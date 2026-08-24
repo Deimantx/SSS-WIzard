@@ -22,5 +22,5 @@ export const DEFAULT_LAYOUTS: Record<ScreenId, ScreenLayouts> = {
   equipment: { 'equipment-loadout': layout(0, 0, 7, 13), 'equipment-stats': layout(7, 0, 5, 13), 'equipment-owned': layout(0, 13, 12, 13) },
   guild: { 'guild-banner': layout(0, 0, 12, 5), 'guild-request-1': layout(0, 5, 4, 11), 'guild-request-2': layout(4, 5, 4, 11), 'guild-request-3': layout(8, 5, 4, 11), 'guild-rank': layout(0, 16, 12, 6) },
   collection: { 'collection-summary': layout(0, 0, 12, 5), 'collection-content': layout(0, 5, 12, 15) },
-  settings: { 'settings-appearance': layout(0, 0, 8, 16), 'settings-theme-preview': layout(8, 0, 4, 13), 'settings-save': layout(0, 16, 6, 9), 'settings-layout': layout(6, 16, 6, 9), 'settings-developer': layout(0, 25, 6, 7), 'settings-info': layout(6, 25, 6, 7) },
+  settings: { 'settings-profile': layout(0, 0, 12, 8), 'settings-appearance': layout(0, 8, 8, 16), 'settings-theme-preview': layout(8, 8, 4, 13), 'settings-save': layout(0, 24, 6, 9), 'settings-layout': layout(6, 24, 6, 9), 'settings-developer': layout(0, 33, 6, 7), 'settings-info': layout(6, 33, 6, 7) },
 }

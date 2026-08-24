@@ -9,7 +9,7 @@ const labels: Record<string, string> = {
   'combat-dungeon': 'Dungeon', 'combat-enemy': 'Enemy', 'combat-timeline': 'Combat timeline', 'combat-spells': 'Spell bar', 'combat-log': 'Combat log',
   'inventory-catalog': 'Item catalog', 'inventory-detail': 'Item detail', 'equipment-loadout': 'Equipment loadout', 'equipment-stats': 'Equipment stats', 'equipment-owned': 'Owned equipment',
   'guild-banner': 'Guild banner', 'guild-request-1': 'Request one', 'guild-request-2': 'Request two', 'guild-request-3': 'Request three', 'guild-rank': 'Guild rank',
-  'collection-summary': 'Collection summary', 'collection-content': 'Collection content', 'settings-appearance': 'Appearance', 'settings-theme-preview': 'Theme preview', 'settings-save': 'Save', 'settings-layout': 'Interface layout', 'settings-developer': 'Developer', 'settings-info': 'Info',
+  'collection-summary': 'Collection summary', 'collection-content': 'Collection content', 'settings-profile': 'Profile', 'settings-appearance': 'Appearance', 'settings-theme-preview': 'Theme preview', 'settings-save': 'Save', 'settings-layout': 'Interface layout', 'settings-developer': 'Developer', 'settings-info': 'Info',
 }
 
 export const PANEL_REGISTRY: PanelDefinition[] = (Object.entries(DEFAULT_LAYOUTS) as [ScreenId, Record<string, PanelDefinition['defaultLayout']>][]) .flatMap(([screen, layouts]) => Object.entries(layouts).map(([id, defaultLayout]) => ({ id, screen, label: labels[id] ?? id, defaultLayout, minW: id.includes('request') ? 3 : 2, minH: 4, canHide: true })))

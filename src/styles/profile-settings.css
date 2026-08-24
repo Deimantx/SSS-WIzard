@@ -1,0 +1,5 @@
+.profile-settings-summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 8px; }
+.profile-settings-summary > div:first-child { display: grid; gap: 5px; }
+.profile-settings-summary strong { font-size: var(--text-lg); }
+.profile-settings-summary .profile-badges { margin: 0; }
+.profile-settings-error { color: var(--ui-danger); font-size: var(--text-sm); }

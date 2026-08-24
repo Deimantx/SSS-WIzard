@@ -9,7 +9,10 @@ import { SCHOOLS } from '../game/data/schools'
 import { SPELLS } from '../game/data/spells'
 import { RECIPES as RECIPE_DATA } from '../game/data/recipes'
 import { appendLog, barrierMultiplier, canReserveFocus, completeResearchCycle, equipmentStats, manaRegenPerSecond, playerBasicDamage, pushNotification, recalculateDerivedStats, selectFreeFocus, selectUsedFocus, spellDamageMultiplier } from '../game/engine'
-import { loadSave, saveGame as persistSave, clearSave } from '../persistence/saveManager'
+import { loadProfileGame, saveProfileGame } from '../persistence/profileSaveManager'
+import { AUTOSAVE_INTERVAL_MS, type SaveReason } from '../persistence/saveConstants'
+import { getActiveProfileId } from '../profiles/profileSessionStore'
+import { updateProfileMetadata } from '../profiles/profileStorage'
 import { createInitialState } from './initialState'
 import type { DungeonId, EquipmentSlot, GameState, ItemId, MonsterId, SchoolId, ScreenId, SpellEffect, SpellId, StatusEffect } from '../game/types'
 import { clamp, formatTime } from '../game/utils'
@@ -35,9 +38,10 @@ export interface GameActions {
   clearCombatStatuses: () => void
   clearPlayerStatuses: () => void
   clearEnemyStatuses: () => void
-  saveGame: () => void
+  saveGame: (reason?: SaveReason) => SaveResult
   reloadFromStorage: () => void
   resetSave: () => void
+  hydrateState: (state: GameState) => void
   dismissNotification: (id: string) => void
   setPlayer: (changes: Partial<GameState['player']>) => void
   setSchoolDebug: (school: SchoolId, xp: number, level?: number) => void
@@ -55,18 +59,14 @@ export interface GameActions {
   setGuildReputation: (amount: number) => void
   setBossKills: (bossId: 'grove-sentinel' | 'forest-heart', amount: number) => void
   preset: (name: 'fresh' | 'research' | 'combat' | 'boss' | 'guild' | 'main-boss' | 'chapter-complete') => void
-  resumeFromHidden: (elapsedMs: number) => void
+  resumeFromHidden: (elapsedMs: number, notify?: boolean) => void
 }
 
 export type GameStore = GameState & GameActions
 
-const loadInitialState = () => {
-  const loaded = loadSave()
-  const state = loaded.state ?? createInitialState()
-  if (loaded.error) state.notifications.push({ id: `save-error-${Date.now()}`, text: `Save recovery: ${loaded.error}`, tone: 'warning' })
-  recalculateDerivedStats(state)
-  return state
-}
+export interface SaveResult { ok: boolean; error: string | null }
+
+let lastBackgroundSaveErrorAt = 0
 
 const spellUnlocked = (state: GameState, spellId: SpellId) => state.progress.unlockedSpells.includes(spellId)
 const isEquipped = (state: GameState, itemId: ItemId) => Object.values(state.equipment).includes(itemId)
@@ -336,7 +336,7 @@ const tickCombat = (state: GameState, delta: number) => {
 }
 
 export const useGameStore = create<GameStore>()(immer((set, get) => ({
-  ...loadInitialState(),
+  ...createInitialState(),
   tick: (deltaMs) => set((state) => {
     const delta = Math.min(1000, Math.max(0, deltaMs))
     state.channelCooldownMs = Math.max(0, state.channelCooldownMs - delta)
@@ -369,9 +369,41 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   clearCombatStatuses: () => set((state) => { state.combat.playerStatuses = []; state.combat.enemyStatuses = []; return state }),
   clearPlayerStatuses: () => set((state) => { state.combat.playerStatuses = []; return state }),
   clearEnemyStatuses: () => set((state) => { state.combat.enemyStatuses = []; return state }),
-  saveGame: () => set((state) => { state.lastSavedAt = Date.now(); persistSave(state); pushNotification(state, 'Game saved', 'success'); return state }),
-  reloadFromStorage: () => { const loaded = loadSave(); if (!loaded.state) return; set((state) => { Object.assign(state, loaded.state as GameState); recalculateDerivedStats(state); return state }) },
-  resetSave: () => { clearSave(); set((state) => { Object.assign(state, createInitialState()); return state }) },
+  saveGame: (reason = 'manual') => {
+    const activeProfileId = getActiveProfileId()
+    if (!activeProfileId) return { ok: false, error: 'No active profile.' }
+    const savedAt = Date.now()
+    let result: SaveResult = { ok: false, error: 'Profile save failed.' }
+    set((state) => {
+      state.lastSavedAt = savedAt
+      result = saveProfileGame(activeProfileId, state)
+      if (result.ok && reason === 'manual') pushNotification(state, 'Game saved', 'success')
+      if (!result.ok && (reason === 'manual' || savedAt - lastBackgroundSaveErrorAt > AUTOSAVE_INTERVAL_MS)) {
+        lastBackgroundSaveErrorAt = savedAt
+        pushNotification(state, result.error ?? 'Profile save failed.', 'warning')
+      }
+      return state
+    })
+    if (result.ok) updateProfileMetadata(activeProfileId, { lastSavedAt: savedAt })
+    return result
+  },
+  reloadFromStorage: () => {
+    const activeProfileId = getActiveProfileId()
+    if (!activeProfileId) return
+    const loaded = loadProfileGame(activeProfileId)
+    if (!loaded.state) return
+    set((state) => { Object.assign(state, loaded.state as GameState); recalculateDerivedStats(state); return state })
+  },
+  resetSave: () => {
+    const fresh = createInitialState()
+    set((state) => { Object.assign(state, fresh); return state })
+    const activeProfileId = getActiveProfileId()
+    if (activeProfileId) {
+      const saved = saveProfileGame(activeProfileId, useGameStore.getState())
+      if (saved.ok) updateProfileMetadata(activeProfileId, { lastSavedAt: fresh.lastSavedAt })
+    }
+  },
+  hydrateState: (nextState) => set((state) => { Object.assign(state, nextState); recalculateDerivedStats(state); return state }),
   dismissNotification: (id) => set((state) => { state.notifications = state.notifications.filter((note) => note.id !== id); return state }),
   setPlayer: (changes) => set((state) => { state.player = { ...state.player, ...changes }; recalculateDerivedStats(state); return state }),
   setSchoolDebug: (school, xp, level) => set((state) => { state.schools[school].xp = Math.max(0, xp); state.schools[school].level = level ?? Math.min(state.progress.magicLevelCap, Math.max(1, Math.floor(xp / 20) + 1)); unlockSchoolSpells(state, school); return state }),
@@ -389,7 +421,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   setGuildReputation: (amount) => set((state) => { state.progress.guildReputation = Math.max(0, amount); return state }),
   setBossKills: (bossId, amount) => set((state) => { state.progress.bossKillsByBoss[bossId] = Math.max(0, amount); state.progress.requestProgress['sentinel-breaker'] = state.progress.bossKillsByBoss['grove-sentinel'] ?? 0; return state }),
   preset: (name) => set((state) => { Object.assign(state, createInitialState()); if (name === 'research') { state.inventory['fire-fragment'] = 10; state.player.mana = 100; state.activities.autoChannel = true } if (name === 'combat') { state.inventory['fire-fragment'] = 10; state.progress.unlockedSpells = ['fire-bolt']; state.schools.fire = { xp: 20, level: 2 }; state.player.mana = 100; state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; spawnNextEnemy(state) } if (name === 'boss') { state.inventory['fire-fragment'] = 15; state.inventory['wisp-essence'] = 10; state.inventory['grove-bark'] = 2; state.progress.unlockedSpells = ['fire-bolt']; state.schools.fire = { xp: 80, level: 4 }; state.progress.guildUnlocked = true; state.progress.firstBossKill = true; state.progress.emberStaffUnlocked = true; state.progress.forestHeartUnlocked = true; state.progress.autoHuntBossUnlocked = true; state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; state.combat.threatCleared = 20; spawnNextEnemy(state) } if (name === 'guild') { state.progress.guildUnlocked = true; state.progress.guildRank = 'initiate'; state.progress.firstBossKill = true; state.progress.emberStaffUnlocked = true; state.progress.forestHeartUnlocked = true; state.progress.autoHuntBossUnlocked = true; state.inventory['fire-fragment'] = 20; state.progress.lifetimeKills = 30; state.progress.requestProgress['clear-the-woods'] = 30; state.progress.bossKillsByBoss['grove-sentinel'] = 2; state.progress.requestProgress['sentinel-breaker'] = 2; state.progress.guildReputation = 100 } if (name === 'main-boss' || name === 'chapter-complete') { state.inventory['fire-fragment'] = 20; state.inventory['wisp-essence'] = 12; state.inventory['grove-bark'] = 4; state.progress.guildUnlocked = true; state.progress.guildRank = 'apprentice'; state.progress.firstBossKill = true; state.progress.emberStaffUnlocked = true; state.progress.forestHeartUnlocked = true; state.progress.autoHuntBossUnlocked = true; state.progress.permanentFocusBonuses['forest-heart'] = 10; state.progress.permanentFocusBonuses['guild-apprentice'] = 10; state.progress.magicLevelCap = 20; state.schools.fire = { xp: 380, level: 20 }; state.progress.firstMainBossKill = true; state.inventory.heartseed = 1; recalculateDerivedStats(state); state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; spawnEnemy(state, 'forest-heart', true) } return state }),
-  resumeFromHidden: (elapsedMs) => set((state) => { if (elapsedMs > 1000) { state.offlineBankMs += elapsedMs; pushNotification(state, `${Math.round(elapsedMs / 1000)}s added to Offline Bank`, 'info') } return state }),
+  resumeFromHidden: (elapsedMs, notify = true) => set((state) => { if (elapsedMs > 1000) { state.offlineBankMs += elapsedMs; if (notify) pushNotification(state, `${Math.round(elapsedMs / 1000)}s added to Offline Bank`, 'info') } return state }),
 })))
 
 export const useGameStoreSelectors = { selectUsedFocus, selectFreeFocus }

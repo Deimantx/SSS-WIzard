@@ -32,11 +32,13 @@ npm run build
 
 ## Development Test Mode
 
-Open `Settings / Info`, enable `Show tools` under `Developer tools`, and use the clearly marked Developer Tools panel. Presets provide Fresh, Research, Combat, Boss, and Main Boss states without waiting through the full progression.
+Open `Settings / Info` and use `Developer Tools`. Presets provide Fresh, Research, Combat, Boss, and Main Boss states without waiting through the full progression.
 
-## Save Data
+## Profiles and Save Data
 
-Save data is stored in browser `localStorage` under `sss-wizard-save-v1`. Clearing browser storage or using `Reset save` removes progress. There is no cloud account or backend. Save loading has a migration boundary and currently migrates v1 saves to v2.
+SSS Wizard opens with three local profile slots. Each profile has an independent gameplay save with Default mode and Normal difficulty. Profiles are stored in this browser only; there is no cloud account or backend.
+
+Appearance preferences and UI layouts are global to this browser, while gameplay progression is saved per profile. Existing development saves under the legacy `sss-wizard-save-v1` key are migrated into Profile 1 with a recovery backup during first boot. Clearing browser storage removes local profiles and preferences.
 
 ## Project Structure
 

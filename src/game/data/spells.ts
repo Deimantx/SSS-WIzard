@@ -1,0 +1,1 @@
+export { SPELLS } from './content'

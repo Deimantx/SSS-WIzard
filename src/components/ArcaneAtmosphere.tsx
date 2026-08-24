@@ -27,9 +27,11 @@ export function ArcaneAtmosphere() {
     resize()
     window.addEventListener('resize', resize)
     let frame = 0
-    const animate = () => { frame = requestAnimationFrame(animate); particles.rotation.y += 0.00035; particles.rotation.x = Math.sin(performance.now() * 0.00008) * 0.08; renderer.render(scene, camera) }
+    const animate = () => { if (document.hidden) return; frame = requestAnimationFrame(animate); particles.rotation.y += 0.00035; particles.rotation.x = Math.sin(performance.now() * 0.00008) * 0.08; renderer.render(scene, camera) }
+    const visibility = () => { if (!document.hidden) animate(); else cancelAnimationFrame(frame) }
+    document.addEventListener('visibilitychange', visibility)
     animate()
-    return () => { cancelAnimationFrame(frame); window.removeEventListener('resize', resize); points.dispose(); material.dispose(); renderer.dispose(); host.removeChild(renderer.domElement) }
+    return () => { cancelAnimationFrame(frame); document.removeEventListener('visibilitychange', visibility); window.removeEventListener('resize', resize); points.dispose(); material.dispose(); renderer.dispose(); host.removeChild(renderer.domElement) }
   }, [])
   return <div ref={ref} className="atmosphere" aria-hidden="true" />
 }

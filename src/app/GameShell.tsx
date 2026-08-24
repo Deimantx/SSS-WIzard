@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { BookOpen, ChevronRight, CircleHelp, FlaskConical, Gem, Home, LayoutDashboard, Library, Menu, Settings, Shield, Swords, TowerControl, X } from 'lucide-react'
+import { BookOpen, ChevronRight, Edit3, Gem, Home, LayoutDashboard, Library, Menu, Settings, Shield, Swords, TowerControl, X } from 'lucide-react'
 import { useGameStore } from '../store/gameStore'
 import { selectCombatStatus, selectManaRegen, selectOfflineBankMs, selectUsedFocus } from '../store/selectors'
 import type { ScreenId } from '../game/types'
@@ -8,6 +8,8 @@ import { ArcaneAtmosphere } from '../components/ArcaneAtmosphere'
 import { ScreenRouter } from '../screens/ScreenRouter'
 import { useUiPreferences } from '../ui/preferences/uiPreferencesStore'
 import { themeColors } from '../ui/theme/themePresets'
+import { closeLayoutEditor, openLayoutEditor, useLayoutEditorStore } from '../ui/layout-editor/layoutEditorStore'
+import { LayoutEditorDrawer } from '../ui/layout-editor/LayoutEditorDrawer'
 
 const NAV: { id: ScreenId; label: string; icon: typeof Home; hint: string }[] = [
   { id: 'home', label: 'Overview', icon: Home, hint: 'Your wizard at a glance' },
@@ -27,7 +29,7 @@ export function GameShell() {
   const combat = useGameStore((state) => state.combat)
   const progress = useGameStore((state) => state.progress)
   const activities = useGameStore((state) => state.activities)
-  const editMode = useGameStore((state) => state.ui.editMode)
+  const editor = useLayoutEditorStore()
   const notifications = useGameStore((state) => state.notifications)
   const setScreen = useGameStore((state) => state.setScreen)
   const tick = useGameStore((state) => state.tick)
@@ -43,6 +45,15 @@ export function GameShell() {
   const offlineBankMs = useGameStore(selectOfflineBankMs)
   const preferences = useUiPreferences()
   const appearance = themeColors(preferences.theme, preferences.customTheme)
+
+  useEffect(() => {
+    if (!editor.isEditing) return
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape' && !(event.target as HTMLElement | null)?.matches('input,select,textarea')) { event.preventDefault(); closeLayoutEditor() } }
+    const onResize = () => { if (window.innerWidth < 1024) closeLayoutEditor('UI Editor is available on desktop-sized layouts.') }
+    window.addEventListener('keydown', onKeyDown)
+    window.addEventListener('resize', onResize)
+    return () => { window.removeEventListener('keydown', onKeyDown); window.removeEventListener('resize', onResize) }
+  }, [editor.isEditing])
 
   useEffect(() => {
     const interval = window.setInterval(() => { if (document.hidden || hiddenRef.current) return; const now = performance.now(); const elapsed = now - lastFrame.current; lastFrame.current = now; tick(elapsed) }, 100)
@@ -64,7 +75,7 @@ export function GameShell() {
       <nav className="nav-list">{NAV.map(({ id, label, icon: Icon, hint }) => <button key={id} className={`nav-item ${screen === id ? 'active' : ''}`} onClick={() => setScreen(id)} title={hint}><Icon size={17} /><span>{label}</span>{screen === id && <ChevronRight className="nav-chevron" size={14} />}</button>)}</nav>
       <div className="sidebar-foot"><div className="save-dot"><span /> Autosave active</div><div className="version">MVP · local save</div></div>
     </aside>
-    <main className={`main-area ${editMode ? 'edit-mode' : ''}`}>
+    <main className={`main-area ${editor.isEditing ? 'editor-open' : ''}`}>
       <header className="topbar">
         <button className="mobile-menu" onClick={() => setScreen('home')} aria-label="Go to overview"><Menu size={19} /></button>
         <div className="crumb"><span>Wizard Tower</span><ChevronRight size={14} /><strong>{NAV.find((item) => item.id === screen)?.label}</strong></div>
@@ -76,12 +87,13 @@ export function GameShell() {
           <div className="focus-chip top-detail"><span className="focus-glyph">⚔</span><div><small>STATUS</small><strong>{combatStatus}</strong></div></div>
           <div className="focus-chip top-detail"><span className="focus-glyph">◷</span><div><small>OFFLINE BANK</small><strong>{formatTime(offlineBankMs)}</strong></div></div>
         </div>
-        <button className="icon-button" onClick={() => setScreen('settings')} title="Settings"><Settings size={17} /></button>
+        <button className="topbar-editor-button" onClick={() => editor.isEditing ? closeLayoutEditor() : openLayoutEditor(screen)} title={editor.isEditing ? 'Exit UI editor' : 'Edit UI layout'}><Edit3 size={15} /><span>{editor.isEditing ? 'Exit UI Edit' : 'Edit UI Layout'}</span></button><button className="icon-button" onClick={() => setScreen('settings')} title="Settings"><Settings size={17} /></button>
       </header>
       <div className="screen-scroll"><ScreenRouter /></div>
       <ActivityDock />
-      {editMode && <div className="layout-badge">UI EDIT MODE · layout changes are local to this session</div>}
     </main>
+    <LayoutEditorDrawer screen={screen} />
+    {!editor.isEditing && editor.notice && <div className="layout-editor-notice-toast" role="status">{editor.notice}</div>}
     <div className="toast-stack">{notifications.map((note) => <div className={`toast ${note.tone}`} key={note.id}><span>{note.tone === 'success' ? '✦' : note.tone === 'warning' ? '!' : '·'}</span><div>{note.text}</div><button onClick={() => dismissNotification(note.id)}><X size={13} /></button></div>)}</div>
   </div>
 }

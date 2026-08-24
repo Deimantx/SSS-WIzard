@@ -1,0 +1,18 @@
+import type { ScreenId } from '../../game/types'
+import type { PanelDefinition } from './layoutEditorTypes'
+import { DEFAULT_LAYOUTS } from './defaultLayouts'
+
+const labels: Record<string, string> = {
+  'home-objective': 'Main objective', 'home-checklist': 'Chapter checklist', 'home-wizard': 'The wizard',
+  'tower-channeling': 'Channeling', 'tower-focus': 'Focus', 'tower-condensation': 'Condensation', 'tower-research': 'Research', 'tower-transmutation': 'Transmutation',
+  'school-fire': 'Fire school', 'school-water': 'Water school', 'school-earth': 'Earth school', 'school-air': 'Air school', 'school-ceiling': 'Level ceiling',
+  'combat-dungeon': 'Dungeon', 'combat-enemy': 'Enemy', 'combat-timeline': 'Combat timeline', 'combat-spells': 'Spell bar', 'combat-log': 'Combat log',
+  'inventory-catalog': 'Item catalog', 'inventory-detail': 'Item detail', 'equipment-loadout': 'Equipment loadout', 'equipment-stats': 'Equipment stats', 'equipment-owned': 'Owned equipment',
+  'guild-banner': 'Guild banner', 'guild-request-1': 'Request one', 'guild-request-2': 'Request two', 'guild-request-3': 'Request three', 'guild-rank': 'Guild rank',
+  'collection-summary': 'Collection summary', 'collection-content': 'Collection content', 'settings-appearance': 'Appearance', 'settings-theme-preview': 'Theme preview', 'settings-save': 'Save', 'settings-layout': 'Interface layout', 'settings-developer': 'Developer', 'settings-info': 'Info',
+}
+
+export const PANEL_REGISTRY: PanelDefinition[] = (Object.entries(DEFAULT_LAYOUTS) as [ScreenId, Record<string, PanelDefinition['defaultLayout']>][]) .flatMap(([screen, layouts]) => Object.entries(layouts).map(([id, defaultLayout]) => ({ id, screen, label: labels[id] ?? id, defaultLayout, minW: id.includes('request') ? 3 : 2, minH: 4, canHide: true })))
+
+export const getPanelDefinitions = (screen: ScreenId) => PANEL_REGISTRY.filter((panel) => panel.screen === screen)
+export const getPanelDefinition = (screen: ScreenId, panelId: string) => PANEL_REGISTRY.find((panel) => panel.screen === screen && panel.id === panelId)

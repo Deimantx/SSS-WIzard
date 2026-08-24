@@ -19,7 +19,7 @@ export const createInitialState = (): GameState => ({
   },
   combat: { active: false, dungeonId: null, enemyId: null, enemyHp: 0, enemyMaxHp: 0, enemyBarrier: 0, enemyActionIndex: 0, enemyActionTimerMs: 0, enemyIntervalMs: 0, enemyTelegraphMs: 0, enemyTelegraphActionId: null, enemySpecialUsed: {}, pendingBossId: null, playerAttackTimerMs: 0, enemyAttackTimerMs: 0, encounterTimerMs: 0, spellCooldowns: { 'fire-bolt': 0, 'water-ward': 0, 'earth-spike': 0, 'air-lance': 0, ignite: 0, 'flow-mend': 0, stoneguard: 0, quickening: 0 }, playerStatuses: [], enemyStatuses: [], threatCleared: 0, inBossFight: false, log: [], lastDamageDealt: 0, lastDamageTaken: 0 },
   progress: { magicLevelCap: BALANCE.mainBoss.startingMagicLevelCap, unlockedSpells: [], discoveredMonsters: [], lifetimeKills: 0, firstBossKill: false, firstMainBossKill: false, guildUnlocked: false, emberStaffUnlocked: false, forestHeartUnlocked: false, autoHuntBossUnlocked: false, guildRank: 'outsider', requestProgress: {}, guildReputation: 0, requestClaims: {}, permanentFocusBonuses: {}, lifetimeKillsByMonster: {}, bossKillsByBoss: {}, autoHuntBossByDungeon: { 'whispering-woods': false } },
-  ui: { screen: 'home', showDebug: false, editMode: false, reducedMotion: false, layouts: {} },
+  ui: { screen: 'home', showDebug: false },
   offlineBankMs: 0,
   lastSavedAt: Date.now(),
   notifications: [],

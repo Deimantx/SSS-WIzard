@@ -1,0 +1,8 @@
+import { Pause, Play, Zap } from 'lucide-react'
+import { BALANCE } from '../../game/data/balance'
+import { selectManaRegen } from '../../store/selectors'
+import { useGameStore } from '../../store/gameStore'
+import { Button, Card, Status } from '../../components/ui'
+import { formatNumber } from '../../game/utils'
+
+export function ChannelingPanel() { const player = useGameStore((state) => state.player); const active = useGameStore((state) => state.activities.autoChannel); const channelMana = useGameStore((state) => state.channelMana); const toggleAutoChannel = useGameStore((state) => state.toggleAutoChannel); const manaRegen = useGameStore(selectManaRegen); return <Card title="Channeling Chamber" action={<Status tone="active">Passive +{manaRegen}/s</Status>}><div className="channel-visual"><div className="mana-core"><span>✦</span><i /></div><div><div className="eyebrow">CURRENT MANA</div><strong className="big-number">{formatNumber(player.mana)} <small>/ {player.maxMana}</small></strong><p className="muted">Manual channeling costs no Focus. Automation does.</p></div></div><div className="button-row"><Button onClick={channelMana} disabled={player.mana >= player.maxMana}><Zap size={16} /> Channel Mana <small>+{BALANCE.mana.manualChannelAmount}</small></Button><Button variant={active ? 'success' : 'secondary'} onClick={toggleAutoChannel}>{active ? <Pause size={15} /> : <Play size={15} />} {active ? 'Pause Auto Channeling' : 'Enable Auto Channeling'} <small>−{BALANCE.mana.autoChannelFocus} Focus</small></Button></div><div className="info-strip"><span>Mana regeneration</span><strong>{manaRegen}/s</strong><span>Net with active drains</span><strong className="positive">{manaRegen}/s baseline</strong></div></Card> }

@@ -1,0 +1,8 @@
+import { useMemo } from 'react'
+import { ShieldCheck } from 'lucide-react'
+import { deriveFocusReservations } from '../../game/engine'
+import { selectFreeFocus, selectUsedFocus } from '../../store/selectors'
+import { useGameStore } from '../../store/gameStore'
+import { Card, Progress } from '../../components/ui'
+
+export function FocusPanel() { const player = useGameStore((state) => state.player); const activities = useGameStore((state) => state.activities); const progress = useGameStore((state) => state.progress); const used = useGameStore(selectUsedFocus); const free = useGameStore(selectFreeFocus); const reservations = useMemo(() => deriveFocusReservations({ activities, progress }), [activities, progress]); return <Card title="Focus Allocation" action={<span className="focus-ring"><strong>{used}</strong><small>/ {player.maxFocus}</small></span>}><p className="muted">Reservations are derived from the engine. Pause an activity to release Focus immediately.</p><div className="focus-total"><span>Used</span><Progress value={used / player.maxFocus * 100} tone="violet" /><strong>{free} free</strong></div><div className="reservation-list">{reservations.length ? reservations.map((reservation) => <div className="reservation" key={reservation.id}><span className="reservation-dot" /><span>{reservation.label}</span><strong>{reservation.amount}</strong></div>) : <div className="empty-state small">No automated activities are reserving Focus.</div>}</div><div className="focus-rule"><ShieldCheck size={15} /><span>Basic Attack requires <strong>0 Focus</strong>. Spell Auto-Cast costs come from each spell definition.</span></div></Card> }

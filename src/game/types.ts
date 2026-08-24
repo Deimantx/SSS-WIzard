@@ -155,8 +155,8 @@ export interface ProgressState {
   bossKillsByBoss: Partial<Record<'grove-sentinel' | 'forest-heart', number>>
   autoHuntBossByDungeon: Record<DungeonId, boolean>
 }
-export interface PanelLayout { x: number; y: number; width: number; height: number }
-export interface UiState { screen: ScreenId; showDebug: boolean; editMode: boolean; reducedMotion: boolean; layouts: Partial<Record<ScreenId, Record<string, PanelLayout>>> }
+/** Gameplay UI state. Layout editing is transient UI chrome and lives outside the save. */
+export interface UiState { screen: ScreenId; showDebug: boolean }
 export interface GameState {
   saveVersion: number
   player: PlayerState

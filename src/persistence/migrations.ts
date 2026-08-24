@@ -39,7 +39,8 @@ const migrateV1 = (raw: Record<string, any>): GameState => {
     activities: { ...fresh.activities, ...(isRecord(oldActivities) ? oldActivities : {}), research, autoCast: { ...fresh.activities.autoCast, ...(isRecord(oldActivities.autoCast) ? oldActivities.autoCast : {}) } },
     progress: { ...fresh.progress, ...(isRecord(oldProgress) ? oldProgress : {}) },
     combat: { ...fresh.combat, ...(isRecord(raw.combat) ? raw.combat : {}) },
-    ui: { ...fresh.ui, ...(isRecord(raw.ui) ? raw.ui : {}) },
+    // Legacy editor fields are intentionally discarded from gameplay state.
+    ui: { screen: isRecord(raw.ui) && typeof raw.ui.screen === 'string' ? raw.ui.screen as GameState['ui']['screen'] : fresh.ui.screen, showDebug: isRecord(raw.ui) && raw.ui.showDebug === true },
     offlineBankMs: typeof raw.offlineBankMs === 'number' ? raw.offlineBankMs : 0,
   }
   return migrated

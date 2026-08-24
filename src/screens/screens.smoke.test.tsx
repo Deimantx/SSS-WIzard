@@ -42,6 +42,21 @@ describe('screen smoke coverage', () => {
     error.mockRestore()
   })
 
+  it('opens the desktop editor, follows navigation, and exits with Escape or drawer controls', async () => {
+    const user = userEvent.setup()
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1280 })
+    render(<GameShell />)
+    await user.click(screen.getByRole('button', { name: 'Edit UI Layout' }))
+    expect(screen.getByRole('complementary', { name: 'UI layout editor' })).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Wizard Tower' }))
+    expect(screen.getAllByText('Channeling').length).toBeGreaterThan(0)
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('complementary', { name: 'UI layout editor' })).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Edit UI Layout' }))
+    await user.click(screen.getByRole('button', { name: 'Done' }))
+    expect(screen.queryByRole('complementary', { name: 'UI layout editor' })).toBeNull()
+  })
+
   it.each(['default', 'dark', 'light', 'custom'] as const)('renders %s appearance on Settings', async (theme) => {
     const user = userEvent.setup()
     render(<GameShell />)

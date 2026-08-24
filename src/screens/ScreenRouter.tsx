@@ -1,4 +1,3 @@
-import { EditablePanel } from '../components/layout/EditablePanel'
 import { ScreenErrorBoundary } from '../components/errors/ScreenErrorBoundary'
 import { useGameStore } from '../store/gameStore'
 import { CollectionScreenV2 } from './collection/CollectionScreen'
@@ -27,5 +26,5 @@ function CurrentScreen() {
 
 export function ScreenRouter() {
   const screen = useGameStore((state) => state.ui.screen)
-  return <><ScreenErrorBoundary key={screen} screen={screen}><EditablePanel screen={screen} panelId="main-content"><CurrentScreen /></EditablePanel></ScreenErrorBoundary><DebugPanel /></>
+  return <><ScreenErrorBoundary key={screen} screen={screen}><CurrentScreen /></ScreenErrorBoundary><DebugPanel /></>
 }

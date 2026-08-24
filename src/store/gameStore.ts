@@ -11,7 +11,7 @@ import { RECIPES as RECIPE_DATA } from '../game/data/recipes'
 import { appendLog, barrierMultiplier, canReserveFocus, completeResearchCycle, equipmentStats, manaRegenPerSecond, playerBasicDamage, pushNotification, recalculateDerivedStats, selectFreeFocus, selectUsedFocus, spellDamageMultiplier } from '../game/engine'
 import { loadSave, saveGame as persistSave, clearSave } from '../persistence/saveManager'
 import { createInitialState } from './initialState'
-import type { DungeonId, EquipmentSlot, GameState, ItemId, PanelLayout, SchoolId, ScreenId, SpellEffect, SpellId, StatusEffect } from '../game/types'
+import type { DungeonId, EquipmentSlot, GameState, ItemId, SchoolId, ScreenId, SpellEffect, SpellId, StatusEffect } from '../game/types'
 import { clamp, formatTime } from '../game/utils'
 
 export interface GameActions {
@@ -33,7 +33,6 @@ export interface GameActions {
   saveGame: () => void
   resetSave: () => void
   setDebug: (enabled: boolean) => void
-  toggleEditMode: () => void
   dismissNotification: (id: string) => void
   setPlayer: (changes: Partial<GameState['player']>) => void
   setSchoolDebug: (school: SchoolId, xp: number, level?: number) => void
@@ -52,9 +51,6 @@ export interface GameActions {
   setBossKills: (bossId: 'grove-sentinel' | 'forest-heart', amount: number) => void
   preset: (name: 'fresh' | 'research' | 'combat' | 'boss' | 'guild' | 'main-boss' | 'chapter-complete') => void
   resumeFromHidden: (elapsedMs: number) => void
-  setLayout: (screen: ScreenId, panelId: string, layout: PanelLayout) => void
-  resetLayout: (screen: ScreenId) => void
-  resetAllLayouts: () => void
 }
 
 export type GameStore = GameState & GameActions
@@ -366,7 +362,6 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   saveGame: () => set((state) => { state.lastSavedAt = Date.now(); persistSave(state); pushNotification(state, 'Game saved', 'success'); return state }),
   resetSave: () => { clearSave(); set((state) => { Object.assign(state, createInitialState()); return state }) },
   setDebug: (enabled) => set((state) => { state.ui.showDebug = enabled; return state }),
-  toggleEditMode: () => set((state) => { state.ui.editMode = !state.ui.editMode; return state }),
   dismissNotification: (id) => set((state) => { state.notifications = state.notifications.filter((note) => note.id !== id); return state }),
   setPlayer: (changes) => set((state) => { state.player = { ...state.player, ...changes }; recalculateDerivedStats(state); return state }),
   setSchoolDebug: (school, xp, level) => set((state) => { state.schools[school].xp = Math.max(0, xp); state.schools[school].level = level ?? Math.min(state.progress.magicLevelCap, Math.max(1, Math.floor(xp / 20) + 1)); unlockSchoolSpells(state, school); return state }),
@@ -385,9 +380,6 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   setBossKills: (bossId, amount) => set((state) => { state.progress.bossKillsByBoss[bossId] = Math.max(0, amount); state.progress.requestProgress['sentinel-breaker'] = state.progress.bossKillsByBoss['grove-sentinel'] ?? 0; return state }),
   preset: (name) => set((state) => { Object.assign(state, createInitialState()); if (name === 'research') { state.inventory['fire-fragment'] = 10; state.player.mana = 100; state.activities.autoChannel = true } if (name === 'combat') { state.inventory['fire-fragment'] = 10; state.progress.unlockedSpells = ['fire-bolt']; state.schools.fire = { xp: 20, level: 2 }; state.player.mana = 100; state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; spawnNextEnemy(state) } if (name === 'boss') { state.inventory['fire-fragment'] = 15; state.inventory['wisp-essence'] = 10; state.inventory['grove-bark'] = 2; state.progress.unlockedSpells = ['fire-bolt']; state.schools.fire = { xp: 80, level: 4 }; state.progress.guildUnlocked = true; state.progress.firstBossKill = true; state.progress.emberStaffUnlocked = true; state.progress.forestHeartUnlocked = true; state.progress.autoHuntBossUnlocked = true; state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; state.combat.threatCleared = 20; spawnNextEnemy(state) } if (name === 'guild') { state.progress.guildUnlocked = true; state.progress.guildRank = 'initiate'; state.progress.firstBossKill = true; state.progress.emberStaffUnlocked = true; state.progress.forestHeartUnlocked = true; state.progress.autoHuntBossUnlocked = true; state.inventory['fire-fragment'] = 20; state.progress.lifetimeKills = 30; state.progress.requestProgress['clear-the-woods'] = 30; state.progress.bossKillsByBoss['grove-sentinel'] = 2; state.progress.requestProgress['sentinel-breaker'] = 2; state.progress.guildReputation = 100 } if (name === 'main-boss' || name === 'chapter-complete') { state.inventory['fire-fragment'] = 20; state.inventory['wisp-essence'] = 12; state.inventory['grove-bark'] = 4; state.progress.guildUnlocked = true; state.progress.guildRank = 'apprentice'; state.progress.firstBossKill = true; state.progress.emberStaffUnlocked = true; state.progress.forestHeartUnlocked = true; state.progress.autoHuntBossUnlocked = true; state.progress.permanentFocusBonuses['forest-heart'] = 10; state.progress.permanentFocusBonuses['guild-apprentice'] = 10; state.progress.magicLevelCap = 20; state.schools.fire = { xp: 380, level: 20 }; state.progress.firstMainBossKill = true; state.inventory.heartseed = 1; recalculateDerivedStats(state); state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; spawnEnemy(state, 'forest-heart', true) } return state }),
   resumeFromHidden: (elapsedMs) => set((state) => { if (elapsedMs > 1000) { state.offlineBankMs += elapsedMs; pushNotification(state, `${Math.round(elapsedMs / 1000)}s added to Offline Bank`, 'info') } return state }),
-  setLayout: (screen, panelId, layout) => set((state) => { if (!state.ui.layouts[screen]) state.ui.layouts[screen] = {}; state.ui.layouts[screen]![panelId] = layout; return state }),
-  resetLayout: (screen) => set((state) => { delete state.ui.layouts[screen]; return state }),
-  resetAllLayouts: () => set((state) => { state.ui.layouts = {}; return state }),
 })))
 
 export const useGameStoreSelectors = { selectUsedFocus, selectFreeFocus }

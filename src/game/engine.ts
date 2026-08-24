@@ -1,5 +1,7 @@
 import { BALANCE, SCHOOL_LEVEL_XP } from './data/balance'
-import { ITEMS, SCHOOLS, SPELLS, getResearchXp } from './data/content'
+import { ITEMS, getResearchXp } from './data/items'
+import { SCHOOLS } from './data/schools'
+import { SPELLS } from './data/spells'
 import type { EquipmentStats, FocusReservation, GameState, ItemId, SchoolId, SpellId } from './types'
 import { clamp, uid } from './utils'
 
@@ -32,7 +34,7 @@ export const recalculateDerivedStats = (state: GameState) => {
   state.player.mana = clamp(state.player.mana, 0, state.player.maxMana)
 }
 
-export const selectFocusReservations = (state: Pick<GameState, 'activities' | 'progress'>): FocusReservation[] => {
+export const deriveFocusReservations = (state: Pick<GameState, 'activities' | 'progress'>): FocusReservation[] => {
   const reservations: FocusReservation[] = []
   if (state.activities.autoChannel) reservations.push({ id: 'channeling', sourceType: 'channeling', sourceId: 'mana', amount: BALANCE.mana.autoChannelFocus, label: 'Auto Channeling' })
   if (state.activities.condense.running) reservations.push({ id: 'condense', sourceType: 'condense', sourceId: state.activities.condense.element, amount: BALANCE.condense.focusCost, label: `Condensing ${SCHOOLS[state.activities.condense.element].name}` })
@@ -47,7 +49,7 @@ export const selectFocusReservations = (state: Pick<GameState, 'activities' | 'p
   return reservations
 }
 
-export const selectUsedFocus = (state: Pick<GameState, 'activities' | 'progress'>) => selectFocusReservations(state).reduce((sum, reservation) => sum + reservation.amount, 0)
+export const selectUsedFocus = (state: Pick<GameState, 'activities' | 'progress'>) => deriveFocusReservations(state).reduce((sum, reservation) => sum + reservation.amount, 0)
 export const selectFreeFocus = (state: Pick<GameState, 'activities' | 'progress' | 'player'>) => Math.max(0, state.player.maxFocus - selectUsedFocus(state))
 export const usedFocus = selectUsedFocus
 export const freeFocus = selectFreeFocus
@@ -90,4 +92,4 @@ export const completeResearchCycle = (state: GameState, itemId: ItemId, targetSc
 
 export const pushNotification = (state: GameState, text: string, tone: 'info' | 'success' | 'warning' = 'info') => { state.notifications = [...state.notifications, { id: uid(), text, tone }].slice(-5) }
 export const appendLog = (state: GameState, message: string) => { state.combat.log = [message, ...state.combat.log].slice(0, 50) }
-export const focusReservations = selectFocusReservations
+export const focusReservations = deriveFocusReservations

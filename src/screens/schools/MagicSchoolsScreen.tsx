@@ -1,5 +1,6 @@
 import { Check, Lock } from 'lucide-react'
-import { FRAGMENT_ORDER, SCHOOLS, SPELLS } from '../../game/data/content'
+import { FRAGMENT_ORDER, SCHOOLS } from '../../game/data/schools'
+import { SPELLS } from '../../game/data/spells'
 import { schoolProgress } from '../../game/engine'
 import { useGameStore } from '../../store/gameStore'
 import { formatNumber } from '../../game/utils'

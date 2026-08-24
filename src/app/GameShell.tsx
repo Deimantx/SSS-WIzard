@@ -6,6 +6,8 @@ import type { ScreenId } from '../game/types'
 import { formatNumber, formatTime } from '../game/utils'
 import { ArcaneAtmosphere } from '../components/ArcaneAtmosphere'
 import { ScreenRouter } from '../screens/ScreenRouter'
+import { useUiPreferences } from '../ui/preferences/uiPreferencesStore'
+import { themeColors } from '../ui/theme/themePresets'
 
 const NAV: { id: ScreenId; label: string; icon: typeof Home; hint: string }[] = [
   { id: 'home', label: 'Overview', icon: Home, hint: 'Your wizard at a glance' },
@@ -39,6 +41,8 @@ export function GameShell() {
   const manaRegen = useGameStore(selectManaRegen)
   const combatStatus = useGameStore(selectCombatStatus)
   const offlineBankMs = useGameStore(selectOfflineBankMs)
+  const preferences = useUiPreferences()
+  const appearance = themeColors(preferences.theme, preferences.customTheme)
 
   useEffect(() => {
     const interval = window.setInterval(() => { if (document.hidden || hiddenRef.current) return; const now = performance.now(); const elapsed = now - lastFrame.current; lastFrame.current = now; tick(elapsed) }, 100)
@@ -54,7 +58,7 @@ export function GameShell() {
   }, [notifications, dismissNotification])
 
   return <div className="game-shell">
-    <ArcaneAtmosphere />
+    {preferences.backgroundEffects && <ArcaneAtmosphere accentColor={appearance.accent} opacity={preferences.theme === 'light' ? 0.22 : 0.72} reducedMotion={preferences.reducedMotion} />}
     <aside className="sidebar">
       <div className="brand"><div className="brand-mark">SSS</div><div><strong>SSS Wizard</strong><span>Arcane incremental RPG</span></div></div>
       <nav className="nav-list">{NAV.map(({ id, label, icon: Icon, hint }) => <button key={id} className={`nav-item ${screen === id ? 'active' : ''}`} onClick={() => setScreen(id)} title={hint}><Icon size={17} /><span>{label}</span>{screen === id && <ChevronRight className="nav-chevron" size={14} />}</button>)}</nav>

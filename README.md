@@ -45,6 +45,8 @@ Open `Settings / Info`, enable `Show tools` under `Developer tools`, and use the
 
 Save data is stored in browser `localStorage` under `sss-wizard-save-v1`. Clearing browser storage or using `Reset save` removes progress. There is no cloud account or backend. Save loading has a migration boundary and currently migrates v1 saves to v2.
 
+Appearance preferences are stored separately under `sss-wizard-ui-preferences-v1`. Resetting gameplay does not reset the theme, text size, background effects, or reduced-motion preference; use `Reset Appearance` for that.
+
 ## Project Structure
 
 - `src/app` — shell, navigation, and global status UI

@@ -1,0 +1,16 @@
+import type { CustomThemeColors, UiTheme } from '../preferences/uiPreferencesTypes'
+import type { ThemeColors, ThemePreset } from './themeTypes'
+
+export const THEME_PRESETS: Record<Exclude<UiTheme, 'custom'>, ThemePreset> = {
+  default: { id: 'default', label: 'Default', description: 'Current SSS Wizard arcane violet theme.', background: '#090b13', backgroundElevated: '#111326', sidebar: 'rgba(10, 12, 22, .94)', topbar: 'rgba(9, 11, 19, .82)', panel: '#141623', panelStrong: '#17192a', panelHover: '#25233e', text: '#eceaf8', muted: '#aaa8bd', accent: '#a894ff', accentStrong: '#7164c8', accentSoft: 'rgba(168, 148, 255, .14)', secondary: '#efbd77', border: 'rgba(185, 180, 230, .18)', borderStrong: 'rgba(185, 180, 230, .3)', textDisabled: '#706d82', gold: '#efbd77', danger: '#e87778', success: '#70cda3', warning: '#f09b70', shadow: 'rgba(0, 0, 0, .24)', panelGradientStart: 'rgba(24, 26, 42, .96)', panelGradientEnd: 'rgba(15, 17, 29, .94)' },
+  dark: { id: 'dark', label: 'Dark', description: 'Neutral, deeper, higher-contrast dark theme.', background: '#07080c', backgroundElevated: '#111318', sidebar: '#0b0d12', topbar: 'rgba(7, 8, 12, .9)', panel: '#101218', panelStrong: '#151820', panelHover: '#20242e', text: '#f0f2f5', muted: '#adb2bc', accent: '#8d7cf1', accentStrong: '#6759c8', accentSoft: 'rgba(141, 124, 241, .15)', secondary: '#e3b36d', border: 'rgba(220, 225, 235, .18)', borderStrong: 'rgba(220, 225, 235, .32)', textDisabled: '#717783', gold: '#e3b36d', danger: '#ef7b83', success: '#72d4a4', warning: '#f2ad75', shadow: 'rgba(0, 0, 0, .42)', panelGradientStart: '#151820', panelGradientEnd: '#101218' },
+  light: { id: 'light', label: 'Light', description: 'Warm fantasy parchment / ivory theme.', background: '#ece8df', backgroundElevated: '#f8f5ee', sidebar: '#e5dfd3', topbar: 'rgba(248, 245, 238, .9)', panel: '#f8f5ee', panelStrong: '#ffffff', panelHover: '#eee8f5', text: '#28242f', muted: '#655f6d', accent: '#6d58b5', accentStrong: '#57439c', accentSoft: 'rgba(109, 88, 181, .12)', secondary: '#9a6c2f', border: 'rgba(55, 45, 70, .18)', borderStrong: 'rgba(55, 45, 70, .3)', textDisabled: '#8f8993', gold: '#9a6c2f', danger: '#b54d56', success: '#287d59', warning: '#a76427', shadow: 'rgba(62, 47, 36, .14)', panelGradientStart: '#ffffff', panelGradientEnd: '#f3eee4' },
+}
+
+export const customFromPreset = (preset: ThemePreset): CustomThemeColors => ({ background: preset.background, panel: preset.panel, text: preset.text, muted: preset.muted, accent: preset.accent, secondary: preset.secondary, border: preset.id === 'light' ? '#b9af9f' : preset.id === 'dark' ? '#4d5563' : '#5b527c' })
+
+export const themeColors = (theme: UiTheme, customTheme: CustomThemeColors): ThemeColors => {
+  if (theme !== 'custom') return THEME_PRESETS[theme]
+  const base = THEME_PRESETS.default
+  return { ...base, ...customTheme, backgroundElevated: customTheme.panel, sidebar: customTheme.background, topbar: customTheme.background, panelStrong: customTheme.panel, panelHover: customTheme.accent, borderStrong: customTheme.border, textDisabled: customTheme.muted, accentStrong: customTheme.accent, accentSoft: `${customTheme.accent}2b`, gold: '#efbd77', danger: '#e87778', success: '#70cda3', warning: '#f09b70', shadow: 'rgba(0, 0, 0, .22)', panelGradientStart: customTheme.panel, panelGradientEnd: customTheme.background }
+}

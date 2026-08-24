@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 
-export function ArcaneAtmosphere() {
+export function ArcaneAtmosphere({ accentColor = '#a894ff', opacity = 0.72, reducedMotion = false }: { accentColor?: string; opacity?: number; reducedMotion?: boolean }) {
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const host = ref.current
@@ -20,18 +20,18 @@ export function ArcaneAtmosphere() {
       positions[i + 2] = (Math.random() - 0.5) * 5
     }
     points.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-    const material = new THREE.PointsMaterial({ color: 0xa894ff, size: 0.035, transparent: true, opacity: 0.45 })
+    const material = new THREE.PointsMaterial({ color: accentColor, size: 0.035, transparent: true, opacity: opacity * 0.62 })
     const particles = new THREE.Points(points, material)
     scene.add(particles)
     const resize = () => { const width = host.clientWidth || window.innerWidth; const height = host.clientHeight || window.innerHeight; camera.aspect = width / height; camera.updateProjectionMatrix(); renderer.setSize(width, height, false) }
     resize()
     window.addEventListener('resize', resize)
     let frame = 0
-    const animate = () => { if (document.hidden) return; frame = requestAnimationFrame(animate); particles.rotation.y += 0.00035; particles.rotation.x = Math.sin(performance.now() * 0.00008) * 0.08; renderer.render(scene, camera) }
+    const animate = () => { if (document.hidden) return; if (!reducedMotion) frame = requestAnimationFrame(animate); if (!reducedMotion) { particles.rotation.y += 0.00035; particles.rotation.x = Math.sin(performance.now() * 0.00008) * 0.08 } renderer.render(scene, camera) }
     const visibility = () => { if (!document.hidden) animate(); else cancelAnimationFrame(frame) }
     document.addEventListener('visibilitychange', visibility)
     animate()
     return () => { cancelAnimationFrame(frame); document.removeEventListener('visibilitychange', visibility); window.removeEventListener('resize', resize); points.dispose(); material.dispose(); renderer.dispose(); host.removeChild(renderer.domElement) }
-  }, [])
+  }, [accentColor, opacity, reducedMotion])
   return <div ref={ref} className="atmosphere" aria-hidden="true" />
 }

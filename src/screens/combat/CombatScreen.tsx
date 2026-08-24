@@ -1,12 +1,14 @@
 import type { CSSProperties } from 'react'
 import { Pause, Swords } from 'lucide-react'
 import { BALANCE } from '../../game/data/balance'
-import { MONSTERS, SCHOOLS, SPELLS } from '../../game/data/content'
+import { MONSTERS } from '../../game/data/monsters'
+import { SCHOOLS } from '../../game/data/schools'
+import { SPELLS } from '../../game/data/spells'
 import { useGameStore } from '../../store/gameStore'
 import type { SpellId } from '../../game/types'
 import { formatNumber, formatTime } from '../../game/utils'
 import { Button, Card, Progress, Status, Tooltip } from '../../components/ui'
-import { selectPlayerBasicDamage } from '../../store/selectors'
+import { selectAutoHuntUnlocked, selectPlayerBasicDamage } from '../../store/selectors'
 
 export function CombatScreenV2() {
   const combat = useGameStore((state) => state.combat)
@@ -19,6 +21,7 @@ export function CombatScreenV2() {
   const castSpell = useGameStore((state) => state.castSpell)
   const toggleAutoCast = useGameStore((state) => state.toggleAutoCast)
   const basicDamage = useGameStore(selectPlayerBasicDamage)
+  const autoHuntUnlocked = useGameStore(selectAutoHuntUnlocked)
   const enemy = combat.enemyId ? MONSTERS[combat.enemyId] : null
   const interval = BALANCE.player.basicAttackIntervalMs * (combat.playerStatuses.some((status) => status.id === 'quickening') ? 0.75 : 1)
   const attackProgress = Math.max(0, Math.min(interval, interval - combat.playerAttackTimerMs))
@@ -30,7 +33,7 @@ export function CombatScreenV2() {
       <Card title="Whispering Woods" action={<Status tone={combat.active ? 'active' : 'neutral'}>{combat.active ? 'Combat Active' : 'At the Tower'}</Status>}>
         <div className="forest-scene"><div className="moon" /><div className="tree tree-a" /><div className="tree tree-b" /><div className="tree tree-c" /><div className="forest-rune">✦</div></div>
         <div className="dungeon-stat-row"><div className="metric"><span>Threat Cleared</span><strong>{combat.threatCleared} / {BALANCE.dungeon.whisperingWoodsThreatRequired}</strong></div><div className="metric"><span>Lifetime kills</span><strong>{formatNumber(progress.lifetimeKills)}</strong></div><div className="metric"><span>Encounter</span><strong>{enemy ? 'Engaged' : combat.active ? formatTime(combat.encounterTimerMs) : '—'}</strong></div></div>
-        <div className="auto-hunt-row"><div><strong>Auto Hunt Boss</strong><small>Finish the current normal encounter, then engage Grove Sentinel at {BALANCE.dungeon.whisperingWoodsThreatRequired} Threat.</small></div><Button variant={progress.autoHuntBossByDungeon['whispering-woods'] ? 'success' : 'secondary'} onClick={toggleAutoHunt}>{progress.autoHuntBossByDungeon['whispering-woods'] ? 'ON' : 'OFF'}</Button></div>
+        <div className="auto-hunt-row"><div><strong>Auto Hunt Boss</strong><small>{autoHuntUnlocked ? `Finish the current normal encounter, then engage Grove Sentinel at ${BALANCE.dungeon.whisperingWoodsThreatRequired} Threat.` : 'Locked until the first Grove Sentinel kill.'}</small></div><Button disabled={!autoHuntUnlocked} variant={progress.autoHuntBossByDungeon['whispering-woods'] ? 'success' : 'secondary'} onClick={toggleAutoHunt}>{autoHuntUnlocked ? progress.autoHuntBossByDungeon['whispering-woods'] ? 'ON' : 'OFF' : 'LOCKED'}</Button></div>
         {combat.threatCleared >= BALANCE.dungeon.whisperingWoodsThreatRequired && combat.active && !combat.inBossFight && !progress.autoHuntBossByDungeon['whispering-woods'] && <div className="boss-ready"><div><Status tone="success">Boss Ready</Status><strong>Grove Sentinel can be challenged.</strong><span>Threat may continue above the requirement while Auto Hunt is OFF.</span></div><Button variant="success" onClick={() => engageBoss('grove-sentinel')}>Engage Sentinel</Button></div>}
         {progress.forestHeartUnlocked && combat.active && !combat.inBossFight && <div className="boss-ready heart"><div><Status tone="warning">Main Boss Unlocked</Status><strong>Forest Heart waits beneath the grove.</strong><span>First kill raises the cap and grants permanent Focus.</span></div><Button variant="danger" onClick={() => engageBoss('forest-heart')}>Engage Forest Heart</Button></div>}
       </Card>

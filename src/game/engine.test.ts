@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { BALANCE, SCHOOL_LEVEL_XP } from './data/balance'
 import { chooseMonster } from './data/dungeons'
-import { MONSTERS, SPELLS, getResearchXp } from './data/content'
+import { MONSTERS } from './data/monsters'
+import { getResearchXp } from './data/items'
 import { completeResearchCycle, focusReservations, getSchoolLevel, selectUsedFocus, usedFocus } from './engine'
 import { migrateSave } from '../persistence/migrations'
 import { makeInitialState, useGameStore } from '../store/gameStore'
@@ -17,14 +18,24 @@ describe('focus reservation engine', () => {
     expect(focusReservations(state).map((item) => item.label)).toEqual(['Auto Channeling'])
   })
 
-  it('does not exceed max Focus', () => {
-    const state = makeInitialState()
-    state.player.maxFocus = 30
-    state.activities.autoChannel = true
-    state.activities.condense.running = true
-    state.activities.research.running = true
-    expect(usedFocus(state)).toBe(60)
-    expect(Math.max(0, state.player.maxFocus - usedFocus(state))).toBe(0)
+  it('rejects a Focus activity when the action would exceed max Focus', () => {
+    const game = useGameStore.getState()
+    game.resetSave()
+    game.setPlayer({ baseMaxFocus: 30 })
+    game.toggleAutoChannel()
+    game.toggleCondense()
+    const state = useGameStore.getState()
+    expect(state.activities.autoChannel).toBe(true)
+    expect(state.activities.condense.running).toBe(false)
+    expect(selectUsedFocus(state)).toBe(BALANCE.mana.autoChannelFocus)
+  })
+
+  it('rejects spell Auto-Cast when insufficient Focus is available', () => {
+    const game = useGameStore.getState()
+    game.preset('combat')
+    game.setPlayer({ baseMaxFocus: 10 })
+    game.toggleAutoCast('fire-bolt')
+    expect(useGameStore.getState().activities.autoCast['fire-bolt']).toBe(false)
   })
 })
 
@@ -82,6 +93,38 @@ describe('central game loop', () => {
     expect(state.progress.firstBossKill).toBe(true)
     expect(state.progress.guildUnlocked).toBe(true)
     expect(state.progress.forestHeartUnlocked).toBe(true)
+    expect(state.progress.autoHuntBossUnlocked).toBe(true)
+  })
+
+  it('unlocks Auto Hunt after a manual Sentinel kill and queues the boss at threshold', () => {
+    const game = useGameStore.getState()
+    game.resetSave()
+    expect(useGameStore.getState().progress.autoHuntBossUnlocked).toBe(false)
+    game.enterDungeon()
+    game.setThreat(BALANCE.dungeon.whisperingWoodsThreatRequired)
+    game.engageBoss('grove-sentinel')
+    game.killCurrentEnemy()
+    expect(useGameStore.getState().progress.autoHuntBossUnlocked).toBe(true)
+    game.toggleAutoHunt()
+    expect(useGameStore.getState().progress.autoHuntBossByDungeon['whispering-woods']).toBe(true)
+    for (let index = 0; index < 5; index += 1) game.tick(1000)
+    game.setThreat(BALANCE.dungeon.whisperingWoodsThreatRequired)
+    game.killCurrentEnemy()
+    for (let index = 0; index < 5; index += 1) game.tick(1000)
+    expect(useGameStore.getState().combat.enemyId).toBe('grove-sentinel')
+    expect(useGameStore.getState().combat.inBossFight).toBe(true)
+  })
+
+  it('allows Threat to exceed the requirement while Auto Hunt is off', () => {
+    const game = useGameStore.getState()
+    game.resetSave()
+    game.enterDungeon()
+    game.setThreat(19)
+    game.killCurrentEnemy()
+    for (let index = 0; index < 5; index += 1) game.tick(1000)
+    game.killCurrentEnemy()
+    expect(useGameStore.getState().combat.threatCleared).toBe(21)
+    expect(useGameStore.getState().combat.pendingBossId).toBeNull()
   })
 })
 

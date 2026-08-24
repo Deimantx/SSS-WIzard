@@ -3,9 +3,12 @@ import { immer } from 'zustand/middleware/immer'
 import { BALANCE, SCHOOL_LEVEL_XP } from '../game/data/balance'
 import { DUNGEONS, chooseMonster } from '../game/data/dungeons'
 import { GUILD_REQUESTS } from '../game/data/guildRequests'
-import { ITEMS, MONSTERS, SCHOOLS, SPELLS, getResearchXp } from '../game/data/content'
+import { ITEMS, getResearchXp } from '../game/data/items'
+import { MONSTERS } from '../game/data/monsters'
+import { SCHOOLS } from '../game/data/schools'
+import { SPELLS } from '../game/data/spells'
 import { RECIPES as RECIPE_DATA } from '../game/data/recipes'
-import { appendLog, barrierMultiplier, canReserveFocus, completeResearchCycle, equipmentStats, manaRegenPerSecond, playerBasicDamage, pushNotification, recalculateDerivedStats, selectFreeFocus, selectFocusReservations, selectUsedFocus, spellDamageMultiplier } from '../game/engine'
+import { appendLog, barrierMultiplier, canReserveFocus, completeResearchCycle, equipmentStats, manaRegenPerSecond, playerBasicDamage, pushNotification, recalculateDerivedStats, selectFreeFocus, selectUsedFocus, spellDamageMultiplier } from '../game/engine'
 import { loadSave, saveGame as persistSave, clearSave } from '../persistence/saveManager'
 import { createInitialState } from './initialState'
 import type { DungeonId, EquipmentSlot, GameState, ItemId, PanelLayout, SchoolId, ScreenId, SpellEffect, SpellId, StatusEffect } from '../game/types'
@@ -167,6 +170,7 @@ const finishEnemy = (state: GameState) => {
     const bossId = enemyId as 'grove-sentinel' | 'forest-heart'
     state.progress.bossKillsByBoss[bossId] = (state.progress.bossKillsByBoss[bossId] ?? 0) + 1
     if (bossId === 'grove-sentinel') state.progress.requestProgress['sentinel-breaker'] = state.progress.bossKillsByBoss[bossId]
+    if (bossId === 'grove-sentinel') state.progress.autoHuntBossUnlocked = true
     if (bossId === 'grove-sentinel' && !state.progress.firstBossKill) {
       state.progress.firstBossKill = true
       state.progress.guildUnlocked = true
@@ -357,10 +361,10 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   enterDungeon: () => set((state) => { if (state.combat.active) return state; state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; state.combat.encounterTimerMs = 0; state.player.health = Math.max(1, state.player.health); spawnNextEnemy(state); pushNotification(state, 'Whispering Woods entered', 'info'); return state }),
   leaveDungeon: () => set((state) => { state.combat = { ...createInitialState().combat, log: ['Left the dungeon. Threat Cleared resets.'] }; return state }),
   engageBoss: (bossId) => set((state) => { if (!state.combat.active) { pushNotification(state, 'Enter Whispering Woods first', 'warning'); return state } if (bossId === 'grove-sentinel' && state.combat.threatCleared < DUNGEONS['whispering-woods'].threatRequired) { pushNotification(state, `Grove Sentinel requires ${DUNGEONS['whispering-woods'].threatRequired} Threat Cleared`, 'warning'); return state } if (bossId === 'forest-heart' && !state.progress.forestHeartUnlocked) { pushNotification(state, 'Defeat Grove Sentinel to reveal Forest Heart', 'warning'); return state } spawnEnemy(state, bossId, true); pushNotification(state, `${MONSTERS[bossId].name} engaged`, 'warning'); return state }),
-  toggleAutoHunt: () => set((state) => { if (!state.progress.autoHuntBossUnlocked) { pushNotification(state, 'Auto Hunt unlocks after the first Grove Sentinel kill', 'warning'); return state } state.progress.autoHuntBossByDungeon['whispering-woods'] = !state.progress.autoHuntBossByDungeon['whispering-woods']; return state }),
+  toggleAutoHunt: () => set((state) => { const unlocked = state.progress.autoHuntBossUnlocked || (state.progress.bossKillsByBoss['grove-sentinel'] ?? 0) > 0 || state.progress.firstBossKill; if (!unlocked) { pushNotification(state, 'Auto Hunt unlocks after the first Grove Sentinel kill', 'warning'); return state } state.progress.autoHuntBossUnlocked = true; state.progress.autoHuntBossByDungeon['whispering-woods'] = !state.progress.autoHuntBossByDungeon['whispering-woods']; return state }),
   killCurrentEnemy: () => set((state) => { if (state.combat.enemyId) { state.combat.enemyHp = 0; finishEnemy(state) } return state }),
   saveGame: () => set((state) => { state.lastSavedAt = Date.now(); persistSave(state); pushNotification(state, 'Game saved', 'success'); return state }),
-  resetSave: () => { clearSave(); useGameStore.setState(createInitialState()) },
+  resetSave: () => { clearSave(); set((state) => { Object.assign(state, createInitialState()); return state }) },
   setDebug: (enabled) => set((state) => { state.ui.showDebug = enabled; return state }),
   toggleEditMode: () => set((state) => { state.ui.editMode = !state.ui.editMode; return state }),
   dismissNotification: (id) => set((state) => { state.notifications = state.notifications.filter((note) => note.id !== id); return state }),
@@ -386,7 +390,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   resetAllLayouts: () => set((state) => { state.ui.layouts = {}; return state }),
 })))
 
-export const useGameStoreSelectors = { selectFocusReservations, selectUsedFocus, selectFreeFocus }
-export { selectFocusReservations, selectUsedFocus, selectFreeFocus }
+export const useGameStoreSelectors = { selectUsedFocus, selectFreeFocus }
+export { selectUsedFocus, selectFreeFocus }
 export const selectManaRegen = (state: GameStore) => manaRegenPerSecond(state)
 export const makeInitialState = createInitialState

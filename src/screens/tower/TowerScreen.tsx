@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Pause, Play, ShieldCheck, Zap } from 'lucide-react'
 import { BALANCE } from '../../game/data/balance'
-import { FRAGMENT_ORDER, ITEMS, RESEARCH_ITEMS, SCHOOLS } from '../../game/data/content'
+import { ITEMS } from '../../game/data/items'
+import { FRAGMENT_ORDER, RESEARCH_ITEMS, SCHOOLS } from '../../game/data/schools'
 import { RECIPES } from '../../game/data/recipes'
-import { selectFocusReservations, selectFreeFocus, selectManaRegen, selectUsedFocus } from '../../store/selectors'
+import { selectFreeFocus, selectManaRegen, selectUsedFocus } from '../../store/selectors'
+import { deriveFocusReservations } from '../../game/engine'
 import { useGameStore } from '../../store/gameStore'
 import type { ItemId, SchoolId } from '../../game/types'
 import { formatNumber, formatTime } from '../../game/utils'
@@ -25,7 +27,7 @@ export function TowerScreenV2() {
   const toggleTransmutation = useGameStore((state) => state.toggleTransmutation)
   const focusUsed = useGameStore(selectUsedFocus)
   const focusFree = useGameStore(selectFreeFocus)
-  const reservations = useGameStore(selectFocusReservations)
+  const reservations = useMemo(() => deriveFocusReservations({ activities, progress }), [activities, progress])
   const manaRegen = useGameStore(selectManaRegen)
   const job = activities.research
   const selectedDefinition = ITEMS[selectedItem]

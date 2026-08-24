@@ -1,1 +1,1 @@
-export { canReserveFocus, selectFocusReservations, selectFreeFocus, selectUsedFocus } from '../engine'
+export { canReserveFocus, deriveFocusReservations, selectFreeFocus, selectUsedFocus } from '../engine'

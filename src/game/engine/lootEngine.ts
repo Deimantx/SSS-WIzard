@@ -1,1 +1,2 @@
-export { ITEMS, MONSTERS } from '../data/content'
+export { ITEMS } from '../data/items'
+export { MONSTERS } from '../data/monsters'

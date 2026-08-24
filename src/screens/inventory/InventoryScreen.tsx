@@ -1,6 +1,6 @@
 import { Lock, Search, ShieldCheck, Unlock } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { ITEMS } from '../../game/data/content'
+import { ITEMS } from '../../game/data/items'
 import { RECIPES } from '../../game/data/recipes'
 import type { ItemCategory, ItemId } from '../../game/types'
 import { useGameStore } from '../../store/gameStore'

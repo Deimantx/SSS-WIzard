@@ -1,2 +1,2 @@
 export { completeResearchCycle, getSchoolLevel, grantSchoolXp } from '../engine'
-export { getResearchXp } from '../data/content'
+export { getResearchXp } from '../data/items'

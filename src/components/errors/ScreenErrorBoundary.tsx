@@ -6,7 +6,7 @@ import { Button, Card, Status } from '../ui'
 
 interface Props { children: ReactNode; screen: ScreenId }
 interface State { error: Error | null; componentStack: string }
-const SCREEN_LABELS: Record<ScreenId, string> = { home: 'Overview', tower: 'Wizard Tower', schools: 'Magic Schools', combat: 'Combat', inventory: 'Inventory', equipment: 'Equipment', guild: 'Guild', collection: 'Collection', settings: 'Settings / Info' }
+const SCREEN_LABELS: Record<ScreenId, string> = { home: 'Overview', combat: 'Combat', schools: 'Magic Schools', inventory: 'Inventory', equipment: 'Equipment', collection: 'Collection', 'tower-channeling': 'Channeling', 'tower-focus': 'Focus', 'tower-condensation': 'Condensation', 'tower-research': 'Research', 'tower-transmutation': 'Transmutation', guild: 'Guild', settings: 'Settings / Info' }
 
 export class ScreenErrorBoundary extends Component<Props, State> {
   state: State = { error: null, componentStack: '' }
@@ -25,6 +25,5 @@ export class ScreenErrorBoundary extends Component<Props, State> {
 
 function ScreenErrorFallback({ screen, error, componentStack }: { screen: ScreenId; error: Error; componentStack: string }) {
   const setScreen = useGameStore((state) => state.setScreen)
-  const showDebug = useGameStore((state) => state.ui.showDebug)
-  return <div className="screen-error-fallback"><Card title="This screen failed to render."><Status tone="warning">Screen: {SCREEN_LABELS[screen]}</Status><p className="error-summary">The rest of the game is still running. Your save and active systems are intact.</p>{showDebug && <details open className="error-details"><summary>Error details</summary><pre>{error.message}{componentStack}</pre></details>}<div className="button-row"><Button onClick={() => setScreen('home')}>Return Home</Button><Button variant="secondary" onClick={() => resetScreenLayout(screen)}>Reset This Screen Layout</Button><Button variant="ghost" onClick={() => window.location.reload()}>Reload</Button></div></Card></div>
+  return <div className="screen-error-fallback"><Card title="This screen failed to render."><Status tone="warning">Screen: {SCREEN_LABELS[screen]}</Status><p className="error-summary">The rest of the game is still running. Your save and active systems are intact.</p><details open className="error-details"><summary>Error details</summary><pre>{error.message}{componentStack}</pre></details><div className="button-row"><Button onClick={() => setScreen('home')}>Return Home</Button><Button variant="secondary" onClick={() => resetScreenLayout(screen)}>Reset This Screen Layout</Button><Button variant="ghost" onClick={() => window.location.reload()}>Reload</Button></div></Card></div>
 }

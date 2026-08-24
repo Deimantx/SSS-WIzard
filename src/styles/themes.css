@@ -70,7 +70,7 @@ body { color: var(--ui-text); background: var(--ui-bg); }
 .contrast-warning { margin-top: 10px; color: var(--ui-warning); font-size: var(--text-sm); }
 .appearance-reset { color: #2b2634 !important; background: #f3ead8 !important; border-color: #b69a6a !important; }
 :root[data-theme='light'] .resource-chip, :root[data-theme='light'] .focus-chip { background: rgba(255,255,255,.7); }
-:root[data-theme='light'] .toast, :root[data-theme='light'] .debug-panel { background: var(--ui-panel-strong); color: var(--ui-text); }
+:root[data-theme='light'] .toast { background: var(--ui-panel-strong); color: var(--ui-text); }
 :root[data-theme='light'] .tooltip { color: #28242f; background: #fff; border-color: var(--ui-border-strong); }
 :root { --ui-muted: var(--ui-text-muted); --ui-background: var(--ui-bg); --ui-panel-soft: var(--ui-panel-strong); }
 :root[data-theme='light'] .research-config select, :root[data-theme='light'] .recipe-select select { color: var(--ui-text); background: var(--ui-panel-strong); }

@@ -6,7 +6,7 @@ import { getPanelDefinitions } from './panelRegistry'
 import { fitSelectedPanel, getSavedScreenLayouts, moveSelectedPanel, openLayoutEditor, redoLayout, resetAllScreenLayouts, resetSelectedPanel, resetScreenLayout, selectLayoutPanel, setPanelInteraction, setShowEditorGrid, togglePanelHidden, togglePanelLocked, undoLayout, updateSelectedPanel, useLayoutEditorStore, closeLayoutEditor } from './layoutEditorStore'
 import { panelName } from './layoutUtils'
 
-const SCREEN_LABELS: Record<ScreenId, string> = { home: 'Overview', tower: 'Wizard Tower', schools: 'Magic Schools', combat: 'Combat', inventory: 'Inventory', equipment: 'Equipment', guild: 'Guild', collection: 'Collection', settings: 'Settings / Info' }
+const SCREEN_LABELS: Record<ScreenId, string> = { home: 'Overview', combat: 'Combat', schools: 'Magic Schools', inventory: 'Inventory', equipment: 'Equipment', collection: 'Collection', 'tower-channeling': 'Channeling', 'tower-focus': 'Focus', 'tower-condensation': 'Condensation', 'tower-research': 'Research', 'tower-transmutation': 'Transmutation', guild: 'Guild', settings: 'Settings / Info' }
 
 export function LayoutEditorDrawer({ screen }: { screen: ScreenId }) {
   const editor = useLayoutEditorStore()

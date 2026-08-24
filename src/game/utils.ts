@@ -13,4 +13,11 @@ export const formatTime = (ms: number) => {
   const s = total % 60
   return h > 0 ? `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}` : `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
+export const formatOfflineBank = (ms: number) => {
+  const totalMinutes = Math.floor((Number.isFinite(ms) ? Math.max(0, ms) : 0) / 60_000)
+  if (totalMinutes < 1) return '<1m'
+  const hours = Math.floor(totalMinutes / 60)
+  if (hours < 24) return hours ? `${hours}h ${String(totalMinutes % 60).padStart(2, '0')}m` : `${totalMinutes}m`
+  return `${Math.floor(hours / 24)}d ${hours % 24}h`
+}
 export const uid = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`

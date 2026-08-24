@@ -2,6 +2,12 @@ import { createInitialState, SAVE_VERSION } from '../store/initialState'
 import type { GameState, ItemId, ResearchActivity, SchoolId } from '../game/types'
 import { isRecord, SaveMigrationError } from './saveSchema'
 
+const normalizeScreen = (value: unknown, fallback: GameState['ui']['screen']): GameState['ui']['screen'] => {
+  if (value === 'tower') return 'tower-channeling'
+  const valid = ['home', 'combat', 'schools', 'inventory', 'equipment', 'collection', 'tower-channeling', 'tower-focus', 'tower-condensation', 'tower-research', 'tower-transmutation', 'guild', 'settings']
+  return typeof value === 'string' && valid.includes(value) ? value as GameState['ui']['screen'] : fallback
+}
+
 const merge = <T extends Record<string, any>>(base: T, value: unknown): T => {
   if (!isRecord(value)) return base
   const result = { ...base } as T
@@ -40,7 +46,7 @@ const migrateV1 = (raw: Record<string, any>): GameState => {
     progress: { ...fresh.progress, ...(isRecord(oldProgress) ? oldProgress : {}) },
     combat: { ...fresh.combat, ...(isRecord(raw.combat) ? raw.combat : {}) },
     // Legacy editor fields are intentionally discarded from gameplay state.
-    ui: { screen: isRecord(raw.ui) && typeof raw.ui.screen === 'string' ? raw.ui.screen as GameState['ui']['screen'] : fresh.ui.screen, showDebug: isRecord(raw.ui) && raw.ui.showDebug === true },
+    ui: { screen: normalizeScreen(isRecord(raw.ui) ? raw.ui.screen : undefined, fresh.ui.screen) },
     offlineBankMs: typeof raw.offlineBankMs === 'number' ? raw.offlineBankMs : 0,
   }
   return migrated
@@ -50,6 +56,6 @@ export const migrateSave = (rawSave: unknown): GameState => {
   if (!isRecord(rawSave)) throw new SaveMigrationError('Save data is not a valid object.')
   const version = rawSave.saveVersion
   if (version === 1) return migrateV1(rawSave)
-  if (version === SAVE_VERSION) return merge(createInitialState(), rawSave)
+  if (version === SAVE_VERSION) { const migrated = merge(createInitialState(), rawSave); migrated.ui.screen = normalizeScreen(isRecord(rawSave.ui) ? rawSave.ui.screen : undefined, migrated.ui.screen); return migrated }
   throw new SaveMigrationError(`Unsupported save version: ${String(version ?? 'missing')}.`)
 }

@@ -11,7 +11,7 @@ import { RECIPES as RECIPE_DATA } from '../game/data/recipes'
 import { appendLog, barrierMultiplier, canReserveFocus, completeResearchCycle, equipmentStats, manaRegenPerSecond, playerBasicDamage, pushNotification, recalculateDerivedStats, selectFreeFocus, selectUsedFocus, spellDamageMultiplier } from '../game/engine'
 import { loadSave, saveGame as persistSave, clearSave } from '../persistence/saveManager'
 import { createInitialState } from './initialState'
-import type { DungeonId, EquipmentSlot, GameState, ItemId, SchoolId, ScreenId, SpellEffect, SpellId, StatusEffect } from '../game/types'
+import type { DungeonId, EquipmentSlot, GameState, ItemId, MonsterId, SchoolId, ScreenId, SpellEffect, SpellId, StatusEffect } from '../game/types'
 import { clamp, formatTime } from '../game/utils'
 
 export interface GameActions {
@@ -30,9 +30,14 @@ export interface GameActions {
   engageBoss: (bossId: 'grove-sentinel' | 'forest-heart') => void
   toggleAutoHunt: () => void
   killCurrentEnemy: () => void
+  spawnDebugEnemy: (enemyId: MonsterId) => void
+  setEnemyHealthPercent: (percent: number) => void
+  clearCombatStatuses: () => void
+  clearPlayerStatuses: () => void
+  clearEnemyStatuses: () => void
   saveGame: () => void
+  reloadFromStorage: () => void
   resetSave: () => void
-  setDebug: (enabled: boolean) => void
   dismissNotification: (id: string) => void
   setPlayer: (changes: Partial<GameState['player']>) => void
   setSchoolDebug: (school: SchoolId, xp: number, level?: number) => void
@@ -359,16 +364,21 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   engageBoss: (bossId) => set((state) => { if (!state.combat.active) { pushNotification(state, 'Enter Whispering Woods first', 'warning'); return state } if (bossId === 'grove-sentinel' && state.combat.threatCleared < DUNGEONS['whispering-woods'].threatRequired) { pushNotification(state, `Grove Sentinel requires ${DUNGEONS['whispering-woods'].threatRequired} Threat Cleared`, 'warning'); return state } if (bossId === 'forest-heart' && !state.progress.forestHeartUnlocked) { pushNotification(state, 'Defeat Grove Sentinel to reveal Forest Heart', 'warning'); return state } spawnEnemy(state, bossId, true); pushNotification(state, `${MONSTERS[bossId].name} engaged`, 'warning'); return state }),
   toggleAutoHunt: () => set((state) => { const unlocked = state.progress.autoHuntBossUnlocked || (state.progress.bossKillsByBoss['grove-sentinel'] ?? 0) > 0 || state.progress.firstBossKill; if (!unlocked) { pushNotification(state, 'Auto Hunt unlocks after the first Grove Sentinel kill', 'warning'); return state } state.progress.autoHuntBossUnlocked = true; state.progress.autoHuntBossByDungeon['whispering-woods'] = !state.progress.autoHuntBossByDungeon['whispering-woods']; return state }),
   killCurrentEnemy: () => set((state) => { if (state.combat.enemyId) { state.combat.enemyHp = 0; finishEnemy(state) } return state }),
+  spawnDebugEnemy: (enemyId) => set((state) => { if (!state.combat.active) { state.combat.active = true; state.combat.dungeonId = 'whispering-woods' } spawnEnemy(state, enemyId, enemyId === 'grove-sentinel' || enemyId === 'forest-heart'); pushNotification(state, `${MONSTERS[enemyId].name} spawned by Developer Tools`, 'warning'); return state }),
+  setEnemyHealthPercent: (percent) => set((state) => { if (state.combat.enemyId) state.combat.enemyHp = Math.max(0, Math.min(state.combat.enemyMaxHp, state.combat.enemyMaxHp * clamp(percent, 0, 100) / 100)); return state }),
+  clearCombatStatuses: () => set((state) => { state.combat.playerStatuses = []; state.combat.enemyStatuses = []; return state }),
+  clearPlayerStatuses: () => set((state) => { state.combat.playerStatuses = []; return state }),
+  clearEnemyStatuses: () => set((state) => { state.combat.enemyStatuses = []; return state }),
   saveGame: () => set((state) => { state.lastSavedAt = Date.now(); persistSave(state); pushNotification(state, 'Game saved', 'success'); return state }),
+  reloadFromStorage: () => { const loaded = loadSave(); if (!loaded.state) return; set((state) => { Object.assign(state, loaded.state as GameState); recalculateDerivedStats(state); return state }) },
   resetSave: () => { clearSave(); set((state) => { Object.assign(state, createInitialState()); return state }) },
-  setDebug: (enabled) => set((state) => { state.ui.showDebug = enabled; return state }),
   dismissNotification: (id) => set((state) => { state.notifications = state.notifications.filter((note) => note.id !== id); return state }),
   setPlayer: (changes) => set((state) => { state.player = { ...state.player, ...changes }; recalculateDerivedStats(state); return state }),
   setSchoolDebug: (school, xp, level) => set((state) => { state.schools[school].xp = Math.max(0, xp); state.schools[school].level = level ?? Math.min(state.progress.magicLevelCap, Math.max(1, Math.floor(xp / 20) + 1)); unlockSchoolSpells(state, school); return state }),
   setLevelCap: (cap) => set((state) => { state.progress.magicLevelCap = Math.max(1, cap); Object.keys(state.schools).forEach((id) => { const school = id as SchoolId; state.schools[school].level = Math.min(state.schools[school].level, state.progress.magicLevelCap) }); return state }),
   setThreat: (amount) => set((state) => { state.combat.threatCleared = Math.max(0, amount); return state }),
   addItem: (itemId, quantity) => set((state) => { state.inventory[itemId] = Math.max(0, (state.inventory[itemId] ?? 0) + quantity); return state }),
-  removeItem: (itemId, quantity) => set((state) => { if (isProtected(state, itemId)) return state; state.inventory[itemId] = Math.max(0, (state.inventory[itemId] ?? 0) - quantity); return state }),
+  removeItem: (itemId, quantity) => set((state) => { if (isProtected(state, itemId)) { pushNotification(state, `${ITEMS[itemId].name} is protected or equipped`, 'warning'); return state } state.inventory[itemId] = Math.max(0, (state.inventory[itemId] ?? 0) - quantity); return state }),
   toggleItemProtection: (itemId) => set((state) => { if (isEquipped(state, itemId)) { pushNotification(state, 'Equipped items are always protected.', 'warning'); return state } state.protectedItems[itemId] = !state.protectedItems[itemId]; return state }),
   equipItem: (itemId) => set((state) => { const item = ITEMS[itemId]; if (!item.equipmentSlot || (state.inventory[itemId] ?? 0) < 1) return state; const old = state.equipment[item.equipmentSlot]; if (old) state.protectedItems[old] = false; state.equipment[item.equipmentSlot] = itemId; state.protectedItems[itemId] = true; recalculateDerivedStats(state); pushNotification(state, `${item.name} equipped`, 'success'); return state }),
   unequipItem: (slot) => set((state) => { const old = state.equipment[slot]; if (old) state.protectedItems[old] = false; state.equipment[slot] = null; recalculateDerivedStats(state); return state }),

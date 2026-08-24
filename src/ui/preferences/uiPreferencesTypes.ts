@@ -1,5 +1,6 @@
 export type UiTheme = 'default' | 'dark' | 'light' | 'custom'
 export type TextSize = 'default' | 'large' | 'extra-large'
+export type NavigationGroupId = 'combat' | 'hero' | 'tower' | 'world' | 'system'
 
 export interface CustomThemeColors {
   background: string
@@ -17,4 +18,5 @@ export interface UiPreferences {
   backgroundEffects: boolean
   reducedMotion: boolean
   customTheme: CustomThemeColors
+  navigationGroups: Record<NavigationGroupId, boolean>
 }

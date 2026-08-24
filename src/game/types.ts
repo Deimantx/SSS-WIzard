@@ -1,6 +1,6 @@
 export type SchoolId = 'fire' | 'water' | 'earth' | 'air'
 export type ElementId = SchoolId
-export type ScreenId = 'home' | 'tower' | 'schools' | 'combat' | 'inventory' | 'equipment' | 'guild' | 'collection' | 'settings'
+export type ScreenId = 'home' | 'combat' | 'schools' | 'inventory' | 'equipment' | 'collection' | 'tower-channeling' | 'tower-focus' | 'tower-condensation' | 'tower-research' | 'tower-transmutation' | 'guild' | 'settings'
 export type ActivityStatus = 'running' | 'paused' | 'waiting-mana' | 'waiting-focus' | 'completed' | 'locked' | 'recovering'
 
 export type ItemId =
@@ -155,8 +155,8 @@ export interface ProgressState {
   bossKillsByBoss: Partial<Record<'grove-sentinel' | 'forest-heart', number>>
   autoHuntBossByDungeon: Record<DungeonId, boolean>
 }
-/** Gameplay UI state. Layout editing is transient UI chrome and lives outside the save. */
-export interface UiState { screen: ScreenId; showDebug: boolean }
+/** Gameplay UI state. Layout editing and developer tools are transient UI chrome outside the save. */
+export interface UiState { screen: ScreenId }
 export interface GameState {
   saveVersion: number
   player: PlayerState

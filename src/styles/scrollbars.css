@@ -1,0 +1,14 @@
+:root {
+  --ui-scrollbar-track: color-mix(in srgb, var(--ui-bg) 75%, var(--ui-panel));
+  --ui-scrollbar-thumb: color-mix(in srgb, var(--ui-accent) 42%, var(--ui-panel-strong));
+  --ui-scrollbar-thumb-hover: color-mix(in srgb, var(--ui-accent) 70%, var(--ui-panel-strong));
+  --ui-scrollbar-thumb-active: var(--ui-accent);
+}
+
+* { scrollbar-width: thin; scrollbar-color: var(--ui-scrollbar-thumb) var(--ui-scrollbar-track); }
+*::-webkit-scrollbar { width: 9px; height: 9px; }
+*::-webkit-scrollbar-track { background: var(--ui-scrollbar-track); }
+*::-webkit-scrollbar-thumb { background: var(--ui-scrollbar-thumb); border: 2px solid var(--ui-scrollbar-track); border-radius: 999px; }
+*::-webkit-scrollbar-thumb:hover { background: var(--ui-scrollbar-thumb-hover); }
+*::-webkit-scrollbar-thumb:active { background: var(--ui-scrollbar-thumb-active); }
+.screen-scroll, .nav-list, .developer-tools-content, .layout-editor-drawer-scroll, .sandbox-scroll-sample { scrollbar-gutter: stable; }

@@ -74,7 +74,7 @@ describe('central game loop', () => {
     game.enterDungeon()
     game.killCurrentEnemy()
     expect(useGameStore.getState().combat.threatCleared).toBe(1)
-    game.setScreen('tower')
+    game.setScreen('tower-channeling')
     expect(useGameStore.getState().combat.threatCleared).toBe(1)
     game.setPlayer({ health: 1 })
     for (let index = 0; index < 12; index += 1) game.tick(1000)

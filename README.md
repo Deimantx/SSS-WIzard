@@ -1,10 +1,3 @@
-# SSS Wizard
-
-SSS Wizard is a UI-driven incremental RPG about one wizard balancing Mana, Research, crafting, automation, and semi-automatic dungeon combat.
-
-## Current Status
-
-First playable development build / work in progress. The current chapter is a continuous-save vertical slice ending with Forest Heart and the Magic School cap increase.
 
 ## Tech Stack
 
@@ -44,8 +37,6 @@ Open `Settings / Info`, enable `Show tools` under `Developer tools`, and use the
 ## Save Data
 
 Save data is stored in browser `localStorage` under `sss-wizard-save-v1`. Clearing browser storage or using `Reset save` removes progress. There is no cloud account or backend. Save loading has a migration boundary and currently migrates v1 saves to v2.
-
-Appearance preferences are stored separately under `sss-wizard-ui-preferences-v1`. Resetting gameplay does not reset the theme, text size, background effects, or reduced-motion preference; use `Reset Appearance` for that.
 
 ## Project Structure
 

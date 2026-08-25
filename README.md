@@ -61,3 +61,5 @@ Mana → elemental materials → Research → Magic School progression → spell
 ## Development Notes
 
 This is an active prototype. Balance, content, and the first-chapter pacing remain provisional. Gameplay state is intentionally kept outside the current screen so Tower activities and Combat continue while navigating.
+
+For the current ownership map, see [`Docs/ARCHITECTURE.md`](Docs/ARCHITECTURE.md). New content belongs under `src/game/content`, gameplay rules under `src/game/systems`, navigation destinations under their feature folders in `src/screens`, and internal testing surfaces under `src/devtools`.

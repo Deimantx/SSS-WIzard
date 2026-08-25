@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { BALANCE, SCHOOL_LEVEL_XP } from '../game/data/balance'
-import { DUNGEONS, chooseMonster } from '../game/data/dungeons'
+import { DUNGEONS } from '../game/data/dungeons'
 import { GUILD_REQUESTS } from '../game/data/guildRequests'
 import { ITEMS, getResearchXp } from '../game/data/items'
 import { MONSTERS } from '../game/data/monsters'
@@ -11,14 +11,16 @@ import { RECIPES as RECIPE_DATA } from '../game/data/recipes'
 import { CHANNELING_DISCOVERIES } from '../game/data/channelingDiscoveries'
 import { MANA_PILLARS, getManaPillarLevelCost } from '../game/data/manaPillars'
 import { advanceChanneling, checkChannelingDiscoveries } from '../game/engine/channelingEngine'
-import { appendLog, barrierMultiplier, canReserveFocus, completeResearchCycle, equipmentStats, manaRegenPerSecond, playerBasicDamage, pushNotification, recalculateDerivedStats, selectFreeFocus, selectUsedFocus, spellDamageMultiplier } from '../game/engine'
+import { appendLog, canReserveFocus as canReserveFocusNormal, completeResearchCycle, manaRegenPerSecond, playerBasicDamage, pushNotification, recalculateDerivedStats, selectFreeFocus, selectUsedFocus, spellDamageMultiplier } from '../game/engine'
+import { addStatus, applyBarrier, damageEnemy, damagePlayer, executeEnemyAction, executeSpecial, finishEnemy, spawnEnemy, spawnNextEnemy } from '../game/systems/combat/combatRuntime'
 import { loadProfileGame, saveProfileGame } from '../persistence/profileSaveManager'
 import { AUTOSAVE_INTERVAL_MS, type SaveReason } from '../persistence/saveConstants'
 import { getActiveProfileId } from '../profiles/profileSessionStore'
 import { updateProfileMetadata } from '../profiles/profileStorage'
 import { createInitialState } from './initialState'
 import type { ChannelingDiscoveryId, DungeonId, EquipmentSlot, GameState, ItemId, ManaPillarId, MonsterId, SchoolId, ScreenId, SpellEffect, SpellId, StatusEffect } from '../game/types'
-import { clamp, formatTime } from '../game/utils'
+import { clamp } from '../game/utils'
+import { resetDebugState, sanitizeDebugNumber } from './actions/debugActions'
 
 export interface GameActions {
   tick: (deltaMs: number) => void
@@ -26,11 +28,20 @@ export interface GameActions {
   addArcaneEcho: () => void
   removeArcaneEcho: () => void
   setChannelingEchoes: (amount: number) => void
+  forceSetEchoes: (amount: number) => void
   upgradeManaPillar: (pillarId: ManaPillarId) => void
   setManaPillarLevel: (pillarId: ManaPillarId, level: number) => void
+  forceSetManaPillarLevel: (pillarId: ManaPillarId, level: number) => void
   setChannelingManaGenerated: (amount: number) => void
   setChannelingFiveEchoSustain: (amount: number) => void
   setChannelingDiscovery: (id: ChannelingDiscoveryId, completed: boolean) => void
+  setDebugManaRegenBonus: (amount: number) => void
+  setDebugMaxManaBonus: (amount: number) => void
+  setDebugMaxFocusBonus: (amount: number) => void
+  setDebugAllowManaOverCap: (enabled: boolean) => void
+  setDebugAllowFocusOverCap: (enabled: boolean) => void
+  setDebugIgnoreEchoLimit: (enabled: boolean) => void
+  resetDebugOverrides: () => void
   toggleCondense: (element?: SchoolId) => void
   setResearchConfig: (itemId: ItemId, targetSchoolId: SchoolId, quantity: number) => void
   toggleResearch: (itemId?: ItemId, targetSchoolId?: SchoolId, quantity?: number) => void
@@ -80,169 +91,10 @@ let lastBackgroundSaveErrorAt = 0
 const spellUnlocked = (state: GameState, spellId: SpellId) => state.progress.unlockedSpells.includes(spellId)
 const isEquipped = (state: GameState, itemId: ItemId) => Object.values(state.equipment).includes(itemId)
 const isProtected = (state: GameState, itemId: ItemId) => Boolean(state.protectedItems[itemId]) || isEquipped(state, itemId)
+const canReserveFocus = (state: GameState, amount: number) => state.debug.allowFocusOverCap || canReserveFocusNormal(state, amount)
 
 const unlockSchoolSpells = (state: GameState, school: SchoolId) => {
   Object.values(SPELLS).filter((spell) => spell.school === school && state.schools[school].level >= spell.unlockLevel).forEach((spell) => { if (!state.progress.unlockedSpells.includes(spell.id)) state.progress.unlockedSpells.push(spell.id) })
-}
-
-const addStatus = (statuses: StatusEffect[], next: StatusEffect) => {
-  const existing = statuses.find((status) => status.id === next.id)
-  if (existing) Object.assign(existing, next)
-  else statuses.push(next)
-}
-
-const applyBarrier = (state: GameState, amount: number) => {
-  const received = equipmentStats(state).barrierReceived ?? 0
-  const next = Math.round(amount * barrierMultiplier(state) + received)
-  addStatus(state.combat.playerStatuses, { id: 'barrier', remainingMs: 9000, value: next })
-  return next
-}
-
-const damageEnemy = (state: GameState, raw: number, source: 'basic' | 'spell' | 'status' = 'spell') => {
-  if (!state.combat.enemyId) return 0
-  let damage = raw
-  if (source === 'basic' && state.combat.enemyId === 'thornling') damage *= 0.85
-  const absorbed = Math.min(state.combat.enemyBarrier, damage)
-  state.combat.enemyBarrier -= absorbed
-  const dealt = Math.max(0, Math.round(damage - absorbed))
-  state.combat.enemyHp = Math.max(0, state.combat.enemyHp - dealt)
-  state.combat.lastDamageDealt = dealt
-  return dealt
-}
-
-const damagePlayer = (state: GameState, raw: number) => {
-  let damage = raw
-  const barrier = state.combat.playerStatuses.find((status) => status.id === 'barrier')
-  if (barrier) {
-    const absorbed = Math.min(barrier.value, damage)
-    barrier.value -= absorbed
-    damage -= absorbed
-    if (barrier.value <= 0) state.combat.playerStatuses = state.combat.playerStatuses.filter((status) => status.id !== 'barrier')
-  }
-  const dealt = Math.max(0, Math.round(damage))
-  state.player.health = Math.max(0, state.player.health - dealt)
-  state.combat.lastDamageTaken = dealt
-  return dealt
-}
-
-const rollLoot = (state: GameState, enemyId: keyof typeof MONSTERS) => {
-  const drops: string[] = []
-  MONSTERS[enemyId].loot.forEach((drop) => {
-    if (Math.random() <= drop.chance) {
-      const quantity = Math.floor(drop.min + Math.random() * (drop.max - drop.min + 1))
-      state.inventory[drop.itemId] = (state.inventory[drop.itemId] ?? 0) + quantity
-      drops.push(`${quantity} ${ITEMS[drop.itemId].name}`)
-    }
-  })
-  return drops.join(', ')
-}
-
-const spawnEnemy = (state: GameState, enemyId: keyof typeof MONSTERS, boss = false) => {
-  const monster = MONSTERS[enemyId]
-  state.combat.enemyId = enemyId
-  state.combat.enemyHp = monster.maxHealth
-  state.combat.enemyMaxHp = monster.maxHealth
-  state.combat.enemyBarrier = enemyId === 'stone-root' ? Math.round(monster.maxHealth * 0.15) : 0
-  state.combat.enemyActionIndex = 0
-  state.combat.enemyIntervalMs = monster.attackIntervalMs
-  state.combat.enemyActionTimerMs = state.combat.enemyIntervalMs
-  state.combat.enemyTelegraphMs = 0
-  state.combat.enemyTelegraphActionId = null
-  state.combat.enemySpecialUsed = {}
-  state.combat.inBossFight = boss
-  state.combat.playerAttackTimerMs = 0
-  state.combat.enemyAttackTimerMs = monster.attackIntervalMs
-  state.combat.enemyStatuses = []
-  if (!state.progress.discoveredMonsters.includes(enemyId)) state.progress.discoveredMonsters.push(enemyId)
-  appendLog(state, `${monster.name} enters the clearing.`)
-}
-
-const spawnNextEnemy = (state: GameState) => {
-  const dungeon = DUNGEONS[state.combat.dungeonId ?? 'whispering-woods']
-  if (state.combat.pendingBossId) { const boss = state.combat.pendingBossId; state.combat.pendingBossId = null; spawnEnemy(state, boss, true); pushNotification(state, `${MONSTERS[boss].name} arrives via Auto Hunt`, 'warning'); return }
-  spawnEnemy(state, chooseMonster(dungeon.monsterPool))
-}
-
-const finishEnemy = (state: GameState) => {
-  const enemyId = state.combat.enemyId
-  if (!enemyId) return
-  const monster = MONSTERS[enemyId]
-  const drops = rollLoot(state, enemyId)
-  state.combat.enemyId = null
-  state.combat.enemyHp = 0
-  state.combat.enemyBarrier = 0
-  state.combat.enemyTelegraphMs = 0
-  state.combat.enemyTelegraphActionId = null
-  state.combat.encounterTimerMs = DUNGEONS[state.combat.dungeonId ?? 'whispering-woods'].encounterDelayMs
-  if (monster.boss) {
-    state.combat.threatCleared = 0
-    state.combat.inBossFight = false
-    const bossId = enemyId as 'grove-sentinel' | 'forest-heart'
-    state.progress.bossKillsByBoss[bossId] = (state.progress.bossKillsByBoss[bossId] ?? 0) + 1
-    if (bossId === 'grove-sentinel') state.progress.requestProgress['sentinel-breaker'] = state.progress.bossKillsByBoss[bossId]
-    if (bossId === 'grove-sentinel') state.progress.autoHuntBossUnlocked = true
-    if (bossId === 'grove-sentinel' && !state.progress.firstBossKill) {
-      state.progress.firstBossKill = true
-      state.progress.guildUnlocked = true
-      state.progress.guildRank = 'initiate'
-      state.progress.emberStaffUnlocked = true
-      state.progress.forestHeartUnlocked = true
-      pushNotification(state, 'Grove Sentinel defeated · Guild unlocked', 'success')
-      pushNotification(state, 'Four equipment recipes are now available', 'success')
-    }
-    if (bossId === 'forest-heart' && !state.progress.firstMainBossKill) {
-      state.progress.firstMainBossKill = true
-      state.progress.magicLevelCap = BALANCE.mainBoss.firstBossMagicLevelCap
-      if (!state.progress.permanentFocusBonuses['forest-heart']) state.progress.permanentFocusBonuses['forest-heart'] = BALANCE.focus.forestHeartBonus
-      recalculateDerivedStats(state)
-      pushNotification(state, 'Magic School cap increased to 20', 'success')
-      pushNotification(state, 'FIRST CHAPTER COMPLETE · +10 permanent Focus', 'success')
-    }
-    appendLog(state, `${monster.name} defeated${drops ? ` · ${drops}` : ''}. Threat Cleared resets.`)
-  } else {
-    state.progress.lifetimeKills += 1
-    state.progress.lifetimeKillsByMonster[enemyId] = (state.progress.lifetimeKillsByMonster[enemyId] ?? 0) + 1
-    state.combat.threatCleared += 1
-    state.progress.requestProgress['clear-the-woods'] = state.progress.lifetimeKills
-    appendLog(state, `${monster.name} defeated${drops ? ` · ${drops}` : ''}`)
-    if (state.combat.threatCleared === DUNGEONS['whispering-woods'].threatRequired) pushNotification(state, 'Grove Sentinel is ready', 'success')
-    if (state.progress.autoHuntBossByDungeon['whispering-woods'] && state.combat.threatCleared >= DUNGEONS['whispering-woods'].threatRequired) {
-      state.combat.pendingBossId = 'grove-sentinel'
-      pushNotification(state, 'Auto Hunt Boss queued Grove Sentinel', 'info')
-    }
-  }
-}
-
-const executeSpecial = (state: GameState, specialId: string) => {
-  const enemyId = state.combat.enemyId
-  if (!enemyId) return
-  const special = MONSTERS[enemyId].specialAttacks[specialId]
-  if (!special) return
-  if (special.effect === 'damage' || special.effect === 'damage-thorn' || special.effect === 'damage-delay') damagePlayer(state, special.amount)
-  if (special.effect === 'damage-thorn') addStatus(state.combat.playerStatuses, { id: 'thorn-wound', remainingMs: 6000, value: 3, tickIntervalMs: 2000, nextTickMs: 2000 })
-  if (special.effect === 'damage-delay') addStatus(state.combat.playerStatuses, { id: 'attack-delay', remainingMs: special.delayMs ?? 700, value: special.delayMs ?? 700 })
-  if (special.effect === 'barrier') state.combat.enemyBarrier += special.amount
-  if (special.effect === 'heal') state.combat.enemyHp = Math.min(state.combat.enemyMaxHp, state.combat.enemyHp + special.amount)
-  appendLog(state, `${special.name} resolves${special.effect === 'barrier' ? ` · +${special.amount} Barrier` : ''}.`)
-}
-
-const executeEnemyAction = (state: GameState) => {
-  const enemyId = state.combat.enemyId
-  if (!enemyId) return
-  const monster = MONSTERS[enemyId]
-  const step = monster.actionSequence[state.combat.enemyActionIndex % monster.actionSequence.length]
-  state.combat.enemyActionIndex = (state.combat.enemyActionIndex + 1) % monster.actionSequence.length
-  if (step.kind === 'special' && step.specialAttackId) {
-    const special = monster.specialAttacks[step.specialAttackId]
-    state.combat.enemyTelegraphMs = special.telegraphMs
-    state.combat.enemyTelegraphActionId = step.specialAttackId
-    appendLog(state, `${special.name} telegraphed · ${formatTime(special.telegraphMs)}`)
-  } else {
-    damagePlayer(state, monster.attackDamage)
-    appendLog(state, `${monster.name} Basic hits for ${state.combat.lastDamageTaken}.`)
-    if (monster.traits.some((trait) => trait.effect === 'thorn')) addStatus(state.combat.playerStatuses, { id: 'thorn-wound', remainingMs: 6000, value: 3, tickIntervalMs: 2000, nextTickMs: 2000 })
-  }
-  state.combat.enemyActionTimerMs = state.combat.enemyIntervalMs
 }
 
 const applySpellEffect = (state: GameState, spellId: SpellId, effect: SpellEffect) => {
@@ -379,6 +231,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     return state
   }),
   setChannelingEchoes: (amount) => set((state) => { state.activities.channeling.echoesAssigned = clamp(Math.round(amount), 0, BALANCE.channeling.maxEchoes); return state }),
+  forceSetEchoes: (amount) => set((state) => { const upper = state.debug.ignoreEchoLimit ? 1_000_000_000 : BALANCE.channeling.maxEchoes; state.activities.channeling.echoesAssigned = clamp(Math.round(sanitizeDebugNumber(amount)), 0, upper); return state }),
   upgradeManaPillar: (pillarId) => set((state) => {
     const pillar = MANA_PILLARS[pillarId]
     const currentLevel = state.progress.channeling.pillars[pillarId].level
@@ -414,9 +267,17 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     if (discoveries.includes('deep-reservoir')) recalculateDerivedStats(state)
     return state
   }),
+  forceSetManaPillarLevel: (pillarId, level) => get().setManaPillarLevel(pillarId, level),
   setChannelingManaGenerated: (amount) => set((state) => { state.progress.channeling.totalManaGenerated = Math.max(0, amount); const discoveries = checkChannelingDiscoveries(state); discoveries.forEach((id) => { const discovery = CHANNELING_DISCOVERIES.find((entry) => entry.id === id); if (discovery) pushNotification(state, `Arcane Discovery: ${discovery.name}`, 'success') }); if (discoveries.includes('deep-reservoir')) recalculateDerivedStats(state); return state }),
   setChannelingFiveEchoSustain: (amount) => set((state) => { state.progress.channeling.fiveEchoSustainMs = Math.max(0, amount); const discoveries = checkChannelingDiscoveries(state); discoveries.forEach((id) => { const discovery = CHANNELING_DISCOVERIES.find((entry) => entry.id === id); if (discovery) pushNotification(state, `Arcane Discovery: ${discovery.name}`, 'success') }); return state }),
   setChannelingDiscovery: (id, completed) => set((state) => { state.progress.channeling.discoveries[id] = completed; recalculateDerivedStats(state); return state }),
+  setDebugManaRegenBonus: (amount) => set((state) => { state.debug.bonusManaRegenFlat = sanitizeDebugNumber(amount); return state }),
+  setDebugMaxManaBonus: (amount) => set((state) => { state.debug.bonusMaxManaFlat = sanitizeDebugNumber(amount); recalculateDerivedStats(state); return state }),
+  setDebugMaxFocusBonus: (amount) => set((state) => { state.debug.bonusMaxFocusFlat = sanitizeDebugNumber(amount); recalculateDerivedStats(state); return state }),
+  setDebugAllowManaOverCap: (enabled) => set((state) => { state.debug.allowManaOverCap = enabled; recalculateDerivedStats(state); return state }),
+  setDebugAllowFocusOverCap: (enabled) => set((state) => { state.debug.allowFocusOverCap = enabled; return state }),
+  setDebugIgnoreEchoLimit: (enabled) => set((state) => { state.debug.ignoreEchoLimit = enabled; return state }),
+  resetDebugOverrides: () => set((state) => { resetDebugState(state); state.activities.channeling.echoesAssigned = clamp(state.activities.channeling.echoesAssigned, 0, BALANCE.channeling.maxEchoes); recalculateDerivedStats(state); return state }),
   toggleCondense: (element = get().activities.condense.element) => set((state) => { if (state.activities.condense.running) { state.activities.condense.running = false; return state } if (!canReserveFocus(state, BALANCE.condense.focusCost)) pushNotification(state, `Cannot start Condensation · Requires ${BALANCE.condense.focusCost} Focus`, 'warning'); else if (state.player.mana < BALANCE.condense.manaCost) pushNotification(state, 'Cannot start Condensation · Not enough Mana', 'warning'); else { state.activities.condense.element = element; state.player.mana -= BALANCE.condense.manaCost; state.activities.condense.running = true; state.activities.condense.progressMs = 0 } return state }),
   setResearchConfig: (itemId, targetSchoolId, quantity) => set((state) => { const job = state.activities.research; if (job.running) return state; job.itemId = itemId; job.targetSchoolId = targetSchoolId; job.requestedQuantity = Math.max(1, quantity); job.remainingQuantity = Math.max(1, quantity); job.progressMs = 0; job.xpPerItem = getResearchXp(itemId, targetSchoolId); job.status = 'idle'; return state }),
   toggleResearch: (itemId, targetSchoolId, quantity = 1) => set((state) => { const job = state.activities.research; if (job.running) { job.running = false; job.status = 'paused'; return state } if (itemId) { job.itemId = itemId; job.targetSchoolId = targetSchoolId ?? ITEMS[itemId].researchSchool ?? 'fire'; job.requestedQuantity = Math.max(1, quantity); job.remainingQuantity = Math.max(1, quantity); job.xpPerItem = getResearchXp(itemId, job.targetSchoolId) } if (!job.itemId || !job.targetSchoolId) { job.status = 'missing-item'; return state } if (isProtected(state, job.itemId)) { job.running = false; job.status = 'missing-item'; pushNotification(state, 'This item is protected. Unlock it before Research.', 'warning'); return state } if ((state.inventory[job.itemId] ?? 0) < 1) { job.running = false; job.status = 'missing-item'; pushNotification(state, 'Cannot start Research · item missing', 'warning'); return state } if (state.schools[job.targetSchoolId].level >= state.progress.magicLevelCap) { job.running = false; job.status = 'level-cap'; pushNotification(state, 'Level Cap Reached · Research queue preserved', 'warning'); return state } if (!canReserveFocus(state, job.focusCost)) { job.running = false; job.status = 'waiting-focus'; pushNotification(state, `Cannot start Research · Requires ${job.focusCost} Focus · Free Focus: ${selectFreeFocus(state)}`, 'warning'); return state } job.running = true; job.status = 'running'; return state }),

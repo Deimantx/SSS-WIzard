@@ -4,9 +4,10 @@ import { MANA_PILLARS, PILLAR_LEVEL_COSTS } from './data/manaPillars'
 import { chooseMonster } from './data/dungeons'
 import { MONSTERS } from './data/monsters'
 import { getResearchXp } from './data/items'
-import { completeResearchCycle, focusReservations, getSchoolLevel, manaRegenPerSecond, selectUsedFocus, usedFocus } from './engine'
+import { completeResearchCycle, focusReservations, getSchoolLevel, manaRegenPerSecond, selectFreeFocus, selectRawFreeFocus, selectUsedFocus, usedFocus } from './engine'
 import { getManaCapacityBreakdown, getManaRegenBreakdown } from './engine/channelingEngine'
 import { migrateSave } from '../persistence/migrations'
+import { serializeGameState } from '../persistence/profileSaveManager'
 import { makeInitialState, useGameStore } from '../store/gameStore'
 
 describe('focus reservation engine', () => {
@@ -334,6 +335,97 @@ describe('Life Essence combat material', () => {
       expect(monster.loot).toContainEqual({ itemId: 'life-essence', min: 1, max: 3, chance: 1 })
     })
     expect(MONSTERS['forest-heart'].loot.some((drop) => drop.itemId === 'heartseed')).toBe(true)
+  })
+})
+
+describe('Developer channeling overrides', () => {
+  it('adds a temporary Mana regen source and restores the normal calculation', () => {
+    const game = useGameStore.getState()
+    game.resetSave()
+    const normal = getManaRegenBreakdown(useGameStore.getState()).total
+    game.setDebugManaRegenBonus(100)
+    expect(getManaRegenBreakdown(useGameStore.getState())).toMatchObject({ developerBonus: 100, total: normal + 100 })
+    game.resetDebugOverrides()
+    expect(getManaRegenBreakdown(useGameStore.getState()).total).toBe(normal)
+  })
+
+  it('applies a debug Max Mana flat bonus before Astral Expansion', () => {
+    const game = useGameStore.getState()
+    game.resetSave()
+    game.forceSetManaPillarLevel('astral-expansion', 10)
+    game.setDebugMaxManaBonus(500)
+    expect(getManaCapacityBreakdown(useGameStore.getState())).toMatchObject({ developerCapacityBonus: 500, preAmplification: 600, total: 900 })
+  })
+
+  it('allows explicit Mana over-cap testing without changing normal clamps', () => {
+    const game = useGameStore.getState()
+    game.resetSave()
+    game.setDebugAllowManaOverCap(true)
+    game.setPlayer({ mana: 1000 })
+    expect(useGameStore.getState().player.mana).toBe(1000)
+    game.tick(1000)
+    expect(useGameStore.getState().player.mana).toBe(1000)
+    game.setDebugAllowManaOverCap(false)
+    expect(useGameStore.getState().player.mana).toBe(useGameStore.getState().player.maxMana)
+  })
+
+  it('reports raw negative Focus while keeping gameplay free Focus safe', () => {
+    const game = useGameStore.getState()
+    game.resetSave()
+    game.setDebugMaxFocusBonus(500)
+    game.setDebugIgnoreEchoLimit(true)
+    game.forceSetEchoes(20)
+    const state = useGameStore.getState()
+    expect(state.player.maxFocus).toBe(600)
+    expect(selectRawFreeFocus(state)).toBe(400)
+    game.setDebugMaxFocusBonus(0)
+    expect(selectRawFreeFocus(useGameStore.getState())).toBe(-100)
+  })
+
+  it('allows normal Focus actions to exceed the pool only in debug over-reservation mode', () => {
+    const game = useGameStore.getState()
+    game.resetSave()
+    game.setPlayer({ baseMaxFocus: 5 })
+    game.setDebugAllowFocusOverCap(true)
+    game.addArcaneEcho()
+    const state = useGameStore.getState()
+    expect(state.activities.channeling.echoesAssigned).toBe(1)
+    expect(selectRawFreeFocus(state)).toBe(-5)
+    expect(selectFreeFocus(state)).toBe(0)
+  })
+
+  it('force sets Echoes and Pillars without consuming materials', () => {
+    const game = useGameStore.getState()
+    game.resetSave()
+    game.forceSetEchoes(20)
+    expect(useGameStore.getState().activities.channeling.echoesAssigned).toBe(5)
+    game.setDebugIgnoreEchoLimit(true)
+    game.forceSetEchoes(20)
+    game.forceSetManaPillarLevel('leyline-conduit', 10)
+    expect(useGameStore.getState().activities.channeling.echoesAssigned).toBe(20)
+    expect(useGameStore.getState().progress.channeling.pillars['leyline-conduit'].level).toBe(10)
+    expect(getManaRegenBreakdown(useGameStore.getState()).echoTotal).toBe(100)
+  })
+
+  it('resets only debug controls and strips them from normal profile serialization', () => {
+    const game = useGameStore.getState()
+    game.resetSave()
+    game.addItem('fire-fragment', 9)
+    game.setManaPillarLevel('mana-resonance', 1)
+    game.setDebugManaRegenBonus(500)
+    game.setDebugMaxManaBonus(500)
+    game.setDebugMaxFocusBonus(500)
+    game.setDebugAllowManaOverCap(true)
+    game.setDebugAllowFocusOverCap(true)
+    game.setDebugIgnoreEchoLimit(true)
+    const before = useGameStore.getState()
+    const serialized = serializeGameState(before)
+    expect(serialized).not.toHaveProperty('debug')
+    game.resetDebugOverrides()
+    const after = useGameStore.getState()
+    expect(after.debug).toEqual({ bonusManaRegenFlat: 0, bonusMaxManaFlat: 0, bonusMaxFocusFlat: 0, allowManaOverCap: false, allowFocusOverCap: false, ignoreEchoLimit: false })
+    expect(after.inventory['fire-fragment']).toBe(before.inventory['fire-fragment'])
+    expect(after.progress.channeling.pillars['mana-resonance'].level).toBe(1)
   })
 })
 

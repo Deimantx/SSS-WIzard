@@ -188,6 +188,15 @@ export interface GameState {
   offlineBankMs: number
   lastSavedAt: number
   notifications: NotificationItem[]
+  debug: DebugOverrides
+}
+export interface DebugOverrides {
+  bonusManaRegenFlat: number
+  bonusMaxManaFlat: number
+  bonusMaxFocusFlat: number
+  allowManaOverCap: boolean
+  allowFocusOverCap: boolean
+  ignoreEchoLimit: boolean
 }
 export interface NotificationItem { id: string; text: string; tone: 'info' | 'success' | 'warning' }
 export interface FocusReservation {

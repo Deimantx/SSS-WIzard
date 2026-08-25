@@ -11,6 +11,7 @@ export interface ProfileSaveResult {
 
 export const serializeGameState = (state: GameState) => JSON.parse(JSON.stringify({
   ...state,
+  debug: undefined,
   notifications: [],
   saveVersion: CURRENT_SAVE_VERSION,
   lastSavedAt: state.lastSavedAt,

@@ -1,9 +1,9 @@
 import { useSyncExternalStore } from 'react'
 
-export type DeveloperToolsTab = 'overview' | 'player' | 'schools' | 'inventory' | 'combat' | 'activities' | 'progression' | 'save'
+export type DeveloperToolsTab = 'character' | 'channeling' | 'focus' | 'inventory' | 'combat' | 'schools' | 'progression' | 'save' | 'diagnostics'
 export interface DeveloperToolsSessionState { open: boolean; activeTab: DeveloperToolsTab; search: string }
 
-let current: DeveloperToolsSessionState = { open: false, activeTab: 'overview', search: '' }
+let current: DeveloperToolsSessionState = { open: false, activeTab: 'character', search: '' }
 const listeners = new Set<() => void>()
 const emit = () => listeners.forEach((listener) => listener())
 const update = (changes: Partial<DeveloperToolsSessionState>) => { current = { ...current, ...changes }; emit() }

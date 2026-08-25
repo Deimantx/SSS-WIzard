@@ -15,7 +15,7 @@ export const loadSave = (): { state: GameState | null; error: string | null } =>
 
 export const saveGame = (state: GameState) => {
   if (typeof localStorage === 'undefined') return
-    const clean = JSON.parse(JSON.stringify({ ...state, notifications: [], saveVersion: CURRENT_SAVE_VERSION, lastSavedAt: Date.now() })) as GameState
+    const clean = JSON.parse(JSON.stringify({ ...state, debug: undefined, notifications: [], saveVersion: CURRENT_SAVE_VERSION, lastSavedAt: Date.now() })) as GameState
     localStorage.setItem(LEGACY_SAVE_KEY, JSON.stringify(clean))
 }
 

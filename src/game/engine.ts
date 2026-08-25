@@ -30,9 +30,9 @@ export const recalculateDerivedStats = (state: GameState) => {
   const permanentFocus = Object.values(state.progress.permanentFocusBonuses).reduce((sum, value) => sum + value, 0)
   state.player.maxHealth = state.player.baseMaxHealth + (stats.maxHealth ?? 0)
   state.player.maxMana = getManaCapacityBreakdown(state).total
-  state.player.maxFocus = state.player.baseMaxFocus + permanentFocus + (stats.maxFocus ?? 0)
+  state.player.maxFocus = Math.max(0, state.player.baseMaxFocus + permanentFocus + (stats.maxFocus ?? 0) + state.debug.bonusMaxFocusFlat)
   state.player.health = clamp(state.player.health, 0, state.player.maxHealth)
-  state.player.mana = clamp(state.player.mana, 0, state.player.maxMana)
+  state.player.mana = state.debug.allowManaOverCap ? Math.max(0, state.player.mana) : clamp(state.player.mana, 0, state.player.maxMana)
 }
 
 export const deriveFocusReservations = (state: Pick<GameState, 'activities' | 'progress'>): FocusReservation[] => {
@@ -52,7 +52,8 @@ export const deriveFocusReservations = (state: Pick<GameState, 'activities' | 'p
 }
 
 export const selectUsedFocus = (state: Pick<GameState, 'activities' | 'progress'>) => deriveFocusReservations(state).reduce((sum, reservation) => sum + reservation.amount, 0)
-export const selectFreeFocus = (state: Pick<GameState, 'activities' | 'progress' | 'player'>) => Math.max(0, state.player.maxFocus - selectUsedFocus(state))
+export const selectRawFreeFocus = (state: Pick<GameState, 'activities' | 'progress' | 'player'>) => state.player.maxFocus - selectUsedFocus(state)
+export const selectFreeFocus = (state: Pick<GameState, 'activities' | 'progress' | 'player'>) => Math.max(0, selectRawFreeFocus(state))
 export const usedFocus = selectUsedFocus
 export const freeFocus = selectFreeFocus
 export const canReserveFocus = (state: Pick<GameState, 'activities' | 'progress' | 'player'>, amount: number) => selectFreeFocus(state) >= amount

@@ -10,6 +10,7 @@ export interface ManaRegenBreakdown {
   leylineConduitBonus: number
   stableLeylineBonus: number
   equipmentPassiveBonus: number
+  developerBonus: number
   passiveBeforeResonance: number
   manaResonanceMultiplier: number
   passiveAfterResonance: number
@@ -26,6 +27,7 @@ export interface ManaCapacityBreakdown {
   deepReservoirBonus: number
   equipmentBonus: number
   futureFlatBonus: number
+  developerCapacityBonus: number
   preAmplification: number
   astralExpansionMultiplier: number
   total: number
@@ -46,13 +48,14 @@ const pillarLevel = (state: Pick<GameState, 'progress'>, id: ManaPillarId) => Ma
 
 export const getManaPillarLevel = (state: Pick<GameState, 'progress'>, id: ManaPillarId) => pillarLevel(state, id)
 
-export const getManaCapacityBreakdown = (state: Pick<GameState, 'player' | 'progress' | 'equipment'>): ManaCapacityBreakdown => {
+export const getManaCapacityBreakdown = (state: Pick<GameState, 'player' | 'progress' | 'equipment'> & Partial<Pick<GameState, 'debug'>>): ManaCapacityBreakdown => {
   const stats = equipmentStatsFor(state)
   const arcaneReservoirBonus = pillarLevel(state, 'arcane-reservoir') * 25
   const deepReservoirBonus = state.progress.channeling.discoveries['deep-reservoir'] ? BALANCE.channeling.deepReservoirCapacityBonus : 0
   const equipmentBonus = stats.maxMana ?? 0
   const futureFlatBonus = 0
-  const preAmplification = state.player.baseMaxMana + arcaneReservoirBonus + deepReservoirBonus + equipmentBonus + futureFlatBonus
+  const developerCapacityBonus = state.debug?.bonusMaxManaFlat ?? 0
+  const preAmplification = state.player.baseMaxMana + arcaneReservoirBonus + deepReservoirBonus + equipmentBonus + futureFlatBonus + developerCapacityBonus
   const astralExpansionMultiplier = 1 + pillarLevel(state, 'astral-expansion') * 0.05
   return {
     base: state.player.baseMaxMana,
@@ -62,28 +65,30 @@ export const getManaCapacityBreakdown = (state: Pick<GameState, 'player' | 'prog
     futureFlatBonus,
     preAmplification,
     astralExpansionMultiplier,
+    developerCapacityBonus,
     total: Math.floor(preAmplification * astralExpansionMultiplier),
   }
 }
 
-export const getManaRegenBreakdown = (state: Pick<GameState, 'activities' | 'progress' | 'equipment'>): ManaRegenBreakdown => {
+export const getManaRegenBreakdown = (state: Pick<GameState, 'activities' | 'progress' | 'equipment'> & Partial<Pick<GameState, 'debug'>>): ManaRegenBreakdown => {
   const stats = equipmentStatsFor(state)
-  const echoes = clamp(state.activities.channeling.echoesAssigned, 0, BALANCE.channeling.maxEchoes)
+  const echoes = state.debug?.ignoreEchoLimit ? Math.max(0, state.activities.channeling.echoesAssigned) : clamp(state.activities.channeling.echoesAssigned, 0, BALANCE.channeling.maxEchoes)
   const baseNatural = BALANCE.channeling.baseNaturalRegenPerSecond
   const leylineConduitBonus = pillarLevel(state, 'leyline-conduit')
   const stableLeylineBonus = state.progress.channeling.discoveries['stable-leyline'] ? BALANCE.channeling.stableLeylineRegenBonus : 0
   const equipmentPassiveBonus = stats.manaRegen ?? 0
-  const passiveBeforeResonance = baseNatural + leylineConduitBonus + stableLeylineBonus + equipmentPassiveBonus
+  const developerBonus = state.debug?.bonusManaRegenFlat ?? 0
+  const passiveBeforeResonance = baseNatural + leylineConduitBonus + stableLeylineBonus + equipmentPassiveBonus + developerBonus
   const manaResonanceMultiplier = 1 + pillarLevel(state, 'mana-resonance') * 0.05
   const passiveAfterResonance = passiveBeforeResonance * manaResonanceMultiplier
   const echoBase = echoes * BALANCE.channeling.echoManaPerSecond
   const echoAttunementMultiplier = 1 + pillarLevel(state, 'echo-attunement') * 0.05
   const echoDiscoveryMultiplier = state.progress.channeling.discoveries['echo-resonance'] ? BALANCE.channeling.discoveryEchoMultiplier : 1
   const echoTotal = echoBase * echoAttunementMultiplier * echoDiscoveryMultiplier
-  return { baseNatural, leylineConduitBonus, stableLeylineBonus, equipmentPassiveBonus, passiveBeforeResonance, manaResonanceMultiplier, passiveAfterResonance, echoBase, echoAttunementMultiplier, echoDiscoveryMultiplier, echoTotal, total: passiveAfterResonance + echoTotal }
+  return { baseNatural, leylineConduitBonus, stableLeylineBonus, equipmentPassiveBonus, developerBonus, passiveBeforeResonance, manaResonanceMultiplier, passiveAfterResonance, echoBase, echoAttunementMultiplier, echoDiscoveryMultiplier, echoTotal, total: passiveAfterResonance + echoTotal }
 }
 
-export const manaRegenPerSecond = (state: Pick<GameState, 'activities' | 'progress' | 'equipment'>) => getManaRegenBreakdown(state).total
+export const manaRegenPerSecond = (state: Pick<GameState, 'activities' | 'progress' | 'equipment'> & Partial<Pick<GameState, 'debug'>>) => getManaRegenBreakdown(state).total
 
 export const getManaPillarDefinition = (id: ManaPillarId) => MANA_PILLARS[id]
 
@@ -107,7 +112,10 @@ export const checkChannelingDiscoveries = (state: GameState): ChannelingDiscover
 export const advanceChanneling = (state: GameState, deltaMs: number) => {
   const delta = Math.max(0, deltaMs)
   const before = state.player.mana
-  state.player.mana = clamp(before + manaRegenPerSecond(state) * delta / 1000, 0, state.player.maxMana)
+  const generated = manaRegenPerSecond(state) * delta / 1000
+  state.player.mana = state.debug.allowManaOverCap && before > state.player.maxMana
+    ? before
+    : clamp(before + generated, 0, state.player.maxMana)
   const gained = state.player.mana - before
   state.progress.channeling.totalManaGenerated += gained
   if (!state.progress.channeling.discoveries['echo-resonance']) {

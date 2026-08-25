@@ -1,0 +1,1 @@
+export { resolveMonsterLoot } from './lootResolution'

@@ -1,8 +1,8 @@
-import { manaRegenPerSecond, playerBasicDamage, selectFreeFocus, selectUsedFocus } from '../game/engine'
+import { manaRegenPerSecond, playerBasicDamage, selectFreeFocus, selectRawFreeFocus, selectUsedFocus } from '../game/engine'
 import { getManaCapacityBreakdown, getManaRegenBreakdown } from '../game/engine/channelingEngine'
 import type { GameStore } from './gameStore'
 
-export { selectUsedFocus, selectFreeFocus }
+export { selectUsedFocus, selectFreeFocus, selectRawFreeFocus }
 export const selectManaRegen = (state: GameStore) => manaRegenPerSecond(state)
 export const selectManaRegenBreakdown = (state: GameStore) => getManaRegenBreakdown(state)
 export const selectManaCapacityBreakdown = (state: GameStore) => getManaCapacityBreakdown(state)

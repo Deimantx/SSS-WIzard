@@ -20,3 +20,5 @@ export const ITEMS: Record<ItemId, ItemDefinition> = {
 }
 
 export const getResearchXp = (itemId: ItemId, targetSchoolId: SchoolId) => ITEMS[itemId].researchSchool === targetSchoolId ? 12 : 8
+
+export const getItemSourceLabel = (itemId: ItemId) => itemId === 'life-essence' ? 'Combat → all monsters' : ITEMS[itemId].category === 'elemental' ? 'Wizard Tower → Condensation' : ITEMS[itemId].source

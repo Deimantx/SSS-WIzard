@@ -4,12 +4,13 @@ import { DEFAULT_LAYOUTS } from './defaultLayouts'
 import { getPanelDefinitions } from './panelRegistry'
 import { loadUiLayouts, resetUiLayouts, saveUiLayouts } from './layoutEditorStorage'
 import { clampPanelLayout, getScreenLayouts, isDesktopLayout } from './layoutUtils'
-import type { LayoutEditorState, SavedPanelLayout, ScreenLayouts, UiLayoutDocument } from './layoutEditorTypes'
+import { clampTopbarLayout, DEFAULT_TOPBAR_LAYOUT, moveTopbarResource, TOPBAR_PRESETS } from './shellLayout'
+import type { LayoutEditorState, SavedPanelLayout, ScreenLayouts, TopbarLayout, TopbarRegionId, UiLayoutDocument } from './layoutEditorTypes'
 
 type Snapshot = LayoutEditorState & { document: UiLayoutDocument }
 const listeners = new Set<() => void>()
 let documentState = loadUiLayouts()
-let snapshot: Snapshot = { isEditing: false, selectedPanelId: null, showGrid: true, panelInteraction: false, notice: null, undoDepth: 0, redoDepth: 0, document: documentState }
+let snapshot: Snapshot = { isEditing: false, layoutTarget: 'screen', selectedPanelId: null, showGrid: true, panelInteraction: false, notice: null, undoDepth: 0, redoDepth: 0, document: documentState }
 let undoStack: UiLayoutDocument[] = []
 let redoStack: UiLayoutDocument[] = []
 
@@ -29,12 +30,13 @@ export function getSavedScreenLayouts(screen: ScreenId) { return getScreenLayout
 export function openLayoutEditor(screen: ScreenId) {
   if (!isDesktopLayout()) { publish({ notice: 'UI Editor is available on desktop-sized layouts.' }); return false }
   const first = getPanelDefinitions(screen).find((panel) => !getSavedScreenLayouts(screen)[panel.id]?.hidden)?.id ?? getPanelDefinitions(screen)[0]?.id ?? null
-  publish({ isEditing: true, selectedPanelId: first, notice: null, showGrid: true })
+  publish({ isEditing: true, layoutTarget: 'screen', selectedPanelId: first, notice: null, showGrid: true })
   return true
 }
 export function closeLayoutEditor(notice: string | null = null) { undoStack = []; redoStack = []; publish({ isEditing: false, selectedPanelId: null, panelInteraction: false, notice }) }
 export function toggleLayoutEditor(screen: ScreenId) { return snapshot.isEditing ? (closeLayoutEditor(), false) : openLayoutEditor(screen) }
 export function selectLayoutPanel(panelId: string | null) { publish({ selectedPanelId: panelId }) }
+export function setLayoutTarget(layoutTarget: LayoutEditorState['layoutTarget']) { publish({ layoutTarget, selectedPanelId: layoutTarget === 'shell' ? null : snapshot.selectedPanelId }) }
 export function setShowEditorGrid(showGrid: boolean) { publish({ showGrid }) }
 export function setPanelInteraction(panelInteraction: boolean) { publish({ panelInteraction }) }
 export function clearLayoutNotice() { publish({ notice: null }) }
@@ -74,7 +76,13 @@ export function togglePanelLocked(screen: ScreenId, panelId: string) {
 }
 export function resetSelectedPanel(screen: ScreenId) { if (snapshot.selectedPanelId) updateScreenLayouts(screen, { ...getSavedScreenLayouts(screen), [snapshot.selectedPanelId]: clone(DEFAULT_LAYOUTS[screen][snapshot.selectedPanelId]) }) }
 export function resetScreenLayout(screen: ScreenId) { const next = clone(documentState); delete next.screens[screen]; commitDocument(next) }
-export function resetAllScreenLayouts() { resetUiLayouts(); commitDocument({ version: 2, screens: {} }) }
+export function getTopbarLayout() { return clampTopbarLayout(documentState.shell?.topbar) }
+export function updateTopbarLayout(changes: Partial<TopbarLayout>) { const next = clone(documentState); next.shell = { topbar: clampTopbarLayout({ ...getTopbarLayout(), ...changes }) }; commitDocument(next) }
+export function updateTopbarWidth(regionId: TopbarRegionId, width: number) { updateTopbarLayout({ widths: { ...getTopbarLayout().widths, [regionId]: width } }) }
+export function moveTopbarResourceBy(regionId: TopbarRegionId, direction: -1 | 1) { updateTopbarLayout(moveTopbarResource(getTopbarLayout(), regionId, direction)) }
+export function applyTopbarPreset(preset: keyof typeof TOPBAR_PRESETS) { updateTopbarLayout(clone(TOPBAR_PRESETS[preset])) }
+export function resetHeaderLayout() { updateTopbarLayout(clone(DEFAULT_TOPBAR_LAYOUT)) }
+export function resetAllScreenLayouts() { resetUiLayouts(); commitDocument({ version: 3, screens: {}, shell: { topbar: clone(DEFAULT_TOPBAR_LAYOUT) } }) }
 
 export function undoLayout() { const previous = undoStack.pop(); if (!previous) return; redoStack.push(clone(documentState)); documentState = previous; saveUiLayouts(documentState); publish({}) }
 export function redoLayout() { const next = redoStack.pop(); if (!next) return; undoStack.push(clone(documentState)); documentState = next; saveUiLayouts(documentState); publish({}) }

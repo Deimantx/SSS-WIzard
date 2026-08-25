@@ -11,7 +11,7 @@ describe('layout editor persistence and session state', () => {
     updateSelectedPanel('home', { x: 5, w: 6 })
     closeLayoutEditor()
     expect(getLayoutEditorState().isEditing).toBe(false)
-    expect(JSON.parse(localStorage.getItem(UI_LAYOUTS_KEY) ?? '{}')).toMatchObject({ version: 2, screens: { home: { 'home-wizard': { x: 5, w: 6 } } } })
+    expect(JSON.parse(localStorage.getItem(UI_LAYOUTS_KEY) ?? '{}')).toMatchObject({ version: 3, screens: { home: { 'home-wizard': { x: 5, w: 6 } } }, shell: { topbar: { widths: { 'topbar-mana': 600 } } } })
     expect(Object.prototype.hasOwnProperty.call(getLayoutEditorState(), 'document')).toBe(true)
   })
 

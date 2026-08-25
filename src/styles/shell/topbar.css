@@ -1,10 +1,13 @@
-.topbar-v3 { position: relative; z-index: 7; min-height: 82px; height: 82px; flex: 0 0 auto; display: flex; align-items: center; gap: 16px; padding: 10px 28px; overflow: visible; border-bottom: 1px solid var(--ui-border); background: var(--ui-topbar); backdrop-filter: blur(18px); }
-.topbar-v3 .crumb { flex: 0 0 145px; min-width: 105px; }
-.topbar-resources { display: grid; grid-template-columns: clamp(140px, 12vw, 180px) minmax(420px, 720px) clamp(170px, 14vw, 220px); align-items: stretch; gap: 10px; min-width: 0; width: min(100%, 1120px); max-width: 1120px; flex: 1 1 auto; overflow: visible; }
-.topbar-resource, .mana-hero { position: relative; min-width: 0; border: 1px solid var(--ui-border); border-radius: 9px; background: color-mix(in srgb, var(--ui-panel) 88%, transparent); color: var(--ui-text-soft); overflow: visible; }
+.topbar-v3 { position: relative; z-index: 7; min-height: 82px; height: 82px; flex: 0 0 auto; display: flex; align-items: center; gap: 14px; padding: 10px 28px; overflow: visible; border-bottom: 1px solid var(--ui-border); background: var(--ui-topbar); backdrop-filter: blur(18px); }
+.topbar-shell-grid { display: grid; grid-template-columns: repeat(5, max-content); align-items: stretch; gap: 10px; min-width: 0; width: 100%; height: 62px; }
+.topbar-shell-grid > .game-tooltip-trigger { display: block; width: max-content; min-width: 0; }
+.topbar-shell-grid > .game-tooltip-trigger:last-child { margin-left: auto; }
+.topbar-shell-region { position: relative; height: 100%; min-width: 0; overflow: visible; }
+.topbar-shell-region > .crumb { width: 100%; height: 100%; }
+.topbar-resource, .mana-hero { position: relative; width: 100%; height: 100%; min-width: 0; border: 1px solid var(--ui-border); border-radius: 9px; background: color-mix(in srgb, var(--ui-panel) 88%, transparent); color: var(--ui-text-soft); overflow: visible; }
 .topbar-resource { display: flex; align-items: center; gap: 8px; padding: 8px 10px; }
 .topbar-resource > svg { flex: 0 0 auto; color: var(--resource-health); }
-.topbar-resource > div, .mana-hero { min-width: 0; }
+.topbar-resource > div { flex: 1 1 auto; width: 100%; min-width: 0; }
 .topbar-resource small, .mana-hero small { display: block; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; }
 .topbar-resource strong, .mana-hero strong { display: block; color: var(--ui-text); font: var(--text-xs) var(--font-mono); white-space: nowrap; }
 .topbar-resource.low-resource { border-color: color-mix(in srgb, var(--resource-health) 55%, var(--ui-border)); }
@@ -13,7 +16,7 @@
 .mana-hero-head > span, .focus-head > span { display: inline-flex; align-items: center; gap: 5px; color: var(--resource-mana); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; }
 .focus-head > span { color: var(--resource-focus); }
 .mana-hero-head strong { font-size: var(--text-sm); }
-.shell-meter { height: 4px; overflow: hidden; margin-top: 7px; border-radius: 99px; background: color-mix(in srgb, var(--ui-text) 11%, transparent); }
+.shell-meter { width: 100%; height: 4px; overflow: hidden; margin-top: 7px; border-radius: 99px; background: color-mix(in srgb, var(--ui-text) 11%, transparent); }
 .shell-meter i { display: block; height: 100%; border-radius: inherit; transition: width .2s ease; }
 .mana-cap-state { display: block; margin-top: 4px; color: var(--ui-warning); font: var(--text-micro) var(--font-mono); letter-spacing: .08em; }
 .shell-meter.hp i { background: var(--resource-health); }
@@ -28,7 +31,7 @@
 .mana-flow-details summary::-webkit-details-marker { display: none; }
 .mana-flow-details summary small { display: inline; letter-spacing: 0; color: inherit; font: inherit; opacity: .82; }
 .mana-flow-popover { position: absolute; top: calc(100% + 8px); left: 0; z-index: 20; width: 300px; padding: 12px; border: 1px solid var(--ui-border-strong); border-radius: 8px; background: var(--ui-panel-strong); box-shadow: 0 18px 45px var(--ui-shadow); color: var(--ui-text-soft); }
-.mana-flow-popover > strong { margin-bottom: 8px; color: var(--ui-text); font: var(--text-xs) var(--font-sans); }
+.mana-flow-popover > strong { display: block; margin-bottom: 8px; color: var(--ui-text); font: var(--text-xs) var(--font-sans); }
 .flow-row { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; font: var(--text-micro) var(--font-mono); }
 .flow-row b { color: var(--ui-success); font-weight: 500; }
 .flow-demand-heading { margin-top: 4px; border-top: 1px solid var(--ui-border); }
@@ -43,29 +46,34 @@
 .focus-resource.tight-resource .focus-head strong { color: var(--ui-warning); }
 .focus-allocation-details { position: absolute; top: calc(100% + 8px); right: 0; z-index: 20; display: none; width: 240px; max-width: min(240px, calc(100vw - 24px)); padding: 9px; border: 1px solid var(--ui-border-strong); border-radius: 8px; background: var(--ui-panel-strong); box-shadow: 0 18px 45px var(--ui-shadow); color: var(--ui-text-muted); font: var(--text-micro) var(--font-sans); }
 .focus-resource:hover .focus-allocation-details, .focus-resource:focus .focus-allocation-details, .focus-resource:focus-within .focus-allocation-details { display: grid; gap: 5px; }
-.topbar-v3 .topbar-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; flex: 0 0 auto; }
+.topbar-v3 .topbar-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; flex: 0 0 auto; height: 100%; }
+.topbar-v3 .topbar-actions > .game-tooltip-trigger { display: inline-flex; }
 .topbar-v3 .topbar-tool-button { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 7px 9px; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text-soft); background: var(--ui-panel); cursor: pointer; font: var(--text-xs) var(--font-sans); white-space: nowrap; }
 .topbar-v3 .topbar-tool-button:hover, .topbar-v3 .topbar-tool-button.active { border-color: var(--ui-accent); color: var(--ui-text); background: var(--ui-accent-soft); }
 .topbar-v3 .offline-bank-trigger svg { color: var(--ui-secondary); }
+.topbar-region-overlay { position: absolute; z-index: 4; inset: 2px; display: flex; align-items: flex-start; justify-content: space-between; padding: 3px 4px; border: 1px dashed var(--ui-accent); border-radius: 6px; color: var(--ui-accent); background: color-mix(in srgb, var(--ui-accent-soft) 18%, transparent); pointer-events: none; font: var(--text-micro) var(--font-mono); letter-spacing: .04em; }
+.topbar-region-grip { font-style: normal; opacity: .85; }
+.topbar-region-resize { position: absolute; top: 18%; bottom: 18%; width: 3px; border-radius: 3px; background: var(--ui-accent); opacity: .7; }
+.topbar-region-resize.left { left: -2px; }.topbar-region-resize.right { right: -2px; }
 @media (max-width: 1380px) {
   .topbar-v3 { padding-inline: 18px; gap: 10px; }
-  .topbar-v3 .crumb { flex-basis: 112px; }
   .topbar-v3 .topbar-tool-button span { display: none; }
-  .topbar-resources { grid-template-columns: clamp(120px, 12vw, 150px) minmax(260px, 1fr) clamp(160px, 13vw, 190px); }
+  .topbar-shell-grid { grid-template-columns: repeat(5, minmax(0, auto)); gap: 7px; }
 }
 @media (max-width: 980px) {
   .topbar-v3 { height: auto; min-height: 82px; flex-wrap: wrap; }
-  .topbar-v3 .crumb { flex: 1; }
-  .topbar-resources { order: 4; width: 100%; max-width: none; flex-basis: 100%; grid-template-columns: minmax(100px, 140px) minmax(220px, 1fr) minmax(145px, 180px); }
+  .topbar-shell-grid { order: 4; width: 100%; height: 58px; grid-template-columns: minmax(100px, 140px) minmax(0, 1fr) minmax(0, 1.5fr) minmax(120px, 180px) auto; }
+  .topbar-shell-grid > .game-tooltip-trigger { width: auto !important; }
   .topbar-v3 .topbar-actions { margin-left: 0; }
 }
 @media (max-width: 620px) {
   .topbar-v3 { padding: 9px 12px; }
-  .topbar-resources { gap: 6px; grid-template-columns: minmax(82px, 1fr) minmax(0, 1.8fr) minmax(112px, 1.1fr); }
+  .topbar-shell-grid { gap: 6px; grid-template-columns: minmax(82px, 1fr) minmax(0, 1.1fr) minmax(0, 1.8fr) minmax(112px, 1.1fr) auto; }
   .topbar-resource { padding-inline: 7px; }
   .topbar-resource strong, .mana-hero-head strong { font-size: var(--text-micro); }
   .mana-flow-popover { left: auto; right: -30px; }
   .topbar-v3 .topbar-tool-button { padding-inline: 7px; }
   .topbar-v3 .topbar-editor-button { display: none; }
+  .topbar-region-overlay { font-size: 8px; }
 }
 @media (prefers-reduced-motion: reduce) { .shell-meter i { transition: none; } }

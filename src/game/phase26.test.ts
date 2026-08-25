@@ -94,7 +94,7 @@ describe('Phase 2.6 Activity Monitor telemetry', () => {
     expect(telemetry.find((item) => item.id === 'transmutation')?.metrics[0].value).toBe('450/h')
   })
 
-  it('exposes player, enemy, threat, lifetime and next-action combat telemetry', () => {
+  it('exposes player, enemy, threat, attack timing, and next-action combat telemetry', () => {
     const state = makeInitialState()
     state.combat.active = true
     state.combat.dungeonId = 'whispering-woods'
@@ -108,13 +108,14 @@ describe('Phase 2.6 Activity Monitor telemetry', () => {
     const combat = getActivityTelemetry(state).find((item) => item.id === 'combat')
 
     expect(combat?.bars?.map((bar) => bar.label)).toEqual(['Player HP', 'Enemy HP'])
-    expect(combat?.metrics.map((item) => item.label)).toEqual(['Threat Cleared', 'Lifetime Kills', 'Next'])
+    expect(combat?.metrics.map((item) => item.label)).toEqual(['Threat Cleared', 'Player Attack', 'Enemy Action'])
+    expect(combat?.metrics.find((item) => item.label === 'Player Attack')?.value).toContain('Basic Attack')
 
     state.combat.enemyId = null
     state.combat.encounterTimerMs = 3200
     const recovery = getActivityTelemetry(state).find((item) => item.id === 'combat')
     expect(recovery?.bars?.map((bar) => bar.label)).toEqual(['Player HP'])
-    expect(recovery?.metrics.map((item) => item.label)).toEqual(['Threat Cleared', 'Lifetime Kills', 'Next Encounter'])
+    expect(recovery?.metrics.map((item) => item.label)).toEqual(['Threat Cleared', 'Next Encounter'])
   })
 })
 

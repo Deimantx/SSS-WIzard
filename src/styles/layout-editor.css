@@ -28,3 +28,18 @@
 @media (prefers-reduced-motion: reduce) { .react-grid-item { transition: none !important; } }
 [data-reduced-motion="true"] .react-grid-item { transition: none !important; }
 .layout-editor-fields input { background: var(--ui-panel-strong); }
+.layout-target-buttons, .shell-preset-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+.layout-target-buttons button, .shell-preset-buttons button { padding: 8px 6px; border: 1px solid var(--ui-border); border-radius: 5px; color: var(--ui-muted); background: transparent; cursor: pointer; font: 9px var(--font-mono); }
+.layout-target-buttons button:hover, .layout-target-buttons button.active, .shell-preset-buttons button:hover, .shell-preset-buttons button.active { border-color: var(--ui-accent); color: var(--ui-text); background: var(--ui-accent-soft); }
+.shell-preset-buttons { grid-template-columns: repeat(3, 1fr); }
+.shell-order-list { display: grid; gap: 5px; }
+.shell-order-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 8px; border: 1px solid var(--ui-border); border-radius: 5px; color: var(--ui-text-soft); font-size: 10px; }
+.shell-order-row > span { display: inline-flex; gap: 3px; }
+.shell-order-row button { width: 24px; height: 24px; border: 1px solid var(--ui-border); border-radius: 4px; color: var(--ui-muted); background: transparent; cursor: pointer; }
+.shell-order-row button:hover:not(:disabled) { border-color: var(--ui-accent); color: var(--ui-text); }
+.shell-order-row button:disabled { opacity: .3; cursor: not-allowed; }
+.shell-width-list { display: grid; gap: 7px; }
+.shell-width-list label { display: grid; grid-template-columns: minmax(0, 1fr) 76px; gap: 4px 8px; align-items: center; color: var(--ui-text-soft); font-size: 10px; }
+.shell-width-list input { width: 100%; min-width: 0; padding: 6px; border: 1px solid var(--ui-border); border-radius: 4px; color: var(--ui-text); background: var(--ui-panel-strong); font: 10px var(--font-mono); }
+.shell-width-list small { grid-column: 1 / -1; color: var(--ui-muted); font: 8px var(--font-mono); }
+.layout-editor-help { margin-top: 9px; color: var(--ui-muted); font-size: 9px; line-height: 1.45; }

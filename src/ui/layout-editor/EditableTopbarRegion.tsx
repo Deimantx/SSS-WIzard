@@ -8,43 +8,64 @@ import { dismissGameTooltips } from '../../components/ui/tooltip/Tooltip'
 export function EditableTopbarRegion({ regionId, label, editing, width, children }: { regionId: TopbarRegionId; label: string; editing: boolean; width?: number; children: ReactNode }) {
   const editor = useLayoutEditorStore()
   const pointerId = useRef<number | null>(null)
+  const captureTarget = useRef<HTMLElement | null>(null)
   const interactive = editing && editor.layoutTarget === 'shell'
   const isResource = TOPBAR_RESOURCE_IDS.includes(regionId)
 
-  useEffect(() => {
-    if (!interactive || !editor.shellInteraction) return
-    const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') { event.preventDefault(); cancelTopbarInteraction() } }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [interactive, editor.shellInteraction])
-
-  const startResize = (event: ReactPointerEvent<HTMLButtonElement>, edge: 'left' | 'right') => {
-    event.preventDefault(); event.stopPropagation(); dismissGameTooltips(); pointerId.current = event.pointerId; event.currentTarget.setPointerCapture?.(event.pointerId); beginTopbarResize(regionId, edge, event.clientX)
-  }
-  const moveResize = (event: ReactPointerEvent<HTMLDivElement>) => { if (pointerId.current !== event.pointerId || editor.shellInteraction !== 'resizing') return; previewTopbarResize(event.clientX) }
-  const finish = (event: ReactPointerEvent<HTMLDivElement>) => { if (pointerId.current !== event.pointerId) return; pointerId.current = null; if (event.currentTarget.hasPointerCapture?.(event.pointerId)) event.currentTarget.releasePointerCapture?.(event.pointerId); commitTopbarInteraction() }
-  const startDrag = (event: ReactPointerEvent<HTMLButtonElement>) => { event.preventDefault(); event.stopPropagation(); dismissGameTooltips(); pointerId.current = event.pointerId; event.currentTarget.setPointerCapture?.(event.pointerId); beginTopbarReorder(regionId, event.clientX) }
-  const moveDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (pointerId.current !== event.pointerId || editor.shellInteraction !== 'dragging') return
+  const previewOrderAt = (clientX: number) => {
+    if (pointerId.current === null || editor.shellInteraction !== 'dragging') return
     const resources = getTopbarLayout().order.filter((id) => TOPBAR_RESOURCE_IDS.includes(id))
     const withoutDragged = resources.filter((id) => id !== regionId)
     let insertAt = withoutDragged.length
     for (let index = 0; index < withoutDragged.length; index += 1) {
       const node = document.querySelector(`[data-shell-region="${withoutDragged[index]}"]`)
       const rect = node?.getBoundingClientRect()
-      if (rect && event.clientX < rect.left + rect.width / 2) { insertAt = index; break }
+      if (rect && clientX < rect.left + rect.width / 2) { insertAt = index; break }
     }
     withoutDragged.splice(insertAt, 0, regionId)
     previewTopbarOrder(['topbar-breadcrumb', ...withoutDragged, 'topbar-utilities'])
   }
 
-  return <div className={`topbar-shell-region topbar-region-${regionId.replace('topbar-', '')} ${interactive ? 'shell-region-editing' : ''} ${editor.selectedShellRegion === regionId ? 'selected' : ''}`} style={{ width: width === undefined ? undefined : `${width}px` } as CSSProperties} data-shell-region={regionId} onClick={() => interactive && selectShellRegion(regionId)} onPointerMove={(event) => { moveResize(event); moveDrag(event) }} onPointerUp={finish} onPointerCancel={() => { pointerId.current = null; cancelTopbarInteraction() }}>
+  const previewResizeAt = (clientX: number) => { if (pointerId.current !== null && editor.shellInteraction === 'resizing') previewTopbarResize(clientX) }
+  const finish = (cancelled: boolean, eventPointerId?: number) => {
+    if (pointerId.current === null || (eventPointerId !== undefined && pointerId.current !== eventPointerId)) return
+    const activePointer = pointerId.current
+    pointerId.current = null
+    const target = captureTarget.current
+    captureTarget.current = null
+    if (target?.hasPointerCapture?.(activePointer)) target.releasePointerCapture?.(activePointer)
+    cancelled ? cancelTopbarInteraction() : commitTopbarInteraction()
+  }
+
+  useEffect(() => {
+    if (!interactive || editor.shellInteraction === 'idle') return
+    const onPointerMove = (event: PointerEvent) => { if (event.pointerId === pointerId.current) { previewResizeAt(event.clientX); previewOrderAt(event.clientX) } }
+    const onPointerUp = (event: PointerEvent) => finish(false, event.pointerId)
+    const onPointerCancel = (event: PointerEvent) => finish(true, event.pointerId)
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') { event.preventDefault(); finish(true) } }
+    window.addEventListener('pointermove', onPointerMove)
+    window.addEventListener('pointerup', onPointerUp)
+    window.addEventListener('pointercancel', onPointerCancel)
+    window.addEventListener('keydown', onKeyDown)
+    return () => { window.removeEventListener('pointermove', onPointerMove); window.removeEventListener('pointerup', onPointerUp); window.removeEventListener('pointercancel', onPointerCancel); window.removeEventListener('keydown', onKeyDown) }
+  }, [interactive, editor.shellInteraction, regionId])
+
+  const begin = (event: ReactPointerEvent<HTMLButtonElement>, kind: 'dragging' | 'resizing', edge?: 'left' | 'right') => {
+    event.preventDefault(); event.stopPropagation(); dismissGameTooltips()
+    pointerId.current = event.pointerId
+    captureTarget.current = event.currentTarget
+    event.currentTarget.setPointerCapture?.(event.pointerId)
+    if (kind === 'resizing' && edge) beginTopbarResize(regionId, edge, event.clientX)
+    else beginTopbarReorder(regionId, event.clientX)
+  }
+
+  return <div className={`topbar-shell-region topbar-region-${regionId.replace('topbar-', '')} ${interactive ? 'shell-region-editing' : ''} ${editor.selectedShellRegion === regionId ? 'selected' : ''}`} style={{ width: width === undefined ? undefined : `${width}px` } as CSSProperties} data-shell-region={regionId} onClick={() => interactive && selectShellRegion(regionId)} onPointerMove={(event) => { previewResizeAt(event.clientX); previewOrderAt(event.clientX) }} onPointerUp={(event) => finish(false, event.pointerId)} onPointerCancel={(event) => finish(true, event.pointerId)}>
     {children}
-    {interactive && <div className="topbar-region-overlay" aria-label={`${label} shell controls`}>
+    {interactive && <div className="topbar-region-overlay" aria-label={`${label} header controls`}>
       <span className="topbar-region-label">{label}</span>
-      {isResource && <button type="button" className="topbar-region-grip" aria-label={`Drag ${label} to reorder`} onPointerDown={startDrag}>⋮⋮</button>}
-      {isResource && <button type="button" className="topbar-region-resize left" aria-label={`Resize ${label} from left edge`} onPointerDown={(event) => startResize(event, 'left')} />}
-      {isResource && <button type="button" className="topbar-region-resize right" aria-label={`Resize ${label} from right edge`} onPointerDown={(event) => startResize(event, 'right')} />}
+      {isResource && <button type="button" className="topbar-region-grip" aria-label={`Drag ${label} to reorder`} onPointerDown={(event) => begin(event, 'dragging')}>⋮⋮</button>}
+      {isResource && <button type="button" className="topbar-region-resize left" aria-label={`Resize ${label} from left edge`} onPointerDown={(event) => begin(event, 'resizing', 'left')} />}
+      {isResource && <button type="button" className="topbar-region-resize right" aria-label={`Resize ${label} from right edge`} onPointerDown={(event) => begin(event, 'resizing', 'right')} />}
     </div>}
   </div>
 }

@@ -18,13 +18,13 @@ const orderWithResources = (order: readonly TopbarRegionId[]) => {
 
 export const DEFAULT_TOPBAR_LAYOUT: TopbarLayout = {
   order: ['topbar-breadcrumb', 'topbar-health', 'topbar-mana', 'topbar-focus', 'topbar-utilities'],
-  widths: { 'topbar-breadcrumb': 180, 'topbar-health': 160, 'topbar-mana': 600, 'topbar-focus': 190, 'topbar-utilities': 0 },
+  widths: { 'topbar-breadcrumb': 180, 'topbar-health': 160, 'topbar-mana': 480, 'topbar-focus': 180, 'topbar-utilities': 0 },
 }
 
 export const TOPBAR_PRESETS: Record<'mana-focused' | 'balanced' | 'compact', TopbarLayout> = {
   'mana-focused': { order: [...DEFAULT_TOPBAR_LAYOUT.order], widths: { ...DEFAULT_TOPBAR_LAYOUT.widths } },
   balanced: { order: [...DEFAULT_TOPBAR_LAYOUT.order], widths: { ...DEFAULT_TOPBAR_LAYOUT.widths, 'topbar-health': 190, 'topbar-mana': 420, 'topbar-focus': 220 } },
-  compact: { order: [...DEFAULT_TOPBAR_LAYOUT.order], widths: { ...DEFAULT_TOPBAR_LAYOUT.widths, 'topbar-breadcrumb': 150, 'topbar-health': 140, 'topbar-mana': 340, 'topbar-focus': 160 } },
+  compact: { order: [...DEFAULT_TOPBAR_LAYOUT.order], widths: { ...DEFAULT_TOPBAR_LAYOUT.widths, 'topbar-health': 140, 'topbar-mana': 340, 'topbar-focus': 160 } },
 }
 
 export function clampTopbarLayout(value: Partial<TopbarLayout> | null | undefined): TopbarLayout {

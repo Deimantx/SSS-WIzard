@@ -30,16 +30,16 @@ export function subscribeLayoutEditor(listener: () => void) { listeners.add(list
 export function useLayoutEditorStore<T = Snapshot>(selector?: (state: Snapshot) => T): T { const value = useSyncExternalStore(subscribeLayoutEditor, getLayoutEditorState, getLayoutEditorState); return selector ? selector(value) : value as T }
 
 export function getSavedScreenLayouts(screen: ScreenId) { return getScreenLayouts(screen, documentState.screens[screen]) }
-export function openLayoutEditor(screen: ScreenId) {
+export function openLayoutEditor(screen: ScreenId, target: LayoutEditorState['layoutTarget'] = 'screen') {
   if (!isDesktopLayout()) { publish({ notice: 'UI Editor is available on desktop-sized layouts.' }); return false }
   const first = getPanelDefinitions(screen).find((panel) => !getSavedScreenLayouts(screen)[panel.id]?.hidden)?.id ?? getPanelDefinitions(screen)[0]?.id ?? null
-  publish({ isEditing: true, layoutTarget: 'screen', selectedPanelId: first, notice: null, showGrid: true })
+  publish({ isEditing: true, layoutTarget: target, selectedPanelId: target === 'shell' ? null : first, selectedShellRegion: target === 'shell' ? 'topbar-mana' : null, notice: null, showGrid: true })
   return true
 }
 export function closeLayoutEditor(notice: string | null = null) { cancelTopbarInteraction(); undoStack = []; redoStack = []; publish({ isEditing: false, layoutTarget: 'screen', selectedPanelId: null, selectedShellRegion: null, panelInteraction: false, notice }) }
 export function toggleLayoutEditor(screen: ScreenId) { return snapshot.isEditing ? (closeLayoutEditor(), false) : openLayoutEditor(screen) }
 export function selectLayoutPanel(panelId: string | null) { publish({ selectedPanelId: panelId }) }
-export function setLayoutTarget(layoutTarget: LayoutEditorState['layoutTarget']) { cancelTopbarInteraction(); publish({ layoutTarget, selectedPanelId: layoutTarget === 'shell' ? null : snapshot.selectedPanelId, selectedShellRegion: layoutTarget === 'shell' ? null : snapshot.selectedShellRegion }) }
+export function setLayoutTarget(layoutTarget: LayoutEditorState['layoutTarget']) { cancelTopbarInteraction(); publish({ layoutTarget, selectedPanelId: layoutTarget === 'shell' ? null : snapshot.selectedPanelId, selectedShellRegion: layoutTarget === 'shell' ? 'topbar-mana' : null }) }
 export function setShowEditorGrid(showGrid: boolean) { publish({ showGrid }) }
 export function setPanelInteraction(panelInteraction: boolean) { publish({ panelInteraction }) }
 export function clearLayoutNotice() { publish({ notice: null }) }

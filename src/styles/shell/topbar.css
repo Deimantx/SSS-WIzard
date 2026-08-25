@@ -1,10 +1,13 @@
 .topbar-v3 { position: relative; z-index: 7; min-height: 82px; height: 82px; flex: 0 0 auto; display: flex; align-items: center; gap: 14px; padding: 10px 28px; overflow: visible; border-bottom: 1px solid var(--ui-border); background: var(--ui-topbar); backdrop-filter: blur(18px); }
-.topbar-shell-grid { display: grid; grid-template-columns: repeat(5, max-content); align-items: stretch; gap: 10px; min-width: 0; width: 100%; height: 62px; }
-.topbar-shell-grid > .game-tooltip-trigger { display: block; width: max-content; min-width: 0; }
-.topbar-shell-grid > .game-tooltip-trigger:last-child { margin-left: auto; }
-.topbar-shell-grid > .topbar-region-utilities { margin-left: auto; }
-.topbar-shell-region { position: relative; height: 100%; min-width: 0; overflow: visible; }
-.topbar-shell-region > .crumb { width: 100%; height: 100%; }
+.topbar-context { flex: 0 1 280px; min-width: 0; height: 62px; }
+.topbar-context > .game-tooltip-trigger { display: block; width: 100%; height: 100%; }
+.topbar-context .crumb { width: 100%; height: 100%; min-width: 0; }
+.topbar-flex-spacer { flex: 1 1 auto; min-width: 18px; align-self: stretch; }
+.topbar-right-hud { display: flex; align-items: stretch; justify-content: flex-end; gap: 12px; min-width: 0; flex: 0 0 auto; height: 62px; }
+.topbar-resource-cluster { display: flex; align-items: stretch; gap: 8px; min-width: 0; height: 62px; }
+.topbar-resource-slot { position: relative; flex: 0 0 auto; min-width: 0; height: 62px; }
+.topbar-resource-slot > .game-tooltip-trigger { display: block; width: 100%; height: 100%; }
+.topbar-shell-region { position: relative; z-index: 1; width: 100%; height: 100%; min-width: 0; overflow: visible; }
 .topbar-resource, .mana-hero { position: relative; width: 100%; height: 100%; min-width: 0; border: 1px solid var(--ui-border); border-radius: 9px; background: color-mix(in srgb, var(--ui-panel) 88%, transparent); color: var(--ui-text-soft); overflow: visible; }
 .topbar-resource { display: flex; align-items: center; gap: 8px; padding: 8px 10px; }
 .topbar-resource > svg { flex: 0 0 auto; color: var(--resource-health); }
@@ -45,13 +48,17 @@
 .focus-resource > small { margin-top: 3px; letter-spacing: 0; }
 .focus-resource.tight-resource { border-color: color-mix(in srgb, var(--ui-warning) 48%, var(--ui-border)); }
 .focus-resource.tight-resource .focus-head strong { color: var(--ui-warning); }
-.topbar-v3 .topbar-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; flex: 0 0 auto; height: 100%; }
-.topbar-v3 .topbar-actions > .game-tooltip-trigger { display: inline-flex; }
-.topbar-v3 .topbar-tool-button { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 7px 9px; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text-soft); background: var(--ui-panel); cursor: pointer; font: var(--text-xs) var(--font-sans); white-space: nowrap; }
-.topbar-v3 .topbar-tool-button:hover, .topbar-v3 .topbar-tool-button.active { border-color: var(--ui-accent); color: var(--ui-text); background: var(--ui-accent-soft); }
-.topbar-v3 .offline-bank-trigger svg { color: var(--ui-secondary); }
+.topbar-utility-cluster { display: flex; align-items: center; gap: 6px; min-width: max-content; height: 100%; padding-left: 12px; border-left: 1px solid var(--ui-border); }
+.topbar-utility-cluster > .game-tooltip-trigger { display: inline-flex; min-width: 0; }
+.topbar-tool-button { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 7px 9px; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text-soft); background: var(--ui-panel); cursor: pointer; font: var(--text-xs) var(--font-sans); white-space: nowrap; }
+.topbar-tool-button:hover, .topbar-tool-button.active { border-color: var(--ui-accent); color: var(--ui-text); background: var(--ui-accent-soft); }
+.topbar-tool-button:disabled { opacity: .45; cursor: not-allowed; }
+.offline-bank-trigger svg { color: var(--ui-secondary); }
+.offline-bank-trigger.has-bank { border-color: color-mix(in srgb, var(--ui-secondary) 42%, var(--ui-border)); background: color-mix(in srgb, var(--ui-secondary) 7%, var(--ui-panel)); }
+.offline-bank-trigger strong { color: var(--ui-text); font: var(--text-xs) var(--font-mono); }
+.topbar-settings-button { flex: 0 0 auto; }
 body.shell-layout-interacting, body.shell-layout-interacting * { user-select: none !important; }
-.topbar-region-overlay { position: absolute; z-index: 4; inset: 2px; display: flex; align-items: flex-start; justify-content: space-between; padding: 3px 4px; border: 1px dashed var(--ui-accent); border-radius: 6px; color: var(--ui-accent); background: color-mix(in srgb, var(--ui-accent-soft) 18%, transparent); pointer-events: none; font: var(--text-micro) var(--font-mono); letter-spacing: .04em; user-select: none; }
+.topbar-region-overlay { position: absolute; z-index: 30; inset: 2px; display: flex; align-items: flex-start; justify-content: space-between; padding: 3px 4px; border: 1px dashed var(--ui-accent); border-radius: 6px; color: var(--ui-accent); background: color-mix(in srgb, var(--ui-accent-soft) 18%, transparent); pointer-events: none; font: var(--text-micro) var(--font-mono); letter-spacing: .04em; user-select: none; }
 .topbar-region-label { pointer-events: none; }
 .topbar-region-grip { z-index: 2; display: inline-flex; align-items: center; justify-content: center; min-width: 28px; min-height: 24px; padding: 0 4px; border: 1px solid color-mix(in srgb, var(--ui-accent) 48%, transparent); border-radius: 4px; color: var(--ui-accent); background: color-mix(in srgb, var(--ui-panel-strong) 86%, transparent); cursor: grab; font: inherit; line-height: 1; pointer-events: auto; }
 .topbar-region-grip:active { cursor: grabbing; }
@@ -63,28 +70,38 @@ body.shell-layout-interacting, body.shell-layout-interacting * { user-select: no
 .shell-region-editing.selected .topbar-region-overlay { border-style: solid; box-shadow: 0 0 0 2px color-mix(in srgb, var(--ui-accent) 20%, transparent); }
 @media (max-width: 1380px) {
   .topbar-v3 { padding-inline: 18px; gap: 10px; }
-  .topbar-v3 .topbar-tool-button span { display: none; }
-  .topbar-shell-grid { grid-template-columns: repeat(5, minmax(0, auto)); gap: 7px; }
+  .topbar-tool-button span:not(.offline-bank-label) { display: none; }
+  .offline-bank-label { display: none; }
+  .topbar-utility-cluster { gap: 5px; padding-left: 10px; }
 }
 @media (max-width: 1200px) and (min-width: 981px) {
-  .topbar-shell-grid { grid-template-columns: minmax(100px, .8fr) minmax(125px, 1fr) minmax(280px, 2fr) minmax(150px, 1.1fr) auto; }
-  .topbar-shell-grid .topbar-shell-region { width: 100% !important; }
+  .topbar-context { flex-basis: 190px; }
+  .topbar-resource-cluster { gap: 6px; }
+  .topbar-resource-slot-health { width: 145px !important; }
+  .topbar-resource-slot-mana { width: min(480px, 31vw) !important; }
+  .topbar-resource-slot-focus { width: 160px !important; }
+  .topbar-resource-slot > .game-tooltip-trigger, .topbar-resource-slot .topbar-shell-region { width: 100% !important; }
+  .topbar-tool-button { padding-inline: 7px; }
 }
 @media (max-width: 980px) {
   .topbar-v3 { height: auto; min-height: 82px; flex-wrap: wrap; }
-  .topbar-shell-grid { order: 4; width: 100%; height: 58px; grid-template-columns: minmax(100px, 140px) minmax(0, 1fr) minmax(0, 1.5fr) minmax(120px, 180px) auto; }
-  .topbar-shell-grid > .game-tooltip-trigger { width: auto !important; }
-  .topbar-shell-grid .topbar-shell-region { width: 100% !important; }
-  .topbar-v3 .topbar-actions { margin-left: 0; }
+  .topbar-context { order: 1; flex: 1 1 auto; max-width: none; height: 44px; }
+  .topbar-flex-spacer { display: none; }
+  .topbar-right-hud { order: 3; width: 100%; height: 58px; justify-content: flex-end; }
+  .topbar-resource-cluster { flex: 1 1 auto; height: 58px; }
+  .topbar-resource-slot { flex: 1 1 0; width: auto !important; height: 58px; }
+  .topbar-resource-slot > .game-tooltip-trigger, .topbar-resource-slot .topbar-shell-region { width: 100% !important; }
+  .topbar-utility-cluster { height: 58px; }
 }
 @media (max-width: 620px) {
   .topbar-v3 { padding: 9px 12px; }
-  .topbar-shell-grid { gap: 6px; grid-template-columns: minmax(82px, 1fr) minmax(0, 1.1fr) minmax(0, 1.8fr) minmax(112px, 1.1fr) auto; }
+  .topbar-right-hud { gap: 6px; }
+  .topbar-resource-cluster { gap: 5px; }
   .topbar-resource { padding-inline: 7px; }
   .topbar-resource strong, .mana-hero-head strong { font-size: var(--text-micro); }
   .mana-flow-popover { left: auto; right: -30px; }
-  .topbar-v3 .topbar-tool-button { padding-inline: 7px; }
-  .topbar-v3 .topbar-editor-button { display: none; }
+  .topbar-tool-button { padding-inline: 7px; }
+  .topbar-editor-button { display: none; }
   .topbar-region-overlay { font-size: 8px; }
 }
 @media (prefers-reduced-motion: reduce) { .shell-meter i { transition: none; } }

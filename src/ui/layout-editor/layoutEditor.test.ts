@@ -11,7 +11,7 @@ describe('layout editor persistence and session state', () => {
     updateSelectedPanel('home', { x: 5, w: 6 })
     closeLayoutEditor()
     expect(getLayoutEditorState().isEditing).toBe(false)
-    expect(JSON.parse(localStorage.getItem(UI_LAYOUTS_KEY) ?? '{}')).toMatchObject({ version: 3, screens: { home: { 'home-wizard': { x: 5, w: 6 } } }, shell: { topbar: { widths: { 'topbar-mana': 600 } } } })
+    expect(JSON.parse(localStorage.getItem(UI_LAYOUTS_KEY) ?? '{}')).toMatchObject({ version: 3, screens: { home: { 'home-wizard': { x: 5, w: 6 } } }, shell: { topbar: { widths: { 'topbar-mana': 480 } } } })
     expect(Object.prototype.hasOwnProperty.call(getLayoutEditorState(), 'document')).toBe(true)
   })
 
@@ -33,12 +33,12 @@ describe('layout editor persistence and session state', () => {
   it('directly resizes the live shell with one undoable commit', () => {
     openLayoutEditor('home'); setLayoutTarget('shell')
     beginTopbarResize('topbar-mana', 'right', 100); previewTopbarResize(200)
-    expect(getTopbarLayout().widths['topbar-mana']).toBe(700)
-    expect(JSON.parse(localStorage.getItem(UI_LAYOUTS_KEY) ?? '{}').shell.topbar.widths['topbar-mana']).toBe(600)
+    expect(getTopbarLayout().widths['topbar-mana']).toBe(580)
+    expect(JSON.parse(localStorage.getItem(UI_LAYOUTS_KEY) ?? '{}').shell.topbar.widths['topbar-mana']).toBe(480)
     commitTopbarInteraction()
-    expect(getTopbarLayout().widths['topbar-mana']).toBe(700)
+    expect(getTopbarLayout().widths['topbar-mana']).toBe(580)
     undoLayout()
-    expect(getTopbarLayout().widths['topbar-mana']).toBe(600)
+    expect(getTopbarLayout().widths['topbar-mana']).toBe(480)
   })
 
   it('directly reorders resources and can cancel an interaction', () => {
@@ -49,5 +49,12 @@ describe('layout editor persistence and session state', () => {
     expect(getTopbarLayout().order).toEqual(['topbar-breadcrumb', 'topbar-health', 'topbar-mana', 'topbar-focus', 'topbar-utilities'])
     beginTopbarResize('topbar-health', 'right', 100); previewTopbarResize(1000); cancelTopbarInteraction()
     expect(getTopbarLayout().widths['topbar-health']).toBe(160)
+  })
+
+  it('opens the topbar action directly in Header mode with Mana selected', () => {
+    openLayoutEditor('home', 'shell')
+    expect(getLayoutEditorState().layoutTarget).toBe('shell')
+    expect(getLayoutEditorState().selectedShellRegion).toBe('topbar-mana')
+    expect(getTopbarLayout().widths['topbar-mana']).toBe(480)
   })
 })

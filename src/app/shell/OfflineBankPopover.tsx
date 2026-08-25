@@ -1,10 +1,11 @@
+import { Activity, Clock3, FlaskConical, Hammer, Swords, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { Clock3, X } from 'lucide-react'
+import { GameTooltip } from '../../components/ui/tooltip/Tooltip'
 import { getActivityTelemetry } from '../../game/systems/activity/activityTelemetry'
 import { formatOfflineBank } from '../../game/utils'
 import { useGameStore } from '../../store/gameStore'
 
-const presets = [{ label: '1m', ms: 60_000 }, { label: '5m', ms: 300_000 }, { label: '15m', ms: 900_000 }, { label: '1h', ms: 3_600_000 }]
+const presets = [{ label: '1 MIN', short: '1m', ms: 60_000 }, { label: '5 MIN', short: '5m', ms: 300_000 }, { label: '15 MIN', short: '15m', ms: 900_000 }, { label: '1 HOUR', short: '1h', ms: 3_600_000 }]
 
 export function OfflineBankPopover({ open, onClose }: { open: boolean; onClose: () => void }) {
   const panelRef = useRef<HTMLDivElement>(null)
@@ -22,24 +23,31 @@ export function OfflineBankPopover({ open, onClose }: { open: boolean; onClose: 
     const updatePosition = () => {
       const anchor = document.querySelector('.offline-bank-trigger')?.getBoundingClientRect()
       if (!anchor) return
-      setPosition({ top: anchor.bottom + 8, right: Math.max(12, window.innerWidth - anchor.right) })
+      const panel = panelRef.current?.getBoundingClientRect()
+      const width = panel?.width ?? 380
+      const height = panel?.height ?? 540
+      const right = Math.max(12, Math.min(window.innerWidth - width - 12, window.innerWidth - anchor.right))
+      const below = anchor.bottom + 9
+      const top = below + height <= window.innerHeight - 12 ? below : Math.max(12, anchor.top - height - 9)
+      setPosition({ top, right })
     }
     updatePosition()
+    const frame = window.requestAnimationFrame(updatePosition)
     const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') { event.preventDefault(); onClose() } }
     const onPointerDown = (event: MouseEvent) => { const target = event.target as HTMLElement; if (!panelRef.current?.contains(target) && !target.closest('.offline-bank-trigger')) onClose() }
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('mousedown', onPointerDown)
     window.addEventListener('resize', updatePosition)
     window.addEventListener('scroll', updatePosition, true)
-    return () => { window.removeEventListener('keydown', onKeyDown); window.removeEventListener('mousedown', onPointerDown); window.removeEventListener('resize', updatePosition); window.removeEventListener('scroll', updatePosition, true) }
-  }, [open, onClose])
+    return () => { window.cancelAnimationFrame(frame); window.removeEventListener('keydown', onKeyDown); window.removeEventListener('mousedown', onPointerDown); window.removeEventListener('resize', updatePosition); window.removeEventListener('scroll', updatePosition, true) }
+  }, [open, onClose, activities.length])
 
   if (!open) return null
 
-  const spend = async (durationMs: number) => {
+  const spend = async (durationMs: number, label: string) => {
     setError(null)
     setAdvancing(true)
-    setAdvancingLabel(`${durationMs / 60_000 >= 60 ? '1h' : `${durationMs / 60_000}m`}`)
+    setAdvancingLabel(label)
     const result = await advance(durationMs)
     setAdvancing(false)
     setAdvancingLabel('')
@@ -47,12 +55,18 @@ export function OfflineBankPopover({ open, onClose }: { open: boolean; onClose: 
   }
 
   return <div className="offline-bank-popover" style={position} ref={panelRef} role="dialog" aria-label="Offline Bank">
-    <div className="offline-bank-header"><div><span className="offline-bank-eyebrow"><Clock3 size={13} /> OFFLINE BANK</span><strong>{formatOfflineBank(bankMs)} banked</strong></div><button className="offline-bank-close" onClick={onClose} aria-label="Close Offline Bank"><X size={15} /></button></div>
-    <p className="offline-bank-copy">Spend banked time to advance your currently active systems. No time is spent automatically.</p>
-    <div className="offline-bank-section"><small>ACTIVE SYSTEMS</small>{activities.length ? <div className="offline-active-list">{activities.map((activity) => <span key={activity.id}><i className={activity.accent} />{activity.label} · {activity.subtitle ?? activity.status}</span>)}</div> : <span className="offline-empty">No timed systems are active.</span>}</div>
-    <div className="offline-bank-section"><small>ADVANCE TIME</small><div className="offline-presets">{presets.map((preset) => <button key={preset.ms} className="offline-preset" disabled={advancing || bankMs < preset.ms} onClick={() => spend(preset.ms)}>{advancing ? '…' : preset.label}</button>)}</div></div>
-    {advancing && <div className="offline-advancing" role="status">Advancing {advancingLabel}…</div>}
+    <div className="offline-bank-header"><div><span className="offline-bank-eyebrow"><Clock3 size={14} /> OFFLINE BANK</span><p>Stored time can advance live systems</p></div><button className="offline-bank-close icon-button" onClick={onClose} aria-label="Close Offline Bank"><X size={15} /></button></div>
+    <div className="offline-bank-hero"><span className="offline-bank-section-label">BANKED TIME</span><strong>{formatOfflineBank(bankMs)}</strong><small>Available for simulation</small><div className="offline-bank-meter" aria-hidden="true"><i /></div></div>
+    <section className="offline-bank-section"><div className="offline-bank-section-head"><span className="offline-bank-section-label">ACTIVE SYSTEMS</span><small>{activities.length ? `${activities.length} running` : 'Standby'}</small></div>{activities.length ? <div className="offline-active-list">{activities.map((activity) => <div className={`offline-active-row accent-${activity.accent}`} key={activity.id}><span className="offline-activity-icon"><ActivityIcon activity={activity.label} /></span><span className="offline-active-copy"><strong>{activity.label}</strong><small>{activity.subtitle ?? activity.status}</small></span><em>{activity.status === 'running' ? 'ACTIVE' : activity.status.replace('-', ' ').toUpperCase()}</em></div>)}</div> : <div className="offline-empty-state"><strong>No active timed systems.</strong><span>Start an activity before spending Offline Bank time.</span></div>}</section>
+    <section className="offline-bank-section"><div className="offline-bank-section-head"><span className="offline-bank-section-label">ADVANCE TIME</span><small>Spend deliberately</small></div><div className="offline-presets">{presets.map((preset) => { const disabled = advancing || bankMs < preset.ms; const button = <button key={preset.ms} className="offline-preset" disabled={disabled} onClick={() => spend(preset.ms, preset.label)}><strong>+{preset.label}</strong><small>Advance active systems</small></button>; return disabled && !advancing ? <GameTooltip key={preset.ms} block content="Not enough Offline Bank time." accent="warning">{button}</GameTooltip> : button })}</div>{advancing && <div className="offline-advancing" role="status"><span>ADVANCING {advancingLabel}...</span><i /></div>}</section>
     {error && <div className="offline-bank-error" role="alert">{error}</div>}
-    <small className="offline-bank-footnote">Time is consumed from the Offline Bank and uses the normal simulation.</small>
+    <div className="offline-bank-footnote"><span>Offline Bank is never spent automatically.</span><span>Simulation uses normal game rules.</span></div>
   </div>
+}
+
+function ActivityIcon({ activity }: { activity: string }) {
+  if (activity === 'COMBAT') return <Swords size={15} />
+  if (activity === 'CONDENSATION') return <FlaskConical size={15} />
+  if (activity === 'TRANSMUTATION') return <Hammer size={15} />
+  return <Activity size={15} />
 }

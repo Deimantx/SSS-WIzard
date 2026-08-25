@@ -67,7 +67,7 @@ export function GameShell() {
     setUiPreferences({ navigationGroups: { ...preferences.navigationGroups, [groupId]: !preferences.navigationGroups[groupId] } })
   }
   const openDevTools = () => { dismissGameTooltips(); setOfflineBankOpen(false); openDeveloperTools() }
-  const toggleEditor = () => { dismissGameTooltips(); if (editor.isEditing) closeLayoutEditor(); else openLayoutEditor(screen) }
+  const toggleEditor = () => { dismissGameTooltips(); if (editor.isEditing) closeLayoutEditor(); else openLayoutEditor(screen, 'shell') }
   const switchProfile = () => { const result = leaveToProfiles(); if (!result.ok) setProfileSwitchError(result.error) }
 
   return <TooltipProvider><div className="game-shell">

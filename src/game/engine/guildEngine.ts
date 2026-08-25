@@ -1,1 +1,1 @@
-export { GUILD_REQUESTS } from '../data/guildRequests'
+export { GUILD_REQUESTS } from '../content/guild/guildRequests'

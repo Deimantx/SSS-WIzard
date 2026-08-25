@@ -1,5 +1,5 @@
-import { ITEMS } from '../../data/items'
-import { MONSTERS } from '../../data/monsters'
+import { ITEMS } from '../../content/items/items'
+import { MONSTERS } from '../../content/monsters/whisperingWoods'
 import type { GameState, MonsterId } from '../../types'
 
 /** Resolves the current monster table into inventory changes and a readable log fragment. */

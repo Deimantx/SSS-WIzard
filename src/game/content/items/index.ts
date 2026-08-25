@@ -1,1 +1,1 @@
-export * from '../../data/items'
+export * from './items'

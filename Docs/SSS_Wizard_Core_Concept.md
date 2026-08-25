@@ -1778,3 +1778,9 @@ The Channeling Chamber uses passive Mana generation rather than a manual Channel
 The Phase 2.4 implementation established the passive Mana and Echo foundation that the Phase 2.5 Pillars now extend.
 
 Arcane Discoveries are permanent condition-based principles: Stable Leyline, Echo Resonance, and Deep Reservoir. Future discoveries remain hidden placeholders until implemented.
+
+### Phase 2.6 Offline Bank and Mana Flow
+
+Inactive time is accumulated in the Offline Bank. The player manually spends it with the `1m`, `5m`, `15m`, or `1h` controls; each action advances the currently active systems through the normal shared simulation, consumes the selected banked time, and never starts an automatic spend. A single action is capped at one hour.
+
+Mana Flow is derived presentation data, not a new permanent stat. It reports authoritative Mana production minus average active Mana demand from Condensation, Research, and estimated Auto-Cast spell cooldown demand, with time-to-full or time-to-empty when meaningful.

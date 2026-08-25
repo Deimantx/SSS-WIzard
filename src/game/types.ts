@@ -206,3 +206,38 @@ export interface FocusReservation {
   amount: number
   label: string
 }
+
+export type ManaFlowState = 'surplus' | 'balanced' | 'deficit'
+export interface ManaDemandSource {
+  id: string
+  label: string
+  manaPerSecond: number
+  estimated?: boolean
+}
+export interface ManaFlowBreakdown {
+  production: number
+  demand: number
+  net: number
+  state: ManaFlowState
+  demandSources: ManaDemandSource[]
+  etaMs: number | null
+  etaKind: 'full' | 'empty' | 'starved' | null
+}
+
+export type ActivityTelemetryStatus = 'running' | 'waiting-mana' | 'paused' | 'combat' | 'recovery'
+export interface ActivityMetric {
+  label: string
+  value: string
+  tone?: 'neutral' | 'positive' | 'negative' | 'warning'
+}
+export interface ActivityTelemetry {
+  id: 'combat' | 'condensation' | 'research' | 'transmutation'
+  label: string
+  subtitle?: string
+  screen: ScreenId
+  status: ActivityTelemetryStatus
+  progressPercent?: number
+  remainingMs?: number
+  metrics: ActivityMetric[]
+  accent: 'red' | 'orange' | 'violet' | 'gold'
+}

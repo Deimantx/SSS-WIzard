@@ -1,1 +1,1 @@
-export * from '../../data/schools'
+export * from './schools'

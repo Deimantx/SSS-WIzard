@@ -1,1 +1,1 @@
-export { DUNGEONS, chooseMonster } from '../data/dungeons'
+export { DUNGEONS, chooseMonster } from '../content/dungeons/dungeons'

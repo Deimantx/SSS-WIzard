@@ -1,1 +1,1 @@
-export * from '../../data/dungeons'
+export * from './dungeons'

@@ -4,7 +4,9 @@
 @import './typography.css';
 @import './scrollbars.css';
 @import './navigation.css';
-@import './topbar.css';
+@import './shell/topbar.css';
+@import './shell/activity-monitor.css';
+@import './shell/offline-bank.css';
 @import './developer-tools.css';
 @import './tools/developer-tools-v2.css';
 @import './settings-preview.css';

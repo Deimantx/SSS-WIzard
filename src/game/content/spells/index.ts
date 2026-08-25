@@ -1,1 +1,1 @@
-export * from '../../data/spells'
+export * from './spells'

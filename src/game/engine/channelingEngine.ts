@@ -1,7 +1,7 @@
-import { BALANCE } from '../data/balance'
-import { CHANNELING_DISCOVERIES } from '../data/channelingDiscoveries'
-import { ITEMS } from '../data/items'
-import { MANA_PILLARS } from '../data/manaPillars'
+import { BALANCE } from '../core/balance/balance'
+import { CHANNELING_DISCOVERIES } from '../content/channeling/channelingDiscoveries'
+import { ITEMS } from '../content/items/items'
+import { MANA_PILLARS } from '../content/channeling/manaPillars'
 import type { ChannelingDiscoveryId, EquipmentStats, GameState, ManaPillarId } from '../types'
 import { clamp } from '../utils'
 

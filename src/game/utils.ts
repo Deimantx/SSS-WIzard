@@ -20,4 +20,18 @@ export const formatOfflineBank = (ms: number) => {
   if (hours < 24) return hours ? `${hours}h ${String(totalMinutes % 60).padStart(2, '0')}m` : `${totalMinutes}m`
   return `${Math.floor(hours / 24)}d ${hours % 24}h`
 }
+export const formatCompactDuration = (ms: number) => {
+  const seconds = Math.max(0, ms) / 1000
+  if (seconds < 60) return `${seconds.toFixed(seconds < 10 ? 1 : 0)}s`
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes}m ${String(Math.floor(seconds % 60)).padStart(2, '0')}s`
+  const hours = Math.floor(minutes / 60)
+  return `${hours}h ${String(minutes % 60).padStart(2, '0')}m`
+}
+export const formatRatePerHour = (value: number) => {
+  const safe = Math.max(0, value)
+  if (safe >= 1000) return `${(safe / 1000).toFixed(safe >= 10_000 ? 0 : 1)}k/h`
+  return `${Math.round(safe).toLocaleString()}/h`
+}
+export const formatSignedRate = (value: number) => `${value > 0 ? '+' : ''}${value.toFixed(Math.abs(value) >= 10 ? 1 : 2).replace(/\.0+$/, '').replace(/(\.\d*[1-9])0+$/, '$1')}/s`
 export const uid = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`

@@ -1,2 +1,3 @@
-export * from '../../data/manaPillars'
-export * from '../../data/channelingDiscoveries'
+export * from './channeling'
+export * from './manaPillars'
+export * from './channelingDiscoveries'

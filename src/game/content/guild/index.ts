@@ -1,1 +1,1 @@
-export * from '../../data/guildRequests'
+export * from './guildRequests'

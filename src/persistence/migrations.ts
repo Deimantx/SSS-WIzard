@@ -42,7 +42,7 @@ const migrateV1 = (raw: Record<string, any>): GameState => {
     inventory: { ...fresh.inventory, ...(isRecord(raw.inventory) ? raw.inventory : {}) },
     protectedItems: { ...fresh.protectedItems, ...(oldWeapon ? { [oldWeapon]: true } : {}) },
     equipment: { ...fresh.equipment, weapon: oldWeapon ?? fresh.equipment.weapon, focus: oldFocus ?? null },
-    activities: { ...fresh.activities, ...(isRecord(oldActivities) ? oldActivities : {}), research, autoCast: { ...fresh.activities.autoCast, ...(isRecord(oldActivities.autoCast) ? oldActivities.autoCast : {}) } },
+    activities: { ...fresh.activities, channeling: { echoesAssigned: oldActivities.autoChannel === true ? 1 : 0 }, research, autoCast: { ...fresh.activities.autoCast, ...(isRecord(oldActivities.autoCast) ? oldActivities.autoCast : {}) } },
     progress: { ...fresh.progress, ...(isRecord(oldProgress) ? oldProgress : {}) },
     combat: { ...fresh.combat, ...(isRecord(raw.combat) ? raw.combat : {}) },
     // Legacy editor fields are intentionally discarded from gameplay state.
@@ -52,10 +52,29 @@ const migrateV1 = (raw: Record<string, any>): GameState => {
   return migrated
 }
 
+const migrateV2 = (raw: Record<string, any>): GameState => {
+  const fresh = createInitialState()
+  const migrated = merge(fresh, raw)
+  const oldActivities = isRecord(raw.activities) ? raw.activities : {}
+  migrated.saveVersion = SAVE_VERSION
+  migrated.activities = {
+    ...fresh.activities,
+    condense: isRecord(oldActivities.condense) ? { ...fresh.activities.condense, ...oldActivities.condense } : fresh.activities.condense,
+    research: isRecord(oldActivities.research) ? { ...fresh.activities.research, ...oldActivities.research } as ResearchActivity : fresh.activities.research,
+    transmutation: isRecord(oldActivities.transmutation) ? { ...fresh.activities.transmutation, ...oldActivities.transmutation } : fresh.activities.transmutation,
+    channeling: { echoesAssigned: oldActivities.autoChannel === true ? 1 : 0 },
+    autoCast: { ...fresh.activities.autoCast, ...(isRecord(oldActivities.autoCast) ? oldActivities.autoCast : {}) },
+  }
+  migrated.progress.channeling = { ...fresh.progress.channeling }
+  migrated.ui.screen = normalizeScreen(isRecord(raw.ui) ? raw.ui.screen : undefined, migrated.ui.screen)
+  return migrated
+}
+
 export const migrateSave = (rawSave: unknown): GameState => {
   if (!isRecord(rawSave)) throw new SaveMigrationError('Save data is not a valid object.')
   const version = rawSave.saveVersion
   if (version === 1) return migrateV1(rawSave)
+  if (version === 2) return migrateV2(rawSave)
   if (version === SAVE_VERSION) { const migrated = merge(createInitialState(), rawSave); migrated.ui.screen = normalizeScreen(isRecord(rawSave.ui) ? rawSave.ui.screen : undefined, migrated.ui.screen); return migrated }
   throw new SaveMigrationError(`Unsupported save version: ${String(version ?? 'missing')}.`)
 }

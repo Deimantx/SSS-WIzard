@@ -72,10 +72,13 @@ export const deleteProfile = (slotId: ProfileSlotId): ProfileOperationResult => 
   if (getActiveProfileId() === slotId) return failure('Leave the active profile before deleting it.')
   const registry = loadProfileRegistry()
   if (!registry.slots[slotId]) return failure('That profile slot is already empty.')
+  const nextRegistry = { ...registry, slots: { ...registry.slots, [slotId]: null } }
+  if (!saveProfileRegistry(nextRegistry)) return failure('The profile registry could not be updated.')
   const cleared = clearProfileGame(slotId)
-  if (!cleared.ok) return failure(cleared.error ?? 'The profile save could not be removed.')
-  registry.slots[slotId] = null
-  if (!saveProfileRegistry(registry)) return failure('The profile registry could not be updated.')
+  if (!cleared.ok) {
+    saveProfileRegistry(registry)
+    return failure(cleared.error ?? 'The profile save could not be removed.')
+  }
   refreshProfiles()
   return success()
 }

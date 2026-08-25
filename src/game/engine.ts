@@ -2,6 +2,7 @@ import { BALANCE, SCHOOL_LEVEL_XP } from './data/balance'
 import { ITEMS, getResearchXp } from './data/items'
 import { SCHOOLS } from './data/schools'
 import { SPELLS } from './data/spells'
+import { getManaCapacityBreakdown, manaRegenPerSecond as getChannelingManaRegen } from './engine/channelingEngine'
 import type { EquipmentStats, FocusReservation, GameState, ItemId, SchoolId, SpellId } from './types'
 import { clamp, uid } from './utils'
 
@@ -28,7 +29,7 @@ export const recalculateDerivedStats = (state: GameState) => {
   const stats = equipmentStats(state)
   const permanentFocus = Object.values(state.progress.permanentFocusBonuses).reduce((sum, value) => sum + value, 0)
   state.player.maxHealth = state.player.baseMaxHealth + (stats.maxHealth ?? 0)
-  state.player.maxMana = state.player.baseMaxMana + (stats.maxMana ?? 0)
+  state.player.maxMana = getManaCapacityBreakdown(state).total
   state.player.maxFocus = state.player.baseMaxFocus + permanentFocus + (stats.maxFocus ?? 0)
   state.player.health = clamp(state.player.health, 0, state.player.maxHealth)
   state.player.mana = clamp(state.player.mana, 0, state.player.maxMana)
@@ -36,7 +37,8 @@ export const recalculateDerivedStats = (state: GameState) => {
 
 export const deriveFocusReservations = (state: Pick<GameState, 'activities' | 'progress'>): FocusReservation[] => {
   const reservations: FocusReservation[] = []
-  if (state.activities.autoChannel) reservations.push({ id: 'channeling', sourceType: 'channeling', sourceId: 'mana', amount: BALANCE.mana.autoChannelFocus, label: 'Auto Channeling' })
+  const echoes = state.activities.channeling.echoesAssigned
+  if (echoes > 0) reservations.push({ id: 'channeling-echoes', sourceType: 'channeling', sourceId: 'echoes', amount: echoes * BALANCE.channeling.echoFocusCost, label: 'Arcane Echo Channeling' })
   if (state.activities.condense.running) reservations.push({ id: 'condense', sourceType: 'condense', sourceId: state.activities.condense.element, amount: BALANCE.condense.focusCost, label: `Condensing ${SCHOOLS[state.activities.condense.element].name}` })
   const research = state.activities.research
   if (research.running) reservations.push({ id: 'research', sourceType: 'research', sourceId: research.itemId ?? 'fragment', amount: research.focusCost, label: 'Arcane Research' })
@@ -54,7 +56,7 @@ export const selectFreeFocus = (state: Pick<GameState, 'activities' | 'progress'
 export const usedFocus = selectUsedFocus
 export const freeFocus = selectFreeFocus
 export const canReserveFocus = (state: Pick<GameState, 'activities' | 'progress' | 'player'>, amount: number) => selectFreeFocus(state) >= amount
-export const manaRegenPerSecond = (state: Pick<GameState, 'activities'>) => BALANCE.mana.passiveRegenPerSecond + (state.activities.autoChannel ? BALANCE.mana.autoChannelManaPerSecond : 0)
+export const manaRegenPerSecond = getChannelingManaRegen
 export const schoolProgress = (state: GameState, school: SchoolId) => {
   const current = state.schools[school]
   if (current.level >= state.progress.magicLevelCap) return 1
@@ -90,6 +92,6 @@ export const completeResearchCycle = (state: GameState, itemId: ItemId, targetSc
   return { completed: true, reason: 'complete' as const, xp, levels, spellId: spell?.id }
 }
 
-export const pushNotification = (state: GameState, text: string, tone: 'info' | 'success' | 'warning' = 'info') => { state.notifications = [...state.notifications, { id: uid(), text, tone }].slice(-5) }
+export const pushNotification = (state: GameState, text: string, tone: 'info' | 'success' | 'warning' = 'info') => { if (state.notifications.some((notification) => notification.text === text && notification.tone === tone)) return; state.notifications = [...state.notifications, { id: uid(), text, tone }].slice(-5) }
 export const appendLog = (state: GameState, message: string) => { state.combat.log = [message, ...state.combat.log].slice(0, 50) }
 export const focusReservations = deriveFocusReservations

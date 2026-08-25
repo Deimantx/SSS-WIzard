@@ -24,6 +24,7 @@ export function loadUiLayouts(): UiLayoutDocument {
     for (const screen of Object.keys(DEFAULT_LAYOUTS) as ScreenId[]) {
       const source = parsed.screens?.[screen]
       if (!source || typeof source !== 'object') continue
+      if (screen === 'tower-channeling' && ('channeling-main' in source || 'channeling-stats' in source)) continue
       const panels: Record<string, SavedPanelLayout> = {}
       for (const [id, value] of Object.entries(source)) { const normalized = normalizePanel(screen, id, value); if (normalized) panels[id] = normalized }
       if (Object.keys(panels).length) screens[screen] = panels

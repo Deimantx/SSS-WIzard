@@ -20,7 +20,22 @@ export function HomeScreenV2() {
   const hasEquipment = Object.values(equipment).some((id) => id && (['ember-staff', 'tide-focus', 'stoneweave-robe', 'windthread-charm'] as ItemId[]).includes(id))
   const permanentFocus = Object.values(progress.permanentFocusBonuses).reduce((sum, value) => sum + value, 0)
   const objectives = [
-    { label: 'Channel Mana', done: player.mana > BALANCE.mana.startingMana }, { label: 'Condense a Fragment', done: Object.entries(inventory).some(([id, quantity]) => id.endsWith('fragment') && Boolean(quantity)) }, { label: 'Research a Fragment', done: Object.values(schools).some((school) => school.xp > 0) }, { label: 'Reach School Level 2', done: Object.values(schools).some((school) => school.level >= 2) }, { label: 'Unlock a Spell', done: progress.unlockedSpells.length > 0 }, { label: 'Enter Whispering Woods', done: combat.active || progress.lifetimeKills > 0 }, { label: 'Defeat a monster', done: progress.lifetimeKills > 0 }, { label: 'Enable Auto-Cast', done: hasAuto }, { label: 'Run Research during Combat', done: combat.active && activities.research.running }, { label: `Reach ${BALANCE.dungeon.whisperingWoodsThreatRequired} Threat`, done: combat.threatCleared >= BALANCE.dungeon.whisperingWoodsThreatRequired || progress.firstBossKill }, { label: 'Defeat Grove Sentinel', done: progress.firstBossKill }, { label: 'Craft and equip an elemental item', done: hasEquipment }, { label: 'Complete a Guild Request', done: Object.values(progress.requestClaims).some(Boolean) }, { label: 'Reach School Level 4', done: Object.values(schools).some((school) => school.level >= 4) }, { label: 'Unlock a second spell', done: progress.unlockedSpells.some((spell) => ['ignite', 'flow-mend', 'stoneguard', 'quickening'].includes(spell)) }, { label: 'Defeat Forest Heart', done: progress.firstMainBossKill },
+    { label: 'Assign your first Arcane Echo', done: activities.channeling.echoesAssigned > 0 },
+    { label: 'Condense a Fragment', done: Object.entries(inventory).some(([id, quantity]) => id.endsWith('fragment') && Boolean(quantity)) },
+    { label: 'Research a Fragment', done: Object.values(schools).some((school) => school.xp > 0) },
+    { label: 'Reach School Level 2', done: Object.values(schools).some((school) => school.level >= 2) },
+    { label: 'Unlock a Spell', done: progress.unlockedSpells.length > 0 },
+    { label: 'Enter Whispering Woods', done: combat.active || progress.lifetimeKills > 0 },
+    { label: 'Defeat a monster', done: progress.lifetimeKills > 0 },
+    { label: 'Enable Auto-Cast', done: hasAuto },
+    { label: 'Run Research during Combat', done: combat.active && activities.research.running },
+    { label: `Reach ${BALANCE.dungeon.whisperingWoodsThreatRequired} Threat`, done: combat.threatCleared >= BALANCE.dungeon.whisperingWoodsThreatRequired || progress.firstBossKill },
+    { label: 'Defeat Grove Sentinel', done: progress.firstBossKill },
+    { label: 'Craft and equip an elemental item', done: hasEquipment },
+    { label: 'Complete a Guild Request', done: Object.values(progress.requestClaims).some(Boolean) },
+    { label: 'Reach School Level 4', done: Object.values(schools).some((school) => school.level >= 4) },
+    { label: 'Unlock a second spell', done: progress.unlockedSpells.some((spell) => ['ignite', 'flow-mend', 'stoneguard', 'quickening'].includes(spell)) },
+    { label: 'Defeat Forest Heart', done: progress.firstMainBossKill },
   ]
   const objective = progress.firstMainBossKill ? 'First MVP Chapter Complete' : progress.firstBossKill ? 'Defeat Forest Heart' : 'Clear Whispering Woods'
   return <div className="screen-content"><div className="screen-header"><div><div className="eyebrow">WIZARD TOWER · OVERVIEW</div><h1>Good evening, apprentice.</h1><p>One wizard. One tower. Every system is competing for the same Focus.</p></div><Button variant="secondary" onClick={() => setScreen('tower-channeling')}>Open Channeling <ChevronRight size={15} /></Button></div><EditableGrid screen="home" panels={[

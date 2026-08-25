@@ -19,7 +19,21 @@ describe('screen smoke coverage', () => {
   it('renders each Wizard Tower system as its own focused screen', async () => {
     const user = userEvent.setup()
     render(<GameShell />)
-    for (const item of [{ label: 'Channeling', heading: 'The tower draws from the leyline.' }, { label: 'Focus', heading: 'Focus is the tower’s limiting spell.' }, { label: 'Condensation', heading: 'Turn Mana into elemental matter.' }, { label: 'Research', heading: 'Research turns fragments into understanding.' }, { label: 'Transmutation', heading: 'Turn gathered materials into equipment.' }]) { await goToTower(user, item.label); expect(screen.getByRole('heading', { name: item.heading })).toBeTruthy() }
+    for (const item of [{ label: 'Channeling', heading: 'Channeling Chamber' }, { label: 'Focus', heading: 'Focus is the tower’s limiting spell.' }, { label: 'Condensation', heading: 'Turn Mana into elemental matter.' }, { label: 'Research', heading: 'Research turns fragments into understanding.' }, { label: 'Transmutation', heading: 'Turn gathered materials into equipment.' }]) { await goToTower(user, item.label); expect(screen.getByRole('heading', { name: item.heading })).toBeTruthy() }
+  })
+
+  it('opens and closes the Arcane Discoveries modal with three real cards and six placeholders', async () => {
+    const user = userEvent.setup()
+    render(<GameShell />)
+    await goToTower(user, 'Channeling')
+    await user.click(screen.getByRole('button', { name: 'Arcane Discoveries 0/3' }))
+    expect(screen.getByRole('dialog', { name: 'Arcane Discoveries' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Stable Leyline' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Echo Resonance' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Deep Reservoir' })).toBeTruthy()
+    expect(screen.getAllByText('Undiscovered')).toHaveLength(6)
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog', { name: 'Arcane Discoveries' })).toBeNull()
   })
 
   it('navigates every major screen through grouped shell navigation', async () => {

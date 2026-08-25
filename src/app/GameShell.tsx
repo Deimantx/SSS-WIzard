@@ -116,6 +116,7 @@ function ActivityDock() {
   const setScreen = useGameStore((state) => state.setScreen)
   const items = [
     ...(combat.active ? [{ label: combat.enemyId ? `Combat \u00b7 ${combat.enemyId.replace(/-/g, ' ')}` : 'Combat \u00b7 next encounter', progress: combat.enemyId ? (combat.enemyHp / combat.enemyMaxHp) * 100 : 20, tone: 'red', screen: 'combat' as ScreenId }] : []),
+    ...(activities.channeling.echoesAssigned > 0 ? [{ label: `Channeling \u00b7 ${activities.channeling.echoesAssigned} Echoes`, progress: 100, tone: 'orange', screen: 'tower-channeling' as ScreenId }] : []),
     ...(activities.condense.running ? [{ label: `Condensing ${activities.condense.element}`, progress: Math.min(100, activities.condense.progressMs / 60), tone: 'orange', screen: 'tower-condensation' as ScreenId }] : []),
     ...(activities.research.running ? [{ label: `Research \u00b7 ${activities.research.targetSchoolId ?? 'School'} \u00b7 ${activities.research.remainingQuantity} left`, progress: Math.min(100, activities.research.progressMs / 50), tone: 'violet', screen: 'tower-research' as ScreenId }] : []),
     ...(activities.transmutation.running ? [{ label: 'Transmutation', progress: Math.min(100, activities.transmutation.progressMs / 80), tone: 'gold', screen: 'tower-transmutation' as ScreenId }] : []),

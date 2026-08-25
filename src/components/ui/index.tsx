@@ -4,8 +4,8 @@ export function Card({ children, className = '', title, action, style }: { child
   return <section style={style} className={`card ${className}`}>{title && <div className="card-head"><h2>{title}</h2>{action}</div>}{children}</section>
 }
 
-export function Button({ children, onClick, variant = 'primary', disabled = false, className = '', title }: { children: ReactNode; onClick?: () => void; variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'success'; disabled?: boolean; className?: string; title?: string }) {
-  return <button title={title} className={`button ${variant} ${className}`} onClick={onClick} disabled={disabled}>{children}</button>
+export function Button({ children, onClick, variant = 'primary', disabled = false, className = '', title, ariaLabel }: { children: ReactNode; onClick?: () => void; variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'success'; disabled?: boolean; className?: string; title?: string; ariaLabel?: string }) {
+  return <button title={title} aria-label={ariaLabel} className={`button ${variant} ${className}`} onClick={onClick} disabled={disabled}>{children}</button>
 }
 
 export function Progress({ value, tone = 'violet', label, right }: { value: number; tone?: string; label?: string; right?: ReactNode }) {

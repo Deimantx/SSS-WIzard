@@ -8,20 +8,29 @@ import { MONSTERS } from '../game/data/monsters'
 import { SCHOOLS } from '../game/data/schools'
 import { SPELLS } from '../game/data/spells'
 import { RECIPES as RECIPE_DATA } from '../game/data/recipes'
+import { CHANNELING_DISCOVERIES } from '../game/data/channelingDiscoveries'
+import { CHANNELING_UPGRADES, getChannelingRankCost } from '../game/data/channeling'
+import { advanceChanneling, checkChannelingDiscoveries } from '../game/engine/channelingEngine'
 import { appendLog, barrierMultiplier, canReserveFocus, completeResearchCycle, equipmentStats, manaRegenPerSecond, playerBasicDamage, pushNotification, recalculateDerivedStats, selectFreeFocus, selectUsedFocus, spellDamageMultiplier } from '../game/engine'
 import { loadProfileGame, saveProfileGame } from '../persistence/profileSaveManager'
 import { AUTOSAVE_INTERVAL_MS, type SaveReason } from '../persistence/saveConstants'
 import { getActiveProfileId } from '../profiles/profileSessionStore'
 import { updateProfileMetadata } from '../profiles/profileStorage'
 import { createInitialState } from './initialState'
-import type { DungeonId, EquipmentSlot, GameState, ItemId, MonsterId, SchoolId, ScreenId, SpellEffect, SpellId, StatusEffect } from '../game/types'
+import type { ChannelingDiscoveryId, ChannelingUpgradeId, DungeonId, EquipmentSlot, GameState, ItemId, MonsterId, SchoolId, ScreenId, SpellEffect, SpellId, StatusEffect } from '../game/types'
 import { clamp, formatTime } from '../game/utils'
 
 export interface GameActions {
   tick: (deltaMs: number) => void
   setScreen: (screen: ScreenId) => void
-  channelMana: () => void
-  toggleAutoChannel: () => void
+  addArcaneEcho: () => void
+  removeArcaneEcho: () => void
+  setChannelingEchoes: (amount: number) => void
+  purchaseChannelingUpgrade: (upgradeId: ChannelingUpgradeId) => void
+  setChannelingUpgradeRank: (upgradeId: ChannelingUpgradeId, rank: number) => void
+  setChannelingManaGenerated: (amount: number) => void
+  setChannelingFiveEchoSustain: (amount: number) => void
+  setChannelingDiscovery: (id: ChannelingDiscoveryId, completed: boolean) => void
   toggleCondense: (element?: SchoolId) => void
   setResearchConfig: (itemId: ItemId, targetSchoolId: SchoolId, quantity: number) => void
   toggleResearch: (itemId?: ItemId, targetSchoolId?: SchoolId, quantity?: number) => void
@@ -339,8 +348,12 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   ...createInitialState(),
   tick: (deltaMs) => set((state) => {
     const delta = Math.min(1000, Math.max(0, deltaMs))
-    state.channelCooldownMs = Math.max(0, state.channelCooldownMs - delta)
-    state.player.mana = clamp(state.player.mana + manaRegenPerSecond(state) * delta / 1000, 0, state.player.maxMana)
+    const channelingTick = advanceChanneling(state, delta)
+    if (channelingTick.discoveries.includes('deep-reservoir')) recalculateDerivedStats(state)
+    channelingTick.discoveries.forEach((id) => {
+      const discovery = CHANNELING_DISCOVERIES.find((entry) => entry.id === id)
+      if (discovery) pushNotification(state, `Arcane Discovery: ${discovery.name}`, 'success')
+    })
     if (!state.combat.active) state.player.health = clamp(state.player.health + BALANCE.player.healthRegenPerSecond * delta / 1000 * BALANCE.player.outOfCombatRegenMultiplier, 0, state.player.maxHealth)
     const condense = state.activities.condense
     if (condense.running) { if (condense.progressMs >= BALANCE.condense.durationMs) { if (state.player.mana >= BALANCE.condense.manaCost) { state.player.mana -= BALANCE.condense.manaCost; condense.progressMs = 0 } } else { condense.progressMs += delta; if (condense.progressMs >= BALANCE.condense.durationMs) { state.inventory[SCHOOLS[condense.element].fragment] = (state.inventory[SCHOOLS[condense.element].fragment] ?? 0) + 1; pushNotification(state, `${SCHOOLS[condense.element].name} Fragment condensed`, 'success') } } }
@@ -351,8 +364,46 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     return state
   }),
   setScreen: (screen) => set((state) => { state.ui.screen = screen; return state }),
-  channelMana: () => set((state) => { if (state.channelCooldownMs > 0 || state.player.mana >= state.player.maxMana) return state; state.player.mana = clamp(state.player.mana + BALANCE.mana.manualChannelAmount, 0, state.player.maxMana); state.channelCooldownMs = BALANCE.mana.manualChannelCooldownMs; pushNotification(state, '+15 Mana channeled', 'info'); return state }),
-  toggleAutoChannel: () => set((state) => { if (state.activities.autoChannel) state.activities.autoChannel = false; else if (canReserveFocus(state, BALANCE.mana.autoChannelFocus)) state.activities.autoChannel = true; else pushNotification(state, `Cannot start Auto Channeling · Requires ${BALANCE.mana.autoChannelFocus} Focus · Free Focus: ${selectFreeFocus(state)}`, 'warning'); return state }),
+  addArcaneEcho: () => set((state) => {
+    const current = state.activities.channeling.echoesAssigned
+    if (current >= BALANCE.channeling.maxEchoes) return state
+    if (!canReserveFocus(state, BALANCE.channeling.echoFocusCost)) {
+      pushNotification(state, `Not enough free Focus. Arcane Echo requires ${BALANCE.channeling.echoFocusCost} Focus. Free Focus: ${selectFreeFocus(state)}`, 'warning')
+      return state
+    }
+    state.activities.channeling.echoesAssigned = current + 1
+    return state
+  }),
+  removeArcaneEcho: () => set((state) => {
+    state.activities.channeling.echoesAssigned = Math.max(0, state.activities.channeling.echoesAssigned - 1)
+    return state
+  }),
+  setChannelingEchoes: (amount) => set((state) => { state.activities.channeling.echoesAssigned = clamp(Math.round(amount), 0, BALANCE.channeling.maxEchoes); return state }),
+  purchaseChannelingUpgrade: (upgradeId) => set((state) => {
+    const upgrade = CHANNELING_UPGRADES[upgradeId]
+    const currentRank = state.progress.channeling[upgradeId === 'mana-reservoir' ? 'manaReservoirRank' : 'leylineConduitRank']
+    const nextRank = currentRank + 1
+    if (currentRank >= upgrade.maxRank) { pushNotification(state, `${upgrade.name} is already at MAX RANK`, 'warning'); return state }
+    const cost = getChannelingRankCost(nextRank)
+    if (!cost) return state
+    const blocked = upgrade.resources.find((itemId) => isProtected(state, itemId))
+    if (blocked) { pushNotification(state, `Upgrade blocked. ${ITEMS[blocked].name} is protected.`, 'warning'); return state }
+    const missing = upgrade.resources.find((itemId) => (state.inventory[itemId] ?? 0) < cost)
+    if (missing) { pushNotification(state, `Not enough ${ITEMS[missing].name}. Need ${cost}.`, 'warning'); return state }
+    upgrade.resources.forEach((itemId) => { state.inventory[itemId] = (state.inventory[itemId] ?? 0) - cost })
+    if (upgradeId === 'mana-reservoir') state.progress.channeling.manaReservoirRank = nextRank
+    else state.progress.channeling.leylineConduitRank = nextRank
+    recalculateDerivedStats(state)
+    const discoveries = checkChannelingDiscoveries(state)
+    pushNotification(state, `${upgrade.name} upgraded to Rank ${nextRank}`, 'success')
+    discoveries.forEach((id) => { const discovery = CHANNELING_DISCOVERIES.find((entry) => entry.id === id); if (discovery) pushNotification(state, `Arcane Discovery: ${discovery.name}`, 'success') })
+    if (discoveries.includes('deep-reservoir')) recalculateDerivedStats(state)
+    return state
+  }),
+  setChannelingUpgradeRank: (upgradeId, rank) => set((state) => { const safeRank = clamp(Math.round(rank), 0, CHANNELING_UPGRADES[upgradeId].maxRank); if (upgradeId === 'mana-reservoir') state.progress.channeling.manaReservoirRank = safeRank; else state.progress.channeling.leylineConduitRank = safeRank; recalculateDerivedStats(state); const discoveries = checkChannelingDiscoveries(state); discoveries.forEach((id) => { const discovery = CHANNELING_DISCOVERIES.find((entry) => entry.id === id); if (discovery) pushNotification(state, `Arcane Discovery: ${discovery.name}`, 'success') }); if (discoveries.includes('deep-reservoir')) recalculateDerivedStats(state); return state }),
+  setChannelingManaGenerated: (amount) => set((state) => { state.progress.channeling.totalManaGenerated = Math.max(0, amount); const discoveries = checkChannelingDiscoveries(state); discoveries.forEach((id) => { const discovery = CHANNELING_DISCOVERIES.find((entry) => entry.id === id); if (discovery) pushNotification(state, `Arcane Discovery: ${discovery.name}`, 'success') }); if (discoveries.includes('deep-reservoir')) recalculateDerivedStats(state); return state }),
+  setChannelingFiveEchoSustain: (amount) => set((state) => { state.progress.channeling.fiveEchoSustainMs = Math.max(0, amount); const discoveries = checkChannelingDiscoveries(state); discoveries.forEach((id) => { const discovery = CHANNELING_DISCOVERIES.find((entry) => entry.id === id); if (discovery) pushNotification(state, `Arcane Discovery: ${discovery.name}`, 'success') }); return state }),
+  setChannelingDiscovery: (id, completed) => set((state) => { state.progress.channeling.discoveries[id] = completed; recalculateDerivedStats(state); return state }),
   toggleCondense: (element = get().activities.condense.element) => set((state) => { if (state.activities.condense.running) { state.activities.condense.running = false; return state } if (!canReserveFocus(state, BALANCE.condense.focusCost)) pushNotification(state, `Cannot start Condensation · Requires ${BALANCE.condense.focusCost} Focus`, 'warning'); else if (state.player.mana < BALANCE.condense.manaCost) pushNotification(state, 'Cannot start Condensation · Not enough Mana', 'warning'); else { state.activities.condense.element = element; state.player.mana -= BALANCE.condense.manaCost; state.activities.condense.running = true; state.activities.condense.progressMs = 0 } return state }),
   setResearchConfig: (itemId, targetSchoolId, quantity) => set((state) => { const job = state.activities.research; if (job.running) return state; job.itemId = itemId; job.targetSchoolId = targetSchoolId; job.requestedQuantity = Math.max(1, quantity); job.remainingQuantity = Math.max(1, quantity); job.progressMs = 0; job.xpPerItem = getResearchXp(itemId, targetSchoolId); job.status = 'idle'; return state }),
   toggleResearch: (itemId, targetSchoolId, quantity = 1) => set((state) => { const job = state.activities.research; if (job.running) { job.running = false; job.status = 'paused'; return state } if (itemId) { job.itemId = itemId; job.targetSchoolId = targetSchoolId ?? ITEMS[itemId].researchSchool ?? 'fire'; job.requestedQuantity = Math.max(1, quantity); job.remainingQuantity = Math.max(1, quantity); job.xpPerItem = getResearchXp(itemId, job.targetSchoolId) } if (!job.itemId || !job.targetSchoolId) { job.status = 'missing-item'; return state } if (isProtected(state, job.itemId)) { job.running = false; job.status = 'missing-item'; pushNotification(state, 'This item is protected. Unlock it before Research.', 'warning'); return state } if ((state.inventory[job.itemId] ?? 0) < 1) { job.running = false; job.status = 'missing-item'; pushNotification(state, 'Cannot start Research · item missing', 'warning'); return state } if (state.schools[job.targetSchoolId].level >= state.progress.magicLevelCap) { job.running = false; job.status = 'level-cap'; pushNotification(state, 'Level Cap Reached · Research queue preserved', 'warning'); return state } if (!canReserveFocus(state, job.focusCost)) { job.running = false; job.status = 'waiting-focus'; pushNotification(state, `Cannot start Research · Requires ${job.focusCost} Focus · Free Focus: ${selectFreeFocus(state)}`, 'warning'); return state } job.running = true; job.status = 'running'; return state }),
@@ -420,7 +471,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   promoteGuild: () => set((state) => { const complete = Object.values(GUILD_REQUESTS).every((request) => (state.progress.requestProgress[request.id] ?? 0) >= request.target); if (state.progress.guildRank === 'initiate' && complete && state.progress.guildReputation >= 175) { state.progress.guildRank = 'apprentice'; if (!state.progress.permanentFocusBonuses['guild-apprentice']) state.progress.permanentFocusBonuses['guild-apprentice'] = BALANCE.focus.guildApprenticeBonus; recalculateDerivedStats(state); pushNotification(state, 'Guild rank increased to Apprentice · +10 permanent Focus', 'success') } return state }),
   setGuildReputation: (amount) => set((state) => { state.progress.guildReputation = Math.max(0, amount); return state }),
   setBossKills: (bossId, amount) => set((state) => { state.progress.bossKillsByBoss[bossId] = Math.max(0, amount); state.progress.requestProgress['sentinel-breaker'] = state.progress.bossKillsByBoss['grove-sentinel'] ?? 0; return state }),
-  preset: (name) => set((state) => { Object.assign(state, createInitialState()); if (name === 'research') { state.inventory['fire-fragment'] = 10; state.player.mana = 100; state.activities.autoChannel = true } if (name === 'combat') { state.inventory['fire-fragment'] = 10; state.progress.unlockedSpells = ['fire-bolt']; state.schools.fire = { xp: 20, level: 2 }; state.player.mana = 100; state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; spawnNextEnemy(state) } if (name === 'boss') { state.inventory['fire-fragment'] = 15; state.inventory['wisp-essence'] = 10; state.inventory['grove-bark'] = 2; state.progress.unlockedSpells = ['fire-bolt']; state.schools.fire = { xp: 80, level: 4 }; state.progress.guildUnlocked = true; state.progress.firstBossKill = true; state.progress.emberStaffUnlocked = true; state.progress.forestHeartUnlocked = true; state.progress.autoHuntBossUnlocked = true; state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; state.combat.threatCleared = 20; spawnNextEnemy(state) } if (name === 'guild') { state.progress.guildUnlocked = true; state.progress.guildRank = 'initiate'; state.progress.firstBossKill = true; state.progress.emberStaffUnlocked = true; state.progress.forestHeartUnlocked = true; state.progress.autoHuntBossUnlocked = true; state.inventory['fire-fragment'] = 20; state.progress.lifetimeKills = 30; state.progress.requestProgress['clear-the-woods'] = 30; state.progress.bossKillsByBoss['grove-sentinel'] = 2; state.progress.requestProgress['sentinel-breaker'] = 2; state.progress.guildReputation = 100 } if (name === 'main-boss' || name === 'chapter-complete') { state.inventory['fire-fragment'] = 20; state.inventory['wisp-essence'] = 12; state.inventory['grove-bark'] = 4; state.progress.guildUnlocked = true; state.progress.guildRank = 'apprentice'; state.progress.firstBossKill = true; state.progress.emberStaffUnlocked = true; state.progress.forestHeartUnlocked = true; state.progress.autoHuntBossUnlocked = true; state.progress.permanentFocusBonuses['forest-heart'] = 10; state.progress.permanentFocusBonuses['guild-apprentice'] = 10; state.progress.magicLevelCap = 20; state.schools.fire = { xp: 380, level: 20 }; state.progress.firstMainBossKill = true; state.inventory.heartseed = 1; recalculateDerivedStats(state); state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; spawnEnemy(state, 'forest-heart', true) } return state }),
+  preset: (name) => set((state) => { Object.assign(state, createInitialState()); if (name === 'research') { state.inventory['fire-fragment'] = 10; state.player.mana = 100; state.activities.channeling.echoesAssigned = 1 } if (name === 'combat') { state.inventory['fire-fragment'] = 10; state.progress.unlockedSpells = ['fire-bolt']; state.schools.fire = { xp: 20, level: 2 }; state.player.mana = 100; state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; spawnNextEnemy(state) } if (name === 'boss') { state.inventory['fire-fragment'] = 15; state.inventory['wisp-essence'] = 10; state.inventory['grove-bark'] = 2; state.progress.unlockedSpells = ['fire-bolt']; state.schools.fire = { xp: 80, level: 4 }; state.progress.guildUnlocked = true; state.progress.firstBossKill = true; state.progress.emberStaffUnlocked = true; state.progress.forestHeartUnlocked = true; state.progress.autoHuntBossUnlocked = true; state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; state.combat.threatCleared = 20; spawnNextEnemy(state) } if (name === 'guild') { state.progress.guildUnlocked = true; state.progress.guildRank = 'initiate'; state.progress.firstBossKill = true; state.progress.emberStaffUnlocked = true; state.progress.forestHeartUnlocked = true; state.progress.autoHuntBossUnlocked = true; state.inventory['fire-fragment'] = 20; state.progress.lifetimeKills = 30; state.progress.requestProgress['clear-the-woods'] = 30; state.progress.bossKillsByBoss['grove-sentinel'] = 2; state.progress.requestProgress['sentinel-breaker'] = 2; state.progress.guildReputation = 100 } if (name === 'main-boss' || name === 'chapter-complete') { state.inventory['fire-fragment'] = 20; state.inventory['wisp-essence'] = 12; state.inventory['grove-bark'] = 4; state.progress.guildUnlocked = true; state.progress.guildRank = 'apprentice'; state.progress.firstBossKill = true; state.progress.emberStaffUnlocked = true; state.progress.forestHeartUnlocked = true; state.progress.autoHuntBossUnlocked = true; state.progress.permanentFocusBonuses['forest-heart'] = 10; state.progress.permanentFocusBonuses['guild-apprentice'] = 10; state.progress.magicLevelCap = 20; state.schools.fire = { xp: 380, level: 20 }; state.progress.firstMainBossKill = true; state.inventory.heartseed = 1; recalculateDerivedStats(state); state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; spawnEnemy(state, 'forest-heart', true) } return state }),
   resumeFromHidden: (elapsedMs, notify = true) => set((state) => { if (elapsedMs > 1000) { state.offlineBankMs += elapsedMs; if (notify) pushNotification(state, `${Math.round(elapsedMs / 1000)}s added to Offline Bank`, 'info') } return state }),
 })))
 

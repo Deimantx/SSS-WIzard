@@ -24,6 +24,8 @@ export type EquipmentSlot = 'weapon' | 'robe' | 'focus' | 'charm'
 export type ItemCategory = 'elemental' | 'monster-loot' | 'equipment' | 'boss-loot'
 export type SpellType = 'damage' | 'heal' | 'barrier' | 'dot' | 'buff'
 export type StatusId = 'barrier' | 'thorn-wound' | 'burning' | 'attack-delay' | 'quickening'
+export type ChannelingUpgradeId = 'mana-reservoir' | 'leyline-conduit'
+export type ChannelingDiscoveryId = 'stable-leyline' | 'echo-resonance' | 'deep-reservoir'
 
 export type AutoCastCondition = { type: 'always' } | { type: 'health-below'; percent: number } | { type: 'barrier-below'; value: number }
 export type SpellEffect =
@@ -98,11 +100,12 @@ export interface SpecialAttackDefinition {
 export interface SchoolState { xp: number; level: number }
 export interface PlayerState { health: number; maxHealth: number; mana: number; maxMana: number; maxFocus: number; baseMaxHealth: number; baseMaxMana: number; baseMaxFocus: number; godMode: boolean }
 export interface CondenseActivity { running: boolean; element: ElementId; progressMs: number }
+export interface ChannelingActivity { echoesAssigned: number }
 export type ResearchStatus = 'idle' | 'running' | 'paused' | 'waiting-mana' | 'waiting-focus' | 'level-cap' | 'missing-item' | 'completed'
 export interface ResearchActivity { running: boolean; itemId: ItemId | null; targetSchoolId: SchoolId | null; requestedQuantity: number; remainingQuantity: number; progressMs: number; durationPerItemMs: number; xpPerItem: number; manaPerItem: number; focusCost: number; status: ResearchStatus }
 export interface TransmutationActivity { running: boolean; recipeId: string | null; progressMs: number }
 export interface ActivitiesState {
-  autoChannel: boolean
+  channeling: ChannelingActivity
   condense: CondenseActivity
   research: ResearchActivity
   transmutation: TransmutationActivity
@@ -154,6 +157,15 @@ export interface ProgressState {
   lifetimeKillsByMonster: Partial<Record<MonsterId, number>>
   bossKillsByBoss: Partial<Record<'grove-sentinel' | 'forest-heart', number>>
   autoHuntBossByDungeon: Record<DungeonId, boolean>
+  channeling: ChannelingProgress
+}
+
+export interface ChannelingProgress {
+  manaReservoirRank: number
+  leylineConduitRank: number
+  totalManaGenerated: number
+  fiveEchoSustainMs: number
+  discoveries: Record<ChannelingDiscoveryId, boolean>
 }
 /** Gameplay UI state. Layout editing and developer tools are transient UI chrome outside the save. */
 export interface UiState { screen: ScreenId }
@@ -171,7 +183,6 @@ export interface GameState {
   offlineBankMs: number
   lastSavedAt: number
   notifications: NotificationItem[]
-  channelCooldownMs: number
 }
 export interface NotificationItem { id: string; text: string; tone: 'info' | 'success' | 'warning' }
 export interface FocusReservation {

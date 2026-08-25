@@ -7,7 +7,7 @@ export const DEFAULT_LAYOUTS: Record<ScreenId, ScreenLayouts> = {
   home: {
     'home-objective': layout(0, 0, 12, 4), 'home-checklist': layout(0, 4, 7, 10), 'home-wizard': layout(7, 4, 5, 10),
   },
-  'tower-channeling': { 'channeling-main': layout(0, 0, 8, 10), 'channeling-stats': layout(8, 0, 4, 10) },
+  'tower-channeling': { 'channeling-mana-core': layout(0, 0, 6, 11), 'channeling-echoes': layout(6, 0, 6, 11), 'channeling-infrastructure': layout(0, 11, 12, 13) },
   'tower-focus': { 'focus-summary': layout(0, 0, 7, 12), 'focus-reservations': layout(7, 0, 5, 12) },
   'tower-condensation': { 'condensation-elements': layout(0, 0, 7, 11), 'condensation-status': layout(7, 0, 5, 11) },
   'tower-research': { 'research-config': layout(0, 0, 7, 13), 'research-queue': layout(7, 0, 5, 13) },

@@ -1762,3 +1762,15 @@ Testavimo įrankio veiksmai turi būti aiškiai atskirti nuo normalaus žaidimo,
 ### Kitos pastabos
 
 - 
+
+### Channeling Chamber V2 (Phase 2.4)
+
+The Channeling Chamber uses passive Mana generation rather than a manual Channel button. Fresh profiles begin at **+5 Mana/s** and may assign **0–5 Arcane Echoes**, reserving **10 Focus** and adding **+5 Mana/s** per Echo. Five Echoes therefore reserve 50 Focus and produce **+30 Mana/s** total with starting infrastructure.
+
+Channeling infrastructure is permanent progression:
+
+- Mana Reservoir, Rank 0–5, adds +25 Max Mana per rank and consumes Earth + Water Fragments.
+- Leyline Conduit, Rank 0–5, adds +1 Natural Mana/s per rank and consumes Water + Air Fragments.
+- Both upgrade families use costs 9 / 18 / 50 / 160 / 250 of each required Fragment.
+
+Arcane Discoveries are permanent condition-based principles: Stable Leyline, Echo Resonance, and Deep Reservoir. Future discoveries remain hidden placeholders until implemented.

@@ -1,1 +1,1 @@
-export { manaRegenPerSecond } from '../engine'
+export { advanceChanneling, checkChannelingDiscoveries, getManaCapacityBreakdown, getManaRegenBreakdown, manaRegenPerSecond } from './channelingEngine'

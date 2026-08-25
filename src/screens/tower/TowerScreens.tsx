@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { deriveFocusReservations } from '../../game/engine'
+import { BALANCE } from '../../game/data/balance'
 import { RECIPES } from '../../game/data/recipes'
 import { ITEMS } from '../../game/data/items'
 import { SCHOOLS } from '../../game/data/schools'
@@ -7,16 +8,14 @@ import { selectFreeFocus, selectUsedFocus } from '../../store/selectors'
 import { useGameStore } from '../../store/gameStore'
 import { Button, Card, Progress, Status } from '../../components/ui'
 import { EditableGrid } from '../../ui/layout-editor/EditableGrid'
-import { ChannelingPanel } from './ChannelingPanel'
+import { ChannelingScreen } from './channeling/ChannelingScreen'
 import { CondensationPanel } from './CondensationPanel'
 import { FocusPanel } from './FocusPanel'
 import { ResearchPanel } from './ResearchPanel'
 import { TransmutationPanel } from './TransmutationPanel'
 
 export function TowerChannelingScreen() {
-  const player = useGameStore((state) => state.player)
-  const activities = useGameStore((state) => state.activities)
-  return <TowerFrame eyebrow="WIZARD TOWER · CHANNELING" title="The tower draws from the leyline." description="Draw Mana into the tower and decide whether the channel should run unattended."><EditableGrid screen="tower-channeling" panels={[{ id: 'channeling-main', content: <ChannelingPanel /> }, { id: 'channeling-stats', content: <Card title="Channeling stats"><div className="tower-stat-list"><span>Current Mana<strong>{Math.floor(player.mana)} / {player.maxMana}</strong></span><span>Auto Channel<strong>{activities.autoChannel ? 'Active' : 'Paused'}</strong></span><span>Focus reserved<strong>{activities.autoChannel ? '10' : '0'}</strong></span></div><Progress value={player.mana / player.maxMana * 100} label="Mana reserves" right={`${Math.floor(player.mana)} / ${player.maxMana}`} /></Card> }]} /></TowerFrame>
+  return <ChannelingScreen />
 }
 
 export function TowerFocusScreen() {
@@ -32,7 +31,7 @@ export function TowerFocusScreen() {
 export function TowerCondensationScreen() {
   const condense = useGameStore((state) => state.activities.condense)
   const inventory = useGameStore((state) => state.inventory)
-  return <TowerFrame eyebrow="WIZARD TOWER · ELEMENTAL CONDENSATION" title="Turn Mana into elemental matter." description="Choose a fragment to condense. The activity continues while you visit other screens."><EditableGrid screen="tower-condensation" panels={[{ id: 'condensation-elements', content: <CondensationPanel /> }, { id: 'condensation-status', content: <Card title="Condensation status" action={<Status tone={condense.running ? 'active' : 'neutral'}>{condense.running ? 'Running' : 'Paused'}</Status>}><div className="tower-stat-list"><span>Selected element<strong>{SCHOOLS[condense.element].name}</strong></span><span>Fragments banked<strong>{inventory[SCHOOLS[condense.element].fragment] ?? 0}</strong></span><span>Focus reservation<strong>35</strong></span></div><p className="muted">Pause or resume the activity from the primary condensation panel.</p></Card> }]} /></TowerFrame>
+  return <TowerFrame eyebrow="WIZARD TOWER · ELEMENTAL CONDENSATION" title="Turn Mana into elemental matter." description="Choose a fragment to condense. The activity continues while you visit other screens."><EditableGrid screen="tower-condensation" panels={[{ id: 'condensation-elements', content: <CondensationPanel /> }, { id: 'condensation-status', content: <Card title="Condensation status" action={<Status tone={condense.running ? 'active' : 'neutral'}>{condense.running ? 'Running' : 'Paused'}</Status>}><div className="tower-stat-list"><span>Selected element<strong>{SCHOOLS[condense.element].name}</strong></span><span>Fragments banked<strong>{inventory[SCHOOLS[condense.element].fragment] ?? 0}</strong></span><span>Focus reservation<strong>{BALANCE.condense.focusCost}</strong></span></div><p className="muted">Pause or resume the activity from the primary condensation panel.</p></Card> }]} /></TowerFrame>
 }
 
 export function TowerResearchScreen() {

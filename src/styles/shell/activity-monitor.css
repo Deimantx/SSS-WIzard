@@ -1,6 +1,54 @@
-.activity-monitor { position: fixed; z-index: 6; right: 18px; bottom: 16px; left: calc(250px + 18px); width: min(1160px, calc(100vw - 250px - 36px)); margin-inline: auto; padding: 7px; border: 1px solid var(--ui-border); border-radius: 9px; background: color-mix(in srgb, var(--ui-panel-strong) 94%, transparent); box-shadow: 0 15px 42px var(--ui-shadow); backdrop-filter: blur(16px); }
-.activity-monitor-header { display: flex; align-items: center; justify-content: space-between; padding: 1px 5px 6px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .08em; }.activity-monitor-header button, .activity-monitor-collapsed button { display: inline-flex; align-items: center; gap: 7px; border: 0; color: var(--ui-text-muted); background: transparent; cursor: pointer; font: inherit; }.activity-monitor-header button:hover, .activity-monitor-collapsed button:hover { color: var(--ui-text); }
-.activity-monitor-track { display: flex; gap: 7px; min-width: 0; overflow-x: auto; }.activity-card { flex: 0 1 320px; min-width: 260px; max-width: 340px; padding: 9px 10px; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text-soft); background: var(--ui-panel); cursor: pointer; text-align: left; }.activity-card:hover { border-color: var(--ui-accent); background: var(--ui-panel-hover); }.activity-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }.activity-card-head strong { display: block; color: var(--ui-text); font: var(--text-micro) var(--font-mono); letter-spacing: .08em; }.activity-card-head span { display: block; margin-top: 3px; color: var(--ui-text-muted); font: var(--text-xs) var(--font-sans); }.activity-card-head small { flex: 0 0 auto; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }.accent-red .activity-card-head strong { color: var(--ui-danger); }.accent-orange .activity-card-head strong { color: var(--ui-warning); }.accent-violet .activity-card-head strong { color: var(--ui-accent); }.accent-gold .activity-card-head strong { color: var(--ui-secondary); }
-.activity-progress-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }.activity-progress { flex: 1; height: 4px; overflow: hidden; border-radius: 99px; background: color-mix(in srgb, var(--ui-text) 11%, transparent); }.activity-progress i { display: block; height: 100%; border-radius: inherit; background: var(--ui-accent); }.accent-red .activity-progress i { background: var(--ui-danger); }.accent-orange .activity-progress i { background: var(--ui-warning); }.accent-gold .activity-progress i { background: var(--ui-secondary); }.activity-progress-row span, .activity-recovery { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); white-space: nowrap; }.activity-recovery { margin-top: 9px; color: var(--ui-warning); }
-.activity-card-metrics { display: flex; flex-wrap: wrap; gap: 5px 12px; margin-top: 8px; }.activity-card-metrics span { display: grid; gap: 2px; min-width: 54px; }.activity-card-metrics small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-sans); }.activity-card-metrics b { color: var(--ui-text-soft); font: var(--text-micro) var(--font-mono); font-weight: 500; }.activity-card-metrics .negative b { color: var(--ui-danger); }.activity-card-metrics .positive b { color: var(--ui-success); }.activity-waiting { opacity: .7; }.activity-monitor-collapsed { width: auto; left: auto; padding: 8px 11px; }.activity-monitor-collapsed button { color: var(--ui-text); font-size: var(--text-micro); }
-@media (max-width: 760px) { .activity-monitor { right: 10px; bottom: 10px; left: 10px; width: auto; }.activity-card { min-width: 245px; }.activity-monitor-collapsed { left: auto; right: 10px; } }
+.activity-monitor { position: fixed; z-index: 6; right: 18px; bottom: 16px; left: auto; width: fit-content; max-width: min(950px, calc(100vw - 32px)); max-height: 300px; padding: 7px; overflow: hidden; border: 1px solid var(--ui-border); border-radius: 9px; background: color-mix(in srgb, var(--ui-panel-strong) 94%, transparent); box-shadow: 0 15px 42px var(--ui-shadow); backdrop-filter: blur(16px); }
+.activity-monitor-header, .activity-monitor-collapsed-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 1px 5px 6px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .08em; }
+.activity-monitor-header button, .activity-monitor-collapsed-head button { display: inline-flex; align-items: center; gap: 7px; border: 0; color: var(--ui-text-muted); background: transparent; cursor: pointer; font: inherit; }
+.activity-monitor-header button:hover, .activity-monitor-collapsed-head button:hover { color: var(--ui-text); }
+.activity-monitor-track { display: flex; align-items: stretch; gap: 7px; width: max-content; max-width: 100%; overflow-x: auto; padding-bottom: 2px; scrollbar-color: var(--ui-scrollbar-thumb) transparent; scrollbar-width: thin; }
+.activity-monitor-track::-webkit-scrollbar { height: 5px; }
+.activity-monitor-track::-webkit-scrollbar-thumb { border-radius: 99px; background: var(--ui-scrollbar-thumb); }
+.activity-card { display: flex; flex-direction: column; min-height: 0; flex: 0 0 300px; width: 300px; min-width: 280px; max-width: 300px; padding: 9px 10px; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text-soft); background: var(--ui-panel); cursor: pointer; text-align: left; }
+.activity-card.accent-red { flex-basis: 330px; width: 330px; min-width: 300px; max-width: 340px; }
+.activity-card:hover { border-color: var(--ui-accent); background: var(--ui-panel-hover); }
+.activity-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.activity-card-head strong { display: block; color: var(--ui-text); font: var(--text-micro) var(--font-mono); letter-spacing: .08em; }
+.activity-card-head span { display: block; margin-top: 3px; color: var(--ui-text-muted); font: var(--text-xs) var(--font-sans); }
+.activity-card-head small { flex: 0 0 auto; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
+.accent-red .activity-card-head strong, .activity-mini-summary.accent-red strong { color: var(--ui-danger); }
+.accent-orange .activity-card-head strong, .activity-mini-summary.accent-orange strong { color: var(--ui-warning); }
+.accent-violet .activity-card-head strong, .activity-mini-summary.accent-violet strong { color: var(--ui-accent); }
+.accent-gold .activity-card-head strong, .activity-mini-summary.accent-gold strong { color: var(--ui-secondary); }
+.activity-bars { display: grid; gap: 7px; margin-top: 9px; }
+.activity-bar-row { display: grid; gap: 3px; }
+.activity-bar-label { display: flex; justify-content: space-between; gap: 8px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-sans); }
+.activity-bar-label b { color: var(--ui-text-soft); font: var(--text-micro) var(--font-mono); font-weight: 500; white-space: nowrap; }
+.activity-progress-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.activity-progress { flex: 1; height: 4px; overflow: hidden; border-radius: 99px; background: color-mix(in srgb, var(--ui-text) 11%, transparent); }
+.activity-progress i { display: block; height: 100%; border-radius: inherit; background: var(--ui-accent); }
+.activity-bar-row.positive .activity-progress i { background: var(--ui-success); }
+.activity-bar-row.negative .activity-progress i { background: var(--ui-danger); }
+.activity-bar-row.warning .activity-progress i { background: var(--ui-warning); }
+.accent-red .activity-progress i { background: var(--ui-danger); }
+.accent-orange .activity-progress i { background: var(--ui-warning); }
+.accent-gold .activity-progress i { background: var(--ui-secondary); }
+.activity-progress-row span { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); white-space: nowrap; }
+.activity-card-metrics { display: flex; flex-wrap: wrap; gap: 5px 12px; margin-top: 9px; }
+.activity-card-metrics span { display: grid; gap: 2px; min-width: 54px; }
+.activity-card-metrics small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-sans); }
+.activity-card-metrics b { color: var(--ui-text-soft); font: var(--text-micro) var(--font-mono); font-weight: 500; }
+.activity-card-metrics .negative b { color: var(--ui-danger); }
+.activity-card-metrics .positive b { color: var(--ui-success); }
+.activity-card-metrics .warning b { color: var(--ui-warning); }
+.activity-waiting { opacity: .78; }
+.activity-monitor-collapsed { width: min(400px, calc(100vw - 32px)); max-height: 190px; padding: 8px 11px; }
+.activity-monitor-collapsed-head { padding: 0 0 7px; color: var(--ui-text); }
+.activity-monitor-mini-list { display: grid; gap: 5px; }
+.activity-mini-summary { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 9px; width: 100%; padding: 6px 7px; border: 1px solid var(--ui-border); border-radius: 6px; color: var(--ui-text-muted); background: var(--ui-panel); cursor: pointer; text-align: left; }
+.activity-mini-summary:hover { border-color: var(--ui-accent); background: var(--ui-panel-hover); }
+.activity-mini-summary strong { font: var(--text-micro) var(--font-mono); letter-spacing: .06em; }
+.activity-mini-summary span { min-width: 0; overflow: hidden; color: var(--ui-text-soft); font: var(--text-micro) var(--font-sans); text-overflow: ellipsis; white-space: nowrap; }
+.activity-monitor-more { display: block; margin-top: 6px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
+@media (max-width: 760px) {
+  .activity-monitor { right: 10px; bottom: 10px; max-width: calc(100vw - 20px); }
+  .activity-monitor-collapsed { width: min(400px, calc(100vw - 20px)); }
+  .activity-card { flex-basis: 280px; width: 280px; min-width: 260px; }
+  .activity-card.accent-red { flex-basis: 300px; width: 300px; min-width: 280px; }
+}

@@ -130,14 +130,14 @@ export const advanceGameState = (state: GameState, deltaMs: number, context: Adv
   if (!state.combat.active) state.player.health = clamp(state.player.health + BALANCE.player.healthRegenPerSecond * delta / 1000 * BALANCE.player.outOfCombatRegenMultiplier, 0, state.player.maxHealth)
   const condense = state.activities.condense
   if (condense.running) {
-    if (condense.progressMs >= BALANCE.condense.durationMs) {
-      if (state.player.mana >= BALANCE.condense.manaCost) { state.player.mana -= BALANCE.condense.manaCost; condense.progressMs = 0 }
-    } else {
-      condense.progressMs += delta
-      if (condense.progressMs >= BALANCE.condense.durationMs) {
-        state.inventory[SCHOOLS[condense.element].fragment] = (state.inventory[SCHOOLS[condense.element].fragment] ?? 0) + 1
-        if (shouldNotifyRoutine(context)) pushNotification(state, `${SCHOOLS[condense.element].name} Fragment condensed`, 'success')
-      }
+    if (condense.progressMs < BALANCE.condense.durationMs) {
+      condense.progressMs = Math.min(BALANCE.condense.durationMs, condense.progressMs + delta)
+    }
+    if (condense.progressMs >= BALANCE.condense.durationMs && state.player.mana >= BALANCE.condense.manaCost) {
+      state.player.mana -= BALANCE.condense.manaCost
+      state.inventory[SCHOOLS[condense.element].fragment] = (state.inventory[SCHOOLS[condense.element].fragment] ?? 0) + 1
+      condense.progressMs = 0
+      if (shouldNotifyRoutine(context)) pushNotification(state, `${SCHOOLS[condense.element].name} Fragment condensed`, 'success')
     }
   }
   tickResearch(state, delta, context)

@@ -8,29 +8,39 @@ import type { ActivityMetric, ActivityTelemetry, GameState } from '../../types'
 import { clamp, formatCompactDuration, formatNumber, formatRatePerHour, formatSignedRate } from '../../utils'
 
 const metric = (label: string, value: string, tone?: ActivityMetric['tone']): ActivityMetric => ({ label, value, tone })
+const percent = (value: number, max: number) => Math.round(clamp(value / Math.max(1, max) * 100, 0, 100))
 
 export const getActivityTelemetry = (state: GameState): ActivityTelemetry[] => {
   const activities: ActivityTelemetry[] = []
+  const dungeon = DUNGEONS[state.combat.dungeonId ?? 'whispering-woods']
 
   if (state.combat.active) {
+    const playerPercent = percent(state.player.health, state.player.maxHealth)
     if (state.combat.enemyId) {
       const enemy = MONSTERS[state.combat.enemyId]
+      const enemyPercent = percent(state.combat.enemyHp, state.combat.enemyMaxHp)
       const nextAction = enemy.actionSequence[state.combat.enemyActionIndex % enemy.actionSequence.length]
       const nextSpecial = nextAction.specialAttackId ? enemy.specialAttacks[nextAction.specialAttackId] : undefined
       const nextLabel = state.combat.enemyTelegraphActionId
         ? enemy.specialAttacks[state.combat.enemyTelegraphActionId]?.name ?? 'Telegraph'
         : nextSpecial?.name ?? 'Basic Attack'
       const nextTime = state.combat.enemyTelegraphMs > 0 ? state.combat.enemyTelegraphMs : state.combat.enemyActionTimerMs
+      const enemyLabel = state.combat.inBossFight ? 'Boss HP' : 'Enemy HP'
       activities.push({
         id: 'combat',
         label: 'COMBAT',
-        subtitle: DUNGEONS[state.combat.dungeonId ?? 'whispering-woods'].name,
+        subtitle: dungeon.name,
         screen: 'combat',
         status: 'combat',
-        progressPercent: clamp(state.combat.enemyHp / Math.max(1, state.combat.enemyMaxHp) * 100, 0, 100),
+        progressPercent: enemyPercent,
+        bars: [
+          { label: 'Player HP', value: `${formatNumber(state.player.health)} / ${formatNumber(state.player.maxHealth)} (${playerPercent}%)`, percent: playerPercent, tone: playerPercent < 35 ? 'warning' : 'positive' },
+          { label: enemyLabel, value: `${formatNumber(state.combat.enemyHp)} / ${formatNumber(state.combat.enemyMaxHp)} (${enemyPercent}%)`, percent: enemyPercent, tone: 'negative' },
+        ],
+        collapsedSummary: `Combat P${playerPercent}% / E${enemyPercent}% · Threat ${formatNumber(state.combat.threatCleared)} / ${formatNumber(dungeon.threatRequired)}`,
         metrics: [
-          metric(enemy.name, `Enemy HP ${Math.round(state.combat.enemyHp / Math.max(1, state.combat.enemyMaxHp) * 100)}%`),
-          metric('Threat', `${formatNumber(state.combat.threatCleared)} / ${formatNumber(DUNGEONS[state.combat.dungeonId ?? 'whispering-woods'].threatRequired)}`),
+          metric('Threat Cleared', `${formatNumber(state.combat.threatCleared)} / ${formatNumber(dungeon.threatRequired)}`),
+          metric('Lifetime Kills', formatNumber(state.progress.lifetimeKills)),
           metric('Next', `${nextLabel} · ${formatCompactDuration(nextTime)}`),
         ],
         accent: 'red',
@@ -39,13 +49,18 @@ export const getActivityTelemetry = (state: GameState): ActivityTelemetry[] => {
       activities.push({
         id: 'combat',
         label: 'COMBAT',
-        subtitle: DUNGEONS[state.combat.dungeonId ?? 'whispering-woods'].name,
+        subtitle: dungeon.name,
         screen: 'combat',
         status: 'recovery',
         remainingMs: state.combat.encounterTimerMs,
+        bars: [
+          { label: 'Player HP', value: `${formatNumber(state.player.health)} / ${formatNumber(state.player.maxHealth)} (${playerPercent}%)`, percent: playerPercent, tone: playerPercent < 35 ? 'warning' : 'positive' },
+        ],
+        collapsedSummary: `Combat P${playerPercent}% · Next ${formatCompactDuration(state.combat.encounterTimerMs)}`,
         metrics: [
-          metric('NEXT ENCOUNTER', formatCompactDuration(state.combat.encounterTimerMs)),
-          metric('Threat', `${formatNumber(state.combat.threatCleared)} / ${formatNumber(DUNGEONS[state.combat.dungeonId ?? 'whispering-woods'].threatRequired)}`),
+          metric('Threat Cleared', `${formatNumber(state.combat.threatCleared)} / ${formatNumber(dungeon.threatRequired)}`),
+          metric('Lifetime Kills', formatNumber(state.progress.lifetimeKills)),
+          metric('Next Encounter', formatCompactDuration(state.combat.encounterTimerMs)),
         ],
         accent: 'red',
       })
@@ -55,6 +70,7 @@ export const getActivityTelemetry = (state: GameState): ActivityTelemetry[] => {
   const condense = state.activities.condense
   if (condense.running) {
     const duration = BALANCE.condense.durationMs
+    const remainingMs = Math.max(0, duration - condense.progressMs)
     const waitingMana = condense.progressMs >= duration && state.player.mana < BALANCE.condense.manaCost
     activities.push({
       id: 'condensation',
@@ -63,7 +79,8 @@ export const getActivityTelemetry = (state: GameState): ActivityTelemetry[] => {
       screen: 'tower-condensation',
       status: waitingMana ? 'waiting-mana' : 'running',
       progressPercent: clamp(condense.progressMs / duration * 100, 0, 100),
-      remainingMs: Math.max(0, duration - condense.progressMs),
+      remainingMs,
+      collapsedSummary: waitingMana ? `${SCHOOLS[condense.element].name} Condense · WAITING MANA` : `${SCHOOLS[condense.element].name} Condense · ${formatCompactDuration(remainingMs)}`,
       metrics: [
         metric('Potential', formatRatePerHour(3_600_000 / duration)),
         metric('Mana', `${formatSignedRate(-(BALANCE.condense.manaCost / (duration / 1000)))} avg`, 'negative'),
@@ -76,19 +93,22 @@ export const getActivityTelemetry = (state: GameState): ActivityTelemetry[] => {
   const research = state.activities.research
   if (research.running && research.itemId && research.targetSchoolId && research.remainingQuantity > 0) {
     const duration = Math.max(1, research.durationPerItemMs)
+    const remainingMs = Math.max(0, duration - research.progressMs)
     const waitingMana = research.status === 'waiting-mana' || (research.progressMs >= duration && state.player.mana < research.manaPerItem)
     const item = ITEMS[research.itemId]
+    const schoolName = SCHOOLS[research.targetSchoolId].name
     activities.push({
       id: 'research',
       label: 'RESEARCH',
-      subtitle: `${item?.researchSchool ? SCHOOLS[item.researchSchool].name : 'Material'} → ${SCHOOLS[research.targetSchoolId].name}`,
+      subtitle: `${item?.researchSchool ? SCHOOLS[item.researchSchool].name : 'Material'} → ${schoolName}`,
       screen: 'tower-research',
       status: waitingMana ? 'waiting-mana' : research.status === 'paused' ? 'paused' : 'running',
       progressPercent: clamp(research.progressMs / duration * 100, 0, 100),
-      remainingMs: Math.max(0, duration - research.progressMs),
+      remainingMs,
+      collapsedSummary: waitingMana ? `${schoolName} Research · WAITING MANA` : `${schoolName} Research · ${formatCompactDuration(remainingMs)}`,
       metrics: [
         metric('Remaining', `${formatNumber(research.remainingQuantity)} items`),
-        metric('Cycle', formatCompactDuration(Math.max(0, duration - research.progressMs))),
+        metric('Cycle', formatCompactDuration(remainingMs)),
         metric('XP/h', formatRatePerHour(research.xpPerItem * 3_600_000 / duration)),
         metric('Items/h', formatRatePerHour(3_600_000 / duration)),
         metric('Mana', formatSignedRate(-(research.manaPerItem / (duration / 1000))), 'negative'),
@@ -102,6 +122,7 @@ export const getActivityTelemetry = (state: GameState): ActivityTelemetry[] => {
   if (transmutation.running && transmutation.recipeId) {
     const recipe = RECIPES[transmutation.recipeId]
     if (recipe) {
+      const remainingMs = Math.max(0, recipe.durationMs - transmutation.progressMs)
       activities.push({
         id: 'transmutation',
         label: 'TRANSMUTATION',
@@ -109,10 +130,11 @@ export const getActivityTelemetry = (state: GameState): ActivityTelemetry[] => {
         screen: 'tower-transmutation',
         status: 'running',
         progressPercent: clamp(transmutation.progressMs / recipe.durationMs * 100, 0, 100),
-        remainingMs: Math.max(0, recipe.durationMs - transmutation.progressMs),
+        remainingMs,
+        collapsedSummary: `${recipe.name} · ${formatCompactDuration(remainingMs)}`,
         metrics: [
           metric('Potential', formatRatePerHour(3_600_000 / recipe.durationMs)),
-          metric('Cycle', formatCompactDuration(Math.max(0, recipe.durationMs - transmutation.progressMs))),
+          metric('Cycle', formatCompactDuration(remainingMs)),
           metric('Focus', `${recipe.focusCost}`),
         ],
         accent: 'gold',

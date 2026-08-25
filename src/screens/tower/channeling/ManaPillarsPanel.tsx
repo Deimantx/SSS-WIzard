@@ -13,6 +13,20 @@ const effectValue = (pillarId: ManaPillarId, level: number) => {
   return `+${value}%`
 }
 
+const materialSource = (itemId: ItemId) => itemId === 'life-essence' ? 'Combat → all monsters' : 'Wizard Tower → Condensation'
+
+function ItemRequirementTile({ itemId, owned, required, protectedItem }: { itemId: ItemId; owned: number; required: number; protectedItem: boolean }) {
+  const item = ITEMS[itemId]
+  const missing = Math.max(0, required - owned)
+  const stateClass = protectedItem ? 'is-protected' : missing > 0 ? 'missing' : 'sufficient'
+  const details = [item.name, `Owned: ${owned}`, `Required: ${required}`, `Missing: ${missing}`, `Source: ${materialSource(itemId)}`, protectedItem ? 'Protected item / Cannot be consumed by this upgrade.' : ''].filter(Boolean).join('\n')
+  return <span className={`item-requirement-tile ${stateClass}`} tabIndex={0} role="img" aria-label={`${item.name}, ${owned} owned, ${required} required${protectedItem ? ', protected' : ''}`} title={details}>
+    <span className="item-requirement-icon" style={{ color: item.color }}>{item.icon}</span>
+    <strong>{owned}</strong><small>/ {required}</small>
+    {protectedItem && <i className="item-requirement-lock" aria-hidden="true">🔒</i>}
+  </span>
+}
+
 function PillarCard({ pillarId }: { pillarId: ManaPillarId }) {
   const pillar = MANA_PILLARS[pillarId]
   const level = useGameStore((state) => state.progress.channeling.pillars[pillarId].level)
@@ -33,10 +47,9 @@ function PillarCard({ pillarId }: { pillarId: ManaPillarId }) {
     <div className="mana-pillar-head"><h3>{pillar.name}</h3><Status tone={mastered ? 'success' : 'active'}>{mastered ? 'RANK I MASTERED' : 'RANK I'}</Status></div>
     <p className="muted">{pillar.description}</p>
     <div className="mana-pillar-level"><span>LEVEL {level} / {pillar.maxLevel}</span><div className="mana-pillar-marks" aria-label={`Pillar progress ${level} of ${pillar.maxLevel}`}>{Array.from({ length: pillar.maxLevel }, (_, index) => <i className={index < level ? 'filled' : ''} key={index} />)}</div></div>
-    <div className="mana-pillar-effect-row"><div><span>CURRENT</span><strong>{effectValue(pillarId, level)}</strong></div><b>→</b><div><span>{mastered ? 'RANK II' : 'NEXT'}</span><strong>{mastered ? '???' : effectValue(pillarId, level + 1)}</strong></div></div>
-    {!mastered && cost && <div className="mana-pillar-costs"><span className="eyebrow">COST · OWNED / REQUIRED</span>{requiredItems.map((itemId) => { const required = itemId === 'life-essence' ? cost.lifeEssence : cost.fragment; const owned = inventory[itemId] ?? 0; const protectedItem = isProtected(itemId); return <span className={protectedItem || owned < required ? 'missing' : ''} key={itemId}><span>{ITEMS[itemId].name}</span><strong>{protectedItem ? 'LOCKED · PROTECTED' : `${owned} / ${required}`}</strong></span> })}</div>}
-    <Button variant={canUpgrade ? 'secondary' : 'ghost'} disabled={!canUpgrade} onClick={() => upgrade(pillarId)}>{buttonLabel}</Button>
-    {reason && <small className={`mana-pillar-reason ${mastered ? 'complete' : ''}`}>{reason}</small>}
+    <div className="mana-pillar-effect-row"><div><span>CURRENT</span><strong>{effectValue(pillarId, level)}</strong></div><b aria-hidden="true">→</b><div><span>{mastered ? 'RANK II' : 'NEXT'}</span><strong>{mastered ? '???' : effectValue(pillarId, level + 1)}</strong></div></div>
+    {!mastered && cost && <div className="mana-pillar-costs"><span className="eyebrow">COST · OWNED / REQUIRED</span><div className="mana-pillar-requirements">{requiredItems.map((itemId) => { const required = itemId === 'life-essence' ? cost.lifeEssence : cost.fragment; const owned = inventory[itemId] ?? 0; return <ItemRequirementTile key={itemId} itemId={itemId} owned={owned} required={required} protectedItem={isProtected(itemId)} /> })}</div></div>}
+    <Button variant={canUpgrade ? 'secondary' : 'ghost'} disabled={!canUpgrade} title={reason || undefined} ariaLabel={reason || undefined} onClick={() => upgrade(pillarId)}>{buttonLabel}</Button>
   </article>
 }
 

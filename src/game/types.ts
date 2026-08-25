@@ -230,6 +230,12 @@ export interface ActivityMetric {
   value: string
   tone?: 'neutral' | 'positive' | 'negative' | 'warning'
 }
+export interface ActivityBar {
+  label: string
+  value: string
+  percent: number
+  tone?: ActivityMetric['tone']
+}
 export interface ActivityTelemetry {
   id: 'combat' | 'condensation' | 'research' | 'transmutation'
   label: string
@@ -238,6 +244,8 @@ export interface ActivityTelemetry {
   status: ActivityTelemetryStatus
   progressPercent?: number
   remainingMs?: number
+  bars?: ActivityBar[]
+  collapsedSummary?: string
   metrics: ActivityMetric[]
   accent: 'red' | 'orange' | 'violet' | 'gold'
 }

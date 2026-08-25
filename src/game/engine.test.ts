@@ -364,7 +364,7 @@ describe('Developer channeling overrides', () => {
     game.setPlayer({ mana: 1000 })
     expect(useGameStore.getState().player.mana).toBe(1000)
     game.tick(1000)
-    expect(useGameStore.getState().player.mana).toBe(1000)
+    expect(useGameStore.getState().player.mana).toBeGreaterThan(1000)
     game.setDebugAllowManaOverCap(false)
     expect(useGameStore.getState().player.mana).toBe(useGameStore.getState().player.maxMana)
   })

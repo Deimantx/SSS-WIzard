@@ -113,8 +113,8 @@ export const advanceChanneling = (state: GameState, deltaMs: number) => {
   const delta = Math.max(0, deltaMs)
   const before = state.player.mana
   const generated = manaRegenPerSecond(state) * delta / 1000
-  state.player.mana = state.debug.allowManaOverCap && before > state.player.maxMana
-    ? before
+  state.player.mana = state.debug.allowManaOverCap
+    ? Math.max(0, before + generated)
     : clamp(before + generated, 0, state.player.maxMana)
   const gained = state.player.mana - before
   state.progress.channeling.totalManaGenerated += gained

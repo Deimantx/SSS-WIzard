@@ -53,7 +53,8 @@ export const getManaFlowBreakdown = (state: GameState): ManaFlowBreakdown => {
   let etaKind: ManaFlowBreakdown['etaKind'] = null
 
   if (stateName === 'surplus') {
-    if (state.player.mana >= state.player.maxMana) etaKind = 'full'
+    if (state.player.mana > state.player.maxMana) etaKind = null
+    else if (state.player.mana >= state.player.maxMana) etaKind = 'full'
     else if (state.player.maxMana > state.player.mana) {
       etaMs = ((state.player.maxMana - state.player.mana) / net) * 1000
       etaKind = 'full'

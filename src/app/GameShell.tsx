@@ -5,7 +5,7 @@ import { ScreenRouter } from '../screens/ScreenRouter'
 import { getNavigationContext } from './navigation'
 import { setUiPreferences, useUiPreferences } from '../ui/preferences/uiPreferencesStore'
 import { themeColors } from '../ui/theme/themePresets'
-import { closeLayoutEditor, openLayoutEditor, useLayoutEditorStore } from '../ui/layout-editor/layoutEditorStore'
+import { cancelTopbarInteraction, closeLayoutEditor, openLayoutEditor, useLayoutEditorStore } from '../ui/layout-editor/layoutEditorStore'
 import { openDeveloperTools } from '../devtools/developerToolsStore'
 import { DeveloperToolsWindow } from '../devtools/DeveloperToolsWindow'
 import { LayoutEditorDrawer } from '../ui/layout-editor/LayoutEditorDrawer'
@@ -17,6 +17,7 @@ import { Topbar } from './shell/Topbar'
 import { ActivityMonitor } from './shell/ActivityMonitor'
 import { OfflineBankPopover } from './shell/OfflineBankPopover'
 import { ToastStack } from './shell/ToastStack'
+import { TooltipProvider, dismissGameTooltips } from '../components/ui/tooltip/Tooltip'
 
 export function GameShell() {
   const screen = useGameStore((state) => state.ui.screen)
@@ -38,12 +39,12 @@ export function GameShell() {
 
   useEffect(() => {
     if (!editor.isEditing) return
-    const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape' && !(event.target as HTMLElement | null)?.matches('input,select,textarea')) { event.preventDefault(); closeLayoutEditor() } }
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape' && !(event.target as HTMLElement | null)?.matches('input,select,textarea')) { event.preventDefault(); if (editor.shellInteraction !== 'idle') cancelTopbarInteraction(); else closeLayoutEditor() } }
     const onResize = () => { if (window.innerWidth < 1024) closeLayoutEditor('UI Editor is available on desktop-sized layouts.') }
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('resize', onResize)
     return () => { window.removeEventListener('keydown', onKeyDown); window.removeEventListener('resize', onResize) }
-  }, [editor.isEditing])
+  }, [editor.isEditing, editor.shellInteraction])
 
   useEffect(() => {
     const group = navigation.group.id
@@ -65,15 +66,15 @@ export function GameShell() {
     const groupId = id as keyof typeof preferences.navigationGroups
     setUiPreferences({ navigationGroups: { ...preferences.navigationGroups, [groupId]: !preferences.navigationGroups[groupId] } })
   }
-  const openDevTools = () => { setOfflineBankOpen(false); openDeveloperTools() }
-  const toggleEditor = () => { if (editor.isEditing) closeLayoutEditor(); else openLayoutEditor(screen) }
+  const openDevTools = () => { dismissGameTooltips(); setOfflineBankOpen(false); openDeveloperTools() }
+  const toggleEditor = () => { dismissGameTooltips(); if (editor.isEditing) closeLayoutEditor(); else openLayoutEditor(screen) }
   const switchProfile = () => { const result = leaveToProfiles(); if (!result.ok) setProfileSwitchError(result.error) }
 
-  return <div className="game-shell">
+  return <TooltipProvider><div className="game-shell">
     {preferences.backgroundEffects && <ArcaneAtmosphere accentColor={appearance.accent} opacity={preferences.theme === 'light' ? 0.22 : 0.72} reducedMotion={preferences.reducedMotion} />}
     <Sidebar screen={screen} setScreen={setScreen} preferences={preferences} toggleGroup={toggleGroup} activeProfile={activeProfile} profileSwitchError={profileSwitchError} switchProfile={switchProfile} />
     <main className={`main-area ${editor.isEditing ? 'editor-open' : ''}`}>
-      <Topbar screen={screen} editor={editor} offlineBankOpen={offlineBankOpen} onOfflineBankToggle={() => setOfflineBankOpen((open) => !open)} onDeveloperTools={openDevTools} onEditUi={toggleEditor} onSettings={() => { setOfflineBankOpen(false); setScreen('settings') }} onMobileMenu={() => setScreen('home')} />
+      <Topbar screen={screen} editor={editor} offlineBankOpen={offlineBankOpen} onOfflineBankToggle={() => { dismissGameTooltips(); setOfflineBankOpen((open) => !open) }} onDeveloperTools={openDevTools} onEditUi={toggleEditor} onSettings={() => { dismissGameTooltips(); setOfflineBankOpen(false); setScreen('settings') }} onMobileMenu={() => setScreen('home')} />
       <OfflineBankPopover open={offlineBankOpen} onClose={() => setOfflineBankOpen(false)} />
       <div className="screen-scroll"><ScreenRouter /></div>
       <ActivityMonitor />
@@ -82,5 +83,5 @@ export function GameShell() {
     <DeveloperToolsWindow />
     {!editor.isEditing && editor.notice && <div className="layout-editor-notice-toast" role="status">{editor.notice}</div>}
     <ToastStack />
-  </div>
+  </div></TooltipProvider>
 }

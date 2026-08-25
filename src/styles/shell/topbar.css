@@ -2,6 +2,7 @@
 .topbar-shell-grid { display: grid; grid-template-columns: repeat(5, max-content); align-items: stretch; gap: 10px; min-width: 0; width: 100%; height: 62px; }
 .topbar-shell-grid > .game-tooltip-trigger { display: block; width: max-content; min-width: 0; }
 .topbar-shell-grid > .game-tooltip-trigger:last-child { margin-left: auto; }
+.topbar-shell-grid > .topbar-region-utilities { margin-left: auto; }
 .topbar-shell-region { position: relative; height: 100%; min-width: 0; overflow: visible; }
 .topbar-shell-region > .crumb { width: 100%; height: 100%; }
 .topbar-resource, .mana-hero { position: relative; width: 100%; height: 100%; min-width: 0; border: 1px solid var(--ui-border); border-radius: 9px; background: color-mix(in srgb, var(--ui-panel) 88%, transparent); color: var(--ui-text-soft); overflow: visible; }
@@ -44,26 +45,36 @@
 .focus-resource > small { margin-top: 3px; letter-spacing: 0; }
 .focus-resource.tight-resource { border-color: color-mix(in srgb, var(--ui-warning) 48%, var(--ui-border)); }
 .focus-resource.tight-resource .focus-head strong { color: var(--ui-warning); }
-.focus-allocation-details { position: absolute; top: calc(100% + 8px); right: 0; z-index: 20; display: none; width: 240px; max-width: min(240px, calc(100vw - 24px)); padding: 9px; border: 1px solid var(--ui-border-strong); border-radius: 8px; background: var(--ui-panel-strong); box-shadow: 0 18px 45px var(--ui-shadow); color: var(--ui-text-muted); font: var(--text-micro) var(--font-sans); }
-.focus-resource:hover .focus-allocation-details, .focus-resource:focus .focus-allocation-details, .focus-resource:focus-within .focus-allocation-details { display: grid; gap: 5px; }
 .topbar-v3 .topbar-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; flex: 0 0 auto; height: 100%; }
 .topbar-v3 .topbar-actions > .game-tooltip-trigger { display: inline-flex; }
 .topbar-v3 .topbar-tool-button { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 7px 9px; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text-soft); background: var(--ui-panel); cursor: pointer; font: var(--text-xs) var(--font-sans); white-space: nowrap; }
 .topbar-v3 .topbar-tool-button:hover, .topbar-v3 .topbar-tool-button.active { border-color: var(--ui-accent); color: var(--ui-text); background: var(--ui-accent-soft); }
 .topbar-v3 .offline-bank-trigger svg { color: var(--ui-secondary); }
-.topbar-region-overlay { position: absolute; z-index: 4; inset: 2px; display: flex; align-items: flex-start; justify-content: space-between; padding: 3px 4px; border: 1px dashed var(--ui-accent); border-radius: 6px; color: var(--ui-accent); background: color-mix(in srgb, var(--ui-accent-soft) 18%, transparent); pointer-events: none; font: var(--text-micro) var(--font-mono); letter-spacing: .04em; }
-.topbar-region-grip { font-style: normal; opacity: .85; }
-.topbar-region-resize { position: absolute; top: 18%; bottom: 18%; width: 3px; border-radius: 3px; background: var(--ui-accent); opacity: .7; }
-.topbar-region-resize.left { left: -2px; }.topbar-region-resize.right { right: -2px; }
+body.shell-layout-interacting, body.shell-layout-interacting * { user-select: none !important; }
+.topbar-region-overlay { position: absolute; z-index: 4; inset: 2px; display: flex; align-items: flex-start; justify-content: space-between; padding: 3px 4px; border: 1px dashed var(--ui-accent); border-radius: 6px; color: var(--ui-accent); background: color-mix(in srgb, var(--ui-accent-soft) 18%, transparent); pointer-events: none; font: var(--text-micro) var(--font-mono); letter-spacing: .04em; user-select: none; }
+.topbar-region-label { pointer-events: none; }
+.topbar-region-grip { z-index: 2; display: inline-flex; align-items: center; justify-content: center; min-width: 28px; min-height: 24px; padding: 0 4px; border: 1px solid color-mix(in srgb, var(--ui-accent) 48%, transparent); border-radius: 4px; color: var(--ui-accent); background: color-mix(in srgb, var(--ui-panel-strong) 86%, transparent); cursor: grab; font: inherit; line-height: 1; pointer-events: auto; }
+.topbar-region-grip:active { cursor: grabbing; }
+.topbar-region-resize { position: absolute; z-index: 3; top: 12%; bottom: 12%; width: 10px; padding: 0; border: 0; border-radius: 3px; background: transparent; cursor: ew-resize; pointer-events: auto; }
+.topbar-region-resize::after { position: absolute; inset: 0 3px; border-radius: 3px; background: var(--ui-accent); content: ''; opacity: .86; }
+.topbar-region-resize:hover::after { box-shadow: 0 0 10px var(--ui-accent); opacity: 1; }
+.topbar-region-resize.left { left: -5px; }.topbar-region-resize.right { right: -5px; }
+.topbar-region-overlay:has(.topbar-region-grip) { cursor: default; }
+.shell-region-editing.selected .topbar-region-overlay { border-style: solid; box-shadow: 0 0 0 2px color-mix(in srgb, var(--ui-accent) 20%, transparent); }
 @media (max-width: 1380px) {
   .topbar-v3 { padding-inline: 18px; gap: 10px; }
   .topbar-v3 .topbar-tool-button span { display: none; }
   .topbar-shell-grid { grid-template-columns: repeat(5, minmax(0, auto)); gap: 7px; }
 }
+@media (max-width: 1200px) and (min-width: 981px) {
+  .topbar-shell-grid { grid-template-columns: minmax(100px, .8fr) minmax(125px, 1fr) minmax(280px, 2fr) minmax(150px, 1.1fr) auto; }
+  .topbar-shell-grid .topbar-shell-region { width: 100% !important; }
+}
 @media (max-width: 980px) {
   .topbar-v3 { height: auto; min-height: 82px; flex-wrap: wrap; }
   .topbar-shell-grid { order: 4; width: 100%; height: 58px; grid-template-columns: minmax(100px, 140px) minmax(0, 1fr) minmax(0, 1.5fr) minmax(120px, 180px) auto; }
   .topbar-shell-grid > .game-tooltip-trigger { width: auto !important; }
+  .topbar-shell-grid .topbar-shell-region { width: 100% !important; }
   .topbar-v3 .topbar-actions { margin-left: 0; }
 }
 @media (max-width: 620px) {

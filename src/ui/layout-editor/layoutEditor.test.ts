@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { UI_LAYOUTS_KEY } from './layoutEditorStorage'
-import { closeLayoutEditor, getLayoutEditorState, getSavedScreenLayouts, moveSelectedPanel, openLayoutEditor, resetAllScreenLayouts, selectLayoutPanel, togglePanelHidden, togglePanelLocked, undoLayout, redoLayout, updateSelectedPanel } from './layoutEditorStore'
+import { beginTopbarReorder, beginTopbarResize, cancelTopbarInteraction, closeLayoutEditor, commitTopbarInteraction, getLayoutEditorState, getSavedScreenLayouts, getTopbarLayout, moveSelectedPanel, openLayoutEditor, previewTopbarOrder, previewTopbarResize, resetAllScreenLayouts, selectLayoutPanel, setLayoutTarget, togglePanelHidden, togglePanelLocked, undoLayout, redoLayout, updateSelectedPanel } from './layoutEditorStore'
 
 describe('layout editor persistence and session state', () => {
   beforeEach(() => { localStorage.clear(); resetAllScreenLayouts(); closeLayoutEditor(); Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1280 }) })
@@ -28,5 +28,26 @@ describe('layout editor persistence and session state', () => {
 
   it('guards editor entry below desktop width', () => {
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 900 }); expect(openLayoutEditor('home')).toBe(false); expect(getLayoutEditorState().isEditing).toBe(false); expect(getLayoutEditorState().notice).toContain('desktop-sized')
+  })
+
+  it('directly resizes the live shell with one undoable commit', () => {
+    openLayoutEditor('home'); setLayoutTarget('shell')
+    beginTopbarResize('topbar-mana', 'right', 100); previewTopbarResize(200)
+    expect(getTopbarLayout().widths['topbar-mana']).toBe(700)
+    expect(JSON.parse(localStorage.getItem(UI_LAYOUTS_KEY) ?? '{}').shell.topbar.widths['topbar-mana']).toBe(600)
+    commitTopbarInteraction()
+    expect(getTopbarLayout().widths['topbar-mana']).toBe(700)
+    undoLayout()
+    expect(getTopbarLayout().widths['topbar-mana']).toBe(600)
+  })
+
+  it('directly reorders resources and can cancel an interaction', () => {
+    openLayoutEditor('home'); setLayoutTarget('shell')
+    beginTopbarReorder('topbar-focus', 100); previewTopbarOrder(['topbar-breadcrumb', 'topbar-health', 'topbar-focus', 'topbar-mana', 'topbar-utilities']); commitTopbarInteraction()
+    expect(getTopbarLayout().order).toEqual(['topbar-breadcrumb', 'topbar-health', 'topbar-focus', 'topbar-mana', 'topbar-utilities'])
+    undoLayout()
+    expect(getTopbarLayout().order).toEqual(['topbar-breadcrumb', 'topbar-health', 'topbar-mana', 'topbar-focus', 'topbar-utilities'])
+    beginTopbarResize('topbar-health', 'right', 100); previewTopbarResize(1000); cancelTopbarInteraction()
+    expect(getTopbarLayout().widths['topbar-health']).toBe(160)
   })
 })

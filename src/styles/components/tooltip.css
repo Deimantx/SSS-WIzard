@@ -2,11 +2,15 @@
 .game-tooltip-trigger.block { display: block; width: 100%; }
 .game-tooltip { position: fixed; z-index: 90; width: max-content; max-width: min(360px, calc(100vw - 16px)); padding: 8px 10px; border: 1px solid var(--tooltip-border, var(--ui-border-strong)); border-left: 2px solid var(--tooltip-accent, var(--ui-accent)); border-radius: 7px; color: var(--tooltip-text, var(--ui-text)); background: var(--tooltip-bg, var(--ui-panel-strong)); box-shadow: 0 14px 34px var(--ui-shadow); font: var(--text-xs) var(--font-sans); line-height: 1.45; pointer-events: none; opacity: 0; transform: translateY(3px); transition: opacity 130ms ease, transform 130ms ease; }
 .game-tooltip.is-positioned { opacity: 1; transform: translateY(0); }
-.game-tooltip-content { display: grid; gap: 4px; min-width: 180px; max-width: 340px; }
+.game-tooltip-content { display: grid; gap: 4px; min-width: 180px; max-width: 260px; }
+.game-tooltip-content.game-tooltip-rich { width: min(300px, calc(100vw - 28px)); max-width: 300px; }
 .game-tooltip-content > strong { color: var(--tooltip-title, var(--ui-text)); font: var(--text-xs) var(--font-mono); letter-spacing: .02em; }
 .game-tooltip-content > p { margin: 0; color: var(--tooltip-muted, var(--ui-text-muted)); font-size: var(--text-micro); line-height: 1.5; }
 .game-tooltip-content .tooltip-row { display: flex; justify-content: space-between; gap: 16px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
 .game-tooltip-content .tooltip-row b { color: var(--ui-text-soft); font-weight: 500; text-align: right; }
+.game-tooltip-content .tooltip-section { display: grid; gap: 3px; margin-top: 5px; padding-top: 5px; border-top: 1px solid var(--ui-border); }
+.game-tooltip-content .tooltip-section small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; }
+.game-tooltip-content .tooltip-section p { margin: 0; color: var(--ui-text-soft); font-size: var(--text-micro); line-height: 1.45; }
 .game-tooltip-neutral { --tooltip-accent: var(--ui-accent); }
 .game-tooltip-mana { --tooltip-accent: var(--resource-mana); }
 .game-tooltip-health { --tooltip-accent: var(--resource-health); }

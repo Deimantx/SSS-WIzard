@@ -12,7 +12,7 @@ export const TOPBAR_WIDTH_LIMITS: Record<TopbarRegionId, { min: number; max: num
 }
 
 const orderWithResources = (order: readonly TopbarRegionId[]) => {
-  const resources = TOPBAR_RESOURCE_IDS.filter((id) => order.includes(id))
+  const resources = [...order.filter((id): id is TopbarRegionId => TOPBAR_RESOURCE_IDS.includes(id)), ...TOPBAR_RESOURCE_IDS.filter((id) => !order.includes(id))]
   return ['topbar-breadcrumb', ...resources, 'topbar-utilities'] as TopbarRegionId[]
 }
 

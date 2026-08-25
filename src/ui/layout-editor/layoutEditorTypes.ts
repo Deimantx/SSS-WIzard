@@ -48,6 +48,9 @@ export interface PanelDefinition {
 export interface LayoutEditorState {
   isEditing: boolean
   layoutTarget: 'screen' | 'shell'
+  shellInteraction: 'idle' | 'dragging' | 'resizing'
+  shellPreview: TopbarLayout | null
+  selectedShellRegion: TopbarRegionId | null
   selectedPanelId: string | null
   showGrid: boolean
   panelInteraction: boolean

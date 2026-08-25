@@ -1763,14 +1763,18 @@ Testavimo įrankio veiksmai turi būti aiškiai atskirti nuo normalaus žaidimo,
 
 - 
 
-### Channeling Chamber V2 (Phase 2.4)
+### Pillars of Mana and Life Essence (Phase 2.5)
+
+The Channeling Chamber now includes five immediately available permanent Pillars: Leyline Conduit, Arcane Reservoir, Mana Resonance, Astral Expansion, and Echo Attunement. Each starts at Rank I, Level 0 / 10, uses the shared 5 / 10 / 15 / 25 / 40 / 60 / 90 / 130 / 180 / 250 Fragment curve plus 10 / 20 / 30 / 50 / 80 / 120 / 180 / 260 / 360 / 500 Life Essence, and becomes Mastered at Level 10. Rank II is future content and has no active purchase flow.
+
+Life Essence is a universal monster material. Every current enemy, including bosses, drops 1–3 Life Essence at 100% chance in addition to its existing loot. It is used with Elemental Fragments for permanent Tower progression, is not a Research material, and is not currently used in Transmutation recipes.
+
+Mana Resonance amplifies all passive non-Echo Mana regeneration. Astral Expansion amplifies the full pre-amplification Max Mana pool, including equipment and Deep Reservoir. Echo Attunement affects Arcane Echo output only; Echo Focus cost and the five-Echo limit remain unchanged. Existing Arcane Discoveries remain permanent and stack in their existing categories.
+
+### Historical Channeling Chamber V2 (Phase 2.4)
 
 The Channeling Chamber uses passive Mana generation rather than a manual Channel button. Fresh profiles begin at **+5 Mana/s** and may assign **0–5 Arcane Echoes**, reserving **10 Focus** and adding **+5 Mana/s** per Echo. Five Echoes therefore reserve 50 Focus and produce **+30 Mana/s** total with starting infrastructure.
 
-Channeling infrastructure is permanent progression:
-
-- Mana Reservoir, Rank 0–5, adds +25 Max Mana per rank and consumes Earth + Water Fragments.
-- Leyline Conduit, Rank 0–5, adds +1 Natural Mana/s per rank and consumes Water + Air Fragments.
-- Both upgrade families use costs 9 / 18 / 50 / 160 / 250 of each required Fragment.
+The Phase 2.4 implementation established the passive Mana and Echo foundation that the Phase 2.5 Pillars now extend.
 
 Arcane Discoveries are permanent condition-based principles: Stable Leyline, Echo Resonance, and Deep Reservoir. Future discoveries remain hidden placeholders until implemented.

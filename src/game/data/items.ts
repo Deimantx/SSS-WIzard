@@ -1,8 +1,10 @@
 import type { ItemDefinition, ItemId, SchoolId } from '../types'
 
-const material = (id: ItemId, name: string, description: string, icon: string, color: string, category: ItemDefinition['category'], source: string, researchSchool?: SchoolId): ItemDefinition => ({ id, name, description, icon, color, kind: 'material', category, source, researchSchool, researchXp: 10 })
+const material = (id: ItemId, name: string, description: string, icon: string, color: string, category: ItemDefinition['category'], source: string, researchSchool?: SchoolId): ItemDefinition => ({ id, name, description, icon, color, kind: 'material', category, source, ...(researchSchool ? { researchSchool, researchXp: 10 } : {}) })
+const universalMaterial = (id: ItemId, name: string, description: string, icon: string, color: string, category: ItemDefinition['category'], source: string): ItemDefinition => ({ id, name, description, icon, color, kind: 'material', category, source })
 
 export const ITEMS: Record<ItemId, ItemDefinition> = {
+  'life-essence': universalMaterial('life-essence', 'Life Essence', 'Vital residue released when living magic is defeated. A universal catalyst for permanent Tower upgrades.', '✧', '#8fe0c0', 'monster-loot', 'All monsters'),
   'fire-fragment': material('fire-fragment', 'Fire Fragment', 'A hot shard of condensed elemental force.', '◆', '#ff745d', 'elemental', 'Elemental Condensation', 'fire'),
   'water-fragment': material('water-fragment', 'Water Fragment', 'A cool fragment that remembers the tide.', '◇', '#64b7ff', 'elemental', 'Elemental Condensation', 'water'),
   'earth-fragment': material('earth-fragment', 'Earth Fragment', 'Dense mineral magic from the deep places.', '⬢', '#d5a36b', 'elemental', 'Elemental Condensation', 'earth'),

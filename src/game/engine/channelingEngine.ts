@@ -1,26 +1,33 @@
 import { BALANCE } from '../data/balance'
 import { CHANNELING_DISCOVERIES } from '../data/channelingDiscoveries'
-import { CHANNELING_UPGRADES, getChannelingRankCost } from '../data/channeling'
 import { ITEMS } from '../data/items'
-import type { ChannelingDiscoveryId, ChannelingUpgradeId, EquipmentStats, GameState } from '../types'
+import { MANA_PILLARS } from '../data/manaPillars'
+import type { ChannelingDiscoveryId, EquipmentStats, GameState, ManaPillarId } from '../types'
 import { clamp } from '../utils'
 
 export interface ManaRegenBreakdown {
   baseNatural: number
-  conduitBonus: number
+  leylineConduitBonus: number
   stableLeylineBonus: number
+  equipmentPassiveBonus: number
+  passiveBeforeResonance: number
+  manaResonanceMultiplier: number
+  passiveAfterResonance: number
   echoBase: number
-  echoMultiplier: number
+  echoAttunementMultiplier: number
+  echoDiscoveryMultiplier: number
   echoTotal: number
-  equipmentBonus: number
   total: number
 }
 
 export interface ManaCapacityBreakdown {
   base: number
-  reservoirBonus: number
-  discoveryBonus: number
+  arcaneReservoirBonus: number
+  deepReservoirBonus: number
   equipmentBonus: number
+  futureFlatBonus: number
+  preAmplification: number
+  astralExpansionMultiplier: number
   total: number
 }
 
@@ -35,39 +42,50 @@ const equipmentStatsFor = (state: Pick<GameState, 'equipment'>): EquipmentStats 
   return total
 }
 
-const channelingProgress = (state: Pick<GameState, 'progress'>) => state.progress.channeling
+const pillarLevel = (state: Pick<GameState, 'progress'>, id: ManaPillarId) => Math.max(0, Math.min(10, state.progress.channeling.pillars[id]?.level ?? 0))
+
+export const getManaPillarLevel = (state: Pick<GameState, 'progress'>, id: ManaPillarId) => pillarLevel(state, id)
 
 export const getManaCapacityBreakdown = (state: Pick<GameState, 'player' | 'progress' | 'equipment'>): ManaCapacityBreakdown => {
-  const progress = channelingProgress(state)
   const stats = equipmentStatsFor(state)
+  const arcaneReservoirBonus = pillarLevel(state, 'arcane-reservoir') * 25
+  const deepReservoirBonus = state.progress.channeling.discoveries['deep-reservoir'] ? BALANCE.channeling.deepReservoirCapacityBonus : 0
+  const equipmentBonus = stats.maxMana ?? 0
+  const futureFlatBonus = 0
+  const preAmplification = state.player.baseMaxMana + arcaneReservoirBonus + deepReservoirBonus + equipmentBonus + futureFlatBonus
+  const astralExpansionMultiplier = 1 + pillarLevel(state, 'astral-expansion') * 0.05
   return {
     base: state.player.baseMaxMana,
-    reservoirBonus: progress.manaReservoirRank * BALANCE.channeling.reservoirCapacityPerRank,
-    discoveryBonus: progress.discoveries['deep-reservoir'] ? BALANCE.channeling.deepReservoirCapacityBonus : 0,
-    equipmentBonus: stats.maxMana ?? 0,
-    total: state.player.baseMaxMana + progress.manaReservoirRank * BALANCE.channeling.reservoirCapacityPerRank + (progress.discoveries['deep-reservoir'] ? BALANCE.channeling.deepReservoirCapacityBonus : 0) + (stats.maxMana ?? 0),
+    arcaneReservoirBonus,
+    deepReservoirBonus,
+    equipmentBonus,
+    futureFlatBonus,
+    preAmplification,
+    astralExpansionMultiplier,
+    total: Math.floor(preAmplification * astralExpansionMultiplier),
   }
 }
 
 export const getManaRegenBreakdown = (state: Pick<GameState, 'activities' | 'progress' | 'equipment'>): ManaRegenBreakdown => {
-  const progress = channelingProgress(state)
   const stats = equipmentStatsFor(state)
   const echoes = clamp(state.activities.channeling.echoesAssigned, 0, BALANCE.channeling.maxEchoes)
-  const echoMultiplier = progress.discoveries['echo-resonance'] ? BALANCE.channeling.discoveryEchoMultiplier : 1
-  const echoBase = echoes * BALANCE.channeling.echoManaPerSecond
-  const echoTotal = echoBase * echoMultiplier
   const baseNatural = BALANCE.channeling.baseNaturalRegenPerSecond
-  const conduitBonus = progress.leylineConduitRank * BALANCE.channeling.conduitManaRegenPerRank
-  const stableLeylineBonus = progress.discoveries['stable-leyline'] ? 1 : 0
-  const equipmentBonus = stats.manaRegen ?? 0
-  return { baseNatural, conduitBonus, stableLeylineBonus, echoBase, echoMultiplier, echoTotal, equipmentBonus, total: baseNatural + conduitBonus + stableLeylineBonus + echoTotal + equipmentBonus }
+  const leylineConduitBonus = pillarLevel(state, 'leyline-conduit')
+  const stableLeylineBonus = state.progress.channeling.discoveries['stable-leyline'] ? BALANCE.channeling.stableLeylineRegenBonus : 0
+  const equipmentPassiveBonus = stats.manaRegen ?? 0
+  const passiveBeforeResonance = baseNatural + leylineConduitBonus + stableLeylineBonus + equipmentPassiveBonus
+  const manaResonanceMultiplier = 1 + pillarLevel(state, 'mana-resonance') * 0.05
+  const passiveAfterResonance = passiveBeforeResonance * manaResonanceMultiplier
+  const echoBase = echoes * BALANCE.channeling.echoManaPerSecond
+  const echoAttunementMultiplier = 1 + pillarLevel(state, 'echo-attunement') * 0.05
+  const echoDiscoveryMultiplier = state.progress.channeling.discoveries['echo-resonance'] ? BALANCE.channeling.discoveryEchoMultiplier : 1
+  const echoTotal = echoBase * echoAttunementMultiplier * echoDiscoveryMultiplier
+  return { baseNatural, leylineConduitBonus, stableLeylineBonus, equipmentPassiveBonus, passiveBeforeResonance, manaResonanceMultiplier, passiveAfterResonance, echoBase, echoAttunementMultiplier, echoDiscoveryMultiplier, echoTotal, total: passiveAfterResonance + echoTotal }
 }
 
 export const manaRegenPerSecond = (state: Pick<GameState, 'activities' | 'progress' | 'equipment'>) => getManaRegenBreakdown(state).total
 
-export const getChannelingUpgradeRank = (state: Pick<GameState, 'progress'>, upgradeId: ChannelingUpgradeId) => upgradeId === 'mana-reservoir' ? state.progress.channeling.manaReservoirRank : state.progress.channeling.leylineConduitRank
-
-export const getChannelingUpgradeCost = (upgradeId: ChannelingUpgradeId, nextRank: number) => CHANNELING_UPGRADES[upgradeId] && getChannelingRankCost(nextRank)
+export const getManaPillarDefinition = (id: ManaPillarId) => MANA_PILLARS[id]
 
 export const checkChannelingDiscoveries = (state: GameState): ChannelingDiscoveryId[] => {
   const channeling = state.progress.channeling
@@ -100,4 +118,3 @@ export const advanceChanneling = (state: GameState, deltaMs: number) => {
   const discoveries = checkChannelingDiscoveries(state)
   return { gained, discoveries }
 }
-

@@ -36,6 +36,17 @@ describe('screen smoke coverage', () => {
     expect(screen.queryByRole('dialog', { name: 'Arcane Discoveries' })).toBeNull()
   })
 
+  it('renders the five available Pillars and Life Essence in the item archive', async () => {
+    const user = userEvent.setup()
+    render(<GameShell />)
+    await goToTower(user, 'Channeling')
+    expect(screen.getByRole('heading', { name: 'Pillars of Mana' })).toBeTruthy()
+    for (const name of ['Leyline Conduit', 'Arcane Reservoir', 'Mana Resonance', 'Astral Expansion', 'Echo Attunement']) expect(screen.getByText(name, { selector: 'h3' })).toBeTruthy()
+    await user.click(navItem('Collection'))
+    await user.click(screen.getByRole('button', { name: 'Items' }))
+    expect(screen.getByText('Life Essence')).toBeTruthy()
+  })
+
   it('navigates every major screen through grouped shell navigation', async () => {
     const user = userEvent.setup()
     render(<GameShell />)

@@ -11,6 +11,7 @@ export type ItemId =
   | 'wisp-essence'
   | 'grove-bark'
   | 'heartseed'
+  | 'life-essence'
   | 'apprentice-wand'
   | 'ember-staff'
   | 'tide-focus'
@@ -24,7 +25,7 @@ export type EquipmentSlot = 'weapon' | 'robe' | 'focus' | 'charm'
 export type ItemCategory = 'elemental' | 'monster-loot' | 'equipment' | 'boss-loot'
 export type SpellType = 'damage' | 'heal' | 'barrier' | 'dot' | 'buff'
 export type StatusId = 'barrier' | 'thorn-wound' | 'burning' | 'attack-delay' | 'quickening'
-export type ChannelingUpgradeId = 'mana-reservoir' | 'leyline-conduit'
+export type ManaPillarId = 'leyline-conduit' | 'arcane-reservoir' | 'mana-resonance' | 'astral-expansion' | 'echo-attunement'
 export type ChannelingDiscoveryId = 'stable-leyline' | 'echo-resonance' | 'deep-reservoir'
 
 export type AutoCastCondition = { type: 'always' } | { type: 'health-below'; percent: number } | { type: 'barrier-below'; value: number }
@@ -161,11 +162,15 @@ export interface ProgressState {
 }
 
 export interface ChannelingProgress {
-  manaReservoirRank: number
-  leylineConduitRank: number
+  pillars: Record<ManaPillarId, ManaPillarState>
   totalManaGenerated: number
   fiveEchoSustainMs: number
   discoveries: Record<ChannelingDiscoveryId, boolean>
+}
+
+export interface ManaPillarState {
+  rank: number
+  level: number
 }
 /** Gameplay UI state. Layout editing and developer tools are transient UI chrome outside the save. */
 export interface UiState { screen: ScreenId }

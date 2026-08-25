@@ -1,4 +1,5 @@
 import { createInitialState, SAVE_VERSION } from '../store/initialState'
+import { MANA_PILLAR_IDS } from '../game/data/manaPillars'
 import type { GameState, ItemId, ResearchActivity, SchoolId } from '../game/types'
 import { isRecord, SaveMigrationError } from './saveSchema'
 
@@ -20,6 +21,38 @@ const merge = <T extends Record<string, any>>(base: T, value: unknown): T => {
   return result
 }
 
+const safeLevel = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.min(10, Math.round(value))) : 0
+
+const migrateChanneling = (rawProgress: unknown, fresh: GameState['progress']): GameState['progress']['channeling'] => {
+  const source = isRecord(rawProgress) && isRecord(rawProgress.channeling) ? rawProgress.channeling : {}
+  const oldPillars = isRecord(source.pillars) ? source.pillars : {}
+  const oldLeyline = typeof source.leylineConduitRank === 'number' ? source.leylineConduitRank : undefined
+  const oldReservoir = typeof source.manaReservoirRank === 'number' ? source.manaReservoirRank : undefined
+  const pillars = { ...fresh.channeling.pillars }
+  MANA_PILLAR_IDS.forEach((id) => {
+    const oldPillar = isRecord(oldPillars[id]) ? oldPillars[id] : {}
+    const legacyLevel = id === 'leyline-conduit' ? oldLeyline : id === 'arcane-reservoir' ? oldReservoir : undefined
+    pillars[id] = { rank: 1, level: safeLevel(oldPillar.level ?? legacyLevel) }
+  })
+  const discoveries = { ...fresh.channeling.discoveries }
+  ;(['stable-leyline', 'echo-resonance', 'deep-reservoir'] as const).forEach((id) => {
+    if (isRecord(source.discoveries) && typeof source.discoveries[id] === 'boolean') discoveries[id] = source.discoveries[id] as boolean
+  })
+  return {
+    pillars,
+    totalManaGenerated: typeof source.totalManaGenerated === 'number' ? Math.max(0, source.totalManaGenerated) : fresh.channeling.totalManaGenerated,
+    fiveEchoSustainMs: typeof source.fiveEchoSustainMs === 'number' ? Math.max(0, source.fiveEchoSustainMs) : fresh.channeling.fiveEchoSustainMs,
+    discoveries,
+  }
+}
+
+const finalize = (migrated: GameState, raw: Record<string, any>) => {
+  migrated.saveVersion = SAVE_VERSION
+  migrated.progress.channeling = migrateChanneling(raw.progress, createInitialState().progress)
+  migrated.ui.screen = normalizeScreen(isRecord(raw.ui) ? raw.ui.screen : undefined, migrated.ui.screen)
+  return migrated
+}
+
 const migrateV1 = (raw: Record<string, any>): GameState => {
   const fresh = createInitialState()
   const oldPlayer = isRecord(raw.player) ? raw.player : {}
@@ -37,26 +70,23 @@ const migrateV1 = (raw: Record<string, any>): GameState => {
   const research: ResearchActivity = { ...fresh.activities.research, running: Boolean(oldResearch.running), itemId: oldItem, targetSchoolId: target && ['fire', 'water', 'earth', 'air'].includes(target) ? target : null, requestedQuantity: oldItem ? 1 : 0, remainingQuantity: oldItem ? 1 : 0, progressMs: typeof oldResearch.progressMs === 'number' ? oldResearch.progressMs : 0, status: oldResearch.running ? 'running' : 'idle' }
   const migrated: GameState = {
     ...fresh,
-    saveVersion: SAVE_VERSION,
     player: { ...fresh.player, ...oldPlayer, baseMaxHealth: typeof oldPlayer.baseMaxHealth === 'number' ? oldPlayer.baseMaxHealth : oldMaxHealth, baseMaxMana: typeof oldPlayer.baseMaxMana === 'number' ? oldPlayer.baseMaxMana : oldMaxMana, baseMaxFocus: typeof oldPlayer.baseMaxFocus === 'number' ? oldPlayer.baseMaxFocus : oldMaxFocus },
     inventory: { ...fresh.inventory, ...(isRecord(raw.inventory) ? raw.inventory : {}) },
     protectedItems: { ...fresh.protectedItems, ...(oldWeapon ? { [oldWeapon]: true } : {}) },
     equipment: { ...fresh.equipment, weapon: oldWeapon ?? fresh.equipment.weapon, focus: oldFocus ?? null },
     activities: { ...fresh.activities, channeling: { echoesAssigned: oldActivities.autoChannel === true ? 1 : 0 }, research, autoCast: { ...fresh.activities.autoCast, ...(isRecord(oldActivities.autoCast) ? oldActivities.autoCast : {}) } },
-    progress: { ...fresh.progress, ...(isRecord(oldProgress) ? oldProgress : {}) },
+    progress: { ...fresh.progress, ...(oldProgress as Partial<GameState['progress']>) },
     combat: { ...fresh.combat, ...(isRecord(raw.combat) ? raw.combat : {}) },
-    // Legacy editor fields are intentionally discarded from gameplay state.
-    ui: { screen: normalizeScreen(isRecord(raw.ui) ? raw.ui.screen : undefined, fresh.ui.screen) },
+    ui: { screen: fresh.ui.screen },
     offlineBankMs: typeof raw.offlineBankMs === 'number' ? raw.offlineBankMs : 0,
   }
-  return migrated
+  return finalize(migrated, raw)
 }
 
 const migrateV2 = (raw: Record<string, any>): GameState => {
   const fresh = createInitialState()
   const migrated = merge(fresh, raw)
   const oldActivities = isRecord(raw.activities) ? raw.activities : {}
-  migrated.saveVersion = SAVE_VERSION
   migrated.activities = {
     ...fresh.activities,
     condense: isRecord(oldActivities.condense) ? { ...fresh.activities.condense, ...oldActivities.condense } : fresh.activities.condense,
@@ -65,16 +95,21 @@ const migrateV2 = (raw: Record<string, any>): GameState => {
     channeling: { echoesAssigned: oldActivities.autoChannel === true ? 1 : 0 },
     autoCast: { ...fresh.activities.autoCast, ...(isRecord(oldActivities.autoCast) ? oldActivities.autoCast : {}) },
   }
-  migrated.progress.channeling = { ...fresh.progress.channeling }
-  migrated.ui.screen = normalizeScreen(isRecord(raw.ui) ? raw.ui.screen : undefined, migrated.ui.screen)
-  return migrated
+  return finalize(migrated, raw)
 }
+
+const migrateV3 = (raw: Record<string, any>): GameState => finalize(merge(createInitialState(), raw), raw)
 
 export const migrateSave = (rawSave: unknown): GameState => {
   if (!isRecord(rawSave)) throw new SaveMigrationError('Save data is not a valid object.')
   const version = rawSave.saveVersion
   if (version === 1) return migrateV1(rawSave)
   if (version === 2) return migrateV2(rawSave)
-  if (version === SAVE_VERSION) { const migrated = merge(createInitialState(), rawSave); migrated.ui.screen = normalizeScreen(isRecord(rawSave.ui) ? rawSave.ui.screen : undefined, migrated.ui.screen); return migrated }
+  if (version === 3) return migrateV3(rawSave)
+  if (version === SAVE_VERSION) {
+    const migrated = merge(createInitialState(), rawSave)
+    migrated.ui.screen = normalizeScreen(isRecord(rawSave.ui) ? rawSave.ui.screen : undefined, migrated.ui.screen)
+    return migrated
+  }
   throw new SaveMigrationError(`Unsupported save version: ${String(version ?? 'missing')}.`)
 }

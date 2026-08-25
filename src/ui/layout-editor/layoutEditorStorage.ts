@@ -22,8 +22,11 @@ export function loadUiLayouts(): UiLayoutDocument {
     const parsed = JSON.parse(raw) as Partial<UiLayoutDocument>
     const screens: UiLayoutDocument['screens'] = {}
     for (const screen of Object.keys(DEFAULT_LAYOUTS) as ScreenId[]) {
-      const source = parsed.screens?.[screen]
-      if (!source || typeof source !== 'object') continue
+      const rawSource = parsed.screens?.[screen]
+      if (!rawSource || typeof rawSource !== 'object') continue
+      const source = screen === 'tower-channeling' && !('channeling-pillars' in rawSource) && 'channeling-infrastructure' in rawSource
+        ? { ...rawSource, 'channeling-pillars': rawSource['channeling-infrastructure'] }
+        : rawSource
       if (screen === 'tower-channeling' && ('channeling-main' in source || 'channeling-stats' in source)) continue
       const panels: Record<string, SavedPanelLayout> = {}
       for (const [id, value] of Object.entries(source)) { const normalized = normalizePanel(screen, id, value); if (normalized) panels[id] = normalized }

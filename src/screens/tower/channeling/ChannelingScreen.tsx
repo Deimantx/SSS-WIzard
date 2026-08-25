@@ -6,7 +6,7 @@ import { useGameStore } from '../../../store/gameStore'
 import { CHANNELING_DISCOVERIES } from '../../../game/data/channelingDiscoveries'
 import { ManaCorePanel } from './ManaCorePanel'
 import { ArcaneEchoPanel } from './ArcaneEchoPanel'
-import { ChannelingInfrastructurePanel } from './ChannelingInfrastructurePanel'
+import { ManaPillarsPanel } from './ManaPillarsPanel'
 import { ArcaneDiscoveriesModal } from './ArcaneDiscoveriesModal'
 
 export function ChannelingScreen() {
@@ -21,9 +21,8 @@ export function ChannelingScreen() {
     <EditableGrid screen="tower-channeling" panels={[
       { id: 'channeling-mana-core', content: <ManaCorePanel /> },
       { id: 'channeling-echoes', content: <ArcaneEchoPanel /> },
-      { id: 'channeling-infrastructure', content: <ChannelingInfrastructurePanel /> },
+      { id: 'channeling-pillars', content: <ManaPillarsPanel /> },
     ]} />
     {discoveriesOpen && <ArcaneDiscoveriesModal onClose={() => setDiscoveriesOpen(false)} />}
   </div>
 }
-

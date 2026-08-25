@@ -9,7 +9,7 @@ import { SCHOOLS } from '../game/data/schools'
 import { SPELLS } from '../game/data/spells'
 import { RECIPES as RECIPE_DATA } from '../game/data/recipes'
 import { CHANNELING_DISCOVERIES } from '../game/data/channelingDiscoveries'
-import { CHANNELING_UPGRADES, getChannelingRankCost } from '../game/data/channeling'
+import { MANA_PILLARS, getManaPillarLevelCost } from '../game/data/manaPillars'
 import { advanceChanneling, checkChannelingDiscoveries } from '../game/engine/channelingEngine'
 import { appendLog, barrierMultiplier, canReserveFocus, completeResearchCycle, equipmentStats, manaRegenPerSecond, playerBasicDamage, pushNotification, recalculateDerivedStats, selectFreeFocus, selectUsedFocus, spellDamageMultiplier } from '../game/engine'
 import { loadProfileGame, saveProfileGame } from '../persistence/profileSaveManager'
@@ -17,7 +17,7 @@ import { AUTOSAVE_INTERVAL_MS, type SaveReason } from '../persistence/saveConsta
 import { getActiveProfileId } from '../profiles/profileSessionStore'
 import { updateProfileMetadata } from '../profiles/profileStorage'
 import { createInitialState } from './initialState'
-import type { ChannelingDiscoveryId, ChannelingUpgradeId, DungeonId, EquipmentSlot, GameState, ItemId, MonsterId, SchoolId, ScreenId, SpellEffect, SpellId, StatusEffect } from '../game/types'
+import type { ChannelingDiscoveryId, DungeonId, EquipmentSlot, GameState, ItemId, ManaPillarId, MonsterId, SchoolId, ScreenId, SpellEffect, SpellId, StatusEffect } from '../game/types'
 import { clamp, formatTime } from '../game/utils'
 
 export interface GameActions {
@@ -26,8 +26,8 @@ export interface GameActions {
   addArcaneEcho: () => void
   removeArcaneEcho: () => void
   setChannelingEchoes: (amount: number) => void
-  purchaseChannelingUpgrade: (upgradeId: ChannelingUpgradeId) => void
-  setChannelingUpgradeRank: (upgradeId: ChannelingUpgradeId, rank: number) => void
+  upgradeManaPillar: (pillarId: ManaPillarId) => void
+  setManaPillarLevel: (pillarId: ManaPillarId, level: number) => void
   setChannelingManaGenerated: (amount: number) => void
   setChannelingFiveEchoSustain: (amount: number) => void
   setChannelingDiscovery: (id: ChannelingDiscoveryId, completed: boolean) => void
@@ -379,28 +379,41 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     return state
   }),
   setChannelingEchoes: (amount) => set((state) => { state.activities.channeling.echoesAssigned = clamp(Math.round(amount), 0, BALANCE.channeling.maxEchoes); return state }),
-  purchaseChannelingUpgrade: (upgradeId) => set((state) => {
-    const upgrade = CHANNELING_UPGRADES[upgradeId]
-    const currentRank = state.progress.channeling[upgradeId === 'mana-reservoir' ? 'manaReservoirRank' : 'leylineConduitRank']
-    const nextRank = currentRank + 1
-    if (currentRank >= upgrade.maxRank) { pushNotification(state, `${upgrade.name} is already at MAX RANK`, 'warning'); return state }
-    const cost = getChannelingRankCost(nextRank)
+  upgradeManaPillar: (pillarId) => set((state) => {
+    const pillar = MANA_PILLARS[pillarId]
+    const currentLevel = state.progress.channeling.pillars[pillarId].level
+    const nextLevel = currentLevel + 1
+    if (currentLevel >= pillar.maxLevel) { pushNotification(state, `${pillar.name} is already mastered`, 'warning'); return state }
+    const cost = getManaPillarLevelCost(nextLevel)
     if (!cost) return state
-    const blocked = upgrade.resources.find((itemId) => isProtected(state, itemId))
+    const requiredItems = [...pillar.fragmentRequirements, 'life-essence' as const]
+    const blocked = requiredItems.find((itemId) => isProtected(state, itemId))
     if (blocked) { pushNotification(state, `Upgrade blocked. ${ITEMS[blocked].name} is protected.`, 'warning'); return state }
-    const missing = upgrade.resources.find((itemId) => (state.inventory[itemId] ?? 0) < cost)
-    if (missing) { pushNotification(state, `Not enough ${ITEMS[missing].name}. Need ${cost}.`, 'warning'); return state }
-    upgrade.resources.forEach((itemId) => { state.inventory[itemId] = (state.inventory[itemId] ?? 0) - cost })
-    if (upgradeId === 'mana-reservoir') state.progress.channeling.manaReservoirRank = nextRank
-    else state.progress.channeling.leylineConduitRank = nextRank
+    const missing = requiredItems.find((itemId) => (state.inventory[itemId] ?? 0) < (itemId === 'life-essence' ? cost.lifeEssence : cost.fragment))
+    if (missing) {
+      const required = missing === 'life-essence' ? cost.lifeEssence : cost.fragment
+      pushNotification(state, `Not enough ${ITEMS[missing].name}. Need ${required}.`, 'warning')
+      return state
+    }
+    pillar.fragmentRequirements.forEach((itemId) => { state.inventory[itemId] = (state.inventory[itemId] ?? 0) - cost.fragment })
+    state.inventory['life-essence'] = (state.inventory['life-essence'] ?? 0) - cost.lifeEssence
+    state.progress.channeling.pillars[pillarId].level = nextLevel
     recalculateDerivedStats(state)
     const discoveries = checkChannelingDiscoveries(state)
-    pushNotification(state, `${upgrade.name} upgraded to Rank ${nextRank}`, 'success')
+    pushNotification(state, nextLevel === pillar.maxLevel ? `${pillar.name} mastered Rank I` : `${pillar.name} reached Level ${nextLevel}`, 'success')
     discoveries.forEach((id) => { const discovery = CHANNELING_DISCOVERIES.find((entry) => entry.id === id); if (discovery) pushNotification(state, `Arcane Discovery: ${discovery.name}`, 'success') })
     if (discoveries.includes('deep-reservoir')) recalculateDerivedStats(state)
     return state
   }),
-  setChannelingUpgradeRank: (upgradeId, rank) => set((state) => { const safeRank = clamp(Math.round(rank), 0, CHANNELING_UPGRADES[upgradeId].maxRank); if (upgradeId === 'mana-reservoir') state.progress.channeling.manaReservoirRank = safeRank; else state.progress.channeling.leylineConduitRank = safeRank; recalculateDerivedStats(state); const discoveries = checkChannelingDiscoveries(state); discoveries.forEach((id) => { const discovery = CHANNELING_DISCOVERIES.find((entry) => entry.id === id); if (discovery) pushNotification(state, `Arcane Discovery: ${discovery.name}`, 'success') }); if (discoveries.includes('deep-reservoir')) recalculateDerivedStats(state); return state }),
+  setManaPillarLevel: (pillarId, level) => set((state) => {
+    state.progress.channeling.pillars[pillarId].rank = 1
+    state.progress.channeling.pillars[pillarId].level = clamp(Math.round(level), 0, MANA_PILLARS[pillarId].maxLevel)
+    recalculateDerivedStats(state)
+    const discoveries = checkChannelingDiscoveries(state)
+    discoveries.forEach((id) => { const discovery = CHANNELING_DISCOVERIES.find((entry) => entry.id === id); if (discovery) pushNotification(state, `Arcane Discovery: ${discovery.name}`, 'success') })
+    if (discoveries.includes('deep-reservoir')) recalculateDerivedStats(state)
+    return state
+  }),
   setChannelingManaGenerated: (amount) => set((state) => { state.progress.channeling.totalManaGenerated = Math.max(0, amount); const discoveries = checkChannelingDiscoveries(state); discoveries.forEach((id) => { const discovery = CHANNELING_DISCOVERIES.find((entry) => entry.id === id); if (discovery) pushNotification(state, `Arcane Discovery: ${discovery.name}`, 'success') }); if (discoveries.includes('deep-reservoir')) recalculateDerivedStats(state); return state }),
   setChannelingFiveEchoSustain: (amount) => set((state) => { state.progress.channeling.fiveEchoSustainMs = Math.max(0, amount); const discoveries = checkChannelingDiscoveries(state); discoveries.forEach((id) => { const discovery = CHANNELING_DISCOVERIES.find((entry) => entry.id === id); if (discovery) pushNotification(state, `Arcane Discovery: ${discovery.name}`, 'success') }); return state }),
   setChannelingDiscovery: (id, completed) => set((state) => { state.progress.channeling.discoveries[id] = completed; recalculateDerivedStats(state); return state }),

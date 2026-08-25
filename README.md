@@ -56,7 +56,7 @@ Appearance preferences and UI layouts are global to this browser, while gameplay
 
 ## Current Gameplay Loop
 
-Mana → elemental materials → Research → Magic School progression → spells → Combat → loot → Transmutation → equipment → bosses → higher cap.
+Mana → elemental materials → Research → Magic School progression → spells → Combat → loot → Transmutation → equipment → bosses → higher cap. Channeling progression includes five Pillars of Mana upgraded with Elemental Fragments and Life Essence earned from combat.
 
 ## Development Notes
 

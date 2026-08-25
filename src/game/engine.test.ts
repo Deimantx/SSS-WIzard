@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { BALANCE, SCHOOL_LEVEL_XP } from './data/balance'
-import { CHANNELING_RANK_COSTS } from './data/channeling'
+import { MANA_PILLARS, PILLAR_LEVEL_COSTS } from './data/manaPillars'
 import { chooseMonster } from './data/dungeons'
 import { MONSTERS } from './data/monsters'
 import { getResearchXp } from './data/items'
 import { completeResearchCycle, focusReservations, getSchoolLevel, manaRegenPerSecond, selectUsedFocus, usedFocus } from './engine'
+import { getManaCapacityBreakdown, getManaRegenBreakdown } from './engine/channelingEngine'
 import { migrateSave } from '../persistence/migrations'
 import { makeInitialState, useGameStore } from '../store/gameStore'
 
@@ -129,9 +130,12 @@ describe('central game loop', () => {
   })
 })
 
-describe('Channeling V2 economy', () => {
-  it('uses the confirmed cost curve for both infrastructure families', () => {
-    expect(Object.values(CHANNELING_RANK_COSTS)).toEqual([9, 18, 50, 160, 250])
+describe('Pillars of Mana economy', () => {
+  it('uses the exact common cost curve and makes all five Pillars available fresh', () => {
+    expect(Object.values(PILLAR_LEVEL_COSTS).map((cost) => cost.fragment)).toEqual([5, 10, 15, 25, 40, 60, 90, 130, 180, 250])
+    expect(Object.values(PILLAR_LEVEL_COSTS).map((cost) => cost.lifeEssence)).toEqual([10, 20, 30, 50, 80, 120, 180, 260, 360, 500])
+    expect(Object.values(makeInitialState().progress.channeling.pillars).every((pillar) => pillar.rank === 1 && pillar.level === 0)).toBe(true)
+    expect(Object.keys(MANA_PILLARS)).toHaveLength(5)
   })
 
   it('regenerates fresh Mana at +5/s and tracks only actual Mana gained', () => {
@@ -170,43 +174,61 @@ describe('Channeling V2 economy', () => {
     expect(state.notifications[state.notifications.length - 1]?.text).toContain('Not enough free Focus')
   })
 
-  it('uses the confirmed conduit regen values', () => {
+  it('applies Leyline Conduit levels as additive passive regen', () => {
     const game = useGameStore.getState()
     game.resetSave()
-    game.setChannelingUpgradeRank('leyline-conduit', 3)
+    game.setManaPillarLevel('leyline-conduit', 3)
     expect(manaRegenPerSecond(useGameStore.getState())).toBe(8)
     game.setChannelingEchoes(5)
     expect(manaRegenPerSecond(useGameStore.getState())).toBe(33)
-    game.setChannelingUpgradeRank('leyline-conduit', 5)
+    game.setManaPillarLevel('leyline-conduit', 5)
     expect(manaRegenPerSecond(useGameStore.getState())).toBe(35)
   })
 
-  it('purchases reservoir upgrades at the exact cost and preserves current Mana', () => {
+  it('purchases Arcane Reservoir with Fragments plus Life Essence and preserves current Mana', () => {
     const game = useGameStore.getState()
     game.resetSave()
     game.setPlayer({ mana: 50 })
-    game.addItem('earth-fragment', 9)
-    game.addItem('water-fragment', 9)
-    game.purchaseChannelingUpgrade('mana-reservoir')
+    game.addItem('earth-fragment', 5)
+    game.addItem('water-fragment', 5)
+    game.addItem('life-essence', 10)
+    game.upgradeManaPillar('arcane-reservoir')
     const state = useGameStore.getState()
-    expect(state.progress.channeling.manaReservoirRank).toBe(1)
+    expect(state.progress.channeling.pillars['arcane-reservoir'].level).toBe(1)
     expect(state.inventory['earth-fragment']).toBe(0)
     expect(state.inventory['water-fragment']).toBe(0)
+    expect(state.inventory['life-essence']).toBe(0)
     expect(state.player.maxMana).toBe(125)
     expect(state.player.mana).toBe(50)
   })
 
-  it('blocks purchases when a required Fragment is protected', () => {
+  it('blocks purchases when Life Essence is protected without consuming anything', () => {
     const game = useGameStore.getState()
     game.resetSave()
-    game.addItem('earth-fragment', 9)
-    game.addItem('water-fragment', 9)
-    game.toggleItemProtection('earth-fragment')
-    game.purchaseChannelingUpgrade('mana-reservoir')
+    game.addItem('earth-fragment', 5)
+    game.addItem('water-fragment', 5)
+    game.addItem('life-essence', 10)
+    game.toggleItemProtection('life-essence')
+    game.upgradeManaPillar('arcane-reservoir')
     const state = useGameStore.getState()
-    expect(state.progress.channeling.manaReservoirRank).toBe(0)
-    expect(state.inventory['earth-fragment']).toBe(9)
+    expect(state.progress.channeling.pillars['arcane-reservoir'].level).toBe(0)
+    expect(state.inventory['earth-fragment']).toBe(5)
+    expect(state.inventory['water-fragment']).toBe(5)
+    expect(state.inventory['life-essence']).toBe(10)
     expect(state.notifications[state.notifications.length - 1]?.text).toContain('protected')
+  })
+
+  it('blocks an incomplete transaction when one required resource is missing', () => {
+    const game = useGameStore.getState()
+    game.resetSave()
+    game.addItem('earth-fragment', 5)
+    game.addItem('water-fragment', 5)
+    game.addItem('life-essence', 9)
+    game.upgradeManaPillar('arcane-reservoir')
+    const state = useGameStore.getState()
+    expect(state.progress.channeling.pillars['arcane-reservoir'].level).toBe(0)
+    expect(state.inventory['earth-fragment']).toBe(5)
+    expect(state.inventory['water-fragment']).toBe(5)
   })
 
   it('tracks capped Mana generation instead of theoretical flow', () => {
@@ -249,10 +271,69 @@ describe('Channeling V2 economy', () => {
   it('adds Deep Reservoir capacity as a derived discovery bonus', () => {
     const game = useGameStore.getState()
     game.resetSave()
-    game.setChannelingUpgradeRank('mana-reservoir', 5)
+    game.setManaPillarLevel('arcane-reservoir', 5)
     const state = useGameStore.getState()
     expect(state.progress.channeling.discoveries['deep-reservoir']).toBe(true)
     expect(state.player.maxMana).toBe(250)
+  })
+
+  it('separates passive Mana Resonance from Echo output', () => {
+    const game = useGameStore.getState()
+    game.resetSave()
+    game.setManaPillarLevel('leyline-conduit', 10)
+    game.setManaPillarLevel('mana-resonance', 10)
+    game.setManaPillarLevel('echo-attunement', 10)
+    game.setChannelingEchoes(5)
+    const regen = getManaRegenBreakdown(useGameStore.getState())
+    expect(regen.passiveBeforeResonance).toBe(15)
+    expect(regen.passiveAfterResonance).toBe(22.5)
+    expect(regen.echoTotal).toBe(37.5)
+    expect(regen.total).toBe(60)
+  })
+
+  it('amplifies the full Max Mana pool with Astral Expansion and floors once', () => {
+    const game = useGameStore.getState()
+    game.resetSave()
+    game.setManaPillarLevel('arcane-reservoir', 4)
+    game.setChannelingDiscovery('deep-reservoir', false)
+    game.setManaPillarLevel('astral-expansion', 10)
+    game.setChannelingDiscovery('deep-reservoir', false)
+    expect(getManaCapacityBreakdown(useGameStore.getState())).toMatchObject({ preAmplification: 200, total: 300 })
+    game.setManaPillarLevel('astral-expansion', 5)
+    game.setChannelingDiscovery('deep-reservoir', false)
+    game.setPlayer({ baseMaxMana: 101 })
+    expect(getManaCapacityBreakdown(useGameStore.getState()).total).toBe(251)
+  })
+
+  it('stacks Echo Attunement multiplicatively with Echo Resonance', () => {
+    const game = useGameStore.getState()
+    game.resetSave()
+    game.setManaPillarLevel('echo-attunement', 10)
+    game.setChannelingEchoes(5)
+    game.setChannelingDiscovery('echo-resonance', true)
+    expect(getManaRegenBreakdown(useGameStore.getState()).echoTotal).toBeCloseTo(41.25)
+  })
+
+  it('cannot raise a Pillar beyond Level 10 or spend after mastery', () => {
+    const game = useGameStore.getState()
+    game.resetSave()
+    game.setManaPillarLevel('mana-resonance', 10)
+    game.addItem('fire-fragment', 250)
+    game.addItem('air-fragment', 250)
+    game.addItem('life-essence', 500)
+    game.upgradeManaPillar('mana-resonance')
+    const state = useGameStore.getState()
+    expect(state.progress.channeling.pillars['mana-resonance'].level).toBe(10)
+    expect(state.inventory['life-essence']).toBe(500)
+  })
+})
+
+describe('Life Essence combat material', () => {
+  it('is guaranteed at 1-3 quantity for every current monster while preserving existing loot', () => {
+    Object.values(MONSTERS).forEach((monster) => {
+      expect(monster.loot).toContainEqual({ itemId: 'life-essence', min: 1, max: 3, chance: 1 })
+    })
+    expect(MONSTERS['forest-heart'].loot.some((drop) => drop.itemId === 'heartseed')).toBe(true)
   })
 })
 
@@ -289,7 +370,7 @@ describe('Phase 2 progression', () => {
 
   it('migrates a v1 save and rejects an unknown version safely', () => {
     const migrated = migrateSave({ saveVersion: 1, player: { mana: 42, maxFocus: 100 }, inventory: { 'fire-fragment': 2 }, equipment: { weapon: 'apprentice-wand' }, activities: { research: { running: true, itemId: 'fire-fragment', progressMs: 1000 } } })
-    expect(migrated.saveVersion).toBe(3)
+    expect(migrated.saveVersion).toBe(4)
     expect(migrated.activities.research.targetSchoolId).toBe('fire')
     expect(migrated.inventory['fire-fragment']).toBe(2)
     expect(() => migrateSave({ saveVersion: 99 })).toThrow('Unsupported save version')

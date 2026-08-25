@@ -9,13 +9,16 @@ export interface ProfileSaveResult {
   error: string | null
 }
 
-export const serializeGameState = (state: GameState) => JSON.parse(JSON.stringify({
-  ...state,
+export const serializeGameState = (state: GameState) => {
+  const { lastOfflineBankReport: _transientReport, ...gameplayState } = state as GameState & { lastOfflineBankReport?: unknown }
+  return JSON.parse(JSON.stringify({
+  ...gameplayState,
   debug: undefined,
   notifications: [],
   saveVersion: CURRENT_SAVE_VERSION,
   lastSavedAt: state.lastSavedAt,
-})) as GameState
+  })) as GameState
+}
 
 export const loadProfileGame = (slotId: ProfileSlotId): { state: GameState | null; error: string | null } => {
   if (!isProfileSlotId(slotId) || typeof localStorage === 'undefined') return { state: null, error: null }

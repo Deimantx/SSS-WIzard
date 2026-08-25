@@ -7,7 +7,7 @@ import { useGameStore } from '../../store/gameStore'
 
 const presets = [{ label: '1 MIN', short: '1m', ms: 60_000 }, { label: '5 MIN', short: '5m', ms: 300_000 }, { label: '15 MIN', short: '15m', ms: 900_000 }, { label: '1 HOUR', short: '1h', ms: 3_600_000 }]
 
-export function OfflineBankPopover({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function OfflineBankPopover({ open, onClose, onViewLastResults }: { open: boolean; onClose: () => void; onViewLastResults: () => void }) {
   const panelRef = useRef<HTMLDivElement>(null)
   const [advancing, setAdvancing] = useState(false)
   const [advancingLabel, setAdvancingLabel] = useState('')
@@ -17,6 +17,8 @@ export function OfflineBankPopover({ open, onClose }: { open: boolean; onClose: 
   const bankMs = state.offlineBankMs
   const activities = getActivityTelemetry(state)
   const advance = state.advanceWithOfflineBank
+  const meaningfulRecovery = state.combat.active && (Boolean(state.combat.enemyId) || state.player.health < state.player.maxHealth || state.combat.encounterTimerMs > 0)
+  const canAdvance = state.activities.condense.running || state.activities.research.running || state.activities.transmutation.running || meaningfulRecovery
 
   useEffect(() => {
     if (!open) return
@@ -48,19 +50,24 @@ export function OfflineBankPopover({ open, onClose }: { open: boolean; onClose: 
     setError(null)
     setAdvancing(true)
     setAdvancingLabel(label)
-    const result = await advance(durationMs)
-    setAdvancing(false)
-    setAdvancingLabel('')
-    if (!result.ok) setError(result.error ?? 'Unable to advance Offline Bank.')
+    try {
+      const result = await advance(durationMs)
+      if (!result.ok) setError(result.error ?? 'Unable to advance Offline Bank.')
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Unable to advance Offline Bank.')
+    } finally {
+      setAdvancing(false)
+      setAdvancingLabel('')
+    }
   }
 
   return <div className="offline-bank-popover" style={position} ref={panelRef} role="dialog" aria-label="Offline Bank">
     <div className="offline-bank-header"><div><span className="offline-bank-eyebrow"><Clock3 size={14} /> OFFLINE BANK</span><p>Stored time can advance live systems</p></div><button className="offline-bank-close icon-button" onClick={onClose} aria-label="Close Offline Bank"><X size={15} /></button></div>
     <div className="offline-bank-hero"><span className="offline-bank-section-label">BANKED TIME</span><strong>{formatOfflineBank(bankMs)}</strong><small>Available for simulation</small><div className="offline-bank-meter" aria-hidden="true"><i /></div></div>
     <section className="offline-bank-section"><div className="offline-bank-section-head"><span className="offline-bank-section-label">ACTIVE SYSTEMS</span><small>{activities.length ? `${activities.length} running` : 'Standby'}</small></div>{activities.length ? <div className="offline-active-list">{activities.map((activity) => <div className={`offline-active-row accent-${activity.accent}`} key={activity.id}><span className="offline-activity-icon"><ActivityIcon activity={activity.label} /></span><span className="offline-active-copy"><strong>{activity.label}</strong><small>{activity.subtitle ?? activity.status}</small></span><em>{activity.status === 'running' ? 'ACTIVE' : activity.status.replace('-', ' ').toUpperCase()}</em></div>)}</div> : <div className="offline-empty-state"><strong>No active timed systems.</strong><span>Start an activity before spending Offline Bank time.</span></div>}</section>
-    <section className="offline-bank-section"><div className="offline-bank-section-head"><span className="offline-bank-section-label">ADVANCE TIME</span><small>Spend deliberately</small></div><div className="offline-presets">{presets.map((preset) => { const disabled = advancing || bankMs < preset.ms; const button = <button key={preset.ms} className="offline-preset" disabled={disabled} onClick={() => spend(preset.ms, preset.label)}><strong>+{preset.label}</strong><small>Advance active systems</small></button>; return disabled && !advancing ? <GameTooltip key={preset.ms} block content="Not enough Offline Bank time." accent="warning">{button}</GameTooltip> : button })}</div>{advancing && <div className="offline-advancing" role="status"><span>ADVANCING {advancingLabel}...</span><i /></div>}</section>
+    <section className="offline-bank-section"><div className="offline-bank-section-head"><span className="offline-bank-section-label">ADVANCE TIME</span><small>Spend deliberately</small></div>{!canAdvance && <div className="offline-no-work">Start an activity before spending Offline Bank time.</div>}<div className="offline-presets">{presets.map((preset) => { const disabled = advancing || bankMs < preset.ms || !canAdvance; const reason = !canAdvance ? 'Start an activity before spending Offline Bank time.' : 'Not enough Offline Bank time.'; const button = <button key={preset.ms} className="offline-preset" disabled={disabled} onClick={() => spend(preset.ms, preset.label)} aria-label={`Advance ${preset.short}`}><strong>+{preset.label}</strong><small>Advance active systems</small></button>; return disabled && !advancing ? <GameTooltip key={preset.ms} block content={reason} accent="warning">{button}</GameTooltip> : button })}</div>{advancing && <div className="offline-advancing" role="status"><span>ADVANCING {advancingLabel}...</span><i /></div>}</section>
     {error && <div className="offline-bank-error" role="alert">{error}</div>}
-    <div className="offline-bank-footnote"><span>Offline Bank is never spent automatically.</span><span>Simulation uses normal game rules.</span></div>
+    <div className="offline-bank-footnote"><span>Offline Bank is never spent automatically.</span><span>Simulation uses normal game rules.</span>{state.lastOfflineBankReport && <button type="button" className="offline-last-results" onClick={onViewLastResults}>View Last Results</button>}</div>
   </div>
 }
 

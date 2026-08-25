@@ -1,14 +1,15 @@
 import { ITEMS } from '../../content/items/items'
 import { MONSTERS } from '../../content/monsters/whisperingWoods'
-import type { GameState, MonsterId } from '../../types'
+import type { GameState, ItemId, MonsterId } from '../../types'
 
 /** Resolves the current monster table into inventory changes and a readable log fragment. */
-export function resolveMonsterLoot(state: GameState, enemyId: MonsterId): string {
+export function resolveMonsterLoot(state: GameState, enemyId: MonsterId, onDrop?: (itemId: ItemId, quantity: number) => void): string {
   const drops: string[] = []
   MONSTERS[enemyId].loot.forEach((drop) => {
     if (Math.random() <= drop.chance) {
       const quantity = Math.floor(drop.min + Math.random() * (drop.max - drop.min + 1))
       state.inventory[drop.itemId] = (state.inventory[drop.itemId] ?? 0) + quantity
+      onDrop?.(drop.itemId, quantity)
       drops.push(`${quantity} ${ITEMS[drop.itemId].name}`)
     }
   })

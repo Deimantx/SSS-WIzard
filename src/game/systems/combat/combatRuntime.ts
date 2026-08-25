@@ -7,6 +7,7 @@ import type { GameState, MonsterId, StatusEffect } from '../../types'
 import { formatTime } from '../../utils'
 import { appendLog, pushNotification } from '../../engine'
 import { resolveMonsterLoot } from '../loot'
+import type { SimulationReportCollector } from '../offline-bank/offlineBankReport'
 
 export const addStatus = (statuses: StatusEffect[], next: StatusEffect) => {
   const existing = statuses.find((status) => status.id === next.id)
@@ -80,11 +81,12 @@ export const spawnNextEnemy = (state: GameState) => {
   spawnEnemy(state, chooseMonster(dungeon.monsterPool))
 }
 
-export const finishEnemy = (state: GameState) => {
+export const finishEnemy = (state: GameState, report?: SimulationReportCollector) => {
   const enemyId = state.combat.enemyId
   if (!enemyId) return
   const monster = MONSTERS[enemyId]
-  const drops = resolveMonsterLoot(state, enemyId)
+  const drops = resolveMonsterLoot(state, enemyId, (itemId, quantity) => report?.recordLoot(itemId, quantity))
+  report?.recordKill(enemyId)
   state.combat.enemyId = null
   state.combat.enemyHp = 0
   state.combat.enemyBarrier = 0
@@ -115,6 +117,7 @@ export const finishEnemy = (state: GameState) => {
       pushNotification(state, 'Magic School cap increased to 20', 'success')
       pushNotification(state, 'FIRST CHAPTER COMPLETE · +10 permanent Focus', 'success')
     }
+    report?.recordNotable(`${monster.name} defeated`)
     appendLog(state, `${monster.name} defeated${drops ? ` · ${drops}` : ''}. Threat Cleared resets.`)
   } else {
     state.progress.lifetimeKills += 1

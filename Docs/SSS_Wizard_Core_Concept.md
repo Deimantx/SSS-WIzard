@@ -1784,3 +1784,8 @@ Arcane Discoveries are permanent condition-based principles: Stable Leyline, Ech
 Inactive time is accumulated in the Offline Bank. The player manually spends it with the `1m`, `5m`, `15m`, or `1h` controls; each action advances the currently active systems through the normal shared simulation, consumes the selected banked time, and never starts an automatic spend. A single action is capped at one hour.
 
 Mana Flow is derived presentation data, not a new permanent stat. It reports authoritative Mana production minus average active Mana demand from Condensation, Research, and estimated Auto-Cast spell cooldown demand, with time-to-full or time-to-empty when meaningful.
+### Phase 3.1 Offline Bank Results and Inventory
+
+Spending banked time produces a transient result summary for meaningful simulated outcomes such as kills, loot, condensation, crafting, Research XP, consumed materials, and progression. The summary is collected from successful events in the shared simulation and is not persisted in gameplay saves.
+
+Inventory shows items the player currently owns. Collection handles catalogue and discovery browsing. Inventory is a vault view with owned-only item tiles, search/filter/sort controls, item details, protection/equipment actions, current Research values, and contextual tooltips.

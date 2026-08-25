@@ -26,7 +26,8 @@ import { setResearchConfigAction, toggleResearchAction } from './actions/researc
 import { toggleTransmutationAction } from './actions/transmutationActions'
 import { saveGameAction } from './actions/persistenceActions'
 import { advanceGameState } from '../game/systems/simulation/advanceGameState'
-import { advanceWithOfflineBank as runOfflineBankAdvance, isOfflineBankSimulationActive } from '../game/systems/offline-bank/offlineBankSimulation'
+import { advanceWithOfflineBank as runOfflineBankAdvance, isOfflineBankSimulationActive, type OfflineBankResult } from '../game/systems/offline-bank/offlineBankSimulation'
+import type { OfflineBankReport } from '../game/systems/offline-bank/offlineBankReport'
 
 export interface GameActions {
   tick: (deltaMs: number) => void
@@ -87,7 +88,8 @@ export interface GameActions {
   setBossKills: (bossId: 'grove-sentinel' | 'forest-heart', amount: number) => void
   preset: (name: 'fresh' | 'research' | 'combat' | 'boss' | 'guild' | 'main-boss' | 'chapter-complete') => void
   resumeFromHidden: (elapsedMs: number, notify?: boolean) => void
-  advanceWithOfflineBank: (durationMs: number) => Promise<{ ok: boolean; error?: string }>
+  advanceWithOfflineBank: (durationMs: number) => Promise<OfflineBankResult>
+  lastOfflineBankReport: OfflineBankReport | null
 }
 
 export type GameStore = GameState & GameActions
@@ -99,6 +101,7 @@ const canReserveFocus = canReserveFocusAction
 
 export const useGameStore = create<GameStore>()(immer((set, get) => ({
   ...createInitialState(),
+  lastOfflineBankReport: null,
   tick: (deltaMs) => set((state) => {
     if (isOfflineBankSimulationActive()) return state
     return advanceGameState(state, deltaMs, { mode: 'live' })
@@ -161,18 +164,18 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     if (!activeProfileId) return
     const loaded = loadProfileGame(activeProfileId)
     if (!loaded.state) return
-    set((state) => { Object.assign(state, loaded.state as GameState); recalculateDerivedStats(state); return state })
+    set((state) => { Object.assign(state, loaded.state as GameState); state.lastOfflineBankReport = null; recalculateDerivedStats(state); return state })
   },
   resetSave: () => {
     const fresh = createInitialState()
-    set((state) => { Object.assign(state, fresh); return state })
+    set((state) => { Object.assign(state, fresh); state.lastOfflineBankReport = null; return state })
     const activeProfileId = getActiveProfileId()
     if (activeProfileId) {
       const saved = saveProfileGame(activeProfileId, useGameStore.getState())
       if (saved.ok) updateProfileMetadata(activeProfileId, { lastSavedAt: fresh.lastSavedAt })
     }
   },
-  hydrateState: (nextState) => set((state) => { Object.assign(state, nextState); recalculateDerivedStats(state); return state }),
+  hydrateState: (nextState) => set((state) => { Object.assign(state, nextState); state.lastOfflineBankReport = null; recalculateDerivedStats(state); return state }),
   dismissNotification: (id) => set((state) => { state.notifications = state.notifications.filter((note) => note.id !== id); return state }),
   setPlayer: (changes) => set((state) => { state.player = { ...state.player, ...changes }; recalculateDerivedStats(state); return state }),
   addMana: (amount) => set((state) => { state.player.mana = Math.max(0, state.player.mana + sanitizeDebugNumber(amount)); recalculateDerivedStats(state); return state }),
@@ -190,9 +193,13 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   promoteGuild: () => set((state) => { promoteGuildAction(state); return state }),
   setGuildReputation: (amount) => set((state) => { state.progress.guildReputation = Math.max(0, amount); return state }),
   setBossKills: (bossId, amount) => set((state) => { setBossKillsAction(state, bossId, amount); return state }),
-  preset: (name) => set((state) => { Object.assign(state, createInitialState()); if (name === 'research') { state.inventory['fire-fragment'] = 10; state.player.mana = 100; state.activities.channeling.echoesAssigned = 1 } if (name === 'combat') { state.inventory['fire-fragment'] = 10; state.progress.unlockedSpells = ['fire-bolt']; state.schools.fire = { xp: 20, level: 2 }; state.player.mana = 100; state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; spawnNextEnemy(state) } if (name === 'boss') { state.inventory['fire-fragment'] = 15; state.inventory['wisp-essence'] = 10; state.inventory['grove-bark'] = 2; state.progress.unlockedSpells = ['fire-bolt']; state.schools.fire = { xp: 80, level: 4 }; state.progress.guildUnlocked = true; state.progress.firstBossKill = true; state.progress.emberStaffUnlocked = true; state.progress.forestHeartUnlocked = true; state.progress.autoHuntBossUnlocked = true; state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; state.combat.threatCleared = 20; spawnNextEnemy(state) } if (name === 'guild') { state.progress.guildUnlocked = true; state.progress.guildRank = 'initiate'; state.progress.firstBossKill = true; state.progress.emberStaffUnlocked = true; state.progress.forestHeartUnlocked = true; state.progress.autoHuntBossUnlocked = true; state.inventory['fire-fragment'] = 20; state.progress.lifetimeKills = 30; state.progress.requestProgress['clear-the-woods'] = 30; state.progress.bossKillsByBoss['grove-sentinel'] = 2; state.progress.requestProgress['sentinel-breaker'] = 2; state.progress.guildReputation = 100 } if (name === 'main-boss' || name === 'chapter-complete') { state.inventory['fire-fragment'] = 20; state.inventory['wisp-essence'] = 12; state.inventory['grove-bark'] = 4; state.progress.guildUnlocked = true; state.progress.guildRank = 'apprentice'; state.progress.firstBossKill = true; state.progress.emberStaffUnlocked = true; state.progress.forestHeartUnlocked = true; state.progress.autoHuntBossUnlocked = true; state.progress.permanentFocusBonuses['forest-heart'] = 10; state.progress.permanentFocusBonuses['guild-apprentice'] = 10; state.progress.magicLevelCap = 20; state.schools.fire = { xp: 380, level: 20 }; state.progress.firstMainBossKill = true; state.inventory.heartseed = 1; recalculateDerivedStats(state); state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; spawnEnemy(state, 'forest-heart', true) } return state }),
+  preset: (name) => set((state) => { Object.assign(state, createInitialState()); state.lastOfflineBankReport = null; if (name === 'research') { state.inventory['fire-fragment'] = 10; state.player.mana = 100; state.activities.channeling.echoesAssigned = 1 } if (name === 'combat') { state.inventory['fire-fragment'] = 10; state.progress.unlockedSpells = ['fire-bolt']; state.schools.fire = { xp: 20, level: 2 }; state.player.mana = 100; state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; spawnNextEnemy(state) } if (name === 'boss') { state.inventory['fire-fragment'] = 15; state.inventory['wisp-essence'] = 10; state.inventory['grove-bark'] = 2; state.progress.unlockedSpells = ['fire-bolt']; state.schools.fire = { xp: 80, level: 4 }; state.progress.guildUnlocked = true; state.progress.firstBossKill = true; state.progress.emberStaffUnlocked = true; state.progress.forestHeartUnlocked = true; state.progress.autoHuntBossUnlocked = true; state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; state.combat.threatCleared = 20; spawnNextEnemy(state) } if (name === 'guild') { state.progress.guildUnlocked = true; state.progress.guildRank = 'initiate'; state.progress.firstBossKill = true; state.progress.emberStaffUnlocked = true; state.progress.forestHeartUnlocked = true; state.progress.autoHuntBossUnlocked = true; state.inventory['fire-fragment'] = 20; state.progress.lifetimeKills = 30; state.progress.requestProgress['clear-the-woods'] = 30; state.progress.bossKillsByBoss['grove-sentinel'] = 2; state.progress.requestProgress['sentinel-breaker'] = 2; state.progress.guildReputation = 100 } if (name === 'main-boss' || name === 'chapter-complete') { state.inventory['fire-fragment'] = 20; state.inventory['wisp-essence'] = 12; state.inventory['grove-bark'] = 4; state.progress.guildUnlocked = true; state.progress.guildRank = 'apprentice'; state.progress.firstBossKill = true; state.progress.emberStaffUnlocked = true; state.progress.forestHeartUnlocked = true; state.progress.autoHuntBossUnlocked = true; state.progress.permanentFocusBonuses['forest-heart'] = 10; state.progress.permanentFocusBonuses['guild-apprentice'] = 10; state.progress.magicLevelCap = 20; state.schools.fire = { xp: 380, level: 20 }; state.progress.firstMainBossKill = true; state.inventory.heartseed = 1; recalculateDerivedStats(state); state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; spawnEnemy(state, 'forest-heart', true) } return state }),
   resumeFromHidden: (elapsedMs, notify = true) => set((state) => { if (elapsedMs > 1000) { state.offlineBankMs += elapsedMs; if (notify) pushNotification(state, `${Math.round(elapsedMs / 1000)}s added to Offline Bank`, 'info') } return state }),
-  advanceWithOfflineBank: (durationMs): Promise<{ ok: boolean; error?: string }> => runOfflineBankAdvance(durationMs, get, (recipe) => set((state) => { recipe(state); return state }), () => { get().saveGame('autosave') }),
+  advanceWithOfflineBank: async (durationMs) => {
+    const result = await runOfflineBankAdvance(durationMs, get, (recipe) => set((state) => { recipe(state); return state }), () => { get().saveGame('autosave') })
+    if (result.ok) set((state) => { state.lastOfflineBankReport = result.report ?? null; return state })
+    return result
+  },
 })))
 
 export const useGameStoreSelectors = { selectUsedFocus, selectFreeFocus }

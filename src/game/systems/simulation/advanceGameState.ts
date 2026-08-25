@@ -9,10 +9,12 @@ import { appendLog, completeResearchCycle, playerBasicDamage, pushNotification, 
 import { addStatus, applyBarrier, damageEnemy, damagePlayer, executeEnemyAction, executeSpecial, finishEnemy, spawnNextEnemy } from '../combat/combatRuntime'
 import type { GameState, SpellEffect, SpellId, StatusEffect } from '../../types'
 import { clamp } from '../../utils'
+import type { SimulationReportCollector } from '../offline-bank/offlineBankReport'
 
 export interface AdvanceContext {
   mode: 'live' | 'banked'
   suppressRoutineNotifications?: boolean
+  report?: SimulationReportCollector
 }
 
 const shouldNotifyRoutine = (context: AdvanceContext) => context.mode === 'live' && !context.suppressRoutineNotifications
@@ -79,13 +81,14 @@ const tickResearch = (state: GameState, delta: number, context: AdvanceContext) 
   const job = state.activities.research
   if (!job.running) return
   if (!job.itemId || !job.targetSchoolId || job.remainingQuantity <= 0) { job.running = false; if (job.status !== 'paused') job.status = 'idle'; return }
-  if (state.schools[job.targetSchoolId].level >= state.progress.magicLevelCap) { job.running = false; job.status = 'level-cap'; return }
+  if (state.schools[job.targetSchoolId].level >= state.progress.magicLevelCap) { job.running = false; job.status = 'level-cap'; context.report?.recordResearchStoppedAtCap(); return }
   if (isProtected(state, job.itemId)) { job.running = false; job.status = 'missing-item'; return }
   if (job.progressMs < job.durationPerItemMs) { job.progressMs += delta; job.status = 'running'; return }
   if (state.player.mana < job.manaPerItem) { job.running = true; job.status = 'waiting-mana'; return }
   state.player.mana -= job.manaPerItem
   const completed = completeResearchCycle(state, job.itemId, job.targetSchoolId)
-  if (!completed.completed) { job.running = false; job.status = completed.reason === 'cap' ? 'level-cap' : 'missing-item'; return }
+  if (!completed.completed) { job.running = false; job.status = completed.reason === 'cap' ? 'level-cap' : 'missing-item'; if (completed.reason === 'cap') context.report?.recordResearchStoppedAtCap(); return }
+  context.report?.recordResearch(job.itemId, job.targetSchoolId, completed.xp ?? 0)
   job.remainingQuantity -= 1
   job.progressMs = 0
   job.status = job.remainingQuantity > 0 ? 'running' : 'completed'
@@ -94,7 +97,7 @@ const tickResearch = (state: GameState, delta: number, context: AdvanceContext) 
   if (job.remainingQuantity <= 0) job.running = false
 }
 
-const tickCombat = (state: GameState, delta: number) => {
+const tickCombat = (state: GameState, delta: number, context: AdvanceContext) => {
   if (!state.combat.active) return
   if (!state.combat.enemyId) { state.combat.encounterTimerMs -= delta; if (state.combat.encounterTimerMs <= 0) spawnNextEnemy(state); return }
   tickStatuses(state, delta)
@@ -111,12 +114,12 @@ const tickCombat = (state: GameState, delta: number) => {
   }
   if (state.combat.enemyId) Object.keys(state.activities.autoCast).forEach((id) => { const spellId = id as SpellId; if (state.activities.autoCast[spellId] && spellUnlocked(state, spellId) && state.combat.spellCooldowns[spellId] <= 0 && meetsAutoCondition(state, spellId)) castSpellInternal(state, spellId, true) })
   if (!state.combat.enemyId) return
-  if (state.combat.enemyHp <= 0) { finishEnemy(state); return }
+  if (state.combat.enemyHp <= 0) { finishEnemy(state, context.report); return }
   if (enemy.id === 'grove-sentinel' && state.combat.enemyHp <= enemy.maxHealth * 0.4 && !state.combat.enemySpecialUsed['ancient-growth']) { state.combat.enemySpecialUsed['ancient-growth'] = true; state.combat.enemyBarrier += 80; appendLog(state, 'Ancient Growth triggers · +80 Barrier.') }
   if (enemy.id === 'forest-heart' && state.combat.enemyHp <= enemy.maxHealth * 0.5 && !state.combat.enemySpecialUsed['living-core']) { state.combat.enemySpecialUsed['living-core'] = true; state.combat.enemyIntervalMs = Math.round(state.combat.enemyIntervalMs * 0.85); appendLog(state, 'Living Core triggers · attack speed increased.') }
   if (state.combat.enemyTelegraphMs > 0) { state.combat.enemyTelegraphMs -= delta; if (state.combat.enemyTelegraphMs <= 0 && state.combat.enemyTelegraphActionId) { executeSpecial(state, state.combat.enemyTelegraphActionId); state.combat.enemyTelegraphActionId = null; state.combat.enemyActionTimerMs = state.combat.enemyIntervalMs } }
   else { state.combat.enemyActionTimerMs -= delta; if (state.combat.enemyActionTimerMs <= 0) executeEnemyAction(state) }
-  if (state.player.health <= 0 && !state.player.godMode) { state.combat.active = false; state.combat.enemyId = null; state.combat.threatCleared = 0; state.combat.inBossFight = false; pushNotification(state, 'Defeated · recovering in the Tower', 'warning'); appendLog(state, 'The wizard falls. Threat Cleared resets to 0.') }
+  if (state.player.health <= 0 && !state.player.godMode) { context.report?.recordPlayerDeath(); state.combat.active = false; state.combat.enemyId = null; state.combat.threatCleared = 0; state.combat.inBossFight = false; pushNotification(state, 'Defeated · recovering in the Tower', 'warning'); appendLog(state, 'The wizard falls. Threat Cleared resets to 0.') }
 }
 
 export const advanceGameState = (state: GameState, deltaMs: number, context: AdvanceContext = { mode: 'live' }) => {
@@ -124,6 +127,7 @@ export const advanceGameState = (state: GameState, deltaMs: number, context: Adv
   const channelingTick = advanceChanneling(state, delta)
   if (channelingTick.discoveries.includes('deep-reservoir')) recalculateDerivedStats(state)
   channelingTick.discoveries.forEach((id) => {
+    context.report?.recordDiscovery(id)
     const discovery = CHANNELING_DISCOVERIES.find((entry) => entry.id === id)
     if (discovery) pushNotification(state, `Arcane Discovery: ${discovery.name}`, 'success')
   })
@@ -135,7 +139,9 @@ export const advanceGameState = (state: GameState, deltaMs: number, context: Adv
     }
     if (condense.progressMs >= BALANCE.condense.durationMs && state.player.mana >= BALANCE.condense.manaCost) {
       state.player.mana -= BALANCE.condense.manaCost
-      state.inventory[SCHOOLS[condense.element].fragment] = (state.inventory[SCHOOLS[condense.element].fragment] ?? 0) + 1
+      const output = SCHOOLS[condense.element].fragment
+      state.inventory[output] = (state.inventory[output] ?? 0) + 1
+      context.report?.recordCondensed(output, 1)
       condense.progressMs = 0
       if (shouldNotifyRoutine(context)) pushNotification(state, `${SCHOOLS[condense.element].name} Fragment condensed`, 'success')
     }
@@ -151,6 +157,7 @@ export const advanceGameState = (state: GameState, deltaMs: number, context: Adv
       if (canCraft) {
         recipe.ingredients.forEach((ingredient) => { state.inventory[ingredient.itemId] = (state.inventory[ingredient.itemId] ?? 0) - ingredient.quantity })
         state.inventory[recipe.output] = (state.inventory[recipe.output] ?? 0) + 1
+        context.report?.recordCraft(recipe.id, recipe.output, 1, recipe.ingredients)
         transmutation.running = false
         transmutation.progressMs = 0
         if (shouldNotifyRoutine(context)) pushNotification(state, `${recipe.name} transmuted`, 'success')
@@ -160,6 +167,6 @@ export const advanceGameState = (state: GameState, deltaMs: number, context: Adv
       }
     }
   }
-  tickCombat(state, delta)
+  tickCombat(state, delta, context)
   return state
 }

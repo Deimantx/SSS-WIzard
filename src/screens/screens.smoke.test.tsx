@@ -62,7 +62,7 @@ describe('screen smoke coverage', () => {
   it('navigates every major screen through grouped shell navigation', async () => {
     const user = userEvent.setup()
     render(<GameShell />)
-    const screens = [{ nav: 'Overview', heading: 'Good evening, apprentice.' }, { nav: 'Combat', heading: 'The clearing watches back.' }, { nav: 'Magic Schools', heading: 'Four paths, one Focus pool.' }, { nav: 'Inventory', heading: 'Everything the tower has earned.' }, { nav: 'Equipment', heading: 'Build the tower’s answer.' }, { nav: 'Guild', heading: 'A guild invitation, still sealed.' }, { nav: 'Collection', heading: 'Collection' }, { nav: 'Settings / Info', heading: 'Settings / Info' }]
+    const screens = [{ nav: 'Overview', heading: 'Good evening, apprentice.' }, { nav: 'Combat', heading: 'The clearing watches back.' }, { nav: 'Magic Schools', heading: 'Four paths, one Focus pool.' }, { nav: 'Inventory', heading: 'Everything the tower currently holds.' }, { nav: 'Equipment', heading: 'Build the tower’s answer.' }, { nav: 'Guild', heading: 'A guild invitation, still sealed.' }, { nav: 'Collection', heading: 'Collection' }, { nav: 'Settings / Info', heading: 'Settings / Info' }]
     for (const item of screens) { await user.click(navItem(item.nav)); expect(screen.getByRole('heading', { name: item.heading })).toBeTruthy() }
     expect(navGroup('Combat')).toBeTruthy()
     expect(navGroup('Hero')).toBeTruthy()

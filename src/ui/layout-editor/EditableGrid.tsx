@@ -16,6 +16,7 @@ export function EditableGrid({ screen, panels, children }: { screen: ScreenId; p
   const { width, containerRef, mounted } = useContainerWidth({ measureBeforeMount: false, initialWidth: 1100 })
   const saved = getSavedScreenLayouts(screen)
   const grid = useMemo(() => toGridLayout(screen, saved, editor.isEditing), [editor.document, editor.isEditing, saved, screen])
+  const displayGrid = useMemo(() => screen === 'inventory' && width > 0 && width < 760 ? grid.map((item, index) => ({ ...item, x: 0, y: index * 13, w: GRID_COLUMNS })) : grid, [grid, screen, width])
   const childPanels = Children.toArray(children).flatMap((child) => { if (!isValidElement(child)) return []; const props = child.props as { children?: ReactNode; 'data-panel-id'?: string }; const id = props['data-panel-id'] ?? (typeof child.key === 'string' ? child.key.replace(/^\$+/, '') : ''); return id ? [{ id, content: props.children }] : [] })
   const panelEntries = panels ?? childPanels
   const available = new Map(panelEntries.map((panel) => [panel.id, panel.content]))
@@ -25,6 +26,6 @@ export function EditableGrid({ screen, panels, children }: { screen: ScreenId; p
   const handleLayoutStop = (layout: Layout) => { if (editor.isEditing) commitGridLayout(screen, layout) }
   return <div className={`ui-editor-grid ${editor.isEditing ? 'editing' : ''}`} ref={containerRef}>
     <GridOverlay visible={editor.isEditing && editor.showGrid} />
-    {mounted && <GridLayout width={width} layout={grid} gridConfig={{ cols: GRID_COLUMNS, rowHeight: GRID_ROW_HEIGHT, margin: GRID_MARGIN, containerPadding: [0, 0] }} dragConfig={{ enabled: editor.isEditing, bounded: true, handle: '.ui-editor-drag-handle', cancel: '.ui-editor-no-drag,button,input,select,textarea,a' }} resizeConfig={{ enabled: editor.isEditing, handles: ['e', 's', 'se'] }} className="ui-editor-grid-layout" onDragStop={handleLayoutStop} onResizeStop={handleLayoutStop}>{renderedChildren}</GridLayout>}
+    {mounted && <GridLayout width={width} layout={displayGrid} gridConfig={{ cols: GRID_COLUMNS, rowHeight: GRID_ROW_HEIGHT, margin: GRID_MARGIN, containerPadding: [0, 0] }} dragConfig={{ enabled: editor.isEditing, bounded: true, handle: '.ui-editor-drag-handle', cancel: '.ui-editor-no-drag,button,input,select,textarea,a' }} resizeConfig={{ enabled: editor.isEditing, handles: ['e', 's', 'se'] }} className="ui-editor-grid-layout" onDragStop={handleLayoutStop} onResizeStop={handleLayoutStop}>{renderedChildren}</GridLayout>}
   </div>
 }

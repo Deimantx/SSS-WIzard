@@ -16,6 +16,7 @@ import { Sidebar } from './shell/Sidebar'
 import { Topbar } from './shell/Topbar'
 import { ActivityMonitor } from './shell/ActivityMonitor'
 import { OfflineBankPopover } from './shell/OfflineBankPopover'
+import { OfflineBankResultsDialog } from './shell/OfflineBankResultsDialog'
 import { ToastStack } from './shell/ToastStack'
 import { TooltipProvider, dismissGameTooltips } from '../components/ui/tooltip/Tooltip'
 
@@ -33,6 +34,8 @@ export function GameShell() {
   const activeProfile = profileSession.activeProfileId ? profileSession.profiles.slots[profileSession.activeProfileId] : null
   const [profileSwitchError, setProfileSwitchError] = useState<string | null>(null)
   const [offlineBankOpen, setOfflineBankOpen] = useState(false)
+  const [offlineResultsOpen, setOfflineResultsOpen] = useState(false)
+  const lastOfflineBankReport = useGameStore((state) => state.lastOfflineBankReport)
   const lastFrame = useRef(performance.now())
   const hiddenAt = useRef<number | null>(null)
   const hiddenRef = useRef(false)
@@ -52,6 +55,12 @@ export function GameShell() {
   }, [navigation.group.id, preferences.navigationGroups, screen])
 
   useEffect(() => {
+    if (!lastOfflineBankReport) return
+    setOfflineResultsOpen(true)
+    setOfflineBankOpen(false)
+  }, [lastOfflineBankReport])
+
+  useEffect(() => {
     const interval = window.setInterval(() => { if (document.hidden || hiddenRef.current) return; const now = performance.now(); const elapsed = now - lastFrame.current; lastFrame.current = now; tick(elapsed) }, 100)
     const autosave = window.setInterval(() => saveGame('autosave'), AUTOSAVE_INTERVAL_MS)
     const visibility = () => { if (document.hidden) { hiddenAt.current = Date.now(); hiddenRef.current = true; saveGame('visibility') } else if (hiddenAt.current) { resumeFromHidden(Date.now() - hiddenAt.current, false); hiddenAt.current = null; hiddenRef.current = false; lastFrame.current = performance.now(); saveGame('profile-anchor') } }
@@ -66,7 +75,7 @@ export function GameShell() {
     const groupId = id as keyof typeof preferences.navigationGroups
     setUiPreferences({ navigationGroups: { ...preferences.navigationGroups, [groupId]: !preferences.navigationGroups[groupId] } })
   }
-  const openDevTools = () => { dismissGameTooltips(); setOfflineBankOpen(false); openDeveloperTools() }
+  const openDevTools = () => { dismissGameTooltips(); setOfflineBankOpen(false); setOfflineResultsOpen(false); openDeveloperTools() }
   const toggleEditor = () => { dismissGameTooltips(); if (editor.isEditing) closeLayoutEditor(); else openLayoutEditor(screen, 'shell') }
   const switchProfile = () => { const result = leaveToProfiles(); if (!result.ok) setProfileSwitchError(result.error) }
 
@@ -74,13 +83,14 @@ export function GameShell() {
     {preferences.backgroundEffects && <ArcaneAtmosphere accentColor={appearance.accent} opacity={preferences.theme === 'light' ? 0.22 : 0.72} reducedMotion={preferences.reducedMotion} />}
     <Sidebar screen={screen} setScreen={setScreen} preferences={preferences} toggleGroup={toggleGroup} activeProfile={activeProfile} profileSwitchError={profileSwitchError} switchProfile={switchProfile} />
     <main className={`main-area ${editor.isEditing ? 'editor-open' : ''}`}>
-      <Topbar screen={screen} editor={editor} offlineBankOpen={offlineBankOpen} onOfflineBankToggle={() => { dismissGameTooltips(); setOfflineBankOpen((open) => !open) }} onDeveloperTools={openDevTools} onEditUi={toggleEditor} onSettings={() => { dismissGameTooltips(); setOfflineBankOpen(false); setScreen('settings') }} onMobileMenu={() => setScreen('home')} />
-      <OfflineBankPopover open={offlineBankOpen} onClose={() => setOfflineBankOpen(false)} />
+      <Topbar screen={screen} editor={editor} offlineBankOpen={offlineBankOpen} onOfflineBankToggle={() => { dismissGameTooltips(); setOfflineResultsOpen(false); setOfflineBankOpen((open) => !open) }} onDeveloperTools={openDevTools} onEditUi={toggleEditor} onSettings={() => { dismissGameTooltips(); setOfflineBankOpen(false); setOfflineResultsOpen(false); setScreen('settings') }} onMobileMenu={() => setScreen('home')} />
+      <OfflineBankPopover open={offlineBankOpen} onClose={() => setOfflineBankOpen(false)} onViewLastResults={() => { setOfflineBankOpen(false); setOfflineResultsOpen(true) }} />
       <div className="screen-scroll"><ScreenRouter /></div>
       <ActivityMonitor />
     </main>
     <LayoutEditorDrawer screen={screen} />
     <DeveloperToolsWindow />
+    <OfflineBankResultsDialog report={lastOfflineBankReport} open={offlineResultsOpen} onClose={() => setOfflineResultsOpen(false)} onOpenInventory={() => { setOfflineResultsOpen(false); setScreen('inventory') }} />
     {!editor.isEditing && editor.notice && <div className="layout-editor-notice-toast" role="status">{editor.notice}</div>}
     <ToastStack />
   </div></TooltipProvider>

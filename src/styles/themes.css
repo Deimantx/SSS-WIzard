@@ -47,9 +47,9 @@ body { color: var(--ui-text); background: var(--ui-bg); }
 .button.secondary, .button.ghost, .icon-button, .mobile-menu { color: var(--ui-text-soft); border-color: var(--ui-border); }
 .button.secondary:hover, .button.ghost:hover, .quick-card:hover { background: var(--ui-accent-soft); border-color: var(--ui-border-strong); color: var(--ui-text); }
 .button.primary { background: linear-gradient(135deg, var(--ui-accent), var(--ui-accent-strong)); border-color: var(--ui-accent); }
-.nav-item, .crumb, .section-label, .metric span, .school-cap, .focus-total, .card-foot, .reservation, .focus-rule, .telegraph, .empty-state, .inventory-search, .detail-list span, .equipment-note, .rank-step, .settings-status, .footer-note { color: var(--ui-text-muted); }
-.screen-header p, .muted, .wizard-details p, .quick-card small, .research-name small, .school-card p, .spell-copy small, .inventory-item small, .collection-entry small, .setting-row small, .auto-hunt-row small { color: var(--ui-text-muted); }
-.card-head h2, .wizard-details h3, .objective-copy h2, .inventory-item strong, .spell-copy strong, .setting-row strong { color: var(--ui-text); }
+.nav-item, .crumb, .section-label, .metric span, .school-cap, .focus-total, .card-foot, .reservation, .focus-rule, .telegraph, .empty-state, .equipment-note, .rank-step, .settings-status, .footer-note { color: var(--ui-text-muted); }
+.screen-header p, .muted, .wizard-details p, .quick-card small, .research-name small, .school-card p, .spell-copy small, .collection-entry small, .setting-row small, .auto-hunt-row small { color: var(--ui-text-muted); }
+.card-head h2, .wizard-details h3, .objective-copy h2, .spell-copy strong, .setting-row strong { color: var(--ui-text); }
 .research-config select, .recipe-select select, .search-input { color: var(--ui-text); background: var(--ui-panel-strong); border-color: var(--ui-border); }
 .screen-error-fallback { max-width: 720px; margin: 8vh auto; padding: 20px; }
 .error-summary { color: var(--ui-text-muted); font-size: var(--text-base); line-height: 1.55; margin: 16px 0; }

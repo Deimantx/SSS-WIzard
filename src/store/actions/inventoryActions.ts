@@ -1,5 +1,6 @@
 import { ITEMS } from '../../game/content/items/items'
 import { pushNotification } from '../../game/engine'
+import { getEquippedReservedQuantity as getEquipmentReservedQuantity } from '../../game/core/equipment'
 import type { GameState, ItemId } from '../../game/types'
 
 export const isEquippedItem = (state: GameState, itemId: ItemId) => Object.values(state.equipment).includes(itemId)
@@ -9,7 +10,7 @@ const safeQuantity = (value: unknown) => typeof value === 'number' && Number.isF
 const safeGold = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.min(Number.MAX_SAFE_INTEGER, Math.floor(value))) : 0
 
 /** Number of copies reserved by equipment slots, independent of stack-level protection. */
-export const getEquippedReservedQuantity = (state: Pick<GameState, 'equipment'>, itemId: ItemId) => Object.values(state.equipment).filter((equippedId) => equippedId === itemId).length
+export const getEquippedReservedQuantity = (state: Pick<GameState, 'equipment'>, itemId: ItemId) => getEquipmentReservedQuantity(state, itemId)
 export const getActionableQuantity = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment'>, itemId: ItemId) => {
   if (state.protectedItems[itemId]) return 0
   return Math.max(0, safeQuantity(state.inventory[itemId]) - getEquippedReservedQuantity(state, itemId))

@@ -229,6 +229,8 @@ Galimos Channeling kryptys:
 
 ### [ATVIRA]
 
+The eight MVP equipment positions above are fixed for this phase. Future decisions concern additional equipment behavior and any slots added after the MVP.
+
 Be elementinių medžiagų gali egzistuoti neutralūs resursai, pavyzdžiui:
 
 - Arcane Essence;
@@ -842,6 +844,21 @@ Dar reikia nuspręsti, ar potion charges taip pat pilnai atsistato po nesėkming
 ---
 
 ## 15. Equipment ir buildai
+
+### MVP Equipment Slots
+
+The current MVP uses eight explicit loadout positions:
+
+- Weapon — one-handed or two-handed;
+- Offhand — shields, focuses and similar equipment; unavailable while a two-handed Weapon is equipped;
+- Armor;
+- Helmet;
+- Amulet;
+- Earrings;
+- Ring 1;
+- Ring 2.
+
+Ring items use the shared `ring` item category; Ring 1 and Ring 2 are loadout positions. More slots may be added later.
 
 ### [SIŪLOMA KRYPTIS]
 

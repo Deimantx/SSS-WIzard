@@ -12,7 +12,7 @@ import { type SaveReason } from '../persistence/saveConstants'
 import { getActiveProfileId } from '../profiles/profileSessionStore'
 import { updateProfileMetadata } from '../profiles/profileStorage'
 import { createInitialState } from './initialState'
-import type { ChannelingDiscoveryId, DungeonId, EquipmentSlot, GameState, ItemId, ManaPillarId, MonsterId, SchoolId, ScreenId, SpellId } from '../game/types'
+import type { ChannelingDiscoveryId, DungeonId, EquipmentPosition, GameState, ItemId, ManaPillarId, MonsterId, SchoolId, ScreenId, SpellId } from '../game/types'
 import { clamp } from '../game/utils'
 import { resetDebugState, sanitizeDebugNumber } from './actions/debugActions'
 import { addItemAction, destroyItemAction, removeItemAction, sellItemAction, toggleItemProtectionAction } from './actions/inventoryActions'
@@ -83,8 +83,8 @@ export interface GameActions {
   sellItem: (itemId: ItemId, quantity: number) => void
   destroyItem: (itemId: ItemId, quantity: number) => void
   clearRecentNew: (itemId: ItemId) => void
-  equipItem: (itemId: ItemId) => void
-  unequipItem: (slot: EquipmentSlot) => void
+  equipItem: (itemId: ItemId, targetPosition?: EquipmentPosition) => void
+  unequipItem: (position: EquipmentPosition) => void
   unlockAllSpells: () => void
   donateGuildRequest: (requestId: string, amount: number | 'max') => void
   claimGuildReward: (requestId: string) => void
@@ -202,8 +202,8 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   sellItem: (itemId, quantity) => set((state) => { sellItemAction(state, itemId, quantity); return state }),
   destroyItem: (itemId, quantity) => set((state) => { destroyItemAction(state, itemId, quantity); return state }),
   clearRecentNew: (itemId) => set((state) => { const entry = state.recentAcquisitions.find((item) => item.itemId === itemId); if (entry) entry.isNew = false; return state }),
-  equipItem: (itemId) => set((state) => { equipItemAction(state, itemId); return state }),
-  unequipItem: (slot) => set((state) => { unequipItemAction(state, slot); return state }),
+  equipItem: (itemId, targetPosition) => set((state) => { equipItemAction(state, itemId, targetPosition); return state }),
+  unequipItem: (position) => set((state) => { unequipItemAction(state, position); return state }),
   unlockAllSpells: () => set((state) => { unlockAllSpellsAction(state); return state }),
   donateGuildRequest: (requestId, amount) => set((state) => { donateGuildRequestAction(state, requestId, amount); return state }),
   claimGuildReward: (requestId) => set((state) => { claimGuildRewardAction(state, requestId); return state }),

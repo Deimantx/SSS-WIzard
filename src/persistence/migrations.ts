@@ -6,7 +6,8 @@ import { ITEMS } from '../game/content/items/items'
 import { MONSTERS } from '../game/content/monsters/whisperingWoods'
 import { RECIPES } from '../game/content/recipes/recipes'
 import { SPELLS } from '../game/content/spells/spells'
-import type { GameState, ItemId, ResearchActivity, SchoolId } from '../game/types'
+import { EQUIPMENT_POSITIONS, normalizeEquipmentState } from '../game/core/equipment'
+import type { EquipmentPosition, GameState, ItemId, ResearchActivity, SchoolId } from '../game/types'
 import { isRecord, SaveMigrationError } from './saveSchema'
 
 const normalizeScreen = (value: unknown, fallback: GameState['ui']['screen']): GameState['ui']['screen'] => {
@@ -93,11 +94,15 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
 const normalizeDirectContentReferences = (migrated: GameState, raw: Record<string, any>) => {
   const fresh = createInitialState()
   const rawEquipment = isRecord(raw.equipment) ? raw.equipment : {}
-  const equipmentSlots = ['weapon', 'robe', 'focus', 'charm'] as const
-  equipmentSlots.forEach((slot) => {
-    const value = Object.prototype.hasOwnProperty.call(rawEquipment, slot) ? rawEquipment[slot] : migrated.equipment[slot]
-    migrated.equipment[slot] = value === null ? null : validContentId(value, itemIds) && ITEMS[value as ItemId].kind === 'equipment' && ITEMS[value as ItemId].equipmentSlot === slot ? value as ItemId : fresh.equipment[slot]
+  const legacyToNew: Partial<Record<EquipmentPosition, keyof typeof rawEquipment>> = { offhand: 'focus', armor: 'robe', amulet: 'charm' }
+  const candidate: Partial<Record<EquipmentPosition, ItemId | null>> = {}
+  EQUIPMENT_POSITIONS.forEach((position) => {
+    const hasNewValue = Object.prototype.hasOwnProperty.call(rawEquipment, position)
+    const legacyPosition = legacyToNew[position]
+    const hasLegacyValue = legacyPosition ? Object.prototype.hasOwnProperty.call(rawEquipment, legacyPosition) : false
+    candidate[position] = hasNewValue ? rawEquipment[position] as ItemId | null : legacyPosition && hasLegacyValue ? rawEquipment[legacyPosition] as ItemId | null : migrated.equipment[position]
   })
+  migrated.equipment = normalizeEquipmentState(candidate, migrated.inventory)
 
   const rawActivities = isRecord(raw.activities) ? raw.activities : {}
   const rawResearch = isRecord(rawActivities.research) ? rawActivities.research : {}
@@ -171,7 +176,7 @@ const migrateV1 = (raw: Record<string, any>): GameState => {
     player: { ...fresh.player, ...oldPlayer, baseMaxHealth: typeof oldPlayer.baseMaxHealth === 'number' ? oldPlayer.baseMaxHealth : oldMaxHealth, baseMaxMana: typeof oldPlayer.baseMaxMana === 'number' ? oldPlayer.baseMaxMana : oldMaxMana, baseMaxFocus: typeof oldPlayer.baseMaxFocus === 'number' ? oldPlayer.baseMaxFocus : oldMaxFocus },
     inventory: { ...fresh.inventory, ...(isRecord(raw.inventory) ? raw.inventory : {}) },
     protectedItems: { ...fresh.protectedItems, ...(oldWeapon ? { [oldWeapon]: true } : {}) },
-    equipment: { ...fresh.equipment, weapon: oldWeapon ?? fresh.equipment.weapon, focus: oldFocus ?? null },
+    equipment: { ...fresh.equipment, weapon: oldWeapon ?? fresh.equipment.weapon, offhand: oldFocus ?? null },
     activities: { ...fresh.activities, channeling: { echoesAssigned: oldActivities.autoChannel === true ? 1 : 0 }, research, autoCast: { ...fresh.activities.autoCast, ...(isRecord(oldActivities.autoCast) ? oldActivities.autoCast : {}) } },
     progress: { ...fresh.progress, ...(oldProgress as Partial<GameState['progress']>) },
     combat: { ...fresh.combat, ...(isRecord(raw.combat) ? raw.combat : {}) },
@@ -198,6 +203,7 @@ const migrateV2 = (raw: Record<string, any>): GameState => {
 
 const migrateV3 = (raw: Record<string, any>): GameState => finalize(merge(createInitialState(), raw), raw)
 const migrateV4 = (raw: Record<string, any>): GameState => finalize(merge(createInitialState(), raw), raw)
+const migrateV5 = (raw: Record<string, any>): GameState => finalize(merge(createInitialState(), raw), raw)
 
 export const migrateSave = (rawSave: unknown): GameState => {
   if (!isRecord(rawSave)) throw new SaveMigrationError('Save data is not a valid object.')
@@ -206,6 +212,7 @@ export const migrateSave = (rawSave: unknown): GameState => {
   if (version === 2) return migrateV2(rawSave)
   if (version === 3) return migrateV3(rawSave)
   if (version === 4) return migrateV4(rawSave)
+  if (version === 5) return migrateV5(rawSave)
   if (version === SAVE_VERSION) {
     return finalize(merge(createInitialState(), rawSave), rawSave)
   }

@@ -21,7 +21,10 @@ export type ItemId =
 export type SpellId = 'fire-bolt' | 'water-ward' | 'earth-spike' | 'air-lance' | 'ignite' | 'flow-mend' | 'stoneguard' | 'quickening'
 export type MonsterId = 'forest-wisp' | 'thornling' | 'stone-root' | 'grove-sentinel' | 'forest-heart'
 export type DungeonId = 'whispering-woods'
-export type EquipmentSlot = 'weapon' | 'robe' | 'focus' | 'charm'
+export type EquipmentItemSlot = 'weapon' | 'offhand' | 'armor' | 'helmet' | 'amulet' | 'earrings' | 'ring'
+export type EquipmentPosition = 'weapon' | 'offhand' | 'armor' | 'helmet' | 'amulet' | 'earrings' | 'ring1' | 'ring2'
+/** @deprecated Use EquipmentItemSlot for item metadata or EquipmentPosition for loadout state. */
+export type EquipmentSlot = EquipmentItemSlot
 /** Legacy authored category kept for save/content compatibility. */
 export type ItemCategory = 'elemental' | 'monster-loot' | 'equipment' | 'boss-loot'
 export type InventoryCategory = 'material' | 'loot' | 'equipment' | 'special'
@@ -71,7 +74,9 @@ export interface ItemDefinition {
   sellValue: number | null
   canDestroy: boolean
   actionRestrictionReason?: string
-  equipmentSlot?: EquipmentSlot
+  equipmentSlot?: EquipmentItemSlot
+  /** Only authored for Weapon items. */
+  weaponHands?: 1 | 2
   stats?: EquipmentStats
   researchSchool?: SchoolId
   researchXp?: number
@@ -194,7 +199,7 @@ export interface GameState {
   currencies: { gold: number }
   inventory: Partial<Record<ItemId, number>>
   protectedItems: Partial<Record<ItemId, boolean>>
-  equipment: { weapon: ItemId | null; robe: ItemId | null; focus: ItemId | null; charm: ItemId | null }
+  equipment: Record<EquipmentPosition, ItemId | null>
   activities: ActivitiesState
   combat: CombatState
   progress: ProgressState

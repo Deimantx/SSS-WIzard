@@ -8,9 +8,9 @@ describe('save navigation migration', () => {
     expect(migrateSave(old).ui.screen).toBe('tower-channeling')
   })
 
-  it('migrates V2 Auto Channel to one Arcane Echo with clean V4 defaults', () => {
+  it('migrates V2 Auto Channel to one Arcane Echo with clean V5 defaults', () => {
     const migrated = migrateSave({ ...createInitialState(), saveVersion: 2, activities: { ...createInitialState().activities, autoChannel: true, channelCooldownMs: 500 } })
-    expect(migrated.saveVersion).toBe(4)
+    expect(migrated.saveVersion).toBe(5)
     expect(migrated.activities.channeling.echoesAssigned).toBe(1)
     expect(migrated.progress.channeling.pillars['arcane-reservoir']).toMatchObject({ rank: 1, level: 0 })
     expect(migrated.progress.channeling.pillars['leyline-conduit']).toMatchObject({ rank: 1, level: 0 })
@@ -24,7 +24,7 @@ describe('save navigation migration', () => {
   it('migrates V3 ranks into the matching Rank I Pillars and preserves Discoveries', () => {
     const old = { ...createInitialState(), saveVersion: 3, progress: { ...createInitialState().progress, channeling: { manaReservoirRank: 4, leylineConduitRank: 3, totalManaGenerated: 120, fiveEchoSustainMs: 5000, discoveries: { 'stable-leyline': true, 'echo-resonance': false, 'deep-reservoir': true } } } }
     const migrated = migrateSave(old)
-    expect(migrated.saveVersion).toBe(4)
+    expect(migrated.saveVersion).toBe(5)
     expect(migrated.progress.channeling.pillars['arcane-reservoir']).toEqual({ rank: 1, level: 4 })
     expect(migrated.progress.channeling.pillars['leyline-conduit']).toEqual({ rank: 1, level: 3 })
     expect(migrated.progress.channeling.pillars['mana-resonance']).toEqual({ rank: 1, level: 0 })
@@ -62,6 +62,45 @@ describe('save navigation migration', () => {
     expect(migrated.progress.autoHuntBossByDungeon).toEqual({ 'whispering-woods': true })
     expect(migrated.combat.enemySpecialUsed).toEqual({ 'ancient-growth': true, 'living-core': false })
     expect(migrated.inventory).not.toHaveProperty('removed-item')
+  })
+
+  it('migrates V4 saves to V5 with zero Gold while preserving gameplay state', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({
+      ...initial,
+      saveVersion: 4,
+      currencies: undefined,
+      inventory: { ...initial.inventory, 'fire-fragment': 17 },
+      progress: { ...initial.progress, lifetimeKills: 23 },
+    })
+
+    expect(migrated.saveVersion).toBe(5)
+    expect(migrated.currencies.gold).toBe(0)
+    expect(migrated.inventory['fire-fragment']).toBe(17)
+    expect(migrated.progress.lifetimeKills).toBe(23)
+  })
+
+  it('falls back safely from removed direct content references', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({
+      ...initial,
+      saveVersion: 4,
+      equipment: { ...initial.equipment, weapon: 'removed-equipment' },
+      activities: {
+        ...initial.activities,
+        research: { ...initial.activities.research, itemId: 'removed-item', targetSchoolId: 'removed-school' },
+        transmutation: { ...initial.activities.transmutation, recipeId: 'removed-recipe' },
+      },
+      combat: { ...initial.combat, dungeonId: 'removed-dungeon', enemyId: 'removed-enemy', pendingBossId: 'removed-boss' },
+    })
+
+    expect(migrated.equipment.weapon).toBe('apprentice-wand')
+    expect(migrated.activities.research.itemId).toBeNull()
+    expect(migrated.activities.research.targetSchoolId).toBeNull()
+    expect(migrated.activities.transmutation.recipeId).toBeNull()
+    expect(migrated.combat.dungeonId).toBeNull()
+    expect(migrated.combat.enemyId).toBeNull()
+    expect(migrated.combat.pendingBossId).toBeNull()
   })
 
   it('sanitizes dynamic values without wiping valid item keys', () => {

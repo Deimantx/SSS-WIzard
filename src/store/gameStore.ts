@@ -15,7 +15,7 @@ import { createInitialState } from './initialState'
 import type { ChannelingDiscoveryId, DungeonId, EquipmentSlot, GameState, ItemId, ManaPillarId, MonsterId, SchoolId, ScreenId, SpellId } from '../game/types'
 import { clamp } from '../game/utils'
 import { resetDebugState, sanitizeDebugNumber } from './actions/debugActions'
-import { addItemAction, removeItemAction, toggleItemProtectionAction } from './actions/inventoryActions'
+import { addItemAction, destroyItemAction, removeItemAction, sellItemAction, toggleItemProtectionAction } from './actions/inventoryActions'
 import { equipItemAction, unequipItemAction } from './actions/equipmentActions'
 import { donateGuildRequestAction, claimGuildRewardAction, promoteGuildAction } from './actions/guildActions'
 import { setSchoolDebugAction, setLevelCapAction, setThreatAction, setBossKillsAction, unlockAllSpellsAction } from './actions/progressionActions'
@@ -80,6 +80,8 @@ export interface GameActions {
   addItem: (itemId: ItemId, quantity: number) => void
   removeItem: (itemId: ItemId, quantity: number) => void
   toggleItemProtection: (itemId: ItemId) => void
+  sellItem: (itemId: ItemId, quantity: number) => void
+  destroyItem: (itemId: ItemId, quantity: number) => void
   clearRecentNew: (itemId: ItemId) => void
   equipItem: (itemId: ItemId) => void
   unequipItem: (slot: EquipmentSlot) => void
@@ -197,6 +199,8 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   addItem: (itemId, quantity) => set((state) => { addItemAction(state, itemId, quantity); return state }),
   removeItem: (itemId, quantity) => set((state) => { removeItemAction(state, itemId, quantity); return state }),
   toggleItemProtection: (itemId) => set((state) => { toggleItemProtectionAction(state, itemId); return state }),
+  sellItem: (itemId, quantity) => set((state) => { sellItemAction(state, itemId, quantity); return state }),
+  destroyItem: (itemId, quantity) => set((state) => { destroyItemAction(state, itemId, quantity); return state }),
   clearRecentNew: (itemId) => set((state) => { const entry = state.recentAcquisitions.find((item) => item.itemId === itemId); if (entry) entry.isNew = false; return state }),
   equipItem: (itemId) => set((state) => { equipItemAction(state, itemId); return state }),
   unequipItem: (slot) => set((state) => { unequipItemAction(state, slot); return state }),

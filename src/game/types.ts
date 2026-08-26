@@ -68,6 +68,9 @@ export interface ItemDefinition {
   sourceNavigation?: ScreenId
   /** Optional authored chain for future refined-material presentations. */
   processingChain?: ItemId[]
+  sellValue: number | null
+  canDestroy: boolean
+  actionRestrictionReason?: string
   equipmentSlot?: EquipmentSlot
   stats?: EquipmentStats
   researchSchool?: SchoolId
@@ -188,6 +191,7 @@ export interface GameState {
   saveVersion: number
   player: PlayerState
   schools: Record<SchoolId, SchoolState>
+  currencies: { gold: number }
   inventory: Partial<Record<ItemId, number>>
   protectedItems: Partial<Record<ItemId, boolean>>
   equipment: { weapon: ItemId | null; robe: ItemId | null; focus: ItemId | null; charm: ItemId | null }

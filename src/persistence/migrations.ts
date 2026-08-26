@@ -4,6 +4,7 @@ import { DUNGEONS } from '../game/content/dungeons/dungeons'
 import { GUILD_REQUESTS } from '../game/content/guild/guildRequests'
 import { ITEMS } from '../game/content/items/items'
 import { MONSTERS } from '../game/content/monsters/whisperingWoods'
+import { RECIPES } from '../game/content/recipes/recipes'
 import { SPELLS } from '../game/content/spells/spells'
 import type { GameState, ItemId, ResearchActivity, SchoolId } from '../game/types'
 import { isRecord, SaveMigrationError } from './saveSchema'
@@ -34,12 +35,15 @@ const bossIds = Object.values(MONSTERS).filter((monster) => monster.boss).map((m
 const dungeonIds = Object.keys(DUNGEONS)
 const requestIds = Object.keys(GUILD_REQUESTS)
 const spellIds = Object.keys(SPELLS)
+const recipeIds = Object.keys(RECIPES)
 const enemySpecialIds = ['ancient-growth', 'living-core']
 const permanentFocusIds = ['forest-heart', 'guild-apprentice']
 
 const nonNegativeInteger = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.floor(value)) : undefined
+const nonNegativeGold = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, Math.floor(value))) : undefined
 const nonNegativeNumber = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : undefined
 const booleanValue = (value: unknown) => typeof value === 'boolean' ? value : undefined
+const validContentId = (value: unknown, validIds: readonly string[]) => typeof value === 'string' && validIds.includes(value)
 
 /**
  * Merge records whose keys are content IDs without ever copying arbitrary save
@@ -77,11 +81,42 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
   migrated.progress.lifetimeKillsByMonster = normalizeDynamicRecord(fresh.progress.lifetimeKillsByMonster, rawProgress.lifetimeKillsByMonster, monsterIds, nonNegativeInteger)
   migrated.progress.bossKillsByBoss = normalizeDynamicRecord(fresh.progress.bossKillsByBoss, rawProgress.bossKillsByBoss, bossIds, nonNegativeInteger)
   migrated.progress.autoHuntBossByDungeon = normalizeDynamicRecord(fresh.progress.autoHuntBossByDungeon, rawProgress.autoHuntBossByDungeon, dungeonIds, booleanValue) as GameState['progress']['autoHuntBossByDungeon']
+  const rawCurrencies = isRecord(raw.currencies) ? raw.currencies : {}
+  migrated.currencies = { gold: nonNegativeGold(rawCurrencies.gold) ?? fresh.currencies.gold }
 
   const rawUnlockedSpells = Array.isArray(rawProgress.unlockedSpells) ? rawProgress.unlockedSpells : []
   migrated.progress.unlockedSpells = rawUnlockedSpells.filter((id): id is GameState['progress']['unlockedSpells'][number] => typeof id === 'string' && spellIds.includes(id))
   const rawDiscoveredMonsters = Array.isArray(rawProgress.discoveredMonsters) ? rawProgress.discoveredMonsters : []
   migrated.progress.discoveredMonsters = rawDiscoveredMonsters.filter((id): id is GameState['progress']['discoveredMonsters'][number] => typeof id === 'string' && monsterIds.includes(id))
+}
+
+const normalizeDirectContentReferences = (migrated: GameState, raw: Record<string, any>) => {
+  const fresh = createInitialState()
+  const rawEquipment = isRecord(raw.equipment) ? raw.equipment : {}
+  const equipmentSlots = ['weapon', 'robe', 'focus', 'charm'] as const
+  equipmentSlots.forEach((slot) => {
+    const value = Object.prototype.hasOwnProperty.call(rawEquipment, slot) ? rawEquipment[slot] : migrated.equipment[slot]
+    migrated.equipment[slot] = value === null ? null : validContentId(value, itemIds) && ITEMS[value as ItemId].kind === 'equipment' && ITEMS[value as ItemId].equipmentSlot === slot ? value as ItemId : fresh.equipment[slot]
+  })
+
+  const rawActivities = isRecord(raw.activities) ? raw.activities : {}
+  const rawResearch = isRecord(rawActivities.research) ? rawActivities.research : {}
+  const researchItem = Object.prototype.hasOwnProperty.call(rawResearch, 'itemId') ? rawResearch.itemId : migrated.activities.research.itemId
+  migrated.activities.research.itemId = researchItem === null ? null : validContentId(researchItem, itemIds) && ITEMS[researchItem as ItemId].kind === 'material' && Boolean(ITEMS[researchItem as ItemId].researchSchool) ? researchItem as ItemId : null
+  const researchSchool = Object.prototype.hasOwnProperty.call(rawResearch, 'targetSchoolId') ? rawResearch.targetSchoolId : migrated.activities.research.targetSchoolId
+  migrated.activities.research.targetSchoolId = validContentId(researchSchool, ['fire', 'water', 'earth', 'air']) ? researchSchool as SchoolId : null
+
+  const rawTransmutation = isRecord(rawActivities.transmutation) ? rawActivities.transmutation : {}
+  const recipeId = Object.prototype.hasOwnProperty.call(rawTransmutation, 'recipeId') ? rawTransmutation.recipeId : migrated.activities.transmutation.recipeId
+  migrated.activities.transmutation.recipeId = recipeId === null ? null : validContentId(recipeId, recipeIds) ? recipeId as string : null
+
+  const rawCombat = isRecord(raw.combat) ? raw.combat : {}
+  const dungeonId = Object.prototype.hasOwnProperty.call(rawCombat, 'dungeonId') ? rawCombat.dungeonId : migrated.combat.dungeonId
+  migrated.combat.dungeonId = dungeonId === null ? null : validContentId(dungeonId, dungeonIds) ? dungeonId as GameState['combat']['dungeonId'] : fresh.combat.dungeonId
+  const enemyId = Object.prototype.hasOwnProperty.call(rawCombat, 'enemyId') ? rawCombat.enemyId : migrated.combat.enemyId
+  migrated.combat.enemyId = enemyId === null ? null : validContentId(enemyId, monsterIds) ? enemyId as GameState['combat']['enemyId'] : fresh.combat.enemyId
+  const pendingBossId = Object.prototype.hasOwnProperty.call(rawCombat, 'pendingBossId') ? rawCombat.pendingBossId : migrated.combat.pendingBossId
+  migrated.combat.pendingBossId = pendingBossId === null ? null : pendingBossId === 'grove-sentinel' && validContentId(pendingBossId, bossIds) ? pendingBossId : fresh.combat.pendingBossId
 }
 
 const migrateChanneling = (rawProgress: unknown, fresh: GameState['progress']): GameState['progress']['channeling'] => {
@@ -112,6 +147,7 @@ const finalize = (migrated: GameState, raw: Record<string, any>) => {
   migrated.progress.channeling = migrateChanneling(raw.progress, createInitialState().progress)
   migrated.ui.screen = normalizeScreen(isRecord(raw.ui) ? raw.ui.screen : undefined, migrated.ui.screen)
   normalizeDynamicRecords(migrated, raw)
+  normalizeDirectContentReferences(migrated, raw)
   return migrated
 }
 
@@ -161,6 +197,7 @@ const migrateV2 = (raw: Record<string, any>): GameState => {
 }
 
 const migrateV3 = (raw: Record<string, any>): GameState => finalize(merge(createInitialState(), raw), raw)
+const migrateV4 = (raw: Record<string, any>): GameState => finalize(merge(createInitialState(), raw), raw)
 
 export const migrateSave = (rawSave: unknown): GameState => {
   if (!isRecord(rawSave)) throw new SaveMigrationError('Save data is not a valid object.')
@@ -168,6 +205,7 @@ export const migrateSave = (rawSave: unknown): GameState => {
   if (version === 1) return migrateV1(rawSave)
   if (version === 2) return migrateV2(rawSave)
   if (version === 3) return migrateV3(rawSave)
+  if (version === 4) return migrateV4(rawSave)
   if (version === SAVE_VERSION) {
     return finalize(merge(createInitialState(), rawSave), rawSave)
   }

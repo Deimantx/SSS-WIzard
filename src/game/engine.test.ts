@@ -462,7 +462,7 @@ describe('Phase 2 progression', () => {
 
   it('migrates a v1 save and rejects an unknown version safely', () => {
     const migrated = migrateSave({ saveVersion: 1, player: { mana: 42, maxFocus: 100 }, inventory: { 'fire-fragment': 2 }, equipment: { weapon: 'apprentice-wand' }, activities: { research: { running: true, itemId: 'fire-fragment', progressMs: 1000 } } })
-    expect(migrated.saveVersion).toBe(4)
+    expect(migrated.saveVersion).toBe(5)
     expect(migrated.activities.research.targetSchoolId).toBe('fire')
     expect(migrated.inventory['fire-fragment']).toBe(2)
     expect(() => migrateSave({ saveVersion: 99 })).toThrow('Unsupported save version')

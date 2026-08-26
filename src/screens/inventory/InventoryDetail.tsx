@@ -1,4 +1,4 @@
-import { ArrowRight, Check, LockKeyhole, PackageOpen, ShieldCheck, Unlock } from 'lucide-react'
+import { ArrowRight, Check, LockKeyhole, PackageOpen } from 'lucide-react'
 import type { CSSProperties, ReactNode } from 'react'
 import { Button, Status } from '../../components/ui'
 import { ItemIcon, ItemQuantity } from '../../components/ui/item'
@@ -10,7 +10,7 @@ import { getInventoryCategoryLabel, getInventorySubcategoryLabel, getItemProcess
 import { getEquipmentComparison } from './inventoryEquipmentComparison'
 import { formatFlowEta, formatItemFlowRate, getItemFlow, getItemNeeds, type ItemEconomyState, type ItemFlow, type ItemNeed } from './inventoryEconomy'
 
-export function InventoryDetail({ itemId, inventory, protectedItems, equipment, economyState, toggleProtection, equipItem, navigate }: { itemId: ItemId | null; inventory: GameState['inventory']; protectedItems: GameState['protectedItems']; equipment: GameState['equipment']; economyState?: ItemEconomyState; toggleProtection: (itemId: ItemId) => void; equipItem: (itemId: ItemId) => void; navigate?: (screen: ScreenId) => void }) {
+export function InventoryDetail({ itemId, inventory, protectedItems, equipment, economyState, navigate }: { itemId: ItemId | null; inventory: GameState['inventory']; protectedItems: GameState['protectedItems']; equipment: GameState['equipment']; economyState?: ItemEconomyState; navigate?: (screen: ScreenId) => void }) {
   if (!itemId) return <div className="inventory-detail-empty"><PackageOpen size={28} aria-hidden="true" /><strong>SELECT AN ITEM</strong><span>Choose an item from the Vault to inspect its source, uses, and protection.</span></div>
   const item = ITEMS[itemId]
   const quantity = inventory[itemId] ?? 0
@@ -45,18 +45,18 @@ export function InventoryDetail({ itemId, inventory, protectedItems, equipment, 
 
     {uses.length > 0 && <section className="inventory-detail-section"><span className="inventory-detail-label">USED IN</span><div className="inventory-use-list">{uses.map((use) => <button type="button" className="inventory-use-row" key={`${use.destination}-${use.label}`} onClick={() => navigate?.(use.destination)}><span><strong>{use.label}</strong><small>{use.detail}</small></span><ArrowRight size={14} aria-hidden="true" /></button>)}</div></section>}
 
-    <section className="inventory-detail-section inventory-detail-actions"><span className="inventory-detail-label">ACTIONS</span><div className="inventory-action-row">{item.kind === 'equipment' && (equipped ? <Button variant="success" disabled ariaLabel={`${item.name} is equipped`}><Check size={14} /> EQUIPPED</Button> : <Button onClick={() => equipItem(itemId)} disabled={quantity <= 0}>EQUIP</Button>)}{equipped ? <div className="inventory-equipped-note"><span><LockKeyhole size={14} /> Equipped items are automatically protected.</span></div> : <Button variant={protectedItem ? 'success' : 'secondary'} onClick={() => toggleProtection(itemId)} tooltip={<span>Protect from Research, Transmutation, and Guild consumption.</span>}>{protectedItem ? <><Unlock size={14} /> UNPROTECT</> : <><ShieldCheck size={14} /> PROTECT</>}</Button>}</div>{protectedItem && !equipped && <p className="inventory-protection-note">PROTECTED · This item cannot be consumed by Research, Transmutation, or Guild donations.</p>}</section>
   </div>
 }
 
 function FlowSection({ flow }: { flow: ItemFlow }) {
-  return <section className="inventory-detail-section inventory-flow-section"><span className="inventory-detail-label">CURRENT FLOW</span>{flow.production.length > 0 && <div className="inventory-flow-group"><small>PRODUCTION</small>{flow.production.map((source) => <FlowRow key={`production-${source.label}`} label={source.label} value={formatItemFlowRate(source.ratePerHour)} />)}</div>}{flow.consumption.length > 0 && <div className="inventory-flow-group"><small>CONSUMPTION</small>{flow.consumption.map((source) => <FlowRow key={`consumption-${source.label}`} label={source.label} value={formatItemFlowRate(-source.ratePerHour)} />)}</div>}<FlowRow label="NET FLOW" value={formatItemFlowRate(flow.netPerHour)} emphasis />{flow.depletionEtaMs !== null && <FlowRow label="DEPLETES IN" value={formatFlowEta(flow.depletionEtaMs) ?? '-'} emphasis />}</section>
+  const netTone = flow.netPerHour > 0 ? 'positive' : flow.netPerHour < 0 ? 'negative' : 'neutral'
+  return <section className="inventory-detail-section inventory-flow-section"><span className="inventory-detail-label">CURRENT FLOW</span>{flow.production.length > 0 && <div className="inventory-flow-group"><small>PRODUCTION</small>{flow.production.map((source) => <FlowRow key={`production-${source.label}`} label={source.label} value={formatItemFlowRate(source.ratePerHour)} tone="positive" />)}</div>}{flow.consumption.length > 0 && <div className="inventory-flow-group"><small>CONSUMPTION</small>{flow.consumption.map((source) => <FlowRow key={`consumption-${source.label}`} label={source.label} value={formatItemFlowRate(-source.ratePerHour)} tone="negative" />)}</div>}<FlowRow label="NET FLOW" value={formatItemFlowRate(flow.netPerHour)} tone={netTone} emphasis />{flow.depletionEtaMs !== null && <FlowRow label="DEPLETES IN" value={formatFlowEta(flow.depletionEtaMs) ?? '-'} emphasis />}</section>
 }
 
 function NeedsSection({ needs, navigate }: { needs: ItemNeed[]; navigate?: (screen: ScreenId) => void }) {
   return <section className="inventory-detail-section inventory-needs-section"><span className="inventory-detail-label">CURRENT NEEDS</span><div className="inventory-needs-list">{needs.map((entry) => <button type="button" className="inventory-need-row" key={entry.id} onClick={() => navigate?.(entry.destination)}><span className="inventory-need-copy"><strong>{entry.label}</strong><small>{entry.detail} · {entry.owned.toLocaleString()} / {entry.required.toLocaleString()}{entry.status === 'MISSING' ? ` · Missing ${entry.missing.toLocaleString()}` : ''}</small></span><span className={`inventory-need-status inventory-need-${entry.status.toLowerCase()}`}>{entry.status === 'MISSING' && entry.readyInMs !== null ? `READY IN ${formatFlowEta(entry.readyInMs)}` : entry.status}</span><ArrowRight size={14} aria-hidden="true" /></button>)}</div></section>
 }
 
-function FlowRow({ label, value, emphasis = false }: { label: string; value: string; emphasis?: boolean }) { return <span className={`inventory-flow-row ${emphasis ? 'emphasis' : ''}`}><span>{label}</span><strong>{value}</strong></span> }
+function FlowRow({ label, value, emphasis = false, tone = 'neutral' }: { label: string; value: string; emphasis?: boolean; tone?: 'positive' | 'negative' | 'neutral' }) { return <span className={`inventory-flow-row ${emphasis ? 'emphasis' : ''} ${tone}`}><span>{label}</span><strong>{value}</strong></span> }
 function DetailRow({ label, value }: { label: string; value: ReactNode }) { return <span className="inventory-detail-row"><span>{label}</span><strong>{value}</strong></span> }
 function formatSlot(slot: string) { return slot.charAt(0).toUpperCase() + slot.slice(1) }

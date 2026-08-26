@@ -2,12 +2,13 @@ import { BALANCE } from '../game/data/balance'
 import { createInitialManaPillars } from '../game/data/manaPillars'
 import type { GameState } from '../game/types'
 
-export const SAVE_VERSION = 4
+export const SAVE_VERSION = 5
 
 export const createInitialState = (): GameState => ({
   saveVersion: SAVE_VERSION,
   player: { health: BALANCE.player.maxHealth, maxHealth: BALANCE.player.maxHealth, mana: BALANCE.mana.startingMana, maxMana: BALANCE.mana.maxMana, maxFocus: BALANCE.focus.startingMax, baseMaxHealth: BALANCE.player.maxHealth, baseMaxMana: BALANCE.mana.maxMana, baseMaxFocus: BALANCE.focus.startingMax, godMode: false },
   schools: { fire: { xp: 0, level: 1 }, water: { xp: 0, level: 1 }, earth: { xp: 0, level: 1 }, air: { xp: 0, level: 1 } },
+  currencies: { gold: 0 },
   inventory: { 'apprentice-wand': 1 },
   protectedItems: { 'apprentice-wand': true },
   equipment: { weapon: 'apprentice-wand', robe: null, focus: null, charm: null },

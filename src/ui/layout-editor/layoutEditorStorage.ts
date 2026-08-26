@@ -39,8 +39,18 @@ export function loadUiLayouts(): UiLayoutDocument {
       const panels: Record<string, SavedPanelLayout> = {}
       for (const [id, value] of Object.entries(source)) { const normalized = normalizePanel(screen, id, value); if (normalized) panels[id] = normalized }
       if (screen === 'inventory' && hasGeometry(source['inventory-catalog'], { x: 0, y: 0, w: 9, h: 15 }) && hasGeometry(source['inventory-detail'], { x: 9, y: 0, w: 3, h: 15 })) {
-        panels['inventory-catalog'] = { ...panels['inventory-catalog'], w: 8 }
-        panels['inventory-detail'] = { ...panels['inventory-detail'], x: 8, w: 4 }
+        panels['inventory-catalog'] = { ...panels['inventory-catalog'], x: 0, y: 0, w: 8, h: 16 }
+        panels['inventory-detail'] = { ...panels['inventory-detail'], x: 8, y: 0, w: 4, h: 11 }
+      }
+      if (screen === 'inventory' && hasGeometry(source['inventory-catalog'], { x: 0, y: 0, w: 8, h: 15 }) && hasGeometry(source['inventory-detail'], { x: 8, y: 0, w: 4, h: 15 })) {
+        panels['inventory-catalog'] = { ...panels['inventory-catalog'], x: 0, y: 0, w: 8, h: 16 }
+        panels['inventory-detail'] = { ...panels['inventory-detail'], x: 8, y: 0, w: 4, h: 11 }
+      }
+      if (screen === 'inventory' && !panels['inventory-actions']) {
+        const detail = panels['inventory-detail'] ?? DEFAULT_LAYOUTS.inventory['inventory-detail']
+        const width = Math.max(3, Math.min(12, detail.w))
+        const x = Math.max(0, Math.min(12 - width, detail.x))
+        panels['inventory-actions'] = { x, y: Math.max(0, detail.y + detail.h), w: width, h: 5 }
       }
       if (Object.keys(panels).length) screens[screen] = panels
     }

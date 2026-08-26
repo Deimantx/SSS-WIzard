@@ -37,7 +37,7 @@ export const advanceWithOfflineBank = async (durationMs: number, getState: () =>
       remaining -= step
       setState((state) => {
         state.offlineBankMs = Math.max(0, state.offlineBankMs - step)
-        advanceGameState(state, step, { mode: 'banked', suppressRoutineNotifications: true, report: collector, onItemAcquired: (itemId, quantity) => onItemAcquired?.(state, itemId, quantity) })
+        advanceGameState(state, step, { mode: 'banked', report: collector, onItemAcquired: (itemId, quantity) => onItemAcquired?.(state, itemId, quantity) })
       })
       if (index > 0 && index % 50 === 0) await yieldToBrowser()
     }
@@ -45,7 +45,7 @@ export const advanceWithOfflineBank = async (durationMs: number, getState: () =>
     const report = collector.finalize(completed)
     setState((state) => {
       const majorEvents = state.notifications.filter((note) => !previousIds.has(note.id) && isMajorNotification(note.text))
-      state.notifications = [...previousNotifications, ...majorEvents].slice(-5)
+      state.notifications = [...previousNotifications, ...majorEvents].slice(-3)
       pushNotification(state, `Advanced ${formatOfflineBank(duration)} using Offline Bank.`, 'info')
     })
     silentSave()

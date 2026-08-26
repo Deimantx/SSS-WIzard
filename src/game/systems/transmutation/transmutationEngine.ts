@@ -1,16 +1,12 @@
 import { RECIPES, RECIPE_ORDER } from '../../content/recipes/recipes'
 import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
-import { pushNotification } from '../../engine'
 import type { GameState, ItemId, RecipeId } from '../../types'
 
 export interface TransmutationAdvanceContext {
   mode: 'live' | 'banked'
-  suppressRoutineNotifications?: boolean
   report?: { recordTransmutation: (recipeId: RecipeId, output: ItemId, quantity: number, ingredients: { itemId: ItemId; quantity: number }[]) => void }
   onItemAcquired?: (itemId: ItemId, quantity: number) => void
 }
-
-const shouldNotify = (context: TransmutationAdvanceContext) => context.mode === 'live' && !context.suppressRoutineNotifications
 
 function canComplete(state: GameState, recipe: (typeof RECIPES)[RecipeId]) {
   return state.player.mana >= recipe.manaCost && recipe.ingredients.every((ingredient) => getConsumableQuantity(state, ingredient.itemId) >= ingredient.quantity)
@@ -23,27 +19,30 @@ function complete(state: GameState, recipe: (typeof RECIPES)[RecipeId], context:
   state.inventory[recipe.output.itemId] = (state.inventory[recipe.output.itemId] ?? 0) + recipe.output.quantity
   context.onItemAcquired?.(recipe.output.itemId, recipe.output.quantity)
   context.report?.recordTransmutation(recipe.id, recipe.output.itemId, recipe.output.quantity, recipe.ingredients)
-  if (shouldNotify(context)) pushNotification(state, `${recipe.name} transmuted`, 'success')
   return true
 }
 
 /** Advances every assigned recipe in stable authored order. Echoes affect speed only. */
 export function advanceTransmutation(state: GameState, deltaMs: number, context: TransmutationAdvanceContext) {
-  const delta = Math.max(0, Math.min(1000, deltaMs))
+  const delta = Number.isFinite(deltaMs) ? Math.max(0, deltaMs) : 0
   for (const recipeId of RECIPE_ORDER) {
     const recipe = RECIPES[recipeId]
     const job = state.activities.transmutation.jobs[recipeId]
-    const echoes = Math.max(0, Math.floor(job?.echoesAssigned ?? 0))
+    const echoes = Number.isFinite(job?.echoesAssigned) ? Math.max(0, Math.floor(job?.echoesAssigned ?? 0)) : 0
     if (!job || echoes <= 0 || (recipe.unlock.type === 'first-grove-sentinel-kill' && !state.progress.firstBossKill)) continue
     job.echoesAssigned = echoes
-    job.progressMs = Math.max(0, Math.min(recipe.baseDurationMs, Number.isFinite(job.progressMs) ? job.progressMs : 0))
-    if (job.progressMs < recipe.baseDurationMs) job.progressMs = Math.min(recipe.baseDurationMs, job.progressMs + delta * echoes)
+    const progress = Number.isFinite(job.progressMs) ? Math.max(0, job.progressMs) : 0
+    job.progressMs = progress + delta * echoes
     while (job.progressMs >= recipe.baseDurationMs) {
       if (!complete(state, recipe, context)) {
         job.progressMs = recipe.baseDurationMs
         break
       }
       job.progressMs -= recipe.baseDurationMs
+      if (job.progressMs > 0 && !canComplete(state, recipe)) {
+        job.progressMs = recipe.baseDurationMs
+        break
+      }
     }
   }
   return state

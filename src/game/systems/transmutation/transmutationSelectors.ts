@@ -24,10 +24,13 @@ export const getTransmutationFreeEchoCapacity = (state: Pick<GameState, 'activit
 export const getTransmutationEchoFocusCost = () => BALANCE.transmutation.echoFocusCost
 export const getTransmutationFocusReserved = (echoesAssigned: number) => Math.max(0, Math.floor(echoesAssigned)) * BALANCE.transmutation.echoFocusCost
 export const getTransmutationSpeedMultiplier = (echoesAssigned: number) => Math.max(1, Math.floor(echoesAssigned))
+export const getRecipeCurrentSpeedMultiplier = (echoesAssigned: number) => Math.max(0, Math.floor(Number.isFinite(echoesAssigned) ? echoesAssigned : 0))
 export const canAssignTransmutationEcho = (state: Pick<GameState, 'activities' | 'progress' | 'player'> & Partial<Pick<GameState, 'debug'>>) => getTransmutationFreeEchoCapacity(state) > 0 && Boolean(state.debug?.allowFocusOverCap || selectFreeFocus(state) >= BALANCE.transmutation.echoFocusCost)
 export const getRecipeEffectiveDuration = (recipe: RecipeDefinition, echoesAssigned: number) => recipe.baseDurationMs / Math.max(1, echoesAssigned)
+export const getRecipeCurrentEffectiveDuration = (recipe: RecipeDefinition, echoesAssigned: number) => getRecipeCurrentSpeedMultiplier(echoesAssigned) > 0 ? recipe.baseDurationMs / getRecipeCurrentSpeedMultiplier(echoesAssigned) : null
 export const getRecipeCraftsPerHour = (recipe: RecipeDefinition, echoesAssigned: number) => Math.max(0, echoesAssigned) * 3_600_000 / Math.max(1, recipe.baseDurationMs)
 export const getRecipeOutputPerHour = (recipe: RecipeDefinition, echoesAssigned: number) => getRecipeCraftsPerHour(recipe, echoesAssigned) * recipe.output.quantity
+export const getRecipeCurrentOutputPerHour = (recipe: RecipeDefinition, echoesAssigned: number) => getRecipeCurrentSpeedMultiplier(echoesAssigned) > 0 ? getRecipeOutputPerHour(recipe, echoesAssigned) : 0
 export const getRecipeRemainingMs = (recipe: RecipeDefinition, progressMs: number) => Math.max(0, recipe.baseDurationMs - Math.max(0, progressMs))
 export const getRecipeManaDemandPerSecond = (recipe: RecipeDefinition, echoesAssigned: number) => recipe.manaCost * Math.max(0, echoesAssigned) / (Math.max(1, recipe.baseDurationMs) / 1000)
 export const getRecipeProgressPercent = (recipe: RecipeDefinition, progressMs: number) => Math.min(100, Math.max(0, progressMs / Math.max(1, recipe.baseDurationMs) * 100))

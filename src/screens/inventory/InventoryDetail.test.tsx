@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createInitialState } from '../../store/initialState'
+import { resetAppearance } from '../../ui/preferences/uiPreferencesStore'
 import { InventoryDetail } from './InventoryDetail'
 
 const makeState = () => {
@@ -18,6 +19,8 @@ const renderDetail = (itemId: 'fire-fragment' | 'water-fragment', navigate = vi.
 }
 
 describe('InventoryDetail accordions', () => {
+  beforeEach(() => { resetAppearance() })
+
   it('uses the requested expanded and collapsed defaults', () => {
     renderDetail('fire-fragment')
 
@@ -52,7 +55,7 @@ describe('InventoryDetail accordions', () => {
     expect((document.getElementById('inventory-detail-usedIn-content') as HTMLDivElement).hidden).toBe(true)
   })
 
-  it('resets accordion state when the selected item changes', () => {
+  it('keeps screen-level accordion state when the selected item changes', () => {
     const state = makeState()
     const view = render(<InventoryDetail itemId="fire-fragment" inventory={state.inventory} protectedItems={state.protectedItems} equipment={state.equipment} economyState={state} />)
     fireEvent.click(screen.getByRole('button', { name: /USED IN/ }))
@@ -60,8 +63,7 @@ describe('InventoryDetail accordions', () => {
 
     view.rerender(<InventoryDetail itemId="water-fragment" inventory={state.inventory} protectedItems={state.protectedItems} equipment={state.equipment} economyState={state} />)
 
-    expect(screen.getByRole('button', { name: /SOURCE/ }).getAttribute('aria-expanded')).toBe('false')
-    expect(screen.getByRole('button', { name: /USED IN/ }).getAttribute('aria-expanded')).toBe('true')
-    expect(screen.getByRole('button', { name: /Pillars of Mana/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /SOURCE/ }).getAttribute('aria-expanded')).toBe('true')
+    expect(screen.getByRole('button', { name: /USED IN/ }).getAttribute('aria-expanded')).toBe('false')
   })
 })

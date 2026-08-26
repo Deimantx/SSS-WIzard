@@ -220,7 +220,7 @@ export interface DebugOverrides {
   ignoreEchoLimit: boolean
   transmutationEchoCapacityOverride: number | null
 }
-export interface NotificationItem { id: string; text: string; tone: 'info' | 'success' | 'warning' }
+export interface NotificationItem { id: string; text: string; tone: 'info' | 'success' | 'warning'; key?: string; createdAt?: number }
 export interface FocusReservation {
   id: string
   sourceType: 'autocast' | 'research' | 'transmutation' | 'channeling'

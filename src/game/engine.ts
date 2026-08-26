@@ -97,6 +97,14 @@ export const completeResearchCycle = (state: GameState, itemId: ItemId, targetSc
   return { completed: true, reason: 'complete' as const, xp, levels, spellId: spell?.id }
 }
 
-export const pushNotification = (state: GameState, text: string, tone: 'info' | 'success' | 'warning' = 'info') => { if (state.notifications.some((notification) => notification.text === text && notification.tone === tone)) return; state.notifications = [...state.notifications, { id: uid(), text, tone }].slice(-5) }
+export interface NotificationOptions { key?: string; cooldownMs?: number }
+
+export const pushNotification = (state: GameState, text: string, tone: 'info' | 'success' | 'warning' = 'info', options: NotificationOptions = {}) => {
+  const now = Date.now()
+  const cooldownMs = Math.max(0, options.cooldownMs ?? 0)
+  if (state.notifications.some((notification) => notification.text === text && notification.tone === tone)) return
+  if (options.key && state.notifications.some((notification) => notification.key === options.key && (cooldownMs === 0 || !notification.createdAt || now - notification.createdAt < cooldownMs))) return
+  state.notifications = [...state.notifications, { id: uid(), text, tone, key: options.key, createdAt: now }].slice(-3)
+}
 export const appendLog = (state: GameState, message: string) => { state.combat.log = [message, ...state.combat.log].slice(0, 50) }
 export const focusReservations = deriveFocusReservations

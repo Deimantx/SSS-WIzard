@@ -14,7 +14,6 @@ import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption
 
 export interface AdvanceContext {
   mode: 'live' | 'banked'
-  suppressRoutineNotifications?: boolean
   report?: SimulationReportCollector
   onItemAcquired?: (itemId: ItemId, quantity: number) => void
 }

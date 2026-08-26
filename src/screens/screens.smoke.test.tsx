@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ScreenErrorBoundary } from '../components/errors/ScreenErrorBoundary'
 import { GameShell } from '../app/GameShell'
-import { resetAppearance, setUiPreferences } from '../ui/preferences/uiPreferencesStore'
+import { resetAllUiPreferences, setUiPreferences } from '../ui/preferences/uiPreferencesStore'
 import { useGameStore } from '../store/gameStore'
 
 vi.mock('../components/ArcaneAtmosphere', () => ({ ArcaneAtmosphere: () => null }))
@@ -14,7 +14,7 @@ const navGroup = (label: string) => nav().getByRole('button', { name: `Toggle ${
 const goToTower = async (user: ReturnType<typeof userEvent.setup>, label: string) => { const group = navGroup('Wizard Tower'); if (group.getAttribute('aria-expanded') === 'false') await user.click(group); await user.click(navItem(label)) }
 
 describe('screen smoke coverage', () => {
-  beforeEach(() => { window.localStorage.clear(); useGameStore.getState().resetSave(); resetAppearance() })
+  beforeEach(() => { window.localStorage.clear(); useGameStore.getState().resetSave(); resetAllUiPreferences() })
 
   it('renders each Wizard Tower system as its own focused screen', async () => {
     const user = userEvent.setup()

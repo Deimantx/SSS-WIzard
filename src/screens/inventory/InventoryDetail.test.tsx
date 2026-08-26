@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createInitialState } from '../../store/initialState'
-import { resetAppearance } from '../../ui/preferences/uiPreferencesStore'
+import { resetAllUiPreferences } from '../../ui/preferences/uiPreferencesStore'
 import { InventoryDetail } from './InventoryDetail'
 
 const makeState = () => {
@@ -19,7 +19,7 @@ const renderDetail = (itemId: 'fire-fragment' | 'water-fragment', navigate = vi.
 }
 
 describe('InventoryDetail accordions', () => {
-  beforeEach(() => { resetAppearance() })
+  beforeEach(() => { resetAllUiPreferences() })
 
   it('uses the requested expanded and collapsed defaults', () => {
     renderDetail('fire-fragment')

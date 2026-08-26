@@ -1,10 +1,10 @@
 import { ChevronDown, ChevronRight, LockKeyhole } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { Card, Progress, Status } from '../../../components/ui'
+import { Card, Status } from '../../../components/ui'
 import { ItemIcon, ItemRequirementTile } from '../../../components/ui/item'
 import { ITEMS, getItemSourceLabel } from '../../../game/content/items/items'
 import type { RecipeDefinition } from '../../../game/content/recipes/recipes'
-import { getRecipeConsumableRequirements, getRecipeCurrentEffectiveDuration, getRecipeCurrentOutputPerHour, getRecipeCurrentSpeedMultiplier, getRecipeProgressPercent, getRecipeRemainingMs, getRecipeStatus, getRecipeUnlockReason, getTransmutationFocusReserved, getTransmutationJob, type TransmutationStatus } from '../../../game/systems/transmutation/transmutationSelectors'
+import { getRecipeConsumableRequirements, getRecipeCurrentEffectiveDuration, getRecipeCurrentOutputPerHour, getRecipeCurrentSpeedMultiplier, getRecipeStatus, getRecipeUnlockReason, getTransmutationFocusReserved, getTransmutationJob, type TransmutationStatus } from '../../../game/systems/transmutation/transmutationSelectors'
 import { formatNumber, formatTime } from '../../../game/utils'
 import { getItemUses } from '../../inventory/inventoryMetadata'
 import { setUiPreferences, useUiPreferences } from '../../../ui/preferences/uiPreferencesStore'
@@ -34,24 +34,21 @@ export function RecipeDetail({ recipe }: { recipe: RecipeDefinition }) {
 
       <DetailSection title="BASE RECIPE"><div className="transmutation-stat-grid"><DetailStat label="TIME" value={formatTime(recipe.baseDurationMs)} /><DetailStat label="MANA" value={formatNumber(recipe.manaCost)} /><DetailStat label="OUTPUT" value={`×${recipe.output.quantity} ${item.name}`} /></div></DetailSection>
 
-      <DetailSection title="CURRENT PRODUCTION"><CurrentProduction recipe={recipe} status={status} echoes={echoes} currentCycle={currentCycle} currentSpeed={currentSpeed} currentOutput={currentOutput} /></DetailSection>
+      <DetailSection title="CURRENT PRODUCTION"><CurrentProduction status={status} echoes={echoes} currentCycle={currentCycle} currentSpeed={currentSpeed} currentOutput={currentOutput} /></DetailSection>
 
-      <DetailSection title="MATERIAL REQUIREMENTS">{requirements.length === 0 ? <p className="transmutation-no-materials">No material ingredients · Mana-only recipe.</p> : <div className="transmutation-requirements-grid">{requirements.map((requirement) => <ItemRequirementTile key={requirement.itemId} itemId={requirement.itemId} owned={requirement.owned} available={requirement.available} equipped={requirement.equipped} required={requirement.required} protectedItem={requirement.protected} source={getItemSourceLabel(requirement.itemId)} />)}</div>}</DetailSection>
+      {requirements.length > 0 && <DetailSection title="MATERIAL REQUIREMENTS"><div className="transmutation-requirements-grid">{requirements.map((requirement) => <ItemRequirementTile key={requirement.itemId} itemId={requirement.itemId} owned={requirement.owned} available={requirement.available} equipped={requirement.equipped} required={requirement.required} protectedItem={requirement.protected} source={getItemSourceLabel(requirement.itemId)} />)}</div></DetailSection>}
 
-      <section className="transmutation-detail-section transmutation-mana-requirement"><span className="eyebrow">MANA</span><strong>{formatNumber(state.player.mana)} / {formatNumber(recipe.manaCost)}</strong><Status tone={state.player.mana >= recipe.manaCost ? 'success' : 'warning'}>{state.player.mana >= recipe.manaCost ? 'READY' : 'WAITING'}</Status></section>
+      {recipe.manaCost > 0 && <section className="transmutation-detail-section transmutation-mana-requirement"><span className="eyebrow">MANA</span><strong>{formatNumber(state.player.mana)} / {formatNumber(recipe.manaCost)}</strong><Status tone={state.player.mana >= recipe.manaCost ? 'success' : 'warning'}>{state.player.mana >= recipe.manaCost ? 'READY' : 'WAITING'}</Status></section>}
 
       <section className="transmutation-detail-section transmutation-accordion"><button type="button" onClick={toggleUsedIn} aria-expanded={isUsedInOpen}><span className="eyebrow">USED IN {uses.length ? `· ${uses.length}` : ''}</span>{isUsedInOpen ? <ChevronDown size={15} aria-hidden="true" /> : <ChevronRight size={15} aria-hidden="true" />}</button>{isUsedInOpen && (uses.length ? <div className="transmutation-uses">{uses.map((use) => <span key={`${use.destination}-${use.label}`}><strong>{use.label}</strong><small>{use.detail}</small></span>)}</div> : <p className="muted">No known downstream use yet.</p>)}</section>
     </div>
   </Card>
 }
 
-function CurrentProduction({ recipe, status, echoes, currentCycle, currentSpeed, currentOutput }: { recipe: RecipeDefinition; status: TransmutationStatus; echoes: number; currentCycle: number | null; currentSpeed: number; currentOutput: number }) {
-  const job = useGameStore((state) => getTransmutationJob(state, recipe.id))
+function CurrentProduction({ status, echoes, currentCycle, currentSpeed, currentOutput }: { status: TransmutationStatus; echoes: number; currentCycle: number | null; currentSpeed: number; currentOutput: number }) {
   if (status === 'locked') return <div className="transmutation-production-paused"><Status tone="locked">LOCKED</Status><span>Unlock this recipe to begin production.</span></div>
-  if (!echoes) return <div className="transmutation-production-paused"><Status>PAUSED</Status><span>No Echoes assigned · 0× speed · Cycle — · 0/h output.</span></div>
-  const remaining = getRecipeRemainingMs(recipe, job?.progressMs ?? 0)
-  const waiting = status === 'waiting-mana' || status === 'waiting-materials'
-  return <><div className="transmutation-current-summary"><DetailStat label="ECHOES" value={String(echoes)} /><DetailStat label="SPEED" value={`${currentSpeed}×`} /><DetailStat label="CYCLE" value={currentCycle === null ? '—' : formatTime(currentCycle)} /><DetailStat label="OUTPUT" value={`${formatNumber(currentOutput)}/h`} /><DetailStat label="FOCUS" value={String(getTransmutationFocusReserved(echoes))} /></div><Progress value={getRecipeProgressPercent(recipe, job?.progressMs ?? 0)} tone="gold" label="CURRENT CYCLE" right={waiting ? status === 'waiting-mana' ? 'WAITING MANA' : 'WAITING MATERIALS' : formatTime(remaining)} />{waiting && <p className="transmutation-waiting-note">{status === 'waiting-mana' ? 'Waiting for Mana.' : 'Waiting for materials.'} Progress is preserved.</p>}</>
+  if (!echoes) return <div className="transmutation-production-paused"><Status>PAUSED</Status><span>No Echoes assigned · 0× speed · Effective Time — · 0/h output.</span></div>
+  return <div className="transmutation-current-summary"><DetailStat label="ECHOES" value={String(echoes)} /><DetailStat label="SPEED" value={`${currentSpeed}×`} /><DetailStat label="EFFECTIVE TIME" value={currentCycle === null ? '—' : formatTime(currentCycle)} /><DetailStat label="OUTPUT / H" value={formatNumber(currentOutput)} /><DetailStat label="FOCUS" value={String(getTransmutationFocusReserved(echoes))} /></div>
 }
 
 function DetailSection({ title, children }: { title: string; children: ReactNode }) { return <section className="transmutation-detail-section"><span className="eyebrow">{title}</span>{children}</section> }

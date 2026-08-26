@@ -1,3 +1,5 @@
+import type { RecipeCategory } from '../../game/types'
+
 export type UiTheme = 'default' | 'dark' | 'light' | 'custom'
 export type TextSize = 'default' | 'large' | 'extra-large'
 export type NavigationGroupId = 'combat' | 'hero' | 'tower' | 'world' | 'system'
@@ -23,6 +25,7 @@ export interface TransmutationScreenPreferences {
   selectedRecipeId: string
   recipeFilter: TransmutationLibraryFilter
   usedInOpen: boolean
+  collapsedCategories: Record<RecipeCategory, boolean>
 }
 
 export interface ScreenPreferences {

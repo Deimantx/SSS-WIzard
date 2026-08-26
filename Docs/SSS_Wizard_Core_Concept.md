@@ -854,7 +854,7 @@ The current MVP uses eight explicit loadout positions:
 - Armor;
 - Helmet;
 - Amulet;
-- Earrings;
+- Cape;
 - Ring 1;
 - Ring 2.
 

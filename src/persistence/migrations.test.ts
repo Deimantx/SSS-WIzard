@@ -8,9 +8,9 @@ describe('save navigation migration', () => {
     expect(migrateSave(old).ui.screen).toBe('tower-channeling')
   })
 
-  it('migrates V2 Auto Channel to one Arcane Echo with clean V6 defaults', () => {
+  it('migrates V2 Auto Channel to one Arcane Echo with clean V7 defaults', () => {
     const migrated = migrateSave({ ...createInitialState(), saveVersion: 2, activities: { ...createInitialState().activities, autoChannel: true, channelCooldownMs: 500 } })
-    expect(migrated.saveVersion).toBe(6)
+    expect(migrated.saveVersion).toBe(7)
     expect(migrated.activities.channeling.echoesAssigned).toBe(1)
     expect(migrated.progress.channeling.pillars['arcane-reservoir']).toMatchObject({ rank: 1, level: 0 })
     expect(migrated.progress.channeling.pillars['leyline-conduit']).toMatchObject({ rank: 1, level: 0 })
@@ -24,7 +24,7 @@ describe('save navigation migration', () => {
   it('migrates V3 ranks into the matching Rank I Pillars and preserves Discoveries', () => {
     const old = { ...createInitialState(), saveVersion: 3, progress: { ...createInitialState().progress, channeling: { manaReservoirRank: 4, leylineConduitRank: 3, totalManaGenerated: 120, fiveEchoSustainMs: 5000, discoveries: { 'stable-leyline': true, 'echo-resonance': false, 'deep-reservoir': true } } } }
     const migrated = migrateSave(old)
-    expect(migrated.saveVersion).toBe(6)
+    expect(migrated.saveVersion).toBe(7)
     expect(migrated.progress.channeling.pillars['arcane-reservoir']).toEqual({ rank: 1, level: 4 })
     expect(migrated.progress.channeling.pillars['leyline-conduit']).toEqual({ rank: 1, level: 3 })
     expect(migrated.progress.channeling.pillars['mana-resonance']).toEqual({ rank: 1, level: 0 })
@@ -64,7 +64,7 @@ describe('save navigation migration', () => {
     expect(migrated.inventory).not.toHaveProperty('removed-item')
   })
 
-  it('migrates V4 saves to V6 with zero Gold while preserving gameplay state', () => {
+  it('migrates V4 saves to V7 with zero Gold while preserving gameplay state', () => {
     const initial = createInitialState()
     const migrated = migrateSave({
       ...initial,
@@ -74,7 +74,7 @@ describe('save navigation migration', () => {
       progress: { ...initial.progress, lifetimeKills: 23 },
     })
 
-    expect(migrated.saveVersion).toBe(6)
+    expect(migrated.saveVersion).toBe(7)
     expect(migrated.currencies.gold).toBe(0)
     expect(migrated.inventory['fire-fragment']).toBe(17)
     expect(migrated.progress.lifetimeKills).toBe(23)
@@ -101,6 +101,31 @@ describe('save navigation migration', () => {
     expect(migrated.combat.dungeonId).toBeNull()
     expect(migrated.combat.enemyId).toBeNull()
     expect(migrated.combat.pendingBossId).toBeNull()
+  })
+
+  it('migrates v6 Earrings state to an empty Cape without converting the item', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({
+      ...initial,
+      saveVersion: 6,
+      inventory: { ...initial.inventory, 'tide-focus': 1 },
+      equipment: { weapon: 'apprentice-wand', offhand: null, armor: null, helmet: null, amulet: null, earrings: 'tide-focus', ring1: null, ring2: null },
+    })
+    expect(migrated.saveVersion).toBe(7)
+    expect(migrated.equipment.cape).toBeNull()
+    expect('earrings' in migrated.equipment).toBe(false)
+    expect(migrated.inventory['tide-focus']).toBe(1)
+  })
+
+  it('ignores an invalid v6 Earrings value without creating a Cape item', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({
+      ...initial,
+      saveVersion: 6,
+      equipment: { ...initial.equipment, earrings: 'not-an-item' },
+    })
+    expect(migrated.equipment.cape).toBeNull()
+    expect('earrings' in migrated.equipment).toBe(false)
   })
 
   it('sanitizes dynamic values without wiping valid item keys', () => {

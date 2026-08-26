@@ -2,7 +2,7 @@ import { BALANCE } from '../game/data/balance'
 import { createInitialManaPillars } from '../game/data/manaPillars'
 import type { GameState } from '../game/types'
 
-export const SAVE_VERSION = 6
+export const SAVE_VERSION = 7
 
 export const createInitialState = (): GameState => ({
   saveVersion: SAVE_VERSION,
@@ -11,7 +11,7 @@ export const createInitialState = (): GameState => ({
   currencies: { gold: 0 },
   inventory: { 'apprentice-wand': 1 },
   protectedItems: { 'apprentice-wand': true },
-  equipment: { weapon: 'apprentice-wand', offhand: null, armor: null, helmet: null, amulet: null, earrings: null, ring1: null, ring2: null },
+  equipment: { weapon: 'apprentice-wand', offhand: null, armor: null, helmet: null, cape: null, amulet: null, ring1: null, ring2: null },
   activities: {
     channeling: { echoesAssigned: 0 },
     condense: { running: false, element: 'fire', progressMs: 0 },

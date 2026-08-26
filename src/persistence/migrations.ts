@@ -204,6 +204,8 @@ const migrateV2 = (raw: Record<string, any>): GameState => {
 const migrateV3 = (raw: Record<string, any>): GameState => finalize(merge(createInitialState(), raw), raw)
 const migrateV4 = (raw: Record<string, any>): GameState => finalize(merge(createInitialState(), raw), raw)
 const migrateV5 = (raw: Record<string, any>): GameState => finalize(merge(createInitialState(), raw), raw)
+/** v6 used the former earrings position. It is intentionally ignored; no item is auto-converted into Cape. */
+const migrateV6 = (raw: Record<string, any>): GameState => finalize(merge(createInitialState(), raw), raw)
 
 export const migrateSave = (rawSave: unknown): GameState => {
   if (!isRecord(rawSave)) throw new SaveMigrationError('Save data is not a valid object.')
@@ -213,6 +215,7 @@ export const migrateSave = (rawSave: unknown): GameState => {
   if (version === 3) return migrateV3(rawSave)
   if (version === 4) return migrateV4(rawSave)
   if (version === 5) return migrateV5(rawSave)
+  if (version === 6) return migrateV6(rawSave)
   if (version === SAVE_VERSION) {
     return finalize(merge(createInitialState(), rawSave), rawSave)
   }

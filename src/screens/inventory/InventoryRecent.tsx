@@ -5,7 +5,7 @@ import type { GameState, ItemId } from '../../game/types'
 import type { RecentAcquisition } from '../../store/gameStore'
 import type { ItemFlow } from './inventoryEconomy'
 
-export function InventoryRecent({ entries, inventory, protectedItems = {}, equipment = { weapon: null, offhand: null, armor: null, helmet: null, amulet: null, earrings: null, ring1: null, ring2: null }, flows, onSelect }: { entries: readonly RecentAcquisition[]; inventory: GameState['inventory']; protectedItems?: GameState['protectedItems']; equipment?: GameState['equipment']; flows?: ReadonlyMap<ItemId, ItemFlow | null>; onSelect: (itemId: ItemId) => void }) {
+export function InventoryRecent({ entries, inventory, protectedItems = {}, equipment = { weapon: null, offhand: null, armor: null, helmet: null, cape: null, amulet: null, ring1: null, ring2: null }, flows, onSelect }: { entries: readonly RecentAcquisition[]; inventory: GameState['inventory']; protectedItems?: GameState['protectedItems']; equipment?: GameState['equipment']; flows?: ReadonlyMap<ItemId, ItemFlow | null>; onSelect: (itemId: ItemId) => void }) {
   const visible = entries.filter((entry) => (inventory[entry.itemId] ?? 0) > 0)
   if (visible.length === 0) return null
   return <section className="inventory-recent" aria-labelledby="inventory-recent-heading">

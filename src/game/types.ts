@@ -21,8 +21,8 @@ export type ItemId =
 export type SpellId = 'fire-bolt' | 'water-ward' | 'earth-spike' | 'air-lance' | 'ignite' | 'flow-mend' | 'stoneguard' | 'quickening'
 export type MonsterId = 'forest-wisp' | 'thornling' | 'stone-root' | 'grove-sentinel' | 'forest-heart'
 export type DungeonId = 'whispering-woods'
-export type EquipmentItemSlot = 'weapon' | 'offhand' | 'armor' | 'helmet' | 'amulet' | 'earrings' | 'ring'
-export type EquipmentPosition = 'weapon' | 'offhand' | 'armor' | 'helmet' | 'amulet' | 'earrings' | 'ring1' | 'ring2'
+export type EquipmentItemSlot = 'weapon' | 'offhand' | 'armor' | 'helmet' | 'cape' | 'amulet' | 'ring'
+export type EquipmentPosition = 'weapon' | 'offhand' | 'armor' | 'helmet' | 'cape' | 'amulet' | 'ring1' | 'ring2'
 /** @deprecated Use EquipmentItemSlot for item metadata or EquipmentPosition for loadout state. */
 export type EquipmentSlot = EquipmentItemSlot
 /** Legacy authored category kept for save/content compatibility. */

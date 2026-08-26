@@ -1,8 +1,9 @@
 import { LockKeyhole, Shield, Sparkles } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
-import { Button, Card, Status } from '../../components/ui'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { Button, Card, GameTooltip, Status } from '../../components/ui'
+import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { ITEMS } from '../../game/content/items/items'
-import { EQUIPMENT_ITEM_SLOT_LABELS, EQUIPMENT_POSITION_LABELS, EQUIPMENT_POSITIONS, getEquippedCount, getItemPositions, isPositionCompatible, isTwoHandedWeapon } from '../../game/core/equipment'
+import { EQUIPMENT_ITEM_SLOT_LABELS, EQUIPMENT_POSITION_LABELS, getEquippedCount, getItemPositions, isTwoHandedWeapon } from '../../game/core/equipment'
 import type { EquipmentItemSlot, EquipmentPosition, ItemId } from '../../game/types'
 import { useGameStore } from '../../store/gameStore'
 import { EditableGrid } from '../../ui/layout-editor/EditableGrid'
@@ -10,12 +11,22 @@ import { getEquipmentPreview, getEquipmentStatSnapshot } from './equipmentPrevie
 
 type ArmoryFilter = 'all' | EquipmentItemSlot
 type WeaponHandsFilter = 'all' | 1 | 2
+
 const ARMORY_FILTERS: { id: ArmoryFilter; label: string }[] = [
-  { id: 'all', label: 'ALL' }, { id: 'weapon', label: 'WEAPON' }, { id: 'offhand', label: 'OFFHAND' }, { id: 'armor', label: 'ARMOR' }, { id: 'helmet', label: 'HELMET' }, { id: 'amulet', label: 'AMULET' }, { id: 'earrings', label: 'EARRINGS' }, { id: 'ring', label: 'RINGS' },
+  { id: 'all', label: 'ALL' }, { id: 'weapon', label: 'WEAPON' }, { id: 'offhand', label: 'OFFHAND' }, { id: 'armor', label: 'ARMOR' }, { id: 'helmet', label: 'HELMET' }, { id: 'cape', label: 'CAPE' }, { id: 'amulet', label: 'AMULET' }, { id: 'ring', label: 'RINGS' },
 ]
-const EMPTY_FILTER_LABELS: Record<ArmoryFilter, string> = { all: 'EQUIPMENT', weapon: 'WEAPONS', offhand: 'OFFHANDS', armor: 'ARMOR', helmet: 'HELMETS', amulet: 'AMULETS', earrings: 'EARRINGS', ring: 'RINGS' }
-const SLOT_SUBTITLES: Record<EquipmentPosition, string> = { weapon: 'Main-hand weapon. Supports one-handed and two-handed weapons.', offhand: 'Shields, focuses and other secondary equipment. Unavailable with a two-handed Weapon.', armor: 'Robes, enchanted armor and other body equipment.', helmet: 'Headwear such as hats, hoods, circlets and helmets.', amulet: 'Neck accessories and magical charms.', earrings: 'A pair/set of magical earrings.', ring1: 'Ring accessory slot.', ring2: 'Ring accessory slot.' }
-const LARGE_SLOTS = new Set<EquipmentPosition>(['weapon', 'offhand', 'armor'])
+const EMPTY_FILTER_LABELS: Record<ArmoryFilter, string> = { all: 'EQUIPMENT', weapon: 'WEAPONS', offhand: 'OFFHANDS', armor: 'ARMOR', helmet: 'HELMETS', cape: 'CAPES', amulet: 'AMULETS', ring: 'RINGS' }
+const LOADOUT_VISUAL_ORDER: readonly EquipmentPosition[] = ['cape', 'helmet', 'weapon', 'armor', 'offhand', 'ring1', 'amulet', 'ring2']
+const SLOT_TOOLTIP_COPY: Record<EquipmentPosition, { title: string; description: ReactNode }> = {
+  weapon: { title: 'WEAPON', description: <>Main-hand equipment.<br />Supports one-handed and two-handed weapons.<br />Two-handed weapons disable Offhand.</> },
+  offhand: { title: 'OFFHAND', description: <>Shields, magical focuses, books, or other secondary equipment.<br />Cannot be equipped with a two-handed Weapon.</> },
+  armor: { title: 'ARMOR', description: <>Body equipment including robes and future plated magical armor.</> },
+  helmet: { title: 'HELMET', description: <>Head equipment such as wizard hats, hoods, circlets, or helmets.</> },
+  cape: { title: 'CAPE', description: <>Back equipment such as magical cloaks and capes.<br />Cape effects depend on the individual item.</> },
+  amulet: { title: 'AMULET', description: <>Neck equipment such as magical amulets and charms.</> },
+  ring1: { title: 'RING', description: <>Ring accessory slot.<br />The same Ring may occupy both Ring slots if two copies are owned.</> },
+  ring2: { title: 'RING', description: <>Ring accessory slot.<br />The same Ring may occupy both Ring slots if two copies are owned.</> },
+}
 
 export function EquipmentScreenV2() {
   const equipment = useGameStore((state) => state.equipment)
@@ -51,30 +62,32 @@ export function EquipmentScreenV2() {
   const selectSlot = (position: EquipmentPosition) => {
     setSelectedPosition(position)
     setRingReplacement(position === 'ring1' || position === 'ring2' ? position : null)
-    const slot = position === 'ring1' || position === 'ring2' ? 'ring' : position
-    setFilter(slot as ArmoryFilter)
+    setFilter(position === 'ring1' || position === 'ring2' ? 'ring' : position as ArmoryFilter)
     if (equipment[position]) setSelectedItemId(equipment[position])
   }
 
   const selectArmoryItem = (itemId: ItemId) => {
     setSelectedItemId(itemId)
-    if (ITEMS[itemId].equipmentSlot === 'ring' && selectedPosition !== 'ring1' && selectedPosition !== 'ring2') {
-      setRingReplacement(equipment.ring1 ? equipment.ring2 ? null : 'ring2' : 'ring1')
-    }
+    if (ITEMS[itemId].equipmentSlot === 'ring' && selectedPosition !== 'ring1' && selectedPosition !== 'ring2') setRingReplacement(equipment.ring1 ? equipment.ring2 ? null : 'ring2' : 'ring1')
   }
 
   const loadout = <Card title="WIZARD LOADOUT" action={<Status tone="success">{equippedCount} / 8 EQUIPPED</Status>}>
     <div className="equipment-loadout-board">
-      {EQUIPMENT_POSITIONS.map((position) => {
+      {LOADOUT_VISUAL_ORDER.map((position) => {
         const itemId = equipment[position]
         const item = itemId ? ITEMS[itemId] : null
         const locked = position === 'offhand' && isTwoHandedWeapon(equipment.weapon)
-        return <div key={position} className={`equipment-slot-card ${LARGE_SLOTS.has(position) ? 'major' : 'minor'} ${selectedPosition === position ? 'selected' : ''} ${locked ? 'locked' : ''}`} role="button" tabIndex={0} onClick={() => selectSlot(position)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); selectSlot(position) } }} title={SLOT_SUBTITLES[position]}>
-          <div className="equipment-slot-card-head"><span>{EQUIPMENT_POSITION_LABELS[position]}</span>{item && <small>{item.weaponHands ? `${item.weaponHands}H` : 'EQUIPPED'}</small>}</div>
-          {locked ? <div className="equipment-slot-lock"><LockKeyhole size={17} /><strong>LOCKED BY 2H WEAPON</strong><small>Offhand unavailable</small></div> : item ? <div className="equipment-slot-card-item"><span className="equipment-slot-icon" style={{ color: item.color }}>{item.icon}</span><strong>{item.name}</strong><small>{Object.entries(item.stats ?? {}).filter(([, value]) => value !== 0).map(([key, value]) => `${key}: ${value}`).join(' · ') || 'Ready'}</small></div> : <div className="equipment-slot-empty"><span>+</span><small>EMPTY</small></div>}
+        const emptyCopy = locked ? 'Blocked by 2H Weapon' : position === 'ring1' || position === 'ring2' ? 'Select Ring' : `Select ${EQUIPMENT_POSITION_LABELS[position]}`
+        const tooltip = SLOT_TOOLTIP_COPY[position]
+        return <div className="equipment-slot-grid-item" data-position={position} key={position}>
+          <GameTooltip block content={<TooltipContent title={tooltip.title} description={tooltip.description} />}>
+            <div className={`equipment-slot-card ${selectedPosition === position ? 'selected' : ''} ${locked ? 'locked' : ''}`} data-position={position} role="button" tabIndex={0} onClick={() => selectSlot(position)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); selectSlot(position) } }}>
+              <div className="equipment-slot-card-head"><span>{EQUIPMENT_POSITION_LABELS[position]}</span>{item && <small>{item.weaponHands ? `${item.weaponHands}H` : 'EQUIPPED'}</small>}</div>
+              {locked ? <div className="equipment-slot-lock"><LockKeyhole size={17} /><strong>{emptyCopy}</strong></div> : item ? <div className="equipment-slot-card-item"><span className="equipment-slot-icon" style={{ color: item.color }}>{item.icon}</span><strong>{item.name}</strong><small>{Object.entries(item.stats ?? {}).filter(([, value]) => value !== 0).map(([key, value]) => `${key}: ${value}`).join(' · ') || 'Ready'}</small></div> : <div className="equipment-slot-empty"><span>+</span><small>{emptyCopy}</small></div>}
+            </div>
+          </GameTooltip>
         </div>
       })}
-      <div className="equipment-sigil"><Sparkles size={25} /><strong>WIZARD</strong><small>SIGIL</small></div>
     </div>
     <p className="equipment-loadout-note">Select an empty slot to filter compatible gear. More slots may be added later.</p>
   </Card>
@@ -102,9 +115,9 @@ export function EquipmentScreenV2() {
       {preview?.removedOffhand && <div className="equipment-impact-warning"><LockKeyhole size={14} /><span>{ITEMS[preview.removedOffhand].name} will be unequipped automatically.</span></div>}
       {ringNeedsChoice && <div className="equipment-ring-replace"><strong>REPLACE</strong><label><input type="radio" name="ring-replacement" checked={ringReplacement === 'ring1'} onChange={() => setRingReplacement('ring1')} /> Ring 1: {equipment.ring1 ? ITEMS[equipment.ring1].name : 'Empty'}</label><label><input type="radio" name="ring-replacement" checked={ringReplacement === 'ring2'} onChange={() => setRingReplacement('ring2')} /> Ring 2: {equipment.ring2 ? ITEMS[equipment.ring2].name : 'Empty'}</label></div>}
       {preview && !preview.compatible && <div className="equipment-incompatible"><strong>INCOMPATIBLE</strong><span>{preview.reason}</span></div>}
-      {preview?.compatible && <div className="equipment-preview-impact"><span className="equipment-preview-label">LOADOUT IMPACT</span>{Object.entries(preview.impact).filter(([, value]) => Math.abs(value ?? 0) > 0.0001).map(([key, value]) => <div className="equipment-impact-row" key={key}><span>{friendlyStat(key)}</span><small>{formatSnapshotValue(key, preview.current)}</small><strong>{formatSnapshotValue(key, preview.preview!, value as number)}</strong><em className={(value ?? 0) > 0 ? 'positive' : 'negative'}>{formatSignedStat(key, value as number)}</em></div>)}</div>}
+      {preview?.compatible && <div className="equipment-preview-impact"><span className="equipment-preview-label">LOADOUT IMPACT</span>{Object.entries(preview.impact).filter(([, value]) => Math.abs(value ?? 0) > 0.0001).map(([key, value]) => <div className="equipment-impact-row" key={key}><span>{friendlyStat(key)}</span><small>{formatSnapshotValue(key, preview.current)}</small><strong>{formatSnapshotValue(key, preview.preview!)}</strong><em className={(value ?? 0) > 0 ? 'positive' : 'negative'}>{formatSignedStat(key, value as number)}</em></div>)}</div>}
       {equippedPositions.length > 0 && <div className="equipment-current-position"><Status tone="success">EQUIPPED IN {equippedPositions.map((position) => EQUIPMENT_POSITION_LABELS[position]).join(' + ')}</Status></div>}
-      <div className="equipment-inspector-actions"><Button variant="primary" disabled={!preview?.compatible || ringNeedsChoice || equippedPositions.includes(preview?.position ?? 'weapon')} onClick={() => selectedItemId && equipItem(selectedItemId, preview?.position ?? undefined)}>EQUIP</Button>{selectedPosition && equipment[selectedPosition] && <Button variant="ghost" onClick={() => unequipItem(selectedPosition)}>UNEQUIP {EQUIPMENT_POSITION_LABELS[selectedPosition].toUpperCase()}</Button>}</div>
+      <div className="equipment-inspector-actions"><Button variant="primary" disabled={!preview?.compatible || ringNeedsChoice || equippedPositions.includes(preview?.position ?? 'weapon')} onClick={() => selectedItemId && equipItem(selectedItemId, preview?.position ?? undefined)}>EQUIP</Button>{equipment[selectedPosition] && <Button variant="ghost" onClick={() => unequipItem(selectedPosition)}>UNEQUIP {EQUIPMENT_POSITION_LABELS[selectedPosition].toUpperCase()}</Button>}</div>
     </>}
   </Card>
 
@@ -122,7 +135,7 @@ function friendlyStat(key: string) {
   return ({ maxHealth: 'Max Health', maxMana: 'Max Mana', maxFocus: 'Max Focus', manaRegen: 'Passive Mana Regen', basicDamage: 'Basic Attack Damage', barrierReceived: 'Barrier Received', fireSpellDamagePct: 'Fire Spell Damage', waterBarrierPct: 'Water Barrier Strength', earthSpellDamagePct: 'Earth Spell Damage', airSpellDamagePct: 'Air Spell Damage' } as Record<string, string>)[key] ?? key
 }
 
-function formatSnapshotValue(key: string, snapshot: ReturnType<typeof getEquipmentStatSnapshot>, delta?: number) {
+function formatSnapshotValue(key: string, snapshot: ReturnType<typeof getEquipmentStatSnapshot>) {
   const value = snapshot[key as keyof ReturnType<typeof getEquipmentStatSnapshot>] as number
   return key.endsWith('Pct') ? `${Math.round(value * 100)}%` : key === 'manaRegen' ? `${value.toFixed(1)}/s` : String(Math.round(value * 100) / 100)
 }

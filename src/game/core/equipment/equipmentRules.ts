@@ -1,16 +1,16 @@
 import { ITEMS } from '../../content/items/items'
 import type { EquipmentItemSlot, EquipmentPosition, GameState, ItemId, ItemDefinition } from '../../types'
 
-export const EQUIPMENT_POSITIONS: readonly EquipmentPosition[] = ['weapon', 'offhand', 'armor', 'helmet', 'amulet', 'earrings', 'ring1', 'ring2']
-export const EQUIPMENT_ITEM_SLOTS: readonly EquipmentItemSlot[] = ['weapon', 'offhand', 'armor', 'helmet', 'amulet', 'earrings', 'ring']
+export const EQUIPMENT_POSITIONS: readonly EquipmentPosition[] = ['weapon', 'offhand', 'armor', 'helmet', 'cape', 'amulet', 'ring1', 'ring2']
+export const EQUIPMENT_ITEM_SLOTS: readonly EquipmentItemSlot[] = ['weapon', 'offhand', 'armor', 'helmet', 'cape', 'amulet', 'ring']
 
 export const EQUIPMENT_POSITION_LABELS: Record<EquipmentPosition, string> = {
   weapon: 'Weapon',
   offhand: 'Offhand',
   armor: 'Armor',
   helmet: 'Helmet',
+  cape: 'Cape',
   amulet: 'Amulet',
-  earrings: 'Earrings',
   ring1: 'Ring 1',
   ring2: 'Ring 2',
 }
@@ -20,8 +20,8 @@ export const EQUIPMENT_ITEM_SLOT_LABELS: Record<EquipmentItemSlot, string> = {
   offhand: 'Offhand',
   armor: 'Armor',
   helmet: 'Helmet',
+  cape: 'Cape',
   amulet: 'Amulet',
-  earrings: 'Earrings',
   ring: 'Rings',
 }
 
@@ -30,8 +30,8 @@ export const EMPTY_EQUIPMENT: Record<EquipmentPosition, null> = {
   offhand: null,
   armor: null,
   helmet: null,
+  cape: null,
   amulet: null,
-  earrings: null,
   ring1: null,
   ring2: null,
 }

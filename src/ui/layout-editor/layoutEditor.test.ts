@@ -60,6 +60,6 @@ describe('layout editor persistence and session state', () => {
   })
 
   it('keeps Item Actions at its functional minimum height', () => {
-    expect(clampPanelLayout('inventory', 'inventory-actions', { h: 1 }).h).toBe(7)
+    expect(clampPanelLayout('inventory', 'inventory-actions', { h: 1 }).h).toBe(5)
   })
 })

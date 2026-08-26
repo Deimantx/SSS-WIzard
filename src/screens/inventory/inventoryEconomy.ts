@@ -1,9 +1,8 @@
 import { GUILD_REQUESTS } from '../../game/content/guild/guildRequests'
 import { MANA_PILLARS, getManaPillarLevelCost } from '../../game/content/channeling/manaPillars'
 import { RECIPES } from '../../game/content/recipes/recipes'
-import { SCHOOLS } from '../../game/content/schools/schools'
-import { BALANCE } from '../../game/core/balance/balance'
 import { ITEMS } from '../../game/content/items/items'
+import { getRecipeCraftsPerHour, isRecipeUnlocked } from '../../game/systems/transmutation/transmutationSelectors'
 import type { GameState, ItemId, ScreenId } from '../../game/types'
 
 export type ItemEconomyState = Pick<GameState, 'inventory' | 'protectedItems' | 'equipment' | 'progress' | 'activities'>
@@ -50,32 +49,29 @@ const flowSource = (label: string, ratePerHour: number, destination: ScreenId): 
 }
 
 /** Derives live material throughput from the same activity cycle values used by the game systems. */
-export function getItemFlow(itemId: ItemId, state: Pick<GameState, 'inventory' | 'activities'>): ItemFlow | null {
+export function getItemFlow(itemId: ItemId, state: Pick<GameState, 'inventory' | 'activities' | 'progress'>): ItemFlow | null {
   const item = ITEMS[itemId]
   if (!item || item.inventoryCategory !== 'material') return null
 
   const production: ItemFlowSource[] = []
   const consumption: ItemFlowSource[] = []
-  const condense = state.activities.condense
-  const school = Object.values(SCHOOLS).find((candidate) => candidate.fragment === itemId)
-  if (condense.running && school && condense.element === school.id) {
-    const source = flowSource('Condensation', HOUR_MS / BALANCE.condense.durationMs, 'tower-condensation')
-    if (source) production.push(source)
-  }
-
   const research = state.activities.research
   if (research.running && research.itemId === itemId && research.remainingQuantity > 0) {
     const source = flowSource('Research', HOUR_MS / Math.max(1, research.durationPerItemMs), 'tower-research')
     if (source) consumption.push(source)
   }
 
-  const transmutation = state.activities.transmutation
-  const recipe = transmutation.running && transmutation.recipeId ? RECIPES[transmutation.recipeId] : null
-  const ingredient = recipe?.ingredients.find((candidate) => candidate.itemId === itemId)
-  if (recipe && ingredient) {
-    const source = flowSource('Transmutation', ingredient.quantity * HOUR_MS / Math.max(1, recipe.durationMs), 'tower-transmutation')
-    if (source) consumption.push(source)
-  }
+  Object.values(RECIPES).forEach((recipe) => {
+    const echoes = Math.max(0, Math.floor(state.activities.transmutation.jobs[recipe.id]?.echoesAssigned ?? 0))
+    if (!echoes || !isRecipeUnlocked(state, recipe)) return
+    const ingredient = recipe.ingredients.find((candidate) => candidate.itemId === itemId)
+    if (ingredient) {
+      const source = flowSource(recipe.name, ingredient.quantity * getRecipeCraftsPerHour(recipe, echoes), 'tower-transmutation')
+      if (source) consumption.push(source)
+    }
+    const output = recipe.output.itemId === itemId ? flowSource(recipe.name, recipe.output.quantity * getRecipeCraftsPerHour(recipe, echoes), 'tower-transmutation') : null
+    if (output) production.push(output)
+  })
 
   if (production.length === 0 && consumption.length === 0) return null
   const productionPerHour = production.reduce((sum, source) => sum + source.ratePerHour, 0)
@@ -111,12 +107,11 @@ export function getItemNeeds(itemId: ItemId, state: ItemEconomyState): ItemNeed[
     needs.push(need(`pillar:${pillar.id}`, `${pillar.name} Lv.${nextLevel}`, 'Next Pillar level', 'tower-channeling', itemId, cost.fragment, state, flow))
   }
 
-  if (state.progress.emberStaffUnlocked) {
-    for (const recipe of Object.values(RECIPES)) {
+  for (const recipe of Object.values(RECIPES)) {
+      if (!isRecipeUnlocked(state, recipe)) continue
       const ingredient = recipe.ingredients.find((candidate) => candidate.itemId === itemId)
       if (!ingredient) continue
       needs.push(need(`recipe:${recipe.id}`, recipe.name, 'Transmutation recipe', 'tower-transmutation', itemId, ingredient.quantity, state, flow))
-    }
   }
 
   if (state.progress.guildUnlocked) {

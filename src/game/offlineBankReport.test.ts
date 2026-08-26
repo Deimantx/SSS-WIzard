@@ -12,36 +12,33 @@ const runTick = (state: ReturnType<typeof makeInitialState>, report: ReturnType<
 }
 
 describe('Offline Bank event reports', () => {
-  it('reports condensation and research independently when their net inventory change is zero', () => {
+  it('reports Transmutation and research independently when their net inventory change is zero', () => {
     const state = makeInitialState()
     state.player.mana = state.player.maxMana
-    state.activities.condense.running = true
-    state.activities.condense.progressMs = BALANCE.condense.durationMs
-    const report = createOfflineBankReportCollector(state, 1, 1_000)
-
-    advanceGameState(state, 1, { mode: 'banked', report })
-    state.activities.condense.running = false
+    state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 1, progressMs: 6000 }
     state.inventory['fire-fragment'] = 1
     state.activities.research = { ...state.activities.research, running: true, itemId: 'fire-fragment', targetSchoolId: 'fire', remainingQuantity: 1, progressMs: BALANCE.research.durationPerItemMs }
+    const report = createOfflineBankReportCollector(state, 1, 1_000)
     const result = runTick(state, report)
 
-    expect(result.production.condensed['fire-fragment']).toBe(1)
+    expect(result.production.transmutation['fire-fragment']).toBe(1)
     expect(result.research.researchedItems['fire-fragment']).toBe(1)
     expect(result.research.xpBySchool.fire).toBe(12)
     expect(result.netInventory['fire-fragment']).toBe(0)
   })
 
-  it('reports successful transmutation ingredients and output', () => {
+  it('reports successful equipment Transmutation ingredients and output', () => {
     const state = makeInitialState()
+    state.progress.firstBossKill = true
     state.inventory['fire-fragment'] = 4
     state.inventory['wisp-essence'] = 4
     state.inventory['grove-bark'] = 1
-    state.activities.transmutation = { running: true, recipeId: 'ember-staff', progressMs: 8_000 }
+    state.activities.transmutation.jobs['ember-staff'] = { echoesAssigned: 1, progressMs: 8_000 }
     const report = createOfflineBankReportCollector(state, 1, 1_000)
     const result = runTick(state, report)
 
     expect(result.production.craftsByRecipe['ember-staff']).toBe(1)
-    expect(result.production.craftedItems['ember-staff']).toBe(1)
+    expect(result.production.transmutation['ember-staff']).toBe(1)
     expect(result.consumption.transmutation).toEqual({ 'fire-fragment': 4, 'wisp-essence': 4, 'grove-bark': 1 })
   })
 
@@ -55,7 +52,6 @@ describe('Offline Bank event reports', () => {
     state.combat.playerAttackTimerMs = 0
     const random = vi.spyOn(Math, 'random').mockReturnValue(0)
     const report = createOfflineBankReportCollector(state, 1, 1_000)
-
     const result = runTick(state, report)
     random.mockRestore()
 
@@ -81,12 +77,13 @@ describe('Offline Bank event reports', () => {
   it('collects multiple successful systems from one shared simulation tick', () => {
     const state = makeInitialState()
     state.player.mana = state.player.maxMana
+    state.progress.firstBossKill = true
     state.inventory['fire-fragment'] = 4
     state.inventory['wisp-essence'] = 4
     state.inventory['grove-bark'] = 1
-    state.activities.condense = { running: true, element: 'fire', progressMs: BALANCE.condense.durationMs }
+    state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 1, progressMs: 6000 }
     state.activities.research = { ...state.activities.research, running: true, itemId: 'fire-fragment', targetSchoolId: 'fire', remainingQuantity: 1, progressMs: BALANCE.research.durationPerItemMs }
-    state.activities.transmutation = { running: true, recipeId: 'ember-staff', progressMs: 8_000 }
+    state.activities.transmutation.jobs['ember-staff'] = { echoesAssigned: 1, progressMs: 8_000 }
     state.combat.active = true
     state.combat.dungeonId = 'whispering-woods'
     state.combat.enemyId = 'forest-wisp'
@@ -95,11 +92,10 @@ describe('Offline Bank event reports', () => {
     state.combat.playerAttackTimerMs = 0
     const random = vi.spyOn(Math, 'random').mockReturnValue(0)
     const report = createOfflineBankReportCollector(state, 1, 1_000)
-
     const result = runTick(state, report)
     random.mockRestore()
 
-    expect(result.production.condensed['fire-fragment']).toBe(1)
+    expect(result.production.transmutation['fire-fragment']).toBe(1)
     expect(result.research.researchedItems['fire-fragment']).toBe(1)
     expect(result.production.craftsByRecipe['ember-staff']).toBe(1)
     expect(result.combat.killsTotal).toBe(1)

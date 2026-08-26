@@ -1,9 +1,10 @@
 import { BALANCE, SCHOOL_LEVEL_XP } from './core/balance/balance'
 import { ITEMS, getResearchXp } from './content/items/items'
-import { SCHOOLS } from './content/schools/schools'
 import { SPELLS } from './content/spells/spells'
 import { getManaCapacityBreakdown, manaRegenPerSecond as getChannelingManaRegen } from './engine/channelingEngine'
 import type { EquipmentStats, FocusReservation, GameState, ItemId, SchoolId, SpellId } from './types'
+import { RECIPES, RECIPE_ORDER } from './content/recipes/recipes'
+import { getConsumableQuantity } from './core/inventory/inventoryConsumption'
 import { clamp, uid } from './utils'
 
 export const getSchoolLevel = (xp: number, cap: number) => {
@@ -39,10 +40,13 @@ export const deriveFocusReservations = (state: Pick<GameState, 'activities' | 'p
   const reservations: FocusReservation[] = []
   const echoes = state.activities.channeling.echoesAssigned
   if (echoes > 0) reservations.push({ id: 'channeling-echoes', sourceType: 'channeling', sourceId: 'echoes', amount: echoes * BALANCE.channeling.echoFocusCost, label: 'Arcane Echo Channeling' })
-  if (state.activities.condense.running) reservations.push({ id: 'condense', sourceType: 'condense', sourceId: state.activities.condense.element, amount: BALANCE.condense.focusCost, label: `Condensing ${SCHOOLS[state.activities.condense.element].name}` })
   const research = state.activities.research
   if (research.running) reservations.push({ id: 'research', sourceType: 'research', sourceId: research.itemId ?? 'fragment', amount: research.focusCost, label: 'Arcane Research' })
-  if (state.activities.transmutation.running) reservations.push({ id: 'transmutation', sourceType: 'transmutation', sourceId: state.activities.transmutation.recipeId ?? 'recipe', amount: BALANCE.transmutation.focusCost, label: 'Transmutation' })
+  RECIPE_ORDER.forEach((recipeId) => {
+    const echoes = Math.max(0, Math.floor(state.activities.transmutation.jobs[recipeId]?.echoesAssigned ?? 0))
+    if (!echoes) return
+    reservations.push({ id: `transmutation-${recipeId}`, sourceType: 'transmutation', sourceId: recipeId, amount: echoes * BALANCE.transmutation.echoFocusCost, label: `Transmutation · ${RECIPES[recipeId].name}` })
+  })
   Object.entries(state.activities.autoCast).forEach(([spellId, active]) => {
     if (!active || !state.progress.unlockedSpells.includes(spellId as SpellId)) return
     const spell = SPELLS[spellId as SpellId]
@@ -84,7 +88,7 @@ export const completeResearchCycle = (state: GameState, itemId: ItemId, targetSc
   const item = ITEMS[itemId]
   if (!item || !item.researchSchool) return { completed: false, reason: 'unknown' as const }
   if (state.schools[targetSchoolId].level >= state.progress.magicLevelCap) return { completed: false, reason: 'cap' as const }
-  if ((state.inventory[itemId] ?? 0) < 1 || state.protectedItems[itemId]) return { completed: false, reason: 'protected' as const }
+  if (getConsumableQuantity(state, itemId) < 1) return { completed: false, reason: 'protected' as const }
   state.inventory[itemId] = (state.inventory[itemId] ?? 0) - 1
   const xp = getResearchXp(itemId, targetSchoolId)
   const levels = grantSchoolXp(state, targetSchoolId, xp)

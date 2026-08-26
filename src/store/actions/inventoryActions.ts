@@ -1,6 +1,7 @@
 import { ITEMS } from '../../game/content/items/items'
 import { pushNotification } from '../../game/engine'
 import { getEquippedReservedQuantity as getEquipmentReservedQuantity } from '../../game/core/equipment'
+import { getConsumableQuantity } from '../../game/core/inventory/inventoryConsumption'
 import type { GameState, ItemId } from '../../game/types'
 
 export const isEquippedItem = (state: GameState, itemId: ItemId) => Object.values(state.equipment).includes(itemId)
@@ -12,8 +13,7 @@ const safeGold = (value: unknown) => typeof value === 'number' && Number.isFinit
 /** Number of copies reserved by equipment slots, independent of stack-level protection. */
 export const getEquippedReservedQuantity = (state: Pick<GameState, 'equipment'>, itemId: ItemId) => getEquipmentReservedQuantity(state, itemId)
 export const getActionableQuantity = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment'>, itemId: ItemId) => {
-  if (state.protectedItems[itemId]) return 0
-  return Math.max(0, safeQuantity(state.inventory[itemId]) - getEquippedReservedQuantity(state, itemId))
+  return getConsumableQuantity(state, itemId)
 }
 export const canSellItem = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment'>, itemId: ItemId) => Boolean(ITEMS[itemId]?.sellValue != null && getActionableQuantity(state, itemId) > 0)
 export const canDestroyItem = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment'>, itemId: ItemId) => Boolean(ITEMS[itemId]?.canDestroy === true && getActionableQuantity(state, itemId) > 0)

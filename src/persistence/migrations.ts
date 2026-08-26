@@ -5,14 +5,17 @@ import { GUILD_REQUESTS } from '../game/content/guild/guildRequests'
 import { ITEMS } from '../game/content/items/items'
 import { MONSTERS } from '../game/content/monsters/whisperingWoods'
 import { RECIPES } from '../game/content/recipes/recipes'
+import { RECIPE_ORDER } from '../game/content/recipes/recipes'
+import { BALANCE } from '../game/core/balance/balance'
 import { SPELLS } from '../game/content/spells/spells'
 import { EQUIPMENT_POSITIONS, normalizeEquipmentState } from '../game/core/equipment'
-import type { EquipmentPosition, GameState, ItemId, ResearchActivity, SchoolId } from '../game/types'
+import type { EquipmentPosition, GameState, ItemId, RecipeId, ResearchActivity, SchoolId, TransmutationJobState } from '../game/types'
 import { isRecord, SaveMigrationError } from './saveSchema'
 
 const normalizeScreen = (value: unknown, fallback: GameState['ui']['screen']): GameState['ui']['screen'] => {
   if (value === 'tower') return 'tower-channeling'
-  const valid = ['home', 'combat', 'schools', 'inventory', 'equipment', 'collection', 'tower-channeling', 'tower-focus', 'tower-condensation', 'tower-research', 'tower-transmutation', 'guild', 'settings']
+  const valid = ['home', 'combat', 'schools', 'inventory', 'equipment', 'collection', 'tower-channeling', 'tower-focus', 'tower-research', 'tower-transmutation', 'guild', 'settings']
+  if (value === 'tower-condensation') return 'tower-transmutation'
   return typeof value === 'string' && valid.includes(value) ? value as GameState['ui']['screen'] : fallback
 }
 
@@ -111,10 +114,6 @@ const normalizeDirectContentReferences = (migrated: GameState, raw: Record<strin
   const researchSchool = Object.prototype.hasOwnProperty.call(rawResearch, 'targetSchoolId') ? rawResearch.targetSchoolId : migrated.activities.research.targetSchoolId
   migrated.activities.research.targetSchoolId = validContentId(researchSchool, ['fire', 'water', 'earth', 'air']) ? researchSchool as SchoolId : null
 
-  const rawTransmutation = isRecord(rawActivities.transmutation) ? rawActivities.transmutation : {}
-  const recipeId = Object.prototype.hasOwnProperty.call(rawTransmutation, 'recipeId') ? rawTransmutation.recipeId : migrated.activities.transmutation.recipeId
-  migrated.activities.transmutation.recipeId = recipeId === null ? null : validContentId(recipeId, recipeIds) ? recipeId as string : null
-
   const rawCombat = isRecord(raw.combat) ? raw.combat : {}
   const dungeonId = Object.prototype.hasOwnProperty.call(rawCombat, 'dungeonId') ? rawCombat.dungeonId : migrated.combat.dungeonId
   migrated.combat.dungeonId = dungeonId === null ? null : validContentId(dungeonId, dungeonIds) ? dungeonId as GameState['combat']['dungeonId'] : fresh.combat.dungeonId
@@ -147,12 +146,61 @@ const migrateChanneling = (rawProgress: unknown, fresh: GameState['progress']): 
   }
 }
 
+const LEGACY_CONDENSATION_DURATION_MS = 6000
+const normalizedProgress = (value: unknown, oldDuration: number, newDuration: number) => {
+  const progress = nonNegativeNumber(value) ?? 0
+  return Math.min(newDuration, progress / Math.max(1, oldDuration) * newDuration)
+}
+
+/** Converts V7's two single-queue activities into independent V8 jobs. */
+const normalizeTransmutationJobs = (migrated: GameState, raw: Record<string, any>) => {
+  const rawActivities = isRecord(raw.activities) ? raw.activities : {}
+  const rawTransmutation = isRecord(rawActivities.transmutation) ? rawActivities.transmutation : {}
+  const jobs: Partial<Record<RecipeId, TransmutationJobState>> = {}
+  const rawJobs = isRecord(rawTransmutation.jobs) ? rawTransmutation.jobs : {}
+  RECIPE_ORDER.forEach((recipeId) => {
+    const rawJob = isRecord(rawJobs[recipeId]) ? rawJobs[recipeId] : null
+    if (!rawJob) return
+    const recipe = RECIPES[recipeId]
+    jobs[recipeId] = { echoesAssigned: Math.max(0, Math.floor(nonNegativeNumber(rawJob.echoesAssigned) ?? 0)), progressMs: Math.min(recipe.baseDurationMs, nonNegativeNumber(rawJob.progressMs) ?? 0) }
+  })
+
+  if (rawTransmutation.running === true && validContentId(rawTransmutation.recipeId, recipeIds)) {
+    const recipeId = rawTransmutation.recipeId as RecipeId
+    const recipe = RECIPES[recipeId]
+    jobs[recipeId] = { echoesAssigned: Math.max(1, jobs[recipeId]?.echoesAssigned ?? 0), progressMs: normalizedProgress(rawTransmutation.progressMs, typeof rawTransmutation.durationMs === 'number' ? rawTransmutation.durationMs : recipe.baseDurationMs, recipe.baseDurationMs) }
+  }
+
+  const rawCondense = isRecord(rawActivities.condense) ? rawActivities.condense : {}
+  if (rawCondense.running === true && validContentId(rawCondense.element, ['fire', 'water', 'earth', 'air'])) {
+    const recipeId = `${rawCondense.element}-fragment` as RecipeId
+    jobs[recipeId] = { echoesAssigned: Math.max(1, jobs[recipeId]?.echoesAssigned ?? 0), progressMs: normalizedProgress(rawCondense.progressMs, LEGACY_CONDENSATION_DURATION_MS, RECIPES[recipeId].baseDurationMs) }
+  }
+
+  // Preserve work while ensuring the migration cannot create Focus overflow.
+  const rawResearch = isRecord(rawActivities.research) ? rawActivities.research : {}
+  const nonTransmutationFocus = Math.max(0, Math.floor(migrated.activities.channeling.echoesAssigned)) * BALANCE.channeling.echoFocusCost
+    + (rawResearch.running === true ? Math.max(0, Math.floor(nonNegativeNumber(rawResearch.focusCost) ?? migrated.activities.research.focusCost)) : 0)
+    + Object.entries(migrated.activities.autoCast).filter(([spellId, active]) => active && migrated.progress.unlockedSpells.includes(spellId as any)).reduce((sum, [spellId]) => sum + (SPELLS[spellId as keyof typeof SPELLS]?.autoCastFocus ?? 0), 0)
+  let remaining = Math.max(0, Math.min(BALANCE.transmutation.maxEchoes, Math.floor((migrated.player.maxFocus - nonTransmutationFocus) / BALANCE.transmutation.echoFocusCost)))
+  const normalized: Partial<Record<RecipeId, TransmutationJobState>> = {}
+  RECIPE_ORDER.forEach((recipeId) => {
+    const job = jobs[recipeId]
+    if (!job) return
+    const echoes = Math.min(job.echoesAssigned, remaining)
+    normalized[recipeId] = { echoesAssigned: echoes, progressMs: job.progressMs }
+    remaining -= echoes
+  })
+  migrated.activities.transmutation = { jobs: normalized }
+}
+
 const finalize = (migrated: GameState, raw: Record<string, any>) => {
   migrated.saveVersion = SAVE_VERSION
   migrated.progress.channeling = migrateChanneling(raw.progress, createInitialState().progress)
   migrated.ui.screen = normalizeScreen(isRecord(raw.ui) ? raw.ui.screen : undefined, migrated.ui.screen)
   normalizeDynamicRecords(migrated, raw)
   normalizeDirectContentReferences(migrated, raw)
+  normalizeTransmutationJobs(migrated, raw)
   return migrated
 }
 
@@ -192,9 +240,7 @@ const migrateV2 = (raw: Record<string, any>): GameState => {
   const oldActivities = isRecord(raw.activities) ? raw.activities : {}
   migrated.activities = {
     ...fresh.activities,
-    condense: isRecord(oldActivities.condense) ? { ...fresh.activities.condense, ...oldActivities.condense } : fresh.activities.condense,
     research: isRecord(oldActivities.research) ? { ...fresh.activities.research, ...oldActivities.research } as ResearchActivity : fresh.activities.research,
-    transmutation: isRecord(oldActivities.transmutation) ? { ...fresh.activities.transmutation, ...oldActivities.transmutation } : fresh.activities.transmutation,
     channeling: { echoesAssigned: oldActivities.autoChannel === true ? 1 : 0 },
     autoCast: { ...fresh.activities.autoCast, ...(isRecord(oldActivities.autoCast) ? oldActivities.autoCast : {}) },
   }
@@ -216,6 +262,7 @@ export const migrateSave = (rawSave: unknown): GameState => {
   if (version === 4) return migrateV4(rawSave)
   if (version === 5) return migrateV5(rawSave)
   if (version === 6) return migrateV6(rawSave)
+  if (version === 7) return finalize(merge(createInitialState(), rawSave), rawSave)
   if (version === SAVE_VERSION) {
     return finalize(merge(createInitialState(), rawSave), rawSave)
   }

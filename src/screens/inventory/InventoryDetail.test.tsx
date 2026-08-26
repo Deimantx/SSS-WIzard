@@ -38,7 +38,7 @@ describe('InventoryDetail accordions', () => {
     fireEvent.click(sourceHeader)
     expect(sourceHeader.getAttribute('aria-expanded')).toBe('true')
     fireEvent.click(screen.getByRole('button', { name: /Go to Wizard Tower/ }))
-    expect(navigate).toHaveBeenCalledWith('tower-condensation')
+    expect(navigate).toHaveBeenCalledWith('tower-transmutation')
 
     fireEvent.click(needsHeader)
     expect(needsHeader.getAttribute('aria-expanded')).toBe('false')

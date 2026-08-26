@@ -2,7 +2,7 @@ import { BALANCE } from '../game/data/balance'
 import { createInitialManaPillars } from '../game/data/manaPillars'
 import type { GameState } from '../game/types'
 
-export const SAVE_VERSION = 7
+export const SAVE_VERSION = 8
 
 export const createInitialState = (): GameState => ({
   saveVersion: SAVE_VERSION,
@@ -14,9 +14,8 @@ export const createInitialState = (): GameState => ({
   equipment: { weapon: 'apprentice-wand', offhand: null, armor: null, helmet: null, cape: null, amulet: null, ring1: null, ring2: null },
   activities: {
     channeling: { echoesAssigned: 0 },
-    condense: { running: false, element: 'fire', progressMs: 0 },
     research: { running: false, itemId: null, targetSchoolId: null, requestedQuantity: 0, remainingQuantity: 0, progressMs: 0, durationPerItemMs: BALANCE.research.durationPerItemMs, xpPerItem: BALANCE.research.xpPerFragment, manaPerItem: BALANCE.research.manaCostPerItem, focusCost: BALANCE.research.focusCost, status: 'idle' },
-    transmutation: { running: false, recipeId: null, progressMs: 0 },
+    transmutation: { jobs: {} },
     autoCast: { 'fire-bolt': false, 'water-ward': false, 'earth-spike': false, 'air-lance': false, ignite: false, 'flow-mend': false, stoneguard: false, quickening: false },
   },
   combat: { active: false, dungeonId: null, enemyId: null, enemyHp: 0, enemyMaxHp: 0, enemyBarrier: 0, enemyActionIndex: 0, enemyActionTimerMs: 0, enemyIntervalMs: 0, enemyTelegraphMs: 0, enemyTelegraphActionId: null, enemySpecialUsed: {}, pendingBossId: null, playerAttackTimerMs: 0, enemyAttackTimerMs: 0, encounterTimerMs: 0, spellCooldowns: { 'fire-bolt': 0, 'water-ward': 0, 'earth-spike': 0, 'air-lance': 0, ignite: 0, 'flow-mend': 0, stoneguard: 0, quickening: 0 }, playerStatuses: [], enemyStatuses: [], threatCleared: 0, inBossFight: false, log: [], lastDamageDealt: 0, lastDamageTaken: 0 },
@@ -25,5 +24,5 @@ export const createInitialState = (): GameState => ({
   offlineBankMs: 0,
   lastSavedAt: Date.now(),
   notifications: [],
-  debug: { bonusManaRegenFlat: 0, bonusMaxManaFlat: 0, bonusMaxFocusFlat: 0, allowManaOverCap: false, allowFocusOverCap: false, ignoreEchoLimit: false },
+  debug: { bonusManaRegenFlat: 0, bonusMaxManaFlat: 0, bonusMaxFocusFlat: 0, allowManaOverCap: false, allowFocusOverCap: false, ignoreEchoLimit: false, transmutationEchoCapacityOverride: null },
 })

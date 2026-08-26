@@ -16,7 +16,6 @@ src/
   screens/
     tower/channeling/  Channeling panels and discoveries
     tower/focus/       Focus destination
-    tower/condensation/ Condensation destination
     tower/research/    Research destination
     tower/transmutation/ Transmutation destination
   store/
@@ -31,8 +30,8 @@ src/
 
 Combat lifecycle, damage, enemy actions, and encounter completion live in `game/systems/combat/combatRuntime.ts`. Monster drop resolution lives in `game/systems/loot/lootResolution.ts`. Live ticks and player-selected Offline Bank advances both call `game/systems/simulation/advanceGameState.ts` in one-second-safe steps. Routine banked notifications are suppressed while major unlocks and failures are retained.
 
-Mana Flow is derived UI information: authoritative Channeling production minus active average consumption from Condensation, Research, and estimated Auto-Cast demand. It is not persisted as a new stat. Activity cards consume `getActivityTelemetry(state)` and the shell owns only presentation and navigation.
+Mana Flow is derived UI information: authoritative Channeling production minus active average consumption from Transmutation, Research, and estimated Auto-Cast demand. It is not persisted as a new stat. Activity cards consume `getActivityTelemetry(state)` and the shell owns only presentation and navigation.
 
 The persistent shell is composed from `app/GameShell.tsx`, `app/shell/Topbar.tsx`, `Sidebar.tsx`, `ActivityMonitor.tsx`, `OfflineBankPopover.tsx`, and `ToastStack.tsx`. Developer overrides remain runtime-only; profile serializers strip them.
 
-Developer overrides are runtime-only test controls kept under `GameState.debug`; profile serializers strip the field, so normal Save V4 progression never records temporary bonuses or cap toggles.
+Developer overrides are runtime-only test controls kept under `GameState.debug`; profile serializers strip the field, so normal V8 progression never records temporary bonuses or cap toggles.

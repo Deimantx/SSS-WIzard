@@ -1,18 +1,26 @@
-import type { EquipmentItemSlot, ItemId } from '../../types'
+import type { ItemId, RecipeCategory, RecipeId, RecipeUnlockCondition } from '../../types'
 
 export interface RecipeDefinition {
-  id: string
-  output: ItemId
+  id: RecipeId
   name: string
-  slot: EquipmentItemSlot
-  durationMs: number
-  focusCost: number
+  output: { itemId: ItemId; quantity: number }
+  category: RecipeCategory
+  baseDurationMs: number
+  manaCost: number
   ingredients: { itemId: ItemId; quantity: number }[]
+  unlock: RecipeUnlockCondition
+  description?: string
 }
 
-export const RECIPES: Record<string, RecipeDefinition> = {
-  'ember-staff': { id: 'ember-staff', output: 'ember-staff', name: 'Ember Staff', slot: 'weapon', durationMs: 8000, focusCost: 20, ingredients: [{ itemId: 'fire-fragment', quantity: 4 }, { itemId: 'wisp-essence', quantity: 4 }, { itemId: 'grove-bark', quantity: 1 }] },
-  'tide-focus': { id: 'tide-focus', output: 'tide-focus', name: 'Tide Focus', slot: 'offhand', durationMs: 9000, focusCost: 20, ingredients: [{ itemId: 'water-fragment', quantity: 4 }, { itemId: 'wisp-essence', quantity: 3 }, { itemId: 'grove-bark', quantity: 1 }] },
-  'stoneweave-robe': { id: 'stoneweave-robe', output: 'stoneweave-robe', name: 'Stoneweave Robe', slot: 'armor', durationMs: 9000, focusCost: 20, ingredients: [{ itemId: 'earth-fragment', quantity: 4 }, { itemId: 'wisp-essence', quantity: 3 }, { itemId: 'grove-bark', quantity: 1 }] },
-  'windthread-charm': { id: 'windthread-charm', output: 'windthread-charm', name: 'Windthread Charm', slot: 'amulet', durationMs: 9000, focusCost: 20, ingredients: [{ itemId: 'air-fragment', quantity: 4 }, { itemId: 'wisp-essence', quantity: 3 }, { itemId: 'grove-bark', quantity: 1 }] },
+export const RECIPES: Record<RecipeId, RecipeDefinition> = {
+  'fire-fragment': { id: 'fire-fragment', name: 'Fire Fragment', output: { itemId: 'fire-fragment', quantity: 1 }, category: 'elemental', baseDurationMs: 6000, manaCost: 15, ingredients: [], unlock: { type: 'always' }, description: '[TUNING] Shape Mana into a stable Fire Fragment.' },
+  'water-fragment': { id: 'water-fragment', name: 'Water Fragment', output: { itemId: 'water-fragment', quantity: 1 }, category: 'elemental', baseDurationMs: 6000, manaCost: 15, ingredients: [], unlock: { type: 'always' }, description: '[TUNING] Shape Mana into a stable Water Fragment.' },
+  'earth-fragment': { id: 'earth-fragment', name: 'Earth Fragment', output: { itemId: 'earth-fragment', quantity: 1 }, category: 'elemental', baseDurationMs: 6000, manaCost: 15, ingredients: [], unlock: { type: 'always' }, description: '[TUNING] Shape Mana into a stable Earth Fragment.' },
+  'air-fragment': { id: 'air-fragment', name: 'Air Fragment', output: { itemId: 'air-fragment', quantity: 1 }, category: 'elemental', baseDurationMs: 6000, manaCost: 15, ingredients: [], unlock: { type: 'always' }, description: '[TUNING] Shape Mana into a stable Air Fragment.' },
+  'ember-staff': { id: 'ember-staff', name: 'Ember Staff', output: { itemId: 'ember-staff', quantity: 1 }, category: 'equipment', baseDurationMs: 8000, manaCost: 0, ingredients: [{ itemId: 'fire-fragment', quantity: 4 }, { itemId: 'wisp-essence', quantity: 4 }, { itemId: 'grove-bark', quantity: 1 }], unlock: { type: 'first-grove-sentinel-kill' }, description: 'A staff that makes every basic hit burn brighter.' },
+  'tide-focus': { id: 'tide-focus', name: 'Tide Focus', output: { itemId: 'tide-focus', quantity: 1 }, category: 'equipment', baseDurationMs: 9000, manaCost: 0, ingredients: [{ itemId: 'water-fragment', quantity: 4 }, { itemId: 'wisp-essence', quantity: 3 }, { itemId: 'grove-bark', quantity: 1 }], unlock: { type: 'first-grove-sentinel-kill' }, description: 'A fluid focus that deepens Water barriers.' },
+  'stoneweave-robe': { id: 'stoneweave-robe', name: 'Stoneweave Robe', output: { itemId: 'stoneweave-robe', quantity: 1 }, category: 'equipment', baseDurationMs: 9000, manaCost: 0, ingredients: [{ itemId: 'earth-fragment', quantity: 4 }, { itemId: 'wisp-essence', quantity: 3 }, { itemId: 'grove-bark', quantity: 1 }], unlock: { type: 'first-grove-sentinel-kill' }, description: 'A heavy robe that turns barriers into shelter.' },
+  'windthread-charm': { id: 'windthread-charm', name: 'Windthread Charm', output: { itemId: 'windthread-charm', quantity: 1 }, category: 'equipment', baseDurationMs: 9000, manaCost: 0, ingredients: [{ itemId: 'air-fragment', quantity: 4 }, { itemId: 'wisp-essence', quantity: 3 }, { itemId: 'grove-bark', quantity: 1 }], unlock: { type: 'first-grove-sentinel-kill' }, description: 'A charm that leaves room for one more automation.' },
 }
+
+export const RECIPE_ORDER: readonly RecipeId[] = ['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment', 'ember-staff', 'tide-focus', 'stoneweave-robe', 'windthread-charm']

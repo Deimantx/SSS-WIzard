@@ -1,7 +1,6 @@
 import { BALANCE } from '../../core/balance/balance'
 import { CHANNELING_DISCOVERIES } from '../../content/channeling/channelingDiscoveries'
 import { MONSTERS } from '../../content/monsters/whisperingWoods'
-import { RECIPES } from '../../content/recipes/recipes'
 import { SCHOOLS } from '../../content/schools/schools'
 import { SPELLS } from '../../content/spells/spells'
 import { advanceChanneling } from '../../engine/channelingEngine'
@@ -10,6 +9,8 @@ import { addStatus, applyBarrier, damageEnemy, damagePlayer, executeEnemyAction,
 import type { GameState, ItemId, SpellEffect, SpellId, StatusEffect } from '../../types'
 import { clamp } from '../../utils'
 import type { SimulationReportCollector } from '../offline-bank/offlineBankReport'
+import { advanceTransmutation } from '../transmutation/transmutationEngine'
+import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
 
 export interface AdvanceContext {
   mode: 'live' | 'banked'
@@ -18,10 +19,7 @@ export interface AdvanceContext {
   onItemAcquired?: (itemId: ItemId, quantity: number) => void
 }
 
-const shouldNotifyRoutine = (context: AdvanceContext) => context.mode === 'live' && !context.suppressRoutineNotifications
 const spellUnlocked = (state: GameState, spellId: SpellId) => state.progress.unlockedSpells.includes(spellId)
-const isEquipped = (state: GameState, itemId: keyof typeof state.inventory) => Object.values(state.equipment).includes(itemId)
-const isProtected = (state: GameState, itemId: keyof typeof state.inventory) => Boolean(state.protectedItems[itemId]) || isEquipped(state, itemId)
 
 const applySpellEffect = (state: GameState, spellId: SpellId, effect: SpellEffect) => {
   const spell = SPELLS[spellId]
@@ -83,7 +81,7 @@ const tickResearch = (state: GameState, delta: number, context: AdvanceContext) 
   if (!job.running) return
   if (!job.itemId || !job.targetSchoolId || job.remainingQuantity <= 0) { job.running = false; if (job.status !== 'paused') job.status = 'idle'; return }
   if (state.schools[job.targetSchoolId].level >= state.progress.magicLevelCap) { job.running = false; job.status = 'level-cap'; context.report?.recordResearchStoppedAtCap(); return }
-  if (isProtected(state, job.itemId)) { job.running = false; job.status = 'missing-item'; return }
+  if (getConsumableQuantity(state, job.itemId) < 1) { job.running = false; job.status = 'missing-item'; return }
   if (job.progressMs < job.durationPerItemMs) { job.progressMs += delta; job.status = 'running'; return }
   if (state.player.mana < job.manaPerItem) { job.running = true; job.status = 'waiting-mana'; return }
   state.player.mana -= job.manaPerItem
@@ -133,43 +131,8 @@ export const advanceGameState = (state: GameState, deltaMs: number, context: Adv
     if (discovery) pushNotification(state, `Arcane Discovery: ${discovery.name}`, 'success')
   })
   if (!state.combat.active) state.player.health = clamp(state.player.health + BALANCE.player.healthRegenPerSecond * delta / 1000 * BALANCE.player.outOfCombatRegenMultiplier, 0, state.player.maxHealth)
-  const condense = state.activities.condense
-  if (condense.running) {
-    if (condense.progressMs < BALANCE.condense.durationMs) {
-      condense.progressMs = Math.min(BALANCE.condense.durationMs, condense.progressMs + delta)
-    }
-    if (condense.progressMs >= BALANCE.condense.durationMs && state.player.mana >= BALANCE.condense.manaCost) {
-      state.player.mana -= BALANCE.condense.manaCost
-      const output = SCHOOLS[condense.element].fragment
-      state.inventory[output] = (state.inventory[output] ?? 0) + 1
-      context.onItemAcquired?.(output, 1)
-      context.report?.recordCondensed(output, 1)
-      condense.progressMs = 0
-      if (shouldNotifyRoutine(context)) pushNotification(state, `${SCHOOLS[condense.element].name} Fragment condensed`, 'success')
-    }
-  }
   tickResearch(state, delta, context)
-  const transmutation = state.activities.transmutation
-  if (transmutation.running && transmutation.recipeId) {
-    const recipe = RECIPES[transmutation.recipeId]
-    if (!recipe) transmutation.running = false
-    else if (transmutation.progressMs < recipe.durationMs) transmutation.progressMs += delta
-    else {
-      const canCraft = recipe.ingredients.every((ingredient) => (state.inventory[ingredient.itemId] ?? 0) >= ingredient.quantity && !isProtected(state, ingredient.itemId))
-      if (canCraft) {
-        recipe.ingredients.forEach((ingredient) => { state.inventory[ingredient.itemId] = (state.inventory[ingredient.itemId] ?? 0) - ingredient.quantity })
-        state.inventory[recipe.output] = (state.inventory[recipe.output] ?? 0) + 1
-        context.onItemAcquired?.(recipe.output, 1)
-        context.report?.recordCraft(recipe.id, recipe.output, 1, recipe.ingredients)
-        transmutation.running = false
-        transmutation.progressMs = 0
-        if (shouldNotifyRoutine(context)) pushNotification(state, `${recipe.name} transmuted`, 'success')
-      } else {
-        transmutation.running = false
-        if (shouldNotifyRoutine(context)) pushNotification(state, 'Transmutation stopped · missing or protected ingredients', 'warning')
-      }
-    }
-  }
+  advanceTransmutation(state, delta, context)
   tickCombat(state, delta, context)
   return state
 }

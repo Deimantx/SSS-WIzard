@@ -9,9 +9,8 @@ export const DEFAULT_LAYOUTS: Record<ScreenId, ScreenLayouts> = {
   },
   'tower-channeling': { 'channeling-mana-core': layout(0, 0, 6, 9), 'channeling-echoes': layout(6, 0, 6, 9), 'channeling-pillars': layout(0, 9, 12, 25) },
   'tower-focus': { 'focus-summary': layout(0, 0, 7, 12), 'focus-reservations': layout(7, 0, 5, 12) },
-  'tower-condensation': { 'condensation-elements': layout(0, 0, 7, 11), 'condensation-status': layout(7, 0, 5, 11) },
   'tower-research': { 'research-config': layout(0, 0, 7, 13), 'research-queue': layout(7, 0, 5, 13) },
-  'tower-transmutation': { 'transmutation-recipes': layout(0, 0, 7, 13), 'transmutation-detail': layout(7, 0, 5, 13) },
+  'tower-transmutation': { 'transmutation-recipes': layout(0, 0, 7, 18), 'transmutation-detail': layout(7, 0, 5, 11), 'transmutation-focus': layout(7, 11, 5, 7) },
   schools: {
     'school-fire': layout(0, 0, 6, 10), 'school-water': layout(6, 0, 6, 10), 'school-earth': layout(0, 10, 6, 10), 'school-air': layout(6, 10, 6, 10), 'school-ceiling': layout(0, 20, 12, 5),
   },

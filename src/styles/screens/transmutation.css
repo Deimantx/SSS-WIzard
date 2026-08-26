@@ -1,0 +1,79 @@
+.transmutation-screen .ui-editor-grid-layout { min-height: 620px; }
+.transmutation-screen .ui-editor-panel-content > .card { height: 100%; min-height: 100%; }
+.transmutation-screen .card { overflow: hidden; }
+.transmutation-library, .transmutation-detail, .transmutation-focus { display: flex; min-height: 0; flex-direction: column; }
+.transmutation-search { display: flex; align-items: center; gap: 7px; margin-bottom: 9px; padding: 7px 9px; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text-muted); background: var(--ui-panel); }
+.transmutation-search input { width: 100%; padding: 0; border: 0; outline: 0; color: var(--ui-text); background: transparent; }
+.transmutation-filters { display: flex; flex-wrap: wrap; gap: 5px; padding-bottom: 9px; border-bottom: 1px solid var(--ui-border); }
+.transmutation-filters button { padding: 6px 8px; border: 1px solid var(--ui-border); border-radius: 6px; color: var(--ui-text-muted); background: var(--ui-panel); cursor: pointer; font: var(--text-micro) var(--font-mono); letter-spacing: .06em; }
+.transmutation-filters button:hover, .transmutation-filters button.active { border-color: color-mix(in srgb, var(--ui-accent) 65%, var(--ui-border)); color: var(--ui-text); background: var(--ui-accent-soft); }
+.transmutation-count { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
+.transmutation-library-list { display: grid; gap: 6px; min-height: 0; margin: 10px -3px 0 0; padding-right: 3px; overflow: auto; }
+.transmutation-recipe-row { display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; align-items: center; gap: 8px; width: 100%; min-width: 0; padding: 8px; border: 1px solid var(--ui-border); border-radius: 8px; color: var(--ui-text); background: var(--ui-panel-strong); cursor: pointer; text-align: left; }
+.transmutation-recipe-row:hover, .transmutation-recipe-row.selected { border-color: color-mix(in srgb, var(--ui-accent) 70%, var(--ui-border)); background: var(--ui-accent-soft); outline: none; }
+.transmutation-recipe-row.locked { opacity: .68; }
+.transmutation-recipe-copy, .transmutation-recipe-state { display: grid; min-width: 0; gap: 4px; }
+.transmutation-recipe-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-xs); }
+.transmutation-recipe-copy small, .transmutation-recipe-state small { color: var(--ui-text-muted); font-size: var(--text-micro); }
+.transmutation-recipe-state { justify-items: end; }
+.transmutation-recipe-state .status { font-size: .56rem; }
+.transmutation-detail-hero { display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 11px; align-items: start; }
+.transmutation-detail-icon { display: grid; place-items: center; width: 58px; height: 58px; border: 1px solid color-mix(in srgb, var(--ui-accent) 38%, var(--ui-border)); border-radius: 10px; background: var(--ui-accent-soft); }
+.transmutation-detail-hero h2 { margin: 3px 0; color: var(--ui-text); font-size: var(--text-base); }
+.transmutation-detail-hero p { margin: 0 0 4px; color: var(--ui-text-muted); font-size: var(--text-xs); line-height: 1.4; }
+.transmutation-owned { color: var(--ui-text-soft); font: var(--text-micro) var(--font-mono); }
+.transmutation-lock-reason { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding: 8px; border: 1px solid color-mix(in srgb, var(--ui-warning) 45%, var(--ui-border)); border-radius: 7px; color: var(--ui-warning); font-size: var(--text-xs); }
+.transmutation-stat-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 14px 0; }
+.transmutation-stat-grid span { display: grid; gap: 4px; padding: 8px; border: 1px solid var(--ui-border); border-radius: 7px; background: var(--ui-panel); }
+.transmutation-stat-grid small, .transmutation-focus-stats span { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .06em; }
+.transmutation-stat-grid strong { color: var(--ui-text); font: var(--text-xs) var(--font-mono); }
+.transmutation-detail-section { margin-top: 13px; padding-top: 12px; border-top: 1px solid var(--ui-border); }
+.transmutation-no-materials, .transmutation-detail-section .muted { margin: 8px 0 0; color: var(--ui-text-muted); font-size: var(--text-xs); }
+.transmutation-requirements { display: grid; gap: 6px; margin-top: 8px; }
+.transmutation-requirements > .game-tooltip-trigger { display: block; }
+.transmutation-requirement { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; align-items: center; gap: 7px; padding: 6px; border: 1px solid var(--ui-border); border-radius: 7px; background: var(--ui-panel); cursor: help; }
+.transmutation-requirement.ready { border-color: color-mix(in srgb, var(--ui-success) 35%, var(--ui-border)); }
+.transmutation-requirement.missing { border-color: color-mix(in srgb, var(--ui-warning) 52%, var(--ui-border)); }
+.transmutation-requirement.protected { border-color: color-mix(in srgb, var(--ui-danger) 55%, var(--ui-border)); }
+.transmutation-requirement > span:nth-child(2) { display: grid; min-width: 0; gap: 3px; }
+.transmutation-requirement strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ui-text); font-size: var(--text-xs); }
+.transmutation-requirement small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
+.transmutation-requirement .status { font-size: .56rem; }
+.transmutation-mana-requirement { display: flex; align-items: center; gap: 8px; }
+.transmutation-mana-requirement .eyebrow { margin-right: auto; }
+.transmutation-mana-requirement strong { color: var(--ui-text); font: var(--text-xs) var(--font-mono); }
+.transmutation-accordion > button { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 0; border: 0; color: var(--ui-text); background: transparent; cursor: pointer; text-align: left; }
+.transmutation-uses { display: grid; gap: 6px; margin-top: 9px; }
+.transmutation-uses span { display: grid; gap: 3px; padding: 7px; border: 1px solid var(--ui-border); border-radius: 6px; }
+.transmutation-uses strong { color: var(--ui-text-soft); font-size: var(--text-xs); }
+.transmutation-uses small { color: var(--ui-text-muted); font-size: var(--text-micro); }
+.transmutation-craftability { display: block; margin-top: auto; padding-top: 12px; color: var(--ui-text-muted); font-size: var(--text-micro); line-height: 1.4; }
+.transmutation-craftability.ready { color: var(--ui-success); }
+.transmutation-focus-header { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 11px; }
+.transmutation-focus-header > div { display: grid; gap: 4px; padding: 9px; border: 1px solid var(--ui-border); border-radius: 7px; background: var(--ui-panel); }
+.transmutation-focus-header strong { color: var(--ui-text); font: var(--text-sm) var(--font-mono); }
+.transmutation-focus-selected { display: grid; gap: 9px; padding: 11px; border: 1px solid color-mix(in srgb, var(--ui-accent) 38%, var(--ui-border)); border-radius: 8px; background: color-mix(in srgb, var(--ui-accent) 7%, var(--ui-panel)); }
+.transmutation-focus-selected-name { display: flex; align-items: center; gap: 7px; color: var(--ui-text); }
+.transmutation-echo-control { display: grid; grid-template-columns: 34px minmax(0, 1fr) 34px; align-items: center; gap: 7px; }
+.transmutation-echo-control > strong { color: var(--ui-text); font: var(--text-sm) var(--font-mono); text-align: center; }
+.transmutation-echo-control .button { min-height: 30px; padding: 4px; justify-content: center; }
+.transmutation-focus-stats { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; }
+.transmutation-active-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 14px 0 8px; }
+.transmutation-active-heading .button { min-height: 24px; padding: 3px 6px; font-size: .58rem; }
+.transmutation-assignment-list { display: grid; gap: 6px; min-height: 0; overflow: auto; }
+.transmutation-assignment-row { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto 27px 27px; align-items: center; gap: 6px; padding: 6px; border: 1px solid var(--ui-border); border-radius: 7px; background: var(--ui-panel); }
+.transmutation-assignment-row > span { display: grid; gap: 4px; min-width: 0; }
+.transmutation-assignment-row strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ui-text-soft); font-size: var(--text-xs); }
+.transmutation-assignment-row small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); white-space: nowrap; }
+.transmutation-assignment-row .button { min-height: 25px; padding: 2px; justify-content: center; }
+.transmutation-empty-assignments { display: grid; gap: 5px; margin-top: 10px; padding: 18px 8px; border: 1px dashed var(--ui-border); color: var(--ui-text-muted); text-align: center; }
+.transmutation-empty-assignments strong { color: var(--ui-text-soft); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; }
+.transmutation-empty-assignments span { font-size: var(--text-xs); line-height: 1.4; }
+@media (max-width: 760px) {
+  .transmutation-screen .ui-editor-grid-layout { min-height: 0; }
+  .transmutation-screen .ui-editor-grid-layout > div { min-height: 0; }
+  .transmutation-screen .ui-editor-panel-content > .card { min-height: 0; }
+  .transmutation-library-list, .transmutation-assignment-list { max-height: 360px; }
+  .transmutation-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .transmutation-focus-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

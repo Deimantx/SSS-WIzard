@@ -24,7 +24,7 @@ describe('equipment slot rules', () => {
       inventory: { ...initial.inventory, 'ember-staff': 1, 'tide-focus': 1, 'stoneweave-robe': 1, 'windthread-charm': 1 },
       equipment: { weapon: 'ember-staff', focus: 'tide-focus', robe: 'stoneweave-robe', charm: 'windthread-charm' },
     })
-    expect(migrated.saveVersion).toBe(7)
+    expect(migrated.saveVersion).toBe(8)
     expect(migrated.equipment).toMatchObject({ weapon: 'ember-staff', offhand: null, armor: 'stoneweave-robe', amulet: 'windthread-charm', helmet: null, cape: null, ring1: null, ring2: null })
     expect(migrated.inventory['tide-focus']).toBe(1)
   })

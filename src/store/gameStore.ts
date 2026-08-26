@@ -12,7 +12,7 @@ import { type SaveReason } from '../persistence/saveConstants'
 import { getActiveProfileId } from '../profiles/profileSessionStore'
 import { updateProfileMetadata } from '../profiles/profileStorage'
 import { createInitialState } from './initialState'
-import type { ChannelingDiscoveryId, DungeonId, EquipmentPosition, GameState, ItemId, ManaPillarId, MonsterId, SchoolId, ScreenId, SpellId } from '../game/types'
+import type { ChannelingDiscoveryId, DungeonId, EquipmentPosition, GameState, ItemId, ManaPillarId, MonsterId, RecipeId, SchoolId, ScreenId, SpellId } from '../game/types'
 import { clamp } from '../game/utils'
 import { resetDebugState, sanitizeDebugNumber } from './actions/debugActions'
 import { addItemAction, destroyItemAction, removeItemAction, sellItemAction, toggleItemProtectionAction } from './actions/inventoryActions'
@@ -21,9 +21,10 @@ import { donateGuildRequestAction, claimGuildRewardAction, promoteGuildAction } 
 import { setSchoolDebugAction, setLevelCapAction, setThreatAction, setBossKillsAction, unlockAllSpellsAction } from './actions/progressionActions'
 import { setChannelingEchoesAction, upgradeManaPillarAction, setManaPillarLevelAction, setChannelingManaGeneratedAction, setChannelingSustainAction, setChannelingDiscoveryAction } from './actions/channelingActions'
 import { canReserveFocusAction } from './actions/focusActions'
-import { toggleCondensationAction } from './actions/condensationActions'
 import { setResearchConfigAction, toggleResearchAction } from './actions/researchActions'
-import { toggleTransmutationAction } from './actions/transmutationActions'
+import { assignTransmutationEchoAction, clearTransmutationAssignmentsAction, removeTransmutationEchoAction, setTransmutationEchoCapacityOverrideAction, setTransmutationEchoesAction } from './actions/transmutationActions'
+import { forceCompleteTransmutationCycle } from '../game/systems/transmutation/transmutationEngine'
+import { RECIPES } from '../game/content/recipes/recipes'
 import { saveGameAction } from './actions/persistenceActions'
 import { advanceGameState } from '../game/systems/simulation/advanceGameState'
 import { advanceWithOfflineBank as runOfflineBankAdvance, isOfflineBankSimulationActive, type OfflineBankResult } from '../game/systems/offline-bank/offlineBankSimulation'
@@ -51,10 +52,15 @@ export interface GameActions {
   setDebugAllowFocusOverCap: (enabled: boolean) => void
   setDebugIgnoreEchoLimit: (enabled: boolean) => void
   resetDebugOverrides: () => void
-  toggleCondense: (element?: SchoolId) => void
   setResearchConfig: (itemId: ItemId, targetSchoolId: SchoolId, quantity: number) => void
   toggleResearch: (itemId?: ItemId, targetSchoolId?: SchoolId, quantity?: number) => void
-  toggleTransmutation: (recipeId?: string) => void
+  assignTransmutationEcho: (recipeId: RecipeId) => void
+  removeTransmutationEcho: (recipeId: RecipeId) => void
+  setTransmutationEchoes: (recipeId: RecipeId, amount: number) => void
+  clearTransmutationAssignments: () => void
+  completeTransmutationCycle: (recipeId: RecipeId) => void
+  grantTransmutationIngredients: (recipeId: RecipeId) => void
+  setDebugTransmutationEchoCapacity: (amount: number | null) => void
   castSpell: (spellId: SpellId) => void
   toggleAutoCast: (spellId: SpellId) => void
   enterDungeon: () => void
@@ -150,10 +156,15 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   setDebugAllowFocusOverCap: (enabled) => set((state) => { state.debug.allowFocusOverCap = enabled; return state }),
   setDebugIgnoreEchoLimit: (enabled) => set((state) => { state.debug.ignoreEchoLimit = enabled; return state }),
   resetDebugOverrides: () => set((state) => { resetDebugState(state); state.activities.channeling.echoesAssigned = clamp(state.activities.channeling.echoesAssigned, 0, BALANCE.channeling.maxEchoes); recalculateDerivedStats(state); return state }),
-  toggleCondense: (element = get().activities.condense.element) => set((state) => { toggleCondensationAction(state, element); return state }),
   setResearchConfig: (itemId, targetSchoolId, quantity) => set((state) => { setResearchConfigAction(state, itemId, targetSchoolId, quantity); return state }),
   toggleResearch: (itemId, targetSchoolId, quantity = 1) => set((state) => { toggleResearchAction(state, itemId, targetSchoolId, quantity); return state }),
-  toggleTransmutation: (recipeId = get().activities.transmutation.recipeId ?? 'ember-staff') => set((state) => { toggleTransmutationAction(state, recipeId); return state }),
+  assignTransmutationEcho: (recipeId) => set((state) => { assignTransmutationEchoAction(state, recipeId); return state }),
+  removeTransmutationEcho: (recipeId) => set((state) => { removeTransmutationEchoAction(state, recipeId); return state }),
+  setTransmutationEchoes: (recipeId, amount) => set((state) => { setTransmutationEchoesAction(state, recipeId, amount); return state }),
+  clearTransmutationAssignments: () => set((state) => { clearTransmutationAssignmentsAction(state); return state }),
+  completeTransmutationCycle: (recipeId) => set((state) => { forceCompleteTransmutationCycle(state, recipeId, { mode: 'live' }); return state }),
+  grantTransmutationIngredients: (recipeId) => set((state) => { const recipe = RECIPES[recipeId]; recipe.ingredients.forEach((ingredient) => { state.inventory[ingredient.itemId] = (state.inventory[ingredient.itemId] ?? 0) + ingredient.quantity }); return state }),
+  setDebugTransmutationEchoCapacity: (amount) => set((state) => { setTransmutationEchoCapacityOverrideAction(state, amount); return state }),
   castSpell: (spellId) => set((state) => { castSpellAction(state, spellId); return state }),
   toggleAutoCast: (spellId) => set((state) => { if (!spellUnlocked(state, spellId)) return state; if (state.activities.autoCast[spellId]) state.activities.autoCast[spellId] = false; else if (canReserveFocus(state, SPELLS[spellId].autoCastFocus)) { state.activities.autoCast[spellId] = true; pushNotification(state, `${SPELLS[spellId].name} Auto-Cast enabled`, 'success') } else pushNotification(state, `Cannot enable Auto-Cast · Requires ${SPELLS[spellId].autoCastFocus} Focus · Free Focus: ${selectFreeFocus(state)}`, 'warning'); return state }),
   enterDungeon: () => set((state) => { if (state.combat.active) return state; state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; state.combat.encounterTimerMs = 0; state.player.health = Math.max(1, state.player.health); spawnNextEnemy(state); pushNotification(state, 'Whispering Woods entered', 'info'); return state }),

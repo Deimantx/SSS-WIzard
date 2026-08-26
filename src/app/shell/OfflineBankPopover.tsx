@@ -1,9 +1,10 @@
-import { Activity, Clock3, FlaskConical, Hammer, Swords, X } from 'lucide-react'
+import { Activity, Clock3, Hammer, Swords, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { GameTooltip } from '../../components/ui/tooltip/Tooltip'
 import { getActivityTelemetry } from '../../game/systems/activity/activityTelemetry'
 import { formatOfflineBank } from '../../game/utils'
 import { useGameStore } from '../../store/gameStore'
+import { getTransmutationEchoesAssigned } from '../../game/systems/transmutation/transmutationSelectors'
 
 const presets = [{ label: '1 MIN', short: '1m', ms: 60_000 }, { label: '5 MIN', short: '5m', ms: 300_000 }, { label: '15 MIN', short: '15m', ms: 900_000 }, { label: '1 HOUR', short: '1h', ms: 3_600_000 }]
 
@@ -18,7 +19,7 @@ export function OfflineBankPopover({ open, onClose, onViewLastResults }: { open:
   const activities = getActivityTelemetry(state)
   const advance = state.advanceWithOfflineBank
   const meaningfulRecovery = state.combat.active && (Boolean(state.combat.enemyId) || state.player.health < state.player.maxHealth || state.combat.encounterTimerMs > 0)
-  const canAdvance = state.activities.condense.running || state.activities.research.running || state.activities.transmutation.running || meaningfulRecovery
+  const canAdvance = getTransmutationEchoesAssigned(state) > 0 || state.activities.research.running || meaningfulRecovery
 
   useEffect(() => {
     if (!open) return
@@ -73,7 +74,6 @@ export function OfflineBankPopover({ open, onClose, onViewLastResults }: { open:
 
 function ActivityIcon({ activity }: { activity: string }) {
   if (activity === 'COMBAT') return <Swords size={15} />
-  if (activity === 'CONDENSATION') return <FlaskConical size={15} />
   if (activity === 'TRANSMUTATION') return <Hammer size={15} />
   return <Activity size={15} />
 }

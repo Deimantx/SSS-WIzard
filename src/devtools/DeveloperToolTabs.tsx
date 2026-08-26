@@ -4,6 +4,7 @@ import { DeveloperChanneling } from './tabs/DeveloperChanneling'
 import { DeveloperCharacter } from './tabs/DeveloperCharacter'
 import { DeveloperDiagnostics } from './tabs/DeveloperDiagnostics'
 import { DeveloperFocus } from './tabs/DeveloperFocus'
+import { DeveloperTransmutation } from './tabs/DeveloperTransmutation'
 import { DeveloperInventory } from './tabs/DeveloperInventory'
 import { DeveloperProgression } from './tabs/DeveloperProgression'
 import { DeveloperSaveState } from './tabs/DeveloperSaveState'
@@ -13,6 +14,7 @@ export function DeveloperTab({ tab, copy }: { tab: DeveloperToolsTab; copy: (lab
   if (tab === 'character') return <DeveloperCharacter />
   if (tab === 'channeling') return <DeveloperChanneling />
   if (tab === 'focus') return <DeveloperFocus />
+  if (tab === 'transmutation') return <DeveloperTransmutation />
   if (tab === 'inventory') return <DeveloperInventory />
   if (tab === 'combat') return <DeveloperCombat />
   if (tab === 'schools') return <DeveloperSchools />

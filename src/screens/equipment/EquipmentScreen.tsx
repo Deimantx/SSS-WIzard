@@ -8,6 +8,7 @@ import type { EquipmentItemSlot, EquipmentPosition, ItemId } from '../../game/ty
 import { useGameStore } from '../../store/gameStore'
 import { EditableGrid } from '../../ui/layout-editor/EditableGrid'
 import { getEquipmentPreview, getEquipmentStatSnapshot } from './equipmentPreview'
+import { formatStat, friendlyStatLabel } from '../../components/ui/item/ItemTooltip'
 
 type ArmoryFilter = 'all' | EquipmentItemSlot
 type WeaponHandsFilter = 'all' | 1 | 2
@@ -68,7 +69,13 @@ export function EquipmentScreenV2() {
 
   const selectArmoryItem = (itemId: ItemId) => {
     setSelectedItemId(itemId)
-    if (ITEMS[itemId].equipmentSlot === 'ring' && selectedPosition !== 'ring1' && selectedPosition !== 'ring2') setRingReplacement(equipment.ring1 ? equipment.ring2 ? null : 'ring2' : 'ring1')
+    const slot = ITEMS[itemId].equipmentSlot
+    if (slot === 'ring') {
+      if (selectedPosition !== 'ring1' && selectedPosition !== 'ring2') setRingReplacement(equipment.ring1 ? equipment.ring2 ? null : 'ring2' : 'ring1')
+    } else if (slot) {
+      setSelectedPosition(slot)
+      setRingReplacement(null)
+    }
   }
 
   const loadout = <Card title="WIZARD LOADOUT" action={<Status tone="success">{equippedCount} / 8 EQUIPPED</Status>}>
@@ -83,7 +90,7 @@ export function EquipmentScreenV2() {
           <GameTooltip block content={<TooltipContent title={tooltip.title} description={tooltip.description} />}>
             <div className={`equipment-slot-card ${selectedPosition === position ? 'selected' : ''} ${locked ? 'locked' : ''}`} data-position={position} role="button" tabIndex={0} onClick={() => selectSlot(position)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); selectSlot(position) } }}>
               <div className="equipment-slot-card-head"><span>{EQUIPMENT_POSITION_LABELS[position]}</span>{item && <small>{item.weaponHands ? `${item.weaponHands}H` : 'EQUIPPED'}</small>}</div>
-              {locked ? <div className="equipment-slot-lock"><LockKeyhole size={17} /><strong>{emptyCopy}</strong></div> : item ? <div className="equipment-slot-card-item"><span className="equipment-slot-icon" style={{ color: item.color }}>{item.icon}</span><strong>{item.name}</strong><small>{Object.entries(item.stats ?? {}).filter(([, value]) => value !== 0).map(([key, value]) => `${key}: ${value}`).join(' · ') || 'Ready'}</small></div> : <div className="equipment-slot-empty"><span>+</span><small>{emptyCopy}</small></div>}
+              {locked ? <div className="equipment-slot-lock"><LockKeyhole size={17} /><strong>{emptyCopy}</strong></div> : item ? <div className="equipment-slot-card-item"><span className="equipment-slot-icon" style={{ color: item.color }}>{item.icon}</span><strong>{item.name}</strong><small>{Object.entries(item.stats ?? {}).filter(([, value]) => value !== 0).map(([key, value]) => `${formatStat(key, value)} ${friendlyStatLabel(key)}`).join(' · ') || 'Ready'}</small></div> : <div className="equipment-slot-empty"><span>+</span><small>{emptyCopy}</small></div>}
             </div>
           </GameTooltip>
         </div>

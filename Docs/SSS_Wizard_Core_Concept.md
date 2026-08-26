@@ -514,10 +514,10 @@ Magas ir jo klonai gali gaminti elementines medžiagas, panašias į:
 
 | Veiksmas | Mana | Trukmė | Rezultatas |
 |---|---:|---:|---|
-| Condense Fire Fragment | 15 | 6 s | 1 Fire Fragment |
-| Condense Water Fragment | 15 | 6 s | 1 Water Fragment |
-| Condense Earth Fragment | 15 | 6 s | 1 Earth Fragment |
-| Condense Air Fragment | 15 | 6 s | 1 Air Fragment |
+| Transmute Fire Fragment | 15 | 6 s | 1 Fire Fragment |
+| Transmute Water Fragment | 15 | 6 s | 1 Water Fragment |
+| Transmute Earth Fragment | 15 | 6 s | 1 Earth Fragment |
+| Transmute Air Fragment | 15 | 6 s | 1 Air Fragment |
 
 Visi skaičiai yra **[BALANSAS]**.
 
@@ -796,6 +796,8 @@ Pradžioje užtenka paprasto įjungimo, išjungimo ir prioritetų.
 ### [PATVIRTINTA KRYPTIS]
 
 Transmutation yra magiškas craftingas. Ji naudoja:
+
+Transmutation is the main crafting system. Recipes can convert Mana into matter, materials into processed materials, or Mana plus materials into equipment and advanced items. Transmutation is automated through Arcane Echo assignment: each assigned Echo reserves Focus and adds one unit of recipe processing speed. Multiple Echoes may be concentrated on one recipe or distributed across several recipes.
 
 - elementines medžiagas;
 - neutralias magiškas medžiagas;
@@ -1800,10 +1802,10 @@ Arcane Discoveries are permanent condition-based principles: Stable Leyline, Ech
 
 Inactive time is accumulated in the Offline Bank. The player manually spends it with the `1m`, `5m`, `15m`, or `1h` controls; each action advances the currently active systems through the normal shared simulation, consumes the selected banked time, and never starts an automatic spend. A single action is capped at one hour.
 
-Mana Flow is derived presentation data, not a new permanent stat. It reports authoritative Mana production minus average active Mana demand from Condensation, Research, and estimated Auto-Cast spell cooldown demand, with time-to-full or time-to-empty when meaningful.
+Mana Flow is derived presentation data, not a new permanent stat. It reports authoritative Mana production minus average active Mana demand from Transmutation, Research, and estimated Auto-Cast spell cooldown demand, with time-to-full or time-to-empty when meaningful.
 ### Phase 3.1 Offline Bank Results and Inventory
 
-Spending banked time produces a transient result summary for meaningful simulated outcomes such as kills, loot, condensation, crafting, Research XP, consumed materials, and progression. The summary is collected from successful events in the shared simulation and is not persisted in gameplay saves.
+Spending banked time produces a transient result summary for meaningful simulated outcomes such as kills, loot, Transmutation crafts, Research XP, consumed materials, and progression. The summary is collected from successful events in the shared simulation and is not persisted in gameplay saves.
 
 Inventory shows items the player currently owns. Collection handles catalogue and discovery browsing. Inventory is a vault view with owned-only item tiles, search/filter/sort controls, item details, protection/equipment actions, current Research values, and contextual tooltips.
 

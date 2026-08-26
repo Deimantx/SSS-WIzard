@@ -8,9 +8,14 @@ describe('save navigation migration', () => {
     expect(migrateSave(old).ui.screen).toBe('tower-channeling')
   })
 
+  it('maps the removed Condensation destination to Transmutation', () => {
+    const old = { ...createInitialState(), saveVersion: 7, ui: { screen: 'tower-condensation' } }
+    expect(migrateSave(old).ui.screen).toBe('tower-transmutation')
+  })
+
   it('migrates V2 Auto Channel to one Arcane Echo with clean V7 defaults', () => {
     const migrated = migrateSave({ ...createInitialState(), saveVersion: 2, activities: { ...createInitialState().activities, autoChannel: true, channelCooldownMs: 500 } })
-    expect(migrated.saveVersion).toBe(7)
+    expect(migrated.saveVersion).toBe(8)
     expect(migrated.activities.channeling.echoesAssigned).toBe(1)
     expect(migrated.progress.channeling.pillars['arcane-reservoir']).toMatchObject({ rank: 1, level: 0 })
     expect(migrated.progress.channeling.pillars['leyline-conduit']).toMatchObject({ rank: 1, level: 0 })
@@ -24,7 +29,7 @@ describe('save navigation migration', () => {
   it('migrates V3 ranks into the matching Rank I Pillars and preserves Discoveries', () => {
     const old = { ...createInitialState(), saveVersion: 3, progress: { ...createInitialState().progress, channeling: { manaReservoirRank: 4, leylineConduitRank: 3, totalManaGenerated: 120, fiveEchoSustainMs: 5000, discoveries: { 'stable-leyline': true, 'echo-resonance': false, 'deep-reservoir': true } } } }
     const migrated = migrateSave(old)
-    expect(migrated.saveVersion).toBe(7)
+    expect(migrated.saveVersion).toBe(8)
     expect(migrated.progress.channeling.pillars['arcane-reservoir']).toEqual({ rank: 1, level: 4 })
     expect(migrated.progress.channeling.pillars['leyline-conduit']).toEqual({ rank: 1, level: 3 })
     expect(migrated.progress.channeling.pillars['mana-resonance']).toEqual({ rank: 1, level: 0 })
@@ -74,7 +79,7 @@ describe('save navigation migration', () => {
       progress: { ...initial.progress, lifetimeKills: 23 },
     })
 
-    expect(migrated.saveVersion).toBe(7)
+    expect(migrated.saveVersion).toBe(8)
     expect(migrated.currencies.gold).toBe(0)
     expect(migrated.inventory['fire-fragment']).toBe(17)
     expect(migrated.progress.lifetimeKills).toBe(23)
@@ -89,7 +94,7 @@ describe('save navigation migration', () => {
       activities: {
         ...initial.activities,
         research: { ...initial.activities.research, itemId: 'removed-item', targetSchoolId: 'removed-school' },
-        transmutation: { ...initial.activities.transmutation, recipeId: 'removed-recipe' },
+        transmutation: { ...initial.activities.transmutation, jobs: { 'removed-recipe': { echoesAssigned: 1, progressMs: 100 } } },
       },
       combat: { ...initial.combat, dungeonId: 'removed-dungeon', enemyId: 'removed-enemy', pendingBossId: 'removed-boss' },
     })
@@ -97,7 +102,7 @@ describe('save navigation migration', () => {
     expect(migrated.equipment.weapon).toBeNull()
     expect(migrated.activities.research.itemId).toBeNull()
     expect(migrated.activities.research.targetSchoolId).toBeNull()
-    expect(migrated.activities.transmutation.recipeId).toBeNull()
+    expect(migrated.activities.transmutation.jobs).not.toHaveProperty('removed-recipe')
     expect(migrated.combat.dungeonId).toBeNull()
     expect(migrated.combat.enemyId).toBeNull()
     expect(migrated.combat.pendingBossId).toBeNull()
@@ -111,7 +116,7 @@ describe('save navigation migration', () => {
       inventory: { ...initial.inventory, 'tide-focus': 1 },
       equipment: { weapon: 'apprentice-wand', offhand: null, armor: null, helmet: null, amulet: null, earrings: 'tide-focus', ring1: null, ring2: null },
     })
-    expect(migrated.saveVersion).toBe(7)
+    expect(migrated.saveVersion).toBe(8)
     expect(migrated.equipment.cape).toBeNull()
     expect('earrings' in migrated.equipment).toBe(false)
     expect(migrated.inventory['tide-focus']).toBe(1)
@@ -141,5 +146,51 @@ describe('save navigation migration', () => {
     expect(migrated.inventory['life-essence']).toBe(0)
     expect(migrated.inventory).not.toHaveProperty('water-fragment')
     expect(migrated.progress.lifetimeKillsByMonster['forest-wisp']).toBe(6)
+  })
+
+  it('migrates an active V7 Condensation job into its matching fragment recipe', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({
+      ...initial,
+      saveVersion: 7,
+      activities: { ...initial.activities, condense: { running: true, element: 'water', progressMs: 3000 } },
+    } as any)
+
+    expect(migrated.activities.transmutation.jobs['water-fragment']).toEqual({ echoesAssigned: 1, progressMs: 3000 })
+    expect(migrated.activities.transmutation.jobs['fire-fragment']).toBeUndefined()
+  })
+
+  it('migrates an active old Transmutation queue and preserves both legacy activities', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({
+      ...initial,
+      saveVersion: 7,
+      activities: {
+        ...initial.activities,
+        condense: { running: true, element: 'fire', progressMs: 1500 },
+        transmutation: { running: true, recipeId: 'ember-staff', progressMs: 4000, durationMs: 8000 },
+      },
+    } as any)
+
+    expect(migrated.activities.transmutation.jobs['fire-fragment']).toEqual({ echoesAssigned: 1, progressMs: 1500 })
+    expect(migrated.activities.transmutation.jobs['ember-staff']).toEqual({ echoesAssigned: 1, progressMs: 4000 })
+    expect(migrated.saveVersion).toBe(8)
+  })
+
+  it('ignores inactive or unknown legacy queues and clamps migrated Focus deterministically', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({
+      ...initial,
+      saveVersion: 7,
+      player: { ...initial.player, baseMaxFocus: 10, maxFocus: 10 },
+      activities: {
+        ...initial.activities,
+        condense: { running: false, element: 'earth', progressMs: 3000 },
+        transmutation: { running: true, recipeId: 'removed-recipe', progressMs: 500 },
+      },
+    } as any)
+
+    expect(migrated.activities.transmutation.jobs).toEqual({})
+    expect(migrated.activities.channeling.echoesAssigned).toBe(0)
   })
 })

@@ -19,7 +19,7 @@ describe('screen smoke coverage', () => {
   it('renders each Wizard Tower system as its own focused screen', async () => {
     const user = userEvent.setup()
     render(<GameShell />)
-    for (const item of [{ label: 'Channeling', heading: 'Channeling Chamber' }, { label: 'Focus', heading: 'Focus is the tower’s limiting spell.' }, { label: 'Condensation', heading: 'Turn Mana into elemental matter.' }, { label: 'Research', heading: 'Research turns fragments into understanding.' }, { label: 'Transmutation', heading: 'Turn gathered materials into equipment.' }]) { await goToTower(user, item.label); expect(screen.getByRole('heading', { name: item.heading })).toBeTruthy() }
+    for (const item of [{ label: 'Channeling', heading: 'Channeling Chamber' }, { label: 'Focus', heading: 'Focus is the tower’s limiting spell.' }, { label: 'Transmutation', heading: 'Turn Mana and materials into matter.' }, { label: 'Research', heading: 'Research turns fragments into understanding.' }]) { await goToTower(user, item.label); expect(screen.getByRole('heading', { name: item.heading })).toBeTruthy() }
   })
 
   it('opens and closes the Arcane Discoveries modal with three real cards and six placeholders', async () => {

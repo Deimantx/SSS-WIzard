@@ -1,9 +1,10 @@
-import { BALANCE } from '../../core/balance/balance'
 import { DUNGEONS } from '../../content/dungeons/dungeons'
 import { ITEMS } from '../../content/items/items'
 import { MONSTERS } from '../../content/monsters/whisperingWoods'
-import { RECIPES } from '../../content/recipes/recipes'
+import { RECIPES, RECIPE_ORDER } from '../../content/recipes/recipes'
 import { SCHOOLS } from '../../content/schools/schools'
+import { BALANCE } from '../../core/balance/balance'
+import { getRecipeCraftsPerHour, getRecipeManaDemandPerSecond, getRecipeStatus } from '../transmutation/transmutationSelectors'
 import type { ActivityMetric, ActivityTelemetry, GameState } from '../../types'
 import { clamp, formatCompactDuration, formatNumber, formatRatePerHour, formatSignedRate } from '../../utils'
 
@@ -69,14 +70,6 @@ export const getActivityTelemetry = (state: GameState): ActivityTelemetry[] => {
     }
   }
 
-  const condense = state.activities.condense
-  if (condense.running) {
-    const duration = BALANCE.condense.durationMs
-    const remainingMs = Math.max(0, duration - condense.progressMs)
-    const waitingMana = condense.progressMs >= duration && state.player.mana < BALANCE.condense.manaCost
-    activities.push({ id: 'condensation', label: 'CONDENSATION', subtitle: `${SCHOOLS[condense.element].name} Fragment`, screen: 'tower-condensation', status: waitingMana ? 'waiting-mana' : 'running', progressPercent: clamp(condense.progressMs / duration * 100, 0, 100), remainingMs, collapsedSummary: waitingMana ? `${SCHOOLS[condense.element].name} Condense · WAITING MANA` : `${SCHOOLS[condense.element].name} Condense · ${formatCompactDuration(remainingMs)}`, metrics: [metric('Potential', formatRatePerHour(3_600_000 / duration)), metric('Mana', `${formatSignedRate(-(BALANCE.condense.manaCost / (duration / 1000)))} avg`, 'negative'), metric('Focus', `${BALANCE.condense.focusCost}`)], accent: 'orange' })
-  }
-
   const research = state.activities.research
   if (research.running && research.itemId && research.targetSchoolId && research.remainingQuantity > 0) {
     const duration = Math.max(1, research.durationPerItemMs)
@@ -87,13 +80,22 @@ export const getActivityTelemetry = (state: GameState): ActivityTelemetry[] => {
     activities.push({ id: 'research', label: 'RESEARCH', subtitle: `${item?.researchSchool ? SCHOOLS[item.researchSchool].name : 'Material'} → ${schoolName}`, screen: 'tower-research', status: waitingMana ? 'waiting-mana' : research.status === 'paused' ? 'paused' : 'running', progressPercent: clamp(research.progressMs / duration * 100, 0, 100), remainingMs, collapsedSummary: waitingMana ? `${schoolName} Research · WAITING MANA` : `${schoolName} Research · ${formatCompactDuration(remainingMs)}`, metrics: [metric('Remaining', `${formatNumber(research.remainingQuantity)} items`), metric('Cycle', formatCompactDuration(remainingMs)), metric('XP/h', formatRatePerHour(research.xpPerItem * 3_600_000 / duration)), metric('Items/h', formatRatePerHour(3_600_000 / duration)), metric('Mana', formatSignedRate(-(research.manaPerItem / (duration / 1000))), 'negative'), metric('Focus', `${research.focusCost}`)], accent: 'violet' })
   }
 
-  const transmutation = state.activities.transmutation
-  if (transmutation.running && transmutation.recipeId) {
-    const recipe = RECIPES[transmutation.recipeId]
-    if (recipe) {
-      const remainingMs = Math.max(0, recipe.durationMs - transmutation.progressMs)
-      activities.push({ id: 'transmutation', label: 'TRANSMUTATION', subtitle: `${recipe.name} → ${ITEMS[recipe.output]?.name ?? recipe.output}`, screen: 'tower-transmutation', status: 'running', progressPercent: clamp(transmutation.progressMs / recipe.durationMs * 100, 0, 100), remainingMs, collapsedSummary: `${recipe.name} · ${formatCompactDuration(remainingMs)}`, metrics: [metric('Potential', formatRatePerHour(3_600_000 / recipe.durationMs)), metric('Cycle', formatCompactDuration(remainingMs)), metric('Focus', `${recipe.focusCost}`)], accent: 'gold' })
-    }
+  const jobs = RECIPE_ORDER.map((recipeId) => {
+    const recipe = RECIPES[recipeId]
+    const job = state.activities.transmutation.jobs[recipeId]
+    const echoes = Math.max(0, Math.floor(job?.echoesAssigned ?? 0))
+    return job && echoes > 0 && (recipe.unlock.type === 'always' || state.progress.firstBossKill) ? { recipe, job, echoes, status: getRecipeStatus(state, recipe) } : null
+  }).filter((entry): entry is NonNullable<typeof entry> => entry !== null)
+  if (jobs.length > 0) {
+    const totalEchoes = jobs.reduce((sum, entry) => sum + entry.echoes, 0)
+    const totalFocus = totalEchoes * BALANCE.transmutation.echoFocusCost
+    const totalOutput = jobs.reduce((sum, entry) => sum + getRecipeCraftsPerHour(entry.recipe, entry.echoes) * entry.recipe.output.quantity, 0)
+    const manaDemand = jobs.reduce((sum, entry) => sum + getRecipeManaDemandPerSecond(entry.recipe, entry.echoes), 0)
+    const waitingMana = jobs.filter((entry) => entry.status === 'waiting-mana').length
+    const waitingMaterials = jobs.filter((entry) => entry.status === 'waiting-materials').length
+    const remainingMs = Math.min(...jobs.map((entry) => Math.max(0, entry.recipe.baseDurationMs - (entry.job.progressMs ?? 0))))
+    const status = waitingMaterials === jobs.length ? 'waiting-materials' : waitingMana === jobs.length ? 'waiting-mana' : 'running'
+    activities.push({ id: 'transmutation', label: 'TRANSMUTATION', subtitle: `${jobs.length} recipe${jobs.length === 1 ? '' : 's'} · ${totalEchoes} Echoes`, screen: 'tower-transmutation', status, progressPercent: Math.round(jobs.reduce((sum, entry) => sum + (entry.job.progressMs ?? 0) / entry.recipe.baseDurationMs, 0) / jobs.length * 100), remainingMs, collapsedSummary: `Transmutation · ${jobs.length} recipe${jobs.length === 1 ? '' : 's'} · ${totalEchoes} Echoes`, metrics: [metric('Output', formatRatePerHour(totalOutput)), metric('Mana', `${formatSignedRate(-manaDemand)} /s`, 'negative'), metric('Focus', `${totalFocus}`), ...(waitingMana + waitingMaterials > 0 ? [metric('Waiting', `${waitingMana + waitingMaterials}`,'warning')] : [])], accent: 'gold' })
   }
 
   return activities

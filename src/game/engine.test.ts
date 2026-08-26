@@ -14,9 +14,9 @@ describe('focus reservation engine', () => {
   it('reserves Focus for running activities and releases it when paused', () => {
     const state = makeInitialState()
     state.activities.channeling.echoesAssigned = 1
-    state.activities.condense.running = true
-    expect(usedFocus(state)).toBe(30)
-    state.activities.condense.running = false
+    state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 1, progressMs: 0 }
+    expect(usedFocus(state)).toBe(20)
+    state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 0, progressMs: 0 }
     expect(usedFocus(state)).toBe(BALANCE.channeling.echoFocusCost)
     expect(focusReservations(state).map((item) => item.label)).toEqual(['Arcane Echo Channeling'])
   })
@@ -24,12 +24,12 @@ describe('focus reservation engine', () => {
   it('rejects a Focus activity when the action would exceed max Focus', () => {
     const game = useGameStore.getState()
     game.resetSave()
-    game.setPlayer({ baseMaxFocus: 20 })
+    game.setPlayer({ baseMaxFocus: 15 })
     game.addArcaneEcho()
-    game.toggleCondense()
+    game.assignTransmutationEcho('fire-fragment')
     const state = useGameStore.getState()
     expect(state.activities.channeling.echoesAssigned).toBe(1)
-    expect(state.activities.condense.running).toBe(false)
+    expect(state.activities.transmutation.jobs['fire-fragment']?.echoesAssigned ?? 0).toBe(0)
     expect(selectUsedFocus(state)).toBe(BALANCE.channeling.echoFocusCost)
   })
 
@@ -423,7 +423,7 @@ describe('Developer channeling overrides', () => {
     expect(serialized).not.toHaveProperty('debug')
     game.resetDebugOverrides()
     const after = useGameStore.getState()
-    expect(after.debug).toEqual({ bonusManaRegenFlat: 0, bonusMaxManaFlat: 0, bonusMaxFocusFlat: 0, allowManaOverCap: false, allowFocusOverCap: false, ignoreEchoLimit: false })
+    expect(after.debug).toEqual({ bonusManaRegenFlat: 0, bonusMaxManaFlat: 0, bonusMaxFocusFlat: 0, allowManaOverCap: false, allowFocusOverCap: false, ignoreEchoLimit: false, transmutationEchoCapacityOverride: null })
     expect(after.inventory['fire-fragment']).toBe(before.inventory['fire-fragment'])
     expect(after.progress.channeling.pillars['mana-resonance'].level).toBe(1)
   })
@@ -462,7 +462,7 @@ describe('Phase 2 progression', () => {
 
   it('migrates a v1 save and rejects an unknown version safely', () => {
     const migrated = migrateSave({ saveVersion: 1, player: { mana: 42, maxFocus: 100 }, inventory: { 'fire-fragment': 2 }, equipment: { weapon: 'apprentice-wand' }, activities: { research: { running: true, itemId: 'fire-fragment', progressMs: 1000 } } })
-    expect(migrated.saveVersion).toBe(7)
+    expect(migrated.saveVersion).toBe(8)
     expect(migrated.activities.research.targetSchoolId).toBe('fire')
     expect(migrated.inventory['fire-fragment']).toBe(2)
     expect(() => migrateSave({ saveVersion: 99 })).toThrow('Unsupported save version')

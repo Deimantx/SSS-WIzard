@@ -8,14 +8,13 @@ import { HomeScreenV2 } from './home/HomeScreen'
 import { InventoryScreenV2 } from './inventory/InventoryScreen'
 import { MagicSchoolsScreenV2 } from './schools/MagicSchoolsScreen'
 import { SettingsScreenV2 } from './settings/SettingsScreen'
-import { TowerChannelingScreen, TowerCondensationScreen, TowerFocusScreen, TowerResearchScreen, TowerTransmutationScreen } from './tower/TowerScreens'
+import { TowerChannelingScreen, TowerFocusScreen, TowerResearchScreen, TowerTransmutationScreen } from './tower/TowerScreens'
 
 function CurrentScreen() {
   const screen = useGameStore((state) => state.ui.screen)
   if (screen === 'home') return <HomeScreenV2 />
   if (screen === 'tower-channeling') return <TowerChannelingScreen />
   if (screen === 'tower-focus') return <TowerFocusScreen />
-  if (screen === 'tower-condensation') return <TowerCondensationScreen />
   if (screen === 'tower-research') return <TowerResearchScreen />
   if (screen === 'tower-transmutation') return <TowerTransmutationScreen />
   if (screen === 'schools') return <MagicSchoolsScreenV2 />

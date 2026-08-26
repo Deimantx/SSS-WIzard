@@ -1,13 +1,13 @@
 import { MONSTERS } from '../../content/monsters/whisperingWoods'
 import { ITEMS } from '../../content/items/items'
-import type { ChannelingDiscoveryId, GameState, ItemId, MonsterId, SchoolId, SpellId } from '../../types'
+import type { ChannelingDiscoveryId, GameState, ItemId, MonsterId, RecipeId, SchoolId, SpellId } from '../../types'
 
 export interface OfflineBankReport {
   durationMs: number
   bankBeforeMs: number
   bankAfterMs: number
   combat: { killsTotal: number; killsByMonster: Partial<Record<MonsterId, number>>; bossKills: Partial<Record<MonsterId, number>>; playerDeaths: number; loot: Partial<Record<ItemId, number>> }
-  production: { condensed: Partial<Record<ItemId, number>>; craftsByRecipe: Record<string, number>; craftedItems: Partial<Record<ItemId, number>> }
+  production: { transmutation: Partial<Record<ItemId, number>>; craftsByRecipe: Partial<Record<RecipeId, number>> }
   research: { researchedItems: Partial<Record<ItemId, number>>; xpBySchool: Partial<Record<SchoolId, number>>; levelBefore: Partial<Record<SchoolId, number>>; levelAfter: Partial<Record<SchoolId, number>>; stoppedAtCap?: boolean }
   consumption: { research: Partial<Record<ItemId, number>>; transmutation: Partial<Record<ItemId, number>> }
   netInventory: Partial<Record<ItemId, number>>
@@ -20,8 +20,7 @@ export interface SimulationReportCollector {
   recordKill: (monsterId: MonsterId) => void
   recordLoot: (itemId: ItemId, quantity: number) => void
   recordPlayerDeath: () => void
-  recordCondensed: (itemId: ItemId, quantity: number) => void
-  recordCraft: (recipeId: string, output: ItemId, quantity: number, ingredients: { itemId: ItemId; quantity: number }[]) => void
+  recordTransmutation: (recipeId: RecipeId, output: ItemId, quantity: number, ingredients: { itemId: ItemId; quantity: number }[]) => void
   recordResearch: (itemId: ItemId, schoolId: SchoolId, xp: number) => void
   recordResearchStoppedAtCap: () => void
   recordDiscovery: (id: ChannelingDiscoveryId) => void
@@ -40,7 +39,7 @@ export function createOfflineBankReportCollector(state: GameState, durationMs: n
   const report: OfflineBankReport = {
     durationMs, bankBeforeMs, bankAfterMs: bankBeforeMs,
     combat: { killsTotal: 0, killsByMonster: {}, bossKills: {}, playerDeaths: 0, loot: {} },
-    production: { condensed: {}, craftsByRecipe: {}, craftedItems: {} },
+    production: { transmutation: {}, craftsByRecipe: {} },
     research: { researchedItems: {}, xpBySchool: {}, levelBefore, levelAfter: {}, stoppedAtCap: false },
     consumption: { research: {}, transmutation: {} }, netInventory: {},
     progression: { spellsUnlocked: [], discoveriesUnlocked: [], guildUnlocked: false, notableEvents: [] },
@@ -53,8 +52,7 @@ export function createOfflineBankReportCollector(state: GameState, durationMs: n
     recordKill: (monsterId) => { report.combat.killsTotal += 1; add(report.combat.killsByMonster, monsterId, 1); if (MONSTERS[monsterId].boss) add(report.combat.bossKills, monsterId, 1) },
     recordLoot: (itemId, quantity) => { touch(itemId); add(report.combat.loot, itemId, quantity) },
     recordPlayerDeath: () => { report.combat.playerDeaths += 1 },
-    recordCondensed: (itemId, quantity) => { touch(itemId); add(report.production.condensed, itemId, quantity) },
-    recordCraft: (recipeId, output, quantity, ingredients) => { touch(output); add(report.production.craftsByRecipe, recipeId, 1); add(report.production.craftedItems, output, quantity); ingredients.forEach((ingredient) => { touch(ingredient.itemId); add(report.consumption.transmutation, ingredient.itemId, ingredient.quantity) }) },
+    recordTransmutation: (recipeId, output, quantity, ingredients) => { touch(output); add(report.production.craftsByRecipe, recipeId, quantity); add(report.production.transmutation, output, quantity); ingredients.forEach((ingredient) => { touch(ingredient.itemId); add(report.consumption.transmutation, ingredient.itemId, ingredient.quantity) }) },
     recordResearch: (itemId, schoolId, xp) => { touch(itemId); add(report.research.researchedItems, itemId, 1); add(report.research.xpBySchool, schoolId, xp); add(report.consumption.research, itemId, 1) },
     recordResearchStoppedAtCap: () => { report.research.stoppedAtCap = true },
     recordDiscovery: (id) => { if (!report.progression.discoveriesUnlocked.includes(id)) report.progression.discoveriesUnlocked.push(id) },

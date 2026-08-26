@@ -1,6 +1,6 @@
 export type SchoolId = 'fire' | 'water' | 'earth' | 'air'
 export type ElementId = SchoolId
-export type ScreenId = 'home' | 'combat' | 'schools' | 'inventory' | 'equipment' | 'collection' | 'tower-channeling' | 'tower-focus' | 'tower-condensation' | 'tower-research' | 'tower-transmutation' | 'guild' | 'settings'
+export type ScreenId = 'home' | 'combat' | 'schools' | 'inventory' | 'equipment' | 'collection' | 'tower-channeling' | 'tower-focus' | 'tower-research' | 'tower-transmutation' | 'guild' | 'settings'
 export type ActivityStatus = 'running' | 'paused' | 'waiting-mana' | 'waiting-focus' | 'completed' | 'locked' | 'recovering'
 
 export type ItemId =
@@ -33,6 +33,9 @@ export type SpellType = 'damage' | 'heal' | 'barrier' | 'dot' | 'buff'
 export type StatusId = 'barrier' | 'thorn-wound' | 'burning' | 'attack-delay' | 'quickening'
 export type ManaPillarId = 'leyline-conduit' | 'arcane-reservoir' | 'mana-resonance' | 'astral-expansion' | 'echo-attunement'
 export type ChannelingDiscoveryId = 'stable-leyline' | 'echo-resonance' | 'deep-reservoir'
+export type RecipeId = 'fire-fragment' | 'water-fragment' | 'earth-fragment' | 'air-fragment' | 'ember-staff' | 'tide-focus' | 'stoneweave-robe' | 'windthread-charm'
+export type RecipeCategory = 'elemental' | 'material' | 'equipment' | 'special'
+export type RecipeUnlockCondition = { type: 'always' } | { type: 'first-grove-sentinel-kill' }
 
 export type AutoCastCondition = { type: 'always' } | { type: 'health-below'; percent: number } | { type: 'barrier-below'; value: number }
 export type SpellEffect =
@@ -118,14 +121,13 @@ export interface SpecialAttackDefinition {
 
 export interface SchoolState { xp: number; level: number }
 export interface PlayerState { health: number; maxHealth: number; mana: number; maxMana: number; maxFocus: number; baseMaxHealth: number; baseMaxMana: number; baseMaxFocus: number; godMode: boolean }
-export interface CondenseActivity { running: boolean; element: ElementId; progressMs: number }
 export interface ChannelingActivity { echoesAssigned: number }
 export type ResearchStatus = 'idle' | 'running' | 'paused' | 'waiting-mana' | 'waiting-focus' | 'level-cap' | 'missing-item' | 'completed'
 export interface ResearchActivity { running: boolean; itemId: ItemId | null; targetSchoolId: SchoolId | null; requestedQuantity: number; remainingQuantity: number; progressMs: number; durationPerItemMs: number; xpPerItem: number; manaPerItem: number; focusCost: number; status: ResearchStatus }
-export interface TransmutationActivity { running: boolean; recipeId: string | null; progressMs: number }
+export interface TransmutationJobState { echoesAssigned: number; progressMs: number }
+export interface TransmutationActivity { jobs: Partial<Record<RecipeId, TransmutationJobState>> }
 export interface ActivitiesState {
   channeling: ChannelingActivity
-  condense: CondenseActivity
   research: ResearchActivity
   transmutation: TransmutationActivity
   autoCast: Record<SpellId, boolean>
@@ -216,11 +218,12 @@ export interface DebugOverrides {
   allowManaOverCap: boolean
   allowFocusOverCap: boolean
   ignoreEchoLimit: boolean
+  transmutationEchoCapacityOverride: number | null
 }
 export interface NotificationItem { id: string; text: string; tone: 'info' | 'success' | 'warning' }
 export interface FocusReservation {
   id: string
-  sourceType: 'autocast' | 'research' | 'condense' | 'transmutation' | 'channeling'
+  sourceType: 'autocast' | 'research' | 'transmutation' | 'channeling'
   sourceId: string
   amount: number
   label: string
@@ -243,7 +246,7 @@ export interface ManaFlowBreakdown {
   etaKind: 'full' | 'empty' | 'starved' | null
 }
 
-export type ActivityTelemetryStatus = 'running' | 'waiting-mana' | 'paused' | 'combat' | 'recovery'
+export type ActivityTelemetryStatus = 'running' | 'waiting-mana' | 'waiting-materials' | 'paused' | 'combat' | 'recovery'
 export interface ActivityMetric {
   label: string
   value: string
@@ -256,7 +259,7 @@ export interface ActivityBar {
   tone?: ActivityMetric['tone']
 }
 export interface ActivityTelemetry {
-  id: 'combat' | 'condensation' | 'research' | 'transmutation'
+  id: 'combat' | 'research' | 'transmutation'
   label: string
   subtitle?: string
   screen: ScreenId

@@ -5,9 +5,8 @@ export const BALANCE = {
   mana: { startingMana: 50, maxMana: 100 },
   channeling: { baseNaturalRegenPerSecond: 5, echoFocusCost: 10, echoManaPerSecond: 5, maxEchoes: 5, discoveryEchoMultiplier: 1.1, stableLeylineRegenBonus: 1, stableLeylineThreshold: 2500, echoResonanceDurationMs: 120000, deepReservoirThreshold: 225, deepReservoirCapacityBonus: 25 },
   focus: { startingMax: 100, forestHeartBonus: 10, guildApprenticeBonus: 10 },
-  condense: { focusCost: 20, manaCost: 15, durationMs: 6000 },
   research: { focusCost: 25, manaCostPerItem: 5, durationPerItemMs: 5000, xpPerFragment: 10, matchingXp: 12, nonMatchingXp: 8 },
-  transmutation: { focusCost: 20, durationMs: 8000 },
+  transmutation: { echoFocusCost: 10, maxEchoes: 5 },
   dungeon: { encounterDelayMs: 5000, whisperingWoodsThreatRequired: 20 },
   mainBoss: { startingMagicLevelCap: 10, firstBossMagicLevelCap: 20 },
 } as const

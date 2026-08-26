@@ -2,17 +2,44 @@ import { RECIPES } from '../../game/content/recipes/recipes'
 import { BALANCE } from '../../game/core/balance/balance'
 import { canReserveFocusAction } from './focusActions'
 import { pushNotification } from '../../game/engine'
-import type { GameState } from '../../game/types'
+import { getTransmutationEchoesAssigned, getTransmutationEchoCapacity, isRecipeUnlocked } from '../../game/systems/transmutation/transmutationSelectors'
+import type { GameState, RecipeId } from '../../game/types'
 
-const isProtected = (state: GameState, itemId: keyof GameState['inventory']) => Boolean(state.protectedItems[itemId]) || Object.values(state.equipment).includes(itemId)
+const ensureJob = (state: GameState, recipeId: RecipeId) => state.activities.transmutation.jobs[recipeId] ?? (state.activities.transmutation.jobs[recipeId] = { echoesAssigned: 0, progressMs: 0 })
 
-export const toggleTransmutationAction = (state: GameState, recipeId: string) => {
-  const activity = state.activities.transmutation
+export const assignTransmutationEchoAction = (state: GameState, recipeId: RecipeId) => {
   const recipe = RECIPES[recipeId]
-  if (activity.running) { activity.running = false; return }
-  if (!state.progress.emberStaffUnlocked) { pushNotification(state, 'Grove Sentinel must be defeated before using Transmutation.', 'warning'); return }
-  if (!recipe || !canReserveFocusAction(state, recipe.focusCost)) { pushNotification(state, `Cannot start Transmutation - Requires ${recipe?.focusCost ?? BALANCE.transmutation.focusCost} Focus`, 'warning'); return }
-  if (!recipe.ingredients.every((ingredient) => (state.inventory[ingredient.itemId] ?? 0) >= ingredient.quantity && !isProtected(state, ingredient.itemId))) { pushNotification(state, 'Missing or protected recipe ingredients.', 'warning'); return }
-  state.activities.transmutation = { running: true, recipeId, progressMs: 0 }
+  if (!recipe || !isRecipeUnlocked(state, recipe)) { pushNotification(state, recipe ? 'Defeat Grove Sentinel to unlock this recipe.' : 'Unknown Transmutation recipe.', 'warning'); return false }
+  if (getTransmutationEchoesAssigned(state) >= getTransmutationEchoCapacity(state)) { const capacity = getTransmutationEchoCapacity(state); pushNotification(state, `Transmutation Echo capacity reached: ${capacity} / ${capacity}.`, 'warning'); return false }
+  if (!canReserveFocusAction(state, BALANCE.transmutation.echoFocusCost)) { pushNotification(state, `Not enough free Focus. Each Transmutation Echo requires ${BALANCE.transmutation.echoFocusCost} Focus.`, 'warning'); return false }
+  ensureJob(state, recipeId).echoesAssigned += 1
+  return true
 }
 
+export const removeTransmutationEchoAction = (state: GameState, recipeId: RecipeId) => {
+  const job = state.activities.transmutation.jobs[recipeId]
+  if (job) job.echoesAssigned = Math.max(0, Math.floor(job.echoesAssigned) - 1)
+  return true
+}
+
+export const setTransmutationEchoesAction = (state: GameState, recipeId: RecipeId, amount: number, force = false) => {
+  const recipe = RECIPES[recipeId]
+  if (!recipe) return false
+  const target = Math.max(0, Math.floor(Number.isFinite(amount) ? amount : 0))
+  const current = Math.max(0, Math.floor(state.activities.transmutation.jobs[recipeId]?.echoesAssigned ?? 0))
+  if (target <= current || force) {
+    const job = ensureJob(state, recipeId)
+    job.echoesAssigned = force && state.debug.ignoreEchoLimit ? target : Math.min(target, current + getTransmutationAssignableEchoes(state, recipeId))
+    return true
+  }
+  for (let index = current; index < target; index += 1) if (!assignTransmutationEchoAction(state, recipeId)) break
+  return true
+}
+
+const getTransmutationAssignableEchoes = (state: GameState, recipeId: RecipeId) => {
+  const current = Math.max(0, Math.floor(state.activities.transmutation.jobs[recipeId]?.echoesAssigned ?? 0))
+  return Math.max(0, getTransmutationEchoCapacity(state) - getTransmutationEchoesAssigned(state) + current)
+}
+
+export const clearTransmutationAssignmentsAction = (state: GameState) => Object.values(state.activities.transmutation.jobs).forEach((job) => { if (job) job.echoesAssigned = 0 })
+export const setTransmutationEchoCapacityOverrideAction = (state: GameState, amount: number | null) => { state.debug.transmutationEchoCapacityOverride = amount === null || !Number.isFinite(amount) ? null : Math.max(0, Math.floor(amount)) }

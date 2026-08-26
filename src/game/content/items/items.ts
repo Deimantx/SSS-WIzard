@@ -10,10 +10,10 @@ const material = (id: ItemId, name: string, description: string, icon: string, c
 const universalMaterial = (id: ItemId, name: string, description: string, icon: string, color: string, category: ItemDefinition['category'], source: string, materialSubtype?: InventoryMaterialSubtype, sourceNavigation?: ScreenId): AuthoredItemDefinition => ({ id, name, description, icon, color, kind: 'material', category, inventoryCategory: 'material', ...(materialSubtype ? { materialSubtype } : {}), source, ...(sourceNavigation ? { sourceNavigation } : {}) })
 const authoredItems: Record<ItemId, AuthoredItemDefinition> = {
   'life-essence': universalMaterial('life-essence', 'Life Essence', 'Vital residue released when living magic is defeated. A universal catalyst for permanent Tower upgrades.', '✧', '#8fe0c0', 'monster-loot', 'All monsters'),
-  'fire-fragment': material('fire-fragment', 'Fire Fragment', 'A hot shard of condensed elemental force.', '◆', '#ff745d', 'elemental', 'Elemental Condensation', 'fire'),
-  'water-fragment': material('water-fragment', 'Water Fragment', 'A cool fragment that remembers the tide.', '◇', '#64b7ff', 'elemental', 'Elemental Condensation', 'water'),
-  'earth-fragment': material('earth-fragment', 'Earth Fragment', 'Dense mineral magic from the deep places.', '⬢', '#d5a36b', 'elemental', 'Elemental Condensation', 'earth'),
-  'air-fragment': material('air-fragment', 'Air Fragment', 'A weightless mote humming with motion.', '≈', '#b9d8d0', 'elemental', 'Elemental Condensation', 'air'),
+  'fire-fragment': material('fire-fragment', 'Fire Fragment', 'A hot shard of transmuted elemental force.', '◆', '#ff745d', 'elemental', 'Transmutation', 'fire'),
+  'water-fragment': material('water-fragment', 'Water Fragment', 'A cool fragment shaped by transmutation.', '◇', '#64b7ff', 'elemental', 'Transmutation', 'water'),
+  'earth-fragment': material('earth-fragment', 'Earth Fragment', 'Dense mineral magic made by transmutation.', '⬢', '#d5a36b', 'elemental', 'Transmutation', 'earth'),
+  'air-fragment': material('air-fragment', 'Air Fragment', 'A weightless mote formed through transmutation.', '≈', '#b9d8d0', 'elemental', 'Transmutation', 'air'),
   'wisp-essence': material('wisp-essence', 'Wisp Essence', 'Loot from the lesser spirits of Whispering Woods.', '☼', '#c3a7ff', 'monster-loot', 'Whispering Woods normal monsters'),
   'grove-bark': material('grove-bark', 'Grove Bark', 'Resilient bark shed by the Sentinel.', '▥', '#9eaa75', 'monster-loot', 'Grove Sentinel'),
   heartseed: material('heartseed', 'Heartseed', 'A living seed left by the Forest Heart.', '✤', '#f4c46e', 'boss-loot', 'Forest Heart first and repeat kills'),
@@ -27,10 +27,10 @@ const authoredItems: Record<ItemId, AuthoredItemDefinition> = {
 /** Normalize authored content once so every current item has an explicit Vault classification. */
 const sourceNavigationByItem: Partial<Record<ItemId, ScreenId>> = {
   'life-essence': 'combat',
-  'fire-fragment': 'tower-condensation',
-  'water-fragment': 'tower-condensation',
-  'earth-fragment': 'tower-condensation',
-  'air-fragment': 'tower-condensation',
+  'fire-fragment': 'tower-transmutation',
+  'water-fragment': 'tower-transmutation',
+  'earth-fragment': 'tower-transmutation',
+  'air-fragment': 'tower-transmutation',
   'wisp-essence': 'combat',
   'grove-bark': 'combat',
   heartseed: 'combat',
@@ -67,4 +67,4 @@ export const ITEMS: Record<ItemId, ItemDefinition> = Object.fromEntries(
 
 export const getResearchXp = (itemId: ItemId, targetSchoolId: SchoolId) => ITEMS[itemId].researchSchool === targetSchoolId ? 12 : 8
 
-export const getItemSourceLabel = (itemId: ItemId) => ITEMS[itemId].sourceNavigation === 'tower-condensation' || ITEMS[itemId].materialSubtype === 'elemental' ? 'Wizard Tower → Condensation' : itemId === 'life-essence' ? 'Combat → all monsters' : ITEMS[itemId].source
+export const getItemSourceLabel = (itemId: ItemId) => ITEMS[itemId].materialSubtype === 'elemental' ? 'Wizard Tower → Transmutation' : itemId === 'life-essence' ? 'Combat → all monsters' : ITEMS[itemId].source

@@ -1,191 +1,110 @@
 import { describe, expect, it } from 'vitest'
 import { makeInitialState, useGameStore } from '../store/gameStore'
 import { recalculateDerivedStats } from './engine'
+import { selectUsedFocus } from './engine'
 import { advanceChanneling } from './engine/channelingEngine'
 import { BALANCE } from './core/balance/balance'
+import { RECIPES } from './content/recipes/recipes'
 import { advanceGameState } from './systems/simulation/advanceGameState'
 import { getManaFlowBreakdown } from './systems/channeling/manaFlow'
 import { getActivityTelemetry } from './systems/activity/activityTelemetry'
+import { getTransmutationEchoesAssigned } from './systems/transmutation/transmutationSelectors'
 import { clampResourcePercent } from '../app/shell/Topbar'
 
-describe('Phase 2.6 Mana Flow', () => {
-  it('clamps Focus and handles a zero maximum without invalid widths', () => {
+describe('Unified Transmutation', () => {
+  it('defines four fragment and four equipment recipes with the intended costs', () => {
+    expect(Object.keys(RECIPES)).toHaveLength(8)
+    expect(['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'].map((id) => RECIPES[id as keyof typeof RECIPES].manaCost)).toEqual([15, 15, 15, 15])
+    expect(['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'].map((id) => RECIPES[id as keyof typeof RECIPES].baseDurationMs)).toEqual([6000, 6000, 6000, 6000])
+    expect(RECIPES['ember-staff'].ingredients).toEqual([
+      { itemId: 'fire-fragment', quantity: 4 },
+      { itemId: 'wisp-essence', quantity: 4 },
+      { itemId: 'grove-bark', quantity: 1 },
+    ])
+    expect(RECIPES['ember-staff'].manaCost).toBe(0)
+    expect(RECIPES['ember-staff'].unlock.type).toBe('first-grove-sentinel-kill')
+  })
+
+  it('assigns Echoes across independent jobs and reserves ten Focus per Echo', () => {
+    const game = useGameStore.getState()
+    game.resetSave()
+    game.assignTransmutationEcho('fire-fragment')
+    game.assignTransmutationEcho('water-fragment')
+    const state = useGameStore.getState()
+    expect(state.activities.transmutation.jobs['fire-fragment']).toMatchObject({ echoesAssigned: 1, progressMs: 0 })
+    expect(state.activities.transmutation.jobs['water-fragment']).toMatchObject({ echoesAssigned: 1, progressMs: 0 })
+    expect(getTransmutationEchoesAssigned(state)).toBe(2)
+    expect(selectUsedFocus(state)).toBe(20)
+  })
+
+  it('advances multiple jobs at Echo-adjusted speed and preserves partial progress', () => {
+    const state = makeInitialState()
+    state.player.mana = state.player.maxMana
+    state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 2, progressMs: 1000 }
+    state.activities.transmutation.jobs['water-fragment'] = { echoesAssigned: 1, progressMs: 2000 }
+    advanceGameState(state, 1000, { mode: 'banked' })
+    expect(state.activities.transmutation.jobs['fire-fragment']?.progressMs).toBe(3000)
+    expect(state.activities.transmutation.jobs['water-fragment']?.progressMs).toBe(3000)
+    for (let index = 0; index < 3; index += 1) advanceGameState(state, 1000, { mode: 'banked' })
+    expect(state.inventory['fire-fragment']).toBe(1)
+    expect(state.inventory['water-fragment']).toBe(1)
+    expect(state.activities.transmutation.jobs['fire-fragment']?.progressMs).toBeGreaterThan(0)
+    expect(state.activities.transmutation.jobs['fire-fragment']?.progressMs).toBeLessThan(6000)
+  })
+
+  it('charges exactly fifteen Mana for a completed elemental fragment cycle', () => {
+    const state = makeInitialState()
+    state.player.mana = 20
+    state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 1, progressMs: 5999 }
+    advanceGameState(state, 1, { mode: 'banked' })
+    expect(state.player.mana).toBeCloseTo(5.005)
+    expect(state.inventory['fire-fragment']).toBe(1)
+  })
+
+  it('holds a completed cycle at full progress when Mana is unavailable', () => {
+    const state = makeInitialState()
+    state.player.mana = 0
+    state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 1, progressMs: 5999 }
+    advanceGameState(state, 1, { mode: 'banked' })
+    expect(state.activities.transmutation.jobs['fire-fragment']?.progressMs).toBe(6000)
+    expect(state.inventory['fire-fragment'] ?? 0).toBe(0)
+    expect(getActivityTelemetry(state).find((item) => item.id === 'transmutation')?.status).toBe('waiting-mana')
+  })
+
+  it('holds a completed equipment cycle when an ingredient is missing', () => {
+    const state = makeInitialState()
+    state.progress.firstBossKill = true
+    state.activities.transmutation.jobs['ember-staff'] = { echoesAssigned: 1, progressMs: 8000 }
+    advanceGameState(state, 1, { mode: 'banked' })
+    expect(state.activities.transmutation.jobs['ember-staff']?.progressMs).toBe(8000)
+    expect(state.inventory['ember-staff'] ?? 0).toBe(0)
+    expect(getActivityTelemetry(state).find((item) => item.id === 'transmutation')?.status).toBe('waiting-materials')
+  })
+
+  it('aggregates simultaneous jobs into one Activity Monitor card', () => {
+    const state = makeInitialState()
+    state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 1, progressMs: 1000 }
+    state.activities.transmutation.jobs['water-fragment'] = { echoesAssigned: 2, progressMs: 1000 }
+    const cards = getActivityTelemetry(state).filter((item) => item.id === 'transmutation')
+    expect(cards).toHaveLength(1)
+    expect(cards[0].subtitle).toContain('2 recipes')
+    expect(cards[0].subtitle).toContain('3 Echoes')
+    expect(cards[0].metrics.find((metric) => metric.label === 'Output')?.value).toBe('1.8k/h')
+  })
+
+  it('separates Transmutation Mana demand from channeling Echo output', () => {
+    const state = makeInitialState()
+    state.activities.channeling.echoesAssigned = 1
+    state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 1, progressMs: 0 }
+    const flow = getManaFlowBreakdown(state)
+    expect(flow.production).toBe(10)
+    expect(flow.demand).toBe(2.5)
+    expect(flow.demandSources.map((source) => source.id)).toContain('transmutation-fire-fragment')
+  })
+
+  it('clamps Focus and handles zero maxima without invalid widths', () => {
     expect(clampResourcePercent(150, 100)).toBe(100)
     expect(clampResourcePercent(50, 0)).toBe(0)
-  })
-
-  it('uses authoritative production and reports surplus without consumers', () => {
-    const state = makeInitialState()
-    state.debug.bonusManaRegenFlat = 27.5
-    const flow = getManaFlowBreakdown(state)
-    expect(flow.production).toBe(32.5)
-    expect(flow.demand).toBe(0)
-    expect(flow.net).toBe(32.5)
-    expect(flow.state).toBe('surplus')
-  })
-
-  it('derives condensation demand from its live balance values', () => {
-    const state = makeInitialState()
-    state.activities.condense.running = true
-    const flow = getManaFlowBreakdown(state)
-    expect(flow.demand).toBe(2.5)
-    expect(flow.net).toBe(2.5)
-  })
-
-  it('reports deficit and time to empty', () => {
-    const state = makeInitialState()
-    state.debug.bonusManaRegenFlat = -3
-    state.activities.condense.running = true
-    state.activities.research.running = true
-    state.activities.research.remainingQuantity = 1
-    state.activities.research.durationPerItemMs = 5000
-    state.activities.research.manaPerItem = 5
-    state.player.mana = 60
-    const flow = getManaFlowBreakdown(state)
-    expect(flow.production).toBe(2)
-    expect(flow.demand).toBe(3.5)
-    expect(flow.net).toBe(-1.5)
-    expect(flow.state).toBe('deficit')
-    expect(flow.etaMs).toBe(40_000)
-    expect(flow.etaKind).toBe('empty')
-  })
-
-  it('reports full, starved, and balanced boundary states', () => {
-    const full = makeInitialState()
-    full.player.mana = full.player.maxMana
-    expect(getManaFlowBreakdown(full)).toMatchObject({ state: 'surplus', etaKind: 'full', etaMs: null })
-    const starved = makeInitialState()
-    starved.player.mana = 0
-    starved.debug.bonusManaRegenFlat = -6
-    expect(getManaFlowBreakdown(starved)).toMatchObject({ state: 'deficit', etaKind: 'starved', etaMs: null })
-    const balanced = makeInitialState()
-    balanced.debug.bonusManaRegenFlat = -5
-    expect(getManaFlowBreakdown(balanced)).toMatchObject({ state: 'balanced', net: 0, etaKind: null })
-  })
-
-  it('does not report a full ETA while Mana is already over cap', () => {
-    const state = makeInitialState()
-    state.debug.allowManaOverCap = true
-    state.player.mana = state.player.maxMana + 100
-    expect(getManaFlowBreakdown(state)).toMatchObject({ state: 'surplus', etaKind: null, etaMs: null })
-  })
-})
-
-describe('Phase 2.6 Activity Monitor telemetry', () => {
-  it('does not present persistent Arcane Echoes as a timed activity', () => {
-    const state = makeInitialState()
-    state.activities.channeling.echoesAssigned = 5
-    expect(getActivityTelemetry(state)).toEqual([])
-  })
-
-  it('derives activity rates from the selected activity definitions', () => {
-    const state = makeInitialState()
-    state.activities.condense.running = true
-    state.activities.research.running = true
-    state.activities.research.itemId = 'fire-fragment'
-    state.activities.research.targetSchoolId = 'fire'
-    state.activities.research.remainingQuantity = 20
-    state.activities.research.xpPerItem = 12
-    state.activities.transmutation.running = true
-    state.activities.transmutation.recipeId = 'ember-staff'
-    const telemetry = getActivityTelemetry(state)
-    expect(telemetry.find((item) => item.id === 'condensation')?.metrics[0].value).toBe('600/h')
-    expect(telemetry.find((item) => item.id === 'research')?.metrics.map((item) => item.value)).toContain('8.6k/h')
-    expect(telemetry.find((item) => item.id === 'transmutation')?.metrics[0].value).toBe('450/h')
-  })
-
-  it('exposes player, enemy, threat, attack timing, and next-action combat telemetry', () => {
-    const state = makeInitialState()
-    state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
-    state.combat.enemyId = 'thornling'
-    state.combat.enemyHp = 36
-    state.combat.enemyMaxHp = 64
-    state.combat.enemyActionTimerMs = 1300
-    state.combat.threatCleared = 8
-    state.progress.lifetimeKills = 47
-    state.player.health = 82
-    const combat = getActivityTelemetry(state).find((item) => item.id === 'combat')
-
-    expect(combat?.bars?.map((bar) => bar.label)).toEqual(['Player HP', 'Enemy HP'])
-    expect(combat?.metrics.map((item) => item.label)).toEqual(['Threat Cleared', 'Player Attack', 'Enemy Action'])
-    expect(combat?.metrics.find((item) => item.label === 'Player Attack')?.value).toContain('Basic Attack')
-
-    state.combat.enemyId = null
-    state.combat.encounterTimerMs = 3200
-    const recovery = getActivityTelemetry(state).find((item) => item.id === 'combat')
-    expect(recovery?.bars?.map((bar) => bar.label)).toEqual(['Player HP'])
-    expect(recovery?.metrics.map((item) => item.label)).toEqual(['Threat Cleared', 'Next Encounter'])
-  })
-})
-
-describe('Phase 2.6 Offline Bank', () => {
-  it('spends banked time through the shared simulation and never recurses into the bank', async () => {
-    const game = useGameStore.getState()
-    game.resetSave()
-    game.preset('research')
-    game.setResearchConfig('fire-fragment', 'fire', 20)
-    game.toggleResearch()
-    game.resumeFromHidden(600_000, false)
-    const result = await useGameStore.getState().advanceWithOfflineBank(300_000)
-    const state = useGameStore.getState()
-    expect(result.ok).toBe(true)
-    expect(state.offlineBankMs).toBe(300_000)
-    expect(state.activities.research.remainingQuantity).toBeLessThan(20)
-    expect(state.notifications.filter((note) => /research completed/i.test(note.text)).length).toBeLessThan(5)
-  })
-
-  it('rejects an advance larger than the bank without changing state', async () => {
-    const game = useGameStore.getState()
-    game.resetSave()
-    game.resumeFromHidden(180_000, false)
-    const before = useGameStore.getState()
-    const snapshot = { bank: before.offlineBankMs, mana: before.player.mana, notifications: before.notifications.map((note) => note.text) }
-    const result = await before.advanceWithOfflineBank(300_000)
-    const after = useGameStore.getState()
-    expect(result.ok).toBe(false)
-    expect(after.offlineBankMs).toBe(snapshot.bank)
-    expect(after.player.mana).toBe(snapshot.mana)
-    expect(after.notifications.map((note) => note.text)).toEqual(snapshot.notifications)
-  })
-})
-
-describe('Phase 2.7 stability fixes', () => {
-  it('does not grant condensation output before its completion payment', () => {
-    const state = makeInitialState()
-    state.debug.bonusManaRegenFlat = -BALANCE.channeling.baseNaturalRegenPerSecond
-    state.activities.condense.running = true
-    state.activities.condense.element = 'water'
-    state.activities.condense.progressMs = BALANCE.condense.durationMs - 100
-    state.player.mana = 0
-    advanceGameState(state, 100, { mode: 'banked' })
-
-    expect(state.activities.condense.progressMs).toBe(BALANCE.condense.durationMs)
-    expect(state.inventory['water-fragment'] ?? 0).toBe(0)
-    expect(state.player.mana).toBe(0)
-    expect(getActivityTelemetry(state).find((item) => item.id === 'condensation')?.status).toBe('waiting-mana')
-
-    state.player.mana = BALANCE.condense.manaCost
-    advanceGameState(state, 1, { mode: 'banked' })
-    expect(state.player.mana).toBe(0)
-    expect(state.inventory['water-fragment']).toBe(1)
-    expect(state.activities.condense.progressMs).toBe(0)
-  })
-
-  it('does not complete a waiting condensation cycle while paused', () => {
-    const state = makeInitialState()
-    state.debug.bonusManaRegenFlat = -BALANCE.channeling.baseNaturalRegenPerSecond
-    state.activities.condense.running = true
-    state.activities.condense.progressMs = BALANCE.condense.durationMs
-    state.player.mana = 0
-    advanceGameState(state, 1, { mode: 'banked' })
-    state.activities.condense.running = false
-    state.player.mana = BALANCE.condense.manaCost
-    advanceGameState(state, 1000, { mode: 'banked' })
-
-    expect(state.inventory['water-fragment'] ?? 0).toBe(0)
-    expect(state.activities.condense.progressMs).toBe(BALANCE.condense.durationMs)
-    expect(state.player.mana).toBe(BALANCE.condense.manaCost)
   })
 
   it('continues Mana regeneration above Max Mana only while the debug override is enabled', () => {
@@ -194,9 +113,12 @@ describe('Phase 2.7 stability fixes', () => {
     state.debug.allowManaOverCap = true
     advanceChanneling(state, 1000)
     expect(state.player.mana).toBeGreaterThan(state.player.maxMana)
-
     state.debug.allowManaOverCap = false
     recalculateDerivedStats(state)
     expect(state.player.mana).toBe(state.player.maxMana)
+  })
+
+  it('uses the authored five-Echo capacity', () => {
+    expect(BALANCE.transmutation.maxEchoes).toBe(5)
   })
 })

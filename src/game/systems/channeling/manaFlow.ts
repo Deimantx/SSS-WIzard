@@ -1,21 +1,20 @@
-import { SCHOOLS } from '../../content/schools/schools'
 import { SPELLS } from '../../content/spells/spells'
+import { RECIPES, RECIPE_ORDER } from '../../content/recipes/recipes'
 import { BALANCE } from '../../core/balance/balance'
 import { getManaRegenBreakdown } from '../../engine/channelingEngine'
+import { getRecipeManaDemandPerSecond } from '../transmutation/transmutationSelectors'
 import type { GameState, ManaDemandSource, ManaFlowBreakdown } from '../../types'
 
 const FLOW_EPSILON = 0.05
 
 export const getManaDemandBreakdown = (state: GameState): ManaDemandSource[] => {
   const sources: ManaDemandSource[] = []
-  const condense = state.activities.condense
-  if (condense.running && BALANCE.condense.durationMs > 0) {
-    sources.push({
-      id: 'condensation',
-      label: `Condensation · ${SCHOOLS[condense.element].name}`,
-      manaPerSecond: BALANCE.condense.manaCost / (BALANCE.condense.durationMs / 1000),
-    })
-  }
+  RECIPE_ORDER.forEach((recipeId) => {
+    const recipe = RECIPES[recipeId]
+    const echoes = Math.max(0, Math.floor(state.activities.transmutation.jobs[recipeId]?.echoesAssigned ?? 0))
+    if (!echoes || recipe.manaCost <= 0 || (recipe.unlock.type === 'first-grove-sentinel-kill' && !state.progress.firstBossKill)) return
+    sources.push({ id: `transmutation-${recipeId}`, label: `Transmutation · ${recipe.name}`, manaPerSecond: getRecipeManaDemandPerSecond(recipe, echoes) })
+  })
 
   const research = state.activities.research
   if (research.running && research.remainingQuantity > 0 && research.durationPerItemMs > 0) {

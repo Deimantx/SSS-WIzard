@@ -1,9 +1,14 @@
-import type { ItemDefinition, ItemId, SchoolId } from '../../types'
+import type { InventoryCategory, InventoryMaterialSubtype, ItemDefinition, ItemId, SchoolId, ScreenId } from '../../types'
 
-const material = (id: ItemId, name: string, description: string, icon: string, color: string, category: ItemDefinition['category'], source: string, researchSchool?: SchoolId): ItemDefinition => ({ id, name, description, icon, color, kind: 'material', category, source, ...(researchSchool ? { researchSchool, researchXp: 10 } : {}) })
-const universalMaterial = (id: ItemId, name: string, description: string, icon: string, color: string, category: ItemDefinition['category'], source: string): ItemDefinition => ({ id, name, description, icon, color, kind: 'material', category, source })
-
-export const ITEMS: Record<ItemId, ItemDefinition> = {
+const materialSubtypes: InventoryMaterialSubtype[] = ['elemental', 'creature', 'ore', 'refined', 'arcane']
+const material = (id: ItemId, name: string, description: string, icon: string, color: string, category: ItemDefinition['category'], source: string, subtypeOrSchool?: InventoryMaterialSubtype | SchoolId, researchSchool?: SchoolId, sourceNavigation?: ScreenId): ItemDefinition => {
+  const materialSubtype = subtypeOrSchool && materialSubtypes.includes(subtypeOrSchool as InventoryMaterialSubtype) ? subtypeOrSchool as InventoryMaterialSubtype : category === 'elemental' ? 'elemental' : 'creature'
+  const affinity = subtypeOrSchool && !materialSubtypes.includes(subtypeOrSchool as InventoryMaterialSubtype) ? subtypeOrSchool as SchoolId : researchSchool
+  return { id, name, description, icon, color, kind: 'material', category, inventoryCategory: 'material', materialSubtype, source, ...(sourceNavigation ? { sourceNavigation } : {}), ...(affinity ? { researchSchool: affinity, researchXp: 10 } : {}) }
+}
+const universalMaterial = (id: ItemId, name: string, description: string, icon: string, color: string, category: ItemDefinition['category'], source: string, materialSubtype?: InventoryMaterialSubtype, sourceNavigation?: ScreenId): ItemDefinition => ({ id, name, description, icon, color, kind: 'material', category, inventoryCategory: 'material', ...(materialSubtype ? { materialSubtype } : {}), source, ...(sourceNavigation ? { sourceNavigation } : {}) })
+type AuthoredItemDefinition = Omit<ItemDefinition, 'inventoryCategory' | 'materialSubtype'> & Partial<Pick<ItemDefinition, 'inventoryCategory' | 'materialSubtype'>>
+const authoredItems: Record<ItemId, AuthoredItemDefinition> = {
   'life-essence': universalMaterial('life-essence', 'Life Essence', 'Vital residue released when living magic is defeated. A universal catalyst for permanent Tower upgrades.', '✧', '#8fe0c0', 'monster-loot', 'All monsters'),
   'fire-fragment': material('fire-fragment', 'Fire Fragment', 'A hot shard of condensed elemental force.', '◆', '#ff745d', 'elemental', 'Elemental Condensation', 'fire'),
   'water-fragment': material('water-fragment', 'Water Fragment', 'A cool fragment that remembers the tide.', '◇', '#64b7ff', 'elemental', 'Elemental Condensation', 'water'),
@@ -19,6 +24,29 @@ export const ITEMS: Record<ItemId, ItemDefinition> = {
   'windthread-charm': { id: 'windthread-charm', name: 'Windthread Charm', description: 'A charm that leaves room for one more automation.', icon: '⌁', color: '#b9d8d0', kind: 'equipment', category: 'equipment', source: 'Transmutation', equipmentSlot: 'charm', stats: { maxFocus: 10, airSpellDamagePct: 0.1 } },
 }
 
+/** Normalize authored content once so every current item has an explicit Vault classification. */
+const sourceNavigationByItem: Partial<Record<ItemId, ScreenId>> = {
+  'life-essence': 'combat',
+  'fire-fragment': 'tower-condensation',
+  'water-fragment': 'tower-condensation',
+  'earth-fragment': 'tower-condensation',
+  'air-fragment': 'tower-condensation',
+  'wisp-essence': 'combat',
+  'grove-bark': 'combat',
+  heartseed: 'combat',
+  'ember-staff': 'tower-transmutation',
+  'tide-focus': 'tower-transmutation',
+  'stoneweave-robe': 'tower-transmutation',
+  'windthread-charm': 'tower-transmutation',
+}
+const inventoryCategoryOverrides: Partial<Record<ItemId, InventoryCategory>> = { heartseed: 'loot' }
+export const ITEMS: Record<ItemId, ItemDefinition> = Object.fromEntries(
+  Object.entries(authoredItems).map(([id, item]) => {
+    const inventoryCategory = inventoryCategoryOverrides[id as ItemId] ?? item.inventoryCategory ?? (item.kind === 'equipment' ? 'equipment' : item.category === 'boss-loot' ? 'loot' : 'material')
+    return [id, { ...item, inventoryCategory, ...(inventoryCategory === 'material' ? { materialSubtype: item.materialSubtype ?? (item.category === 'elemental' ? 'elemental' : 'creature') } : {}), sourceNavigation: item.sourceNavigation ?? sourceNavigationByItem[id as ItemId] }]
+  }),
+) as Record<ItemId, ItemDefinition>
+
 export const getResearchXp = (itemId: ItemId, targetSchoolId: SchoolId) => ITEMS[itemId].researchSchool === targetSchoolId ? 12 : 8
 
-export const getItemSourceLabel = (itemId: ItemId) => itemId === 'life-essence' ? 'Combat → all monsters' : ITEMS[itemId].category === 'elemental' ? 'Wizard Tower → Condensation' : ITEMS[itemId].source
+export const getItemSourceLabel = (itemId: ItemId) => ITEMS[itemId].sourceNavigation === 'tower-condensation' || ITEMS[itemId].materialSubtype === 'elemental' ? 'Wizard Tower → Condensation' : itemId === 'life-essence' ? 'Combat → all monsters' : ITEMS[itemId].source

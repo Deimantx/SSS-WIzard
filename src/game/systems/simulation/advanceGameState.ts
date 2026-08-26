@@ -7,7 +7,7 @@ import { SPELLS } from '../../content/spells/spells'
 import { advanceChanneling } from '../../engine/channelingEngine'
 import { appendLog, completeResearchCycle, playerBasicDamage, pushNotification, recalculateDerivedStats, spellDamageMultiplier } from '../../engine'
 import { addStatus, applyBarrier, damageEnemy, damagePlayer, executeEnemyAction, executeSpecial, finishEnemy, spawnNextEnemy } from '../combat/combatRuntime'
-import type { GameState, SpellEffect, SpellId, StatusEffect } from '../../types'
+import type { GameState, ItemId, SpellEffect, SpellId, StatusEffect } from '../../types'
 import { clamp } from '../../utils'
 import type { SimulationReportCollector } from '../offline-bank/offlineBankReport'
 
@@ -15,6 +15,7 @@ export interface AdvanceContext {
   mode: 'live' | 'banked'
   suppressRoutineNotifications?: boolean
   report?: SimulationReportCollector
+  onItemAcquired?: (itemId: ItemId, quantity: number) => void
 }
 
 const shouldNotifyRoutine = (context: AdvanceContext) => context.mode === 'live' && !context.suppressRoutineNotifications
@@ -114,7 +115,7 @@ const tickCombat = (state: GameState, delta: number, context: AdvanceContext) =>
   }
   if (state.combat.enemyId) Object.keys(state.activities.autoCast).forEach((id) => { const spellId = id as SpellId; if (state.activities.autoCast[spellId] && spellUnlocked(state, spellId) && state.combat.spellCooldowns[spellId] <= 0 && meetsAutoCondition(state, spellId)) castSpellInternal(state, spellId, true) })
   if (!state.combat.enemyId) return
-  if (state.combat.enemyHp <= 0) { finishEnemy(state, context.report); return }
+  if (state.combat.enemyHp <= 0) { finishEnemy(state, context.report, context.onItemAcquired); return }
   if (enemy.id === 'grove-sentinel' && state.combat.enemyHp <= enemy.maxHealth * 0.4 && !state.combat.enemySpecialUsed['ancient-growth']) { state.combat.enemySpecialUsed['ancient-growth'] = true; state.combat.enemyBarrier += 80; appendLog(state, 'Ancient Growth triggers · +80 Barrier.') }
   if (enemy.id === 'forest-heart' && state.combat.enemyHp <= enemy.maxHealth * 0.5 && !state.combat.enemySpecialUsed['living-core']) { state.combat.enemySpecialUsed['living-core'] = true; state.combat.enemyIntervalMs = Math.round(state.combat.enemyIntervalMs * 0.85); appendLog(state, 'Living Core triggers · attack speed increased.') }
   if (state.combat.enemyTelegraphMs > 0) { state.combat.enemyTelegraphMs -= delta; if (state.combat.enemyTelegraphMs <= 0 && state.combat.enemyTelegraphActionId) { executeSpecial(state, state.combat.enemyTelegraphActionId); state.combat.enemyTelegraphActionId = null; state.combat.enemyActionTimerMs = state.combat.enemyIntervalMs } }
@@ -141,6 +142,7 @@ export const advanceGameState = (state: GameState, deltaMs: number, context: Adv
       state.player.mana -= BALANCE.condense.manaCost
       const output = SCHOOLS[condense.element].fragment
       state.inventory[output] = (state.inventory[output] ?? 0) + 1
+      context.onItemAcquired?.(output, 1)
       context.report?.recordCondensed(output, 1)
       condense.progressMs = 0
       if (shouldNotifyRoutine(context)) pushNotification(state, `${SCHOOLS[condense.element].name} Fragment condensed`, 'success')
@@ -157,6 +159,7 @@ export const advanceGameState = (state: GameState, deltaMs: number, context: Adv
       if (canCraft) {
         recipe.ingredients.forEach((ingredient) => { state.inventory[ingredient.itemId] = (state.inventory[ingredient.itemId] ?? 0) - ingredient.quantity })
         state.inventory[recipe.output] = (state.inventory[recipe.output] ?? 0) + 1
+        context.onItemAcquired?.(recipe.output, 1)
         context.report?.recordCraft(recipe.id, recipe.output, 1, recipe.ingredients)
         transmutation.running = false
         transmutation.progressMs = 0

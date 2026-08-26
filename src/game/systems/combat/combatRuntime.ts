@@ -3,7 +3,7 @@ import { DUNGEONS, chooseMonster } from '../../content/dungeons/dungeons'
 import { ITEMS } from '../../content/items/items'
 import { MONSTERS } from '../../content/monsters/whisperingWoods'
 import { barrierMultiplier, equipmentStats, recalculateDerivedStats } from '../../engine'
-import type { GameState, MonsterId, StatusEffect } from '../../types'
+import type { GameState, ItemId, MonsterId, StatusEffect } from '../../types'
 import { formatTime } from '../../utils'
 import { appendLog, pushNotification } from '../../engine'
 import { resolveMonsterLoot } from '../loot'
@@ -81,11 +81,11 @@ export const spawnNextEnemy = (state: GameState) => {
   spawnEnemy(state, chooseMonster(dungeon.monsterPool))
 }
 
-export const finishEnemy = (state: GameState, report?: SimulationReportCollector) => {
+export const finishEnemy = (state: GameState, report?: SimulationReportCollector, onItemAcquired?: (itemId: ItemId, quantity: number) => void) => {
   const enemyId = state.combat.enemyId
   if (!enemyId) return
   const monster = MONSTERS[enemyId]
-  const drops = resolveMonsterLoot(state, enemyId, (itemId, quantity) => report?.recordLoot(itemId, quantity))
+  const drops = resolveMonsterLoot(state, enemyId, (itemId, quantity) => { onItemAcquired?.(itemId, quantity); report?.recordLoot(itemId, quantity) })
   report?.recordKill(enemyId)
   state.combat.enemyId = null
   state.combat.enemyHp = 0

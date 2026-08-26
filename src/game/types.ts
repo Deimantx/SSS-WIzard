@@ -22,7 +22,10 @@ export type SpellId = 'fire-bolt' | 'water-ward' | 'earth-spike' | 'air-lance' |
 export type MonsterId = 'forest-wisp' | 'thornling' | 'stone-root' | 'grove-sentinel' | 'forest-heart'
 export type DungeonId = 'whispering-woods'
 export type EquipmentSlot = 'weapon' | 'robe' | 'focus' | 'charm'
+/** Legacy authored category kept for save/content compatibility. */
 export type ItemCategory = 'elemental' | 'monster-loot' | 'equipment' | 'boss-loot'
+export type InventoryCategory = 'material' | 'loot' | 'equipment' | 'special'
+export type InventoryMaterialSubtype = 'elemental' | 'creature' | 'ore' | 'refined' | 'arcane'
 export type SpellType = 'damage' | 'heal' | 'barrier' | 'dot' | 'buff'
 export type StatusId = 'barrier' | 'thorn-wound' | 'burning' | 'attack-delay' | 'quickening'
 export type ManaPillarId = 'leyline-conduit' | 'arcane-reservoir' | 'mana-resonance' | 'astral-expansion' | 'echo-attunement'
@@ -54,10 +57,15 @@ export interface ItemDefinition {
   name: string
   description: string
   icon: string
+  image?: string
   color: string
   kind: 'material' | 'equipment'
   category: ItemCategory
+  /** Player-facing Vault classification. This is based on item function, not drop source. */
+  inventoryCategory: InventoryCategory
+  materialSubtype?: InventoryMaterialSubtype
   source: string
+  sourceNavigation?: ScreenId
   equipmentSlot?: EquipmentSlot
   stats?: EquipmentStats
   researchSchool?: SchoolId

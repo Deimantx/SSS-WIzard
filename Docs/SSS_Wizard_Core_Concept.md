@@ -1789,3 +1789,7 @@ Mana Flow is derived presentation data, not a new permanent stat. It reports aut
 Spending banked time produces a transient result summary for meaningful simulated outcomes such as kills, loot, condensation, crafting, Research XP, consumed materials, and progression. The summary is collected from successful events in the shared simulation and is not persisted in gameplay saves.
 
 Inventory shows items the player currently owns. Collection handles catalogue and discovery browsing. Inventory is a vault view with owned-only item tiles, search/filter/sort controls, item details, protection/equipment actions, current Research values, and contextual tooltips.
+
+### Phase 3.2 Inventory Vault
+
+Inventory is the Tower Vault for current ownership; Collection remains the discovered/content catalogue, including entries that may no longer be owned. Vault categories are Materials, Loot, Equipment, and Special, with Protected as a utility filter. Materials are classified by function and use Elemental, Creature, Ore, Refined, and Arcane subcategories. The Vault renders owned-only item types, derives source/use links from authored systems, and keeps recent acquisition amounts as transient session UI state.

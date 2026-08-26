@@ -29,6 +29,8 @@ import { advanceGameState } from '../game/systems/simulation/advanceGameState'
 import { advanceWithOfflineBank as runOfflineBankAdvance, isOfflineBankSimulationActive, type OfflineBankResult } from '../game/systems/offline-bank/offlineBankSimulation'
 import type { OfflineBankReport } from '../game/systems/offline-bank/offlineBankReport'
 
+export interface RecentAcquisition { itemId: ItemId; amount: number; timestamp: number; isNew: boolean }
+
 export interface GameActions {
   tick: (deltaMs: number) => void
   setScreen: (screen: ScreenId) => void
@@ -78,6 +80,7 @@ export interface GameActions {
   addItem: (itemId: ItemId, quantity: number) => void
   removeItem: (itemId: ItemId, quantity: number) => void
   toggleItemProtection: (itemId: ItemId) => void
+  clearRecentNew: (itemId: ItemId) => void
   equipItem: (itemId: ItemId) => void
   unequipItem: (slot: EquipmentSlot) => void
   unlockAllSpells: () => void
@@ -92,19 +95,28 @@ export interface GameActions {
   lastOfflineBankReport: OfflineBankReport | null
 }
 
-export type GameStore = GameState & GameActions
+export type GameStore = GameState & GameActions & { recentAcquisitions: RecentAcquisition[] }
 
 export interface SaveResult { ok: boolean; error: string | null }
+
+export const recordRecentAcquisition = (state: GameState & { recentAcquisitions?: RecentAcquisition[] }, itemId: ItemId, amount: number) => {
+  if (amount <= 0 || !Number.isFinite(amount)) return
+  const previous = state.recentAcquisitions ?? []
+  const priorEntry = previous.find((entry) => entry.itemId === itemId)
+  const wasOwned = (state.inventory[itemId] ?? 0) - amount > 0
+  state.recentAcquisitions = [{ itemId, amount, timestamp: Date.now(), isNew: priorEntry?.isNew ?? !wasOwned }, ...previous.filter((entry) => entry.itemId !== itemId)].slice(0, 8)
+}
 
 const spellUnlocked = (state: GameState, spellId: SpellId) => state.progress.unlockedSpells.includes(spellId)
 const canReserveFocus = canReserveFocusAction
 
 export const useGameStore = create<GameStore>()(immer((set, get) => ({
   ...createInitialState(),
+  recentAcquisitions: [],
   lastOfflineBankReport: null,
   tick: (deltaMs) => set((state) => {
     if (isOfflineBankSimulationActive()) return state
-    return advanceGameState(state, deltaMs, { mode: 'live' })
+    return advanceGameState(state, deltaMs, { mode: 'live', onItemAcquired: (itemId, amount) => recordRecentAcquisition(state, itemId, amount) })
   }),
   setScreen: (screen) => set((state) => { state.ui.screen = screen; return state }),
   addArcaneEcho: () => set((state) => {
@@ -164,18 +176,18 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     if (!activeProfileId) return
     const loaded = loadProfileGame(activeProfileId)
     if (!loaded.state) return
-    set((state) => { Object.assign(state, loaded.state as GameState); state.lastOfflineBankReport = null; recalculateDerivedStats(state); return state })
+    set((state) => { Object.assign(state, loaded.state as GameState); state.recentAcquisitions = []; state.lastOfflineBankReport = null; recalculateDerivedStats(state); return state })
   },
   resetSave: () => {
     const fresh = createInitialState()
-    set((state) => { Object.assign(state, fresh); state.lastOfflineBankReport = null; return state })
+    set((state) => { Object.assign(state, fresh); state.recentAcquisitions = []; state.lastOfflineBankReport = null; return state })
     const activeProfileId = getActiveProfileId()
     if (activeProfileId) {
       const saved = saveProfileGame(activeProfileId, useGameStore.getState())
       if (saved.ok) updateProfileMetadata(activeProfileId, { lastSavedAt: fresh.lastSavedAt })
     }
   },
-  hydrateState: (nextState) => set((state) => { Object.assign(state, nextState); state.lastOfflineBankReport = null; recalculateDerivedStats(state); return state }),
+  hydrateState: (nextState) => set((state) => { Object.assign(state, nextState); state.recentAcquisitions = []; state.lastOfflineBankReport = null; recalculateDerivedStats(state); return state }),
   dismissNotification: (id) => set((state) => { state.notifications = state.notifications.filter((note) => note.id !== id); return state }),
   setPlayer: (changes) => set((state) => { state.player = { ...state.player, ...changes }; recalculateDerivedStats(state); return state }),
   addMana: (amount) => set((state) => { state.player.mana = Math.max(0, state.player.mana + sanitizeDebugNumber(amount)); recalculateDerivedStats(state); return state }),
@@ -185,6 +197,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   addItem: (itemId, quantity) => set((state) => { addItemAction(state, itemId, quantity); return state }),
   removeItem: (itemId, quantity) => set((state) => { removeItemAction(state, itemId, quantity); return state }),
   toggleItemProtection: (itemId) => set((state) => { toggleItemProtectionAction(state, itemId); return state }),
+  clearRecentNew: (itemId) => set((state) => { const entry = state.recentAcquisitions.find((item) => item.itemId === itemId); if (entry) entry.isNew = false; return state }),
   equipItem: (itemId) => set((state) => { equipItemAction(state, itemId); return state }),
   unequipItem: (slot) => set((state) => { unequipItemAction(state, slot); return state }),
   unlockAllSpells: () => set((state) => { unlockAllSpellsAction(state); return state }),
@@ -196,11 +209,15 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   preset: (name) => set((state) => { Object.assign(state, createInitialState()); state.lastOfflineBankReport = null; if (name === 'research') { state.inventory['fire-fragment'] = 10; state.player.mana = 100; state.activities.channeling.echoesAssigned = 1 } if (name === 'combat') { state.inventory['fire-fragment'] = 10; state.progress.unlockedSpells = ['fire-bolt']; state.schools.fire = { xp: 20, level: 2 }; state.player.mana = 100; state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; spawnNextEnemy(state) } if (name === 'boss') { state.inventory['fire-fragment'] = 15; state.inventory['wisp-essence'] = 10; state.inventory['grove-bark'] = 2; state.progress.unlockedSpells = ['fire-bolt']; state.schools.fire = { xp: 80, level: 4 }; state.progress.guildUnlocked = true; state.progress.firstBossKill = true; state.progress.emberStaffUnlocked = true; state.progress.forestHeartUnlocked = true; state.progress.autoHuntBossUnlocked = true; state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; state.combat.threatCleared = 20; spawnNextEnemy(state) } if (name === 'guild') { state.progress.guildUnlocked = true; state.progress.guildRank = 'initiate'; state.progress.firstBossKill = true; state.progress.emberStaffUnlocked = true; state.progress.forestHeartUnlocked = true; state.progress.autoHuntBossUnlocked = true; state.inventory['fire-fragment'] = 20; state.progress.lifetimeKills = 30; state.progress.requestProgress['clear-the-woods'] = 30; state.progress.bossKillsByBoss['grove-sentinel'] = 2; state.progress.requestProgress['sentinel-breaker'] = 2; state.progress.guildReputation = 100 } if (name === 'main-boss' || name === 'chapter-complete') { state.inventory['fire-fragment'] = 20; state.inventory['wisp-essence'] = 12; state.inventory['grove-bark'] = 4; state.progress.guildUnlocked = true; state.progress.guildRank = 'apprentice'; state.progress.firstBossKill = true; state.progress.emberStaffUnlocked = true; state.progress.forestHeartUnlocked = true; state.progress.autoHuntBossUnlocked = true; state.progress.permanentFocusBonuses['forest-heart'] = 10; state.progress.permanentFocusBonuses['guild-apprentice'] = 10; state.progress.magicLevelCap = 20; state.schools.fire = { xp: 380, level: 20 }; state.progress.firstMainBossKill = true; state.inventory.heartseed = 1; recalculateDerivedStats(state); state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; spawnEnemy(state, 'forest-heart', true) } return state }),
   resumeFromHidden: (elapsedMs, notify = true) => set((state) => { if (elapsedMs > 1000) { state.offlineBankMs += elapsedMs; if (notify) pushNotification(state, `${Math.round(elapsedMs / 1000)}s added to Offline Bank`, 'info') } return state }),
   advanceWithOfflineBank: async (durationMs) => {
-    const result = await runOfflineBankAdvance(durationMs, get, (recipe) => set((state) => { recipe(state); return state }), () => { get().saveGame('autosave') })
+    const result = await runOfflineBankAdvance(durationMs, get, (recipe) => set((state) => { recipe(state); return state }), () => { get().saveGame('autosave') }, (state, itemId, amount) => recordRecentAcquisition(state as GameStore, itemId, amount))
     if (result.ok) set((state) => { state.lastOfflineBankReport = result.report ?? null; return state })
     return result
   },
 })))
+
+// Presets replace gameplay state for developer testing; recent acquisition UI state is session-only too.
+const presetGameplayState = useGameStore.getState().preset
+useGameStore.setState({ preset: (name) => { presetGameplayState(name); useGameStore.setState({ recentAcquisitions: [] }) } })
 
 export const useGameStoreSelectors = { selectUsedFocus, selectFreeFocus }
 export { selectUsedFocus, selectFreeFocus }

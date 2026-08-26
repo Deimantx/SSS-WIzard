@@ -10,7 +10,7 @@ export interface ProfileSaveResult {
 }
 
 export const serializeGameState = (state: GameState) => {
-  const { lastOfflineBankReport: _transientReport, ...gameplayState } = state as GameState & { lastOfflineBankReport?: unknown }
+  const { lastOfflineBankReport: _transientReport, recentAcquisitions: _transientAcquisitions, ...gameplayState } = state as GameState & { lastOfflineBankReport?: unknown; recentAcquisitions?: unknown }
   return JSON.parse(JSON.stringify({
   ...gameplayState,
   debug: undefined,

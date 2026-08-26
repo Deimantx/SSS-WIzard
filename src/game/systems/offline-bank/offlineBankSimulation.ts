@@ -1,12 +1,13 @@
 import { advanceGameState } from '../simulation/advanceGameState'
 import { pushNotification } from '../../engine'
-import type { GameState } from '../../types'
+import type { GameState, ItemId } from '../../types'
 import { formatOfflineBank } from '../../utils'
 import { createOfflineBankReportCollector, type OfflineBankReport } from './offlineBankReport'
 
 export interface OfflineBankResult { ok: boolean; error?: string; report?: OfflineBankReport }
 type StateSetter = (recipe: (state: GameState) => void) => void
 type SilentSave = () => void
+type ItemAcquired = (state: GameState, itemId: ItemId, quantity: number) => void
 
 let active = false
 export const isOfflineBankSimulationActive = () => active
@@ -14,7 +15,7 @@ const isMajorNotification = (text: string) => /Arcane Discovery|reached Level|un
 const yieldToBrowser = () => new Promise<void>((resolve) => window.setTimeout(resolve, 0))
 const cloneGameState = (state: GameState) => JSON.parse(JSON.stringify(state)) as GameState
 
-export const advanceWithOfflineBank = async (durationMs: number, getState: () => GameState, setState: StateSetter, silentSave: SilentSave): Promise<OfflineBankResult> => {
+export const advanceWithOfflineBank = async (durationMs: number, getState: () => GameState, setState: StateSetter, silentSave: SilentSave, onItemAcquired?: ItemAcquired): Promise<OfflineBankResult> => {
   const duration = Math.floor(durationMs)
   if (active) return { ok: false, error: 'Offline Bank is already advancing.' }
   if (!Number.isFinite(duration) || duration <= 0) return { ok: false, error: 'Choose a positive duration.' }
@@ -36,7 +37,7 @@ export const advanceWithOfflineBank = async (durationMs: number, getState: () =>
       remaining -= step
       setState((state) => {
         state.offlineBankMs = Math.max(0, state.offlineBankMs - step)
-        advanceGameState(state, step, { mode: 'banked', suppressRoutineNotifications: true, report: collector })
+        advanceGameState(state, step, { mode: 'banked', suppressRoutineNotifications: true, report: collector, onItemAcquired: (itemId, quantity) => onItemAcquired?.(state, itemId, quantity) })
       })
       if (index > 0 && index % 50 === 0) await yieldToBrowser()
     }

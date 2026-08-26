@@ -66,6 +66,8 @@ export interface ItemDefinition {
   materialSubtype?: InventoryMaterialSubtype
   source: string
   sourceNavigation?: ScreenId
+  /** Optional authored chain for future refined-material presentations. */
+  processingChain?: ItemId[]
   equipmentSlot?: EquipmentSlot
   stats?: EquipmentStats
   researchSchool?: SchoolId

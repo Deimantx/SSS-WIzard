@@ -36,6 +36,8 @@ export function getItemSourceDestination(itemId: ItemId): InventoryDestination |
   return destination ? { label: getItemSourceLabel(itemId), destination } : null
 }
 
+export const getItemProcessingChain = (itemId: ItemId): ItemId[] => ITEMS[itemId].processingChain ?? []
+
 /** Used-in links are derived from authored recipes, Pillars, Guild requests, and Research eligibility. */
 export function getItemUses(itemId: ItemId): InventoryDestination[] {
   const uses: InventoryDestination[] = []
@@ -78,4 +80,3 @@ export function getInventorySearchText(itemId: ItemId): string {
 export function matchesInventorySearch(itemId: ItemId, query: string) {
   return !query.trim() || getInventorySearchText(itemId).includes(query.trim().toLowerCase())
 }
-

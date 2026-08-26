@@ -4,7 +4,8 @@ import { getInventoryCategory, getMaterialSubtype, INVENTORY_CATEGORIES, matches
 
 export { INVENTORY_CATEGORIES, MATERIAL_SUBCATEGORIES }
 export const INVENTORY_FILTERS = INVENTORY_CATEGORIES
-export type InventoryFilter = InventoryCategoryFilter | 'Protected' | 'Elemental' | 'Monster Loot' | 'Boss Loot'
+export const INVENTORY_UTILITY_FILTERS = ['Protected', 'Needed'] as const
+export type InventoryFilter = InventoryCategoryFilter | typeof INVENTORY_UTILITY_FILTERS[number] | 'Elemental' | 'Monster Loot' | 'Boss Loot'
 export const INVENTORY_SORTS = ['Category', 'Name', 'Quantity', 'Recent'] as const
 export type InventorySort = typeof INVENTORY_SORTS[number]
 
@@ -13,7 +14,7 @@ const categoryFilterMatches = (id: ItemId, filter: InventoryFilter, materialSubc
   if (filter === 'Elemental') return item.inventoryCategory === 'material' && item.materialSubtype === 'elemental'
   if (filter === 'Monster Loot') return item.category === 'monster-loot'
   if (filter === 'Boss Loot') return item.category === 'boss-loot'
-  if (filter === 'All' || filter === 'Protected') return true
+  if (filter === 'All' || filter === 'Protected' || filter === 'Needed') return true
   if (filter === 'Materials') return item.inventoryCategory === 'material' && (materialSubcategory === 'All Materials' || item.materialSubtype === materialSubcategory.toLowerCase())
   return getInventoryCategory(id) === filter.toLowerCase() as 'loot' | 'equipment' | 'special'
 }
@@ -31,15 +32,18 @@ export function selectVisibleItemIds(
   sort: InventorySort,
   materialSubcategory: MaterialSubcategoryFilter | readonly ItemId[] = 'All Materials',
   recentOrder: readonly ItemId[] = [],
+  neededItemIds: readonly ItemId[] = [],
 ) {
   const isRecentArray = Array.isArray(materialSubcategory)
   const resolvedSubcategory: MaterialSubcategoryFilter = isRecentArray ? 'All Materials' : materialSubcategory as MaterialSubcategoryFilter
   const resolvedRecentOrder: readonly ItemId[] = isRecentArray ? materialSubcategory as readonly ItemId[] : recentOrder
   const equipped = new Set(Object.values(equipment).filter(Boolean))
+  const needed = new Set(neededItemIds)
   const recentRank = new Map(resolvedRecentOrder.map((id, index) => [id, index]))
   const items = selectOwnedItemIds(inventory).filter((id) => {
     const protectionMatch = filter === 'Protected' ? Boolean(protectedItems[id]) || equipped.has(id) : true
-    return protectionMatch && categoryFilterMatches(id, filter, resolvedSubcategory) && matchesInventorySearch(id, search)
+    const neededMatch = filter === 'Needed' ? needed.has(id) : true
+    return protectionMatch && neededMatch && categoryFilterMatches(id, filter, resolvedSubcategory) && matchesInventorySearch(id, search)
   })
   return items.sort((a, b) => {
     if (sort === 'Quantity') return (inventory[b] ?? 0) - (inventory[a] ?? 0) || ITEMS[a].name.localeCompare(ITEMS[b].name)

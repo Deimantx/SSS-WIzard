@@ -61,4 +61,59 @@ describe('profile storage and session lifecycle', () => {
     const secondBank = useGameStore.getState().offlineBankMs
     expect(secondBank).toBe(firstBank)
   })
+
+  it('keeps newly earned items through a manual save and profile switch', () => {
+    expect(createProfile('slot-1', 'Inventory Test').ok).toBe(true)
+    expect(enterProfile('slot-1').ok).toBe(true)
+    useGameStore.getState().addItem('fire-fragment', 37)
+    useGameStore.getState().addItem('life-essence', 9)
+    expect(useGameStore.getState().saveGame('manual').ok).toBe(true)
+
+    expect(leaveToProfiles().ok).toBe(true)
+    expect(enterProfile('slot-1').ok).toBe(true)
+    expect(useGameStore.getState().inventory['fire-fragment']).toBe(37)
+    expect(useGameStore.getState().inventory['life-essence']).toBe(9)
+  })
+
+  it('keeps item quantities and protection through autosave, visibility save, and reload', () => {
+    expect(createProfile('slot-1', 'Autosave Test').ok).toBe(true)
+    expect(enterProfile('slot-1').ok).toBe(true)
+    useGameStore.getState().addItem('fire-fragment', 5)
+    useGameStore.getState().toggleItemProtection('fire-fragment')
+    expect(useGameStore.getState().saveGame('autosave').ok).toBe(true)
+    useGameStore.getState().addItem('fire-fragment', 2)
+    expect(useGameStore.getState().saveGame('visibility').ok).toBe(true)
+    useGameStore.getState().addItem('fire-fragment', 10)
+    useGameStore.getState().reloadFromStorage()
+
+    expect(useGameStore.getState().inventory['fire-fragment']).toBe(7)
+    expect(useGameStore.getState().protectedItems['fire-fragment']).toBe(true)
+  })
+
+  it('persists progression maps and permanent rewards exactly once', () => {
+    expect(createProfile('slot-1', 'Progress Test').ok).toBe(true)
+    expect(enterProfile('slot-1').ok).toBe(true)
+    useGameStore.setState((state) => {
+      state.progress.lifetimeKillsByMonster['forest-wisp'] = 12
+      state.progress.bossKillsByBoss['grove-sentinel'] = 2
+      state.progress.requestProgress['arcane-supply'] = 20
+      state.progress.requestClaims['arcane-supply'] = true
+      state.progress.permanentFocusBonuses['forest-heart'] = 10
+      state.progress.permanentFocusBonuses['guild-apprentice'] = 10
+      state.progress.autoHuntBossByDungeon['whispering-woods'] = true
+      return state
+    })
+    expect(useGameStore.getState().saveGame('manual').ok).toBe(true)
+
+    expect(leaveToProfiles().ok).toBe(true)
+    expect(enterProfile('slot-1').ok).toBe(true)
+    const progress = useGameStore.getState().progress
+    expect(progress.lifetimeKillsByMonster['forest-wisp']).toBe(12)
+    expect(progress.bossKillsByBoss['grove-sentinel']).toBe(2)
+    expect(progress.requestProgress['arcane-supply']).toBe(20)
+    expect(progress.requestClaims['arcane-supply']).toBe(true)
+    expect(progress.permanentFocusBonuses).toEqual({ 'forest-heart': 10, 'guild-apprentice': 10 })
+    expect(Object.values(progress.permanentFocusBonuses).reduce((sum, value) => sum + value, 0)).toBe(20)
+    expect(progress.autoHuntBossByDungeon['whispering-woods']).toBe(true)
+  })
 })

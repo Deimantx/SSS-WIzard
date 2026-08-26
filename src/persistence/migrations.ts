@@ -1,5 +1,10 @@
 import { createInitialState, SAVE_VERSION } from '../store/initialState'
 import { MANA_PILLAR_IDS } from '../game/data/manaPillars'
+import { DUNGEONS } from '../game/content/dungeons/dungeons'
+import { GUILD_REQUESTS } from '../game/content/guild/guildRequests'
+import { ITEMS } from '../game/content/items/items'
+import { MONSTERS } from '../game/content/monsters/whisperingWoods'
+import { SPELLS } from '../game/content/spells/spells'
 import type { GameState, ItemId, ResearchActivity, SchoolId } from '../game/types'
 import { isRecord, SaveMigrationError } from './saveSchema'
 
@@ -22,6 +27,62 @@ const merge = <T extends Record<string, any>>(base: T, value: unknown): T => {
 }
 
 const safeLevel = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.min(10, Math.round(value))) : 0
+
+const itemIds = Object.keys(ITEMS)
+const monsterIds = Object.keys(MONSTERS)
+const bossIds = Object.values(MONSTERS).filter((monster) => monster.boss).map((monster) => monster.id)
+const dungeonIds = Object.keys(DUNGEONS)
+const requestIds = Object.keys(GUILD_REQUESTS)
+const spellIds = Object.keys(SPELLS)
+const enemySpecialIds = ['ancient-growth', 'living-core']
+const permanentFocusIds = ['forest-heart', 'guild-apprentice']
+
+const nonNegativeInteger = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.floor(value)) : undefined
+const nonNegativeNumber = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : undefined
+const booleanValue = (value: unknown) => typeof value === 'boolean' ? value : undefined
+
+/**
+ * Merge records whose keys are content IDs without ever copying arbitrary save
+ * keys. The initial-state record supplies defaults, while the raw record can
+ * add any currently valid content key (including keys absent from the default).
+ */
+const normalizeDynamicRecord = <T>(base: Record<string, T>, incoming: unknown, validKeys: readonly string[], normalize: (value: unknown) => T | undefined) => {
+  const source = isRecord(incoming) ? incoming : {}
+  const result: Record<string, T> = {}
+  for (const key of validKeys) {
+    const defaultValue = normalize(base[key])
+    if (defaultValue !== undefined) result[key] = defaultValue
+    if (Object.prototype.hasOwnProperty.call(source, key)) {
+      const incomingValue = normalize(source[key])
+      if (incomingValue !== undefined) result[key] = incomingValue
+    }
+  }
+  return result
+}
+
+const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) => {
+  const fresh = createInitialState()
+  const rawProgress = isRecord(raw.progress) ? raw.progress : {}
+  const rawActivities = isRecord(raw.activities) ? raw.activities : {}
+  const rawCombat = isRecord(raw.combat) ? raw.combat : {}
+
+  migrated.inventory = normalizeDynamicRecord(fresh.inventory, raw.inventory, itemIds, nonNegativeInteger)
+  migrated.protectedItems = normalizeDynamicRecord(fresh.protectedItems, raw.protectedItems, itemIds, booleanValue)
+  migrated.activities.autoCast = normalizeDynamicRecord(fresh.activities.autoCast, rawActivities.autoCast, spellIds, booleanValue) as GameState['activities']['autoCast']
+  migrated.combat.spellCooldowns = normalizeDynamicRecord(fresh.combat.spellCooldowns, rawCombat.spellCooldowns, spellIds, nonNegativeNumber) as GameState['combat']['spellCooldowns']
+  migrated.combat.enemySpecialUsed = normalizeDynamicRecord(fresh.combat.enemySpecialUsed, rawCombat.enemySpecialUsed, enemySpecialIds, booleanValue)
+  migrated.progress.requestProgress = normalizeDynamicRecord(fresh.progress.requestProgress, rawProgress.requestProgress, requestIds, nonNegativeInteger)
+  migrated.progress.requestClaims = normalizeDynamicRecord(fresh.progress.requestClaims, rawProgress.requestClaims, requestIds, booleanValue)
+  migrated.progress.permanentFocusBonuses = normalizeDynamicRecord(fresh.progress.permanentFocusBonuses, rawProgress.permanentFocusBonuses, permanentFocusIds, nonNegativeNumber)
+  migrated.progress.lifetimeKillsByMonster = normalizeDynamicRecord(fresh.progress.lifetimeKillsByMonster, rawProgress.lifetimeKillsByMonster, monsterIds, nonNegativeInteger)
+  migrated.progress.bossKillsByBoss = normalizeDynamicRecord(fresh.progress.bossKillsByBoss, rawProgress.bossKillsByBoss, bossIds, nonNegativeInteger)
+  migrated.progress.autoHuntBossByDungeon = normalizeDynamicRecord(fresh.progress.autoHuntBossByDungeon, rawProgress.autoHuntBossByDungeon, dungeonIds, booleanValue) as GameState['progress']['autoHuntBossByDungeon']
+
+  const rawUnlockedSpells = Array.isArray(rawProgress.unlockedSpells) ? rawProgress.unlockedSpells : []
+  migrated.progress.unlockedSpells = rawUnlockedSpells.filter((id): id is GameState['progress']['unlockedSpells'][number] => typeof id === 'string' && spellIds.includes(id))
+  const rawDiscoveredMonsters = Array.isArray(rawProgress.discoveredMonsters) ? rawProgress.discoveredMonsters : []
+  migrated.progress.discoveredMonsters = rawDiscoveredMonsters.filter((id): id is GameState['progress']['discoveredMonsters'][number] => typeof id === 'string' && monsterIds.includes(id))
+}
 
 const migrateChanneling = (rawProgress: unknown, fresh: GameState['progress']): GameState['progress']['channeling'] => {
   const source = isRecord(rawProgress) && isRecord(rawProgress.channeling) ? rawProgress.channeling : {}
@@ -50,6 +111,7 @@ const finalize = (migrated: GameState, raw: Record<string, any>) => {
   migrated.saveVersion = SAVE_VERSION
   migrated.progress.channeling = migrateChanneling(raw.progress, createInitialState().progress)
   migrated.ui.screen = normalizeScreen(isRecord(raw.ui) ? raw.ui.screen : undefined, migrated.ui.screen)
+  normalizeDynamicRecords(migrated, raw)
   return migrated
 }
 
@@ -107,9 +169,7 @@ export const migrateSave = (rawSave: unknown): GameState => {
   if (version === 2) return migrateV2(rawSave)
   if (version === 3) return migrateV3(rawSave)
   if (version === SAVE_VERSION) {
-    const migrated = merge(createInitialState(), rawSave)
-    migrated.ui.screen = normalizeScreen(isRecord(rawSave.ui) ? rawSave.ui.screen : undefined, migrated.ui.screen)
-    return migrated
+    return finalize(merge(createInitialState(), rawSave), rawSave)
   }
   throw new SaveMigrationError(`Unsupported save version: ${String(version ?? 'missing')}.`)
 }

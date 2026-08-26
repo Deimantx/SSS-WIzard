@@ -9,6 +9,12 @@ const LEGACY_UI_LAYOUTS_KEY = 'sss-wizard-ui-layout-v2'
 const blankDocument = (): UiLayoutDocument => ({ version: LAYOUT_VERSION, screens: {}, shell: { topbar: clampTopbarLayout(DEFAULT_TOPBAR_LAYOUT) } })
 const validNumber = (value: unknown, fallback: number) => typeof value === 'number' && Number.isFinite(value) ? value : fallback
 
+const hasGeometry = (value: unknown, expected: { x: number; y: number; w: number; h: number }) => {
+  if (!value || typeof value !== 'object') return false
+  const candidate = value as Partial<SavedPanelLayout>
+  return candidate.x === expected.x && candidate.y === expected.y && candidate.w === expected.w && candidate.h === expected.h
+}
+
 const normalizePanel = (screen: ScreenId, id: string, value: unknown): SavedPanelLayout | null => {
   const fallback = DEFAULT_LAYOUTS[screen]?.[id]
   if (!fallback || !value || typeof value !== 'object') return null
@@ -32,6 +38,10 @@ export function loadUiLayouts(): UiLayoutDocument {
       if (screen === 'tower-channeling' && ('channeling-main' in source || 'channeling-stats' in source)) continue
       const panels: Record<string, SavedPanelLayout> = {}
       for (const [id, value] of Object.entries(source)) { const normalized = normalizePanel(screen, id, value); if (normalized) panels[id] = normalized }
+      if (screen === 'inventory' && hasGeometry(source['inventory-catalog'], { x: 0, y: 0, w: 9, h: 15 }) && hasGeometry(source['inventory-detail'], { x: 9, y: 0, w: 3, h: 15 })) {
+        panels['inventory-catalog'] = { ...panels['inventory-catalog'], w: 8 }
+        panels['inventory-detail'] = { ...panels['inventory-detail'], x: 8, w: 4 }
+      }
       if (Object.keys(panels).length) screens[screen] = panels
     }
     return { version: LAYOUT_VERSION, screens, shell: { topbar: clampTopbarLayout(parsed.shell?.topbar) } }

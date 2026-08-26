@@ -116,12 +116,12 @@
 .inventory-processing-chain strong { color: var(--ui-text-soft); font-weight: 600; }
 
 .inventory-vault-header-meta { display: inline-flex; align-items: center; justify-content: flex-end; gap: 12px; flex-wrap: wrap; }
-.inventory-gold, .inventory-actions-gold { display: inline-flex; align-items: center; gap: 5px; color: var(--ui-gold); font: var(--text-micro) var(--font-mono); letter-spacing: .08em; white-space: nowrap; }
-.inventory-gold svg, .inventory-actions-gold svg { color: var(--ui-gold); }
-.inventory-actions-card { height: 100% !important; min-height: 0 !important; overflow: hidden !important; display: flex; flex-direction: column; }
+.inventory-gold { display: inline-flex; align-items: center; gap: 5px; color: var(--ui-gold); font: var(--text-micro) var(--font-mono); letter-spacing: .08em; white-space: nowrap; }
+.inventory-gold svg { color: var(--ui-gold); }
+.inventory-actions-card { height: 100% !important; min-height: 0 !important; overflow: visible !important; display: flex; flex-direction: column; }
 .inventory-actions-card > .card-head { flex: 0 0 auto; }
-.inventory-actions-card > .inventory-actions-content { flex: 1 1 auto; min-height: 0; overflow: auto; scrollbar-gutter: stable; scrollbar-width: thin; scrollbar-color: var(--ui-scrollbar-thumb) transparent; }
-.inventory-actions-content { display: grid; align-content: start; gap: 12px; min-width: 0; }
+.inventory-actions-card > .inventory-actions-content { flex: 1 1 auto; min-height: auto; overflow: visible; }
+.inventory-actions-content { display: grid; align-content: start; gap: 8px; min-width: 0; }
 .inventory-actions-empty { place-content: center; justify-items: center; min-height: 0; color: var(--ui-text-muted); text-align: center; }
 .inventory-actions-empty strong { color: var(--ui-text-soft); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; }
 .inventory-actions-empty span { font-size: var(--text-xs); }
@@ -138,12 +138,11 @@
 .inventory-action-gold, .inventory-action-preview b { color: var(--ui-gold) !important; }
 .inventory-action-unavailable { color: var(--ui-warning) !important; }
 .inventory-action-note { margin: 0; color: var(--ui-warning); font: var(--text-micro) var(--font-mono); line-height: 1.4; }
-.inventory-action-mode { display: grid; gap: 10px; }
+.inventory-action-mode { display: grid; gap: 8px; }
 .inventory-action-mode-title { overflow: hidden; color: var(--ui-text); font: var(--text-micro) var(--font-mono); letter-spacing: .08em; text-overflow: ellipsis; white-space: nowrap; }
 .inventory-action-preview strong { display: flex; justify-content: space-between; gap: 8px; }
-.inventory-action-confirmation { display: grid; gap: 3px; color: var(--ui-danger) !important; }.inventory-action-confirmation strong, .inventory-action-confirmation small { color: inherit !important; font: var(--text-micro) var(--font-mono); }.inventory-action-confirmation small { letter-spacing: .06em; }
-.inventory-actions-gold { justify-content: flex-end; padding-top: 2px; border-top: 1px solid var(--ui-border); }
-.inventory-actions-gold strong { color: var(--ui-gold); font: var(--text-sm) var(--font-mono); letter-spacing: 0; }
+.inventory-action-confirmation { color: var(--ui-danger) !important; }
+.inventory-action-confirmation strong { color: inherit !important; font: var(--text-micro) var(--font-mono); }
 .inventory-quantity-selector { display: grid; gap: 8px; --quantity-color: var(--ui-gold); }
 .inventory-quantity-destroy { --quantity-color: var(--ui-danger); }
 .inventory-quantity-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
@@ -168,4 +167,4 @@
 .inventory-flow-row.positive strong, .inventory-flow-row.emphasis.positive strong { color: var(--ui-success); }
 .inventory-flow-row.negative strong, .inventory-flow-row.emphasis.negative strong { color: var(--ui-danger); }
 .inventory-flow-row.neutral strong, .inventory-flow-row.emphasis.neutral strong { color: var(--ui-text-muted); }
-@media (max-width: 760px) { .inventory-vault-header-meta { justify-content: flex-start; }.inventory-actions-card { overflow: visible !important; }.inventory-actions-card > .inventory-actions-content { overflow: visible; }.inventory-actions-content { gap: 10px; } }
+@media (max-width: 760px) { .inventory-vault-header-meta { justify-content: flex-start; }.inventory-actions-card { height: auto !important; min-height: 0 !important; overflow: visible !important; }.inventory-actions-card > .inventory-actions-content { overflow: visible; }.inventory-actions-content { gap: 10px; } }

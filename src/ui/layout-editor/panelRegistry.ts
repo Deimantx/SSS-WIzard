@@ -12,7 +12,7 @@ const labels: Record<string, string> = {
   'collection-summary': 'Collection summary', 'collection-content': 'Collection content', 'settings-profile': 'Profile', 'settings-appearance': 'Appearance', 'settings-theme-preview': 'Theme preview', 'settings-save': 'Save', 'settings-layout': 'Interface layout', 'settings-developer': 'Developer', 'settings-info': 'Info',
 }
 
-export const PANEL_REGISTRY: PanelDefinition[] = (Object.entries(DEFAULT_LAYOUTS) as [ScreenId, Record<string, PanelDefinition['defaultLayout']>][]) .flatMap(([screen, layouts]) => Object.entries(layouts).map(([id, defaultLayout]) => ({ id, screen, label: labels[id] ?? id, defaultLayout, minW: id === 'inventory-actions' || id.includes('request') ? 3 : 2, minH: 4, canHide: true })))
+export const PANEL_REGISTRY: PanelDefinition[] = (Object.entries(DEFAULT_LAYOUTS) as [ScreenId, Record<string, PanelDefinition['defaultLayout']>][]) .flatMap(([screen, layouts]) => Object.entries(layouts).map(([id, defaultLayout]) => ({ id, screen, label: labels[id] ?? id, defaultLayout, minW: id === 'inventory-actions' || id.includes('request') ? 3 : 2, minH: id === 'inventory-actions' ? 7 : 4, canHide: true })))
 
 export const getPanelDefinitions = (screen: ScreenId) => PANEL_REGISTRY.filter((panel) => panel.screen === screen)
 export const getPanelDefinition = (screen: ScreenId, panelId: string) => PANEL_REGISTRY.find((panel) => panel.screen === screen && panel.id === panelId)

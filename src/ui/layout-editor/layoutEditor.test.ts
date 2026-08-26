@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { UI_LAYOUTS_KEY } from './layoutEditorStorage'
 import { beginTopbarReorder, beginTopbarResize, cancelTopbarInteraction, closeLayoutEditor, commitTopbarInteraction, getLayoutEditorState, getSavedScreenLayouts, getTopbarLayout, moveSelectedPanel, openLayoutEditor, previewTopbarOrder, previewTopbarResize, resetAllScreenLayouts, selectLayoutPanel, setLayoutTarget, togglePanelHidden, togglePanelLocked, undoLayout, redoLayout, updateSelectedPanel } from './layoutEditorStore'
+import { clampPanelLayout } from './layoutUtils'
 
 describe('layout editor persistence and session state', () => {
   beforeEach(() => { localStorage.clear(); resetAllScreenLayouts(); closeLayoutEditor(); Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1280 }) })
@@ -56,5 +57,9 @@ describe('layout editor persistence and session state', () => {
     expect(getLayoutEditorState().layoutTarget).toBe('shell')
     expect(getLayoutEditorState().selectedShellRegion).toBe('topbar-mana')
     expect(getTopbarLayout().widths['topbar-mana']).toBe(480)
+  })
+
+  it('keeps Item Actions at its functional minimum height', () => {
+    expect(clampPanelLayout('inventory', 'inventory-actions', { h: 1 }).h).toBe(7)
   })
 })

@@ -13,8 +13,8 @@ let lastBackgroundSaveErrorAt = 0
 
 export const saveGameAction = (state: GameState, activeProfileId: ProfileSlotId | null, reason: SaveReason, savedAt: number): PersistenceSaveResult => {
   if (!activeProfileId) return { ok: false, error: 'No active profile.' }
-  markSavedAt(state, savedAt)
-  const result = saveProfileGame(activeProfileId, state)
+  const result = saveProfileGame(activeProfileId, state, { savedAt })
+  if (result.ok) markSavedAt(state, savedAt)
   if (result.ok && reason === 'manual') pushNotification(state, 'Game saved', 'success')
   if (!result.ok && (reason === 'manual' || savedAt - lastBackgroundSaveErrorAt > AUTOSAVE_INTERVAL_MS)) {
     lastBackgroundSaveErrorAt = savedAt

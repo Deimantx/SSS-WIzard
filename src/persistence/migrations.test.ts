@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { migrateSave } from './migrations'
+import { serializeGameState } from './profileSaveManager'
 import { createInitialState } from '../store/initialState'
 
 describe('save navigation migration', () => {
@@ -237,5 +238,26 @@ describe('save navigation migration', () => {
 
     expect(migrated.saveVersion).toBe(9)
     expect(migrated.activities.research.slots).toEqual(state.activities.research.slots)
+  })
+
+  it('preserves a non-default current V9 gameplay snapshot through serialization and migration', () => {
+    const state = createInitialState()
+    state.inventory = { 'apprentice-wand': 1, 'fire-fragment': 123, 'water-fragment': 47, 'life-essence': 99 }
+    state.schools = { fire: { xp: 125, level: 7 }, water: { xp: 65, level: 4 }, earth: { xp: 45, level: 3 }, air: { xp: 25, level: 2 } }
+    state.currencies.gold = 321
+    state.equipment.weapon = 'apprentice-wand'
+    state.progress.channeling.pillars['leyline-conduit'] = { rank: 1, level: 3 }
+    state.activities.research.slots['research-1'] = { itemId: 'fire-fragment', targetSchoolId: 'fire', requestedQuantity: 30, remainingQuantity: 30, progressMs: 0, echoesAssigned: 1, status: 'running' }
+    state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 1, progressMs: 0 }
+
+    const migrated = migrateSave(JSON.parse(JSON.stringify(serializeGameState(state))))
+
+    expect(migrated.inventory).toMatchObject({ 'fire-fragment': 123, 'water-fragment': 47, 'life-essence': 99 })
+    expect(migrated.schools).toEqual(state.schools)
+    expect(migrated.currencies).toEqual({ gold: 321 })
+    expect(migrated.equipment.weapon).toBe('apprentice-wand')
+    expect(migrated.progress.channeling.pillars['leyline-conduit']).toEqual({ rank: 1, level: 3 })
+    expect(migrated.activities.research.slots['research-1']).toEqual(state.activities.research.slots['research-1'])
+    expect(migrated.activities.transmutation.jobs['fire-fragment']).toEqual({ echoesAssigned: 1, progressMs: 0 })
   })
 })

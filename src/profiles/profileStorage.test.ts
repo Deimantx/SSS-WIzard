@@ -2,9 +2,10 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { createInitialState } from '../store/initialState'
 import { useGameStore } from '../store/gameStore'
 import { loadProfileGame, saveProfileGame } from '../persistence/profileSaveManager'
+import { SCHOOL_LEVEL_XP } from '../game/core/balance/balance'
 import { LEGACY_SAVE_BACKUP_KEY, SAVE_KEY } from '../persistence/saveSchema'
 import { createProfile, enterProfile, leaveToProfiles } from './profileController'
-import { PROFILE_REGISTRY_KEY, profileSaveKey } from './profileKeys'
+import { PROFILE_REGISTRY_KEY, profileSaveBackupKey, profileSaveKey } from './profileKeys'
 import { loadProfileRegistry, saveProfileRegistry } from './profileStorage'
 import { refreshProfiles, setActiveProfileId } from './profileSessionStore'
 
@@ -129,5 +130,96 @@ describe('profile storage and session lifecycle', () => {
     expect(progress.permanentFocusBonuses).toEqual({ 'forest-heart': 10, 'guild-apprentice': 10 })
     expect(Object.values(progress.permanentFocusBonuses).reduce((sum, value) => sum + value, 0)).toBe(20)
     expect(progress.autoHuntBossByDungeon['whispering-woods']).toBe(true)
+  })
+
+  it('persists inventory, schools, activities, equipment, currency, and pillars through the profile lifecycle', () => {
+    expect(createProfile('slot-1', 'Full Lifecycle').ok).toBe(true)
+    expect(enterProfile('slot-1').ok).toBe(true)
+    useGameStore.getState().addItem('fire-fragment', 123)
+    useGameStore.getState().addItem('water-fragment', 47)
+    useGameStore.getState().addItem('life-essence', 99)
+    useGameStore.getState().setSchoolDebug('fire', SCHOOL_LEVEL_XP(6) + 5, 7)
+    useGameStore.getState().setSchoolDebug('water', SCHOOL_LEVEL_XP(3) + 5, 4)
+    useGameStore.getState().setSchoolDebug('earth', SCHOOL_LEVEL_XP(2) + 5, 3)
+    useGameStore.getState().setSchoolDebug('air', SCHOOL_LEVEL_XP(1) + 5, 2)
+    useGameStore.getState().prepareResearch('fire-fragment', 'fire', 30)
+    useGameStore.getState().setResearchEchoes('research-1', 1)
+    useGameStore.getState().assignTransmutationEcho('fire-fragment')
+    useGameStore.setState((state) => {
+      state.currencies.gold = 321
+      state.progress.channeling.pillars['leyline-conduit'] = { rank: 1, level: 3 }
+      return state
+    })
+    expect(useGameStore.getState().saveGame('manual').ok).toBe(true)
+
+    expect(leaveToProfiles().ok).toBe(true)
+    expect(enterProfile('slot-1').ok).toBe(true)
+    expect(useGameStore.getState().inventory).toMatchObject({ 'fire-fragment': 123, 'water-fragment': 47, 'life-essence': 99 })
+    expect(useGameStore.getState().schools).toEqual({
+      fire: { xp: 125, level: 7 },
+      water: { xp: 65, level: 4 },
+      earth: { xp: 45, level: 3 },
+      air: { xp: 25, level: 2 },
+    })
+    expect(useGameStore.getState().currencies.gold).toBe(321)
+    expect(useGameStore.getState().equipment.weapon).toBe('apprentice-wand')
+    expect(useGameStore.getState().progress.channeling.pillars['leyline-conduit']).toEqual({ rank: 1, level: 3 })
+    expect(useGameStore.getState().activities.research.slots['research-1']).toMatchObject({ itemId: 'fire-fragment', targetSchoolId: 'fire', requestedQuantity: 30, remainingQuantity: 30, echoesAssigned: 1 })
+    expect(useGameStore.getState().activities.transmutation.jobs['fire-fragment']).toEqual({ echoesAssigned: 1, progressMs: 0 })
+
+    useGameStore.getState().addItem('fire-fragment', 7)
+    expect(useGameStore.getState().saveGame('manual').ok).toBe(true)
+    useGameStore.getState().hydrateState(createInitialState())
+    useGameStore.getState().reloadFromStorage()
+    expect(useGameStore.getState().inventory['fire-fragment']).toBe(130)
+    expect(useGameStore.getState().schools.fire).toEqual({ xp: 125, level: 7 })
+    expect(useGameStore.getState().schools.water).toEqual({ xp: 65, level: 4 })
+  })
+
+  it('recovers a valid backup when the primary profile save is corrupt', () => {
+    expect(createProfile('slot-1', 'Backup Test').ok).toBe(true)
+    expect(enterProfile('slot-1').ok).toBe(true)
+    useGameStore.getState().addItem('fire-fragment', 23)
+    expect(useGameStore.getState().saveGame('manual').ok).toBe(true)
+    expect(useGameStore.getState().saveGame('manual').ok).toBe(true)
+    const primary = localStorage.getItem(profileSaveKey('slot-1'))
+    expect(primary).toBeTruthy()
+    expect(localStorage.getItem(profileSaveBackupKey('slot-1'))).toBeTruthy()
+
+    localStorage.setItem(profileSaveKey('slot-1'), '{corrupt')
+    const loaded = loadProfileGame('slot-1')
+    expect(loaded.source).toBe('backup')
+    expect(loaded.recovered).toBe(true)
+    expect(loaded.state?.inventory['fire-fragment']).toBe(23)
+    expect(localStorage.getItem(profileSaveKey('slot-1'))).toBe('{corrupt')
+    expect(primary).not.toBeNull()
+  })
+
+  it('rejects a candidate that loses critical data without replacing the primary or backup', () => {
+    expect(createProfile('slot-1', 'Integrity Test').ok).toBe(true)
+    expect(enterProfile('slot-1').ok).toBe(true)
+    useGameStore.getState().addItem('fire-fragment', 19)
+    expect(useGameStore.getState().saveGame('manual').ok).toBe(true)
+    const primaryBefore = localStorage.getItem(profileSaveKey('slot-1'))
+    const backupBefore = localStorage.getItem(profileSaveBackupKey('slot-1'))
+    const invalidState = { ...useGameStore.getState(), inventory: { ...useGameStore.getState().inventory, 'removed-item': 4 } } as never
+
+    const result = saveProfileGame('slot-1', invalidState)
+
+    expect(result.ok).toBe(false)
+    expect(result.error).toContain('SAVE FAILED')
+    expect(localStorage.getItem(profileSaveKey('slot-1'))).toBe(primaryBefore)
+    expect(localStorage.getItem(profileSaveBackupKey('slot-1'))).toBe(backupBefore)
+  })
+
+  it('keeps the player on Profile Select when both gameplay copies are unreadable', () => {
+    expect(createProfile('slot-1', 'Unreadable Test').ok).toBe(true)
+    localStorage.setItem(profileSaveKey('slot-1'), '{primary-corrupt')
+    localStorage.setItem(profileSaveBackupKey('slot-1'), '{backup-corrupt')
+
+    const result = enterProfile('slot-1')
+
+    expect(result.ok).toBe(false)
+    expect(result.error).toContain('Profile save could not be loaded.')
   })
 })

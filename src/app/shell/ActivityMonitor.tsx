@@ -4,6 +4,7 @@ import { getActivityTelemetry } from '../../game/systems/activity/activityTeleme
 import { formatCompactDuration } from '../../game/utils'
 import { useGameStore } from '../../store/gameStore'
 import type { ActivityTelemetry } from '../../game/types'
+import { GameTooltip, TooltipContent } from '../../components/ui/tooltip/Tooltip'
 
 const collapsedStorageKey = 'sss-wizard.activity-monitor-collapsed'
 
@@ -24,17 +25,17 @@ export function ActivityMonitor() {
   if (!activities.length) return null
   if (collapsed) {
     return <aside className="activity-monitor activity-monitor-collapsed" aria-label="Activity Monitor">
-      <div className="activity-monitor-collapsed-head"><strong>{activities.length} ACTIVE</strong><button onClick={() => setCollapsed(false)} aria-label="Expand Activity Monitor"><ChevronUp size={14} /></button></div>
+      <div className="activity-monitor-collapsed-head"><strong>{activities.length} ACTIVE</strong><GameTooltip content="Expand Activity Monitor"><button onClick={() => setCollapsed(false)} aria-label="Expand Activity Monitor"><ChevronUp size={14} /></button></GameTooltip></div>
       <div className="activity-monitor-mini-list">
-        {activities.slice(0, 2).map((activity) => <button className={`activity-mini-summary accent-${activity.accent}`} key={activity.id} onClick={() => setScreen(activity.screen)}><strong>{activity.label}</strong><span>{summaryFor(activity)}</span></button>)}
+        {activities.slice(0, 2).map((activity) => <GameTooltip block content={<TooltipContent title={activity.label} description={`Open ${activity.label} to manage this activity.`} />} accent={activity.accent === 'red' ? 'danger' : activity.accent === 'orange' ? 'warning' : activity.accent === 'gold' ? 'mana' : 'neutral'} key={activity.id}><button className={`activity-mini-summary accent-${activity.accent}`} onClick={() => setScreen(activity.screen)}><strong>{activity.label}</strong><span>{summaryFor(activity)}</span></button></GameTooltip>)}
       </div>
       {activities.length > 2 && <small className="activity-monitor-more">+{activities.length - 2} more active</small>}
     </aside>
   }
 
   return <aside className="activity-monitor" aria-label="Activity Monitor">
-    <div className="activity-monitor-header"><span>ACTIVITY MONITOR · {activities.length} ACTIVE</span><button onClick={() => setCollapsed(true)} aria-label="Collapse Activity Monitor"><ChevronDown size={14} /></button></div>
-    <div className="activity-monitor-track">{activities.map((activity) => <ActivityCard key={activity.id} activity={activity} onClick={() => setScreen(activity.screen)} />)}</div>
+    <div className="activity-monitor-header"><span>ACTIVITY MONITOR · {activities.length} ACTIVE</span><GameTooltip content="Collapse Activity Monitor"><button onClick={() => setCollapsed(true)} aria-label="Collapse Activity Monitor"><ChevronDown size={14} /></button></GameTooltip></div>
+    <div className="activity-monitor-track">{activities.map((activity) => <GameTooltip block content={<TooltipContent title={activity.label} description={`Open ${activity.label} to manage this activity.`} />} accent={activity.accent === 'red' ? 'danger' : activity.accent === 'orange' ? 'warning' : activity.accent === 'gold' ? 'mana' : 'neutral'} key={activity.id}><ActivityCard activity={activity} onClick={() => setScreen(activity.screen)} /></GameTooltip>)}</div>
   </aside>
 }
 

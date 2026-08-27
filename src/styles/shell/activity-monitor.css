@@ -1,16 +1,16 @@
-.activity-monitor { position: fixed; z-index: 6; right: 18px; bottom: 16px; left: auto; width: fit-content; max-width: min(950px, calc(100vw - 32px)); max-height: 300px; padding: 7px; overflow: hidden; border: 1px solid var(--ui-border); border-radius: 9px; background: color-mix(in srgb, var(--ui-panel-strong) 94%, transparent); box-shadow: 0 15px 42px var(--ui-shadow); backdrop-filter: blur(16px); }
+.activity-monitor { position: fixed; z-index: 6; right: 18px; bottom: 18px; left: auto; display: flex; flex-direction: column; width: min(320px, calc(100vw - 36px)); max-height: min(560px, calc(100vh - 120px)); min-height: 0; padding: 7px; overflow: hidden; border: 1px solid var(--ui-border); border-radius: 9px; background: color-mix(in srgb, var(--ui-panel-strong) 94%, transparent); box-shadow: 0 15px 42px var(--ui-shadow); backdrop-filter: blur(16px); }
 .activity-monitor-header, .activity-monitor-collapsed-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 1px 5px 6px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .08em; }
 .activity-monitor-header button, .activity-monitor-collapsed-head button { display: inline-flex; align-items: center; gap: 7px; border: 0; color: var(--ui-text-muted); background: transparent; cursor: pointer; font: inherit; }
 .activity-monitor-header button:hover, .activity-monitor-collapsed-head button:hover { color: var(--ui-text); }
-.activity-monitor-track { display: flex; align-items: stretch; gap: 7px; width: max-content; max-width: 100%; overflow-x: auto; padding-bottom: 2px; scrollbar-color: var(--ui-scrollbar-thumb) transparent; scrollbar-width: thin; }
-.activity-monitor-track::-webkit-scrollbar { height: 5px; }
+.activity-monitor-track { display: flex; flex: 1 1 auto; flex-direction: column; align-items: stretch; gap: 7px; width: 100%; min-height: 0; overflow-x: hidden; overflow-y: auto; padding: 0 2px 2px 0; scrollbar-color: var(--ui-scrollbar-thumb) transparent; scrollbar-gutter: stable; scrollbar-width: thin; }
+.activity-monitor-track::-webkit-scrollbar { width: 6px; }
 .activity-monitor-track::-webkit-scrollbar-thumb { border-radius: 99px; background: var(--ui-scrollbar-thumb); }
-.activity-card { display: flex; flex-direction: column; min-height: 0; flex: 0 0 300px; width: 300px; min-width: 280px; max-width: 300px; padding: 9px 10px; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text-soft); background: var(--ui-panel); cursor: pointer; text-align: left; }
-.activity-card.accent-red { flex-basis: 330px; width: 330px; min-width: 300px; max-width: 340px; }
+.activity-card { display: flex; flex: 0 0 auto; flex-direction: column; width: 100%; min-height: 0; min-width: 0; max-width: none; padding: 9px 10px; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text-soft); background: var(--ui-panel); cursor: pointer; text-align: left; }
 .activity-card:hover { border-color: var(--ui-accent); background: var(--ui-panel-hover); }
 .activity-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.activity-card-head > div { min-width: 0; }
 .activity-card-head strong { display: block; color: var(--ui-text); font: var(--text-micro) var(--font-mono); letter-spacing: .08em; }
-.activity-card-head span { display: block; margin-top: 3px; color: var(--ui-text-muted); font: var(--text-xs) var(--font-sans); }
+.activity-card-head span { display: block; margin-top: 3px; overflow-wrap: anywhere; color: var(--ui-text-muted); font: var(--text-xs) var(--font-sans); }
 .activity-card-head small { flex: 0 0 auto; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
 .accent-red .activity-card-head strong, .activity-mini-summary.accent-red strong { color: var(--ui-danger); }
 .accent-orange .activity-card-head strong, .activity-mini-summary.accent-orange strong { color: var(--ui-warning); }
@@ -47,8 +47,6 @@
 .activity-mini-summary span { min-width: 0; overflow: hidden; color: var(--ui-text-soft); font: var(--text-micro) var(--font-sans); text-overflow: ellipsis; white-space: nowrap; }
 .activity-monitor-more { display: block; margin-top: 6px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
 @media (max-width: 760px) {
-  .activity-monitor { right: 10px; bottom: 10px; max-width: calc(100vw - 20px); }
+  .activity-monitor { right: 10px; bottom: 10px; width: min(300px, calc(100vw - 20px)); max-height: min(460px, calc(100vh - 112px)); }
   .activity-monitor-collapsed { width: min(400px, calc(100vw - 20px)); }
-  .activity-card { flex-basis: 280px; width: 280px; min-width: 260px; }
-  .activity-card.accent-red { flex-basis: 300px; width: 300px; min-width: 280px; }
 }

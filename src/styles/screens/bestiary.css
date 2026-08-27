@@ -1,0 +1,57 @@
+.bestiary-screen .ui-editor-grid { min-height: 0; }
+.bestiary-screen .ui-editor-panel-content > .card { height: 100%; min-height: 0; overflow: hidden; }
+.bestiary-index, .bestiary-inspector { display: flex; flex-direction: column; }
+.bestiary-index > .card-head, .bestiary-inspector > .card-head { flex: 0 0 auto; }
+.bestiary-search { display: flex; align-items: center; gap: 7px; margin-bottom: 10px; padding: 0 9px; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text-muted); background: var(--ui-panel-soft); }
+.bestiary-search .search-input { width: 100%; min-width: 0; padding: 8px 0; border: 0; background: transparent; }
+.bestiary-entry-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(116px, 1fr)); align-content: start; gap: 8px; overflow-y: auto; min-height: 0; padding: 2px 3px 20px 0; scrollbar-color: var(--ui-scrollbar-thumb) transparent; scrollbar-width: thin; }
+.bestiary-entry-grid::-webkit-scrollbar, .bestiary-inspector-scroll::-webkit-scrollbar { width: 6px; }
+.bestiary-entry-grid::-webkit-scrollbar-thumb, .bestiary-inspector-scroll::-webkit-scrollbar-thumb { border-radius: 99px; background: var(--ui-scrollbar-thumb); }
+.bestiary-entry-card { display: grid; align-content: start; gap: 7px; min-width: 0; min-height: 145px; padding: 8px; border: 1px solid var(--ui-border); border-radius: 8px; color: var(--ui-text); background: color-mix(in srgb, var(--ui-panel-strong) 68%, transparent); cursor: pointer; text-align: left; transition: border-color .16s ease, transform .16s ease, background .16s ease; }
+.bestiary-entry-card:hover, .bestiary-entry-card.selected { border-color: color-mix(in srgb, var(--bestiary-color, var(--ui-accent)) 65%, var(--ui-border)); background: color-mix(in srgb, var(--bestiary-color, var(--ui-accent)) 8%, var(--ui-panel)); }
+.bestiary-entry-card:hover { transform: translateY(-1px); }
+.bestiary-entry-card.undiscovered { color: var(--ui-text-muted); }
+.bestiary-entry-art { display: grid; place-items: center; min-height: 79px; border: 1px solid color-mix(in srgb, var(--bestiary-color, var(--ui-accent)) 30%, var(--ui-border)); border-radius: 7px; color: var(--bestiary-color, var(--ui-accent)); background: color-mix(in srgb, var(--bestiary-color, var(--ui-accent)) 8%, transparent); font-size: 28px; }
+.bestiary-entry-art img, .bestiary-portrait img { display: block; width: 78%; height: 78%; object-fit: contain; }
+.bestiary-entry-card.undiscovered .bestiary-entry-art { color: var(--ui-text-muted); filter: grayscale(1); }
+.bestiary-entry-copy { display: grid; gap: 3px; min-width: 0; }
+.bestiary-entry-copy strong { overflow: hidden; color: var(--ui-text-soft); font-size: var(--text-xs); text-overflow: ellipsis; white-space: nowrap; }
+.bestiary-entry-copy small { overflow: hidden; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); text-overflow: ellipsis; white-space: nowrap; }
+.bestiary-empty, .bestiary-inspector-empty { display: grid; place-content: center; justify-items: center; gap: 7px; min-height: 175px; padding: 20px; color: var(--ui-text-muted); text-align: center; }
+.bestiary-empty strong, .bestiary-inspector-empty strong { color: var(--ui-text-soft); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; }
+.bestiary-empty span, .bestiary-inspector-empty span { font-size: var(--text-xs); line-height: 1.45; }
+.bestiary-index-note { display: block; flex: 0 0 auto; margin-top: 8px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
+.bestiary-inspector-scroll { display: grid; align-content: start; gap: 12px; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 3px 3px 22px 0; scrollbar-color: var(--ui-scrollbar-thumb) transparent; scrollbar-width: thin; }
+.bestiary-dossier-hero { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.bestiary-portrait { position: relative; display: grid; place-items: center; width: 96px; height: 96px; flex: 0 0 auto; border: 1px solid color-mix(in srgb, var(--bestiary-color) 40%, var(--ui-border)); border-radius: 50%; color: var(--bestiary-color); background: radial-gradient(circle, color-mix(in srgb, var(--bestiary-color) 18%, transparent), transparent 70%), var(--ui-panel-soft); font-size: 39px; box-shadow: 0 0 25px color-mix(in srgb, var(--bestiary-color) 14%, transparent); }
+.bestiary-portrait::after { position: absolute; inset: -7px; border: 1px dashed color-mix(in srgb, var(--bestiary-color) 33%, transparent); border-radius: 50%; content: ''; }
+.bestiary-portrait.boss { width: 105px; height: 105px; font-size: 46px; }
+.bestiary-dossier-hero > div:last-child { min-width: 0; }
+.bestiary-dossier-category { color: var(--bestiary-color); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; text-transform: uppercase; }
+.bestiary-dossier-hero h2 { margin: 4px 0 4px; overflow-wrap: anywhere; color: var(--ui-text); font-size: var(--text-lg); }
+.bestiary-dossier-hero p { margin: 0 0 7px; color: var(--ui-text-muted); font-size: var(--text-xs); line-height: 1.45; }
+.bestiary-dossier-meta { display: grid; gap: 7px; padding: 9px 0; border-top: 1px solid var(--ui-border); border-bottom: 1px solid var(--ui-border); color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
+.bestiary-dossier-meta span { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.bestiary-dossier-meta strong { color: var(--ui-text-soft); }
+.bestiary-section { display: grid; gap: 8px; padding-top: 11px; border-top: 1px solid var(--ui-border); }
+.bestiary-section-label { color: var(--bestiary-color); font: var(--text-micro) var(--font-mono); letter-spacing: .14em; }
+.bestiary-stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.bestiary-stat-grid > div { display: grid; gap: 4px; min-width: 0; padding: 8px; border-radius: 6px; background: color-mix(in srgb, var(--ui-panel-strong) 70%, transparent); }
+.bestiary-stat-grid span { color: var(--ui-text-muted); font: .55rem var(--font-mono); letter-spacing: .04em; }
+.bestiary-stat-grid strong { color: var(--ui-text-soft); font: var(--text-xs) var(--font-mono); }
+.bestiary-trait-list, .bestiary-ability-list, .bestiary-loot-list { display: grid; gap: 5px; }
+.bestiary-trait-list > div, .bestiary-ability-list > div { display: grid; gap: 3px; padding: 8px; border: 1px solid var(--ui-border); border-radius: 6px; background: color-mix(in srgb, var(--ui-panel-strong) 58%, transparent); }
+.bestiary-trait-list strong, .bestiary-ability-list strong, .bestiary-loot-row strong { color: var(--ui-text-soft); font-size: var(--text-xs); }
+.bestiary-trait-list span, .bestiary-ability-list span { color: var(--ui-text-muted); font-size: var(--text-xs); line-height: 1.45; }
+.bestiary-ability-list > div > div { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.bestiary-ability-list small, .bestiary-loot-row small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
+.bestiary-sequence { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; color: var(--ui-text-muted); }
+.bestiary-sequence span { display: inline-flex; align-items: center; gap: 5px; padding: 6px 7px; border: 1px solid var(--ui-border); border-radius: 5px; font: var(--text-micro) var(--font-mono); }
+.bestiary-sequence span.special { border-color: color-mix(in srgb, var(--ui-secondary) 45%, var(--ui-border)); color: var(--ui-secondary); background: color-mix(in srgb, var(--ui-secondary) 8%, transparent); }
+.bestiary-sequence b { color: var(--ui-text-muted); font-weight: 400; }
+.bestiary-sequence em { color: var(--bestiary-color); font: var(--text-micro) var(--font-mono); font-style: normal; }
+.bestiary-loot-row { display: grid; grid-template-columns: 27px minmax(0, 1fr) auto; align-items: center; gap: 7px; padding: 7px; border: 1px solid var(--ui-border); border-radius: 6px; }
+.bestiary-loot-row > div { display: grid; gap: 3px; min-width: 0; }
+.bestiary-loot-row .status { white-space: nowrap; }
+.bestiary-muted { margin: 0; color: var(--ui-text-muted); font-size: var(--text-xs); }
+@media (max-width: 760px) { .bestiary-stat-grid { grid-template-columns: 1fr; }.bestiary-dossier-hero { align-items: flex-start; }.bestiary-portrait { width: 76px; height: 76px; font-size: 31px; }.bestiary-portrait.boss { width: 84px; height: 84px; font-size: 36px; }.bestiary-loot-row { grid-template-columns: 27px minmax(0, 1fr); }.bestiary-loot-row .status { grid-column: 2; width: fit-content; } }

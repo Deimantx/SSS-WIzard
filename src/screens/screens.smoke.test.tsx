@@ -36,15 +36,16 @@ describe('screen smoke coverage', () => {
     expect(screen.queryByRole('dialog', { name: 'Arcane Discoveries' })).toBeNull()
   })
 
-  it('renders the five available Pillars and Life Essence in the item archive', async () => {
+  it('renders the five available Pillars and the item-only archive', async () => {
     const user = userEvent.setup()
     render(<GameShell />)
     await goToTower(user, 'Channeling')
     expect(screen.getByRole('heading', { name: 'Pillars of Mana' })).toBeTruthy()
     for (const name of ['Leyline Conduit', 'Arcane Reservoir', 'Mana Resonance', 'Astral Expansion', 'Echo Attunement']) expect(screen.getByText(name, { selector: 'h3' })).toBeTruthy()
     await user.click(navItem('Collection'))
-    await user.click(screen.getByRole('button', { name: 'Items' }))
-    expect(screen.getByText('Life Essence')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'ITEM COLLECTION' })).toBeTruthy()
+    expect(screen.getByText('Apprentice Wand')).toBeTruthy()
+    expect(screen.queryByText('Forest Wisp')).toBeNull()
   })
 
   it('keeps Channeling readable by collapsing formulas and grouping Pillars', async () => {
@@ -62,7 +63,7 @@ describe('screen smoke coverage', () => {
   it('navigates every major screen through grouped shell navigation', async () => {
     const user = userEvent.setup()
     render(<GameShell />)
-    const screens = [{ nav: 'Overview', heading: 'Good evening, apprentice.' }, { nav: 'Combat', heading: 'The clearing watches back.' }, { nav: 'Magic Schools', heading: 'Four paths, one Focus pool.' }, { nav: 'Inventory', heading: 'Everything the tower currently holds.' }, { nav: 'Equipment', heading: 'Build the tower’s answer.' }, { nav: 'Guild', heading: 'A guild invitation, still sealed.' }, { nav: 'Collection', heading: 'Collection' }, { nav: 'Settings / Info', heading: 'Settings / Info' }]
+    const screens = [{ nav: 'Overview', heading: 'Good evening, apprentice.' }, { nav: 'Combat', heading: 'The clearing watches back.' }, { nav: 'Magic Schools', heading: 'Four paths, one Focus pool.' }, { nav: 'Inventory', heading: 'Everything the tower currently holds.' }, { nav: 'Equipment', heading: 'Build the tower’s answer.' }, { nav: 'Guild', heading: 'A guild invitation, still sealed.' }, { nav: 'Collection', heading: 'Every relic leaves a record.' }, { nav: 'Bestiary', heading: 'Know what waits beyond the tower.' }, { nav: 'Settings / Info', heading: 'Settings / Info' }]
     for (const item of screens) { await user.click(navItem(item.nav)); expect(screen.getByRole('heading', { name: item.heading })).toBeTruthy() }
     expect(navGroup('Combat')).toBeTruthy()
     expect(navGroup('Hero')).toBeTruthy()

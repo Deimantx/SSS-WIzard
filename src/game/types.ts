@@ -1,6 +1,6 @@
 export type SchoolId = 'fire' | 'water' | 'earth' | 'air'
 export type ElementId = SchoolId
-export type ScreenId = 'home' | 'combat' | 'schools' | 'inventory' | 'equipment' | 'collection' | 'tower-channeling' | 'tower-focus' | 'tower-research' | 'tower-transmutation' | 'guild' | 'settings'
+export type ScreenId = 'home' | 'combat' | 'schools' | 'inventory' | 'equipment' | 'collection' | 'bestiary' | 'tower-channeling' | 'tower-focus' | 'tower-research' | 'tower-transmutation' | 'guild' | 'settings'
 export type ActivityStatus = 'running' | 'mana-limited' | 'paused' | 'waiting-mana' | 'waiting-focus' | 'completed' | 'locked' | 'recovering'
 
 export type ItemId =
@@ -21,6 +21,7 @@ export type ItemId =
 
 export type SpellId = 'fire-bolt' | 'water-ward' | 'earth-spike' | 'air-lance' | 'ignite' | 'flow-mend' | 'stoneguard' | 'quickening'
 export type MonsterId = 'forest-wisp' | 'thornling' | 'stone-root' | 'grove-sentinel' | 'forest-heart'
+export type BestiaryCategory = 'monster' | 'boss' | 'special-boss'
 export type DungeonId = 'whispering-woods'
 export type EquipmentItemSlot = 'weapon' | 'offhand' | 'armor' | 'helmet' | 'cape' | 'amulet' | 'ring'
 export type EquipmentPosition = 'weapon' | 'offhand' | 'armor' | 'helmet' | 'cape' | 'amulet' | 'ring1' | 'ring2'
@@ -203,6 +204,7 @@ export interface ProgressState {
   magicLevelCap: number
   unlockedSpells: SpellId[]
   discoveredMonsters: MonsterId[]
+  discoveredItems: ItemId[]
   lifetimeKills: number
   firstBossKill: boolean
   firstMainBossKill: boolean
@@ -217,7 +219,7 @@ export interface ProgressState {
   permanentFocusBonuses: Record<string, number>
   focusImprovement: FocusImprovementState
   lifetimeKillsByMonster: Partial<Record<MonsterId, number>>
-  bossKillsByBoss: Partial<Record<'grove-sentinel' | 'forest-heart', number>>
+  bossKillsByBoss: Partial<Record<MonsterId, number>>
   autoHuntBossByDungeon: Record<DungeonId, boolean>
   channeling: ChannelingProgress
 }

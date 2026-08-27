@@ -1,6 +1,7 @@
 import { RECIPES, RECIPE_ORDER } from '../../content/recipes/recipes'
 import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
 import type { GameState, ItemId, RecipeId } from '../../types'
+import { grantItem } from '../inventory/itemAcquisition'
 import { allocateContinuousMana, CONTINUOUS_MANA_EPSILON, requestedManaForProgress, type ContinuousManaAllocation, type ContinuousManaFundingResult, type ContinuousManaWorkRequest } from '../simulation/continuousManaScheduler'
 
 export interface TransmutationAdvanceContext {
@@ -122,7 +123,7 @@ export const completeTransmutationCycle = (state: GameState, recipe: (typeof REC
   recipe.ingredients.forEach((ingredient) => {
     state.inventory[ingredient.itemId] = Math.max(0, (state.inventory[ingredient.itemId] ?? 0) - ingredient.quantity)
   })
-  state.inventory[recipe.output.itemId] = (state.inventory[recipe.output.itemId] ?? 0) + recipe.output.quantity
+  grantItem(state, recipe.output.itemId, recipe.output.quantity)
   context.onItemAcquired?.(recipe.output.itemId, recipe.output.quantity)
   context.report?.recordTransmutation(recipe.id, recipe.output.itemId, recipe.output.quantity, recipe.ingredients)
   return true

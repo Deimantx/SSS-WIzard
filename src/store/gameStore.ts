@@ -24,6 +24,7 @@ import { canReserveFocusAction, setFocusImprovementLevelAction, upgradeFocusCapa
 import { assignResearchEchoAction, clearPreparedResearchAction, clearResearchEchoesAction, prepareResearchAction, removePreparedResearchAction, removeResearchEchoAction, setResearchEchoesAction } from './actions/researchActions'
 import { assignTransmutationEchoAction, clearTransmutationAssignmentsAction, removeTransmutationEchoAction, setTransmutationEchoCapacityOverrideAction, setTransmutationEchoesAction } from './actions/transmutationActions'
 import { forceCompleteTransmutationCycle } from '../game/systems/transmutation/transmutationEngine'
+import { grantItem } from '../game/systems/inventory/itemAcquisition'
 import { RECIPES } from '../game/content/recipes/recipes'
 import { saveGameAction } from './actions/persistenceActions'
 import { advanceGameState } from '../game/systems/simulation/advanceGameState'
@@ -105,7 +106,7 @@ export interface GameActions {
   claimGuildReward: (requestId: string) => void
   promoteGuild: () => void
   setGuildReputation: (amount: number) => void
-  setBossKills: (bossId: 'grove-sentinel' | 'forest-heart', amount: number) => void
+  setBossKills: (bossId: MonsterId, amount: number) => void
   preset: (name: 'fresh' | 'research' | 'combat' | 'boss' | 'guild' | 'main-boss' | 'chapter-complete') => void
   resumeFromHidden: (elapsedMs: number, notify?: boolean) => void
   advanceWithOfflineBank: (durationMs: number) => Promise<OfflineBankResult>
@@ -180,7 +181,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   setTransmutationEchoes: (recipeId, amount) => set((state) => { setTransmutationEchoesAction(state, recipeId, amount); return state }),
   clearTransmutationAssignments: () => set((state) => { clearTransmutationAssignmentsAction(state); return state }),
   completeTransmutationCycle: (recipeId) => set((state) => { forceCompleteTransmutationCycle(state, recipeId, { mode: 'live' }); return state }),
-  grantTransmutationIngredients: (recipeId) => set((state) => { const recipe = RECIPES[recipeId]; recipe.ingredients.forEach((ingredient) => { state.inventory[ingredient.itemId] = (state.inventory[ingredient.itemId] ?? 0) + ingredient.quantity }); return state }),
+  grantTransmutationIngredients: (recipeId) => set((state) => { const recipe = RECIPES[recipeId]; recipe.ingredients.forEach((ingredient) => grantItem(state, ingredient.itemId, ingredient.quantity)); return state }),
   setDebugTransmutationEchoCapacity: (amount) => set((state) => { setTransmutationEchoCapacityOverrideAction(state, amount); return state }),
   castSpell: (spellId) => set((state) => { castSpellAction(state, spellId); return state }),
   toggleAutoCast: (spellId) => set((state) => { if (!spellUnlocked(state, spellId)) return state; if (state.activities.autoCast[spellId]) state.activities.autoCast[spellId] = false; else if (canReserveFocus(state, SPELLS[spellId].autoCastFocus)) { state.activities.autoCast[spellId] = true; pushNotification(state, `${SPELLS[spellId].name} Auto-Cast enabled`, 'success') } else pushNotification(state, `Cannot enable Auto-Cast · Requires ${SPELLS[spellId].autoCastFocus} Focus · Free Focus: ${selectFreeFocus(state)}`, 'warning'); return state }),

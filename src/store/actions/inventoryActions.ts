@@ -3,6 +3,7 @@ import { pushNotification } from '../../game/engine'
 import { getEquippedReservedQuantity as getEquipmentReservedQuantity } from '../../game/core/equipment'
 import { getConsumableQuantity } from '../../game/core/inventory/inventoryConsumption'
 import type { GameState, ItemId } from '../../game/types'
+import { grantItem } from '../../game/systems/inventory/itemAcquisition'
 
 export const isEquippedItem = (state: GameState, itemId: ItemId) => Object.values(state.equipment).includes(itemId)
 export const isProtectedItem = (state: GameState, itemId: ItemId) => Boolean(state.protectedItems[itemId]) || isEquippedItem(state, itemId)
@@ -20,9 +21,7 @@ export const canSellItem = (state: InventoryActionState, itemId: ItemId) => Bool
 export const canDestroyItem = (state: InventoryActionState, itemId: ItemId) => Boolean(ITEMS[itemId]?.canDestroy === true && getActionableQuantity(state, itemId) > 0)
 
 export const addItemAction = (state: GameState, itemId: ItemId, quantity: number) => {
-  const before = safeQuantity(state.inventory[itemId])
-  state.inventory[itemId] = Math.max(0, before + (Number.isFinite(quantity) ? quantity : 0))
-  return Math.max(0, state.inventory[itemId] - before)
+  return grantItem(state, itemId, quantity)
 }
 
 export const removeItemAction = (state: GameState, itemId: ItemId, quantity: number) => { if (isProtectedItem(state, itemId)) { pushNotification(state, `${ITEMS[itemId].name} is protected or equipped`, 'warning'); return } state.inventory[itemId] = Math.max(0, safeQuantity(state.inventory[itemId]) - safeQuantity(quantity)) }

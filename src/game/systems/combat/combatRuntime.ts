@@ -1,12 +1,13 @@
 import { BALANCE } from '../../core/balance/balance'
 import { DUNGEONS, chooseMonster } from '../../content/dungeons/dungeons'
 import { ITEMS } from '../../content/items/items'
-import { MONSTERS } from '../../content/monsters/whisperingWoods'
+import { isBossMonster, MONSTERS } from '../../content/monsters/whisperingWoods'
 import { barrierMultiplier, equipmentStats, recalculateDerivedStats } from '../../engine'
 import type { GameState, ItemId, MonsterId, StatusEffect } from '../../types'
 import { formatTime } from '../../utils'
 import { appendLog, pushNotification } from '../../engine'
 import { resolveMonsterLoot } from '../loot'
+import { discoverMonster } from '../collection/discovery'
 import type { SimulationReportCollector } from '../offline-bank/offlineBankReport'
 
 export const addStatus = (statuses: StatusEffect[], next: StatusEffect) => {
@@ -49,7 +50,7 @@ export const damagePlayer = (state: GameState, raw: number) => {
   return dealt
 }
 
-export const spawnEnemy = (state: GameState, enemyId: MonsterId, boss = false) => {
+export const spawnEnemy = (state: GameState, enemyId: MonsterId, _boss = false) => {
   const monster = MONSTERS[enemyId]
   state.combat.enemyId = enemyId
   state.combat.enemyHp = monster.maxHealth
@@ -61,11 +62,11 @@ export const spawnEnemy = (state: GameState, enemyId: MonsterId, boss = false) =
   state.combat.enemyTelegraphMs = 0
   state.combat.enemyTelegraphActionId = null
   state.combat.enemySpecialUsed = {}
-  state.combat.inBossFight = boss
+  state.combat.inBossFight = isBossMonster(monster)
   state.combat.playerAttackTimerMs = 0
   state.combat.enemyAttackTimerMs = monster.attackIntervalMs
   state.combat.enemyStatuses = []
-  if (!state.progress.discoveredMonsters.includes(enemyId)) state.progress.discoveredMonsters.push(enemyId)
+  discoverMonster(state, enemyId)
   appendLog(state, `${monster.name} enters the clearing.`)
 }
 
@@ -93,7 +94,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   state.combat.enemyTelegraphMs = 0
   state.combat.enemyTelegraphActionId = null
   state.combat.encounterTimerMs = DUNGEONS[state.combat.dungeonId ?? 'whispering-woods'].encounterDelayMs
-  if (monster.boss) {
+  if (isBossMonster(monster)) {
     state.combat.threatCleared = 0
     state.combat.inBossFight = false
     const bossId = enemyId as 'grove-sentinel' | 'forest-heart'

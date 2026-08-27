@@ -45,3 +45,11 @@ When replacing a system, remove the obsolete implementation after migration rath
 - Editable screen panels must never visually bleed into adjacent panels; fit defaults and minimum sizes to intended content, and use responsive reflow or an internal themed scroll area when content can exceed a panel.
 - Add or update Vitest coverage when changing save migration, production payment, reservation, or offline-report behavior.
 - Run `npm run test:run` and `npm run build` before handoff.
+
+## Archive ownership
+
+- Collection is item-only; creature data belongs in Bestiary.
+- Bestiary entries must be derived from authored `MONSTERS` data; screens must not hardcode creature ID lists.
+- All positive item grants go through the central item-acquisition helper so Collection discovery remains correct.
+- Monster discovery happens on encounter, not first kill.
+- UI icons and ambiguous controls use the shared `GameTooltip` system, never browser `title` tooltips.

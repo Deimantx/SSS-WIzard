@@ -1,6 +1,7 @@
 import { ScreenErrorBoundary } from '../components/errors/ScreenErrorBoundary'
 import { useGameStore } from '../store/gameStore'
-import { CollectionScreenV2 } from './collection/CollectionScreen'
+import { CollectionScreen } from './collection/CollectionScreen'
+import { BestiaryScreen } from './bestiary/BestiaryScreen'
 import { CombatScreenV2 } from './combat/CombatScreen'
 import { EquipmentScreenV2 } from './equipment/EquipmentScreen'
 import { GuildScreenV2 } from './guild/GuildScreen'
@@ -22,7 +23,8 @@ function CurrentScreen() {
   if (screen === 'inventory') return <InventoryScreenV2 />
   if (screen === 'equipment') return <EquipmentScreenV2 />
   if (screen === 'guild') return <GuildScreenV2 />
-  if (screen === 'collection') return <CollectionScreenV2 />
+  if (screen === 'collection') return <CollectionScreen />
+  if (screen === 'bestiary') return <BestiaryScreen />
   return <SettingsScreenV2 />
 }
 

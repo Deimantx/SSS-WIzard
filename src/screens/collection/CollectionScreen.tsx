@@ -1,25 +1,27 @@
-import { useState, type CSSProperties } from 'react'
-import { MONSTERS } from '../../game/data/monsters'
-import { ITEMS } from '../../game/data/items'
-import { SPELLS } from '../../game/data/spells'
-import { SCHOOLS } from '../../game/data/schools'
-import type { ItemId, MonsterId, SpellId } from '../../game/types'
-import { useGameStore } from '../../store/gameStore'
-import { Card, Status, Tabs } from '../../components/ui'
-import { formatNumber } from '../../game/utils'
+import { useEffect, useMemo, useState } from 'react'
 import { EditableGrid } from '../../ui/layout-editor/EditableGrid'
-import { getInventoryCategoryLabel, getInventorySubcategoryLabel } from '../inventory/inventoryMetadata'
+import { useGameStore } from '../../store/gameStore'
+import type { ItemId } from '../../game/types'
+import { CollectionLibrary } from './CollectionLibrary'
+import { CollectionInspector } from './CollectionInspector'
+import { CollectionSummary } from './CollectionSummary'
+import { getCollectionVisibleItems, type CollectionCategoryFilter, type CollectionStatusFilter } from '../../game/systems/collection/collectionSelectors'
 
-const tabs = ['Monsters', 'Bosses', 'Items', 'Spells'] as const
-
-export function CollectionScreenV2() {
-  const [tab, setTab] = useState<typeof tabs[number]>('Monsters')
+export function CollectionScreen() {
   const progress = useGameStore((state) => state.progress)
-  const discovered = progress.discoveredMonsters
-  const bossKills = progress.bossKillsByBoss as Partial<Record<MonsterId, number>>
-  const summary = <Card title="Archive" action={<span className="muted">{discovered.length} / 5 creatures discovered</span>}><p className="muted">Collection is the tower catalogue: discovered content remains visible even when it is no longer owned.</p></Card>
-  const content = <Card title="Collection content"><Tabs items={tabs} active={tab} onChange={setTab} />{tab === 'Monsters' && <div className="collection-grid collection-v2">{(['forest-wisp', 'thornling', 'stone-root'] as MonsterId[]).map((id) => <MonsterEntry key={id} id={id} discovered={discovered.includes(id)} kills={progress.lifetimeKillsByMonster[id] ?? 0} />)}</div>}{tab === 'Bosses' && <div className="collection-grid collection-v2">{(['grove-sentinel', 'forest-heart'] as MonsterId[]).map((id) => <MonsterEntry key={id} id={id} discovered={discovered.includes(id)} kills={bossKills[id] ?? 0} boss />)}</div>}{tab === 'Items' && <div className="collection-grid collection-v2">{(Object.keys(ITEMS) as ItemId[]).map((id) => { const item = ITEMS[id]; const subtype = getInventorySubcategoryLabel(id); return <div className="collection-entry found" key={id}><div className="collection-creature" style={{ '--enemy-color': item.color } as CSSProperties}>{item.icon}</div><div><strong>{item.name}</strong><small>{subtype ? `${subtype} Material` : getInventoryCategoryLabel(id)} · Source: {item.source}</small></div></div> })}</div>}{tab === 'Spells' && <div className="collection-grid collection-v2">{(Object.keys(SPELLS) as SpellId[]).map((id) => { const spell = SPELLS[id]; const unlocked = progress.unlockedSpells.includes(id); return <div className={`collection-entry ${unlocked ? 'found' : ''}`} key={id}><div className="collection-creature" style={{ '--enemy-color': SCHOOLS[spell.school].color } as CSSProperties}>{SCHOOLS[spell.school].glyph}</div><div><strong>{spell.name}</strong><small>{SCHOOLS[spell.school].name} · Level {spell.unlockLevel} · {spell.manaCost} Mana · {spell.cooldownMs / 1000}s · {spell.autoCastFocus} Auto Focus</small></div><Status tone={unlocked ? 'success' : 'locked'}>{unlocked ? 'Known' : 'Locked'}</Status></div> })}</div>}</Card>
-  return <div className="screen-content"><div className="screen-header"><div><div className="eyebrow">FIELD NOTES</div><h1>Collection</h1><p>Every encounter leaves a trace. Sequences, traits, drops, and spell details stay visible after discovery.</p></div></div><EditableGrid screen="collection" panels={[{ id: 'collection-summary', content: summary }, { id: 'collection-content', content }]} /></div>
-}
+  const inventory = useGameStore((state) => state.inventory)
+  const navigate = useGameStore((state) => state.setScreen)
+  const [search, setSearch] = useState('')
+  const [category, setCategory] = useState<CollectionCategoryFilter>('All')
+  const [status, setStatus] = useState<CollectionStatusFilter>('All')
+  const [selected, setSelected] = useState<ItemId | null>(null)
+  const visibleIds = useMemo(() => getCollectionVisibleItems({ progress }, category, status, search), [progress, category, status, search])
 
-function MonsterEntry({ id, discovered, kills, boss = false }: { id: MonsterId; discovered: boolean; kills: number; boss?: boolean }) { const monster = MONSTERS[id]; return <div className={`collection-entry ${discovered ? 'found' : ''}`}><div className="collection-creature" style={{ '--enemy-color': monster.color } as CSSProperties}>{discovered ? boss ? '♛' : '◈' : '?'}</div><div><strong>{discovered ? monster.name : 'Undiscovered'}</strong><small>{discovered ? `${monster.subtitle} · ${formatNumber(kills)} kills` : 'Encounter it in the woods.'}</small>{discovered && <><div className="trait-row">{monster.traits.map((trait) => <span className="trait" key={trait.name}>{trait.name}</span>)}</div><small className="collection-sequence">Sequence: {monster.actionSequence.map((step) => step.name).join(' → ')}</small><small>Known drops: {monster.loot.map((drop) => drop.itemId).join(', ')}</small></>}</div></div> }
+  useEffect(() => {
+    setSelected((current) => current && visibleIds.includes(current) ? current : visibleIds[0] ?? null)
+  }, [visibleIds.join('|')])
+
+  const library = <CollectionLibrary progress={progress} inventory={inventory} search={search} category={category} status={status} onSearch={setSearch} onCategory={setCategory} onStatus={setStatus} selected={selected} onSelect={setSelected} />
+  const inspector = <CollectionInspector itemId={selected} inventory={inventory} progress={progress} navigate={navigate} />
+  return <div className="screen-content collection-screen"><div className="screen-header"><div><div className="eyebrow">TOWER ARCHIVE · COLLECTION</div><h1>Every relic leaves a record.</h1><p>Discover materials, loot and equipment once, then keep their details permanently in the tower archive.</p></div></div><EditableGrid screen="collection" panels={[{ id: 'collection-summary', content: <CollectionSummary progress={progress} /> }, { id: 'collection-content', content: library }, { id: 'collection-inspector', content: inspector }]} /></div>
+}

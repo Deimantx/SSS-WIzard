@@ -20,5 +20,7 @@
 @import './screens/research.css';
 @import './screens/focus.css';
 @import './screens/home.css';
+@import './screens/collection.css';
+@import './screens/bestiary.css';
 @import './profiles.css';
 @import './profile-settings.css';

@@ -3,7 +3,7 @@ import { MANA_PILLAR_IDS } from '../game/data/manaPillars'
 import { DUNGEONS } from '../game/content/dungeons/dungeons'
 import { GUILD_REQUESTS } from '../game/content/guild/guildRequests'
 import { ITEMS } from '../game/content/items/items'
-import { MONSTERS } from '../game/content/monsters/whisperingWoods'
+import { isBossMonster, MONSTERS } from '../game/content/monsters/whisperingWoods'
 import { RECIPES } from '../game/content/recipes/recipes'
 import { RECIPE_ORDER } from '../game/content/recipes/recipes'
 import { BALANCE } from '../game/core/balance/balance'
@@ -17,7 +17,7 @@ import { recalculateDerivedStats } from '../game/engine'
 
 const normalizeScreen = (value: unknown, fallback: GameState['ui']['screen']): GameState['ui']['screen'] => {
   if (value === 'tower') return 'tower-channeling'
-  const valid = ['home', 'combat', 'schools', 'inventory', 'equipment', 'collection', 'tower-channeling', 'tower-focus', 'tower-research', 'tower-transmutation', 'guild', 'settings']
+  const valid = ['home', 'combat', 'schools', 'inventory', 'equipment', 'collection', 'bestiary', 'tower-channeling', 'tower-focus', 'tower-research', 'tower-transmutation', 'guild', 'settings']
   if (value === 'tower-condensation') return 'tower-transmutation'
   return typeof value === 'string' && valid.includes(value) ? value as GameState['ui']['screen'] : fallback
 }
@@ -38,7 +38,7 @@ const safeLevel = (value: unknown) => typeof value === 'number' && Number.isFini
 
 const itemIds = Object.keys(ITEMS)
 const monsterIds = Object.keys(MONSTERS)
-const bossIds = Object.values(MONSTERS).filter((monster) => monster.boss).map((monster) => monster.id)
+const bossIds = Object.values(MONSTERS).filter(isBossMonster).map((monster) => monster.id)
 const dungeonIds = Object.keys(DUNGEONS)
 const requestIds = Object.keys(GUILD_REQUESTS)
 const spellIds = Object.keys(SPELLS)
@@ -96,7 +96,31 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
   const rawUnlockedSpells = Array.isArray(rawProgress.unlockedSpells) ? rawProgress.unlockedSpells : []
   migrated.progress.unlockedSpells = rawUnlockedSpells.filter((id): id is GameState['progress']['unlockedSpells'][number] => typeof id === 'string' && spellIds.includes(id))
   const rawDiscoveredMonsters = Array.isArray(rawProgress.discoveredMonsters) ? rawProgress.discoveredMonsters : []
-  migrated.progress.discoveredMonsters = rawDiscoveredMonsters.filter((id): id is GameState['progress']['discoveredMonsters'][number] => typeof id === 'string' && monsterIds.includes(id))
+  migrated.progress.discoveredMonsters = [...new Set(rawDiscoveredMonsters.filter((id): id is GameState['progress']['discoveredMonsters'][number] => typeof id === 'string' && monsterIds.includes(id)))]
+  const rawDiscoveredItems = Array.isArray(rawProgress.discoveredItems) ? rawProgress.discoveredItems : []
+  migrated.progress.discoveredItems = [...new Set(rawDiscoveredItems.filter((id): id is ItemId => typeof id === 'string' && itemIds.includes(id)))]
+}
+
+/** Seeds the historical item archive only for saves that predate V11. */
+const seedLegacyItemDiscoveries = (migrated: GameState, raw: Record<string, any>, sourceVersion: number) => {
+  const rawProgress = isRecord(raw.progress) ? raw.progress : {}
+  const hasArchive = Array.isArray(rawProgress.discoveredItems)
+  if (sourceVersion >= SAVE_VERSION && hasArchive) return
+
+  const discovered = new Set<ItemId>(migrated.progress.discoveredItems)
+  const rawEquipment = isRecord(raw.equipment) ? raw.equipment : {}
+  Object.values(rawEquipment).forEach((itemId) => { if (typeof itemId === 'string' && ITEMS[itemId as ItemId]) discovered.add(itemId as ItemId) })
+  Object.entries(migrated.inventory).forEach(([itemId, quantity]) => {
+    if (itemIds.includes(itemId) && typeof quantity === 'number' && quantity > 0) discovered.add(itemId as ItemId)
+  })
+  Object.values(migrated.equipment).forEach((itemId) => { if (itemId && ITEMS[itemId]) discovered.add(itemId as ItemId) })
+
+  Object.values(MONSTERS).forEach((monster) => {
+    const defeats = isBossMonster(monster) ? migrated.progress.bossKillsByBoss[monster.id] ?? 0 : migrated.progress.lifetimeKillsByMonster[monster.id] ?? 0
+    if (defeats < 1) return
+    monster.loot.filter((drop) => drop.chance === 1).forEach((drop) => discovered.add(drop.itemId))
+  })
+  migrated.progress.discoveredItems = itemIds.filter((itemId) => discovered.has(itemId as ItemId)) as ItemId[]
 }
 
 const normalizeDirectContentReferences = (migrated: GameState, raw: Record<string, any>) => {
@@ -279,13 +303,14 @@ const normalizeResearchFocus = (migrated: GameState) => {
 
 const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion = Number(raw.saveVersion ?? 0)) => {
   // Versions through V7 retain the historical migration marker for callers
-  // that still chain those migrations; V8/V9 are normalized into the current
-  // V10 document.
+  // that still chain those migrations; V8-V10 are normalized into the current
+  // V11 document.
   migrated.saveVersion = sourceVersion >= 8 ? SAVE_VERSION : 8
   migrated.progress.channeling = migrateChanneling(raw.progress, createInitialState().progress)
   migrated.ui.screen = normalizeScreen(isRecord(raw.ui) ? raw.ui.screen : undefined, migrated.ui.screen)
   normalizeDynamicRecords(migrated, raw)
   normalizeDirectContentReferences(migrated, raw)
+  seedLegacyItemDiscoveries(migrated, raw, sourceVersion)
   normalizeResearch(migrated, raw, sourceVersion)
   recalculateDerivedStats(migrated)
   normalizeTransmutationJobs(migrated, raw)
@@ -355,6 +380,7 @@ export const migrateSave = (rawSave: unknown): GameState => {
   if (version === 7) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === 8) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === 9) return finalize(merge(createInitialState(), rawSave), rawSave, version)
+  if (version === 10) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === SAVE_VERSION) {
     return finalize(merge(createInitialState(), rawSave), rawSave, version)
   }

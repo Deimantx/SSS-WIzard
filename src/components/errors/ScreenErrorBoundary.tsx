@@ -6,7 +6,7 @@ import { Button, Card, Status } from '../ui'
 
 interface Props { children: ReactNode; screen: ScreenId }
 interface State { error: Error | null; componentStack: string }
-const SCREEN_LABELS: Record<ScreenId, string> = { home: 'Overview', combat: 'Combat', schools: 'Magic Schools', inventory: 'Inventory', equipment: 'Equipment', collection: 'Collection', 'tower-channeling': 'Channeling', 'tower-focus': 'Focus', 'tower-research': 'Research', 'tower-transmutation': 'Transmutation', guild: 'Guild', settings: 'Settings / Info' }
+const SCREEN_LABELS: Record<ScreenId, string> = { home: 'Overview', combat: 'Combat', schools: 'Magic Schools', inventory: 'Inventory', equipment: 'Equipment', collection: 'Collection', bestiary: 'Bestiary', 'tower-channeling': 'Channeling', 'tower-focus': 'Focus', 'tower-research': 'Research', 'tower-transmutation': 'Transmutation', guild: 'Guild', settings: 'Settings / Info' }
 
 export class ScreenErrorBoundary extends Component<Props, State> {
   state: State = { error: null, componentStack: '' }

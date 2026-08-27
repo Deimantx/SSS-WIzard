@@ -8,7 +8,7 @@ import { panelName } from './layoutUtils'
 import { TOPBAR_RESOURCE_IDS, TOPBAR_WIDTH_LIMITS, topbarLayoutPresetName } from './shellLayout'
 import type { LayoutEditorState, TopbarRegionId } from './layoutEditorTypes'
 
-const SCREEN_LABELS: Record<ScreenId, string> = { home: 'Overview', combat: 'Combat', schools: 'Magic Schools', inventory: 'Inventory', equipment: 'Equipment', collection: 'Collection', 'tower-channeling': 'Channeling', 'tower-focus': 'Focus', 'tower-research': 'Research', 'tower-transmutation': 'Transmutation', guild: 'Guild', settings: 'Settings / Info' }
+const SCREEN_LABELS: Record<ScreenId, string> = { home: 'Overview', combat: 'Combat', schools: 'Magic Schools', inventory: 'Inventory', equipment: 'Equipment', collection: 'Collection', bestiary: 'Bestiary', 'tower-channeling': 'Channeling', 'tower-focus': 'Focus', 'tower-research': 'Research', 'tower-transmutation': 'Transmutation', guild: 'Guild', settings: 'Settings / Info' }
 const RESOURCE_NAMES: Record<TopbarRegionId, string> = { 'topbar-health': 'HP', 'topbar-mana': 'Mana', 'topbar-focus': 'Focus', 'topbar-breadcrumb': 'Breadcrumb', 'topbar-utilities': 'Utilities' }
 
 export function LayoutEditorDrawer({ screen }: { screen: ScreenId }) {

@@ -1,4 +1,4 @@
-import { MONSTERS } from '../../content/monsters/whisperingWoods'
+import { isBossMonster, MONSTERS } from '../../content/monsters/whisperingWoods'
 import { ITEMS } from '../../content/items/items'
 import type { ChannelingDiscoveryId, GameState, ItemId, MonsterId, RecipeId, SchoolId, SpellId } from '../../types'
 
@@ -49,7 +49,7 @@ export function createOfflineBankReportCollector(state: GameState, durationMs: n
   const recordNotable = (event: string) => { if (event && !report.progression.notableEvents.includes(event)) report.progression.notableEvents.push(event) }
   return {
     report,
-    recordKill: (monsterId) => { report.combat.killsTotal += 1; add(report.combat.killsByMonster, monsterId, 1); if (MONSTERS[monsterId].boss) add(report.combat.bossKills, monsterId, 1) },
+    recordKill: (monsterId) => { report.combat.killsTotal += 1; add(report.combat.killsByMonster, monsterId, 1); if (isBossMonster(MONSTERS[monsterId])) add(report.combat.bossKills, monsterId, 1) },
     recordLoot: (itemId, quantity) => { touch(itemId); add(report.combat.loot, itemId, quantity) },
     recordPlayerDeath: () => { report.combat.playerDeaths += 1 },
     recordTransmutation: (recipeId, output, quantity, ingredients) => { touch(output); add(report.production.craftsByRecipe, recipeId, quantity); add(report.production.transmutation, output, quantity); ingredients.forEach((ingredient) => { touch(ingredient.itemId); add(report.consumption.transmutation, ingredient.itemId, ingredient.quantity) }) },

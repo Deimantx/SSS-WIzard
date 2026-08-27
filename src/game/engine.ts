@@ -7,15 +7,9 @@ import type { EquipmentStats, FocusReservation, GameState, ItemId, SchoolId, Spe
 import { RECIPES, RECIPE_ORDER } from './content/recipes/recipes'
 import { clamp, uid } from './utils'
 import { RESEARCH_SLOT_ORDER } from './systems/research/researchReservations'
+import { getSchoolLevel as getCentralSchoolLevel, getSchoolProgressInfo } from './systems/schools'
 
-export const getSchoolLevel = (xp: number, cap: number) => {
-  let level = 1
-  for (let next = 2; next <= cap; next += 1) {
-    if (xp >= SCHOOL_LEVEL_XP(next - 1)) level = next
-    else break
-  }
-  return Math.min(cap, level)
-}
+export const getSchoolLevel = getCentralSchoolLevel
 
 export const equipmentStats = (state: Pick<GameState, 'equipment'>): EquipmentStats => {
   const total: EquipmentStats = {}
@@ -67,11 +61,7 @@ export const freeFocus = selectFreeFocus
 export const canReserveFocus = (state: Pick<GameState, 'activities' | 'progress' | 'player'>, amount: number) => selectFreeFocus(state) >= amount
 export const manaRegenPerSecond = getChannelingManaRegen
 export const schoolProgress = (state: GameState, school: SchoolId) => {
-  const current = state.schools[school]
-  if (current.level >= state.progress.magicLevelCap) return 1
-  const previous = SCHOOL_LEVEL_XP(Math.max(1, current.level - 1))
-  const next = SCHOOL_LEVEL_XP(current.level)
-  return clamp((current.xp - previous) / Math.max(1, next - previous), 0, 1)
+  return getSchoolProgressInfo(state, school).progress
 }
 export const playerBasicDamage = (state: Pick<GameState, 'equipment'>) => BALANCE.player.basicAttackDamage + (equipmentStats(state).basicDamage ?? 0)
 export const spellDamageMultiplier = (state: Pick<GameState, 'equipment'>, school: SchoolId) => {

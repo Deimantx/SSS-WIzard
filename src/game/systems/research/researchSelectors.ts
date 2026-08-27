@@ -7,6 +7,7 @@ import { selectFreeFocus } from '../../engine'
 import type { GameState, ItemId, ResearchJobState, ResearchJobStatus, ResearchSlotId, SchoolId } from '../../types'
 import { clamp } from '../../utils'
 import { RESEARCH_SLOT_ORDER } from './researchReservations'
+import { getSchoolProgressInfo } from '../schools'
 
 export interface PreparedResearchJob extends ResearchJobState { slotId: ResearchSlotId }
 
@@ -84,3 +85,27 @@ export const getResearchBatchEtaMs = (job: Pick<ResearchJobState, 'remainingQuan
 
 export const getResearchJobXpPerItem = (job: Pick<ResearchJobState, 'itemId' | 'targetSchoolId'>) => getResearchXp(job.itemId, job.targetSchoolId)
 export const getResearchSchoolName = (schoolId: SchoolId) => SCHOOLS[schoolId]?.name ?? schoolId
+
+export interface ResearchNextLevelEta {
+  etaMs: number | null
+  beyondBatch: boolean
+}
+
+/** Estimate when this prepared batch alone reaches its target school's next level. */
+export const getResearchNextLevelEtaMs = (state: Pick<GameState, 'activities' | 'inventory' | 'protectedItems' | 'equipment' | 'schools' | 'progress' | 'player'>, slotId: ResearchSlotId): ResearchNextLevelEta => {
+  const job = getResearchJob(state, slotId)
+  if (!job || finiteQuantity(job.remainingQuantity) <= 0 || finiteQuantity(job.echoesAssigned) <= 0) return { etaMs: null, beyondBatch: false }
+  const status = getResearchJobStatus(state, slotId)
+  if (status !== 'running') return { etaMs: null, beyondBatch: false }
+  const school = getSchoolProgressInfo(state, job.targetSchoolId)
+  if (school.atCap || school.nextLevelXp === null) return { etaMs: null, beyondBatch: false }
+  const xpPerItem = getResearchJobXpPerItem(job)
+  const neededXp = Math.max(0, school.nextLevelXp - school.xp)
+  const itemsNeeded = Math.ceil(neededXp / Math.max(1, xpPerItem))
+  const remaining = finiteQuantity(job.remainingQuantity)
+  if (itemsNeeded > remaining) return { etaMs: null, beyondBatch: true }
+  const echoes = finiteQuantity(job.echoesAssigned)
+  const currentItemMs = Math.max(0, BALANCE.research.durationPerItemMs - finiteProgress(job.progressMs)) / echoes
+  const futureItemMs = BALANCE.research.durationPerItemMs / echoes
+  return { etaMs: currentItemMs + Math.max(0, itemsNeeded - 1) * futureItemMs, beyondBatch: false }
+}

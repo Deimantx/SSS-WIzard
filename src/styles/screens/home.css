@@ -1,0 +1,53 @@
+.ui-editor-panel-content > .school-mastery-panel,
+.ui-editor-panel-content > .current-arcane-work { height: 100%; min-height: 0; margin: 0; overflow: hidden; }
+.school-mastery-panel { display: flex; flex-direction: column; }
+.school-mastery-panel > .card-head { flex: 0 0 auto; }
+.school-mastery-total, .current-arcane-work-summary { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); white-space: nowrap; }
+.school-mastery-intro { margin: -7px 0 13px; color: var(--ui-text-muted); font-size: var(--text-xs); line-height: 1.4; }
+.school-mastery-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.school-progress-summary { display: grid; gap: 6px; min-width: 0; padding: 9px; border: 1px solid color-mix(in srgb, var(--school-color) 32%, var(--ui-border)); border-radius: 7px; background: color-mix(in srgb, var(--school-color) 6%, transparent); }
+.school-progress-summary-head, .school-progress-summary-foot { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.school-progress-summary-head strong { min-width: 0; overflow: hidden; color: var(--ui-text); font-size: var(--text-xs); text-overflow: ellipsis; white-space: nowrap; }
+.school-progress-summary-head small, .school-progress-summary-foot { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
+.school-progress-summary-head small { margin-left: auto; white-space: nowrap; }
+.school-progress-glyph { flex: 0 0 auto; color: var(--school-color); font-size: var(--text-base); }
+.school-progress-summary .progress-wrap { margin-top: 0; }
+.school-progress-summary .progress i { background: var(--school-color); }
+.school-progress-summary-foot span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.school-progress-summary-foot strong { margin-left: auto; color: var(--school-color); font-weight: 500; }
+.school-mastery-footer { display: grid; gap: 6px; margin-top: 13px; padding-top: 10px; border-top: 1px solid var(--ui-border); color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
+.school-mastery-footer-head { display: flex; align-items: center; gap: 10px; }
+.school-mastery-footer strong { color: var(--ui-accent); font-size: var(--text-sm); }
+.school-mastery-footer-head span:last-child { margin-left: auto; }
+.school-mastery-footer .progress-wrap { margin-top: 0; }
+.research-school-mastery .school-mastery-intro, .research-school-mastery .school-mastery-footer { display: none; }
+.research-school-mastery .school-mastery-grid { height: 100%; align-items: center; }
+.research-school-mastery .school-progress-summary { padding: 7px; }
+.research-school-mastery .school-progress-summary-head { gap: 4px; }
+.research-school-mastery .school-progress-summary-head strong { font-size: var(--text-micro); }
+.research-school-mastery .school-progress-summary-head small, .research-school-mastery .school-progress-summary-foot { font-size: .56rem; }
+
+.current-arcane-work { display: flex; flex-direction: column; }
+.current-arcane-work > .card-head { flex: 0 0 auto; }
+.arcane-work-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); flex: 1 1 auto; align-content: start; min-height: 0; gap: 8px; }
+.arcane-work-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; min-width: 0; padding: 10px 11px; border: 1px solid var(--ui-border); border-radius: 7px; background: color-mix(in srgb, var(--ui-panel-strong) 52%, transparent); }
+.arcane-work-copy { min-width: 0; }
+.arcane-work-label { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.arcane-work-label strong { color: var(--ui-text); font-size: var(--text-sm); }
+.arcane-work-label .status { flex: 0 0 auto; }
+.arcane-work-copy p { margin: 4px 0 0; overflow: hidden; color: var(--ui-text-muted); font-size: var(--text-xs); line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
+.arcane-work-row > .button { flex: 0 0 auto; padding: 6px 8px; font-size: var(--text-micro); }
+
+@media (max-width: 760px) {
+  .school-mastery-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .research-school-mastery .school-mastery-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .school-mastery-intro { margin-bottom: 10px; }
+  .school-mastery-footer-head { flex-wrap: wrap; }
+  .school-mastery-footer-head span:last-child { margin-left: 0; }
+  .arcane-work-list { grid-template-columns: 1fr; }
+  .arcane-work-copy p { white-space: normal; }
+}
+
+@media (max-width: 480px) {
+  .school-mastery-panel:not(.research-school-mastery) .school-mastery-grid { grid-template-columns: 1fr; }
+}

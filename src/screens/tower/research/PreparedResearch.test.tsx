@@ -45,6 +45,8 @@ describe('PreparedResearch', () => {
     expect(screen.getByText('MANA / S')).toBeTruthy()
     expect(screen.getByText('XP / H')).toBeTruthy()
     expect(screen.getByText('XP REMAINING')).toBeTruthy()
+    expect(screen.getAllByText(/SCHOOL PROGRESS/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/EST\. NEXT LEVEL/).length).toBeGreaterThan(0)
     expect((screen.getByRole('button', { name: /Assign Research Echo to Fire Fragment/ }) as HTMLButtonElement).disabled).toBe(true)
   })
 })

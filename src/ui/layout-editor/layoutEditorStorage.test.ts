@@ -76,11 +76,12 @@ describe('Transmutation default layout', () => {
 })
 
 describe('Research layout compatibility', () => {
-  it('uses the safe twelve-row Research defaults', () => {
+  it('uses the mastery-first Research defaults', () => {
     expect(DEFAULT_LAYOUTS['tower-research']).toEqual({
-      'research-library': { x: 0, y: 0, w: 6, h: 12 },
-      'research-inspector': { x: 6, y: 0, w: 6, h: 12 },
-      'research-prepared': { x: 0, y: 12, w: 12, h: 10 },
+      'research-school-mastery': { x: 0, y: 0, w: 12, h: 4 },
+      'research-library': { x: 0, y: 4, w: 6, h: 12 },
+      'research-inspector': { x: 6, y: 4, w: 6, h: 12 },
+      'research-prepared': { x: 0, y: 16, w: 12, h: 10 },
     })
   })
 
@@ -114,6 +115,22 @@ describe('Research layout compatibility', () => {
     })
   })
 
+  it('migrates the previous twelve-row default and keeps panel flags', () => {
+    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({
+      version: 3,
+      screens: { 'tower-research': {
+        'research-library': { x: 0, y: 0, w: 6, h: 12, locked: true },
+        'research-inspector': { x: 6, y: 0, w: 6, h: 12 },
+        'research-prepared': { x: 0, y: 12, w: 12, h: 10 },
+      } },
+    }))
+
+    expect(loadUiLayouts().screens['tower-research']).toMatchObject({
+      ...DEFAULT_LAYOUTS['tower-research'],
+      'research-library': { ...DEFAULT_LAYOUTS['tower-research']['research-library'], locked: true },
+    })
+  })
+
   it('maps legacy Research panels to the safe defaults', () => {
     localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({
       version: 3,
@@ -127,6 +144,54 @@ describe('Research layout compatibility', () => {
       'research-library': { ...DEFAULT_LAYOUTS['tower-research']['research-library'], locked: true },
       'research-inspector': { ...DEFAULT_LAYOUTS['tower-research']['research-inspector'], hidden: true },
       'research-prepared': DEFAULT_LAYOUTS['tower-research']['research-prepared'],
+    })
+  })
+})
+
+describe('Home expansion layout compatibility', () => {
+  it('uses the mastery and current work defaults', () => {
+    expect(DEFAULT_LAYOUTS.home).toEqual({
+      'home-objective': { x: 0, y: 0, w: 12, h: 4 },
+      'home-school-mastery': { x: 0, y: 4, w: 12, h: 6 },
+      'home-checklist': { x: 0, y: 10, w: 7, h: 10 },
+      'home-wizard': { x: 7, y: 10, w: 5, h: 10 },
+      'home-arcane-work': { x: 0, y: 20, w: 12, h: 7 },
+    })
+  })
+
+  it('migrates the previous canonical Home layout without dropping flags', () => {
+    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({
+      version: 3,
+      screens: { home: {
+        'home-objective': { x: 0, y: 0, w: 12, h: 4 },
+        'home-checklist': { x: 0, y: 4, w: 7, h: 10, hidden: true },
+        'home-wizard': { x: 7, y: 4, w: 5, h: 10 },
+      } },
+    }))
+
+    expect(loadUiLayouts().screens.home).toMatchObject({
+      ...DEFAULT_LAYOUTS.home,
+      'home-checklist': { ...DEFAULT_LAYOUTS.home['home-checklist'], hidden: true },
+    })
+  })
+
+  it('preserves customized Home geometry and adds new panels below it', () => {
+    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({
+      version: 3,
+      screens: { home: {
+        'home-objective': { x: 0, y: 0, w: 8, h: 5 },
+        'home-checklist': { x: 8, y: 0, w: 4, h: 12 },
+        'home-wizard': { x: 0, y: 5, w: 8, h: 12 },
+      } },
+    }))
+
+    const home = loadUiLayouts().screens.home
+    expect(home).toMatchObject({
+      'home-objective': { x: 0, y: 0, w: 8, h: 5 },
+      'home-checklist': { x: 8, y: 0, w: 4, h: 12 },
+      'home-wizard': { x: 0, y: 5, w: 8, h: 12 },
+      'home-school-mastery': { x: 0, y: 17, w: 12, h: 6 },
+      'home-arcane-work': { x: 0, y: 23, w: 12, h: 7 },
     })
   })
 })

@@ -30,6 +30,20 @@ describe('ResearchInspector', () => {
     fireEvent.click(screen.getByRole('button', { name: 'WATER' }))
     expect(valueMetric('XP / ITEM')).toBe('8')
     expect((screen.getByRole('button', { name: 'WATER' }) as HTMLButtonElement).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByRole('button', { name: 'WATER' }).textContent).toContain('LV 1 / 10')
+  })
+
+  it('updates the projected target-school result with quantity and target changes', () => {
+    researchState()
+    render(<ResearchInspector itemId="fire-fragment" />)
+
+    expect(screen.getByText('PROJECTED SCHOOL')).toBeTruthy()
+    expect(document.querySelector('.research-projection-school')?.textContent).toBe('Fire')
+    const slider = screen.getByLabelText('Research quantity slider') as HTMLInputElement
+    fireEvent.change(slider, { target: { value: '2' } })
+    expect(document.querySelector('.research-projection-level strong')?.textContent).toContain('LV 2')
+    fireEvent.click(screen.getByRole('button', { name: 'WATER' }))
+    expect(document.querySelector('.research-projection-school')?.textContent).toBe('Water')
   })
 
   it('uses unreserved quantity for the slider and preserves inventory on Prepare', () => {

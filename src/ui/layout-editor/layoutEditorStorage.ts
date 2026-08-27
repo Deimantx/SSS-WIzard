@@ -21,6 +21,18 @@ const hasGeometry = (value: unknown, expected: { x: number; y: number; w: number
   return candidate.x === expected.x && candidate.y === expected.y && candidate.w === expected.w && candidate.h === expected.h
 }
 
+const overlaps = (a: SavedPanelLayout, b: SavedPanelLayout) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y
+const placeMissingPanel = (screen: ScreenId, id: string, panels: Record<string, SavedPanelLayout>) => {
+  const fallback = DEFAULT_LAYOUTS[screen]?.[id]
+  if (!fallback || panels[id]) return
+  let candidate = { ...fallback }
+  if (Object.values(panels).some((panel) => overlaps(candidate, panel))) {
+    const maxY = Math.max(0, ...Object.values(panels).map((panel) => panel.y + panel.h))
+    candidate = { ...fallback, y: maxY }
+  }
+  panels[id] = candidate
+}
+
 const normalizePanel = (screen: ScreenId, id: string, value: unknown): SavedPanelLayout | null => {
   const fallback = DEFAULT_LAYOUTS[screen]?.[id]
   if (!fallback || !value || typeof value !== 'object') return null
@@ -56,6 +68,21 @@ export function loadUiLayouts(): UiLayoutDocument {
         panels['research-inspector'] = { ...panels['research-inspector'], ...DEFAULT_LAYOUTS['tower-research']['research-inspector'] }
         panels['research-prepared'] = { ...panels['research-prepared'], ...DEFAULT_LAYOUTS['tower-research']['research-prepared'] }
       }
+      if (screen === 'tower-research' && hasGeometry(source['research-library'], { x: 0, y: 0, w: 6, h: 12 }) && hasGeometry(source['research-inspector'], { x: 6, y: 0, w: 6, h: 12 }) && hasGeometry(source['research-prepared'], { x: 0, y: 12, w: 12, h: 10 })) {
+        panels['research-library'] = { ...panels['research-library'], ...DEFAULT_LAYOUTS['tower-research']['research-library'] }
+        panels['research-inspector'] = { ...panels['research-inspector'], ...DEFAULT_LAYOUTS['tower-research']['research-inspector'] }
+        panels['research-prepared'] = { ...panels['research-prepared'], ...DEFAULT_LAYOUTS['tower-research']['research-prepared'] }
+        panels['research-school-mastery'] = { ...DEFAULT_LAYOUTS['tower-research']['research-school-mastery'], ...panelFlags(source['research-school-mastery']) }
+      }
+      if (screen === 'home' && hasGeometry(source['home-objective'], { x: 0, y: 0, w: 12, h: 4 }) && hasGeometry(source['home-checklist'], { x: 0, y: 4, w: 7, h: 10 }) && hasGeometry(source['home-wizard'], { x: 7, y: 4, w: 5, h: 10 })) {
+        panels['home-objective'] = { ...panels['home-objective'], ...DEFAULT_LAYOUTS.home['home-objective'] }
+        panels['home-checklist'] = { ...panels['home-checklist'], ...DEFAULT_LAYOUTS.home['home-checklist'] }
+        panels['home-wizard'] = { ...panels['home-wizard'], ...DEFAULT_LAYOUTS.home['home-wizard'] }
+        panels['home-school-mastery'] = { ...DEFAULT_LAYOUTS.home['home-school-mastery'], ...panelFlags(source['home-school-mastery']) }
+        panels['home-arcane-work'] = { ...DEFAULT_LAYOUTS.home['home-arcane-work'], ...panelFlags(source['home-arcane-work']) }
+      }
+      if (screen === 'tower-research') placeMissingPanel(screen, 'research-school-mastery', panels)
+      if (screen === 'home') { placeMissingPanel(screen, 'home-school-mastery', panels); placeMissingPanel(screen, 'home-arcane-work', panels) }
       if (screen === 'inventory' && hasGeometry(source['inventory-catalog'], { x: 0, y: 0, w: 9, h: 15 }) && hasGeometry(source['inventory-detail'], { x: 9, y: 0, w: 3, h: 15 })) {
         panels['inventory-catalog'] = { ...panels['inventory-catalog'], x: 0, y: 0, w: 8, h: 17 }
         panels['inventory-detail'] = { ...panels['inventory-detail'], x: 8, y: 0, w: 4, h: 12 }

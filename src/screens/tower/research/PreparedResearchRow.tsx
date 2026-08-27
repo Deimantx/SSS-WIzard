@@ -5,7 +5,8 @@ import { ItemIcon } from '../../../components/ui/item'
 import { SCHOOLS } from '../../../game/content/schools/schools'
 import { ITEMS } from '../../../game/content/items/items'
 import { BALANCE } from '../../../game/core/balance/balance'
-import { getResearchBatchEtaMs, getResearchEchoCapacity, getResearchEchoesAssigned, getResearchEchoFocusCost, getResearchItemsPerHour, getResearchJobProgressPercent, getResearchJobStatus, getResearchManaPerSecond, getResearchXpPerHour, getResearchJobXpPerItem } from '../../../game/systems/research/researchSelectors'
+import { getResearchBatchEtaMs, getResearchEchoCapacity, getResearchEchoesAssigned, getResearchEchoFocusCost, getResearchItemsPerHour, getResearchJobProgressPercent, getResearchJobStatus, getResearchManaPerSecond, getResearchNextLevelEtaMs, getResearchXpPerHour, getResearchJobXpPerItem } from '../../../game/systems/research/researchSelectors'
+import { getSchoolProgressInfo } from '../../../game/systems/schools'
 import type { ResearchJobStatus, ResearchSlotId } from '../../../game/types'
 import { formatCompactDuration, formatNumber, formatSignedRate } from '../../../game/utils'
 import { useGameStore } from '../../../store/gameStore'
@@ -35,6 +36,9 @@ export function PreparedResearchRow({ slotId }: { slotId: ResearchSlotId }) {
   const canAdd = status !== 'level-cap' && status !== 'protected' && status !== 'missing-item' && totalEchoes < capacity && freeFocus >= getResearchEchoFocusCost()
   const statusLabel = status.replace('-', ' ').toUpperCase()
   const eta = status === 'waiting-mana' || status === 'level-cap' || status === 'protected' || status === 'missing-item' ? null : getResearchBatchEtaMs(job)
+  const schoolProgress = getSchoolProgressInfo(state, job.targetSchoolId)
+  const nextLevelEta = getResearchNextLevelEtaMs(state, slotId)
+  const nextLevelText = schoolProgress.atCap ? 'CAP' : nextLevelEta.beyondBatch ? 'BEYOND BATCH' : nextLevelEta.etaMs === null ? '—' : formatCompactDuration(nextLevelEta.etaMs)
   const canRemove = <TooltipContent title="Remove prepared batch" description="Unconsumed items become available again. Partial Research progress is lost." />
   const echoHelp = canAdd ? `Each Research Echo reserves ${getResearchEchoFocusCost()} Focus and adds another 1x base speed.` : freeFocus < getResearchEchoFocusCost() ? `Not enough free Focus. Each Research Echo reserves ${getResearchEchoFocusCost()} Focus. Free Focus: ${formatNumber(freeFocus)}.` : status === 'level-cap' ? 'Increase the target school cap before assigning Echoes.' : totalEchoes >= capacity ? `Research Echo pool is full: ${capacity} / ${capacity}.` : 'This batch is blocked until its item is available.'
   const statusDescription = status === 'empty' ? 'This prepared batch has no remaining items.' : statusHelp[status]
@@ -43,6 +47,7 @@ export function PreparedResearchRow({ slotId }: { slotId: ResearchSlotId }) {
     <div className="prepared-research-context"><span>{formatNumber(job.remainingQuantity)} remaining</span><span>{eta === null ? 'ETA —' : `ETA ${formatCompactDuration(eta)}`}</span><GameTooltip content={<TooltipContent title="Research Focus" description={`${getResearchEchoFocusCost()} Focus is reserved for each assigned Research Echo.`} />} accent="focus"><span>Focus {formatNumber(echoes * getResearchEchoFocusCost())}</span></GameTooltip></div>
     <div className="prepared-research-progress-heading"><span>CURRENT ITEM</span><strong>{Math.round(Math.min(100, Math.max(0, job.progressMs / BALANCE.research.durationPerItemMs * 100)))}%</strong></div>
     <Progress value={getResearchJobProgressPercent(state, slotId)} tone="violet" />
+    <div className="prepared-research-school-progress"><div className="prepared-research-progress-heading"><span>SCHOOL PROGRESS · {SCHOOLS[job.targetSchoolId]?.name ?? job.targetSchoolId}</span><strong>LV {schoolProgress.level} / {schoolProgress.cap}</strong></div><Progress value={schoolProgress.progress * 100} tone={job.targetSchoolId} /><div className="prepared-research-school-meta"><span>{schoolProgress.atCap ? 'AT CAP' : `${formatNumber(schoolProgress.xpIntoLevel)} / ${formatNumber(schoolProgress.xpRequiredForLevel ?? 0)} XP`}</span><GameTooltip content={<TooltipContent title="Estimated next school level" description="Estimate from this Research batch only. Other batches may reach the next level sooner." />} accent="elemental"><span>EST. NEXT LEVEL {nextLevelText}</span></GameTooltip></div></div>
     <div className="prepared-research-metrics"><ResearchMetric label="ITEMS / H" value={formatNumber(getResearchItemsPerHour(job))} /><ResearchMetric label="MANA / S" value={formatSignedRate(-getResearchManaPerSecond(job))} className="mana" /><ResearchMetric label="XP / H" value={formatNumber(getResearchXpPerHour(job))} className="xp" /><ResearchMetric label="XP REMAINING" value={formatNumber(job.remainingQuantity * getResearchJobXpPerItem(job))} /></div>
   </div>
 }

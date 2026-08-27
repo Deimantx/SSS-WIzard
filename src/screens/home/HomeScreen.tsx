@@ -6,6 +6,8 @@ import { Button, Card, Status } from '../../components/ui'
 import { formatNumber, formatOfflineBank } from '../../game/utils'
 import { EditableGrid } from '../../ui/layout-editor/EditableGrid'
 import { getResearchEchoesAssigned } from '../../game/systems/research/researchSelectors'
+import { SchoolMasteryPanel } from '../../components/game/schools/SchoolMasteryPanel'
+import { CurrentArcaneWork } from './CurrentArcaneWork'
 
 export function HomeScreenV2() {
   const player = useGameStore((state) => state.player)
@@ -43,5 +45,7 @@ export function HomeScreenV2() {
     { id: 'home-objective', content: <div className={`objective-card ${progress.firstMainBossKill ? 'success' : 'violet'}`}><div className="objective-icon"><Target size={22} /></div><div className="objective-copy"><span>MAIN OBJECTIVE</span><h2>{objective}</h2><p>{progress.firstMainBossKill ? `Magic School Cap 10 → 20 · Permanent Focus gained: +${permanentFocus}.` : progress.firstBossKill ? 'Forest Heart’s first defeat raises the Magic School cap and grants permanent Focus.' : `Reach ${BALANCE.dungeon.whisperingWoodsThreatRequired} Threat Cleared and defeat Grove Sentinel.`}</p></div><div className="objective-state"><Status tone={progress.firstMainBossKill ? 'success' : 'active'}>{progress.firstMainBossKill ? 'COMPLETE' : `CAP ${progress.magicLevelCap}`}</Status></div></div> },
     { id: 'home-checklist', content: <Card title="Chapter checklist" action={<span className="muted">{objectives.filter((item) => item.done).length} / {objectives.length}</span>}><div className="objective-list">{objectives.map((item) => <div key={item.label} className={item.done ? 'done' : ''}><span>{item.done ? <Check size={14} /> : <i />}</span>{item.label}</div>)}</div></Card> },
     { id: 'home-wizard', content: <Card title="The wizard"><div className="wizard-portrait"><div className="wizard-orbit orbit-one" /><div className="wizard-orbit orbit-two" /><div className="wizard-silhouette">♙</div><div className="wizard-sigil">✦</div></div><div className="wizard-details"><h3>Apprentice of the Tower</h3><p>Magic School cap <strong>{progress.magicLevelCap}</strong> · {formatNumber(player.maxFocus)} Max Focus</p><div className="metric-row"><div className="metric"><span>Active systems</span><strong>{Number(combat.active) + Number(getResearchEchoesAssigned({ activities }) > 0) + Number(Object.values(activities.transmutation.jobs).some((job) => (job?.echoesAssigned ?? 0) > 0))}</strong></div><div className="metric"><span>Lifetime kills</span><strong>{formatNumber(progress.lifetimeKills)}</strong></div><div className="metric"><span>Offline Bank</span><strong>{formatOfflineBank(offlineBankMs)}</strong></div></div></div></Card> },
+    { id: 'home-school-mastery', content: <SchoolMasteryPanel /> },
+    { id: 'home-arcane-work', content: <CurrentArcaneWork /> },
   ]} /></div>
 }

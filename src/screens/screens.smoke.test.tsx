@@ -139,4 +139,13 @@ describe('screen smoke coverage', () => {
     await user.click(navItem('Combat'))
     expect(screen.getByRole('heading', { name: 'The clearing watches back.' })).toBeTruthy()
   })
+
+  it('shows shared School Mastery and Current Arcane Work on Overview', () => {
+    render(<GameShell />)
+    expect(screen.getByRole('heading', { name: 'MAGIC SCHOOL MASTERY' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'CURRENT ARCANE WORK' })).toBeTruthy()
+    for (const school of ['Fire', 'Water', 'Earth', 'Air']) expect(screen.getByText(school, { selector: 'strong' })).toBeTruthy()
+    expect(screen.getAllByText('No Echoes assigned').length).toBeGreaterThan(0)
+    expect(screen.getByText('No active recipes')).toBeTruthy()
+  })
 })

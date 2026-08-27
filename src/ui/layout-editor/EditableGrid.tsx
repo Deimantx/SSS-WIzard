@@ -10,21 +10,23 @@ import { EditableGridItem } from './EditableGridItem'
 import { GridOverlay } from './GridOverlay'
 
 export interface EditableGridPanel { id: string; content: ReactNode }
+export type EditableGridLayoutTransform = (layout: Layout) => Layout
 
-export function EditableGrid({ screen, panels, children }: { screen: ScreenId; panels?: EditableGridPanel[]; children?: ReactNode }) {
+export function EditableGrid({ screen, panels, children, layoutTransform }: { screen: ScreenId; panels?: EditableGridPanel[]; children?: ReactNode; layoutTransform?: EditableGridLayoutTransform }) {
   const editor = useLayoutEditorStore()
   const { width, containerRef, mounted } = useContainerWidth({ measureBeforeMount: false, initialWidth: 1100 })
   const saved = getSavedScreenLayouts(screen)
   const grid = useMemo(() => toGridLayout(screen, saved, editor.isEditing), [editor.document, editor.isEditing, saved, screen])
+  const transformedGrid = useMemo(() => editor.isEditing || !layoutTransform ? grid : layoutTransform(grid), [editor.isEditing, grid, layoutTransform])
   const displayGrid = useMemo(() => {
-    if (!((screen === 'inventory' || screen === 'tower-focus' || screen === 'tower-transmutation' || screen === 'tower-research') && width > 0 && width < 760)) return grid
+    if (!((screen === 'inventory' || screen === 'tower-focus' || screen === 'tower-transmutation' || screen === 'tower-research') && width > 0 && width < 760)) return transformedGrid
     let nextY = 0
-    return grid.map((item) => {
+    return transformedGrid.map((item) => {
       const stacked = { ...item, x: 0, y: nextY, w: GRID_COLUMNS }
       nextY += item.h
       return stacked
     })
-  }, [grid, screen, width])
+  }, [screen, transformedGrid, width])
   const childPanels = Children.toArray(children).flatMap((child) => { if (!isValidElement(child)) return []; const props = child.props as { children?: ReactNode; 'data-panel-id'?: string }; const id = props['data-panel-id'] ?? (typeof child.key === 'string' ? child.key.replace(/^\$+/, '') : ''); return id ? [{ id, content: props.children }] : [] })
   const panelEntries = panels ?? childPanels
   const available = new Map(panelEntries.map((panel) => [panel.id, panel.content]))

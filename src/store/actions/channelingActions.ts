@@ -6,6 +6,7 @@ import { checkChannelingDiscoveries } from '../../game/engine/channelingEngine'
 import { canReserveFocus as canReserveFocusNormal, pushNotification, recalculateDerivedStats } from '../../game/engine'
 import type { ChannelingDiscoveryId, GameState, ManaPillarId } from '../../game/types'
 import { clamp } from '../../game/utils'
+import { getConsumableQuantity } from '../../game/core/inventory/inventoryConsumption'
 
 const isProtected = (state: GameState, itemId: keyof GameState['inventory']) => Boolean(state.protectedItems[itemId]) || Object.values(state.equipment).includes(itemId)
 const canReserveFocus = (state: GameState, amount: number) => state.debug.allowFocusOverCap || canReserveFocusNormal(state, amount)
@@ -26,7 +27,7 @@ export const upgradeManaPillarAction = (state: GameState, pillarId: ManaPillarId
   const requiredItems = [...pillar.fragmentRequirements, 'life-essence' as const]
   const blocked = requiredItems.find((itemId) => isProtected(state, itemId))
   if (blocked) { pushNotification(state, `Upgrade blocked. ${ITEMS[blocked].name} is protected.`, 'warning'); return }
-  const missing = requiredItems.find((itemId) => (state.inventory[itemId] ?? 0) < (itemId === 'life-essence' ? cost.lifeEssence : cost.fragment))
+  const missing = requiredItems.find((itemId) => getConsumableQuantity(state, itemId) < (itemId === 'life-essence' ? cost.lifeEssence : cost.fragment))
   if (missing) { pushNotification(state, `Not enough ${ITEMS[missing].name}. Need ${missing === 'life-essence' ? cost.lifeEssence : cost.fragment}.`, 'warning'); return }
   pillar.fragmentRequirements.forEach((itemId) => { state.inventory[itemId] = (state.inventory[itemId] ?? 0) - cost.fragment })
   state.inventory['life-essence'] = (state.inventory['life-essence'] ?? 0) - cost.lifeEssence

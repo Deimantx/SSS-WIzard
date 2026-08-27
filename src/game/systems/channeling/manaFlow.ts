@@ -3,6 +3,7 @@ import { RECIPES, RECIPE_ORDER } from '../../content/recipes/recipes'
 import { BALANCE } from '../../core/balance/balance'
 import { getManaRegenBreakdown } from '../../engine/channelingEngine'
 import { getRecipeManaDemandPerSecond } from '../transmutation/transmutationSelectors'
+import { getResearchManaPerSecond, getPreparedResearchJobs } from '../research/researchSelectors'
 import type { GameState, ManaDemandSource, ManaFlowBreakdown } from '../../types'
 
 const FLOW_EPSILON = 0.05
@@ -16,13 +17,9 @@ export const getManaDemandBreakdown = (state: GameState): ManaDemandSource[] => 
     sources.push({ id: `transmutation-${recipeId}`, label: `Transmutation · ${recipe.name}`, manaPerSecond: getRecipeManaDemandPerSecond(recipe, echoes) })
   })
 
-  const research = state.activities.research
-  if (research.running && research.remainingQuantity > 0 && research.durationPerItemMs > 0) {
-    sources.push({
-      id: 'research',
-      label: 'Research',
-      manaPerSecond: research.manaPerItem / (research.durationPerItemMs / 1000),
-    })
+  const researchJobs = getPreparedResearchJobs(state).filter((job) => job.echoesAssigned > 0)
+  if (researchJobs.length > 0) {
+    researchJobs.forEach((job) => sources.push({ id: `research-${job.slotId}`, label: `Research · ${job.itemId}`, manaPerSecond: getResearchManaPerSecond(job) }))
   }
 
   if (state.combat.active) {

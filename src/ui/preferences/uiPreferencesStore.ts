@@ -10,7 +10,7 @@ const subscribe = (listener: () => void) => { listeners.add(listener); return ()
 
 export const getUiPreferences = () => current
 type TransmutationPreferenceChanges = Partial<Omit<ScreenPreferences['transmutation'], 'collapsedCategories'>> & { collapsedCategories?: Partial<ScreenPreferences['transmutation']['collapsedCategories']> }
-type UiPreferenceChanges = Omit<Partial<UiPreferences>, 'screenState'> & { screenState?: { inventory?: Partial<ScreenPreferences['inventory']>; transmutation?: TransmutationPreferenceChanges } }
+type UiPreferenceChanges = Omit<Partial<UiPreferences>, 'screenState'> & { screenState?: { inventory?: Partial<ScreenPreferences['inventory']>; transmutation?: TransmutationPreferenceChanges; research?: Partial<ScreenPreferences['research']> } }
 
 export const setUiPreferences = (changes: UiPreferenceChanges) => {
   const screenState = changes.screenState
@@ -18,7 +18,7 @@ export const setUiPreferences = (changes: UiPreferenceChanges) => {
     ...current,
     ...changes,
     customTheme: changes.customTheme ? { ...current.customTheme, ...changes.customTheme } : current.customTheme,
-    screenState: screenState ? { ...current.screenState, ...screenState, inventory: { ...current.screenState.inventory, ...screenState.inventory }, transmutation: { ...current.screenState.transmutation, ...screenState.transmutation, collapsedCategories: { ...current.screenState.transmutation.collapsedCategories, ...screenState.transmutation?.collapsedCategories } } } : current.screenState,
+    screenState: screenState ? { ...current.screenState, ...screenState, inventory: { ...current.screenState.inventory, ...screenState.inventory }, transmutation: { ...current.screenState.transmutation, ...screenState.transmutation, collapsedCategories: { ...current.screenState.transmutation.collapsedCategories, ...screenState.transmutation?.collapsedCategories } }, research: { ...current.screenState.research, ...screenState.research } } : current.screenState,
   })
   saveUiPreferences(current)
   applyUiPreferences(current)

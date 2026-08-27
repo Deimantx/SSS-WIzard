@@ -4,6 +4,7 @@ import { RECIPES } from '../../game/content/recipes/recipes'
 import { ITEMS } from '../../game/content/items/items'
 import { getRecipeCraftsPerHour, isRecipeUnlocked } from '../../game/systems/transmutation/transmutationSelectors'
 import type { GameState, ItemId, ScreenId } from '../../game/types'
+import { getPreparedResearchJobs, getResearchItemsPerHour } from '../../game/systems/research/researchSelectors'
 
 export type ItemEconomyState = Pick<GameState, 'inventory' | 'protectedItems' | 'equipment' | 'progress' | 'activities'>
 export type ItemFlowDirection = 'production' | 'consumption' | 'mixed'
@@ -55,11 +56,11 @@ export function getItemFlow(itemId: ItemId, state: Pick<GameState, 'inventory' |
 
   const production: ItemFlowSource[] = []
   const consumption: ItemFlowSource[] = []
-  const research = state.activities.research
-  if (research.running && research.itemId === itemId && research.remainingQuantity > 0) {
-    const source = flowSource('Research', HOUR_MS / Math.max(1, research.durationPerItemMs), 'tower-research')
-    if (source) consumption.push(source)
-  }
+  const researchRate = getPreparedResearchJobs(state)
+    .filter((job) => job.itemId === itemId && job.echoesAssigned > 0)
+    .reduce((total, job) => total + getResearchItemsPerHour(job), 0)
+  const researchSource = flowSource('Research', researchRate, 'tower-research')
+  if (researchSource) consumption.push(researchSource)
 
   Object.values(RECIPES).forEach((recipe) => {
     const echoes = Math.max(0, Math.floor(state.activities.transmutation.jobs[recipe.id]?.echoesAssigned ?? 0))

@@ -2,6 +2,7 @@ import { GUILD_REQUESTS } from '../../game/content/guild/guildRequests'
 import { BALANCE } from '../../game/core/balance/balance'
 import { pushNotification, recalculateDerivedStats } from '../../game/engine'
 import { isProtectedItem } from './inventoryActions'
+import { getConsumableQuantity } from '../../game/core/inventory/inventoryConsumption'
 import type { GameState } from '../../game/types'
 
 export const donateGuildRequestAction = (state: GameState, requestId: string, amount: number | 'max') => {
@@ -9,7 +10,8 @@ export const donateGuildRequestAction = (state: GameState, requestId: string, am
   if (!request || request.kind !== 'donation' || !state.progress.guildUnlocked) return
   const current = state.progress.requestProgress[requestId] ?? 0
   const remaining = request.target - current
-  const quantity = amount === 'max' ? Math.min(remaining, state.inventory[request.itemId] ?? 0) : Math.min(remaining, amount)
+  const available = getConsumableQuantity(state, request.itemId)
+  const quantity = amount === 'max' ? Math.min(remaining, available) : Math.min(remaining, Math.min(amount, available))
   if (quantity <= 0 || isProtectedItem(state, request.itemId)) { pushNotification(state, 'Protected or missing Fire Fragments.', 'warning'); return }
   state.inventory[request.itemId] = (state.inventory[request.itemId] ?? 0) - quantity
   state.progress.requestProgress[requestId] = current + quantity
@@ -32,4 +34,3 @@ export const promoteGuildAction = (state: GameState) => {
     pushNotification(state, 'Guild rank increased to Apprentice - +10 permanent Focus', 'success')
   }
 }
-

@@ -1,11 +1,12 @@
 import { BALANCE, SCHOOL_LEVEL_XP } from './core/balance/balance'
 import { ITEMS, getResearchXp } from './content/items/items'
+import { SCHOOLS } from './content/schools/schools'
 import { SPELLS } from './content/spells/spells'
 import { getManaCapacityBreakdown, manaRegenPerSecond as getChannelingManaRegen } from './engine/channelingEngine'
 import type { EquipmentStats, FocusReservation, GameState, ItemId, SchoolId, SpellId } from './types'
 import { RECIPES, RECIPE_ORDER } from './content/recipes/recipes'
-import { getConsumableQuantity } from './core/inventory/inventoryConsumption'
 import { clamp, uid } from './utils'
+import { RESEARCH_SLOT_ORDER } from './systems/research/researchReservations'
 
 export const getSchoolLevel = (xp: number, cap: number) => {
   let level = 1
@@ -41,7 +42,10 @@ export const deriveFocusReservations = (state: Pick<GameState, 'activities' | 'p
   const echoes = state.activities.channeling.echoesAssigned
   if (echoes > 0) reservations.push({ id: 'channeling-echoes', sourceType: 'channeling', sourceId: 'echoes', amount: echoes * BALANCE.channeling.echoFocusCost, label: 'Arcane Echo Channeling' })
   const research = state.activities.research
-  if (research.running) reservations.push({ id: 'research', sourceType: 'research', sourceId: research.itemId ?? 'fragment', amount: research.focusCost, label: 'Arcane Research' })
+  const researchJobs = research.slots
+    ? RESEARCH_SLOT_ORDER.map((slotId) => ({ slotId, job: research.slots[slotId] })).filter((entry): entry is { slotId: typeof RESEARCH_SLOT_ORDER[number]; job: NonNullable<typeof entry.job> } => Boolean(entry.job && entry.job.echoesAssigned > 0))
+    : research.running && research.itemId && research.targetSchoolId ? [{ slotId: 'research-1' as const, job: { itemId: research.itemId, targetSchoolId: research.targetSchoolId, requestedQuantity: research.requestedQuantity ?? research.remainingQuantity ?? 0, remainingQuantity: research.remainingQuantity ?? 0, progressMs: research.progressMs ?? 0, echoesAssigned: 1, status: 'running' as const } }] : []
+  researchJobs.forEach(({ slotId, job }) => reservations.push({ id: `research-${slotId}`, sourceType: 'research', sourceId: slotId, amount: Math.max(0, Math.floor(job.echoesAssigned)) * BALANCE.research.echoFocusCost, label: `Research · ${ITEMS[job.itemId]?.name ?? job.itemId} → ${SCHOOLS[job.targetSchoolId]?.name ?? job.targetSchoolId}` }))
   RECIPE_ORDER.forEach((recipeId) => {
     const echoes = Math.max(0, Math.floor(state.activities.transmutation.jobs[recipeId]?.echoesAssigned ?? 0))
     if (!echoes) return
@@ -88,7 +92,9 @@ export const completeResearchCycle = (state: GameState, itemId: ItemId, targetSc
   const item = ITEMS[itemId]
   if (!item || !item.researchSchool) return { completed: false, reason: 'unknown' as const }
   if (state.schools[targetSchoolId].level >= state.progress.magicLevelCap) return { completed: false, reason: 'cap' as const }
-  if (getConsumableQuantity(state, itemId) < 1) return { completed: false, reason: 'protected' as const }
+  if (state.protectedItems[itemId] || Object.values(state.equipment).includes(itemId)) return { completed: false, reason: 'protected' as const }
+  const equippedCopies = Object.values(state.equipment).filter((equipped) => equipped === itemId).length
+  if ((state.inventory[itemId] ?? 0) <= equippedCopies) return { completed: false, reason: 'missing' as const }
   state.inventory[itemId] = (state.inventory[itemId] ?? 0) - 1
   const xp = getResearchXp(itemId, targetSchoolId)
   const levels = grantSchoolXp(state, targetSchoolId, xp)

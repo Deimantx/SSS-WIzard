@@ -5,6 +5,7 @@ import { RECIPES, RECIPE_ORDER } from '../../content/recipes/recipes'
 import { SCHOOLS } from '../../content/schools/schools'
 import { BALANCE } from '../../core/balance/balance'
 import { getRecipeCraftsPerHour, getRecipeManaDemandPerSecond, getRecipeStatus } from '../transmutation/transmutationSelectors'
+import { getPreparedResearchJobs, getResearchBatchEtaMs, getResearchFocusReserved, getResearchItemsPerHour, getResearchJobProgressPercent, getResearchJobStatus, getResearchManaPerSecond, getResearchXpPerHour } from '../research/researchSelectors'
 import type { ActivityMetric, ActivityTelemetry, GameState } from '../../types'
 import { clamp, formatCompactDuration, formatNumber, formatRatePerHour, formatSignedRate } from '../../utils'
 
@@ -70,14 +71,19 @@ export const getActivityTelemetry = (state: GameState): ActivityTelemetry[] => {
     }
   }
 
-  const research = state.activities.research
-  if (research.running && research.itemId && research.targetSchoolId && research.remainingQuantity > 0) {
-    const duration = Math.max(1, research.durationPerItemMs)
-    const remainingMs = Math.max(0, duration - research.progressMs)
-    const waitingMana = research.status === 'waiting-mana' || (research.progressMs >= duration && state.player.mana < research.manaPerItem)
-    const item = ITEMS[research.itemId]
-    const schoolName = SCHOOLS[research.targetSchoolId].name
-    activities.push({ id: 'research', label: 'RESEARCH', subtitle: `${item?.researchSchool ? SCHOOLS[item.researchSchool].name : 'Material'} → ${schoolName}`, screen: 'tower-research', status: waitingMana ? 'waiting-mana' : research.status === 'paused' ? 'paused' : 'running', progressPercent: clamp(research.progressMs / duration * 100, 0, 100), remainingMs, collapsedSummary: waitingMana ? `${schoolName} Research · WAITING MANA` : `${schoolName} Research · ${formatCompactDuration(remainingMs)}`, metrics: [metric('Remaining', `${formatNumber(research.remainingQuantity)} items`), metric('Cycle', formatCompactDuration(remainingMs)), metric('XP/h', formatRatePerHour(research.xpPerItem * 3_600_000 / duration)), metric('Items/h', formatRatePerHour(3_600_000 / duration)), metric('Mana', formatSignedRate(-(research.manaPerItem / (duration / 1000))), 'negative'), metric('Focus', `${research.focusCost}`)], accent: 'violet' })
+  const researchJobs = getPreparedResearchJobs(state).filter((job) => job.echoesAssigned > 0)
+  if (researchJobs.length > 0) {
+    const totalEchoes = researchJobs.reduce((sum, job) => sum + job.echoesAssigned, 0)
+    const totalXpPerHour = researchJobs.reduce((sum, job) => sum + getResearchXpPerHour(job), 0)
+    const totalItemsPerHour = researchJobs.reduce((sum, job) => sum + getResearchItemsPerHour(job), 0)
+    const manaDemand = researchJobs.reduce((sum, job) => sum + getResearchManaPerSecond(job), 0)
+    const waiting = researchJobs.filter((job) => getResearchJobStatus(state, job.slotId) === 'waiting-mana').length
+    const etaCandidates = researchJobs.map((job) => getResearchBatchEtaMs(job)).filter((eta): eta is number => eta !== null)
+    const remainingMs = etaCandidates.length ? Math.min(...etaCandidates) : undefined
+    const first = researchJobs[0]
+    const firstItem = ITEMS[first.itemId]
+    const schoolName = SCHOOLS[first.targetSchoolId].name
+    activities.push({ id: 'research', label: 'RESEARCH', subtitle: `${researchJobs.length} batches · ${totalEchoes} Echoes`, screen: 'tower-research', status: waiting === researchJobs.length ? 'waiting-mana' : 'running', progressPercent: Math.round(researchJobs.reduce((sum, job) => sum + getResearchJobProgressPercent(state, job.slotId), 0) / researchJobs.length), remainingMs, collapsedSummary: waiting === researchJobs.length ? `Research · ${researchJobs.length} batches · WAITING MANA` : `Research · ${researchJobs.length} batches · ${formatRatePerHour(totalXpPerHour)} XP/h`, metrics: [metric('Batches', `${researchJobs.length}`), metric('Target', `${firstItem.name} → ${schoolName}`), metric('XP/h', formatRatePerHour(totalXpPerHour)), metric('Items/h', formatRatePerHour(totalItemsPerHour)), metric('Mana', formatSignedRate(-manaDemand), 'negative'), metric('Focus', `${getResearchFocusReserved(state)}`), ...(waiting > 0 ? [metric('Waiting', `${waiting}`, 'warning')] : [])], accent: 'violet' })
   }
 
   const jobs = RECIPE_ORDER.map((recipeId) => {

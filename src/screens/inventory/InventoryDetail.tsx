@@ -11,6 +11,7 @@ import { getEquipmentComparison } from './inventoryEquipmentComparison'
 import { formatFlowEta, formatItemFlowRate, getItemFlow, getItemNeeds, type ItemEconomyState, type ItemFlow, type ItemNeed } from './inventoryEconomy'
 import { EQUIPMENT_ITEM_SLOT_LABELS, getItemPositions } from '../../game/core/equipment'
 import { setUiPreferences, useUiPreferences } from '../../ui/preferences/uiPreferencesStore'
+import { getResearchReservedQuantity } from '../../game/systems/research/researchReservations'
 
 type DetailAccordionKey = 'currentNeeds' | 'source' | 'usedIn'
 type DetailAccordionState = Record<DetailAccordionKey, boolean>
@@ -22,6 +23,7 @@ export function InventoryDetail({ itemId, inventory, protectedItems, equipment, 
   if (!itemId) return <div className="inventory-detail-empty"><PackageOpen size={28} aria-hidden="true" /><strong>SELECT AN ITEM</strong><span>Choose an item from the Vault to inspect its source, uses, and protection.</span></div>
   const item = ITEMS[itemId]
   const quantity = inventory[itemId] ?? 0
+  const researchReserved = economyState ? getResearchReservedQuantity(economyState, itemId) : 0
   const equipped = Object.values(equipment).includes(itemId)
   const protectedItem = Boolean(protectedItems[itemId]) || equipped
   const source = getItemSourceDestination(itemId)
@@ -38,6 +40,7 @@ export function InventoryDetail({ itemId, inventory, protectedItems, equipment, 
   return <div className={`inventory-detail-content inventory-detail-${item.inventoryCategory}`} style={{ '--detail-accent': item.color } as CSSProperties}>
     <div className="inventory-detail-hero"><div className="inventory-detail-icon"><ItemIcon itemId={itemId} size="large" /></div><div className="inventory-detail-title"><span className="inventory-detail-category">{category}{item.equipmentSlot ? ` · ${EQUIPMENT_ITEM_SLOT_LABELS[item.equipmentSlot]}` : ''}</span><h2>{item.name}</h2><div className="inventory-detail-badges">{equipped ? <Status tone="success"><Check size={12} /> Equipped</Status> : protectedItem ? <Status tone="warning"><LockKeyhole size={12} /> Protected</Status> : <Status>Available</Status>}</div></div></div>
     <div className="inventory-detail-owned"><span>OWNED</span><ItemQuantity value={quantity} /></div>
+    {researchReserved > 0 && <div className="inventory-detail-reserved"><span>PREPARED FOR RESEARCH</span><strong>×{researchReserved.toLocaleString()}</strong><small>Unavailable to selling, destruction, Guild donations, and Transmutation.</small></div>}
     <p className="inventory-detail-description">{item.description}</p>
 
     {flow && <FlowSection flow={flow} />}

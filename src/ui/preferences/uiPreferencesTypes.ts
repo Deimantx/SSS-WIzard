@@ -1,4 +1,4 @@
-import type { RecipeCategory } from '../../game/types'
+import type { ItemId, RecipeCategory, SchoolId } from '../../game/types'
 
 export type UiTheme = 'default' | 'dark' | 'light' | 'custom'
 export type TextSize = 'default' | 'large' | 'extra-large'
@@ -28,9 +28,17 @@ export interface TransmutationScreenPreferences {
   collapsedCategories: Record<RecipeCategory, boolean>
 }
 
+export type ResearchAffinityFilter = 'all' | SchoolId
+export interface ResearchScreenPreferences {
+  selectedItemId: ItemId | null
+  affinityFilter: ResearchAffinityFilter
+  targetSchoolId: SchoolId
+}
+
 export interface ScreenPreferences {
   inventory: InventoryScreenPreferences
   transmutation: TransmutationScreenPreferences
+  research: ResearchScreenPreferences
 }
 
 export interface UiPreferences {

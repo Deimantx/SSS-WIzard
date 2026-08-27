@@ -2,7 +2,7 @@ import { BALANCE } from '../game/data/balance'
 import { createInitialManaPillars } from '../game/data/manaPillars'
 import type { GameState } from '../game/types'
 
-export const SAVE_VERSION = 8
+export const SAVE_VERSION = 9
 
 export const createInitialState = (): GameState => ({
   saveVersion: SAVE_VERSION,
@@ -14,7 +14,7 @@ export const createInitialState = (): GameState => ({
   equipment: { weapon: 'apprentice-wand', offhand: null, armor: null, helmet: null, cape: null, amulet: null, ring1: null, ring2: null },
   activities: {
     channeling: { echoesAssigned: 0 },
-    research: { running: false, itemId: null, targetSchoolId: null, requestedQuantity: 0, remainingQuantity: 0, progressMs: 0, durationPerItemMs: BALANCE.research.durationPerItemMs, xpPerItem: BALANCE.research.xpPerFragment, manaPerItem: BALANCE.research.manaCostPerItem, focusCost: BALANCE.research.focusCost, status: 'idle' },
+    research: { slots: { 'research-1': null, 'research-2': null, 'research-3': null, 'research-4': null } },
     transmutation: { jobs: {} },
     autoCast: { 'fire-bolt': false, 'water-ward': false, 'earth-spike': false, 'air-lance': false, ignite: false, 'flow-mend': false, stoneguard: false, quickening: false },
   },

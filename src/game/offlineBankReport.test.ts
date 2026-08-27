@@ -5,6 +5,7 @@ import { advanceWithOfflineBank, isOfflineBankSimulationActive } from './systems
 import { createOfflineBankReportCollector } from './systems/offline-bank/offlineBankReport'
 import { makeInitialState } from '../store/gameStore'
 import { serializeGameState } from '../persistence/profileSaveManager'
+import { prepareResearchAction, setResearchEchoesAction } from '../store/actions/researchActions'
 
 const runTick = (state: ReturnType<typeof makeInitialState>, report: ReturnType<typeof createOfflineBankReportCollector>) => {
   advanceGameState(state, 1, { mode: 'banked', report })
@@ -100,6 +101,25 @@ describe('Offline Bank event reports', () => {
     expect(result.production.craftsByRecipe['ember-staff']).toBe(1)
     expect(result.combat.killsTotal).toBe(1)
     expect(result.netInventory['fire-fragment']).toBe(-4)
+  })
+
+  it('aggregates multiple Research jobs during Offline Bank simulation', () => {
+    const state = makeInitialState()
+    state.player.mana = state.player.maxMana
+    state.inventory['fire-fragment'] = 10
+    state.inventory['water-fragment'] = 10
+    prepareResearchAction(state, 'fire-fragment', 'fire', 5)
+    prepareResearchAction(state, 'water-fragment', 'water', 5)
+    setResearchEchoesAction(state, 'research-1', 2)
+    setResearchEchoesAction(state, 'research-2', 1)
+    const report = createOfflineBankReportCollector(state, 5_000, 5_000)
+
+    for (let index = 0; index < 5; index += 1) advanceGameState(state, 1_000, { mode: 'banked', report })
+    const result = report.finalize(state)
+
+    expect(result.research.researchedItems).toEqual({ 'fire-fragment': 2, 'water-fragment': 1 })
+    expect(result.research.xpBySchool).toEqual({ fire: 24, water: 12 })
+    expect(result.consumption.research).toEqual({ 'fire-fragment': 2, 'water-fragment': 1 })
   })
 })
 

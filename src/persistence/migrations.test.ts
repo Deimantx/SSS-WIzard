@@ -193,4 +193,49 @@ describe('save navigation migration', () => {
     expect(migrated.activities.transmutation.jobs).toEqual({})
     expect(migrated.activities.channeling.echoesAssigned).toBe(0)
   })
+
+  it('migrates an active V8 Research queue into research-1 with one Echo', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({
+      ...initial,
+      saveVersion: 8,
+      inventory: { ...initial.inventory, 'fire-fragment': 20 },
+      activities: {
+        ...initial.activities,
+        research: { ...initial.activities.research, running: true, itemId: 'fire-fragment', targetSchoolId: 'water', requestedQuantity: 12, remainingQuantity: 9, progressMs: 2300, status: 'running' },
+      },
+    } as any)
+
+    expect(migrated.saveVersion).toBe(9)
+    expect(migrated.activities.research.slots['research-1']).toEqual({ itemId: 'fire-fragment', targetSchoolId: 'water', requestedQuantity: 12, remainingQuantity: 9, progressMs: 2300, echoesAssigned: 1, status: 'running' })
+  })
+
+  it('keeps blocked V8 Research work prepared without assigning an Echo', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({
+      ...initial,
+      saveVersion: 8,
+      activities: {
+        ...initial.activities,
+        research: { ...initial.activities.research, running: true, itemId: 'fire-fragment', targetSchoolId: 'fire', requestedQuantity: 3, remainingQuantity: 3, progressMs: Number.POSITIVE_INFINITY, status: 'level-cap' },
+      },
+    } as any)
+
+    expect(migrated.activities.research.slots['research-1']).toMatchObject({ remainingQuantity: 3, progressMs: 0, echoesAssigned: 0, status: 'level-cap' })
+  })
+
+  it('round-trips V9 Research slots with independent targets, progress, and Echoes', () => {
+    const state = createInitialState()
+    state.inventory['fire-fragment'] = 50
+    state.inventory['water-fragment'] = 50
+    state.inventory['earth-fragment'] = 50
+    state.activities.research.slots['research-1'] = { itemId: 'fire-fragment', targetSchoolId: 'fire', requestedQuantity: 20, remainingQuantity: 17, progressMs: 1200, echoesAssigned: 2, status: 'running' }
+    state.activities.research.slots['research-2'] = { itemId: 'fire-fragment', targetSchoolId: 'water', requestedQuantity: 15, remainingQuantity: 15, progressMs: 3400, echoesAssigned: 1, status: 'running' }
+    state.activities.research.slots['research-3'] = { itemId: 'earth-fragment', targetSchoolId: 'air', requestedQuantity: 8, remainingQuantity: 8, progressMs: 800, echoesAssigned: 2, status: 'running' }
+
+    const migrated = migrateSave(JSON.parse(JSON.stringify(state)))
+
+    expect(migrated.saveVersion).toBe(9)
+    expect(migrated.activities.research.slots).toEqual(state.activities.research.slots)
+  })
 })

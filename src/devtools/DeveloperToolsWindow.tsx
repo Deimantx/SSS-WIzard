@@ -5,7 +5,7 @@ import { useGameStore } from '../store/gameStore'
 import { closeDeveloperTools, setDeveloperToolsSearch, setDeveloperToolsTab, useDeveloperToolsStore, type DeveloperToolsTab } from './developerToolsStore'
 import { DeveloperTab } from './DeveloperToolTabs'
 
-const tabs: { id: DeveloperToolsTab; label: string }[] = [{ id: 'character', label: 'Character' }, { id: 'channeling', label: 'Channeling' }, { id: 'focus', label: 'Focus' }, { id: 'transmutation', label: 'Transmutation' }, { id: 'inventory', label: 'Inventory' }, { id: 'combat', label: 'Combat' }, { id: 'schools', label: 'Magic Schools' }, { id: 'progression', label: 'Guild / Progression' }, { id: 'save', label: 'Save / Profile' }, { id: 'diagnostics', label: 'Diagnostics' }]
+const tabs: { id: DeveloperToolsTab; label: string }[] = [{ id: 'character', label: 'Character' }, { id: 'channeling', label: 'Channeling' }, { id: 'focus', label: 'Focus' }, { id: 'research', label: 'Research' }, { id: 'transmutation', label: 'Transmutation' }, { id: 'inventory', label: 'Inventory' }, { id: 'combat', label: 'Combat' }, { id: 'schools', label: 'Magic Schools' }, { id: 'progression', label: 'Guild / Progression' }, { id: 'save', label: 'Save / Profile' }, { id: 'diagnostics', label: 'Diagnostics' }]
 
 export function DeveloperToolsWindow() {
   const session = useDeveloperToolsStore()

@@ -82,7 +82,6 @@ export interface ItemDefinition {
   weaponHands?: 1 | 2
   stats?: EquipmentStats
   researchSchool?: SchoolId
-  researchXp?: number
   lockedByDefault?: boolean
 }
 
@@ -122,8 +121,48 @@ export interface SpecialAttackDefinition {
 export interface SchoolState { xp: number; level: number }
 export interface PlayerState { health: number; maxHealth: number; mana: number; maxMana: number; maxFocus: number; baseMaxHealth: number; baseMaxMana: number; baseMaxFocus: number; godMode: boolean }
 export interface ChannelingActivity { echoesAssigned: number }
-export type ResearchStatus = 'idle' | 'running' | 'paused' | 'waiting-mana' | 'waiting-focus' | 'level-cap' | 'missing-item' | 'completed'
-export interface ResearchActivity { running: boolean; itemId: ItemId | null; targetSchoolId: SchoolId | null; requestedQuantity: number; remainingQuantity: number; progressMs: number; durationPerItemMs: number; xpPerItem: number; manaPerItem: number; focusCost: number; status: ResearchStatus }
+export type ResearchSlotId = 'research-1' | 'research-2' | 'research-3' | 'research-4'
+export type ResearchJobStatus = 'prepared' | 'running' | 'waiting-mana' | 'level-cap' | 'protected' | 'missing-item'
+export type ResearchStatus = ResearchJobStatus
+export interface ResearchJobState {
+  itemId: ItemId
+  targetSchoolId: SchoolId
+  requestedQuantity: number
+  remainingQuantity: number
+  progressMs: number
+  echoesAssigned: number
+  status: ResearchJobStatus
+}
+/**
+ * Research is persisted as fixed prepared slots. The optional fields below are
+ * read-only compatibility inputs for pre-V9 saves and old external callers;
+ * they are never authoritative and are omitted from fresh saves.
+ */
+export interface ResearchActivity {
+  slots: Record<ResearchSlotId, ResearchJobState | null>
+  /** @deprecated V8 compatibility only. */
+  running?: boolean
+  /** @deprecated V8 compatibility only. */
+  itemId?: ItemId | null
+  /** @deprecated V8 compatibility only. */
+  targetSchoolId?: SchoolId | null
+  /** @deprecated V8 compatibility only. */
+  requestedQuantity?: number
+  /** @deprecated V8 compatibility only. */
+  remainingQuantity?: number
+  /** @deprecated V8 compatibility only. */
+  progressMs?: number
+  /** @deprecated V8 compatibility only. */
+  durationPerItemMs?: number
+  /** @deprecated V8 compatibility only. */
+  xpPerItem?: number
+  /** @deprecated V8 compatibility only. */
+  manaPerItem?: number
+  /** @deprecated V8 compatibility only. */
+  focusCost?: number
+  /** @deprecated V8 compatibility only. */
+  status?: ResearchStatus | 'idle' | 'paused' | 'waiting-focus' | 'completed'
+}
 export interface TransmutationJobState { echoesAssigned: number; progressMs: number }
 export interface TransmutationActivity { jobs: Partial<Record<RecipeId, TransmutationJobState>> }
 export interface ActivitiesState {

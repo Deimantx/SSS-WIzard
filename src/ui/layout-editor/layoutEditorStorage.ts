@@ -34,7 +34,9 @@ export function loadUiLayouts(): UiLayoutDocument {
       if (!rawSource || typeof rawSource !== 'object') continue
       const source = screen === 'tower-channeling' && !('channeling-pillars' in rawSource) && 'channeling-infrastructure' in rawSource
         ? { ...rawSource, 'channeling-pillars': rawSource['channeling-infrastructure'] }
-        : rawSource
+        : screen === 'tower-research' && ('research-config' in rawSource || 'research-queue' in rawSource)
+          ? { ...rawSource, 'research-library': rawSource['research-config'], 'research-inspector': rawSource['research-queue'], 'research-prepared': DEFAULT_LAYOUTS['tower-research']['research-prepared'] }
+          : rawSource
       if (screen === 'tower-channeling' && ('channeling-main' in source || 'channeling-stats' in source)) continue
       const panels: Record<string, SavedPanelLayout> = {}
       for (const [id, value] of Object.entries(source)) { const normalized = normalizePanel(screen, id, value); if (normalized) panels[id] = normalized }

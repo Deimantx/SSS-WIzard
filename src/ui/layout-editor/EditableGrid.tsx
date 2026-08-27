@@ -17,7 +17,7 @@ export function EditableGrid({ screen, panels, children }: { screen: ScreenId; p
   const saved = getSavedScreenLayouts(screen)
   const grid = useMemo(() => toGridLayout(screen, saved, editor.isEditing), [editor.document, editor.isEditing, saved, screen])
   const displayGrid = useMemo(() => {
-    if (!((screen === 'inventory' || screen === 'tower-transmutation') && width > 0 && width < 760)) return grid
+    if (!((screen === 'inventory' || screen === 'tower-transmutation' || screen === 'tower-research') && width > 0 && width < 760)) return grid
     let nextY = 0
     return grid.map((item) => {
       const stacked = { ...item, x: 0, y: nextY, w: GRID_COLUMNS }

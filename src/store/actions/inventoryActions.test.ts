@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../initialState'
 import { equipItemAction } from './equipmentActions'
 import { destroyItemAction, getActionableQuantity, sellItemAction, toggleItemProtectionAction } from './inventoryActions'
+import { prepareResearchAction } from './researchActions'
 
 describe('inventory transactions', () => {
   it('sells a safe quantity atomically for Gold', () => {
@@ -55,5 +56,16 @@ describe('inventory transactions', () => {
     const starterState = createInitialState()
     expect(destroyItemAction(starterState, 'apprentice-wand', 1)).toBe(0)
     expect(starterState.inventory['apprentice-wand']).toBe(1)
+  })
+
+  it('excludes Research reservations from sell and destroy quantities', () => {
+    const state = createInitialState()
+    state.inventory['fire-fragment'] = 100
+    expect(prepareResearchAction(state, 'fire-fragment', 'fire', 80)).toBe(true)
+
+    expect(getActionableQuantity(state, 'fire-fragment')).toBe(20)
+    expect(sellItemAction(state, 'fire-fragment', 100)).toBe(20)
+    expect(state.inventory['fire-fragment']).toBe(80)
+    expect(destroyItemAction(state, 'fire-fragment', 100)).toBe(0)
   })
 })

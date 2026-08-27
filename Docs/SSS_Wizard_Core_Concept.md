@@ -442,6 +442,18 @@ Research nevyksta vien todėl, kad magas laukia arba yra paskyręs paprastą tyr
 5. pasibaigus procesui daiktas dingsta;
 6. pasirinkta magijos mokykla gauna XP.
 
+- MVP Arcane Crucible palaiko iki 4 paruoštų Research partijų.
+- Research turi 5 Echo paskirstymo fondą.
+- Vienas Echo suteikia bazinį 1× Research greitį.
+- Papildomi Echo didina tos partijos greitį tiesiškai.
+- Echo gali būti paskirstyti kelioms partijoms.
+- Todėl vienu metu galima Research kelias Magic Schools.
+- Paruošta partija su 0 Echo lieka eilėje ir neprogresuoja.
+
+### [BALANSAS]
+
+MVP Research kaina: 10 Focus už vieną Research Echo.
+
 ### Paprastas pavyzdys
 
 | Laukas | Reikšmė |
@@ -450,7 +462,7 @@ Research nevyksta vien todėl, kad magas laukia arba yra paskyręs paprastą tyr
 | Kiekis | 1 |
 | Pasirinktas skillas | Fire |
 | Trukmė | 5 sekundės |
-| Rezultatas | 10 Fire XP |
+| Rezultatas | 12 Fire XP |
 
 Jeigu įdedama 12 fragmentų, eilė gali trukti 60 sekundžių ir sunaikinti juos po vieną.
 

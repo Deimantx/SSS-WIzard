@@ -8,8 +8,10 @@ import { RECIPES } from '../game/content/recipes/recipes'
 import { RECIPE_ORDER } from '../game/content/recipes/recipes'
 import { BALANCE } from '../game/core/balance/balance'
 import { SPELLS } from '../game/content/spells/spells'
+import { SCHOOLS } from '../game/content/schools/schools'
 import { EQUIPMENT_POSITIONS, normalizeEquipmentState } from '../game/core/equipment'
-import type { EquipmentPosition, GameState, ItemId, RecipeId, ResearchActivity, SchoolId, TransmutationJobState } from '../game/types'
+import type { EquipmentPosition, GameState, ItemId, RecipeId, ResearchActivity, ResearchJobState, SchoolId, TransmutationJobState } from '../game/types'
+import { RESEARCH_SLOT_ORDER } from '../game/systems/research/researchReservations'
 import { isRecord, SaveMigrationError } from './saveSchema'
 
 const normalizeScreen = (value: unknown, fallback: GameState['ui']['screen']): GameState['ui']['screen'] => {
@@ -107,13 +109,6 @@ const normalizeDirectContentReferences = (migrated: GameState, raw: Record<strin
   })
   migrated.equipment = normalizeEquipmentState(candidate, migrated.inventory)
 
-  const rawActivities = isRecord(raw.activities) ? raw.activities : {}
-  const rawResearch = isRecord(rawActivities.research) ? rawActivities.research : {}
-  const researchItem = Object.prototype.hasOwnProperty.call(rawResearch, 'itemId') ? rawResearch.itemId : migrated.activities.research.itemId
-  migrated.activities.research.itemId = researchItem === null ? null : validContentId(researchItem, itemIds) && ITEMS[researchItem as ItemId].kind === 'material' && Boolean(ITEMS[researchItem as ItemId].researchSchool) ? researchItem as ItemId : null
-  const researchSchool = Object.prototype.hasOwnProperty.call(rawResearch, 'targetSchoolId') ? rawResearch.targetSchoolId : migrated.activities.research.targetSchoolId
-  migrated.activities.research.targetSchoolId = validContentId(researchSchool, ['fire', 'water', 'earth', 'air']) ? researchSchool as SchoolId : null
-
   const rawCombat = isRecord(raw.combat) ? raw.combat : {}
   const dungeonId = Object.prototype.hasOwnProperty.call(rawCombat, 'dungeonId') ? rawCombat.dungeonId : migrated.combat.dungeonId
   migrated.combat.dungeonId = dungeonId === null ? null : validContentId(dungeonId, dungeonIds) ? dungeonId as GameState['combat']['dungeonId'] : fresh.combat.dungeonId
@@ -121,6 +116,67 @@ const normalizeDirectContentReferences = (migrated: GameState, raw: Record<strin
   migrated.combat.enemyId = enemyId === null ? null : validContentId(enemyId, monsterIds) ? enemyId as GameState['combat']['enemyId'] : fresh.combat.enemyId
   const pendingBossId = Object.prototype.hasOwnProperty.call(rawCombat, 'pendingBossId') ? rawCombat.pendingBossId : migrated.combat.pendingBossId
   migrated.combat.pendingBossId = pendingBossId === null ? null : pendingBossId === 'grove-sentinel' && validContentId(pendingBossId, bossIds) ? pendingBossId : fresh.combat.pendingBossId
+}
+
+const validResearchStatus = (value: unknown): ResearchJobState['status'] => value === 'running' || value === 'waiting-mana' || value === 'level-cap' || value === 'protected' || value === 'missing-item' || value === 'prepared' ? value : 'prepared'
+
+/** Normalizes both the V8 single queue and the V9 slot document. */
+const normalizeResearch = (migrated: GameState, raw: Record<string, any>, sourceVersion: number) => {
+  const fresh = createInitialState()
+  const rawActivities = isRecord(raw.activities) ? raw.activities : {}
+  const rawResearch = isRecord(rawActivities.research) ? rawActivities.research : {}
+  const rawSlots = isRecord(rawResearch.slots) ? rawResearch.slots : null
+  const slots = { ...fresh.activities.research.slots }
+  const normalizeJob = (source: Record<string, any>, oldQueue = false): ResearchJobState | null => {
+    const legacyActivity = migrated.activities.research
+    const itemId = source.itemId ?? (oldQueue ? legacyActivity.itemId : undefined)
+    const targetSchoolId = source.targetSchoolId ?? (oldQueue ? legacyActivity.targetSchoolId : undefined)
+    if (!validContentId(itemId, itemIds) || !ITEMS[itemId as ItemId] || ITEMS[itemId as ItemId].kind !== 'material' || !ITEMS[itemId as ItemId].researchSchool) return null
+    if (!validContentId(targetSchoolId, Object.keys(SCHOOLS))) return null
+    const remaining = nonNegativeInteger(source.remainingQuantity) ?? (oldQueue ? nonNegativeInteger(legacyActivity.remainingQuantity) ?? 0 : 0)
+    if (remaining < 1) return null
+    const requested = Math.max(remaining, nonNegativeInteger(source.requestedQuantity) ?? remaining)
+    const status = validResearchStatus(source.status)
+    const blocked = status === 'level-cap' || status === 'missing-item' || status === 'protected'
+    return {
+      itemId: itemId as ItemId,
+      targetSchoolId: targetSchoolId as SchoolId,
+      requestedQuantity: requested,
+      remainingQuantity: remaining,
+      progressMs: Math.min(BALANCE.research.durationPerItemMs, nonNegativeNumber(source.progressMs) ?? 0),
+      echoesAssigned: oldQueue ? source.running === true && !blocked ? 1 : 0 : Math.min(BALANCE.research.maxEchoes, Math.max(0, Math.floor(nonNegativeNumber(source.echoesAssigned) ?? 0))),
+      status: oldQueue ? blocked ? status : source.running === true ? 'running' : 'prepared' : status,
+    }
+  }
+
+  let foundRawSlot = false
+  if (rawSlots) {
+    RESEARCH_SLOT_ORDER.forEach((slotId) => {
+      const source = isRecord(rawSlots[slotId]) ? rawSlots[slotId] as Record<string, any> : null
+      if (source) { foundRawSlot = true; slots[slotId] = normalizeJob(source) }
+    })
+  }
+  // V8 fixtures may have been created by spreading a newer initial state,
+  // leaving an all-null slots record alongside the real legacy queue fields.
+  if (!rawSlots || (!foundRawSlot && sourceVersion < 9)) {
+    const oldJob = normalizeJob(rawResearch, true)
+    if (oldJob) slots['research-1'] = oldJob
+  }
+  migrated.activities.research = { slots }
+  if (sourceVersion < 9) defineLegacyResearchCompatibility(migrated.activities.research)
+}
+
+const defineLegacyResearchCompatibility = (research: ResearchActivity) => {
+  if (Object.prototype.hasOwnProperty.call(research, 'itemId')) return
+  const first = () => research.slots['research-1']
+  Object.defineProperties(research, {
+    itemId: { configurable: true, get: () => first()?.itemId ?? null },
+    targetSchoolId: { configurable: true, get: () => first()?.targetSchoolId ?? null },
+    running: { configurable: true, get: () => Boolean(first()?.echoesAssigned) },
+    requestedQuantity: { configurable: true, get: () => first()?.requestedQuantity ?? 0 },
+    remainingQuantity: { configurable: true, get: () => first()?.remainingQuantity ?? 0 },
+    progressMs: { configurable: true, get: () => first()?.progressMs ?? 0 },
+  })
 }
 
 const migrateChanneling = (rawProgress: unknown, fresh: GameState['progress']): GameState['progress']['channeling'] => {
@@ -178,9 +234,9 @@ const normalizeTransmutationJobs = (migrated: GameState, raw: Record<string, any
   }
 
   // Preserve work while ensuring the migration cannot create Focus overflow.
-  const rawResearch = isRecord(rawActivities.research) ? rawActivities.research : {}
+  const researchEchoFocus = RESEARCH_SLOT_ORDER.reduce((sum, slotId) => sum + Math.max(0, Math.floor(migrated.activities.research.slots[slotId]?.echoesAssigned ?? 0)) * BALANCE.research.echoFocusCost, 0)
   const nonTransmutationFocus = Math.max(0, Math.floor(migrated.activities.channeling.echoesAssigned)) * BALANCE.channeling.echoFocusCost
-    + (rawResearch.running === true ? Math.max(0, Math.floor(nonNegativeNumber(rawResearch.focusCost) ?? migrated.activities.research.focusCost)) : 0)
+    + researchEchoFocus
     + Object.entries(migrated.activities.autoCast).filter(([spellId, active]) => active && migrated.progress.unlockedSpells.includes(spellId as any)).reduce((sum, [spellId]) => sum + (SPELLS[spellId as keyof typeof SPELLS]?.autoCastFocus ?? 0), 0)
   let remaining = Math.max(0, Math.min(BALANCE.transmutation.maxEchoes, Math.floor((migrated.player.maxFocus - nonTransmutationFocus) / BALANCE.transmutation.echoFocusCost)))
   const normalized: Partial<Record<RecipeId, TransmutationJobState>> = {}
@@ -194,13 +250,33 @@ const normalizeTransmutationJobs = (migrated: GameState, raw: Record<string, any
   migrated.activities.transmutation = { jobs: normalized }
 }
 
-const finalize = (migrated: GameState, raw: Record<string, any>) => {
-  migrated.saveVersion = SAVE_VERSION
+const normalizeResearchFocus = (migrated: GameState) => {
+  const nonResearchFocus = Math.max(0, Math.floor(migrated.activities.channeling.echoesAssigned)) * BALANCE.channeling.echoFocusCost
+    + Object.entries(migrated.activities.transmutation.jobs).reduce((sum, [, job]) => sum + Math.max(0, Math.floor(job?.echoesAssigned ?? 0)) * BALANCE.transmutation.echoFocusCost, 0)
+    + Object.entries(migrated.activities.autoCast).filter(([spellId, active]) => active && migrated.progress.unlockedSpells.includes(spellId as any)).reduce((sum, [spellId]) => sum + (SPELLS[spellId as keyof typeof SPELLS]?.autoCastFocus ?? 0), 0)
+  let remaining = Math.max(0, Math.floor((migrated.player.maxFocus - nonResearchFocus) / BALANCE.research.echoFocusCost))
+  RESEARCH_SLOT_ORDER.forEach((slotId) => {
+    const job = migrated.activities.research.slots[slotId]
+    if (!job) return
+    const echoes = Math.min(Math.max(0, Math.floor(job.echoesAssigned)), remaining)
+    job.echoesAssigned = echoes
+    if (echoes === 0 && job.status === 'running') job.status = 'prepared'
+    remaining -= echoes
+  })
+}
+
+const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion = Number(raw.saveVersion ?? 0)) => {
+  // Versions through V7 retain the historical migration marker for callers
+  // that still chain those migrations; V8 is the boundary that upgrades the
+  // Research shape and is written as the current V9 document.
+  migrated.saveVersion = sourceVersion >= 8 ? SAVE_VERSION : 8
   migrated.progress.channeling = migrateChanneling(raw.progress, createInitialState().progress)
   migrated.ui.screen = normalizeScreen(isRecord(raw.ui) ? raw.ui.screen : undefined, migrated.ui.screen)
   normalizeDynamicRecords(migrated, raw)
   normalizeDirectContentReferences(migrated, raw)
+  normalizeResearch(migrated, raw, sourceVersion)
   normalizeTransmutationJobs(migrated, raw)
+  normalizeResearchFocus(migrated)
   return migrated
 }
 
@@ -218,7 +294,7 @@ const migrateV1 = (raw: Record<string, any>): GameState => {
   const oldMaxMana = typeof oldPlayer.maxMana === 'number' ? oldPlayer.maxMana : fresh.player.baseMaxMana
   const oldMaxFocus = typeof oldPlayer.maxFocus === 'number' ? oldPlayer.maxFocus : fresh.player.baseMaxFocus
   const target = oldItem?.split('-')[0] as SchoolId | undefined
-  const research: ResearchActivity = { ...fresh.activities.research, running: Boolean(oldResearch.running), itemId: oldItem, targetSchoolId: target && ['fire', 'water', 'earth', 'air'].includes(target) ? target : null, requestedQuantity: oldItem ? 1 : 0, remainingQuantity: oldItem ? 1 : 0, progressMs: typeof oldResearch.progressMs === 'number' ? oldResearch.progressMs : 0, status: oldResearch.running ? 'running' : 'idle' }
+  const research: ResearchActivity = { ...fresh.activities.research, running: Boolean(oldResearch.running), itemId: oldItem, targetSchoolId: target && Object.keys(SCHOOLS).includes(target) ? target : null, requestedQuantity: oldItem ? 1 : 0, remainingQuantity: oldItem ? 1 : 0, progressMs: typeof oldResearch.progressMs === 'number' ? oldResearch.progressMs : 0, status: oldResearch.running ? 'running' : 'idle' }
   const migrated: GameState = {
     ...fresh,
     player: { ...fresh.player, ...oldPlayer, baseMaxHealth: typeof oldPlayer.baseMaxHealth === 'number' ? oldPlayer.baseMaxHealth : oldMaxHealth, baseMaxMana: typeof oldPlayer.baseMaxMana === 'number' ? oldPlayer.baseMaxMana : oldMaxMana, baseMaxFocus: typeof oldPlayer.baseMaxFocus === 'number' ? oldPlayer.baseMaxFocus : oldMaxFocus },
@@ -262,9 +338,10 @@ export const migrateSave = (rawSave: unknown): GameState => {
   if (version === 4) return migrateV4(rawSave)
   if (version === 5) return migrateV5(rawSave)
   if (version === 6) return migrateV6(rawSave)
-  if (version === 7) return finalize(merge(createInitialState(), rawSave), rawSave)
+  if (version === 7) return finalize(merge(createInitialState(), rawSave), rawSave, version)
+  if (version === 8) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === SAVE_VERSION) {
-    return finalize(merge(createInitialState(), rawSave), rawSave)
+    return finalize(merge(createInitialState(), rawSave), rawSave, version)
   }
   throw new SaveMigrationError(`Unsupported save version: ${String(version ?? 'missing')}.`)
 }

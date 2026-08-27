@@ -5,6 +5,7 @@ import { getActivityTelemetry } from '../../game/systems/activity/activityTeleme
 import { formatOfflineBank } from '../../game/utils'
 import { useGameStore } from '../../store/gameStore'
 import { getTransmutationEchoesAssigned } from '../../game/systems/transmutation/transmutationSelectors'
+import { getResearchEchoesAssigned } from '../../game/systems/research/researchSelectors'
 
 const presets = [{ label: '1 MIN', short: '1m', ms: 60_000 }, { label: '5 MIN', short: '5m', ms: 300_000 }, { label: '15 MIN', short: '15m', ms: 900_000 }, { label: '1 HOUR', short: '1h', ms: 3_600_000 }]
 
@@ -19,7 +20,7 @@ export function OfflineBankPopover({ open, onClose, onViewLastResults }: { open:
   const activities = getActivityTelemetry(state)
   const advance = state.advanceWithOfflineBank
   const meaningfulRecovery = state.combat.active && (Boolean(state.combat.enemyId) || state.player.health < state.player.maxHealth || state.combat.encounterTimerMs > 0)
-  const canAdvance = getTransmutationEchoesAssigned(state) > 0 || state.activities.research.running || meaningfulRecovery
+  const canAdvance = getTransmutationEchoesAssigned(state) > 0 || getResearchEchoesAssigned(state) > 0 || meaningfulRecovery
 
   useEffect(() => {
     if (!open) return

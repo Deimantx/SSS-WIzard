@@ -4,7 +4,7 @@ import { DEFAULT_LAYOUTS } from './defaultLayouts'
 
 const labels: Record<string, string> = {
   'home-objective': 'Main objective', 'home-checklist': 'Chapter checklist', 'home-wizard': 'The wizard',
-  'channeling-mana-core': 'Mana Core', 'channeling-echoes': 'Arcane Echoes', 'channeling-pillars': 'Pillars of Mana', 'focus-summary': 'Focus summary', 'focus-reservations': 'Focus reservations', 'research-config': 'Research config', 'research-queue': 'Research queue', 'transmutation-recipes': 'Recipe library', 'transmutation-detail': 'Recipe detail', 'transmutation-focus': 'Focus assignment',
+  'channeling-mana-core': 'Mana Core', 'channeling-echoes': 'Arcane Echoes', 'channeling-pillars': 'Pillars of Mana', 'focus-summary': 'Focus summary', 'focus-reservations': 'Focus reservations', 'research-library': 'Researchable items', 'research-inspector': 'Item inspection', 'research-prepared': 'Prepared Research', 'transmutation-recipes': 'Recipe library', 'transmutation-detail': 'Recipe detail', 'transmutation-focus': 'Focus assignment',
   'school-fire': 'Fire school', 'school-water': 'Water school', 'school-earth': 'Earth school', 'school-air': 'Air school', 'school-ceiling': 'Level ceiling',
   'combat-dungeon': 'Dungeon', 'combat-enemy': 'Enemy', 'combat-timeline': 'Combat timeline', 'combat-spells': 'Spell bar', 'combat-log': 'Combat log',
   'inventory-catalog': 'Item Vault', 'inventory-detail': 'Item Details', 'inventory-actions': 'Item Actions', 'equipment-loadout': 'Equipment loadout', 'equipment-stats': 'Equipment stats', 'equipment-owned': 'Armory', 'equipment-inspector': 'Gear inspector',

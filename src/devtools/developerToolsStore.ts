@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react'
 
-export type DeveloperToolsTab = 'character' | 'channeling' | 'focus' | 'transmutation' | 'inventory' | 'combat' | 'schools' | 'progression' | 'save' | 'diagnostics'
+export type DeveloperToolsTab = 'character' | 'channeling' | 'focus' | 'research' | 'transmutation' | 'inventory' | 'combat' | 'schools' | 'progression' | 'save' | 'diagnostics'
 export interface DeveloperToolsSessionState { open: boolean; activeTab: DeveloperToolsTab; search: string }
 
 let current: DeveloperToolsSessionState = { open: false, activeTab: 'character', search: '' }

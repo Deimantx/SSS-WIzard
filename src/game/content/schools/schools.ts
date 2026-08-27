@@ -1,4 +1,5 @@
 import type { ElementId, ItemId, SchoolId } from '../../types'
+import { BALANCE } from '../../core/balance/balance'
 
 export const SCHOOLS: Record<SchoolId, { id: SchoolId; name: string; glyph: string; color: string; fragment: ItemId; tagline: string }> = {
   fire: { id: 'fire', name: 'Fire', glyph: '✦', color: '#ff745d', fragment: 'fire-fragment', tagline: 'Momentum and direct damage' },
@@ -8,4 +9,5 @@ export const SCHOOLS: Record<SchoolId, { id: SchoolId; name: string; glyph: stri
 }
 
 export const FRAGMENT_ORDER: ElementId[] = ['fire', 'water', 'earth', 'air']
-export const RESEARCH_ITEMS = FRAGMENT_ORDER.map((school) => ({ itemId: SCHOOLS[school].fragment, school, xp: 10, mana: 5, durationMs: 5000, label: `${SCHOOLS[school].name} Fragment` }))
+/** Compatibility view for older content consumers; Research V2 reads authored item metadata directly. */
+export const RESEARCH_ITEMS = FRAGMENT_ORDER.map((school) => ({ itemId: SCHOOLS[school].fragment, school, xp: BALANCE.research.matchingXp, mana: BALANCE.research.manaCostPerItem, durationMs: BALANCE.research.durationPerItemMs, label: `${SCHOOLS[school].name} Fragment` }))

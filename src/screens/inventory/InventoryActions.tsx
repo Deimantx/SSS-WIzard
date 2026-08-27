@@ -5,6 +5,7 @@ import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { ITEMS } from '../../game/content/items/items'
 import type { GameState, ItemId } from '../../game/types'
 import { canDestroyItem, canSellItem, getActionableQuantity, getEquippedReservedQuantity } from '../../store/actions/inventoryActions'
+import { getResearchReservedQuantity } from '../../game/systems/research/researchReservations'
 import { InventoryQuantitySlider, clampInventoryQuantity } from './InventoryQuantitySelector'
 
 const protectionTooltip = 'Protect this stack from Research, Transmutation, Guild donations, selling, and destruction.'
@@ -16,19 +17,20 @@ type InventoryActionsProps = {
   inventory: GameState['inventory']
   protectedItems: GameState['protectedItems']
   equipment: GameState['equipment']
+  activities: GameState['activities']
   toggleProtection: (itemId: ItemId) => void
   equipItem: (itemId: ItemId) => void
   sellItem: (itemId: ItemId, quantity: number) => void
   destroyItem: (itemId: ItemId, quantity: number) => void
 }
 
-export function InventoryActions({ itemId, inventory, protectedItems, equipment, toggleProtection, equipItem, sellItem, destroyItem }: InventoryActionsProps) {
+export function InventoryActions({ itemId, inventory, protectedItems, equipment, activities, toggleProtection, equipItem, sellItem, destroyItem }: InventoryActionsProps) {
   const [quantity, setQuantity] = useState(1)
   const [quantityEditing, setQuantityEditing] = useState(false)
   const [quantityDraft, setQuantityDraft] = useState('1')
   const [destroyConfirming, setDestroyConfirming] = useState(false)
   const item = itemId ? ITEMS[itemId] : null
-  const maximum = itemId ? getActionableQuantity({ inventory, protectedItems, equipment }, itemId) : 0
+  const maximum = itemId ? getActionableQuantity({ inventory, protectedItems, equipment, activities }, itemId) : 0
 
   useEffect(() => {
     setQuantity(1)
@@ -72,13 +74,16 @@ export function InventoryActions({ itemId, inventory, protectedItems, equipment,
   const equipped = Object.values(equipment).includes(itemId)
   const manuallyProtected = Boolean(protectedItems[itemId])
   const reserved = getEquippedReservedQuantity({ equipment }, itemId)
-  const sellable = canSellItem({ inventory, protectedItems, equipment }, itemId)
-  const destroyable = canDestroyItem({ inventory, protectedItems, equipment }, itemId)
+  const researchReserved = getResearchReservedQuantity({ activities }, itemId)
+  const sellable = canSellItem({ inventory, protectedItems, equipment, activities }, itemId)
+  const destroyable = canDestroyItem({ inventory, protectedItems, equipment, activities }, itemId)
   const reason = manuallyProtected
     ? 'Unprotect this item before selling or destroying it.'
     : reserved > 0 && maximum === 0
       ? 'The equipped copy cannot be sold or destroyed.'
-      : maximum === 0
+      : researchReserved > 0 && maximum === 0
+        ? 'Prepared Research quantity is reserved until its cycles complete or the batch is removed.'
+        : maximum === 0
         ? 'No actionable copies available.'
         : null
 
@@ -110,7 +115,7 @@ export function InventoryActions({ itemId, inventory, protectedItems, equipment,
 
   const saleValue = item.sellValue === null ? null : quantity * item.sellValue
   const quantityLabel = manuallyProtected ? 'PROTECTED' : maximum < 1 ? '0 AVAILABLE' : `${quantity} / ${maximum}`
-  const quantityTooltip = <TooltipContent title="QUANTITY"><p>{quantity} selected<br />{maximum} actionable copies<br />{owned} owned{reserved > 0 ? <><br />{reserved} equipped</> : null}</p></TooltipContent>
+  const quantityTooltip = <TooltipContent title="QUANTITY"><p>{quantity} selected<br />{maximum} actionable copies<br />{owned} owned{reserved > 0 ? <><br />{reserved} equipped</> : null}{researchReserved > 0 ? <><br />{researchReserved} prepared for Research</> : null}</p></TooltipContent>
 
   return <div className="inventory-actions-content">
     <ActionHeader

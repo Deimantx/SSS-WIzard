@@ -1,16 +1,15 @@
 import { BALANCE } from '../../core/balance/balance'
 import { CHANNELING_DISCOVERIES } from '../../content/channeling/channelingDiscoveries'
 import { MONSTERS } from '../../content/monsters/whisperingWoods'
-import { SCHOOLS } from '../../content/schools/schools'
 import { SPELLS } from '../../content/spells/spells'
 import { advanceChanneling } from '../../engine/channelingEngine'
-import { appendLog, completeResearchCycle, playerBasicDamage, pushNotification, recalculateDerivedStats, spellDamageMultiplier } from '../../engine'
+import { appendLog, playerBasicDamage, pushNotification, recalculateDerivedStats, spellDamageMultiplier } from '../../engine'
 import { addStatus, applyBarrier, damageEnemy, damagePlayer, executeEnemyAction, executeSpecial, finishEnemy, spawnNextEnemy } from '../combat/combatRuntime'
 import type { GameState, ItemId, SpellEffect, SpellId, StatusEffect } from '../../types'
 import { clamp } from '../../utils'
 import type { SimulationReportCollector } from '../offline-bank/offlineBankReport'
 import { advanceTransmutation } from '../transmutation/transmutationEngine'
-import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
+import { advanceResearch } from '../research/researchEngine'
 
 export interface AdvanceContext {
   mode: 'live' | 'banked'
@@ -75,26 +74,6 @@ const tickStatuses = (state: GameState, delta: number) => {
   state.combat.enemyStatuses = enemyStatuses
 }
 
-const tickResearch = (state: GameState, delta: number, context: AdvanceContext) => {
-  const job = state.activities.research
-  if (!job.running) return
-  if (!job.itemId || !job.targetSchoolId || job.remainingQuantity <= 0) { job.running = false; if (job.status !== 'paused') job.status = 'idle'; return }
-  if (state.schools[job.targetSchoolId].level >= state.progress.magicLevelCap) { job.running = false; job.status = 'level-cap'; context.report?.recordResearchStoppedAtCap(); return }
-  if (getConsumableQuantity(state, job.itemId) < 1) { job.running = false; job.status = 'missing-item'; return }
-  if (job.progressMs < job.durationPerItemMs) { job.progressMs += delta; job.status = 'running'; return }
-  if (state.player.mana < job.manaPerItem) { job.running = true; job.status = 'waiting-mana'; return }
-  state.player.mana -= job.manaPerItem
-  const completed = completeResearchCycle(state, job.itemId, job.targetSchoolId)
-  if (!completed.completed) { job.running = false; job.status = completed.reason === 'cap' ? 'level-cap' : 'missing-item'; if (completed.reason === 'cap') context.report?.recordResearchStoppedAtCap(); return }
-  context.report?.recordResearch(job.itemId, job.targetSchoolId, completed.xp ?? 0)
-  job.remainingQuantity -= 1
-  job.progressMs = 0
-  job.status = job.remainingQuantity > 0 ? 'running' : 'completed'
-  if (completed.levels && completed.levels.after > completed.levels.before) pushNotification(state, `${SCHOOLS[job.targetSchoolId].name} reached Level ${completed.levels.after}`, 'success')
-  if (completed.spellId) pushNotification(state, `${SPELLS[completed.spellId].name} unlocked`, 'success')
-  if (job.remainingQuantity <= 0) job.running = false
-}
-
 const tickCombat = (state: GameState, delta: number, context: AdvanceContext) => {
   if (!state.combat.active) return
   if (!state.combat.enemyId) { state.combat.encounterTimerMs -= delta; if (state.combat.encounterTimerMs <= 0) spawnNextEnemy(state); return }
@@ -130,7 +109,7 @@ export const advanceGameState = (state: GameState, deltaMs: number, context: Adv
     if (discovery) pushNotification(state, `Arcane Discovery: ${discovery.name}`, 'success')
   })
   if (!state.combat.active) state.player.health = clamp(state.player.health + BALANCE.player.healthRegenPerSecond * delta / 1000 * BALANCE.player.outOfCombatRegenMultiplier, 0, state.player.maxHealth)
-  tickResearch(state, delta, context)
+  advanceResearch(state, delta, context)
   advanceTransmutation(state, delta, context)
   tickCombat(state, delta, context)
   return state

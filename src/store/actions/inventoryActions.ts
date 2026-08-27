@@ -12,11 +12,12 @@ const safeGold = (value: unknown) => typeof value === 'number' && Number.isFinit
 
 /** Number of copies reserved by equipment slots, independent of stack-level protection. */
 export const getEquippedReservedQuantity = (state: Pick<GameState, 'equipment'>, itemId: ItemId) => getEquipmentReservedQuantity(state, itemId)
-export const getActionableQuantity = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment'>, itemId: ItemId) => {
+type InventoryActionState = Pick<GameState, 'inventory' | 'protectedItems' | 'equipment'> & Partial<Pick<GameState, 'activities'>>
+export const getActionableQuantity = (state: InventoryActionState, itemId: ItemId) => {
   return getConsumableQuantity(state, itemId)
 }
-export const canSellItem = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment'>, itemId: ItemId) => Boolean(ITEMS[itemId]?.sellValue != null && getActionableQuantity(state, itemId) > 0)
-export const canDestroyItem = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment'>, itemId: ItemId) => Boolean(ITEMS[itemId]?.canDestroy === true && getActionableQuantity(state, itemId) > 0)
+export const canSellItem = (state: InventoryActionState, itemId: ItemId) => Boolean(ITEMS[itemId]?.sellValue != null && getActionableQuantity(state, itemId) > 0)
+export const canDestroyItem = (state: InventoryActionState, itemId: ItemId) => Boolean(ITEMS[itemId]?.canDestroy === true && getActionableQuantity(state, itemId) > 0)
 
 export const addItemAction = (state: GameState, itemId: ItemId, quantity: number) => {
   const before = safeQuantity(state.inventory[itemId])

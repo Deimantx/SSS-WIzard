@@ -30,11 +30,11 @@ export function RecipeDetail({ recipe }: { recipe: RecipeDefinition }) {
       <div className="transmutation-detail-hero"><div className="transmutation-detail-icon"><ItemIcon itemId={recipe.output.itemId} size="large" /></div><div className="transmutation-detail-title"><span className="eyebrow">{recipe.category.toUpperCase()}</span><h2>{recipe.name}</h2><span className="transmutation-owned">OWNED ×{formatNumber(state.inventory[recipe.output.itemId] ?? 0)}</span></div><Status tone={statusTone(status)}>{statusLabel(status)}</Status></div>
       <p className="transmutation-detail-description">{recipe.description}</p>
 
-      {status === 'locked' && <div className="transmutation-lock-reason"><LockKeyhole size={15} aria-hidden="true" /><div><Status tone="locked">LOCKED</Status><span>{getRecipeUnlockReason(recipe)}</span></div></div>}
+      {status === 'locked' && <div className="transmutation-lock-reason"><LockKeyhole size={15} aria-hidden="true" /><span>{getRecipeUnlockReason(recipe)}</span></div>}
 
       <DetailSection title="BASE RECIPE"><div className="transmutation-stat-grid"><DetailStat label="TIME" value={formatTime(recipe.baseDurationMs)} /><DetailStat label="MANA" value={formatNumber(recipe.manaCost)} /><DetailStat label="OUTPUT" value={`×${recipe.output.quantity} ${item.name}`} /></div></DetailSection>
 
-      <DetailSection title="CURRENT PRODUCTION"><CurrentProduction status={status} echoes={echoes} currentCycle={currentCycle} currentSpeed={currentSpeed} currentOutput={currentOutput} /></DetailSection>
+      {status !== 'locked' && <DetailSection title="CURRENT PRODUCTION"><CurrentProduction echoes={echoes} currentCycle={currentCycle} currentSpeed={currentSpeed} currentOutput={currentOutput} /></DetailSection>}
 
       {requirements.length > 0 && <DetailSection title="MATERIAL REQUIREMENTS"><div className="transmutation-requirements-grid">{requirements.map((requirement) => <ItemRequirementTile key={requirement.itemId} itemId={requirement.itemId} owned={requirement.owned} available={requirement.available} equipped={requirement.equipped} required={requirement.required} protectedItem={requirement.protected} source={getItemSourceLabel(requirement.itemId)} />)}</div></DetailSection>}
 
@@ -45,9 +45,8 @@ export function RecipeDetail({ recipe }: { recipe: RecipeDefinition }) {
   </Card>
 }
 
-function CurrentProduction({ status, echoes, currentCycle, currentSpeed, currentOutput }: { status: TransmutationStatus; echoes: number; currentCycle: number | null; currentSpeed: number; currentOutput: number }) {
-  if (status === 'locked') return <div className="transmutation-production-paused"><Status tone="locked">LOCKED</Status><span>Unlock this recipe to begin production.</span></div>
-  if (!echoes) return <div className="transmutation-production-paused"><Status>PAUSED</Status><span>No Echoes assigned · 0× speed · Effective Time — · 0/h output.</span></div>
+function CurrentProduction({ echoes, currentCycle, currentSpeed, currentOutput }: { echoes: number; currentCycle: number | null; currentSpeed: number; currentOutput: number }) {
+  if (!echoes) return <div className="transmutation-production-paused"><Status>PAUSED</Status><span>Assign an Arcane Echo to begin production.</span></div>
   return <div className="transmutation-current-summary"><DetailStat label="ECHOES" value={String(echoes)} /><DetailStat label="SPEED" value={`${currentSpeed}×`} /><DetailStat label="EFFECTIVE TIME" value={currentCycle === null ? '—' : formatTime(currentCycle)} /><DetailStat label="OUTPUT / H" value={formatNumber(currentOutput)} /><DetailStat label="FOCUS" value={String(getTransmutationFocusReserved(echoes))} /></div>
 }
 

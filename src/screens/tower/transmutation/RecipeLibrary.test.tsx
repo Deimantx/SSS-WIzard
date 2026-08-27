@@ -18,11 +18,13 @@ describe('RecipeLibrary screen preferences', () => {
     fireEvent.click(elemental)
 
     expect(elemental.getAttribute('aria-expanded')).toBe('false')
+    expect(document.getElementById('transmutation-elemental-recipes')).toBeNull()
     expect(screen.queryByRole('button', { name: /Fire Fragment/ })).toBeNull()
     expect(screen.getByRole('button', { name: /Ember Staff/ })).toBeTruthy()
 
     fireEvent.click(elemental)
     expect(elemental.getAttribute('aria-expanded')).toBe('true')
+    expect(document.getElementById('transmutation-elemental-recipes')).toBeTruthy()
     expect(screen.getByRole('button', { name: /Fire Fragment/ })).toBeTruthy()
   })
 
@@ -43,9 +45,13 @@ describe('RecipeLibrary screen preferences', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: 'EQUIPMENT' }))
 
-    expect(screen.getByRole('button', { name: /^EQUIPMENT, 4 recipes$/i }).getAttribute('aria-expanded')).toBe('true')
+    expect(screen.queryByRole('button', { name: /^EQUIPMENT, 4 recipes$/i })).toBeNull()
+    expect(document.querySelector('.transmutation-group-heading.is-static')).toBeTruthy()
     expect(screen.getByRole('button', { name: /Ember Staff/ })).toBeTruthy()
     expect(JSON.parse(window.localStorage.getItem('sss-wizard-ui-preferences-v1')!).screenState.transmutation.collapsedCategories.equipment).toBe(true)
+
+    fireEvent.click(screen.getByRole('tab', { name: 'ALL' }))
+    expect(screen.queryByRole('button', { name: /Ember Staff/ })).toBeNull()
   })
 
   it('temporarily reveals matching groups while searching and keeps idle tiles quiet', () => {
@@ -55,10 +61,14 @@ describe('RecipeLibrary screen preferences', () => {
     expect(screen.queryByRole('button', { name: /Ember Staff/ })).toBeNull()
     fireEvent.change(screen.getByPlaceholderText('Search recipes...'), { target: { value: 'ember' } })
 
-    expect(screen.getByRole('button', { name: /^EQUIPMENT, 1 recipes$/i }).getAttribute('aria-expanded')).toBe('true')
+    expect(screen.queryByRole('button', { name: /^EQUIPMENT, 1 recipes$/i })).toBeNull()
+    expect(document.querySelector('.transmutation-group-heading.is-static')).toBeTruthy()
     expect(screen.getByRole('button', { name: /Ember Staff/ })).toBeTruthy()
     expect(screen.queryByText('PAUSED')).toBeNull()
     expect(screen.getByText('LOCKED')).toBeTruthy()
+
+    fireEvent.change(screen.getByPlaceholderText('Search recipes...'), { target: { value: '' } })
+    expect(screen.queryByRole('button', { name: /Ember Staff/ })).toBeNull()
   })
 
   it('uses a single ACTIVE status alongside the Echo badge', () => {

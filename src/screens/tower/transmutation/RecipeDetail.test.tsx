@@ -30,6 +30,22 @@ describe('RecipeDetail screen preferences', () => {
     expect(screen.queryByText('Progress is preserved.')).toBeNull()
   })
 
+  it('keeps paused production concise when no Echoes are assigned', () => {
+    render(<RecipeDetail recipe={RECIPES['fire-fragment']} />)
+
+    expect(document.querySelector('.transmutation-production-paused .status')?.textContent).toBe('PAUSED')
+    expect(screen.getByText('Assign an Arcane Echo to begin production.')).toBeTruthy()
+  })
+
+  it('shows only the unlock explanation for locked recipes', () => {
+    render(<RecipeDetail recipe={RECIPES['ember-staff']} />)
+
+    expect(screen.getByText('LOCKED')).toBeTruthy()
+    expect(document.querySelector('.transmutation-lock-reason .status')).toBeNull()
+    expect(screen.queryByText('CURRENT PRODUCTION')).toBeNull()
+    expect(screen.queryByText('PAUSED')).toBeNull()
+  })
+
   it('omits the empty material section while keeping the Mana requirement', () => {
     render(<RecipeDetail recipe={RECIPES['fire-fragment']} />)
 

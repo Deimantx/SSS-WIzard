@@ -13,6 +13,8 @@
 .transmutation-recipe-group { display: grid; grid-template-rows: auto auto; align-content: start; align-items: start; gap: 7px; min-width: 0; }
 .transmutation-group-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 28px; padding: 5px 6px; border: 1px solid var(--ui-border); border-radius: 6px; color: var(--ui-text-soft); background: transparent; cursor: pointer; text-align: left; }
 .transmutation-group-heading:hover, .transmutation-group-heading:focus-visible { border-color: color-mix(in srgb, var(--ui-accent) 65%, var(--ui-border)); background: var(--ui-accent-soft); outline: none; }
+.transmutation-group-heading.is-static { cursor: default; }
+.transmutation-group-heading.is-static:hover { border-color: var(--ui-border); background: transparent; }
 .transmutation-group-heading-label { color: var(--ui-text-soft); font: var(--text-micro) var(--font-mono); letter-spacing: .13em; }
 .transmutation-group-heading-meta { display: inline-flex; align-items: center; gap: 6px; color: var(--ui-text-muted); }
 .transmutation-group-heading small { color: inherit; font: var(--text-micro) var(--font-mono); }
@@ -43,7 +45,7 @@
 .transmutation-detail-description { margin: 0; color: var(--ui-text-muted); font-size: var(--text-xs); line-height: 1.5; }
 .transmutation-lock-reason { display: flex; align-items: flex-start; gap: 8px; padding: 8px; border: 1px solid color-mix(in srgb, var(--ui-warning) 45%, var(--ui-border)); border-radius: 7px; color: var(--ui-warning); font-size: var(--text-xs); line-height: 1.4; }
 .transmutation-lock-reason > svg { flex: 0 0 auto; margin-top: 2px; }
-.transmutation-lock-reason > div { display: grid; gap: 4px; min-width: 0; }
+.transmutation-lock-reason > span { min-width: 0; }
 .transmutation-detail-section { display: grid; gap: 8px; min-width: 0; padding-top: 11px; border-top: 1px solid var(--ui-border); }
 .transmutation-stat-grid, .transmutation-current-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
 .transmutation-stat-grid span, .transmutation-current-summary span { display: grid; gap: 4px; min-width: 0; padding: 7px; border: 1px solid var(--ui-border); border-radius: 7px; background: var(--ui-panel); }

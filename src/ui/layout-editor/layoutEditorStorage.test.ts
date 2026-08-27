@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import { DEFAULT_LAYOUTS } from './defaultLayouts'
 import { UI_LAYOUTS_KEY, loadUiLayouts } from './layoutEditorStorage'
+import { getScreenLayouts } from './layoutUtils'
 
 describe('inventory layout compatibility', () => {
   beforeEach(() => localStorage.clear())
@@ -50,5 +52,25 @@ describe('inventory layout compatibility', () => {
       'inventory-detail': { x: 8, y: 0, w: 4, h: 12 },
       'inventory-actions': { x: 8, y: 12, w: 4, h: 5 },
     })
+  })
+})
+
+describe('Transmutation default layout', () => {
+  it('uses the compact fresh defaults', () => {
+    expect(DEFAULT_LAYOUTS['tower-transmutation']).toEqual({
+      'transmutation-recipes': { x: 0, y: 0, w: 7, h: 15 },
+      'transmutation-detail': { x: 7, y: 0, w: 5, h: 9 },
+      'transmutation-focus': { x: 7, y: 9, w: 5, h: 6 },
+    })
+  })
+
+  it('preserves custom geometry when defaults change', () => {
+    const layouts = getScreenLayouts('tower-transmutation', {
+      'transmutation-recipes': { x: 1, y: 2, w: 6, h: 20 },
+    })
+
+    expect(layouts['transmutation-recipes']).toEqual({ x: 1, y: 2, w: 6, h: 20 })
+    expect(layouts['transmutation-detail']).toEqual({ x: 7, y: 0, w: 5, h: 9 })
+    expect(layouts['transmutation-focus']).toEqual({ x: 7, y: 9, w: 5, h: 6 })
   })
 })

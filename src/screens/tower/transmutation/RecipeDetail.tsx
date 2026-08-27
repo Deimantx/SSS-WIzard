@@ -4,8 +4,8 @@ import { Card, Status } from '../../../components/ui'
 import { ItemIcon, ItemRequirementTile } from '../../../components/ui/item'
 import { ITEMS, getItemSourceLabel } from '../../../game/content/items/items'
 import type { RecipeDefinition } from '../../../game/content/recipes/recipes'
-import { getRecipeConsumableRequirements, getRecipeCurrentEffectiveDuration, getRecipeCurrentOutputPerHour, getRecipeCurrentSpeedMultiplier, getRecipeStatus, getRecipeUnlockReason, getTransmutationFocusReserved, getTransmutationJob, type TransmutationStatus } from '../../../game/systems/transmutation/transmutationSelectors'
-import { formatNumber, formatTime } from '../../../game/utils'
+import { getRecipeConsumableRequirements, getRecipeCurrentEffectiveDuration, getRecipeCurrentOutputPerHour, getRecipeCurrentSpeedMultiplier, getRecipeManaDemandPerSecond, getRecipeStatus, getRecipeUnlockReason, getTransmutationFocusReserved, getTransmutationJob, type TransmutationStatus } from '../../../game/systems/transmutation/transmutationSelectors'
+import { formatNumber, formatSignedRate, formatTime } from '../../../game/utils'
 import { getItemUses } from '../../inventory/inventoryMetadata'
 import { setUiPreferences, useUiPreferences } from '../../../ui/preferences/uiPreferencesStore'
 import { useGameStore } from '../../../store/gameStore'
@@ -38,7 +38,7 @@ export function RecipeDetail({ recipe }: { recipe: RecipeDefinition }) {
 
       {requirements.length > 0 && <DetailSection title="MATERIAL REQUIREMENTS"><div className="transmutation-requirements-grid">{requirements.map((requirement) => <ItemRequirementTile key={requirement.itemId} itemId={requirement.itemId} owned={requirement.owned} available={requirement.available} equipped={requirement.equipped} required={requirement.required} protectedItem={requirement.protected} source={getItemSourceLabel(requirement.itemId)} />)}</div></DetailSection>}
 
-      {recipe.manaCost > 0 && <section className="transmutation-detail-section transmutation-mana-requirement"><span className="eyebrow">MANA</span><strong>{formatNumber(state.player.mana)} / {formatNumber(recipe.manaCost)}</strong><Status tone={state.player.mana >= recipe.manaCost ? 'success' : 'warning'}>{state.player.mana >= recipe.manaCost ? 'READY' : 'WAITING'}</Status></section>}
+      {recipe.manaCost > 0 && <section className="transmutation-detail-section transmutation-mana-requirement"><span className="eyebrow">MANA / CYCLE</span><strong>{formatNumber(recipe.manaCost)} · {formatSignedRate(-getRecipeManaDemandPerSecond(recipe, echoes))} demand</strong><Status tone={status === 'waiting-mana' ? 'warning' : status === 'mana-limited' ? 'warning' : 'success'}>{status === 'waiting-mana' ? 'WAITING' : status === 'mana-limited' ? 'LIMITED' : 'FUNDED'}</Status></section>}
 
       <section className="transmutation-detail-section transmutation-accordion"><button type="button" onClick={toggleUsedIn} aria-expanded={isUsedInOpen}><span className="eyebrow">USED IN {uses.length ? `· ${uses.length}` : ''}</span>{isUsedInOpen ? <ChevronDown size={15} aria-hidden="true" /> : <ChevronRight size={15} aria-hidden="true" />}</button>{isUsedInOpen && (uses.length ? <div className="transmutation-uses">{uses.map((use) => <span key={`${use.destination}-${use.label}`}><strong>{use.label}</strong><small>{use.detail}</small></span>)}</div> : <p className="muted">No known downstream use yet.</p>)}</section>
     </div>
@@ -52,5 +52,5 @@ function CurrentProduction({ echoes, currentCycle, currentSpeed, currentOutput }
 
 function DetailSection({ title, children }: { title: string; children: ReactNode }) { return <section className="transmutation-detail-section"><span className="eyebrow">{title}</span>{children}</section> }
 function DetailStat({ label, value }: { label: string; value: string }) { return <span><small>{label}</small><strong>{value}</strong></span> }
-function statusTone(status: TransmutationStatus): 'neutral' | 'success' | 'warning' | 'active' | 'locked' { return status === 'locked' ? 'locked' : status === 'active' ? 'active' : status === 'waiting-mana' || status === 'waiting-materials' ? 'warning' : 'neutral' }
+function statusTone(status: TransmutationStatus): 'neutral' | 'success' | 'warning' | 'active' | 'locked' { return status === 'locked' ? 'locked' : status === 'active' ? 'active' : status === 'mana-limited' || status === 'waiting-mana' || status === 'waiting-materials' ? 'warning' : 'neutral' }
 function statusLabel(status: TransmutationStatus) { return status.replace('-', ' ').toUpperCase() }

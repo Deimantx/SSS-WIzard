@@ -3,11 +3,13 @@ import { SCHOOLS } from '../../content/schools/schools'
 import { BALANCE } from '../../core/balance/balance'
 import { getEquippedReservedQuantity } from '../../core/equipment/equipmentRules'
 import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
+import { manaRegenPerSecond } from '../../engine/channelingEngine'
 import { selectFreeFocus } from '../../engine'
 import type { GameState, ItemId, ResearchJobState, ResearchJobStatus, ResearchSlotId, SchoolId } from '../../types'
 import { clamp } from '../../utils'
 import { RESEARCH_SLOT_ORDER } from './researchReservations'
 import { getSchoolProgressInfo } from '../schools'
+import { CONTINUOUS_MANA_EPSILON, continuousManaPerSecond, estimateContinuousFundingRatio, getContinuousManaDemandPerSecond } from '../simulation/continuousManaScheduler'
 
 export interface PreparedResearchJob extends ResearchJobState { slotId: ResearchSlotId }
 
@@ -27,7 +29,7 @@ export const getPreparedResearchJobs = (state: Pick<GameState, 'activities'>): P
   if (jobs.length > 0 || !research?.running || !research.itemId || !research.targetSchoolId) return jobs
   // A V8-shaped in-memory activity is converted by the engine; selectors stay
   // useful for compatibility until the next simulation step.
-  return [{ slotId: 'research-1', itemId: research.itemId, targetSchoolId: research.targetSchoolId, requestedQuantity: finiteQuantity(research.requestedQuantity) || finiteQuantity(research.remainingQuantity), remainingQuantity: finiteQuantity(research.remainingQuantity), progressMs: finiteProgress(research.progressMs), echoesAssigned: 1, status: research.status === 'waiting-mana' ? 'waiting-mana' : research.status === 'level-cap' ? 'level-cap' : 'running' }]
+  return [{ slotId: 'research-1', itemId: research.itemId, targetSchoolId: research.targetSchoolId, requestedQuantity: finiteQuantity(research.requestedQuantity) || finiteQuantity(research.remainingQuantity), remainingQuantity: finiteQuantity(research.remainingQuantity), progressMs: finiteProgress(research.progressMs), echoesAssigned: 1, status: research.status === 'waiting-mana' ? 'waiting-mana' : research.status === 'mana-limited' ? 'mana-limited' : research.status === 'level-cap' ? 'level-cap' : 'running' }]
 }
 
 export const getPreparedResearchCount = (state: Pick<GameState, 'activities'>) => getPreparedResearchJobs(state).length
@@ -44,7 +46,7 @@ export const getResearchJob = (state: Pick<GameState, 'activities'>, slotId: Res
   const research = state.activities.research
   const stored = research?.slots?.[slotId]
   if (stored) return stored
-  if (slotId === 'research-1' && research?.running && research.itemId && research.targetSchoolId) return { itemId: research.itemId, targetSchoolId: research.targetSchoolId, requestedQuantity: finiteQuantity(research.requestedQuantity) || finiteQuantity(research.remainingQuantity), remainingQuantity: finiteQuantity(research.remainingQuantity), progressMs: finiteProgress(research.progressMs), echoesAssigned: 1, status: research.status === 'waiting-mana' ? 'waiting-mana' : research.status === 'level-cap' ? 'level-cap' : 'running' }
+  if (slotId === 'research-1' && research?.running && research.itemId && research.targetSchoolId) return { itemId: research.itemId, targetSchoolId: research.targetSchoolId, requestedQuantity: finiteQuantity(research.requestedQuantity) || finiteQuantity(research.remainingQuantity), remainingQuantity: finiteQuantity(research.remainingQuantity), progressMs: finiteProgress(research.progressMs), echoesAssigned: 1, status: research.status === 'waiting-mana' ? 'waiting-mana' : research.status === 'mana-limited' ? 'mana-limited' : research.status === 'level-cap' ? 'level-cap' : 'running' }
   return null
 }
 
@@ -57,7 +59,10 @@ export function getResearchJobStatus(state: Pick<GameState, 'activities' | 'inve
   if (state.schools[job.targetSchoolId].level >= state.progress.magicLevelCap) return 'level-cap'
   if (rawOwned(state, job.itemId) < 1) return 'missing-item'
   if (finiteQuantity(job.echoesAssigned) <= 0) return 'prepared'
-  if (finiteProgress(job.progressMs) >= BALANCE.research.durationPerItemMs && state.player.mana < BALANCE.research.manaCostPerItem) return 'waiting-mana'
+  const demand = getContinuousManaDemandPerSecond(state)
+  const ratio = estimateContinuousFundingRatio(state.player.mana, manaRegenPerSecond(state), demand, BALANCE.tickMs)
+  if (ratio <= CONTINUOUS_MANA_EPSILON) return 'waiting-mana'
+  if (ratio < 1 - CONTINUOUS_MANA_EPSILON) return 'mana-limited'
   return 'running'
 }
 
@@ -73,7 +78,7 @@ export const getResearchEffectiveDuration = (job: Pick<ResearchJobState, 'echoes
 
 export const getResearchItemsPerHour = (job: Pick<ResearchJobState, 'echoesAssigned'>) => finiteQuantity(job.echoesAssigned) * 3_600_000 / BALANCE.research.durationPerItemMs
 export const getResearchXpPerHour = (job: Pick<ResearchJobState, 'itemId' | 'targetSchoolId' | 'echoesAssigned'>) => getResearchItemsPerHour(job) * getResearchXp(job.itemId, job.targetSchoolId)
-export const getResearchManaPerSecond = (job: Pick<ResearchJobState, 'echoesAssigned'>) => BALANCE.research.manaCostPerItem * finiteQuantity(job.echoesAssigned) / (BALANCE.research.durationPerItemMs / 1000)
+export const getResearchManaPerSecond = (job: Pick<ResearchJobState, 'echoesAssigned'>) => continuousManaPerSecond(BALANCE.research.manaCostPerItem, BALANCE.research.durationPerItemMs, finiteQuantity(job.echoesAssigned))
 
 export const getResearchBatchEtaMs = (job: Pick<ResearchJobState, 'remainingQuantity' | 'progressMs' | 'echoesAssigned'>) => {
   const echoes = finiteQuantity(job.echoesAssigned)

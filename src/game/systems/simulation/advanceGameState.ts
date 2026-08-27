@@ -8,8 +8,9 @@ import { addStatus, applyBarrier, damageEnemy, damagePlayer, executeEnemyAction,
 import type { GameState, ItemId, SpellEffect, SpellId, StatusEffect } from '../../types'
 import { clamp } from '../../utils'
 import type { SimulationReportCollector } from '../offline-bank/offlineBankReport'
-import { advanceTransmutation } from '../transmutation/transmutationEngine'
-import { advanceResearch } from '../research/researchEngine'
+import { applyTransmutationAllocations, buildTransmutationWorkRequests } from '../transmutation/transmutationEngine'
+import { applyResearchAllocations, buildResearchWorkRequests } from '../research/researchEngine'
+import { allocateContinuousMana } from './continuousManaScheduler'
 
 export interface AdvanceContext {
   mode: 'live' | 'banked'
@@ -109,8 +110,13 @@ export const advanceGameState = (state: GameState, deltaMs: number, context: Adv
     if (discovery) pushNotification(state, `Arcane Discovery: ${discovery.name}`, 'success')
   })
   if (!state.combat.active) state.player.health = clamp(state.player.health + BALANCE.player.healthRegenPerSecond * delta / 1000 * BALANCE.player.outOfCombatRegenMultiplier, 0, state.player.maxHealth)
-  advanceResearch(state, delta, context)
-  advanceTransmutation(state, delta, context)
+  // Build both systems' requests from the same pre-work snapshot. The shared
+  // scheduler funds them together so call order cannot create Mana priority.
+  const researchRequests = buildResearchWorkRequests(state, delta, context)
+  const transmutationRequests = buildTransmutationWorkRequests(state, delta)
+  const funding = allocateContinuousMana(state, [...researchRequests, ...transmutationRequests])
+  applyResearchAllocations(state, researchRequests, funding.allocations, context)
+  applyTransmutationAllocations(state, transmutationRequests, funding.allocations, context)
   tickCombat(state, delta, context)
   return state
 }

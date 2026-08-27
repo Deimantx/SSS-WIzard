@@ -67,7 +67,7 @@ export const removeResearchEchoAction = (state: GameState, slotId: ResearchSlotI
   const job = state.activities.research.slots[slotId]
   if (!job) return false
   job.echoesAssigned = Math.max(0, Math.floor(job.echoesAssigned) - 1)
-  if (job.echoesAssigned === 0 && (job.status === 'running' || job.status === 'waiting-mana')) job.status = 'prepared'
+  if (job.echoesAssigned === 0 && (job.status === 'running' || job.status === 'mana-limited' || job.status === 'waiting-mana')) job.status = 'prepared'
   return true
 }
 
@@ -76,7 +76,7 @@ export const setResearchEchoesAction = (state: GameState, slotId: ResearchSlotId
   if (!job) return false
   const target = Math.max(0, finiteQuantity(amount))
   const current = Math.max(0, Math.floor(job.echoesAssigned))
-  if (target <= current) { job.echoesAssigned = target; if (!target && (job.status === 'running' || job.status === 'waiting-mana')) job.status = 'prepared'; return true }
+  if (target <= current) { job.echoesAssigned = target; if (!target && (job.status === 'running' || job.status === 'mana-limited' || job.status === 'waiting-mana')) job.status = 'prepared'; return true }
   if (force && state.debug.ignoreEchoLimit) { job.echoesAssigned = target; return true }
   for (let index = current; index < target; index += 1) if (!assignResearchEchoAction(state, slotId)) break
   return true
@@ -85,7 +85,7 @@ export const setResearchEchoesAction = (state: GameState, slotId: ResearchSlotId
 export const clearResearchEchoesAction = (state: GameState) => {
   RESEARCH_SLOT_ORDER.forEach((slotId) => {
     const job = state.activities.research.slots[slotId]
-    if (job) { job.echoesAssigned = 0; if (job.status === 'running' || job.status === 'waiting-mana') job.status = 'prepared' }
+    if (job) { job.echoesAssigned = 0; if (job.status === 'running' || job.status === 'mana-limited' || job.status === 'waiting-mana') job.status = 'prepared' }
   })
 }
 

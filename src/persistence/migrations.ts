@@ -121,7 +121,7 @@ const normalizeDirectContentReferences = (migrated: GameState, raw: Record<strin
   migrated.combat.pendingBossId = pendingBossId === null ? null : pendingBossId === 'grove-sentinel' && validContentId(pendingBossId, bossIds) ? pendingBossId : fresh.combat.pendingBossId
 }
 
-const validResearchStatus = (value: unknown): ResearchJobState['status'] => value === 'running' || value === 'waiting-mana' || value === 'level-cap' || value === 'protected' || value === 'missing-item' || value === 'prepared' ? value : 'prepared'
+const validResearchStatus = (value: unknown): ResearchJobState['status'] => value === 'running' || value === 'mana-limited' || value === 'waiting-mana' || value === 'level-cap' || value === 'protected' || value === 'missing-item' || value === 'prepared' ? value : 'prepared'
 
 /** Normalizes both the V8 single queue and the V9 slot document. */
 const normalizeResearch = (migrated: GameState, raw: Record<string, any>, sourceVersion: number) => {
@@ -141,12 +141,16 @@ const normalizeResearch = (migrated: GameState, raw: Record<string, any>, source
     const requested = Math.max(remaining, nonNegativeInteger(source.requestedQuantity) ?? remaining)
     const status = validResearchStatus(source.status)
     const blocked = status === 'level-cap' || status === 'missing-item' || status === 'protected'
+    const rawProgress = nonNegativeNumber(source.progressMs) ?? 0
+    const progressMs = status === 'waiting-mana' && rawProgress >= BALANCE.research.durationPerItemMs
+      ? 0
+      : Math.min(BALANCE.research.durationPerItemMs, rawProgress)
     return {
       itemId: itemId as ItemId,
       targetSchoolId: targetSchoolId as SchoolId,
       requestedQuantity: requested,
       remainingQuantity: remaining,
-      progressMs: Math.min(BALANCE.research.durationPerItemMs, nonNegativeNumber(source.progressMs) ?? 0),
+      progressMs,
       echoesAssigned: oldQueue ? source.running === true && !blocked ? 1 : 0 : Math.min(BALANCE.research.maxEchoes, Math.max(0, Math.floor(nonNegativeNumber(source.echoesAssigned) ?? 0))),
       status: oldQueue ? blocked ? status : source.running === true ? 'running' : 'prepared' : status,
     }
@@ -221,19 +225,24 @@ const normalizeTransmutationJobs = (migrated: GameState, raw: Record<string, any
     const rawJob = isRecord(rawJobs[recipeId]) ? rawJobs[recipeId] : null
     if (!rawJob) return
     const recipe = RECIPES[recipeId]
-    jobs[recipeId] = { echoesAssigned: Math.max(0, Math.floor(nonNegativeNumber(rawJob.echoesAssigned) ?? 0)), progressMs: Math.min(recipe.baseDurationMs, nonNegativeNumber(rawJob.progressMs) ?? 0) }
+    const progress = nonNegativeNumber(rawJob.progressMs) ?? 0
+    // Legacy Transmutation pinned unfunded work at 100%; that work was never
+    // paid for and must not become an instant free output after hydration.
+    jobs[recipeId] = { echoesAssigned: Math.max(0, Math.floor(nonNegativeNumber(rawJob.echoesAssigned) ?? 0)), progressMs: progress >= recipe.baseDurationMs ? 0 : Math.min(recipe.baseDurationMs, progress) }
   })
 
   if (rawTransmutation.running === true && validContentId(rawTransmutation.recipeId, recipeIds)) {
     const recipeId = rawTransmutation.recipeId as RecipeId
     const recipe = RECIPES[recipeId]
-    jobs[recipeId] = { echoesAssigned: Math.max(1, jobs[recipeId]?.echoesAssigned ?? 0), progressMs: normalizedProgress(rawTransmutation.progressMs, typeof rawTransmutation.durationMs === 'number' ? rawTransmutation.durationMs : recipe.baseDurationMs, recipe.baseDurationMs) }
+    const progress = normalizedProgress(rawTransmutation.progressMs, typeof rawTransmutation.durationMs === 'number' ? rawTransmutation.durationMs : recipe.baseDurationMs, recipe.baseDurationMs)
+    jobs[recipeId] = { echoesAssigned: Math.max(1, jobs[recipeId]?.echoesAssigned ?? 0), progressMs: progress >= recipe.baseDurationMs ? 0 : progress }
   }
 
   const rawCondense = isRecord(rawActivities.condense) ? rawActivities.condense : {}
   if (rawCondense.running === true && validContentId(rawCondense.element, ['fire', 'water', 'earth', 'air'])) {
     const recipeId = `${rawCondense.element}-fragment` as RecipeId
-    jobs[recipeId] = { echoesAssigned: Math.max(1, jobs[recipeId]?.echoesAssigned ?? 0), progressMs: normalizedProgress(rawCondense.progressMs, LEGACY_CONDENSATION_DURATION_MS, RECIPES[recipeId].baseDurationMs) }
+    const progress = normalizedProgress(rawCondense.progressMs, LEGACY_CONDENSATION_DURATION_MS, RECIPES[recipeId].baseDurationMs)
+    jobs[recipeId] = { echoesAssigned: Math.max(1, jobs[recipeId]?.echoesAssigned ?? 0), progressMs: progress >= RECIPES[recipeId].baseDurationMs ? 0 : progress }
   }
 
   // Preserve work while ensuring the migration cannot create Focus overflow.

@@ -2,8 +2,8 @@ import { SPELLS } from '../../content/spells/spells'
 import { RECIPES, RECIPE_ORDER } from '../../content/recipes/recipes'
 import { BALANCE } from '../../core/balance/balance'
 import { getManaRegenBreakdown } from '../../engine/channelingEngine'
-import { getRecipeManaDemandPerSecond } from '../transmutation/transmutationSelectors'
-import { getResearchManaPerSecond, getPreparedResearchJobs } from '../research/researchSelectors'
+import { getRecipeManaDemandPerSecond, getRecipeStatus } from '../transmutation/transmutationSelectors'
+import { getResearchManaPerSecond, getPreparedResearchJobs, getResearchJobStatus } from '../research/researchSelectors'
 import type { GameState, ManaDemandSource, ManaFlowBreakdown } from '../../types'
 
 const FLOW_EPSILON = 0.05
@@ -13,11 +13,16 @@ export const getManaDemandBreakdown = (state: GameState): ManaDemandSource[] => 
   RECIPE_ORDER.forEach((recipeId) => {
     const recipe = RECIPES[recipeId]
     const echoes = Math.max(0, Math.floor(state.activities.transmutation.jobs[recipeId]?.echoesAssigned ?? 0))
-    if (!echoes || recipe.manaCost <= 0 || (recipe.unlock.type === 'first-grove-sentinel-kill' && !state.progress.firstBossKill)) return
+    const status = getRecipeStatus(state, recipe)
+    if (!echoes || recipe.manaCost <= 0 || status === 'locked' || status === 'paused' || status === 'waiting-materials') return
     sources.push({ id: `transmutation-${recipeId}`, label: `Transmutation · ${recipe.name}`, manaPerSecond: getRecipeManaDemandPerSecond(recipe, echoes) })
   })
 
-  const researchJobs = getPreparedResearchJobs(state).filter((job) => job.echoesAssigned > 0)
+  const researchJobs = getPreparedResearchJobs(state).filter((job) => {
+    if (job.echoesAssigned <= 0) return false
+    const status = getResearchJobStatus(state, job.slotId)
+    return status === 'running' || status === 'mana-limited' || status === 'waiting-mana'
+  })
   if (researchJobs.length > 0) {
     researchJobs.forEach((job) => sources.push({ id: `research-${job.slotId}`, label: `Research · ${job.itemId}`, manaPerSecond: getResearchManaPerSecond(job) }))
   }

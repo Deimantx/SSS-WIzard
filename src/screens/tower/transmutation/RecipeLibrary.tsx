@@ -77,13 +77,14 @@ function RecipeTile({ recipe, selected, onSelect }: { recipe: RecipeDefinition; 
     <span className="transmutation-tile-icon"><ItemIcon itemId={recipe.output.itemId} size="tile" /></span>
     <strong>{recipe.name}</strong>
     <span className="transmutation-tile-owned"><ItemQuantity value={owned} compact /></span>
-    {status !== 'paused' && <span className="transmutation-tile-status"><Status tone={locked ? 'locked' : status === 'active' ? 'active' : status === 'waiting-mana' || status === 'waiting-materials' ? 'warning' : 'neutral'}>{statusText(status)}</Status></span>}
+    {status !== 'paused' && <span className="transmutation-tile-status"><Status tone={locked ? 'locked' : status === 'active' ? 'active' : status === 'mana-limited' || status === 'waiting-mana' || status === 'waiting-materials' ? 'warning' : 'neutral'}>{statusText(status)}</Status></span>}
     {echoes > 0 && <Progress value={getRecipeProgressPercent(recipe, progress)} tone="gold" />}
   </button></GameTooltip>
 }
 
 function statusText(status: TransmutationStatus) {
   if (status === 'active') return 'ACTIVE'
+  if (status === 'mana-limited') return 'MANA LIMITED'
   if (status === 'waiting-mana') return 'WAITING MANA'
   if (status === 'waiting-materials') return 'WAITING MATERIALS'
   if (status === 'locked') return 'LOCKED'

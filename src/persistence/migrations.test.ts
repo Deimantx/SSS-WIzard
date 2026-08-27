@@ -260,4 +260,35 @@ describe('save navigation migration', () => {
     expect(migrated.activities.research.slots['research-1']).toEqual(state.activities.research.slots['research-1'])
     expect(migrated.activities.transmutation.jobs['fire-fragment']).toEqual({ echoesAssigned: 1, progressMs: 0 })
   })
+
+  it('clears legacy Transmutation full bars so they cannot craft for free', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({
+      ...initial,
+      saveVersion: 10,
+      activities: { ...initial.activities, transmutation: { jobs: { 'fire-fragment': { echoesAssigned: 1, progressMs: 6000 } } } },
+    } as any)
+    expect(migrated.activities.transmutation.jobs['fire-fragment']).toEqual({ echoesAssigned: 1, progressMs: 0 })
+  })
+
+  it('clears legacy Research waiting-Mana full bars while preserving the batch', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({
+      ...initial,
+      saveVersion: 10,
+      inventory: { ...initial.inventory, 'fire-fragment': 3 },
+      activities: {
+        ...initial.activities,
+        research: {
+          slots: {
+            'research-1': { itemId: 'fire-fragment', targetSchoolId: 'fire', requestedQuantity: 3, remainingQuantity: 3, progressMs: 5000, echoesAssigned: 1, status: 'waiting-mana' },
+            'research-2': null,
+            'research-3': null,
+            'research-4': null,
+          },
+        },
+      },
+    } as any)
+    expect(migrated.activities.research.slots['research-1']).toMatchObject({ remainingQuantity: 3, echoesAssigned: 1, progressMs: 0, status: 'waiting-mana' })
+  })
 })

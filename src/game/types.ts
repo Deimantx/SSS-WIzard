@@ -1,7 +1,7 @@
 export type SchoolId = 'fire' | 'water' | 'earth' | 'air'
 export type ElementId = SchoolId
 export type ScreenId = 'home' | 'combat' | 'schools' | 'inventory' | 'equipment' | 'collection' | 'tower-channeling' | 'tower-focus' | 'tower-research' | 'tower-transmutation' | 'guild' | 'settings'
-export type ActivityStatus = 'running' | 'paused' | 'waiting-mana' | 'waiting-focus' | 'completed' | 'locked' | 'recovering'
+export type ActivityStatus = 'running' | 'mana-limited' | 'paused' | 'waiting-mana' | 'waiting-focus' | 'completed' | 'locked' | 'recovering'
 
 export type ItemId =
   | 'fire-fragment'
@@ -123,7 +123,7 @@ export interface SchoolState { xp: number; level: number }
 export interface PlayerState { health: number; maxHealth: number; mana: number; maxMana: number; maxFocus: number; baseMaxHealth: number; baseMaxMana: number; baseMaxFocus: number; godMode: boolean }
 export interface ChannelingActivity { echoesAssigned: number }
 export type ResearchSlotId = 'research-1' | 'research-2' | 'research-3' | 'research-4'
-export type ResearchJobStatus = 'prepared' | 'running' | 'waiting-mana' | 'level-cap' | 'protected' | 'missing-item'
+export type ResearchJobStatus = 'prepared' | 'running' | 'mana-limited' | 'waiting-mana' | 'level-cap' | 'protected' | 'missing-item'
 export type ResearchStatus = ResearchJobStatus
 export interface ResearchJobState {
   itemId: ItemId
@@ -292,7 +292,7 @@ export interface ManaFlowBreakdown {
   etaKind: 'full' | 'empty' | 'starved' | null
 }
 
-export type ActivityTelemetryStatus = 'running' | 'waiting-mana' | 'waiting-materials' | 'paused' | 'combat' | 'recovery'
+export type ActivityTelemetryStatus = 'running' | 'mana-limited' | 'waiting-mana' | 'waiting-materials' | 'paused' | 'combat' | 'recovery'
 export interface ActivityMetric {
   label: string
   value: string

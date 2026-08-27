@@ -27,7 +27,7 @@ import { forceCompleteTransmutationCycle } from '../game/systems/transmutation/t
 import { RECIPES } from '../game/content/recipes/recipes'
 import { saveGameAction } from './actions/persistenceActions'
 import { advanceGameState } from '../game/systems/simulation/advanceGameState'
-import { advanceResearch } from '../game/systems/research/researchEngine'
+import { forceCompleteResearchCycle } from '../game/systems/research/researchEngine'
 import { advanceWithOfflineBank as runOfflineBankAdvance, isOfflineBankSimulationActive, type OfflineBankResult } from '../game/systems/offline-bank/offlineBankSimulation'
 import type { OfflineBankReport } from '../game/systems/offline-bank/offlineBankReport'
 
@@ -174,7 +174,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   setResearchEchoes: (slotId, amount) => set((state) => { setResearchEchoesAction(state, slotId, amount); return state }),
   clearResearchEchoes: () => set((state) => { clearResearchEchoesAction(state); return state }),
   clearPreparedResearch: () => set((state) => { clearPreparedResearchAction(state); return state }),
-  forceResearchCycle: (slotId) => set((state) => { const job = state.activities.research.slots[slotId]; if (job) { job.progressMs = BALANCE.research.durationPerItemMs; advanceResearch(state, 0, { mode: 'live' }) }; return state }),
+  forceResearchCycle: (slotId) => set((state) => { forceCompleteResearchCycle(state, slotId, { mode: 'live' }); return state }),
   assignTransmutationEcho: (recipeId) => set((state) => { assignTransmutationEchoAction(state, recipeId); return state }),
   removeTransmutationEcho: (recipeId) => set((state) => { removeTransmutationEchoAction(state, recipeId); return state }),
   setTransmutationEchoes: (recipeId, amount) => set((state) => { setTransmutationEchoesAction(state, recipeId, amount); return state }),

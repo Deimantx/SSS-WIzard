@@ -7,6 +7,7 @@ import { prepareResearchAction, assignResearchEchoAction, removeResearchEchoActi
 import { advanceResearch } from './researchEngine'
 import { getResearchAvailableQuantity, getResearchEchoesAssigned, getResearchFocusReserved } from './researchSelectors'
 import { getResearchReservedQuantity } from './researchReservations'
+import { advanceGameState } from '../simulation/advanceGameState'
 
 const prepared = (inventory = 100) => {
   const state = createInitialState()
@@ -83,5 +84,44 @@ describe('Arcane Crucible V2', () => {
     expect(assignResearchEchoAction(state, 'research-1')).toBe(false)
     expect(removeResearchEchoAction(state, 'research-1')).toBe(true)
     expect(removePreparedResearchAction(state, 'research-1')).toBe(true)
+  })
+
+  it('applies only Mana-funded Research progress and grants item XP at completion', () => {
+    const state = prepared(10)
+    prepareResearchAction(state, 'fire-fragment', 'fire', 1)
+    assignResearchEchoAction(state, 'research-1')
+    state.player.mana = 0
+    state.debug.bonusManaRegenFlat = -4.5
+
+    for (let elapsed = 0; elapsed < 2_500; elapsed += 100) advanceGameState(state, 100, { mode: 'banked' })
+    expect(state.activities.research.slots['research-1']).toMatchObject({ remainingQuantity: 1, progressMs: 1_250, status: 'mana-limited' })
+    expect(state.inventory['fire-fragment']).toBe(10)
+    expect(state.schools.fire.xp).toBe(0)
+
+    state.debug.bonusManaRegenFlat = 0
+    state.player.mana = 100
+    for (let elapsed = 0; elapsed < 3_750; elapsed += 100) advanceGameState(state, 100, { mode: 'banked' })
+    expect(state.activities.research.slots['research-1']).toBeNull()
+    expect(state.inventory['fire-fragment']).toBe(9)
+    expect(state.schools.fire.xp).toBe(12)
+  })
+
+  it('does not request or spend Mana for protected or capped Research', () => {
+    const state = prepared(10)
+    prepareResearchAction(state, 'fire-fragment', 'fire', 1)
+    assignResearchEchoAction(state, 'research-1')
+    state.player.mana = 20
+    state.protectedItems['fire-fragment'] = true
+    advanceResearch(state, 1_000)
+    expect(state.player.mana).toBe(20)
+    expect(state.activities.research.slots['research-1']).toMatchObject({ progressMs: 0, echoesAssigned: 0, status: 'protected' })
+
+    state.protectedItems['fire-fragment'] = false
+    assignResearchEchoAction(state, 'research-1')
+    state.schools.fire.level = state.progress.magicLevelCap
+    state.schools.fire.xp = SCHOOL_LEVEL_XP(state.progress.magicLevelCap)
+    advanceResearch(state, 1_000)
+    expect(state.player.mana).toBe(20)
+    expect(state.activities.research.slots['research-1']).toMatchObject({ progressMs: 0, echoesAssigned: 0, status: 'level-cap' })
   })
 })

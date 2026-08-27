@@ -38,8 +38,8 @@ describe('Transmutation simulation', () => {
     advanceTransmutation(state, 1_000, { mode: 'banked' })
 
     expect(state.inventory['fire-fragment']).toBe(1)
-    expect(state.player.mana).toBe(0)
-    expect(state.activities.transmutation.jobs['fire-fragment']?.progressMs).toBe(6_000)
+    expect(state.player.mana).toBe(2.5)
+    expect(state.activities.transmutation.jobs['fire-fragment']?.progressMs).toBe(4_000)
   })
 
   it('does not create routine completion toasts', () => {

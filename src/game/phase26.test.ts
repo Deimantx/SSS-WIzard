@@ -52,31 +52,32 @@ describe('Unified Transmutation', () => {
     expect(state.activities.transmutation.jobs['fire-fragment']?.progressMs).toBeLessThan(6000)
   })
 
-  it('charges exactly fifteen Mana for a completed elemental fragment cycle', () => {
+  it('charges only the funded Mana for the final portion of an elemental cycle', () => {
     const state = makeInitialState()
     state.player.mana = 20
     state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 1, progressMs: 5999 }
     advanceGameState(state, 1, { mode: 'banked' })
-    expect(state.player.mana).toBeCloseTo(5.005)
+    expect(state.player.mana).toBeCloseTo(20.0025)
     expect(state.inventory['fire-fragment']).toBe(1)
   })
 
-  it('holds a completed cycle at full progress when Mana is unavailable', () => {
+  it('does not preserve an old full bar when Mana is unavailable', () => {
     const state = makeInitialState()
     state.player.mana = 0
+    state.debug.bonusManaRegenFlat = -5
     state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 1, progressMs: 5999 }
     advanceGameState(state, 1, { mode: 'banked' })
-    expect(state.activities.transmutation.jobs['fire-fragment']?.progressMs).toBe(6000)
+    expect(state.activities.transmutation.jobs['fire-fragment']?.progressMs).toBe(5999)
     expect(state.inventory['fire-fragment'] ?? 0).toBe(0)
     expect(getActivityTelemetry(state).find((item) => item.id === 'transmutation')?.status).toBe('waiting-mana')
   })
 
-  it('holds a completed equipment cycle when an ingredient is missing', () => {
+  it('does not preserve an old full equipment bar when an ingredient is missing', () => {
     const state = makeInitialState()
     state.progress.firstBossKill = true
     state.activities.transmutation.jobs['ember-staff'] = { echoesAssigned: 1, progressMs: 8000 }
     advanceGameState(state, 1, { mode: 'banked' })
-    expect(state.activities.transmutation.jobs['ember-staff']?.progressMs).toBe(8000)
+    expect(state.activities.transmutation.jobs['ember-staff']?.progressMs).toBe(0)
     expect(state.inventory['ember-staff'] ?? 0).toBe(0)
     expect(getActivityTelemetry(state).find((item) => item.id === 'transmutation')?.status).toBe('waiting-materials')
   })

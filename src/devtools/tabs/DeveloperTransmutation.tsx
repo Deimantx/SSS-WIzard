@@ -28,7 +28,7 @@ export function DeveloperTransmutation() {
     </Card>
     <Card title="Recipe fixture controls" className="developer-debug-card">
       <label>Recipe<select value={selected} onChange={(event) => setSelected(event.target.value as RecipeId)}>{RECIPE_ORDER.map((id) => <option key={id} value={id}>{RECIPES[id].name}</option>)}</select></label>
-      <div className="button-row"><Button onClick={() => grantIngredients(selected)}>Grant ingredients</Button><Button onClick={() => addMana(100)}>Grant Mana</Button><Button variant="success" onClick={() => useGameStore.getState().completeTransmutationCycle(selected)}>Complete one cycle</Button></div>
+      <div className="button-row"><Button onClick={() => grantIngredients(selected)}>Grant ingredients</Button><Button onClick={() => addMana(100)}>Grant Mana</Button><Button variant="success" onClick={() => useGameStore.getState().completeTransmutationCycle(selected)}>DEBUG ONLY · Complete one cycle</Button></div>
       <p className="muted">Fixture actions are intentionally explicit so production, waiting-Mana, protected-stack, and multi-job states can be tested quickly.</p>
     </Card>
     <Card title="Echo capacity override">

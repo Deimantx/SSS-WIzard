@@ -44,4 +44,13 @@ describe('inventory economy selectors', () => {
     expect(getItemNeeds('fire-fragment', state).every((entry) => entry.status === 'PROTECTED')).toBe(true)
     expect(getNeededItemIds(state)).toContain('fire-fragment')
   })
+
+  it('reports Focus Capacity as a Prismatic-only need', () => {
+    const state = createInitialState()
+    state.inventory['prismatic-fragment'] = 2
+    state.inventory['life-essence'] = 99
+
+    expect(getItemNeeds('prismatic-fragment', state).some((entry) => entry.label === 'Focus Capacity Lv 1' && entry.required === 5)).toBe(true)
+    expect(getItemNeeds('life-essence', state).some((entry) => entry.label.startsWith('Focus Capacity'))).toBe(false)
+  })
 })

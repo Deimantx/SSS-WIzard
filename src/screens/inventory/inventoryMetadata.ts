@@ -48,7 +48,7 @@ export function getItemUses(itemId: ItemId): InventoryDestination[] {
   if (itemId === 'life-essence' || Object.values(MANA_PILLARS).some((pillar) => pillar.fragmentRequirements.includes(itemId))) {
     uses.push({ label: 'Pillars of Mana', destination: 'tower-channeling', detail: 'Permanent Tower progression' })
   }
-  if (itemId === 'prismatic-fragment' || itemId === 'life-essence') {
+  if (itemId === 'prismatic-fragment') {
     uses.push({ label: FOCUS_IMPROVEMENT.name, destination: 'tower-focus', detail: 'Permanent Focus progression' })
   }
   Object.values(GUILD_REQUESTS).forEach((request) => {

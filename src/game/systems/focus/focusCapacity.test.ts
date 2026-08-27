@@ -1,52 +1,53 @@
 import { describe, expect, it } from 'vitest'
 import { RECIPES } from '../../content/recipes/recipes'
+import { FOCUS_IMPROVEMENT } from '../../content/focus/focusImprovement'
 import { createInitialState } from '../../../store/initialState'
 import { upgradeFocusCapacityAction, setFocusImprovementLevelAction } from '../../../store/actions/focusActions'
 import { getFocusCapacityBreakdown } from './focusCapacity'
 import { getRecipeCurrentEffectiveDuration } from '../transmutation/transmutationSelectors'
 
 describe('Focus Capacity', () => {
+  it('uses the Rank I +5 Focus balance', () => {
+    expect(FOCUS_IMPROVEMENT.focusPerLevel).toBe(5)
+    expect(FOCUS_IMPROVEMENT.maxLevel * FOCUS_IMPROVEMENT.focusPerLevel).toBe(50)
+  })
+
   it('breaks Max Focus into base, improvement, rewards, equipment, and debug sources', () => {
     const state = createInitialState()
     state.progress.focusImprovement.level = 3
     state.progress.permanentFocusBonuses = { forestHeart: 20 }
     state.equipment.amulet = 'windthread-charm'
-    state.debug.bonusMaxFocusFlat = 10
 
-    expect(getFocusCapacityBreakdown(state)).toEqual({ base: 100, improvement: 30, permanentRewards: 20, equipment: 10, debug: 10, total: 170 })
+    expect(getFocusCapacityBreakdown(state)).toEqual({ base: 100, improvement: 15, permanentRewards: 20, equipment: 10, debug: 0, total: 145 })
   })
 
-  it('consumes the exact Level 1 cost and updates derived Max Focus', () => {
+  it('consumes the exact Prismatic-only Level 1 cost and updates derived Max Focus', () => {
     const state = createInitialState()
     state.inventory['prismatic-fragment'] = 5
-    state.inventory['life-essence'] = 10
 
     expect(upgradeFocusCapacityAction(state)).toBe(true)
     expect(state.progress.focusImprovement).toEqual({ rank: 1, level: 1 })
     expect(state.inventory['prismatic-fragment']).toBe(0)
-    expect(state.inventory['life-essence']).toBe(0)
-    expect(state.player.maxFocus).toBe(110)
+    expect(state.inventory['life-essence']).toBeUndefined()
+    expect(state.player.maxFocus).toBe(105)
   })
 
   it('blocks protected materials without changing progression or inventory', () => {
     const state = createInitialState()
     state.inventory['prismatic-fragment'] = 5
-    state.inventory['life-essence'] = 10
     state.protectedItems['prismatic-fragment'] = true
 
     expect(upgradeFocusCapacityAction(state)).toBe(false)
     expect(state.progress.focusImprovement.level).toBe(0)
     expect(state.inventory['prismatic-fragment']).toBe(5)
-    expect(state.inventory['life-essence']).toBe(10)
   })
 
   it('stops at Rank I mastery and grants the full bonus', () => {
     const state = createInitialState()
     setFocusImprovementLevelAction(state, 10)
     state.inventory['prismatic-fragment'] = 999
-    state.inventory['life-essence'] = 999
 
-    expect(state.player.maxFocus).toBe(200)
+    expect(state.player.maxFocus).toBe(150)
     expect(upgradeFocusCapacityAction(state)).toBe(false)
     expect(state.inventory['prismatic-fragment']).toBe(999)
   })

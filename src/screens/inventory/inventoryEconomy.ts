@@ -127,8 +127,8 @@ export function getItemNeeds(itemId: ItemId, state: ItemEconomyState): ItemNeed[
 
   const focusLevel = Math.max(0, Math.floor(state.progress.focusImprovement.level))
   const focusCost = getFocusImprovementLevelCost(focusLevel + 1)
-  if (focusCost && (itemId === 'prismatic-fragment' || itemId === 'life-essence')) {
-    needs.push(need(`focus:${FOCUS_IMPROVEMENT.id}`, `${FOCUS_IMPROVEMENT.name} Lv ${focusLevel + 1}`, 'Next Focus Capacity level', 'tower-focus', itemId, itemId === 'prismatic-fragment' ? focusCost.primary : focusCost.lifeEssence, state, flow))
+  if (focusCost && itemId === 'prismatic-fragment') {
+    needs.push(need(`focus:${FOCUS_IMPROVEMENT.id}`, `${FOCUS_IMPROVEMENT.name} Lv ${focusLevel + 1}`, 'Next Focus Capacity level', 'tower-focus', itemId, focusCost.primary, state, flow))
   }
 
   return needs.slice(0, 5)

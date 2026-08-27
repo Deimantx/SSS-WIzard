@@ -20,6 +20,11 @@ const hasGeometry = (value: unknown, expected: { x: number; y: number; w: number
   const candidate = value as Partial<SavedPanelLayout>
   return candidate.x === expected.x && candidate.y === expected.y && candidate.w === expected.w && candidate.h === expected.h
 }
+const hasUnmodifiedGeometry = (value: unknown, expected: { x: number; y: number; w: number; h: number }) => {
+  if (!value || typeof value !== 'object') return false
+  const candidate = value as Partial<SavedPanelLayout>
+  return hasGeometry(value, expected) && candidate.hidden !== true && candidate.locked !== true
+}
 
 const overlaps = (a: SavedPanelLayout, b: SavedPanelLayout) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y
 const placeMissingPanel = (screen: ScreenId, id: string, panels: Record<string, SavedPanelLayout>) => {
@@ -80,6 +85,11 @@ export function loadUiLayouts(): UiLayoutDocument {
         panels['home-wizard'] = { ...panels['home-wizard'], ...DEFAULT_LAYOUTS.home['home-wizard'] }
         panels['home-school-mastery'] = { ...DEFAULT_LAYOUTS.home['home-school-mastery'], ...panelFlags(source['home-school-mastery']) }
         panels['home-arcane-work'] = { ...DEFAULT_LAYOUTS.home['home-arcane-work'], ...panelFlags(source['home-arcane-work']) }
+      }
+      if (screen === 'tower-focus' && hasUnmodifiedGeometry(source['focus-summary'], { x: 0, y: 0, w: 12, h: 6 }) && hasUnmodifiedGeometry(source['focus-reservations'], { x: 0, y: 6, w: 7, h: 14 }) && hasUnmodifiedGeometry(source['focus-improvement'], { x: 7, y: 6, w: 5, h: 14 })) {
+        panels['focus-summary'] = { ...panels['focus-summary'], ...DEFAULT_LAYOUTS['tower-focus']['focus-summary'] }
+        panels['focus-reservations'] = { ...panels['focus-reservations'], ...DEFAULT_LAYOUTS['tower-focus']['focus-reservations'] }
+        panels['focus-improvement'] = { ...panels['focus-improvement'], ...DEFAULT_LAYOUTS['tower-focus']['focus-improvement'] }
       }
       if (screen === 'tower-research') placeMissingPanel(screen, 'research-school-mastery', panels)
       if (screen === 'tower-focus') placeMissingPanel(screen, 'focus-improvement', panels)

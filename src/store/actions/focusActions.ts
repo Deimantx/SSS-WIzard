@@ -10,7 +10,7 @@ import { clamp } from '../../game/utils'
 export const canReserveFocusAction = (state: GameState, amount: number) => state.debug.allowFocusOverCap || canReserveFocusNormal(state, amount)
 export const getFocusAllocation = (state: GameState) => ({ used: selectUsedFocus(state), free: selectFreeFocus(state), max: state.player.maxFocus })
 
-const isProtected = (state: GameState, itemId: 'prismatic-fragment' | 'life-essence') => Boolean(state.protectedItems[itemId]) || getEquippedReservedQuantity(state, itemId) > 0
+const isProtected = (state: GameState, itemId: 'prismatic-fragment') => Boolean(state.protectedItems[itemId]) || getEquippedReservedQuantity(state, itemId) > 0
 
 export const upgradeFocusCapacityAction = (state: GameState) => {
   const currentLevel = state.progress.focusImprovement.level
@@ -20,19 +20,17 @@ export const upgradeFocusCapacityAction = (state: GameState) => {
   }
   const cost = getFocusImprovementLevelCost(currentLevel + 1)
   if (!cost) return false
-  const protectedItem = (['prismatic-fragment', 'life-essence'] as const).find((itemId) => isProtected(state, itemId))
+  const protectedItem = isProtected(state, 'prismatic-fragment') ? 'prismatic-fragment' : undefined
   if (protectedItem) {
     pushNotification(state, `Upgrade blocked. ${ITEMS[protectedItem].name} is protected.`, 'warning')
     return false
   }
-  const missingItem = (['prismatic-fragment', 'life-essence'] as const).find((itemId) => getConsumableQuantity(state, itemId) < (itemId === 'prismatic-fragment' ? cost.primary : cost.lifeEssence))
+  const missingItem = getConsumableQuantity(state, 'prismatic-fragment') < cost.primary ? 'prismatic-fragment' : undefined
   if (missingItem) {
-    const required = missingItem === 'prismatic-fragment' ? cost.primary : cost.lifeEssence
-    pushNotification(state, `Not enough ${ITEMS[missingItem].name}. Need ${required}.`, 'warning')
+    pushNotification(state, `Not enough ${ITEMS[missingItem].name}. Need ${cost.primary}.`, 'warning')
     return false
   }
   state.inventory['prismatic-fragment'] = Math.max(0, (state.inventory['prismatic-fragment'] ?? 0) - cost.primary)
-  state.inventory['life-essence'] = Math.max(0, (state.inventory['life-essence'] ?? 0) - cost.lifeEssence)
   state.progress.focusImprovement.rank = 1
   state.progress.focusImprovement.level = currentLevel + 1
   recalculateDerivedStats(state)

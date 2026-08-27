@@ -14,6 +14,25 @@ describe('Focus screen', () => {
     expect(screen.getByRole('heading', { name: 'FOCUS OVERVIEW' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'ACTIVE FOCUS USAGE' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'FOCUS IMPROVEMENT' })).toBeTruthy()
+    expect(screen.getByText('FOCUS LOAD')).toBeTruthy()
+    expect(screen.getByText('AVAILABLE CAPACITY')).toBeTruthy()
+    expect(screen.getAllByText('CHANNELING').length).toBeGreaterThan(0)
+    expect(screen.getByText('RESEARCH')).toBeTruthy()
+    expect(screen.getByText('TRANSMUTATION')).toBeTruthy()
+    expect(screen.getByText('AUTO-CAST')).toBeTruthy()
+  })
+
+  it('shows one Prismatic requirement and the +5 progression', () => {
+    const state = createInitialState()
+    state.progress.focusImprovement.level = 4
+    state.inventory['prismatic-fragment'] = 32
+    useGameStore.getState().hydrateState(state)
+    render(<TooltipProvider><FocusScreen /></TooltipProvider>)
+    expect(screen.getByText('LEVEL 4 / 10')).toBeTruthy()
+    expect(document.body.textContent).toContain('+20 Max Focus')
+    expect(document.body.textContent).toContain('+25 Max Focus')
+    expect(screen.getByRole('img', { name: /Prismatic Fragment, 32 available, 40 required/ })).toBeTruthy()
+    expect(screen.queryByRole('img', { name: /Life Essence/ })).toBeNull()
   })
 
   it('navigates a research reservation to the Research screen', async () => {

@@ -14,6 +14,12 @@ export interface FocusUsageEntry {
   status?: string
 }
 
+export interface FocusUsageGroup {
+  sourceType: (typeof FOCUS_USAGE_GROUPS)[number]
+  entries: FocusUsageEntry[]
+  amount: number
+}
+
 export const FOCUS_USAGE_GROUPS: readonly FocusReservation['sourceType'][] = ['channeling', 'research', 'transmutation', 'autocast']
 
 const plural = (count: number, singular: string) => `${count} ${singular}${count === 1 ? '' : 's'}`
@@ -38,5 +44,14 @@ export function getFocusUsageEntries(state: GameState): FocusUsageEntry[] {
       return { ...reservation, detail: `${plural(echoes, 'Echo')} × ${BALANCE.transmutation.echoFocusCost} Focus`, status }
     }
     return { ...reservation, detail: `${reservation.amount} Focus`, status: 'ENABLED' }
+  })
+}
+
+/** Groups the authoritative reservation entries for Focus Load and Active Focus Usage. */
+export function getFocusUsageGroups(state: GameState): FocusUsageGroup[] {
+  const entries = getFocusUsageEntries(state)
+  return FOCUS_USAGE_GROUPS.map((sourceType) => {
+    const groupEntries = entries.filter((entry) => entry.sourceType === sourceType)
+    return { sourceType, entries: groupEntries, amount: groupEntries.reduce((sum, entry) => sum + entry.amount, 0) }
   })
 }

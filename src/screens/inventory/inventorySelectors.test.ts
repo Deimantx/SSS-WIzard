@@ -67,6 +67,13 @@ describe('Inventory V3 selectors and display rules', () => {
     expect(getItemUses('fire-fragment').map((use) => use.destination)).toEqual(expect.arrayContaining(['tower-transmutation', 'tower-channeling', 'tower-research', 'guild']))
   })
 
+  it('links Focus Capacity only to Prismatic Fragment', () => {
+    const prismaticUses = getItemUses('prismatic-fragment')
+    const lifeEssenceUses = getItemUses('life-essence')
+    expect(prismaticUses.some((use) => use.label === 'Focus Capacity' && use.destination === 'tower-focus')).toBe(true)
+    expect(lifeEssenceUses.some((use) => use.label === 'Focus Capacity')).toBe(false)
+  })
+
   it('returns same-slot equipment comparison deltas', () => {
     expect(getEquipmentComparison(ITEMS['ember-staff'], ITEMS['apprentice-wand']).find((row) => row.key === 'basicDamage')).toMatchObject({ selectedValue: '+4', equippedValue: '+0', delta: '+4', direction: 'positive' })
   })

@@ -151,9 +151,33 @@ describe('Research layout compatibility', () => {
 describe('Focus layout compatibility', () => {
   it('uses the three-panel Focus defaults', () => {
     expect(DEFAULT_LAYOUTS['tower-focus']).toEqual({
+      'focus-summary': { x: 0, y: 0, w: 12, h: 11 },
+      'focus-reservations': { x: 0, y: 11, w: 7, h: 16 },
+      'focus-improvement': { x: 7, y: 11, w: 5, h: 16 },
+    })
+  })
+
+  it('migrates the untouched previous Focus default to the improved geometry', () => {
+    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({ version: 3, screens: { 'tower-focus': {
       'focus-summary': { x: 0, y: 0, w: 12, h: 6 },
       'focus-reservations': { x: 0, y: 6, w: 7, h: 14 },
       'focus-improvement': { x: 7, y: 6, w: 5, h: 14 },
+    } } }))
+
+    expect(loadUiLayouts().screens['tower-focus']).toEqual(DEFAULT_LAYOUTS['tower-focus'])
+  })
+
+  it('preserves a customized Focus layout even when its panels use old geometry', () => {
+    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({ version: 3, screens: { 'tower-focus': {
+      'focus-summary': { x: 0, y: 0, w: 12, h: 6 },
+      'focus-reservations': { x: 0, y: 6, w: 7, h: 14 },
+      'focus-improvement': { x: 7, y: 6, w: 5, h: 14, locked: true },
+    } } }))
+
+    expect(loadUiLayouts().screens['tower-focus']).toMatchObject({
+      'focus-summary': { x: 0, y: 0, w: 12, h: 6 },
+      'focus-reservations': { x: 0, y: 6, w: 7, h: 14 },
+      'focus-improvement': { x: 7, y: 6, w: 5, h: 14, locked: true },
     })
   })
 
@@ -166,7 +190,7 @@ describe('Focus layout compatibility', () => {
     expect(loadUiLayouts().screens['tower-focus']).toMatchObject({
       'focus-summary': { x: 0, y: 0, w: 7, h: 12 },
       'focus-reservations': { x: 7, y: 0, w: 5, h: 12 },
-      'focus-improvement': { x: 7, y: 12, w: 5, h: 14 },
+      'focus-improvement': { x: 7, y: 12, w: 5, h: 16 },
     })
   })
 })

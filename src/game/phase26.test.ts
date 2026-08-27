@@ -13,7 +13,7 @@ import { clampResourcePercent } from '../app/shell/Topbar'
 
 describe('Unified Transmutation', () => {
   it('defines four fragment and four equipment recipes with the intended costs', () => {
-    expect(Object.keys(RECIPES)).toHaveLength(8)
+    expect(Object.keys(RECIPES)).toHaveLength(9)
     expect(['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'].map((id) => RECIPES[id as keyof typeof RECIPES].manaCost)).toEqual([15, 15, 15, 15])
     expect(['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'].map((id) => RECIPES[id as keyof typeof RECIPES].baseDurationMs)).toEqual([6000, 6000, 6000, 6000])
     expect(RECIPES['ember-staff'].ingredients).toEqual([

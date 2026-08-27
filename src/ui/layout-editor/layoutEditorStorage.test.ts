@@ -148,6 +148,29 @@ describe('Research layout compatibility', () => {
   })
 })
 
+describe('Focus layout compatibility', () => {
+  it('uses the three-panel Focus defaults', () => {
+    expect(DEFAULT_LAYOUTS['tower-focus']).toEqual({
+      'focus-summary': { x: 0, y: 0, w: 12, h: 6 },
+      'focus-reservations': { x: 0, y: 6, w: 7, h: 14 },
+      'focus-improvement': { x: 7, y: 6, w: 5, h: 14 },
+    })
+  })
+
+  it('places the new improvement panel below a stored two-panel Focus layout', () => {
+    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({ version: 3, screens: { 'tower-focus': {
+      'focus-summary': { x: 0, y: 0, w: 7, h: 12 },
+      'focus-reservations': { x: 7, y: 0, w: 5, h: 12 },
+    } } }))
+
+    expect(loadUiLayouts().screens['tower-focus']).toMatchObject({
+      'focus-summary': { x: 0, y: 0, w: 7, h: 12 },
+      'focus-reservations': { x: 7, y: 0, w: 5, h: 12 },
+      'focus-improvement': { x: 7, y: 12, w: 5, h: 14 },
+    })
+  })
+})
+
 describe('Home expansion layout compatibility', () => {
   it('uses the mastery and current work defaults', () => {
     expect(DEFAULT_LAYOUTS.home).toEqual({

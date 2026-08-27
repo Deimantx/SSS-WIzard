@@ -82,6 +82,7 @@ export function loadUiLayouts(): UiLayoutDocument {
         panels['home-arcane-work'] = { ...DEFAULT_LAYOUTS.home['home-arcane-work'], ...panelFlags(source['home-arcane-work']) }
       }
       if (screen === 'tower-research') placeMissingPanel(screen, 'research-school-mastery', panels)
+      if (screen === 'tower-focus') placeMissingPanel(screen, 'focus-improvement', panels)
       if (screen === 'home') { placeMissingPanel(screen, 'home-school-mastery', panels); placeMissingPanel(screen, 'home-arcane-work', panels) }
       if (screen === 'inventory' && hasGeometry(source['inventory-catalog'], { x: 0, y: 0, w: 9, h: 15 }) && hasGeometry(source['inventory-detail'], { x: 9, y: 0, w: 3, h: 15 })) {
         panels['inventory-catalog'] = { ...panels['inventory-catalog'], x: 0, y: 0, w: 8, h: 17 }

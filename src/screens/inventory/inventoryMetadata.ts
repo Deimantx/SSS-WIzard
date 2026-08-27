@@ -2,6 +2,7 @@ import { GUILD_REQUESTS } from '../../game/content/guild/guildRequests'
 import { MANA_PILLARS } from '../../game/content/channeling/manaPillars'
 import { RECIPES } from '../../game/content/recipes/recipes'
 import { getItemSourceLabel, ITEMS } from '../../game/content/items/items'
+import { FOCUS_IMPROVEMENT } from '../../game/content/focus/focusImprovement'
 import type { InventoryCategory, InventoryMaterialSubtype, ItemId, ScreenId } from '../../game/types'
 
 export const INVENTORY_CATEGORIES = ['All', 'Materials', 'Loot', 'Equipment', 'Special'] as const
@@ -46,6 +47,9 @@ export function getItemUses(itemId: ItemId): InventoryDestination[] {
   })
   if (itemId === 'life-essence' || Object.values(MANA_PILLARS).some((pillar) => pillar.fragmentRequirements.includes(itemId))) {
     uses.push({ label: 'Pillars of Mana', destination: 'tower-channeling', detail: 'Permanent Tower progression' })
+  }
+  if (itemId === 'prismatic-fragment' || itemId === 'life-essence') {
+    uses.push({ label: FOCUS_IMPROVEMENT.name, destination: 'tower-focus', detail: 'Permanent Focus progression' })
   }
   Object.values(GUILD_REQUESTS).forEach((request) => {
     if (request.kind === 'donation' && request.itemId === itemId) uses.push({ label: request.name, destination: 'guild', detail: 'Guild request' })

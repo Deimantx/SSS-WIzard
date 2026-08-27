@@ -8,6 +8,7 @@ export type ItemId =
   | 'water-fragment'
   | 'earth-fragment'
   | 'air-fragment'
+  | 'prismatic-fragment'
   | 'wisp-essence'
   | 'grove-bark'
   | 'heartseed'
@@ -26,14 +27,14 @@ export type EquipmentPosition = 'weapon' | 'offhand' | 'armor' | 'helmet' | 'cap
 /** @deprecated Use EquipmentItemSlot for item metadata or EquipmentPosition for loadout state. */
 export type EquipmentSlot = EquipmentItemSlot
 /** Legacy authored category kept for save/content compatibility. */
-export type ItemCategory = 'elemental' | 'monster-loot' | 'equipment' | 'boss-loot'
+export type ItemCategory = 'elemental' | 'material' | 'monster-loot' | 'equipment' | 'boss-loot'
 export type InventoryCategory = 'material' | 'loot' | 'equipment' | 'special'
 export type InventoryMaterialSubtype = 'elemental' | 'creature' | 'ore' | 'refined' | 'arcane'
 export type SpellType = 'damage' | 'heal' | 'barrier' | 'dot' | 'buff'
 export type StatusId = 'barrier' | 'thorn-wound' | 'burning' | 'attack-delay' | 'quickening'
 export type ManaPillarId = 'leyline-conduit' | 'arcane-reservoir' | 'mana-resonance' | 'astral-expansion' | 'echo-attunement'
 export type ChannelingDiscoveryId = 'stable-leyline' | 'echo-resonance' | 'deep-reservoir'
-export type RecipeId = 'fire-fragment' | 'water-fragment' | 'earth-fragment' | 'air-fragment' | 'ember-staff' | 'tide-focus' | 'stoneweave-robe' | 'windthread-charm'
+export type RecipeId = 'fire-fragment' | 'water-fragment' | 'earth-fragment' | 'air-fragment' | 'prismatic-fragment' | 'ember-staff' | 'tide-focus' | 'stoneweave-robe' | 'windthread-charm'
 export type RecipeCategory = 'elemental' | 'material' | 'equipment' | 'special'
 export type RecipeUnlockCondition = { type: 'always' } | { type: 'first-grove-sentinel-kill' }
 
@@ -214,10 +215,16 @@ export interface ProgressState {
   guildReputation: number
   requestClaims: Record<string, boolean>
   permanentFocusBonuses: Record<string, number>
+  focusImprovement: FocusImprovementState
   lifetimeKillsByMonster: Partial<Record<MonsterId, number>>
   bossKillsByBoss: Partial<Record<'grove-sentinel' | 'forest-heart', number>>
   autoHuntBossByDungeon: Record<DungeonId, boolean>
   channeling: ChannelingProgress
+}
+
+export interface FocusImprovementState {
+  rank: number
+  level: number
 }
 
 export interface ChannelingProgress {

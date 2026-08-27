@@ -13,6 +13,7 @@ import { EQUIPMENT_POSITIONS, normalizeEquipmentState } from '../game/core/equip
 import type { EquipmentPosition, GameState, ItemId, RecipeId, ResearchActivity, ResearchJobState, SchoolId, TransmutationJobState } from '../game/types'
 import { RESEARCH_SLOT_ORDER } from '../game/systems/research/researchReservations'
 import { isRecord, SaveMigrationError } from './saveSchema'
+import { recalculateDerivedStats } from '../game/engine'
 
 const normalizeScreen = (value: unknown, fallback: GameState['ui']['screen']): GameState['ui']['screen'] => {
   if (value === 'tower') return 'tower-channeling'
@@ -84,6 +85,8 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
   migrated.progress.requestProgress = normalizeDynamicRecord(fresh.progress.requestProgress, rawProgress.requestProgress, requestIds, nonNegativeInteger)
   migrated.progress.requestClaims = normalizeDynamicRecord(fresh.progress.requestClaims, rawProgress.requestClaims, requestIds, booleanValue)
   migrated.progress.permanentFocusBonuses = normalizeDynamicRecord(fresh.progress.permanentFocusBonuses, rawProgress.permanentFocusBonuses, permanentFocusIds, nonNegativeNumber)
+  const rawFocusImprovement = isRecord(rawProgress.focusImprovement) ? rawProgress.focusImprovement : {}
+  migrated.progress.focusImprovement = { rank: 1, level: safeLevel(rawFocusImprovement.level) }
   migrated.progress.lifetimeKillsByMonster = normalizeDynamicRecord(fresh.progress.lifetimeKillsByMonster, rawProgress.lifetimeKillsByMonster, monsterIds, nonNegativeInteger)
   migrated.progress.bossKillsByBoss = normalizeDynamicRecord(fresh.progress.bossKillsByBoss, rawProgress.bossKillsByBoss, bossIds, nonNegativeInteger)
   migrated.progress.autoHuntBossByDungeon = normalizeDynamicRecord(fresh.progress.autoHuntBossByDungeon, rawProgress.autoHuntBossByDungeon, dungeonIds, booleanValue) as GameState['progress']['autoHuntBossByDungeon']
@@ -267,16 +270,18 @@ const normalizeResearchFocus = (migrated: GameState) => {
 
 const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion = Number(raw.saveVersion ?? 0)) => {
   // Versions through V7 retain the historical migration marker for callers
-  // that still chain those migrations; V8 is the boundary that upgrades the
-  // Research shape and is written as the current V9 document.
+  // that still chain those migrations; V8/V9 are normalized into the current
+  // V10 document.
   migrated.saveVersion = sourceVersion >= 8 ? SAVE_VERSION : 8
   migrated.progress.channeling = migrateChanneling(raw.progress, createInitialState().progress)
   migrated.ui.screen = normalizeScreen(isRecord(raw.ui) ? raw.ui.screen : undefined, migrated.ui.screen)
   normalizeDynamicRecords(migrated, raw)
   normalizeDirectContentReferences(migrated, raw)
   normalizeResearch(migrated, raw, sourceVersion)
+  recalculateDerivedStats(migrated)
   normalizeTransmutationJobs(migrated, raw)
   normalizeResearchFocus(migrated)
+  recalculateDerivedStats(migrated)
   return migrated
 }
 
@@ -340,6 +345,7 @@ export const migrateSave = (rawSave: unknown): GameState => {
   if (version === 6) return migrateV6(rawSave)
   if (version === 7) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === 8) return finalize(merge(createInitialState(), rawSave), rawSave, version)
+  if (version === 9) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === SAVE_VERSION) {
     return finalize(merge(createInitialState(), rawSave), rawSave, version)
   }

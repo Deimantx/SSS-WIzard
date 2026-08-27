@@ -8,7 +8,7 @@ export const DEFAULT_LAYOUTS: Record<ScreenId, ScreenLayouts> = {
     'home-objective': layout(0, 0, 12, 4), 'home-school-mastery': layout(0, 4, 12, 6), 'home-checklist': layout(0, 10, 7, 10), 'home-wizard': layout(7, 10, 5, 10), 'home-arcane-work': layout(0, 20, 12, 7),
   },
   'tower-channeling': { 'channeling-mana-core': layout(0, 0, 6, 9), 'channeling-echoes': layout(6, 0, 6, 9), 'channeling-pillars': layout(0, 9, 12, 25) },
-  'tower-focus': { 'focus-summary': layout(0, 0, 7, 12), 'focus-reservations': layout(7, 0, 5, 12) },
+  'tower-focus': { 'focus-summary': layout(0, 0, 12, 6), 'focus-reservations': layout(0, 6, 7, 14), 'focus-improvement': layout(7, 6, 5, 14) },
   'tower-research': { 'research-school-mastery': layout(0, 0, 12, 4), 'research-library': layout(0, 4, 6, 12), 'research-inspector': layout(6, 4, 6, 12), 'research-prepared': layout(0, 16, 12, 10) },
   'tower-transmutation': { 'transmutation-recipes': layout(0, 0, 7, 15), 'transmutation-detail': layout(7, 0, 5, 9), 'transmutation-focus': layout(7, 9, 5, 6) },
   schools: {

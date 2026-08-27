@@ -20,7 +20,7 @@ import { equipItemAction, unequipItemAction } from './actions/equipmentActions'
 import { donateGuildRequestAction, claimGuildRewardAction, promoteGuildAction } from './actions/guildActions'
 import { setSchoolDebugAction, setLevelCapAction, setThreatAction, setBossKillsAction, unlockAllSpellsAction } from './actions/progressionActions'
 import { setChannelingEchoesAction, upgradeManaPillarAction, setManaPillarLevelAction, setChannelingManaGeneratedAction, setChannelingSustainAction, setChannelingDiscoveryAction } from './actions/channelingActions'
-import { canReserveFocusAction } from './actions/focusActions'
+import { canReserveFocusAction, setFocusImprovementLevelAction, upgradeFocusCapacityAction } from './actions/focusActions'
 import { assignResearchEchoAction, clearPreparedResearchAction, clearResearchEchoesAction, prepareResearchAction, removePreparedResearchAction, removeResearchEchoAction, setResearchEchoesAction } from './actions/researchActions'
 import { assignTransmutationEchoAction, clearTransmutationAssignmentsAction, removeTransmutationEchoAction, setTransmutationEchoCapacityOverrideAction, setTransmutationEchoesAction } from './actions/transmutationActions'
 import { forceCompleteTransmutationCycle } from '../game/systems/transmutation/transmutationEngine'
@@ -43,6 +43,8 @@ export interface GameActions {
   upgradeManaPillar: (pillarId: ManaPillarId) => void
   setManaPillarLevel: (pillarId: ManaPillarId, level: number) => void
   forceSetManaPillarLevel: (pillarId: ManaPillarId, level: number) => void
+  upgradeFocusCapacity: () => void
+  setFocusImprovementLevel: (level: number) => void
   setChannelingManaGenerated: (amount: number) => void
   setChannelingFiveEchoSustain: (amount: number) => void
   setChannelingDiscovery: (id: ChannelingDiscoveryId, completed: boolean) => void
@@ -153,6 +155,8 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   upgradeManaPillar: (pillarId) => set((state) => { upgradeManaPillarAction(state, pillarId); return state }),
   setManaPillarLevel: (pillarId, level) => set((state) => { setManaPillarLevelAction(state, pillarId, level); return state }),
   forceSetManaPillarLevel: (pillarId, level) => get().setManaPillarLevel(pillarId, level),
+  upgradeFocusCapacity: () => set((state) => { upgradeFocusCapacityAction(state); return state }),
+  setFocusImprovementLevel: (level) => set((state) => { setFocusImprovementLevelAction(state, level); return state }),
   setChannelingManaGenerated: (amount) => set((state) => { setChannelingManaGeneratedAction(state, amount); return state }),
   setChannelingFiveEchoSustain: (amount) => set((state) => { setChannelingSustainAction(state, amount); return state }),
   setChannelingDiscovery: (id, completed) => set((state) => { setChannelingDiscoveryAction(state, id, completed); return state }),

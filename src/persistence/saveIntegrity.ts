@@ -71,7 +71,7 @@ const hasCurrentSaveShape = (value: Record<string, unknown>) => {
     && value.lastSavedAt >= 0
 }
 
-/** Validates a stored document without accepting a partial V9 object as a fresh save. */
+/** Validates a stored document without accepting a partial current object as a fresh save. */
 export const validateStoredSave = (encoded: string): SaveValidationResult => {
   try {
     const decoded: unknown = JSON.parse(encoded)

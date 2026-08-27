@@ -8,6 +8,7 @@ import { RECIPES, RECIPE_ORDER } from './content/recipes/recipes'
 import { clamp, uid } from './utils'
 import { RESEARCH_SLOT_ORDER } from './systems/research/researchReservations'
 import { getSchoolLevel as getCentralSchoolLevel, getSchoolProgressInfo } from './systems/schools'
+import { getFocusCapacityBreakdown } from './systems/focus/focusCapacity'
 
 export const getSchoolLevel = getCentralSchoolLevel
 
@@ -23,10 +24,9 @@ export const equipmentStats = (state: Pick<GameState, 'equipment'>): EquipmentSt
 
 export const recalculateDerivedStats = (state: GameState) => {
   const stats = equipmentStats(state)
-  const permanentFocus = Object.values(state.progress.permanentFocusBonuses).reduce((sum, value) => sum + value, 0)
   state.player.maxHealth = state.player.baseMaxHealth + (stats.maxHealth ?? 0)
   state.player.maxMana = getManaCapacityBreakdown(state).total
-  state.player.maxFocus = Math.max(0, state.player.baseMaxFocus + permanentFocus + (stats.maxFocus ?? 0) + state.debug.bonusMaxFocusFlat)
+  state.player.maxFocus = getFocusCapacityBreakdown(state).total
   state.player.health = clamp(state.player.health, 0, state.player.maxHealth)
   state.player.mana = state.debug.allowManaOverCap ? Math.max(0, state.player.mana) : clamp(state.player.mana, 0, state.player.maxMana)
 }

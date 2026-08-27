@@ -1,5 +1,6 @@
 import { GUILD_REQUESTS } from '../../game/content/guild/guildRequests'
 import { MANA_PILLARS, getManaPillarLevelCost } from '../../game/content/channeling/manaPillars'
+import { FOCUS_IMPROVEMENT, getFocusImprovementLevelCost } from '../../game/content/focus/focusImprovement'
 import { RECIPES } from '../../game/content/recipes/recipes'
 import { ITEMS } from '../../game/content/items/items'
 import { getRecipeCraftsPerHour, isRecipeUnlocked } from '../../game/systems/transmutation/transmutationSelectors'
@@ -108,13 +109,6 @@ export function getItemNeeds(itemId: ItemId, state: ItemEconomyState): ItemNeed[
     needs.push(need(`pillar:${pillar.id}`, `${pillar.name} Lv.${nextLevel}`, 'Next Pillar level', 'tower-channeling', itemId, cost.fragment, state, flow))
   }
 
-  for (const recipe of Object.values(RECIPES)) {
-      if (!isRecipeUnlocked(state, recipe)) continue
-      const ingredient = recipe.ingredients.find((candidate) => candidate.itemId === itemId)
-      if (!ingredient) continue
-      needs.push(need(`recipe:${recipe.id}`, recipe.name, 'Transmutation recipe', 'tower-transmutation', itemId, ingredient.quantity, state, flow))
-  }
-
   if (state.progress.guildUnlocked) {
     for (const request of Object.values(GUILD_REQUESTS)) {
       if (request.kind !== 'donation' || request.itemId !== itemId) continue
@@ -122,6 +116,19 @@ export function getItemNeeds(itemId: ItemId, state: ItemEconomyState): ItemNeed[
       const remaining = Math.max(0, request.target - progress)
       if (remaining > 0) needs.push(need(`guild:${request.id}`, request.name, 'Active Guild donation', 'guild', itemId, remaining, state, flow))
     }
+  }
+
+  for (const recipe of Object.values(RECIPES).sort((left, right) => Number(left.category === 'material') - Number(right.category === 'material'))) {
+    if (!isRecipeUnlocked(state, recipe)) continue
+    const ingredient = recipe.ingredients.find((candidate) => candidate.itemId === itemId)
+    if (!ingredient) continue
+    needs.push(need(`recipe:${recipe.id}`, recipe.name, 'Transmutation recipe', 'tower-transmutation', itemId, ingredient.quantity, state, flow))
+  }
+
+  const focusLevel = Math.max(0, Math.floor(state.progress.focusImprovement.level))
+  const focusCost = getFocusImprovementLevelCost(focusLevel + 1)
+  if (focusCost && (itemId === 'prismatic-fragment' || itemId === 'life-essence')) {
+    needs.push(need(`focus:${FOCUS_IMPROVEMENT.id}`, `${FOCUS_IMPROVEMENT.name} Lv ${focusLevel + 1}`, 'Next Focus Capacity level', 'tower-focus', itemId, itemId === 'prismatic-fragment' ? focusCost.primary : focusCost.lifeEssence, state, flow))
   }
 
   return needs.slice(0, 5)

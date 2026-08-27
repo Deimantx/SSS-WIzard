@@ -10,6 +10,7 @@ const material = (id: ItemId, name: string, description: string, icon: string, c
 }
 const universalMaterial = (id: ItemId, name: string, description: string, icon: string, color: string, category: ItemDefinition['category'], source: string, materialSubtype?: InventoryMaterialSubtype, sourceNavigation?: ScreenId): AuthoredItemDefinition => ({ id, name, description, icon, color, kind: 'material', category, inventoryCategory: 'material', ...(materialSubtype ? { materialSubtype } : {}), source, ...(sourceNavigation ? { sourceNavigation } : {}) })
 const authoredItems: Record<ItemId, AuthoredItemDefinition> = {
+  'prismatic-fragment': universalMaterial('prismatic-fragment', 'Prismatic Fragment', 'A harmonized shard formed from all four elemental forces and bound through Life Essence. Used to strengthen the tower\'s Focus capacity.', '✦', '#c8a8ff', 'material', 'Transmutation', 'arcane', 'tower-transmutation'),
   'life-essence': universalMaterial('life-essence', 'Life Essence', 'Vital residue released when living magic is defeated. A universal catalyst for permanent Tower upgrades.', '✧', '#8fe0c0', 'monster-loot', 'All monsters'),
   'fire-fragment': material('fire-fragment', 'Fire Fragment', 'A hot shard of transmuted elemental force.', '◆', '#ff745d', 'elemental', 'Transmutation', 'fire'),
   'water-fragment': material('water-fragment', 'Water Fragment', 'A cool fragment shaped by transmutation.', '◇', '#64b7ff', 'elemental', 'Transmutation', 'water'),
@@ -27,6 +28,7 @@ const authoredItems: Record<ItemId, AuthoredItemDefinition> = {
 
 /** Normalize authored content once so every current item has an explicit Vault classification. */
 const sourceNavigationByItem: Partial<Record<ItemId, ScreenId>> = {
+  'prismatic-fragment': 'tower-transmutation',
   'life-essence': 'combat',
   'fire-fragment': 'tower-transmutation',
   'water-fragment': 'tower-transmutation',
@@ -42,6 +44,7 @@ const sourceNavigationByItem: Partial<Record<ItemId, ScreenId>> = {
 }
 const inventoryCategoryOverrides: Partial<Record<ItemId, InventoryCategory>> = { heartseed: 'loot' }
 const sellValues: Record<ItemId, number | null> = {
+  'prismatic-fragment': 20,
   'life-essence': 2,
   'fire-fragment': 1,
   'water-fragment': 1,
@@ -71,4 +74,4 @@ export const getResearchXp = (itemId: ItemId, targetSchoolId: SchoolId) => ITEMS
 /** Research content is data-driven: only authored research affinities enter the Crucible library. */
 export const getResearchableItemIds = () => (Object.keys(ITEMS) as ItemId[]).filter((itemId) => ITEMS[itemId].kind === 'material' && Boolean(ITEMS[itemId].researchSchool))
 
-export const getItemSourceLabel = (itemId: ItemId) => ITEMS[itemId].materialSubtype === 'elemental' ? 'Wizard Tower → Transmutation' : itemId === 'life-essence' ? 'Combat → all monsters' : ITEMS[itemId].source
+export const getItemSourceLabel = (itemId: ItemId) => ITEMS[itemId].materialSubtype === 'elemental' || itemId === 'prismatic-fragment' ? 'Wizard Tower → Transmutation' : itemId === 'life-essence' ? 'Combat → all monsters' : ITEMS[itemId].source

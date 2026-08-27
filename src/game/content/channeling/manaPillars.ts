@@ -1,4 +1,5 @@
 import type { ItemId, ManaPillarId } from '../../types'
+import { RANK_ONE_TOWER_UPGRADE_COSTS, type RankOneUpgradeLevel } from '../tower/rankOneUpgradeCosts'
 
 export interface ManaPillarLevelCost {
   fragment: number
@@ -24,18 +25,9 @@ export const MANA_PILLAR_IDS: readonly ManaPillarId[] = [
   'echo-attunement',
 ]
 
-export const PILLAR_LEVEL_COSTS: Record<1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10, ManaPillarLevelCost> = {
-  1: { fragment: 5, lifeEssence: 10 },
-  2: { fragment: 10, lifeEssence: 20 },
-  3: { fragment: 15, lifeEssence: 30 },
-  4: { fragment: 25, lifeEssence: 50 },
-  5: { fragment: 40, lifeEssence: 80 },
-  6: { fragment: 60, lifeEssence: 120 },
-  7: { fragment: 90, lifeEssence: 180 },
-  8: { fragment: 130, lifeEssence: 260 },
-  9: { fragment: 180, lifeEssence: 360 },
-  10: { fragment: 250, lifeEssence: 500 },
-}
+export const PILLAR_LEVEL_COSTS: Record<RankOneUpgradeLevel, ManaPillarLevelCost> = Object.fromEntries(
+  (Object.keys(RANK_ONE_TOWER_UPGRADE_COSTS) as unknown as RankOneUpgradeLevel[]).map((level) => [level, { fragment: RANK_ONE_TOWER_UPGRADE_COSTS[level].primary, lifeEssence: RANK_ONE_TOWER_UPGRADE_COSTS[level].lifeEssence }]),
+) as Record<RankOneUpgradeLevel, ManaPillarLevelCost>
 
 export const MANA_PILLARS: Record<ManaPillarId, ManaPillarDefinition> = {
   'leyline-conduit': {

@@ -91,6 +91,11 @@ export function loadUiLayouts(): UiLayoutDocument {
         panels['focus-reservations'] = { ...panels['focus-reservations'], ...DEFAULT_LAYOUTS['tower-focus']['focus-reservations'] }
         panels['focus-improvement'] = { ...panels['focus-improvement'], ...DEFAULT_LAYOUTS['tower-focus']['focus-improvement'] }
       }
+      if (screen === 'tower-focus' && hasUnmodifiedGeometry(source['focus-summary'], { x: 0, y: 0, w: 12, h: 11 }) && hasUnmodifiedGeometry(source['focus-reservations'], { x: 0, y: 11, w: 7, h: 16 }) && hasUnmodifiedGeometry(source['focus-improvement'], { x: 7, y: 11, w: 5, h: 16 })) {
+        panels['focus-summary'] = { ...panels['focus-summary'], ...DEFAULT_LAYOUTS['tower-focus']['focus-summary'] }
+        panels['focus-reservations'] = { ...panels['focus-reservations'], ...DEFAULT_LAYOUTS['tower-focus']['focus-reservations'] }
+        panels['focus-improvement'] = { ...panels['focus-improvement'], ...DEFAULT_LAYOUTS['tower-focus']['focus-improvement'] }
+      }
       if (screen === 'tower-research') placeMissingPanel(screen, 'research-school-mastery', panels)
       if (screen === 'tower-focus') placeMissingPanel(screen, 'focus-improvement', panels)
       if (screen === 'home') { placeMissingPanel(screen, 'home-school-mastery', panels); placeMissingPanel(screen, 'home-arcane-work', panels) }

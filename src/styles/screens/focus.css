@@ -2,7 +2,7 @@
 .focus-screen .ui-editor-panel-content > .card { height: 100%; min-height: 100%; overflow: hidden; }
 .focus-overview, .focus-usage, .focus-improvement { display: flex; min-width: 0; min-height: 0; flex-direction: column; }
 .focus-overview { overflow-y: auto !important; scrollbar-gutter: stable; padding: 14px; }
-.focus-improvement { scrollbar-gutter: stable; }
+.focus-improvement { overflow-x: hidden; overflow-y: auto !important; scrollbar-gutter: stable; -webkit-overflow-scrolling: touch; }
 .focus-overview .card-head { margin-bottom: 13px; }
 .focus-overview .card-head, .focus-usage .card-head, .focus-improvement .card-head { flex: 0 0 auto; }
 .focus-overview-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }

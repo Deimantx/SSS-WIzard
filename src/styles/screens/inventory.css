@@ -169,4 +169,7 @@
 .inventory-flow-row.positive strong, .inventory-flow-row.emphasis.positive strong { color: var(--ui-success); }
 .inventory-flow-row.negative strong, .inventory-flow-row.emphasis.negative strong { color: var(--ui-danger); }
 .inventory-flow-row.neutral strong, .inventory-flow-row.emphasis.neutral strong { color: var(--ui-text-muted); }
+.inventory-detail-reserved { display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; padding: 9px; margin-top: 9px; border: 1px solid rgba(168,148,255,.22); border-radius: 6px; color: var(--ui-accent); font: 9px 'DM Mono'; }
+.inventory-detail-reserved strong { color: var(--ui-text); font-size: 11px; }
+.inventory-detail-reserved small { grid-column: 1 / -1; color: var(--muted); font: 9px 'Manrope'; line-height: 1.35; }
 @media (max-width: 760px) { .inventory-vault-header-meta { justify-content: flex-start; }.inventory-actions-card { height: auto !important; min-height: 0 !important; overflow: visible !important; }.inventory-actions-card > .inventory-actions-content { overflow: visible; }.inventory-actions-content { gap: 10px; } }

@@ -9,6 +9,12 @@ const LEGACY_UI_LAYOUTS_KEY = 'sss-wizard-ui-layout-v2'
 const blankDocument = (): UiLayoutDocument => ({ version: LAYOUT_VERSION, screens: {}, shell: { topbar: clampTopbarLayout(DEFAULT_TOPBAR_LAYOUT) } })
 const validNumber = (value: unknown, fallback: number) => typeof value === 'number' && Number.isFinite(value) ? value : fallback
 
+const panelFlags = (value: unknown): Pick<SavedPanelLayout, 'hidden' | 'locked'> => {
+  if (!value || typeof value !== 'object') return {}
+  const candidate = value as Partial<SavedPanelLayout>
+  return { ...(candidate.hidden === true ? { hidden: true } : {}), ...(candidate.locked === true ? { locked: true } : {}) }
+}
+
 const hasGeometry = (value: unknown, expected: { x: number; y: number; w: number; h: number }) => {
   if (!value || typeof value !== 'object') return false
   const candidate = value as Partial<SavedPanelLayout>
@@ -35,11 +41,21 @@ export function loadUiLayouts(): UiLayoutDocument {
       const source = screen === 'tower-channeling' && !('channeling-pillars' in rawSource) && 'channeling-infrastructure' in rawSource
         ? { ...rawSource, 'channeling-pillars': rawSource['channeling-infrastructure'] }
         : screen === 'tower-research' && ('research-config' in rawSource || 'research-queue' in rawSource)
-          ? { ...rawSource, 'research-library': rawSource['research-config'], 'research-inspector': rawSource['research-queue'], 'research-prepared': DEFAULT_LAYOUTS['tower-research']['research-prepared'] }
+          ? {
+              ...rawSource,
+              'research-library': { ...DEFAULT_LAYOUTS['tower-research']['research-library'], ...panelFlags(rawSource['research-config']) },
+              'research-inspector': { ...DEFAULT_LAYOUTS['tower-research']['research-inspector'], ...panelFlags(rawSource['research-queue']) },
+              'research-prepared': { ...DEFAULT_LAYOUTS['tower-research']['research-prepared'] },
+            }
           : rawSource
       if (screen === 'tower-channeling' && ('channeling-main' in source || 'channeling-stats' in source)) continue
       const panels: Record<string, SavedPanelLayout> = {}
       for (const [id, value] of Object.entries(source)) { const normalized = normalizePanel(screen, id, value); if (normalized) panels[id] = normalized }
+      if (screen === 'tower-research' && hasGeometry(source['research-library'], { x: 0, y: 0, w: 6, h: 10 }) && hasGeometry(source['research-inspector'], { x: 6, y: 0, w: 6, h: 10 }) && hasGeometry(source['research-prepared'], { x: 0, y: 10, w: 12, h: 10 })) {
+        panels['research-library'] = { ...panels['research-library'], ...DEFAULT_LAYOUTS['tower-research']['research-library'] }
+        panels['research-inspector'] = { ...panels['research-inspector'], ...DEFAULT_LAYOUTS['tower-research']['research-inspector'] }
+        panels['research-prepared'] = { ...panels['research-prepared'], ...DEFAULT_LAYOUTS['tower-research']['research-prepared'] }
+      }
       if (screen === 'inventory' && hasGeometry(source['inventory-catalog'], { x: 0, y: 0, w: 9, h: 15 }) && hasGeometry(source['inventory-detail'], { x: 9, y: 0, w: 3, h: 15 })) {
         panels['inventory-catalog'] = { ...panels['inventory-catalog'], x: 0, y: 0, w: 8, h: 17 }
         panels['inventory-detail'] = { ...panels['inventory-detail'], x: 8, y: 0, w: 4, h: 12 }

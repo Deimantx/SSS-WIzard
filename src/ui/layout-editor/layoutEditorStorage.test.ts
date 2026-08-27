@@ -74,3 +74,59 @@ describe('Transmutation default layout', () => {
     expect(layouts['transmutation-focus']).toEqual({ x: 7, y: 9, w: 5, h: 6 })
   })
 })
+
+describe('Research layout compatibility', () => {
+  it('uses the safe twelve-row Research defaults', () => {
+    expect(DEFAULT_LAYOUTS['tower-research']).toEqual({
+      'research-library': { x: 0, y: 0, w: 6, h: 12 },
+      'research-inspector': { x: 6, y: 0, w: 6, h: 12 },
+      'research-prepared': { x: 0, y: 12, w: 12, h: 10 },
+    })
+  })
+
+  it('migrates only the previous untouched Research default', () => {
+    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({
+      version: 3,
+      screens: { 'tower-research': {
+        'research-library': { x: 0, y: 0, w: 6, h: 10 },
+        'research-inspector': { x: 6, y: 0, w: 6, h: 10 },
+        'research-prepared': { x: 0, y: 10, w: 12, h: 10 },
+      } },
+    }))
+
+    expect(loadUiLayouts().screens['tower-research']).toMatchObject(DEFAULT_LAYOUTS['tower-research'])
+  })
+
+  it('preserves custom Research geometry', () => {
+    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({
+      version: 3,
+      screens: { 'tower-research': {
+        'research-library': { x: 0, y: 0, w: 5, h: 15 },
+        'research-inspector': { x: 5, y: 0, w: 7, h: 15 },
+        'research-prepared': { x: 0, y: 15, w: 12, h: 8 },
+      } },
+    }))
+
+    expect(loadUiLayouts().screens['tower-research']).toMatchObject({
+      'research-library': { x: 0, y: 0, w: 5, h: 15 },
+      'research-inspector': { x: 5, y: 0, w: 7, h: 15 },
+      'research-prepared': { x: 0, y: 15, w: 12, h: 8 },
+    })
+  })
+
+  it('maps legacy Research panels to the safe defaults', () => {
+    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({
+      version: 3,
+      screens: { 'tower-research': {
+        'research-config': { x: 0, y: 0, w: 4, h: 4, locked: true },
+        'research-queue': { x: 4, y: 0, w: 8, h: 4, hidden: true },
+      } },
+    }))
+
+    expect(loadUiLayouts().screens['tower-research']).toMatchObject({
+      'research-library': { ...DEFAULT_LAYOUTS['tower-research']['research-library'], locked: true },
+      'research-inspector': { ...DEFAULT_LAYOUTS['tower-research']['research-inspector'], hidden: true },
+      'research-prepared': DEFAULT_LAYOUTS['tower-research']['research-prepared'],
+    })
+  })
+})

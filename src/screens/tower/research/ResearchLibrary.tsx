@@ -34,7 +34,7 @@ export function ResearchLibrary({ selectedItemId, onSelect }: { selectedItemId: 
       <FilterButton label="ALL" active={filter === 'all'} onClick={() => setFilter('all')} />
       {SCHOOLS_ORDER.map((schoolId) => <FilterButton key={schoolId} label={SCHOOLS[schoolId].name.toUpperCase()} active={filter === schoolId} onClick={() => setFilter(schoolId)} />)}
     </div>
-    {itemIds.length === 0 ? <div className="empty-state small">{allResearchable.length ? 'No researchable items match this affinity.' : 'Fragments you own or prepare will appear here.'}</div> : <div className="research-item-grid">{itemIds.map((itemId) => <ResearchItemTile key={itemId} itemId={itemId} selected={selectedItemId === itemId} encodedState={itemState[itemId]} onSelect={onSelect} />)}</div>}
+    <div className="research-library-body">{itemIds.length === 0 ? <div className="empty-state small">{allResearchable.length ? 'No researchable items match this affinity.' : 'Fragments you own or prepare will appear here.'}</div> : <div className="research-item-grid">{itemIds.map((itemId) => <ResearchItemTile key={itemId} itemId={itemId} selected={selectedItemId === itemId} encodedState={itemState[itemId]} onSelect={onSelect} />)}</div>}</div>
   </Card>
 }
 

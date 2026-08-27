@@ -24,9 +24,12 @@ describe('ResearchInspector', () => {
     researchState()
     render(<ResearchInspector itemId="fire-fragment" />)
 
+    expect(screen.getAllByRole('button', { name: /^(FIRE|WATER|EARTH|AIR)$/ })).toHaveLength(4)
+    expect((screen.getByRole('button', { name: 'FIRE' }) as HTMLButtonElement).getAttribute('aria-pressed')).toBe('true')
     expect(valueMetric('XP / ITEM')).toBe('12')
     fireEvent.click(screen.getByRole('button', { name: 'WATER' }))
     expect(valueMetric('XP / ITEM')).toBe('8')
+    expect((screen.getByRole('button', { name: 'WATER' }) as HTMLButtonElement).getAttribute('aria-pressed')).toBe('true')
   })
 
   it('uses unreserved quantity for the slider and preserves inventory on Prepare', () => {

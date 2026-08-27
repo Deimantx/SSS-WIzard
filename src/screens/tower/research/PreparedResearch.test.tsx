@@ -30,4 +30,21 @@ describe('PreparedResearch', () => {
     expect(screen.getByText(/ECHOES 4 \/ 5/)).toBeTruthy()
     expect(document.querySelectorAll('.game-tooltip-trigger').length).toBeGreaterThan(0)
   })
+
+  it('renders live metrics and disables Echo assignment without free Focus', () => {
+    const state = createInitialState()
+    state.inventory['fire-fragment'] = 10
+    state.player.baseMaxFocus = 10
+    state.player.maxFocus = 10
+    prepareResearchAction(state, 'fire-fragment', 'fire', 5)
+    setResearchEchoesAction(state, 'research-1' as never, 1)
+    useGameStore.getState().hydrateState(state)
+    render(<TooltipProvider><PreparedResearch /></TooltipProvider>)
+
+    expect(screen.getByText('ITEMS / H')).toBeTruthy()
+    expect(screen.getByText('MANA / S')).toBeTruthy()
+    expect(screen.getByText('XP / H')).toBeTruthy()
+    expect(screen.getByText('XP REMAINING')).toBeTruthy()
+    expect((screen.getByRole('button', { name: /Assign Research Echo to Fire Fragment/ }) as HTMLButtonElement).disabled).toBe(true)
+  })
 })

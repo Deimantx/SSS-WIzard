@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { UI_LAYOUTS_KEY } from './layoutEditorStorage'
 import { beginTopbarReorder, beginTopbarResize, cancelTopbarInteraction, closeLayoutEditor, commitTopbarInteraction, getLayoutEditorState, getSavedScreenLayouts, getTopbarLayout, moveSelectedPanel, openLayoutEditor, previewTopbarOrder, previewTopbarResize, resetAllScreenLayouts, selectLayoutPanel, setLayoutTarget, togglePanelHidden, togglePanelLocked, undoLayout, redoLayout, updateSelectedPanel } from './layoutEditorStore'
 import { clampPanelLayout } from './layoutUtils'
+import { getPanelDefinition } from './panelRegistry'
 
 describe('layout editor persistence and session state', () => {
   beforeEach(() => { localStorage.clear(); resetAllScreenLayouts(); closeLayoutEditor(); Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1280 }) })
@@ -61,5 +62,12 @@ describe('layout editor persistence and session state', () => {
 
   it('keeps Item Actions at its functional minimum height', () => {
     expect(clampPanelLayout('inventory', 'inventory-actions', { h: 1 }).h).toBe(5)
+  })
+
+  it('keeps Research panels at safe minimum heights', () => {
+    expect(getPanelDefinition('tower-research', 'research-library')?.minH).toBe(8)
+    expect(getPanelDefinition('tower-research', 'research-inspector')?.minH).toBe(12)
+    expect(getPanelDefinition('tower-research', 'research-prepared')?.minH).toBe(7)
+    expect(clampPanelLayout('tower-research', 'research-inspector', { h: 1 }).h).toBe(12)
   })
 })

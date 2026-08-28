@@ -3,7 +3,7 @@ import { ItemIcon, ItemQuantity, ItemTooltip } from '../../components/ui/item'
 import { ITEMS } from '../../game/content/items/items'
 import type { GameState, ItemId } from '../../game/types'
 import { getInventoryAccentClass } from '../../game/content/items/inventoryMetadata'
-import type { ItemFlow, ItemFlowDirection } from './inventoryEconomy'
+import type { ItemFlow, ItemFlowDirection } from '../../game/systems/inventory/itemFlow'
 
 export function InventoryItemTile({ itemId, inventory, protectedItems, equipment, selected, newItem = false, flow, flowDirection, onSelect }: { itemId: ItemId; inventory: GameState['inventory']; protectedItems: GameState['protectedItems']; equipment: GameState['equipment']; selected: boolean; newItem?: boolean; flow?: ItemFlow | null; flowDirection?: ItemFlowDirection; onSelect: () => void }) {
   const item = ITEMS[itemId]

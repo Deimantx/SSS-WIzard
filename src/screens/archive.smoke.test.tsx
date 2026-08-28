@@ -8,6 +8,7 @@ import { resetAllUiPreferences } from '../ui/preferences/uiPreferencesStore'
 vi.mock('../components/ArcaneAtmosphere', () => ({ ArcaneAtmosphere: () => null }))
 
 const navItem = (label: string) => within(screen.getByRole('navigation', { name: 'Main navigation' })).getAllByRole('button', { name: label }).find((button) => button.classList.contains('nav-item'))!
+const mojibakePattern = new RegExp(['\\u00c3\\u00a2', '\\u00c3\\u201a', '\\u00c3\\u0192', '\\u00ef\\u00bf\\u00bd'].join('|'))
 
 describe('archive screens', () => {
   beforeEach(() => { window.localStorage.clear(); useGameStore.getState().resetSave(); resetAllUiPreferences() })
@@ -39,6 +40,8 @@ describe('archive screens', () => {
     const progress = useGameStore.getState().progress
     useGameStore.setState({ progress: { ...progress, discoveredMonsters: ['forest-wisp'] } })
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Forest Wisp' })).toBeTruthy())
+    const discoveredEntry = screen.getByRole('button', { name: 'Forest Wisp, Monster, 0 defeats' })
+    expect(discoveredEntry.textContent).not.toMatch(mojibakePattern)
     expect(screen.getByText('COMBAT STATS')).toBeTruthy()
     expect(screen.getByText('TRAITS')).toBeTruthy()
     expect(screen.getByText('SPECIAL ATTACKS')).toBeTruthy()

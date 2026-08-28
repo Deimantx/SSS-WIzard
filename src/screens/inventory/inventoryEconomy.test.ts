@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../store/initialState'
-import { getItemFlow, getItemNeeds, getNeededItemIds } from './inventoryEconomy'
+import { getItemFlow } from '../../game/systems/inventory/itemFlow'
+import { getItemNeeds, getNeededItemIds } from './inventoryEconomy'
 
 describe('inventory economy selectors', () => {
   it('reports active Transmutation production and research consumption', () => {

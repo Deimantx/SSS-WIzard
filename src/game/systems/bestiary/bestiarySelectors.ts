@@ -5,7 +5,8 @@ import { completionPercent } from '../archive/archiveSelectors'
 
 export const BESTIARY_CATEGORIES = ['all', 'monster', 'boss', 'special-boss'] as const
 export type BestiaryCategoryFilter = typeof BESTIARY_CATEGORIES[number]
-export const BESTIARY_CATEGORY_LABELS: Record<BestiaryCategory, string> = { monster: 'Monsters', boss: 'Bosses', 'special-boss': 'Special Bosses' }
+export const BESTIARY_CATEGORY_LABELS = { monster: 'Monsters', boss: 'Bosses', 'special-boss': 'Special Bosses' } as const satisfies Record<BestiaryCategory, string>
+export const BESTIARY_ENTRY_CATEGORY_LABELS = { monster: 'Monster', boss: 'Boss', 'special-boss': 'Special Boss' } as const satisfies Record<BestiaryCategory, string>
 
 export const getBestiaryEntries = () => Object.values(MONSTERS)
 export const getMonstersByBestiaryCategory = (category: BestiaryCategory) => getBestiaryEntries().filter((monster) => monster.bestiaryCategory === category)
@@ -15,6 +16,8 @@ export const getMonsterDefeatCount = (state: Pick<GameState, 'progress'>, monste
   const monster = MONSTERS[monsterId]
   return isBossMonster(monster) ? state.progress.bossKillsByBoss[monsterId] ?? 0 : state.progress.lifetimeKillsByMonster[monsterId] ?? 0
 }
+
+export const formatDefeats = (count: number) => `${count.toLocaleString()} ${count === 1 ? 'defeat' : 'defeats'}`
 
 export const getMonsterLocations = (monsterId: MonsterId) => Object.values(DUNGEONS).filter((dungeon) => dungeon.monsterPool.includes(monsterId) || dungeon.boss === monsterId || dungeon.specialBosses?.includes(monsterId)).map((dungeon) => dungeon.name)
 

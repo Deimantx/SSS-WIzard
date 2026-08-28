@@ -99,7 +99,7 @@ export const getActivityTelemetry = (state: GameState): ActivityTelemetry[] => {
     const waiting = statuses.filter((status) => status === 'waiting-mana').length
     if (limited > 0 && waiting < statuses.length) {
       researchCard.status = 'mana-limited'
-      researchCard.collapsedSummary = `Research Â· ${activeResearch.length} batches Â· MANA LIMITED`
+      researchCard.collapsedSummary = `Research · ${activeResearch.length} batches · MANA LIMITED`
     }
   }
 

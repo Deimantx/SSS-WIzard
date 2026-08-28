@@ -5,8 +5,7 @@ import type { ItemId } from '../../../game/types'
 import { GameTooltip, TooltipContent } from '../tooltip/Tooltip'
 import { getInventoryCategoryLabel, getInventorySubcategoryLabel, getItemUses } from '../../../game/content/items/inventoryMetadata'
 import { ItemIcon } from './ItemIcon'
-import type { ItemFlow } from '../../../screens/inventory/inventoryEconomy'
-import { formatItemFlowRate, formatFlowEta } from '../../../screens/inventory/inventoryEconomy'
+import { formatFlowEta, formatItemFlowRate, type ItemFlow } from '../../../game/systems/inventory/itemFlow'
 
 export function ItemTooltip({ itemId, owned, protectedItem = false, equipped = false, recentlyGained, flow, children }: { itemId: ItemId; owned: number; protectedItem?: boolean; equipped?: boolean; recentlyGained?: number; flow?: ItemFlow | null; children: ReactNode }) {
   const item = ITEMS[itemId]

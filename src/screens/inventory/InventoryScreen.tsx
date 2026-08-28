@@ -10,7 +10,8 @@ import { InventoryDetail } from './InventoryDetail'
 import { InventoryActions } from './InventoryActions'
 import { InventoryItemTile } from './InventoryItemTile'
 import { InventoryRecent } from './InventoryRecent'
-import { getItemFlow, getNeededItemIds, type ItemEconomyState } from './inventoryEconomy'
+import { getItemFlow } from '../../game/systems/inventory/itemFlow'
+import { getNeededItemIds, type ItemEconomyState } from './inventoryEconomy'
 
 export function InventoryScreenV2() {
   const [search, setSearch] = useState('')

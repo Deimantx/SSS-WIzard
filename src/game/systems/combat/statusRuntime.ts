@@ -61,9 +61,8 @@ export const applyStatus = (state: GameState, actor: CombatActor, statusId: Stat
     existing.source = source
   }
   if (mode === 'strongest') {
-    // V1 has no variable per-application strength. Equal applications refresh;
-    // future strength-bearing statuses must introduce an explicit stat rather
-    // than overloading runtime duration or an opaque potency number.
+    // V1 strongest supports fixed-strength definitions only. Variable-strength
+    // status applications require a future explicit strength model.
     existing.source = source
     existing.remainingMs = duration
     existing.nextTickMs = nextTickMs
@@ -113,24 +112,31 @@ const periodicEffects = (status: ActiveStatus): CombatEffect[] => {
 export const tickStatuses = (state: GameState, deltaMs: number, executeEffects: ExecuteEffects) => {
   const delta = Math.max(0, deltaMs)
   ;(['player', 'enemy'] as CombatActor[]).forEach((actor) => {
-    const remaining: ActiveStatus[] = []
-    statusList(state, actor).forEach((status) => {
-      const definition = STATUS_DEFINITIONS[status.statusId]
+    const snapshot = [...statusList(state, actor)]
+    snapshot.forEach((original) => {
+      if (!statusList(state, actor).some((status) => status.statusId === original.statusId)) return
+      const definition = STATUS_DEFINITIONS[original.statusId]
       if (!definition) return
-      const next = { ...status }
-      const previousRemaining = next.remainingMs
+      const previousRemaining = original.remainingMs
       const activeWindow = previousRemaining === null ? delta : Math.min(delta, previousRemaining)
-      let timeToTick = next.nextTickMs
+      let timeToTick = original.nextTickMs
       let guard = 0
-      while (timeToTick !== undefined && timeToTick <= activeWindow && (previousRemaining === null || timeToTick < previousRemaining) && (actor !== 'enemy' || Boolean(state.combat.enemyId)) && definition.periodic && guard < 1000) {
-        executeEffects(state, periodicEffects(next), { ...next.source, kind: 'status', sourceId: next.statusId, originSourceId: next.source.sourceId, tags: ['status', ...definition.tags] })
+      while (timeToTick !== undefined && timeToTick <= activeWindow && (previousRemaining === null || timeToTick < previousRemaining) && (actor !== 'enemy' || Boolean(state.combat.enemyId)) && statusList(state, actor).some((status) => status.statusId === original.statusId) && definition.periodic && guard < 1000) {
+        executeEffects(state, periodicEffects(original), { ...original.source, kind: 'status', sourceId: original.statusId, originSourceId: original.source.sourceId, tags: ['status', ...definition.tags] })
         timeToTick += definition.periodic.intervalMs
         guard += 1
       }
-      if (timeToTick !== undefined) next.nextTickMs = timeToTick - delta
-      if (next.remainingMs !== null) next.remainingMs = Math.max(0, next.remainingMs - delta)
-      if (next.remainingMs === null || next.remainingMs > 0) remaining.push(next)
+      const nextTickMs = timeToTick === undefined ? undefined : timeToTick - delta
+      const nextRemainingMs = previousRemaining === null ? null : Math.max(0, previousRemaining - delta)
+      const liveStatuses = statusList(state, actor)
+      const live = liveStatuses.find((status) => status.statusId === original.statusId)
+      if (!live) return
+      if (nextRemainingMs === null || nextRemainingMs > 0) {
+        live.remainingMs = nextRemainingMs
+        if (nextTickMs !== undefined) live.nextTickMs = nextTickMs
+        return
+      }
+      setStatusList(state, actor, liveStatuses.filter((status) => status.statusId !== original.statusId))
     })
-    setStatusList(state, actor, remaining)
   })
 }

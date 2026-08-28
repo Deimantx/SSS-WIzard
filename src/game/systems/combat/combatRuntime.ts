@@ -38,6 +38,7 @@ export const spawnEnemy = (state: GameState, enemyId: MonsterId) => {
   state.combat.enemyStatuses = []
   discoverMonster(state, enemyId)
   runCombatTriggers(state, 'enemy', 'on-combat-start', { source: { actor: 'enemy', kind: 'system', sourceId: 'combat-start' } }, executeCombatEffects)
+  runCombatTriggers(state, 'player', 'on-combat-start', { source: { actor: 'player', kind: 'system', sourceId: 'combat-start' }, target: 'enemy' }, executeCombatEffects)
   appendLog(state, `${monster.name} enters the clearing.`)
 }
 

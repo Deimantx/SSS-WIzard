@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { executeCombatEffects, damageEnemy, damagePlayer, getCombatDamagePreview, resolveBasicAttackInterval } from './effectResolver'
 import { applyStatus, tickStatuses } from './statusRuntime'
-import { executeSpecial, finishEnemy, spawnEnemy } from './combatRuntime'
+import { applyBarrier, executeSpecial, finishEnemy, spawnEnemy } from './combatRuntime'
+import { runCombatTriggers } from './triggerRuntime'
 import { migrateSave } from '../../../persistence/migrations'
 import type { CombatSource } from '../../types'
 import { advanceGameState } from '../simulation/advanceGameState'
@@ -10,6 +11,7 @@ import { tickBarriers } from './barrierRuntime'
 import { castSpellAction } from '../../../store/actions/combatActions'
 import { MONSTERS } from '../../content/monsters/whisperingWoods'
 import { STATUS_DEFINITIONS } from '../../content/statuses'
+import { SPELLS } from '../../content/spells/spells'
 
 const playerSpell: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'test-spell', school: 'fire', tags: ['spell', 'magic'] }
 const enemyAttack: CombatSource = { actor: 'enemy', kind: 'basic-attack', sourceId: 'test-attack', tags: ['basic-attack', 'direct'] }
@@ -83,6 +85,47 @@ describe('authored status runtime', () => {
     expect(state.player.health).toBe(50)
     expect(state.combat.playerStatuses.some((status) => status.statusId === 'burning')).toBe(true)
     expect(state.combat.playerStatuses.some((status) => status.statusId === 'stunned')).toBe(true)
+  })
+
+  it('preserves a status applied by a periodic effect', () => {
+    const original = STATUS_DEFINITIONS.quickening.periodic
+    STATUS_DEFINITIONS.quickening.periodic = { intervalMs: 1000, effects: [{ type: 'apply-status', target: 'self', statusId: 'haste' }] }
+    try {
+      const state = stateWithEnemy()
+      applyStatus(state, 'player', 'quickening', playerSpell)
+      tickStatuses(state, 1000, executeCombatEffects)
+      expect(state.combat.playerStatuses.map((status) => status.statusId)).toEqual(['quickening', 'haste'])
+    } finally {
+      STATUS_DEFINITIONS.quickening.periodic = original
+    }
+  })
+
+  it('does not resurrect a status removed by an earlier periodic effect', () => {
+    const original = STATUS_DEFINITIONS.quickening.periodic
+    STATUS_DEFINITIONS.quickening.periodic = { intervalMs: 1000, effects: [{ type: 'remove-status', target: 'self', statusId: 'vulnerable' }] }
+    try {
+      const state = stateWithEnemy()
+      applyStatus(state, 'player', 'quickening', playerSpell)
+      applyStatus(state, 'player', 'vulnerable', enemyAttack)
+      tickStatuses(state, 1000, executeCombatEffects)
+      expect(state.combat.playerStatuses.map((status) => status.statusId)).toEqual(['quickening'])
+    } finally {
+      STATUS_DEFINITIONS.quickening.periodic = original
+    }
+  })
+
+  it('preserves the live list after a periodic cleanse', () => {
+    const original = STATUS_DEFINITIONS.quickening.periodic
+    STATUS_DEFINITIONS.quickening.periodic = { intervalMs: 1000, effects: [{ type: 'cleanse', target: 'self', mode: 'all' }] }
+    try {
+      const state = stateWithEnemy()
+      applyStatus(state, 'player', 'quickening', playerSpell)
+      applyStatus(state, 'player', 'burning', enemyAttack)
+      tickStatuses(state, 1000, executeCombatEffects)
+      expect(state.combat.playerStatuses.map((status) => status.statusId)).toEqual(['quickening'])
+    } finally {
+      STATUS_DEFINITIONS.quickening.periodic = original
+    }
   })
 })
 
@@ -162,6 +205,11 @@ describe('post-implementation combat audit regressions', () => {
 
   it('replaces temporary player barriers, expires them, and pauses them during encounter delay', () => {
     const state = stateWithEnemy()
+    executeCombatEffects(state, [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 20 } }], playerSpell)
+    executeCombatEffects(state, [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 10 } }], playerSpell)
+    expect(state.combat.playerBarrier).toBe(30)
+    expect(state.combat.playerBarrierRemainingMs).toBeNull()
+
     executeCombatEffects(state, [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 25 }, mode: 'replace', durationMs: 9000 }], playerSpell)
     executeCombatEffects(state, [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 40 }, mode: 'replace', durationMs: 9000 }], playerSpell)
     expect(state.combat.playerBarrier).toBe(40)
@@ -180,6 +228,19 @@ describe('post-implementation combat audit regressions', () => {
     finishEnemy(state)
     advanceGameState(state, 1000, { mode: 'live' })
     expect(state.combat.playerBarrierRemainingMs).toBe(remaining)
+  })
+
+  it('keeps authored barrier duration and effect tags explicit', () => {
+    const state = stateWithEnemy()
+    applyBarrier(state, 12)
+    expect(state.combat.playerBarrier).toBe(12)
+    expect(state.combat.playerBarrierRemainingMs).toBe(9000)
+    expect(SPELLS['water-ward'].effects[0]).toMatchObject({ type: 'gain-barrier', mode: 'replace', durationMs: 9000 })
+    expect(SPELLS.stoneguard.effects[0]).toMatchObject({ type: 'gain-barrier', mode: 'replace', durationMs: 9000 })
+    expect(STATUS_DEFINITIONS.haste.tags).toEqual(['buff'])
+    expect(STATUS_DEFINITIONS.quickening.tags).toEqual(['buff', 'air'])
+    expect(MONSTERS['forest-heart'].specialAttacks['rejuvenating-sap'].tags).toEqual(['special', 'heal', 'direct'])
+    expect(MONSTERS['stone-root'].traits[0].rules?.[0].effects[0]).toMatchObject({ type: 'gain-barrier', mode: 'add', durationMs: null })
   })
 
   it('dispatches damage-dealt only to the source actor', () => {
@@ -311,6 +372,38 @@ describe('post-implementation combat audit regressions', () => {
       executeCombatEffects(state, [{ type: 'heal', target: 'self', magnitude: { type: 'flat', value: 1 }, tags: ['heal', 'direct'] }], playerSpell)
       const haste = state.combat.playerStatuses.find((status) => status.statusId === 'haste')
       expect(haste?.source).toMatchObject({ kind: 'status', sourceId: 'quickening' })
+    } finally {
+      STATUS_DEFINITIONS.quickening.triggers = original
+    }
+  })
+
+  it('runs player status combat-start rules once per spawned encounter', () => {
+    const original = STATUS_DEFINITIONS.quickening.triggers
+    STATUS_DEFINITIONS.quickening.triggers = [{
+      id: 'audit-player-combat-start',
+      event: 'on-combat-start',
+      oncePerEncounter: true,
+      effects: [
+        { type: 'apply-status', target: 'self', statusId: 'haste' },
+        { type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 5 }, mode: 'add', durationMs: null },
+      ],
+    }]
+    try {
+      const state = createInitialState()
+      state.combat.active = true
+      state.combat.dungeonId = 'whispering-woods'
+      applyStatus(state, 'player', 'quickening', playerSpell)
+
+      spawnEnemy(state, 'forest-wisp')
+      expect(state.combat.playerBarrier).toBe(5)
+      expect(state.combat.playerStatuses.find((status) => status.statusId === 'haste')?.source).toMatchObject({ kind: 'status', sourceId: 'quickening', tags: ['status', 'buff', 'air'] })
+
+      runCombatTriggers(state, 'player', 'on-combat-start', { source: { actor: 'player', kind: 'system', sourceId: 'combat-start' }, target: 'enemy' }, executeCombatEffects)
+      expect(state.combat.playerBarrier).toBe(5)
+
+      spawnEnemy(state, 'thornling')
+      expect(state.combat.playerBarrier).toBe(10)
+      expect(state.combat.triggeredRuleIds).toContain('player:status:quickening:audit-player-combat-start')
     } finally {
       STATUS_DEFINITIONS.quickening.triggers = original
     }

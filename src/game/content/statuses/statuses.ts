@@ -16,7 +16,7 @@ export const STATUS_DEFINITIONS: Record<StatusId, StatusDefinition> = {
     stacking: { mode: 'refresh' }, modifiers: [modifier('basic-attack-speed-percent', 0.25)], cleanseable: false, dispellable: true,
   },
   haste: {
-    id: 'haste', name: 'Haste', description: 'Basic Attacks resolve 15% faster.', classification: 'buff', tags: ['buff', 'air'], defaultDurationMs: null,
+    id: 'haste', name: 'Haste', description: 'Basic Attacks resolve 15% faster.', classification: 'buff', tags: ['buff'], defaultDurationMs: null,
     stacking: { mode: 'refresh' }, modifiers: [modifier('basic-attack-speed-percent', 0.15)], cleanseable: false, dispellable: true,
   },
   'thorn-wound': {

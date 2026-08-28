@@ -110,7 +110,7 @@ export const executeCombatEffect = (state: GameState, effect: CombatEffect, sour
       break
     }
     case 'heal': applyHealing(state, resolveMagnitude(state, effect.magnitude, source, target), source, target, tags, execute, depth); break
-    case 'gain-barrier': gainBarrierRuntime(state, resolveMagnitude(state, effect.magnitude, source, target), source, target, tags, { mode: effect.mode ?? (target === 'player' ? 'replace' : 'add'), durationMs: effect.durationMs === undefined ? (target === 'player' ? 9000 : undefined) : effect.durationMs }); break
+    case 'gain-barrier': gainBarrierRuntime(state, resolveMagnitude(state, effect.magnitude, source, target), source, target, tags, { mode: effect.mode ?? 'add', durationMs: effect.durationMs === undefined ? null : effect.durationMs }); break
     case 'restore-resource':
     case 'drain-resource': executeResource(state, effect, source); break
     case 'apply-status': {
@@ -177,7 +177,7 @@ export const damageEnemy = (state: GameState, raw: number, source: 'basic' | 'sp
 
 export const damagePlayer = (state: GameState, raw: number, source: CombatSource = sourceForLegacy('basic', 'enemy')) => applyDamage(state, raw, 'physical', source, 'player', source.tags ?? [], executeCombatEffects, 0)
 
-export const gainBarrier = (state: GameState, amount: number, target: CombatActor, source: CombatSource = { actor: target, kind: 'system', sourceId: 'legacy-barrier' }) => gainBarrierRuntime(state, amount, source, target, source.tags ?? ['barrier'], { mode: target === 'player' ? 'replace' : 'add', durationMs: target === 'player' ? 9000 : undefined })
+export const gainBarrier = (state: GameState, amount: number, target: CombatActor, source: CombatSource = { actor: target, kind: 'system', sourceId: 'legacy-barrier' }) => gainBarrierRuntime(state, amount, source, target, source.tags ?? ['barrier'], { mode: 'add', durationMs: null })
 
 export const getBasicAttackTags = (state: GameState): CombatTag[] => {
   const weapon = state.equipment.weapon ? ITEMS[state.equipment.weapon] : undefined

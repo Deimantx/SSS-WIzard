@@ -32,7 +32,8 @@ export type ItemCategory = 'elemental' | 'material' | 'monster-loot' | 'equipmen
 export type InventoryCategory = 'material' | 'loot' | 'equipment' | 'special'
 export type InventoryMaterialSubtype = 'elemental' | 'creature' | 'ore' | 'refined' | 'arcane'
 export type SpellType = 'damage' | 'heal' | 'barrier' | 'dot' | 'buff'
-export type StatusId = 'barrier' | 'thorn-wound' | 'burning' | 'attack-delay' | 'quickening'
+import type { ActiveStatus, CombatEffect, SpecialAttackDefinition, StatusId, TraitDefinition } from './systems/combat/combatTypes'
+export type { ActiveStatus, CombatCondition, CombatEffect, CombatSource, CombatTag, DamageType, EffectTarget, Magnitude, ModifierKey, SpecialAttackDefinition, StatusId, StatusModifier, StatusDefinition, TraitDefinition } from './systems/combat/combatTypes'
 export type ManaPillarId = 'leyline-conduit' | 'arcane-reservoir' | 'mana-resonance' | 'astral-expansion' | 'echo-attunement'
 export type ChannelingDiscoveryId = 'stable-leyline' | 'echo-resonance' | 'deep-reservoir'
 export type RecipeId = 'fire-fragment' | 'water-fragment' | 'earth-fragment' | 'air-fragment' | 'prismatic-fragment' | 'ember-staff' | 'tide-focus' | 'stoneweave-robe' | 'windthread-charm'
@@ -40,13 +41,6 @@ export type RecipeCategory = 'elemental' | 'material' | 'equipment' | 'special'
 export type RecipeUnlockCondition = { type: 'always' } | { type: 'first-grove-sentinel-kill' }
 
 export type AutoCastCondition = { type: 'always' } | { type: 'health-below'; percent: number } | { type: 'barrier-below'; value: number }
-export type SpellEffect =
-  | { type: 'damage'; amount: number }
-  | { type: 'heal'; amount: number }
-  | { type: 'barrier'; amount: number }
-  | { type: 'dot'; statusId: StatusId; durationMs: number; damagePerTick: number; tickMs: number }
-  | { type: 'buff'; statusId: StatusId; durationMs: number; value: number }
-
 export interface EquipmentStats {
   basicDamage?: number
   maxHealth?: number
@@ -58,6 +52,7 @@ export interface EquipmentStats {
   waterBarrierPct?: number
   earthSpellDamagePct?: number
   airSpellDamagePct?: number
+  resistances?: Partial<Record<import('./systems/combat/combatTypes').DamageType, number>>
 }
 
 export interface ItemDefinition {
@@ -82,6 +77,8 @@ export interface ItemDefinition {
   equipmentSlot?: EquipmentItemSlot
   /** Only authored for Weapon items. */
   weaponHands?: 1 | 2
+  attackTags?: import('./systems/combat/combatTypes').CombatTag[]
+  damageType?: import('./systems/combat/combatTypes').DamageType
   stats?: EquipmentStats
   researchSchool?: SchoolId
   lockedByDefault?: boolean
@@ -97,7 +94,7 @@ export interface SpellDefinition {
   cooldownMs: number
   autoCastFocus: number
   type: SpellType
-  effect: SpellEffect
+  effects: CombatEffect[]
   damage?: number
   barrier?: number
   autoCondition?: AutoCastCondition
@@ -108,16 +105,6 @@ export interface MonsterActionStep {
   name: string
   kind: 'basic' | 'special'
   specialAttackId?: string
-}
-
-export interface SpecialAttackDefinition {
-  id: string
-  name: string
-  telegraphMs: number
-  description: string
-  effect: 'damage' | 'damage-thorn' | 'damage-delay' | 'barrier' | 'heal'
-  amount: number
-  delayMs?: number
 }
 
 export interface SchoolState { xp: number; level: number }
@@ -173,7 +160,6 @@ export interface ActivitiesState {
   transmutation: TransmutationActivity
   autoCast: Record<SpellId, boolean>
 }
-export interface StatusEffect { id: StatusId; remainingMs: number; value: number; tickIntervalMs?: number; nextTickMs?: number }
 export interface CombatState {
   active: boolean
   dungeonId: DungeonId | null
@@ -181,19 +167,21 @@ export interface CombatState {
   enemyHp: number
   enemyMaxHp: number
   enemyBarrier: number
+  playerBarrier: number
   enemyActionIndex: number
   enemyActionTimerMs: number
   enemyIntervalMs: number
   enemyTelegraphMs: number
   enemyTelegraphActionId: string | null
+  triggeredRuleIds: string[]
+  /** @deprecated V11 save compatibility; mechanics use triggeredRuleIds. */
   enemySpecialUsed: Record<string, boolean>
   pendingBossId: 'grove-sentinel' | null
   playerAttackTimerMs: number
-  enemyAttackTimerMs: number
   encounterTimerMs: number
   spellCooldowns: Record<SpellId, number>
-  playerStatuses: StatusEffect[]
-  enemyStatuses: StatusEffect[]
+  playerStatuses: ActiveStatus[]
+  enemyStatuses: ActiveStatus[]
   threatCleared: number
   inBossFight: boolean
   log: string[]

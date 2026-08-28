@@ -1,11 +1,16 @@
 import { BALANCE } from '../../core/balance/balance'
 import { CHANNELING_DISCOVERIES } from '../../content/channeling/channelingDiscoveries'
+import { ITEMS } from '../../content/items/items'
 import { MONSTERS } from '../../content/monsters/whisperingWoods'
 import { SPELLS } from '../../content/spells/spells'
 import { advanceChanneling } from '../../engine/channelingEngine'
-import { appendLog, playerBasicDamage, pushNotification, recalculateDerivedStats, spellDamageMultiplier } from '../../engine'
-import { addStatus, applyBarrier, damageEnemy, damagePlayer, executeEnemyAction, executeSpecial, finishEnemy, spawnNextEnemy } from '../combat/combatRuntime'
-import type { GameState, ItemId, SpellEffect, SpellId, StatusEffect } from '../../types'
+import { appendLog, playerBasicDamage, pushNotification, recalculateDerivedStats } from '../../engine'
+import { castSpellInternal } from '../../engine/spellEngine'
+import { executeCombatEffects, getBasicAttackTags, resolveBasicAttackInterval } from '../combat/effectResolver'
+import { executeEnemyAction, executeSpecial, finishEnemy, spawnNextEnemy } from '../combat/combatRuntime'
+import { actorCannotAct, tickStatuses } from '../combat/statusRuntime'
+import { getCombatModifiers } from '../combat/modifiers'
+import type { GameState, ItemId, SpellId, CombatSource } from '../../types'
 import { clamp } from '../../utils'
 import type { SimulationReportCollector } from '../offline-bank/offlineBankReport'
 import { applyTransmutationAllocations, buildTransmutationWorkRequests } from '../transmutation/transmutationEngine'
@@ -20,84 +25,71 @@ export interface AdvanceContext {
 
 const spellUnlocked = (state: GameState, spellId: SpellId) => state.progress.unlockedSpells.includes(spellId)
 
-const applySpellEffect = (state: GameState, spellId: SpellId, effect: SpellEffect) => {
-  const spell = SPELLS[spellId]
-  if (effect.type === 'damage') damageEnemy(state, (effect.amount + state.schools[spell.school].level * 2) * spellDamageMultiplier(state, spell.school), 'spell')
-  if (effect.type === 'heal') state.player.health = Math.min(state.player.maxHealth, state.player.health + effect.amount)
-  if (effect.type === 'barrier') applyBarrier(state, effect.amount)
-  if (effect.type === 'dot') {
-    damageEnemy(state, 10 * spellDamageMultiplier(state, spell.school), 'spell')
-    addStatus(state.combat.enemyStatuses, { id: effect.statusId, remainingMs: effect.durationMs, value: effect.damagePerTick, tickIntervalMs: effect.tickMs, nextTickMs: effect.tickMs })
-  }
-  if (effect.type === 'buff') addStatus(state.combat.playerStatuses, { id: effect.statusId, remainingMs: effect.durationMs, value: effect.value })
-}
-
 const meetsAutoCondition = (state: GameState, spellId: SpellId) => {
   const condition = SPELLS[spellId].autoCondition
   if (!condition || condition.type === 'always') return true
   if (condition.type === 'health-below') return state.player.health / Math.max(1, state.player.maxHealth) * 100 < condition.percent
-  const barrier = state.combat.playerStatuses.find((status) => status.id === 'barrier')?.value ?? 0
-  return barrier < condition.value
+  return state.combat.playerBarrier < condition.value
 }
 
-const castSpellInternal = (state: GameState, spellId: SpellId, quiet = false) => {
-  const spell = SPELLS[spellId]
-  if (!spell || state.player.mana < spell.manaCost || state.combat.spellCooldowns[spellId] > 0) return false
-  if ((spell.type === 'damage' || spell.type === 'dot') && !state.combat.enemyId) return false
-  state.player.mana -= spell.manaCost
-  state.combat.spellCooldowns[spellId] = spell.cooldownMs
-  applySpellEffect(state, spellId, spell.effect)
-  appendLog(state, `${spell.name} cast${spell.type === 'damage' || spell.type === 'dot' ? ` for ${state.combat.lastDamageDealt}` : ''}.`)
-  if (!quiet) pushNotification(state, `${spell.name} cast`, 'info')
-  return true
-}
+const tickCombatStatuses = (state: GameState, delta: number) => tickStatuses(state, delta, executeCombatEffects)
 
-const tickStatuses = (state: GameState, delta: number) => {
-  const playerStatuses: StatusEffect[] = []
-  state.combat.playerStatuses.forEach((status) => {
-    const next = { ...status, remainingMs: status.remainingMs - delta, nextTickMs: status.nextTickMs === undefined ? undefined : status.nextTickMs - delta }
-    while (next.nextTickMs !== undefined && next.nextTickMs <= 0 && next.remainingMs > 0) {
-      if (next.id === 'thorn-wound') damagePlayer(state, next.value)
-      next.nextTickMs += next.tickIntervalMs ?? 1000
-    }
-    if (next.remainingMs > 0) playerStatuses.push(next)
-  })
-  state.combat.playerStatuses = playerStatuses
-  const enemyStatuses: StatusEffect[] = []
-  state.combat.enemyStatuses.forEach((status) => {
-    const next = { ...status, remainingMs: status.remainingMs - delta, nextTickMs: status.nextTickMs === undefined ? undefined : status.nextTickMs - delta }
-    while (next.nextTickMs !== undefined && next.nextTickMs <= 0 && next.remainingMs > 0 && state.combat.enemyId) {
-      if (next.id === 'burning') damageEnemy(state, next.value, 'status')
-      next.nextTickMs += next.tickIntervalMs ?? 1000
-    }
-    if (next.remainingMs > 0) enemyStatuses.push(next)
-  })
-  state.combat.enemyStatuses = enemyStatuses
+const playerBasicAttack = (state: GameState) => {
+  const weapon = state.equipment.weapon ? ITEMS[state.equipment.weapon] : undefined
+  const source: CombatSource = { actor: 'player', kind: weapon?.attackTags?.length ? 'weapon' : 'basic-attack', sourceId: 'player-basic-attack', tags: getBasicAttackTags(state) }
+  executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', damageType: weapon?.damageType ?? 'physical', magnitude: { type: 'flat', value: playerBasicDamage(state) }, tags: ['basic-attack', 'direct'] }], source)
+  return state.combat.lastDamageDealt
 }
 
 const tickCombat = (state: GameState, delta: number, context: AdvanceContext) => {
   if (!state.combat.active) return
   if (!state.combat.enemyId) { state.combat.encounterTimerMs -= delta; if (state.combat.encounterTimerMs <= 0) spawnNextEnemy(state); return }
-  tickStatuses(state, delta)
-  const enemy = MONSTERS[state.combat.enemyId]
-  const quickening = state.combat.playerStatuses.find((status) => status.id === 'quickening')
-  state.combat.playerAttackTimerMs -= delta
-  Object.keys(state.combat.spellCooldowns).forEach((id) => { state.combat.spellCooldowns[id as SpellId] = Math.max(0, state.combat.spellCooldowns[id as SpellId] - delta) })
-  if (state.combat.playerAttackTimerMs <= 0 && state.combat.enemyId) {
-    const damage = damageEnemy(state, playerBasicDamage(state), 'basic')
+
+  tickCombatStatuses(state, delta)
+  if (state.combat.enemyId && state.combat.enemyHp <= 0) { finishEnemy(state, context.report, context.onItemAcquired); return }
+  const enemy = state.combat.enemyId ? MONSTERS[state.combat.enemyId] : null
+  if (!enemy) return
+
+  const cooldownRecovery = Math.max(0, 1 + getCombatModifiers(state, 'player', 'cooldown-recovery-percent'))
+  const playerStunned = actorCannotAct(state, 'player')
+  if (!playerStunned) state.combat.playerAttackTimerMs -= delta
+  Object.keys(state.combat.spellCooldowns).forEach((id) => { state.combat.spellCooldowns[id as SpellId] = Math.max(0, state.combat.spellCooldowns[id as SpellId] - delta * cooldownRecovery) })
+  if (!playerStunned && state.combat.playerAttackTimerMs <= 0 && state.combat.enemyId) {
+    const damage = playerBasicAttack(state)
     appendLog(state, `Basic Attack hits for ${damage}.`)
-    const interval = BALANCE.player.basicAttackIntervalMs * (quickening ? 0.75 : 1)
-    const delay = state.combat.playerStatuses.find((status) => status.id === 'attack-delay')?.value ?? 0
-    state.combat.playerAttackTimerMs = interval + delay
+    state.combat.playerAttackTimerMs = resolveBasicAttackInterval(state, 'player', BALANCE.player.basicAttackIntervalMs)
   }
   if (state.combat.enemyId) Object.keys(state.activities.autoCast).forEach((id) => { const spellId = id as SpellId; if (state.activities.autoCast[spellId] && spellUnlocked(state, spellId) && state.combat.spellCooldowns[spellId] <= 0 && meetsAutoCondition(state, spellId)) castSpellInternal(state, spellId, true) })
   if (!state.combat.enemyId) return
   if (state.combat.enemyHp <= 0) { finishEnemy(state, context.report, context.onItemAcquired); return }
-  if (enemy.id === 'grove-sentinel' && state.combat.enemyHp <= enemy.maxHealth * 0.4 && !state.combat.enemySpecialUsed['ancient-growth']) { state.combat.enemySpecialUsed['ancient-growth'] = true; state.combat.enemyBarrier += 80; appendLog(state, 'Ancient Growth triggers · +80 Barrier.') }
-  if (enemy.id === 'forest-heart' && state.combat.enemyHp <= enemy.maxHealth * 0.5 && !state.combat.enemySpecialUsed['living-core']) { state.combat.enemySpecialUsed['living-core'] = true; state.combat.enemyIntervalMs = Math.round(state.combat.enemyIntervalMs * 0.85); appendLog(state, 'Living Core triggers · attack speed increased.') }
-  if (state.combat.enemyTelegraphMs > 0) { state.combat.enemyTelegraphMs -= delta; if (state.combat.enemyTelegraphMs <= 0 && state.combat.enemyTelegraphActionId) { executeSpecial(state, state.combat.enemyTelegraphActionId); state.combat.enemyTelegraphActionId = null; state.combat.enemyActionTimerMs = state.combat.enemyIntervalMs } }
-  else { state.combat.enemyActionTimerMs -= delta; if (state.combat.enemyActionTimerMs <= 0) executeEnemyAction(state) }
-  if (state.player.health <= 0 && !state.player.godMode) { context.report?.recordPlayerDeath(); state.combat.active = false; state.combat.enemyId = null; state.combat.threatCleared = 0; state.combat.inBossFight = false; pushNotification(state, 'Defeated · recovering in the Tower', 'warning'); appendLog(state, 'The wizard falls. Threat Cleared resets to 0.') }
+
+  state.combat.enemyIntervalMs = resolveBasicAttackInterval(state, 'enemy', enemy.attackIntervalMs)
+  if (!actorCannotAct(state, 'enemy') && state.combat.enemyTelegraphMs > 0) {
+    state.combat.enemyTelegraphMs -= delta
+    if (state.combat.enemyTelegraphMs <= 0 && state.combat.enemyTelegraphActionId) {
+      executeSpecial(state, state.combat.enemyTelegraphActionId)
+      state.combat.enemyTelegraphActionId = null
+      state.combat.enemyActionTimerMs = state.combat.enemyIntervalMs
+    }
+  } else if (!actorCannotAct(state, 'enemy')) {
+    state.combat.enemyActionTimerMs -= delta
+    if (state.combat.enemyActionTimerMs <= 0) executeEnemyAction(state)
+  }
+  if (state.player.health <= 0 && !state.player.godMode) {
+    context.report?.recordPlayerDeath()
+    state.combat.active = false
+    state.combat.enemyId = null
+    state.combat.enemyHp = 0
+    state.combat.enemyBarrier = 0
+    state.combat.playerBarrier = 0
+    state.combat.playerStatuses = []
+    state.combat.enemyStatuses = []
+    state.combat.triggeredRuleIds = []
+    state.combat.threatCleared = 0
+    state.combat.inBossFight = false
+    pushNotification(state, 'Defeated · recovering in the Tower', 'warning')
+    appendLog(state, 'The wizard falls. Threat Cleared resets to 0.')
+  }
 }
 
 export const advanceGameState = (state: GameState, deltaMs: number, context: AdvanceContext = { mode: 'live' }) => {
@@ -110,8 +102,6 @@ export const advanceGameState = (state: GameState, deltaMs: number, context: Adv
     if (discovery) pushNotification(state, `Arcane Discovery: ${discovery.name}`, 'success')
   })
   if (!state.combat.active) state.player.health = clamp(state.player.health + BALANCE.player.healthRegenPerSecond * delta / 1000 * BALANCE.player.outOfCombatRegenMultiplier, 0, state.player.maxHealth)
-  // Build both systems' requests from the same pre-work snapshot. The shared
-  // scheduler funds them together so call order cannot create Mana priority.
   const researchRequests = buildResearchWorkRequests(state, delta, context)
   const transmutationRequests = buildTransmutationWorkRequests(state, delta)
   const funding = allocateContinuousMana(state, [...researchRequests, ...transmutationRequests])

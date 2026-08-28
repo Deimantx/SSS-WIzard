@@ -1,72 +1,41 @@
 import { BALANCE } from '../../core/balance/balance'
 import { DUNGEONS, chooseMonster } from '../../content/dungeons/dungeons'
-import { ITEMS } from '../../content/items/items'
 import { isBossMonster, MONSTERS } from '../../content/monsters/whisperingWoods'
-import { barrierMultiplier, equipmentStats, recalculateDerivedStats } from '../../engine'
-import type { GameState, ItemId, MonsterId, StatusEffect } from '../../types'
+import { recalculateDerivedStats, appendLog, pushNotification } from '../../engine'
+import type { GameState, ItemId, MonsterId } from '../../types'
 import { formatTime } from '../../utils'
-import { appendLog, pushNotification } from '../../engine'
+import { executeCombatEffects, damageEnemy, damagePlayer, gainBarrier } from './effectResolver'
+import { applyStatus, clearStatuses } from './statusRuntime'
+import { runCombatTriggers } from './triggerRuntime'
+import type { CombatSource, StatusId } from './combatTypes'
+import { resolveBasicAttackInterval } from './effectResolver'
 import { resolveMonsterLoot } from '../loot'
 import { discoverMonster } from '../collection/discovery'
 import type { SimulationReportCollector } from '../offline-bank/offlineBankReport'
 
-export const addStatus = (statuses: StatusEffect[], next: StatusEffect) => {
-  const existing = statuses.find((status) => status.id === next.id)
-  if (existing) Object.assign(existing, next)
-  else statuses.push(next)
-}
+export { applyStatus, clearStatuses, damageEnemy, damagePlayer, executeCombatEffects, gainBarrier, resolveBasicAttackInterval }
 
-export const applyBarrier = (state: GameState, amount: number) => {
-  const received = equipmentStats(state).barrierReceived ?? 0
-  const next = Math.round(amount * barrierMultiplier(state) + received)
-  addStatus(state.combat.playerStatuses, { id: 'barrier', remainingMs: 9000, value: next })
-  return next
-}
+export const applyBarrier = (state: GameState, amount: number) => gainBarrier(state, amount, 'player', { actor: 'player', kind: 'spell', sourceId: 'legacy-barrier', tags: ['barrier'] })
 
-export const damageEnemy = (state: GameState, raw: number, source: 'basic' | 'spell' | 'status' = 'spell') => {
-  if (!state.combat.enemyId) return 0
-  let damage = raw
-  if (source === 'basic' && state.combat.enemyId === 'thornling') damage *= 0.85
-  const absorbed = Math.min(state.combat.enemyBarrier, damage)
-  state.combat.enemyBarrier -= absorbed
-  const dealt = Math.max(0, Math.round(damage - absorbed))
-  state.combat.enemyHp = Math.max(0, state.combat.enemyHp - dealt)
-  state.combat.lastDamageDealt = dealt
-  return dealt
-}
+export const debugApplyStatus = (state: GameState, actor: 'player' | 'enemy', statusId: StatusId, durationMs?: number | null, stacks?: number) => applyStatus(state, actor, statusId, { actor: actor === 'player' ? 'enemy' : 'player', kind: 'system', sourceId: 'developer-tools', tags: ['status'] }, { durationMs, stacks })
 
-export const damagePlayer = (state: GameState, raw: number) => {
-  let damage = raw
-  const barrier = state.combat.playerStatuses.find((status) => status.id === 'barrier')
-  if (barrier) {
-    const absorbed = Math.min(barrier.value, damage)
-    barrier.value -= absorbed
-    damage -= absorbed
-    if (barrier.value <= 0) state.combat.playerStatuses = state.combat.playerStatuses.filter((status) => status.id !== 'barrier')
-  }
-  const dealt = Math.max(0, Math.round(damage))
-  state.player.health = Math.max(0, state.player.health - dealt)
-  state.combat.lastDamageTaken = dealt
-  return dealt
-}
-
-export const spawnEnemy = (state: GameState, enemyId: MonsterId, _boss = false) => {
+export const spawnEnemy = (state: GameState, enemyId: MonsterId) => {
   const monster = MONSTERS[enemyId]
   state.combat.enemyId = enemyId
   state.combat.enemyHp = monster.maxHealth
   state.combat.enemyMaxHp = monster.maxHealth
-  state.combat.enemyBarrier = enemyId === 'stone-root' ? Math.round(monster.maxHealth * 0.15) : 0
+  state.combat.enemyBarrier = 0
   state.combat.enemyActionIndex = 0
   state.combat.enemyIntervalMs = monster.attackIntervalMs
   state.combat.enemyActionTimerMs = state.combat.enemyIntervalMs
   state.combat.enemyTelegraphMs = 0
   state.combat.enemyTelegraphActionId = null
-  state.combat.enemySpecialUsed = {}
+  state.combat.triggeredRuleIds = []
   state.combat.inBossFight = isBossMonster(monster)
   state.combat.playerAttackTimerMs = 0
-  state.combat.enemyAttackTimerMs = monster.attackIntervalMs
   state.combat.enemyStatuses = []
   discoverMonster(state, enemyId)
+  runCombatTriggers(state, 'enemy', 'on-combat-start', { source: { actor: 'enemy', kind: 'system', sourceId: 'combat-start' } }, executeCombatEffects)
   appendLog(state, `${monster.name} enters the clearing.`)
 }
 
@@ -75,7 +44,7 @@ export const spawnNextEnemy = (state: GameState) => {
   if (state.combat.pendingBossId) {
     const boss = state.combat.pendingBossId
     state.combat.pendingBossId = null
-    spawnEnemy(state, boss, true)
+    spawnEnemy(state, boss)
     pushNotification(state, `${MONSTERS[boss].name} arrives via Auto Hunt`, 'warning')
     return
   }
@@ -93,6 +62,8 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   state.combat.enemyBarrier = 0
   state.combat.enemyTelegraphMs = 0
   state.combat.enemyTelegraphActionId = null
+  state.combat.enemyStatuses = []
+  state.combat.triggeredRuleIds = []
   state.combat.encounterTimerMs = DUNGEONS[state.combat.dungeonId ?? 'whispering-woods'].encounterDelayMs
   if (isBossMonster(monster)) {
     state.combat.threatCleared = 0
@@ -139,12 +110,10 @@ export const executeSpecial = (state: GameState, specialId: string) => {
   if (!enemyId) return
   const special = MONSTERS[enemyId].specialAttacks[specialId]
   if (!special) return
-  if (special.effect === 'damage' || special.effect === 'damage-thorn' || special.effect === 'damage-delay') damagePlayer(state, special.amount)
-  if (special.effect === 'damage-thorn') addStatus(state.combat.playerStatuses, { id: 'thorn-wound', remainingMs: 6000, value: 3, tickIntervalMs: 2000, nextTickMs: 2000 })
-  if (special.effect === 'damage-delay') addStatus(state.combat.playerStatuses, { id: 'attack-delay', remainingMs: special.delayMs ?? 700, value: special.delayMs ?? 700 })
-  if (special.effect === 'barrier') state.combat.enemyBarrier += special.amount
-  if (special.effect === 'heal') state.combat.enemyHp = Math.min(state.combat.enemyMaxHp, state.combat.enemyHp + special.amount)
-  appendLog(state, `${special.name} resolves${special.effect === 'barrier' ? ` · +${special.amount} Barrier` : ''}.`)
+  const source: CombatSource = { actor: 'enemy', kind: 'special-attack', sourceId: special.id, tags: [...(special.tags ?? []), 'special'] }
+  executeCombatEffects(state, special.effects, source)
+  runCombatTriggers(state, 'enemy', 'on-special-resolve', { source, target: 'player', sourceTags: source.tags }, executeCombatEffects)
+  appendLog(state, `${special.name} resolves.`)
 }
 
 export const executeEnemyAction = (state: GameState) => {
@@ -155,13 +124,22 @@ export const executeEnemyAction = (state: GameState) => {
   state.combat.enemyActionIndex = (state.combat.enemyActionIndex + 1) % monster.actionSequence.length
   if (step.kind === 'special' && step.specialAttackId) {
     const special = monster.specialAttacks[step.specialAttackId]
+    if (!special) return
     state.combat.enemyTelegraphMs = special.telegraphMs
     state.combat.enemyTelegraphActionId = step.specialAttackId
     appendLog(state, `${special.name} telegraphed · ${formatTime(special.telegraphMs)}`)
   } else {
-    damagePlayer(state, monster.attackDamage)
-    appendLog(state, `${monster.name} Basic hits for ${state.combat.lastDamageTaken}.`)
-    if (monster.traits.some((trait) => trait.effect === 'thorn')) addStatus(state.combat.playerStatuses, { id: 'thorn-wound', remainingMs: 6000, value: 3, tickIntervalMs: 2000, nextTickMs: 2000 })
+    const source: CombatSource = { actor: 'enemy', kind: 'basic-attack', sourceId: `${enemyId}-basic-attack`, tags: ['basic-attack', 'direct'] }
+    const damage = executeEnemyBasicAttack(state, source)
+    appendLog(state, `${monster.name} Basic hits for ${damage}.`)
   }
   state.combat.enemyActionTimerMs = state.combat.enemyIntervalMs
+}
+
+const executeEnemyBasicAttack = (state: GameState, source: CombatSource) => {
+  const monster = state.combat.enemyId ? MONSTERS[state.combat.enemyId] : null
+  if (!monster) return 0
+  const before = state.player.health
+  damagePlayer(state, monster.attackDamage, source)
+  return Math.max(0, before - state.player.health)
 }

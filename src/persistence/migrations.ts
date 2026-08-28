@@ -14,6 +14,8 @@ import type { EquipmentPosition, GameState, ItemId, RecipeId, ResearchActivity, 
 import { RESEARCH_SLOT_ORDER } from '../game/systems/research/researchReservations'
 import { isRecord, SaveMigrationError } from './saveSchema'
 import { recalculateDerivedStats } from '../game/engine'
+import { STATUS_DEFINITIONS } from '../game/content/statuses'
+import type { ActiveStatus, CombatSource, StatusId } from '../game/types'
 
 const normalizeScreen = (value: unknown, fallback: GameState['ui']['screen']): GameState['ui']['screen'] => {
   if (value === 'tower') return 'tower-channeling'
@@ -99,6 +101,43 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
   migrated.progress.discoveredMonsters = [...new Set(rawDiscoveredMonsters.filter((id): id is GameState['progress']['discoveredMonsters'][number] => typeof id === 'string' && monsterIds.includes(id)))]
   const rawDiscoveredItems = Array.isArray(rawProgress.discoveredItems) ? rawProgress.discoveredItems : []
   migrated.progress.discoveredItems = [...new Set(rawDiscoveredItems.filter((id): id is ItemId => typeof id === 'string' && itemIds.includes(id)))]
+}
+
+const normalizeCombatState = (migrated: GameState, raw: Record<string, any>) => {
+  const fresh = createInitialState()
+  const rawCombat = isRecord(raw.combat) ? raw.combat : {}
+  const normalizeSource = (value: unknown, fallbackActor: 'player' | 'enemy'): CombatSource => {
+    if (!isRecord(value)) return { actor: fallbackActor, kind: 'system', sourceId: 'save-migration' }
+    const actor = value.actor === 'player' || value.actor === 'enemy' ? value.actor : fallbackActor
+    const kind = ['basic-attack', 'spell', 'weapon', 'status', 'trait', 'special-attack', 'equipment', 'system'].includes(String(value.kind)) ? value.kind as CombatSource['kind'] : 'system'
+    const school = ['fire', 'water', 'earth', 'air'].includes(String(value.school)) ? value.school as CombatSource['school'] : undefined
+    return { actor, kind, sourceId: typeof value.sourceId === 'string' ? value.sourceId : 'save-migration', originSourceId: typeof value.originSourceId === 'string' ? value.originSourceId : undefined, school, tags: Array.isArray(value.tags) ? value.tags.filter((tag): tag is NonNullable<CombatSource['tags']>[number] => typeof tag === 'string') : undefined }
+  }
+  const normalizeStatuses = (value: unknown, fallbackActor: 'player' | 'enemy'): ActiveStatus[] => {
+    if (!Array.isArray(value)) return []
+    return value.flatMap((entry): ActiveStatus[] => {
+      if (!isRecord(entry)) return []
+      const rawId = entry.statusId ?? entry.id
+      if (rawId === 'barrier' || rawId === 'attack-delay' || typeof rawId !== 'string' || !Object.prototype.hasOwnProperty.call(STATUS_DEFINITIONS, rawId)) return []
+      const statusId = rawId as StatusId
+      const definition = STATUS_DEFINITIONS[statusId]
+      const remainingRaw = entry.remainingMs
+      const remainingMs = remainingRaw === null ? null : nonNegativeNumber(remainingRaw) ?? definition.defaultDurationMs
+      const nextTickMs = nonNegativeNumber(entry.nextTickMs)
+      return [{ statusId, holder: fallbackActor, source: normalizeSource(entry.source, fallbackActor === 'player' ? 'enemy' : 'player'), remainingMs, stacks: Math.max(1, Math.floor(nonNegativeNumber(entry.stacks) ?? 1)), potency: nonNegativeNumber(entry.potency ?? entry.value), nextTickMs: nextTickMs ?? (definition.periodic?.intervalMs), appliedAt: nonNegativeNumber(entry.appliedAt) }]
+    })
+  }
+  const rawPlayerStatuses = Array.isArray(rawCombat.playerStatuses) ? rawCombat.playerStatuses : []
+  const oldBarrier = rawPlayerStatuses.filter((entry) => isRecord(entry) && entry.id === 'barrier').reduce((sum, entry) => sum + (nonNegativeNumber(entry.value) ?? 0), 0)
+  const oldDelay = rawPlayerStatuses.filter((entry) => isRecord(entry) && entry.id === 'attack-delay').reduce((sum, entry) => sum + (nonNegativeNumber(entry.value) ?? 0), 0)
+  migrated.combat.playerBarrier = Math.max(0, nonNegativeNumber(rawCombat.playerBarrier) ?? 0, oldBarrier)
+  migrated.combat.enemyBarrier = Math.max(0, nonNegativeNumber(rawCombat.enemyBarrier) ?? fresh.combat.enemyBarrier)
+  migrated.combat.playerStatuses = normalizeStatuses(rawPlayerStatuses, 'player')
+  migrated.combat.enemyStatuses = normalizeStatuses(rawCombat.enemyStatuses, 'enemy')
+  migrated.combat.playerAttackTimerMs = Math.max(0, migrated.combat.playerAttackTimerMs + oldDelay)
+  const rawTriggered = Array.isArray(rawCombat.triggeredRuleIds) ? rawCombat.triggeredRuleIds.filter((id): id is string => typeof id === 'string') : []
+  const legacyTriggered = Object.entries(migrated.combat.enemySpecialUsed).flatMap(([id, used]) => used ? id === 'ancient-growth' ? ['grove-sentinel-ancient-growth-threshold'] : id === 'living-core' ? ['forest-heart-living-core-threshold'] : [] : [])
+  migrated.combat.triggeredRuleIds = [...new Set([...rawTriggered, ...legacyTriggered])]
 }
 
 /** Seeds the historical item archive only for saves that predate V11. */
@@ -305,10 +344,11 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   // Versions through V7 retain the historical migration marker for callers
   // that still chain those migrations; V8-V10 are normalized into the current
   // V11 document.
-  migrated.saveVersion = sourceVersion >= 8 ? SAVE_VERSION : 8
+  migrated.saveVersion = sourceVersion >= SAVE_VERSION ? SAVE_VERSION : sourceVersion >= 8 ? 11 : 8
   migrated.progress.channeling = migrateChanneling(raw.progress, createInitialState().progress)
   migrated.ui.screen = normalizeScreen(isRecord(raw.ui) ? raw.ui.screen : undefined, migrated.ui.screen)
   normalizeDynamicRecords(migrated, raw)
+  normalizeCombatState(migrated, raw)
   normalizeDirectContentReferences(migrated, raw)
   seedLegacyItemDiscoveries(migrated, raw, sourceVersion)
   normalizeResearch(migrated, raw, sourceVersion)
@@ -381,6 +421,7 @@ export const migrateSave = (rawSave: unknown): GameState => {
   if (version === 8) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === 9) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === 10) return finalize(merge(createInitialState(), rawSave), rawSave, version)
+  if (version === 11) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === SAVE_VERSION) {
     return finalize(merge(createInitialState(), rawSave), rawSave, version)
   }

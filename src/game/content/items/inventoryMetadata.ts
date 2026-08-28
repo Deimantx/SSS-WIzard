@@ -1,10 +1,11 @@
-import { GUILD_REQUESTS } from '../../game/content/guild/guildRequests'
-import { MANA_PILLARS } from '../../game/content/channeling/manaPillars'
-import { RECIPES } from '../../game/content/recipes/recipes'
-import { getItemSourceLabel, ITEMS } from '../../game/content/items/items'
-import { FOCUS_IMPROVEMENT } from '../../game/content/focus/focusImprovement'
-import type { InventoryCategory, InventoryMaterialSubtype, ItemId, ScreenId } from '../../game/types'
+import { GUILD_REQUESTS } from '../guild/guildRequests'
+import { MANA_PILLARS } from '../channeling/manaPillars'
+import { RECIPES } from '../recipes/recipes'
+import { getItemSourceLabel, ITEMS } from './items'
+import { FOCUS_IMPROVEMENT } from '../focus/focusImprovement'
+import type { InventoryCategory, InventoryMaterialSubtype, ItemId, ScreenId } from '../../types'
 
+/** Player-facing inventory filters and classification are shared item-domain metadata. */
 export const INVENTORY_CATEGORIES = ['All', 'Materials', 'Loot', 'Equipment', 'Special'] as const
 export type InventoryCategoryFilter = typeof INVENTORY_CATEGORIES[number]
 export const MATERIAL_SUBCATEGORIES = ['All Materials', 'Elemental', 'Creature', 'Ore', 'Refined', 'Arcane'] as const

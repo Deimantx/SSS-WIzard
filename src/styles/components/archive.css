@@ -1,0 +1,49 @@
+:root {
+  --archive-card-min: 126px;
+  --archive-card-max: 148px;
+  --archive-card-height: 142px;
+  --archive-card-art-height: 76px;
+  --archive-card-gap: 10px;
+}
+
+.archive-summary-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; }
+.archive-summary-head > div { display: grid; gap: 3px; }
+.archive-summary-head > div:last-child { text-align: right; }
+.archive-summary-label { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .12em; text-transform: uppercase; }
+.archive-summary-head strong { color: var(--ui-text); font: 700 var(--text-lg) var(--font-mono); }
+.archive-progress-grid { display: grid; gap: 6px; margin-top: 10px; }
+.collection-progress-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.bestiary-progress-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.archive-progress-tile { display: grid; gap: 5px; min-width: 0; padding: 9px; border: 1px solid var(--ui-border); border-radius: 7px; background: color-mix(in srgb, var(--ui-panel-strong) 60%, transparent); }
+.archive-progress-tile-head { display: flex; align-items: baseline; justify-content: space-between; gap: 7px; min-width: 0; }
+.archive-progress-tile-head span { overflow: hidden; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .08em; text-overflow: ellipsis; white-space: nowrap; }
+.archive-progress-tile-head strong { color: var(--ui-text-soft); font: var(--text-xs) var(--font-mono); white-space: nowrap; }
+.archive-progress-track { height: 4px; overflow: hidden; border-radius: 999px; background: var(--ui-progress-track, var(--ui-border)); }
+.archive-progress-track i { display: block; height: 100%; border-radius: inherit; background: var(--ui-accent); transition: width .2s ease; }
+.archive-progress-tile small { color: var(--ui-accent); font: var(--text-micro) var(--font-mono); text-align: right; }
+.archive-progress-tile.empty { opacity: .6; }
+.archive-progress-tile.empty .archive-progress-track i { background: var(--ui-text-disabled); }
+.archive-progress-tile.empty small { color: var(--ui-text-disabled); }
+
+.archive-search { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 0 11px; border: 1px solid var(--ui-border); border-radius: 8px; color: var(--ui-text-muted); background: color-mix(in srgb, var(--ui-panel-strong) 82%, transparent); }
+.archive-search:focus-within { border-color: color-mix(in srgb, var(--ui-accent) 65%, var(--ui-border)); box-shadow: 0 0 0 3px var(--ui-accent-soft); }
+.archive-search .search-input { width: 100%; min-width: 0; padding: 8px 0; border: 0; background: transparent; }
+.archive-filter-bar { display: flex; flex-wrap: wrap; gap: 5px; }
+.archive-filter-button { appearance: none; -webkit-appearance: none; border: 1px solid var(--ui-border); border-radius: 6px; padding: 8px 10px; color: var(--ui-text-muted); background: var(--ui-panel); cursor: pointer; font: var(--text-micro) var(--font-mono); letter-spacing: .06em; }
+.archive-filter-button:hover, .archive-filter-button:focus-visible, .archive-filter-button.active { border-color: color-mix(in srgb, var(--ui-accent) 62%, var(--ui-border)); color: var(--ui-text); background: var(--ui-accent-soft); outline: none; }
+.archive-filter-button:focus-visible { box-shadow: 0 0 0 2px color-mix(in srgb, var(--ui-accent) 35%, transparent); }
+
+.archive-entry-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--archive-card-min), var(--archive-card-max))); justify-content: start; align-content: start; gap: var(--archive-card-gap); min-height: 0; overflow-y: auto; padding: 2px 3px 20px 0; scrollbar-color: var(--ui-scrollbar-thumb) transparent; scrollbar-width: thin; }
+.archive-entry-grid::-webkit-scrollbar { width: 6px; }
+.archive-entry-grid::-webkit-scrollbar-thumb { border-radius: 99px; background: var(--ui-scrollbar-thumb); }
+.archive-entry-card { position: relative; display: grid; grid-template-rows: var(--archive-card-art-height) minmax(0, 1fr); align-content: start; gap: 7px; width: 100%; min-width: 0; min-height: var(--archive-card-height); padding: 8px; border: 1px solid var(--ui-border); border-radius: 9px; color: var(--ui-text-soft); background: color-mix(in srgb, var(--ui-panel-strong) 68%, transparent); cursor: pointer; text-align: left; transition: border-color .16s ease, transform .16s ease, background .16s ease, box-shadow .16s ease; }
+.archive-entry-card:hover { transform: translateY(-1px); }
+.archive-entry-card:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 2px; }
+.archive-entry-card.selected { border-color: var(--ui-accent); background: var(--ui-accent-soft); box-shadow: 0 0 0 1px color-mix(in srgb, var(--ui-accent) 25%, transparent); }
+.archive-entry-card.undiscovered { color: var(--ui-text-muted); }
+.archive-entry-art { display: grid; place-items: center; width: 100%; height: var(--archive-card-art-height); min-height: 0; border-radius: 7px; }
+
+@media (max-width: 760px) {
+  .archive-progress-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .archive-entry-grid { grid-template-columns: repeat(auto-fill, minmax(118px, 138px)); }
+}

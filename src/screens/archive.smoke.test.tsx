@@ -17,7 +17,7 @@ describe('archive screens', () => {
     render(<GameShell />)
     await user.click(navItem('Collection'))
     expect(screen.getByRole('heading', { name: 'ITEM COLLECTION' })).toBeTruthy()
-    expect(screen.getByLabelText('Collection discovery status')).toBeTruthy()
+    expect(screen.getByRole('tablist', { name: 'Collection discovery status' })).toBeTruthy()
     expect(screen.queryByText('Fire Fragment')).toBeNull()
     await user.click(screen.getAllByRole('button', { name: 'Undiscovered item' })[0])
     expect(screen.getByText('UNDISCOVERED ITEM')).toBeTruthy()

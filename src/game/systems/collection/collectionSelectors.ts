@@ -1,9 +1,10 @@
 import { ITEMS } from '../../content/items/items'
 import type { GameState, InventoryCategory, ItemId } from '../../types'
-import { CATEGORY_LABELS, INVENTORY_CATEGORY_ORDER, getInventorySubcategoryLabel } from '../../../screens/inventory/inventoryMetadata'
+import { CATEGORY_LABELS, INVENTORY_CATEGORIES, INVENTORY_CATEGORY_ORDER, getInventorySubcategoryLabel } from '../../content/items/inventoryMetadata'
+import { completionPercent } from '../archive/archiveSelectors'
 
 export type CollectionStatusFilter = 'All' | 'Discovered' | 'Undiscovered'
-export type CollectionCategoryFilter = 'All' | 'Materials' | 'Loot' | 'Equipment' | 'Special'
+export type CollectionCategoryFilter = typeof INVENTORY_CATEGORIES[number]
 
 export const isItemDiscovered = (state: Pick<GameState, 'progress'>, itemId: ItemId) => state.progress.discoveredItems.includes(itemId)
 
@@ -12,7 +13,7 @@ export const getCollectionItems = () => Object.keys(ITEMS) as ItemId[]
 export const getCollectionCompletion = (state: Pick<GameState, 'progress'>) => {
   const total = getCollectionItems().length
   const discovered = getCollectionItems().filter((itemId) => isItemDiscovered(state, itemId)).length
-  return { discovered, total, percent: total === 0 ? 0 : Math.round(discovered / total * 100) }
+  return { discovered, total, percent: completionPercent(discovered, total) }
 }
 
 export const getCollectionCategoryCounts = (state: Pick<GameState, 'progress'>) => Object.fromEntries(

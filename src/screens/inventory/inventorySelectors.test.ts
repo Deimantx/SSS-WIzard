@@ -3,7 +3,7 @@ import { getResearchXp, ITEMS } from '../../game/content/items/items'
 import { makeInitialState, recordRecentAcquisition, type RecentAcquisition } from '../../store/gameStore'
 import { formatStat, friendlyStatLabel } from '../../components/ui/item/ItemTooltip'
 import { INVENTORY_FILTERS, MATERIAL_SUBCATEGORIES, inventorySummary, selectOwnedItemIds, selectVisibleItemIds } from './inventorySelectors'
-import { getInventoryCategory, getItemUses, getInventorySearchText } from './inventoryMetadata'
+import { getInventoryCategory, getItemUses, getInventorySearchText } from '../../game/content/items/inventoryMetadata'
 import { getEquipmentComparison } from './inventoryEquipmentComparison'
 
 describe('Inventory V3 selectors and display rules', () => {

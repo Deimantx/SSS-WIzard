@@ -1,6 +1,6 @@
 import { ITEMS } from '../../game/content/items/items'
 import type { GameState, ItemId } from '../../game/types'
-import { getInventoryCategory, getMaterialSubtype, INVENTORY_CATEGORIES, matchesInventorySearch, MATERIAL_SUBCATEGORIES, type InventoryCategoryFilter, type MaterialSubcategoryFilter } from './inventoryMetadata'
+import { getInventoryCategory, getMaterialSubtype, INVENTORY_CATEGORIES, matchesInventorySearch, MATERIAL_SUBCATEGORIES, type InventoryCategoryFilter, type MaterialSubcategoryFilter } from '../../game/content/items/inventoryMetadata'
 
 export { INVENTORY_CATEGORIES, MATERIAL_SUBCATEGORIES }
 export const INVENTORY_FILTERS = INVENTORY_CATEGORIES

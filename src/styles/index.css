@@ -8,6 +8,7 @@
 @import './shell/activity-monitor.css';
 @import './shell/offline-bank.css';
 @import './components/tooltip.css';
+@import './components/archive.css';
 @import './developer-tools.css';
 @import './tools/developer-tools-v2.css';
 @import './settings-preview.css';

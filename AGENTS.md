@@ -48,6 +48,8 @@ When replacing a system, remove the obsolete implementation after migration rath
 
 ## Archive ownership
 
+- Game/content/system modules must not import screen/UI modules; shared metadata belongs in game/content or system layers.
+- New filter/category controls should reuse the established shared filter-button visual language rather than invent screen-specific variants.
 - Collection is item-only; creature data belongs in Bestiary.
 - Bestiary entries must be derived from authored `MONSTERS` data; screens must not hardcode creature ID lists.
 - All positive item grants go through the central item-acquisition helper so Collection discovery remains correct.

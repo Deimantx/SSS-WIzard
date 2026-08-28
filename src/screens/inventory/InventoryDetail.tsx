@@ -6,7 +6,7 @@ import { getItemSourceLabel, getResearchXp, ITEMS } from '../../game/content/ite
 import { SCHOOLS } from '../../game/content/schools/schools'
 import type { GameState, ItemId, SchoolId, ScreenId } from '../../game/types'
 import { formatStat, friendlyStatLabel } from '../../components/ui/item/ItemTooltip'
-import { getInventoryCategoryLabel, getInventorySubcategoryLabel, getItemProcessingChain, getItemSourceDestination, getItemUses } from './inventoryMetadata'
+import { getInventoryCategoryLabel, getInventorySubcategoryLabel, getItemProcessingChain, getItemSourceDestination, getItemUses } from '../../game/content/items/inventoryMetadata'
 import { getEquipmentComparison } from './inventoryEquipmentComparison'
 import { formatFlowEta, formatItemFlowRate, getItemFlow, getItemNeeds, type ItemEconomyState, type ItemFlow, type ItemNeed } from './inventoryEconomy'
 import { EQUIPMENT_ITEM_SLOT_LABELS, getItemPositions } from '../../game/core/equipment'

@@ -3,7 +3,7 @@ import { getItemSourceLabel, getResearchXp, ITEMS } from '../../../game/content/
 import { SCHOOLS } from '../../../game/content/schools/schools'
 import type { ItemId } from '../../../game/types'
 import { GameTooltip, TooltipContent } from '../tooltip/Tooltip'
-import { getInventoryCategoryLabel, getInventorySubcategoryLabel, getItemUses } from '../../../screens/inventory/inventoryMetadata'
+import { getInventoryCategoryLabel, getInventorySubcategoryLabel, getItemUses } from '../../../game/content/items/inventoryMetadata'
 import { ItemIcon } from './ItemIcon'
 import type { ItemFlow } from '../../../screens/inventory/inventoryEconomy'
 import { formatItemFlowRate, formatFlowEta } from '../../../screens/inventory/inventoryEconomy'

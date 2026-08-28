@@ -8,7 +8,7 @@ import { SCHOOLS } from '../../game/content/schools/schools'
 import type { GameState, ItemId, SchoolId, ScreenId } from '../../game/types'
 import { EQUIPMENT_ITEM_SLOT_LABELS } from '../../game/core/equipment'
 import { formatStat, friendlyStatLabel } from '../../components/ui/item/ItemTooltip'
-import { getInventoryCategoryLabel, getInventorySubcategoryLabel, getItemSourceDestination, getItemUses } from '../inventory/inventoryMetadata'
+import { getInventoryCategoryLabel, getInventorySubcategoryLabel, getItemSourceDestination, getItemUses } from '../../game/content/items/inventoryMetadata'
 
 interface CollectionInspectorProps {
   itemId: ItemId | null
@@ -20,7 +20,7 @@ interface CollectionInspectorProps {
 export function CollectionInspector({ itemId, inventory, progress, navigate }: CollectionInspectorProps) {
   if (!itemId) return <Card title="ITEM INSPECTION" className="collection-inspector"><EmptyInspector text="Select an item to inspect its archive record." /></Card>
   const item = ITEMS[itemId]
-  if (!item) return <Card title="ITEM INSPECTION" className="collection-inspector"><EmptyInspector text="This item is no longer part of the authored archive." /></Card>
+  if (!item) return <Card title="ITEM INSPECTION" className="collection-inspector"><EmptyInspector text="This item is no longer part of the archive." /></Card>
   if (!progress.discoveredItems.includes(itemId)) return <Card title="ITEM INSPECTION" className="collection-inspector"><div className="collection-inspector-empty"><span className="collection-unknown-mark">?</span><strong>UNDISCOVERED ITEM</strong><span>Acquire this item once to permanently reveal its archive entry.</span></div></Card>
 
   const quantity = inventory[itemId] ?? 0

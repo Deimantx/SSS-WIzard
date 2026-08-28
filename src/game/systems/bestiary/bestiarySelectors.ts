@@ -1,9 +1,11 @@
 import { DUNGEONS } from '../../content/dungeons/dungeons'
 import { MONSTERS, isBossMonster, type MonsterDefinition } from '../../content/monsters/whisperingWoods'
 import type { BestiaryCategory, GameState, MonsterId } from '../../types'
+import { completionPercent } from '../archive/archiveSelectors'
 
 export const BESTIARY_CATEGORIES = ['all', 'monster', 'boss', 'special-boss'] as const
 export type BestiaryCategoryFilter = typeof BESTIARY_CATEGORIES[number]
+export const BESTIARY_CATEGORY_LABELS: Record<BestiaryCategory, string> = { monster: 'Monsters', boss: 'Bosses', 'special-boss': 'Special Bosses' }
 
 export const getBestiaryEntries = () => Object.values(MONSTERS)
 export const getMonstersByBestiaryCategory = (category: BestiaryCategory) => getBestiaryEntries().filter((monster) => monster.bestiaryCategory === category)
@@ -24,7 +26,7 @@ export const getBestiaryCompletion = (state: Pick<GameState, 'progress'>) => {
     return [category, { discovered: members.filter((monster) => state.progress.discoveredMonsters.includes(monster.id)).length, total: members.length }]
   })) as Record<BestiaryCategory, { discovered: number; total: number }>
   const totalDefeats = entries.reduce((sum, monster) => sum + getMonsterDefeatCount(state, monster.id), 0)
-  return { discovered, total: entries.length, percent: entries.length === 0 ? 0 : Math.round(discovered / entries.length * 100), categories, totalDefeats }
+  return { discovered, total: entries.length, percent: completionPercent(discovered, entries.length), categories, totalDefeats }
 }
 
 export const getBestiarySearchText = (monster: MonsterDefinition) => [monster.name, monster.subtitle, ...monster.traits.map((trait) => `${trait.name} ${trait.description}`), ...Object.values(monster.specialAttacks).map((attack) => `${attack.name} ${attack.description}`)].join(' ').toLowerCase()

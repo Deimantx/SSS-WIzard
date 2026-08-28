@@ -18,6 +18,8 @@ export function Progress({ value, tone = 'violet', label, right }: { value: numb
 export function Status({ children, tone = 'neutral' }: { children: ReactNode; tone?: 'neutral' | 'success' | 'warning' | 'active' | 'locked' }) { return <span className={`status ${tone}`}>{children}</span> }
 export { GameTooltip }
 export function Tooltip({ children, text }: { children: ReactNode; text: string }) { return <GameTooltip content={text}>{children}</GameTooltip> }
-export function SearchInput({ value, onChange, placeholder = 'Search...' }: { value: string; onChange: (value: string) => void; placeholder?: string }) { return <input className="search-input" value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} /> }
+export function SearchInput({ value, onChange, placeholder = 'Search...', ariaLabel }: { value: string; onChange: (value: string) => void; placeholder?: string; ariaLabel?: string }) { return <input aria-label={ariaLabel} className="search-input" value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} /> }
 
 export function Tabs<T extends string>({ items, active, onChange }: { items: readonly T[]; active: T; onChange: (value: T) => void }) { return <div className="tabs">{items.map((item) => <button className={item === active ? 'active' : ''} key={item} onClick={() => onChange(item)}>{item}</button>)}</div> }
+export { ArchiveProgressTile } from './ArchiveProgressTile'
+export { FilterBar, type FilterOption } from './FilterBar'

@@ -7,8 +7,9 @@ import { advanceChanneling } from '../../engine/channelingEngine'
 import { appendLog, playerBasicDamage, pushNotification, recalculateDerivedStats } from '../../engine'
 import { castSpellInternal } from '../../engine/spellEngine'
 import { executeCombatEffects, getBasicAttackTags, resolveBasicAttackInterval } from '../combat/effectResolver'
-import { executeEnemyAction, executeSpecial, finishEnemy, spawnNextEnemy } from '../combat/combatRuntime'
+import { executeEnemyAction, executeSpecial, resolveCombatDeaths, spawnNextEnemy } from '../combat/combatRuntime'
 import { actorCannotAct, tickStatuses } from '../combat/statusRuntime'
+import { tickBarriers } from '../combat/barrierRuntime'
 import { getCombatModifiers } from '../combat/modifiers'
 import type { GameState, ItemId, SpellId, CombatSource } from '../../types'
 import { clamp } from '../../utils'
@@ -43,10 +44,11 @@ const playerBasicAttack = (state: GameState) => {
 
 const tickCombat = (state: GameState, delta: number, context: AdvanceContext) => {
   if (!state.combat.active) return
-  if (!state.combat.enemyId) { state.combat.encounterTimerMs -= delta; if (state.combat.encounterTimerMs <= 0) spawnNextEnemy(state); return }
+  if (!state.combat.enemyId) { state.combat.encounterTimerMs -= delta; if (state.combat.encounterTimerMs <= 0) { spawnNextEnemy(state); resolveCombatDeaths(state, context.report, context.onItemAcquired) } return }
 
   tickCombatStatuses(state, delta)
-  if (state.combat.enemyId && state.combat.enemyHp <= 0) { finishEnemy(state, context.report, context.onItemAcquired); return }
+  tickBarriers(state, delta)
+  if (resolveCombatDeaths(state, context.report, context.onItemAcquired)) return
   const enemy = state.combat.enemyId ? MONSTERS[state.combat.enemyId] : null
   if (!enemy) return
 
@@ -58,37 +60,36 @@ const tickCombat = (state: GameState, delta: number, context: AdvanceContext) =>
     const damage = playerBasicAttack(state)
     appendLog(state, `Basic Attack hits for ${damage}.`)
     state.combat.playerAttackTimerMs = resolveBasicAttackInterval(state, 'player', BALANCE.player.basicAttackIntervalMs)
+    if (resolveCombatDeaths(state, context.report, context.onItemAcquired)) return
   }
-  if (state.combat.enemyId) Object.keys(state.activities.autoCast).forEach((id) => { const spellId = id as SpellId; if (state.activities.autoCast[spellId] && spellUnlocked(state, spellId) && state.combat.spellCooldowns[spellId] <= 0 && meetsAutoCondition(state, spellId)) castSpellInternal(state, spellId, true) })
+  if (state.combat.enemyId) {
+    for (const id of Object.keys(state.activities.autoCast)) {
+      const spellId = id as SpellId
+      if (actorCannotAct(state, 'player')) break
+      if (state.activities.autoCast[spellId] && spellUnlocked(state, spellId) && state.combat.spellCooldowns[spellId] <= 0 && meetsAutoCondition(state, spellId)) {
+        castSpellInternal(state, spellId, true)
+        if (resolveCombatDeaths(state, context.report, context.onItemAcquired)) return
+      }
+    }
+  }
   if (!state.combat.enemyId) return
-  if (state.combat.enemyHp <= 0) { finishEnemy(state, context.report, context.onItemAcquired); return }
+  if (resolveCombatDeaths(state, context.report, context.onItemAcquired)) return
 
   state.combat.enemyIntervalMs = resolveBasicAttackInterval(state, 'enemy', enemy.attackIntervalMs)
   if (!actorCannotAct(state, 'enemy') && state.combat.enemyTelegraphMs > 0) {
     state.combat.enemyTelegraphMs -= delta
     if (state.combat.enemyTelegraphMs <= 0 && state.combat.enemyTelegraphActionId) {
       executeSpecial(state, state.combat.enemyTelegraphActionId)
+      if (resolveCombatDeaths(state, context.report, context.onItemAcquired)) return
       state.combat.enemyTelegraphActionId = null
       state.combat.enemyActionTimerMs = state.combat.enemyIntervalMs
     }
   } else if (!actorCannotAct(state, 'enemy')) {
     state.combat.enemyActionTimerMs -= delta
-    if (state.combat.enemyActionTimerMs <= 0) executeEnemyAction(state)
-  }
-  if (state.player.health <= 0 && !state.player.godMode) {
-    context.report?.recordPlayerDeath()
-    state.combat.active = false
-    state.combat.enemyId = null
-    state.combat.enemyHp = 0
-    state.combat.enemyBarrier = 0
-    state.combat.playerBarrier = 0
-    state.combat.playerStatuses = []
-    state.combat.enemyStatuses = []
-    state.combat.triggeredRuleIds = []
-    state.combat.threatCleared = 0
-    state.combat.inBossFight = false
-    pushNotification(state, 'Defeated · recovering in the Tower', 'warning')
-    appendLog(state, 'The wizard falls. Threat Cleared resets to 0.')
+    if (state.combat.enemyActionTimerMs <= 0) {
+      executeEnemyAction(state)
+      if (resolveCombatDeaths(state, context.report, context.onItemAcquired)) return
+    }
   }
 }
 

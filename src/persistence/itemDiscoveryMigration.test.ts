@@ -13,12 +13,12 @@ describe('item discovery save migration', () => {
     legacy.progress.bossKillsByBoss = { 'grove-sentinel': 1 }
 
     const migrated = migrateSave(legacy)
-    expect(migrated.saveVersion).toBe(11)
+    expect(migrated.saveVersion).toBe(12)
     expect(migrated.progress.discoveredItems).toEqual(expect.arrayContaining(['apprentice-wand', 'fire-fragment', 'grove-bark', 'wisp-essence', 'life-essence']))
     expect(migrated.progress.discoveredItems).not.toContain('heartseed')
   })
 
-  it('round-trips the historical archive without deriving extra current-V11 entries', () => {
+  it('round-trips the historical archive without deriving extra current-V12 entries', () => {
     const state = createInitialState()
     state.progress.discoveredItems = ['apprentice-wand', 'fire-fragment']
     state.inventory['water-fragment'] = 7

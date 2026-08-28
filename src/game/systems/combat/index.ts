@@ -1,4 +1,5 @@
 export * from './combatRuntime'
+export { getActiveBarrier, tickBarriers } from './barrierRuntime'
 export * from './combatTypes'
 export * from './effectResolver'
 export * from './modifiers'

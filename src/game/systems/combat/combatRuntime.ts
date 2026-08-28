@@ -5,6 +5,7 @@ import { recalculateDerivedStats, appendLog, pushNotification } from '../../engi
 import type { GameState, ItemId, MonsterId } from '../../types'
 import { formatTime } from '../../utils'
 import { executeCombatEffects, damageEnemy, damagePlayer, gainBarrier } from './effectResolver'
+import { gainBarrier as gainBarrierRuntime } from './barrierRuntime'
 import { applyStatus, clearStatuses } from './statusRuntime'
 import { runCombatTriggers } from './triggerRuntime'
 import type { CombatSource, StatusId } from './combatTypes'
@@ -15,9 +16,9 @@ import type { SimulationReportCollector } from '../offline-bank/offlineBankRepor
 
 export { applyStatus, clearStatuses, damageEnemy, damagePlayer, executeCombatEffects, gainBarrier, resolveBasicAttackInterval }
 
-export const applyBarrier = (state: GameState, amount: number) => gainBarrier(state, amount, 'player', { actor: 'player', kind: 'spell', sourceId: 'legacy-barrier', tags: ['barrier'] })
+export const applyBarrier = (state: GameState, amount: number) => gainBarrierRuntime(state, amount, { actor: 'player', kind: 'spell', sourceId: 'legacy-barrier', tags: ['barrier'] }, 'player', ['barrier'], { mode: 'replace', durationMs: 9000 })
 
-export const debugApplyStatus = (state: GameState, actor: 'player' | 'enemy', statusId: StatusId, durationMs?: number | null, stacks?: number) => applyStatus(state, actor, statusId, { actor: actor === 'player' ? 'enemy' : 'player', kind: 'system', sourceId: 'developer-tools', tags: ['status'] }, { durationMs, stacks })
+export const debugApplyStatus = (state: GameState, actor: 'player' | 'enemy', statusId: StatusId, durationMs?: number | null, stacks?: number) => applyStatus(state, actor, statusId, { actor, kind: 'system', sourceId: 'developer-tools', tags: ['status'] }, { durationMs, stacks })
 
 export const spawnEnemy = (state: GameState, enemyId: MonsterId) => {
   const monster = MONSTERS[enemyId]
@@ -25,6 +26,7 @@ export const spawnEnemy = (state: GameState, enemyId: MonsterId) => {
   state.combat.enemyHp = monster.maxHealth
   state.combat.enemyMaxHp = monster.maxHealth
   state.combat.enemyBarrier = 0
+  state.combat.enemyBarrierRemainingMs = null
   state.combat.enemyActionIndex = 0
   state.combat.enemyIntervalMs = monster.attackIntervalMs
   state.combat.enemyActionTimerMs = state.combat.enemyIntervalMs
@@ -60,6 +62,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   state.combat.enemyId = null
   state.combat.enemyHp = 0
   state.combat.enemyBarrier = 0
+  state.combat.enemyBarrierRemainingMs = null
   state.combat.enemyTelegraphMs = 0
   state.combat.enemyTelegraphActionId = null
   state.combat.enemyStatuses = []
@@ -103,6 +106,34 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
       pushNotification(state, 'Auto Hunt Boss queued Grove Sentinel', 'info')
     }
   }
+}
+
+export const resolveCombatDeaths = (state: GameState, report?: SimulationReportCollector, onItemAcquired?: (itemId: ItemId, quantity: number) => void) => {
+  if (state.player.health <= 0 && !state.player.godMode) {
+    report?.recordPlayerDeath()
+    state.combat.active = false
+    state.combat.enemyId = null
+    state.combat.enemyHp = 0
+    state.combat.enemyBarrier = 0
+    state.combat.enemyBarrierRemainingMs = null
+    state.combat.playerBarrier = 0
+    state.combat.playerBarrierRemainingMs = null
+    state.combat.enemyTelegraphMs = 0
+    state.combat.enemyTelegraphActionId = null
+    state.combat.playerStatuses = []
+    state.combat.enemyStatuses = []
+    state.combat.triggeredRuleIds = []
+    state.combat.threatCleared = 0
+    state.combat.inBossFight = false
+    pushNotification(state, 'Defeated · recovering in the Tower', 'warning')
+    appendLog(state, 'The wizard falls. Threat Cleared resets to 0.')
+    return true
+  }
+  if (state.combat.enemyId && state.combat.enemyHp <= 0) {
+    finishEnemy(state, report, onItemAcquired)
+    return true
+  }
+  return false
 }
 
 export const executeSpecial = (state: GameState, specialId: string) => {

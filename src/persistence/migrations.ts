@@ -45,7 +45,6 @@ const dungeonIds = Object.keys(DUNGEONS)
 const requestIds = Object.keys(GUILD_REQUESTS)
 const spellIds = Object.keys(SPELLS)
 const recipeIds = Object.keys(RECIPES)
-const enemySpecialIds = ['ancient-growth', 'living-core']
 const permanentFocusIds = ['forest-heart', 'guild-apprentice']
 
 const nonNegativeInteger = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.floor(value)) : undefined
@@ -83,7 +82,6 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
   migrated.protectedItems = normalizeDynamicRecord(fresh.protectedItems, raw.protectedItems, itemIds, booleanValue)
   migrated.activities.autoCast = normalizeDynamicRecord(fresh.activities.autoCast, rawActivities.autoCast, spellIds, booleanValue) as GameState['activities']['autoCast']
   migrated.combat.spellCooldowns = normalizeDynamicRecord(fresh.combat.spellCooldowns, rawCombat.spellCooldowns, spellIds, nonNegativeNumber) as GameState['combat']['spellCooldowns']
-  migrated.combat.enemySpecialUsed = normalizeDynamicRecord(fresh.combat.enemySpecialUsed, rawCombat.enemySpecialUsed, enemySpecialIds, booleanValue)
   migrated.progress.requestProgress = normalizeDynamicRecord(fresh.progress.requestProgress, rawProgress.requestProgress, requestIds, nonNegativeInteger)
   migrated.progress.requestClaims = normalizeDynamicRecord(fresh.progress.requestClaims, rawProgress.requestClaims, requestIds, booleanValue)
   migrated.progress.permanentFocusBonuses = normalizeDynamicRecord(fresh.progress.permanentFocusBonuses, rawProgress.permanentFocusBonuses, permanentFocusIds, nonNegativeNumber)
@@ -119,28 +117,40 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>) => 
       if (!isRecord(entry)) return []
       const rawId = entry.statusId ?? entry.id
       if (rawId === 'barrier' || rawId === 'attack-delay' || typeof rawId !== 'string' || !Object.prototype.hasOwnProperty.call(STATUS_DEFINITIONS, rawId)) return []
-      const statusId = rawId as StatusId
+      let statusId = rawId as StatusId
+      const source = normalizeSource(entry.source, fallbackActor)
+      // V11 briefly represented Living Core as Quickening with a potency
+      // override. Convert that transient shape to the authored Haste status.
+      if (statusId === 'quickening' && entry.potency === 0.15 && source.kind === 'trait') statusId = 'haste'
       const definition = STATUS_DEFINITIONS[statusId]
       const remainingRaw = entry.remainingMs
       const remainingMs = remainingRaw === null ? null : nonNegativeNumber(remainingRaw) ?? definition.defaultDurationMs
       const nextTickMs = nonNegativeNumber(entry.nextTickMs)
-      return [{ statusId, holder: fallbackActor, source: normalizeSource(entry.source, fallbackActor === 'player' ? 'enemy' : 'player'), remainingMs, stacks: Math.max(1, Math.floor(nonNegativeNumber(entry.stacks) ?? 1)), potency: nonNegativeNumber(entry.potency ?? entry.value), nextTickMs: nextTickMs ?? (definition.periodic?.intervalMs), appliedAt: nonNegativeNumber(entry.appliedAt) }]
+      return [{ statusId, holder: fallbackActor, source, remainingMs, stacks: Math.max(1, Math.floor(nonNegativeNumber(entry.stacks) ?? 1)), nextTickMs: nextTickMs ?? (definition.periodic?.intervalMs), appliedAt: nonNegativeNumber(entry.appliedAt) }]
     })
   }
   const rawPlayerStatuses = Array.isArray(rawCombat.playerStatuses) ? rawCombat.playerStatuses : []
-  const oldBarrier = rawPlayerStatuses.filter((entry) => isRecord(entry) && entry.id === 'barrier').reduce((sum, entry) => sum + (nonNegativeNumber(entry.value) ?? 0), 0)
-  const oldDelay = rawPlayerStatuses.filter((entry) => isRecord(entry) && entry.id === 'attack-delay').reduce((sum, entry) => sum + (nonNegativeNumber(entry.value) ?? 0), 0)
+  const oldBarrierEntries = rawPlayerStatuses.filter((entry) => isRecord(entry) && (entry.id === 'barrier' || entry.statusId === 'barrier'))
+  const oldBarrier = oldBarrierEntries.reduce((sum, entry) => sum + (nonNegativeNumber(entry.value) ?? 0), 0)
+  const oldBarrierRemaining = oldBarrierEntries.map((entry) => nonNegativeNumber(entry.remainingMs)).find((value) => value !== undefined)
+  const oldDelay = rawPlayerStatuses.filter((entry) => isRecord(entry) && (entry.id === 'attack-delay' || entry.statusId === 'attack-delay')).reduce((sum, entry) => sum + (nonNegativeNumber(entry.value) ?? 0), 0)
   migrated.combat.playerBarrier = Math.max(0, nonNegativeNumber(rawCombat.playerBarrier) ?? 0, oldBarrier)
   migrated.combat.enemyBarrier = Math.max(0, nonNegativeNumber(rawCombat.enemyBarrier) ?? fresh.combat.enemyBarrier)
+  const rawPlayerBarrierRemaining = nonNegativeNumber(rawCombat.playerBarrierRemainingMs)
+  migrated.combat.playerBarrierRemainingMs = migrated.combat.playerBarrier > 0 ? rawPlayerBarrierRemaining ?? oldBarrierRemaining ?? 9000 : null
+  migrated.combat.enemyBarrierRemainingMs = migrated.combat.enemyBarrier > 0 ? nonNegativeNumber(rawCombat.enemyBarrierRemainingMs) ?? null : null
   migrated.combat.playerStatuses = normalizeStatuses(rawPlayerStatuses, 'player')
   migrated.combat.enemyStatuses = normalizeStatuses(rawCombat.enemyStatuses, 'enemy')
   migrated.combat.playerAttackTimerMs = Math.max(0, migrated.combat.playerAttackTimerMs + oldDelay)
   const rawTriggered = Array.isArray(rawCombat.triggeredRuleIds) ? rawCombat.triggeredRuleIds.filter((id): id is string => typeof id === 'string') : []
-  const legacyTriggered = Object.entries(migrated.combat.enemySpecialUsed).flatMap(([id, used]) => used ? id === 'ancient-growth' ? ['grove-sentinel-ancient-growth-threshold'] : id === 'living-core' ? ['forest-heart-living-core-threshold'] : [] : [])
-  migrated.combat.triggeredRuleIds = [...new Set([...rawTriggered, ...legacyTriggered])]
+  const legacySpecials = isRecord(rawCombat.enemySpecialUsed) ? rawCombat.enemySpecialUsed : {}
+  const legacyTriggered = Object.entries(legacySpecials).flatMap(([id, used]) => used ? id === 'ancient-growth' ? ['enemy:trait:grove-sentinel-ancient-growth:grove-sentinel-ancient-growth-threshold'] : id === 'living-core' ? ['enemy:trait:forest-heart-living-core:forest-heart-living-core-threshold'] : [] : [])
+  const legacyTraitSource: Record<string, string> = { 'grove-sentinel-ancient-growth-threshold': 'grove-sentinel-ancient-growth', 'forest-heart-living-core-threshold': 'forest-heart-living-core', 'stone-rooted-shell-start': 'stone-rooted-shell' }
+  const namespaced = rawTriggered.map((id) => id.includes(':') ? id : `enemy:trait:${legacyTraitSource[id] ?? id}:${id}`)
+  migrated.combat.triggeredRuleIds = [...new Set([...namespaced, ...legacyTriggered])]
 }
 
-/** Seeds the historical item archive only for saves that predate V11. */
+/** Seeds the historical item archive only for saves that predate the V12 archive shape. */
 const seedLegacyItemDiscoveries = (migrated: GameState, raw: Record<string, any>, sourceVersion: number) => {
   const rawProgress = isRecord(raw.progress) ? raw.progress : {}
   const hasArchive = Array.isArray(rawProgress.discoveredItems)
@@ -341,10 +351,9 @@ const normalizeResearchFocus = (migrated: GameState) => {
 }
 
 const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion = Number(raw.saveVersion ?? 0)) => {
-  // Versions through V7 retain the historical migration marker for callers
-  // that still chain those migrations; V8-V10 are normalized into the current
-  // V11 document.
-  migrated.saveVersion = sourceVersion >= SAVE_VERSION ? SAVE_VERSION : sourceVersion >= 8 ? 11 : 8
+  // V1-V7 retain their historical marker for callers that still chain those
+  // migrations. Every V8+ document is normalized to the current V12 shape.
+  migrated.saveVersion = sourceVersion >= 8 ? SAVE_VERSION : 8
   migrated.progress.channeling = migrateChanneling(raw.progress, createInitialState().progress)
   migrated.ui.screen = normalizeScreen(isRecord(raw.ui) ? raw.ui.screen : undefined, migrated.ui.screen)
   normalizeDynamicRecords(migrated, raw)

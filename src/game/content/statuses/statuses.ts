@@ -2,8 +2,8 @@ import type { CombatEffect, StatusDefinition, StatusId, StatusModifier } from '.
 
 // Periodic effects are authored relative to the status holder. The runtime
 // maps the holder to self/opponent while retaining the original source.
-const damage = (damageType: 'physical' | 'fire', value: number): CombatEffect => ({ type: 'deal-damage', target: 'self', damageType, magnitude: { type: 'flat', value }, tags: ['status', 'dot'] })
-const heal = (value: number): CombatEffect => ({ type: 'heal', target: 'self', magnitude: { type: 'flat', value }, tags: ['status', 'hot'] })
+const damage = (damageType: 'physical' | 'fire', value: number): CombatEffect => ({ type: 'deal-damage', target: 'self', damageType, magnitude: { type: 'flat', value }, tags: ['dot', damageType] })
+const heal = (value: number): CombatEffect => ({ type: 'heal', target: 'self', magnitude: { type: 'flat', value }, tags: ['heal', 'hot'] })
 const modifier = (key: StatusModifier['key'], value: number, extra: Omit<StatusModifier, 'key' | 'value'> = {}): StatusModifier => ({ key, value, ...extra })
 
 export const STATUS_DEFINITIONS: Record<StatusId, StatusDefinition> = {
@@ -14,6 +14,10 @@ export const STATUS_DEFINITIONS: Record<StatusId, StatusDefinition> = {
   quickening: {
     id: 'quickening', name: 'Quickening', description: 'Basic Attacks resolve 25% faster.', classification: 'buff', tags: ['buff', 'air'], defaultDurationMs: 6000,
     stacking: { mode: 'refresh' }, modifiers: [modifier('basic-attack-speed-percent', 0.25)], cleanseable: false, dispellable: true,
+  },
+  haste: {
+    id: 'haste', name: 'Haste', description: 'Basic Attacks resolve 15% faster.', classification: 'buff', tags: ['buff', 'air'], defaultDurationMs: null,
+    stacking: { mode: 'refresh' }, modifiers: [modifier('basic-attack-speed-percent', 0.15)], cleanseable: false, dispellable: true,
   },
   'thorn-wound': {
     id: 'thorn-wound', name: 'Thorn Wound', description: 'Thorns deal physical damage over time.', classification: 'debuff', tags: ['debuff', 'dot'], defaultDurationMs: 6000,
@@ -45,7 +49,7 @@ export const STATUS_DEFINITIONS: Record<StatusId, StatusDefinition> = {
   },
   purified: {
     id: 'purified', name: 'Purified', description: 'Incoming control and debuff durations are reduced by 50%.', classification: 'buff', tags: ['buff', 'water'], defaultDurationMs: 4000,
-    stacking: { mode: 'refresh' }, modifiers: [modifier('status-duration-received-percent', -0.5)], cleanseable: false, dispellable: true,
+    stacking: { mode: 'refresh' }, modifiers: [modifier('status-duration-received-percent', -0.5, { statusTags: ['debuff'] })], cleanseable: false, dispellable: true,
   },
   stunned: {
     id: 'stunned', name: 'Stunned', description: 'Cannot start or resolve normal actions.', classification: 'debuff', tags: ['debuff', 'control'], defaultDurationMs: 3000,
@@ -58,11 +62,33 @@ export const STATUS_ORDER = Object.keys(STATUS_DEFINITIONS) as StatusId[]
 
 export const validateStatusDefinitions = () => {
   const errors: string[] = []
-  Object.values(STATUS_DEFINITIONS).forEach((definition) => {
+  const ids = Object.values(STATUS_DEFINITIONS).map((definition) => definition.id)
+  if (new Set(ids).size !== ids.length) errors.push('duplicate status id')
+  const validateCondition = (owner: string, condition: import('../../systems/combat/combatTypes').CombatCondition | undefined): void => {
+    if (!condition) return
+    if ((condition.type === 'self-hp-below-percent' || condition.type === 'target-hp-below-percent') && (!Number.isFinite(condition.percent) || condition.percent < 0 || condition.percent > 100)) errors.push(`${owner}: invalid HP threshold`)
+    if (condition.type === 'status-stack-at-least' && (!Number.isFinite(condition.stacks) || condition.stacks < 1)) errors.push(`${owner}: invalid status stack threshold`)
+    if (condition.type === 'all' || condition.type === 'any') condition.conditions.forEach((entry) => validateCondition(owner, entry))
+    if (condition.type === 'not') validateCondition(owner, condition.condition)
+  }
+  const validateEffects = (owner: string, effects: CombatEffect[]) => effects.forEach((effect) => {
+    if ('magnitude' in effect) {
+      const magnitude = effect.magnitude
+      if ('value' in magnitude && !Number.isFinite(magnitude.value)) errors.push(`${owner}: non-finite magnitude`)
+      if (magnitude.type === 'school-level' && (!Number.isFinite(magnitude.base) || !Number.isFinite(magnitude.perLevel))) errors.push(`${owner}: non-finite school magnitude`)
+    }
+    if (effect.type === 'apply-status' && !STATUS_DEFINITIONS[effect.statusId]) errors.push(`${owner}: unknown status ${effect.statusId}`)
+  })
+  Object.entries(STATUS_DEFINITIONS).forEach(([key, definition]) => {
+    if (key !== definition.id) errors.push(`${key}: key/id mismatch`)
     if (definition.defaultDurationMs !== null && definition.defaultDurationMs < 0) errors.push(`${definition.id}: negative duration`)
+    if (definition.defaultDurationMs !== null && !Number.isFinite(definition.defaultDurationMs)) errors.push(`${definition.id}: non-finite duration`)
     if (definition.periodic && definition.periodic.intervalMs <= 0) errors.push(`${definition.id}: periodic interval must be positive`)
     if (definition.stacking.maxStacks !== undefined && definition.stacking.maxStacks < 1) errors.push(`${definition.id}: maxStacks must be at least one`)
-    definition.periodic?.effects.forEach((effect) => { if (effect.type === 'apply-status' && !STATUS_DEFINITIONS[effect.statusId]) errors.push(`${definition.id}: unknown status ${effect.statusId}`) })
+    if (definition.stacking.maxDurationMs !== undefined && (!Number.isFinite(definition.stacking.maxDurationMs) || definition.stacking.maxDurationMs < 0)) errors.push(`${definition.id}: invalid max duration`)
+    definition.modifiers?.forEach((entry) => { if (!Number.isFinite(entry.value)) errors.push(`${definition.id}: non-finite modifier`) })
+    validateEffects(`${definition.id}: periodic`, definition.periodic?.effects ?? [])
+    definition.triggers?.forEach((rule) => { validateCondition(`${definition.id}:${rule.id}`, rule.condition); validateEffects(`${definition.id}:${rule.id}`, rule.effects) })
   })
   if (errors.length && import.meta.env.DEV) console.error(`[combat-statuses] ${errors.join('; ')}`)
   return errors

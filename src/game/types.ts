@@ -168,14 +168,14 @@ export interface CombatState {
   enemyMaxHp: number
   enemyBarrier: number
   playerBarrier: number
+  enemyBarrierRemainingMs: number | null
+  playerBarrierRemainingMs: number | null
   enemyActionIndex: number
   enemyActionTimerMs: number
   enemyIntervalMs: number
   enemyTelegraphMs: number
   enemyTelegraphActionId: string | null
   triggeredRuleIds: string[]
-  /** @deprecated V11 save compatibility; mechanics use triggeredRuleIds. */
-  enemySpecialUsed: Record<string, boolean>
   pendingBossId: 'grove-sentinel' | null
   playerAttackTimerMs: number
   encounterTimerMs: number

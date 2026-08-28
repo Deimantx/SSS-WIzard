@@ -28,8 +28,7 @@ const actorTraits = (state: GameState, actor: CombatActor) => {
 const statusModifierValue = (state: GameState, actor: CombatActor, statusId: StatusId, modifier: StatusModifier) => {
   const active = activeStatuses(state, actor).find((status) => status.statusId === statusId)
   if (!active) return 0
-  const value = active.potency ?? modifier.value
-  return (modifier.perStack ? value * Math.max(1, active.stacks) : value)
+  return modifier.perStack ? modifier.value * Math.max(1, active.stacks) : modifier.value
 }
 
 export const getCombatModifiers = (state: GameState, actor: CombatActor, key: ModifierKey, context: ModifierContext = {}) => {
@@ -37,7 +36,7 @@ export const getCombatModifiers = (state: GameState, actor: CombatActor, key: Mo
   activeStatuses(state, actor).forEach((active) => {
     const definition = STATUS_DEFINITIONS[active.statusId]
     definition?.modifiers?.forEach((modifier) => {
-      if (modifier.key === key && matchesModifier(modifier, { ...context, statusTags: definition.tags })) total += statusModifierValue(state, actor, active.statusId, modifier)
+      if (modifier.key === key && matchesModifier(modifier, context)) total += statusModifierValue(state, actor, active.statusId, modifier)
     })
   })
   actorTraits(state, actor).forEach((trait) => trait.modifiers?.forEach((modifier) => {

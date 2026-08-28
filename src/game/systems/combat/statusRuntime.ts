@@ -21,7 +21,7 @@ const resolvedDuration = (state: GameState, actor: CombatActor, statusId: Status
   return Math.max(0, Math.round(durationMs * Math.max(0, 1 + received + controlReceived + dealt)))
 }
 
-export interface ApplyStatusOptions { durationMs?: number | null; stacks?: number; potency?: number; now?: number }
+export interface ApplyStatusOptions { durationMs?: number | null; stacks?: number; now?: number }
 
 export const applyStatus = (state: GameState, actor: CombatActor, statusId: StatusId, source: CombatSource, options: ApplyStatusOptions = {}) => {
   const definition = STATUS_DEFINITIONS[statusId]
@@ -35,9 +35,8 @@ export const applyStatus = (state: GameState, actor: CombatActor, statusId: Stat
   const duration = resolvedDuration(state, actor, statusId, options.durationMs === undefined ? definition.defaultDurationMs : options.durationMs, source)
   if (duration !== null && duration <= 0) return null
   const requestedStacks = Math.max(1, Math.floor(options.stacks ?? 1))
-  const requestedPotency = options.potency
   const nextTickMs = definition.periodic ? definition.periodic.intervalMs : undefined
-  const create = (stacks = requestedStacks, potency = requestedPotency, remainingMs = duration): ActiveStatus => ({ statusId, holder: actor, source, remainingMs, stacks: Math.min(definition.stacking.maxStacks ?? Number.MAX_SAFE_INTEGER, stacks), potency, nextTickMs, appliedAt: options.now ?? Date.now() })
+  const create = (stacks = requestedStacks, remainingMs = duration): ActiveStatus => ({ statusId, holder: actor, source, remainingMs, stacks: Math.min(definition.stacking.maxStacks ?? Number.MAX_SAFE_INTEGER, stacks), nextTickMs, appliedAt: options.now ?? Date.now() })
   if (!existing) {
     statuses.push(create())
     return statuses[statuses.length - 1]
@@ -49,7 +48,6 @@ export const applyStatus = (state: GameState, actor: CombatActor, statusId: Stat
     existing.remainingMs = duration
     existing.nextTickMs = nextTickMs
     existing.source = source
-    if (existing.potency === undefined) existing.potency = requestedPotency
   }
   if (mode === 'extend') {
     const extended = existing.remainingMs === null || duration === null ? null : existing.remainingMs + duration
@@ -61,19 +59,14 @@ export const applyStatus = (state: GameState, actor: CombatActor, statusId: Stat
     existing.remainingMs = duration
     existing.nextTickMs = nextTickMs
     existing.source = source
-    if (requestedPotency !== undefined) existing.potency = requestedPotency
   }
   if (mode === 'strongest') {
-    const currentPotency = existing.potency ?? 0
-    const newPotency = requestedPotency ?? 0
-    if (newPotency >= currentPotency) {
-      existing.potency = requestedPotency
-      existing.source = source
-      existing.remainingMs = duration
-      existing.nextTickMs = nextTickMs
-    } else if (existing.remainingMs !== null && duration !== null) {
-      existing.remainingMs = Math.max(existing.remainingMs, duration)
-    }
+    // V1 has no variable per-application strength. Equal applications refresh;
+    // future strength-bearing statuses must introduce an explicit stat rather
+    // than overloading runtime duration or an opaque potency number.
+    existing.source = source
+    existing.remainingMs = duration
+    existing.nextTickMs = nextTickMs
   }
   return existing
 }
@@ -113,27 +106,29 @@ const periodicEffects = (status: ActiveStatus): CombatEffect[] => {
   const definition = STATUS_DEFINITIONS[status.statusId]
   return definition?.periodic?.effects.map((effect) => {
     const holderTarget = status.holder === status.source.actor ? effect.target : effect.target === 'self' ? 'opponent' : 'self'
-    const targeted = { ...effect, target: holderTarget } as CombatEffect
-    if (status.potency === undefined || targeted.type === 'apply-status' || (targeted.type !== 'deal-damage' && targeted.type !== 'heal') || targeted.magnitude.type !== 'flat') return targeted
-    return { ...targeted, magnitude: { type: 'flat', value: status.potency } } as CombatEffect
+    return { ...effect, target: holderTarget } as CombatEffect
   }) ?? []
 }
 
 export const tickStatuses = (state: GameState, deltaMs: number, executeEffects: ExecuteEffects) => {
+  const delta = Math.max(0, deltaMs)
   ;(['player', 'enemy'] as CombatActor[]).forEach((actor) => {
     const remaining: ActiveStatus[] = []
     statusList(state, actor).forEach((status) => {
       const definition = STATUS_DEFINITIONS[status.statusId]
       if (!definition) return
       const next = { ...status }
-      if (next.remainingMs !== null) next.remainingMs = Math.max(0, next.remainingMs - deltaMs)
-      if (next.nextTickMs !== undefined) next.nextTickMs -= deltaMs
+      const previousRemaining = next.remainingMs
+      const activeWindow = previousRemaining === null ? delta : Math.min(delta, previousRemaining)
+      let timeToTick = next.nextTickMs
       let guard = 0
-      while (next.nextTickMs !== undefined && next.nextTickMs <= 0 && (next.remainingMs === null || next.remainingMs > 0) && (actor !== 'enemy' || Boolean(state.combat.enemyId)) && definition.periodic && guard < 1000) {
-        executeEffects(state, periodicEffects(next), { ...next.source, kind: 'status', sourceId: next.statusId, originSourceId: next.source.sourceId, tags: [...(next.source.tags ?? []), ...definition.tags] })
-        next.nextTickMs += definition.periodic.intervalMs
+      while (timeToTick !== undefined && timeToTick <= activeWindow && (previousRemaining === null || timeToTick < previousRemaining) && (actor !== 'enemy' || Boolean(state.combat.enemyId)) && definition.periodic && guard < 1000) {
+        executeEffects(state, periodicEffects(next), { ...next.source, kind: 'status', sourceId: next.statusId, originSourceId: next.source.sourceId, tags: ['status', ...definition.tags] })
+        timeToTick += definition.periodic.intervalMs
         guard += 1
       }
+      if (timeToTick !== undefined) next.nextTickMs = timeToTick - delta
+      if (next.remainingMs !== null) next.remainingMs = Math.max(0, next.remainingMs - delta)
       if (next.remainingMs === null || next.remainingMs > 0) remaining.push(next)
     })
     setStatusList(state, actor, remaining)

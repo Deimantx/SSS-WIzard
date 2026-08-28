@@ -8,7 +8,7 @@ describe('Focus and Prismatic save migration', () => {
     const initial = createInitialState()
     const migrated = migrateSave({ ...initial, saveVersion: 9, progress: { ...initial.progress, focusImprovement: undefined }, inventory: { ...initial.inventory, 'fire-fragment': 37 } })
 
-    expect(migrated.saveVersion).toBe(11)
+    expect(migrated.saveVersion).toBe(12)
     expect(migrated.progress.focusImprovement).toEqual({ rank: 1, level: 0 })
     expect(migrated.inventory['fire-fragment']).toBe(37)
   })

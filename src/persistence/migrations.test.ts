@@ -66,7 +66,8 @@ describe('save navigation migration', () => {
     expect(migrated.progress.lifetimeKillsByMonster).toEqual({ 'forest-wisp': 12, thornling: 3 })
     expect(migrated.progress.bossKillsByBoss).toEqual({ 'grove-sentinel': 2, 'forest-heart': 1 })
     expect(migrated.progress.autoHuntBossByDungeon).toEqual({ 'whispering-woods': true })
-    expect(migrated.combat.enemySpecialUsed).toEqual({ 'ancient-growth': true, 'living-core': false })
+    expect(migrated.combat.triggeredRuleIds).toContain('enemy:trait:grove-sentinel-ancient-growth:grove-sentinel-ancient-growth-threshold')
+    expect(migrated.combat).not.toHaveProperty('enemySpecialUsed')
     expect(migrated.inventory).not.toHaveProperty('removed-item')
   })
 
@@ -207,7 +208,7 @@ describe('save navigation migration', () => {
       },
     } as any)
 
-    expect(migrated.saveVersion).toBe(11)
+    expect(migrated.saveVersion).toBe(12)
     expect(migrated.activities.research.slots['research-1']).toEqual({ itemId: 'fire-fragment', targetSchoolId: 'water', requestedQuantity: 12, remainingQuantity: 9, progressMs: 2300, echoesAssigned: 1, status: 'running' })
   })
 
@@ -236,7 +237,7 @@ describe('save navigation migration', () => {
 
     const migrated = migrateSave(JSON.parse(JSON.stringify(state)))
 
-    expect(migrated.saveVersion).toBe(11)
+    expect(migrated.saveVersion).toBe(12)
     expect(migrated.activities.research.slots).toEqual(state.activities.research.slots)
   })
 

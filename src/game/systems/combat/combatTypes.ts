@@ -11,6 +11,7 @@ export type CombatTag =
   | 'ranged'
   | 'magic'
   | 'direct'
+  | 'heal'
   | 'dot'
   | 'hot'
   | 'status'
@@ -40,7 +41,6 @@ export type Magnitude =
   | { type: 'target-max-health-percent'; value: number }
   | { type: 'source-basic-damage-percent'; value: number }
   | { type: 'school-level'; base: number; perLevel: number; school: SchoolId }
-  | { type: 'weapon-damage-percent'; value: number }
   | { type: 'target-missing-health-percent'; value: number }
 
 export type ResourceId = 'mana'
@@ -56,15 +56,16 @@ export type StatusId =
   | 'staggered'
   | 'vulnerable'
   | 'purified'
+  | 'haste'
   | 'stunned'
 
 export type CombatEffect =
   | { type: 'deal-damage'; target: EffectTarget; damageType: DamageType; magnitude: Magnitude; tags?: CombatTag[]; school?: SchoolId }
   | { type: 'heal'; target: EffectTarget; magnitude: Magnitude; tags?: CombatTag[] }
-  | { type: 'gain-barrier'; target: EffectTarget; magnitude: Magnitude; tags?: CombatTag[] }
+  | { type: 'gain-barrier'; target: EffectTarget; magnitude: Magnitude; mode?: 'add' | 'replace'; durationMs?: number | null; tags?: CombatTag[] }
   | { type: 'restore-resource'; target: EffectTarget; resource: ResourceId; magnitude: Magnitude; tags?: CombatTag[] }
   | { type: 'drain-resource'; target: EffectTarget; resource: ResourceId; magnitude: Magnitude; tags?: CombatTag[] }
-  | { type: 'apply-status'; target: EffectTarget; statusId: StatusId; durationMs?: number | null; stacks?: number; potency?: number; tags?: CombatTag[] }
+  | { type: 'apply-status'; target: EffectTarget; statusId: StatusId; durationMs?: number | null; stacks?: number; tags?: CombatTag[] }
   | { type: 'remove-status'; target: EffectTarget; statusId: StatusId }
   | { type: 'cleanse'; target: EffectTarget; mode: 'one' | 'all' | 'tag'; tag?: CombatTag }
   | { type: 'dispel'; target: EffectTarget; mode: 'one' | 'all' | 'tag'; tag?: CombatTag }
@@ -148,7 +149,6 @@ export interface ActiveStatus {
   source: CombatSource
   remainingMs: number | null
   stacks: number
-  potency?: number
   nextTickMs?: number
   appliedAt?: number
 }

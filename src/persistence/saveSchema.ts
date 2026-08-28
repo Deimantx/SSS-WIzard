@@ -2,7 +2,7 @@ export const LEGACY_SAVE_KEY = 'sss-wizard-save-v1'
 /** @deprecated Kept as a migration/test compatibility alias; active saves use profile slot keys. */
 export const SAVE_KEY = LEGACY_SAVE_KEY
 export const LEGACY_SAVE_BACKUP_KEY = 'sss-wizard-legacy-save-backup-v1'
-export const CURRENT_SAVE_VERSION = 11
+export const CURRENT_SAVE_VERSION = 12
 
 export class SaveMigrationError extends Error {
   constructor(message: string) { super(message); this.name = 'SaveMigrationError' }

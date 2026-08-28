@@ -1,4 +1,5 @@
-import type { BestiaryCategory, CombatEffect, CombatTag, DamageType, ItemId, Magnitude, MonsterId, SpecialAttackDefinition, StatusId, TraitDefinition } from '../../types'
+import { STATUS_DEFINITIONS } from '../statuses'
+import type { BestiaryCategory, CombatCondition, CombatEffect, CombatTag, DamageType, ItemId, Magnitude, MonsterId, SpecialAttackDefinition, StatusId, TraitDefinition } from '../../types'
 
 export interface MonsterDefinition {
   id: MonsterId
@@ -23,16 +24,16 @@ export interface MonsterDefinition {
 const basic = (id: string) => ({ id, name: 'Basic', kind: 'basic' as const })
 const special = (id: string, specialAttackId: string, name: string) => ({ id, name, kind: 'special' as const, specialAttackId })
 const lifeEssenceDrop = { itemId: 'life-essence' as const, min: 1, max: 3, chance: 1 }
-const directDamage = (damageType: DamageType, value: number): CombatEffect => ({ type: 'deal-damage', target: 'opponent', damageType, magnitude: { type: 'flat', value }, tags: ['special', 'direct'] })
-const gainBarrier = (magnitude: Magnitude): CombatEffect => ({ type: 'gain-barrier', target: 'self', magnitude, tags: ['special', 'barrier'] })
-const apply = (statusId: 'thorn-wound' | 'quickening', target: 'self' | 'opponent', durationMs?: number | null, potency?: number): CombatEffect => ({ type: 'apply-status', target, statusId, durationMs, potency, tags: ['special', target === 'self' ? 'buff' : 'debuff'] })
+const directDamage = (damageType: DamageType, value: number): CombatEffect => ({ type: 'deal-damage', target: 'opponent', damageType, magnitude: { type: 'flat', value }, tags: ['direct'] })
+const gainBarrier = (magnitude: Magnitude): CombatEffect => ({ type: 'gain-barrier', target: 'self', magnitude, mode: 'add', tags: ['barrier'] })
+const apply = (statusId: 'thorn-wound' | 'haste', target: 'self' | 'opponent', durationMs?: number | null): CombatEffect => ({ type: 'apply-status', target, statusId, durationMs, tags: [target === 'self' ? 'buff' : 'debuff'] })
 const delay = (amountMs: number): CombatEffect => ({ type: 'modify-action-timer', target: 'opponent', action: 'basic-attack', amountMs })
-const heal = (value: number): CombatEffect => ({ type: 'heal', target: 'self', magnitude: { type: 'flat', value }, tags: ['special', 'hot'] })
+const heal = (value: number): CombatEffect => ({ type: 'heal', target: 'self', magnitude: { type: 'flat', value }, tags: ['heal', 'direct'] })
 
 const barkskin: TraitDefinition = { id: 'thornling-barkskin', name: 'Barkskin', description: 'Basic Attack damage received is reduced by 15%.', modifiers: [{ key: 'damage-taken-percent', value: -0.15, sourceTags: ['basic-attack'] }] }
 const rootedShell: TraitDefinition = { id: 'stone-rooted-shell', name: 'Rooted Shell', description: 'Starts with Barrier equal to 15% max HP.', rules: [{ id: 'stone-rooted-shell-start', event: 'on-combat-start', effects: [gainBarrier({ type: 'source-max-health-percent', value: 0.15 })], oncePerEncounter: true }] }
 const ancientGrowth: TraitDefinition = { id: 'grove-sentinel-ancient-growth', name: 'Ancient Growth', description: 'At 40% HP, gains a large Barrier once.', rules: [{ id: 'grove-sentinel-ancient-growth-threshold', event: 'on-hp-threshold', condition: { type: 'self-hp-below-percent', percent: 40 }, effects: [gainBarrier({ type: 'flat', value: 80 })], oncePerEncounter: true }] }
-const livingCore: TraitDefinition = { id: 'forest-heart-living-core', name: 'Living Core', description: 'At 50% HP, gains 15% attack speed once.', rules: [{ id: 'forest-heart-living-core-threshold', event: 'on-hp-threshold', condition: { type: 'self-hp-below-percent', percent: 50 }, effects: [apply('quickening', 'self', null, 0.15)], oncePerEncounter: true }] }
+const livingCore: TraitDefinition = { id: 'forest-heart-living-core', name: 'Living Core', description: 'At 50% HP, gains 15% attack speed once.', rules: [{ id: 'forest-heart-living-core-threshold', event: 'on-hp-threshold', condition: { type: 'self-hp-below-percent', percent: 50 }, effects: [apply('haste', 'self', null)], oncePerEncounter: true }] }
 
 export const MONSTERS: Record<MonsterId, MonsterDefinition> = {
   'forest-wisp': { id: 'forest-wisp', bestiaryCategory: 'monster', name: 'Forest Wisp', subtitle: 'A curious lantern of the undergrowth', maxHealth: 44, attackDamage: 5, attackIntervalMs: 2800, color: '#aa9aff', traits: [{ id: 'forest-wisp-flicker', name: 'Flicker', description: 'Arc Spark is telegraphed before it lands.' }], actionSequence: [basic('basic-1'), basic('basic-2'), special('arc-spark-step', 'arc-spark', 'Arc Spark')], specialAttacks: { 'arc-spark': { id: 'arc-spark', name: 'Arc Spark', telegraphMs: 2000, description: 'A bright spark for 12 damage.', effects: [directDamage('arcane', 12)], tags: ['special', 'magic'], interruptible: true } }, loot: [{ itemId: 'wisp-essence', min: 1, max: 2, chance: 1 }] },
@@ -48,9 +49,31 @@ export const WHISPERING_WOODS_MONSTER_IDS = Object.keys(MONSTERS) as MonsterId[]
 
 export const validateMonsterDefinitions = () => {
   const errors: string[] = []
-  Object.values(MONSTERS).forEach((monster) => {
+  const validateCondition = (owner: string, condition: CombatCondition | undefined): void => {
+    if (!condition) return
+    if ((condition.type === 'self-hp-below-percent' || condition.type === 'target-hp-below-percent') && (!Number.isFinite(condition.percent) || condition.percent < 0 || condition.percent > 100)) errors.push(`${owner}: invalid HP threshold`)
+    if (condition.type === 'status-stack-at-least' && (!Number.isFinite(condition.stacks) || condition.stacks < 1)) errors.push(`${owner}: invalid status stack threshold`)
+    if (condition.type === 'all' || condition.type === 'any') condition.conditions.forEach((entry) => validateCondition(owner, entry))
+    if (condition.type === 'not') validateCondition(owner, condition.condition)
+  }
+  const validateEffects = (owner: string, effects: CombatEffect[]) => effects.forEach((effect) => {
+    if ('magnitude' in effect) {
+      const magnitude = effect.magnitude
+      if ('value' in magnitude && !Number.isFinite(magnitude.value)) errors.push(`${owner}: non-finite magnitude`)
+      if (magnitude.type === 'school-level' && (!Number.isFinite(magnitude.base) || !Number.isFinite(magnitude.perLevel))) errors.push(`${owner}: non-finite school magnitude`)
+    }
+    if (effect.type === 'apply-status' && !STATUS_DEFINITIONS[effect.statusId]) errors.push(`${owner}: unknown status ${effect.statusId}`)
+  })
+  Object.entries(MONSTERS).forEach(([key, monster]) => {
+    if (key !== monster.id || !Number.isFinite(monster.maxHealth) || monster.maxHealth <= 0 || !Number.isFinite(monster.attackDamage) || !Number.isFinite(monster.attackIntervalMs) || monster.attackIntervalMs <= 0) errors.push(`${monster.id}: invalid combat numbers`)
+    const traitIds = monster.traits.map((trait) => trait.id)
+    if (new Set(traitIds).size !== traitIds.length) errors.push(`${monster.id}: duplicate trait id`)
+    const ruleIds = monster.traits.flatMap((trait) => trait.rules ?? []).map((rule) => rule.id)
+    if (new Set(ruleIds).size !== ruleIds.length) errors.push(`${monster.id}: duplicate trigger rule id`)
     monster.actionSequence.forEach((step) => { if (step.kind === 'special' && (!step.specialAttackId || !monster.specialAttacks[step.specialAttackId])) errors.push(`${monster.id}: missing special reference`) })
-    Object.values(monster.specialAttacks).forEach((specialAttack) => { if (specialAttack.telegraphMs < 0) errors.push(`${monster.id}/${specialAttack.id}: negative telegraph`) })
+    Object.entries(monster.specialAttacks).forEach(([key, specialAttack]) => { if (key !== specialAttack.id) errors.push(`${monster.id}/${key}: key/id mismatch`); if (specialAttack.telegraphMs < 0 || !Number.isFinite(specialAttack.telegraphMs)) errors.push(`${monster.id}/${specialAttack.id}: invalid telegraph`); validateEffects(`${monster.id}/${specialAttack.id}`, specialAttack.effects) })
+    monster.traits.forEach((trait) => trait.rules?.forEach((rule) => { validateCondition(`${monster.id}/${trait.id}/${rule.id}`, rule.condition); validateEffects(`${monster.id}/${trait.id}/${rule.id}`, rule.effects) }))
+    Object.entries(monster.resistances ?? {}).forEach(([damageType, resistance]) => { if (!Number.isFinite(resistance) || resistance < -1 || resistance > 0.9) errors.push(`${monster.id}: invalid ${damageType} resistance`) })
   })
   if (errors.length && import.meta.env.DEV) console.error(`[combat-monsters] ${errors.join('; ')}`)
   return errors

@@ -7,6 +7,7 @@ import { selectPlayerBasicDamage } from '../../store/selectors'
 import { Card, Progress, Status, Tooltip } from '../../components/ui'
 import { formatNumber, formatTime } from '../../game/utils'
 import { resolveBasicAttackInterval } from '../../game/systems/combat/effectResolver'
+import { BALANCE } from '../../game/core/balance/balance'
 
 const ActiveStatuses = ({ statuses, label }: { statuses: ReturnType<typeof useGameStore.getState>['combat']['playerStatuses']; label: string }) => <div className="combat-statuses"><small>{label}</small>{statuses.length ? statuses.map((status) => { const definition = STATUS_DEFINITIONS[status.statusId]; return <Tooltip key={status.statusId} text={definition.description}><Status tone={definition.classification === 'buff' ? 'success' : definition.classification === 'debuff' ? 'warning' : 'neutral'}>{definition.name}{status.stacks > 1 ? ` ×${status.stacks}` : ''} · {status.remainingMs === null ? '∞' : formatTime(status.remainingMs)}</Status></Tooltip> }) : <span className="muted">None</span>}</div>
 
@@ -15,7 +16,7 @@ export function EnemyPanel() {
   const basicDamage = useGameStore(selectPlayerBasicDamage)
   const enemy = combat.enemyId ? MONSTERS[combat.enemyId] : null
   const boss = enemy ? isBossMonster(enemy) : false
-  const interval = resolveBasicAttackInterval(useGameStore.getState(), 'player', 1200)
+  const interval = resolveBasicAttackInterval(useGameStore.getState(), 'player', BALANCE.player.basicAttackIntervalMs)
   const attackProgress = Math.max(0, Math.min(interval, interval - combat.playerAttackTimerMs))
   return <Card title={enemy ? enemy.name : 'No current enemy'} action={<Status tone={enemy ? boss ? 'warning' : 'active' : 'neutral'}>{enemy ? boss ? 'Boss Fight' : 'Normal Monster' : combat.active ? 'Encounter Delay' : 'Idle'}</Status>}>
     <div className={`enemy-portrait ${boss ? 'boss' : ''}`} style={{ '--enemy-color': enemy?.color ?? '#8c83b5' } as CSSProperties}><div className="enemy-aura" /><span>{boss ? '♛' : enemy ? '◈' : '∅'}</span></div>

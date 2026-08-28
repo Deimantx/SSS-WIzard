@@ -9,6 +9,13 @@ export interface BarrierOptions {
   durationMs?: number | null
 }
 
+export interface BarrierGainResult {
+  previous: number
+  current: number
+  gained: number
+  calculatedAmount: number
+}
+
 const getBarrier = (state: GameState, actor: CombatActor) => actor === 'player' ? state.combat.playerBarrier : state.combat.enemyBarrier
 const setBarrier = (state: GameState, actor: CombatActor, amount: number) => {
   if (actor === 'player') state.combat.playerBarrier = amount
@@ -22,18 +29,21 @@ const setRemaining = (state: GameState, actor: CombatActor, remainingMs: number 
 
 export const getActiveBarrier = (state: GameState, actor: CombatActor) => getBarrier(state, actor)
 
-export const gainBarrier = (state: GameState, raw: number, source: CombatSource, target: CombatActor, tags: CombatTag[], options: BarrierOptions = {}) => {
+export const gainBarrierResult = (state: GameState, raw: number, source: CombatSource, target: CombatActor, tags: CombatTag[], options: BarrierOptions = {}): BarrierGainResult => {
   const sourcePower = Math.max(0, 1 + getCombatModifiers(state, source.actor, 'barrier-power-percent', { sourceTags: tags }))
   const targetPower = Math.max(0, 1 + getCombatModifiers(state, target, 'barrier-received-percent', { sourceTags: tags }))
   const equipmentBonus = target === 'player' ? equipmentStats(state).barrierReceived ?? 0 : 0
   const amount = Math.max(0, Math.round(raw * sourcePower * targetPower * (target === 'player' ? barrierMultiplier(state) : 1) + equipmentBonus))
   const mode = options.mode ?? 'add'
-  const next = mode === 'replace' ? amount : Math.max(0, getBarrier(state, target) + amount)
+  const previous = getBarrier(state, target)
+  const next = mode === 'replace' ? amount : Math.max(0, previous + amount)
   setBarrier(state, target, next)
   if (options.durationMs !== undefined) setRemaining(state, target, next > 0 && options.durationMs !== null ? Math.max(0, options.durationMs) : null)
   else if (mode === 'replace' && next <= 0) setRemaining(state, target, null)
-  return amount
+  return { previous, current: next, gained: Math.max(0, next - previous), calculatedAmount: amount }
 }
+
+export const gainBarrier = (state: GameState, raw: number, source: CombatSource, target: CombatActor, tags: CombatTag[], options: BarrierOptions = {}) => gainBarrierResult(state, raw, source, target, tags, options).calculatedAmount
 
 export const consumeBarrier = (state: GameState, target: CombatActor, amount: number) => {
   const before = getBarrier(state, target)

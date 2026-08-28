@@ -7,7 +7,7 @@ import { formatTime } from '../../utils'
 import { executeCombatEffects, damageEnemy, damagePlayer, gainBarrier } from './effectResolver'
 import { gainBarrier as gainBarrierRuntime } from './barrierRuntime'
 import { applyStatus, clearStatuses } from './statusRuntime'
-import { runCombatTriggers } from './triggerRuntime'
+import { resetCombatRuleRuntime, runCombatTriggers } from './triggerRuntime'
 import type { CombatSource, StatusId } from './combatTypes'
 import { resolveBasicAttackInterval } from './effectResolver'
 import { resolveMonsterLoot } from '../loot'
@@ -32,13 +32,13 @@ export const spawnEnemy = (state: GameState, enemyId: MonsterId) => {
   state.combat.enemyActionTimerMs = state.combat.enemyIntervalMs
   state.combat.enemyTelegraphMs = 0
   state.combat.enemyTelegraphActionId = null
-  state.combat.triggeredRuleIds = []
+  resetCombatRuleRuntime(state)
   state.combat.inBossFight = isBossMonster(monster)
   state.combat.playerAttackTimerMs = 0
   state.combat.enemyStatuses = []
   discoverMonster(state, enemyId)
   runCombatTriggers(state, 'enemy', 'on-combat-start', { source: { actor: 'enemy', kind: 'system', sourceId: 'combat-start' } }, executeCombatEffects)
-  runCombatTriggers(state, 'player', 'on-combat-start', { source: { actor: 'player', kind: 'system', sourceId: 'combat-start' }, target: 'enemy' }, executeCombatEffects)
+  runCombatTriggers(state, 'player', 'on-combat-start', { source: { actor: 'player', kind: 'system', sourceId: 'combat-start' }, eventTarget: 'enemy' }, executeCombatEffects)
   appendLog(state, `${monster.name} enters the clearing.`)
 }
 
@@ -67,7 +67,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   state.combat.enemyTelegraphMs = 0
   state.combat.enemyTelegraphActionId = null
   state.combat.enemyStatuses = []
-  state.combat.triggeredRuleIds = []
+  resetCombatRuleRuntime(state)
   state.combat.encounterTimerMs = DUNGEONS[state.combat.dungeonId ?? 'whispering-woods'].encounterDelayMs
   if (isBossMonster(monster)) {
     state.combat.threatCleared = 0
@@ -123,7 +123,7 @@ export const resolveCombatDeaths = (state: GameState, report?: SimulationReportC
     state.combat.enemyTelegraphActionId = null
     state.combat.playerStatuses = []
     state.combat.enemyStatuses = []
-    state.combat.triggeredRuleIds = []
+    resetCombatRuleRuntime(state)
     state.combat.threatCleared = 0
     state.combat.inBossFight = false
     pushNotification(state, 'Defeated · recovering in the Tower', 'warning')
@@ -144,7 +144,7 @@ export const executeSpecial = (state: GameState, specialId: string) => {
   if (!special) return
   const source: CombatSource = { actor: 'enemy', kind: 'special-attack', sourceId: special.id, tags: [...(special.tags ?? []), 'special'] }
   executeCombatEffects(state, special.effects, source)
-  runCombatTriggers(state, 'enemy', 'on-special-resolve', { source, target: 'player', sourceTags: source.tags }, executeCombatEffects)
+  runCombatTriggers(state, 'enemy', 'on-special-resolve', { source, eventTarget: 'player', sourceTags: source.tags }, executeCombatEffects)
   appendLog(state, `${special.name} resolves.`)
 }
 

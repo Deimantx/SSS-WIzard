@@ -2,6 +2,13 @@ import type { SchoolId } from '../../types'
 
 export type DamageType = 'physical' | 'arcane' | 'fire' | 'water' | 'earth' | 'air'
 
+export type TraitId =
+  | 'forest-wisp-flicker'
+  | 'thornling-barkskin'
+  | 'stone-rooted-shell'
+  | 'grove-sentinel-ancient-growth'
+  | 'forest-heart-living-core'
+
 export type CombatTag =
   | 'basic-attack'
   | 'spell'
@@ -29,6 +36,8 @@ export interface CombatSource {
   sourceId?: string
   /** Original authored source when a status tick derives from another effect. */
   originSourceId?: string
+  /** Rule that produced this source, when the source came from a triggered rule. */
+  ruleId?: string
   school?: SchoolId
   tags?: CombatTag[]
 }
@@ -91,13 +100,14 @@ export type ModifierKey =
   | 'status-duration-dealt-percent'
   | 'status-duration-received-percent'
 
-export interface StatusModifier {
+export interface CombatModifier {
   key: ModifierKey
   value: number
   sourceTags?: CombatTag[]
   damageTypes?: DamageType[]
   statusTags?: CombatTag[]
   perStack?: boolean
+  condition?: CombatCondition
 }
 
 export type CombatTrigger =
@@ -111,6 +121,10 @@ export type CombatTrigger =
   | 'on-hp-threshold'
   | 'on-special-resolve'
   | 'on-heal'
+  | 'on-heal-received'
+  | 'on-barrier-gained'
+  | 'on-status-removed'
+  | 'on-status-expired'
   | 'on-kill'
 
 export type CombatCondition =
@@ -121,8 +135,15 @@ export type CombatCondition =
   | { type: 'target-has-status'; statusId: StatusId }
   | { type: 'self-has-barrier' }
   | { type: 'target-has-barrier' }
+  | { type: 'self-hp-above-percent'; percent: number }
+  | { type: 'target-hp-above-percent'; percent: number }
+  | { type: 'self-status-stacks-at-least'; statusId: StatusId; stacks: number }
+  | { type: 'target-status-stacks-at-least'; statusId: StatusId; stacks: number }
+  | { type: 'self-barrier-at-least'; value: number }
+  | { type: 'self-barrier-at-most'; value: number }
+  | { type: 'target-barrier-at-least'; value: number }
+  | { type: 'target-barrier-at-most'; value: number }
   | { type: 'source-has-tag'; tag: CombatTag }
-  | { type: 'status-stack-at-least'; statusId: StatusId; stacks: number }
   | { type: 'all'; conditions: CombatCondition[] }
   | { type: 'any'; conditions: CombatCondition[] }
   | { type: 'not'; condition: CombatCondition }
@@ -133,14 +154,38 @@ export interface CombatTriggerRule {
   condition?: CombatCondition
   effects: CombatEffect[]
   oncePerEncounter?: boolean
+  cooldownMs?: number
+  priority?: number
 }
 
 export interface TraitDefinition {
   id: string
   name: string
   description: string
-  modifiers?: StatusModifier[]
+  modifiers?: CombatModifier[]
   rules?: CombatTriggerRule[]
+  ui?: { shortDescription?: string; icon?: string; category?: string }
+}
+
+export interface CombatConditionContext {
+  source?: CombatSource
+  sourceTags?: CombatTag[]
+  /** The actor affected by an event, when the event has an affected actor. */
+  eventTarget?: 'player' | 'enemy'
+  /** The actor whose HP/barrier/status changed for this event. */
+  changedActor?: 'player' | 'enemy'
+  amount?: number
+  healthDamage?: number
+  barrierDamage?: number
+  damageType?: DamageType
+  previousHp?: number
+  currentHp?: number
+  previousHpPercent?: number
+  currentHpPercent?: number
+  previousBarrier?: number
+  currentBarrier?: number
+  barrierGained?: number
+  statusId?: StatusId
 }
 
 export interface ActiveStatus {
@@ -165,7 +210,7 @@ export interface StatusDefinition {
     maxStacks?: number
     maxDurationMs?: number
   }
-  modifiers?: StatusModifier[]
+  modifiers?: CombatModifier[]
   periodic?: { intervalMs: number; effects: CombatEffect[] }
   triggers?: CombatTriggerRule[]
   preventsAction?: boolean

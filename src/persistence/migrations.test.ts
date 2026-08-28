@@ -237,7 +237,7 @@ describe('save navigation migration', () => {
 
     const migrated = migrateSave(JSON.parse(JSON.stringify(state)))
 
-    expect(migrated.saveVersion).toBe(12)
+    expect(migrated.saveVersion).toBe(13)
     expect(migrated.activities.research.slots).toEqual(state.activities.research.slots)
   })
 

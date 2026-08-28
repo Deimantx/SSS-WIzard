@@ -1,10 +1,10 @@
-import type { CombatEffect, StatusDefinition, StatusId, StatusModifier } from '../../systems/combat/combatTypes'
+import type { CombatEffect, CombatModifier, StatusDefinition, StatusId } from '../../systems/combat/combatTypes'
 
 // Periodic effects are authored relative to the status holder. The runtime
 // maps the holder to self/opponent while retaining the original source.
 const damage = (damageType: 'physical' | 'fire', value: number): CombatEffect => ({ type: 'deal-damage', target: 'self', damageType, magnitude: { type: 'flat', value }, tags: ['dot', damageType] })
 const heal = (value: number): CombatEffect => ({ type: 'heal', target: 'self', magnitude: { type: 'flat', value }, tags: ['heal', 'hot'] })
-const modifier = (key: StatusModifier['key'], value: number, extra: Omit<StatusModifier, 'key' | 'value'> = {}): StatusModifier => ({ key, value, ...extra })
+const modifier = (key: CombatModifier['key'], value: number, extra: Omit<CombatModifier, 'key' | 'value'> = {}): CombatModifier => ({ key, value, ...extra })
 
 export const STATUS_DEFINITIONS: Record<StatusId, StatusDefinition> = {
   burning: {
@@ -66,8 +66,9 @@ export const validateStatusDefinitions = () => {
   if (new Set(ids).size !== ids.length) errors.push('duplicate status id')
   const validateCondition = (owner: string, condition: import('../../systems/combat/combatTypes').CombatCondition | undefined): void => {
     if (!condition) return
-    if ((condition.type === 'self-hp-below-percent' || condition.type === 'target-hp-below-percent') && (!Number.isFinite(condition.percent) || condition.percent < 0 || condition.percent > 100)) errors.push(`${owner}: invalid HP threshold`)
-    if (condition.type === 'status-stack-at-least' && (!Number.isFinite(condition.stacks) || condition.stacks < 1)) errors.push(`${owner}: invalid status stack threshold`)
+    if ((condition.type === 'self-hp-below-percent' || condition.type === 'target-hp-below-percent' || condition.type === 'self-hp-above-percent' || condition.type === 'target-hp-above-percent') && (!Number.isFinite(condition.percent) || condition.percent < 0 || condition.percent > 100)) errors.push(`${owner}: invalid HP threshold`)
+    if ((condition.type === 'self-status-stacks-at-least' || condition.type === 'target-status-stacks-at-least') && (!Number.isInteger(condition.stacks) || condition.stacks < 1)) errors.push(`${owner}: invalid status stack threshold`)
+    if ((condition.type === 'self-barrier-at-least' || condition.type === 'self-barrier-at-most' || condition.type === 'target-barrier-at-least' || condition.type === 'target-barrier-at-most') && (!Number.isFinite(condition.value) || condition.value < 0)) errors.push(`${owner}: invalid Barrier amount`)
     if (condition.type === 'all' || condition.type === 'any') condition.conditions.forEach((entry) => validateCondition(owner, entry))
     if (condition.type === 'not') validateCondition(owner, condition.condition)
   }
@@ -86,9 +87,9 @@ export const validateStatusDefinitions = () => {
     if (definition.periodic && definition.periodic.intervalMs <= 0) errors.push(`${definition.id}: periodic interval must be positive`)
     if (definition.stacking.maxStacks !== undefined && definition.stacking.maxStacks < 1) errors.push(`${definition.id}: maxStacks must be at least one`)
     if (definition.stacking.maxDurationMs !== undefined && (!Number.isFinite(definition.stacking.maxDurationMs) || definition.stacking.maxDurationMs < 0)) errors.push(`${definition.id}: invalid max duration`)
-    definition.modifiers?.forEach((entry) => { if (!Number.isFinite(entry.value)) errors.push(`${definition.id}: non-finite modifier`) })
+    definition.modifiers?.forEach((entry) => { if (!Number.isFinite(entry.value)) errors.push(`${definition.id}: non-finite modifier`); validateCondition(`${definition.id}:modifier`, entry.condition) })
     validateEffects(`${definition.id}: periodic`, definition.periodic?.effects ?? [])
-    definition.triggers?.forEach((rule) => { validateCondition(`${definition.id}:${rule.id}`, rule.condition); validateEffects(`${definition.id}:${rule.id}`, rule.effects) })
+    definition.triggers?.forEach((rule) => { if (rule.priority !== undefined && (!Number.isInteger(rule.priority) || !Number.isFinite(rule.priority))) errors.push(`${definition.id}:${rule.id}: invalid priority`); if (rule.cooldownMs !== undefined && (!Number.isInteger(rule.cooldownMs) || !Number.isFinite(rule.cooldownMs) || rule.cooldownMs < 0)) errors.push(`${definition.id}:${rule.id}: invalid cooldown`); validateCondition(`${definition.id}:${rule.id}`, rule.condition); validateEffects(`${definition.id}:${rule.id}`, rule.effects) })
   })
   if (errors.length && import.meta.env.DEV) console.error(`[combat-statuses] ${errors.join('; ')}`)
   return errors

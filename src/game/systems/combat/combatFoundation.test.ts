@@ -5,11 +5,12 @@ import { applyStatus, tickStatuses } from './statusRuntime'
 import { applyBarrier, executeSpecial, finishEnemy, spawnEnemy } from './combatRuntime'
 import { runCombatTriggers } from './triggerRuntime'
 import { migrateSave } from '../../../persistence/migrations'
-import type { CombatSource } from '../../types'
+import type { CombatSource, TraitDefinition, TraitId } from '../../types'
 import { advanceGameState } from '../simulation/advanceGameState'
 import { tickBarriers } from './barrierRuntime'
 import { castSpellAction } from '../../../store/actions/combatActions'
 import { MONSTERS } from '../../content/monsters/whisperingWoods'
+import { TRAIT_DEFINITIONS } from '../../content/traits'
 import { STATUS_DEFINITIONS } from '../../content/statuses'
 import { SPELLS } from '../../content/spells/spells'
 
@@ -21,6 +22,20 @@ const stateWithEnemy = (enemyId: Parameters<typeof spawnEnemy>[1] = 'forest-wisp
   state.combat.dungeonId = 'whispering-woods'
   spawnEnemy(state, enemyId)
   return state
+}
+
+const withTemporaryTrait = (trait: TraitDefinition, test: () => void) => {
+  const monster = MONSTERS['forest-wisp']
+  const traitId = trait.id as TraitId
+  const registry = TRAIT_DEFINITIONS as Record<string, TraitDefinition>
+  const original = registry[trait.id]
+  registry[trait.id] = trait
+  monster.traitIds.push(traitId)
+  try { test() } finally {
+    monster.traitIds.pop()
+    if (original) registry[trait.id] = original
+    else delete registry[trait.id]
+  }
 }
 
 describe('universal combat effects', () => {
@@ -240,21 +255,18 @@ describe('post-implementation combat audit regressions', () => {
     expect(STATUS_DEFINITIONS.haste.tags).toEqual(['buff'])
     expect(STATUS_DEFINITIONS.quickening.tags).toEqual(['buff', 'air'])
     expect(MONSTERS['forest-heart'].specialAttacks['rejuvenating-sap'].tags).toEqual(['special', 'heal', 'direct'])
-    expect(MONSTERS['stone-root'].traits[0].rules?.[0].effects[0]).toMatchObject({ type: 'gain-barrier', mode: 'add', durationMs: null })
+    expect(TRAIT_DEFINITIONS['stone-rooted-shell'].rules?.[0].effects[0]).toMatchObject({ type: 'gain-barrier', mode: 'add', durationMs: null })
   })
 
   it('dispatches damage-dealt only to the source actor', () => {
     const trait = { id: 'audit-damage-owner', name: 'Audit Damage Owner', description: 'Test trait.', rules: [{ id: 'audit-damage-owner-rule', event: 'on-damage-dealt' as const, effects: [{ type: 'gain-barrier' as const, target: 'self' as const, magnitude: { type: 'flat' as const, value: 1 } }] }] }
-    MONSTERS['forest-wisp'].traits.push(trait)
-    try {
+    withTemporaryTrait(trait, () => {
       const state = stateWithEnemy()
       damageEnemy(state, 1, 'spell')
       expect(state.combat.enemyBarrier).toBe(0)
       damagePlayer(state, 1, enemyAttack)
       expect(state.combat.enemyBarrier).toBe(1)
-    } finally {
-      MONSTERS['forest-wisp'].traits.pop()
-    }
+    })
   })
 
   it('applies Purified only to harmful status durations', () => {
@@ -350,16 +362,13 @@ describe('post-implementation combat audit regressions', () => {
 
   it('fires HP threshold rules only when health crosses downward', () => {
     const trait = { id: 'audit-threshold-owner', name: 'Audit Threshold Owner', description: 'Test trait.', rules: [{ id: 'audit-threshold-rule', event: 'on-hp-threshold' as const, condition: { type: 'self-hp-below-percent' as const, percent: 50 }, effects: [{ type: 'gain-barrier' as const, target: 'self' as const, magnitude: { type: 'flat' as const, value: 5 } }] }] }
-    MONSTERS['forest-wisp'].traits.push(trait)
-    try {
+    withTemporaryTrait(trait, () => {
       const state = stateWithEnemy()
       damageEnemy(state, 25, 'spell')
       expect(state.combat.enemyBarrier).toBe(5)
       damageEnemy(state, 1, 'spell')
       expect(state.combat.enemyBarrier).toBe(4)
-    } finally {
-      MONSTERS['forest-wisp'].traits.pop()
-    }
+    })
   })
 
   it('runs status-owned triggers with status source metadata and emits on-heal', () => {
@@ -398,7 +407,7 @@ describe('post-implementation combat audit regressions', () => {
       expect(state.combat.playerBarrier).toBe(5)
       expect(state.combat.playerStatuses.find((status) => status.statusId === 'haste')?.source).toMatchObject({ kind: 'status', sourceId: 'quickening', tags: ['status', 'buff', 'air'] })
 
-      runCombatTriggers(state, 'player', 'on-combat-start', { source: { actor: 'player', kind: 'system', sourceId: 'combat-start' }, target: 'enemy' }, executeCombatEffects)
+      runCombatTriggers(state, 'player', 'on-combat-start', { source: { actor: 'player', kind: 'system', sourceId: 'combat-start' }, eventTarget: 'enemy' }, executeCombatEffects)
       expect(state.combat.playerBarrier).toBe(5)
 
       spawnEnemy(state, 'thornling')

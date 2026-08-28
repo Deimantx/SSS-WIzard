@@ -2,6 +2,7 @@ import { DUNGEONS } from '../../content/dungeons/dungeons'
 import { MONSTERS, isBossMonster, type MonsterDefinition } from '../../content/monsters/whisperingWoods'
 import type { BestiaryCategory, GameState, MonsterId } from '../../types'
 import { completionPercent } from '../archive/archiveSelectors'
+import { getMonsterTraits } from '../combat/traitRuntime'
 
 export const BESTIARY_CATEGORIES = ['all', 'monster', 'boss', 'special-boss'] as const
 export type BestiaryCategoryFilter = typeof BESTIARY_CATEGORIES[number]
@@ -32,7 +33,7 @@ export const getBestiaryCompletion = (state: Pick<GameState, 'progress'>) => {
   return { discovered, total: entries.length, percent: completionPercent(discovered, entries.length), categories, totalDefeats }
 }
 
-export const getBestiarySearchText = (monster: MonsterDefinition) => [monster.name, monster.subtitle, ...monster.traits.map((trait) => `${trait.name} ${trait.description}`), ...Object.values(monster.specialAttacks).map((attack) => `${attack.name} ${attack.description}`)].join(' ').toLowerCase()
+export const getBestiarySearchText = (monster: MonsterDefinition) => [monster.name, monster.subtitle, ...getMonsterTraits(monster).map((trait) => `${trait.name} ${trait.description}`), ...Object.values(monster.specialAttacks).map((attack) => `${attack.name} ${attack.description}`)].join(' ').toLowerCase()
 
 export const formatDropChance = (chance: number) => chance >= 1 ? 'Guaranteed' : `${Number((Math.max(0, chance) * 100).toFixed(1))}%`
 export const formatDropQuantity = (min: number, max: number) => min === max ? `×${min}` : `×${min}–${max}`

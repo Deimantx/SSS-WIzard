@@ -8,7 +8,7 @@ import { castSpellAction } from './actions/combatActions'
 import { manaRegenPerSecond, pushNotification, recalculateDerivedStats, selectFreeFocus, selectUsedFocus } from '../game/engine'
 import { debugApplyStatus, executeSpecial, finishEnemy, spawnEnemy, spawnNextEnemy } from '../game/systems/combat/combatRuntime'
 import { executeCombatEffects } from '../game/systems/combat/effectResolver'
-import { runCombatTriggers } from '../game/systems/combat/triggerRuntime'
+import { resetCombatRuleRuntime, runCombatTriggers } from '../game/systems/combat/triggerRuntime'
 import { loadProfileGame, saveProfileGame } from '../persistence/profileSaveManager'
 import { type SaveReason } from '../persistence/saveConstants'
 import { getActiveProfileId } from '../profiles/profileSessionStore'
@@ -89,6 +89,7 @@ export interface GameActions {
   clearPlayerBarrier: () => void
   clearEnemyBarrier: () => void
   forceEnemySpecial: (specialId: string) => void
+  resetCombatRuleRuntime: () => void
   clearCombatStatuses: () => void
   clearPlayerStatuses: () => void
   clearEnemyStatuses: () => void
@@ -200,7 +201,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   toggleAutoHunt: () => set((state) => { const unlocked = state.progress.autoHuntBossUnlocked || (state.progress.bossKillsByBoss['grove-sentinel'] ?? 0) > 0 || state.progress.firstBossKill; if (!unlocked) { pushNotification(state, 'Auto Hunt unlocks after the first Grove Sentinel kill', 'warning'); return state } state.progress.autoHuntBossUnlocked = true; state.progress.autoHuntBossByDungeon['whispering-woods'] = !state.progress.autoHuntBossByDungeon['whispering-woods']; return state }),
   killCurrentEnemy: () => set((state) => { if (state.combat.enemyId) { state.combat.enemyHp = 0; finishEnemy(state) } return state }),
   spawnDebugEnemy: (enemyId) => set((state) => { if (!state.combat.active) { state.combat.active = true; state.combat.dungeonId = 'whispering-woods' } spawnEnemy(state, enemyId); pushNotification(state, `${MONSTERS[enemyId].name} spawned by Developer Tools`, 'warning'); return state }),
-  setEnemyHealthPercent: (percent) => set((state) => { if (state.combat.enemyId) { const previousHp = state.combat.enemyHp; const nextHp = Math.max(0, Math.min(state.combat.enemyMaxHp, state.combat.enemyMaxHp * clamp(percent, 0, 100) / 100)); state.combat.enemyHp = nextHp; if (nextHp > 0) runCombatTriggers(state, 'enemy', 'on-hp-threshold', { source: { actor: 'player', kind: 'system', sourceId: 'developer-health-control' }, target: 'enemy', sourceTags: [], previousHp, currentHp: nextHp, previousHpPercent: previousHp / Math.max(1, state.combat.enemyMaxHp) * 100, currentHpPercent: nextHp / Math.max(1, state.combat.enemyMaxHp) * 100 }, executeCombatEffects) } return state }),
+  setEnemyHealthPercent: (percent) => set((state) => { if (state.combat.enemyId) { const previousHp = state.combat.enemyHp; const nextHp = Math.max(0, Math.min(state.combat.enemyMaxHp, state.combat.enemyMaxHp * clamp(percent, 0, 100) / 100)); state.combat.enemyHp = nextHp; if (nextHp !== previousHp) { const context = { source: { actor: 'player' as const, kind: 'system' as const, sourceId: 'developer-health-control' }, eventTarget: 'enemy' as const, changedActor: 'enemy' as const, sourceTags: [], previousHp, currentHp: nextHp, previousHpPercent: previousHp / Math.max(1, state.combat.enemyMaxHp) * 100, currentHpPercent: nextHp / Math.max(1, state.combat.enemyMaxHp) * 100 }; runCombatTriggers(state, 'enemy', 'on-hp-threshold', context, executeCombatEffects); runCombatTriggers(state, 'player', 'on-hp-threshold', context, executeCombatEffects) } } return state }),
   applyPlayerStatus: (statusId) => set((state) => { debugApplyStatus(state, 'player', statusId); return state }),
   applyEnemyStatus: (statusId) => set((state) => { debugApplyStatus(state, 'enemy', statusId); return state }),
   setPlayerBarrier: (amount) => set((state) => { state.combat.playerBarrier = Math.max(0, Math.floor(sanitizeDebugNumber(amount))); if (state.combat.playerBarrier === 0) state.combat.playerBarrierRemainingMs = null; return state }),
@@ -208,6 +209,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   clearPlayerBarrier: () => set((state) => { state.combat.playerBarrier = 0; state.combat.playerBarrierRemainingMs = null; return state }),
   clearEnemyBarrier: () => set((state) => { state.combat.enemyBarrier = 0; state.combat.enemyBarrierRemainingMs = null; return state }),
   forceEnemySpecial: (specialId) => set((state) => { if (state.combat.enemyId) executeSpecial(state, specialId); return state }),
+  resetCombatRuleRuntime: () => set((state) => { resetCombatRuleRuntime(state); return state }),
   clearCombatStatuses: () => set((state) => { state.combat.playerStatuses = []; state.combat.enemyStatuses = []; return state }),
   clearPlayerStatuses: () => set((state) => { state.combat.playerStatuses = []; return state }),
   clearEnemyStatuses: () => set((state) => { state.combat.enemyStatuses = []; return state }),

@@ -11,6 +11,7 @@ import { executeEnemyAction, executeSpecial, resolveCombatDeaths, spawnNextEnemy
 import { actorCannotAct, tickStatuses } from '../combat/statusRuntime'
 import { tickBarriers } from '../combat/barrierRuntime'
 import { getCombatModifiers } from '../combat/modifiers'
+import { tickRuleCooldowns } from '../combat/triggerRuntime'
 import type { GameState, ItemId, SpellId, CombatSource } from '../../types'
 import { clamp } from '../../utils'
 import type { SimulationReportCollector } from '../offline-bank/offlineBankReport'
@@ -46,6 +47,7 @@ const tickCombat = (state: GameState, delta: number, context: AdvanceContext) =>
   if (!state.combat.active) return
   if (!state.combat.enemyId) { state.combat.encounterTimerMs -= delta; if (state.combat.encounterTimerMs <= 0) { spawnNextEnemy(state); resolveCombatDeaths(state, context.report, context.onItemAcquired) } return }
 
+  tickRuleCooldowns(state, delta)
   tickCombatStatuses(state, delta)
   tickBarriers(state, delta)
   if (resolveCombatDeaths(state, context.report, context.onItemAcquired)) return

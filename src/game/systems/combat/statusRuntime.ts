@@ -2,10 +2,17 @@ import { STATUS_DEFINITIONS } from '../../content/statuses'
 import { MONSTERS } from '../../content/monsters/whisperingWoods'
 import type { GameState, StatusId } from '../../types'
 import type { CombatActor } from './magnitude'
+import { runCombatTriggers } from './triggerRuntime'
 import type { CombatEffect, CombatSource, ActiveStatus, CombatTag } from './combatTypes'
 import { getCombatModifiers } from './modifiers'
 
 export type ExecuteEffects = (state: GameState, effects: CombatEffect[], source: CombatSource, depth?: number) => void
+export interface StatusRemovalOptions {
+  executeEffects?: ExecuteEffects
+  source?: CombatSource
+  depth?: number
+  reason?: 'removed' | 'expired'
+}
 
 const statusList = (state: GameState, actor: CombatActor) => actor === 'player' ? state.combat.playerStatuses : state.combat.enemyStatuses
 const setStatusList = (state: GameState, actor: CombatActor, statuses: ActiveStatus[]) => { if (actor === 'player') state.combat.playerStatuses = statuses; else state.combat.enemyStatuses = statuses }
@@ -15,9 +22,9 @@ export const actorCannotAct = (state: GameState, actor: CombatActor) => statusLi
 const resolvedDuration = (state: GameState, actor: CombatActor, statusId: StatusId, durationMs: number | null, source: CombatSource) => {
   if (durationMs === null) return null
   const definition = STATUS_DEFINITIONS[statusId]
-  const received = getCombatModifiers(state, actor, 'status-duration-received-percent', { statusTags: definition.tags })
-  const controlReceived = definition.tags.includes('control') ? getCombatModifiers(state, actor, 'control-duration-received-percent', { statusTags: definition.tags }) : 0
-  const dealt = getCombatModifiers(state, source.actor, 'status-duration-dealt-percent', { statusTags: definition.tags })
+  const received = getCombatModifiers(state, actor, 'status-duration-received-percent', { source, statusTags: definition.tags })
+  const controlReceived = definition.tags.includes('control') ? getCombatModifiers(state, actor, 'control-duration-received-percent', { source, statusTags: definition.tags }) : 0
+  const dealt = getCombatModifiers(state, source.actor, 'status-duration-dealt-percent', { source, statusTags: definition.tags })
   return Math.max(0, Math.round(durationMs * Math.max(0, 1 + received + controlReceived + dealt)))
 }
 
@@ -70,35 +77,55 @@ export const applyStatus = (state: GameState, actor: CombatActor, statusId: Stat
   return existing
 }
 
-export const removeStatus = (state: GameState, actor: CombatActor, statusId: StatusId) => {
+const removeStatusEntry = (state: GameState, actor: CombatActor, statusId: StatusId, options: StatusRemovalOptions = {}) => {
   const statuses = statusList(state, actor)
-  const next = statuses.filter((status) => status.statusId !== statusId)
-  setStatusList(state, actor, next)
-  return next.length !== statuses.length
+  const index = statuses.findIndex((status) => status.statusId === statusId)
+  if (index < 0) return null
+  const removed = statuses[index]
+  setStatusList(state, actor, statuses.filter((_, entryIndex) => entryIndex !== index))
+  if (options.executeEffects) {
+    const definition = STATUS_DEFINITIONS[removed.statusId]
+    runCombatTriggers(state, actor, options.reason === 'expired' ? 'on-status-expired' : 'on-status-removed', {
+      source: options.source ?? removed.source,
+      eventTarget: actor,
+      changedActor: actor,
+      statusId: removed.statusId,
+      sourceTags: ['status', ...(definition?.tags ?? [])],
+    }, options.executeEffects, options.depth ?? 0, [removed])
+  }
+  return removed
 }
+
+export const removeStatus = (state: GameState, actor: CombatActor, statusId: StatusId, options: StatusRemovalOptions = {}) => Boolean(removeStatusEntry(state, actor, statusId, { ...options, reason: options.reason ?? 'removed' }))
 
 export const clearStatuses = (state: GameState, actor: CombatActor) => setStatusList(state, actor, [])
 
-export const cleanseStatuses = (state: GameState, actor: CombatActor, mode: 'one' | 'all' | 'tag', tag?: CombatTag) => {
+export const cleanseStatuses = (state: GameState, actor: CombatActor, mode: 'one' | 'all' | 'tag', tag?: CombatTag, options: StatusRemovalOptions = {}) => {
   const statuses = statusList(state, actor)
   const eligible = statuses.filter((status) => {
     const definition = STATUS_DEFINITIONS[status.statusId]
     return definition?.classification === 'debuff' && definition.cleanseable && (mode !== 'tag' || definition.tags.includes(tag as CombatTag))
   })
   const remove = mode === 'one' ? eligible.slice(0, 1) : eligible
-  if (remove.length) setStatusList(state, actor, statuses.filter((status) => !remove.includes(status)))
-  return remove.length
+  remove.forEach((status) => {
+    const live = statusList(state, actor).find((entry) => entry === status)
+    if (live) removeStatusEntry(state, actor, live.statusId, { ...options, reason: 'removed' })
+  })
+  return remove.filter((status) => !statusList(state, actor).includes(status)).length
 }
 
-export const dispelStatuses = (state: GameState, actor: CombatActor, mode: 'one' | 'all' | 'tag', tag?: CombatTag) => {
+export const dispelStatuses = (state: GameState, actor: CombatActor, mode: 'one' | 'all' | 'tag', tag?: CombatTag, options: StatusRemovalOptions = {}) => {
   const statuses = statusList(state, actor)
   const eligible = statuses.filter((status) => {
     const definition = STATUS_DEFINITIONS[status.statusId]
     return definition?.classification === 'buff' && definition.dispellable && (mode !== 'tag' || definition.tags.includes(tag as CombatTag))
   })
   const remove = mode === 'one' ? eligible.slice(0, 1) : eligible
-  if (remove.length) setStatusList(state, actor, statuses.filter((status) => !remove.includes(status)))
-  return remove.length
+  remove.forEach((status) => {
+    const live = statusList(state, actor).find((entry) => entry === status)
+    if (live) removeStatusEntry(state, actor, live.statusId, { ...options, reason: 'removed' })
+  })
+  return remove.filter((status) => !statusList(state, actor).includes(status)).length
 }
 
 const periodicEffects = (status: ActiveStatus): CombatEffect[] => {
@@ -114,14 +141,14 @@ export const tickStatuses = (state: GameState, deltaMs: number, executeEffects: 
   ;(['player', 'enemy'] as CombatActor[]).forEach((actor) => {
     const snapshot = [...statusList(state, actor)]
     snapshot.forEach((original) => {
-      if (!statusList(state, actor).some((status) => status.statusId === original.statusId)) return
+      if (!statusList(state, actor).some((status) => status === original)) return
       const definition = STATUS_DEFINITIONS[original.statusId]
       if (!definition) return
       const previousRemaining = original.remainingMs
       const activeWindow = previousRemaining === null ? delta : Math.min(delta, previousRemaining)
       let timeToTick = original.nextTickMs
       let guard = 0
-      while (timeToTick !== undefined && timeToTick <= activeWindow && (previousRemaining === null || timeToTick < previousRemaining) && (actor !== 'enemy' || Boolean(state.combat.enemyId)) && statusList(state, actor).some((status) => status.statusId === original.statusId) && definition.periodic && guard < 1000) {
+      while (timeToTick !== undefined && timeToTick <= activeWindow && (previousRemaining === null || timeToTick < previousRemaining) && (actor !== 'enemy' || Boolean(state.combat.enemyId)) && statusList(state, actor).some((status) => status === original) && definition.periodic && guard < 1000) {
         executeEffects(state, periodicEffects(original), { ...original.source, kind: 'status', sourceId: original.statusId, originSourceId: original.source.sourceId, tags: ['status', ...definition.tags] })
         timeToTick += definition.periodic.intervalMs
         guard += 1
@@ -129,14 +156,15 @@ export const tickStatuses = (state: GameState, deltaMs: number, executeEffects: 
       const nextTickMs = timeToTick === undefined ? undefined : timeToTick - delta
       const nextRemainingMs = previousRemaining === null ? null : Math.max(0, previousRemaining - delta)
       const liveStatuses = statusList(state, actor)
-      const live = liveStatuses.find((status) => status.statusId === original.statusId)
+      const live = liveStatuses.find((status) => status === original)
       if (!live) return
+      if (live !== original) return
       if (nextRemainingMs === null || nextRemainingMs > 0) {
         live.remainingMs = nextRemainingMs
         if (nextTickMs !== undefined) live.nextTickMs = nextTickMs
         return
       }
-      setStatusList(state, actor, liveStatuses.filter((status) => status.statusId !== original.statusId))
+      removeStatusEntry(state, actor, original.statusId, { executeEffects, reason: 'expired' })
     })
   })
 }

@@ -6,7 +6,7 @@ import type { GameState } from '../../types'
 import { applyStatus, cleanseStatuses, dispelStatuses, removeStatus } from './statusRuntime'
 import type { CombatActor } from './magnitude'
 import { getActorHealth, resolveMagnitude } from './magnitude'
-import { consumeBarrier, gainBarrier as gainBarrierRuntime, getActiveBarrier } from './barrierRuntime'
+import { consumeBarrier, gainBarrierResult, gainBarrier as gainBarrierRuntime, getActiveBarrier } from './barrierRuntime'
 import { getCombatModifiers, getResistance, isImmuneToDamage } from './modifiers'
 import { runCombatTriggers, type CombatEventContext } from './triggerRuntime'
 import type { CombatEffect, CombatSource, CombatTag, DamageType, EffectTarget } from './combatTypes'
@@ -30,7 +30,7 @@ export interface DamageBreakdown {
 export const calculateCombatDamage = (state: GameState, raw: number, damageType: DamageType, source: CombatSource, target: CombatActor, tags: CombatTag[] = source.tags ?? []): DamageBreakdown => {
   const amount = Math.max(0, raw)
   if (amount <= 0 || isImmuneToDamage(state, target, damageType)) return { raw: amount, sourceModified: 0, targetModified: 0, resistance: getResistance(state, target, damageType), resolvedBeforeBarrier: 0, barrierAbsorbed: 0, healthDamage: 0, immune: amount > 0 }
-  const modifierContext = { sourceTags: tags, damageType }
+  const modifierContext = { source, sourceTags: tags, damageType }
   let sourceModified = amount * (1 + getCombatModifiers(state, source.actor, 'damage-dealt-percent', modifierContext))
   if (tags.includes('basic-attack')) sourceModified *= 1 + getCombatModifiers(state, source.actor, 'basic-attack-damage-percent', modifierContext)
   if (source.kind === 'spell') sourceModified *= 1 + getCombatModifiers(state, source.actor, 'spell-damage-percent', modifierContext)
@@ -58,7 +58,7 @@ const applyDamage = (state: GameState, raw: number, damageType: DamageType, sour
   if (source.actor === 'player') state.combat.lastDamageDealt = dealt
   else state.combat.lastDamageTaken = dealt
   const context: CombatEventContext = {
-    source, target, sourceTags: tags, amount: breakdown.resolvedBeforeBarrier, healthDamage: dealt, barrierDamage: breakdown.barrierAbsorbed, damageType,
+    source, eventTarget: target, changedActor: target, sourceTags: tags, amount: breakdown.resolvedBeforeBarrier, healthDamage: dealt, barrierDamage: breakdown.barrierAbsorbed, damageType, previousBarrier: barrierBefore, currentBarrier: getActiveBarrier(state, target),
     previousHp, currentHp, previousHpPercent: previousHp / Math.max(1, maxHp) * 100, currentHpPercent: currentHp / Math.max(1, maxHp) * 100,
   }
   if (breakdown.barrierAbsorbed > 0 && barrierBefore > 0 && getActiveBarrier(state, target) === 0) {
@@ -71,20 +71,39 @@ const applyDamage = (state: GameState, raw: number, damageType: DamageType, sour
   const hitEvent = tags.includes('basic-attack') ? 'on-basic-attack-hit' : source.kind === 'spell' ? 'on-spell-hit' : null
   if (hitEvent) runCombatTriggers(state, source.actor, hitEvent, context, execute, depth)
   if (currentHp <= 0 && dealt > 0) runCombatTriggers(state, source.actor, 'on-kill', context, execute, depth)
-  if (dealt > 0 && currentHp > 0) runCombatTriggers(state, target, 'on-hp-threshold', context, execute, depth)
+  if (dealt > 0) {
+    const thresholdActors = [...new Set<CombatActor>([target, source.actor])]
+    thresholdActors.forEach((thresholdActor) => runCombatTriggers(state, thresholdActor, 'on-hp-threshold', context, execute, depth))
+  }
   return dealt
 }
 
 const applyHealing = (state: GameState, raw: number, source: CombatSource, target: CombatActor, tags: CombatTag[], execute: ExecuteCombatEffects, depth: number) => {
-  const amount = Math.max(0, Math.round(raw * (1 + getCombatModifiers(state, source.actor, 'healing-done-percent', { sourceTags: tags }))))
-  const received = Math.max(0, 1 + getCombatModifiers(state, target, 'healing-received-percent', { sourceTags: tags }))
+  const amount = Math.max(0, Math.round(raw * (1 + getCombatModifiers(state, source.actor, 'healing-done-percent', { source, sourceTags: tags }))))
+  const received = Math.max(0, 1 + getCombatModifiers(state, target, 'healing-received-percent', { source, sourceTags: tags }))
   const before = getActorHealth(state, target)
   const max = target === 'player' ? state.player.maxHealth : state.combat.enemyMaxHp
-  const healed = Math.max(0, Math.min(max, before + amount * received) - before)
+  const healed = Math.max(0, Math.min(max, before + Math.round(amount * received)) - before)
   if (target === 'player') state.player.health += healed
   else state.combat.enemyHp += healed
-  if (healed > 0) runCombatTriggers(state, source.actor, 'on-heal', { source, target, sourceTags: tags, amount: Math.round(healed) }, execute, depth)
-  return Math.round(healed)
+  if (healed > 0) {
+    const context: CombatEventContext = {
+      source,
+      eventTarget: target,
+      changedActor: target,
+      sourceTags: tags,
+      amount: healed,
+      previousHp: before,
+      currentHp: before + healed,
+      previousHpPercent: before / Math.max(1, max) * 100,
+      currentHpPercent: (before + healed) / Math.max(1, max) * 100,
+    }
+    runCombatTriggers(state, source.actor, 'on-heal', context, execute, depth)
+    runCombatTriggers(state, target, 'on-heal-received', context, execute, depth)
+    const thresholdActors = [...new Set<CombatActor>([target, source.actor])]
+    thresholdActors.forEach((thresholdActor) => runCombatTriggers(state, thresholdActor, 'on-hp-threshold', context, execute, depth))
+  }
+  return healed
 }
 
 const executeResource = (state: GameState, effect: Extract<CombatEffect, { type: 'restore-resource' | 'drain-resource' }>, source: CombatSource) => {
@@ -110,7 +129,11 @@ export const executeCombatEffect = (state: GameState, effect: CombatEffect, sour
       break
     }
     case 'heal': applyHealing(state, resolveMagnitude(state, effect.magnitude, source, target), source, target, tags, execute, depth); break
-    case 'gain-barrier': gainBarrierRuntime(state, resolveMagnitude(state, effect.magnitude, source, target), source, target, tags, { mode: effect.mode ?? 'add', durationMs: effect.durationMs === undefined ? null : effect.durationMs }); break
+    case 'gain-barrier': {
+      const result = gainBarrierResult(state, resolveMagnitude(state, effect.magnitude, source, target), source, target, tags, { mode: effect.mode ?? 'add', durationMs: effect.durationMs === undefined ? null : effect.durationMs })
+      if (result.gained > 0) runCombatTriggers(state, target, 'on-barrier-gained', { source, eventTarget: target, changedActor: target, sourceTags: tags, previousBarrier: result.previous, currentBarrier: result.current, barrierGained: result.gained, amount: result.gained }, execute, depth)
+      break
+    }
     case 'restore-resource':
     case 'drain-resource': executeResource(state, effect, source); break
     case 'apply-status': {
@@ -120,13 +143,13 @@ export const executeCombatEffect = (state: GameState, effect: CombatEffect, sour
         const definition = STATUS_DEFINITIONS[effect.statusId]
         appendLog(state, `${definition.name} applied.`)
         // Application events belong to the applier; the status holder is the target.
-        runCombatTriggers(state, source.actor, 'on-status-applied', { source: statusSource, target, sourceTags: tags, statusId: effect.statusId }, execute, depth)
+        runCombatTriggers(state, source.actor, 'on-status-applied', { source: statusSource, eventTarget: target, changedActor: target, sourceTags: tags, statusId: effect.statusId }, execute, depth)
       }
       break
     }
-    case 'remove-status': if (removeStatus(state, target, effect.statusId)) appendLog(state, `${STATUS_DEFINITIONS[effect.statusId]?.name ?? effect.statusId} removed.`); break
-    case 'cleanse': cleanseStatuses(state, target, effect.mode, effect.tag); break
-    case 'dispel': dispelStatuses(state, target, effect.mode, effect.tag); break
+    case 'remove-status': if (removeStatus(state, target, effect.statusId, { executeEffects: execute, source, depth })) appendLog(state, `${STATUS_DEFINITIONS[effect.statusId]?.name ?? effect.statusId} removed.`); break
+    case 'cleanse': cleanseStatuses(state, target, effect.mode, effect.tag, { executeEffects: execute, source, depth }); break
+    case 'dispel': dispelStatuses(state, target, effect.mode, effect.tag, { executeEffects: execute, source, depth }); break
     case 'modify-action-timer': {
       if (target === 'player') state.combat.playerAttackTimerMs = Math.max(0, state.combat.playerAttackTimerMs + effect.amountMs)
       else if (effect.action === 'current' && state.combat.enemyTelegraphMs > 0) state.combat.enemyTelegraphMs = Math.max(0, state.combat.enemyTelegraphMs + effect.amountMs)

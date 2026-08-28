@@ -33,7 +33,7 @@ export type InventoryCategory = 'material' | 'loot' | 'equipment' | 'special'
 export type InventoryMaterialSubtype = 'elemental' | 'creature' | 'ore' | 'refined' | 'arcane'
 export type SpellType = 'damage' | 'heal' | 'barrier' | 'dot' | 'buff'
 import type { ActiveStatus, CombatEffect, SpecialAttackDefinition, StatusId, TraitDefinition } from './systems/combat/combatTypes'
-export type { ActiveStatus, CombatCondition, CombatEffect, CombatSource, CombatTag, DamageType, EffectTarget, Magnitude, ModifierKey, SpecialAttackDefinition, StatusId, StatusModifier, StatusDefinition, TraitDefinition } from './systems/combat/combatTypes'
+export type { ActiveStatus, CombatCondition, CombatConditionContext, CombatEffect, CombatModifier, CombatSource, CombatTag, DamageType, EffectTarget, Magnitude, ModifierKey, SpecialAttackDefinition, StatusId, StatusDefinition, TraitDefinition, TraitId } from './systems/combat/combatTypes'
 export type ManaPillarId = 'leyline-conduit' | 'arcane-reservoir' | 'mana-resonance' | 'astral-expansion' | 'echo-attunement'
 export type ChannelingDiscoveryId = 'stable-leyline' | 'echo-resonance' | 'deep-reservoir'
 export type RecipeId = 'fire-fragment' | 'water-fragment' | 'earth-fragment' | 'air-fragment' | 'prismatic-fragment' | 'ember-staff' | 'tide-focus' | 'stoneweave-robe' | 'windthread-charm'
@@ -176,6 +176,7 @@ export interface CombatState {
   enemyTelegraphMs: number
   enemyTelegraphActionId: string | null
   triggeredRuleIds: string[]
+  ruleCooldowns: Record<string, number>
   pendingBossId: 'grove-sentinel' | null
   playerAttackTimerMs: number
   encounterTimerMs: number

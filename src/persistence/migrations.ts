@@ -109,7 +109,7 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>) => 
     const actor = value.actor === 'player' || value.actor === 'enemy' ? value.actor : fallbackActor
     const kind = ['basic-attack', 'spell', 'weapon', 'status', 'trait', 'special-attack', 'equipment', 'system'].includes(String(value.kind)) ? value.kind as CombatSource['kind'] : 'system'
     const school = ['fire', 'water', 'earth', 'air'].includes(String(value.school)) ? value.school as CombatSource['school'] : undefined
-    return { actor, kind, sourceId: typeof value.sourceId === 'string' ? value.sourceId : 'save-migration', originSourceId: typeof value.originSourceId === 'string' ? value.originSourceId : undefined, school, tags: Array.isArray(value.tags) ? value.tags.filter((tag): tag is NonNullable<CombatSource['tags']>[number] => typeof tag === 'string') : undefined }
+    return { actor, kind, sourceId: typeof value.sourceId === 'string' ? value.sourceId : 'save-migration', originSourceId: typeof value.originSourceId === 'string' ? value.originSourceId : undefined, ruleId: typeof value.ruleId === 'string' ? value.ruleId : undefined, school, tags: Array.isArray(value.tags) ? value.tags.filter((tag): tag is NonNullable<CombatSource['tags']>[number] => typeof tag === 'string') : undefined }
   }
   const normalizeStatuses = (value: unknown, fallbackActor: 'player' | 'enemy'): ActiveStatus[] => {
     if (!Array.isArray(value)) return []
@@ -148,13 +148,20 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>) => 
   const legacyTraitSource: Record<string, string> = { 'grove-sentinel-ancient-growth-threshold': 'grove-sentinel-ancient-growth', 'forest-heart-living-core-threshold': 'forest-heart-living-core', 'stone-rooted-shell-start': 'stone-rooted-shell' }
   const namespaced = rawTriggered.map((id) => id.includes(':') ? id : `enemy:trait:${legacyTraitSource[id] ?? id}:${id}`)
   migrated.combat.triggeredRuleIds = [...new Set([...namespaced, ...legacyTriggered])]
+  const rawRuleCooldowns = isRecord(rawCombat.ruleCooldowns) ? rawCombat.ruleCooldowns : {}
+  const ruleCooldowns: Record<string, number> = {}
+  Object.entries(rawRuleCooldowns).forEach(([key, value]) => {
+    if (key === '__proto__' || key === 'prototype' || key === 'constructor') return
+    if (typeof value === 'number' && Number.isFinite(value) && value >= 0) ruleCooldowns[key] = Math.min(Number.MAX_SAFE_INTEGER, value)
+  })
+  migrated.combat.ruleCooldowns = ruleCooldowns
 }
 
 /** Seeds the historical item archive only for saves that predate the V12 archive shape. */
 const seedLegacyItemDiscoveries = (migrated: GameState, raw: Record<string, any>, sourceVersion: number) => {
   const rawProgress = isRecord(raw.progress) ? raw.progress : {}
   const hasArchive = Array.isArray(rawProgress.discoveredItems)
-  if (sourceVersion >= SAVE_VERSION && hasArchive) return
+  if (sourceVersion >= 12 && hasArchive) return
 
   const discovered = new Set<ItemId>(migrated.progress.discoveredItems)
   const rawEquipment = isRecord(raw.equipment) ? raw.equipment : {}
@@ -351,9 +358,10 @@ const normalizeResearchFocus = (migrated: GameState) => {
 }
 
 const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion = Number(raw.saveVersion ?? 0)) => {
-  // V1-V7 retain their historical marker for callers that still chain those
-  // migrations. Every V8+ document is normalized to the current V12 shape.
-  migrated.saveVersion = sourceVersion >= 8 ? SAVE_VERSION : 8
+  // V1-V7 retain their historical migration marker. V8-V11 retain the V12
+  // normalization marker for existing callers, while V12 and current saves
+  // are upgraded to the V13 schema.
+  migrated.saveVersion = sourceVersion >= 12 ? SAVE_VERSION : sourceVersion >= 8 ? 12 : 8
   migrated.progress.channeling = migrateChanneling(raw.progress, createInitialState().progress)
   migrated.ui.screen = normalizeScreen(isRecord(raw.ui) ? raw.ui.screen : undefined, migrated.ui.screen)
   normalizeDynamicRecords(migrated, raw)
@@ -431,6 +439,7 @@ export const migrateSave = (rawSave: unknown): GameState => {
   if (version === 9) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === 10) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === 11) return finalize(merge(createInitialState(), rawSave), rawSave, version)
+  if (version === 12) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === SAVE_VERSION) {
     return finalize(merge(createInitialState(), rawSave), rawSave, version)
   }

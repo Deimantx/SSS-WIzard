@@ -144,6 +144,8 @@ export type CombatCondition =
   | { type: 'target-barrier-at-least'; value: number }
   | { type: 'target-barrier-at-most'; value: number }
   | { type: 'source-has-tag'; tag: CombatTag }
+  | { type: 'event-status-is'; statusId: StatusId }
+  | { type: 'event-status-has-tag'; tag: CombatTag }
   | { type: 'all'; conditions: CombatCondition[] }
   | { type: 'any'; conditions: CombatCondition[] }
   | { type: 'not'; condition: CombatCondition }
@@ -186,6 +188,8 @@ export interface CombatConditionContext {
   currentBarrier?: number
   barrierGained?: number
   statusId?: StatusId
+  /** Tags belonging to the Status involved in an apply/remove/expiry event. */
+  eventStatusTags?: CombatTag[]
 }
 
 export interface ActiveStatus {

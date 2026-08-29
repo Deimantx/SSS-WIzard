@@ -14,7 +14,5 @@ export const getMonsterTraits = (monster: MonsterDefinition): TraitDefinition[] 
 }
 
 export const getActorTraits = (state: GameState, actor: CombatActor) => {
-  if (actor !== 'enemy' || !state.combat.enemyId) return []
-  const monster = MONSTERS[state.combat.enemyId]
-  return monster ? getMonsterTraits(monster) : []
+  return getTraitDefinitions(getActorTraitIds(state, actor))
 }

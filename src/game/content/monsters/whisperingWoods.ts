@@ -1,6 +1,6 @@
 import { STATUS_DEFINITIONS } from '../statuses'
-import { getTraitDefinition, getTraitDefinitions, validateTraitDefinitions } from '../traits'
-import type { BestiaryCategory, CombatCondition, CombatEffect, CombatTag, DamageType, ItemId, Magnitude, MonsterId, SpecialAttackDefinition, StatusId, TraitId } from '../../types'
+import { getTraitDefinition, validateTraitDefinitions } from '../traits'
+import type { BestiaryCategory, CombatEffect, CombatTag, DamageType, ItemId, Magnitude, MonsterId, SpecialAttackDefinition, StatusId, TraitId } from '../../types'
 
 export interface MonsterDefinition {
   id: MonsterId
@@ -47,14 +47,6 @@ export const WHISPERING_WOODS_MONSTER_IDS = Object.keys(MONSTERS) as MonsterId[]
 
 export const validateMonsterDefinitions = () => {
   const errors: string[] = []
-  const validateCondition = (owner: string, condition: CombatCondition | undefined): void => {
-    if (!condition) return
-    if ((condition.type === 'self-hp-below-percent' || condition.type === 'target-hp-below-percent' || condition.type === 'self-hp-above-percent' || condition.type === 'target-hp-above-percent') && (!Number.isFinite(condition.percent) || condition.percent < 0 || condition.percent > 100)) errors.push(`${owner}: invalid HP threshold`)
-    if ((condition.type === 'self-status-stacks-at-least' || condition.type === 'target-status-stacks-at-least') && (!Number.isInteger(condition.stacks) || condition.stacks < 1)) errors.push(`${owner}: invalid status stack threshold`)
-    if ((condition.type === 'self-barrier-at-least' || condition.type === 'self-barrier-at-most' || condition.type === 'target-barrier-at-least' || condition.type === 'target-barrier-at-most') && (!Number.isFinite(condition.value) || condition.value < 0)) errors.push(`${owner}: invalid Barrier amount`)
-    if (condition.type === 'all' || condition.type === 'any') condition.conditions.forEach((entry) => validateCondition(owner, entry))
-    if (condition.type === 'not') validateCondition(owner, condition.condition)
-  }
   const validateEffects = (owner: string, effects: CombatEffect[]) => effects.forEach((effect) => {
     if ('magnitude' in effect) {
       const magnitude = effect.magnitude
@@ -68,11 +60,8 @@ export const validateMonsterDefinitions = () => {
     const traitIds = monster.traitIds
     if (new Set(traitIds).size !== traitIds.length) errors.push(`${monster.id}: duplicate trait id`)
     traitIds.forEach((traitId) => { if (!getTraitDefinition(traitId)) errors.push(`${monster.id}: unknown trait ${traitId}`) })
-    const ruleIds = getTraitDefinitions(traitIds).flatMap((trait) => trait.rules ?? []).map((rule) => rule.id)
-    if (new Set(ruleIds).size !== ruleIds.length) errors.push(`${monster.id}: duplicate trigger rule id`)
     monster.actionSequence.forEach((step) => { if (step.kind === 'special' && (!step.specialAttackId || !monster.specialAttacks[step.specialAttackId])) errors.push(`${monster.id}: missing special reference`) })
     Object.entries(monster.specialAttacks).forEach(([key, specialAttack]) => { if (key !== specialAttack.id) errors.push(`${monster.id}/${key}: key/id mismatch`); if (specialAttack.telegraphMs < 0 || !Number.isFinite(specialAttack.telegraphMs)) errors.push(`${monster.id}/${specialAttack.id}: invalid telegraph`); validateEffects(`${monster.id}/${specialAttack.id}`, specialAttack.effects) })
-    getTraitDefinitions(traitIds).forEach((trait) => trait.rules?.forEach((rule) => { validateCondition(`${monster.id}/${trait.id}/${rule.id}`, rule.condition); validateEffects(`${monster.id}/${trait.id}/${rule.id}`, rule.effects) }))
     Object.entries(monster.resistances ?? {}).forEach(([damageType, resistance]) => { if (!Number.isFinite(resistance) || resistance < -1 || resistance > 0.9) errors.push(`${monster.id}: invalid ${damageType} resistance`) })
   })
   if (errors.length && import.meta.env.DEV) console.error(`[combat-monsters] ${errors.join('; ')}`)

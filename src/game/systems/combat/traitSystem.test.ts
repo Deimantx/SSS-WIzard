@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { migrateSave } from '../../../persistence/migrations'
 import { STATUS_DEFINITIONS } from '../../content/statuses'
-import { TRAIT_DEFINITIONS } from '../../content/traits'
+import { TRAIT_DEFINITIONS, validateTraitDefinitions } from '../../content/traits'
 import { MONSTERS } from '../../content/monsters/whisperingWoods'
+import { validateMonsterDefinitions } from '../../content/monsters/whisperingWoods'
 import type { CombatEffect, CombatSource, TraitDefinition, TraitId } from '../../types'
 import { executeCombatEffects, damageEnemy, damagePlayer } from './effectResolver'
 import { getCombatModifiers } from './modifiers'
@@ -54,6 +55,7 @@ describe('Universal Trait System V1', () => {
   it('supports nested conditions, source tags, explicit stack ownership, and Barrier amounts', () => {
     const state = stateWithEnemy()
     applyStatus(state, 'enemy', 'shock', playerSource, { stacks: 3 })
+    applyStatus(state, 'player', 'shock', playerSource, { stacks: 3 })
     state.combat.enemyBarrier = 20
     const condition = {
       type: 'all' as const,
@@ -65,6 +67,7 @@ describe('Universal Trait System V1', () => {
       ],
     }
     expect(evaluateCombatCondition(state, 'enemy', condition, { source: playerSource })).toBe(true)
+    expect(evaluateCombatCondition(state, 'enemy', { type: 'target-status-stacks-at-least', statusId: 'shock', stacks: 3 }, {})).toBe(true)
     expect(evaluateCombatCondition(state, 'enemy', { type: 'self-barrier-at-most', value: 19 }, {})).toBe(false)
     expect(evaluateCombatCondition(state, 'enemy', { type: 'any', conditions: [{ type: 'self-hp-above-percent', percent: 100 }, { type: 'self-barrier-at-least', value: 20 }] }, {})).toBe(true)
   })
@@ -75,6 +78,12 @@ describe('Universal Trait System V1', () => {
     expect(conditionContainsCrossedHpThreshold('enemy', downward, { changedActor: 'enemy', previousHpPercent: 39, currentHpPercent: 30 })).toBe(false)
     expect(conditionContainsCrossedHpThreshold('enemy', { type: 'self-hp-above-percent', percent: 40 }, { changedActor: 'enemy', previousHpPercent: 39, currentHpPercent: 41 })).toBe(true)
     expect(conditionContainsCrossedHpThreshold('enemy', { type: 'target-hp-below-percent', percent: 40 }, { changedActor: 'player', previousHpPercent: 41, currentHpPercent: 39 })).toBe(true)
+    const notBelow = { type: 'not' as const, condition: downward }
+    expect(conditionContainsCrossedHpThreshold('enemy', notBelow, { changedActor: 'enemy', previousHpPercent: 39, currentHpPercent: 41 })).toBe(true)
+    expect(conditionContainsCrossedHpThreshold('enemy', notBelow, { changedActor: 'enemy', previousHpPercent: 41, currentHpPercent: 39 })).toBe(false)
+    expect(conditionContainsCrossedHpThreshold('enemy', { type: 'not', condition: { type: 'self-hp-above-percent', percent: 40 } }, { changedActor: 'enemy', previousHpPercent: 41, currentHpPercent: 39 })).toBe(true)
+    expect(conditionContainsCrossedHpThreshold('enemy', { type: 'not', condition: notBelow }, { changedActor: 'enemy', previousHpPercent: 41, currentHpPercent: 39 })).toBe(true)
+    expect(conditionContainsCrossedHpThreshold('enemy', { type: 'all', conditions: [notBelow, { type: 'any', conditions: [notBelow, { type: 'self-hp-below-percent', percent: 10 }] }] }, { changedActor: 'enemy', previousHpPercent: 39, currentHpPercent: 41 })).toBe(true)
 
     withTemporaryTrait({
       id: 'test-target-threshold', name: 'Target Threshold', description: 'Test.',
@@ -111,7 +120,7 @@ describe('Universal Trait System V1', () => {
     })
   })
 
-  it('runs same-event rules by priority against live state and preserves equal-priority order', () => {
+  it('runs same-event rules by priority against live state', () => {
     withTemporaryTrait({
       id: 'test-order', name: 'Order', description: 'Test.',
       rules: [
@@ -125,6 +134,37 @@ describe('Universal Trait System V1', () => {
       runCombatTriggers(state, 'enemy', 'on-combat-start', { eventTarget: 'player' }, executeCombatEffects)
       expect(state.combat.enemyBarrier).toBe(3)
       expect(state.combat.enemyStatuses.some((status) => status.statusId === 'fortified')).toBe(true)
+    })
+  })
+
+  it('preserves authored order for equal-priority rules', () => {
+    withTemporaryTrait({
+      id: 'test-equal-priority', name: 'Equal Priority', description: 'Test.',
+      rules: [
+        { id: 'gain-first', event: 'on-damage-taken', priority: 0, effects: [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 3 } }] },
+        { id: 'observe-second', event: 'on-damage-taken', priority: 0, condition: { type: 'self-has-barrier' }, effects: [{ type: 'apply-status', target: 'self', statusId: 'fortified' }] },
+      ],
+    }, () => {
+      const state = stateWithEnemy()
+      damageEnemy(state, 1, 'spell')
+      expect(state.combat.enemyBarrier).toBe(3)
+      expect(state.combat.enemyStatuses.some((status) => status.statusId === 'fortified')).toBe(true)
+    })
+  })
+
+  it('does not start a cooldown when an event condition fails', () => {
+    withTemporaryTrait({
+      id: 'test-conditional-cooldown', name: 'Conditional Cooldown', description: 'Test.',
+      rules: [{ id: 'fire-only', event: 'on-damage-taken', condition: { type: 'source-has-tag', tag: 'fire' }, cooldownMs: 3000, effects: [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 2 } }] }],
+    }, () => {
+      const state = stateWithEnemy()
+      const key = 'enemy:trait:test-conditional-cooldown:fire-only'
+      damageEnemy(state, 1, 'spell')
+      expect(state.combat.enemyBarrier).toBe(0)
+      expect(state.combat.ruleCooldowns[key] ?? 0).toBe(0)
+      executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', damageType: 'fire', magnitude: { type: 'flat', value: 1 } }], playerSource)
+      expect(state.combat.enemyBarrier).toBe(2)
+      expect(state.combat.ruleCooldowns[key]).toBe(3000)
     })
   })
 
@@ -148,14 +188,58 @@ describe('Universal Trait System V1', () => {
     })
   })
 
+  it('keeps lifecycle Status identity separate from remover source tags', () => {
+    withTemporaryTrait({
+      id: 'test-lifecycle-context', name: 'Lifecycle Context', description: 'Test.',
+      rules: [
+        { id: 'source-fire', event: 'on-status-removed', condition: { type: 'source-has-tag', tag: 'fire' }, effects: [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 5 } }] },
+        { id: 'status-fire', event: 'on-status-removed', condition: { type: 'event-status-has-tag', tag: 'fire' }, effects: [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 7 } }] },
+        { id: 'fortified-only', event: 'on-status-removed', condition: { type: 'event-status-is', statusId: 'fortified' }, effects: [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 11 } }] },
+      ],
+    }, () => {
+      const state = stateWithEnemy()
+      applyStatus(state, 'enemy', 'burning', enemySource)
+      applyStatus(state, 'enemy', 'fortified', enemySource)
+      removeStatus(state, 'enemy', 'burning', { executeEffects: executeCombatEffects, source: enemySource })
+      expect(state.combat.enemyBarrier).toBe(7)
+      removeStatus(state, 'enemy', 'fortified', { executeEffects: executeCombatEffects, source: playerSource })
+      expect(state.combat.enemyBarrier).toBe(23)
+    })
+  })
+
+  it('matches a specific Status on expiry and not other Status expiries', () => {
+    withTemporaryTrait({
+      id: 'test-expiry-context', name: 'Expiry Context', description: 'Test.',
+      rules: [{ id: 'quickening-expired', event: 'on-status-expired', condition: { type: 'event-status-is', statusId: 'quickening' }, effects: [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 6 } }] }],
+    }, () => {
+      const state = stateWithEnemy()
+      applyStatus(state, 'enemy', 'quickening', enemySource, { durationMs: 1 })
+      tickStatuses(state, 1, executeCombatEffects)
+      expect(state.combat.enemyBarrier).toBe(6)
+      applyStatus(state, 'enemy', 'fortified', enemySource, { durationMs: 1 })
+      tickStatuses(state, 1, executeCombatEffects)
+      expect(state.combat.enemyBarrier).toBe(6)
+    })
+  })
+
   it('distinguishes explicit removal from expiry and lets the removed Status own the rule', () => {
     const original = STATUS_DEFINITIONS.quickening.triggers
-    STATUS_DEFINITIONS.quickening.triggers = [{ id: 'test-removed', event: 'on-status-removed', effects: [{ type: 'apply-status', target: 'self', statusId: 'haste' }] }]
+    STATUS_DEFINITIONS.quickening.triggers = [
+      { id: 'test-removed', event: 'on-status-removed', effects: [{ type: 'apply-status', target: 'self', statusId: 'fortified' }] },
+      { id: 'test-expired', event: 'on-status-expired', effects: [{ type: 'apply-status', target: 'self', statusId: 'haste' }] },
+    ]
     try {
       const state = stateWithEnemy()
       applyStatus(state, 'player', 'quickening', playerSource)
       expect(removeStatus(state, 'player', 'quickening', { executeEffects: executeCombatEffects, source: playerSource })).toBe(true)
-      expect(state.combat.playerStatuses.some((status) => status.statusId === 'haste')).toBe(true)
+      expect(state.combat.playerStatuses.some((status) => status.statusId === 'fortified')).toBe(true)
+      expect(state.combat.playerStatuses.some((status) => status.statusId === 'haste')).toBe(false)
+
+      const expiryState = stateWithEnemy()
+      applyStatus(expiryState, 'player', 'quickening', playerSource, { durationMs: 1 })
+      tickStatuses(expiryState, 1, executeCombatEffects)
+      expect(expiryState.combat.playerStatuses.some((status) => status.statusId === 'haste')).toBe(true)
+      expect(expiryState.combat.playerStatuses.some((status) => status.statusId === 'fortified')).toBe(false)
     } finally { STATUS_DEFINITIONS.quickening.triggers = original }
   })
 
@@ -179,5 +263,28 @@ describe('Universal Trait System V1', () => {
     expect(v12.combat.ruleCooldowns).toEqual({})
     const current = migrateSave({ ...initial, saveVersion: 13, combat: { ...initial.combat, ruleCooldowns: { valid: 2500, negative: -1, nan: Number.NaN, infinite: Number.POSITIVE_INFINITY, __proto__: 4 } } })
     expect(current.combat.ruleCooldowns).toEqual({ valid: 2500 })
+  })
+
+  it('allows local rule IDs across Traits but rejects duplicates within one Trait', () => {
+    const registry = TRAIT_DEFINITIONS as Record<string, TraitDefinition>
+    const monster = MONSTERS['forest-wisp']
+    const originalTraitIds = [...monster.traitIds]
+    const originalA = registry['test-validator-a']
+    const originalB = registry['test-validator-b']
+    const sharedRule = { id: 'threshold', event: 'on-combat-start' as const, effects: [] }
+    registry['test-validator-a'] = { id: 'test-validator-a', name: 'Validator A', description: 'Test.', rules: [sharedRule] }
+    registry['test-validator-b'] = { id: 'test-validator-b', name: 'Validator B', description: 'Test.', rules: [sharedRule] }
+    monster.traitIds = ['test-validator-a' as TraitId, 'test-validator-b' as TraitId]
+    try {
+      expect(validateMonsterDefinitions()).toEqual([])
+      registry['test-validator-a'] = { ...registry['test-validator-a'], rules: [sharedRule, { ...sharedRule }] }
+      expect(validateTraitDefinitions()).toContain('[combat-traits] test-validator-a: duplicate rule id')
+    } finally {
+      monster.traitIds = originalTraitIds
+      if (originalA) registry['test-validator-a'] = originalA
+      else delete registry['test-validator-a']
+      if (originalB) registry['test-validator-b'] = originalB
+      else delete registry['test-validator-b']
+    }
   })
 })

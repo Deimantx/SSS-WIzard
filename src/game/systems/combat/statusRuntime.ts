@@ -85,12 +85,17 @@ const removeStatusEntry = (state: GameState, actor: CombatActor, statusId: Statu
   setStatusList(state, actor, statuses.filter((_, entryIndex) => entryIndex !== index))
   if (options.executeEffects) {
     const definition = STATUS_DEFINITIONS[removed.statusId]
+    const eventStatusTags = definition?.tags ?? []
+    const lifecycleSource: CombatSource = options.reason === 'expired'
+      ? { actor, kind: 'status', sourceId: removed.statusId, originSourceId: removed.source.sourceId, tags: ['status', ...eventStatusTags] }
+      : options.source ?? removed.source
     runCombatTriggers(state, actor, options.reason === 'expired' ? 'on-status-expired' : 'on-status-removed', {
-      source: options.source ?? removed.source,
+      source: lifecycleSource,
       eventTarget: actor,
       changedActor: actor,
       statusId: removed.statusId,
-      sourceTags: ['status', ...(definition?.tags ?? [])],
+      sourceTags: lifecycleSource.tags ?? [],
+      eventStatusTags,
     }, options.executeEffects, options.depth ?? 0, [removed])
   }
   return removed

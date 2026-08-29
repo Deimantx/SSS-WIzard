@@ -36,6 +36,8 @@ export const evaluateCombatCondition = (state: GameState, actor: CombatActor, co
     case 'target-barrier-at-least': return barrierFor(state, target) >= condition.value
     case 'target-barrier-at-most': return barrierFor(state, target) <= condition.value
     case 'source-has-tag': return sourceTagsFor(context).includes(condition.tag)
+    case 'event-status-is': return context.statusId === condition.statusId
+    case 'event-status-has-tag': return context.eventStatusTags?.includes(condition.tag) ?? false
     case 'all': return condition.conditions.every((entry) => evaluateCombatCondition(state, actor, entry, context))
     case 'any': return condition.conditions.some((entry) => evaluateCombatCondition(state, actor, entry, context))
     case 'not': return !evaluateCombatCondition(state, actor, condition.condition, context)
@@ -44,24 +46,28 @@ export const evaluateCombatCondition = (state: GameState, actor: CombatActor, co
 
 const thresholdActor = (actor: CombatActor, type: CombatCondition['type']) => type.startsWith('target-') ? opponentOf(actor) : actor
 
-const crossedLeaf = (actor: CombatActor, condition: Extract<CombatCondition, { type: 'self-hp-below-percent' | 'target-hp-below-percent' | 'self-hp-above-percent' | 'target-hp-above-percent' }>, context: CombatConditionContext) => {
+const crossedLeaf = (actor: CombatActor, condition: Extract<CombatCondition, { type: 'self-hp-below-percent' | 'target-hp-below-percent' | 'self-hp-above-percent' | 'target-hp-above-percent' }>, context: CombatConditionContext, negated: boolean) => {
   if (changedActorFor(context) !== thresholdActor(actor, condition.type)) return false
   if (context.previousHpPercent === undefined || context.currentHpPercent === undefined) return false
-  if (condition.type.endsWith('below-percent')) return context.previousHpPercent > condition.percent && context.currentHpPercent <= condition.percent
-  return context.previousHpPercent < condition.percent && context.currentHpPercent >= condition.percent
+  if (condition.type.endsWith('below-percent')) return negated
+    ? context.previousHpPercent <= condition.percent && context.currentHpPercent > condition.percent
+    : context.previousHpPercent > condition.percent && context.currentHpPercent <= condition.percent
+  return negated
+    ? context.previousHpPercent >= condition.percent && context.currentHpPercent < condition.percent
+    : context.previousHpPercent < condition.percent && context.currentHpPercent >= condition.percent
 }
 
 /** Returns true only when at least one HP threshold leaf in a condition crossed. */
-export const conditionContainsCrossedHpThreshold = (actor: CombatActor, condition: CombatCondition | undefined, context: CombatConditionContext): boolean => {
+export const conditionContainsCrossedHpThreshold = (actor: CombatActor, condition: CombatCondition | undefined, context: CombatConditionContext, negated = false): boolean => {
   if (!condition) return false
   switch (condition.type) {
     case 'self-hp-below-percent':
     case 'target-hp-below-percent':
     case 'self-hp-above-percent':
-    case 'target-hp-above-percent': return crossedLeaf(actor, condition, context)
+    case 'target-hp-above-percent': return crossedLeaf(actor, condition, context, negated)
     case 'all':
-    case 'any': return condition.conditions.some((entry) => conditionContainsCrossedHpThreshold(actor, entry, context))
-    case 'not': return conditionContainsCrossedHpThreshold(actor, condition.condition, context)
+    case 'any': return condition.conditions.some((entry) => conditionContainsCrossedHpThreshold(actor, entry, context, negated))
+    case 'not': return conditionContainsCrossedHpThreshold(actor, condition.condition, context, !negated)
     default: return false
   }
 }

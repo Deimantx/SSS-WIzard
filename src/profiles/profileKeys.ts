@@ -5,5 +5,6 @@ export const PROFILE_SLOT_IDS: ProfileSlotId[] = ['slot-1', 'slot-2', 'slot-3']
 
 export const profileSaveKey = (slotId: ProfileSlotId) => `sss-wizard-profile-${slotId}-save-v1`
 export const profileSaveBackupKey = (slotId: ProfileSlotId) => `sss-wizard-profile-${slotId}-save-backup-v1`
+export const profileSaveRecoveryKey = (slotId: ProfileSlotId) => `sss-wizard-profile-${slotId}-save-recovery-v1`
 
 export const isProfileSlotId = (value: unknown): value is ProfileSlotId => PROFILE_SLOT_IDS.includes(value as ProfileSlotId)

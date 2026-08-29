@@ -9,6 +9,7 @@ import { getActorHealth, resolveMagnitude } from './magnitude'
 import { consumeBarrier, gainBarrierResult, gainBarrier as gainBarrierRuntime, getActiveBarrier } from './barrierRuntime'
 import { getCombatModifiers, getResistance, isImmuneToDamage } from './modifiers'
 import { runCombatTriggers, type CombatEventContext } from './triggerRuntime'
+import { interruptEnemyAction, resolveActiveEnemyAction, setEnemyActionPattern } from './actionRuntime'
 import type { CombatEffect, CombatSource, CombatTag, DamageType, EffectTarget } from './combatTypes'
 
 const MAX_EFFECT_DEPTH = 20
@@ -152,8 +153,10 @@ export const executeCombatEffect = (state: GameState, effect: CombatEffect, sour
     case 'dispel': dispelStatuses(state, target, effect.mode, effect.tag, { executeEffects: execute, source, depth }); break
     case 'modify-action-timer': {
       if (target === 'player') state.combat.playerAttackTimerMs = Math.max(0, state.combat.playerAttackTimerMs + effect.amountMs)
-      else if (effect.action === 'current' && state.combat.enemyTelegraphMs > 0) state.combat.enemyTelegraphMs = Math.max(0, state.combat.enemyTelegraphMs + effect.amountMs)
-      else state.combat.enemyActionTimerMs = Math.max(0, state.combat.enemyActionTimerMs + effect.amountMs)
+      else if (effect.action === 'current' && state.combat.enemyTelegraphActionId) {
+        state.combat.enemyTelegraphMs = Math.max(0, state.combat.enemyTelegraphMs + effect.amountMs)
+        if (state.combat.enemyTelegraphMs <= 0) resolveActiveEnemyAction(state, execute)
+      } else state.combat.enemyActionTimerMs = Math.max(0, state.combat.enemyActionTimerMs + effect.amountMs)
       appendLog(state, `${effect.amountMs >= 0 ? 'Action delayed' : 'Action timer changed'} by ${Math.abs(effect.amountMs)}ms.`)
       break
     }
@@ -164,21 +167,8 @@ export const executeCombatEffect = (state: GameState, effect: CombatEffect, sour
       }
       break
     }
-    case 'interrupt': {
-      if (target === 'enemy' && state.combat.enemyTelegraphMs > 0) {
-        const actionId = state.combat.enemyTelegraphActionId
-        const special = state.combat.enemyId && actionId ? MONSTERS[state.combat.enemyId].specialAttacks[actionId] : undefined
-        if (special?.interruptible === false) {
-          appendLog(state, `${special.name} cannot be interrupted.`)
-          break
-        }
-        state.combat.enemyTelegraphMs = 0
-        state.combat.enemyTelegraphActionId = null
-        state.combat.enemyActionTimerMs = state.combat.enemyIntervalMs
-        appendLog(state, `${actionId ?? 'Special Attack'} interrupted.`)
-      }
-      break
-    }
+    case 'interrupt': if (target === 'enemy') interruptEnemyAction(state, execute); break
+    case 'set-action-pattern': if (target === 'enemy') setEnemyActionPattern(state, effect.patternId); break
   }
 }
 

@@ -1,5 +1,5 @@
 import { STATUS_DEFINITIONS } from '../statuses'
-import type { CombatCondition, CombatEffect, CombatModifier, Magnitude, TraitDefinition, TraitId } from '../../systems/combat/combatTypes'
+import type { CombatCondition, CombatEffect, CombatModifier, CombatTag, Magnitude, TraitDefinition, TraitId } from '../../systems/combat/combatTypes'
 
 const gainBarrier = (magnitude: Magnitude): CombatEffect => ({
   type: 'gain-barrier',
@@ -15,6 +15,7 @@ const applyStatus = (statusId: Extract<CombatEffect, { type: 'apply-status' }>['
   target: 'self',
   statusId,
 })
+const COMBAT_TAGS: readonly CombatTag[] = ['basic-attack', 'spell', 'weapon', 'equipment', 'melee', 'ranged', 'magic', 'direct', 'heal', 'dot', 'hot', 'status', 'special', 'trait', 'buff', 'debuff', 'control', 'barrier', 'physical', 'arcane', 'fire', 'water', 'earth', 'air']
 
 export const TRAIT_DEFINITIONS: Record<TraitId, TraitDefinition> = {
   'forest-wisp-flicker': {
@@ -83,6 +84,8 @@ const validateCondition = (owner: string, condition: CombatCondition | undefined
   if (condition.type === 'self-barrier-at-least' || condition.type === 'self-barrier-at-most' || condition.type === 'target-barrier-at-least' || condition.type === 'target-barrier-at-most') {
     if (!Number.isFinite(condition.value) || condition.value < 0) errors.push(`${owner}: invalid Barrier amount`)
   }
+  if (condition.type === 'event-action-is' && !condition.actionId.trim()) errors.push(`${owner}: action id is required`)
+  if (condition.type === 'event-action-has-tag' && !COMBAT_TAGS.includes(condition.tag)) errors.push(`${owner}: invalid action tag`)
   if (condition.type === 'all' || condition.type === 'any') condition.conditions.forEach((entry) => validateCondition(owner, entry, errors))
   if (condition.type === 'not') validateCondition(owner, condition.condition, errors)
 }
@@ -94,6 +97,7 @@ const validateEffects = (owner: string, effects: CombatEffect[], errors: string[
     if (magnitude.type === 'school-level' && (!Number.isFinite(magnitude.base) || !Number.isFinite(magnitude.perLevel))) errors.push(`${owner}: invalid school magnitude`)
   }
   if (effect.type === 'apply-status' && !STATUS_DEFINITIONS[effect.statusId]) errors.push(`${owner}: unknown status ${effect.statusId}`)
+  if (effect.type === 'set-action-pattern' && !effect.patternId.trim()) errors.push(`${owner}: action pattern id is required`)
   if ('durationMs' in effect && effect.durationMs !== null && effect.durationMs !== undefined && (!Number.isFinite(effect.durationMs) || effect.durationMs < 0)) errors.push(`${owner}: invalid duration`)
 })
 

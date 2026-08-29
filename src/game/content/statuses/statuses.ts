@@ -1,10 +1,11 @@
-import type { CombatEffect, CombatModifier, StatusDefinition, StatusId } from '../../systems/combat/combatTypes'
+import type { CombatEffect, CombatModifier, CombatTag, StatusDefinition, StatusId } from '../../systems/combat/combatTypes'
 
 // Periodic effects are authored relative to the status holder. The runtime
 // maps the holder to self/opponent while retaining the original source.
 const damage = (damageType: 'physical' | 'fire', value: number): CombatEffect => ({ type: 'deal-damage', target: 'self', damageType, magnitude: { type: 'flat', value }, tags: ['dot', damageType] })
 const heal = (value: number): CombatEffect => ({ type: 'heal', target: 'self', magnitude: { type: 'flat', value }, tags: ['heal', 'hot'] })
 const modifier = (key: CombatModifier['key'], value: number, extra: Omit<CombatModifier, 'key' | 'value'> = {}): CombatModifier => ({ key, value, ...extra })
+const COMBAT_TAGS: readonly CombatTag[] = ['basic-attack', 'spell', 'weapon', 'equipment', 'melee', 'ranged', 'magic', 'direct', 'heal', 'dot', 'hot', 'status', 'special', 'trait', 'buff', 'debuff', 'control', 'barrier', 'physical', 'arcane', 'fire', 'water', 'earth', 'air']
 
 export const STATUS_DEFINITIONS: Record<StatusId, StatusDefinition> = {
   burning: {
@@ -16,8 +17,8 @@ export const STATUS_DEFINITIONS: Record<StatusId, StatusDefinition> = {
     stacking: { mode: 'refresh' }, modifiers: [modifier('basic-attack-speed-percent', 0.25)], cleanseable: false, dispellable: true,
   },
   haste: {
-    id: 'haste', name: 'Haste', description: 'Basic Attacks resolve 15% faster.', classification: 'buff', tags: ['buff'], defaultDurationMs: null,
-    stacking: { mode: 'refresh' }, modifiers: [modifier('basic-attack-speed-percent', 0.15)], cleanseable: false, dispellable: true,
+    id: 'haste', name: 'Haste', description: 'Action speed increased by 15%.', classification: 'buff', tags: ['buff'], defaultDurationMs: null,
+    stacking: { mode: 'refresh' }, modifiers: [modifier('action-speed-percent', 0.15)], cleanseable: false, dispellable: true,
   },
   'thorn-wound': {
     id: 'thorn-wound', name: 'Thorn Wound', description: 'Thorns deal physical damage over time.', classification: 'debuff', tags: ['debuff', 'dot'], defaultDurationMs: 6000,
@@ -69,6 +70,8 @@ export const validateStatusDefinitions = () => {
     if ((condition.type === 'self-hp-below-percent' || condition.type === 'target-hp-below-percent' || condition.type === 'self-hp-above-percent' || condition.type === 'target-hp-above-percent') && (!Number.isFinite(condition.percent) || condition.percent < 0 || condition.percent > 100)) errors.push(`${owner}: invalid HP threshold`)
     if ((condition.type === 'self-status-stacks-at-least' || condition.type === 'target-status-stacks-at-least') && (!Number.isInteger(condition.stacks) || condition.stacks < 1)) errors.push(`${owner}: invalid status stack threshold`)
     if ((condition.type === 'self-barrier-at-least' || condition.type === 'self-barrier-at-most' || condition.type === 'target-barrier-at-least' || condition.type === 'target-barrier-at-most') && (!Number.isFinite(condition.value) || condition.value < 0)) errors.push(`${owner}: invalid Barrier amount`)
+    if (condition.type === 'event-action-is' && !condition.actionId.trim()) errors.push(`${owner}: action id is required`)
+    if (condition.type === 'event-action-has-tag' && !COMBAT_TAGS.includes(condition.tag)) errors.push(`${owner}: invalid action tag`)
     if (condition.type === 'all' || condition.type === 'any') condition.conditions.forEach((entry) => validateCondition(owner, entry))
     if (condition.type === 'not') validateCondition(owner, condition.condition)
   }
@@ -79,6 +82,7 @@ export const validateStatusDefinitions = () => {
       if (magnitude.type === 'school-level' && (!Number.isFinite(magnitude.base) || !Number.isFinite(magnitude.perLevel))) errors.push(`${owner}: non-finite school magnitude`)
     }
     if (effect.type === 'apply-status' && !STATUS_DEFINITIONS[effect.statusId]) errors.push(`${owner}: unknown status ${effect.statusId}`)
+    if (effect.type === 'set-action-pattern' && !effect.patternId.trim()) errors.push(`${owner}: action pattern id is required`)
   })
   Object.entries(STATUS_DEFINITIONS).forEach(([key, definition]) => {
     if (key !== definition.id) errors.push(`${key}: key/id mismatch`)

@@ -101,13 +101,14 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
   migrated.progress.discoveredItems = [...new Set(rawDiscoveredItems.filter((id): id is ItemId => typeof id === 'string' && itemIds.includes(id)))]
 }
 
-const normalizeCombatState = (migrated: GameState, raw: Record<string, any>) => {
+const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sourceVersion: number) => {
   const fresh = createInitialState()
   const rawCombat = isRecord(raw.combat) ? raw.combat : {}
   const normalizeSource = (value: unknown, fallbackActor: 'player' | 'enemy'): CombatSource => {
     if (!isRecord(value)) return { actor: fallbackActor, kind: 'system', sourceId: 'save-migration' }
     const actor = value.actor === 'player' || value.actor === 'enemy' ? value.actor : fallbackActor
-    const kind = ['basic-attack', 'spell', 'weapon', 'status', 'trait', 'special-attack', 'equipment', 'system'].includes(String(value.kind)) ? value.kind as CombatSource['kind'] : 'system'
+    const rawKind = String(value.kind)
+    const kind = rawKind === 'special-attack' ? 'action' : ['basic-attack', 'spell', 'weapon', 'status', 'trait', 'action', 'equipment', 'system'].includes(rawKind) ? rawKind as CombatSource['kind'] : 'system'
     const school = ['fire', 'water', 'earth', 'air'].includes(String(value.school)) ? value.school as CombatSource['school'] : undefined
     return { actor, kind, sourceId: typeof value.sourceId === 'string' ? value.sourceId : 'save-migration', originSourceId: typeof value.originSourceId === 'string' ? value.originSourceId : undefined, ruleId: typeof value.ruleId === 'string' ? value.ruleId : undefined, school, tags: Array.isArray(value.tags) ? value.tags.filter((tag): tag is NonNullable<CombatSource['tags']>[number] => typeof tag === 'string') : undefined }
   }
@@ -142,6 +143,32 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>) => 
   migrated.combat.playerStatuses = normalizeStatuses(rawPlayerStatuses, 'player')
   migrated.combat.enemyStatuses = normalizeStatuses(rawCombat.enemyStatuses, 'enemy')
   migrated.combat.playerAttackTimerMs = Math.max(0, migrated.combat.playerAttackTimerMs + oldDelay)
+
+  const activeEnemyId = typeof migrated.combat.enemyId === 'string' && MONSTERS[migrated.combat.enemyId] ? migrated.combat.enemyId : null
+  const monster = activeEnemyId ? MONSTERS[activeEnemyId] : undefined
+  const rawPatternId = typeof rawCombat.enemyActionPatternId === 'string' ? rawCombat.enemyActionPatternId : undefined
+  const pattern = monster && sourceVersion >= 14 && rawPatternId && monster.actionPatterns[rawPatternId]
+    ? monster.actionPatterns[rawPatternId]
+    : monster?.actionPatterns[monster.defaultActionPatternId]
+  migrated.combat.enemyActionPatternId = pattern?.id ?? null
+  const rawIndex = nonNegativeInteger(rawCombat.enemyActionIndex) ?? 0
+  migrated.combat.enemyActionIndex = pattern && pattern.steps.length > 0 ? rawIndex % pattern.steps.length : 0
+  const savedRecoveryCandidate = sourceVersion >= 14 ? nonNegativeNumber(rawCombat.enemyActionRecoveryMs) : undefined
+  const legacyRecoveryCandidate = nonNegativeNumber(rawCombat.enemyIntervalMs)
+  const savedRecovery = savedRecoveryCandidate !== undefined && savedRecoveryCandidate >= 100 ? savedRecoveryCandidate : undefined
+  const legacyRecovery = legacyRecoveryCandidate !== undefined && legacyRecoveryCandidate >= 100 ? legacyRecoveryCandidate : undefined
+  migrated.combat.enemyActionRecoveryMs = monster ? savedRecovery ?? legacyRecovery ?? monster.actionIntervalMs : 0
+  const rawRecoveryTimer = nonNegativeNumber(rawCombat.enemyActionTimerMs)
+  migrated.combat.enemyActionTimerMs = monster ? rawRecoveryTimer ?? migrated.combat.enemyActionRecoveryMs : 0
+  const rawActionId = typeof rawCombat.enemyTelegraphActionId === 'string' ? rawCombat.enemyTelegraphActionId : undefined
+  const activeAction = monster && rawActionId ? monster.actions[rawActionId] : undefined
+  const rawTelegraph = nonNegativeNumber(rawCombat.enemyTelegraphMs)
+  const validTelegraph = Boolean(activeAction && rawTelegraph !== undefined)
+  migrated.combat.enemyTelegraphActionId = validTelegraph ? activeAction?.id ?? null : null
+  migrated.combat.enemyTelegraphMs = validTelegraph ? rawTelegraph ?? 0 : 0
+  const rawStepId = typeof rawCombat.enemyTelegraphStepId === 'string' ? rawCombat.enemyTelegraphStepId : undefined
+  const validStep = sourceVersion >= 14 && pattern && rawStepId && pattern.steps.some((step) => step.id === rawStepId && step.type === 'action' && step.actionId === activeAction?.id)
+  migrated.combat.enemyTelegraphStepId = validTelegraph && validStep ? rawStepId ?? null : null
   const rawTriggered = Array.isArray(rawCombat.triggeredRuleIds) ? rawCombat.triggeredRuleIds.filter((id): id is string => typeof id === 'string') : []
   const legacySpecials = isRecord(rawCombat.enemySpecialUsed) ? rawCombat.enemySpecialUsed : {}
   const legacyTriggered = Object.entries(legacySpecials).flatMap(([id, used]) => used ? id === 'ancient-growth' ? ['enemy:trait:grove-sentinel-ancient-growth:grove-sentinel-ancient-growth-threshold'] : id === 'living-core' ? ['enemy:trait:forest-heart-living-core:forest-heart-living-core-threshold'] : [] : [])
@@ -358,14 +385,13 @@ const normalizeResearchFocus = (migrated: GameState) => {
 }
 
 const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion = Number(raw.saveVersion ?? 0)) => {
-  // V1-V7 retain their historical migration marker. V8-V11 retain the V12
-  // normalization marker for existing callers, while V12 and current saves
-  // are upgraded to the V13 schema.
-  migrated.saveVersion = sourceVersion >= 12 ? SAVE_VERSION : sourceVersion >= 8 ? 12 : 8
+  // V1-V7 retain their historical migration marker. V8-V13 are normalized
+  // into the current V14 combat/save document.
+  migrated.saveVersion = sourceVersion >= 8 ? SAVE_VERSION : 8
   migrated.progress.channeling = migrateChanneling(raw.progress, createInitialState().progress)
   migrated.ui.screen = normalizeScreen(isRecord(raw.ui) ? raw.ui.screen : undefined, migrated.ui.screen)
   normalizeDynamicRecords(migrated, raw)
-  normalizeCombatState(migrated, raw)
+  normalizeCombatState(migrated, raw, sourceVersion)
   normalizeDirectContentReferences(migrated, raw)
   seedLegacyItemDiscoveries(migrated, raw, sourceVersion)
   normalizeResearch(migrated, raw, sourceVersion)
@@ -440,6 +466,7 @@ export const migrateSave = (rawSave: unknown): GameState => {
   if (version === 10) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === 11) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === 12) return finalize(merge(createInitialState(), rawSave), rawSave, version)
+  if (version === 13) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === SAVE_VERSION) {
     return finalize(merge(createInitialState(), rawSave), rawSave, version)
   }

@@ -6,8 +6,9 @@ import { MONSTERS } from '../game/content/monsters/whisperingWoods'
 import { SPELLS } from '../game/content/spells/spells'
 import { castSpellAction } from './actions/combatActions'
 import { manaRegenPerSecond, pushNotification, recalculateDerivedStats, selectFreeFocus, selectUsedFocus } from '../game/engine'
-import { debugApplyStatus, executeSpecial, finishEnemy, spawnEnemy, spawnNextEnemy } from '../game/systems/combat/combatRuntime'
+import { debugApplyStatus, finishEnemy, spawnEnemy, spawnNextEnemy } from '../game/systems/combat/combatRuntime'
 import { executeCombatEffects } from '../game/systems/combat/effectResolver'
+import { forceResolveEnemyAction as forceResolveEnemyActionRuntime, interruptEnemyAction as interruptEnemyActionRuntime, resolveActiveEnemyAction as resolveActiveEnemyActionRuntime, setEnemyActionPattern as setEnemyActionPatternRuntime, startEnemyAction as startEnemyActionRuntime, startNextEnemyAction as startNextEnemyActionRuntime } from '../game/systems/combat/actionRuntime'
 import { resetCombatRuleRuntime, runCombatTriggers } from '../game/systems/combat/triggerRuntime'
 import { loadProfileGame, saveProfileGame } from '../persistence/profileSaveManager'
 import { type SaveReason } from '../persistence/saveConstants'
@@ -88,7 +89,14 @@ export interface GameActions {
   setEnemyBarrier: (amount: number) => void
   clearPlayerBarrier: () => void
   clearEnemyBarrier: () => void
-  forceEnemySpecial: (specialId: string) => void
+  forceEnemyAction: (actionId: string) => void
+  startEnemyAction: (actionId: string) => void
+  resolveActiveEnemyAction: () => void
+  interruptEnemyAction: () => void
+  advanceEnemyAction: () => void
+  setEnemyActionPattern: (patternId: string) => void
+  resetEnemyActionPattern: () => void
+  resetEnemyActionIndex: () => void
   resetCombatRuleRuntime: () => void
   clearCombatStatuses: () => void
   clearPlayerStatuses: () => void
@@ -208,7 +216,14 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   setEnemyBarrier: (amount) => set((state) => { state.combat.enemyBarrier = Math.max(0, Math.floor(sanitizeDebugNumber(amount))); if (state.combat.enemyBarrier === 0) state.combat.enemyBarrierRemainingMs = null; return state }),
   clearPlayerBarrier: () => set((state) => { state.combat.playerBarrier = 0; state.combat.playerBarrierRemainingMs = null; return state }),
   clearEnemyBarrier: () => set((state) => { state.combat.enemyBarrier = 0; state.combat.enemyBarrierRemainingMs = null; return state }),
-  forceEnemySpecial: (specialId) => set((state) => { if (state.combat.enemyId) executeSpecial(state, specialId); return state }),
+  forceEnemyAction: (actionId) => set((state) => { if (state.combat.enemyId) forceResolveEnemyActionRuntime(state, actionId, executeCombatEffects); return state }),
+  startEnemyAction: (actionId) => set((state) => { if (state.combat.enemyId) startEnemyActionRuntime(state, actionId, executeCombatEffects); return state }),
+  resolveActiveEnemyAction: () => set((state) => { resolveActiveEnemyActionRuntime(state, executeCombatEffects); return state }),
+  interruptEnemyAction: () => set((state) => { interruptEnemyActionRuntime(state, executeCombatEffects); return state }),
+  advanceEnemyAction: () => set((state) => { startNextEnemyActionRuntime(state, executeCombatEffects); return state }),
+  setEnemyActionPattern: (patternId) => set((state) => { setEnemyActionPatternRuntime(state, patternId); return state }),
+  resetEnemyActionPattern: () => set((state) => { if (state.combat.enemyId) setEnemyActionPatternRuntime(state, MONSTERS[state.combat.enemyId].defaultActionPatternId); return state }),
+  resetEnemyActionIndex: () => set((state) => { state.combat.enemyActionIndex = 0; return state }),
   resetCombatRuleRuntime: () => set((state) => { resetCombatRuleRuntime(state); return state }),
   clearCombatStatuses: () => set((state) => { state.combat.playerStatuses = []; state.combat.enemyStatuses = []; return state }),
   clearPlayerStatuses: () => set((state) => { state.combat.playerStatuses = []; return state }),

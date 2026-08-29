@@ -457,7 +457,7 @@ describe('Phase 2 progression', () => {
     expect(chooseMonster([...pool], () => 0)).toBe('forest-wisp')
     expect(chooseMonster([...pool], () => 0.5)).toBe('thornling')
     expect(chooseMonster([...pool], () => 0.99)).toBe('stone-root')
-    expect(MONSTERS['forest-wisp'].actionSequence[2].name).toBe('Arc Spark')
+    expect(MONSTERS['forest-wisp'].actions['arc-spark'].name).toBe('Arc Spark')
   })
 
   it('migrates a v1 save and rejects an unknown version safely', () => {

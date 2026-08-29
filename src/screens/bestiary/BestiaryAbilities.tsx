@@ -2,6 +2,6 @@ import type { MonsterDefinition } from '../../game/content/monsters/whisperingWo
 import { formatTime } from '../../game/utils'
 
 export function BestiaryAbilities({ monster }: { monster: MonsterDefinition }) {
-  const attacks = Object.values(monster.specialAttacks)
-  return <section className="bestiary-section"><span className="bestiary-section-label">SPECIAL ATTACKS</span>{attacks.length === 0 ? <p className="bestiary-muted">No recorded special attacks.</p> : <div className="bestiary-ability-list">{attacks.map((attack) => <div key={attack.id}><div><strong>{attack.name}</strong><small>Telegraph: {formatTime(attack.telegraphMs)}</small></div><span>{attack.description}</span></div>)}</div>}</section>
+  const actions = Object.values(monster.actions)
+  return <section className="bestiary-section"><span className="bestiary-section-label">ACTIONS</span>{actions.length === 0 ? <p className="bestiary-muted">No recorded Actions.</p> : <div className="bestiary-ability-list">{actions.map((action) => <div key={action.id}><div><strong>{action.name}</strong><small>Telegraph: {formatTime(action.telegraphMs)} · {action.interruptible === false ? 'Uninterruptible' : 'Interruptible'}</small></div><span>{action.description}{action.recoveryMs !== undefined ? ` Recovery: ${formatTime(action.recoveryMs)}.` : ''}</span></div>)}</div>}</section>
 }

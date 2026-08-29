@@ -32,8 +32,8 @@ export type ItemCategory = 'elemental' | 'material' | 'monster-loot' | 'equipmen
 export type InventoryCategory = 'material' | 'loot' | 'equipment' | 'special'
 export type InventoryMaterialSubtype = 'elemental' | 'creature' | 'ore' | 'refined' | 'arcane'
 export type SpellType = 'damage' | 'heal' | 'barrier' | 'dot' | 'buff'
-import type { ActiveStatus, CombatEffect, SpecialAttackDefinition, StatusId, TraitDefinition } from './systems/combat/combatTypes'
-export type { ActiveStatus, CombatCondition, CombatConditionContext, CombatEffect, CombatModifier, CombatSource, CombatTag, DamageType, EffectTarget, Magnitude, ModifierKey, SpecialAttackDefinition, StatusId, StatusDefinition, TraitDefinition, TraitId } from './systems/combat/combatTypes'
+import type { ActiveStatus, CombatEffect, StatusId, TraitDefinition } from './systems/combat/combatTypes'
+export type { ActionPattern, ActionStep, ActiveStatus, CombatActionDefinition, CombatCondition, CombatConditionContext, CombatEffect, CombatModifier, CombatSource, CombatTag, DamageType, EffectTarget, Magnitude, ModifierKey, StatusId, StatusDefinition, TraitDefinition, TraitId } from './systems/combat/combatTypes'
 export type ManaPillarId = 'leyline-conduit' | 'arcane-reservoir' | 'mana-resonance' | 'astral-expansion' | 'echo-attunement'
 export type ChannelingDiscoveryId = 'stable-leyline' | 'echo-resonance' | 'deep-reservoir'
 export type RecipeId = 'fire-fragment' | 'water-fragment' | 'earth-fragment' | 'air-fragment' | 'prismatic-fragment' | 'ember-staff' | 'tide-focus' | 'stoneweave-robe' | 'windthread-charm'
@@ -98,13 +98,6 @@ export interface SpellDefinition {
   damage?: number
   barrier?: number
   autoCondition?: AutoCastCondition
-}
-
-export interface MonsterActionStep {
-  id: string
-  name: string
-  kind: 'basic' | 'special'
-  specialAttackId?: string
 }
 
 export interface SchoolState { xp: number; level: number }
@@ -172,9 +165,11 @@ export interface CombatState {
   playerBarrierRemainingMs: number | null
   enemyActionIndex: number
   enemyActionTimerMs: number
-  enemyIntervalMs: number
+  enemyActionPatternId: string | null
+  enemyActionRecoveryMs: number
   enemyTelegraphMs: number
   enemyTelegraphActionId: string | null
+  enemyTelegraphStepId: string | null
   triggeredRuleIds: string[]
   ruleCooldowns: Record<string, number>
   pendingBossId: 'grove-sentinel' | null

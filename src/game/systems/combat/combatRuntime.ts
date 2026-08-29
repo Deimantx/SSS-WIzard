@@ -3,13 +3,13 @@ import { DUNGEONS, chooseMonster } from '../../content/dungeons/dungeons'
 import { isBossMonster, MONSTERS } from '../../content/monsters/whisperingWoods'
 import { recalculateDerivedStats, appendLog, pushNotification } from '../../engine'
 import type { GameState, ItemId, MonsterId } from '../../types'
-import { formatTime } from '../../utils'
 import { executeCombatEffects, damageEnemy, damagePlayer, gainBarrier } from './effectResolver'
 import { gainBarrier as gainBarrierRuntime } from './barrierRuntime'
 import { applyStatus, clearStatuses } from './statusRuntime'
 import { resetCombatRuleRuntime, runCombatTriggers } from './triggerRuntime'
-import type { CombatSource, StatusId } from './combatTypes'
+import type { StatusId } from './combatTypes'
 import { resolveBasicAttackInterval } from './effectResolver'
+import { initializeEnemyActionRuntime, resetEnemyActionRuntime } from './actionRuntime'
 import { resolveMonsterLoot } from '../loot'
 import { discoverMonster } from '../collection/discovery'
 import type { SimulationReportCollector } from '../offline-bank/offlineBankReport'
@@ -27,11 +27,7 @@ export const spawnEnemy = (state: GameState, enemyId: MonsterId) => {
   state.combat.enemyMaxHp = monster.maxHealth
   state.combat.enemyBarrier = 0
   state.combat.enemyBarrierRemainingMs = null
-  state.combat.enemyActionIndex = 0
-  state.combat.enemyIntervalMs = monster.attackIntervalMs
-  state.combat.enemyActionTimerMs = state.combat.enemyIntervalMs
-  state.combat.enemyTelegraphMs = 0
-  state.combat.enemyTelegraphActionId = null
+  initializeEnemyActionRuntime(state)
   resetCombatRuleRuntime(state)
   state.combat.inBossFight = isBossMonster(monster)
   state.combat.playerAttackTimerMs = 0
@@ -64,8 +60,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   state.combat.enemyHp = 0
   state.combat.enemyBarrier = 0
   state.combat.enemyBarrierRemainingMs = null
-  state.combat.enemyTelegraphMs = 0
-  state.combat.enemyTelegraphActionId = null
+  resetEnemyActionRuntime(state)
   state.combat.enemyStatuses = []
   resetCombatRuleRuntime(state)
   state.combat.encounterTimerMs = DUNGEONS[state.combat.dungeonId ?? 'whispering-woods'].encounterDelayMs
@@ -117,10 +112,9 @@ export const resolveCombatDeaths = (state: GameState, report?: SimulationReportC
     state.combat.enemyHp = 0
     state.combat.enemyBarrier = 0
     state.combat.enemyBarrierRemainingMs = null
+    resetEnemyActionRuntime(state)
     state.combat.playerBarrier = 0
     state.combat.playerBarrierRemainingMs = null
-    state.combat.enemyTelegraphMs = 0
-    state.combat.enemyTelegraphActionId = null
     state.combat.playerStatuses = []
     state.combat.enemyStatuses = []
     resetCombatRuleRuntime(state)
@@ -135,43 +129,4 @@ export const resolveCombatDeaths = (state: GameState, report?: SimulationReportC
     return true
   }
   return false
-}
-
-export const executeSpecial = (state: GameState, specialId: string) => {
-  const enemyId = state.combat.enemyId
-  if (!enemyId) return
-  const special = MONSTERS[enemyId].specialAttacks[specialId]
-  if (!special) return
-  const source: CombatSource = { actor: 'enemy', kind: 'special-attack', sourceId: special.id, tags: [...(special.tags ?? []), 'special'] }
-  executeCombatEffects(state, special.effects, source)
-  runCombatTriggers(state, 'enemy', 'on-special-resolve', { source, eventTarget: 'player', sourceTags: source.tags }, executeCombatEffects)
-  appendLog(state, `${special.name} resolves.`)
-}
-
-export const executeEnemyAction = (state: GameState) => {
-  const enemyId = state.combat.enemyId
-  if (!enemyId) return
-  const monster = MONSTERS[enemyId]
-  const step = monster.actionSequence[state.combat.enemyActionIndex % monster.actionSequence.length]
-  state.combat.enemyActionIndex = (state.combat.enemyActionIndex + 1) % monster.actionSequence.length
-  if (step.kind === 'special' && step.specialAttackId) {
-    const special = monster.specialAttacks[step.specialAttackId]
-    if (!special) return
-    state.combat.enemyTelegraphMs = special.telegraphMs
-    state.combat.enemyTelegraphActionId = step.specialAttackId
-    appendLog(state, `${special.name} telegraphed · ${formatTime(special.telegraphMs)}`)
-  } else {
-    const source: CombatSource = { actor: 'enemy', kind: 'basic-attack', sourceId: `${enemyId}-basic-attack`, tags: ['basic-attack', 'direct'] }
-    const damage = executeEnemyBasicAttack(state, source)
-    appendLog(state, `${monster.name} Basic hits for ${damage}.`)
-  }
-  state.combat.enemyActionTimerMs = state.combat.enemyIntervalMs
-}
-
-const executeEnemyBasicAttack = (state: GameState, source: CombatSource) => {
-  const monster = state.combat.enemyId ? MONSTERS[state.combat.enemyId] : null
-  if (!monster) return 0
-  const before = state.player.health
-  damagePlayer(state, monster.attackDamage, source)
-  return Math.max(0, before - state.player.health)
 }

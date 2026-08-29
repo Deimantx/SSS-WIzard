@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { executeCombatEffects, damageEnemy, damagePlayer, getCombatDamagePreview, resolveBasicAttackInterval } from './effectResolver'
 import { applyStatus, tickStatuses } from './statusRuntime'
-import { applyBarrier, executeSpecial, finishEnemy, spawnEnemy } from './combatRuntime'
+import { applyBarrier, finishEnemy, spawnEnemy } from './combatRuntime'
+import { forceResolveEnemyAction } from './actionRuntime'
 import { runCombatTriggers } from './triggerRuntime'
 import { migrateSave } from '../../../persistence/migrations'
 import type { CombatSource, TraitDefinition, TraitId } from '../../types'
@@ -13,6 +14,7 @@ import { MONSTERS } from '../../content/monsters/whisperingWoods'
 import { TRAIT_DEFINITIONS } from '../../content/traits'
 import { STATUS_DEFINITIONS } from '../../content/statuses'
 import { SPELLS } from '../../content/spells/spells'
+import { resolveActionRecoveryMs } from './actionRuntime'
 
 const playerSpell: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'test-spell', school: 'fire', tags: ['spell', 'magic'] }
 const enemyAttack: CombatSource = { actor: 'enemy', kind: 'basic-attack', sourceId: 'test-attack', tags: ['basic-attack', 'direct'] }
@@ -94,8 +96,8 @@ describe('authored status runtime', () => {
     const state = stateWithEnemy()
     state.player.health = 50
     applyStatus(state, 'player', 'regeneration', { actor: 'player', kind: 'spell', sourceId: 'regen', tags: ['spell'] })
-    applyStatus(state, 'player', 'burning', { actor: 'enemy', kind: 'special-attack', sourceId: 'burn', tags: ['special'] })
-    applyStatus(state, 'player', 'stunned', { actor: 'enemy', kind: 'special-attack', sourceId: 'stun', tags: ['special'] })
+    applyStatus(state, 'player', 'burning', { actor: 'enemy', kind: 'action', sourceId: 'burn', tags: ['special'] })
+    applyStatus(state, 'player', 'stunned', { actor: 'enemy', kind: 'action', sourceId: 'stun', tags: ['special'] })
     tickStatuses(state, 1000, executeCombatEffects)
     expect(state.player.health).toBe(50)
     expect(state.combat.playerStatuses.some((status) => status.statusId === 'burning')).toBe(true)
@@ -159,12 +161,12 @@ describe('combat save compatibility', () => {
 describe('data-driven monster mechanics', () => {
   it('composes Thorn Lash and Root Slam effects', () => {
     const thornling = stateWithEnemy('thornling')
-    executeSpecial(thornling, 'thorn-lash')
+    forceResolveEnemyAction(thornling, 'thorn-lash', executeCombatEffects)
     expect(thornling.player.health).toBe(90)
     expect(thornling.combat.playerStatuses[0].statusId).toBe('thorn-wound')
     const root = stateWithEnemy('stone-root')
     expect(root.combat.enemyBarrier).toBe(14)
-    executeSpecial(root, 'root-slam')
+    forceResolveEnemyAction(root, 'root-slam', executeCombatEffects)
     expect(root.player.health).toBe(82)
     expect(root.combat.playerAttackTimerMs).toBe(700)
   })
@@ -179,7 +181,7 @@ describe('data-driven monster mechanics', () => {
     const heart = stateWithEnemy('forest-heart')
     damageEnemy(heart, 310, 'spell')
     expect(heart.combat.enemyStatuses[0]).toMatchObject({ statusId: 'haste', remainingMs: null })
-    expect(resolveBasicAttackInterval(heart, 'enemy', 2400)).toBe(2040)
+    expect(resolveActionRecoveryMs(heart, 'enemy', 2400)).toBe(2040)
   })
 })
 
@@ -254,7 +256,7 @@ describe('post-implementation combat audit regressions', () => {
     expect(SPELLS.stoneguard.effects[0]).toMatchObject({ type: 'gain-barrier', mode: 'replace', durationMs: 9000 })
     expect(STATUS_DEFINITIONS.haste.tags).toEqual(['buff'])
     expect(STATUS_DEFINITIONS.quickening.tags).toEqual(['buff', 'air'])
-    expect(MONSTERS['forest-heart'].specialAttacks['rejuvenating-sap'].tags).toEqual(['special', 'heal', 'direct'])
+    expect(MONSTERS['forest-heart'].actions['rejuvenating-sap'].tags).toEqual(['special', 'heal', 'direct'])
     expect(TRAIT_DEFINITIONS['stone-rooted-shell'].rules?.[0].effects[0]).toMatchObject({ type: 'gain-barrier', mode: 'add', durationMs: null })
   })
 
@@ -279,9 +281,9 @@ describe('post-implementation combat audit regressions', () => {
   })
 
   it('does not interrupt a special attack authored as non-interruptible', () => {
-    const special = MONSTERS['forest-wisp'].specialAttacks['arc-spark']
-    const previous = special.interruptible
-    special.interruptible = false
+    const action = MONSTERS['forest-wisp'].actions['arc-spark']
+    const previous = action.interruptible
+    action.interruptible = false
     try {
       const state = stateWithEnemy()
       state.combat.enemyTelegraphMs = 1000
@@ -290,7 +292,7 @@ describe('post-implementation combat audit regressions', () => {
       expect(state.combat.enemyTelegraphMs).toBe(1000)
       expect(state.combat.enemyTelegraphActionId).toBe('arc-spark')
     } finally {
-      special.interruptible = previous
+      action.interruptible = previous
     }
   })
 

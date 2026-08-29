@@ -38,6 +38,10 @@ export const evaluateCombatCondition = (state: GameState, actor: CombatActor, co
     case 'source-has-tag': return sourceTagsFor(context).includes(condition.tag)
     case 'event-status-is': return context.statusId === condition.statusId
     case 'event-status-has-tag': return context.eventStatusTags?.includes(condition.tag) ?? false
+    case 'event-action-is': return context.actionId === condition.actionId
+    case 'event-action-has-tag': return context.eventActionTags?.includes(condition.tag) ?? false
+    case 'source-is-self': return context.source?.actor === actor
+    case 'source-is-opponent': return context.source?.actor === opponentOf(actor)
     case 'all': return condition.conditions.every((entry) => evaluateCombatCondition(state, actor, entry, context))
     case 'any': return condition.conditions.some((entry) => evaluateCombatCondition(state, actor, entry, context))
     case 'not': return !evaluateCombatCondition(state, actor, condition.condition, context)

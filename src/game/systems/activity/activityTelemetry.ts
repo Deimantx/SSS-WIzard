@@ -4,6 +4,7 @@ import { MONSTERS } from '../../content/monsters/whisperingWoods'
 import { RECIPES, RECIPE_ORDER } from '../../content/recipes/recipes'
 import { SCHOOLS } from '../../content/schools/schools'
 import { BALANCE } from '../../core/balance/balance'
+import { getCurrentEnemyActionStep, getEnemyAction } from '../combat/actionRuntime'
 import { getRecipeCraftsPerHour, getRecipeCurrentRemainingDuration, getRecipeManaDemandPerSecond, getRecipeStatus } from '../transmutation/transmutationSelectors'
 import { getPreparedResearchJobs, getResearchBatchEtaMs, getResearchFocusReserved, getResearchItemsPerHour, getResearchJobProgressPercent, getResearchJobStatus, getResearchManaPerSecond, getResearchXpPerHour } from '../research/researchSelectors'
 import type { ActivityMetric, ActivityTelemetry, GameState } from '../../types'
@@ -22,11 +23,11 @@ export const getActivityTelemetry = (state: GameState): ActivityTelemetry[] => {
     if (state.combat.enemyId) {
       const enemy = MONSTERS[state.combat.enemyId]
       const enemyPercent = percent(state.combat.enemyHp, state.combat.enemyMaxHp)
-      const nextAction = enemy.actionSequence[state.combat.enemyActionIndex % enemy.actionSequence.length]
-      const nextSpecial = nextAction.specialAttackId ? enemy.specialAttacks[nextAction.specialAttackId] : undefined
+      const nextStep = getCurrentEnemyActionStep(state)
+      const nextAction = nextStep?.type === 'action' ? getEnemyAction(state, nextStep.actionId) : undefined
       const nextLabel = state.combat.enemyTelegraphActionId
-        ? enemy.specialAttacks[state.combat.enemyTelegraphActionId]?.name ?? 'Telegraph'
-        : nextSpecial?.name ?? 'Basic Attack'
+        ? getEnemyAction(state, state.combat.enemyTelegraphActionId)?.name ?? 'Action'
+        : nextAction?.name ?? 'Basic Attack'
       const nextTime = state.combat.enemyTelegraphMs > 0 ? state.combat.enemyTelegraphMs : state.combat.enemyActionTimerMs
       const boss = state.combat.inBossFight
       const enemyLabel = boss ? 'Boss HP' : 'Enemy HP'

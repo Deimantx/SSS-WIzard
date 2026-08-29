@@ -32,7 +32,7 @@ export type CombatTag =
 
 export interface CombatSource {
   actor: 'player' | 'enemy'
-  kind: 'basic-attack' | 'spell' | 'weapon' | 'status' | 'trait' | 'special-attack' | 'equipment' | 'system'
+  kind: 'basic-attack' | 'spell' | 'weapon' | 'status' | 'trait' | 'action' | 'equipment' | 'system'
   sourceId?: string
   /** Original authored source when a status tick derives from another effect. */
   originSourceId?: string
@@ -81,12 +81,14 @@ export type CombatEffect =
   | { type: 'modify-action-timer'; target: EffectTarget; amountMs: number; action: 'basic-attack' | 'current' }
   | { type: 'modify-cooldown'; target: EffectTarget; amountMs: number; spellId?: string }
   | { type: 'interrupt'; target: EffectTarget }
+  | { type: 'set-action-pattern'; target: EffectTarget; patternId: string }
 
 export type ModifierKey =
   | 'damage-dealt-percent'
   | 'damage-taken-percent'
   | 'basic-attack-damage-percent'
   | 'basic-attack-speed-percent'
+  | 'action-speed-percent'
   | 'spell-damage-percent'
   | 'melee-damage-percent'
   | 'ranged-damage-percent'
@@ -119,7 +121,9 @@ export type CombatTrigger =
   | 'on-barrier-broken'
   | 'on-status-applied'
   | 'on-hp-threshold'
-  | 'on-special-resolve'
+  | 'on-action-start'
+  | 'on-action-resolve'
+  | 'on-action-interrupted'
   | 'on-heal'
   | 'on-heal-received'
   | 'on-barrier-gained'
@@ -146,6 +150,10 @@ export type CombatCondition =
   | { type: 'source-has-tag'; tag: CombatTag }
   | { type: 'event-status-is'; statusId: StatusId }
   | { type: 'event-status-has-tag'; tag: CombatTag }
+  | { type: 'event-action-is'; actionId: string }
+  | { type: 'event-action-has-tag'; tag: CombatTag }
+  | { type: 'source-is-self' }
+  | { type: 'source-is-opponent' }
   | { type: 'all'; conditions: CombatCondition[] }
   | { type: 'any'; conditions: CombatCondition[] }
   | { type: 'not'; condition: CombatCondition }
@@ -190,6 +198,11 @@ export interface CombatConditionContext {
   statusId?: StatusId
   /** Tags belonging to the Status involved in an apply/remove/expiry event. */
   eventStatusTags?: CombatTag[]
+  /** Identity of the Action involved in an Action lifecycle event. */
+  actionId?: string
+  actionStepId?: string
+  actionPatternId?: string
+  eventActionTags?: CombatTag[]
 }
 
 export interface ActiveStatus {
@@ -223,12 +236,24 @@ export interface StatusDefinition {
   ui?: { shortDescription?: string; icon?: string }
 }
 
-export interface SpecialAttackDefinition {
+export interface CombatActionDefinition {
   id: string
   name: string
-  telegraphMs: number
   description: string
+  telegraphMs: number
+  /** Optional recovery override after this Action resolves or is interrupted. */
+  recoveryMs?: number
   effects: CombatEffect[]
   tags?: CombatTag[]
+  /** Defaults to true when omitted. */
   interruptible?: boolean
+}
+
+export type ActionStep =
+  | { id: string; type: 'basic' }
+  | { id: string; type: 'action'; actionId: string }
+
+export interface ActionPattern {
+  id: string
+  steps: ActionStep[]
 }

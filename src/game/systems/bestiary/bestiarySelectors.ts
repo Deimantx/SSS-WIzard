@@ -33,7 +33,7 @@ export const getBestiaryCompletion = (state: Pick<GameState, 'progress'>) => {
   return { discovered, total: entries.length, percent: completionPercent(discovered, entries.length), categories, totalDefeats }
 }
 
-export const getBestiarySearchText = (monster: MonsterDefinition) => [monster.name, monster.subtitle, ...getMonsterTraits(monster).map((trait) => `${trait.name} ${trait.description}`), ...Object.values(monster.specialAttacks).map((attack) => `${attack.name} ${attack.description}`)].join(' ').toLowerCase()
+export const getBestiarySearchText = (monster: MonsterDefinition) => [monster.name, monster.subtitle, ...getMonsterTraits(monster).map((trait) => `${trait.name} ${trait.description}`), ...Object.values(monster.actions).map((action) => `${action.name} ${action.description}`), ...Object.values(monster.actionPatterns).flatMap((pattern) => pattern.steps.map((step) => step.type === 'basic' ? 'Basic' : monster.actions[step.actionId]?.name ?? step.actionId))].join(' ').toLowerCase()
 
 export const formatDropChance = (chance: number) => chance >= 1 ? 'Guaranteed' : `${Number((Math.max(0, chance) * 100).toFixed(1))}%`
 export const formatDropQuantity = (min: number, max: number) => min === max ? `×${min}` : `×${min}–${max}`

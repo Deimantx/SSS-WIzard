@@ -7,7 +7,8 @@ import { advanceChanneling } from '../../engine/channelingEngine'
 import { appendLog, playerBasicDamage, pushNotification, recalculateDerivedStats } from '../../engine'
 import { castSpellInternal } from '../../engine/spellEngine'
 import { executeCombatEffects, getBasicAttackTags, resolveBasicAttackInterval } from '../combat/effectResolver'
-import { executeEnemyAction, executeSpecial, resolveCombatDeaths, spawnNextEnemy } from '../combat/combatRuntime'
+import { resolveCombatDeaths, spawnNextEnemy } from '../combat/combatRuntime'
+import { resolveActiveEnemyAction, startNextEnemyAction } from '../combat/actionRuntime'
 import { actorCannotAct, tickStatuses } from '../combat/statusRuntime'
 import { tickBarriers } from '../combat/barrierRuntime'
 import { getCombatModifiers } from '../combat/modifiers'
@@ -77,19 +78,16 @@ const tickCombat = (state: GameState, delta: number, context: AdvanceContext) =>
   if (!state.combat.enemyId) return
   if (resolveCombatDeaths(state, context.report, context.onItemAcquired)) return
 
-  state.combat.enemyIntervalMs = resolveBasicAttackInterval(state, 'enemy', enemy.attackIntervalMs)
-  if (!actorCannotAct(state, 'enemy') && state.combat.enemyTelegraphMs > 0) {
+  if (!actorCannotAct(state, 'enemy') && state.combat.enemyTelegraphActionId) {
     state.combat.enemyTelegraphMs -= delta
-    if (state.combat.enemyTelegraphMs <= 0 && state.combat.enemyTelegraphActionId) {
-      executeSpecial(state, state.combat.enemyTelegraphActionId)
+    if (state.combat.enemyTelegraphMs <= 0) {
+      resolveActiveEnemyAction(state, executeCombatEffects)
       if (resolveCombatDeaths(state, context.report, context.onItemAcquired)) return
-      state.combat.enemyTelegraphActionId = null
-      state.combat.enemyActionTimerMs = state.combat.enemyIntervalMs
     }
   } else if (!actorCannotAct(state, 'enemy')) {
     state.combat.enemyActionTimerMs -= delta
     if (state.combat.enemyActionTimerMs <= 0) {
-      executeEnemyAction(state)
+      startNextEnemyAction(state, executeCombatEffects)
       if (resolveCombatDeaths(state, context.report, context.onItemAcquired)) return
     }
   }

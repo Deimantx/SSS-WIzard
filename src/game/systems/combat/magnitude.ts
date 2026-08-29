@@ -7,7 +7,7 @@ export type CombatActor = 'player' | 'enemy'
 
 export const getActorMaxHealth = (state: GameState, actor: CombatActor) => actor === 'player' ? state.player.maxHealth : state.combat.enemyMaxHp
 export const getActorHealth = (state: GameState, actor: CombatActor) => actor === 'player' ? state.player.health : state.combat.enemyHp
-export const getActorBasicDamage = (state: GameState, actor: CombatActor) => actor === 'player' ? playerBasicDamage(state) : state.combat.enemyId ? MONSTERS[state.combat.enemyId].attackDamage : 0
+export const getActorBasicDamage = (state: GameState, actor: CombatActor) => actor === 'player' ? playerBasicDamage(state) : state.combat.enemyId ? MONSTERS[state.combat.enemyId].basicAttackDamage : 0
 
 export const resolveMagnitude = (state: GameState, magnitude: Magnitude, source: CombatSource, target: CombatActor) => {
   const sourceMax = getActorMaxHealth(state, source.actor)

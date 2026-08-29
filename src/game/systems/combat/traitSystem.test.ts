@@ -259,7 +259,7 @@ describe('Universal Trait System V1', () => {
   it('sanitizes V13 rule cooldowns and upgrades V12 saves without losing runtime state', () => {
     const initial = createInitialState()
     const v12 = migrateSave({ ...initial, saveVersion: 12, combat: { ...initial.combat, ruleCooldowns: undefined } })
-    expect(v12.saveVersion).toBe(13)
+    expect(v12.saveVersion).toBe(14)
     expect(v12.combat.ruleCooldowns).toEqual({})
     const current = migrateSave({ ...initial, saveVersion: 13, combat: { ...initial.combat, ruleCooldowns: { valid: 2500, negative: -1, nan: Number.NaN, infinite: Number.POSITIVE_INFINITY, __proto__: 4 } } })
     expect(current.combat.ruleCooldowns).toEqual({ valid: 2500 })

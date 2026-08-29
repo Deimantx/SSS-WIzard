@@ -27,6 +27,13 @@ export const isDungeonUnlocked = (dungeon: DungeonDefinition, progress: Pick<Gam
   return unlock.type === 'always' || (progress.bossKillsByBoss[unlock.bossId] ?? 0) >= 1
 }
 
+export const isDungeonCompleted = (dungeonId: DungeonId, progress: GameState['progress']) => (progress.bossKillsByBoss[DUNGEONS[dungeonId].boss] ?? 0) >= 1
+
+export const isTutorialCompleted = (progress: GameState['progress']) => {
+  const tutorialDungeon = DUNGEON_ORDER.map((id) => DUNGEONS[id]).find((dungeon) => dungeon.completesTutorial)
+  return tutorialDungeon ? isDungeonCompleted(tutorialDungeon.id, progress) : false
+}
+
 export const getDungeonUnlockRequirement = (dungeon: DungeonDefinition) => {
   const unlock = dungeon.unlock ?? { type: 'always' as const }
   return unlock.type === 'always' ? null : `Defeat ${MONSTERS[unlock.bossId]?.name ?? unlock.bossId}`

@@ -11,11 +11,11 @@ export { WHISPERING_WOODS_MONSTERS, WHISPERING_WOODS_MONSTER_IDS } from './whisp
 export { HOWLING_DEN_MONSTERS } from './howlingDen'
 export { ABANDONED_CATACOMBS_MONSTERS } from './abandonedCatacombs'
 
-export const MONSTERS = {
-  ...WHISPERING_WOODS_MONSTERS,
-  ...HOWLING_DEN_MONSTERS,
-  ...ABANDONED_CATACOMBS_MONSTERS,
-} as Record<MonsterId, MonsterDefinition>
+const MONSTER_REGISTRIES = [WHISPERING_WOODS_MONSTERS, HOWLING_DEN_MONSTERS, ABANDONED_CATACOMBS_MONSTERS] as const
+const registryIdCounts = MONSTER_REGISTRIES.flatMap((registry) => Object.keys(registry)).reduce<Record<string, number>>((counts, id) => { counts[id] = (counts[id] ?? 0) + 1; return counts }, {})
+const duplicateMonsterIds = Object.entries(registryIdCounts).filter(([, count]) => count > 1).map(([id]) => id)
+
+export const MONSTERS = Object.assign({}, ...MONSTER_REGISTRIES) as Record<MonsterId, MonsterDefinition>
 
 export const isBossMonster = (monster: MonsterDefinition) => monster.bestiaryCategory === 'boss'
 export const MONSTER_IDS = Object.keys(MONSTERS) as MonsterId[]
@@ -33,7 +33,7 @@ const validateEffects = (owner: string, effects: CombatEffect[], errors: string[
 })
 
 export const validateMonsterDefinitions = () => {
-  const errors: string[] = []
+  const errors: string[] = duplicateMonsterIds.map((id) => `${id}: duplicate monster registry entry`)
   Object.entries(MONSTERS).forEach(([key, monster]) => {
     if (key !== monster.id) errors.push(`${monster.id}: key/id mismatch`)
     if (!Number.isFinite(monster.maxHealth) || monster.maxHealth <= 0 || !Number.isFinite(monster.basicAttackDamage) || monster.basicAttackDamage < 0 || !Number.isFinite(monster.actionIntervalMs) || monster.actionIntervalMs < 100) errors.push(`${monster.id}: invalid combat numbers`)

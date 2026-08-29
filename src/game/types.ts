@@ -192,6 +192,7 @@ export interface ProgressState {
   discoveredItems: ItemId[]
   lifetimeKills: number
   firstBossKill: boolean
+  /** Legacy pre-three-dungeon milestone; historically represented the Forest Heart main-boss clear. */
   firstMainBossKill: boolean
   guildUnlocked: boolean
   emberStaffUnlocked: boolean

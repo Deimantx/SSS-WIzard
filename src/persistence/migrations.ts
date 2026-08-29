@@ -103,6 +103,15 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
   migrated.progress.discoveredItems = [...new Set(rawDiscoveredItems.filter((id): id is ItemId => typeof id === 'string' && itemIds.includes(id)))]
 }
 
+export const normalizeLegacyProgressEvidence = (progress: GameState['progress']) => {
+  if (progress.firstMainBossKill === true) progress.bossKillsByBoss['forest-heart'] = Math.max(progress.bossKillsByBoss['forest-heart'] ?? 0, 1)
+  progress.requestProgress['sentinel-breaker'] = Math.max(
+    progress.requestProgress['sentinel-breaker'] ?? 0,
+    progress.bossKillsByBoss['grove-sentinel'] ?? 0,
+    progress.lifetimeKillsByMonster['grove-sentinel'] ?? 0,
+  )
+}
+
 const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sourceVersion: number) => {
   const fresh = createInitialState()
   const rawCombat = isRecord(raw.combat) ? raw.combat : {}
@@ -404,6 +413,7 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   migrated.progress.channeling = migrateChanneling(raw.progress, createInitialState().progress)
   migrated.ui.screen = normalizeScreen(isRecord(raw.ui) ? raw.ui.screen : undefined, migrated.ui.screen)
   normalizeDynamicRecords(migrated, raw)
+  normalizeLegacyProgressEvidence(migrated.progress)
   normalizeCombatState(migrated, raw, sourceVersion)
   normalizeDirectContentReferences(migrated, raw)
   seedLegacyItemDiscoveries(migrated, raw, sourceVersion)

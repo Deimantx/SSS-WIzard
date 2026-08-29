@@ -1,5 +1,5 @@
 import type { GameState } from '../game/types'
-import { migrateSave } from './migrations'
+import { migrateSave, normalizeLegacyProgressEvidence } from './migrations'
 import { CURRENT_SAVE_VERSION, isRecord } from './saveSchema'
 
 export interface CriticalSaveSnapshot {
@@ -50,7 +50,11 @@ export const getCriticalSaveSnapshot = (state: Pick<GameState, 'inventory' | 'pr
     transmutation: state.activities.transmutation,
     autoCast: state.activities.autoCast,
   },
-  progress: state.progress,
+  progress: (() => {
+    const progress = cloneJson(state.progress)
+    normalizeLegacyProgressEvidence(progress)
+    return progress
+  })(),
   offlineBankMs: state.offlineBankMs,
 })
 

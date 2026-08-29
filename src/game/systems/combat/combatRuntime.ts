@@ -73,7 +73,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
     state.combat.inBossFight = false
     const bossId = enemyId
     state.progress.bossKillsByBoss[bossId] = (state.progress.bossKillsByBoss[bossId] ?? 0) + 1
-    if (bossId === 'grove-sentinel') state.progress.requestProgress['sentinel-breaker'] = state.progress.bossKillsByBoss[bossId]
+    if (state.combat.pendingBossId === enemyId) state.combat.pendingBossId = null
     state.progress.autoHuntBossUnlocked = true
     if (bossId === 'forest-heart' && !state.progress.firstBossKill) {
       state.progress.firstBossKill = true
@@ -92,17 +92,15 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
       pushNotification(state, 'WHISPERING WOODS COMPLETE / Howling Den unlocked.', 'success')
     }
     if (bossId === 'corrupted-greatbear' && state.progress.bossKillsByBoss[bossId] === 1) pushNotification(state, 'HOWLING DEN COMPLETE / Abandoned Catacombs unlocked.', 'success')
-    if (bossId === 'archmage-edrin-shade' && state.progress.bossKillsByBoss[bossId] === 1) {
-      state.progress.firstMainBossKill = true
-      pushNotification(state, 'FIRST CHAPTER COMPLETE', 'success')
-    }
+    if (bossId === 'archmage-edrin-shade' && state.progress.bossKillsByBoss[bossId] === 1) pushNotification(state, 'FIRST CHAPTER COMPLETE', 'success')
     report?.recordNotable(`${monster.name} defeated`)
     appendLog(state, `${monster.name} defeated${drops ? ` - ${drops}` : ''}. Threat Cleared resets.`)
   } else {
     state.progress.lifetimeKills += 1
     state.progress.lifetimeKillsByMonster[enemyId] = (state.progress.lifetimeKillsByMonster[enemyId] ?? 0) + 1
     state.combat.threatCleared += 1
-    if (state.combat.dungeonId === 'whispering-woods') state.progress.requestProgress['clear-the-woods'] = state.progress.lifetimeKills
+    if (enemyId === 'grove-sentinel') state.progress.requestProgress['sentinel-breaker'] = Math.max(state.progress.requestProgress['sentinel-breaker'] ?? 0, state.progress.lifetimeKillsByMonster[enemyId])
+    if (state.combat.dungeonId === 'whispering-woods') state.progress.requestProgress['clear-the-woods'] = (state.progress.requestProgress['clear-the-woods'] ?? 0) + 1
     appendLog(state, `${monster.name} defeated${drops ? ` - ${drops}` : ''}`)
     if (state.combat.threatCleared === dungeon.threatRequired) pushNotification(state, `${MONSTERS[dungeon.boss].name} is ready`, 'success')
     if (state.progress.autoHuntBossByDungeon[dungeon.id] && state.combat.threatCleared >= dungeon.threatRequired && !state.combat.pendingBossId) {

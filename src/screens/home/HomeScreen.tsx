@@ -1,6 +1,6 @@
 import { Check, ChevronRight, Target } from 'lucide-react'
 import type { ItemId } from '../../game/types'
-import { DUNGEONS } from '../../game/content/dungeons/dungeons'
+import { DUNGEONS, isDungeonCompleted, isTutorialCompleted } from '../../game/content/dungeons/dungeons'
 import { useGameStore } from '../../store/gameStore'
 import { Button, Card, Status } from '../../components/ui'
 import { formatNumber, formatOfflineBank } from '../../game/utils'
@@ -22,9 +22,9 @@ export function HomeScreenV2() {
   const hasAuto = Object.values(activities.autoCast).some(Boolean)
   const hasEquipment = Object.values(equipment).some((id) => id && (['ember-staff', 'tide-focus', 'stoneweave-robe', 'windthread-charm'] as ItemId[]).includes(id))
   const permanentFocus = Object.values(progress.permanentFocusBonuses).reduce((sum, value) => sum + value, 0)
-  const woodsComplete = (progress.bossKillsByBoss[DUNGEONS['whispering-woods'].boss] ?? 0) > 0
-  const denComplete = (progress.bossKillsByBoss[DUNGEONS['howling-den'].boss] ?? 0) > 0
-  const chapterComplete = (progress.bossKillsByBoss[DUNGEONS['abandoned-catacombs'].boss] ?? 0) > 0 || progress.firstMainBossKill
+  const woodsComplete = isDungeonCompleted('whispering-woods', progress)
+  const denComplete = isDungeonCompleted('howling-den', progress)
+  const chapterComplete = isTutorialCompleted(progress)
   const objectives = [
     { label: 'Assign your first Arcane Echo', done: activities.channeling.echoesAssigned > 0 },
     { label: 'Transmute a Fragment', done: Object.entries(inventory).some(([id, quantity]) => id.endsWith('fragment') && Boolean(quantity)) },

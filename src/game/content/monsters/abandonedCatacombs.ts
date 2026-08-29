@@ -1,6 +1,7 @@
+import type { MonsterId } from '../../types'
 import { action, applyStatus, basic, directDamage, gainBarrier, heal, withLifeEssence, type MonsterDefinition } from './monsterTypes'
 
-export const ABANDONED_CATACOMBS_MONSTERS: Record<string, MonsterDefinition> = {
+export const ABANDONED_CATACOMBS_MONSTERS = {
   'restless-skeleton': {
     id: 'restless-skeleton', bestiaryCategory: 'monster', name: 'Restless Skeleton', subtitle: 'Bones animated by the last command they heard',
     maxHealth: 180, basicAttackDamage: 15, actionIntervalMs: 2700, color: '#c9c3ae', traitIds: ['restless-skeleton-brittle-bones'], resistances: { physical: 0.25 },
@@ -45,4 +46,4 @@ export const ABANDONED_CATACOMBS_MONSTERS: Record<string, MonsterDefinition> = {
     }, defaultActionPatternId: 'default',
     loot: withLifeEssence([]),
   },
-}
+} satisfies Partial<Record<MonsterId, MonsterDefinition>>

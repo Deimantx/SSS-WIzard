@@ -1,6 +1,7 @@
+import type { MonsterId } from '../../types'
 import { action, applyStatus, basic, delayBasicAttack, directDamage, withLifeEssence, type MonsterDefinition } from './monsterTypes'
 
-export const HOWLING_DEN_MONSTERS: Record<string, MonsterDefinition> = {
+export const HOWLING_DEN_MONSTERS = {
   'cavefang-wolf': {
     id: 'cavefang-wolf', bestiaryCategory: 'monster', name: 'Cavefang Wolf', subtitle: 'A patient predator that waits for weakness',
     maxHealth: 115, basicAttackDamage: 12, actionIntervalMs: 2200, color: '#b8a0a0', traitIds: ['cavefang-wolf-predator-instinct'],
@@ -40,4 +41,4 @@ export const HOWLING_DEN_MONSTERS: Record<string, MonsterDefinition> = {
     }, defaultActionPatternId: 'default',
     loot: withLifeEssence([]),
   },
-}
+} satisfies Partial<Record<MonsterId, MonsterDefinition>>

@@ -28,7 +28,7 @@ export function DungeonPanel() {
   const selectedUnlocked = isDungeonUnlocked(selectedDungeon, progress)
   const enemy = combat.enemyId ? MONSTERS[combat.enemyId] : null
   const boss = MONSTERS[selectedDungeon.boss]
-  const bossReady = selectedIsCurrent && !combat.inBossFight && combat.threatCleared >= selectedDungeon.threatRequired
+  const bossReady = selectedIsCurrent && !combat.inBossFight && !combat.enemyId && combat.threatCleared >= selectedDungeon.threatRequired
 
   return <Card title="DUNGEON ATLAS" action={<Status tone={combat.active ? 'active' : 'neutral'}>{combat.active ? `${DUNGEONS[combat.dungeonId ?? selectedDungeonId].name} active` : 'At the Tower'}</Status>}>
     <div className="dungeon-card-grid">{DUNGEON_ORDER.map((dungeonId) => {

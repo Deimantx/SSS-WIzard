@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { migrateSave } from './migrations'
 import { serializeGameState } from './profileSaveManager'
-import { createInitialState } from '../store/initialState'
+import { createInitialState, SAVE_VERSION } from '../store/initialState'
+import { DUNGEONS, isDungeonUnlocked, isTutorialCompleted } from '../game/content/dungeons/dungeons'
 
 describe('save navigation migration', () => {
   it('maps the old aggregate Tower screen to Channeling', () => {
@@ -60,7 +61,7 @@ describe('save navigation migration', () => {
 
     expect(migrated.inventory).toMatchObject({ 'fire-fragment': 37, 'life-essence': 9 })
     expect(migrated.protectedItems['fire-fragment']).toBe(true)
-    expect(migrated.progress.requestProgress).toEqual({ 'arcane-supply': 7 })
+    expect(migrated.progress.requestProgress).toEqual({ 'arcane-supply': 7, 'sentinel-breaker': 2 })
     expect(migrated.progress.requestClaims).toEqual({ 'arcane-supply': true })
     expect(migrated.progress.permanentFocusBonuses).toEqual({ 'forest-heart': 10, 'guild-apprentice': 10 })
     expect(migrated.progress.lifetimeKillsByMonster).toEqual({ 'forest-wisp': 12, thornling: 3 })
@@ -69,6 +70,40 @@ describe('save navigation migration', () => {
     expect(migrated.combat.triggeredRuleIds).toContain('enemy:trait:grove-sentinel-ancient-growth:grove-sentinel-ancient-growth-threshold')
     expect(migrated.combat).not.toHaveProperty('enemySpecialUsed')
     expect(migrated.inventory).not.toHaveProperty('removed-item')
+  })
+
+  it('maps the legacy main-boss milestone to Forest Heart evidence only', () => {
+    const initial = createInitialState()
+    const old = {
+      ...initial,
+      saveVersion: SAVE_VERSION,
+      progress: { ...initial.progress, firstMainBossKill: true, bossKillsByBoss: {}, requestProgress: {} },
+    }
+    const migrated = migrateSave(old)
+
+    expect(migrated.progress.bossKillsByBoss['forest-heart']).toBe(1)
+    expect(migrated.progress.bossKillsByBoss['corrupted-greatbear']).toBeUndefined()
+    expect(migrated.progress.bossKillsByBoss['archmage-edrin-shade']).toBeUndefined()
+    expect(isDungeonUnlocked(DUNGEONS['howling-den'], migrated.progress)).toBe(true)
+    expect(isDungeonUnlocked(DUNGEONS['abandoned-catacombs'], migrated.progress)).toBe(false)
+    expect(isTutorialCompleted(migrated.progress)).toBe(false)
+
+    const rerun = migrateSave(migrated)
+    expect(rerun.progress.bossKillsByBoss['forest-heart']).toBe(1)
+    expect(rerun.progress.requestProgress['sentinel-breaker']).toBe(0)
+  })
+
+  it('preserves stronger Forest Heart evidence and seeds the historical Sentinel request', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({
+      ...initial,
+      saveVersion: SAVE_VERSION,
+      progress: { ...initial.progress, firstMainBossKill: true, bossKillsByBoss: { 'forest-heart': 4, 'grove-sentinel': 2 }, requestProgress: {} },
+    })
+
+    expect(migrated.progress.bossKillsByBoss['forest-heart']).toBe(4)
+    expect(migrated.progress.bossKillsByBoss['grove-sentinel']).toBe(2)
+    expect(migrated.progress.requestProgress['sentinel-breaker']).toBe(2)
   })
 
   it('migrates V4 saves to V7 with zero Gold while preserving gameplay state', () => {

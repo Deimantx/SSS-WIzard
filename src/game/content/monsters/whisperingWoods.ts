@@ -1,7 +1,7 @@
 import type { MonsterId } from '../../types'
 import { action, applyStatus, basic, delayBasicAttack, directDamage, gainBarrier, heal, withLifeEssence, type MonsterDefinition } from './monsterTypes'
 
-export const WHISPERING_WOODS_MONSTERS: Record<string, MonsterDefinition> = {
+export const WHISPERING_WOODS_MONSTERS = {
   'forest-wisp': {
     id: 'forest-wisp', bestiaryCategory: 'monster', name: 'Forest Wisp', subtitle: 'A curious lantern of the undergrowth',
     maxHealth: 44, basicAttackDamage: 5, actionIntervalMs: 2800, color: '#aa9aff', traitIds: ['forest-wisp-flicker'],
@@ -44,6 +44,6 @@ export const WHISPERING_WOODS_MONSTERS: Record<string, MonsterDefinition> = {
     actionPatterns: { default: { id: 'default', steps: [basic('basic-1'), basic('basic-2'), action('heart-pulse-step', 'heart-pulse'), basic('basic-3'), basic('basic-4'), action('root-prison-step', 'root-prison'), basic('basic-5'), basic('basic-6'), basic('basic-7'), action('sap-step', 'rejuvenating-sap')] } }, defaultActionPatternId: 'default',
     loot: withLifeEssence([{ itemId: 'heartseed', min: 1, max: 1, chance: 1 }]),
   },
-}
+} satisfies Partial<Record<MonsterId, MonsterDefinition>>
 
 export const WHISPERING_WOODS_MONSTER_IDS = ['forest-wisp', 'thornling', 'stone-root', 'grove-sentinel', 'forest-heart'] as const satisfies readonly MonsterId[]

@@ -2,6 +2,13 @@ import { SPELLS } from '../../game/content/spells/spells'
 import { getNextSpellPresetId, getSpellPresetFocusProjection, normalizeSpellPresetName } from '../../game/systems/spells'
 import type { GameState, SpellId, SpellPreset, SpellPresetId } from '../../game/types'
 
+export interface ApplySpellPresetResult {
+  ok: boolean
+  reason?: 'focus' | 'missing-preset' | 'empty'
+  requiredExtraFocus?: number
+  unavailableSpellIds?: SpellId[]
+}
+
 const normalizedSpellIds = (spellIds: readonly SpellId[]) => [...new Set(spellIds.filter((spellId) => Boolean(SPELLS[spellId])))]
 
 export const createSpellPresetAction = (state: GameState, name: string): SpellPresetId => {
@@ -41,22 +48,26 @@ export const deleteSpellPresetAction = (state: GameState, id: SpellPresetId) => 
   return true
 }
 
-export const applySpellPresetAction = (state: GameState, id: SpellPresetId) => {
+export const applySpellPresetAction = (state: GameState, id: SpellPresetId): ApplySpellPresetResult => {
   const preset = state.spellPresets.presets.find((entry) => entry.id === id)
-  if (!preset) return false
+  if (!preset) return { ok: false, reason: 'missing-preset', unavailableSpellIds: [] }
   const projection = getSpellPresetFocusProjection(state, preset)
+  if (!projection.validSpellIds.length) {
+    pushPresetNotification(state, `Cannot apply ${preset.name} · Add at least one available spell.`, 'warning')
+    return { ok: false, reason: 'empty', unavailableSpellIds: projection.unavailableSpellIds }
+  }
   if (!projection.canApply) {
     const required = Math.max(0, projection.totalAfterApply - state.player.maxFocus)
     pushPresetNotification(state, `Cannot apply ${preset.name} · Requires ${required} more Focus.`, 'warning')
-    return false
+    return { ok: false, reason: 'focus', requiredExtraFocus: required, unavailableSpellIds: projection.unavailableSpellIds }
   }
   Object.keys(SPELLS).forEach((spellId) => { state.activities.autoCast[spellId as SpellId] = false })
   projection.validSpellIds.forEach((spellId) => { state.activities.autoCast[spellId] = true })
-  state.spellPresets.lastAppliedPresetId = id
+  state.spellPresets.lastAppliedPresetId = projection.unavailableSpellIds.length ? null : id
   if (projection.unavailableSpellIds.length) {
-    pushPresetNotification(state, `${preset.name} applied · ${projection.unavailableSpellIds.length} spell${projection.unavailableSpellIds.length === 1 ? '' : 's'} unavailable.`, 'warning')
+    pushPresetNotification(state, `${preset.name} partially applied · ${projection.unavailableSpellIds.length} unavailable spell${projection.unavailableSpellIds.length === 1 ? '' : 's'} skipped.`, 'warning')
   }
-  return true
+  return { ok: true, unavailableSpellIds: projection.unavailableSpellIds }
 }
 
 const pushPresetNotification = (state: GameState, text: string, tone: 'info' | 'success' | 'warning') => {

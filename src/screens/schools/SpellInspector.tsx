@@ -1,7 +1,6 @@
 import { SCHOOLS } from '../../game/content/schools/schools'
 import { SPELLS } from '../../game/content/spells/spells'
 import { STATUS_DEFINITIONS } from '../../game/content/statuses'
-import { getSchoolProgressInfo } from '../../game/systems/schools'
 import { formatSpellRank, getSpellAutoCastFocusCost, type SpellRank } from '../../game/systems/spells'
 import { getSpellEquipmentBonusPreview } from '../../game/systems/spells/spellEquipmentPreview'
 import type { CombatEffect, Magnitude } from '../../game/systems/combat/combatTypes'
@@ -21,14 +20,13 @@ export function SpellInspector({ entry, state, rankPathOpen, onToggleRankPath, o
   onToggleRankPath: () => void
   onToggleAutoCast: (spellId: SpellId) => void
 }) {
-  if (!entry) return <Card title="Spell Inspector" className="schools-inspector-panel"><div className="schools-empty-state">Select a catalog entry to inspect it.</div></Card>
+  if (!entry) return <Card className="schools-inspector-panel"><div className="spell-inspector-empty"><InspectorEyebrow>SELECT A SPELL</InspectorEyebrow><h2>SELECT A SPELL</h2><p>Known Spells will appear here when learned. Choose a known Spell from the Spellbook to inspect its mechanics.</p></div></Card>
   const school = SCHOOLS[entry.school]
-  if (entry.kind === 'placeholder') return <Card className="schools-inspector-panel" style={{ borderTopColor: school.color } as React.CSSProperties}><InspectorEyebrow>UNDISCOVERED SPELL</InspectorEyebrow><div className="spell-inspector-unknown"><SpellIcon school={entry.school} locked size="large" /><h2>???</h2><Status tone="locked">FUTURE PLACEHOLDER</Status><p>{school.name} School · Requires School Lv {entry.unlockLevel}</p><p className="muted">This catalog slot is reserved for future spell content. No mechanics have been authored yet.</p></div></Card>
-  if (!entry.unlocked) return <Card className="schools-inspector-panel" style={{ borderTopColor: school.color } as React.CSSProperties}><InspectorEyebrow>UNKNOWN SPELL</InspectorEyebrow><div className="spell-inspector-unknown"><SpellIcon school={entry.school} locked size="large" /><h2>???</h2><Status tone="locked">LOCKED</Status><p>{school.name} School · Requires School Lv {entry.unlockLevel}</p><p className="muted">Continue researching this school to reveal the spell.</p></div></Card>
+  if (entry.kind === 'placeholder') return <Card className="schools-inspector-panel" style={{ borderTopColor: school.color } as React.CSSProperties}><InspectorEyebrow>UNKNOWN SPELL</InspectorEyebrow><div className="spell-inspector-unknown"><SpellIcon school={entry.school} locked size="large" /><h2>?</h2><Status tone="locked">UNDISCOVERED</Status><p>{school.name.toUpperCase()} SCHOOL · Requires Level {entry.unlockLevel}</p><p className="muted">This future catalog slot has no authored mechanics yet.</p></div></Card>
+  if (!entry.unlocked) return <Card className="schools-inspector-panel" style={{ borderTopColor: school.color } as React.CSSProperties}><InspectorEyebrow>UNKNOWN SPELL</InspectorEyebrow><div className="spell-inspector-unknown"><SpellIcon school={entry.school} locked size="large" /><h2>?</h2><Status tone="locked">LOCKED</Status><p>{school.name.toUpperCase()} SCHOOL · Requires Level {entry.unlockLevel}</p><p className="muted">Research this school to reveal the spell.</p></div></Card>
 
   const spell = SPELLS[entry.spellId]
   const rank = entry.rank as SpellRank
-  const schoolInfo = getSchoolProgressInfo(state, entry.school)
   const focusCost = getSpellAutoCastFocusCost(state, spell.id) ?? rank * 10
   const preview = getSpellEquipmentBonusPreview(state, spell.id)
   return <Card className="schools-inspector-panel" style={{ borderTopColor: school.color }}>
@@ -40,9 +38,8 @@ export function SpellInspector({ entry, state, rankPathOpen, onToggleRankPath, o
         <div className="spell-inspector-section"><div className="section-label">CORE CASTING</div><div className="spell-core-grid"><Metric label="Mana" value={`${spell.manaCost}`} /><Metric label="Cooldown" value={formatTime(spell.cooldownMs)} /><Metric label="Auto-Cast Focus" value={`${focusCost}`} /><Metric label="Current Rank" value={formatSpellRank(rank)} /></div></div>
         <div className="spell-inspector-section"><div className="section-label">EFFECTS</div><div className="spell-effects">{spell.effects.map((effect, index) => <div className="spell-effect-row" key={`${effect.type}-${index}`}><strong>{effectLabel(effect)}</strong><span>{effectDescription(effect)}</span></div>)}</div></div>
         <div className="spell-autocast-card"><div><div className="section-label">AUTO-CAST</div><strong>{state.activities.autoCast[spell.id] ? 'ON' : 'OFF'}</strong><span>{conditionLabel(spell.autoCondition)}</span><small>{state.activities.autoCast[spell.id] ? `${focusCost} Focus reserved` : `Requires ${focusCost} Focus when enabled`}</small></div><GameTooltip content={<TooltipContent title="Auto-Cast" description="Toggle this unlocked spell's live Auto-Cast reservation. Applying a preset can change this state atomically." />}><Button variant={state.activities.autoCast[spell.id] ? 'success' : 'secondary'} onClick={() => onToggleAutoCast(spell.id)}>{state.activities.autoCast[spell.id] ? 'TURN OFF' : 'TURN ON'}</Button></GameTooltip></div>
-        <details className="spell-equipment-details"><summary>EQUIPMENT BONUSES</summary><SpellEquipmentBonuses preview={preview} /></details>
+        <details className="spell-equipment-details"><summary><span>EQUIPMENT MODIFIERS</span>{preview.current.length ? <Status tone="success">{preview.current.length} ACTIVE</Status> : <Status>NONE</Status>}</summary><SpellEquipmentBonuses preview={preview} /></details>
         <div className="spell-rank-path-action"><span><small>Rank Path</small><strong>{formatSpellRank(rank)} current</strong></span><GameTooltip content={<TooltipContent title="View Rank Path" description="Review the authored Rank I path and future Focus costs." />}><Button variant="ghost" onClick={onToggleRankPath}>VIEW RANK PATH</Button></GameTooltip></div>
-        <small className="spell-inspector-school-state">{school.name} School Level {schoolInfo.level} · {schoolInfo.xp} XP</small>
       </div>
       {rankPathOpen && <SpellRankPath currentRank={rank} onClose={onToggleRankPath} />}
     </div>

@@ -23,3 +23,4 @@ export function SearchInput({ value, onChange, placeholder = 'Search...', ariaLa
 export function Tabs<T extends string>({ items, active, onChange }: { items: readonly T[]; active: T; onChange: (value: T) => void }) { return <div className="tabs">{items.map((item) => <button className={item === active ? 'active' : ''} key={item} onClick={() => onChange(item)}>{item}</button>)}</div> }
 export { ArchiveProgressTile } from './ArchiveProgressTile'
 export { FilterBar, type FilterOption } from './FilterBar'
+export { SelectMenu, type SelectMenuOption } from './SelectMenu'

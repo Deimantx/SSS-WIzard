@@ -65,9 +65,30 @@ export const normalizeSpellPresetState = (raw: unknown, autoCast?: Partial<Recor
   return { presets, lastAppliedPresetId: matches ? applied : null }
 }
 
-const activeAutocastFocus = (state: Pick<GameState, 'activities' | 'progress'>) => deriveFocusReservations(state)
-  .filter((reservation) => reservation.sourceType !== 'autocast')
-  .reduce((sum, reservation) => sum + reservation.amount, 0)
+export interface SpellPresetFocusBreakdown {
+  autoCastFocus: number
+  otherFocus: number
+  totalFocus: number
+  maxFocus: number
+  freeFocus: number
+}
+
+export type SpellPresetFocusState = Pick<GameState, 'activities' | 'progress'> & { player: Pick<GameState['player'], 'maxFocus'> }
+
+export const getSpellPresetFocusBreakdown = (state: SpellPresetFocusState): SpellPresetFocusBreakdown => {
+  const reservations = deriveFocusReservations(state)
+  const autoCastFocus = reservations.filter((reservation) => reservation.sourceType === 'autocast').reduce((sum, reservation) => sum + reservation.amount, 0)
+  const otherFocus = reservations.filter((reservation) => reservation.sourceType !== 'autocast').reduce((sum, reservation) => sum + reservation.amount, 0)
+  const totalFocus = autoCastFocus + otherFocus
+  return { autoCastFocus, otherFocus, totalFocus, maxFocus: state.player.maxFocus, freeFocus: state.player.maxFocus - totalFocus }
+}
+
+export const doesCurrentAutoCastMatchPreset = (state: Pick<GameState, 'activities' | 'progress'>, preset: Pick<SpellPreset, 'spellIds'>) => {
+  const projection = getSpellPresetFocusProjection({ ...state, player: { maxFocus: 0 }, debug: { allowFocusOverCap: true } }, preset)
+  if (!projection.validSpellIds.length || projection.unavailableSpellIds.length || projection.invalidSpellIds.length) return false
+  const presetIds = new Set(projection.validSpellIds)
+  return Object.keys(SPELLS).every((id) => Boolean(state.activities.autoCast[id as SpellId]) === presetIds.has(id as SpellId))
+}
 
 export const getSpellPresetFocusProjection = (
   state: SpellPresetProjectionState,
@@ -85,7 +106,7 @@ export const getSpellPresetFocusProjection = (
     else unavailableSpellIds.push(rawId)
   }
   const presetAutoCastFocus = validSpellIds.reduce((sum, spellId) => sum + (getSpellAutoCastFocusCost(state, spellId) ?? 0), 0)
-  const nonAutoCastFocus = activeAutocastFocus(state)
+  const nonAutoCastFocus = getSpellPresetFocusBreakdown({ activities: state.activities, progress: state.progress, player: state.player }).otherFocus
   const totalAfterApply = nonAutoCastFocus + presetAutoCastFocus
   const freeAfterApply = state.player.maxFocus - totalAfterApply
   return {
@@ -96,7 +117,7 @@ export const getSpellPresetFocusProjection = (
     nonAutoCastFocus,
     totalAfterApply,
     freeAfterApply,
-    canApply: Boolean(state.debug.allowFocusOverCap) || totalAfterApply <= state.player.maxFocus,
+    canApply: validSpellIds.length > 0 && (Boolean(state.debug.allowFocusOverCap) || totalAfterApply <= state.player.maxFocus),
   }
 }
 

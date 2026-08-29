@@ -35,7 +35,7 @@ import { forceCompleteResearchCycle } from '../game/systems/research/researchEng
 import { advanceWithOfflineBank as runOfflineBankAdvance, isOfflineBankSimulationActive, type OfflineBankResult } from '../game/systems/offline-bank/offlineBankSimulation'
 import type { OfflineBankReport } from '../game/systems/offline-bank/offlineBankReport'
 import { getSpellAutoCastFocusCost, isSpellUnlocked, syncSpellUnlocksForSchool } from '../game/systems/spells'
-import { applySpellPresetAction, createSpellPresetAction, deleteSpellPresetAction, duplicateSpellPresetAction, renameSpellPresetAction, saveSpellPresetAction } from './actions/spellPresetActions'
+import { applySpellPresetAction, createSpellPresetAction, deleteSpellPresetAction, duplicateSpellPresetAction, renameSpellPresetAction, saveSpellPresetAction, type ApplySpellPresetResult } from './actions/spellPresetActions'
 
 export interface RecentAcquisition { itemId: ItemId; amount: number; timestamp: number; isNew: boolean }
 
@@ -78,12 +78,12 @@ export interface GameActions {
   setDebugTransmutationEchoCapacity: (amount: number | null) => void
   castSpell: (spellId: SpellId) => void
   toggleAutoCast: (spellId: SpellId) => void
-  createSpellPreset: (name: string) => void
-  renameSpellPreset: (id: SpellPresetId, name: string) => void
-  duplicateSpellPreset: (id: SpellPresetId) => void
-  deleteSpellPreset: (id: SpellPresetId) => void
-  saveSpellPreset: (preset: SpellPreset) => void
-  applySpellPreset: (id: SpellPresetId) => void
+  createSpellPreset: (name: string) => SpellPresetId
+  renameSpellPreset: (id: SpellPresetId, name: string) => boolean
+  duplicateSpellPreset: (id: SpellPresetId) => SpellPresetId | null
+  deleteSpellPreset: (id: SpellPresetId) => boolean
+  saveSpellPreset: (preset: SpellPreset) => boolean
+  applySpellPreset: (id: SpellPresetId) => ApplySpellPresetResult
   enterDungeon: (dungeonId?: DungeonId) => void
   leaveDungeon: () => void
   engageBoss: (bossId: MonsterId) => void
@@ -213,12 +213,12 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   setDebugTransmutationEchoCapacity: (amount) => set((state) => { setTransmutationEchoCapacityOverrideAction(state, amount); return state }),
   castSpell: (spellId) => set((state) => { castSpellAction(state, spellId); return state }),
   toggleAutoCast: (spellId) => set((state) => { const cost = getSpellAutoCastFocusCost(state, spellId); if (!spellUnlocked(state, spellId) || cost === null) return state; if (state.activities.autoCast[spellId]) { state.activities.autoCast[spellId] = false; state.spellPresets.lastAppliedPresetId = null } else if (canReserveFocus(state, cost)) { state.activities.autoCast[spellId] = true; state.spellPresets.lastAppliedPresetId = null; pushNotification(state, `${SPELLS[spellId].name} Auto-Cast enabled`, 'success') } else pushNotification(state, `Cannot enable Auto-Cast · Requires ${cost} Focus · Free Focus: ${selectFreeFocus(state)}`, 'warning'); return state }),
-  createSpellPreset: (name) => set((state) => { createSpellPresetAction(state, name); return state }),
-  renameSpellPreset: (id, name) => set((state) => { renameSpellPresetAction(state, id, name); return state }),
-  duplicateSpellPreset: (id) => set((state) => { duplicateSpellPresetAction(state, id); return state }),
-  deleteSpellPreset: (id) => set((state) => { deleteSpellPresetAction(state, id); return state }),
-  saveSpellPreset: (preset) => set((state) => { saveSpellPresetAction(state, preset); return state }),
-  applySpellPreset: (id) => set((state) => { applySpellPresetAction(state, id); return state }),
+  createSpellPreset: (name) => { let result!: SpellPresetId; set((state) => { result = createSpellPresetAction(state, name); return state }); return result },
+  renameSpellPreset: (id, name) => { let result = false; set((state) => { result = renameSpellPresetAction(state, id, name); return state }); return result },
+  duplicateSpellPreset: (id) => { let result: SpellPresetId | null = null; set((state) => { result = duplicateSpellPresetAction(state, id); return state }); return result },
+  deleteSpellPreset: (id) => { let result = false; set((state) => { result = deleteSpellPresetAction(state, id); return state }); return result },
+  saveSpellPreset: (preset) => { let result = false; set((state) => { result = saveSpellPresetAction(state, preset); return state }); return result },
+  applySpellPreset: (id) => { let result: ApplySpellPresetResult = { ok: false, reason: 'missing-preset', unavailableSpellIds: [] }; set((state) => { result = applySpellPresetAction(state, id); return state }); return result },
   enterDungeon: (dungeonId = 'whispering-woods') => set((state) => { const dungeon = DUNGEONS[dungeonId]; if (state.combat.active || !dungeon) return state; if (!isDungeonUnlocked(dungeon, state.progress)) { pushNotification(state, `${getDungeonUnlockRequirement(dungeon) ?? 'Requirement'} to unlock ${dungeon.name}.`, 'warning'); return state } state.combat.active = true; state.combat.dungeonId = dungeonId; state.combat.encounterTimerMs = 0; state.player.health = Math.max(1, state.player.health); spawnNextEnemy(state); pushNotification(state, `${dungeon.name} entered`, 'info'); return state }),
   leaveDungeon: () => set((state) => { state.combat = { ...createInitialState().combat, log: ['Left the dungeon. Threat Cleared resets.'] }; return state }),
   engageBoss: (bossId) => set((state) => {

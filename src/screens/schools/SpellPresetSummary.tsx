@@ -1,5 +1,4 @@
-import { getSpellPresetFocusProjection } from '../../game/systems/spells'
-import { selectUsedFocus } from '../../game/engine'
+import { doesCurrentAutoCastMatchPreset, getSpellPresetFocusBreakdown } from '../../game/systems/spells'
 import { useGameStore } from '../../store/gameStore'
 import { Button, Card, Status } from '../../components/ui'
 
@@ -10,10 +9,15 @@ export function SpellPresetSummary({ onManage }: { onManage: () => void }) {
   const debug = useGameStore((state) => state.debug)
   const maxFocus = useGameStore((state) => state.player.maxFocus)
   const state = { spellPresets, activities, progress, player: { maxFocus }, debug }
-  const applied = spellPresets.presets.find((preset) => preset.id === spellPresets.lastAppliedPresetId)
+  const focus = getSpellPresetFocusBreakdown(state)
+  const applied = spellPresets.presets.find((preset) => doesCurrentAutoCastMatchPreset(state, preset))
   const currentCount = Object.values(activities.autoCast).filter(Boolean).length
-  const projection = applied ? getSpellPresetFocusProjection(state, applied) : null
   return <Card title="Spell Presets" className="schools-presets-panel" action={<Button variant="secondary" onClick={onManage}>MANAGE PRESETS</Button>}>
-    <div className="spell-preset-summary-grid"><div><small>APPLIED</small><strong>{applied?.name ?? 'CUSTOM'}</strong><span>{applied ? `${projection?.validSpellIds.length ?? 0} spells · ${projection?.presetAutoCastFocus ?? 0} Focus` : 'None · Manual Auto-Cast selection'}</span></div><div><small>LIVE AUTO-CAST</small><strong>{currentCount} spells</strong><span>{selectUsedFocus(state)} / {maxFocus} Focus reserved</span></div><div><Status tone={applied ? 'success' : 'active'}>{applied ? 'PRESET ACTIVE' : 'CUSTOM SETUP'}</Status><span>{applied ? 'Manual changes clear the applied marker.' : 'Apply a saved set to coordinate Auto-Cast.'}</span></div></div>
+    <div className="spell-preset-summary-grid">
+      <div className="spell-preset-summary-current"><small>CURRENT</small><strong>{applied?.name ?? 'CUSTOM'}</strong><span>{applied ? <Status tone="success">ACTIVE</Status> : 'Manual Auto-Cast selection'}</span></div>
+      <div><small>AUTO-CAST</small><strong>{currentCount} Spells · {focus.autoCastFocus} Focus</strong></div>
+      <div><small>OTHER SYSTEMS</small><strong>{focus.otherFocus} Focus</strong></div>
+      <div><small>TOTAL</small><strong>{focus.totalFocus} / {focus.maxFocus}</strong><span>{focus.freeFocus >= 0 ? `${focus.freeFocus} Free` : `${Math.abs(focus.freeFocus)} Over Cap`}</span></div>
+    </div>
   </Card>
 }

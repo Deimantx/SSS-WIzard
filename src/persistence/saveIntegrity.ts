@@ -85,6 +85,8 @@ const hasCurrentSaveShape = (value: Record<string, unknown>) => {
     && typeof value.lastSavedAt === 'number'
     && Number.isFinite(value.lastSavedAt)
     && value.lastSavedAt >= 0
+    && isRecord(value.progress)
+    && Object.prototype.hasOwnProperty.call(value.progress, 'spellRanks')
 }
 
 const hasRecoverableSaveShape = (value: Record<string, unknown>) => {
@@ -100,6 +102,9 @@ export const validateStoredSave = (encoded: string): SaveValidationResult => {
     const decoded = decodeSave(encoded)
     if (decoded.saveVersion === CURRENT_SAVE_VERSION && !hasCurrentSaveShape(decoded)) {
       return { ok: false, state: null, error: 'Current save is missing required gameplay data.' }
+    }
+    if (decoded.saveVersion === CURRENT_SAVE_VERSION - 1 && !hasRecoverableSaveShape(decoded)) {
+      return { ok: false, state: null, error: 'Historical save is missing required gameplay data.' }
     }
     const migrated = migrateSave(decoded)
     const roundTrip = validateSerializedSave(JSON.stringify(migrated), migrated)

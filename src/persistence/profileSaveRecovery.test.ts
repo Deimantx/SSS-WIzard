@@ -33,7 +33,7 @@ describe('profile save recovery and historical compatibility', () => {
 
     expect(loaded.state).not.toBeNull()
     expect(loaded.source).toBe('primary')
-    expect(loaded.state?.saveVersion).toBe(label === 'V4' ? 8 : 15)
+    expect(loaded.state?.saveVersion).toBe(label === 'V4' ? 8 : 16)
     expect(loaded.diagnostics?.primary).toMatchObject({ present: true, ok: true, saveVersion: Number(label.slice(1)) })
     expect(localStorage.getItem(profileSaveKey('slot-1'))).toBe(raw)
     expect(loaded.state?.inventory['fire-fragment']).toBeGreaterThan(0)
@@ -146,7 +146,7 @@ describe('profile save recovery and historical compatibility', () => {
     expect(localStorage.getItem(profileSaveRecoveryKey('slot-1'))).toBe(primaryRaw)
 
     expect(enterProfile('slot-1').ok).toBe(true)
-    expect(JSON.parse(localStorage.getItem(profileSaveKey('slot-1'))!).saveVersion).toBe(15)
+    expect(JSON.parse(localStorage.getItem(profileSaveKey('slot-1'))!).saveVersion).toBe(16)
     expect(localStorage.getItem(profileSaveBackupKey('slot-1'))).toBe(backupRaw)
   })
 
@@ -169,7 +169,7 @@ describe('profile save recovery and historical compatibility', () => {
 
     expect(enterProfile('slot-1').ok).toBe(true)
     const canonical = JSON.parse(localStorage.getItem(profileSaveKey('slot-1'))!)
-    expect(canonical.saveVersion).toBe(15)
+    expect(canonical.saveVersion).toBe(16)
     expect(canonical.lastSavedAt).toEqual(expect.any(Number))
     expect(localStorage.getItem(profileSaveRecoveryKey('slot-1'))).toBe(raw)
   })

@@ -10,12 +10,13 @@ import { BALANCE } from '../game/core/balance/balance'
 import { SPELLS } from '../game/content/spells/spells'
 import { SCHOOLS } from '../game/content/schools/schools'
 import { EQUIPMENT_POSITIONS, normalizeEquipmentState } from '../game/core/equipment'
-import type { EquipmentPosition, GameState, ItemId, RecipeId, ResearchActivity, ResearchJobState, SchoolId, TransmutationJobState } from '../game/types'
+import type { EquipmentPosition, GameState, ItemId, RecipeId, ResearchActivity, ResearchJobState, SchoolId, SpellId, TransmutationJobState } from '../game/types'
 import { RESEARCH_SLOT_ORDER } from '../game/systems/research/researchReservations'
 import { isRecord, SaveMigrationError } from './saveSchema'
 import { recalculateDerivedStats } from '../game/engine'
 import { STATUS_DEFINITIONS } from '../game/content/statuses'
 import type { ActiveStatus, CombatSource, StatusId } from '../game/types'
+import { getSpellAutoCastFocusCost, MAX_SPELL_RANK, MIN_SPELL_RANK, syncAllSpellUnlocks, type SpellRank } from '../game/systems/spells'
 
 const normalizeScreen = (value: unknown, fallback: GameState['ui']['screen']): GameState['ui']['screen'] => {
   if (value === 'tower') return 'tower-channeling'
@@ -95,12 +96,43 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
   const rawCurrencies = isRecord(raw.currencies) ? raw.currencies : {}
   migrated.currencies = { gold: nonNegativeGold(rawCurrencies.gold) ?? fresh.currencies.gold }
 
-  const rawUnlockedSpells = Array.isArray(rawProgress.unlockedSpells) ? rawProgress.unlockedSpells : []
-  migrated.progress.unlockedSpells = rawUnlockedSpells.filter((id): id is GameState['progress']['unlockedSpells'][number] => typeof id === 'string' && spellIds.includes(id))
   const rawDiscoveredMonsters = Array.isArray(rawProgress.discoveredMonsters) ? rawProgress.discoveredMonsters : []
   migrated.progress.discoveredMonsters = [...new Set(rawDiscoveredMonsters.filter((id): id is GameState['progress']['discoveredMonsters'][number] => typeof id === 'string' && monsterIds.includes(id)))]
   const rawDiscoveredItems = Array.isArray(rawProgress.discoveredItems) ? rawProgress.discoveredItems : []
   migrated.progress.discoveredItems = [...new Set(rawDiscoveredItems.filter((id): id is ItemId => typeof id === 'string' && itemIds.includes(id)))]
+}
+
+const isSpellRankValue = (value: unknown): value is SpellRank => typeof value === 'number' && Number.isInteger(value) && value >= MIN_SPELL_RANK && value <= MAX_SPELL_RANK
+
+/** Converts legacy unlock arrays and current rank evidence into one canonical map. */
+const normalizeSpellProgression = (migrated: GameState, raw: Record<string, any>) => {
+  const rawProgress = isRecord(raw.progress) ? raw.progress : {}
+  const ranks: Partial<Record<SpellId, SpellRank>> = {}
+  const rawRanks = isRecord(rawProgress.spellRanks) ? rawProgress.spellRanks : {}
+  spellIds.forEach((id) => {
+    const rank = rawRanks[id]
+    if (isSpellRankValue(rank)) ranks[id as SpellId] = rank
+  })
+  const rawUnlockedSpells = Array.isArray(rawProgress.unlockedSpells) ? rawProgress.unlockedSpells : []
+  rawUnlockedSpells.forEach((id) => {
+    if (typeof id === 'string' && spellIds.includes(id)) ranks[id as SpellId] = Math.max(ranks[id as SpellId] ?? MIN_SPELL_RANK, MIN_SPELL_RANK) as SpellRank
+  })
+  migrated.progress.spellRanks = ranks
+  syncAllSpellUnlocks(migrated)
+  Object.keys(migrated.activities.autoCast).forEach((id) => {
+    if (!isSpellRankValue(ranks[id as SpellId])) migrated.activities.autoCast[id as SpellId] = false
+  })
+}
+
+const normalizeSchoolCap = (migrated: GameState, raw: Record<string, any>) => {
+  const rawProgress = isRecord(raw.progress) ? raw.progress : {}
+  const savedCap = nonNegativeNumber(rawProgress.magicLevelCap) ?? BALANCE.schoolProgression.startingCap
+  const edrinDefeated = (migrated.progress.bossKillsByBoss['archmage-edrin-shade'] ?? 0) >= 1
+  migrated.progress.magicLevelCap = Math.max(
+    savedCap,
+    BALANCE.schoolProgression.startingCap,
+    ...(edrinDefeated ? [BALANCE.schoolProgression.tutorialCompleteCap] : []),
+  )
 }
 
 export const normalizeLegacyProgressEvidence = (progress: GameState['progress']) => {
@@ -378,7 +410,7 @@ const normalizeTransmutationJobs = (migrated: GameState, raw: Record<string, any
   const researchEchoFocus = RESEARCH_SLOT_ORDER.reduce((sum, slotId) => sum + Math.max(0, Math.floor(migrated.activities.research.slots[slotId]?.echoesAssigned ?? 0)) * BALANCE.research.echoFocusCost, 0)
   const nonTransmutationFocus = Math.max(0, Math.floor(migrated.activities.channeling.echoesAssigned)) * BALANCE.channeling.echoFocusCost
     + researchEchoFocus
-    + Object.entries(migrated.activities.autoCast).filter(([spellId, active]) => active && migrated.progress.unlockedSpells.includes(spellId as any)).reduce((sum, [spellId]) => sum + (SPELLS[spellId as keyof typeof SPELLS]?.autoCastFocus ?? 0), 0)
+    + Object.entries(migrated.activities.autoCast).filter(([, active]) => active).reduce((sum, [spellId]) => sum + (getSpellAutoCastFocusCost(migrated, spellId as SpellId) ?? 0), 0)
   let remaining = Math.max(0, Math.min(BALANCE.transmutation.maxEchoes, Math.floor((migrated.player.maxFocus - nonTransmutationFocus) / BALANCE.transmutation.echoFocusCost)))
   const normalized: Partial<Record<RecipeId, TransmutationJobState>> = {}
   RECIPE_ORDER.forEach((recipeId) => {
@@ -394,7 +426,7 @@ const normalizeTransmutationJobs = (migrated: GameState, raw: Record<string, any
 const normalizeResearchFocus = (migrated: GameState) => {
   const nonResearchFocus = Math.max(0, Math.floor(migrated.activities.channeling.echoesAssigned)) * BALANCE.channeling.echoFocusCost
     + Object.entries(migrated.activities.transmutation.jobs).reduce((sum, [, job]) => sum + Math.max(0, Math.floor(job?.echoesAssigned ?? 0)) * BALANCE.transmutation.echoFocusCost, 0)
-    + Object.entries(migrated.activities.autoCast).filter(([spellId, active]) => active && migrated.progress.unlockedSpells.includes(spellId as any)).reduce((sum, [spellId]) => sum + (SPELLS[spellId as keyof typeof SPELLS]?.autoCastFocus ?? 0), 0)
+    + Object.entries(migrated.activities.autoCast).filter(([, active]) => active).reduce((sum, [spellId]) => sum + (getSpellAutoCastFocusCost(migrated, spellId as SpellId) ?? 0), 0)
   let remaining = Math.max(0, Math.floor((migrated.player.maxFocus - nonResearchFocus) / BALANCE.research.echoFocusCost))
   RESEARCH_SLOT_ORDER.forEach((slotId) => {
     const job = migrated.activities.research.slots[slotId]
@@ -414,6 +446,8 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   migrated.ui.screen = normalizeScreen(isRecord(raw.ui) ? raw.ui.screen : undefined, migrated.ui.screen)
   normalizeDynamicRecords(migrated, raw)
   normalizeLegacyProgressEvidence(migrated.progress)
+  normalizeSchoolCap(migrated, raw)
+  normalizeSpellProgression(migrated, raw)
   normalizeCombatState(migrated, raw, sourceVersion)
   normalizeDirectContentReferences(migrated, raw)
   seedLegacyItemDiscoveries(migrated, raw, sourceVersion)
@@ -491,6 +525,7 @@ export const migrateSave = (rawSave: unknown): GameState => {
   if (version === 12) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === 13) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === 14) return finalize(merge(createInitialState(), rawSave), rawSave, version)
+  if (version === 15) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === SAVE_VERSION) {
     return finalize(merge(createInitialState(), rawSave), rawSave, version)
   }

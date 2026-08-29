@@ -1,15 +1,38 @@
 import { SPELLS } from '../../game/content/spells/spells'
 import { SCHOOL_LEVEL_XP } from '../../game/core/balance/balance'
+import { syncAllSpellUnlocks, syncSpellUnlocksForSchool } from '../../game/systems/spells'
 import type { GameState, MonsterId, SchoolId, SpellId } from '../../game/types'
 
-export const unlockSchoolSpellsAction = (state: GameState, school: SchoolId) => {
-  Object.values(SPELLS).filter((spell) => spell.school === school && state.schools[school].level >= spell.unlockLevel).forEach((spell) => { if (!state.progress.unlockedSpells.includes(spell.id)) state.progress.unlockedSpells.push(spell.id) })
-}
 export const unlockAllSpellsAction = (state: GameState) => {
-  state.progress.unlockedSpells = Object.keys(SPELLS) as SpellId[]
-  Object.keys(state.schools).forEach((id) => { const school = id as SchoolId; state.schools[school].level = Math.max(4, state.schools[school].level); state.schools[school].xp = Math.max(SCHOOL_LEVEL_XP(4), state.schools[school].xp) })
+  Object.keys(SPELLS).forEach((id) => { state.progress.spellRanks[id as SpellId] = 1 })
+  Object.keys(state.schools).forEach((id) => {
+    const school = id as SchoolId
+    const targetLevel = Math.min(state.progress.magicLevelCap, 16)
+    state.schools[school].level = Math.max(targetLevel, state.schools[school].level)
+    state.schools[school].xp = Math.max(SCHOOL_LEVEL_XP(targetLevel), state.schools[school].xp)
+  })
+  syncAllSpellUnlocks(state)
 }
-export const setSchoolDebugAction = (state: GameState, school: SchoolId, xp: number, level?: number) => { state.schools[school].xp = Math.max(0, xp); state.schools[school].level = level ?? Math.min(state.progress.magicLevelCap, Math.max(1, Math.floor(xp / 20) + 1)); unlockSchoolSpellsAction(state, school) }
+export const setSchoolDebugAction = (state: GameState, school: SchoolId, xp: number, level?: number) => {
+  state.schools[school].xp = Math.max(0, xp)
+  state.schools[school].level = Math.max(1, Math.min(state.progress.magicLevelCap, Math.floor(level ?? Math.floor(xp / 20) + 1)))
+  syncSpellUnlocksForSchool(state, school)
+}
+export const debugUnlockSpellRankOneAction = (state: GameState, spellId: SpellId) => {
+  if (!SPELLS[spellId]) return false
+  state.progress.spellRanks[spellId] = 1
+  return true
+}
+export const debugLockSpellAction = (state: GameState, spellId: SpellId) => {
+  if (!SPELLS[spellId]) return false
+  delete state.progress.spellRanks[spellId]
+  state.activities.autoCast[spellId] = false
+  state.combat.spellCooldowns[spellId] = 0
+  return true
+}
+export const resetSpellCooldownsAction = (state: GameState) => {
+  Object.keys(state.combat.spellCooldowns).forEach((spellId) => { state.combat.spellCooldowns[spellId as SpellId] = 0 })
+}
 export const setLevelCapAction = (state: GameState, cap: number) => { state.progress.magicLevelCap = Math.max(1, cap); Object.keys(state.schools).forEach((id) => { const school = id as SchoolId; state.schools[school].level = Math.min(state.schools[school].level, state.progress.magicLevelCap) }) }
 export const setThreatAction = (state: GameState, amount: number) => { state.combat.threatCleared = Math.max(0, amount) }
 export const setBossKillsAction = (state: GameState, bossId: MonsterId, amount: number) => {

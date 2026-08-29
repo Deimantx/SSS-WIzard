@@ -8,6 +8,6 @@ export const BALANCE = {
   research: { maxPreparedSlots: 4, maxEchoes: 5, echoFocusCost: 10, manaCostPerItem: 5, durationPerItemMs: 5000, matchingXp: 12, nonMatchingXp: 8 },
   transmutation: { echoFocusCost: 10, maxEchoes: 5 },
   dungeon: { encounterDelayMs: 5000, whisperingWoodsThreatRequired: 20 },
-  mainBoss: { startingMagicLevelCap: 10, firstBossMagicLevelCap: 20 },
+  schoolProgression: { startingCap: 20, tutorialCompleteCap: 40 },
 } as const
 export const SCHOOL_LEVEL_XP = (level: number) => level * 20

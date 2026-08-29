@@ -19,7 +19,7 @@ export type ItemId =
   | 'stoneweave-robe'
   | 'windthread-charm'
 
-export type SpellId = 'fire-bolt' | 'water-ward' | 'earth-spike' | 'air-lance' | 'ignite' | 'flow-mend' | 'stoneguard' | 'quickening'
+export type SpellId = 'fire-bolt' | 'ignite' | 'fireball' | 'water-ward' | 'flow-mend' | 'frostbite' | 'earth-spike' | 'stoneguard' | 'fortify' | 'air-lance' | 'quickening' | 'shock-spark'
 export type MonsterId = 'forest-wisp' | 'thornling' | 'stone-root' | 'grove-sentinel' | 'forest-heart' | 'cavefang-wolf' | 'razorclaw-lynx' | 'corrupted-dire-wolf' | 'corrupted-greatbear' | 'restless-skeleton' | 'grave-wraith' | 'fallen-acolyte' | 'archmage-edrin-shade'
 export type BestiaryCategory = 'monster' | 'boss'
 export type DungeonId = 'whispering-woods' | 'howling-den' | 'abandoned-catacombs'
@@ -92,11 +92,8 @@ export interface SpellDefinition {
   unlockLevel: number
   manaCost: number
   cooldownMs: number
-  autoCastFocus: number
   type: SpellType
   effects: CombatEffect[]
-  damage?: number
-  barrier?: number
   autoCondition?: AutoCastCondition
 }
 
@@ -187,7 +184,7 @@ export interface CombatState {
 }
 export interface ProgressState {
   magicLevelCap: number
-  unlockedSpells: SpellId[]
+  spellRanks: Partial<Record<SpellId, import('./systems/spells/spellProgression').SpellRank>>
   discoveredMonsters: MonsterId[]
   discoveredItems: ItemId[]
   lifetimeKills: number

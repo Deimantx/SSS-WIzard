@@ -34,7 +34,7 @@ const cloneInventory = (state: GameState) => ({ ...state.inventory })
 export function createOfflineBankReportCollector(state: GameState, durationMs: number, bankBeforeMs: number): SimulationReportCollector {
   const inventoryBefore = cloneInventory(state)
   const touchedItems = new Set<ItemId>()
-  const progressionBefore = { spells: [...state.progress.unlockedSpells], discoveries: Object.entries(state.progress.channeling.discoveries).filter(([, value]) => value).map(([id]) => id as ChannelingDiscoveryId), guildUnlocked: state.progress.guildUnlocked, guildRank: state.progress.guildRank, levelCap: state.progress.magicLevelCap }
+  const progressionBefore = { spells: new Set(Object.keys(state.progress.spellRanks) as SpellId[]), discoveries: Object.entries(state.progress.channeling.discoveries).filter(([, value]) => value).map(([id]) => id as ChannelingDiscoveryId), guildUnlocked: state.progress.guildUnlocked, guildRank: state.progress.guildRank, levelCap: state.progress.magicLevelCap }
   const levelBefore = Object.fromEntries((Object.keys(state.schools) as SchoolId[]).map((id) => [id, state.schools[id].level])) as Partial<Record<SchoolId, number>>
   const report: OfflineBankReport = {
     durationMs, bankBeforeMs, bankAfterMs: bankBeforeMs,
@@ -61,7 +61,7 @@ export function createOfflineBankReportCollector(state: GameState, durationMs: n
       report.bankAfterMs = Math.max(0, current.offlineBankMs)
       report.endingState = { health: current.player.health, maxHealth: current.player.maxHealth, mana: current.player.mana, maxMana: current.player.maxMana }
       ;(Object.keys(ITEMS) as ItemId[]).forEach((id) => { const delta = (current.inventory[id] ?? 0) - (inventoryBefore[id] ?? 0); if (delta || touchedItems.has(id)) report.netInventory[id] = delta })
-      report.progression.spellsUnlocked = current.progress.unlockedSpells.filter((id) => !progressionBefore.spells.includes(id))
+      report.progression.spellsUnlocked = (Object.keys(current.progress.spellRanks) as SpellId[]).filter((id) => !progressionBefore.spells.has(id))
       report.progression.discoveriesUnlocked = (Object.entries(current.progress.channeling.discoveries).filter(([id, value]) => value && !progressionBefore.discoveries.includes(id as ChannelingDiscoveryId)).map(([id]) => id as ChannelingDiscoveryId))
       report.progression.guildUnlocked = !progressionBefore.guildUnlocked && current.progress.guildUnlocked
       if (progressionBefore.guildRank !== current.progress.guildRank) { report.progression.guildRankBefore = progressionBefore.guildRank; report.progression.guildRankAfter = current.progress.guildRank }

@@ -1,6 +1,5 @@
 import { ITEMS, getResearchXp } from '../../content/items/items'
 import { SCHOOLS } from '../../content/schools/schools'
-import { SPELLS } from '../../content/spells/spells'
 import { BALANCE } from '../../core/balance/balance'
 import { getEquippedReservedQuantity } from '../../core/equipment/equipmentRules'
 import { grantSchoolXp, pushNotification } from '../../engine'
@@ -57,16 +56,6 @@ const stopBlocked = (job: ResearchJobState, status: ResearchJobState['status'], 
   // be carried into continuous funding as a free completed item.
   job.progressMs = progress >= BALANCE.research.durationPerItemMs ? 0 : Math.min(BALANCE.research.durationPerItemMs, progress)
   if (status === 'level-cap' && changed) context.report?.recordResearchStoppedAtCap()
-}
-
-const unlockSchoolSpell = (state: GameState, schoolId: SchoolId, level: number) => {
-  const spell = Object.values(SPELLS).find((entry) => entry.school === schoolId && entry.unlockLevel === level)
-  if (spell && !state.progress.unlockedSpells.includes(spell.id)) {
-    state.progress.unlockedSpells.push(spell.id)
-    pushNotification(state, `${spell.name} unlocked`, 'success')
-    return spell.id
-  }
-  return undefined
 }
 
 const normalizeJobProgress = (job: ResearchJobState) => {
@@ -127,7 +116,6 @@ const completeResearchCycle = (state: GameState, slotId: ResearchSlotId, job: Re
   context.report?.recordResearch(job.itemId, job.targetSchoolId, xp)
   job.remainingQuantity -= 1
   if (levels.after > levels.before) pushNotification(state, `${SCHOOLS[job.targetSchoolId].name} reached Level ${levels.after}`, 'success')
-  unlockSchoolSpell(state, job.targetSchoolId, levels.after)
   return 'complete' as const
 }
 

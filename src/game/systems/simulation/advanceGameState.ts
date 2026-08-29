@@ -19,6 +19,7 @@ import type { SimulationReportCollector } from '../offline-bank/offlineBankRepor
 import { applyTransmutationAllocations, buildTransmutationWorkRequests } from '../transmutation/transmutationEngine'
 import { applyResearchAllocations, buildResearchWorkRequests } from '../research/researchEngine'
 import { allocateContinuousMana } from './continuousManaScheduler'
+import { isSpellUnlocked } from '../spells'
 
 export interface AdvanceContext {
   mode: 'live' | 'banked'
@@ -26,7 +27,7 @@ export interface AdvanceContext {
   onItemAcquired?: (itemId: ItemId, quantity: number) => void
 }
 
-const spellUnlocked = (state: GameState, spellId: SpellId) => state.progress.unlockedSpells.includes(spellId)
+const spellUnlocked = isSpellUnlocked
 
 const meetsAutoCondition = (state: GameState, spellId: SpellId) => {
   const condition = SPELLS[spellId].autoCondition

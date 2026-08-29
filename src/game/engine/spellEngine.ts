@@ -2,6 +2,7 @@ import { SPELLS } from '../content/spells'
 import { appendLog, pushNotification } from '../engine'
 import { executeCombatEffects } from '../systems/combat/effectResolver'
 import { actorCannotAct } from '../systems/combat/statusRuntime'
+import { isSpellUnlocked } from '../systems/spells'
 import type { CombatSource, GameState, SpellId } from '../types'
 
 const hasEnemyTarget = (spellId: SpellId) => SPELLS[spellId].effects.some((effect) => effect.target === 'opponent')
@@ -11,7 +12,7 @@ export type SpellCastFailure = 'unknown' | 'locked' | 'stunned' | 'inactive' | '
 export const getSpellCastFailure = (state: GameState, spellId: SpellId): SpellCastFailure | null => {
   const spell = SPELLS[spellId]
   if (!spell) return 'unknown'
-  if (!state.progress.unlockedSpells.includes(spellId)) return 'locked'
+  if (!isSpellUnlocked(state, spellId)) return 'locked'
   if (actorCannotAct(state, 'player')) return 'stunned'
   if (!state.combat.active) return 'inactive'
   if (hasEnemyTarget(spellId) && !state.combat.enemyId) return 'no-target'
@@ -42,7 +43,7 @@ export const castSpellInternal = (state: GameState, spellId: SpellId, quiet = fa
 }
 
 export const castSpellAction = (state: GameState, spellId: SpellId) => {
-  if (!state.progress.unlockedSpells.includes(spellId)) return false
+  if (!isSpellUnlocked(state, spellId)) return false
   const spell = SPELLS[spellId]
   const failure = getSpellCastFailure(state, spellId)
   if (failure) { notifySpellCastFailure(state, spellId, failure); return false }

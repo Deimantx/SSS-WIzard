@@ -2,7 +2,8 @@ import { BALANCE } from '../../core/balance/balance'
 import { deriveFocusReservations } from '../../engine'
 import { RECIPES } from '../../content/recipes/recipes'
 import { getRecipeStatus } from '../transmutation/transmutationSelectors'
-import type { FocusReservation, GameState, ResearchJobStatus } from '../../types'
+import { formatSpellRank, getSpellRank } from '../spells'
+import type { FocusReservation, GameState, ResearchJobStatus, SpellId } from '../../types'
 
 export interface FocusUsageEntry {
   id: string
@@ -43,7 +44,8 @@ export function getFocusUsageEntries(state: GameState): FocusUsageEntry[] {
       const status = recipe ? getRecipeStatus(state, recipe).replace('-', ' ').toUpperCase() : 'ACTIVE'
       return { ...reservation, detail: `${plural(echoes, 'Echo')} × ${BALANCE.transmutation.echoFocusCost} Focus`, status }
     }
-    return { ...reservation, detail: `${reservation.amount} Focus`, status: 'ENABLED' }
+    const rank = getSpellRank(state, reservation.sourceId as SpellId)
+    return { ...reservation, detail: `${rank ? formatSpellRank(rank) : 'Spell'} · ${reservation.amount} Focus`, status: 'ENABLED' }
   })
 }
 

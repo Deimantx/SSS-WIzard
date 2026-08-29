@@ -30,7 +30,7 @@ describe('ResearchInspector', () => {
     fireEvent.click(screen.getByRole('button', { name: 'WATER' }))
     expect(valueMetric('XP / ITEM')).toBe('8')
     expect((screen.getByRole('button', { name: 'WATER' }) as HTMLButtonElement).getAttribute('aria-pressed')).toBe('true')
-    expect(screen.getByRole('button', { name: 'WATER' }).textContent).toContain('LV 1 / 10')
+    expect(screen.getByRole('button', { name: 'WATER' }).textContent).toContain('LV 1 / 20')
   })
 
   it('updates the projected target-school result with quantity and target changes', () => {

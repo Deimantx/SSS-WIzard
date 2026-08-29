@@ -35,7 +35,7 @@ describe('school progression selectors', () => {
     const result = projectSchoolProgress(state, 'fire', 500)
     expect(result.projected).toMatchObject({ level: state.progress.magicLevelCap, progress: 1 })
     expect(result.levelsGained).toBe(state.progress.magicLevelCap - 1)
-    expect(result.addedXp).toBe(190)
+    expect(result.addedXp).toBe(390)
     expect(result.cappedByCurrentCeiling).toBe(true)
     expect(state.schools.fire).toEqual({ xp: 10, level: 1 })
   })
@@ -56,7 +56,7 @@ describe('school progression selectors', () => {
     const summary = getSchoolMasterySummary(state)
     expect(summary.schoolCount).toBe(4)
     expect(summary.totalLevels).toBe(5)
-    expect(summary.maximumLevels).toBe(40)
+    expect(summary.maximumLevels).toBe(80)
     expect(summary.cappedSchools).toBe(0)
     state.progress.magicLevelCap = 20
     expect(getSchoolMasterySummary(state).maximumLevels).toBe(80)

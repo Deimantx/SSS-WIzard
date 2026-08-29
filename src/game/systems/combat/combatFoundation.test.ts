@@ -201,7 +201,7 @@ describe('post-implementation combat audit regressions', () => {
 
   it('blocks manual and automatic spell casts while Stunned without spending resources', () => {
     const state = stateWithEnemy()
-    state.progress.unlockedSpells = ['fire-bolt']
+    state.progress.spellRanks = { 'fire-bolt': 1 }
     state.player.mana = 50
     applyStatus(state, 'player', 'stunned', enemyAttack)
     expect(castSpellAction(state, 'fire-bolt')).toBe(false)

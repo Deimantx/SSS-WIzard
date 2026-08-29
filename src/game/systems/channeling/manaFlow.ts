@@ -5,6 +5,7 @@ import { getManaRegenBreakdown } from '../../engine/channelingEngine'
 import { getRecipeManaDemandPerSecond, getRecipeStatus } from '../transmutation/transmutationSelectors'
 import { getResearchManaPerSecond, getPreparedResearchJobs, getResearchJobStatus } from '../research/researchSelectors'
 import type { GameState, ManaDemandSource, ManaFlowBreakdown } from '../../types'
+import { isSpellUnlocked } from '../spells'
 
 const FLOW_EPSILON = 0.05
 
@@ -31,7 +32,7 @@ export const getManaDemandBreakdown = (state: GameState): ManaDemandSource[] => 
     Object.entries(state.activities.autoCast).forEach(([id, enabled]) => {
       if (!enabled) return
       const spell = SPELLS[id as keyof typeof SPELLS]
-      if (!spell || !state.progress.unlockedSpells.includes(spell.id) || spell.cooldownMs <= 0) return
+      if (!spell || !isSpellUnlocked(state, spell.id) || spell.cooldownMs <= 0) return
       sources.push({
         id: `autocast-${spell.id}`,
         label: `Auto-Cast · ${spell.name}`,

@@ -85,14 +85,18 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
       pushNotification(state, 'Four equipment recipes are now available', 'success')
     }
     if (bossId === 'forest-heart' && !state.progress.permanentFocusBonuses['forest-heart']) {
-      state.progress.magicLevelCap = BALANCE.mainBoss.firstBossMagicLevelCap
-      if (!state.progress.permanentFocusBonuses['forest-heart']) state.progress.permanentFocusBonuses['forest-heart'] = BALANCE.focus.forestHeartBonus
+      state.progress.permanentFocusBonuses['forest-heart'] = BALANCE.focus.forestHeartBonus
       recalculateDerivedStats(state)
-      pushNotification(state, 'Magic School cap increased to 20', 'success')
       pushNotification(state, 'WHISPERING WOODS COMPLETE / Howling Den unlocked.', 'success')
     }
     if (bossId === 'corrupted-greatbear' && state.progress.bossKillsByBoss[bossId] === 1) pushNotification(state, 'HOWLING DEN COMPLETE / Abandoned Catacombs unlocked.', 'success')
-    if (bossId === 'archmage-edrin-shade' && state.progress.bossKillsByBoss[bossId] === 1) pushNotification(state, 'FIRST CHAPTER COMPLETE', 'success')
+    if (bossId === 'archmage-edrin-shade' && state.progress.bossKillsByBoss[bossId] === 1) {
+      pushNotification(state, 'FIRST CHAPTER COMPLETE', 'success')
+      if (state.progress.magicLevelCap < BALANCE.schoolProgression.tutorialCompleteCap) {
+        state.progress.magicLevelCap = Math.max(state.progress.magicLevelCap, BALANCE.schoolProgression.tutorialCompleteCap)
+        pushNotification(state, `Magic School cap increased to ${state.progress.magicLevelCap}`, 'success')
+      }
+    }
     report?.recordNotable(`${monster.name} defeated`)
     appendLog(state, `${monster.name} defeated${drops ? ` - ${drops}` : ''}. Threat Cleared resets.`)
   } else {

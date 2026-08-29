@@ -9,6 +9,7 @@ import { clamp, uid } from './utils'
 import { RESEARCH_SLOT_ORDER } from './systems/research/researchReservations'
 import { getSchoolLevel as getCentralSchoolLevel, getSchoolProgressInfo } from './systems/schools'
 import { getFocusCapacityBreakdown } from './systems/focus/focusCapacity'
+import { getSpellAutoCastFocusCost, syncSpellUnlocksForSchool } from './systems/spells'
 
 export const getSchoolLevel = getCentralSchoolLevel
 
@@ -54,9 +55,11 @@ export const deriveFocusReservations = (state: Pick<GameState, 'activities' | 'p
     reservations.push({ id: `transmutation-${recipeId}`, sourceType: 'transmutation', sourceId: recipeId, amount: echoes * BALANCE.transmutation.echoFocusCost, label: `Transmutation · ${RECIPES[recipeId].name}` })
   })
   Object.entries(state.activities.autoCast).forEach(([spellId, active]) => {
-    if (!active || !state.progress.unlockedSpells.includes(spellId as SpellId)) return
+    if (!active) return
     const spell = SPELLS[spellId as SpellId]
-    reservations.push({ id: `autocast-${spellId}`, sourceType: 'autocast', sourceId: spellId, amount: spell.autoCastFocus, label: `${spell.name} Auto-Cast` })
+    const amount = getSpellAutoCastFocusCost(state, spellId as SpellId)
+    if (!spell || amount === null) return
+    reservations.push({ id: `autocast-${spellId}`, sourceType: 'autocast', sourceId: spellId, amount, label: `${spell.name} Auto-Cast` })
   })
   return reservations
 }
@@ -83,7 +86,9 @@ export const grantSchoolXp = (state: GameState, school: SchoolId, amount: number
   const cap = state.progress.magicLevelCap
   state.schools[school].xp = Math.min(SCHOOL_LEVEL_XP(cap), state.schools[school].xp + amount)
   state.schools[school].level = getSchoolLevel(state.schools[school].xp, cap)
-  return { before, after: state.schools[school].level }
+  const unlockedSpellIds = syncSpellUnlocksForSchool(state, school)
+  unlockedSpellIds.forEach((spellId) => pushNotification(state, `${SPELLS[spellId].name} unlocked · Rank I`, 'success'))
+  return { before, after: state.schools[school].level, unlockedSpellIds }
 }
 
 export const completeResearchCycle = (state: GameState, itemId: ItemId, targetSchoolId: SchoolId = ITEMS[itemId].researchSchool ?? 'fire') => {
@@ -96,9 +101,7 @@ export const completeResearchCycle = (state: GameState, itemId: ItemId, targetSc
   state.inventory[itemId] = (state.inventory[itemId] ?? 0) - 1
   const xp = getResearchXp(itemId, targetSchoolId)
   const levels = grantSchoolXp(state, targetSchoolId, xp)
-  const spell = Object.values(SPELLS).find((entry) => entry.school === targetSchoolId && entry.unlockLevel === levels.after)
-  if (spell && !state.progress.unlockedSpells.includes(spell.id)) state.progress.unlockedSpells.push(spell.id)
-  return { completed: true, reason: 'complete' as const, xp, levels, spellId: spell?.id }
+  return { completed: true, reason: 'complete' as const, xp, levels, spellId: levels.unlockedSpellIds[0] }
 }
 
 export interface NotificationOptions { key?: string; cooldownMs?: number }

@@ -36,7 +36,7 @@ describe('focus reservation engine', () => {
   it('rejects spell Auto-Cast when insufficient Focus is available', () => {
     const game = useGameStore.getState()
     game.preset('combat')
-    game.setPlayer({ baseMaxFocus: 10 })
+    game.setPlayer({ baseMaxFocus: 9 })
     game.toggleAutoCast('fire-bolt')
     expect(useGameStore.getState().activities.autoCast['fire-bolt']).toBe(false)
   })
@@ -55,6 +55,7 @@ describe('research rules', () => {
   it('preserves the next item at the level cap', () => {
     const state = makeInitialState()
     state.inventory['fire-fragment'] = 1
+    state.progress.magicLevelCap = 10
     state.schools.fire.level = 10
     state.schools.fire.xp = SCHOOL_LEVEL_XP(10)
     const result = completeResearchCycle(state, 'fire-fragment')
@@ -432,15 +433,15 @@ describe('Developer channeling overrides', () => {
 })
 
 describe('Phase 2 progression', () => {
-  it('uses spell-specific Auto-Cast Focus values', () => {
+  it('uses the Rank-based Auto-Cast Focus formula', () => {
     const state = makeInitialState()
-    state.progress.unlockedSpells = ['water-ward']
+    state.progress.spellRanks = { 'water-ward': 1 }
     state.activities.autoCast['water-ward'] = true
-    expect(selectUsedFocus(state)).toBe(20)
+    expect(selectUsedFocus(state)).toBe(10)
     state.activities.autoCast['water-ward'] = false
-    state.progress.unlockedSpells = ['fire-bolt']
+    state.progress.spellRanks = { 'fire-bolt': 1 }
     state.activities.autoCast['fire-bolt'] = true
-    expect(selectUsedFocus(state)).toBe(15)
+    expect(selectUsedFocus(state)).toBe(10)
   })
 
   it('keeps Research item and target school independent', () => {

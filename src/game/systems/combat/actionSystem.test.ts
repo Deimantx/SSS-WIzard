@@ -351,6 +351,8 @@ describe('Universal Action System V1', () => {
 
   it('keeps live and Offline Bank combat simulation on the same Action path', async () => {
     const offline = stateWithEnemy()
+    offline.progress.spellRanks.fireball = 1
+    offline.activities.autoCast.fireball = true
     offline.offlineBankMs = 4000
     const live = JSON.parse(JSON.stringify(offline)) as typeof offline
     for (let index = 0; index < 4; index += 1) advanceGameState(live, 1000, { mode: 'live' })
@@ -363,7 +365,10 @@ describe('Universal Action System V1', () => {
       telegraph: state.combat.enemyTelegraphMs,
       recovery: state.combat.enemyActionTimerMs,
       playerHp: state.player.health,
+      mana: state.player.mana,
       enemyHp: state.combat.enemyHp,
+      fireballCooldown: state.combat.spellCooldowns.fireball,
+      lastDamageDealt: state.combat.lastDamageDealt,
       playerBarrier: state.combat.playerBarrier,
       enemyBarrier: state.combat.enemyBarrier,
       playerStatuses: state.combat.playerStatuses,
@@ -393,7 +398,7 @@ describe('Universal Action System V1', () => {
   it('migrates V13 Action runtime fields and old Action sources safely to V15', () => {
     const initial = createInitialState()
     const migrated = migrateSave({ ...initial, saveVersion: 13, combat: { ...initial.combat, active: true, enemyId: 'forest-wisp', enemyTelegraphActionId: 'arc-spark', enemyTelegraphMs: 700, enemyIntervalMs: 2810, playerStatuses: [{ statusId: 'burning', holder: 'player', remainingMs: 1000, stacks: 1, source: { actor: 'enemy', kind: 'special-attack', sourceId: 'arc-spark' } }] } })
-    expect(migrated.saveVersion).toBe(15)
+    expect(migrated.saveVersion).toBe(16)
     expect(migrated.combat.enemyActionPatternId).toBe('default')
     expect(migrated.combat.enemyActionRecoveryMs).toBe(2810)
     expect(migrated.combat.enemyTelegraphActionId).toBe('arc-spark')
@@ -415,7 +420,7 @@ describe('Universal Action System V1', () => {
   it('migrates V14 Action origin when the current Pattern and Step prove it', () => {
     const initial = createInitialState()
     const migrated = migrateSave({ ...initial, saveVersion: 14, combat: { ...initial.combat, active: true, enemyId: 'forest-wisp', enemyActionPatternId: 'default', enemyTelegraphActionId: 'arc-spark', enemyTelegraphMs: 700, enemyTelegraphStepId: 'arc-spark-step' } })
-    expect(migrated.saveVersion).toBe(15)
+    expect(migrated.saveVersion).toBe(16)
     expect(migrated.combat.enemyTelegraphPatternId).toBe('default')
     expect(migrated.combat.enemyTelegraphStepId).toBe('arc-spark-step')
   })

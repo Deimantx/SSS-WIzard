@@ -102,6 +102,10 @@ describe('screen smoke coverage', () => {
     render(<GameShell />)
     await user.click(screen.getByRole('button', { name: 'Dev Tools' }))
     expect(screen.getByRole('dialog', { name: 'Developer Tools' })).toBeTruthy()
+    await user.click(within(screen.getByRole('navigation', { name: 'Developer tool sections' })).getByRole('button', { name: 'Magic Schools' }))
+    expect(screen.getByRole('heading', { name: 'Magic schools' })).toBeTruthy()
+    for (const label of ['Set all Lv2', 'Set all Lv8', 'Set all Lv16', 'Set all Lv20', 'Set all Lv40', 'Unlock all Rank I spells', 'Reset spell cooldowns']) expect(screen.getByRole('button', { name: label })).toBeTruthy()
+    expect(screen.getAllByRole('button', { name: 'Unlock Rank I' })).toHaveLength(12)
     await user.click(screen.getByRole('button', { name: 'Player' }))
     expect(screen.getByRole('heading', { name: 'Player values' })).toBeTruthy()
     await user.keyboard('{Escape}')
@@ -148,5 +152,25 @@ describe('screen smoke coverage', () => {
     for (const school of ['Fire', 'Water', 'Earth', 'Air']) expect(screen.getByText(school, { selector: 'strong' })).toBeTruthy()
     expect(screen.getAllByText('No Echoes assigned').length).toBeGreaterThan(0)
     expect(screen.getByText('No active recipes')).toBeTruthy()
+  })
+
+  it('renders the four-school Rank-I roster and canonical spell-bar Focus costs', async () => {
+    const user = userEvent.setup()
+    render(<GameShell />)
+
+    await user.click(navItem('Magic Schools'))
+    for (const spell of ['Fire Bolt', 'Ignite', 'Fireball', 'Water Ward', 'Flow Mend', 'Frostbite', 'Earth Spike', 'Stoneguard', 'Fortify', 'Air Lance', 'Quickening', 'Shock Spark']) {
+      expect(screen.getByText(spell, { selector: 'strong' })).toBeTruthy()
+    }
+    expect(screen.getAllByText('LOCKED')).toHaveLength(12)
+    expect(screen.getAllByText('EDRIN → 40')).toHaveLength(1)
+
+    const progress = useGameStore.getState().progress
+    useGameStore.setState({ progress: { ...progress, spellRanks: { 'fire-bolt': 1, fireball: 3 } } })
+    await user.click(navItem('Combat'))
+    expect(screen.getByText('Fire Bolt', { selector: 'strong' })).toBeTruthy()
+    expect(screen.getByText('Fireball', { selector: 'strong' }).textContent).toContain('Rank III')
+    expect(screen.getByText(/Auto-Cast 30 Focus/)).toBeTruthy()
+    expect(screen.getAllByText(/LOCKED · Unlock/).length).toBeGreaterThan(0)
   })
 })

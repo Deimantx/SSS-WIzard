@@ -36,7 +36,7 @@ export function MagicSchoolsScreenV2() {
     <EditableGrid screen="schools" panels={[
       { id: 'schools-browser', content: <SpellBrowser state={browserState} filters={filters} onFiltersChange={setFilters} selectedEntryId={selectedEntryId} onSelect={(id) => { setSelectedEntryId(id); setRankPathOpen(false) }} /> },
       { id: 'schools-inspector', content: <SpellInspector entry={selectedEntry} state={inspectorState} rankPathOpen={rankPathOpen} onToggleRankPath={() => setRankPathOpen((open) => !open)} onToggleAutoCast={toggleAutoCast} /> },
-      { id: 'schools-presets', content: <SpellPresetSummary onManage={() => setPresetsOpen(true)} /> },
+      { id: 'schools-presets', content: <SpellPresetSummary onManage={() => { setRankPathOpen(false); setPresetsOpen(true) }} /> },
     ]} />
     <SpellPresetDialog open={presetsOpen} onClose={() => setPresetsOpen(false)} />
   </div>

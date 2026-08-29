@@ -6,8 +6,8 @@ export function Card({ children, className = '', title, action, style }: { child
   return <section style={style} className={`card ${className}`}>{title && <div className="card-head"><h2>{title}</h2>{action}</div>}{children}</section>
 }
 
-export function Button({ children, onClick, variant = 'primary', disabled = false, className = '', tooltip, ariaLabel }: { children: ReactNode; onClick?: () => void; variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'success'; disabled?: boolean; className?: string; tooltip?: TooltipNode; ariaLabel?: string }) {
-  const button = <button aria-label={ariaLabel} className={`button ${variant} ${className}`} onClick={onClick} disabled={disabled}>{children}</button>
+export function Button({ children, onClick, variant = 'primary', disabled = false, className = '', tooltip, ariaLabel, icon = false }: { children: ReactNode; onClick?: () => void; variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'success'; disabled?: boolean; className?: string; tooltip?: TooltipNode; ariaLabel?: string; icon?: boolean }) {
+  const button = <button aria-label={ariaLabel} className={`button ${variant} ${icon ? 'icon' : ''} ${className}`} onClick={onClick} disabled={disabled}>{children}</button>
   return tooltip ? <GameTooltip block content={tooltip}>{button}</GameTooltip> : button
 }
 

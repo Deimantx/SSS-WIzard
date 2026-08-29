@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createInitialState } from '../../../store/initialState'
+import { createInitialState, SAVE_VERSION } from '../../../store/initialState'
 import { MONSTERS } from '../../content/monsters'
 import { STATUS_DEFINITIONS } from '../../content/statuses'
 import { TRAIT_DEFINITIONS } from '../../content/traits'
@@ -398,7 +398,7 @@ describe('Universal Action System V1', () => {
   it('migrates V13 Action runtime fields and old Action sources safely to V15', () => {
     const initial = createInitialState()
     const migrated = migrateSave({ ...initial, saveVersion: 13, combat: { ...initial.combat, active: true, enemyId: 'forest-wisp', enemyTelegraphActionId: 'arc-spark', enemyTelegraphMs: 700, enemyIntervalMs: 2810, playerStatuses: [{ statusId: 'burning', holder: 'player', remainingMs: 1000, stacks: 1, source: { actor: 'enemy', kind: 'special-attack', sourceId: 'arc-spark' } }] } })
-    expect(migrated.saveVersion).toBe(16)
+    expect(migrated.saveVersion).toBe(SAVE_VERSION)
     expect(migrated.combat.enemyActionPatternId).toBe('default')
     expect(migrated.combat.enemyActionRecoveryMs).toBe(2810)
     expect(migrated.combat.enemyTelegraphActionId).toBe('arc-spark')
@@ -420,7 +420,7 @@ describe('Universal Action System V1', () => {
   it('migrates V14 Action origin when the current Pattern and Step prove it', () => {
     const initial = createInitialState()
     const migrated = migrateSave({ ...initial, saveVersion: 14, combat: { ...initial.combat, active: true, enemyId: 'forest-wisp', enemyActionPatternId: 'default', enemyTelegraphActionId: 'arc-spark', enemyTelegraphMs: 700, enemyTelegraphStepId: 'arc-spark-step' } })
-    expect(migrated.saveVersion).toBe(16)
+    expect(migrated.saveVersion).toBe(SAVE_VERSION)
     expect(migrated.combat.enemyTelegraphPatternId).toBe('default')
     expect(migrated.combat.enemyTelegraphStepId).toBe('arc-spark-step')
   })

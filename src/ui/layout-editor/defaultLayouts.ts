@@ -12,7 +12,7 @@ export const DEFAULT_LAYOUTS: Record<ScreenId, ScreenLayouts> = {
   'tower-research': { 'research-school-mastery': layout(0, 0, 12, 4), 'research-library': layout(0, 4, 6, 12), 'research-inspector': layout(6, 4, 6, 12), 'research-prepared': layout(0, 16, 12, 10) },
   'tower-transmutation': { 'transmutation-recipes': layout(0, 0, 7, 15), 'transmutation-detail': layout(7, 0, 5, 9), 'transmutation-focus': layout(7, 9, 5, 6) },
   schools: {
-    'school-fire': layout(0, 0, 6, 10), 'school-water': layout(6, 0, 6, 10), 'school-earth': layout(0, 10, 6, 10), 'school-air': layout(6, 10, 6, 10), 'school-ceiling': layout(0, 20, 12, 5),
+    'schools-browser': layout(0, 0, 7, 18), 'schools-inspector': layout(7, 0, 5, 18), 'schools-presets': layout(0, 18, 12, 5),
   },
   combat: {
     'combat-dungeon': layout(0, 0, 7, 11), 'combat-enemy': layout(7, 0, 5, 11), 'combat-timeline': layout(0, 11, 12, 8), 'combat-spells': layout(0, 19, 7, 12), 'combat-log': layout(7, 19, 5, 12),

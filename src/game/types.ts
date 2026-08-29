@@ -20,6 +20,7 @@ export type ItemId =
   | 'windthread-charm'
 
 export type SpellId = 'fire-bolt' | 'ignite' | 'fireball' | 'water-ward' | 'flow-mend' | 'frostbite' | 'earth-spike' | 'stoneguard' | 'fortify' | 'air-lance' | 'quickening' | 'shock-spark'
+export type SpellPresetId = string
 export type MonsterId = 'forest-wisp' | 'thornling' | 'stone-root' | 'grove-sentinel' | 'forest-heart' | 'cavefang-wolf' | 'razorclaw-lynx' | 'corrupted-dire-wolf' | 'corrupted-greatbear' | 'restless-skeleton' | 'grave-wraith' | 'fallen-acolyte' | 'archmage-edrin-shade'
 export type BestiaryCategory = 'monster' | 'boss'
 export type DungeonId = 'whispering-woods' | 'howling-den' | 'abandoned-catacombs'
@@ -150,6 +151,15 @@ export interface ActivitiesState {
   transmutation: TransmutationActivity
   autoCast: Record<SpellId, boolean>
 }
+export interface SpellPreset {
+  id: SpellPresetId
+  name: string
+  spellIds: SpellId[]
+}
+export interface SpellPresetState {
+  presets: SpellPreset[]
+  lastAppliedPresetId: SpellPresetId | null
+}
 export interface CombatState {
   active: boolean
   dungeonId: DungeonId | null
@@ -236,6 +246,7 @@ export interface GameState {
   activities: ActivitiesState
   combat: CombatState
   progress: ProgressState
+  spellPresets: SpellPresetState
   ui: UiState
   offlineBankMs: number
   lastSavedAt: number

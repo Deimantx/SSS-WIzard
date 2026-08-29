@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createInitialState } from '../store/initialState'
+import { createInitialState, SAVE_VERSION } from '../store/initialState'
 import { serializeGameState } from './profileSaveManager'
 import { migrateSave } from './migrations'
 
@@ -8,7 +8,7 @@ describe('Focus and Prismatic save migration', () => {
     const initial = createInitialState()
     const migrated = migrateSave({ ...initial, saveVersion: 9, progress: { ...initial.progress, focusImprovement: undefined }, inventory: { ...initial.inventory, 'fire-fragment': 37 } })
 
-    expect(migrated.saveVersion).toBe(16)
+    expect(migrated.saveVersion).toBe(SAVE_VERSION)
     expect(migrated.progress.focusImprovement).toEqual({ rank: 1, level: 0 })
     expect(migrated.inventory['fire-fragment']).toBe(37)
   })
@@ -24,5 +24,14 @@ describe('Focus and Prismatic save migration', () => {
     expect(loaded.progress.focusImprovement).toEqual({ rank: 1, level: 4 })
     expect(loaded.activities.transmutation.jobs['prismatic-fragment']).toEqual({ echoesAssigned: 2, progressMs: 4_321 })
     expect(loaded.player.maxFocus).toBe(120)
+  })
+
+  it('migrates a V16 save without presets to an empty V17 preset state', () => {
+    const state = createInitialState() as any
+    delete state.spellPresets
+    state.saveVersion = 16
+    const migrated = migrateSave(state)
+    expect(migrated.saveVersion).toBe(SAVE_VERSION)
+    expect(migrated.spellPresets).toEqual({ presets: [], lastAppliedPresetId: null })
   })
 })

@@ -1,7 +1,7 @@
 import { Button, Card, GameTooltip, Status } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { SCHOOLS } from '../../game/data/schools'
-import { SCHOOL_LEVEL_XP } from '../../game/core/balance/balance'
+import { getSchoolLevelStartXp } from '../../game/systems/schools'
 import { formatSpellRank, getAllSpellsInOrder, getSpellAutoCastFocusCost, getSpellRank } from '../../game/systems/spells'
 import type { SchoolId } from '../../game/types'
 import { useGameStore } from '../../store/gameStore'
@@ -16,7 +16,7 @@ export function DeveloperSchools() {
   const debugUnlock = useGameStore((state) => state.debugUnlockSpellRankOne)
   const debugLock = useGameStore((state) => state.debugLockSpell)
   const resetCooldowns = useGameStore((state) => state.resetSpellCooldowns)
-  const setAllLevels = (level: number) => { if (level > progress.magicLevelCap) setLevelCap(level); (Object.keys(SCHOOLS) as SchoolId[]).forEach((id) => setSchoolDebug(id, SCHOOL_LEVEL_XP(level), level)) }
+  const setAllLevels = (level: number) => { if (level > progress.magicLevelCap) setLevelCap(level); (Object.keys(SCHOOLS) as SchoolId[]).forEach((id) => setSchoolDebug(id, getSchoolLevelStartXp(level), level)) }
   return <div className="developer-tab-grid">
     <Card title="Magic schools"><div className="developer-school-list">{(Object.keys(SCHOOLS) as SchoolId[]).map((id) => <div className="developer-school-row" key={id}><span className="school-glyph" style={{ color: SCHOOLS[id].color }}>{SCHOOLS[id].glyph}</span><div><strong>{SCHOOLS[id].name}</strong><small>Level {schools[id].level} · {schools[id].xp} XP · {getAllSpellsInOrder().filter((spell) => spell.school === id && getSpellRank({ progress }, spell.id) !== null).length} Rank-I spells known</small></div><NumberField label="XP" value={schools[id].xp} onChange={(value) => setSchoolDebug(id, value, schools[id].level)} /><NumberField label="Level" value={schools[id].level} onChange={(value) => setSchoolDebug(id, schools[id].xp, value)} /></div>)}</div></Card>
     <Card title="School controls"><div className="developer-button-grid"><Button variant="secondary" onClick={() => setAllLevels(2)}>Set all Lv2</Button><Button variant="secondary" onClick={() => setAllLevels(8)}>Set all Lv8</Button><Button variant="secondary" onClick={() => setAllLevels(16)}>Set all Lv16</Button><Button variant="secondary" onClick={() => setAllLevels(20)}>Set all Lv20</Button><Button variant="secondary" onClick={() => setAllLevels(40)}>Set all Lv40</Button><Button variant="success" onClick={unlockAll}>Unlock all Rank I spells</Button><Button variant="ghost" onClick={resetCooldowns} tooltip={<TooltipContent title="Reset spell cooldowns" description="Clear every combat spell cooldown for testing." />}>Reset spell cooldowns</Button></div><div className="developer-button-grid"><Button variant="secondary" onClick={() => setLevelCap(20)}>Cap 20</Button><Button variant="secondary" onClick={() => setLevelCap(40)}>Cap 40</Button></div><NumberField label="Magic School cap" value={progress.magicLevelCap} onChange={setLevelCap} /></Card>

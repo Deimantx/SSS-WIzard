@@ -251,4 +251,15 @@ describe('Home expansion layout compatibility', () => {
       'home-arcane-work': { x: 0, y: 23, w: 12, h: 7 },
     })
   })
+
+  it('resets only the Schools layout when legacy school panel IDs are saved', () => {
+    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({ version: 3, screens: {
+      schools: { 'school-fire': { x: 4, y: 3, w: 4, h: 8 }, 'school-ranks': { x: 0, y: 20, w: 12, h: 4 } },
+      home: { 'home-objective': { x: 1, y: 1, w: 10, h: 4 } },
+    } }))
+    const loaded = loadUiLayouts()
+    expect(loaded.screens.schools).toEqual({})
+    expect(loaded.screens.home).toHaveProperty('home-objective')
+    expect(getScreenLayouts('schools', loaded.screens.schools)).toEqual(DEFAULT_LAYOUTS.schools)
+  })
 })

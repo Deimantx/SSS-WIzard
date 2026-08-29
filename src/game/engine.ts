@@ -9,7 +9,7 @@ import { clamp, uid } from './utils'
 import { RESEARCH_SLOT_ORDER } from './systems/research/researchReservations'
 import { getSchoolLevel as getCentralSchoolLevel, getSchoolProgressInfo } from './systems/schools'
 import { getFocusCapacityBreakdown } from './systems/focus/focusCapacity'
-import { getSpellAutoCastFocusCost, syncSpellUnlocksForSchool } from './systems/spells'
+import { getSpellAutoCastFocusCost, syncSpellUnlocksForSchool } from './systems/spells/spellProgression'
 
 export const getSchoolLevel = getCentralSchoolLevel
 

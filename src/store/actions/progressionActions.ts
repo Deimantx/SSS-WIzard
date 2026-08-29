@@ -1,5 +1,5 @@
 import { SPELLS } from '../../game/content/spells/spells'
-import { SCHOOL_LEVEL_XP } from '../../game/core/balance/balance'
+import { getSchoolLevelStartXp } from '../../game/systems/schools'
 import { syncAllSpellUnlocks, syncSpellUnlocksForSchool } from '../../game/systems/spells'
 import type { GameState, MonsterId, SchoolId, SpellId } from '../../game/types'
 
@@ -9,7 +9,7 @@ export const unlockAllSpellsAction = (state: GameState) => {
     const school = id as SchoolId
     const targetLevel = Math.min(state.progress.magicLevelCap, 16)
     state.schools[school].level = Math.max(targetLevel, state.schools[school].level)
-    state.schools[school].xp = Math.max(SCHOOL_LEVEL_XP(targetLevel), state.schools[school].xp)
+    state.schools[school].xp = Math.max(getSchoolLevelStartXp(targetLevel), state.schools[school].xp)
   })
   syncAllSpellUnlocks(state)
 }

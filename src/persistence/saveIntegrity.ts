@@ -15,6 +15,7 @@ export interface CriticalSaveSnapshot {
     autoCast: GameState['activities']['autoCast']
   }
   progress: GameState['progress']
+  spellPresets: GameState['spellPresets']
   offlineBankMs: number
 }
 
@@ -38,7 +39,7 @@ const canonicalize = (value: unknown): unknown => {
   return value
 }
 
-export const getCriticalSaveSnapshot = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment' | 'schools' | 'currencies' | 'activities' | 'progress' | 'offlineBankMs'>): CriticalSaveSnapshot => cloneJson({
+export const getCriticalSaveSnapshot = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment' | 'schools' | 'currencies' | 'activities' | 'progress' | 'spellPresets' | 'offlineBankMs'>): CriticalSaveSnapshot => cloneJson({
   inventory: state.inventory,
   protectedItems: state.protectedItems,
   equipment: state.equipment,
@@ -55,6 +56,7 @@ export const getCriticalSaveSnapshot = (state: Pick<GameState, 'inventory' | 'pr
     normalizeLegacyProgressEvidence(progress)
     return progress
   })(),
+  spellPresets: state.spellPresets,
   offlineBankMs: state.offlineBankMs,
 })
 
@@ -87,6 +89,7 @@ const hasCurrentSaveShape = (value: Record<string, unknown>) => {
     && value.lastSavedAt >= 0
     && isRecord(value.progress)
     && Object.prototype.hasOwnProperty.call(value.progress, 'spellRanks')
+    && Object.prototype.hasOwnProperty.call(value, 'spellPresets')
 }
 
 const hasRecoverableSaveShape = (value: Record<string, unknown>) => {
@@ -100,10 +103,11 @@ const hasRecoverableSaveShape = (value: Record<string, unknown>) => {
 export const validateStoredSave = (encoded: string): SaveValidationResult => {
   try {
     const decoded = decodeSave(encoded)
-    if (decoded.saveVersion === CURRENT_SAVE_VERSION && !hasCurrentSaveShape(decoded)) {
+    const saveVersion = decoded.saveVersion as number
+    if (saveVersion === CURRENT_SAVE_VERSION && !hasCurrentSaveShape(decoded)) {
       return { ok: false, state: null, error: 'Current save is missing required gameplay data.' }
     }
-    if (decoded.saveVersion === CURRENT_SAVE_VERSION - 1 && !hasRecoverableSaveShape(decoded)) {
+    if (saveVersion < CURRENT_SAVE_VERSION && !hasRecoverableSaveShape(decoded)) {
       return { ok: false, state: null, error: 'Historical save is missing required gameplay data.' }
     }
     const migrated = migrateSave(decoded)

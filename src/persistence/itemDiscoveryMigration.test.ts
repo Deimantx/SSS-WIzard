@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createInitialState } from '../store/initialState'
+import { createInitialState, SAVE_VERSION } from '../store/initialState'
 import { migrateSave } from './migrations'
 import { serializeGameState } from './profileSaveManager'
 
@@ -13,7 +13,7 @@ describe('item discovery save migration', () => {
     legacy.progress.bossKillsByBoss = { 'grove-sentinel': 1 }
 
     const migrated = migrateSave(legacy)
-    expect(migrated.saveVersion).toBe(16)
+    expect(migrated.saveVersion).toBe(SAVE_VERSION)
     expect(migrated.progress.discoveredItems).toEqual(expect.arrayContaining(['apprentice-wand', 'fire-fragment', 'grove-bark', 'wisp-essence', 'life-essence']))
     expect(migrated.progress.discoveredItems).not.toContain('heartseed')
   })

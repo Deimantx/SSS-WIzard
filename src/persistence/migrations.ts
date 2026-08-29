@@ -16,7 +16,7 @@ import { isRecord, SaveMigrationError } from './saveSchema'
 import { recalculateDerivedStats } from '../game/engine'
 import { STATUS_DEFINITIONS } from '../game/content/statuses'
 import type { ActiveStatus, CombatSource, StatusId } from '../game/types'
-import { getSpellAutoCastFocusCost, MAX_SPELL_RANK, MIN_SPELL_RANK, syncAllSpellUnlocks, type SpellRank } from '../game/systems/spells'
+import { getSpellAutoCastFocusCost, MAX_SPELL_RANK, MIN_SPELL_RANK, normalizeSpellPresetState, syncAllSpellUnlocks, type SpellRank } from '../game/systems/spells'
 
 const normalizeScreen = (value: unknown, fallback: GameState['ui']['screen']): GameState['ui']['screen'] => {
   if (value === 'tower') return 'tower-channeling'
@@ -122,6 +122,10 @@ const normalizeSpellProgression = (migrated: GameState, raw: Record<string, any>
   Object.keys(migrated.activities.autoCast).forEach((id) => {
     if (!isSpellRankValue(ranks[id as SpellId])) migrated.activities.autoCast[id as SpellId] = false
   })
+}
+
+const normalizeSpellPresets = (migrated: GameState, raw: Record<string, any>) => {
+  migrated.spellPresets = normalizeSpellPresetState(raw.spellPresets, migrated.activities.autoCast)
 }
 
 const normalizeSchoolCap = (migrated: GameState, raw: Record<string, any>) => {
@@ -439,8 +443,8 @@ const normalizeResearchFocus = (migrated: GameState) => {
 }
 
 const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion = Number(raw.saveVersion ?? 0)) => {
-  // V1-V7 retain their historical migration marker. V8-V14 are normalized
-  // into the current V15 combat/save document.
+  // V1-V7 retain their historical migration marker. V8+ are normalized into
+  // the current save document.
   migrated.saveVersion = sourceVersion >= 8 ? SAVE_VERSION : 8
   migrated.progress.channeling = migrateChanneling(raw.progress, createInitialState().progress)
   migrated.ui.screen = normalizeScreen(isRecord(raw.ui) ? raw.ui.screen : undefined, migrated.ui.screen)
@@ -448,6 +452,7 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   normalizeLegacyProgressEvidence(migrated.progress)
   normalizeSchoolCap(migrated, raw)
   normalizeSpellProgression(migrated, raw)
+  normalizeSpellPresets(migrated, raw)
   normalizeCombatState(migrated, raw, sourceVersion)
   normalizeDirectContentReferences(migrated, raw)
   seedLegacyItemDiscoveries(migrated, raw, sourceVersion)
@@ -526,6 +531,7 @@ export const migrateSave = (rawSave: unknown): GameState => {
   if (version === 13) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === 14) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === 15) return finalize(merge(createInitialState(), rawSave), rawSave, version)
+  if (version === 16) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === SAVE_VERSION) {
     return finalize(merge(createInitialState(), rawSave), rawSave, version)
   }

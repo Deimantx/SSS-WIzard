@@ -55,6 +55,18 @@ export function loadUiLayouts(): UiLayoutDocument {
     for (const screen of Object.keys(DEFAULT_LAYOUTS) as ScreenId[]) {
       const rawSource = parsed.screens?.[screen]
       if (!rawSource || typeof rawSource !== 'object') continue
+      if (screen === 'schools') {
+        const legacySchoolIds = ['school-fire', 'school-water', 'school-earth', 'school-air', 'school-ceiling', 'school-ranks']
+        const canonicalSchoolIds = ['schools-browser', 'schools-inspector', 'schools-presets']
+        const hasLegacyPanels = legacySchoolIds.some((id) => Object.prototype.hasOwnProperty.call(rawSource, id))
+        const hasCanonicalPanels = canonicalSchoolIds.some((id) => Object.prototype.hasOwnProperty.call(rawSource, id))
+        if (hasLegacyPanels && !hasCanonicalPanels) {
+          // The Schools composition changed completely. Reset only this
+          // screen so custom layouts on every other screen survive.
+          screens.schools = {}
+          continue
+        }
+      }
       const source = screen === 'tower-channeling' && !('channeling-pillars' in rawSource) && 'channeling-infrastructure' in rawSource
         ? { ...rawSource, 'channeling-pillars': rawSource['channeling-infrastructure'] }
         : screen === 'tower-research' && ('research-config' in rawSource || 'research-queue' in rawSource)

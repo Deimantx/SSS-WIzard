@@ -155,7 +155,7 @@ export const executeCombatEffect = (state: GameState, effect: CombatEffect, sour
       if (target === 'player') state.combat.playerAttackTimerMs = Math.max(0, state.combat.playerAttackTimerMs + effect.amountMs)
       else if (effect.action === 'current' && state.combat.enemyTelegraphActionId) {
         state.combat.enemyTelegraphMs = Math.max(0, state.combat.enemyTelegraphMs + effect.amountMs)
-        if (state.combat.enemyTelegraphMs <= 0) resolveActiveEnemyAction(state, execute)
+        if (state.combat.enemyTelegraphMs <= 0) resolveActiveEnemyAction(state, execute, depth)
       } else state.combat.enemyActionTimerMs = Math.max(0, state.combat.enemyActionTimerMs + effect.amountMs)
       appendLog(state, `${effect.amountMs >= 0 ? 'Action delayed' : 'Action timer changed'} by ${Math.abs(effect.amountMs)}ms.`)
       break
@@ -167,7 +167,7 @@ export const executeCombatEffect = (state: GameState, effect: CombatEffect, sour
       }
       break
     }
-    case 'interrupt': if (target === 'enemy') interruptEnemyAction(state, execute); break
+    case 'interrupt': if (target === 'enemy') interruptEnemyAction(state, execute, depth); break
     case 'set-action-pattern': if (target === 'enemy') setEnemyActionPattern(state, effect.patternId); break
   }
 }

@@ -208,7 +208,7 @@ describe('save navigation migration', () => {
       },
     } as any)
 
-    expect(migrated.saveVersion).toBe(14)
+    expect(migrated.saveVersion).toBe(15)
     expect(migrated.activities.research.slots['research-1']).toEqual({ itemId: 'fire-fragment', targetSchoolId: 'water', requestedQuantity: 12, remainingQuantity: 9, progressMs: 2300, echoesAssigned: 1, status: 'running' })
   })
 
@@ -237,7 +237,7 @@ describe('save navigation migration', () => {
 
     const migrated = migrateSave(JSON.parse(JSON.stringify(state)))
 
-    expect(migrated.saveVersion).toBe(14)
+    expect(migrated.saveVersion).toBe(15)
     expect(migrated.activities.research.slots).toEqual(state.activities.research.slots)
   })
 

@@ -14,10 +14,11 @@ export function CombatTimelinePanel() {
   const currentAction = activeAction ?? (nextStep?.type === 'action' ? getEnemyAction(state, nextStep.actionId) : undefined)
   const activeStepId = combat.enemyTelegraphStepId
   const currentIndex = pattern && pattern.steps.length > 0 ? Math.max(0, combat.enemyActionIndex) % pattern.steps.length : -1
+  const activeOriginMatchesCurrent = !combat.enemyTelegraphPatternId || combat.enemyTelegraphPatternId === combat.enemyActionPatternId
 
   return <Card title={`Enemy Pattern · ${pattern?.id ?? 'None'}`} className="timeline-card">
     <div className="timeline-row">{pattern ? pattern.steps.map((step, index) => {
-      const current = activeStepId ? step.id === activeStepId : index === currentIndex
+      const current = activeAction && !activeOriginMatchesCurrent ? index === currentIndex : activeStepId ? step.id === activeStepId : index === currentIndex
       return <div className={`timeline-step ${current ? 'current' : index < currentIndex ? 'complete' : ''}`} key={step.id}><span>{current ? '→' : index < currentIndex ? '✓' : '•'}</span><small>{step.type === 'basic' ? 'Basic' : enemy?.actions[step.actionId]?.name ?? step.actionId}</small></div>
     }) : <div className="muted">No enemy pattern loaded.</div>}</div>
     <div className={`telegraph ${activeAction ? 'active' : ''}`}>

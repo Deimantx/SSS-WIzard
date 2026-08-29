@@ -170,6 +170,7 @@ export interface CombatState {
   enemyTelegraphMs: number
   enemyTelegraphActionId: string | null
   enemyTelegraphStepId: string | null
+  enemyTelegraphPatternId: string | null
   triggeredRuleIds: string[]
   ruleCooldowns: Record<string, number>
   pendingBossId: 'grove-sentinel' | null

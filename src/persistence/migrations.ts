@@ -167,8 +167,18 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
   migrated.combat.enemyTelegraphActionId = validTelegraph ? activeAction?.id ?? null : null
   migrated.combat.enemyTelegraphMs = validTelegraph ? rawTelegraph ?? 0 : 0
   const rawStepId = typeof rawCombat.enemyTelegraphStepId === 'string' ? rawCombat.enemyTelegraphStepId : undefined
-  const validStep = sourceVersion >= 14 && pattern && rawStepId && pattern.steps.some((step) => step.id === rawStepId && step.type === 'action' && step.actionId === activeAction?.id)
-  migrated.combat.enemyTelegraphStepId = validTelegraph && validStep ? rawStepId ?? null : null
+  const compatibleStep = (candidate: typeof pattern, stepId: string | undefined) => Boolean(candidate && stepId && candidate.steps.some((step) => step.id === stepId && step.type === 'action' && step.actionId === activeAction?.id))
+  const validCurrentStep = sourceVersion >= 14 && compatibleStep(pattern, rawStepId)
+  const rawOriginPatternId = typeof rawCombat.enemyTelegraphPatternId === 'string' ? rawCombat.enemyTelegraphPatternId : undefined
+  const savedOriginPattern = sourceVersion >= 15 && monster && rawOriginPatternId ? monster.actionPatterns[rawOriginPatternId] : undefined
+  const originPattern = validTelegraph && (
+    compatibleStep(savedOriginPattern, rawStepId) || (!rawStepId && savedOriginPattern)
+  ) ? savedOriginPattern
+    : validTelegraph && sourceVersion === 14 && validCurrentStep ? pattern
+      : undefined
+  const validOriginStep = compatibleStep(originPattern, rawStepId)
+  migrated.combat.enemyTelegraphStepId = validTelegraph && (validCurrentStep || validOriginStep) ? rawStepId ?? null : null
+  migrated.combat.enemyTelegraphPatternId = originPattern?.id ?? null
   const rawTriggered = Array.isArray(rawCombat.triggeredRuleIds) ? rawCombat.triggeredRuleIds.filter((id): id is string => typeof id === 'string') : []
   const legacySpecials = isRecord(rawCombat.enemySpecialUsed) ? rawCombat.enemySpecialUsed : {}
   const legacyTriggered = Object.entries(legacySpecials).flatMap(([id, used]) => used ? id === 'ancient-growth' ? ['enemy:trait:grove-sentinel-ancient-growth:grove-sentinel-ancient-growth-threshold'] : id === 'living-core' ? ['enemy:trait:forest-heart-living-core:forest-heart-living-core-threshold'] : [] : [])
@@ -385,8 +395,8 @@ const normalizeResearchFocus = (migrated: GameState) => {
 }
 
 const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion = Number(raw.saveVersion ?? 0)) => {
-  // V1-V7 retain their historical migration marker. V8-V13 are normalized
-  // into the current V14 combat/save document.
+  // V1-V7 retain their historical migration marker. V8-V14 are normalized
+  // into the current V15 combat/save document.
   migrated.saveVersion = sourceVersion >= 8 ? SAVE_VERSION : 8
   migrated.progress.channeling = migrateChanneling(raw.progress, createInitialState().progress)
   migrated.ui.screen = normalizeScreen(isRecord(raw.ui) ? raw.ui.screen : undefined, migrated.ui.screen)
@@ -467,6 +477,7 @@ export const migrateSave = (rawSave: unknown): GameState => {
   if (version === 11) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === 12) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === 13) return finalize(merge(createInitialState(), rawSave), rawSave, version)
+  if (version === 14) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === SAVE_VERSION) {
     return finalize(merge(createInitialState(), rawSave), rawSave, version)
   }

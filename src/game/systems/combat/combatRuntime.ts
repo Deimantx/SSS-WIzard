@@ -9,7 +9,7 @@ import { applyStatus, clearStatuses } from './statusRuntime'
 import { resetCombatRuleRuntime, runCombatTriggers } from './triggerRuntime'
 import type { StatusId } from './combatTypes'
 import { resolveBasicAttackInterval } from './effectResolver'
-import { initializeEnemyActionRuntime, resetEnemyActionRuntime } from './actionRuntime'
+import { initializeEnemyActionRuntime, resetEnemyActionRuntime, scheduleEnemyRecovery } from './actionRuntime'
 import { resolveMonsterLoot } from '../loot'
 import { discoverMonster } from '../collection/discovery'
 import type { SimulationReportCollector } from '../offline-bank/offlineBankReport'
@@ -35,6 +35,7 @@ export const spawnEnemy = (state: GameState, enemyId: MonsterId) => {
   discoverMonster(state, enemyId)
   runCombatTriggers(state, 'enemy', 'on-combat-start', { source: { actor: 'enemy', kind: 'system', sourceId: 'combat-start' } }, executeCombatEffects)
   runCombatTriggers(state, 'player', 'on-combat-start', { source: { actor: 'player', kind: 'system', sourceId: 'combat-start' }, eventTarget: 'enemy' }, executeCombatEffects)
+  scheduleEnemyRecovery(state, monster.actionIntervalMs)
   appendLog(state, `${monster.name} enters the clearing.`)
 }
 

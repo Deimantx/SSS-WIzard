@@ -55,7 +55,7 @@ export const TRAIT_DEFINITIONS: Record<TraitId, TraitDefinition> = {
   'forest-heart-living-core': {
     id: 'forest-heart-living-core',
     name: 'Living Core',
-    description: 'At 50% HP, gains 15% attack speed once.',
+    description: 'At 50% HP, gains 15% Action speed once.',
     rules: [{
       id: 'forest-heart-living-core-threshold',
       event: 'on-hp-threshold',

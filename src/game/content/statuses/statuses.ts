@@ -25,8 +25,8 @@ export const STATUS_DEFINITIONS: Record<StatusId, StatusDefinition> = {
     stacking: { mode: 'refresh' }, periodic: { intervalMs: 2000, effects: [damage('physical', 3)] }, cleanseable: true, dispellable: false,
   },
   chilled: {
-    id: 'chilled', name: 'Chilled', description: 'Basic Attacks resolve 20% slower.', classification: 'debuff', tags: ['debuff', 'control', 'water'], defaultDurationMs: 5000,
-    stacking: { mode: 'strongest' }, modifiers: [modifier('basic-attack-speed-percent', -0.2)], cleanseable: true, dispellable: false,
+    id: 'chilled', name: 'Chilled', description: 'Basic Attacks and Action cadence are 20% slower.', classification: 'debuff', tags: ['debuff', 'control', 'water'], defaultDurationMs: 5000,
+    stacking: { mode: 'strongest' }, modifiers: [modifier('basic-attack-speed-percent', -0.2), modifier('action-speed-percent', -0.2)], cleanseable: true, dispellable: false,
   },
   regeneration: {
     id: 'regeneration', name: 'Regeneration', description: 'Restores Health over time.', classification: 'buff', tags: ['buff', 'hot', 'water'], defaultDurationMs: 6000,

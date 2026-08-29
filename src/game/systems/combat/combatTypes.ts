@@ -8,6 +8,16 @@ export type TraitId =
   | 'stone-rooted-shell'
   | 'grove-sentinel-ancient-growth'
   | 'forest-heart-living-core'
+  | 'cavefang-wolf-predator-instinct'
+  | 'razorclaw-lynx-relentless-hunter'
+  | 'corrupted-dire-wolf-arcane-corruption'
+  | 'corrupted-greatbear-thick-hide'
+  | 'corrupted-greatbear-unstable-corruption'
+  | 'restless-skeleton-brittle-bones'
+  | 'grave-wraith-ethereal-form'
+  | 'fallen-acolyte-grave-channeling'
+  | 'archmage-edrin-arcane-remnant'
+  | 'archmage-edrin-unbound-spirit'
 
 export type CombatTag =
   | 'basic-attack'
@@ -66,6 +76,8 @@ export type StatusId =
   | 'vulnerable'
   | 'purified'
   | 'haste'
+  | 'bleeding'
+  | 'spectral-fade'
   | 'stunned'
 
 export type CombatEffect =
@@ -80,7 +92,6 @@ export type CombatEffect =
   | { type: 'dispel'; target: EffectTarget; mode: 'one' | 'all' | 'tag'; tag?: CombatTag }
   | { type: 'modify-action-timer'; target: EffectTarget; amountMs: number; action: 'basic-attack' | 'current' }
   | { type: 'modify-cooldown'; target: EffectTarget; amountMs: number; spellId?: string }
-  | { type: 'interrupt'; target: EffectTarget }
   | { type: 'set-action-pattern'; target: EffectTarget; patternId: string }
 
 export type ModifierKey =
@@ -123,7 +134,6 @@ export type CombatTrigger =
   | 'on-hp-threshold'
   | 'on-action-start'
   | 'on-action-resolve'
-  | 'on-action-interrupted'
   | 'on-heal'
   | 'on-heal-received'
   | 'on-barrier-gained'
@@ -241,12 +251,10 @@ export interface CombatActionDefinition {
   name: string
   description: string
   telegraphMs: number
-  /** Optional recovery override after this Action resolves or is interrupted. */
+  /** Optional recovery override after this Action resolves. */
   recoveryMs?: number
   effects: CombatEffect[]
   tags?: CombatTag[]
-  /** Defaults to true when omitted. */
-  interruptible?: boolean
 }
 
 export type ActionStep =

@@ -22,7 +22,7 @@ describe('Unified Transmutation', () => {
       { itemId: 'grove-bark', quantity: 1 },
     ])
     expect(RECIPES['ember-staff'].manaCost).toBe(0)
-    expect(RECIPES['ember-staff'].unlock.type).toBe('first-grove-sentinel-kill')
+    expect(RECIPES['ember-staff'].unlock.type).toBe('first-dungeon-boss-kill')
   })
 
   it('assigns Echoes across independent jobs and reserves ten Focus per Echo', () => {

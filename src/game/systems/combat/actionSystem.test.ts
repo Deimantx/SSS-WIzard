@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
-import { MONSTERS } from '../../content/monsters/whisperingWoods'
+import { MONSTERS } from '../../content/monsters'
 import { STATUS_DEFINITIONS } from '../../content/statuses'
 import { TRAIT_DEFINITIONS } from '../../content/traits'
 import type { CombatActionDefinition, CombatEffect, CombatSource, TraitDefinition, TraitId } from '../../types'
 import { executeCombatEffect, executeCombatEffects, resolveBasicAttackInterval } from './effectResolver'
-import { clearActiveEnemyAction, forceResolveEnemyAction, getCurrentEnemyActionStep, interruptEnemyAction, resetEnemyActionRuntime, resolveActiveEnemyAction, scheduleEnemyRecovery, setEnemyActionPattern, startNextEnemyAction } from './actionRuntime'
+import { clearActiveEnemyAction, forceResolveEnemyAction, getCurrentEnemyActionStep, resetEnemyActionRuntime, resolveActiveEnemyAction, scheduleEnemyRecovery, setEnemyActionPattern, startNextEnemyAction } from './actionRuntime'
 import { finishEnemy, resolveCombatDeaths, spawnEnemy } from './combatRuntime'
 import { applyStatus, clearStatuses } from './statusRuntime'
 import { migrateSave } from '../../../persistence/migrations'
@@ -97,7 +97,7 @@ describe('Universal Action System V1', () => {
     resolveActiveEnemyAction(state, executeCombatEffects)
     expect(state.player.health).toBe(state.player.maxHealth - 22)
     expect(state.combat.enemyTelegraphActionId).toBeNull()
-    expect(state.combat.enemyActionRecoveryMs).toBe(2800)
+    expect(state.combat.enemyActionRecoveryMs).toBe(2380)
   })
 
   it('resolves zero-Telegraph Actions in Start, Effects, Resolve order', () => {
@@ -127,33 +127,6 @@ describe('Universal Action System V1', () => {
       expect(state.combat.enemyBarrier).toBe(1)
       expect(state.combat.playerBarrier).toBe(2)
     }))
-  })
-
-  it('allows a Start observer to interrupt and consumes the selected Step', () => {
-    const action = emptyAction('start-interrupt', { telegraphMs: 1000 })
-    const trait: TraitDefinition = { id: 'interrupt-observer-trait', name: 'Interrupt Observer', description: 'test', rules: [{ id: 'interrupted', event: 'on-action-interrupted', effects: [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 3 } }] }] }
-    const statusRules = [{ id: 'interrupt-on-start', event: 'on-action-start' as const, condition: { type: 'event-action-is' as const, actionId: action.id }, effects: [{ type: 'interrupt' as const, target: 'opponent' as const }] }]
-    withMonsterFixture(action, 'interrupt-pattern', () => withTraitAndStatusRules(trait, statusRules, () => {
-      const state = stateWithEnemy()
-      applyStatus(state, 'player', 'quickening', { actor: 'player', kind: 'system', sourceId: 'interrupt-test' })
-      state.combat.enemyActionTimerMs = 0
-      startNextEnemyAction(state, executeCombatEffects)
-      expect(state.combat.enemyTelegraphActionId).toBeNull()
-      expect(state.combat.enemyActionIndex).toBe(0)
-      expect(state.combat.enemyActionTimerMs).toBe(2800)
-      expect(state.combat.enemyBarrier).toBe(3)
-    }))
-  })
-
-  it('does not interrupt an explicitly uninterruptible Action', () => {
-    withMonsterFixture(emptyAction('uninterruptible', { interruptible: false, telegraphMs: 1000 }), 'uninterruptible-pattern', () => {
-      const state = stateWithEnemy()
-      state.combat.enemyActionTimerMs = 0
-      startNextEnemyAction(state, executeCombatEffects)
-      expect(interruptEnemyAction(state, executeCombatEffects)).toBe(false)
-      expect(state.combat.enemyTelegraphActionId).toBe('uninterruptible')
-      expect(state.combat.enemyTelegraphMs).toBe(1000)
-    })
   })
 
   it('uses Action recovery overrides and Action Speed without shortening Telegraphs', () => {
@@ -196,17 +169,15 @@ describe('Universal Action System V1', () => {
     })
   })
 
-  it('commits an Action before impacts so a mid-resolve Interrupt cannot cancel it', () => {
+  it('commits an Action before impacts so every authored effect resolves', () => {
     const action = emptyAction('double-hit', { telegraphMs: 100, effects: [
       { type: 'deal-damage', target: 'opponent', damageType: 'physical', magnitude: { type: 'flat', value: 1 } },
       { type: 'deal-damage', target: 'opponent', damageType: 'physical', magnitude: { type: 'flat', value: 1 } },
     ] })
     const trait: TraitDefinition = { id: 'resolve-commit-trait', name: 'Resolve Commit', description: 'test', rules: [
       { id: 'resolved', event: 'on-action-resolve', effects: [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 1 } }] },
-      { id: 'interrupted', event: 'on-action-interrupted', effects: [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 10 } }] },
     ] }
-    const statusRules = [{ id: 'interrupt-on-hit', event: 'on-damage-taken' as const, effects: [{ type: 'interrupt' as const, target: 'opponent' as const }] }]
-    withMonsterFixture(action, 'commit-pattern', () => withTraitAndStatusRules(trait, statusRules, () => {
+    withMonsterFixture(action, 'commit-pattern', () => withTraitAndStatusRules(trait, [], () => {
       const state = stateWithEnemy()
       applyStatus(state, 'player', 'quickening', { actor: 'player', kind: 'system', sourceId: 'commit-test' })
       state.combat.enemyActionTimerMs = 0
@@ -237,7 +208,7 @@ describe('Universal Action System V1', () => {
     }))
   })
 
-  it('preserves Action origin Pattern through switching, resolve, and interrupt', () => {
+  it('preserves Action origin Pattern through switching and resolve', () => {
     withMonsterFixture(emptyAction('origin-action', { telegraphMs: 1000 }), 'default', () => {
       const monster = MONSTERS['forest-wisp']
       const previousPattern = monster.actionPatterns.enraged
@@ -252,13 +223,6 @@ describe('Universal Action System V1', () => {
         expect(resolved.combat.enemyActionPatternId).toBe('enraged')
         expect(resolved.combat.enemyTelegraphPatternId).toBeNull()
 
-        const interrupted = stateWithEnemy()
-        interrupted.combat.enemyActionTimerMs = 0
-        startNextEnemyAction(interrupted, executeCombatEffects)
-        setEnemyActionPattern(interrupted, 'enraged')
-        expect(interruptEnemyAction(interrupted, executeCombatEffects)).toBe(true)
-        expect(interrupted.combat.enemyActionPatternId).toBe('enraged')
-        expect(interrupted.combat.enemyTelegraphPatternId).toBeNull()
       } finally {
         if (previousPattern) monster.actionPatterns.enraged = previousPattern
         else delete monster.actionPatterns.enraged
@@ -371,7 +335,7 @@ describe('Universal Action System V1', () => {
     })
   })
 
-  it('cleans administrative combat state without emitting an Interrupt event', () => {
+  it('cleans administrative combat state after an active Action', () => {
     const cases = [
       () => { const state = stateWithEnemy(); state.combat.enemyActionTimerMs = 0; startNextEnemyAction(state, executeCombatEffects); startNextEnemyAction(state, executeCombatEffects); startNextEnemyAction(state, executeCombatEffects); resetEnemyActionRuntime(state); return state },
       () => { const state = stateWithEnemy(); state.combat.enemyActionTimerMs = 0; startNextEnemyAction(state, executeCombatEffects); startNextEnemyAction(state, executeCombatEffects); startNextEnemyAction(state, executeCombatEffects); finishEnemy(state); return state },
@@ -379,7 +343,7 @@ describe('Universal Action System V1', () => {
     ]
     cases.forEach((create) => {
       const state = create()
-      expect(state.combat.log.some((entry) => entry.includes('interrupted'))).toBe(false)
+      expect(state.combat.log.some((entry) => entry.includes('cancelled'))).toBe(false)
       expect(state.combat.enemyTelegraphActionId).toBeNull()
       expect(state.combat.enemyTelegraphPatternId).toBeNull()
     })
@@ -414,7 +378,7 @@ describe('Universal Action System V1', () => {
     expect(labels('thornling')).toEqual(['Basic', 'Basic', 'Thorn Lash'])
     expect(labels('stone-root')).toEqual(['Basic', 'Basic', 'Basic', 'Root Slam'])
     expect(labels('grove-sentinel')).toEqual(['Basic', 'Basic', 'Root Crush', 'Basic', 'Verdant Guard'])
-    expect(labels('forest-heart')).toEqual(['Basic', 'Heart Pulse', 'Basic', 'Basic', 'Root Prison', 'Basic', 'Rejuvenating Sap'])
+    expect(labels('forest-heart')).toEqual(['Basic', 'Basic', 'Heart Pulse', 'Basic', 'Basic', 'Root Prison', 'Basic', 'Basic', 'Basic', 'Rejuvenating Sap'])
     const action = (monster: keyof typeof MONSTERS, actionId: string) => MONSTERS[monster].actions[actionId]
     expect(action('forest-wisp', 'arc-spark')).toMatchObject({ telegraphMs: 2000, effects: [expect.objectContaining({ damageType: 'arcane', magnitude: { type: 'flat', value: 12 } })] })
     expect(action('thornling', 'thorn-lash')).toMatchObject({ telegraphMs: 1800, effects: [expect.objectContaining({ damageType: 'physical', magnitude: { type: 'flat', value: 10 } }), expect.objectContaining({ type: 'apply-status', statusId: 'thorn-wound' })] })

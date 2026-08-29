@@ -1,4 +1,4 @@
-import { MONSTERS } from '../../content/monsters/whisperingWoods'
+import { MONSTERS } from '../../content/monsters'
 import { playerBasicDamage } from '../../engine'
 import type { GameState } from '../../types'
 import type { CombatSource, Magnitude } from './combatTypes'

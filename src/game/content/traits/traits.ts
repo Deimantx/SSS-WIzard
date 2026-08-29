@@ -10,10 +10,11 @@ const gainBarrier = (magnitude: Magnitude): CombatEffect => ({
   tags: ['barrier'],
 })
 
-const applyStatus = (statusId: Extract<CombatEffect, { type: 'apply-status' }>['statusId']): CombatEffect => ({
+const applyStatus = (statusId: Extract<CombatEffect, { type: 'apply-status' }>['statusId'], durationMs?: number | null): CombatEffect => ({
   type: 'apply-status',
   target: 'self',
   statusId,
+  durationMs,
 })
 const COMBAT_TAGS: readonly CombatTag[] = ['basic-attack', 'spell', 'weapon', 'equipment', 'melee', 'ranged', 'magic', 'direct', 'heal', 'dot', 'hot', 'status', 'special', 'trait', 'buff', 'debuff', 'control', 'barrier', 'physical', 'arcane', 'fire', 'water', 'earth', 'air']
 
@@ -21,7 +22,8 @@ export const TRAIT_DEFINITIONS: Record<TraitId, TraitDefinition> = {
   'forest-wisp-flicker': {
     id: 'forest-wisp-flicker',
     name: 'Flicker',
-    description: 'Arc Spark is telegraphed before it lands.',
+    description: 'After Arc Spark resolves, gains Haste for 3 seconds.',
+    rules: [{ id: 'forest-wisp-flicker-arc-spark', event: 'on-action-resolve', condition: { type: 'event-action-is', actionId: 'arc-spark' }, effects: [applyStatus('haste', 3000)], }],
   },
   'thornling-barkskin': {
     id: 'thornling-barkskin',
@@ -63,6 +65,42 @@ export const TRAIT_DEFINITIONS: Record<TraitId, TraitDefinition> = {
       effects: [applyStatus('haste')],
       oncePerEncounter: true,
     }],
+  },
+  'cavefang-wolf-predator-instinct': {
+    id: 'cavefang-wolf-predator-instinct', name: 'Predator Instinct', description: 'Deals 25% more damage while the target is at or below 35% HP.',
+    modifiers: [{ key: 'damage-dealt-percent', value: 0.25, condition: { type: 'target-hp-below-percent', percent: 35 } }],
+  },
+  'razorclaw-lynx-relentless-hunter': {
+    id: 'razorclaw-lynx-relentless-hunter', name: 'Relentless Hunter', description: 'Deals 20% more damage to Bleeding targets.',
+    modifiers: [{ key: 'damage-dealt-percent', value: 0.2, condition: { type: 'target-has-status', statusId: 'bleeding' } }],
+  },
+  'corrupted-dire-wolf-arcane-corruption': {
+    id: 'corrupted-dire-wolf-arcane-corruption', name: 'Arcane Corruption', description: 'Corruption grants 10% resistance to Fire, Water, Earth, and Air.',
+  },
+  'corrupted-greatbear-thick-hide': {
+    id: 'corrupted-greatbear-thick-hide', name: 'Thick Hide', description: 'Basic Attack damage received is reduced by 20%.',
+    modifiers: [{ key: 'damage-taken-percent', value: -0.2, sourceTags: ['basic-attack'] }],
+  },
+  'corrupted-greatbear-unstable-corruption': {
+    id: 'corrupted-greatbear-unstable-corruption', name: 'Unstable Corruption', description: 'At 50% HP, gains Haste and shifts to the Corrupted Pattern once.',
+    rules: [{ id: 'corrupted-greatbear-unstable-corruption-threshold', event: 'on-hp-threshold', condition: { type: 'self-hp-below-percent', percent: 50 }, effects: [{ type: 'apply-status', target: 'self', statusId: 'haste' }, { type: 'set-action-pattern', target: 'self', patternId: 'corrupted' }], oncePerEncounter: true }],
+  },
+  'restless-skeleton-brittle-bones': {
+    id: 'restless-skeleton-brittle-bones', name: 'Brittle Bones', description: 'Physical damage is reduced by 25%.',
+  },
+  'grave-wraith-ethereal-form': {
+    id: 'grave-wraith-ethereal-form', name: 'Ethereal Form', description: 'Physical damage is reduced by 50%; Fire, Water, Earth, and Air damage are increased by 25%.',
+  },
+  'fallen-acolyte-grave-channeling': {
+    id: 'fallen-acolyte-grave-channeling', name: 'Grave Channeling', description: 'Below 50% HP, healing done is increased by 50%.',
+    modifiers: [{ key: 'healing-done-percent', value: 0.5, condition: { type: 'self-hp-below-percent', percent: 50 } }],
+  },
+  'archmage-edrin-arcane-remnant': {
+    id: 'archmage-edrin-arcane-remnant', name: 'Arcane Remnant', description: 'Resists Fire, Water, Earth, and Air damage by 15%.',
+  },
+  'archmage-edrin-unbound-spirit': {
+    id: 'archmage-edrin-unbound-spirit', name: 'Unbound Spirit', description: 'At 50% HP, gains Haste and shifts to the Unbound Pattern once.',
+    rules: [{ id: 'archmage-edrin-unbound-spirit-threshold', event: 'on-hp-threshold', condition: { type: 'self-hp-below-percent', percent: 50 }, effects: [{ type: 'apply-status', target: 'self', statusId: 'haste' }, { type: 'set-action-pattern', target: 'self', patternId: 'unbound' }], oncePerEncounter: true }],
   },
 }
 

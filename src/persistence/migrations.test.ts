@@ -65,7 +65,7 @@ describe('save navigation migration', () => {
     expect(migrated.progress.permanentFocusBonuses).toEqual({ 'forest-heart': 10, 'guild-apprentice': 10 })
     expect(migrated.progress.lifetimeKillsByMonster).toEqual({ 'forest-wisp': 12, thornling: 3 })
     expect(migrated.progress.bossKillsByBoss).toEqual({ 'grove-sentinel': 2, 'forest-heart': 1 })
-    expect(migrated.progress.autoHuntBossByDungeon).toEqual({ 'whispering-woods': true })
+    expect(migrated.progress.autoHuntBossByDungeon).toEqual({ 'whispering-woods': true, 'howling-den': false, 'abandoned-catacombs': false })
     expect(migrated.combat.triggeredRuleIds).toContain('enemy:trait:grove-sentinel-ancient-growth:grove-sentinel-ancient-growth-threshold')
     expect(migrated.combat).not.toHaveProperty('enemySpecialUsed')
     expect(migrated.inventory).not.toHaveProperty('removed-item')

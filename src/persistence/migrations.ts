@@ -3,7 +3,7 @@ import { MANA_PILLAR_IDS } from '../game/data/manaPillars'
 import { DUNGEONS } from '../game/content/dungeons/dungeons'
 import { GUILD_REQUESTS } from '../game/content/guild/guildRequests'
 import { ITEMS } from '../game/content/items/items'
-import { isBossMonster, MONSTERS } from '../game/content/monsters/whisperingWoods'
+import { isBossMonster, MONSTERS } from '../game/content/monsters'
 import { RECIPES } from '../game/content/recipes/recipes'
 import { RECIPE_ORDER } from '../game/content/recipes/recipes'
 import { BALANCE } from '../game/core/balance/balance'
@@ -40,7 +40,6 @@ const safeLevel = (value: unknown) => typeof value === 'number' && Number.isFini
 
 const itemIds = Object.keys(ITEMS)
 const monsterIds = Object.keys(MONSTERS)
-const bossIds = Object.values(MONSTERS).filter(isBossMonster).map((monster) => monster.id)
 const dungeonIds = Object.keys(DUNGEONS)
 const requestIds = Object.keys(GUILD_REQUESTS)
 const spellIds = Object.keys(SPELLS)
@@ -88,7 +87,10 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
   const rawFocusImprovement = isRecord(rawProgress.focusImprovement) ? rawProgress.focusImprovement : {}
   migrated.progress.focusImprovement = { rank: 1, level: safeLevel(rawFocusImprovement.level) }
   migrated.progress.lifetimeKillsByMonster = normalizeDynamicRecord(fresh.progress.lifetimeKillsByMonster, rawProgress.lifetimeKillsByMonster, monsterIds, nonNegativeInteger)
-  migrated.progress.bossKillsByBoss = normalizeDynamicRecord(fresh.progress.bossKillsByBoss, rawProgress.bossKillsByBoss, bossIds, nonNegativeInteger)
+  // Keep historical boss counters for monsters that were later demoted to a
+  // normal encounter (notably Grove Sentinel). They remain useful migration
+  // evidence even when current combat treats the monster as non-boss.
+  migrated.progress.bossKillsByBoss = normalizeDynamicRecord(fresh.progress.bossKillsByBoss, rawProgress.bossKillsByBoss, monsterIds, nonNegativeInteger)
   migrated.progress.autoHuntBossByDungeon = normalizeDynamicRecord(fresh.progress.autoHuntBossByDungeon, rawProgress.autoHuntBossByDungeon, dungeonIds, booleanValue) as GameState['progress']['autoHuntBossByDungeon']
   const rawCurrencies = isRecord(raw.currencies) ? raw.currencies : {}
   migrated.currencies = { gold: nonNegativeGold(rawCurrencies.gold) ?? fresh.currencies.gold }
@@ -146,6 +148,7 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
 
   const activeEnemyId = typeof migrated.combat.enemyId === 'string' && MONSTERS[migrated.combat.enemyId] ? migrated.combat.enemyId : null
   const monster = activeEnemyId ? MONSTERS[activeEnemyId] : undefined
+  migrated.combat.inBossFight = Boolean(monster && isBossMonster(monster))
   const rawPatternId = typeof rawCombat.enemyActionPatternId === 'string' ? rawCombat.enemyActionPatternId : undefined
   const pattern = monster && sourceVersion >= 14 && rawPatternId && monster.actionPatterns[rawPatternId]
     ? monster.actionPatterns[rawPatternId]
@@ -209,7 +212,7 @@ const seedLegacyItemDiscoveries = (migrated: GameState, raw: Record<string, any>
   Object.values(migrated.equipment).forEach((itemId) => { if (itemId && ITEMS[itemId]) discovered.add(itemId as ItemId) })
 
   Object.values(MONSTERS).forEach((monster) => {
-    const defeats = isBossMonster(monster) ? migrated.progress.bossKillsByBoss[monster.id] ?? 0 : migrated.progress.lifetimeKillsByMonster[monster.id] ?? 0
+    const defeats = Math.max(migrated.progress.lifetimeKillsByMonster[monster.id] ?? 0, migrated.progress.bossKillsByBoss[monster.id] ?? 0)
     if (defeats < 1) return
     monster.loot.filter((drop) => drop.chance === 1).forEach((drop) => discovered.add(drop.itemId))
   })
@@ -235,7 +238,7 @@ const normalizeDirectContentReferences = (migrated: GameState, raw: Record<strin
   const enemyId = Object.prototype.hasOwnProperty.call(rawCombat, 'enemyId') ? rawCombat.enemyId : migrated.combat.enemyId
   migrated.combat.enemyId = enemyId === null ? null : validContentId(enemyId, monsterIds) ? enemyId as GameState['combat']['enemyId'] : fresh.combat.enemyId
   const pendingBossId = Object.prototype.hasOwnProperty.call(rawCombat, 'pendingBossId') ? rawCombat.pendingBossId : migrated.combat.pendingBossId
-  migrated.combat.pendingBossId = pendingBossId === null ? null : pendingBossId === 'grove-sentinel' && validContentId(pendingBossId, bossIds) ? pendingBossId : fresh.combat.pendingBossId
+  migrated.combat.pendingBossId = pendingBossId === null ? null : validContentId(pendingBossId, monsterIds) ? pendingBossId as GameState['combat']['pendingBossId'] : fresh.combat.pendingBossId
 }
 
 const validResearchStatus = (value: unknown): ResearchJobState['status'] => value === 'running' || value === 'mana-limited' || value === 'waiting-mana' || value === 'level-cap' || value === 'protected' || value === 'missing-item' || value === 'prepared' ? value : 'prepared'

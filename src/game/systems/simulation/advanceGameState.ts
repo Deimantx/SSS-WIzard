@@ -1,7 +1,7 @@
 import { BALANCE } from '../../core/balance/balance'
 import { CHANNELING_DISCOVERIES } from '../../content/channeling/channelingDiscoveries'
 import { ITEMS } from '../../content/items/items'
-import { MONSTERS } from '../../content/monsters/whisperingWoods'
+import { MONSTERS } from '../../content/monsters'
 import { SPELLS } from '../../content/spells/spells'
 import { advanceChanneling } from '../../engine/channelingEngine'
 import { appendLog, playerBasicDamage, pushNotification, recalculateDerivedStats } from '../../engine'

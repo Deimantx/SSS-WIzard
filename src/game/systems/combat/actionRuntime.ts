@@ -1,13 +1,14 @@
-import { MONSTERS } from '../../content/monsters/whisperingWoods'
+import { MONSTERS } from '../../content/monsters'
 import { appendLog } from '../../engine'
 import type { GameState } from '../../types'
 import type { CombatActor } from './magnitude'
 import { getCombatModifiers } from './modifiers'
+import { actorCannotAct } from './statusRuntime'
 import { runCombatTriggers, type CombatEventContext } from './triggerRuntime'
 import type { ActionStep, CombatActionDefinition, CombatEffect, CombatSource, CombatTag, CombatTrigger } from './combatTypes'
 
 export type ActionEffectExecutor = (state: GameState, effects: CombatEffect[], source: CombatSource, depth?: number) => void
-export type ActionLifecycleEvent = Extract<CombatTrigger, 'on-action-start' | 'on-action-resolve' | 'on-action-interrupted'>
+export type ActionLifecycleEvent = Extract<CombatTrigger, 'on-action-start' | 'on-action-resolve'>
 
 const opponentOf = (actor: CombatActor): CombatActor => actor === 'player' ? 'enemy' : 'player'
 
@@ -129,7 +130,7 @@ const startActionDefinition = (state: GameState, action: CombatActionDefinition,
   const context = actionContext(action, patternId, stepId)
   runActionEventObservers(state, 'on-action-start', context, executeEffects, depth)
   if (state.combat.enemyTelegraphActionId !== action.id) return true
-  if (state.combat.enemyTelegraphMs <= 0) resolveActiveEnemyAction(state, executeEffects, depth)
+  if (state.combat.enemyTelegraphMs <= 0 && !actorCannotAct(state, 'enemy')) resolveActiveEnemyAction(state, executeEffects, depth)
   else appendLog(state, `${action.name} telegraphed · ${formatMilliseconds(action.telegraphMs)}`)
   return true
 }
@@ -145,7 +146,7 @@ export const startEnemyAction = (state: GameState, actionId: string, executeEffe
 
 export const startNextEnemyAction = (state: GameState, executeEffects: ActionEffectExecutor, depth = 0) => {
   const enemyId = state.combat.enemyId
-  if (!enemyId || state.combat.enemyTelegraphActionId) return false
+  if (!enemyId || state.combat.enemyTelegraphActionId || actorCannotAct(state, 'enemy')) return false
   const monster = MONSTERS[enemyId]
   const pattern = patternFor(state)
   if (!pattern || pattern.steps.length === 0) return false
@@ -175,7 +176,7 @@ export const startNextEnemyAction = (state: GameState, executeEffects: ActionEff
 export const resolveActiveEnemyAction = (state: GameState, executeEffects: ActionEffectExecutor, depth = 0) => {
   const enemyId = state.combat.enemyId
   const actionId = state.combat.enemyTelegraphActionId
-  if (!enemyId || !actionId) return false
+  if (!enemyId || !actionId || actorCannotAct(state, 'enemy')) return false
   const action = MONSTERS[enemyId].actions[actionId]
   if (!action) {
     clearActiveEnemyAction(state)
@@ -189,29 +190,6 @@ export const resolveActiveEnemyAction = (state: GameState, executeEffects: Actio
   runActionEventObservers(state, 'on-action-resolve', context, executeEffects, depth + 1)
   scheduleEnemyRecovery(state, action.recoveryMs ?? MONSTERS[enemyId].actionIntervalMs)
   appendLog(state, `${action.name} resolves.`)
-  return true
-}
-
-export const interruptEnemyAction = (state: GameState, executeEffects: ActionEffectExecutor, depth = 0) => {
-  const enemyId = state.combat.enemyId
-  const actionId = state.combat.enemyTelegraphActionId
-  if (!enemyId || !actionId) return false
-  const action = MONSTERS[enemyId].actions[actionId]
-  if (!action) {
-    clearActiveEnemyAction(state)
-    return false
-  }
-  if (action.interruptible === false) {
-    appendLog(state, `${action.name} cannot be interrupted.`)
-    return false
-  }
-  const stepId = state.combat.enemyTelegraphStepId ?? undefined
-  const patternId = state.combat.enemyTelegraphPatternId ?? state.combat.enemyActionPatternId ?? undefined
-  const context = actionContext(action, patternId, stepId)
-  clearActiveEnemyAction(state)
-  runActionEventObservers(state, 'on-action-interrupted', context, executeEffects, depth)
-  scheduleEnemyRecovery(state, action.recoveryMs ?? MONSTERS[enemyId].actionIntervalMs)
-  appendLog(state, `${action.name} interrupted.`)
   return true
 }
 

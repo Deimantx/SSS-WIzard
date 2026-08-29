@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react'
 import { GameTooltip } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { BESTIARY_ENTRY_CATEGORY_LABELS, formatDefeats, getMonsterDefeatCount } from '../../game/systems/bestiary/bestiarySelectors'
-import { isBossMonster, type MonsterDefinition } from '../../game/content/monsters/whisperingWoods'
+import { isBossMonster, type MonsterDefinition } from '../../game/content/monsters'
 import type { GameState } from '../../game/types'
 
 export function BestiaryEntryCard({ monster, progress, selected, onSelect }: { monster: MonsterDefinition; progress: GameState['progress']; selected: boolean; onSelect: () => void }) {

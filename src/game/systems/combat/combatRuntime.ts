@@ -1,6 +1,6 @@
 import { BALANCE } from '../../core/balance/balance'
 import { DUNGEONS, chooseMonster } from '../../content/dungeons/dungeons'
-import { isBossMonster, MONSTERS } from '../../content/monsters/whisperingWoods'
+import { isBossMonster, MONSTERS } from '../../content/monsters'
 import { recalculateDerivedStats, appendLog, pushNotification } from '../../engine'
 import type { GameState, ItemId, MonsterId } from '../../types'
 import { executeCombatEffects, damageEnemy, damagePlayer, gainBarrier } from './effectResolver'
@@ -36,7 +36,7 @@ export const spawnEnemy = (state: GameState, enemyId: MonsterId) => {
   runCombatTriggers(state, 'enemy', 'on-combat-start', { source: { actor: 'enemy', kind: 'system', sourceId: 'combat-start' } }, executeCombatEffects)
   runCombatTriggers(state, 'player', 'on-combat-start', { source: { actor: 'player', kind: 'system', sourceId: 'combat-start' }, eventTarget: 'enemy' }, executeCombatEffects)
   scheduleEnemyRecovery(state, monster.actionIntervalMs)
-  appendLog(state, `${monster.name} enters the clearing.`)
+  appendLog(state, `${monster.name} enters the dungeon.`)
 }
 
 export const spawnNextEnemy = (state: GameState) => {
@@ -44,9 +44,11 @@ export const spawnNextEnemy = (state: GameState) => {
   if (state.combat.pendingBossId) {
     const boss = state.combat.pendingBossId
     state.combat.pendingBossId = null
-    spawnEnemy(state, boss)
-    pushNotification(state, `${MONSTERS[boss].name} arrives via Auto Hunt`, 'warning')
-    return
+    if (MONSTERS[boss]) {
+      spawnEnemy(state, boss)
+      pushNotification(state, `${MONSTERS[boss].name} arrives via Auto Hunt`, 'warning')
+      return
+    }
   }
   spawnEnemy(state, chooseMonster(dungeon.monsterPool))
 }
@@ -64,43 +66,48 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   resetEnemyActionRuntime(state)
   state.combat.enemyStatuses = []
   resetCombatRuleRuntime(state)
-  state.combat.encounterTimerMs = DUNGEONS[state.combat.dungeonId ?? 'whispering-woods'].encounterDelayMs
+  const dungeon = DUNGEONS[state.combat.dungeonId ?? 'whispering-woods']
+  state.combat.encounterTimerMs = dungeon.encounterDelayMs
   if (isBossMonster(monster)) {
     state.combat.threatCleared = 0
     state.combat.inBossFight = false
-    const bossId = enemyId as 'grove-sentinel' | 'forest-heart'
+    const bossId = enemyId
     state.progress.bossKillsByBoss[bossId] = (state.progress.bossKillsByBoss[bossId] ?? 0) + 1
     if (bossId === 'grove-sentinel') state.progress.requestProgress['sentinel-breaker'] = state.progress.bossKillsByBoss[bossId]
-    if (bossId === 'grove-sentinel') state.progress.autoHuntBossUnlocked = true
-    if (bossId === 'grove-sentinel' && !state.progress.firstBossKill) {
+    state.progress.autoHuntBossUnlocked = true
+    if (bossId === 'forest-heart' && !state.progress.firstBossKill) {
       state.progress.firstBossKill = true
       state.progress.guildUnlocked = true
       state.progress.guildRank = 'initiate'
       state.progress.emberStaffUnlocked = true
       state.progress.forestHeartUnlocked = true
-      pushNotification(state, 'Grove Sentinel defeated · Guild unlocked', 'success')
+      pushNotification(state, 'Forest Heart defeated - Guild unlocked', 'success')
       pushNotification(state, 'Four equipment recipes are now available', 'success')
     }
-    if (bossId === 'forest-heart' && !state.progress.firstMainBossKill) {
-      state.progress.firstMainBossKill = true
+    if (bossId === 'forest-heart' && !state.progress.permanentFocusBonuses['forest-heart']) {
       state.progress.magicLevelCap = BALANCE.mainBoss.firstBossMagicLevelCap
       if (!state.progress.permanentFocusBonuses['forest-heart']) state.progress.permanentFocusBonuses['forest-heart'] = BALANCE.focus.forestHeartBonus
       recalculateDerivedStats(state)
       pushNotification(state, 'Magic School cap increased to 20', 'success')
-      pushNotification(state, 'FIRST CHAPTER COMPLETE · +10 permanent Focus', 'success')
+      pushNotification(state, 'WHISPERING WOODS COMPLETE / Howling Den unlocked.', 'success')
+    }
+    if (bossId === 'corrupted-greatbear' && state.progress.bossKillsByBoss[bossId] === 1) pushNotification(state, 'HOWLING DEN COMPLETE / Abandoned Catacombs unlocked.', 'success')
+    if (bossId === 'archmage-edrin-shade' && state.progress.bossKillsByBoss[bossId] === 1) {
+      state.progress.firstMainBossKill = true
+      pushNotification(state, 'FIRST CHAPTER COMPLETE', 'success')
     }
     report?.recordNotable(`${monster.name} defeated`)
-    appendLog(state, `${monster.name} defeated${drops ? ` · ${drops}` : ''}. Threat Cleared resets.`)
+    appendLog(state, `${monster.name} defeated${drops ? ` - ${drops}` : ''}. Threat Cleared resets.`)
   } else {
     state.progress.lifetimeKills += 1
     state.progress.lifetimeKillsByMonster[enemyId] = (state.progress.lifetimeKillsByMonster[enemyId] ?? 0) + 1
     state.combat.threatCleared += 1
-    state.progress.requestProgress['clear-the-woods'] = state.progress.lifetimeKills
-    appendLog(state, `${monster.name} defeated${drops ? ` · ${drops}` : ''}`)
-    if (state.combat.threatCleared === DUNGEONS['whispering-woods'].threatRequired) pushNotification(state, 'Grove Sentinel is ready', 'success')
-    if (state.progress.autoHuntBossByDungeon['whispering-woods'] && state.combat.threatCleared >= DUNGEONS['whispering-woods'].threatRequired) {
-      state.combat.pendingBossId = 'grove-sentinel'
-      pushNotification(state, 'Auto Hunt Boss queued Grove Sentinel', 'info')
+    if (state.combat.dungeonId === 'whispering-woods') state.progress.requestProgress['clear-the-woods'] = state.progress.lifetimeKills
+    appendLog(state, `${monster.name} defeated${drops ? ` - ${drops}` : ''}`)
+    if (state.combat.threatCleared === dungeon.threatRequired) pushNotification(state, `${MONSTERS[dungeon.boss].name} is ready`, 'success')
+    if (state.progress.autoHuntBossByDungeon[dungeon.id] && state.combat.threatCleared >= dungeon.threatRequired && !state.combat.pendingBossId) {
+      state.combat.pendingBossId = dungeon.boss
+      pushNotification(state, `Auto Hunt Boss queued ${MONSTERS[dungeon.boss].name}`, 'info')
     }
   }
 }
@@ -118,10 +125,11 @@ export const resolveCombatDeaths = (state: GameState, report?: SimulationReportC
     state.combat.playerBarrierRemainingMs = null
     state.combat.playerStatuses = []
     state.combat.enemyStatuses = []
+    state.combat.pendingBossId = null
     resetCombatRuleRuntime(state)
     state.combat.threatCleared = 0
     state.combat.inBossFight = false
-    pushNotification(state, 'Defeated · recovering in the Tower', 'warning')
+    pushNotification(state, 'Defeated - recovering in the Tower', 'warning')
     appendLog(state, 'The wizard falls. Threat Cleared resets to 0.')
     return true
   }

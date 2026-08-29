@@ -1,5 +1,5 @@
 import { STATUS_DEFINITIONS } from '../../content/statuses'
-import { MONSTERS } from '../../content/monsters/whisperingWoods'
+import { MONSTERS } from '../../content/monsters'
 import { equipmentStats } from '../../engine'
 import type { GameState, StatusId } from '../../types'
 import type { CombatActor } from './magnitude'

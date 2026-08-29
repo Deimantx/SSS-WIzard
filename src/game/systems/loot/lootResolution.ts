@@ -1,5 +1,5 @@
 import { ITEMS } from '../../content/items/items'
-import { MONSTERS } from '../../content/monsters/whisperingWoods'
+import { MONSTERS } from '../../content/monsters'
 import type { GameState, ItemId, MonsterId } from '../../types'
 import { grantItem } from '../inventory/itemAcquisition'
 

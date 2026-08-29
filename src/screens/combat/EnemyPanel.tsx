@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { isBossMonster, MONSTERS } from '../../game/data/monsters'
+import { isBossMonster, MONSTERS } from '../../game/content/monsters'
 import { ITEMS } from '../../game/data/items'
 import { STATUS_DEFINITIONS } from '../../game/content/statuses'
 import { useGameStore } from '../../store/gameStore'

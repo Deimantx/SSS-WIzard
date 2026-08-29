@@ -1,4 +1,4 @@
-import { isBossMonster, MONSTERS } from '../../content/monsters/whisperingWoods'
+import { isBossMonster, MONSTERS } from '../../content/monsters'
 import { ITEMS } from '../../content/items/items'
 import type { ChannelingDiscoveryId, GameState, ItemId, MonsterId, RecipeId, SchoolId, SpellId } from '../../types'
 

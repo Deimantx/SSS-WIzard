@@ -1,5 +1,5 @@
 import { getTraitDefinitions } from '../../content/traits'
-import { MONSTERS, type MonsterDefinition } from '../../content/monsters/whisperingWoods'
+import { MONSTERS, type MonsterDefinition } from '../../content/monsters'
 import type { GameState, TraitDefinition } from '../../types'
 import type { CombatActor } from './magnitude'
 

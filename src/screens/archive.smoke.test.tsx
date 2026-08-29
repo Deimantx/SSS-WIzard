@@ -32,7 +32,6 @@ describe('archive screens', () => {
     expect(screen.getByRole('heading', { name: 'BESTIARY INDEX' })).toBeTruthy()
     expect(screen.getByRole('tab', { name: 'MONSTERS' })).toBeTruthy()
     expect(screen.getByRole('tab', { name: 'BOSSES' })).toBeTruthy()
-    expect(screen.getByRole('tab', { name: 'SPECIAL BOSSES' })).toBeTruthy()
     await user.click(screen.getAllByRole('button', { name: 'Undiscovered creature' })[0])
     expect(screen.getByText('UNDISCOVERED CREATURE')).toBeTruthy()
     expect(screen.queryByText('Forest Wisp')).toBeNull()

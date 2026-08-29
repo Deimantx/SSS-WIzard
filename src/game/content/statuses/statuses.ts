@@ -20,9 +20,17 @@ export const STATUS_DEFINITIONS: Record<StatusId, StatusDefinition> = {
     id: 'haste', name: 'Haste', description: 'Action speed increased by 15%.', classification: 'buff', tags: ['buff'], defaultDurationMs: null,
     stacking: { mode: 'refresh' }, modifiers: [modifier('action-speed-percent', 0.15)], cleanseable: false, dispellable: true,
   },
+  'spectral-fade': {
+    id: 'spectral-fade', name: 'Spectral Fade', description: 'Damage taken is reduced by 25%.', classification: 'buff', tags: ['buff'], defaultDurationMs: 5000,
+    stacking: { mode: 'strongest' }, modifiers: [modifier('damage-taken-percent', -0.25)], cleanseable: false, dispellable: true,
+  },
   'thorn-wound': {
     id: 'thorn-wound', name: 'Thorn Wound', description: 'Thorns deal physical damage over time.', classification: 'debuff', tags: ['debuff', 'dot'], defaultDurationMs: 6000,
     stacking: { mode: 'refresh' }, periodic: { intervalMs: 2000, effects: [damage('physical', 3)] }, cleanseable: true, dispellable: false,
+  },
+  bleeding: {
+    id: 'bleeding', name: 'Bleeding', description: 'Takes 4 Physical damage every 2 seconds.', classification: 'debuff', tags: ['debuff', 'dot', 'physical'], defaultDurationMs: 8000,
+    stacking: { mode: 'refresh' }, periodic: { intervalMs: 2000, effects: [damage('physical', 4)] }, cleanseable: true, dispellable: false,
   },
   chilled: {
     id: 'chilled', name: 'Chilled', description: 'Basic Attacks and Action cadence are 20% slower.', classification: 'debuff', tags: ['debuff', 'control', 'water'], defaultDurationMs: 5000,

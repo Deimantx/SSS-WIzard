@@ -9,7 +9,7 @@ const ensureJob = (state: GameState, recipeId: RecipeId) => state.activities.tra
 
 export const assignTransmutationEchoAction = (state: GameState, recipeId: RecipeId) => {
   const recipe = RECIPES[recipeId]
-  if (!recipe || !isRecipeUnlocked(state, recipe)) { pushNotification(state, recipe ? 'Defeat Grove Sentinel to unlock this recipe.' : 'Unknown Transmutation recipe.', 'warning', { key: 'transmutation-locked', cooldownMs: 1500 }); return false }
+  if (!recipe || !isRecipeUnlocked(state, recipe)) { pushNotification(state, recipe ? 'Defeat the first dungeon boss to unlock this recipe.' : 'Unknown Transmutation recipe.', 'warning', { key: 'transmutation-locked', cooldownMs: 1500 }); return false }
   if (getTransmutationEchoesAssigned(state) >= getTransmutationEchoCapacity(state)) { const capacity = getTransmutationEchoCapacity(state); pushNotification(state, `Transmutation Echo capacity reached: ${capacity} / ${capacity}.`, 'warning', { key: 'transmutation-capacity', cooldownMs: 1500 }); return false }
   if (!canReserveFocusAction(state, BALANCE.transmutation.echoFocusCost)) { pushNotification(state, `Not enough free Focus. Each Transmutation Echo requires ${BALANCE.transmutation.echoFocusCost} Focus.`, 'warning', { key: 'transmutation-no-focus', cooldownMs: 1500 }); return false }
   ensureJob(state, recipeId).echoesAssigned += 1

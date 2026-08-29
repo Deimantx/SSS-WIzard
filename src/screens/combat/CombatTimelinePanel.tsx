@@ -1,4 +1,4 @@
-import { MONSTERS } from '../../game/data/monsters'
+import { MONSTERS } from '../../game/content/monsters'
 import { useGameStore } from '../../store/gameStore'
 import { Card } from '../../components/ui'
 import { formatTime } from '../../game/utils'
@@ -23,7 +23,7 @@ export function CombatTimelinePanel() {
     }) : <div className="muted">No enemy pattern loaded.</div>}</div>
     <div className={`telegraph ${activeAction ? 'active' : ''}`}>
       <div><strong>{activeAction ? activeAction.name : currentAction?.name ?? 'Next action'}</strong><span>{activeAction ? `${formatTime(combat.enemyTelegraphMs)} telegraph remaining` : 'The pattern advances on the enemy clock.'}</span></div>
-      {currentAction && <span>{currentAction.description} · {currentAction.interruptible === false ? 'Uninterruptible' : 'Interruptible'}</span>}
+      {currentAction && <span>{currentAction.description}</span>}
     </div>
   </Card>
 }

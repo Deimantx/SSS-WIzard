@@ -85,12 +85,12 @@ describe('central game loop', () => {
     expect(useGameStore.getState().progress.lifetimeKills).toBe(1)
   })
 
-  it('first Grove Sentinel kill unlocks the Guild and Forest Heart', () => {
+  it('first Forest Heart kill unlocks the Guild and the next dungeon', () => {
     const game = useGameStore.getState()
     game.resetSave()
     game.enterDungeon()
     game.setThreat(BALANCE.dungeon.whisperingWoodsThreatRequired)
-    game.engageBoss('grove-sentinel')
+    game.engageBoss('forest-heart')
     game.killCurrentEnemy()
     const state = useGameStore.getState()
     expect(state.progress.firstBossKill).toBe(true)
@@ -99,13 +99,13 @@ describe('central game loop', () => {
     expect(state.progress.autoHuntBossUnlocked).toBe(true)
   })
 
-  it('unlocks Auto Hunt after a manual Sentinel kill and queues the boss at threshold', () => {
+  it('unlocks Auto Hunt after a manual boss kill and queues the current dungeon boss', () => {
     const game = useGameStore.getState()
     game.resetSave()
     expect(useGameStore.getState().progress.autoHuntBossUnlocked).toBe(false)
     game.enterDungeon()
     game.setThreat(BALANCE.dungeon.whisperingWoodsThreatRequired)
-    game.engageBoss('grove-sentinel')
+    game.engageBoss('forest-heart')
     game.killCurrentEnemy()
     expect(useGameStore.getState().progress.autoHuntBossUnlocked).toBe(true)
     game.toggleAutoHunt()
@@ -114,7 +114,7 @@ describe('central game loop', () => {
     game.setThreat(BALANCE.dungeon.whisperingWoodsThreatRequired)
     game.killCurrentEnemy()
     for (let index = 0; index < 5; index += 1) game.tick(1000)
-    expect(useGameStore.getState().combat.enemyId).toBe('grove-sentinel')
+    expect(useGameStore.getState().combat.enemyId).toBe('forest-heart')
     expect(useGameStore.getState().combat.inBossFight).toBe(true)
   })
 
@@ -259,7 +259,7 @@ describe('Pillars of Mana economy', () => {
     expect(manaRegenPerSecond(useGameStore.getState())).toBe(33.5)
   })
 
-  it('resets the continuous Echo timer when five Echoes are interrupted', () => {
+  it('resets the continuous Echo timer when five Echoes stop sustaining', () => {
     const game = useGameStore.getState()
     game.resetSave()
     game.setChannelingEchoes(5)

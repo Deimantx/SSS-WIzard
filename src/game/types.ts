@@ -20,9 +20,9 @@ export type ItemId =
   | 'windthread-charm'
 
 export type SpellId = 'fire-bolt' | 'water-ward' | 'earth-spike' | 'air-lance' | 'ignite' | 'flow-mend' | 'stoneguard' | 'quickening'
-export type MonsterId = 'forest-wisp' | 'thornling' | 'stone-root' | 'grove-sentinel' | 'forest-heart'
-export type BestiaryCategory = 'monster' | 'boss' | 'special-boss'
-export type DungeonId = 'whispering-woods'
+export type MonsterId = 'forest-wisp' | 'thornling' | 'stone-root' | 'grove-sentinel' | 'forest-heart' | 'cavefang-wolf' | 'razorclaw-lynx' | 'corrupted-dire-wolf' | 'corrupted-greatbear' | 'restless-skeleton' | 'grave-wraith' | 'fallen-acolyte' | 'archmage-edrin-shade'
+export type BestiaryCategory = 'monster' | 'boss'
+export type DungeonId = 'whispering-woods' | 'howling-den' | 'abandoned-catacombs'
 export type EquipmentItemSlot = 'weapon' | 'offhand' | 'armor' | 'helmet' | 'cape' | 'amulet' | 'ring'
 export type EquipmentPosition = 'weapon' | 'offhand' | 'armor' | 'helmet' | 'cape' | 'amulet' | 'ring1' | 'ring2'
 /** @deprecated Use EquipmentItemSlot for item metadata or EquipmentPosition for loadout state. */
@@ -38,7 +38,7 @@ export type ManaPillarId = 'leyline-conduit' | 'arcane-reservoir' | 'mana-resona
 export type ChannelingDiscoveryId = 'stable-leyline' | 'echo-resonance' | 'deep-reservoir'
 export type RecipeId = 'fire-fragment' | 'water-fragment' | 'earth-fragment' | 'air-fragment' | 'prismatic-fragment' | 'ember-staff' | 'tide-focus' | 'stoneweave-robe' | 'windthread-charm'
 export type RecipeCategory = 'elemental' | 'material' | 'equipment' | 'special'
-export type RecipeUnlockCondition = { type: 'always' } | { type: 'first-grove-sentinel-kill' }
+export type RecipeUnlockCondition = { type: 'always' } | { type: 'first-dungeon-boss-kill' }
 
 export type AutoCastCondition = { type: 'always' } | { type: 'health-below'; percent: number } | { type: 'barrier-below'; value: number }
 export interface EquipmentStats {
@@ -173,7 +173,7 @@ export interface CombatState {
   enemyTelegraphPatternId: string | null
   triggeredRuleIds: string[]
   ruleCooldowns: Record<string, number>
-  pendingBossId: 'grove-sentinel' | null
+  pendingBossId: MonsterId | null
   playerAttackTimerMs: number
   encounterTimerMs: number
   spellCooldowns: Record<SpellId, number>

@@ -1,4 +1,4 @@
-import type { MonsterDefinition } from '../../game/content/monsters/whisperingWoods'
+import type { MonsterDefinition } from '../../game/content/monsters'
 import { getMonsterTraits } from '../../game/systems/combat/traitRuntime'
 
 export function BestiaryTraits({ monster }: { monster: MonsterDefinition }) {

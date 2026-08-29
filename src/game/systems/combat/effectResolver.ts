@@ -1,5 +1,5 @@
 import { ITEMS } from '../../content/items/items'
-import { MONSTERS } from '../../content/monsters/whisperingWoods'
+import { MONSTERS } from '../../content/monsters'
 import { STATUS_DEFINITIONS } from '../../content/statuses'
 import { appendLog, playerBasicDamage, spellDamageMultiplier } from '../../engine'
 import type { GameState } from '../../types'
@@ -9,7 +9,7 @@ import { getActorHealth, resolveMagnitude } from './magnitude'
 import { consumeBarrier, gainBarrierResult, gainBarrier as gainBarrierRuntime, getActiveBarrier } from './barrierRuntime'
 import { getCombatModifiers, getResistance, isImmuneToDamage } from './modifiers'
 import { runCombatTriggers, type CombatEventContext } from './triggerRuntime'
-import { interruptEnemyAction, resolveActiveEnemyAction, setEnemyActionPattern } from './actionRuntime'
+import { resolveActiveEnemyAction, setEnemyActionPattern } from './actionRuntime'
 import type { CombatEffect, CombatSource, CombatTag, DamageType, EffectTarget } from './combatTypes'
 
 const MAX_EFFECT_DEPTH = 20
@@ -167,7 +167,6 @@ export const executeCombatEffect = (state: GameState, effect: CombatEffect, sour
       }
       break
     }
-    case 'interrupt': if (target === 'enemy') interruptEnemyAction(state, execute, depth); break
     case 'set-action-pattern': if (target === 'enemy') setEnemyActionPattern(state, effect.patternId); break
   }
 }

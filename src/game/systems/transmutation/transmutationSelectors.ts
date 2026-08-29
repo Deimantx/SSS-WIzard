@@ -68,4 +68,4 @@ export function getRecipeStatus(state: Pick<GameState, 'activities' | 'inventory
 }
 
 export const getTransmutationRecipeEntries = () => RECIPE_ORDER.map((id) => RECIPES[id])
-export const getRecipeUnlockReason = (recipe: RecipeDefinition) => recipe.unlock.type === 'first-grove-sentinel-kill' ? 'Defeat Grove Sentinel to unlock this recipe.' : null
+export const getRecipeUnlockReason = (recipe: RecipeDefinition) => recipe.unlock.type === 'first-dungeon-boss-kill' ? 'Defeat the first dungeon boss to unlock this recipe.' : null

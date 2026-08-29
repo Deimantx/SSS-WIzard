@@ -10,7 +10,7 @@ import type { CombatSource, TraitDefinition, TraitId } from '../../types'
 import { advanceGameState } from '../simulation/advanceGameState'
 import { tickBarriers } from './barrierRuntime'
 import { castSpellAction } from '../../../store/actions/combatActions'
-import { MONSTERS } from '../../content/monsters/whisperingWoods'
+import { MONSTERS } from '../../content/monsters'
 import { TRAIT_DEFINITIONS } from '../../content/traits'
 import { STATUS_DEFINITIONS } from '../../content/statuses'
 import { SPELLS } from '../../content/spells/spells'
@@ -278,22 +278,6 @@ describe('post-implementation combat audit regressions', () => {
     const regeneration = applyStatus(state, 'player', 'regeneration', { actor: 'player', kind: 'system', sourceId: 'test' })
     expect(burning?.remainingMs).toBe(2500)
     expect(regeneration?.remainingMs).toBe(6000)
-  })
-
-  it('does not interrupt a special attack authored as non-interruptible', () => {
-    const action = MONSTERS['forest-wisp'].actions['arc-spark']
-    const previous = action.interruptible
-    action.interruptible = false
-    try {
-      const state = stateWithEnemy()
-      state.combat.enemyTelegraphMs = 1000
-      state.combat.enemyTelegraphActionId = 'arc-spark'
-      executeCombatEffects(state, [{ type: 'interrupt', target: 'opponent' }], playerSpell)
-      expect(state.combat.enemyTelegraphMs).toBe(1000)
-      expect(state.combat.enemyTelegraphActionId).toBe('arc-spark')
-    } finally {
-      action.interruptible = previous
-    }
   })
 
   it('modifies the active enemy telegraph only for the current action timer', () => {

@@ -1,14 +1,14 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { BALANCE } from '../game/core/balance/balance'
-import { DUNGEONS } from '../game/content/dungeons/dungeons'
-import { MONSTERS } from '../game/content/monsters/whisperingWoods'
+import { DUNGEONS, DUNGEON_ORDER, getDungeonUnlockRequirement, isDungeonUnlocked } from '../game/content/dungeons/dungeons'
+import { MONSTERS } from '../game/content/monsters'
 import { SPELLS } from '../game/content/spells/spells'
 import { castSpellAction } from './actions/combatActions'
 import { manaRegenPerSecond, pushNotification, recalculateDerivedStats, selectFreeFocus, selectUsedFocus } from '../game/engine'
 import { debugApplyStatus, finishEnemy, spawnEnemy, spawnNextEnemy } from '../game/systems/combat/combatRuntime'
 import { executeCombatEffects } from '../game/systems/combat/effectResolver'
-import { forceResolveEnemyAction as forceResolveEnemyActionRuntime, interruptEnemyAction as interruptEnemyActionRuntime, resolveActiveEnemyAction as resolveActiveEnemyActionRuntime, setEnemyActionPattern as setEnemyActionPatternRuntime, startEnemyAction as startEnemyActionRuntime, startNextEnemyAction as startNextEnemyActionRuntime } from '../game/systems/combat/actionRuntime'
+import { forceResolveEnemyAction as forceResolveEnemyActionRuntime, resolveActiveEnemyAction as resolveActiveEnemyActionRuntime, setEnemyActionPattern as setEnemyActionPatternRuntime, startEnemyAction as startEnemyActionRuntime, startNextEnemyAction as startNextEnemyActionRuntime } from '../game/systems/combat/actionRuntime'
 import { resetCombatRuleRuntime, runCombatTriggers } from '../game/systems/combat/triggerRuntime'
 import { loadProfileGame, saveProfileGame } from '../persistence/profileSaveManager'
 import { type SaveReason } from '../persistence/saveConstants'
@@ -76,10 +76,10 @@ export interface GameActions {
   setDebugTransmutationEchoCapacity: (amount: number | null) => void
   castSpell: (spellId: SpellId) => void
   toggleAutoCast: (spellId: SpellId) => void
-  enterDungeon: () => void
+  enterDungeon: (dungeonId?: DungeonId) => void
   leaveDungeon: () => void
-  engageBoss: (bossId: 'grove-sentinel' | 'forest-heart') => void
-  toggleAutoHunt: () => void
+  engageBoss: (bossId: MonsterId) => void
+  toggleAutoHunt: (dungeonId?: DungeonId) => void
   killCurrentEnemy: () => void
   spawnDebugEnemy: (enemyId: MonsterId) => void
   setEnemyHealthPercent: (percent: number) => void
@@ -92,7 +92,6 @@ export interface GameActions {
   forceEnemyAction: (actionId: string) => void
   startEnemyAction: (actionId: string) => void
   resolveActiveEnemyAction: () => void
-  interruptEnemyAction: () => void
   advanceEnemyAction: () => void
   setEnemyActionPattern: (patternId: string) => void
   resetEnemyActionPattern: () => void
@@ -203,10 +202,10 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   setDebugTransmutationEchoCapacity: (amount) => set((state) => { setTransmutationEchoCapacityOverrideAction(state, amount); return state }),
   castSpell: (spellId) => set((state) => { castSpellAction(state, spellId); return state }),
   toggleAutoCast: (spellId) => set((state) => { if (!spellUnlocked(state, spellId)) return state; if (state.activities.autoCast[spellId]) state.activities.autoCast[spellId] = false; else if (canReserveFocus(state, SPELLS[spellId].autoCastFocus)) { state.activities.autoCast[spellId] = true; pushNotification(state, `${SPELLS[spellId].name} Auto-Cast enabled`, 'success') } else pushNotification(state, `Cannot enable Auto-Cast · Requires ${SPELLS[spellId].autoCastFocus} Focus · Free Focus: ${selectFreeFocus(state)}`, 'warning'); return state }),
-  enterDungeon: () => set((state) => { if (state.combat.active) return state; state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; state.combat.encounterTimerMs = 0; state.player.health = Math.max(1, state.player.health); spawnNextEnemy(state); pushNotification(state, 'Whispering Woods entered', 'info'); return state }),
+  enterDungeon: (dungeonId = 'whispering-woods') => set((state) => { const dungeon = DUNGEONS[dungeonId]; if (state.combat.active || !dungeon) return state; if (!isDungeonUnlocked(dungeon, state.progress)) { pushNotification(state, `${getDungeonUnlockRequirement(dungeon) ?? 'Requirement'} to unlock ${dungeon.name}.`, 'warning'); return state } state.combat.active = true; state.combat.dungeonId = dungeonId; state.combat.encounterTimerMs = 0; state.player.health = Math.max(1, state.player.health); spawnNextEnemy(state); pushNotification(state, `${dungeon.name} entered`, 'info'); return state }),
   leaveDungeon: () => set((state) => { state.combat = { ...createInitialState().combat, log: ['Left the dungeon. Threat Cleared resets.'] }; return state }),
-  engageBoss: (bossId) => set((state) => { if (!state.combat.active) { pushNotification(state, 'Enter Whispering Woods first', 'warning'); return state } if (bossId === 'grove-sentinel' && state.combat.threatCleared < DUNGEONS['whispering-woods'].threatRequired) { pushNotification(state, `Grove Sentinel requires ${DUNGEONS['whispering-woods'].threatRequired} Threat Cleared`, 'warning'); return state } if (bossId === 'forest-heart' && !state.progress.forestHeartUnlocked) { pushNotification(state, 'Defeat Grove Sentinel to reveal Forest Heart', 'warning'); return state } spawnEnemy(state, bossId); pushNotification(state, `${MONSTERS[bossId].name} engaged`, 'warning'); return state }),
-  toggleAutoHunt: () => set((state) => { const unlocked = state.progress.autoHuntBossUnlocked || (state.progress.bossKillsByBoss['grove-sentinel'] ?? 0) > 0 || state.progress.firstBossKill; if (!unlocked) { pushNotification(state, 'Auto Hunt unlocks after the first Grove Sentinel kill', 'warning'); return state } state.progress.autoHuntBossUnlocked = true; state.progress.autoHuntBossByDungeon['whispering-woods'] = !state.progress.autoHuntBossByDungeon['whispering-woods']; return state }),
+  engageBoss: (bossId) => set((state) => { const dungeon = DUNGEONS[state.combat.dungeonId ?? 'whispering-woods']; const boss = MONSTERS[bossId]; if (!state.combat.active) { pushNotification(state, `Enter ${dungeon.name} first`, 'warning'); return state } if (!isDungeonUnlocked(dungeon, state.progress)) { pushNotification(state, `${dungeon.name} is locked.`, 'warning'); return state } if (!boss || dungeon.boss !== bossId) { pushNotification(state, `${boss?.name ?? bossId} is not the boss of ${dungeon.name}.`, 'warning'); return state } if (state.combat.threatCleared < dungeon.threatRequired) { pushNotification(state, `${boss.name} requires ${dungeon.threatRequired} Threat Cleared`, 'warning'); return state } spawnEnemy(state, bossId); pushNotification(state, `${boss.name} engaged`, 'warning'); return state }),
+  toggleAutoHunt: (dungeonId = 'whispering-woods') => set((state) => { const dungeon = DUNGEONS[dungeonId]; if (!dungeon || !isDungeonUnlocked(dungeon, state.progress)) return state; const unlocked = state.progress.autoHuntBossUnlocked || Object.values(state.progress.bossKillsByBoss).some((kills) => kills > 0) || state.progress.firstBossKill; if (!unlocked) { pushNotification(state, 'Auto Hunt unlocks after the first dungeon boss kill', 'warning'); return state } state.progress.autoHuntBossUnlocked = true; state.progress.autoHuntBossByDungeon[dungeonId] = !state.progress.autoHuntBossByDungeon[dungeonId]; return state }),
   killCurrentEnemy: () => set((state) => { if (state.combat.enemyId) { state.combat.enemyHp = 0; finishEnemy(state) } return state }),
   spawnDebugEnemy: (enemyId) => set((state) => { if (!state.combat.active) { state.combat.active = true; state.combat.dungeonId = 'whispering-woods' } spawnEnemy(state, enemyId); pushNotification(state, `${MONSTERS[enemyId].name} spawned by Developer Tools`, 'warning'); return state }),
   setEnemyHealthPercent: (percent) => set((state) => { if (state.combat.enemyId) { const previousHp = state.combat.enemyHp; const nextHp = Math.max(0, Math.min(state.combat.enemyMaxHp, state.combat.enemyMaxHp * clamp(percent, 0, 100) / 100)); state.combat.enemyHp = nextHp; if (nextHp !== previousHp) { const context = { source: { actor: 'player' as const, kind: 'system' as const, sourceId: 'developer-health-control' }, eventTarget: 'enemy' as const, changedActor: 'enemy' as const, sourceTags: [], previousHp, currentHp: nextHp, previousHpPercent: previousHp / Math.max(1, state.combat.enemyMaxHp) * 100, currentHpPercent: nextHp / Math.max(1, state.combat.enemyMaxHp) * 100 }; runCombatTriggers(state, 'enemy', 'on-hp-threshold', context, executeCombatEffects); runCombatTriggers(state, 'player', 'on-hp-threshold', context, executeCombatEffects) } } return state }),
@@ -219,7 +218,6 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   forceEnemyAction: (actionId) => set((state) => { if (state.combat.enemyId) forceResolveEnemyActionRuntime(state, actionId, executeCombatEffects); return state }),
   startEnemyAction: (actionId) => set((state) => { if (state.combat.enemyId) startEnemyActionRuntime(state, actionId, executeCombatEffects); return state }),
   resolveActiveEnemyAction: () => set((state) => { resolveActiveEnemyActionRuntime(state, executeCombatEffects); return state }),
-  interruptEnemyAction: () => set((state) => { interruptEnemyActionRuntime(state, executeCombatEffects); return state }),
   advanceEnemyAction: () => set((state) => { startNextEnemyActionRuntime(state, executeCombatEffects); return state }),
   setEnemyActionPattern: (patternId) => set((state) => { setEnemyActionPatternRuntime(state, patternId); return state }),
   resetEnemyActionPattern: () => set((state) => { if (state.combat.enemyId) setEnemyActionPatternRuntime(state, MONSTERS[state.combat.enemyId].defaultActionPatternId); return state }),
@@ -283,7 +281,16 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
 
 // Presets replace gameplay state for developer testing; recent acquisition UI state is session-only too.
 const presetGameplayState = useGameStore.getState().preset
-useGameStore.setState({ preset: (name) => { presetGameplayState(name); useGameStore.setState({ recentAcquisitions: [] }) } })
+const completeDungeonPreset = () => useGameStore.setState((state) => {
+  DUNGEON_ORDER.forEach((dungeonId) => { state.progress.bossKillsByBoss[DUNGEONS[dungeonId].boss] = 1; state.progress.autoHuntBossByDungeon[dungeonId] = true })
+  state.progress.autoHuntBossUnlocked = true
+  state.progress.firstMainBossKill = true
+  state.combat.active = true
+  state.combat.dungeonId = 'abandoned-catacombs'
+  state.combat.threatCleared = DUNGEONS['abandoned-catacombs'].threatRequired
+  spawnEnemy(state, DUNGEONS['abandoned-catacombs'].boss)
+})
+useGameStore.setState({ preset: (name) => { presetGameplayState(name); if (name === 'chapter-complete') completeDungeonPreset(); useGameStore.setState({ recentAcquisitions: [] }) } })
 
 export const useGameStoreSelectors = { selectUsedFocus, selectFreeFocus }
 export { selectUsedFocus, selectFreeFocus }

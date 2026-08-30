@@ -5,7 +5,7 @@ import { SPELLS } from '../../game/content/spells/spells'
 import { STATUS_DEFINITIONS } from '../../game/content/statuses'
 import { formatSpellRank, getSpellAutoCastFocusCost, getSpellPresetFocusBreakdown, type SpellRank } from '../../game/systems/spells'
 import { getSpellEquipmentBonusPreview } from '../../game/systems/spells/spellEquipmentPreview'
-import type { CombatEffect, Magnitude } from '../../game/systems/combat/combatTypes'
+import type { CombatEffect } from '../../game/systems/combat/combatTypes'
 import type { GameState, SpellId } from '../../game/types'
 import { formatTime } from '../../game/utils'
 import { Button, Card, GameTooltip, Status } from '../../components/ui'
@@ -14,6 +14,8 @@ import { SpellIcon } from './SpellIcon'
 import type { SpellBrowserEntry } from './spellBrowserSelectors'
 import { SpellEquipmentBonuses } from './SpellEquipmentBonuses'
 import { SpellRankPath } from './SpellRankPath'
+import { SpellEffectTooltip } from './SpellEffectTooltip'
+import { buildSpellEffectTooltipModel, formatSpellMagnitude, getSpellEffectCategory } from './spellEffectTooltipModel'
 
 export function SpellInspector({ entry, state, rankPathOpen, onToggleRankPath, onToggleAutoCast }: {
   entry: SpellBrowserEntry | null
@@ -54,8 +56,8 @@ export function SpellInspector({ entry, state, rankPathOpen, onToggleRankPath, o
       <div className="spell-inspector-main">
         <div className="spell-inspector-title"><span className="spell-inspector-icon-frame"><SpellIcon school={spell.school} size="large" /></span><div><div className="spell-inspector-meta">{school.name.toUpperCase()} · {formatSpellRank(rank).toUpperCase()}</div><h2>{spell.name}</h2><p>Learned at Lv{spell.unlockLevel}</p></div></div>
         <p className="spell-inspector-description">{spell.description}</p>
-        <div className="spell-inspector-section"><div className="section-label">CORE CASTING</div><div className="spell-core-grid"><Metric icon={<Droplet size={14} />} label="Mana" value={`${spell.manaCost}`} description="Mana spent when this Spell is cast." /><Metric icon={<Clock3 size={14} />} label="Cooldown" value={formatTime(spell.cooldownMs)} description="Time before this Spell can be cast again." /><Metric icon={<CircleDot size={14} />} label="Auto-Cast Focus" value={`${focusCost}`} description="Focus reserved while this Spell is enabled for Auto-Cast." /></div></div>
-        <div className="spell-inspector-section"><div className="section-label">EFFECTS</div><div className="spell-effects">{spell.effects.map((effect, index) => <EffectRow effect={effect} key={`${effect.type}-${index}`} />)}</div></div>
+        <div className="spell-inspector-section"><div className="section-label">CORE CASTING</div><div className="spell-core-grid"><Metric semantic="mana" icon={<Droplet size={14} />} label="Mana" value={`${spell.manaCost}`} description="Mana spent when this Spell is cast." /><Metric semantic="time" icon={<Clock3 size={14} />} label="Cooldown" value={formatTime(spell.cooldownMs)} description="Time before this Spell can be cast again." /><Metric semantic="focus" icon={<CircleDot size={14} />} label="Auto-Cast Focus" value={`${focusCost}`} description="Focus reserved while this Spell is enabled for Auto-Cast." /></div></div>
+        <div className="spell-inspector-section"><div className="section-label">EFFECTS</div><div className="spell-effects">{spell.effects.map((effect, index) => <EffectRow state={state} spellId={spell.id} effect={effect} effectIndex={index} key={`${effect.type}-${index}`} />)}</div></div>
         <div className={`spell-autocast-card${autoCast ? ' is-active' : ''}${!canEnable ? ' is-blocked' : ''}`}><GameTooltip block accent={autoCast ? 'success' : !canEnable ? 'warning' : 'focus'} content={<TooltipContent title="Auto-Cast" description={autoCastTooltip} />}><button type="button" className="spell-autocast-control" aria-label={`Auto-Cast ${autoCast ? 'ON' : 'OFF'}`} aria-pressed={autoCast} disabled={!autoCast && !canEnable} onClick={() => onToggleAutoCast(spell.id)}><span className="spell-autocast-control-label"><span className="section-label">AUTO-CAST</span><strong>{autoCast ? 'ON' : 'OFF'}</strong></span><span className="spell-autocast-control-status">{autoCast ? 'ACTIVE' : <CircleDot size={16} aria-hidden="true" />}</span></button></GameTooltip><div className="spell-autocast-details"><strong>{conditionLabel(spell.autoCondition)}</strong><small>{autoCast ? `${focusCost} Focus reserved` : !canEnable ? `Need ${focusCost} Focus` : `${focusCost} Focus when enabled`}</small></div></div>
         <details className="spell-equipment-details"><summary><span>EQUIPMENT MODIFIERS</span>{preview.current.length ? <Status tone="success">{preview.current.length} ACTIVE</Status> : <Status>NONE</Status>}</summary><SpellEquipmentBonuses preview={preview} /></details>
         <div className="spell-rank-path-action"><span><small>RANK PROGRESSION</small><strong>{formatSpellRank(rank)} path</strong></span><GameTooltip content={<TooltipContent title="View Rank Path" description="Review the Rank I path and future Focus costs." />}><Button variant="ghost" onClick={onToggleRankPath}>VIEW RANK PATH <span aria-hidden="true">→</span></Button></GameTooltip></div>
@@ -66,46 +68,32 @@ export function SpellInspector({ entry, state, rankPathOpen, onToggleRankPath, o
 }
 
 function InspectorEyebrow({ children }: { children: React.ReactNode }) { return <div className="panel-kicker">{children}</div> }
-function Metric({ icon, label, value, description }: { icon: React.ReactNode; label: string; value: string; description: string }) { return <GameTooltip block content={<TooltipContent title={label} description={description} />}><div className="spell-core-metric"><span className="spell-core-metric-icon" aria-hidden="true">{icon}</span><small>{label}</small><strong>{value}</strong></div></GameTooltip> }
+function Metric({ icon, label, value, description, semantic }: { icon: React.ReactNode; label: string; value: string; description: string; semantic: 'mana' | 'time' | 'focus' }) { return <GameTooltip block accent={semantic === 'mana' ? 'mana' : semantic === 'focus' ? 'focus' : 'neutral'} content={<TooltipContent title={label} description={description} />}><div className="spell-core-metric"><span className={`spell-core-metric-icon ui-${semantic}`} aria-hidden="true">{icon}</span><small>{label}</small><strong className={`ui-${semantic}`}>{value}</strong></div></GameTooltip> }
 function conditionLabel(condition: typeof SPELLS[SpellId]['autoCondition']) {
   if (!condition || condition.type === 'always') return 'Always'
   if (condition.type === 'health-below') return `Health below ${condition.percent}%`
   return `Barrier below ${condition.value}`
 }
-function magnitudeLabel(magnitude: Magnitude) {
-  if (magnitude.type === 'flat') return `${magnitude.value}`
-  if (magnitude.type === 'school-level') return `${magnitude.base} + ${magnitude.perLevel} per ${SCHOOLS[magnitude.school].name} School Level`
-  if (magnitude.type === 'source-max-health-percent') return `${magnitude.value * 100}% of Max Health`
-  if (magnitude.type === 'target-max-health-percent') return `${magnitude.value * 100}% of target Max Health`
-  if (magnitude.type === 'source-basic-damage-percent') return `${magnitude.value * 100}% of Basic Damage`
-  return `${magnitude.value * 100}% of missing Health`
+function EffectRow({ state, spellId, effect, effectIndex }: { state: Pick<GameState, 'schools' | 'progress' | 'equipment' | 'activities'> & { player: Pick<GameState['player'], 'maxFocus'>; debug: Pick<GameState['debug'], 'allowFocusOverCap'> }; spellId: SpellId; effect: CombatEffect; effectIndex: number }) {
+  const model = buildSpellEffectTooltipModel(state, spellId, effectIndex)
+  return <GameTooltip block delay={120} placement="right" accent={model.categoryKey === 'heal' ? 'success' : model.categoryKey === 'barrier' ? 'mana' : model.categoryKey === 'debuff' ? 'warning' : 'elemental'} content={<SpellEffectTooltip model={model} />}>
+    <div tabIndex={0} aria-label={`${model.category}: ${model.title}`} className={`spell-effect-row effect-${model.categoryKey}`}><span className="spell-effect-icon" aria-hidden="true"><EffectIcon categoryKey={model.categoryKey} effect={effect} /></span><div><strong>{model.category}</strong><b>{effectLabel(effect)}</b><span>{effectDescription(effect)}</span></div></div>
+  </GameTooltip>
 }
-function EffectRow({ effect }: { effect: CombatEffect }) {
-  const category = effectCategory(effect)
-  return <div className={`spell-effect-row effect-${category.toLocaleLowerCase()}`}><span className="spell-effect-icon" aria-hidden="true"><EffectIcon effect={effect} /></span><div><strong>{category}</strong><b>{effectLabel(effect)}</b><span>{effectDescription(effect)}</span></div></div>
-}
-function EffectIcon({ effect }: { effect: CombatEffect }) {
+function EffectIcon({ effect, categoryKey }: { effect: CombatEffect; categoryKey: ReturnType<typeof getSpellEffectCategory>['categoryKey'] }) {
   if (effect.type === 'deal-damage') return <Flame size={16} />
   if (effect.type === 'heal') return <HeartPulse size={16} />
   if (effect.type === 'gain-barrier') return <Shield size={16} />
-  if (effect.type === 'apply-status' && effect.statusId === 'chilled') return <Snowflake size={16} />
-  if (effect.type === 'apply-status' && effect.tags?.includes('debuff')) return <Zap size={16} />
+  if (categoryKey === 'control') return <Snowflake size={16} />
+  if (categoryKey === 'dot') return <Flame size={16} />
+  if (categoryKey === 'debuff') return <Zap size={16} />
   return <Sparkles size={16} />
 }
-function effectCategory(effect: CombatEffect) {
-  if (effect.type === 'deal-damage') return 'DAMAGE'
-  if (effect.type === 'heal') return 'HEAL'
-  if (effect.type === 'gain-barrier') return 'BARRIER'
-  if (effect.type === 'apply-status') return effect.tags?.includes('debuff') ? 'DEBUFF' : effect.tags?.includes('buff') ? 'BUFF' : 'STATUS'
-  if (effect.type === 'restore-resource') return 'RESTORE'
-  if (effect.type === 'drain-resource') return 'DRAIN'
-  return 'EFFECT'
-}
 function effectLabel(effect: CombatEffect) {
-  if (effect.type === 'deal-damage') return magnitudeLabel(effect.magnitude)
-  if (effect.type === 'heal') return magnitudeLabel(effect.magnitude)
-  if (effect.type === 'gain-barrier') return magnitudeLabel(effect.magnitude)
-  if (effect.type === 'apply-status') return STATUS_DEFINITIONS[effect.statusId]?.name ?? effect.statusId
+  if (effect.type === 'deal-damage') return formatSpellMagnitude(effect.magnitude)
+  if (effect.type === 'heal') return formatSpellMagnitude(effect.magnitude)
+  if (effect.type === 'gain-barrier') return formatSpellMagnitude(effect.magnitude)
+  if (effect.type === 'apply-status') return effect.statusId[0].toUpperCase() + effect.statusId.slice(1)
   if (effect.type === 'restore-resource') return 'Resource restored'
   if (effect.type === 'drain-resource') return 'Resource drained'
   return 'Additional effect'

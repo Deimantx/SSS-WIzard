@@ -82,15 +82,15 @@ export function TooltipProvider({ children }: { children: ReactNode }) {
   return <TooltipContext.Provider value={value}><>{children}</>{active && typeof document !== 'undefined' && createPortal(<div ref={layerRef} id={active.tooltipId} className={`game-tooltip game-tooltip-${active.accent} ${position.top > 0 ? 'is-positioned' : ''}`} role="tooltip" style={{ top: position.top, left: position.left }}>{active.content}</div>, document.body)}</TooltipContext.Provider>
 }
 
-interface GameTooltipProps { children: ReactNode; content: ReactNode; accent?: TooltipAccent; placement?: TooltipPlacement; className?: string; block?: boolean; disabled?: boolean }
+interface GameTooltipProps { children: ReactNode; content: ReactNode; accent?: TooltipAccent; placement?: TooltipPlacement; className?: string; block?: boolean; disabled?: boolean; delay?: number }
 
-export function GameTooltip({ children, content, accent = 'neutral', placement = 'top', className = '', block = false, disabled = false }: GameTooltipProps) {
+export function GameTooltip({ children, content, accent = 'neutral', placement = 'top', className = '', block = false, disabled = false, delay = 500 }: GameTooltipProps) {
   const context = useContext(TooltipContext)
   const fallback = useFallbackTooltip(context === null)
   const triggerRef = useRef<HTMLSpanElement>(null)
   const id = useId().replace(/:/g, '')
   const tooltipId = `game-tooltip-${id}`
-  const request = () => { if (!disabled && content) (context ?? fallback).request({ id, element: triggerRef.current!, content, accent, placement, tooltipId }, 500) }
+  const request = () => { if (!disabled && content) (context ?? fallback).request({ id, element: triggerRef.current!, content, accent, placement, tooltipId }, delay) }
   const leave = () => (context ?? fallback).leave(id)
   const onKeyDown = (event: KeyboardEvent<HTMLSpanElement>) => { if (event.key === 'Escape') { event.preventDefault(); (context ?? fallback).dismiss() } }
   const describedChild = isValidElement(children) ? cloneElement(children as ReactElement<{ 'aria-describedby'?: string }>, { 'aria-describedby': `${(children.props as { 'aria-describedby'?: string })['aria-describedby'] ?? ''} ${tooltipId}`.trim() }) : children

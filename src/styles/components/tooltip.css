@@ -3,18 +3,36 @@
 .game-tooltip { position: fixed; z-index: 90; width: max-content; max-width: min(360px, calc(100vw - 16px)); padding: 8px 10px; border: 1px solid var(--tooltip-border, var(--ui-border-strong)); border-left: 2px solid var(--tooltip-accent, var(--ui-accent)); border-radius: 7px; color: var(--tooltip-text, var(--ui-text)); background: var(--tooltip-bg, var(--ui-panel-strong)); box-shadow: 0 14px 34px var(--ui-shadow); font: var(--text-xs) var(--font-sans); line-height: 1.45; pointer-events: none; opacity: 0; transform: translateY(3px); transition: opacity 130ms ease, transform 130ms ease; }
 .game-tooltip.is-positioned { opacity: 1; transform: translateY(0); }
 .game-tooltip-content { display: grid; gap: 4px; min-width: 180px; max-width: 260px; }
-.game-tooltip-content.game-tooltip-rich { width: min(300px, calc(100vw - 28px)); max-width: 300px; }
+.game-tooltip-content.game-tooltip-rich { width: min(320px, calc(100vw - 28px)); max-width: 340px; }
 .game-tooltip-content > strong { color: var(--tooltip-title, var(--ui-text)); font: var(--text-xs) var(--font-mono); letter-spacing: .02em; }
 .game-tooltip-content > p { margin: 0; color: var(--tooltip-muted, var(--ui-text-muted)); font-size: var(--text-micro); line-height: 1.5; }
-.game-tooltip-content .tooltip-row { display: flex; justify-content: space-between; gap: 16px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
-.game-tooltip-content .tooltip-row b { color: var(--ui-text-soft); font-weight: 500; text-align: right; }
+.game-tooltip-content .tooltip-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 16px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
+.game-tooltip-content .tooltip-row b { max-width: 190px; color: var(--ui-text-soft); font-weight: 500; text-align: right; overflow-wrap: anywhere; }
+.game-tooltip-content .tooltip-row b.semantic-mana { color: var(--semantic-mana); }
+.game-tooltip-content .tooltip-row b.semantic-time { color: var(--semantic-time); }
+.game-tooltip-content .tooltip-row b.semantic-focus { color: var(--semantic-focus); }
+.game-tooltip-content .tooltip-row b.semantic-positive { color: var(--ui-success); }
+.game-tooltip-content .tooltip-row b.semantic-negative { color: var(--ui-danger); }
+.game-tooltip-content .tooltip-row b.semantic-school { color: var(--effect-accent, var(--ui-text-soft)); }
+.spell-effect-tooltip { display: grid; gap: 5px; }
+.spell-effect-tooltip-name { color: var(--ui-text); font-size: var(--text-xs); }
+.spell-effect-tooltip-description { margin: 0; color: var(--ui-text-muted); font-size: var(--text-micro); line-height: 1.45; }
+.spell-effect-tooltip-rows { display: grid; gap: 4px; margin-top: 2px; padding-top: 6px; border-top: 1px solid var(--ui-border); }
+.spell-tooltip-category { color: var(--effect-accent, var(--ui-accent)); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; }
+.spell-effect-tooltip.effect-damage, .spell-tooltip-category.effect-damage { --effect-accent: var(--ui-secondary); }
+.spell-effect-tooltip.effect-heal, .spell-tooltip-category.effect-heal { --effect-accent: var(--ui-success); }
+.spell-effect-tooltip.effect-barrier, .spell-tooltip-category.effect-barrier { --effect-accent: var(--semantic-mana); }
+.spell-effect-tooltip.effect-buff, .spell-tooltip-category.effect-buff { --effect-accent: var(--ui-accent); }
+.spell-effect-tooltip.effect-debuff, .spell-tooltip-category.effect-debuff { --effect-accent: var(--ui-danger); }
+.spell-effect-tooltip.effect-control, .spell-tooltip-category.effect-control { --effect-accent: #83c9ef; }
+.spell-effect-tooltip.effect-dot, .spell-tooltip-category.effect-dot { --effect-accent: var(--ui-warning); }
 .game-tooltip-content .tooltip-section { display: grid; gap: 3px; margin-top: 5px; padding-top: 5px; border-top: 1px solid var(--ui-border); }
 .game-tooltip-content .tooltip-section small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; }
 .game-tooltip-content .tooltip-section p { margin: 0; color: var(--ui-text-soft); font-size: var(--text-micro); line-height: 1.45; }
 .game-tooltip-neutral { --tooltip-accent: var(--ui-accent); }
-.game-tooltip-mana { --tooltip-accent: var(--resource-mana); }
+.game-tooltip-mana { --tooltip-accent: var(--semantic-mana); }
 .game-tooltip-health { --tooltip-accent: var(--resource-health); }
-.game-tooltip-focus { --tooltip-accent: var(--resource-focus); }
+.game-tooltip-focus { --tooltip-accent: var(--semantic-focus); }
 .game-tooltip-success { --tooltip-accent: var(--ui-success); }
 .game-tooltip-warning { --tooltip-accent: var(--ui-warning); }
 .game-tooltip-danger { --tooltip-accent: var(--ui-danger); }

@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ScreenErrorBoundary } from '../components/errors/ScreenErrorBoundary'
@@ -207,6 +207,38 @@ describe('screen smoke coverage', () => {
     const toggle = screen.getByRole('button', { name: 'Auto-Cast OFF' })
     expect(toggle.hasAttribute('disabled')).toBe(true)
     expect(screen.getByText('Need 10 Focus')).toBeTruthy()
+  })
+
+  it('derives effect micro-icons and exposes rich mouse and keyboard effect tooltips', async () => {
+    const user = userEvent.setup()
+    const progress = useGameStore.getState().progress
+    useGameStore.setState({ progress: { ...progress, spellRanks: { ignite: 1 } } })
+    render(<GameShell />)
+    await user.click(navItem('Magic Schools'))
+
+    const igniteTile = screen.getByRole('button', { name: /Ignite,/ })
+    const tileShell = igniteTile.closest('.spell-browser-tile-shell')!
+    const microIcons = tileShell.querySelectorAll('.spell-browser-effect-icon')
+    expect(microIcons).toHaveLength(2)
+    expect(microIcons[0].getAttribute('aria-label')).toBe('Damage')
+    expect(microIcons[1].getAttribute('aria-label')).toBe('DoT')
+    await user.hover(microIcons[1])
+    expect((await screen.findByRole('tooltip')).textContent).toContain('DoT')
+    await user.unhover(microIcons[1])
+    await waitFor(() => expect(screen.queryByRole('tooltip')).toBeNull())
+
+    await user.click(igniteTile)
+    const effectRow = screen.getByLabelText('DOT: Burning')
+    await user.hover(effectRow)
+    const tooltip = await screen.findByRole('tooltip')
+    expect(tooltip.textContent).toContain('Burning')
+    expect(tooltip.textContent).toContain('Damage Per Tick')
+    expect(tooltip.textContent).toContain('1.0s')
+    expect(tooltip.textContent).toContain('Source')
+    effectRow.focus()
+    await waitFor(() => expect(screen.getByRole('tooltip').textContent).toContain('Burning'))
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('tooltip')).toBeNull()
   })
 
   it('creates, saves, and applies an Auto-Cast preset from the Schools screen', async () => {

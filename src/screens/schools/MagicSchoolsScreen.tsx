@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useGameStore } from '../../store/gameStore'
+import { dismissGameTooltips } from '../../components/ui/tooltip/Tooltip'
 import { EditableGrid } from '../../ui/layout-editor/EditableGrid'
 import { SpellBrowser } from './SpellBrowser'
 import { SpellInspector } from './SpellInspector'
@@ -36,9 +37,9 @@ export function MagicSchoolsScreenV2() {
   return <div className="screen-content schools-screen">
     <div className="screen-header schools-screen-header"><div><div className="eyebrow">MAGIC SCHOOL ARCHIVE</div><h1>Magic Schools</h1><p>Browse your known Spells, inspect their effects and configure reusable Auto-Cast presets.</p></div></div>
     <EditableGrid screen="schools" panels={[
-      { id: 'schools-browser', content: <SpellBrowser state={browserState} filters={filters} onFiltersChange={setFilters} selectedEntryId={selectedEntryId} onSelect={(id) => { setSelectedEntryId(id); setRankPathOpen(false) }} /> },
-      { id: 'schools-inspector', content: <SpellInspector entry={selectedEntry} state={inspectorState} rankPathOpen={rankPathOpen} onToggleRankPath={() => setRankPathOpen((open) => !open)} onToggleAutoCast={toggleAutoCast} /> },
-      { id: 'schools-presets', content: <SpellPresetSummary onManage={() => { setRankPathOpen(false); setPresetsOpen(true) }} /> },
+      { id: 'schools-browser', content: <SpellBrowser state={browserState} filters={filters} onFiltersChange={setFilters} selectedEntryId={selectedEntryId} onSelect={(id) => { dismissGameTooltips(); setSelectedEntryId(id); setRankPathOpen(false) }} /> },
+      { id: 'schools-inspector', content: <SpellInspector entry={selectedEntry} state={inspectorState} rankPathOpen={rankPathOpen} onToggleRankPath={() => { dismissGameTooltips(); setRankPathOpen((open) => !open) }} onToggleAutoCast={toggleAutoCast} /> },
+      { id: 'schools-presets', content: <SpellPresetSummary onManage={() => { dismissGameTooltips(); setRankPathOpen(false); setPresetsOpen(true) }} /> },
     ]} />
     <SpellPresetDialog open={presetsOpen} onClose={() => setPresetsOpen(false)} />
   </div>

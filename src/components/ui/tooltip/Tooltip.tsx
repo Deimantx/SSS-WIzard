@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom'
 export type TooltipAccent = 'neutral' | 'mana' | 'health' | 'focus' | 'success' | 'warning' | 'danger' | 'elemental'
 export type TooltipPlacement = 'top' | 'bottom' | 'left' | 'right'
 
-interface TooltipRequest { id: string; element: HTMLElement; content: ReactNode; accent: TooltipAccent; placement: TooltipPlacement; tooltipId: string }
+interface TooltipRequest { id: string; element: HTMLElement; content: ReactNode; accent: TooltipAccent; placement: TooltipPlacement; tooltipId: string; wide: boolean }
 interface TooltipContextValue { request: (request: TooltipRequest, delay?: number) => void; leave: (id: string) => void; dismiss: () => void; touch: (request: TooltipRequest) => void }
 const TooltipContext = createContext<TooltipContextValue | null>(null)
 let providerDismiss: (() => void) | null = null
@@ -62,8 +62,8 @@ export function TooltipProvider({ children }: { children: ReactNode }) {
       if (!layer) return
       const gap = 8; const margin = 8
       const fits = { top: trigger.top - layer.height - gap >= margin, bottom: trigger.bottom + layer.height + gap <= innerHeight - margin, left: trigger.left - layer.width - gap >= margin, right: trigger.right + layer.width + gap <= innerWidth - margin }
-      const opposite: Record<TooltipPlacement, TooltipPlacement> = { top: 'bottom', bottom: 'top', left: 'right', right: 'left' }
-      const side = fits[active.placement] ? active.placement : fits[opposite[active.placement]] ? opposite[active.placement] : active.placement
+      const fallbackOrder: Record<TooltipPlacement, TooltipPlacement[]> = { top: ['top', 'bottom', 'right', 'left'], bottom: ['bottom', 'top', 'right', 'left'], left: ['left', 'right', 'top', 'bottom'], right: ['right', 'left', 'top', 'bottom'] }
+      const side = fallbackOrder[active.placement].find((candidate) => fits[candidate]) ?? active.placement
       let top = trigger.top - layer.height - gap
       let left = trigger.left + (trigger.width - layer.width) / 2
       if (side === 'bottom') top = trigger.bottom + gap
@@ -79,22 +79,22 @@ export function TooltipProvider({ children }: { children: ReactNode }) {
   }, [active])
 
   const value = { request, leave, dismiss, touch }
-  return <TooltipContext.Provider value={value}><>{children}</>{active && typeof document !== 'undefined' && createPortal(<div ref={layerRef} id={active.tooltipId} className={`game-tooltip game-tooltip-${active.accent} ${position.top > 0 ? 'is-positioned' : ''}`} role="tooltip" style={{ top: position.top, left: position.left }}>{active.content}</div>, document.body)}</TooltipContext.Provider>
+  return <TooltipContext.Provider value={value}><>{children}</>{active && typeof document !== 'undefined' && createPortal(<div ref={layerRef} id={active.tooltipId} className={`game-tooltip game-tooltip-${active.accent}${active.wide ? ' game-tooltip-wide' : ''} ${position.top > 0 ? 'is-positioned' : ''}`} role="tooltip" style={{ top: position.top, left: position.left }}>{active.content}</div>, document.body)}</TooltipContext.Provider>
 }
 
-interface GameTooltipProps { children: ReactNode; content: ReactNode; accent?: TooltipAccent; placement?: TooltipPlacement; className?: string; block?: boolean; disabled?: boolean; delay?: number }
+interface GameTooltipProps { children: ReactNode; content: ReactNode; accent?: TooltipAccent; placement?: TooltipPlacement; className?: string; block?: boolean; disabled?: boolean; delay?: number; wide?: boolean }
 
-export function GameTooltip({ children, content, accent = 'neutral', placement = 'top', className = '', block = false, disabled = false, delay = 500 }: GameTooltipProps) {
+export function GameTooltip({ children, content, accent = 'neutral', placement = 'top', className = '', block = false, disabled = false, delay = 500, wide = false }: GameTooltipProps) {
   const context = useContext(TooltipContext)
   const fallback = useFallbackTooltip(context === null)
   const triggerRef = useRef<HTMLSpanElement>(null)
   const id = useId().replace(/:/g, '')
   const tooltipId = `game-tooltip-${id}`
-  const request = () => { if (!disabled && content) (context ?? fallback).request({ id, element: triggerRef.current!, content, accent, placement, tooltipId }, delay) }
+  const request = () => { if (!disabled && content) (context ?? fallback).request({ id, element: triggerRef.current!, content, accent, placement, tooltipId, wide }, delay) }
   const leave = () => (context ?? fallback).leave(id)
   const onKeyDown = (event: KeyboardEvent<HTMLSpanElement>) => { if (event.key === 'Escape') { event.preventDefault(); (context ?? fallback).dismiss() } }
   const describedChild = isValidElement(children) ? cloneElement(children as ReactElement<{ 'aria-describedby'?: string }>, { 'aria-describedby': `${(children.props as { 'aria-describedby'?: string })['aria-describedby'] ?? ''} ${tooltipId}`.trim() }) : children
-  return <span ref={triggerRef} className={`game-tooltip-trigger ${block ? 'block' : ''} ${className}`} onPointerEnter={(event) => event.pointerType !== 'touch' && request()} onPointerLeave={(event) => event.pointerType !== 'touch' && leave()} onFocusCapture={request} onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) leave() }} onPointerDown={(event) => { if (event.pointerType === 'touch' && triggerRef.current) (context ?? fallback).touch({ id, element: triggerRef.current, content, accent, placement, tooltipId }) }} onKeyDown={onKeyDown}>{describedChild}</span>
+  return <span ref={triggerRef} className={`game-tooltip-trigger ${block ? 'block' : ''} ${className}`} onPointerEnter={(event) => event.pointerType !== 'touch' && request()} onPointerLeave={(event) => event.pointerType !== 'touch' && leave()} onFocusCapture={request} onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) leave() }} onPointerDown={(event) => { if (event.pointerType === 'touch' && triggerRef.current) (context ?? fallback).touch({ id, element: triggerRef.current, content, accent, placement, tooltipId, wide }) }} onKeyDown={onKeyDown}>{describedChild}</span>
 }
 
 function useFallbackTooltip(enabled: boolean): TooltipContextValue {

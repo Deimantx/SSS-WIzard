@@ -241,6 +241,70 @@ describe('screen smoke coverage', () => {
     expect(screen.queryByRole('tooltip')).toBeNull()
   })
 
+  it('shows the full spell tooltip and keeps prioritized Inspector details inline', async () => {
+    const user = userEvent.setup()
+    const progress = useGameStore.getState().progress
+    const equipment = useGameStore.getState().equipment
+    useGameStore.setState({ progress: { ...progress, spellRanks: { 'fire-bolt': 1, fortify: 1, frostbite: 1 } }, equipment: { ...equipment, weapon: 'ember-staff' } })
+    render(<GameShell />)
+    await user.click(navItem('Magic Schools'))
+
+    const fireBoltTile = screen.getByRole('button', { name: /Fire Bolt,/ })
+    await user.hover(fireBoltTile)
+    const spellTooltip = await screen.findByRole('tooltip')
+    expect(spellTooltip.classList.contains('game-tooltip-wide')).toBe(true)
+    expect(spellTooltip.textContent).toContain('FIRE · RANK I')
+    expect(spellTooltip.textContent).toContain('RANK I')
+    expect(spellTooltip.textContent).toContain('Fire Bolt')
+    expect(spellTooltip.textContent).toContain('MANA')
+    expect(spellTooltip.textContent).toContain('12')
+    expect(spellTooltip.textContent).toContain('COOLDOWN')
+    expect(spellTooltip.textContent).toContain('3.5s')
+    expect(spellTooltip.textContent).toContain('AUTO-CAST')
+    expect(spellTooltip.textContent).toContain('10 Focus')
+    expect(spellTooltip.textContent).toContain('Base Damage')
+    expect(spellTooltip.textContent).toContain('Current Base Preview')
+    expect(spellTooltip.textContent).toContain('Ember Staff')
+    expect(spellTooltip.textContent).not.toContain('Select to inspect this Spell')
+    expect(spellTooltip.textContent).not.toContain('Source')
+    await user.unhover(fireBoltTile)
+    await waitFor(() => expect(screen.queryByRole('tooltip')).toBeNull())
+
+    await user.click(screen.getByRole('button', { name: /Fortify,/ }))
+    const fortifyRow = screen.getByLabelText('BUFF: Fortified')
+    expect(fortifyRow.textContent).toContain('Damage Taken')
+    expect(fortifyRow.textContent).toContain('-15%')
+    expect(fortifyRow.textContent).toContain('Duration')
+    expect(fortifyRow.textContent).toContain('8.0s')
+    expect(fortifyRow.textContent).toContain('Target')
+    expect(fortifyRow.textContent).toContain('Self')
+    await user.hover(fortifyRow)
+    expect((await screen.findByRole('tooltip')).textContent).toContain('Source')
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('tooltip')).toBeNull()
+
+    await user.click(screen.getByRole('button', { name: /Frostbite,/ }))
+    expect(screen.getByLabelText('DAMAGE: Water Damage')).toBeTruthy()
+    expect(screen.getByLabelText('CONTROL: Chilled')).toBeTruthy()
+  })
+
+  it('keeps locked spell entries secret in their hover copy', async () => {
+    const user = userEvent.setup()
+    const progress = useGameStore.getState().progress
+    useGameStore.setState({ progress: { ...progress, spellRanks: { 'fire-bolt': 1 } } })
+    render(<GameShell />)
+    await user.click(navItem('Magic Schools'))
+    await user.click(screen.getByRole('checkbox', { name: 'Unlocked Only' }))
+
+    const lockedTile = screen.getAllByRole('button', { name: /Locked Fire spell/ })[0]
+    await user.hover(lockedTile)
+    const tooltip = await screen.findByRole('tooltip')
+    expect(tooltip.textContent).toContain('Locked spell')
+    expect(tooltip.textContent).not.toContain('Base Damage')
+    expect(tooltip.textContent).not.toContain('Current Base Preview')
+    expect(tooltip.textContent).not.toContain('Fireball')
+  })
+
   it('creates, saves, and applies an Auto-Cast preset from the Schools screen', async () => {
     const user = userEvent.setup()
     const progress = useGameStore.getState().progress

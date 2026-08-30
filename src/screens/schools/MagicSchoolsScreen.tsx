@@ -18,7 +18,7 @@ export function MagicSchoolsScreenV2() {
   const maxFocus = useGameStore((state) => state.player.maxFocus)
   const allowFocusOverCap = useGameStore((state) => state.debug.allowFocusOverCap)
   const toggleAutoCast = useGameStore((state) => state.toggleAutoCast)
-  const browserState = useMemo(() => ({ schools, progress, activities }), [schools, progress, activities])
+  const browserState = useMemo(() => ({ schools, progress, equipment, activities }), [schools, progress, equipment, activities])
   const inspectorState = useMemo(() => ({ schools, progress, equipment, activities, player: { maxFocus }, debug: { allowFocusOverCap } }), [schools, progress, equipment, activities, maxFocus, allowFocusOverCap])
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null)

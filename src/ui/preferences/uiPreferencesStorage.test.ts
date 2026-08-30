@@ -10,15 +10,15 @@ describe('screen UI preferences', () => {
 
     expect(preferences.screenState.inventory).toEqual({ currentNeedsOpen: true, sourceOpen: false, usedInOpen: true })
     expect(preferences.screenState.transmutation).toEqual({ selectedRecipeId: 'fire-fragment', recipeFilter: 'all', usedInOpen: true, collapsedCategories: { elemental: false, material: false, equipment: false, special: false } })
-    expect(preferences.screenState.combat).toEqual({ combatLogFontSize: 'medium', combatLogCollapsed: false, lastExpandedCombatLogH: 8 })
+    expect(preferences.screenState.combat).toEqual({ combatLogFontSize: 'medium', combatLogCollapsed: false, lastExpandedCombatLogH: 7, combatDetailsMode: 'damage-done' })
   })
 
   it('validates Combat Log font and collapse preferences independently of gameplay', () => {
     const preferences = normalizeUiPreferences({ screenState: { combat: { combatLogFontSize: 'huge', combatLogCollapsed: 'yes', lastExpandedCombatLogH: -4 } } })
-    expect(preferences.screenState.combat).toEqual({ combatLogFontSize: 'medium', combatLogCollapsed: false, lastExpandedCombatLogH: 2 })
+    expect(preferences.screenState.combat).toEqual({ combatLogFontSize: 'medium', combatLogCollapsed: false, lastExpandedCombatLogH: 2, combatDetailsMode: 'damage-done' })
 
     setUiPreferences({ screenState: { combat: { combatLogFontSize: 'xlarge', combatLogCollapsed: true, lastExpandedCombatLogH: 12 } } })
-    expect(loadUiPreferences().screenState.combat).toEqual({ combatLogFontSize: 'xlarge', combatLogCollapsed: true, lastExpandedCombatLogH: 12 })
+    expect(loadUiPreferences().screenState.combat).toEqual({ combatLogFontSize: 'xlarge', combatLogCollapsed: true, lastExpandedCombatLogH: 12, combatDetailsMode: 'damage-done' })
   })
 
   it('normalizes malformed screen preferences without affecting gameplay', () => {

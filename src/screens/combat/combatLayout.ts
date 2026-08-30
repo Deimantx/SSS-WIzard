@@ -4,9 +4,10 @@ import { GRID_COLUMNS, GRID_MARGIN, GRID_ROW_HEIGHT } from '../../ui/layout-edit
 const STAGE_ID = 'combat-stage'
 const SPELL_DECK_ID = 'combat-spell-deck'
 const LOG_ID = 'combat-log'
+const DETAILS_ID = 'combat-details'
 export const DEFAULT_COMBAT_SPELL_DECK_H = 7
 export const MAX_ADAPTIVE_COMBAT_SPELL_DECK_H = 9
-export const DEFAULT_COMBAT_LOG_H = 8
+export const DEFAULT_COMBAT_LOG_H = 7
 export const COMPACT_COMBAT_LOG_H = 2
 
 export interface AdaptiveCombatLayoutOptions {
@@ -43,6 +44,7 @@ export function getAdaptiveCombatLayout(layout: Layout, options: AdaptiveCombatL
     if (item.i === STAGE_ID) return { ...item, h: requiredStageHeight, x: Math.max(0, Math.min(GRID_COLUMNS - item.w, item.x)) }
     if (item.i === SPELL_DECK_ID) return { ...item, y: deckY, h: deckHeight }
     if (item.i === LOG_ID) return { ...item, y: logY, h: logHeight }
+    if (item.i === DETAILS_ID) return { ...item, y: Math.max(item.y, logY) }
     return item
   })
   return next.every((item, index) => item.i === layout[index]?.i && item.x === layout[index]?.x && item.y === layout[index]?.y && item.w === layout[index]?.w && item.h === layout[index]?.h) ? layout : next

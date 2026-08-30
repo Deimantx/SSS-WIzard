@@ -9,7 +9,6 @@ import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { ItemIcon } from '../../components/ui/item/ItemIcon'
 import { CombatStatusStrip } from './CombatStatusStrip'
 import { CombatResource } from './CombatResource'
-import { CombatPerformanceMeters } from './CombatPerformanceMeters'
 
 export function PlayerCombatCard() {
   const health = useGameStore((state) => state.player.health)
@@ -30,6 +29,5 @@ export function PlayerCombatCard() {
     <div className="combat-resource-stack"><CombatResource icon={<Heart size={13} />} label="HP" value={`${formatNumber(health)} / ${formatNumber(maxHealth)}`} percent={health / Math.max(1, maxHealth) * 100} tone="health" /><CombatResource icon={<Droplet size={13} />} label="MANA" value={`${formatNumber(mana)} / ${formatNumber(maxMana)}`} percent={mana / Math.max(1, maxMana) * 100} tone="mana" /><CombatResource icon={<Shield size={13} />} label="BARRIER" value={`${formatNumber(playerBarrier)}${playerBarrierRemainingMs === null ? '' : ` · ${formatTime(playerBarrierRemainingMs)}`}`} percent={playerBarrier / Math.max(1, maxHealth) * 100} tone="barrier" /></div>
     <CombatStatusStrip statuses={playerStatuses} label="ACTIVE STATUSES" />
     <GameTooltip block content={<TooltipContent title="Basic Attack" description="Your equipped weapon attacks automatically. Live timing is shown in Combat Flow." />}><div className="combat-basic-attack"><div className="combat-basic-head"><span className="combat-subsection-label">BASIC ATTACK</span><span className="combat-basic-weapon"><WandSparkles size={13} aria-hidden="true" />{weapon?.name ?? 'Unarmed'}</span></div><div className="combat-basic-stats"><span>Damage<strong>{formatNumber(basicDamage)}</strong></span></div></div></GameTooltip>
-    <CombatPerformanceMeters actor="player" scope="run" />
   </section>
 }

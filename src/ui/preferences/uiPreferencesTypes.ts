@@ -1,4 +1,5 @@
 import type { ItemId, RecipeCategory, SchoolId } from '../../game/types'
+import type { CombatDetailsMode } from '../../game/presentation/combat/combatDetailsPresentation'
 
 export type UiTheme = 'default' | 'dark' | 'light' | 'custom'
 export type TextSize = 'default' | 'large' | 'extra-large'
@@ -40,6 +41,7 @@ export interface CombatScreenPreferences {
   combatLogFontSize: CombatLogFontSize
   combatLogCollapsed: boolean
   lastExpandedCombatLogH: number
+  combatDetailsMode: CombatDetailsMode
 }
 
 export interface ScreenPreferences {

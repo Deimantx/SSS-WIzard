@@ -91,6 +91,20 @@ export function loadUiLayouts(): UiLayoutDocument {
           screens.combat = {}
           continue
         }
+        if (!Object.prototype.hasOwnProperty.call(rawSource, 'combat-details') && hasUnmodifiedGeometry(rawSource['combat-stage'], { x: 0, y: 0, w: 12, h: 14 }) && hasUnmodifiedGeometry(rawSource['combat-spell-deck'], { x: 0, y: 14, w: 12, h: 7 }) && hasUnmodifiedGeometry(rawSource['combat-log'], { x: 0, y: 21, w: 12, h: 8 })) {
+          // The untouched V3.3 stack receives the new side-by-side Details dock.
+          screens.combat = {}
+          continue
+        }
+      }
+      let combatSource: Record<string, unknown> | undefined
+      if (screen === 'combat' && !Object.prototype.hasOwnProperty.call(rawSource, 'combat-details') && Object.prototype.hasOwnProperty.call(rawSource, 'combat-stage') && Object.prototype.hasOwnProperty.call(rawSource, 'combat-spell-deck') && Object.prototype.hasOwnProperty.call(rawSource, 'combat-log')) {
+        const rawLog = rawSource['combat-log'] as Partial<SavedPanelLayout>
+        const logWidth = Math.max(1, Math.round(validNumber(rawLog.w, DEFAULT_LAYOUTS.combat['combat-log'].w)))
+        const logX = Math.max(0, Math.round(validNumber(rawLog.x, DEFAULT_LAYOUTS.combat['combat-log'].x)))
+        const needsSplit = logX + logWidth > DEFAULT_LAYOUTS.combat['combat-log'].w || logX >= 7
+        const migratedLog = { ...rawLog, ...(needsSplit ? { x: 0, w: Math.min(7, logWidth) } : {}) }
+        combatSource = { ...rawSource, 'combat-log': migratedLog, 'combat-details': { ...DEFAULT_LAYOUTS.combat['combat-details'], x: 7, y: validNumber(rawLog.y, DEFAULT_LAYOUTS.combat['combat-details'].y), h: validNumber(rawLog.h, DEFAULT_LAYOUTS.combat['combat-details'].h) } }
       }
       const source = screen === 'tower-channeling' && !('channeling-pillars' in rawSource) && 'channeling-infrastructure' in rawSource
         ? { ...rawSource, 'channeling-pillars': rawSource['channeling-infrastructure'] }
@@ -101,7 +115,7 @@ export function loadUiLayouts(): UiLayoutDocument {
               'research-inspector': { ...DEFAULT_LAYOUTS['tower-research']['research-inspector'], ...panelFlags(rawSource['research-queue']) },
               'research-prepared': { ...DEFAULT_LAYOUTS['tower-research']['research-prepared'] },
             }
-          : rawSource
+          : combatSource ?? rawSource
       if (screen === 'tower-channeling' && ('channeling-main' in source || 'channeling-stats' in source)) continue
       const panels: Record<string, SavedPanelLayout> = {}
       for (const [id, value] of Object.entries(source)) { const normalized = normalizePanel(screen, id, value); if (normalized) panels[id] = normalized }

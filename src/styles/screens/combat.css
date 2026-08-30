@@ -2312,6 +2312,79 @@
 .combat-metric-tooltip-source-head span small,
 .combat-metric-tooltip-source-head > b,
 .combat-metric-tooltip-rate { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
+
+/* V3.4 compact Combat Details dock */
+.combat-details-panel {
+  container-type: inline-size;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 9px;
+  padding: 12px;
+}
+.combat-details-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; min-width: 0; }
+.combat-details-scope { margin-top: 3px; color: var(--details-mode-color, var(--ui-text-muted)); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; }
+.combat-details-mode-nav { display: grid; grid-template-columns: 25px minmax(0, 1fr) 25px; align-items: center; gap: 5px; min-width: 0; }
+.combat-details-mode-title { min-width: 0; overflow: hidden; color: var(--details-mode-color, var(--ui-text)); font: var(--text-micro) var(--font-mono); letter-spacing: .06em; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+.combat-details-mode-button { display: grid; width: 25px; height: 25px; place-items: center; padding: 0; border: 1px solid color-mix(in srgb, var(--details-mode-color, var(--ui-border-strong)) 60%, var(--ui-border)); border-radius: 5px; color: var(--details-mode-color, var(--ui-text-muted)); background: transparent; cursor: pointer; }
+.combat-details-mode-button:hover,
+.combat-details-mode-button:focus-visible { border-color: var(--details-mode-color, var(--ui-accent)); color: var(--ui-text); background: color-mix(in srgb, var(--details-mode-color, var(--ui-accent)) 12%, transparent); outline: none; }
+.combat-details-summary { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; min-width: 0; padding-bottom: 8px; border-bottom: 1px solid var(--ui-border); }
+.combat-details-summary-total,
+.combat-details-summary-rate { display: grid; min-width: 0; gap: 2px; align-content: start; }
+.combat-details-summary-total > span,
+.combat-details-summary-rate > span,
+.combat-details-secondary small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .07em; }
+.combat-details-summary-total > strong { overflow: hidden; color: var(--details-mode-color, var(--ui-text)); font: 26px/1 var(--font-mono); text-overflow: ellipsis; white-space: nowrap; }
+.combat-details-summary-rate { padding-left: 8px; border-left: 1px solid var(--ui-border); cursor: help; }
+.combat-details-summary-rate:focus-visible { outline: 1px solid var(--details-mode-color, var(--ui-accent)); outline-offset: 2px; }
+.combat-details-summary-rate > strong { color: var(--details-mode-color, var(--ui-text)); font: 17px/1.1 var(--font-mono); white-space: nowrap; }
+.combat-details-summary-rate > strong small { margin-left: 2px; color: var(--ui-text-muted); font-size: 10px; }
+.combat-details-summary-rate > em { overflow: hidden; color: var(--ui-text-muted); font: 9px var(--font-mono); font-style: normal; text-overflow: ellipsis; white-space: nowrap; }
+.combat-details-secondary { display: grid; grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
+.combat-details-secondary > .game-tooltip-trigger { min-width: 0; }
+.combat-details-secondary > .game-tooltip-trigger > span { display: grid; min-width: 0; gap: 2px; padding: 4px 5px; border: 1px solid var(--ui-border); border-radius: 4px; cursor: help; }
+.combat-details-secondary > .game-tooltip-trigger > span:focus-visible { border-color: var(--details-mode-color, var(--ui-accent)); outline: none; }
+.combat-details-secondary strong { overflow: hidden; color: var(--ui-text-soft); font: 11px var(--font-mono); text-overflow: ellipsis; white-space: nowrap; }
+.combat-details-rows { display: grid; align-content: start; gap: 4px; min-height: 0; overflow: auto; padding-right: 2px; scrollbar-color: var(--ui-border-strong) transparent; scrollbar-width: thin; }
+.combat-details-row { position: relative; display: grid; grid-template-columns: 21px 22px minmax(0, 1fr) auto auto; gap: 5px; align-items: center; min-width: 0; min-height: 31px; padding: 3px 5px 3px 3px; border: 1px solid transparent; border-radius: 5px; color: var(--ui-text-muted); cursor: help; isolation: isolate; }
+.combat-details-row:hover,
+.combat-details-row:focus-visible { border-color: var(--ui-border); background: color-mix(in srgb, var(--details-mode-color, var(--ui-text)) 5%, transparent); outline: none; }
+.combat-details-bar { position: absolute; z-index: 0; inset: 2px auto 2px 0; width: var(--details-row-percent); border-radius: 4px; background: color-mix(in srgb, var(--details-mode-color, var(--ui-accent)) 17%, transparent); pointer-events: none; }
+.combat-details-row > span:not(.combat-details-bar) { position: relative; z-index: 1; }
+.combat-details-rank { color: var(--ui-text-muted); font: 10px var(--font-mono); text-align: right; }
+.combat-details-source-icon { display: grid; width: 22px; height: 22px; place-items: center; color: currentColor; }
+.combat-details-source-icon .spell-icon-shell { transform: scale(.8); }
+.combat-details-source { display: grid; min-width: 0; gap: 1px; }
+.combat-details-source strong { overflow: hidden; color: var(--ui-text-soft); font-size: 11px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.combat-details-source small { overflow: hidden; color: var(--ui-text-muted); font: 9px var(--font-mono); text-overflow: ellipsis; white-space: nowrap; }
+.combat-details-row-total,
+.combat-details-row-percent { position: relative; z-index: 1; color: var(--ui-text); font: 11px var(--font-mono); text-align: right; white-space: nowrap; }
+.combat-details-row-percent { min-width: 42px; color: var(--ui-text-muted); font-size: 10px; }
+.combat-details-empty { display: grid; min-height: 100px; place-items: center; align-content: center; gap: 5px; color: var(--ui-text-muted); text-align: center; }
+.combat-details-empty strong { color: var(--details-mode-color, var(--ui-text-soft)); font: var(--text-micro) var(--font-mono); letter-spacing: .08em; }
+.combat-details-empty span { font-size: 10px; }
+.combat-details-empty-scope { min-height: 80px; }
+.combat-details-mode-damage-done { --details-mode-color: var(--details-damage-done); }
+.combat-details-mode-damage-taken { --details-mode-color: var(--details-damage-taken); }
+.combat-details-mode-healing { --details-mode-color: var(--details-healing); }
+@container (max-width: 520px) {
+  .combat-details-panel { padding: 10px; gap: 7px; }
+  .combat-details-head { display: grid; gap: 6px; }
+  .combat-details-mode-nav { width: 100%; }
+  .combat-details-summary-total > strong { font-size: 22px; }
+  .combat-details-row { grid-template-columns: 18px 20px minmax(0, 1fr) auto auto; gap: 4px; padding-right: 3px; }
+  .combat-details-source-icon { width: 20px; height: 20px; }
+  .combat-details-source strong { font-size: 10px; }
+  .combat-details-source small { font-size: 8px; }
+  .combat-details-row-total { font-size: 10px; }
+  .combat-details-row-percent { min-width: 36px; font-size: 9px; }
+}
+@container (max-width: 360px) {
+  .combat-details-source small { display: none; }
+  .combat-details-row-percent { min-width: 32px; }
+}
 .combat-metric-tooltip-source-head > b { white-space: nowrap; }
 .combat-metric-tooltip-bar { height: 4px; overflow: hidden; border-radius: 999px; background: color-mix(in srgb, var(--ui-text) 8%, transparent); }
 .combat-metric-tooltip-bar i { display: block; height: 100%; min-width: 1px; border-radius: inherit; background: var(--ui-warning); }

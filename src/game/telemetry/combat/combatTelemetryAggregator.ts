@@ -32,7 +32,7 @@ export const cloneCombatTelemetryScope = (scope: CombatTelemetryScope): CombatTe
   enemy: cloneActorMetrics(scope.enemy),
 })
 
-const cloneContribution = (contribution: CombatMetricSourceContribution): CombatMetricSourceContribution => ({ ...contribution })
+const cloneContribution = (contribution: CombatMetricSourceContribution): CombatMetricSourceContribution => ({ ...contribution, damageTypes: { ...contribution.damageTypes } })
 const cloneMetric = (metric: CombatMetricAggregate): CombatMetricAggregate => ({ total: metric.total, bySource: Object.fromEntries(Object.entries(metric.bySource).map(([key, contribution]) => [key, cloneContribution(contribution)])) })
 const cloneActorMetrics = (metrics: CombatActorMetrics): CombatActorMetrics => ({
   damageDone: cloneMetric(metrics.damageDone),
@@ -94,7 +94,7 @@ const contributionFor = (aggregate: CombatMetricAggregate, event: CombatEvent): 
   const key = getCombatMetricSourceKey(event)
   const existing = aggregate.bySource[key]
   if (existing) return existing
-  const contribution: CombatMetricSourceContribution = { key, ...metadata, total: 0, healthDamage: 0, barrierAbsorbed: 0, effectiveHealing: 0, overheal: 0, barrierGranted: 0, events: 0 }
+  const contribution: CombatMetricSourceContribution = { key, ...metadata, total: 0, healthDamage: 0, barrierAbsorbed: 0, effectiveHealing: 0, overheal: 0, barrierGranted: 0, events: 0, damageTypes: {} }
   aggregate.bySource[key] = contribution
   return contribution
 }
@@ -117,6 +117,7 @@ export const consumeCombatEvent = (scope: CombatTelemetryScope, event: CombatEve
       sourceContribution.total += amount
       sourceContribution.healthDamage += finite(event.healthDamage)
       sourceContribution.barrierAbsorbed += finite(event.barrierAbsorbed)
+      if (event.damageType) sourceContribution.damageTypes[event.damageType] = (sourceContribution.damageTypes[event.damageType] ?? 0) + amount
       sourceContribution.events += 1
     }
     const targetActor = event.target === 'player' || event.target === 'enemy' ? event.target : null
@@ -131,6 +132,7 @@ export const consumeCombatEvent = (scope: CombatTelemetryScope, event: CombatEve
         targetContribution.total += amount
         targetContribution.healthDamage += finite(event.healthDamage)
         targetContribution.barrierAbsorbed += finite(event.barrierAbsorbed)
+        if (event.damageType) targetContribution.damageTypes[event.damageType] = (targetContribution.damageTypes[event.damageType] ?? 0) + amount
         targetContribution.events += 1
       }
     }
@@ -160,7 +162,7 @@ export const consumeCombatEvent = (scope: CombatTelemetryScope, event: CombatEve
     const key = getCombatMetricSourceKey(event)
     const metadata = metadataForEvent(event)
     if (!metadata) return
-    const contribution = metrics.barrierGrantedBySource[key] ?? (metrics.barrierGrantedBySource[key] = { key, ...metadata, total: 0, healthDamage: 0, barrierAbsorbed: 0, effectiveHealing: 0, overheal: 0, barrierGranted: 0, events: 0 })
+    const contribution = metrics.barrierGrantedBySource[key] ?? (metrics.barrierGrantedBySource[key] = { key, ...metadata, total: 0, healthDamage: 0, barrierAbsorbed: 0, effectiveHealing: 0, overheal: 0, barrierGranted: 0, events: 0, damageTypes: {} })
     metrics.barrierGranted += amount
     contribution.barrierGranted += amount
     contribution.events += 1

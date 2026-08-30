@@ -1,5 +1,5 @@
 import type { DungeonId, GameState, MonsterId, SpellId } from '../../types'
-import type { CombatEvent, CombatSource, StatusId, TraitId } from '../../systems/combat/combatTypes'
+import type { CombatEvent, CombatSource, DamageType, StatusId, TraitId } from '../../systems/combat/combatTypes'
 
 export type CombatMetricSourceKind = 'basic-attack' | 'spell' | 'action' | 'status' | 'trait' | 'system'
 
@@ -22,6 +22,7 @@ export interface CombatMetricSourceContribution {
   overheal: number
   barrierGranted: number
   events: number
+  damageTypes: Partial<Record<DamageType, number>>
 }
 
 export interface CombatMetricAggregate {

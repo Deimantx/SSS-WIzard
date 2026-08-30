@@ -1,4 +1,4 @@
-import type { SchoolId } from '../../types'
+import type { ItemId, MonsterId, SchoolId, SpellId } from '../../types'
 
 export type DamageType = 'physical' | 'arcane' | 'fire' | 'water' | 'earth' | 'air'
 
@@ -39,6 +39,55 @@ export type CombatTag =
   | 'control'
   | 'barrier'
   | DamageType
+
+export type CombatLogCategory =
+  | 'basic-attack'
+  | 'spell'
+  | 'enemy-action'
+  | 'damage'
+  | 'heal'
+  | 'barrier'
+  | 'status'
+  | 'trait'
+  | 'death'
+  | 'loot'
+  | 'pattern'
+  | 'system'
+
+export type CombatLogSource =
+  | { kind: 'player' }
+  | { kind: 'enemy'; monsterId: MonsterId }
+  | { kind: 'system' }
+
+export interface CombatLogEvent {
+  source: CombatLogSource
+  target?: 'player' | 'enemy'
+  targetMonsterId?: MonsterId
+  category: CombatLogCategory
+  sourceId?: string
+  spellId?: SpellId
+  actionId?: string
+  traitId?: TraitId
+  statusId?: StatusId
+  itemId?: ItemId
+  damageType?: DamageType
+  amount?: number
+  healthDamage?: number
+  barrierAbsorbed?: number
+  durationMs?: number | null
+  stacks?: number
+  timestampMs?: number
+}
+
+export interface CombatLogEntry extends CombatLogEvent {
+  id: number
+  sequence: number
+  timestampMs: number
+}
+
+export interface CombatUiEventSink {
+  push: (event: CombatLogEvent) => void
+}
 
 export interface CombatSource {
   actor: 'player' | 'enemy'

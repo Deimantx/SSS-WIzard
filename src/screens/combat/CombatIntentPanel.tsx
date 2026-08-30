@@ -1,4 +1,4 @@
-import { Clock3, ShieldAlert } from 'lucide-react'
+import { Clock3, Heart, Shield, ShieldAlert, Sparkles, Swords, TimerReset } from 'lucide-react'
 import { useMemo } from 'react'
 import { DUNGEONS } from '../../game/content/dungeons/dungeons'
 import { MONSTERS } from '../../game/content/monsters'
@@ -60,7 +60,15 @@ export function CombatIntentPanel({ selectedDungeonId }: { selectedDungeonId: Du
 }
 
 function CombatEffectRow({ effect }: { effect: CombatEffectPresentation }) {
-  return <div className={`combat-effect-line effect-kind-${effect.kind}`}><strong>{effect.label}</strong>{effect.value && <b>{effect.value}</b>}<small>{[effect.detail, effect.timeLabel].filter(Boolean).join(' · ')}</small></div>
+  return <div className={`combat-effect-line effect-kind-${effect.kind}`}><span className="combat-effect-icon"><IntentEffectIcon kind={effect.kind} /></span><div><strong>{effect.value && effect.kind === 'damage' ? `${effect.value} ${effect.label}` : effect.label}</strong>{effect.value && effect.kind !== 'damage' && <b>{effect.value}</b>}<small>{[effect.detail, effect.timeLabel].filter(Boolean).join(' · ')}</small></div></div>
+}
+
+function IntentEffectIcon({ kind }: { kind: CombatEffectPresentation['kind'] }) {
+  if (kind === 'damage') return <Swords size={13} aria-hidden="true" />
+  if (kind === 'barrier') return <Shield size={13} aria-hidden="true" />
+  if (kind === 'heal') return <Heart size={13} aria-hidden="true" />
+  if (kind === 'control') return <TimerReset size={13} aria-hidden="true" />
+  return <Sparkles size={13} aria-hidden="true" />
 }
 
 function ActionTooltip({ action }: { action: CombatActionPresentation }) {

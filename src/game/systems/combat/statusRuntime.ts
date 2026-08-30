@@ -3,15 +3,16 @@ import { MONSTERS } from '../../content/monsters'
 import type { GameState, StatusId } from '../../types'
 import type { CombatActor } from './magnitude'
 import { runCombatTriggers } from './triggerRuntime'
-import type { CombatEffect, CombatSource, ActiveStatus, CombatTag } from './combatTypes'
+import type { CombatEffect, CombatSource, ActiveStatus, CombatTag, CombatUiEventSink } from './combatTypes'
 import { getCombatModifiers } from './modifiers'
 
-export type ExecuteEffects = (state: GameState, effects: CombatEffect[], source: CombatSource, depth?: number) => void
+export type ExecuteEffects = (state: GameState, effects: CombatEffect[], source: CombatSource, depth?: number, uiEvents?: CombatUiEventSink) => void
 export interface StatusRemovalOptions {
   executeEffects?: ExecuteEffects
   source?: CombatSource
   depth?: number
   reason?: 'removed' | 'expired'
+  uiEvents?: CombatUiEventSink
 }
 
 const statusList = (state: GameState, actor: CombatActor) => actor === 'player' ? state.combat.playerStatuses : state.combat.enemyStatuses
@@ -96,7 +97,7 @@ const removeStatusEntry = (state: GameState, actor: CombatActor, statusId: Statu
       statusId: removed.statusId,
       sourceTags: lifecycleSource.tags ?? [],
       eventStatusTags,
-    }, options.executeEffects, options.depth ?? 0, [removed])
+    }, options.executeEffects, options.depth ?? 0, [removed], options.uiEvents)
   }
   return removed
 }
@@ -141,7 +142,7 @@ const periodicEffects = (status: ActiveStatus): CombatEffect[] => {
   }) ?? []
 }
 
-export const tickStatuses = (state: GameState, deltaMs: number, executeEffects: ExecuteEffects) => {
+export const tickStatuses = (state: GameState, deltaMs: number, executeEffects: ExecuteEffects, uiEvents?: CombatUiEventSink) => {
   const delta = Math.max(0, deltaMs)
   ;(['player', 'enemy'] as CombatActor[]).forEach((actor) => {
     const snapshot = [...statusList(state, actor)]
@@ -154,7 +155,7 @@ export const tickStatuses = (state: GameState, deltaMs: number, executeEffects: 
       let timeToTick = original.nextTickMs
       let guard = 0
       while (timeToTick !== undefined && timeToTick <= activeWindow && (previousRemaining === null || timeToTick < previousRemaining) && (actor !== 'enemy' || Boolean(state.combat.enemyId)) && statusList(state, actor).some((status) => status === original) && definition.periodic && guard < 1000) {
-        executeEffects(state, periodicEffects(original), { ...original.source, kind: 'status', sourceId: original.statusId, originSourceId: original.source.sourceId, tags: ['status', ...definition.tags] })
+        executeEffects(state, periodicEffects(original), { ...original.source, kind: 'status', sourceId: original.statusId, originSourceId: original.source.sourceId, tags: ['status', ...definition.tags] }, undefined, uiEvents)
         timeToTick += definition.periodic.intervalMs
         guard += 1
       }
@@ -169,7 +170,7 @@ export const tickStatuses = (state: GameState, deltaMs: number, executeEffects: 
         if (nextTickMs !== undefined) live.nextTickMs = nextTickMs
         return
       }
-      removeStatusEntry(state, actor, original.statusId, { executeEffects, reason: 'expired' })
+      removeStatusEntry(state, actor, original.statusId, { executeEffects, reason: 'expired', uiEvents })
     })
   })
 }

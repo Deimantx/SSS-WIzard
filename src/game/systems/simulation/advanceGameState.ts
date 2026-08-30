@@ -14,6 +14,7 @@ import { tickBarriers } from '../combat/barrierRuntime'
 import { getCombatModifiers } from '../combat/modifiers'
 import { tickRuleCooldowns } from '../combat/triggerRuntime'
 import type { GameState, ItemId, SpellId, CombatSource } from '../../types'
+import type { CombatUiEventSink } from '../combat/combatTypes'
 import { clamp } from '../../utils'
 import type { SimulationReportCollector } from '../offline-bank/offlineBankReport'
 import { applyTransmutationAllocations, buildTransmutationWorkRequests } from '../transmutation/transmutationEngine'
@@ -26,6 +27,7 @@ export interface AdvanceContext {
   mode: 'live' | 'banked'
   report?: SimulationReportCollector
   onItemAcquired?: (itemId: ItemId, quantity: number) => void
+  uiEvents?: CombatUiEventSink
 }
 
 const spellUnlocked = isSpellUnlocked
@@ -37,23 +39,23 @@ const meetsAutoCondition = (state: GameState, spellId: SpellId) => {
   return state.combat.playerBarrier < condition.value
 }
 
-const tickCombatStatuses = (state: GameState, delta: number) => tickStatuses(state, delta, executeCombatEffects)
+const tickCombatStatuses = (state: GameState, delta: number, uiEvents?: CombatUiEventSink) => tickStatuses(state, delta, executeCombatEffects, uiEvents)
 
-const playerBasicAttack = (state: GameState) => {
+const playerBasicAttack = (state: GameState, uiEvents?: CombatUiEventSink) => {
   const weapon = state.equipment.weapon ? ITEMS[state.equipment.weapon] : undefined
   const source: CombatSource = { actor: 'player', kind: weapon?.attackTags?.length ? 'weapon' : 'basic-attack', sourceId: 'player-basic-attack', tags: getBasicAttackTags(state) }
-  executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', damageType: weapon?.damageType ?? 'physical', magnitude: { type: 'flat', value: playerBasicDamage(state) }, tags: ['basic-attack', 'direct'] }], source)
+  executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', damageType: weapon?.damageType ?? 'physical', magnitude: { type: 'flat', value: playerBasicDamage(state) }, tags: ['basic-attack', 'direct'] }], source, undefined, uiEvents)
   return state.combat.lastDamageDealt
 }
 
 const tickCombat = (state: GameState, delta: number, context: AdvanceContext) => {
   if (!state.combat.active) return
-  if (!state.combat.enemyId) { state.combat.encounterTimerMs -= delta; if (state.combat.encounterTimerMs <= 0) { spawnNextEnemy(state); resolveCombatDeaths(state, context.report, context.onItemAcquired) } return }
+  if (!state.combat.enemyId) { state.combat.encounterTimerMs -= delta; if (state.combat.encounterTimerMs <= 0) { spawnNextEnemy(state, context.uiEvents); resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents) } return }
 
   tickRuleCooldowns(state, delta)
-  tickCombatStatuses(state, delta)
+  tickCombatStatuses(state, delta, context.uiEvents)
   tickBarriers(state, delta)
-  if (resolveCombatDeaths(state, context.report, context.onItemAcquired)) return
+  if (resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents)) return
   const enemy = state.combat.enemyId ? MONSTERS[state.combat.enemyId] : null
   if (!enemy) return
 
@@ -62,35 +64,35 @@ const tickCombat = (state: GameState, delta: number, context: AdvanceContext) =>
   if (!playerStunned) state.combat.playerAttackTimerMs -= delta
   Object.keys(state.combat.spellCooldowns).forEach((id) => { state.combat.spellCooldowns[id as SpellId] = Math.max(0, state.combat.spellCooldowns[id as SpellId] - delta * cooldownRecovery) })
   if (!playerStunned && state.combat.playerAttackTimerMs <= 0 && state.combat.enemyId) {
-    const damage = playerBasicAttack(state)
+    const damage = playerBasicAttack(state, context.uiEvents)
     appendLog(state, `Basic Attack hits for ${damage}.`)
     state.combat.playerAttackTimerMs = resolveBasicAttackInterval(state, 'player', BALANCE.player.basicAttackIntervalMs)
-    if (resolveCombatDeaths(state, context.report, context.onItemAcquired)) return
+    if (resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents)) return
   }
   if (state.combat.enemyId) {
     for (const id of Object.keys(state.activities.autoCast)) {
       const spellId = id as SpellId
       if (actorCannotAct(state, 'player')) break
       if (state.activities.autoCast[spellId] && spellUnlocked(state, spellId) && state.combat.spellCooldowns[spellId] <= 0 && meetsAutoCondition(state, spellId)) {
-        castSpellInternal(state, spellId, true)
-        if (resolveCombatDeaths(state, context.report, context.onItemAcquired)) return
+        castSpellInternal(state, spellId, true, context.uiEvents)
+        if (resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents)) return
       }
     }
   }
   if (!state.combat.enemyId) return
-  if (resolveCombatDeaths(state, context.report, context.onItemAcquired)) return
+  if (resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents)) return
 
   if (!actorCannotAct(state, 'enemy') && state.combat.enemyTelegraphActionId) {
     state.combat.enemyTelegraphMs -= delta
     if (state.combat.enemyTelegraphMs <= 0) {
-      resolveActiveEnemyAction(state, executeCombatEffects)
-      if (resolveCombatDeaths(state, context.report, context.onItemAcquired)) return
+      resolveActiveEnemyAction(state, executeCombatEffects, 0, context.uiEvents)
+      if (resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents)) return
     }
   } else if (!actorCannotAct(state, 'enemy')) {
     state.combat.enemyActionTimerMs -= delta
     if (state.combat.enemyActionTimerMs <= 0) {
-      startNextEnemyAction(state, executeCombatEffects)
-      if (resolveCombatDeaths(state, context.report, context.onItemAcquired)) return
+      startNextEnemyAction(state, executeCombatEffects, 0, context.uiEvents)
+      if (resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents)) return
     }
   }
 }
@@ -115,11 +117,12 @@ const advanceGameStateStep = (state: GameState, delta: number, context: AdvanceC
 
 export const advanceGameState = (state: GameState, deltaMs: number, context: AdvanceContext = { mode: 'live' }) => {
   const bounded = Math.min(MAX_SIMULATION_DELTA_MS, Math.max(0, deltaMs))
+  const simulationContext = context.mode === 'live' ? context : { ...context, uiEvents: undefined }
   let remaining = bounded
 
   while (remaining > 0) {
     const step = Math.min(SIMULATION_QUANTUM_MS, remaining)
-    advanceGameStateStep(state, step, context)
+    advanceGameStateStep(state, step, simulationContext)
     remaining -= step
   }
 

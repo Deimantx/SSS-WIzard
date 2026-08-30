@@ -6,7 +6,7 @@ import { MONSTERS } from '../game/content/monsters'
 import { SPELLS } from '../game/content/spells/spells'
 import { castSpellAction } from './actions/combatActions'
 import { manaRegenPerSecond, pushNotification, recalculateDerivedStats, selectFreeFocus, selectUsedFocus } from '../game/engine'
-import { debugApplyStatus, finishEnemy, spawnEnemy, spawnNextEnemy } from '../game/systems/combat/combatRuntime'
+import { debugApplyStatus, resolveCombatDeaths, spawnEnemy, spawnNextEnemy } from '../game/systems/combat/combatRuntime'
 import { executeCombatEffects } from '../game/systems/combat/effectResolver'
 import { forceResolveEnemyAction as forceResolveEnemyActionRuntime, resolveActiveEnemyAction as resolveActiveEnemyActionRuntime, setEnemyActionPattern as setEnemyActionPatternRuntime, startEnemyAction as startEnemyActionRuntime, startNextEnemyAction as startNextEnemyActionRuntime } from '../game/systems/combat/actionRuntime'
 import { resetCombatRuleRuntime, runCombatTriggers } from '../game/systems/combat/triggerRuntime'
@@ -36,6 +36,7 @@ import { advanceWithOfflineBank as runOfflineBankAdvance, isOfflineBankSimulatio
 import type { OfflineBankReport } from '../game/systems/offline-bank/offlineBankReport'
 import { getSpellAutoCastFocusCost, isSpellUnlocked, syncSpellUnlocksForSchool } from '../game/systems/spells'
 import { applySpellPresetAction, createSpellPresetAction, deleteSpellPresetAction, duplicateSpellPresetAction, renameSpellPresetAction, saveSpellPresetAction, type ApplySpellPresetResult } from './actions/spellPresetActions'
+import { clearCombatLogUi, combatLogUiSink } from '../game/ui/combatLogStore'
 
 export interface RecentAcquisition { itemId: ItemId; amount: number; timestamp: number; isNew: boolean }
 
@@ -162,7 +163,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   lastOfflineBankReport: null,
   tick: (deltaMs) => set((state) => {
     if (isOfflineBankSimulationActive()) return state
-    return advanceGameState(state, deltaMs, { mode: 'live', onItemAcquired: (itemId, amount) => recordRecentAcquisition(state, itemId, amount) })
+    return advanceGameState(state, deltaMs, { mode: 'live', onItemAcquired: (itemId, amount) => recordRecentAcquisition(state, itemId, amount), uiEvents: combatLogUiSink })
   }),
   setScreen: (screen) => set((state) => { state.ui.screen = screen; return state }),
   addArcaneEcho: () => set((state) => {
@@ -211,7 +212,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   completeTransmutationCycle: (recipeId) => set((state) => { forceCompleteTransmutationCycle(state, recipeId, { mode: 'live' }); return state }),
   grantTransmutationIngredients: (recipeId) => set((state) => { const recipe = RECIPES[recipeId]; recipe.ingredients.forEach((ingredient) => grantItem(state, ingredient.itemId, ingredient.quantity)); return state }),
   setDebugTransmutationEchoCapacity: (amount) => set((state) => { setTransmutationEchoCapacityOverrideAction(state, amount); return state }),
-  castSpell: (spellId) => set((state) => { castSpellAction(state, spellId); return state }),
+  castSpell: (spellId) => set((state) => { castSpellAction(state, spellId, combatLogUiSink); return state }),
   toggleAutoCast: (spellId) => set((state) => { const cost = getSpellAutoCastFocusCost(state, spellId); if (!spellUnlocked(state, spellId) || cost === null) return state; if (state.activities.autoCast[spellId]) { state.activities.autoCast[spellId] = false; state.spellPresets.lastAppliedPresetId = null } else if (canReserveFocus(state, cost)) { state.activities.autoCast[spellId] = true; state.spellPresets.lastAppliedPresetId = null; pushNotification(state, `${SPELLS[spellId].name} Auto-Cast enabled`, 'success') } else pushNotification(state, `Cannot enable Auto-Cast · Requires ${cost} Focus · Free Focus: ${selectFreeFocus(state)}`, 'warning'); return state }),
   createSpellPreset: (name) => { let result!: SpellPresetId; set((state) => { result = createSpellPresetAction(state, name); return state }); return result },
   renameSpellPreset: (id, name) => { let result = false; set((state) => { result = renameSpellPresetAction(state, id, name); return state }); return result },
@@ -219,7 +220,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   deleteSpellPreset: (id) => { let result = false; set((state) => { result = deleteSpellPresetAction(state, id); return state }); return result },
   saveSpellPreset: (preset) => { let result = false; set((state) => { result = saveSpellPresetAction(state, preset); return state }); return result },
   applySpellPreset: (id) => { let result: ApplySpellPresetResult = { ok: false, reason: 'missing-preset', unavailableSpellIds: [] }; set((state) => { result = applySpellPresetAction(state, id); return state }); return result },
-  enterDungeon: (dungeonId = 'whispering-woods') => set((state) => { const dungeon = DUNGEONS[dungeonId]; if (state.combat.active || !dungeon) return state; if (!isDungeonUnlocked(dungeon, state.progress)) { pushNotification(state, `${getDungeonUnlockRequirement(dungeon) ?? 'Requirement'} to unlock ${dungeon.name}.`, 'warning'); return state } state.combat.active = true; state.combat.dungeonId = dungeonId; state.combat.encounterTimerMs = 0; state.player.health = Math.max(1, state.player.health); spawnNextEnemy(state); pushNotification(state, `${dungeon.name} entered`, 'info'); return state }),
+  enterDungeon: (dungeonId = 'whispering-woods') => set((state) => { const dungeon = DUNGEONS[dungeonId]; if (state.combat.active || !dungeon) return state; if (!isDungeonUnlocked(dungeon, state.progress)) { pushNotification(state, `${getDungeonUnlockRequirement(dungeon) ?? 'Requirement'} to unlock ${dungeon.name}.`, 'warning'); return state } state.combat.active = true; state.combat.dungeonId = dungeonId; state.combat.encounterTimerMs = 0; state.player.health = Math.max(1, state.player.health); spawnNextEnemy(state, combatLogUiSink); pushNotification(state, `${dungeon.name} entered`, 'info'); return state }),
   leaveDungeon: () => set((state) => { state.combat = { ...createInitialState().combat, log: ['Left the dungeon. Threat Cleared resets.'] }; return state }),
   engageBoss: (bossId) => set((state) => {
     const dungeon = DUNGEONS[state.combat.dungeonId ?? 'whispering-woods']
@@ -231,33 +232,33 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     if (state.combat.threatCleared < dungeon.threatRequired) { pushNotification(state, `${boss.name} requires ${dungeon.threatRequired} Threat Cleared`, 'warning'); return state }
     if (state.combat.pendingBossId === bossId) state.combat.pendingBossId = null
     state.combat.encounterTimerMs = 0
-    spawnEnemy(state, bossId)
+    spawnEnemy(state, bossId, combatLogUiSink)
     pushNotification(state, `${boss.name} engaged`, 'warning')
     return state
   }),
   toggleAutoHunt: (dungeonId = 'whispering-woods') => set((state) => { const dungeon = DUNGEONS[dungeonId]; if (!dungeon || !isDungeonUnlocked(dungeon, state.progress)) return state; const unlocked = state.progress.autoHuntBossUnlocked || Object.values(state.progress.bossKillsByBoss).some((kills) => kills > 0) || state.progress.firstBossKill; if (!unlocked) { pushNotification(state, 'Auto Hunt unlocks after the first dungeon boss kill', 'warning'); return state } state.progress.autoHuntBossUnlocked = true; state.progress.autoHuntBossByDungeon[dungeonId] = !state.progress.autoHuntBossByDungeon[dungeonId]; return state }),
-  killCurrentEnemy: () => set((state) => { if (state.combat.enemyId) { state.combat.enemyHp = 0; finishEnemy(state) } return state }),
+  killCurrentEnemy: () => set((state) => { if (state.combat.enemyId) { state.combat.enemyHp = 0; resolveCombatDeaths(state, undefined, undefined, combatLogUiSink) } return state }),
   spawnDebugEnemy: (enemyId, dungeonId) => set((state) => {
     const contextDungeonId = dungeonId ?? state.combat.dungeonId ?? 'whispering-woods'
     state.combat.active = true
     state.combat.dungeonId = contextDungeonId
-    spawnEnemy(state, enemyId)
+    spawnEnemy(state, enemyId, combatLogUiSink)
     pushNotification(state, `${MONSTERS[enemyId].name} spawned by Developer Tools in ${DUNGEONS[contextDungeonId].name}`, 'warning')
     return state
   }),
-  setEnemyHealthPercent: (percent) => set((state) => { if (state.combat.enemyId) { const previousHp = state.combat.enemyHp; const nextHp = Math.max(0, Math.min(state.combat.enemyMaxHp, state.combat.enemyMaxHp * clamp(percent, 0, 100) / 100)); state.combat.enemyHp = nextHp; if (nextHp !== previousHp) { const context = { source: { actor: 'player' as const, kind: 'system' as const, sourceId: 'developer-health-control' }, eventTarget: 'enemy' as const, changedActor: 'enemy' as const, sourceTags: [], previousHp, currentHp: nextHp, previousHpPercent: previousHp / Math.max(1, state.combat.enemyMaxHp) * 100, currentHpPercent: nextHp / Math.max(1, state.combat.enemyMaxHp) * 100 }; runCombatTriggers(state, 'enemy', 'on-hp-threshold', context, executeCombatEffects); runCombatTriggers(state, 'player', 'on-hp-threshold', context, executeCombatEffects) } } return state }),
+  setEnemyHealthPercent: (percent) => set((state) => { if (state.combat.enemyId) { const previousHp = state.combat.enemyHp; const nextHp = Math.max(0, Math.min(state.combat.enemyMaxHp, state.combat.enemyMaxHp * clamp(percent, 0, 100) / 100)); state.combat.enemyHp = nextHp; if (nextHp !== previousHp) { const context = { source: { actor: 'player' as const, kind: 'system' as const, sourceId: 'developer-health-control' }, eventTarget: 'enemy' as const, changedActor: 'enemy' as const, sourceTags: [], previousHp, currentHp: nextHp, previousHpPercent: previousHp / Math.max(1, state.combat.enemyMaxHp) * 100, currentHpPercent: nextHp / Math.max(1, state.combat.enemyMaxHp) * 100 }; runCombatTriggers(state, 'enemy', 'on-hp-threshold', context, executeCombatEffects, 0, [], combatLogUiSink); runCombatTriggers(state, 'player', 'on-hp-threshold', context, executeCombatEffects, 0, [], combatLogUiSink) } } return state }),
   applyPlayerStatus: (statusId) => set((state) => { debugApplyStatus(state, 'player', statusId); return state }),
   applyEnemyStatus: (statusId) => set((state) => { debugApplyStatus(state, 'enemy', statusId); return state }),
   setPlayerBarrier: (amount) => set((state) => { state.combat.playerBarrier = Math.max(0, Math.floor(sanitizeDebugNumber(amount))); if (state.combat.playerBarrier === 0) state.combat.playerBarrierRemainingMs = null; return state }),
   setEnemyBarrier: (amount) => set((state) => { state.combat.enemyBarrier = Math.max(0, Math.floor(sanitizeDebugNumber(amount))); if (state.combat.enemyBarrier === 0) state.combat.enemyBarrierRemainingMs = null; return state }),
   clearPlayerBarrier: () => set((state) => { state.combat.playerBarrier = 0; state.combat.playerBarrierRemainingMs = null; return state }),
   clearEnemyBarrier: () => set((state) => { state.combat.enemyBarrier = 0; state.combat.enemyBarrierRemainingMs = null; return state }),
-  forceEnemyAction: (actionId) => set((state) => { if (state.combat.enemyId) forceResolveEnemyActionRuntime(state, actionId, executeCombatEffects); return state }),
-  startEnemyAction: (actionId) => set((state) => { if (state.combat.enemyId) startEnemyActionRuntime(state, actionId, executeCombatEffects); return state }),
-  resolveActiveEnemyAction: () => set((state) => { resolveActiveEnemyActionRuntime(state, executeCombatEffects); return state }),
-  advanceEnemyAction: () => set((state) => { startNextEnemyActionRuntime(state, executeCombatEffects); return state }),
-  setEnemyActionPattern: (patternId) => set((state) => { setEnemyActionPatternRuntime(state, patternId); return state }),
-  resetEnemyActionPattern: () => set((state) => { if (state.combat.enemyId) setEnemyActionPatternRuntime(state, MONSTERS[state.combat.enemyId].defaultActionPatternId); return state }),
+  forceEnemyAction: (actionId) => set((state) => { if (state.combat.enemyId) forceResolveEnemyActionRuntime(state, actionId, executeCombatEffects, 0, combatLogUiSink); return state }),
+  startEnemyAction: (actionId) => set((state) => { if (state.combat.enemyId) startEnemyActionRuntime(state, actionId, executeCombatEffects, undefined, 0, combatLogUiSink); return state }),
+  resolveActiveEnemyAction: () => set((state) => { resolveActiveEnemyActionRuntime(state, executeCombatEffects, 0, combatLogUiSink); return state }),
+  advanceEnemyAction: () => set((state) => { startNextEnemyActionRuntime(state, executeCombatEffects, 0, combatLogUiSink); return state }),
+  setEnemyActionPattern: (patternId) => set((state) => { setEnemyActionPatternRuntime(state, patternId, combatLogUiSink); return state }),
+  resetEnemyActionPattern: () => set((state) => { if (state.combat.enemyId) setEnemyActionPatternRuntime(state, MONSTERS[state.combat.enemyId].defaultActionPatternId, combatLogUiSink); return state }),
   resetEnemyActionIndex: () => set((state) => { state.combat.enemyActionIndex = 0; return state }),
   resetCombatRuleRuntime: () => set((state) => { resetCombatRuleRuntime(state); return state }),
   clearCombatStatuses: () => set((state) => { state.combat.playerStatuses = []; state.combat.enemyStatuses = []; return state }),
@@ -275,10 +276,12 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     if (!activeProfileId) return
     const loaded = loadProfileGame(activeProfileId)
     if (!loaded.state) return
+    clearCombatLogUi()
     set((state) => { Object.assign(state, loaded.state as GameState); state.recentAcquisitions = []; state.lastOfflineBankReport = null; recalculateDerivedStats(state); return state })
   },
   resetSave: () => {
     const fresh = createInitialState()
+    clearCombatLogUi()
     set((state) => { Object.assign(state, fresh); state.recentAcquisitions = []; state.lastOfflineBankReport = null; return state })
     const activeProfileId = getActiveProfileId()
     if (activeProfileId) {
@@ -286,7 +289,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
       if (saved.ok) updateProfileMetadata(activeProfileId, { lastSavedAt: fresh.lastSavedAt })
     }
   },
-  hydrateState: (nextState) => set((state) => { Object.assign(state, nextState); state.recentAcquisitions = []; state.lastOfflineBankReport = null; recalculateDerivedStats(state); return state }),
+  hydrateState: (nextState) => { clearCombatLogUi(); return set((state) => { Object.assign(state, nextState); state.recentAcquisitions = []; state.lastOfflineBankReport = null; recalculateDerivedStats(state); return state }) },
   dismissNotification: (id) => set((state) => { state.notifications = state.notifications.filter((note) => note.id !== id); return state }),
   setPlayer: (changes) => set((state) => { state.player = { ...state.player, ...changes }; recalculateDerivedStats(state); return state }),
   addMana: (amount) => set((state) => { state.player.mana = Math.max(0, state.player.mana + sanitizeDebugNumber(amount)); recalculateDerivedStats(state); return state }),
@@ -310,7 +313,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   promoteGuild: () => set((state) => { promoteGuildAction(state); return state }),
   setGuildReputation: (amount) => set((state) => { state.progress.guildReputation = Math.max(0, amount); return state }),
   setBossKills: (bossId, amount) => set((state) => { setBossKillsAction(state, bossId, amount); return state }),
-  preset: (name) => set((state) => { Object.assign(state, createInitialState()); state.lastOfflineBankReport = null; if (name === 'research') { (['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'] as const).forEach((itemId) => { state.inventory[itemId] = 100 }); state.player.mana = 100; (['fire', 'water', 'earth', 'air'] as const).forEach((schoolId, index) => { prepareResearchAction(state, `${schoolId}-fragment` as ItemId, schoolId, 50); setResearchEchoesAction(state, `research-${index + 1}` as ResearchSlotId, index === 0 ? 2 : 1) }) } if (name === 'combat') { state.inventory['fire-fragment'] = 10; state.schools.fire = { xp: 20, level: 2 }; syncSpellUnlocksForSchool(state, 'fire'); state.player.mana = 100; state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; spawnNextEnemy(state) } if (name === 'boss') { state.inventory['fire-fragment'] = 15; state.inventory['wisp-essence'] = 10; state.inventory['grove-bark'] = 2; state.schools.fire = { xp: 80, level: 4 }; syncSpellUnlocksForSchool(state, 'fire'); state.progress.guildUnlocked = true; state.progress.firstBossKill = true; state.progress.emberStaffUnlocked = true; state.progress.forestHeartUnlocked = true; state.progress.autoHuntBossUnlocked = true; state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; state.combat.threatCleared = 20; spawnNextEnemy(state) } if (name === 'guild') { state.progress.guildUnlocked = true; state.progress.guildRank = 'initiate'; state.progress.firstBossKill = true; state.progress.emberStaffUnlocked = true; state.progress.forestHeartUnlocked = true; state.progress.autoHuntBossUnlocked = true; state.inventory['fire-fragment'] = 20; state.progress.lifetimeKills = 30; state.progress.requestProgress['clear-the-woods'] = 30; state.progress.bossKillsByBoss['grove-sentinel'] = 2; state.progress.requestProgress['sentinel-breaker'] = 2; state.progress.guildReputation = 100 } if (name === 'main-boss' || name === 'chapter-complete') { state.inventory['fire-fragment'] = 20; state.inventory['wisp-essence'] = 12; state.inventory['grove-bark'] = 4; state.progress.guildUnlocked = true; state.progress.guildRank = 'apprentice'; state.progress.firstBossKill = true; state.progress.emberStaffUnlocked = true; state.progress.forestHeartUnlocked = true; state.progress.autoHuntBossUnlocked = true; state.progress.permanentFocusBonuses['forest-heart'] = 10; state.progress.permanentFocusBonuses['guild-apprentice'] = 10; state.progress.magicLevelCap = 20; state.schools.fire = { xp: 380, level: 20 }; syncSpellUnlocksForSchool(state, 'fire'); state.progress.firstMainBossKill = true; state.inventory.heartseed = 1; recalculateDerivedStats(state); state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; spawnEnemy(state, 'forest-heart') } return state }),
+  preset: (name) => set((state) => { clearCombatLogUi(); Object.assign(state, createInitialState()); state.lastOfflineBankReport = null; if (name === 'research') { (['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'] as const).forEach((itemId) => { state.inventory[itemId] = 100 }); state.player.mana = 100; (['fire', 'water', 'earth', 'air'] as const).forEach((schoolId, index) => { prepareResearchAction(state, `${schoolId}-fragment` as ItemId, schoolId, 50); setResearchEchoesAction(state, `research-${index + 1}` as ResearchSlotId, index === 0 ? 2 : 1) }) } if (name === 'combat') { state.inventory['fire-fragment'] = 10; state.schools.fire = { xp: 20, level: 2 }; syncSpellUnlocksForSchool(state, 'fire'); state.player.mana = 100; state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; spawnNextEnemy(state, combatLogUiSink) } if (name === 'boss') { state.inventory['fire-fragment'] = 15; state.inventory['wisp-essence'] = 10; state.inventory['grove-bark'] = 2; state.schools.fire = { xp: 80, level: 4 }; syncSpellUnlocksForSchool(state, 'fire'); state.progress.guildUnlocked = true; state.progress.firstBossKill = true; state.progress.emberStaffUnlocked = true; state.progress.forestHeartUnlocked = true; state.progress.autoHuntBossUnlocked = true; state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; state.combat.threatCleared = 20; spawnNextEnemy(state, combatLogUiSink) } if (name === 'guild') { state.progress.guildUnlocked = true; state.progress.guildRank = 'initiate'; state.progress.firstBossKill = true; state.progress.emberStaffUnlocked = true; state.progress.forestHeartUnlocked = true; state.progress.autoHuntBossUnlocked = true; state.inventory['fire-fragment'] = 20; state.progress.lifetimeKills = 30; state.progress.requestProgress['clear-the-woods'] = 30; state.progress.bossKillsByBoss['grove-sentinel'] = 2; state.progress.requestProgress['sentinel-breaker'] = 2; state.progress.guildReputation = 100 } if (name === 'main-boss' || name === 'chapter-complete') { state.inventory['fire-fragment'] = 20; state.inventory['wisp-essence'] = 12; state.inventory['grove-bark'] = 4; state.progress.guildUnlocked = true; state.progress.guildRank = 'apprentice'; state.progress.firstBossKill = true; state.progress.emberStaffUnlocked = true; state.progress.forestHeartUnlocked = true; state.progress.autoHuntBossUnlocked = true; state.progress.permanentFocusBonuses['forest-heart'] = 10; state.progress.permanentFocusBonuses['guild-apprentice'] = 10; state.progress.magicLevelCap = 20; state.schools.fire = { xp: 380, level: 20 }; syncSpellUnlocksForSchool(state, 'fire'); state.progress.firstMainBossKill = true; state.inventory.heartseed = 1; recalculateDerivedStats(state); state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; spawnEnemy(state, 'forest-heart', combatLogUiSink); } return state }),
   resumeFromHidden: (elapsedMs, notify = true) => set((state) => { if (elapsedMs > 1000) { state.offlineBankMs += elapsedMs; if (notify) pushNotification(state, `${Math.round(elapsedMs / 1000)}s added to Offline Bank`, 'info') } return state }),
   advanceWithOfflineBank: async (durationMs) => {
     const result = await runOfflineBankAdvance(durationMs, get, (recipe) => set((state) => { recipe(state); return state }), () => { get().saveGame('autosave') }, (state, itemId, amount) => recordRecentAcquisition(state as GameStore, itemId, amount))
@@ -326,7 +329,7 @@ const prepareForestHeartPreset = () => useGameStore.setState((state) => {
   state.combat.dungeonId = 'whispering-woods'
   state.combat.threatCleared = DUNGEONS['whispering-woods'].threatRequired
   state.combat.pendingBossId = null
-  spawnEnemy(state, DUNGEONS['whispering-woods'].boss)
+  spawnEnemy(state, DUNGEONS['whispering-woods'].boss, combatLogUiSink)
 })
 const completeDungeonPreset = () => useGameStore.setState((state) => {
   DUNGEON_ORDER.forEach((dungeonId) => { state.progress.bossKillsByBoss[DUNGEONS[dungeonId].boss] = 1; state.progress.autoHuntBossByDungeon[dungeonId] = true })
@@ -336,7 +339,7 @@ const completeDungeonPreset = () => useGameStore.setState((state) => {
   state.combat.active = true
   state.combat.dungeonId = 'abandoned-catacombs'
   state.combat.threatCleared = DUNGEONS['abandoned-catacombs'].threatRequired
-  spawnEnemy(state, DUNGEONS['abandoned-catacombs'].boss)
+  spawnEnemy(state, DUNGEONS['abandoned-catacombs'].boss, combatLogUiSink)
 })
 useGameStore.setState({ preset: (name) => { presetGameplayState(name); if (name === 'boss' || name === 'main-boss') prepareForestHeartPreset(); if (name === 'chapter-complete') completeDungeonPreset(); useGameStore.setState({ recentAcquisitions: [] }) } })
 

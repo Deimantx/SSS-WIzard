@@ -69,17 +69,20 @@ export function loadUiLayouts(): UiLayoutDocument {
       }
       if (screen === 'combat') {
         const legacyCombatIds = ['combat-dungeon', 'combat-enemy', 'combat-timeline', 'combat-spells', 'combat-log']
-        const canonicalCombatIds = ['combat-stage', 'combat-spell-deck', 'combat-intel']
+        const canonicalCombatIds = ['combat-stage', 'combat-spell-deck', 'combat-log']
+        const legacyCombatIdsWithoutSharedLog = ['combat-dungeon', 'combat-enemy', 'combat-timeline', 'combat-spells']
+        const hasRemovedIntel = Object.prototype.hasOwnProperty.call(rawSource, 'combat-intel')
         const hasLegacyPanels = legacyCombatIds.some((id) => Object.prototype.hasOwnProperty.call(rawSource, id))
+        const hasLegacyPanelsWithoutSharedLog = legacyCombatIdsWithoutSharedLog.some((id) => Object.prototype.hasOwnProperty.call(rawSource, id))
         const hasCanonicalPanels = canonicalCombatIds.some((id) => Object.prototype.hasOwnProperty.call(rawSource, id))
-        if (hasLegacyPanels && !hasCanonicalPanels) {
-          // Combat's composition changed from five independent cards to one
-          // live stage plus two supporting surfaces. Preserve other screens.
+        if (hasRemovedIntel || hasLegacyPanelsWithoutSharedLog || (hasLegacyPanels && !hasCanonicalPanels)) {
+          // Combat's lower composition changed again: the permanent Intel dock
+          // is replaced by a permanent Combat Log. Preserve other screens.
           screens.combat = {}
           continue
         }
-        if (hasUnmodifiedGeometry(rawSource['combat-stage'], { x: 0, y: 0, w: 12, h: 16 }) && hasUnmodifiedGeometry(rawSource['combat-spell-deck'], { x: 0, y: 16, w: 12, h: 10 }) && hasUnmodifiedGeometry(rawSource['combat-intel'], { x: 0, y: 26, w: 12, h: 10 })) {
-          // The untouched V1.1 lower stack is replaced by the aligned 8/4 dock.
+        if (hasUnmodifiedGeometry(rawSource['combat-stage'], { x: 0, y: 0, w: 12, h: 16 }) && hasUnmodifiedGeometry(rawSource['combat-spell-deck'], { x: 0, y: 16, w: 12, h: 10 }) && hasUnmodifiedGeometry(rawSource['combat-log'], { x: 0, y: 26, w: 12, h: 10 })) {
+          // The untouched V2 lower stack is replaced by the tuned Deck/Log stack.
           screens.combat = {}
           continue
         }

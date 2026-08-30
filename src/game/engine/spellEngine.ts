@@ -4,6 +4,7 @@ import { executeCombatEffects } from '../systems/combat/effectResolver'
 import { actorCannotAct } from '../systems/combat/statusRuntime'
 import { isSpellUnlocked } from '../systems/spells'
 import type { CombatSource, GameState, SpellId } from '../types'
+import type { CombatUiEventSink } from '../systems/combat/combatTypes'
 
 const hasEnemyTarget = (spellId: SpellId) => SPELLS[spellId].effects.some((effect) => effect.target === 'opponent')
 
@@ -29,23 +30,23 @@ export const notifySpellCastFailure = (state: GameState, spellId: SpellId, failu
   else if (failure === 'inactive' || failure === 'no-target') pushNotification(state, 'Enter combat before using that spell', 'warning')
 }
 
-export const castSpellInternal = (state: GameState, spellId: SpellId, quiet = false) => {
+export const castSpellInternal = (state: GameState, spellId: SpellId, quiet = false, uiEvents?: CombatUiEventSink) => {
   const spell = SPELLS[spellId]
   if (!spell || getSpellCastFailure(state, spellId)) return false
   state.player.mana -= spell.manaCost
   state.combat.spellCooldowns[spellId] = spell.cooldownMs
   const source: CombatSource = { actor: 'player', kind: 'spell', sourceId: spell.id, school: spell.school, tags: ['spell', 'magic', spell.school] }
-  executeCombatEffects(state, spell.effects, source)
+  executeCombatEffects(state, spell.effects, source, undefined, uiEvents)
   const damageEffect = spell.effects.some((effect) => effect.type === 'deal-damage')
   appendLog(state, `${spell.name} cast${damageEffect ? ` for ${state.combat.lastDamageDealt}` : ''}.`)
   if (!quiet) pushNotification(state, `${spell.name} cast`, 'info')
   return true
 }
 
-export const castSpellAction = (state: GameState, spellId: SpellId) => {
+export const castSpellAction = (state: GameState, spellId: SpellId, uiEvents?: CombatUiEventSink) => {
   if (!isSpellUnlocked(state, spellId)) return false
   const spell = SPELLS[spellId]
   const failure = getSpellCastFailure(state, spellId)
   if (failure) { notifySpellCastFailure(state, spellId, failure); return false }
-  return castSpellInternal(state, spellId)
+  return castSpellInternal(state, spellId, false, uiEvents)
 }

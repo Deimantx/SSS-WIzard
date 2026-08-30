@@ -1,13 +1,13 @@
 import { STATUS_DEFINITIONS } from '../../content/statuses'
 import { appendLog } from '../../engine'
-import type { ActiveStatus, GameState } from '../../types'
+import type { ActiveStatus, GameState, StatusId, TraitId } from '../../types'
 import type { CombatActor } from './magnitude'
 import { getActorTraits } from './traitRuntime'
 import { conditionContainsCrossedHpThreshold, conditionHasHpThreshold, evaluateCombatCondition } from './conditionRuntime'
-import type { CombatConditionContext, CombatEffect, CombatSource, CombatTag, CombatTrigger, CombatTriggerRule } from './combatTypes'
+import type { CombatConditionContext, CombatEffect, CombatSource, CombatTag, CombatTrigger, CombatTriggerRule, CombatUiEventSink } from './combatTypes'
 
 export type CombatEventContext = CombatConditionContext
-export type TriggerEffectExecutor = (state: GameState, effects: CombatEffect[], source: CombatSource, depth?: number) => void
+export type TriggerEffectExecutor = (state: GameState, effects: CombatEffect[], source: CombatSource, depth?: number, uiEvents?: CombatUiEventSink) => void
 
 const MAX_TRIGGER_DEPTH = 20
 const statusesFor = (state: GameState, actor: CombatActor) => actor === 'player' ? state.combat.playerStatuses : state.combat.enemyStatuses
@@ -67,6 +67,7 @@ export const runCombatTriggers = (
   executeEffects: TriggerEffectExecutor,
   depth = 0,
   transientStatuses: ActiveStatus[] = [],
+  uiEvents?: CombatUiEventSink,
 ) => {
   if (depth >= MAX_TRIGGER_DEPTH) return
   const rules = collectOwnedRules(state, actor, transientStatuses)
@@ -88,7 +89,8 @@ export const runCombatTriggers = (
     if (rule.oncePerEncounter) state.combat.triggeredRuleIds.push(runtimeKey)
     if (rule.cooldownMs && rule.cooldownMs > 0) state.combat.ruleCooldowns[runtimeKey] = rule.cooldownMs
     const source: CombatSource = { actor, kind: ownerKind, sourceId: ownerId, ruleId: rule.id, tags: sourceTags }
-    executeEffects(state, rule.effects, source, depth + 1)
+    uiEvents?.push({ source: actor === 'enemy' && state.combat.enemyId ? { kind: 'enemy', monsterId: state.combat.enemyId } : actor === 'player' ? { kind: 'player' } : { kind: 'system' }, target: context.eventTarget, targetMonsterId: context.eventTarget === 'enemy' ? state.combat.enemyId ?? undefined : undefined, category: ownerKind === 'trait' ? 'trait' : 'status', sourceId: ownerId, traitId: ownerKind === 'trait' ? ownerId as TraitId : undefined, statusId: ownerKind === 'status' ? ownerId as StatusId : undefined, amount: context.amount, damageType: context.damageType, healthDamage: context.healthDamage, barrierAbsorbed: context.barrierDamage })
+    executeEffects(state, rule.effects, source, depth + 1, uiEvents)
     if (actor === 'enemy') appendLog(state, `${ownerName} triggers.`)
   })
 }

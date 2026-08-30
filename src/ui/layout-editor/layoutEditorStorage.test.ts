@@ -265,7 +265,7 @@ describe('Home expansion layout compatibility', () => {
 })
 
 describe('Combat layout compatibility', () => {
-  it('resets legacy combat panels to the new stage, deck, and intel defaults', () => {
+  it('resets legacy combat panels to the new stage, deck, and log defaults', () => {
     localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({ version: 3, screens: {
       combat: {
         'combat-dungeon': { x: 0, y: 0, w: 4, h: 8 },
@@ -286,22 +286,22 @@ describe('Combat layout compatibility', () => {
       combat: {
         'combat-stage': { x: 0, y: 0, w: 10, h: 18, locked: true },
         'combat-spell-deck': { x: 0, y: 18, w: 10, h: 12 },
-        'combat-intel': { x: 10, y: 0, w: 2, h: 30, hidden: true },
+        'combat-log': { x: 0, y: 30, w: 10, h: 8, hidden: true },
       },
     } }))
 
     expect(loadUiLayouts().screens.combat).toEqual({
       'combat-stage': { x: 0, y: 0, w: 10, h: 18, locked: true },
       'combat-spell-deck': { x: 0, y: 18, w: 10, h: 12 },
-      'combat-intel': { x: 10, y: 0, w: 2, h: 30, hidden: true },
+      'combat-log': { x: 0, y: 30, w: 10, h: 8, hidden: true },
     })
   })
 
-  it('migrates the untouched V1.1 lower stack to the aligned deck and intel dock', () => {
+  it('migrates the untouched V2 lower stack to the tuned deck and log', () => {
     localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({ version: 3, screens: { combat: {
       'combat-stage': { x: 0, y: 0, w: 12, h: 16 },
       'combat-spell-deck': { x: 0, y: 16, w: 12, h: 10 },
-      'combat-intel': { x: 0, y: 26, w: 12, h: 10 },
+      'combat-log': { x: 0, y: 26, w: 12, h: 10 },
     } } }))
 
     expect(loadUiLayouts().screens.combat).toEqual({})

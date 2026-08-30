@@ -5,9 +5,9 @@ import type { CombatActor } from './magnitude'
 import { getCombatModifiers } from './modifiers'
 import { actorCannotAct } from './statusRuntime'
 import { runCombatTriggers, type CombatEventContext } from './triggerRuntime'
-import type { ActionStep, CombatActionDefinition, CombatEffect, CombatSource, CombatTag, CombatTrigger } from './combatTypes'
+import type { ActionStep, CombatActionDefinition, CombatEffect, CombatSource, CombatTag, CombatTrigger, CombatUiEventSink } from './combatTypes'
 
-export type ActionEffectExecutor = (state: GameState, effects: CombatEffect[], source: CombatSource, depth?: number) => void
+export type ActionEffectExecutor = (state: GameState, effects: CombatEffect[], source: CombatSource, depth?: number, uiEvents?: CombatUiEventSink) => void
 export type ActionLifecycleEvent = Extract<CombatTrigger, 'on-action-start' | 'on-action-resolve'>
 
 const opponentOf = (actor: CombatActor): CombatActor => actor === 'player' ? 'enemy' : 'player'
@@ -88,11 +88,12 @@ export const initializeEnemyActionRuntime = (state: GameState) => {
   clearActiveEnemyAction(state)
 }
 
-export const setEnemyActionPattern = (state: GameState, patternId: string) => {
+export const setEnemyActionPattern = (state: GameState, patternId: string, uiEvents?: CombatUiEventSink) => {
   const pattern = patternFor(state, patternId)
   if (!pattern || pattern.steps.length === 0 || !state.combat.enemyId) return false
   state.combat.enemyActionPatternId = pattern.id
   state.combat.enemyActionIndex = 0
+  uiEvents?.push({ source: state.combat.enemyId ? { kind: 'enemy', monsterId: state.combat.enemyId } : { kind: 'system' }, category: 'pattern', sourceId: pattern.id })
   return true
 }
 
@@ -115,36 +116,37 @@ export const runActionEventObservers = (
   context: CombatEventContext,
   executeEffects: ActionEffectExecutor,
   depth = 0,
+  uiEvents?: CombatUiEventSink,
 ) => {
   const sourceActor = context.source?.actor
   if (!sourceActor) return
-  runCombatTriggers(state, sourceActor, event, context, executeEffects, depth)
-  runCombatTriggers(state, opponentOf(sourceActor), event, context, executeEffects, depth)
+  runCombatTriggers(state, sourceActor, event, context, executeEffects, depth, [], uiEvents)
+  runCombatTriggers(state, opponentOf(sourceActor), event, context, executeEffects, depth, [], uiEvents)
 }
 
-const startActionDefinition = (state: GameState, action: CombatActionDefinition, stepId: string | undefined, executeEffects: ActionEffectExecutor, patternId = state.combat.enemyActionPatternId ?? undefined, depth = 0) => {
+const startActionDefinition = (state: GameState, action: CombatActionDefinition, stepId: string | undefined, executeEffects: ActionEffectExecutor, patternId = state.combat.enemyActionPatternId ?? undefined, depth = 0, uiEvents?: CombatUiEventSink) => {
   state.combat.enemyTelegraphActionId = action.id
   state.combat.enemyTelegraphStepId = stepId ?? null
   state.combat.enemyTelegraphPatternId = patternId ?? null
   state.combat.enemyTelegraphMs = Math.max(0, action.telegraphMs)
   const context = actionContext(action, patternId, stepId)
-  runActionEventObservers(state, 'on-action-start', context, executeEffects, depth)
+  runActionEventObservers(state, 'on-action-start', context, executeEffects, depth, uiEvents)
   if (state.combat.enemyTelegraphActionId !== action.id) return true
-  if (state.combat.enemyTelegraphMs <= 0 && !actorCannotAct(state, 'enemy')) resolveActiveEnemyAction(state, executeEffects, depth)
+  if (state.combat.enemyTelegraphMs <= 0 && !actorCannotAct(state, 'enemy')) resolveActiveEnemyAction(state, executeEffects, depth, uiEvents)
   else appendLog(state, `${action.name} telegraphed · ${formatMilliseconds(action.telegraphMs)}`)
   return true
 }
 
 const formatMilliseconds = (milliseconds: number) => `${(Math.max(0, milliseconds) / 1000).toFixed(1)}s`
 
-export const startEnemyAction = (state: GameState, actionId: string, executeEffects: ActionEffectExecutor, stepId?: string, depth = 0) => {
+export const startEnemyAction = (state: GameState, actionId: string, executeEffects: ActionEffectExecutor, stepId?: string, depth = 0, uiEvents?: CombatUiEventSink) => {
   if (!state.combat.enemyId || state.combat.enemyTelegraphActionId) return false
   const action = getEnemyAction(state, actionId)
   if (!action) return false
-  return startActionDefinition(state, action, stepId, executeEffects, state.combat.enemyActionPatternId ?? undefined, depth)
+  return startActionDefinition(state, action, stepId, executeEffects, state.combat.enemyActionPatternId ?? undefined, depth, uiEvents)
 }
 
-export const startNextEnemyAction = (state: GameState, executeEffects: ActionEffectExecutor, depth = 0) => {
+export const startNextEnemyAction = (state: GameState, executeEffects: ActionEffectExecutor, depth = 0, uiEvents?: CombatUiEventSink) => {
   const enemyId = state.combat.enemyId
   if (!enemyId || state.combat.enemyTelegraphActionId || actorCannotAct(state, 'enemy')) return false
   const monster = MONSTERS[enemyId]
@@ -159,7 +161,7 @@ export const startNextEnemyAction = (state: GameState, executeEffects: ActionEff
   if (step.type === 'basic') {
     const source: CombatSource = { actor: 'enemy', kind: 'basic-attack', sourceId: `${enemyId}-basic-attack`, tags: ['basic-attack', 'direct'] }
     const before = state.player.health
-    executeEffects(state, [{ type: 'deal-damage', target: 'opponent', damageType: 'physical', magnitude: { type: 'flat', value: monster.basicAttackDamage }, tags: ['basic-attack', 'direct'] }], source, depth)
+    executeEffects(state, [{ type: 'deal-damage', target: 'opponent', damageType: 'physical', magnitude: { type: 'flat', value: monster.basicAttackDamage }, tags: ['basic-attack', 'direct'] }], source, depth, uiEvents)
     appendLog(state, `${monster.name} Basic hits for ${Math.max(0, before - state.player.health)}.`)
     scheduleEnemyRecovery(state, monster.actionIntervalMs)
     return true
@@ -170,10 +172,10 @@ export const startNextEnemyAction = (state: GameState, executeEffects: ActionEff
     scheduleEnemyRecovery(state, monster.actionIntervalMs)
     return false
   }
-  return startActionDefinition(state, action, step.id, executeEffects, pattern.id, depth)
+  return startActionDefinition(state, action, step.id, executeEffects, pattern.id, depth, uiEvents)
 }
 
-export const resolveActiveEnemyAction = (state: GameState, executeEffects: ActionEffectExecutor, depth = 0) => {
+export const resolveActiveEnemyAction = (state: GameState, executeEffects: ActionEffectExecutor, depth = 0, uiEvents?: CombatUiEventSink) => {
   const enemyId = state.combat.enemyId
   const actionId = state.combat.enemyTelegraphActionId
   if (!enemyId || !actionId || actorCannotAct(state, 'enemy')) return false
@@ -186,23 +188,25 @@ export const resolveActiveEnemyAction = (state: GameState, executeEffects: Actio
   const patternId = state.combat.enemyTelegraphPatternId ?? state.combat.enemyActionPatternId ?? undefined
   const context = actionContext(action, patternId, stepId)
   clearActiveEnemyAction(state)
-  executeEffects(state, action.effects, context.source as CombatSource, depth + 1)
-  runActionEventObservers(state, 'on-action-resolve', context, executeEffects, depth + 1)
+  if (action.effects.length === 0) uiEvents?.push({ source: { kind: 'enemy', monsterId: enemyId }, target: 'player', category: 'enemy-action', sourceId: action.id, actionId: action.id })
+  executeEffects(state, action.effects, context.source as CombatSource, depth + 1, uiEvents)
+  runActionEventObservers(state, 'on-action-resolve', context, executeEffects, depth + 1, uiEvents)
   scheduleEnemyRecovery(state, action.recoveryMs ?? MONSTERS[enemyId].actionIntervalMs)
   appendLog(state, `${action.name} resolves.`)
   return true
 }
 
 /** Direct developer resolution; it still uses Action effects and resolve observers. */
-export const forceResolveEnemyAction = (state: GameState, actionId: string, executeEffects: ActionEffectExecutor, depth = 0) => {
-  if (state.combat.enemyTelegraphActionId === actionId) return resolveActiveEnemyAction(state, executeEffects, depth)
+export const forceResolveEnemyAction = (state: GameState, actionId: string, executeEffects: ActionEffectExecutor, depth = 0, uiEvents?: CombatUiEventSink) => {
+  if (state.combat.enemyTelegraphActionId === actionId) return resolveActiveEnemyAction(state, executeEffects, depth, uiEvents)
   if (state.combat.enemyTelegraphActionId) return false
   const enemyId = state.combat.enemyId
   const action = getEnemyAction(state, actionId)
   if (!enemyId || !action) return false
   const context = actionContext(action, state.combat.enemyActionPatternId ?? undefined, undefined)
-  executeEffects(state, action.effects, context.source as CombatSource, depth + 1)
-  runActionEventObservers(state, 'on-action-resolve', context, executeEffects, depth + 1)
+  if (action.effects.length === 0) uiEvents?.push({ source: { kind: 'enemy', monsterId: enemyId }, target: 'player', category: 'enemy-action', sourceId: action.id, actionId: action.id })
+  executeEffects(state, action.effects, context.source as CombatSource, depth + 1, uiEvents)
+  runActionEventObservers(state, 'on-action-resolve', context, executeEffects, depth + 1, uiEvents)
   scheduleEnemyRecovery(state, action.recoveryMs ?? MONSTERS[enemyId].actionIntervalMs)
   appendLog(state, `${action.name} resolves.`)
   return true

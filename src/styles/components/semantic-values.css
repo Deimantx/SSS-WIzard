@@ -1,0 +1,5 @@
+.ui-mana { color: var(--semantic-mana); }
+.ui-time { color: var(--semantic-time); }
+.ui-focus { color: var(--semantic-focus); }
+.ui-health { color: var(--semantic-health); }
+.ui-barrier { color: var(--semantic-barrier); }

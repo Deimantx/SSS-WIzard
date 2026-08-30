@@ -10,6 +10,7 @@
 @import './components/tooltip.css';
 @import './components/select-menu.css';
 @import './components/archive.css';
+@import './components/semantic-values.css';
 @import './developer-tools.css';
 @import './tools/developer-tools-v2.css';
 @import './settings-preview.css';
@@ -25,5 +26,6 @@
 @import './screens/collection.css';
 @import './screens/bestiary.css';
 @import './screens/schools.css';
+@import './screens/combat.css';
 @import './profiles.css';
 @import './profile-settings.css';

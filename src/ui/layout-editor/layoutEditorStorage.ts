@@ -67,6 +67,18 @@ export function loadUiLayouts(): UiLayoutDocument {
           continue
         }
       }
+      if (screen === 'combat') {
+        const legacyCombatIds = ['combat-dungeon', 'combat-enemy', 'combat-timeline', 'combat-spells', 'combat-log']
+        const canonicalCombatIds = ['combat-stage', 'combat-spell-deck', 'combat-intel']
+        const hasLegacyPanels = legacyCombatIds.some((id) => Object.prototype.hasOwnProperty.call(rawSource, id))
+        const hasCanonicalPanels = canonicalCombatIds.some((id) => Object.prototype.hasOwnProperty.call(rawSource, id))
+        if (hasLegacyPanels && !hasCanonicalPanels) {
+          // Combat's composition changed from five independent cards to one
+          // live stage plus two supporting surfaces. Preserve other screens.
+          screens.combat = {}
+          continue
+        }
+      }
       const source = screen === 'tower-channeling' && !('channeling-pillars' in rawSource) && 'channeling-infrastructure' in rawSource
         ? { ...rawSource, 'channeling-pillars': rawSource['channeling-infrastructure'] }
         : screen === 'tower-research' && ('research-config' in rawSource || 'research-queue' in rawSource)

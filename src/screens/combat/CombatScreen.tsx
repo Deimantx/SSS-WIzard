@@ -1,15 +1,26 @@
-import { Swords } from 'lucide-react'
-import { useGameStore } from '../../store/gameStore'
-import { Button } from '../../components/ui'
+import { useCallback, useEffect, useState } from 'react'
+import { dismissGameTooltips } from '../../components/ui/tooltip/Tooltip'
 import { EditableGrid } from '../../ui/layout-editor/EditableGrid'
-import { DungeonPanel } from './DungeonPanel'
-import { EnemyPanel } from './EnemyPanel'
-import { CombatTimelinePanel } from './CombatTimelinePanel'
-import { SpellBarPanel } from './SpellBarPanel'
-import { CombatLogPanel } from './CombatLogPanel'
+import type { DungeonId } from '../../game/types'
+import { useGameStore } from '../../store/gameStore'
+import { DungeonAtlasDialog, dungeonHasMeaningfulProgress, getFirstUnlockedDungeon } from './DungeonAtlasDialog'
+import { CombatIntelPanel } from './CombatIntelPanel'
+import { CombatRunBar } from './CombatRunBar'
+import { CombatSpellDeck } from './CombatSpellDeck'
+import { CombatStage } from './CombatStage'
+import { LeaveDungeonDialog } from './LeaveDungeonDialog'
 
 export function CombatScreenV2() {
+  const combatDungeonId = useGameStore((state) => state.combat.dungeonId)
+  const progress = useGameStore((state) => state.progress)
   const combat = useGameStore((state) => state.combat)
-  const enter = useGameStore((state) => state.enterDungeon)
-  return <div className="screen-content"><div className="screen-header"><div><div className="eyebrow">DUNGEON ATLAS · THREE FRONTIERS</div><h1>The dungeon watches back.</h1><p>Read enemy patterns, react to telegraphs, and choose which spells deserve Focus.</p></div>{!combat.active && <Button onClick={() => enter()}><Swords size={16} /> Enter Whispering Woods</Button>}</div><EditableGrid screen="combat" panels={[{ id: 'combat-dungeon', content: <DungeonPanel /> }, { id: 'combat-enemy', content: <EnemyPanel /> }, { id: 'combat-timeline', content: <CombatTimelinePanel /> }, { id: 'combat-spells', content: <SpellBarPanel /> }, { id: 'combat-log', content: <CombatLogPanel /> }]} /></div>
+  const [selectedDungeonId, setSelectedDungeonId] = useState<DungeonId>(() => combatDungeonId ?? getFirstUnlockedDungeon(progress))
+  const [atlasOpen, setAtlasOpen] = useState(false)
+  const [leaveOpen, setLeaveOpen] = useState(false)
+  useEffect(() => { if (combatDungeonId) setSelectedDungeonId(combatDungeonId) }, [combatDungeonId])
+  const openAtlas = useCallback(() => { dismissGameTooltips(); setAtlasOpen(true) }, [])
+  const closeAtlas = useCallback(() => setAtlasOpen(false), [])
+  const closeLeave = useCallback(() => setLeaveOpen(false), [])
+  const requestLeave = useCallback(() => { dismissGameTooltips(); if (dungeonHasMeaningfulProgress(combat)) setLeaveOpen(true); else useGameStore.getState().leaveDungeon() }, [combat])
+  return <div className="screen-content combat-screen"><div className="screen-header"><div><div className="eyebrow">ARCANE COMBAT</div><h1>Combat</h1><p>Read enemy intent, manage Mana, and control your Spell automation.</p></div></div><CombatRunBar selectedDungeonId={selectedDungeonId} onOpenAtlas={openAtlas} onRequestLeave={requestLeave} /><EditableGrid screen="combat" panels={[{ id: 'combat-stage', content: <CombatStage /> }, { id: 'combat-spell-deck', content: <CombatSpellDeck /> }, { id: 'combat-intel', content: <CombatIntelPanel /> }]} />{atlasOpen && <DungeonAtlasDialog selectedDungeonId={selectedDungeonId} onSelect={setSelectedDungeonId} onClose={closeAtlas} />}{leaveOpen && <LeaveDungeonDialog onClose={closeLeave} />}</div>
 }

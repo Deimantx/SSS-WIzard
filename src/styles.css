@@ -193,44 +193,7 @@ h1 { font-size: clamp(27px, 3vw, 40px); line-height: 1.08; letter-spacing: -.045
 .ceiling-line strong { font-size: 12px; }
 .ceiling-line p { margin-top: 4px; }
 .ceiling-arrow { color: #9b8a74; font: 12px 'DM Mono'; }
-.dungeon-card, .enemy-card { min-height: 430px; }
-.dungeon-card-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.dungeon-card { min-height: 0; display: flex; flex-direction: column; gap: 10px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: rgba(255,255,255,.025); }
-.dungeon-card.selected { border-color: rgba(168,148,255,.42); background: rgba(168,148,255,.06); }
-.dungeon-card.locked { opacity: .72; }
-.dungeon-card-select { display: grid; gap: 5px; min-width: 0; padding: 0; border: 0; color: inherit; text-align: left; background: transparent; cursor: pointer; }
-.dungeon-card-select strong { color: #e3dff0; font-size: 12px; }
-.dungeon-card-select small, .dungeon-lock-note { color: var(--muted); font-size: 9px; line-height: 1.35; }
-.dungeon-lock-note { color: var(--gold); }
-.dungeon-card-actions { display: flex; gap: 5px; margin-top: auto; }
-.dungeon-card-actions .button { flex: 1; min-width: 0; padding-left: 6px; padding-right: 6px; font-size: 8px; }
-.dungeon-footer-actions { display: flex; justify-content: flex-end; margin-top: 14px; }
-.forest-scene { position: relative; height: 205px; overflow: hidden; border: 1px solid rgba(126,119,182,.17); border-radius: 8px; background: linear-gradient(160deg, #152238, #11182a 48%, #172116); }
-.forest-scene:after { content: ''; position: absolute; inset: 50% 0 0; background: linear-gradient(transparent, rgba(7,10,12,.75)); }
-.moon { position: absolute; top: 25px; right: 28%; width: 42px; height: 42px; border-radius: 50%; background: #d9d6ed; box-shadow: 0 0 30px rgba(214,211,255,.4); opacity: .8; }
-.tree { position: absolute; bottom: -7px; width: 70px; height: 155px; background: #0c1216; clip-path: polygon(42% 100%, 53% 100%, 55% 45%, 90% 45%, 75% 34%, 100% 23%, 61% 25%, 75% 4%, 50% 18%, 37% 0, 38% 23%, 8% 12%, 30% 34%, 0 38%, 43% 45%); opacity: .95; }
-.tree-a { left: 8%; transform: scale(1.45); }.tree-b { right: 8%; transform: scale(1.65); }.tree-c { left: 43%; transform: scale(.9); opacity: .7; }
-.forest-rune { position: absolute; z-index: 1; left: 48%; bottom: 26px; color: rgba(168,148,255,.75); font-size: 22px; text-shadow: 0 0 20px var(--violet); }
-.dungeon-stat-row { margin-top: 16px; }
-.boss-ready { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 17px; padding: 12px; background: rgba(112,205,163,.06); border: 1px solid rgba(112,205,163,.2); border-radius: 8px; }
-.boss-ready.heart { background: rgba(232,119,120,.06); border-color: rgba(232,119,120,.2); }
-.boss-ready > div { display: grid; gap: 4px; }
-.boss-ready strong { font-size: 11px; }.boss-ready span:not(.status) { color: var(--muted); font-size: 9px; }
-.enemy-card { text-align: center; }
-.enemy-card .card-head { text-align: left; }
-.enemy-portrait { position: relative; display: grid; place-items: center; width: 118px; height: 118px; margin: 13px auto 15px; border: 1px solid color-mix(in srgb, var(--enemy-color) 35%, transparent); border-radius: 50%; color: var(--enemy-color); font-size: 47px; background: radial-gradient(circle, color-mix(in srgb, var(--enemy-color) 18%, transparent), transparent 64%), rgba(7,9,16,.55); box-shadow: 0 0 32px color-mix(in srgb, var(--enemy-color) 15%, transparent); }
-.enemy-portrait.boss { width: 140px; height: 140px; font-size: 58px; }
-.enemy-aura { position: absolute; inset: -10px; border: 1px dashed color-mix(in srgb, var(--enemy-color) 35%, transparent); border-radius: 50%; animation: spin 16s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.enemy-name { font-size: 17px; }.center { text-align: center; margin-top: 5px; }
-.trait-row { display: flex; gap: 5px; justify-content: center; flex-wrap: wrap; margin-top: 12px; }
-.trait { display: inline-flex; padding: 4px 6px; border-radius: 4px; color: #d5bb91; background: rgba(239,189,119,.08); border: 1px solid rgba(239,189,119,.18); font: 9px 'DM Mono'; }
-.combat-statline { display: flex; justify-content: space-around; gap: 10px; color: #77748d; font-size: 9px; border-top: 1px solid var(--line); padding-top: 14px; margin-top: 19px; }.combat-statline strong { display: block; color: #c8c4d8; font: 10px 'DM Mono'; margin-top: 4px; }
 .empty-state { display: grid; place-items: center; min-height: 90px; color: #77748d; font-size: 11px; text-align: center; }.empty-state.small { min-height: 55px; font-size: 10px; }
-.spell-card, .log-card { min-height: 350px; }.spell-list { display: grid; gap: 8px; }
-.spell-row { display: grid; grid-template-columns: 28px 1fr auto auto; align-items: center; gap: 9px; padding: 8px; border: 1px solid var(--line); border-radius: 7px; }
-.spell-row.locked { opacity: .46; }.spell-mini { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 6px; background: rgba(255,255,255,.045); }
-.spell-copy strong, .spell-copy small { display: block; }.spell-copy strong { font-size: 10px; }.spell-copy small { color: #77748d; font-size: 9px; margin-top: 3px; }.spell-row .button { padding: 6px 9px; font-size: 9px; }
 .developer-spell-list { display: grid; gap: 7px; }
 .developer-spell-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: center; gap: 7px; padding: 8px; border: 1px solid var(--line); border-radius: 7px; }
 .developer-spell-row strong, .developer-spell-row small { display: block; }
@@ -239,7 +202,6 @@ h1 { font-size: clamp(27px, 3vw, 40px); line-height: 1.08; letter-spacing: -.045
 .developer-rank-table { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
 .developer-rank-table span { display: grid; gap: 4px; padding: 8px; border: 1px solid var(--line); border-radius: 6px; }
 .developer-rank-table strong { font-size: 10px; }.developer-rank-table small { color: var(--gold); font: 9px 'DM Mono'; }
-.combat-log { max-height: 280px; overflow: auto; display: grid; gap: 8px; }.combat-log > div { display: flex; gap: 10px; color: #858298; font-size: 10px; line-height: 1.4; }.combat-log span { color: #5f5c75; font: 9px 'DM Mono'; }.combat-log .latest { color: #e7e2f8; }
 .info-card { margin-top: 16px; }.info-columns { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }.info-columns svg { color: var(--violet); }.info-columns strong, .info-columns p { display: block; }.info-columns strong { font-size: 11px; margin-top: 10px; }.info-columns p { color: var(--muted); font-size: 10px; line-height: 1.5; margin-top: 5px; }
 .equipment-card, .upgrade-card { min-height: 250px; }.equipment-slot { display: flex; align-items: center; gap: 16px; margin: 20px 0 25px; }.equipment-art { width: 80px; height: 80px; display: grid; place-items: center; font-size: 35px; border: 1px solid rgba(239,189,119,.25); border-radius: 14px; background: rgba(239,189,119,.07); }.equipment-art.small { width: 57px; height: 57px; font-size: 25px; }.equipment-slot h2, .upgrade-head h2 { font-size: 17px; margin-top: 7px; }.equipment-slot p, .upgrade-head p { color: var(--muted); font-size: 10px; line-height: 1.45; margin-top: 5px; }.stat-compare { display: flex; justify-content: space-between; align-items: center; gap: 12px; border-top: 1px solid var(--line); padding-top: 17px; }.stat-compare span, .stat-compare strong { display: block; }.stat-compare span { color: #77748d; font-size: 9px; }.stat-compare strong { color: #d6d1e8; font: 11px 'DM Mono'; margin-top: 5px; }.stat-compare svg { color: #68657e; }.positive { color: var(--green) !important; }.upgrade-head { display: flex; align-items: center; gap: 14px; margin: 20px 0; }.upgrade-card .status { margin-top: 18px; }
 .locked-screen { display: grid; place-items: center; align-content: center; min-height: 360px; background: rgba(20,22,35,.65); border: 1px solid var(--line); border-radius: 10px; text-align: center; }.locked-seal { width: 68px; height: 68px; display: grid; place-items: center; border: 1px solid rgba(239,189,119,.25); border-radius: 50%; color: var(--gold); background: rgba(239,189,119,.06); margin-bottom: 17px; }.locked-screen h2 { font-size: 17px; }.locked-screen p { color: var(--muted); font-size: 11px; margin: 8px 0 19px; }

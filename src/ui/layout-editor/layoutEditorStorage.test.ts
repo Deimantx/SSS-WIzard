@@ -263,3 +263,37 @@ describe('Home expansion layout compatibility', () => {
     expect(getScreenLayouts('schools', loaded.screens.schools)).toEqual(DEFAULT_LAYOUTS.schools)
   })
 })
+
+describe('Combat layout compatibility', () => {
+  it('resets legacy combat panels to the new stage, deck, and intel defaults', () => {
+    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({ version: 3, screens: {
+      combat: {
+        'combat-dungeon': { x: 0, y: 0, w: 4, h: 8 },
+        'combat-enemy': { x: 4, y: 0, w: 4, h: 8 },
+        'combat-timeline': { x: 8, y: 0, w: 4, h: 8 },
+        'combat-spells': { x: 0, y: 8, w: 8, h: 8 },
+        'combat-log': { x: 8, y: 8, w: 4, h: 8 },
+      },
+    } }))
+
+    const loaded = loadUiLayouts()
+    expect(loaded.screens.combat).toEqual({})
+    expect(getScreenLayouts('combat', loaded.screens.combat)).toEqual(DEFAULT_LAYOUTS.combat)
+  })
+
+  it('keeps canonical combat geometry and flags intact', () => {
+    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({ version: 3, screens: {
+      combat: {
+        'combat-stage': { x: 0, y: 0, w: 10, h: 18, locked: true },
+        'combat-spell-deck': { x: 0, y: 18, w: 10, h: 12 },
+        'combat-intel': { x: 10, y: 0, w: 2, h: 30, hidden: true },
+      },
+    } }))
+
+    expect(loadUiLayouts().screens.combat).toEqual({
+      'combat-stage': { x: 0, y: 0, w: 10, h: 18, locked: true },
+      'combat-spell-deck': { x: 0, y: 18, w: 10, h: 12 },
+      'combat-intel': { x: 10, y: 0, w: 2, h: 30, hidden: true },
+    })
+  })
+})

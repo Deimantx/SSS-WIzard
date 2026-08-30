@@ -12,14 +12,15 @@ export interface DungeonDefinition {
   encounterDelayMs: number
   unlock?: DungeonUnlockCondition
   completesTutorial?: boolean
+  ui?: { description: string }
 }
 
 export const DUNGEON_ORDER: DungeonId[] = ['whispering-woods', 'howling-den', 'abandoned-catacombs']
 
 export const DUNGEONS: Record<DungeonId, DungeonDefinition> = {
-  'whispering-woods': { id: 'whispering-woods', name: 'Whispering Woods', monsterPool: ['forest-wisp', 'thornling', 'stone-root', 'grove-sentinel'], threatRequired: 20, boss: 'forest-heart', encounterDelayMs: 5000, unlock: { type: 'always' } },
-  'howling-den': { id: 'howling-den', name: 'Howling Den', monsterPool: ['cavefang-wolf', 'razorclaw-lynx', 'corrupted-dire-wolf'], threatRequired: 25, boss: 'corrupted-greatbear', encounterDelayMs: 5000, unlock: { type: 'boss-kill', bossId: 'forest-heart' } },
-  'abandoned-catacombs': { id: 'abandoned-catacombs', name: 'Abandoned Catacombs', monsterPool: ['restless-skeleton', 'grave-wraith', 'fallen-acolyte'], threatRequired: 30, boss: 'archmage-edrin-shade', encounterDelayMs: 5000, unlock: { type: 'boss-kill', bossId: 'corrupted-greatbear' }, completesTutorial: true },
+  'whispering-woods': { id: 'whispering-woods', name: 'Whispering Woods', monsterPool: ['forest-wisp', 'thornling', 'stone-root', 'grove-sentinel'], threatRequired: 20, boss: 'forest-heart', encounterDelayMs: 5000, unlock: { type: 'always' }, ui: { description: 'A restless grove where living roots and arcane wisps guard the Forest Heart.' } },
+  'howling-den': { id: 'howling-den', name: 'Howling Den', monsterPool: ['cavefang-wolf', 'razorclaw-lynx', 'corrupted-dire-wolf'], threatRequired: 25, boss: 'corrupted-greatbear', encounterDelayMs: 5000, unlock: { type: 'boss-kill', bossId: 'forest-heart' }, ui: { description: 'A predator-haunted den twisted by unstable magic.' } },
+  'abandoned-catacombs': { id: 'abandoned-catacombs', name: 'Abandoned Catacombs', monsterPool: ['restless-skeleton', 'grave-wraith', 'fallen-acolyte'], threatRequired: 30, boss: 'archmage-edrin-shade', encounterDelayMs: 5000, unlock: { type: 'boss-kill', bossId: 'corrupted-greatbear' }, completesTutorial: true, ui: { description: 'A dead mage’s tomb-complex where spirits and forgotten magic still linger.' } },
 }
 
 export const isDungeonUnlocked = (dungeon: DungeonDefinition, progress: Pick<GameState, 'progress'>['progress']) => {

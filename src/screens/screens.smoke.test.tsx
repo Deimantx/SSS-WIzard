@@ -63,7 +63,7 @@ describe('screen smoke coverage', () => {
   it('navigates every major screen through grouped shell navigation', async () => {
     const user = userEvent.setup()
     render(<GameShell />)
-    const screens = [{ nav: 'Overview', heading: 'Good evening, apprentice.' }, { nav: 'Combat', heading: 'The dungeon watches back.' }, { nav: 'Magic Schools', heading: 'Magic Schools' }, { nav: 'Inventory', heading: 'Everything the tower currently holds.' }, { nav: 'Equipment', heading: 'Build the tower’s answer.' }, { nav: 'Guild', heading: 'A guild invitation, still sealed.' }, { nav: 'Collection', heading: 'Every relic leaves a record.' }, { nav: 'Bestiary', heading: 'Know what waits beyond the tower.' }, { nav: 'Settings / Info', heading: 'Settings / Info' }]
+    const screens = [{ nav: 'Overview', heading: 'Good evening, apprentice.' }, { nav: 'Combat', heading: 'Combat' }, { nav: 'Magic Schools', heading: 'Magic Schools' }, { nav: 'Inventory', heading: 'Everything the tower currently holds.' }, { nav: 'Equipment', heading: 'Build the tower’s answer.' }, { nav: 'Guild', heading: 'A guild invitation, still sealed.' }, { nav: 'Collection', heading: 'Every relic leaves a record.' }, { nav: 'Bestiary', heading: 'Know what waits beyond the tower.' }, { nav: 'Settings / Info', heading: 'Settings / Info' }]
     for (const item of screens) { await user.click(navItem(item.nav)); expect(screen.getByRole('heading', { name: item.heading })).toBeTruthy() }
     expect(navGroup('Combat')).toBeTruthy()
     expect(navGroup('Hero')).toBeTruthy()
@@ -142,7 +142,7 @@ describe('screen smoke coverage', () => {
     await goToTower(user, 'Research')
     expect(screen.getByRole('heading', { name: 'Research turns fragments into understanding.' })).toBeTruthy()
     await user.click(navItem('Combat'))
-    expect(screen.getByRole('heading', { name: 'The dungeon watches back.' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Combat' })).toBeTruthy()
   })
 
   it('shows shared School Mastery and Current Arcane Work on Overview', () => {

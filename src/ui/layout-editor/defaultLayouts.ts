@@ -15,7 +15,7 @@ export const DEFAULT_LAYOUTS: Record<ScreenId, ScreenLayouts> = {
     'schools-browser': layout(0, 0, 7, 18), 'schools-inspector': layout(7, 0, 5, 18), 'schools-presets': layout(0, 18, 12, 5),
   },
   combat: {
-    'combat-dungeon': layout(0, 0, 7, 11), 'combat-enemy': layout(7, 0, 5, 11), 'combat-timeline': layout(0, 11, 12, 8), 'combat-spells': layout(0, 19, 7, 12), 'combat-log': layout(7, 19, 5, 12),
+    'combat-stage': layout(0, 0, 12, 16), 'combat-spell-deck': layout(0, 16, 12, 10), 'combat-intel': layout(0, 26, 12, 10),
   },
   inventory: { 'inventory-catalog': layout(0, 0, 8, 17), 'inventory-detail': layout(8, 0, 4, 12), 'inventory-actions': layout(8, 12, 4, 5) },
   equipment: { 'equipment-loadout': layout(0, 0, 7, 13), 'equipment-stats': layout(7, 0, 5, 13), 'equipment-owned': layout(0, 13, 8, 13), 'equipment-inspector': layout(8, 13, 4, 13) },

@@ -19,7 +19,7 @@ export function EditableGrid({ screen, panels, children, layoutTransform }: { sc
   const grid = useMemo(() => toGridLayout(screen, saved, editor.isEditing), [editor.document, editor.isEditing, saved, screen])
   const transformedGrid = useMemo(() => editor.isEditing || !layoutTransform ? grid : layoutTransform(grid), [editor.isEditing, grid, layoutTransform])
   const displayGrid = useMemo(() => {
-    if (!((screen === 'inventory' || screen === 'collection' || screen === 'bestiary' || screen === 'tower-focus' || screen === 'tower-transmutation' || screen === 'tower-research' || screen === 'schools') && width > 0 && width < 760)) return transformedGrid
+    if (!((screen === 'inventory' || screen === 'collection' || screen === 'bestiary' || screen === 'tower-focus' || screen === 'tower-transmutation' || screen === 'tower-research' || screen === 'schools' || screen === 'combat') && width > 0 && width < 760)) return transformedGrid
     let nextY = 0
     return transformedGrid.map((item) => {
       const stacked = { ...item, x: 0, y: nextY, w: GRID_COLUMNS }

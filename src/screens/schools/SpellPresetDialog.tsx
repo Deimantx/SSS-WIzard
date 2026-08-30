@@ -191,7 +191,7 @@ function AvailableSpells({ state, selectedIds, school, search, onAdd }: { state:
     if (!isSpellUnlocked(state, spell.id)) return false
     return !query || `${spell.name} ${spell.description}`.toLocaleLowerCase().includes(query)
   }), [state.progress, school, query])
-  return <div className="spell-preset-available-list">{spells.map((spell) => { const added = selectedIds.includes(spell.id); const rank = getSpellRank(state, spell.id) ?? 1; const focusCost = getSpellAutoCastFocusCost(state, spell.id) ?? rank * 10; return <PresetAvailableSpellTile key={spell.id} spell={spell} rank={rank} focusCost={focusCost} added={added} onAdd={onAdd} /> })}{!spells.length && <div className="spell-preset-library-empty">No known Spells match this library filter.</div>}</div>
+  return <div className="spell-preset-available-list">{spells.map((spell) => { const added = selectedIds.includes(spell.id); const rank = getSpellRank(state, spell.id); const focusCost = getSpellAutoCastFocusCost(state, spell.id); if (rank === null || focusCost === null) return null; return <PresetAvailableSpellTile key={spell.id} spell={spell} rank={rank} focusCost={focusCost} added={added} onAdd={onAdd} /> })}{!spells.length && <div className="spell-preset-library-empty">No known Spells match this library filter.</div>}</div>
 }
 
 function FocusBudget({ projection, maxFocus }: { projection: ReturnType<typeof getSpellPresetFocusProjection>; maxFocus: number }) {

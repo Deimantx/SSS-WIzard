@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, X } from 'lucide-react'
+import { ArrowDown, ArrowUp, CircleDot, X } from 'lucide-react'
 import { Button, GameTooltip } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import type { SpellDefinition, SpellId } from '../../game/types'
@@ -13,7 +13,7 @@ export function PresetLoadoutSpellTile({ spell, spellId, rank, focusCost, index,
     <span className="spell-preset-slot-number">{String(index + 1).padStart(2, '0')}</span>
     <SpellIcon school={school} locked={!available} size="medium" />
     <strong>{name}</strong>
-    <small>{spell && rank ? `${formatSpellRank(rank as SpellRank)} · ${focusCost ?? rank * 10} Focus` : 'Unavailable · saved slot retained'}</small>
+    {spell && rank ? <><small>{formatSpellRank(rank as SpellRank)}</small>{focusCost !== null && <span className="spell-preset-tile-focus"><CircleDot size={12} aria-hidden="true" />{focusCost} Focus</span>}</> : <small>Unavailable · saved slot retained</small>}
     <div className="spell-preset-tile-actions">
       <GameTooltip content={<TooltipContent title="Move earlier" description="Move this Spell one slot toward the front of the loadout." />}><Button icon variant="ghost" ariaLabel={`Move ${name} up`} disabled={index === 0} onClick={() => onMove(index, -1)}><ArrowUp size={13} aria-hidden="true" /></Button></GameTooltip>
       <GameTooltip content={<TooltipContent title="Move later" description="Move this Spell one slot toward the end of the loadout." />}><Button icon variant="ghost" ariaLabel={`Move ${name} down`} disabled={index === total - 1} onClick={() => onMove(index, 1)}><ArrowDown size={13} aria-hidden="true" /></Button></GameTooltip>

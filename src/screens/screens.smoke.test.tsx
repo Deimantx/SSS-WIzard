@@ -174,8 +174,18 @@ describe('screen smoke coverage', () => {
     expect(screen.getByText('Fire Bolt', { selector: 'strong' })).toBeTruthy()
     expect(screen.getByText('Water Ward', { selector: 'strong' })).toBeTruthy()
     expect(screen.queryAllByText('???')).toHaveLength(0)
-    await user.click(screen.getByRole('button', { name: /Fire Bolt,/ }))
+    const fireBoltTile = screen.getByRole('button', { name: /Fire Bolt,/ })
+    expect(fireBoltTile.querySelector('.spell-browser-rank-badge')).toBeNull()
+    expect(fireBoltTile.querySelector('.spell-tile-status')).toBeNull()
+    await user.click(fireBoltTile)
     expect(screen.getByText(/Auto-Cast Focus/)).toBeTruthy()
+    expect(screen.queryByText('Current Rank')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Auto-Cast OFF' })).toBeTruthy()
+    expect(screen.getByText('10 Focus when enabled')).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Auto-Cast OFF' }))
+    expect(screen.getByRole('button', { name: 'Auto-Cast ON' })).toBeTruthy()
+    expect(screen.getByText('10 Focus reserved')).toBeTruthy()
+    expect(fireBoltTile.querySelector('.spell-tile-status')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: /Water Ward,/ }))
     expect(screen.getByRole('heading', { name: 'Water Ward' })).toBeTruthy()
     expect(screen.getByRole('button', { name: /Water Ward,/ }).getAttribute('aria-pressed')).toBe('true')
@@ -186,6 +196,19 @@ describe('screen smoke coverage', () => {
     expect(screen.getAllByText('???').length).toBeGreaterThan(0)
   })
 
+  it('shows a themed insufficient-Focus Auto-Cast state without enabling it', async () => {
+    const user = userEvent.setup()
+    const progress = useGameStore.getState().progress
+    const player = useGameStore.getState().player
+    useGameStore.setState({ progress: { ...progress, spellRanks: { 'fire-bolt': 1 } }, player: { ...player, maxFocus: 0 } })
+    render(<GameShell />)
+    await user.click(navItem('Magic Schools'))
+    await user.click(screen.getByRole('button', { name: /Fire Bolt,/ }))
+    const toggle = screen.getByRole('button', { name: 'Auto-Cast OFF' })
+    expect(toggle.hasAttribute('disabled')).toBe(true)
+    expect(screen.getByText('Need 10 Focus')).toBeTruthy()
+  })
+
   it('creates, saves, and applies an Auto-Cast preset from the Schools screen', async () => {
     const user = userEvent.setup()
     const progress = useGameStore.getState().progress
@@ -194,6 +217,7 @@ describe('screen smoke coverage', () => {
     await user.click(navItem('Magic Schools'))
     await user.click(screen.getByRole('button', { name: 'MANAGE PRESETS' }))
     const dialog = screen.getByRole('dialog', { name: 'SPELL PRESET MANAGER' })
+    expect(within(dialog).getByText('FIRE · RANK I')).toBeTruthy()
     await user.clear(within(dialog).getByRole('textbox', { name: 'Preset name' }))
     await user.type(within(dialog).getByRole('textbox', { name: 'Preset name' }), 'Fire opener')
     await user.click(within(dialog).getByRole('button', { name: /Fire Bolt/ }))

@@ -1,6 +1,6 @@
 import { FRAGMENT_ORDER, SCHOOLS } from '../../game/data/schools'
 import { SPELLS } from '../../game/content/spells/spells'
-import { getSpellRank } from '../../game/systems/spells'
+import { getSpellAutoCastFocusCost } from '../../game/systems/spells'
 import { FilterBar, GameTooltip, SearchInput, SelectMenu } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import type { GameState, SchoolId, SpellId } from '../../game/types'
@@ -14,7 +14,7 @@ const typeMenuOptions = typeFilters.map((type) => ({ value: type, label: type ==
 const sortMenuOptions = sortOptions.map((sort) => ({ value: sort, label: sort === 'Unlock Level' ? 'Unlock' : sort }))
 
 export function SpellBrowser({ state, filters, onFiltersChange, selectedEntryId, onSelect }: {
-  state: Pick<GameState, 'schools' | 'progress'>
+  state: Pick<GameState, 'schools' | 'progress' | 'activities'>
   filters: SpellBrowserFilters
   onFiltersChange: (next: SpellBrowserFilters) => void
   selectedEntryId: string | null
@@ -35,7 +35,7 @@ export function SpellBrowser({ state, filters, onFiltersChange, selectedEntryId,
       <SelectMenu options={sortMenuOptions} value={filters.sort} onChange={(value) => update('sort', value)} ariaLabel="Spell sort" prefix="Sort: " />
     </div>
     <div className="spell-browser-grid" aria-label="Spell catalog">
-      {entries.map((entry: SpellBrowserEntry) => <SpellBrowserTile key={entry.id} entry={entry} selected={entry.id === selectedEntryId} onSelect={onSelect} />)}
+      {entries.map((entry: SpellBrowserEntry) => <SpellBrowserTile key={entry.id} entry={entry} selected={entry.id === selectedEntryId} autoCast={entry.kind === 'spell' && Boolean(state.activities.autoCast[entry.spellId])} autoCastFocusCost={entry.kind === 'spell' ? getSpellAutoCastFocusCost(state, entry.spellId) : null} onSelect={onSelect} />)}
       {!entries.length && <div className="schools-empty-state">{showKnownEmptyState ? <><h3>NO SPELLS LEARNED YET</h3><p>Reach School Level 2 through Research to reveal your first Spells.</p><small>Turn off Unlocked Only to preview locked slots.</small></> : <p>No visible Spells match these filters.</p>}</div>}
     </div>
   </div>

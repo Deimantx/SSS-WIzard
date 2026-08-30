@@ -86,6 +86,11 @@ export function loadUiLayouts(): UiLayoutDocument {
           screens.combat = {}
           continue
         }
+        if (hasUnmodifiedGeometry(rawSource['combat-stage'], { x: 0, y: 0, w: 12, h: 14 }) && hasUnmodifiedGeometry(rawSource['combat-spell-deck'], { x: 0, y: 14, w: 12, h: 9 }) && hasUnmodifiedGeometry(rawSource['combat-log'], { x: 0, y: 23, w: 12, h: 8 })) {
+          // The untouched V3.1 stack gets the compact one-row Deck default.
+          screens.combat = {}
+          continue
+        }
       }
       const source = screen === 'tower-channeling' && !('channeling-pillars' in rawSource) && 'channeling-infrastructure' in rawSource
         ? { ...rawSource, 'channeling-pillars': rawSource['channeling-infrastructure'] }

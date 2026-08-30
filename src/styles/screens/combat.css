@@ -202,8 +202,7 @@
 }
 
 /* Player / Enemy */
-.combat-actor-card,
-.combat-intent-panel {
+.combat-actor-card {
   min-width: 0;
   min-height: 0;
   border: 1px solid var(--ui-border);
@@ -259,33 +258,7 @@
   color: var(--ui-accent);
   background: color-mix(in srgb, var(--ui-accent) 9%, transparent);
 }
-.combat-player-sigil {
-  display: grid;
-  place-items: center;
-  align-content: center;
-  gap: 5px;
-  width: 72px;
-  height: 72px;
-  margin: 0 auto;
-  border: 1px solid color-mix(in srgb, var(--ui-accent) 48%, var(--ui-border));
-  border-radius: 10px;
-  color: var(--ui-accent);
-  background: radial-gradient(
-    circle,
-    color-mix(in srgb, var(--ui-accent) 13%, transparent),
-    transparent 70%
-  );
-}
-.combat-player-sigil span {
-  max-width: 66px;
-  overflow: hidden;
-  color: var(--ui-text-muted);
-  font: 8px var(--font-mono);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.combat-subsection-label,
-.combat-intent-kicker {
+.combat-subsection-label {
   color: var(--ui-text-muted);
   font: var(--text-micro) var(--font-mono);
   letter-spacing: 0.12em;
@@ -548,22 +521,6 @@
   border-radius: inherit;
   transform: rotate(16deg);
 }
-.combat-enemy-identity {
-  display: grid;
-  gap: 3px;
-  text-align: center;
-}
-.combat-enemy-identity strong {
-  color: var(--ui-text);
-  font-size: 15px;
-}
-.combat-enemy-identity span {
-  overflow: hidden;
-  color: var(--ui-text-muted);
-  font-size: 10px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 .combat-enemy-card .progress-wrap {
   margin-top: 2px;
 }
@@ -678,139 +635,6 @@
   color: var(--ui-text-muted);
   font: var(--text-micro) var(--font-mono);
 }
-/* Intent */
-.combat-intent-panel {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 11px;
-  padding: 15px;
-  border-color: color-mix(
-    in srgb,
-    var(--enemy-accent, var(--ui-accent)) 30%,
-    var(--ui-border)
-  );
-  background:
-    radial-gradient(
-      circle at 50% 16%,
-      color-mix(
-        in srgb,
-        var(--enemy-accent, var(--ui-accent)) 10%,
-        transparent
-      ),
-      transparent 50%
-    ),
-    color-mix(in srgb, var(--ui-bg) 44%, var(--ui-panel-strong));
-  box-shadow: inset 0 0 0 1px
-    color-mix(in srgb, var(--enemy-accent, var(--ui-accent)) 10%, transparent);
-}
-.combat-intent-panel.is-telegraphing {
-  box-shadow: inset 0 0 0 1px
-    color-mix(in srgb, var(--ui-warning) 18%, transparent);
-}
-.combat-intent-head {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-}
-.combat-intent-head h2 {
-  max-width: 100%;
-  margin-top: 4px;
-  overflow: hidden;
-  color: var(--ui-text);
-  font-size: 18px;
-  letter-spacing: -0.035em;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.combat-intent-countdown {
-  display: flex;
-  align-items: baseline;
-  gap: 7px;
-}
-.combat-intent-countdown svg {
-  align-self: center;
-  color: var(--ui-text-muted);
-}
-.combat-intent-countdown strong {
-  font: 24px var(--font-mono);
-}
-.combat-intent-countdown span {
-  color: var(--ui-text-muted);
-  font-size: 10px;
-}
-.combat-intent-panel .progress-wrap {
-  margin-top: 0;
-}
-.combat-intent-panel .progress {
-  height: 6px;
-}
-.combat-intent-panel .progress i {
-  background: var(--ui-warning);
-}
-.combat-intent-effects {
-  display: grid;
-  gap: 6px;
-  padding: 10px;
-  border: 1px solid
-    color-mix(
-      in srgb,
-      var(--enemy-accent, var(--ui-accent)) 26%,
-      var(--ui-border)
-    );
-  border-radius: 7px;
-  background: color-mix(in srgb, var(--ui-panel) 54%, transparent);
-}
-.combat-intent-effects.game-tooltip-trigger {
-  display: grid;
-}
-.combat-effect-line {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 3px 8px;
-  padding-top: 6px;
-  border-top: 1px solid var(--ui-border);
-}
-.combat-effect-line:first-of-type {
-  padding-top: 0;
-  border-top: 0;
-}
-.combat-effect-line strong {
-  color: var(--ui-text-soft);
-  font-size: 11px;
-}
-.combat-effect-line b {
-  color: var(--ui-text);
-  font: var(--text-micro) var(--font-mono);
-}
-.combat-effect-line small {
-  color: var(--ui-text-muted);
-  font: var(--text-micro) var(--font-mono);
-}
-.combat-effect-line small {
-  grid-column: 1 / -1;
-}
-.effect-kind-damage strong,
-.effect-kind-damage b {
-  color: var(--ui-danger);
-}
-.effect-kind-heal strong,
-.effect-kind-heal b {
-  color: var(--ui-success);
-}
-.effect-kind-barrier strong,
-.effect-kind-barrier b {
-  color: var(--semantic-barrier);
-}
-.effect-kind-control strong,
-.effect-kind-control b {
-  color: var(--semantic-control);
-}
-.combat-intent-pattern {
-  margin-top: auto;
-  padding-top: 8px;
-  border-top: 1px solid var(--ui-border);
-}
 .combat-pattern-rail {
   display: flex;
   align-items: stretch;
@@ -883,68 +707,6 @@
   color: var(--ui-text-disabled);
   font-size: 10px;
 }
-.combat-intent-latest {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--ui-border);
-}
-.combat-intent-latest span {
-  color: var(--ui-text-muted);
-  font: var(--text-micro) var(--font-mono);
-}
-.combat-intent-latest strong {
-  overflow: hidden;
-  color: var(--ui-text-soft);
-  font-size: 10px;
-  font-weight: 500;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.combat-intent-panel.is-idle,
-.combat-intent-panel.is-delay,
-.combat-intent-panel.is-boss-ready {
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-}
-.combat-intent-panel.is-idle svg {
-  color: var(--ui-accent);
-}
-.combat-intent-panel.is-idle strong {
-  color: var(--ui-text);
-  font: 14px var(--font-mono);
-  letter-spacing: 0.08em;
-}
-.combat-intent-panel.is-idle p,
-.combat-intent-panel.is-delay p {
-  max-width: 210px;
-  color: var(--ui-text-muted);
-  font-size: 11px;
-  line-height: 1.5;
-}
-.combat-intent-panel.is-boss-ready p {
-  max-width: 230px;
-  color: var(--ui-text-muted);
-  font-size: 11px;
-  line-height: 1.5;
-}
-.combat-intent-panel.is-idle h2,
-.combat-intent-panel.is-boss-ready h2 {
-  color: var(--ui-text);
-  font-size: 18px;
-}
-.combat-intent-panel.is-delay .combat-intent-title {
-  font: 28px var(--font-mono);
-}
-.combat-intent-panel.is-delay .progress-wrap {
-  width: min(230px, 100%);
-}
-.combat-intent-panel.is-delay .progress-label {
-  display: none;
-}
-
 /* Atlas / Dialogs */
 .combat-modal-backdrop {
   position: fixed;
@@ -1666,11 +1428,6 @@
   .combat-stage-grid {
     grid-template-columns: minmax(190px, 1fr) minmax(220px, 1fr);
   }
-  .combat-intent-panel {
-    grid-column: 1 / -1;
-    order: 3;
-    min-height: 270px;
-  }
   .combat-enemy-card {
     order: 2;
   }
@@ -1687,13 +1444,8 @@
     grid-template-columns: 1fr;
     height: auto;
   }
-  .combat-actor-card,
-  .combat-intent-panel {
+  .combat-actor-card {
     min-height: 300px;
-  }
-  .combat-intent-panel {
-    grid-column: auto;
-    order: 3;
   }
   .combat-enemy-card {
     order: 2;
@@ -1889,15 +1641,6 @@
   color: var(--ui-text);
   background: var(--ui-accent-soft);
   outline: none;
-}
-.combat-player-sigil {
-  width: 84px;
-  height: 84px;
-  border-radius: 12px;
-}
-.combat-player-sigil > svg {
-  width: 50px;
-  height: 50px;
 }
 .combat-monster-portrait {
   width: min(200px, 90%);
@@ -2321,4 +2064,218 @@
   .combat-modal-backdrop *::after {
     animation: none !important;
   }
+}
+
+/* V3.2 Player / Enemy rhythm */
+.combat-player-identity {
+  display: grid;
+  gap: 5px;
+  padding: 10px 0 9px;
+  border-block: 1px solid var(--ui-border);
+}
+.combat-player-weapon {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+.combat-player-weapon .item-icon {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  font-size: 16px;
+}
+.combat-player-weapon strong {
+  overflow: hidden;
+  color: var(--ui-text-soft);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.combat-player-weapon > svg { color: var(--ui-gold); }
+.combat-player-identity > span,
+.combat-enemy-subtitle {
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-mono);
+}
+.combat-basic-attack {
+  padding-top: 10px;
+}
+.combat-basic-stats span { display: grid; gap: 3px; }
+.combat-basic-stats strong { color: var(--ui-text); font-size: 14px; }
+.combat-enemy-subtitle {
+  margin-top: -5px;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.combat-enemy-card .combat-actor-head h2 { max-width: 100%; }
+
+/* V3.2 Combat Flow */
+.combat-flow-panel {
+  --flow-accent: var(--enemy-accent, var(--ui-accent));
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  gap: 10px;
+  padding: 15px;
+  border: 1px solid color-mix(in srgb, var(--flow-accent) 34%, var(--ui-border));
+  border-radius: 9px;
+  background:
+    radial-gradient(circle at 50% 12%, color-mix(in srgb, var(--flow-accent) 10%, transparent), transparent 54%),
+    color-mix(in srgb, var(--ui-bg) 44%, var(--ui-panel-strong));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--flow-accent) 9%, transparent);
+}
+.combat-flow-panel.is-telegraphing {
+  border-color: color-mix(in srgb, var(--ui-warning) 50%, var(--ui-border));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ui-warning) 22%, transparent);
+}
+.combat-flow-head,
+.combat-flow-next,
+.combat-flow-timeline-head,
+.combat-flow-subhead {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+.combat-flow-head { justify-content: space-between; }
+.combat-flow-head h2 {
+  margin-top: 3px;
+  color: var(--ui-text);
+  font-size: 14px;
+  letter-spacing: .03em;
+}
+.combat-flow-kicker { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .12em; text-transform: uppercase; }
+.combat-flow-next {
+  justify-content: space-between;
+  padding: 8px 9px;
+  border: 1px solid color-mix(in srgb, var(--flow-accent) 28%, var(--ui-border));
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--flow-accent) 7%, transparent);
+}
+.combat-flow-next > div { display: grid; min-width: 0; gap: 3px; }
+.combat-flow-next strong { overflow: hidden; color: var(--ui-text); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.combat-flow-next-time { flex: 0 0 auto; color: var(--semantic-time); font-size: 11px; }
+.combat-flow-next.is-enemy { border-color: color-mix(in srgb, var(--ui-warning) 46%, var(--ui-border)); background: color-mix(in srgb, var(--ui-warning) 8%, transparent); }
+.combat-flow-timelines { display: grid; gap: 8px; }
+.combat-flow-timeline { display: grid; gap: 4px; min-width: 0; }
+.combat-flow-timeline-head { align-items: baseline; }
+.combat-flow-timeline-head .combat-subsection-label { flex: 0 0 45px; }
+.combat-flow-timeline-head strong { min-width: 0; flex: 1; overflow: hidden; color: var(--ui-text-soft); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.combat-flow-timeline-time { flex: 0 0 auto; color: var(--semantic-time); font-size: 11px; }
+.combat-flow-timeline .progress-wrap { margin-top: 0; }
+.combat-flow-timeline .progress { height: 6px; }
+.combat-flow-timeline-player .progress i { background: var(--semantic-time); }
+.combat-flow-timeline-enemy .progress i { background: var(--flow-accent); }
+.combat-flow-timeline-enemy.is-telegraphing .progress i { background: var(--ui-warning); }
+.combat-flow-timeline.is-stunned { opacity: .72; }
+.combat-flow-paused { padding: 5px 7px; border: 1px dashed var(--ui-border); border-radius: 5px; color: var(--ui-text-disabled); font: var(--text-micro) var(--font-mono); }
+.combat-flow-intent.game-tooltip-trigger { display: block; width: 100%; }
+.combat-flow-intent {
+  display: grid;
+  gap: 7px;
+  padding: 9px;
+  border: 1px solid var(--ui-border);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--ui-panel) 54%, transparent);
+}
+.combat-flow-intent.is-special { border-color: color-mix(in srgb, var(--flow-accent) 48%, var(--ui-border)); }
+.combat-flow-subhead { justify-content: space-between; align-items: baseline; }
+.combat-flow-subhead strong { overflow: hidden; color: var(--ui-text); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.combat-flow-intent.is-special .combat-flow-subhead strong { color: var(--flow-accent); }
+.combat-flow-effects { display: grid; gap: 5px; }
+.combat-flow-effect { display: grid; grid-template-columns: 17px minmax(0, 1fr); gap: 5px; align-items: center; min-width: 0; }
+.combat-flow-effect-icon { display: grid; place-items: center; color: var(--ui-text-muted); }
+.combat-flow-effect strong { overflow: hidden; color: var(--ui-text-soft); font: 11px var(--font-mono); text-overflow: ellipsis; white-space: nowrap; }
+.combat-flow-effect small { grid-column: 2; overflow: hidden; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); text-overflow: ellipsis; white-space: nowrap; }
+.combat-flow-effect.effect-kind-damage strong { color: var(--ui-text-soft); }
+.combat-flow-effect.effect-kind-heal strong { color: var(--semantic-health); }
+.combat-flow-effect.effect-kind-barrier strong { color: var(--semantic-barrier); }
+.combat-flow-effect.effect-kind-control strong { color: var(--semantic-control); }
+.combat-flow-effect.effect-kind-status strong { color: var(--semantic-debuff); }
+.combat-flow-effect.damage-type-fire strong { color: var(--semantic-damage-fire); }
+.combat-flow-effect.damage-type-water strong { color: var(--semantic-damage-water); }
+.combat-flow-effect.damage-type-earth strong { color: var(--semantic-damage-earth); }
+.combat-flow-effect.damage-type-air strong { color: var(--semantic-damage-air); }
+.combat-flow-effect.damage-type-arcane strong { color: var(--semantic-damage-arcane); }
+.combat-flow-pattern { margin-top: auto; padding-top: 8px; border-top: 1px solid var(--ui-border); }
+.combat-flow-pattern-rail { padding-top: 6px; }
+.combat-flow-pattern-node { min-width: 86px; }
+.combat-flow-pattern-node-wrap > .game-tooltip-trigger { min-width: 0; }
+.combat-flow-pattern-arrow { color: var(--ui-text-disabled); }
+.combat-flow-panel.is-tower,
+.combat-flow-panel.is-boss-ready,
+.combat-flow-panel.is-encounter-delay { align-items: center; justify-content: center; text-align: center; }
+.combat-flow-panel.is-tower > svg,
+.combat-flow-panel.is-boss-ready > svg { color: var(--ui-accent); }
+.combat-flow-panel.is-tower > strong { max-width: 220px; color: var(--ui-text); font-size: 13px; }
+.combat-flow-panel.is-boss-ready > strong { color: var(--ui-warning); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; text-transform: uppercase; }
+.combat-flow-panel.is-boss-ready h2 { color: var(--ui-text); font-size: 18px; }
+.combat-flow-panel.is-boss-ready p,
+.combat-flow-panel.is-encounter-delay p { max-width: 230px; color: var(--ui-text-muted); font-size: 11px; line-height: 1.5; }
+.combat-flow-delay { color: var(--ui-text); font: 28px var(--font-mono); }
+.combat-flow-panel.is-encounter-delay .progress-wrap { width: min(230px, 100%); }
+.combat-flow-panel.is-encounter-delay .progress-label { display: none; }
+
+/* V3.2 adaptive Spell Deck */
+.combat-spell-deck { min-height: 0; }
+.combat-spell-grid-region { min-height: 0; }
+.combat-spell-grid { align-content: start; }
+
+/* V3.2 Combat Log readability, size preferences, and collapse */
+.combat-log-panel {
+  --combat-log-font-size: 12px;
+  --combat-log-line-height: 30px;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+}
+.combat-log-panel.combat-log-size-small { --combat-log-font-size: 10px; --combat-log-line-height: 26px; }
+.combat-log-panel.combat-log-size-medium { --combat-log-font-size: 12px; --combat-log-line-height: 30px; }
+.combat-log-panel.combat-log-size-large { --combat-log-font-size: 14px; --combat-log-line-height: 34px; }
+.combat-log-panel.combat-log-size-xlarge { --combat-log-font-size: 16px; --combat-log-line-height: 39px; }
+.combat-log-head-actions { display: flex; align-items: center; justify-content: flex-end; gap: 9px; min-width: 0; }
+.combat-log-collapse { flex: 0 0 auto; padding: 4px 7px; border: 1px solid var(--ui-border); border-radius: 4px; color: var(--ui-text-muted); background: transparent; cursor: pointer; font: var(--text-micro) var(--font-mono); }
+.combat-log-collapse:hover,
+.combat-log-collapse:focus-visible { border-color: var(--ui-accent); color: var(--ui-text); outline: none; }
+.combat-log-font-row { display: flex; justify-content: flex-end; padding: 5px 0 7px; }
+.combat-log-font-row label { display: inline-flex; align-items: center; gap: 7px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
+.combat-log-font-row .select-menu-trigger { min-height: 27px; padding: 4px 7px; }
+.combat-log-row { gap: 9px; min-height: var(--combat-log-line-height); padding: 5px 7px; }
+.combat-log-row time { font-size: calc(var(--combat-log-font-size) - 2px); }
+.combat-log-source { gap: 5px; }
+.combat-log-source > small { font-size: calc(var(--combat-log-font-size) - 3px); }
+.combat-log-action-identity { width: 28px; height: var(--combat-log-line-height); }
+.combat-log-message strong { color: var(--ui-text-soft); font-family: var(--font-sans); font-size: var(--combat-log-font-size); line-height: 1.25; white-space: normal; }
+.combat-log-result { max-width: 260px; font-size: calc(var(--combat-log-font-size) - 2px); line-height: 1.25; }
+.combat-log-collapsed-latest { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: center; min-width: 0; padding-top: 7px; }
+.combat-log-collapsed-latest span { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
+.combat-log-collapsed-latest strong { overflow: hidden; color: var(--ui-text-soft); font-size: var(--combat-log-font-size); font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.combat-log-panel.is-collapsed { grid-template-rows: auto auto; align-content: start; padding: 8px 12px; }
+.combat-log-panel.is-collapsed .combat-log-head { padding-bottom: 5px; }
+.combat-log-panel.is-collapsed .combat-log-head h2 { font-size: 12px; }
+.combat-log-panel.is-collapsed .combat-log-count { font-size: 9px; }
+.combat-log-panel.is-collapsed .combat-log-collapse { padding: 3px 6px; }
+.combat-log-panel.is-collapsed .combat-log-collapsed-latest { padding-top: 6px; }
+@container (max-width: 620px) {
+  .combat-flow-panel {
+    grid-column: auto;
+    order: 3;
+    min-height: 300px;
+  }
+  .combat-flow-timeline-head .combat-subsection-label { flex-basis: 40px; }
+  .combat-log-head-actions { gap: 5px; }
+  .combat-log-count { font-size: 9px; }
+}
+@container (min-width: 621px) and (max-width: 940px) {
+  .combat-flow-panel { grid-column: 1 / -1; order: 3; min-height: 270px; }
+}
+@container (max-width: 480px) {
+  .combat-log-head-actions { align-items: flex-end; flex-direction: column; }
+  .combat-log-panel.is-collapsed .combat-log-head-actions { align-items: flex-end; flex-direction: row; }
+  .combat-log-font-row { justify-content: flex-start; }
+  .combat-log-row { grid-template-columns: 31px 26px 24px minmax(0, 1fr); }
+  .combat-log-result { grid-column: 4; max-width: none; }
 }

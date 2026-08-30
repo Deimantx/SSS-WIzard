@@ -1,7 +1,7 @@
 import { Card } from '../../components/ui'
 import { useEffect, useRef, type Ref } from 'react'
 import type { DungeonId } from '../../game/types'
-import { CombatIntentPanel } from './CombatIntentPanel'
+import { CombatFlowPanel } from './CombatFlowPanel'
 import { EnemyCombatCard } from './EnemyCombatCard'
 import { PlayerCombatCard } from './PlayerCombatCard'
 import type { EnemyContextMode } from './EnemyContextWindow'
@@ -19,5 +19,5 @@ export function CombatStage({ selectedDungeonId, onContentHeightChange, enemyCar
     observer.observe(node)
     return () => observer.disconnect()
   }, [onContentHeightChange, selectedDungeonId])
-  return <Card className="combat-stage-panel"><div ref={stageRef} className="combat-stage-grid"><PlayerCombatCard /><CombatIntentPanel selectedDungeonId={selectedDungeonId} /><EnemyCombatCard selectedDungeonId={selectedDungeonId} cardRef={enemyCardRef} onOpenContext={onOpenEnemyContext} /></div></Card>
+  return <Card className="combat-stage-panel"><div ref={stageRef} className="combat-stage-grid"><PlayerCombatCard /><CombatFlowPanel selectedDungeonId={selectedDungeonId} /><EnemyCombatCard selectedDungeonId={selectedDungeonId} cardRef={enemyCardRef} onOpenContext={onOpenEnemyContext} /></div></Card>
 }

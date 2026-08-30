@@ -18,7 +18,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = (Object.entries(DEFAULT_LAYOUTS
   label: labels[id] ?? id,
   defaultLayout,
   minW: id === 'combat-stage' ? 6 : id === 'combat-spell-deck' || id === 'combat-log' ? 6 : id === 'focus-summary' ? 8 : id === 'focus-reservations' ? 5 : id === 'focus-improvement' ? 4 : id === 'research-school-mastery' || id === 'home-school-mastery' || id === 'home-arcane-work' ? 6 : id === 'inventory-actions' || id.includes('request') ? 3 : 2,
-  minH: id === 'combat-stage' ? 13 : id === 'combat-spell-deck' ? 9 : id === 'combat-log' ? 8 : id === 'focus-summary' ? 8 : id === 'focus-reservations' ? 10 : id === 'focus-improvement' ? 11 : id === 'inventory-actions' ? 5 : id === 'research-library' ? 8 : id === 'research-inspector' ? 12 : id === 'research-prepared' ? 7 : id === 'home-school-mastery' ? 5 : id === 'home-arcane-work' ? 6 : id === 'research-school-mastery' ? 4 : 4,
+  minH: id === 'combat-stage' ? 13 : id === 'combat-spell-deck' ? 5 : id === 'combat-log' ? 2 : id === 'focus-summary' ? 8 : id === 'focus-reservations' ? 10 : id === 'focus-improvement' ? 11 : id === 'inventory-actions' ? 5 : id === 'research-library' ? 8 : id === 'research-inspector' ? 12 : id === 'research-prepared' ? 7 : id === 'home-school-mastery' ? 5 : id === 'home-arcane-work' ? 6 : id === 'research-school-mastery' ? 4 : 4,
   canHide: true,
 })))
 

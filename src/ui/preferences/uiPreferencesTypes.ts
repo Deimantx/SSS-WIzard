@@ -35,10 +35,18 @@ export interface ResearchScreenPreferences {
   targetSchoolId: SchoolId
 }
 
+export type CombatLogFontSize = 'small' | 'medium' | 'large' | 'xlarge'
+export interface CombatScreenPreferences {
+  combatLogFontSize: CombatLogFontSize
+  combatLogCollapsed: boolean
+  lastExpandedCombatLogH: number
+}
+
 export interface ScreenPreferences {
   inventory: InventoryScreenPreferences
   transmutation: TransmutationScreenPreferences
   research: ResearchScreenPreferences
+  combat: CombatScreenPreferences
 }
 
 export interface UiPreferences {

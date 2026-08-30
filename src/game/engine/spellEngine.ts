@@ -4,7 +4,7 @@ import { executeCombatEffects } from '../systems/combat/effectResolver'
 import { actorCannotAct } from '../systems/combat/statusRuntime'
 import { isSpellUnlocked } from '../systems/spells'
 import type { CombatSource, GameState, SpellId } from '../types'
-import type { CombatUiEventSink } from '../systems/combat/combatTypes'
+import type { CombatEventSink } from '../systems/combat/combatTypes'
 
 const hasEnemyTarget = (spellId: SpellId) => SPELLS[spellId].effects.some((effect) => effect.target === 'opponent')
 
@@ -30,7 +30,7 @@ export const notifySpellCastFailure = (state: GameState, spellId: SpellId, failu
   else if (failure === 'inactive' || failure === 'no-target') pushNotification(state, 'Enter combat before using that spell', 'warning')
 }
 
-export const castSpellInternal = (state: GameState, spellId: SpellId, quiet = false, uiEvents?: CombatUiEventSink) => {
+export const castSpellInternal = (state: GameState, spellId: SpellId, quiet = false, uiEvents?: CombatEventSink) => {
   const spell = SPELLS[spellId]
   if (!spell || getSpellCastFailure(state, spellId)) return false
   state.player.mana -= spell.manaCost
@@ -43,7 +43,7 @@ export const castSpellInternal = (state: GameState, spellId: SpellId, quiet = fa
   return true
 }
 
-export const castSpellAction = (state: GameState, spellId: SpellId, uiEvents?: CombatUiEventSink) => {
+export const castSpellAction = (state: GameState, spellId: SpellId, uiEvents?: CombatEventSink) => {
   if (!isSpellUnlocked(state, spellId)) return false
   const spell = SPELLS[spellId]
   const failure = getSpellCastFailure(state, spellId)

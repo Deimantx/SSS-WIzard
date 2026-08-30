@@ -14,7 +14,7 @@ import { tickBarriers } from '../combat/barrierRuntime'
 import { getCombatModifiers } from '../combat/modifiers'
 import { tickRuleCooldowns } from '../combat/triggerRuntime'
 import type { GameState, ItemId, SpellId, CombatSource } from '../../types'
-import type { CombatUiEventSink } from '../combat/combatTypes'
+import type { CombatEventSink } from '../combat/combatTypes'
 import { clamp } from '../../utils'
 import type { SimulationReportCollector } from '../offline-bank/offlineBankReport'
 import { applyTransmutationAllocations, buildTransmutationWorkRequests } from '../transmutation/transmutationEngine'
@@ -22,12 +22,14 @@ import { applyResearchAllocations, buildResearchWorkRequests } from '../research
 import { allocateContinuousMana } from './continuousManaScheduler'
 import { isSpellUnlocked } from '../spells'
 import { MAX_SIMULATION_DELTA_MS, SIMULATION_QUANTUM_MS } from './simulationConstants'
+import type { CombatTelemetryObserver } from '../../telemetry/combat/combatTelemetryTypes'
 
 export interface AdvanceContext {
   mode: 'live' | 'banked'
   report?: SimulationReportCollector
   onItemAcquired?: (itemId: ItemId, quantity: number) => void
-  uiEvents?: CombatUiEventSink
+  uiEvents?: CombatEventSink
+  telemetry?: CombatTelemetryObserver
 }
 
 const spellUnlocked = isSpellUnlocked
@@ -39,9 +41,9 @@ const meetsAutoCondition = (state: GameState, spellId: SpellId) => {
   return state.combat.playerBarrier < condition.value
 }
 
-const tickCombatStatuses = (state: GameState, delta: number, uiEvents?: CombatUiEventSink) => tickStatuses(state, delta, executeCombatEffects, uiEvents)
+const tickCombatStatuses = (state: GameState, delta: number, uiEvents?: CombatEventSink) => tickStatuses(state, delta, executeCombatEffects, uiEvents)
 
-const playerBasicAttack = (state: GameState, uiEvents?: CombatUiEventSink) => {
+const playerBasicAttack = (state: GameState, uiEvents?: CombatEventSink) => {
   const weapon = state.equipment.weapon ? ITEMS[state.equipment.weapon] : undefined
   const source: CombatSource = { actor: 'player', kind: weapon?.attackTags?.length ? 'weapon' : 'basic-attack', sourceId: 'player-basic-attack', tags: getBasicAttackTags(state) }
   executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', damageType: weapon?.damageType ?? 'physical', magnitude: { type: 'flat', value: playerBasicDamage(state) }, tags: ['basic-attack', 'direct'] }], source, undefined, uiEvents)
@@ -98,6 +100,7 @@ const tickCombat = (state: GameState, delta: number, context: AdvanceContext) =>
 }
 
 const advanceGameStateStep = (state: GameState, delta: number, context: AdvanceContext) => {
+  context.telemetry?.advance(delta, state)
   const channelingTick = advanceChanneling(state, delta)
   if (channelingTick.discoveries.includes('deep-reservoir')) recalculateDerivedStats(state)
   channelingTick.discoveries.forEach((id) => {
@@ -117,7 +120,7 @@ const advanceGameStateStep = (state: GameState, delta: number, context: AdvanceC
 
 export const advanceGameState = (state: GameState, deltaMs: number, context: AdvanceContext = { mode: 'live' }) => {
   const bounded = Math.min(MAX_SIMULATION_DELTA_MS, Math.max(0, deltaMs))
-  const simulationContext = context.mode === 'live' ? context : { ...context, uiEvents: undefined }
+  const simulationContext = context.mode === 'live' ? context : { ...context, uiEvents: undefined, telemetry: undefined }
   let remaining = bounded
 
   while (remaining > 0) {

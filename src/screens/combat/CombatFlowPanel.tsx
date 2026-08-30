@@ -12,7 +12,7 @@ import { selectPlayerBasicDamage } from '../../store/selectors'
 import { formatTime } from '../../game/utils'
 import { BALANCE } from '../../game/core/balance/balance'
 import { resolveBasicAttackInterval } from '../../game/systems/combat/effectResolver'
-import { GameTooltip, Progress, Status } from '../../components/ui'
+import { GameTooltip, Progress } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { EnemyPatternRail } from './EnemyPatternRail'
 
@@ -60,8 +60,7 @@ export function CombatFlowPanel({ selectedDungeonId }: { selectedDungeonId: Dung
   if (presentation.mode === 'encounter-delay') return <section className="combat-flow-panel is-encounter-delay"><div className="combat-flow-kicker">NEXT ENCOUNTER</div><strong className="combat-flow-delay">{formatTime(presentation.encounterTimerMs)}</strong><Progress value={Math.max(0, Math.min(100, (1 - presentation.encounterTimerMs / Math.max(1, presentation.dungeon.encounterDelayMs)) * 100))} tone="time" label="Encounter progress" /><p>The Dungeon is searching for another threat.</p></section>
 
   return <section className={`combat-flow-panel${presentation.enemyTimeline?.state === 'telegraph' ? ' is-telegraphing' : ''}`} style={{ '--enemy-accent': presentation.enemy?.color } as React.CSSProperties}>
-    <header className="combat-flow-head"><div><span className="combat-flow-kicker">COMBAT FLOW</span><h2>WHAT HAPPENS NEXT?</h2></div><Status tone={presentation.enemyTimeline?.state === 'telegraph' ? 'warning' : 'neutral'}>{presentation.enemyTimeline?.state === 'telegraph' ? 'Telegraphing' : 'Live timing'}</Status></header>
-    {presentation.nextResolution && <div className={`combat-flow-next${presentation.nextResolution.actor ? ` is-${presentation.nextResolution.actor}` : ''}`}><div><span className="combat-subsection-label">NEXT RESOLUTION</span><strong>{presentation.nextResolution.label}</strong></div><span className="combat-flow-next-time ui-time">{presentation.nextResolution.remainingMs === null ? 'PAUSED' : `· ${formatTime(presentation.nextResolution.remainingMs)}`}</span></div>}
+    <header className="combat-flow-head"><span className="combat-flow-kicker">COMBAT FLOW</span></header>
     <div className="combat-flow-timelines"><TimelineRow timeline={presentation.playerTimeline} /><TimelineRow timeline={presentation.enemyTimeline} /></div>
     {presentation.enemyIntent && <GameTooltip block wide={presentation.enemyIntent.special} placement="bottom" accent={presentation.enemyIntent.special ? 'warning' : 'neutral'} content={presentation.enemyIntent.action ? <ActionTooltip action={presentation.enemyIntent.action} /> : undefined}><div className={`combat-flow-intent${presentation.enemyIntent.special ? ' is-special' : ''}`}><div className="combat-flow-subhead"><span className="combat-subsection-label">ENEMY INTENT</span><strong>{presentation.enemyIntent.label}</strong></div>{presentation.enemyIntent.action ? <div className="combat-flow-effects">{presentation.enemyIntent.action.effects.map((effect, index) => <CombatEffectRow key={`${effect.label}-${index}`} effect={effect} />)}</div> : presentation.enemyIntent.basic ? <div className="combat-flow-effects"><CombatEffectRow effect={presentation.enemyIntent.basic} /></div> : null}</div></GameTooltip>}
     <div className="combat-flow-pattern"><div className="combat-subsection-label">ENEMY PATTERN</div><EnemyPatternRail pattern={presentation.pattern} enemy={presentation.enemy} currentIndex={presentation.patternIndex} activeStepId={presentation.activeStepId} activeAction={presentation.activeActionId} activeOriginMatchesCurrent={presentation.activeOriginMatchesCurrent} /></div>

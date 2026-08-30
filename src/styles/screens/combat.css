@@ -2134,7 +2134,6 @@
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ui-warning) 22%, transparent);
 }
 .combat-flow-head,
-.combat-flow-next,
 .combat-flow-timeline-head,
 .combat-flow-subhead {
   display: flex;
@@ -2143,24 +2142,7 @@
   gap: 8px;
 }
 .combat-flow-head { justify-content: space-between; }
-.combat-flow-head h2 {
-  margin-top: 3px;
-  color: var(--ui-text);
-  font-size: 14px;
-  letter-spacing: .03em;
-}
 .combat-flow-kicker { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .12em; text-transform: uppercase; }
-.combat-flow-next {
-  justify-content: space-between;
-  padding: 8px 9px;
-  border: 1px solid color-mix(in srgb, var(--flow-accent) 28%, var(--ui-border));
-  border-radius: 7px;
-  background: color-mix(in srgb, var(--flow-accent) 7%, transparent);
-}
-.combat-flow-next > div { display: grid; min-width: 0; gap: 3px; }
-.combat-flow-next strong { overflow: hidden; color: var(--ui-text); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
-.combat-flow-next-time { flex: 0 0 auto; color: var(--semantic-time); font-size: 11px; }
-.combat-flow-next.is-enemy { border-color: color-mix(in srgb, var(--ui-warning) 46%, var(--ui-border)); background: color-mix(in srgb, var(--ui-warning) 8%, transparent); }
 .combat-flow-timelines { display: grid; gap: 8px; }
 .combat-flow-timeline { display: grid; gap: 4px; min-width: 0; }
 .combat-flow-timeline-head { align-items: baseline; }
@@ -2230,12 +2212,15 @@
 .combat-log-panel {
   --combat-log-font-size: 12px;
   --combat-log-line-height: 30px;
+  --combat-log-icon-size: 12px;
+  --combat-log-row-gap: 8px;
+  --combat-log-row-pad: 5px 7px;
   grid-template-rows: auto auto auto minmax(0, 1fr);
 }
-.combat-log-panel.combat-log-size-small { --combat-log-font-size: 10px; --combat-log-line-height: 26px; }
-.combat-log-panel.combat-log-size-medium { --combat-log-font-size: 12px; --combat-log-line-height: 30px; }
-.combat-log-panel.combat-log-size-large { --combat-log-font-size: 14px; --combat-log-line-height: 34px; }
-.combat-log-panel.combat-log-size-xlarge { --combat-log-font-size: 16px; --combat-log-line-height: 39px; }
+.combat-log-panel.combat-log-size-small { --combat-log-font-size: 12px; --combat-log-line-height: 30px; --combat-log-icon-size: 12px; }
+.combat-log-panel.combat-log-size-medium { --combat-log-font-size: 14px; --combat-log-line-height: 34px; --combat-log-icon-size: 14px; --combat-log-row-gap: 9px; --combat-log-row-pad: 6px 8px; }
+.combat-log-panel.combat-log-size-large { --combat-log-font-size: 16px; --combat-log-line-height: 38px; --combat-log-icon-size: 16px; --combat-log-row-gap: 10px; --combat-log-row-pad: 7px 9px; }
+.combat-log-panel.combat-log-size-xlarge { --combat-log-font-size: 20px; --combat-log-line-height: 45px; --combat-log-icon-size: 19px; --combat-log-row-gap: 11px; --combat-log-row-pad: 8px 10px; }
 .combat-log-head-actions { display: flex; align-items: center; justify-content: flex-end; gap: 9px; min-width: 0; }
 .combat-log-collapse { flex: 0 0 auto; padding: 4px 7px; border: 1px solid var(--ui-border); border-radius: 4px; color: var(--ui-text-muted); background: transparent; cursor: pointer; font: var(--text-micro) var(--font-mono); }
 .combat-log-collapse:hover,
@@ -2243,11 +2228,18 @@
 .combat-log-font-row { display: flex; justify-content: flex-end; padding: 5px 0 7px; }
 .combat-log-font-row label { display: inline-flex; align-items: center; gap: 7px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
 .combat-log-font-row .select-menu-trigger { min-height: 27px; padding: 4px 7px; }
-.combat-log-row { gap: 9px; min-height: var(--combat-log-line-height); padding: 5px 7px; }
+.combat-log-row { gap: var(--combat-log-row-gap); min-height: var(--combat-log-line-height); padding: var(--combat-log-row-pad); }
 .combat-log-row time { font-size: calc(var(--combat-log-font-size) - 2px); }
-.combat-log-source { gap: 5px; }
+.combat-log-source { gap: var(--combat-log-row-gap); }
 .combat-log-source > small { font-size: calc(var(--combat-log-font-size) - 3px); }
-.combat-log-action-identity { width: 28px; height: var(--combat-log-line-height); }
+.combat-log-source-player,
+.combat-log-source-system,
+.combat-log-source-portrait { width: var(--combat-log-line-height); height: var(--combat-log-line-height); }
+.combat-log-source-player svg,
+.combat-log-source-system svg,
+.combat-log-source-portrait .combat-monster-portrait svg,
+.combat-log-action-identity svg { width: var(--combat-log-icon-size); height: var(--combat-log-icon-size); }
+.combat-log-action-identity { width: calc(var(--combat-log-icon-size) + 10px); height: var(--combat-log-line-height); }
 .combat-log-message strong { color: var(--ui-text-soft); font-family: var(--font-sans); font-size: var(--combat-log-font-size); line-height: 1.25; white-space: normal; }
 .combat-log-result { max-width: 260px; font-size: calc(var(--combat-log-font-size) - 2px); line-height: 1.25; }
 .combat-log-collapsed-latest { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: center; min-width: 0; padding-top: 7px; }
@@ -2259,6 +2251,86 @@
 .combat-log-panel.is-collapsed .combat-log-count { font-size: 9px; }
 .combat-log-panel.is-collapsed .combat-log-collapse { padding: 3px 6px; }
 .combat-log-panel.is-collapsed .combat-log-collapsed-latest { padding-top: 6px; }
+
+/* V3.3 transient Details-style performance meters */
+.combat-performance {
+  display: grid;
+  gap: 5px;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--ui-border);
+}
+.combat-performance-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.combat-performance-head > strong { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .08em; }
+.combat-performance-rows { display: grid; gap: 2px; }
+.combat-performance-rows > .game-tooltip-trigger { display: block; width: 100%; }
+.combat-performance-row {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto auto;
+  gap: 6px;
+  min-width: 0;
+  min-height: 23px;
+  align-items: center;
+  padding: 2px 4px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: var(--ui-text-muted);
+  cursor: help;
+}
+.combat-performance-row:hover,
+.combat-performance-row:focus-visible { border-color: var(--ui-border); background: color-mix(in srgb, var(--ui-text) 4%, transparent); outline: none; }
+.combat-performance-icon { display: grid; place-items: center; color: var(--ui-text-muted); }
+.combat-performance-icon svg { width: 14px; height: 14px; }
+.combat-performance-row > strong { overflow: hidden; font: var(--text-micro) var(--font-mono); letter-spacing: .04em; text-overflow: ellipsis; white-space: nowrap; }
+.combat-performance-row > b { color: var(--ui-text); font: 12px var(--font-mono); white-space: nowrap; }
+.combat-performance-row > small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); text-align: right; white-space: nowrap; }
+.combat-performance-row.metric-damage .combat-performance-icon,
+.combat-performance-row.metric-damage > b { color: var(--ui-warning); }
+.combat-performance-row.metric-healing .combat-performance-icon,
+.combat-performance-row.metric-healing > b { color: var(--semantic-health); }
+.combat-performance-row.metric-taken .combat-performance-icon,
+.combat-performance-row.metric-taken > b { color: var(--ui-danger); }
+.combat-performance-enemy .combat-performance-row.metric-damage .combat-performance-icon,
+.combat-performance-enemy .combat-performance-row.metric-damage > b { color: var(--enemy-accent, var(--ui-warning)); }
+
+.combat-metric-tooltip-summary { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; padding-bottom: 7px; border-bottom: 1px solid var(--ui-border); }
+.combat-metric-tooltip-summary > strong { color: var(--ui-text); font: var(--text-xs) var(--font-mono); }
+.combat-metric-tooltip-summary > b { color: var(--ui-text); font: var(--text-xs) var(--font-mono); white-space: nowrap; }
+.combat-metric-tooltip-summary > b small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
+.combat-metric-tooltip-sources { gap: 7px; max-height: min(360px, calc(100vh - 240px)); overflow-y: auto; scrollbar-width: thin; }
+.combat-metric-tooltip-source { display: grid; gap: 3px; }
+.combat-metric-tooltip-source-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: baseline; }
+.combat-metric-tooltip-source-head > span { display: grid; min-width: 0; gap: 2px; }
+.combat-metric-tooltip-source-head strong { overflow: hidden; color: var(--ui-text-soft); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.metric-source-accent-fire { color: var(--semantic-damage-fire) !important; }
+.metric-source-accent-water { color: var(--semantic-damage-water) !important; }
+.metric-source-accent-earth { color: var(--semantic-damage-earth) !important; }
+.metric-source-accent-air { color: var(--semantic-damage-air) !important; }
+.metric-source-accent-enemy { color: var(--ui-warning) !important; }
+.metric-source-accent-status { color: var(--semantic-debuff) !important; }
+.metric-source-accent-trait { color: var(--ui-accent) !important; }
+.combat-metric-tooltip-source-head span small,
+.combat-metric-tooltip-source-head > b,
+.combat-metric-tooltip-rate { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
+.combat-metric-tooltip-source-head > b { white-space: nowrap; }
+.combat-metric-tooltip-bar { height: 4px; overflow: hidden; border-radius: 999px; background: color-mix(in srgb, var(--ui-text) 8%, transparent); }
+.combat-metric-tooltip-bar i { display: block; height: 100%; min-width: 1px; border-radius: inherit; background: var(--ui-warning); }
+.combat-metric-tooltip-bar .metric-accent-damage { background: var(--ui-warning); }
+.combat-metric-tooltip-bar .metric-accent-healing { background: var(--semantic-health); }
+.combat-metric-tooltip-bar .metric-accent-taken { background: var(--ui-danger); }
+.combat-metric-tooltip-bar .metric-accent-fire { background: var(--semantic-damage-fire); }
+.combat-metric-tooltip-bar .metric-accent-water { background: var(--semantic-damage-water); }
+.combat-metric-tooltip-bar .metric-accent-earth { background: var(--semantic-damage-earth); }
+.combat-metric-tooltip-bar .metric-accent-air { background: var(--semantic-damage-air); }
+.combat-metric-tooltip-bar .metric-accent-enemy { background: var(--ui-warning); }
+.combat-metric-tooltip-bar .metric-accent-status { background: var(--semantic-debuff); }
+.combat-metric-tooltip-bar .metric-accent-trait { background: var(--ui-accent); }
+.combat-metric-tooltip-damage .combat-metric-tooltip-bar i { background: var(--ui-warning); }
+.combat-metric-tooltip-healing .combat-metric-tooltip-bar i { background: var(--semantic-health); }
+.combat-metric-tooltip-taken .combat-metric-tooltip-bar i { background: var(--ui-danger); }
+.combat-metric-tooltip-rate { display: block; text-align: right; }
+.combat-metric-tooltip-secondary { gap: 5px; }
+.combat-metric-tooltip-secondary > p { margin: 0; color: var(--ui-text-muted); font-size: var(--text-micro); line-height: 1.4; }
 @container (max-width: 620px) {
   .combat-flow-panel {
     grid-column: auto;

@@ -16,24 +16,28 @@ const input = (changes: Partial<CombatFlowRuntimeInput> = {}): CombatFlowRuntime
 })
 
 describe('getCombatFlowPresentation', () => {
-  it('selects Player Basic Attack when the player timer resolves sooner, including an exact runtime tie', () => {
-    expect(getCombatFlowPresentation(input()).nextResolution).toMatchObject({ actor: 'player', label: 'Player Basic Attack', remainingMs: 500 })
-    expect(getCombatFlowPresentation(input({ playerAttackTimerMs: 1200 })).nextResolution?.actor).toBe('player')
+  it('keeps player timing readable, including an exact runtime tie', () => {
+    expect(getCombatFlowPresentation(input()).playerTimeline).toMatchObject({ actor: 'player', label: 'Basic Attack', remainingMs: 500 })
+    expect(getCombatFlowPresentation(input({ playerAttackTimerMs: 1200 })).playerTimeline?.remainingMs).toBe(1200)
   })
 
   it('selects the enemy action when its recovery resolves sooner', () => {
     const presentation = getCombatFlowPresentation(input({ playerAttackTimerMs: 1500, enemyActionTimerMs: 400, nextStep: pattern.steps[2], enemyActionIndex: 2 }))
-    expect(presentation.nextResolution).toMatchObject({ actor: 'enemy', label: 'Root Crush', remainingMs: 400 })
     expect(presentation.enemyTimeline).toMatchObject({ label: 'Root Crush', state: 'recovery', remainingMs: 400 })
   })
 
   it('uses the telegraph runtime for enemy timing and intent', () => {
     const action = enemy.actions['root-crush']
     const presentation = getCombatFlowPresentation(input({ playerAttackTimerMs: 1500, enemyTelegraphMs: 800, enemyTelegraphActionId: 'root-crush', enemyTelegraphStepId: 'root-crush-step', telegraphAction: action, nextStep: pattern.steps[3], enemyActionIndex: 3 }))
-    expect(presentation.nextResolution).toMatchObject({ actor: 'enemy', label: 'Root Crush', remainingMs: 800 })
     expect(presentation.enemyTimeline).toMatchObject({ state: 'telegraph', remainingMs: 800, progress: 60 })
     expect(presentation.enemyIntent).toMatchObject({ label: 'Root Crush', special: true })
     expect(presentation.patternIndex).toBe(2)
+  })
+
+  it('clamps negative live timers to zero', () => {
+    const presentation = getCombatFlowPresentation(input({ playerAttackTimerMs: -200, enemyActionTimerMs: -100 }))
+    expect(presentation.playerTimeline?.remainingMs).toBe(0)
+    expect(presentation.enemyTimeline?.remainingMs).toBe(0)
   })
 
   it('switches to non-timer modes outside an active enemy encounter', () => {

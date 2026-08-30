@@ -15,18 +15,11 @@ export interface CombatFlowTimeline {
   state: CombatFlowTimelineState
 }
 
-export interface CombatFlowNextResolution {
-  actor: 'player' | 'enemy' | null
-  label: string
-  remainingMs: number | null
-}
-
 export interface CombatFlowPresentation {
   mode: CombatFlowMode
   dungeonId: DungeonId
   dungeon: DungeonDefinition
   enemy: MonsterDefinition | null
-  nextResolution: CombatFlowNextResolution | null
   playerTimeline: CombatFlowTimeline | null
   enemyTimeline: CombatFlowTimeline | null
   enemyIntent: { label: string; action: CombatActionPresentation | null; basic: CombatEffectPresentation | null; special: boolean } | null
@@ -72,14 +65,12 @@ const stepIndex = (pattern: ActionPattern | undefined, stepId: string | null, fa
   const index = stepId ? pattern.steps.findIndex((step) => step.id === stepId) : -1
   return index >= 0 ? index : fallback
 }
-const stepLabel = (step: ActionStep | undefined, enemy: MonsterDefinition | null) => step?.type === 'action' ? enemy?.actions[step.actionId]?.name ?? 'Action' : 'Basic Attack'
-
 export function getCombatFlowPresentation(input: CombatFlowRuntimeInput): CombatFlowPresentation {
   const dungeonId = input.dungeonId ?? input.selectedDungeonId
   const bossReady = input.active && !input.enemy && !input.inBossFight && input.threatCleared >= input.dungeon.threatRequired
-  if (!input.active) return { mode: 'tower', dungeonId, dungeon: input.dungeon, enemy: null, nextResolution: null, playerTimeline: null, enemyTimeline: null, enemyIntent: null, pattern: undefined, patternIndex: -1, activeStepId: null, activeActionId: null, activeOriginMatchesCurrent: true, encounterTimerMs: input.encounterTimerMs }
-  if (!input.enemy && bossReady) return { mode: 'boss-ready', dungeonId, dungeon: input.dungeon, enemy: null, nextResolution: null, playerTimeline: null, enemyTimeline: null, enemyIntent: null, pattern: undefined, patternIndex: -1, activeStepId: null, activeActionId: null, activeOriginMatchesCurrent: true, encounterTimerMs: input.encounterTimerMs }
-  if (!input.enemy) return { mode: 'encounter-delay', dungeonId, dungeon: input.dungeon, enemy: null, nextResolution: null, playerTimeline: null, enemyTimeline: null, enemyIntent: null, pattern: undefined, patternIndex: -1, activeStepId: null, activeActionId: null, activeOriginMatchesCurrent: true, encounterTimerMs: Math.max(0, input.encounterTimerMs) }
+  if (!input.active) return { mode: 'tower', dungeonId, dungeon: input.dungeon, enemy: null, playerTimeline: null, enemyTimeline: null, enemyIntent: null, pattern: undefined, patternIndex: -1, activeStepId: null, activeActionId: null, activeOriginMatchesCurrent: true, encounterTimerMs: input.encounterTimerMs }
+  if (!input.enemy && bossReady) return { mode: 'boss-ready', dungeonId, dungeon: input.dungeon, enemy: null, playerTimeline: null, enemyTimeline: null, enemyIntent: null, pattern: undefined, patternIndex: -1, activeStepId: null, activeActionId: null, activeOriginMatchesCurrent: true, encounterTimerMs: input.encounterTimerMs }
+  if (!input.enemy) return { mode: 'encounter-delay', dungeonId, dungeon: input.dungeon, enemy: null, playerTimeline: null, enemyTimeline: null, enemyIntent: null, pattern: undefined, patternIndex: -1, activeStepId: null, activeActionId: null, activeOriginMatchesCurrent: true, encounterTimerMs: Math.max(0, input.encounterTimerMs) }
 
   const telegraphAction = input.telegraphAction
   const activeTelegraph = Boolean(telegraphAction)
@@ -94,22 +85,13 @@ export function getCombatFlowPresentation(input: CombatFlowRuntimeInput): Combat
   const playerTimeline: CombatFlowTimeline = { actor: 'player', label: 'Basic Attack', remainingMs: input.playerStunned ? null : playerRemainingMs, progress: input.playerStunned ? null : clampProgress(playerRemainingMs, input.playerAttackIntervalMs), state: input.playerStunned ? 'stunned' : 'ready' }
   const enemyTimeline: CombatFlowTimeline = { actor: 'enemy', label: enemyAction?.name ?? (input.nextStep?.type === 'basic' ? 'Basic Attack' : 'Enemy Action'), remainingMs: input.enemyStunned ? null : enemyRemainingMs, progress: input.enemyStunned ? null : clampProgress(enemyRemainingMs, enemyTotalMs), state: input.enemyStunned ? 'stunned' : activeTelegraph ? 'telegraph' : 'recovery' }
 
-  let nextResolution: CombatFlowNextResolution
-  if (input.playerStunned && input.enemyStunned) nextResolution = { actor: null, label: 'ACTIONS PAUSED', remainingMs: null }
-  else if (input.playerStunned) nextResolution = { actor: 'enemy', label: enemyTimeline.label, remainingMs: enemyRemainingMs }
-  else if (input.enemyStunned) nextResolution = { actor: 'player', label: 'Player Basic Attack', remainingMs: playerRemainingMs }
-  else if (playerRemainingMs <= enemyRemainingMs) nextResolution = { actor: 'player', label: 'Player Basic Attack', remainingMs: playerRemainingMs }
-  else nextResolution = { actor: 'enemy', label: enemyTimeline.label, remainingMs: enemyRemainingMs }
-
   const rawIndex = Number.isFinite(input.enemyActionIndex) ? Math.max(0, Math.floor(input.enemyActionIndex)) : -1
   const currentIndex = stepIndex(input.pattern, input.enemyTelegraphStepId, rawIndex)
   return {
     mode: 'combat', dungeonId, dungeon: input.dungeon, enemy: input.enemy,
-    nextResolution, playerTimeline, enemyTimeline,
+    playerTimeline, enemyTimeline,
     enemyIntent: { label: enemyAction?.name ?? (basicPresentation ? 'Basic Attack' : 'Preparing'), action: enemyActionPresentation, basic: basicPresentation, special: Boolean(enemyActionPresentation) },
     pattern: input.pattern, patternIndex: currentIndex, activeStepId: input.enemyTelegraphStepId, activeActionId: input.enemyTelegraphActionId, activeOriginMatchesCurrent: !input.enemyTelegraphPatternId || input.enemyTelegraphPatternId === input.enemyActionPatternId,
     encounterTimerMs: input.encounterTimerMs,
   }
 }
-
-export { stepLabel }

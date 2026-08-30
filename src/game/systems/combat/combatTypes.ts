@@ -1,4 +1,4 @@
-import type { ItemId, MonsterId, SchoolId, SpellId } from '../../types'
+import type { DungeonId, ItemId, MonsterId, SchoolId, SpellId } from '../../types'
 
 export type DamageType = 'physical' | 'arcane' | 'fire' | 'water' | 'earth' | 'air'
 
@@ -59,12 +59,16 @@ export type CombatLogSource =
   | { kind: 'enemy'; monsterId: MonsterId }
   | { kind: 'system' }
 
-export interface CombatLogEvent {
+export interface CombatEvent {
   source: CombatLogSource
+  sourceKind?: CombatSource['kind']
   target?: 'player' | 'enemy'
   targetMonsterId?: MonsterId
+  dungeonId?: DungeonId
   category: CombatLogCategory
   sourceId?: string
+  originSourceId?: string
+  ruleId?: string
   spellId?: SpellId
   actionId?: string
   traitId?: TraitId
@@ -72,6 +76,9 @@ export interface CombatLogEvent {
   itemId?: ItemId
   damageType?: DamageType
   amount?: number
+  attemptedAmount?: number
+  effectiveAmount?: number
+  overheal?: number
   healthDamage?: number
   barrierAbsorbed?: number
   durationMs?: number | null
@@ -79,15 +86,20 @@ export interface CombatLogEvent {
   timestampMs?: number
 }
 
-export interface CombatLogEntry extends CombatLogEvent {
+export type CombatLogEvent = CombatEvent
+
+export interface CombatLogEntry extends CombatEvent {
   id: number
   sequence: number
   timestampMs: number
 }
 
-export interface CombatUiEventSink {
-  push: (event: CombatLogEvent) => void
+export interface CombatEventSink {
+  push: (event: CombatEvent) => void
 }
+
+/** @deprecated Use CombatEvent. Kept for existing log-focused callers. */
+export type CombatUiEventSink = CombatEventSink
 
 export interface CombatSource {
   actor: 'player' | 'enemy'

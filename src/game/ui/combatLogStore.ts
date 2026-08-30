@@ -1,12 +1,12 @@
 import { create } from 'zustand'
-import type { CombatLogEntry, CombatLogEvent, CombatUiEventSink } from '../systems/combat/combatTypes'
+import type { CombatEvent, CombatEventSink, CombatLogEntry } from '../systems/combat/combatTypes'
 
 export const MAX_COMBAT_LOG_ENTRIES = 50
 let nextSequence = 0
 
 interface CombatLogUiState {
   entries: CombatLogEntry[]
-  push: (event: CombatLogEvent) => void
+  push: (event: CombatEvent) => void
   clear: () => void
 }
 
@@ -20,7 +20,7 @@ export const useCombatLogStore = create<CombatLogUiState>((set) => ({
   clear: () => set({ entries: [] }),
 }))
 
-export const combatLogUiSink: CombatUiEventSink = {
+export const combatLogUiSink: CombatEventSink = {
   push: (event) => useCombatLogStore.getState().push(event),
 }
 

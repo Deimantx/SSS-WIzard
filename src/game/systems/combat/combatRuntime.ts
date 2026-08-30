@@ -7,7 +7,7 @@ import { executeCombatEffects, damageEnemy, damagePlayer, gainBarrier } from './
 import { gainBarrier as gainBarrierRuntime } from './barrierRuntime'
 import { applyStatus, clearStatuses } from './statusRuntime'
 import { resetCombatRuleRuntime, runCombatTriggers } from './triggerRuntime'
-import type { CombatUiEventSink, StatusId } from './combatTypes'
+import type { CombatEventSink, StatusId } from './combatTypes'
 import { resolveBasicAttackInterval } from './effectResolver'
 import { initializeEnemyActionRuntime, resetEnemyActionRuntime, scheduleEnemyRecovery } from './actionRuntime'
 import { resolveMonsterLoot } from '../loot'
@@ -20,7 +20,7 @@ export const applyBarrier = (state: GameState, amount: number) => gainBarrierRun
 
 export const debugApplyStatus = (state: GameState, actor: 'player' | 'enemy', statusId: StatusId, durationMs?: number | null, stacks?: number) => applyStatus(state, actor, statusId, { actor, kind: 'system', sourceId: 'developer-tools', tags: ['status'] }, { durationMs, stacks })
 
-export const spawnEnemy = (state: GameState, enemyId: MonsterId, uiEvents?: CombatUiEventSink) => {
+export const spawnEnemy = (state: GameState, enemyId: MonsterId, uiEvents?: CombatEventSink) => {
   const monster = MONSTERS[enemyId]
   state.combat.enemyId = enemyId
   state.combat.enemyHp = monster.maxHealth
@@ -33,14 +33,14 @@ export const spawnEnemy = (state: GameState, enemyId: MonsterId, uiEvents?: Comb
   state.combat.playerAttackTimerMs = 0
   state.combat.enemyStatuses = []
   discoverMonster(state, enemyId)
-  uiEvents?.push({ source: { kind: 'system' }, target: 'enemy', targetMonsterId: enemyId, category: 'system', sourceId: 'encounter-start' })
+  uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'system', sourceId: 'encounter-start' })
   runCombatTriggers(state, 'enemy', 'on-combat-start', { source: { actor: 'enemy', kind: 'system', sourceId: 'combat-start' } }, executeCombatEffects, 0, [], uiEvents)
   runCombatTriggers(state, 'player', 'on-combat-start', { source: { actor: 'player', kind: 'system', sourceId: 'combat-start' }, eventTarget: 'enemy' }, executeCombatEffects, 0, [], uiEvents)
   scheduleEnemyRecovery(state, monster.actionIntervalMs)
   appendLog(state, `${monster.name} enters the dungeon.`)
 }
 
-export const spawnNextEnemy = (state: GameState, uiEvents?: CombatUiEventSink) => {
+export const spawnNextEnemy = (state: GameState, uiEvents?: CombatEventSink) => {
   const dungeon = DUNGEONS[state.combat.dungeonId ?? 'whispering-woods']
   if (state.combat.pendingBossId) {
     const boss = state.combat.pendingBossId
@@ -54,11 +54,11 @@ export const spawnNextEnemy = (state: GameState, uiEvents?: CombatUiEventSink) =
   spawnEnemy(state, chooseMonster(dungeon.monsterPool), uiEvents)
 }
 
-export const finishEnemy = (state: GameState, report?: SimulationReportCollector, onItemAcquired?: (itemId: ItemId, quantity: number) => void, uiEvents?: CombatUiEventSink) => {
+export const finishEnemy = (state: GameState, report?: SimulationReportCollector, onItemAcquired?: (itemId: ItemId, quantity: number) => void, uiEvents?: CombatEventSink) => {
   const enemyId = state.combat.enemyId
   if (!enemyId) return
   const monster = MONSTERS[enemyId]
-  const drops = resolveMonsterLoot(state, enemyId, (itemId, quantity) => { onItemAcquired?.(itemId, quantity); report?.recordLoot(itemId, quantity); uiEvents?.push({ source: { kind: 'system' }, target: 'enemy', targetMonsterId: enemyId, category: 'loot', sourceId: 'loot-drop', itemId, amount: quantity }) })
+  const drops = resolveMonsterLoot(state, enemyId, (itemId, quantity) => { onItemAcquired?.(itemId, quantity); report?.recordLoot(itemId, quantity); uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'loot', sourceId: 'loot-drop', itemId, amount: quantity }) })
   report?.recordKill(enemyId)
   state.combat.enemyId = null
   state.combat.enemyHp = 0
@@ -115,9 +115,9 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   }
 }
 
-export const resolveCombatDeaths = (state: GameState, report?: SimulationReportCollector, onItemAcquired?: (itemId: ItemId, quantity: number) => void, uiEvents?: CombatUiEventSink) => {
+export const resolveCombatDeaths = (state: GameState, report?: SimulationReportCollector, onItemAcquired?: (itemId: ItemId, quantity: number) => void, uiEvents?: CombatEventSink) => {
   if (state.player.health <= 0 && !state.player.godMode) {
-    uiEvents?.push({ source: { kind: 'system' }, target: 'player', category: 'death', sourceId: 'player-defeated' })
+    uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'player', category: 'death', sourceId: 'player-defeated' })
     report?.recordPlayerDeath()
     state.combat.active = false
     state.combat.enemyId = null
@@ -140,7 +140,7 @@ export const resolveCombatDeaths = (state: GameState, report?: SimulationReportC
   }
   if (state.combat.enemyId && state.combat.enemyHp <= 0) {
     const enemyId = state.combat.enemyId
-    uiEvents?.push({ source: { kind: 'system' }, target: 'enemy', targetMonsterId: enemyId, category: 'death', sourceId: 'enemy-defeated' })
+    uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'death', sourceId: 'enemy-defeated' })
     finishEnemy(state, report, onItemAcquired, uiEvents)
     return true
   }

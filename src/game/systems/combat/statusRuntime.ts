@@ -3,16 +3,16 @@ import { MONSTERS } from '../../content/monsters'
 import type { GameState, StatusId } from '../../types'
 import type { CombatActor } from './magnitude'
 import { runCombatTriggers } from './triggerRuntime'
-import type { CombatEffect, CombatSource, ActiveStatus, CombatTag, CombatUiEventSink } from './combatTypes'
+import type { CombatEffect, CombatEventSink, CombatSource, ActiveStatus, CombatTag } from './combatTypes'
 import { getCombatModifiers } from './modifiers'
 
-export type ExecuteEffects = (state: GameState, effects: CombatEffect[], source: CombatSource, depth?: number, uiEvents?: CombatUiEventSink) => void
+export type ExecuteEffects = (state: GameState, effects: CombatEffect[], source: CombatSource, depth?: number, uiEvents?: CombatEventSink) => void
 export interface StatusRemovalOptions {
   executeEffects?: ExecuteEffects
   source?: CombatSource
   depth?: number
   reason?: 'removed' | 'expired'
-  uiEvents?: CombatUiEventSink
+  uiEvents?: CombatEventSink
 }
 
 const statusList = (state: GameState, actor: CombatActor) => actor === 'player' ? state.combat.playerStatuses : state.combat.enemyStatuses
@@ -142,7 +142,7 @@ const periodicEffects = (status: ActiveStatus): CombatEffect[] => {
   }) ?? []
 }
 
-export const tickStatuses = (state: GameState, deltaMs: number, executeEffects: ExecuteEffects, uiEvents?: CombatUiEventSink) => {
+export const tickStatuses = (state: GameState, deltaMs: number, executeEffects: ExecuteEffects, uiEvents?: CombatEventSink) => {
   const delta = Math.max(0, deltaMs)
   ;(['player', 'enemy'] as CombatActor[]).forEach((actor) => {
     const snapshot = [...statusList(state, actor)]

@@ -2,7 +2,7 @@ import { ITEMS } from '../../content/items/items'
 import { MONSTERS } from '../../content/monsters'
 import { STATUS_DEFINITIONS } from '../../content/statuses'
 import { appendLog, playerBasicDamage, spellDamageMultiplier } from '../../engine'
-import type { GameState, SpellId, StatusId } from '../../types'
+import type { GameState, SpellId, StatusId, TraitId } from '../../types'
 import { applyStatus, cleanseStatuses, dispelStatuses, removeStatus } from './statusRuntime'
 import type { CombatActor } from './magnitude'
 import { getActorHealth, resolveMagnitude } from './magnitude'
@@ -10,7 +10,7 @@ import { consumeBarrier, gainBarrierResult, gainBarrier as gainBarrierRuntime, g
 import { getCombatModifiers, getResistance, isImmuneToDamage } from './modifiers'
 import { runCombatTriggers, type CombatEventContext } from './triggerRuntime'
 import { resolveActiveEnemyAction, setEnemyActionPattern } from './actionRuntime'
-import type { CombatEffect, CombatLogCategory, CombatSource, CombatTag, CombatUiEventSink, DamageType, EffectTarget } from './combatTypes'
+import type { CombatEffect, CombatEventSink, CombatLogCategory, CombatSource, CombatTag, DamageType, EffectTarget } from './combatTypes'
 
 const MAX_EFFECT_DEPTH = 20
 
@@ -18,6 +18,20 @@ const targetActor = (source: CombatSource, target: EffectTarget): CombatActor =>
 const sourceTags = (source: CombatSource, effectTags?: CombatTag[]) => [...new Set<CombatTag>([...(source.tags ?? []), ...(effectTags ?? [])])]
 const logSource = (state: GameState, source: CombatSource) => source.actor === 'enemy' && state.combat.enemyId ? { kind: 'enemy' as const, monsterId: state.combat.enemyId } : source.actor === 'player' ? { kind: 'player' as const } : { kind: 'system' as const }
 const logCategory = (source: CombatSource, tags: CombatTag[], fallback: CombatLogCategory): CombatLogCategory => source.kind === 'spell' ? 'spell' : source.kind === 'action' ? 'enemy-action' : source.kind === 'trait' ? 'trait' : tags.includes('basic-attack') ? 'basic-attack' : fallback
+const eventFields = (state: GameState, source: CombatSource, target: CombatActor) => ({
+  source: logSource(state, source),
+  sourceKind: source.kind,
+  dungeonId: state.combat.dungeonId ?? undefined,
+  target,
+  targetMonsterId: target === 'enemy' ? state.combat.enemyId ?? undefined : undefined,
+  sourceId: source.sourceId,
+  originSourceId: source.originSourceId,
+  ruleId: source.ruleId,
+  spellId: source.kind === 'spell' ? source.sourceId as SpellId : undefined,
+  actionId: source.kind === 'action' ? source.sourceId : undefined,
+  traitId: source.kind === 'trait' ? source.sourceId as TraitId : undefined,
+  statusId: source.kind === 'status' ? source.sourceId as StatusId : undefined,
+})
 
 export interface DamageBreakdown {
   raw: number
@@ -47,7 +61,7 @@ export const calculateCombatDamage = (state: GameState, raw: number, damageType:
   return { raw: amount, sourceModified, targetModified, resistance, resolvedBeforeBarrier, barrierAbsorbed, healthDamage: Math.max(0, resolvedBeforeBarrier - barrierAbsorbed), immune: false }
 }
 
-const applyDamage = (state: GameState, raw: number, damageType: DamageType, source: CombatSource, target: CombatActor, tags: CombatTag[], execute: ExecuteCombatEffects, depth: number, uiEvents?: CombatUiEventSink) => {
+const applyDamage = (state: GameState, raw: number, damageType: DamageType, source: CombatSource, target: CombatActor, tags: CombatTag[], execute: ExecuteCombatEffects, depth: number, uiEvents?: CombatEventSink) => {
   const breakdown = calculateCombatDamage(state, raw, damageType, source, target, tags)
   if (breakdown.resolvedBeforeBarrier <= 0) return 0
   const previousHp = getActorHealth(state, target)
@@ -60,7 +74,7 @@ const applyDamage = (state: GameState, raw: number, damageType: DamageType, sour
   const currentHp = getActorHealth(state, target)
   if (source.actor === 'player') state.combat.lastDamageDealt = dealt
   else state.combat.lastDamageTaken = dealt
-  uiEvents?.push({ source: logSource(state, source), target, targetMonsterId: target === 'enemy' ? state.combat.enemyId ?? undefined : undefined, category: logCategory(source, tags, 'damage'), sourceId: source.sourceId, spellId: source.kind === 'spell' ? source.sourceId as SpellId : undefined, actionId: source.kind === 'action' ? source.sourceId : undefined, statusId: source.kind === 'status' ? source.sourceId as StatusId : undefined, damageType, amount: breakdown.resolvedBeforeBarrier, healthDamage: dealt, barrierAbsorbed: breakdown.barrierAbsorbed })
+  uiEvents?.push({ ...eventFields(state, source, target), category: logCategory(source, tags, 'damage'), damageType, amount: breakdown.resolvedBeforeBarrier, healthDamage: dealt, barrierAbsorbed: breakdown.barrierAbsorbed })
   const context: CombatEventContext = {
     source, eventTarget: target, changedActor: target, sourceTags: tags, amount: breakdown.resolvedBeforeBarrier, healthDamage: dealt, barrierDamage: breakdown.barrierAbsorbed, damageType, previousBarrier: barrierBefore, currentBarrier: getActiveBarrier(state, target),
     previousHp, currentHp, previousHpPercent: previousHp / Math.max(1, maxHp) * 100, currentHpPercent: currentHp / Math.max(1, maxHp) * 100,
@@ -82,16 +96,19 @@ const applyDamage = (state: GameState, raw: number, damageType: DamageType, sour
   return dealt
 }
 
-const applyHealing = (state: GameState, raw: number, source: CombatSource, target: CombatActor, tags: CombatTag[], execute: ExecuteCombatEffects, depth: number, uiEvents?: CombatUiEventSink) => {
+const applyHealing = (state: GameState, raw: number, source: CombatSource, target: CombatActor, tags: CombatTag[], execute: ExecuteCombatEffects, depth: number, uiEvents?: CombatEventSink) => {
   const amount = Math.max(0, Math.round(raw * (1 + getCombatModifiers(state, source.actor, 'healing-done-percent', { source, sourceTags: tags }))))
   const received = Math.max(0, 1 + getCombatModifiers(state, target, 'healing-received-percent', { source, sourceTags: tags }))
   const before = getActorHealth(state, target)
   const max = target === 'player' ? state.player.maxHealth : state.combat.enemyMaxHp
   const healed = Math.max(0, Math.min(max, before + Math.round(amount * received)) - before)
+  const attemptedAmount = Math.max(0, Math.round(amount * received))
   if (target === 'player') state.player.health += healed
   else state.combat.enemyHp += healed
+  if (attemptedAmount > 0) {
+    uiEvents?.push({ ...eventFields(state, source, target), category: 'heal', amount: healed, attemptedAmount, effectiveAmount: healed, overheal: Math.max(0, attemptedAmount - healed) })
+  }
   if (healed > 0) {
-    uiEvents?.push({ source: logSource(state, source), target, targetMonsterId: target === 'enemy' ? state.combat.enemyId ?? undefined : undefined, category: 'heal', sourceId: source.sourceId, spellId: source.kind === 'spell' ? source.sourceId as SpellId : undefined, actionId: source.kind === 'action' ? source.sourceId : undefined, amount: healed })
     const context: CombatEventContext = {
       source,
       eventTarget: target,
@@ -121,9 +138,9 @@ const executeResource = (state: GameState, effect: Extract<CombatEffect, { type:
   return Math.abs(state.player.mana - before)
 }
 
-export type ExecuteCombatEffects = (state: GameState, effects: CombatEffect[], source: CombatSource, depth?: number, uiEvents?: CombatUiEventSink) => void
+export type ExecuteCombatEffects = (state: GameState, effects: CombatEffect[], source: CombatSource, depth?: number, uiEvents?: CombatEventSink) => void
 
-export const executeCombatEffect = (state: GameState, effect: CombatEffect, source: CombatSource, depth = 0, execute: ExecuteCombatEffects = executeCombatEffects, uiEvents?: CombatUiEventSink) => {
+export const executeCombatEffect = (state: GameState, effect: CombatEffect, source: CombatSource, depth = 0, execute: ExecuteCombatEffects = executeCombatEffects, uiEvents?: CombatEventSink) => {
   if (depth >= MAX_EFFECT_DEPTH) return
   const target = targetActor(source, effect.target)
   const tags = sourceTags(source, 'tags' in effect ? effect.tags : undefined)
@@ -137,7 +154,7 @@ export const executeCombatEffect = (state: GameState, effect: CombatEffect, sour
     case 'gain-barrier': {
       const result = gainBarrierResult(state, resolveMagnitude(state, effect.magnitude, source, target), source, target, tags, { mode: effect.mode ?? 'add', durationMs: effect.durationMs === undefined ? null : effect.durationMs })
       if (result.gained > 0) {
-        uiEvents?.push({ source: logSource(state, source), target, targetMonsterId: target === 'enemy' ? state.combat.enemyId ?? undefined : undefined, category: 'barrier', sourceId: source.sourceId, spellId: source.kind === 'spell' ? source.sourceId as SpellId : undefined, actionId: source.kind === 'action' ? source.sourceId : undefined, amount: result.gained, durationMs: effect.durationMs })
+        uiEvents?.push({ ...eventFields(state, source, target), category: 'barrier', amount: result.gained, durationMs: effect.durationMs })
         runCombatTriggers(state, target, 'on-barrier-gained', { source, eventTarget: target, changedActor: target, sourceTags: tags, previousBarrier: result.previous, currentBarrier: result.current, barrierGained: result.gained, amount: result.gained }, execute, depth, [], uiEvents)
       }
       break
@@ -150,7 +167,7 @@ export const executeCombatEffect = (state: GameState, effect: CombatEffect, sour
       if (active) {
         const definition = STATUS_DEFINITIONS[effect.statusId]
         appendLog(state, `${definition.name} applied.`)
-        uiEvents?.push({ source: logSource(state, source), target, targetMonsterId: target === 'enemy' ? state.combat.enemyId ?? undefined : undefined, category: 'status', sourceId: source.sourceId, spellId: source.kind === 'spell' ? source.sourceId as SpellId : undefined, actionId: source.kind === 'action' ? source.sourceId : undefined, statusId: effect.statusId, durationMs: active.remainingMs, stacks: active.stacks })
+        uiEvents?.push({ ...eventFields(state, source, target), category: 'status', statusId: effect.statusId, durationMs: active.remainingMs, stacks: active.stacks })
         // Application events belong to the applier; the status holder is the target.
         runCombatTriggers(state, source.actor, 'on-status-applied', { source: statusSource, eventTarget: target, changedActor: target, sourceTags: tags, statusId: effect.statusId, eventStatusTags: definition.tags }, execute, depth, [], uiEvents)
       }
@@ -166,7 +183,7 @@ export const executeCombatEffect = (state: GameState, effect: CombatEffect, sour
         if (state.combat.enemyTelegraphMs <= 0) resolveActiveEnemyAction(state, execute, depth, uiEvents)
       } else state.combat.enemyActionTimerMs = Math.max(0, state.combat.enemyActionTimerMs + effect.amountMs)
       appendLog(state, `${effect.amountMs >= 0 ? 'Action delayed' : 'Action timer changed'} by ${Math.abs(effect.amountMs)}ms.`)
-      uiEvents?.push({ source: logSource(state, source), target, targetMonsterId: target === 'enemy' ? state.combat.enemyId ?? undefined : undefined, category: 'system', sourceId: 'action-timer', amount: Math.abs(effect.amountMs), durationMs: effect.amountMs })
+      uiEvents?.push({ ...eventFields(state, source, target), category: 'system', sourceId: 'action-timer', amount: Math.abs(effect.amountMs), durationMs: effect.amountMs })
       break
     }
     case 'modify-cooldown': {

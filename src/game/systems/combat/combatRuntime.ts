@@ -127,6 +127,7 @@ export const resolveCombatDeaths = (state: GameState, report?: SimulationReportC
     state.combat.playerBarrierRemainingMs = null
     state.combat.playerStatuses = []
     state.combat.enemyStatuses = []
+    Object.keys(state.combat.spellCooldowns).forEach((spellId) => { delete state.combat.spellCooldowns[spellId as keyof typeof state.combat.spellCooldowns] })
     state.combat.pendingBossId = null
     resetCombatRuleRuntime(state)
     state.combat.threatCleared = 0

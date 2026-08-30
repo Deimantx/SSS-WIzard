@@ -3,7 +3,7 @@ import { ITEMS, getResearchXp } from './content/items/items'
 import { SCHOOLS } from './content/schools/schools'
 import { SPELLS } from './content/spells/spells'
 import { getManaCapacityBreakdown, manaRegenPerSecond as getChannelingManaRegen } from './engine/channelingEngine'
-import type { EquipmentStats, FocusReservation, GameState, ItemId, SchoolId, SpellId } from './types'
+import type { EquipmentStats, FocusReservation, GameState, ItemId, SchoolId, SpellId, CombatSource, CombatTag } from './types'
 import { RECIPES, RECIPE_ORDER } from './content/recipes/recipes'
 import { clamp, uid } from './utils'
 import { RESEARCH_SLOT_ORDER } from './systems/research/researchReservations'
@@ -79,7 +79,16 @@ export const spellDamageMultiplier = (state: Pick<GameState, 'equipment'>, schoo
   const stats = equipmentStats(state)
   return 1 + (school === 'fire' ? stats.fireSpellDamagePct ?? 0 : school === 'earth' ? stats.earthSpellDamagePct ?? 0 : school === 'air' ? stats.airSpellDamagePct ?? 0 : 0)
 }
-export const barrierMultiplier = (state: Pick<GameState, 'equipment'>) => 1 + (equipmentStats(state).waterBarrierPct ?? 0)
+/** Tide Focus is scoped to player-owned Water-aligned Barrier effects. */
+export const barrierMultiplier = (
+  state: Pick<GameState, 'equipment'>,
+  source?: Pick<CombatSource, 'actor' | 'school' | 'tags'>,
+  effectTags: readonly CombatTag[] = [],
+) => {
+  const tags = new Set<CombatTag>([...(source?.tags ?? []), ...effectTags])
+  const isWaterBarrier = source?.actor === 'player' && (source.school === 'water' || tags.has('water'))
+  return 1 + (isWaterBarrier ? equipmentStats(state).waterBarrierPct ?? 0 : 0)
+}
 
 export const grantSchoolXp = (state: GameState, school: SchoolId, amount: number) => {
   const before = state.schools[school].level

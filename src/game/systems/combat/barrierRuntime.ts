@@ -33,7 +33,8 @@ export const gainBarrierResult = (state: GameState, raw: number, source: CombatS
   const sourcePower = Math.max(0, 1 + getCombatModifiers(state, source.actor, 'barrier-power-percent', { sourceTags: tags }))
   const targetPower = Math.max(0, 1 + getCombatModifiers(state, target, 'barrier-received-percent', { sourceTags: tags }))
   const equipmentBonus = target === 'player' ? equipmentStats(state).barrierReceived ?? 0 : 0
-  const amount = Math.max(0, Math.round(raw * sourcePower * targetPower * (target === 'player' ? barrierMultiplier(state) : 1) + equipmentBonus))
+  const equipmentMultiplier = target === 'player' ? barrierMultiplier(state, source, tags) : 1
+  const amount = Math.max(0, Math.round(raw * sourcePower * targetPower * equipmentMultiplier + equipmentBonus))
   const mode = options.mode ?? 'add'
   const previous = getBarrier(state, target)
   const next = mode === 'replace' ? amount : Math.max(0, previous + amount)

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { executeCombatEffects, damageEnemy, damagePlayer, getCombatDamagePreview, resolveBasicAttackInterval } from './effectResolver'
 import { applyStatus, tickStatuses } from './statusRuntime'
-import { applyBarrier, finishEnemy, spawnEnemy } from './combatRuntime'
+import { applyBarrier, finishEnemy, resolveCombatDeaths, spawnEnemy } from './combatRuntime'
 import { forceResolveEnemyAction } from './actionRuntime'
 import { runCombatTriggers } from './triggerRuntime'
 import { migrateSave } from '../../../persistence/migrations'
@@ -15,6 +15,7 @@ import { TRAIT_DEFINITIONS } from '../../content/traits'
 import { STATUS_DEFINITIONS } from '../../content/statuses'
 import { SPELLS } from '../../content/spells/spells'
 import { resolveActionRecoveryMs } from './actionRuntime'
+import { getSpellEquipmentBonusPreview } from '../spells/spellEquipmentPreview'
 
 const playerSpell: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'test-spell', school: 'fire', tags: ['spell', 'magic'] }
 const enemyAttack: CombatSource = { actor: 'enemy', kind: 'basic-attack', sourceId: 'test-attack', tags: ['basic-attack', 'direct'] }
@@ -199,6 +200,35 @@ describe('post-implementation combat audit regressions', () => {
     expect(state.combat.playerStatuses).toEqual([])
   })
 
+  it('resets Spell cooldowns on genuine defeat and starts re-entry ready', () => {
+    const state = stateWithEnemy()
+    state.progress.spellRanks.stoneguard = 1
+    state.combat.spellCooldowns.stoneguard = 16_000
+    state.player.health = 0
+
+    expect(resolveCombatDeaths(state)).toBe(true)
+    expect(state.combat.active).toBe(false)
+    expect(state.combat.spellCooldowns).toEqual({})
+
+    state.combat.active = true
+    state.combat.dungeonId = 'whispering-woods'
+    state.player.health = 1
+    state.player.mana = state.player.maxMana
+    spawnEnemy(state, 'forest-wisp')
+    expect(castSpellAction(state, 'stoneguard')).toBe(true)
+  })
+
+  it('does not reset Spell cooldowns when God Mode prevents defeat', () => {
+    const state = stateWithEnemy()
+    state.combat.spellCooldowns.stoneguard = 16_000
+    state.player.health = 0
+    state.player.godMode = true
+
+    expect(resolveCombatDeaths(state)).toBe(false)
+    expect(state.combat.active).toBe(true)
+    expect(state.combat.spellCooldowns.stoneguard).toBe(16_000)
+  })
+
   it('blocks manual and automatic spell casts while Stunned without spending resources', () => {
     const state = stateWithEnemy()
     state.progress.spellRanks = { 'fire-bolt': 1 }
@@ -245,6 +275,56 @@ describe('post-implementation combat audit regressions', () => {
     finishEnemy(state)
     advanceGameState(state, 1000, { mode: 'live' })
     expect(state.combat.playerBarrierRemainingMs).toBe(remaining)
+  })
+
+  it('scopes Tide Focus to Water-aligned player Barriers', () => {
+    const waterSource: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'water-barrier-test', school: 'water', tags: ['spell', 'magic', 'water'] }
+    const earthSource: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'earth-barrier-test', school: 'earth', tags: ['spell', 'magic', 'earth'] }
+
+    const baseWater = stateWithEnemy()
+    executeCombatEffects(baseWater, SPELLS['water-ward'].effects, waterSource)
+    expect(baseWater.combat.playerBarrier).toBe(35)
+
+    const tideWater = stateWithEnemy()
+    tideWater.equipment.offhand = 'tide-focus'
+    executeCombatEffects(tideWater, SPELLS['water-ward'].effects, waterSource)
+    expect(tideWater.combat.playerBarrier).toBe(42)
+
+    const tideEarth = stateWithEnemy()
+    tideEarth.equipment.offhand = 'tide-focus'
+    executeCombatEffects(tideEarth, SPELLS.stoneguard.effects, earthSource)
+    expect(tideEarth.combat.playerBarrier).toBe(70)
+  })
+
+  it('keeps generic flat Barrier Received bonuses independent of Water scope', () => {
+    const waterSource: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'water-barrier-test', school: 'water', tags: ['spell', 'water'] }
+    const earthSource: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'earth-barrier-test', school: 'earth', tags: ['spell', 'earth'] }
+
+    const water = stateWithEnemy()
+    water.equipment.armor = 'stoneweave-robe'
+    executeCombatEffects(water, SPELLS['water-ward'].effects, waterSource)
+    expect(water.combat.playerBarrier).toBe(45)
+
+    const earth = stateWithEnemy()
+    earth.equipment.armor = 'stoneweave-robe'
+    executeCombatEffects(earth, SPELLS.stoneguard.effects, earthSource)
+    expect(earth.combat.playerBarrier).toBe(80)
+  })
+
+  it('keeps the Water Barrier equipment preview aligned with runtime scope', () => {
+    const state = stateWithEnemy()
+    state.equipment.offhand = 'tide-focus'
+
+    expect(getSpellEquipmentBonusPreview(state, 'water-ward')).toMatchObject({ totalPercent: 0.2, current: [expect.objectContaining({ itemId: 'tide-focus' })] })
+    expect(getSpellEquipmentBonusPreview(state, 'stoneguard')).toMatchObject({ totalPercent: 0, current: [] })
+
+    const waterSource: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'water-ward', school: 'water', tags: ['spell', 'magic', 'water'] }
+    const earthSource: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'stoneguard', school: 'earth', tags: ['spell', 'magic', 'earth'] }
+    executeCombatEffects(state, SPELLS['water-ward'].effects, waterSource)
+    expect(state.combat.playerBarrier).toBe(42)
+    state.combat.playerBarrier = 0
+    executeCombatEffects(state, SPELLS.stoneguard.effects, earthSource)
+    expect(state.combat.playerBarrier).toBe(70)
   })
 
   it('keeps authored barrier duration and effect tags explicit', () => {

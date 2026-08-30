@@ -20,6 +20,7 @@ import { applyTransmutationAllocations, buildTransmutationWorkRequests } from '.
 import { applyResearchAllocations, buildResearchWorkRequests } from '../research/researchEngine'
 import { allocateContinuousMana } from './continuousManaScheduler'
 import { isSpellUnlocked } from '../spells'
+import { MAX_SIMULATION_DELTA_MS, SIMULATION_QUANTUM_MS } from './simulationConstants'
 
 export interface AdvanceContext {
   mode: 'live' | 'banked'
@@ -94,8 +95,7 @@ const tickCombat = (state: GameState, delta: number, context: AdvanceContext) =>
   }
 }
 
-export const advanceGameState = (state: GameState, deltaMs: number, context: AdvanceContext = { mode: 'live' }) => {
-  const delta = Math.min(1000, Math.max(0, deltaMs))
+const advanceGameStateStep = (state: GameState, delta: number, context: AdvanceContext) => {
   const channelingTick = advanceChanneling(state, delta)
   if (channelingTick.discoveries.includes('deep-reservoir')) recalculateDerivedStats(state)
   channelingTick.discoveries.forEach((id) => {
@@ -110,5 +110,18 @@ export const advanceGameState = (state: GameState, deltaMs: number, context: Adv
   applyResearchAllocations(state, researchRequests, funding.allocations, context)
   applyTransmutationAllocations(state, transmutationRequests, funding.allocations, context)
   tickCombat(state, delta, context)
+  return state
+}
+
+export const advanceGameState = (state: GameState, deltaMs: number, context: AdvanceContext = { mode: 'live' }) => {
+  const bounded = Math.min(MAX_SIMULATION_DELTA_MS, Math.max(0, deltaMs))
+  let remaining = bounded
+
+  while (remaining > 0) {
+    const step = Math.min(SIMULATION_QUANTUM_MS, remaining)
+    advanceGameStateStep(state, step, context)
+    remaining -= step
+  }
+
   return state
 }

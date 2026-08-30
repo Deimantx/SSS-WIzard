@@ -28,6 +28,12 @@ export function TooltipProvider({ children }: { children: ReactNode }) {
     if (touchTimer.current !== null) window.clearTimeout(touchTimer.current)
     timer.current = null; closeTimer.current = null; touchTimer.current = null
   }
+  const cancelClose = () => {
+    if (closeTimer.current !== null) {
+      window.clearTimeout(closeTimer.current)
+      closeTimer.current = null
+    }
+  }
   const dismiss = () => { clearTimers(); pendingRef.current = null; activeRef.current = null; setPending(null); setActive(null) }
   const request = (next: TooltipRequest, delay = 500) => {
     clearTimers();
@@ -46,7 +52,7 @@ export function TooltipProvider({ children }: { children: ReactNode }) {
   const leave = (id: string) => {
     if (pendingRef.current?.id === id) { clearTimers(); pendingRef.current = null; setPending(null) }
     if (activeRef.current?.id === id) {
-      if (closeTimer.current !== null) window.clearTimeout(closeTimer.current)
+      cancelClose()
       closeTimer.current = window.setTimeout(dismiss, 70)
     }
   }
@@ -79,7 +85,7 @@ export function TooltipProvider({ children }: { children: ReactNode }) {
   }, [active])
 
   const value = { request, leave, dismiss, touch }
-  return <TooltipContext.Provider value={value}><>{children}</>{active && typeof document !== 'undefined' && createPortal(<div ref={layerRef} id={active.tooltipId} className={`game-tooltip game-tooltip-${active.accent}${active.wide ? ' game-tooltip-wide' : ''} ${position.top > 0 ? 'is-positioned' : ''}`} role="tooltip" style={{ top: position.top, left: position.left }}>{active.content}</div>, document.body)}</TooltipContext.Provider>
+  return <TooltipContext.Provider value={value}><>{children}</>{active && typeof document !== 'undefined' && createPortal(<div ref={layerRef} id={active.tooltipId} className={`game-tooltip game-tooltip-${active.accent}${active.wide ? ' game-tooltip-wide' : ''} ${position.top > 0 ? 'is-positioned' : ''}`} role="tooltip" onPointerEnter={active.wide ? cancelClose : undefined} onPointerLeave={active.wide ? dismiss : undefined} style={{ top: position.top, left: position.left }}>{active.content}</div>, document.body)}</TooltipContext.Provider>
 }
 
 interface GameTooltipProps { children: ReactNode; content: ReactNode; accent?: TooltipAccent; placement?: TooltipPlacement; className?: string; block?: boolean; disabled?: boolean; delay?: number; wide?: boolean }

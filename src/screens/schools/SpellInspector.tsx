@@ -18,14 +18,16 @@ import { SpellRankPath } from './SpellRankPath'
 import type { SpellEffectTooltipCategoryKey } from './spellEffectTooltipModel'
 import { buildSpellDetailPresentation } from './spellDetailPresentation'
 
-export function SpellInspector({ entry, state, rankPathOpen, onToggleRankPath, onToggleAutoCast }: {
+export function SpellInspector({ entry, state, onContentHeightChange, rankPathOpen, onToggleRankPath, onToggleAutoCast }: {
   entry: SpellBrowserEntry | null
   state: Pick<GameState, 'schools' | 'progress' | 'equipment' | 'activities'> & { player: Pick<GameState['player'], 'maxFocus'>; debug: Pick<GameState['debug'], 'allowFocusOverCap'> }
+  onContentHeightChange?: (height: number) => void
   rankPathOpen: boolean
   onToggleRankPath: () => void
   onToggleAutoCast: (spellId: SpellId) => void
 }) {
   const rankDrawerRef = useRef<HTMLElement>(null)
+  const inspectorMainRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (!rankPathOpen) return
     const onPointerDown = (event: PointerEvent) => { if (!rankDrawerRef.current?.contains(event.target as Node)) onToggleRankPath() }
@@ -34,6 +36,20 @@ export function SpellInspector({ entry, state, rankPathOpen, onToggleRankPath, o
     document.addEventListener('keydown', onKeyDown)
     return () => { document.removeEventListener('pointerdown', onPointerDown); document.removeEventListener('keydown', onKeyDown) }
   }, [rankPathOpen, onToggleRankPath])
+  useEffect(() => {
+    if (!onContentHeightChange) return
+    const node = inspectorMainRef.current
+    if (!node) {
+      onContentHeightChange(0)
+      return
+    }
+    const measure = () => onContentHeightChange(Math.ceil(node.scrollHeight + 34))
+    measure()
+    if (typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(measure)
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [entry?.id, entry?.kind, entry?.rank, onContentHeightChange])
 
   if (!entry) return <Card className="schools-inspector-panel"><div className="spell-inspector-empty"><InspectorEyebrow>SELECT A SPELL</InspectorEyebrow><h2>SELECT A SPELL</h2><p>Known Spells will appear here when learned. Choose a known Spell from the Spellbook to inspect its mechanics.</p></div></Card>
   const school = SCHOOLS[entry.school]
@@ -55,7 +71,7 @@ export function SpellInspector({ entry, state, rankPathOpen, onToggleRankPath, o
       : `Insufficient free Focus. Need ${focusCost} Focus.`
   return <Card className="schools-inspector-panel" style={{ '--spell-school-color': school.color, borderTopColor: school.color } as React.CSSProperties}>
     <div className="spell-inspector-layout">
-      <div className="spell-inspector-main">
+      <div ref={inspectorMainRef} className="spell-inspector-main">
         <div className="spell-inspector-title"><span className="spell-inspector-icon-frame"><SpellIcon school={spell.school} size="large" /></span><div><div className="spell-inspector-meta">{school.name.toUpperCase()} · {formatSpellRank(rank).toUpperCase()}</div><h2>{spell.name}</h2><p>Learned at Lv{spell.unlockLevel}</p></div></div>
         <p className="spell-inspector-description">{spell.description}</p>
         <div className="spell-inspector-section"><div className="section-label">CORE CASTING</div><div className="spell-core-grid"><Metric semantic="mana" icon={<Droplet size={14} />} label="Mana" value={`${spell.manaCost}`} description="Mana spent when this Spell is cast." /><Metric semantic="time" icon={<Clock3 size={14} />} label="Cooldown" value={formatTime(spell.cooldownMs)} description="Time before this Spell can be cast again." /><Metric semantic="focus" icon={<CircleDot size={14} />} label="Auto-Cast Focus" value={`${focusCost}`} description="Focus reserved while this Spell is enabled for Auto-Cast." /></div></div>

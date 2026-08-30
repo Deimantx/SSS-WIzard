@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useGameStore } from '../../store/gameStore'
 import { dismissGameTooltips } from '../../components/ui/tooltip/Tooltip'
 import { EditableGrid } from '../../ui/layout-editor/EditableGrid'
@@ -7,6 +7,7 @@ import { SpellInspector } from './SpellInspector'
 import { SpellPresetDialog } from './SpellPresetDialog'
 import { SpellPresetSummary } from './SpellPresetSummary'
 import { getSpellBrowserEntries, type SpellBrowserFilters } from './spellBrowserSelectors'
+import { getAdaptiveSchoolsLayout } from './schoolsLayout'
 
 const DEFAULT_FILTERS: SpellBrowserFilters = { school: 'all', search: '', showUnlockedOnly: true, type: 'All Types', sort: 'Unlock Level' }
 
@@ -22,10 +23,13 @@ export function MagicSchoolsScreenV2() {
   const inspectorState = useMemo(() => ({ schools, progress, equipment, activities, player: { maxFocus }, debug: { allowFocusOverCap } }), [schools, progress, equipment, activities, maxFocus, allowFocusOverCap])
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null)
+  const [inspectorContentHeight, setInspectorContentHeight] = useState(0)
   const [rankPathOpen, setRankPathOpen] = useState(false)
   const [presetsOpen, setPresetsOpen] = useState(false)
   const visibleEntries = useMemo(() => getSpellBrowserEntries(browserState, filters), [browserState, filters])
   const selectedEntry = visibleEntries.find((entry) => entry.id === selectedEntryId) ?? null
+  const reportInspectorContentHeight = useCallback((height: number) => setInspectorContentHeight((current) => current === height ? current : height), [])
+  const layoutTransform = useCallback((layout: Parameters<typeof getAdaptiveSchoolsLayout>[0]) => getAdaptiveSchoolsLayout(layout, inspectorContentHeight), [inspectorContentHeight])
 
   useEffect(() => {
     const nextId = selectedEntryId && visibleEntries.some((entry) => entry.id === selectedEntryId) ? selectedEntryId : visibleEntries[0]?.id ?? null
@@ -36,9 +40,9 @@ export function MagicSchoolsScreenV2() {
 
   return <div className="screen-content schools-screen">
     <div className="screen-header schools-screen-header"><div><div className="eyebrow">MAGIC SCHOOL ARCHIVE</div><h1>Magic Schools</h1><p>Browse your known Spells, inspect their effects and configure reusable Auto-Cast presets.</p></div></div>
-    <EditableGrid screen="schools" panels={[
+    <EditableGrid screen="schools" layoutTransform={layoutTransform} panels={[
       { id: 'schools-browser', content: <SpellBrowser state={browserState} filters={filters} onFiltersChange={setFilters} selectedEntryId={selectedEntryId} onSelect={(id) => { dismissGameTooltips(); setSelectedEntryId(id); setRankPathOpen(false) }} /> },
-      { id: 'schools-inspector', content: <SpellInspector entry={selectedEntry} state={inspectorState} rankPathOpen={rankPathOpen} onToggleRankPath={() => { dismissGameTooltips(); setRankPathOpen((open) => !open) }} onToggleAutoCast={toggleAutoCast} /> },
+      { id: 'schools-inspector', content: <SpellInspector entry={selectedEntry} state={inspectorState} onContentHeightChange={reportInspectorContentHeight} rankPathOpen={rankPathOpen} onToggleRankPath={() => { dismissGameTooltips(); setRankPathOpen((open) => !open) }} onToggleAutoCast={toggleAutoCast} /> },
       { id: 'schools-presets', content: <SpellPresetSummary onManage={() => { dismissGameTooltips(); setRankPathOpen(false); setPresetsOpen(true) }} /> },
     ]} />
     <SpellPresetDialog open={presetsOpen} onClose={() => setPresetsOpen(false)} />

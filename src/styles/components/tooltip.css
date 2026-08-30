@@ -2,7 +2,7 @@
 .game-tooltip-trigger.block { display: block; width: 100%; }
 .game-tooltip { position: fixed; z-index: 90; width: max-content; max-width: min(360px, calc(100vw - 16px)); padding: 8px 10px; border: 1px solid var(--tooltip-border, var(--ui-border-strong)); border-left: 2px solid var(--tooltip-accent, var(--ui-accent)); border-radius: 7px; color: var(--tooltip-text, var(--ui-text)); background: var(--tooltip-bg, var(--ui-panel-strong)); box-shadow: 0 14px 34px var(--ui-shadow); font: var(--text-xs) var(--font-sans); line-height: 1.45; pointer-events: none; opacity: 0; transform: translateY(3px); transition: opacity 130ms ease, transform 130ms ease; }
 .game-tooltip.is-positioned { opacity: 1; transform: translateY(0); }
-.game-tooltip-wide { max-width: min(420px, calc(100vw - 16px)); max-height: min(620px, calc(100vh - 16px)); overflow: auto; scrollbar-color: var(--ui-border-strong) transparent; scrollbar-width: thin; }
+.game-tooltip-wide { max-width: min(420px, calc(100vw - 16px)); max-height: min(620px, calc(100vh - 16px)); overflow-y: auto; overscroll-behavior: contain; pointer-events: auto; scrollbar-color: var(--ui-border-strong) transparent; scrollbar-width: thin; }
 .game-tooltip-wide::-webkit-scrollbar { width: 6px; }
 .game-tooltip-wide::-webkit-scrollbar-thumb { border-radius: 999px; background: var(--ui-border-strong); }
 .game-tooltip-content { display: grid; gap: 4px; min-width: 180px; max-width: 260px; }

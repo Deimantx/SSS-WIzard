@@ -25,16 +25,14 @@ export function SpellBrowserTile({ entry, state, selected, onSelect }: { entry: 
     ? <SpellCardTooltip presentation={presentation} />
     : <TooltipContent title={entry.kind === 'placeholder' ? 'Undiscovered spell' : 'Locked spell'} description={`${school.name} School Level ${entry.unlockLevel} is required. Continue researching to reveal this entry.`} />
   return <span className="spell-browser-tile-shell">
-    <GameTooltip block wide={Boolean(presentation)} delay={presentation ? 120 : 500} placement={presentation ? 'right' : 'top'} accent={unlocked ? 'elemental' : 'warning'} content={content}>
-      <button type="button" style={{ '--spell-school-color': school.color } as React.CSSProperties} className={`spell-browser-tile${selected ? ' is-selected' : ''}${unlocked ? ' is-unlocked' : ' is-locked'}`} aria-label={visibleLabel} aria-pressed={selected} onClick={() => onSelect(entry.id)}>
-        <div className="spell-browser-tile-top"><span className="spell-browser-icon-frame"><SpellIcon school={entry.school} locked={!unlocked} size="large" /></span>{unlocked && autoCast && <span className="spell-tile-status" aria-label="Auto-Cast active"><CircleDot size={16} aria-hidden="true" /></span>}</div>
-        <span className="spell-browser-tile-main">
-          {unlocked && entry.kind === 'spell' ? <><strong className="spell-browser-name">{SPELLS[entry.spellId].name}</strong><span className="spell-browser-rank">{school.name.toUpperCase()} · {formatSpellRank(entry.rank ?? 1).toUpperCase()}</span></> : <><strong className="spell-browser-name">???</strong><span className="spell-browser-rank">{school.name.toUpperCase()} · {entry.kind === 'placeholder' ? 'UNDISCOVERED' : 'LOCKED'}</span></>}
-        </span>
-        <span className="spell-browser-effect-slot" aria-hidden="true" />
-        {unlocked && entry.kind === 'spell' ? <span className="spell-browser-footer"><span className="ui-mana" aria-label="Mana cost"><Droplet size={12} aria-hidden="true" />{SPELLS[entry.spellId].manaCost}</span><span className="ui-time" aria-label="Cooldown"><Clock3 size={12} aria-hidden="true" />{formatTime(SPELLS[entry.spellId].cooldownMs)}</span></span> : <span className="spell-browser-footer"><CircleDot size={11} aria-hidden="true" />Requires Lv {entry.unlockLevel}</span>}
-      </button>
-    </GameTooltip>
+    <button type="button" style={{ '--spell-school-color': school.color } as React.CSSProperties} className={`spell-browser-tile${selected ? ' is-selected' : ''}${unlocked ? ' is-unlocked' : ' is-locked'}`} aria-label={visibleLabel} aria-pressed={selected} onClick={() => onSelect(entry.id)}>
+      <div className="spell-browser-tile-top"><GameTooltip className="spell-browser-icon-tooltip" wide={Boolean(presentation)} delay={presentation ? 120 : 500} placement={presentation ? 'right' : 'top'} accent={unlocked ? 'elemental' : 'warning'} content={content}><span className="spell-browser-icon-frame" tabIndex={0} aria-label={`View ${visibleLabel}`}><SpellIcon school={entry.school} locked={!unlocked} size="large" /></span></GameTooltip>{unlocked && autoCast && <span className="spell-tile-status" aria-label="Auto-Cast active"><CircleDot size={16} aria-hidden="true" /></span>}</div>
+      <span className="spell-browser-tile-main">
+        {unlocked && entry.kind === 'spell' ? <><strong className="spell-browser-name">{SPELLS[entry.spellId].name}</strong><span className="spell-browser-rank">{school.name.toUpperCase()} Â· {formatSpellRank(entry.rank ?? 1).toUpperCase()}</span></> : <><strong className="spell-browser-name">???</strong><span className="spell-browser-rank">{school.name.toUpperCase()} Â· {entry.kind === 'placeholder' ? 'UNDISCOVERED' : 'LOCKED'}</span></>}
+      </span>
+      <span className="spell-browser-effect-slot" aria-hidden="true" />
+      {unlocked && entry.kind === 'spell' ? <span className="spell-browser-footer"><span className="ui-mana" aria-label="Mana cost"><Droplet size={12} aria-hidden="true" />{SPELLS[entry.spellId].manaCost}</span><span className="ui-time" aria-label="Cooldown"><Clock3 size={12} aria-hidden="true" />{formatTime(SPELLS[entry.spellId].cooldownMs)}</span></span> : <span className="spell-browser-footer"><CircleDot size={11} aria-hidden="true" />Requires Lv {entry.unlockLevel}</span>}
+    </button>
     <span className="spell-browser-effect-icons" aria-label={effectTags.length ? `Effect types: ${effectTags.map(effectTagLabel).join(', ')}` : undefined} aria-hidden={!effectTags.length}>{effectTags.map((tag) => <GameTooltip key={tag} content={<TooltipContent title={effectTagLabel(tag)} description={`${effectTagLabel(tag)} effect.`} />}><span className={`spell-browser-effect-icon effect-micro-${tag.toLocaleLowerCase()}`} aria-label={effectTagLabel(tag)}><EffectMicroIcon tag={tag} /></span></GameTooltip>)}</span>
   </span>
 }

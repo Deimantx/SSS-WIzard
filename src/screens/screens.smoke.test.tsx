@@ -251,6 +251,9 @@ describe('screen smoke coverage', () => {
 
     const fireBoltTile = screen.getByRole('button', { name: /Fire Bolt,/ })
     await user.hover(fireBoltTile)
+    await waitFor(() => expect(screen.queryByRole('tooltip')).toBeNull())
+    const fireBoltIcon = fireBoltTile.querySelector('.spell-browser-icon-frame')!
+    await user.hover(fireBoltIcon)
     const spellTooltip = await screen.findByRole('tooltip')
     expect(spellTooltip.classList.contains('game-tooltip-wide')).toBe(true)
     expect(spellTooltip.textContent).toContain('FIRE · RANK I')
@@ -267,7 +270,7 @@ describe('screen smoke coverage', () => {
     expect(spellTooltip.textContent).toContain('Ember Staff')
     expect(spellTooltip.textContent).not.toContain('Select to inspect this Spell')
     expect(spellTooltip.textContent).not.toContain('Source')
-    await user.unhover(fireBoltTile)
+    await user.unhover(fireBoltIcon)
     await waitFor(() => expect(screen.queryByRole('tooltip')).toBeNull())
 
     await user.click(screen.getByRole('button', { name: /Fortify,/ }))
@@ -280,6 +283,7 @@ describe('screen smoke coverage', () => {
     expect(fortifyRow.textContent).toContain('Self')
     await user.hover(fortifyRow)
     expect((await screen.findByRole('tooltip')).textContent).toContain('Source')
+    fortifyRow.focus()
     await user.keyboard('{Escape}')
     expect(screen.queryByRole('tooltip')).toBeNull()
 
@@ -297,7 +301,7 @@ describe('screen smoke coverage', () => {
     await user.click(screen.getByRole('checkbox', { name: 'Unlocked Only' }))
 
     const lockedTile = screen.getAllByRole('button', { name: /Locked Fire spell/ })[0]
-    await user.hover(lockedTile)
+    await user.hover(lockedTile.querySelector('.spell-browser-icon-frame')!)
     const tooltip = await screen.findByRole('tooltip')
     expect(tooltip.textContent).toContain('Locked spell')
     expect(tooltip.textContent).not.toContain('Base Damage')

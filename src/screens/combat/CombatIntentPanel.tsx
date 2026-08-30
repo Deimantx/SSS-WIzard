@@ -1,36 +1,68 @@
 import { Clock3, ShieldAlert } from 'lucide-react'
+import { useMemo } from 'react'
+import { DUNGEONS } from '../../game/content/dungeons/dungeons'
 import { MONSTERS } from '../../game/content/monsters'
-import { buildCombatActionPresentation, formatCombatEffect } from '../../game/presentation/combat'
+import { buildCombatActionPresentation, formatCombatEffect, type CombatActionPresentation, type CombatEffectPresentation } from '../../game/presentation/combat'
 import { getCurrentEnemyActionStep, getEnemyAction, getEnemyActionPattern } from '../../game/systems/combat/actionRuntime'
+import type { DungeonId } from '../../game/types'
 import { useGameStore } from '../../store/gameStore'
 import { formatTime } from '../../game/utils'
 import { GameTooltip, Progress, Status } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { EnemyPatternRail } from './EnemyPatternRail'
 
-export function CombatIntentPanel() {
-  const state = useGameStore((current) => current)
-  const view = (() => {
-    const combat = state.combat
-    const enemy = combat.enemyId ? MONSTERS[combat.enemyId] : null
-    const pattern = enemy ? getEnemyActionPattern(state) : undefined
-    const nextStep = enemy ? getCurrentEnemyActionStep(state) : undefined
-    const activeAction = enemy ? getEnemyAction(state, combat.enemyTelegraphActionId) : undefined
-    const nextAction = nextStep?.type === 'action' ? enemy?.actions[nextStep.actionId] : undefined
-    const currentIndex = pattern?.steps.length ? Math.max(0, combat.enemyActionIndex) % pattern.steps.length : -1
-    const activeOriginMatchesCurrent = !combat.enemyTelegraphPatternId || combat.enemyTelegraphPatternId === combat.enemyActionPatternId
-    return { combat, enemy, pattern, activeAction, nextAction, nextStep, currentIndex, activeOriginMatchesCurrent }
-  })()
-  const { combat, enemy, pattern, activeAction, nextAction, nextStep, currentIndex, activeOriginMatchesCurrent } = view
-  if (!combat.active) return <section className="combat-intent-panel is-idle"><div className="combat-intent-kicker">COMBAT STAGE</div><ShieldAlert size={30} aria-hidden="true" /><strong>AT THE TOWER</strong><p>No active encounter. Choose a Dungeon from the Atlas to begin.</p></section>
-  if (!enemy) return <section className="combat-intent-panel is-delay"><div className="combat-intent-kicker">NEXT ENCOUNTER</div><strong className="combat-intent-title">{formatTime(combat.encounterTimerMs)}</strong><Progress value={Math.max(0, Math.min(100, (1 - combat.encounterTimerMs / 5000) * 100))} tone="time" label="Encounter progress" /><p>The Dungeon is searching for another threat.</p></section>
+export function CombatIntentPanel({ selectedDungeonId }: { selectedDungeonId: DungeonId }) {
+  const active = useGameStore((state) => state.combat.active)
+  const enemyId = useGameStore((state) => state.combat.enemyId)
+  const dungeonId = useGameStore((state) => state.combat.dungeonId)
+  const threatCleared = useGameStore((state) => state.combat.threatCleared)
+  const inBossFight = useGameStore((state) => state.combat.inBossFight)
+  const encounterTimerMs = useGameStore((state) => state.combat.encounterTimerMs)
+  const enemyTelegraphMs = useGameStore((state) => state.combat.enemyTelegraphMs)
+  const enemyActionTimerMs = useGameStore((state) => state.combat.enemyActionTimerMs)
+  const enemyActionRecoveryMs = useGameStore((state) => state.combat.enemyActionRecoveryMs)
+  const enemyActionIndex = useGameStore((state) => state.combat.enemyActionIndex)
+  const enemyActionPatternId = useGameStore((state) => state.combat.enemyActionPatternId)
+  const enemyTelegraphActionId = useGameStore((state) => state.combat.enemyTelegraphActionId)
+  const enemyTelegraphStepId = useGameStore((state) => state.combat.enemyTelegraphStepId)
+  const enemyTelegraphPatternId = useGameStore((state) => state.combat.enemyTelegraphPatternId)
+  const latestLog = useGameStore((state) => state.combat.log[0])
+  const dungeon = DUNGEONS[active ? dungeonId ?? selectedDungeonId : selectedDungeonId]
+  const enemy = enemyId ? MONSTERS[enemyId] : null
+  const bossReady = active && !enemy && !inBossFight && threatCleared >= dungeon.threatRequired
+  const pattern = useMemo(() => enemy ? getEnemyActionPattern(useGameStore.getState()) : undefined, [enemyId, enemyActionPatternId])
+  const nextStep = useMemo(() => enemy ? getCurrentEnemyActionStep(useGameStore.getState()) : undefined, [enemyId, enemyActionPatternId, enemyActionIndex])
+  const activeAction = useMemo(() => enemy ? getEnemyAction(useGameStore.getState(), enemyTelegraphActionId) : undefined, [enemyId, enemyTelegraphActionId])
+  const nextAction = useMemo(() => nextStep?.type === 'action' && enemy ? enemy.actions[nextStep.actionId] : undefined, [enemy, nextStep])
   const action = activeAction ?? nextAction
-  const actionPresentation = action ? buildCombatActionPresentation(action) : null
-  const active = Boolean(activeAction)
-  const total = activeAction?.telegraphMs ?? 0
-  const remaining = active ? combat.enemyTelegraphMs : combat.enemyActionTimerMs
-  const basicPresentation = !actionPresentation && nextStep?.type === 'basic' ? formatCombatEffect({ type: 'deal-damage', target: 'opponent', damageType: 'physical', magnitude: { type: 'flat', value: enemy.basicAttackDamage } }, { actor: 'enemy', kind: 'basic-attack' }) : null
-  return <section className={`combat-intent-panel${active ? ' is-telegraphing' : ''}`} style={{ '--enemy-accent': enemy.color } as React.CSSProperties}><header className="combat-intent-head"><div><span className="combat-intent-kicker">ENEMY INTENT</span><h2>{active ? action?.name : 'NEXT ACTION'}</h2></div><Status tone={active ? 'warning' : 'neutral'}>{active ? 'Telegraphing' : 'Recovery'}</Status></header><div className="combat-intent-countdown"><Clock3 size={17} aria-hidden="true" /><strong className="ui-time">{formatTime(remaining)}</strong><span>{active ? 'until resolution' : 'on enemy clock'}</span></div><Progress value={active && total > 0 ? (1 - combat.enemyTelegraphMs / total) * 100 : active ? 100 : 0} tone="warning" label={active ? 'Telegraph progress' : 'Recovery progress'} right={active ? formatTime(combat.enemyTelegraphMs) : formatTime(combat.enemyActionTimerMs)} />{actionPresentation ? <GameTooltip block wide={active} placement="bottom" accent="warning" content={<ActionTooltip action={actionPresentation} />}><div className="combat-intent-effects"><span className="combat-subsection-label">{active ? 'WHAT HAPPENS' : 'ACTION EFFECTS'}</span>{actionPresentation.effects.map((effect, index) => <div className="combat-effect-line" key={`${effect.label}-${index}`}><strong>{effect.label}</strong><small>{effect.detail}</small></div>)}</div></GameTooltip> : basicPresentation ? <div className="combat-intent-effects"><span className="combat-subsection-label">BASIC ATTACK</span><div className="combat-effect-line"><strong>{basicPresentation.label}</strong><small>{basicPresentation.detail}</small></div></div> : null}<div className="combat-intent-pattern"><div className="combat-subsection-label">ACTION SEQUENCE</div><EnemyPatternRail pattern={pattern} enemy={enemy} currentIndex={currentIndex} activeStepId={combat.enemyTelegraphStepId} activeAction={combat.enemyTelegraphActionId} activeOriginMatchesCurrent={activeOriginMatchesCurrent} /></div><div className="combat-intent-latest"><span>LATEST</span><strong>{combat.log[0] ?? 'Combat events will appear here.'}</strong></div></section>
+  const actionPresentation = useMemo(() => action ? buildCombatActionPresentation(action) : null, [action])
+  const basicPresentation = useMemo(() => !actionPresentation && nextStep?.type === 'basic' && enemy
+    ? formatCombatEffect({ type: 'deal-damage', target: 'opponent', damageType: 'physical', magnitude: { type: 'flat', value: enemy.basicAttackDamage } }, { actor: 'enemy', kind: 'basic-attack' })
+    : null, [actionPresentation, enemy, nextStep])
+
+  if (!active) return <section className="combat-intent-panel is-idle"><div className="combat-intent-kicker">AT THE TOWER</div><ShieldAlert size={30} aria-hidden="true" /><strong>READY TO ENTER</strong><h2>{dungeon.name}</h2><p>{dungeon.ui?.description ?? 'Choose a route from the Dungeon Atlas to begin.'}</p></section>
+  if (!enemy && bossReady) return <section className="combat-intent-panel is-boss-ready"><div className="combat-intent-kicker">BOSS ENCOUNTER</div><ShieldAlert size={30} aria-hidden="true" /><strong>BOSS READY</strong><h2>{MONSTERS[dungeon.boss].name}</h2><p>The route is clear. Engage the Boss from the Run Bar when ready.</p></section>
+  if (!enemy) return <section className="combat-intent-panel is-delay"><div className="combat-intent-kicker">NEXT ENCOUNTER</div><strong className="combat-intent-title">{formatTime(encounterTimerMs)}</strong><Progress value={Math.max(0, Math.min(100, (1 - encounterTimerMs / Math.max(1, dungeon.encounterDelayMs)) * 100))} tone="time" label="Encounter progress" /><p>The Dungeon is searching for another threat.</p></section>
+
+  const currentIndex = pattern?.steps.length ? Math.max(0, enemyActionIndex) % pattern.steps.length : -1
+  const activeTelegraph = Boolean(activeAction)
+  const recoveryProgress = 1 - enemyActionTimerMs / Math.max(1, enemyActionRecoveryMs)
+  const activeOriginMatchesCurrent = !enemyTelegraphPatternId || enemyTelegraphPatternId === enemyActionPatternId
+
+  return <section className={`combat-intent-panel${activeTelegraph ? ' is-telegraphing' : ''}`} style={{ '--enemy-accent': enemy.color } as React.CSSProperties}>
+    <header className="combat-intent-head"><div><span className="combat-intent-kicker">{activeTelegraph ? 'ENEMY INTENT' : 'NEXT ACTION'}</span><h2>{action?.name ?? (nextStep?.type === 'basic' ? 'Basic Attack' : 'Preparing…')}</h2></div><Status tone={activeTelegraph ? 'warning' : 'neutral'}>{activeTelegraph ? 'Telegraphing' : 'Recovery'}</Status></header>
+    <div className="combat-intent-countdown"><Clock3 size={17} aria-hidden="true" /><strong className="ui-time">{formatTime(activeTelegraph ? enemyTelegraphMs : enemyActionTimerMs)}</strong><span>{activeTelegraph ? 'until resolution' : 'until next action'}</span></div>
+    <Progress value={activeTelegraph && action?.telegraphMs ? Math.max(0, Math.min(100, (1 - enemyTelegraphMs / action.telegraphMs) * 100)) : Math.max(0, Math.min(100, recoveryProgress * 100))} tone={activeTelegraph ? 'warning' : 'time'} label={activeTelegraph ? 'Telegraph progress' : 'Recovery progress'} />
+    {actionPresentation ? <GameTooltip block wide={activeTelegraph} placement="bottom" accent={activeTelegraph ? 'warning' : 'elemental'} content={<ActionTooltip action={actionPresentation} />}><div className="combat-intent-effects"><span className="combat-subsection-label">{activeTelegraph ? 'WHAT HAPPENS' : 'ACTION EFFECTS'}</span>{actionPresentation.effects.map((effect, index) => <CombatEffectRow key={`${effect.label}-${index}`} effect={effect} />)}</div></GameTooltip> : basicPresentation ? <div className="combat-intent-effects"><span className="combat-subsection-label">BASIC ATTACK</span><CombatEffectRow effect={basicPresentation} /></div> : null}
+    <div className="combat-intent-pattern"><div className="combat-subsection-label">ACTION SEQUENCE</div><EnemyPatternRail pattern={pattern} enemy={enemy} currentIndex={currentIndex} activeStepId={enemyTelegraphStepId} activeAction={enemyTelegraphActionId} activeOriginMatchesCurrent={activeOriginMatchesCurrent} /></div>
+    <div className="combat-intent-latest"><span>LATEST</span><strong>{latestLog ?? 'Combat events will appear here.'}</strong></div>
+  </section>
 }
 
-function ActionTooltip({ action }: { action: ReturnType<typeof buildCombatActionPresentation> }) { return <TooltipContent title={action.name} description={action.description}><div className="tooltip-section"><small>TELEGRAPH</small><p>{(action.telegraphMs / 1000).toFixed(1)}s</p></div>{action.recoveryMs !== undefined && <div className="tooltip-section"><small>RECOVERY</small><p>{(action.recoveryMs / 1000).toFixed(1)}s</p></div>}<div className="tooltip-section"><small>EFFECTS</small>{action.effects.map((effect) => <p key={`${effect.label}-${effect.detail}`}>{effect.label} · {effect.detail}</p>)}</div></TooltipContent> }
+function CombatEffectRow({ effect }: { effect: CombatEffectPresentation }) {
+  return <div className={`combat-effect-line effect-kind-${effect.kind}`}><strong>{effect.label}</strong>{effect.value && <b>{effect.value}</b>}<small>{[effect.detail, effect.timeLabel].filter(Boolean).join(' · ')}</small></div>
+}
+
+function ActionTooltip({ action }: { action: CombatActionPresentation }) {
+  return <TooltipContent title={action.name} description={action.description}><div className="tooltip-section"><small>TELEGRAPH</small><p>{formatTime(action.telegraphMs)}</p></div>{action.recoveryMs !== undefined && <div className="tooltip-section"><small>RECOVERY</small><p>{formatTime(action.recoveryMs)}</p></div>}<div className="tooltip-section"><small>EFFECTS</small>{action.effects.map((effect, index) => <p key={`${effect.label}-${index}`}>{effect.label}{effect.value ? `: ${effect.value}` : ''}{effect.detail ? ` · ${effect.detail}` : ''}{effect.timeLabel ? ` · ${effect.timeLabel}` : ''}</p>)}</div></TooltipContent>
+}

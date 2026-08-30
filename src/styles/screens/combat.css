@@ -1,299 +1,2227 @@
-/* Combat V1 — one live workspace with dense, readable surfaces. */
-.combat-screen { max-width: 1520px; }
-.combat-screen .screen-header { margin-bottom: 16px; }
-.combat-screen .ui-editor-grid { min-height: 0; }
-.combat-screen .ui-editor-panel-content { min-width: 0; height: 100%; }
-.combat-screen .ui-editor-panel-content > .card { min-height: 100%; }
-.combat-run-bar { display: grid; grid-template-columns: minmax(150px, 1.05fr) minmax(190px, 1.45fr) minmax(150px, 1.1fr) auto minmax(250px, auto); gap: 16px; align-items: center; min-width: 0; margin-bottom: 14px; padding: 13px 15px; border: 1px solid var(--ui-border-strong); border-radius: 10px; background: linear-gradient(100deg, color-mix(in srgb, var(--ui-accent) 8%, var(--ui-panel)), color-mix(in srgb, var(--ui-panel-strong) 92%, transparent)); box-shadow: 0 10px 30px var(--ui-shadow); }
-.combat-run-bar.is-active { border-color: color-mix(in srgb, var(--ui-accent) 30%, var(--ui-border)); }
-.combat-run-context, .combat-run-threat, .combat-run-boss { min-width: 0; }
-.combat-run-context { display: grid; gap: 4px; }
-.combat-run-context strong { overflow: hidden; color: var(--ui-text); font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
-.combat-run-context small, .combat-run-threat small, .combat-run-boss small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
-.combat-run-threat { display: grid; gap: 5px; }
-.combat-run-metric-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; }
-.combat-run-metric-head strong { color: var(--ui-text); font-weight: 500; letter-spacing: 0; }
-.combat-run-threat .progress-wrap { margin: 0; }
-.combat-run-threat .progress { height: 6px; }
-.combat-run-threat .progress i { background: var(--ui-warning); }
-.combat-run-boss { display: grid; gap: 4px; padding-left: 15px; border-left: 1px solid var(--ui-border); }
-.combat-run-boss .combat-subsection-label { display: flex; align-items: center; gap: 5px; }
-.combat-run-boss .combat-subsection-label svg { color: var(--ui-gold); }
-.combat-run-boss strong { overflow: hidden; color: var(--ui-text-soft); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
-.combat-run-boss small { color: var(--ui-gold); }
-.combat-toggle { display: grid; gap: 3px; min-width: 82px; padding: 8px 10px; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text-muted); background: color-mix(in srgb, var(--ui-panel-strong) 70%, transparent); cursor: pointer; text-align: left; }
-.combat-toggle span { font: var(--text-micro) var(--font-mono); letter-spacing: .06em; }
-.combat-toggle strong { color: var(--ui-text-soft); font: var(--text-micro) var(--font-mono); }
-.combat-toggle:hover:not(:disabled), .combat-toggle.is-on { border-color: color-mix(in srgb, var(--semantic-focus) 60%, var(--ui-border)); background: color-mix(in srgb, var(--semantic-focus) 10%, transparent); }
-.combat-toggle.is-on strong { color: var(--semantic-focus); }
-.combat-toggle:disabled { opacity: .55; cursor: not-allowed; }
-.combat-run-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 6px; }
-.combat-run-actions .button { padding: 8px 10px; font-size: 9px; }
-.combat-stage-panel, .combat-spell-deck, .combat-intel-panel { container-type: inline-size; min-width: 0; height: 100%; box-sizing: border-box; overflow: hidden; padding: 15px; border-radius: 12px; }
-.combat-stage-panel { background: radial-gradient(circle at 50% 10%, color-mix(in srgb, var(--ui-accent) 6%, transparent), transparent 42%), linear-gradient(145deg, var(--ui-panel-gradient-start), var(--ui-panel-gradient-end)); }
-.combat-stage-panel > .card-head, .combat-spell-deck > .card-head, .combat-intel-panel > .card-head { margin-bottom: 12px; }
-.combat-stage-grid { display: grid; grid-template-columns: minmax(210px, .88fr) minmax(280px, 1.28fr) minmax(240px, 1fr); gap: 10px; min-width: 0; min-height: 390px; height: calc(100% - 30px); }
-.combat-actor-card, .combat-intent-panel { min-width: 0; min-height: 0; overflow: hidden; border: 1px solid var(--ui-border); border-radius: 9px; background: color-mix(in srgb, var(--ui-panel-strong) 82%, transparent); }
-.combat-actor-card { display: flex; flex-direction: column; gap: 11px; padding: 13px; }
-.combat-actor-head { display: flex; align-items: flex-start; gap: 9px; min-width: 0; }
-.combat-actor-head > div:nth-child(2) { min-width: 0; flex: 1; }
-.combat-actor-head h2 { overflow: hidden; margin-top: 3px; color: var(--ui-text); font-size: 15px; letter-spacing: -.02em; text-overflow: ellipsis; white-space: nowrap; }
-.combat-actor-head p { overflow: hidden; margin-top: 4px; color: var(--ui-text-muted); font-size: 10px; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
-.combat-actor-head .status { margin-left: auto; }
-.combat-actor-mark { display: grid; place-items: center; width: 31px; height: 31px; flex: 0 0 auto; border: 1px solid color-mix(in srgb, var(--ui-accent) 50%, var(--ui-border)); border-radius: 8px; color: var(--ui-accent); background: color-mix(in srgb, var(--ui-accent) 9%, transparent); }
-.combat-subsection-label, .combat-intent-kicker { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .12em; text-transform: uppercase; }
-.combat-resource-stack { display: grid; gap: 9px; }
-.combat-resource { display: grid; gap: 5px; }
-.combat-resource-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
-.combat-resource-label span { display: inline-flex; align-items: center; gap: 5px; }
-.combat-resource-label strong { color: var(--ui-text); font-weight: 500; }
-.combat-resource-track { height: 7px; overflow: hidden; border-radius: 99px; background: color-mix(in srgb, var(--ui-text) 9%, transparent); }
-.combat-resource-track i { display: block; height: 100%; border-radius: inherit; transition: width 120ms linear; }
-.combat-resource-health .combat-resource-label span, .combat-resource-health .combat-resource-label strong { color: var(--semantic-health); }
-.combat-resource-health .combat-resource-track i { background: var(--semantic-health); box-shadow: 0 0 9px color-mix(in srgb, var(--semantic-health) 60%, transparent); }
-.combat-resource-mana .combat-resource-label span, .combat-resource-mana .combat-resource-label strong { color: var(--semantic-mana); }
-.combat-resource-mana .combat-resource-track i { background: var(--semantic-mana); box-shadow: 0 0 9px color-mix(in srgb, var(--semantic-mana) 60%, transparent); }
-.combat-resource-barrier .combat-resource-label span, .combat-resource-barrier .combat-resource-label strong { color: var(--semantic-barrier); }
-.combat-resource-barrier .combat-resource-track i { background: var(--semantic-barrier); box-shadow: 0 0 9px color-mix(in srgb, var(--semantic-barrier) 60%, transparent); }
-.combat-resource .game-tooltip-trigger, .combat-basic-attack.game-tooltip-trigger { display: block; }
-.combat-status-strip { min-width: 0; padding-top: 10px; border-top: 1px solid var(--ui-border); }
-.combat-status-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
-.combat-status-empty { display: block; margin-top: 7px; color: var(--ui-text-disabled); font-size: 10px; }
-.combat-status-chip { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; padding: 4px 6px; border: 1px solid var(--ui-border); border-radius: 6px; color: var(--ui-text-soft); background: color-mix(in srgb, var(--ui-text) 4%, transparent); font-size: 9px; cursor: help; }
-.combat-status-chip strong { overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
-.combat-status-chip b { color: var(--ui-text); font: 9px var(--font-mono); }
-.combat-status-chip small { color: var(--semantic-time); font: 9px var(--font-mono); white-space: nowrap; }
-.combat-status-icon { display: grid; place-items: center; }
-.status-kind-buff { border-color: color-mix(in srgb, var(--ui-accent) 40%, var(--ui-border)); color: var(--ui-accent); }
-.status-kind-debuff { border-color: color-mix(in srgb, #d66baf 42%, var(--ui-border)); color: #df86bd; }
-.combat-basic-attack { margin-top: auto; padding-top: 10px; border-top: 1px solid var(--ui-border); }
-.combat-basic-head, .combat-basic-stats { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.combat-basic-weapon { display: inline-flex; align-items: center; gap: 4px; overflow: hidden; color: var(--ui-text-soft); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
-.combat-basic-weapon svg { color: var(--ui-gold); flex: 0 0 auto; }
-.combat-basic-stats { margin-top: 9px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
-.combat-basic-stats span { display: grid; gap: 3px; }
-.combat-basic-stats strong { display: inline-flex; align-items: center; gap: 4px; color: var(--ui-text); font-weight: 500; }
-.combat-basic-attack .progress-wrap { margin-top: 9px; }
-.combat-basic-attack .progress { height: 4px; }
-.combat-basic-attack .progress i { background: var(--semantic-time); }
-.combat-enemy-card { --enemy-accent: var(--ui-accent); border-color: color-mix(in srgb, var(--enemy-accent) 35%, var(--ui-border)); }
-.combat-enemy-card.is-boss { border-top: 2px solid color-mix(in srgb, var(--enemy-accent) 80%, var(--ui-danger)); }
-.combat-enemy-card .combat-actor-head h2 { color: var(--ui-text); }
-.combat-monster-portrait { position: relative; display: grid; place-items: center; width: min(150px, 70%); aspect-ratio: 1; flex: 0 0 auto; align-self: center; overflow: hidden; margin: 2px auto 0; border: 1px solid color-mix(in srgb, var(--enemy-accent) 56%, var(--ui-border)); border-radius: 50%; color: var(--enemy-accent); background: radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--enemy-accent) 20%, transparent), transparent 67%), color-mix(in srgb, var(--ui-bg) 80%, transparent); box-shadow: 0 0 30px color-mix(in srgb, var(--enemy-accent) 13%, transparent); }
-.combat-monster-portrait.is-boss { width: min(170px, 76%); border-radius: 42%; }
-.combat-monster-portrait img { width: 86%; height: 86%; object-fit: contain; }
-.combat-portrait-aura { position: absolute; inset: 8%; border: 1px dashed color-mix(in srgb, var(--enemy-accent) 50%, transparent); border-radius: inherit; transform: rotate(16deg); }
-.combat-enemy-identity { display: grid; gap: 3px; text-align: center; }
-.combat-enemy-identity strong { color: var(--ui-text); font-size: 15px; }
-.combat-enemy-identity span { overflow: hidden; color: var(--ui-text-muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
-.combat-enemy-card .progress-wrap { margin-top: 2px; }
-.combat-enemy-card .progress i { background: var(--semantic-health); }
-.combat-barrier-readout { display: grid; grid-template-columns: 1fr auto auto; gap: 7px; align-items: center; padding-top: 8px; border-top: 1px solid var(--ui-border); color: var(--semantic-barrier); font: var(--text-micro) var(--font-mono); }
-.combat-barrier-readout span { display: inline-flex; align-items: center; gap: 5px; }
-.combat-barrier-readout strong { color: var(--semantic-barrier); font-weight: 500; }
-.combat-barrier-readout small { color: var(--semantic-time); }
-.combat-barrier-readout.is-empty { color: var(--ui-text-muted); }
-.combat-barrier-readout.is-empty strong { color: var(--ui-text-muted); }
-.combat-trait-strip { display: flex; flex-wrap: wrap; gap: 4px; }
-.combat-trait-strip > .game-tooltip-trigger { min-width: 0; }
-.combat-trait-strip span { display: block; overflow: hidden; padding: 4px 6px; border: 1px solid color-mix(in srgb, var(--ui-gold) 35%, var(--ui-border)); border-radius: 5px; color: var(--ui-gold); background: color-mix(in srgb, var(--ui-gold) 7%, transparent); font: var(--text-micro) var(--font-mono); text-overflow: ellipsis; white-space: nowrap; }
-.combat-enemy-empty { justify-content: center; }
-.combat-empty-actor { display: grid; place-items: center; align-content: center; gap: 10px; flex: 1; padding: 20px; color: var(--ui-text-muted); text-align: center; }
-.combat-empty-actor svg { color: var(--ui-accent); opacity: .7; }
-.combat-empty-actor strong { max-width: 190px; font-size: 11px; line-height: 1.5; }
-.combat-intent-panel { position: relative; display: flex; flex-direction: column; gap: 11px; padding: 15px; border-color: color-mix(in srgb, var(--enemy-accent, var(--ui-accent)) 30%, var(--ui-border)); background: radial-gradient(circle at 50% 16%, color-mix(in srgb, var(--enemy-accent, var(--ui-accent)) 10%, transparent), transparent 50%), color-mix(in srgb, var(--ui-bg) 44%, var(--ui-panel-strong)); }
-.combat-intent-panel.is-telegraphing { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ui-warning) 18%, transparent); }
-.combat-intent-head { display: flex; justify-content: space-between; gap: 8px; }
-.combat-intent-head h2 { max-width: 100%; margin-top: 4px; overflow: hidden; color: var(--ui-text); font-size: 18px; letter-spacing: -.035em; text-overflow: ellipsis; white-space: nowrap; }
-.combat-intent-countdown { display: flex; align-items: baseline; gap: 7px; }
-.combat-intent-countdown svg { align-self: center; color: var(--ui-text-muted); }
-.combat-intent-countdown strong { font: 24px var(--font-mono); }
-.combat-intent-countdown span { color: var(--ui-text-muted); font-size: 10px; }
-.combat-intent-panel .progress-wrap { margin-top: 0; }
-.combat-intent-panel .progress { height: 6px; }
-.combat-intent-panel .progress i { background: var(--ui-warning); }
-.combat-intent-effects { display: grid; gap: 6px; padding: 10px; border: 1px solid color-mix(in srgb, var(--enemy-accent, var(--ui-accent)) 26%, var(--ui-border)); border-radius: 7px; background: color-mix(in srgb, var(--ui-panel) 54%, transparent); }
-.combat-intent-effects.game-tooltip-trigger { display: grid; }
-.combat-effect-line { display: grid; gap: 3px; padding-top: 6px; border-top: 1px solid var(--ui-border); }
-.combat-effect-line:first-of-type { padding-top: 0; border-top: 0; }
-.combat-effect-line strong { color: var(--ui-text-soft); font-size: 11px; }
-.combat-effect-line small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
-.combat-intent-pattern { margin-top: auto; padding-top: 8px; border-top: 1px solid var(--ui-border); }
-.combat-pattern-rail { display: flex; align-items: stretch; gap: 4px; min-width: 0; overflow-x: auto; padding: 7px 1px 3px; scrollbar-width: thin; }
-.combat-pattern-node-wrap { display: flex; align-items: center; min-width: 0; }
-.combat-pattern-node-wrap > .game-tooltip-trigger { min-width: 0; }
-.combat-pattern-node { display: grid; grid-template-columns: auto minmax(45px, 1fr); gap: 5px; align-items: center; min-width: 76px; padding: 6px 7px; border: 1px solid var(--ui-border); border-radius: 6px; color: var(--ui-text-muted); background: color-mix(in srgb, var(--ui-text) 3%, transparent); cursor: help; }
-.combat-pattern-node i { display: grid; place-items: center; width: 15px; height: 15px; color: var(--ui-text-disabled); font-style: normal; }
-.combat-pattern-node strong { overflow: hidden; color: inherit; font: var(--text-micro) var(--font-mono); text-overflow: ellipsis; white-space: nowrap; }
-.combat-pattern-node.is-current { border-color: color-mix(in srgb, var(--enemy-accent, var(--ui-warning)) 68%, var(--ui-border)); color: var(--ui-gold); background: color-mix(in srgb, var(--ui-warning) 9%, transparent); }
-.combat-pattern-node.is-current i { color: var(--ui-gold); }
-.combat-pattern-node.is-complete { color: var(--ui-success); border-color: color-mix(in srgb, var(--ui-success) 28%, var(--ui-border)); }
-.combat-pattern-arrow { align-self: center; padding: 0 1px; color: var(--ui-text-disabled); font-size: 12px; }
-.combat-pattern-empty { padding: 8px 0; color: var(--ui-text-disabled); font-size: 10px; }
-.combat-intent-latest { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; padding-top: 8px; border-top: 1px solid var(--ui-border); }
-.combat-intent-latest span { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
-.combat-intent-latest strong { overflow: hidden; color: var(--ui-text-soft); font-size: 10px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
-.combat-intent-panel.is-idle, .combat-intent-panel.is-delay { align-items: center; justify-content: center; text-align: center; }
-.combat-intent-panel.is-idle svg { color: var(--ui-accent); }
-.combat-intent-panel.is-idle strong { color: var(--ui-text); font: 14px var(--font-mono); letter-spacing: .08em; }
-.combat-intent-panel.is-idle p, .combat-intent-panel.is-delay p { max-width: 210px; color: var(--ui-text-muted); font-size: 11px; line-height: 1.5; }
-.combat-intent-panel.is-delay .combat-intent-title { font: 28px var(--font-mono); }
-.combat-intent-panel.is-delay .progress-wrap { width: min(230px, 100%); }
-.combat-intent-panel.is-delay .progress-label { display: none; }
-.combat-modal-backdrop { position: fixed; z-index: 50; inset: 0; display: grid; place-items: center; padding: 18px; overflow: auto; background: rgb(4 7 13 / 82%); backdrop-filter: blur(3px); animation: combat-modal-fade 120ms ease both; }
-.dungeon-atlas-dialog { display: flex; flex-direction: column; width: min(1080px, 100%); height: min(760px, 94vh); overflow: hidden; border: 1px solid var(--ui-border-strong); border-radius: 14px; background: var(--ui-panel-strong); box-shadow: 0 25px 80px var(--ui-shadow); animation: combat-modal-in 140ms ease both; }
-.combat-modal-head, .combat-modal-foot { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex: 0 0 auto; padding: 15px 19px; border-bottom: 1px solid var(--ui-border); background: var(--ui-panel-strong); }
-.combat-modal-head h2 { margin-top: 4px; color: var(--ui-text); font-size: 18px; letter-spacing: .04em; }
-.combat-modal-head p { margin-top: 5px; color: var(--ui-text-muted); font-size: 11px; }
-.combat-modal-head .button.icon, .combat-confirm-dialog .button.icon { width: 30px; min-width: 30px; height: 30px; padding: 0; }
-.dungeon-atlas-body { display: grid; grid-template-columns: 235px minmax(0, 1fr); min-height: 0; flex: 1 1 auto; overflow: hidden; }
-.dungeon-atlas-list { min-width: 0; overflow: auto; padding: 15px 11px; border-right: 1px solid var(--ui-border); background: color-mix(in srgb, var(--ui-panel) 65%, transparent); scrollbar-width: thin; }
-.dungeon-atlas-list-item { display: grid; width: 100%; gap: 5px; margin-top: 7px; padding: 11px 10px; border: 1px solid transparent; border-left: 2px solid transparent; border-radius: 7px; color: var(--ui-text-soft); background: transparent; cursor: pointer; text-align: left; }
-.dungeon-atlas-list-item:hover, .dungeon-atlas-list-item.is-selected { border-color: var(--ui-border-strong); border-left-color: var(--ui-accent); background: color-mix(in srgb, var(--ui-accent) 9%, transparent); }
-.dungeon-atlas-list-item span { color: var(--ui-accent); font: var(--text-micro) var(--font-mono); letter-spacing: .08em; }
-.dungeon-atlas-list-item.is-locked span { color: var(--ui-text-disabled); }
-.dungeon-atlas-list-item strong { color: var(--ui-text); font-size: 12px; }
-.dungeon-atlas-list-item small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
-.dungeon-atlas-inspector { min-width: 0; min-height: 0; overflow: auto; padding: 20px 23px; scrollbar-width: thin; }
-.dungeon-atlas-title-row { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
-.dungeon-atlas-title-row h3 { margin-top: 5px; color: var(--ui-text); font-size: 23px; letter-spacing: -.04em; }
-.dungeon-atlas-description { max-width: 680px; margin-top: 7px; color: var(--ui-text-muted); font-size: 12px; line-height: 1.55; }
-.dungeon-atlas-stat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; max-width: 450px; margin-top: 17px; }
-.dungeon-atlas-stat-grid > div { display: grid; gap: 4px; padding: 10px; border: 1px solid var(--ui-border); border-radius: 7px; }
-.dungeon-atlas-stat-grid span { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
-.dungeon-atlas-stat-grid strong { color: var(--ui-text); font: 16px var(--font-mono); }
-.dungeon-atlas-section { margin-top: 19px; padding-top: 15px; border-top: 1px solid var(--ui-border); }
-.dungeon-roster-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; margin-top: 8px; }
-.dungeon-roster-grid > .game-tooltip-trigger { min-width: 0; }
-.dungeon-roster-card { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 6px; align-items: center; min-width: 0; padding: 7px; border: 1px solid var(--ui-border); border-radius: 7px; background: color-mix(in srgb, var(--ui-panel) 65%, transparent); }
-.dungeon-roster-card .combat-monster-portrait { width: 32px; border-radius: 9px; box-shadow: none; }
-.dungeon-roster-card .combat-portrait-aura { display: none; }
-.dungeon-roster-card strong, .dungeon-roster-card small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dungeon-roster-card strong { color: var(--ui-text-soft); font-size: 10px; }
-.dungeon-roster-card small { margin-top: 2px; color: var(--ui-text-muted); font-size: 8px; }
-.dungeon-boss-preview { display: flex; align-items: center; gap: 13px; margin-top: 8px; padding: 11px; border: 1px solid color-mix(in srgb, var(--ui-gold) 35%, var(--ui-border)); border-radius: 9px; background: color-mix(in srgb, var(--ui-gold) 6%, transparent); }
-.dungeon-boss-preview .combat-monster-portrait { width: 66px; border-radius: 14px; box-shadow: none; }
-.dungeon-boss-preview .combat-portrait-aura { display: none; }
-.dungeon-boss-preview h4 { margin-top: 5px; color: var(--ui-text); font-size: 15px; }
-.dungeon-boss-preview p { margin-top: 3px; color: var(--ui-text-muted); font-size: 10px; }
-.dungeon-boss-preview small { display: block; margin-top: 7px; color: var(--ui-gold); font: var(--text-micro) var(--font-mono); }
-.dungeon-atlas-lock-note { display: flex; align-items: center; gap: 8px; margin-top: 17px; padding: 10px; border: 1px solid var(--ui-border); color: var(--ui-text-muted); font-size: 11px; }
-.dungeon-atlas-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 17px; }
-.dungeon-atlas-actions .combat-toggle { min-width: 105px; }
-.dungeon-atlas-actions .button { font-size: 9px; }
-.dungeon-atlas-active-note { margin-top: 12px; color: var(--ui-warning); font-size: 10px; text-align: right; }
-.combat-modal-foot { border-top: 1px solid var(--ui-border); border-bottom: 0; }
-.combat-modal-foot > span { display: inline-flex; align-items: center; gap: 6px; color: var(--ui-text-muted); font-size: 10px; }
-.combat-modal-foot > span svg { color: var(--ui-accent); }
-.combat-confirm-dialog { width: min(440px, 100%); padding: 17px; border: 1px solid var(--ui-border-strong); border-radius: 12px; background: var(--ui-panel-strong); box-shadow: 0 25px 80px var(--ui-shadow); animation: combat-modal-in 140ms ease both; }
-.combat-confirm-dialog > header { display: flex; justify-content: space-between; gap: 12px; align-items: start; }
-.combat-confirm-dialog h2 { margin-top: 5px; color: var(--ui-text); font-size: 17px; }
-.combat-confirm-copy { display: grid; gap: 7px; margin-top: 20px; padding: 13px; border: 1px solid color-mix(in srgb, var(--ui-danger) 28%, var(--ui-border)); border-radius: 8px; background: color-mix(in srgb, var(--ui-danger) 6%, transparent); }
-.combat-confirm-copy strong { color: var(--ui-text-soft); font-size: 11px; }
-.combat-confirm-copy > span { color: var(--ui-danger); font: 18px var(--font-mono); }
-.combat-confirm-copy p { color: var(--ui-text-muted); font-size: 10px; line-height: 1.5; }
-.combat-confirm-dialog > footer { display: flex; justify-content: flex-end; gap: 7px; margin-top: 17px; }
-.combat-spell-deck { background: linear-gradient(145deg, var(--ui-panel-gradient-start), var(--ui-panel-gradient-end)); }
-.combat-spell-deck-head { display: grid; grid-template-columns: minmax(170px, 1fr) minmax(170px, .8fr) auto; align-items: center; gap: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--ui-border); }
-.combat-spell-deck-head > div { display: grid; gap: 4px; min-width: 0; }
-.combat-spell-deck-head strong { overflow: hidden; color: var(--ui-text); font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
-.combat-spell-deck-head small { overflow: hidden; color: var(--ui-text-muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
-.combat-focus-summary { justify-items: start; padding-left: 15px; border-left: 1px solid var(--ui-border); }
-.combat-focus-summary span { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
-.combat-focus-summary strong { font: 14px var(--font-mono); }
-.combat-focus-summary small { font: var(--text-micro) var(--font-mono); }
-.combat-spell-filter { display: flex; gap: 5px; overflow-x: auto; padding: 11px 0 9px; scrollbar-width: thin; }
-.combat-filter-button { display: inline-flex; align-items: center; gap: 4px; min-height: 28px; padding: 5px 8px; border: 1px solid var(--ui-border); border-radius: 6px; color: var(--ui-text-muted); background: transparent; cursor: pointer; font: var(--text-micro) var(--font-mono); white-space: nowrap; }
-.combat-filter-button:hover, .combat-filter-button.is-active { border-color: var(--ui-accent); color: var(--ui-text); background: var(--ui-accent-soft); }
-.combat-spell-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; max-height: 490px; overflow: auto; align-content: start; padding: 2px 2px 3px 0; scrollbar-width: thin; }
-.spell-combat-tile { position: relative; display: grid; min-width: 0; min-height: 148px; border: 1px solid var(--ui-border); border-radius: 8px; background: color-mix(in srgb, var(--ui-panel-strong) 86%, transparent); }
-.spell-combat-tile::before { position: absolute; top: 0; right: 8px; left: 8px; height: 2px; border-radius: 99px; background: var(--spell-school-color); content: ''; opacity: .6; }
-.spell-combat-tile:hover { border-color: color-mix(in srgb, var(--spell-school-color) 68%, var(--ui-border)); background: color-mix(in srgb, var(--spell-school-color) 7%, var(--ui-panel-strong)); }
-.spell-combat-tile.is-auto { border-color: color-mix(in srgb, var(--semantic-focus) 45%, var(--ui-border)); }
-.spell-combat-tile.is-mana-starved { border-color: color-mix(in srgb, var(--ui-warning) 55%, var(--ui-border)); }
-.spell-combat-cast { position: relative; display: grid; grid-template-rows: 40px minmax(0, 1fr) auto auto; gap: 5px; min-width: 0; min-height: 146px; overflow: hidden; padding: 10px; border: 0; border-radius: inherit; color: var(--ui-text-soft); background: transparent; cursor: pointer; text-align: left; }
-.spell-combat-cast:disabled { cursor: not-allowed; }
-.spell-combat-cast:not(:disabled):active { transform: translateY(1px); filter: brightness(.93); }
-.spell-combat-tile.is-cooldown .spell-combat-cast { filter: saturate(.72); }
-.spell-combat-cast:focus-visible { outline: 2px solid var(--spell-school-color); outline-offset: -2px; }
-.spell-combat-tile-top { display: flex; align-items: start; justify-content: space-between; gap: 5px; min-width: 0; }
-.spell-combat-icon { display: inline-flex; }
-.spell-combat-icon .spell-icon-shell { width: 38px; height: 38px; border-radius: 9px; }
-.spell-combat-cooldown { display: inline-flex; align-items: center; min-height: 21px; padding: 3px 4px; border: 1px solid color-mix(in srgb, var(--semantic-time) 35%, var(--ui-border)); border-radius: 4px; color: var(--semantic-time); background: color-mix(in srgb, var(--ui-bg) 45%, transparent); font: var(--text-micro) var(--font-mono); white-space: nowrap; }
-.spell-combat-name { display: grid; align-content: end; min-width: 0; gap: 3px; }
-.spell-combat-name strong { overflow: hidden; color: var(--ui-text); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
-.spell-combat-name small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
-.spell-combat-footer { display: flex; justify-content: space-between; gap: 5px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
-.spell-combat-footer span { display: inline-flex; align-items: center; gap: 3px; min-width: 0; }
-.spell-combat-footer .ui-mana { color: var(--semantic-mana); }
-.spell-combat-footer .ui-time { color: var(--semantic-time); }
-.spell-combat-warning { display: inline-flex; align-items: center; gap: 4px; overflow: hidden; color: var(--ui-warning); font: var(--text-micro) var(--font-mono); text-overflow: ellipsis; white-space: nowrap; }
-.spell-combat-cooldown-mask { position: absolute; right: 0; bottom: 0; left: 0; height: var(--cooldown-percent); pointer-events: none; background: linear-gradient(to top, color-mix(in srgb, var(--ui-bg) 45%, transparent), transparent); transition: height 100ms linear; }
-.spell-combat-auto { position: absolute; z-index: 2; top: 8px; right: 8px; display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 1px solid var(--ui-border); border-radius: 50%; color: var(--ui-text-muted); background: color-mix(in srgb, var(--ui-panel-strong) 92%, transparent); cursor: pointer; }
-.spell-combat-auto:hover, .spell-combat-auto:focus-visible { border-color: var(--semantic-focus); color: var(--semantic-focus); outline: none; }
-.spell-combat-auto.is-active { border-color: var(--semantic-focus); color: var(--semantic-focus); background: color-mix(in srgb, var(--semantic-focus) 12%, var(--ui-panel)); box-shadow: 0 0 10px color-mix(in srgb, var(--semantic-focus) 22%, transparent); }
-.combat-spell-empty { display: grid; place-items: center; gap: 7px; min-height: 100px; border: 1px dashed var(--ui-border); color: var(--ui-text-muted); font-size: 11px; text-align: center; }
-.combat-spell-empty svg { color: var(--semantic-focus); }
-.combat-spell-deck-foot { display: flex; justify-content: space-between; gap: 10px; align-items: center; margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--ui-border); }
-.combat-spell-deck-foot small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); text-align: right; }
-.combat-intel-panel { background: linear-gradient(145deg, var(--ui-panel-gradient-start), var(--ui-panel-gradient-end)); }
-.combat-intel-panel > .tabs { display: flex; gap: 4px; overflow-x: auto; margin-bottom: 11px; border-bottom: 1px solid var(--ui-border); scrollbar-width: thin; }
-.combat-intel-panel > .tabs button { padding: 7px 9px; border: 0; border-bottom: 2px solid transparent; color: var(--ui-text-muted); background: transparent; cursor: pointer; font: var(--text-micro) var(--font-mono); white-space: nowrap; }
-.combat-intel-panel > .tabs button:hover, .combat-intel-panel > .tabs button.active { border-bottom-color: var(--ui-accent); color: var(--ui-text); }
-.combat-intel-scroll { max-height: 295px; overflow: auto; padding-right: 3px; scrollbar-width: thin; }
-.intel-identity-row { display: flex; align-items: center; gap: 12px; }
-.intel-identity-row .combat-monster-portrait { width: 58px; border-radius: 12px; box-shadow: none; }
-.intel-identity-row .combat-portrait-aura { display: none; }
-.intel-identity-row h3 { margin-top: 4px; color: var(--ui-text); font-size: 16px; }
-.intel-identity-row p { margin-top: 3px; color: var(--ui-text-muted); font-size: 10px; }
-.intel-identity-row small { display: block; margin-top: 6px; color: var(--ui-gold); font: var(--text-micro) var(--font-mono); }
-.intel-section { padding-top: 13px; margin-top: 13px; border-top: 1px solid var(--ui-border); }
-.intel-trait-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; margin-top: 8px; }
-.intel-trait-grid > .game-tooltip-trigger { min-width: 0; }
-.intel-trait-card { display: flex; gap: 7px; min-width: 0; padding: 8px; border: 1px solid color-mix(in srgb, var(--ui-gold) 28%, var(--ui-border)); border-radius: 7px; background: color-mix(in srgb, var(--ui-gold) 5%, transparent); }
-.intel-trait-card > svg { flex: 0 0 auto; color: var(--ui-gold); }
-.intel-trait-card strong, .intel-trait-card p { display: block; overflow: hidden; text-overflow: ellipsis; }
-.intel-trait-card strong { color: var(--ui-text-soft); font-size: 10px; white-space: nowrap; }
-.intel-trait-card p { display: -webkit-box; margin-top: 3px; color: var(--ui-text-muted); font-size: 9px; line-height: 1.35; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
-.intel-resistance-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px 8px; margin-top: 8px; }
-.intel-resistance-row { display: flex; justify-content: space-between; gap: 8px; padding: 6px 7px; border: 1px solid var(--ui-border); border-radius: 5px; color: var(--ui-text-muted); font-size: 9px; }
-.intel-resistance-row strong { color: var(--ui-text-soft); font: var(--text-micro) var(--font-mono); text-align: right; }
-.damage-type { color: var(--ui-text-soft); }
-.damage-fire { color: #ed8b68; }.damage-water { color: #67b8ef; }.damage-earth { color: #d0a36e; }.damage-air { color: #b7dacf; }.damage-arcane { color: var(--ui-accent); }.damage-physical { color: #c1b9ad; }
-.intel-action-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; margin-top: 8px; }
-.intel-action-grid > .game-tooltip-trigger { min-width: 0; }
-.intel-action-card { min-width: 0; padding: 8px; border: 1px solid var(--ui-border); border-radius: 7px; background: color-mix(in srgb, var(--ui-panel) 70%, transparent); }
-.intel-action-card > div:first-child { display: flex; justify-content: space-between; gap: 6px; }
-.intel-action-card strong { overflow: hidden; color: var(--ui-text-soft); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
-.intel-action-card span { display: inline-flex; align-items: center; gap: 3px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); white-space: nowrap; }
-.intel-action-card p { display: -webkit-box; margin-top: 5px; overflow: hidden; color: var(--ui-text-muted); font-size: 9px; line-height: 1.4; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
-.intel-action-effects { display: grid; gap: 3px; margin-top: 7px; }
-.intel-action-effects span { overflow: hidden; color: var(--ui-text-muted); font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
-.intel-pattern-detail { display: grid; gap: 5px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--ui-border); }
-.intel-pattern-line { display: grid; grid-template-columns: 65px minmax(0, 1fr); gap: 8px; padding: 6px 7px; border: 1px solid var(--ui-border); border-radius: 5px; }
-.intel-pattern-line span { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
-.intel-pattern-line strong { overflow: hidden; color: var(--ui-text-soft); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
-.intel-pattern-line.is-active { border-color: color-mix(in srgb, var(--ui-accent) 50%, var(--ui-border)); background: var(--ui-accent-soft); }
-.intel-basic-attack { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--ui-border); color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
-.intel-basic-attack strong { color: var(--ui-text-soft); font-weight: 500; }.intel-basic-attack small { margin-left: auto; }
-.intel-fallback { padding: 5px 0; }.intel-fallback h3 { margin-top: 5px; color: var(--ui-text); font-size: 15px; }.intel-fallback > p { margin-top: 5px; color: var(--ui-text-muted); font-size: 10px; }
-.intel-roster-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 17px; }
-.intel-roster-line { display: flex; align-items: center; gap: 7px; margin-top: 8px; }
-.intel-roster-line .combat-monster-portrait { width: 30px; border-radius: 7px; box-shadow: none; }.intel-roster-line .combat-portrait-aura { display: none; }
-.intel-roster-line span { display: grid; min-width: 0; gap: 2px; }.intel-roster-line strong, .intel-roster-line small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.intel-roster-line strong { color: var(--ui-text-soft); font-size: 10px; }.intel-roster-line small { color: var(--ui-text-muted); font-size: 8px; }
-.intel-loot-group + .intel-loot-group { margin-top: 16px; padding-top: 13px; border-top: 1px solid var(--ui-border); }
-.intel-loot-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
-.intel-loot-grid > .game-tooltip-trigger { min-width: 0; }
-.intel-loot-row { display: grid; grid-template-columns: 25px minmax(0, 1fr) auto; gap: 6px; align-items: center; min-width: 0; padding: 7px; border: 1px solid var(--ui-border); border-radius: 6px; }
-.intel-loot-row > div { min-width: 0; }.intel-loot-row strong, .intel-loot-row small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.intel-loot-row strong { color: var(--ui-text-soft); font-size: 9px; }.intel-loot-row small { margin-top: 3px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }.intel-loot-row .status { padding: 3px 5px; font-size: 8px; }
-.loot-monster-group { margin-top: 10px; }.loot-monster-group > span { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }.loot-monster-group .intel-loot-grid { margin-top: 5px; }
-.combat-log-tab { min-height: 130px; }.combat-log { display: grid; gap: 6px; }.combat-log > div { display: grid; grid-template-columns: 25px minmax(0, 1fr); gap: 8px; color: var(--ui-text-muted); font-size: 10px; line-height: 1.45; }.combat-log > div.latest { color: var(--ui-text); }.combat-log > div > span { color: var(--ui-text-disabled); font: var(--text-micro) var(--font-mono); }.combat-log p { min-width: 0; }
-@keyframes combat-modal-fade { from { opacity: 0; } to { opacity: 1; } }
-@keyframes combat-modal-in { from { opacity: 0; transform: scale(.985); } to { opacity: 1; transform: scale(1); } }
-@container (max-width: 940px) { .combat-stage-grid { grid-template-columns: minmax(190px, 1fr) minmax(220px, 1fr); }.combat-intent-panel { grid-column: 1 / -1; order: 3; min-height: 270px; }.combat-enemy-card { order: 2; }.combat-player-card { order: 1; }.combat-spell-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }.intel-action-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@container (max-width: 620px) { .combat-stage-grid { display: grid; grid-template-columns: 1fr; height: auto; }.combat-actor-card, .combat-intent-panel { min-height: 300px; }.combat-intent-panel { grid-column: auto; order: 3; }.combat-enemy-card { order: 2; }.combat-player-card { order: 1; }.combat-spell-deck-head { grid-template-columns: 1fr auto; }.combat-focus-summary { grid-column: 1 / -1; grid-row: 2; padding: 9px 0 0; border-top: 1px solid var(--ui-border); border-left: 0; }.combat-spell-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.intel-trait-grid, .intel-resistance-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.intel-loot-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.dungeon-roster-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@container (max-width: 380px) { .combat-spell-deck-head { grid-template-columns: 1fr; }.combat-spell-deck-head > .button { justify-self: start; }.combat-spell-grid, .intel-trait-grid, .intel-resistance-grid, .intel-action-grid, .intel-loot-grid { grid-template-columns: 1fr; }.intel-roster-columns { grid-template-columns: 1fr; gap: 11px; }.combat-spell-deck-foot { align-items: flex-start; flex-direction: column; }.combat-spell-deck-foot small { text-align: left; } }
-@media (max-width: 1050px) { .combat-run-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }.combat-run-threat { grid-column: 1 / -1; }.combat-run-actions { justify-content: stretch; }.combat-run-actions .button { flex: 1 1 auto; } }
-@media (max-width: 760px) { .combat-run-bar { grid-template-columns: 1fr 1fr; gap: 10px; }.combat-run-boss { padding-left: 0; border-left: 0; }.combat-run-actions { grid-column: 1 / -1; }.dungeon-atlas-dialog { height: min(900px, 96vh); }.dungeon-atlas-body { grid-template-columns: 1fr; overflow: auto; }.dungeon-atlas-list { display: flex; gap: 5px; overflow-x: auto; padding: 10px; border-right: 0; border-bottom: 1px solid var(--ui-border); }.dungeon-atlas-list > .combat-subsection-label { display: none; }.dungeon-atlas-list-item { flex: 0 0 175px; margin-top: 0; }.dungeon-atlas-inspector { overflow: visible; padding: 15px; }.combat-modal-foot { align-items: stretch; flex-direction: column; } }
-@media (max-width: 480px) { .combat-run-bar { grid-template-columns: 1fr; }.combat-run-threat { grid-column: auto; }.combat-run-actions { flex-direction: column; }.combat-run-actions .button { width: 100%; }.combat-spell-deck-head > .button { width: 100%; }.dungeon-atlas-stat-grid, .dungeon-roster-grid { grid-template-columns: 1fr 1fr; }.dungeon-atlas-actions { align-items: stretch; flex-direction: column; }.dungeon-atlas-actions .button, .dungeon-atlas-actions .combat-toggle { width: 100%; }.intel-resistance-grid, .intel-action-grid, .intel-loot-grid { grid-template-columns: 1fr; } }
-@media (prefers-reduced-motion: reduce) { .combat-screen *, .combat-screen *::before, .combat-screen *::after { scroll-behavior: auto; transition-duration: 0s !important; animation: none !important; }.combat-modal-backdrop *, .combat-modal-backdrop *::before, .combat-modal-backdrop *::after { animation: none !important; } }
+/* Combat V1.1 — container-aware live workspace with readable information hierarchy. */
+.combat-screen {
+  max-width: 1520px;
+  container-type: inline-size;
+}
+.combat-screen .screen-header {
+  margin-bottom: 16px;
+}
+.combat-screen .ui-editor-grid {
+  min-height: 0;
+}
+.combat-screen .ui-editor-panel-content {
+  min-width: 0;
+  height: 100%;
+}
+.combat-screen .ui-editor-panel-content > .card {
+  min-height: 100%;
+}
+
+/* Run Bar */
+.combat-run-bar {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.05fr) minmax(190px, 1.45fr) minmax(
+      150px,
+      1.1fr
+    ) auto minmax(250px, auto);
+  gap: 16px;
+  align-items: center;
+  min-width: 0;
+  margin-bottom: 14px;
+  padding: 13px 15px;
+  border: 1px solid var(--ui-border-strong);
+  border-radius: 10px;
+  background: linear-gradient(
+    100deg,
+    color-mix(in srgb, var(--ui-accent) 8%, var(--ui-panel)),
+    color-mix(in srgb, var(--ui-panel-strong) 92%, transparent)
+  );
+  box-shadow: 0 10px 30px var(--ui-shadow);
+}
+.combat-run-bar.is-active {
+  border-color: color-mix(in srgb, var(--ui-accent) 30%, var(--ui-border));
+}
+.combat-run-context,
+.combat-run-threat,
+.combat-run-boss {
+  min-width: 0;
+}
+.combat-run-context {
+  display: grid;
+  gap: 4px;
+}
+.combat-run-context strong {
+  overflow: hidden;
+  color: var(--ui-text);
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.combat-run-context small,
+.combat-run-threat small,
+.combat-run-boss small {
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-mono);
+}
+.combat-run-threat {
+  display: grid;
+  gap: 5px;
+}
+.combat-run-metric-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-mono);
+  letter-spacing: 0.1em;
+}
+.combat-run-metric-head strong {
+  color: var(--ui-text);
+  font-weight: 500;
+  letter-spacing: 0;
+}
+.combat-run-threat .progress-wrap {
+  margin: 0;
+}
+.combat-run-threat .progress {
+  height: 6px;
+}
+.combat-run-threat .progress i {
+  background: var(--ui-warning);
+}
+.combat-run-boss {
+  display: grid;
+  gap: 4px;
+  padding-left: 15px;
+  border-left: 1px solid var(--ui-border);
+}
+.combat-run-boss .combat-subsection-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.combat-run-boss .combat-subsection-label svg {
+  color: var(--ui-gold);
+}
+.combat-run-boss strong {
+  overflow: hidden;
+  color: var(--ui-text-soft);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.combat-run-boss small {
+  color: var(--ui-gold);
+}
+.combat-toggle {
+  display: grid;
+  gap: 3px;
+  min-width: 82px;
+  padding: 8px 10px;
+  border: 1px solid var(--ui-border);
+  border-radius: 7px;
+  color: var(--ui-text-muted);
+  background: color-mix(in srgb, var(--ui-panel-strong) 70%, transparent);
+  cursor: pointer;
+  text-align: left;
+}
+.combat-toggle span {
+  font: var(--text-micro) var(--font-mono);
+  letter-spacing: 0.06em;
+}
+.combat-toggle strong {
+  color: var(--ui-text-soft);
+  font: var(--text-micro) var(--font-mono);
+}
+.combat-toggle:hover:not(:disabled),
+.combat-toggle.is-on {
+  border-color: color-mix(in srgb, var(--semantic-focus) 60%, var(--ui-border));
+  background: color-mix(in srgb, var(--semantic-focus) 10%, transparent);
+}
+.combat-toggle.is-on strong {
+  color: var(--semantic-focus);
+}
+.combat-toggle:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.combat-run-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.combat-run-actions .button {
+  padding: 8px 10px;
+  font-size: 9px;
+}
+
+/* Stage */
+.combat-stage-panel,
+.combat-spell-deck,
+.combat-intel-panel {
+  container-type: inline-size;
+  min-width: 0;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 15px;
+  border-radius: 12px;
+}
+.combat-stage-panel {
+  border-color: var(--ui-border-strong);
+  background:
+    radial-gradient(
+      circle at 50% 10%,
+      color-mix(in srgb, var(--ui-accent) 6%, transparent),
+      transparent 42%
+    ),
+    linear-gradient(
+      145deg,
+      var(--ui-panel-gradient-start),
+      var(--ui-panel-gradient-end)
+    );
+}
+.combat-stage-panel > .card-head,
+.combat-spell-deck > .card-head,
+.combat-intel-panel > .card-head {
+  margin-bottom: 12px;
+}
+.combat-stage-panel {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+}
+.combat-stage-grid {
+  display: grid;
+  grid-template-columns: minmax(210px, 0.85fr) minmax(280px, 1.35fr) minmax(
+      240px,
+      1fr
+    );
+  gap: 10px;
+  min-width: 0;
+  min-height: 390px;
+  height: 100%;
+}
+
+/* Player / Enemy */
+.combat-actor-card,
+.combat-intent-panel {
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid var(--ui-border);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--ui-panel-strong) 82%, transparent);
+}
+.combat-actor-card {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  padding: 13px;
+  background: color-mix(in srgb, var(--ui-panel-strong) 70%, transparent);
+}
+.combat-actor-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  min-width: 0;
+}
+.combat-actor-head-copy {
+  min-width: 0;
+  flex: 1;
+}
+.combat-actor-head h2 {
+  overflow: hidden;
+  margin-top: 3px;
+  color: var(--ui-text);
+  font-size: 15px;
+  letter-spacing: -0.02em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.combat-actor-head p {
+  overflow: hidden;
+  margin-top: 4px;
+  color: var(--ui-text-muted);
+  font-size: 10px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.combat-actor-head .status {
+  margin-left: auto;
+}
+.combat-actor-mark {
+  display: grid;
+  place-items: center;
+  width: 31px;
+  height: 31px;
+  flex: 0 0 auto;
+  border: 1px solid color-mix(in srgb, var(--ui-accent) 50%, var(--ui-border));
+  border-radius: 8px;
+  color: var(--ui-accent);
+  background: color-mix(in srgb, var(--ui-accent) 9%, transparent);
+}
+.combat-player-sigil {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 5px;
+  width: 72px;
+  height: 72px;
+  margin: 0 auto;
+  border: 1px solid color-mix(in srgb, var(--ui-accent) 48%, var(--ui-border));
+  border-radius: 10px;
+  color: var(--ui-accent);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--ui-accent) 13%, transparent),
+    transparent 70%
+  );
+}
+.combat-player-sigil span {
+  max-width: 66px;
+  overflow: hidden;
+  color: var(--ui-text-muted);
+  font: 8px var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.combat-subsection-label,
+.combat-intent-kicker {
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.combat-resource-stack {
+  display: grid;
+  gap: 9px;
+}
+.combat-resource {
+  display: grid;
+  gap: 5px;
+}
+.combat-resource-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-mono);
+}
+.combat-resource-label span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.combat-resource-label strong {
+  color: var(--ui-text);
+  font-weight: 500;
+}
+.combat-resource-track {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--ui-text) 9%, transparent);
+}
+.combat-resource-track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  transition: width 120ms linear;
+}
+.combat-resource-health .combat-resource-label span,
+.combat-resource-health .combat-resource-label strong {
+  color: var(--semantic-health);
+}
+.combat-resource-health .combat-resource-track i {
+  background: var(--semantic-health);
+  box-shadow: 0 0 9px
+    color-mix(in srgb, var(--semantic-health) 60%, transparent);
+}
+.combat-resource-mana .combat-resource-label span,
+.combat-resource-mana .combat-resource-label strong {
+  color: var(--semantic-mana);
+}
+.combat-resource-mana .combat-resource-track i {
+  background: var(--semantic-mana);
+  box-shadow: 0 0 9px color-mix(in srgb, var(--semantic-mana) 60%, transparent);
+}
+.combat-resource-barrier .combat-resource-label span,
+.combat-resource-barrier .combat-resource-label strong {
+  color: var(--semantic-barrier);
+}
+.combat-resource-barrier .combat-resource-track i {
+  background: var(--semantic-barrier);
+  box-shadow: 0 0 9px
+    color-mix(in srgb, var(--semantic-barrier) 60%, transparent);
+}
+.combat-resource-barrier.is-empty .combat-resource-label span,
+.combat-resource-barrier.is-empty .combat-resource-label strong {
+  color: var(--ui-text-disabled);
+}
+.combat-resource-barrier.is-empty .combat-resource-track {
+  opacity: 0.55;
+}
+.combat-resource .game-tooltip-trigger,
+.combat-basic-attack.game-tooltip-trigger {
+  display: block;
+}
+/* Statuses */
+.combat-status-strip {
+  min-width: 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--ui-border);
+}
+.combat-status-strip.is-empty {
+  padding-top: 7px;
+}
+.combat-status-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 7px;
+}
+.combat-status-strip.is-empty .combat-status-list {
+  margin-top: 5px;
+}
+.combat-status-empty {
+  display: block;
+  margin-top: 4px;
+  color: var(--ui-text-disabled);
+  font-size: 9px;
+}
+.combat-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  padding: 4px 6px;
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+  color: var(--ui-text-soft);
+  background: color-mix(in srgb, var(--ui-text) 4%, transparent);
+  font-size: 9px;
+  cursor: help;
+}
+.combat-status-chip strong {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.combat-status-chip b {
+  color: var(--ui-text);
+  font: 9px var(--font-mono);
+}
+.combat-status-chip small {
+  color: var(--semantic-time);
+  font: 9px var(--font-mono);
+  white-space: nowrap;
+}
+.combat-status-icon {
+  display: grid;
+  place-items: center;
+}
+.status-category-buff {
+  border-color: color-mix(in srgb, var(--semantic-buff) 48%, var(--ui-border));
+  color: var(--semantic-buff);
+}
+.status-category-debuff {
+  border-color: color-mix(
+    in srgb,
+    var(--semantic-debuff) 48%,
+    var(--ui-border)
+  );
+  color: var(--semantic-debuff);
+}
+.status-category-dot {
+  border-color: color-mix(in srgb, var(--semantic-dot) 48%, var(--ui-border));
+  color: var(--semantic-dot);
+}
+.status-category-control {
+  border-color: color-mix(
+    in srgb,
+    var(--semantic-control) 48%,
+    var(--ui-border)
+  );
+  color: var(--semantic-control);
+}
+.combat-basic-attack {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--ui-border);
+}
+.combat-basic-head,
+.combat-basic-stats {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.combat-basic-weapon {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+  color: var(--ui-text-soft);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.combat-basic-weapon svg {
+  color: var(--ui-gold);
+  flex: 0 0 auto;
+}
+.combat-basic-stats {
+  margin-top: 9px;
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-mono);
+}
+.combat-basic-stats span {
+  display: grid;
+  gap: 3px;
+}
+.combat-basic-stats strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ui-text);
+  font-weight: 500;
+}
+.combat-basic-attack .progress-wrap {
+  margin-top: 9px;
+}
+.combat-basic-attack .progress {
+  height: 4px;
+}
+.combat-basic-attack .progress i {
+  background: var(--semantic-time);
+}
+
+/* Enemy */
+.combat-enemy-card {
+  --enemy-accent: var(--ui-accent);
+  border-color: color-mix(in srgb, var(--enemy-accent) 35%, var(--ui-border));
+}
+.combat-enemy-card.is-boss {
+  border-top: 2px solid
+    color-mix(in srgb, var(--enemy-accent) 80%, var(--ui-danger));
+}
+.combat-enemy-card .combat-actor-head h2 {
+  color: var(--ui-text);
+}
+.combat-monster-portrait {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(180px, 82%);
+  aspect-ratio: 1.28 / 1;
+  flex: 0 0 auto;
+  align-self: center;
+  overflow: hidden;
+  margin: 2px auto 0;
+  border: 1px solid
+    color-mix(in srgb, var(--enemy-accent) 56%, var(--ui-border));
+  border-radius: 10px;
+  color: var(--enemy-accent);
+  background:
+    radial-gradient(
+      circle at 50% 45%,
+      color-mix(in srgb, var(--enemy-accent) 20%, transparent),
+      transparent 67%
+    ),
+    color-mix(in srgb, var(--ui-bg) 80%, transparent);
+  box-shadow: 0 0 30px color-mix(in srgb, var(--enemy-accent) 13%, transparent);
+}
+.combat-monster-portrait.is-boss {
+  width: min(190px, 88%);
+  border-radius: 10px;
+}
+.combat-monster-portrait img {
+  width: 86%;
+  height: 86%;
+  object-fit: contain;
+}
+.combat-portrait-aura {
+  position: absolute;
+  inset: 8%;
+  border: 1px dashed color-mix(in srgb, var(--enemy-accent) 50%, transparent);
+  border-radius: inherit;
+  transform: rotate(16deg);
+}
+.combat-enemy-identity {
+  display: grid;
+  gap: 3px;
+  text-align: center;
+}
+.combat-enemy-identity strong {
+  color: var(--ui-text);
+  font-size: 15px;
+}
+.combat-enemy-identity span {
+  overflow: hidden;
+  color: var(--ui-text-muted);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.combat-enemy-card .progress-wrap {
+  margin-top: 2px;
+}
+.combat-enemy-card .progress i {
+  background: var(--semantic-health);
+}
+.combat-barrier-readout {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 7px;
+  align-items: center;
+  padding-top: 8px;
+  border-top: 1px solid var(--ui-border);
+  color: var(--semantic-barrier);
+  font: var(--text-micro) var(--font-mono);
+}
+.combat-barrier-readout span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.combat-barrier-readout strong {
+  color: var(--semantic-barrier);
+  font-weight: 500;
+}
+.combat-barrier-readout small {
+  color: var(--semantic-time);
+}
+.combat-barrier-readout.is-empty {
+  color: var(--ui-text-muted);
+}
+.combat-barrier-readout.is-empty strong {
+  color: var(--ui-text-muted);
+}
+.combat-trait-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.combat-trait-strip > .game-tooltip-trigger {
+  min-width: 0;
+}
+.combat-trait-strip span {
+  display: block;
+  overflow: hidden;
+  padding: 4px 6px;
+  border: 1px solid color-mix(in srgb, var(--ui-gold) 35%, var(--ui-border));
+  border-radius: 5px;
+  color: var(--ui-gold);
+  background: color-mix(in srgb, var(--ui-gold) 7%, transparent);
+  font: var(--text-micro) var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.combat-enemy-empty {
+  justify-content: center;
+}
+.combat-empty-actor {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  flex: 1;
+  padding: 20px;
+  color: var(--ui-text-muted);
+  text-align: center;
+}
+.combat-empty-actor svg {
+  color: var(--ui-accent);
+  opacity: 0.7;
+}
+.combat-empty-actor strong {
+  max-width: 190px;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.combat-empty-actor .combat-subsection-label {
+  color: var(--ui-text-muted);
+}
+.combat-route-preview {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  margin: auto 0;
+  padding: 10px;
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+}
+.combat-route-preview .combat-monster-portrait {
+  width: 56px;
+  aspect-ratio: 1.2;
+  border-radius: 7px;
+  box-shadow: none;
+}
+.combat-route-preview .combat-portrait-aura {
+  display: none;
+}
+.combat-route-preview > div {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+.combat-route-preview strong {
+  overflow: hidden;
+  color: var(--ui-text-soft);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.combat-route-preview small {
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-mono);
+}
+/* Intent */
+.combat-intent-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  padding: 15px;
+  border-color: color-mix(
+    in srgb,
+    var(--enemy-accent, var(--ui-accent)) 30%,
+    var(--ui-border)
+  );
+  background:
+    radial-gradient(
+      circle at 50% 16%,
+      color-mix(
+        in srgb,
+        var(--enemy-accent, var(--ui-accent)) 10%,
+        transparent
+      ),
+      transparent 50%
+    ),
+    color-mix(in srgb, var(--ui-bg) 44%, var(--ui-panel-strong));
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--enemy-accent, var(--ui-accent)) 10%, transparent);
+}
+.combat-intent-panel.is-telegraphing {
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--ui-warning) 18%, transparent);
+}
+.combat-intent-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.combat-intent-head h2 {
+  max-width: 100%;
+  margin-top: 4px;
+  overflow: hidden;
+  color: var(--ui-text);
+  font-size: 18px;
+  letter-spacing: -0.035em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.combat-intent-countdown {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+.combat-intent-countdown svg {
+  align-self: center;
+  color: var(--ui-text-muted);
+}
+.combat-intent-countdown strong {
+  font: 24px var(--font-mono);
+}
+.combat-intent-countdown span {
+  color: var(--ui-text-muted);
+  font-size: 10px;
+}
+.combat-intent-panel .progress-wrap {
+  margin-top: 0;
+}
+.combat-intent-panel .progress {
+  height: 6px;
+}
+.combat-intent-panel .progress i {
+  background: var(--ui-warning);
+}
+.combat-intent-effects {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--enemy-accent, var(--ui-accent)) 26%,
+      var(--ui-border)
+    );
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--ui-panel) 54%, transparent);
+}
+.combat-intent-effects.game-tooltip-trigger {
+  display: grid;
+}
+.combat-effect-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 3px 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--ui-border);
+}
+.combat-effect-line:first-of-type {
+  padding-top: 0;
+  border-top: 0;
+}
+.combat-effect-line strong {
+  color: var(--ui-text-soft);
+  font-size: 11px;
+}
+.combat-effect-line b {
+  color: var(--ui-text);
+  font: var(--text-micro) var(--font-mono);
+}
+.combat-effect-line small {
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-mono);
+}
+.combat-effect-line small {
+  grid-column: 1 / -1;
+}
+.effect-kind-damage strong,
+.effect-kind-damage b {
+  color: var(--ui-danger);
+}
+.effect-kind-heal strong,
+.effect-kind-heal b {
+  color: var(--ui-success);
+}
+.effect-kind-barrier strong,
+.effect-kind-barrier b {
+  color: var(--semantic-barrier);
+}
+.effect-kind-control strong,
+.effect-kind-control b {
+  color: var(--semantic-control);
+}
+.combat-intent-pattern {
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--ui-border);
+}
+.combat-pattern-rail {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  min-width: 0;
+  overflow-x: auto;
+  padding: 7px 1px 3px;
+  scrollbar-width: thin;
+}
+.combat-pattern-node-wrap {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.combat-pattern-node-wrap > .game-tooltip-trigger {
+  min-width: 0;
+}
+.combat-pattern-node {
+  display: grid;
+  grid-template-columns: auto minmax(45px, 1fr);
+  gap: 5px;
+  align-items: center;
+  min-width: 76px;
+  padding: 6px 7px;
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+  color: var(--ui-text-muted);
+  background: color-mix(in srgb, var(--ui-text) 3%, transparent);
+  cursor: help;
+}
+.combat-pattern-node i {
+  display: grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  color: var(--ui-text-disabled);
+  font-style: normal;
+}
+.combat-pattern-node strong {
+  overflow: hidden;
+  color: inherit;
+  font: var(--text-micro) var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.combat-pattern-node.is-current {
+  border-color: color-mix(
+    in srgb,
+    var(--enemy-accent, var(--ui-warning)) 68%,
+    var(--ui-border)
+  );
+  color: var(--ui-gold);
+  background: color-mix(in srgb, var(--ui-warning) 9%, transparent);
+}
+.combat-pattern-node.is-current i {
+  color: var(--ui-gold);
+}
+.combat-pattern-node.is-complete {
+  color: var(--ui-success);
+  border-color: color-mix(in srgb, var(--ui-success) 28%, var(--ui-border));
+}
+.combat-pattern-arrow {
+  align-self: center;
+  padding: 0 1px;
+  color: var(--ui-text-disabled);
+  font-size: 12px;
+}
+.combat-pattern-empty {
+  padding: 8px 0;
+  color: var(--ui-text-disabled);
+  font-size: 10px;
+}
+.combat-intent-latest {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--ui-border);
+}
+.combat-intent-latest span {
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-mono);
+}
+.combat-intent-latest strong {
+  overflow: hidden;
+  color: var(--ui-text-soft);
+  font-size: 10px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.combat-intent-panel.is-idle,
+.combat-intent-panel.is-delay,
+.combat-intent-panel.is-boss-ready {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.combat-intent-panel.is-idle svg {
+  color: var(--ui-accent);
+}
+.combat-intent-panel.is-idle strong {
+  color: var(--ui-text);
+  font: 14px var(--font-mono);
+  letter-spacing: 0.08em;
+}
+.combat-intent-panel.is-idle p,
+.combat-intent-panel.is-delay p {
+  max-width: 210px;
+  color: var(--ui-text-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.combat-intent-panel.is-boss-ready p {
+  max-width: 230px;
+  color: var(--ui-text-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.combat-intent-panel.is-idle h2,
+.combat-intent-panel.is-boss-ready h2 {
+  color: var(--ui-text);
+  font-size: 18px;
+}
+.combat-intent-panel.is-delay .combat-intent-title {
+  font: 28px var(--font-mono);
+}
+.combat-intent-panel.is-delay .progress-wrap {
+  width: min(230px, 100%);
+}
+.combat-intent-panel.is-delay .progress-label {
+  display: none;
+}
+
+/* Atlas / Dialogs */
+.combat-modal-backdrop {
+  position: fixed;
+  z-index: 50;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  overflow: auto;
+  background: rgb(4 7 13 / 82%);
+  backdrop-filter: blur(3px);
+  animation: combat-modal-fade 120ms ease both;
+}
+.dungeon-atlas-dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(1080px, 100%);
+  height: min(760px, 94vh);
+  overflow: hidden;
+  border: 1px solid var(--ui-border-strong);
+  border-radius: 14px;
+  background: var(--ui-panel-strong);
+  box-shadow: 0 25px 80px var(--ui-shadow);
+  animation: combat-modal-in 140ms ease both;
+}
+.combat-modal-head,
+.combat-modal-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex: 0 0 auto;
+  padding: 15px 19px;
+  border-bottom: 1px solid var(--ui-border);
+  background: var(--ui-panel-strong);
+}
+.combat-modal-head h2 {
+  margin-top: 4px;
+  color: var(--ui-text);
+  font-size: 18px;
+  letter-spacing: 0.04em;
+}
+.combat-modal-head p {
+  margin-top: 5px;
+  color: var(--ui-text-muted);
+  font-size: 11px;
+}
+.combat-modal-head .button.icon,
+.combat-confirm-dialog .button.icon {
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  padding: 0;
+}
+.dungeon-atlas-body {
+  display: grid;
+  grid-template-columns: 235px minmax(0, 1fr);
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+.dungeon-atlas-list {
+  min-width: 0;
+  overflow: auto;
+  padding: 15px 11px;
+  border-right: 1px solid var(--ui-border);
+  background: color-mix(in srgb, var(--ui-panel) 65%, transparent);
+  scrollbar-width: thin;
+}
+.dungeon-atlas-list-item {
+  display: grid;
+  width: 100%;
+  gap: 5px;
+  margin-top: 7px;
+  padding: 11px 10px;
+  border: 1px solid transparent;
+  border-left: 2px solid transparent;
+  border-radius: 7px;
+  color: var(--ui-text-soft);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+.dungeon-atlas-list-item:hover,
+.dungeon-atlas-list-item.is-selected {
+  border-color: var(--ui-border-strong);
+  border-left-color: var(--ui-accent);
+  background: color-mix(in srgb, var(--ui-accent) 9%, transparent);
+}
+.dungeon-atlas-list-item span {
+  color: var(--ui-accent);
+  font: var(--text-micro) var(--font-mono);
+  letter-spacing: 0.08em;
+}
+.dungeon-atlas-list-item.is-locked span {
+  color: var(--ui-text-disabled);
+}
+.dungeon-atlas-list-item strong {
+  color: var(--ui-text);
+  font-size: 12px;
+}
+.dungeon-atlas-list-item small {
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-mono);
+}
+.dungeon-atlas-inspector {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  padding: 20px 23px;
+  scrollbar-width: thin;
+}
+.dungeon-atlas-title-row {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.dungeon-atlas-title-row h3 {
+  margin-top: 5px;
+  color: var(--ui-text);
+  font-size: 23px;
+  letter-spacing: -0.04em;
+}
+.dungeon-atlas-description {
+  max-width: 680px;
+  margin-top: 7px;
+  color: var(--ui-text-muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+.dungeon-atlas-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  max-width: 450px;
+  margin-top: 17px;
+}
+.dungeon-atlas-stat-grid > div {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid var(--ui-border);
+  border-radius: 7px;
+}
+.dungeon-atlas-stat-grid span {
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-mono);
+}
+.dungeon-atlas-stat-grid strong {
+  color: var(--ui-text);
+  font: 16px var(--font-mono);
+}
+.dungeon-atlas-section {
+  margin-top: 19px;
+  padding-top: 15px;
+  border-top: 1px solid var(--ui-border);
+}
+.dungeon-roster-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 8px;
+}
+.dungeon-roster-grid > .game-tooltip-trigger {
+  min-width: 0;
+}
+.dungeon-roster-card {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 6px;
+  align-items: center;
+  min-width: 0;
+  padding: 7px;
+  border: 1px solid var(--ui-border);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--ui-panel) 65%, transparent);
+}
+.dungeon-roster-card .combat-monster-portrait {
+  width: 32px;
+  border-radius: 9px;
+  box-shadow: none;
+}
+.dungeon-roster-card .combat-portrait-aura {
+  display: none;
+}
+.dungeon-roster-card strong,
+.dungeon-roster-card small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dungeon-roster-card strong {
+  color: var(--ui-text-soft);
+  font-size: 10px;
+}
+.dungeon-roster-card small {
+  margin-top: 2px;
+  color: var(--ui-text-muted);
+  font-size: 8px;
+}
+.dungeon-boss-preview {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-top: 8px;
+  padding: 11px;
+  border: 1px solid color-mix(in srgb, var(--ui-gold) 35%, var(--ui-border));
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--ui-gold) 6%, transparent);
+}
+.dungeon-boss-preview .combat-monster-portrait {
+  width: 66px;
+  border-radius: 14px;
+  box-shadow: none;
+}
+.dungeon-boss-preview .combat-portrait-aura {
+  display: none;
+}
+.dungeon-boss-preview h4 {
+  margin-top: 5px;
+  color: var(--ui-text);
+  font-size: 15px;
+}
+.dungeon-boss-preview p {
+  margin-top: 3px;
+  color: var(--ui-text-muted);
+  font-size: 10px;
+}
+.dungeon-boss-preview small {
+  display: block;
+  margin-top: 7px;
+  color: var(--ui-gold);
+  font: var(--text-micro) var(--font-mono);
+}
+.dungeon-atlas-lock-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 17px;
+  padding: 10px;
+  border: 1px solid var(--ui-border);
+  color: var(--ui-text-muted);
+  font-size: 11px;
+}
+.dungeon-atlas-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 17px;
+}
+.dungeon-atlas-actions .combat-toggle {
+  min-width: 105px;
+}
+.dungeon-atlas-actions .button {
+  font-size: 9px;
+}
+.dungeon-atlas-active-note {
+  margin-top: 12px;
+  color: var(--ui-warning);
+  font-size: 10px;
+  text-align: right;
+}
+.combat-modal-foot {
+  border-top: 1px solid var(--ui-border);
+  border-bottom: 0;
+}
+.combat-modal-foot > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ui-text-muted);
+  font-size: 10px;
+}
+.combat-modal-foot > span svg {
+  color: var(--ui-accent);
+}
+.combat-confirm-dialog {
+  width: min(440px, 100%);
+  padding: 17px;
+  border: 1px solid var(--ui-border-strong);
+  border-radius: 12px;
+  background: var(--ui-panel-strong);
+  box-shadow: 0 25px 80px var(--ui-shadow);
+  animation: combat-modal-in 140ms ease both;
+}
+.combat-confirm-dialog > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+}
+.combat-confirm-dialog h2 {
+  margin-top: 5px;
+  color: var(--ui-text);
+  font-size: 17px;
+}
+.combat-confirm-copy {
+  display: grid;
+  gap: 7px;
+  margin-top: 20px;
+  padding: 13px;
+  border: 1px solid color-mix(in srgb, var(--ui-danger) 28%, var(--ui-border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ui-danger) 6%, transparent);
+}
+.combat-confirm-copy strong {
+  color: var(--ui-text-soft);
+  font-size: 11px;
+}
+.combat-confirm-copy > span {
+  color: var(--ui-danger);
+  font: 18px var(--font-mono);
+}
+.combat-confirm-copy p {
+  color: var(--ui-text-muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+.combat-confirm-dialog > footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 7px;
+  margin-top: 17px;
+}
+/* Spell Deck */
+.combat-spell-deck {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  background: linear-gradient(
+    145deg,
+    var(--ui-panel-gradient-start),
+    var(--ui-panel-gradient-end)
+  );
+}
+.combat-spell-deck-head {
+  display: grid;
+  grid-template-columns: minmax(170px, 1fr) minmax(170px, 0.8fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--ui-border);
+}
+.combat-spell-deck-head > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.combat-spell-deck-head strong {
+  overflow: hidden;
+  color: var(--ui-text);
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.combat-spell-deck-head small {
+  overflow: hidden;
+  color: var(--ui-text-muted);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.combat-focus-summary {
+  justify-items: start;
+  padding-left: 15px;
+  border-left: 1px solid var(--ui-border);
+}
+.combat-focus-summary span {
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-mono);
+}
+.combat-focus-summary strong {
+  font: 14px var(--font-mono);
+}
+.combat-focus-summary small {
+  font: var(--text-micro) var(--font-mono);
+}
+.combat-spell-filter {
+  display: flex;
+  gap: 5px;
+  overflow-x: auto;
+  padding: 11px 0 9px;
+  scrollbar-width: thin;
+}
+.combat-filter-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  padding: 5px 8px;
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+  color: var(--ui-text-muted);
+  background: transparent;
+  cursor: pointer;
+  font: var(--text-micro) var(--font-mono);
+  white-space: nowrap;
+}
+.combat-filter-button:hover,
+.combat-filter-button.is-active {
+  border-color: var(--ui-accent);
+  color: var(--ui-text);
+  background: var(--ui-accent-soft);
+}
+.combat-spell-deck-body {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  min-height: 0;
+}
+.combat-spell-banner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid color-mix(in srgb, var(--ui-warning) 32%, var(--ui-border));
+  border-radius: 6px;
+  color: var(--ui-warning);
+  background: color-mix(in srgb, var(--ui-warning) 6%, transparent);
+  font: var(--text-micro) var(--font-mono);
+}
+.combat-spell-grid-region {
+  min-height: 0;
+  height: 100%;
+}
+.combat-spell-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  align-content: start;
+  padding: 2px 2px 3px 0;
+  scrollbar-width: thin;
+}
+.spell-combat-tile {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 132px;
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ui-panel-strong) 86%, transparent);
+}
+.spell-combat-tile::before {
+  position: absolute;
+  top: 0;
+  right: 8px;
+  left: 8px;
+  height: 2px;
+  border-radius: 99px;
+  background: var(--spell-school-color);
+  content: "";
+  opacity: 0.6;
+}
+.spell-combat-tile:hover {
+  border-color: color-mix(
+    in srgb,
+    var(--spell-school-color) 68%,
+    var(--ui-border)
+  );
+  background: color-mix(
+    in srgb,
+    var(--spell-school-color) 7%,
+    var(--ui-panel-strong)
+  );
+}
+.spell-combat-tile.is-auto {
+  border-color: color-mix(in srgb, var(--semantic-focus) 45%, var(--ui-border));
+}
+.spell-combat-tile.is-mana-starved {
+  border-color: color-mix(in srgb, var(--ui-warning) 55%, var(--ui-border));
+}
+.spell-combat-cast {
+  position: relative;
+  display: grid;
+  grid-template-rows: 40px minmax(0, 1fr) auto auto;
+  gap: 5px;
+  min-width: 0;
+  min-height: 130px;
+  overflow: hidden;
+  padding: 10px 36px 9px 10px;
+  border: 0;
+  border-radius: inherit;
+  color: var(--ui-text-soft);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+.spell-combat-cast:disabled {
+  cursor: not-allowed;
+}
+.spell-combat-cast:not(:disabled):active {
+  transform: translateY(1px);
+  filter: brightness(0.93);
+}
+.spell-combat-tile.is-cooldown .spell-combat-cast {
+  filter: saturate(0.72);
+}
+.spell-combat-cast:focus-visible {
+  outline: 2px solid var(--spell-school-color);
+  outline-offset: -2px;
+}
+.spell-combat-tile-top {
+  display: flex;
+  align-items: start;
+  gap: 5px;
+  min-width: 0;
+}
+.spell-combat-icon {
+  display: inline-flex;
+}
+.spell-combat-icon .spell-icon-shell {
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+}
+.spell-combat-name {
+  display: grid;
+  align-content: end;
+  min-width: 0;
+  gap: 3px;
+}
+.spell-combat-name strong {
+  overflow: hidden;
+  color: var(--ui-text);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.spell-combat-name small {
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-mono);
+}
+.spell-combat-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 5px;
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-mono);
+}
+.spell-combat-footer span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+}
+.spell-combat-footer .ui-mana {
+  color: var(--semantic-mana);
+}
+.spell-combat-footer .ui-time {
+  color: var(--semantic-time);
+}
+.spell-combat-warning {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+  color: var(--ui-warning);
+  font: var(--text-micro) var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.spell-combat-cooldown-mask {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: var(--cooldown-percent);
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--ui-bg) 45%, transparent),
+    transparent
+  );
+  transition: height 100ms linear;
+}
+.spell-combat-auto {
+  position: absolute;
+  z-index: 2;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--ui-border);
+  border-radius: 50%;
+  color: var(--ui-text-muted);
+  background: color-mix(in srgb, var(--ui-panel-strong) 92%, transparent);
+  cursor: pointer;
+}
+.spell-combat-auto:hover,
+.spell-combat-auto:focus-visible {
+  border-color: var(--semantic-focus);
+  color: var(--semantic-focus);
+  outline: none;
+}
+.spell-combat-auto.is-active {
+  border-color: var(--semantic-focus);
+  color: var(--semantic-focus);
+  background: color-mix(in srgb, var(--semantic-focus) 12%, var(--ui-panel));
+  box-shadow: 0 0 10px
+    color-mix(in srgb, var(--semantic-focus) 22%, transparent);
+}
+.combat-spell-empty {
+  display: grid;
+  place-items: center;
+  gap: 7px;
+  min-height: 100px;
+  border: 1px dashed var(--ui-border);
+  color: var(--ui-text-muted);
+  font-size: 11px;
+  text-align: center;
+}
+.combat-spell-empty svg {
+  color: var(--semantic-focus);
+}
+.combat-spell-deck-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid var(--ui-border);
+}
+.combat-spell-deck-foot small {
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-mono);
+  text-align: right;
+}
+/* Intel */
+.combat-intel-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  background: linear-gradient(
+    145deg,
+    var(--ui-panel-gradient-start),
+    var(--ui-panel-gradient-end)
+  );
+}
+.combat-intel-panel > .tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  overflow: visible;
+  margin-bottom: 11px;
+  padding: 3px;
+  border: 1px solid var(--ui-border);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--ui-bg) 30%, transparent);
+}
+.combat-intel-panel > .tabs button {
+  min-width: 0;
+  padding: 7px 5px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 5px;
+  color: var(--ui-text-muted);
+  background: transparent;
+  cursor: pointer;
+  font: var(--text-micro) var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.combat-intel-panel > .tabs button:hover,
+.combat-intel-panel > .tabs button.active {
+  color: var(--ui-text);
+  background: var(--ui-accent-soft);
+}
+.combat-intel-scroll {
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 3px;
+  scrollbar-width: thin;
+}
+.intel-identity-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.intel-identity-row .combat-monster-portrait {
+  width: 54px;
+  aspect-ratio: 1;
+  border-radius: 9px;
+  box-shadow: none;
+}
+.intel-identity-row .combat-portrait-aura {
+  display: none;
+}
+.intel-identity-row h3 {
+  margin-top: 4px;
+  color: var(--ui-text);
+  font-size: 16px;
+}
+.intel-identity-row p {
+  margin-top: 3px;
+  color: var(--ui-text-muted);
+  font-size: 10px;
+}
+.intel-identity-row small {
+  display: block;
+  margin-top: 6px;
+  color: var(--ui-gold);
+  font: var(--text-micro) var(--font-mono);
+}
+.intel-section {
+  padding-top: 13px;
+  margin-top: 13px;
+  border-top: 1px solid var(--ui-border);
+}
+.intel-trait-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 8px;
+}
+.intel-trait-grid > .game-tooltip-trigger {
+  min-width: 0;
+}
+.intel-trait-card {
+  display: flex;
+  gap: 7px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--ui-gold) 28%, var(--ui-border));
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--ui-gold) 5%, transparent);
+}
+.intel-trait-card > svg {
+  flex: 0 0 auto;
+  color: var(--ui-gold);
+}
+.intel-trait-card strong,
+.intel-trait-card p {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.intel-trait-card strong {
+  color: var(--ui-text-soft);
+  font-size: 10px;
+  white-space: nowrap;
+}
+.intel-trait-card p {
+  display: -webkit-box;
+  margin-top: 3px;
+  color: var(--ui-text-muted);
+  font-size: 9px;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.intel-resistance-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px 8px;
+  margin-top: 8px;
+}
+.intel-resistance-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 7px;
+  border: 1px solid var(--ui-border);
+  border-radius: 5px;
+  color: var(--ui-text-muted);
+  font-size: 9px;
+}
+.intel-resistance-row strong {
+  color: var(--ui-text-soft);
+  font: var(--text-micro) var(--font-mono);
+  text-align: right;
+}
+.intel-resistance-row.is-weakness strong {
+  color: var(--ui-success);
+}
+.intel-resistance-row.is-immunity strong {
+  color: var(--ui-warning);
+}
+.damage-type {
+  color: var(--ui-text-soft);
+}
+.damage-fire {
+  color: #ed8b68;
+}
+.damage-water {
+  color: #67b8ef;
+}
+.damage-earth {
+  color: #d0a36e;
+}
+.damage-air {
+  color: #b7dacf;
+}
+.damage-arcane {
+  color: var(--ui-accent);
+}
+.damage-physical {
+  color: #c1b9ad;
+}
+.intel-action-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 8px;
+}
+.intel-action-grid > .game-tooltip-trigger {
+  min-width: 0;
+}
+.intel-action-card {
+  display: flex;
+  min-width: 0;
+  min-height: 112px;
+  flex-direction: column;
+  padding: 8px;
+  border: 1px solid var(--ui-border);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--ui-panel) 70%, transparent);
+}
+.intel-action-card > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+}
+.intel-action-card strong {
+  overflow: hidden;
+  color: var(--ui-text-soft);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.intel-action-card span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-mono);
+  white-space: nowrap;
+}
+.intel-action-card p {
+  display: -webkit-box;
+  margin-top: 5px;
+  overflow: hidden;
+  color: var(--ui-text-muted);
+  font-size: 9px;
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.intel-action-effects {
+  display: grid;
+  gap: 3px;
+  margin-top: auto;
+}
+.intel-action-effects span {
+  overflow: hidden;
+  color: var(--ui-text-muted);
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.intel-pattern-detail {
+  display: grid;
+  gap: 5px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--ui-border);
+}
+.intel-pattern-line {
+  display: grid;
+  grid-template-columns: 65px minmax(0, 1fr);
+  gap: 8px;
+  padding: 6px 7px;
+  border: 1px solid var(--ui-border);
+  border-radius: 5px;
+}
+.intel-pattern-line span {
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-mono);
+}
+.intel-pattern-line strong {
+  overflow: hidden;
+  color: var(--ui-text-soft);
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.intel-pattern-line.is-active {
+  border-color: color-mix(in srgb, var(--ui-accent) 50%, var(--ui-border));
+  background: var(--ui-accent-soft);
+}
+.intel-basic-attack {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid var(--ui-border);
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-mono);
+}
+.intel-basic-attack strong {
+  color: var(--ui-text-soft);
+  font-weight: 500;
+}
+.intel-basic-attack small {
+  margin-left: auto;
+}
+.intel-fallback {
+  padding: 5px 0;
+}
+.intel-fallback h3 {
+  margin-top: 5px;
+  color: var(--ui-text);
+  font-size: 15px;
+}
+.intel-fallback > p {
+  margin-top: 5px;
+  color: var(--ui-text-muted);
+  font-size: 10px;
+}
+.intel-roster-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 17px;
+}
+.intel-roster-line {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 8px;
+}
+.intel-roster-line .combat-monster-portrait {
+  width: 30px;
+  border-radius: 7px;
+  box-shadow: none;
+}
+.intel-roster-line .combat-portrait-aura {
+  display: none;
+}
+.intel-roster-line span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+.intel-roster-line strong,
+.intel-roster-line small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.intel-roster-line strong {
+  color: var(--ui-text-soft);
+  font-size: 10px;
+}
+.intel-roster-line small {
+  color: var(--ui-text-muted);
+  font-size: 8px;
+}
+.intel-loot-group + .intel-loot-group {
+  margin-top: 16px;
+  padding-top: 13px;
+  border-top: 1px solid var(--ui-border);
+}
+.intel-loot-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 8px;
+}
+.intel-loot-grid > .game-tooltip-trigger {
+  min-width: 0;
+}
+.intel-loot-row {
+  display: grid;
+  grid-template-columns: 25px minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: center;
+  min-width: 0;
+  padding: 7px;
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+}
+.intel-loot-row > div {
+  min-width: 0;
+}
+.intel-loot-row strong,
+.intel-loot-row small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.intel-loot-row strong {
+  color: var(--ui-text-soft);
+  font-size: 9px;
+}
+.intel-loot-row small {
+  margin-top: 3px;
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-mono);
+}
+.intel-loot-row .status {
+  padding: 3px 5px;
+  font-size: 8px;
+}
+.loot-monster-group {
+  margin-top: 10px;
+}
+.loot-monster-group > span {
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-mono);
+}
+.loot-monster-group .intel-loot-grid {
+  margin-top: 5px;
+}
+.combat-log-tab {
+  min-height: 130px;
+}
+.combat-log {
+  display: grid;
+  gap: 6px;
+}
+.combat-log > div {
+  display: grid;
+  grid-template-columns: 25px minmax(0, 1fr);
+  gap: 8px;
+  color: var(--ui-text-muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+.combat-log > div.latest {
+  position: sticky;
+  top: -1px;
+  z-index: 1;
+  padding: 6px 0;
+  color: var(--ui-text);
+  background: var(--ui-panel);
+}
+.combat-log > div > span {
+  color: var(--ui-text-disabled);
+  font: var(--text-micro) var(--font-mono);
+}
+.combat-log p {
+  min-width: 0;
+}
+@keyframes combat-modal-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes combat-modal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+/* Responsive */
+@container (max-width: 940px) {
+  .combat-stage-grid {
+    grid-template-columns: minmax(190px, 1fr) minmax(220px, 1fr);
+  }
+  .combat-intent-panel {
+    grid-column: 1 / -1;
+    order: 3;
+    min-height: 270px;
+  }
+  .combat-enemy-card {
+    order: 2;
+  }
+  .combat-player-card {
+    order: 1;
+  }
+  .combat-spell-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .intel-action-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@container (max-width: 620px) {
+  .combat-stage-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+  .combat-actor-card,
+  .combat-intent-panel {
+    min-height: 300px;
+  }
+  .combat-intent-panel {
+    grid-column: auto;
+    order: 3;
+  }
+  .combat-enemy-card {
+    order: 2;
+  }
+  .combat-player-card {
+    order: 1;
+  }
+  .combat-spell-deck-head {
+    grid-template-columns: 1fr auto;
+  }
+  .combat-focus-summary {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    padding: 9px 0 0;
+    border-top: 1px solid var(--ui-border);
+    border-left: 0;
+  }
+  .combat-spell-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .intel-trait-grid,
+  .intel-resistance-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .intel-loot-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .dungeon-roster-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@container (max-width: 380px) {
+  .combat-spell-deck-head {
+    grid-template-columns: 1fr;
+  }
+  .combat-spell-deck-head > .button {
+    justify-self: start;
+  }
+  .combat-spell-grid,
+  .intel-trait-grid,
+  .intel-resistance-grid,
+  .intel-action-grid,
+  .intel-loot-grid {
+    grid-template-columns: 1fr;
+  }
+  .intel-roster-columns {
+    grid-template-columns: 1fr;
+    gap: 11px;
+  }
+  .combat-spell-deck-foot {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .combat-spell-deck-foot small {
+    text-align: left;
+  }
+}
+@container (max-width: 1050px) {
+  .combat-run-bar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .combat-run-threat {
+    grid-column: 1 / -1;
+  }
+  .combat-run-actions {
+    justify-content: stretch;
+  }
+  .combat-run-actions .button {
+    flex: 1 1 auto;
+  }
+}
+@container (max-width: 760px) {
+  .combat-run-bar {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .combat-run-boss {
+    padding-left: 0;
+    border-left: 0;
+  }
+  .combat-run-actions {
+    grid-column: 1 / -1;
+  }
+}
+@container (max-width: 480px) {
+  .combat-run-bar {
+    grid-template-columns: 1fr;
+  }
+  .combat-run-threat {
+    grid-column: auto;
+  }
+  .combat-run-actions {
+    flex-direction: column;
+  }
+  .combat-run-actions .button {
+    width: 100%;
+  }
+}
+@media (max-width: 760px) {
+  .dungeon-atlas-dialog {
+    height: min(900px, 96vh);
+  }
+  .dungeon-atlas-body {
+    grid-template-columns: 1fr;
+    overflow: auto;
+  }
+  .dungeon-atlas-list {
+    display: flex;
+    gap: 5px;
+    overflow-x: auto;
+    padding: 10px;
+    border-right: 0;
+    border-bottom: 1px solid var(--ui-border);
+  }
+  .dungeon-atlas-list > .combat-subsection-label {
+    display: none;
+  }
+  .dungeon-atlas-list-item {
+    flex: 0 0 175px;
+    margin-top: 0;
+  }
+  .dungeon-atlas-inspector {
+    overflow: visible;
+    padding: 15px;
+  }
+  .combat-modal-foot {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+@media (max-width: 480px) {
+  .combat-spell-deck-head > .button {
+    width: 100%;
+  }
+  .dungeon-atlas-stat-grid,
+  .dungeon-roster-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .dungeon-atlas-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .dungeon-atlas-actions .button,
+  .dungeon-atlas-actions .combat-toggle {
+    width: 100%;
+  }
+  .intel-resistance-grid,
+  .intel-action-grid,
+  .intel-loot-grid {
+    grid-template-columns: 1fr;
+  }
+}
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .combat-screen *,
+  .combat-screen *::before,
+  .combat-screen *::after {
+    scroll-behavior: auto;
+    transition-duration: 0s !important;
+    animation: none !important;
+  }
+  .combat-modal-backdrop *,
+  .combat-modal-backdrop *::before,
+  .combat-modal-backdrop *::after {
+    animation: none !important;
+  }
+}

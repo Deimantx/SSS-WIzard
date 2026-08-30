@@ -1,5 +1,7 @@
 import type { ActionPattern, ActionStep, BestiaryCategory, CombatActionDefinition, CombatEffect, CombatTag, DamageType, ItemId, Magnitude, MonsterId, StatusId, TraitId } from '../../types'
 
+export type MonsterPortraitIcon = 'wisp' | 'plant' | 'stone' | 'guardian' | 'wolf' | 'claw' | 'bear' | 'skeleton' | 'ghost' | 'mage' | 'boss'
+
 export interface MonsterDefinition {
   id: MonsterId
   bestiaryCategory: BestiaryCategory
@@ -10,6 +12,7 @@ export interface MonsterDefinition {
   actionIntervalMs: number
   color: string
   image?: string
+  ui?: { portraitIcon?: MonsterPortraitIcon }
   traitIds: TraitId[]
   resistances?: Partial<Record<DamageType, number>>
   damageImmunities?: DamageType[]

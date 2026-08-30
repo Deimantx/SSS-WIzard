@@ -14,8 +14,9 @@ export function getAdaptiveCombatLayout(layout: Layout, requiredStageContentHeig
   if (!stage || !deck || !intel) return layout
 
   const requiredStageHeight = Math.max(stage.h, Math.ceil((requiredStageContentHeight + GRID_MARGIN[1]) / (GRID_ROW_HEIGHT + GRID_MARGIN[1])))
-  const deckY = Math.max(deck.y, stage.y + requiredStageHeight)
-  const intelY = Math.max(intel.y, deckY + deck.h)
+  const lowerStartY = stage.y + requiredStageHeight
+  const deckY = Math.max(deck.y, lowerStartY)
+  const intelY = Math.max(intel.y, lowerStartY)
   if (requiredStageHeight === stage.h && deckY === deck.y && intelY === intel.y) return layout
 
   return layout.map((item) => {

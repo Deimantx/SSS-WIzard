@@ -1,4 +1,4 @@
-.topbar-v3 { position: relative; z-index: 7; min-height: 82px; height: 82px; flex: 0 0 auto; display: flex; align-items: center; gap: 14px; padding: 10px 28px; overflow: visible; border-bottom: 1px solid var(--ui-border); background: var(--ui-topbar); backdrop-filter: blur(18px); }
+.topbar-v3 { position: relative; z-index: var(--z-sticky); min-height: 82px; height: 82px; flex: 0 0 auto; display: flex; align-items: center; gap: 14px; padding: 10px 28px; overflow: visible; border-bottom: 1px solid var(--ui-border); background: var(--ui-topbar); backdrop-filter: blur(18px); }
 .topbar-context { flex: 0 1 280px; min-width: 0; height: 62px; }
 .topbar-context > .game-tooltip-trigger { display: block; width: 100%; height: 100%; }
 .topbar-context .crumb { width: 100%; height: 100%; min-width: 0; }

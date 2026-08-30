@@ -1,5 +1,5 @@
-.developer-tools-backdrop { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 40px; background: color-mix(in srgb, var(--ui-bg) 72%, transparent); backdrop-filter: blur(5px); }
-.toast-stack { z-index: 50; }
+.developer-tools-backdrop { position: fixed; inset: 0; z-index: var(--z-modal-backdrop); display: grid; place-items: center; padding: 40px; background: color-mix(in srgb, var(--ui-bg) 72%, transparent); backdrop-filter: blur(5px); }
+.toast-stack { z-index: var(--z-toast); }
 .developer-tools-window { display: flex; flex-direction: column; width: min(1100px, calc(100vw - 80px)); height: min(760px, calc(100vh - 80px)); min-height: 440px; overflow: hidden; border: 1px solid var(--ui-border-strong); border-radius: 12px; background: var(--ui-bg-elevated); box-shadow: 0 28px 90px var(--ui-shadow); }
 .developer-tools-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 18px 22px; border-bottom: 1px solid var(--ui-border); background: var(--ui-panel); }
 .developer-tools-header .eyebrow { display: flex; align-items: center; gap: 6px; }.developer-tools-header h2 { margin: 5px 0 0; color: var(--ui-text); font-size: var(--text-lg); }.developer-tools-header p { margin: 5px 0 0; color: var(--ui-text-muted); font-size: var(--text-sm); }.developer-tools-header-actions { display: flex; align-items: center; gap: 10px; }

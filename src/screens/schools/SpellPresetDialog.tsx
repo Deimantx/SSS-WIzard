@@ -6,7 +6,7 @@ import { DEFAULT_SPELL_PRESET_NAME, doesCurrentAutoCastMatchPreset, getSpellPres
 import { formatSpellRank, getAllSpellsInOrder, getSpellRank } from '../../game/systems/spells/spellProgression'
 import type { GameState, SchoolId, SpellId, SpellPreset, SpellPresetId } from '../../game/types'
 import { useGameStore } from '../../store/gameStore'
-import { Button, FilterBar, GameTooltip, SearchInput, Status } from '../../components/ui'
+import { Button, FilterBar, GameTooltip, ModalPortal, SearchInput, Status } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { EditablePresetName } from './EditablePresetName'
 import { FocusBudgetMeter } from './FocusBudgetMeter'
@@ -37,9 +37,7 @@ export function SpellPresetDialog({ open, onClose }: { open: boolean; onClose: (
   const applySpellPreset = useGameStore((state) => state.applySpellPreset)
   const deleteSpellPreset = useGameStore((state) => state.deleteSpellPreset)
   const duplicateSpellPreset = useGameStore((state) => state.duplicateSpellPreset)
-  const dialogRef = useRef<HTMLDivElement>(null)
   const dirtyRef = useRef(false)
-  const closeRequestRef = useRef<() => void>(() => undefined)
   const [selectedId, setSelectedId] = useState<SpellPresetId | null>(null)
   const [draft, setDraft] = useState<DraftPreset | null>(null)
   const [availableSchool, setAvailableSchool] = useState<'all' | SchoolId>('all')
@@ -76,26 +74,6 @@ export function SpellPresetDialog({ open, onClose }: { open: boolean; onClose: (
   const presetRows = useMemo(() => spellPresets.presets.map((preset) => ({ preset, projection: getSpellPresetFocusProjection(state, preset) })), [spellPresets, state])
 
   const requestClose = () => { if (dirtyRef.current) setConfirmation({ kind: 'close' }); else onClose() }
-  closeRequestRef.current = requestClose
-
-  useEffect(() => {
-    if (!open) return
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    const focusTimer = window.setTimeout(() => dialogRef.current?.querySelector<HTMLElement>('[data-autofocus="true"]')?.focus(), 0)
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') { event.preventDefault(); closeRequestRef.current(); return }
-      if (event.key !== 'Tab' || !dialogRef.current) return
-      const focusable = [...dialogRef.current.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])')]
-      if (!focusable.length) return
-      const first = focusable[0]
-      const last = focusable[focusable.length - 1]
-      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus() }
-      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus() }
-    }
-    document.addEventListener('keydown', handleKeyDown)
-    return () => { window.clearTimeout(focusTimer); document.body.style.overflow = previousOverflow; document.removeEventListener('keydown', handleKeyDown) }
-  }, [open])
 
   if (!open || !draft || !projection) return null
 
@@ -170,8 +148,7 @@ export function SpellPresetDialog({ open, onClose }: { open: boolean; onClose: (
   const saveConfirmation = () => { if (persistDraft()) executePending() }
   const discardConfirmation = () => executePending()
 
-  return <div className="spell-preset-dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) requestClose() }}>
-    <div ref={dialogRef} className="spell-preset-dialog" role="dialog" aria-modal="true" aria-labelledby="spell-preset-dialog-title" aria-describedby="spell-preset-dialog-description">
+  return <ModalPortal open onClose={requestClose} onEscape={requestClose} backdropClassName="spell-preset-dialog-backdrop" surfaceClassName="spell-preset-dialog" ariaLabelledBy="spell-preset-dialog-title" ariaDescribedBy="spell-preset-dialog-description">
       <header className="spell-preset-dialog-head"><div><div className="panel-kicker">AUTO-CAST CONFIGURATION</div><h2 id="spell-preset-dialog-title">SPELL PRESET MANAGER</h2><p id="spell-preset-dialog-description">Build reusable Auto-Cast setups and preview Focus usage.</p></div><Button icon variant="ghost" ariaLabel="Close spell preset manager" onClick={requestClose}><X size={16} aria-hidden="true" /></Button></header>
       <div className="spell-preset-dialog-body">
         <aside className="spell-preset-sidebar"><div className="spell-preset-list-head"><strong>PRESETS</strong><Button variant="secondary" onClick={() => requestAction({ kind: 'new' })}>+ NEW</Button></div>{draft.id === null && <button type="button" className="spell-preset-card spell-preset-local-row is-selected" onClick={() => requestAction({ kind: 'new' })}><span className="spell-preset-card-title">New Preset</span><PresetMiniIcons spellIds={draft.spellIds} /><small>0 Spells · 0 Focus</small><Status tone={dirty ? 'warning' : 'neutral'}>{dirty ? 'UNSAVED' : 'NEW'}</Status></button>}{presetRows.map(({ preset, projection: presetProjection }) => { const active = activePresetId === preset.id; const selected = preset.id === selectedId; const selectedDirty = selected && dirty; return <button type="button" className={`spell-preset-card${selected ? ' is-selected' : ''}`} key={preset.id} onClick={() => requestAction({ kind: 'select', preset })}><span className="spell-preset-card-title">{preset.name}</span><PresetMiniIcons spellIds={preset.spellIds} /><small>{preset.spellIds.length} Spells · {presetProjection.presetAutoCastFocus} Focus</small><Status tone={selectedDirty ? 'warning' : active ? 'success' : 'neutral'}>{selectedDirty ? 'UNSAVED' : active ? 'ACTIVE' : 'SAVED'}</Status></button> })}</aside>
@@ -180,8 +157,7 @@ export function SpellPresetDialog({ open, onClose }: { open: boolean; onClose: (
       </div>
       <footer className="spell-preset-dialog-foot"><div className="spell-preset-dialog-status">{savedFeedback && <Status tone="success">✓ SAVED</Status>}{!savedFeedback && applyError && <p role="alert">{applyError}</p>}{!savedFeedback && !applyError && projection.validSpellIds.length === 0 && <Status tone="warning">Add at least one Spell to enable Apply.</Status>}{!savedFeedback && !applyError && projection.validSpellIds.length > 0 && !projection.canApply && <Status tone="warning">Need {Math.max(0, projection.totalAfterApply - state.player.maxFocus)} more Focus.</Status>}{!savedFeedback && !applyError && projection.canApply && projection.unavailableSpellIds.length > 0 && <Status tone="warning">{projection.unavailableSpellIds.length} unavailable Spell{projection.unavailableSpellIds.length === 1 ? '' : 's'} will be skipped.</Status>}</div><div className="spell-preset-dialog-actions"><Button variant="ghost" disabled={!draft.id} onClick={duplicate}>DUPLICATE</Button><Button variant="danger" disabled={!draft.id} onClick={deletePreset}>DELETE</Button><span className="spell-preset-dialog-spacer" /><Button variant="ghost" onClick={requestClose}>CANCEL</Button><Button variant="secondary" onClick={save}>{savedFeedback ? '✓ SAVED' : 'SAVE'}</Button><GameTooltip content={<TooltipContent title="Apply" description="Replace live Auto-Cast with this loadout when Focus allows it." />}><Button variant="success" disabled={!projection.canApply} onClick={apply}>APPLY</Button></GameTooltip></div></footer>
       {confirmation && <ConfirmationDialog confirmation={confirmation} draftName={draft.name} onCancel={() => setConfirmation(null)} onDiscard={discardConfirmation} onSave={saveConfirmation} />}
-    </div>
-  </div>
+  </ModalPortal>
 }
 
 function AvailableSpells({ state, selectedIds, school, search, onAdd }: { state: Pick<GameState, 'progress'>; selectedIds: SpellId[]; school: 'all' | SchoolId; search: string; onAdd: (spellId: SpellId) => void }) {

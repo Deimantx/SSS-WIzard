@@ -950,7 +950,7 @@
 /* Atlas / Dialogs */
 .combat-modal-backdrop {
   position: fixed;
-  z-index: 50;
+  z-index: var(--z-modal-backdrop);
   inset: 0;
   display: grid;
   place-items: center;
@@ -961,6 +961,8 @@
   animation: combat-modal-fade 120ms ease both;
 }
 .dungeon-atlas-dialog {
+  position: relative;
+  z-index: var(--z-modal);
   display: flex;
   flex-direction: column;
   width: min(1080px, 100%);
@@ -1227,6 +1229,8 @@
   color: var(--ui-accent);
 }
 .combat-confirm-dialog {
+  position: relative;
+  z-index: var(--z-modal);
   width: min(440px, 100%);
   padding: 17px;
   border: 1px solid var(--ui-border-strong);
@@ -1286,7 +1290,7 @@
 }
 .combat-spell-deck-head {
   display: grid;
-  grid-template-columns: minmax(170px, 1fr) minmax(170px, 0.8fr) auto;
+  grid-template-columns: minmax(145px, 0.85fr) minmax(250px, 1.35fr) minmax(135px, 0.7fr);
   align-items: center;
   gap: 14px;
   padding-bottom: 12px;
@@ -1303,6 +1307,13 @@
   font-size: 14px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.combat-spell-deck-heading {
+  align-content: center;
+}
+.combat-spell-deck-heading strong {
+  font-size: 15px;
+  letter-spacing: 0.02em;
 }
 .combat-spell-deck-head small {
   overflow: hidden;
@@ -1326,18 +1337,61 @@
 .combat-focus-summary small {
   font: var(--text-micro) var(--font-mono);
 }
-.combat-spell-filter {
-  display: flex;
+.combat-preset-control {
+  align-content: center;
+}
+.combat-preset-control-row {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+}
+.combat-preset-control-row .select-menu {
+  min-width: 0;
+}
+.combat-preset-control-row .select-menu-trigger {
+  min-height: 31px;
+  padding: 6px 8px;
+}
+.combat-preset-manage {
+  min-height: 31px;
+  padding: 7px 9px;
+  font-size: 9px;
+}
+.combat-preset-control > small {
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-mono);
+}
+.combat-school-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.combat-spell-filter-toolbar {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(120px, 0.65fr) auto;
+  align-items: center;
   gap: 5px;
-  overflow-x: auto;
-  padding: 11px 0 9px;
-  scrollbar-width: thin;
+  padding: 10px 0 9px;
+}
+.combat-spell-filter-toolbar .search-input,
+.combat-spell-filter-toolbar .select-menu {
+  min-width: 0;
+}
+.combat-spell-filter-toolbar .search-input {
+  width: 100%;
+  min-height: 31px;
+  padding: 6px 8px;
+}
+.combat-spell-filter-toolbar .select-menu-trigger {
+  min-height: 31px;
+  padding: 6px 8px;
 }
 .combat-filter-button {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  min-height: 28px;
+  min-height: 31px;
   padding: 5px 8px;
   border: 1px solid var(--ui-border);
   border-radius: 6px;
@@ -1354,11 +1408,12 @@
   background: var(--ui-accent-soft);
 }
 .combat-spell-deck-body {
-  display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   min-height: 0;
 }
 .combat-spell-banner {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1370,13 +1425,28 @@
   background: color-mix(in srgb, var(--ui-warning) 6%, transparent);
   font: var(--text-micro) var(--font-mono);
 }
+.combat-spell-preset-notice {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin-top: 6px;
+  padding: 6px 8px;
+  border: 1px solid color-mix(in srgb, var(--ui-danger) 34%, var(--ui-border));
+  border-radius: 6px;
+  color: var(--ui-danger);
+  background: color-mix(in srgb, var(--ui-danger) 6%, transparent);
+  font: var(--text-micro) var(--font-mono);
+}
 .combat-spell-grid-region {
+  flex: 1 1 auto;
   min-height: 0;
   height: 100%;
 }
 .combat-spell-grid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(8, minmax(0, 1fr));
   gap: 8px;
   min-height: 0;
   height: 100%;
@@ -1390,7 +1460,7 @@
   position: relative;
   display: grid;
   min-width: 0;
-  min-height: 132px;
+  min-height: 82px;
   border: 1px solid var(--ui-border);
   border-radius: 8px;
   background: color-mix(in srgb, var(--ui-panel-strong) 86%, transparent);
@@ -1427,10 +1497,10 @@
 .spell-combat-cast {
   position: relative;
   display: grid;
-  grid-template-rows: 40px minmax(0, 1fr) auto auto;
-  gap: 5px;
+  grid-template-rows: 32px minmax(0, 1fr) auto;
+  gap: 4px;
   min-width: 0;
-  min-height: 130px;
+  min-height: 80px;
   overflow: hidden;
   padding: 10px 36px 9px 10px;
   border: 0;
@@ -1464,13 +1534,13 @@
   display: inline-flex;
 }
 .spell-combat-icon .spell-icon-shell {
-  width: 38px;
-  height: 38px;
-  border-radius: 9px;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
 }
 .spell-combat-name {
   display: grid;
-  align-content: end;
+  align-content: center;
   min-width: 0;
   gap: 3px;
 }
@@ -1480,10 +1550,6 @@
   font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-.spell-combat-name small {
-  color: var(--ui-text-muted);
-  font: var(--text-micro) var(--font-mono);
 }
 .spell-combat-footer {
   display: flex;
@@ -1504,13 +1570,17 @@
 .spell-combat-footer .ui-time {
   color: var(--semantic-time);
 }
-.spell-combat-warning {
+.spell-combat-footer .ui-mana.has-warning {
+  color: var(--ui-warning);
+}
+.spell-combat-footer .ui-mana em {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   overflow: hidden;
   color: var(--ui-warning);
-  font: var(--text-micro) var(--font-mono);
+  font: 8px var(--font-mono);
+  font-style: normal;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1558,6 +1628,7 @@
     color-mix(in srgb, var(--semantic-focus) 22%, transparent);
 }
 .combat-spell-empty {
+  flex: 1 1 auto;
   display: grid;
   place-items: center;
   gap: 7px;
@@ -1587,7 +1658,8 @@
 /* Intel */
 .combat-intel-panel {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
+  min-height: 0;
   background: linear-gradient(
     145deg,
     var(--ui-panel-gradient-start),
@@ -2039,7 +2111,7 @@
     order: 1;
   }
   .combat-spell-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
   .intel-action-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2076,7 +2148,14 @@
     border-left: 0;
   }
   .combat-spell-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .combat-spell-filter-toolbar {
+    grid-template-columns: minmax(0, 1fr) minmax(110px, 0.8fr);
+  }
+  .combat-spell-filter-toolbar .combat-filter-button {
+    grid-column: 1 / -1;
+    justify-self: start;
   }
   .intel-trait-grid,
   .intel-resistance-grid {
@@ -2093,8 +2172,8 @@
   .combat-spell-deck-head {
     grid-template-columns: 1fr;
   }
-  .combat-spell-deck-head > .button {
-    justify-self: start;
+  .combat-spell-filter-toolbar {
+    grid-template-columns: 1fr;
   }
   .combat-spell-grid,
   .intel-trait-grid,
@@ -2113,6 +2192,31 @@
   }
   .combat-spell-deck-foot small {
     text-align: left;
+  }
+}
+@container (min-width: 701px) and (max-width: 850px) {
+  .combat-spell-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+@container (min-width: 561px) and (max-width: 700px) {
+  .combat-spell-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@container (min-width: 441px) and (max-width: 560px) {
+  .combat-spell-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@container (min-width: 321px) and (max-width: 440px) {
+  .combat-spell-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@container (max-width: 320px) {
+  .combat-spell-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 @container (max-width: 1050px) {
@@ -2157,7 +2261,7 @@
   }
 }
 @media (max-width: 760px) {
-  .dungeon-atlas-dialog {
+.dungeon-atlas-dialog {
     height: min(900px, 96vh);
   }
   .dungeon-atlas-body {
@@ -2189,7 +2293,7 @@
   }
 }
 @media (max-width: 480px) {
-  .combat-spell-deck-head > .button {
+  .combat-preset-manage {
     width: 100%;
   }
   .dungeon-atlas-stat-grid,

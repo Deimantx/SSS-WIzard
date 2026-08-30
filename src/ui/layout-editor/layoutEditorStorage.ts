@@ -78,6 +78,11 @@ export function loadUiLayouts(): UiLayoutDocument {
           screens.combat = {}
           continue
         }
+        if (hasUnmodifiedGeometry(rawSource['combat-stage'], { x: 0, y: 0, w: 12, h: 16 }) && hasUnmodifiedGeometry(rawSource['combat-spell-deck'], { x: 0, y: 16, w: 12, h: 10 }) && hasUnmodifiedGeometry(rawSource['combat-intel'], { x: 0, y: 26, w: 12, h: 10 })) {
+          // The untouched V1.1 lower stack is replaced by the aligned 8/4 dock.
+          screens.combat = {}
+          continue
+        }
       }
       const source = screen === 'tower-channeling' && !('channeling-pillars' in rawSource) && 'channeling-infrastructure' in rawSource
         ? { ...rawSource, 'channeling-pillars': rawSource['channeling-infrastructure'] }

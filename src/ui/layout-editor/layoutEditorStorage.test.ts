@@ -296,4 +296,15 @@ describe('Combat layout compatibility', () => {
       'combat-intel': { x: 10, y: 0, w: 2, h: 30, hidden: true },
     })
   })
+
+  it('migrates the untouched V1.1 lower stack to the aligned deck and intel dock', () => {
+    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({ version: 3, screens: { combat: {
+      'combat-stage': { x: 0, y: 0, w: 12, h: 16 },
+      'combat-spell-deck': { x: 0, y: 16, w: 12, h: 10 },
+      'combat-intel': { x: 0, y: 26, w: 12, h: 10 },
+    } } }))
+
+    expect(loadUiLayouts().screens.combat).toEqual({})
+    expect(getScreenLayouts('combat', {})).toEqual(DEFAULT_LAYOUTS.combat)
+  })
 })

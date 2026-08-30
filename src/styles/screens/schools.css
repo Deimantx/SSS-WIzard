@@ -209,12 +209,12 @@
 .focus-budget-meter.is-compact .focus-budget-meter-labels { grid-column: 1 / -1; }
 
 /* Preset modal */
-.spell-preset-dialog-backdrop { position: fixed; z-index: 50; inset: 0; display: grid; place-items: center; padding: 18px; background: rgb(4 7 13 / 82%); backdrop-filter: blur(2px); animation: spell-modal-fade 120ms ease both; }
-.spell-preset-dialog { position: relative; display: flex; flex-direction: column; width: min(1280px, 100%); height: min(790px, 94vh); overflow: hidden; border: 1px solid var(--ui-border-strong); border-radius: 14px; background: var(--ui-panel-strong); box-shadow: 0 25px 80px var(--ui-shadow); color: var(--ui-text); animation: spell-modal-in 140ms ease both; }
+.spell-preset-dialog-backdrop { position: fixed; z-index: var(--z-modal-backdrop); inset: 0; display: grid; place-items: center; padding: 18px; background: rgb(4 7 13 / 86%); backdrop-filter: blur(5px); animation: spell-modal-fade 120ms ease both; }
+.spell-preset-dialog { position: relative; z-index: var(--z-modal); display: flex; flex-direction: column; width: min(1180px, 92vw); height: min(760px, 88vh); overflow: hidden; border: 1px solid var(--ui-border-strong); border-radius: 14px; background: var(--ui-panel-strong); box-shadow: 0 25px 80px var(--ui-shadow); color: var(--ui-text); animation: spell-modal-in 140ms ease both; }
 .spell-preset-dialog-head, .spell-preset-dialog-foot { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex: 0 0 auto; padding: 15px 19px; border-bottom: 1px solid var(--ui-border); background: var(--ui-panel-strong); }
 .spell-preset-dialog-head h2 { margin: 3px 0 4px; color: var(--ui-text); font-size: var(--text-lg); letter-spacing: .03em; }
 .spell-preset-dialog-head p { color: var(--ui-text-muted); font-size: var(--text-xs); }
-.spell-preset-dialog-body { display: grid; grid-template-columns: 230px minmax(300px, 1fr) minmax(350px, 1.2fr); min-height: 0; flex: 1 1 auto; overflow: hidden; }
+.spell-preset-dialog-body { display: grid; grid-template-columns: 190px minmax(360px, 1fr) minmax(340px, .9fr); min-height: 0; flex: 1 1 auto; overflow: hidden; }
 .spell-preset-sidebar, .spell-preset-available-column, .spell-preset-loadout-column { container-type: inline-size; min-width: 0; min-height: 0; overflow: auto; padding: 15px; }
 .spell-preset-sidebar { border-right: 1px solid var(--ui-border); background: color-mix(in srgb, var(--ui-panel) 65%, transparent); }
 .spell-preset-available-column { border-right: 1px solid var(--ui-border); background: color-mix(in srgb, var(--ui-panel) 35%, transparent); }
@@ -314,16 +314,23 @@
 @container (max-width: 399px) {
   .spell-preset-available-list, .spell-preset-contents { grid-template-columns: 1fr; }
 }
-@media (max-width: 1050px) {
+@media (min-width: 851px) and (max-width: 1050px) {
   .spell-preset-dialog-body { grid-template-columns: 190px minmax(260px, 1fr) minmax(300px, 1fr); }
   .spell-preset-sidebar, .spell-preset-available-column, .spell-preset-loadout-column { padding: 12px; }
+}
+@media (max-width: 850px) {
+  .spell-preset-dialog-body { grid-template-columns: 180px minmax(0, 1fr); grid-template-rows: minmax(240px, 1fr) minmax(240px, 1fr); }
+  .spell-preset-sidebar { grid-row: 1 / -1; }
+  .spell-preset-available-column { grid-column: 2; border-right: 0; border-bottom: 1px solid var(--ui-border); }
+  .spell-preset-loadout-column { grid-column: 2; }
 }
 @media (max-width: 760px) {
   .schools-screen .screen-header { align-items: start; }
   .schools-browser-controls { grid-template-columns: 1fr 1fr; }
   .schools-browser-controls .search-input { grid-column: 1 / -1; }
   .spell-preset-dialog { height: min(900px, 96vh); }
-  .spell-preset-dialog-body { grid-template-columns: 1fr; overflow: auto; }
+  .spell-preset-dialog-body { grid-template-columns: 1fr; grid-template-rows: none; overflow: auto; }
+  .spell-preset-sidebar, .spell-preset-available-column, .spell-preset-loadout-column { grid-column: auto; grid-row: auto; }
   .spell-preset-sidebar, .spell-preset-available-column { border-right: 0; border-bottom: 1px solid var(--ui-border); overflow: visible; }
   .spell-preset-sidebar { max-height: 190px; white-space: nowrap; overflow-x: auto; }
   .spell-preset-card { display: inline-grid; width: 180px; margin-right: 5px; vertical-align: top; white-space: normal; }

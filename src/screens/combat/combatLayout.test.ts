@@ -3,17 +3,17 @@ import { getAdaptiveCombatLayout } from './combatLayout'
 
 describe('getAdaptiveCombatLayout', () => {
   const base = [
-    { i: 'combat-stage', x: 0, y: 0, w: 12, h: 16 },
-    { i: 'combat-spell-deck', x: 0, y: 16, w: 12, h: 10 },
-    { i: 'combat-intel', x: 0, y: 26, w: 12, h: 10 },
+    { i: 'combat-stage', x: 0, y: 0, w: 12, h: 14 },
+    { i: 'combat-spell-deck', x: 0, y: 14, w: 8, h: 14 },
+    { i: 'combat-intel', x: 8, y: 14, w: 4, h: 14 },
   ]
 
   it('expands the stage and pushes the following panels down without shrinking', () => {
     const layout = getAdaptiveCombatLayout(base, 800)
     expect(layout).toEqual([
       { i: 'combat-stage', x: 0, y: 0, w: 12, h: 19 },
-      { i: 'combat-spell-deck', x: 0, y: 19, w: 12, h: 10 },
-      { i: 'combat-intel', x: 0, y: 29, w: 12, h: 10 },
+      { i: 'combat-spell-deck', x: 0, y: 19, w: 8, h: 14 },
+      { i: 'combat-intel', x: 8, y: 19, w: 4, h: 14 },
     ])
   })
 

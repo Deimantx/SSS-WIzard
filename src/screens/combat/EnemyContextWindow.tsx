@@ -29,6 +29,7 @@ export function EnemyContextWindow({ mode, anchorRef, triggerRef, selectedDungeo
   const surfaceRef = useRef<HTMLDivElement>(null)
   const [position, setPosition] = useState({ top: 16, left: 16 })
   const active = useGameStore((state) => state.combat.active)
+  const enemyId = useGameStore((state) => state.combat.enemyId)
 
   useLayoutEffect(() => {
     const updatePosition = () => {
@@ -56,7 +57,7 @@ export function EnemyContextWindow({ mode, anchorRef, triggerRef, selectedDungeo
   }, [anchorRef, mode, selectedDungeonId])
 
   useEffect(() => {
-    if (!active) { onClose(); return }
+    if (!active || !enemyId || !MONSTERS[enemyId]) { onClose(); return }
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target
       if (!(target instanceof Node)) return
@@ -68,7 +69,7 @@ export function EnemyContextWindow({ mode, anchorRef, triggerRef, selectedDungeo
     document.addEventListener('pointerdown', onPointerDown)
     document.addEventListener('keydown', onKeyDown)
     return () => { document.removeEventListener('pointerdown', onPointerDown); document.removeEventListener('keydown', onKeyDown) }
-  }, [active, anchorRef, onClose])
+  }, [active, anchorRef, enemyId, onClose])
 
   useEffect(() => {
     const trigger = triggerRef.current
@@ -76,7 +77,7 @@ export function EnemyContextWindow({ mode, anchorRef, triggerRef, selectedDungeo
     return () => trigger?.focus()
   }, [triggerRef])
 
-  if (typeof document === 'undefined') return null
+  if (typeof document === 'undefined' || !active || !enemyId || !MONSTERS[enemyId]) return null
   return createPortal(<div ref={surfaceRef} className="enemy-context-window" role="dialog" aria-modal="false" aria-label={mode === 'intel' ? 'Enemy Intel' : 'Enemy Loot'} style={{ top: position.top, left: position.left }}>
     <header className="enemy-context-header">
       <div><span className="combat-subsection-label">CURRENT ENCOUNTER</span><strong>{mode === 'intel' ? 'ENEMY INTEL' : 'LOOT'}</strong></div>

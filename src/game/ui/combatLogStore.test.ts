@@ -19,13 +19,13 @@ describe('combatLogStore', () => {
   beforeEach(() => clearCombatLogUi())
   afterEach(() => clearCombatLogUi())
 
-  it('keeps a newest-first transient ring buffer of 300 events', () => {
+  it('keeps a newest-first transient ring buffer of 50 events', () => {
     for (let index = 1; index <= 305; index += 1) useCombatLogStore.getState().push(event(index))
 
     const entries = useCombatLogStore.getState().entries
-    expect(entries).toHaveLength(300)
+    expect(entries).toHaveLength(50)
     expect(entries[0].amount).toBe(305)
-    expect(entries[entries.length - 1]?.amount).toBe(6)
+    expect(entries[entries.length - 1]?.amount).toBe(256)
     expect(entries.every((entry, index) => index === 0 || entry.sequence < entries[index - 1].sequence)).toBe(true)
   })
 

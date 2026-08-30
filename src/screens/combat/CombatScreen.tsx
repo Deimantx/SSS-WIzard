@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { dismissGameTooltips } from '../../components/ui/tooltip/Tooltip'
 import { EditableGrid } from '../../ui/layout-editor/EditableGrid'
 import type { DungeonId } from '../../game/types'
+import { MONSTERS } from '../../game/content/monsters'
 import { useGameStore } from '../../store/gameStore'
 import { DungeonAtlasDialog, dungeonHasMeaningfulProgress, getFirstUnlockedDungeon } from './DungeonAtlasDialog'
 import { CombatRunBar } from './CombatRunBar'
@@ -30,6 +31,8 @@ export function CombatScreenV2() {
   const closeEnemyContext = useCallback(() => setEnemyContextMode(null), [])
   const openEnemyContext = useCallback((mode: EnemyContextMode, trigger: HTMLButtonElement) => {
     dismissGameTooltips()
+    const currentCombat = useGameStore.getState().combat
+    if (!currentCombat.active || !currentCombat.enemyId || !MONSTERS[currentCombat.enemyId]) return
     if (enemyContextMode === mode && enemyContextTriggerRef.current === trigger) { setEnemyContextMode(null); return }
     enemyContextTriggerRef.current = trigger
     setEnemyContextMode(mode)

@@ -10,7 +10,7 @@ import { debugApplyStatus, resolveCombatDeaths, spawnEnemy, spawnNextEnemy } fro
 import { executeCombatEffects } from '../game/systems/combat/effectResolver'
 import { forceResolveEnemyAction as forceResolveEnemyActionRuntime, resolveActiveEnemyAction as resolveActiveEnemyActionRuntime, setEnemyActionPattern as setEnemyActionPatternRuntime, startEnemyAction as startEnemyActionRuntime, startNextEnemyAction as startNextEnemyActionRuntime } from '../game/systems/combat/actionRuntime'
 import { resetCombatRuleRuntime, runCombatTriggers } from '../game/systems/combat/triggerRuntime'
-import { loadProfileGame, saveProfileGame } from '../persistence/profileSaveManager'
+import { loadProfileGame, resetProfileGame } from '../persistence/profileSaveManager'
 import { type SaveReason } from '../persistence/saveConstants'
 import { getActiveProfileId } from '../profiles/profileSessionStore'
 import { updateProfileMetadata } from '../profiles/profileStorage'
@@ -281,13 +281,17 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   },
   resetSave: () => {
     const fresh = createInitialState()
-    clearCombatLogUi()
-    set((state) => { Object.assign(state, fresh); state.recentAcquisitions = []; state.lastOfflineBankReport = null; return state })
     const activeProfileId = getActiveProfileId()
     if (activeProfileId) {
-      const saved = saveProfileGame(activeProfileId, useGameStore.getState())
-      if (saved.ok) updateProfileMetadata(activeProfileId, { lastSavedAt: fresh.lastSavedAt })
+      const saved = resetProfileGame(activeProfileId, fresh)
+      if (!saved.ok) {
+        set((state) => { pushNotification(state, saved.error ?? 'The profile reset could not be saved.', 'warning'); return state })
+        return
+      }
     }
+    clearCombatLogUi()
+    set((state) => { Object.assign(state, fresh); state.recentAcquisitions = []; state.lastOfflineBankReport = null; return state })
+    if (activeProfileId) updateProfileMetadata(activeProfileId, { lastSavedAt: fresh.lastSavedAt })
   },
   hydrateState: (nextState) => { clearCombatLogUi(); return set((state) => { Object.assign(state, nextState); state.recentAcquisitions = []; state.lastOfflineBankReport = null; recalculateDerivedStats(state); return state }) },
   dismissNotification: (id) => set((state) => { state.notifications = state.notifications.filter((note) => note.id !== id); return state }),

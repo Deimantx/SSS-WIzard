@@ -43,4 +43,17 @@ describe('CombatSpellDeck V2', () => {
     expect(screen.getByRole('alert').textContent).toContain('Only 0 Focus is available')
     expect(screen.getByText('CUSTOM', { selector: '.select-menu-label' })).toBeTruthy()
   })
+
+  it('keeps the Auto-Cast control inside its spell tile in both states', async () => {
+    const user = userEvent.setup()
+    useGameStore.getState().preset('combat')
+    render(<TooltipProvider><CombatSpellDeck /></TooltipProvider>)
+    const autoButton = screen.getByRole('button', { name: 'Enable Auto-Cast for Fire Bolt' })
+    expect(autoButton.closest('.spell-combat-auto-slot')?.parentElement?.classList.contains('spell-combat-tile')).toBe(true)
+
+    await user.click(autoButton)
+    const activeButton = screen.getByRole('button', { name: 'Disable Auto-Cast for Fire Bolt' })
+    expect(activeButton.closest('.spell-combat-auto-slot')?.parentElement?.classList.contains('spell-combat-tile')).toBe(true)
+    expect(activeButton.classList.contains('is-active')).toBe(true)
+  })
 })

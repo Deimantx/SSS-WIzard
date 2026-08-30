@@ -3,6 +3,7 @@ import type { ScreenId } from '../../game/types'
 import { navigationGroups } from '../navigation'
 import type { UiPreferences } from '../../ui/preferences/uiPreferencesTypes'
 import { GameTooltip } from '../../components/ui/tooltip/Tooltip'
+import { useSaveDiagnosticsStore } from '../../persistence/saveDiagnosticsStore'
 
 interface SidebarProps {
   screen: ScreenId
@@ -15,6 +16,9 @@ interface SidebarProps {
 }
 
 export function Sidebar({ screen, setScreen, preferences, toggleGroup, activeProfile, profileSwitchError, switchProfile }: SidebarProps) {
+  const saveDiagnostics = useSaveDiagnosticsStore()
+  const saveBlocked = saveDiagnostics.health === 'protected'
+  const saveError = saveDiagnostics.health === 'error'
   return <aside className="sidebar">
     <div className="brand"><div className="brand-mark">SSS</div><div><strong>SSS Wizard</strong><span>Arcane incremental RPG</span></div></div>
     <nav className="nav-list" aria-label="Main navigation">
@@ -26,6 +30,6 @@ export function Sidebar({ screen, setScreen, preferences, toggleGroup, activePro
         </section>
       })}
     </nav>
-    <div className="sidebar-foot"><div className="save-dot"><span /> Autosave · 30s</div><div className="version">Profile {activeProfile?.slotNumber ?? '-'} · {activeProfile?.name ?? 'No profile'}</div>{profileSwitchError && <small className="profile-switch-error" role="alert">{profileSwitchError}</small>}<GameTooltip content="Return to Profile Selection"><button className="profile-switch-button" onClick={switchProfile}>Switch Profile</button></GameTooltip></div>
+    <div className="sidebar-foot"><div className={`save-dot ${saveBlocked ? 'is-blocked' : saveError ? 'is-error' : ''}`}><span /> {saveBlocked ? 'Autosave: BLOCKED' : saveError ? 'Autosave: ERROR' : 'Autosave · 30s'}</div><div className="version">Profile {activeProfile?.slotNumber ?? '-'} · {activeProfile?.name ?? 'No profile'}</div>{profileSwitchError && <small className="profile-switch-error" role="alert">{profileSwitchError}</small>}<GameTooltip content="Return to Profile Selection"><button className="profile-switch-button" onClick={switchProfile}>Switch Profile</button></GameTooltip></div>
   </aside>
 }

@@ -18,6 +18,7 @@ import { ActivityMonitor } from './shell/ActivityMonitor'
 import { OfflineBankPopover } from './shell/OfflineBankPopover'
 import { OfflineBankResultsDialog } from './shell/OfflineBankResultsDialog'
 import { ToastStack } from './shell/ToastStack'
+import { SaveProtectionNotice } from './shell/SaveProtectionNotice'
 import { TooltipProvider, dismissGameTooltips } from '../components/ui/tooltip/Tooltip'
 
 export function GameShell() {
@@ -92,6 +93,7 @@ export function GameShell() {
     <DeveloperToolsWindow />
     <OfflineBankResultsDialog report={lastOfflineBankReport} open={offlineResultsOpen} onClose={() => setOfflineResultsOpen(false)} onOpenInventory={() => { setOfflineResultsOpen(false); setScreen('inventory') }} />
     {!editor.isEditing && editor.notice && <div className="layout-editor-notice-toast" role="status">{editor.notice}</div>}
+    <SaveProtectionNotice />
     <ToastStack />
   </div></TooltipProvider>
 }

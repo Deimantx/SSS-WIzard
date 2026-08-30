@@ -2,7 +2,8 @@ import { createInitialState } from '../store/initialState'
 import { useGameStore } from '../store/gameStore'
 import { closeDeveloperTools } from '../devtools/developerToolsStore'
 import { closeLayoutEditor } from '../ui/layout-editor/layoutEditorStore'
-import { clearProfileGame, loadProfileGame, saveProfileGame } from '../persistence/profileSaveManager'
+import { clearProfileGame, loadProfileGame, resetProfileGame } from '../persistence/profileSaveManager'
+import { setSaveDiagnosticsProfile } from '../persistence/saveDiagnosticsStore'
 import { createProfileMetadata, loadProfileRegistry, saveProfileRegistry } from './profileStorage'
 import { closeCreateProfileDialog, getActiveProfileId, refreshProfiles, setActiveProfileId } from './profileSessionStore'
 import type { ProfileSlotId } from './profileTypes'
@@ -21,11 +22,12 @@ export const enterProfile = (slotId: ProfileSlotId): ProfileOperationResult => {
   const previousSavedAt = loaded.state.lastSavedAt
   useGameStore.getState().hydrateState(loaded.state)
   setActiveProfileId(slotId)
+  setSaveDiagnosticsProfile(slotId)
   const now = Date.now()
   const offlineElapsed = Math.max(0, now - previousSavedAt)
   if (offlineElapsed > 1000) useGameStore.getState().resumeFromHidden(offlineElapsed, false)
   const anchored = useGameStore.getState().saveGame('profile-anchor')
-  if (!anchored.ok) { setActiveProfileId(null); refreshProfiles(); return failure(anchored.error ?? 'The profile could not be anchored.') }
+  if (!anchored.ok) { setActiveProfileId(null); setSaveDiagnosticsProfile(null); refreshProfiles(); return failure(anchored.error ?? 'The profile could not be anchored.') }
   const registry = loadProfileRegistry()
   if (registry.slots[slotId]) {
     registry.slots[slotId] = { ...registry.slots[slotId]!, lastPlayedAt: now, lastSavedAt: useGameStore.getState().lastSavedAt }
@@ -44,6 +46,7 @@ export const leaveToProfiles = (): ProfileOperationResult => {
   closeDeveloperTools()
   closeLayoutEditor()
   setActiveProfileId(null)
+  setSaveDiagnosticsProfile(null)
   refreshProfiles()
   useGameStore.getState().hydrateState(createInitialState())
   return success()
@@ -55,7 +58,7 @@ export const createProfile = (slotId: ProfileSlotId, name: string): ProfileOpera
   const registry = loadProfileRegistry()
   if (registry.slots[slotId]) return failure('That profile slot is already occupied.')
   const state = createInitialState()
-  const saved = saveProfileGame(slotId, state)
+  const saved = resetProfileGame(slotId, state)
   if (!saved.ok) return failure(saved.error ?? 'The new profile could not be saved.')
   const metadata = createProfileMetadata(slotId, trimmed)
   registry.slots[slotId] = { ...metadata, lastSavedAt: state.lastSavedAt }

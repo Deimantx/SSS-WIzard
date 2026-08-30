@@ -1868,6 +1868,10 @@
   border-top: 1px solid var(--ui-border);
 }
 .enemy-utility-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   min-width: 0;
   padding: 6px 7px;
   border: 1px solid var(--ui-border);
@@ -2265,6 +2269,17 @@
 .log-system .combat-log-message strong { color: var(--ui-text); }
 @keyframes combat-log-row-in { from { opacity: 0; transform: translateY(-2px); } to { opacity: 1; transform: translateY(0); } }
 .combat-log-row.is-latest { animation: combat-log-row-in 120ms ease both; }
+.combat-log-row.log-action-basic-attack { color: color-mix(in srgb, var(--ui-text-muted) 76%, transparent); opacity: .78; }
+.combat-log-row.log-action-basic-attack .combat-log-message strong,
+.combat-log-row.log-action-basic-attack .combat-log-result { color: var(--ui-text-muted); }
+.combat-log-row.log-action-spell,
+.combat-log-row.log-action-enemy-action,
+.combat-log-row.log-action-trait,
+.combat-log-row.log-action-death { border-left: 2px solid currentColor; padding-left: 4px; }
+.combat-log-row.log-action-spell .combat-log-message strong,
+.combat-log-row.log-action-enemy-action .combat-log-message strong,
+.combat-log-row.log-action-trait .combat-log-message strong,
+.combat-log-row.log-action-death .combat-log-message strong { color: var(--ui-text); font-weight: 700; }
 @container (max-width: 700px) {
   .combat-log-row { grid-template-columns: 34px 32px 26px minmax(0, 1fr) minmax(100px, auto); }
 }
@@ -2274,7 +2289,9 @@
   .combat-log-result { grid-column: 4; text-align: left; }
   .combat-log-filter-row { align-items: flex-start; flex-direction: column; }
 }
-.spell-combat-auto { opacity: 0; pointer-events: none; top: 6px; right: 6px; width: 22px; height: 22px; }
+.spell-combat-auto-slot { position: absolute; z-index: 2; top: 6px; right: 6px; width: 22px; height: 22px; }
+.spell-combat-auto-slot > .game-tooltip-trigger { display: block; width: 100%; height: 100%; }
+.spell-combat-auto { position: static; opacity: 0; pointer-events: none; width: 22px; height: 22px; }
 .spell-combat-tile:hover .spell-combat-auto,
 .spell-combat-tile:focus-within .spell-combat-auto,
 .spell-combat-auto.is-active,

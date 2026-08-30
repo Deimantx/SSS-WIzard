@@ -21,6 +21,13 @@ button:focus-visible { outline: 2px solid var(--violet); outline-offset: 2px; }
 .nav-chevron { margin-left: auto; opacity: .65; }
 .sidebar-foot { margin-top: auto; color: var(--muted); font-size: 10px; padding: 14px 10px 0; border-top: 1px solid var(--line); }
 .save-dot { display: flex; align-items: center; gap: 6px; }
+.save-dot.is-blocked { color: var(--ui-warning); }
+.save-dot.is-error { color: var(--ui-danger); }
+.save-dot.is-blocked span { background: var(--ui-warning); box-shadow: 0 0 9px var(--ui-warning); }
+.save-dot.is-error span { background: var(--ui-danger); box-shadow: 0 0 9px var(--ui-danger); }
+.save-protection-notice { position: fixed; z-index: var(--z-toast); right: 18px; bottom: 18px; display: grid; gap: 4px; width: min(420px, calc(100vw - 36px)); padding: 11px 13px; border: 1px solid color-mix(in srgb, var(--ui-warning) 65%, var(--ui-border)); border-radius: 8px; color: var(--ui-warning); background: color-mix(in srgb, var(--ui-panel-strong) 96%, var(--ui-warning)); box-shadow: 0 10px 35px var(--ui-shadow); font-size: 10px; line-height: 1.4; }
+.save-protection-notice strong { font: 700 10px var(--font-mono); letter-spacing: .06em; }
+.save-protection-notice.is-error { border-color: color-mix(in srgb, var(--ui-danger) 65%, var(--ui-border)); color: var(--ui-danger); background: color-mix(in srgb, var(--ui-panel-strong) 96%, var(--ui-danger)); }
 .save-dot span { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 9px var(--green); }
 .version { margin-top: 8px; color: #5f6077; }
 .main-area { position: relative; z-index: var(--z-normal, 0); min-width: 0; flex: 1; display: flex; flex-direction: column; max-height: 100vh; }

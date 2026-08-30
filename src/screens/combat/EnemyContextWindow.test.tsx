@@ -1,5 +1,5 @@
 import userEvent from '@testing-library/user-event'
-import { render, screen } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import { useRef, useState } from 'react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { TooltipProvider } from '../../components/ui/tooltip/Tooltip'
@@ -51,5 +51,14 @@ describe('EnemyContextWindow', () => {
     await user.click(screen.getByRole('button', { name: 'Open Intel' }))
     await user.click(document.body)
     expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('closes when the current enemy disappears during an open context window', async () => {
+    const user = userEvent.setup()
+    render(<TooltipProvider><ContextHarness /></TooltipProvider>)
+    await user.click(screen.getByRole('button', { name: 'Open Intel' }))
+    expect(screen.getByRole('dialog', { name: 'Enemy Intel' })).toBeTruthy()
+    act(() => useGameStore.setState({ combat: { ...useGameStore.getState().combat, enemyId: null } }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
   })
 })

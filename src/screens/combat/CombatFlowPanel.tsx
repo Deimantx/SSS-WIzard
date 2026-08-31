@@ -15,6 +15,7 @@ import { resolveBasicAttackInterval } from '../../game/systems/combat/effectReso
 import { GameTooltip, Progress } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { EnemyPatternRail } from './EnemyPatternRail'
+import { CombatAlerts } from './CombatAlerts'
 
 export function CombatFlowPanel({ selectedDungeonId }: { selectedDungeonId: DungeonId }) {
   const combat = useGameStore((state) => state.combat)
@@ -55,12 +56,13 @@ export function CombatFlowPanel({ selectedDungeonId }: { selectedDungeonId: Dung
     telegraphAction,
   }), [combat, dungeon, enemy, enemyStunned, nextStep, pattern, playerAttackIntervalMs, playerBasicDamage, playerStunned, selectedDungeonId, telegraphAction])
 
-  if (presentation.mode === 'tower') return <section className="combat-flow-panel is-tower"><div className="combat-flow-kicker">AT THE TOWER</div><ShieldAlert size={28} aria-hidden="true" /><strong>Enter a Dungeon to begin Combat.</strong></section>
-  if (presentation.mode === 'boss-ready') return <section className="combat-flow-panel is-boss-ready"><div className="combat-flow-kicker">BOSS READY</div><ShieldAlert size={28} aria-hidden="true" /><strong>{MONSTERS[presentation.dungeon.boss].name} awaits.</strong><p>The route is clear. Engage the Boss from the Run Bar when ready.</p></section>
-  if (presentation.mode === 'encounter-delay') return <section className="combat-flow-panel is-encounter-delay"><div className="combat-flow-kicker">NEXT ENCOUNTER</div><strong className="combat-flow-delay">{formatTime(presentation.encounterTimerMs)}</strong><Progress value={Math.max(0, Math.min(100, (1 - presentation.encounterTimerMs / Math.max(1, presentation.dungeon.encounterDelayMs)) * 100))} tone="time" label="Encounter progress" /><p>The Dungeon is searching for another threat.</p></section>
+  if (presentation.mode === 'tower') return <section className="combat-flow-panel is-tower"><div className="combat-flow-kicker">AT THE TOWER</div><ShieldAlert size={28} aria-hidden="true" /><strong>Enter a Dungeon to begin Combat.</strong><CombatAlerts /></section>
+  if (presentation.mode === 'boss-ready') return <section className="combat-flow-panel is-boss-ready"><div className="combat-flow-kicker">BOSS READY</div><ShieldAlert size={28} aria-hidden="true" /><strong>{MONSTERS[presentation.dungeon.boss].name} awaits.</strong><p>The route is clear. Engage the Boss from the Run Bar when ready.</p><CombatAlerts /></section>
+  if (presentation.mode === 'encounter-delay') return <section className="combat-flow-panel is-encounter-delay"><div className="combat-flow-kicker">NEXT ENCOUNTER</div><strong className="combat-flow-delay">{formatTime(presentation.encounterTimerMs)}</strong><Progress value={Math.max(0, Math.min(100, (1 - presentation.encounterTimerMs / Math.max(1, presentation.dungeon.encounterDelayMs)) * 100))} tone="time" label="Encounter progress" /><p>The Dungeon is searching for another threat.</p><CombatAlerts /></section>
 
   return <section className={`combat-flow-panel${presentation.enemyTimeline?.state === 'telegraph' ? ' is-telegraphing' : ''}`} style={{ '--enemy-accent': presentation.enemy?.color } as React.CSSProperties}>
     <header className="combat-flow-head"><span className="combat-flow-kicker">COMBAT FLOW</span></header>
+    <CombatAlerts />
     <div className="combat-flow-timelines"><TimelineRow timeline={presentation.playerTimeline} /><TimelineRow timeline={presentation.enemyTimeline} /></div>
     {presentation.enemyIntent && <GameTooltip block wide={presentation.enemyIntent.special} placement="bottom" accent={presentation.enemyIntent.special ? 'warning' : 'neutral'} content={presentation.enemyIntent.action ? <ActionTooltip action={presentation.enemyIntent.action} /> : undefined}><div className={`combat-flow-intent${presentation.enemyIntent.special ? ' is-special' : ''}`}><div className="combat-flow-subhead"><span className="combat-subsection-label">ENEMY INTENT</span><strong>{presentation.enemyIntent.label}</strong></div>{presentation.enemyIntent.action ? <div className="combat-flow-effects">{presentation.enemyIntent.action.effects.map((effect, index) => <CombatEffectRow key={`${effect.label}-${index}`} effect={effect} />)}</div> : presentation.enemyIntent.basic ? <div className="combat-flow-effects"><CombatEffectRow effect={presentation.enemyIntent.basic} /></div> : null}</div></GameTooltip>}
     <div className="combat-flow-pattern"><div className="combat-subsection-label">ENEMY PATTERN</div><EnemyPatternRail pattern={presentation.pattern} enemy={presentation.enemy} currentIndex={presentation.patternIndex} activeStepId={presentation.activeStepId} activeAction={presentation.activeActionId} activeOriginMatchesCurrent={presentation.activeOriginMatchesCurrent} /></div>

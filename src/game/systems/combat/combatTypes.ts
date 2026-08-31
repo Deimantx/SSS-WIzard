@@ -54,6 +54,11 @@ export type CombatLogCategory =
   | 'pattern'
   | 'system'
 
+export type CombatActionPhase = 'telegraph' | 'resolve'
+export type CombatStatusPhase = 'apply' | 'remove' | 'expire'
+export type CombatFailureReason = 'unknown' | 'locked' | 'stunned' | 'inactive' | 'no-target' | 'cooldown' | 'mana'
+export type CombatAlertPriority = 'critical' | 'important' | 'info'
+
 export type CombatLogSource =
   | { kind: 'player' }
   | { kind: 'enemy'; monsterId: MonsterId }
@@ -71,8 +76,10 @@ export interface CombatEvent {
   ruleId?: string
   spellId?: SpellId
   actionId?: string
+  actionPhase?: CombatActionPhase
   traitId?: TraitId
   statusId?: StatusId
+  statusPhase?: CombatStatusPhase
   itemId?: ItemId
   damageType?: DamageType
   amount?: number
@@ -88,6 +95,7 @@ export interface CombatEvent {
   barrierAfter?: number
   durationMs?: number | null
   stacks?: number
+  failure?: CombatFailureReason
   timestampMs?: number
 }
 
@@ -101,6 +109,13 @@ export interface CombatLogEntry extends CombatEvent {
 
 export interface CombatEventSink {
   push: (event: CombatEvent) => void
+}
+
+export interface CombatAlertObserver {
+  beginRun: (dungeonId: DungeonId) => void
+  advance: (deltaMs: number, state: import('../../types').GameState) => void
+  consume: (event: CombatEvent) => void
+  clear: () => void
 }
 
 /** @deprecated Use CombatEvent. Kept for existing log-focused callers. */
@@ -309,7 +324,7 @@ export interface StatusDefinition {
   preventsAction?: boolean
   cleanseable: boolean
   dispellable: boolean
-  ui?: { shortDescription?: string; icon?: string }
+  ui?: { shortDescription?: string; icon?: string; alert?: CombatAlertPriority }
 }
 
 export interface CombatActionDefinition {

@@ -265,7 +265,7 @@ describe('Home expansion layout compatibility', () => {
 })
 
 describe('Combat layout compatibility', () => {
-  it('resets legacy combat panels to the new stage, deck, and log defaults', () => {
+  it('resets legacy combat panels to the new stage, deck, and details defaults', () => {
     localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({ version: 3, screens: {
       combat: {
         'combat-dungeon': { x: 0, y: 0, w: 4, h: 8 },
@@ -281,24 +281,23 @@ describe('Combat layout compatibility', () => {
     expect(getScreenLayouts('combat', loaded.screens.combat)).toEqual(DEFAULT_LAYOUTS.combat)
   })
 
-  it('keeps canonical combat geometry and flags intact', () => {
+  it('keeps canonical combat geometry while removing the permanent log', () => {
     localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({ version: 3, screens: {
       combat: {
         'combat-stage': { x: 0, y: 0, w: 10, h: 18, locked: true },
         'combat-spell-deck': { x: 0, y: 18, w: 10, h: 12 },
-        'combat-log': { x: 0, y: 30, w: 10, h: 8, hidden: true },
+      'combat-log': { x: 0, y: 30, w: 10, h: 8, hidden: true },
       },
     } }))
 
     expect(loadUiLayouts().screens.combat).toEqual({
       'combat-stage': { x: 0, y: 0, w: 10, h: 18, locked: true },
       'combat-spell-deck': { x: 0, y: 18, w: 10, h: 12 },
-      'combat-log': { x: 0, y: 30, w: 7, h: 8, hidden: true },
-      'combat-details': { x: 7, y: 30, w: 5, h: 8 },
+      'combat-details': { x: 0, y: 30, w: 12, h: 8 },
     })
   })
 
-  it('resets only the untouched V3.3 combat stack to the new side-by-side defaults', () => {
+  it('resets only the untouched V3.3 combat stack to the new full-width defaults', () => {
     localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({ version: 3, screens: { combat: {
       'combat-stage': { x: 0, y: 0, w: 12, h: 14 },
       'combat-spell-deck': { x: 0, y: 14, w: 12, h: 7 },
@@ -309,7 +308,7 @@ describe('Combat layout compatibility', () => {
     expect(getScreenLayouts('combat', {})).toEqual(DEFAULT_LAYOUTS.combat)
   })
 
-  it('migrates the untouched V2 lower stack to the tuned deck and log', () => {
+  it('resets the untouched V2 lower stack to the current Combat defaults', () => {
     localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({ version: 3, screens: { combat: {
       'combat-stage': { x: 0, y: 0, w: 12, h: 16 },
       'combat-spell-deck': { x: 0, y: 16, w: 12, h: 10 },

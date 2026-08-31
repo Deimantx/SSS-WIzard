@@ -169,7 +169,7 @@ export const executeCombatEffect = (state: GameState, effect: CombatEffect, sour
       if (active) {
         const definition = STATUS_DEFINITIONS[effect.statusId]
         appendLog(state, `${definition.name} applied.`)
-        uiEvents?.push({ ...eventFields(state, source, target), category: 'status', statusId: effect.statusId, durationMs: active.remainingMs, stacks: active.stacks })
+        uiEvents?.push({ ...eventFields(state, source, target), category: 'status', statusId: effect.statusId, statusPhase: 'apply', durationMs: active.remainingMs, stacks: active.stacks })
         // Application events belong to the applier; the status holder is the target.
         runCombatTriggers(state, source.actor, 'on-status-applied', { source: statusSource, eventTarget: target, changedActor: target, sourceTags: tags, statusId: effect.statusId, eventStatusTags: definition.tags }, execute, depth, [], uiEvents)
       }

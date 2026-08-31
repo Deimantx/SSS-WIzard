@@ -14,7 +14,7 @@ import { tickBarriers } from '../combat/barrierRuntime'
 import { getCombatModifiers } from '../combat/modifiers'
 import { tickRuleCooldowns } from '../combat/triggerRuntime'
 import type { GameState, ItemId, SpellId, CombatSource } from '../../types'
-import type { CombatEventSink } from '../combat/combatTypes'
+import type { CombatAlertObserver, CombatEventSink } from '../combat/combatTypes'
 import { clamp } from '../../utils'
 import type { SimulationReportCollector } from '../offline-bank/offlineBankReport'
 import { applyTransmutationAllocations, buildTransmutationWorkRequests } from '../transmutation/transmutationEngine'
@@ -30,6 +30,7 @@ export interface AdvanceContext {
   onItemAcquired?: (itemId: ItemId, quantity: number) => void
   uiEvents?: CombatEventSink
   telemetry?: CombatTelemetryObserver
+  alerts?: CombatAlertObserver
 }
 
 const spellUnlocked = isSpellUnlocked
@@ -101,6 +102,7 @@ const tickCombat = (state: GameState, delta: number, context: AdvanceContext) =>
 
 const advanceGameStateStep = (state: GameState, delta: number, context: AdvanceContext) => {
   context.telemetry?.advance(delta, state)
+  context.alerts?.advance(delta, state)
   const channelingTick = advanceChanneling(state, delta)
   if (channelingTick.discoveries.includes('deep-reservoir')) recalculateDerivedStats(state)
   channelingTick.discoveries.forEach((id) => {
@@ -120,7 +122,7 @@ const advanceGameStateStep = (state: GameState, delta: number, context: AdvanceC
 
 export const advanceGameState = (state: GameState, deltaMs: number, context: AdvanceContext = { mode: 'live' }) => {
   const bounded = Math.min(MAX_SIMULATION_DELTA_MS, Math.max(0, deltaMs))
-  const simulationContext = context.mode === 'live' ? context : { ...context, uiEvents: undefined, telemetry: undefined }
+  const simulationContext = context.mode === 'live' ? context : { ...context, uiEvents: undefined, telemetry: undefined, alerts: undefined }
   let remaining = bounded
 
   while (remaining > 0) {

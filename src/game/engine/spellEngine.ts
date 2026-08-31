@@ -30,9 +30,30 @@ export const notifySpellCastFailure = (state: GameState, spellId: SpellId, failu
   else if (failure === 'inactive' || failure === 'no-target') pushNotification(state, 'Enter combat before using that spell', 'warning')
 }
 
+const reportManaStarvation = (state: GameState, spellId: SpellId, uiEvents?: CombatEventSink) => {
+  const spell = SPELLS[spellId]
+  if (!spell || !uiEvents) return
+  uiEvents.push({
+    source: { kind: 'player' },
+    sourceKind: 'spell',
+    dungeonId: state.combat.dungeonId ?? undefined,
+    target: state.combat.enemyId ? 'enemy' : undefined,
+    targetMonsterId: state.combat.enemyId ?? undefined,
+    category: 'system',
+    sourceId: 'spell-cast-failed',
+    spellId,
+    failure: 'mana',
+    attemptedAmount: spell.manaCost,
+  })
+}
+
 export const castSpellInternal = (state: GameState, spellId: SpellId, quiet = false, uiEvents?: CombatEventSink) => {
   const spell = SPELLS[spellId]
-  if (!spell || getSpellCastFailure(state, spellId)) return false
+  const failure = getSpellCastFailure(state, spellId)
+  if (!spell || failure) {
+    if (failure === 'mana') reportManaStarvation(state, spellId, uiEvents)
+    return false
+  }
   state.player.mana -= spell.manaCost
   state.combat.spellCooldowns[spellId] = spell.cooldownMs
   const source: CombatSource = { actor: 'player', kind: 'spell', sourceId: spell.id, school: spell.school, tags: ['spell', 'magic', spell.school] }
@@ -47,6 +68,6 @@ export const castSpellAction = (state: GameState, spellId: SpellId, uiEvents?: C
   if (!isSpellUnlocked(state, spellId)) return false
   const spell = SPELLS[spellId]
   const failure = getSpellCastFailure(state, spellId)
-  if (failure) { notifySpellCastFailure(state, spellId, failure); return false }
+  if (failure) { if (failure === 'mana') reportManaStarvation(state, spellId, uiEvents); notifySpellCastFailure(state, spellId, failure); return false }
   return castSpellInternal(state, spellId, false, uiEvents)
 }

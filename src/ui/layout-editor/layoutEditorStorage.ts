@@ -3,8 +3,8 @@ import { DEFAULT_LAYOUTS } from './defaultLayouts'
 import { LAYOUT_VERSION, type SavedPanelLayout, type UiLayoutDocument } from './layoutEditorTypes'
 import { clampTopbarLayout, DEFAULT_TOPBAR_LAYOUT } from './shellLayout'
 
-export const UI_LAYOUTS_KEY = 'sss-wizard-ui-layout-v3'
-const LEGACY_UI_LAYOUTS_KEY = 'sss-wizard-ui-layout-v2'
+export const UI_LAYOUTS_KEY = 'sss-wizard-ui-layout-v4'
+const LEGACY_UI_LAYOUTS_KEYS = ['sss-wizard-ui-layout-v3', 'sss-wizard-ui-layout-v2'] as const
 
 const blankDocument = (): UiLayoutDocument => ({ version: LAYOUT_VERSION, screens: {}, shell: { topbar: clampTopbarLayout(DEFAULT_TOPBAR_LAYOUT) } })
 const validNumber = (value: unknown, fallback: number) => typeof value === 'number' && Number.isFinite(value) ? value : fallback
@@ -48,9 +48,10 @@ const normalizePanel = (screen: ScreenId, id: string, value: unknown): SavedPane
 export function loadUiLayouts(): UiLayoutDocument {
   if (typeof window === 'undefined') return blankDocument()
   try {
-    const raw = window.localStorage.getItem(UI_LAYOUTS_KEY) ?? window.localStorage.getItem(LEGACY_UI_LAYOUTS_KEY)
+    const raw = [UI_LAYOUTS_KEY, ...LEGACY_UI_LAYOUTS_KEYS].map((key) => window.localStorage.getItem(key)).find(Boolean)
     if (!raw) return blankDocument()
     const parsed = JSON.parse(raw) as Partial<UiLayoutDocument>
+    const layoutNeedsMigration = parsed.version !== LAYOUT_VERSION
     const screens: UiLayoutDocument['screens'] = {}
     for (const screen of Object.keys(DEFAULT_LAYOUTS) as ScreenId[]) {
       const rawSource = parsed.screens?.[screen]
@@ -68,43 +69,47 @@ export function loadUiLayouts(): UiLayoutDocument {
         }
       }
       if (screen === 'combat') {
-        const legacyCombatIds = ['combat-dungeon', 'combat-enemy', 'combat-timeline', 'combat-spells', 'combat-log']
-        const canonicalCombatIds = ['combat-stage', 'combat-spell-deck', 'combat-log']
-        const legacyCombatIdsWithoutSharedLog = ['combat-dungeon', 'combat-enemy', 'combat-timeline', 'combat-spells']
+        const legacyCombatIds = ['combat-dungeon', 'combat-enemy', 'combat-timeline', 'combat-spells']
         const hasRemovedIntel = Object.prototype.hasOwnProperty.call(rawSource, 'combat-intel')
         const hasLegacyPanels = legacyCombatIds.some((id) => Object.prototype.hasOwnProperty.call(rawSource, id))
-        const hasLegacyPanelsWithoutSharedLog = legacyCombatIdsWithoutSharedLog.some((id) => Object.prototype.hasOwnProperty.call(rawSource, id))
-        const hasCanonicalPanels = canonicalCombatIds.some((id) => Object.prototype.hasOwnProperty.call(rawSource, id))
-        if (hasRemovedIntel || hasLegacyPanelsWithoutSharedLog || (hasLegacyPanels && !hasCanonicalPanels)) {
-          // Combat's lower composition changed again: the permanent Intel dock
-          // is replaced by a permanent Combat Log. Preserve other screens.
+        if (hasRemovedIntel || hasLegacyPanels) {
+          // The Combat composition changed completely. Reset only this screen;
+          // other screen layouts remain user-owned and untouched.
           screens.combat = {}
           continue
         }
-        if (hasUnmodifiedGeometry(rawSource['combat-stage'], { x: 0, y: 0, w: 12, h: 16 }) && hasUnmodifiedGeometry(rawSource['combat-spell-deck'], { x: 0, y: 16, w: 12, h: 10 }) && hasUnmodifiedGeometry(rawSource['combat-log'], { x: 0, y: 26, w: 12, h: 10 })) {
-          // The untouched V2 lower stack is replaced by the tuned Deck/Log stack.
+        if (layoutNeedsMigration && hasUnmodifiedGeometry(rawSource['combat-stage'], { x: 0, y: 0, w: 12, h: 16 }) && hasUnmodifiedGeometry(rawSource['combat-spell-deck'], { x: 0, y: 16, w: 12, h: 10 })) {
           screens.combat = {}
           continue
         }
-        if (hasUnmodifiedGeometry(rawSource['combat-stage'], { x: 0, y: 0, w: 12, h: 14 }) && hasUnmodifiedGeometry(rawSource['combat-spell-deck'], { x: 0, y: 14, w: 12, h: 9 }) && hasUnmodifiedGeometry(rawSource['combat-log'], { x: 0, y: 23, w: 12, h: 8 })) {
-          // The untouched V3.1 stack gets the compact one-row Deck default.
+        if (layoutNeedsMigration && hasUnmodifiedGeometry(rawSource['combat-stage'], { x: 0, y: 0, w: 12, h: 14 }) && hasUnmodifiedGeometry(rawSource['combat-spell-deck'], { x: 0, y: 14, w: 12, h: 9 })) {
           screens.combat = {}
           continue
         }
-        if (!Object.prototype.hasOwnProperty.call(rawSource, 'combat-details') && hasUnmodifiedGeometry(rawSource['combat-stage'], { x: 0, y: 0, w: 12, h: 14 }) && hasUnmodifiedGeometry(rawSource['combat-spell-deck'], { x: 0, y: 14, w: 12, h: 7 }) && hasUnmodifiedGeometry(rawSource['combat-log'], { x: 0, y: 21, w: 12, h: 8 })) {
-          // The untouched V3.3 stack receives the new side-by-side Details dock.
+        if (layoutNeedsMigration && hasUnmodifiedGeometry(rawSource['combat-stage'], { x: 0, y: 0, w: 12, h: 14 }) && hasUnmodifiedGeometry(rawSource['combat-spell-deck'], { x: 0, y: 14, w: 12, h: 7 }) && hasUnmodifiedGeometry(rawSource['combat-log'], { x: 0, y: 21, w: 12, h: 8 })) {
           screens.combat = {}
           continue
         }
       }
       let combatSource: Record<string, unknown> | undefined
-      if (screen === 'combat' && !Object.prototype.hasOwnProperty.call(rawSource, 'combat-details') && Object.prototype.hasOwnProperty.call(rawSource, 'combat-stage') && Object.prototype.hasOwnProperty.call(rawSource, 'combat-spell-deck') && Object.prototype.hasOwnProperty.call(rawSource, 'combat-log')) {
-        const rawLog = rawSource['combat-log'] as Partial<SavedPanelLayout>
-        const logWidth = Math.max(1, Math.round(validNumber(rawLog.w, DEFAULT_LAYOUTS.combat['combat-log'].w)))
-        const logX = Math.max(0, Math.round(validNumber(rawLog.x, DEFAULT_LAYOUTS.combat['combat-log'].x)))
-        const needsSplit = logX + logWidth > DEFAULT_LAYOUTS.combat['combat-log'].w || logX >= 7
-        const migratedLog = { ...rawLog, ...(needsSplit ? { x: 0, w: Math.min(7, logWidth) } : {}) }
-        combatSource = { ...rawSource, 'combat-log': migratedLog, 'combat-details': { ...DEFAULT_LAYOUTS.combat['combat-details'], x: 7, y: validNumber(rawLog.y, DEFAULT_LAYOUTS.combat['combat-details'].y), h: validNumber(rawLog.h, DEFAULT_LAYOUTS.combat['combat-details'].h) } }
+      if (screen === 'combat' && Object.prototype.hasOwnProperty.call(rawSource, 'combat-stage') && Object.prototype.hasOwnProperty.call(rawSource, 'combat-spell-deck') && (layoutNeedsMigration || Object.prototype.hasOwnProperty.call(rawSource, 'combat-log'))) {
+        const rawDeck = rawSource['combat-spell-deck'] as Partial<SavedPanelLayout>
+        const rawDetails = rawSource['combat-details'] as Partial<SavedPanelLayout> | undefined
+        const rawLog = rawSource['combat-log'] as Partial<SavedPanelLayout> | undefined
+        const deckY = validNumber(rawDeck.y, DEFAULT_LAYOUTS.combat['combat-spell-deck'].y)
+        const deckH = Math.max(1, Math.round(validNumber(rawDeck.h, DEFAULT_LAYOUTS.combat['combat-spell-deck'].h)))
+        const detailsY = Math.max(deckY + deckH, validNumber(rawDetails?.y, validNumber(rawLog?.y, DEFAULT_LAYOUTS.combat['combat-details'].y)))
+        const withoutPermanentLog = Object.fromEntries(Object.entries(rawSource).filter(([id]) => id !== 'combat-log'))
+        const detailsBase = rawDetails ?? DEFAULT_LAYOUTS.combat['combat-details']
+        combatSource = {
+          ...withoutPermanentLog,
+          'combat-details': {
+            ...detailsBase,
+            x: layoutNeedsMigration || !rawDetails ? 0 : validNumber(detailsBase.x, 0),
+            y: detailsY,
+            w: layoutNeedsMigration || !rawDetails ? 12 : Math.max(1, Math.round(validNumber(detailsBase.w, 12))),
+          },
+        }
       }
       const source = screen === 'tower-channeling' && !('channeling-pillars' in rawSource) && 'channeling-infrastructure' in rawSource
         ? { ...rawSource, 'channeling-pillars': rawSource['channeling-infrastructure'] }
@@ -185,5 +190,8 @@ export function saveUiLayouts(document: UiLayoutDocument) {
 }
 
 export function resetUiLayouts() {
-  if (typeof window !== 'undefined') window.localStorage.removeItem(UI_LAYOUTS_KEY)
+  if (typeof window !== 'undefined') {
+    window.localStorage.removeItem(UI_LAYOUTS_KEY)
+    LEGACY_UI_LAYOUTS_KEYS.forEach((key) => window.localStorage.removeItem(key))
+  }
 }

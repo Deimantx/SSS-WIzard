@@ -8,12 +8,10 @@ import { DungeonAtlasDialog, dungeonHasMeaningfulProgress, getFirstUnlockedDunge
 import { CombatRunBar } from './CombatRunBar'
 import { CombatSpellDeck } from './CombatSpellDeck'
 import { CombatStage } from './CombatStage'
-import { CombatLogPanel } from './CombatLogPanel'
 import { CombatDetailsPanel } from './CombatDetailsPanel'
 import { EnemyContextWindow, type EnemyContextMode } from './EnemyContextWindow'
 import { LeaveDungeonDialog } from './LeaveDungeonDialog'
 import { getAdaptiveCombatLayout } from './combatLayout'
-import { useUiPreferences } from '../../ui/preferences/uiPreferencesStore'
 
 export function CombatScreenV2() {
   const combatDungeonId = useGameStore((state) => state.combat.dungeonId)
@@ -27,7 +25,6 @@ export function CombatScreenV2() {
   const enemyContextTriggerRef = useRef<HTMLButtonElement>(null)
   const [stageContentHeight, setStageContentHeight] = useState(0)
   const [deckContentHeight, setDeckContentHeight] = useState(0)
-  const preferences = useUiPreferences()
   useEffect(() => { if (combatDungeonId) setSelectedDungeonId(combatDungeonId) }, [combatDungeonId])
   const openAtlas = useCallback(() => { dismissGameTooltips(); setAtlasOpen(true) }, [])
   const closeAtlas = useCallback(() => setAtlasOpen(false), [])
@@ -45,6 +42,6 @@ export function CombatScreenV2() {
   const requestLeave = useCallback(() => { dismissGameTooltips(); if (dungeonHasMeaningfulProgress(combat)) setLeaveOpen(true); else useGameStore.getState().leaveDungeon() }, [combat])
   const reportStageContentHeight = useCallback((height: number) => setStageContentHeight((current) => current === height ? current : height), [])
   const reportDeckContentHeight = useCallback((height: number) => setDeckContentHeight((current) => current === height ? current : height), [])
-  const layoutTransform = useCallback((layout: Parameters<typeof getAdaptiveCombatLayout>[0]) => getAdaptiveCombatLayout(layout, { requiredStageContentHeight: stageContentHeight, requiredDeckContentHeight: deckContentHeight, logCollapsed: preferences.screenState.combat.combatLogCollapsed, logExpandedH: preferences.screenState.combat.lastExpandedCombatLogH }), [deckContentHeight, preferences.screenState.combat.combatLogCollapsed, preferences.screenState.combat.lastExpandedCombatLogH, stageContentHeight])
-  return <div className="screen-content combat-screen"><div className="screen-header"><div><div className="eyebrow">ARCANE COMBAT</div><h1>Combat</h1><p>Read enemy intent, manage Mana, and control your Spell automation.</p></div></div><CombatRunBar selectedDungeonId={selectedDungeonId} onOpenAtlas={openAtlas} onRequestLeave={requestLeave} /><EditableGrid screen="combat" layoutTransform={layoutTransform} panels={[{ id: 'combat-stage', content: <CombatStage selectedDungeonId={selectedDungeonId} onContentHeightChange={reportStageContentHeight} enemyCardRef={enemyCardRef} onOpenEnemyContext={openEnemyContext} /> }, { id: 'combat-spell-deck', content: <CombatSpellDeck onRequiredHeightChange={reportDeckContentHeight} /> }, { id: 'combat-log', content: <CombatLogPanel /> }, { id: 'combat-details', content: <CombatDetailsPanel /> }]} />{enemyContextMode && <EnemyContextWindow mode={enemyContextMode} anchorRef={enemyCardRef} triggerRef={enemyContextTriggerRef} selectedDungeonId={selectedDungeonId} onModeChange={setEnemyContextMode} onClose={closeEnemyContext} />}{atlasOpen && <DungeonAtlasDialog selectedDungeonId={selectedDungeonId} onSelect={setSelectedDungeonId} onClose={closeAtlas} />}{leaveOpen && <LeaveDungeonDialog onClose={closeLeave} />}</div>
+  const layoutTransform = useCallback((layout: Parameters<typeof getAdaptiveCombatLayout>[0]) => getAdaptiveCombatLayout(layout, { requiredStageContentHeight: stageContentHeight, requiredDeckContentHeight: deckContentHeight }), [deckContentHeight, stageContentHeight])
+  return <div className="screen-content combat-screen"><div className="screen-header"><div><div className="eyebrow">ARCANE COMBAT</div><h1>Combat</h1><p>Read enemy intent, manage Mana, and control your Spell automation.</p></div></div><CombatRunBar selectedDungeonId={selectedDungeonId} onOpenAtlas={openAtlas} onRequestLeave={requestLeave} /><EditableGrid screen="combat" layoutTransform={layoutTransform} panels={[{ id: 'combat-stage', content: <CombatStage selectedDungeonId={selectedDungeonId} onContentHeightChange={reportStageContentHeight} enemyCardRef={enemyCardRef} onOpenEnemyContext={openEnemyContext} /> }, { id: 'combat-spell-deck', content: <CombatSpellDeck onRequiredHeightChange={reportDeckContentHeight} /> }, { id: 'combat-details', content: <CombatDetailsPanel /> }]} />{enemyContextMode && <EnemyContextWindow mode={enemyContextMode} anchorRef={enemyCardRef} triggerRef={enemyContextTriggerRef} selectedDungeonId={selectedDungeonId} onModeChange={setEnemyContextMode} onClose={closeEnemyContext} />}{atlasOpen && <DungeonAtlasDialog selectedDungeonId={selectedDungeonId} onSelect={setSelectedDungeonId} onClose={closeAtlas} />}{leaveOpen && <LeaveDungeonDialog onClose={closeLeave} />}</div>
 }

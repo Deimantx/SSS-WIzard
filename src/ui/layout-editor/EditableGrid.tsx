@@ -21,9 +21,6 @@ export function EditableGrid({ screen, panels, children, layoutTransform }: { sc
   const displayGrid = useMemo(() => {
     const responsiveScreen = screen === 'inventory' || screen === 'collection' || screen === 'bestiary' || screen === 'tower-focus' || screen === 'tower-transmutation' || screen === 'tower-research' || screen === 'schools' || screen === 'combat'
     if (!responsiveScreen || width <= 0) return transformedGrid
-    if (screen === 'combat' && width >= 760 && width < 1_020) {
-      return transformedGrid.map((item) => item.i === 'combat-log' ? { ...item, x: 0, w: 6 } : item.i === 'combat-details' ? { ...item, x: 6, w: 6 } : item)
-    }
     if (width >= 760) return transformedGrid
     let nextY = 0
     return transformedGrid.map((item) => {

@@ -1,14 +1,15 @@
-import { Activity, ChevronLeft, ChevronRight, Flame, HeartPulse, RotateCcw, Shield, Sparkles, Swords } from 'lucide-react'
-import type { CSSProperties, ReactNode } from 'react'
+import { Activity, ChevronLeft, ChevronRight, Flame, HeartPulse, List, RotateCcw, Shield, Sparkles, Swords } from 'lucide-react'
+import { useState, type CSSProperties, type ReactNode } from 'react'
 import { SPELLS } from '../../game/content/spells/spells'
 import { formatTime } from '../../game/utils'
 import { cycleCombatDetailsMode, getCombatDetailsPresentation, type CombatDetailsMode, type CombatDetailsRowPresentation } from '../../game/presentation/combat'
 import { useCombatTelemetryStore } from '../../game/telemetry/combat/combatTelemetryStore'
 import { Card, GameTooltip } from '../../components/ui'
-import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
+import { dismissGameTooltips, TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { setUiPreferences, useUiPreferences } from '../../ui/preferences/uiPreferencesStore'
 import { SpellIcon } from '../../components/spells/SpellIcon'
 import { CombatDetailsTooltip } from './CombatDetailsTooltip'
+import { FullCombatLogDrawer } from './FullCombatLogDrawer'
 
 const exact = (value: number) => Math.round(Math.max(0, value)).toLocaleString()
 const exactRate = (value: number) => Math.max(0, value).toFixed(1)
@@ -19,12 +20,14 @@ export function CombatDetailsPanel() {
   const preferences = useUiPreferences().screenState.combat
   const scope = telemetry.run ?? telemetry.lastRun
   const mode = preferences.combatDetailsMode
+  const [fullLogOpen, setFullLogOpen] = useState(false)
   const presentation = getCombatDetailsPresentation(scope, mode)
   const moveMode = (direction: -1 | 1) => setUiPreferences({ screenState: { combat: { combatDetailsMode: cycleCombatDetailsMode(mode, direction) } } })
 
   return <Card className={`combat-details-panel combat-details-mode-${mode}`} style={{ '--details-mode-color': `var(${presentation.config.colorToken})` } as CSSProperties}>
-    <header className="combat-details-head"><span className="combat-subsection-label">COMBAT DETAILS</span><div className="combat-details-mode-nav"><GameTooltip content={<TooltipContent title="Previous Combat Details metric" description="Show the previous combat metric." />}><button type="button" className="combat-details-mode-button" aria-label="Previous Combat Details metric" onClick={() => moveMode(-1)}><ChevronLeft size={15} aria-hidden="true" /></button></GameTooltip><strong className="combat-details-mode-title">{presentation.config.label}</strong><GameTooltip content={<TooltipContent title="Next Combat Details metric" description="Show the next combat metric." />}><button type="button" className="combat-details-mode-button" aria-label="Next Combat Details metric" onClick={() => moveMode(1)}><ChevronRight size={15} aria-hidden="true" /></button></GameTooltip><GameTooltip content={<TooltipContent title="RESET COMBAT DETAILS" description="Clear the current Combat Details statistics and start measuring again from zero." />}><button type="button" className="combat-details-reset-button" aria-label="RESET COMBAT DETAILS" onClick={() => telemetry.resetMeasurement()}><RotateCcw size={14} aria-hidden="true" /></button></GameTooltip></div></header>
+    <header className="combat-details-head"><span className="combat-subsection-label">COMBAT DETAILS</span><div className="combat-details-mode-nav"><GameTooltip content={<TooltipContent title="View Full Combat Log" description="Open the complete transient combat event history without leaving the fight." />}><button type="button" className="combat-details-log-button" aria-label="View Full Combat Log" onClick={() => { dismissGameTooltips(); setFullLogOpen(true) }}><List size={14} aria-hidden="true" /></button></GameTooltip><GameTooltip content={<TooltipContent title="Previous Combat Details metric" description="Show the previous combat metric." />}><button type="button" className="combat-details-mode-button" aria-label="Previous Combat Details metric" onClick={() => moveMode(-1)}><ChevronLeft size={15} aria-hidden="true" /></button></GameTooltip><strong className="combat-details-mode-title">{presentation.config.label}</strong><GameTooltip content={<TooltipContent title="Next Combat Details metric" description="Show the next combat metric." />}><button type="button" className="combat-details-mode-button" aria-label="Next Combat Details metric" onClick={() => moveMode(1)}><ChevronRight size={15} aria-hidden="true" /></button></GameTooltip><GameTooltip content={<TooltipContent title="RESET COMBAT DETAILS" description="Clear the current Combat Details statistics and start measuring again from zero." />}><button type="button" className="combat-details-reset-button" aria-label="RESET COMBAT DETAILS" onClick={() => telemetry.resetMeasurement()}><RotateCcw size={14} aria-hidden="true" /></button></GameTooltip></div></header>
     {!scope ? <div className="combat-details-empty"><strong>NO COMBAT DATA</strong><span>Enter a Dungeon to begin tracking.</span></div> : <><div className="combat-details-summary"><div className="combat-details-summary-stat combat-details-summary-total"><span>{presentation.config.totalLabel}</span><strong>{presentation.compactTotal}</strong></div><GameTooltip content={<TooltipContent title={`${presentation.config.rateLabel} /s`} description="Rate is calculated over engaged combat time."><div className="tooltip-row"><span>EXACT {presentation.config.totalLabel}</span><b>{exact(presentation.total)}</b></div></TooltipContent>}><div className="combat-details-summary-stat combat-details-summary-rate" tabIndex={0}><span>{presentation.config.rateLabel}</span><strong>{exactRate(presentation.rate)}<small>/s</small></strong></div></GameTooltip><GameTooltip content={<TooltipContent title="ENGAGED TIME" description="Time spent actively fighting an enemy."><div className="tooltip-row"><span>ENGAGED TIME</span><b>{formatTime(presentation.engagedMs)}</b></div></TooltipContent>}><div className="combat-details-summary-stat combat-details-summary-engaged" tabIndex={0}><span>ENGAGED</span><strong>{formatTime(presentation.engagedMs)}</strong></div></GameTooltip></div>{presentation.rows.length > 0 ? <div className="combat-details-rows">{presentation.rows.map((row) => <CombatDetailsRow key={row.key} mode={mode} row={row} />)}</div> : <div className="combat-details-empty combat-details-empty-scope"><strong>NO {presentation.config.label} YET</strong><span>Combat sources will appear here.</span></div>}</>}
+    {fullLogOpen && <FullCombatLogDrawer onClose={() => setFullLogOpen(false)} />}
   </Card>
 }
 

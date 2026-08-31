@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { CombatEvent, CombatEventSink, CombatLogEntry } from '../systems/combat/combatTypes'
 
-export const MAX_COMBAT_LOG_ENTRIES = 20
+export const MAX_FULL_COMBAT_LOG_ENTRIES = 150
 let nextSequence = 0
 
 interface CombatLogUiState {
@@ -15,7 +15,7 @@ export const useCombatLogStore = create<CombatLogUiState>((set) => ({
   push: (event) => set((state) => {
     const sequence = ++nextSequence
     const entry: CombatLogEntry = { ...event, id: sequence, sequence, timestampMs: event.timestampMs ?? Date.now() }
-    return { entries: [entry, ...state.entries].slice(0, MAX_COMBAT_LOG_ENTRIES) }
+    return { entries: [entry, ...state.entries].slice(0, MAX_FULL_COMBAT_LOG_ENTRIES) }
   }),
   clear: () => set({ entries: [] }),
 }))

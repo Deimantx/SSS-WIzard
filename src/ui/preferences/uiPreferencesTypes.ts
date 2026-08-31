@@ -39,8 +39,6 @@ export interface ResearchScreenPreferences {
 export type CombatLogFontSize = 'small' | 'medium' | 'large' | 'xlarge'
 export interface CombatScreenPreferences {
   combatLogFontSize: CombatLogFontSize
-  combatLogCollapsed: boolean
-  lastExpandedCombatLogH: number
   combatDetailsMode: CombatDetailsMode
 }
 

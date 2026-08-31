@@ -34,7 +34,7 @@ export const STATUS_DEFINITIONS: Record<StatusId, StatusDefinition> = {
   },
   chilled: {
     id: 'chilled', name: 'Chilled', description: 'Basic Attacks and Action cadence are 20% slower.', classification: 'debuff', tags: ['debuff', 'control', 'water'], defaultDurationMs: 5000,
-    stacking: { mode: 'strongest' }, modifiers: [modifier('basic-attack-speed-percent', -0.2), modifier('action-speed-percent', -0.2)], cleanseable: true, dispellable: false,
+    stacking: { mode: 'strongest' }, modifiers: [modifier('basic-attack-speed-percent', -0.2), modifier('action-speed-percent', -0.2)], cleanseable: true, dispellable: false, ui: { alert: 'important', icon: 'control' },
   },
   regeneration: {
     id: 'regeneration', name: 'Regeneration', description: 'Restores Health over time.', classification: 'buff', tags: ['buff', 'hot', 'water'], defaultDurationMs: 6000,
@@ -50,11 +50,11 @@ export const STATUS_DEFINITIONS: Record<StatusId, StatusDefinition> = {
   },
   staggered: {
     id: 'staggered', name: 'Staggered', description: 'Recently suffered a stagger.', classification: 'debuff', tags: ['debuff', 'control', 'earth'], defaultDurationMs: 1000,
-    stacking: { mode: 'refresh' }, cleanseable: true, dispellable: false,
+    stacking: { mode: 'refresh' }, cleanseable: true, dispellable: false, ui: { alert: 'important', icon: 'control' },
   },
   vulnerable: {
     id: 'vulnerable', name: 'Vulnerable', description: 'Damage taken is increased by 15%.', classification: 'debuff', tags: ['debuff'], defaultDurationMs: 6000,
-    stacking: { mode: 'strongest' }, modifiers: [modifier('damage-taken-percent', 0.15)], cleanseable: true, dispellable: false,
+    stacking: { mode: 'strongest' }, modifiers: [modifier('damage-taken-percent', 0.15)], cleanseable: true, dispellable: false, ui: { alert: 'important', icon: 'status' },
   },
   purified: {
     id: 'purified', name: 'Purified', description: 'Incoming control and debuff durations are reduced by 50%.', classification: 'buff', tags: ['buff', 'water'], defaultDurationMs: 4000,
@@ -62,7 +62,7 @@ export const STATUS_DEFINITIONS: Record<StatusId, StatusDefinition> = {
   },
   stunned: {
     id: 'stunned', name: 'Stunned', description: 'Cannot start or resolve normal actions.', classification: 'debuff', tags: ['debuff', 'control'], defaultDurationMs: 3000,
-    stacking: { mode: 'refresh' }, preventsAction: true, cleanseable: true, dispellable: false,
+    stacking: { mode: 'refresh' }, preventsAction: true, cleanseable: true, dispellable: false, ui: { alert: 'critical', icon: 'control' },
   },
 }
 

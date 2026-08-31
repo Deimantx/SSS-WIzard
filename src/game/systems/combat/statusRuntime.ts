@@ -84,6 +84,12 @@ const removeStatusEntry = (state: GameState, actor: CombatActor, statusId: Statu
   if (index < 0) return null
   const removed = statuses[index]
   setStatusList(state, actor, statuses.filter((_, entryIndex) => entryIndex !== index))
+  const holderSource = actor === 'enemy' && state.combat.enemyId
+    ? { kind: 'enemy' as const, monsterId: state.combat.enemyId }
+    : actor === 'player'
+      ? { kind: 'player' as const }
+      : { kind: 'system' as const }
+  options.uiEvents?.push({ source: holderSource, sourceKind: 'status', dungeonId: state.combat.dungeonId ?? undefined, target: actor, targetMonsterId: actor === 'enemy' ? state.combat.enemyId ?? undefined : undefined, category: 'status', sourceId: removed.statusId, statusId: removed.statusId, statusPhase: options.reason === 'expired' ? 'expire' : 'remove', originSourceId: removed.source.sourceId, ruleId: removed.source.ruleId, stacks: removed.stacks })
   if (options.executeEffects) {
     const definition = STATUS_DEFINITIONS[removed.statusId]
     const eventStatusTags = definition?.tags ?? []

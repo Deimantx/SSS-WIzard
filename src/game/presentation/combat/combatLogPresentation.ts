@@ -75,10 +75,18 @@ export function presentCombatLogEntry(entry: CombatLogEntry, newestTimestampMs =
     result = `+${formatNumber(entry.amount ?? 0)} BARRIER${entry.durationMs ? ` · ${formatDuration(entry.durationMs)}` : ''}`
     semanticClass = 'log-barrier'
   } else if (entry.category === 'status') {
-    result = `${status?.name ?? 'STATUS'} applied${entry.durationMs ? ` · ${formatDuration(entry.durationMs)}` : ''}${entry.stacks && entry.stacks > 1 ? ` · ${entry.stacks} stacks` : ''}`
+    const statusVerb = entry.statusPhase === 'expire' ? 'expired' : entry.statusPhase === 'remove' ? 'removed' : 'applied'
+    result = `${status?.name ?? 'STATUS'} ${statusVerb}${entry.durationMs ? ` · ${formatDuration(entry.durationMs)}` : ''}${entry.stacks && entry.stacks > 1 ? ` · ${entry.stacks} stacks` : ''}`
     semanticClass = status?.classification === 'buff' ? 'log-buff' : status?.tags.includes('dot') ? 'log-dot' : status?.tags.includes('control') ? 'log-control' : 'log-debuff'
   } else if (entry.category === 'system') {
-    message = entry.source.kind === 'enemy' ? `${source.toUpperCase()} EVENT` : entry.sourceId === 'encounter-start' ? `${entry.targetMonsterId ? MONSTERS[entry.targetMonsterId]?.name.toUpperCase() : 'ENEMY'} ENTERED` : message
+    if (entry.actionPhase === 'telegraph') {
+      message = `${actionLabel.toUpperCase()} TELEGRAPHED`
+      result = 'PREPARE'
+      semanticClass = 'log-system'
+      actionClass = 'log-action-enemy-action'
+    } else {
+      message = entry.source.kind === 'enemy' ? `${source.toUpperCase()} EVENT` : entry.sourceId === 'encounter-start' ? `${entry.targetMonsterId ? MONSTERS[entry.targetMonsterId]?.name.toUpperCase() : 'ENEMY'} ENTERED` : message
+    }
     semanticClass = 'log-system'
   }
 

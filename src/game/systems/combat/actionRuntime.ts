@@ -130,6 +130,7 @@ const startActionDefinition = (state: GameState, action: CombatActionDefinition,
   state.combat.enemyTelegraphPatternId = patternId ?? null
   state.combat.enemyTelegraphMs = Math.max(0, action.telegraphMs)
   const context = actionContext(action, patternId, stepId)
+  uiEvents?.push({ source: { kind: 'enemy', monsterId: state.combat.enemyId as NonNullable<typeof state.combat.enemyId> }, sourceKind: 'action', dungeonId: state.combat.dungeonId ?? undefined, target: 'player', category: 'system', sourceId: action.id, actionId: action.id, actionPhase: 'telegraph' })
   runActionEventObservers(state, 'on-action-start', context, executeEffects, depth, uiEvents)
   if (state.combat.enemyTelegraphActionId !== action.id) return true
   if (state.combat.enemyTelegraphMs <= 0 && !actorCannotAct(state, 'enemy')) resolveActiveEnemyAction(state, executeEffects, depth, uiEvents)

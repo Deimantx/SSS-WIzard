@@ -1,12 +1,13 @@
 import { DUNGEONS } from '../../content/dungeons/dungeons'
 import { ITEMS } from '../../content/items/items'
-import { formatCompactDuration, formatNumber } from '../../utils'
+import { formatCompactDuration } from '../../utils'
 import { averageBossMs, averageEncounterMs, hasMinimumRateSample, ratePerHour, runsPerHour, totalLootQuantity as selectTotalLootQuantity } from '../../telemetry/dungeon/dungeonStatisticsSelectors'
 import type { DungeonStatisticsSession } from '../../telemetry/dungeon/dungeonStatisticsTypes'
 import type { ItemId } from '../../types'
+import { formatUiCount, formatUiPercent, formatUiRate } from '../numbers'
 
 export const formatStatisticsTime = (value: number | null) => value === null ? '—' : formatCompactDuration(value)
-export const formatStatisticsRate = (value: number) => `${Math.max(0, Number.isFinite(value) ? value : 0).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} /h`
+export const formatStatisticsRate = (value: number) => formatUiRate(value, '/h')
 
 export interface DungeonDropRowPresentation {
   itemId: ItemId
@@ -50,6 +51,8 @@ export function getDungeonStatisticsPresentation(session: DungeonStatisticsSessi
     averageBoss: formatStatisticsTime(averageBossMs(session)),
     fastestEncounter: formatStatisticsTime(session?.fastestEncounterMs ?? null),
     fastestBoss: formatStatisticsTime(session?.fastestBossMs ?? null),
-    totalDropsLabel: formatNumber(totalDrops),
+    totalDropsLabel: formatUiCount(totalDrops),
+    uptimeLabel: formatUiPercent(uptime),
+    downtimeLabel: formatUiPercent(Math.max(0, 100 - uptime)),
   }
 }

@@ -48,7 +48,7 @@ describe('dungeon statistics presentation', () => {
     expect(presentation.totalDrops).toBe(100)
     expect(presentation.dropsPerHour).toBe(600)
     expect(presentation.dropRows.find((row) => row.itemId === 'wisp-essence')?.perHour).toBe(150)
-    expect(presentation.dropsPerHourLabel).toBe('600.0 /h')
+    expect(presentation.dropsPerHourLabel).toBe('600 /h')
   })
 
   it('shows a projected hourly label immediately and marks early samples explicitly', () => {
@@ -56,10 +56,10 @@ describe('dungeon statistics presentation', () => {
     const presentation = getDungeonStatisticsPresentation(shortSession)
 
     expect(presentation.dropsPerHour).toBe(120)
-    expect(presentation.dropsPerHourLabel).toBe('120.0 /h')
-    expect(presentation.dropRows[0].perHourLabel).toBe('120.0 /h')
+    expect(presentation.dropsPerHourLabel).toBe('120 /h')
+    expect(presentation.dropRows[0].perHourLabel).toBe('120 /h')
     expect(presentation.earlySample).toBe(true)
-    expect(getDungeonStatisticsPresentation({ ...shortSession, elapsedMs: 60_000 }).dropsPerHourLabel).toBe('60.0 /h')
+    expect(getDungeonStatisticsPresentation({ ...shortSession, elapsedMs: 60_000 }).dropsPerHourLabel).toBe('60 /h')
     expect(getDungeonStatisticsPresentation({ ...shortSession, elapsedMs: 60_000 }).earlySample).toBe(false)
   })
 

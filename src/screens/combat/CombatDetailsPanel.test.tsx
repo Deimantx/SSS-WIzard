@@ -46,9 +46,9 @@ describe('CombatDetailsPanel', () => {
 
     expect(screen.getByText('Fire Bolt')).toBeTruthy()
     expect(screen.getByText('Basic Attack')).toBeTruthy()
-    expect(screen.getByText('80.0%')).toBeTruthy()
-    expect(screen.getByText('20.0%')).toBeTruthy()
-    expect(screen.getByLabelText('1. Fire Bolt, 80.0%, 120')).toBeTruthy()
+    expect(screen.getByText('80%')).toBeTruthy()
+    expect(screen.getByText('20%')).toBeTruthy()
+    expect(screen.getByLabelText('1. Fire Bolt, 80%, 120')).toBeTruthy()
   })
 
   it('uses the simplified three-stat summary and resets telemetry without changing the selected mode', async () => {

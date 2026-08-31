@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { consumeCombatEvent, createCombatTelemetryScope } from '../../telemetry/combat/combatTelemetryAggregator'
-import { getCombatDetailsPresentation, cycleCombatDetailsMode, formatCompactCombatValue } from './combatDetailsPresentation'
+import { getCombatDetailsPresentation, cycleCombatDetailsMode } from './combatDetailsPresentation'
 
 const populatedScope = () => {
   const scope = createCombatTelemetryScope('run-1', 1, 'whispering-woods', 'grove-sentinel')
@@ -24,9 +24,16 @@ describe('combat details presentation', () => {
     const details = getCombatDetailsPresentation(populatedScope(), 'damage-done')
     expect(details.total).toBe(150)
     expect(details.rate).toBe(5)
+    expect(details.totalLabel).toBe('150')
+    expect(details.rateLabel).toBe('5')
+    expect(details.engagedLabel).toBe('30s')
     expect(details.rows.map((row) => [row.rank, row.source.name, row.total, row.percent])).toEqual([
       [1, 'Fire Bolt', 120, 80],
       [2, 'Basic Attack', 30, 20],
+    ])
+    expect(details.rows.map((row) => [row.totalLabel, row.rateLabel, row.percentLabel])).toEqual([
+      ['120', '4', '80%'],
+      ['30', '1', '20%'],
     ])
   })
 
@@ -47,10 +54,11 @@ describe('combat details presentation', () => {
     expect(empty).toMatchObject({ total: 0, rate: 0, rows: [] })
   })
 
-  it('uses compact values only for the dock presentation', () => {
-    expect(formatCompactCombatValue(999)).toBe('999')
-    expect(formatCompactCombatValue(1_240)).toBe('1.2k')
-    expect(formatCompactCombatValue(14_628)).toBe('14.6k')
-    expect(formatCompactCombatValue(1_300_000)).toBe('1.3m')
+  it('ceil-rounds semantic combat rates without changing raw telemetry', () => {
+    const details = getCombatDetailsPresentation(populatedScope(), 'damage-done')
+    expect(details.rate).toBe(5)
+    expect(details.rateLabel).toBe('5')
+    expect(details.rows[0].total).toBe(120)
+    expect(details.rows[0].totalLabel).toBe('120')
   })
 })

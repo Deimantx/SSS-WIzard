@@ -31,6 +31,8 @@ describe('DungeonStatisticsPanel V3.7', () => {
     expect(screen.queryByText('LOOT')).toBeNull()
     expect(screen.queryByText('TOP DROPS')).toBeNull()
     expect(document.querySelectorAll('.dungeon-statistics-drop-row')).toHaveLength(allItemIds.length)
+    expect(document.querySelector('.dungeon-statistics-drop-quantity')).toBeNull()
+    expect(document.querySelector('.dungeon-statistics-drop-rate')?.textContent).toMatch(/\/h$/)
   })
 
   it('keeps Runs and Efficiency as distinct KPI-focused modes', () => {

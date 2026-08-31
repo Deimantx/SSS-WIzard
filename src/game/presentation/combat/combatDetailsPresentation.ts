@@ -1,6 +1,7 @@
 import { getCombatMetricAggregate, getCombatMetricRate } from '../../telemetry/combat/combatTelemetryAggregator'
 import { presentCombatMetricSource, type CombatMetricSourcePresentation } from '../../telemetry/combat/combatMetricSourcePresentation'
 import type { CombatMetricSourceContribution, CombatTelemetryMetric, CombatTelemetryScope } from '../../telemetry/combat/combatTelemetryTypes'
+import { formatUiCombatRate, formatUiCount, formatUiDuration, formatUiPercent } from '../numbers'
 
 export type CombatDetailsMode = 'damage-done' | 'damage-taken' | 'healing'
 
@@ -26,18 +27,22 @@ export interface CombatDetailsRowPresentation {
   source: CombatMetricSourcePresentation
   contribution: CombatMetricSourceContribution
   total: number
-  compactTotal: string
+  totalLabel: string
   percent: number
+  percentLabel: string
   rate: number
+  rateLabel: string
 }
 
 export interface CombatDetailsPresentation {
   mode: CombatDetailsMode
   config: CombatDetailsModeConfig
   total: number
-  compactTotal: string
+  totalLabel: string
   rate: number
+  rateLabel: string
   engagedMs: number
+  engagedLabel: string
   elapsedMs: number
   rows: CombatDetailsRowPresentation[]
 }
@@ -48,34 +53,33 @@ export const cycleCombatDetailsMode = (mode: CombatDetailsMode, direction: -1 | 
   return COMBAT_DETAILS_MODE_ORDER[(safeIndex + direction + COMBAT_DETAILS_MODE_ORDER.length) % COMBAT_DETAILS_MODE_ORDER.length]
 }
 
-export const formatCompactCombatValue = (value: number): string => {
-  const safe = Math.max(0, Number.isFinite(value) ? value : 0)
-  if (safe < 1_000) return Math.round(safe).toLocaleString()
-  if (safe < 1_000_000) return `${trimCompact(safe / 1_000)}k`
-  return `${trimCompact(safe / 1_000_000)}m`
-}
-
-const trimCompact = (value: number) => value >= 100 ? Math.round(value).toString() : value.toFixed(1).replace(/\.0$/, '')
-
 export const getCombatDetailsPresentation = (scope: CombatTelemetryScope | null, mode: CombatDetailsMode): CombatDetailsPresentation => {
   const config = COMBAT_DETAILS_MODE_CONFIG[mode]
-  const empty: CombatDetailsPresentation = { mode, config, total: 0, compactTotal: '0', rate: 0, engagedMs: scope?.engagedMs ?? 0, elapsedMs: scope?.elapsedMs ?? 0, rows: [] }
+  const engagedMs = scope?.engagedMs ?? 0
+  const empty: CombatDetailsPresentation = { mode, config, total: 0, totalLabel: '0', rate: 0, rateLabel: '0', engagedMs, engagedLabel: formatUiDuration(engagedMs / 1000), elapsedMs: scope?.elapsedMs ?? 0, rows: [] }
   if (!scope) return empty
 
   const aggregate = getCombatMetricAggregate(scope, 'player', config.metric)
   const rows = Object.values(aggregate.bySource)
     .filter((contribution) => contribution.total > 0)
     .sort((left, right) => right.total - left.total || left.key.localeCompare(right.key))
-    .map((contribution, index) => ({
-      key: contribution.key,
-      rank: index + 1,
-      source: presentCombatMetricSource(contribution),
-      contribution,
-      total: contribution.total,
-      compactTotal: formatCompactCombatValue(contribution.total),
-      percent: aggregate.total > 0 ? contribution.total / aggregate.total * 100 : 0,
-      rate: getCombatMetricRate(contribution.total, scope.engagedMs),
-    }))
+    .map((contribution, index) => {
+      const percent = aggregate.total > 0 ? contribution.total / aggregate.total * 100 : 0
+      const rate = getCombatMetricRate(contribution.total, engagedMs)
+      return {
+        key: contribution.key,
+        rank: index + 1,
+        source: presentCombatMetricSource(contribution),
+        contribution,
+        total: contribution.total,
+        totalLabel: formatUiCount(contribution.total),
+        percent,
+        percentLabel: formatUiPercent(percent),
+        rate,
+        rateLabel: formatUiCombatRate(rate),
+      }
+    })
 
-  return { ...empty, total: aggregate.total, compactTotal: formatCompactCombatValue(aggregate.total), rate: getCombatMetricRate(aggregate.total, scope.engagedMs), rows }
+  const rate = getCombatMetricRate(aggregate.total, engagedMs)
+  return { ...empty, total: aggregate.total, totalLabel: formatUiCount(aggregate.total), rate, rateLabel: formatUiCombatRate(rate), rows }
 }

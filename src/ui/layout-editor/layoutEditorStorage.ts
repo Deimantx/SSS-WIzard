@@ -3,8 +3,8 @@ import { DEFAULT_LAYOUTS } from './defaultLayouts'
 import { LAYOUT_VERSION, type SavedPanelLayout, type UiLayoutDocument } from './layoutEditorTypes'
 import { clampTopbarLayout, DEFAULT_TOPBAR_LAYOUT } from './shellLayout'
 
-export const UI_LAYOUTS_KEY = 'sss-wizard-ui-layout-v5'
-const LEGACY_UI_LAYOUTS_KEYS = ['sss-wizard-ui-layout-v4', 'sss-wizard-ui-layout-v3', 'sss-wizard-ui-layout-v2'] as const
+export const UI_LAYOUTS_KEY = 'sss-wizard-ui-layout-v6'
+const LEGACY_UI_LAYOUTS_KEYS = ['sss-wizard-ui-layout-v5', 'sss-wizard-ui-layout-v4', 'sss-wizard-ui-layout-v3', 'sss-wizard-ui-layout-v2'] as const
 
 const blankDocument = (): UiLayoutDocument => ({ version: LAYOUT_VERSION, screens: {}, shell: { topbar: clampTopbarLayout(DEFAULT_TOPBAR_LAYOUT) } })
 const validNumber = (value: unknown, fallback: number) => typeof value === 'number' && Number.isFinite(value) ? value : fallback
@@ -91,6 +91,10 @@ export function loadUiLayouts(): UiLayoutDocument {
           screens.combat = {}
           continue
         }
+        if (layoutNeedsMigration && hasUnmodifiedGeometry(rawSource['combat-stage'], { x: 0, y: 0, w: 12, h: 14 }) && hasUnmodifiedGeometry(rawSource['combat-spell-deck'], { x: 0, y: 14, w: 12, h: 7 }) && hasUnmodifiedGeometry(rawSource['combat-details'], { x: 0, y: 21, w: 7, h: 8 }) && hasUnmodifiedGeometry(rawSource['combat-dungeon-statistics'], { x: 7, y: 21, w: 5, h: 8 })) {
+          screens.combat = {}
+          continue
+        }
       }
       let combatSource: Record<string, unknown> | undefined
       const requiresLegacyCombatMigration = screen === 'combat' && Object.prototype.hasOwnProperty.call(rawSource, 'combat-stage') && Object.prototype.hasOwnProperty.call(rawSource, 'combat-spell-deck') && (Object.prototype.hasOwnProperty.call(rawSource, 'combat-log') || (layoutNeedsMigration && sourceVersion !== 4))
@@ -130,8 +134,8 @@ export function loadUiLayouts(): UiLayoutDocument {
         const details = panels['combat-details']
         const oldDefaultDetails = details && hasUnmodifiedGeometry(details, { x: 0, y: 21, w: 12, h: 8 })
         if (oldDefaultDetails) {
-          panels['combat-details'] = { ...details, x: 0, w: 7 }
-          panels['combat-dungeon-statistics'] = { ...DEFAULT_LAYOUTS.combat['combat-dungeon-statistics'], y: details.y }
+          panels['combat-details'] = { ...details, x: 0, w: 6 }
+          panels['combat-dungeon-statistics'] = { ...DEFAULT_LAYOUTS.combat['combat-dungeon-statistics'], x: 6, y: details.y, w: 6 }
         } else if (details && details.x === 0 && details.w >= 6 && details.w <= 8) {
           const statisticsWidth = 12 - details.w
           panels['combat-dungeon-statistics'] = statisticsWidth >= 4

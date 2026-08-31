@@ -15,14 +15,13 @@ export interface AdaptiveCombatLayoutOptions {
 
 /**
  * Adapts the single Combat stack from measured content.
- * Saved geometry remains the floor for panels the player intentionally expanded.
+ * The deck bottom is the sole source of truth for the shared analytics row.
  */
 export function getAdaptiveCombatLayout(layout: Layout, options: AdaptiveCombatLayoutOptions | number): Layout {
   const normalized = typeof options === 'number' ? { requiredStageContentHeight: options } : options
   const stage = layout.find((item) => item.i === STAGE_ID)
   const deck = layout.find((item) => item.i === SPELL_DECK_ID)
   const details = layout.find((item) => item.i === DETAILS_ID)
-  const dungeonStatistics = layout.find((item) => item.i === DUNGEON_STATISTICS_ID)
   if (!stage || !deck || !details) return layout
 
   const requiredStageHeight = normalized.requiredStageContentHeight && normalized.requiredStageContentHeight > 0
@@ -34,7 +33,7 @@ export function getAdaptiveCombatLayout(layout: Layout, options: AdaptiveCombatL
   const deckHeight = Math.max(deck.h > DEFAULT_COMBAT_SPELL_DECK_H ? deck.h : DEFAULT_COMBAT_SPELL_DECK_H, requiredDeckHeight)
   const lowerStartY = stage.y + requiredStageHeight
   const deckY = Math.max(deck.y, lowerStartY)
-  const bottomY = Math.max(details.y, dungeonStatistics?.y ?? details.y, deckY + deckHeight)
+  const bottomY = deckY + deckHeight
   const next = layout.map((item) => {
     if (item.i === STAGE_ID) return { ...item, h: requiredStageHeight, x: Math.max(0, Math.min(GRID_COLUMNS - item.w, item.x)) }
     if (item.i === SPELL_DECK_ID) return { ...item, y: deckY, h: deckHeight }

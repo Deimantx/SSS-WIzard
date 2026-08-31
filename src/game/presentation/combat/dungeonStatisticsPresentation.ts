@@ -8,7 +8,7 @@ import type { ItemId } from '../../types'
 export const formatStatisticsTime = (value: number | null) => value === null ? '—' : formatCompactDuration(value)
 export const formatStatisticsRate = (value: number) => `${value.toFixed(1)} /h`
 
-export interface DungeonLootRowPresentation {
+export interface DungeonDropRowPresentation {
   itemId: ItemId
   name: string
   quantity: number
@@ -16,9 +16,12 @@ export interface DungeonLootRowPresentation {
   icon: string
 }
 
+/** @deprecated Use DungeonDropRowPresentation. */
+export type DungeonLootRowPresentation = DungeonDropRowPresentation
+
 export function getDungeonStatisticsPresentation(session: DungeonStatisticsSession | null) {
-  const lootRows: DungeonLootRowPresentation[] = session
-    ? (Object.entries(session.lootByItemId) as [ItemId, number][]).filter(([, quantity]) => quantity > 0).sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0])).map(([itemId, quantity]) => ({ itemId, name: ITEMS[itemId].name, quantity, perHour: ratePerHour(quantity, session), icon: ITEMS[itemId].icon }))
+  const dropRows: DungeonDropRowPresentation[] = session
+    ? (Object.entries(session.lootByItemId) as [ItemId, number][]).filter(([, quantity]) => quantity > 0).sort((left, right) => right[1] - left[1] || ITEMS[left[0]].name.localeCompare(ITEMS[right[0]].name) || left[0].localeCompare(right[0])).map(([itemId, quantity]) => ({ itemId, name: ITEMS[itemId].name, quantity, perHour: ratePerHour(quantity, session), icon: ITEMS[itemId].icon }))
     : []
   const uptime = session && session.elapsedMs > 0 ? Math.min(100, session.engagedMs / session.elapsedMs * 100) : 0
   return {
@@ -29,15 +32,15 @@ export function getDungeonStatisticsPresentation(session: DungeonStatisticsSessi
     currentRunTime: session ? formatCompactDuration(session.currentRunElapsedMs) : '—',
     averageRunTime: formatStatisticsTime(session && session.completedRuns > 0 ? session.completedRunDurationTotalMs / session.completedRuns : null),
     bestRunTime: formatStatisticsTime(session?.bestRunMs ?? null),
-    totalLoot: session?.totalLootQuantity ?? 0,
-    lootPerHour: session ? ratePerHour(session.totalLootQuantity, session) : 0,
-    lootRows,
+    totalDrops: session?.totalLootQuantity ?? 0,
+    dropsPerHour: session ? ratePerHour(session.totalLootQuantity, session) : 0,
+    dropRows,
     uptime,
     downtime: Math.max(0, 100 - uptime),
     averageEncounter: formatStatisticsTime(averageEncounterMs(session)),
     averageBoss: formatStatisticsTime(averageBossMs(session)),
     fastestEncounter: formatStatisticsTime(session?.fastestEncounterMs ?? null),
     fastestBoss: formatStatisticsTime(session?.fastestBossMs ?? null),
-    totalLootLabel: formatNumber(session?.totalLootQuantity ?? 0),
+    totalDropsLabel: formatNumber(session?.totalLootQuantity ?? 0),
   }
 }

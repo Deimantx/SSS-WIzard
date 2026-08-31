@@ -1,9 +1,9 @@
 import type { CombatEvent } from '../../systems/combat/combatTypes'
 import type { DungeonId, GameState, ItemId, MonsterId } from '../../types'
 
-export type DungeonStatisticsMode = 'runs' | 'loot' | 'efficiency'
+export type DungeonStatisticsMode = 'runs' | 'drops' | 'efficiency'
 
-export const DUNGEON_STATISTICS_MODE_ORDER: readonly DungeonStatisticsMode[] = ['runs', 'loot', 'efficiency']
+export const DUNGEON_STATISTICS_MODE_ORDER: readonly DungeonStatisticsMode[] = ['runs', 'drops', 'efficiency']
 
 export interface DungeonStatisticsSession {
   dungeonId: DungeonId

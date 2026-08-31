@@ -4,6 +4,7 @@ import { GRID_COLUMNS, GRID_MARGIN, GRID_ROW_HEIGHT } from '../../ui/layout-edit
 const STAGE_ID = 'combat-stage'
 const SPELL_DECK_ID = 'combat-spell-deck'
 const DETAILS_ID = 'combat-details'
+const DUNGEON_STATISTICS_ID = 'combat-dungeon-statistics'
 export const DEFAULT_COMBAT_SPELL_DECK_H = 7
 export const MAX_ADAPTIVE_COMBAT_SPELL_DECK_H = 9
 
@@ -21,6 +22,7 @@ export function getAdaptiveCombatLayout(layout: Layout, options: AdaptiveCombatL
   const stage = layout.find((item) => item.i === STAGE_ID)
   const deck = layout.find((item) => item.i === SPELL_DECK_ID)
   const details = layout.find((item) => item.i === DETAILS_ID)
+  const dungeonStatistics = layout.find((item) => item.i === DUNGEON_STATISTICS_ID)
   if (!stage || !deck || !details) return layout
 
   const requiredStageHeight = normalized.requiredStageContentHeight && normalized.requiredStageContentHeight > 0
@@ -32,11 +34,11 @@ export function getAdaptiveCombatLayout(layout: Layout, options: AdaptiveCombatL
   const deckHeight = Math.max(deck.h > DEFAULT_COMBAT_SPELL_DECK_H ? deck.h : DEFAULT_COMBAT_SPELL_DECK_H, requiredDeckHeight)
   const lowerStartY = stage.y + requiredStageHeight
   const deckY = Math.max(deck.y, lowerStartY)
-  const detailsY = Math.max(details.y, deckY + deckHeight)
+  const bottomY = Math.max(details.y, dungeonStatistics?.y ?? details.y, deckY + deckHeight)
   const next = layout.map((item) => {
     if (item.i === STAGE_ID) return { ...item, h: requiredStageHeight, x: Math.max(0, Math.min(GRID_COLUMNS - item.w, item.x)) }
     if (item.i === SPELL_DECK_ID) return { ...item, y: deckY, h: deckHeight }
-    if (item.i === DETAILS_ID) return { ...item, y: detailsY }
+    if (item.i === DETAILS_ID || item.i === DUNGEON_STATISTICS_ID) return { ...item, y: bottomY }
     return item
   })
   return next.every((item, index) => item.i === layout[index]?.i && item.x === layout[index]?.x && item.y === layout[index]?.y && item.w === layout[index]?.w && item.h === layout[index]?.h) ? layout : next

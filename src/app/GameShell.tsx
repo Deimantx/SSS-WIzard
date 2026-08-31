@@ -20,6 +20,7 @@ import { OfflineBankResultsDialog } from './shell/OfflineBankResultsDialog'
 import { ToastStack } from './shell/ToastStack'
 import { SaveProtectionNotice } from './shell/SaveProtectionNotice'
 import { TooltipProvider, dismissGameTooltips } from '../components/ui/tooltip/Tooltip'
+import { DefeatSummaryModal } from '../screens/combat/DefeatSummaryModal'
 
 export function GameShell() {
   const screen = useGameStore((state) => state.ui.screen)
@@ -95,5 +96,6 @@ export function GameShell() {
     {!editor.isEditing && editor.notice && <div className="layout-editor-notice-toast" role="status">{editor.notice}</div>}
     <SaveProtectionNotice />
     <ToastStack />
+    <DefeatSummaryModal />
   </div></TooltipProvider>
 }

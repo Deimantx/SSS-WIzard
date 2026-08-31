@@ -56,7 +56,7 @@
   --details-healing: #67c791;
 }
 
-:root { --semantic-mana: var(--resource-mana); --semantic-time: var(--ui-text); --semantic-focus: var(--resource-focus); --semantic-health: var(--resource-health); --semantic-barrier: #62d4e8; --z-normal: 0; --z-sticky: 100; --z-dropdown: 500; --z-context: 800; --z-tooltip: 1000; --z-modal-backdrop: 2000; --z-modal: 2010; --z-modal-tooltip: 2100; --z-toast: 3000; --bg: var(--ui-bg); --panel: var(--ui-panel); --panel-2: var(--ui-panel-strong); --line: var(--ui-border); --muted: var(--ui-text-muted); --soft: var(--ui-text-soft); --violet: var(--ui-accent); --violet-2: var(--ui-accent-strong); --gold: var(--ui-gold); --red: var(--ui-danger); --green: var(--ui-success); --orange: var(--ui-warning); }
+:root { --semantic-mana: var(--resource-mana); --semantic-time: var(--ui-text); --semantic-focus: var(--resource-focus); --semantic-health: var(--ui-health); --semantic-barrier: #62d4e8; --z-normal: 0; --z-sticky: 100; --z-dropdown: 500; --z-context: 800; --z-context-dropdown: 850; --z-tooltip: 1000; --z-modal-backdrop: 2000; --z-modal: 2010; --z-modal-tooltip: 2100; --z-toast: 3000; --bg: var(--ui-bg); --panel: var(--ui-panel); --panel-2: var(--ui-panel-strong); --line: var(--ui-border); --muted: var(--ui-text-muted); --soft: var(--ui-text-soft); --violet: var(--ui-accent); --violet-2: var(--ui-accent-strong); --gold: var(--ui-gold); --red: var(--ui-danger); --green: var(--ui-success); --orange: var(--ui-warning); }
 body.modal-open { overflow: hidden; }
 body { color: var(--ui-text); background: var(--ui-bg); }
 .game-shell { background: var(--ui-bg); }

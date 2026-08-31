@@ -39,10 +39,12 @@ import { applySpellPresetAction, createSpellPresetAction, deleteSpellPresetActio
 import { clearCombatLogUi, combatLogUiSink as combatLogSink } from '../game/ui/combatLogStore'
 import { combatAlertsObserver, combatAlertsSink, clearCombatAlerts } from '../game/ui/combatAlertsStore'
 import { beginCombatRecapRun, clearCombatRecap, combatRecapSink } from '../game/ui/combatRecapStore'
+import { clearCombatDefeat, combatDefeatSink } from '../game/ui/combatDefeatStore'
 import { createCombatEventSink } from '../game/systems/combat/combatEventSink'
 import { combatTelemetryObserver, combatTelemetrySink } from '../game/telemetry/combat/combatTelemetryStore'
+import { clearDungeonStatistics, dungeonStatisticsObserver, dungeonStatisticsSink } from '../game/telemetry/dungeon/dungeonStatisticsStore'
 
-const combatEventSink = createCombatEventSink(combatLogSink, combatRecapSink, combatAlertsSink, combatTelemetrySink)
+const combatEventSink = createCombatEventSink(combatLogSink, combatRecapSink, combatDefeatSink, combatAlertsSink, dungeonStatisticsSink, combatTelemetrySink)
 const combatLogUiSink = combatEventSink
 
 export interface RecentAcquisition { itemId: ItemId; amount: number; timestamp: number; isNew: boolean }
@@ -170,7 +172,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   lastOfflineBankReport: null,
   tick: (deltaMs) => set((state) => {
     if (isOfflineBankSimulationActive()) return state
-    return advanceGameState(state, deltaMs, { mode: 'live', onItemAcquired: (itemId, amount) => recordRecentAcquisition(state, itemId, amount), uiEvents: combatEventSink, telemetry: combatTelemetryObserver, alerts: combatAlertsObserver })
+    return advanceGameState(state, deltaMs, { mode: 'live', onItemAcquired: (itemId, amount) => recordRecentAcquisition(state, itemId, amount), uiEvents: combatEventSink, telemetry: combatTelemetryObserver, alerts: combatAlertsObserver, statistics: dungeonStatisticsObserver })
   }),
   setScreen: (screen) => set((state) => { state.ui.screen = screen; return state }),
   addArcaneEcho: () => set((state) => {
@@ -227,8 +229,8 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   deleteSpellPreset: (id) => { let result = false; set((state) => { result = deleteSpellPresetAction(state, id); return state }); return result },
   saveSpellPreset: (preset) => { let result = false; set((state) => { result = saveSpellPresetAction(state, preset); return state }); return result },
   applySpellPreset: (id) => { let result: ApplySpellPresetResult = { ok: false, reason: 'missing-preset', unavailableSpellIds: [] }; set((state) => { result = applySpellPresetAction(state, id); return state }); return result },
-  enterDungeon: (dungeonId = 'whispering-woods') => set((state) => { const dungeon = DUNGEONS[dungeonId]; if (state.combat.active || !dungeon) return state; if (!isDungeonUnlocked(dungeon, state.progress)) { pushNotification(state, `${getDungeonUnlockRequirement(dungeon) ?? 'Requirement'} to unlock ${dungeon.name}.`, 'warning'); return state } clearCombatLogUi(); beginCombatRecapRun(); combatAlertsObserver.beginRun(dungeonId); combatTelemetryObserver.beginRun(dungeonId); state.combat.active = true; state.combat.dungeonId = dungeonId; state.combat.encounterTimerMs = 0; state.player.health = Math.max(1, state.player.health); spawnNextEnemy(state, combatEventSink); pushNotification(state, `${dungeon.name} entered`, 'info'); return state }),
-  leaveDungeon: () => { combatAlertsObserver.clear(); combatTelemetryObserver.endRun('leave'); return set((state) => { state.combat = { ...createInitialState().combat, log: ['Left the dungeon. Threat Cleared resets.'] }; return state }) },
+  enterDungeon: (dungeonId = 'whispering-woods') => set((state) => { const dungeon = DUNGEONS[dungeonId]; if (state.combat.active || !dungeon) return state; if (!isDungeonUnlocked(dungeon, state.progress)) { pushNotification(state, `${getDungeonUnlockRequirement(dungeon) ?? 'Requirement'} to unlock ${dungeon.name}.`, 'warning'); return state } clearCombatLogUi(); clearCombatDefeat(); beginCombatRecapRun(); combatAlertsObserver.beginRun(dungeonId); combatTelemetryObserver.beginRun(dungeonId); dungeonStatisticsObserver.beginSession(dungeonId); state.combat.active = true; state.combat.dungeonId = dungeonId; state.combat.encounterTimerMs = 0; state.player.health = Math.max(1, state.player.health); spawnNextEnemy(state, combatEventSink); pushNotification(state, `${dungeon.name} entered`, 'info'); return state }),
+  leaveDungeon: () => { combatAlertsObserver.clear(); combatTelemetryObserver.endRun('leave'); dungeonStatisticsObserver.endSession('leave'); clearCombatDefeat(); return set((state) => { state.combat = { ...createInitialState().combat, log: ['Left the dungeon. Threat Cleared resets.'] }; return state }) },
   engageBoss: (bossId) => set((state) => {
     const dungeon = DUNGEONS[state.combat.dungeonId ?? 'whispering-woods']
     const boss = MONSTERS[bossId]
@@ -286,6 +288,8 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     clearCombatLogUi()
     clearCombatAlerts()
     clearCombatRecap()
+    clearCombatDefeat()
+    clearDungeonStatistics()
     combatTelemetryObserver.clear()
     set((state) => { Object.assign(state, loaded.state as GameState); state.recentAcquisitions = []; state.lastOfflineBankReport = null; recalculateDerivedStats(state); return state })
   },
@@ -302,11 +306,13 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     clearCombatLogUi()
     clearCombatAlerts()
     clearCombatRecap()
+    clearCombatDefeat()
+    clearDungeonStatistics()
     combatTelemetryObserver.clear()
     set((state) => { Object.assign(state, fresh); state.recentAcquisitions = []; state.lastOfflineBankReport = null; return state })
     if (activeProfileId) updateProfileMetadata(activeProfileId, { lastSavedAt: fresh.lastSavedAt })
   },
-  hydrateState: (nextState) => { clearCombatLogUi(); clearCombatAlerts(); clearCombatRecap(); combatTelemetryObserver.clear(); return set((state) => { Object.assign(state, nextState); state.recentAcquisitions = []; state.lastOfflineBankReport = null; recalculateDerivedStats(state); return state }) },
+  hydrateState: (nextState) => { clearCombatLogUi(); clearCombatAlerts(); clearCombatRecap(); clearCombatDefeat(); clearDungeonStatistics(); combatTelemetryObserver.clear(); return set((state) => { Object.assign(state, nextState); state.recentAcquisitions = []; state.lastOfflineBankReport = null; recalculateDerivedStats(state); return state }) },
   dismissNotification: (id) => set((state) => { state.notifications = state.notifications.filter((note) => note.id !== id); return state }),
   setPlayer: (changes) => set((state) => { state.player = { ...state.player, ...changes }; recalculateDerivedStats(state); return state }),
   addMana: (amount) => set((state) => { state.player.mana = Math.max(0, state.player.mana + sanitizeDebugNumber(amount)); recalculateDerivedStats(state); return state }),
@@ -358,7 +364,7 @@ const completeDungeonPreset = () => useGameStore.setState((state) => {
   state.combat.threatCleared = DUNGEONS['abandoned-catacombs'].threatRequired
   spawnEnemy(state, DUNGEONS['abandoned-catacombs'].boss, combatLogUiSink)
 })
-useGameStore.setState({ preset: (name) => { combatAlertsObserver.clear(); clearCombatRecap(); combatTelemetryObserver.clear(); presetGameplayState(name); if (name === 'boss' || name === 'main-boss') prepareForestHeartPreset(); if (name === 'chapter-complete') completeDungeonPreset(); useGameStore.setState({ recentAcquisitions: [] }) } })
+useGameStore.setState({ preset: (name) => { combatAlertsObserver.clear(); clearCombatRecap(); clearCombatDefeat(); clearDungeonStatistics(); combatTelemetryObserver.clear(); presetGameplayState(name); if (name === 'boss' || name === 'main-boss') prepareForestHeartPreset(); if (name === 'chapter-complete') completeDungeonPreset(); const presetState = useGameStore.getState(); if (presetState.combat.active && presetState.combat.dungeonId) dungeonStatisticsObserver.beginSession(presetState.combat.dungeonId); useGameStore.setState({ recentAcquisitions: [] }) } })
 
 export const useGameStoreSelectors = { selectUsedFocus, selectFreeFocus }
 export { selectUsedFocus, selectFreeFocus }

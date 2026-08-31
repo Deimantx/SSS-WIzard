@@ -117,7 +117,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
 
 export const resolveCombatDeaths = (state: GameState, report?: SimulationReportCollector, onItemAcquired?: (itemId: ItemId, quantity: number) => void, uiEvents?: CombatEventSink) => {
   if (state.player.health <= 0 && !state.player.godMode) {
-    uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'player', category: 'death', sourceId: 'player-defeated' })
+    uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'player', targetMonsterId: state.combat.enemyId ?? undefined, category: 'death', sourceId: 'player-defeated' })
     report?.recordPlayerDeath()
     state.combat.active = false
     state.combat.enemyId = null

@@ -3,6 +3,7 @@ import { RECIPE_ORDER } from '../../game/content/recipes/recipes'
 import { ITEMS } from '../../game/content/items/items'
 import { SCHOOLS } from '../../game/content/schools/schools'
 import { COMBAT_DETAILS_MODE_ORDER } from '../../game/presentation/combat/combatDetailsPresentation'
+import { DUNGEON_STATISTICS_MODE_ORDER } from '../../game/telemetry/dungeon/dungeonStatisticsTypes'
 import type { CombatLogFontSize, ScreenPreferences, TransmutationLibraryFilter, UiPreferences } from './uiPreferencesTypes'
 
 export const UI_PREFERENCES_KEY = 'sss-wizard-ui-preferences-v1'
@@ -10,7 +11,7 @@ export const defaultScreenPreferences = (): ScreenPreferences => ({
   inventory: { currentNeedsOpen: true, sourceOpen: false, usedInOpen: true },
   transmutation: { selectedRecipeId: RECIPE_ORDER[0], recipeFilter: 'all', usedInOpen: true, collapsedCategories: { elemental: false, material: false, equipment: false, special: false } },
   research: { selectedItemId: null, affinityFilter: 'all', targetSchoolId: 'fire' },
-  combat: { combatLogFontSize: 'medium', combatDetailsMode: 'damage-done' },
+  combat: { combatLogFontSize: 'medium', combatDetailsMode: 'damage-done', dungeonStatisticsMode: 'runs' },
 })
 
 export const defaultUiPreferences = (): UiPreferences => ({ theme: 'default', textSize: 'default', backgroundEffects: true, reducedMotion: false, customTheme: customFromPreset(THEME_PRESETS.default), navigationGroups: { combat: false, hero: false, tower: false, world: false, system: false }, screenState: defaultScreenPreferences() })
@@ -37,7 +38,8 @@ export const normalizeUiPreferences = (value: unknown): UiPreferences => {
   const targetSchoolId = research.targetSchoolId && SCHOOLS[research.targetSchoolId] ? research.targetSchoolId : defaults.screenState.research.targetSchoolId
   const combatLogFontSize: CombatLogFontSize = combat.combatLogFontSize === 'small' || combat.combatLogFontSize === 'large' || combat.combatLogFontSize === 'xlarge' ? combat.combatLogFontSize : 'medium'
   const combatDetailsMode = COMBAT_DETAILS_MODE_ORDER.includes(combat.combatDetailsMode as typeof COMBAT_DETAILS_MODE_ORDER[number]) ? combat.combatDetailsMode as typeof COMBAT_DETAILS_MODE_ORDER[number] : defaults.screenState.combat.combatDetailsMode
-  return { theme: input.theme === 'dark' || input.theme === 'light' || input.theme === 'custom' ? input.theme : 'default', textSize: input.textSize === 'large' || input.textSize === 'extra-large' ? input.textSize : 'default', backgroundEffects: input.backgroundEffects !== false, reducedMotion: input.reducedMotion === true, customTheme: custom, navigationGroups: { combat: groups.combat === true, hero: groups.hero === true, tower: groups.tower === true, world: groups.world === true, system: groups.system === true }, screenState: { inventory: { currentNeedsOpen: inventory.currentNeedsOpen !== false, sourceOpen: inventory.sourceOpen === true, usedInOpen: inventory.usedInOpen !== false, }, transmutation: { selectedRecipeId, recipeFilter, usedInOpen: transmutation.usedInOpen !== false, collapsedCategories: { elemental: collapsedCategories.elemental === true, material: collapsedCategories.material === true, equipment: collapsedCategories.equipment === true, special: collapsedCategories.special === true } }, research: { selectedItemId, affinityFilter, targetSchoolId }, combat: { combatLogFontSize, combatDetailsMode } } }
+  const dungeonStatisticsMode = DUNGEON_STATISTICS_MODE_ORDER.includes(combat.dungeonStatisticsMode as typeof DUNGEON_STATISTICS_MODE_ORDER[number]) ? combat.dungeonStatisticsMode as typeof DUNGEON_STATISTICS_MODE_ORDER[number] : defaults.screenState.combat.dungeonStatisticsMode
+  return { theme: input.theme === 'dark' || input.theme === 'light' || input.theme === 'custom' ? input.theme : 'default', textSize: input.textSize === 'large' || input.textSize === 'extra-large' ? input.textSize : 'default', backgroundEffects: input.backgroundEffects !== false, reducedMotion: input.reducedMotion === true, customTheme: custom, navigationGroups: { combat: groups.combat === true, hero: groups.hero === true, tower: groups.tower === true, world: groups.world === true, system: groups.system === true }, screenState: { inventory: { currentNeedsOpen: inventory.currentNeedsOpen !== false, sourceOpen: inventory.sourceOpen === true, usedInOpen: inventory.usedInOpen !== false, }, transmutation: { selectedRecipeId, recipeFilter, usedInOpen: transmutation.usedInOpen !== false, collapsedCategories: { elemental: collapsedCategories.elemental === true, material: collapsedCategories.material === true, equipment: collapsedCategories.equipment === true, special: collapsedCategories.special === true } }, research: { selectedItemId, affinityFilter, targetSchoolId }, combat: { combatLogFontSize, combatDetailsMode, dungeonStatisticsMode } } }
 }
 
 export const loadUiPreferences = (): UiPreferences => { try { const raw = window.localStorage.getItem(UI_PREFERENCES_KEY); return raw ? normalizeUiPreferences(JSON.parse(raw)) : defaultUiPreferences() } catch { return defaultUiPreferences() } }

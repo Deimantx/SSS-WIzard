@@ -6,6 +6,8 @@ export interface SelectMenuOption<T extends string> {
   label: ReactNode
 }
 
+export type SelectMenuPortalLayer = 'default' | 'context' | 'modal'
+
 interface MenuPosition {
   top: number
   left: number
@@ -13,13 +15,14 @@ interface MenuPosition {
   maxHeight: number
 }
 
-export function SelectMenu<T extends string>({ options, value, onChange, ariaLabel, prefix = '', disabled = false }: {
+export function SelectMenu<T extends string>({ options, value, onChange, ariaLabel, prefix = '', disabled = false, portalLayer = 'default' }: {
   options: readonly SelectMenuOption<T>[]
   value: T
   onChange: (value: T) => void
   ariaLabel: string
   prefix?: string
   disabled?: boolean
+  portalLayer?: SelectMenuPortalLayer
 }) {
   const [open, setOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(() => Math.max(0, options.findIndex((option) => option.value === value)))
@@ -86,7 +89,7 @@ export function SelectMenu<T extends string>({ options, value, onChange, ariaLab
     <div
       ref={optionsRef}
       id={menuId}
-      className={`select-menu-options select-menu-options-portal${triggerRef.current?.closest('[aria-modal="true"]') ? ' is-modal-dropdown' : ''}`}
+      className={`select-menu-options select-menu-options-portal${portalLayer === 'context' ? ' is-context-dropdown' : portalLayer === 'modal' || triggerRef.current?.closest('[aria-modal="true"]') ? ' is-modal-dropdown' : ''}`}
       role="listbox"
       aria-label={ariaLabel}
       style={{ '--select-menu-top': `${menuPosition.top}px`, '--select-menu-left': `${menuPosition.left}px`, '--select-menu-width': `${menuPosition.width}px`, '--select-menu-max-height': `${menuPosition.maxHeight}px` } as CSSProperties}

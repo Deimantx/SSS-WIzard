@@ -23,6 +23,7 @@ import { allocateContinuousMana } from './continuousManaScheduler'
 import { isSpellUnlocked } from '../spells'
 import { MAX_SIMULATION_DELTA_MS, SIMULATION_QUANTUM_MS } from './simulationConstants'
 import type { CombatTelemetryObserver } from '../../telemetry/combat/combatTelemetryTypes'
+import type { DungeonStatisticsObserver } from '../../telemetry/dungeon/dungeonStatisticsTypes'
 
 export interface AdvanceContext {
   mode: 'live' | 'banked'
@@ -31,6 +32,7 @@ export interface AdvanceContext {
   uiEvents?: CombatEventSink
   telemetry?: CombatTelemetryObserver
   alerts?: CombatAlertObserver
+  statistics?: DungeonStatisticsObserver
 }
 
 const spellUnlocked = isSpellUnlocked
@@ -103,6 +105,7 @@ const tickCombat = (state: GameState, delta: number, context: AdvanceContext) =>
 const advanceGameStateStep = (state: GameState, delta: number, context: AdvanceContext) => {
   context.telemetry?.advance(delta, state)
   context.alerts?.advance(delta, state)
+  context.statistics?.advance(delta, state)
   const channelingTick = advanceChanneling(state, delta)
   if (channelingTick.discoveries.includes('deep-reservoir')) recalculateDerivedStats(state)
   channelingTick.discoveries.forEach((id) => {
@@ -122,7 +125,7 @@ const advanceGameStateStep = (state: GameState, delta: number, context: AdvanceC
 
 export const advanceGameState = (state: GameState, deltaMs: number, context: AdvanceContext = { mode: 'live' }) => {
   const bounded = Math.min(MAX_SIMULATION_DELTA_MS, Math.max(0, deltaMs))
-  const simulationContext = context.mode === 'live' ? context : { ...context, uiEvents: undefined, telemetry: undefined, alerts: undefined }
+  const simulationContext = context.mode === 'live' ? context : { ...context, uiEvents: undefined, telemetry: undefined, alerts: undefined, statistics: undefined }
   let remaining = bounded
 
   while (remaining > 0) {

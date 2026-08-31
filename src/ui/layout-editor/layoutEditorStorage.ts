@@ -3,8 +3,8 @@ import { DEFAULT_LAYOUTS } from './defaultLayouts'
 import { LAYOUT_VERSION, type SavedPanelLayout, type UiLayoutDocument } from './layoutEditorTypes'
 import { clampTopbarLayout, DEFAULT_TOPBAR_LAYOUT } from './shellLayout'
 
-export const UI_LAYOUTS_KEY = 'sss-wizard-ui-layout-v4'
-const LEGACY_UI_LAYOUTS_KEYS = ['sss-wizard-ui-layout-v3', 'sss-wizard-ui-layout-v2'] as const
+export const UI_LAYOUTS_KEY = 'sss-wizard-ui-layout-v5'
+const LEGACY_UI_LAYOUTS_KEYS = ['sss-wizard-ui-layout-v4', 'sss-wizard-ui-layout-v3', 'sss-wizard-ui-layout-v2'] as const
 
 const blankDocument = (): UiLayoutDocument => ({ version: LAYOUT_VERSION, screens: {}, shell: { topbar: clampTopbarLayout(DEFAULT_TOPBAR_LAYOUT) } })
 const validNumber = (value: unknown, fallback: number) => typeof value === 'number' && Number.isFinite(value) ? value : fallback
@@ -51,6 +51,7 @@ export function loadUiLayouts(): UiLayoutDocument {
     const raw = [UI_LAYOUTS_KEY, ...LEGACY_UI_LAYOUTS_KEYS].map((key) => window.localStorage.getItem(key)).find(Boolean)
     if (!raw) return blankDocument()
     const parsed = JSON.parse(raw) as Partial<UiLayoutDocument>
+    const sourceVersion = typeof parsed.version === 'number' ? Number(parsed.version) : 0
     const layoutNeedsMigration = parsed.version !== LAYOUT_VERSION
     const screens: UiLayoutDocument['screens'] = {}
     for (const screen of Object.keys(DEFAULT_LAYOUTS) as ScreenId[]) {
@@ -92,7 +93,8 @@ export function loadUiLayouts(): UiLayoutDocument {
         }
       }
       let combatSource: Record<string, unknown> | undefined
-      if (screen === 'combat' && Object.prototype.hasOwnProperty.call(rawSource, 'combat-stage') && Object.prototype.hasOwnProperty.call(rawSource, 'combat-spell-deck') && (layoutNeedsMigration || Object.prototype.hasOwnProperty.call(rawSource, 'combat-log'))) {
+      const requiresLegacyCombatMigration = screen === 'combat' && Object.prototype.hasOwnProperty.call(rawSource, 'combat-stage') && Object.prototype.hasOwnProperty.call(rawSource, 'combat-spell-deck') && (Object.prototype.hasOwnProperty.call(rawSource, 'combat-log') || (layoutNeedsMigration && sourceVersion !== 4))
+      if (requiresLegacyCombatMigration) {
         const rawDeck = rawSource['combat-spell-deck'] as Partial<SavedPanelLayout>
         const rawDetails = rawSource['combat-details'] as Partial<SavedPanelLayout> | undefined
         const rawLog = rawSource['combat-log'] as Partial<SavedPanelLayout> | undefined
@@ -124,6 +126,21 @@ export function loadUiLayouts(): UiLayoutDocument {
       if (screen === 'tower-channeling' && ('channeling-main' in source || 'channeling-stats' in source)) continue
       const panels: Record<string, SavedPanelLayout> = {}
       for (const [id, value] of Object.entries(source)) { const normalized = normalizePanel(screen, id, value); if (normalized) panels[id] = normalized }
+      if (screen === 'combat' && !panels['combat-dungeon-statistics']) {
+        const details = panels['combat-details']
+        const oldDefaultDetails = details && hasUnmodifiedGeometry(details, { x: 0, y: 21, w: 12, h: 8 })
+        if (oldDefaultDetails) {
+          panels['combat-details'] = { ...details, x: 0, w: 7 }
+          panels['combat-dungeon-statistics'] = { ...DEFAULT_LAYOUTS.combat['combat-dungeon-statistics'], y: details.y }
+        } else if (details && details.x === 0 && details.w >= 6 && details.w <= 8) {
+          const statisticsWidth = 12 - details.w
+          panels['combat-dungeon-statistics'] = statisticsWidth >= 4
+            ? { ...DEFAULT_LAYOUTS.combat['combat-dungeon-statistics'], x: details.w, y: details.y, w: statisticsWidth, h: details.h }
+            : { ...DEFAULT_LAYOUTS.combat['combat-dungeon-statistics'], y: Math.max(0, details.y + details.h) }
+        } else {
+          placeMissingPanel(screen, 'combat-dungeon-statistics', panels)
+        }
+      }
       if (screen === 'tower-research' && hasGeometry(source['research-library'], { x: 0, y: 0, w: 6, h: 10 }) && hasGeometry(source['research-inspector'], { x: 6, y: 0, w: 6, h: 10 }) && hasGeometry(source['research-prepared'], { x: 0, y: 10, w: 12, h: 10 })) {
         panels['research-library'] = { ...panels['research-library'], ...DEFAULT_LAYOUTS['tower-research']['research-library'] }
         panels['research-inspector'] = { ...panels['research-inspector'], ...DEFAULT_LAYOUTS['tower-research']['research-inspector'] }

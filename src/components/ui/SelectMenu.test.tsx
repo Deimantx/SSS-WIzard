@@ -19,4 +19,11 @@ describe('SelectMenu', () => {
     await user.click(screen.getByTestId('outside'))
     expect(screen.queryByRole('listbox', { name: 'Spell type filter' })).toBeNull()
   })
+
+  it('marks context-layer menus so a drawer can sit below its portal options', async () => {
+    const user = userEvent.setup()
+    render(<SelectMenu options={[{ value: 'small', label: 'Small' }, { value: 'large', label: 'Large' }]} value="small" onChange={() => undefined} ariaLabel="Text size" portalLayer="context" />)
+    await user.click(screen.getByRole('button', { name: 'Text size' }))
+    expect(screen.getByRole('listbox', { name: 'Text size' }).className).toContain('is-context-dropdown')
+  })
 })

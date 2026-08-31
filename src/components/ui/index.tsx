@@ -23,5 +23,5 @@ export function SearchInput({ value, onChange, placeholder = 'Search...', ariaLa
 export function Tabs<T extends string>({ items, active, onChange }: { items: readonly T[]; active: T; onChange: (value: T) => void }) { return <div className="tabs" role="tablist">{items.map((item) => <button role="tab" aria-selected={item === active} className={item === active ? 'active' : ''} key={item} onClick={() => onChange(item)}>{item}</button>)}</div> }
 export { ArchiveProgressTile } from './ArchiveProgressTile'
 export { FilterBar, type FilterOption } from './FilterBar'
-export { SelectMenu, type SelectMenuOption } from './SelectMenu'
+export { SelectMenu, type SelectMenuOption, type SelectMenuPortalLayer } from './SelectMenu'
 export { ModalPortal } from './ModalPortal'

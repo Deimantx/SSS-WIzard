@@ -10,15 +10,15 @@ describe('screen UI preferences', () => {
 
     expect(preferences.screenState.inventory).toEqual({ currentNeedsOpen: true, sourceOpen: false, usedInOpen: true })
     expect(preferences.screenState.transmutation).toEqual({ selectedRecipeId: 'fire-fragment', recipeFilter: 'all', usedInOpen: true, collapsedCategories: { elemental: false, material: false, equipment: false, special: false } })
-    expect(preferences.screenState.combat).toEqual({ combatLogFontSize: 'medium', combatDetailsMode: 'damage-done' })
+    expect(preferences.screenState.combat).toEqual({ combatLogFontSize: 'medium', combatDetailsMode: 'damage-done', dungeonStatisticsMode: 'runs' })
   })
 
   it('validates the Full Combat Log font preference independently of gameplay', () => {
     const preferences = normalizeUiPreferences({ screenState: { combat: { combatLogFontSize: 'huge' } } })
-    expect(preferences.screenState.combat).toEqual({ combatLogFontSize: 'medium', combatDetailsMode: 'damage-done' })
+    expect(preferences.screenState.combat).toEqual({ combatLogFontSize: 'medium', combatDetailsMode: 'damage-done', dungeonStatisticsMode: 'runs' })
 
     setUiPreferences({ screenState: { combat: { combatLogFontSize: 'xlarge' } } })
-    expect(loadUiPreferences().screenState.combat).toEqual({ combatLogFontSize: 'xlarge', combatDetailsMode: 'damage-done' })
+    expect(loadUiPreferences().screenState.combat).toEqual({ combatLogFontSize: 'xlarge', combatDetailsMode: 'damage-done', dungeonStatisticsMode: 'runs' })
   })
 
   it('normalizes malformed screen preferences without affecting gameplay', () => {

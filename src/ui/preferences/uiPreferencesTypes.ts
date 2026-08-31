@@ -1,5 +1,6 @@
 import type { ItemId, RecipeCategory, SchoolId } from '../../game/types'
 import type { CombatDetailsMode } from '../../game/presentation/combat/combatDetailsPresentation'
+import type { DungeonStatisticsMode } from '../../game/telemetry/dungeon/dungeonStatisticsTypes'
 
 export type UiTheme = 'default' | 'dark' | 'light' | 'custom'
 export type TextSize = 'default' | 'large' | 'extra-large'
@@ -40,6 +41,7 @@ export type CombatLogFontSize = 'small' | 'medium' | 'large' | 'xlarge'
 export interface CombatScreenPreferences {
   combatLogFontSize: CombatLogFontSize
   combatDetailsMode: CombatDetailsMode
+  dungeonStatisticsMode: DungeonStatisticsMode
 }
 
 export interface ScreenPreferences {

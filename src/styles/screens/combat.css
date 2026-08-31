@@ -2490,6 +2490,7 @@
 .dungeon-statistics-drops-list::-webkit-scrollbar { width: 6px; }
 .dungeon-statistics-drops-list::-webkit-scrollbar-track { background: transparent; }
 .dungeon-statistics-drops-list::-webkit-scrollbar-thumb { border-radius: 999px; background: var(--ui-border-strong); }
+.dungeon-statistics-summary-grid > .game-tooltip-trigger { display: block; min-width: 0; width: 100%; }
 @container (max-width: 420px) {
   .dungeon-statistics-panel { padding: 10px; gap: 7px; }
   .dungeon-statistics-head { display: grid; gap: 6px; }
@@ -2725,14 +2726,10 @@
   background: radial-gradient(circle at 12% 8%, rgb(52 152 132 / 5%), transparent 43%), radial-gradient(circle at 82% 72%, rgb(25 98 90 / 4%), transparent 48%);
   transition: opacity 350ms ease, filter 350ms ease;
 }
-.combat-ambient-den { background: radial-gradient(circle at 80% 12%, rgb(119 139 188 / 5%), transparent 44%), radial-gradient(circle at 18% 80%, rgb(87 66 116 / 4%), transparent 50%); }
-.combat-ambient-catacombs { background: radial-gradient(circle at 70% 15%, rgb(119 95 173 / 6%), transparent 45%), radial-gradient(circle at 20% 80%, rgb(58 74 129 / 5%), transparent 52%); }
+.combat-ambient-layer.is-combat-active { opacity: .72; }
 .combat-ambient-layer.is-boss-active { opacity: .9; filter: saturate(1.14); }
 .combat-ambient-particles { position: absolute; inset: 0; }
-.combat-ambient-particles i { position: absolute; top: var(--particle-top); left: var(--particle-left); width: 3px; height: 3px; border-radius: 50%; opacity: .24; background: var(--ui-accent); box-shadow: 0 0 8px currentColor; animation: combat-ambient-mote var(--particle-duration) ease-in-out var(--particle-delay) infinite alternate; }
-.combat-ambient-den .combat-ambient-particles i { color: #a7bde8; background: currentColor; }
-.combat-ambient-catacombs .combat-ambient-particles i { color: #b9a6ed; background: currentColor; }
-.combat-ambient-woods .combat-ambient-particles i { color: #78cdb0; background: currentColor; }
+.combat-ambient-particles i { position: absolute; top: var(--particle-top); left: var(--particle-left); width: 3px; height: 3px; border-radius: 50%; opacity: .24; color: var(--ui-accent); background: currentColor; box-shadow: 0 0 8px currentColor; animation: combat-ambient-mote var(--particle-duration) ease-in-out var(--particle-delay) infinite alternate; }
 @keyframes combat-ambient-mote { from { opacity: .1; transform: translate3d(-4px, 5px, 0); } to { opacity: .36; transform: translate3d(6px, -9px, 0); } }
 
 .combat-actor-card { position: relative; }
@@ -2815,3 +2812,22 @@
   .dungeon-statistics-drop-row.is-new { animation: none; }
   .combat-ambient-particles i { opacity: .18; }
 }
+
+/* V3.9 responsive readability tokens for high-frequency Combat surfaces */
+.combat-flow-timeline-head strong,
+.combat-flow-timeline-time,
+.combat-flow-effect strong,
+.spell-combat-name strong,
+.dungeon-statistics-context strong,
+.dungeon-statistics-drop-row > strong { font-size: var(--ui-font-small); }
+.combat-flow-effect small,
+.combat-status-chip,
+.dungeon-statistics-stat > span,
+.dungeon-statistics-drop-row > span:not(.dungeon-statistics-drop-icon),
+.dungeon-statistics-uptime span { font-size: var(--ui-font-micro); }
+.combat-resource-label,
+.spell-combat-footer,
+.dungeon-statistics-stat > strong,
+.dungeon-statistics-drop-row > span:not(.dungeon-statistics-drop-icon),
+.dungeon-statistics-uptime strong,
+.combat-flow-timeline-time { font-variant-numeric: tabular-nums; }

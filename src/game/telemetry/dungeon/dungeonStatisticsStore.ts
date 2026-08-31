@@ -14,7 +14,6 @@ interface DungeonStatisticsStore extends DungeonStatisticsState {
   completeRun: (durationMs: number) => void
   beginEncounter: (monsterId: MonsterId, boss: boolean) => void
   completeEncounter: (monsterId: MonsterId, durationMs: number, boss: boolean) => void
-  recordLoot: (itemId: ItemId, quantity: number) => void
   consumeEvent: (event: CombatEvent) => void
   reset: () => void
   clear: () => void
@@ -42,6 +41,11 @@ const newSession = (dungeonId: DungeonId): DungeonStatisticsSession => ({
 
 const bossFor = (monsterId: MonsterId) => Boolean(MONSTERS[monsterId] && isBossMonster(MONSTERS[monsterId]))
 const validDuration = (durationMs: number) => Number.isFinite(durationMs) ? Math.max(0, durationMs) : 0
+const addLootToSession = (session: DungeonStatisticsSession, itemId: ItemId, quantity: number): DungeonStatisticsSession => {
+  const lootByItemId = { ...session.lootByItemId, [itemId]: (session.lootByItemId[itemId] ?? 0) + quantity }
+  const totalLootQuantity = Object.values(lootByItemId).reduce((total, amount) => total + (Number.isFinite(amount) ? Math.max(0, amount ?? 0) : 0), 0)
+  return { ...session, totalLootQuantity, lootByItemId }
+}
 
 const beginEncounterState = (state: DungeonStatisticsStore, monsterId: MonsterId, boss: boolean) => ({ ...state, currentEncounter: { monsterId, boss, elapsedMs: 0 } })
 const completeEncounterState = (state: DungeonStatisticsStore, monsterId: MonsterId, durationMs: number, boss: boolean) => {
@@ -71,7 +75,7 @@ const completeRunState = (state: DungeonStatisticsStore, durationMs: number) => 
 
 export const useDungeonStatisticsStore = create<DungeonStatisticsStore>((set) => ({
   ...initialState(),
-  beginSession: (dungeonId) => set({ session: newSession(dungeonId), active: true, currentEncounter: null }),
+  beginSession: (dungeonId) => set((state) => state.active && state.session?.dungeonId === dungeonId ? state : { session: newSession(dungeonId), active: true, currentEncounter: null }),
   endSession: (_reason) => set((state) => ({ ...state, active: false, currentEncounter: null })),
   advanceTime: (deltaMs, gameState) => set((state) => {
     const delta = validDuration(deltaMs)
@@ -98,18 +102,14 @@ export const useDungeonStatisticsStore = create<DungeonStatisticsStore>((set) =>
   completeRun: (durationMs) => set((state) => completeRunState(state, durationMs)),
   beginEncounter: (monsterId, boss) => set((state) => state.active && state.session ? beginEncounterState(state, monsterId, boss) : state),
   completeEncounter: (monsterId, durationMs, boss) => set((state) => completeEncounterState(state, monsterId, durationMs, boss)),
-  recordLoot: (itemId, quantity) => set((state) => {
-    if (!state.active || !state.session || !Number.isFinite(quantity) || quantity <= 0) return state
-    return { ...state, session: { ...state.session, totalLootQuantity: state.session.totalLootQuantity + quantity, lootByItemId: { ...state.session.lootByItemId, [itemId]: (state.session.lootByItemId[itemId] ?? 0) + quantity } } }
-  }),
   consumeEvent: (event) => set((state) => {
     let next = state
     if (!next.active && !next.session && event.dungeonId && event.sourceId === 'encounter-start') next = { ...next, active: true, session: newSession(event.dungeonId) }
     if (!next.active || !next.session) return next
     if (event.sourceId === 'encounter-start' && event.targetMonsterId) return beginEncounterState(next, event.targetMonsterId, bossFor(event.targetMonsterId))
-    if (event.category === 'loot' && event.itemId && Number.isFinite(event.amount) && (event.amount ?? 0) > 0) {
+    if (event.category === 'loot' && event.sourceId === 'loot-drop' && event.itemId && Number.isFinite(event.amount) && (event.amount ?? 0) > 0) {
       const quantity = event.amount ?? 0
-      return { ...next, session: { ...next.session, totalLootQuantity: next.session.totalLootQuantity + quantity, lootByItemId: { ...next.session.lootByItemId, [event.itemId]: (next.session.lootByItemId[event.itemId] ?? 0) + quantity } } }
+      return { ...next, session: addLootToSession(next.session, event.itemId, quantity) }
     }
     if (event.sourceId === 'enemy-defeated' && event.targetMonsterId) {
       const boss = bossFor(event.targetMonsterId)
@@ -138,7 +138,6 @@ export const dungeonStatisticsObserver: DungeonStatisticsObserver = {
   completeRun: (durationMs) => useDungeonStatisticsStore.getState().completeRun(durationMs),
   beginEncounter: (monsterId, boss) => useDungeonStatisticsStore.getState().beginEncounter(monsterId, boss),
   completeEncounter: (monsterId, durationMs, boss) => useDungeonStatisticsStore.getState().completeEncounter(monsterId, durationMs, boss),
-  recordLoot: (itemId, quantity) => useDungeonStatisticsStore.getState().recordLoot(itemId, quantity),
   consume: (event) => useDungeonStatisticsStore.getState().consumeEvent(event),
   reset: () => useDungeonStatisticsStore.getState().reset(),
   clear: () => useDungeonStatisticsStore.getState().clear(),

@@ -32,7 +32,6 @@ export interface DungeonStatisticsObserver {
   completeRun: (durationMs: number) => void
   beginEncounter: (monsterId: MonsterId, boss: boolean) => void
   completeEncounter: (monsterId: MonsterId, durationMs: number, boss: boolean) => void
-  recordLoot: (itemId: ItemId, quantity: number) => void
   consume: (event: CombatEvent) => void
   reset: () => void
   clear: () => void

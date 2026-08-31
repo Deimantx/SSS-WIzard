@@ -36,8 +36,35 @@ describe('dungeon statistics presentation', () => {
 
     expect(presentation.fullRuns).toBe(2)
     expect(presentation.runsPerHour).toBe(2)
-    expect(presentation.currentRunTime).not.toBe('—')
-    expect(presentation.averageRunTime).not.toBe('—')
-    expect(presentation.bestRunTime).not.toBe('—')
+    expect(presentation.currentRunTime).not.toBe('')
+    expect(presentation.averageRunTime).not.toBe('')
+    expect(presentation.bestRunTime).not.toBe('')
+  })
+
+  it('uses the canonical session denominator for total and item rates', () => {
+    const tenMinuteSession = { ...session({ 'wisp-essence': 25, 'life-essence': 75 }), elapsedMs: 600_000 }
+    const presentation = getDungeonStatisticsPresentation(tenMinuteSession)
+
+    expect(presentation.totalDrops).toBe(100)
+    expect(presentation.dropsPerHour).toBe(600)
+    expect(presentation.dropRows.find((row) => row.itemId === 'wisp-essence')?.perHour).toBe(150)
+    expect(presentation.dropsPerHourLabel).toBe('600.0 /h')
+  })
+
+  it('suppresses unstable hourly labels before the 60 second sample floor', () => {
+    const shortSession = { ...session({ 'wisp-essence': 1 }), elapsedMs: 30_000 }
+    const presentation = getDungeonStatisticsPresentation(shortSession)
+
+    expect(presentation.dropsPerHour).toBe(120)
+    expect(presentation.dropsPerHourLabel).toBe('MEASURING...')
+    expect(presentation.dropRows[0].perHourLabel).toBe('MEASURING...')
+    expect(getDungeonStatisticsPresentation({ ...shortSession, elapsedMs: 60_000 }).dropsPerHourLabel).toBe('60.0 /h')
+  })
+
+  it('derives visible total items from the per-item quantities', () => {
+    const presentation = getDungeonStatisticsPresentation({ ...session({ 'wisp-essence': 25, 'life-essence': 40, 'grove-bark': 10, heartseed: 2 }), totalLootQuantity: 999 })
+
+    expect(presentation.totalDrops).toBe(77)
+    expect(presentation.totalDropsLabel).toBe('77')
   })
 })

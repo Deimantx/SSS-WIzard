@@ -4,9 +4,8 @@ import { Card, GameTooltip, Progress } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { ItemIcon } from '../../components/ui/item/ItemIcon'
 import { ITEMS } from '../../game/content/items/items'
-import { getDungeonStatisticsPresentation, formatStatisticsRate } from '../../game/presentation/combat/dungeonStatisticsPresentation'
+import { getDungeonStatisticsPresentation } from '../../game/presentation/combat/dungeonStatisticsPresentation'
 import { useDungeonStatisticsStore } from '../../game/telemetry/dungeon/dungeonStatisticsStore'
-import { DUNGEON_RATE_SAMPLE_MIN_MS } from '../../game/telemetry/dungeon/dungeonStatisticsSelectors'
 import { DUNGEON_STATISTICS_MODE_ORDER, type DungeonStatisticsMode } from '../../game/telemetry/dungeon/dungeonStatisticsTypes'
 import { formatNumber } from '../../game/utils'
 import { setUiPreferences, useUiPreferences } from '../../ui/preferences/uiPreferencesStore'
@@ -47,19 +46,19 @@ function RunsMode({ presentation }: { presentation: ReturnType<typeof getDungeon
 }
 
 function DropsMode({ presentation }: { presentation: ReturnType<typeof getDungeonStatisticsPresentation> }) {
-  const sessionDescription = presentation.rateSampleReady
-    ? `Session average measured over ${presentation.sessionTime}.`
-    : `Rate projection becomes available after ${DUNGEON_RATE_SAMPLE_MIN_MS / 1000} seconds; this session is currently ${presentation.sessionTime}.`
-  return <div className="dungeon-statistics-content dungeon-statistics-drops-content"><div className="dungeon-statistics-summary-grid dungeon-statistics-drops-summary"><Statistic label="ITEMS" value={presentation.totalDropsLabel} icon={<Package size={13} aria-hidden="true" />} tooltip={<TooltipContent title="Total item units" description={`Total quantity of item units dropped during this session: ${presentation.totalDropsLabel}. ${sessionDescription}`} />} animate /><Statistic label="ITEMS / HOUR" value={presentation.dropsPerHourLabel} icon={<Gauge size={13} aria-hidden="true" />} tooltip={<TooltipContent title="SESSION RATE" description={`${presentation.totalDropsLabel} items collected over ${presentation.sessionTime}. ${presentation.rateSampleReady ? `Projected session average: ${formatStatisticsRate(presentation.dropsPerHour)}.` : `Projected rate is still measuring and will become meaningful after ${DUNGEON_RATE_SAMPLE_MIN_MS / 1000} seconds.`}`} />} /></div><div className="dungeon-statistics-list-label">DROPS</div>{presentation.dropRows.length ? <div className="dungeon-statistics-drops-list">{presentation.dropRows.map((row) => <DropRow key={row.itemId} row={row} sessionTime={presentation.sessionTime} />)}</div> : <div className="dungeon-statistics-empty dungeon-statistics-empty-inline"><span>No drops recorded yet.</span></div>}</div>
+  const sessionDescription = presentation.earlySample
+    ? `Current session projection from ${presentation.sessionTime} of data. Early sample rates will stabilize as the session continues.`
+    : `Session average measured over ${presentation.sessionTime}.`
+  return <div className="dungeon-statistics-content dungeon-statistics-drops-content"><div className="dungeon-statistics-summary-grid dungeon-statistics-drops-summary"><Statistic label="ITEMS" value={presentation.totalDropsLabel} icon={<Package size={13} aria-hidden="true" />} tooltip={<TooltipContent title="Total item units" description={`Total quantity of item units dropped during this session: ${presentation.totalDropsLabel}. ${sessionDescription}`} />} animate /><Statistic label="ITEMS / HOUR" value={presentation.dropsPerHourLabel} icon={<Gauge size={13} aria-hidden="true" />} tooltip={<TooltipContent title="SESSION RATE" description={`${presentation.totalDropsLabel} items collected over ${presentation.sessionTime}. Projected session average: ${presentation.dropsPerHourLabel}. ${presentation.earlySample ? 'Early sample rates will stabilize as the session continues.' : ''}`} />} /></div>{presentation.earlySample && <div className="dungeon-statistics-rate-context" role="status"><strong>EARLY SAMPLE</strong><span>· {presentation.sessionTime}</span></div>}<div className="dungeon-statistics-list-label">DROPS</div>{presentation.dropRows.length ? <div className="dungeon-statistics-drops-list">{presentation.dropRows.map((row) => <DropRow key={row.itemId} row={row} sessionTime={presentation.sessionTime} earlySample={presentation.earlySample} />)}</div> : <div className="dungeon-statistics-empty dungeon-statistics-empty-inline"><span>No drops recorded yet.</span></div>}</div>
 }
 
-function DropRow({ row, sessionTime }: { row: ReturnType<typeof getDungeonStatisticsPresentation>['dropRows'][number]; sessionTime: string }) {
+function DropRow({ row, sessionTime, earlySample }: { row: ReturnType<typeof getDungeonStatisticsPresentation>['dropRows'][number]; sessionTime: string; earlySample: boolean }) {
   const [isNew, setIsNew] = useState(true)
   useEffect(() => {
     const timer = window.setTimeout(() => setIsNew(false), 180)
     return () => window.clearTimeout(timer)
   }, [])
-  return <GameTooltip block content={<TooltipContent title={ITEMS[row.itemId].name.toUpperCase()} description={`${ITEMS[row.itemId].description} ${row.quantity.toLocaleString()} collected over ${sessionTime}.`}><div className="tooltip-row"><span>EXACT QUANTITY</span><b>{row.quantity.toLocaleString()}</b></div><div className="tooltip-row"><span>RATE</span><b>{row.perHourLabel}</b></div></TooltipContent>}><div className={`dungeon-statistics-drop-row${isNew ? ' is-new' : ''}`} tabIndex={0} aria-label={`${row.name}, ${row.quantity.toLocaleString()} dropped, ${row.perHourLabel}`}><span className="dungeon-statistics-drop-icon"><ItemIcon itemId={row.itemId} size="tiny" /></span><strong>{row.name}</strong><AnimatedMetric value={formatNumber(row.quantity)} /><span className="dungeon-statistics-drop-rate">{row.perHourLabel}</span></div></GameTooltip>
+  return <GameTooltip block content={<TooltipContent title={ITEMS[row.itemId].name.toUpperCase()} description={`${ITEMS[row.itemId].description} ${row.quantity.toLocaleString()} collected over ${sessionTime}. ${earlySample ? 'Early sample rates will stabilize as the session continues.' : ''}`}><div className="tooltip-row"><span>EXACT QUANTITY</span><b>{row.quantity.toLocaleString()}</b></div><div className="tooltip-row"><span>RATE</span><b>{row.perHourLabel}</b></div></TooltipContent>}><div className={`dungeon-statistics-drop-row${isNew ? ' is-new' : ''}`} tabIndex={0} aria-label={`${row.name}, ${row.quantity.toLocaleString()} dropped, ${row.perHourLabel}`}><span className="dungeon-statistics-drop-icon"><ItemIcon itemId={row.itemId} size="tiny" /></span><strong>{row.name}</strong><AnimatedMetric className="dungeon-statistics-drop-quantity" value={formatNumber(row.quantity)} /><span className="dungeon-statistics-drop-rate">{row.perHourLabel}</span></div></GameTooltip>
 }
 
 function EfficiencyMode({ presentation }: { presentation: ReturnType<typeof getDungeonStatisticsPresentation> }) {

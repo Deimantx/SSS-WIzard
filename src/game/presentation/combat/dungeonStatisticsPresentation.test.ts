@@ -51,14 +51,16 @@ describe('dungeon statistics presentation', () => {
     expect(presentation.dropsPerHourLabel).toBe('600.0 /h')
   })
 
-  it('suppresses unstable hourly labels before the 60 second sample floor', () => {
+  it('shows a projected hourly label immediately and marks early samples explicitly', () => {
     const shortSession = { ...session({ 'wisp-essence': 1 }), elapsedMs: 30_000 }
     const presentation = getDungeonStatisticsPresentation(shortSession)
 
     expect(presentation.dropsPerHour).toBe(120)
-    expect(presentation.dropsPerHourLabel).toBe('MEASURING...')
-    expect(presentation.dropRows[0].perHourLabel).toBe('MEASURING...')
+    expect(presentation.dropsPerHourLabel).toBe('120.0 /h')
+    expect(presentation.dropRows[0].perHourLabel).toBe('120.0 /h')
+    expect(presentation.earlySample).toBe(true)
     expect(getDungeonStatisticsPresentation({ ...shortSession, elapsedMs: 60_000 }).dropsPerHourLabel).toBe('60.0 /h')
+    expect(getDungeonStatisticsPresentation({ ...shortSession, elapsedMs: 60_000 }).earlySample).toBe(false)
   })
 
   it('derives visible total items from the per-item quantities', () => {

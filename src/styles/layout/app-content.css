@@ -1,0 +1,47 @@
+:root {
+  --app-content-width-base: 1120px;
+  --app-content-width-wide: 1280px;
+  --app-content-width-ultrawide: 1480px;
+  --app-content-max-width: var(--app-content-width-base);
+  --app-content-gutter: 24px;
+  --app-content-padding-inline: clamp(24px, 3vw, 48px);
+}
+
+.screen-scroll {
+  container-type: inline-size;
+}
+
+.screen-content,
+.app-content-shell {
+  width: min(calc(100% - (var(--app-content-gutter) * 2)), var(--app-content-max-width));
+  max-width: var(--app-content-max-width);
+  margin-inline: auto;
+  padding-inline: var(--app-content-padding-inline);
+}
+
+@media (min-width: 1440px) {
+  :root {
+    --app-content-max-width: var(--app-content-width-wide);
+  }
+}
+
+@media (min-width: 1920px) {
+  :root {
+    --app-content-max-width: var(--app-content-width-ultrawide);
+  }
+}
+
+@media (max-width: 1100px) {
+  .screen-content,
+  .app-content-shell {
+    padding-inline: 30px;
+  }
+}
+
+@media (max-width: 760px) {
+  .screen-content,
+  .app-content-shell {
+    width: 100%;
+    padding-inline: 15px;
+  }
+}

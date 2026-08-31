@@ -65,8 +65,8 @@ export function CombatFlowPanel({ selectedDungeonId }: { selectedDungeonId: Dung
     <header className="combat-flow-head"><span className="combat-flow-kicker">COMBAT FLOW</span></header>
     <CombatAlerts />
     <div className="combat-flow-timelines"><TimelineRow timeline={presentation.playerTimeline} /><TimelineRow timeline={presentation.enemyTimeline} /></div>
-    {presentation.enemyIntent && <EnemyIntent intent={presentation.enemyIntent} basicDamage={presentation.enemy?.basicAttackDamage ?? 0} />}
-    <div className="combat-flow-pattern"><div className="combat-subsection-label">ENEMY PATTERN</div><EnemyPatternRail pattern={presentation.pattern} enemy={presentation.enemy} currentIndex={presentation.patternIndex} activeStepId={presentation.activeStepId} activeAction={presentation.activeActionId} activeOriginMatchesCurrent={presentation.activeOriginMatchesCurrent} /></div>
+    {presentation.enemyIntent && <EnemyIntent intent={presentation.enemyIntent} basicDamage={presentation.enemy?.basicAttackDamage ?? 0} progress={presentation.enemyTimeline?.progress ?? 0} />}
+    <div className="combat-flow-pattern"><div className="combat-subsection-label">ENEMY PATTERN</div><EnemyPatternRail pattern={presentation.pattern} enemy={presentation.enemy} currentIndex={presentation.patternIndex} activeStepId={presentation.activeStepId} activeAction={presentation.activeActionId} activeOriginMatchesCurrent={presentation.activeOriginMatchesCurrent} currentProgress={presentation.enemyTimeline?.progress} /></div>
   </section>
 }
 
@@ -74,7 +74,7 @@ function TimelineRow({ timeline }: { timeline: CombatFlowTimeline | null }) {
   if (!timeline) return null
   const label = timeline.actor === 'player' ? 'PLAYER' : 'ENEMY'
   const progress = timeline.progress ?? 0
-  return <div className={`combat-flow-timeline combat-flow-timeline-${timeline.actor}${timeline.state === 'telegraph' ? ' is-telegraphing' : ''}${timeline.state === 'stunned' ? ' is-stunned' : ''}`}><div className="combat-flow-timeline-head"><span className="combat-subsection-label">{label}</span><strong>{timeline.label}</strong><span className="combat-flow-timeline-time ui-time">{timeline.state === 'stunned' ? 'STUNNED' : formatTime(timeline.remainingMs ?? 0)}</span></div>{timeline.state === 'stunned' ? <div className="combat-flow-paused">Action paused</div> : <Progress value={progress} label={`${label} ${timeline.label} progress`} />}</div>
+  return <div className={`combat-flow-timeline combat-flow-timeline-${timeline.actor}${timeline.state === 'telegraph' ? ' is-telegraphing' : ''}${timeline.state === 'stunned' ? ' is-stunned' : ''}${progress >= 90 ? ' is-near-complete' : ''}`}><div className="combat-flow-timeline-head"><span className="combat-subsection-label">{label}</span><strong>{timeline.label}</strong><span className="combat-flow-timeline-time ui-time">{timeline.state === 'stunned' ? 'STUNNED' : formatTime(timeline.remainingMs ?? 0)}</span></div>{timeline.state === 'stunned' ? <div className="combat-flow-paused">Action paused</div> : <Progress value={progress} label={`${label} ${timeline.label} progress`} />}</div>
 }
 
 function CombatEffectRow({ effect }: { effect: CombatEffectPresentation }) {
@@ -91,7 +91,8 @@ function IntentEffectIcon({ kind }: { kind: CombatEffectPresentation['kind'] }) 
   return <Sparkles size={13} aria-hidden="true" />
 }
 
-function EnemyIntent({ intent, basicDamage }: { intent: NonNullable<ReturnType<typeof getCombatFlowPresentation>['enemyIntent']>; basicDamage: number }) {
+function EnemyIntent({ intent, basicDamage, progress }: { intent: NonNullable<ReturnType<typeof getCombatFlowPresentation>['enemyIntent']>; basicDamage: number; progress: number }) {
   const action = intent.action ?? (intent.basic ? buildBasicAttackPresentation(basicDamage) : null)
-  return <GameTooltip block wide placement="bottom" accent={intent.special ? 'warning' : 'neutral'} content={action ? <EnemyActionTooltip action={action} /> : undefined}><div className={`combat-flow-intent${intent.special ? ' is-special' : ''}`}><div className="combat-flow-subhead"><span className={`combat-flow-intent-icon combat-pattern-icon-${intent.iconKind}`}><EnemyPatternIcon kind={intent.iconKind} /></span><span className="combat-subsection-label">ENEMY INTENT</span><strong>{intent.label}</strong></div>{intent.action ? <div className="combat-flow-effects">{intent.action.effects.map((effect, index) => <CombatEffectRow key={`${effect.label}-${index}`} effect={effect} />)}</div> : intent.basic ? <div className="combat-flow-effects"><CombatEffectRow effect={intent.basic} /></div> : null}</div></GameTooltip>
+  const style = { '--intent-progress': `${Math.max(0, Math.min(100, progress))}%` } as React.CSSProperties
+  return <GameTooltip block wide placement="bottom" accent={intent.special ? 'warning' : 'neutral'} content={action ? <EnemyActionTooltip action={action} /> : undefined}><div className={`combat-flow-intent${intent.special ? ' is-special' : ''} combat-intent-${intent.iconKind}`}><div className="combat-flow-subhead"><span style={style} className={`combat-flow-intent-icon combat-pattern-icon-${intent.iconKind}`}><EnemyPatternIcon kind={intent.iconKind} /></span><span className="combat-subsection-label">ENEMY INTENT</span><strong>{intent.label}</strong></div>{intent.action ? <div className="combat-flow-effects">{intent.action.effects.map((effect, index) => <CombatEffectRow key={`${effect.label}-${index}`} effect={effect} />)}</div> : intent.basic ? <div className="combat-flow-effects"><CombatEffectRow effect={intent.basic} /></div> : null}</div></GameTooltip>
 }

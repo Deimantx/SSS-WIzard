@@ -16,4 +16,10 @@ describe('CombatResource V3.7 feedback', () => {
     view.rerender(<TooltipProvider><CombatResource icon={null} label="BARRIER" value="0" currentValue={0} maxValue={100} percent={0} tone="barrier" /></TooltipProvider>)
     expect(document.querySelector('.combat-resource')?.className).toContain('is-feedback-barrier-break')
   })
+
+  it('renders a gain region when Mana or Barrier increases', () => {
+    const view = render(<TooltipProvider><CombatResource icon={null} label="MANA" value="30 / 100" currentValue={20} maxValue={100} percent={20} tone="mana" /></TooltipProvider>)
+    view.rerender(<TooltipProvider><CombatResource icon={null} label="MANA" value="30 / 100" currentValue={30} maxValue={100} percent={30} tone="mana" /></TooltipProvider>)
+    expect(document.querySelector('.combat-resource-gain')).toBeTruthy()
+  })
 })

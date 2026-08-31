@@ -1,4 +1,4 @@
-import { AlertTriangle, CircleDot, Clock3, Droplet } from 'lucide-react'
+import { AlertTriangle, CircleDot, Droplet } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { SPELLS } from '../../game/content/spells/spells'
 import { SCHOOLS } from '../../game/content/schools/schools'
@@ -27,15 +27,21 @@ export function CombatSpellTile({ spellId, presentationState, globalBlocker }: {
   const previousCooldown = useRef(cooldown)
   const castFeedbackTimer = useRef<number | null>(null)
   const [justResolved, setJustResolved] = useState(false)
+  const [justReady, setJustReady] = useState(false)
   const combatActive = useGameStore((state) => state.combat.active)
   const enemyId = useGameStore((state) => state.combat.enemyId)
   const playerStunned = useGameStore((state) => actorCannotAct(state, 'player'))
   useEffect(() => {
-    if (previousCooldown.current <= 0 && cooldown > 0) {
+    const previous = previousCooldown.current
+    if (previous <= 0 && cooldown > 0) {
       setJustResolved(true)
+      setJustReady(false)
       if (castFeedbackTimer.current !== null) window.clearTimeout(castFeedbackTimer.current)
       castFeedbackTimer.current = window.setTimeout(() => { setJustResolved(false); castFeedbackTimer.current = null }, 160)
-      previousCooldown.current = cooldown
+    } else if (previous > 0 && cooldown <= 0) {
+      setJustReady(true)
+      if (castFeedbackTimer.current !== null) window.clearTimeout(castFeedbackTimer.current)
+      castFeedbackTimer.current = window.setTimeout(() => { setJustReady(false); castFeedbackTimer.current = null }, 180)
     }
     previousCooldown.current = cooldown
   }, [cooldown])
@@ -46,9 +52,9 @@ export function CombatSpellTile({ spellId, presentationState, globalBlocker }: {
   const stateLabel = cooldown > 0 ? `${formatTime(cooldown)} remaining` : localFailure ?? (manualDisabled ? 'Unavailable' : 'READY')
   const label = `${spell.name}, ${formatSpellRank(rank ?? 1)}, ${spell.manaCost} Mana, ${stateLabel}`
   const cooldownFraction = getCooldownFraction(cooldown, spell.cooldownMs)
-  return <div className={`spell-combat-tile${active ? ' is-auto' : ''}${failure && failure !== 'cooldown' ? ' is-unavailable' : ''}${cooldown > 0 ? ' is-cooldown' : ''}${justResolved ? ' is-casting' : ''}${failure === 'mana' ? ' is-mana-starved' : ''}`} style={{ '--spell-school-color': SCHOOLS[spell.school].color, '--cooldown-percent': `${cooldownFraction * 100}%` } as React.CSSProperties}>
+  return <div className={`spell-combat-tile${active ? ' is-auto' : ''}${failure && failure !== 'cooldown' ? ' is-unavailable' : ''}${cooldown > 0 ? ' is-cooldown' : ''}${justResolved ? ' is-casting' : ''}${justReady ? ' is-ready' : ''}${failure === 'mana' ? ' is-mana-starved' : ''}`} style={{ '--spell-school-color': SCHOOLS[spell.school].color, '--cooldown-percent': `${cooldownFraction * 100}%` } as React.CSSProperties}>
     <GameTooltip block wide placement="top" accent="elemental" content={<SpellCardTooltip presentation={presentation} />}>
-      <button type="button" className="spell-combat-cast" aria-label={label} disabled={manualDisabled} onClick={() => cast(spellId)}><span className="spell-combat-tile-top"><span className="spell-combat-icon"><SpellIcon school={spell.school} size="medium" />{cooldownFraction > 0 && <span className="spell-combat-cooldown-overlay" aria-hidden="true"><span className="spell-combat-cooldown-number">{formatCooldownNumber(cooldown)}</span></span>}</span></span><span className="spell-combat-name"><strong>{spell.name}</strong></span><span className="spell-combat-footer"><span className={`ui-mana${localFailure ? ' has-warning' : ''}`}><Droplet size={12} aria-hidden="true" />{spell.manaCost}{localFailure && <em><AlertTriangle size={10} aria-hidden="true" />{localFailure}</em>}</span><span className="ui-time"><Clock3 size={12} aria-hidden="true" />{cooldown > 0 ? formatTime(cooldown) : 'READY'}</span></span></button>
+      <button type="button" className="spell-combat-cast" aria-label={label} disabled={manualDisabled} onClick={() => cast(spellId)}><span className="spell-combat-tile-top"><span className="spell-combat-icon"><SpellIcon school={spell.school} size="medium" />{cooldownFraction > 0 && <span className="spell-combat-cooldown-overlay" aria-hidden="true"><span className="spell-combat-cooldown-number">{formatCooldownNumber(cooldown)}</span></span>}</span></span><span className="spell-combat-name"><strong>{spell.name}</strong></span><span className="spell-combat-footer"><span className={`ui-mana${localFailure ? ' has-warning' : ''}`}><Droplet size={12} aria-hidden="true" />{spell.manaCost}{localFailure && <em><AlertTriangle size={10} aria-hidden="true" />{localFailure}</em>}</span></span></button>
     </GameTooltip>
     <div className="spell-combat-auto-slot"><GameTooltip accent="focus" content={<TooltipContent title={active ? 'AUTO-CAST ACTIVE' : 'AUTO-CAST'} description={active ? `${presentation.autoCastFocus} Focus reserved. Condition: ${autoConditionLabel(spell.autoCondition)}.` : `${presentation.autoCastFocus} Focus will be reserved. Condition: ${autoConditionLabel(spell.autoCondition)}.`} />}><button type="button" className={`spell-combat-auto${active ? ' is-active' : ''}`} aria-label={`${active ? 'Disable' : 'Enable'} Auto-Cast for ${spell.name}`} aria-pressed={active} onClick={() => toggle(spellId)}><CircleDot size={14} aria-hidden="true" /></button></GameTooltip></div>
   </div>

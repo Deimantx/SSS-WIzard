@@ -1,4 +1,6 @@
 import { Flame, HeartPulse, Shield, Snowflake, Sparkles, Zap } from 'lucide-react'
+import type { CSSProperties } from 'react'
+import { useEffect, useState } from 'react'
 import type { ActiveStatus } from '../../game/types'
 import { STATUS_DEFINITIONS } from '../../game/content/statuses'
 import { SPELLS } from '../../game/content/spells/spells'
@@ -11,6 +13,11 @@ export function CombatStatusStrip({ statuses, label }: { statuses: ActiveStatus[
 }
 
 export function CombatStatusChip({ status }: { status: ActiveStatus }) {
+  const [isNew, setIsNew] = useState(true)
+  useEffect(() => {
+    const timer = window.setTimeout(() => setIsNew(false), 180)
+    return () => window.clearTimeout(timer)
+  }, [])
   const definition = STATUS_DEFINITIONS[status.statusId]
   if (!definition) return null
   const categoryKey = definition.tags.includes('dot') ? 'dot' : definition.tags.includes('control') ? 'control' : definition.classification === 'buff' ? 'buff' : definition.classification === 'debuff' ? 'debuff' : 'neutral'
@@ -18,7 +25,10 @@ export function CombatStatusChip({ status }: { status: ActiveStatus }) {
   const source = status.source.kind === 'spell' && status.source.sourceId && SPELLS[status.source.sourceId as keyof typeof SPELLS] ? SPELLS[status.source.sourceId as keyof typeof SPELLS].name : null
   const accent = definition.tags.includes('dot') ? 'danger' : definition.tags.includes('control') ? 'mana' : definition.classification === 'buff' ? 'elemental' : definition.classification === 'debuff' ? 'warning' : 'neutral'
   const duration = status.remainingMs === null ? '∞' : formatTime(status.remainingMs)
-  return <GameTooltip block accent={accent} content={<TooltipContent title={definition.name} description={definition.description}><div className="tooltip-section"><small>TYPE</small><p>{category}</p></div><div className="tooltip-section"><small>REMAINING</small><p>{duration}</p></div><div className="tooltip-section"><small>STACKS</small><p>{status.stacks}</p></div>{source && <div className="tooltip-section"><small>SOURCE</small><p>{source}</p></div>}</TooltipContent>}><span className={`combat-status-chip status-category-${categoryKey}`} tabIndex={0} aria-label={`${definition.name}, ${category}, ${status.stacks} stack${status.stacks === 1 ? '' : 's'}, ${duration} remaining`}><span className="combat-status-icon"><StatusIcon status={status} /></span><strong>{definition.name}</strong>{status.stacks > 1 && <b>×{status.stacks}</b>}<small>{duration}</small></span></GameTooltip>
+  const timed = status.remainingMs !== null && definition.defaultDurationMs !== null
+  const durationPercent = timed ? Math.max(0, Math.min(100, status.remainingMs! / Math.max(1, definition.defaultDurationMs!) * 100)) : 0
+  const style = timed ? { '--status-duration-percent': `${durationPercent}%` } as CSSProperties : undefined
+  return <GameTooltip block accent={accent} content={<TooltipContent title={definition.name} description={definition.description}><div className="tooltip-section"><small>TYPE</small><p>{category}</p></div><div className="tooltip-section"><small>REMAINING</small><p>{duration}</p></div><div className="tooltip-section"><small>STACKS</small><p>{status.stacks}</p></div>{source && <div className="tooltip-section"><small>SOURCE</small><p>{source}</p></div>}</TooltipContent>}><span style={style} className={`combat-status-chip status-category-${categoryKey}${timed ? ' is-timed' : ''}${isNew ? ' is-new' : ''}`} tabIndex={0} aria-label={`${definition.name}, ${category}, ${status.stacks} stack${status.stacks === 1 ? '' : 's'}, ${duration} remaining`}><span className="combat-status-icon"><StatusIcon status={status} /></span><strong>{definition.name}</strong>{status.stacks > 1 && <b>×{status.stacks}</b>}<small>{duration}</small></span></GameTooltip>
 }
 
 function StatusIcon({ status }: { status: ActiveStatus }) {

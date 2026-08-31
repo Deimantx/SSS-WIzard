@@ -105,3 +105,9 @@ body.shell-layout-interacting, body.shell-layout-interacting * { user-select: no
   .topbar-region-overlay { font-size: 8px; }
 }
 @media (prefers-reduced-motion: reduce) { .shell-meter i { transition: none; } }
+
+@media (min-width: 1381px) {
+  .topbar-v3 {
+    padding-inline: calc(max(var(--app-content-gutter, 24px), (100% - var(--app-content-max-width, 1440px)) / 2) + var(--app-content-padding-inline, 48px));
+  }
+}

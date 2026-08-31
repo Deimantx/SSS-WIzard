@@ -1,6 +1,6 @@
 import type { MonsterId } from '../../types'
 import type { CombatEvent, CombatSource } from '../../systems/combat/combatTypes'
-import type { CombatActorMetrics, CombatMetricAggregate, CombatMetricSourceContribution, CombatTelemetryScope, CombatTelemetrySourceMetadata, CombatTelemetryMetric } from './combatTelemetryTypes'
+import type { CombatActorMetrics, CombatBarrierTelemetryLayer, CombatMetricAggregate, CombatMetricSourceContribution, CombatTelemetryScope, CombatTelemetrySourceMetadata, CombatTelemetryMetric } from './combatTelemetryTypes'
 
 const finite = (value: number | undefined) => Number.isFinite(value) ? Math.max(0, value as number) : 0
 
@@ -24,12 +24,14 @@ export const createCombatTelemetryScope = (scopeId: string, startedAtSequence: n
   elapsedMs: 0,
   player: createCombatActorMetrics(),
   enemy: createCombatActorMetrics(),
+  barrierLayers: [],
 })
 
 export const cloneCombatTelemetryScope = (scope: CombatTelemetryScope): CombatTelemetryScope => ({
   ...scope,
   player: cloneActorMetrics(scope.player),
   enemy: cloneActorMetrics(scope.enemy),
+  barrierLayers: scope.barrierLayers.map((layer) => ({ ...layer, sourceMetadata: layer.sourceMetadata ? { ...layer.sourceMetadata } : undefined })),
 })
 
 const cloneContribution = (contribution: CombatMetricSourceContribution): CombatMetricSourceContribution => ({ ...contribution, damageTypes: { ...contribution.damageTypes } })
@@ -101,6 +103,76 @@ const contributionFor = (aggregate: CombatMetricAggregate, event: CombatEvent): 
 
 const metricActor = (scope: CombatTelemetryScope, actor: 'player' | 'enemy') => scope[actor]
 
+const createContribution = (key: string, metadata: CombatTelemetrySourceMetadata): CombatMetricSourceContribution => ({ key, ...metadata, total: 0, healthDamage: 0, barrierAbsorbed: 0, effectiveHealing: 0, overheal: 0, barrierGranted: 0, events: 0, damageTypes: {} })
+
+const contributionForMetadata = (aggregate: CombatMetricAggregate, key: string, metadata: CombatTelemetrySourceMetadata) => {
+  const existing = aggregate.bySource[key]
+  if (existing) return existing
+  const contribution = createContribution(key, metadata)
+  aggregate.bySource[key] = contribution
+  return contribution
+}
+
+const nextBarrierLayerSequence = (scope: CombatTelemetryScope) => scope.barrierLayers.reduce((max, layer) => Math.max(max, layer.createdSequence), scope.startedAtSequence) + 1
+
+const clearBarrierLayers = (scope: CombatTelemetryScope, owner: 'player' | 'enemy') => {
+  scope.barrierLayers = scope.barrierLayers.filter((layer) => layer.owner !== owner)
+}
+
+const creditBarrierAbsorption = (scope: CombatTelemetryScope, layer: CombatBarrierTelemetryLayer, amount: number) => {
+  if (!layer.sourceMetadata || !layer.sourceKey || amount <= 0) return
+  const sourceMetrics = metricActor(scope, layer.sourceMetadata.actor)
+  const contribution = contributionForMetadata(sourceMetrics.healingDone, layer.sourceKey, layer.sourceMetadata)
+  sourceMetrics.healingDone.total += amount
+  contribution.total += amount
+  contribution.barrierAbsorbed += amount
+  contribution.events += 1
+}
+
+const consumeBarrierLayers = (scope: CombatTelemetryScope, owner: 'player' | 'enemy', amount: number) => {
+  let remaining = finite(amount)
+  if (remaining <= 0) return
+  for (const layer of scope.barrierLayers) {
+    if (remaining <= 0) break
+    if (layer.owner !== owner || layer.remaining <= 0) continue
+    const absorbed = Math.min(layer.remaining, remaining)
+    layer.remaining -= absorbed
+    remaining -= absorbed
+    creditBarrierAbsorption(scope, layer, absorbed)
+  }
+  scope.barrierLayers = scope.barrierLayers.filter((layer) => layer.remaining > 0)
+}
+
+const removeUncreditedBarrierCapacity = (scope: CombatTelemetryScope, owner: 'player' | 'enemy', amount: number) => {
+  let remaining = finite(amount)
+  if (remaining <= 0) return
+  for (const layer of scope.barrierLayers) {
+    if (remaining <= 0) break
+    if (layer.owner !== owner || layer.remaining <= 0) continue
+    const removed = Math.min(layer.remaining, remaining)
+    layer.remaining -= removed
+    remaining -= removed
+  }
+  scope.barrierLayers = scope.barrierLayers.filter((layer) => layer.remaining > 0)
+}
+
+const barrierFor = (state: { combat: { playerBarrier: number; enemyBarrier: number } }, owner: 'player' | 'enemy') => owner === 'player' ? state.combat.playerBarrier : state.combat.enemyBarrier
+
+const reconcileBarrierOwner = (scope: CombatTelemetryScope, owner: 'player' | 'enemy', current: number) => {
+  const tracked = scope.barrierLayers.filter((layer) => layer.owner === owner).reduce((total, layer) => total + layer.remaining, 0)
+  if (current < tracked) removeUncreditedBarrierCapacity(scope, owner, tracked - current)
+  if (current > tracked) {
+    const baseline = current - tracked
+    const sequence = nextBarrierLayerSequence(scope)
+    scope.barrierLayers.push({ id: `baseline:${scope.scopeId}:${owner}:${sequence}`, owner, granted: baseline, remaining: baseline, createdSequence: sequence })
+  }
+}
+
+/** Reconciles provenance with runtime state so expiry, replacement, and clears never become healing. */
+export const reconcileCombatBarrierTelemetry = (scope: CombatTelemetryScope, state: { combat: { playerBarrier: number; enemyBarrier: number } }): void => {
+  ;(['player', 'enemy'] as const).forEach((owner) => reconcileBarrierOwner(scope, owner, finite(barrierFor(state, owner))))
+}
+
 export const consumeCombatEvent = (scope: CombatTelemetryScope, event: CombatEvent): void => {
   const sourceActor = event.source.kind === 'player' || event.source.kind === 'enemy' ? event.source.kind : null
   if (!sourceActor) return
@@ -135,6 +207,8 @@ export const consumeCombatEvent = (scope: CombatTelemetryScope, event: CombatEve
         if (event.damageType) targetContribution.damageTypes[event.damageType] = (targetContribution.damageTypes[event.damageType] ?? 0) + amount
         targetContribution.events += 1
       }
+      if (event.barrierBefore !== undefined) reconcileBarrierOwner(scope, targetActor, finite(event.barrierBefore))
+      consumeBarrierLayers(scope, targetActor, event.barrierAbsorbed ?? 0)
     }
     return
   }
@@ -156,16 +230,23 @@ export const consumeCombatEvent = (scope: CombatTelemetryScope, event: CombatEve
   }
 
   if (event.category === 'barrier') {
-    const amount = finite(event.amount)
-    if (amount <= 0) return
-    const metrics = metricActor(scope, sourceActor)
-    const key = getCombatMetricSourceKey(event)
+    const amount = finite(event.barrierGranted ?? event.amount)
+    const owner = event.target === 'player' || event.target === 'enemy' ? event.target : sourceActor
+    if (event.barrierMode === 'replace') clearBarrierLayers(scope, owner)
+    else if (event.barrierBefore !== undefined) reconcileBarrierOwner(scope, owner, finite(event.barrierBefore))
     const metadata = metadataForEvent(event)
-    if (!metadata) return
-    const contribution = metrics.barrierGrantedBySource[key] ?? (metrics.barrierGrantedBySource[key] = { key, ...metadata, total: 0, healthDamage: 0, barrierAbsorbed: 0, effectiveHealing: 0, overheal: 0, barrierGranted: 0, events: 0, damageTypes: {} })
-    metrics.barrierGranted += amount
-    contribution.barrierGranted += amount
-    contribution.events += 1
+    const key = getCombatMetricSourceKey(event)
+    if (metadata && amount > 0) {
+      const metrics = metricActor(scope, sourceActor)
+      const contribution = contributionForMetadata(metrics.healingDone, key, metadata)
+      metrics.barrierGranted += amount
+      contribution.barrierGranted += amount
+      contribution.events += 1
+      const grantedBySource = metrics.barrierGrantedBySource[key] ?? (metrics.barrierGrantedBySource[key] = createContribution(key, metadata))
+      grantedBySource.barrierGranted += amount
+      grantedBySource.events += 1
+    }
+    if (amount > 0) scope.barrierLayers.push({ id: `grant:${scope.scopeId}:${owner}:${nextBarrierLayerSequence(scope)}`, owner, sourceKey: metadata ? key : undefined, sourceMetadata: metadata ?? undefined, granted: amount, remaining: amount, createdSequence: nextBarrierLayerSequence(scope) })
   }
 }
 

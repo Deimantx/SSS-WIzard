@@ -14,7 +14,7 @@ describe('CombatDetailsPanel', () => {
   it('shows the empty state without a current or completed run', () => {
     render(<TooltipProvider><CombatDetailsPanel /></TooltipProvider>)
     expect(screen.getByText('COMBAT DETAILS')).toBeTruthy()
-    expect(screen.getByText('CURRENT RUN')).toBeTruthy()
+    expect(screen.queryByText('CURRENT RUN')).toBeNull()
     expect(screen.getByText('NO COMBAT DATA')).toBeTruthy()
     expect(screen.getByText('Enter a Dungeon to begin tracking.')).toBeTruthy()
   })
@@ -29,7 +29,7 @@ describe('CombatDetailsPanel', () => {
     await user.click(screen.getByRole('button', { name: 'Next Combat Details metric' }))
     expect(screen.getByText('DAMAGE TAKEN')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Next Combat Details metric' }))
-    expect(screen.getByText('HEALING')).toBeTruthy()
+    expect(screen.getAllByText('HEALING').length).toBeGreaterThanOrEqual(2)
     await user.click(screen.getByRole('button', { name: 'Previous Combat Details metric' }))
     expect(screen.getByText('DAMAGE TAKEN')).toBeTruthy()
     view.unmount()
@@ -49,5 +49,23 @@ describe('CombatDetailsPanel', () => {
     expect(screen.getByText('80.0%')).toBeTruthy()
     expect(screen.getByText('20.0%')).toBeTruthy()
     expect(screen.getByLabelText('1. Fire Bolt, 80.0%, 120')).toBeTruthy()
+  })
+
+  it('uses the simplified three-stat summary and resets telemetry without changing the selected mode', async () => {
+    const user = userEvent.setup()
+    combatTelemetryObserver.beginRun('whispering-woods')
+    combatTelemetryObserver.consume(damageEvent(120))
+    render(<TooltipProvider><CombatDetailsPanel /></TooltipProvider>)
+
+    expect(screen.getByText('DAMAGE')).toBeTruthy()
+    expect(screen.getByText('DPS')).toBeTruthy()
+    expect(screen.getByText('ENGAGED')).toBeTruthy()
+    expect(screen.queryByText('TOTAL')).toBeNull()
+    expect(screen.queryByText('HP DAMAGE')).toBeNull()
+    expect(screen.queryByText('BARRIER DAMAGE')).toBeNull()
+
+    await user.click(screen.getByRole('button', { name: 'RESET COMBAT DETAILS' }))
+    expect(screen.getByText('NO DAMAGE DONE YET')).toBeTruthy()
+    expect(screen.getByText('DAMAGE')).toBeTruthy()
   })
 })

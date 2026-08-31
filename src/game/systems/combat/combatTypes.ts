@@ -81,6 +81,11 @@ export interface CombatEvent {
   overheal?: number
   healthDamage?: number
   barrierAbsorbed?: number
+  /** Actual barrier capacity granted by this event. Replacements report the new capacity. */
+  barrierGranted?: number
+  barrierMode?: 'add' | 'replace'
+  barrierBefore?: number
+  barrierAfter?: number
   durationMs?: number | null
   stacks?: number
   timestampMs?: number

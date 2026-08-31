@@ -27,11 +27,14 @@ describe('CombatLogPanel V3.2', () => {
     combatLogUiSink.push({ source: { kind: 'player' }, target: 'enemy', targetMonsterId: 'forest-wisp', category: 'damage', damageType: 'fire', amount: 48, timestampMs: 1 })
     render(<TooltipProvider><CombatLogPanel /></TooltipProvider>)
 
-    await user.click(screen.getByRole('button', { name: 'Collapse Combat Log' }))
+    const collapseButton = screen.getByRole('button', { name: 'Collapse Combat Log' })
+    expect(collapseButton.querySelector('.lucide-chevron-down')).toBeTruthy()
+    await user.click(collapseButton)
     expect(document.querySelector('.combat-log-panel')?.classList.contains('is-collapsed')).toBe(true)
     expect(document.querySelector('.combat-log-scroll')).toBeNull()
     expect(screen.getByText(/LAST/)).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Expand Combat Log' })).toBeTruthy()
+    const expandButton = screen.getByRole('button', { name: 'Expand Combat Log' })
+    expect(expandButton.querySelector('.lucide-chevron-up')).toBeTruthy()
 
     await user.click(screen.getByRole('button', { name: 'Expand Combat Log' }))
     expect(document.querySelector('.combat-log-panel')?.classList.contains('is-collapsed')).toBe(false)

@@ -7,7 +7,7 @@ export const getCombatActorMetrics = (scope: CombatTelemetryScope | null, actor:
 
 export const getCombatMetricBreakdown = (scope: CombatTelemetryScope, actor: CombatTelemetryActor, metric: CombatTelemetryMetric, limit = 8): { rows: CombatMetricBreakdownRow[]; otherSources: number } => {
   const aggregate = getCombatMetricAggregate(scope, actor, metric)
-  const sorted = Object.values(aggregate.bySource).sort((left, right) => right.total - left.total)
+  const sorted = Object.values(aggregate.bySource).filter((contribution) => contribution.total > 0).sort((left, right) => right.total - left.total)
   const rows = sorted.slice(0, limit).map((contribution) => ({ contribution, percent: aggregate.total > 0 ? contribution.total / aggregate.total * 100 : 0, rate: getCombatMetricRate(contribution.total, scope.engagedMs) }))
   return { rows, otherSources: Math.max(0, sorted.length - rows.length) }
 }

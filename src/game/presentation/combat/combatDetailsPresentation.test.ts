@@ -22,14 +22,12 @@ describe('combat details presentation', () => {
 
   it('presents all ranked player run sources with exact aggregate percentages', () => {
     const details = getCombatDetailsPresentation(populatedScope(), 'damage-done')
-    expect(details.scopeLabel).toBe('CURRENT RUN')
     expect(details.total).toBe(150)
     expect(details.rate).toBe(5)
     expect(details.rows.map((row) => [row.rank, row.source.name, row.total, row.percent])).toEqual([
       [1, 'Fire Bolt', 120, 80],
       [2, 'Basic Attack', 30, 20],
     ])
-    expect(details.secondaryStats).toEqual([{ label: 'HP DAMAGE', value: 140, compactValue: '140' }, { label: 'BARRIER DAMAGE', value: 10, compactValue: '10' }])
   })
 
   it('uses enemy source identity for Player Damage Taken and effective healing for Healing', () => {
@@ -38,18 +36,15 @@ describe('combat details presentation', () => {
     expect(taken.total).toBe(50)
     expect(taken.rows[0].source.name).toBe('Root Crush')
     expect(taken.rows[0].source.subtitle).toBe('Grove Sentinel')
-    expect(taken.secondaryStats).toEqual([{ label: 'HP DAMAGE', value: 40, compactValue: '40' }, { label: 'BARRIER ABSORBED', value: 10, compactValue: '10' }])
 
     const healing = getCombatDetailsPresentation(scope, 'healing')
     expect(healing.total).toBe(40)
     expect(healing.rate).toBeCloseTo(1.3333, 4)
-    expect(healing.secondaryStats).toEqual([{ label: 'OVERHEAL', value: 20, compactValue: '20' }])
   })
 
-  it('labels a completed run as Last Run and returns a safe empty model', () => {
-    expect(getCombatDetailsPresentation({ ...populatedScope(), scopeId: 'last-run-1' }, 'damage-done').scopeLabel).toBe('LAST RUN')
+  it('returns a safe empty model', () => {
     const empty = getCombatDetailsPresentation(null, 'healing')
-    expect(empty).toMatchObject({ scopeLabel: 'CURRENT RUN', total: 0, rate: 0, rows: [] })
+    expect(empty).toMatchObject({ total: 0, rate: 0, rows: [] })
   })
 
   it('uses compact values only for the dock presentation', () => {

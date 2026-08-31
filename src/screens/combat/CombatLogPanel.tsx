@@ -1,6 +1,7 @@
-import { ChevronUp } from 'lucide-react'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Card, SelectMenu, Tabs, type SelectMenuOption } from '../../components/ui'
+import { Card, GameTooltip, SelectMenu, Tabs, type SelectMenuOption } from '../../components/ui'
+import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import type { CombatLogEntry } from '../../game/systems/combat/combatTypes'
 import { MAX_COMBAT_LOG_ENTRIES, useCombatLogStore } from '../../game/ui/combatLogStore'
 import { useGameStore } from '../../store/gameStore'
@@ -50,7 +51,7 @@ export function CombatLogPanel() {
   }
 
   return <Card className={`combat-log-panel combat-log-size-${preferences.combatLogFontSize}${preferences.combatLogCollapsed ? ' is-collapsed' : ''}`}>
-    <header className="combat-log-head"><div><span className="combat-subsection-label">LIVE FEED</span><h2>COMBAT LOG</h2></div><div className="combat-log-head-actions"><span className="combat-log-count">LIVE · {MAX_COMBAT_LOG_ENTRIES} EVENTS</span><button type="button" className="combat-log-collapse" aria-expanded={!preferences.combatLogCollapsed} aria-label={`${preferences.combatLogCollapsed ? 'Expand' : 'Collapse'} Combat Log`} onClick={toggleCollapsed}>{preferences.combatLogCollapsed ? 'EXPAND' : 'COLLAPSE'}</button></div></header>
+    <header className="combat-log-head"><div><span className="combat-subsection-label">LIVE FEED</span><h2>COMBAT LOG</h2></div><div className="combat-log-head-actions"><span className="combat-log-count">LIVE · {MAX_COMBAT_LOG_ENTRIES} EVENTS</span><GameTooltip content={<TooltipContent title={preferences.combatLogCollapsed ? 'Expand Combat Log' : 'Collapse Combat Log'} description={preferences.combatLogCollapsed ? 'Show the full combat event feed.' : 'Reduce the feed to the latest combat event.'} />}><button type="button" className="combat-log-collapse" aria-expanded={!preferences.combatLogCollapsed} aria-label={`${preferences.combatLogCollapsed ? 'Expand' : 'Collapse'} Combat Log`} onClick={toggleCollapsed}>{preferences.combatLogCollapsed ? <ChevronUp size={14} aria-hidden="true" /> : <ChevronDown size={14} aria-hidden="true" />}</button></GameTooltip></div></header>
     {preferences.combatLogCollapsed ? <div className="combat-log-collapsed-latest" aria-live="polite"><span>LAST</span><strong>{latestLine}</strong></div> : <><div className="combat-log-filter-row"><Tabs items={logFilters} active={filter} onChange={setFilter} />{newEvents > 0 && <button type="button" className="combat-log-new-events" onClick={scrollTop}><ChevronUp size={12} /> {newEvents} NEW EVENTS</button>}</div><div className="combat-log-font-row"><label>TEXT SIZE <SelectMenu options={fontOptions} value={preferences.combatLogFontSize} onChange={setFontSize} ariaLabel="Combat Log text size" /></label></div><div ref={scrollRef} className="combat-log-scroll" onScroll={(event) => { if (event.currentTarget.scrollTop <= 16) setNewEvents(0) }}>{entries.length ? filteredEntries.length ? filteredEntries.map((entry, index) => <CombatLogRow key={entry.id} entry={entry} newestTimestampMs={newestTimestampMs} latest={index === 0} />) : <div className="combat-log-empty">No events match this source filter.</div> : legacyLog.length ? legacyLog.map((message, index) => <LegacyCombatLogRow key={`${message}-${index}`} message={message} latest={index === 0} />) : <div className="combat-log-empty">No combat events yet. Enter a Dungeon to begin.</div>}</div></>}
   </Card>
 }

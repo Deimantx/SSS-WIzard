@@ -44,6 +44,16 @@ export interface CombatActorMetrics {
   barrierGrantedBySource: Record<string, CombatMetricSourceContribution>
 }
 
+export interface CombatBarrierTelemetryLayer {
+  id: string
+  owner: 'player' | 'enemy'
+  sourceKey?: string
+  sourceMetadata?: CombatTelemetrySourceMetadata
+  granted: number
+  remaining: number
+  createdSequence: number
+}
+
 export interface CombatTelemetryScope {
   scopeId: string
   dungeonId?: DungeonId
@@ -53,6 +63,7 @@ export interface CombatTelemetryScope {
   elapsedMs: number
   player: CombatActorMetrics
   enemy: CombatActorMetrics
+  barrierLayers: CombatBarrierTelemetryLayer[]
 }
 
 export interface CombatTelemetryState {
@@ -69,6 +80,7 @@ export interface CombatTelemetryObserver {
   endRun: (reason: CombatTelemetryEndReason) => void
   beginEncounter: (monsterId: MonsterId) => void
   endEncounter: (reason: CombatEncounterEndReason) => void
+  resetMeasurement: () => void
   advance: (deltaMs: number, state: GameState) => void
   consume: (event: CombatEvent) => void
   clear: () => void

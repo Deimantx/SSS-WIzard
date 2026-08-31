@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { CombatEvent, CombatEventSink, CombatLogEntry } from '../systems/combat/combatTypes'
 
-export const MAX_COMBAT_LOG_ENTRIES = 50
+export const MAX_COMBAT_LOG_ENTRIES = 20
 let nextSequence = 0
 
 interface CombatLogUiState {

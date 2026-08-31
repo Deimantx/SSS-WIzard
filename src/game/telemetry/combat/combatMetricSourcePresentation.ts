@@ -17,7 +17,7 @@ export interface CombatMetricSourcePresentation {
 export const presentCombatMetricSource = (source: CombatMetricSourceContribution): CombatMetricSourcePresentation => {
   if (source.kind === 'spell') {
     const spell = source.spellId ? SPELLS[source.spellId] : undefined
-    return spell ? { name: spell.name, subtitle: 'Spell', icon: 'sparkles', accent: spell.school } : { name: 'Unknown Spell', subtitle: 'Spell', icon: 'sparkles', accent: 'neutral' }
+    return spell ? { name: spell.name, subtitle: '', icon: 'sparkles', accent: spell.school } : { name: 'Unknown Spell', subtitle: '', icon: 'sparkles', accent: 'neutral' }
   }
   if (source.kind === 'basic-attack') return { name: 'Basic Attack', subtitle: source.monsterId ? MONSTERS[source.monsterId]?.name ?? 'Enemy' : 'Equipped weapon', icon: 'swords', accent: source.actor === 'enemy' ? 'enemy' : 'damage' }
   if (source.kind === 'action') {

@@ -15,15 +15,9 @@ export interface CombatDetailsModeConfig {
 }
 
 export const COMBAT_DETAILS_MODE_CONFIG: Record<CombatDetailsMode, CombatDetailsModeConfig> = {
-  'damage-done': { label: 'DAMAGE DONE', metric: 'damage', totalLabel: 'TOTAL', rateLabel: 'DPS', colorToken: '--details-damage-done' },
-  'damage-taken': { label: 'DAMAGE TAKEN', metric: 'taken', totalLabel: 'TOTAL', rateLabel: 'DTPS', colorToken: '--details-damage-taken' },
-  healing: { label: 'HEALING', metric: 'healing', totalLabel: 'EFFECTIVE', rateLabel: 'HPS', colorToken: '--details-healing' },
-}
-
-export interface CombatDetailsSecondaryStat {
-  label: string
-  value: number
-  compactValue: string
+  'damage-done': { label: 'DAMAGE DONE', metric: 'damage', totalLabel: 'DAMAGE', rateLabel: 'DPS', colorToken: '--details-damage-done' },
+  'damage-taken': { label: 'DAMAGE TAKEN', metric: 'taken', totalLabel: 'DAMAGE', rateLabel: 'DTPS', colorToken: '--details-damage-taken' },
+  healing: { label: 'HEALING', metric: 'healing', totalLabel: 'HEALING', rateLabel: 'HPS', colorToken: '--details-healing' },
 }
 
 export interface CombatDetailsRowPresentation {
@@ -40,13 +34,11 @@ export interface CombatDetailsRowPresentation {
 export interface CombatDetailsPresentation {
   mode: CombatDetailsMode
   config: CombatDetailsModeConfig
-  scopeLabel: 'CURRENT RUN' | 'LAST RUN'
   total: number
   compactTotal: string
   rate: number
   engagedMs: number
   elapsedMs: number
-  secondaryStats: CombatDetailsSecondaryStat[]
   rows: CombatDetailsRowPresentation[]
 }
 
@@ -65,16 +57,14 @@ export const formatCompactCombatValue = (value: number): string => {
 
 const trimCompact = (value: number) => value >= 100 ? Math.round(value).toString() : value.toFixed(1).replace(/\.0$/, '')
 
-const secondary = (label: string, value: number): CombatDetailsSecondaryStat => ({ label, value, compactValue: formatCompactCombatValue(value) })
-
 export const getCombatDetailsPresentation = (scope: CombatTelemetryScope | null, mode: CombatDetailsMode): CombatDetailsPresentation => {
   const config = COMBAT_DETAILS_MODE_CONFIG[mode]
-  const empty: CombatDetailsPresentation = { mode, config, scopeLabel: scope?.scopeId.startsWith('last-') ? 'LAST RUN' : 'CURRENT RUN', total: 0, compactTotal: '0', rate: 0, engagedMs: scope?.engagedMs ?? 0, elapsedMs: scope?.elapsedMs ?? 0, secondaryStats: [], rows: [] }
+  const empty: CombatDetailsPresentation = { mode, config, total: 0, compactTotal: '0', rate: 0, engagedMs: scope?.engagedMs ?? 0, elapsedMs: scope?.elapsedMs ?? 0, rows: [] }
   if (!scope) return empty
 
-  const metrics = scope.player
   const aggregate = getCombatMetricAggregate(scope, 'player', config.metric)
   const rows = Object.values(aggregate.bySource)
+    .filter((contribution) => contribution.total > 0)
     .sort((left, right) => right.total - left.total || left.key.localeCompare(right.key))
     .map((contribution, index) => ({
       key: contribution.key,
@@ -87,13 +77,5 @@ export const getCombatDetailsPresentation = (scope: CombatTelemetryScope | null,
       rate: getCombatMetricRate(contribution.total, scope.engagedMs),
     }))
 
-  const secondaryStats = mode === 'damage-done'
-    ? [secondary('HP DAMAGE', metrics.damageDone.bySource ? sumContribution(metrics.damageDone.bySource, 'healthDamage') : 0), secondary('BARRIER DAMAGE', metrics.damageDone.bySource ? sumContribution(metrics.damageDone.bySource, 'barrierAbsorbed') : 0)].filter((stat) => stat.value > 0)
-    : mode === 'damage-taken'
-      ? [secondary('HP DAMAGE', metrics.damageTaken.healthDamage), secondary('BARRIER ABSORBED', metrics.damageTaken.barrierAbsorbed)]
-      : [secondary('OVERHEAL', sumContribution(metrics.healingDone.bySource, 'overheal')), secondary('BARRIER GRANTED', metrics.barrierGranted)].filter((stat) => stat.value > 0)
-
-  return { ...empty, total: aggregate.total, compactTotal: formatCompactCombatValue(aggregate.total), rate: getCombatMetricRate(aggregate.total, scope.engagedMs), secondaryStats, rows }
+  return { ...empty, total: aggregate.total, compactTotal: formatCompactCombatValue(aggregate.total), rate: getCombatMetricRate(aggregate.total, scope.engagedMs), rows }
 }
-
-const sumContribution = (sources: Record<string, CombatMetricSourceContribution>, field: 'healthDamage' | 'barrierAbsorbed' | 'overheal') => Object.values(sources).reduce((total, source) => total + source[field], 0)

@@ -74,7 +74,7 @@ const applyDamage = (state: GameState, raw: number, damageType: DamageType, sour
   const currentHp = getActorHealth(state, target)
   if (source.actor === 'player') state.combat.lastDamageDealt = dealt
   else state.combat.lastDamageTaken = dealt
-  uiEvents?.push({ ...eventFields(state, source, target), category: logCategory(source, tags, 'damage'), damageType, amount: breakdown.resolvedBeforeBarrier, healthDamage: dealt, barrierAbsorbed: breakdown.barrierAbsorbed })
+  uiEvents?.push({ ...eventFields(state, source, target), category: logCategory(source, tags, 'damage'), damageType, amount: breakdown.resolvedBeforeBarrier, healthDamage: dealt, barrierAbsorbed: breakdown.barrierAbsorbed, barrierBefore, barrierAfter: getActiveBarrier(state, target) })
   const context: CombatEventContext = {
     source, eventTarget: target, changedActor: target, sourceTags: tags, amount: breakdown.resolvedBeforeBarrier, healthDamage: dealt, barrierDamage: breakdown.barrierAbsorbed, damageType, previousBarrier: barrierBefore, currentBarrier: getActiveBarrier(state, target),
     previousHp, currentHp, previousHpPercent: previousHp / Math.max(1, maxHp) * 100, currentHpPercent: currentHp / Math.max(1, maxHp) * 100,
@@ -152,10 +152,12 @@ export const executeCombatEffect = (state: GameState, effect: CombatEffect, sour
     }
     case 'heal': applyHealing(state, resolveMagnitude(state, effect.magnitude, source, target), source, target, tags, execute, depth, uiEvents); break
     case 'gain-barrier': {
-      const result = gainBarrierResult(state, resolveMagnitude(state, effect.magnitude, source, target), source, target, tags, { mode: effect.mode ?? 'add', durationMs: effect.durationMs === undefined ? null : effect.durationMs })
-      if (result.gained > 0) {
-        uiEvents?.push({ ...eventFields(state, source, target), category: 'barrier', amount: result.gained, durationMs: effect.durationMs })
-        runCombatTriggers(state, target, 'on-barrier-gained', { source, eventTarget: target, changedActor: target, sourceTags: tags, previousBarrier: result.previous, currentBarrier: result.current, barrierGained: result.gained, amount: result.gained }, execute, depth, [], uiEvents)
+      const mode = effect.mode ?? 'add'
+      const result = gainBarrierResult(state, resolveMagnitude(state, effect.magnitude, source, target), source, target, tags, { mode, durationMs: effect.durationMs === undefined ? null : effect.durationMs })
+      if (result.current > 0 && (result.gained > 0 || mode === 'replace')) {
+        const granted = mode === 'replace' ? result.current : result.gained
+        uiEvents?.push({ ...eventFields(state, source, target), category: 'barrier', amount: granted, barrierGranted: granted, barrierMode: mode, barrierBefore: result.previous, barrierAfter: result.current, durationMs: effect.durationMs })
+        if (result.gained > 0) runCombatTriggers(state, target, 'on-barrier-gained', { source, eventTarget: target, changedActor: target, sourceTags: tags, previousBarrier: result.previous, currentBarrier: result.current, barrierGained: result.gained, amount: result.gained }, execute, depth, [], uiEvents)
       }
       break
     }

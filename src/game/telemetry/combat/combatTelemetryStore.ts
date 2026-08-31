@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { CombatEvent, CombatEventSink } from '../../systems/combat/combatTypes'
-import { advanceCombatTelemetryScope, cloneCombatTelemetryScope, consumeCombatEvent, createCombatTelemetryScope } from './combatTelemetryAggregator'
+import { advanceCombatTelemetryScope, cloneCombatTelemetryScope, consumeCombatEvent, createCombatTelemetryScope, reconcileCombatBarrierTelemetry } from './combatTelemetryAggregator'
 import type { CombatTelemetryObserver, CombatTelemetryState } from './combatTelemetryTypes'
 import type { DungeonId, GameState, MonsterId } from '../../types'
 
@@ -9,6 +9,7 @@ interface CombatTelemetryStore extends CombatTelemetryState {
   endRun: (reason: 'leave' | 'defeat' | 'reset') => void
   beginEncounter: (monsterId: MonsterId) => void
   endEncounter: (reason: 'death' | 'despawn' | 'leave') => void
+  resetMeasurement: () => void
   advanceTime: (deltaMs: number, state: GameState) => void
   consumeEvent: (event: CombatEvent) => void
   clear: () => void
@@ -26,6 +27,11 @@ export const useCombatTelemetryStore = create<CombatTelemetryStore>((set) => ({
   endRun: (_reason) => set((state) => ({ run: null, encounter: null, lastRun: state.run ? { ...cloneCombatTelemetryScope(state.run), scopeId: `last-${state.run.scopeId}` } : state.lastRun })),
   beginEncounter: (monsterId) => set((state) => ({ encounter: newScope('encounter', state.run?.dungeonId, monsterId) })),
   endEncounter: (_reason) => set({ encounter: null }),
+  resetMeasurement: () => set((state) => ({
+    run: state.run ? newScope('run', state.run.dungeonId) : null,
+    encounter: state.encounter ? newScope('encounter', state.encounter.dungeonId ?? state.run?.dungeonId, state.encounter.monsterId) : null,
+    lastRun: null,
+  })),
   advanceTime: (deltaMs, gameState) => set((state) => {
     let run = state.run
     let encounter = state.encounter
@@ -35,10 +41,12 @@ export const useCombatTelemetryStore = create<CombatTelemetryStore>((set) => ({
     if (run) {
       run = cloneCombatTelemetryScope(run)
       advanceCombatTelemetryScope(run, deltaMs, gameState.combat.active && Boolean(gameState.combat.enemyId))
+      reconcileCombatBarrierTelemetry(run, gameState)
     }
     if (encounter && gameState.combat.active && gameState.combat.enemyId === encounter.monsterId) {
       encounter = cloneCombatTelemetryScope(encounter)
       advanceCombatTelemetryScope(encounter, deltaMs, true)
+      reconcileCombatBarrierTelemetry(encounter, gameState)
     }
     return { ...state, run, encounter }
   }),
@@ -73,6 +81,7 @@ export const combatTelemetryObserver: CombatTelemetryObserver = {
   endRun: (reason) => useCombatTelemetryStore.getState().endRun(reason),
   beginEncounter: (monsterId) => useCombatTelemetryStore.getState().beginEncounter(monsterId),
   endEncounter: (reason) => useCombatTelemetryStore.getState().endEncounter(reason),
+  resetMeasurement: () => useCombatTelemetryStore.getState().resetMeasurement(),
   advance: (deltaMs, state) => useCombatTelemetryStore.getState().advanceTime(deltaMs, state),
   consume: (event) => useCombatTelemetryStore.getState().consumeEvent(event),
   clear: () => useCombatTelemetryStore.getState().clear(),

@@ -2,7 +2,7 @@ import { Heart, Shield, ShieldAlert, Sparkles, Swords, TimerReset } from 'lucide
 import { useMemo } from 'react'
 import { DUNGEONS } from '../../game/content/dungeons/dungeons'
 import { MONSTERS } from '../../game/content/monsters'
-import { buildCombatActionPresentation, type CombatActionPresentation, type CombatEffectPresentation } from '../../game/presentation/combat'
+import { type CombatEffectPresentation } from '../../game/presentation/combat'
 import { getCombatFlowPresentation, type CombatFlowTimeline } from '../../game/presentation/combat/combatFlowPresentation'
 import { getCurrentEnemyActionStep, getEnemyAction, getEnemyActionPattern } from '../../game/systems/combat/actionRuntime'
 import { actorCannotAct } from '../../game/systems/combat/statusRuntime'
@@ -13,9 +13,10 @@ import { formatTime } from '../../game/utils'
 import { BALANCE } from '../../game/core/balance/balance'
 import { resolveBasicAttackInterval } from '../../game/systems/combat/effectResolver'
 import { GameTooltip, Progress } from '../../components/ui'
-import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { EnemyPatternRail } from './EnemyPatternRail'
 import { CombatAlerts } from './CombatAlerts'
+import { EnemyActionTooltip, buildBasicAttackPresentation } from './EnemyActionTooltip'
+import { EnemyPatternIcon } from './EnemyPatternIcon'
 
 export function CombatFlowPanel({ selectedDungeonId }: { selectedDungeonId: DungeonId }) {
   const combat = useGameStore((state) => state.combat)
@@ -64,7 +65,7 @@ export function CombatFlowPanel({ selectedDungeonId }: { selectedDungeonId: Dung
     <header className="combat-flow-head"><span className="combat-flow-kicker">COMBAT FLOW</span></header>
     <CombatAlerts />
     <div className="combat-flow-timelines"><TimelineRow timeline={presentation.playerTimeline} /><TimelineRow timeline={presentation.enemyTimeline} /></div>
-    {presentation.enemyIntent && <GameTooltip block wide={presentation.enemyIntent.special} placement="bottom" accent={presentation.enemyIntent.special ? 'warning' : 'neutral'} content={presentation.enemyIntent.action ? <ActionTooltip action={presentation.enemyIntent.action} /> : undefined}><div className={`combat-flow-intent${presentation.enemyIntent.special ? ' is-special' : ''}`}><div className="combat-flow-subhead"><span className="combat-subsection-label">ENEMY INTENT</span>{presentation.enemyIntent.special && <span className="combat-flow-intent-action-icon"><Sparkles size={15} aria-hidden="true" /></span>}<strong>{presentation.enemyIntent.label}</strong></div>{presentation.enemyIntent.action ? <div className="combat-flow-effects">{presentation.enemyIntent.action.effects.map((effect, index) => <CombatEffectRow key={`${effect.label}-${index}`} effect={effect} />)}</div> : presentation.enemyIntent.basic ? <div className="combat-flow-effects"><CombatEffectRow effect={presentation.enemyIntent.basic} /></div> : null}</div></GameTooltip>}
+    {presentation.enemyIntent && <EnemyIntent intent={presentation.enemyIntent} basicDamage={presentation.enemy?.basicAttackDamage ?? 0} />}
     <div className="combat-flow-pattern"><div className="combat-subsection-label">ENEMY PATTERN</div><EnemyPatternRail pattern={presentation.pattern} enemy={presentation.enemy} currentIndex={presentation.patternIndex} activeStepId={presentation.activeStepId} activeAction={presentation.activeActionId} activeOriginMatchesCurrent={presentation.activeOriginMatchesCurrent} /></div>
   </section>
 }
@@ -90,6 +91,7 @@ function IntentEffectIcon({ kind }: { kind: CombatEffectPresentation['kind'] }) 
   return <Sparkles size={13} aria-hidden="true" />
 }
 
-function ActionTooltip({ action }: { action: CombatActionPresentation }) {
-  return <TooltipContent title={action.name} description={action.description}><div className="tooltip-section"><small>TELEGRAPH</small><p>{formatTime(action.telegraphMs)}</p></div>{action.recoveryMs !== undefined && <div className="tooltip-section"><small>RECOVERY</small><p>{formatTime(action.recoveryMs)}</p></div>}<div className="tooltip-section"><small>EFFECTS</small>{action.effects.map((effect, index) => <p key={`${effect.label}-${index}`}>{effect.label}{effect.value ? `: ${effect.value}` : ''}{effect.detail ? ` · ${effect.detail}` : ''}{effect.timeLabel ? ` · ${effect.timeLabel}` : ''}</p>)}</div></TooltipContent>
+function EnemyIntent({ intent, basicDamage }: { intent: NonNullable<ReturnType<typeof getCombatFlowPresentation>['enemyIntent']>; basicDamage: number }) {
+  const action = intent.action ?? (intent.basic ? buildBasicAttackPresentation(basicDamage) : null)
+  return <GameTooltip block wide placement="bottom" accent={intent.special ? 'warning' : 'neutral'} content={action ? <EnemyActionTooltip action={action} /> : undefined}><div className={`combat-flow-intent${intent.special ? ' is-special' : ''}`}><div className="combat-flow-subhead"><span className={`combat-flow-intent-icon combat-pattern-icon-${intent.iconKind}`}><EnemyPatternIcon kind={intent.iconKind} /></span><span className="combat-subsection-label">ENEMY INTENT</span><strong>{intent.label}</strong></div>{intent.action ? <div className="combat-flow-effects">{intent.action.effects.map((effect, index) => <CombatEffectRow key={`${effect.label}-${index}`} effect={effect} />)}</div> : intent.basic ? <div className="combat-flow-effects"><CombatEffectRow effect={intent.basic} /></div> : null}</div></GameTooltip>
 }

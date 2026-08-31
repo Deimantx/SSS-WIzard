@@ -12,6 +12,7 @@ describe('Combat actor card symmetry', () => {
     render(<TooltipProvider><PlayerCombatCard /></TooltipProvider>)
     expect(screen.getByText('YOUR WIZARD')).toBeTruthy()
     expect(document.querySelector('.combat-player-card .combat-actor-mark')).toBeNull()
+    expect(document.querySelector('.player-placeholder')).toBeNull()
     expect(screen.getByText('BASIC ATTACK')).toBeTruthy()
     expect(screen.queryByText('Next Attack')).toBeNull()
     expect(screen.queryByText('Attack progress')).toBeNull()

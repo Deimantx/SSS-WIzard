@@ -30,7 +30,7 @@ describe('getCombatFlowPresentation', () => {
     const action = enemy.actions['root-crush']
     const presentation = getCombatFlowPresentation(input({ playerAttackTimerMs: 1500, enemyTelegraphMs: 800, enemyTelegraphActionId: 'root-crush', enemyTelegraphStepId: 'root-crush-step', telegraphAction: action, nextStep: pattern.steps[3], enemyActionIndex: 3 }))
     expect(presentation.enemyTimeline).toMatchObject({ state: 'telegraph', remainingMs: 800, progress: 60 })
-    expect(presentation.enemyIntent).toMatchObject({ label: 'Root Crush', special: true })
+    expect(presentation.enemyIntent).toMatchObject({ label: 'Root Crush', special: true, iconKind: 'direct-damage' })
     expect(presentation.patternIndex).toBe(2)
   })
 

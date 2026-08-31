@@ -293,12 +293,11 @@ describe('Combat layout compatibility', () => {
     expect(loadUiLayouts().screens.combat).toEqual({
       'combat-stage': { x: 0, y: 0, w: 10, h: 18, locked: true },
       'combat-spell-deck': { x: 0, y: 18, w: 10, h: 12 },
-      'combat-details': { x: 0, y: 30, w: 12, h: 8 },
-      'combat-dungeon-statistics': { x: 6, y: 38, w: 6, h: 8 },
+      'combat-analytics': { x: 0, y: 30, w: 12, h: 8 },
     })
   })
 
-  it('migrates the V3.5 full-width Details default into the 7/5 analytics split', () => {
+  it('migrates the V3.5 full-width Details default into the Combat Analytics parent', () => {
     localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({ version: 4, screens: { combat: {
       'combat-stage': { x: 0, y: 0, w: 12, h: 14 },
       'combat-spell-deck': { x: 0, y: 14, w: 12, h: 7 },
@@ -308,8 +307,22 @@ describe('Combat layout compatibility', () => {
     expect(loadUiLayouts().screens.combat).toEqual({
       'combat-stage': { x: 0, y: 0, w: 12, h: 14 },
       'combat-spell-deck': { x: 0, y: 14, w: 12, h: 7 },
+      'combat-analytics': { x: 0, y: 21, w: 12, h: 8 },
+    })
+  })
+
+  it('migrates the V3.7 split panels into one editable Combat Analytics parent', () => {
+    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({ version: 6, screens: { combat: {
+      'combat-stage': { x: 0, y: 0, w: 12, h: 14 },
+      'combat-spell-deck': { x: 0, y: 14, w: 12, h: 7 },
       'combat-details': { x: 0, y: 21, w: 6, h: 8 },
       'combat-dungeon-statistics': { x: 6, y: 21, w: 6, h: 8 },
+    } } }))
+
+    expect(loadUiLayouts().screens.combat).toEqual({
+      'combat-stage': { x: 0, y: 0, w: 12, h: 14 },
+      'combat-spell-deck': { x: 0, y: 14, w: 12, h: 7 },
+      'combat-analytics': { x: 0, y: 21, w: 12, h: 8 },
     })
   })
 

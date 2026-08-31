@@ -1,6 +1,7 @@
 import type { DungeonDefinition } from '../../content/dungeons/dungeons'
 import type { MonsterDefinition } from '../../content/monsters'
 import { buildCombatActionPresentation, formatCombatEffect, type CombatActionPresentation, type CombatEffectPresentation } from './combatActionPresentation'
+import { classifyEnemyActionPatternIcon, type EnemyPatternIconKind } from './enemyPatternIconPresentation'
 import type { ActionPattern, ActionStep, CombatActionDefinition } from '../../systems/combat/combatTypes'
 import type { DungeonId, MonsterId } from '../../types'
 
@@ -22,7 +23,7 @@ export interface CombatFlowPresentation {
   enemy: MonsterDefinition | null
   playerTimeline: CombatFlowTimeline | null
   enemyTimeline: CombatFlowTimeline | null
-  enemyIntent: { label: string; action: CombatActionPresentation | null; basic: CombatEffectPresentation | null; special: boolean } | null
+  enemyIntent: { label: string; action: CombatActionPresentation | null; basic: CombatEffectPresentation | null; special: boolean; iconKind: EnemyPatternIconKind } | null
   pattern: ActionPattern | undefined
   patternIndex: number
   activeStepId: string | null
@@ -90,7 +91,7 @@ export function getCombatFlowPresentation(input: CombatFlowRuntimeInput): Combat
   return {
     mode: 'combat', dungeonId, dungeon: input.dungeon, enemy: input.enemy,
     playerTimeline, enemyTimeline,
-    enemyIntent: { label: enemyAction?.name ?? (basicPresentation ? 'Basic Attack' : 'Preparing'), action: enemyActionPresentation, basic: basicPresentation, special: Boolean(enemyActionPresentation) },
+    enemyIntent: { label: enemyAction?.name ?? (basicPresentation ? 'Basic Attack' : 'Preparing'), action: enemyActionPresentation, basic: basicPresentation, special: Boolean(enemyActionPresentation), iconKind: enemyAction ? classifyEnemyActionPatternIcon(enemyAction) : 'basic-attack' },
     pattern: input.pattern, patternIndex: currentIndex, activeStepId: input.enemyTelegraphStepId, activeActionId: input.enemyTelegraphActionId, activeOriginMatchesCurrent: !input.enemyTelegraphPatternId || input.enemyTelegraphPatternId === input.enemyActionPatternId,
     encounterTimerMs: input.encounterTimerMs,
   }

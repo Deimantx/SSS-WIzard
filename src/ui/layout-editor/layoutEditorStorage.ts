@@ -3,8 +3,8 @@ import { DEFAULT_LAYOUTS } from './defaultLayouts'
 import { LAYOUT_VERSION, type SavedPanelLayout, type UiLayoutDocument } from './layoutEditorTypes'
 import { clampTopbarLayout, DEFAULT_TOPBAR_LAYOUT } from './shellLayout'
 
-export const UI_LAYOUTS_KEY = 'sss-wizard-ui-layout-v6'
-const LEGACY_UI_LAYOUTS_KEYS = ['sss-wizard-ui-layout-v5', 'sss-wizard-ui-layout-v4', 'sss-wizard-ui-layout-v3', 'sss-wizard-ui-layout-v2'] as const
+export const UI_LAYOUTS_KEY = 'sss-wizard-ui-layout-v7'
+const LEGACY_UI_LAYOUTS_KEYS = ['sss-wizard-ui-layout-v6', 'sss-wizard-ui-layout-v5', 'sss-wizard-ui-layout-v4', 'sss-wizard-ui-layout-v3', 'sss-wizard-ui-layout-v2'] as const
 
 const blankDocument = (): UiLayoutDocument => ({ version: LAYOUT_VERSION, screens: {}, shell: { topbar: clampTopbarLayout(DEFAULT_TOPBAR_LAYOUT) } })
 const validNumber = (value: unknown, fallback: number) => typeof value === 'number' && Number.isFinite(value) ? value : fallback
@@ -104,17 +104,18 @@ export function loadUiLayouts(): UiLayoutDocument {
         const rawLog = rawSource['combat-log'] as Partial<SavedPanelLayout> | undefined
         const deckY = validNumber(rawDeck.y, DEFAULT_LAYOUTS.combat['combat-spell-deck'].y)
         const deckH = Math.max(1, Math.round(validNumber(rawDeck.h, DEFAULT_LAYOUTS.combat['combat-spell-deck'].h)))
-        const detailsY = Math.max(deckY + deckH, validNumber(rawDetails?.y, validNumber(rawLog?.y, DEFAULT_LAYOUTS.combat['combat-details'].y)))
-        const withoutPermanentLog = Object.fromEntries(Object.entries(rawSource).filter(([id]) => id !== 'combat-log'))
-        const detailsBase = rawDetails ?? DEFAULT_LAYOUTS.combat['combat-details']
+        const rawStatistics = rawSource['combat-dungeon-statistics'] as Partial<SavedPanelLayout> | undefined
+        const defaultAnalytics = DEFAULT_LAYOUTS.combat['combat-analytics']
+        const oldLowerPanels = [rawDetails, rawStatistics].filter((panel): panel is Partial<SavedPanelLayout> => Boolean(panel))
+        const lowerY = oldLowerPanels.length ? Math.min(...oldLowerPanels.map((panel) => validNumber(panel.y, defaultAnalytics.y))) : validNumber(rawLog?.y, defaultAnalytics.y)
+        const analyticsY = Math.max(deckY + deckH, lowerY)
+        const analyticsBottom = oldLowerPanels.length ? Math.max(...oldLowerPanels.map((panel) => validNumber(panel.y, analyticsY) + Math.max(1, Math.round(validNumber(panel.h, defaultAnalytics.h))))) : analyticsY + defaultAnalytics.h
+        const withoutLegacyCombatPanels = Object.fromEntries(Object.entries(rawSource).filter(([id]) => id !== 'combat-log' && id !== 'combat-details' && id !== 'combat-dungeon-statistics'))
+        const hidden = oldLowerPanels.length > 1 && oldLowerPanels.every((panel) => panel.hidden === true)
+        const locked = oldLowerPanels.some((panel) => panel.locked === true)
         combatSource = {
-          ...withoutPermanentLog,
-          'combat-details': {
-            ...detailsBase,
-            x: layoutNeedsMigration || !rawDetails ? 0 : validNumber(detailsBase.x, 0),
-            y: detailsY,
-            w: layoutNeedsMigration || !rawDetails ? 12 : Math.max(1, Math.round(validNumber(detailsBase.w, 12))),
-          },
+          ...withoutLegacyCombatPanels,
+          'combat-analytics': { ...defaultAnalytics, x: 0, y: analyticsY, w: 12, h: Math.max(defaultAnalytics.h, analyticsBottom - analyticsY), ...(hidden ? { hidden: true } : {}), ...(locked ? { locked: true } : {}) },
         }
       }
       const source = screen === 'tower-channeling' && !('channeling-pillars' in rawSource) && 'channeling-infrastructure' in rawSource
@@ -130,19 +131,23 @@ export function loadUiLayouts(): UiLayoutDocument {
       if (screen === 'tower-channeling' && ('channeling-main' in source || 'channeling-stats' in source)) continue
       const panels: Record<string, SavedPanelLayout> = {}
       for (const [id, value] of Object.entries(source)) { const normalized = normalizePanel(screen, id, value); if (normalized) panels[id] = normalized }
-      if (screen === 'combat' && !panels['combat-dungeon-statistics']) {
+      if (screen === 'combat') {
+        const analytics = panels['combat-analytics']
         const details = panels['combat-details']
-        const oldDefaultDetails = details && hasUnmodifiedGeometry(details, { x: 0, y: 21, w: 12, h: 8 })
-        if (oldDefaultDetails) {
-          panels['combat-details'] = { ...details, x: 0, w: 6 }
-          panels['combat-dungeon-statistics'] = { ...DEFAULT_LAYOUTS.combat['combat-dungeon-statistics'], x: 6, y: details.y, w: 6 }
-        } else if (details && details.x === 0 && details.w >= 6 && details.w <= 8) {
-          const statisticsWidth = 12 - details.w
-          panels['combat-dungeon-statistics'] = statisticsWidth >= 4
-            ? { ...DEFAULT_LAYOUTS.combat['combat-dungeon-statistics'], x: details.w, y: details.y, w: statisticsWidth, h: details.h }
-            : { ...DEFAULT_LAYOUTS.combat['combat-dungeon-statistics'], y: Math.max(0, details.y + details.h) }
+        const statistics = panels['combat-dungeon-statistics']
+        if (!analytics && (details || statistics)) {
+          const lowerPanels = [details, statistics].filter((panel): panel is SavedPanelLayout => Boolean(panel))
+          const lowerY = Math.min(...lowerPanels.map((panel) => panel.y))
+          const analyticsY = Math.max(0, lowerY)
+          const analyticsBottom = Math.max(...lowerPanels.map((panel) => panel.y + panel.h))
+          panels['combat-analytics'] = { ...DEFAULT_LAYOUTS.combat['combat-analytics'], x: 0, y: analyticsY, w: 12, h: Math.max(DEFAULT_LAYOUTS.combat['combat-analytics'].h, analyticsBottom - analyticsY), ...(lowerPanels.length > 1 && lowerPanels.every((panel) => panel.hidden === true) ? { hidden: true } : {}), ...(lowerPanels.some((panel) => panel.locked === true) ? { locked: true } : {}) }
+          delete panels['combat-details']
+          delete panels['combat-dungeon-statistics']
+        } else if (!analytics) {
+          placeMissingPanel(screen, 'combat-analytics', panels)
         } else {
-          placeMissingPanel(screen, 'combat-dungeon-statistics', panels)
+          delete panels['combat-details']
+          delete panels['combat-dungeon-statistics']
         }
       }
       if (screen === 'tower-research' && hasGeometry(source['research-library'], { x: 0, y: 0, w: 6, h: 10 }) && hasGeometry(source['research-inspector'], { x: 6, y: 0, w: 6, h: 10 }) && hasGeometry(source['research-prepared'], { x: 0, y: 10, w: 12, h: 10 })) {

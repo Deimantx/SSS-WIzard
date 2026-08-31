@@ -9,7 +9,6 @@ import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { ItemIcon } from '../../components/ui/item/ItemIcon'
 import { CombatStatusStrip } from './CombatStatusStrip'
 import { CombatResource } from './CombatResource'
-import { PlayerPlaceholder } from './PlayerPlaceholder'
 
 export function PlayerCombatCard() {
   const health = useGameStore((state) => state.player.health)
@@ -26,7 +25,6 @@ export function PlayerCombatCard() {
 
   return <section className={`combat-actor-card combat-player-card${cannotAct ? ' is-disabled' : ''}`}>
     <header className="combat-actor-head"><div className="combat-actor-head-copy"><span className="combat-subsection-label">PLAYER</span><h2>YOUR WIZARD</h2></div><Status tone={cannotAct ? 'warning' : 'active'}>{cannotAct ? 'Unable to act' : 'Ready'}</Status></header>
-    <PlayerPlaceholder />
     <div className="combat-player-identity"><div className="combat-player-weapon">{weaponId ? <ItemIcon itemId={weaponId} size="tile" /> : <WandSparkles size={16} aria-hidden="true" />}<strong>{weapon?.name ?? 'Unarmed focus'}</strong></div><span>Apprentice Wizard</span></div>
     <div className="combat-resource-stack"><CombatResource icon={<Heart size={13} />} label="HP" value={`${formatNumber(health)} / ${formatNumber(maxHealth)}`} currentValue={health} maxValue={maxHealth} percent={health / Math.max(1, maxHealth) * 100} tone="health" /><CombatResource icon={<Droplet size={13} />} label="MANA" value={`${formatNumber(mana)} / ${formatNumber(maxMana)}`} currentValue={mana} maxValue={maxMana} percent={mana / Math.max(1, maxMana) * 100} tone="mana" /><CombatResource icon={<Shield size={13} />} label="BARRIER" value={`${formatNumber(playerBarrier)}${playerBarrierRemainingMs === null ? '' : ` · ${formatTime(playerBarrierRemainingMs)}`} `} currentValue={playerBarrier} maxValue={maxHealth} percent={playerBarrier / Math.max(1, maxHealth) * 100} tone="barrier" /></div>
     <CombatStatusStrip statuses={playerStatuses} label="ACTIVE STATUSES" />

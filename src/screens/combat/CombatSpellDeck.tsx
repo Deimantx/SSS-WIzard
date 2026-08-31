@@ -101,9 +101,9 @@ export function CombatSpellDeck({ onRequiredHeightChange }: { onRequiredHeightCh
 
   return <Card className="combat-spell-deck">
     <div ref={deckHeadRef} className="combat-spell-deck-head">
-      <div className="combat-spell-deck-heading"><span className="combat-subsection-label">COMBAT LOADOUT</span><strong>SPELL DECK</strong><small>Cast, filter, and tune Auto-Cast without leaving the fight.</small></div>
+      <div className="combat-spell-deck-heading"><strong>SPELL DECK</strong></div>
       <div className="combat-preset-control"><span className="combat-subsection-label">PRESET</span><div className="combat-preset-control-row"><SelectMenu options={presetOptions} value={activePreset?.id ?? 'custom'} onChange={choosePreset} ariaLabel="Combat Auto-Cast preset" /><GameTooltip content={<TooltipContent title="Manage Presets" description="Build, edit, and apply reusable Auto-Cast configurations." />}><Button className="combat-preset-manage" variant="secondary" onClick={openPresetManager}><Settings2 size={13} /> MANAGE</Button></GameTooltip></div><small>{activePreset ? 'Live configuration matches this preset.' : 'CUSTOM · live configuration'}</small></div>
-      <div className="combat-focus-summary"><span>AUTO-CAST</span><strong className="ui-focus">{focus.autoCastFocus} Focus</strong><small>{focus.freeFocus} free · {focus.otherFocus} other reserved</small></div>
+      <div className="combat-focus-summary"><span>AUTO</span><strong className="ui-focus">{focus.autoCastFocus} Focus</strong></div>
     </div>
     <div ref={deckBodyRef} className="combat-spell-deck-body">
       {banner && <div className="combat-spell-banner" role="status"><CircleDot size={13} aria-hidden="true" />{banner}</div>}

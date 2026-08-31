@@ -56,4 +56,13 @@ describe('CombatSpellDeck V2', () => {
     expect(activeButton.closest('.spell-combat-auto-slot')?.parentElement?.classList.contains('spell-combat-tile')).toBe(true)
     expect(activeButton.classList.contains('is-active')).toBe(true)
   })
+
+  it('keeps cooldown presentation on the icon with a readable countdown', () => {
+    const current = useGameStore.getState()
+    useGameStore.setState({ combat: { ...current.combat, active: true, enemyId: 'forest-wisp', spellCooldowns: { ...current.combat.spellCooldowns, 'fire-bolt': 3400 } } })
+    const { container } = render(<TooltipProvider><CombatSpellDeck /></TooltipProvider>)
+    expect(container.querySelector('.spell-combat-cooldown-overlay')).toBeTruthy()
+    expect(screen.getByText('3.4')).toBeTruthy()
+    expect(container.querySelector('.spell-combat-cooldown-mask')).toBeNull()
+  })
 })

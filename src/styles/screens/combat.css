@@ -2053,33 +2053,6 @@
 }
 
 /* V3.2 Player / Enemy rhythm */
-.combat-player-identity {
-  display: grid;
-  gap: 5px;
-  padding: 10px 0 9px;
-  border-block: 1px solid var(--ui-border);
-}
-.combat-player-weapon {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  min-width: 0;
-}
-.combat-player-weapon .item-icon {
-  flex: 0 0 auto;
-  width: 24px;
-  height: 24px;
-  font-size: 16px;
-}
-.combat-player-weapon strong {
-  overflow: hidden;
-  color: var(--ui-text-soft);
-  font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.combat-player-weapon > svg { color: var(--ui-gold); }
-.combat-player-identity > span,
 .combat-enemy-subtitle {
   color: var(--ui-text-muted);
   font: var(--text-micro) var(--font-mono);
@@ -2129,19 +2102,6 @@
 }
 .combat-flow-head { justify-content: space-between; }
 .combat-flow-kicker { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .12em; text-transform: uppercase; }
-.combat-alert-stack { display: grid; gap: 5px; min-width: 0; }
-.combat-alert-row { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 7px; align-items: center; min-width: 0; padding: 6px 8px; border: 1px solid var(--ui-border); border-left: 2px solid var(--alert-accent, var(--ui-accent)); border-radius: 5px; background: color-mix(in srgb, var(--alert-accent, var(--ui-accent)) 6%, transparent); cursor: help; }
-.combat-alert-row:hover,
-.combat-alert-row:focus-visible { border-color: color-mix(in srgb, var(--alert-accent, var(--ui-accent)) 55%, var(--ui-border)); outline: none; }
-.combat-alert-icon { display: grid; width: 22px; height: 22px; place-items: center; color: var(--alert-accent, var(--ui-accent)); }
-.combat-alert-copy { display: grid; min-width: 0; gap: 2px; }
-.combat-alert-copy strong { overflow: hidden; color: var(--ui-text); font: var(--text-micro) var(--font-mono); letter-spacing: .04em; text-overflow: ellipsis; white-space: nowrap; }
-.combat-alert-copy small { overflow: hidden; color: var(--ui-text-muted); font-size: 10px; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
-.combat-alert-semantic-danger { --alert-accent: var(--ui-danger); }
-.combat-alert-semantic-warning { --alert-accent: var(--ui-warning); }
-.combat-alert-semantic-info { --alert-accent: var(--ui-accent); }
-.combat-alert-semantic-success { --alert-accent: var(--ui-success); }
-.combat-alert-critical { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--alert-accent) 14%, transparent); }
 .combat-flow-timelines { display: grid; gap: 8px; }
 .combat-flow-timeline { display: grid; gap: 4px; min-width: 0; }
 .combat-flow-timeline-head { align-items: baseline; }
@@ -2635,7 +2595,6 @@
 
 /* V3.7.1 compact Player panel */
 .combat-player-card { gap: 9px; }
-.combat-player-identity { padding: 7px 8px; }
 
 /* V3.7.1 compact Spell Deck header */
 .combat-spell-deck-head { grid-template-columns: max-content minmax(230px, 1fr) auto; gap: 10px; padding-bottom: 8px; }
@@ -2980,4 +2939,33 @@
   .combat-resource-trail,
   .combat-flow-pattern-node,
   .spell-combat-cooldown-overlay { transition: none; }
+}
+
+/* V3.9.3 focused micro-polish */
+.combat-flow-pattern-rail {
+  justify-content: center;
+  justify-content: safe center;
+}
+.combat-flow-pattern-rail .combat-pattern-node-wrap { flex: 0 0 auto; }
+.combat-preset-control-row .select-menu-chevron {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  place-items: center;
+  margin-inline-start: 2px;
+  color: var(--ui-text-soft);
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 20px;
+  transform: translateY(-1px);
+  transition: color 140ms ease, transform 140ms ease;
+}
+.combat-preset-control-row .select-menu-trigger:hover .select-menu-chevron,
+.combat-preset-control-row .select-menu-trigger:focus-visible .select-menu-chevron,
+.combat-preset-control-row .select-menu.is-open .select-menu-chevron { color: var(--ui-accent); }
+.combat-preset-control-row .select-menu.is-open .select-menu-chevron { transform: translateY(0) rotate(180deg); }
+
+@media (prefers-reduced-motion: reduce) {
+  .combat-preset-control-row .select-menu-chevron { transition: none; }
 }

@@ -259,7 +259,9 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
       ? Math.max(100, nonNegativeNumber(rawCombat.playerAttackDurationMs) ?? resolveBasicAttackInterval(migrated, 'player', BALANCE.player.basicAttackIntervalMs))
       : resolveBasicAttackInterval(migrated, 'player', BALANCE.player.basicAttackIntervalMs)
     migrated.combat.playerAttackDurationMs = playerDuration
-    migrated.combat.playerAttackTimerMs = Math.min(playerDuration, rawPlayerTimer ?? playerDuration) + oldDelay
+    migrated.combat.playerAttackTimerMs = sourceVersion >= SAVE_VERSION
+      ? Math.min(playerDuration, rawPlayerTimer ?? playerDuration) + oldDelay
+      : playerDuration + oldDelay
   } else {
     migrated.combat.playerAttackDurationMs = 0
     migrated.combat.playerAttackTimerMs = (rawPlayerTimer ?? 0) + oldDelay

@@ -30,4 +30,16 @@ describe('EnemyPatternRail', () => {
     expect(tooltip.textContent).toContain('Physical Damage')
     expect(tooltip.textContent).toContain('Target: Player')
   })
+
+  it('keeps a committed old-Pattern action visible while the selected Pattern is still next', () => {
+    const pattern = MONSTERS['corrupted-greatbear'].actionPatterns.corrupted
+    const { container } = render(<TooltipProvider><EnemyPatternRail pattern={pattern} enemy={MONSTERS['corrupted-greatbear']} currentStepIndex={2} currentStepId="crushing-maul-step" currentActionId="crushing-maul" currentPatternOriginId="default" /></TooltipProvider>)
+
+    expect(screen.getByText('CURRENT ACTION')).toBeTruthy()
+    expect(screen.getByText('NEXT PATTERN')).toBeTruthy()
+    expect(screen.getByText('Crushing Maul')).toBeTruthy()
+    expect(container.querySelectorAll('[aria-current="step"]')).toHaveLength(0)
+    expect(container.querySelector('.combat-pattern-transition')).toBeTruthy()
+    expect(container.querySelector('.combat-pattern-node.is-next')).toBe(container.querySelectorAll('.combat-pattern-node')[0])
+  })
 })

@@ -9,7 +9,7 @@ import { getActorHealth, resolveMagnitude } from './magnitude'
 import { consumeBarrier, gainBarrierResult, gainBarrier as gainBarrierRuntime, getActiveBarrier } from './barrierRuntime'
 import { getCombatModifiers, getResistance, isImmuneToDamage } from './modifiers'
 import { runCombatTriggers, type CombatEventContext } from './triggerRuntime'
-import { setEnemyActionPattern } from './actionRuntime'
+import { getCurrentEnemyActionStep, setEnemyActionPattern } from './actionRuntime'
 import type { CombatEffect, CombatEventSink, CombatLogCategory, CombatSource, CombatTag, DamageType, EffectTarget } from './combatTypes'
 
 const MAX_EFFECT_DEPTH = 20
@@ -179,9 +179,27 @@ export const executeCombatEffect = (state: GameState, effect: CombatEffect, sour
     case 'cleanse': cleanseStatuses(state, target, effect.mode, effect.tag, { executeEffects: execute, source, depth, uiEvents }); break
     case 'dispel': dispelStatuses(state, target, effect.mode, effect.tag, { executeEffects: execute, source, depth, uiEvents }); break
     case 'modify-action-timer': {
-      if (target === 'player') state.combat.playerAttackTimerMs = Math.max(0, state.combat.playerAttackTimerMs + effect.amountMs)
-      else if (effect.action === 'current' && state.combat.enemyCurrentStepId) state.combat.enemyActionTimerMs = Math.max(0, state.combat.enemyActionTimerMs + effect.amountMs)
-      else if (effect.action !== 'current') state.combat.enemyActionTimerMs = Math.max(0, state.combat.enemyActionTimerMs + effect.amountMs)
+      // Player V1 has one explicit timed normal-action lane: Basic Attack.
+      // `current` therefore maps to that same lane until a player action queue exists.
+      let applied = false
+      if (target === 'player') {
+        state.combat.playerAttackTimerMs = Math.max(0, state.combat.playerAttackTimerMs + effect.amountMs)
+        applied = true
+      } else if (effect.action === 'current') {
+        // Current means the committed action, whether Basic or Skill.
+        if (state.combat.enemyCurrentStepId) {
+          state.combat.enemyActionTimerMs = Math.max(0, state.combat.enemyActionTimerMs + effect.amountMs)
+          applied = true
+        }
+      } else if (effect.action === 'basic-attack') {
+        // A Basic-specific modifier never reaches a committed Skill and never
+        // creates a timer for a future action.
+        if (getCurrentEnemyActionStep(state)?.type === 'basic') {
+          state.combat.enemyActionTimerMs = Math.max(0, state.combat.enemyActionTimerMs + effect.amountMs)
+          applied = true
+        }
+      }
+      if (!applied) break
       appendLog(state, `${effect.amountMs >= 0 ? 'Action delayed' : 'Action timer changed'} by ${Math.abs(effect.amountMs)}ms.`)
       uiEvents?.push({ ...eventFields(state, source, target), category: 'system', sourceId: 'action-timer', amount: Math.abs(effect.amountMs), durationMs: effect.amountMs })
       break

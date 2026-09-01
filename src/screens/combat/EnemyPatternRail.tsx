@@ -7,10 +7,13 @@ import { EnemyPatternIcon, getEnemyPatternIconLabel } from './EnemyPatternIcon'
 
 export function EnemyPatternRail({ pattern, enemy, currentStepIndex, currentStepId, currentActionId, currentPatternOriginId, currentProgress, currentActionDurationMs }: { pattern?: ActionPattern; enemy?: MonsterDefinition | null; currentStepIndex: number; currentStepId: string | null; currentActionId: string | null; currentPatternOriginId: string | null; currentProgress?: number | null; currentActionDurationMs?: number }) {
   if (!pattern) return <div className="combat-pattern-empty">No enemy pattern loaded.</div>
-  return <div className="combat-pattern-rail combat-flow-pattern-rail" aria-label="Enemy pattern"><div className="combat-pattern-sequence">{pattern.steps.map((step, index) => {
+  const currentOriginIsDifferent = Boolean(currentPatternOriginId && currentPatternOriginId !== pattern.id && (currentStepId || currentActionId))
+  const currentActionLabel = currentActionId ? enemy?.actions[currentActionId]?.name ?? 'Enemy Action' : 'Basic Attack'
+  const nextPatternIndex = currentOriginIsDifferent ? 0 : (currentStepIndex + 1) % pattern.steps.length
+  return <div className="combat-pattern-rail combat-flow-pattern-rail" aria-label="Enemy pattern">{currentOriginIsDifferent && <div className="combat-pattern-transition"><div><span className="combat-subsection-label">CURRENT ACTION</span><strong>{currentActionLabel}</strong></div><div><span className="combat-subsection-label">NEXT PATTERN</span><strong>{pattern.id}</strong></div></div>}<div className="combat-pattern-sequence">{pattern.steps.map((step, index) => {
     const currentOriginMatchesPattern = !currentPatternOriginId || currentPatternOriginId === pattern.id
     const current = currentOriginMatchesPattern && (currentStepId ? step.id === currentStepId : currentActionId && step.type === 'action' ? step.actionId === currentActionId : index === currentStepIndex)
-    const next = !current && pattern.steps.length > 1 && index === (currentStepIndex + 1) % pattern.steps.length
+    const next = !current && pattern.steps.length > 0 && index === nextPatternIndex
     const action = step.type === 'action' ? enemy?.actions[step.actionId] : undefined
     const presentation = action ? buildCombatActionPresentation(action) : buildBasicAttackPresentation(enemy?.basicAttackDamage ?? 0, current ? currentActionDurationMs ?? enemy?.basicAttackTimeMs ?? 0 : enemy?.basicAttackTimeMs ?? 0)
     const kind = classifyEnemyPatternStep(step, action)

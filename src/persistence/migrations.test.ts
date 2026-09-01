@@ -297,6 +297,78 @@ describe('save navigation migration', () => {
     expect(migrated.activities.transmutation.jobs['fire-fragment']).toEqual({ echoesAssigned: 1, progressMs: 0 })
   })
 
+  it('round-trips V18 committed Basic, Skill, and switched-Pattern timing state', () => {
+    const basic = createInitialState()
+    basic.combat.active = true
+    basic.combat.dungeonId = 'whispering-woods'
+    basic.combat.enemyId = 'forest-wisp'
+    basic.combat.enemyHp = 40
+    basic.combat.enemyMaxHp = 44
+    basic.combat.enemyActionPatternId = 'default'
+    basic.combat.enemyNextActionIndex = 2
+    basic.combat.enemyCurrentStepId = 'basic-2'
+    basic.combat.enemyCurrentActionId = null
+    basic.combat.enemyCurrentActionPatternId = 'default'
+    basic.combat.enemyActionDurationMs = 2_800
+    basic.combat.enemyActionTimerMs = 1_743
+    basic.combat.playerAttackDurationMs = 2_200
+    basic.combat.playerAttackTimerMs = 777
+    const basicLoaded = migrateSave(JSON.parse(JSON.stringify(serializeGameState(basic))))
+    expect(basicLoaded.combat).toMatchObject({ enemyActionPatternId: 'default', enemyNextActionIndex: 2, enemyCurrentStepId: 'basic-2', enemyCurrentActionId: null, enemyCurrentActionPatternId: 'default', enemyActionDurationMs: 2_800, enemyActionTimerMs: 1_743, playerAttackDurationMs: 2_200, playerAttackTimerMs: 777 })
+
+    const skill = createInitialState()
+    skill.combat.active = true
+    skill.combat.dungeonId = 'whispering-woods'
+    skill.combat.enemyId = 'forest-wisp'
+    skill.combat.enemyHp = 40
+    skill.combat.enemyMaxHp = 44
+    skill.combat.enemyActionPatternId = 'default'
+    skill.combat.enemyNextActionIndex = 0
+    skill.combat.enemyCurrentStepId = 'arc-spark-step'
+    skill.combat.enemyCurrentActionId = 'arc-spark'
+    skill.combat.enemyCurrentActionPatternId = 'default'
+    skill.combat.enemyActionDurationMs = 2_000
+    skill.combat.enemyActionTimerMs = 901
+    const skillLoaded = migrateSave(JSON.parse(JSON.stringify(serializeGameState(skill))))
+    expect(skillLoaded.combat).toMatchObject({ enemyCurrentStepId: 'arc-spark-step', enemyCurrentActionId: 'arc-spark', enemyCurrentActionPatternId: 'default', enemyActionDurationMs: 2_000, enemyActionTimerMs: 901 })
+
+    const switched = createInitialState()
+    switched.combat.active = true
+    switched.combat.dungeonId = 'howling-den'
+    switched.combat.enemyId = 'corrupted-greatbear'
+    switched.combat.enemyHp = 900
+    switched.combat.enemyMaxHp = 900
+    switched.combat.enemyActionPatternId = 'corrupted'
+    switched.combat.enemyNextActionIndex = 4
+    switched.combat.enemyCurrentStepId = 'crushing-maul-step'
+    switched.combat.enemyCurrentActionId = 'crushing-maul'
+    switched.combat.enemyCurrentActionPatternId = 'default'
+    switched.combat.enemyActionDurationMs = 1_800
+    switched.combat.enemyActionTimerMs = 901
+    const switchedLoaded = migrateSave(JSON.parse(JSON.stringify(serializeGameState(switched))))
+    expect(switchedLoaded.combat).toMatchObject({ enemyActionPatternId: 'corrupted', enemyNextActionIndex: 4, enemyCurrentStepId: 'crushing-maul-step', enemyCurrentActionId: 'crushing-maul', enemyCurrentActionPatternId: 'default', enemyActionDurationMs: 1_800, enemyActionTimerMs: 901 })
+  })
+
+  it('keeps durable progression while rebuilding a V17 Player Basic cycle', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({
+      ...initial,
+      saveVersion: 17,
+      currencies: { gold: 321 },
+      inventory: { ...initial.inventory, 'fire-fragment': 37 },
+      equipment: { ...initial.equipment, weapon: 'apprentice-wand' },
+      progress: { ...initial.progress, spellRanks: { ...initial.progress.spellRanks, 'fire-bolt': 1 }, bossKillsByBoss: { ...initial.progress.bossKillsByBoss, 'forest-heart': 2 } },
+      combat: { ...initial.combat, active: true, dungeonId: 'whispering-woods', enemyId: 'forest-wisp', playerAttackTimerMs: 500 },
+    })
+
+    expect(migrated.currencies.gold).toBe(321)
+    expect(migrated.inventory['fire-fragment']).toBe(37)
+    expect(migrated.equipment.weapon).toBe('apprentice-wand')
+    expect(migrated.progress.spellRanks['fire-bolt']).toBe(1)
+    expect(migrated.progress.bossKillsByBoss['forest-heart']).toBe(2)
+    expect(migrated.combat.playerAttackTimerMs).toBe(migrated.combat.playerAttackDurationMs)
+  })
+
   it('clears legacy Transmutation full bars so they cannot craft for free', () => {
     const initial = createInitialState()
     const migrated = migrateSave({

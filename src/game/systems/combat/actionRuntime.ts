@@ -135,13 +135,21 @@ export const startEnemyAction = (state: GameState, actionId: string, executeEffe
   const action = getEnemyAction(state, actionId)
   if (!enemyId || !action || state.combat.enemyHp <= 0 || state.player.health <= 0 || state.combat.enemyCurrentStepId || actorCannotAct(state, 'enemy')) return false
   const selectedPattern = patternFor(state)
-  const authoredPattern = stepId && selectedPattern?.steps.some((step) => step.id === stepId && step.type === 'action' && step.actionId === actionId)
+  const selectedStep = selectedPattern?.steps.find((step) => step.type === 'action' && step.actionId === actionId && (!stepId || step.id === stepId))
+    ?? selectedPattern?.steps.find((step) => step.type === 'action' && step.actionId === actionId)
+  const authoredPattern = selectedStep
     ? selectedPattern
     : Object.values(MONSTERS[enemyId].actionPatterns).find((candidate) => candidate.steps.some((step) => step.type === 'action' && step.actionId === actionId))
   if (!authoredPattern) return false
-  const authoredStep = authoredPattern.steps.some((step) => step.id === stepId && step.type === 'action' && step.actionId === actionId)
-    ? stepId ?? null
-    : authoredPattern.steps.find((step) => step.type === 'action' && step.actionId === actionId)?.id ?? null
+  const authoredStep = selectedStep?.id ?? authoredPattern.steps.find((step) => step.type === 'action' && step.actionId === actionId)?.id ?? null
+  if (selectedStep && selectedPattern) {
+    // Manual testing of an action that belongs to the selected Pattern joins
+    // the normal sequence at the step immediately after that action.
+    const selectedIndex = selectedPattern.steps.findIndex((step) => step.id === selectedStep.id)
+    state.combat.enemyNextActionIndex = (selectedIndex + 1) % selectedPattern.steps.length
+  }
+  // An action outside the selected Pattern is intentionally standalone; leave
+  // the selected Pattern cursor untouched for isolated developer testing.
   return startActionDefinition(state, action, authoredStep, authoredPattern.id, executeEffects, depth, uiEvents)
 }
 

@@ -5,7 +5,7 @@ import { advanceGameState } from '../simulation/advanceGameState'
 import { executeCombatEffects } from './effectResolver'
 import { applyStatus, clearStatuses } from './statusRuntime'
 import { spawnEnemy, resolveCombatDeaths } from './combatRuntime'
-import { clearCurrentEnemyAction, getCurrentEnemyActionStep, getNextEnemyActionStep, resolveCurrentEnemyAction, resolveEnemyBasicAttackTimeMs, resolveEnemySkillActionTimeMs, setEnemyActionPattern, startNextEnemyAction } from './actionRuntime'
+import { clearCurrentEnemyAction, getCurrentEnemyActionStep, getNextEnemyActionStep, resolveCurrentEnemyAction, resolveEnemyBasicAttackTimeMs, resolveEnemySkillActionTimeMs, setEnemyActionPattern, startEnemyAction, startNextEnemyAction } from './actionRuntime'
 import type { CombatEvent, CombatEventSink } from './combatTypes'
 import { migrateSave } from '../../../persistence/migrations'
 
@@ -96,6 +96,19 @@ describe('classic real-time combat action timing', () => {
     expect(state.combat.enemyCurrentActionPatternId).toBe('corrupted')
   })
 
+  it('aligns a manually started selected-Pattern action and documents standalone behavior', () => {
+    const state = stateWithEnemy('corrupted-greatbear')
+    clearCurrentEnemyAction(state)
+    expect(setEnemyActionPattern(state, 'corrupted')).toBe(true)
+    expect(startEnemyAction(state, 'crushing-maul', executeCombatEffects)).toBe(true)
+    expect(state.combat.enemyNextActionIndex).toBe(3)
+
+    clearCurrentEnemyAction(state)
+    state.combat.enemyNextActionIndex = 4
+    expect(startEnemyAction(state, 'groundbreaker', executeCombatEffects)).toBe(true)
+    expect(state.combat.enemyNextActionIndex).toBe(4)
+  })
+
   it('uses separate Basic Attack and Action speed modifiers with duration snapshots', () => {
     const state = stateWithEnemy('corrupted-greatbear')
     const basicBase = state.combat.enemyActionDurationMs
@@ -165,6 +178,14 @@ describe('classic real-time combat action timing', () => {
 })
 
 describe('V17 combat timing migration', () => {
+  it('starts a clean V17 Player Basic cycle under V18 semantics', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({ ...initial, saveVersion: 17, combat: { ...initial.combat, active: true, enemyId: 'forest-wisp', playerAttackTimerMs: 500 } })
+
+    expect(migrated.combat.playerAttackDurationMs).toBeGreaterThan(500)
+    expect(migrated.combat.playerAttackTimerMs).toBe(migrated.combat.playerAttackDurationMs)
+  })
+
   it('restarts a valid V17 Skill at its full new Action Time', () => {
     const initial = createInitialState()
     const migrated = migrateSave({ ...initial, saveVersion: 17, combat: { ...initial.combat, active: true, enemyId: 'forest-wisp', enemyActionPatternId: 'default', enemyActionIndex: 0, enemyActionTimerMs: 700, enemyActionRecoveryMs: 2800, enemyTelegraphActionId: 'arc-spark', enemyTelegraphStepId: 'arc-spark-step', enemyTelegraphPatternId: 'default', enemyTelegraphMs: 500 } })

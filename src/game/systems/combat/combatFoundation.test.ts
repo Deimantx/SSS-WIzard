@@ -3,7 +3,7 @@ import { createInitialState } from '../../../store/initialState'
 import { executeCombatEffects, damageEnemy, damagePlayer, getCombatDamagePreview, resolveBasicAttackInterval } from './effectResolver'
 import { applyStatus, tickStatuses } from './statusRuntime'
 import { applyBarrier, finishEnemy, resolveCombatDeaths, spawnEnemy } from './combatRuntime'
-import { clearCurrentEnemyAction, forceResolveEnemyAction } from './actionRuntime'
+import { clearCurrentEnemyAction, forceResolveEnemyAction, startEnemyAction } from './actionRuntime'
 import { runCombatTriggers } from './triggerRuntime'
 import { migrateSave } from '../../../persistence/migrations'
 import type { CombatSource, TraitDefinition, TraitId } from '../../types'
@@ -153,7 +153,7 @@ describe('combat save compatibility', () => {
     const migrated = migrateSave({ ...initial, saveVersion: 11, combat: { ...initial.combat, playerBarrierRemainingMs: null, playerStatuses: [{ id: 'barrier', remainingMs: 9000, value: 22 }, { id: 'attack-delay', remainingMs: 700, value: 700 }, { id: 'burning', remainingMs: 4000, value: 5, tickIntervalMs: 1000, nextTickMs: 500 }], enemySpecialUsed: {} } } as any)
     expect(migrated.combat.playerBarrier).toBe(22)
     expect(migrated.combat.playerBarrierRemainingMs).toBe(9000)
-    expect(migrated.combat.playerAttackTimerMs).toBe(700)
+    expect(migrated.combat.playerAttackTimerMs).toBe(migrated.combat.playerAttackDurationMs + 700)
     expect(migrated.combat.playerStatuses).toHaveLength(1)
     expect(migrated.combat.playerStatuses[0]).toMatchObject({ statusId: 'burning' })
   })
@@ -369,6 +369,33 @@ describe('post-implementation combat audit regressions', () => {
     executeCombatEffects(state, [{ type: 'modify-action-timer', target: 'opponent', action: 'current', amountMs: -500 }], playerSpell)
     expect(state.combat.enemyActionTimerMs).toBe(1500)
     expect(state.combat.enemyActionDurationMs).toBe(2000)
+  })
+
+  it('applies Basic-specific timer changes only to a committed enemy Basic', () => {
+    const basic = stateWithEnemy()
+    const basicTimer = basic.combat.enemyActionTimerMs
+    executeCombatEffects(basic, [{ type: 'modify-action-timer', target: 'opponent', action: 'basic-attack', amountMs: 500 }], playerSpell)
+    expect(basic.combat.enemyActionTimerMs).toBe(basicTimer + 500)
+
+    const skill = stateWithEnemy()
+    clearCurrentEnemyAction(skill)
+    skill.combat.enemyNextActionIndex = 2
+    startEnemyAction(skill, 'arc-spark', executeCombatEffects)
+    const skillTimer = skill.combat.enemyActionTimerMs
+    executeCombatEffects(skill, [{ type: 'modify-action-timer', target: 'opponent', action: 'basic-attack', amountMs: 500 }], playerSpell)
+    expect(skill.combat.enemyActionTimerMs).toBe(skillTimer)
+    executeCombatEffects(skill, [{ type: 'modify-action-timer', target: 'opponent', action: 'current', amountMs: -500 }], playerSpell)
+    expect(skill.combat.enemyActionTimerMs).toBe(skillTimer - 500)
+  })
+
+  it('does not create a fake enemy timer when no enemy action is committed', () => {
+    const state = stateWithEnemy()
+    clearCurrentEnemyAction(state)
+    executeCombatEffects(state, [{ type: 'modify-action-timer', target: 'opponent', action: 'basic-attack', amountMs: 500 }], playerSpell)
+    executeCombatEffects(state, [{ type: 'modify-action-timer', target: 'opponent', action: 'current', amountMs: 500 }], playerSpell)
+    expect(state.combat.enemyCurrentStepId).toBeNull()
+    expect(state.combat.enemyActionTimerMs).toBe(0)
+    expect(state.combat.enemyActionDurationMs).toBe(0)
   })
 
   it('produces identical periodic results for one large tick and many small ticks', () => {

@@ -18,6 +18,22 @@ export interface StatusRemovalOptions {
 const statusList = (state: GameState, actor: CombatActor) => actor === 'player' ? state.combat.playerStatuses : state.combat.enemyStatuses
 const setStatusList = (state: GameState, actor: CombatActor, statuses: ActiveStatus[]) => { if (actor === 'player') state.combat.playerStatuses = statuses; else state.combat.enemyStatuses = statuses }
 
+/** Returns the earliest status tick or expiration boundary on the shared combat clock. */
+export const getNextCombatStatusEventMs = (state: GameState): number | null => {
+  let next: number | null = null
+  ;(['player', 'enemy'] as CombatActor[]).forEach((actor) => {
+    statusList(state, actor).forEach((status) => {
+      if (!STATUS_DEFINITIONS[status.statusId]) return
+      const candidates = [status.remainingMs, status.nextTickMs].filter((value): value is number => value !== null && value !== undefined && Number.isFinite(value))
+      candidates.forEach((value) => {
+        const boundary = Math.max(0, value)
+        if (next === null || boundary < next) next = boundary
+      })
+    })
+  })
+  return next
+}
+
 export const actorCannotAct = (state: GameState, actor: CombatActor) => statusList(state, actor).some((status) => STATUS_DEFINITIONS[status.statusId]?.preventsAction === true)
 
 const resolvedDuration = (state: GameState, actor: CombatActor, statusId: StatusId, durationMs: number | null, source: CombatSource) => {

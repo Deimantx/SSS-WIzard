@@ -24,7 +24,7 @@ describe('getCombatFlowPresentation', () => {
 
   it('renders the committed action and its current pattern step', () => {
     const presentation = getCombatFlowPresentation(input({ enemyActionTimerMs: 800, enemyActionDurationMs: 2000, currentAction: enemy.actions['root-crush'] }))
-    expect(presentation.enemyIntent).toMatchObject({ label: 'Root Crush', special: true, iconKind: 'direct-damage' })
+    expect(presentation.enemyCurrentAction).toMatchObject({ label: 'Root Crush', special: true, iconKind: 'direct-damage' })
     expect(presentation.enemyTimeline?.progress).toBe(60)
     expect(presentation.currentStepIndex).toBe(2)
     expect(presentation.currentActionId).toBe('root-crush')
@@ -33,7 +33,7 @@ describe('getCombatFlowPresentation', () => {
   it('renders a committed Basic Attack without inventing an instant hit', () => {
     const basic = pattern.steps[0]
     const presentation = getCombatFlowPresentation(input({ enemyActionTimerMs: 1500, enemyActionDurationMs: 2500, enemyCurrentActionId: null, enemyCurrentStepId: basic.id, currentStep: basic, currentAction: undefined }))
-    expect(presentation.enemyIntent).toMatchObject({ label: 'Basic Attack', special: false })
+    expect(presentation.enemyCurrentAction).toMatchObject({ label: 'Basic Attack', special: false })
     expect(presentation.enemyTimeline?.remainingMs).toBe(1500)
     expect(presentation.enemyTimeline?.progress).toBe(40)
   })
@@ -42,6 +42,11 @@ describe('getCombatFlowPresentation', () => {
     const presentation = getCombatFlowPresentation(input({ playerAttackTimerMs: -200, enemyActionTimerMs: -100 }))
     expect(presentation.playerTimeline?.remainingMs).toBe(0)
     expect(presentation.enemyTimeline?.remainingMs).toBe(0)
+  })
+
+  it('keeps frozen progress and remaining time visible while Stunned', () => {
+    const presentation = getCombatFlowPresentation(input({ enemyActionTimerMs: 800, enemyActionDurationMs: 2000, enemyStunned: true }))
+    expect(presentation.enemyTimeline).toMatchObject({ state: 'stunned', remainingMs: 800, progress: 60, label: 'Root Crush' })
   })
 
   it('switches to non-timer modes outside an active enemy encounter', () => {

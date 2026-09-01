@@ -27,6 +27,15 @@ const setRemaining = (state: GameState, actor: CombatActor, remainingMs: number 
   else state.combat.enemyBarrierRemainingMs = remainingMs
 }
 
+/** Returns the earliest finite Barrier expiration boundary on the shared combat clock. */
+export const getNextCombatBarrierEventMs = (state: GameState): number | null => {
+  const candidates = (['player', 'enemy'] as CombatActor[])
+    .map((actor) => ({ amount: getBarrier(state, actor), remaining: getRemaining(state, actor) }))
+    .filter(({ amount, remaining }) => amount > 0 && remaining !== null && Number.isFinite(remaining))
+    .map(({ remaining }) => Math.max(0, remaining as number))
+  return candidates.length ? Math.min(...candidates) : null
+}
+
 export const getActiveBarrier = (state: GameState, actor: CombatActor) => getBarrier(state, actor)
 
 export const gainBarrierResult = (state: GameState, raw: number, source: CombatSource, target: CombatActor, tags: CombatTag[], options: BarrierOptions = {}): BarrierGainResult => {

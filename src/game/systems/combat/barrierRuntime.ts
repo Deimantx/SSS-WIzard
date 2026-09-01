@@ -27,14 +27,19 @@ const setRemaining = (state: GameState, actor: CombatActor, remainingMs: number 
   else state.combat.enemyBarrierRemainingMs = remainingMs
 }
 
-/** Returns the earliest finite Barrier expiration boundary on the shared combat clock. */
-export const getNextCombatBarrierEventMs = (state: GameState): number | null => {
-  const candidates = (['player', 'enemy'] as CombatActor[])
+const getNextBarrierEventMs = (state: GameState, actors: CombatActor[]): number | null => {
+  const candidates = actors
     .map((actor) => ({ amount: getBarrier(state, actor), remaining: getRemaining(state, actor) }))
     .filter(({ amount, remaining }) => amount > 0 && remaining !== null && Number.isFinite(remaining))
     .map(({ remaining }) => Math.max(0, remaining as number))
   return candidates.length ? Math.min(...candidates) : null
 }
+
+/** Returns the earliest finite Barrier expiration boundary on the shared combat clock. */
+export const getNextCombatBarrierEventMs = (state: GameState): number | null => getNextBarrierEventMs(state, ['player', 'enemy'])
+
+/** Returns the earliest player Barrier expiration boundary while an encounter is not active. */
+export const getNextPlayerBarrierEventMs = (state: GameState): number | null => getNextBarrierEventMs(state, ['player'])
 
 export const getActiveBarrier = (state: GameState, actor: CombatActor) => getBarrier(state, actor)
 
@@ -64,8 +69,8 @@ export const consumeBarrier = (state: GameState, target: CombatActor, amount: nu
   return absorbed
 }
 
-export const tickBarriers = (state: GameState, deltaMs: number) => {
-  ;(['player', 'enemy'] as CombatActor[]).forEach((actor) => {
+export const tickBarriers = (state: GameState, deltaMs: number, actors: CombatActor[] = ['player', 'enemy']) => {
+  actors.forEach((actor) => {
     const remaining = getRemaining(state, actor)
     if (remaining === null || getBarrier(state, actor) <= 0) return
     const next = Math.max(0, remaining - deltaMs)

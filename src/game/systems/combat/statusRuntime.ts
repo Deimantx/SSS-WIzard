@@ -18,10 +18,9 @@ export interface StatusRemovalOptions {
 const statusList = (state: GameState, actor: CombatActor) => actor === 'player' ? state.combat.playerStatuses : state.combat.enemyStatuses
 const setStatusList = (state: GameState, actor: CombatActor, statuses: ActiveStatus[]) => { if (actor === 'player') state.combat.playerStatuses = statuses; else state.combat.enemyStatuses = statuses }
 
-/** Returns the earliest status tick or expiration boundary on the shared combat clock. */
-export const getNextCombatStatusEventMs = (state: GameState): number | null => {
+const getNextStatusEventMs = (state: GameState, actors: CombatActor[]): number | null => {
   let next: number | null = null
-  ;(['player', 'enemy'] as CombatActor[]).forEach((actor) => {
+  actors.forEach((actor) => {
     statusList(state, actor).forEach((status) => {
       if (!STATUS_DEFINITIONS[status.statusId]) return
       const candidates = [status.remainingMs, status.nextTickMs].filter((value): value is number => value !== null && value !== undefined && Number.isFinite(value))
@@ -33,6 +32,12 @@ export const getNextCombatStatusEventMs = (state: GameState): number | null => {
   })
   return next
 }
+
+/** Returns the earliest status tick or expiration boundary on the shared combat clock. */
+export const getNextCombatStatusEventMs = (state: GameState): number | null => getNextStatusEventMs(state, ['player', 'enemy'])
+
+/** Returns the earliest player-owned status boundary while an encounter is not active. */
+export const getNextPlayerStatusEventMs = (state: GameState): number | null => getNextStatusEventMs(state, ['player'])
 
 export const actorCannotAct = (state: GameState, actor: CombatActor) => statusList(state, actor).some((status) => STATUS_DEFINITIONS[status.statusId]?.preventsAction === true)
 
@@ -164,9 +169,9 @@ const periodicEffects = (status: ActiveStatus): CombatEffect[] => {
   }) ?? []
 }
 
-export const tickStatuses = (state: GameState, deltaMs: number, executeEffects: ExecuteEffects, uiEvents?: CombatEventSink) => {
+export const tickStatuses = (state: GameState, deltaMs: number, executeEffects: ExecuteEffects, uiEvents?: CombatEventSink, actors: CombatActor[] = ['player', 'enemy']) => {
   const delta = Math.max(0, deltaMs)
-  ;(['player', 'enemy'] as CombatActor[]).forEach((actor) => {
+  actors.forEach((actor) => {
     const snapshot = [...statusList(state, actor)]
     snapshot.forEach((original) => {
       if (!statusList(state, actor).some((status) => status === original)) return

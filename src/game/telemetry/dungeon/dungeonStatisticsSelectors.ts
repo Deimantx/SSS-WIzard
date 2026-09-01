@@ -1,10 +1,7 @@
 import type { DungeonStatisticsSession } from './dungeonStatisticsTypes'
 
-export const DUNGEON_RATE_SAMPLE_MIN_MS = 60_000
-
 export const sessionElapsedMs = (session: DungeonStatisticsSession | null) => session && Number.isFinite(session.elapsedMs) ? Math.max(0, session.elapsedMs) : 0
 export const sessionHours = (session: DungeonStatisticsSession | null) => sessionElapsedMs(session) / 3_600_000
-export const hasMinimumRateSample = (session: DungeonStatisticsSession | null) => sessionElapsedMs(session) >= DUNGEON_RATE_SAMPLE_MIN_MS
 export const ratePerHour = (value: number, session: DungeonStatisticsSession | null) => {
   const elapsedMs = sessionElapsedMs(session)
   if (elapsedMs <= 0 || !Number.isFinite(value)) return 0

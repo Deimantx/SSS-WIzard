@@ -1,6 +1,6 @@
 export * from './combatRuntime'
 export * from './actionRuntime'
-export { getActiveBarrier, getNextCombatBarrierEventMs, tickBarriers } from './barrierRuntime'
+export { getActiveBarrier, getNextCombatBarrierEventMs, getNextPlayerBarrierEventMs, tickBarriers } from './barrierRuntime'
 export * from './combatTypes'
 export * from './conditionRuntime'
 export * from './effectResolver'

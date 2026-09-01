@@ -9,8 +9,8 @@ import { castSpellInternal } from '../../engine/spellEngine'
 import { executeCombatEffects, getBasicAttackTags, resolveBasicAttackInterval } from '../combat/effectResolver'
 import { resolveCombatDeaths, spawnNextEnemy } from '../combat/combatRuntime'
 import { resolveCurrentEnemyAction, startNextEnemyAction } from '../combat/actionRuntime'
-import { actorCannotAct, getNextCombatStatusEventMs, tickStatuses } from '../combat/statusRuntime'
-import { getNextCombatBarrierEventMs, tickBarriers } from '../combat/barrierRuntime'
+import { actorCannotAct, getNextCombatStatusEventMs, getNextPlayerStatusEventMs, tickStatuses } from '../combat/statusRuntime'
+import { getNextCombatBarrierEventMs, getNextPlayerBarrierEventMs, tickBarriers } from '../combat/barrierRuntime'
 import { getCombatModifiers } from '../combat/modifiers'
 import { tickRuleCooldowns } from '../combat/triggerRuntime'
 import type { GameState, ItemId, SpellId, CombatSource } from '../../types'
@@ -56,11 +56,19 @@ const autoCastReadySpells = (state: GameState, context: AdvanceContext) => {
   for (const id of Object.keys(state.activities.autoCast)) {
     const spellId = id as SpellId
     if (actorCannotAct(state, 'player')) break
-    if (state.activities.autoCast[spellId] && spellUnlocked(state, spellId) && state.combat.spellCooldowns[spellId] <= 0 && meetsAutoCondition(state, spellId)) {
+    if (state.activities.autoCast[spellId] && spellUnlocked(state, spellId) && (state.combat.spellCooldowns[spellId] ?? 0) <= 0 && meetsAutoCondition(state, spellId)) {
       castSpellInternal(state, spellId, true, context.uiEvents)
       if (resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents)) return
     }
   }
+}
+
+const hasReadyAutoCast = (state: GameState) => {
+  if (actorCannotAct(state, 'player') || !state.combat.enemyId) return false
+  return Object.keys(state.activities.autoCast).some((id) => {
+    const spellId = id as SpellId
+    return Boolean(state.activities.autoCast[spellId]) && spellUnlocked(state, spellId) && (state.combat.spellCooldowns[spellId] ?? 0) <= 0 && meetsAutoCondition(state, spellId)
+  })
 }
 
 const ensurePlayerBasicRuntime = (state: GameState) => {
@@ -100,6 +108,12 @@ const hasImmediateCombatTimelineEvent = (state: GameState) => {
   return false
 }
 
+const advanceObservers = (state: GameState, delta: number, context: AdvanceContext) => {
+  if (delta <= 0) return
+  context.telemetry?.advance(delta, state)
+  context.statistics?.advance(delta, state)
+}
+
 /**
  * Advances every combat-local clock on one chronological timeline. The outer
  * simulation quantum remains a batching limit; it is not a gameplay boundary.
@@ -107,6 +121,7 @@ const hasImmediateCombatTimelineEvent = (state: GameState) => {
 const advanceCombatTimeline = (state: GameState, delta: number, context: AdvanceContext) => {
   let remaining = Math.max(0, delta)
   let guard = 0
+  let attemptedImmediateAutoCast = false
   while (guard < 10_000 && state.combat.enemyId && (remaining > 0 || hasImmediateCombatTimelineEvent(state))) {
     guard += 1
     if (!state.combat.enemyCurrentStepId && !actorCannotAct(state, 'enemy')) {
@@ -115,6 +130,19 @@ const advanceCombatTimeline = (state: GameState, delta: number, context: Advance
     }
     ensurePlayerBasicRuntime(state)
     if (!state.combat.enemyId) break
+
+    // A spell that is already ready when an encounter starts should be
+    // attempted at t=0. Keep Player Basic's exact-boundary priority and let
+    // status/barrier callbacks settle first when they are also due at t=0.
+    if (!attemptedImmediateAutoCast && hasReadyAutoCast(state)
+      && !actorCannotAct(state, 'player')
+      && state.combat.playerAttackTimerMs > 0
+      && getNextCombatStatusEventMs(state) !== 0
+      && getNextCombatBarrierEventMs(state) !== 0) {
+      attemptedImmediateAutoCast = true
+      autoCastReadySpells(state, context)
+      if (!state.combat.enemyId) break
+    }
 
     const playerBlockedAtSegmentStart = actorCannotAct(state, 'player')
     const enemyBlockedAtSegmentStart = actorCannotAct(state, 'enemy')
@@ -139,38 +167,94 @@ const advanceCombatTimeline = (state: GameState, delta: number, context: Advance
     tickSpellCooldowns(state, elapsed, cooldownRecovery)
     remaining = Math.max(0, remaining - elapsed)
 
+    // Observe only the exact engaged segment. Death/despawn resolution below
+    // determines whether the remainder belongs to downtime.
+    advanceObservers(state, elapsed, context)
+
     // Status/Barrier callbacks have priority at an exact boundary.
     if (resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents)) break
 
+    let playerBasicResolved = false
     if (!actorCannotAct(state, 'player') && state.combat.playerAttackTimerMs <= 0 && state.combat.enemyId) {
       const damage = playerBasicAttack(state, context.uiEvents)
       appendLog(state, `Basic Attack hits for ${damage}.`)
       state.combat.playerAttackDurationMs = resolveBasicAttackInterval(state, 'player', BALANCE.player.basicAttackIntervalMs)
       state.combat.playerAttackTimerMs = state.combat.playerAttackDurationMs
+      playerBasicResolved = true
       if (resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents)) break
     }
 
-    autoCastReadySpells(state, context)
+    const reachedMeaningfulBoundary = elapsed <= 0 || boundaries.some((value) => value <= elapsed)
+    if (playerBasicResolved || reachedMeaningfulBoundary) autoCastReadySpells(state, context)
     if (!state.combat.enemyId) break
     if (!actorCannotAct(state, 'enemy') && state.combat.enemyCurrentStepId && state.combat.enemyActionTimerMs <= 0) {
       resolveCurrentEnemyAction(state, executeCombatEffects, 0, context.uiEvents)
       if (resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents)) break
+      // An enemy action can make a conditional spell ready at this exact
+      // timestamp (for example, Flow Mend after taking damage).
+      autoCastReadySpells(state, context)
     }
   }
+  return remaining
+}
+
+const advanceCombatDowntimeTimeline = (state: GameState, delta: number, context: AdvanceContext) => {
+  let remaining = Math.max(0, delta)
+  let guard = 0
+  while (guard < 10_000 && state.combat.active && !state.combat.enemyId && remaining > 0) {
+    guard += 1
+    if (state.combat.encounterTimerMs <= 0) {
+      spawnNextEnemy(state, context.uiEvents)
+      if (resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents)) break
+      // Spawn is an exact boundary. A ready spell must not wait for the next
+      // outer simulation quantum before attempting its first cast.
+      autoCastReadySpells(state, context)
+      break
+    }
+
+    const cooldownRecovery = cooldownRecoveryMultiplier(state)
+    const boundaries = [
+      Math.max(0, state.combat.encounterTimerMs),
+      getNextPlayerStatusEventMs(state),
+      getNextPlayerBarrierEventMs(state),
+    ].filter((value): value is number => value !== null && Number.isFinite(value))
+    const untilEvent = boundaries.length ? Math.min(...boundaries) : remaining
+    const elapsed = Math.min(remaining, Math.max(0, untilEvent))
+
+    tickStatuses(state, elapsed, executeCombatEffects, context.uiEvents, ['player'])
+    tickBarriers(state, elapsed, ['player'])
+    tickSpellCooldowns(state, elapsed, cooldownRecovery)
+    state.combat.encounterTimerMs = Math.max(0, state.combat.encounterTimerMs - elapsed)
+    remaining = Math.max(0, remaining - elapsed)
+    advanceObservers(state, elapsed, context)
+
+    if (resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents)) break
+    if (state.combat.encounterTimerMs <= 0) {
+      spawnNextEnemy(state, context.uiEvents)
+      if (resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents)) break
+      autoCastReadySpells(state, context)
+      break
+    }
+    if (elapsed <= 0) break
+  }
+  return remaining
 }
 
 const tickCombat = (state: GameState, delta: number, context: AdvanceContext) => {
   if (!state.combat.active) return
-  if (!state.combat.enemyId) { state.combat.encounterTimerMs -= delta; if (state.combat.encounterTimerMs <= 0) { spawnNextEnemy(state, context.uiEvents); resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents) } return }
-  const enemy = state.combat.enemyId ? MONSTERS[state.combat.enemyId] : null
-  if (!enemy) return
-  advanceCombatTimeline(state, delta, context)
+  if (state.combat.enemyId && !MONSTERS[state.combat.enemyId]) return
+  let remaining = Math.max(0, delta)
+  let guard = 0
+  while (guard < 10_000 && remaining > 0 && state.combat.active) {
+    guard += 1
+    remaining = state.combat.enemyId
+      ? advanceCombatTimeline(state, remaining, context)
+      : advanceCombatDowntimeTimeline(state, remaining, context)
+  }
 }
 
 const advanceGameStateStep = (state: GameState, delta: number, context: AdvanceContext) => {
-  context.telemetry?.advance(delta, state)
   context.alerts?.advance(delta, state)
-  context.statistics?.advance(delta, state)
   const channelingTick = advanceChanneling(state, delta)
   if (channelingTick.discoveries.includes('deep-reservoir')) recalculateDerivedStats(state)
   channelingTick.discoveries.forEach((id) => {

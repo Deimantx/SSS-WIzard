@@ -252,7 +252,7 @@ describe('post-implementation combat audit regressions', () => {
     expect(state.combat.playerAttackTimerMs).toBe(500)
   })
 
-  it('replaces temporary player barriers, expires them, and pauses them during encounter delay', () => {
+  it('replaces temporary player barriers, expires them, and continues them during encounter delay', () => {
     const state = stateWithEnemy()
     executeCombatEffects(state, [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 20 } }], playerSpell)
     executeCombatEffects(state, [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 10 } }], playerSpell)
@@ -271,12 +271,14 @@ describe('post-implementation combat audit regressions', () => {
 
     executeCombatEffects(state, [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 40 }, mode: 'replace', durationMs: 9000 }], playerSpell)
     const remaining = state.combat.playerBarrierRemainingMs
+    if (remaining === null) throw new Error('Expected a timed player Barrier')
     state.combat.enemyHp = 0
     state.combat.enemyId = 'forest-wisp'
-    // The normal finish path starts an encounter delay; temporary combat time is paused there.
+    // The normal finish path starts an encounter delay; active Dungeon time
+    // continues to age temporary combat state there.
     finishEnemy(state)
     advanceGameState(state, 1000, { mode: 'live' })
-    expect(state.combat.playerBarrierRemainingMs).toBe(remaining)
+    expect(state.combat.playerBarrierRemainingMs).toBe(remaining - 1000)
   })
 
   it('scopes Tide Focus to Water-aligned player Barriers', () => {

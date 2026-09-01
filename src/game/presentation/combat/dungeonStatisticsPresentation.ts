@@ -1,7 +1,7 @@
 import { DUNGEONS } from '../../content/dungeons/dungeons'
 import { ITEMS } from '../../content/items/items'
 import { formatCompactDuration } from '../../utils'
-import { averageBossMs, averageEncounterMs, hasMinimumRateSample, ratePerHour, runsPerHour, totalLootQuantity as selectTotalLootQuantity } from '../../telemetry/dungeon/dungeonStatisticsSelectors'
+import { averageBossMs, averageEncounterMs, ratePerHour, runsPerHour, totalLootQuantity as selectTotalLootQuantity } from '../../telemetry/dungeon/dungeonStatisticsSelectors'
 import type { DungeonStatisticsSession } from '../../telemetry/dungeon/dungeonStatisticsTypes'
 import type { ItemId } from '../../types'
 import { formatUiCount, formatUiPercent, formatUiRate } from '../numbers'
@@ -23,7 +23,6 @@ export type DungeonLootRowPresentation = DungeonDropRowPresentation
 
 export function getDungeonStatisticsPresentation(session: DungeonStatisticsSession | null) {
   const hasRateDenominator = Boolean(session && session.elapsedMs > 0)
-  const earlySample = hasRateDenominator && !hasMinimumRateSample(session)
   const runsRate = runsPerHour(session)
   const dropRows: DungeonDropRowPresentation[] = session
     ? (Object.entries(session.lootByItemId) as [ItemId, number][]).filter(([, quantity]) => quantity > 0).sort((left, right) => right[1] - left[1] || ITEMS[left[0]].name.localeCompare(ITEMS[right[0]].name) || left[0].localeCompare(right[0])).map(([itemId, quantity]) => { const perHour = ratePerHour(quantity, session); return { itemId, name: ITEMS[itemId].name, quantity, perHour, perHourLabel: hasRateDenominator ? formatStatisticsRate(perHour) : '—', icon: ITEMS[itemId].icon } })
@@ -43,7 +42,6 @@ export function getDungeonStatisticsPresentation(session: DungeonStatisticsSessi
     totalDrops,
     dropsPerHour,
     dropsPerHourLabel: hasRateDenominator ? formatStatisticsRate(dropsPerHour) : '—',
-    earlySample,
     dropRows,
     uptime,
     downtime: Math.max(0, 100 - uptime),

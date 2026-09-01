@@ -1,6 +1,6 @@
 import userEvent from '@testing-library/user-event'
-import { render, screen } from '@testing-library/react'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { act, fireEvent, render, screen } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { TooltipProvider } from '../../components/ui/tooltip/Tooltip'
 import { ITEMS } from '../../game/content/items/items'
 import type { DungeonStatisticsSession } from '../../game/telemetry/dungeon/dungeonStatisticsTypes'
@@ -46,5 +46,23 @@ describe('DungeonStatisticsPanel V3.7', () => {
     expect(screen.getByText('COMBAT UPTIME')).toBeTruthy()
     expect(screen.getByText('FASTEST BOSS')).toBeTruthy()
     })
+  })
+
+  it('does not show an early-sample label or tooltip warning for short sessions', () => {
+    vi.useFakeTimers()
+    try {
+      useDungeonStatisticsStore.setState({ active: true, session: { ...makeSession(), elapsedMs: 30_000, lootByItemId: { 'life-essence': 1 }, totalLootQuantity: 1 }, currentEncounter: null })
+      setUiPreferences({ screenState: { combat: { dungeonStatisticsMode: 'drops' } } })
+      render(<TooltipProvider><DungeonStatisticsPanel /></TooltipProvider>)
+
+      expect(screen.queryByText('EARLY SAMPLE')).toBeNull()
+      const row = document.querySelector('.dungeon-statistics-drop-row')
+      if (!row) throw new Error('Expected a drop row')
+      fireEvent.pointerEnter(row)
+      act(() => vi.advanceTimersByTime(500))
+      expect(screen.queryByText(/Early sample rates will stabilize/)).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })

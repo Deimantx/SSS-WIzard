@@ -7,7 +7,7 @@ import type { DungeonId, MonsterId } from '../../types'
 import { getFallbackTimedActionState, type TimedActionState } from '../../systems/combat/actionTiming'
 
 export type CombatFlowMode = 'tower' | 'boss-ready' | 'encounter-delay' | 'combat'
-export type CombatFlowTimelineState = 'acting' | 'stunned'
+export type CombatFlowTimelineState = 'acting' | 'stunned' | 'paused' | 'disabled'
 
 export interface CombatFlowTimeline {
   actor: 'player' | 'enemy'
@@ -18,6 +18,7 @@ export interface CombatFlowTimeline {
   rate: number
   etaMs: number | null
   blocked: boolean
+  blockReason: TimedActionState['blockReason']
   progress: number | null
   state: CombatFlowTimelineState
 }
@@ -89,18 +90,32 @@ export function getCombatFlowPresentation(input: CombatFlowRuntimeInput): Combat
     : null
   const enemyTotalMs = input.enemyActionDurationMs || input.enemy.basicAttackTimeMs
   const playerTiming = input.playerTiming ?? getFallbackTimedActionState(input.playerAttackDurationMs, input.playerAttackTimerMs, Boolean(input.playerStunned))
-  const enemyTiming = input.enemyTiming ?? getFallbackTimedActionState(enemyTotalMs, input.enemyActionTimerMs, Boolean(input.enemyStunned))
-  const playerTimeline: CombatFlowTimeline = { actor: 'player', label: 'Basic Attack', remainingMs: playerTiming.etaMs, remainingWorkMs: playerTiming.remainingWorkMs, baseWorkMs: playerTiming.baseWorkMs, rate: playerTiming.rate, etaMs: playerTiming.etaMs, blocked: playerTiming.blocked, progress: playerTiming.progress, state: input.playerStunned || playerTiming.blocked ? 'stunned' : 'acting' }
-  const enemyTimeline: CombatFlowTimeline = { actor: 'enemy', label: enemyAction?.name ?? (input.currentStep?.type === 'basic' ? 'Basic Attack' : 'Enemy Action'), remainingMs: enemyTiming.etaMs, remainingWorkMs: enemyTiming.remainingWorkMs, baseWorkMs: enemyTiming.baseWorkMs, rate: enemyTiming.rate, etaMs: enemyTiming.etaMs, blocked: enemyTiming.blocked, progress: enemyTiming.progress, state: input.enemyStunned || enemyTiming.blocked ? 'stunned' : 'acting' }
+  // `undefined` means a legacy caller omitted canonical timing; `null` is a
+  // deliberate live-runtime statement that no enemy action is committed.
+  const enemyTiming = input.enemyTiming === undefined
+    ? getFallbackTimedActionState(enemyTotalMs, input.enemyActionTimerMs, Boolean(input.enemyStunned))
+    : input.enemyTiming
+  const hasCommittedEnemyAction = enemyTiming !== null && Boolean(input.currentStep || input.currentAction || input.enemyCurrentStepId)
+  const timelineState = (timing: TimedActionState, legacyStunned = false): CombatFlowTimelineState => {
+    if (legacyStunned || timing.blockReason === 'status-control') return 'stunned'
+    if (timing.blockReason === 'disabled') return 'disabled'
+    if (timing.blockReason === 'debug-freeze') return 'paused'
+    return 'acting'
+  }
+  const playerTimeline: CombatFlowTimeline = { actor: 'player', label: 'Basic Attack', remainingMs: playerTiming.etaMs, remainingWorkMs: playerTiming.remainingWorkMs, baseWorkMs: playerTiming.baseWorkMs, rate: playerTiming.rate, etaMs: playerTiming.etaMs, blocked: playerTiming.blocked, blockReason: playerTiming.blockReason, progress: playerTiming.progress, state: timelineState(playerTiming, input.playerStunned) }
+  const enemyTimeline: CombatFlowTimeline | null = hasCommittedEnemyAction && enemyTiming
+    ? { actor: 'enemy', label: enemyAction?.name ?? (input.currentStep?.type === 'basic' ? 'Basic Attack' : 'Enemy Action'), remainingMs: enemyTiming.etaMs, remainingWorkMs: enemyTiming.remainingWorkMs, baseWorkMs: enemyTiming.baseWorkMs, rate: enemyTiming.rate, etaMs: enemyTiming.etaMs, blocked: enemyTiming.blocked, blockReason: enemyTiming.blockReason, progress: enemyTiming.progress, state: timelineState(enemyTiming, input.enemyStunned) }
+    : null
 
   const rawIndex = Number.isFinite(input.enemyNextActionIndex) ? Math.max(0, Math.floor(input.enemyNextActionIndex) - 1) : -1
   const currentPatternChanged = Boolean(input.enemyCurrentActionPatternId && input.pattern && input.enemyCurrentActionPatternId !== input.pattern.id)
-  const currentIndex = currentPatternChanged ? -1 : stepIndex(input.pattern, input.currentStep?.id, rawIndex)
+  const currentIndex = !hasCommittedEnemyAction || currentPatternChanged ? -1 : stepIndex(input.pattern, input.currentStep?.id, rawIndex)
+  const enemyCurrentAction = hasCommittedEnemyAction && enemyTiming ? { label: enemyAction?.name ?? (basicPresentation ? 'Basic Attack' : 'Enemy Action'), action: enemyActionPresentation, basic: basicPresentation, special: Boolean(enemyActionPresentation), iconKind: enemyAction ? classifyEnemyActionPatternIcon(enemyAction) : 'basic-attack' } : null
   return {
     mode: 'combat', dungeonId, dungeon: input.dungeon, enemy: input.enemy,
     playerTimeline, enemyTimeline,
-    enemyCurrentAction: { label: enemyAction?.name ?? (basicPresentation ? 'Basic Attack' : 'Enemy Action'), action: enemyActionPresentation, basic: basicPresentation, special: Boolean(enemyActionPresentation), iconKind: enemyAction ? classifyEnemyActionPatternIcon(enemyAction) : 'basic-attack' },
-    pattern: input.pattern, currentStepIndex: currentIndex, currentStepId: input.currentStep?.id ?? null, currentActionId: input.enemyCurrentActionId, currentPatternOriginId: input.enemyCurrentActionPatternId, currentActionDurationMs: input.enemyActionDurationMs,
+    enemyCurrentAction,
+    pattern: input.pattern, currentStepIndex: currentIndex, currentStepId: hasCommittedEnemyAction ? input.currentStep?.id ?? null : null, currentActionId: hasCommittedEnemyAction ? input.enemyCurrentActionId : null, currentPatternOriginId: hasCommittedEnemyAction ? input.enemyCurrentActionPatternId : null, currentActionDurationMs: enemyTimeline?.baseWorkMs ?? 0,
     encounterTimerMs: input.encounterTimerMs,
   }
 }

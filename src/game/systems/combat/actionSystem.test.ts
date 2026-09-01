@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState, SAVE_VERSION } from '../../../store/initialState'
 import { MONSTERS } from '../../content/monsters'
+import { DUNGEONS } from '../../content/dungeons/dungeons'
+import { getCombatFlowPresentation } from '../../presentation/combat/combatFlowPresentation'
 import { advanceGameState } from '../simulation/advanceGameState'
 import { executeCombatEffects } from './effectResolver'
-import { applyStatus, clearStatuses } from './statusRuntime'
+import { applyStatus, clearStatuses, tickStatuses } from './statusRuntime'
 import { spawnEnemy, resolveCombatDeaths } from './combatRuntime'
-import { clearCurrentEnemyAction, getCurrentEnemyActionStep, getNextEnemyActionStep, getEnemyBasicAttackRate, getEnemySkillActionRate, getPlayerBasicAttackRate, resolveCurrentEnemyAction, setEnemyActionPattern, startEnemyAction, startNextEnemyAction } from './actionRuntime'
-import { getTimedActionState } from './actionTiming'
+import { clearCurrentEnemyAction, getCurrentEnemyActionStep, getNextEnemyActionStep, getEnemyAction, getEnemyActionPattern, getEnemyBasicAttackRate, getEnemySkillActionRate, getPlayerBasicAttackRate, resolveCurrentEnemyAction, startNextEnemyAction, setEnemyActionPattern, startEnemyAction } from './actionRuntime'
+import { getCurrentEnemyActionTiming, getTimedActionState } from './actionTiming'
 import type { CombatEvent, CombatEventSink } from './combatTypes'
 import { migrateSave } from '../../../persistence/migrations'
 
@@ -150,6 +152,57 @@ describe('classic real-time combat action timing', () => {
     expect(state.combat.enemyCurrentStepId).toBe(stepId)
     advance(state, 1)
     expect(state.combat.enemyCurrentStepId).not.toBe(stepId)
+  })
+
+  it('keeps an alive stunned enemy without a committed action out of Combat Flow', () => {
+    const monster = MONSTERS['forest-wisp']
+    const action = monster.actions['arc-spark']
+    const originalEffects = action.effects
+    action.effects = [{ type: 'apply-status', target: 'self', statusId: 'stunned' }]
+    try {
+      const state = stateWithEnemy()
+      startAt(state, 2)
+      state.combat.enemyActionTimerMs = 0
+      expect(resolveCurrentEnemyAction(state, executeCombatEffects)).toBe(true)
+      expect(state.combat.enemyId).toBe('forest-wisp')
+      expect(state.combat.enemyCurrentStepId).toBeNull()
+      expect(getCurrentEnemyActionTiming(state)).toBeNull()
+
+      const presentation = getCombatFlowPresentation({
+        active: state.combat.active,
+        dungeonId: state.combat.dungeonId,
+        selectedDungeonId: 'whispering-woods',
+        dungeon: DUNGEONS['whispering-woods'],
+        enemy: monster,
+        enemyId: state.combat.enemyId,
+        threatCleared: state.combat.threatCleared,
+        inBossFight: state.combat.inBossFight,
+        encounterTimerMs: state.combat.encounterTimerMs,
+        playerAttackTimerMs: state.combat.playerAttackTimerMs,
+        playerAttackDurationMs: state.combat.playerAttackDurationMs,
+        enemyActionTimerMs: state.combat.enemyActionTimerMs,
+        enemyActionDurationMs: state.combat.enemyActionDurationMs,
+        enemyNextActionIndex: state.combat.enemyNextActionIndex,
+        enemyCurrentActionId: state.combat.enemyCurrentActionId,
+        enemyCurrentStepId: state.combat.enemyCurrentStepId,
+        enemyCurrentActionPatternId: state.combat.enemyCurrentActionPatternId,
+        enemyActionPatternId: state.combat.enemyActionPatternId,
+        playerBasicDamage: 1,
+        enemyTiming: null,
+        pattern: getEnemyActionPattern(state),
+        nextStep: getNextEnemyActionStep(state),
+        currentStep: getCurrentEnemyActionStep(state),
+        currentAction: getEnemyAction(state, state.combat.enemyCurrentActionId),
+      })
+      expect(presentation.enemyTimeline).toBeNull()
+      expect(presentation.enemyCurrentAction).toBeNull()
+
+      tickStatuses(state, 3_000, executeCombatEffects)
+      expect(startNextEnemyAction(state, executeCombatEffects)).toBe(true)
+      expect(state.combat.enemyCurrentStepId).not.toBeNull()
+    } finally {
+      action.effects = originalEffects
+    }
   })
 
   it('does not recursively resolve when an effect modifies the current timer', () => {

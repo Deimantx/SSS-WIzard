@@ -49,6 +49,34 @@ describe('getCombatFlowPresentation', () => {
     expect(presentation.enemyTimeline).toMatchObject({ state: 'stunned', remainingMs: null, progress: 60, label: 'Root Crush' })
   })
 
+  it('does not invent an enemy action when canonical timing says none is committed', () => {
+    const presentation = getCombatFlowPresentation(input({
+      enemyTiming: null,
+      enemyCurrentStepId: null,
+      enemyCurrentActionId: null,
+      currentStep: undefined,
+      currentAction: undefined,
+    }))
+    expect(presentation.mode).toBe('combat')
+    expect(presentation.enemyTimeline).toBeNull()
+    expect(presentation.enemyCurrentAction).toBeNull()
+    expect(presentation.currentStepIndex).toBe(-1)
+  })
+
+  it('uses the legacy timing fallback only when canonical enemy timing is omitted', () => {
+    const presentation = getCombatFlowPresentation(input({ enemyTiming: undefined }))
+    expect(presentation.enemyTimeline).toMatchObject({ label: 'Root Crush', remainingMs: 1200 })
+  })
+
+  it('keeps debug pauses and disabled Basic Attack distinct from Stunned', () => {
+    const frozen = getCombatFlowPresentation(input({ enemyTiming: { baseWorkMs: 2600, remainingWorkMs: 1200, progress: 100 - 1200 / 2600 * 100, rate: 0, etaMs: null, blocked: true, blockReason: 'debug-freeze' } }))
+    const disabled = getCombatFlowPresentation(input({ playerTiming: { baseWorkMs: 2800, remainingWorkMs: 500, progress: 100 - 500 / 2800 * 100, rate: 0, etaMs: null, blocked: true, blockReason: 'disabled' } }))
+    expect(frozen.enemyTimeline).toMatchObject({ state: 'paused', blockReason: 'debug-freeze' })
+    expect(disabled.playerTimeline).toMatchObject({ state: 'disabled', blockReason: 'disabled' })
+    expect(frozen.enemyTimeline?.state).not.toBe('stunned')
+    expect(disabled.playerTimeline?.state).not.toBe('stunned')
+  })
+
   it('switches to non-timer modes outside an active enemy encounter', () => {
     expect(getCombatFlowPresentation(input({ active: false, enemyId: null, enemy: null })).mode).toBe('tower')
     expect(getCombatFlowPresentation(input({ enemyId: null, enemy: null, threatCleared: 20 })).mode).toBe('boss-ready')

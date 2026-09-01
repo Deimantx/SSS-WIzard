@@ -1,7 +1,7 @@
 import type { DungeonId, GameState, MonsterId, SpellId } from '../../types'
 import type { CombatEvent, CombatSource, DamageType, StatusId, TraitId } from '../../systems/combat/combatTypes'
 
-export type CombatMetricSourceKind = 'basic-attack' | 'spell' | 'action' | 'status' | 'trait' | 'system'
+export type CombatMetricSourceKind = 'basic-attack' | 'spell' | 'action' | 'status' | 'trait' | 'equipment' | 'system'
 
 export interface CombatMetricSourceContribution {
   key: string

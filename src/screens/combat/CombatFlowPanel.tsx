@@ -75,7 +75,9 @@ function TimelineRow({ timeline }: { timeline: CombatFlowTimeline | null }) {
   if (!timeline) return null
   const label = timeline.actor === 'player' ? 'PLAYER' : 'ENEMY'
   const progress = timeline.progress ?? 0
-  return <div className={`combat-flow-timeline combat-flow-timeline-${timeline.actor}${timeline.state === 'stunned' ? ' is-stunned' : ''}${progress >= 90 ? ' is-near-complete' : ''}`}><div className="combat-flow-timeline-head"><span className="combat-subsection-label">{label}</span><strong>{timeline.label}</strong><span className="combat-flow-timeline-time ui-time">{timeline.etaMs === null ? 'PAUSED' : formatTime(timeline.etaMs)}</span></div><CombatActionProgress value={progress} />{timeline.state === 'stunned' && <div className="combat-flow-paused">STUNNED · PAUSED</div>}</div>
+  const stateClass = timeline.state === 'stunned' ? ' is-stunned' : timeline.state === 'paused' ? ' is-paused' : timeline.state === 'disabled' ? ' is-disabled' : ''
+  const blockLabel = timeline.state === 'stunned' ? 'STUNNED · PAUSED' : timeline.state === 'paused' ? 'DEBUG PAUSED' : timeline.state === 'disabled' ? 'DISABLED' : null
+  return <div className={`combat-flow-timeline combat-flow-timeline-${timeline.actor}${stateClass}${progress >= 90 ? ' is-near-complete' : ''}`}><div className="combat-flow-timeline-head"><span className="combat-subsection-label">{label}</span><strong>{timeline.label}</strong><span className="combat-flow-timeline-time ui-time">{timeline.state === 'disabled' ? 'DISABLED' : timeline.etaMs === null ? 'PAUSED' : formatTime(timeline.etaMs)}</span></div><CombatActionProgress value={progress} />{blockLabel && <div className="combat-flow-paused">{blockLabel}</div>}</div>
 }
 
 function CombatEffectRow({ effect }: { effect: CombatEffectPresentation }) {

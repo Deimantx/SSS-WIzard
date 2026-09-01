@@ -46,7 +46,8 @@ const cloneActorMetrics = (metrics: CombatActorMetrics): CombatActorMetrics => (
 })
 
 const eventKind = (event: CombatEvent): CombatMetricSourceContribution['kind'] => {
-  if (event.sourceKind === 'weapon' || event.sourceKind === 'equipment') return 'basic-attack'
+  if (event.sourceKind === 'weapon') return 'basic-attack'
+  if (event.sourceKind === 'equipment') return 'equipment'
   if (event.sourceKind === 'basic-attack' || event.sourceKind === 'spell' || event.sourceKind === 'action' || event.sourceKind === 'status' || event.sourceKind === 'trait' || event.sourceKind === 'system') return event.sourceKind
   if (event.category === 'spell') return 'spell'
   if (event.category === 'enemy-action') return 'action'
@@ -85,8 +86,18 @@ export const getCombatMetricSourceKey = (event: CombatEvent): string => {
   if (metadata.kind === 'spell') return `spell:${metadata.spellId ?? metadata.sourceId ?? 'unknown'}`
   if (metadata.kind === 'basic-attack') return `${actorPrefix}:basic`
   if (metadata.kind === 'action') return `${actorPrefix}:action:${metadata.actionId ?? metadata.sourceId ?? 'unknown'}`
-  if (metadata.kind === 'status') return `status:${metadata.statusId ?? metadata.sourceId ?? 'unknown'}${metadata.providerInstanceKey ? `:provider:${metadata.providerInstanceKey}` : ''}`
+  if (metadata.kind === 'status') {
+    const origin = metadata.originSourceKind && metadata.originSourceId ? `:origin:${metadata.originSourceKind}:${metadata.originSourceId}` : ''
+    const provider = metadata.providerInstanceKey ? `:provider:${metadata.providerInstanceKey}` : ''
+    const rule = metadata.ruleId ? `:rule:${metadata.ruleId}` : ''
+    return `status:${metadata.statusId ?? metadata.sourceId ?? 'unknown'}${origin}${provider}${rule}`
+  }
   if (metadata.kind === 'trait') return `${actorPrefix}:trait:${metadata.traitId ?? metadata.sourceId ?? 'unknown'}`
+  if (metadata.kind === 'equipment') {
+    const provider = metadata.providerInstanceKey ? `:provider:${metadata.providerInstanceKey}` : ''
+    const rule = metadata.ruleId ? `:rule:${metadata.ruleId}` : ''
+    return `${actorPrefix}:equipment:${metadata.sourceId ?? 'unknown'}${provider}${rule}`
+  }
   return `system:${metadata.sourceId ?? 'unknown'}`
 }
 

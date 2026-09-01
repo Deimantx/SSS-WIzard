@@ -4,6 +4,8 @@ import { createInitialState } from '../../../store/initialState'
 import { advanceGameState } from '../../systems/simulation/advanceGameState'
 import { createCombatEventSink } from '../../systems/combat/combatEventSink'
 import { executeCombatEffects } from '../../systems/combat/effectResolver'
+import { applyStatus, tickStatuses } from '../../systems/combat/statusRuntime'
+import { spawnEnemy } from '../../systems/combat/combatRuntime'
 import { advanceCombatTelemetryScope, consumeCombatEvent, createCombatTelemetryScope, getCombatMetricRate, getCombatMetricSourceKey, reconcileCombatBarrierTelemetry } from './combatTelemetryAggregator'
 import { combatTelemetryObserver, useCombatTelemetryStore } from './combatTelemetryStore'
 
@@ -115,8 +117,71 @@ describe('combat telemetry foundation', () => {
 
   it('canonicalizes status, trait, and monster-specific action sources', () => {
     expect(getCombatMetricSourceKey({ source: { kind: 'player' }, sourceKind: 'status', sourceId: 'burning', statusId: 'burning', category: 'damage', amount: 1 })).toBe('status:burning')
+    const igniteBurn = { source: { kind: 'player' } as const, sourceKind: 'status' as const, sourceId: 'burning', statusId: 'burning' as const, originSourceKind: 'spell' as const, originSourceId: 'ignite', category: 'damage' as const, amount: 100 }
+    const fireballBurn = { ...igniteBurn, originSourceId: 'fireball', amount: 20 }
+    expect(getCombatMetricSourceKey(igniteBurn)).toBe('status:burning:origin:spell:ignite')
+    expect(getCombatMetricSourceKey(fireballBurn)).toBe('status:burning:origin:spell:fireball')
+    const scope = createCombatTelemetryScope('origin-test', 1, 'whispering-woods')
+    consumeCombatEvent(scope, igniteBurn)
+    consumeCombatEvent(scope, fireballBurn)
+    expect(Object.keys(scope.player.damageDone.bySource)).toEqual(['status:burning:origin:spell:ignite', 'status:burning:origin:spell:fireball'])
+    expect(scope.player.damageDone.total).toBe(120)
+    expect(scope.player.damageDone.bySource['status:burning:origin:spell:ignite'].total).toBe(100)
+    expect(scope.player.damageDone.bySource['status:burning:origin:spell:fireball'].total).toBe(20)
     expect(getCombatMetricSourceKey({ source: { kind: 'enemy', monsterId: 'grove-sentinel' }, sourceKind: 'action', sourceId: 'root-crush', actionId: 'root-crush', category: 'damage', amount: 1 })).toBe('enemy:grove-sentinel:action:root-crush')
     expect(getCombatMetricSourceKey({ source: { kind: 'enemy', monsterId: 'grove-sentinel' }, sourceKind: 'trait', sourceId: 'grove-sentinel-ancient-growth', traitId: 'grove-sentinel-ancient-growth', category: 'damage', amount: 1 })).toBe('enemy:grove-sentinel:trait:grove-sentinel-ancient-growth')
+  })
+
+  it('keeps Equipment proc damage, healing, and barriers out of Basic Attack analytics', () => {
+    const source = { source: { kind: 'player' } as const, sourceKind: 'equipment' as const, sourceId: 'apprentice-wand', providerInstanceKey: 'ring1', ruleId: 'flame-retaliation' }
+    const damage = { ...source, category: 'damage' as const, amount: 30, healthDamage: 30 }
+    const heal = { ...source, category: 'heal' as const, amount: 4, effectiveAmount: 4 }
+    const barrier = { ...source, category: 'barrier' as const, amount: 5, barrierGranted: 5, barrierMode: 'add' as const }
+    expect(getCombatMetricSourceKey(damage)).toBe('player:equipment:apprentice-wand:provider:ring1:rule:flame-retaliation')
+    const scope = createCombatTelemetryScope('equipment-test', 1, 'whispering-woods')
+    consumeCombatEvent(scope, damage)
+    consumeCombatEvent(scope, heal)
+    consumeCombatEvent(scope, barrier)
+    const contribution = scope.player.damageDone.bySource['player:equipment:apprentice-wand:provider:ring1:rule:flame-retaliation']
+    expect(contribution.kind).toBe('equipment')
+    expect(contribution.total).toBe(30)
+    expect(scope.player.healingDone.bySource['player:equipment:apprentice-wand:provider:ring1:rule:flame-retaliation'].effectiveHealing).toBe(4)
+    expect(scope.player.barrierGrantedBySource['player:equipment:apprentice-wand:provider:ring1:rule:flame-retaliation'].barrierGranted).toBe(5)
+    expect(contribution.kind).not.toBe('basic-attack')
+  })
+
+  it('keeps duplicate Equipment providers and Status origins distinct without changing totals', () => {
+    const ring1 = { source: { kind: 'player' } as const, sourceKind: 'equipment' as const, sourceId: 'apprentice-wand', providerInstanceKey: 'ring1', ruleId: 'burn' }
+    const ring2 = { ...ring1, providerInstanceKey: 'ring2' }
+    expect(getCombatMetricSourceKey({ ...ring1, category: 'damage' as const, amount: 1 })).not.toBe(getCombatMetricSourceKey({ ...ring2, category: 'damage' as const, amount: 1 }))
+    const status1 = { source: { kind: 'player' } as const, sourceKind: 'status' as const, sourceId: 'burning', statusId: 'burning' as const, originSourceKind: 'equipment' as const, originSourceId: 'apprentice-wand', providerInstanceKey: 'ring1', ruleId: 'burn', category: 'damage' as const, amount: 5 }
+    const status2 = { ...status1, providerInstanceKey: 'ring2' }
+    expect(getCombatMetricSourceKey(status1)).not.toBe(getCombatMetricSourceKey(status2))
+    const scope = createCombatTelemetryScope('provider-test', 1)
+    consumeCombatEvent(scope, status1)
+    consumeCombatEvent(scope, status2)
+    expect(scope.player.damageDone.total).toBe(10)
+    expect(Object.keys(scope.player.damageDone.bySource)).toHaveLength(2)
+  })
+
+  it('preserves Ignite and Fireball origins through runtime Status ticks', () => {
+    const state = createInitialState()
+    state.combat.active = true
+    state.combat.dungeonId = 'whispering-woods'
+    spawnEnemy(state, 'forest-wisp')
+    const ignite = { actor: 'player' as const, kind: 'spell' as const, sourceId: 'ignite', tags: ['spell', 'fire'] as ('spell' | 'fire')[] }
+    const fireball = { actor: 'player' as const, kind: 'spell' as const, sourceId: 'fireball', tags: ['spell', 'fire'] as ('spell' | 'fire')[] }
+    applyStatus(state, 'enemy', 'burning', ignite, { now: 0 })
+    applyStatus(state, 'enemy', 'burning', fireball, { now: 0 })
+    const events: CombatEvent[] = []
+    tickStatuses(state, 1_000, executeCombatEffects, { push: (event) => events.push(event) }, ['enemy'])
+    const ticks = events.filter((event) => event.category === 'damage' && event.sourceKind === 'status')
+    expect(ticks.map((event) => event.originSourceId)).toEqual(['ignite', 'fireball'])
+    const scope = createCombatTelemetryScope('runtime-origin-test', 1, 'whispering-woods')
+    ticks.forEach((event) => consumeCombatEvent(scope, event))
+    expect(Object.keys(scope.player.damageDone.bySource)).toEqual(['status:burning:origin:spell:ignite', 'status:burning:origin:spell:fireball'])
+    expect(scope.player.damageDone.total).toBe(10)
+    expect(Object.values(scope.player.damageDone.bySource).reduce((sum, contribution) => sum + contribution.total, 0)).toBe(scope.player.damageDone.total)
   })
 
   it('does not treat trigger notifications as resolved metric events', () => {

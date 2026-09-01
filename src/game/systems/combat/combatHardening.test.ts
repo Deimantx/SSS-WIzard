@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { ITEMS } from '../../content/items/items'
 import { createInitialState } from '../../../store/initialState'
 import type { GameState, ItemDefinition, ItemId } from '../../types'
+import type { CombatEvent } from './combatTypes'
 import { executeCombatEffects } from './effectResolver'
 import { getCombatModifiers } from './modifiers'
 import { applyStatus, tickStatuses } from './statusRuntime'
@@ -11,6 +12,7 @@ import { runCombatTriggers, getRuleRuntimeKey, tickRuleCooldowns } from './trigg
 import { advanceGameState } from '../simulation/advanceGameState'
 import { validateStatusDefinitions, STATUS_DEFINITIONS } from '../../content/statuses'
 import { isPersistedCombatEffect } from './combatEffectValidation'
+import { getCombatMetricSourceKey } from '../../telemetry/combat/combatTelemetryAggregator'
 
 const source = { actor: 'player' as const, kind: 'spell' as const, sourceId: 'hardening-test', school: 'water' as const, tags: ['spell' as const, 'magic' as const, 'water' as const] }
 const stateWithEnemy = () => {
@@ -208,6 +210,23 @@ describe('equipment combat providers', () => {
       expect.objectContaining({ providerInstanceKey: 'ring1' }),
       expect.objectContaining({ providerInstanceKey: 'ring2' }),
     ]))
+  })
+
+  it('uses the real weapon Item ID when an authored weapon has attack tags', () => {
+    const weaponId = 'hardening-test-weapon' as ItemId
+    ITEMS[weaponId] = { ...testItem, id: weaponId, name: 'Hardening Test Weapon', equipmentSlot: 'weapon', weaponHands: 1, attackTags: ['melee'], damageType: 'fire' }
+    try {
+      const state = stateWithEnemy()
+      state.equipment.weapon = weaponId
+      state.combat.playerAttackTimerMs = 0
+      const events: CombatEvent[] = []
+      advanceGameState(state, 1, { mode: 'live', uiEvents: { push: (event) => events.push(event) } })
+      const attack = events.find((event) => event.source.kind === 'player' && event.sourceKind === 'weapon' && event.category === 'basic-attack')
+      expect(attack).toMatchObject({ sourceKind: 'weapon', sourceId: weaponId, itemId: weaponId })
+      expect(getCombatMetricSourceKey(attack!)).toBe('player:basic')
+    } finally {
+      delete ITEMS[weaponId]
+    }
   })
 
   it('preserves player rule cooldowns through enemy death and downtime while clearing enemy cooldowns', () => {

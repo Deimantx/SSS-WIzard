@@ -2282,6 +2282,7 @@
 .metric-source-accent-enemy { color: var(--ui-warning) !important; }
 .metric-source-accent-status { color: var(--semantic-debuff) !important; }
 .metric-source-accent-trait { color: var(--ui-accent) !important; }
+.metric-source-accent-equipment { color: var(--ui-secondary) !important; }
 .combat-metric-tooltip-source-head span small,
 .combat-metric-tooltip-source-head > b,
 .combat-metric-tooltip-rate { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
@@ -2375,6 +2376,7 @@
 .combat-metric-tooltip-bar .metric-accent-enemy { background: var(--ui-warning); }
 .combat-metric-tooltip-bar .metric-accent-status { background: var(--semantic-debuff); }
 .combat-metric-tooltip-bar .metric-accent-trait { background: var(--ui-accent); }
+.combat-metric-tooltip-bar .metric-accent-equipment { background: var(--ui-secondary); }
 .combat-metric-tooltip-damage .combat-metric-tooltip-bar i { background: var(--ui-warning); }
 .combat-metric-tooltip-healing .combat-metric-tooltip-bar i { background: var(--semantic-health); }
 .combat-metric-tooltip-taken .combat-metric-tooltip-bar i { background: var(--ui-danger); }

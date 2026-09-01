@@ -24,6 +24,21 @@ describe('canonical combat action timing selectors', () => {
     spawnEnemy(state, 'forest-wisp')
     applyStatus(state, 'enemy', 'stunned', { actor: 'player', kind: 'spell', sourceId: 'timing-stun' })
 
-    expect(getCurrentEnemyActionTiming(state)).toMatchObject({ remainingWorkMs: 2_800, progress: 0, rate: 0, etaMs: null, blocked: true })
+    expect(getCurrentEnemyActionTiming(state)).toMatchObject({ remainingWorkMs: 2_800, progress: 0, rate: 0, etaMs: null, blocked: true, blockReason: 'status-control' })
+  })
+
+  it('reports debug freeze and disabled Basic Attack without labeling either as Stunned', () => {
+    const frozen = createInitialState()
+    frozen.combat.active = true
+    frozen.combat.dungeonId = 'whispering-woods'
+    spawnEnemy(frozen, 'forest-wisp')
+    frozen.debug.freezeEnemyActions = true
+    frozen.debug.freezePlayerActions = true
+    expect(getCurrentEnemyActionTiming(frozen)).toMatchObject({ blocked: true, blockReason: 'debug-freeze' })
+    expect(getPlayerBasicTiming(frozen)).toMatchObject({ blocked: true, blockReason: 'debug-freeze' })
+
+    frozen.debug.freezePlayerActions = false
+    frozen.debug.disablePlayerBasicAttack = true
+    expect(getPlayerBasicTiming(frozen)).toMatchObject({ blocked: true, blockReason: 'disabled' })
   })
 })

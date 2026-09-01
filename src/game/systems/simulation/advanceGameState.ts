@@ -48,7 +48,7 @@ const meetsAutoCondition = (state: GameState, spellId: SpellId) => {
 
 const playerBasicAttack = (state: GameState, uiEvents?: CombatEventSink) => {
   const weapon = state.equipment.weapon ? ITEMS[state.equipment.weapon] : undefined
-  const source: CombatSource = { actor: 'player', kind: weapon?.attackTags?.length ? 'weapon' : 'basic-attack', sourceId: 'player-basic-attack', tags: getBasicAttackTags(state) }
+  const source: CombatSource = { actor: 'player', kind: weapon?.attackTags?.length ? 'weapon' : 'basic-attack', sourceId: weapon?.attackTags?.length && state.equipment.weapon ? state.equipment.weapon : 'player-basic-attack', tags: getBasicAttackTags(state) }
   executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', damageType: weapon?.damageType ?? 'physical', magnitude: { type: 'flat', value: playerBasicDamage(state) }, tags: ['basic-attack', 'direct'] }], source, undefined, uiEvents)
   return state.combat.lastDamageDealt
 }

@@ -1,5 +1,6 @@
 import { BALANCE } from '../../core/balance/balance'
 import type { GameState } from '../../types'
+import { actorCannotAct } from './statusRuntime'
 import {
   getCurrentEnemyActionRate,
   getPlayerBasicAttackRate,
@@ -19,14 +20,18 @@ export interface TimedActionState {
   /** Real simulation milliseconds until completion, or null while blocked. */
   etaMs: number | null
   blocked: boolean
+  /** Why the action clock is blocked, when the runtime can identify it. */
+  blockReason: ActionBlockReason
 }
+
+export type ActionBlockReason = 'status-control' | 'debug-freeze' | 'disabled' | null
 
 const finiteWork = (value: number, fallback: number) => Math.min(
   MAX_ACTION_WORK_MS,
   Math.max(MIN_ACTION_TIME_MS, Number.isFinite(value) && value > 0 ? value : fallback),
 )
 
-const buildTiming = (baseWorkMs: number, remainingWorkMs: number, rate: number): TimedActionState => {
+const buildTiming = (baseWorkMs: number, remainingWorkMs: number, rate: number, blockReason: ActionBlockReason = null): TimedActionState => {
   const base = finiteWork(baseWorkMs, MIN_ACTION_TIME_MS)
   const remaining = Math.min(MAX_ACTION_WORK_MS, Math.max(0, Number.isFinite(remainingWorkMs) ? remainingWorkMs : base))
   const safeRate = Number.isFinite(rate) && rate > 0 ? rate : 0
@@ -37,22 +42,34 @@ const buildTiming = (baseWorkMs: number, remainingWorkMs: number, rate: number):
     rate: safeRate,
     etaMs: safeRate > 0 ? remaining / safeRate : null,
     blocked: safeRate <= 0,
+    blockReason,
   }
 }
 
-export const getTimedActionState = (baseWorkMs: number, remainingWorkMs: number, rate: number) => buildTiming(baseWorkMs, remainingWorkMs, rate)
+export const getTimedActionState = (baseWorkMs: number, remainingWorkMs: number, rate: number, blockReason: ActionBlockReason = null) => buildTiming(baseWorkMs, remainingWorkMs, rate, blockReason)
 
-export const getPlayerBasicTiming = (state: GameState): TimedActionState => buildTiming(
-  state.combat.playerAttackDurationMs || BALANCE.player.basicAttackIntervalMs,
-  state.combat.playerAttackTimerMs,
-  state.debug.freezePlayerActions || state.debug.disablePlayerBasicAttack ? 0 : getPlayerBasicAttackRate(state),
-)
+export const getPlayerBasicTiming = (state: GameState): TimedActionState => {
+  const blockReason: ActionBlockReason = actorCannotAct(state, 'player')
+    ? 'status-control'
+    : state.debug.freezePlayerActions
+      ? 'debug-freeze'
+      : state.debug.disablePlayerBasicAttack
+        ? 'disabled'
+        : null
+  return buildTiming(
+    state.combat.playerAttackDurationMs || BALANCE.player.basicAttackIntervalMs,
+    state.combat.playerAttackTimerMs,
+    blockReason ? 0 : getPlayerBasicAttackRate(state),
+    blockReason,
+  )
+}
 
 export const getCurrentEnemyActionTiming = (state: GameState): TimedActionState | null => {
   if (!state.combat.enemyId || !state.combat.enemyCurrentStepId) return null
-  const rate = state.debug.freezeEnemyActions ? 0 : getCurrentEnemyActionRate(state)
+  const blockReason: ActionBlockReason = actorCannotAct(state, 'enemy') ? 'status-control' : state.debug.freezeEnemyActions ? 'debug-freeze' : null
+  const rate = blockReason ? 0 : getCurrentEnemyActionRate(state)
   const authoredBase = state.combat.enemyActionDurationMs
-  return buildTiming(authoredBase, state.combat.enemyActionTimerMs, rate)
+  return buildTiming(authoredBase, state.combat.enemyActionTimerMs, rate, blockReason)
 }
 
 /** Shared presentation fallback for callers that only have a raw timer. */

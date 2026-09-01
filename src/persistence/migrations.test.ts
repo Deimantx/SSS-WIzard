@@ -374,6 +374,36 @@ describe('save navigation migration', () => {
     expect(migrated.combat.playerAttackTimerMs).toBe(MAX_ACTION_WORK_MS)
   })
 
+  it('preserves V21 equipment provider identity on ActiveStatus normalization', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({ ...initial, saveVersion: 21, combat: {
+      ...initial.combat,
+      active: true,
+      dungeonId: 'whispering-woods',
+      enemyId: 'forest-wisp',
+      enemyHp: 44,
+      enemyMaxHp: 44,
+      enemyStatuses: [{ statusId: 'burning', holder: 'enemy', instanceKey: 'player:equipment:test-ring:provider:ring1', source: { actor: 'player', kind: 'equipment', sourceId: 'test-ring', providerInstanceKey: 'ring1' }, remainingMs: 4_000, initialDurationMs: 5_000, stacks: 1, nextTickMs: 1_000, appliedAt: 0 }],
+    } } as any)
+    expect(migrated.combat.enemyStatuses[0].source).toMatchObject({ kind: 'equipment', sourceId: 'test-ring', providerInstanceKey: 'ring1' })
+  })
+
+  it('keeps V20 equipment sources compatible without a provider identity', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({ ...initial, saveVersion: 20, combat: {
+      ...initial.combat,
+      active: true,
+      dungeonId: 'whispering-woods',
+      enemyId: 'forest-wisp',
+      enemyHp: 44,
+      enemyMaxHp: 44,
+      enemyStatuses: [{ statusId: 'burning', holder: 'enemy', instanceKey: 'player:equipment:test-ring', source: { actor: 'player', kind: 'equipment', sourceId: 'test-ring', providerInstanceKey: 'ring1' }, remainingMs: 4_000, initialDurationMs: 5_000, stacks: 1, nextTickMs: 1_000, appliedAt: 0 }],
+    } } as any)
+    expect(migrated.combat.enemyStatuses[0].source).toMatchObject({ kind: 'equipment', sourceId: 'test-ring' })
+    expect(migrated.combat.enemyStatuses[0].source.providerInstanceKey).toBeUndefined()
+    expect(migrated.combat.enemyId).toBe('forest-wisp')
+  })
+
   it('keeps durable progression while rebuilding a V17 Player Basic cycle', () => {
     const initial = createInitialState()
     const migrated = migrateSave({

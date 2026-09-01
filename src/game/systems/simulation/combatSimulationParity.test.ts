@@ -1,6 +1,9 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { ITEMS } from '../../content/items/items'
 import { createInitialState } from '../../../store/initialState'
-import type { GameState } from '../../types'
+import type { GameState, ItemDefinition, ItemId } from '../../types'
+import { executeCombatEffects } from '../combat/effectResolver'
+import { clearCurrentEnemyAction, startEnemyAction } from '../combat/actionRuntime'
 import { spawnEnemy } from '../combat/combatRuntime'
 import { applyStatus } from '../combat/statusRuntime'
 import { advanceGameState } from './advanceGameState'
@@ -117,5 +120,101 @@ describe('canonical simulation quantum parity', () => {
     advanceGameState(coarse, 250, { mode: 'banked' })
 
     expect(snapshot(coarse)).toEqual(snapshot(fine))
+  })
+
+  it('keeps a Chilled mid-skill timeline identical for fine and coarse callers', () => {
+    const fine = combatFixture()
+    const prepare = (state: GameState) => {
+      clearCurrentEnemyAction(state)
+      state.combat.enemyNextActionIndex = 2
+      expect(startEnemyAction(state, 'arc-spark', executeCombatEffects)).toBe(true)
+    }
+    prepare(fine)
+    const coarse = cloneState(fine)
+
+    advanceFine(fine, 1_000)
+    advanceGameState(coarse, 1_000, { mode: 'banked' })
+    const chilled = { actor: 'player' as const, kind: 'spell' as const, sourceId: 'parity-chilled', school: 'water' as const, tags: ['spell' as const, 'water' as const] }
+    applyStatus(fine, 'enemy', 'chilled', chilled, { durationMs: 1_500 })
+    applyStatus(coarse, 'enemy', 'chilled', chilled, { durationMs: 1_500 })
+    advanceFine(fine, 4_000)
+    for (let elapsed = 0; elapsed < 4_000; elapsed += 1_000) advanceGameState(coarse, 1_000, { mode: 'banked' })
+
+    expect(snapshot(coarse)).toEqual(snapshot(fine))
+  })
+
+  it('keeps Stun pause/resume and Quickening mid-basic parity identical', () => {
+    const fine = combatFixture()
+    const coarse = cloneState(fine)
+    advanceFine(fine, 500)
+    advanceGameState(coarse, 500, { mode: 'banked' })
+    const stun = { actor: 'player' as const, kind: 'spell' as const, sourceId: 'parity-stun', tags: ['spell' as const, 'control' as const] }
+    applyStatus(fine, 'player', 'stunned', stun, { durationMs: 750 })
+    applyStatus(coarse, 'player', 'stunned', stun, { durationMs: 750 })
+    advanceFine(fine, 2_000)
+    for (let elapsed = 0; elapsed < 2_000; elapsed += 1_000) advanceGameState(coarse, 1_000, { mode: 'banked' })
+    expect(snapshot(coarse)).toEqual(snapshot(fine))
+
+    const quickFine = combatFixture()
+    const quickCoarse = cloneState(quickFine)
+    advanceFine(quickFine, 500)
+    advanceGameState(quickCoarse, 500, { mode: 'banked' })
+    const quickening = { actor: 'player' as const, kind: 'spell' as const, sourceId: 'parity-quickening', tags: ['spell' as const, 'buff' as const] }
+    applyStatus(quickFine, 'player', 'quickening', quickening)
+    applyStatus(quickCoarse, 'player', 'quickening', quickening)
+    advanceFine(quickFine, 2_000 - 500)
+    for (let elapsed = 0; elapsed < 2_000 - 500; elapsed += 1_000) advanceGameState(quickCoarse, Math.min(1_000, 2_000 - 500 - elapsed), { mode: 'banked' })
+    expect(snapshot(quickCoarse)).toEqual(snapshot(quickFine))
+  })
+
+  it('keeps variable potency refresh parity identical', () => {
+    const fine = combatFixture()
+    const coarse = cloneState(fine)
+    const chilled = { actor: 'player' as const, kind: 'spell' as const, sourceId: 'parity-potency', school: 'water' as const, tags: ['spell' as const, 'water' as const] }
+    const weak = { 'basic-attack-speed-percent': -0.1, 'action-speed-percent': -0.1 }
+    const strong = { 'basic-attack-speed-percent': -0.3, 'action-speed-percent': -0.3 }
+    applyStatus(fine, 'enemy', 'chilled', chilled, { durationMs: 2_000, modifierOverrides: weak })
+    applyStatus(coarse, 'enemy', 'chilled', chilled, { durationMs: 2_000, modifierOverrides: weak })
+    advanceFine(fine, 500)
+    advanceGameState(coarse, 500, { mode: 'banked' })
+    applyStatus(fine, 'enemy', 'chilled', { ...chilled, sourceId: 'parity-potency-strong' }, { durationMs: 2_000, modifierOverrides: strong })
+    applyStatus(coarse, 'enemy', 'chilled', { ...chilled, sourceId: 'parity-potency-strong' }, { durationMs: 2_000, modifierOverrides: strong })
+    advanceFine(fine, 3_000)
+    for (let elapsed = 0; elapsed < 3_000; elapsed += 1_000) advanceGameState(coarse, 1_000, { mode: 'banked' })
+
+    expect(snapshot(coarse)).toEqual(snapshot(fine))
+  })
+
+  it('keeps an equipment trigger event and its resulting state parity identical', () => {
+    const itemId = 'parity-combat-ring' as ItemId
+    const item: ItemDefinition = {
+      id: itemId,
+      name: 'Parity Combat Ring',
+      description: 'Test-only provider.',
+      icon: '◌',
+      color: '#fff',
+      kind: 'equipment',
+      category: 'equipment',
+      inventoryCategory: 'equipment',
+      source: 'Tests',
+      sellValue: 1,
+      canDestroy: true,
+      equipmentSlot: 'ring',
+      combat: { rules: [{ id: 'parity-start', event: 'on-combat-start', oncePerEncounter: true, effects: [{ type: 'apply-status', target: 'self', statusId: 'quickening' }] }] },
+    }
+    ITEMS[itemId] = item
+    try {
+      const fine = createInitialState()
+      fine.combat.active = true
+      fine.combat.dungeonId = 'whispering-woods'
+      fine.equipment.ring1 = itemId
+      spawnEnemy(fine, 'forest-wisp')
+      const coarse = cloneState(fine)
+      advanceFine(fine, 5_000)
+      for (let elapsed = 0; elapsed < 5_000; elapsed += 1_000) advanceGameState(coarse, 1_000, { mode: 'banked' })
+      expect(snapshot(coarse)).toEqual(snapshot(fine))
+    } finally {
+      delete ITEMS[itemId]
+    }
   })
 })

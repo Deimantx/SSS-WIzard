@@ -5,6 +5,7 @@ import { ABANDONED_CATACOMBS_MONSTERS } from './abandonedCatacombs'
 import { HOWLING_DEN_MONSTERS } from './howlingDen'
 import { WHISPERING_WOODS_MONSTERS, WHISPERING_WOODS_MONSTER_IDS } from './whisperingWoods'
 import type { MonsterDefinition } from './monsterTypes'
+import { isPersistedCombatEffect } from '../../systems/combat/combatEffectValidation'
 
 export type { MonsterDefinition } from './monsterTypes'
 export { WHISPERING_WOODS_MONSTERS, WHISPERING_WOODS_MONSTER_IDS } from './whisperingWoods'
@@ -23,6 +24,7 @@ export const MONSTER_IDS = Object.keys(MONSTERS) as MonsterId[]
 const COMBAT_TAGS: readonly CombatTag[] = ['basic-attack', 'spell', 'weapon', 'equipment', 'melee', 'ranged', 'magic', 'direct', 'heal', 'dot', 'hot', 'status', 'special', 'trait', 'buff', 'debuff', 'control', 'barrier', 'physical', 'arcane', 'fire', 'water', 'earth', 'air']
 
 const validateEffects = (owner: string, effects: CombatEffect[], errors: string[]) => effects.forEach((effect) => {
+  if (!isPersistedCombatEffect(effect)) errors.push(`${owner}: invalid combat effect`)
   if ('magnitude' in effect) {
     const magnitude = effect.magnitude
     if ('value' in magnitude && (!Number.isFinite(magnitude.value) || magnitude.value < 0)) errors.push(`${owner}: invalid magnitude`)

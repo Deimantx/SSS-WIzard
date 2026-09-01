@@ -1,5 +1,6 @@
-import type { InventoryCategory, InventoryMaterialSubtype, ItemDefinition, ItemId, SchoolId, ScreenId } from '../../types'
+import type { InventoryCategory, InventoryMaterialSubtype, ItemDefinition, ItemId, ModifierKey, SchoolId, ScreenId } from '../../types'
 import { BALANCE } from '../../core/balance/balance'
+import { isPersistedCombatEffect } from '../../systems/combat/combatEffectValidation'
 
 type AuthoredItemDefinition = Omit<ItemDefinition, 'inventoryCategory' | 'materialSubtype' | 'sellValue' | 'canDestroy' | 'actionRestrictionReason'> & Partial<Pick<ItemDefinition, 'inventoryCategory' | 'materialSubtype' | 'sellValue' | 'canDestroy' | 'actionRestrictionReason'>>
 const materialSubtypes: InventoryMaterialSubtype[] = ['elemental', 'creature', 'ore', 'refined', 'arcane']
@@ -68,6 +69,32 @@ export const ITEMS: Record<ItemId, ItemDefinition> = Object.fromEntries(
     return [id, { ...item, inventoryCategory, ...(inventoryCategory === 'material' ? { materialSubtype: item.materialSubtype ?? (item.category === 'elemental' ? 'elemental' : 'creature') } : {}), sourceNavigation: item.sourceNavigation ?? sourceNavigationByItem[itemId], sellValue: item.sellValue !== undefined ? item.sellValue : sellValues[itemId], canDestroy: item.canDestroy ?? destroyability[itemId] ?? true, ...(item.actionRestrictionReason || actionRestrictionReasons[itemId] ? { actionRestrictionReason: item.actionRestrictionReason ?? actionRestrictionReasons[itemId] } : {}) }]
   }),
 ) as Record<ItemId, ItemDefinition>
+
+export const validateItemDefinitions = () => {
+  const errors: string[] = []
+  const modifierKeys: readonly ModifierKey[] = ['damage-dealt-percent', 'damage-taken-percent', 'basic-attack-damage-percent', 'basic-attack-speed-percent', 'action-speed-percent', 'spell-damage-percent', 'melee-damage-percent', 'ranged-damage-percent', 'healing-done-percent', 'healing-received-percent', 'barrier-power-percent', 'barrier-received-percent', 'mana-regen-percent', 'cooldown-recovery-percent', 'control-duration-received-percent', 'status-duration-dealt-percent', 'status-duration-received-percent']
+  Object.entries(ITEMS).forEach(([key, item]) => {
+    if (key !== item.id) errors.push(`${key}: key/id mismatch`)
+    if (item.combat && item.kind !== 'equipment') errors.push(`${item.id}: only equipment items may define combat metadata`)
+    const modifiers = item.combat?.modifiers ?? []
+    modifiers.forEach((modifier) => {
+      if (!modifierKeys.includes(modifier.key)) errors.push(`${item.id}: invalid combat modifier key`)
+      if (!Number.isFinite(modifier.value)) errors.push(`${item.id}: non-finite combat modifier`)
+    })
+    const rules = item.combat?.rules ?? []
+    const ruleIds = rules.map((rule) => rule.id)
+    if (new Set(ruleIds).size !== ruleIds.length) errors.push(`${item.id}: duplicate combat rule id`)
+    rules.forEach((rule) => {
+      if (!rule.id.trim()) errors.push(`${item.id}: combat rule id is required`)
+      if (rule.cooldownMs !== undefined && (!Number.isFinite(rule.cooldownMs) || rule.cooldownMs < 0)) errors.push(`${item.id}:${rule.id}: invalid cooldown`)
+      if (!Array.isArray(rule.effects) || !rule.effects.every(isPersistedCombatEffect)) errors.push(`${item.id}:${rule.id}: invalid combat effects`)
+    })
+  })
+  if (errors.length && import.meta.env.DEV) console.error(`[combat-items] ${errors.join('; ')}`)
+  return errors
+}
+
+validateItemDefinitions()
 
 export const getResearchXp = (itemId: ItemId, targetSchoolId: SchoolId) => ITEMS[itemId].researchSchool === targetSchoolId ? BALANCE.research.matchingXp : BALANCE.research.nonMatchingXp
 

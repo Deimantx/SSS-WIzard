@@ -8,6 +8,10 @@ import { runCombatTriggers, type CombatEventContext } from './triggerRuntime'
 import type { ActionPattern, ActionStep, CombatActionDefinition, CombatEffect, CombatEventSink, CombatSource, CombatTag, CombatTrigger } from './combatTypes'
 
 export const MIN_ACTION_TIME_MS = 100
+/** Action rates are multiplicative work consumption, bounded for safety. */
+export const MIN_ACTION_RATE = 0.1
+export const MAX_ACTION_RATE = 10
+export const MAX_ACTION_WORK_MS = 86_400_000
 export type ActionEffectExecutor = (state: GameState, effects: CombatEffect[], source: CombatSource, depth?: number, uiEvents?: CombatEventSink) => void
 export type ActionLifecycleEvent = Extract<CombatTrigger, 'on-action-start' | 'on-action-resolve'>
 
@@ -51,14 +55,27 @@ export const getCurrentEnemyActionStep = (state: GameState) => {
   return pattern.steps.find((step) => step.id === stepId)
 }
 
+const boundedRate = (value: number) => Math.max(MIN_ACTION_RATE, Math.min(MAX_ACTION_RATE, Number.isFinite(value) ? value : 1))
+const modifierForLane = (lane: 'basic-attack' | 'action') => lane === 'basic-attack' ? 'basic-attack-speed-percent' as const : 'action-speed-percent' as const
+
+/** Returns the live rate for a timed action. Stun is a hard zero, not a slow. */
+export const getActionRate = (state: GameState, actor: CombatActor, lane: 'basic-attack' | 'action') => {
+  if (actorCannotAct(state, actor)) return 0
+  const sourceTags: CombatTag[] = lane === 'basic-attack' ? ['basic-attack'] : ['special']
+  return boundedRate(1 + getCombatModifiers(state, actor, modifierForLane(lane), { sourceTags }))
+}
+
+export const getPlayerBasicAttackRate = (state: GameState) => getActionRate(state, 'player', 'basic-attack')
+export const getEnemyBasicAttackRate = (state: GameState) => getActionRate(state, 'enemy', 'basic-attack')
+export const getEnemySkillActionRate = (state: GameState) => getActionRate(state, 'enemy', 'action')
+export const getCurrentEnemyActionRate = (state: GameState) => getCurrentEnemyActionStep(state)?.type === 'action' ? getEnemySkillActionRate(state) : getEnemyBasicAttackRate(state)
+
 export const resolveEnemyBasicAttackTimeMs = (state: GameState, baseTimeMs: number) => {
-  const speed = getCombatModifiers(state, 'enemy', 'basic-attack-speed-percent', { sourceTags: ['basic-attack'] })
-  return Math.max(MIN_ACTION_TIME_MS, Math.round(Math.max(0, baseTimeMs) * Math.max(0.1, 1 - speed)))
+  return Math.max(MIN_ACTION_TIME_MS, Math.round(Math.max(MIN_ACTION_TIME_MS, baseTimeMs) / Math.max(MIN_ACTION_RATE, getEnemyBasicAttackRate(state))))
 }
 
 export const resolveEnemySkillActionTimeMs = (state: GameState, baseTimeMs: number) => {
-  const speed = getCombatModifiers(state, 'enemy', 'action-speed-percent', { sourceTags: ['special'] })
-  return Math.max(MIN_ACTION_TIME_MS, Math.round(Math.max(0, baseTimeMs) * Math.max(0.1, 1 - speed)))
+  return Math.max(MIN_ACTION_TIME_MS, Math.round(Math.max(MIN_ACTION_TIME_MS, baseTimeMs) / Math.max(MIN_ACTION_RATE, getEnemySkillActionRate(state))))
 }
 
 /** Clears only the committed action. Selected Pattern and next cursor survive. */
@@ -112,17 +129,18 @@ export const runActionEventObservers = (state: GameState, event: ActionLifecycle
   runCombatTriggers(state, opponentOf(sourceActor), event, context, executeEffects, depth, [], uiEvents)
 }
 
-const commitAction = (state: GameState, stepId: string | null, actionId: string | null, patternId: string, durationMs: number) => {
+/** `enemyActionTimerMs` is remaining work; duration is the authored base work. */
+const commitAction = (state: GameState, stepId: string | null, actionId: string | null, patternId: string, baseDurationMs: number) => {
   state.combat.enemyCurrentStepId = stepId
   state.combat.enemyCurrentActionId = actionId
   state.combat.enemyCurrentActionPatternId = patternId
-  state.combat.enemyActionDurationMs = Math.max(MIN_ACTION_TIME_MS, durationMs)
+  state.combat.enemyActionDurationMs = Math.max(MIN_ACTION_TIME_MS, Number.isFinite(baseDurationMs) ? baseDurationMs : MIN_ACTION_TIME_MS)
   state.combat.enemyActionTimerMs = state.combat.enemyActionDurationMs
 }
 
 const startActionDefinition = (state: GameState, action: CombatActionDefinition, stepId: string | null, patternId: string, executeEffects: ActionEffectExecutor, depth = 0, uiEvents?: CombatEventSink) => {
   if (!state.combat.enemyId || state.combat.enemyCurrentStepId) return false
-  commitAction(state, stepId, action.id, patternId, resolveEnemySkillActionTimeMs(state, action.actionTimeMs))
+  commitAction(state, stepId, action.id, patternId, action.actionTimeMs)
   const context = actionContext(action, patternId, stepId ?? undefined)
   uiEvents?.push({ source: { kind: 'enemy', monsterId: state.combat.enemyId }, sourceKind: 'action', dungeonId: state.combat.dungeonId ?? undefined, target: 'player', category: 'system', sourceId: action.id, actionId: action.id, actionPhase: 'start', durationMs: state.combat.enemyActionDurationMs })
   runActionEventObservers(state, 'on-action-start', context, executeEffects, depth, uiEvents)
@@ -165,7 +183,7 @@ export const startNextEnemyAction = (state: GameState, executeEffects: ActionEff
   state.combat.enemyNextActionIndex = (index + 1) % pattern.steps.length
 
   if (step.type === 'basic') {
-    commitAction(state, step.id, null, pattern.id, resolveEnemyBasicAttackTimeMs(state, monster.basicAttackTimeMs))
+    commitAction(state, step.id, null, pattern.id, monster.basicAttackTimeMs)
     return true
   }
 

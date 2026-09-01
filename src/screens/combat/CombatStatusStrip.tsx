@@ -22,10 +22,10 @@ export function CombatStatusChip({ group }: { group: CombatStatusGroupPresentati
   }, [])
   const { definition } = group
   const duration = group.displayRemainingMs === null ? '\u221e' : formatTime(group.displayRemainingMs)
-  const timed = group.displayRemainingMs !== null && definition.defaultDurationMs !== null
-  const durationPercent = timed ? Math.max(0, Math.min(100, group.displayRemainingMs! / Math.max(1, definition.defaultDurationMs!) * 100)) : 0
+  const timed = group.displayRemainingMs !== null && group.displayInitialDurationMs !== null
+  const durationPercent = timed ? Math.max(0, Math.min(100, group.displayRemainingMs! / Math.max(1, group.displayInitialDurationMs!) * 100)) : 0
   const style = timed ? { '--status-duration-percent': `${durationPercent}%` } as CSSProperties : undefined
-  const stacks = group.instances.reduce((total, status) => total + Math.max(0, status.stacks), 0)
+  const stacks = group.definition.stacking.mode === 'stacks' ? group.totalStacks : 0
   const sources = group.sourceBreakdown
   const sourceCount = group.instances.length
   const accent = group.categoryKey === 'dot' ? 'danger' : group.categoryKey === 'control' ? 'mana' : group.categoryKey === 'buff' ? 'elemental' : group.categoryKey === 'debuff' ? 'warning' : 'neutral'

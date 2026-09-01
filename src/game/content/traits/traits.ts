@@ -1,5 +1,6 @@
 import { STATUS_DEFINITIONS } from '../statuses'
 import type { CombatCondition, CombatEffect, CombatModifier, CombatTag, Magnitude, TraitDefinition, TraitId } from '../../systems/combat/combatTypes'
+import { COMBAT_MODIFIER_KEYS, isPersistedCombatEffect } from '../../systems/combat/combatEffectValidation'
 
 const gainBarrier = (magnitude: Magnitude): CombatEffect => ({
   type: 'gain-barrier',
@@ -129,6 +130,7 @@ const validateCondition = (owner: string, condition: CombatCondition | undefined
 }
 
 const validateEffects = (owner: string, effects: CombatEffect[], errors: string[]) => effects.forEach((effect) => {
+  if (!isPersistedCombatEffect(effect)) errors.push(`${owner}: invalid combat effect`)
   if ('magnitude' in effect) {
     const magnitude = effect.magnitude
     if ('value' in magnitude && (!Number.isFinite(magnitude.value) || magnitude.value < 0)) errors.push(`${owner}: invalid magnitude`)
@@ -150,6 +152,7 @@ export const validateTraitDefinitions = () => {
     if (!definition.name.trim()) errors.push(`${owner}: name is required`)
     if (!definition.description.trim()) errors.push(`${owner}: description is required`)
     definition.modifiers?.forEach((modifier: CombatModifier) => {
+      if (!COMBAT_MODIFIER_KEYS.includes(modifier.key)) errors.push(`${owner}: invalid modifier key`)
       if (!Number.isFinite(modifier.value)) errors.push(`${owner}: non-finite modifier`)
       if (modifier.perStack) errors.push(`${owner}: Trait modifiers may not use perStack`)
       validateCondition(`${owner}/modifier`, modifier.condition, errors)

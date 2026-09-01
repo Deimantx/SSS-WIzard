@@ -14,6 +14,7 @@ import { BALANCE } from '../../game/core/balance/balance'
 import { resolveBasicAttackInterval } from '../../game/systems/combat/effectResolver'
 import { GameTooltip, Progress } from '../../components/ui'
 import { EnemyPatternRail } from './EnemyPatternRail'
+import { CombatActionProgress } from './CombatActionProgress'
 import { EnemyActionTooltip, buildBasicAttackPresentation } from './EnemyActionTooltip'
 import { EnemyPatternIcon } from './EnemyPatternIcon'
 
@@ -63,17 +64,17 @@ export function CombatFlowPanel({ selectedDungeonId }: { selectedDungeonId: Dung
 
   return <section className="combat-flow-panel" style={{ '--enemy-accent': presentation.enemy?.color } as React.CSSProperties}>
     <header className="combat-flow-head"><span className="combat-flow-kicker">COMBAT FLOW</span></header>
-    <div className="combat-flow-timelines"><TimelineRow timeline={presentation.playerTimeline} /><TimelineRow timeline={presentation.enemyTimeline} /></div>
+    <div className="combat-flow-timelines"><TimelineRow timeline={presentation.playerTimeline} /><TimelineRow timeline={presentation.enemyTimeline} cycleId={presentation.currentStepId} /></div>
     {presentation.enemyCurrentAction && <CurrentEnemyAction currentAction={presentation.enemyCurrentAction} basicDamage={presentation.enemy?.basicAttackDamage ?? 0} actionTimeMs={presentation.currentActionDurationMs} progress={presentation.enemyTimeline?.progress ?? 0} />}
     <div className="combat-flow-pattern"><div className="combat-subsection-label">ENEMY PATTERN</div><EnemyPatternRail pattern={presentation.pattern} enemy={presentation.enemy} currentStepIndex={presentation.currentStepIndex} currentStepId={presentation.currentStepId} currentActionId={presentation.currentActionId} currentPatternOriginId={presentation.currentPatternOriginId} currentProgress={presentation.enemyTimeline?.progress} currentActionDurationMs={presentation.currentActionDurationMs} /></div>
   </section>
 }
 
-function TimelineRow({ timeline }: { timeline: CombatFlowTimeline | null }) {
+function TimelineRow({ timeline, cycleId }: { timeline: CombatFlowTimeline | null; cycleId?: string | null }) {
   if (!timeline) return null
   const label = timeline.actor === 'player' ? 'PLAYER' : 'ENEMY'
   const progress = timeline.progress ?? 0
-  return <div className={`combat-flow-timeline combat-flow-timeline-${timeline.actor}${timeline.state === 'stunned' ? ' is-stunned' : ''}${progress >= 90 ? ' is-near-complete' : ''}`}><div className="combat-flow-timeline-head"><span className="combat-subsection-label">{label}</span><strong>{timeline.label}</strong><span className="combat-flow-timeline-time ui-time">{formatTime(timeline.remainingMs ?? 0)}</span></div><Progress value={progress} label={`${label} ${timeline.label} progress`} />{timeline.state === 'stunned' && <div className="combat-flow-paused">STUNNED · PAUSED</div>}</div>
+  return <div className={`combat-flow-timeline combat-flow-timeline-${timeline.actor}${timeline.state === 'stunned' ? ' is-stunned' : ''}${progress >= 90 ? ' is-near-complete' : ''}`}><div className="combat-flow-timeline-head"><span className="combat-subsection-label">{label}</span><strong>{timeline.label}</strong><span className="combat-flow-timeline-time ui-time">{formatTime(timeline.remainingMs ?? 0)}</span></div><CombatActionProgress value={progress} cycleId={timeline.actor === 'enemy' ? cycleId : undefined} />{timeline.state === 'stunned' && <div className="combat-flow-paused">STUNNED · PAUSED</div>}</div>
 }
 
 function CombatEffectRow({ effect }: { effect: CombatEffectPresentation }) {

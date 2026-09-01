@@ -90,7 +90,7 @@ describe('authored status runtime', () => {
     executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', damageType: 'air', magnitude: { type: 'flat', value: 10 }, tags: ['spell'] }], { ...playerSpell, school: 'air' })
     expect(state.combat.enemyHp).toBe(32)
     applyStatus(state, 'player', 'quickening', { actor: 'player', kind: 'spell', sourceId: 'quickening', tags: ['spell'] })
-    expect(resolveBasicAttackInterval(state, 'player', 1200)).toBe(900)
+    expect(resolveBasicAttackInterval(state, 'player', 1200)).toBe(960)
   })
 
   it('ticks a holder-relative Regeneration and supports cleanse, dispel, and Stun', () => {
@@ -184,7 +184,7 @@ describe('data-driven monster mechanics', () => {
     const heart = stateWithEnemy('forest-heart')
     damageEnemy(heart, 310, 'spell')
     expect(heart.combat.enemyStatuses[0]).toMatchObject({ statusId: 'haste', remainingMs: null })
-    expect(resolveEnemySkillActionTimeMs(heart, 2400)).toBe(2040)
+    expect(resolveEnemySkillActionTimeMs(heart, 2400)).toBe(2087)
   })
 })
 

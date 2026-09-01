@@ -9,7 +9,7 @@ import { getActorHealth, resolveMagnitude } from './magnitude'
 import { consumeBarrier, gainBarrierResult, gainBarrier as gainBarrierRuntime, getActiveBarrier } from './barrierRuntime'
 import { getCombatModifiers, getResistance, isImmuneToDamage } from './modifiers'
 import { runCombatTriggers, type CombatEventContext } from './triggerRuntime'
-import { getCurrentEnemyActionStep, setEnemyActionPattern } from './actionRuntime'
+import { getCurrentEnemyActionStep, MAX_ACTION_WORK_MS, setEnemyActionPattern } from './actionRuntime'
 import type { CombatEffect, CombatEventSink, CombatLogCategory, CombatSource, CombatTag, DamageType, EffectTarget } from './combatTypes'
 
 const MAX_EFFECT_DEPTH = 20
@@ -27,12 +27,15 @@ const eventFields = (state: GameState, source: CombatSource, target: CombatActor
   sourceId: source.sourceId,
   originSourceId: source.originSourceId,
   originSourceKind: source.originSourceKind,
+  originTags: source.originTags,
+  originSchool: source.originSchool,
   ruleId: source.ruleId,
   statusInstanceKey: source.statusInstanceKey,
   spellId: source.kind === 'spell' ? source.sourceId as SpellId : undefined,
   actionId: source.kind === 'action' ? source.sourceId : undefined,
   traitId: source.kind === 'trait' ? source.sourceId as TraitId : undefined,
-  statusId: source.kind === 'status' ? source.sourceId as StatusId : undefined,
+  statusId: source.statusId ?? (source.kind === 'status' ? source.sourceId as StatusId : undefined),
+  itemId: source.kind === 'equipment' || source.kind === 'weapon' ? source.sourceId as import('../../types').ItemId : undefined,
 })
 
 export interface DamageBreakdown {
@@ -172,7 +175,7 @@ export const executeCombatEffect = (state: GameState, effect: CombatEffect, sour
     case 'drain-resource': executeResource(state, effect, source); break
     case 'apply-status': {
       const statusSource = { ...source, tags }
-      const active = applyStatus(state, target, effect.statusId, statusSource, { durationMs: effect.durationMs, stacks: effect.stacks, periodicEffects: effect.periodicEffects, statusSourceKey: effect.statusSourceKey })
+      const active = applyStatus(state, target, effect.statusId, statusSource, { durationMs: effect.durationMs, stacks: effect.stacks, periodicEffects: effect.periodicEffects, statusSourceKey: effect.statusSourceKey, modifierOverrides: effect.modifierOverrides })
       if (active) {
         const definition = STATUS_DEFINITIONS[effect.statusId]
         appendLog(state, `${definition.name} applied.`)
@@ -188,21 +191,23 @@ export const executeCombatEffect = (state: GameState, effect: CombatEffect, sour
     case 'modify-action-timer': {
       // Player V1 has one explicit timed normal-action lane: Basic Attack.
       // `current` therefore maps to that same lane until a player action queue exists.
+      if (!Number.isFinite(effect.amountMs)) break
+      const adjustWork = (value: number) => Math.max(0, Math.min(MAX_ACTION_WORK_MS, (Number.isFinite(value) ? value : 0) + effect.amountMs))
       let applied = false
       if (target === 'player') {
-        state.combat.playerAttackTimerMs = Math.max(0, state.combat.playerAttackTimerMs + effect.amountMs)
+        state.combat.playerAttackTimerMs = adjustWork(state.combat.playerAttackTimerMs)
         applied = true
       } else if (effect.action === 'current') {
         // Current means the committed action, whether Basic or Skill.
         if (state.combat.enemyCurrentStepId) {
-          state.combat.enemyActionTimerMs = Math.max(0, state.combat.enemyActionTimerMs + effect.amountMs)
+          state.combat.enemyActionTimerMs = adjustWork(state.combat.enemyActionTimerMs)
           applied = true
         }
       } else if (effect.action === 'basic-attack') {
         // A Basic-specific modifier never reaches a committed Skill and never
         // creates a timer for a future action.
         if (getCurrentEnemyActionStep(state)?.type === 'basic') {
-          state.combat.enemyActionTimerMs = Math.max(0, state.combat.enemyActionTimerMs + effect.amountMs)
+          state.combat.enemyActionTimerMs = adjustWork(state.combat.enemyActionTimerMs)
           applied = true
         }
       }
@@ -212,9 +217,9 @@ export const executeCombatEffect = (state: GameState, effect: CombatEffect, sour
       break
     }
     case 'modify-cooldown': {
-      if (target === 'player') {
+      if (target === 'player' && Number.isFinite(effect.amountMs)) {
         const ids = effect.spellId ? [effect.spellId] : Object.keys(state.combat.spellCooldowns)
-        ids.forEach((id) => { if (id in state.combat.spellCooldowns) state.combat.spellCooldowns[id as keyof typeof state.combat.spellCooldowns] = Math.max(0, state.combat.spellCooldowns[id as keyof typeof state.combat.spellCooldowns] + effect.amountMs) })
+        ids.forEach((id) => { if (id in state.combat.spellCooldowns) state.combat.spellCooldowns[id as keyof typeof state.combat.spellCooldowns] = Math.max(0, Math.min(MAX_ACTION_WORK_MS, state.combat.spellCooldowns[id as keyof typeof state.combat.spellCooldowns] + effect.amountMs)) })
       }
       break
     }
@@ -249,7 +254,8 @@ export const getBasicAttackTags = (state: GameState): CombatTag[] => {
 
 export const resolveBasicAttackInterval = (state: GameState, actor: CombatActor, baseInterval: number) => {
   const speed = getCombatModifiers(state, actor, 'basic-attack-speed-percent', { sourceTags: ['basic-attack'] })
-  return Math.max(100, Math.round(baseInterval * Math.max(0.1, 1 - speed)))
+  const rate = Math.min(10, Math.max(0.1, Number.isFinite(1 + speed) ? 1 + speed : 1))
+  return Math.max(100, Math.round(Math.max(100, baseInterval) / rate))
 }
 
 export { getActiveBarrier }

@@ -4,8 +4,9 @@ import type { GameState, StatusId } from '../../types'
 import type { CombatActor } from './magnitude'
 import { resolveMagnitude } from './magnitude'
 import { runCombatTriggers } from './triggerRuntime'
-import type { CombatEffect, CombatEventSink, CombatSource, ActiveStatus, CombatTag } from './combatTypes'
+import type { CombatEffect, CombatEventSink, CombatSource, ActiveStatus, CombatTag, ModifierKey } from './combatTypes'
 import { getCombatModifiers } from './modifiers'
+import { COMBAT_MODIFIER_KEYS, isPersistedCombatEffect } from './combatEffectValidation'
 
 export type ExecuteEffects = (state: GameState, effects: CombatEffect[], source: CombatSource, depth?: number, uiEvents?: CombatEventSink) => void
 export interface StatusRemovalOptions {
@@ -65,11 +66,31 @@ const relativeTargetForHolder = (holder: CombatActor, sourceActor: CombatActor, 
 }
 
 /** Resolve variable authored periodic magnitudes once, while retaining target-relative effects. */
-const snapshotPeriodicEffects = (state: GameState, holder: CombatActor, source: CombatSource, effects: CombatEffect[] | undefined) => effects?.map((effect) => {
-  if (effect.type !== 'deal-damage' || effect.magnitude.type === 'flat') return { ...effect }
-  const target = relativeTargetForHolder(holder, source.actor, effect.target)
-  return { ...effect, magnitude: { type: 'flat' as const, value: resolveMagnitude(state, effect.magnitude, source, target) } }
-})
+const snapshotPeriodicEffects = (state: GameState, holder: CombatActor, source: CombatSource, effects: CombatEffect[] | undefined) => {
+  if (!effects) return undefined
+  const validEffects = effects.filter(isPersistedCombatEffect)
+  // An invalid override must not disable a safe authored periodic payload.
+  if (effects.length > 0 && validEffects.length === 0) return undefined
+  return validEffects.map((effect) => {
+    if (effect.type !== 'deal-damage' || effect.magnitude.type === 'flat') return { ...effect }
+    const target = relativeTargetForHolder(holder, source.actor, effect.target)
+    return { ...effect, magnitude: { type: 'flat' as const, value: resolveMagnitude(state, effect.magnitude, source, target) } }
+  })
+}
+
+const snapshotModifierOverrides = (overrides: Partial<Record<ModifierKey, number>> | undefined) => {
+  if (!overrides) return undefined
+  const valid = Object.entries(overrides).filter(([key, value]) => COMBAT_MODIFIER_KEYS.includes(key as ModifierKey) && typeof value === 'number' && Number.isFinite(value))
+  return valid.length ? Object.fromEntries(valid) as Partial<Record<ModifierKey, number>> : undefined
+}
+
+const setApplicationPayload = (active: ActiveStatus, duration: number | null, periodicEffects: CombatEffect[] | undefined, modifierOverrides: Partial<Record<ModifierKey, number>> | undefined) => {
+  active.initialDurationMs = duration
+  if (periodicEffects !== undefined) active.periodicEffects = periodicEffects
+  else delete active.periodicEffects
+  if (modifierOverrides !== undefined) active.modifierOverrides = modifierOverrides
+  else delete active.modifierOverrides
+}
 
 export interface ApplyStatusOptions {
   durationMs?: number | null
@@ -77,6 +98,7 @@ export interface ApplyStatusOptions {
   now?: number
   periodicEffects?: CombatEffect[]
   statusSourceKey?: string
+  modifierOverrides?: Partial<Record<ModifierKey, number>>
 }
 
 export interface StatusTickOptions {
@@ -97,22 +119,27 @@ export const applyStatus = (state: GameState, actor: CombatActor, statusId: Stat
     ? options.statusSourceKey?.trim() || getStatusApplicationSourceKey(source)
     : `single:${statusId}`
   const existing = statuses.find((status) => status.statusId === statusId && status.instanceKey === instanceKey)
-  const duration = resolvedDuration(state, actor, statusId, options.durationMs === undefined ? definition.defaultDurationMs : options.durationMs, source)
+  const requestedDuration = options.durationMs === undefined ? definition.defaultDurationMs : options.durationMs
+  if (requestedDuration !== null && requestedDuration !== undefined && !Number.isFinite(requestedDuration)) return null
+  const duration = resolvedDuration(state, actor, statusId, requestedDuration ?? definition.defaultDurationMs, source)
   if (duration !== null && duration <= 0) return null
-  const requestedStacks = Math.max(1, Math.floor(options.stacks ?? 1))
+  const requestedStacks = Math.max(1, Math.floor(Number.isFinite(options.stacks ?? 1) ? options.stacks ?? 1 : 1))
   const nextTickMs = definition.periodic ? definition.periodic.intervalMs : undefined
   const hasPeriodicOverride = options.periodicEffects !== undefined
   const periodicEffects = hasPeriodicOverride ? snapshotPeriodicEffects(state, actor, source, options.periodicEffects) : undefined
+  const modifierOverrides = snapshotModifierOverrides(options.modifierOverrides)
   const create = (stacks = requestedStacks, remainingMs = duration): ActiveStatus => ({
     statusId,
     holder: actor,
     instanceKey,
     source,
     remainingMs,
+    initialDurationMs: duration,
     stacks: Math.min(definition.stacking.maxStacks ?? Number.MAX_SAFE_INTEGER, stacks),
     nextTickMs,
     appliedAt: options.now ?? Date.now(),
     ...(hasPeriodicOverride ? { periodicEffects } : {}),
+    ...(modifierOverrides ? { modifierOverrides } : {}),
   })
   if (!existing) {
     statuses.push(create())
@@ -128,28 +155,28 @@ export const applyStatus = (state: GameState, actor: CombatActor, statusId: Stat
     existing.appliedAt = options.now ?? Date.now()
     existing.instanceKey = instanceKey
     if (definition.periodic && existing.nextTickMs === undefined) existing.nextTickMs = definition.periodic.intervalMs
-    if (hasPeriodicOverride) existing.periodicEffects = periodicEffects
-    else delete existing.periodicEffects
+    setApplicationPayload(existing, duration, periodicEffects, modifierOverrides)
     if (mode === 'stacks') existing.stacks = Math.min(definition.stacking.maxStacks ?? Number.MAX_SAFE_INTEGER, existing.stacks + requestedStacks)
     return existing
   }
 
-  if (mode === 'replace') Object.assign(existing, create())
+  if (mode === 'replace') {
+    Object.assign(existing, create())
+    setApplicationPayload(existing, duration, periodicEffects, modifierOverrides)
+  }
   if (mode === 'refresh') {
     existing.remainingMs = duration
     existing.nextTickMs = nextTickMs
     existing.source = source
     existing.appliedAt = options.now ?? Date.now()
-    if (hasPeriodicOverride) existing.periodicEffects = periodicEffects
-    else delete existing.periodicEffects
+    setApplicationPayload(existing, duration, periodicEffects, modifierOverrides)
   }
   if (mode === 'extend') {
     const extended = existing.remainingMs === null || duration === null ? null : existing.remainingMs + duration
     existing.remainingMs = definition.stacking.maxDurationMs && extended !== null ? Math.min(definition.stacking.maxDurationMs, extended) : extended
     existing.source = source
     existing.appliedAt = options.now ?? Date.now()
-    if (hasPeriodicOverride) existing.periodicEffects = periodicEffects
-    else delete existing.periodicEffects
+    setApplicationPayload(existing, extended, periodicEffects, modifierOverrides)
   }
   if (mode === 'stacks') {
     existing.stacks = Math.min(definition.stacking.maxStacks ?? Number.MAX_SAFE_INTEGER, existing.stacks + requestedStacks)
@@ -157,18 +184,25 @@ export const applyStatus = (state: GameState, actor: CombatActor, statusId: Stat
     existing.nextTickMs = nextTickMs
     existing.source = source
     existing.appliedAt = options.now ?? Date.now()
-    if (hasPeriodicOverride) existing.periodicEffects = periodicEffects
-    else delete existing.periodicEffects
+    setApplicationPayload(existing, duration, periodicEffects, modifierOverrides)
   }
   if (mode === 'strongest') {
-    // V1 strongest supports fixed-strength definitions only. Variable-strength
-    // status applications require a future explicit strength model.
+    const potencyKey = definition.potencyKey
+    const authoredPotency = potencyKey ? definition.modifiers?.find((entry) => entry.key === potencyKey)?.value : undefined
+    const incomingPotency = potencyKey ? modifierOverrides?.[potencyKey] ?? authoredPotency : undefined
+    const activePotency = potencyKey ? existing.modifierOverrides?.[potencyKey] ?? authoredPotency : undefined
+    const stronger = incomingPotency !== undefined && activePotency !== undefined
+      ? definition.potencyDirection === 'lower' ? incomingPotency < activePotency : incomingPotency > activePotency
+      : true
+    const equal = incomingPotency !== undefined && activePotency !== undefined && incomingPotency === activePotency
+    // Weaker applications do not downgrade an active effect. Equal potency is
+    // intentionally allowed to refresh duration and source metadata.
+    if (!stronger && !equal) return existing
     existing.source = source
     existing.remainingMs = duration
     existing.nextTickMs = nextTickMs
     existing.appliedAt = options.now ?? Date.now()
-    if (hasPeriodicOverride) existing.periodicEffects = periodicEffects
-    else delete existing.periodicEffects
+    setApplicationPayload(existing, duration, periodicEffects, modifierOverrides)
   }
   return existing
 }
@@ -191,6 +225,8 @@ const emitStatusLifecycle = (state: GameState, actor: CombatActor, removed: Acti
     statusPhase,
     originSourceId: removed.source.sourceId,
     originSourceKind: removed.source.kind,
+    originTags: removed.source.tags,
+    originSchool: removed.source.school,
     ruleId: removed.source.ruleId,
     statusInstanceKey: removed.instanceKey,
     stacks: removed.stacks,
@@ -199,7 +235,7 @@ const emitStatusLifecycle = (state: GameState, actor: CombatActor, removed: Acti
   const definition = STATUS_DEFINITIONS[removed.statusId]
   const eventStatusTags = definition?.tags ?? []
   const lifecycleSource: CombatSource = statusPhase === 'expire'
-    ? { actor, kind: 'status', sourceId: removed.statusId, originSourceId: removed.source.sourceId, originSourceKind: removed.source.kind, statusInstanceKey: removed.instanceKey, tags: ['status', ...eventStatusTags] }
+    ? { actor, kind: 'status', sourceId: removed.statusId, statusId: removed.statusId, originSourceId: removed.source.sourceId, originSourceKind: removed.source.kind, originTags: removed.source.tags, originSchool: removed.source.school, statusInstanceKey: removed.instanceKey, school: removed.source.school, tags: ['status', ...eventStatusTags, ...(removed.source.tags ?? [])] }
     : options.source ?? removed.source
   runCombatTriggers(state, actor, statusPhase === 'expire' ? 'on-status-expired' : 'on-status-removed', {
     source: lifecycleSource,
@@ -290,7 +326,7 @@ export const tickStatuses = (state: GameState, deltaMs: number, executeEffects: 
       // Inclusive expiration boundary: a tick scheduled exactly when the
       // status expires resolves before the instance is removed.
       while (timeToTick !== undefined && timeToTick <= activeWindow && (previousRemaining === null || timeToTick <= previousRemaining) && (actor !== 'enemy' || Boolean(state.combat.enemyId)) && statusList(state, actor).some((status) => status === original) && definition.periodic && guard < 1000) {
-        executeEffects(state, periodicEffects(original), { ...original.source, kind: 'status', sourceId: original.statusId, originSourceId: original.source.sourceId, originSourceKind: original.source.kind, statusInstanceKey: original.instanceKey, tags: ['status', ...definition.tags] }, undefined, uiEvents)
+        executeEffects(state, periodicEffects(original), { ...original.source, kind: 'status', sourceId: original.statusId, statusId: original.statusId, originSourceId: original.source.sourceId, originSourceKind: original.source.kind, originTags: original.source.tags, originSchool: original.source.school, statusInstanceKey: original.instanceKey, school: original.source.school, tags: ['status', ...definition.tags, ...(original.source.tags ?? [])] }, undefined, uiEvents)
         timeToTick += definition.periodic.intervalMs
         guard += 1
       }

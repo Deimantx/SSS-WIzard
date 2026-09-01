@@ -17,6 +17,8 @@ export interface CombatStatusGroupPresentation {
   definition: StatusDefinition
   instances: ActiveStatus[]
   displayRemainingMs: number | null
+  displayInitialDurationMs: number | null
+  totalStacks: number
   categoryKey: 'dot' | 'control' | 'buff' | 'debuff' | 'neutral'
   categoryLabel: string
   sourceBreakdown: PeriodicStatusSourcePresentation[]
@@ -52,13 +54,15 @@ export const getCombatStatusGroups = (statuses: ActiveStatus[]): CombatStatusGro
     if (!definition) return []
     const hasInfinite = instances.some((status) => status.remainingMs === null)
     const displayRemainingMs = hasInfinite ? null : Math.max(...instances.map((status) => status.remainingMs ?? 0))
+    const displayInstance = instances.reduce((best, status) => (status.remainingMs === null || (best.remainingMs !== null && (status.remainingMs ?? 0) > (best.remainingMs ?? 0))) ? status : best, instances[0])
+    const displayInitialDurationMs = displayInstance.initialDurationMs ?? definition.defaultDurationMs
+    const totalStacks = instances.reduce((total, status) => total + Math.max(0, status.stacks), 0)
     const categoryKey = definition.tags.includes('dot') ? 'dot' : definition.tags.includes('control') ? 'control' : definition.classification === 'buff' ? 'buff' : definition.classification === 'debuff' ? 'debuff' : 'neutral'
     const categoryLabel = categoryKey === 'dot' ? 'Damage over time' : categoryKey === 'control' ? 'Control' : categoryKey === 'buff' ? 'Buff' : categoryKey === 'debuff' ? 'Debuff' : 'Status'
     const sourceBreakdown = definition.tags.includes('dot')
       ? instances.map((status) => sourcePeriodicPresentation(status, definition)).sort((left, right) => (right.damagePerSecond ?? 0) - (left.damagePerSecond ?? 0) || left.sourceLabel.localeCompare(right.sourceLabel))
       : []
     const totalCurrentRate = sourceBreakdown.reduce((total, source) => total + (source.damagePerSecond ?? 0), 0)
-    return [{ statusId, definition, instances, displayRemainingMs, categoryKey, categoryLabel, sourceBreakdown, ...(sourceBreakdown.some((source) => source.damagePerSecond !== undefined) ? { totalCurrentRate } : {}) }]
+    return [{ statusId, definition, instances, displayRemainingMs, displayInitialDurationMs, totalStacks, categoryKey, categoryLabel, sourceBreakdown, ...(sourceBreakdown.some((source) => source.damagePerSecond !== undefined) ? { totalCurrentRate } : {}) }]
   })
 }
-

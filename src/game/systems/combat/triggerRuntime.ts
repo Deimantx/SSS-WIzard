@@ -1,6 +1,8 @@
 import { STATUS_DEFINITIONS } from '../../content/statuses'
+import { ITEMS } from '../../content/items/items'
+import { EQUIPMENT_POSITIONS } from '../../core/equipment'
 import { appendLog } from '../../engine'
-import type { ActiveStatus, GameState, StatusId, TraitId } from '../../types'
+import type { ActiveStatus, GameState, ItemId, StatusId, TraitId } from '../../types'
 import type { CombatActor } from './magnitude'
 import { getActorTraits } from './traitRuntime'
 import { conditionContainsCrossedHpThreshold, conditionHasHpThreshold, evaluateCombatCondition } from './conditionRuntime'
@@ -14,11 +16,12 @@ const statusesFor = (state: GameState, actor: CombatActor) => actor === 'player'
 
 export interface OwnedRule {
   rule: CombatTriggerRule
-  ownerKind: 'trait' | 'status'
+  ownerKind: 'trait' | 'status' | 'equipment'
   ownerId: string
   ownerName: string
   actor: CombatActor
   sourceTags: CombatTag[]
+  equipmentPosition?: (typeof EQUIPMENT_POSITIONS)[number]
   stableOrder: number
 }
 
@@ -34,15 +37,28 @@ export const collectOwnedRules = (state: GameState, actor: CombatActor, transien
   })
   ;[...statusesFor(state, actor), ...transientStatuses].forEach((status) => {
     const definition = STATUS_DEFINITIONS[status.statusId]
+    // Per-source status triggers are rejected by content validation and are
+    // also ignored defensively until instance-level trigger semantics exist.
+    if (definition?.applicationPolicy === 'per-source') return
     definition?.triggers?.forEach((rule) => {
       owned.push({ rule, ownerKind: 'status', ownerId: status.statusId, ownerName: definition.name, actor, sourceTags: ['status', ...definition.tags], stableOrder })
+      stableOrder += 1
+    })
+  })
+  if (actor === 'player') EQUIPMENT_POSITIONS.forEach((position) => {
+    const itemId = state.equipment[position]
+    const item = itemId ? ITEMS[itemId] : undefined
+    item?.combat?.rules?.forEach((rule) => {
+      owned.push({ rule, ownerKind: 'equipment', ownerId: item.id, ownerName: item.name, actor, sourceTags: ['equipment'], equipmentPosition: position, stableOrder })
       stableOrder += 1
     })
   })
   return owned
 }
 
-export const getRuleRuntimeKey = (actor: CombatActor, ownerKind: OwnedRule['ownerKind'], ownerId: string, ruleId: string) => `${actor}:${ownerKind}:${ownerId}:${ruleId}`
+export const getRuleRuntimeKey = (actor: CombatActor, ownerKind: OwnedRule['ownerKind'], ownerId: string, ruleId: string, equipmentPosition?: OwnedRule['equipmentPosition']) => equipmentPosition && ownerKind === 'equipment'
+  ? `${actor}:${ownerKind}:${equipmentPosition}:${ownerId}:${ruleId}`
+  : `${actor}:${ownerKind}:${ownerId}:${ruleId}`
 
 export const tickRuleCooldowns = (state: GameState, deltaMs: number) => {
   if (!state.combat.active || !state.combat.enemyId) return
@@ -76,8 +92,8 @@ export const runCombatTriggers = (
 
   state.combat.triggeredRuleIds ??= []
   state.combat.ruleCooldowns ??= {}
-  rules.forEach(({ rule, ownerKind, ownerId, ownerName, sourceTags }) => {
-    const runtimeKey = getRuleRuntimeKey(actor, ownerKind, ownerId, rule.id)
+  rules.forEach(({ rule, ownerKind, ownerId, ownerName, sourceTags, equipmentPosition }) => {
+    const runtimeKey = getRuleRuntimeKey(actor, ownerKind, ownerId, rule.id, equipmentPosition)
     if (rule.oncePerEncounter && state.combat.triggeredRuleIds.includes(runtimeKey)) return
     if ((state.combat.ruleCooldowns[runtimeKey] ?? 0) > 0) return
     if (event === 'on-hp-threshold' && !conditionHasHpThreshold(rule.condition)) return
@@ -88,8 +104,8 @@ export const runCombatTriggers = (
     // same rule before its once/cooldown guard has been established.
     if (rule.oncePerEncounter) state.combat.triggeredRuleIds.push(runtimeKey)
     if (rule.cooldownMs && rule.cooldownMs > 0) state.combat.ruleCooldowns[runtimeKey] = rule.cooldownMs
-    const source: CombatSource = { actor, kind: ownerKind, sourceId: ownerId, ruleId: rule.id, tags: sourceTags }
-    uiEvents?.push({ source: actor === 'enemy' && state.combat.enemyId ? { kind: 'enemy', monsterId: state.combat.enemyId } : actor === 'player' ? { kind: 'player' } : { kind: 'system' }, sourceKind: 'system', target: context.eventTarget, targetMonsterId: context.eventTarget === 'enemy' ? state.combat.enemyId ?? undefined : undefined, category: ownerKind === 'trait' ? 'trait' : 'status', sourceId: ownerId, traitId: ownerKind === 'trait' ? ownerId as TraitId : undefined, statusId: ownerKind === 'status' ? ownerId as StatusId : undefined, amount: context.amount, damageType: context.damageType, healthDamage: context.healthDamage, barrierAbsorbed: context.barrierDamage })
+    const source: CombatSource = { actor, kind: ownerKind === 'equipment' ? 'equipment' : ownerKind, sourceId: ownerId, ruleId: rule.id, tags: sourceTags }
+    uiEvents?.push({ source: actor === 'enemy' && state.combat.enemyId ? { kind: 'enemy', monsterId: state.combat.enemyId } : actor === 'player' ? { kind: 'player' } : { kind: 'system' }, sourceKind: ownerKind === 'equipment' ? 'equipment' : 'system', target: context.eventTarget, targetMonsterId: context.eventTarget === 'enemy' ? state.combat.enemyId ?? undefined : undefined, category: ownerKind === 'trait' ? 'trait' : 'system', sourceId: ownerId, itemId: ownerKind === 'equipment' ? ownerId as ItemId : undefined, traitId: ownerKind === 'trait' ? ownerId as TraitId : undefined, statusId: ownerKind === 'status' ? ownerId as StatusId : undefined, amount: context.amount, damageType: context.damageType, healthDamage: context.healthDamage, barrierAbsorbed: context.barrierDamage })
     executeEffects(state, rule.effects, source, depth + 1, uiEvents)
     if (actor === 'enemy') appendLog(state, `${ownerName} triggers.`)
   })

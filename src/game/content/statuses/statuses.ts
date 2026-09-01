@@ -1,4 +1,4 @@
-import type { CombatEffect, CombatModifier, CombatTag, StatusDefinition, StatusId } from '../../systems/combat/combatTypes'
+import type { CombatEffect, CombatModifier, CombatTag, ModifierKey, StatusDefinition, StatusId } from '../../systems/combat/combatTypes'
 
 // Periodic effects are authored relative to the status holder. The runtime
 // maps the holder to self/opponent while retaining the original source.
@@ -22,7 +22,7 @@ export const STATUS_DEFINITIONS: Record<StatusId, StatusDefinition> = {
   },
   'spectral-fade': {
     id: 'spectral-fade', name: 'Spectral Fade', description: 'Damage taken is reduced by 25%.', classification: 'buff', tags: ['buff'], defaultDurationMs: 5000,
-    stacking: { mode: 'strongest' }, modifiers: [modifier('damage-taken-percent', -0.25)], cleanseable: false, dispellable: true,
+    stacking: { mode: 'strongest' }, potencyKey: 'damage-taken-percent', potencyDirection: 'lower', modifiers: [modifier('damage-taken-percent', -0.25)], cleanseable: false, dispellable: true,
   },
   'thorn-wound': {
     id: 'thorn-wound', name: 'Thorn Wound', description: 'Thorns deal physical damage over time.', classification: 'debuff', tags: ['debuff', 'dot'], defaultDurationMs: 6000,
@@ -34,7 +34,7 @@ export const STATUS_DEFINITIONS: Record<StatusId, StatusDefinition> = {
   },
   chilled: {
     id: 'chilled', name: 'Chilled', description: 'Basic Attacks and Action cadence are 20% slower.', classification: 'debuff', tags: ['debuff', 'control', 'water'], defaultDurationMs: 5000,
-    stacking: { mode: 'strongest' }, modifiers: [modifier('basic-attack-speed-percent', -0.2), modifier('action-speed-percent', -0.2)], cleanseable: true, dispellable: false, ui: { alert: 'important', icon: 'control' },
+    stacking: { mode: 'strongest' }, potencyKey: 'action-speed-percent', potencyDirection: 'lower', modifiers: [modifier('basic-attack-speed-percent', -0.2), modifier('action-speed-percent', -0.2)], cleanseable: true, dispellable: false, ui: { alert: 'important', icon: 'control' },
   },
   regeneration: {
     id: 'regeneration', name: 'Regeneration', description: 'Restores Health over time.', classification: 'buff', tags: ['buff', 'hot', 'water'], defaultDurationMs: 6000,
@@ -42,7 +42,7 @@ export const STATUS_DEFINITIONS: Record<StatusId, StatusDefinition> = {
   },
   fortified: {
     id: 'fortified', name: 'Fortified', description: 'Damage taken is reduced by 15%.', classification: 'buff', tags: ['buff', 'earth'], defaultDurationMs: 8000,
-    stacking: { mode: 'strongest' }, modifiers: [modifier('damage-taken-percent', -0.15)], cleanseable: false, dispellable: true,
+    stacking: { mode: 'strongest' }, potencyKey: 'damage-taken-percent', potencyDirection: 'lower', modifiers: [modifier('damage-taken-percent', -0.15)], cleanseable: false, dispellable: true,
   },
   shock: {
     id: 'shock', name: 'Shock', description: 'Each stack increases Air damage taken by 4%.', classification: 'debuff', tags: ['debuff', 'air'], defaultDurationMs: 8000,
@@ -54,7 +54,7 @@ export const STATUS_DEFINITIONS: Record<StatusId, StatusDefinition> = {
   },
   vulnerable: {
     id: 'vulnerable', name: 'Vulnerable', description: 'Damage taken is increased by 15%.', classification: 'debuff', tags: ['debuff'], defaultDurationMs: 6000,
-    stacking: { mode: 'strongest' }, modifiers: [modifier('damage-taken-percent', 0.15)], cleanseable: true, dispellable: false, ui: { alert: 'important', icon: 'status' },
+    stacking: { mode: 'strongest' }, potencyKey: 'damage-taken-percent', potencyDirection: 'higher', modifiers: [modifier('damage-taken-percent', 0.15)], cleanseable: true, dispellable: false, ui: { alert: 'important', icon: 'status' },
   },
   purified: {
     id: 'purified', name: 'Purified', description: 'Incoming control and debuff durations are reduced by 50%.', classification: 'buff', tags: ['buff', 'water'], defaultDurationMs: 4000,
@@ -71,6 +71,7 @@ export const STATUS_ORDER = Object.keys(STATUS_DEFINITIONS) as StatusId[]
 
 export const validateStatusDefinitions = () => {
   const errors: string[] = []
+  const modifierKeys: readonly ModifierKey[] = ['damage-dealt-percent', 'damage-taken-percent', 'basic-attack-damage-percent', 'basic-attack-speed-percent', 'action-speed-percent', 'spell-damage-percent', 'melee-damage-percent', 'ranged-damage-percent', 'healing-done-percent', 'healing-received-percent', 'barrier-power-percent', 'barrier-received-percent', 'mana-regen-percent', 'cooldown-recovery-percent', 'control-duration-received-percent', 'status-duration-dealt-percent', 'status-duration-received-percent']
   const ids = Object.values(STATUS_DEFINITIONS).map((definition) => definition.id)
   if (new Set(ids).size !== ids.length) errors.push('duplicate status id')
   const validateCondition = (owner: string, condition: import('../../systems/combat/combatTypes').CombatCondition | undefined): void => {
@@ -90,6 +91,18 @@ export const validateStatusDefinitions = () => {
       if (magnitude.type === 'school-level' && (!Number.isFinite(magnitude.base) || !Number.isFinite(magnitude.perLevel))) errors.push(`${owner}: non-finite school magnitude`)
     }
     if (effect.type === 'apply-status' && !STATUS_DEFINITIONS[effect.statusId]) errors.push(`${owner}: unknown status ${effect.statusId}`)
+    if (effect.type === 'apply-status') {
+      if (effect.durationMs !== undefined && effect.durationMs !== null && (!Number.isFinite(effect.durationMs) || effect.durationMs <= 0)) errors.push(`${owner}: status duration must be positive and finite`)
+      if (effect.modifierOverrides) Object.entries(effect.modifierOverrides).forEach(([key, value]) => {
+        if (!modifierKeys.includes(key as ModifierKey)) errors.push(`${owner}: unknown modifier override ${key}`)
+        if (!Number.isFinite(value)) errors.push(`${owner}: non-finite modifier override`)
+      })
+      if (effect.periodicEffects !== undefined) {
+        if (!Array.isArray(effect.periodicEffects)) errors.push(`${owner}: periodic override must be an array`)
+        else if (!STATUS_DEFINITIONS[effect.statusId]?.periodic) errors.push(`${owner}: periodic override requires a periodic status`)
+        else validateEffects(`${owner}: periodic`, effect.periodicEffects)
+      }
+    }
     if (effect.type === 'set-action-pattern' && !effect.patternId.trim()) errors.push(`${owner}: action pattern id is required`)
   })
   Object.entries(STATUS_DEFINITIONS).forEach(([key, definition]) => {
@@ -100,6 +113,12 @@ export const validateStatusDefinitions = () => {
     if (definition.periodic && !Number.isFinite(definition.periodic.intervalMs)) errors.push(`${definition.id}: periodic interval must be finite`)
     if (definition.applicationPolicy !== undefined && definition.applicationPolicy !== 'single' && definition.applicationPolicy !== 'per-source') errors.push(`${definition.id}: invalid application policy`)
     if (definition.applicationPolicy === 'per-source' && (definition.modifiers?.length || definition.preventsAction)) errors.push(`${definition.id}: per-source status cannot define modifiers or preventsAction without aggregation`)
+    if (definition.applicationPolicy === 'per-source' && (definition.triggers?.length ?? 0) > 0) errors.push(`${definition.id}: Per-source statuses may not define shared status triggers in V1. Use periodicEffects or design explicit instance-trigger semantics first.`)
+    if (definition.stacking.mode === 'strongest') {
+      if (!definition.potencyKey || !modifierKeys.includes(definition.potencyKey)) errors.push(`${definition.id}: strongest policy requires a valid potencyKey`)
+      if (definition.potencyDirection !== 'higher' && definition.potencyDirection !== 'lower') errors.push(`${definition.id}: strongest policy requires potencyDirection`)
+      if (definition.potencyKey && !definition.modifiers?.some((entry) => entry.key === definition.potencyKey)) errors.push(`${definition.id}: potencyKey must match a Status modifier`)
+    }
     if (definition.stacking.maxStacks !== undefined && definition.stacking.maxStacks < 1) errors.push(`${definition.id}: maxStacks must be at least one`)
     if (definition.stacking.maxDurationMs !== undefined && (!Number.isFinite(definition.stacking.maxDurationMs) || definition.stacking.maxDurationMs < 0)) errors.push(`${definition.id}: invalid max duration`)
     definition.modifiers?.forEach((entry) => { if (!Number.isFinite(entry.value)) errors.push(`${definition.id}: non-finite modifier`); validateCondition(`${definition.id}:modifier`, entry.condition) })

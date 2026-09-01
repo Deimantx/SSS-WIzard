@@ -88,16 +88,34 @@ describe('multi-source periodic statuses', () => {
     expect(presentation.message).toContain('Burning (Ignite)')
   })
 
-  it('adds deterministic instance keys when migrating V18 active statuses to V19', () => {
+  it('adds deterministic instance keys and V20 metadata when migrating V18 active statuses', () => {
     const initial = createInitialState()
     const migrated = migrateSave({ ...initial, saveVersion: 18, combat: { ...initial.combat, enemyStatuses: [
       { statusId: 'burning', source: source('ignite'), remainingMs: 2_000, stacks: 1, nextTickMs: 500 },
       { statusId: 'fortified', source: source('fortify'), remainingMs: 2_000, stacks: 1 },
     ] } } as any)
-    expect(migrated.saveVersion).toBe(19)
+    expect(migrated.saveVersion).toBe(20)
     expect(migrated.combat.enemyStatuses).toMatchObject([
       { statusId: 'burning', instanceKey: getStatusApplicationSourceKey(source('ignite')), remainingMs: 2_000, nextTickMs: 500 },
       { statusId: 'fortified', instanceKey: 'single:fortified' },
     ])
+  })
+
+  it('drops malformed persisted periodic overrides without breaking the save', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({ ...initial, saveVersion: 19, combat: { ...initial.combat, active: true, enemyId: 'forest-wisp', enemyStatuses: [
+      { statusId: 'burning', source: source('unsafe'), remainingMs: 2_000, stacks: 1, periodicEffects: [{ type: 'deal-damage', target: 'self', damageType: 'fire', magnitude: { type: 'flat', value: Number.NaN } }, { type: 'not-a-combat-effect' }] },
+    ] } } as any)
+    expect(migrated.combat.enemyStatuses).toHaveLength(1)
+    expect(migrated.combat.enemyStatuses[0].periodicEffects).toBeUndefined()
+    expect(migrated.combat.enemyStatuses[0].initialDurationMs).toBe(5_000)
+  })
+
+  it('preserves origin tags and school on periodic tick events', () => {
+    const state = stateWithEnemy()
+    const events: CombatEvent[] = []
+    applyStatus(state, 'enemy', 'burning', source('ignite'))
+    tickStatuses(state, 1_000, executeCombatEffects, { push: (event) => events.push(event) })
+    expect(events.find((event) => event.sourceKind === 'status' && event.category === 'damage')).toMatchObject({ originSourceKind: 'spell', originSourceId: 'ignite', originTags: ['spell', 'magic', 'fire'], originSchool: 'fire' })
   })
 })

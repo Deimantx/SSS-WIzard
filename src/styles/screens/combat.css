@@ -2889,9 +2889,14 @@
   box-shadow: inset 0 1px 2px rgb(0 0 0 / 38%), 0 0 0 1px rgb(255 255 255 / 3%);
 }
 .combat-flow-timeline .progress i { border-radius: inherit; box-shadow: 0 0 8px color-mix(in srgb, currentColor 42%, transparent); }
+.combat-action-progress .progress i { transition: width 100ms linear; }
+.combat-action-progress .progress i.is-reset { transition: none !important; }
 .combat-flow-timeline-player .progress i { color: var(--ui-accent); }
 .combat-flow-timeline-enemy .progress i { color: var(--flow-accent); }
 .combat-flow-timeline.is-near-complete .progress i::after { width: 5px; box-shadow: 0 0 10px currentColor; }
+@media (prefers-reduced-motion: reduce) {
+  .combat-action-progress .progress i { transition: none; }
+}
 .combat-flow-current-action.is-special {
   border-width: 1px 1px 1px 3px;
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--combat-current-action-warning) 16%, transparent), 0 8px 20px color-mix(in srgb, var(--combat-current-action-warning) 10%, transparent);

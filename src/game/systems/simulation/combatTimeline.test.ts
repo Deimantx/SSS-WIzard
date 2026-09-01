@@ -99,8 +99,8 @@ describe('shared combat timeline', () => {
     advanceGameState(state, 100, { mode: 'live' })
 
     expect(state.combat.enemyCurrentStepId).toBe('crushing-maul-step')
-    expect(state.combat.enemyActionDurationMs).toBe(Math.round(MONSTERS['corrupted-greatbear'].actions['crushing-maul'].actionTimeMs * 0.85))
-    expect(state.combat.enemyActionTimerMs).toBe(Math.round(MONSTERS['corrupted-greatbear'].actions['crushing-maul'].actionTimeMs * 0.85) - 80)
+    expect(state.combat.enemyActionDurationMs).toBe(MONSTERS['corrupted-greatbear'].actions['crushing-maul'].actionTimeMs)
+    expect(state.combat.enemyActionTimerMs).toBeCloseTo(MONSTERS['corrupted-greatbear'].actions['crushing-maul'].actionTimeMs - 87.5)
   })
 
   it('ticks a Status applied by an Action for leftover time in the same quantum', () => {
@@ -134,7 +134,7 @@ describe('shared combat timeline', () => {
     clearCurrentEnemyAction(fine)
     fine.combat.enemyNextActionIndex = 2
     expect(startEnemyAction(fine, 'thorn-lash', executeCombatEffects)).toBe(true)
-    expect(fine.combat.enemyActionDurationMs).toBe(1_530)
+    expect(fine.combat.enemyActionDurationMs).toBe(1_800)
     const coarse = cloneState(fine)
 
     for (let elapsed = 0; elapsed < 12_000; elapsed += 100) advanceGameState(fine, 100, { mode: 'live' })

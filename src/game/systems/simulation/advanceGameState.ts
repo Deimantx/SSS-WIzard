@@ -6,9 +6,9 @@ import { SPELLS } from '../../content/spells/spells'
 import { advanceChanneling } from '../../engine/channelingEngine'
 import { appendLog, playerBasicDamage, pushNotification, recalculateDerivedStats } from '../../engine'
 import { castSpellInternal, getSpellCastFailure } from '../../engine/spellEngine'
-import { executeCombatEffects, getBasicAttackTags, resolveBasicAttackInterval } from '../combat/effectResolver'
+import { executeCombatEffects, getBasicAttackTags } from '../combat/effectResolver'
 import { resolveCombatDeaths, spawnNextEnemy } from '../combat/combatRuntime'
-import { resolveCurrentEnemyAction, startNextEnemyAction } from '../combat/actionRuntime'
+import { getCurrentEnemyActionRate, getPlayerBasicAttackRate, resolveCurrentEnemyAction, startNextEnemyAction } from '../combat/actionRuntime'
 import { actorCannotAct, expirePendingStatuses, getNextCombatStatusEventMs, getNextPlayerStatusEventMs, tickStatuses } from '../combat/statusRuntime'
 import { getNextCombatBarrierEventMs, getNextPlayerBarrierEventMs, tickBarriers } from '../combat/barrierRuntime'
 import { getCombatModifiers } from '../combat/modifiers'
@@ -83,10 +83,15 @@ const hasReadyAutoCast = (state: GameState) => {
 
 const ensurePlayerBasicRuntime = (state: GameState) => {
   if (state.combat.playerAttackDurationMs > 0) return
-  state.combat.playerAttackDurationMs = resolveBasicAttackInterval(state, 'player', BALANCE.player.basicAttackIntervalMs)
+  // Player Basic uses the same work model as enemy actions. The duration is
+  // authored base work; the live rate is consumed by the timeline below.
+  state.combat.playerAttackDurationMs = Math.max(100, BALANCE.player.basicAttackIntervalMs)
 }
 
-const cooldownRecoveryMultiplier = (state: GameState) => Math.max(0, 1 + getCombatModifiers(state, 'player', 'cooldown-recovery-percent'))
+const cooldownRecoveryMultiplier = (state: GameState) => {
+  const rate = 1 + getCombatModifiers(state, 'player', 'cooldown-recovery-percent')
+  return Math.min(10, Math.max(0, Number.isFinite(rate) ? rate : 0))
+}
 
 const tickSpellCooldowns = (state: GameState, deltaMs: number, cooldownRecovery: number) => {
   const delta = Math.max(0, deltaMs) * cooldownRecovery
@@ -156,8 +161,12 @@ const advanceCombatTimeline = (state: GameState, delta: number, context: Advance
 
     const playerBlockedAtSegmentStart = actorCannotAct(state, 'player') || state.debug.freezePlayerActions || state.debug.disablePlayerBasicAttack
     const enemyBlockedAtSegmentStart = actorCannotAct(state, 'enemy') || state.debug.freezeEnemyActions
-    const playerRemaining = playerBlockedAtSegmentStart ? Number.POSITIVE_INFINITY : Math.max(0, state.combat.playerAttackTimerMs)
-    const enemyRemaining = enemyBlockedAtSegmentStart || !state.combat.enemyCurrentStepId ? Number.POSITIVE_INFINITY : Math.max(0, state.combat.enemyActionTimerMs)
+    const playerRate = getPlayerBasicAttackRate(state)
+    const enemyRate = state.combat.enemyCurrentStepId ? getCurrentEnemyActionRate(state) : 0
+    // Timers hold remaining work. Convert only the next boundary to real
+    // simulation milliseconds; completed work is never recomputed.
+    const playerRemaining = playerBlockedAtSegmentStart || playerRate <= 0 ? Number.POSITIVE_INFINITY : Math.max(0, state.combat.playerAttackTimerMs) / playerRate
+    const enemyRemaining = enemyBlockedAtSegmentStart || !state.combat.enemyCurrentStepId || enemyRate <= 0 ? Number.POSITIVE_INFINITY : Math.max(0, state.combat.enemyActionTimerMs) / enemyRate
     const cooldownRecovery = cooldownRecoveryMultiplier(state)
     const boundaries = [
       playerRemaining,
@@ -169,8 +178,8 @@ const advanceCombatTimeline = (state: GameState, delta: number, context: Advance
     const untilEvent = boundaries.length ? Math.min(...boundaries) : remaining
     const elapsed = Math.min(remaining, Math.max(0, untilEvent))
 
-    if (!playerBlockedAtSegmentStart) state.combat.playerAttackTimerMs = Math.max(0, state.combat.playerAttackTimerMs - elapsed)
-    if (!enemyBlockedAtSegmentStart && state.combat.enemyCurrentStepId) state.combat.enemyActionTimerMs = Math.max(0, state.combat.enemyActionTimerMs - elapsed)
+    if (!playerBlockedAtSegmentStart && playerRate > 0) state.combat.playerAttackTimerMs = Math.max(0, state.combat.playerAttackTimerMs - elapsed * playerRate)
+    if (!enemyBlockedAtSegmentStart && state.combat.enemyCurrentStepId && enemyRate > 0) state.combat.enemyActionTimerMs = Math.max(0, state.combat.enemyActionTimerMs - elapsed * enemyRate)
     tickRuleCooldowns(state, elapsed)
     const pendingStatusExpirations = tickStatuses(state, elapsed, executeCombatEffects, context.uiEvents, ['player', 'enemy'], { deferExpiry: true })
     tickBarriers(state, elapsed)
@@ -190,7 +199,7 @@ const advanceCombatTimeline = (state: GameState, delta: number, context: Advance
     if (!actorCannotAct(state, 'player') && !state.debug.freezePlayerActions && !state.debug.disablePlayerBasicAttack && state.combat.playerAttackTimerMs <= 0 && state.combat.enemyId) {
       const damage = playerBasicAttack(state, context.uiEvents)
       appendLog(state, `Basic Attack hits for ${damage}.`)
-      state.combat.playerAttackDurationMs = resolveBasicAttackInterval(state, 'player', BALANCE.player.basicAttackIntervalMs)
+      state.combat.playerAttackDurationMs = Math.max(100, BALANCE.player.basicAttackIntervalMs)
       state.combat.playerAttackTimerMs = state.combat.playerAttackDurationMs
       playerBasicResolved = true
       if (resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents)) break

@@ -38,7 +38,7 @@ export const spawnEnemy = (state: GameState, enemyId: MonsterId, uiEvents?: Comb
   uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'system', sourceId: 'encounter-start' })
   runCombatTriggers(state, 'enemy', 'on-combat-start', { source: { actor: 'enemy', kind: 'system', sourceId: 'combat-start' } }, executeCombatEffects, 0, [], uiEvents)
   runCombatTriggers(state, 'player', 'on-combat-start', { source: { actor: 'player', kind: 'system', sourceId: 'combat-start' }, eventTarget: 'enemy' }, executeCombatEffects, 0, [], uiEvents)
-  state.combat.playerAttackDurationMs = resolveBasicAttackInterval(state, 'player', BALANCE.player.basicAttackIntervalMs)
+  state.combat.playerAttackDurationMs = Math.max(100, BALANCE.player.basicAttackIntervalMs)
   state.combat.playerAttackTimerMs = state.combat.playerAttackDurationMs
   if (state.combat.enemyHp > 0 && state.player.health > 0) startNextEnemyAction(state, executeCombatEffects, 0, uiEvents)
   appendLog(state, `${monster.name} enters the dungeon.`)

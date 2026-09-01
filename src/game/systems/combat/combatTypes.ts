@@ -74,6 +74,8 @@ export interface CombatEvent {
   sourceId?: string
   originSourceId?: string
   originSourceKind?: CombatSource['kind']
+  originTags?: CombatTag[]
+  originSchool?: SchoolId
   statusInstanceKey?: string
   ruleId?: string
   spellId?: SpellId
@@ -131,10 +133,16 @@ export interface CombatSource {
   originSourceId?: string
   /** Original source kind retained when a periodic tick becomes a status source. */
   originSourceKind?: CombatSource['kind']
+  /** Tags from the authored source that caused a derived event. */
+  originTags?: CombatTag[]
+  /** School from the authored source that caused a derived event. */
+  originSchool?: SchoolId
   /** Stable identity of the status instance that produced a periodic event. */
   statusInstanceKey?: string
   /** Rule that produced this source, when the source came from a triggered rule. */
   ruleId?: string
+  /** Authored status identity when this source is status-owned. */
+  statusId?: StatusId
   school?: SchoolId
   tags?: CombatTag[]
 }
@@ -173,7 +181,7 @@ export type CombatEffect =
   | { type: 'gain-barrier'; target: EffectTarget; magnitude: Magnitude; mode?: 'add' | 'replace'; durationMs?: number | null; tags?: CombatTag[] }
   | { type: 'restore-resource'; target: EffectTarget; resource: ResourceId; magnitude: Magnitude; tags?: CombatTag[] }
   | { type: 'drain-resource'; target: EffectTarget; resource: ResourceId; magnitude: Magnitude; tags?: CombatTag[] }
-  | { type: 'apply-status'; target: EffectTarget; statusId: StatusId; durationMs?: number | null; stacks?: number; periodicEffects?: CombatEffect[]; statusSourceKey?: string; tags?: CombatTag[] }
+  | { type: 'apply-status'; target: EffectTarget; statusId: StatusId; durationMs?: number | null; stacks?: number; periodicEffects?: CombatEffect[]; statusSourceKey?: string; modifierOverrides?: Partial<Record<ModifierKey, number>>; tags?: CombatTag[] }
   | { type: 'remove-status'; target: EffectTarget; statusId: StatusId }
   | { type: 'cleanse'; target: EffectTarget; mode: 'one' | 'all' | 'tag'; tag?: CombatTag }
   | { type: 'dispel'; target: EffectTarget; mode: 'one' | 'all' | 'tag'; tag?: CombatTag }
@@ -203,7 +211,11 @@ export type ModifierKey =
 export interface CombatModifier {
   key: ModifierKey
   value: number
+  sourceKinds?: Array<CombatSource['kind']>
   sourceTags?: CombatTag[]
+  originSourceKinds?: Array<CombatSource['kind']>
+  originTags?: CombatTag[]
+  statusIds?: StatusId[]
   damageTypes?: DamageType[]
   statusTags?: CombatTag[]
   perStack?: boolean
@@ -309,11 +321,15 @@ export interface ActiveStatus {
   instanceKey: string
   source: CombatSource
   remainingMs: number | null
+  /** Resolved duration used as the denominator for this application. */
+  initialDurationMs: number | null
   stacks: number
   nextTickMs?: number
   appliedAt?: number
   /** Optional source-specific periodic payload snapshotted on application. */
   periodicEffects?: CombatEffect[]
+  /** Application-time potency values override authored Status modifiers. */
+  modifierOverrides?: Partial<Record<ModifierKey, number>>
 }
 
 export interface StatusDefinition {
@@ -330,6 +346,10 @@ export interface StatusDefinition {
     maxStacks?: number
     maxDurationMs?: number
   }
+  /** Required for strongest statuses so potency comparison is explicit. */
+  potencyKey?: ModifierKey
+  /** Whether a larger or smaller effective modifier value is stronger. */
+  potencyDirection?: 'higher' | 'lower'
   modifiers?: CombatModifier[]
   periodic?: { intervalMs: number; effects: CombatEffect[] }
   triggers?: CombatTriggerRule[]

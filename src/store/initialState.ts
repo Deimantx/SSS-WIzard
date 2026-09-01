@@ -2,8 +2,9 @@ import { BALANCE } from '../game/data/balance'
 import { createInitialManaPillars } from '../game/data/manaPillars'
 import type { GameState } from '../game/types'
 
-// Combat Action System V2 stores one explicit timer for each active action.
-export const SAVE_VERSION = 19
+// Combat Action System V3 stores authored base work plus remaining work for
+// dynamic-rate action progression.
+export const SAVE_VERSION = 20
 
 export const createInitialState = (): GameState => ({
   saveVersion: SAVE_VERSION,

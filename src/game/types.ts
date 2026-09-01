@@ -81,6 +81,11 @@ export interface ItemDefinition {
   attackTags?: import('./systems/combat/combatTypes').CombatTag[]
   damageType?: import('./systems/combat/combatTypes').DamageType
   stats?: EquipmentStats
+  /** Optional universal combat provider for equipped item effects. */
+  combat?: {
+    modifiers?: import('./systems/combat/combatTypes').CombatModifier[]
+    rules?: import('./systems/combat/combatTypes').CombatTriggerRule[]
+  }
   researchSchool?: SchoolId
   lockedByDefault?: boolean
 }

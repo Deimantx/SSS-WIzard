@@ -5,7 +5,7 @@ import { advanceGameState } from '../simulation/advanceGameState'
 import { executeCombatEffects } from './effectResolver'
 import { applyStatus, clearStatuses } from './statusRuntime'
 import { spawnEnemy, resolveCombatDeaths } from './combatRuntime'
-import { clearCurrentEnemyAction, getCurrentEnemyActionStep, getNextEnemyActionStep, resolveCurrentEnemyAction, resolveEnemyBasicAttackTimeMs, resolveEnemySkillActionTimeMs, setEnemyActionPattern, startEnemyAction, startNextEnemyAction } from './actionRuntime'
+import { clearCurrentEnemyAction, getCurrentEnemyActionStep, getNextEnemyActionStep, getEnemyBasicAttackRate, getEnemySkillActionRate, getPlayerBasicAttackRate, resolveCurrentEnemyAction, resolveEnemyBasicAttackTimeMs, resolveEnemySkillActionTimeMs, setEnemyActionPattern, startEnemyAction, startNextEnemyAction } from './actionRuntime'
 import type { CombatEvent, CombatEventSink } from './combatTypes'
 import { migrateSave } from '../../../persistence/migrations'
 
@@ -109,7 +109,7 @@ describe('classic real-time combat action timing', () => {
     expect(state.combat.enemyNextActionIndex).toBe(4)
   })
 
-  it('uses separate Basic Attack and Action speed modifiers with duration snapshots', () => {
+  it('uses separate Basic Attack and Action rates with authored base work', () => {
     const state = stateWithEnemy('corrupted-greatbear')
     const basicBase = state.combat.enemyActionDurationMs
     applyStatus(state, 'enemy', 'haste', { actor: 'enemy', kind: 'system', sourceId: 'test' })
@@ -117,20 +117,23 @@ describe('classic real-time combat action timing', () => {
     clearCurrentEnemyAction(state)
     state.combat.enemyNextActionIndex = 2
     startNextEnemyAction(state, executeCombatEffects)
-    expect(state.combat.enemyActionDurationMs).toBe(resolveEnemySkillActionTimeMs(state, 1800))
+    expect(state.combat.enemyActionDurationMs).toBe(1800)
+    expect(getEnemySkillActionRate(state)).toBeCloseTo(1.15)
 
     const player = stateWithEnemy()
     applyStatus(player, 'player', 'quickening', { actor: 'player', kind: 'system', sourceId: 'test' })
     const basicDuration = player.combat.playerAttackDurationMs
     advance(player, 2800)
-    expect(player.combat.playerAttackDurationMs).toBe(Math.round(basicDuration * 0.75))
+    expect(player.combat.playerAttackDurationMs).toBe(basicDuration)
+    expect(getPlayerBasicAttackRate(player)).toBeCloseTo(1.25)
   })
 
   it('applies Chilled to both Basic Attack and Action timing', () => {
     const state = stateWithEnemy()
     applyStatus(state, 'enemy', 'chilled', { actor: 'player', kind: 'spell', sourceId: 'test' })
-    expect(resolveEnemyBasicAttackTimeMs(state, 2500)).toBe(3000)
-    expect(resolveEnemySkillActionTimeMs(state, 2000)).toBe(2400)
+    expect(resolveEnemyBasicAttackTimeMs(state, 2500)).toBe(3125)
+    expect(resolveEnemySkillActionTimeMs(state, 2000)).toBe(2500)
+    expect(getEnemyBasicAttackRate(state)).toBeCloseTo(0.8)
   })
 
   it('pauses the current timer and identity while the enemy is Stunned', () => {

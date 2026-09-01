@@ -17,8 +17,8 @@ export const getSpellCastFailure = (state: GameState, spellId: SpellId): SpellCa
   if (actorCannotAct(state, 'player')) return 'stunned'
   if (!state.combat.active) return 'inactive'
   if (hasEnemyTarget(spellId) && !state.combat.enemyId) return 'no-target'
-  if (state.combat.spellCooldowns[spellId] > 0) return 'cooldown'
-  if (state.player.mana < spell.manaCost) return 'mana'
+  if (!state.debug.ignoreSpellCooldowns && state.combat.spellCooldowns[spellId] > 0) return 'cooldown'
+  if (!state.debug.infiniteMana && state.player.mana < spell.manaCost) return 'mana'
   return null
 }
 
@@ -54,8 +54,8 @@ export const castSpellInternal = (state: GameState, spellId: SpellId, quiet = fa
     if (failure === 'mana') reportManaStarvation(state, spellId, uiEvents)
     return false
   }
-  state.player.mana -= spell.manaCost
-  state.combat.spellCooldowns[spellId] = spell.cooldownMs
+  if (!state.debug.infiniteMana) state.player.mana -= spell.manaCost
+  state.combat.spellCooldowns[spellId] = state.debug.ignoreSpellCooldowns ? 0 : spell.cooldownMs
   const source: CombatSource = { actor: 'player', kind: 'spell', sourceId: spell.id, school: spell.school, tags: ['spell', 'magic', spell.school] }
   executeCombatEffects(state, spell.effects, source, undefined, uiEvents)
   const damageEffect = spell.effects.some((effect) => effect.type === 'deal-damage')

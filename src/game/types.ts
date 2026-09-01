@@ -99,7 +99,18 @@ export interface SpellDefinition {
 }
 
 export interface SchoolState { xp: number; level: number }
-export interface PlayerState { health: number; maxHealth: number; mana: number; maxMana: number; maxFocus: number; baseMaxHealth: number; baseMaxMana: number; baseMaxFocus: number; godMode: boolean }
+export interface PlayerState {
+  health: number
+  maxHealth: number
+  mana: number
+  maxMana: number
+  maxFocus: number
+  baseMaxHealth: number
+  baseMaxMana: number
+  baseMaxFocus: number
+  /** @deprecated Compatibility-only legacy field. Runtime immortality lives in GameState.debug. */
+  godMode: boolean
+}
 export interface ChannelingActivity { echoesAssigned: number }
 export type ResearchSlotId = 'research-1' | 'research-2' | 'research-3' | 'research-4'
 export type ResearchJobStatus = 'prepared' | 'running' | 'mana-limited' | 'waiting-mana' | 'level-cap' | 'protected' | 'missing-item'
@@ -263,6 +274,16 @@ export interface DebugOverrides {
   allowFocusOverCap: boolean
   ignoreEchoLimit: boolean
   transmutationEchoCapacityOverride: number | null
+  playerImmortal: boolean
+  enemyImmortal: boolean
+  infiniteMana: boolean
+  ignoreSpellCooldowns: boolean
+  disablePlayerBasicAttack: boolean
+  disableAutoCast: boolean
+  freezePlayerActions: boolean
+  freezeEnemyActions: boolean
+  combatPaused: boolean
+  combatTimeScale: number
 }
 export interface NotificationItem { id: string; text: string; tone: 'info' | 'success' | 'warning'; key?: string; createdAt?: number }
 export interface FocusReservation {

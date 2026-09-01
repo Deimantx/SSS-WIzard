@@ -18,7 +18,7 @@ export function DeveloperTab({ tab, copy }: { tab: DeveloperToolsTab; copy: (lab
   if (tab === 'transmutation') return <DeveloperTransmutation />
   if (tab === 'research') return <DeveloperResearch />
   if (tab === 'inventory') return <DeveloperInventory />
-  if (tab === 'combat') return <DeveloperCombat />
+  if (tab === 'combat') return <DeveloperCombat copy={copy} />
   if (tab === 'schools') return <DeveloperSchools />
   if (tab === 'progression') return <DeveloperProgression />
   if (tab === 'diagnostics') return <DeveloperDiagnostics copy={copy} />

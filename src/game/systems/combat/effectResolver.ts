@@ -73,8 +73,10 @@ const applyDamage = (state: GameState, raw: number, damageType: DamageType, sour
   const barrierBefore = getActiveBarrier(state, target)
   consumeBarrier(state, target, breakdown.resolvedBeforeBarrier)
   const dealt = breakdown.healthDamage
-  if (target === 'player') state.player.health = Math.max(0, state.player.health - dealt)
-  else state.combat.enemyHp = Math.max(0, state.combat.enemyHp - dealt)
+  const immortal = target === 'player' ? state.debug.playerImmortal : state.debug.enemyImmortal
+  const nextHealth = Math.max(0, previousHp - dealt)
+  if (target === 'player') state.player.health = immortal ? Math.max(1, nextHealth) : nextHealth
+  else state.combat.enemyHp = immortal ? Math.max(1, nextHealth) : nextHealth
   const currentHp = getActorHealth(state, target)
   if (source.actor === 'player') state.combat.lastDamageDealt = dealt
   else state.combat.lastDamageTaken = dealt
@@ -92,6 +94,7 @@ const applyDamage = (state: GameState, raw: number, damageType: DamageType, sour
   runCombatTriggers(state, target, 'on-damage-taken', context, execute, depth, [], uiEvents)
   const hitEvent = tags.includes('basic-attack') ? 'on-basic-attack-hit' : source.kind === 'spell' ? 'on-spell-hit' : null
   if (hitEvent) runCombatTriggers(state, source.actor, hitEvent, context, execute, depth, [], uiEvents)
+  // A prevented lethal hit is still a real hit, but it is not a kill.
   if (currentHp <= 0 && dealt > 0) runCombatTriggers(state, source.actor, 'on-kill', context, execute, depth, [], uiEvents)
   if (dealt > 0) {
     const thresholdActors = [...new Set<CombatActor>([target, source.actor])]

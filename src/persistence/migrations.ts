@@ -501,6 +501,10 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   // V1-V7 retain their historical migration marker. V8+ are normalized into
   // the current save document.
   migrated.saveVersion = sourceVersion >= 8 ? SAVE_VERSION : 8
+  // Debug overrides are runtime-only. Legacy godMode is retained on the type
+  // solely for old object compatibility, but must never survive hydration.
+  migrated.debug = createInitialState().debug
+  migrated.player.godMode = false
   migrated.progress.channeling = migrateChanneling(raw.progress, createInitialState().progress)
   migrated.ui.screen = normalizeScreen(isRecord(raw.ui) ? raw.ui.screen : undefined, migrated.ui.screen)
   normalizeDynamicRecords(migrated, raw)

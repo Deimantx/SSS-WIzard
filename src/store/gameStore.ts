@@ -6,7 +6,7 @@ import { MONSTERS } from '../game/content/monsters'
 import { SPELLS } from '../game/content/spells/spells'
 import { castSpellAction } from './actions/combatActions'
 import { manaRegenPerSecond, pushNotification, recalculateDerivedStats, selectFreeFocus, selectUsedFocus } from '../game/engine'
-import { debugApplyStatus, resolveCombatDeaths, spawnEnemy, spawnNextEnemy } from '../game/systems/combat/combatRuntime'
+import { debugApplyStatus, spawnEnemy, spawnNextEnemy } from '../game/systems/combat/combatRuntime'
 import { executeCombatEffects } from '../game/systems/combat/effectResolver'
 import { forceResolveEnemyAction as forceResolveEnemyActionRuntime, resolveCurrentEnemyAction as resolveCurrentEnemyActionRuntime, setEnemyActionPattern as setEnemyActionPatternRuntime, startEnemyAction as startEnemyActionRuntime, startNextEnemyAction as startNextEnemyActionRuntime } from '../game/systems/combat/actionRuntime'
 import { resetCombatRuleRuntime, runCombatTriggers } from '../game/systems/combat/triggerRuntime'
@@ -17,7 +17,7 @@ import { updateProfileMetadata } from '../profiles/profileStorage'
 import { createInitialState } from './initialState'
 import type { ChannelingDiscoveryId, DungeonId, EquipmentPosition, GameState, ItemId, ManaPillarId, MonsterId, RecipeId, ResearchSlotId, SchoolId, ScreenId, SpellId, SpellPreset, SpellPresetId, StatusId } from '../game/types'
 import { clamp } from '../game/utils'
-import { resetDebugState, sanitizeDebugNumber } from './actions/debugActions'
+import { createDefaultDebugOverrides, resetCombatDebugState, resetDebugState, sanitizeCombatTimeScale, sanitizeDebugNumber } from './actions/debugActions'
 import { addItemAction, destroyItemAction, removeItemAction, sellItemAction, toggleItemProtectionAction } from './actions/inventoryActions'
 import { equipItemAction, unequipItemAction } from './actions/equipmentActions'
 import { donateGuildRequestAction, claimGuildRewardAction, promoteGuildAction } from './actions/guildActions'
@@ -43,6 +43,7 @@ import { clearCombatDefeat, combatDefeatSink } from '../game/ui/combatDefeatStor
 import { createCombatEventSink } from '../game/systems/combat/combatEventSink'
 import { combatTelemetryObserver, combatTelemetrySink } from '../game/telemetry/combat/combatTelemetryStore'
 import { clearDungeonStatistics, dungeonStatisticsObserver, dungeonStatisticsSink } from '../game/telemetry/dungeon/dungeonStatisticsStore'
+import { advanceCombatOnlyForDebug, clearToBossForDebug, despawnEnemyForDebug, fastResolveNormalEnemiesForDebug, forceKillEnemyForDebug, jumpToBossForDebug, restartBossForDebug } from '../game/systems/combat/debugCombatRuntime'
 
 const combatEventSink = createCombatEventSink(combatLogSink, combatRecapSink, combatDefeatSink, combatAlertsSink, dungeonStatisticsSink, combatTelemetrySink)
 const combatLogUiSink = combatEventSink
@@ -70,6 +71,17 @@ export interface GameActions {
   setDebugAllowManaOverCap: (enabled: boolean) => void
   setDebugAllowFocusOverCap: (enabled: boolean) => void
   setDebugIgnoreEchoLimit: (enabled: boolean) => void
+  setDebugPlayerImmortal: (enabled: boolean) => void
+  setDebugEnemyImmortal: (enabled: boolean) => void
+  setDebugInfiniteMana: (enabled: boolean) => void
+  setDebugIgnoreSpellCooldowns: (enabled: boolean) => void
+  setDebugDisablePlayerBasicAttack: (enabled: boolean) => void
+  setDebugDisableAutoCast: (enabled: boolean) => void
+  setDebugFreezePlayerActions: (enabled: boolean) => void
+  setDebugFreezeEnemyActions: (enabled: boolean) => void
+  setDebugCombatPaused: (enabled: boolean) => void
+  setDebugCombatTimeScale: (scale: number) => void
+  clearCombatDebugOverrides: () => void
   resetDebugOverrides: () => void
   prepareResearch: (itemId: ItemId, targetSchoolId: SchoolId, quantity: number) => void
   removePreparedResearch: (slotId: ResearchSlotId) => void
@@ -99,6 +111,12 @@ export interface GameActions {
   engageBoss: (bossId: MonsterId) => void
   toggleAutoHunt: (dungeonId?: DungeonId) => void
   killCurrentEnemy: () => void
+  despawnDebugEnemy: () => void
+  fastResolveDebugEnemies: (amount: number, dungeonId?: DungeonId, stopAtBossReady?: boolean) => void
+  clearDebugThreatToBoss: (dungeonId?: DungeonId) => void
+  jumpDebugToBoss: (dungeonId?: DungeonId) => void
+  restartDebugBoss: () => void
+  advanceCombatDebug: (durationMs: number) => void
   spawnDebugEnemy: (enemyId: MonsterId, dungeonId?: DungeonId) => void
   setEnemyHealthPercent: (percent: number) => void
   applyPlayerStatus: (statusId: StatusId) => void
@@ -205,6 +223,17 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   setDebugAllowManaOverCap: (enabled) => set((state) => { state.debug.allowManaOverCap = enabled; recalculateDerivedStats(state); return state }),
   setDebugAllowFocusOverCap: (enabled) => set((state) => { state.debug.allowFocusOverCap = enabled; return state }),
   setDebugIgnoreEchoLimit: (enabled) => set((state) => { state.debug.ignoreEchoLimit = enabled; return state }),
+  setDebugPlayerImmortal: (enabled) => set((state) => { state.debug.playerImmortal = enabled; return state }),
+  setDebugEnemyImmortal: (enabled) => set((state) => { state.debug.enemyImmortal = enabled; return state }),
+  setDebugInfiniteMana: (enabled) => set((state) => { state.debug.infiniteMana = enabled; return state }),
+  setDebugIgnoreSpellCooldowns: (enabled) => set((state) => { state.debug.ignoreSpellCooldowns = enabled; return state }),
+  setDebugDisablePlayerBasicAttack: (enabled) => set((state) => { state.debug.disablePlayerBasicAttack = enabled; return state }),
+  setDebugDisableAutoCast: (enabled) => set((state) => { state.debug.disableAutoCast = enabled; return state }),
+  setDebugFreezePlayerActions: (enabled) => set((state) => { state.debug.freezePlayerActions = enabled; return state }),
+  setDebugFreezeEnemyActions: (enabled) => set((state) => { state.debug.freezeEnemyActions = enabled; return state }),
+  setDebugCombatPaused: (enabled) => set((state) => { state.debug.combatPaused = enabled; return state }),
+  setDebugCombatTimeScale: (scale) => set((state) => { state.debug.combatTimeScale = sanitizeCombatTimeScale(scale); return state }),
+  clearCombatDebugOverrides: () => set((state) => { resetCombatDebugState(state); return state }),
   resetDebugOverrides: () => set((state) => { resetDebugState(state); state.activities.channeling.echoesAssigned = clamp(state.activities.channeling.echoesAssigned, 0, BALANCE.channeling.maxEchoes); recalculateDerivedStats(state); return state }),
   prepareResearch: (itemId, targetSchoolId, quantity) => set((state) => { prepareResearchAction(state, itemId, targetSchoolId, quantity); return state }),
   removePreparedResearch: (slotId) => set((state) => { removePreparedResearchAction(state, slotId); return state }),
@@ -246,7 +275,13 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     return state
   }),
   toggleAutoHunt: (dungeonId = 'whispering-woods') => set((state) => { const dungeon = DUNGEONS[dungeonId]; if (!dungeon || !isDungeonUnlocked(dungeon, state.progress)) return state; const unlocked = state.progress.autoHuntBossUnlocked || Object.values(state.progress.bossKillsByBoss).some((kills) => kills > 0) || state.progress.firstBossKill; if (!unlocked) { pushNotification(state, 'Auto Hunt unlocks after the first dungeon boss kill', 'warning'); return state } state.progress.autoHuntBossUnlocked = true; state.progress.autoHuntBossByDungeon[dungeonId] = !state.progress.autoHuntBossByDungeon[dungeonId]; return state }),
-  killCurrentEnemy: () => set((state) => { if (state.combat.enemyId) { state.combat.enemyHp = 0; resolveCombatDeaths(state, undefined, undefined, combatLogUiSink) } return state }),
+  killCurrentEnemy: () => set((state) => { forceKillEnemyForDebug(state, { uiEvents: combatLogUiSink }); return state }),
+  despawnDebugEnemy: () => set((state) => { despawnEnemyForDebug(state); return state }),
+  fastResolveDebugEnemies: (amount, dungeonId, stopAtBossReady = true) => set((state) => { fastResolveNormalEnemiesForDebug(state, amount, dungeonId ?? state.combat.dungeonId ?? 'whispering-woods', stopAtBossReady, { uiEvents: combatLogUiSink, onItemAcquired: (itemId, quantity) => recordRecentAcquisition(state, itemId, quantity) }); return state }),
+  clearDebugThreatToBoss: (dungeonId) => set((state) => { clearToBossForDebug(state, dungeonId ?? state.combat.dungeonId ?? 'whispering-woods', { uiEvents: combatLogUiSink, onItemAcquired: (itemId, quantity) => recordRecentAcquisition(state, itemId, quantity) }); return state }),
+  jumpDebugToBoss: (dungeonId) => set((state) => { jumpToBossForDebug(state, dungeonId ?? state.combat.dungeonId ?? 'whispering-woods', { uiEvents: combatLogUiSink }); return state }),
+  restartDebugBoss: () => set((state) => { restartBossForDebug(state, { uiEvents: combatLogUiSink }); return state }),
+  advanceCombatDebug: (durationMs) => set((state) => { advanceCombatOnlyForDebug(state, durationMs, { mode: 'live', uiEvents: combatEventSink, telemetry: combatTelemetryObserver, alerts: combatAlertsObserver, statistics: dungeonStatisticsObserver, onItemAcquired: (itemId, amount) => recordRecentAcquisition(state, itemId, amount) }); return state }),
   spawnDebugEnemy: (enemyId, dungeonId) => set((state) => {
     const contextDungeonId = dungeonId ?? state.combat.dungeonId ?? 'whispering-woods'
     state.combat.active = true
@@ -291,7 +326,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     clearCombatDefeat()
     clearDungeonStatistics()
     combatTelemetryObserver.clear()
-    set((state) => { Object.assign(state, loaded.state as GameState); state.recentAcquisitions = []; state.lastOfflineBankReport = null; recalculateDerivedStats(state); return state })
+    set((state) => { Object.assign(state, loaded.state as GameState); state.player.godMode = false; state.debug = createDefaultDebugOverrides(); state.recentAcquisitions = []; state.lastOfflineBankReport = null; recalculateDerivedStats(state); return state })
   },
   resetSave: () => {
     const fresh = createInitialState()
@@ -312,7 +347,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     set((state) => { Object.assign(state, fresh); state.recentAcquisitions = []; state.lastOfflineBankReport = null; return state })
     if (activeProfileId) updateProfileMetadata(activeProfileId, { lastSavedAt: fresh.lastSavedAt })
   },
-  hydrateState: (nextState) => { clearCombatLogUi(); clearCombatAlerts(); clearCombatRecap(); clearCombatDefeat(); clearDungeonStatistics(); combatTelemetryObserver.clear(); return set((state) => { Object.assign(state, nextState); state.recentAcquisitions = []; state.lastOfflineBankReport = null; recalculateDerivedStats(state); return state }) },
+  hydrateState: (nextState) => { clearCombatLogUi(); clearCombatAlerts(); clearCombatRecap(); clearCombatDefeat(); clearDungeonStatistics(); combatTelemetryObserver.clear(); return set((state) => { Object.assign(state, nextState); state.player.godMode = false; state.debug = createDefaultDebugOverrides(); state.recentAcquisitions = []; state.lastOfflineBankReport = null; recalculateDerivedStats(state); return state }) },
   dismissNotification: (id) => set((state) => { state.notifications = state.notifications.filter((note) => note.id !== id); return state }),
   setPlayer: (changes) => set((state) => { state.player = { ...state.player, ...changes }; recalculateDerivedStats(state); return state }),
   addMana: (amount) => set((state) => { state.player.mana = Math.max(0, state.player.mana + sanitizeDebugNumber(amount)); recalculateDerivedStats(state); return state }),

@@ -14,6 +14,7 @@ export function DeveloperCharacter() {
   const setOverCap = useGameStore((state) => state.setDebugAllowManaOverCap)
   const setRegenBonus = useGameStore((state) => state.setDebugManaRegenBonus)
   const setManaBonus = useGameStore((state) => state.setDebugMaxManaBonus)
+  const setImmortal = useGameStore((state) => state.setDebugPlayerImmortal)
   const update = (key: keyof typeof player, value: number) => setPlayer({ [key]: value } as Partial<typeof player>)
   const regen = getManaRegenBreakdown({ activities, progress, equipment, debug })
 
@@ -50,7 +51,7 @@ export function DeveloperCharacter() {
       <div className="developer-button-grid">
         <Button onClick={() => setPlayer({ health: player.maxHealth })}>Heal to Max</Button>
         <Button variant="secondary" onClick={() => setPlayer({ health: Math.max(0, player.health - 25) })}>Damage by 25</Button>
-        <Button variant={player.godMode ? 'success' : 'secondary'} onClick={() => setPlayer({ godMode: !player.godMode })}>{player.godMode ? 'God Mode ON' : 'God Mode OFF'}</Button>
+        <Button variant={debug.playerImmortal ? 'success' : 'secondary'} onClick={() => setImmortal(!debug.playerImmortal)}>{debug.playerImmortal ? 'Player Immortal ON' : 'Player Immortal OFF'}</Button>
       </div>
     </Card>
     <Card title="Temporary Mana overrides" className="developer-debug-card">

@@ -120,8 +120,12 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   }
 }
 
-export const resolveCombatDeaths = (state: GameState, report?: SimulationReportCollector, onItemAcquired?: (itemId: ItemId, quantity: number) => void, uiEvents?: CombatEventSink) => {
-  if (state.player.health <= 0 && !state.player.godMode) {
+export interface ResolveCombatDeathsOptions { forceEnemyDeath?: boolean }
+
+export const resolveCombatDeaths = (state: GameState, report?: SimulationReportCollector, onItemAcquired?: (itemId: ItemId, quantity: number) => void, uiEvents?: CombatEventSink, options: ResolveCombatDeathsOptions = {}) => {
+  // The legacy field is only honored for direct in-memory compatibility with
+  // old callers. Hydrated profile state always normalizes it to false.
+  if (state.player.health <= 0 && !state.debug.playerImmortal && !state.player.godMode) {
     uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'player', targetMonsterId: state.combat.enemyId ?? undefined, category: 'death', sourceId: 'player-defeated' })
     report?.recordPlayerDeath()
     state.combat.active = false
@@ -143,6 +147,11 @@ export const resolveCombatDeaths = (state: GameState, report?: SimulationReportC
     pushNotification(state, 'Defeated - recovering in the Tower', 'warning')
     appendLog(state, 'The wizard falls. Threat Cleared resets to 0.')
     return true
+  }
+  if (state.debug.playerImmortal && state.player.health <= 0) state.player.health = 1
+  if (state.debug.enemyImmortal && !options.forceEnemyDeath && state.combat.enemyId && state.combat.enemyHp <= 0) {
+    state.combat.enemyHp = 1
+    return false
   }
   if (state.combat.enemyId && state.combat.enemyHp <= 0) {
     const enemyId = state.combat.enemyId

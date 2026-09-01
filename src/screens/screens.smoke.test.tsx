@@ -109,6 +109,8 @@ describe('screen smoke coverage', () => {
     await user.click(screen.getByRole('button', { name: 'Player' }))
     expect(screen.getByRole('heading', { name: 'Player values' })).toBeTruthy()
     await user.keyboard('{Escape}')
+    expect(screen.getByRole('dialog', { name: 'Developer Tools' })).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Close Developer Tools' }))
     expect(screen.queryByRole('dialog', { name: 'Developer Tools' })).toBeNull()
     expect(screen.getByRole('heading', { name: 'Good evening, apprentice.' })).toBeTruthy()
   })

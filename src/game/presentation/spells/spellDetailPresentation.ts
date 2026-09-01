@@ -4,6 +4,7 @@ import type { GameState, SchoolId, SpellId } from '../../types'
 import { formatTime } from '../../utils'
 import { buildSpellEffectTooltipModel, type SpellEffectTooltipModel, type SpellEffectTooltipRow } from './spellEffectTooltipModel'
 import { getSpellPower } from '../../systems/spells/spellPower'
+import { getEffectiveManaCost } from '../../systems/combat/combatStats'
 
 export type SpellPresentationState = Pick<GameState, 'schools' | 'equipment' | 'progress' | 'activities'>
 
@@ -35,5 +36,5 @@ export const getInspectorInlineEffectRows = (model: SpellEffectTooltipModel): Sp
 
 export function buildSpellDetailPresentation(state: SpellPresentationState, spellId: SpellId, rank: SpellRank): SpellDetailPresentation {
   const spell = SPELLS[spellId]
-  return { spellId, spellName: spell.name, school: spell.school, rankLabel: formatSpellRank(rank), description: spell.description, manaCost: spell.manaCost, cooldownLabel: formatTime(spell.cooldownMs), autoCastFocus: getSpellAutoCastFocusCost(state, spellId) ?? 0, autoCastActive: Boolean(state.activities.autoCast[spellId]), spellPower: getSpellPower(state), effects: spell.effects.map((_, index) => buildSpellEffectTooltipModel(state, spellId, index)) }
+  return { spellId, spellName: spell.name, school: spell.school, rankLabel: formatSpellRank(rank), description: spell.description, manaCost: getEffectiveManaCost(state, spell.manaCost), cooldownLabel: formatTime(spell.cooldownMs), autoCastFocus: getSpellAutoCastFocusCost(state, spellId) ?? 0, autoCastActive: Boolean(state.activities.autoCast[spellId]), spellPower: getSpellPower(state), effects: spell.effects.map((_, index) => buildSpellEffectTooltipModel(state, spellId, index)) }
 }

@@ -98,6 +98,13 @@ export interface CombatEvent {
   overheal?: number
   healthDamage?: number
   barrierAbsorbed?: number
+  critical?: boolean
+  critChance?: number
+  critMultiplier?: number
+  blocked?: boolean
+  blockChance?: number
+  blockReduction?: number
+  blockedAmount?: number
   /** Actual barrier capacity granted by this event. Replacements report the new capacity. */
   barrierGranted?: number
   barrierMode?: 'add' | 'replace'
@@ -236,6 +243,12 @@ export type ModifierKey =
   | 'control-duration-received-percent'
   | 'status-duration-dealt-percent'
   | 'status-duration-received-percent'
+  | 'defense-flat'
+  | 'crit-chance'
+  | 'crit-damage'
+  | 'block-chance'
+  | 'damage-over-time-percent'
+  | 'resistance-percent'
 
 export interface CombatModifier {
   key: ModifierKey

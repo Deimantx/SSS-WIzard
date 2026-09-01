@@ -60,4 +60,4 @@ export const validateDungeonDefinitions = () => {
 
 validateDungeonDefinitions()
 
-export const chooseMonster = (pool: MonsterId[], rng: () => number = Math.random) => pool[Math.floor(Math.max(0, Math.min(0.999999, rng())) * pool.length)]
+export const chooseMonster = (pool: MonsterId[], rng: () => number = () => 0) => pool[Math.floor(Math.max(0, Math.min(0.999999, rng())) * pool.length)]

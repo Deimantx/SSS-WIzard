@@ -5,6 +5,7 @@ import { actorCannotAct } from '../systems/combat/statusRuntime'
 import { isSpellUnlocked } from '../systems/spells'
 import type { CombatSource, GameState, SpellId } from '../types'
 import type { CombatEventSink } from '../systems/combat/combatTypes'
+import { getEffectiveManaCost } from '../systems/combat/combatStats'
 
 const hasEnemyTarget = (spellId: SpellId) => SPELLS[spellId].effects.some((effect) => effect.target === 'opponent')
 
@@ -18,7 +19,7 @@ export const getSpellCastFailure = (state: GameState, spellId: SpellId): SpellCa
   if (!state.combat.active) return 'inactive'
   if (hasEnemyTarget(spellId) && !state.combat.enemyId) return 'no-target'
   if (!state.debug.ignoreSpellCooldowns && state.combat.spellCooldowns[spellId] > 0) return 'cooldown'
-  if (!state.debug.infiniteMana && state.player.mana < spell.manaCost) return 'mana'
+  if (!state.debug.infiniteMana && state.player.mana < getEffectiveManaCost(state, spell.manaCost)) return 'mana'
   return null
 }
 
@@ -43,7 +44,7 @@ const reportManaStarvation = (state: GameState, spellId: SpellId, uiEvents?: Com
     sourceId: 'spell-cast-failed',
     spellId,
     failure: 'mana',
-    attemptedAmount: spell.manaCost,
+    attemptedAmount: getEffectiveManaCost(state, spell.manaCost),
   })
 }
 
@@ -54,7 +55,7 @@ export const castSpellInternal = (state: GameState, spellId: SpellId, quiet = fa
     if (failure === 'mana') reportManaStarvation(state, spellId, uiEvents)
     return false
   }
-  if (!state.debug.infiniteMana) state.player.mana -= spell.manaCost
+  if (!state.debug.infiniteMana) state.player.mana -= getEffectiveManaCost(state, spell.manaCost)
   state.combat.spellCooldowns[spellId] = state.debug.ignoreSpellCooldowns ? 0 : spell.cooldownMs
   const source: CombatSource = { actor: 'player', kind: 'spell', sourceId: spell.id, school: spell.school, tags: ['spell', 'magic', spell.school] }
   executeCombatEffects(state, spell.effects, source, undefined, uiEvents)

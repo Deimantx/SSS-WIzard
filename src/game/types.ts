@@ -50,6 +50,18 @@ export interface EquipmentStats {
   manaRegen?: number
   maxFocus?: number
   barrierReceived?: number
+  defense?: number
+  critChance?: number
+  critDamage?: number
+  basicAttackSpeedPct?: number
+  blockChance?: number
+  cooldownRecoveryPct?: number
+  healingDonePct?: number
+  barrierPowerPct?: number
+  damageOverTimePct?: number
+  statusDurationPct?: number
+  manaCostReductionPct?: number
+  focusEfficiencyPct?: number
   fireSpellDamagePct?: number
   waterBarrierPct?: number
   earthSpellDamagePct?: number
@@ -214,6 +226,8 @@ export interface CombatState {
   log: string[]
   lastDamageDealt: number
   lastDamageTaken: number
+  /** Persisted deterministic PRNG state used by Combat Crit, Block and encounters. */
+  combatRngState: number
 }
 export interface ProgressState {
   magicLevelCap: number

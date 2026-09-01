@@ -4,6 +4,7 @@ import { BALANCE } from '../../core/balance/balance'
 import { getManaRegenBreakdown } from '../../engine/channelingEngine'
 import { getRecipeManaDemandPerSecond, getRecipeStatus } from '../transmutation/transmutationSelectors'
 import { getResearchManaPerSecond, getPreparedResearchJobs, getResearchJobStatus } from '../research/researchSelectors'
+import { getEffectiveManaCost } from '../combat/combatStats'
 import type { GameState, ManaDemandSource, ManaFlowBreakdown } from '../../types'
 import { isSpellUnlocked } from '../spells'
 
@@ -36,7 +37,7 @@ export const getManaDemandBreakdown = (state: GameState): ManaDemandSource[] => 
       sources.push({
         id: `autocast-${spell.id}`,
         label: `Auto-Cast · ${spell.name}`,
-        manaPerSecond: spell.manaCost / (spell.cooldownMs / 1000),
+        manaPerSecond: getEffectiveManaCost(state, spell.manaCost) / (spell.cooldownMs / 1000),
         estimated: true,
       })
     })

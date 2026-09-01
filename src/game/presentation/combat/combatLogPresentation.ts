@@ -67,6 +67,8 @@ export function presentCombatLogEntry(entry: CombatLogEntry, newestTimestampMs =
   } else if (entry.damageType || entry.healthDamage !== undefined) {
     const resolvedDamage = entry.amount ?? entry.healthDamage ?? 0
     result = `${formatNumber(resolvedDamage)} ${damageLabel(entry.damageType)}`
+    if (entry.critical) result += ' · CRIT'
+    if (entry.blocked) result += ' · BLOCK'
     if (entry.barrierAbsorbed) result += ` · ${formatNumber(entry.barrierAbsorbed)} absorbed`
     if (entry.barrierAbsorbed && entry.healthDamage !== undefined && entry.healthDamage !== resolvedDamage) result += ` · ${formatNumber(entry.healthDamage)} HP`
     semanticClass = `log-damage-${entry.damageType ?? 'physical'}`

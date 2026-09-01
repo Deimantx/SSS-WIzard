@@ -6,6 +6,7 @@ import { advanceCombatState, type AdvanceContext } from '../simulation/advanceGa
 import { finishEnemy, resolveCombatDeaths, spawnEnemy } from './combatRuntime'
 import { resetEnemyActionRuntime } from './actionRuntime'
 import { clearEnemyRuleCooldowns } from './triggerRuntime'
+import { nextCombatRandom } from './combatRng'
 
 export interface DebugCombatRuntimeContext {
   uiEvents?: CombatEventSink
@@ -65,7 +66,7 @@ export const fastResolveNormalEnemiesForDebug = (
       if (isBossMonster(MONSTERS[state.combat.enemyId])) break
       resetEncounterWithoutRewards(state)
     }
-    const enemyId = chooseMonster(dungeon.monsterPool)
+    const enemyId = chooseMonster(dungeon.monsterPool, () => nextCombatRandom(state))
     spawnEnemy(state, enemyId, context.uiEvents)
     state.combat.enemyHp = 0
     if (!resolveCombatDeaths(state, undefined, context.onItemAcquired, context.uiEvents, { forceEnemyDeath: true })) break

@@ -1,4 +1,4 @@
-import { BookOpen, Heart, Package, Shield } from 'lucide-react'
+import { BarChart3, BookOpen, Heart, Package, Shield } from 'lucide-react'
 import { useEffect, useMemo, useState, type CSSProperties, type Ref } from 'react'
 import type { DungeonId, MonsterId } from '../../game/types'
 import { DUNGEONS } from '../../game/content/dungeons/dungeons'
@@ -54,5 +54,5 @@ export function EnemyCombatCard({ selectedDungeonId, cardRef, onOpenContext }: {
 }
 
 function EnemyUtilityFooter({ onOpenContext }: { onOpenContext?: (mode: EnemyContextMode, trigger: HTMLButtonElement) => void }) {
-  return <div className="enemy-utility-footer"><button type="button" className="enemy-utility-button" aria-label="Open Enemy Intel" onClick={(event) => onOpenContext?.('intel', event.currentTarget)}><BookOpen size={13} aria-hidden="true" /> ENEMY INTEL</button><button type="button" className="enemy-utility-button" aria-label="Open Enemy Loot" onClick={(event) => onOpenContext?.('loot', event.currentTarget)}><Package size={13} aria-hidden="true" /> LOOT</button></div>
+  return <div className="enemy-utility-footer"><button type="button" className="enemy-utility-button" aria-label="Open Enemy Intel" onClick={(event) => onOpenContext?.('intel', event.currentTarget)}><BookOpen size={13} aria-hidden="true" /> ENEMY INTEL</button><button type="button" className="enemy-utility-button" aria-label="Open Enemy Stats" onClick={(event) => onOpenContext?.('stats', event.currentTarget)}><BarChart3 size={13} aria-hidden="true" /> STATS</button><button type="button" className="enemy-utility-button" aria-label="Open Enemy Loot" onClick={(event) => onOpenContext?.('loot', event.currentTarget)}><Package size={13} aria-hidden="true" /> LOOT</button></div>
 }

@@ -48,7 +48,7 @@ describe('classic real-time combat action timing', () => {
     advance(state, MONSTERS['forest-wisp'].basicAttackTimeMs - 1)
     expect(state.player.health).toBe(initialHealth)
     advance(state, 1)
-    expect(state.player.health).toBe(initialHealth - MONSTERS['forest-wisp'].basicAttackDamage)
+    expect(state.player.health).toBeCloseTo(initialHealth - MONSTERS['forest-wisp'].basicAttackDamage * (1 - 10 / 110))
     expect(state.combat.enemyCurrentStepId).toBe('basic-2')
     expect(state.combat.enemyActionTimerMs).toBe(MONSTERS['forest-wisp'].basicAttackTimeMs)
   })
@@ -62,7 +62,7 @@ describe('classic real-time combat action timing', () => {
     advance(state, 1999)
     expect(state.player.health).toBe(initialHealth)
     advance(state, 1)
-    expect(state.player.health).toBe(initialHealth - 12)
+    expect(state.player.health).toBeCloseTo(initialHealth - 12 * 1.5 * (1 - 10 / 110))
   })
 
   it('starts the next Pattern step immediately after resolve with no recovery gap', () => {
@@ -214,7 +214,7 @@ describe('classic real-time combat action timing', () => {
     expect(state.combat.enemyActionTimerMs).toBe(0)
     expect(state.player.health).toBe(before)
     resolveCurrentEnemyAction(state, executeCombatEffects)
-    expect(state.player.health).toBe(before - 12)
+    expect(state.player.health).toBeCloseTo(before - 12 * 1.5 * (1 - 10 / 110))
   })
 
   it('cleans current timing state on enemy death and player defeat', () => {

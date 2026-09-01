@@ -8,6 +8,8 @@ import type { CombatActor } from './magnitude'
 import { getActorHealth, resolveMagnitude } from './magnitude'
 import { consumeBarrier, gainBarrierResult, gainBarrier as gainBarrierRuntime, getActiveBarrier } from './barrierRuntime'
 import { getCombatModifiers, getResistance, isImmuneToDamage } from './modifiers'
+import { getBlockChance, getCritChance, getCritDamageMultiplier, getDefense, getDefenseReduction } from './combatStats'
+import { nextCombatRandom } from './combatRng'
 import { runCombatTriggers, type CombatEventContext } from './triggerRuntime'
 import { getCurrentEnemyActionStep, MAX_ACTION_WORK_MS, setEnemyActionPattern } from './actionRuntime'
 import { getRootCombatSourceProvenance } from './combatProvenance'
@@ -59,17 +61,64 @@ const eventFields = (state: GameState, source: CombatSource, target: CombatActor
 export interface DamageBreakdown {
   raw: number
   sourceModified: number
+  critical: boolean
+  critChance: number
+  critMultiplier: number
+  afterCrit: number
   targetModified: number
+  defense: number
+  defenseReduction: number
+  afterDefense: number
   resistance: number
+  afterResistance: number
+  blocked: boolean
+  blockChance: number
+  blockReduction: number
+  blockedAmount: number
   resolvedBeforeBarrier: number
   barrierAbsorbed: number
   healthDamage: number
   immune: boolean
 }
 
-export const calculateCombatDamage = (state: GameState, raw: number, damageType: DamageType, source: CombatSource, target: CombatActor, tags: CombatTag[] = source.tags ?? []): DamageBreakdown => {
+interface DamageRolls {
+  critical?: boolean
+  blocked?: boolean
+}
+
+const isDirectHit = (tags: CombatTag[]) => tags.includes('direct') && !tags.includes('dot')
+
+const emptyDamageBreakdown = (raw: number, resistance: number, direct: boolean, critChance: number, critMultiplier: number, blockChance: number, immune: boolean): DamageBreakdown => ({
+  raw,
+  sourceModified: 0,
+  critical: false,
+  critChance: direct ? critChance : 0,
+  critMultiplier: direct ? critMultiplier : 1,
+  afterCrit: 0,
+  targetModified: 0,
+  defense: 0,
+  defenseReduction: 0,
+  afterDefense: 0,
+  resistance,
+  afterResistance: 0,
+  blocked: false,
+  blockChance: direct ? blockChance : 0,
+  blockReduction: 0,
+  blockedAmount: 0,
+  resolvedBeforeBarrier: 0,
+  barrierAbsorbed: 0,
+  healthDamage: 0,
+  immune,
+})
+
+const calculateCombatDamageWithRolls = (state: GameState, raw: number, damageType: DamageType, source: CombatSource, target: CombatActor, tags: CombatTag[], rolls: DamageRolls = {}): DamageBreakdown => {
   const amount = Math.max(0, raw)
-  if (amount <= 0 || isImmuneToDamage(state, target, damageType)) return { raw: amount, sourceModified: 0, targetModified: 0, resistance: getResistance(state, target, damageType), resolvedBeforeBarrier: 0, barrierAbsorbed: 0, healthDamage: 0, immune: amount > 0 }
+  const direct = isDirectHit(tags)
+  const critChance = direct ? getCritChance(state, source.actor, source) : 0
+  const critMultiplier = direct ? getCritDamageMultiplier(state, source.actor, source) : 1
+  const blockChance = direct ? getBlockChance(state, target, source) : 0
+  const resistance = getResistance(state, target, damageType, { source, sourceTags: tags })
+  if (amount <= 0 || isImmuneToDamage(state, target, damageType)) return emptyDamageBreakdown(amount, resistance, direct, critChance, critMultiplier, blockChance, amount > 0 && isImmuneToDamage(state, target, damageType))
   const modifierContext = { source, sourceTags: tags, damageType }
   let sourceModified = amount * (1 + getCombatModifiers(state, source.actor, 'damage-dealt-percent', modifierContext))
   if (tags.includes('basic-attack')) sourceModified *= 1 + getCombatModifiers(state, source.actor, 'basic-attack-damage-percent', modifierContext)
@@ -79,17 +128,33 @@ export const calculateCombatDamage = (state: GameState, raw: number, damageType:
   if (tags.includes('melee')) sourceModified *= 1 + getCombatModifiers(state, source.actor, 'melee-damage-percent', modifierContext)
   if (tags.includes('ranged')) sourceModified *= 1 + getCombatModifiers(state, source.actor, 'ranged-damage-percent', modifierContext)
   if (spellOrigin && root.school) sourceModified *= spellDamageMultiplier(state, root.school)
-  const targetModified = sourceModified * (1 + getCombatModifiers(state, target, 'damage-taken-percent', modifierContext))
-  const resistance = getResistance(state, target, damageType)
+  if (tags.includes('dot')) sourceModified *= 1 + getCombatModifiers(state, source.actor, 'damage-over-time-percent', modifierContext)
+  const critical = direct && rolls.critical === true
+  const afterCrit = sourceModified * (critical ? critMultiplier : 1)
+  const targetModified = afterCrit * (1 + getCombatModifiers(state, target, 'damage-taken-percent', modifierContext))
+  const defenseReduction = direct ? getDefenseReduction(state, target) : 0
+  const defense = direct ? getDefense(state, target) : 0
+  const afterDefense = targetModified * (1 - defenseReduction)
+  const afterResistance = Math.max(0, afterDefense * (1 - resistance))
+  const blocked = direct && rolls.blocked === true
+  const blockReduction = blocked ? 0.5 : 0
+  const blockedAmount = blocked ? afterResistance * blockReduction : 0
+  const resolvedBeforeBarrier = Math.max(0, afterResistance - blockedAmount)
   // Keep fractional base damage intact. Player-facing log formatting may
   // round it, but rounding every periodic tick would turn 100/6 into 17*6.
-  const resolvedBeforeBarrier = Math.max(0, targetModified * (1 - resistance))
   const barrierAbsorbed = Math.min(getActiveBarrier(state, target), resolvedBeforeBarrier)
-  return { raw: amount, sourceModified, targetModified, resistance, resolvedBeforeBarrier, barrierAbsorbed, healthDamage: Math.max(0, resolvedBeforeBarrier - barrierAbsorbed), immune: false }
+  return { raw: amount, sourceModified, critical, critChance, critMultiplier, afterCrit, targetModified, defense, defenseReduction, afterDefense, resistance, afterResistance, blocked, blockChance, blockReduction, blockedAmount, resolvedBeforeBarrier, barrierAbsorbed, healthDamage: Math.max(0, resolvedBeforeBarrier - barrierAbsorbed), immune: false }
 }
 
+export const calculateCombatDamage = (state: GameState, raw: number, damageType: DamageType, source: CombatSource, target: CombatActor, tags: CombatTag[] = source.tags ?? []): DamageBreakdown => calculateCombatDamageWithRolls(state, raw, damageType, source, target, tags)
+
 const applyDamage = (state: GameState, raw: number, damageType: DamageType, source: CombatSource, target: CombatActor, tags: CombatTag[], execute: ExecuteCombatEffects, depth: number, uiEvents?: CombatEventSink) => {
-  const breakdown = calculateCombatDamage(state, raw, damageType, source, target, tags)
+  const rolls: DamageRolls = {}
+  if (isDirectHit(tags)) {
+    rolls.critical = nextCombatRandom(state) < getCritChance(state, source.actor, source)
+    rolls.blocked = nextCombatRandom(state) < getBlockChance(state, target, source)
+  }
+  const breakdown = calculateCombatDamageWithRolls(state, raw, damageType, source, target, tags, rolls)
   if (breakdown.resolvedBeforeBarrier <= 0) return 0
   const previousHp = getActorHealth(state, target)
   const maxHp = target === 'player' ? state.player.maxHealth : state.combat.enemyMaxHp
@@ -103,7 +168,7 @@ const applyDamage = (state: GameState, raw: number, damageType: DamageType, sour
   const currentHp = getActorHealth(state, target)
   if (source.actor === 'player') state.combat.lastDamageDealt = dealt
   else state.combat.lastDamageTaken = dealt
-  uiEvents?.push({ ...eventFields(state, source, target), category: logCategory(source, tags, 'damage'), damageType, amount: breakdown.resolvedBeforeBarrier, healthDamage: dealt, barrierAbsorbed: breakdown.barrierAbsorbed, barrierBefore, barrierAfter: getActiveBarrier(state, target) })
+  uiEvents?.push({ ...eventFields(state, source, target), category: logCategory(source, tags, 'damage'), damageType, amount: breakdown.resolvedBeforeBarrier, healthDamage: dealt, barrierAbsorbed: breakdown.barrierAbsorbed, barrierBefore, barrierAfter: getActiveBarrier(state, target), critical: breakdown.critical, critChance: breakdown.critChance, critMultiplier: breakdown.critMultiplier, blocked: breakdown.blocked, blockChance: breakdown.blockChance, blockReduction: breakdown.blockReduction, blockedAmount: breakdown.blockedAmount })
   const context: CombatEventContext = {
     source, eventTarget: target, changedActor: target, sourceTags: tags, amount: breakdown.resolvedBeforeBarrier, healthDamage: dealt, barrierDamage: breakdown.barrierAbsorbed, damageType, previousBarrier: barrierBefore, currentBarrier: getActiveBarrier(state, target),
     previousHp, currentHp, previousHpPercent: previousHp / Math.max(1, maxHp) * 100, currentHpPercent: currentHp / Math.max(1, maxHp) * 100,

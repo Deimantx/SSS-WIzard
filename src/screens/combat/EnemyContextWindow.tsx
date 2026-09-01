@@ -13,8 +13,9 @@ import { Button, GameTooltip, Status } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { ItemIcon, ItemTooltip } from '../../components/ui/item'
 import { MonsterPortrait } from './MonsterPortrait'
+import { getEnemyCombatStats } from '../../game/systems/combat/combatStats'
 
-export type EnemyContextMode = 'intel' | 'loot'
+export type EnemyContextMode = 'intel' | 'stats' | 'loot'
 
 interface EnemyContextWindowProps {
   mode: EnemyContextMode
@@ -74,13 +75,33 @@ export function EnemyContextWindow({ mode, anchorRef, triggerRef, selectedDungeo
   }, [triggerRef])
 
   if (typeof document === 'undefined' || !active || !enemyId || !MONSTERS[enemyId]) return null
-  return createPortal(<div ref={surfaceRef} className="enemy-context-window" role="dialog" aria-modal="false" aria-label={mode === 'intel' ? 'Enemy Intel' : 'Enemy Loot'} style={{ top: position.top, left: position.left }}>
+  return createPortal(<div ref={surfaceRef} className="enemy-context-window" role="dialog" aria-modal="false" aria-label={mode === 'intel' ? 'Enemy Intel' : mode === 'stats' ? 'Enemy Stats' : 'Enemy Loot'} style={{ top: position.top, left: position.left }}>
     <header className="enemy-context-header">
-      <div><span className="combat-subsection-label">CURRENT ENCOUNTER</span><strong>{mode === 'intel' ? 'ENEMY INTEL' : 'LOOT'}</strong></div>
-      <div className="enemy-context-header-actions"><div className="enemy-context-tabs" role="tablist" aria-label="Enemy context"><button type="button" role="tab" aria-selected={mode === 'intel'} className={mode === 'intel' ? 'is-active' : ''} onClick={() => onModeChange('intel')}>INTEL</button><button type="button" role="tab" aria-selected={mode === 'loot'} className={mode === 'loot' ? 'is-active' : ''} onClick={() => onModeChange('loot')}>LOOT</button></div><Button icon variant="ghost" ariaLabel="Close enemy context" onClick={onClose}><X size={15} /></Button></div>
+      <div><span className="combat-subsection-label">CURRENT ENCOUNTER</span><strong>{mode === 'intel' ? 'ENEMY INTEL' : mode === 'stats' ? 'ENEMY STATS' : 'LOOT'}</strong></div>
+      <div className="enemy-context-header-actions"><div className="enemy-context-tabs" role="tablist" aria-label="Enemy context"><button type="button" role="tab" aria-selected={mode === 'intel'} className={mode === 'intel' ? 'is-active' : ''} onClick={() => onModeChange('intel')}>OVERVIEW</button><button type="button" role="tab" aria-selected={mode === 'stats'} className={mode === 'stats' ? 'is-active' : ''} onClick={() => onModeChange('stats')}>STATS</button><button type="button" role="tab" aria-selected={mode === 'loot'} className={mode === 'loot' ? 'is-active' : ''} onClick={() => onModeChange('loot')}>LOOT</button></div><Button icon variant="ghost" ariaLabel="Close enemy context" onClick={onClose}><X size={15} /></Button></div>
     </header>
-    <div className="enemy-context-body">{mode === 'intel' ? <EnemyIntelContent selectedDungeonId={selectedDungeonId} /> : <EnemyLootContent selectedDungeonId={selectedDungeonId} />}</div>
+    <div className="enemy-context-body">{mode === 'intel' ? <EnemyIntelContent selectedDungeonId={selectedDungeonId} /> : mode === 'stats' ? <EnemyStatsContent /> : <EnemyLootContent selectedDungeonId={selectedDungeonId} />}</div>
   </div>, document.body)
+}
+
+export function EnemyStatsContent() {
+  const state = useGameStore((current) => current)
+  const stats = getEnemyCombatStats(state)
+  const rows: Array<[string, string, string]> = [
+    ['Max Health', formatNumber(stats.maxHealth), 'Maximum Health for the current encounter.'],
+    ['Basic Attack Damage', formatNumber(stats.basicAttackDamage), 'Raw damage of the enemy Basic Attack before mitigation.'],
+    ['Basic Attack Speed', `${stats.basicAttackSpeedMultiplier.toFixed(2)}x`, 'Multiplier applied to the enemy Basic Attack interval.'],
+    ['Defense', formatNumber(stats.defense), 'Reduces direct incoming damage using Defense / (Defense + 100), capped at 80%. Damage-over-time ignores Defense.'],
+    ['Crit Chance', `${Math.round(stats.critChance * 100)}%`, 'Chance for a direct enemy hit to critically strike.'],
+    ['Crit Damage', `${Math.round(stats.critDamageMultiplier * 100)}%`, 'Multiplier applied to a critical direct hit.'],
+  ]
+  if (stats.blockChance > 0) rows.push(['Block Chance', `${Math.round(stats.blockChance * 100)}%`, 'Chance to reduce post-Defense and post-Resistance direct damage by 50%.'])
+  if (stats.healingDoneBonus !== 0) rows.push(['Healing Done', `${Math.round(stats.healingDoneBonus * 100)}%`, 'Bonus applied to the enemy healing effects.'])
+  if (stats.barrierPowerBonus !== 0) rows.push(['Barrier Power', `${Math.round(stats.barrierPowerBonus * 100)}%`, 'Bonus applied to the enemy Barrier effects.'])
+  if (stats.damageOverTimeBonus !== 0) rows.push(['Damage over Time', `${Math.round(stats.damageOverTimeBonus * 100)}%`, 'Bonus applied only to the enemy periodic damage effects.'])
+  if (stats.statusDurationBonus !== 0) rows.push(['Status Duration', `${Math.round(stats.statusDurationBonus * 100)}%`, 'Bonus to outgoing status duration.'])
+  Object.entries(stats.resistances).filter(([, value]) => Math.abs(value ?? 0) > 0.0001).forEach(([type, value]) => rows.push([`${pretty(type)} Resistance`, `${Math.round((value ?? 0) * 100)}%`, 'Target-relative damage resistance. Positive values reduce damage; negative values are weaknesses.']))
+  return <section className="enemy-stats-content"><div className="enemy-stats-grid">{rows.map(([label, value, description]) => <GameTooltip key={label} block content={<TooltipContent title={label} description={description} />}><div tabIndex={0} className="enemy-stat-row"><span>{label}</span><strong>{value}</strong></div></GameTooltip>)}</div></section>
 }
 
 export function EnemyIntelContent({ selectedDungeonId }: { selectedDungeonId: DungeonId }) {

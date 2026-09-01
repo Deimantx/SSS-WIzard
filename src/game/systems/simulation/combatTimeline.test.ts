@@ -72,7 +72,7 @@ describe('shared combat timeline', () => {
     const statusDamage = events.findIndex((event) => event.sourceKind === 'status' && event.category === 'damage')
     expect(actionDamage).toBeGreaterThanOrEqual(0)
     expect(statusDamage).toBeGreaterThan(actionDamage)
-    expect(state.player.health).toBe(9_995)
+    expect(state.player.health).toBeCloseTo(10_000 - 5 * 1.5 * (1 - 10 / 110))
   })
 
   it('keeps a Stunned action frozen until the exact mid-quantum expiry boundary', () => {

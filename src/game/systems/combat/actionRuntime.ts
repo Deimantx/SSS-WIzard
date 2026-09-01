@@ -7,6 +7,7 @@ import { actorCannotAct } from './statusRuntime'
 import { runCombatTriggers, type CombatEventContext } from './triggerRuntime'
 import type { ActionPattern, ActionStep, CombatActionDefinition, CombatEffect, CombatEventSink, CombatSource, CombatTag, CombatTrigger } from './combatTypes'
 import { MAX_ACTION_RATE, MAX_ACTION_WORK_MS, MIN_ACTION_RATE, MIN_ACTION_TIME_MS } from '../../core/balance/combatTiming'
+import { getBasicAttackSpeedMultiplier } from './combatStats'
 
 export { MAX_ACTION_RATE, MAX_ACTION_WORK_MS, MIN_ACTION_RATE, MIN_ACTION_TIME_MS }
 export type ActionEffectExecutor = (state: GameState, effects: CombatEffect[], source: CombatSource, depth?: number, uiEvents?: CombatEventSink) => void
@@ -58,7 +59,8 @@ const modifierForLane = (lane: 'basic-attack' | 'action') => lane === 'basic-att
 /** Returns the live rate for a timed action. Stun is a hard zero, not a slow. */
 export const getActionRate = (state: GameState, actor: CombatActor, lane: 'basic-attack' | 'action') => {
   if (actorCannotAct(state, actor)) return 0
-  const sourceTags: CombatTag[] = lane === 'basic-attack' ? ['basic-attack'] : ['special']
+  if (lane === 'basic-attack') return boundedRate(getBasicAttackSpeedMultiplier(state, actor))
+  const sourceTags: CombatTag[] = ['special']
   return boundedRate(1 + getCombatModifiers(state, actor, modifierForLane(lane), { sourceTags }))
 }
 

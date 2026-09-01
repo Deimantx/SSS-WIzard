@@ -3,6 +3,7 @@ import { SCHOOLS } from '../../game/content/schools/schools'
 import { SPELLS } from '../../game/content/spells/spells'
 import { STATUS_DEFINITIONS } from '../../game/content/statuses'
 import { formatSpellRank } from '../../game/systems/spells'
+import { getEffectiveManaCost } from '../../game/systems/combat/combatStats'
 import type { SpellId } from '../../game/types'
 import { formatTime } from '../../game/utils'
 import { GameTooltip } from '../../components/ui'
@@ -32,7 +33,7 @@ export function SpellBrowserTile({ entry, state, selected, onSelect }: { entry: 
         {unlocked && entry.kind === 'spell' ? <><strong className="spell-browser-name">{SPELLS[entry.spellId].name}</strong><span className="spell-browser-rank">{school.name.toUpperCase()} · {formatSpellRank(entry.rank ?? 1).toUpperCase()}</span></> : <><strong className="spell-browser-name">???</strong><span className="spell-browser-rank">{school.name.toUpperCase()} · {entry.kind === 'placeholder' ? 'UNDISCOVERED' : 'LOCKED'}</span></>}
       </span>
       <span className="spell-browser-effect-slot" aria-hidden="true" />
-      {unlocked && entry.kind === 'spell' ? <span className="spell-browser-footer"><span className="ui-mana" aria-label="Mana cost"><Droplet size={12} aria-hidden="true" />{SPELLS[entry.spellId].manaCost}</span><span className="ui-time" aria-label="Cooldown"><Clock3 size={12} aria-hidden="true" />{formatTime(SPELLS[entry.spellId].cooldownMs)}</span></span> : <span className="spell-browser-footer"><CircleDot size={11} aria-hidden="true" />Requires Lv {entry.unlockLevel}</span>}
+      {unlocked && entry.kind === 'spell' ? <span className="spell-browser-footer"><span className="ui-mana" aria-label="Mana cost"><Droplet size={12} aria-hidden="true" />{getEffectiveManaCost(state, SPELLS[entry.spellId].manaCost)}</span><span className="ui-time" aria-label="Cooldown"><Clock3 size={12} aria-hidden="true" />{formatTime(SPELLS[entry.spellId].cooldownMs)}</span></span> : <span className="spell-browser-footer"><CircleDot size={11} aria-hidden="true" />Requires Lv {entry.unlockLevel}</span>}
       </button>
     </GameTooltip>
     <span className="spell-browser-effect-icons" aria-label={effectTags.length ? `Effect types: ${effectTags.map(effectTagLabel).join(', ')}` : undefined} aria-hidden={!effectTags.length}>{effectTags.map((tag) => <GameTooltip key={tag} content={<TooltipContent title={effectTagLabel(tag)} description={`${effectTagLabel(tag)} effect.`} />}><span className={`spell-browser-effect-icon effect-micro-${tag.toLocaleLowerCase()}`} aria-label={effectTagLabel(tag)}><EffectMicroIcon tag={tag} /></span></GameTooltip>)}</span>

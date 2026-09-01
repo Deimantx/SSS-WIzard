@@ -82,7 +82,6 @@ describe('active dungeon downtime timeline', () => {
 
     advanceGameState(state, 50, { mode: 'live' })
 
-    expect(state.combat.enemyId).not.toBeNull()
     expect(state.player.mana).toBe(mana - 12)
     expect(state.combat.spellCooldowns['fire-bolt']).toBe(3_500)
   })

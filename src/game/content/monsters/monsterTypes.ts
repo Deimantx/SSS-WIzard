@@ -11,6 +11,11 @@ export interface MonsterDefinition {
   basicAttackDamage: number
   /** Base amount of time required for one Basic Attack Pattern step. */
   basicAttackTimeMs: number
+  /** Optional RPG stat overrides. Runtime defaults live in combatStats. */
+  defense?: number
+  critChance?: number
+  critDamage?: number
+  blockChance?: number
   color: string
   image?: string
   ui?: { portraitIcon?: MonsterPortraitIcon }

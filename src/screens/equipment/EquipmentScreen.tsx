@@ -90,7 +90,7 @@ export function EquipmentScreenV2() {
           <GameTooltip block content={<TooltipContent title={tooltip.title} description={tooltip.description} />}>
             <div className={`equipment-slot-card ${selectedPosition === position ? 'selected' : ''} ${locked ? 'locked' : ''}`} data-position={position} role="button" tabIndex={0} onClick={() => selectSlot(position)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); selectSlot(position) } }}>
               <div className="equipment-slot-card-head"><span>{EQUIPMENT_POSITION_LABELS[position]}</span>{item && <small>{item.weaponHands ? `${item.weaponHands}H` : 'EQUIPPED'}</small>}</div>
-              {locked ? <div className="equipment-slot-lock"><LockKeyhole size={17} /><strong>{emptyCopy}</strong></div> : item ? <div className="equipment-slot-card-item"><span className="equipment-slot-icon" style={{ color: item.color }}>{item.icon}</span><strong>{item.name}</strong><small>{Object.entries(item.stats ?? {}).filter(([, value]) => value !== 0).map(([key, value]) => `${formatStat(key, value)} ${friendlyStatLabel(key)}`).join(' · ') || 'Ready'}</small></div> : <div className="equipment-slot-empty"><span>+</span><small>{emptyCopy}</small></div>}
+              {locked ? <div className="equipment-slot-lock"><LockKeyhole size={17} /><strong>{emptyCopy}</strong></div> : item ? <div className="equipment-slot-card-item"><span className="equipment-slot-icon" style={{ color: item.color }}>{item.icon}</span><strong>{item.name}</strong><small>{flattenItemStats(item.stats).filter(([, value]) => value !== 0).map(([key, value]) => `${formatStat(key, value)} ${friendlyStatLabel(key)}`).join(' · ') || 'Ready'}</small></div> : <div className="equipment-slot-empty"><span>+</span><small>{emptyCopy}</small></div>}
             </div>
           </GameTooltip>
         </div>
@@ -101,9 +101,11 @@ export function EquipmentScreenV2() {
 
   const statsPanel = <Card title="WIZARD STATS" action={<Sparkles size={16} color="var(--gold)" />}>
     <div className="equipment-stat-groups">
-      <StatGroup title="CORE" rows={[['Max Health', String(statSnapshot.maxHealth)], ['Max Mana', String(statSnapshot.maxMana)], ['Max Focus', String(statSnapshot.maxFocus)], ['Passive Mana Regen', `+${statSnapshot.manaRegen.toFixed(1)}/s`]]} />
-      <StatGroup title="OFFENSE" rows={[['Spell Power', String(statSnapshot.spellPower)], ['Basic Attack Damage', String(statSnapshot.basicDamage)]]} />
-      <StatGroup title="DEFENSE" rows={statSnapshot.barrierReceived ? [['Barrier Received', `+${statSnapshot.barrierReceived}`]] : []} />
+      <StatGroup title="CORE" rows={[['Max Health', String(statSnapshot.maxHealth)], ['Max Mana', String(statSnapshot.maxMana)], ['Max Focus', String(statSnapshot.maxFocus)], ['Mana Regen', `+${statSnapshot.manaRegen.toFixed(1)}/s`]]} />
+      <StatGroup title="OFFENSE" rows={[['Spell Power', String(statSnapshot.spellPower)], ['Basic Attack Damage', String(statSnapshot.basicDamage)], ['Basic Attack Speed', `${statSnapshot.basicAttackSpeedMultiplier.toFixed(2)}x`], ['Crit Chance', `${Math.round(statSnapshot.critChance * 100)}%`], ['Crit Damage', `${Math.round(statSnapshot.critDamageMultiplier * 100)}%`]]} />
+      <StatGroup title="DEFENSE" rows={[['Defense', String(Math.round(statSnapshot.defense * 100) / 100)], ...(statSnapshot.blockChance ? [['Block Chance', `${Math.round(statSnapshot.blockChance * 100)}%`] as [string, string]] : []), ...Object.entries(statSnapshot.resistances).filter(([, value]) => Math.abs(value ?? 0) > 0.0001).map(([type, value]) => [`${type[0].toUpperCase()}${type.slice(1)} Resistance`, `${Math.round((value ?? 0) * 100)}%`] as [string, string])]} />
+      <StatGroup title="UTILITY" rows={[...(statSnapshot.cooldownRecovery !== 1 ? [['Cooldown Recovery', `${statSnapshot.cooldownRecovery.toFixed(2)}x`] as [string, string]] : []), ...(statSnapshot.healingDoneBonus ? [['Healing Done', `${Math.round(statSnapshot.healingDoneBonus * 100)}%`] as [string, string]] : []), ...(statSnapshot.barrierPowerBonus ? [['Barrier Power', `${Math.round(statSnapshot.barrierPowerBonus * 100)}%`] as [string, string]] : []), ...(statSnapshot.manaCostReduction ? [['Mana Cost Reduction', `${Math.round(statSnapshot.manaCostReduction * 100)}%`] as [string, string]] : []), ...(statSnapshot.focusEfficiency ? [['Focus Efficiency', `${Math.round(statSnapshot.focusEfficiency * 100)}%`] as [string, string]] : [])]} />
+      <StatGroup title="PERIODIC / STATUS" rows={[...(statSnapshot.damageOverTimeBonus ? [['Damage over Time', `${Math.round(statSnapshot.damageOverTimeBonus * 100)}%`] as [string, string]] : []), ...(statSnapshot.statusDurationBonus ? [['Status Duration', `${Math.round(statSnapshot.statusDurationBonus * 100)}%`] as [string, string]] : [])]} />
       <StatGroup title="MAGIC" rows={[['Fire Spell Damage', statSnapshot.fireSpellDamagePct], ['Water Barrier Strength', statSnapshot.waterBarrierPct], ['Earth Spell Damage', statSnapshot.earthSpellDamagePct], ['Air Spell Damage', statSnapshot.airSpellDamagePct]].filter(([, value]) => value !== 0).map(([label, value]) => [String(label), `+${Math.round(Number(value) * 100)}%`])} />
     </div>
     <div className="equipment-note"><Shield size={15} /><span>Equipped copies remain reserved from Research, Transmutation, Guild donation, Sell, and Destroy.</span></div>
@@ -122,7 +124,7 @@ export function EquipmentScreenV2() {
       {preview?.removedOffhand && <div className="equipment-impact-warning"><LockKeyhole size={14} /><span>{ITEMS[preview.removedOffhand].name} will be unequipped automatically.</span></div>}
       {ringNeedsChoice && <div className="equipment-ring-replace"><strong>REPLACE</strong><label><input type="radio" name="ring-replacement" checked={ringReplacement === 'ring1'} onChange={() => setRingReplacement('ring1')} /> Ring 1: {equipment.ring1 ? ITEMS[equipment.ring1].name : 'Empty'}</label><label><input type="radio" name="ring-replacement" checked={ringReplacement === 'ring2'} onChange={() => setRingReplacement('ring2')} /> Ring 2: {equipment.ring2 ? ITEMS[equipment.ring2].name : 'Empty'}</label></div>}
       {preview && !preview.compatible && <div className="equipment-incompatible"><strong>INCOMPATIBLE</strong><span>{preview.reason}</span></div>}
-      {preview?.compatible && <div className="equipment-preview-impact"><span className="equipment-preview-label">LOADOUT IMPACT</span>{Object.entries(preview.impact).filter(([, value]) => Math.abs(value ?? 0) > 0.0001).map(([key, value]) => <div className="equipment-impact-row" key={key}><span>{friendlyStat(key)}</span><small>{formatSnapshotValue(key, preview.current)}</small><strong>{formatSnapshotValue(key, preview.preview!)}</strong><em className={(value ?? 0) > 0 ? 'positive' : 'negative'}>{formatSignedStat(key, value as number)}</em></div>)}</div>}
+      {preview?.compatible && <div className="equipment-preview-impact"><span className="equipment-preview-label">LOADOUT IMPACT</span>{getImpactEntries(preview.impact).filter(([, value]) => Math.abs(value ?? 0) > 0.0001).map(([key, value]) => <div className="equipment-impact-row" key={key}><span>{friendlyStat(key)}</span><small>{formatSnapshotValue(key, preview.current)}</small><strong>{formatSnapshotValue(key, preview.preview!)}</strong><em className={(value ?? 0) > 0 ? 'positive' : 'negative'}>{formatSignedStat(key, value as number)}</em></div>)}</div>}
       {equippedPositions.length > 0 && <div className="equipment-current-position"><Status tone="success">EQUIPPED IN {equippedPositions.map((position) => EQUIPMENT_POSITION_LABELS[position]).join(' + ')}</Status></div>}
       <div className="equipment-inspector-actions"><Button variant="primary" disabled={!preview?.compatible || ringNeedsChoice || equippedPositions.includes(preview?.position ?? 'weapon')} onClick={() => selectedItemId && equipItem(selectedItemId, preview?.position ?? undefined)}>EQUIP</Button>{equipment[selectedPosition] && <Button variant="ghost" onClick={() => unequipItem(selectedPosition)}>UNEQUIP {EQUIPMENT_POSITION_LABELS[selectedPosition].toUpperCase()}</Button>}</div>
     </>}
@@ -136,22 +138,33 @@ export const EquipmentScreen = EquipmentScreenV2
 function StatGroup({ title, rows }: { title: string; rows: [string, string][] }) {
   if (rows.length === 0) return null
   return <section className="equipment-stat-group"><span>{title}</span>{rows.map(([label, value]) => {
-    const content = label === 'Spell Power' ? <TooltipContent title="Spell Power" description="Determines the base magnitude of damaging, healing, Barrier, and Spell-applied damage-over-time effects according to each Spell's authored Scaling coefficient." /> : null
+    const descriptions: Record<string, string> = { 'Spell Power': "Determines the base magnitude of damaging, healing, Barrier, and Spell-applied damage-over-time effects according to each Spell's authored Scaling coefficient.", Defense: 'Reduces direct incoming damage using Defense / (Defense + 100), up to 80%. Damage-over-time ignores Defense.', 'Crit Chance': 'Chance for a direct hit to deal Crit Damage. Periodic effects cannot critically strike.', 'Crit Damage': 'Multiplier applied when a direct hit critically strikes.', 'Block Chance': 'Chance to reduce post-Defense, post-Resistance direct damage by 50%. Periodic effects cannot be blocked.' }
+    const content = descriptions[label] ? <TooltipContent title={label} description={descriptions[label]} /> : null
     const row = <div key={label}><small>{label}</small><strong>{value}</strong></div>
     return content ? <GameTooltip block key={label} content={content}>{row}</GameTooltip> : row
   })}</section>
 }
 
 function friendlyStat(key: string) {
-  return ({ maxHealth: 'Max Health', maxMana: 'Max Mana', maxFocus: 'Max Focus', manaRegen: 'Passive Mana Regen', basicDamage: 'Basic Attack Damage', spellPower: 'Spell Power', barrierReceived: 'Barrier Received', fireSpellDamagePct: 'Fire Spell Damage', waterBarrierPct: 'Water Barrier Strength', earthSpellDamagePct: 'Earth Spell Damage', airSpellDamagePct: 'Air Spell Damage' } as Record<string, string>)[key] ?? key
+  return ({ maxHealth: 'Max Health', maxMana: 'Max Mana', maxFocus: 'Max Focus', manaRegen: 'Mana Regen', basicDamage: 'Basic Attack Damage', spellPower: 'Spell Power', barrierReceived: 'Barrier Received', fireSpellDamagePct: 'Fire Spell Damage', waterBarrierPct: 'Water Barrier Strength', earthSpellDamagePct: 'Earth Spell Damage', airSpellDamagePct: 'Air Spell Damage', basicAttackSpeedPct: 'Basic Attack Speed', critChance: 'Crit Chance', critDamage: 'Crit Damage', defense: 'Defense', blockChance: 'Block Chance', damageOverTimePct: 'Damage over Time', statusDurationPct: 'Status Duration', cooldownRecoveryPct: 'Cooldown Recovery', healingDonePct: 'Healing Done', barrierPowerPct: 'Barrier Power', manaCostReductionPct: 'Mana Cost Reduction', focusEfficiencyPct: 'Focus Efficiency' } as Record<string, string>)[key] ?? key.replace(/^resistance-/, '').replace(/^./, (value) => value.toUpperCase()) + (key.startsWith('resistance-') ? ' Resistance' : '')
 }
 
 function formatSnapshotValue(key: string, snapshot: ReturnType<typeof getEquipmentStatSnapshot>) {
-  const value = snapshot[key as keyof ReturnType<typeof getEquipmentStatSnapshot>] as number
-  return key.endsWith('Pct') ? `${Math.round(value * 100)}%` : key === 'manaRegen' ? `${value.toFixed(1)}/s` : String(Math.round(value * 100) / 100)
+  const snapshotKey: Record<string, keyof ReturnType<typeof getEquipmentStatSnapshot>> = { basicAttackSpeedPct: 'basicAttackSpeedMultiplier', critDamage: 'critDamageMultiplier', damageOverTimePct: 'damageOverTimeBonus', statusDurationPct: 'statusDurationBonus', cooldownRecoveryPct: 'cooldownRecovery', healingDonePct: 'healingDoneBonus', barrierPowerPct: 'barrierPowerBonus', manaCostReductionPct: 'manaCostReduction', focusEfficiencyPct: 'focusEfficiency' }
+  const value = key.startsWith('resistance-')
+    ? Number((snapshot.resistances as Record<string, number>)[key.replace('resistance-', '')] ?? 0)
+    : Number(snapshot[snapshotKey[key] ?? (key as keyof ReturnType<typeof getEquipmentStatSnapshot>)] ?? 0)
+  if (key.endsWith('Pct') || ['critChance', 'blockChance', 'damageOverTimeBonus', 'statusDurationBonus', 'healingDoneBonus', 'barrierPowerBonus', 'manaCostReduction', 'focusEfficiency'].includes(key) || key.startsWith('resistance-')) return `${Math.round(value * 100)}%`
+  if (key === 'manaRegen') return `${value.toFixed(1)}/s`
+  if (key === 'basicAttackSpeedPct' || key === 'cooldownRecovery') return `${value.toFixed(2)}x`
+  if (key === 'critDamage') return `${Math.round(value * 100)}%`
+  return String(Math.round(value * 100) / 100)
 }
 
 function formatSignedStat(key: string, value: number) {
   const sign = value > 0 ? '+' : ''
-  return key.endsWith('Pct') ? `${sign}${Math.round(value * 100)}%` : key === 'manaRegen' ? `${sign}${value.toFixed(1)}/s` : `${sign}${Math.round(value * 100) / 100}`
+  return key.endsWith('Pct') || ['critChance', 'critDamage', 'blockChance'].includes(key) || key.startsWith('resistance-') ? `${sign}${Math.round(value * 100)}%` : key === 'manaRegen' ? `${sign}${value.toFixed(1)}/s` : key === 'basicAttackSpeedPct' || key === 'cooldownRecoveryPct' ? `${sign}${value.toFixed(2)}x` : `${sign}${Math.round(value * 100) / 100}`
 }
+
+const getImpactEntries = (impact: ReturnType<typeof getEquipmentPreview>['impact']): Array<[string, number]> => Object.entries(impact).flatMap(([key, value]) => key === 'resistances' && value && typeof value === 'object' ? Object.entries(value).map(([damageType, resistance]) => [`resistance-${damageType}`, Number(resistance)]) : [[key, Number(value)]])
+const flattenItemStats = (stats: NonNullable<import('../../game/types').ItemDefinition['stats']> | undefined): Array<[string, number]> => Object.entries(stats ?? {}).flatMap(([key, value]) => key === 'resistances' && value && typeof value === 'object' ? Object.entries(value).map(([type, resistance]) => [`resistance-${type}`, Number(resistance)]) : [[key, Number(value)]])

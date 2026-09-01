@@ -75,7 +75,7 @@ const snapshotPeriodicEffects = (state: GameState, holder: CombatActor, source: 
   // Runtime overrides follow the same atomic rule as persisted overrides.
   if (!effects.every(isPersistedCombatEffect)) return undefined
   return effects.map((effect) => {
-    if (effect.type !== 'deal-damage' || effect.magnitude.type === 'flat') return { ...effect }
+    if (!('magnitude' in effect) || effect.magnitude.type === 'flat') return { ...effect }
     const target = relativeTargetForHolder(holder, source.actor, effect.target)
     return { ...effect, magnitude: { type: 'flat' as const, value: resolveMagnitude(state, effect.magnitude, source, target) } }
   })
@@ -128,8 +128,9 @@ export const applyStatus = (state: GameState, actor: CombatActor, statusId: Stat
   if (duration !== null && duration <= 0) return null
   const requestedStacks = Math.max(1, Math.floor(Number.isFinite(options.stacks ?? 1) ? options.stacks ?? 1 : 1))
   const nextTickMs = definition.periodic ? definition.periodic.intervalMs : undefined
-  const hasPeriodicOverride = options.periodicEffects !== undefined
-  const periodicEffects = hasPeriodicOverride ? snapshotPeriodicEffects(state, actor, source, options.periodicEffects) : undefined
+  const authoredPeriodicEffects = options.periodicEffects ?? definition.periodic?.effects
+  const hasPeriodicEffects = options.periodicEffects !== undefined || authoredPeriodicEffects !== undefined
+  const periodicEffects = hasPeriodicEffects ? snapshotPeriodicEffects(state, actor, source, authoredPeriodicEffects) : undefined
   const modifierOverrides = snapshotModifierOverrides(statusId, options.modifierOverrides)
   const create = (stacks = requestedStacks, remainingMs = duration): ActiveStatus => ({
     statusId,
@@ -141,7 +142,7 @@ export const applyStatus = (state: GameState, actor: CombatActor, statusId: Stat
     stacks: Math.min(definition.stacking.maxStacks ?? Number.MAX_SAFE_INTEGER, stacks),
     nextTickMs,
     appliedAt: options.now ?? Date.now(),
-    ...(hasPeriodicOverride ? { periodicEffects } : {}),
+    ...(hasPeriodicEffects && periodicEffects ? { periodicEffects } : {}),
     ...(modifierOverrides ? { modifierOverrides } : {}),
   })
   if (!existing) {

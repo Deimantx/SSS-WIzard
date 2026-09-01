@@ -18,7 +18,7 @@ export function ItemTooltip({ itemId, owned, protectedItem = false, equipped = f
     {recentlyGained !== undefined && <TooltipRow label="Recently gained" value={`+${recentlyGained.toLocaleString()}`} />}
     {equipped ? <TooltipRow label="State" value="Equipped" /> : <TooltipRow label="Protected" value={protectedItem ? 'Yes' : 'No'} />}
     {item.researchSchool && <div className="tooltip-section"><small>RESEARCH</small>{(Object.keys(SCHOOLS) as Array<keyof typeof SCHOOLS>).map((schoolId) => <TooltipRow key={schoolId} label={SCHOOLS[schoolId].name} value={`${getResearchXp(itemId, schoolId)} XP`} />)}</div>}
-    {item.stats && Object.keys(item.stats).length > 0 && <div className="tooltip-section"><small>STATS</small>{Object.entries(item.stats).filter(([, value]) => value !== 0).map(([key, value]) => <TooltipRow key={key} label={friendlyStatLabel(key)} value={formatStat(key, value)} />)}</div>}
+    {item.stats && Object.keys(item.stats).length > 0 && <div className="tooltip-section"><small>STATS</small>{flattenItemStats(item.stats).filter(([, value]) => value !== 0).map(([key, value]) => <TooltipRow key={key} label={friendlyStatLabel(key)} value={formatStat(key, value)} />)}</div>}
     {flow && <div className="tooltip-section"><small>CURRENT FLOW</small>{flow.production.map((source) => <TooltipRow key={`production-${source.label}`} label={source.label} value={formatItemFlowRate(source.ratePerHour)} />)}{flow.consumption.map((source) => <TooltipRow key={`consumption-${source.label}`} label={source.label} value={formatItemFlowRate(-source.ratePerHour)} />)}<TooltipRow label="Net" value={formatItemFlowRate(flow.netPerHour)} />{flow.depletionEtaMs !== null && <TooltipRow label="Depletes in" value={formatFlowEta(flow.depletionEtaMs) ?? '-'} />}</div>}
     <div className="tooltip-section"><small>SOURCE</small><p>{getItemSourceLabel(itemId)}</p></div>
     {uses.length > 0 && <div className="tooltip-section"><small>USED IN</small>{uses.map((use) => <p key={`${use.destination}-${use.label}`}>{use.label}</p>)}</div>}
@@ -26,12 +26,16 @@ export function ItemTooltip({ itemId, owned, protectedItem = false, equipped = f
 }
 
 export function friendlyStatLabel(key: string) {
-  const labels: Record<string, string> = { basicDamage: 'Basic Attack Damage', spellPower: 'Spell Power', maxHealth: 'Max Health', maxMana: 'Max Mana', manaRegen: 'Mana Regen', maxFocus: 'Max Focus', barrierReceived: 'Barrier Received', fireSpellDamagePct: 'Fire Spell Damage', waterBarrierPct: 'Water Barrier', earthSpellDamagePct: 'Earth Spell Damage', airSpellDamagePct: 'Air Spell Damage' }
+  const labels: Record<string, string> = { basicDamage: 'Basic Attack Damage', spellPower: 'Spell Power', maxHealth: 'Max Health', maxMana: 'Max Mana', manaRegen: 'Mana Regen', maxFocus: 'Max Focus', barrierReceived: 'Barrier Received', fireSpellDamagePct: 'Fire Spell Damage', waterBarrierPct: 'Water Barrier', earthSpellDamagePct: 'Earth Spell Damage', airSpellDamagePct: 'Air Spell Damage', defense: 'Defense', critChance: 'Crit Chance', critDamage: 'Crit Damage', basicAttackSpeedPct: 'Basic Attack Speed', blockChance: 'Block Chance', cooldownRecoveryPct: 'Cooldown Recovery', healingDonePct: 'Healing Done', barrierPowerPct: 'Barrier Power', damageOverTimePct: 'Damage over Time', statusDurationPct: 'Status Duration', manaCostReductionPct: 'Mana Cost Reduction', focusEfficiencyPct: 'Focus Efficiency' }
+  if (key.startsWith('resistance-')) return `${key.replace('resistance-', '').replace(/^./, (value) => value.toUpperCase())} Resistance`
   return labels[key] ?? key.replace(/([A-Z])/g, ' $1').replace(/^./, (value) => value.toUpperCase())
 }
 
 export function formatStat(key: string, value: number) {
-  return `${value >= 0 ? '+' : ''}${key.endsWith('Pct') ? `${Math.round(value * 100)}%` : value}`
+  const percent = key.endsWith('Pct') || ['critChance', 'critDamage', 'blockChance'].includes(key) || key.startsWith('resistance-')
+  return `${value >= 0 ? '+' : ''}${percent ? `${Math.round(value * 100)}%` : value}`
 }
 
 function TooltipRow({ label, value }: { label: string; value: ReactNode }) { return <span className="tooltip-row"><span>{label}</span><b>{value}</b></span> }
+
+const flattenItemStats = (stats: NonNullable<import('../../../game/types').ItemDefinition['stats']>): Array<[string, number]> => Object.entries(stats).flatMap(([key, value]) => key === 'resistances' && value && typeof value === 'object' ? Object.entries(value).map(([type, resistance]) => [`resistance-${type}`, Number(resistance)]) : [[key, Number(value)]])

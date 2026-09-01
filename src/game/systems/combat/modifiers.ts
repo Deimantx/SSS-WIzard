@@ -1,8 +1,8 @@
 import { STATUS_DEFINITIONS } from '../../content/statuses'
 import { MONSTERS } from '../../content/monsters'
-import { equipmentStats } from '../../engine'
+import { getEquipmentStats } from '../../core/equipment/equipmentStats'
 import { ITEMS } from '../../content/items/items'
-import type { GameState, StatusId } from '../../types'
+import type { EquipmentStats, GameState, StatusId } from '../../types'
 import type { CombatActor } from './magnitude'
 import { evaluateCombatCondition } from './conditionRuntime'
 import { getActorTraits } from './traitRuntime'
@@ -18,6 +18,19 @@ export interface ModifierContext {
   damageType?: DamageType
   statusId?: StatusId
   statusTags?: CombatTag[]
+}
+
+const EQUIPMENT_MODIFIER_STATS: Partial<Record<ModifierKey, keyof EquipmentStats>> = {
+  'defense-flat': 'defense',
+  'crit-chance': 'critChance',
+  'crit-damage': 'critDamage',
+  'basic-attack-speed-percent': 'basicAttackSpeedPct',
+  'block-chance': 'blockChance',
+  'cooldown-recovery-percent': 'cooldownRecoveryPct',
+  'healing-done-percent': 'healingDonePct',
+  'barrier-power-percent': 'barrierPowerPct',
+  'damage-over-time-percent': 'damageOverTimePct',
+  'status-duration-dealt-percent': 'statusDurationPct',
 }
 
 const activeStatuses = (state: GameState, actor: CombatActor) => actor === 'player' ? state.combat.playerStatuses : state.combat.enemyStatuses
@@ -68,15 +81,20 @@ export const getCombatModifiers = (state: GameState, actor: CombatActor, key: Mo
         if (modifier.key === key && matchesModifier(modifier, context) && evaluateCombatCondition(state, actor, modifier.condition, { source: context.source, sourceTags: context.sourceTags, statusId: context.statusId })) total += modifier.value
       })
     })
+    const equipmentField = EQUIPMENT_MODIFIER_STATS[key]
+    if (equipmentField) total += Number(getEquipmentStats(state)[equipmentField] ?? 0)
   }
   return total
 }
 
 export const resolveModifier = getCombatModifiers
 
-export const getResistance = (state: GameState, actor: CombatActor, damageType: DamageType) => {
-  if (actor === 'enemy' && state.combat.enemyId) return Math.max(-1, Math.min(0.9, MONSTERS[state.combat.enemyId].resistances?.[damageType] ?? 0))
-  return Math.max(-1, Math.min(0.9, equipmentStats(state).resistances?.[damageType] ?? 0))
+export const getResistance = (state: GameState, actor: CombatActor, damageType: DamageType, context: ModifierContext = {}) => {
+  const authored = actor === 'enemy' && state.combat.enemyId
+    ? MONSTERS[state.combat.enemyId].resistances?.[damageType] ?? 0
+    : getEquipmentStats(state).resistances?.[damageType] ?? 0
+  const modified = authored + getCombatModifiers(state, actor, 'resistance-percent', { ...context, damageType })
+  return Math.max(-1, Math.min(0.9, modified))
 }
 
 export const isImmuneToDamage = (state: GameState, actor: CombatActor, damageType: DamageType) => actor === 'enemy' && Boolean(state.combat.enemyId && MONSTERS[state.combat.enemyId].damageImmunities?.includes(damageType))

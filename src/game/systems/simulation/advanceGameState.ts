@@ -11,7 +11,7 @@ import { resolveCombatDeaths, spawnNextEnemy } from '../combat/combatRuntime'
 import { getCurrentEnemyActionRate, getPlayerBasicAttackRate, resolveCurrentEnemyAction, startNextEnemyAction } from '../combat/actionRuntime'
 import { actorCannotAct, expirePendingStatuses, getNextCombatStatusEventMs, getNextPlayerStatusEventMs, tickStatuses } from '../combat/statusRuntime'
 import { getNextCombatBarrierEventMs, getNextPlayerBarrierEventMs, tickBarriers } from '../combat/barrierRuntime'
-import { getCombatModifiers } from '../combat/modifiers'
+import { getCooldownRecoveryMultiplier, getEffectiveManaCost } from '../combat/combatStats'
 import { tickRuleCooldowns } from '../combat/triggerRuntime'
 import type { GameState, ItemId, SpellId, CombatSource } from '../../types'
 import type { CombatAlertObserver, CombatEventSink } from '../combat/combatTypes'
@@ -64,7 +64,7 @@ const autoCastReadySpells = (state: GameState, context: AdvanceContext) => {
     if (actorCannotAct(state, 'player')) break
     if (isAutoCastEligible(state, spellId)) {
       const spell = SPELLS[spellId]
-      if (latches.includes(spellId) && !state.debug.infiniteMana && state.player.mana < spell.manaCost) continue
+      if (latches.includes(spellId) && !state.debug.infiniteMana && state.player.mana < getEffectiveManaCost(state, spell.manaCost)) continue
       const latchIndex = latches.indexOf(spellId)
       if (latchIndex >= 0) latches.splice(latchIndex, 1)
       castSpellInternal(state, spellId, true, context.uiEvents)
@@ -91,11 +91,6 @@ const ensurePlayerBasicRuntime = (state: GameState) => {
   // Player Basic uses the same work model as enemy actions. The duration is
   // authored base work; the live rate is consumed by the timeline below.
   state.combat.playerAttackDurationMs = Math.min(MAX_ACTION_WORK_MS, Math.max(MIN_ACTION_TIME_MS, BALANCE.player.basicAttackIntervalMs))
-}
-
-const cooldownRecoveryMultiplier = (state: GameState) => {
-  const rate = 1 + getCombatModifiers(state, 'player', 'cooldown-recovery-percent')
-  return Math.min(10, Math.max(0, Number.isFinite(rate) ? rate : 0))
 }
 
 const tickSpellCooldowns = (state: GameState, deltaMs: number, cooldownRecovery: number) => {
@@ -172,7 +167,7 @@ const advanceCombatTimeline = (state: GameState, delta: number, context: Advance
     // simulation milliseconds; completed work is never recomputed.
     const playerRemaining = playerBlockedAtSegmentStart || playerRate <= 0 ? Number.POSITIVE_INFINITY : Math.max(0, state.combat.playerAttackTimerMs) / playerRate
     const enemyRemaining = enemyBlockedAtSegmentStart || !state.combat.enemyCurrentStepId || enemyRate <= 0 ? Number.POSITIVE_INFINITY : Math.max(0, state.combat.enemyActionTimerMs) / enemyRate
-    const cooldownRecovery = cooldownRecoveryMultiplier(state)
+    const cooldownRecovery = getCooldownRecoveryMultiplier(state)
     const boundaries = [
       playerRemaining,
       enemyRemaining,
@@ -238,7 +233,7 @@ const advanceCombatDowntimeTimeline = (state: GameState, delta: number, context:
       break
     }
 
-    const cooldownRecovery = cooldownRecoveryMultiplier(state)
+    const cooldownRecovery = getCooldownRecoveryMultiplier(state)
     const boundaries = [
       Math.max(0, state.combat.encounterTimerMs),
       getNextPlayerStatusEventMs(state),

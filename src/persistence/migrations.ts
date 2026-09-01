@@ -1,4 +1,5 @@
 import { createInitialState, SAVE_VERSION } from '../store/initialState'
+import { COMBAT_RNG_DEFAULT_SEED } from '../game/core/balance/combatRng'
 import { MANA_PILLAR_IDS } from '../game/data/manaPillars'
 import { DUNGEONS } from '../game/content/dungeons/dungeons'
 import { GUILD_REQUESTS } from '../game/content/guild/guildRequests'
@@ -20,6 +21,7 @@ import { getSpellAutoCastFocusCost, MAX_SPELL_RANK, MIN_SPELL_RANK, normalizeSpe
 import { getStatusApplicationSourceKey } from '../game/systems/combat/statusRuntime'
 import { normalizePersistedPeriodicEffects, hasValidStatusModifierOverrides } from '../game/systems/combat/combatEffectValidation'
 import { MAX_ACTION_WORK_MS, MIN_ACTION_TIME_MS } from '../game/core/balance/combatTiming'
+import { normalizeCombatRngState } from '../game/systems/combat/combatRng'
 
 const normalizeScreen = (value: unknown, fallback: GameState['ui']['screen']): GameState['ui']['screen'] => {
   if (value === 'tower') return 'tower-channeling'
@@ -156,6 +158,9 @@ export const normalizeLegacyProgressEvidence = (progress: GameState['progress'])
 const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sourceVersion: number) => {
   const fresh = createInitialState()
   const rawCombat = isRecord(raw.combat) ? raw.combat : {}
+  migrated.combat.combatRngState = sourceVersion >= 23
+    ? normalizeCombatRngState(rawCombat.combatRngState)
+    : COMBAT_RNG_DEFAULT_SEED >>> 0
   const legacyActiveEnemyId = typeof rawCombat.enemyId === 'string' && MONSTERS[rawCombat.enemyId as MonsterId] ? rawCombat.enemyId as MonsterId : null
   const legacyEnemyInstanceKey = sourceVersion === 21 && legacyActiveEnemyId ? 'enemy:1' : null
   const normalizeSource = (value: unknown, fallbackActor: 'player' | 'enemy'): CombatSource => {
@@ -630,7 +635,7 @@ export const migrateSave = (rawSave: unknown): GameState => {
   if (version === 17) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === 18) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === 19) return finalize(merge(createInitialState(), rawSave), rawSave, version)
-  if (version === 20 || version === 21 || version === SAVE_VERSION) {
+  if (version === 20 || version === 21 || version === 22 || version === SAVE_VERSION) {
     return finalize(merge(createInitialState(), rawSave), rawSave, version)
   }
   throw new SaveMigrationError(`Unsupported save version: ${String(version ?? 'missing')}.`)

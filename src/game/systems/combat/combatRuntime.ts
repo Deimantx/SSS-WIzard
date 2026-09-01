@@ -13,6 +13,7 @@ import { resolveMonsterLoot } from '../loot'
 import { discoverMonster } from '../collection/discovery'
 import type { SimulationReportCollector } from '../offline-bank/offlineBankReport'
 import { MAX_ACTION_WORK_MS, MIN_ACTION_TIME_MS } from '../../core/balance/combatTiming'
+import { nextCombatRandom } from './combatRng'
 
 export { applyStatus, clearStatuses, damageEnemy, damagePlayer, executeCombatEffects, gainBarrier }
 
@@ -59,7 +60,7 @@ export const spawnNextEnemy = (state: GameState, uiEvents?: CombatEventSink) => 
       return
     }
   }
-  spawnEnemy(state, chooseMonster(dungeon.monsterPool), uiEvents)
+  spawnEnemy(state, chooseMonster(dungeon.monsterPool, () => nextCombatRandom(state)), uiEvents)
 }
 
 export const finishEnemy = (state: GameState, report?: SimulationReportCollector, onItemAcquired?: (itemId: ItemId, quantity: number) => void, uiEvents?: CombatEventSink) => {

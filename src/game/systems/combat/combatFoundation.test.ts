@@ -48,7 +48,7 @@ describe('universal combat effects', () => {
     state.combat.playerBarrier = 10
     damagePlayer(state, 15, enemyAttack(state))
     expect(state.combat.playerBarrier).toBe(0)
-    expect(state.player.health).toBe(95)
+    expect(state.player.health).toBeCloseTo(100 - (15 * 1.5 * (1 - 10 / 110) - 10))
     state.player.health = 99
     executeCombatEffects(state, [{ type: 'heal', target: 'self', magnitude: { type: 'flat', value: 20 } }, { type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 25 } }, { type: 'restore-resource', target: 'self', resource: 'mana', magnitude: { type: 'flat', value: 100 } }, { type: 'modify-action-timer', target: 'self', action: 'basic-attack', amountMs: 700 }, { type: 'modify-cooldown', target: 'self', spellId: 'fire-bolt', amountMs: -2000 }], playerSpell)
     expect(state.player.health).toBe(state.player.maxHealth)
@@ -62,9 +62,9 @@ describe('universal combat effects', () => {
     const state = stateWithEnemy('thornling')
     state.combat.enemyBarrier = 5
     const dealt = damageEnemy(state, 10, 'basic')
-    expect(dealt).toBe(3.5)
+    expect(dealt).toBeCloseTo(10 * 1.5 * 0.85 * (1 - 10 / 110) - 5)
     expect(state.combat.enemyBarrier).toBe(0)
-    expect(state.combat.enemyHp).toBe(60.5)
+    expect(state.combat.enemyHp).toBeCloseTo(64 - dealt)
     expect(state.combat.log).toContain('Barrier breaks.')
   })
 })
@@ -165,13 +165,13 @@ describe('data-driven monster mechanics', () => {
     const thornling = stateWithEnemy('thornling')
     clearCurrentEnemyAction(thornling)
     forceResolveEnemyAction(thornling, 'thorn-lash', executeCombatEffects)
-    expect(thornling.player.health).toBe(90)
+    expect(thornling.player.health).toBeCloseTo(100 - 10 * 1.5 * (1 - 10 / 110))
     expect(thornling.combat.playerStatuses[0].statusId).toBe('thorn-wound')
     const root = stateWithEnemy('stone-root')
     clearCurrentEnemyAction(root)
     expect(root.combat.enemyBarrier).toBe(14)
     forceResolveEnemyAction(root, 'root-slam', executeCombatEffects)
-    expect(root.player.health).toBe(82)
+    expect(root.player.health).toBeCloseTo(100 - 18 * 1.5 * (1 - 10 / 110))
     expect(root.combat.playerAttackTimerMs).toBe(2900)
   })
 
@@ -180,7 +180,7 @@ describe('data-driven monster mechanics', () => {
     damageEnemy(sentinel, 220, 'spell')
     expect(sentinel.combat.enemyBarrier).toBe(80)
     damageEnemy(sentinel, 10, 'spell')
-    expect(sentinel.combat.enemyBarrier).toBe(70)
+    expect(sentinel.combat.enemyBarrier).toBeCloseTo(80 - 10 * (1 - 10 / 110))
     expect(sentinel.combat.triggeredRuleIds).toEqual(['enemy:trait:grove-sentinel-ancient-growth:grove-sentinel-ancient-growth-threshold'])
     const heart = stateWithEnemy('forest-heart')
     damageEnemy(heart, 310, 'spell')
@@ -430,8 +430,8 @@ describe('post-implementation combat audit regressions', () => {
       const ranged = stateWithEnemy()
       applyStatus(ranged, 'player', 'quickening', playerSpell)
       executeCombatEffects(ranged, [{ type: 'deal-damage', target: 'opponent', damageType: 'physical', magnitude: { type: 'flat', value: 10 }, tags: ['direct'] }], { actor: 'player', kind: 'weapon', sourceId: 'ranged', tags: ['weapon', 'ranged'] })
-      expect(melee.combat.enemyHp).toBe(29)
-      expect(ranged.combat.enemyHp).toBe(34)
+      expect(melee.combat.enemyHp).toBeCloseTo(44 - 10 * 1.5 * 1.5 * (1 - 10 / 110))
+      expect(ranged.combat.enemyHp).toBeCloseTo(44 - 10 * 1.5 * (1 - 10 / 110))
     } finally {
       STATUS_DEFINITIONS.quickening.modifiers = original
     }
@@ -464,7 +464,7 @@ describe('post-implementation combat audit regressions', () => {
       damageEnemy(state, 25, 'spell')
       expect(state.combat.enemyBarrier).toBe(5)
       damageEnemy(state, 1, 'spell')
-      expect(state.combat.enemyBarrier).toBe(4)
+      expect(state.combat.enemyBarrier).toBeCloseTo(5 - 1 * (1 - 10 / 110))
     })
   })
 

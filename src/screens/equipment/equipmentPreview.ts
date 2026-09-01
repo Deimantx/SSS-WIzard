@@ -1,10 +1,9 @@
-import { BALANCE } from '../../game/core/balance/balance'
 import { ITEMS } from '../../game/content/items/items'
-import { getManaCapacityBreakdown, getManaRegenBreakdown } from '../../game/engine/channelingEngine'
 import { equipmentStats } from '../../game/engine'
-import { getSpellPower } from '../../game/systems/spells/spellPower'
+import { getPlayerSheetCombatStats } from '../../game/systems/combat/combatStats'
 import { isPositionCompatible, isTwoHandedWeapon, previewEquipmentState } from '../../game/core/equipment'
 import type { EquipmentPosition, EquipmentStats, GameState, ItemId } from '../../game/types'
+import type { DamageType } from '../../game/systems/combat/combatTypes'
 
 export interface EquipmentStatSnapshot {
   maxHealth: number
@@ -18,6 +17,19 @@ export interface EquipmentStatSnapshot {
   waterBarrierPct: number
   earthSpellDamagePct: number
   airSpellDamagePct: number
+  basicAttackSpeedMultiplier: number
+  critChance: number
+  critDamageMultiplier: number
+  defense: number
+  blockChance: number
+  damageOverTimeBonus: number
+  statusDurationBonus: number
+  cooldownRecovery: number
+  healingDoneBonus: number
+  barrierPowerBonus: number
+  manaCostReduction: number
+  focusEfficiency: number
+  resistances: Partial<Record<DamageType, number>>
 }
 
 export interface EquipmentPreview {
@@ -33,21 +45,32 @@ export interface EquipmentPreview {
 
 export const getEquipmentStatSnapshot = (state: Pick<GameState, 'player' | 'progress' | 'activities' | 'equipment'> & Partial<Pick<GameState, 'debug'>>, equipment: GameState['equipment']): EquipmentStatSnapshot => {
   const stats = equipmentStats({ equipment })
-  const capacity = getManaCapacityBreakdown({ player: state.player, progress: state.progress, equipment, debug: state.debug })
-  const regen = getManaRegenBreakdown({ activities: state.activities, progress: state.progress, equipment, debug: state.debug })
-  const permanentFocus = Object.values(state.progress.permanentFocusBonuses).reduce((sum, value) => sum + value, 0)
+  const sheet = getPlayerSheetCombatStats({ ...state, equipment } as GameState)
   return {
-    maxHealth: state.player.baseMaxHealth + (stats.maxHealth ?? 0),
-    maxMana: capacity.total,
-    maxFocus: Math.max(0, state.player.baseMaxFocus + permanentFocus + (stats.maxFocus ?? 0) + (state.debug?.bonusMaxFocusFlat ?? 0)),
-    manaRegen: regen.total,
-    basicDamage: BALANCE.player.basicAttackDamage + (stats.basicDamage ?? 0),
-    spellPower: getSpellPower({ equipment }),
+    maxHealth: sheet.maxHealth,
+    maxMana: sheet.maxMana,
+    maxFocus: sheet.maxFocus,
+    manaRegen: sheet.manaRegen,
+    basicDamage: sheet.basicAttackDamage,
+    spellPower: sheet.spellPower,
     barrierReceived: stats.barrierReceived ?? 0,
     fireSpellDamagePct: stats.fireSpellDamagePct ?? 0,
     waterBarrierPct: stats.waterBarrierPct ?? 0,
     earthSpellDamagePct: stats.earthSpellDamagePct ?? 0,
     airSpellDamagePct: stats.airSpellDamagePct ?? 0,
+    basicAttackSpeedMultiplier: sheet.basicAttackSpeedMultiplier,
+    critChance: sheet.critChance,
+    critDamageMultiplier: sheet.critDamageMultiplier,
+    defense: sheet.defense,
+    blockChance: sheet.blockChance,
+    damageOverTimeBonus: sheet.damageOverTimeBonus,
+    statusDurationBonus: sheet.statusDurationBonus,
+    cooldownRecovery: sheet.cooldownRecovery,
+    healingDoneBonus: sheet.healingDoneBonus,
+    barrierPowerBonus: sheet.barrierPowerBonus,
+    manaCostReduction: sheet.manaCostReduction,
+    focusEfficiency: sheet.focusEfficiency,
+    resistances: { ...sheet.resistances },
   }
 }
 
@@ -63,6 +86,19 @@ const subtractSnapshots = (current: EquipmentStatSnapshot, preview: EquipmentSta
   waterBarrierPct: preview.waterBarrierPct - current.waterBarrierPct,
   earthSpellDamagePct: preview.earthSpellDamagePct - current.earthSpellDamagePct,
   airSpellDamagePct: preview.airSpellDamagePct - current.airSpellDamagePct,
+  basicAttackSpeedPct: preview.basicAttackSpeedMultiplier - current.basicAttackSpeedMultiplier,
+  critChance: preview.critChance - current.critChance,
+  critDamage: preview.critDamageMultiplier - current.critDamageMultiplier,
+  defense: preview.defense - current.defense,
+  blockChance: preview.blockChance - current.blockChance,
+  damageOverTimePct: preview.damageOverTimeBonus - current.damageOverTimeBonus,
+  statusDurationPct: preview.statusDurationBonus - current.statusDurationBonus,
+  cooldownRecoveryPct: preview.cooldownRecovery - current.cooldownRecovery,
+  healingDonePct: preview.healingDoneBonus - current.healingDoneBonus,
+  barrierPowerPct: preview.barrierPowerBonus - current.barrierPowerBonus,
+  manaCostReductionPct: preview.manaCostReduction - current.manaCostReduction,
+  focusEfficiencyPct: preview.focusEfficiency - current.focusEfficiency,
+  resistances: Object.fromEntries(Object.keys({ ...current.resistances, ...preview.resistances }).map((damageType) => [damageType, (preview.resistances[damageType as DamageType] ?? 0) - (current.resistances[damageType as DamageType] ?? 0)])) as EquipmentStats['resistances'],
 })
 
 export function getEquipmentPreview(state: Pick<GameState, 'player' | 'progress' | 'activities' | 'equipment'> & Partial<Pick<GameState, 'debug'>>, itemId: ItemId, targetPosition?: EquipmentPosition): EquipmentPreview {

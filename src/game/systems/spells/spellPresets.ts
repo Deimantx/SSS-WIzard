@@ -17,7 +17,7 @@ export interface SpellPresetFocusProjection {
   canApply: boolean
 }
 
-export type SpellPresetProjectionState = Pick<GameState, 'activities' | 'progress'> & {
+export type SpellPresetProjectionState = Pick<GameState, 'activities' | 'progress'> & Partial<Pick<GameState, 'equipment'>> & {
   player: Pick<GameState['player'], 'maxFocus'>
   debug: Pick<GameState['debug'], 'allowFocusOverCap'>
 }
@@ -73,7 +73,7 @@ export interface SpellPresetFocusBreakdown {
   freeFocus: number
 }
 
-export type SpellPresetFocusState = Pick<GameState, 'activities' | 'progress'> & { player: Pick<GameState['player'], 'maxFocus'> }
+export type SpellPresetFocusState = Pick<GameState, 'activities' | 'progress'> & Partial<Pick<GameState, 'equipment'>> & { player: Pick<GameState['player'], 'maxFocus'> }
 
 export const getSpellPresetFocusBreakdown = (state: SpellPresetFocusState): SpellPresetFocusBreakdown => {
   const reservations = deriveFocusReservations(state)
@@ -83,7 +83,7 @@ export const getSpellPresetFocusBreakdown = (state: SpellPresetFocusState): Spel
   return { autoCastFocus, otherFocus, totalFocus, maxFocus: state.player.maxFocus, freeFocus: state.player.maxFocus - totalFocus }
 }
 
-export const doesCurrentAutoCastMatchPreset = (state: Pick<GameState, 'activities' | 'progress'>, preset: Pick<SpellPreset, 'spellIds'>) => {
+export const doesCurrentAutoCastMatchPreset = (state: Pick<GameState, 'activities' | 'progress'> & Partial<Pick<GameState, 'equipment'>>, preset: Pick<SpellPreset, 'spellIds'>) => {
   const projection = getSpellPresetFocusProjection({ ...state, player: { maxFocus: 0 }, debug: { allowFocusOverCap: true } }, preset)
   if (!projection.validSpellIds.length || projection.unavailableSpellIds.length || projection.invalidSpellIds.length) return false
   const presetIds = new Set(projection.validSpellIds)
@@ -106,7 +106,7 @@ export const getSpellPresetFocusProjection = (
     else unavailableSpellIds.push(rawId)
   }
   const presetAutoCastFocus = validSpellIds.reduce((sum, spellId) => sum + (getSpellAutoCastFocusCost(state, spellId) ?? 0), 0)
-  const nonAutoCastFocus = getSpellPresetFocusBreakdown({ activities: state.activities, progress: state.progress, player: state.player }).otherFocus
+  const nonAutoCastFocus = getSpellPresetFocusBreakdown({ activities: state.activities, progress: state.progress, equipment: state.equipment, player: state.player }).otherFocus
   const totalAfterApply = nonAutoCastFocus + presetAutoCastFocus
   const freeAfterApply = state.player.maxFocus - totalAfterApply
   return {

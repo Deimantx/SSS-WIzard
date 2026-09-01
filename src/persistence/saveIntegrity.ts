@@ -17,6 +17,7 @@ export interface CriticalSaveSnapshot {
   progress: GameState['progress']
   spellPresets: GameState['spellPresets']
   offlineBankMs: number
+  combatRngState: number
 }
 
 export interface SaveValidationResult {
@@ -39,7 +40,7 @@ const canonicalize = (value: unknown): unknown => {
   return value
 }
 
-export const getCriticalSaveSnapshot = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment' | 'schools' | 'currencies' | 'activities' | 'progress' | 'spellPresets' | 'offlineBankMs'>): CriticalSaveSnapshot => cloneJson({
+export const getCriticalSaveSnapshot = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment' | 'schools' | 'currencies' | 'activities' | 'progress' | 'spellPresets' | 'offlineBankMs' | 'combat'>): CriticalSaveSnapshot => cloneJson({
   inventory: state.inventory,
   protectedItems: state.protectedItems,
   equipment: state.equipment,
@@ -58,6 +59,7 @@ export const getCriticalSaveSnapshot = (state: Pick<GameState, 'inventory' | 'pr
   })(),
   spellPresets: state.spellPresets,
   offlineBankMs: state.offlineBankMs,
+  combatRngState: state.combat.combatRngState,
 })
 
 export const criticalSaveSnapshotsEqual = (left: CriticalSaveSnapshot, right: CriticalSaveSnapshot) => JSON.stringify(canonicalize(left)) === JSON.stringify(canonicalize(right))

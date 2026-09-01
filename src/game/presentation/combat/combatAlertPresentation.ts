@@ -69,6 +69,14 @@ export const createCombatAlertSpec = (event: CombatEvent): CombatAlertSpec | nul
     return { dedupeKey: `death:${event.sourceId ?? event.target ?? 'combat'}`, priority: isBossEvent(event) ? 'critical' : 'important', category: 'death', title: `${defeated} DEFEATED`, detail: event.target === 'player' ? 'Recover in the Tower before entering a new run.' : 'Encounter resolved.', icon: 'death', semantic: event.target === 'player' ? 'danger' : 'success', durationMs: 5_000 }
   }
 
+  if (event.critical && (event.category === 'damage' || event.category === 'basic-attack' || event.category === 'spell' || event.category === 'enemy-action')) {
+    return { dedupeKey: `crit:${event.sourceId ?? 'hit'}:${event.target ?? 'combat'}`, priority: 'info', category: 'system', title: 'CRIT', detail: `${targetLabel(event)} took a critical direct hit.`, icon: 'crit', semantic: 'info', durationMs: 1_500 }
+  }
+
+  if (event.blocked && (event.category === 'damage' || event.category === 'basic-attack' || event.category === 'spell' || event.category === 'enemy-action')) {
+    return { dedupeKey: `block:${event.sourceId ?? 'hit'}:${event.target ?? 'combat'}`, priority: 'info', category: 'system', title: 'BLOCK', detail: `${targetLabel(event)} blocked part of the direct hit.`, icon: 'block', semantic: 'info', durationMs: 1_500 }
+  }
+
   if ((event.category === 'damage' || event.category === 'basic-attack' || event.category === 'spell' || event.category === 'enemy-action') && (event.barrierBefore ?? 0) > 0 && event.barrierAfter === 0) {
     return { dedupeKey: `barrier-break:${event.target ?? 'combat'}`, priority: 'important', category: 'barrier', title: 'BARRIER BROKEN', detail: `${targetLabel(event)} has lost its protective barrier.`, icon: 'barrier', semantic: 'warning', durationMs: 3_500 }
   }

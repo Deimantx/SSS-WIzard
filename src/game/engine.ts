@@ -26,7 +26,7 @@ export const recalculateDerivedStats = (state: GameState) => {
   state.player.mana = state.debug.allowManaOverCap ? Math.max(0, state.player.mana) : clamp(state.player.mana, 0, state.player.maxMana)
 }
 
-export const deriveFocusReservations = (state: Pick<GameState, 'activities' | 'progress'>): FocusReservation[] => {
+export const deriveFocusReservations = (state: Pick<GameState, 'activities' | 'progress'> & Partial<Pick<GameState, 'equipment'>>): FocusReservation[] => {
   const reservations: FocusReservation[] = []
   const echoes = state.activities.channeling.echoesAssigned
   if (echoes > 0) reservations.push({ id: 'channeling-echoes', sourceType: 'channeling', sourceId: 'echoes', amount: echoes * BALANCE.channeling.echoFocusCost, label: 'Arcane Echo Channeling' })
@@ -50,12 +50,12 @@ export const deriveFocusReservations = (state: Pick<GameState, 'activities' | 'p
   return reservations
 }
 
-export const selectUsedFocus = (state: Pick<GameState, 'activities' | 'progress'>) => deriveFocusReservations(state).reduce((sum, reservation) => sum + reservation.amount, 0)
-export const selectRawFreeFocus = (state: Pick<GameState, 'activities' | 'progress' | 'player'>) => state.player.maxFocus - selectUsedFocus(state)
-export const selectFreeFocus = (state: Pick<GameState, 'activities' | 'progress' | 'player'>) => Math.max(0, selectRawFreeFocus(state))
+export const selectUsedFocus = (state: Pick<GameState, 'activities' | 'progress'> & Partial<Pick<GameState, 'equipment'>>) => deriveFocusReservations(state).reduce((sum, reservation) => sum + reservation.amount, 0)
+export const selectRawFreeFocus = (state: Pick<GameState, 'activities' | 'progress' | 'player'> & Partial<Pick<GameState, 'equipment'>>) => state.player.maxFocus - selectUsedFocus(state)
+export const selectFreeFocus = (state: Pick<GameState, 'activities' | 'progress' | 'player'> & Partial<Pick<GameState, 'equipment'>>) => Math.max(0, selectRawFreeFocus(state))
 export const usedFocus = selectUsedFocus
 export const freeFocus = selectFreeFocus
-export const canReserveFocus = (state: Pick<GameState, 'activities' | 'progress' | 'player'>, amount: number) => selectFreeFocus(state) >= amount
+export const canReserveFocus = (state: Pick<GameState, 'activities' | 'progress' | 'player'> & Partial<Pick<GameState, 'equipment'>>, amount: number) => selectFreeFocus(state) >= amount
 export const manaRegenPerSecond = getChannelingManaRegen
 export const schoolProgress = (state: GameState, school: SchoolId) => {
   return getSchoolProgressInfo(state, school).progress

@@ -38,7 +38,7 @@ describe('Combat Lab immortality and forced-resolution runtime', () => {
     expect(state.combat.enemyHp).toBe(1)
     expect(resolveCombatDeaths(state, undefined, undefined, sink)).toBe(false)
     expect(events.filter((event) => event.sourceId === 'debug-spell')).toHaveLength(2)
-    expect(useCombatTelemetryStore.getState().run?.player.damageDone.total).toBe(750)
+    expect(useCombatTelemetryStore.getState().run?.player.damageDone.total).toBeCloseTo(500 * 1.5 * (1 - 10 / 110) + 250 * (1 - 10 / 110))
     expect(events.some((event) => event.sourceId === 'enemy-defeated')).toBe(false)
   })
 
@@ -54,7 +54,7 @@ describe('Combat Lab immortality and forced-resolution runtime', () => {
     executeCombatEffects(state, [damage(500, 'enemy')], enemySource(state), 0, sink)
     expect(state.player.health).toBe(1)
     expect(resolveCombatDeaths(state, undefined, undefined, sink)).toBe(false)
-    expect(useCombatTelemetryStore.getState().run?.player.damageTaken.total).toBe(500)
+    expect(useCombatTelemetryStore.getState().run?.player.damageTaken.total).toBeCloseTo(500 * 1.5 * (1 - 10 / 110))
     expect(events.some((event) => event.sourceId === 'player-defeated')).toBe(false)
   })
 
@@ -70,7 +70,9 @@ describe('Combat Lab immortality and forced-resolution runtime', () => {
     const event = events.find((candidate) => candidate.sourceId === 'debug-spell')
     expect(state.combat.enemyBarrier).toBe(0)
     expect(state.combat.enemyHp).toBe(1)
-    expect(event).toMatchObject({ amount: 250, healthDamage: 150, barrierAbsorbed: 100 })
+    expect(event?.amount).toBeCloseTo(250 * 1.5 * (1 - 10 / 110))
+    expect(event?.healthDamage).toBeCloseTo(250 * 1.5 * (1 - 10 / 110) - 100)
+    expect(event).toMatchObject({ barrierAbsorbed: 100 })
   })
 
   it('protects an immortal enemy from lethal periodic status damage', () => {

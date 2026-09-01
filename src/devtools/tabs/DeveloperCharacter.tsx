@@ -2,6 +2,7 @@ import { Button, Card, Status } from '../../components/ui'
 import { getManaRegenBreakdown } from '../../game/engine/channelingEngine'
 import { useGameStore } from '../../store/gameStore'
 import { getSpellPowerBreakdown } from '../../game/systems/spells/spellPower'
+import { getPlayerCombatStats } from '../../game/systems/combat/combatStats'
 import { NumberField, Summary } from './DeveloperTabPrimitives'
 
 export function DeveloperCharacter() {
@@ -19,6 +20,8 @@ export function DeveloperCharacter() {
   const update = (key: keyof typeof player, value: number) => setPlayer({ [key]: value } as Partial<typeof player>)
   const regen = getManaRegenBreakdown({ activities, progress, equipment, debug })
   const spellPower = getSpellPowerBreakdown({ equipment })
+  const resolvedCombat = getPlayerCombatStats(useGameStore((state) => state))
+  const combatRngState = useGameStore((state) => state.combat.combatRngState)
 
   return <div className="developer-tab-grid">
     <Card title="Player values">
@@ -39,6 +42,25 @@ export function DeveloperCharacter() {
         <NumberField label="Base Max Health" value={player.baseMaxHealth} onChange={(value) => update('baseMaxHealth', value)} />
         <NumberField label="Current Mana" value={player.mana} onChange={(value) => update('mana', value)} />
         <NumberField label="Base Max Mana" value={player.baseMaxMana} onChange={(value) => update('baseMaxMana', value)} />
+      </div>
+    </Card>
+    <Card title="Resolved combat stats" className="developer-debug-card">
+      <div className="developer-summary-grid">
+        <Summary label="Spell Power" value={resolvedCombat.spellPower} />
+        <Summary label="Basic Damage" value={resolvedCombat.basicAttackDamage} />
+        <Summary label="Basic Speed" value={`${resolvedCombat.basicAttackSpeedMultiplier.toFixed(2)}x`} />
+        <Summary label="Crit Chance" value={`${Math.round(resolvedCombat.critChance * 100)}%`} />
+        <Summary label="Crit Damage" value={`${Math.round(resolvedCombat.critDamageMultiplier * 100)}%`} />
+        <Summary label="Defense" value={resolvedCombat.defense} />
+        <Summary label="Block Chance" value={`${Math.round(resolvedCombat.blockChance * 100)}%`} />
+        <Summary label="DoT Bonus" value={`${Math.round(resolvedCombat.damageOverTimeBonus * 100)}%`} />
+        <Summary label="Status Duration" value={`${Math.round(resolvedCombat.statusDurationBonus * 100)}%`} />
+        <Summary label="Cooldown Recovery" value={`${resolvedCombat.cooldownRecovery.toFixed(2)}x`} />
+        <Summary label="Healing Done" value={`${Math.round(resolvedCombat.healingDoneBonus * 100)}%`} />
+        <Summary label="Barrier Power" value={`${Math.round(resolvedCombat.barrierPowerBonus * 100)}%`} />
+        <Summary label="Mana Cost Reduction" value={`${Math.round(resolvedCombat.manaCostReduction * 100)}%`} />
+        <Summary label="Focus Efficiency" value={`${Math.round(resolvedCombat.focusEfficiency * 100)}%`} />
+        <Summary label="Combat RNG State" value={combatRngState} />
       </div>
     </Card>
     <Card title="Mana controls" className="developer-debug-card">

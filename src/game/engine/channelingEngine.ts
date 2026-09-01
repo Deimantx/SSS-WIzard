@@ -1,8 +1,8 @@
 import { BALANCE } from '../core/balance/balance'
 import { CHANNELING_DISCOVERIES } from '../content/channeling/channelingDiscoveries'
-import { ITEMS } from '../content/items/items'
 import { MANA_PILLARS } from '../content/channeling/manaPillars'
-import type { ChannelingDiscoveryId, EquipmentStats, GameState, ManaPillarId } from '../types'
+import { getEquipmentStats } from '../core/equipment/equipmentStats'
+import type { ChannelingDiscoveryId, GameState, ManaPillarId } from '../types'
 import { clamp } from '../utils'
 
 export interface ManaRegenBreakdown {
@@ -33,23 +33,12 @@ export interface ManaCapacityBreakdown {
   total: number
 }
 
-const equipmentStatsFor = (state: Pick<GameState, 'equipment'>): EquipmentStats => {
-  const total: EquipmentStats = {}
-  Object.values(state.equipment).forEach((itemId) => {
-    if (!itemId || !ITEMS[itemId]) return
-    Object.entries(ITEMS[itemId].stats ?? {}).forEach(([key, value]) => {
-      total[key as keyof EquipmentStats] = (total[key as keyof EquipmentStats] ?? 0) + (value ?? 0)
-    })
-  })
-  return total
-}
-
 const pillarLevel = (state: Pick<GameState, 'progress'>, id: ManaPillarId) => Math.max(0, Math.min(10, state.progress.channeling.pillars[id]?.level ?? 0))
 
 export const getManaPillarLevel = (state: Pick<GameState, 'progress'>, id: ManaPillarId) => pillarLevel(state, id)
 
 export const getManaCapacityBreakdown = (state: Pick<GameState, 'player' | 'progress' | 'equipment'> & Partial<Pick<GameState, 'debug'>>): ManaCapacityBreakdown => {
-  const stats = equipmentStatsFor(state)
+  const stats = getEquipmentStats(state)
   const arcaneReservoirBonus = pillarLevel(state, 'arcane-reservoir') * 25
   const deepReservoirBonus = state.progress.channeling.discoveries['deep-reservoir'] ? BALANCE.channeling.deepReservoirCapacityBonus : 0
   const equipmentBonus = stats.maxMana ?? 0
@@ -71,7 +60,7 @@ export const getManaCapacityBreakdown = (state: Pick<GameState, 'player' | 'prog
 }
 
 export const getManaRegenBreakdown = (state: Pick<GameState, 'activities' | 'progress' | 'equipment'> & Partial<Pick<GameState, 'debug'>>): ManaRegenBreakdown => {
-  const stats = equipmentStatsFor(state)
+  const stats = getEquipmentStats(state)
   const echoes = state.debug?.ignoreEchoLimit ? Math.max(0, state.activities.channeling.echoesAssigned) : clamp(state.activities.channeling.echoesAssigned, 0, BALANCE.channeling.maxEchoes)
   const baseNatural = BALANCE.channeling.baseNaturalRegenPerSecond
   const leylineConduitBonus = pillarLevel(state, 'leyline-conduit')

@@ -15,7 +15,7 @@ export type ActionLifecycleEvent = Extract<CombatTrigger, 'on-action-start' | 'o
 const opponentOf = (actor: CombatActor): CombatActor => actor === 'player' ? 'enemy' : 'player'
 const resolvingStates = new WeakSet<GameState>()
 const actionTags = (action: CombatActionDefinition): CombatTag[] => [...new Set<CombatTag>(['special', ...(action.tags ?? [])])]
-const actionSource = (action: CombatActionDefinition): CombatSource => ({ actor: 'enemy', kind: 'action', sourceId: action.id, tags: actionTags(action) })
+const actionSource = (state: GameState, action: CombatActionDefinition): CombatSource => ({ actor: 'enemy', kind: 'action', sourceId: action.id, sourceMonsterId: state.combat.enemyId ?? undefined, sourceInstanceKey: state.combat.enemyInstanceKey ?? undefined, tags: actionTags(action) })
 
 const patternFor = (state: GameState, patternId?: string) => {
   const enemyId = state.combat.enemyId
@@ -101,12 +101,12 @@ export const setEnemyActionPattern = (state: GameState, patternId: string, uiEve
   if (!pattern || pattern.steps.length === 0 || !state.combat.enemyId) return false
   state.combat.enemyActionPatternId = pattern.id
   state.combat.enemyNextActionIndex = 0
-  uiEvents?.push({ source: { kind: 'enemy', monsterId: state.combat.enemyId }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, category: 'pattern', sourceId: pattern.id })
+  uiEvents?.push({ source: { kind: 'enemy', monsterId: state.combat.enemyId }, sourceKind: 'system', sourceMonsterId: state.combat.enemyId, sourceInstanceKey: state.combat.enemyInstanceKey ?? undefined, dungeonId: state.combat.dungeonId ?? undefined, category: 'pattern', sourceId: pattern.id })
   return true
 }
 
-const actionContext = (action: CombatActionDefinition, patternId: string | undefined, stepId: string | undefined): CombatEventContext => {
-  const source = actionSource(action)
+const actionContext = (state: GameState, action: CombatActionDefinition, patternId: string | undefined, stepId: string | undefined): CombatEventContext => {
+  const source = actionSource(state, action)
   return { source, sourceTags: source.tags, actionId: action.id, actionStepId: stepId, actionPatternId: patternId, eventActionTags: source.tags }
 }
 
@@ -130,8 +130,8 @@ const commitAction = (state: GameState, stepId: string | null, actionId: string 
 const startActionDefinition = (state: GameState, action: CombatActionDefinition, stepId: string | null, patternId: string, executeEffects: ActionEffectExecutor, depth = 0, uiEvents?: CombatEventSink) => {
   if (!state.combat.enemyId || state.combat.enemyCurrentStepId) return false
   commitAction(state, stepId, action.id, patternId, action.actionTimeMs)
-  const context = actionContext(action, patternId, stepId ?? undefined)
-  uiEvents?.push({ source: { kind: 'enemy', monsterId: state.combat.enemyId }, sourceKind: 'action', dungeonId: state.combat.dungeonId ?? undefined, target: 'player', category: 'system', sourceId: action.id, actionId: action.id, actionPhase: 'start', durationMs: state.combat.enemyActionDurationMs })
+  const context = actionContext(state, action, patternId, stepId ?? undefined)
+  uiEvents?.push({ source: { kind: 'enemy', monsterId: state.combat.enemyId }, sourceKind: 'action', sourceMonsterId: state.combat.enemyId, sourceInstanceKey: state.combat.enemyInstanceKey ?? undefined, dungeonId: state.combat.dungeonId ?? undefined, target: 'player', category: 'system', sourceId: action.id, actionId: action.id, actionPhase: 'start', durationMs: state.combat.enemyActionDurationMs })
   runActionEventObservers(state, 'on-action-start', context, executeEffects, depth, uiEvents)
   if (state.combat.enemyHp <= 0 || state.player.health <= 0) clearCurrentEnemyAction(state)
   return true
@@ -182,7 +182,7 @@ export const startNextEnemyAction = (state: GameState, executeEffects: ActionEff
 }
 
 const resolveBasicAttack = (state: GameState, monsterId: NonNullable<GameState['combat']['enemyId']>, monster: typeof MONSTERS[NonNullable<GameState['combat']['enemyId']>], executeEffects: ActionEffectExecutor, depth: number, uiEvents?: CombatEventSink) => {
-  const source: CombatSource = { actor: 'enemy', kind: 'basic-attack', sourceId: `${monsterId}-basic-attack`, tags: ['basic-attack', 'direct'] }
+  const source: CombatSource = { actor: 'enemy', kind: 'basic-attack', sourceId: `${monsterId}-basic-attack`, sourceMonsterId: monsterId, sourceInstanceKey: state.combat.enemyInstanceKey ?? undefined, tags: ['basic-attack', 'direct'] }
   const before = state.player.health
   executeEffects(state, [{ type: 'deal-damage', target: 'opponent', damageType: 'physical', magnitude: { type: 'flat', value: monster.basicAttackDamage }, tags: ['basic-attack', 'direct'] }], source, depth, uiEvents)
   appendLog(state, `${monster.name} Basic hits for ${Math.max(0, before - state.player.health)}.`)
@@ -207,8 +207,8 @@ export const resolveCurrentEnemyAction = (state: GameState, executeEffects: Acti
     if (!action) {
       resolveBasicAttack(state, enemyId, MONSTERS[enemyId], executeEffects, depth + 1, uiEvents)
     } else {
-      const context = actionContext(action, originPatternId, stepId ?? undefined)
-      if (action.effects.length === 0) uiEvents?.push({ source: { kind: 'enemy', monsterId: enemyId }, sourceKind: 'action', dungeonId: state.combat.dungeonId ?? undefined, target: 'player', category: 'enemy-action', sourceId: action.id, actionId: action.id, actionPhase: 'resolve' })
+      const context = actionContext(state, action, originPatternId, stepId ?? undefined)
+      if (action.effects.length === 0) uiEvents?.push({ source: { kind: 'enemy', monsterId: enemyId }, sourceKind: 'action', sourceMonsterId: enemyId, sourceInstanceKey: state.combat.enemyInstanceKey ?? undefined, dungeonId: state.combat.dungeonId ?? undefined, target: 'player', category: 'enemy-action', sourceId: action.id, actionId: action.id, actionPhase: 'resolve' })
       executeEffects(state, action.effects, context.source as CombatSource, depth + 1, uiEvents)
       runActionEventObservers(state, 'on-action-resolve', context, executeEffects, depth + 1, uiEvents)
       appendLog(state, `${action.name} resolves.`)

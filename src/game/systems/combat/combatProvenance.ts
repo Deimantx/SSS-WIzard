@@ -1,6 +1,7 @@
 import { STATUS_DEFINITIONS } from '../../content/statuses'
 import type { ActiveStatus, CombatEffect, CombatSource } from './combatTypes'
 import type { CombatActor } from './magnitude'
+import type { GameState } from '../../types'
 
 export interface CombatSourceProvenance {
   sourceId?: string
@@ -8,6 +9,10 @@ export interface CombatSourceProvenance {
   tags?: CombatSource['tags']
   school?: CombatSource['school']
   providerInstanceKey?: string
+  sourceMonsterId?: CombatSource['sourceMonsterId']
+  sourceInstanceKey?: string
+  originMonsterId?: CombatSource['originMonsterId']
+  originInstanceKey?: string
 }
 
 /** Returns the authored root behind a direct, status, or chained combat source. */
@@ -17,7 +22,18 @@ export const getRootCombatSourceProvenance = (source: CombatSource): CombatSourc
   tags: source.originTags ?? source.tags,
   school: source.originSchool ?? source.school,
   providerInstanceKey: source.providerInstanceKey,
+  sourceMonsterId: source.originMonsterId ?? source.sourceMonsterId,
+  sourceInstanceKey: source.originInstanceKey ?? source.sourceInstanceKey,
+  originMonsterId: source.originMonsterId ?? source.sourceMonsterId,
+  originInstanceKey: source.originInstanceKey ?? source.sourceInstanceKey,
 })
+
+/** Enemy source ownership is instance-based; missing identity is conservatively detached. */
+export const isEnemySourceOwnerActive = (state: Pick<GameState, 'combat'>, source: CombatSource) => {
+  if (source.actor !== 'enemy') return true
+  const instanceKey = source.sourceInstanceKey ?? source.originInstanceKey
+  return Boolean(instanceKey && state.combat.enemyInstanceKey && instanceKey === state.combat.enemyInstanceKey)
+}
 
 const relativeTargetForHolder = (holder: CombatActor, sourceActor: CombatActor, target: 'self' | 'opponent'): CombatActor => {
   if (target === 'self') return holder
@@ -48,6 +64,10 @@ export const buildPeriodicStatusCombatSource = (status: ActiveStatus): CombatSou
     originTags: root.tags,
     originSchool: root.school,
     providerInstanceKey: root.providerInstanceKey,
+    sourceMonsterId: root.sourceMonsterId ?? status.source.sourceMonsterId,
+    sourceInstanceKey: root.sourceInstanceKey ?? status.source.sourceInstanceKey,
+    originMonsterId: root.originMonsterId,
+    originInstanceKey: root.originInstanceKey,
     school: root.school ?? status.source.school,
     tags: ['status', ...(definition?.tags ?? []), ...(root.tags ?? [])],
   }

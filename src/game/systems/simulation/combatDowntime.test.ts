@@ -180,7 +180,7 @@ describe('active dungeon downtime timeline', () => {
 
     advance(state, 100, { mode: 'live', uiEvents: { push: (event) => events.push(event) } })
 
-    expect(state.player.health).toBe(95)
+    expect(state.player.health).toBe(100)
     expect(state.combat.spellCooldowns['flow-mend']).toBe(9_920)
     expect(events.find((event) => event.sourceId === 'flow-mend' && event.sourceKind === 'spell')).toBeDefined()
   })

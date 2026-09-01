@@ -6,6 +6,7 @@ import { Summary } from './DeveloperTabPrimitives'
 import { getProfileSaveDiagnostics } from '../../persistence/profileSaveManager'
 import { useSaveDiagnosticsStore } from '../../persistence/saveDiagnosticsStore'
 import { useProfileSession } from '../../profiles/profileSessionStore'
+import { getSpellPower } from '../../game/systems/spells/spellPower'
 
 const formatTimestamp = (value: number | null) => value === null ? '—' : new Date(value).toLocaleTimeString()
 const formatCandidate = (candidate: ReturnType<typeof getProfileSaveDiagnostics>['primary']) => {
@@ -24,8 +25,9 @@ export function DeveloperDiagnostics({ copy }: { copy: (label: string, value: un
   const rawFree = useGameStore(selectRawFreeFocus)
   const regen = getManaRegenBreakdown(state)
   const capacity = getManaCapacityBreakdown(state)
+  const spellPower = getSpellPower(state)
   const debugActive = Object.values(state.debug).some((value) => typeof value === 'boolean' ? value : value > 0)
-  const hasInvalidNumber = [state.player.health, state.player.mana, state.player.maxMana, state.player.maxFocus, regen.total, capacity.total].some((value) => !Number.isFinite(value))
+  const hasInvalidNumber = [state.player.health, state.player.mana, state.player.maxMana, state.player.maxFocus, spellPower, regen.total, capacity.total].some((value) => !Number.isFinite(value))
   const diagnosticReport = saveDiagnostics && saveSession.activeProfileId ? {
     profileId: saveSession.activeProfileId,
     health: saveSession.health,

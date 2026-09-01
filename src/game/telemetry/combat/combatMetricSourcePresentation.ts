@@ -32,7 +32,11 @@ export const presentCombatMetricSource = (source: CombatMetricSourceContribution
     return name !== 'Enemy Action' ? { name, subtitle: source.monsterId ? MONSTERS[source.monsterId]?.name ?? 'Enemy Action' : 'Enemy Action', icon: 'swords', accent: 'enemy' } : { name: 'Unknown Action', subtitle: 'Enemy Action', icon: 'swords', accent: 'neutral' }
   }
   if (source.kind === 'status') {
-    const originName = source.originSourceId ? resolveCombatSourceLabel({ kind: source.originSourceKind ?? 'status', sourceId: source.originSourceId }) : undefined
+    const originName = source.originSourceId
+      ? source.originSourceKind === 'action' && source.monsterId
+        ? MONSTERS[source.monsterId]?.actions[source.originSourceId]?.name ?? 'Enemy Action'
+        : resolveCombatSourceLabel({ kind: source.originSourceKind ?? 'status', sourceId: source.originSourceId })
+      : undefined
     const status = source.statusId ? STATUS_DEFINITIONS[source.statusId] : undefined
     const name = status?.name ?? 'Unknown Status'
     return { name, subtitle: originName ? `${originName} · Status effect` : 'Status effect', icon: 'flame', accent: status?.classification === 'buff' ? 'healing' : status ? 'status' : 'neutral' }

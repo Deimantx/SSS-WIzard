@@ -26,7 +26,7 @@ export function ItemTooltip({ itemId, owned, protectedItem = false, equipped = f
 }
 
 export function friendlyStatLabel(key: string) {
-  const labels: Record<string, string> = { basicDamage: 'Basic Attack Damage', maxHealth: 'Max Health', maxMana: 'Max Mana', manaRegen: 'Mana Regen', maxFocus: 'Max Focus', barrierReceived: 'Barrier Received', fireSpellDamagePct: 'Fire Spell Damage', waterBarrierPct: 'Water Barrier', earthSpellDamagePct: 'Earth Spell Damage', airSpellDamagePct: 'Air Spell Damage' }
+  const labels: Record<string, string> = { basicDamage: 'Basic Attack Damage', spellPower: 'Spell Power', maxHealth: 'Max Health', maxMana: 'Max Mana', manaRegen: 'Mana Regen', maxFocus: 'Max Focus', barrierReceived: 'Barrier Received', fireSpellDamagePct: 'Fire Spell Damage', waterBarrierPct: 'Water Barrier', earthSpellDamagePct: 'Earth Spell Damage', airSpellDamagePct: 'Air Spell Damage' }
   return labels[key] ?? key.replace(/([A-Z])/g, ' $1').replace(/^./, (value) => value.toUpperCase())
 }
 

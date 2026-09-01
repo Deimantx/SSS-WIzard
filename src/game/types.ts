@@ -44,6 +44,7 @@ export type RecipeUnlockCondition = { type: 'always' } | { type: 'first-dungeon-
 export type AutoCastCondition = { type: 'always' } | { type: 'health-below'; percent: number } | { type: 'barrier-below'; value: number }
 export interface EquipmentStats {
   basicDamage?: number
+  spellPower?: number
   maxHealth?: number
   maxMana?: number
   manaRegen?: number
@@ -180,6 +181,10 @@ export interface CombatState {
   active: boolean
   dungeonId: DungeonId | null
   enemyId: MonsterId | null
+  /** Monotonic deterministic identity for the currently spawned encounter. */
+  enemyInstanceSerial: number
+  /** `enemy:<serial>` while an enemy is alive; null during encounter downtime. */
+  enemyInstanceKey: string | null
   enemyHp: number
   enemyMaxHp: number
   enemyBarrier: number

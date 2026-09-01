@@ -18,9 +18,11 @@ describe('spell detail presentation', () => {
     const inlineRows = getInspectorInlineEffectRows(damage)
 
     expect(detail).toMatchObject({ spellId: 'fire-bolt', spellName: 'Fire Bolt', school: 'fire', rankLabel: 'Rank I', description: expect.any(String), manaCost: 12, cooldownLabel: '3.5s', autoCastFocus: 10, autoCastActive: false })
+    expect(detail.spellPower).toBe(120)
     expect(detail.effects).toHaveLength(1)
-    expect(row(cardRows, 'Base Damage')?.value).toBe('28')
-    expect(row(cardRows, 'Current Base Preview')?.value).toBe('34')
+    expect(row(cardRows, 'Scaling')?.value).toBe('60% Spell Power')
+    expect(row(cardRows, 'Base Damage')?.value).toBe('72')
+    expect(row(cardRows, 'Current Base Preview')).toBeUndefined()
     expect(row(cardRows, 'Ember Staff')?.value).toBe('+20%')
     expect(cardRows.some((entry) => entry.label === 'Source')).toBe(false)
     expect(inlineRows.some((entry) => entry.label === 'Source')).toBe(false)
@@ -32,7 +34,7 @@ describe('spell detail presentation', () => {
     const state = createInitialState()
     const labels = (spellId: Parameters<typeof buildSpellDetailPresentation>[1], effectIndex: number) => getInspectorInlineEffectRows(buildSpellDetailPresentation(state, spellId, 1).effects[effectIndex]).map((entry) => entry.label)
 
-    expect(labels('fire-bolt', 0)).toEqual(expect.arrayContaining(['Base Damage', 'School Scaling', 'Current Base Preview', 'Damage Type', 'Target']))
+    expect(labels('fire-bolt', 0)).toEqual(expect.arrayContaining(['Scaling', 'Base Damage', 'Damage Type', 'Target']))
     expect(labels('water-ward', 0)).toEqual(expect.arrayContaining(['Amount', 'Duration', 'Mode', 'Target']))
     expect(labels('fortify', 0)).toEqual(expect.arrayContaining(['Damage Taken', 'Duration', 'Target']))
     expect(labels('frostbite', 1)).toEqual(expect.arrayContaining(['Basic Attack Speed', 'Action Speed', 'Duration', 'Target']))

@@ -17,7 +17,16 @@ const MAX_EFFECT_DEPTH = 20
 
 const targetActor = (source: CombatSource, target: EffectTarget): CombatActor => target === 'self' ? source.actor : source.actor === 'player' ? 'enemy' : 'player'
 const sourceTags = (source: CombatSource, effectTags?: CombatTag[]) => [...new Set<CombatTag>([...(source.tags ?? []), ...(effectTags ?? [])])]
-const logSource = (state: GameState, source: CombatSource) => source.actor === 'enemy' && state.combat.enemyId ? { kind: 'enemy' as const, monsterId: state.combat.enemyId } : source.actor === 'player' ? { kind: 'player' as const } : { kind: 'system' as const }
+const logSource = (state: GameState, source: CombatSource) => {
+  if (source.actor === 'player') return { kind: 'player' as const }
+  if (source.actor !== 'enemy') return { kind: 'system' as const }
+  const root = getRootCombatSourceProvenance(source)
+  const monsterId = source.sourceMonsterId ?? root.originMonsterId ?? root.sourceMonsterId
+  // Attribution is provenance, not ownership liveness. A detached source
+  // must remain attributable to the authored Enemy without borrowing the
+  // current encounter's modifiers or trigger rules.
+  return monsterId ? { kind: 'enemy' as const, monsterId } : { kind: 'system' as const }
+}
 const logCategory = (source: CombatSource, tags: CombatTag[], fallback: CombatLogCategory): CombatLogCategory => source.kind === 'spell' ? 'spell' : source.kind === 'action' ? 'enemy-action' : source.kind === 'trait' ? 'trait' : tags.includes('basic-attack') ? 'basic-attack' : fallback
 const eventFields = (state: GameState, source: CombatSource, target: CombatActor) => {
   const root = getRootCombatSourceProvenance(source)
@@ -32,6 +41,10 @@ const eventFields = (state: GameState, source: CombatSource, target: CombatActor
   originSourceKind: root.sourceKind,
   originTags: root.tags,
   originSchool: root.school,
+  sourceMonsterId: source.sourceMonsterId,
+  sourceInstanceKey: source.sourceInstanceKey,
+  originMonsterId: root.originMonsterId ?? root.sourceMonsterId,
+  originInstanceKey: root.originInstanceKey ?? root.sourceInstanceKey,
   providerInstanceKey: root.providerInstanceKey,
   ruleId: source.ruleId,
   statusInstanceKey: source.statusInstanceKey,
@@ -60,10 +73,12 @@ export const calculateCombatDamage = (state: GameState, raw: number, damageType:
   const modifierContext = { source, sourceTags: tags, damageType }
   let sourceModified = amount * (1 + getCombatModifiers(state, source.actor, 'damage-dealt-percent', modifierContext))
   if (tags.includes('basic-attack')) sourceModified *= 1 + getCombatModifiers(state, source.actor, 'basic-attack-damage-percent', modifierContext)
-  if (source.kind === 'spell') sourceModified *= 1 + getCombatModifiers(state, source.actor, 'spell-damage-percent', modifierContext)
+  const root = getRootCombatSourceProvenance(source)
+  const spellOrigin = source.kind === 'spell' || root.sourceKind === 'spell'
+  if (spellOrigin) sourceModified *= 1 + getCombatModifiers(state, source.actor, 'spell-damage-percent', modifierContext)
   if (tags.includes('melee')) sourceModified *= 1 + getCombatModifiers(state, source.actor, 'melee-damage-percent', modifierContext)
   if (tags.includes('ranged')) sourceModified *= 1 + getCombatModifiers(state, source.actor, 'ranged-damage-percent', modifierContext)
-  if (source.kind === 'spell' && source.school) sourceModified *= spellDamageMultiplier(state, source.school)
+  if (spellOrigin && root.school) sourceModified *= spellDamageMultiplier(state, root.school)
   const targetModified = sourceModified * (1 + getCombatModifiers(state, target, 'damage-taken-percent', modifierContext))
   const resistance = getResistance(state, target, damageType)
   // Keep fractional base damage intact. Player-facing log formatting may

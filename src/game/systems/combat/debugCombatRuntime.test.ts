@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import type { CombatEvent, CombatEventSink } from './combatTypes'
+import type { GameState } from '../../types'
 import { executeCombatEffects } from './effectResolver'
 import { resolveCombatDeaths, spawnEnemy } from './combatRuntime'
 import { combatTelemetrySink, useCombatTelemetryStore } from '../../telemetry/combat/combatTelemetryStore'
@@ -10,7 +11,7 @@ import { advanceGameState } from '../simulation/advanceGameState'
 import { applyStatus } from './statusRuntime'
 
 const source = { actor: 'player' as const, kind: 'spell' as const, sourceId: 'debug-spell', tags: ['spell' as const, 'direct' as const] }
-const enemySource = { actor: 'enemy' as const, kind: 'basic-attack' as const, sourceId: 'debug-enemy-hit', tags: ['basic-attack' as const, 'direct' as const] }
+const enemySource = (state: GameState) => ({ actor: 'enemy' as const, kind: 'basic-attack' as const, sourceId: 'debug-enemy-hit', sourceMonsterId: state.combat.enemyId ?? undefined, sourceInstanceKey: state.combat.enemyInstanceKey ?? undefined, tags: ['basic-attack' as const, 'direct' as const] })
 const damage = (value: number, actor: 'player' | 'enemy' = 'player') => ({ type: 'deal-damage' as const, target: 'opponent' as const, damageType: 'physical' as const, magnitude: { type: 'flat' as const, value }, tags: actor === 'player' ? ['spell' as const, 'direct' as const] : ['basic-attack' as const, 'direct' as const] })
 
 const activeState = () => {
@@ -50,7 +51,7 @@ describe('Combat Lab immortality and forced-resolution runtime', () => {
     spawnEnemy(state, 'forest-wisp', sink)
     state.player.health = 1
 
-    executeCombatEffects(state, [damage(500, 'enemy')], enemySource, 0, sink)
+    executeCombatEffects(state, [damage(500, 'enemy')], enemySource(state), 0, sink)
     expect(state.player.health).toBe(1)
     expect(resolveCombatDeaths(state, undefined, undefined, sink)).toBe(false)
     expect(useCombatTelemetryStore.getState().run?.player.damageTaken.total).toBe(500)

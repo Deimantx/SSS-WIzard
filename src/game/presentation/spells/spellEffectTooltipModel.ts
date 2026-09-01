@@ -1,6 +1,8 @@
 import { STATUS_DEFINITIONS } from '../../content/statuses'
 import { SPELLS } from '../../content/spells/spells'
 import { getSpellEquipmentBonusPreview } from '../../systems/spells/spellEquipmentPreview'
+import { getSpellPower } from '../../systems/spells/spellPower'
+import { scaleMagnitude } from '../../systems/combat/combatTypes'
 import type { CombatEffect, CombatModifier, Magnitude } from '../../systems/combat/combatTypes'
 import type { GameState, SchoolId, SpellId } from '../../types'
 import { formatTime } from '../../utils'
@@ -30,6 +32,7 @@ const formatSignedPercent = (value: number) => `${value >= 0 ? '+' : ''}${format
 
 export const formatSpellMagnitude = (magnitude: Magnitude) => {
   if (magnitude.type === 'flat') return formatValue(magnitude.value)
+  if (magnitude.type === 'spell-power') return `${formatValue(magnitude.coefficient * 100)}% Spell Power`
   if (magnitude.type === 'school-level') return `${formatValue(magnitude.base)} + ${formatValue(magnitude.perLevel)} per ${capitalize(magnitude.school)} School Level`
   if (magnitude.type === 'source-max-health-percent') return `${formatValue(magnitude.value * 100)}% of Max Health`
   if (magnitude.type === 'target-max-health-percent') return `${formatValue(magnitude.value * 100)}% of target Max Health`
@@ -86,7 +89,10 @@ export function buildSpellEffectTooltipModel(state: Pick<GameState, 'schools' | 
   if (effect.type === 'deal-damage') {
     const damageType = capitalize(effect.damageType)
     const magnitude = effect.magnitude
-    if (magnitude.type === 'school-level') {
+    if (magnitude.type === 'spell-power') {
+      rows.push({ label: 'Scaling', value: formatSpellMagnitude(magnitude), semantic: 'school' })
+      rows.push({ label: 'Base Damage', value: formatValue(getSpellPower(state) * magnitude.coefficient), semantic: 'school' })
+    } else if (magnitude.type === 'school-level') {
       const level = state.schools[magnitude.school]?.level ?? 0
       rows.push({ label: 'Base Damage', value: formatValue(magnitude.base), semantic: 'school' })
       rows.push({ label: 'School Scaling', value: `+${formatValue(magnitude.perLevel)} / ${capitalize(magnitude.school)} Level`, semantic: 'school' })
@@ -100,13 +106,19 @@ export function buildSpellEffectTooltipModel(state: Pick<GameState, 'schools' | 
   }
 
   if (effect.type === 'heal') {
-    rows.push({ label: 'Amount', value: formatSpellMagnitude(effect.magnitude) })
+    if (effect.magnitude.type === 'spell-power') {
+      rows.push({ label: 'Scaling', value: formatSpellMagnitude(effect.magnitude), semantic: 'school' })
+      rows.push({ label: 'Amount', value: formatValue(getSpellPower(state) * effect.magnitude.coefficient), semantic: 'school' })
+    } else rows.push({ label: 'Amount', value: formatSpellMagnitude(effect.magnitude) })
     appendTargetAndSource(rows, effect, spell.name)
     return { school: spell.school, ...category, title: 'Healing', description: 'Restores Health to the selected target.', rows }
   }
 
   if (effect.type === 'gain-barrier') {
-    rows.push({ label: 'Amount', value: formatSpellMagnitude(effect.magnitude) })
+    if (effect.magnitude.type === 'spell-power') {
+      rows.push({ label: 'Scaling', value: formatSpellMagnitude(effect.magnitude), semantic: 'school' })
+      rows.push({ label: 'Amount', value: formatValue(getSpellPower(state) * effect.magnitude.coefficient), semantic: 'school' })
+    } else rows.push({ label: 'Amount', value: formatSpellMagnitude(effect.magnitude) })
     if (effect.durationMs !== undefined && effect.durationMs !== null) rows.push({ label: 'Duration', value: formatTime(effect.durationMs), semantic: 'time' })
     rows.push({ label: 'Mode', value: effect.mode === 'replace' ? 'Replace' : 'Add' })
     appendTargetAndSource(rows, effect, spell.name)
@@ -122,10 +134,16 @@ export function buildSpellEffectTooltipModel(state: Pick<GameState, 'schools' | 
     const periodicDamage = periodicEffects?.find((entry) => entry.type === 'deal-damage')
     if (periodicDamage?.type === 'deal-damage') {
       rows.push({ label: 'Damage Type', value: `${capitalize(periodicDamage.damageType)} Damage`, semantic: 'school' })
-      rows.push({ label: 'Damage Per Tick', value: formatSpellMagnitude(periodicDamage.magnitude), semantic: 'school' })
+      const tickCount = durationMs !== null && status?.periodic?.intervalMs ? Math.floor(durationMs / status.periodic.intervalMs) : 0
+      if (periodicDamage.magnitude.type === 'spell-power' && tickCount > 0) {
+        const totalMagnitude = scaleMagnitude(periodicDamage.magnitude, tickCount)
+        const totalCoefficient = periodicDamage.magnitude.coefficient * tickCount
+        rows.push({ label: 'Scaling', value: `${formatSpellMagnitude(totalMagnitude)} over ${formatTime(durationMs!)}`, semantic: 'school' })
+        rows.push({ label: 'Total Base Damage', value: formatValue(getSpellPower(state) * totalCoefficient), semantic: 'school' })
+        rows.push({ label: 'Damage Per Tick', value: formatValue(getSpellPower(state) * periodicDamage.magnitude.coefficient), semantic: 'school' })
+      } else rows.push({ label: 'Damage Per Tick', value: formatSpellMagnitude(periodicDamage.magnitude), semantic: 'school' })
       rows.push({ label: 'Tick Interval', value: formatTime(status.periodic?.intervalMs ?? 0), semantic: 'time' })
-      if (durationMs !== null && status?.periodic?.intervalMs) {
-        const tickCount = Math.floor(durationMs / status.periodic.intervalMs)
+      if (durationMs !== null && status?.periodic?.intervalMs && periodicDamage.magnitude.type !== 'spell-power') {
         if (periodicDamage.magnitude.type === 'flat') rows.push({ label: 'Total Base Damage', value: formatValue(periodicDamage.magnitude.value * tickCount), semantic: 'school' })
       }
     }

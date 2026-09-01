@@ -22,6 +22,9 @@ export const debugApplyStatus = (state: GameState, actor: 'player' | 'enemy', st
 
 export const spawnEnemy = (state: GameState, enemyId: MonsterId, uiEvents?: CombatEventSink) => {
   const monster = MONSTERS[enemyId]
+  const previousSerial = Number.isSafeInteger(state.combat.enemyInstanceSerial) ? state.combat.enemyInstanceSerial : 0
+  state.combat.enemyInstanceSerial = Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, previousSerial) + 1)
+  state.combat.enemyInstanceKey = `enemy:${state.combat.enemyInstanceSerial}`
   state.combat.enemyId = enemyId
   state.combat.enemyHp = monster.maxHealth
   state.combat.enemyMaxHp = monster.maxHealth
@@ -66,6 +69,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   const drops = resolveMonsterLoot(state, enemyId, (itemId, quantity) => { onItemAcquired?.(itemId, quantity); report?.recordLoot(itemId, quantity); uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'loot', sourceId: 'loot-drop', itemId, amount: quantity }) })
   report?.recordKill(enemyId)
   state.combat.enemyId = null
+  state.combat.enemyInstanceKey = null
   state.combat.enemyHp = 0
   state.combat.enemyBarrier = 0
   state.combat.enemyBarrierRemainingMs = null
@@ -131,6 +135,7 @@ export const resolveCombatDeaths = (state: GameState, report?: SimulationReportC
     report?.recordPlayerDeath()
     state.combat.active = false
     state.combat.enemyId = null
+    state.combat.enemyInstanceKey = null
     state.combat.enemyHp = 0
     state.combat.enemyBarrier = 0
     state.combat.enemyBarrierRemainingMs = null

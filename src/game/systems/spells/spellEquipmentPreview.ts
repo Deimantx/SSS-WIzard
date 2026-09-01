@@ -5,7 +5,7 @@ import type { GameState, ItemId, SchoolId, SpellId } from '../../types'
 export interface SpellEquipmentModifier {
   itemId: ItemId
   itemName: string
-  stat: 'spell-damage' | 'barrier'
+  stat: 'spell-power' | 'spell-damage' | 'barrier'
   label: string
   value: number
 }
@@ -13,6 +13,7 @@ export interface SpellEquipmentModifier {
 export interface SpellEquipmentBonusPreview {
   current: SpellEquipmentModifier[]
   totalPercent: number
+  spellPower: number
   future: string[]
 }
 
@@ -27,9 +28,9 @@ const statForSchool = (school: SchoolId): SpellDamageStat | 'waterBarrierPct' | 
 /** Reads the same authored item stats used by runtime equipment calculations. */
 export const getSpellEquipmentBonusPreview = (state: Pick<GameState, 'equipment'>, spellId: SpellId): SpellEquipmentBonusPreview => {
   const spell = SPELLS[spellId]
-  if (!spell) return { current: [], totalPercent: 0, future: [] }
+  if (!spell) return { current: [], totalPercent: 0, spellPower: 0, future: [] }
   const statKey = statForSchool(spell.school)
-  if (!statKey) return { current: [], totalPercent: 0, future: [] }
+  if (!statKey) return { current: [], totalPercent: 0, spellPower: 0, future: [] }
   const affectsDamage = spell.effects.some((effect) => effect.type === 'deal-damage' && (effect.school ?? effect.damageType) === spell.school)
   const affectsBarrier = spell.effects.some((effect) => effect.type === 'gain-barrier')
   const appliesModifier = statKey === 'waterBarrierPct' ? affectsBarrier : affectsDamage
@@ -44,7 +45,8 @@ export const getSpellEquipmentBonusPreview = (state: Pick<GameState, 'equipment'
   })
   return {
     current,
-    totalPercent: current.reduce((sum, modifier) => sum + modifier.value, 0),
+    totalPercent: current.filter((modifier) => modifier.stat !== 'spell-power').reduce((sum, modifier) => sum + modifier.value, 0),
+    spellPower: Object.values(state.equipment).reduce((sum, itemId) => sum + (itemId ? ITEMS[itemId]?.stats?.spellPower ?? 0 : 0), 0),
     future: ['Additional school-specific equipment modifiers will appear here when authored.'],
   }
 }

@@ -78,6 +78,10 @@ export interface CombatEvent {
   originSchool?: SchoolId
   /** Equipment/provider instance identity, such as ring1 or ring2. */
   providerInstanceKey?: string
+  sourceMonsterId?: MonsterId
+  sourceInstanceKey?: string
+  originMonsterId?: MonsterId
+  originInstanceKey?: string
   statusInstanceKey?: string
   ruleId?: string
   spellId?: SpellId
@@ -131,8 +135,14 @@ export interface CombatSource {
   actor: 'player' | 'enemy'
   kind: 'basic-attack' | 'spell' | 'weapon' | 'status' | 'trait' | 'action' | 'equipment' | 'system'
   sourceId?: string
+  /** Authored Monster that owns an Enemy source. */
+  sourceMonsterId?: MonsterId
+  /** Deterministic encounter identity for an Enemy source. */
+  sourceInstanceKey?: string
   /** Original authored source when a status tick derives from another effect. */
   originSourceId?: string
+  originMonsterId?: MonsterId
+  originInstanceKey?: string
   /** Original source kind retained when a periodic tick becomes a status source. */
   originSourceKind?: CombatSource['kind']
   /** Tags from the authored source that caused a derived event. */
@@ -159,7 +169,22 @@ export type Magnitude =
   | { type: 'target-max-health-percent'; value: number }
   | { type: 'source-basic-damage-percent'; value: number }
   | { type: 'school-level'; base: number; perLevel: number; school: SchoolId }
+  | { type: 'spell-power'; coefficient: number }
   | { type: 'target-missing-health-percent'; value: number }
+
+/** Pure linear scaling for authored total magnitudes such as periodic payloads. */
+export const scaleMagnitude = (magnitude: Magnitude, factor: number): Magnitude => {
+  const scale = Number.isFinite(factor) ? factor : 0
+  switch (magnitude.type) {
+    case 'flat': return { type: 'flat', value: magnitude.value * scale }
+    case 'source-max-health-percent': return { type: 'source-max-health-percent', value: magnitude.value * scale }
+    case 'target-max-health-percent': return { type: 'target-max-health-percent', value: magnitude.value * scale }
+    case 'source-basic-damage-percent': return { type: 'source-basic-damage-percent', value: magnitude.value * scale }
+    case 'spell-power': return { type: 'spell-power', coefficient: magnitude.coefficient * scale }
+    case 'school-level': return { type: 'school-level', base: magnitude.base * scale, perLevel: magnitude.perLevel * scale, school: magnitude.school }
+    case 'target-missing-health-percent': return { type: 'target-missing-health-percent', value: magnitude.value * scale }
+  }
+}
 
 export type ResourceId = 'mana'
 

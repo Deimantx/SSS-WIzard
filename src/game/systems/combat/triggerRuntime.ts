@@ -7,6 +7,7 @@ import type { CombatActor } from './magnitude'
 import { getActorTraits } from './traitRuntime'
 import { conditionContainsCrossedHpThreshold, conditionHasHpThreshold, evaluateCombatCondition } from './conditionRuntime'
 import type { CombatConditionContext, CombatEffect, CombatEventSink, CombatSource, CombatTag, CombatTrigger, CombatTriggerRule } from './combatTypes'
+import { isEnemySourceOwnerActive } from './combatProvenance'
 
 export type CombatEventContext = CombatConditionContext
 export type TriggerEffectExecutor = (state: GameState, effects: CombatEffect[], source: CombatSource, depth?: number, uiEvents?: CombatEventSink) => void
@@ -106,6 +107,10 @@ export const runCombatTriggers = (
   uiEvents?: CombatEventSink,
 ) => {
   if (depth >= MAX_TRIGGER_DEPTH) return
+  // A periodic effect from a defeated Enemy may still tick, but it cannot
+  // execute source-side rules from the next encounter. Combat-start uses a
+  // system source and is intentionally allowed to initialize the new owner.
+  if (actor === 'enemy' && context.source?.actor === 'enemy' && context.source.kind !== 'system' && !isEnemySourceOwnerActive(state, context.source)) return
   const rules = collectOwnedRules(state, actor, transientStatuses)
     .filter(({ rule }) => rule.event === event)
     .sort((left, right) => (left.rule.priority ?? 0) - (right.rule.priority ?? 0) || left.stableOrder - right.stableOrder)
@@ -124,8 +129,8 @@ export const runCombatTriggers = (
     // same rule before its once/cooldown guard has been established.
     if (rule.oncePerEncounter) state.combat.triggeredRuleIds.push(runtimeKey)
     if (rule.cooldownMs && rule.cooldownMs > 0) state.combat.ruleCooldowns[runtimeKey] = rule.cooldownMs
-    const source: CombatSource = { actor, kind: ownerKind === 'equipment' ? 'equipment' : ownerKind, sourceId: ownerId, providerInstanceKey: ownerKind === 'equipment' ? equipmentPosition : undefined, ruleId: rule.id, tags: sourceTags }
-    uiEvents?.push({ source: actor === 'enemy' && state.combat.enemyId ? { kind: 'enemy', monsterId: state.combat.enemyId } : actor === 'player' ? { kind: 'player' } : { kind: 'system' }, sourceKind: ownerKind === 'equipment' ? 'equipment' : 'system', target: context.eventTarget, targetMonsterId: context.eventTarget === 'enemy' ? state.combat.enemyId ?? undefined : undefined, category: ownerKind === 'trait' ? 'trait' : 'system', sourceId: ownerId, providerInstanceKey: ownerKind === 'equipment' ? equipmentPosition : undefined, itemId: ownerKind === 'equipment' ? ownerId as ItemId : undefined, traitId: ownerKind === 'trait' ? ownerId as TraitId : undefined, statusId: ownerKind === 'status' ? ownerId as StatusId : undefined, amount: context.amount, damageType: context.damageType, healthDamage: context.healthDamage, barrierAbsorbed: context.barrierDamage })
+    const source: CombatSource = { actor, kind: ownerKind === 'equipment' ? 'equipment' : ownerKind, sourceId: ownerId, sourceMonsterId: actor === 'enemy' ? state.combat.enemyId ?? undefined : undefined, sourceInstanceKey: actor === 'enemy' ? state.combat.enemyInstanceKey ?? undefined : undefined, providerInstanceKey: ownerKind === 'equipment' ? equipmentPosition : undefined, ruleId: rule.id, tags: sourceTags }
+    uiEvents?.push({ source: actor === 'enemy' && state.combat.enemyId ? { kind: 'enemy', monsterId: state.combat.enemyId } : actor === 'player' ? { kind: 'player' } : { kind: 'system' }, sourceKind: ownerKind === 'equipment' ? 'equipment' : 'system', sourceMonsterId: source.sourceMonsterId, sourceInstanceKey: source.sourceInstanceKey, target: context.eventTarget, targetMonsterId: context.eventTarget === 'enemy' ? state.combat.enemyId ?? undefined : undefined, category: ownerKind === 'trait' ? 'trait' : 'system', sourceId: ownerId, providerInstanceKey: ownerKind === 'equipment' ? equipmentPosition : undefined, itemId: ownerKind === 'equipment' ? ownerId as ItemId : undefined, traitId: ownerKind === 'trait' ? ownerId as TraitId : undefined, statusId: ownerKind === 'status' ? ownerId as StatusId : undefined, amount: context.amount, damageType: context.damageType, healthDamage: context.healthDamage, barrierAbsorbed: context.barrierDamage })
     executeEffects(state, rule.effects, source, depth + 1, uiEvents)
     if (actor === 'enemy') appendLog(state, `${ownerName} triggers.`)
   })

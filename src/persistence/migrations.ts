@@ -10,7 +10,7 @@ import { BALANCE } from '../game/core/balance/balance'
 import { SPELLS } from '../game/content/spells/spells'
 import { SCHOOLS } from '../game/content/schools/schools'
 import { EQUIPMENT_POSITIONS, normalizeEquipmentState } from '../game/core/equipment'
-import type { EquipmentPosition, GameState, ItemId, RecipeId, ResearchActivity, ResearchJobState, SchoolId, SpellId, TransmutationJobState } from '../game/types'
+import type { EquipmentPosition, GameState, ItemId, MonsterId, RecipeId, ResearchActivity, ResearchJobState, SchoolId, SpellId, TransmutationJobState } from '../game/types'
 import { RESEARCH_SLOT_ORDER } from '../game/systems/research/researchReservations'
 import { isRecord, SaveMigrationError } from './saveSchema'
 import { recalculateDerivedStats } from '../game/engine'
@@ -156,6 +156,8 @@ export const normalizeLegacyProgressEvidence = (progress: GameState['progress'])
 const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sourceVersion: number) => {
   const fresh = createInitialState()
   const rawCombat = isRecord(raw.combat) ? raw.combat : {}
+  const legacyActiveEnemyId = typeof rawCombat.enemyId === 'string' && MONSTERS[rawCombat.enemyId as MonsterId] ? rawCombat.enemyId as MonsterId : null
+  const legacyEnemyInstanceKey = sourceVersion === 21 && legacyActiveEnemyId ? 'enemy:1' : null
   const normalizeSource = (value: unknown, fallbackActor: 'player' | 'enemy'): CombatSource => {
     if (!isRecord(value)) return { actor: fallbackActor, kind: 'system', sourceId: 'save-migration' }
     const actor = value.actor === 'player' || value.actor === 'enemy' ? value.actor : fallbackActor
@@ -166,10 +168,14 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
     const originSourceKind = ['basic-attack', 'spell', 'weapon', 'status', 'trait', 'action', 'equipment', 'system'].includes(rawOriginKind) ? rawOriginKind as CombatSource['kind'] : undefined
     const originTags = Array.isArray(value.originTags) ? value.originTags.filter((tag): tag is NonNullable<CombatSource['originTags']>[number] => typeof tag === 'string') : undefined
     const originSchool = ['fire', 'water', 'earth', 'air'].includes(String(value.originSchool)) ? value.originSchool as CombatSource['originSchool'] : undefined
+    const sourceMonsterId = typeof value.sourceMonsterId === 'string' && MONSTERS[value.sourceMonsterId as MonsterId] ? value.sourceMonsterId as MonsterId : sourceVersion === 21 && actor === 'enemy' ? legacyActiveEnemyId ?? undefined : undefined
+    const sourceInstanceKey = sourceVersion >= 22 && typeof value.sourceInstanceKey === 'string' && /^enemy:[1-9]\d*$/.test(value.sourceInstanceKey) ? value.sourceInstanceKey : sourceVersion === 21 && actor === 'enemy' ? legacyEnemyInstanceKey ?? undefined : undefined
+    const originMonsterId = typeof value.originMonsterId === 'string' && MONSTERS[value.originMonsterId as MonsterId] ? value.originMonsterId as MonsterId : sourceMonsterId
+    const originInstanceKey = sourceVersion >= 22 && typeof value.originInstanceKey === 'string' && /^enemy:[1-9]\d*$/.test(value.originInstanceKey) ? value.originInstanceKey : sourceInstanceKey
     const statusId = typeof value.statusId === 'string' && Object.prototype.hasOwnProperty.call(STATUS_DEFINITIONS, value.statusId) ? value.statusId as StatusId : undefined
     const rawProvider = typeof value.providerInstanceKey === 'string' && value.providerInstanceKey.trim().length <= 64 ? value.providerInstanceKey.trim() : undefined
     const providerInstanceKey = sourceVersion >= 21 && rawProvider && (kind !== 'equipment' || EQUIPMENT_POSITIONS.includes(rawProvider as EquipmentPosition)) ? rawProvider : undefined
-    return { actor, kind, sourceId: typeof value.sourceId === 'string' ? value.sourceId : 'save-migration', statusId, originSourceId: typeof value.originSourceId === 'string' ? value.originSourceId : undefined, originSourceKind, originTags, originSchool, providerInstanceKey, ruleId: typeof value.ruleId === 'string' ? value.ruleId : undefined, statusInstanceKey: typeof value.statusInstanceKey === 'string' ? value.statusInstanceKey : undefined, school, tags: Array.isArray(value.tags) ? value.tags.filter((tag): tag is NonNullable<CombatSource['tags']>[number] => typeof tag === 'string') : undefined }
+    return { actor, kind, sourceId: typeof value.sourceId === 'string' ? value.sourceId : 'save-migration', sourceMonsterId, sourceInstanceKey, originSourceId: typeof value.originSourceId === 'string' ? value.originSourceId : undefined, originMonsterId, originInstanceKey, originSourceKind, originTags, originSchool, providerInstanceKey, ruleId: typeof value.ruleId === 'string' ? value.ruleId : undefined, statusInstanceKey: typeof value.statusInstanceKey === 'string' ? value.statusInstanceKey : undefined, school, tags: Array.isArray(value.tags) ? value.tags.filter((tag): tag is NonNullable<CombatSource['tags']>[number] => typeof tag === 'string') : undefined }
   }
   const normalizeStatuses = (value: unknown, fallbackActor: 'player' | 'enemy'): ActiveStatus[] => {
     if (!Array.isArray(value)) return []
@@ -222,6 +228,14 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
   const rawPlayerTimer = nonNegativeNumber(rawCombat.playerAttackTimerMs)
 
   const activeEnemyId = typeof migrated.combat.enemyId === 'string' && MONSTERS[migrated.combat.enemyId] ? migrated.combat.enemyId : null
+  const rawSerial = sourceVersion >= 22 ? nonNegativeInteger(rawCombat.enemyInstanceSerial) ?? 0 : sourceVersion === 21 && activeEnemyId ? 1 : 0
+  const rawInstanceKey = sourceVersion >= 22 && typeof rawCombat.enemyInstanceKey === 'string' && /^enemy:[1-9]\d*$/.test(rawCombat.enemyInstanceKey) ? rawCombat.enemyInstanceKey : null
+  const keySerial = rawInstanceKey ? nonNegativeInteger(rawInstanceKey.slice('enemy:'.length)) ?? 0 : 0
+  migrated.combat.enemyInstanceSerial = Math.max(0, rawSerial, keySerial)
+  migrated.combat.enemyInstanceKey = activeEnemyId
+    ? sourceVersion === 21 ? 'enemy:1' : rawInstanceKey ?? `enemy:${Math.max(1, migrated.combat.enemyInstanceSerial)}`
+    : null
+  if (activeEnemyId && migrated.combat.enemyInstanceSerial < 1) migrated.combat.enemyInstanceSerial = 1
   const monster = activeEnemyId ? MONSTERS[activeEnemyId] : undefined
   migrated.combat.inBossFight = Boolean(monster && isBossMonster(monster))
   const rawPatternId = typeof rawCombat.enemyActionPatternId === 'string' ? rawCombat.enemyActionPatternId : undefined
@@ -616,7 +630,7 @@ export const migrateSave = (rawSave: unknown): GameState => {
   if (version === 17) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === 18) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === 19) return finalize(merge(createInitialState(), rawSave), rawSave, version)
-  if (version === 20 || version === SAVE_VERSION) {
+  if (version === 20 || version === 21 || version === SAVE_VERSION) {
     return finalize(merge(createInitialState(), rawSave), rawSave, version)
   }
   throw new SaveMigrationError(`Unsupported save version: ${String(version ?? 'missing')}.`)

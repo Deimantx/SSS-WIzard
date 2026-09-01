@@ -8,7 +8,7 @@ import { evaluateCombatCondition } from './conditionRuntime'
 import { getActorTraits } from './traitRuntime'
 import type { CombatModifier, CombatSource, CombatTag, DamageType, ModifierKey } from './combatTypes'
 import { getStatusGroupStacks } from './statusSelectors'
-import { getRootCombatSourceProvenance } from './combatProvenance'
+import { getRootCombatSourceProvenance, isEnemySourceOwnerActive } from './combatProvenance'
 
 export interface ModifierContext {
   source?: CombatSource
@@ -47,6 +47,10 @@ const statusModifierValue = (state: GameState, actor: CombatActor, active: GameS
 }
 
 export const getCombatModifiers = (state: GameState, actor: CombatActor, key: ModifierKey, context: ModifierContext = {}) => {
+  // Source-side Enemy modifiers belong to the encounter instance that
+  // authored the source. A lingering source may still resolve its snapshot,
+  // but it cannot borrow the next Enemy's traits/statuses.
+  if (actor === 'enemy' && context.source?.actor === 'enemy' && !isEnemySourceOwnerActive(state, context.source)) return 0
   let total = 0
   activeStatuses(state, actor).forEach((active) => {
     const definition = STATUS_DEFINITIONS[active.statusId]

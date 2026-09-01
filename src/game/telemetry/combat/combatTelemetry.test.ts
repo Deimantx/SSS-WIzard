@@ -92,10 +92,12 @@ describe('combat telemetry foundation', () => {
     state.combat.active = true
     state.combat.dungeonId = 'whispering-woods'
     state.combat.enemyId = 'grove-sentinel'
+    state.combat.enemyInstanceSerial = 1
+    state.combat.enemyInstanceKey = 'enemy:1'
     const events: CombatEvent[] = []
     const sink: CombatEventSink = { push: (event) => events.push(event) }
     const ward: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'water-ward', school: 'water', tags: ['spell', 'water'] }
-    const rootCrush: CombatSource = { actor: 'enemy', kind: 'action', sourceId: 'root-crush', ruleId: 'root-crush', tags: ['special'] }
+    const rootCrush: CombatSource = { actor: 'enemy', kind: 'action', sourceId: 'root-crush', ruleId: 'root-crush', sourceMonsterId: 'grove-sentinel', sourceInstanceKey: 'enemy:1', tags: ['special'] }
     executeCombatEffects(state, [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 35 }, mode: 'replace', durationMs: 9_000 }], ward, undefined, sink)
     executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', damageType: 'physical', magnitude: { type: 'flat', value: 20 } }], rootCrush, undefined, sink)
 

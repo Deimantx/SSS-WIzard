@@ -14,6 +14,7 @@ export interface DebugCombatRuntimeContext {
 
 const resetEncounterWithoutRewards = (state: GameState) => {
   state.combat.enemyId = null
+  state.combat.enemyInstanceKey = null
   state.combat.enemyHp = 0
   state.combat.enemyMaxHp = 0
   state.combat.enemyBarrier = 0

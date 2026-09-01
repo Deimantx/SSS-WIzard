@@ -1,6 +1,7 @@
 import { Button, Card, Status } from '../../components/ui'
 import { getManaRegenBreakdown } from '../../game/engine/channelingEngine'
 import { useGameStore } from '../../store/gameStore'
+import { getSpellPowerBreakdown } from '../../game/systems/spells/spellPower'
 import { NumberField, Summary } from './DeveloperTabPrimitives'
 
 export function DeveloperCharacter() {
@@ -17,6 +18,7 @@ export function DeveloperCharacter() {
   const setImmortal = useGameStore((state) => state.setDebugPlayerImmortal)
   const update = (key: keyof typeof player, value: number) => setPlayer({ [key]: value } as Partial<typeof player>)
   const regen = getManaRegenBreakdown({ activities, progress, equipment, debug })
+  const spellPower = getSpellPowerBreakdown({ equipment })
 
   return <div className="developer-tab-grid">
     <Card title="Player values">
@@ -28,6 +30,9 @@ export function DeveloperCharacter() {
         <Summary label="Current Mana Regen" value={`+${regen.total}/s`} />
         <Summary label="Developer Mana Regen Bonus" value={`+${debug.bonusManaRegenFlat}/s`} />
         <Summary label="Final Max Focus" value={player.maxFocus} />
+        <Summary label="Spell Power Base" value={spellPower.base} />
+        <Summary label="Spell Power Equipment" value={spellPower.equipment} />
+        <Summary label="Spell Power Total" value={spellPower.total} />
       </div>
       <div className="developer-form-grid">
         <NumberField label="Current Health" value={player.health} onChange={(value) => update('health', value)} />

@@ -85,7 +85,7 @@
 .spell-inspector-title p { margin: 0; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
 .spell-inspector-description { margin: 0 0 13px; color: var(--ui-text-soft); font-size: var(--text-xs); line-height: 1.55; }
 .spell-inspector-section { padding: 11px 0; border-top: 1px solid var(--ui-border); }
-.spell-core-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+.spell-core-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
 .spell-core-grid > .game-tooltip-trigger { min-width: 0; }
 .spell-core-metric { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; align-items: center; gap: 2px 5px; min-height: 58px; padding: 8px; border: 1px solid transparent; border-radius: 7px; background: color-mix(in srgb, var(--ui-panel-strong) 78%, transparent); }
 .spell-core-metric:hover { border-color: var(--ui-border); }

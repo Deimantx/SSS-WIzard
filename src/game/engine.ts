@@ -10,26 +10,12 @@ import { RESEARCH_SLOT_ORDER } from './systems/research/researchReservations'
 import { getSchoolLevel as getCentralSchoolLevel, getSchoolProgressInfo } from './systems/schools'
 import { getFocusCapacityBreakdown } from './systems/focus/focusCapacity'
 import { getSpellAutoCastFocusCost, syncSpellUnlocksForSchool } from './systems/spells/spellProgression'
+import { getEquipmentStats } from './core/equipment/equipmentStats'
+export { getSpellPower, getSpellPowerBreakdown } from './systems/spells/spellPower'
 
 export const getSchoolLevel = getCentralSchoolLevel
 
-export const equipmentStats = (state: Pick<GameState, 'equipment'>): EquipmentStats => {
-  const total: EquipmentStats = {}
-  Object.values(state.equipment).forEach((itemId) => {
-    if (!itemId || !ITEMS[itemId]) return
-    const stats = ITEMS[itemId].stats ?? {}
-    Object.entries(stats).forEach(([key, value]) => {
-      if (key === 'resistances' && value && typeof value === 'object') {
-        const resistances = (total.resistances ?? {}) as NonNullable<EquipmentStats['resistances']>
-        Object.entries(value as Record<string, number>).forEach(([damageType, resistance]) => { resistances[damageType as keyof typeof resistances] = (resistances[damageType as keyof typeof resistances] ?? 0) + (resistance ?? 0) })
-        total.resistances = resistances
-        return
-      }
-      total[key as keyof EquipmentStats] = ((total[key as keyof EquipmentStats] ?? 0) as number + (value ?? 0)) as never
-    })
-  })
-  return total
-}
+export const equipmentStats = getEquipmentStats
 
 export const recalculateDerivedStats = (state: GameState) => {
   const stats = equipmentStats(state)

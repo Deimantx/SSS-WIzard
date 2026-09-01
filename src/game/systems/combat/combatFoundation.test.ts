@@ -6,7 +6,7 @@ import { applyBarrier, finishEnemy, resolveCombatDeaths, spawnEnemy } from './co
 import { clearCurrentEnemyAction, forceResolveEnemyAction, startEnemyAction } from './actionRuntime'
 import { runCombatTriggers } from './triggerRuntime'
 import { migrateSave } from '../../../persistence/migrations'
-import type { CombatSource, TraitDefinition, TraitId } from '../../types'
+import type { CombatSource, GameState, TraitDefinition, TraitId } from '../../types'
 import { advanceGameState } from '../simulation/advanceGameState'
 import { tickBarriers } from './barrierRuntime'
 import { castSpellAction } from '../../../store/actions/combatActions'
@@ -19,7 +19,7 @@ import { getTimedActionState } from './actionTiming'
 import { getSpellEquipmentBonusPreview } from '../spells/spellEquipmentPreview'
 
 const playerSpell: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'test-spell', school: 'fire', tags: ['spell', 'magic'] }
-const enemyAttack: CombatSource = { actor: 'enemy', kind: 'basic-attack', sourceId: 'test-attack', tags: ['basic-attack', 'direct'] }
+const enemyAttack = (state: GameState): CombatSource => ({ actor: 'enemy', kind: 'basic-attack', sourceId: 'test-attack', sourceMonsterId: state.combat.enemyId ?? undefined, sourceInstanceKey: state.combat.enemyInstanceKey ?? undefined, tags: ['basic-attack', 'direct'] })
 const stateWithEnemy = (enemyId: Parameters<typeof spawnEnemy>[1] = 'forest-wisp') => {
   const state = createInitialState()
   state.combat.active = true
@@ -46,7 +46,7 @@ describe('universal combat effects', () => {
   it('resolves damage, healing, barriers, mana, delay, and cooldowns', () => {
     const state = stateWithEnemy()
     state.combat.playerBarrier = 10
-    damagePlayer(state, 15, enemyAttack)
+    damagePlayer(state, 15, enemyAttack(state))
     expect(state.combat.playerBarrier).toBe(0)
     expect(state.player.health).toBe(95)
     state.player.health = 99
@@ -125,7 +125,7 @@ describe('authored status runtime', () => {
     try {
       const state = stateWithEnemy()
       applyStatus(state, 'player', 'quickening', playerSpell)
-      applyStatus(state, 'player', 'vulnerable', enemyAttack)
+      applyStatus(state, 'player', 'vulnerable', enemyAttack(state))
       tickStatuses(state, 1000, executeCombatEffects)
       expect(state.combat.playerStatuses.map((status) => status.statusId)).toEqual(['quickening'])
     } finally {
@@ -139,7 +139,7 @@ describe('authored status runtime', () => {
     try {
       const state = stateWithEnemy()
       applyStatus(state, 'player', 'quickening', playerSpell)
-      applyStatus(state, 'player', 'burning', enemyAttack)
+      applyStatus(state, 'player', 'burning', enemyAttack(state))
       tickStatuses(state, 1000, executeCombatEffects)
       expect(state.combat.playerStatuses.map((status) => status.statusId)).toEqual(['quickening'])
     } finally {
@@ -194,7 +194,7 @@ describe('post-implementation combat audit regressions', () => {
     const state = stateWithEnemy()
     state.player.health = 1
     state.combat.playerAttackTimerMs = 0
-    applyStatus(state, 'player', 'burning', enemyAttack)
+    applyStatus(state, 'player', 'burning', enemyAttack(state))
 
     advanceGameState(state, 1000, { mode: 'live' })
 
@@ -236,7 +236,7 @@ describe('post-implementation combat audit regressions', () => {
     const state = stateWithEnemy()
     state.progress.spellRanks = { 'fire-bolt': 1 }
     state.player.mana = 50
-    applyStatus(state, 'player', 'stunned', enemyAttack)
+      applyStatus(state, 'player', 'stunned', enemyAttack(state))
     expect(castSpellAction(state, 'fire-bolt')).toBe(false)
     expect(state.player.mana).toBe(50)
     expect(state.combat.spellCooldowns['fire-bolt']).toBe(0)
@@ -288,17 +288,17 @@ describe('post-implementation combat audit regressions', () => {
 
     const baseWater = stateWithEnemy()
     executeCombatEffects(baseWater, SPELLS['water-ward'].effects, waterSource)
-    expect(baseWater.combat.playerBarrier).toBe(35)
+    expect(baseWater.combat.playerBarrier).toBe(70)
 
     const tideWater = stateWithEnemy()
     tideWater.equipment.offhand = 'tide-focus'
     executeCombatEffects(tideWater, SPELLS['water-ward'].effects, waterSource)
-    expect(tideWater.combat.playerBarrier).toBe(42)
+    expect(tideWater.combat.playerBarrier).toBe(97)
 
     const tideEarth = stateWithEnemy()
     tideEarth.equipment.offhand = 'tide-focus'
     executeCombatEffects(tideEarth, SPELLS.stoneguard.effects, earthSource)
-    expect(tideEarth.combat.playerBarrier).toBe(70)
+    expect(tideEarth.combat.playerBarrier).toBe(150)
   })
 
   it('keeps generic flat Barrier Received bonuses independent of Water scope', () => {
@@ -308,12 +308,12 @@ describe('post-implementation combat audit regressions', () => {
     const water = stateWithEnemy()
     water.equipment.armor = 'stoneweave-robe'
     executeCombatEffects(water, SPELLS['water-ward'].effects, waterSource)
-    expect(water.combat.playerBarrier).toBe(45)
+    expect(water.combat.playerBarrier).toBe(80)
 
     const earth = stateWithEnemy()
     earth.equipment.armor = 'stoneweave-robe'
     executeCombatEffects(earth, SPELLS.stoneguard.effects, earthSource)
-    expect(earth.combat.playerBarrier).toBe(80)
+    expect(earth.combat.playerBarrier).toBe(140)
   })
 
   it('keeps the Water Barrier equipment preview aligned with runtime scope', () => {
@@ -326,10 +326,10 @@ describe('post-implementation combat audit regressions', () => {
     const waterSource: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'water-ward', school: 'water', tags: ['spell', 'magic', 'water'] }
     const earthSource: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'stoneguard', school: 'earth', tags: ['spell', 'magic', 'earth'] }
     executeCombatEffects(state, SPELLS['water-ward'].effects, waterSource)
-    expect(state.combat.playerBarrier).toBe(42)
+    expect(state.combat.playerBarrier).toBe(97)
     state.combat.playerBarrier = 0
     executeCombatEffects(state, SPELLS.stoneguard.effects, earthSource)
-    expect(state.combat.playerBarrier).toBe(70)
+    expect(state.combat.playerBarrier).toBe(150)
   })
 
   it('keeps authored barrier duration and effect tags explicit', () => {
@@ -351,7 +351,7 @@ describe('post-implementation combat audit regressions', () => {
       const state = stateWithEnemy()
       damageEnemy(state, 1, 'spell')
       expect(state.combat.enemyBarrier).toBe(0)
-      damagePlayer(state, 1, enemyAttack)
+      damagePlayer(state, 1, enemyAttack(state))
       expect(state.combat.enemyBarrier).toBe(1)
     })
   })
@@ -359,7 +359,7 @@ describe('post-implementation combat audit regressions', () => {
   it('applies Purified only to harmful status durations', () => {
     const state = stateWithEnemy()
     applyStatus(state, 'player', 'purified', { actor: 'player', kind: 'system', sourceId: 'test' })
-    const burning = applyStatus(state, 'player', 'burning', enemyAttack)
+    const burning = applyStatus(state, 'player', 'burning', enemyAttack(state))
     const regeneration = applyStatus(state, 'player', 'regeneration', { actor: 'player', kind: 'system', sourceId: 'test' })
     expect(burning?.remainingMs).toBe(2500)
     expect(regeneration?.remainingMs).toBe(6000)
@@ -445,7 +445,7 @@ describe('post-implementation combat audit regressions', () => {
     applyStatus(equipped, 'enemy', 'burning', playerSpell)
     tickStatuses(plain, 1000, executeCombatEffects)
     tickStatuses(equipped, 1000, executeCombatEffects)
-    expect(equipped.combat.enemyHp).toBe(plain.combat.enemyHp)
+    expect(equipped.combat.enemyHp).toBe(plain.combat.enemyHp - 1)
   })
 
   it('uses the canonical damage calculation for preview and resolution', () => {

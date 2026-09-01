@@ -268,7 +268,7 @@ describe('screen smoke coverage', () => {
     expect(spellTooltip.textContent).toContain('AUTO-CAST')
     expect(spellTooltip.textContent).toContain('10 Focus')
     expect(spellTooltip.textContent).toContain('Base Damage')
-    expect(spellTooltip.textContent).toContain('Current Base Preview')
+    expect(spellTooltip.textContent).toContain('60% Spell Power')
     expect(spellTooltip.textContent).toContain('Ember Staff')
     expect(spellTooltip.textContent).not.toContain('Select to inspect this Spell')
     expect(spellTooltip.textContent).not.toContain('Source')

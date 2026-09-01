@@ -4,7 +4,7 @@ import { migrateSave } from '../../../persistence/migrations'
 import { STATUS_DEFINITIONS } from '../../content/statuses'
 import { TRAIT_DEFINITIONS, validateTraitDefinitions } from '../../content/traits'
 import { MONSTERS, validateMonsterDefinitions } from '../../content/monsters'
-import type { CombatEffect, CombatSource, TraitDefinition, TraitId } from '../../types'
+import type { CombatEffect, CombatSource, GameState, TraitDefinition, TraitId } from '../../types'
 import { executeCombatEffects, damageEnemy, damagePlayer } from './effectResolver'
 import { getCombatModifiers } from './modifiers'
 import { applyStatus, removeStatus, tickStatuses } from './statusRuntime'
@@ -13,7 +13,7 @@ import { resetCombatRuleRuntime, runCombatTriggers, tickRuleCooldowns } from './
 import { spawnEnemy } from './combatRuntime'
 
 const playerSource: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'trait-test', tags: ['spell', 'fire'] }
-const enemySource: CombatSource = { actor: 'enemy', kind: 'basic-attack', sourceId: 'trait-test-attack', tags: ['basic-attack', 'direct'] }
+const enemySource = (state: GameState): CombatSource => ({ actor: 'enemy', kind: 'basic-attack', sourceId: 'trait-test-attack', sourceMonsterId: state.combat.enemyId ?? undefined, sourceInstanceKey: state.combat.enemyInstanceKey ?? undefined, tags: ['basic-attack', 'direct'] })
 
 const stateWithEnemy = () => {
   const state = createInitialState()
@@ -45,9 +45,9 @@ describe('Universal Trait System V1', () => {
     }, () => {
       const state = stateWithEnemy()
       const context = { sourceTags: ['spell' as const], damageType: 'fire' as const }
-      expect(getCombatModifiers(state, 'enemy', 'damage-dealt-percent', context)).toBe(0)
+      expect(getCombatModifiers(state, 'enemy', 'damage-dealt-percent', { ...context, source: enemySource(state) })).toBe(0)
       state.player.health = 10
-      expect(getCombatModifiers(state, 'enemy', 'damage-dealt-percent', context)).toBe(0.2)
+      expect(getCombatModifiers(state, 'enemy', 'damage-dealt-percent', { ...context, source: enemySource(state) })).toBe(0.2)
     })
   })
 
@@ -90,7 +90,7 @@ describe('Universal Trait System V1', () => {
     }, () => {
       const state = stateWithEnemy()
       state.player.health = 60
-      damagePlayer(state, 20, enemySource)
+      damagePlayer(state, 20, enemySource(state))
       expect(state.combat.enemyBarrier).toBe(7)
     })
   })
@@ -197,9 +197,9 @@ describe('Universal Trait System V1', () => {
       ],
     }, () => {
       const state = stateWithEnemy()
-      applyStatus(state, 'enemy', 'burning', enemySource)
-      applyStatus(state, 'enemy', 'fortified', enemySource)
-      removeStatus(state, 'enemy', 'burning', { executeEffects: executeCombatEffects, source: enemySource })
+      applyStatus(state, 'enemy', 'burning', enemySource(state))
+      applyStatus(state, 'enemy', 'fortified', enemySource(state))
+      removeStatus(state, 'enemy', 'burning', { executeEffects: executeCombatEffects, source: enemySource(state) })
       expect(state.combat.enemyBarrier).toBe(7)
       removeStatus(state, 'enemy', 'fortified', { executeEffects: executeCombatEffects, source: playerSource })
       expect(state.combat.enemyBarrier).toBe(23)
@@ -212,10 +212,10 @@ describe('Universal Trait System V1', () => {
       rules: [{ id: 'quickening-expired', event: 'on-status-expired', condition: { type: 'event-status-is', statusId: 'quickening' }, effects: [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 6 } }] }],
     }, () => {
       const state = stateWithEnemy()
-      applyStatus(state, 'enemy', 'quickening', enemySource, { durationMs: 1 })
+      applyStatus(state, 'enemy', 'quickening', enemySource(state), { durationMs: 1 })
       tickStatuses(state, 1, executeCombatEffects)
       expect(state.combat.enemyBarrier).toBe(6)
-      applyStatus(state, 'enemy', 'fortified', enemySource, { durationMs: 1 })
+      applyStatus(state, 'enemy', 'fortified', enemySource(state), { durationMs: 1 })
       tickStatuses(state, 1, executeCombatEffects)
       expect(state.combat.enemyBarrier).toBe(6)
     })

@@ -102,7 +102,7 @@ export function EquipmentScreenV2() {
   const statsPanel = <Card title="WIZARD STATS" action={<Sparkles size={16} color="var(--gold)" />}>
     <div className="equipment-stat-groups">
       <StatGroup title="CORE" rows={[['Max Health', String(statSnapshot.maxHealth)], ['Max Mana', String(statSnapshot.maxMana)], ['Max Focus', String(statSnapshot.maxFocus)], ['Passive Mana Regen', `+${statSnapshot.manaRegen.toFixed(1)}/s`]]} />
-      <StatGroup title="OFFENSE" rows={[['Basic Attack Damage', String(statSnapshot.basicDamage)]]} />
+      <StatGroup title="OFFENSE" rows={[['Spell Power', String(statSnapshot.spellPower)], ['Basic Attack Damage', String(statSnapshot.basicDamage)]]} />
       <StatGroup title="DEFENSE" rows={statSnapshot.barrierReceived ? [['Barrier Received', `+${statSnapshot.barrierReceived}`]] : []} />
       <StatGroup title="MAGIC" rows={[['Fire Spell Damage', statSnapshot.fireSpellDamagePct], ['Water Barrier Strength', statSnapshot.waterBarrierPct], ['Earth Spell Damage', statSnapshot.earthSpellDamagePct], ['Air Spell Damage', statSnapshot.airSpellDamagePct]].filter(([, value]) => value !== 0).map(([label, value]) => [String(label), `+${Math.round(Number(value) * 100)}%`])} />
     </div>
@@ -135,11 +135,15 @@ export const EquipmentScreen = EquipmentScreenV2
 
 function StatGroup({ title, rows }: { title: string; rows: [string, string][] }) {
   if (rows.length === 0) return null
-  return <section className="equipment-stat-group"><span>{title}</span>{rows.map(([label, value]) => <div key={label}><small>{label}</small><strong>{value}</strong></div>)}</section>
+  return <section className="equipment-stat-group"><span>{title}</span>{rows.map(([label, value]) => {
+    const content = label === 'Spell Power' ? <TooltipContent title="Spell Power" description="Determines the base magnitude of damaging, healing, Barrier, and Spell-applied damage-over-time effects according to each Spell's authored Scaling coefficient." /> : null
+    const row = <div key={label}><small>{label}</small><strong>{value}</strong></div>
+    return content ? <GameTooltip block key={label} content={content}>{row}</GameTooltip> : row
+  })}</section>
 }
 
 function friendlyStat(key: string) {
-  return ({ maxHealth: 'Max Health', maxMana: 'Max Mana', maxFocus: 'Max Focus', manaRegen: 'Passive Mana Regen', basicDamage: 'Basic Attack Damage', barrierReceived: 'Barrier Received', fireSpellDamagePct: 'Fire Spell Damage', waterBarrierPct: 'Water Barrier Strength', earthSpellDamagePct: 'Earth Spell Damage', airSpellDamagePct: 'Air Spell Damage' } as Record<string, string>)[key] ?? key
+  return ({ maxHealth: 'Max Health', maxMana: 'Max Mana', maxFocus: 'Max Focus', manaRegen: 'Passive Mana Regen', basicDamage: 'Basic Attack Damage', spellPower: 'Spell Power', barrierReceived: 'Barrier Received', fireSpellDamagePct: 'Fire Spell Damage', waterBarrierPct: 'Water Barrier Strength', earthSpellDamagePct: 'Earth Spell Damage', airSpellDamagePct: 'Air Spell Damage' } as Record<string, string>)[key] ?? key
 }
 
 function formatSnapshotValue(key: string, snapshot: ReturnType<typeof getEquipmentStatSnapshot>) {

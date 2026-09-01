@@ -13,6 +13,7 @@ const isStatusId = (value: unknown): value is StatusId => typeof value === 'stri
 const isMagnitude = (value: unknown) => {
   if (!isRecord(value) || typeof value.type !== 'string') return false
   if (value.type === 'flat' || value.type === 'source-max-health-percent' || value.type === 'target-max-health-percent' || value.type === 'source-basic-damage-percent' || value.type === 'target-missing-health-percent') return isFiniteNumber(value.value)
+  if (value.type === 'spell-power') return isFiniteNumber(value.coefficient) && value.coefficient >= 0
   return value.type === 'school-level' && isFiniteNumber(value.base) && isFiniteNumber(value.perLevel) && ['fire', 'water', 'earth', 'air'].includes(String(value.school))
 }
 

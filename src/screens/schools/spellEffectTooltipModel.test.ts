@@ -5,17 +5,18 @@ import { buildSpellEffectTooltipModel } from './spellEffectTooltipModel'
 const row = (model: ReturnType<typeof buildSpellEffectTooltipModel>, label: string) => model.rows.find((entry) => entry.label === label)
 
 describe('spell effect tooltip models', () => {
-  it('uses the authored school scaling and equipment preview for damage', () => {
+  it('uses authored Spell Power scaling and equipment preview for damage', () => {
     const state = createInitialState()
     state.schools.fire.level = 3
     state.equipment.weapon = 'ember-staff'
     const model = buildSpellEffectTooltipModel(state, 'fire-bolt', 0)
 
     expect(model).toMatchObject({ category: 'DAMAGE', title: 'Fire Damage', description: 'Deals Fire damage when this Spell resolves.' })
-    expect(row(model, 'Base Damage')?.value).toBe('28')
-    expect(row(model, 'School Scaling')?.value).toBe('+2 / Fire Level')
-    expect(row(model, 'Current School Level')?.value).toBe('3')
-    expect(row(model, 'Current Base Preview')?.value).toBe('34')
+    expect(row(model, 'Scaling')?.value).toBe('60% Spell Power')
+    expect(row(model, 'Base Damage')?.value).toBe('72')
+    expect(row(model, 'School Scaling')).toBeUndefined()
+    expect(row(model, 'Current School Level')).toBeUndefined()
+    expect(row(model, 'Current Base Preview')).toBeUndefined()
     expect(row(model, 'Ember Staff')).toMatchObject({ value: '+20%', semantic: 'positive' })
     expect(row(model, 'Target')?.value).toBe('Enemy')
     expect(row(model, 'Source')?.value).toBe('Fire Bolt')
@@ -48,7 +49,8 @@ describe('spell effect tooltip models', () => {
     const model = buildSpellEffectTooltipModel(state, 'water-ward', 0)
 
     expect(model).toMatchObject({ category: 'BARRIER', title: 'Barrier' })
-    expect(row(model, 'Amount')?.value).toBe('35')
+    expect(row(model, 'Scaling')?.value).toBe('70% Spell Power')
+    expect(row(model, 'Amount')?.value).toBe('80.5')
     expect(row(model, 'Duration')?.value).toBe('9.0s')
     expect(row(model, 'Mode')?.value).toBe('Replace')
     expect(row(model, 'Tide Focus')).toMatchObject({ value: '+20%', semantic: 'positive' })

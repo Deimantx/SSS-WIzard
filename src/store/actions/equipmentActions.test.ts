@@ -46,6 +46,15 @@ describe('equipment actions', () => {
     expect(getEquipmentStatSnapshot(state, state.equipment)).toEqual(preview.preview)
   })
 
+  it('previews the flat Spell Power contribution of a new weapon', () => {
+    const state = createInitialState()
+    state.inventory['ember-staff'] = 1
+    const preview = getEquipmentPreview(state, 'ember-staff')
+    expect(preview.current.spellPower).toBe(100)
+    expect(preview.preview?.spellPower).toBe(120)
+    expect(preview.impact.spellPower).toBe(20)
+  })
+
   it('uses Ring 1 then Ring 2 and reserves duplicate copies safely', () => {
     ITEMS[testRingId] = { id: testRingId, name: 'Test Arcane Ring', description: 'Test ring', icon: '◌', color: '#fff', kind: 'equipment', category: 'equipment', inventoryCategory: 'equipment', source: 'Test', sellValue: 1, canDestroy: true, equipmentSlot: 'ring', stats: {} } satisfies ItemDefinition
     const state = createInitialState()

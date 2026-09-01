@@ -54,6 +54,8 @@
 .equipment-stat-group { display: grid; gap: 6px; }
 .equipment-stat-group > span, .equipment-preview-label { color: var(--ui-accent); font: var(--text-micro) var(--font-mono); letter-spacing: .14em; }
 .equipment-stat-group > div { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--ui-border); }
+.equipment-stat-group > .game-tooltip-trigger { display: block; }
+.equipment-stat-group > .game-tooltip-trigger > div { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--ui-border); }
 .equipment-stat-group small { color: var(--ui-text-muted); font-size: var(--text-xs); }
 .equipment-stat-group strong { color: var(--ui-text); font: var(--text-xs) var(--font-mono); }
 .equipment-screen .equipment-note { margin-top: 14px; }

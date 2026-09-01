@@ -22,12 +22,14 @@ const statusList = (state: GameState, actor: CombatActor): ActiveStatus[] => act
 const setStatusList = (state: GameState, actor: CombatActor, statuses: ActiveStatus[]) => { if (actor === 'player') state.combat.playerStatuses = statuses; else state.combat.enemyStatuses = statuses }
 
 /** Stable source identity shared by application, persistence, UI, and tests. */
-export const getStatusApplicationSourceKey = (source: Pick<CombatSource, 'actor' | 'kind' | 'sourceId' | 'originSourceId' | 'ruleId' | 'providerInstanceKey'>): string => {
+export const getStatusApplicationSourceKey = (source: Pick<CombatSource, 'actor' | 'kind' | 'sourceId' | 'originSourceId' | 'ruleId' | 'providerInstanceKey' | 'sourceInstanceKey' | 'originInstanceKey'>): string => {
   const sourceId = source.sourceId?.trim() || source.originSourceId?.trim() || 'unknown'
   const provider = source.providerInstanceKey?.trim() ? `:provider:${source.providerInstanceKey.trim()}` : ''
   const origin = source.kind === 'status' && source.originSourceId?.trim() && source.originSourceId !== sourceId ? `:origin:${source.originSourceId.trim()}` : ''
   const rule = source.ruleId?.trim() ? `:rule:${source.ruleId.trim()}` : ''
-  return `${source.actor}:${source.kind}:${sourceId}${provider}${origin}${rule}`
+  const instanceValue = source.sourceInstanceKey?.trim() || source.originInstanceKey?.trim()
+  const instance = instanceValue ? `:instance:${instanceValue}` : ''
+  return `${source.actor}:${source.kind}:${sourceId}${provider}${origin}${rule}${instance}`
 }
 
 const getNextStatusEventMs = (state: GameState, actors: CombatActor[]): number | null => {
@@ -213,11 +215,17 @@ const holderSource = (state: GameState, actor: CombatActor) => actor === 'enemy'
   : actor === 'player' ? { kind: 'player' as const } : { kind: 'system' as const }
 
 const emitStatusLifecycle = (state: GameState, actor: CombatActor, removed: ActiveStatus, options: StatusRemovalOptions, statusPhase: 'remove' | 'expire') => {
-  const source = holderSource(state, actor)
+  const source = removed.source.actor === 'enemy' && (removed.source.sourceMonsterId ?? getRootCombatSourceProvenance(removed.source).originMonsterId)
+    ? { kind: 'enemy' as const, monsterId: (removed.source.sourceMonsterId ?? getRootCombatSourceProvenance(removed.source).originMonsterId)! }
+    : removed.source.actor === 'player' ? { kind: 'player' as const } : holderSource(state, actor)
   const root = getRootCombatSourceProvenance(removed.source)
   options.uiEvents?.push({
     source,
     sourceKind: 'status',
+    sourceMonsterId: removed.source.sourceMonsterId,
+    sourceInstanceKey: removed.source.sourceInstanceKey,
+    originMonsterId: root.originMonsterId ?? root.sourceMonsterId,
+    originInstanceKey: root.originInstanceKey ?? root.sourceInstanceKey,
     dungeonId: state.combat.dungeonId ?? undefined,
     target: actor,
     targetMonsterId: actor === 'enemy' ? state.combat.enemyId ?? undefined : undefined,

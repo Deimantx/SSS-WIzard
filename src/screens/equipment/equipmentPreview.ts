@@ -2,6 +2,7 @@ import { BALANCE } from '../../game/core/balance/balance'
 import { ITEMS } from '../../game/content/items/items'
 import { getManaCapacityBreakdown, getManaRegenBreakdown } from '../../game/engine/channelingEngine'
 import { equipmentStats } from '../../game/engine'
+import { getSpellPower } from '../../game/systems/spells/spellPower'
 import { isPositionCompatible, isTwoHandedWeapon, previewEquipmentState } from '../../game/core/equipment'
 import type { EquipmentPosition, EquipmentStats, GameState, ItemId } from '../../game/types'
 
@@ -11,6 +12,7 @@ export interface EquipmentStatSnapshot {
   maxFocus: number
   manaRegen: number
   basicDamage: number
+  spellPower: number
   barrierReceived: number
   fireSpellDamagePct: number
   waterBarrierPct: number
@@ -40,6 +42,7 @@ export const getEquipmentStatSnapshot = (state: Pick<GameState, 'player' | 'prog
     maxFocus: Math.max(0, state.player.baseMaxFocus + permanentFocus + (stats.maxFocus ?? 0) + (state.debug?.bonusMaxFocusFlat ?? 0)),
     manaRegen: regen.total,
     basicDamage: BALANCE.player.basicAttackDamage + (stats.basicDamage ?? 0),
+    spellPower: getSpellPower({ equipment }),
     barrierReceived: stats.barrierReceived ?? 0,
     fireSpellDamagePct: stats.fireSpellDamagePct ?? 0,
     waterBarrierPct: stats.waterBarrierPct ?? 0,
@@ -54,6 +57,7 @@ const subtractSnapshots = (current: EquipmentStatSnapshot, preview: EquipmentSta
   maxFocus: preview.maxFocus - current.maxFocus,
   manaRegen: preview.manaRegen - current.manaRegen,
   basicDamage: preview.basicDamage - current.basicDamage,
+  spellPower: preview.spellPower - current.spellPower,
   barrierReceived: preview.barrierReceived - current.barrierReceived,
   fireSpellDamagePct: preview.fireSpellDamagePct - current.fireSpellDamagePct,
   waterBarrierPct: preview.waterBarrierPct - current.waterBarrierPct,

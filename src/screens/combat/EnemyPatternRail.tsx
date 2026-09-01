@@ -7,7 +7,7 @@ import { EnemyPatternIcon, getEnemyPatternIconLabel } from './EnemyPatternIcon'
 
 export function EnemyPatternRail({ pattern, enemy, currentIndex, activeStepId, activeAction, activeOriginMatchesCurrent, currentProgress }: { pattern?: ActionPattern; enemy?: MonsterDefinition | null; currentIndex: number; activeStepId: string | null; activeAction: string | null; activeOriginMatchesCurrent: boolean; currentProgress?: number | null }) {
   if (!pattern) return <div className="combat-pattern-empty">No enemy pattern loaded.</div>
-  return <div className="combat-pattern-rail combat-flow-pattern-rail" aria-label="Enemy pattern">{pattern.steps.map((step, index) => {
+  return <div className="combat-pattern-rail combat-flow-pattern-rail" aria-label="Enemy pattern"><div className="combat-pattern-sequence">{pattern.steps.map((step, index) => {
     const current = activeAction && !activeOriginMatchesCurrent ? index === currentIndex : activeStepId ? step.id === activeStepId : index === currentIndex
     const next = !current && pattern.steps.length > 1 && index === (currentIndex + 1) % pattern.steps.length
     const action = step.type === 'action' ? enemy?.actions[step.actionId] : undefined
@@ -17,5 +17,5 @@ export function EnemyPatternRail({ pattern, enemy, currentIndex, activeStepId, a
     const label = `${presentation.name}, ${getEnemyPatternIconLabel(kind)}${current ? ', current action' : next ? ', next action' : ''}`
     const nodeStyle = current && currentProgress !== null && currentProgress !== undefined ? { '--pattern-progress': `${Math.max(0, Math.min(100, currentProgress))}%` } as React.CSSProperties : undefined
     return <span className="combat-pattern-node-wrap combat-flow-pattern-node-wrap" key={step.id}><GameTooltip block wide placement="bottom" accent={current ? 'warning' : 'neutral'} content={<EnemyActionTooltip action={presentation} />}><button style={nodeStyle} type="button" className={`combat-pattern-node combat-flow-pattern-node is-${state} combat-pattern-icon-${kind}`} aria-label={label} aria-current={current ? 'step' : undefined}><i><EnemyPatternIcon kind={kind} /></i></button></GameTooltip>{index < pattern.steps.length - 1 && <span className="combat-pattern-arrow combat-flow-pattern-arrow" aria-hidden="true">→</span>}</span>
-  })}</div>
+  })}</div></div>
 }

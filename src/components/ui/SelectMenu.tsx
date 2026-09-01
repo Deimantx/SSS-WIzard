@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom'
 import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { ChevronDown } from 'lucide-react'
 
 export interface SelectMenuOption<T extends string> {
   value: T
@@ -128,7 +129,7 @@ export function SelectMenu<T extends string>({ options, value, onChange, ariaLab
       }}
     >
       <span className="select-menu-label">{prefix}{selected?.label ?? 'Select'}</span>
-      <span className="select-menu-chevron" aria-hidden="true">⌄</span>
+      <span className="select-menu-chevron" aria-hidden="true"><ChevronDown size={18} strokeWidth={2.1} /></span>
     </button>
     {menu}
   </div>

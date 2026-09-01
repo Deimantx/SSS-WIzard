@@ -8,11 +8,15 @@ import { EnemyPatternRail } from './EnemyPatternRail'
 describe('EnemyPatternRail', () => {
   it('renders long patterns as readable icon-only, accessible nodes', () => {
     const pattern: ActionPattern = { id: 'long-pattern', steps: Array.from({ length: 12 }, (_, index) => ({ id: `step-${index}`, type: 'basic' as const })) }
-    render(<TooltipProvider><EnemyPatternRail pattern={pattern} enemy={MONSTERS['grove-sentinel']} currentIndex={2} activeStepId={null} activeAction={null} activeOriginMatchesCurrent /></TooltipProvider>)
+    const { container } = render(<TooltipProvider><EnemyPatternRail pattern={pattern} enemy={MONSTERS['grove-sentinel']} currentIndex={2} activeStepId={null} activeAction={null} activeOriginMatchesCurrent /></TooltipProvider>)
 
     expect(screen.getAllByRole('button')).toHaveLength(12)
     expect(screen.getByRole('button', { name: 'Basic Attack, basic attack, current action' })).toBeTruthy()
     expect(screen.queryByText('Basic Attack', { selector: 'strong' })).toBeNull()
+    const rail = container.querySelector('.combat-flow-pattern-rail')
+    const sequence = rail?.querySelector('.combat-pattern-sequence')
+    expect(sequence?.parentElement).toBe(rail)
+    expect(sequence?.querySelectorAll('.combat-pattern-node-wrap')).toHaveLength(12)
   })
 
   it('exposes the authored action through the shared tooltip on focus', async () => {

@@ -641,30 +641,44 @@
 }
 .combat-pattern-rail {
   display: flex;
-  align-items: stretch;
-  gap: 4px;
+  width: 100%;
+  align-items: center;
   min-width: 0;
   overflow-x: auto;
-  padding: 7px 1px 3px;
+  overflow-y: hidden;
+  padding: 7px 1px 4px;
+  scrollbar-color: var(--ui-border-strong) transparent;
   scrollbar-width: thin;
 }
-.combat-pattern-node-wrap {
-  display: flex;
+.combat-pattern-sequence {
+  display: inline-flex;
   align-items: center;
+  width: max-content;
+  min-width: max-content;
+  margin-inline: auto;
+}
+.combat-pattern-node-wrap {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
   min-width: 0;
 }
 .combat-pattern-node-wrap > .game-tooltip-trigger {
-  min-width: 0;
+  display: block;
+  width: 30px;
+  min-width: 30px;
+  flex: 0 0 30px;
 }
 .combat-pattern-node {
   display: grid;
-  grid-template-columns: auto minmax(45px, 1fr);
-  gap: 5px;
-  align-items: center;
-  min-width: 76px;
-  padding: 6px 7px;
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  flex: 0 0 30px;
+  place-items: center;
+  padding: 0;
   border: 1px solid var(--ui-border);
-  border-radius: 6px;
+  border-radius: 7px;
   color: var(--ui-text-muted);
   background: color-mix(in srgb, var(--ui-text) 3%, transparent);
   cursor: help;
@@ -672,17 +686,17 @@
 .combat-pattern-node i {
   display: grid;
   place-items: center;
-  width: 15px;
-  height: 15px;
-  color: var(--ui-text-disabled);
+  width: auto;
+  height: auto;
+  color: var(--ui-text-muted);
   font-style: normal;
 }
+.combat-pattern-node i svg {
+  width: 16px;
+  height: 16px;
+}
 .combat-pattern-node strong {
-  overflow: hidden;
-  color: inherit;
-  font: var(--text-micro) var(--font-mono);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: none;
 }
 .combat-pattern-node.is-current {
   border-color: color-mix(
@@ -701,10 +715,12 @@
   border-color: color-mix(in srgb, var(--ui-success) 28%, var(--ui-border));
 }
 .combat-pattern-arrow {
+  flex: 0 0 auto;
   align-self: center;
-  padding: 0 1px;
+  margin-inline: 3px;
+  padding: 0;
   color: var(--ui-text-disabled);
-  font-size: 12px;
+  font-size: 13px;
 }
 .combat-pattern-empty {
   padding: 8px 0;
@@ -2145,9 +2161,6 @@
 .combat-flow-effect.damage-type-arcane strong { color: var(--semantic-damage-arcane); }
 .combat-flow-pattern { margin-top: auto; padding-top: 8px; border-top: 1px solid var(--ui-border); }
 .combat-flow-pattern-rail { padding-top: 6px; }
-.combat-flow-pattern-node { min-width: 86px; }
-.combat-flow-pattern-node-wrap > .game-tooltip-trigger { min-width: 0; }
-.combat-flow-pattern-arrow { color: var(--ui-text-disabled); }
 .combat-flow-panel.is-tower,
 .combat-flow-panel.is-boss-ready,
 .combat-flow-panel.is-encounter-delay { align-items: center; justify-content: center; text-align: center; }
@@ -2637,16 +2650,9 @@
 .combat-flow-intent.is-special .combat-flow-intent-icon { width: 34px; height: 34px; border-color: color-mix(in srgb, var(--combat-intent-warning) 58%, var(--ui-border)); background: color-mix(in srgb, var(--combat-intent-warning) 10%, transparent); }
 .combat-flow-intent.is-special .combat-flow-intent-icon svg { width: 19px; height: 19px; }
 .combat-flow-intent:not(.is-special) .combat-flow-intent-icon { border-color: color-mix(in srgb, var(--ui-border) 82%, transparent); }
-.combat-pattern-rail { align-items: center; gap: 5px; padding: 7px 1px 4px; scrollbar-color: var(--ui-border-strong) transparent; }
-.combat-flow-pattern-node { display: grid; width: 30px; height: 30px; min-width: 30px; place-items: center; padding: 0; border-radius: 7px; }
-.combat-flow-pattern-node strong { display: none; }
-.combat-flow-pattern-node i { width: auto; height: auto; color: var(--ui-text-muted); }
-.combat-flow-pattern-node i svg { width: 16px; height: 16px; }
 .combat-flow-pattern-node.is-current { box-shadow: 0 0 0 1px color-mix(in srgb, var(--enemy-accent, var(--ui-warning)) 32%, transparent); }
 .combat-flow-pattern-node.is-next { border-color: color-mix(in srgb, var(--ui-gold) 56%, var(--ui-border)); color: var(--ui-gold); }
 .combat-flow-pattern-node.is-complete { opacity: .58; }
-.combat-flow-pattern-node-wrap > .game-tooltip-trigger { display: block; width: 30px; flex: 0 0 30px; }
-.combat-flow-pattern-arrow { padding: 0; font-size: 13px; }
 .combat-pattern-icon-basic { color: var(--ui-text-muted); }
 .combat-pattern-icon-direct-damage { color: var(--ui-warning); }
 .combat-pattern-icon-dot-damage { color: var(--semantic-debuff); }
@@ -2939,33 +2945,4 @@
   .combat-resource-trail,
   .combat-flow-pattern-node,
   .spell-combat-cooldown-overlay { transition: none; }
-}
-
-/* V3.9.3 focused micro-polish */
-.combat-flow-pattern-rail {
-  justify-content: center;
-  justify-content: safe center;
-}
-.combat-flow-pattern-rail .combat-pattern-node-wrap { flex: 0 0 auto; }
-.combat-preset-control-row .select-menu-chevron {
-  display: grid;
-  width: 20px;
-  height: 20px;
-  flex: 0 0 20px;
-  place-items: center;
-  margin-inline-start: 2px;
-  color: var(--ui-text-soft);
-  font-size: 1.35rem;
-  font-weight: 700;
-  line-height: 20px;
-  transform: translateY(-1px);
-  transition: color 140ms ease, transform 140ms ease;
-}
-.combat-preset-control-row .select-menu-trigger:hover .select-menu-chevron,
-.combat-preset-control-row .select-menu-trigger:focus-visible .select-menu-chevron,
-.combat-preset-control-row .select-menu.is-open .select-menu-chevron { color: var(--ui-accent); }
-.combat-preset-control-row .select-menu.is-open .select-menu-chevron { transform: translateY(0) rotate(180deg); }
-
-@media (prefers-reduced-motion: reduce) {
-  .combat-preset-control-row .select-menu-chevron { transition: none; }
 }

@@ -79,14 +79,7 @@ export function presentCombatLogEntry(entry: CombatLogEntry, newestTimestampMs =
     result = `${status?.name ?? 'STATUS'} ${statusVerb}${entry.durationMs ? ` · ${formatDuration(entry.durationMs)}` : ''}${entry.stacks && entry.stacks > 1 ? ` · ${entry.stacks} stacks` : ''}`
     semanticClass = status?.classification === 'buff' ? 'log-buff' : status?.tags.includes('dot') ? 'log-dot' : status?.tags.includes('control') ? 'log-control' : 'log-debuff'
   } else if (entry.category === 'system') {
-    if (entry.actionPhase === 'telegraph') {
-      message = `${actionLabel.toUpperCase()} TELEGRAPHED`
-      result = 'PREPARE'
-      semanticClass = 'log-system'
-      actionClass = 'log-action-enemy-action'
-    } else {
-      message = entry.source.kind === 'enemy' ? `${source.toUpperCase()} EVENT` : entry.sourceId === 'encounter-start' ? `${entry.targetMonsterId ? MONSTERS[entry.targetMonsterId]?.name.toUpperCase() : 'ENEMY'} ENTERED` : message
-    }
+    message = entry.source.kind === 'enemy' ? `${source.toUpperCase()} EVENT` : entry.sourceId === 'encounter-start' ? `${entry.targetMonsterId ? MONSTERS[entry.targetMonsterId]?.name.toUpperCase() : 'ENEMY'} ENTERED` : message
     semanticClass = 'log-system'
   }
 

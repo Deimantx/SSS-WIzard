@@ -2104,10 +2104,6 @@
     color-mix(in srgb, var(--ui-bg) 44%, var(--ui-panel-strong));
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--flow-accent) 9%, transparent);
 }
-.combat-flow-panel.is-telegraphing {
-  border-color: color-mix(in srgb, var(--ui-warning) 50%, var(--ui-border));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ui-warning) 22%, transparent);
-}
 .combat-flow-head,
 .combat-flow-timeline-head,
 .combat-flow-subhead {
@@ -2128,7 +2124,6 @@
 .combat-flow-timeline .progress { height: 6px; }
 .combat-flow-timeline-player .progress i { background: var(--semantic-time); }
 .combat-flow-timeline-enemy .progress i { background: var(--flow-accent); }
-.combat-flow-timeline-enemy.is-telegraphing .progress i { background: var(--ui-warning); }
 .combat-flow-timeline.is-stunned { opacity: .72; }
 .combat-flow-paused { padding: 5px 7px; border: 1px dashed var(--ui-border); border-radius: 5px; color: var(--ui-text-disabled); font: var(--text-micro) var(--font-mono); }
 .combat-flow-intent.game-tooltip-trigger { display: block; width: 100%; }
@@ -2545,7 +2540,6 @@
 .combat-flow-intent-action-icon { display: grid; width: 25px; height: 25px; flex: 0 0 auto; place-items: center; border: 1px solid color-mix(in srgb, var(--combat-intent-warning) 52%, var(--ui-border)); border-radius: 6px; color: var(--combat-intent-warning); background: color-mix(in srgb, var(--combat-intent-warning) 12%, transparent); }
 .combat-flow-intent.is-special .combat-flow-effect strong { color: var(--ui-text); font-size: 11px; }
 .combat-flow-intent.is-special .combat-flow-effect-icon { color: var(--combat-intent-warning); }
-.combat-flow-timeline-enemy.is-telegraphing .combat-flow-timeline-head strong { color: var(--combat-intent-warning); }
 .combat-flow-timeline.is-near-complete .progress i::after { width: 4px; background: rgb(255 255 255 / 92%); box-shadow: 0 0 8px currentColor; }
 
 .combat-flow-panel.is-encounter-delay { gap: 9px; }
@@ -2645,7 +2639,6 @@
 .combat-flow-timeline .progress i::after { position: absolute; top: -1px; right: -1px; bottom: -1px; width: 3px; border-radius: 99px; background: rgb(255 255 255 / 68%); box-shadow: 0 0 5px currentColor; content: ''; }
 .combat-flow-timeline-player .progress i { background: linear-gradient(90deg, color-mix(in srgb, var(--ui-accent) 62%, var(--ui-text)), var(--ui-accent)); }
 .combat-flow-timeline-enemy .progress i { background: linear-gradient(90deg, color-mix(in srgb, var(--flow-accent) 58%, var(--ui-warning)), var(--flow-accent)); }
-.combat-flow-timeline-enemy.is-telegraphing .progress i { background: linear-gradient(90deg, color-mix(in srgb, var(--ui-warning) 64%, var(--ui-danger)), var(--ui-warning)); }
 .combat-flow-intent-icon { display: grid; width: 27px; height: 27px; flex: 0 0 auto; place-items: center; border: 1px solid var(--ui-border); border-radius: 6px; background: color-mix(in srgb, var(--ui-text) 4%, transparent); }
 .combat-flow-intent.is-special .combat-flow-intent-icon { width: 34px; height: 34px; border-color: color-mix(in srgb, var(--combat-intent-warning) 58%, var(--ui-border)); background: color-mix(in srgb, var(--combat-intent-warning) 10%, transparent); }
 .combat-flow-intent.is-special .combat-flow-intent-icon svg { width: 19px; height: 19px; }
@@ -2891,7 +2884,6 @@
 .combat-flow-timeline .progress i { border-radius: inherit; box-shadow: 0 0 8px color-mix(in srgb, currentColor 42%, transparent); }
 .combat-flow-timeline-player .progress i { color: var(--ui-accent); }
 .combat-flow-timeline-enemy .progress i { color: var(--flow-accent); }
-.combat-flow-timeline-enemy.is-telegraphing .progress i { color: var(--ui-warning); }
 .combat-flow-timeline.is-near-complete .progress i::after { width: 5px; box-shadow: 0 0 10px currentColor; }
 .combat-flow-intent.is-special {
   border-width: 1px 1px 1px 3px;

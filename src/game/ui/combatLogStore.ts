@@ -13,6 +13,7 @@ interface CombatLogUiState {
 export const useCombatLogStore = create<CombatLogUiState>((set) => ({
   entries: [],
   push: (event) => set((state) => {
+    if (event.actionPhase === 'start') return state
     const sequence = ++nextSequence
     const entry: CombatLogEntry = { ...event, id: sequence, sequence, timestampMs: event.timestampMs ?? Date.now() }
     return { entries: [entry, ...state.entries].slice(0, MAX_FULL_COMBAT_LOG_ENTRIES) }

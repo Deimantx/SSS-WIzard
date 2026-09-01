@@ -3,7 +3,7 @@ import { applyStatus, delayBasicAttack, directDamage, gainBarrier, heal } from '
 import type { CombatActionDefinition } from '../../systems/combat/combatTypes'
 import { classifyEnemyActionPatternIcon } from './enemyPatternIconPresentation'
 
-const action = (effects: CombatActionDefinition['effects']): CombatActionDefinition => ({ id: 'synthetic', name: 'Synthetic Action', description: 'Test action', telegraphMs: 1000, effects })
+const action = (effects: CombatActionDefinition['effects']): CombatActionDefinition => ({ id: 'synthetic', name: 'Synthetic Action', description: 'Test action', actionTimeMs: 1000, effects })
 
 describe('classifyEnemyActionPatternIcon', () => {
   it('classifies universal effect categories without content IDs', () => {

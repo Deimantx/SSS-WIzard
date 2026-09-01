@@ -4,7 +4,7 @@ import { MONSTERS } from '../../content/monsters'
 import { RECIPES, RECIPE_ORDER } from '../../content/recipes/recipes'
 import { SCHOOLS } from '../../content/schools/schools'
 import { BALANCE } from '../../core/balance/balance'
-import { getCurrentEnemyActionStep, getEnemyAction } from '../combat/actionRuntime'
+import { getCurrentEnemyActionStep, getEnemyAction, getNextEnemyActionStep } from '../combat/actionRuntime'
 import { getRecipeCraftsPerHour, getRecipeCurrentRemainingDuration, getRecipeManaDemandPerSecond, getRecipeStatus } from '../transmutation/transmutationSelectors'
 import { getPreparedResearchJobs, getResearchBatchEtaMs, getResearchFocusReserved, getResearchItemsPerHour, getResearchJobProgressPercent, getResearchJobStatus, getResearchManaPerSecond, getResearchXpPerHour } from '../research/researchSelectors'
 import type { ActivityMetric, ActivityTelemetry, GameState } from '../../types'
@@ -23,12 +23,12 @@ export const getActivityTelemetry = (state: GameState): ActivityTelemetry[] => {
     if (state.combat.enemyId) {
       const enemy = MONSTERS[state.combat.enemyId]
       const enemyPercent = percent(state.combat.enemyHp, state.combat.enemyMaxHp)
-      const nextStep = getCurrentEnemyActionStep(state)
+      const currentStep = getCurrentEnemyActionStep(state)
+      const currentAction = state.combat.enemyCurrentActionId ? getEnemyAction(state, state.combat.enemyCurrentActionId) : undefined
+      const nextStep = getNextEnemyActionStep(state)
       const nextAction = nextStep?.type === 'action' ? getEnemyAction(state, nextStep.actionId) : undefined
-      const nextLabel = state.combat.enemyTelegraphActionId
-        ? getEnemyAction(state, state.combat.enemyTelegraphActionId)?.name ?? 'Action'
-        : nextAction?.name ?? 'Basic Attack'
-      const nextTime = state.combat.enemyTelegraphMs > 0 ? state.combat.enemyTelegraphMs : state.combat.enemyActionTimerMs
+      const nextLabel = currentAction?.name ?? (currentStep?.type === 'basic' ? 'Basic Attack' : nextAction?.name ?? 'Basic Attack')
+      const nextTime = state.combat.enemyActionTimerMs > 0 ? state.combat.enemyActionTimerMs : state.combat.enemyActionDurationMs
       const boss = state.combat.inBossFight
       const enemyLabel = boss ? 'Boss HP' : 'Enemy HP'
       activities.push({
@@ -57,12 +57,12 @@ export const getActivityTelemetry = (state: GameState): ActivityTelemetry[] => {
         label: 'COMBAT',
         subtitle: dungeon.name,
         screen: 'combat',
-        status: 'recovery',
+        status: 'paused',
         remainingMs: state.combat.encounterTimerMs,
         bars: [
           { label: 'Player HP', value: `${formatNumber(state.player.health)} / ${formatNumber(state.player.maxHealth)} (${playerPercent}%)`, percent: playerPercent, tone: playerPercent < 35 ? 'warning' : 'positive' },
         ],
-        collapsedSummary: `Combat · RECOVERY ${formatCompactDuration(state.combat.encounterTimerMs)}`,
+        collapsedSummary: `Combat · NEXT ENCOUNTER ${formatCompactDuration(state.combat.encounterTimerMs)}`,
         metrics: [
           metric('Threat Cleared', `${formatNumber(state.combat.threatCleared)} / ${formatNumber(dungeon.threatRequired)}`),
           metric('Next Encounter', formatCompactDuration(state.combat.encounterTimerMs)),

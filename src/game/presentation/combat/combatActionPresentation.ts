@@ -20,8 +20,7 @@ export interface CombatActionPresentation {
   id: string
   name: string
   description: string
-  telegraphMs: number
-  recoveryMs?: number
+  actionTimeMs: number
   effects: CombatEffectPresentation[]
 }
 
@@ -48,4 +47,4 @@ export const formatCombatEffect = (effect: CombatEffect, source: CombatSource): 
   return { kind: 'pattern', label: 'Action Pattern', detail: 'Changes the enemy sequence', targetLabel: target }
 }
 
-export const buildCombatActionPresentation = (action: CombatActionDefinition, source: CombatSource = { actor: 'enemy', kind: 'action' }): CombatActionPresentation => ({ id: action.id, name: action.name, description: action.description, telegraphMs: action.telegraphMs, recoveryMs: action.recoveryMs, effects: action.effects.map((effect) => formatCombatEffect(effect, source)) })
+export const buildCombatActionPresentation = (action: CombatActionDefinition, source: CombatSource = { actor: 'enemy', kind: 'action' }): CombatActionPresentation => ({ id: action.id, name: action.name, description: action.description, actionTimeMs: action.actionTimeMs, effects: action.effects.map((effect) => formatCombatEffect(effect, source)) })

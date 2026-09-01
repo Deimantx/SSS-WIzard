@@ -17,6 +17,8 @@ import { recalculateDerivedStats } from '../game/engine'
 import { STATUS_DEFINITIONS } from '../game/content/statuses'
 import type { ActiveStatus, CombatSource, StatusId } from '../game/types'
 import { getSpellAutoCastFocusCost, MAX_SPELL_RANK, MIN_SPELL_RANK, normalizeSpellPresetState, syncAllSpellUnlocks, type SpellRank } from '../game/systems/spells'
+import { resolveBasicAttackInterval } from '../game/systems/combat/effectResolver'
+import { resolveEnemyBasicAttackTimeMs, resolveEnemySkillActionTimeMs } from '../game/systems/combat/actionRuntime'
 
 const normalizeScreen = (value: unknown, fallback: GameState['ui']['screen']): GameState['ui']['screen'] => {
   if (value === 'tower') return 'tower-channeling'
@@ -189,7 +191,7 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
   migrated.combat.enemyBarrierRemainingMs = migrated.combat.enemyBarrier > 0 ? nonNegativeNumber(rawCombat.enemyBarrierRemainingMs) ?? null : null
   migrated.combat.playerStatuses = normalizeStatuses(rawPlayerStatuses, 'player')
   migrated.combat.enemyStatuses = normalizeStatuses(rawCombat.enemyStatuses, 'enemy')
-  migrated.combat.playerAttackTimerMs = Math.max(0, migrated.combat.playerAttackTimerMs + oldDelay)
+  const rawPlayerTimer = nonNegativeNumber(rawCombat.playerAttackTimerMs)
 
   const activeEnemyId = typeof migrated.combat.enemyId === 'string' && MONSTERS[migrated.combat.enemyId] ? migrated.combat.enemyId : null
   const monster = activeEnemyId ? MONSTERS[activeEnemyId] : undefined
@@ -199,34 +201,69 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
     ? monster.actionPatterns[rawPatternId]
     : monster?.actionPatterns[monster.defaultActionPatternId]
   migrated.combat.enemyActionPatternId = pattern?.id ?? null
-  const rawIndex = nonNegativeInteger(rawCombat.enemyActionIndex) ?? 0
-  migrated.combat.enemyActionIndex = pattern && pattern.steps.length > 0 ? rawIndex % pattern.steps.length : 0
-  const savedRecoveryCandidate = sourceVersion >= 14 ? nonNegativeNumber(rawCombat.enemyActionRecoveryMs) : undefined
-  const legacyRecoveryCandidate = nonNegativeNumber(rawCombat.enemyIntervalMs)
-  const savedRecovery = savedRecoveryCandidate !== undefined && savedRecoveryCandidate >= 100 ? savedRecoveryCandidate : undefined
-  const legacyRecovery = legacyRecoveryCandidate !== undefined && legacyRecoveryCandidate >= 100 ? legacyRecoveryCandidate : undefined
-  migrated.combat.enemyActionRecoveryMs = monster ? savedRecovery ?? legacyRecovery ?? monster.actionIntervalMs : 0
-  const rawRecoveryTimer = nonNegativeNumber(rawCombat.enemyActionTimerMs)
-  migrated.combat.enemyActionTimerMs = monster ? rawRecoveryTimer ?? migrated.combat.enemyActionRecoveryMs : 0
-  const rawActionId = typeof rawCombat.enemyTelegraphActionId === 'string' ? rawCombat.enemyTelegraphActionId : undefined
-  const activeAction = monster && rawActionId ? monster.actions[rawActionId] : undefined
-  const rawTelegraph = nonNegativeNumber(rawCombat.enemyTelegraphMs)
-  const validTelegraph = Boolean(activeAction && rawTelegraph !== undefined)
-  migrated.combat.enemyTelegraphActionId = validTelegraph ? activeAction?.id ?? null : null
-  migrated.combat.enemyTelegraphMs = validTelegraph ? rawTelegraph ?? 0 : 0
-  const rawStepId = typeof rawCombat.enemyTelegraphStepId === 'string' ? rawCombat.enemyTelegraphStepId : undefined
-  const compatibleStep = (candidate: typeof pattern, stepId: string | undefined) => Boolean(candidate && stepId && candidate.steps.some((step) => step.id === stepId && step.type === 'action' && step.actionId === activeAction?.id))
-  const validCurrentStep = sourceVersion >= 14 && compatibleStep(pattern, rawStepId)
-  const rawOriginPatternId = typeof rawCombat.enemyTelegraphPatternId === 'string' ? rawCombat.enemyTelegraphPatternId : undefined
-  const savedOriginPattern = sourceVersion >= 15 && monster && rawOriginPatternId ? monster.actionPatterns[rawOriginPatternId] : undefined
-  const originPattern = validTelegraph && (
-    compatibleStep(savedOriginPattern, rawStepId) || (!rawStepId && savedOriginPattern)
-  ) ? savedOriginPattern
-    : validTelegraph && sourceVersion === 14 && validCurrentStep ? pattern
-      : undefined
-  const validOriginStep = compatibleStep(originPattern, rawStepId)
-  migrated.combat.enemyTelegraphStepId = validTelegraph && (validCurrentStep || validOriginStep) ? rawStepId ?? null : null
-  migrated.combat.enemyTelegraphPatternId = originPattern?.id ?? null
+  const rawIndex = sourceVersion >= SAVE_VERSION
+    ? nonNegativeInteger(rawCombat.enemyNextActionIndex) ?? 0
+    : nonNegativeInteger(rawCombat.enemyActionIndex) ?? 0
+  migrated.combat.enemyNextActionIndex = pattern && pattern.steps.length > 0 ? rawIndex % pattern.steps.length : 0
+
+  const findStep = (candidate: typeof pattern, stepId: string | undefined, actionId: string | null) => candidate?.steps.find((step) => step.id === stepId && (actionId === null ? step.type === 'basic' : step.type === 'action' && step.actionId === actionId))
+  const findActionStep = (candidate: typeof pattern, actionId: string) => candidate?.steps.find((step) => step.type === 'action' && step.actionId === actionId)
+  const clearCurrent = () => {
+    migrated.combat.enemyCurrentStepId = null
+    migrated.combat.enemyCurrentActionId = null
+    migrated.combat.enemyCurrentActionPatternId = null
+    migrated.combat.enemyActionTimerMs = 0
+    migrated.combat.enemyActionDurationMs = 0
+  }
+  clearCurrent()
+
+  if (monster && sourceVersion >= SAVE_VERSION) {
+    const rawCurrentActionId = typeof rawCombat.enemyCurrentActionId === 'string' ? rawCombat.enemyCurrentActionId : null
+    const currentAction = rawCurrentActionId ? monster.actions[rawCurrentActionId] : undefined
+    const rawCurrentStepId = typeof rawCombat.enemyCurrentStepId === 'string' ? rawCombat.enemyCurrentStepId : undefined
+    const currentStep = findStep(pattern, rawCurrentStepId, rawCurrentActionId)
+    const rawCurrentOriginId = typeof rawCombat.enemyCurrentActionPatternId === 'string' ? rawCombat.enemyCurrentActionPatternId : undefined
+    const currentOrigin = rawCurrentOriginId && monster.actionPatterns[rawCurrentOriginId] ? monster.actionPatterns[rawCurrentOriginId] : pattern
+    const originStep = findStep(currentOrigin, rawCurrentStepId, rawCurrentActionId)
+    const validStep = currentStep ?? originStep
+    if (validStep && (validStep.type === 'basic' || currentAction)) {
+      const duration = nonNegativeNumber(rawCombat.enemyActionDurationMs)
+      migrated.combat.enemyCurrentStepId = validStep.id
+      migrated.combat.enemyCurrentActionId = validStep.type === 'action' ? currentAction?.id ?? null : null
+      migrated.combat.enemyCurrentActionPatternId = currentOrigin?.id ?? null
+      migrated.combat.enemyActionDurationMs = Math.max(100, duration ?? (validStep.type === 'basic' ? resolveEnemyBasicAttackTimeMs(migrated, monster.basicAttackTimeMs) : resolveEnemySkillActionTimeMs(migrated, currentAction!.actionTimeMs)))
+      migrated.combat.enemyActionTimerMs = Math.min(migrated.combat.enemyActionDurationMs, nonNegativeNumber(rawCombat.enemyActionTimerMs) ?? migrated.combat.enemyActionDurationMs)
+    }
+  } else if (monster) {
+    // V17 telegraphs are migrated as a newly started Action; old recovery is discarded.
+    const rawActionId = typeof rawCombat.enemyTelegraphActionId === 'string' ? rawCombat.enemyTelegraphActionId : undefined
+    const activeAction = rawActionId ? monster.actions[rawActionId] : undefined
+    const rawStepId = typeof rawCombat.enemyTelegraphStepId === 'string' ? rawCombat.enemyTelegraphStepId : undefined
+    const rawOriginPatternId = typeof rawCombat.enemyTelegraphPatternId === 'string' ? rawCombat.enemyTelegraphPatternId : undefined
+    const savedOriginPattern = rawOriginPatternId ? monster.actionPatterns[rawOriginPatternId] : undefined
+    const currentStep = findStep(pattern, rawStepId, activeAction?.id ?? null) ?? (activeAction ? findActionStep(pattern, activeAction.id) : undefined)
+    const originStep = activeAction && savedOriginPattern ? findStep(savedOriginPattern, rawStepId, activeAction.id) ?? findActionStep(savedOriginPattern, activeAction.id) : undefined
+    const validStep = originStep ?? currentStep
+    const originPattern = originStep ? savedOriginPattern : currentStep ? pattern : undefined
+    if (activeAction && validStep && originPattern) {
+      migrated.combat.enemyCurrentStepId = validStep.id
+      migrated.combat.enemyCurrentActionId = activeAction.id
+      migrated.combat.enemyCurrentActionPatternId = originPattern.id
+      migrated.combat.enemyActionDurationMs = resolveEnemySkillActionTimeMs(migrated, activeAction.actionTimeMs)
+      migrated.combat.enemyActionTimerMs = migrated.combat.enemyActionDurationMs
+    }
+  }
+
+  if (monster) {
+    const playerDuration = sourceVersion >= SAVE_VERSION
+      ? Math.max(100, nonNegativeNumber(rawCombat.playerAttackDurationMs) ?? resolveBasicAttackInterval(migrated, 'player', BALANCE.player.basicAttackIntervalMs))
+      : resolveBasicAttackInterval(migrated, 'player', BALANCE.player.basicAttackIntervalMs)
+    migrated.combat.playerAttackDurationMs = playerDuration
+    migrated.combat.playerAttackTimerMs = Math.min(playerDuration, rawPlayerTimer ?? playerDuration) + oldDelay
+  } else {
+    migrated.combat.playerAttackDurationMs = 0
+    migrated.combat.playerAttackTimerMs = (rawPlayerTimer ?? 0) + oldDelay
+  }
   const rawTriggered = Array.isArray(rawCombat.triggeredRuleIds) ? rawCombat.triggeredRuleIds.filter((id): id is string => typeof id === 'string') : []
   const legacySpecials = isRecord(rawCombat.enemySpecialUsed) ? rawCombat.enemySpecialUsed : {}
   const legacyTriggered = Object.entries(legacySpecials).flatMap(([id, used]) => used ? id === 'ancient-growth' ? ['enemy:trait:grove-sentinel-ancient-growth:grove-sentinel-ancient-growth-threshold'] : id === 'living-core' ? ['enemy:trait:forest-heart-living-core:forest-heart-living-core-threshold'] : [] : [])
@@ -532,6 +569,7 @@ export const migrateSave = (rawSave: unknown): GameState => {
   if (version === 14) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === 15) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === 16) return finalize(merge(createInitialState(), rawSave), rawSave, version)
+  if (version === 17) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === SAVE_VERSION) {
     return finalize(merge(createInitialState(), rawSave), rawSave, version)
   }

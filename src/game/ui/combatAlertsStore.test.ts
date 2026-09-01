@@ -29,8 +29,8 @@ describe('combat alerts', () => {
     expect(useCombatAlertsStore.getState().alerts).toHaveLength(0)
   })
 
-  it('alerts on boss telegraphs, trait triggers, phase shifts, barrier breaks, and death', () => {
-    combatAlertsSink.push(baseEvent({ source: { kind: 'enemy', monsterId: 'forest-heart' }, sourceKind: 'action', target: 'player', category: 'system', actionId: 'heart-pulse', actionPhase: 'telegraph' }))
+  it('ignores action starts while alerting on trait triggers, phase shifts, barrier breaks, and death', () => {
+    combatAlertsSink.push(baseEvent({ source: { kind: 'enemy', monsterId: 'forest-heart' }, sourceKind: 'action', target: 'player', category: 'system', actionId: 'heart-pulse', actionPhase: 'start' }))
     combatAlertsSink.push(baseEvent({ source: { kind: 'enemy', monsterId: 'forest-wisp' }, sourceKind: 'system', category: 'trait', traitId: 'forest-wisp-flicker', ruleId: 'forest-wisp-flicker-arc-spark' }))
     combatAlertsSink.push(baseEvent({ source: { kind: 'enemy', monsterId: 'forest-heart' }, sourceKind: 'system', category: 'pattern', sourceId: 'unbound' }))
     combatAlertsSink.push(baseEvent({ category: 'damage', barrierBefore: 10, barrierAfter: 0, barrierAbsorbed: 10 }))

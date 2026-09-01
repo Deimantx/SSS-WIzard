@@ -9,29 +9,33 @@ const pattern = enemy.actionPatterns.default
 
 const input = (changes: Partial<CombatFlowRuntimeInput> = {}): CombatFlowRuntimeInput => ({
   active: true, dungeonId: 'whispering-woods', selectedDungeonId: 'whispering-woods', enemyId: 'grove-sentinel', dungeon, enemy,
-  threatCleared: 0, inBossFight: false, encounterTimerMs: 0, playerAttackTimerMs: 500, playerAttackIntervalMs: 2800,
-  enemyActionTimerMs: 1200, enemyActionRecoveryMs: 2600, enemyActionIndex: 0, enemyTelegraphMs: 0, enemyTelegraphActionId: null,
-  enemyTelegraphStepId: null, enemyTelegraphPatternId: null, enemyActionPatternId: 'default', playerBasicDamage: 8,
-  playerStunned: false, enemyStunned: false, pattern, nextStep: pattern.steps[0], telegraphAction: undefined, ...changes,
+  threatCleared: 0, inBossFight: false, encounterTimerMs: 0, playerAttackTimerMs: 500, playerAttackDurationMs: 2800,
+  enemyActionTimerMs: 1200, enemyActionDurationMs: 2600, enemyNextActionIndex: 3, enemyCurrentActionId: 'root-crush',
+  enemyCurrentStepId: pattern.steps[2].id, enemyCurrentActionPatternId: 'default', enemyActionPatternId: 'default', playerBasicDamage: 8,
+  playerStunned: false, enemyStunned: false, pattern, nextStep: pattern.steps[3], currentStep: pattern.steps[2], currentAction: enemy.actions['root-crush'], ...changes,
 })
 
 describe('getCombatFlowPresentation', () => {
-  it('keeps player timing readable, including an exact runtime tie', () => {
-    expect(getCombatFlowPresentation(input()).playerTimeline).toMatchObject({ actor: 'player', label: 'Basic Attack', remainingMs: 500 })
-    expect(getCombatFlowPresentation(input({ playerAttackTimerMs: 1200 })).playerTimeline?.remainingMs).toBe(1200)
+  it('keeps player and enemy timing readable with acting states', () => {
+    const presentation = getCombatFlowPresentation(input())
+    expect(presentation.playerTimeline).toMatchObject({ actor: 'player', label: 'Basic Attack', remainingMs: 500, state: 'acting' })
+    expect(presentation.enemyTimeline).toMatchObject({ label: 'Root Crush', state: 'acting', remainingMs: 1200 })
   })
 
-  it('selects the enemy action when its recovery resolves sooner', () => {
-    const presentation = getCombatFlowPresentation(input({ playerAttackTimerMs: 1500, enemyActionTimerMs: 400, nextStep: pattern.steps[2], enemyActionIndex: 2 }))
-    expect(presentation.enemyTimeline).toMatchObject({ label: 'Root Crush', state: 'recovery', remainingMs: 400 })
-  })
-
-  it('uses the telegraph runtime for enemy timing and intent', () => {
-    const action = enemy.actions['root-crush']
-    const presentation = getCombatFlowPresentation(input({ playerAttackTimerMs: 1500, enemyTelegraphMs: 800, enemyTelegraphActionId: 'root-crush', enemyTelegraphStepId: 'root-crush-step', telegraphAction: action, nextStep: pattern.steps[3], enemyActionIndex: 3 }))
-    expect(presentation.enemyTimeline).toMatchObject({ state: 'telegraph', remainingMs: 800, progress: 60 })
+  it('renders the committed action and its current pattern step', () => {
+    const presentation = getCombatFlowPresentation(input({ enemyActionTimerMs: 800, enemyActionDurationMs: 2000, currentAction: enemy.actions['root-crush'] }))
     expect(presentation.enemyIntent).toMatchObject({ label: 'Root Crush', special: true, iconKind: 'direct-damage' })
-    expect(presentation.patternIndex).toBe(2)
+    expect(presentation.enemyTimeline?.progress).toBe(60)
+    expect(presentation.currentStepIndex).toBe(2)
+    expect(presentation.currentActionId).toBe('root-crush')
+  })
+
+  it('renders a committed Basic Attack without inventing an instant hit', () => {
+    const basic = pattern.steps[0]
+    const presentation = getCombatFlowPresentation(input({ enemyActionTimerMs: 1500, enemyActionDurationMs: 2500, enemyCurrentActionId: null, enemyCurrentStepId: basic.id, currentStep: basic, currentAction: undefined }))
+    expect(presentation.enemyIntent).toMatchObject({ label: 'Basic Attack', special: false })
+    expect(presentation.enemyTimeline?.remainingMs).toBe(1500)
+    expect(presentation.enemyTimeline?.progress).toBe(40)
   })
 
   it('clamps negative live timers to zero', () => {

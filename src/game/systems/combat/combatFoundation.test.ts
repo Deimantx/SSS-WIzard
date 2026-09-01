@@ -3,7 +3,7 @@ import { createInitialState } from '../../../store/initialState'
 import { executeCombatEffects, damageEnemy, damagePlayer, getCombatDamagePreview, resolveBasicAttackInterval } from './effectResolver'
 import { applyStatus, tickStatuses } from './statusRuntime'
 import { applyBarrier, finishEnemy, resolveCombatDeaths, spawnEnemy } from './combatRuntime'
-import { forceResolveEnemyAction } from './actionRuntime'
+import { clearCurrentEnemyAction, forceResolveEnemyAction } from './actionRuntime'
 import { runCombatTriggers } from './triggerRuntime'
 import { migrateSave } from '../../../persistence/migrations'
 import type { CombatSource, TraitDefinition, TraitId } from '../../types'
@@ -14,7 +14,7 @@ import { MONSTERS } from '../../content/monsters'
 import { TRAIT_DEFINITIONS } from '../../content/traits'
 import { STATUS_DEFINITIONS } from '../../content/statuses'
 import { SPELLS } from '../../content/spells/spells'
-import { resolveActionRecoveryMs } from './actionRuntime'
+import { resolveEnemySkillActionTimeMs } from './actionRuntime'
 import { getSpellEquipmentBonusPreview } from '../spells/spellEquipmentPreview'
 
 const playerSpell: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'test-spell', school: 'fire', tags: ['spell', 'magic'] }
@@ -53,7 +53,7 @@ describe('universal combat effects', () => {
     expect(state.player.health).toBe(state.player.maxHealth)
     expect(state.combat.playerBarrier).toBe(25)
     expect(state.player.mana).toBe(state.player.maxMana)
-    expect(state.combat.playerAttackTimerMs).toBe(700)
+    expect(state.combat.playerAttackTimerMs).toBe(2900)
     expect(state.combat.spellCooldowns['fire-bolt']).toBe(0)
   })
 
@@ -162,14 +162,16 @@ describe('combat save compatibility', () => {
 describe('data-driven monster mechanics', () => {
   it('composes Thorn Lash and Root Slam effects', () => {
     const thornling = stateWithEnemy('thornling')
+    clearCurrentEnemyAction(thornling)
     forceResolveEnemyAction(thornling, 'thorn-lash', executeCombatEffects)
     expect(thornling.player.health).toBe(90)
     expect(thornling.combat.playerStatuses[0].statusId).toBe('thorn-wound')
     const root = stateWithEnemy('stone-root')
+    clearCurrentEnemyAction(root)
     expect(root.combat.enemyBarrier).toBe(14)
     forceResolveEnemyAction(root, 'root-slam', executeCombatEffects)
     expect(root.player.health).toBe(82)
-    expect(root.combat.playerAttackTimerMs).toBe(700)
+    expect(root.combat.playerAttackTimerMs).toBe(2900)
   })
 
   it('fires authored threshold rules once per encounter', () => {
@@ -182,7 +184,7 @@ describe('data-driven monster mechanics', () => {
     const heart = stateWithEnemy('forest-heart')
     damageEnemy(heart, 310, 'spell')
     expect(heart.combat.enemyStatuses[0]).toMatchObject({ statusId: 'haste', remainingMs: null })
-    expect(resolveActionRecoveryMs(heart, 'enemy', 2400)).toBe(2040)
+    expect(resolveEnemySkillActionTimeMs(heart, 2400)).toBe(2040)
   })
 })
 
@@ -360,14 +362,13 @@ describe('post-implementation combat audit regressions', () => {
     expect(regeneration?.remainingMs).toBe(6000)
   })
 
-  it('modifies the active enemy telegraph only for the current action timer', () => {
+  it('modifies the committed enemy action timer without resolving recursively', () => {
     const state = stateWithEnemy()
-    state.combat.enemyTelegraphMs = 2000
-    state.combat.enemyTelegraphActionId = 'arc-spark'
-    state.combat.enemyActionTimerMs = 400
+    state.combat.enemyActionDurationMs = 2000
+    state.combat.enemyActionTimerMs = 2000
     executeCombatEffects(state, [{ type: 'modify-action-timer', target: 'opponent', action: 'current', amountMs: -500 }], playerSpell)
-    expect(state.combat.enemyTelegraphMs).toBe(1500)
-    expect(state.combat.enemyActionTimerMs).toBe(400)
+    expect(state.combat.enemyActionTimerMs).toBe(1500)
+    expect(state.combat.enemyActionDurationMs).toBe(2000)
   })
 
   it('produces identical periodic results for one large tick and many small ticks', () => {

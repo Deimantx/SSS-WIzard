@@ -4,7 +4,7 @@ import { DUNGEONS } from '../../game/content/dungeons/dungeons'
 import { MONSTERS } from '../../game/content/monsters'
 import { type CombatEffectPresentation } from '../../game/presentation/combat'
 import { getCombatFlowPresentation, type CombatFlowTimeline } from '../../game/presentation/combat/combatFlowPresentation'
-import { getCurrentEnemyActionStep, getEnemyAction, getEnemyActionPattern } from '../../game/systems/combat/actionRuntime'
+import { getCurrentEnemyActionStep, getEnemyAction, getEnemyActionPattern, getNextEnemyActionStep } from '../../game/systems/combat/actionRuntime'
 import { actorCannotAct } from '../../game/systems/combat/statusRuntime'
 import type { DungeonId } from '../../game/types'
 import { useGameStore } from '../../store/gameStore'
@@ -26,8 +26,9 @@ export function CombatFlowPanel({ selectedDungeonId }: { selectedDungeonId: Dung
   const playerStunned = useGameStore((state) => actorCannotAct(state, 'player'))
   const enemyStunned = useGameStore((state) => actorCannotAct(state, 'enemy'))
   const pattern = useGameStore((state) => state.combat.enemyId ? getEnemyActionPattern(state) : undefined)
-  const nextStep = useGameStore((state) => state.combat.enemyId ? getCurrentEnemyActionStep(state) : undefined)
-  const telegraphAction = useGameStore((state) => state.combat.enemyId ? getEnemyAction(state, state.combat.enemyTelegraphActionId) : undefined)
+  const nextStep = useGameStore((state) => state.combat.enemyId ? getNextEnemyActionStep(state) : undefined)
+  const currentStep = useGameStore((state) => state.combat.enemyId ? getCurrentEnemyActionStep(state) : undefined)
+  const currentAction = useGameStore((state) => state.combat.enemyId ? getEnemyAction(state, state.combat.enemyCurrentActionId) : undefined)
   const presentation = useMemo(() => getCombatFlowPresentation({
     active: combat.active,
     dungeonId: combat.dungeonId,
@@ -39,32 +40,32 @@ export function CombatFlowPanel({ selectedDungeonId }: { selectedDungeonId: Dung
     inBossFight: combat.inBossFight,
     encounterTimerMs: combat.encounterTimerMs,
     playerAttackTimerMs: combat.playerAttackTimerMs,
-    playerAttackIntervalMs,
+    playerAttackDurationMs: combat.playerAttackDurationMs || playerAttackIntervalMs,
     enemyActionTimerMs: combat.enemyActionTimerMs,
-    enemyActionRecoveryMs: combat.enemyActionRecoveryMs,
-    enemyActionIndex: combat.enemyActionIndex,
-    enemyTelegraphMs: combat.enemyTelegraphMs,
-    enemyTelegraphActionId: combat.enemyTelegraphActionId,
-    enemyTelegraphStepId: combat.enemyTelegraphStepId,
-    enemyTelegraphPatternId: combat.enemyTelegraphPatternId,
+    enemyActionDurationMs: combat.enemyActionDurationMs,
+    enemyNextActionIndex: combat.enemyNextActionIndex,
+    enemyCurrentActionId: combat.enemyCurrentActionId,
+    enemyCurrentStepId: combat.enemyCurrentStepId,
+    enemyCurrentActionPatternId: combat.enemyCurrentActionPatternId,
     enemyActionPatternId: combat.enemyActionPatternId,
     playerBasicDamage,
     playerStunned,
     enemyStunned,
     pattern,
     nextStep,
-    telegraphAction,
-  }), [combat, dungeon, enemy, enemyStunned, nextStep, pattern, playerAttackIntervalMs, playerBasicDamage, playerStunned, selectedDungeonId, telegraphAction])
+    currentStep,
+    currentAction,
+  }), [combat, currentAction, currentStep, dungeon, enemy, enemyStunned, nextStep, pattern, playerAttackIntervalMs, playerBasicDamage, playerStunned, selectedDungeonId])
 
   if (presentation.mode === 'tower') return <section className="combat-flow-panel is-tower"><div className="combat-flow-kicker">AT THE TOWER</div><ShieldAlert size={28} aria-hidden="true" /><strong>Enter a Dungeon to begin Combat.</strong></section>
   if (presentation.mode === 'boss-ready') return <section className="combat-flow-panel is-boss-ready"><div className="combat-flow-kicker">BOSS READY</div><ShieldAlert size={28} aria-hidden="true" /><strong>{MONSTERS[presentation.dungeon.boss].name} awaits.</strong><p>The route is clear. Engage the Boss from the Run Bar when ready.</p></section>
   if (presentation.mode === 'encounter-delay') return <section className="combat-flow-panel is-encounter-delay"><div className="combat-flow-delay-label">NEXT ENCOUNTER</div><strong className="combat-flow-delay">{formatTime(presentation.encounterTimerMs)}</strong><Progress value={Math.max(0, Math.min(100, (1 - presentation.encounterTimerMs / Math.max(1, presentation.dungeon.encounterDelayMs)) * 100))} tone="time" label="Encounter progress" /><div className="combat-flow-delay-context"><span>Searching the {presentation.dungeon.name}...</span><span>THREAT {combat.threatCleared} / {presentation.dungeon.threatRequired}</span>{presentation.dungeon.threatRequired <= combat.threatCleared && <strong>BOSS APPROACHING</strong>}</div></section>
 
-  return <section className={`combat-flow-panel${presentation.enemyTimeline?.state === 'telegraph' ? ' is-telegraphing' : ''}`} style={{ '--enemy-accent': presentation.enemy?.color } as React.CSSProperties}>
+  return <section className="combat-flow-panel" style={{ '--enemy-accent': presentation.enemy?.color } as React.CSSProperties}>
     <header className="combat-flow-head"><span className="combat-flow-kicker">COMBAT FLOW</span></header>
     <div className="combat-flow-timelines"><TimelineRow timeline={presentation.playerTimeline} /><TimelineRow timeline={presentation.enemyTimeline} /></div>
-    {presentation.enemyIntent && <EnemyIntent intent={presentation.enemyIntent} basicDamage={presentation.enemy?.basicAttackDamage ?? 0} progress={presentation.enemyTimeline?.progress ?? 0} />}
-    <div className="combat-flow-pattern"><div className="combat-subsection-label">ENEMY PATTERN</div><EnemyPatternRail pattern={presentation.pattern} enemy={presentation.enemy} currentIndex={presentation.patternIndex} activeStepId={presentation.activeStepId} activeAction={presentation.activeActionId} activeOriginMatchesCurrent={presentation.activeOriginMatchesCurrent} currentProgress={presentation.enemyTimeline?.progress} /></div>
+    {presentation.enemyIntent && <EnemyIntent intent={presentation.enemyIntent} basicDamage={presentation.enemy?.basicAttackDamage ?? 0} actionTimeMs={presentation.currentActionDurationMs} progress={presentation.enemyTimeline?.progress ?? 0} />}
+    <div className="combat-flow-pattern"><div className="combat-subsection-label">ENEMY PATTERN</div><EnemyPatternRail pattern={presentation.pattern} enemy={presentation.enemy} currentStepIndex={presentation.currentStepIndex} currentStepId={presentation.currentStepId} currentActionId={presentation.currentActionId} currentPatternOriginId={presentation.currentPatternOriginId} currentProgress={presentation.enemyTimeline?.progress} currentActionDurationMs={presentation.currentActionDurationMs} /></div>
   </section>
 }
 
@@ -72,7 +73,7 @@ function TimelineRow({ timeline }: { timeline: CombatFlowTimeline | null }) {
   if (!timeline) return null
   const label = timeline.actor === 'player' ? 'PLAYER' : 'ENEMY'
   const progress = timeline.progress ?? 0
-  return <div className={`combat-flow-timeline combat-flow-timeline-${timeline.actor}${timeline.state === 'telegraph' ? ' is-telegraphing' : ''}${timeline.state === 'stunned' ? ' is-stunned' : ''}${progress >= 90 ? ' is-near-complete' : ''}`}><div className="combat-flow-timeline-head"><span className="combat-subsection-label">{label}</span><strong>{timeline.label}</strong><span className="combat-flow-timeline-time ui-time">{timeline.state === 'stunned' ? 'STUNNED' : formatTime(timeline.remainingMs ?? 0)}</span></div>{timeline.state === 'stunned' ? <div className="combat-flow-paused">Action paused</div> : <Progress value={progress} label={`${label} ${timeline.label} progress`} />}</div>
+  return <div className={`combat-flow-timeline combat-flow-timeline-${timeline.actor}${timeline.state === 'stunned' ? ' is-stunned' : ''}${progress >= 90 ? ' is-near-complete' : ''}`}><div className="combat-flow-timeline-head"><span className="combat-subsection-label">{label}</span><strong>{timeline.label}</strong><span className="combat-flow-timeline-time ui-time">{timeline.state === 'stunned' ? 'STUNNED' : formatTime(timeline.remainingMs ?? 0)}</span></div>{timeline.state === 'stunned' ? <div className="combat-flow-paused">Action paused</div> : <Progress value={progress} label={`${label} ${timeline.label} progress`} />}</div>
 }
 
 function CombatEffectRow({ effect }: { effect: CombatEffectPresentation }) {
@@ -89,8 +90,8 @@ function IntentEffectIcon({ kind }: { kind: CombatEffectPresentation['kind'] }) 
   return <Sparkles size={13} aria-hidden="true" />
 }
 
-function EnemyIntent({ intent, basicDamage, progress }: { intent: NonNullable<ReturnType<typeof getCombatFlowPresentation>['enemyIntent']>; basicDamage: number; progress: number }) {
-  const action = intent.action ?? (intent.basic ? buildBasicAttackPresentation(basicDamage) : null)
+function EnemyIntent({ intent, basicDamage, actionTimeMs, progress }: { intent: NonNullable<ReturnType<typeof getCombatFlowPresentation>['enemyIntent']>; basicDamage: number; actionTimeMs: number; progress: number }) {
+  const action = intent.action ?? (intent.basic ? buildBasicAttackPresentation(basicDamage, actionTimeMs) : null)
   const style = { '--intent-progress': `${Math.max(0, Math.min(100, progress))}%` } as React.CSSProperties
   return <GameTooltip block wide placement="bottom" accent={intent.special ? 'warning' : 'neutral'} content={action ? <EnemyActionTooltip action={action} /> : undefined}><div className={`combat-flow-intent${intent.special ? ' is-special' : ''} combat-intent-${intent.iconKind}`}><div className="combat-flow-subhead"><span style={style} className={`combat-flow-intent-icon combat-pattern-icon-${intent.iconKind}`}><EnemyPatternIcon kind={intent.iconKind} /></span><span className="combat-subsection-label">ENEMY INTENT</span><strong>{intent.label}</strong></div>{intent.action ? <div className="combat-flow-effects">{intent.action.effects.map((effect, index) => <CombatEffectRow key={`${effect.label}-${index}`} effect={effect} />)}</div> : intent.basic ? <div className="combat-flow-effects"><CombatEffectRow effect={intent.basic} /></div> : null}</div></GameTooltip>
 }

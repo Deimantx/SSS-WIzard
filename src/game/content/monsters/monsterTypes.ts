@@ -9,7 +9,8 @@ export interface MonsterDefinition {
   subtitle: string
   maxHealth: number
   basicAttackDamage: number
-  actionIntervalMs: number
+  /** Base amount of time required for one Basic Attack Pattern step. */
+  basicAttackTimeMs: number
   color: string
   image?: string
   ui?: { portraitIcon?: MonsterPortraitIcon }

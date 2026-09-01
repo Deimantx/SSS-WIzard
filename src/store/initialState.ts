@@ -2,8 +2,8 @@ import { BALANCE } from '../game/data/balance'
 import { createInitialManaPillars } from '../game/data/manaPillars'
 import type { GameState } from '../game/types'
 
-// Combat Action System V1 adds persisted Pattern and Recovery runtime state.
-export const SAVE_VERSION = 17
+// Combat Action System V2 stores one explicit timer for each active action.
+export const SAVE_VERSION = 18
 
 export const createInitialState = (): GameState => ({
   saveVersion: SAVE_VERSION,
@@ -19,7 +19,7 @@ export const createInitialState = (): GameState => ({
     transmutation: { jobs: {} },
     autoCast: { 'fire-bolt': false, ignite: false, fireball: false, 'water-ward': false, 'flow-mend': false, frostbite: false, 'earth-spike': false, stoneguard: false, fortify: false, 'air-lance': false, quickening: false, 'shock-spark': false },
   },
-  combat: { active: false, dungeonId: null, enemyId: null, enemyHp: 0, enemyMaxHp: 0, enemyBarrier: 0, playerBarrier: 0, enemyBarrierRemainingMs: null, playerBarrierRemainingMs: null, enemyActionPatternId: null, enemyActionIndex: 0, enemyActionTimerMs: 0, enemyActionRecoveryMs: 0, enemyTelegraphMs: 0, enemyTelegraphActionId: null, enemyTelegraphStepId: null, enemyTelegraphPatternId: null, triggeredRuleIds: [], ruleCooldowns: {}, pendingBossId: null, playerAttackTimerMs: 0, encounterTimerMs: 0, spellCooldowns: { 'fire-bolt': 0, ignite: 0, fireball: 0, 'water-ward': 0, 'flow-mend': 0, frostbite: 0, 'earth-spike': 0, stoneguard: 0, fortify: 0, 'air-lance': 0, quickening: 0, 'shock-spark': 0 }, playerStatuses: [], enemyStatuses: [], threatCleared: 0, inBossFight: false, log: [], lastDamageDealt: 0, lastDamageTaken: 0 },
+  combat: { active: false, dungeonId: null, enemyId: null, enemyHp: 0, enemyMaxHp: 0, enemyBarrier: 0, playerBarrier: 0, enemyBarrierRemainingMs: null, playerBarrierRemainingMs: null, enemyActionPatternId: null, enemyNextActionIndex: 0, enemyCurrentStepId: null, enemyCurrentActionId: null, enemyCurrentActionPatternId: null, enemyActionTimerMs: 0, enemyActionDurationMs: 0, triggeredRuleIds: [], ruleCooldowns: {}, pendingBossId: null, playerAttackTimerMs: 0, playerAttackDurationMs: 0, encounterTimerMs: 0, spellCooldowns: { 'fire-bolt': 0, ignite: 0, fireball: 0, 'water-ward': 0, 'flow-mend': 0, frostbite: 0, 'earth-spike': 0, stoneguard: 0, fortify: 0, 'air-lance': 0, quickening: 0, 'shock-spark': 0 }, playerStatuses: [], enemyStatuses: [], threatCleared: 0, inBossFight: false, log: [], lastDamageDealt: 0, lastDamageTaken: 0 },
   progress: { magicLevelCap: BALANCE.schoolProgression.startingCap, spellRanks: {}, discoveredMonsters: [], discoveredItems: ['apprentice-wand'], lifetimeKills: 0, firstBossKill: false, firstMainBossKill: false, guildUnlocked: false, emberStaffUnlocked: false, forestHeartUnlocked: false, autoHuntBossUnlocked: false, guildRank: 'outsider', requestProgress: {}, guildReputation: 0, requestClaims: {}, permanentFocusBonuses: {}, focusImprovement: { rank: 1, level: 0 }, lifetimeKillsByMonster: {}, bossKillsByBoss: {}, autoHuntBossByDungeon: { 'whispering-woods': false, 'howling-den': false, 'abandoned-catacombs': false }, channeling: { pillars: createInitialManaPillars(), totalManaGenerated: 0, fiveEchoSustainMs: 0, discoveries: { 'stable-leyline': false, 'echo-resonance': false, 'deep-reservoir': false } } },
   spellPresets: { presets: [], lastAppliedPresetId: null },
   ui: { screen: 'home' },

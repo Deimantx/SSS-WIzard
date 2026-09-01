@@ -55,18 +55,18 @@ describe('profile save recovery and historical compatibility', () => {
       expect(loaded.state?.progress.focusImprovement.level).toBe(4)
     }
     if (label === 'V13') {
-      expect(loaded.state?.combat.enemyTelegraphActionId).toBe('arc-spark')
-      expect(loaded.state?.combat.enemyTelegraphStepId).toBeNull()
-      expect(loaded.state?.combat.enemyTelegraphPatternId).toBeNull()
+      expect(loaded.state?.combat.enemyCurrentActionId).toBe('arc-spark')
+      expect(loaded.state?.combat.enemyCurrentStepId).toBe('arc-spark-step')
+      expect(loaded.state?.combat.enemyActionDurationMs).toBe(2000)
       expect(loaded.state?.combat.playerBarrier).toBe(9)
     }
     if (label === 'V14') {
       expect(loaded.state?.combat.enemyActionPatternId).toBe('default')
-      expect(loaded.state?.combat.enemyActionIndex).toBe(0)
-      expect(loaded.state?.combat.enemyActionRecoveryMs).toBe(2800)
-      expect(loaded.state?.combat.enemyTelegraphActionId).toBe('arc-spark')
-      expect(loaded.state?.combat.enemyTelegraphStepId).toBe('arc-spark-step')
-      expect(loaded.state?.combat.enemyTelegraphPatternId).toBe('default')
+      expect(loaded.state?.combat.enemyNextActionIndex).toBe(0)
+      expect(loaded.state?.combat.enemyActionDurationMs).toBe(2000)
+      expect(loaded.state?.combat.enemyCurrentActionId).toBe('arc-spark')
+      expect(loaded.state?.combat.enemyCurrentStepId).toBe('arc-spark-step')
+      expect(loaded.state?.combat.enemyCurrentActionPatternId).toBe('default')
     }
   })
 
@@ -78,7 +78,7 @@ describe('profile save recovery and historical compatibility', () => {
     })
   })
 
-  it('loads a current V15 profile without requesting a rewrite', () => {
+  it('loads a current V18 profile without requesting a rewrite', () => {
     const state = currentStateWithData()
     expect(saveProfileGame('slot-1', state).ok).toBe(true)
     const loaded = loadProfileGame('slot-1')
@@ -195,7 +195,7 @@ describe('profile save recovery and historical compatibility', () => {
     const slotOne = loadProfileGame('slot-1')
     expect(slotOne.source).toBe('legacy-backup')
     expect(slotOne.recovered).toBe(true)
-    expect(slotOne.state?.combat.enemyTelegraphActionId).toBe('arc-spark')
+    expect(slotOne.state?.combat.enemyCurrentActionId).toBe('arc-spark')
     expect(localStorage.getItem(LEGACY_SAVE_BACKUP_KEY)).toBe(rawLegacy)
 
     localStorage.setItem(profileSaveKey('slot-2'), '{primary-corrupt}')

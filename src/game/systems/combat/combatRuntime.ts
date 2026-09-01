@@ -9,7 +9,7 @@ import { applyStatus, clearStatuses } from './statusRuntime'
 import { resetCombatRuleRuntime, runCombatTriggers } from './triggerRuntime'
 import type { CombatEventSink, StatusId } from './combatTypes'
 import { resolveBasicAttackInterval } from './effectResolver'
-import { initializeEnemyActionRuntime, resetEnemyActionRuntime, scheduleEnemyRecovery } from './actionRuntime'
+import { initializeEnemyActionRuntime, resetEnemyActionRuntime, startNextEnemyAction } from './actionRuntime'
 import { resolveMonsterLoot } from '../loot'
 import { discoverMonster } from '../collection/discovery'
 import type { SimulationReportCollector } from '../offline-bank/offlineBankReport'
@@ -31,12 +31,15 @@ export const spawnEnemy = (state: GameState, enemyId: MonsterId, uiEvents?: Comb
   resetCombatRuleRuntime(state)
   state.combat.inBossFight = isBossMonster(monster)
   state.combat.playerAttackTimerMs = 0
+  state.combat.playerAttackDurationMs = 0
   state.combat.enemyStatuses = []
   discoverMonster(state, enemyId)
   uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'system', sourceId: 'encounter-start' })
   runCombatTriggers(state, 'enemy', 'on-combat-start', { source: { actor: 'enemy', kind: 'system', sourceId: 'combat-start' } }, executeCombatEffects, 0, [], uiEvents)
   runCombatTriggers(state, 'player', 'on-combat-start', { source: { actor: 'player', kind: 'system', sourceId: 'combat-start' }, eventTarget: 'enemy' }, executeCombatEffects, 0, [], uiEvents)
-  scheduleEnemyRecovery(state, monster.actionIntervalMs)
+  state.combat.playerAttackDurationMs = resolveBasicAttackInterval(state, 'player', BALANCE.player.basicAttackIntervalMs)
+  state.combat.playerAttackTimerMs = state.combat.playerAttackDurationMs
+  if (state.combat.enemyHp > 0 && state.player.health > 0) startNextEnemyAction(state, executeCombatEffects, 0, uiEvents)
   appendLog(state, `${monster.name} enters the dungeon.`)
 }
 

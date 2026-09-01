@@ -54,7 +54,7 @@ export type CombatLogCategory =
   | 'pattern'
   | 'system'
 
-export type CombatActionPhase = 'telegraph' | 'resolve'
+export type CombatActionPhase = 'start' | 'resolve'
 export type CombatStatusPhase = 'apply' | 'remove' | 'expire'
 export type CombatFailureReason = 'unknown' | 'locked' | 'stunned' | 'inactive' | 'no-target' | 'cooldown' | 'mana'
 export type CombatAlertPriority = 'critical' | 'important' | 'info'
@@ -331,9 +331,8 @@ export interface CombatActionDefinition {
   id: string
   name: string
   description: string
-  telegraphMs: number
-  /** Optional recovery override after this Action resolves. */
-  recoveryMs?: number
+  /** Base duration of the Action before its effects resolve. */
+  actionTimeMs: number
   effects: CombatEffect[]
   tags?: CombatTag[]
 }

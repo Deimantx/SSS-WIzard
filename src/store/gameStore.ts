@@ -8,7 +8,7 @@ import { castSpellAction } from './actions/combatActions'
 import { manaRegenPerSecond, pushNotification, recalculateDerivedStats, selectFreeFocus, selectUsedFocus } from '../game/engine'
 import { debugApplyStatus, resolveCombatDeaths, spawnEnemy, spawnNextEnemy } from '../game/systems/combat/combatRuntime'
 import { executeCombatEffects } from '../game/systems/combat/effectResolver'
-import { forceResolveEnemyAction as forceResolveEnemyActionRuntime, resolveActiveEnemyAction as resolveActiveEnemyActionRuntime, setEnemyActionPattern as setEnemyActionPatternRuntime, startEnemyAction as startEnemyActionRuntime, startNextEnemyAction as startNextEnemyActionRuntime } from '../game/systems/combat/actionRuntime'
+import { forceResolveEnemyAction as forceResolveEnemyActionRuntime, resolveCurrentEnemyAction as resolveCurrentEnemyActionRuntime, setEnemyActionPattern as setEnemyActionPatternRuntime, startEnemyAction as startEnemyActionRuntime, startNextEnemyAction as startNextEnemyActionRuntime } from '../game/systems/combat/actionRuntime'
 import { resetCombatRuleRuntime, runCombatTriggers } from '../game/systems/combat/triggerRuntime'
 import { loadProfileGame, resetProfileGame } from '../persistence/profileSaveManager'
 import { type SaveReason } from '../persistence/saveConstants'
@@ -109,11 +109,11 @@ export interface GameActions {
   clearEnemyBarrier: () => void
   forceEnemyAction: (actionId: string) => void
   startEnemyAction: (actionId: string) => void
-  resolveActiveEnemyAction: () => void
+  resolveCurrentEnemyAction: () => void
   advanceEnemyAction: () => void
   setEnemyActionPattern: (patternId: string) => void
   resetEnemyActionPattern: () => void
-  resetEnemyActionIndex: () => void
+  resetEnemyActionCursor: () => void
   resetCombatRuleRuntime: () => void
   clearCombatStatuses: () => void
   clearPlayerStatuses: () => void
@@ -264,11 +264,11 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   clearEnemyBarrier: () => set((state) => { state.combat.enemyBarrier = 0; state.combat.enemyBarrierRemainingMs = null; return state }),
   forceEnemyAction: (actionId) => set((state) => { if (state.combat.enemyId) forceResolveEnemyActionRuntime(state, actionId, executeCombatEffects, 0, combatLogUiSink); return state }),
   startEnemyAction: (actionId) => set((state) => { if (state.combat.enemyId) startEnemyActionRuntime(state, actionId, executeCombatEffects, undefined, 0, combatLogUiSink); return state }),
-  resolveActiveEnemyAction: () => set((state) => { resolveActiveEnemyActionRuntime(state, executeCombatEffects, 0, combatLogUiSink); return state }),
+  resolveCurrentEnemyAction: () => set((state) => { resolveCurrentEnemyActionRuntime(state, executeCombatEffects, 0, combatLogUiSink); return state }),
   advanceEnemyAction: () => set((state) => { startNextEnemyActionRuntime(state, executeCombatEffects, 0, combatLogUiSink); return state }),
   setEnemyActionPattern: (patternId) => set((state) => { setEnemyActionPatternRuntime(state, patternId, combatLogUiSink); return state }),
   resetEnemyActionPattern: () => set((state) => { if (state.combat.enemyId) setEnemyActionPatternRuntime(state, MONSTERS[state.combat.enemyId].defaultActionPatternId, combatLogUiSink); return state }),
-  resetEnemyActionIndex: () => set((state) => { state.combat.enemyActionIndex = 0; return state }),
+  resetEnemyActionCursor: () => set((state) => { state.combat.enemyNextActionIndex = 0; return state }),
   resetCombatRuleRuntime: () => set((state) => { resetCombatRuleRuntime(state); return state }),
   clearCombatStatuses: () => set((state) => { state.combat.playerStatuses = []; state.combat.enemyStatuses = []; return state }),
   clearPlayerStatuses: () => set((state) => { state.combat.playerStatuses = []; return state }),

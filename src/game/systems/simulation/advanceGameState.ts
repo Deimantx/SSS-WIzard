@@ -8,7 +8,7 @@ import { appendLog, playerBasicDamage, pushNotification, recalculateDerivedStats
 import { castSpellInternal } from '../../engine/spellEngine'
 import { executeCombatEffects, getBasicAttackTags, resolveBasicAttackInterval } from '../combat/effectResolver'
 import { resolveCombatDeaths, spawnNextEnemy } from '../combat/combatRuntime'
-import { resolveActiveEnemyAction, startNextEnemyAction } from '../combat/actionRuntime'
+import { resolveCurrentEnemyAction, startNextEnemyAction } from '../combat/actionRuntime'
 import { actorCannotAct, tickStatuses } from '../combat/statusRuntime'
 import { tickBarriers } from '../combat/barrierRuntime'
 import { getCombatModifiers } from '../combat/modifiers'
@@ -53,6 +53,68 @@ const playerBasicAttack = (state: GameState, uiEvents?: CombatEventSink) => {
   return state.combat.lastDamageDealt
 }
 
+const autoCastReadySpells = (state: GameState, context: AdvanceContext) => {
+  if (actorCannotAct(state, 'player') || !state.combat.enemyId) return
+  for (const id of Object.keys(state.activities.autoCast)) {
+    const spellId = id as SpellId
+    if (actorCannotAct(state, 'player')) break
+    if (state.activities.autoCast[spellId] && spellUnlocked(state, spellId) && state.combat.spellCooldowns[spellId] <= 0 && meetsAutoCondition(state, spellId)) {
+      castSpellInternal(state, spellId, true, context.uiEvents)
+      if (resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents)) return
+    }
+  }
+}
+
+const ensurePlayerBasicRuntime = (state: GameState) => {
+  if (state.combat.playerAttackDurationMs > 0) return
+  state.combat.playerAttackDurationMs = resolveBasicAttackInterval(state, 'player', BALANCE.player.basicAttackIntervalMs)
+}
+
+const tickTimedCombatActions = (state: GameState, delta: number, context: AdvanceContext) => {
+  let remaining = Math.max(0, delta)
+  let guard = 0
+  while (guard < 1000 && state.combat.enemyId && (remaining > 0 || state.combat.playerAttackTimerMs <= 0 || state.combat.enemyActionTimerMs <= 0)) {
+    guard += 1
+    if (!state.combat.enemyCurrentStepId && !actorCannotAct(state, 'enemy')) {
+      startNextEnemyAction(state, executeCombatEffects, 0, context.uiEvents)
+      if (resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents)) break
+    }
+    ensurePlayerBasicRuntime(state)
+    if (!state.combat.enemyId) break
+
+    const playerBlocked = actorCannotAct(state, 'player')
+    const enemyBlocked = actorCannotAct(state, 'enemy')
+    const playerRemaining = playerBlocked ? Number.POSITIVE_INFINITY : Math.max(0, state.combat.playerAttackTimerMs)
+    const enemyRemaining = enemyBlocked || !state.combat.enemyCurrentStepId ? Number.POSITIVE_INFINITY : Math.max(0, state.combat.enemyActionTimerMs)
+    const untilEvent = Math.min(playerRemaining, enemyRemaining)
+    if (!Number.isFinite(untilEvent)) break
+
+    const elapsed = Math.min(remaining, untilEvent)
+    if (elapsed > 0) {
+      if (!playerBlocked) state.combat.playerAttackTimerMs = Math.max(0, state.combat.playerAttackTimerMs - elapsed)
+      if (!enemyBlocked && state.combat.enemyCurrentStepId) state.combat.enemyActionTimerMs = Math.max(0, state.combat.enemyActionTimerMs - elapsed)
+      remaining -= elapsed
+    }
+
+    if (!actorCannotAct(state, 'player') && state.combat.playerAttackTimerMs <= 0 && state.combat.enemyId) {
+      const damage = playerBasicAttack(state, context.uiEvents)
+      appendLog(state, `Basic Attack hits for ${damage}.`)
+      state.combat.playerAttackDurationMs = resolveBasicAttackInterval(state, 'player', BALANCE.player.basicAttackIntervalMs)
+      state.combat.playerAttackTimerMs = state.combat.playerAttackDurationMs
+      if (resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents)) break
+    }
+
+    autoCastReadySpells(state, context)
+    if (!state.combat.enemyId) break
+    if (!actorCannotAct(state, 'enemy') && state.combat.enemyCurrentStepId && state.combat.enemyActionTimerMs <= 0) {
+      resolveCurrentEnemyAction(state, executeCombatEffects, 0, context.uiEvents)
+      if (resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents)) break
+    }
+
+    if (elapsed <= 0 && untilEvent > 0) break
+  }
+}
+
 const tickCombat = (state: GameState, delta: number, context: AdvanceContext) => {
   if (!state.combat.active) return
   if (!state.combat.enemyId) { state.combat.encounterTimerMs -= delta; if (state.combat.encounterTimerMs <= 0) { spawnNextEnemy(state, context.uiEvents); resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents) } return }
@@ -65,41 +127,9 @@ const tickCombat = (state: GameState, delta: number, context: AdvanceContext) =>
   if (!enemy) return
 
   const cooldownRecovery = Math.max(0, 1 + getCombatModifiers(state, 'player', 'cooldown-recovery-percent'))
-  const playerStunned = actorCannotAct(state, 'player')
-  if (!playerStunned) state.combat.playerAttackTimerMs -= delta
   Object.keys(state.combat.spellCooldowns).forEach((id) => { state.combat.spellCooldowns[id as SpellId] = Math.max(0, state.combat.spellCooldowns[id as SpellId] - delta * cooldownRecovery) })
-  if (!playerStunned && state.combat.playerAttackTimerMs <= 0 && state.combat.enemyId) {
-    const damage = playerBasicAttack(state, context.uiEvents)
-    appendLog(state, `Basic Attack hits for ${damage}.`)
-    state.combat.playerAttackTimerMs = resolveBasicAttackInterval(state, 'player', BALANCE.player.basicAttackIntervalMs)
-    if (resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents)) return
-  }
-  if (state.combat.enemyId) {
-    for (const id of Object.keys(state.activities.autoCast)) {
-      const spellId = id as SpellId
-      if (actorCannotAct(state, 'player')) break
-      if (state.activities.autoCast[spellId] && spellUnlocked(state, spellId) && state.combat.spellCooldowns[spellId] <= 0 && meetsAutoCondition(state, spellId)) {
-        castSpellInternal(state, spellId, true, context.uiEvents)
-        if (resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents)) return
-      }
-    }
-  }
-  if (!state.combat.enemyId) return
   if (resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents)) return
-
-  if (!actorCannotAct(state, 'enemy') && state.combat.enemyTelegraphActionId) {
-    state.combat.enemyTelegraphMs -= delta
-    if (state.combat.enemyTelegraphMs <= 0) {
-      resolveActiveEnemyAction(state, executeCombatEffects, 0, context.uiEvents)
-      if (resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents)) return
-    }
-  } else if (!actorCannotAct(state, 'enemy')) {
-    state.combat.enemyActionTimerMs -= delta
-    if (state.combat.enemyActionTimerMs <= 0) {
-      startNextEnemyAction(state, executeCombatEffects, 0, context.uiEvents)
-      if (resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents)) return
-    }
-  }
+  tickTimedCombatActions(state, delta, context)
 }
 
 const advanceGameStateStep = (state: GameState, delta: number, context: AdvanceContext) => {

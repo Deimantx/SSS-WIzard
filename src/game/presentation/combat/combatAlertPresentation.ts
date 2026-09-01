@@ -53,12 +53,6 @@ export const createCombatAlertSpec = (event: CombatEvent): CombatAlertSpec | nul
     return { dedupeKey: 'mana-starved', priority: 'important', category: 'resource', title: 'MANA STARVED', detail: `${spell?.name ?? 'Configured spell'} blocked by ${failureLabel(event.failure)}.`, icon: 'mana', semantic: 'warning', durationMs: 3_500 }
   }
 
-  if (event.actionPhase === 'telegraph' && event.source.kind === 'enemy' && event.actionId && isBossEvent(event)) {
-    const action = MONSTERS[event.source.monsterId]?.actions[event.actionId]
-    if (!action) return null
-    return { dedupeKey: `boss-action:${event.source.monsterId}:${action.id}`, priority: 'critical', category: 'boss', title: `BOSS: ${action.name.toUpperCase()}`, detail: action.description, icon: 'boss', semantic: 'danger', durationMs: 5_000 }
-  }
-
   if (event.category === 'pattern' && event.source.kind === 'enemy' && isBossEvent(event)) {
     return { dedupeKey: `boss-pattern:${event.source.monsterId}:${event.sourceId ?? 'shift'}`, priority: 'critical', category: 'boss', title: 'BOSS PHASE SHIFT', detail: 'The enemy has changed its action pattern.', icon: 'phase', semantic: 'danger', durationMs: 5_000 }
   }

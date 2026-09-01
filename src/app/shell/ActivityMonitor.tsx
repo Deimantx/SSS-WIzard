@@ -40,7 +40,7 @@ export function ActivityMonitor() {
 }
 
 function ActivityCard({ activity, onClick }: { activity: ActivityTelemetry; onClick: () => void }) {
-  const statusLabel = activity.status === 'waiting-mana' ? 'WAITING FOR MANA' : activity.status === 'mana-limited' ? 'MANA LIMITED' : activity.status === 'waiting-materials' ? 'WAITING FOR MATERIALS' : activity.status === 'recovery' ? 'NEXT ENCOUNTER' : activity.status.toUpperCase()
+  const statusLabel = activity.status === 'waiting-mana' ? 'WAITING FOR MANA' : activity.status === 'mana-limited' ? 'MANA LIMITED' : activity.status === 'waiting-materials' ? 'WAITING FOR MATERIALS' : activity.id === 'combat' && activity.status === 'paused' ? 'NEXT ENCOUNTER' : activity.status.toUpperCase()
   const progressLabel = activity.id === 'combat' ? 'Enemy HP' : activity.remainingMs === undefined ? '' : formatCompactDuration(activity.remainingMs)
   return <button className={`activity-card accent-${activity.accent} ${activity.status === 'waiting-mana' || activity.status === 'mana-limited' || activity.status === 'waiting-materials' ? 'activity-waiting' : ''}`} onClick={onClick} aria-label={`Open ${activity.label} activity`}>
     <div className="activity-card-head"><div><strong>{activity.label}</strong><span>{activity.subtitle}</span></div><small>{statusLabel}</small></div>

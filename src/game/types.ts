@@ -170,18 +170,18 @@ export interface CombatState {
   playerBarrier: number
   enemyBarrierRemainingMs: number | null
   playerBarrierRemainingMs: number | null
-  enemyActionIndex: number
-  enemyActionTimerMs: number
   enemyActionPatternId: string | null
-  enemyActionRecoveryMs: number
-  enemyTelegraphMs: number
-  enemyTelegraphActionId: string | null
-  enemyTelegraphStepId: string | null
-  enemyTelegraphPatternId: string | null
+  enemyNextActionIndex: number
+  enemyCurrentStepId: string | null
+  enemyCurrentActionId: string | null
+  enemyCurrentActionPatternId: string | null
+  enemyActionTimerMs: number
+  enemyActionDurationMs: number
   triggeredRuleIds: string[]
   ruleCooldowns: Record<string, number>
   pendingBossId: MonsterId | null
   playerAttackTimerMs: number
+  playerAttackDurationMs: number
   encounterTimerMs: number
   spellCooldowns: Record<SpellId, number>
   playerStatuses: ActiveStatus[]
@@ -288,7 +288,7 @@ export interface ManaFlowBreakdown {
   etaKind: 'full' | 'empty' | 'starved' | null
 }
 
-export type ActivityTelemetryStatus = 'running' | 'mana-limited' | 'waiting-mana' | 'waiting-materials' | 'paused' | 'combat' | 'recovery'
+export type ActivityTelemetryStatus = 'running' | 'mana-limited' | 'waiting-mana' | 'waiting-materials' | 'paused' | 'combat'
 export interface ActivityMetric {
   label: string
   value: string

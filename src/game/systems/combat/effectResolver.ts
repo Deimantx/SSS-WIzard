@@ -9,7 +9,7 @@ import { getActorHealth, resolveMagnitude } from './magnitude'
 import { consumeBarrier, gainBarrierResult, gainBarrier as gainBarrierRuntime, getActiveBarrier } from './barrierRuntime'
 import { getCombatModifiers, getResistance, isImmuneToDamage } from './modifiers'
 import { runCombatTriggers, type CombatEventContext } from './triggerRuntime'
-import { resolveActiveEnemyAction, setEnemyActionPattern } from './actionRuntime'
+import { setEnemyActionPattern } from './actionRuntime'
 import type { CombatEffect, CombatEventSink, CombatLogCategory, CombatSource, CombatTag, DamageType, EffectTarget } from './combatTypes'
 
 const MAX_EFFECT_DEPTH = 20
@@ -180,10 +180,8 @@ export const executeCombatEffect = (state: GameState, effect: CombatEffect, sour
     case 'dispel': dispelStatuses(state, target, effect.mode, effect.tag, { executeEffects: execute, source, depth, uiEvents }); break
     case 'modify-action-timer': {
       if (target === 'player') state.combat.playerAttackTimerMs = Math.max(0, state.combat.playerAttackTimerMs + effect.amountMs)
-      else if (effect.action === 'current' && state.combat.enemyTelegraphActionId) {
-        state.combat.enemyTelegraphMs = Math.max(0, state.combat.enemyTelegraphMs + effect.amountMs)
-        if (state.combat.enemyTelegraphMs <= 0) resolveActiveEnemyAction(state, execute, depth, uiEvents)
-      } else state.combat.enemyActionTimerMs = Math.max(0, state.combat.enemyActionTimerMs + effect.amountMs)
+      else if (effect.action === 'current' && state.combat.enemyCurrentStepId) state.combat.enemyActionTimerMs = Math.max(0, state.combat.enemyActionTimerMs + effect.amountMs)
+      else if (effect.action !== 'current') state.combat.enemyActionTimerMs = Math.max(0, state.combat.enemyActionTimerMs + effect.amountMs)
       appendLog(state, `${effect.amountMs >= 0 ? 'Action delayed' : 'Action timer changed'} by ${Math.abs(effect.amountMs)}ms.`)
       uiEvents?.push({ ...eventFields(state, source, target), category: 'system', sourceId: 'action-timer', amount: Math.abs(effect.amountMs), durationMs: effect.amountMs })
       break

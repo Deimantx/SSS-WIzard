@@ -1,6 +1,10 @@
 import { STATUS_DEFINITIONS } from '../../content/statuses'
 import type { ActiveStatus, CombatEffect, DamageType, StatusDefinition, StatusId } from '../../systems/combat/combatTypes'
 import { resolveCombatSourceLabel } from './combatSourcePresentation'
+import type { GameState } from '../../types'
+import { calculateCombatDamage } from '../../systems/combat/effectResolver'
+import { buildPeriodicStatusCombatSource, getExecutablePeriodicStatusEffects } from '../../systems/combat/combatProvenance'
+import { resolveMagnitude } from '../../systems/combat/magnitude'
 
 export interface PeriodicStatusSourcePresentation {
   instanceKey: string
@@ -27,22 +31,29 @@ export interface CombatStatusGroupPresentation {
 
 const periodicPayload = (status: ActiveStatus): CombatEffect[] => status.periodicEffects ?? STATUS_DEFINITIONS[status.statusId]?.periodic?.effects ?? []
 
-const sourcePeriodicPresentation = (status: ActiveStatus, definition: StatusDefinition): PeriodicStatusSourcePresentation => {
-  const effects = periodicPayload(status).filter((effect) => effect.type === 'deal-damage')
-  const flatEffects = effects.filter((effect) => effect.magnitude.type === 'flat')
-  const damagePerTick = flatEffects.reduce((total, effect) => total + (effect.magnitude.type === 'flat' ? effect.magnitude.value : 0), 0)
-  const damageTypes = [...new Set(flatEffects.map((effect) => effect.damageType))]
+const sourcePeriodicPresentation = (status: ActiveStatus, definition: StatusDefinition, state?: GameState): PeriodicStatusSourcePresentation => {
+  const effects = (state ? getExecutablePeriodicStatusEffects(status) : periodicPayload(status)).filter((effect) => effect.type === 'deal-damage')
+  const damageTypes = [...new Set(effects.map((effect) => effect.damageType))]
+  const source = state ? buildPeriodicStatusCombatSource(status) : undefined
+  const damagePerTick = effects.reduce((total, effect) => {
+    if (effect.type !== 'deal-damage') return total
+    if (!state || !source) return total + (effect.magnitude.type === 'flat' ? effect.magnitude.value : 0)
+    const target = effect.target === 'self' ? source.actor : source.actor === 'player' ? 'enemy' : 'player'
+    const tags = [...new Set([...(source.tags ?? []), ...(effect.tags ?? [])])]
+    const raw = resolveMagnitude(state, effect.magnitude, source, target)
+    return total + calculateCombatDamage(state, raw, effect.damageType, source, target, tags).resolvedBeforeBarrier
+  }, 0)
   const interval = definition.periodic?.intervalMs ?? 0
   return {
     instanceKey: status.instanceKey,
     sourceLabel: resolveCombatSourceLabel(status.source),
     remainingMs: status.remainingMs,
     tickIntervalMs: interval,
-    ...(flatEffects.length && interval > 0 ? { damagePerTick, damagePerSecond: damagePerTick / (interval / 1000), damageType: damageTypes.length === 1 ? damageTypes[0] : undefined } : {}),
+    ...(effects.length && interval > 0 ? { damagePerTick, damagePerSecond: damagePerTick / (interval / 1000), damageType: damageTypes.length === 1 ? damageTypes[0] : undefined } : {}),
   }
 }
 
-export const getCombatStatusGroups = (statuses: ActiveStatus[]): CombatStatusGroupPresentation[] => {
+export const getCombatStatusGroups = (statuses: ActiveStatus[], state?: GameState): CombatStatusGroupPresentation[] => {
   const groups = new Map<StatusId, ActiveStatus[]>()
   statuses.forEach((status) => {
     const group = groups.get(status.statusId) ?? []
@@ -60,7 +71,7 @@ export const getCombatStatusGroups = (statuses: ActiveStatus[]): CombatStatusGro
     const categoryKey = definition.tags.includes('dot') ? 'dot' : definition.tags.includes('control') ? 'control' : definition.classification === 'buff' ? 'buff' : definition.classification === 'debuff' ? 'debuff' : 'neutral'
     const categoryLabel = categoryKey === 'dot' ? 'Damage over time' : categoryKey === 'control' ? 'Control' : categoryKey === 'buff' ? 'Buff' : categoryKey === 'debuff' ? 'Debuff' : 'Status'
     const sourceBreakdown = definition.tags.includes('dot')
-      ? instances.map((status) => sourcePeriodicPresentation(status, definition)).sort((left, right) => (right.damagePerSecond ?? 0) - (left.damagePerSecond ?? 0) || left.sourceLabel.localeCompare(right.sourceLabel))
+      ? instances.map((status) => sourcePeriodicPresentation(status, definition, state)).sort((left, right) => (right.damagePerSecond ?? 0) - (left.damagePerSecond ?? 0) || left.sourceLabel.localeCompare(right.sourceLabel))
       : []
     const totalCurrentRate = sourceBreakdown.reduce((total, source) => total + (source.damagePerSecond ?? 0), 0)
     return [{ statusId, definition, instances, displayRemainingMs, displayInitialDurationMs, totalStacks, categoryKey, categoryLabel, sourceBreakdown, ...(sourceBreakdown.some((source) => source.damagePerSecond !== undefined) ? { totalCurrentRate } : {}) }]

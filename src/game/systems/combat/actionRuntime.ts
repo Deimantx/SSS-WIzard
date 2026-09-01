@@ -6,12 +6,9 @@ import { getCombatModifiers } from './modifiers'
 import { actorCannotAct } from './statusRuntime'
 import { runCombatTriggers, type CombatEventContext } from './triggerRuntime'
 import type { ActionPattern, ActionStep, CombatActionDefinition, CombatEffect, CombatEventSink, CombatSource, CombatTag, CombatTrigger } from './combatTypes'
+import { MAX_ACTION_RATE, MAX_ACTION_WORK_MS, MIN_ACTION_RATE, MIN_ACTION_TIME_MS } from '../../core/balance/combatTiming'
 
-export const MIN_ACTION_TIME_MS = 100
-/** Action rates are multiplicative work consumption, bounded for safety. */
-export const MIN_ACTION_RATE = 0.1
-export const MAX_ACTION_RATE = 10
-export const MAX_ACTION_WORK_MS = 86_400_000
+export { MAX_ACTION_RATE, MAX_ACTION_WORK_MS, MIN_ACTION_RATE, MIN_ACTION_TIME_MS }
 export type ActionEffectExecutor = (state: GameState, effects: CombatEffect[], source: CombatSource, depth?: number, uiEvents?: CombatEventSink) => void
 export type ActionLifecycleEvent = Extract<CombatTrigger, 'on-action-start' | 'on-action-resolve'>
 
@@ -70,14 +67,6 @@ export const getEnemyBasicAttackRate = (state: GameState) => getActionRate(state
 export const getEnemySkillActionRate = (state: GameState) => getActionRate(state, 'enemy', 'action')
 export const getCurrentEnemyActionRate = (state: GameState) => getCurrentEnemyActionStep(state)?.type === 'action' ? getEnemySkillActionRate(state) : getEnemyBasicAttackRate(state)
 
-export const resolveEnemyBasicAttackTimeMs = (state: GameState, baseTimeMs: number) => {
-  return Math.max(MIN_ACTION_TIME_MS, Math.round(Math.max(MIN_ACTION_TIME_MS, baseTimeMs) / Math.max(MIN_ACTION_RATE, getEnemyBasicAttackRate(state))))
-}
-
-export const resolveEnemySkillActionTimeMs = (state: GameState, baseTimeMs: number) => {
-  return Math.max(MIN_ACTION_TIME_MS, Math.round(Math.max(MIN_ACTION_TIME_MS, baseTimeMs) / Math.max(MIN_ACTION_RATE, getEnemySkillActionRate(state))))
-}
-
 /** Clears only the committed action. Selected Pattern and next cursor survive. */
 export const clearCurrentEnemyAction = (state: GameState) => {
   state.combat.enemyCurrentStepId = null
@@ -134,7 +123,7 @@ const commitAction = (state: GameState, stepId: string | null, actionId: string 
   state.combat.enemyCurrentStepId = stepId
   state.combat.enemyCurrentActionId = actionId
   state.combat.enemyCurrentActionPatternId = patternId
-  state.combat.enemyActionDurationMs = Math.max(MIN_ACTION_TIME_MS, Number.isFinite(baseDurationMs) ? baseDurationMs : MIN_ACTION_TIME_MS)
+  state.combat.enemyActionDurationMs = Math.min(MAX_ACTION_WORK_MS, Math.max(MIN_ACTION_TIME_MS, Number.isFinite(baseDurationMs) ? baseDurationMs : MIN_ACTION_TIME_MS))
   state.combat.enemyActionTimerMs = state.combat.enemyActionDurationMs
 }
 

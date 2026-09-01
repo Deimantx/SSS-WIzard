@@ -46,7 +46,7 @@ describe('getCombatFlowPresentation', () => {
 
   it('keeps frozen progress and remaining time visible while Stunned', () => {
     const presentation = getCombatFlowPresentation(input({ enemyActionTimerMs: 800, enemyActionDurationMs: 2000, enemyStunned: true }))
-    expect(presentation.enemyTimeline).toMatchObject({ state: 'stunned', remainingMs: 800, progress: 60, label: 'Root Crush' })
+    expect(presentation.enemyTimeline).toMatchObject({ state: 'stunned', remainingMs: null, progress: 60, label: 'Root Crush' })
   })
 
   it('switches to non-timer modes outside an active enemy encounter', () => {

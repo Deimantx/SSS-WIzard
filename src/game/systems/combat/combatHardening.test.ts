@@ -4,12 +4,13 @@ import { createInitialState } from '../../../store/initialState'
 import type { GameState, ItemDefinition, ItemId } from '../../types'
 import { executeCombatEffects } from './effectResolver'
 import { getCombatModifiers } from './modifiers'
-import { applyStatus } from './statusRuntime'
+import { applyStatus, tickStatuses } from './statusRuntime'
 import { getActionRate, getCurrentEnemyActionRate, getPlayerBasicAttackRate, startEnemyAction, clearCurrentEnemyAction } from './actionRuntime'
-import { spawnEnemy } from './combatRuntime'
+import { finishEnemy, spawnEnemy } from './combatRuntime'
 import { runCombatTriggers, getRuleRuntimeKey, tickRuleCooldowns } from './triggerRuntime'
 import { advanceGameState } from '../simulation/advanceGameState'
 import { validateStatusDefinitions, STATUS_DEFINITIONS } from '../../content/statuses'
+import { isPersistedCombatEffect } from './combatEffectValidation'
 
 const source = { actor: 'player' as const, kind: 'spell' as const, sourceId: 'hardening-test', school: 'water' as const, tags: ['spell' as const, 'magic' as const, 'water' as const] }
 const stateWithEnemy = () => {
@@ -128,6 +129,11 @@ describe('combat foundation hardening', () => {
       STATUS_DEFINITIONS.burning.triggers = original
     }
   })
+
+  it('validates status modifier overrides against the target status definition', () => {
+    expect(isPersistedCombatEffect({ type: 'apply-status', target: 'opponent', statusId: 'chilled', modifierOverrides: { 'damage-dealt-percent': -0.2 } })).toBe(false)
+    expect(isPersistedCombatEffect({ type: 'apply-status', target: 'opponent', statusId: 'chilled', modifierOverrides: { 'basic-attack-speed-percent': -0.2, 'action-speed-percent': -0.2 } })).toBe(true)
+  })
 })
 
 describe('equipment combat providers', () => {
@@ -175,6 +181,53 @@ describe('equipment combat providers', () => {
     expect(state.combat.triggeredRuleIds).toEqual(expect.arrayContaining([ring1Key, ring2Key]))
     expect(state.combat.playerStatuses).toHaveLength(1)
     expect(state.combat.playerStatuses[0].source).toMatchObject({ kind: 'equipment', sourceId: testItemId })
+  })
+
+  it('keeps duplicate equipment status sources distinct through periodic ticks', () => {
+    ITEMS[testItemId] = { ...testItem, combat: { rules: [{ id: 'apply-burning', event: 'on-combat-start', oncePerEncounter: true, effects: [{ type: 'apply-status', target: 'opponent', statusId: 'burning' }] }] } }
+    const state = createInitialState()
+    state.combat.active = true
+    state.combat.dungeonId = 'whispering-woods'
+    state.equipment.ring1 = testItemId
+    state.equipment.ring2 = testItemId
+    const events: Array<{ sourceKind?: string; statusInstanceKey?: string; providerInstanceKey?: string }> = []
+    spawnEnemy(state, 'forest-wisp', { push: (event) => events.push(event) })
+    state.combat.enemyMaxHp = 1_000
+    state.combat.enemyHp = 1_000
+    const statuses = state.combat.enemyStatuses.filter((status) => status.statusId === 'burning')
+    expect(statuses).toHaveLength(2)
+    expect(statuses.map((status) => status.source)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ sourceId: testItemId, providerInstanceKey: 'ring1' }),
+      expect.objectContaining({ sourceId: testItemId, providerInstanceKey: 'ring2' }),
+    ]))
+    expect(statuses[0].instanceKey).not.toBe(statuses[1].instanceKey)
+
+    tickStatuses(state, 1_000, executeCombatEffects, { push: (event) => events.push(event) })
+    const ticks = events.filter((event) => event.sourceKind === 'status' && event.statusInstanceKey)
+    expect(ticks).toEqual(expect.arrayContaining([
+      expect.objectContaining({ providerInstanceKey: 'ring1' }),
+      expect.objectContaining({ providerInstanceKey: 'ring2' }),
+    ]))
+  })
+
+  it('preserves player rule cooldowns through enemy death and downtime while clearing enemy cooldowns', () => {
+    ITEMS[testItemId] = { ...testItem, combat: { rules: [{ id: 'cooldown-start', event: 'on-combat-start', cooldownMs: 12_000, effects: [] }] } }
+    const state = stateWithEnemy()
+    state.equipment.ring1 = testItemId
+    const events: Array<{ sourceKind?: string; providerInstanceKey?: string }> = []
+    state.combat.triggeredRuleIds = []
+    state.combat.ruleCooldowns = {}
+    spawnEnemy(state, 'forest-wisp', { push: (event) => events.push(event) })
+    const playerKey = getRuleRuntimeKey('player', 'equipment', testItemId, 'cooldown-start', 'ring1')
+    state.combat.ruleCooldowns['enemy:trait:temporary:rule'] = 4_000
+    expect(state.combat.ruleCooldowns[playerKey]).toBe(12_000)
+    state.combat.enemyHp = 0
+    finishEnemy(state, undefined, undefined, { push: (event) => events.push(event) })
+    expect(state.combat.ruleCooldowns[playerKey]).toBe(12_000)
+    expect(state.combat.ruleCooldowns['enemy:trait:temporary:rule']).toBeUndefined()
+    for (let elapsed = 0; elapsed < 5_000; elapsed += 1_000) advanceGameState(state, 1_000, { mode: 'banked' })
+    expect(state.combat.enemyId).not.toBeNull()
+    expect(state.combat.ruleCooldowns[playerKey]).toBe(7_000)
   })
 
   it('respects equipment rule cooldowns', () => {

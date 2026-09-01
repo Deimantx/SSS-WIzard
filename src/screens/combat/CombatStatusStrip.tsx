@@ -8,9 +8,11 @@ import { getCombatStatusGroups, type CombatStatusGroupPresentation } from '../..
 import { formatTime } from '../../game/utils'
 import { GameTooltip } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
+import { useGameStore } from '../../store/gameStore'
 
 export function CombatStatusStrip({ statuses, label }: { statuses: ActiveStatus[]; label: string }) {
-  const groups = getCombatStatusGroups(statuses)
+  const state = useGameStore()
+  const groups = getCombatStatusGroups(statuses, state)
   return <section className={`combat-status-strip${groups.length ? ' is-active' : ' is-empty'}`} aria-label={label}><div className="combat-subsection-label">{label}</div>{groups.length ? <div className="combat-status-list">{groups.map((group) => <CombatStatusChip key={group.statusId} group={group} />)}</div> : <span className="combat-status-empty">None active</span>}</section>
 }
 
@@ -35,7 +37,7 @@ export function CombatStatusChip({ group }: { group: CombatStatusGroupPresentati
   const tooltip = <TooltipContent title={definition.name} description={definition.description}>
     <div className="tooltip-section"><small>TYPE</small><p>{group.categoryLabel}</p></div>
     <div className="tooltip-section"><small>REMAINING</small><p>{duration}</p></div>
-    <div className="tooltip-section"><small>STACKS</small><p>{stacks}</p></div>
+    {definition.stacking.mode === 'stacks' && <div className="tooltip-section"><small>STACKS</small><p>{stacks}</p></div>}
     {sources.length > 0 && <div className="tooltip-section"><small>SOURCES</small><div className="combat-status-tooltip-sources">{sources.map((source) => <div className="combat-status-tooltip-source" key={source.instanceKey}><strong>{source.sourceLabel}</strong><span>{source.damagePerSecond !== undefined ? formatUiCombatRate(source.damagePerSecond, '/s') : 'Periodic effect'}</span><small>{source.remainingMs === null ? '\u221e' : formatTime(source.remainingMs)}</small></div>)}</div></div>}
     {rate !== undefined && <div className="tooltip-section"><small>TOTAL</small><p>{formatUiCombatRate(rate, '/s')}</p></div>}
   </TooltipContent>

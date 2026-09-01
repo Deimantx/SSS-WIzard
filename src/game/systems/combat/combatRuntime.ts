@@ -6,15 +6,15 @@ import type { GameState, ItemId, MonsterId } from '../../types'
 import { executeCombatEffects, damageEnemy, damagePlayer, gainBarrier } from './effectResolver'
 import { gainBarrier as gainBarrierRuntime } from './barrierRuntime'
 import { applyStatus, clearStatuses } from './statusRuntime'
-import { resetCombatRuleRuntime, runCombatTriggers } from './triggerRuntime'
+import { clearEnemyRuleCooldowns, resetAllCombatRuleRuntime, resetEncounterRuleFlags, runCombatTriggers } from './triggerRuntime'
 import type { CombatEventSink, StatusId } from './combatTypes'
-import { resolveBasicAttackInterval } from './effectResolver'
 import { initializeEnemyActionRuntime, resetEnemyActionRuntime, startNextEnemyAction } from './actionRuntime'
 import { resolveMonsterLoot } from '../loot'
 import { discoverMonster } from '../collection/discovery'
 import type { SimulationReportCollector } from '../offline-bank/offlineBankReport'
+import { MAX_ACTION_WORK_MS, MIN_ACTION_TIME_MS } from '../../core/balance/combatTiming'
 
-export { applyStatus, clearStatuses, damageEnemy, damagePlayer, executeCombatEffects, gainBarrier, resolveBasicAttackInterval }
+export { applyStatus, clearStatuses, damageEnemy, damagePlayer, executeCombatEffects, gainBarrier }
 
 export const applyBarrier = (state: GameState, amount: number) => gainBarrierRuntime(state, amount, { actor: 'player', kind: 'spell', sourceId: 'legacy-barrier', tags: ['barrier'] }, 'player', ['barrier'], { mode: 'replace', durationMs: 9000 })
 
@@ -28,7 +28,8 @@ export const spawnEnemy = (state: GameState, enemyId: MonsterId, uiEvents?: Comb
   state.combat.enemyBarrier = 0
   state.combat.enemyBarrierRemainingMs = null
   initializeEnemyActionRuntime(state)
-  resetCombatRuleRuntime(state)
+  resetEncounterRuleFlags(state)
+  clearEnemyRuleCooldowns(state)
   state.combat.inBossFight = isBossMonster(monster)
   state.combat.playerAttackTimerMs = 0
   state.combat.playerAttackDurationMs = 0
@@ -38,7 +39,7 @@ export const spawnEnemy = (state: GameState, enemyId: MonsterId, uiEvents?: Comb
   uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'system', sourceId: 'encounter-start' })
   runCombatTriggers(state, 'enemy', 'on-combat-start', { source: { actor: 'enemy', kind: 'system', sourceId: 'combat-start' } }, executeCombatEffects, 0, [], uiEvents)
   runCombatTriggers(state, 'player', 'on-combat-start', { source: { actor: 'player', kind: 'system', sourceId: 'combat-start' }, eventTarget: 'enemy' }, executeCombatEffects, 0, [], uiEvents)
-  state.combat.playerAttackDurationMs = Math.max(100, BALANCE.player.basicAttackIntervalMs)
+  state.combat.playerAttackDurationMs = Math.min(MAX_ACTION_WORK_MS, Math.max(MIN_ACTION_TIME_MS, BALANCE.player.basicAttackIntervalMs))
   state.combat.playerAttackTimerMs = state.combat.playerAttackDurationMs
   if (state.combat.enemyHp > 0 && state.player.health > 0) startNextEnemyAction(state, executeCombatEffects, 0, uiEvents)
   appendLog(state, `${monster.name} enters the dungeon.`)
@@ -71,7 +72,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   resetEnemyActionRuntime(state)
   state.combat.enemyStatuses = []
   state.combat.autoCastManaStarvedSpells = []
-  resetCombatRuleRuntime(state)
+  clearEnemyRuleCooldowns(state)
   const dungeon = DUNGEONS[state.combat.dungeonId ?? 'whispering-woods']
   state.combat.encounterTimerMs = dungeon.encounterDelayMs
   if (isBossMonster(monster)) {
@@ -141,7 +142,7 @@ export const resolveCombatDeaths = (state: GameState, report?: SimulationReportC
     state.combat.autoCastManaStarvedSpells = []
     Object.keys(state.combat.spellCooldowns).forEach((spellId) => { delete state.combat.spellCooldowns[spellId as keyof typeof state.combat.spellCooldowns] })
     state.combat.pendingBossId = null
-    resetCombatRuleRuntime(state)
+    resetAllCombatRuleRuntime(state)
     state.combat.threatCleared = 0
     state.combat.inBossFight = false
     pushNotification(state, 'Defeated - recovering in the Tower', 'warning')

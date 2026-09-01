@@ -92,11 +92,15 @@ export const validateStatusDefinitions = () => {
     }
     if (effect.type === 'apply-status' && !STATUS_DEFINITIONS[effect.statusId]) errors.push(`${owner}: unknown status ${effect.statusId}`)
     if (effect.type === 'apply-status') {
+      const targetDefinition = STATUS_DEFINITIONS[effect.statusId]
+      const allowedOverrideKeys = new Set(targetDefinition?.modifiers?.map((entry) => entry.key) ?? [])
       if (effect.durationMs !== undefined && effect.durationMs !== null && (!Number.isFinite(effect.durationMs) || effect.durationMs <= 0)) errors.push(`${owner}: status duration must be positive and finite`)
       if (effect.modifierOverrides) Object.entries(effect.modifierOverrides).forEach(([key, value]) => {
         if (!modifierKeys.includes(key as ModifierKey)) errors.push(`${owner}: unknown modifier override ${key}`)
+        else if (!allowedOverrideKeys.has(key as ModifierKey)) errors.push(`${owner}: modifier override ${key} is not defined by ${effect.statusId}`)
         if (!Number.isFinite(value)) errors.push(`${owner}: non-finite modifier override`)
       })
+      if (effect.modifierOverrides && targetDefinition?.stacking.mode === 'strongest' && targetDefinition.potencyKey && !Object.prototype.hasOwnProperty.call(effect.modifierOverrides, targetDefinition.potencyKey)) errors.push(`${owner}: strongest override must include potency key ${targetDefinition.potencyKey}`)
       if (effect.periodicEffects !== undefined) {
         if (!Array.isArray(effect.periodicEffects)) errors.push(`${owner}: periodic override must be an array`)
         else if (!STATUS_DEFINITIONS[effect.statusId]?.periodic) errors.push(`${owner}: periodic override requires a periodic status`)

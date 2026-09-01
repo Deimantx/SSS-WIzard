@@ -94,7 +94,7 @@ describe('multi-source periodic statuses', () => {
       { statusId: 'burning', source: source('ignite'), remainingMs: 2_000, stacks: 1, nextTickMs: 500 },
       { statusId: 'fortified', source: source('fortify'), remainingMs: 2_000, stacks: 1 },
     ] } } as any)
-    expect(migrated.saveVersion).toBe(20)
+    expect(migrated.saveVersion).toBe(21)
     expect(migrated.combat.enemyStatuses).toMatchObject([
       { statusId: 'burning', instanceKey: getStatusApplicationSourceKey(source('ignite')), remainingMs: 2_000, nextTickMs: 500 },
       { statusId: 'fortified', instanceKey: 'single:fortified' },
@@ -109,6 +109,17 @@ describe('multi-source periodic statuses', () => {
     expect(migrated.combat.enemyStatuses).toHaveLength(1)
     expect(migrated.combat.enemyStatuses[0].periodicEffects).toBeUndefined()
     expect(migrated.combat.enemyStatuses[0].initialDurationMs).toBe(5_000)
+  })
+
+  it('rejects a mixed valid and invalid periodic override atomically', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({ ...initial, saveVersion: 21, combat: { ...initial.combat, active: true, enemyId: 'forest-wisp', enemyStatuses: [
+      { statusId: 'burning', source: source('mixed'), remainingMs: 2_000, stacks: 1, periodicEffects: [
+        { type: 'deal-damage', target: 'self', damageType: 'fire', magnitude: { type: 'flat', value: 2 } },
+        { type: 'not-a-combat-effect' },
+      ] },
+    ] } } as any)
+    expect(migrated.combat.enemyStatuses[0].periodicEffects).toBeUndefined()
   })
 
   it('preserves origin tags and school on periodic tick events', () => {

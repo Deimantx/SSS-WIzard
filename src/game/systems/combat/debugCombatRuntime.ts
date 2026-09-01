@@ -5,7 +5,7 @@ import type { CombatEventSink } from './combatTypes'
 import { advanceCombatState, type AdvanceContext } from '../simulation/advanceGameState'
 import { finishEnemy, resolveCombatDeaths, spawnEnemy } from './combatRuntime'
 import { resetEnemyActionRuntime } from './actionRuntime'
-import { resetCombatRuleRuntime } from './triggerRuntime'
+import { clearEnemyRuleCooldowns } from './triggerRuntime'
 
 export interface DebugCombatRuntimeContext {
   uiEvents?: CombatEventSink
@@ -22,7 +22,7 @@ const resetEncounterWithoutRewards = (state: GameState) => {
   state.combat.enemyStatuses = []
   state.combat.autoCastManaStarvedSpells = []
   state.combat.inBossFight = false
-  resetCombatRuleRuntime(state)
+  clearEnemyRuleCooldowns(state)
   resetEnemyActionRuntime(state)
 }
 

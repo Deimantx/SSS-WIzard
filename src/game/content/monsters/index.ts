@@ -6,6 +6,7 @@ import { HOWLING_DEN_MONSTERS } from './howlingDen'
 import { WHISPERING_WOODS_MONSTERS, WHISPERING_WOODS_MONSTER_IDS } from './whisperingWoods'
 import type { MonsterDefinition } from './monsterTypes'
 import { isPersistedCombatEffect } from '../../systems/combat/combatEffectValidation'
+import { MAX_ACTION_WORK_MS, MIN_ACTION_TIME_MS } from '../../core/balance/combatTiming'
 
 export type { MonsterDefinition } from './monsterTypes'
 export { WHISPERING_WOODS_MONSTERS, WHISPERING_WOODS_MONSTER_IDS } from './whisperingWoods'
@@ -38,7 +39,7 @@ export const validateMonsterDefinitions = () => {
   const errors: string[] = duplicateMonsterIds.map((id) => `${id}: duplicate monster registry entry`)
   Object.entries(MONSTERS).forEach(([key, monster]) => {
     if (key !== monster.id) errors.push(`${monster.id}: key/id mismatch`)
-    if (!Number.isFinite(monster.maxHealth) || monster.maxHealth <= 0 || !Number.isFinite(monster.basicAttackDamage) || monster.basicAttackDamage < 0 || !Number.isFinite(monster.basicAttackTimeMs) || monster.basicAttackTimeMs <= 0) errors.push(`${monster.id}: invalid combat numbers`)
+    if (!Number.isFinite(monster.maxHealth) || monster.maxHealth <= 0 || !Number.isFinite(monster.basicAttackDamage) || monster.basicAttackDamage < 0 || !Number.isFinite(monster.basicAttackTimeMs) || monster.basicAttackTimeMs < MIN_ACTION_TIME_MS || monster.basicAttackTimeMs > MAX_ACTION_WORK_MS) errors.push(`${monster.id}: invalid combat numbers`)
     if (new Set(monster.traitIds).size !== monster.traitIds.length) errors.push(`${monster.id}: duplicate trait id`)
     monster.traitIds.forEach((traitId) => { if (!getTraitDefinition(traitId)) errors.push(`${monster.id}: unknown trait ${traitId}`) })
     if (!monster.actionPatterns[monster.defaultActionPatternId]) errors.push(`${monster.id}: missing default action pattern`)
@@ -46,7 +47,7 @@ export const validateMonsterDefinitions = () => {
     Object.entries(monster.actions).forEach(([actionKey, action]) => {
       if (actionKey !== action.id) errors.push(`${monster.id}/${actionKey}: key/id mismatch`)
       if (!action.name.trim() || !action.description.trim()) errors.push(`${monster.id}/${action.id}: name and description are required`)
-      if (!Number.isFinite(action.actionTimeMs) || action.actionTimeMs <= 0) errors.push(`${monster.id}/${action.id}: invalid action time`)
+      if (!Number.isFinite(action.actionTimeMs) || action.actionTimeMs < MIN_ACTION_TIME_MS || action.actionTimeMs > MAX_ACTION_WORK_MS) errors.push(`${monster.id}/${action.id}: invalid action time`)
       validateEffects(`${monster.id}/${action.id}`, action.effects, errors)
       action.effects.forEach((effect) => { if (effect.type === 'set-action-pattern' && effect.target === 'self' && !monster.actionPatterns[effect.patternId]) errors.push(`${monster.id}/${action.id}: missing action pattern ${effect.patternId}`) })
       action.tags?.forEach((tag) => { if (!COMBAT_TAGS.includes(tag)) errors.push(`${monster.id}/${action.id}: invalid action tag`) })

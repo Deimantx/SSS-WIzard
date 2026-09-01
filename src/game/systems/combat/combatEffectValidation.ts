@@ -20,6 +20,16 @@ const isTarget = (value: unknown) => value === 'self' || value === 'opponent'
 const isTags = (value: unknown) => value === undefined || Array.isArray(value) && value.every(isTag)
 const isModifierOverrides = (value: unknown) => value === undefined || isRecord(value) && Object.entries(value).every(([key, entry]) => COMBAT_MODIFIER_KEYS.includes(key as ModifierKey) && isFiniteNumber(entry))
 
+const isStatusModifierOverrides = (statusId: StatusId, value: unknown) => {
+  if (!isModifierOverrides(value)) return false
+  if (value === undefined) return true
+  if (!isRecord(value)) return false
+  const definition = STATUS_DEFINITIONS[statusId]
+  const allowed = new Set(definition?.modifiers?.map((modifier) => modifier.key) ?? [])
+  if (Object.keys(value).some((key) => !allowed.has(key as ModifierKey))) return false
+  return definition?.stacking.mode !== 'strongest' || !definition.potencyKey || Object.prototype.hasOwnProperty.call(value, definition.potencyKey)
+}
+
 /** Defensive validator for runtime payloads restored from persisted saves. */
 export const isPersistedCombatEffect = (value: unknown): value is CombatEffect => {
   if (!isRecord(value) || typeof value.type !== 'string') return false
@@ -30,7 +40,7 @@ export const isPersistedCombatEffect = (value: unknown): value is CombatEffect =
   if (value.type === 'apply-status') {
     const duration = value.durationMs
     const stacks = value.stacks
-    if (!isTarget(value.target) || !isStatusId(value.statusId) || (duration !== undefined && duration !== null && (!isFiniteNumber(duration) || duration <= 0)) || (stacks !== undefined && (!isFiniteNumber(stacks) || stacks < 1)) || (value.statusSourceKey !== undefined && typeof value.statusSourceKey !== 'string') || !isModifierOverrides(value.modifierOverrides) || !isTags(value.tags)) return false
+    if (!isTarget(value.target) || !isStatusId(value.statusId) || (duration !== undefined && duration !== null && (!isFiniteNumber(duration) || duration <= 0)) || (stacks !== undefined && (!isFiniteNumber(stacks) || stacks < 1)) || (value.statusSourceKey !== undefined && typeof value.statusSourceKey !== 'string') || !isStatusModifierOverrides(value.statusId, value.modifierOverrides) || !isTags(value.tags)) return false
     // Nested periodic overrides would make a restored payload recursive. The
     // authored definition is the safe fallback for that instance instead.
     return value.periodicEffects === undefined || STATUS_DEFINITIONS[value.statusId]?.periodic !== undefined && Array.isArray(value.periodicEffects) && value.periodicEffects.every(isPersistedCombatEffect) && !value.periodicEffects.some((effect) => effect.type === 'apply-status' && effect.periodicEffects !== undefined)
@@ -46,6 +56,9 @@ export const isPersistedCombatEffect = (value: unknown): value is CombatEffect =
 export const normalizePersistedPeriodicEffects = (value: unknown, statusId: StatusId) => {
   const definition = STATUS_DEFINITIONS[statusId]
   if (!definition?.periodic || !Array.isArray(value)) return undefined
-  const valid = value.filter(isPersistedCombatEffect)
-  return valid.length === value.length || valid.length > 0 ? valid : undefined
+  // A persisted override is one atomic payload. Mixing valid and malformed
+  // entries would silently change authored behavior, so fall back as a whole.
+  return value.every(isPersistedCombatEffect) ? value as CombatEffect[] : undefined
 }
+
+export const hasValidStatusModifierOverrides = (statusId: StatusId, value: unknown) => isStatusModifierOverrides(statusId, value)

@@ -18,7 +18,8 @@ import { STATUS_DEFINITIONS } from '../game/content/statuses'
 import type { ActiveStatus, CombatSource, StatusId } from '../game/types'
 import { getSpellAutoCastFocusCost, MAX_SPELL_RANK, MIN_SPELL_RANK, normalizeSpellPresetState, syncAllSpellUnlocks, type SpellRank } from '../game/systems/spells'
 import { getStatusApplicationSourceKey } from '../game/systems/combat/statusRuntime'
-import { COMBAT_MODIFIER_KEYS, normalizePersistedPeriodicEffects } from '../game/systems/combat/combatEffectValidation'
+import { normalizePersistedPeriodicEffects, hasValidStatusModifierOverrides } from '../game/systems/combat/combatEffectValidation'
+import { MAX_ACTION_WORK_MS, MIN_ACTION_TIME_MS } from '../game/core/balance/combatTiming'
 
 const normalizeScreen = (value: unknown, fallback: GameState['ui']['screen']): GameState['ui']['screen'] => {
   if (value === 'tower') return 'tower-channeling'
@@ -54,6 +55,8 @@ const nonNegativeGold = (value: unknown) => typeof value === 'number' && Number.
 const nonNegativeNumber = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : undefined
 const booleanValue = (value: unknown) => typeof value === 'boolean' ? value : undefined
 const validContentId = (value: unknown, validIds: readonly string[]) => typeof value === 'string' && validIds.includes(value)
+const boundedActionWork = (value: number, fallback: number) => Math.min(MAX_ACTION_WORK_MS, Math.max(0, Number.isFinite(value) ? value : fallback))
+const boundedAuthoredActionTime = (value: number) => Math.min(MAX_ACTION_WORK_MS, Math.max(MIN_ACTION_TIME_MS, Number.isFinite(value) ? value : MIN_ACTION_TIME_MS))
 
 /**
  * Merge records whose keys are content IDs without ever copying arbitrary save
@@ -164,7 +167,9 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
     const originTags = Array.isArray(value.originTags) ? value.originTags.filter((tag): tag is NonNullable<CombatSource['originTags']>[number] => typeof tag === 'string') : undefined
     const originSchool = ['fire', 'water', 'earth', 'air'].includes(String(value.originSchool)) ? value.originSchool as CombatSource['originSchool'] : undefined
     const statusId = typeof value.statusId === 'string' && Object.prototype.hasOwnProperty.call(STATUS_DEFINITIONS, value.statusId) ? value.statusId as StatusId : undefined
-    return { actor, kind, sourceId: typeof value.sourceId === 'string' ? value.sourceId : 'save-migration', statusId, originSourceId: typeof value.originSourceId === 'string' ? value.originSourceId : undefined, originSourceKind, originTags, originSchool, ruleId: typeof value.ruleId === 'string' ? value.ruleId : undefined, statusInstanceKey: typeof value.statusInstanceKey === 'string' ? value.statusInstanceKey : undefined, school, tags: Array.isArray(value.tags) ? value.tags.filter((tag): tag is NonNullable<CombatSource['tags']>[number] => typeof tag === 'string') : undefined }
+    const rawProvider = typeof value.providerInstanceKey === 'string' && value.providerInstanceKey.trim().length <= 64 ? value.providerInstanceKey.trim() : undefined
+    const providerInstanceKey = sourceVersion >= 21 && rawProvider && (kind !== 'equipment' || EQUIPMENT_POSITIONS.includes(rawProvider as EquipmentPosition)) ? rawProvider : undefined
+    return { actor, kind, sourceId: typeof value.sourceId === 'string' ? value.sourceId : 'save-migration', statusId, originSourceId: typeof value.originSourceId === 'string' ? value.originSourceId : undefined, originSourceKind, originTags, originSchool, providerInstanceKey, ruleId: typeof value.ruleId === 'string' ? value.ruleId : undefined, statusInstanceKey: typeof value.statusInstanceKey === 'string' ? value.statusInstanceKey : undefined, school, tags: Array.isArray(value.tags) ? value.tags.filter((tag): tag is NonNullable<CombatSource['tags']>[number] => typeof tag === 'string') : undefined }
   }
   const normalizeStatuses = (value: unknown, fallbackActor: 'player' | 'enemy'): ActiveStatus[] => {
     if (!Array.isArray(value)) return []
@@ -185,8 +190,8 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
         ? entry.instanceKey
         : definition.applicationPolicy === 'per-source' ? getStatusApplicationSourceKey(source) : `single:${statusId}`
       const periodicEffects = normalizePersistedPeriodicEffects(entry.periodicEffects, statusId)
-      const modifierOverrides = isRecord(entry.modifierOverrides)
-        ? Object.fromEntries(Object.entries(entry.modifierOverrides).filter(([key, value]) => COMBAT_MODIFIER_KEYS.includes(key as any) && typeof value === 'number' && Number.isFinite(value)))
+      const modifierOverrides = isRecord(entry.modifierOverrides) && hasValidStatusModifierOverrides(statusId, entry.modifierOverrides)
+        ? Object.fromEntries(Object.entries(entry.modifierOverrides))
         : undefined
       const initialRaw = nonNegativeNumber(entry.initialDurationMs) ?? nonNegativeNumber(entry.durationMs)
       const initialDurationMs = remainingMs === null ? null : initialRaw && initialRaw > 0 ? initialRaw : definition.defaultDurationMs ?? remainingMs
@@ -259,10 +264,10 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
       migrated.combat.enemyCurrentStepId = validStep.id
       migrated.combat.enemyCurrentActionId = validStep.type === 'action' ? currentAction?.id ?? null : null
       migrated.combat.enemyCurrentActionPatternId = currentOrigin?.id ?? null
-      migrated.combat.enemyActionDurationMs = Math.max(100, authoredDuration)
+      migrated.combat.enemyActionDurationMs = boundedAuthoredActionTime(authoredDuration)
       migrated.combat.enemyActionTimerMs = sourceVersion >= 20
-        ? Math.min(Number.MAX_SAFE_INTEGER, savedTimer ?? migrated.combat.enemyActionDurationMs)
-        : Math.min(Number.MAX_SAFE_INTEGER, migrated.combat.enemyActionDurationMs * remainingRatio)
+        ? boundedActionWork(savedTimer ?? migrated.combat.enemyActionDurationMs, migrated.combat.enemyActionDurationMs)
+        : boundedActionWork(migrated.combat.enemyActionDurationMs * remainingRatio, migrated.combat.enemyActionDurationMs)
     }
   } else if (monster) {
     // V17 telegraphs are migrated as a newly started Action; old recovery is discarded.
@@ -279,13 +284,13 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
       migrated.combat.enemyCurrentStepId = validStep.id
       migrated.combat.enemyCurrentActionId = activeAction.id
       migrated.combat.enemyCurrentActionPatternId = originPattern.id
-      migrated.combat.enemyActionDurationMs = Math.max(100, activeAction.actionTimeMs)
+      migrated.combat.enemyActionDurationMs = boundedAuthoredActionTime(activeAction.actionTimeMs)
       migrated.combat.enemyActionTimerMs = migrated.combat.enemyActionDurationMs
     }
   }
 
   if (monster) {
-    const authoredPlayerDuration = Math.max(100, BALANCE.player.basicAttackIntervalMs)
+    const authoredPlayerDuration = boundedAuthoredActionTime(BALANCE.player.basicAttackIntervalMs)
     const savedPlayerDuration = nonNegativeNumber(rawCombat.playerAttackDurationMs)
     const savedPlayerTimer = rawPlayerTimer
     const playerRemainingRatio = savedPlayerDuration && savedPlayerDuration > 0 && savedPlayerTimer !== undefined
@@ -293,11 +298,11 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
       : 1
     migrated.combat.playerAttackDurationMs = authoredPlayerDuration
     migrated.combat.playerAttackTimerMs = sourceVersion >= 20
-      ? Math.min(Number.MAX_SAFE_INTEGER, savedPlayerTimer ?? authoredPlayerDuration) + oldDelay
-      : Math.min(Number.MAX_SAFE_INTEGER, authoredPlayerDuration * playerRemainingRatio + oldDelay)
+      ? boundedActionWork((savedPlayerTimer ?? authoredPlayerDuration) + oldDelay, authoredPlayerDuration)
+      : boundedActionWork(authoredPlayerDuration * playerRemainingRatio + oldDelay, authoredPlayerDuration)
   } else {
     migrated.combat.playerAttackDurationMs = 0
-    migrated.combat.playerAttackTimerMs = (rawPlayerTimer ?? 0) + oldDelay
+    migrated.combat.playerAttackTimerMs = boundedActionWork((rawPlayerTimer ?? 0) + oldDelay, 0)
   }
   const rawTriggered = Array.isArray(rawCombat.triggeredRuleIds) ? rawCombat.triggeredRuleIds.filter((id): id is string => typeof id === 'string') : []
   const legacySpecials = isRecord(rawCombat.enemySpecialUsed) ? rawCombat.enemySpecialUsed : {}
@@ -611,7 +616,7 @@ export const migrateSave = (rawSave: unknown): GameState => {
   if (version === 17) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === 18) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === 19) return finalize(merge(createInitialState(), rawSave), rawSave, version)
-  if (version === SAVE_VERSION) {
+  if (version === 20 || version === SAVE_VERSION) {
     return finalize(merge(createInitialState(), rawSave), rawSave, version)
   }
   throw new SaveMigrationError(`Unsupported save version: ${String(version ?? 'missing')}.`)

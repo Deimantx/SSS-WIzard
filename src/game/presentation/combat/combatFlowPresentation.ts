@@ -4,6 +4,7 @@ import { buildCombatActionPresentation, formatCombatEffect, type CombatActionPre
 import { classifyEnemyActionPatternIcon, type EnemyPatternIconKind } from './enemyPatternIconPresentation'
 import type { ActionPattern, ActionStep, CombatActionDefinition } from '../../systems/combat/combatTypes'
 import type { DungeonId, MonsterId } from '../../types'
+import { getFallbackTimedActionState, type TimedActionState } from '../../systems/combat/actionTiming'
 
 export type CombatFlowMode = 'tower' | 'boss-ready' | 'encounter-delay' | 'combat'
 export type CombatFlowTimelineState = 'acting' | 'stunned'
@@ -12,6 +13,11 @@ export interface CombatFlowTimeline {
   actor: 'player' | 'enemy'
   label: string
   remainingMs: number | null
+  remainingWorkMs: number
+  baseWorkMs: number
+  rate: number
+  etaMs: number | null
+  blocked: boolean
   progress: number | null
   state: CombatFlowTimelineState
 }
@@ -53,15 +59,17 @@ export interface CombatFlowRuntimeInput {
   enemyCurrentActionPatternId: string | null
   enemyActionPatternId: string | null
   playerBasicDamage: number
-  playerStunned: boolean
-  enemyStunned: boolean
+  /** Legacy/pure-presentation hint; live UI supplies canonical timing state. */
+  playerStunned?: boolean
+  enemyStunned?: boolean
   pattern?: ActionPattern
   nextStep?: ActionStep
   currentStep?: ActionStep
   currentAction?: CombatActionDefinition
+  playerTiming?: TimedActionState
+  enemyTiming?: TimedActionState | null
 }
 
-const clampProgress = (remainingMs: number, totalMs: number) => Math.max(0, Math.min(100, (1 - remainingMs / Math.max(1, totalMs)) * 100))
 const stepIndex = (pattern: ActionPattern | undefined, stepId: string | null | undefined, fallback = -1) => {
   if (!pattern) return -1
   const index = stepId ? pattern.steps.findIndex((step) => step.id === stepId) : -1
@@ -79,11 +87,11 @@ export function getCombatFlowPresentation(input: CombatFlowRuntimeInput): Combat
   const basicPresentation = !enemyActionPresentation && input.currentStep?.type === 'basic'
     ? formatCombatEffect({ type: 'deal-damage', target: 'opponent', damageType: 'physical', magnitude: { type: 'flat', value: input.enemy.basicAttackDamage } }, { actor: 'enemy', kind: 'basic-attack' })
     : null
-  const enemyRemainingMs = Math.max(0, input.enemyActionTimerMs)
   const enemyTotalMs = input.enemyActionDurationMs || input.enemy.basicAttackTimeMs
-  const playerRemainingMs = Math.max(0, input.playerAttackTimerMs)
-  const playerTimeline: CombatFlowTimeline = { actor: 'player', label: 'Basic Attack', remainingMs: playerRemainingMs, progress: clampProgress(playerRemainingMs, input.playerAttackDurationMs), state: input.playerStunned ? 'stunned' : 'acting' }
-  const enemyTimeline: CombatFlowTimeline = { actor: 'enemy', label: enemyAction?.name ?? (input.currentStep?.type === 'basic' ? 'Basic Attack' : 'Enemy Action'), remainingMs: enemyRemainingMs, progress: clampProgress(enemyRemainingMs, enemyTotalMs), state: input.enemyStunned ? 'stunned' : 'acting' }
+  const playerTiming = input.playerTiming ?? getFallbackTimedActionState(input.playerAttackDurationMs, input.playerAttackTimerMs, Boolean(input.playerStunned))
+  const enemyTiming = input.enemyTiming ?? getFallbackTimedActionState(enemyTotalMs, input.enemyActionTimerMs, Boolean(input.enemyStunned))
+  const playerTimeline: CombatFlowTimeline = { actor: 'player', label: 'Basic Attack', remainingMs: playerTiming.etaMs, remainingWorkMs: playerTiming.remainingWorkMs, baseWorkMs: playerTiming.baseWorkMs, rate: playerTiming.rate, etaMs: playerTiming.etaMs, blocked: playerTiming.blocked, progress: playerTiming.progress, state: input.playerStunned || playerTiming.blocked ? 'stunned' : 'acting' }
+  const enemyTimeline: CombatFlowTimeline = { actor: 'enemy', label: enemyAction?.name ?? (input.currentStep?.type === 'basic' ? 'Basic Attack' : 'Enemy Action'), remainingMs: enemyTiming.etaMs, remainingWorkMs: enemyTiming.remainingWorkMs, baseWorkMs: enemyTiming.baseWorkMs, rate: enemyTiming.rate, etaMs: enemyTiming.etaMs, blocked: enemyTiming.blocked, progress: enemyTiming.progress, state: input.enemyStunned || enemyTiming.blocked ? 'stunned' : 'acting' }
 
   const rawIndex = Number.isFinite(input.enemyNextActionIndex) ? Math.max(0, Math.floor(input.enemyNextActionIndex) - 1) : -1
   const currentPatternChanged = Boolean(input.enemyCurrentActionPatternId && input.pattern && input.enemyCurrentActionPatternId !== input.pattern.id)

@@ -3,6 +3,7 @@ import { migrateSave } from './migrations'
 import { serializeGameState } from './profileSaveManager'
 import { createInitialState, SAVE_VERSION } from '../store/initialState'
 import { DUNGEONS, isDungeonUnlocked, isTutorialCompleted } from '../game/content/dungeons/dungeons'
+import { MAX_ACTION_WORK_MS } from '../game/core/balance/combatTiming'
 
 describe('save navigation migration', () => {
   it('maps the old aggregate Tower screen to Channeling', () => {
@@ -347,6 +348,30 @@ describe('save navigation migration', () => {
     switched.combat.enemyActionTimerMs = 901
     const switchedLoaded = migrateSave(JSON.parse(JSON.stringify(serializeGameState(switched))))
     expect(switchedLoaded.combat).toMatchObject({ enemyActionPatternId: 'corrupted', enemyNextActionIndex: 4, enemyCurrentStepId: 'crushing-maul-step', enemyCurrentActionId: 'crushing-maul', enemyCurrentActionPatternId: 'default', enemyActionDurationMs: 1_800, enemyActionTimerMs: 901 })
+  })
+
+  it('clamps malformed current action work to the shared safety cap', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({ ...initial, saveVersion: SAVE_VERSION, combat: {
+      ...initial.combat,
+      active: true,
+      dungeonId: 'whispering-woods',
+      enemyId: 'forest-wisp',
+      enemyHp: 44,
+      enemyMaxHp: 44,
+      enemyCurrentStepId: 'basic-1',
+      enemyCurrentActionId: null,
+      enemyCurrentActionPatternId: 'default',
+      enemyActionPatternId: 'default',
+      enemyActionDurationMs: 9e15,
+      enemyActionTimerMs: 9e15,
+      playerAttackDurationMs: 9e15,
+      playerAttackTimerMs: 9e15,
+    } } as any)
+    expect(migrated.combat.enemyActionDurationMs).toBeLessThanOrEqual(MAX_ACTION_WORK_MS)
+    expect(migrated.combat.enemyActionTimerMs).toBe(MAX_ACTION_WORK_MS)
+    expect(migrated.combat.playerAttackDurationMs).toBeLessThanOrEqual(MAX_ACTION_WORK_MS)
+    expect(migrated.combat.playerAttackTimerMs).toBe(MAX_ACTION_WORK_MS)
   })
 
   it('keeps durable progression while rebuilding a V17 Player Basic cycle', () => {

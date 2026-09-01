@@ -10,6 +10,7 @@ import { consumeBarrier, gainBarrierResult, gainBarrier as gainBarrierRuntime, g
 import { getCombatModifiers, getResistance, isImmuneToDamage } from './modifiers'
 import { runCombatTriggers, type CombatEventContext } from './triggerRuntime'
 import { getCurrentEnemyActionStep, MAX_ACTION_WORK_MS, setEnemyActionPattern } from './actionRuntime'
+import { getRootCombatSourceProvenance } from './combatProvenance'
 import type { CombatEffect, CombatEventSink, CombatLogCategory, CombatSource, CombatTag, DamageType, EffectTarget } from './combatTypes'
 
 const MAX_EFFECT_DEPTH = 20
@@ -18,17 +19,20 @@ const targetActor = (source: CombatSource, target: EffectTarget): CombatActor =>
 const sourceTags = (source: CombatSource, effectTags?: CombatTag[]) => [...new Set<CombatTag>([...(source.tags ?? []), ...(effectTags ?? [])])]
 const logSource = (state: GameState, source: CombatSource) => source.actor === 'enemy' && state.combat.enemyId ? { kind: 'enemy' as const, monsterId: state.combat.enemyId } : source.actor === 'player' ? { kind: 'player' as const } : { kind: 'system' as const }
 const logCategory = (source: CombatSource, tags: CombatTag[], fallback: CombatLogCategory): CombatLogCategory => source.kind === 'spell' ? 'spell' : source.kind === 'action' ? 'enemy-action' : source.kind === 'trait' ? 'trait' : tags.includes('basic-attack') ? 'basic-attack' : fallback
-const eventFields = (state: GameState, source: CombatSource, target: CombatActor) => ({
+const eventFields = (state: GameState, source: CombatSource, target: CombatActor) => {
+  const root = getRootCombatSourceProvenance(source)
+  return {
   source: logSource(state, source),
   sourceKind: source.kind,
   dungeonId: state.combat.dungeonId ?? undefined,
   target,
   targetMonsterId: target === 'enemy' ? state.combat.enemyId ?? undefined : undefined,
   sourceId: source.sourceId,
-  originSourceId: source.originSourceId,
-  originSourceKind: source.originSourceKind,
-  originTags: source.originTags,
-  originSchool: source.originSchool,
+  originSourceId: root.sourceId,
+  originSourceKind: root.sourceKind,
+  originTags: root.tags,
+  originSchool: root.school,
+  providerInstanceKey: root.providerInstanceKey,
   ruleId: source.ruleId,
   statusInstanceKey: source.statusInstanceKey,
   spellId: source.kind === 'spell' ? source.sourceId as SpellId : undefined,
@@ -36,7 +40,8 @@ const eventFields = (state: GameState, source: CombatSource, target: CombatActor
   traitId: source.kind === 'trait' ? source.sourceId as TraitId : undefined,
   statusId: source.statusId ?? (source.kind === 'status' ? source.sourceId as StatusId : undefined),
   itemId: source.kind === 'equipment' || source.kind === 'weapon' ? source.sourceId as import('../../types').ItemId : undefined,
-})
+  }
+}
 
 export interface DamageBreakdown {
   raw: number
@@ -179,7 +184,7 @@ export const executeCombatEffect = (state: GameState, effect: CombatEffect, sour
       if (active) {
         const definition = STATUS_DEFINITIONS[effect.statusId]
         appendLog(state, `${definition.name} applied.`)
-        uiEvents?.push({ ...eventFields(state, source, target), category: 'status', statusId: effect.statusId, statusPhase: 'apply', durationMs: active.remainingMs, stacks: active.stacks, statusInstanceKey: active.instanceKey, originSourceId: active.source.sourceId, originSourceKind: active.source.kind })
+        uiEvents?.push({ ...eventFields(state, source, target), category: 'status', statusId: effect.statusId, statusPhase: 'apply', durationMs: active.remainingMs, stacks: active.stacks, statusInstanceKey: active.instanceKey })
         // Application events belong to the applier; the status holder is the target.
         runCombatTriggers(state, source.actor, 'on-status-applied', { source: statusSource, eventTarget: target, changedActor: target, sourceTags: tags, statusId: effect.statusId, eventStatusTags: definition.tags }, execute, depth, [], uiEvents)
       }
@@ -250,12 +255,6 @@ export const gainBarrier = (state: GameState, amount: number, target: CombatActo
 export const getBasicAttackTags = (state: GameState): CombatTag[] => {
   const weapon = state.equipment.weapon ? ITEMS[state.equipment.weapon] : undefined
   return [...new Set<CombatTag>(['basic-attack', 'direct', ...(weapon?.attackTags ?? []), ...(weapon ? ['weapon' as const] : [])])]
-}
-
-export const resolveBasicAttackInterval = (state: GameState, actor: CombatActor, baseInterval: number) => {
-  const speed = getCombatModifiers(state, actor, 'basic-attack-speed-percent', { sourceTags: ['basic-attack'] })
-  const rate = Math.min(10, Math.max(0.1, Number.isFinite(1 + speed) ? 1 + speed : 1))
-  return Math.max(100, Math.round(Math.max(100, baseInterval) / rate))
 }
 
 export { getActiveBarrier }

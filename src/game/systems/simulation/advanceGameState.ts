@@ -25,6 +25,7 @@ import { MAX_SIMULATION_DELTA_MS, SIMULATION_QUANTUM_MS } from './simulationCons
 import type { CombatTelemetryObserver } from '../../telemetry/combat/combatTelemetryTypes'
 import type { DungeonStatisticsObserver } from '../../telemetry/dungeon/dungeonStatisticsTypes'
 import { sanitizeCombatTimeScale } from '../../../store/actions/debugActions'
+import { MAX_ACTION_WORK_MS, MIN_ACTION_TIME_MS } from '../../core/balance/combatTiming'
 
 export interface AdvanceContext {
   mode: 'live' | 'banked'
@@ -82,10 +83,14 @@ const hasReadyAutoCast = (state: GameState) => {
 }
 
 const ensurePlayerBasicRuntime = (state: GameState) => {
-  if (state.combat.playerAttackDurationMs > 0) return
+  if (state.combat.playerAttackDurationMs > 0) {
+    state.combat.playerAttackDurationMs = Math.min(MAX_ACTION_WORK_MS, Math.max(MIN_ACTION_TIME_MS, state.combat.playerAttackDurationMs))
+    state.combat.playerAttackTimerMs = Math.min(MAX_ACTION_WORK_MS, Math.max(0, Number.isFinite(state.combat.playerAttackTimerMs) ? state.combat.playerAttackTimerMs : state.combat.playerAttackDurationMs))
+    return
+  }
   // Player Basic uses the same work model as enemy actions. The duration is
   // authored base work; the live rate is consumed by the timeline below.
-  state.combat.playerAttackDurationMs = Math.max(100, BALANCE.player.basicAttackIntervalMs)
+  state.combat.playerAttackDurationMs = Math.min(MAX_ACTION_WORK_MS, Math.max(MIN_ACTION_TIME_MS, BALANCE.player.basicAttackIntervalMs))
 }
 
 const cooldownRecoveryMultiplier = (state: GameState) => {
@@ -199,7 +204,7 @@ const advanceCombatTimeline = (state: GameState, delta: number, context: Advance
     if (!actorCannotAct(state, 'player') && !state.debug.freezePlayerActions && !state.debug.disablePlayerBasicAttack && state.combat.playerAttackTimerMs <= 0 && state.combat.enemyId) {
       const damage = playerBasicAttack(state, context.uiEvents)
       appendLog(state, `Basic Attack hits for ${damage}.`)
-      state.combat.playerAttackDurationMs = Math.max(100, BALANCE.player.basicAttackIntervalMs)
+      state.combat.playerAttackDurationMs = Math.min(MAX_ACTION_WORK_MS, Math.max(MIN_ACTION_TIME_MS, BALANCE.player.basicAttackIntervalMs))
       state.combat.playerAttackTimerMs = state.combat.playerAttackDurationMs
       playerBasicResolved = true
       if (resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents)) break
@@ -244,6 +249,9 @@ const advanceCombatDowntimeTimeline = (state: GameState, delta: number, context:
 
     const pendingStatusExpirations = tickStatuses(state, elapsed, executeCombatEffects, context.uiEvents, ['player'], { deferExpiry: true })
     tickBarriers(state, elapsed, ['player'])
+    // Player-owned trait/status/equipment cooldowns live across enemy
+    // downtime; enemy-owned cooldowns were cleared when the enemy died.
+    tickRuleCooldowns(state, elapsed, 'player')
     tickSpellCooldowns(state, elapsed, cooldownRecovery)
     state.combat.encounterTimerMs = Math.max(0, state.combat.encounterTimerMs - elapsed)
     remaining = Math.max(0, remaining - elapsed)

@@ -73,6 +73,7 @@ const metadataForEvent = (event: CombatEvent): CombatTelemetrySourceMetadata | n
     sourceId,
     originSourceId: event.originSourceId,
     originSourceKind: event.originSourceKind,
+    providerInstanceKey: event.providerInstanceKey,
     ruleId: event.ruleId,
   }
 }
@@ -84,7 +85,7 @@ export const getCombatMetricSourceKey = (event: CombatEvent): string => {
   if (metadata.kind === 'spell') return `spell:${metadata.spellId ?? metadata.sourceId ?? 'unknown'}`
   if (metadata.kind === 'basic-attack') return `${actorPrefix}:basic`
   if (metadata.kind === 'action') return `${actorPrefix}:action:${metadata.actionId ?? metadata.sourceId ?? 'unknown'}`
-  if (metadata.kind === 'status') return `status:${metadata.statusId ?? metadata.sourceId ?? 'unknown'}`
+  if (metadata.kind === 'status') return `status:${metadata.statusId ?? metadata.sourceId ?? 'unknown'}${metadata.providerInstanceKey ? `:provider:${metadata.providerInstanceKey}` : ''}`
   if (metadata.kind === 'trait') return `${actorPrefix}:trait:${metadata.traitId ?? metadata.sourceId ?? 'unknown'}`
   return `system:${metadata.sourceId ?? 'unknown'}`
 }

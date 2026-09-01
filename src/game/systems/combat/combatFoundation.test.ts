@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
-import { executeCombatEffects, damageEnemy, damagePlayer, getCombatDamagePreview, resolveBasicAttackInterval } from './effectResolver'
+import { executeCombatEffects, damageEnemy, damagePlayer, getCombatDamagePreview } from './effectResolver'
 import { applyStatus, tickStatuses } from './statusRuntime'
 import { applyBarrier, finishEnemy, resolveCombatDeaths, spawnEnemy } from './combatRuntime'
 import { clearCurrentEnemyAction, forceResolveEnemyAction, startEnemyAction } from './actionRuntime'
@@ -14,7 +14,8 @@ import { MONSTERS } from '../../content/monsters'
 import { TRAIT_DEFINITIONS } from '../../content/traits'
 import { STATUS_DEFINITIONS } from '../../content/statuses'
 import { SPELLS } from '../../content/spells/spells'
-import { resolveEnemySkillActionTimeMs } from './actionRuntime'
+import { getEnemySkillActionRate, getPlayerBasicAttackRate } from './actionRuntime'
+import { getTimedActionState } from './actionTiming'
 import { getSpellEquipmentBonusPreview } from '../spells/spellEquipmentPreview'
 
 const playerSpell: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'test-spell', school: 'fire', tags: ['spell', 'magic'] }
@@ -90,7 +91,7 @@ describe('authored status runtime', () => {
     executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', damageType: 'air', magnitude: { type: 'flat', value: 10 }, tags: ['spell'] }], { ...playerSpell, school: 'air' })
     expect(state.combat.enemyHp).toBe(32)
     applyStatus(state, 'player', 'quickening', { actor: 'player', kind: 'spell', sourceId: 'quickening', tags: ['spell'] })
-    expect(resolveBasicAttackInterval(state, 'player', 1200)).toBe(960)
+    expect(getTimedActionState(1200, 1200, getPlayerBasicAttackRate(state)).etaMs).toBe(960)
   })
 
   it('ticks a holder-relative Regeneration and supports cleanse, dispel, and Stun', () => {
@@ -184,7 +185,7 @@ describe('data-driven monster mechanics', () => {
     const heart = stateWithEnemy('forest-heart')
     damageEnemy(heart, 310, 'spell')
     expect(heart.combat.enemyStatuses[0]).toMatchObject({ statusId: 'haste', remainingMs: null })
-    expect(resolveEnemySkillActionTimeMs(heart, 2400)).toBe(2087)
+    expect(getTimedActionState(2400, 2400, getEnemySkillActionRate(heart)).etaMs).toBeCloseTo(2400 / 1.15)
   })
 })
 

@@ -2,7 +2,7 @@ import type { CombatEffect, ModifierKey, SpellDefinition, SpellId } from '../../
 import { SCHOOLS } from '../schools/schools'
 import { STATUS_DEFINITIONS } from '../statuses'
 import { periodicDamageStatus } from '../statuses/periodicDamageStatus'
-import { COMBAT_MODIFIER_KEYS } from '../../systems/combat/combatEffectValidation'
+import { COMBAT_MODIFIER_KEYS, hasValidStatusModifierOverrides } from '../../systems/combat/combatEffectValidation'
 
 const damage = (school: 'fire' | 'water' | 'earth' | 'air', value: number, levelScaling = false): CombatEffect => ({
   type: 'deal-damage', target: 'opponent', damageType: school, school, magnitude: levelScaling ? { type: 'school-level', base: value, perLevel: 2, school } : { type: 'flat', value }, tags: ['direct'],
@@ -46,7 +46,10 @@ export const validateSpellDefinitions = () => {
       if (effect.type === 'apply-status') {
         if (effect.periodicEffects && !STATUS_DEFINITIONS[effect.statusId]?.periodic) errors.push(`${spell.id}: periodic override requires a periodic status`)
         if (effect.durationMs !== undefined && effect.durationMs !== null && (!Number.isFinite(effect.durationMs) || effect.durationMs <= 0)) errors.push(`${spell.id}: periodic status duration must be positive and finite`)
-        if (effect.modifierOverrides) Object.entries(effect.modifierOverrides).forEach(([key, value]) => { if (!COMBAT_MODIFIER_KEYS.includes(key as ModifierKey)) errors.push(`${spell.id}: unknown modifier override ${key}`); if (!Number.isFinite(value)) errors.push(`${spell.id}: non-finite modifier override`) })
+        if (effect.modifierOverrides) {
+          Object.entries(effect.modifierOverrides).forEach(([key, value]) => { if (!COMBAT_MODIFIER_KEYS.includes(key as ModifierKey)) errors.push(`${spell.id}: unknown modifier override ${key}`); if (!Number.isFinite(value)) errors.push(`${spell.id}: non-finite modifier override`) })
+          if (!hasValidStatusModifierOverrides(effect.statusId, effect.modifierOverrides)) errors.push(`${spell.id}: modifier override is not valid for ${effect.statusId}`)
+        }
         effect.periodicEffects?.forEach((periodicEffect) => {
           if (periodicEffect.type === 'deal-damage' && periodicEffect.damageType !== spell.school) errors.push(`${spell.id}: periodic damage school mismatch`)
           validateEffect(periodicEffect)

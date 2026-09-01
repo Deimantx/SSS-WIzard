@@ -15,6 +15,7 @@ export interface CombatMetricSourceContribution {
   sourceId?: string
   originSourceId?: string
   originSourceKind?: CombatSource['kind']
+  providerInstanceKey?: string
   ruleId?: string
   total: number
   healthDamage: number
@@ -108,6 +109,6 @@ export interface CombatMetricSnapshot {
   barrierGranted: number
 }
 
-export type CombatTelemetrySourceMetadata = Pick<CombatMetricSourceContribution, 'actor' | 'kind' | 'monsterId' | 'spellId' | 'actionId' | 'statusId' | 'traitId' | 'sourceId' | 'originSourceId' | 'originSourceKind' | 'ruleId'>
+export type CombatTelemetrySourceMetadata = Pick<CombatMetricSourceContribution, 'actor' | 'kind' | 'monsterId' | 'spellId' | 'actionId' | 'statusId' | 'traitId' | 'sourceId' | 'originSourceId' | 'originSourceKind' | 'providerInstanceKey' | 'ruleId'>
 
 export const combatActorForSource = (source: CombatEvent['source']): Exclude<CombatSource['actor'], 'system'> | null => source.kind === 'player' ? 'player' : source.kind === 'enemy' ? 'enemy' : null

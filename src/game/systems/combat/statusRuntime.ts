@@ -6,7 +6,8 @@ import { resolveMagnitude } from './magnitude'
 import { runCombatTriggers } from './triggerRuntime'
 import type { CombatEffect, CombatEventSink, CombatSource, ActiveStatus, CombatTag, ModifierKey } from './combatTypes'
 import { getCombatModifiers } from './modifiers'
-import { COMBAT_MODIFIER_KEYS, isPersistedCombatEffect } from './combatEffectValidation'
+import { hasValidStatusModifierOverrides, isPersistedCombatEffect } from './combatEffectValidation'
+import { buildPeriodicStatusCombatSource, getExecutablePeriodicStatusEffects, getRootCombatSourceProvenance } from './combatProvenance'
 
 export type ExecuteEffects = (state: GameState, effects: CombatEffect[], source: CombatSource, depth?: number, uiEvents?: CombatEventSink) => void
 export interface StatusRemovalOptions {
@@ -21,11 +22,12 @@ const statusList = (state: GameState, actor: CombatActor): ActiveStatus[] => act
 const setStatusList = (state: GameState, actor: CombatActor, statuses: ActiveStatus[]) => { if (actor === 'player') state.combat.playerStatuses = statuses; else state.combat.enemyStatuses = statuses }
 
 /** Stable source identity shared by application, persistence, UI, and tests. */
-export const getStatusApplicationSourceKey = (source: Pick<CombatSource, 'actor' | 'kind' | 'sourceId' | 'originSourceId' | 'ruleId'>): string => {
+export const getStatusApplicationSourceKey = (source: Pick<CombatSource, 'actor' | 'kind' | 'sourceId' | 'originSourceId' | 'ruleId' | 'providerInstanceKey'>): string => {
   const sourceId = source.sourceId?.trim() || source.originSourceId?.trim() || 'unknown'
+  const provider = source.providerInstanceKey?.trim() ? `:provider:${source.providerInstanceKey.trim()}` : ''
   const origin = source.kind === 'status' && source.originSourceId?.trim() && source.originSourceId !== sourceId ? `:origin:${source.originSourceId.trim()}` : ''
   const rule = source.ruleId?.trim() ? `:rule:${source.ruleId.trim()}` : ''
-  return `${source.actor}:${source.kind}:${sourceId}${origin}${rule}`
+  return `${source.actor}:${source.kind}:${sourceId}${provider}${origin}${rule}`
 }
 
 const getNextStatusEventMs = (state: GameState, actors: CombatActor[]): number | null => {
@@ -68,20 +70,19 @@ const relativeTargetForHolder = (holder: CombatActor, sourceActor: CombatActor, 
 /** Resolve variable authored periodic magnitudes once, while retaining target-relative effects. */
 const snapshotPeriodicEffects = (state: GameState, holder: CombatActor, source: CombatSource, effects: CombatEffect[] | undefined) => {
   if (!effects) return undefined
-  const validEffects = effects.filter(isPersistedCombatEffect)
-  // An invalid override must not disable a safe authored periodic payload.
-  if (effects.length > 0 && validEffects.length === 0) return undefined
-  return validEffects.map((effect) => {
+  // Runtime overrides follow the same atomic rule as persisted overrides.
+  if (!effects.every(isPersistedCombatEffect)) return undefined
+  return effects.map((effect) => {
     if (effect.type !== 'deal-damage' || effect.magnitude.type === 'flat') return { ...effect }
     const target = relativeTargetForHolder(holder, source.actor, effect.target)
     return { ...effect, magnitude: { type: 'flat' as const, value: resolveMagnitude(state, effect.magnitude, source, target) } }
   })
 }
 
-const snapshotModifierOverrides = (overrides: Partial<Record<ModifierKey, number>> | undefined) => {
+const snapshotModifierOverrides = (statusId: StatusId, overrides: Partial<Record<ModifierKey, number>> | undefined) => {
   if (!overrides) return undefined
-  const valid = Object.entries(overrides).filter(([key, value]) => COMBAT_MODIFIER_KEYS.includes(key as ModifierKey) && typeof value === 'number' && Number.isFinite(value))
-  return valid.length ? Object.fromEntries(valid) as Partial<Record<ModifierKey, number>> : undefined
+  if (!hasValidStatusModifierOverrides(statusId, overrides)) return undefined
+  return Object.keys(overrides).length ? { ...overrides } : undefined
 }
 
 const setApplicationPayload = (active: ActiveStatus, duration: number | null, periodicEffects: CombatEffect[] | undefined, modifierOverrides: Partial<Record<ModifierKey, number>> | undefined) => {
@@ -127,7 +128,7 @@ export const applyStatus = (state: GameState, actor: CombatActor, statusId: Stat
   const nextTickMs = definition.periodic ? definition.periodic.intervalMs : undefined
   const hasPeriodicOverride = options.periodicEffects !== undefined
   const periodicEffects = hasPeriodicOverride ? snapshotPeriodicEffects(state, actor, source, options.periodicEffects) : undefined
-  const modifierOverrides = snapshotModifierOverrides(options.modifierOverrides)
+  const modifierOverrides = snapshotModifierOverrides(statusId, options.modifierOverrides)
   const create = (stacks = requestedStacks, remainingMs = duration): ActiveStatus => ({
     statusId,
     holder: actor,
@@ -213,6 +214,7 @@ const holderSource = (state: GameState, actor: CombatActor) => actor === 'enemy'
 
 const emitStatusLifecycle = (state: GameState, actor: CombatActor, removed: ActiveStatus, options: StatusRemovalOptions, statusPhase: 'remove' | 'expire') => {
   const source = holderSource(state, actor)
+  const root = getRootCombatSourceProvenance(removed.source)
   options.uiEvents?.push({
     source,
     sourceKind: 'status',
@@ -223,10 +225,11 @@ const emitStatusLifecycle = (state: GameState, actor: CombatActor, removed: Acti
     sourceId: removed.statusId,
     statusId: removed.statusId,
     statusPhase,
-    originSourceId: removed.source.sourceId,
-    originSourceKind: removed.source.kind,
-    originTags: removed.source.tags,
-    originSchool: removed.source.school,
+    originSourceId: root.sourceId,
+    originSourceKind: root.sourceKind,
+    originTags: root.tags,
+    originSchool: root.school,
+    providerInstanceKey: root.providerInstanceKey,
     ruleId: removed.source.ruleId,
     statusInstanceKey: removed.instanceKey,
     stacks: removed.stacks,
@@ -235,7 +238,7 @@ const emitStatusLifecycle = (state: GameState, actor: CombatActor, removed: Acti
   const definition = STATUS_DEFINITIONS[removed.statusId]
   const eventStatusTags = definition?.tags ?? []
   const lifecycleSource: CombatSource = statusPhase === 'expire'
-    ? { actor, kind: 'status', sourceId: removed.statusId, statusId: removed.statusId, originSourceId: removed.source.sourceId, originSourceKind: removed.source.kind, originTags: removed.source.tags, originSchool: removed.source.school, statusInstanceKey: removed.instanceKey, school: removed.source.school, tags: ['status', ...eventStatusTags, ...(removed.source.tags ?? [])] }
+    ? { ...buildPeriodicStatusCombatSource(removed), actor }
     : options.source ?? removed.source
   runCombatTriggers(state, actor, statusPhase === 'expire' ? 'on-status-expired' : 'on-status-removed', {
     source: lifecycleSource,
@@ -295,14 +298,6 @@ export const dispelStatuses = (state: GameState, actor: CombatActor, mode: 'one'
   return groups.length
 }
 
-const periodicEffects = (status: ActiveStatus): CombatEffect[] => {
-  const definition = STATUS_DEFINITIONS[status.statusId]
-  return (status.periodicEffects ?? definition?.periodic?.effects)?.map((effect) => ({
-    ...effect,
-    target: relativeTargetForHolder(status.holder, status.source.actor, effect.target) === status.source.actor ? 'self' : 'opponent',
-  }) as CombatEffect) ?? []
-}
-
 export const expirePendingStatuses = (state: GameState, pending: Array<{ actor: CombatActor; status: ActiveStatus }>, executeEffects: ExecuteEffects, uiEvents?: CombatEventSink) => {
   pending.forEach(({ actor, status }) => {
     const live = statusList(state, actor).find((entry) => entry === status)
@@ -326,7 +321,7 @@ export const tickStatuses = (state: GameState, deltaMs: number, executeEffects: 
       // Inclusive expiration boundary: a tick scheduled exactly when the
       // status expires resolves before the instance is removed.
       while (timeToTick !== undefined && timeToTick <= activeWindow && (previousRemaining === null || timeToTick <= previousRemaining) && (actor !== 'enemy' || Boolean(state.combat.enemyId)) && statusList(state, actor).some((status) => status === original) && definition.periodic && guard < 1000) {
-        executeEffects(state, periodicEffects(original), { ...original.source, kind: 'status', sourceId: original.statusId, statusId: original.statusId, originSourceId: original.source.sourceId, originSourceKind: original.source.kind, originTags: original.source.tags, originSchool: original.source.school, statusInstanceKey: original.instanceKey, school: original.source.school, tags: ['status', ...definition.tags, ...(original.source.tags ?? [])] }, undefined, uiEvents)
+        executeEffects(state, getExecutablePeriodicStatusEffects(original), buildPeriodicStatusCombatSource(original), undefined, uiEvents)
         timeToTick += definition.periodic.intervalMs
         guard += 1
       }

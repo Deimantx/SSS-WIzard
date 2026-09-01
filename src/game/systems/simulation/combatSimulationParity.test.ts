@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { ITEMS } from '../../content/items/items'
 import { createInitialState } from '../../../store/initialState'
 import type { GameState, ItemDefinition, ItemId } from '../../types'
@@ -52,6 +52,8 @@ const snapshot = (state: GameState) => ({
     playerAttackDurationMs: state.combat.playerAttackDurationMs,
     encounterTimerMs: state.combat.encounterTimerMs,
     spellCooldowns: state.combat.spellCooldowns,
+    triggeredRuleIds: state.combat.triggeredRuleIds,
+    ruleCooldowns: state.combat.ruleCooldowns,
     playerStatuses: comparableStatuses(state, 'player'),
     enemyStatuses: comparableStatuses(state, 'enemy'),
   },
@@ -203,6 +205,7 @@ describe('canonical simulation quantum parity', () => {
       combat: { rules: [{ id: 'parity-start', event: 'on-combat-start', oncePerEncounter: true, effects: [{ type: 'apply-status', target: 'self', statusId: 'quickening' }] }] },
     }
     ITEMS[itemId] = item
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0)
     try {
       const fine = createInitialState()
       fine.combat.active = true
@@ -214,6 +217,48 @@ describe('canonical simulation quantum parity', () => {
       for (let elapsed = 0; elapsed < 5_000; elapsed += 1_000) advanceGameState(coarse, 1_000, { mode: 'banked' })
       expect(snapshot(coarse)).toEqual(snapshot(fine))
     } finally {
+      random.mockRestore()
+      delete ITEMS[itemId]
+    }
+  })
+
+  it('keeps equipment provider identity and player cooldowns through enemy death and downtime', () => {
+    const itemId = 'parity-cooldown-ring' as ItemId
+    const item: ItemDefinition = {
+      id: itemId,
+      name: 'Parity Cooldown Ring',
+      description: 'Test-only provider.',
+      icon: 'â—Œ',
+      color: '#fff',
+      kind: 'equipment',
+      category: 'equipment',
+      inventoryCategory: 'equipment',
+      source: 'Tests',
+      sellValue: 1,
+      canDestroy: true,
+      equipmentSlot: 'ring',
+      combat: { rules: [{ id: 'parity-cooldown', event: 'on-combat-start', oncePerEncounter: true, cooldownMs: 12_000, effects: [{ type: 'apply-status', target: 'opponent', statusId: 'burning' }] }] },
+    }
+    ITEMS[itemId] = item
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0)
+    try {
+      const fine = combatFixture()
+      fine.equipment.ring1 = itemId
+      fine.equipment.ring2 = itemId
+      spawnEnemy(fine, 'forest-wisp')
+      const coarse = cloneState(fine)
+      fine.combat.enemyHp = 0
+      coarse.combat.enemyHp = 0
+      advanceFine(fine, 1)
+      advanceGameState(coarse, 1, { mode: 'banked' })
+      advanceFine(fine, 5_000)
+      for (let elapsed = 0; elapsed < 5_000; elapsed += 1_000) advanceGameState(coarse, 1_000, { mode: 'banked' })
+      expect(snapshot(coarse)).toEqual(snapshot(fine))
+      expect(fine.combat.enemyId).not.toBeNull()
+      expect(Object.values(fine.combat.ruleCooldowns)).toEqual(expect.arrayContaining([6_999, 6_999]))
+      expect(fine.combat.enemyStatuses).toHaveLength(0)
+    } finally {
+      random.mockRestore()
       delete ITEMS[itemId]
     }
   })

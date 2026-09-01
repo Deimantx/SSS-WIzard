@@ -8,6 +8,7 @@ import { evaluateCombatCondition } from './conditionRuntime'
 import { getActorTraits } from './traitRuntime'
 import type { CombatModifier, CombatSource, CombatTag, DamageType, ModifierKey } from './combatTypes'
 import { getStatusGroupStacks } from './statusSelectors'
+import { getRootCombatSourceProvenance } from './combatProvenance'
 
 export interface ModifierContext {
   source?: CombatSource
@@ -24,8 +25,9 @@ const activeStatuses = (state: GameState, actor: CombatActor) => actor === 'play
 const matchesModifier = (modifier: CombatModifier, context: ModifierContext) => {
   const sourceTags = [...new Set([...(context.source?.tags ?? []), ...(context.sourceTags ?? [])])]
   const sourceKind = context.source?.kind
-  const originSourceKind = context.source?.originSourceKind ?? context.originSourceKind
-  const originTags = context.source?.originTags ?? context.originTags
+  const root = context.source ? getRootCombatSourceProvenance(context.source) : undefined
+  const originSourceKind = root?.sourceKind ?? context.originSourceKind
+  const originTags = root?.tags ?? context.originTags
   if (modifier.sourceKinds?.length && (!sourceKind || !modifier.sourceKinds.includes(sourceKind))) return false
   if (modifier.sourceTags?.length && !modifier.sourceTags.every((tag) => sourceTags.includes(tag))) return false
   if (modifier.originSourceKinds?.length && (!originSourceKind || !modifier.originSourceKinds.includes(originSourceKind))) return false

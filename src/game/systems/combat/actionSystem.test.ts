@@ -5,7 +5,8 @@ import { advanceGameState } from '../simulation/advanceGameState'
 import { executeCombatEffects } from './effectResolver'
 import { applyStatus, clearStatuses } from './statusRuntime'
 import { spawnEnemy, resolveCombatDeaths } from './combatRuntime'
-import { clearCurrentEnemyAction, getCurrentEnemyActionStep, getNextEnemyActionStep, getEnemyBasicAttackRate, getEnemySkillActionRate, getPlayerBasicAttackRate, resolveCurrentEnemyAction, resolveEnemyBasicAttackTimeMs, resolveEnemySkillActionTimeMs, setEnemyActionPattern, startEnemyAction, startNextEnemyAction } from './actionRuntime'
+import { clearCurrentEnemyAction, getCurrentEnemyActionStep, getNextEnemyActionStep, getEnemyBasicAttackRate, getEnemySkillActionRate, getPlayerBasicAttackRate, resolveCurrentEnemyAction, setEnemyActionPattern, startEnemyAction, startNextEnemyAction } from './actionRuntime'
+import { getTimedActionState } from './actionTiming'
 import type { CombatEvent, CombatEventSink } from './combatTypes'
 import { migrateSave } from '../../../persistence/migrations'
 
@@ -131,8 +132,8 @@ describe('classic real-time combat action timing', () => {
   it('applies Chilled to both Basic Attack and Action timing', () => {
     const state = stateWithEnemy()
     applyStatus(state, 'enemy', 'chilled', { actor: 'player', kind: 'spell', sourceId: 'test' })
-    expect(resolveEnemyBasicAttackTimeMs(state, 2500)).toBe(3125)
-    expect(resolveEnemySkillActionTimeMs(state, 2000)).toBe(2500)
+    expect(getTimedActionState(2500, 2500, getEnemyBasicAttackRate(state)).etaMs).toBe(3125)
+    expect(getTimedActionState(2000, 2000, getEnemySkillActionRate(state)).etaMs).toBe(2500)
     expect(getEnemyBasicAttackRate(state)).toBeCloseTo(0.8)
   })
 

@@ -125,7 +125,7 @@ describe('shared combat timeline', () => {
 
     advanceGameState(state, 100, { mode: 'live' })
 
-    expect(state.combat.enemyStatuses.find((status) => status.statusId === 'burning')).toMatchObject({ remainingMs: 4_980 })
+    expect(state.combat.enemyStatuses.find((status) => status.statusId === 'burning')).toMatchObject({ remainingMs: 5_980 })
   })
 
   it('preserves non-100ms Action timing across fine and coarse callers', () => {

@@ -1,6 +1,7 @@
 import type { CombatEffect, SpellDefinition, SpellId } from '../../types'
 import { SCHOOLS } from '../schools/schools'
 import { STATUS_DEFINITIONS } from '../statuses'
+import { periodicDamageStatus } from '../statuses/periodicDamageStatus'
 
 const damage = (school: 'fire' | 'water' | 'earth' | 'air', value: number, levelScaling = false): CombatEffect => ({
   type: 'deal-damage', target: 'opponent', damageType: school, school, magnitude: levelScaling ? { type: 'school-level', base: value, perLevel: 2, school } : { type: 'flat', value }, tags: ['direct'],
@@ -10,8 +11,8 @@ const heal = (value: number): CombatEffect => ({ type: 'heal', target: 'self', m
 
 export const SPELLS: Record<SpellId, SpellDefinition> = {
   'fire-bolt': { id: 'fire-bolt', name: 'Fire Bolt', school: 'fire', description: 'A fast, reliable bolt of flame.', unlockLevel: 2, manaCost: 12, cooldownMs: 3500, type: 'damage', effects: [damage('fire', 28, true)], autoCondition: { type: 'always' } },
-  ignite: { id: 'ignite', name: 'Ignite', school: 'fire', description: 'A spark that burns after it lands.', unlockLevel: 8, manaCost: 18, cooldownMs: 9000, type: 'dot', effects: [damage('fire', 10), { type: 'apply-status', target: 'opponent', statusId: 'burning', tags: ['debuff'] }], autoCondition: { type: 'always' } },
-  fireball: { id: 'fireball', name: 'Fireball', school: 'fire', description: 'A heavy sphere of flame that erupts on impact.', unlockLevel: 16, manaCost: 28, cooldownMs: 10000, type: 'damage', effects: [damage('fire', 60, true)], autoCondition: { type: 'always' } },
+  ignite: { id: 'ignite', name: 'Ignite', school: 'fire', description: 'A spark that burns after it lands.', unlockLevel: 8, manaCost: 18, cooldownMs: 9000, type: 'dot', effects: [damage('fire', 10), periodicDamageStatus({ statusId: 'burning', durationMs: 6000, totalBaseDamage: 100, damageType: 'fire' })], autoCondition: { type: 'always' } },
+  fireball: { id: 'fireball', name: 'Fireball', school: 'fire', description: 'A heavy sphere of flame that erupts on impact and leaves a lasting burn.', unlockLevel: 16, manaCost: 28, cooldownMs: 10000, type: 'damage', effects: [damage('fire', 60, true), periodicDamageStatus({ statusId: 'burning', durationMs: 10000, totalBaseDamage: 20, damageType: 'fire' })], autoCondition: { type: 'always' } },
   'water-ward': { id: 'water-ward', name: 'Water Ward', school: 'water', description: 'Wraps the wizard in a frequent, flexible barrier.', unlockLevel: 2, manaCost: 15, cooldownMs: 8000, type: 'barrier', effects: [barrier(35)], autoCondition: { type: 'barrier-below', value: 10 } },
   'flow-mend': { id: 'flow-mend', name: 'Flow Mend', school: 'water', description: 'A restorative current for a wounded wizard.', unlockLevel: 8, manaCost: 18, cooldownMs: 10000, type: 'heal', effects: [heal(30)], autoCondition: { type: 'health-below', percent: 70 } },
   frostbite: { id: 'frostbite', name: 'Frostbite', school: 'water', description: 'Bites into the enemy with cold and slows its combat tempo.', unlockLevel: 16, manaCost: 22, cooldownMs: 10000, type: 'damage', effects: [damage('water', 26, true), { type: 'apply-status', target: 'opponent', statusId: 'chilled', tags: ['debuff', 'control'] }], autoCondition: { type: 'always' } },
@@ -34,8 +35,24 @@ export const validateSpellDefinitions = () => {
     if (!Number.isFinite(spell.manaCost) || spell.manaCost < 0) errors.push(`${spell.id}: invalid mana cost`)
     if (!Number.isFinite(spell.cooldownMs) || spell.cooldownMs < 0) errors.push(`${spell.id}: invalid cooldown`)
     if (!spell.effects.length) errors.push(`${spell.id}: effects must not be empty`)
-    spell.effects.forEach((effect) => {
+    const validateEffect = (effect: CombatEffect) => {
       if (effect.type === 'apply-status' && !STATUS_DEFINITIONS[effect.statusId]) errors.push(`${spell.id}: unknown status ${effect.statusId}`)
+      if ('magnitude' in effect) {
+        const magnitude = effect.magnitude
+        if ('value' in magnitude && !Number.isFinite(magnitude.value)) errors.push(`${spell.id}: non-finite magnitude`)
+        if (magnitude.type === 'school-level' && (!Number.isFinite(magnitude.base) || !Number.isFinite(magnitude.perLevel))) errors.push(`${spell.id}: non-finite school magnitude`)
+      }
+      if (effect.type === 'apply-status') {
+        if (effect.periodicEffects && !STATUS_DEFINITIONS[effect.statusId]?.periodic) errors.push(`${spell.id}: periodic override requires a periodic status`)
+        if (effect.durationMs !== undefined && effect.durationMs !== null && (!Number.isFinite(effect.durationMs) || effect.durationMs <= 0)) errors.push(`${spell.id}: periodic status duration must be positive and finite`)
+        effect.periodicEffects?.forEach((periodicEffect) => {
+          if (periodicEffect.type === 'deal-damage' && periodicEffect.damageType !== spell.school) errors.push(`${spell.id}: periodic damage school mismatch`)
+          validateEffect(periodicEffect)
+        })
+      }
+    }
+    spell.effects.forEach((effect) => {
+      validateEffect(effect)
       if (effect.type === 'deal-damage' && (effect.damageType !== spell.school || (effect.school !== undefined && effect.school !== spell.school))) errors.push(`${spell.id}: damage school mismatch`)
     })
   })

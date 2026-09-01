@@ -27,6 +27,7 @@ export const debugLockSpellAction = (state: GameState, spellId: SpellId) => {
   if (!SPELLS[spellId]) return false
   delete state.progress.spellRanks[spellId]
   state.activities.autoCast[spellId] = false
+  state.combat.autoCastManaStarvedSpells = state.combat.autoCastManaStarvedSpells.filter((id) => id !== spellId)
   state.combat.spellCooldowns[spellId] = 0
   return true
 }

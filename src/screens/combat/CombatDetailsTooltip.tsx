@@ -1,21 +1,9 @@
-import { SPELLS } from '../../game/content/spells/spells'
-import { getTraitDefinition } from '../../game/content/traits'
-import { STATUS_DEFINITIONS } from '../../game/content/statuses'
+import { resolveCombatSourceLabel } from '../../game/presentation/combat/combatSourcePresentation'
 import type { CombatDetailsMode, CombatDetailsRowPresentation } from '../../game/presentation/combat'
 import { formatUiCount } from '../../game/presentation/numbers'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 
 const damageType = (row: CombatDetailsRowPresentation) => Object.entries(row.contribution.damageTypes).sort((left, right) => right[1] - left[1]).map(([type]) => type[0].toUpperCase() + type.slice(1)).join(' · ')
-
-const resolveOrigin = (id: string | undefined) => {
-  if (!id) return undefined
-  const spell = SPELLS[id as keyof typeof SPELLS]
-  if (spell) return `Applied by ${spell.name}`
-  const status = STATUS_DEFINITIONS[id as keyof typeof STATUS_DEFINITIONS]
-  if (status) return `Applied by ${status.name}`
-  const trait = getTraitDefinition(id)
-  return trait ? `Applied by ${trait.name}` : undefined
-}
 
 export function CombatDetailsTooltip({ mode, row }: { mode: CombatDetailsMode; row: CombatDetailsRowPresentation }) {
   const contribution = row.contribution
@@ -32,6 +20,6 @@ export function CombatDetailsTooltip({ mode, row }: { mode: CombatDetailsMode; r
     <div className="tooltip-row"><span>EVENTS</span><b>{formatUiCount(contribution.events)}</b></div>
     {mode !== 'healing' && type && <div className="tooltip-row"><span>DAMAGE TYPE</span><b>{type}</b></div>}
     {mode === 'damage-taken' && contribution.barrierAbsorbed > 0 && <p>Damage Taken includes the full incoming amount, including damage absorbed by Barrier.</p>}
-    {resolveOrigin(contribution.originSourceId) && <div className="tooltip-section"><small>SOURCE</small><p>{resolveOrigin(contribution.originSourceId)}</p></div>}
+    {contribution.originSourceId && <div className="tooltip-section"><small>SOURCE</small><p>Applied by {resolveCombatSourceLabel({ kind: contribution.originSourceKind ?? contribution.kind, sourceId: contribution.originSourceId })}</p></div>}
   </TooltipContent>
 }

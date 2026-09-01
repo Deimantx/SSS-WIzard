@@ -36,7 +36,7 @@ describe('spell effect tooltip models', () => {
     expect(row(chilled, 'Action Speed')?.value).toBe('-20%')
     expect(row(chilled, 'Duration')?.value).toBe('5.0s')
     expect(burning).toMatchObject({ category: 'DOT', title: 'Burning' })
-    expect(row(burning, 'Damage Per Tick')?.value).toBe('5')
+    expect(row(burning, 'Damage Per Tick')?.value).toBe('16.7')
     expect(row(burning, 'Tick Interval')?.value).toBe('1.0s')
     expect(row(shock, 'Air Damage Taken')?.value).toBe('+4% per stack')
     expect(row(shock, 'Max Stacks')?.value).toBe('5')

@@ -33,6 +33,7 @@ export const spawnEnemy = (state: GameState, enemyId: MonsterId, uiEvents?: Comb
   state.combat.playerAttackTimerMs = 0
   state.combat.playerAttackDurationMs = 0
   state.combat.enemyStatuses = []
+  state.combat.autoCastManaStarvedSpells = []
   discoverMonster(state, enemyId)
   uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'system', sourceId: 'encounter-start' })
   runCombatTriggers(state, 'enemy', 'on-combat-start', { source: { actor: 'enemy', kind: 'system', sourceId: 'combat-start' } }, executeCombatEffects, 0, [], uiEvents)
@@ -69,6 +70,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   state.combat.enemyBarrierRemainingMs = null
   resetEnemyActionRuntime(state)
   state.combat.enemyStatuses = []
+  state.combat.autoCastManaStarvedSpells = []
   resetCombatRuleRuntime(state)
   const dungeon = DUNGEONS[state.combat.dungeonId ?? 'whispering-woods']
   state.combat.encounterTimerMs = dungeon.encounterDelayMs
@@ -132,6 +134,7 @@ export const resolveCombatDeaths = (state: GameState, report?: SimulationReportC
     state.combat.playerBarrierRemainingMs = null
     state.combat.playerStatuses = []
     state.combat.enemyStatuses = []
+    state.combat.autoCastManaStarvedSpells = []
     Object.keys(state.combat.spellCooldowns).forEach((spellId) => { delete state.combat.spellCooldowns[spellId as keyof typeof state.combat.spellCooldowns] })
     state.combat.pendingBossId = null
     resetCombatRuleRuntime(state)

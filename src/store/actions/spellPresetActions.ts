@@ -62,6 +62,7 @@ export const applySpellPresetAction = (state: GameState, id: SpellPresetId): App
     return { ok: false, reason: 'focus', requiredExtraFocus: required, unavailableSpellIds: projection.unavailableSpellIds }
   }
   Object.keys(SPELLS).forEach((spellId) => { state.activities.autoCast[spellId as SpellId] = false })
+  state.combat.autoCastManaStarvedSpells = []
   projection.validSpellIds.forEach((spellId) => { state.activities.autoCast[spellId] = true })
   state.spellPresets.lastAppliedPresetId = projection.unavailableSpellIds.length ? null : id
   if (projection.unavailableSpellIds.length) {

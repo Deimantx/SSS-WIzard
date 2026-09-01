@@ -184,6 +184,8 @@ export interface CombatState {
   playerAttackDurationMs: number
   encounterTimerMs: number
   spellCooldowns: Record<SpellId, number>
+  /** Runtime Auto-Cast starvation latch; persisted harmlessly with combat state. */
+  autoCastManaStarvedSpells: SpellId[]
   playerStatuses: ActiveStatus[]
   enemyStatuses: ActiveStatus[]
   threatCleared: number

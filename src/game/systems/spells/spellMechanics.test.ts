@@ -20,13 +20,13 @@ const spellState = (spellId: 'fireball' | 'frostbite' | 'fortify' | 'shock-spark
 }
 
 describe('Rank-I spell mechanics', () => {
-  it('casts Fireball with school scaling and no Rank-I Burning proc', () => {
+  it('casts Fireball with school scaling and its Burning proc', () => {
     const state = spellState('fireball', 'fire')
     expect(castSpellAction(state, 'fireball')).toBe(true)
     expect(state.combat.enemyHp).toBe(908)
     expect(state.player.mana).toBe(72)
     expect(state.combat.spellCooldowns.fireball).toBe(10000)
-    expect(state.combat.enemyStatuses).toEqual([])
+    expect(state.combat.enemyStatuses).toMatchObject([{ statusId: 'burning', instanceKey: 'player:spell:fireball', remainingMs: 10000 }])
   })
 
   it('casts Frostbite and applies the existing Chilled status', () => {
@@ -43,7 +43,7 @@ describe('Rank-I spell mechanics', () => {
     const before = state.player.health
     const source = { ...playerSpell, actor: 'enemy' as const, kind: 'basic-attack' as const }
     const breakdown = calculateCombatDamage(state, 10, 'physical', source, 'player')
-    expect(breakdown.resolvedBeforeBarrier).toBe(9)
+    expect(breakdown.resolvedBeforeBarrier).toBe(8.5)
     expect(state.player.health).toBe(before)
   })
 

@@ -61,9 +61,9 @@ describe('universal combat effects', () => {
     const state = stateWithEnemy('thornling')
     state.combat.enemyBarrier = 5
     const dealt = damageEnemy(state, 10, 'basic')
-    expect(dealt).toBe(4)
+    expect(dealt).toBe(3.5)
     expect(state.combat.enemyBarrier).toBe(0)
-    expect(state.combat.enemyHp).toBe(60)
+    expect(state.combat.enemyHp).toBe(60.5)
     expect(state.combat.log).toContain('Barrier breaks.')
   })
 })
@@ -76,8 +76,8 @@ describe('authored status runtime', () => {
     const first = state.combat.enemyStatuses[0]
     tickStatuses(state, 1000, executeCombatEffects)
     expect(state.combat.enemyHp).toBe(39)
-    applyStatus(state, 'enemy', 'burning', { ...playerSpell, sourceId: 'ignite-again' })
-    expect(state.combat.enemyStatuses[0]).toMatchObject({ remainingMs: 5000, source: { sourceId: 'ignite-again' } })
+    applyStatus(state, 'enemy', 'burning', playerSpell)
+    expect(state.combat.enemyStatuses[0]).toMatchObject({ remainingMs: 5000, source: playerSpell })
     expect(first.statusId).toBe('burning')
     tickStatuses(state, 5000, executeCombatEffects)
     expect(state.combat.enemyStatuses).toHaveLength(0)

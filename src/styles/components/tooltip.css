@@ -65,6 +65,10 @@
 .game-tooltip-content .tooltip-section { display: grid; gap: 3px; margin-top: 5px; padding-top: 5px; border-top: 1px solid var(--ui-border); }
 .game-tooltip-content .tooltip-section small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; }
 .game-tooltip-content .tooltip-section p { margin: 0; color: var(--ui-text-soft); font-size: var(--text-micro); line-height: 1.45; }
+.game-tooltip-content .combat-status-tooltip-sources { display: grid; gap: 4px; }
+.game-tooltip-content .combat-status-tooltip-source { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: baseline; color: var(--ui-text-soft); font-size: var(--text-micro); }
+.game-tooltip-content .combat-status-tooltip-source strong { color: var(--ui-text); font-size: var(--text-micro); }
+.game-tooltip-content .combat-status-tooltip-source small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
 .game-tooltip-neutral { --tooltip-accent: var(--ui-accent); }
 .game-tooltip-mana { --tooltip-accent: var(--semantic-mana); }
 .game-tooltip-health { --tooltip-accent: var(--resource-health); }

@@ -108,7 +108,7 @@ describe('active dungeon downtime timeline', () => {
 
     advance(healingState, 5_000)
 
-    expect(healingState.player.health).toBe(70)
+    expect(healingState.player.health).toBe(75)
     expect(healingState.combat.enemyId).toBeNull()
 
     const lethalState = stateInDowntime(1_000)
@@ -198,7 +198,12 @@ describe('active dungeon downtime timeline', () => {
     advance(state, 1_000, { mode: 'live', uiEvents: { push: (event) => events.push(event) } })
 
     expect(state.combat.playerAttackTimerMs).toBe(1_200)
-    expect(events.filter((event) => event.sourceId === 'spell-cast-failed')).toHaveLength(10)
+    expect(events.filter((event) => event.sourceId === 'spell-cast-failed')).toHaveLength(1)
+
+    state.player.mana = 12
+    advance(state, 1_200)
+    expect(state.combat.spellCooldowns['fire-bolt']).toBeGreaterThan(0)
+    expect(events.filter((event) => event.sourceId === 'spell-cast-failed')).toHaveLength(1)
   })
 
   it('splits telemetry and Dungeon Statistics at exact death and spawn boundaries', () => {

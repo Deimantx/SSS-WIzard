@@ -2,9 +2,9 @@ import { STATUS_DEFINITIONS } from '../../content/statuses'
 import type { GameState } from '../../types'
 import type { CombatActor } from './magnitude'
 import type { CombatCondition, CombatConditionContext } from './combatTypes'
+import { getStatusGroupStacks, hasStatus } from './statusSelectors'
 
 const opponentOf = (actor: CombatActor): CombatActor => actor === 'player' ? 'enemy' : 'player'
-const statusesFor = (state: GameState, actor: CombatActor) => actor === 'player' ? state.combat.playerStatuses : state.combat.enemyStatuses
 const barrierFor = (state: GameState, actor: CombatActor) => actor === 'player' ? state.combat.playerBarrier : state.combat.enemyBarrier
 const hpPercent = (state: GameState, actor: CombatActor) => {
   const max = actor === 'player' ? state.player.maxHealth : state.combat.enemyMaxHp
@@ -25,10 +25,10 @@ export const evaluateCombatCondition = (state: GameState, actor: CombatActor, co
     case 'target-hp-below-percent': return contextualHpPercent(state, target, context) <= condition.percent
     case 'self-hp-above-percent': return contextualHpPercent(state, actor, context) >= condition.percent
     case 'target-hp-above-percent': return contextualHpPercent(state, target, context) >= condition.percent
-    case 'self-has-status': return statusesFor(state, actor).some((status) => status.statusId === condition.statusId)
-    case 'target-has-status': return statusesFor(state, target).some((status) => status.statusId === condition.statusId)
-    case 'self-status-stacks-at-least': return statusesFor(state, actor).some((status) => status.statusId === condition.statusId && status.stacks >= condition.stacks)
-    case 'target-status-stacks-at-least': return statusesFor(state, target).some((status) => status.statusId === condition.statusId && status.stacks >= condition.stacks)
+    case 'self-has-status': return hasStatus(state, actor, condition.statusId)
+    case 'target-has-status': return hasStatus(state, target, condition.statusId)
+    case 'self-status-stacks-at-least': return getStatusGroupStacks(state, actor, condition.statusId) >= condition.stacks
+    case 'target-status-stacks-at-least': return getStatusGroupStacks(state, target, condition.statusId) >= condition.stacks
     case 'self-has-barrier': return barrierFor(state, actor) > 0
     case 'target-has-barrier': return barrierFor(state, target) > 0
     case 'self-barrier-at-least': return barrierFor(state, actor) >= condition.value

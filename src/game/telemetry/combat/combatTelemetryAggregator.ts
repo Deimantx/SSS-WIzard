@@ -72,6 +72,7 @@ const metadataForEvent = (event: CombatEvent): CombatTelemetrySourceMetadata | n
     traitId: event.traitId ?? (kind === 'trait' ? sourceId as CombatTelemetrySourceMetadata['traitId'] : undefined),
     sourceId,
     originSourceId: event.originSourceId,
+    originSourceKind: event.originSourceKind,
     ruleId: event.ruleId,
   }
 }

@@ -118,11 +118,16 @@ export function buildSpellEffectTooltipModel(state: Pick<GameState, 'schools' | 
     const status = STATUS_DEFINITIONS[effect.statusId]
     const durationMs = effect.durationMs === undefined ? status?.defaultDurationMs ?? null : effect.durationMs
     status?.modifiers?.forEach((modifier) => rows.push({ label: modifierLabel(modifier), value: modifierValue(modifier), semantic: modifier.value >= 0 ? 'positive' : 'negative' }))
-    const periodicDamage = status?.periodic?.effects.find((entry) => entry.type === 'deal-damage')
+    const periodicEffects = effect.periodicEffects ?? status?.periodic?.effects
+    const periodicDamage = periodicEffects?.find((entry) => entry.type === 'deal-damage')
     if (periodicDamage?.type === 'deal-damage') {
       rows.push({ label: 'Damage Type', value: `${capitalize(periodicDamage.damageType)} Damage`, semantic: 'school' })
       rows.push({ label: 'Damage Per Tick', value: formatSpellMagnitude(periodicDamage.magnitude), semantic: 'school' })
       rows.push({ label: 'Tick Interval', value: formatTime(status.periodic?.intervalMs ?? 0), semantic: 'time' })
+      if (durationMs !== null && status?.periodic?.intervalMs) {
+        const tickCount = Math.floor(durationMs / status.periodic.intervalMs)
+        if (periodicDamage.magnitude.type === 'flat') rows.push({ label: 'Total Base Damage', value: formatValue(periodicDamage.magnitude.value * tickCount), semantic: 'school' })
+      }
     }
     if (effect.stacks !== undefined) rows.push({ label: 'Applied Stacks', value: `${effect.stacks}` })
     if (status?.stacking.maxStacks !== undefined) rows.push({ label: 'Max Stacks', value: `${status.stacking.maxStacks}` })

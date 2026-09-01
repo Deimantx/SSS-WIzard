@@ -73,6 +73,8 @@ export interface CombatEvent {
   category: CombatLogCategory
   sourceId?: string
   originSourceId?: string
+  originSourceKind?: CombatSource['kind']
+  statusInstanceKey?: string
   ruleId?: string
   spellId?: SpellId
   actionId?: string
@@ -127,6 +129,10 @@ export interface CombatSource {
   sourceId?: string
   /** Original authored source when a status tick derives from another effect. */
   originSourceId?: string
+  /** Original source kind retained when a periodic tick becomes a status source. */
+  originSourceKind?: CombatSource['kind']
+  /** Stable identity of the status instance that produced a periodic event. */
+  statusInstanceKey?: string
   /** Rule that produced this source, when the source came from a triggered rule. */
   ruleId?: string
   school?: SchoolId
@@ -167,7 +173,7 @@ export type CombatEffect =
   | { type: 'gain-barrier'; target: EffectTarget; magnitude: Magnitude; mode?: 'add' | 'replace'; durationMs?: number | null; tags?: CombatTag[] }
   | { type: 'restore-resource'; target: EffectTarget; resource: ResourceId; magnitude: Magnitude; tags?: CombatTag[] }
   | { type: 'drain-resource'; target: EffectTarget; resource: ResourceId; magnitude: Magnitude; tags?: CombatTag[] }
-  | { type: 'apply-status'; target: EffectTarget; statusId: StatusId; durationMs?: number | null; stacks?: number; tags?: CombatTag[] }
+  | { type: 'apply-status'; target: EffectTarget; statusId: StatusId; durationMs?: number | null; stacks?: number; periodicEffects?: CombatEffect[]; statusSourceKey?: string; tags?: CombatTag[] }
   | { type: 'remove-status'; target: EffectTarget; statusId: StatusId }
   | { type: 'cleanse'; target: EffectTarget; mode: 'one' | 'all' | 'tag'; tag?: CombatTag }
   | { type: 'dispel'; target: EffectTarget; mode: 'one' | 'all' | 'tag'; tag?: CombatTag }
@@ -299,11 +305,15 @@ export interface CombatConditionContext {
 export interface ActiveStatus {
   statusId: StatusId
   holder: 'player' | 'enemy'
+  /** Stable identity for this status application slot. */
+  instanceKey: string
   source: CombatSource
   remainingMs: number | null
   stacks: number
   nextTickMs?: number
   appliedAt?: number
+  /** Optional source-specific periodic payload snapshotted on application. */
+  periodicEffects?: CombatEffect[]
 }
 
 export interface StatusDefinition {
@@ -312,6 +322,8 @@ export interface StatusDefinition {
   description: string
   classification: 'buff' | 'debuff' | 'neutral'
   tags: CombatTag[]
+  /** Defaults to single. Per-source allows independent source instances. */
+  applicationPolicy?: 'single' | 'per-source'
   defaultDurationMs: number | null
   stacking: {
     mode: 'replace' | 'refresh' | 'extend' | 'stacks' | 'strongest'

@@ -10,7 +10,7 @@ const COMBAT_TAGS: readonly CombatTag[] = ['basic-attack', 'spell', 'weapon', 'e
 export const STATUS_DEFINITIONS: Record<StatusId, StatusDefinition> = {
   burning: {
     id: 'burning', name: 'Burning', description: 'Takes Fire damage over time.', classification: 'debuff', tags: ['debuff', 'dot', 'fire'], defaultDurationMs: 5000,
-    stacking: { mode: 'refresh' }, periodic: { intervalMs: 1000, effects: [damage('fire', 5)] }, cleanseable: true, dispellable: false,
+    applicationPolicy: 'per-source', stacking: { mode: 'refresh' }, periodic: { intervalMs: 1000, effects: [damage('fire', 5)] }, cleanseable: true, dispellable: false,
   },
   quickening: {
     id: 'quickening', name: 'Quickening', description: 'Basic Attacks resolve 25% faster.', classification: 'buff', tags: ['buff', 'air'], defaultDurationMs: 6000,
@@ -26,11 +26,11 @@ export const STATUS_DEFINITIONS: Record<StatusId, StatusDefinition> = {
   },
   'thorn-wound': {
     id: 'thorn-wound', name: 'Thorn Wound', description: 'Thorns deal physical damage over time.', classification: 'debuff', tags: ['debuff', 'dot'], defaultDurationMs: 6000,
-    stacking: { mode: 'refresh' }, periodic: { intervalMs: 2000, effects: [damage('physical', 3)] }, cleanseable: true, dispellable: false,
+    applicationPolicy: 'per-source', stacking: { mode: 'refresh' }, periodic: { intervalMs: 2000, effects: [damage('physical', 3)] }, cleanseable: true, dispellable: false,
   },
   bleeding: {
     id: 'bleeding', name: 'Bleeding', description: 'Takes 4 Physical damage every 2 seconds.', classification: 'debuff', tags: ['debuff', 'dot', 'physical'], defaultDurationMs: 8000,
-    stacking: { mode: 'refresh' }, periodic: { intervalMs: 2000, effects: [damage('physical', 4)] }, cleanseable: true, dispellable: false,
+    applicationPolicy: 'per-source', stacking: { mode: 'refresh' }, periodic: { intervalMs: 2000, effects: [damage('physical', 4)] }, cleanseable: true, dispellable: false,
   },
   chilled: {
     id: 'chilled', name: 'Chilled', description: 'Basic Attacks and Action cadence are 20% slower.', classification: 'debuff', tags: ['debuff', 'control', 'water'], defaultDurationMs: 5000,
@@ -97,6 +97,9 @@ export const validateStatusDefinitions = () => {
     if (definition.defaultDurationMs !== null && definition.defaultDurationMs < 0) errors.push(`${definition.id}: negative duration`)
     if (definition.defaultDurationMs !== null && !Number.isFinite(definition.defaultDurationMs)) errors.push(`${definition.id}: non-finite duration`)
     if (definition.periodic && definition.periodic.intervalMs <= 0) errors.push(`${definition.id}: periodic interval must be positive`)
+    if (definition.periodic && !Number.isFinite(definition.periodic.intervalMs)) errors.push(`${definition.id}: periodic interval must be finite`)
+    if (definition.applicationPolicy !== undefined && definition.applicationPolicy !== 'single' && definition.applicationPolicy !== 'per-source') errors.push(`${definition.id}: invalid application policy`)
+    if (definition.applicationPolicy === 'per-source' && (definition.modifiers?.length || definition.preventsAction)) errors.push(`${definition.id}: per-source status cannot define modifiers or preventsAction without aggregation`)
     if (definition.stacking.maxStacks !== undefined && definition.stacking.maxStacks < 1) errors.push(`${definition.id}: maxStacks must be at least one`)
     if (definition.stacking.maxDurationMs !== undefined && (!Number.isFinite(definition.stacking.maxDurationMs) || definition.stacking.maxDurationMs < 0)) errors.push(`${definition.id}: invalid max duration`)
     definition.modifiers?.forEach((entry) => { if (!Number.isFinite(entry.value)) errors.push(`${definition.id}: non-finite modifier`); validateCondition(`${definition.id}:modifier`, entry.condition) })

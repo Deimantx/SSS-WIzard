@@ -4,6 +4,7 @@ import { SPELLS } from '../../content/spells/spells'
 import { STATUS_DEFINITIONS } from '../../content/statuses'
 import { getTraitDefinitions } from '../../content/traits'
 import type { CombatLogEntry, DamageType } from '../../systems/combat/combatTypes'
+import { resolveCombatEventOriginLabel } from './combatSourcePresentation'
 
 export interface CombatLogPresentation {
   sourceLabel: string
@@ -38,7 +39,8 @@ export function presentCombatLogEntry(entry: CombatLogEntry, newestTimestampMs =
   const status = entry.statusId ? STATUS_DEFINITIONS[entry.statusId] : undefined
   const trait = entry.traitId ? getTraitDefinitions([entry.traitId])[0] : undefined
   const item = entry.itemId ? ITEMS[entry.itemId] : undefined
-  const actionLabel = spell?.name ?? action?.name ?? trait?.name ?? status?.name ?? item?.name ?? categoryLabel(entry.category)
+  const originLabel = entry.sourceKind === 'status' ? resolveCombatEventOriginLabel(entry) : undefined
+  const actionLabel = spell?.name ?? action?.name ?? trait?.name ?? (status ? `${status.name}${originLabel ? ` (${originLabel})` : ''}` : undefined) ?? item?.name ?? categoryLabel(entry.category)
   const direction = target ? ` → ${target}` : ''
   let message = `${actionLabel}${direction}`
   let result: string | undefined

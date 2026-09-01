@@ -26,7 +26,9 @@ const eventFields = (state: GameState, source: CombatSource, target: CombatActor
   targetMonsterId: target === 'enemy' ? state.combat.enemyId ?? undefined : undefined,
   sourceId: source.sourceId,
   originSourceId: source.originSourceId,
+  originSourceKind: source.originSourceKind,
   ruleId: source.ruleId,
+  statusInstanceKey: source.statusInstanceKey,
   spellId: source.kind === 'spell' ? source.sourceId as SpellId : undefined,
   actionId: source.kind === 'action' ? source.sourceId : undefined,
   traitId: source.kind === 'trait' ? source.sourceId as TraitId : undefined,
@@ -56,7 +58,9 @@ export const calculateCombatDamage = (state: GameState, raw: number, damageType:
   if (source.kind === 'spell' && source.school) sourceModified *= spellDamageMultiplier(state, source.school)
   const targetModified = sourceModified * (1 + getCombatModifiers(state, target, 'damage-taken-percent', modifierContext))
   const resistance = getResistance(state, target, damageType)
-  const resolvedBeforeBarrier = Math.max(0, Math.round(targetModified * (1 - resistance)))
+  // Keep fractional base damage intact. Player-facing log formatting may
+  // round it, but rounding every periodic tick would turn 100/6 into 17*6.
+  const resolvedBeforeBarrier = Math.max(0, targetModified * (1 - resistance))
   const barrierAbsorbed = Math.min(getActiveBarrier(state, target), resolvedBeforeBarrier)
   return { raw: amount, sourceModified, targetModified, resistance, resolvedBeforeBarrier, barrierAbsorbed, healthDamage: Math.max(0, resolvedBeforeBarrier - barrierAbsorbed), immune: false }
 }
@@ -165,11 +169,11 @@ export const executeCombatEffect = (state: GameState, effect: CombatEffect, sour
     case 'drain-resource': executeResource(state, effect, source); break
     case 'apply-status': {
       const statusSource = { ...source, tags }
-      const active = applyStatus(state, target, effect.statusId, statusSource, { durationMs: effect.durationMs, stacks: effect.stacks })
+      const active = applyStatus(state, target, effect.statusId, statusSource, { durationMs: effect.durationMs, stacks: effect.stacks, periodicEffects: effect.periodicEffects, statusSourceKey: effect.statusSourceKey })
       if (active) {
         const definition = STATUS_DEFINITIONS[effect.statusId]
         appendLog(state, `${definition.name} applied.`)
-        uiEvents?.push({ ...eventFields(state, source, target), category: 'status', statusId: effect.statusId, statusPhase: 'apply', durationMs: active.remainingMs, stacks: active.stacks })
+        uiEvents?.push({ ...eventFields(state, source, target), category: 'status', statusId: effect.statusId, statusPhase: 'apply', durationMs: active.remainingMs, stacks: active.stacks, statusInstanceKey: active.instanceKey, originSourceId: active.source.sourceId, originSourceKind: active.source.kind })
         // Application events belong to the applier; the status holder is the target.
         runCombatTriggers(state, source.actor, 'on-status-applied', { source: statusSource, eventTarget: target, changedActor: target, sourceTags: tags, statusId: effect.statusId, eventStatusTags: definition.tags }, execute, depth, [], uiEvents)
       }

@@ -6,6 +6,7 @@ import type { CombatActor } from './magnitude'
 import { evaluateCombatCondition } from './conditionRuntime'
 import { getActorTraits } from './traitRuntime'
 import type { CombatModifier, CombatSource, CombatTag, DamageType, ModifierKey } from './combatTypes'
+import { getStatusGroupStacks } from './statusSelectors'
 
 export interface ModifierContext {
   source?: CombatSource
@@ -25,9 +26,9 @@ const matchesModifier = (modifier: CombatModifier, context: ModifierContext) => 
 }
 
 const statusModifierValue = (state: GameState, actor: CombatActor, statusId: StatusId, modifier: CombatModifier) => {
-  const active = activeStatuses(state, actor).find((status) => status.statusId === statusId)
-  if (!active) return 0
-  return modifier.perStack ? modifier.value * Math.max(1, active.stacks) : modifier.value
+  const stacks = getStatusGroupStacks(state, actor, statusId)
+  if (stacks <= 0) return 0
+  return modifier.perStack ? modifier.value * Math.max(1, stacks) : modifier.value
 }
 
 export const getCombatModifiers = (state: GameState, actor: CombatActor, key: ModifierKey, context: ModifierContext = {}) => {

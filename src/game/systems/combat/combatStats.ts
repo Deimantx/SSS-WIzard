@@ -38,6 +38,8 @@ export interface CombatStats {
   focusEfficiency: number
 }
 
+export type PlayerSheetState = Pick<GameState, 'player' | 'progress' | 'activities' | 'equipment'> & Partial<Pick<GameState, 'debug'>>
+
 const finite = (value: number | undefined, fallback = 0) => Number.isFinite(value) ? value as number : fallback
 const clampPercent = (value: number, min: number, max: number) => Math.min(max, Math.max(min, finite(value)))
 const clampSpeed = (value: number) => Math.min(10, Math.max(0.1, finite(value, DEFAULT_COMBAT_SPEED_MULTIPLIER)))
@@ -48,8 +50,8 @@ export const getDefenseReductionFromRating = (defense: number) => {
 }
 
 const playerEquipmentStat = (state: Pick<GameState, 'equipment'>, key: keyof EquipmentStats) => finite(getEquipmentStats(state)[key] as number | undefined)
-const playerBaseMaxHealth = (state: GameState) => finite(state.player.baseMaxHealth, BALANCE.player.maxHealth) + playerEquipmentStat(state, 'maxHealth')
-const getPlayerSheetStats = (state: GameState): CombatStats => {
+const playerBaseMaxHealth = (state: Pick<GameState, 'player' | 'equipment'>) => finite(state.player.baseMaxHealth, BALANCE.player.maxHealth) + playerEquipmentStat(state, 'maxHealth')
+const getPlayerSheetStats = (state: PlayerSheetState): CombatStats => {
   const equipment = getEquipmentStats(state)
   const basicAttackSpeedMultiplier = clampSpeed(1 + finite(equipment.basicAttackSpeedPct))
   const defense = Math.max(0, BALANCE.player.baseDefense + finite(equipment.defense))

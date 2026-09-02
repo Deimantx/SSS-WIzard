@@ -1,5 +1,5 @@
 import type { GameState } from '../../types'
-import { RECIPES, RECIPE_ORDER } from '../../content/recipes/recipes'
+import { isRecipeUnlocked, RECIPES, RECIPE_ORDER } from '../../content/recipes/recipes'
 import { ITEMS } from '../../content/items/items'
 import { SCHOOLS } from '../../content/schools/schools'
 import { BALANCE } from '../../core/balance/balance'
@@ -90,7 +90,7 @@ export const getContinuousManaDemandPerSecond = (state: ContinuousManaDemandStat
     const recipe = RECIPES[recipeId]
     const job = state.activities.transmutation.jobs[recipeId]
     const echoes = Math.max(0, Math.floor(finiteNonNegative(job?.echoesAssigned)))
-    const unlocked = recipe.unlock.type === 'always' || state.progress.firstBossKill
+    const unlocked = isRecipeUnlocked(state, recipe)
     const hasMaterials = recipe.ingredients.every((ingredient) => getConsumableQuantity(state, ingredient.itemId) >= ingredient.quantity)
     if (echoes > 0 && unlocked && recipe.manaCost > 0 && hasMaterials) demand += continuousManaPerSecond(recipe.manaCost, recipe.baseDurationMs, echoes)
   })

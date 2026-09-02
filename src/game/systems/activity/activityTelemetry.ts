@@ -1,7 +1,7 @@
 import { DUNGEONS } from '../../content/dungeons/dungeons'
 import { ITEMS } from '../../content/items/items'
 import { MONSTERS } from '../../content/monsters'
-import { RECIPES, RECIPE_ORDER } from '../../content/recipes/recipes'
+import { isRecipeUnlocked, RECIPES, RECIPE_ORDER } from '../../content/recipes/recipes'
 import { SCHOOLS } from '../../content/schools/schools'
 import { BALANCE } from '../../core/balance/balance'
 import { getCurrentEnemyActionStep, getEnemyAction, getNextEnemyActionStep } from '../combat/actionRuntime'
@@ -108,7 +108,7 @@ export const getActivityTelemetry = (state: GameState): ActivityTelemetry[] => {
     const recipe = RECIPES[recipeId]
     const job = state.activities.transmutation.jobs[recipeId]
     const echoes = Math.max(0, Math.floor(job?.echoesAssigned ?? 0))
-    return job && echoes > 0 && (recipe.unlock.type === 'always' || state.progress.firstBossKill) ? { recipe, job, echoes, status: getRecipeStatus(state, recipe) } : null
+    return job && echoes > 0 && isRecipeUnlocked(state, recipe) ? { recipe, job, echoes, status: getRecipeStatus(state, recipe) } : null
   }).filter((entry): entry is NonNullable<typeof entry> => entry !== null)
   if (jobs.length > 0) {
     const totalEchoes = jobs.reduce((sum, entry) => sum + entry.echoes, 0)

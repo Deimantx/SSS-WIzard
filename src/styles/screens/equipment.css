@@ -72,6 +72,9 @@
 .equipment-inspector-icon { width: 48px; height: 48px; font-size: 26px; }
 .equipment-inspector-hero h3 { margin: 4px 0; color: var(--ui-text); font-size: var(--text-base); }
 .equipment-inspector-hero p { margin: 0; color: var(--ui-text-muted); font-size: var(--text-xs); line-height: 1.45; }
+.equipment-copy-availability { display: flex; flex-wrap: wrap; align-items: center; gap: 7px 10px; margin-top: 12px; padding: 9px; border: 1px solid var(--ui-border); border-radius: 7px; background: color-mix(in srgb, var(--ui-panel-strong) 70%, transparent); font: var(--text-micro) var(--font-mono); }
+.equipment-copy-availability span { margin-right: auto; color: var(--ui-accent); letter-spacing: .1em; }
+.equipment-copy-availability strong { color: var(--ui-text-soft); font-weight: 600; letter-spacing: .04em; }
 .equipment-hands, .equipment-impact-warning, .equipment-incompatible, .equipment-current-position { display: flex; align-items: center; justify-content: space-between; gap: 9px; margin-top: 12px; padding: 9px; border: 1px solid var(--ui-border); border-radius: 7px; }
 .equipment-hands span, .equipment-hands strong { font: var(--text-micro) var(--font-mono); }
 .equipment-hands span { color: var(--ui-text-muted); }

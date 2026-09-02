@@ -11,7 +11,7 @@ export interface FocusCapacityBreakdown {
   total: number
 }
 
-type FocusCapacityState = Pick<GameState, 'player' | 'progress' | 'equipment' | 'debug'>
+type FocusCapacityState = Pick<GameState, 'player' | 'progress' | 'equipment'> & Partial<Pick<GameState, 'debug'>>
 
 const getEquipmentFocus = (state: Pick<GameState, 'equipment'>) => Object.values(state.equipment).reduce((total, itemId) => total + (itemId ? ITEMS[itemId]?.stats?.maxFocus ?? 0 : 0), 0)
 
@@ -22,7 +22,7 @@ export const getFocusCapacityBreakdown = (state: FocusCapacityState, options: { 
   const improvement = getFocusImprovementBonus(improvementLevel)
   const permanentRewards = Object.values(state.progress.permanentFocusBonuses).reduce((sum, value) => sum + Math.max(0, value), 0)
   const equipment = getEquipmentFocus(state)
-  const debug = state.debug.bonusMaxFocusFlat
+  const debug = state.debug?.bonusMaxFocusFlat ?? 0
   return { base, improvement, permanentRewards, equipment, debug, total: Math.max(0, base + improvement + permanentRewards + equipment + debug) }
 }
 

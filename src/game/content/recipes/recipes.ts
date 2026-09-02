@@ -16,7 +16,7 @@ export interface RecipeDefinition {
 }
 
 const always: RecipeUnlockCondition = { type: 'always' }
-const groveSentinel: RecipeUnlockCondition = { type: 'boss-kill', bossId: 'grove-sentinel' }
+const groveSentinel: RecipeUnlockCondition = { type: 'monster-kill', monsterId: 'grove-sentinel' }
 const howlingDen: RecipeUnlockCondition = { type: 'dungeon-unlocked', dungeonId: 'howling-den' }
 const abandonedCatacombs: RecipeUnlockCondition = { type: 'dungeon-unlocked', dungeonId: 'abandoned-catacombs' }
 const equipmentRecipe = (id: RecipeId, name: string, ingredients: { itemId: ItemId; quantity: number }[], baseDurationMs: number, unlock: RecipeUnlockCondition, description: string): RecipeDefinition => ({ id, name, output: { itemId: id, quantity: 1 }, category: 'equipment', baseDurationMs, manaCost: 0, ingredients, unlock, description })
@@ -70,6 +70,7 @@ export const isRecipeUnlocked = (state: Pick<GameState, 'progress'>, recipe: Rec
     case 'always': return true
     case 'first-dungeon-boss-kill': return state.progress.firstBossKill
     case 'boss-kill': return Boolean(MONSTERS[recipe.unlock.bossId]) && hasProgress(state.progress, recipe.unlock.bossId, Math.max(1, recipe.unlock.count ?? 1))
+    case 'monster-kill': return Boolean(MONSTERS[recipe.unlock.monsterId]) && hasProgress(state.progress, recipe.unlock.monsterId, Math.max(1, recipe.unlock.count ?? 1))
     case 'dungeon-unlocked': {
       const dungeon = DUNGEONS[recipe.unlock.dungeonId]
       return Boolean(dungeon) && (dungeon.unlock?.type !== 'boss-kill' || hasProgress(state.progress, dungeon.unlock.bossId, 1))
@@ -82,6 +83,7 @@ export const getRecipeUnlockRequirement = (recipe: RecipeDefinition): string | n
     case 'always': return null
     case 'first-dungeon-boss-kill': return 'Defeat the first dungeon boss to unlock this recipe.'
     case 'boss-kill': return `Defeat ${MONSTERS[recipe.unlock.bossId]?.name ?? recipe.unlock.bossId}${(recipe.unlock.count ?? 1) > 1 ? ` ${recipe.unlock.count} times` : ''} to unlock this recipe.`
+    case 'monster-kill': return `Defeat ${MONSTERS[recipe.unlock.monsterId]?.name ?? recipe.unlock.monsterId}${(recipe.unlock.count ?? 1) > 1 ? ` ${recipe.unlock.count} times` : ''} to unlock this recipe.`
     case 'dungeon-unlocked': return `Unlock ${DUNGEONS[recipe.unlock.dungeonId]?.name ?? recipe.unlock.dungeonId} to access this recipe.`
   }
 }
@@ -98,6 +100,7 @@ export const validateRecipeDefinitions = (recipes: Record<string, RecipeDefiniti
     recipe.ingredients.forEach((ingredient) => { if (!ITEMS[ingredient.itemId]) errors.push(`${recipe.id}: unknown ingredient ${ingredient.itemId}`); if (!Number.isInteger(ingredient.quantity) || ingredient.quantity <= 0) errors.push(`${recipe.id}: invalid ingredient quantity`) })
     if (recipe.category === 'equipment' && ITEMS[recipe.output.itemId]?.kind !== 'equipment') errors.push(`${recipe.id}: equipment recipe must output equipment`)
     if (recipe.unlock.type === 'boss-kill' && !MONSTERS[recipe.unlock.bossId]) errors.push(`${recipe.id}: unlock boss must be a known monster`)
+    if (recipe.unlock.type === 'monster-kill' && !MONSTERS[recipe.unlock.monsterId]) errors.push(`${recipe.id}: unlock monster must be known`)
     if (recipe.unlock.type === 'dungeon-unlocked' && !DUNGEONS[recipe.unlock.dungeonId]) errors.push(`${recipe.id}: unlock dungeon must be known`)
   })
   if (new Set(order).size !== order.length) errors.push('RECIPE_ORDER contains duplicates')

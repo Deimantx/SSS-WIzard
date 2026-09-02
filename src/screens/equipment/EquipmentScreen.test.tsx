@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { TooltipProvider } from '../../components/ui/tooltip/Tooltip'
 import { useGameStore } from '../../store/gameStore'
@@ -41,5 +41,18 @@ describe('EquipmentScreen stat typography structure', () => {
     render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
     expect(screen.getByText('COMBAT EFFECTS')).toBeTruthy()
     expect(screen.getAllByText('+20% Fire Spell Damage').length).toBeGreaterThan(0)
+  })
+
+  it('shows owned, equipped, and available copies for selected equipment', async () => {
+    const state = useGameStore.getState()
+    useGameStore.setState({ equipment: { ...state.equipment, weapon: 'wispwood-wand', ring1: 'gravebinder-ring' }, inventory: { ...state.inventory, 'wispwood-wand': 1, 'gravebinder-ring': 1 } })
+    const { container } = render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
+    const gravebinderCard = Array.from(container.querySelectorAll('.equipment-armory-card')).find((card) => card.textContent?.includes('Gravebinder Ring')) as HTMLElement | undefined
+    expect(gravebinderCard).toBeTruthy()
+    fireEvent.click(gravebinderCard as HTMLElement)
+    expect(screen.getByText('OWNED 1')).toBeTruthy()
+    expect(screen.getByText('EQUIPPED 1')).toBeTruthy()
+    expect(screen.getByText('AVAILABLE 0')).toBeTruthy()
+    expect(await screen.findByText(/second copy is required for this Ring position/i)).toBeTruthy()
   })
 })

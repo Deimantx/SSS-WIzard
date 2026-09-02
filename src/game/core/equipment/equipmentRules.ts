@@ -98,20 +98,3 @@ export function normalizeEquipmentState(
   if (isTwoHandedWeapon(normalized.weapon)) normalized.offhand = null
   return normalized
 }
-
-export function previewEquipmentState(
-  equipment: Record<EquipmentPosition, ItemId | null>,
-  itemId: ItemId,
-  targetPosition?: EquipmentPosition,
-) {
-  const item = ITEMS[itemId]
-  if (!item || item.kind !== 'equipment' || !item.equipmentSlot) return null
-  const position = targetPosition ?? (item.equipmentSlot === 'ring' ? (equipment.ring1 ? (equipment.ring2 ? null : 'ring2') : 'ring1') : item.equipmentSlot)
-  if (!position) return null
-  if (!isPositionCompatible(itemId, position)) return null
-  if (item.equipmentSlot === 'offhand' && isTwoHandedWeapon(equipment.weapon)) return null
-  const next = { ...equipment }
-  if (isTwoHandedWeapon(itemId)) next.offhand = null
-  next[position] = itemId
-  return next
-}

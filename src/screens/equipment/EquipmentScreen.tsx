@@ -1,5 +1,5 @@
 import { LockKeyhole, Shield, Sparkles } from 'lucide-react'
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Button, Card, EquipmentCombatDetails, GameTooltip, Status } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { ITEMS } from '../../game/content/items/items'
@@ -7,11 +7,12 @@ import { EQUIPMENT_ITEM_SLOT_LABELS, EQUIPMENT_POSITION_LABELS, getEquippedCount
 import type { EquipmentItemSlot, EquipmentPosition, ItemId } from '../../game/types'
 import { useGameStore } from '../../store/gameStore'
 import { EditableGrid } from '../../ui/layout-editor/EditableGrid'
-import { getEquipmentPreview, getEquipmentStatSnapshot } from './equipmentPreview'
+import { getEquipmentCopyAvailability, getEquipmentPreview, getEquipmentStatSnapshot } from '../../game/presentation/equipment/equipmentReadModel'
 import { formatStat, friendlyStatLabel } from '../../components/ui/item/ItemTooltip'
 import { BLOCK_DAMAGE_REDUCTION, MAX_RESISTANCE } from '../../game/core/balance/combatStats'
 import { formatBasicAttackTime } from '../../game/presentation/combat'
 import { getEquipmentPrimaryCombatSummary } from '../../game/presentation/equipment/equipmentCombatPresentation'
+import { getAdaptiveEquipmentLayout } from './equipmentLayout'
 
 type ArmoryFilter = 'all' | EquipmentItemSlot
 type WeaponHandsFilter = 'all' | 1 | 2
@@ -46,7 +47,9 @@ export function EquipmentScreenV2() {
   const [weaponHandsFilter, setWeaponHandsFilter] = useState<WeaponHandsFilter>('all')
   const [selectedItemId, setSelectedItemId] = useState<ItemId | null>(equipment.weapon)
   const [ringReplacement, setRingReplacement] = useState<EquipmentPosition | null>(null)
-  const stateForPreview = { player, progress, activities, debug, equipment }
+  const [loadoutContentHeight, setLoadoutContentHeight] = useState(0)
+  const [statsContentHeight, setStatsContentHeight] = useState(0)
+  const stateForPreview = { player, progress, activities, debug, equipment, inventory }
   const ownedEquipment = useMemo(() => (Object.keys(ITEMS) as ItemId[]).filter((id) => ITEMS[id].kind === 'equipment' && (inventory[id] ?? 0) > 0), [inventory])
   const visibleEquipment = useMemo(() => ownedEquipment.filter((id) => (filter === 'all' || ITEMS[id].equipmentSlot === filter) && (filter !== 'weapon' || weaponHandsFilter === 'all' || ITEMS[id].weaponHands === weaponHandsFilter)), [ownedEquipment, filter, weaponHandsFilter])
   const selectedItem = selectedItemId ? ITEMS[selectedItemId] : null
@@ -54,10 +57,14 @@ export function EquipmentScreenV2() {
     ? ringReplacement ?? (selectedPosition === 'ring1' || selectedPosition === 'ring2' ? selectedPosition : equipment.ring1 ? equipment.ring2 ? undefined : 'ring2' : 'ring1')
     : selectedPosition
   const preview = selectedItemId ? getEquipmentPreview(stateForPreview, selectedItemId, targetPosition) : null
+  const copyAvailability = selectedItemId ? getEquipmentCopyAvailability({ equipment, inventory }, selectedItemId) : null
   const statSnapshot = getEquipmentStatSnapshot(stateForPreview, equipment)
   const equippedCount = getEquippedCount({ equipment })
   const equippedPositions = selectedItemId ? getItemPositions(selectedItemId).filter((position) => equipment[position] === selectedItemId) : []
   const ringNeedsChoice = selectedItem?.equipmentSlot === 'ring' && !ringReplacement && Boolean(equipment.ring1 && equipment.ring2) && selectedPosition !== 'ring1' && selectedPosition !== 'ring2'
+  const reportLoadoutContentHeight = useCallback((height: number) => setLoadoutContentHeight((current) => current === height ? current : height), [])
+  const reportStatsContentHeight = useCallback((height: number) => setStatsContentHeight((current) => current === height ? current : height), [])
+  const layoutTransform = useCallback((layout: Parameters<typeof getAdaptiveEquipmentLayout>[0]) => getAdaptiveEquipmentLayout(layout, { requiredLoadoutContentHeight: loadoutContentHeight, requiredStatsContentHeight: statsContentHeight }), [loadoutContentHeight, statsContentHeight])
 
   useEffect(() => {
     if (selectedItemId && !ownedEquipment.includes(selectedItemId)) setSelectedItemId(ownedEquipment[0] ?? null)
@@ -81,7 +88,7 @@ export function EquipmentScreenV2() {
     }
   }
 
-  const loadout = <Card title="WIZARD LOADOUT" action={<Status tone="success">{equippedCount} / 8 EQUIPPED</Status>}>
+  const loadout = <MeasuredEquipmentCard title="WIZARD LOADOUT" action={<Status tone="success">{equippedCount} / 8 EQUIPPED</Status>} onHeightChange={reportLoadoutContentHeight}>
     <div className="equipment-loadout-board">
       {LOADOUT_VISUAL_ORDER.map((position) => {
         const itemId = equipment[position]
@@ -100,9 +107,9 @@ export function EquipmentScreenV2() {
       })}
     </div>
     <p className="equipment-loadout-note">Select an empty slot to filter compatible gear. More slots may be added later.</p>
-  </Card>
+  </MeasuredEquipmentCard>
 
-  const statsPanel = <Card title="WIZARD STATS" action={<Sparkles size={16} color="var(--gold)" />}>
+  const statsPanel = <MeasuredEquipmentCard title="WIZARD STATS" action={<Sparkles size={16} color="var(--gold)" />} onHeightChange={reportStatsContentHeight}>
     <div className="equipment-stat-groups">
       <StatGroup title="CORE" rows={[['Max Health', String(statSnapshot.maxHealth)], ['Max Mana', String(statSnapshot.maxMana)], ['Max Focus', String(statSnapshot.maxFocus)], ['Mana Regen', `+${statSnapshot.manaRegen.toFixed(1)}/s`]]} />
       <StatGroup title="OFFENSE" basicAttackIntervalMs={statSnapshot.basicAttackIntervalMs} rows={[['Spell Power', String(statSnapshot.spellPower)], ['Basic Attack Damage', String(statSnapshot.basicDamage)], ['Basic Attack Speed', `${statSnapshot.basicAttackSpeedMultiplier.toFixed(2)}x`], ['Crit Chance', `${Math.round(statSnapshot.critChance * 100)}%`], ['Crit Damage', `${Math.round(statSnapshot.critDamageMultiplier * 100)}%`], ...(statSnapshot.fireSpellDamage ? [['Fire Spell Damage', `${Math.round(statSnapshot.fireSpellDamage * 100)}%`] as [string, string]] : []), ...(statSnapshot.airSpellDamage ? [['Air Spell Damage', `${Math.round(statSnapshot.airSpellDamage * 100)}%`] as [string, string]] : [])]} />
@@ -111,7 +118,7 @@ export function EquipmentScreenV2() {
       <StatGroup title="PERIODIC / STATUS" rows={[...(statSnapshot.damageOverTimeBonus ? [['Damage over Time', `${Math.round(statSnapshot.damageOverTimeBonus * 100)}%`] as [string, string]] : []), ...(statSnapshot.statusDurationBonus ? [['Status Duration', `${Math.round(statSnapshot.statusDurationBonus * 100)}%`] as [string, string]] : []), ...(statSnapshot.negativeStatusDurationReceived ? [['Received Negative Status Duration', `${Math.round(statSnapshot.negativeStatusDurationReceived * 100)}%`] as [string, string]] : [])]} />
     </div>
     <div className="equipment-note"><Shield size={15} /><span>Equipped copies remain reserved from Research, Transmutation, Guild donation, Sell, and Destroy.</span></div>
-  </Card>
+  </MeasuredEquipmentCard>
 
   const armory = <Card title="ARMORY" action={<span className="equipment-armory-count">{ownedEquipment.length} OWNED TYPES</span>}>
     <div className="equipment-filter-bar" role="tablist" aria-label="Equipment filters">{ARMORY_FILTERS.map((entry) => <button type="button" role="tab" aria-selected={filter === entry.id} className={filter === entry.id ? 'active' : ''} key={entry.id} onClick={() => { setFilter(entry.id); if (entry.id !== 'all' && entry.id !== 'ring') setSelectedPosition(entry.id) }}>{entry.label}</button>)}</div>
@@ -122,6 +129,7 @@ export function EquipmentScreenV2() {
   const inspector = <Card title="GEAR INSPECTOR" className="equipment-inspector">
     {!selectedItem ? <div className="equipment-inspector-empty"><strong>SELECT GEAR</strong><small>Choose an item from the Armory to compare its real loadout impact.</small></div> : <>
       <div className="equipment-inspector-hero"><span className="equipment-inspector-icon" style={{ color: selectedItem.color }}>{selectedItem.icon}</span><div><div className="eyebrow">{selectedItem.equipmentSlot ? EQUIPMENT_ITEM_SLOT_LABELS[selectedItem.equipmentSlot] : 'EQUIPMENT'}</div><h3>{selectedItem.name}</h3><p>{selectedItem.description}</p></div></div>
+      {copyAvailability && <GameTooltip block content={<TooltipContent title="Equipment copies" description="Owned copies include every copy reserved by the current loadout. A Ring needs one owned copy per occupied Ring position." />}><div className="equipment-copy-availability"><span>COPIES</span><strong>OWNED {copyAvailability.owned}</strong><strong>EQUIPPED {copyAvailability.equipped}</strong><strong>AVAILABLE {copyAvailability.available}</strong></div></GameTooltip>}
       {selectedItem.weaponHands && <div className="equipment-hands"><span>WEAPON TYPE</span><strong>{selectedItem.weaponHands === 2 ? 'Two-Handed' : 'One-Handed'}</strong></div>}
       {preview?.removedOffhand && <div className="equipment-impact-warning"><LockKeyhole size={14} /><span>{ITEMS[preview.removedOffhand].name} will be unequipped automatically.</span></div>}
       <EquipmentCombatDetails item={selectedItem} />
@@ -133,10 +141,37 @@ export function EquipmentScreenV2() {
     </>}
   </Card>
 
-  return <div className="screen-content equipment-screen"><div className="screen-header"><div><div className="eyebrow">WIZARD LOADOUT · EQUIPMENT</div><h1>Build the tower’s answer.</h1><p>Eight equipment positions, owned gear, and honest loadout impact. Two-handed weapons trade away the Offhand.</p></div></div><EditableGrid screen="equipment" panels={[{ id: 'equipment-loadout', content: loadout }, { id: 'equipment-stats', content: statsPanel }, { id: 'equipment-owned', content: armory }, { id: 'equipment-inspector', content: inspector }]} /></div>
+  return <div className="screen-content equipment-screen"><div className="screen-header"><div><div className="eyebrow">WIZARD LOADOUT · EQUIPMENT</div><h1>Build the tower’s answer.</h1><p>Eight equipment positions, owned gear, and honest loadout impact. Two-handed weapons trade away the Offhand.</p></div></div><EditableGrid screen="equipment" layoutTransform={layoutTransform} panels={[{ id: 'equipment-loadout', content: loadout }, { id: 'equipment-stats', content: statsPanel }, { id: 'equipment-owned', content: armory }, { id: 'equipment-inspector', content: inspector }]} /></div>
 }
 
 export const EquipmentScreen = EquipmentScreenV2
+
+function MeasuredEquipmentCard({ children, onHeightChange, ...props }: { children: ReactNode; onHeightChange: (height: number) => void; className?: string; title?: string; action?: ReactNode; style?: React.CSSProperties }) {
+  const cardRef = useRef<HTMLElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
+  const measure = useCallback(() => {
+    const card = cardRef.current
+    const content = contentRef.current
+    if (!card || !content) return
+    const cardRect = card.getBoundingClientRect()
+    const contentRect = content.getBoundingClientRect()
+    const cardStyle = getComputedStyle(card)
+    const bottomFrame = (Number.parseFloat(cardStyle.paddingBottom) || 0) + (Number.parseFloat(cardStyle.borderBottomWidth) || 0)
+    const contentHeight = contentRect.height || content.scrollHeight
+    onHeightChange(Math.ceil((contentRect.top - cardRect.top) + contentHeight + bottomFrame))
+  }, [onHeightChange])
+
+  useLayoutEffect(() => {
+    measure()
+    if (typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(measure)
+    if (cardRef.current) observer.observe(cardRef.current)
+    if (contentRef.current) observer.observe(contentRef.current)
+    return () => observer.disconnect()
+  }, [measure])
+
+  return <Card ref={cardRef} {...props}><div ref={contentRef}>{children}</div></Card>
+}
 
 function StatGroup({ title, rows, basicAttackIntervalMs }: { title: string; rows: [string, string][]; basicAttackIntervalMs?: number }) {
   if (rows.length === 0) return null

@@ -46,6 +46,13 @@ When replacing a system, remove the obsolete implementation after migration rath
 - Add or update Vitest coverage when changing save migration, production payment, reservation, or offline-report behavior.
 - Run `npm run test:run` and `npm run build` before handoff.
 
+## Test execution workflow
+
+- During implementation, run only targeted Vitest files relevant to the code currently being changed.
+- Do not repeatedly run the full test suite or production build after individual edits.
+- Reserve `npm run test:run` and `npm run build` for final handoff validation after implementation and targeted testing are complete.
+- The final handoff should include one full `npm run test:run` and one `npm run build`.
+
 ## Archive ownership
 
 - Game/content/system modules must not import screen/UI modules; shared metadata belongs in game/content or system layers.

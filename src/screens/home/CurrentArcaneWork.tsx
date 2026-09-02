@@ -2,7 +2,7 @@ import { ChevronRight } from 'lucide-react'
 import { Button, Card, GameTooltip, Status } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { manaRegenPerSecond } from '../../game/engine'
-import { RECIPE_ORDER, RECIPES } from '../../game/content/recipes/recipes'
+import { isRecipeUnlocked, RECIPE_ORDER, RECIPES } from '../../game/content/recipes/recipes'
 import { getPreparedResearchJobs, getResearchEchoesAssigned, getResearchXpPerHour } from '../../game/systems/research/researchSelectors'
 import { getTransmutationEchoesAssigned, getTransmutationFocusReserved } from '../../game/systems/transmutation/transmutationSelectors'
 import type { ScreenId } from '../../game/types'
@@ -34,7 +34,7 @@ export function CurrentArcaneWork() {
   const transmutationJobs = RECIPE_ORDER.filter((recipeId) => {
     const recipe = RECIPES[recipeId]
     const job = activities.transmutation.jobs[recipeId]
-    return Boolean(job && job.echoesAssigned > 0 && (recipe.unlock.type === 'always' || progress.firstBossKill))
+    return Boolean(job && job.echoesAssigned > 0 && isRecipeUnlocked({ progress }, recipe))
   })
   const transmutationEchoes = getTransmutationEchoesAssigned({ activities })
   const channelingEchoes = Math.max(0, Math.floor(activities.channeling.echoesAssigned))

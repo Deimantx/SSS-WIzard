@@ -404,6 +404,44 @@ describe('save navigation migration', () => {
     expect(migrated.combat.enemyId).toBe('forest-wisp')
   })
 
+  it('migrates a realistic V23 Equipment save to V24 without wiping valid progression', () => {
+    const initial = createInitialState()
+    const v23 = {
+      ...initial,
+      saveVersion: 23,
+      schools: { ...initial.schools, fire: { xp: 321, level: 4 }, water: { xp: 87, level: 2 } },
+      currencies: { gold: 987 },
+      inventory: { ...initial.inventory, 'apprentice-wand': 1, 'ember-staff': 1, 'tide-focus': 1, 'fire-fragment': 17 },
+      protectedItems: { 'apprentice-wand': true, 'fire-fragment': true },
+      equipment: { ...initial.equipment, weapon: 'apprentice-wand', offhand: 'tide-focus' },
+      progress: { ...initial.progress, discoveredItems: ['apprentice-wand', 'ember-staff', 'tide-focus'], lifetimeKillsByMonster: { 'grove-sentinel': 3 }, bossKillsByBoss: { 'forest-heart': 2 } },
+      activities: { ...initial.activities, transmutation: { jobs: { 'fire-fragment': { echoesAssigned: 1, progressMs: 1000 } } } },
+    } as any
+
+    const migrated = migrateSave(v23)
+    expect(migrated.saveVersion).toBe(24)
+    expect(migrated.inventory).toMatchObject({ 'ember-staff': 1, 'tide-focus': 1, 'fire-fragment': 17 })
+    expect(migrated.inventory).not.toHaveProperty('apprentice-wand')
+    expect(migrated.protectedItems).toEqual({ 'fire-fragment': true })
+    expect(migrated.equipment.weapon).toBeNull()
+    expect(migrated.equipment.offhand).toBe('tide-focus')
+    expect(migrated.progress.discoveredItems).toEqual(['ember-staff', 'tide-focus'])
+    expect(migrated.progress.lifetimeKillsByMonster['grove-sentinel']).toBe(3)
+    expect(migrated.progress.bossKillsByBoss['forest-heart']).toBe(2)
+    expect(migrated.schools).toMatchObject({ fire: { xp: 321, level: 4 }, water: { xp: 87, level: 2 } })
+    expect(migrated.currencies.gold).toBe(987)
+    expect(migrated.activities.transmutation.jobs['fire-fragment']).toMatchObject({ echoesAssigned: 1, progressMs: 1000 })
+
+    const rerun = migrateSave(migrated)
+    expect(rerun.saveVersion).toBe(24)
+    expect(rerun.inventory).toEqual(migrated.inventory)
+    expect(rerun.protectedItems).toEqual(migrated.protectedItems)
+    expect(rerun.equipment).toEqual(migrated.equipment)
+    expect(rerun.schools).toEqual(migrated.schools)
+    expect(rerun.progress).toEqual(migrated.progress)
+    expect(rerun.activities).toEqual(migrated.activities)
+  })
+
   it('migrates suspended legacy periodic damage into the first-class Hit payload', () => {
     const initial = createInitialState()
     const migrated = migrateSave({ ...initial, saveVersion: SAVE_VERSION, combat: {

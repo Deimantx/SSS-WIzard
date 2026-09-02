@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { createInitialState } from '../initialState'
 import { ITEMS } from '../../game/content/items/items'
-import { getEquipmentStatSnapshot, getEquipmentPreview } from '../../screens/equipment/equipmentPreview'
+import { getEquipmentStatSnapshot, getEquipmentPreview } from '../../game/presentation/equipment/equipmentReadModel'
 import type { ItemDefinition, ItemId } from '../../game/types'
 import { getEquippedReservedQuantity } from './inventoryActions'
 import { equipItemAction } from './equipmentActions'
@@ -59,6 +59,7 @@ describe('equipment actions', () => {
   it('previews the derived Defense damage reduction change', () => {
     ITEMS[testDefenseId] = { id: testDefenseId, name: 'Test Defense Robe', description: 'Test armor', icon: '▤', color: '#fff', kind: 'equipment', category: 'equipment', inventoryCategory: 'equipment', source: 'Test', sellValue: 1, canDestroy: true, equipmentSlot: 'armor', stats: { defense: 100 } } satisfies ItemDefinition
     const state = createInitialState()
+    state.inventory[testDefenseId] = 1
     const preview = getEquipmentPreview(state, testDefenseId)
     expect(preview.current.damageReduction).toBeCloseTo(10 / 110)
     expect(preview.preview?.damageReduction).toBeCloseTo(110 / 210)

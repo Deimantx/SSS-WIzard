@@ -3,7 +3,7 @@ import { getManaRegenBreakdown } from '../../game/engine/channelingEngine'
 import { useGameStore } from '../../store/gameStore'
 import { getSpellPowerBreakdown } from '../../game/systems/spells/spellPower'
 import { getPlayerCombatStats } from '../../game/systems/combat/combatStats'
-import { getEquipmentStatSnapshot } from '../../screens/equipment/equipmentPreview'
+import { getEquipmentStatSnapshot } from '../../game/presentation/equipment/equipmentReadModel'
 import { NumberField, Summary } from './DeveloperTabPrimitives'
 
 export function DeveloperCharacter() {
@@ -47,7 +47,36 @@ export function DeveloperCharacter() {
         <NumberField label="Base Max Mana" value={player.baseMaxMana} onChange={(value) => update('baseMaxMana', value)} />
       </div>
     </Card>
-    <Card title="Resolved combat stats" className="developer-debug-card">
+    <Card title="Equipment / sheet stats" className="developer-debug-card">
+      <div className="developer-summary-grid">
+        <Summary label="Spell Power" value={effectiveEquipment.spellPower} />
+        <Summary label="Max HP" value={effectiveEquipment.maxHealth} />
+        <Summary label="Max Mana" value={effectiveEquipment.maxMana} />
+        <Summary label="Max Focus" value={effectiveEquipment.maxFocus} />
+        <Summary label="Mana Regen" value={`${effectiveEquipment.manaRegen}/s`} />
+        <Summary label="Basic Damage" value={effectiveEquipment.basicDamage} />
+        <Summary label="Basic Speed" value={`${effectiveEquipment.basicAttackSpeedMultiplier.toFixed(2)}x`} />
+        <Summary label="Crit Chance" value={`${Math.round(effectiveEquipment.critChance * 100)}%`} />
+        <Summary label="Crit Damage" value={`${Math.round(effectiveEquipment.critDamageMultiplier * 100)}%`} />
+        <Summary label="Defense" value={effectiveEquipment.defense} />
+        <Summary label="Block Chance" value={`${Math.round(effectiveEquipment.blockChance * 100)}%`} />
+        <Summary label="DoT Bonus" value={`${Math.round(effectiveEquipment.damageOverTimeBonus * 100)}%`} />
+        <Summary label="Status Duration" value={`${Math.round(effectiveEquipment.statusDurationBonus * 100)}%`} />
+        <Summary label="Cooldown Recovery" value={`${effectiveEquipment.cooldownRecovery.toFixed(2)}x`} />
+        <Summary label="Healing Done" value={`${Math.round(effectiveEquipment.healingDoneBonus * 100)}%`} />
+        <Summary label="Barrier Power" value={`${Math.round(effectiveEquipment.barrierPowerBonus * 100)}%`} />
+        <Summary label="Mana Cost Reduction" value={`${Math.round(effectiveEquipment.manaCostReduction * 100)}%`} />
+        <Summary label="Focus Efficiency" value={`${Math.round(effectiveEquipment.focusEfficiency * 100)}%`} />
+        <Summary label="Fire Spell Damage" value={`${Math.round(effectiveEquipment.fireSpellDamage * 100)}%`} />
+        <Summary label="Air Spell Damage" value={`${Math.round(effectiveEquipment.airSpellDamage * 100)}%`} />
+        <Summary label="Water Barrier Power" value={`${Math.round(effectiveEquipment.waterBarrierPower * 100)}%`} />
+        <Summary label="Barrier Received" value={`+${effectiveEquipment.barrierReceivedFlat}`} />
+        <Summary label="Received Negative Status" value={`${Math.round(effectiveEquipment.negativeStatusDurationReceived * 100)}%`} />
+        {Object.entries(effectiveEquipment.resistances).map(([type, value]) => <Summary key={type} label={`${type[0].toUpperCase()}${type.slice(1)} Resistance`} value={`${Math.round((value ?? 0) * 100)}%`} />)}
+      </div>
+      <p className="developer-debug-note">Equipment / sheet values use authored loadout stats and exclude temporary combat statuses, traits, and encounter state.</p>
+    </Card>
+    <Card title="Resolved live combat stats" className="developer-debug-card">
       <div className="developer-summary-grid">
         <Summary label="Spell Power" value={resolvedCombat.spellPower} />
         <Summary label="Max HP" value={resolvedCombat.maxHealth} />
@@ -67,11 +96,6 @@ export function DeveloperCharacter() {
         <Summary label="Barrier Power" value={`${Math.round(resolvedCombat.barrierPowerBonus * 100)}%`} />
         <Summary label="Mana Cost Reduction" value={`${Math.round(resolvedCombat.manaCostReduction * 100)}%`} />
         <Summary label="Focus Efficiency" value={`${Math.round(resolvedCombat.focusEfficiency * 100)}%`} />
-        <Summary label="Fire Spell Damage" value={`${Math.round(effectiveEquipment.fireSpellDamage * 100)}%`} />
-        <Summary label="Air Spell Damage" value={`${Math.round(effectiveEquipment.airSpellDamage * 100)}%`} />
-        <Summary label="Water Barrier Power" value={`${Math.round(effectiveEquipment.waterBarrierPower * 100)}%`} />
-        <Summary label="Barrier Received" value={`+${effectiveEquipment.barrierReceivedFlat}`} />
-        <Summary label="Received Negative Status" value={`${Math.round(effectiveEquipment.negativeStatusDurationReceived * 100)}%`} />
         {Object.entries(resolvedCombat.resistances).map(([type, value]) => <Summary key={type} label={`${type[0].toUpperCase()}${type.slice(1)} Resistance`} value={`${Math.round((value ?? 0) * 100)}%`} />)}
         <Summary label="Combat RNG State" value={combatRngState} />
       </div>

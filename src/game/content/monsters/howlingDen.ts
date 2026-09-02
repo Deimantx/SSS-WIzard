@@ -1,18 +1,18 @@
 import type { MonsterId } from '../../types'
-import { action, applyStatus, basic, delayBasicAttack, directDamage, withLifeEssence, type MonsterDefinition } from './monsterTypes'
+import { action, basic, delayBasicAttack, scaledDirectDamage, scaledDot, withLifeEssence, applyStatus, type MonsterDefinition } from './monsterTypes'
 
 export const HOWLING_DEN_MONSTERS = {
   'cavefang-wolf': {
     id: 'cavefang-wolf', bestiaryCategory: 'monster', name: 'Cavefang Wolf', subtitle: 'A patient predator that waits for weakness',
     maxHealth: 115, basicAttackDamage: 12, basicAttackTimeMs: 2200, color: '#b8a0a0', ui: { portraitIcon: 'wolf' }, traitIds: ['cavefang-wolf-predator-instinct'],
-    actions: { pounce: { id: 'pounce', name: 'Pounce', actionTimeMs: 1400, description: 'Deals 18 Physical damage and delays the player Basic Attack by 500ms.', effects: [directDamage('physical', 18), delayBasicAttack(500)], tags: ['special', 'physical', 'melee', 'control'] } },
+    actions: { pounce: { id: 'pounce', name: 'Pounce', actionTimeMs: 1400, description: "The predator lunges at the target and delays the Player's Basic Attack.", effects: [scaledDirectDamage('physical', 1.5), delayBasicAttack(500)], tags: ['special', 'physical', 'melee', 'control'] } },
     actionPatterns: { default: { id: 'default', steps: [basic('basic-1'), basic('basic-2'), action('pounce-step', 'pounce')] } }, defaultActionPatternId: 'default',
     loot: withLifeEssence([]),
   },
   'razorclaw-lynx': {
     id: 'razorclaw-lynx', bestiaryCategory: 'monster', name: 'Razorclaw Lynx', subtitle: 'A blur of claws and hungry momentum',
     maxHealth: 130, basicAttackDamage: 11, basicAttackTimeMs: 1900, color: '#c18b73', ui: { portraitIcon: 'claw' }, traitIds: ['razorclaw-lynx-relentless-hunter'],
-    actions: { 'rending-claws': { id: 'rending-claws', name: 'Rending Claws', actionTimeMs: 1300, description: 'Deals 14 Physical damage and applies Bleeding.', effects: [directDamage('physical', 14), applyStatus('bleeding', 'opponent')], tags: ['special', 'physical', 'melee', 'debuff'] } },
+    actions: { 'rending-claws': { id: 'rending-claws', name: 'Rending Claws', actionTimeMs: 1300, description: 'Raking claws cut the target and leave a lingering Bleeding wound.', effects: [scaledDirectDamage('physical', 1.25), scaledDot('bleeding', 'physical', 1.45, 8000)], tags: ['special', 'physical', 'melee', 'debuff'] } },
     actionPatterns: { default: { id: 'default', steps: [basic('basic-1'), action('rending-claws-step', 'rending-claws'), basic('basic-2')] } }, defaultActionPatternId: 'default',
     loot: withLifeEssence([]),
   },
@@ -20,8 +20,8 @@ export const HOWLING_DEN_MONSTERS = {
     id: 'corrupted-dire-wolf', bestiaryCategory: 'monster', name: 'Corrupted Dire Wolf', subtitle: 'A beast split between fang and sorcery',
     maxHealth: 160, basicAttackDamage: 14, basicAttackTimeMs: 2300, color: '#7e6c9f', ui: { portraitIcon: 'wolf' }, traitIds: ['corrupted-dire-wolf-arcane-corruption'], resistances: { fire: 0.1, water: 0.1, earth: 0.1, air: 0.1 },
     actions: {
-      'arcane-bite': { id: 'arcane-bite', name: 'Arcane Bite', actionTimeMs: 1600, description: 'Strikes for 10 Physical and 10 Arcane damage.', effects: [directDamage('physical', 10), directDamage('arcane', 10)], tags: ['special', 'physical', 'arcane', 'melee', 'direct'] },
-      'corrupted-howl': { id: 'corrupted-howl', name: 'Corrupted Howl', actionTimeMs: 1800, description: 'Applies Haste to self for 6 seconds.', effects: [applyStatus('haste', 'self', 6000)], tags: ['special', 'buff'] },
+      'arcane-bite': { id: 'arcane-bite', name: 'Arcane Bite', actionTimeMs: 1600, description: 'A corrupted bite tears through both body and warding.', effects: [scaledDirectDamage('physical', 0.7), scaledDirectDamage('arcane', 0.7)], tags: ['special', 'physical', 'arcane', 'melee', 'direct'] },
+      'corrupted-howl': { id: 'corrupted-howl', name: 'Corrupted Howl', actionTimeMs: 1800, description: 'The howl fills the Corrupted Dire Wolf with Haste.', effects: [applyStatus('haste', 'self', 6000)], tags: ['special', 'buff'] },
     },
     actionPatterns: { default: { id: 'default', steps: [basic('basic-1'), action('arcane-bite-step', 'arcane-bite'), basic('basic-2'), basic('basic-3'), action('corrupted-howl-step', 'corrupted-howl')] } }, defaultActionPatternId: 'default',
     loot: withLifeEssence([]),
@@ -30,10 +30,10 @@ export const HOWLING_DEN_MONSTERS = {
     id: 'corrupted-greatbear', bestiaryCategory: 'boss', name: 'Corrupted Greatbear', subtitle: 'A mountain of fur warped by hungry magic',
     maxHealth: 900, basicAttackDamage: 22, basicAttackTimeMs: 2800, color: '#806b69', ui: { portraitIcon: 'bear' }, traitIds: ['corrupted-greatbear-thick-hide', 'corrupted-greatbear-unstable-corruption'],
     actions: {
-      'crushing-maul': { id: 'crushing-maul', name: 'Crushing Maul', actionTimeMs: 1800, description: 'Deals 34 Physical damage.', effects: [directDamage('physical', 34)], tags: ['special', 'physical', 'melee', 'direct'] },
-      groundbreaker: { id: 'groundbreaker', name: 'Groundbreaker', actionTimeMs: 2500, description: 'Deals 26 Physical damage and delays the player Basic Attack by 1200ms.', effects: [directDamage('physical', 26), delayBasicAttack(1200)], tags: ['special', 'physical', 'control'] },
+      'crushing-maul': { id: 'crushing-maul', name: 'Crushing Maul', actionTimeMs: 1800, description: 'A brutal maul strike crashes into the target.', effects: [scaledDirectDamage('physical', 1.55)], tags: ['special', 'physical', 'melee', 'direct'] },
+      groundbreaker: { id: 'groundbreaker', name: 'Groundbreaker', actionTimeMs: 2500, description: "The Greatbear shakes the ground and delays the Player's Basic Attack.", effects: [scaledDirectDamage('physical', 1.2), delayBasicAttack(1200)], tags: ['special', 'physical', 'control'] },
       'corrupted-roar': { id: 'corrupted-roar', name: 'Corrupted Roar', actionTimeMs: 2200, description: 'Makes the target Vulnerable.', effects: [applyStatus('vulnerable', 'opponent')], tags: ['special', 'debuff'] },
-      'arcane-rampage': { id: 'arcane-rampage', name: 'Arcane Rampage', actionTimeMs: 3500, description: 'A heavy Arcane strike for 44 damage.', effects: [directDamage('arcane', 44)], tags: ['special', 'magic', 'arcane', 'direct'] },
+      'arcane-rampage': { id: 'arcane-rampage', name: 'Arcane Rampage', actionTimeMs: 3500, description: 'A heavy Arcane strike empowered by unstable corruption.', effects: [scaledDirectDamage('arcane', 2)], tags: ['special', 'magic', 'arcane', 'direct'] },
     },
     actionPatterns: {
       default: { id: 'default', steps: [basic('basic-1'), basic('basic-2'), action('crushing-maul-step', 'crushing-maul'), basic('basic-3'), action('groundbreaker-step', 'groundbreaker')] },

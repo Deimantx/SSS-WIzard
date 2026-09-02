@@ -39,6 +39,22 @@ describe('EnemyContextWindow', () => {
     expect((await screen.findByRole('tooltip')).textContent).toContain('Current Basic Attack Time: 2.80s.')
   })
 
+  it('separates combat stats from the colored defence and resistance groups', () => {
+    const state = useGameStore.getState()
+    useGameStore.setState({ combat: { ...state.combat, enemyId: 'archmage-edrin-shade' } })
+    const { container } = render(<TooltipProvider><EnemyStatsContent /></TooltipProvider>)
+    const combatGroup = container.querySelector('.enemy-stats-group-combat')
+    const defenceGroup = container.querySelector('.enemy-stats-group-defences')
+    expect([...container.querySelectorAll('.enemy-stats-group')]).toHaveLength(2)
+    expect([...combatGroup!.querySelectorAll('.enemy-stat-row')].map((row) => row.querySelector('span')?.textContent)).toEqual(['Health', 'Basic Attack Damage', 'Basic Attack Speed', 'Crit Chance', 'Crit Damage'])
+    expect([...defenceGroup!.querySelectorAll('.enemy-defence-row')].map((row) => row.querySelector('span')?.textContent)).toEqual(['Defense', 'Damage Reduction'])
+    expect([...defenceGroup!.querySelectorAll('.enemy-resistance-row')].map((row) => row.querySelector('span')?.textContent)).toEqual(['Fire', 'Water', 'Earth', 'Air'])
+    expect(defenceGroup!.textContent).not.toContain('Physical')
+    expect(defenceGroup!.textContent).not.toContain('Arcane')
+    expect(defenceGroup!.querySelector('.damage-fire')).toBeTruthy()
+    expect(defenceGroup!.querySelector('.damage-water')).toBeTruthy()
+  })
+
   it('switches Intel and Loot in place without modal body locking', async () => {
     const user = userEvent.setup()
     render(<TooltipProvider><ContextHarness /></TooltipProvider>)

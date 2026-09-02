@@ -28,6 +28,9 @@ const effectLabel = (effect: CombatEffectPresentation) => {
   return effect.tone === 'utility' && effect.label ? `UTILITY / ${effect.label.toUpperCase()}` : TONE_META[effect.tone].label
 }
 
+const baseLabel = (effect: CombatEffectPresentation) => effect.kind === 'damage' ? 'Base Damage' : effect.kind === 'heal' ? 'Base Healing' : 'Base Barrier'
+const damageTypeLabel = (effect: CombatEffectPresentation) => effect.damageType ? ` ${effect.damageType[0].toUpperCase()}${effect.damageType.slice(1)}` : ''
+
 /** Compact semantic effect token shared by combat and the permanent Bestiary dossier. */
 export function CombatEffectChip({ effect, detailed = false }: { effect: CombatEffectPresentation; detailed?: boolean }) {
   const meta = getCombatEffectToneMeta(effect.tone)
@@ -37,7 +40,11 @@ export function CombatEffectChip({ effect, detailed = false }: { effect: CombatE
   return <span className={`enemy-intel-action-effect ${meta.className}${damageClass}`} aria-label={[effectLabel(effect), effect.value, detailed ? detail : undefined].filter(Boolean).join(' / ')}>
     <Icon size={11} aria-hidden="true" />
     <b>{effectLabel(effect)}</b>
-    {effect.value && <strong>{effect.value}</strong>}
+    {effect.value && detailed && effect.basePreview && <strong>{baseLabel(effect)}: {effect.basePreview}{damageTypeLabel(effect)}</strong>}
+    {effect.value && detailed && effect.kind === 'status' && effect.totalBasePreview && <strong>Total Base Damage: {effect.totalBasePreview}</strong>}
+    {effect.value && (!detailed || (!effect.basePreview && !(effect.kind === 'status' && effect.totalBasePreview))) && <strong>{effect.value}</strong>}
+    {detailed && effect.kind === 'status' && effect.totalBasePreview && effect.value && <small>Damage Per Tick: {effect.value}</small>}
+    {detailed && effect.scalingLabel && <small>Scaling: {effect.scalingLabel}</small>}
     {detailed && detail && <small>{detail}</small>}
   </span>
 }

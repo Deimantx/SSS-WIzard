@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { MONSTERS } from '../../content/monsters'
-import { buildCombatActionPresentation, formatCombatEffect, getCombatEffectPresentationTone } from './combatActionPresentation'
+import { buildCombatActionPresentation, formatCombatEffect, getCombatEffectPresentationTone, resolveMonsterBaseMagnitudePreview } from './combatActionPresentation'
 
 describe('combat action presentation', () => {
   it('keeps action effects structured for semantic UI rendering', () => {
-    const presentation = buildCombatActionPresentation(MONSTERS['stone-root'].actions['root-slam'])
-    expect(presentation.effects[0]).toMatchObject({ kind: 'damage', value: '18', damageType: 'physical', targetLabel: 'Player' })
+    const presentation = buildCombatActionPresentation(MONSTERS['stone-root'].actions['root-slam'], { actor: 'enemy', kind: 'action', sourceMonsterId: 'stone-root' }, { monster: MONSTERS['stone-root'] })
+    expect(presentation.effects[0]).toMatchObject({ kind: 'damage', value: '18.2', basePreview: '18.2', scalingLabel: '165% Basic Attack Damage', damageType: 'physical', targetLabel: 'Player' })
     expect(presentation.effects[1]).toMatchObject({ kind: 'control', value: '+0.7s', targetLabel: 'Player', timeLabel: '0.7s' })
     expect(presentation.effects.map((effect) => effect.tone)).toEqual(['damage', 'control'])
   })
@@ -22,5 +22,12 @@ describe('combat action presentation', () => {
     ]
     expect(presentation.map((effect) => effect.tone)).toEqual(['damage', 'heal', 'barrier', 'control', 'dot'])
     expect(presentation[4]).toMatchObject({ damageType: 'fire' })
+  })
+
+  it('previews Monster scaling and exposes total DoT output separately from its tick value', () => {
+    const thorn = buildCombatActionPresentation(MONSTERS.thornling.actions['thorn-lash'], { actor: 'enemy', kind: 'action', sourceMonsterId: 'thornling' }, { monster: MONSTERS.thornling })
+    expect(thorn.effects[0]).toMatchObject({ value: '10', basePreview: '10', scalingLabel: '125% Basic Attack Damage' })
+    expect(thorn.effects[1]).toMatchObject({ value: '3 / 2.0s', totalBasePreview: '9 Physical', scalingLabel: '112.5% Basic Attack Damage' })
+    expect(resolveMonsterBaseMagnitudePreview(MONSTERS['forest-heart'], { type: 'target-max-health-percent', value: 0.5 })).toBeNull()
   })
 })

@@ -16,6 +16,7 @@ import { MonsterPortrait } from './MonsterPortrait'
 import { getEnemyCombatStats } from '../../game/systems/combat/combatStats'
 import { CombatEffectChip } from '../../components/combat/CombatEffectChip'
 import { EnemyCombatStatList } from '../../components/combat/EnemyCombatStatList'
+import { EnemyResistanceStatList } from '../../components/combat/EnemyResistanceStatList'
 import { EnemyActionTooltip } from '../../components/combat/EnemyActionTooltip'
 
 export type EnemyContextMode = 'intel' | 'stats' | 'loot'
@@ -116,7 +117,14 @@ export function EnemyContextWindow({ mode, anchorRef, triggerRef, selectedDungeo
 export function EnemyStatsContent() {
   const state = useGameStore((current) => current)
   const stats = getEnemyCombatStats(state)
-  return <section className="enemy-stats-content"><EnemyCombatStatList rows={buildEnemyCombatStatRows(stats)} className="enemy-stats-grid" rowClassName="enemy-stat-row" /></section>
+  const rows = buildEnemyCombatStatRows(stats)
+  const combatRows = rows.filter((row) => row.group === 'core' || row.group === 'offense' || row.group === 'utility')
+  const defenseRows = rows.filter((row) => row.group === 'defense')
+  const resistanceRows = rows.filter((row) => row.group === 'resistance')
+  return <section className="enemy-stats-content">
+    <div className="enemy-stats-group enemy-stats-group-combat"><div className="combat-subsection-label">COMBAT STATS</div><EnemyCombatStatList rows={combatRows} className="enemy-stats-grid" rowClassName="enemy-stat-row" /></div>
+    <div className="enemy-stats-group enemy-stats-group-defences"><div className="combat-subsection-label">DEFENCES</div><EnemyCombatStatList rows={defenseRows} className="enemy-stats-grid enemy-defence-grid" rowClassName="enemy-stat-row enemy-defence-row" /><EnemyResistanceStatList rows={resistanceRows} stats={stats} className="enemy-stats-grid enemy-resistance-grid" rowClassName="enemy-stat-row enemy-resistance-row" /></div>
+  </section>
 }
 
 export function EnemyIntelContent({ selectedDungeonId }: { selectedDungeonId: DungeonId }) {
@@ -146,7 +154,7 @@ function ResistanceIntel({ monsterId }: { monsterId: MonsterId }) {
 
 function ActionIntel({ monsterId }: { monsterId: MonsterId }) {
   const monster = MONSTERS[monsterId]
-  return <section className="enemy-context-section"><div className="combat-subsection-label">ACTIONS</div><div className="enemy-intel-actions">{Object.values(monster.actions).map((action) => { const presentation = buildCombatActionPresentation(action); return <GameTooltip key={action.id} block wide content={<EnemyActionTooltip action={presentation} />}><div tabIndex={0} className={`enemy-intel-action${presentation.effects[0] ? ` effect-tone-${presentation.effects[0].tone}` : ''}`}><div><strong>{presentation.name}</strong><span><Clock3 size={11} aria-hidden="true" />{formatTime(presentation.actionTimeMs)}</span></div><p>{presentation.description}</p><div className="enemy-intel-action-effects">{presentation.effects.map((effect, index) => <CombatEffectChip key={`${effect.label}-${index}`} effect={effect} />)}</div></div></GameTooltip>})}</div></section>
+  return <section className="enemy-context-section"><div className="combat-subsection-label">ACTIONS</div><div className="enemy-intel-actions">{Object.values(monster.actions).map((action) => { const presentation = buildCombatActionPresentation(action, { actor: 'enemy', kind: 'action', sourceMonsterId: monster.id }, { monster }); return <GameTooltip key={action.id} block wide content={<EnemyActionTooltip action={presentation} />}><div tabIndex={0} className={`enemy-intel-action${presentation.effects[0] ? ` effect-tone-${presentation.effects[0].tone}` : ''}`}><div><strong>{presentation.name}</strong><span><Clock3 size={11} aria-hidden="true" />{formatTime(presentation.actionTimeMs)}</span></div><p>{presentation.description}</p><div className="enemy-intel-action-effects">{presentation.effects.map((effect, index) => <CombatEffectChip key={`${effect.label}-${index}`} effect={effect} />)}</div></div></GameTooltip>})}</div></section>
 }
 
 export function EnemyLootContent({ selectedDungeonId }: { selectedDungeonId: DungeonId }) {

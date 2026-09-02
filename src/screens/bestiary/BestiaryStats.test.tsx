@@ -13,10 +13,11 @@ describe('BestiaryStats', () => {
     const combatLabels = [...(combat?.querySelectorAll('.bestiary-stat-row') ?? [])].map((row) => row.querySelector('.bestiary-stat-row span')?.textContent)
     const defenceLabels = [...(defences?.querySelectorAll('.bestiary-defence-stat-row') ?? [])].map((row) => row.querySelector('span')?.textContent)
 
-    expect(combatLabels).toEqual(['Max Health', 'Basic Attack Damage', 'Basic Attack Speed', 'Crit Chance', 'Crit Damage'])
+    expect(combatLabels).toEqual(['Health', 'Basic Attack Damage', 'Basic Attack Speed', 'Crit Chance', 'Crit Damage'])
     expect(combat?.textContent).not.toContain('Defense')
     expect(combat?.textContent).not.toContain('Damage Reduction')
-    expect(defenceLabels).toEqual(['Defense', 'Damage Reduction', 'Fire Resistance', 'Water Resistance', 'Earth Resistance', 'Air Resistance'])
+    expect(defenceLabels).toEqual(['Defense', 'Damage Reduction', 'Fire', 'Water', 'Earth', 'Air'])
+    expect(defences?.querySelector('.bestiary-defence-core-grid')?.children).toHaveLength(2)
   })
 
   it('places a nonzero Block Chance after Damage Reduction and before resistances', () => {
@@ -24,6 +25,6 @@ describe('BestiaryStats', () => {
     const { container } = render(<TooltipProvider><BestiaryStats monster={monster} /></TooltipProvider>)
     const defences = [...container.querySelectorAll('.bestiary-section')].find((section) => section.textContent?.includes('DEFENCES'))
     const labels = [...(defences?.querySelectorAll('.bestiary-defence-stat-row') ?? [])].map((row) => row.querySelector('span')?.textContent)
-    expect(labels).toEqual(['Defense', 'Damage Reduction', 'Block Chance', 'Fire Resistance', 'Water Resistance', 'Earth Resistance', 'Air Resistance'])
+    expect(labels).toEqual(['Defense', 'Damage Reduction', 'Block Chance', 'Fire', 'Water', 'Earth', 'Air'])
   })
 })

@@ -3,7 +3,7 @@ import { ITEMS } from '../../content/items/items'
 import { createInitialState } from '../../../store/initialState'
 import type { GameState, ItemDefinition, ItemId } from '../../types'
 import { executeCombatEffects } from '../combat/effectResolver'
-import { clearCurrentEnemyAction, startEnemyAction } from '../combat/actionRuntime'
+import { clearCurrentEnemyAction, forceResolveEnemyAction, startEnemyAction } from '../combat/actionRuntime'
 import { spawnEnemy } from '../combat/combatRuntime'
 import { applyStatus } from '../combat/statusRuntime'
 import { advanceGameState } from './advanceGameState'
@@ -83,6 +83,27 @@ describe('canonical simulation quantum parity', () => {
     expect(snapshot(coarse)).toEqual(snapshot(fine))
     expect(fine.combat.spellCooldowns['fire-bolt']).toBeGreaterThan(0)
     expect(fine.combat.playerAttackTimerMs).toBeGreaterThan(0)
+  })
+
+  it('keeps a source-scaled Enemy DoT identical for live and banked callers', () => {
+    const makeFixture = () => {
+      const state = createInitialState()
+      state.combat.active = true
+      state.combat.dungeonId = 'howling-den'
+      state.player.maxHealth = 10_000
+      state.player.health = 10_000
+      state.debug.freezePlayerActions = true
+      state.debug.freezeEnemyActions = true
+      spawnEnemy(state, 'razorclaw-lynx')
+      clearCurrentEnemyAction(state)
+      expect(forceResolveEnemyAction(state, 'rending-claws', executeCombatEffects)).toBe(true)
+      return state
+    }
+    const fine = makeFixture()
+    const coarse = cloneState(fine)
+    advanceFine(fine, 8_000)
+    for (let elapsed = 0; elapsed < 8_000; elapsed += 1_000) advanceGameState(coarse, 1_000, { mode: 'banked' })
+    expect(snapshot(coarse)).toEqual(snapshot(fine))
   })
 
   it('keeps deterministic enemy Action progression and timed Statuses identical', () => {

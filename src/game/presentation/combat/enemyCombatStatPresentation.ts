@@ -57,10 +57,10 @@ export const getMonsterDossierCombatStats = (monster: MonsterDefinition): EnemyC
 }
 
 /** Canonical order, labels, rounding and descriptions for Enemy Intel and Bestiary. */
-export const buildEnemyCombatStatRows = (stats: EnemyCombatStatValues): EnemyCombatStatRow[] => {
+export const buildEnemyCombatStatRows = (stats: EnemyCombatStatValues, options: { includeZeroResistances?: boolean } = {}): EnemyCombatStatRow[] => {
   const rows: EnemyCombatStatRow[] = [
-    { id: 'max-health', label: 'Max Health', value: formatNumber(stats.maxHealth), description: 'Maximum Health for this enemy.', group: 'core' },
-    { id: 'basic-attack-damage', label: 'Basic Attack Damage', value: formatNumber(stats.basicAttackDamage), description: 'Raw damage of the enemy Basic Attack before mitigation.', group: 'offense' },
+    { id: 'max-health', label: 'Health', value: formatNumber(stats.maxHealth), description: 'Maximum Health for this enemy. Some healing and Barrier Actions scale from Max Health.', group: 'core' },
+    { id: 'basic-attack-damage', label: 'Basic Attack Damage', value: formatNumber(stats.basicAttackDamage), description: "The Monster's base Basic Attack damage and the primary scaling stat for its damaging Actions. Individual Actions apply their own percentage coefficient.", group: 'offense' },
     { id: 'basic-attack-speed', label: 'Basic Attack Speed', value: formatBasicAttackRate(stats.basicAttackIntervalMs), description: `Current Basic Attack Time: ${formatBasicAttackTime(stats.basicAttackIntervalMs)}.`, group: 'offense' },
     { id: 'crit-chance', label: 'Crit Chance', value: percentage(stats.critChance), description: 'Chance for a direct enemy hit to critically strike.', group: 'offense' },
     { id: 'crit-damage', label: 'Crit Damage', value: percentage(stats.critDamageMultiplier), description: 'Multiplier applied to a critical direct hit.', group: 'offense' },
@@ -72,7 +72,7 @@ export const buildEnemyCombatStatRows = (stats: EnemyCombatStatValues): EnemyCom
   if (stats.barrierPowerBonus !== 0) rows.push({ id: 'barrier-power', label: 'Barrier Power', value: percentage(stats.barrierPowerBonus), description: "Bonus applied to this enemy's Barrier effects.", group: 'utility' })
   if (stats.damageOverTimeBonus !== 0) rows.push({ id: 'damage-over-time', label: 'Damage over Time', value: percentage(stats.damageOverTimeBonus), description: "Bonus applied only to this enemy's periodic damage effects.", group: 'utility' })
   if (stats.statusDurationBonus !== 0) rows.push({ id: 'status-duration', label: 'Status Duration', value: percentage(stats.statusDurationBonus), description: "Bonus to this enemy's outgoing status duration.", group: 'utility' })
-  Object.entries(stats.resistances).filter(([, value]) => Math.abs(value ?? 0) > 0.0001).forEach(([type, value]) => rows.push({ id: `resistance-${type}`, label: `${pretty(type)} Resistance`, value: percentage(value ?? 0), description: `Reduces incoming ${pretty(type)} damage. Ordinary Resistance is capped at ${Math.round(MAX_RESISTANCE * 100)}%; negative values increase damage taken.`, group: 'resistance' }))
+  Object.entries(stats.resistances).filter(([, value]) => options.includeZeroResistances || Math.abs(value ?? 0) > 0.0001).forEach(([type, value]) => rows.push({ id: `resistance-${type}`, label: `${pretty(type)} Resistance`, value: percentage(value ?? 0), description: `Reduces incoming ${pretty(type)} damage. Ordinary Resistance is capped at ${Math.round(MAX_RESISTANCE * 100)}%; negative values increase damage taken.`, group: 'resistance' }))
   return rows
 }
 

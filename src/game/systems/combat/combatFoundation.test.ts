@@ -171,7 +171,7 @@ describe('data-driven monster mechanics', () => {
     clearCurrentEnemyAction(root)
     expect(root.combat.enemyBarrier).toBe(14)
     forceResolveEnemyAction(root, 'root-slam', executeCombatEffects)
-    expect(root.player.health).toBeCloseTo(100 - 18 * 1.5 * (1 - 10 / 110))
+    expect(root.player.health).toBeCloseTo(100 - 18.15 * 1.5 * (1 - 10 / 110))
     expect(root.combat.playerAttackTimerMs).toBe(2900)
   })
 

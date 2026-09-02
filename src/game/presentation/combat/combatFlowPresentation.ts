@@ -84,7 +84,7 @@ export function getCombatFlowPresentation(input: CombatFlowRuntimeInput): Combat
   if (!input.enemy) return { mode: 'encounter-delay', dungeonId, dungeon: input.dungeon, enemy: null, playerTimeline: null, enemyTimeline: null, enemyCurrentAction: null, pattern: undefined, currentStepIndex: -1, currentStepId: null, currentActionId: null, currentPatternOriginId: null, currentActionDurationMs: 0, encounterTimerMs: Math.max(0, input.encounterTimerMs) }
 
   const enemyAction = input.currentAction
-  const enemyActionPresentation = enemyAction ? buildCombatActionPresentation(enemyAction) : null
+  const enemyActionPresentation = enemyAction ? buildCombatActionPresentation(enemyAction, { actor: 'enemy', kind: 'action', sourceMonsterId: input.enemy.id }, { monster: input.enemy }) : null
   const basicPresentation = !enemyActionPresentation && input.currentStep?.type === 'basic'
     ? formatCombatEffect({ type: 'deal-damage', target: 'opponent', damageType: 'physical', magnitude: { type: 'flat', value: input.enemy.basicAttackDamage } }, { actor: 'enemy', kind: 'basic-attack' })
     : null

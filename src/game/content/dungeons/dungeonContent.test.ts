@@ -7,6 +7,7 @@ import { TRAIT_DEFINITIONS } from '../traits'
 import type { CombatSource } from '../../types'
 import { damageEnemy, finishEnemy, spawnEnemy, spawnNextEnemy } from '../../systems/combat/combatRuntime'
 import { calculateCombatDamage } from '../../systems/combat/effectResolver'
+import { resolveMonsterBaseMagnitudePreview } from '../../presentation/combat'
 
 const labels = (monsterId: keyof typeof MONSTERS, patternId = 'default') => MONSTERS[monsterId].actionPatterns[patternId].steps.map((step) => step.type === 'basic' ? 'Basic' : MONSTERS[monsterId].actions[step.actionId].name)
 const playerSpell: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'content-test', tags: ['spell', 'magic'] }
@@ -43,10 +44,42 @@ describe('first three dungeon content', () => {
     expect(labels('archmage-edrin-shade')).toEqual(['Gravefire', 'Basic', 'Frostbind', 'Arcane Ward', 'Basic', 'Soul Drain'])
     expect(labels('archmage-edrin-shade', 'unbound')).toEqual(['Basic', 'Gravefire', 'Frostbind', 'Soul Drain', 'Basic', 'Final Incantation'])
     expect(MONSTERS['corrupted-dire-wolf'].actions['arcane-bite'].effects.map((effect) => effect.type === 'deal-damage' ? [effect.damageType, effect.magnitude] : effect.type)).toEqual([
-      ['physical', { type: 'flat', value: 10 }],
-      ['arcane', { type: 'flat', value: 10 }],
+      ['physical', { type: 'source-basic-damage-percent', value: 0.7 }],
+      ['arcane', { type: 'source-basic-damage-percent', value: 0.7 }],
     ])
     expect(Object.values(MONSTERS).every((monster) => monster.loot.some((drop) => drop.itemId === 'life-essence'))).toBe(true)
+  })
+
+  it('uses source scaling for all current Monster numerical Action output', () => {
+    Object.values(MONSTERS).forEach((monster) => Object.values(monster.actions).forEach((action) => action.effects.forEach((effect) => {
+      if (effect.type === 'deal-damage' && !effect.tags?.includes('dot')) expect(effect.magnitude.type).toBe('source-basic-damage-percent')
+      if (effect.type === 'heal') expect(effect.magnitude.type).toBe('source-max-health-percent')
+      if (effect.type === 'gain-barrier') expect(effect.magnitude.type).toBe('source-max-health-percent')
+      if (effect.type === 'apply-status' && effect.periodicEffects) effect.periodicEffects.forEach((periodicEffect) => {
+        if (periodicEffect.type === 'deal-damage') expect(periodicEffect.magnitude.type).toBe('source-basic-damage-percent')
+      })
+    })))
+    const ancientGrowth = TRAIT_DEFINITIONS['grove-sentinel-ancient-growth'].rules?.[0].effects[0]
+    expect(ancientGrowth).toMatchObject({ type: 'gain-barrier', magnitude: { type: 'source-max-health-percent', value: 2 / 9 } })
+  })
+
+  it('keeps converted current raw outputs close to their previous authored values', () => {
+    const expected: Array<[keyof typeof MONSTERS, string, number, number]> = [
+      ['forest-wisp', 'arc-spark', 0, 12], ['thornling', 'thorn-lash', 0, 10], ['stone-root', 'root-slam', 0, 18.15],
+      ['grove-sentinel', 'root-crush', 0, 20.25], ['grove-sentinel', 'verdant-guard', 0, 60], ['forest-heart', 'heart-pulse', 0, 24],
+      ['forest-heart', 'root-prison', 0, 16], ['forest-heart', 'rejuvenating-sap', 0, 60], ['cavefang-wolf', 'pounce', 0, 18],
+      ['razorclaw-lynx', 'rending-claws', 0, 13.75], ['corrupted-dire-wolf', 'arcane-bite', 0, 9.8], ['corrupted-greatbear', 'crushing-maul', 0, 34.1],
+      ['corrupted-greatbear', 'groundbreaker', 0, 26.4], ['corrupted-greatbear', 'arcane-rampage', 0, 44], ['restless-skeleton', 'bone-cleaver', 0, 27.75],
+      ['grave-wraith', 'chilling-touch', 0, 18.2], ['fallen-acolyte', 'grave-bolt', 0, 24], ['fallen-acolyte', 'soul-drain', 0, 18],
+      ['fallen-acolyte', 'soul-drain', 1, 19.8], ['fallen-acolyte', 'death-ward', 0, 45.1], ['archmage-edrin-shade', 'gravefire', 0, 28],
+      ['archmage-edrin-shade', 'frostbind', 0, 24], ['archmage-edrin-shade', 'arcane-ward', 0, 70.2], ['archmage-edrin-shade', 'soul-drain', 0, 24],
+      ['archmage-edrin-shade', 'soul-drain', 1, 29.9], ['archmage-edrin-shade', 'final-incantation', 0, 70],
+    ]
+    expected.forEach(([monsterId, actionId, effectIndex, amount]) => {
+      const effect = MONSTERS[monsterId].actions[actionId].effects[effectIndex]
+      if (!('magnitude' in effect)) throw new Error(`Expected a magnitude for ${monsterId}/${actionId}`)
+      expect(resolveMonsterBaseMagnitudePreview(MONSTERS[monsterId], effect.magnitude)).toBeCloseTo(amount, 4)
+    })
   })
 
   it('authors Bleeding and Spectral Fade with their required lifecycle rules', () => {

@@ -83,7 +83,7 @@ function TimelineRow({ timeline }: { timeline: CombatFlowTimeline | null }) {
 function CombatEffectRow({ effect }: { effect: CombatEffectPresentation }) {
   const value = effect.kind === 'damage' ? `${effect.value ?? ''} ${effect.label}`.trim() : effect.kind === 'barrier' ? `+${effect.value ?? 0} BARRIER` : effect.kind === 'heal' ? `HEAL ${effect.value ?? 0}` : effect.kind === 'status' ? effect.label.replace(/^Applies /, '').toUpperCase() : effect.kind === 'control' && effect.label === 'Basic Attack' ? `BASIC ATTACK DELAY ${effect.value ?? ''}`.trim() : [effect.label, effect.value].filter(Boolean).join(' ')
   const detail = [effect.detail, effect.timeLabel].filter(Boolean).join(' · ')
-  return <div className={`combat-flow-effect effect-kind-${effect.kind}${effect.damageType ? ` damage-type-${effect.damageType}` : ''}`}><span className="combat-flow-effect-icon"><IntentEffectIcon kind={effect.kind} /></span><strong>{value}</strong>{detail && <small>{detail}</small>}</div>
+  return <div className={`combat-flow-effect effect-kind-${effect.kind}${effect.damageType ? ` damage-type-${effect.damageType}` : ''}`}><span className="combat-flow-effect-icon"><IntentEffectIcon kind={effect.kind} /></span><strong>{value}</strong>{effect.scalingLabel && <small>Scaling: {effect.scalingLabel}</small>}{detail && <small>{detail}</small>}</div>
 }
 
 function IntentEffectIcon({ kind }: { kind: CombatEffectPresentation['kind'] }) {

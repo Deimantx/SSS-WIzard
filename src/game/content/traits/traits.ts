@@ -51,7 +51,7 @@ export const TRAIT_DEFINITIONS: Record<TraitId, TraitDefinition> = {
       id: 'grove-sentinel-ancient-growth-threshold',
       event: 'on-hp-threshold',
       condition: { type: 'self-hp-below-percent', percent: 40 },
-      effects: [gainBarrier({ type: 'flat', value: 80 })],
+      effects: [gainBarrier({ type: 'source-max-health-percent', value: 2 / 9 })],
       oncePerEncounter: true,
     }],
   },

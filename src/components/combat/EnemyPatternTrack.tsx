@@ -49,7 +49,7 @@ export function EnemyPatternTrack({
       const next = showLiveState && !current && steps.length > 0 && index === nextPatternIndex
       const action = step.type === 'action' ? monster?.actions[step.actionId] : undefined
       const presentation = action
-        ? buildCombatActionPresentation(action)
+        ? buildCombatActionPresentation(action, { actor: 'enemy', kind: 'action', sourceMonsterId: monster?.id }, { monster: monster ?? undefined })
         : buildBasicAttackPresentation(monster?.basicAttackDamage ?? 0, current ? currentActionDurationMs ?? monster?.basicAttackTimeMs ?? 0 : monster?.basicAttackTimeMs ?? 0)
       const kind = classifyEnemyPatternStep(step, action)
       const state = current ? 'current' : next ? 'next' : showLiveState && index < currentStepIndex ? 'complete' : 'future'

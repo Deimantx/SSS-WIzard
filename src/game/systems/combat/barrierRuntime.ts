@@ -1,4 +1,4 @@
-import { appendLog, barrierMultiplier, equipmentStats } from '../../engine'
+import { appendLog } from '../../engine'
 import type { GameState } from '../../types'
 import type { CombatSource, CombatTag } from './combatTypes'
 import type { CombatActor } from './magnitude'
@@ -47,9 +47,8 @@ export const gainBarrierResult = (state: GameState, raw: number, source: CombatS
   const modifierContext = { source, sourceTags: tags }
   const sourcePower = Math.max(0, 1 + getCombatModifiers(state, source.actor, 'barrier-power-percent', modifierContext))
   const targetPower = Math.max(0, 1 + getCombatModifiers(state, target, 'barrier-received-percent', modifierContext))
-  const equipmentBonus = target === 'player' ? equipmentStats(state).barrierReceived ?? 0 : 0
-  const equipmentMultiplier = target === 'player' ? barrierMultiplier(state, source, tags) : 1
-  const amount = Math.max(0, Math.round(raw * sourcePower * targetPower * equipmentMultiplier + equipmentBonus))
+  const barrierReceivedFlat = getCombatModifiers(state, target, 'barrier-received-flat', { ...modifierContext, damageType: source.school })
+  const amount = Math.max(0, Math.round(raw * sourcePower * targetPower + barrierReceivedFlat))
   const mode = options.mode ?? 'add'
   const previous = getBarrier(state, target)
   const next = mode === 'replace' ? amount : Math.max(0, previous + amount)

@@ -17,6 +17,7 @@ export interface ModifierContext {
   originSourceKind?: CombatSource['kind']
   originTags?: CombatTag[]
   damageType?: DamageType
+  damageTypes?: DamageType[]
   statusId?: StatusId
   statusTags?: CombatTag[]
 }
@@ -48,7 +49,8 @@ const matchesModifier = (modifier: CombatModifier, context: ModifierContext) => 
   if (modifier.originTags?.length && !modifier.originTags.every((tag) => originTags?.includes(tag))) return false
   const statusId = context.statusId ?? context.source?.statusId
   if (modifier.statusIds?.length && (!statusId || !modifier.statusIds.includes(statusId))) return false
-  if (modifier.damageTypes?.length && (!context.damageType || !modifier.damageTypes.includes(context.damageType))) return false
+  const damageType = context.damageType ?? context.source?.school
+  if (modifier.damageTypes?.length && (!damageType || !modifier.damageTypes.includes(damageType))) return false
   if (modifier.statusTags?.length && !modifier.statusTags.every((tag) => context.statusTags?.includes(tag))) return false
   return true
 }
@@ -69,17 +71,17 @@ export const getCombatModifiers = (state: GameState, actor: CombatActor, key: Mo
   activeStatuses(state, actor).forEach((active) => {
     const definition = STATUS_DEFINITIONS[active.statusId]
     definition?.modifiers?.forEach((modifier) => {
-      if (modifier.key === key && matchesModifier(modifier, context) && evaluateCombatCondition(state, actor, modifier.condition, { source: context.source, sourceTags: context.sourceTags, statusId: context.statusId })) total += statusModifierValue(state, actor, active, modifier)
+      if (modifier.key === key && matchesModifier(modifier, context) && evaluateCombatCondition(state, actor, modifier.condition, context)) total += statusModifierValue(state, actor, active, modifier)
     })
   })
   getActorTraits(state, actor).forEach((trait) => trait.modifiers?.forEach((modifier) => {
-    if (modifier.key === key && matchesModifier(modifier, context) && evaluateCombatCondition(state, actor, modifier.condition, { source: context.source, sourceTags: context.sourceTags, statusId: context.statusId })) total += modifier.value
+    if (modifier.key === key && matchesModifier(modifier, context) && evaluateCombatCondition(state, actor, modifier.condition, context)) total += modifier.value
   }))
   if (actor === 'player') {
     Object.entries(state.equipment).forEach(([position, itemId]) => {
       if (!itemId) return
       ITEMS[itemId]?.combat?.modifiers?.forEach((modifier) => {
-        if (modifier.key === key && matchesModifier(modifier, context) && evaluateCombatCondition(state, actor, modifier.condition, { source: context.source, sourceTags: context.sourceTags, statusId: context.statusId })) total += modifier.value
+        if (modifier.key === key && matchesModifier(modifier, context) && evaluateCombatCondition(state, actor, modifier.condition, context)) total += modifier.value
       })
     })
     const equipmentField = EQUIPMENT_MODIFIER_STATS[key]

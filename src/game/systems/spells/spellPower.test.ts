@@ -34,15 +34,15 @@ describe('Spell Power foundation', () => {
   it('authors direct, heal, barrier, and total periodic coefficients without flat spell power', () => {
     const ignite = SPELLS.ignite.effects[1] as Extract<CombatEffect, { type: 'apply-status' }>
     const fireballBurn = SPELLS.fireball.effects[1] as Extract<CombatEffect, { type: 'apply-status' }>
-    expect(SPELLS['fire-bolt'].effects[0]).toMatchObject({ magnitude: { type: 'spell-power', coefficient: 0.6 } })
+    expect(SPELLS['fire-bolt'].effects[0]).toMatchObject({ components: [{ magnitude: { type: 'spell-power', coefficient: 0.6 } }] })
     expect(SPELLS['flow-mend'].effects[0]).toMatchObject({ magnitude: { type: 'spell-power', coefficient: 0.8 } })
     expect(SPELLS['water-ward'].effects[0]).toMatchObject({ magnitude: { type: 'spell-power', coefficient: 0.7 } })
     expect(SPELLS.stoneguard.effects[0]).toMatchObject({ magnitude: { type: 'spell-power', coefficient: 1.3 } })
-    expect(ignite.periodicEffects?.[0]).toMatchObject({ magnitude: { type: 'spell-power', coefficient: 1 / 6 } })
+    expect(ignite.periodicEffects?.[0]).toMatchObject({ components: [{ magnitude: { type: 'spell-power', coefficient: 1 / 6 } }] })
     const fireballTickMagnitude = fireballBurn.periodicEffects?.[0]
     expect(fireballTickMagnitude?.type).toBe('deal-damage')
-    if (fireballTickMagnitude?.type !== 'deal-damage' || fireballTickMagnitude.magnitude.type !== 'spell-power') throw new Error('Expected a Spell Power Fireball Burn payload')
-    expect(fireballTickMagnitude.magnitude.coefficient).toBeCloseTo(0.02)
+    if (fireballTickMagnitude?.type !== 'deal-damage' || fireballTickMagnitude.components[0]?.magnitude.type !== 'spell-power') throw new Error('Expected a Spell Power Fireball Burn payload')
+    expect(fireballTickMagnitude.components[0].magnitude.coefficient).toBeCloseTo(0.02)
 
     const state = createInitialState()
     state.combat.active = true
@@ -53,6 +53,6 @@ describe('Spell Power foundation', () => {
     state.combat.enemyMaxHp = 1_000
     executeCombatEffects(state, [ignite], spellSource)
     tickStatuses(state, 1_000, executeCombatEffects)
-    expect(state.combat.enemyHp).toBe(976)
+    expect(state.combat.enemyHp).toBe(980)
   })
 })

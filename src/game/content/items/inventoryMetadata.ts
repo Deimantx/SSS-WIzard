@@ -68,6 +68,7 @@ export function getInventorySearchText(itemId: ItemId): string {
   const stats = Object.keys(item.stats ?? {}).map(friendlyStatKey)
   const fields = [
     item.name,
+    item.description,
     item.inventoryCategory,
     item.materialSubtype,
     item.category,
@@ -78,6 +79,7 @@ export function getInventorySearchText(itemId: ItemId): string {
     item.researchSchool ? 'research researchable' : '',
     uses.map((use) => `${use.label} ${use.detail ?? ''}`).join(' '),
     stats.join(' '),
+    item.combat?.modifiers?.map((modifier) => `${modifier.key} ${(modifier.damageTypes ?? []).join(' ')} ${(modifier.sourceKinds ?? []).join(' ')}`).join(' '),
   ]
   return fields.filter(Boolean).join(' ').toLowerCase()
 }

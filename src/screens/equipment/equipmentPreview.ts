@@ -12,11 +12,6 @@ export interface EquipmentStatSnapshot {
   manaRegen: number
   basicDamage: number
   spellPower: number
-  barrierReceived: number
-  fireSpellDamagePct: number
-  waterBarrierPct: number
-  earthSpellDamagePct: number
-  airSpellDamagePct: number
   basicAttackSpeedMultiplier: number
   basicAttackIntervalMs: number
   critChance: number
@@ -46,7 +41,6 @@ export interface EquipmentPreview {
 }
 
 export const getEquipmentStatSnapshot = (state: Pick<GameState, 'player' | 'progress' | 'activities' | 'equipment'> & Partial<Pick<GameState, 'debug'>>, equipment: GameState['equipment']): EquipmentStatSnapshot => {
-  const stats = equipmentStats({ equipment })
   const sheet = getPlayerSheetCombatStats({ ...state, equipment } as GameState)
   return {
     maxHealth: sheet.maxHealth,
@@ -55,11 +49,6 @@ export const getEquipmentStatSnapshot = (state: Pick<GameState, 'player' | 'prog
     manaRegen: sheet.manaRegen,
     basicDamage: sheet.basicAttackDamage,
     spellPower: sheet.spellPower,
-    barrierReceived: stats.barrierReceived ?? 0,
-    fireSpellDamagePct: stats.fireSpellDamagePct ?? 0,
-    waterBarrierPct: stats.waterBarrierPct ?? 0,
-    earthSpellDamagePct: stats.earthSpellDamagePct ?? 0,
-    airSpellDamagePct: stats.airSpellDamagePct ?? 0,
     basicAttackSpeedMultiplier: sheet.basicAttackSpeedMultiplier,
     basicAttackIntervalMs: sheet.basicAttackIntervalMs,
     critChance: sheet.critChance,
@@ -85,11 +74,6 @@ const subtractSnapshots = (current: EquipmentStatSnapshot, preview: EquipmentSta
   manaRegen: preview.manaRegen - current.manaRegen,
   basicDamage: preview.basicDamage - current.basicDamage,
   spellPower: preview.spellPower - current.spellPower,
-  barrierReceived: preview.barrierReceived - current.barrierReceived,
-  fireSpellDamagePct: preview.fireSpellDamagePct - current.fireSpellDamagePct,
-  waterBarrierPct: preview.waterBarrierPct - current.waterBarrierPct,
-  earthSpellDamagePct: preview.earthSpellDamagePct - current.earthSpellDamagePct,
-  airSpellDamagePct: preview.airSpellDamagePct - current.airSpellDamagePct,
   basicAttackSpeedPct: preview.basicAttackSpeedMultiplier - current.basicAttackSpeedMultiplier,
   critChance: preview.critChance - current.critChance,
   critDamage: preview.critDamageMultiplier - current.critDamageMultiplier,

@@ -404,6 +404,20 @@ describe('save navigation migration', () => {
     expect(migrated.combat.enemyId).toBe('forest-wisp')
   })
 
+  it('migrates suspended legacy periodic damage into the first-class Hit payload', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({ ...initial, saveVersion: SAVE_VERSION, combat: {
+      ...initial.combat,
+      active: true,
+      dungeonId: 'whispering-woods',
+      enemyId: 'forest-wisp',
+      enemyHp: 44,
+      enemyMaxHp: 44,
+      playerStatuses: [{ statusId: 'burning', holder: 'player', instanceKey: 'single:burning', source: { actor: 'enemy', kind: 'action', sourceId: 'arc-spark' }, remainingMs: 2_000, initialDurationMs: 5_000, stacks: 1, nextTickMs: 1_000, periodicEffects: [{ type: 'deal-damage', target: 'self', damageType: 'fire', magnitude: { type: 'flat', value: 5 } }] }],
+    } } as any)
+    expect(migrated.combat.playerStatuses[0].periodicEffects?.[0]).toEqual({ type: 'deal-damage', target: 'self', components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 5 } }] })
+  })
+
   it('keeps durable progression while rebuilding a V17 Player Basic cycle', () => {
     const initial = createInitialState()
     const migrated = migrateSave({

@@ -5,12 +5,12 @@ import type { CombatActor } from './magnitude'
 import { getCombatModifiers } from './modifiers'
 import { actorCannotAct } from './statusRuntime'
 import { runCombatTriggers, type CombatEventContext } from './triggerRuntime'
-import type { ActionPattern, ActionStep, CombatActionDefinition, CombatEffect, CombatEventSink, CombatSource, CombatTag, CombatTrigger } from './combatTypes'
+import { createCombatResolutionContext, type ActionPattern, type ActionStep, type CombatActionDefinition, type CombatEffect, type CombatEventSink, type CombatResolutionContext, type CombatSource, type CombatTag, type CombatTrigger } from './combatTypes'
 import { MAX_ACTION_RATE, MAX_ACTION_WORK_MS, MIN_ACTION_RATE, MIN_ACTION_TIME_MS } from '../../core/balance/combatTiming'
 import { getBasicAttackSpeedMultiplier } from './combatStats'
 
 export { MAX_ACTION_RATE, MAX_ACTION_WORK_MS, MIN_ACTION_RATE, MIN_ACTION_TIME_MS }
-export type ActionEffectExecutor = (state: GameState, effects: CombatEffect[], source: CombatSource, depth?: number, uiEvents?: CombatEventSink) => void
+export type ActionEffectExecutor = (state: GameState, effects: CombatEffect[], source: CombatSource, depth?: number, uiEvents?: CombatEventSink, resolution?: CombatResolutionContext) => void
 export type ActionLifecycleEvent = Extract<CombatTrigger, 'on-action-start' | 'on-action-resolve'>
 
 const opponentOf = (actor: CombatActor): CombatActor => actor === 'player' ? 'enemy' : 'player'
@@ -113,11 +113,11 @@ const actionContext = (state: GameState, action: CombatActionDefinition, pattern
 }
 
 /** Action lifecycle observers are intentionally routed source actor first, opponent second. */
-export const runActionEventObservers = (state: GameState, event: ActionLifecycleEvent, context: CombatEventContext, executeEffects: ActionEffectExecutor, depth = 0, uiEvents?: CombatEventSink) => {
+export const runActionEventObservers = (state: GameState, event: ActionLifecycleEvent, context: CombatEventContext, executeEffects: ActionEffectExecutor, depth = 0, uiEvents?: CombatEventSink, resolution: CombatResolutionContext = createCombatResolutionContext()) => {
   const sourceActor = context.source?.actor
   if (!sourceActor) return
-  runCombatTriggers(state, sourceActor, event, context, executeEffects, depth, [], uiEvents)
-  runCombatTriggers(state, opponentOf(sourceActor), event, context, executeEffects, depth, [], uiEvents)
+  runCombatTriggers(state, sourceActor, event, context, executeEffects, depth, [], uiEvents, resolution)
+  runCombatTriggers(state, opponentOf(sourceActor), event, context, executeEffects, depth, [], uiEvents, resolution)
 }
 
 /** `enemyActionTimerMs` is remaining work; duration is the authored base work. */
@@ -186,7 +186,7 @@ export const startNextEnemyAction = (state: GameState, executeEffects: ActionEff
 const resolveBasicAttack = (state: GameState, monsterId: NonNullable<GameState['combat']['enemyId']>, monster: typeof MONSTERS[NonNullable<GameState['combat']['enemyId']>], executeEffects: ActionEffectExecutor, depth: number, uiEvents?: CombatEventSink) => {
   const source: CombatSource = { actor: 'enemy', kind: 'basic-attack', sourceId: `${monsterId}-basic-attack`, sourceMonsterId: monsterId, sourceInstanceKey: state.combat.enemyInstanceKey ?? undefined, tags: ['basic-attack', 'direct'] }
   const before = state.player.health
-  executeEffects(state, [{ type: 'deal-damage', target: 'opponent', damageType: 'physical', magnitude: { type: 'flat', value: monster.basicAttackDamage }, tags: ['basic-attack', 'direct'] }], source, depth, uiEvents)
+  executeEffects(state, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: monster.basicAttackDamage } }], tags: ['basic-attack', 'direct'] }], source, depth, uiEvents)
   appendLog(state, `${monster.name} Basic hits for ${Math.max(0, before - state.player.health)}.`)
 }
 

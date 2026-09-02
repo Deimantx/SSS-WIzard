@@ -1,8 +1,8 @@
 import type { DamageType } from '../../systems/combat/combatTypes'
-import type { EquipmentStats, InventoryCategory, InventoryMaterialSubtype, ItemDefinition, ItemId, ModifierKey, SchoolId, ScreenId } from '../../types'
+import type { EquipmentStats, InventoryCategory, InventoryMaterialSubtype, ItemDefinition, ItemId, SchoolId, ScreenId } from '../../types'
 import { BALANCE } from '../../core/balance/balance'
 import { MAX_BLOCK_CHANCE, MAX_RESISTANCE, MIN_RESISTANCE } from '../../core/balance/combatStats'
-import { isPersistedCombatEffect } from '../../systems/combat/combatEffectValidation'
+import { validateCombatProvider } from '../../systems/combat/combatEffectValidation'
 
 type AuthoredItemDefinition = Omit<ItemDefinition, 'inventoryCategory' | 'materialSubtype' | 'sellValue' | 'canDestroy' | 'actionRestrictionReason'> & Partial<Pick<ItemDefinition, 'inventoryCategory' | 'materialSubtype' | 'sellValue' | 'canDestroy' | 'actionRestrictionReason'>>
 const materialSubtypes: InventoryMaterialSubtype[] = ['elemental', 'creature', 'ore', 'refined', 'arcane']
@@ -23,10 +23,10 @@ const authoredItems: Record<ItemId, AuthoredItemDefinition> = {
   'grove-bark': material('grove-bark', 'Grove Bark', 'Resilient bark shed by the Sentinel.', '▥', '#9eaa75', 'monster-loot', 'Grove Sentinel'),
   heartseed: material('heartseed', 'Heartseed', 'A living seed left by the Forest Heart.', '✤', '#f4c46e', 'boss-loot', 'Forest Heart first and repeat kills'),
   'apprentice-wand': { id: 'apprentice-wand', name: 'Apprentice Wand', description: 'A dependable starter focus.', icon: '⌁', color: '#e8c98a', kind: 'equipment', category: 'equipment', source: 'Fresh save', equipmentSlot: 'weapon', weaponHands: 1, stats: {} },
-  'ember-staff': { id: 'ember-staff', name: 'Ember Staff', description: 'A staff that increases Spell Power and makes every Fire spell burn brighter.', icon: '⚒', color: '#ff956f', kind: 'equipment', category: 'equipment', source: 'Transmutation', equipmentSlot: 'weapon', weaponHands: 2, stats: { basicDamage: 4, maxMana: 10, spellPower: 20, fireSpellDamagePct: 0.2 } },
-  'tide-focus': { id: 'tide-focus', name: 'Tide Focus', description: 'A fluid focus that increases Spell Power and deepens Water barriers.', icon: '◈', color: '#64b7ff', kind: 'equipment', category: 'equipment', source: 'Transmutation', equipmentSlot: 'offhand', stats: { maxMana: 15, spellPower: 15, waterBarrierPct: 0.2 } },
-  'stoneweave-robe': { id: 'stoneweave-robe', name: 'Stoneweave Robe', description: 'A heavy robe that turns barriers into shelter.', icon: '▤', color: '#d5a36b', kind: 'equipment', category: 'equipment', source: 'Transmutation', equipmentSlot: 'armor', stats: { maxHealth: 20, barrierReceived: 10 } },
-  'windthread-charm': { id: 'windthread-charm', name: 'Windthread Charm', description: 'A charm that increases Spell Power and leaves room for one more automation.', icon: '⌁', color: '#b9d8d0', kind: 'equipment', category: 'equipment', source: 'Transmutation', equipmentSlot: 'amulet', stats: { maxFocus: 10, spellPower: 10, airSpellDamagePct: 0.1 } },
+  'ember-staff': { id: 'ember-staff', name: 'Ember Staff', description: 'A staff that increases Spell Power and makes every Fire spell burn brighter.', icon: '⚒', color: '#ff956f', kind: 'equipment', category: 'equipment', source: 'Transmutation', equipmentSlot: 'weapon', weaponHands: 2, stats: { basicDamage: 4, maxMana: 10, spellPower: 20 }, combat: { modifiers: [{ key: 'spell-damage-percent', value: 0.2, sourceKinds: ['spell'], damageTypes: ['fire'] }] } },
+  'tide-focus': { id: 'tide-focus', name: 'Tide Focus', description: 'A fluid focus that increases Spell Power and deepens Water barriers.', icon: '◈', color: '#64b7ff', kind: 'equipment', category: 'equipment', source: 'Transmutation', equipmentSlot: 'offhand', stats: { maxMana: 15, spellPower: 15 }, combat: { modifiers: [{ key: 'barrier-power-percent', value: 0.2, sourceKinds: ['spell'], damageTypes: ['water'] }] } },
+  'stoneweave-robe': { id: 'stoneweave-robe', name: 'Stoneweave Robe', description: 'A heavy robe that turns barriers into shelter.', icon: '▤', color: '#d5a36b', kind: 'equipment', category: 'equipment', source: 'Transmutation', equipmentSlot: 'armor', stats: { maxHealth: 20 }, combat: { modifiers: [{ key: 'barrier-received-flat', value: 10 }] } },
+  'windthread-charm': { id: 'windthread-charm', name: 'Windthread Charm', description: 'A charm that increases Spell Power and leaves room for one more automation.', icon: '⌁', color: '#b9d8d0', kind: 'equipment', category: 'equipment', source: 'Transmutation', equipmentSlot: 'amulet', stats: { maxFocus: 10, spellPower: 10 }, combat: { modifiers: [{ key: 'spell-damage-percent', value: 0.1, sourceKinds: ['spell'], damageTypes: ['air'] }] } },
 }
 
 /** Normalize authored content once so every current item has an explicit Vault classification. */
@@ -74,10 +74,9 @@ export const ITEMS: Record<ItemId, ItemDefinition> = Object.fromEntries(
 
 const DAMAGE_TYPES: readonly DamageType[] = ['physical', 'arcane', 'fire', 'water', 'earth', 'air']
 const EQUIPMENT_NUMERIC_FIELDS: readonly (keyof EquipmentStats)[] = [
-  'basicDamage', 'spellPower', 'maxHealth', 'maxMana', 'manaRegen', 'maxFocus', 'barrierReceived',
+  'basicDamage', 'spellPower', 'maxHealth', 'maxMana', 'manaRegen', 'maxFocus',
   'defense', 'critChance', 'critDamage', 'basicAttackSpeedPct', 'blockChance', 'cooldownRecoveryPct',
   'healingDonePct', 'barrierPowerPct', 'damageOverTimePct', 'statusDurationPct', 'manaCostReductionPct', 'focusEfficiencyPct',
-  'fireSpellDamagePct', 'waterBarrierPct', 'earthSpellDamagePct', 'airSpellDamagePct',
 ]
 
 const validateEquipmentStats = (itemId: string, stats: EquipmentStats | undefined, errors: string[]) => {
@@ -107,24 +106,11 @@ const validateEquipmentStats = (itemId: string, stats: EquipmentStats | undefine
 
 export const validateItemDefinitions = (items: Record<string, ItemDefinition> = ITEMS) => {
   const errors: string[] = []
-  const modifierKeys: readonly ModifierKey[] = ['damage-dealt-percent', 'damage-taken-percent', 'basic-attack-damage-percent', 'basic-attack-speed-percent', 'action-speed-percent', 'spell-damage-percent', 'melee-damage-percent', 'ranged-damage-percent', 'healing-done-percent', 'healing-received-percent', 'barrier-power-percent', 'barrier-received-percent', 'mana-regen-percent', 'cooldown-recovery-percent', 'control-duration-received-percent', 'status-duration-dealt-percent', 'status-duration-received-percent', 'defense-flat', 'crit-chance', 'crit-damage', 'block-chance', 'damage-over-time-percent', 'resistance-percent']
   Object.entries(items).forEach(([key, item]) => {
     if (key !== item.id) errors.push(`${key}: key/id mismatch`)
     validateEquipmentStats(item.id, item.stats, errors)
     if (item.combat && item.kind !== 'equipment') errors.push(`${item.id}: only equipment items may define combat metadata`)
-    const modifiers = item.combat?.modifiers ?? []
-    modifiers.forEach((modifier) => {
-      if (!modifierKeys.includes(modifier.key)) errors.push(`${item.id}: invalid combat modifier key`)
-      if (!Number.isFinite(modifier.value)) errors.push(`${item.id}: non-finite combat modifier`)
-    })
-    const rules = item.combat?.rules ?? []
-    const ruleIds = rules.map((rule) => rule.id)
-    if (new Set(ruleIds).size !== ruleIds.length) errors.push(`${item.id}: duplicate combat rule id`)
-    rules.forEach((rule) => {
-      if (!rule.id.trim()) errors.push(`${item.id}: combat rule id is required`)
-      if (rule.cooldownMs !== undefined && (!Number.isFinite(rule.cooldownMs) || rule.cooldownMs < 0)) errors.push(`${item.id}:${rule.id}: invalid cooldown`)
-      if (!Array.isArray(rule.effects) || !rule.effects.every(isPersistedCombatEffect)) errors.push(`${item.id}:${rule.id}: invalid combat effects`)
-    })
+    errors.push(...validateCombatProvider(item.combat, `${item.id}.combat`))
   })
   if (errors.length && import.meta.env.DEV) console.error(`[combat-items] ${errors.join('; ')}`)
   return errors

@@ -106,6 +106,64 @@ describe('canonical simulation quantum parity', () => {
     expect(snapshot(coarse)).toEqual(snapshot(fine))
   })
 
+  it('keeps source-scaled direct damage at a non-quantum action boundary identical for fine and coarse callers', () => {
+    const makeFixture = () => {
+      const state = createInitialState()
+      state.combat.active = true
+      state.combat.dungeonId = 'howling-den'
+      state.player.maxHealth = 10_000
+      state.player.health = 10_000
+      state.debug.freezePlayerActions = true
+      spawnEnemy(state, 'cavefang-wolf')
+      clearCurrentEnemyAction(state)
+      expect(startEnemyAction(state, 'pounce', executeCombatEffects)).toBe(true)
+      return state
+    }
+    const fine = makeFixture()
+    const coarse = cloneState(fine)
+    advanceFine(fine, 4_000)
+    for (let elapsed = 0; elapsed < 4_000; elapsed += 1_000) advanceGameState(coarse, 1_000, { mode: 'banked' })
+    expect(snapshot(coarse)).toEqual(snapshot(fine))
+    expect(fine.player.health).toBeLessThan(10_000)
+  })
+
+  it('keeps source-Max-Health Heal and Barrier Actions identical for fine and coarse callers', () => {
+    const makeHealFixture = () => {
+      const state = createInitialState()
+      state.combat.active = true
+      state.combat.dungeonId = 'whispering-woods'
+      state.debug.freezePlayerActions = true
+      spawnEnemy(state, 'forest-heart')
+      state.combat.enemyHp = 100
+      clearCurrentEnemyAction(state)
+      expect(startEnemyAction(state, 'rejuvenating-sap', executeCombatEffects)).toBe(true)
+      return state
+    }
+    const makeBarrierFixture = () => {
+      const state = createInitialState()
+      state.combat.active = true
+      state.combat.dungeonId = 'whispering-woods'
+      state.debug.freezePlayerActions = true
+      spawnEnemy(state, 'grove-sentinel')
+      clearCurrentEnemyAction(state)
+      expect(startEnemyAction(state, 'verdant-guard', executeCombatEffects)).toBe(true)
+      return state
+    }
+    const advancePair = (makeFixture: () => GameState, durationMs: number) => {
+      const fine = makeFixture()
+      const coarse = cloneState(fine)
+      advanceFine(fine, durationMs)
+      for (let elapsed = 0; elapsed < durationMs; elapsed += 1_000) advanceGameState(coarse, Math.min(1_000, durationMs - elapsed), { mode: 'banked' })
+      expect(snapshot(coarse)).toEqual(snapshot(fine))
+      return fine
+    }
+
+    const healed = advancePair(makeHealFixture, 4_000)
+    expect(healed.combat.enemyHp).toBe(160)
+    const barriered = advancePair(makeBarrierFixture, 3_500)
+    expect(barriered.combat.enemyBarrier).toBe(60)
+  })
+
   it('keeps deterministic enemy Action progression and timed Statuses identical', () => {
     const fine = combatFixture()
     const source = { actor: 'player' as const, kind: 'spell' as const, sourceId: 'parity-status', school: 'fire' as const, tags: ['spell' as const, 'fire' as const] }
@@ -305,8 +363,8 @@ describe('canonical simulation quantum parity', () => {
     try {
       const fine = makeFixture()
       const coarse = cloneState(fine)
-      const playerHit = { type: 'deal-damage' as const, target: 'opponent' as const, damageType: 'physical' as const, magnitude: { type: 'flat' as const, value: 1 }, tags: ['direct' as const] }
-      const enemyHit = { type: 'deal-damage' as const, target: 'opponent' as const, damageType: 'physical' as const, magnitude: { type: 'flat' as const, value: 1 }, tags: ['direct' as const] }
+      const playerHit = { type: 'deal-damage' as const, target: 'opponent' as const, components: [{ damageType: 'physical' as const, magnitude: { type: 'flat' as const, value: 1 } }], tags: ['direct' as const] }
+      const enemyHit = { type: 'deal-damage' as const, target: 'opponent' as const, components: [{ damageType: 'physical' as const, magnitude: { type: 'flat' as const, value: 1 } }], tags: ['direct' as const] }
       executeCombatEffects(fine, [enemyHit], { actor: 'enemy', kind: 'basic-attack', sourceId: 'parity-enemy-hit' })
       executeCombatEffects(fine, [playerHit], { actor: 'player', kind: 'spell', sourceId: 'parity-player-hit', tags: ['spell', 'direct'] })
       executeCombatEffects(coarse, [enemyHit], { actor: 'enemy', kind: 'basic-attack', sourceId: 'parity-enemy-hit' })

@@ -161,7 +161,7 @@ describe('Universal Trait System V1', () => {
       damageEnemy(state, 1, 'spell')
       expect(state.combat.enemyBarrier).toBe(0)
       expect(state.combat.ruleCooldowns[key] ?? 0).toBe(0)
-      executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', damageType: 'fire', magnitude: { type: 'flat', value: 1 } }], playerSource)
+      executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 1 } }] }], playerSource)
       expect(state.combat.enemyBarrier).toBe(2)
       expect(state.combat.ruleCooldowns[key]).toBe(3000)
     })

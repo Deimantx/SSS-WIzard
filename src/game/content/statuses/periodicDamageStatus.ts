@@ -39,8 +39,7 @@ export const periodicDamageStatus = ({ statusId, durationMs, totalBaseDamage, to
     periodicEffects: [{
       type: 'deal-damage',
       target: 'self',
-      damageType,
-      magnitude: scaleMagnitude(totalMagnitude ?? { type: 'flat', value: totalBaseDamage ?? 0 }, 1 / ticks),
+      components: [{ damageType, magnitude: scaleMagnitude(totalMagnitude ?? { type: 'flat', value: totalBaseDamage ?? 0 }, 1 / ticks) }],
       tags: ['dot', damageType],
     }],
     tags: ['debuff', 'dot', damageType],

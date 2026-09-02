@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { ITEMS } from '../../content/items/items'
+import { ITEMS, validateItemDefinitions } from '../../content/items/items'
+import { MONSTERS } from '../../content/monsters'
 import { createInitialState } from '../../../store/initialState'
 import type { GameState, ItemDefinition, ItemId } from '../../types'
-import type { CombatEvent } from './combatTypes'
+import type { CombatEffect, CombatEvent } from './combatTypes'
 import { executeCombatEffects } from './effectResolver'
 import { getCombatModifiers } from './modifiers'
 import { applyStatus, tickStatuses } from './statusRuntime'
@@ -11,7 +12,7 @@ import { finishEnemy, spawnEnemy } from './combatRuntime'
 import { runCombatTriggers, getRuleRuntimeKey, tickRuleCooldowns } from './triggerRuntime'
 import { advanceGameState } from '../simulation/advanceGameState'
 import { validateStatusDefinitions, STATUS_DEFINITIONS } from '../../content/statuses'
-import { isPersistedCombatEffect } from './combatEffectValidation'
+import { isPersistedCombatEffect, validateCombatEffect, validateCombatProvider } from './combatEffectValidation'
 import { getCombatMetricSourceKey } from '../../telemetry/combat/combatTelemetryAggregator'
 
 const source = { actor: 'player' as const, kind: 'spell' as const, sourceId: 'hardening-test', school: 'water' as const, tags: ['spell' as const, 'magic' as const, 'water' as const] }
@@ -140,6 +141,7 @@ describe('combat foundation hardening', () => {
 
 describe('equipment combat providers', () => {
   const testItemId = 'hardening-test-ring' as ItemId
+  const secondItemId = 'hardening-test-ring-two' as ItemId
   const testItem: ItemDefinition = {
     id: testItemId,
     name: 'Hardening Test Ring',
@@ -156,7 +158,7 @@ describe('equipment combat providers', () => {
     combat: { modifiers: [{ key: 'damage-dealt-percent', value: 0.2, sourceKinds: ['spell'] }] },
   }
 
-  afterEach(() => { delete ITEMS[testItemId] })
+  afterEach(() => { delete ITEMS[testItemId]; delete ITEMS[secondItemId] })
 
   it('counts only equipped combat modifiers, including both ring positions', () => {
     ITEMS[testItemId] = testItem
@@ -265,5 +267,108 @@ describe('equipment combat providers', () => {
     tickRuleCooldowns(state, 1_000)
     runCombatTriggers(state, 'player', 'on-combat-start', context, executeCombatEffects, 0, [], { push: (event) => events.push(event) })
     expect(events.filter((event) => (event as { sourceKind?: string; category?: string }).sourceKind === 'equipment' && (event as { category?: string }).category === 'system')).toHaveLength(2)
+  })
+
+  it('blocks self-procs within one cascade and resets for the next root Hit', () => {
+    ITEMS[testItemId] = { ...testItem, combat: { rules: [{ id: 'self-proc', event: 'on-damage-dealt', effects: [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 2 } }] }] }] } }
+    const state = stateWithEnemy()
+    state.equipment.ring1 = testItemId
+    const events: CombatEvent[] = []
+    const sink = { push: (event: CombatEvent) => events.push(event) }
+    const root: CombatEffect = { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 1 } }] }
+    executeCombatEffects(state, [root], { actor: 'player', kind: 'system', sourceId: 'root' }, undefined, sink)
+    expect(events.filter((event) => event.category === 'damage')).toHaveLength(2)
+    executeCombatEffects(state, [root], { actor: 'player', kind: 'system', sourceId: 'root' }, undefined, sink)
+    expect(events.filter((event) => event.category === 'damage')).toHaveLength(4)
+  })
+
+  it('bounds a mutual equipment proc chain while preserving distinct ring providers', () => {
+    ITEMS[testItemId] = { ...testItem, combat: { rules: [{ id: 'proc-a', event: 'on-damage-dealt', effects: [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 1 } }] }] }] } }
+    ITEMS[secondItemId] = { ...testItem, id: secondItemId, name: 'Hardening Test Ring Two', combat: { rules: [{ id: 'proc-b', event: 'on-damage-dealt', effects: [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'air', magnitude: { type: 'flat', value: 1 } }] }] }] } }
+    const state = stateWithEnemy()
+    state.equipment.ring1 = testItemId
+    state.equipment.ring2 = secondItemId
+    const events: CombatEvent[] = []
+    const root: CombatEffect = { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 1 } }] }
+    executeCombatEffects(state, [root], { actor: 'player', kind: 'system', sourceId: 'root' }, undefined, { push: (event) => events.push(event) })
+    const damageEvents = events.filter((event) => event.category === 'damage')
+    expect(damageEvents).toHaveLength(3)
+    expect(damageEvents.filter((event) => event.sourceKind === 'equipment').map((event) => event.providerInstanceKey)).toEqual(expect.arrayContaining(['ring1', 'ring2']))
+  })
+
+  it('keeps a split-type Hit atomic while preserving per-component mitigation', () => {
+    const originalDefense = MONSTERS['forest-wisp'].defense
+    const originalResistances = MONSTERS['forest-wisp'].resistances
+    ITEMS[testItemId] = { ...testItem, combat: { modifiers: [{ key: 'crit-chance', value: -1 }] } }
+    MONSTERS['forest-wisp'].defense = 0
+    MONSTERS['forest-wisp'].resistances = { physical: 0.2, arcane: 0.5 }
+    try {
+      const state = stateWithEnemy()
+      state.equipment.ring1 = testItemId
+      const events: CombatEvent[] = []
+      const effect: CombatEffect = { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 10 } }, { damageType: 'arcane', magnitude: { type: 'flat', value: 10 } }], tags: ['direct'] }
+      const initialRng = state.combat.combatRngState
+      executeCombatEffects(state, [effect], { actor: 'player', kind: 'spell', sourceId: 'split-hit', tags: ['spell', 'direct'] }, undefined, { push: (event) => events.push(event) })
+      const damageEvents = events.filter((event) => event.healthDamage !== undefined)
+      expect(damageEvents).toHaveLength(1)
+      expect(damageEvents[0]).toMatchObject({ damageTypes: ['physical', 'arcane'], critical: false, blocked: false, healthDamage: 13 })
+      expect(damageEvents[0].damageComponents?.map((component) => component.amount)).toEqual([8, 5])
+      expect(damageEvents[0].damageComponents?.map((component) => component.damageType)).toEqual(['physical', 'arcane'])
+      expect(state.combat.combatRngState).not.toBe(initialRng)
+    } finally {
+      MONSTERS['forest-wisp'].defense = originalDefense
+      MONSTERS['forest-wisp'].resistances = originalResistances
+    }
+  })
+
+  it('shares one Crit/Block outcome across all components and keeps explicit Hits separate', () => {
+    const originalDefense = MONSTERS['forest-wisp'].defense
+    const originalResistances = MONSTERS['forest-wisp'].resistances
+    const originalBlockChance = MONSTERS['forest-wisp'].blockChance
+    ITEMS[testItemId] = { ...testItem, combat: { modifiers: [{ key: 'crit-chance', value: 1 }] } }
+    MONSTERS['forest-wisp'].defense = 0
+    MONSTERS['forest-wisp'].resistances = { physical: 0, arcane: 0 }
+    MONSTERS['forest-wisp'].blockChance = 0
+    try {
+      const state = stateWithEnemy()
+      state.equipment.ring1 = testItemId
+      state.combat.combatRngState = 0
+      const events: CombatEvent[] = []
+      const hit: CombatEffect = { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 10 } }, { damageType: 'arcane', magnitude: { type: 'flat', value: 10 } }], tags: ['direct'] }
+      executeCombatEffects(state, [hit], { actor: 'player', kind: 'spell', sourceId: 'split-hit', tags: ['spell', 'direct'] }, undefined, { push: (event) => events.push(event) })
+      expect(events.filter((event) => event.healthDamage !== undefined)).toHaveLength(1)
+      expect(events.find((event) => event.healthDamage !== undefined)).toMatchObject({ critical: true, blocked: false, healthDamage: 30 })
+
+      const multiState = stateWithEnemy()
+      multiState.equipment.ring1 = testItemId
+      multiState.combat.combatRngState = 0
+      const multiEvents: CombatEvent[] = []
+      executeCombatEffects(multiState, [
+        { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 10 } }], tags: ['direct'] },
+        { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'arcane', magnitude: { type: 'flat', value: 10 } }], tags: ['direct'] },
+      ], { actor: 'player', kind: 'spell', sourceId: 'true-multi-hit', tags: ['spell', 'direct'] }, undefined, { push: (event) => multiEvents.push(event) })
+      expect(multiEvents.filter((event) => event.healthDamage !== undefined)).toHaveLength(2)
+      expect(multiState.combat.combatRngState).not.toBe(state.combat.combatRngState)
+    } finally {
+      MONSTERS['forest-wisp'].defense = originalDefense
+      MONSTERS['forest-wisp'].resistances = originalResistances
+      MONSTERS['forest-wisp'].blockChance = originalBlockChance
+    }
+  })
+
+  it('validates malformed Equipment Combat providers through shared validators', () => {
+    const malformed = { ...testItem, combat: { modifiers: [{ key: 'not-a-modifier', value: Number.NaN }], rules: [
+      { id: 'duplicate', event: 'on-damage-dealt', effects: [{ type: 'deal-damage', target: 'opponent', components: [] }] },
+      { id: 'duplicate', event: 'on-damage-dealt', cooldownMs: -1, effects: [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'not-a-type', magnitude: { type: 'flat', value: 1 } }] }] },
+    ] } } as unknown as ItemDefinition
+    const errors = validateItemDefinitions({ [testItemId]: malformed })
+    expect(errors.some((error) => error.includes('invalid modifier key'))).toBe(true)
+    expect(errors.some((error) => error.includes('modifier value must be finite'))).toBe(true)
+    expect(errors.some((error) => error.includes('duplicate rule id'))).toBe(true)
+    expect(errors.some((error) => error.includes('damage Hit requires at least one component'))).toBe(true)
+    expect(errors.some((error) => error.includes('invalid damage type'))).toBe(true)
+    expect(errors.some((error) => error.includes('cooldown must be finite and non-negative'))).toBe(true)
+    expect(validateCombatProvider(malformed.combat, `${testItemId}.combat`).length).toBeGreaterThan(0)
+    expect(validateCombatEffect({ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'fire', magnitude: { type: 'spell-power', coefficient: Number.NaN } }] })).toEqual(expect.arrayContaining([expect.stringContaining('coefficient')]))
   })
 })

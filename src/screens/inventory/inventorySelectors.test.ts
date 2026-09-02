@@ -37,7 +37,7 @@ describe('Inventory V3 selectors and display rules', () => {
     expect(getResearchXp('fire-fragment', 'water')).toBe(8)
     expect(friendlyStatLabel('basicDamage')).toBe('Basic Attack Damage')
     expect(friendlyStatLabel('spellPower')).toBe('Spell Power')
-    expect(formatStat('fireSpellDamagePct', 0.2)).toBe('+20%')
+    expect(formatStat('critChance', 0.2)).toBe('+20%')
     expect(formatStat('maxMana', 10)).toBe('+10')
   })
 

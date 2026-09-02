@@ -1,11 +1,10 @@
-import type { CombatEffect, ModifierKey, SpellDefinition, SpellId } from '../../types'
+import type { CombatEffect, SpellDefinition, SpellId } from '../../types'
 import { SCHOOLS } from '../schools/schools'
-import { STATUS_DEFINITIONS } from '../statuses'
 import { periodicDamageStatus } from '../statuses/periodicDamageStatus'
-import { COMBAT_MODIFIER_KEYS, hasValidStatusModifierOverrides } from '../../systems/combat/combatEffectValidation'
+import { validateCombatEffect } from '../../systems/combat/combatEffectValidation'
 
 const damage = (school: 'fire' | 'water' | 'earth' | 'air', coefficient: number): CombatEffect => ({
-  type: 'deal-damage', target: 'opponent', damageType: school, school, magnitude: { type: 'spell-power', coefficient }, tags: ['direct'],
+  type: 'deal-damage', target: 'opponent', components: [{ damageType: school, magnitude: { type: 'spell-power', coefficient } }], school, tags: ['direct'],
 })
 const barrier = (coefficient: number): CombatEffect => ({ type: 'gain-barrier', target: 'self', magnitude: { type: 'spell-power', coefficient }, mode: 'replace', durationMs: 9000, tags: ['barrier'] })
 const heal = (coefficient: number): CombatEffect => ({ type: 'heal', target: 'self', magnitude: { type: 'spell-power', coefficient }, tags: ['heal', 'direct', 'water'] })
@@ -37,29 +36,16 @@ export const validateSpellDefinitions = () => {
     if (!Number.isFinite(spell.cooldownMs) || spell.cooldownMs < 0) errors.push(`${spell.id}: invalid cooldown`)
     if (!spell.effects.length) errors.push(`${spell.id}: effects must not be empty`)
     const validateEffect = (effect: CombatEffect) => {
-      if (effect.type === 'apply-status' && !STATUS_DEFINITIONS[effect.statusId]) errors.push(`${spell.id}: unknown status ${effect.statusId}`)
-      if ('magnitude' in effect) {
-        const magnitude = effect.magnitude
-        if ('value' in magnitude && !Number.isFinite(magnitude.value)) errors.push(`${spell.id}: non-finite magnitude`)
-        if (magnitude.type === 'spell-power' && (!Number.isFinite(magnitude.coefficient) || magnitude.coefficient < 0)) errors.push(`${spell.id}: invalid Spell Power coefficient`)
-        if (magnitude.type === 'school-level' && (!Number.isFinite(magnitude.base) || !Number.isFinite(magnitude.perLevel))) errors.push(`${spell.id}: non-finite school magnitude`)
-      }
+      errors.push(...validateCombatEffect(effect, `${spell.id}.effect`))
       if (effect.type === 'apply-status') {
-        if (effect.periodicEffects && !STATUS_DEFINITIONS[effect.statusId]?.periodic) errors.push(`${spell.id}: periodic override requires a periodic status`)
-        if (effect.durationMs !== undefined && effect.durationMs !== null && (!Number.isFinite(effect.durationMs) || effect.durationMs <= 0)) errors.push(`${spell.id}: periodic status duration must be positive and finite`)
-        if (effect.modifierOverrides) {
-          Object.entries(effect.modifierOverrides).forEach(([key, value]) => { if (!COMBAT_MODIFIER_KEYS.includes(key as ModifierKey)) errors.push(`${spell.id}: unknown modifier override ${key}`); if (!Number.isFinite(value)) errors.push(`${spell.id}: non-finite modifier override`) })
-          if (!hasValidStatusModifierOverrides(effect.statusId, effect.modifierOverrides)) errors.push(`${spell.id}: modifier override is not valid for ${effect.statusId}`)
-        }
         effect.periodicEffects?.forEach((periodicEffect) => {
-          if (periodicEffect.type === 'deal-damage' && periodicEffect.damageType !== spell.school) errors.push(`${spell.id}: periodic damage school mismatch`)
-          validateEffect(periodicEffect)
+          if (periodicEffect.type === 'deal-damage' && periodicEffect.components.some((component) => component.damageType !== spell.school)) errors.push(`${spell.id}: periodic damage school mismatch`)
         })
       }
     }
     spell.effects.forEach((effect) => {
       validateEffect(effect)
-      if (effect.type === 'deal-damage' && (effect.damageType !== spell.school || (effect.school !== undefined && effect.school !== spell.school))) errors.push(`${spell.id}: damage school mismatch`)
+      if (effect.type === 'deal-damage' && (effect.components.some((component) => component.damageType !== spell.school) || (effect.school !== undefined && effect.school !== spell.school))) errors.push(`${spell.id}: damage school mismatch`)
     })
   })
   if (errors.length && import.meta.env.DEV) console.error(`[spells] ${errors.join('; ')}`)

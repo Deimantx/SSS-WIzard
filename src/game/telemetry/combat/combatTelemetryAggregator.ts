@@ -198,6 +198,7 @@ export const consumeCombatEvent = (scope: CombatTelemetryScope, event: CombatEve
   if (event.category === 'damage' || event.category === 'basic-attack' || event.category === 'spell' || event.category === 'enemy-action' || event.category === 'trait') {
     const amount = finite(event.amount)
     if (amount <= 0) return
+    const componentAmounts = event.damageComponents?.map((component) => ({ damageType: component.damageType, amount: finite(component.amount) })) ?? (event.damageType ? [{ damageType: event.damageType, amount }] : [])
     const sourceMetrics = metricActor(scope, sourceActor)
     const sourceContribution = contributionFor(sourceMetrics.damageDone, event)
     if (sourceContribution) {
@@ -205,7 +206,7 @@ export const consumeCombatEvent = (scope: CombatTelemetryScope, event: CombatEve
       sourceContribution.total += amount
       sourceContribution.healthDamage += finite(event.healthDamage)
       sourceContribution.barrierAbsorbed += finite(event.barrierAbsorbed)
-      if (event.damageType) sourceContribution.damageTypes[event.damageType] = (sourceContribution.damageTypes[event.damageType] ?? 0) + amount
+      componentAmounts.forEach((component) => { sourceContribution.damageTypes[component.damageType] = (sourceContribution.damageTypes[component.damageType] ?? 0) + component.amount })
       sourceContribution.events += 1
     }
     const targetActor = event.target === 'player' || event.target === 'enemy' ? event.target : null
@@ -220,7 +221,7 @@ export const consumeCombatEvent = (scope: CombatTelemetryScope, event: CombatEve
         targetContribution.total += amount
         targetContribution.healthDamage += finite(event.healthDamage)
         targetContribution.barrierAbsorbed += finite(event.barrierAbsorbed)
-        if (event.damageType) targetContribution.damageTypes[event.damageType] = (targetContribution.damageTypes[event.damageType] ?? 0) + amount
+        componentAmounts.forEach((component) => { targetContribution.damageTypes[component.damageType] = (targetContribution.damageTypes[component.damageType] ?? 0) + component.amount })
         targetContribution.events += 1
       }
       if (event.barrierBefore !== undefined) reconcileBarrierOwner(scope, targetActor, finite(event.barrierBefore))

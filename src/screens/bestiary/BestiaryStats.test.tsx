@@ -13,7 +13,7 @@ describe('BestiaryStats', () => {
     const combatLabels = [...(combat?.querySelectorAll('.bestiary-stat-row') ?? [])].map((row) => row.querySelector('.bestiary-stat-row span')?.textContent)
     const defenceLabels = [...(defences?.querySelectorAll('.bestiary-defence-stat-row') ?? [])].map((row) => row.querySelector('span')?.textContent)
 
-    expect(combatLabels).toEqual(['Health', 'Basic Attack Damage', 'Basic Attack Speed', 'Crit Chance', 'Crit Damage'])
+    expect(combatLabels).toEqual(['Max Health', 'Basic Attack Damage', 'Basic Attack Speed', 'Crit Chance', 'Crit Damage'])
     expect(combat?.textContent).not.toContain('Defense')
     expect(combat?.textContent).not.toContain('Damage Reduction')
     expect(defenceLabels).toEqual(['Defense', 'Damage Reduction', 'Fire', 'Water', 'Earth', 'Air'])

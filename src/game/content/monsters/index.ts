@@ -1,11 +1,10 @@
-import { STATUS_DEFINITIONS } from '../statuses'
 import { getTraitDefinition, getTraitDefinitions } from '../traits'
 import type { CombatEffect, CombatTag, DamageType, MonsterId } from '../../types'
 import { ABANDONED_CATACOMBS_MONSTERS } from './abandonedCatacombs'
 import { HOWLING_DEN_MONSTERS } from './howlingDen'
 import { WHISPERING_WOODS_MONSTERS, WHISPERING_WOODS_MONSTER_IDS } from './whisperingWoods'
 import type { MonsterDefinition } from './monsterTypes'
-import { isPersistedCombatEffect } from '../../systems/combat/combatEffectValidation'
+import { validateCombatEffect } from '../../systems/combat/combatEffectValidation'
 import { MAX_ACTION_WORK_MS, MIN_ACTION_TIME_MS } from '../../core/balance/combatTiming'
 import { MAX_BLOCK_CHANCE, MAX_CRIT_CHANCE, MAX_CRIT_DAMAGE_MULTIPLIER, MAX_RESISTANCE, MIN_RESISTANCE } from '../../core/balance/combatStats'
 
@@ -27,13 +26,7 @@ const COMBAT_TAGS: readonly CombatTag[] = ['basic-attack', 'spell', 'weapon', 'e
 const DAMAGE_TYPES: readonly DamageType[] = ['physical', 'arcane', 'fire', 'water', 'earth', 'air']
 
 const validateEffects = (owner: string, effects: CombatEffect[], errors: string[]) => effects.forEach((effect) => {
-  if (!isPersistedCombatEffect(effect)) errors.push(`${owner}: invalid combat effect`)
-  if ('magnitude' in effect) {
-    const magnitude = effect.magnitude
-    if ('value' in magnitude && (!Number.isFinite(magnitude.value) || magnitude.value < 0)) errors.push(`${owner}: invalid magnitude`)
-    if (magnitude.type === 'school-level' && (!Number.isFinite(magnitude.base) || !Number.isFinite(magnitude.perLevel))) errors.push(`${owner}: invalid school magnitude`)
-  }
-  if (effect.type === 'apply-status' && !STATUS_DEFINITIONS[effect.statusId]) errors.push(`${owner}: unknown status ${effect.statusId}`)
+  errors.push(...validateCombatEffect(effect, owner))
   if (effect.type === 'set-action-pattern' && !effect.patternId.trim()) errors.push(`${owner}: action pattern id is required`)
 })
 

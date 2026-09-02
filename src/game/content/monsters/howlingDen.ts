@@ -20,7 +20,7 @@ export const HOWLING_DEN_MONSTERS = {
     id: 'corrupted-dire-wolf', bestiaryCategory: 'monster', name: 'Corrupted Dire Wolf', subtitle: 'A beast split between fang and sorcery',
     maxHealth: 160, basicAttackDamage: 14, basicAttackTimeMs: 2300, color: '#7e6c9f', ui: { portraitIcon: 'wolf' }, traitIds: ['corrupted-dire-wolf-arcane-corruption'], resistances: { fire: 0.1, water: 0.1, earth: 0.1, air: 0.1 },
     actions: {
-      'arcane-bite': { id: 'arcane-bite', name: 'Arcane Bite', actionTimeMs: 1600, description: 'A corrupted bite tears through both body and warding.', effects: [scaledDirectDamage('physical', 0.7), scaledDirectDamage('arcane', 0.7)], tags: ['special', 'physical', 'arcane', 'melee', 'direct'] },
+      'arcane-bite': { id: 'arcane-bite', name: 'Arcane Bite', actionTimeMs: 1600, description: 'A corrupted bite tears through both body and warding.', effects: [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'source-basic-damage-percent', value: 0.7 } }, { damageType: 'arcane', magnitude: { type: 'source-basic-damage-percent', value: 0.7 } }], tags: ['direct'] }], tags: ['special', 'physical', 'arcane', 'melee', 'direct'] },
       'corrupted-howl': { id: 'corrupted-howl', name: 'Corrupted Howl', actionTimeMs: 1800, description: 'The howl fills the Corrupted Dire Wolf with Haste.', effects: [applyStatus('haste', 'self', 6000)], tags: ['special', 'buff'] },
     },
     actionPatterns: { default: { id: 'default', steps: [basic('basic-1'), action('arcane-bite-step', 'arcane-bite'), basic('basic-2'), basic('basic-3'), action('corrupted-howl-step', 'corrupted-howl')] } }, defaultActionPatternId: 'default',

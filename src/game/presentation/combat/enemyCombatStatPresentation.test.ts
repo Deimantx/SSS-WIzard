@@ -6,7 +6,7 @@ import { buildEnemyCombatStatRows, buildMonsterDossierCombatStatRows, formatBasi
 describe('enemy combat stat presentation', () => {
   it('keeps dossier order and exposes a real Basic Attack rate', () => {
     const rows = buildMonsterDossierCombatStatRows(MONSTERS['forest-wisp'])
-    expect(rows.slice(0, 7).map((row) => row.label)).toEqual(['Health', 'Basic Attack Damage', 'Basic Attack Speed', 'Crit Chance', 'Crit Damage', 'Defense', 'Damage Reduction'])
+    expect(rows.slice(0, 7).map((row) => row.label)).toEqual(['Max Health', 'Basic Attack Damage', 'Basic Attack Speed', 'Crit Chance', 'Crit Damage', 'Defense', 'Damage Reduction'])
     expect(rows[2]).toMatchObject({ value: '0.36/s', description: 'Current Basic Attack Time: 2.80s.' })
   })
 

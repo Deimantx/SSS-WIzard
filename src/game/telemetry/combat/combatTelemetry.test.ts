@@ -99,7 +99,7 @@ describe('combat telemetry foundation', () => {
     const ward: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'water-ward', school: 'water', tags: ['spell', 'water'] }
     const rootCrush: CombatSource = { actor: 'enemy', kind: 'action', sourceId: 'root-crush', ruleId: 'root-crush', sourceMonsterId: 'grove-sentinel', sourceInstanceKey: 'enemy:1', tags: ['special'] }
     executeCombatEffects(state, [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 35 }, mode: 'replace', durationMs: 9_000 }], ward, undefined, sink)
-    executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', damageType: 'physical', magnitude: { type: 'flat', value: 20 } }], rootCrush, undefined, sink)
+    executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 20 } }] }], rootCrush, undefined, sink)
 
     expect(events[0]).toMatchObject({ category: 'barrier', amount: 35, barrierGranted: 35, barrierMode: 'replace', barrierAfter: 35 })
     expect(events[1]).toMatchObject({ category: 'enemy-action', amount: 20, barrierBefore: 35, barrierAfter: 15, barrierAbsorbed: 20 })

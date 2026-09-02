@@ -43,20 +43,19 @@ describe('first three dungeon content', () => {
     expect(labels('fallen-acolyte')).toEqual(['Grave Bolt', 'Basic', 'Soul Drain', 'Basic', 'Basic', 'Death Ward', 'Basic'])
     expect(labels('archmage-edrin-shade')).toEqual(['Gravefire', 'Basic', 'Frostbind', 'Arcane Ward', 'Basic', 'Soul Drain'])
     expect(labels('archmage-edrin-shade', 'unbound')).toEqual(['Basic', 'Gravefire', 'Frostbind', 'Soul Drain', 'Basic', 'Final Incantation'])
-    expect(MONSTERS['corrupted-dire-wolf'].actions['arcane-bite'].effects.map((effect) => effect.type === 'deal-damage' ? [effect.damageType, effect.magnitude] : effect.type)).toEqual([
-      ['physical', { type: 'source-basic-damage-percent', value: 0.7 }],
-      ['arcane', { type: 'source-basic-damage-percent', value: 0.7 }],
+    expect(MONSTERS['corrupted-dire-wolf'].actions['arcane-bite'].effects.map((effect) => effect.type === 'deal-damage' ? effect.components : effect.type)).toEqual([
+      [{ damageType: 'physical', magnitude: { type: 'source-basic-damage-percent', value: 0.7 } }, { damageType: 'arcane', magnitude: { type: 'source-basic-damage-percent', value: 0.7 } }],
     ])
     expect(Object.values(MONSTERS).every((monster) => monster.loot.some((drop) => drop.itemId === 'life-essence'))).toBe(true)
   })
 
   it('uses source scaling for all current Monster numerical Action output', () => {
     Object.values(MONSTERS).forEach((monster) => Object.values(monster.actions).forEach((action) => action.effects.forEach((effect) => {
-      if (effect.type === 'deal-damage' && !effect.tags?.includes('dot')) expect(effect.magnitude.type).toBe('source-basic-damage-percent')
+      if (effect.type === 'deal-damage' && !effect.tags?.includes('dot')) effect.components.forEach((component) => expect(component.magnitude.type).toBe('source-basic-damage-percent'))
       if (effect.type === 'heal') expect(effect.magnitude.type).toBe('source-max-health-percent')
       if (effect.type === 'gain-barrier') expect(effect.magnitude.type).toBe('source-max-health-percent')
       if (effect.type === 'apply-status' && effect.periodicEffects) effect.periodicEffects.forEach((periodicEffect) => {
-        if (periodicEffect.type === 'deal-damage') expect(periodicEffect.magnitude.type).toBe('source-basic-damage-percent')
+        if (periodicEffect.type === 'deal-damage') periodicEffect.components.forEach((component) => expect(component.magnitude.type).toBe('source-basic-damage-percent'))
       })
     })))
     const ancientGrowth = TRAIT_DEFINITIONS['grove-sentinel-ancient-growth'].rules?.[0].effects[0]
@@ -77,14 +76,15 @@ describe('first three dungeon content', () => {
     ]
     expected.forEach(([monsterId, actionId, effectIndex, amount]) => {
       const effect = MONSTERS[monsterId].actions[actionId].effects[effectIndex]
-      if (!('magnitude' in effect)) throw new Error(`Expected a magnitude for ${monsterId}/${actionId}`)
-      expect(resolveMonsterBaseMagnitudePreview(MONSTERS[monsterId], effect.magnitude)).toBeCloseTo(amount, 4)
+      const magnitude = 'magnitude' in effect ? effect.magnitude : effect.type === 'deal-damage' ? effect.components[0]?.magnitude : undefined
+      if (!magnitude) throw new Error(`Expected a magnitude for ${monsterId}/${actionId}`)
+      expect(resolveMonsterBaseMagnitudePreview(MONSTERS[monsterId], magnitude)).toBeCloseTo(amount, 4)
     })
   })
 
   it('authors Bleeding and Spectral Fade with their required lifecycle rules', () => {
     expect(STATUS_DEFINITIONS.bleeding).toMatchObject({ classification: 'debuff', tags: ['debuff', 'dot', 'physical'], defaultDurationMs: 8000, stacking: { mode: 'refresh' }, cleanseable: true, dispellable: false, periodic: { intervalMs: 2000 } })
-    expect(STATUS_DEFINITIONS.bleeding.periodic?.effects[0]).toMatchObject({ type: 'deal-damage', damageType: 'physical', magnitude: { type: 'flat', value: 4 } })
+    expect(STATUS_DEFINITIONS.bleeding.periodic?.effects[0]).toMatchObject({ type: 'deal-damage', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 4 } }] })
     expect(STATUS_DEFINITIONS['spectral-fade']).toMatchObject({ classification: 'buff', defaultDurationMs: 5000, stacking: { mode: 'strongest' }, cleanseable: false, dispellable: true })
     expect(STATUS_DEFINITIONS['spectral-fade'].modifiers).toContainEqual({ key: 'damage-taken-percent', value: -0.25 })
     expect(TRAIT_DEFINITIONS['corrupted-greatbear-unstable-corruption'].rules?.[0].effects).toHaveLength(2)

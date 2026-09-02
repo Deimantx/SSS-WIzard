@@ -4,18 +4,19 @@ import type { GameState, StatusId } from '../../types'
 import type { CombatActor } from './magnitude'
 import { resolveMagnitude } from './magnitude'
 import { runCombatTriggers } from './triggerRuntime'
-import type { CombatEffect, CombatEventSink, CombatSource, ActiveStatus, CombatTag, ModifierKey } from './combatTypes'
+import type { CombatEffect, CombatEventSink, CombatResolutionContext, CombatSource, ActiveStatus, CombatTag, ModifierKey } from './combatTypes'
 import { getCombatModifiers } from './modifiers'
 import { hasValidStatusModifierOverrides, isPersistedCombatEffect } from './combatEffectValidation'
 import { buildPeriodicStatusCombatSource, getExecutablePeriodicStatusEffects, getRootCombatSourceProvenance } from './combatProvenance'
 
-export type ExecuteEffects = (state: GameState, effects: CombatEffect[], source: CombatSource, depth?: number, uiEvents?: CombatEventSink) => void
+export type ExecuteEffects = (state: GameState, effects: CombatEffect[], source: CombatSource, depth?: number, uiEvents?: CombatEventSink, resolution?: CombatResolutionContext) => void
 export interface StatusRemovalOptions {
   executeEffects?: ExecuteEffects
   source?: CombatSource
   depth?: number
   reason?: 'removed' | 'expired'
   uiEvents?: CombatEventSink
+  resolution?: CombatResolutionContext
 }
 
 const statusList = (state: GameState, actor: CombatActor): ActiveStatus[] => actor === 'player' ? state.combat.playerStatuses : state.combat.enemyStatuses
@@ -75,6 +76,10 @@ const snapshotPeriodicEffects = (state: GameState, holder: CombatActor, source: 
   // Runtime overrides follow the same atomic rule as persisted overrides.
   if (!effects.every(isPersistedCombatEffect)) return undefined
   return effects.map((effect) => {
+    if (effect.type === 'deal-damage') {
+      const target = relativeTargetForHolder(holder, source.actor, effect.target)
+      return { ...effect, components: effect.components.map((component) => component.magnitude.type === 'flat' ? component : { ...component, magnitude: { type: 'flat' as const, value: resolveMagnitude(state, component.magnitude, source, target) } }) }
+    }
     if (!('magnitude' in effect) || effect.magnitude.type === 'flat') return { ...effect }
     const target = relativeTargetForHolder(holder, source.actor, effect.target)
     return { ...effect, magnitude: { type: 'flat' as const, value: resolveMagnitude(state, effect.magnitude, source, target) } }
@@ -256,7 +261,7 @@ const emitStatusLifecycle = (state: GameState, actor: CombatActor, removed: Acti
     statusId: removed.statusId,
     sourceTags: lifecycleSource.tags ?? [],
     eventStatusTags,
-  }, options.executeEffects, options.depth ?? 0, [removed], options.uiEvents)
+  }, options.executeEffects, options.depth ?? 0, [removed], options.uiEvents, options.resolution)
 }
 
 /** Removes one internal instance during natural expiry. */

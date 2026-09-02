@@ -34,7 +34,7 @@ export type InventoryCategory = 'material' | 'loot' | 'equipment' | 'special'
 export type InventoryMaterialSubtype = 'elemental' | 'creature' | 'ore' | 'refined' | 'arcane'
 export type SpellType = 'damage' | 'heal' | 'barrier' | 'dot' | 'buff'
 import type { ActiveStatus, CombatEffect, StatusId, TraitDefinition } from './systems/combat/combatTypes'
-export type { ActionPattern, ActionStep, ActiveStatus, CombatActionDefinition, CombatCondition, CombatConditionContext, CombatEffect, CombatEvent, CombatEventSink, CombatModifier, CombatSource, CombatTag, DamageType, EffectTarget, Magnitude, ModifierKey, StatusId, StatusDefinition, TraitDefinition, TraitId } from './systems/combat/combatTypes'
+export type { ActionPattern, ActionStep, ActiveStatus, CombatActionDefinition, CombatCondition, CombatConditionContext, CombatDamageComponentEvent, CombatEffect, CombatEvent, CombatEventSink, CombatModifier, CombatResolutionContext, CombatSource, CombatTag, DamageComponent, DamageType, EffectTarget, Magnitude, ModifierKey, StatusId, StatusDefinition, TraitDefinition, TraitId } from './systems/combat/combatTypes'
 export type ManaPillarId = 'leyline-conduit' | 'arcane-reservoir' | 'mana-resonance' | 'astral-expansion' | 'echo-attunement'
 export type ChannelingDiscoveryId = 'stable-leyline' | 'echo-resonance' | 'deep-reservoir'
 export type RecipeId = 'fire-fragment' | 'water-fragment' | 'earth-fragment' | 'air-fragment' | 'prismatic-fragment' | 'ember-staff' | 'tide-focus' | 'stoneweave-robe' | 'windthread-charm'
@@ -49,7 +49,6 @@ export interface EquipmentStats {
   maxMana?: number
   manaRegen?: number
   maxFocus?: number
-  barrierReceived?: number
   defense?: number
   critChance?: number
   critDamage?: number
@@ -62,10 +61,6 @@ export interface EquipmentStats {
   statusDurationPct?: number
   manaCostReductionPct?: number
   focusEfficiencyPct?: number
-  fireSpellDamagePct?: number
-  waterBarrierPct?: number
-  earthSpellDamagePct?: number
-  airSpellDamagePct?: number
   resistances?: Partial<Record<import('./systems/combat/combatTypes').DamageType, number>>
 }
 

@@ -7,7 +7,7 @@ import { executeCombatEffects, damageEnemy, damagePlayer, gainBarrier } from './
 import { gainBarrier as gainBarrierRuntime } from './barrierRuntime'
 import { applyStatus, clearStatuses } from './statusRuntime'
 import { clearEnemyRuleCooldowns, resetAllCombatRuleRuntime, resetEncounterRuleFlags, runCombatTriggers } from './triggerRuntime'
-import type { CombatEventSink, StatusId } from './combatTypes'
+import { createCombatResolutionContext, type CombatEventSink, type StatusId } from './combatTypes'
 import { initializeEnemyActionRuntime, resetEnemyActionRuntime, startNextEnemyAction } from './actionRuntime'
 import { resolveMonsterLoot } from '../loot'
 import { discoverMonster } from '../collection/discovery'
@@ -41,8 +41,9 @@ export const spawnEnemy = (state: GameState, enemyId: MonsterId, uiEvents?: Comb
   state.combat.autoCastManaStarvedSpells = []
   discoverMonster(state, enemyId)
   uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'system', sourceId: 'encounter-start' })
-  runCombatTriggers(state, 'enemy', 'on-combat-start', { source: { actor: 'enemy', kind: 'system', sourceId: 'combat-start' } }, executeCombatEffects, 0, [], uiEvents)
-  runCombatTriggers(state, 'player', 'on-combat-start', { source: { actor: 'player', kind: 'system', sourceId: 'combat-start' }, eventTarget: 'enemy' }, executeCombatEffects, 0, [], uiEvents)
+  const combatStartResolution = createCombatResolutionContext()
+  runCombatTriggers(state, 'enemy', 'on-combat-start', { source: { actor: 'enemy', kind: 'system', sourceId: 'combat-start' } }, executeCombatEffects, 0, [], uiEvents, combatStartResolution)
+  runCombatTriggers(state, 'player', 'on-combat-start', { source: { actor: 'player', kind: 'system', sourceId: 'combat-start' }, eventTarget: 'enemy' }, executeCombatEffects, 0, [], uiEvents, combatStartResolution)
   state.combat.playerAttackDurationMs = Math.min(MAX_ACTION_WORK_MS, Math.max(MIN_ACTION_TIME_MS, BALANCE.player.basicAttackIntervalMs))
   state.combat.playerAttackTimerMs = state.combat.playerAttackDurationMs
   if (state.combat.enemyHp > 0 && state.player.health > 0) startNextEnemyAction(state, executeCombatEffects, 0, uiEvents)

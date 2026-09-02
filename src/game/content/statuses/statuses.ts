@@ -1,11 +1,11 @@
-import type { CombatEffect, CombatModifier, CombatTag, ModifierKey, StatusDefinition, StatusId } from '../../systems/combat/combatTypes'
+import type { CombatEffect, CombatModifier, ModifierKey, StatusDefinition, StatusId } from '../../systems/combat/combatTypes'
+import { COMBAT_MODIFIER_KEYS, validateCombatEffect, validateCombatModifier, validateCombatTriggerRule } from '../../systems/combat/combatEffectValidation'
 
 // Periodic effects are authored relative to the status holder. The runtime
 // maps the holder to self/opponent while retaining the original source.
-const damage = (damageType: 'physical' | 'fire', value: number): CombatEffect => ({ type: 'deal-damage', target: 'self', damageType, magnitude: { type: 'flat', value }, tags: ['dot', damageType] })
+const damage = (damageType: 'physical' | 'fire', value: number): CombatEffect => ({ type: 'deal-damage', target: 'self', components: [{ damageType, magnitude: { type: 'flat', value } }], tags: ['dot', damageType] })
 const heal = (value: number): CombatEffect => ({ type: 'heal', target: 'self', magnitude: { type: 'flat', value }, tags: ['heal', 'hot'] })
 const modifier = (key: CombatModifier['key'], value: number, extra: Omit<CombatModifier, 'key' | 'value'> = {}): CombatModifier => ({ key, value, ...extra })
-const COMBAT_TAGS: readonly CombatTag[] = ['basic-attack', 'spell', 'weapon', 'equipment', 'melee', 'ranged', 'magic', 'direct', 'heal', 'dot', 'hot', 'status', 'special', 'trait', 'buff', 'debuff', 'control', 'barrier', 'physical', 'arcane', 'fire', 'water', 'earth', 'air']
 
 export const STATUS_DEFINITIONS: Record<StatusId, StatusDefinition> = {
   burning: {
@@ -71,43 +71,11 @@ export const STATUS_ORDER = Object.keys(STATUS_DEFINITIONS) as StatusId[]
 
 export const validateStatusDefinitions = () => {
   const errors: string[] = []
-  const modifierKeys: readonly ModifierKey[] = ['damage-dealt-percent', 'damage-taken-percent', 'basic-attack-damage-percent', 'basic-attack-speed-percent', 'action-speed-percent', 'spell-damage-percent', 'melee-damage-percent', 'ranged-damage-percent', 'healing-done-percent', 'healing-received-percent', 'barrier-power-percent', 'barrier-received-percent', 'mana-regen-percent', 'cooldown-recovery-percent', 'control-duration-received-percent', 'status-duration-dealt-percent', 'status-duration-received-percent', 'defense-flat', 'crit-chance', 'crit-damage', 'block-chance', 'damage-over-time-percent', 'resistance-percent']
+  const modifierKeys = COMBAT_MODIFIER_KEYS
   const ids = Object.values(STATUS_DEFINITIONS).map((definition) => definition.id)
   if (new Set(ids).size !== ids.length) errors.push('duplicate status id')
-  const validateCondition = (owner: string, condition: import('../../systems/combat/combatTypes').CombatCondition | undefined): void => {
-    if (!condition) return
-    if ((condition.type === 'self-hp-below-percent' || condition.type === 'target-hp-below-percent' || condition.type === 'self-hp-above-percent' || condition.type === 'target-hp-above-percent') && (!Number.isFinite(condition.percent) || condition.percent < 0 || condition.percent > 100)) errors.push(`${owner}: invalid HP threshold`)
-    if ((condition.type === 'self-status-stacks-at-least' || condition.type === 'target-status-stacks-at-least') && (!Number.isInteger(condition.stacks) || condition.stacks < 1)) errors.push(`${owner}: invalid status stack threshold`)
-    if ((condition.type === 'self-barrier-at-least' || condition.type === 'self-barrier-at-most' || condition.type === 'target-barrier-at-least' || condition.type === 'target-barrier-at-most') && (!Number.isFinite(condition.value) || condition.value < 0)) errors.push(`${owner}: invalid Barrier amount`)
-    if (condition.type === 'event-action-is' && !condition.actionId.trim()) errors.push(`${owner}: action id is required`)
-    if (condition.type === 'event-action-has-tag' && !COMBAT_TAGS.includes(condition.tag)) errors.push(`${owner}: invalid action tag`)
-    if (condition.type === 'all' || condition.type === 'any') condition.conditions.forEach((entry) => validateCondition(owner, entry))
-    if (condition.type === 'not') validateCondition(owner, condition.condition)
-  }
   const validateEffects = (owner: string, effects: CombatEffect[]) => effects.forEach((effect) => {
-    if ('magnitude' in effect) {
-      const magnitude = effect.magnitude
-      if ('value' in magnitude && !Number.isFinite(magnitude.value)) errors.push(`${owner}: non-finite magnitude`)
-      if (magnitude.type === 'school-level' && (!Number.isFinite(magnitude.base) || !Number.isFinite(magnitude.perLevel))) errors.push(`${owner}: non-finite school magnitude`)
-    }
-    if (effect.type === 'apply-status' && !STATUS_DEFINITIONS[effect.statusId]) errors.push(`${owner}: unknown status ${effect.statusId}`)
-    if (effect.type === 'apply-status') {
-      const targetDefinition = STATUS_DEFINITIONS[effect.statusId]
-      const allowedOverrideKeys = new Set(targetDefinition?.modifiers?.map((entry) => entry.key) ?? [])
-      if (effect.durationMs !== undefined && effect.durationMs !== null && (!Number.isFinite(effect.durationMs) || effect.durationMs <= 0)) errors.push(`${owner}: status duration must be positive and finite`)
-      if (effect.modifierOverrides) Object.entries(effect.modifierOverrides).forEach(([key, value]) => {
-        if (!modifierKeys.includes(key as ModifierKey)) errors.push(`${owner}: unknown modifier override ${key}`)
-        else if (!allowedOverrideKeys.has(key as ModifierKey)) errors.push(`${owner}: modifier override ${key} is not defined by ${effect.statusId}`)
-        if (!Number.isFinite(value)) errors.push(`${owner}: non-finite modifier override`)
-      })
-      if (effect.modifierOverrides && targetDefinition?.stacking.mode === 'strongest' && targetDefinition.potencyKey && !Object.prototype.hasOwnProperty.call(effect.modifierOverrides, targetDefinition.potencyKey)) errors.push(`${owner}: strongest override must include potency key ${targetDefinition.potencyKey}`)
-      if (effect.periodicEffects !== undefined) {
-        if (!Array.isArray(effect.periodicEffects)) errors.push(`${owner}: periodic override must be an array`)
-        else if (!STATUS_DEFINITIONS[effect.statusId]?.periodic) errors.push(`${owner}: periodic override requires a periodic status`)
-        else validateEffects(`${owner}: periodic`, effect.periodicEffects)
-      }
-    }
-    if (effect.type === 'set-action-pattern' && !effect.patternId.trim()) errors.push(`${owner}: action pattern id is required`)
+    errors.push(...validateCombatEffect(effect, owner))
   })
   Object.entries(STATUS_DEFINITIONS).forEach(([key, definition]) => {
     if (key !== definition.id) errors.push(`${key}: key/id mismatch`)
@@ -125,12 +93,10 @@ export const validateStatusDefinitions = () => {
     }
     if (definition.stacking.maxStacks !== undefined && definition.stacking.maxStacks < 1) errors.push(`${definition.id}: maxStacks must be at least one`)
     if (definition.stacking.maxDurationMs !== undefined && (!Number.isFinite(definition.stacking.maxDurationMs) || definition.stacking.maxDurationMs < 0)) errors.push(`${definition.id}: invalid max duration`)
-    definition.modifiers?.forEach((entry) => { if (!Number.isFinite(entry.value)) errors.push(`${definition.id}: non-finite modifier`); validateCondition(`${definition.id}:modifier`, entry.condition) })
+    definition.modifiers?.forEach((entry) => { errors.push(...validateCombatModifier(entry, `${definition.id}:modifier`)) })
     validateEffects(`${definition.id}: periodic`, definition.periodic?.effects ?? [])
-    definition.triggers?.forEach((rule) => { if (rule.priority !== undefined && (!Number.isInteger(rule.priority) || !Number.isFinite(rule.priority))) errors.push(`${definition.id}:${rule.id}: invalid priority`); if (rule.cooldownMs !== undefined && (!Number.isInteger(rule.cooldownMs) || !Number.isFinite(rule.cooldownMs) || rule.cooldownMs < 0)) errors.push(`${definition.id}:${rule.id}: invalid cooldown`); validateCondition(`${definition.id}:${rule.id}`, rule.condition); validateEffects(`${definition.id}:${rule.id}`, rule.effects) })
+    definition.triggers?.forEach((rule) => { errors.push(...validateCombatTriggerRule(rule, `${definition.id}:${rule.id}`)) })
   })
   if (errors.length && import.meta.env.DEV) console.error(`[combat-statuses] ${errors.join('; ')}`)
   return errors
 }
-
-validateStatusDefinitions()

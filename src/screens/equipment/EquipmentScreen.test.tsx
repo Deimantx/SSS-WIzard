@@ -23,7 +23,7 @@ describe('EquipmentScreen stat typography structure', () => {
 
   it('keeps direct and tooltip rows in the same shell and formats Basic Attack time in seconds', async () => {
     const { container } = render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
-    const directRow = container.querySelector('[data-stat-label="Health"]')
+    const directRow = container.querySelector('[data-stat-label="Max Health"]')
     const tooltipRow = container.querySelector('[data-stat-label="Basic Attack Speed"]')
     expect(directRow?.parentElement?.classList.contains('equipment-stat-row-shell')).toBe(true)
     expect(tooltipRow?.parentElement?.classList.contains('equipment-stat-row-shell')).toBe(true)

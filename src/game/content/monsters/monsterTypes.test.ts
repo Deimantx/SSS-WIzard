@@ -6,8 +6,7 @@ describe('Monster action authoring helpers', () => {
     expect(scaledDirectDamage('arcane', 2.4)).toMatchObject({
       type: 'deal-damage',
       target: 'opponent',
-      damageType: 'arcane',
-      magnitude: { type: 'source-basic-damage-percent', value: 2.4 },
+      components: [{ damageType: 'arcane', magnitude: { type: 'source-basic-damage-percent', value: 2.4 } }],
     })
   })
 
@@ -21,8 +20,7 @@ describe('Monster action authoring helpers', () => {
     expect(effect).toMatchObject({ type: 'apply-status', target: 'opponent', statusId: 'thorn-wound', durationMs: 6000 })
     expect(effect.type === 'apply-status' ? effect.periodicEffects?.[0] : undefined).toMatchObject({
       type: 'deal-damage',
-      damageType: 'physical',
-      magnitude: { type: 'source-basic-damage-percent', value: 0.375 },
+      components: [{ damageType: 'physical', magnitude: { type: 'source-basic-damage-percent', value: 0.375 } }],
     })
   })
 })

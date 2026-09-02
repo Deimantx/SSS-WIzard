@@ -87,19 +87,24 @@ export function buildSpellEffectTooltipModel(state: Pick<GameState, 'schools' | 
   const rows: SpellEffectTooltipRow[] = []
 
   if (effect.type === 'deal-damage') {
-    const damageType = capitalize(effect.damageType)
-    const magnitude = effect.magnitude
-    if (magnitude.type === 'spell-power') {
-      rows.push({ label: 'Scaling', value: formatSpellMagnitude(magnitude), semantic: 'school' })
-      rows.push({ label: 'Base Damage', value: formatValue(getSpellPower(state) * magnitude.coefficient), semantic: 'school' })
-    } else if (magnitude.type === 'school-level') {
-      const level = state.schools[magnitude.school]?.level ?? 0
-      rows.push({ label: 'Base Damage', value: formatValue(magnitude.base), semantic: 'school' })
-      rows.push({ label: 'School Scaling', value: `+${formatValue(magnitude.perLevel)} / ${capitalize(magnitude.school)} Level`, semantic: 'school' })
-      rows.push({ label: 'Current School Level', value: `${level}`, semantic: 'school' })
-      rows.push({ label: 'Current Base Preview', value: formatValue(magnitude.base + level * magnitude.perLevel), semantic: 'school' })
-    } else rows.push({ label: 'Base Damage', value: formatSpellMagnitude(magnitude), semantic: 'school' })
-    rows.push({ label: 'Damage Type', value: `${damageType} Damage`, semantic: 'school' })
+    const damageTypes = effect.components.map((component) => component.damageType)
+    const damageType = damageTypes.length === 1 ? capitalize(damageTypes[0]) : 'Split'
+    effect.components.forEach((component, index) => {
+      const componentLabel = effect.components.length === 1 ? 'Base Damage' : `${capitalize(component.damageType)} Damage`
+      const magnitude = component.magnitude
+      if (magnitude.type === 'spell-power') {
+        rows.push({ label: 'Scaling', value: formatSpellMagnitude(magnitude), semantic: 'school' })
+        rows.push({ label: componentLabel, value: formatValue(getSpellPower(state) * magnitude.coefficient), semantic: 'school' })
+      } else if (magnitude.type === 'school-level') {
+        const level = state.schools[magnitude.school]?.level ?? 0
+        rows.push({ label: componentLabel, value: formatValue(magnitude.base), semantic: 'school' })
+        rows.push({ label: 'School Scaling', value: `+${formatValue(magnitude.perLevel)} / ${capitalize(magnitude.school)} Level`, semantic: 'school' })
+        rows.push({ label: 'Current School Level', value: `${level}`, semantic: 'school' })
+        rows.push({ label: 'Current Base Preview', value: formatValue(magnitude.base + level * magnitude.perLevel), semantic: 'school' })
+      } else rows.push({ label: componentLabel, value: formatSpellMagnitude(magnitude), semantic: 'school' })
+      if (effect.components.length === 1) rows.push({ label: 'Damage Type', value: `${capitalize(component.damageType)} Damage`, semantic: 'school' })
+      else if (index === 0) rows.push({ label: 'Damage Types', value: damageTypes.map((type) => `${capitalize(type)} Damage`).join(' + '), semantic: 'school' })
+    })
     appendTargetAndSource(rows, effect, spell.name)
     rows.push(...equipmentRows(state, spellId))
     return { school: spell.school, ...category, title: `${damageType} Damage`, description: `Deals ${damageType} damage when this Spell resolves.`, rows }
@@ -108,7 +113,7 @@ export function buildSpellEffectTooltipModel(state: Pick<GameState, 'schools' | 
   if (effect.type === 'heal') {
     if (effect.magnitude.type === 'spell-power') {
       rows.push({ label: 'Scaling', value: formatSpellMagnitude(effect.magnitude), semantic: 'school' })
-      rows.push({ label: 'Amount', value: formatValue(getSpellPower(state) * effect.magnitude.coefficient), semantic: 'school' })
+      rows.push({ label: 'Amount', value: formatValue(Math.round(getSpellPower(state) * effect.magnitude.coefficient)), semantic: 'school' })
     } else rows.push({ label: 'Amount', value: formatSpellMagnitude(effect.magnitude) })
     appendTargetAndSource(rows, effect, spell.name)
     return { school: spell.school, ...category, title: 'Healing', description: 'Restores Health to the selected target.', rows }
@@ -117,7 +122,7 @@ export function buildSpellEffectTooltipModel(state: Pick<GameState, 'schools' | 
   if (effect.type === 'gain-barrier') {
     if (effect.magnitude.type === 'spell-power') {
       rows.push({ label: 'Scaling', value: formatSpellMagnitude(effect.magnitude), semantic: 'school' })
-      rows.push({ label: 'Amount', value: formatValue(getSpellPower(state) * effect.magnitude.coefficient), semantic: 'school' })
+      rows.push({ label: 'Amount', value: formatValue(Math.round(getSpellPower(state) * effect.magnitude.coefficient)), semantic: 'school' })
     } else rows.push({ label: 'Amount', value: formatSpellMagnitude(effect.magnitude) })
     if (effect.durationMs !== undefined && effect.durationMs !== null) rows.push({ label: 'Duration', value: formatTime(effect.durationMs), semantic: 'time' })
     rows.push({ label: 'Mode', value: effect.mode === 'replace' ? 'Replace' : 'Add' })
@@ -132,19 +137,20 @@ export function buildSpellEffectTooltipModel(state: Pick<GameState, 'schools' | 
     status?.modifiers?.forEach((modifier) => rows.push({ label: modifierLabel(modifier), value: modifierValue(modifier), semantic: modifier.value >= 0 ? 'positive' : 'negative' }))
     const periodicEffects = effect.periodicEffects ?? status?.periodic?.effects
     const periodicDamage = periodicEffects?.find((entry) => entry.type === 'deal-damage')
+    const periodicComponent = periodicDamage?.components[0]
     if (periodicDamage?.type === 'deal-damage') {
-      rows.push({ label: 'Damage Type', value: `${capitalize(periodicDamage.damageType)} Damage`, semantic: 'school' })
+      if (periodicComponent) rows.push({ label: 'Damage Type', value: `${capitalize(periodicComponent.damageType)} Damage`, semantic: 'school' })
       const tickCount = durationMs !== null && status?.periodic?.intervalMs ? Math.floor(durationMs / status.periodic.intervalMs) : 0
-      if (periodicDamage.magnitude.type === 'spell-power' && tickCount > 0) {
-        const totalMagnitude = scaleMagnitude(periodicDamage.magnitude, tickCount)
-        const totalCoefficient = periodicDamage.magnitude.coefficient * tickCount
+      if (periodicComponent?.magnitude.type === 'spell-power' && tickCount > 0) {
+        const totalMagnitude = scaleMagnitude(periodicComponent.magnitude, tickCount)
+        const totalCoefficient = periodicComponent.magnitude.coefficient * tickCount
         rows.push({ label: 'Scaling', value: `${formatSpellMagnitude(totalMagnitude)} over ${formatTime(durationMs!)}`, semantic: 'school' })
         rows.push({ label: 'Total Base Damage', value: formatValue(getSpellPower(state) * totalCoefficient), semantic: 'school' })
-        rows.push({ label: 'Damage Per Tick', value: formatValue(getSpellPower(state) * periodicDamage.magnitude.coefficient), semantic: 'school' })
-      } else rows.push({ label: 'Damage Per Tick', value: formatSpellMagnitude(periodicDamage.magnitude), semantic: 'school' })
+        rows.push({ label: 'Damage Per Tick', value: formatValue(getSpellPower(state) * periodicComponent.magnitude.coefficient), semantic: 'school' })
+      } else if (periodicComponent) rows.push({ label: 'Damage Per Tick', value: formatSpellMagnitude(periodicComponent.magnitude), semantic: 'school' })
       rows.push({ label: 'Tick Interval', value: formatTime(status.periodic?.intervalMs ?? 0), semantic: 'time' })
-      if (durationMs !== null && status?.periodic?.intervalMs && periodicDamage.magnitude.type !== 'spell-power') {
-        if (periodicDamage.magnitude.type === 'flat') rows.push({ label: 'Total Base Damage', value: formatValue(periodicDamage.magnitude.value * tickCount), semantic: 'school' })
+      if (durationMs !== null && status?.periodic?.intervalMs && periodicComponent && periodicComponent.magnitude.type !== 'spell-power') {
+        if (periodicComponent.magnitude.type === 'flat') rows.push({ label: 'Total Base Damage', value: formatValue(periodicComponent.magnitude.value * tickCount), semantic: 'school' })
       }
     }
     if (effect.stacks !== undefined) rows.push({ label: 'Applied Stacks', value: `${effect.stacks}` })

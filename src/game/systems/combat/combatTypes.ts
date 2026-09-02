@@ -40,6 +40,34 @@ export type CombatTag =
   | 'barrier'
   | DamageType
 
+export interface DamageComponent {
+  damageType: DamageType
+  magnitude: Magnitude
+}
+
+export interface CombatDamageComponentEvent {
+  damageType: DamageType
+  raw: number
+  amount: number
+  healthDamage: number
+  barrierAbsorbed: number
+  immune: boolean
+}
+
+/** Transient resolution state. Never serialize this into GameState/save data. */
+export interface CombatResolutionContext {
+  cascadeId: number
+  executedRuleKeys: Set<string>
+  hitSequence?: number
+}
+
+let nextCascadeId = 0
+export const createCombatResolutionContext = (): CombatResolutionContext => ({
+  cascadeId: ++nextCascadeId,
+  executedRuleKeys: new Set<string>(),
+  hitSequence: 0,
+})
+
 export type CombatLogCategory =
   | 'basic-attack'
   | 'spell'
@@ -92,6 +120,11 @@ export interface CombatEvent {
   statusPhase?: CombatStatusPhase
   itemId?: ItemId
   damageType?: DamageType
+  /** All damage types represented by one Hit. */
+  damageTypes?: DamageType[]
+  /** Final per-component breakdown for one Hit; total event fields remain summed once. */
+  damageComponents?: CombatDamageComponentEvent[]
+  hitId?: string
   amount?: number
   attemptedAmount?: number
   effectiveAmount?: number
@@ -212,7 +245,7 @@ export type StatusId =
   | 'stunned'
 
 export type CombatEffect =
-  | { type: 'deal-damage'; target: EffectTarget; damageType: DamageType; magnitude: Magnitude; tags?: CombatTag[]; school?: SchoolId }
+  | { type: 'deal-damage'; target: EffectTarget; components: DamageComponent[]; tags?: CombatTag[]; school?: SchoolId }
   | { type: 'heal'; target: EffectTarget; magnitude: Magnitude; tags?: CombatTag[] }
   | { type: 'gain-barrier'; target: EffectTarget; magnitude: Magnitude; mode?: 'add' | 'replace'; durationMs?: number | null; tags?: CombatTag[] }
   | { type: 'restore-resource'; target: EffectTarget; resource: ResourceId; magnitude: Magnitude; tags?: CombatTag[] }
@@ -237,6 +270,7 @@ export type ModifierKey =
   | 'healing-done-percent'
   | 'healing-received-percent'
   | 'barrier-power-percent'
+  | 'barrier-received-flat'
   | 'barrier-received-percent'
   | 'mana-regen-percent'
   | 'cooldown-recovery-percent'
@@ -303,6 +337,7 @@ export type CombatCondition =
   | { type: 'event-status-has-tag'; tag: CombatTag }
   | { type: 'event-action-is'; actionId: string }
   | { type: 'event-action-has-tag'; tag: CombatTag }
+  | { type: 'event-damage-type-is'; damageType: DamageType }
   | { type: 'source-is-self' }
   | { type: 'source-is-opponent' }
   | { type: 'all'; conditions: CombatCondition[] }
@@ -316,6 +351,7 @@ export interface CombatTriggerRule {
   effects: CombatEffect[]
   oncePerEncounter?: boolean
   cooldownMs?: number
+  chance?: number
   priority?: number
 }
 
@@ -339,6 +375,8 @@ export interface CombatConditionContext {
   healthDamage?: number
   barrierDamage?: number
   damageType?: DamageType
+  /** Damage types represented by the current Hit; type conditions use any-match semantics. */
+  damageTypes?: DamageType[]
   previousHp?: number
   currentHp?: number
   previousHpPercent?: number

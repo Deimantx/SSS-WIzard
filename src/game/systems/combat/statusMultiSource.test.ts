@@ -42,8 +42,8 @@ describe('multi-source periodic statuses', () => {
 
   it('refreshes the same source without resetting its next tick or losing its payload snapshot', () => {
     const state = stateWithEnemy()
-    const firstPayload: CombatEffect[] = [{ type: 'deal-damage', target: 'self', damageType: 'fire', magnitude: { type: 'flat', value: 4 }, tags: ['dot', 'fire'] }]
-    const secondPayload: CombatEffect[] = [{ type: 'deal-damage', target: 'self', damageType: 'fire', magnitude: { type: 'flat', value: 2 }, tags: ['dot', 'fire'] }]
+    const firstPayload: CombatEffect[] = [{ type: 'deal-damage', target: 'self', components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 4 } }], tags: ['dot', 'fire'] }]
+    const secondPayload: CombatEffect[] = [{ type: 'deal-damage', target: 'self', components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 2 } }], tags: ['dot', 'fire'] }]
     const first = applyStatus(state, 'enemy', 'burning', source('fireball'), { durationMs: 6_000, periodicEffects: firstPayload })
     tickStatuses(state, 800, executeCombatEffects)
     const refreshed = applyStatus(state, 'enemy', 'burning', source('fireball'), { durationMs: 10_000, periodicEffects: secondPayload })
@@ -56,7 +56,7 @@ describe('multi-source periodic statuses', () => {
   it('allows the exact final tick and only emits grouped expiry when the last source ends', () => {
     const state = stateWithEnemy()
     const events: CombatEvent[] = []
-    applyStatus(state, 'enemy', 'burning', source('ignite'), { durationMs: 6_000, periodicEffects: [{ type: 'deal-damage', target: 'self', damageType: 'fire', magnitude: { type: 'flat', value: 1 } }] })
+    applyStatus(state, 'enemy', 'burning', source('ignite'), { durationMs: 6_000, periodicEffects: [{ type: 'deal-damage', target: 'self', components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 1 } }] }] })
     tickStatuses(state, 6_000, executeCombatEffects, { push: (event) => events.push(event) })
     expect(events.filter((event) => event.category === 'damage')).toHaveLength(6)
     expect(state.combat.enemyStatuses).toHaveLength(0)
@@ -104,7 +104,7 @@ describe('multi-source periodic statuses', () => {
   it('drops malformed persisted periodic overrides without breaking the save', () => {
     const initial = createInitialState()
     const migrated = migrateSave({ ...initial, saveVersion: 19, combat: { ...initial.combat, active: true, enemyId: 'forest-wisp', enemyStatuses: [
-      { statusId: 'burning', source: source('unsafe'), remainingMs: 2_000, stacks: 1, periodicEffects: [{ type: 'deal-damage', target: 'self', damageType: 'fire', magnitude: { type: 'flat', value: Number.NaN } }, { type: 'not-a-combat-effect' }] },
+      { statusId: 'burning', source: source('unsafe'), remainingMs: 2_000, stacks: 1, periodicEffects: [{ type: 'deal-damage', target: 'self', components: [{ damageType: 'fire', magnitude: { type: 'flat', value: Number.NaN } }] }, { type: 'not-a-combat-effect' }] },
     ] } } as any)
     expect(migrated.combat.enemyStatuses).toHaveLength(1)
     expect(migrated.combat.enemyStatuses[0].periodicEffects).toBeUndefined()
@@ -115,7 +115,7 @@ describe('multi-source periodic statuses', () => {
     const initial = createInitialState()
     const migrated = migrateSave({ ...initial, saveVersion: 21, combat: { ...initial.combat, active: true, enemyId: 'forest-wisp', enemyStatuses: [
       { statusId: 'burning', source: source('mixed'), remainingMs: 2_000, stacks: 1, periodicEffects: [
-        { type: 'deal-damage', target: 'self', damageType: 'fire', magnitude: { type: 'flat', value: 2 } },
+        { type: 'deal-damage', target: 'self', components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 2 } }] },
         { type: 'not-a-combat-effect' },
       ] },
     ] } } as any)

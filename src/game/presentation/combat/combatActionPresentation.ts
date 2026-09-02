@@ -21,6 +21,7 @@ export interface CombatEffectPresentation {
   /** Total authored DoT amount, distinct from the per-tick chip value. */
   totalBasePreview?: string
   damageType?: DamageType
+  damageTypes?: DamageType[]
   statusId?: string
   targetLabel?: string
   timeLabel?: string
@@ -86,16 +87,21 @@ export const formatCombatEffect = (effect: CombatEffect, source: CombatSource, o
   const target = actorLabel(source, effect.target)
   const tone = getCombatEffectPresentationTone(effect)
   if (effect.type === 'deal-damage') {
-    const preview = options.monster ? resolveMonsterBaseMagnitudePreview(options.monster, effect.magnitude) : null
-    return { kind: 'damage', tone, label: `${capitalize(effect.damageType)} Damage`, value: preview === null ? formatSpellMagnitude(effect.magnitude) : formatPreviewValue(preview), basePreview: preview === null ? undefined : formatPreviewValue(preview), scalingLabel: options.monster ? formatMonsterScalingLabel(effect.magnitude) : undefined, detail: `Target: ${target}`, damageType: effect.damageType, targetLabel: target }
+    const components = effect.components
+    const damageTypes = [...new Set(components.map((component) => component.damageType))]
+    const previews = options.monster ? components.map((component) => resolveMonsterBaseMagnitudePreview(options.monster!, component.magnitude)) : []
+    const preview = previews.length > 0 && previews.every((value): value is number => value !== null) ? previews.reduce((sum, value) => sum + value, 0) : null
+    const value = preview === null ? components.map((component) => `${capitalize(component.damageType)} ${formatSpellMagnitude(component.magnitude)}`).join(' + ') : formatPreviewValue(preview)
+    const scalingLabel = options.monster ? components.map((component) => formatMonsterScalingLabel(component.magnitude)).filter(Boolean).join(' + ') || undefined : undefined
+    return { kind: 'damage', tone, label: damageTypes.length === 1 ? `${capitalize(damageTypes[0])} Damage` : 'Split Damage', value, basePreview: preview === null ? undefined : formatPreviewValue(preview), scalingLabel, detail: `Target: ${target}`, damageType: damageTypes.length === 1 ? damageTypes[0] : undefined, damageTypes, targetLabel: target }
   }
   if (effect.type === 'heal') {
     const preview = options.monster ? resolveMonsterBaseMagnitudePreview(options.monster, effect.magnitude) : null
-    return { kind: 'heal', tone, label: 'Heal', value: preview === null ? formatSpellMagnitude(effect.magnitude) : formatPreviewValue(preview), basePreview: preview === null ? undefined : formatPreviewValue(preview), scalingLabel: options.monster ? formatMonsterScalingLabel(effect.magnitude) : undefined, detail: `Target: ${target}`, targetLabel: target }
+    return { kind: 'heal', tone, label: 'Heal', value: preview === null ? formatSpellMagnitude(effect.magnitude) : formatPreviewValue(Math.round(preview)), basePreview: preview === null ? undefined : formatPreviewValue(Math.round(preview)), scalingLabel: options.monster ? formatMonsterScalingLabel(effect.magnitude) : undefined, detail: `Target: ${target}`, targetLabel: target }
   }
   if (effect.type === 'gain-barrier') {
     const preview = options.monster ? resolveMonsterBaseMagnitudePreview(options.monster, effect.magnitude) : null
-    return { kind: 'barrier', tone, label: 'Barrier', value: preview === null ? formatSpellMagnitude(effect.magnitude) : formatPreviewValue(preview), basePreview: preview === null ? undefined : formatPreviewValue(preview), scalingLabel: options.monster ? formatMonsterScalingLabel(effect.magnitude) : undefined, detail: `${effect.mode === 'replace' ? 'Replaces' : 'Adds to'} ${target}`, targetLabel: target, timeLabel: effect.durationMs ? formatTime(effect.durationMs) : undefined }
+    return { kind: 'barrier', tone, label: 'Barrier', value: preview === null ? formatSpellMagnitude(effect.magnitude) : formatPreviewValue(Math.round(preview)), basePreview: preview === null ? undefined : formatPreviewValue(Math.round(preview)), scalingLabel: options.monster ? formatMonsterScalingLabel(effect.magnitude) : undefined, detail: `${effect.mode === 'replace' ? 'Replaces' : 'Adds to'} ${target}`, targetLabel: target, timeLabel: effect.durationMs ? formatTime(effect.durationMs) : undefined }
   }
   if (effect.type === 'apply-status') {
     const status = STATUS_DEFINITIONS[effect.statusId]
@@ -104,15 +110,16 @@ export const formatCombatEffect = (effect: CombatEffect, source: CombatSource, o
     const periodicDamage = periodic?.find((entry) => entry.type === 'deal-damage')
     const intervalMs = status?.periodic?.intervalMs
     const tickCount = duration !== null && duration !== undefined && intervalMs ? Math.floor(duration / intervalMs) : 0
-    const totalMagnitude = periodicDamage && tickCount > 0 ? scaleMagnitude(periodicDamage.magnitude, tickCount) : undefined
-    const tickPreview = options.monster && periodicDamage ? resolveMonsterBaseMagnitudePreview(options.monster, periodicDamage.magnitude) : null
+    const tickComponent = periodicDamage?.components[0]
+    const totalMagnitude = tickComponent && tickCount > 0 ? scaleMagnitude(tickComponent.magnitude, tickCount) : undefined
+    const tickPreview = options.monster && tickComponent ? resolveMonsterBaseMagnitudePreview(options.monster, tickComponent.magnitude) : null
     const totalPreview = options.monster && totalMagnitude ? resolveMonsterBaseMagnitudePreview(options.monster, totalMagnitude) : null
-    const value = periodicDamage?.type === 'deal-damage' && intervalMs
-      ? `${tickPreview === null ? formatSpellMagnitude(periodicDamage.magnitude) : formatPreviewValue(tickPreview)} / ${formatTime(intervalMs)}`
+    const value = periodicDamage?.type === 'deal-damage' && tickComponent && intervalMs
+      ? `${tickPreview === null ? formatSpellMagnitude(tickComponent.magnitude) : formatPreviewValue(tickPreview)} / ${formatTime(intervalMs)}`
       : undefined
     const scalingLabel = options.monster && totalMagnitude ? formatMonsterScalingLabel(totalMagnitude) : undefined
-    const totalBasePreview = totalPreview === null || !periodicDamage || periodicDamage.type !== 'deal-damage' ? undefined : `${formatPreviewValue(totalPreview)} ${capitalize(periodicDamage.damageType)}`
-    return { kind: 'status', tone, label: `Applies ${status?.name ?? capitalize(effect.statusId)}`, value, scalingLabel, totalBasePreview, detail: `Target: ${target}`, damageType: periodicDamage?.type === 'deal-damage' ? periodicDamage.damageType : undefined, statusId: effect.statusId, targetLabel: target, timeLabel: duration === null || duration === undefined ? undefined : formatTime(duration) }
+    const totalBasePreview = totalPreview === null || !periodicDamage || periodicDamage.type !== 'deal-damage' || !tickComponent ? undefined : `${formatPreviewValue(totalPreview)} ${capitalize(tickComponent.damageType)}`
+    return { kind: 'status', tone, label: `Applies ${status?.name ?? capitalize(effect.statusId)}`, value, scalingLabel, totalBasePreview, detail: `Target: ${target}`, damageType: periodicDamage?.type === 'deal-damage' && tickComponent ? tickComponent.damageType : undefined, statusId: effect.statusId, targetLabel: target, timeLabel: duration === null || duration === undefined ? undefined : formatTime(duration) }
   }
   if (effect.type === 'modify-action-timer') return { kind: 'control', tone, label: effect.action === 'basic-attack' ? 'Basic Attack' : 'Current Action', value: `${effect.amountMs >= 0 ? '+' : '-'}${Math.abs(effect.amountMs) / 1000}s`, detail: effect.amountMs >= 0 ? `Delayed: ${target}` : `Accelerated: ${target}`, targetLabel: target, timeLabel: `${Math.abs(effect.amountMs) / 1000}s` }
   if (effect.type === 'restore-resource' || effect.type === 'drain-resource') return { kind: 'resource', tone, label: `${effect.type === 'restore-resource' ? 'Restore' : 'Drain'} ${capitalize(effect.resource)}`, value: formatSpellMagnitude(effect.magnitude), detail: `Target: ${target}`, targetLabel: target }

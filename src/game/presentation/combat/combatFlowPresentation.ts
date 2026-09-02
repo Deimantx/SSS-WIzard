@@ -86,7 +86,7 @@ export function getCombatFlowPresentation(input: CombatFlowRuntimeInput): Combat
   const enemyAction = input.currentAction
   const enemyActionPresentation = enemyAction ? buildCombatActionPresentation(enemyAction, { actor: 'enemy', kind: 'action', sourceMonsterId: input.enemy.id }, { monster: input.enemy }) : null
   const basicPresentation = !enemyActionPresentation && input.currentStep?.type === 'basic'
-    ? formatCombatEffect({ type: 'deal-damage', target: 'opponent', damageType: 'physical', magnitude: { type: 'flat', value: input.enemy.basicAttackDamage } }, { actor: 'enemy', kind: 'basic-attack' })
+    ? formatCombatEffect({ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: input.enemy.basicAttackDamage } }] }, { actor: 'enemy', kind: 'basic-attack' })
     : null
   const enemyTotalMs = input.enemyActionDurationMs || input.enemy.basicAttackTimeMs
   const playerTiming = input.playerTiming ?? getFallbackTimedActionState(input.playerAttackDurationMs, input.playerAttackTimerMs, Boolean(input.playerStunned))

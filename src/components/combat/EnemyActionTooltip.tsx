@@ -5,7 +5,7 @@ import { formatTime } from '../../game/utils'
 import { CombatEffectChip } from './CombatEffectChip'
 
 export function buildBasicAttackPresentation(basicDamage: number, actionTimeMs = 0): CombatActionPresentation {
-  const effect: CombatEffect = { type: 'deal-damage', target: 'opponent', damageType: 'physical', magnitude: { type: 'flat', value: basicDamage } }
+  const effect: CombatEffect = { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: basicDamage } }] }
   return { id: 'basic-attack', name: 'Basic Attack', description: 'A physical attack using the enemy\'s authored base damage.', actionTimeMs, effects: [formatCombatEffect(effect, { actor: 'enemy', kind: 'basic-attack' })] }
 }
 

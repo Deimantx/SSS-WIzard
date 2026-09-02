@@ -33,16 +33,15 @@ const periodicPayload = (status: ActiveStatus): CombatEffect[] => status.periodi
 
 const sourcePeriodicPresentation = (status: ActiveStatus, definition: StatusDefinition, state?: GameState): PeriodicStatusSourcePresentation => {
   const effects = (state ? getExecutablePeriodicStatusEffects(status) : periodicPayload(status)).filter((effect) => effect.type === 'deal-damage')
-  const damageTypes = [...new Set(effects.map((effect) => effect.damageType))]
+  const damageTypes = [...new Set(effects.flatMap((effect) => effect.components.map((component) => component.damageType)))]
   const source = state ? buildPeriodicStatusCombatSource(status) : undefined
-  const damagePerTick = effects.reduce((total, effect) => {
-    if (effect.type !== 'deal-damage') return total
-    if (!state || !source) return total + (effect.magnitude.type === 'flat' ? effect.magnitude.value : 0)
+  const damagePerTick = effects.reduce((total, effect) => total + effect.components.reduce((componentTotal, component) => {
+    if (!state || !source) return componentTotal + (component.magnitude.type === 'flat' ? component.magnitude.value : 0)
     const target = effect.target === 'self' ? source.actor : source.actor === 'player' ? 'enemy' : 'player'
     const tags = [...new Set([...(source.tags ?? []), ...(effect.tags ?? [])])]
-    const raw = resolveMagnitude(state, effect.magnitude, source, target)
-    return total + calculateCombatDamage(state, raw, effect.damageType, source, target, tags).resolvedBeforeBarrier
-  }, 0)
+    const raw = resolveMagnitude(state, component.magnitude, source, target)
+    return componentTotal + calculateCombatDamage(state, raw, component.damageType, source, target, tags).resolvedBeforeBarrier
+  }, 0), 0)
   const interval = definition.periodic?.intervalMs ?? 0
   return {
     instanceKey: status.instanceKey,

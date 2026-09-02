@@ -46,7 +46,7 @@ describe('EnemyContextWindow', () => {
     const combatGroup = container.querySelector('.enemy-stats-group-combat')
     const defenceGroup = container.querySelector('.enemy-stats-group-defences')
     expect([...container.querySelectorAll('.enemy-stats-group')]).toHaveLength(2)
-    expect([...combatGroup!.querySelectorAll('.enemy-stat-row')].map((row) => row.querySelector('span')?.textContent)).toEqual(['Health', 'Basic Attack Damage', 'Basic Attack Speed', 'Crit Chance', 'Crit Damage'])
+    expect([...combatGroup!.querySelectorAll('.enemy-stat-row')].map((row) => row.querySelector('span')?.textContent)).toEqual(['Max Health', 'Basic Attack Damage', 'Basic Attack Speed', 'Crit Chance', 'Crit Damage'])
     expect([...defenceGroup!.querySelectorAll('.enemy-defence-row')].map((row) => row.querySelector('span')?.textContent)).toEqual(['Defense', 'Damage Reduction'])
     expect([...defenceGroup!.querySelectorAll('.enemy-resistance-row')].map((row) => row.querySelector('span')?.textContent)).toEqual(['Fire', 'Water', 'Earth', 'Air'])
     expect(defenceGroup!.textContent).not.toContain('Physical')

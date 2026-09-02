@@ -12,9 +12,9 @@ describe('combat action presentation', () => {
 
   it('classifies multi-effect actions from effect data and tags', () => {
     const source = { actor: 'enemy' as const, kind: 'action' as const }
-    expect(getCombatEffectPresentationTone({ type: 'deal-damage', target: 'opponent', damageType: 'fire', magnitude: { type: 'flat', value: 4 }, tags: ['dot', 'fire'] })).toBe('dot')
+    expect(getCombatEffectPresentationTone({ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 4 } }], tags: ['dot', 'fire'] })).toBe('dot')
     const presentation = [
-      formatCombatEffect({ type: 'deal-damage', target: 'opponent', damageType: 'arcane', magnitude: { type: 'flat', value: 10 }, tags: ['direct'] }, source),
+      formatCombatEffect({ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'arcane', magnitude: { type: 'flat', value: 10 } }], tags: ['direct'] }, source),
       formatCombatEffect({ type: 'heal', target: 'self', magnitude: { type: 'flat', value: 6 }, tags: ['heal'] }, source),
       formatCombatEffect({ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 8 }, tags: ['barrier'] }, source),
       formatCombatEffect({ type: 'apply-status', target: 'opponent', statusId: 'chilled', tags: ['control'] }, source),

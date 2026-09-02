@@ -88,7 +88,7 @@ describe('authored status runtime', () => {
     const state = stateWithEnemy()
     for (let index = 0; index < 6; index += 1) applyStatus(state, 'enemy', 'shock', playerSpell)
     expect(state.combat.enemyStatuses[0].stacks).toBe(5)
-    executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', damageType: 'air', magnitude: { type: 'flat', value: 10 }, tags: ['spell'] }], { ...playerSpell, school: 'air' })
+    executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'air', magnitude: { type: 'flat', value: 10 } }], tags: ['spell'] }], { ...playerSpell, school: 'air' })
     expect(state.combat.enemyHp).toBe(32)
     applyStatus(state, 'player', 'quickening', { actor: 'player', kind: 'spell', sourceId: 'quickening', tags: ['spell'] })
     expect(getTimedActionState(1200, 1200, getPlayerBasicAttackRate(state)).etaMs).toBe(960)
@@ -426,10 +426,10 @@ describe('post-implementation combat audit regressions', () => {
     try {
       const melee = stateWithEnemy()
       applyStatus(melee, 'player', 'quickening', playerSpell)
-      executeCombatEffects(melee, [{ type: 'deal-damage', target: 'opponent', damageType: 'physical', magnitude: { type: 'flat', value: 10 }, tags: ['direct'] }], { actor: 'player', kind: 'weapon', sourceId: 'melee', tags: ['weapon', 'melee'] })
+      executeCombatEffects(melee, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 10 } }], tags: ['direct'] }], { actor: 'player', kind: 'weapon', sourceId: 'melee', tags: ['weapon', 'melee'] })
       const ranged = stateWithEnemy()
       applyStatus(ranged, 'player', 'quickening', playerSpell)
-      executeCombatEffects(ranged, [{ type: 'deal-damage', target: 'opponent', damageType: 'physical', magnitude: { type: 'flat', value: 10 }, tags: ['direct'] }], { actor: 'player', kind: 'weapon', sourceId: 'ranged', tags: ['weapon', 'ranged'] })
+      executeCombatEffects(ranged, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 10 } }], tags: ['direct'] }], { actor: 'player', kind: 'weapon', sourceId: 'ranged', tags: ['weapon', 'ranged'] })
       expect(melee.combat.enemyHp).toBeCloseTo(44 - 10 * 1.5 * 1.5 * (1 - 10 / 110))
       expect(ranged.combat.enemyHp).toBeCloseTo(44 - 10 * 1.5 * (1 - 10 / 110))
     } finally {
@@ -445,7 +445,7 @@ describe('post-implementation combat audit regressions', () => {
     applyStatus(equipped, 'enemy', 'burning', playerSpell)
     tickStatuses(plain, 1000, executeCombatEffects)
     tickStatuses(equipped, 1000, executeCombatEffects)
-    expect(equipped.combat.enemyHp).toBe(plain.combat.enemyHp - 1)
+    expect(equipped.combat.enemyHp).toBe(plain.combat.enemyHp)
   })
 
   it('uses the canonical damage calculation for preview and resolution', () => {
@@ -453,7 +453,7 @@ describe('post-implementation combat audit regressions', () => {
     state.equipment.weapon = 'ember-staff'
     const source: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'fire-bolt', school: 'fire', tags: ['spell', 'magic'] }
     const preview = getCombatDamagePreview(state, 10, source, 'enemy', 'fire')
-    executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', damageType: 'fire', school: 'fire', magnitude: { type: 'flat', value: 10 } }], source)
+    executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 10 } }], school: 'fire' }], source)
     expect(state.combat.enemyHp).toBe(44 - preview.healthDamage)
   })
 

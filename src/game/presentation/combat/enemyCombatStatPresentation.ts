@@ -59,7 +59,7 @@ export const getMonsterDossierCombatStats = (monster: MonsterDefinition): EnemyC
 /** Canonical order, labels, rounding and descriptions for Enemy Intel and Bestiary. */
 export const buildEnemyCombatStatRows = (stats: EnemyCombatStatValues, options: { includeZeroResistances?: boolean } = {}): EnemyCombatStatRow[] => {
   const rows: EnemyCombatStatRow[] = [
-    { id: 'max-health', label: 'Health', value: formatNumber(stats.maxHealth), description: 'Maximum Health for this enemy. Some healing and Barrier Actions scale from Max Health.', group: 'core' },
+    { id: 'max-health', label: 'Max Health', value: formatNumber(stats.maxHealth), description: 'Maximum Health for this enemy. Some healing and Barrier Actions scale from Max Health.', group: 'core' },
     { id: 'basic-attack-damage', label: 'Basic Attack Damage', value: formatNumber(stats.basicAttackDamage), description: "The Monster's base Basic Attack damage and the primary scaling stat for its damaging Actions. Individual Actions apply their own percentage coefficient.", group: 'offense' },
     { id: 'basic-attack-speed', label: 'Basic Attack Speed', value: formatBasicAttackRate(stats.basicAttackIntervalMs), description: `Current Basic Attack Time: ${formatBasicAttackTime(stats.basicAttackIntervalMs)}.`, group: 'offense' },
     { id: 'crit-chance', label: 'Crit Chance', value: percentage(stats.critChance), description: 'Chance for a direct enemy hit to critically strike.', group: 'offense' },

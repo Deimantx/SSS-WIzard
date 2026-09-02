@@ -12,7 +12,7 @@ import { applyStatus } from './statusRuntime'
 
 const source = { actor: 'player' as const, kind: 'spell' as const, sourceId: 'debug-spell', tags: ['spell' as const, 'direct' as const] }
 const enemySource = (state: GameState) => ({ actor: 'enemy' as const, kind: 'basic-attack' as const, sourceId: 'debug-enemy-hit', sourceMonsterId: state.combat.enemyId ?? undefined, sourceInstanceKey: state.combat.enemyInstanceKey ?? undefined, tags: ['basic-attack' as const, 'direct' as const] })
-const damage = (value: number, actor: 'player' | 'enemy' = 'player') => ({ type: 'deal-damage' as const, target: 'opponent' as const, damageType: 'physical' as const, magnitude: { type: 'flat' as const, value }, tags: actor === 'player' ? ['spell' as const, 'direct' as const] : ['basic-attack' as const, 'direct' as const] })
+const damage = (value: number, actor: 'player' | 'enemy' = 'player') => ({ type: 'deal-damage' as const, target: 'opponent' as const, components: [{ damageType: 'physical' as const, magnitude: { type: 'flat' as const, value } }], tags: actor === 'player' ? ['spell' as const, 'direct' as const] : ['basic-attack' as const, 'direct' as const] })
 
 const activeState = () => {
   const state = createInitialState()

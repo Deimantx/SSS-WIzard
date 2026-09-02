@@ -37,9 +37,9 @@ export const lifeEssenceDrop = { itemId: 'life-essence' as const, min: 1, max: 3
 export const withLifeEssence = (drops: MonsterDefinition['loot']): MonsterDefinition['loot'] => [...drops, lifeEssenceDrop]
 
 /** Default Monster authoring: damage scales from Basic Attack Damage. */
-export const scaledDirectDamage = (damageType: DamageType, coefficient: number, tags: CombatTag[] = ['direct']): CombatEffect => ({ type: 'deal-damage', target: 'opponent', damageType, magnitude: { type: 'source-basic-damage-percent', value: coefficient }, tags })
+export const scaledDirectDamage = (damageType: DamageType, coefficient: number, tags: CombatTag[] = ['direct']): CombatEffect => ({ type: 'deal-damage', target: 'opponent', components: [{ damageType, magnitude: { type: 'source-basic-damage-percent', value: coefficient } }], tags })
 /** Explicit escape hatch for intentionally fixed Monster damage. */
-export const flatDirectDamage = (damageType: DamageType, value: number, tags: CombatTag[] = ['direct']): CombatEffect => ({ type: 'deal-damage', target: 'opponent', damageType, magnitude: { type: 'flat', value }, tags })
+export const flatDirectDamage = (damageType: DamageType, value: number, tags: CombatTag[] = ['direct']): CombatEffect => ({ type: 'deal-damage', target: 'opponent', components: [{ damageType, magnitude: { type: 'flat', value } }], tags })
 export const gainBarrier = (magnitude: Magnitude): CombatEffect => ({ type: 'gain-barrier', target: 'self', magnitude, mode: 'add', durationMs: null, tags: ['barrier'] })
 /** Default Monster authoring: healing scales from the source Monster's Max Health. */
 export const scaledHeal = (maxHealthCoefficient: number): CombatEffect => ({ type: 'heal', target: 'self', magnitude: { type: 'source-max-health-percent', value: maxHealthCoefficient }, tags: ['heal', 'direct'] })

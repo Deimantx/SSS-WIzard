@@ -72,7 +72,7 @@
   gap: 7px;
 }
 .bestiary-stat-grid > .game-tooltip-trigger,
-.bestiary-defence-list > .game-tooltip-trigger,
+.bestiary-defence-grid > .game-tooltip-trigger,
 .bestiary-ability-list > .game-tooltip-trigger {
   display: block;
   min-width: 0;
@@ -103,11 +103,13 @@
   outline: 2px solid var(--ui-accent);
   outline-offset: 2px;
 }
-.bestiary-defence-list {
+.bestiary-defence-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
 }
+.bestiary-defence-stat-list { display: contents; }
+.bestiary-defence-stat-list > .game-tooltip-trigger { display: block; min-width: 0; }
 .bestiary-defence-row {
   display: flex;
   align-items: baseline;
@@ -172,69 +174,30 @@
   gap: 5px;
 }
 .bestiary-pattern-list { display: grid; gap: 8px; }
-.enemy-pattern-preview {
+.bestiary-pattern-preview {
   position: relative;
   display: grid;
   gap: 7px;
   min-width: 0;
-  padding: 8px 28px 8px 9px;
+  padding: 8px;
   border: 1px solid var(--ui-border);
   border-radius: 6px;
   background: color-mix(in srgb, var(--ui-panel-strong) 58%, transparent);
 }
-.enemy-pattern-preview-head {
+.bestiary-pattern-label {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 8px;
 }
-.enemy-pattern-preview-head strong {
+.bestiary-pattern-label strong {
   color: var(--ui-text-soft);
   font: var(--text-micro) var(--font-mono);
   letter-spacing: .08em;
 }
-.enemy-pattern-preview-head span,
-.enemy-pattern-preview-repeat {
-  color: var(--bestiary-color, var(--ui-accent));
-  font: var(--text-micro) var(--font-mono);
-}
-.enemy-pattern-preview-sequence {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 4px;
-  min-width: 0;
-}
-.enemy-pattern-preview-node-wrap {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  min-width: 0;
-}
-.enemy-pattern-preview-node-wrap > .game-tooltip-trigger { width: auto; }
-.enemy-pattern-preview-node {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  min-width: 0;
-  max-width: 170px;
-  padding: 5px 7px;
-  border: 1px solid var(--ui-border);
-  border-radius: 5px;
-  color: var(--ui-text-muted);
-  background: var(--ui-panel);
-  cursor: pointer;
-  font: var(--text-micro) var(--font-sans);
-  text-align: left;
-}
-.enemy-pattern-preview-node:hover,
-.enemy-pattern-preview-node:focus-visible { border-color: var(--ui-accent); color: var(--ui-text); outline: none; }
-.enemy-pattern-preview-node i { display: inline-flex; color: currentColor; }
-.enemy-pattern-preview-node > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.enemy-pattern-preview-arrow { color: var(--ui-text-muted); font-weight: 400; }
-.enemy-pattern-preview-repeat { position: absolute; right: 9px; bottom: 9px; }
+.bestiary-pattern-track { padding: 2px 0 1px; }
+.bestiary-pattern-track .combat-pattern-sequence { margin-inline: 0; }
 
 @media (max-width: 520px) {
-  .bestiary-defence-list { grid-template-columns: 1fr; }
-  .enemy-pattern-preview-node { max-width: 145px; }
+  .bestiary-defence-grid { grid-template-columns: 1fr; }
 }

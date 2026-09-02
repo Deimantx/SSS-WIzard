@@ -1,0 +1,110 @@
+.combat-pattern-rail {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 7px 1px 4px;
+  scrollbar-color: var(--ui-border-strong) transparent;
+  scrollbar-width: thin;
+}
+.combat-pattern-sequence {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  min-width: max-content;
+  margin-inline: auto;
+}
+.combat-pattern-node-wrap {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+.combat-pattern-node-wrap > .game-tooltip-trigger {
+  display: block;
+  width: 30px;
+  min-width: 30px;
+  flex: 0 0 30px;
+}
+.combat-pattern-node {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  flex: 0 0 30px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--ui-border);
+  border-radius: 7px;
+  color: var(--ui-text-muted);
+  background: color-mix(in srgb, var(--ui-text) 3%, transparent);
+  cursor: help;
+}
+.combat-pattern-node i {
+  display: grid;
+  place-items: center;
+  width: auto;
+  height: auto;
+  color: var(--ui-text-muted);
+  font-style: normal;
+}
+.combat-pattern-node i svg {
+  width: 16px;
+  height: 16px;
+}
+.combat-pattern-node strong { display: none; }
+.combat-pattern-node.is-current {
+  border-color: color-mix(in srgb, var(--enemy-accent, var(--ui-warning)) 68%, var(--ui-border));
+  color: var(--ui-gold);
+  background: color-mix(in srgb, var(--ui-warning) 9%, transparent);
+}
+.combat-pattern-node.is-current i { color: var(--ui-gold); }
+.combat-pattern-node.is-complete {
+  color: var(--ui-success);
+  border-color: color-mix(in srgb, var(--ui-success) 28%, var(--ui-border));
+}
+.combat-pattern-node:hover,
+.combat-pattern-node:focus-visible {
+  border-color: var(--ui-accent);
+  color: var(--ui-text);
+  outline: none;
+}
+.combat-pattern-arrow {
+  flex: 0 0 auto;
+  align-self: center;
+  margin-inline: 3px;
+  padding: 0;
+  color: var(--ui-text-disabled);
+  font-size: 13px;
+}
+.combat-pattern-repeat {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  margin-left: 5px;
+  color: var(--bestiary-color, var(--ui-accent));
+}
+.combat-pattern-empty {
+  padding: 8px 0;
+  color: var(--ui-text-disabled);
+  font-size: 10px;
+}
+
+.combat-pattern-icon-basic,
+.combat-pattern-icon-basic-attack { color: var(--ui-text-muted); }
+.combat-pattern-icon-direct-damage { color: var(--ui-warning); }
+.combat-pattern-icon-dot-damage { color: var(--semantic-debuff); }
+.combat-pattern-icon-barrier { color: var(--semantic-barrier); }
+.combat-pattern-icon-heal { color: var(--semantic-health); }
+.combat-pattern-icon-buff { color: var(--ui-accent); }
+.combat-pattern-icon-debuff { color: var(--semantic-debuff); }
+.combat-pattern-icon-control { color: var(--semantic-control); }
+.combat-pattern-icon-resource { color: var(--semantic-mana); }
+.combat-pattern-icon-multi-effect { color: var(--ui-text-soft); }
+
+@media (max-width: 520px) {
+  .combat-pattern-sequence { margin-inline: 0; }
+}

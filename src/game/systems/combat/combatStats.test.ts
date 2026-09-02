@@ -44,6 +44,7 @@ describe('universal combat stats foundation', () => {
     const directState = createInitialState()
     directState.combat.enemyId = 'forest-wisp'
     directState.combat.enemyMaxHp = 1_000
+    directState.combat.enemyHp = 1_000
     const before = directState.combat.combatRngState
     damageEnemy(directState, 1, 'spell')
     const afterDirect = directState.combat.combatRngState
@@ -58,6 +59,7 @@ describe('universal combat stats foundation', () => {
     const dotState = createInitialState()
     dotState.combat.enemyId = 'forest-wisp'
     dotState.combat.enemyMaxHp = 1_000
+    dotState.combat.enemyHp = 1_000
     const dotBefore = dotState.combat.combatRngState
     damageEnemy(dotState, 1, 'status')
     expect(dotState.combat.combatRngState).toBe(dotBefore)

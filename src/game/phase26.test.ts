@@ -13,7 +13,7 @@ import { clampResourcePercent } from '../app/shell/Topbar'
 
 describe('Unified Transmutation', () => {
   it('defines four fragment and four equipment recipes with the intended costs', () => {
-    expect(Object.keys(RECIPES)).toHaveLength(9)
+    expect(Object.keys(RECIPES)).toHaveLength(29)
     expect(['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'].map((id) => RECIPES[id as keyof typeof RECIPES].manaCost)).toEqual([15, 15, 15, 15])
     expect(['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'].map((id) => RECIPES[id as keyof typeof RECIPES].baseDurationMs)).toEqual([6000, 6000, 6000, 6000])
     expect(RECIPES['ember-staff'].ingredients).toEqual([
@@ -22,7 +22,7 @@ describe('Unified Transmutation', () => {
       { itemId: 'grove-bark', quantity: 1 },
     ])
     expect(RECIPES['ember-staff'].manaCost).toBe(0)
-    expect(RECIPES['ember-staff'].unlock.type).toBe('first-dungeon-boss-kill')
+    expect(RECIPES['ember-staff'].unlock).toEqual({ type: 'boss-kill', bossId: 'grove-sentinel' })
   })
 
   it('assigns Echoes across independent jobs and reserves ten Focus per Echo', () => {
@@ -75,6 +75,7 @@ describe('Unified Transmutation', () => {
   it('does not preserve an old full equipment bar when an ingredient is missing', () => {
     const state = makeInitialState()
     state.progress.firstBossKill = true
+    state.progress.lifetimeKillsByMonster['grove-sentinel'] = 1
     state.activities.transmutation.jobs['ember-staff'] = { echoesAssigned: 1, progressMs: 8000 }
     advanceGameState(state, 1, { mode: 'banked' })
     expect(state.activities.transmutation.jobs['ember-staff']?.progressMs).toBe(0)

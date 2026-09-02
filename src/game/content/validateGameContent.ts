@@ -1,5 +1,6 @@
 import { validateDungeonDefinitions } from './dungeons/dungeons'
 import { validateItemDefinitions } from './items/items'
+import { validateRecipeDefinitions } from './recipes/recipes'
 import { validateMonsterDefinitions } from './monsters'
 import { validateSpellDefinitions } from './spells/spells'
 import { validateStatusDefinitions } from './statuses/statuses'
@@ -18,6 +19,7 @@ export const validateGameContent = () => {
     ...validateMonsterDefinitions(),
     ...validateItemDefinitions(),
     ...validateDungeonDefinitions(),
+    ...validateRecipeDefinitions(),
   ]
   if (errors.length && import.meta.env.DEV) console.error(`[game-content] ${errors.join('; ')}`)
   return errors

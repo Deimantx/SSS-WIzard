@@ -51,7 +51,7 @@ describe('spell effect tooltip models', () => {
 
     expect(model).toMatchObject({ category: 'BARRIER', title: 'Barrier' })
     expect(row(model, 'Scaling')?.value).toBe('70% Spell Power')
-    expect(row(model, 'Amount')?.value).toBe('81')
+    expect(row(model, 'Amount')?.value).toBe('77')
     expect(row(model, 'Duration')?.value).toBe('9.0s')
     expect(row(model, 'Mode')?.value).toBe('Replace')
     expect(row(model, 'Tide Focus')).toMatchObject({ value: '+20%', semantic: 'positive' })

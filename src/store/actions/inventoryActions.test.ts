@@ -54,8 +54,9 @@ describe('inventory transactions', () => {
     expect(protectedState.inventory['fire-fragment']).toBe(17)
 
     const starterState = createInitialState()
-    expect(destroyItemAction(starterState, 'apprentice-wand', 1)).toBe(0)
-    expect(starterState.inventory['apprentice-wand']).toBe(1)
+    starterState.inventory['heartseed'] = 1
+    expect(destroyItemAction(starterState, 'heartseed', 1)).toBe(0)
+    expect(starterState.inventory['heartseed']).toBe(1)
   })
 
   it('excludes Research reservations from sell and destroy quantities', () => {

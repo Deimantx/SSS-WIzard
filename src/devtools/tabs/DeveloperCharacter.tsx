@@ -3,6 +3,7 @@ import { getManaRegenBreakdown } from '../../game/engine/channelingEngine'
 import { useGameStore } from '../../store/gameStore'
 import { getSpellPowerBreakdown } from '../../game/systems/spells/spellPower'
 import { getPlayerCombatStats } from '../../game/systems/combat/combatStats'
+import { getEquipmentStatSnapshot } from '../../screens/equipment/equipmentPreview'
 import { NumberField, Summary } from './DeveloperTabPrimitives'
 
 export function DeveloperCharacter() {
@@ -17,10 +18,12 @@ export function DeveloperCharacter() {
   const setRegenBonus = useGameStore((state) => state.setDebugManaRegenBonus)
   const setManaBonus = useGameStore((state) => state.setDebugMaxManaBonus)
   const setImmortal = useGameStore((state) => state.setDebugPlayerImmortal)
+  const damagePlayerForDebug = useGameStore((state) => state.damagePlayerForDebug)
   const update = (key: keyof typeof player, value: number) => setPlayer({ [key]: value } as Partial<typeof player>)
   const regen = getManaRegenBreakdown({ activities, progress, equipment, debug })
   const spellPower = getSpellPowerBreakdown({ equipment })
   const resolvedCombat = getPlayerCombatStats(useGameStore((state) => state))
+  const effectiveEquipment = getEquipmentStatSnapshot(useGameStore((state) => state), equipment)
   const combatRngState = useGameStore((state) => state.combat.combatRngState)
 
   return <div className="developer-tab-grid">
@@ -47,6 +50,10 @@ export function DeveloperCharacter() {
     <Card title="Resolved combat stats" className="developer-debug-card">
       <div className="developer-summary-grid">
         <Summary label="Spell Power" value={resolvedCombat.spellPower} />
+        <Summary label="Max HP" value={resolvedCombat.maxHealth} />
+        <Summary label="Max Mana" value={resolvedCombat.maxMana} />
+        <Summary label="Max Focus" value={resolvedCombat.maxFocus} />
+        <Summary label="Mana Regen" value={`${resolvedCombat.manaRegen}/s`} />
         <Summary label="Basic Damage" value={resolvedCombat.basicAttackDamage} />
         <Summary label="Basic Speed" value={`${resolvedCombat.basicAttackSpeedMultiplier.toFixed(2)}x`} />
         <Summary label="Crit Chance" value={`${Math.round(resolvedCombat.critChance * 100)}%`} />
@@ -60,6 +67,12 @@ export function DeveloperCharacter() {
         <Summary label="Barrier Power" value={`${Math.round(resolvedCombat.barrierPowerBonus * 100)}%`} />
         <Summary label="Mana Cost Reduction" value={`${Math.round(resolvedCombat.manaCostReduction * 100)}%`} />
         <Summary label="Focus Efficiency" value={`${Math.round(resolvedCombat.focusEfficiency * 100)}%`} />
+        <Summary label="Fire Spell Damage" value={`${Math.round(effectiveEquipment.fireSpellDamage * 100)}%`} />
+        <Summary label="Air Spell Damage" value={`${Math.round(effectiveEquipment.airSpellDamage * 100)}%`} />
+        <Summary label="Water Barrier Power" value={`${Math.round(effectiveEquipment.waterBarrierPower * 100)}%`} />
+        <Summary label="Barrier Received" value={`+${effectiveEquipment.barrierReceivedFlat}`} />
+        <Summary label="Received Negative Status" value={`${Math.round(effectiveEquipment.negativeStatusDurationReceived * 100)}%`} />
+        {Object.entries(resolvedCombat.resistances).map(([type, value]) => <Summary key={type} label={`${type[0].toUpperCase()}${type.slice(1)} Resistance`} value={`${Math.round((value ?? 0) * 100)}%`} />)}
         <Summary label="Combat RNG State" value={combatRngState} />
       </div>
     </Card>
@@ -77,7 +90,7 @@ export function DeveloperCharacter() {
     <Card title="Resource controls">
       <div className="developer-button-grid">
         <Button onClick={() => setPlayer({ health: player.maxHealth })}>Heal to Max</Button>
-        <Button variant="secondary" onClick={() => setPlayer({ health: Math.max(0, player.health - 25) })}>Damage by 25</Button>
+        <Button variant="secondary" onClick={() => damagePlayerForDebug(25)}>Damage by 25</Button>
         <Button variant={debug.playerImmortal ? 'success' : 'secondary'} onClick={() => setImmortal(!debug.playerImmortal)}>{debug.playerImmortal ? 'Player Immortal ON' : 'Player Immortal OFF'}</Button>
       </div>
     </Card>

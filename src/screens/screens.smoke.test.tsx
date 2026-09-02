@@ -44,7 +44,7 @@ describe('screen smoke coverage', () => {
     for (const name of ['Leyline Conduit', 'Arcane Reservoir', 'Mana Resonance', 'Astral Expansion', 'Echo Attunement']) expect(screen.getByText(name, { selector: 'h3' })).toBeTruthy()
     await user.click(navItem('Collection'))
     expect(screen.getByRole('heading', { name: 'ITEM COLLECTION' })).toBeTruthy()
-    expect(screen.getByText('Apprentice Wand')).toBeTruthy()
+    expect(screen.queryByText('Apprentice Wand')).toBeNull()
     expect(screen.queryByText('Forest Wisp')).toBeNull()
   })
 

@@ -637,7 +637,7 @@ export const migrateSave = (rawSave: unknown): GameState => {
   if (version === 17) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === 18) return finalize(merge(createInitialState(), rawSave), rawSave, version)
   if (version === 19) return finalize(merge(createInitialState(), rawSave), rawSave, version)
-  if (version === 20 || version === 21 || version === 22 || version === SAVE_VERSION) {
+  if (typeof version === 'number' && version >= 20 && version <= SAVE_VERSION) {
     return finalize(merge(createInitialState(), rawSave), rawSave, version)
   }
   throw new SaveMigrationError(`Unsupported save version: ${String(version ?? 'missing')}.`)

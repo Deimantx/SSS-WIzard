@@ -7,7 +7,7 @@ import { SPELLS } from '../game/content/spells/spells'
 import { castSpellAction } from './actions/combatActions'
 import { manaRegenPerSecond, pushNotification, recalculateDerivedStats, selectFreeFocus, selectUsedFocus } from '../game/engine'
 import { debugApplyStatus, spawnEnemy, spawnNextEnemy } from '../game/systems/combat/combatRuntime'
-import { executeCombatEffects } from '../game/systems/combat/effectResolver'
+import { damagePlayer, executeCombatEffects } from '../game/systems/combat/effectResolver'
 import { forceResolveEnemyAction as forceResolveEnemyActionRuntime, resolveCurrentEnemyAction as resolveCurrentEnemyActionRuntime, setEnemyActionPattern as setEnemyActionPatternRuntime, startEnemyAction as startEnemyActionRuntime, startNextEnemyAction as startNextEnemyActionRuntime } from '../game/systems/combat/actionRuntime'
 import { resetAllCombatRuleRuntime, resetCombatRuleRuntime, runCombatTriggers } from '../game/systems/combat/triggerRuntime'
 import { createCombatResolutionContext } from '../game/systems/combat/combatTypes'
@@ -120,6 +120,7 @@ export interface GameActions {
   advanceCombatDebug: (durationMs: number) => void
   spawnDebugEnemy: (enemyId: MonsterId, dungeonId?: DungeonId) => void
   setEnemyHealthPercent: (percent: number) => void
+  damagePlayerForDebug: (amount: number) => void
   applyPlayerStatus: (statusId: StatusId) => void
   applyEnemyStatus: (statusId: StatusId) => void
   setPlayerBarrier: (amount: number) => void
@@ -292,6 +293,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     return state
   }),
   setEnemyHealthPercent: (percent) => set((state) => { if (state.combat.enemyId) { const previousHp = state.combat.enemyHp; const nextHp = Math.max(0, Math.min(state.combat.enemyMaxHp, state.combat.enemyMaxHp * clamp(percent, 0, 100) / 100)); state.combat.enemyHp = nextHp; if (nextHp !== previousHp) { const context = { source: { actor: 'player' as const, kind: 'system' as const, sourceId: 'developer-health-control' }, eventTarget: 'enemy' as const, changedActor: 'enemy' as const, sourceTags: [], previousHp, currentHp: nextHp, previousHpPercent: previousHp / Math.max(1, state.combat.enemyMaxHp) * 100, currentHpPercent: nextHp / Math.max(1, state.combat.enemyMaxHp) * 100 }; const resolution = createCombatResolutionContext(); runCombatTriggers(state, 'enemy', 'on-hp-threshold', context, executeCombatEffects, 0, [], combatLogUiSink, resolution); runCombatTriggers(state, 'player', 'on-hp-threshold', context, executeCombatEffects, 0, [], combatLogUiSink, resolution) } } return state }),
+  damagePlayerForDebug: (amount) => set((state) => { damagePlayer(state, Math.max(0, sanitizeDebugNumber(amount)), { actor: 'enemy', kind: 'system', sourceId: 'developer-damage', tags: ['direct'] }); return state }),
   applyPlayerStatus: (statusId) => set((state) => { debugApplyStatus(state, 'player', statusId); return state }),
   applyEnemyStatus: (statusId) => set((state) => { debugApplyStatus(state, 'enemy', statusId); return state }),
   setPlayerBarrier: (amount) => set((state) => { state.combat.playerBarrier = Math.max(0, Math.floor(sanitizeDebugNumber(amount))); if (state.combat.playerBarrier === 0) state.combat.playerBarrierRemainingMs = null; return state }),

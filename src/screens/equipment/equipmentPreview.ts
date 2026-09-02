@@ -1,7 +1,9 @@
 import { ITEMS } from '../../game/content/items/items'
 import { equipmentStats } from '../../game/engine'
 import { getPlayerSheetCombatStats } from '../../game/systems/combat/combatStats'
+import { getCombatModifiers } from '../../game/systems/combat/modifiers'
 import { isPositionCompatible, isTwoHandedWeapon, previewEquipmentState } from '../../game/core/equipment'
+import { createInitialState } from '../../store/initialState'
 import type { EquipmentPosition, EquipmentStats, GameState, ItemId } from '../../game/types'
 import type { DamageType } from '../../game/systems/combat/combatTypes'
 
@@ -26,7 +28,21 @@ export interface EquipmentStatSnapshot {
   barrierPowerBonus: number
   manaCostReduction: number
   focusEfficiency: number
+  fireSpellDamage: number
+  airSpellDamage: number
+  waterBarrierPower: number
+  barrierReceivedFlat: number
+  negativeStatusDurationReceived: number
   resistances: Partial<Record<DamageType, number>>
+}
+
+export interface EquipmentImpactStats extends EquipmentStats {
+  damageReduction?: number
+  fireSpellDamage?: number
+  airSpellDamage?: number
+  waterBarrierPower?: number
+  barrierReceivedFlat?: number
+  negativeStatusDurationReceived?: number
 }
 
 export interface EquipmentPreview {
@@ -37,11 +53,14 @@ export interface EquipmentPreview {
   removedOffhand: ItemId | null
   current: EquipmentStatSnapshot
   preview: EquipmentStatSnapshot | null
-  impact: EquipmentStats & { damageReduction?: number }
+  impact: EquipmentImpactStats
 }
 
 export const getEquipmentStatSnapshot = (state: Pick<GameState, 'player' | 'progress' | 'activities' | 'equipment'> & Partial<Pick<GameState, 'debug'>>, equipment: GameState['equipment']): EquipmentStatSnapshot => {
-  const sheet = getPlayerSheetCombatStats({ ...state, equipment } as GameState)
+  const combat = 'combat' in state && state.combat ? state.combat : createInitialState().combat
+  const runtimeState = { ...state, equipment, combat } as GameState
+  const sheet = getPlayerSheetCombatStats(runtimeState)
+  const spellSource = (school: DamageType) => ({ actor: 'player' as const, kind: 'spell' as const, sourceId: 'equipment-preview', school: school === 'physical' || school === 'arcane' ? undefined : school, tags: ['spell', 'magic', 'direct', school] as import('../../game/systems/combat/combatTypes').CombatTag[] })
   return {
     maxHealth: sheet.maxHealth,
     maxMana: sheet.maxMana,
@@ -63,11 +82,16 @@ export const getEquipmentStatSnapshot = (state: Pick<GameState, 'player' | 'prog
     barrierPowerBonus: sheet.barrierPowerBonus,
     manaCostReduction: sheet.manaCostReduction,
     focusEfficiency: sheet.focusEfficiency,
+    fireSpellDamage: getCombatModifiers(runtimeState, 'player', 'spell-damage-percent', { source: spellSource('fire'), sourceTags: ['spell'], damageType: 'fire' }),
+    airSpellDamage: getCombatModifiers(runtimeState, 'player', 'spell-damage-percent', { source: spellSource('air'), sourceTags: ['spell'], damageType: 'air' }),
+    waterBarrierPower: getCombatModifiers(runtimeState, 'player', 'barrier-power-percent', { source: spellSource('water'), sourceTags: ['spell'], damageType: 'water' }),
+    barrierReceivedFlat: getCombatModifiers(runtimeState, 'player', 'barrier-received-flat'),
+    negativeStatusDurationReceived: getCombatModifiers(runtimeState, 'player', 'status-duration-received-percent', { statusTags: ['debuff'] }),
     resistances: { ...sheet.resistances },
   }
 }
 
-const subtractSnapshots = (current: EquipmentStatSnapshot, preview: EquipmentStatSnapshot): EquipmentStats & { damageReduction: number } => ({
+const subtractSnapshots = (current: EquipmentStatSnapshot, preview: EquipmentStatSnapshot): EquipmentImpactStats => ({
   maxHealth: preview.maxHealth - current.maxHealth,
   maxMana: preview.maxMana - current.maxMana,
   maxFocus: preview.maxFocus - current.maxFocus,
@@ -87,6 +111,11 @@ const subtractSnapshots = (current: EquipmentStatSnapshot, preview: EquipmentSta
   barrierPowerPct: preview.barrierPowerBonus - current.barrierPowerBonus,
   manaCostReductionPct: preview.manaCostReduction - current.manaCostReduction,
   focusEfficiencyPct: preview.focusEfficiency - current.focusEfficiency,
+  fireSpellDamage: preview.fireSpellDamage - current.fireSpellDamage,
+  airSpellDamage: preview.airSpellDamage - current.airSpellDamage,
+  waterBarrierPower: preview.waterBarrierPower - current.waterBarrierPower,
+  barrierReceivedFlat: preview.barrierReceivedFlat - current.barrierReceivedFlat,
+  negativeStatusDurationReceived: preview.negativeStatusDurationReceived - current.negativeStatusDurationReceived,
   resistances: Object.fromEntries(Object.keys({ ...current.resistances, ...preview.resistances }).map((damageType) => [damageType, (preview.resistances[damageType as DamageType] ?? 0) - (current.resistances[damageType as DamageType] ?? 0)])) as EquipmentStats['resistances'],
 })
 

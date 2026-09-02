@@ -15,6 +15,7 @@ const hpPercent = (state: GameState, actor: CombatActor) => {
 const changedActorFor = (context: CombatConditionContext) => context.changedActor ?? context.eventTarget
 const contextualHpPercent = (state: GameState, actor: CombatActor, context: CombatConditionContext) => changedActorFor(context) === actor && context.currentHpPercent !== undefined ? context.currentHpPercent : hpPercent(state, actor)
 const sourceTagsFor = (context: CombatConditionContext) => [...new Set([...(context.source?.tags ?? []), ...(context.sourceTags ?? [])])]
+const hasStatusTag = (state: GameState, actor: CombatActor, tag: import('./combatTypes').CombatTag) => (actor === 'player' ? state.combat.playerStatuses : state.combat.enemyStatuses).some((active) => STATUS_DEFINITIONS[active.statusId]?.tags.includes(tag))
 
 /** Evaluates a condition against the actor that owns the condition. */
 export const evaluateCombatCondition = (state: GameState, actor: CombatActor, condition: CombatCondition | undefined, context: CombatConditionContext = {}): boolean => {
@@ -41,6 +42,8 @@ export const evaluateCombatCondition = (state: GameState, actor: CombatActor, co
     case 'event-action-is': return context.actionId === condition.actionId
     case 'event-action-has-tag': return context.eventActionTags?.includes(condition.tag) ?? false
     case 'event-damage-type-is': return (context.damageTypes ?? (context.damageType ? [context.damageType] : [])).includes(condition.damageType)
+    case 'target-has-status-tag': return hasStatusTag(state, target, condition.tag)
+    case 'event-target-is-self': return context.eventTarget === actor
     case 'source-is-self': return context.source?.actor === actor
     case 'source-is-opponent': return context.source?.actor === opponentOf(actor)
     case 'all': return condition.conditions.every((entry) => evaluateCombatCondition(state, actor, entry, context))

@@ -249,14 +249,21 @@ const applyHealing = (state: GameState, raw: number, source: CombatSource, targe
   return healed
 }
 
-const executeResource = (state: GameState, effect: Extract<CombatEffect, { type: 'restore-resource' | 'drain-resource' }>, source: CombatSource) => {
+const executeResource = (state: GameState, effect: Extract<CombatEffect, { type: 'restore-resource' | 'drain-resource' }>, source: CombatSource, uiEvents?: CombatEventSink) => {
   if (effect.resource !== 'mana') return 0
   const actor = targetActor(source, effect.target)
   if (actor !== 'player' || !isCombatActorAlive(state, actor)) return 0
   const amount = Math.round(resolveMagnitude(state, effect.magnitude, source, actor))
   const before = state.player.mana
   state.player.mana = effect.type === 'restore-resource' ? Math.min(state.player.maxMana, state.player.mana + amount) : Math.max(0, state.player.mana - amount)
-  return Math.abs(state.player.mana - before)
+  const changed = Math.abs(state.player.mana - before)
+  if (changed > 0) {
+    const itemName = source.kind === 'equipment' ? ITEMS[source.sourceId as import('../../types').ItemId]?.name : undefined
+    const verb = effect.type === 'restore-resource' ? 'restores' : 'drains'
+    appendLog(state, `${itemName ?? 'Combat effect'} ${verb} ${changed} Mana.`)
+    uiEvents?.push({ ...eventFields(state, source, actor), category: 'system', amount: changed, effectiveAmount: changed })
+  }
+  return changed
 }
 
 export type ExecuteCombatEffects = (state: GameState, effects: CombatEffect[], source: CombatSource, depth?: number, uiEvents?: CombatEventSink, resolution?: CombatResolutionContext) => void
@@ -287,7 +294,7 @@ export const executeCombatEffect = (state: GameState, effect: CombatEffect, sour
       break
     }
     case 'restore-resource':
-    case 'drain-resource': executeResource(state, effect, source); break
+    case 'drain-resource': executeResource(state, effect, source, uiEvents); break
     case 'apply-status': {
       const statusSource = { ...source, tags }
       const active = applyStatus(state, target, effect.statusId, statusSource, { durationMs: effect.durationMs, stacks: effect.stacks, periodicEffects: effect.periodicEffects, statusSourceKey: effect.statusSourceKey, modifierOverrides: effect.modifierOverrides })
@@ -296,7 +303,12 @@ export const executeCombatEffect = (state: GameState, effect: CombatEffect, sour
         appendLog(state, `${definition.name} applied.`)
         uiEvents?.push({ ...eventFields(state, source, target), category: 'status', statusId: effect.statusId, statusPhase: 'apply', durationMs: active.remainingMs, stacks: active.stacks, statusInstanceKey: active.instanceKey })
         // Application events belong to the applier; the status holder is the target.
-        runCombatTriggers(state, source.actor, 'on-status-applied', { source: statusSource, eventTarget: target, changedActor: target, sourceTags: tags, statusId: effect.statusId, eventStatusTags: definition.tags }, execute, depth, [], uiEvents, cascade)
+        const statusContext = { source: statusSource, eventTarget: target, changedActor: target, sourceTags: tags, statusId: effect.statusId, eventStatusTags: definition.tags }
+        // Status application is observable by both the applier and the
+        // affected actor. This lets wearer-owned providers react to hostile
+        // statuses without item-specific routing in the combat core.
+        runCombatTriggers(state, source.actor, 'on-status-applied', statusContext, execute, depth, [], uiEvents, cascade)
+        if (target !== source.actor) runCombatTriggers(state, target, 'on-status-applied', statusContext, execute, depth, [], uiEvents, cascade)
       }
       break
     }

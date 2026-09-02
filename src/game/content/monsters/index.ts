@@ -8,6 +8,7 @@ import { createCombatValidationContext, validateCombatEffect } from '../../syste
 import { STATUS_DEFINITIONS } from '../statuses/statuses'
 import { MAX_ACTION_WORK_MS, MIN_ACTION_TIME_MS } from '../../core/balance/combatTiming'
 import { MAX_BLOCK_CHANCE, MAX_CRIT_CHANCE, MAX_CRIT_DAMAGE_MULTIPLIER, MAX_RESISTANCE, MIN_RESISTANCE } from '../../core/balance/combatStats'
+import { ITEMS } from '../items/items'
 
 export type { MonsterDefinition } from './monsterTypes'
 export { WHISPERING_WOODS_MONSTERS, WHISPERING_WOODS_MONSTER_IDS } from './whisperingWoods'
@@ -41,6 +42,11 @@ export const validateMonsterDefinitions = (monsters: Record<string, MonsterDefin
     if (monster.critDamage !== undefined && (!Number.isFinite(monster.critDamage) || monster.critDamage < 1 || monster.critDamage > MAX_CRIT_DAMAGE_MULTIPLIER)) errors.push(`${monster.id}: invalid crit damage`)
     if (monster.blockChance !== undefined && (!Number.isFinite(monster.blockChance) || monster.blockChance < 0 || monster.blockChance > MAX_BLOCK_CHANCE)) errors.push(`${monster.id}: invalid block chance`)
     if (new Set(monster.traitIds).size !== monster.traitIds.length) errors.push(`${monster.id}: duplicate trait id`)
+    monster.loot.forEach((drop) => {
+      if (!ITEMS[drop.itemId]) errors.push(`${monster.id}: unknown loot item ${drop.itemId}`)
+      if (!Number.isFinite(drop.chance) || drop.chance < 0 || drop.chance > 1) errors.push(`${monster.id}: invalid loot chance`)
+      if (!Number.isInteger(drop.min) || !Number.isInteger(drop.max) || drop.min < 1 || drop.max < drop.min) errors.push(`${monster.id}: invalid loot quantity`)
+    })
     monster.traitIds.forEach((traitId) => { if (!getTraitDefinition(traitId)) errors.push(`${monster.id}: unknown trait ${traitId}`) })
     if (!monster.actionPatterns[monster.defaultActionPatternId]) errors.push(`${monster.id}: missing default action pattern`)
     Object.entries(monster.resistances ?? {}).forEach(([damageType, resistance]) => { if (!DAMAGE_TYPES.includes(damageType as DamageType) || !Number.isFinite(resistance) || resistance < MIN_RESISTANCE || resistance > MAX_RESISTANCE) errors.push(`${monster.id}: invalid ${damageType} resistance`) })

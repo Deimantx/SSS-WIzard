@@ -75,7 +75,7 @@ export const validateCombatCondition = (value: unknown, owner = 'condition', con
   } else if (value.type === 'not') {
     errors.push(...validateCombatCondition(value.condition, `${owner}.not`, context))
   }
-  const known = ['always', 'self-hp-below-percent', 'target-hp-below-percent', 'self-has-status', 'target-has-status', 'self-has-barrier', 'target-has-barrier', 'self-hp-above-percent', 'target-hp-above-percent', 'self-status-stacks-at-least', 'target-status-stacks-at-least', 'self-barrier-at-least', 'self-barrier-at-most', 'target-barrier-at-least', 'target-barrier-at-most', 'source-has-tag', 'event-status-is', 'event-status-has-tag', 'event-action-is', 'event-action-has-tag', 'event-damage-type-is', 'source-is-self', 'source-is-opponent', 'all', 'any', 'not']
+  const known = ['always', 'self-hp-below-percent', 'target-hp-below-percent', 'self-has-status', 'target-has-status', 'self-has-barrier', 'target-has-barrier', 'self-hp-above-percent', 'target-hp-above-percent', 'self-status-stacks-at-least', 'target-status-stacks-at-least', 'self-barrier-at-least', 'self-barrier-at-most', 'target-barrier-at-least', 'target-barrier-at-most', 'source-has-tag', 'event-status-is', 'event-status-has-tag', 'event-action-is', 'event-action-has-tag', 'event-damage-type-is', 'target-has-status-tag', 'event-target-is-self', 'source-is-self', 'source-is-opponent', 'all', 'any', 'not']
   if (!known.includes(value.type)) errors.push(`${owner}: unsupported condition operator ${value.type}`)
   return errors
 }

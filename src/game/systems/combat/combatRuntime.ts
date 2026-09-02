@@ -19,7 +19,11 @@ export { applyStatus, clearStatuses, damageEnemy, damagePlayer, executeCombatEff
 
 export const applyBarrier = (state: GameState, amount: number) => gainBarrierRuntime(state, amount, { actor: 'player', kind: 'spell', sourceId: 'legacy-barrier', tags: ['barrier'] }, 'player', ['barrier'], { mode: 'replace', durationMs: 9000 })
 
-export const debugApplyStatus = (state: GameState, actor: 'player' | 'enemy', statusId: StatusId, durationMs?: number | null, stacks?: number) => applyStatus(state, actor, statusId, { actor, kind: 'system', sourceId: 'developer-tools', tags: ['status'] }, { durationMs, stacks })
+/** DEV-only status fixture routed through the same application/trigger path as combat. */
+export const debugApplyStatus = (state: GameState, actor: 'player' | 'enemy', statusId: StatusId, durationMs?: number | null, stacks?: number) => {
+  const sourceActor = actor === 'player' ? 'enemy' : 'player'
+  executeCombatEffects(state, [{ type: 'apply-status', target: 'opponent', statusId, durationMs, stacks, tags: ['status'] }], { actor: sourceActor, kind: 'system', sourceId: 'developer-tools', tags: ['status'] })
+}
 
 export const spawnEnemy = (state: GameState, enemyId: MonsterId, uiEvents?: CombatEventSink) => {
   const monster = MONSTERS[enemyId]

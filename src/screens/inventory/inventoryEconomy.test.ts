@@ -21,6 +21,7 @@ describe('inventory economy selectors', () => {
   it('reports transmutation ingredient consumption and hides inactive flow', () => {
     const state = createInitialState()
     state.progress.firstBossKill = true
+    state.progress.lifetimeKillsByMonster['grove-sentinel'] = 1
     state.activities.transmutation.jobs['ember-staff'] = { echoesAssigned: 1, progressMs: 1000 }
     expect(getItemFlow('fire-fragment', state)?.consumptionPerHour).toBe(1_800)
 
@@ -33,6 +34,7 @@ describe('inventory economy selectors', () => {
     state.inventory['fire-fragment'] = 12
     state.progress.emberStaffUnlocked = true
     state.progress.firstBossKill = true
+    state.progress.lifetimeKillsByMonster['grove-sentinel'] = 1
     state.progress.guildUnlocked = true
     state.progress.requestProgress['arcane-supply'] = 8
     const needs = getItemNeeds('fire-fragment', state)

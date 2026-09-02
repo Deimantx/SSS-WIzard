@@ -1,4 +1,4 @@
-import { RECIPES, RECIPE_ORDER, type RecipeDefinition } from '../../content/recipes/recipes'
+import { RECIPES, RECIPE_ORDER, getRecipeUnlockRequirement, isRecipeUnlocked as isAuthoredRecipeUnlocked, type RecipeDefinition } from '../../content/recipes/recipes'
 import { getEquippedReservedQuantity } from '../../core/equipment/equipmentRules'
 import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
 import { BALANCE } from '../../core/balance/balance'
@@ -18,7 +18,7 @@ export interface RecipeConsumableRequirement {
   protected: boolean
 }
 
-export const isRecipeUnlocked = (state: Pick<GameState, 'progress'>, recipe: RecipeDefinition) => recipe.unlock.type === 'always' || state.progress.firstBossKill
+export const isRecipeUnlocked = isAuthoredRecipeUnlocked
 export const getTransmutationJob = (state: Pick<GameState, 'activities'>, recipeId: RecipeId): TransmutationJobState | undefined => state.activities.transmutation.jobs[recipeId]
 export const getTransmutationEchoesAssigned = (state: Pick<GameState, 'activities'>) => RECIPE_ORDER.reduce((total, recipeId) => total + Math.max(0, Math.floor(state.activities.transmutation.jobs[recipeId]?.echoesAssigned ?? 0)), 0)
 export const getTransmutationEchoCapacity = (state: Pick<GameState, 'activities'> & Partial<Pick<GameState, 'debug'>>) => state.debug?.ignoreEchoLimit ? Number.MAX_SAFE_INTEGER : Math.max(0, Math.floor(state.debug?.transmutationEchoCapacityOverride ?? BALANCE.transmutation.maxEchoes))
@@ -68,4 +68,4 @@ export function getRecipeStatus(state: Pick<GameState, 'activities' | 'inventory
 }
 
 export const getTransmutationRecipeEntries = () => RECIPE_ORDER.map((id) => RECIPES[id])
-export const getRecipeUnlockReason = (recipe: RecipeDefinition) => recipe.unlock.type === 'first-dungeon-boss-kill' ? 'Defeat the first dungeon boss to unlock this recipe.' : null
+export const getRecipeUnlockReason = getRecipeUnlockRequirement

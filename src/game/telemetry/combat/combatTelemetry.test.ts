@@ -135,28 +135,28 @@ describe('combat telemetry foundation', () => {
   })
 
   it('keeps Equipment proc damage, healing, and barriers out of Basic Attack analytics', () => {
-    const source = { source: { kind: 'player' } as const, sourceKind: 'equipment' as const, sourceId: 'apprentice-wand', providerInstanceKey: 'ring1', ruleId: 'flame-retaliation' }
+    const source = { source: { kind: 'player' } as const, sourceKind: 'equipment' as const, sourceId: 'wispwood-wand', providerInstanceKey: 'ring1', ruleId: 'flame-retaliation' }
     const damage = { ...source, category: 'damage' as const, amount: 30, healthDamage: 30 }
     const heal = { ...source, category: 'heal' as const, amount: 4, effectiveAmount: 4 }
     const barrier = { ...source, category: 'barrier' as const, amount: 5, barrierGranted: 5, barrierMode: 'add' as const }
-    expect(getCombatMetricSourceKey(damage)).toBe('player:equipment:apprentice-wand:provider:ring1:rule:flame-retaliation')
+    expect(getCombatMetricSourceKey(damage)).toBe('player:equipment:wispwood-wand:provider:ring1:rule:flame-retaliation')
     const scope = createCombatTelemetryScope('equipment-test', 1, 'whispering-woods')
     consumeCombatEvent(scope, damage)
     consumeCombatEvent(scope, heal)
     consumeCombatEvent(scope, barrier)
-    const contribution = scope.player.damageDone.bySource['player:equipment:apprentice-wand:provider:ring1:rule:flame-retaliation']
+    const contribution = scope.player.damageDone.bySource['player:equipment:wispwood-wand:provider:ring1:rule:flame-retaliation']
     expect(contribution.kind).toBe('equipment')
     expect(contribution.total).toBe(30)
-    expect(scope.player.healingDone.bySource['player:equipment:apprentice-wand:provider:ring1:rule:flame-retaliation'].effectiveHealing).toBe(4)
-    expect(scope.player.barrierGrantedBySource['player:equipment:apprentice-wand:provider:ring1:rule:flame-retaliation'].barrierGranted).toBe(5)
+    expect(scope.player.healingDone.bySource['player:equipment:wispwood-wand:provider:ring1:rule:flame-retaliation'].effectiveHealing).toBe(4)
+    expect(scope.player.barrierGrantedBySource['player:equipment:wispwood-wand:provider:ring1:rule:flame-retaliation'].barrierGranted).toBe(5)
     expect(contribution.kind).not.toBe('basic-attack')
   })
 
   it('keeps duplicate Equipment providers and Status origins distinct without changing totals', () => {
-    const ring1 = { source: { kind: 'player' } as const, sourceKind: 'equipment' as const, sourceId: 'apprentice-wand', providerInstanceKey: 'ring1', ruleId: 'burn' }
+    const ring1 = { source: { kind: 'player' } as const, sourceKind: 'equipment' as const, sourceId: 'wispwood-wand', providerInstanceKey: 'ring1', ruleId: 'burn' }
     const ring2 = { ...ring1, providerInstanceKey: 'ring2' }
     expect(getCombatMetricSourceKey({ ...ring1, category: 'damage' as const, amount: 1 })).not.toBe(getCombatMetricSourceKey({ ...ring2, category: 'damage' as const, amount: 1 }))
-    const status1 = { source: { kind: 'player' } as const, sourceKind: 'status' as const, sourceId: 'burning', statusId: 'burning' as const, originSourceKind: 'equipment' as const, originSourceId: 'apprentice-wand', providerInstanceKey: 'ring1', ruleId: 'burn', category: 'damage' as const, amount: 5 }
+    const status1 = { source: { kind: 'player' } as const, sourceKind: 'status' as const, sourceId: 'burning', statusId: 'burning' as const, originSourceKind: 'equipment' as const, originSourceId: 'wispwood-wand', providerInstanceKey: 'ring1', ruleId: 'burn', category: 'damage' as const, amount: 5 }
     const status2 = { ...status1, providerInstanceKey: 'ring2' }
     expect(getCombatMetricSourceKey(status1)).not.toBe(getCombatMetricSourceKey(status2))
     const scope = createCombatTelemetryScope('provider-test', 1)

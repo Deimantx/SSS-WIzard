@@ -162,7 +162,7 @@ describe('profile storage and session lifecycle', () => {
       air: { xp: 25, level: 2 },
     })
     expect(useGameStore.getState().currencies.gold).toBe(321)
-    expect(useGameStore.getState().equipment.weapon).toBe('apprentice-wand')
+    expect(useGameStore.getState().equipment.weapon).toBeNull()
     expect(useGameStore.getState().progress.channeling.pillars['leyline-conduit']).toEqual({ rank: 1, level: 3 })
     expect(useGameStore.getState().activities.research.slots['research-1']).toMatchObject({ itemId: 'fire-fragment', targetSchoolId: 'fire', requestedQuantity: 30, remainingQuantity: 30, echoesAssigned: 1 })
     expect(useGameStore.getState().activities.transmutation.jobs['fire-fragment']).toEqual({ echoesAssigned: 1, progressMs: 0 })

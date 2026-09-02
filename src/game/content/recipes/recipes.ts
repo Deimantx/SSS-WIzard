@@ -1,4 +1,7 @@
-import type { ItemId, RecipeCategory, RecipeId, RecipeUnlockCondition } from '../../types'
+import { DUNGEONS } from '../dungeons/dungeons'
+import { ITEMS } from '../items/items'
+import { MONSTERS } from '../monsters'
+import type { GameState, ItemId, RecipeCategory, RecipeId, RecipeUnlockCondition } from '../../types'
 
 export interface RecipeDefinition {
   id: RecipeId
@@ -12,16 +15,93 @@ export interface RecipeDefinition {
   description?: string
 }
 
+const always: RecipeUnlockCondition = { type: 'always' }
+const groveSentinel: RecipeUnlockCondition = { type: 'boss-kill', bossId: 'grove-sentinel' }
+const howlingDen: RecipeUnlockCondition = { type: 'dungeon-unlocked', dungeonId: 'howling-den' }
+const abandonedCatacombs: RecipeUnlockCondition = { type: 'dungeon-unlocked', dungeonId: 'abandoned-catacombs' }
+const equipmentRecipe = (id: RecipeId, name: string, ingredients: { itemId: ItemId; quantity: number }[], baseDurationMs: number, unlock: RecipeUnlockCondition, description: string): RecipeDefinition => ({ id, name, output: { itemId: id, quantity: 1 }, category: 'equipment', baseDurationMs, manaCost: 0, ingredients, unlock, description })
+
 export const RECIPES: Record<RecipeId, RecipeDefinition> = {
-  'fire-fragment': { id: 'fire-fragment', name: 'Fire Fragment', output: { itemId: 'fire-fragment', quantity: 1 }, category: 'elemental', baseDurationMs: 6000, manaCost: 15, ingredients: [], unlock: { type: 'always' }, description: 'Shape Mana into a stable Fire Fragment.' },
-  'water-fragment': { id: 'water-fragment', name: 'Water Fragment', output: { itemId: 'water-fragment', quantity: 1 }, category: 'elemental', baseDurationMs: 6000, manaCost: 15, ingredients: [], unlock: { type: 'always' }, description: 'Shape Mana into a stable Water Fragment.' },
-  'earth-fragment': { id: 'earth-fragment', name: 'Earth Fragment', output: { itemId: 'earth-fragment', quantity: 1 }, category: 'elemental', baseDurationMs: 6000, manaCost: 15, ingredients: [], unlock: { type: 'always' }, description: 'Shape Mana into a stable Earth Fragment.' },
-  'air-fragment': { id: 'air-fragment', name: 'Air Fragment', output: { itemId: 'air-fragment', quantity: 1 }, category: 'elemental', baseDurationMs: 6000, manaCost: 15, ingredients: [], unlock: { type: 'always' }, description: 'Shape Mana into a stable Air Fragment.' },
-  'prismatic-fragment': { id: 'prismatic-fragment', name: 'Prismatic Fragment', output: { itemId: 'prismatic-fragment', quantity: 1 }, category: 'material', baseDurationMs: 18000, manaCost: 0, ingredients: [{ itemId: 'fire-fragment', quantity: 2 }, { itemId: 'water-fragment', quantity: 2 }, { itemId: 'earth-fragment', quantity: 2 }, { itemId: 'air-fragment', quantity: 2 }, { itemId: 'life-essence', quantity: 10 }], unlock: { type: 'always' }, description: 'Harmonize all four elemental forces through Life Essence.' },
-  'ember-staff': { id: 'ember-staff', name: 'Ember Staff', output: { itemId: 'ember-staff', quantity: 1 }, category: 'equipment', baseDurationMs: 8000, manaCost: 0, ingredients: [{ itemId: 'fire-fragment', quantity: 4 }, { itemId: 'wisp-essence', quantity: 4 }, { itemId: 'grove-bark', quantity: 1 }], unlock: { type: 'first-dungeon-boss-kill' }, description: 'A staff that makes every basic hit burn brighter.' },
-  'tide-focus': { id: 'tide-focus', name: 'Tide Focus', output: { itemId: 'tide-focus', quantity: 1 }, category: 'equipment', baseDurationMs: 9000, manaCost: 0, ingredients: [{ itemId: 'water-fragment', quantity: 4 }, { itemId: 'wisp-essence', quantity: 3 }, { itemId: 'grove-bark', quantity: 1 }], unlock: { type: 'first-dungeon-boss-kill' }, description: 'A fluid focus that deepens Water barriers.' },
-  'stoneweave-robe': { id: 'stoneweave-robe', name: 'Stoneweave Robe', output: { itemId: 'stoneweave-robe', quantity: 1 }, category: 'equipment', baseDurationMs: 9000, manaCost: 0, ingredients: [{ itemId: 'earth-fragment', quantity: 4 }, { itemId: 'wisp-essence', quantity: 3 }, { itemId: 'grove-bark', quantity: 1 }], unlock: { type: 'first-dungeon-boss-kill' }, description: 'A heavy robe that turns barriers into shelter.' },
-  'windthread-charm': { id: 'windthread-charm', name: 'Windthread Charm', output: { itemId: 'windthread-charm', quantity: 1 }, category: 'equipment', baseDurationMs: 9000, manaCost: 0, ingredients: [{ itemId: 'air-fragment', quantity: 4 }, { itemId: 'wisp-essence', quantity: 3 }, { itemId: 'grove-bark', quantity: 1 }], unlock: { type: 'first-dungeon-boss-kill' }, description: 'A charm that leaves room for one more automation.' },
+  'fire-fragment': { id: 'fire-fragment', name: 'Fire Fragment', output: { itemId: 'fire-fragment', quantity: 1 }, category: 'elemental', baseDurationMs: 6000, manaCost: 15, ingredients: [], unlock: always, description: 'Shape Mana into a stable Fire Fragment.' },
+  'water-fragment': { id: 'water-fragment', name: 'Water Fragment', output: { itemId: 'water-fragment', quantity: 1 }, category: 'elemental', baseDurationMs: 6000, manaCost: 15, ingredients: [], unlock: always, description: 'Shape Mana into a stable Water Fragment.' },
+  'earth-fragment': { id: 'earth-fragment', name: 'Earth Fragment', output: { itemId: 'earth-fragment', quantity: 1 }, category: 'elemental', baseDurationMs: 6000, manaCost: 15, ingredients: [], unlock: always, description: 'Shape Mana into a stable Earth Fragment.' },
+  'air-fragment': { id: 'air-fragment', name: 'Air Fragment', output: { itemId: 'air-fragment', quantity: 1 }, category: 'elemental', baseDurationMs: 6000, manaCost: 15, ingredients: [], unlock: always, description: 'Shape Mana into a stable Air Fragment.' },
+  'prismatic-fragment': { id: 'prismatic-fragment', name: 'Prismatic Fragment', output: { itemId: 'prismatic-fragment', quantity: 1 }, category: 'material', baseDurationMs: 18000, manaCost: 0, ingredients: [{ itemId: 'fire-fragment', quantity: 2 }, { itemId: 'water-fragment', quantity: 2 }, { itemId: 'earth-fragment', quantity: 2 }, { itemId: 'air-fragment', quantity: 2 }, { itemId: 'life-essence', quantity: 10 }], unlock: always, description: 'Harmonize all four elemental forces through Life Essence.' },
+
+  'ember-staff': equipmentRecipe('ember-staff', 'Ember Staff', [{ itemId: 'fire-fragment', quantity: 4 }, { itemId: 'wisp-essence', quantity: 4 }, { itemId: 'grove-bark', quantity: 1 }], 8000, groveSentinel, 'A staff that makes every Fire spell burn brighter.'),
+  'wispwood-wand': equipmentRecipe('wispwood-wand', 'Wispwood Wand', [{ itemId: 'fire-fragment', quantity: 2 }, { itemId: 'air-fragment', quantity: 2 }, { itemId: 'wisp-essence', quantity: 3 }, { itemId: 'grove-bark', quantity: 1 }], 7000, groveSentinel, 'A flexible one-handed caster weapon.'),
+  'tide-focus': equipmentRecipe('tide-focus', 'Tide Focus', [{ itemId: 'water-fragment', quantity: 4 }, { itemId: 'wisp-essence', quantity: 3 }, { itemId: 'grove-bark', quantity: 1 }], 9000, groveSentinel, 'A fluid focus that deepens Water barriers.'),
+  'stoneweave-robe': equipmentRecipe('stoneweave-robe', 'Stoneweave Robe', [{ itemId: 'earth-fragment', quantity: 4 }, { itemId: 'wisp-essence', quantity: 3 }, { itemId: 'grove-bark', quantity: 1 }], 9000, groveSentinel, 'A heavy robe that turns barriers into shelter.'),
+  'windthread-charm': equipmentRecipe('windthread-charm', 'Windthread Charm', [{ itemId: 'air-fragment', quantity: 4 }, { itemId: 'wisp-essence', quantity: 3 }, { itemId: 'grove-bark', quantity: 1 }], 9000, groveSentinel, 'A charm that leaves room for one more automation.'),
+  'wispveil-hood': equipmentRecipe('wispveil-hood', 'Wispveil Hood', [{ itemId: 'water-fragment', quantity: 2 }, { itemId: 'air-fragment', quantity: 2 }, { itemId: 'wisp-essence', quantity: 4 }, { itemId: 'grove-bark', quantity: 1 }], 10000, groveSentinel, 'A steady hood for the early caster.'),
+  'grovekeeper-mantle': equipmentRecipe('grovekeeper-mantle', 'Grovekeeper Mantle', [{ itemId: 'earth-fragment', quantity: 3 }, { itemId: 'wisp-essence', quantity: 4 }, { itemId: 'grove-bark', quantity: 2 }], 10000, groveSentinel, 'A mantle of early survivability.'),
+  'wispbound-ring': equipmentRecipe('wispbound-ring', 'Wispbound Ring', [{ itemId: 'water-fragment', quantity: 2 }, { itemId: 'air-fragment', quantity: 2 }, { itemId: 'wisp-essence', quantity: 3 }, { itemId: 'grove-bark', quantity: 1 }], 8000, groveSentinel, 'A ring for Mana and utility.'),
+
+  'fangbound-dagger': equipmentRecipe('fangbound-dagger', 'Fangbound Dagger', [{ itemId: 'predator-fang', quantity: 6 }, { itemId: 'air-fragment', quantity: 2 }, { itemId: 'fire-fragment', quantity: 2 }], 12000, howlingDen, 'A quick blade for Basic Attack builds.'),
+  'fangbound-buckler': equipmentRecipe('fangbound-buckler', 'Fangbound Buckler', [{ itemId: 'predator-hide', quantity: 6 }, { itemId: 'predator-fang', quantity: 2 }, { itemId: 'earth-fragment', quantity: 3 }], 12000, howlingDen, 'A defensive one-handed offhand.'),
+  'corrupted-howlstaff': equipmentRecipe('corrupted-howlstaff', 'Corrupted Howlstaff', [{ itemId: 'greatbear-core', quantity: 1 }, { itemId: 'corrupted-beast-essence', quantity: 5 }, { itemId: 'air-fragment', quantity: 3 }, { itemId: 'prismatic-fragment', quantity: 2 }], 18000, howlingDen, 'A fast multi-school spellcaster staff.'),
+  'razorclaw-circlet': equipmentRecipe('razorclaw-circlet', 'Razorclaw Circlet', [{ itemId: 'predator-fang', quantity: 4 }, { itemId: 'predator-hide', quantity: 2 }, { itemId: 'air-fragment', quantity: 2 }], 12000, howlingDen, 'A circlet for Crit and speed.'),
+  'predator-hide-mantle': equipmentRecipe('predator-hide-mantle', 'Predator-Hide Mantle', [{ itemId: 'predator-hide', quantity: 7 }, { itemId: 'earth-fragment', quantity: 3 }], 12000, howlingDen, 'Physical and status protection from the hunt.'),
+  'greatbear-vestment': equipmentRecipe('greatbear-vestment', 'Greatbear Vestment', [{ itemId: 'predator-hide', quantity: 10 }, { itemId: 'greatbear-core', quantity: 1 }, { itemId: 'earth-fragment', quantity: 4 }], 18000, howlingDen, 'A tank vestment built for endurance.'),
+  'howling-signet': equipmentRecipe('howling-signet', 'Howling Signet', [{ itemId: 'corrupted-beast-essence', quantity: 3 }, { itemId: 'predator-fang', quantity: 3 }, { itemId: 'water-fragment', quantity: 2 }, { itemId: 'air-fragment', quantity: 2 }], 14000, howlingDen, 'A ring that sustains long combat runs.'),
+
+  'graveglass-wand': equipmentRecipe('graveglass-wand', 'Graveglass Wand', [{ itemId: 'graveglass-shard', quantity: 6 }, { itemId: 'soul-residue', quantity: 3 }, { itemId: 'prismatic-fragment', quantity: 2 }], 18000, abandonedCatacombs, 'A one-handed wand for efficient spellcasting.'),
+  'edrins-remnant-staff': equipmentRecipe('edrins-remnant-staff', "Edrin's Remnant Staff", [{ itemId: 'edrin-remnant', quantity: 1 }, { itemId: 'graveglass-shard', quantity: 8 }, { itemId: 'soul-residue', quantity: 6 }, { itemId: 'prismatic-fragment', quantity: 4 }], 30000, { type: 'boss-kill', bossId: 'archmage-edrin-shade' }, 'A high-end staff for status builds.'),
+  'soulward-focus': equipmentRecipe('soulward-focus', 'Soulward Focus', [{ itemId: 'soul-residue', quantity: 5 }, { itemId: 'graveglass-shard', quantity: 4 }, { itemId: 'water-fragment', quantity: 3 }, { itemId: 'prismatic-fragment', quantity: 2 }], 20000, abandonedCatacombs, 'A focus that turns broken Barriers into Mana.'),
+  'soulward-shield': equipmentRecipe('soulward-shield', 'Soulward Shield', [{ itemId: 'ossuary-remnant', quantity: 6 }, { itemId: 'graveglass-shard', quantity: 4 }, { itemId: 'earth-fragment', quantity: 4 }, { itemId: 'prismatic-fragment', quantity: 2 }], 20000, abandonedCatacombs, 'A defensive caster shield.'),
+  'acolyte-vestments': equipmentRecipe('acolyte-vestments', 'Acolyte Vestments', [{ itemId: 'soul-residue', quantity: 6 }, { itemId: 'ossuary-remnant', quantity: 4 }, { itemId: 'water-fragment', quantity: 3 }, { itemId: 'prismatic-fragment', quantity: 2 }], 20000, abandonedCatacombs, 'Elemental-resistant defensive caster wear.'),
+  'wraithveil-hood': equipmentRecipe('wraithveil-hood', 'Wraithveil Hood', [{ itemId: 'soul-residue', quantity: 5 }, { itemId: 'graveglass-shard', quantity: 4 }, { itemId: 'air-fragment', quantity: 3 }, { itemId: 'prismatic-fragment', quantity: 2 }], 20000, abandonedCatacombs, 'A hood for status casters.'),
+  'ossuary-mantle': equipmentRecipe('ossuary-mantle', 'Ossuary Mantle', [{ itemId: 'ossuary-remnant', quantity: 7 }, { itemId: 'soul-residue', quantity: 4 }, { itemId: 'earth-fragment', quantity: 3 }, { itemId: 'prismatic-fragment', quantity: 2 }], 20000, abandonedCatacombs, 'General Catacombs defense.'),
+  'soulglass-amulet': equipmentRecipe('soulglass-amulet', 'Soulglass Amulet', [{ itemId: 'graveglass-shard', quantity: 5 }, { itemId: 'soul-residue', quantity: 5 }, { itemId: 'fire-fragment', quantity: 3 }, { itemId: 'prismatic-fragment', quantity: 2 }], 20000, abandonedCatacombs, 'A Burning and future DoT build amulet.'),
+  'gravebinder-ring': equipmentRecipe('gravebinder-ring', 'Gravebinder Ring', [{ itemId: 'graveglass-shard', quantity: 4 }, { itemId: 'soul-residue', quantity: 4 }, { itemId: 'prismatic-fragment', quantity: 2 }], 18000, abandonedCatacombs, 'A universal status-build ring.'),
 }
 
-export const RECIPE_ORDER: readonly RecipeId[] = ['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment', 'prismatic-fragment', 'ember-staff', 'tide-focus', 'stoneweave-robe', 'windthread-charm']
+export const RECIPE_ORDER: readonly RecipeId[] = [
+  'fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment', 'prismatic-fragment',
+  'ember-staff', 'wispwood-wand', 'tide-focus', 'stoneweave-robe', 'windthread-charm', 'wispveil-hood', 'grovekeeper-mantle', 'wispbound-ring',
+  'fangbound-dagger', 'fangbound-buckler', 'corrupted-howlstaff', 'razorclaw-circlet', 'predator-hide-mantle', 'greatbear-vestment', 'howling-signet',
+  'graveglass-wand', 'edrins-remnant-staff', 'soulward-focus', 'soulward-shield', 'acolyte-vestments', 'wraithveil-hood', 'ossuary-mantle', 'soulglass-amulet', 'gravebinder-ring',
+]
+
+const hasProgress = (progress: GameState['progress'], monsterId: string, count: number) => Math.max(progress.lifetimeKillsByMonster[monsterId as keyof typeof progress.lifetimeKillsByMonster] ?? 0, progress.bossKillsByBoss[monsterId as keyof typeof progress.bossKillsByBoss] ?? 0) >= count
+
+export const isRecipeUnlocked = (state: Pick<GameState, 'progress'>, recipe: RecipeDefinition) => {
+  switch (recipe.unlock.type) {
+    case 'always': return true
+    case 'first-dungeon-boss-kill': return state.progress.firstBossKill
+    case 'boss-kill': return Boolean(MONSTERS[recipe.unlock.bossId]) && hasProgress(state.progress, recipe.unlock.bossId, Math.max(1, recipe.unlock.count ?? 1))
+    case 'dungeon-unlocked': {
+      const dungeon = DUNGEONS[recipe.unlock.dungeonId]
+      return Boolean(dungeon) && (dungeon.unlock?.type !== 'boss-kill' || hasProgress(state.progress, dungeon.unlock.bossId, 1))
+    }
+  }
+}
+
+export const getRecipeUnlockRequirement = (recipe: RecipeDefinition): string | null => {
+  switch (recipe.unlock.type) {
+    case 'always': return null
+    case 'first-dungeon-boss-kill': return 'Defeat the first dungeon boss to unlock this recipe.'
+    case 'boss-kill': return `Defeat ${MONSTERS[recipe.unlock.bossId]?.name ?? recipe.unlock.bossId}${(recipe.unlock.count ?? 1) > 1 ? ` ${recipe.unlock.count} times` : ''} to unlock this recipe.`
+    case 'dungeon-unlocked': return `Unlock ${DUNGEONS[recipe.unlock.dungeonId]?.name ?? recipe.unlock.dungeonId} to access this recipe.`
+  }
+}
+
+export const validateRecipeDefinitions = (recipes: Record<string, RecipeDefinition> = RECIPES, order: readonly string[] = RECIPE_ORDER) => {
+  const errors: string[] = []
+  const ids = Object.values(recipes).map((recipe) => recipe.id)
+  if (new Set(ids).size !== ids.length) errors.push('duplicate recipe id')
+  Object.entries(recipes).forEach(([key, recipe]) => {
+    if (key !== recipe.id) errors.push(`${key}: key/id mismatch`)
+    if (!ITEMS[recipe.output.itemId]) errors.push(`${recipe.id}: unknown output item ${recipe.output.itemId}`)
+    if (!Number.isInteger(recipe.output.quantity) || recipe.output.quantity < 1) errors.push(`${recipe.id}: output quantity must be positive`)
+    if (!Number.isFinite(recipe.baseDurationMs) || recipe.baseDurationMs <= 0 || !Number.isFinite(recipe.manaCost) || recipe.manaCost < 0) errors.push(`${recipe.id}: invalid duration or Mana cost`)
+    recipe.ingredients.forEach((ingredient) => { if (!ITEMS[ingredient.itemId]) errors.push(`${recipe.id}: unknown ingredient ${ingredient.itemId}`); if (!Number.isInteger(ingredient.quantity) || ingredient.quantity <= 0) errors.push(`${recipe.id}: invalid ingredient quantity`) })
+    if (recipe.category === 'equipment' && ITEMS[recipe.output.itemId]?.kind !== 'equipment') errors.push(`${recipe.id}: equipment recipe must output equipment`)
+    if (recipe.unlock.type === 'boss-kill' && !MONSTERS[recipe.unlock.bossId]) errors.push(`${recipe.id}: unlock boss must be a known monster`)
+    if (recipe.unlock.type === 'dungeon-unlocked' && !DUNGEONS[recipe.unlock.dungeonId]) errors.push(`${recipe.id}: unlock dungeon must be known`)
+  })
+  if (new Set(order).size !== order.length) errors.push('RECIPE_ORDER contains duplicates')
+  if (order.length !== Object.keys(recipes).length || order.some((id) => !recipes[id as RecipeId])) errors.push('RECIPE_ORDER must contain every recipe exactly once')
+  if (errors.length && import.meta.env.DEV) console.error(`[recipes] ${errors.join('; ')}`)
+  return errors
+}

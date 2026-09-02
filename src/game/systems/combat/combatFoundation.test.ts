@@ -293,12 +293,12 @@ describe('post-implementation combat audit regressions', () => {
     const tideWater = stateWithEnemy()
     tideWater.equipment.offhand = 'tide-focus'
     executeCombatEffects(tideWater, SPELLS['water-ward'].effects, waterSource)
-    expect(tideWater.combat.playerBarrier).toBe(97)
+    expect(tideWater.combat.playerBarrier).toBe(92)
 
     const tideEarth = stateWithEnemy()
     tideEarth.equipment.offhand = 'tide-focus'
     executeCombatEffects(tideEarth, SPELLS.stoneguard.effects, earthSource)
-    expect(tideEarth.combat.playerBarrier).toBe(150)
+    expect(tideEarth.combat.playerBarrier).toBe(143)
   })
 
   it('keeps generic flat Barrier Received bonuses independent of Water scope', () => {
@@ -326,10 +326,10 @@ describe('post-implementation combat audit regressions', () => {
     const waterSource: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'water-ward', school: 'water', tags: ['spell', 'magic', 'water'] }
     const earthSource: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'stoneguard', school: 'earth', tags: ['spell', 'magic', 'earth'] }
     executeCombatEffects(state, SPELLS['water-ward'].effects, waterSource)
-    expect(state.combat.playerBarrier).toBe(97)
+    expect(state.combat.playerBarrier).toBe(92)
     state.combat.playerBarrier = 0
     executeCombatEffects(state, SPELLS.stoneguard.effects, earthSource)
-    expect(state.combat.playerBarrier).toBe(150)
+    expect(state.combat.playerBarrier).toBe(143)
   })
 
   it('keeps authored barrier duration and effect tags explicit', () => {

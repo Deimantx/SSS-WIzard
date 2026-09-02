@@ -13,11 +13,41 @@ export type ItemId =
   | 'grove-bark'
   | 'heartseed'
   | 'life-essence'
-  | 'apprentice-wand'
   | 'ember-staff'
+  | 'wispwood-wand'
   | 'tide-focus'
   | 'stoneweave-robe'
   | 'windthread-charm'
+  | 'heartseed-necklace'
+  | 'wispveil-hood'
+  | 'grovekeeper-mantle'
+  | 'wispbound-ring'
+  | 'predator-fang'
+  | 'predator-hide'
+  | 'corrupted-beast-essence'
+  | 'greatbear-core'
+  | 'fangbound-dagger'
+  | 'fangbound-buckler'
+  | 'corrupted-howlstaff'
+  | 'razorclaw-circlet'
+  | 'predator-hide-mantle'
+  | 'greatbear-vestment'
+  | 'howling-signet'
+  | 'greatbear-heartstone'
+  | 'ossuary-remnant'
+  | 'graveglass-shard'
+  | 'soul-residue'
+  | 'edrin-remnant'
+  | 'graveglass-wand'
+  | 'edrins-remnant-staff'
+  | 'soulward-focus'
+  | 'soulward-shield'
+  | 'acolyte-vestments'
+  | 'wraithveil-hood'
+  | 'ossuary-mantle'
+  | 'soulglass-amulet'
+  | 'gravebinder-ring'
+  | 'edrins-signet'
 
 export type SpellId = 'fire-bolt' | 'ignite' | 'fireball' | 'water-ward' | 'flow-mend' | 'frostbite' | 'earth-spike' | 'stoneguard' | 'fortify' | 'air-lance' | 'quickening' | 'shock-spark'
 export type SpellPresetId = string
@@ -37,9 +67,14 @@ import type { ActiveStatus, CombatEffect, StatusId, TraitDefinition } from './sy
 export type { ActionPattern, ActionStep, ActiveStatus, CombatActionDefinition, CombatCondition, CombatConditionContext, CombatDamageComponentEvent, CombatEffect, CombatEvent, CombatEventSink, CombatModifier, CombatResolutionContext, CombatSource, CombatTag, DamageComponent, DamageType, EffectTarget, Magnitude, ModifierKey, StatusId, StatusDefinition, TraitDefinition, TraitId } from './systems/combat/combatTypes'
 export type ManaPillarId = 'leyline-conduit' | 'arcane-reservoir' | 'mana-resonance' | 'astral-expansion' | 'echo-attunement'
 export type ChannelingDiscoveryId = 'stable-leyline' | 'echo-resonance' | 'deep-reservoir'
-export type RecipeId = 'fire-fragment' | 'water-fragment' | 'earth-fragment' | 'air-fragment' | 'prismatic-fragment' | 'ember-staff' | 'tide-focus' | 'stoneweave-robe' | 'windthread-charm'
+export type RecipeId = 'fire-fragment' | 'water-fragment' | 'earth-fragment' | 'air-fragment' | 'prismatic-fragment' | 'ember-staff' | 'wispwood-wand' | 'tide-focus' | 'stoneweave-robe' | 'windthread-charm' | 'wispveil-hood' | 'grovekeeper-mantle' | 'wispbound-ring' | 'fangbound-dagger' | 'fangbound-buckler' | 'corrupted-howlstaff' | 'razorclaw-circlet' | 'predator-hide-mantle' | 'greatbear-vestment' | 'howling-signet' | 'graveglass-wand' | 'edrins-remnant-staff' | 'soulward-focus' | 'soulward-shield' | 'acolyte-vestments' | 'wraithveil-hood' | 'ossuary-mantle' | 'soulglass-amulet' | 'gravebinder-ring'
 export type RecipeCategory = 'elemental' | 'material' | 'equipment' | 'special'
-export type RecipeUnlockCondition = { type: 'always' } | { type: 'first-dungeon-boss-kill' }
+export type RecipeUnlockCondition =
+  | { type: 'always' }
+  | { type: 'boss-kill'; bossId: MonsterId; count?: number }
+  | { type: 'dungeon-unlocked'; dungeonId: DungeonId }
+  /** @deprecated V1-V23 compatibility for external callers and old authored data. */
+  | { type: 'first-dungeon-boss-kill' }
 
 export type AutoCastCondition = { type: 'always' } | { type: 'health-below'; percent: number } | { type: 'barrier-below'; value: number }
 export interface EquipmentStats {
@@ -86,6 +121,8 @@ export interface ItemDefinition {
   equipmentSlot?: EquipmentItemSlot
   /** Only authored for Weapon items. */
   weaponHands?: 1 | 2
+  /** Presentation hint for Offhand items; it does not create another slot system. */
+  equipmentPresentation?: 'shield' | 'focus'
   attackTags?: import('./systems/combat/combatTypes').CombatTag[]
   damageType?: import('./systems/combat/combatTypes').DamageType
   stats?: EquipmentStats

@@ -40,4 +40,4 @@ export function formatStat(key: string, value: number) {
 
 function TooltipRow({ label, value }: { label: string; value: ReactNode }) { return <span className="tooltip-row"><span>{label}</span><b>{value}</b></span> }
 
-const flattenItemStats = (stats: NonNullable<import('../../../game/types').ItemDefinition['stats']>): Array<[string, number]> => Object.entries(stats).flatMap(([key, value]) => key === 'resistances' && value && typeof value === 'object' ? Object.entries(value).map(([type, resistance]) => [`resistance-${type}`, Number(resistance)]) : [[key, Number(value)]])
+export const flattenItemStats = (stats: NonNullable<import('../../../game/types').ItemDefinition['stats']>): Array<[string, number]> => Object.entries(stats).flatMap(([key, value]) => key === 'resistances' && value && typeof value === 'object' ? Object.entries(value).map(([type, resistance]) => [`resistance-${type}`, Number(resistance)]) : [[key, Number(value)]])

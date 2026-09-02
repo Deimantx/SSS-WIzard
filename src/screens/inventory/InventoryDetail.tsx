@@ -5,7 +5,7 @@ import { ItemIcon, ItemQuantity } from '../../components/ui/item'
 import { getItemSourceLabel, getResearchXp, ITEMS } from '../../game/content/items/items'
 import { SCHOOLS } from '../../game/content/schools/schools'
 import type { GameState, ItemId, SchoolId, ScreenId } from '../../game/types'
-import { formatStat, friendlyStatLabel } from '../../components/ui/item/ItemTooltip'
+import { flattenItemStats, formatStat, friendlyStatLabel } from '../../components/ui/item/ItemTooltip'
 import { getInventoryCategoryLabel, getInventorySubcategoryLabel, getItemProcessingChain, getItemSourceDestination, getItemUses } from '../../game/content/items/inventoryMetadata'
 import { getEquipmentComparison } from './inventoryEquipmentComparison'
 import { formatFlowEta, formatItemFlowRate, getItemFlow, type ItemFlow } from '../../game/systems/inventory/itemFlow'
@@ -47,7 +47,7 @@ export function InventoryDetail({ itemId, inventory, protectedItems, equipment, 
     {flow && <FlowSection flow={flow} />}
     {needs.length > 0 && <InventoryDetailSection section="currentNeeds" title="CURRENT NEEDS" count={needs.length} open={openSections.currentNeeds} onToggle={toggleSection}><NeedsSection needs={needs} navigate={navigate} /></InventoryDetailSection>}
 
-    {item.stats && Object.keys(item.stats).length > 0 && <section className="inventory-detail-section"><span className="inventory-detail-label">STATS</span><div className="inventory-stat-list">{Object.entries(item.stats).filter(([, value]) => value !== 0).map(([key, value]) => <DetailRow key={key} label={friendlyStatLabel(key)} value={formatStat(key, value)} />)}</div></section>}
+    {item.stats && Object.keys(item.stats).length > 0 && <section className="inventory-detail-section"><span className="inventory-detail-label">STATS</span><div className="inventory-stat-list">{flattenItemStats(item.stats).filter(([, value]) => value !== 0).map(([key, value]) => <DetailRow key={key} label={friendlyStatLabel(key)} value={formatStat(key, value)} />)}</div></section>}
 
     {item.kind === 'equipment' && <section className="inventory-detail-section"><span className="inventory-detail-label">EQUIPMENT COMPARISON</span>{equippedId ? <><span className="inventory-detail-sub-label">DIRECT STAT CHANGES</span><div className="inventory-comparison-current"><span>CURRENT</span><strong>{ITEMS[equippedId].name}</strong></div><div className="inventory-comparison-head"><span>STAT</span><span>CURRENT</span><span>SELECTED</span><span>DELTA</span></div><div className="inventory-comparison-list">{comparison.map((row) => <div className="inventory-comparison-row" key={row.key}><span>{row.label}</span><small>{row.equippedValue}</small><strong>{row.selectedValue}</strong><em className={row.direction}>{row.delta}</em></div>)}</div></> : <p className="inventory-muted-note">No item currently equipped in this slot. This item's bonuses are additions.</p>}<EquipmentCombatDetails item={item} /></section>}
 

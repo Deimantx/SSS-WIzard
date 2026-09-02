@@ -19,7 +19,7 @@ describe('archive discovery', () => {
     resolveMonsterLoot(state, 'forest-wisp')
     expect(state.inventory['wisp-essence']).toBe(1)
     expect(state.inventory['life-essence']).toBe(1)
-    expect(state.progress.discoveredItems).toEqual(expect.arrayContaining(['apprentice-wand', 'wisp-essence', 'life-essence']))
+    expect(state.progress.discoveredItems).toEqual(expect.arrayContaining(['wisp-essence', 'life-essence']))
     vi.restoreAllMocks()
   })
 

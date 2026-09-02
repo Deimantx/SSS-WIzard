@@ -1,5 +1,5 @@
 export { ItemIcon } from './ItemIcon'
-export { ItemTooltip, friendlyStatLabel, formatStat } from './ItemTooltip'
+export { ItemTooltip, flattenItemStats, friendlyStatLabel, formatStat } from './ItemTooltip'
 export { EquipmentCombatDetails } from './EquipmentCombatDetails'
 export { ItemRequirementTile } from './ItemRequirementTile'
 export { ItemQuantity, formatItemQuantity } from './ItemQuantity'

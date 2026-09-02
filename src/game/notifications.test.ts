@@ -9,7 +9,7 @@ describe('notification policy', () => {
 
     assignTransmutationEchoAction(state, 'ember-staff')
 
-    expect(state.notifications[0]?.text).toBe('Defeat the first dungeon boss to unlock this recipe.')
+    expect(state.notifications[0]?.text).toBe('Defeat Grove Sentinel to unlock this recipe.')
   })
 
   it('keeps important warnings while rate limiting a semantic warning key', () => {

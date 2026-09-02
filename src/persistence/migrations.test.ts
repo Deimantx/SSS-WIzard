@@ -279,10 +279,10 @@ describe('save navigation migration', () => {
 
   it('preserves a non-default current V9 gameplay snapshot through serialization and migration', () => {
     const state = createInitialState()
-    state.inventory = { 'apprentice-wand': 1, 'fire-fragment': 123, 'water-fragment': 47, 'life-essence': 99 }
+    state.inventory = { 'wispwood-wand': 1, 'fire-fragment': 123, 'water-fragment': 47, 'life-essence': 99 }
     state.schools = { fire: { xp: 125, level: 7 }, water: { xp: 65, level: 4 }, earth: { xp: 45, level: 3 }, air: { xp: 25, level: 2 } }
     state.currencies.gold = 321
-    state.equipment.weapon = 'apprentice-wand'
+    state.equipment.weapon = 'wispwood-wand'
     state.progress.channeling.pillars['leyline-conduit'] = { rank: 1, level: 3 }
     state.activities.research.slots['research-1'] = { itemId: 'fire-fragment', targetSchoolId: 'fire', requestedQuantity: 30, remainingQuantity: 30, progressMs: 0, echoesAssigned: 1, status: 'running' }
     state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 1, progressMs: 0 }
@@ -292,7 +292,7 @@ describe('save navigation migration', () => {
     expect(migrated.inventory).toMatchObject({ 'fire-fragment': 123, 'water-fragment': 47, 'life-essence': 99 })
     expect(migrated.schools).toEqual(state.schools)
     expect(migrated.currencies).toEqual({ gold: 321 })
-    expect(migrated.equipment.weapon).toBe('apprentice-wand')
+    expect(migrated.equipment.weapon).toBe('wispwood-wand')
     expect(migrated.progress.channeling.pillars['leyline-conduit']).toEqual({ rank: 1, level: 3 })
     expect(migrated.activities.research.slots['research-1']).toEqual(state.activities.research.slots['research-1'])
     expect(migrated.activities.transmutation.jobs['fire-fragment']).toEqual({ echoesAssigned: 1, progressMs: 0 })
@@ -424,15 +424,15 @@ describe('save navigation migration', () => {
       ...initial,
       saveVersion: 17,
       currencies: { gold: 321 },
-      inventory: { ...initial.inventory, 'fire-fragment': 37 },
-      equipment: { ...initial.equipment, weapon: 'apprentice-wand' },
+      inventory: { ...initial.inventory, 'fire-fragment': 37, 'wispwood-wand': 1 },
+      equipment: { ...initial.equipment, weapon: 'wispwood-wand' },
       progress: { ...initial.progress, spellRanks: { ...initial.progress.spellRanks, 'fire-bolt': 1 }, bossKillsByBoss: { ...initial.progress.bossKillsByBoss, 'forest-heart': 2 } },
       combat: { ...initial.combat, active: true, dungeonId: 'whispering-woods', enemyId: 'forest-wisp', playerAttackTimerMs: 500 },
     })
 
     expect(migrated.currencies.gold).toBe(321)
     expect(migrated.inventory['fire-fragment']).toBe(37)
-    expect(migrated.equipment.weapon).toBe('apprentice-wand')
+    expect(migrated.equipment.weapon).toBe('wispwood-wand')
     expect(migrated.progress.spellRanks['fire-bolt']).toBe(1)
     expect(migrated.progress.bossKillsByBoss['forest-heart']).toBe(2)
     expect(migrated.combat.playerAttackTimerMs).toBe(migrated.combat.playerAttackDurationMs)

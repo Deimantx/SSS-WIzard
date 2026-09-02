@@ -8,6 +8,8 @@ import { formatTime } from '../../utils'
 
 export interface EquipmentRulePresentation {
   id: string
+  name?: string
+  description?: string
   trigger: string
   condition?: string
   effects: string[]
@@ -131,6 +133,8 @@ const conditionMeaning = (condition: CombatCondition): string => {
     case 'event-damage-type-is': return `When ${DAMAGE_TYPE_NAMES[condition.damageType]} damage is involved`
     case 'source-is-self': return 'When you are the source'
     case 'source-is-opponent': return 'When the opponent is the source'
+    case 'target-has-status-tag': return `Against targets affected by ${TAG_NAMES[condition.tag]} statuses`
+    case 'event-target-is-self': return 'When the event affects you'
     case 'all': return condition.conditions.map(conditionMeaning).join(' and ')
     case 'any': return condition.conditions.map(conditionMeaning).join(' or ')
     case 'not': return `Not ${conditionMeaning(condition.condition)}`
@@ -217,7 +221,7 @@ export const getEquipmentCombatPresentation = (itemOrCombat: Pick<ItemDefinition
     const condition = rule.condition ? conditionMeaning(rule.condition) : undefined
     const cooldown = rule.cooldownMs && rule.cooldownMs > 0 ? `Cooldown: ${formatTime(rule.cooldownMs)}` : undefined
     const summary = `${triggerMeaning(rule)}${condition ? ` · ${condition}` : ''}${effects[0] ? ` → ${effects[0]}` : ''}`
-    return { id: rule.id, trigger: triggerMeaning(rule), condition, effects, cooldown, summary }
+    return { id: rule.id, name: rule.ui?.name, description: rule.ui?.description, trigger: triggerMeaning(rule), condition, effects, cooldown, summary }
   }) ?? []
   return { modifiers, rules, primarySummary: modifiers[0] ?? rules[0]?.summary ?? null }
 }

@@ -13,10 +13,9 @@ describe('Inventory V3 selectors and display rules', () => {
     state.inventory['wisp-essence'] = 0
 
     const owned = selectOwnedItemIds(state.inventory)
-    expect(owned).toContain('apprentice-wand')
     expect(owned).toContain('fire-fragment')
     expect(owned).not.toContain('wisp-essence')
-    expect(inventorySummary(owned, state.inventory)).toMatchObject({ types: 2, total: 13 })
+    expect(inventorySummary(owned, state.inventory)).toMatchObject({ types: 1, total: 12 })
   })
 
   it('supports search, category, protected/equipped filtering, and quantity sorting', () => {
@@ -28,8 +27,8 @@ describe('Inventory V3 selectors and display rules', () => {
 
     expect(selectVisibleItemIds(state.inventory, state.protectedItems, state.equipment, 'fire', 'All', 'Name')).toEqual(['ember-staff', 'fire-fragment'])
     expect(selectVisibleItemIds(state.inventory, state.protectedItems, state.equipment, '', 'Elemental', 'Quantity')).toEqual(['fire-fragment', 'water-fragment'])
-    expect(selectVisibleItemIds(state.inventory, state.protectedItems, state.equipment, '', 'Protected', 'Category')).toEqual(['fire-fragment', 'apprentice-wand'])
-    expect(selectVisibleItemIds(state.inventory, state.protectedItems, state.equipment, '', 'Equipment', 'Name')).toEqual(['apprentice-wand', 'ember-staff'])
+    expect(selectVisibleItemIds(state.inventory, state.protectedItems, state.equipment, '', 'Protected', 'Category')).toEqual(['fire-fragment'])
+    expect(selectVisibleItemIds(state.inventory, state.protectedItems, state.equipment, '', 'Equipment', 'Name')).toEqual(['ember-staff'])
   })
 
   it('uses current research rewards and friendly equipment stat labels', () => {
@@ -76,6 +75,6 @@ describe('Inventory V3 selectors and display rules', () => {
   })
 
   it('returns same-slot equipment comparison deltas', () => {
-    expect(getEquipmentComparison(ITEMS['ember-staff'], ITEMS['apprentice-wand']).find((row) => row.key === 'basicDamage')).toMatchObject({ selectedValue: '+4', equippedValue: '+0', delta: '+4', direction: 'positive' })
+    expect(getEquipmentComparison(ITEMS['ember-staff'], ITEMS['wispwood-wand']).find((row) => row.key === 'basicDamage')).toMatchObject({ selectedValue: '+4', equippedValue: '+2', delta: '+2', direction: 'positive' })
   })
 })

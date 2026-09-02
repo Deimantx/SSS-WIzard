@@ -341,6 +341,8 @@ export type CombatCondition =
   | { type: 'event-action-is'; actionId: string }
   | { type: 'event-action-has-tag'; tag: CombatTag }
   | { type: 'event-damage-type-is'; damageType: DamageType }
+  | { type: 'target-has-status-tag'; tag: CombatTag }
+  | { type: 'event-target-is-self' }
   | { type: 'source-is-self' }
   | { type: 'source-is-opponent' }
   | { type: 'all'; conditions: CombatCondition[] }
@@ -356,6 +358,8 @@ export interface CombatTriggerRule {
   cooldownMs?: number
   chance?: number
   priority?: number
+  /** Neutral player-facing metadata for authored triggered effects. */
+  ui?: { name?: string; description?: string }
 }
 
 export interface TraitDefinition {

@@ -1,4 +1,5 @@
 import { RECIPES, RECIPE_ORDER } from '../../content/recipes/recipes'
+import { isRecipeUnlocked } from './transmutationSelectors'
 import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
 import type { GameState, ItemId, RecipeId } from '../../types'
 import { grantItem } from '../inventory/itemAcquisition'
@@ -12,7 +13,7 @@ export interface TransmutationAdvanceContext {
 
 const finiteNonNegative = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : 0
 const finiteEchoes = (value: unknown) => Math.max(0, Math.floor(finiteNonNegative(value)))
-const isUnlocked = (state: GameState, recipe: (typeof RECIPES)[RecipeId]) => recipe.unlock.type === 'always' || state.progress.firstBossKill
+const isUnlocked = isRecipeUnlocked
 const requestKey = (recipeId: RecipeId) => `transmutation-${recipeId}`
 
 const getAvailableCrafts = (state: GameState, recipe: (typeof RECIPES)[RecipeId]) => {

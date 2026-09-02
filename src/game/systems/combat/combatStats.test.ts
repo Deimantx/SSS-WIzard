@@ -67,10 +67,10 @@ describe('universal combat stats foundation', () => {
 
   it('keeps enemy resistance independent from player equipment and caps ordinary resistance at 75%', () => {
     const itemId = 'stats-resistance-test' as ItemId
-    const item: ItemDefinition = { ...ITEMS['apprentice-wand'], id: itemId, stats: { resistances: { fire: 0.5 } } }
+    const item: ItemDefinition = { ...ITEMS['wispwood-wand'], id: itemId, stats: { resistances: { fire: 0.5 } } }
     ITEMS[itemId] = item
     const secondItemId = 'stats-resistance-test-2' as ItemId
-    ITEMS[secondItemId] = { ...ITEMS['apprentice-wand'], id: secondItemId, stats: { resistances: { fire: 0.4 } } }
+    ITEMS[secondItemId] = { ...ITEMS['wispwood-wand'], id: secondItemId, stats: { resistances: { fire: 0.4 } } }
     try {
       const state = createInitialState()
       state.equipment.weapon = itemId

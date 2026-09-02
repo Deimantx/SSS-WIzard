@@ -2,6 +2,7 @@ import { formatCombatEffect, type CombatActionPresentation } from '../../game/pr
 import type { CombatEffect } from '../../game/systems/combat/combatTypes'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { formatTime } from '../../game/utils'
+import { CombatEffectChip } from './CombatEffectChip'
 
 export function buildBasicAttackPresentation(basicDamage: number, actionTimeMs = 0): CombatActionPresentation {
   const effect: CombatEffect = { type: 'deal-damage', target: 'opponent', damageType: 'physical', magnitude: { type: 'flat', value: basicDamage } }
@@ -12,6 +13,6 @@ export function EnemyActionTooltip({ action }: { action: CombatActionPresentatio
   return <TooltipContent title={action.name} description={action.description}>
     <div className="tooltip-section"><small>ACTION TYPE</small><p>{action.id === 'basic-attack' ? 'BASIC ATTACK' : 'SPECIAL ACTION'}</p></div>
     <div className="tooltip-section"><small>ACTION TIME</small><p>{action.actionTimeMs > 0 ? formatTime(action.actionTimeMs) : 'Runtime dependent'}</p></div>
-    <div className="tooltip-section"><small>EFFECTS</small>{action.effects.map((effect, index) => <p key={`${effect.label}-${index}`}>{effect.label}{effect.value ? `: ${effect.value}` : ''}{effect.detail ? ` · ${effect.detail}` : ''}{effect.timeLabel ? ` · ${effect.timeLabel}` : ''}</p>)}</div>
+    <div className="tooltip-section"><small>EFFECTS</small><div className="enemy-intel-tooltip-effects">{action.effects.map((effect, index) => <CombatEffectChip detailed key={`${effect.label}-${index}`} effect={effect} />)}</div></div>
   </TooltipContent>
 }

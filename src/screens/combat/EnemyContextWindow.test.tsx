@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { TooltipProvider } from '../../components/ui/tooltip/Tooltip'
 import { useGameStore } from '../../store/gameStore'
 import type { EnemyContextMode } from './EnemyContextWindow'
-import { EnemyContextWindow } from './EnemyContextWindow'
+import { EnemyContextWindow, EnemyStatsContent, getEnemyContextPosition } from './EnemyContextWindow'
 
 function ContextHarness() {
   const [mode, setMode] = useState<EnemyContextMode | null>(null)
@@ -21,6 +21,18 @@ describe('EnemyContextWindow', () => {
   beforeEach(() => {
     window.localStorage.clear()
     useGameStore.getState().preset('combat')
+  })
+
+  it('anchors to the enemy card and clamps to a narrow viewport', () => {
+    expect(getEnemyContextPosition({ left: 700, top: 80, width: 300 }, { width: 800, height: 600 })).toEqual({ top: 80, left: 484, width: 300, maxHeight: 504 })
+    expect(getEnemyContextPosition({ left: 0, top: 0, width: 600 }, { width: 320, height: 240 })).toEqual({ top: 16, left: 16, width: 288, maxHeight: 208 })
+  })
+
+  it('keeps Defense and derived Damage Reduction visible in enemy stats', () => {
+    render(<TooltipProvider><EnemyStatsContent /></TooltipProvider>)
+    expect(screen.getByText('Defense')).toBeTruthy()
+    expect(screen.getByText('Damage Reduction')).toBeTruthy()
+    expect(screen.getByText('9.1%')).toBeTruthy()
   })
 
   it('switches Intel and Loot in place without modal body locking', async () => {
@@ -47,6 +59,7 @@ describe('EnemyContextWindow', () => {
     await user.click(screen.getByRole('button', { name: 'Open Intel' }))
     await user.keyboard('{Escape}')
     expect(screen.queryByRole('dialog')).toBeNull()
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Open Intel' }))
 
     await user.click(screen.getByRole('button', { name: 'Open Intel' }))
     await user.click(document.body)

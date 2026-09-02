@@ -36,6 +36,8 @@ const snapshot = (state: GameState) => ({
   combat: {
     active: state.combat.active,
     enemyId: state.combat.enemyId,
+    enemyInstanceSerial: state.combat.enemyInstanceSerial,
+    enemyInstanceKey: state.combat.enemyInstanceKey,
     enemyHp: state.combat.enemyHp,
     enemyBarrier: state.combat.enemyBarrier,
     enemyBarrierRemainingMs: state.combat.enemyBarrierRemainingMs,
@@ -56,6 +58,7 @@ const snapshot = (state: GameState) => ({
     ruleCooldowns: state.combat.ruleCooldowns,
     playerStatuses: comparableStatuses(state, 'player'),
     enemyStatuses: comparableStatuses(state, 'enemy'),
+    combatRngState: state.combat.combatRngState,
   },
 })
 
@@ -260,6 +263,44 @@ describe('canonical simulation quantum parity', () => {
     } finally {
       random.mockRestore()
       delete ITEMS[itemId]
+    }
+  })
+
+  it('keeps random encounters, direct-hit rolls, death downtime, and the next enemy identical', () => {
+    const makeFixture = () => {
+      const state = createInitialState()
+      state.combat.active = true
+      state.combat.dungeonId = 'whispering-woods'
+      state.player.maxHealth = 10_000
+      state.player.health = 10_000
+      state.debug.freezePlayerActions = true
+      state.debug.freezeEnemyActions = true
+      spawnEnemy(state, 'forest-wisp')
+      state.combat.enemyHp = 1
+      state.combat.enemyMaxHp = 1
+      return state
+    }
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0)
+    try {
+      const fine = makeFixture()
+      const coarse = cloneState(fine)
+      const playerHit = { type: 'deal-damage' as const, target: 'opponent' as const, damageType: 'physical' as const, magnitude: { type: 'flat' as const, value: 1 }, tags: ['direct' as const] }
+      const enemyHit = { type: 'deal-damage' as const, target: 'opponent' as const, damageType: 'physical' as const, magnitude: { type: 'flat' as const, value: 1 }, tags: ['direct' as const] }
+      executeCombatEffects(fine, [enemyHit], { actor: 'enemy', kind: 'basic-attack', sourceId: 'parity-enemy-hit' })
+      executeCombatEffects(fine, [playerHit], { actor: 'player', kind: 'spell', sourceId: 'parity-player-hit', tags: ['spell', 'direct'] })
+      executeCombatEffects(coarse, [enemyHit], { actor: 'enemy', kind: 'basic-attack', sourceId: 'parity-enemy-hit' })
+      executeCombatEffects(coarse, [playerHit], { actor: 'player', kind: 'spell', sourceId: 'parity-player-hit', tags: ['spell', 'direct'] })
+      fine.combat.enemyHp = 0
+      coarse.combat.enemyHp = 0
+      advanceFine(fine, 5_100)
+      for (let elapsed = 0; elapsed < 5_100; elapsed += 1_000) advanceGameState(coarse, Math.min(1_000, 5_100 - elapsed), { mode: 'banked' })
+      expect(snapshot(coarse)).toEqual(snapshot(fine))
+      expect(fine.combat.enemyInstanceSerial).toBe(2)
+      expect(fine.combat.enemyInstanceKey).toBe('enemy:2')
+      expect(fine.combat.enemyId).not.toBeNull()
+      expect(fine.combat.combatRngState).not.toBe(createInitialState().combat.combatRngState)
+    } finally {
+      random.mockRestore()
     }
   })
 })

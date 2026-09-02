@@ -1,12 +1,13 @@
 import { STATUS_DEFINITIONS } from '../statuses'
 import { getTraitDefinition, getTraitDefinitions } from '../traits'
-import type { CombatEffect, CombatTag, MonsterId } from '../../types'
+import type { CombatEffect, CombatTag, DamageType, MonsterId } from '../../types'
 import { ABANDONED_CATACOMBS_MONSTERS } from './abandonedCatacombs'
 import { HOWLING_DEN_MONSTERS } from './howlingDen'
 import { WHISPERING_WOODS_MONSTERS, WHISPERING_WOODS_MONSTER_IDS } from './whisperingWoods'
 import type { MonsterDefinition } from './monsterTypes'
 import { isPersistedCombatEffect } from '../../systems/combat/combatEffectValidation'
 import { MAX_ACTION_WORK_MS, MIN_ACTION_TIME_MS } from '../../core/balance/combatTiming'
+import { MAX_BLOCK_CHANCE, MAX_CRIT_CHANCE, MAX_CRIT_DAMAGE_MULTIPLIER, MAX_RESISTANCE, MIN_RESISTANCE } from '../../core/balance/combatStats'
 
 export type { MonsterDefinition } from './monsterTypes'
 export { WHISPERING_WOODS_MONSTERS, WHISPERING_WOODS_MONSTER_IDS } from './whisperingWoods'
@@ -23,6 +24,7 @@ export const isBossMonster = (monster: MonsterDefinition) => monster.bestiaryCat
 export const MONSTER_IDS = Object.keys(MONSTERS) as MonsterId[]
 
 const COMBAT_TAGS: readonly CombatTag[] = ['basic-attack', 'spell', 'weapon', 'equipment', 'melee', 'ranged', 'magic', 'direct', 'heal', 'dot', 'hot', 'status', 'special', 'trait', 'buff', 'debuff', 'control', 'barrier', 'physical', 'arcane', 'fire', 'water', 'earth', 'air']
+const DAMAGE_TYPES: readonly DamageType[] = ['physical', 'arcane', 'fire', 'water', 'earth', 'air']
 
 const validateEffects = (owner: string, effects: CombatEffect[], errors: string[]) => effects.forEach((effect) => {
   if (!isPersistedCombatEffect(effect)) errors.push(`${owner}: invalid combat effect`)
@@ -35,15 +37,19 @@ const validateEffects = (owner: string, effects: CombatEffect[], errors: string[
   if (effect.type === 'set-action-pattern' && !effect.patternId.trim()) errors.push(`${owner}: action pattern id is required`)
 })
 
-export const validateMonsterDefinitions = () => {
+export const validateMonsterDefinitions = (monsters: Record<string, MonsterDefinition> = MONSTERS) => {
   const errors: string[] = duplicateMonsterIds.map((id) => `${id}: duplicate monster registry entry`)
-  Object.entries(MONSTERS).forEach(([key, monster]) => {
+  Object.entries(monsters).forEach(([key, monster]) => {
     if (key !== monster.id) errors.push(`${monster.id}: key/id mismatch`)
     if (!Number.isFinite(monster.maxHealth) || monster.maxHealth <= 0 || !Number.isFinite(monster.basicAttackDamage) || monster.basicAttackDamage < 0 || !Number.isFinite(monster.basicAttackTimeMs) || monster.basicAttackTimeMs < MIN_ACTION_TIME_MS || monster.basicAttackTimeMs > MAX_ACTION_WORK_MS) errors.push(`${monster.id}: invalid combat numbers`)
+    if (monster.defense !== undefined && (!Number.isFinite(monster.defense) || monster.defense < 0)) errors.push(`${monster.id}: invalid defense`)
+    if (monster.critChance !== undefined && (!Number.isFinite(monster.critChance) || monster.critChance < 0 || monster.critChance > MAX_CRIT_CHANCE)) errors.push(`${monster.id}: invalid crit chance`)
+    if (monster.critDamage !== undefined && (!Number.isFinite(monster.critDamage) || monster.critDamage < 1 || monster.critDamage > MAX_CRIT_DAMAGE_MULTIPLIER)) errors.push(`${monster.id}: invalid crit damage`)
+    if (monster.blockChance !== undefined && (!Number.isFinite(monster.blockChance) || monster.blockChance < 0 || monster.blockChance > MAX_BLOCK_CHANCE)) errors.push(`${monster.id}: invalid block chance`)
     if (new Set(monster.traitIds).size !== monster.traitIds.length) errors.push(`${monster.id}: duplicate trait id`)
     monster.traitIds.forEach((traitId) => { if (!getTraitDefinition(traitId)) errors.push(`${monster.id}: unknown trait ${traitId}`) })
     if (!monster.actionPatterns[monster.defaultActionPatternId]) errors.push(`${monster.id}: missing default action pattern`)
-    Object.entries(monster.resistances ?? {}).forEach(([damageType, resistance]) => { if (!Number.isFinite(resistance) || resistance < -1 || resistance > 0.9) errors.push(`${monster.id}: invalid ${damageType} resistance`) })
+    Object.entries(monster.resistances ?? {}).forEach(([damageType, resistance]) => { if (!DAMAGE_TYPES.includes(damageType as DamageType) || !Number.isFinite(resistance) || resistance < MIN_RESISTANCE || resistance > MAX_RESISTANCE) errors.push(`${monster.id}: invalid ${damageType} resistance`) })
     Object.entries(monster.actions).forEach(([actionKey, action]) => {
       if (actionKey !== action.id) errors.push(`${monster.id}/${actionKey}: key/id mismatch`)
       if (!action.name.trim() || !action.description.trim()) errors.push(`${monster.id}/${action.id}: name and description are required`)

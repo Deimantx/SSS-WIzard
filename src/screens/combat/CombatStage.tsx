@@ -4,9 +4,8 @@ import type { DungeonId } from '../../game/types'
 import { CombatFlowPanel } from './CombatFlowPanel'
 import { EnemyCombatCard } from './EnemyCombatCard'
 import { PlayerCombatCard } from './PlayerCombatCard'
-import type { EnemyContextMode } from './EnemyContextWindow'
 
-export function CombatStage({ selectedDungeonId, onContentHeightChange, enemyCardRef, onOpenEnemyContext }: { selectedDungeonId: DungeonId; onContentHeightChange?: (height: number) => void; enemyCardRef?: Ref<HTMLElement>; onOpenEnemyContext?: (mode: EnemyContextMode, trigger: HTMLButtonElement) => void }) {
+export function CombatStage({ selectedDungeonId, onContentHeightChange, enemyCardRef, onOpenEnemyContext, enemyContextOpen = false }: { selectedDungeonId: DungeonId; onContentHeightChange?: (height: number) => void; enemyCardRef?: Ref<HTMLElement>; onOpenEnemyContext?: (trigger: HTMLButtonElement) => void; enemyContextOpen?: boolean }) {
   const stageRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (!onContentHeightChange) return
@@ -19,5 +18,5 @@ export function CombatStage({ selectedDungeonId, onContentHeightChange, enemyCar
     observer.observe(node)
     return () => observer.disconnect()
   }, [onContentHeightChange, selectedDungeonId])
-  return <Card className="combat-stage-panel"><div ref={stageRef} className="combat-stage-grid"><PlayerCombatCard /><CombatFlowPanel selectedDungeonId={selectedDungeonId} /><EnemyCombatCard selectedDungeonId={selectedDungeonId} cardRef={enemyCardRef} onOpenContext={onOpenEnemyContext} /></div></Card>
+  return <Card className="combat-stage-panel"><div ref={stageRef} className="combat-stage-grid"><PlayerCombatCard /><CombatFlowPanel selectedDungeonId={selectedDungeonId} /><EnemyCombatCard selectedDungeonId={selectedDungeonId} cardRef={enemyCardRef} onOpenContext={onOpenEnemyContext} contextOpen={enemyContextOpen} /></div></Card>
 }

@@ -7,7 +7,8 @@ import { getEquippedReservedQuantity } from './inventoryActions'
 import { equipItemAction } from './equipmentActions'
 
 const testRingId = 'test-arcane-ring' as ItemId
-afterEach(() => { delete ITEMS[testRingId] })
+const testDefenseId = 'test-defense-robe' as ItemId
+afterEach(() => { delete ITEMS[testRingId]; delete ITEMS[testDefenseId] })
 
 describe('equipment actions', () => {
   it('automatically removes an Offhand when equipping a 2H weapon', () => {
@@ -53,6 +54,15 @@ describe('equipment actions', () => {
     expect(preview.current.spellPower).toBe(100)
     expect(preview.preview?.spellPower).toBe(120)
     expect(preview.impact.spellPower).toBe(20)
+  })
+
+  it('previews the derived Defense damage reduction change', () => {
+    ITEMS[testDefenseId] = { id: testDefenseId, name: 'Test Defense Robe', description: 'Test armor', icon: '▤', color: '#fff', kind: 'equipment', category: 'equipment', inventoryCategory: 'equipment', source: 'Test', sellValue: 1, canDestroy: true, equipmentSlot: 'armor', stats: { defense: 100 } } satisfies ItemDefinition
+    const state = createInitialState()
+    const preview = getEquipmentPreview(state, testDefenseId)
+    expect(preview.current.damageReduction).toBeCloseTo(10 / 110)
+    expect(preview.preview?.damageReduction).toBeCloseTo(110 / 210)
+    expect(preview.impact.damageReduction).toBeCloseTo(110 / 210 - 10 / 110)
   })
 
   it('uses Ring 1 then Ring 2 and reserves duplicate copies safely', () => {

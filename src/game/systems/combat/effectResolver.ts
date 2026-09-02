@@ -8,7 +8,7 @@ import type { CombatActor } from './magnitude'
 import { getActorHealth, resolveMagnitude } from './magnitude'
 import { consumeBarrier, gainBarrierResult, gainBarrier as gainBarrierRuntime, getActiveBarrier } from './barrierRuntime'
 import { getCombatModifiers, getResistance, isImmuneToDamage } from './modifiers'
-import { getBlockChance, getCritChance, getCritDamageMultiplier, getDefense, getDefenseReduction } from './combatStats'
+import { BLOCK_DAMAGE_REDUCTION, getBlockChance, getCritChance, getCritDamageMultiplier, getDefense, getDefenseReduction } from './combatStats'
 import { nextCombatRandom } from './combatRng'
 import { runCombatTriggers, type CombatEventContext } from './triggerRuntime'
 import { getCurrentEnemyActionStep, MAX_ACTION_WORK_MS, setEnemyActionPattern } from './actionRuntime'
@@ -137,7 +137,7 @@ const calculateCombatDamageWithRolls = (state: GameState, raw: number, damageTyp
   const afterDefense = targetModified * (1 - defenseReduction)
   const afterResistance = Math.max(0, afterDefense * (1 - resistance))
   const blocked = direct && rolls.blocked === true
-  const blockReduction = blocked ? 0.5 : 0
+  const blockReduction = blocked ? BLOCK_DAMAGE_REDUCTION : 0
   const blockedAmount = blocked ? afterResistance * blockReduction : 0
   const resolvedBeforeBarrier = Math.max(0, afterResistance - blockedAmount)
   // Keep fractional base damage intact. Player-facing log formatting may

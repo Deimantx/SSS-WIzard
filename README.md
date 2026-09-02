@@ -18,7 +18,7 @@ Use a current Node.js LTS release. The current Vite toolchain supports Node 20.1
 git clone https://github.com/Deimantx/SSS-WIzard.git
 cd SSS-WIzard
 npm install
-npm run dev
+npm run dev            <----///
 ```
 
 Open the local Vite address shown in the terminal, normally `http://localhost:5173`.

@@ -35,15 +35,20 @@ export function CombatScreenV2() {
   const closeAtlas = useCallback(() => setAtlasOpen(false), [])
   const closeLeave = useCallback(() => setLeaveOpen(false), [])
   const closeEnemyContext = useCallback(() => setEnemyContextMode(null), [])
-  const openEnemyContext = useCallback((mode: EnemyContextMode, trigger: HTMLButtonElement) => {
+  const openEnemyContext = useCallback((trigger: HTMLButtonElement) => {
     dismissGameTooltips()
     const currentCombat = useGameStore.getState().combat
     if (!currentCombat.active || !currentCombat.enemyId || !MONSTERS[currentCombat.enemyId]) return
-    if (enemyContextMode === mode && enemyContextTriggerRef.current === trigger) { setEnemyContextMode(null); return }
+    if (enemyContextMode && enemyContextTriggerRef.current === trigger) { setEnemyContextMode(null); return }
     enemyContextTriggerRef.current = trigger
-    setEnemyContextMode(mode)
+    setEnemyContextMode('intel')
   }, [enemyContextMode])
   useEffect(() => { if (!combat.active) setEnemyContextMode(null) }, [combat.active])
+  const previousEnemyId = useRef(combat.enemyId)
+  useEffect(() => {
+    if (enemyContextMode && combat.enemyId !== previousEnemyId.current) setEnemyContextMode(combat.active && combat.enemyId ? 'intel' : null)
+    previousEnemyId.current = combat.enemyId
+  }, [combat.active, combat.enemyId, enemyContextMode])
   useEffect(() => {
     const dungeonChanged = previousDungeonId.current !== combatDungeonId
     if (!combat.active || dungeonChanged) setStageContentHeight(0)

@@ -1,5 +1,7 @@
-import type { InventoryCategory, InventoryMaterialSubtype, ItemDefinition, ItemId, ModifierKey, SchoolId, ScreenId } from '../../types'
+import type { DamageType } from '../../systems/combat/combatTypes'
+import type { EquipmentStats, InventoryCategory, InventoryMaterialSubtype, ItemDefinition, ItemId, ModifierKey, SchoolId, ScreenId } from '../../types'
 import { BALANCE } from '../../core/balance/balance'
+import { MAX_BLOCK_CHANCE, MAX_RESISTANCE, MIN_RESISTANCE } from '../../core/balance/combatStats'
 import { isPersistedCombatEffect } from '../../systems/combat/combatEffectValidation'
 
 type AuthoredItemDefinition = Omit<ItemDefinition, 'inventoryCategory' | 'materialSubtype' | 'sellValue' | 'canDestroy' | 'actionRestrictionReason'> & Partial<Pick<ItemDefinition, 'inventoryCategory' | 'materialSubtype' | 'sellValue' | 'canDestroy' | 'actionRestrictionReason'>>
@@ -70,11 +72,45 @@ export const ITEMS: Record<ItemId, ItemDefinition> = Object.fromEntries(
   }),
 ) as Record<ItemId, ItemDefinition>
 
-export const validateItemDefinitions = () => {
+const DAMAGE_TYPES: readonly DamageType[] = ['physical', 'arcane', 'fire', 'water', 'earth', 'air']
+const EQUIPMENT_NUMERIC_FIELDS: readonly (keyof EquipmentStats)[] = [
+  'basicDamage', 'spellPower', 'maxHealth', 'maxMana', 'manaRegen', 'maxFocus', 'barrierReceived',
+  'defense', 'critChance', 'critDamage', 'basicAttackSpeedPct', 'blockChance', 'cooldownRecoveryPct',
+  'healingDonePct', 'barrierPowerPct', 'damageOverTimePct', 'statusDurationPct', 'manaCostReductionPct', 'focusEfficiencyPct',
+  'fireSpellDamagePct', 'waterBarrierPct', 'earthSpellDamagePct', 'airSpellDamagePct',
+]
+
+const validateEquipmentStats = (itemId: string, stats: EquipmentStats | undefined, errors: string[]) => {
+  if (stats === undefined) return
+  if (!stats || typeof stats !== 'object' || Array.isArray(stats)) { errors.push(`${itemId}: invalid equipment stats`); return }
+  EQUIPMENT_NUMERIC_FIELDS.forEach((field) => {
+    const value = stats[field]
+    if (value !== undefined && !Number.isFinite(value as number)) errors.push(`${itemId}: non-finite equipment stat ${field}`)
+  })
+  const bounded = (field: keyof EquipmentStats, min: number, max: number) => {
+    const value = stats[field] as number | undefined
+    if (value !== undefined && Number.isFinite(value) && (value < min || value > max)) errors.push(`${itemId}: invalid equipment stat ${String(field)}`)
+  }
+  bounded('defense', 0, Number.POSITIVE_INFINITY)
+  bounded('critChance', 0, 1)
+  bounded('critDamage', 0, Number.POSITIVE_INFINITY)
+  bounded('blockChance', 0, MAX_BLOCK_CHANCE)
+  bounded('manaCostReductionPct', 0, 0.8)
+  bounded('focusEfficiencyPct', 0, 0.8)
+  if (stats.resistances !== undefined) {
+    if (!stats.resistances || typeof stats.resistances !== 'object' || Array.isArray(stats.resistances)) errors.push(`${itemId}: invalid equipment resistances`)
+    else Object.entries(stats.resistances as Record<string, unknown>).forEach(([damageType, value]) => {
+      if (!DAMAGE_TYPES.includes(damageType as DamageType) || typeof value !== 'number' || !Number.isFinite(value) || value < MIN_RESISTANCE || value > MAX_RESISTANCE) errors.push(`${itemId}: invalid ${damageType} resistance`)
+    })
+  }
+}
+
+export const validateItemDefinitions = (items: Record<string, ItemDefinition> = ITEMS) => {
   const errors: string[] = []
   const modifierKeys: readonly ModifierKey[] = ['damage-dealt-percent', 'damage-taken-percent', 'basic-attack-damage-percent', 'basic-attack-speed-percent', 'action-speed-percent', 'spell-damage-percent', 'melee-damage-percent', 'ranged-damage-percent', 'healing-done-percent', 'healing-received-percent', 'barrier-power-percent', 'barrier-received-percent', 'mana-regen-percent', 'cooldown-recovery-percent', 'control-duration-received-percent', 'status-duration-dealt-percent', 'status-duration-received-percent', 'defense-flat', 'crit-chance', 'crit-damage', 'block-chance', 'damage-over-time-percent', 'resistance-percent']
-  Object.entries(ITEMS).forEach(([key, item]) => {
+  Object.entries(items).forEach(([key, item]) => {
     if (key !== item.id) errors.push(`${key}: key/id mismatch`)
+    validateEquipmentStats(item.id, item.stats, errors)
     if (item.combat && item.kind !== 'equipment') errors.push(`${item.id}: only equipment items may define combat metadata`)
     const modifiers = item.combat?.modifiers ?? []
     modifiers.forEach((modifier) => {

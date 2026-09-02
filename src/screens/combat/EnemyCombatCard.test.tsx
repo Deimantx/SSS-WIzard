@@ -21,10 +21,11 @@ describe('EnemyCombatCard contextual controls', () => {
     expect(screen.queryByRole('button', { name: 'Open Enemy Loot' })).toBeNull()
   })
 
-  it('shows Intel and Loot only for a real active enemy', () => {
+  it('shows one Intel trigger only for a real active enemy', () => {
     useGameStore.getState().preset('combat')
     render(<TooltipProvider><EnemyCombatCard selectedDungeonId="whispering-woods" /></TooltipProvider>)
     expect(screen.getByRole('button', { name: 'Open Enemy Intel' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Open Enemy Loot' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Open Enemy Stats' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Open Enemy Loot' })).toBeNull()
   })
 })

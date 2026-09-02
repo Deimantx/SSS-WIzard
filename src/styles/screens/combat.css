@@ -1616,7 +1616,7 @@
 /* V3 contextual enemy windows and permanent combat feed */
 .enemy-utility-footer {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 6px;
   margin-top: auto;
   padding-top: 10px;
@@ -1656,8 +1656,9 @@
   position: fixed;
   z-index: var(--z-context, 800);
   display: flex;
-  width: min(420px, calc(100vw - 32px));
-  max-height: min(620px, calc(100vh - 32px));
+  width: auto;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
   flex-direction: column;
   overflow: hidden;
   border: 1px solid var(--ui-border-strong);
@@ -1719,6 +1720,9 @@
   overflow: auto;
   padding: 12px;
   scrollbar-width: thin;
+}
+.enemy-context-window .enemy-context-body {
+  flex: 1 1 auto;
 }
 .enemy-stats-grid {
   display: grid;
@@ -1848,7 +1852,17 @@
   display: grid;
   gap: 4px;
   padding: 7px;
+  border-left: 2px solid transparent;
+  transition: border-color 120ms ease, background-color 120ms ease;
 }
+.enemy-intel-action.effect-tone-damage { border-left-color: var(--semantic-damage-physical); }
+.enemy-intel-action.effect-tone-heal { border-left-color: var(--ui-success); }
+.enemy-intel-action.effect-tone-barrier { border-left-color: var(--semantic-barrier); }
+.enemy-intel-action.effect-tone-control { border-left-color: var(--semantic-control); }
+.enemy-intel-action.effect-tone-dot { border-left-color: var(--semantic-dot); }
+.enemy-intel-action.effect-tone-buff { border-left-color: var(--semantic-buff); }
+.enemy-intel-action.effect-tone-debuff { border-left-color: var(--semantic-debuff); }
+.enemy-intel-action.effect-tone-utility { border-left-color: var(--ui-text-muted); }
 .enemy-intel-action > div:first-child {
   display: flex;
   justify-content: space-between;
@@ -1874,14 +1888,53 @@
   font-size: 9px;
   line-height: 1.35;
 }
-.enemy-intel-action > div:last-child {
+.enemy-intel-action-effects,
+.enemy-intel-tooltip-effects {
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
 }
-.enemy-intel-action > div:last-child small {
+.enemy-intel-action:hover,
+.enemy-intel-action:focus-visible {
+  background: color-mix(in srgb, var(--ui-accent) 6%, var(--ui-panel));
+}
+.enemy-intel-action-effect {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+  padding: 3px 5px;
+  border: 1px solid color-mix(in srgb, currentColor 35%, var(--ui-border));
+  border-radius: 4px;
   color: var(--ui-text-muted);
+  background: color-mix(in srgb, currentColor 7%, transparent);
   font: var(--text-micro) var(--font-mono);
+}
+.enemy-intel-action-effect b {
+  color: currentColor;
+  font-weight: 700;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+.enemy-intel-action-effect strong { color: var(--ui-text-soft); font-weight: 600; }
+.enemy-intel-action-effect small { flex-basis: 100%; color: var(--ui-text-muted); font-size: 8px; }
+.enemy-intel-action-effect.effect-tone-damage { color: var(--semantic-damage-physical); }
+.enemy-intel-action-effect.effect-tone-damage.damage-fire { color: var(--semantic-damage-fire); }
+.enemy-intel-action-effect.effect-tone-damage.damage-water { color: var(--semantic-damage-water); }
+.enemy-intel-action-effect.effect-tone-damage.damage-earth { color: var(--semantic-damage-earth); }
+.enemy-intel-action-effect.effect-tone-damage.damage-air { color: var(--semantic-damage-air); }
+.enemy-intel-action-effect.effect-tone-damage.damage-arcane { color: var(--semantic-damage-arcane); }
+.enemy-intel-action-effect.effect-tone-heal { color: var(--ui-success); }
+.enemy-intel-action-effect.effect-tone-barrier { color: var(--semantic-barrier); }
+.enemy-intel-action-effect.effect-tone-control { color: var(--semantic-control); }
+.enemy-intel-action-effect.effect-tone-dot { color: var(--semantic-dot); }
+.enemy-intel-action-effect.effect-tone-buff { color: var(--semantic-buff); }
+.enemy-intel-action-effect.effect-tone-debuff { color: var(--semantic-debuff); }
+.enemy-intel-action-effect.effect-tone-utility { color: var(--ui-text-muted); }
+.enemy-intel-tooltip-effects { margin-top: 5px; }
+@media (max-width: 520px) {
+  .enemy-context-window { max-width: calc(100vw - 32px); }
 }
 .combat-effect-line {
   grid-template-columns: 20px minmax(0, 1fr);

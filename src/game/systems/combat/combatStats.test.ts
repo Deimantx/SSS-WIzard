@@ -3,8 +3,11 @@ import { createInitialState } from '../../../store/initialState'
 import { BALANCE } from '../../core/balance/balance'
 import { calculateCombatDamage, damageEnemy } from './effectResolver'
 import { getBlockChance, getCritChance, getCritDamageMultiplier, getDefense, getDefenseReduction, getEnemyCombatStats, getPlayerCombatStats } from './combatStats'
+import { getResistance } from './modifiers'
 import { nextCombatRandom } from './combatRng'
 import type { CombatSource } from './combatTypes'
+import { ITEMS } from '../../content/items/items'
+import type { ItemDefinition, ItemId } from '../../types'
 
 const playerSpell: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'stats-test', school: 'fire', tags: ['spell', 'direct', 'fire'] }
 
@@ -58,5 +61,26 @@ describe('universal combat stats foundation', () => {
     const dotBefore = dotState.combat.combatRngState
     damageEnemy(dotState, 1, 'status')
     expect(dotState.combat.combatRngState).toBe(dotBefore)
+  })
+
+  it('keeps enemy resistance independent from player equipment and caps ordinary resistance at 75%', () => {
+    const itemId = 'stats-resistance-test' as ItemId
+    const item: ItemDefinition = { ...ITEMS['apprentice-wand'], id: itemId, stats: { resistances: { fire: 0.5 } } }
+    ITEMS[itemId] = item
+    const secondItemId = 'stats-resistance-test-2' as ItemId
+    ITEMS[secondItemId] = { ...ITEMS['apprentice-wand'], id: secondItemId, stats: { resistances: { fire: 0.4 } } }
+    try {
+      const state = createInitialState()
+      state.equipment.weapon = itemId
+      state.equipment.offhand = secondItemId
+      expect(getResistance(state, 'player', 'fire')).toBe(0.75)
+      state.combat.enemyId = 'forest-wisp'
+      expect(getResistance(state, 'enemy', 'fire')).toBe(0)
+      state.combat.enemyId = null
+      expect(getResistance(state, 'enemy', 'fire')).toBe(0)
+    } finally {
+      delete ITEMS[itemId]
+      delete ITEMS[secondItemId]
+    }
   })
 })

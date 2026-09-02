@@ -18,9 +18,11 @@ export interface EquipmentStatSnapshot {
   earthSpellDamagePct: number
   airSpellDamagePct: number
   basicAttackSpeedMultiplier: number
+  basicAttackIntervalMs: number
   critChance: number
   critDamageMultiplier: number
   defense: number
+  damageReduction: number
   blockChance: number
   damageOverTimeBonus: number
   statusDurationBonus: number
@@ -40,7 +42,7 @@ export interface EquipmentPreview {
   removedOffhand: ItemId | null
   current: EquipmentStatSnapshot
   preview: EquipmentStatSnapshot | null
-  impact: EquipmentStats
+  impact: EquipmentStats & { damageReduction?: number }
 }
 
 export const getEquipmentStatSnapshot = (state: Pick<GameState, 'player' | 'progress' | 'activities' | 'equipment'> & Partial<Pick<GameState, 'debug'>>, equipment: GameState['equipment']): EquipmentStatSnapshot => {
@@ -59,9 +61,11 @@ export const getEquipmentStatSnapshot = (state: Pick<GameState, 'player' | 'prog
     earthSpellDamagePct: stats.earthSpellDamagePct ?? 0,
     airSpellDamagePct: stats.airSpellDamagePct ?? 0,
     basicAttackSpeedMultiplier: sheet.basicAttackSpeedMultiplier,
+    basicAttackIntervalMs: sheet.basicAttackIntervalMs,
     critChance: sheet.critChance,
     critDamageMultiplier: sheet.critDamageMultiplier,
     defense: sheet.defense,
+    damageReduction: sheet.defenseReduction,
     blockChance: sheet.blockChance,
     damageOverTimeBonus: sheet.damageOverTimeBonus,
     statusDurationBonus: sheet.statusDurationBonus,
@@ -74,7 +78,7 @@ export const getEquipmentStatSnapshot = (state: Pick<GameState, 'player' | 'prog
   }
 }
 
-const subtractSnapshots = (current: EquipmentStatSnapshot, preview: EquipmentStatSnapshot): EquipmentStats => ({
+const subtractSnapshots = (current: EquipmentStatSnapshot, preview: EquipmentStatSnapshot): EquipmentStats & { damageReduction: number } => ({
   maxHealth: preview.maxHealth - current.maxHealth,
   maxMana: preview.maxMana - current.maxMana,
   maxFocus: preview.maxFocus - current.maxFocus,
@@ -90,6 +94,7 @@ const subtractSnapshots = (current: EquipmentStatSnapshot, preview: EquipmentSta
   critChance: preview.critChance - current.critChance,
   critDamage: preview.critDamageMultiplier - current.critDamageMultiplier,
   defense: preview.defense - current.defense,
+  damageReduction: preview.damageReduction - current.damageReduction,
   blockChance: preview.blockChance - current.blockChance,
   damageOverTimePct: preview.damageOverTimeBonus - current.damageOverTimeBonus,
   statusDurationPct: preview.statusDurationBonus - current.statusDurationBonus,

@@ -1,5 +1,6 @@
 import { MONSTERS } from '../../content/monsters'
 import { BALANCE } from '../../core/balance/balance'
+import { DEFENSE_K, MAX_BLOCK_CHANCE, MAX_CRIT_CHANCE, MAX_CRIT_DAMAGE_MULTIPLIER, MAX_DEFENSE_REDUCTION, MAX_RESISTANCE, MIN_CRIT_DAMAGE_MULTIPLIER, MIN_RESISTANCE } from '../../core/balance/combatStats'
 import { getEquipmentStats } from '../../core/equipment/equipmentStats'
 import { getManaCapacityBreakdown, getManaRegenBreakdown } from '../../engine/channelingEngine'
 import { getFocusCapacityBreakdown } from '../focus/focusCapacity'
@@ -9,13 +10,7 @@ import type { CombatActor } from './magnitude'
 import type { CombatSource, DamageType } from './combatTypes'
 import { getCombatModifiers, getResistance } from './modifiers'
 
-export const DEFENSE_K = 100
-export const MAX_DEFENSE_REDUCTION = 0.8
-export const MAX_CRIT_CHANCE = 1
-export const MIN_CRIT_DAMAGE_MULTIPLIER = 1
-export const MAX_CRIT_DAMAGE_MULTIPLIER = 5
-export const MAX_BLOCK_CHANCE = 0.75
-export const BLOCK_DAMAGE_REDUCTION = 0.5
+export { BLOCK_DAMAGE_REDUCTION, DEFENSE_K, MAX_BLOCK_CHANCE, MAX_CRIT_CHANCE, MAX_CRIT_DAMAGE_MULTIPLIER, MAX_DEFENSE_REDUCTION, MAX_RESISTANCE, MIN_CRIT_DAMAGE_MULTIPLIER, MIN_RESISTANCE } from '../../core/balance/combatStats'
 
 const DAMAGE_TYPES: readonly DamageType[] = ['physical', 'arcane', 'fire', 'water', 'earth', 'air']
 
@@ -74,7 +69,7 @@ const getPlayerSheetStats = (state: GameState): CombatStats => {
     defense,
     defenseReduction: getDefenseReductionFromRating(defense),
     blockChance: clampPercent(finite(equipment.blockChance), 0, MAX_BLOCK_CHANCE),
-    resistances: Object.fromEntries(DAMAGE_TYPES.map((type) => [type, clampPercent(finite(equipment.resistances?.[type]), -1, 0.9)])) as Partial<Record<DamageType, number>>,
+    resistances: Object.fromEntries(DAMAGE_TYPES.map((type) => [type, clampPercent(finite(equipment.resistances?.[type]), MIN_RESISTANCE, MAX_RESISTANCE)])) as Partial<Record<DamageType, number>>,
     cooldownRecovery: Math.max(0, 1 + finite(equipment.cooldownRecoveryPct)),
     healingDoneBonus: finite(equipment.healingDonePct),
     barrierPowerBonus: finite(equipment.barrierPowerPct),

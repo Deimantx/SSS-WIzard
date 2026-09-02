@@ -1,12 +1,12 @@
 import { useSyncExternalStore } from 'react'
 import { clampDeveloperToolsGeometry, getDefaultDeveloperGeometry, loadDeveloperToolsGeometry, saveDeveloperToolsGeometry, type DeveloperToolsGeometry } from './developerToolsWindowGeometry'
 
-export type DeveloperToolsTab = 'character' | 'channeling' | 'focus' | 'research' | 'transmutation' | 'inventory' | 'combat' | 'schools' | 'progression' | 'save' | 'diagnostics'
+export type DeveloperToolsTab = 'character' | 'progression' | 'inventory' | 'equipment' | 'schools' | 'spells' | 'research' | 'channeling' | 'focus' | 'transmutation' | 'combat' | 'monsters' | 'statuses' | 'save' | 'diagnostics'
 export type DeveloperCombatTab = 'live' | 'encounter' | 'boss' | 'actions' | 'status' | 'telemetry'
-export interface DeveloperToolsSessionState extends DeveloperToolsGeometry { open: boolean; activeTab: DeveloperToolsTab; search: string; combatTab: DeveloperCombatTab }
+export interface DeveloperToolsSessionState extends DeveloperToolsGeometry { open: boolean; activeTab: DeveloperToolsTab; combatTab: DeveloperCombatTab }
 
 const geometry = loadDeveloperToolsGeometry()
-let current: DeveloperToolsSessionState = { open: false, activeTab: 'character', search: '', combatTab: 'live', ...geometry }
+let current: DeveloperToolsSessionState = { open: false, activeTab: 'character', combatTab: 'live', ...geometry }
 const listeners = new Set<() => void>()
 const emit = () => listeners.forEach((listener) => listener())
 const update = (changes: Partial<DeveloperToolsSessionState>, persistGeometry = false) => { current = { ...current, ...changes }; if (persistGeometry) saveDeveloperToolsGeometry(current); emit() }
@@ -16,7 +16,6 @@ export const openDeveloperTools = (activeTab: DeveloperToolsTab = current.active
 export const closeDeveloperTools = () => update({ open: false })
 export const toggleDeveloperTools = () => update({ open: !current.open })
 export const setDeveloperToolsTab = (activeTab: DeveloperToolsTab) => update({ activeTab })
-export const setDeveloperToolsSearch = (search: string) => update({ search })
 export const setDeveloperCombatTab = (combatTab: DeveloperCombatTab) => update({ combatTab })
 export const setDeveloperToolsGeometry = (next: Partial<DeveloperToolsGeometry>, persist = true) => update(clampDeveloperToolsGeometry({ x: current.x, y: current.y, width: current.width, height: current.height, minimized: current.minimized, ...next }), persist)
 export const setDeveloperToolsPosition = (x: number, y: number) => setDeveloperToolsGeometry({ x, y }, true)

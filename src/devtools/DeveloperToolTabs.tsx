@@ -10,6 +10,9 @@ import { DeveloperInventory } from './tabs/DeveloperInventory'
 import { DeveloperProgression } from './tabs/DeveloperProgression'
 import { DeveloperSaveState } from './tabs/DeveloperSaveState'
 import { DeveloperSchools } from './tabs/DeveloperSchools'
+import { DeveloperSpells } from './tabs/DeveloperSpells'
+import { DeveloperMonsters } from './tabs/DeveloperMonsters'
+import { DeveloperStatuses } from './tabs/DeveloperStatuses'
 
 export function DeveloperTab({ tab, copy }: { tab: DeveloperToolsTab; copy: (label: string, value: unknown) => Promise<void> }) {
   if (tab === 'character') return <DeveloperCharacter />
@@ -18,8 +21,12 @@ export function DeveloperTab({ tab, copy }: { tab: DeveloperToolsTab; copy: (lab
   if (tab === 'transmutation') return <DeveloperTransmutation />
   if (tab === 'research') return <DeveloperResearch />
   if (tab === 'inventory') return <DeveloperInventory />
+  if (tab === 'equipment') return <DeveloperInventory />
   if (tab === 'combat') return <DeveloperCombat copy={copy} />
   if (tab === 'schools') return <DeveloperSchools />
+  if (tab === 'spells') return <DeveloperSpells />
+  if (tab === 'monsters') return <DeveloperMonsters />
+  if (tab === 'statuses') return <DeveloperStatuses />
   if (tab === 'progression') return <DeveloperProgression />
   if (tab === 'diagnostics') return <DeveloperDiagnostics copy={copy} />
   return <DeveloperSaveState copy={copy} />

@@ -2,11 +2,16 @@ import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } f
 import { Bug, Check, Maximize2, Minus, RotateCcw, X } from 'lucide-react'
 import { GameTooltip, Status } from '../components/ui'
 import { useGameStore } from '../store/gameStore'
-import { clampDeveloperToolsToViewport, closeDeveloperTools, minimizeDeveloperTools, resetDeveloperToolsWindow, restoreDeveloperTools, setDeveloperToolsGeometry, setDeveloperToolsSearch, setDeveloperToolsTab, useDeveloperToolsStore, type DeveloperToolsTab } from './developerToolsStore'
+import { clampDeveloperToolsToViewport, closeDeveloperTools, minimizeDeveloperTools, resetDeveloperToolsWindow, restoreDeveloperTools, setDeveloperToolsGeometry, setDeveloperToolsTab, useDeveloperToolsStore, type DeveloperToolsTab } from './developerToolsStore'
 import { DeveloperTab } from './DeveloperToolTabs'
 import { getActiveDebugOverrides } from './debugOverridePresentation'
 
-const tabs: { id: DeveloperToolsTab; label: string }[] = [{ id: 'character', label: 'Character' }, { id: 'channeling', label: 'Channeling' }, { id: 'focus', label: 'Focus' }, { id: 'research', label: 'Research' }, { id: 'transmutation', label: 'Transmutation' }, { id: 'inventory', label: 'Inventory' }, { id: 'combat', label: 'Combat Lab' }, { id: 'schools', label: 'Magic Schools' }, { id: 'progression', label: 'Guild / Progression' }, { id: 'save', label: 'Save / Profile' }, { id: 'diagnostics', label: 'Diagnostics' }]
+const tabGroups: readonly { label: string; tabs: readonly { id: DeveloperToolsTab; label: string }[] }[] = [
+  { label: 'PLAYER', tabs: [{ id: 'character', label: 'Character' }, { id: 'progression', label: 'Progression' }, { id: 'inventory', label: 'Inventory' }, { id: 'equipment', label: 'Equipment / Loadouts' }] },
+  { label: 'MAGIC', tabs: [{ id: 'schools', label: 'Magic Schools' }, { id: 'spells', label: 'Spells' }, { id: 'research', label: 'Research' }, { id: 'channeling', label: 'Channeling' }, { id: 'focus', label: 'Focus' }, { id: 'transmutation', label: 'Transmutation' }] },
+  { label: 'COMBAT', tabs: [{ id: 'combat', label: 'Combat Lab' }, { id: 'monsters', label: 'Monsters' }, { id: 'statuses', label: 'Statuses' }] },
+  { label: 'SYSTEM', tabs: [{ id: 'save', label: 'Save / Profile' }, { id: 'diagnostics', label: 'Diagnostics' }] },
+]
 
 type Interaction = { pointerId: number; startX: number; startY: number; geometry: { x: number; y: number; width: number; height: number } }
 
@@ -84,8 +89,8 @@ export function DeveloperToolsWindow() {
       {!session.minimized && <>
         {activeOverrides.length > 0 && <div className="developer-active-overrides" role="status"><strong>ACTIVE OVERRIDES</strong><span>{activeOverrides.map((override) => override.label).join(' · ')}</span></div>}
         <div className="developer-tools-body">
-          <nav className="developer-tools-tabs" aria-label="Developer tool sections">{tabs.map((tab) => <button key={tab.id} className={session.activeTab === tab.id ? 'active' : ''} aria-selected={session.activeTab === tab.id} onClick={() => setDeveloperToolsTab(tab.id)}>{tab.label}</button>)}<button className="developer-tools-legacy-tab" aria-label="Player" onClick={() => setDeveloperToolsTab('character')}>Player</button></nav>
-          <main className="developer-tools-content"><div className="developer-tools-toolbar"><label>Search tools<input value={session.search} onChange={(event) => setDeveloperToolsSearch(event.target.value)} placeholder="Filter item or school names" /></label></div><DeveloperTab tab={session.activeTab} copy={copy} /></main>
+          <nav className="developer-tools-tabs" aria-label="Developer tool sections">{tabGroups.map((group) => <div className="developer-tools-tab-group" key={group.label}><span className="developer-tools-tab-group-label">{group.label}</span>{group.tabs.map((tab) => <button key={tab.id} className={session.activeTab === tab.id ? 'active' : ''} aria-selected={session.activeTab === tab.id} onClick={() => setDeveloperToolsTab(tab.id)}>{tab.label}</button>)}</div>)}<button className="developer-tools-legacy-tab" aria-label="Player" onClick={() => setDeveloperToolsTab('character')}>Player</button></nav>
+          <main className="developer-tools-content"><DeveloperTab tab={session.activeTab} copy={copy} /></main>
         </div>
         <div className="developer-tools-resize-handle right" aria-hidden="true" onPointerDown={(event) => beginResize(event, 'right')} onPointerMove={moveResize} onPointerUp={endInteraction} onPointerCancel={endInteraction} />
         <div className="developer-tools-resize-handle bottom" aria-hidden="true" onPointerDown={(event) => beginResize(event, 'bottom')} onPointerMove={moveResize} onPointerUp={endInteraction} onPointerCancel={endInteraction} />

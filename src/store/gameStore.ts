@@ -7,6 +7,7 @@ import { SPELLS } from '../game/content/spells/spells'
 import { castSpellAction } from './actions/combatActions'
 import { manaRegenPerSecond, pushNotification, recalculateDerivedStats, selectFreeFocus, selectUsedFocus } from '../game/engine'
 import { debugApplyStatus, spawnEnemy, spawnNextEnemy } from '../game/systems/combat/combatRuntime'
+import { removeStatus as removeCombatStatus } from '../game/systems/combat/statusRuntime'
 import { damagePlayer, executeCombatEffects } from '../game/systems/combat/effectResolver'
 import { forceResolveEnemyAction as forceResolveEnemyActionRuntime, resolveCurrentEnemyAction as resolveCurrentEnemyActionRuntime, setEnemyActionPattern as setEnemyActionPatternRuntime, startEnemyAction as startEnemyActionRuntime, startNextEnemyAction as startNextEnemyActionRuntime } from '../game/systems/combat/actionRuntime'
 import { resetAllCombatRuleRuntime, resetCombatRuleRuntime, runCombatTriggers } from '../game/systems/combat/triggerRuntime'
@@ -26,10 +27,8 @@ import { debugLockSpellAction, debugUnlockSpellRankOneAction, resetSpellCooldown
 import { setChannelingEchoesAction, upgradeManaPillarAction, setManaPillarLevelAction, setChannelingManaGeneratedAction, setChannelingSustainAction, setChannelingDiscoveryAction } from './actions/channelingActions'
 import { canReserveFocusAction, setFocusImprovementLevelAction, upgradeFocusCapacityAction } from './actions/focusActions'
 import { assignResearchEchoAction, clearPreparedResearchAction, clearResearchEchoesAction, prepareResearchAction, removePreparedResearchAction, removeResearchEchoAction, setResearchEchoesAction } from './actions/researchActions'
-import { assignTransmutationEchoAction, clearTransmutationAssignmentsAction, removeTransmutationEchoAction, setTransmutationEchoCapacityOverrideAction, setTransmutationEchoesAction } from './actions/transmutationActions'
+import { assignTransmutationEchoAction, clearTransmutationAssignmentsAction, grantTransmutationMissingIngredientsAction, removeTransmutationEchoAction, setTransmutationEchoCapacityOverrideAction, setTransmutationEchoesAction } from './actions/transmutationActions'
 import { forceCompleteTransmutationCycle } from '../game/systems/transmutation/transmutationEngine'
-import { grantItem } from '../game/systems/inventory/itemAcquisition'
-import { RECIPES } from '../game/content/recipes/recipes'
 import { saveGameAction } from './actions/persistenceActions'
 import { advanceGameState } from '../game/systems/simulation/advanceGameState'
 import { forceCompleteResearchCycle } from '../game/systems/research/researchEngine'
@@ -97,7 +96,7 @@ export interface GameActions {
   setTransmutationEchoes: (recipeId: RecipeId, amount: number) => void
   clearTransmutationAssignments: () => void
   completeTransmutationCycle: (recipeId: RecipeId) => void
-  grantTransmutationIngredients: (recipeId: RecipeId) => void
+  grantTransmutationIngredients: (recipeId: RecipeId, cycles?: number) => void
   setDebugTransmutationEchoCapacity: (amount: number | null) => void
   castSpell: (spellId: SpellId) => void
   toggleAutoCast: (spellId: SpellId) => void
@@ -123,6 +122,8 @@ export interface GameActions {
   damagePlayerForDebug: (amount: number) => void
   applyPlayerStatus: (statusId: StatusId) => void
   applyEnemyStatus: (statusId: StatusId) => void
+  removePlayerStatus: (statusId: StatusId) => void
+  removeEnemyStatus: (statusId: StatusId) => void
   setPlayerBarrier: (amount: number) => void
   setEnemyBarrier: (amount: number) => void
   clearPlayerBarrier: () => void
@@ -250,7 +251,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   setTransmutationEchoes: (recipeId, amount) => set((state) => { setTransmutationEchoesAction(state, recipeId, amount); return state }),
   clearTransmutationAssignments: () => set((state) => { clearTransmutationAssignmentsAction(state); return state }),
   completeTransmutationCycle: (recipeId) => set((state) => { forceCompleteTransmutationCycle(state, recipeId, { mode: 'live' }); return state }),
-  grantTransmutationIngredients: (recipeId) => set((state) => { const recipe = RECIPES[recipeId]; recipe.ingredients.forEach((ingredient) => grantItem(state, ingredient.itemId, ingredient.quantity)); return state }),
+  grantTransmutationIngredients: (recipeId, cycles = 1) => set((state) => { grantTransmutationMissingIngredientsAction(state, recipeId, cycles); return state }),
   setDebugTransmutationEchoCapacity: (amount) => set((state) => { setTransmutationEchoCapacityOverrideAction(state, amount); return state }),
   castSpell: (spellId) => set((state) => { castSpellAction(state, spellId, combatEventSink); return state }),
   toggleAutoCast: (spellId) => set((state) => { const cost = getSpellAutoCastFocusCost(state, spellId); if (!spellUnlocked(state, spellId) || cost === null) return state; const latchIndex = state.combat.autoCastManaStarvedSpells.indexOf(spellId); if (latchIndex >= 0) state.combat.autoCastManaStarvedSpells.splice(latchIndex, 1); if (state.activities.autoCast[spellId]) { state.activities.autoCast[spellId] = false; state.spellPresets.lastAppliedPresetId = null } else if (canReserveFocus(state, cost)) { state.activities.autoCast[spellId] = true; state.spellPresets.lastAppliedPresetId = null; pushNotification(state, `${SPELLS[spellId].name} Auto-Cast enabled`, 'success') } else pushNotification(state, `Cannot enable Auto-Cast · Requires ${cost} Focus · Free Focus: ${selectFreeFocus(state)}`, 'warning'); return state }),
@@ -296,6 +297,8 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   damagePlayerForDebug: (amount) => set((state) => { damagePlayer(state, Math.max(0, sanitizeDebugNumber(amount)), { actor: 'enemy', kind: 'system', sourceId: 'developer-damage', tags: ['direct'] }); return state }),
   applyPlayerStatus: (statusId) => set((state) => { debugApplyStatus(state, 'player', statusId); return state }),
   applyEnemyStatus: (statusId) => set((state) => { debugApplyStatus(state, 'enemy', statusId); return state }),
+  removePlayerStatus: (statusId) => set((state) => { removeCombatStatus(state, 'player', statusId); return state }),
+  removeEnemyStatus: (statusId) => set((state) => { removeCombatStatus(state, 'enemy', statusId); return state }),
   setPlayerBarrier: (amount) => set((state) => { state.combat.playerBarrier = Math.max(0, Math.floor(sanitizeDebugNumber(amount))); if (state.combat.playerBarrier === 0) state.combat.playerBarrierRemainingMs = null; return state }),
   setEnemyBarrier: (amount) => set((state) => { state.combat.enemyBarrier = Math.max(0, Math.floor(sanitizeDebugNumber(amount))); if (state.combat.enemyBarrier === 0) state.combat.enemyBarrierRemainingMs = null; return state }),
   clearPlayerBarrier: () => set((state) => { state.combat.playerBarrier = 0; state.combat.playerBarrierRemainingMs = null; return state }),

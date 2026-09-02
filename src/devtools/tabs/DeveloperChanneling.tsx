@@ -1,6 +1,5 @@
 import { Button, Card, Status } from '../../components/ui'
-import { CHANNELING_DISCOVERIES } from '../../game/data/channelingDiscoveries'
-import { MANA_PILLAR_IDS, MANA_PILLARS } from '../../game/data/manaPillars'
+import { CHANNELING_DISCOVERIES, MANA_PILLAR_IDS, MANA_PILLARS } from '../../game/content/channeling'
 import { useGameStore } from '../../store/gameStore'
 import { NumberField, Summary } from './DeveloperTabPrimitives'
 

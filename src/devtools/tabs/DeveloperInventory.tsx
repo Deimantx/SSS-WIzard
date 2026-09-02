@@ -58,13 +58,17 @@ export function DeveloperInventory() {
   const unequipItem = useGameStore((game) => game.unequipItem)
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<InventoryFilter>('all')
-  const [selected, setSelected] = useState<ItemId>('fire-fragment')
+  const [selected, setSelected] = useState<ItemId | null>('fire-fragment')
   const [quantity, setQuantity] = useState(1)
   const itemOptions = useMemo(() => (Object.keys(ITEMS) as ItemId[]).filter((id) => matchesFilter(id, filter) && `${ITEMS[id].name} ${id}`.toLowerCase().includes(query.toLowerCase())), [filter, query])
-  const selectedItem = ITEMS[selected] ?? ITEMS['fire-fragment']
+  const selectedItem = selected ? ITEMS[selected] : null
 
   useEffect(() => {
-    if (!itemOptions.includes(selected)) setSelected(itemOptions[0] ?? 'fire-fragment')
+    if (itemOptions.length === 0) {
+      if (selected !== null) setSelected(null)
+    } else if (selected === null || !itemOptions.includes(selected)) {
+      setSelected(itemOptions[0])
+    }
   }, [itemOptions, selected])
 
   const addGroup = (ids: readonly ItemId[], amount: number) => ids.forEach((id) => addItem(id, amount))
@@ -83,15 +87,26 @@ export function DeveloperInventory() {
     unequipAll()
     EQUIPMENT_IDS.forEach((id) => { const amount = useGameStore.getState().inventory[id] ?? 0; if (amount > 0) removeItem(id, amount) })
   }
+  const addSelected = () => { if (selected) addItem(selected, quantity) }
+  const removeSelected = () => { if (selected) removeItem(selected, quantity) }
+  const addAndEquipSelected = () => { if (selected && selectedItem) { addItem(selected, quantity); if (selectedItem.kind === 'equipment') equipItem(selected) } }
+  const setExactSelected = () => {
+    if (!selected) return
+    const current = state.inventory[selected] ?? 0
+    if (quantity > current) addItem(selected, quantity - current)
+    else if (quantity < current) removeItem(selected, current - quantity)
+  }
 
   return <div className="developer-tab-grid">
     <Card title="Item controls">
       <div className="developer-filter-bar"><FilterBar options={INVENTORY_FILTERS} value={filter} onChange={setFilter} ariaLabel="Developer inventory filter" /></div>
       <label>Search items<input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Fragments, equipment..." /></label>
-      <label>Item<select value={selected} onChange={(event) => setSelected(event.target.value as ItemId)}>{itemOptions.map((id) => <option key={id} value={id}>{ITEMS[id].name}</option>)}</select></label>
-      <div className="developer-item-selected"><span style={{ color: selectedItem.color }}>{selectedItem.icon}</span><div><strong>{selectedItem.name}</strong><small>{selectedItem.description}</small></div><Status tone={state.protectedItems[selected] || Object.values(state.equipment).includes(selected) ? 'warning' : 'neutral'}>{Object.values(state.equipment).includes(selected) ? 'Equipped' : state.protectedItems[selected] ? 'Protected' : `${state.inventory[selected] ?? 0} owned`}</Status></div>
-      <NumberField label="Quantity" value={quantity} onChange={(value) => setQuantity(Math.max(1, value))} />
-      <div className="button-row"><Button onClick={() => addItem(selected, quantity)}>Add</Button><Button variant="secondary" onClick={() => removeItem(selected, quantity)}>Remove</Button><Button variant="secondary" onClick={() => { addItem(selected, quantity); if (selectedItem.kind === 'equipment') equipItem(selected) }}>Add and equip</Button><Button variant="ghost" onClick={() => { const current = state.inventory[selected] ?? 0; if (quantity > current) addItem(selected, quantity - current); else if (quantity < current) removeItem(selected, current - quantity) }}>Set exact</Button></div>
+      <label>Item<select value={selected ?? ''} onChange={(event) => setSelected(event.target.value ? event.target.value as ItemId : null)}>{itemOptions.map((id) => <option key={id} value={id}>{ITEMS[id].name}</option>)}</select></label>
+      {selectedItem && selected ? <>
+        <div className="developer-item-selected"><span style={{ color: selectedItem.color }}>{selectedItem.icon}</span><div><strong>{selectedItem.name}</strong><small>{selectedItem.description}</small></div><Status tone={state.protectedItems[selected] || Object.values(state.equipment).includes(selected) ? 'warning' : 'neutral'}>{Object.values(state.equipment).includes(selected) ? 'Equipped' : state.protectedItems[selected] ? 'Protected' : `${state.inventory[selected] ?? 0} owned`}</Status></div>
+        <NumberField label="Quantity" value={quantity} onChange={(value) => setQuantity(Math.max(1, value))} />
+        <div className="button-row"><Button onClick={addSelected}>Add</Button><Button variant="secondary" onClick={removeSelected}>Remove</Button><Button variant="secondary" onClick={addAndEquipSelected}>Add and equip</Button><Button variant="ghost" onClick={setExactSelected}>Set exact</Button></div>
+      </> : <div className="developer-item-empty"><strong>No matching items</strong><small>Change the search or filter to select an item before using Dev Inventory actions.</small></div>}
     </Card>
     <Card title="Quick groups">
       <p className="muted">Remove respects equipped and protected item rules.</p>

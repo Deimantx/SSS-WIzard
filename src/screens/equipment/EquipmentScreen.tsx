@@ -57,6 +57,7 @@ export function EquipmentScreenV2() {
     ? ringReplacement ?? (selectedPosition === 'ring1' || selectedPosition === 'ring2' ? selectedPosition : equipment.ring1 ? equipment.ring2 ? undefined : 'ring2' : 'ring1')
     : selectedPosition
   const preview = selectedItemId ? getEquipmentPreview(stateForPreview, selectedItemId, targetPosition) : null
+  const inspectorTargetPosition = preview?.position ?? targetPosition
   const copyAvailability = selectedItemId ? getEquipmentCopyAvailability({ equipment, inventory }, selectedItemId) : null
   const statSnapshot = getEquipmentStatSnapshot(stateForPreview, equipment)
   const equippedCount = getEquippedCount({ equipment })
@@ -137,7 +138,7 @@ export function EquipmentScreenV2() {
       {preview && !preview.compatible && <div className="equipment-incompatible"><strong>INCOMPATIBLE</strong><span>{preview.reason}</span></div>}
       {preview?.compatible && <div className="equipment-preview-impact"><span className="equipment-preview-label">LOADOUT IMPACT</span>{getImpactEntries(preview.impact).filter(([, value]) => Math.abs(value ?? 0) > 0.0001).map(([key, value]) => <div className="equipment-impact-row" key={key}><span className="equipment-stat-label">{friendlyStat(key)}</span><small className="equipment-stat-current equipment-stat-value">{formatSnapshotValue(key, preview.current)}</small><strong className="equipment-stat-value">{formatSnapshotValue(key, preview.preview!)}</strong><em className={`equipment-stat-delta ${(value ?? 0) > 0 ? 'positive' : 'negative'}`}>{formatSignedStat(key, value as number)}</em></div>)}</div>}
       {equippedPositions.length > 0 && <div className="equipment-current-position"><Status tone="success">EQUIPPED IN {equippedPositions.map((position) => EQUIPMENT_POSITION_LABELS[position]).join(' + ')}</Status></div>}
-      <div className="equipment-inspector-actions"><Button variant="primary" disabled={!preview?.compatible || ringNeedsChoice || equippedPositions.includes(preview?.position ?? 'weapon')} onClick={() => selectedItemId && equipItem(selectedItemId, preview?.position ?? undefined)}>EQUIP</Button>{equipment[selectedPosition] && <Button variant="ghost" onClick={() => unequipItem(selectedPosition)}>UNEQUIP {EQUIPMENT_POSITION_LABELS[selectedPosition].toUpperCase()}</Button>}</div>
+      <div className="equipment-inspector-actions"><Button variant="primary" disabled={!preview?.compatible || ringNeedsChoice || equippedPositions.includes(preview?.position ?? 'weapon')} onClick={() => selectedItemId && equipItem(selectedItemId, preview?.position ?? undefined)}>EQUIP</Button>{inspectorTargetPosition && equipment[inspectorTargetPosition] === selectedItemId && <Button variant="ghost" onClick={() => unequipItem(inspectorTargetPosition)}>UNEQUIP {EQUIPMENT_POSITION_LABELS[inspectorTargetPosition].toUpperCase()}</Button>}</div>
     </>}
   </Card>
 

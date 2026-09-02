@@ -33,8 +33,23 @@ export function DeveloperCombatStatus() {
   }
   const prepareThresholdFixture = (itemId: ItemId, position: EquipmentPosition, healthPercent: number) => {
     prepareEquipmentFixture(itemId, position)
+    clearPlayerBarrier()
     const current = useGameStore.getState()
-    setPlayer({ health: Math.max(1, Math.floor(current.player.maxHealth * healthPercent)) })
+    const maxHealth = current.player.maxHealth
+    setPlayer({ health: maxHealth })
+    const targetHealth = Math.max(1, Math.floor(maxHealth * healthPercent))
+    let health = useGameStore.getState().player.health
+    let attempts = 0
+    // Small real hits keep an incoming critical hit from making the fixture lethal
+    // before the on-hp-threshold trigger can resolve.
+    let barrierTriggered = false
+    while (health > targetHealth && !barrierTriggered && attempts < Math.ceil(maxHealth * 4)) {
+      damagePlayer(1)
+      const next = useGameStore.getState()
+      health = next.player.health
+      barrierTriggered = next.combat.playerBarrier > 0
+      attempts += 1
+    }
   }
   return <div className="developer-tab-grid">
     <Card title="Universal status tester"><label className="developer-number-field">Status<select aria-label="Status to apply" value={statusId} onChange={(event) => setStatusId(event.target.value as StatusId)}>{STATUS_ORDER.map((id) => <option key={id} value={id}>{STATUS_DEFINITIONS[id].name}</option>)}</select></label><p className="muted">{STATUS_DEFINITIONS[statusId].description}</p><div className="button-row"><Button onClick={() => applyPlayer(statusId)}>Apply to Player</Button><Button onClick={() => applyEnemy(statusId)}>Apply to Enemy</Button><Button variant="ghost" onClick={clearPlayer}>Clear Player Statuses</Button><Button variant="ghost" onClick={clearEnemy}>Clear Enemy Statuses</Button></div></Card>

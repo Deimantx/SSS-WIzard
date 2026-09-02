@@ -5,6 +5,7 @@ import { validateMonsterDefinitions } from './monsters'
 import { validateSpellDefinitions } from './spells/spells'
 import { validateStatusDefinitions } from './statuses/statuses'
 import { validateTraitDefinitions } from './traits/traits'
+import { validateEquipmentSetDefinitions } from './equipment/equipmentSets'
 
 /**
  * Intentional development-time validation entry point for authored content.
@@ -20,6 +21,7 @@ export const validateGameContent = () => {
     ...validateItemDefinitions(),
     ...validateDungeonDefinitions(),
     ...validateRecipeDefinitions(),
+    ...validateEquipmentSetDefinitions(),
   ]
   if (errors.length && import.meta.env.DEV) console.error(`[game-content] ${errors.join('; ')}`)
   return errors

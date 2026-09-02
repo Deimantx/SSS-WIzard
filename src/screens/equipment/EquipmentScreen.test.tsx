@@ -55,4 +55,50 @@ describe('EquipmentScreen stat typography structure', () => {
     expect(screen.getByText('AVAILABLE 0')).toBeTruthy()
     expect(await screen.findByText(/second copy is required for this Ring position/i)).toBeTruthy()
   })
+
+  it('does not expose a stale Weapon unequip action when selecting a Ring from Armory', () => {
+    const state = useGameStore.getState()
+    useGameStore.setState({ equipment: { ...state.equipment, weapon: 'wispwood-wand' }, inventory: { ...state.inventory, 'wispwood-wand': 1, 'gravebinder-ring': 1 } })
+    const { container } = render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
+    fireEvent.click(container.querySelector('.equipment-slot-card[data-position="weapon"]') as HTMLElement)
+    fireEvent.click(screen.getByRole('tab', { name: 'RINGS' }))
+    const gravebinderCard = Array.from(container.querySelectorAll('.equipment-armory-card')).find((card) => card.textContent?.includes('Gravebinder Ring')) as HTMLElement | undefined
+    expect(gravebinderCard).toBeTruthy()
+    fireEvent.click(gravebinderCard as HTMLElement)
+
+    expect(screen.getByRole('heading', { name: 'Gravebinder Ring' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'UNEQUIP WEAPON' })).toBeNull()
+    expect(useGameStore.getState().equipment.weapon).toBe('wispwood-wand')
+  })
+
+  it('keeps Ring 1 occupied and Ring 2 empty selection targeted at Ring 2', () => {
+    const state = useGameStore.getState()
+    useGameStore.setState({ equipment: { ...state.equipment, weapon: 'wispwood-wand', ring1: 'gravebinder-ring' }, inventory: { ...state.inventory, 'wispwood-wand': 1, 'gravebinder-ring': 1 } })
+    const { container } = render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
+    fireEvent.click(container.querySelector('.equipment-slot-card[data-position="weapon"]') as HTMLElement)
+    fireEvent.click(screen.getByRole('tab', { name: 'RINGS' }))
+    const gravebinderCard = Array.from(container.querySelectorAll('.equipment-armory-card')).find((card) => card.textContent?.includes('Gravebinder Ring')) as HTMLElement | undefined
+    fireEvent.click(gravebinderCard as HTMLElement)
+
+    expect(screen.queryByRole('button', { name: 'UNEQUIP WEAPON' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'UNEQUIP RING 1' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'UNEQUIP RING 2' })).toBeNull()
+    expect(useGameStore.getState().equipment.weapon).toBe('wispwood-wand')
+  })
+
+  it('waits for Ring replacement choice when both Ring positions are occupied', () => {
+    const state = useGameStore.getState()
+    useGameStore.setState({ equipment: { ...state.equipment, weapon: 'wispwood-wand', ring1: 'gravebinder-ring', ring2: 'wispbound-ring' }, inventory: { ...state.inventory, 'wispwood-wand': 1, 'gravebinder-ring': 1, 'wispbound-ring': 1 } })
+    const { container } = render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
+    fireEvent.click(container.querySelector('.equipment-slot-card[data-position="weapon"]') as HTMLElement)
+    fireEvent.click(screen.getByRole('tab', { name: 'RINGS' }))
+    const gravebinderCard = Array.from(container.querySelectorAll('.equipment-armory-card')).find((card) => card.textContent?.includes('Gravebinder Ring')) as HTMLElement | undefined
+    fireEvent.click(gravebinderCard as HTMLElement)
+
+    expect(screen.queryByRole('button', { name: 'UNEQUIP WEAPON' })).toBeNull()
+    expect(screen.queryByRole('button', { name: /UNEQUIP RING/ })).toBeNull()
+    fireEvent.click(screen.getByRole('radio', { name: /Ring 1:/ }))
+    expect(screen.getByRole('button', { name: 'UNEQUIP RING 1' })).toBeTruthy()
+    expect(useGameStore.getState().equipment.weapon).toBe('wispwood-wand')
+  })
 })

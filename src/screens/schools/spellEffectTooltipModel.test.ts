@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { SPELLS } from '../../game/content/spells/spells'
 import { createInitialState } from '../../store/initialState'
 import { buildSpellEffectTooltipModel } from './spellEffectTooltipModel'
 
@@ -56,5 +57,41 @@ describe('spell effect tooltip models', () => {
     expect(row(model, 'Tide Focus')).toMatchObject({ value: '+20%', semantic: 'positive' })
     expect(row(model, 'Target')?.value).toBe('Self')
     expect(row(model, 'Source')?.value).toBe('Water Ward')
+  })
+
+  it('merges partial Status modifier overrides in the Spell tooltip', () => {
+    const original = SPELLS.frostbite.effects[1]
+    if (original.type !== 'apply-status') throw new Error('Expected Frostbite to apply Chilled')
+    SPELLS.frostbite.effects[1] = { ...original, modifierOverrides: { 'action-speed-percent': -0.3 } }
+    try {
+      const model = buildSpellEffectTooltipModel(createInitialState(), 'frostbite', 1)
+      expect(row(model, 'Basic Attack Speed')?.value).toBe('-20%')
+      expect(row(model, 'Action Speed')?.value).toBe('-30%')
+    } finally {
+      SPELLS.frostbite.effects[1] = original
+    }
+  })
+
+  it('exposes every periodic damage component in a Status tooltip', () => {
+    const original = SPELLS.ignite.effects[1]
+    if (original.type !== 'apply-status') throw new Error('Expected Ignite to apply Burning')
+    SPELLS.ignite.effects[1] = {
+      ...original,
+      durationMs: 6_000,
+      periodicEffects: [{ type: 'deal-damage', target: 'self', components: [
+        { damageType: 'fire', magnitude: { type: 'spell-power', coefficient: 0.1 } },
+        { damageType: 'arcane', magnitude: { type: 'spell-power', coefficient: 0.05 } },
+      ], tags: ['dot'] }],
+    }
+    try {
+      const model = buildSpellEffectTooltipModel(createInitialState(), 'ignite', 1)
+      expect(row(model, 'Damage Types')?.value).toBe('Fire Damage + Arcane Damage')
+      expect(row(model, 'Fire Scaling')?.value).toContain('60% Spell Power')
+      expect(row(model, 'Arcane Scaling')?.value).toContain('30% Spell Power')
+      expect(row(model, 'Fire Damage Per Tick')?.value).toBe('10')
+      expect(row(model, 'Arcane Damage Per Tick')?.value).toBe('5')
+    } finally {
+      SPELLS.ignite.effects[1] = original
+    }
   })
 })

@@ -3,7 +3,7 @@ import { formatSpellMagnitude } from '../spells/spellEffectTooltipModel'
 import type { ItemDefinition } from '../../types'
 import type { CombatCondition, CombatEffect, CombatModifier, CombatSource, CombatTag, CombatTriggerRule, DamageType, Magnitude, ModifierKey, StatusId } from '../../systems/combat/combatTypes'
 import { scaleMagnitude } from '../../systems/combat/combatTypes'
-import { COMBAT_MODIFIER_KEYS } from '../../systems/combat/combatEffectValidation'
+import { getEffectiveAppliedStatusModifiers } from '../combat/statusEffectPresentation'
 import { formatTime } from '../../utils'
 
 export interface EquipmentRulePresentation {
@@ -141,10 +141,10 @@ const formatMagnitude = (magnitude: Magnitude, noun: string) => {
   switch (magnitude.type) {
     case 'flat': return `${amount(magnitude.value)} ${noun}`
     case 'spell-power': return `${amount(magnitude.coefficient)}× Spell Power ${noun}`
-    case 'source-max-health-percent': return `${Math.round(magnitude.value * 100)}% of Max Health as ${noun}`
-    case 'target-max-health-percent': return `${Math.round(magnitude.value * 100)}% of target Max Health as ${noun}`
-    case 'source-basic-damage-percent': return `${Math.round(magnitude.value * 100)}% of Basic Attack Damage as ${noun}`
-    case 'target-missing-health-percent': return `${Math.round(magnitude.value * 100)}% of missing Health as ${noun}`
+    case 'source-max-health-percent': return `${formatSpellMagnitude(magnitude)} as ${noun}`
+    case 'target-max-health-percent': return `${formatSpellMagnitude(magnitude)} as ${noun}`
+    case 'source-basic-damage-percent': return `${formatSpellMagnitude(magnitude)} as ${noun}`
+    case 'target-missing-health-percent': return `${formatSpellMagnitude(magnitude)} as ${noun}`
     case 'school-level': return `${amount(magnitude.base)} + ${amount(magnitude.perLevel)} per ${titleCase(magnitude.school)} level ${noun}`
   }
 }
@@ -192,13 +192,7 @@ const periodicStatusDetails = (effect: Extract<CombatEffect, { type: 'apply-stat
 }
 
 const applyStatusDetails = (effect: Extract<CombatEffect, { type: 'apply-status' }>): string[] => {
-  const status = STATUS_DEFINITIONS[effect.statusId]
-  const modifierEntries = effect.modifierOverrides
-    ? Object.entries(effect.modifierOverrides)
-    : status?.modifiers?.map((modifier) => [modifier.key, modifier.value] as [string, number]) ?? []
-  const modifierDetails = modifierEntries.flatMap(([key, value]) => COMBAT_MODIFIER_KEYS.includes(key as ModifierKey) && Number.isFinite(value)
-    ? [modifierMeaning({ key: key as ModifierKey, value })]
-    : [])
+  const modifierDetails = getEffectiveAppliedStatusModifiers(effect.statusId, effect.modifierOverrides).map(modifierMeaning)
   return [effectMeaning(effect), ...modifierDetails, ...periodicStatusDetails(effect)]
 }
 

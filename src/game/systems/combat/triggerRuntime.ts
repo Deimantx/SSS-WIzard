@@ -3,7 +3,7 @@ import { ITEMS } from '../../content/items/items'
 import { EQUIPMENT_POSITIONS } from '../../core/equipment'
 import { appendLog } from '../../engine'
 import type { ActiveStatus, GameState, ItemId, StatusId, TraitId } from '../../types'
-import type { CombatActor } from './magnitude'
+import { isCombatActorAlive, type CombatActor } from './magnitude'
 import { getActorTraits } from './traitRuntime'
 import { conditionContainsCrossedHpThreshold, conditionHasHpThreshold, evaluateCombatCondition } from './conditionRuntime'
 import { createCombatResolutionContext, type CombatConditionContext, type CombatEffect, type CombatEventSink, type CombatResolutionContext, type CombatSource, type CombatTag, type CombatTrigger, type CombatTriggerRule } from './combatTypes'
@@ -119,6 +119,10 @@ export const runCombatTriggers = (
   resolution?: CombatResolutionContext,
 ) => {
   if (depth >= MAX_TRIGGER_DEPTH) return
+  // Trigger rules are owned by the actor that provides them. A detached
+  // source may still resolve its already-authored effect, but a dead actor
+  // cannot start a new Trait, Status, or Equipment reaction.
+  if (!isCombatActorAlive(state, actor)) return
   const cascade = resolution ?? createCombatResolutionContext()
   // A periodic effect from a defeated Enemy may still tick, but it cannot
   // execute source-side rules from the next encounter. Combat-start uses a

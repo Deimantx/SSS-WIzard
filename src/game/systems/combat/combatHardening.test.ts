@@ -546,6 +546,51 @@ describe('equipment combat providers', () => {
     expect(nonlethal.player.health).toBe(90)
   })
 
+  it('does not let a dead Player retaliate, while a surviving Player still can', () => {
+    ITEMS[testItemId] = { ...testItem, combat: { rules: [{ id: 'retaliation', event: 'on-damage-taken', effects: [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 50 } }] }] }] } }
+    const incoming = { actor: 'enemy' as const, kind: 'action' as const, sourceId: 'retaliation-test', tags: ['physical' as const] }
+    const lethal = stateWithEnemy()
+    lethal.equipment.ring1 = testItemId
+    lethal.player.maxHealth = 100
+    lethal.player.health = 20
+    lethal.combat.enemyMaxHp = 100
+    lethal.combat.enemyHp = 100
+    executeCombatEffects(lethal, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 30 } }] }], incoming)
+    expect(lethal.player.health).toBe(0)
+    expect(lethal.combat.enemyHp).toBe(100)
+
+    const nonlethal = stateWithEnemy()
+    nonlethal.equipment.ring1 = testItemId
+    nonlethal.player.maxHealth = 100
+    nonlethal.player.health = 100
+    nonlethal.combat.enemyMaxHp = 100
+    nonlethal.combat.enemyHp = 100
+    executeCombatEffects(nonlethal, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 30 } }] }], incoming)
+    expect(nonlethal.player.health).toBe(70)
+    expect(nonlethal.combat.enemyHp).toBeLessThan(100)
+  })
+
+  it('does not activate an Enemy threshold Trait when the threshold Hit is lethal', () => {
+    const state = createInitialState()
+    state.combat.active = true
+    state.combat.dungeonId = 'whispering-woods'
+    state.player.health = 100
+    state.player.maxHealth = 100
+    spawnEnemy(state, 'grove-sentinel')
+    state.combat.enemyMaxHp = 100
+    state.combat.enemyHp = 100
+    state.combat.enemyBarrier = 0
+    const initialPattern = state.combat.enemyActionPatternId
+    const initialLogLength = state.combat.log.length
+    executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 200 } }] }], { actor: 'player', kind: 'spell', sourceId: 'lethal-threshold', tags: ['spell'] })
+    expect(state.combat.enemyHp).toBe(0)
+    expect(state.combat.enemyBarrier).toBe(0)
+    expect(state.combat.enemyActionPatternId).toBe(initialPattern)
+    expect(state.combat.enemyStatuses).toHaveLength(0)
+    expect(state.combat.log.slice(initialLogLength).some((entry) => entry.includes('Ancient Growth triggers'))).toBe(false)
+    expect(state.combat.triggeredRuleIds.some((id) => id.includes('ancient-growth-threshold'))).toBe(false)
+  })
+
   it('skips post-lethal opponent statuses while resolving later self effects', () => {
     const state = stateWithEnemy()
     state.combat.enemyHp = 5

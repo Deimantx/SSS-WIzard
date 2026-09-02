@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { migrateSave } from '../../../persistence/migrations'
+import { ITEMS } from '../../content/items/items'
 import { MONSTERS } from '../../content/monsters'
 import { TRAIT_DEFINITIONS } from '../../content/traits'
-import type { CombatEvent, GameState, TraitDefinition, TraitId } from '../../types'
+import type { CombatEvent, GameState, ItemDefinition, ItemId, TraitDefinition, TraitId } from '../../types'
 import { getCombatMetricSourceKey } from '../../telemetry/combat/combatTelemetryAggregator'
 import { clearCurrentEnemyAction, forceResolveEnemyAction } from './actionRuntime'
 import { finishEnemy, spawnEnemy } from './combatRuntime'
@@ -108,5 +109,40 @@ describe('Enemy source ownership', () => {
     expect(detached.combat.playerStatuses[0].source).toMatchObject({ actor: 'enemy', sourceId: 'rending-claws' })
     expect(detached.combat.playerStatuses[0].source.sourceMonsterId).toBeUndefined()
     expect(detached.combat.playerStatuses[0].source.sourceInstanceKey).toBeUndefined()
+  })
+
+  it('lets a living Player react to a detached Enemy DoT while dead Enemy rules stay inactive', () => {
+    const itemId = 'detached-reactive-ring' as ItemId
+    const item: ItemDefinition = {
+      id: itemId,
+      name: 'Detached Reactive Ring',
+      description: 'Test-only equipment.',
+      icon: '◆',
+      color: '#fff',
+      kind: 'equipment',
+      category: 'equipment',
+      inventoryCategory: 'equipment',
+      source: 'Tests',
+      sellValue: 1,
+      canDestroy: true,
+      equipmentSlot: 'ring',
+      combat: { rules: [{ id: 'react-to-detached-dot', event: 'on-damage-taken', effects: [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 100 } }] }] },
+    }
+    ITEMS[itemId] = item
+    try {
+      const state = makeState('razorclaw-lynx')
+      clearCurrentEnemyAction(state)
+      expect(forceResolveEnemyAction(state, 'rending-claws', executeCombatEffects)).toBe(true)
+      const oldStatus = state.combat.playerStatuses.find((status) => status.statusId === 'bleeding')
+      if (!oldStatus) throw new Error('Expected Rending Claws to apply Bleeding')
+      finishEnemy(state)
+      state.equipment.ring1 = itemId
+      const beforeBarrier = state.combat.playerBarrier
+      tickStatuses(state, 2_000, executeCombatEffects)
+      expect(state.player.health).toBeLessThan(100)
+      expect(state.combat.playerBarrier).toBeGreaterThan(beforeBarrier)
+    } finally {
+      delete ITEMS[itemId]
+    }
   })
 })

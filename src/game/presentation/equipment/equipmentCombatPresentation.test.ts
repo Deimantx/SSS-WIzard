@@ -33,12 +33,12 @@ describe('equipment combat presentation', () => {
       }, {
         id: 'custom-chilled',
         event: 'on-spell-hit',
-        effects: [{ type: 'apply-status', target: 'opponent', statusId: 'chilled', durationMs: 4_000, stacks: 1, modifierOverrides: { 'basic-attack-speed-percent': -0.3, 'action-speed-percent': -0.3 } }],
+        effects: [{ type: 'apply-status', target: 'opponent', statusId: 'chilled', durationMs: 4_000, stacks: 1, modifierOverrides: { 'action-speed-percent': -0.3 } }],
       }],
     } satisfies NonNullable<ItemDefinition['combat']>
     const presentation = getEquipmentCombatPresentation({ combat })
     expect(presentation.rules[0].effects).toEqual(expect.arrayContaining(['Apply Burning for 6.0s', '120% Spell Power total Fire damage']))
-    expect(presentation.rules[1].effects).toEqual(expect.arrayContaining(['Apply Chilled for 4.0s (1 stack)', '-30% Basic Attack Speed', '-30% Action Speed']))
+    expect(presentation.rules[1].effects).toEqual(expect.arrayContaining(['Apply Chilled for 4.0s (1 stack)', '-20% Basic Attack Speed', '-30% Action Speed']))
     expect(presentation.rules.flatMap((rule) => rule.effects).join(' ')).not.toContain('internal-only-key')
   })
 
@@ -48,12 +48,20 @@ describe('equipment combat presentation', () => {
       rules: [{ id: 'timing', event: 'on-spell-hit', cooldownMs: 2_500, effects: [
         { type: 'modify-action-timer', target: 'self', action: 'basic-attack', amountMs: 1_000 },
         { type: 'modify-cooldown', target: 'self', spellId: 'fire-bolt', amountMs: -2_500 },
+        { type: 'gain-barrier', target: 'self', magnitude: { type: 'source-max-health-percent', value: 0.125 } },
+        { type: 'gain-barrier', target: 'self', magnitude: { type: 'target-max-health-percent', value: 0.054 } },
+        { type: 'gain-barrier', target: 'self', magnitude: { type: 'source-basic-damage-percent', value: 0.20 } },
+        { type: 'gain-barrier', target: 'self', magnitude: { type: 'target-missing-health-percent', value: 0.054 } },
       ] }],
     } })
     const text = [...presentation.modifiers, ...presentation.rules.flatMap((rule) => [...rule.effects, rule.cooldown ?? ''])].join(' ')
     expect(text).toContain('+12.5% Damage Dealt')
     expect(text).toContain('Delay Basic Attack by 1.0s')
     expect(text).toContain('Reduce Fire Bolt cooldown by 2.5s')
+    expect(text).toContain('12.5% of Max Health as Barrier')
+    expect(text).toContain('5.4% of target Max Health as Barrier')
+    expect(text).toContain('20% of Basic Damage as Barrier')
+    expect(text).toContain('5.4% of missing Health as Barrier')
     expect(text).not.toMatch(/\b(?:1000|2500)ms\b/)
   })
 })

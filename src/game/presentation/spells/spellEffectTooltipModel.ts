@@ -6,6 +6,7 @@ import { scaleMagnitude } from '../../systems/combat/combatTypes'
 import type { CombatEffect, CombatModifier, Magnitude } from '../../systems/combat/combatTypes'
 import type { GameState, SchoolId, SpellId } from '../../types'
 import { formatTime } from '../../utils'
+import { getEffectiveAppliedStatusModifiers } from '../combat/statusEffectPresentation'
 
 export type SpellEffectTooltipSemantic = 'mana' | 'time' | 'focus' | 'positive' | 'negative' | 'school' | 'neutral'
 export type SpellEffectTooltipCategoryKey = 'damage' | 'heal' | 'barrier' | 'buff' | 'debuff' | 'control' | 'dot' | 'effect'
@@ -137,25 +138,33 @@ export function buildSpellEffectTooltipModel(state: Pick<GameState, 'schools' | 
   if (effect.type === 'apply-status') {
     const status = STATUS_DEFINITIONS[effect.statusId]
     const durationMs = effect.durationMs === undefined ? status?.defaultDurationMs ?? null : effect.durationMs
-    status?.modifiers?.forEach((modifier) => rows.push({ label: modifierLabel(modifier), value: modifierValue(modifier), semantic: modifier.value >= 0 ? 'positive' : 'negative' }))
+    getEffectiveAppliedStatusModifiers(effect.statusId, effect.modifierOverrides).forEach((modifier) => rows.push({ label: modifierLabel(modifier), value: modifierValue(modifier), semantic: modifier.value >= 0 ? 'positive' : 'negative' }))
     const periodicEffects = effect.periodicEffects ?? status?.periodic?.effects
-    const periodicDamage = periodicEffects?.find((entry) => entry.type === 'deal-damage')
-    const periodicComponent = periodicDamage?.components[0]
-    if (periodicDamage?.type === 'deal-damage') {
-      if (periodicComponent) rows.push({ label: 'Damage Type', value: `${capitalize(periodicComponent.damageType)} Damage`, semantic: 'school' })
-      const tickCount = durationMs !== null && status?.periodic?.intervalMs ? Math.floor(durationMs / status.periodic.intervalMs) : 0
-      if (periodicComponent?.magnitude.type === 'spell-power' && tickCount > 0) {
+    const periodicDamageEffects = periodicEffects?.filter((entry) => entry.type === 'deal-damage') ?? []
+    const periodicDamageComponents = periodicDamageEffects.flatMap((entry) => entry.components)
+    const intervalMs = status?.periodic?.intervalMs ?? 0
+    const tickCount = durationMs !== null && intervalMs > 0 ? Math.floor(durationMs / intervalMs) : 0
+    const multipleComponents = periodicDamageComponents.length > 1
+    periodicDamageComponents.forEach((periodicComponent) => {
+      const componentPrefix = multipleComponents ? `${capitalize(periodicComponent.damageType)} ` : ''
+      if (periodicComponent.magnitude.type === 'spell-power' && tickCount > 0) {
         const totalMagnitude = scaleMagnitude(periodicComponent.magnitude, tickCount)
         const totalCoefficient = periodicComponent.magnitude.coefficient * tickCount
-        rows.push({ label: 'Scaling', value: `${formatSpellMagnitude(totalMagnitude)} over ${formatTime(durationMs!)}`, semantic: 'school' })
-        rows.push({ label: 'Total Base Damage', value: formatValue(getSpellPower(state) * totalCoefficient), semantic: 'school' })
-        rows.push({ label: 'Damage Per Tick', value: formatValue(getSpellPower(state) * periodicComponent.magnitude.coefficient), semantic: 'school' })
-      } else if (periodicComponent) rows.push({ label: 'Damage Per Tick', value: formatSpellMagnitude(periodicComponent.magnitude), semantic: 'school' })
-      rows.push({ label: 'Tick Interval', value: formatTime(status.periodic?.intervalMs ?? 0), semantic: 'time' })
-      if (durationMs !== null && status?.periodic?.intervalMs && periodicComponent && periodicComponent.magnitude.type !== 'spell-power') {
-        if (periodicComponent.magnitude.type === 'flat') rows.push({ label: 'Total Base Damage', value: formatValue(periodicComponent.magnitude.value * tickCount), semantic: 'school' })
+        rows.push({ label: `${componentPrefix}Scaling`.trim(), value: `${formatSpellMagnitude(totalMagnitude)} over ${formatTime(durationMs!)}`, semantic: 'school' })
+        rows.push({ label: `${componentPrefix}Total Base Damage`.trim(), value: formatValue(getSpellPower(state) * totalCoefficient), semantic: 'school' })
+        rows.push({ label: `${componentPrefix}Damage Per Tick`.trim(), value: formatValue(getSpellPower(state) * periodicComponent.magnitude.coefficient), semantic: 'school' })
+      } else {
+        rows.push({ label: `${componentPrefix}Damage Per Tick`.trim(), value: formatSpellMagnitude(periodicComponent.magnitude), semantic: 'school' })
+        if (durationMs !== null && tickCount > 0 && periodicComponent.magnitude.type === 'flat') rows.push({ label: `${componentPrefix}Total Base Damage`.trim(), value: formatValue(periodicComponent.magnitude.value * tickCount), semantic: 'school' })
       }
-    }
+    })
+    if (periodicDamageComponents.length === 1) rows.push({ label: 'Damage Type', value: `${capitalize(periodicDamageComponents[0].damageType)} Damage`, semantic: 'school' })
+    else if (periodicDamageComponents.length > 1) rows.push({ label: 'Damage Types', value: periodicDamageComponents.map((component) => `${capitalize(component.damageType)} Damage`).join(' + '), semantic: 'school' })
+    if (periodicDamageComponents.length > 0) rows.push({ label: 'Tick Interval', value: formatTime(intervalMs), semantic: 'time' })
+    periodicEffects?.filter((entry) => entry.type !== 'deal-damage').forEach((periodicEffect) => {
+      if ('magnitude' in periodicEffect) rows.push({ label: `Periodic ${capitalize(periodicEffect.type.replace(/-/g, ' '))}`, value: formatSpellMagnitude(periodicEffect.magnitude), semantic: 'positive' })
+      else rows.push({ label: 'Periodic Effect', value: capitalize(periodicEffect.type.replace(/-/g, ' ')), semantic: 'neutral' })
+    })
     if (effect.stacks !== undefined) rows.push({ label: 'Applied Stacks', value: `${effect.stacks}` })
     if (status?.stacking.maxStacks !== undefined) rows.push({ label: 'Max Stacks', value: `${status.stacking.maxStacks}` })
     if (status) rows.push({ label: 'Stacking', value: stackingLabel(status.stacking.mode) })

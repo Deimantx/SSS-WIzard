@@ -57,6 +57,8 @@ export interface CombatDamageComponentEvent {
 /** Transient resolution state. Never serialize this into GameState/save data. */
 export interface CombatResolutionContext {
   cascadeId: number
+  /** Rules that passed non-random eligibility and have already attempted this cascade. */
+  attemptedRuleKeys: Set<string>
   executedRuleKeys: Set<string>
   hitSequence?: number
 }
@@ -64,6 +66,7 @@ export interface CombatResolutionContext {
 let nextCascadeId = 0
 export const createCombatResolutionContext = (): CombatResolutionContext => ({
   cascadeId: ++nextCascadeId,
+  attemptedRuleKeys: new Set<string>(),
   executedRuleKeys: new Set<string>(),
   hitSequence: 0,
 })

@@ -160,26 +160,36 @@ const applyDamage = (state: GameState, components: Array<{ raw: number; damageTy
   const maxHp = target === 'player' ? state.player.maxHealth : state.combat.enemyMaxHp
   const barrierBefore = getActiveBarrier(state, target)
   let remainingBarrier = barrierBefore
-  const componentEvents: CombatDamageComponentEvent[] = breakdowns.map((breakdown, index) => {
+  const preClampComponentEvents: CombatDamageComponentEvent[] = breakdowns.map((breakdown, index) => {
     const barrierAbsorbed = Math.min(remainingBarrier, breakdown.resolvedBeforeBarrier)
     remainingBarrier = Math.max(0, remainingBarrier - barrierAbsorbed)
     return { damageType: components[index]?.damageType ?? 'physical', raw: breakdown.raw, amount: breakdown.resolvedBeforeBarrier, healthDamage: Math.max(0, breakdown.resolvedBeforeBarrier - barrierAbsorbed), barrierAbsorbed, immune: breakdown.immune }
   })
-  const totalBarrierAbsorbed = componentEvents.reduce((sum, component) => sum + component.barrierAbsorbed, 0)
+  const totalBarrierAbsorbed = preClampComponentEvents.reduce((sum, component) => sum + component.barrierAbsorbed, 0)
   consumeBarrier(state, target, totalBarrierAbsorbed)
-  const dealt = componentEvents.reduce((sum, component) => sum + component.healthDamage, 0)
+  const attemptedHealthDamage = preClampComponentEvents.reduce((sum, component) => sum + component.healthDamage, 0)
   const immortal = target === 'player' ? state.debug.playerImmortal : state.debug.enemyImmortal
-  const nextHealth = Math.max(0, previousHp - dealt)
-  if (target === 'player') state.player.health = immortal ? Math.max(1, nextHealth) : nextHealth
-  else state.combat.enemyHp = immortal ? Math.max(1, nextHealth) : nextHealth
+  const nextHealth = Math.max(0, previousHp - attemptedHealthDamage)
+  if (target === 'player') state.player.health = immortal && previousHp > 0 ? Math.max(1, nextHealth) : nextHealth
+  else state.combat.enemyHp = immortal && previousHp > 0 ? Math.max(1, nextHealth) : nextHealth
   const currentHp = getActorHealth(state, target)
+  // Health damage is effective damage: never report overkill or damage
+  // prevented by an immortal/debug floor as Health that was actually lost.
+  let remainingHealthDamage = Math.max(0, previousHp - currentHp)
+  const componentEvents: CombatDamageComponentEvent[] = preClampComponentEvents.map((component) => {
+    const healthDamage = Math.min(remainingHealthDamage, component.healthDamage)
+    remainingHealthDamage = Math.max(0, remainingHealthDamage - healthDamage)
+    return { ...component, healthDamage }
+  })
+  const dealt = Math.max(0, previousHp - currentHp)
   if (source.actor === 'player') state.combat.lastDamageDealt = dealt
   else state.combat.lastDamageTaken = dealt
   const damageTypes = [...new Set(components.map((component) => component.damageType))]
   const first = breakdowns[0]
+  const blockedAmount = breakdowns.reduce((sum, breakdown) => sum + breakdown.blockedAmount, 0)
   const cascade = resolution ?? createCombatResolutionContext()
   cascade.hitSequence = (cascade.hitSequence ?? 0) + 1
-  uiEvents?.push({ ...eventFields(state, source, target), category: logCategory(source, tags, 'damage'), damageType: damageTypes.length === 1 ? damageTypes[0] : undefined, damageTypes, damageComponents: componentEvents, hitId: `${cascade.cascadeId}:hit:${cascade.hitSequence}`, amount: resolvedBeforeBarrier, healthDamage: dealt, barrierAbsorbed: totalBarrierAbsorbed, barrierBefore, barrierAfter: getActiveBarrier(state, target), critical: first?.critical ?? false, critChance: first?.critChance ?? 0, critMultiplier: first?.critMultiplier ?? 1, blocked: first?.blocked ?? false, blockChance: first?.blockChance ?? 0, blockReduction: first?.blockReduction ?? 0, blockedAmount: first?.blockedAmount ?? 0 })
+  uiEvents?.push({ ...eventFields(state, source, target), category: logCategory(source, tags, 'damage'), damageType: damageTypes.length === 1 ? damageTypes[0] : undefined, damageTypes, damageComponents: componentEvents, hitId: `${cascade.cascadeId}:hit:${cascade.hitSequence}`, amount: resolvedBeforeBarrier, healthDamage: dealt, barrierAbsorbed: totalBarrierAbsorbed, barrierBefore, barrierAfter: getActiveBarrier(state, target), critical: first?.critical ?? false, critChance: first?.critChance ?? 0, critMultiplier: first?.critMultiplier ?? 1, blocked: first?.blocked ?? false, blockChance: first?.blockChance ?? 0, blockReduction: first?.blockReduction ?? 0, blockedAmount })
   const context: CombatEventContext = {
     source, eventTarget: target, changedActor: target, sourceTags: tags, amount: resolvedBeforeBarrier, healthDamage: dealt, barrierDamage: totalBarrierAbsorbed, damageType: damageTypes.length === 1 ? damageTypes[0] : undefined, damageTypes, previousBarrier: barrierBefore, currentBarrier: getActiveBarrier(state, target),
     previousHp, currentHp, previousHpPercent: previousHp / Math.max(1, maxHp) * 100, currentHpPercent: currentHp / Math.max(1, maxHp) * 100,
@@ -194,7 +204,7 @@ const applyDamage = (state: GameState, components: Array<{ raw: number; damageTy
   const hitEvent = tags.includes('basic-attack') ? 'on-basic-attack-hit' : source.kind === 'spell' ? 'on-spell-hit' : null
   if (hitEvent) runCombatTriggers(state, source.actor, hitEvent, context, execute, depth, [], uiEvents, cascade)
   // A prevented lethal hit is still a real hit, but it is not a kill.
-  if (currentHp <= 0 && dealt > 0) runCombatTriggers(state, source.actor, 'on-kill', context, execute, depth, [], uiEvents, cascade)
+  if (previousHp > 0 && currentHp <= 0 && dealt > 0) runCombatTriggers(state, source.actor, 'on-kill', context, execute, depth, [], uiEvents, cascade)
   if (dealt > 0) {
     const thresholdActors = [...new Set<CombatActor>([target, source.actor])]
     thresholdActors.forEach((thresholdActor) => runCombatTriggers(state, thresholdActor, 'on-hp-threshold', context, execute, depth, [], uiEvents, cascade))

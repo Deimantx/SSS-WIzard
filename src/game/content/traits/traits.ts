@@ -1,5 +1,6 @@
 import type { CombatEffect, CombatModifier, Magnitude, TraitDefinition, TraitId } from '../../systems/combat/combatTypes'
-import { validateCombatModifier, validateCombatTriggerRule } from '../../systems/combat/combatEffectValidation'
+import { STATUS_DEFINITIONS } from '../statuses/statuses'
+import { createCombatValidationContext, validateCombatModifier, validateCombatTriggerRule } from '../../systems/combat/combatEffectValidation'
 
 const gainBarrier = (magnitude: Magnitude): CombatEffect => ({
   type: 'gain-barrier',
@@ -112,6 +113,7 @@ export const getTraitDefinitions = (traitIds: readonly string[]) => traitIds.fla
 
 export const validateTraitDefinitions = () => {
   const errors: string[] = []
+  const validationContext = createCombatValidationContext(STATUS_DEFINITIONS)
   const definitions = Object.entries(TRAIT_DEFINITIONS)
   const ids = definitions.map(([, definition]) => definition.id)
   if (new Set(ids).size !== ids.length) errors.push('duplicate trait id')
@@ -121,14 +123,14 @@ export const validateTraitDefinitions = () => {
     if (!definition.name.trim()) errors.push(`${owner}: name is required`)
     if (!definition.description.trim()) errors.push(`${owner}: description is required`)
     definition.modifiers?.forEach((modifier: CombatModifier) => {
-      errors.push(...validateCombatModifier(modifier, `${owner}/modifier`))
+      errors.push(...validateCombatModifier(modifier, `${owner}/modifier`, validationContext))
       if (modifier.perStack) errors.push(`${owner}: Trait modifiers may not use perStack`)
     })
     const ruleIds = (definition.rules ?? []).map((rule) => rule.id)
     if (new Set(ruleIds).size !== ruleIds.length) errors.push(`${owner}: duplicate rule id`)
     definition.rules?.forEach((rule) => {
       const ruleOwner = `${owner}/${rule.id}`
-      errors.push(...validateCombatTriggerRule(rule, ruleOwner))
+      errors.push(...validateCombatTriggerRule(rule, ruleOwner, validationContext))
       if (rule.priority !== undefined && (!Number.isInteger(rule.priority) || !Number.isFinite(rule.priority))) errors.push(`${ruleOwner}: invalid priority`)
       if (rule.cooldownMs !== undefined && (!Number.isInteger(rule.cooldownMs) || !Number.isFinite(rule.cooldownMs) || rule.cooldownMs < 0)) errors.push(`${ruleOwner}: invalid cooldown`)
       if (Array.isArray(rule.effects)) rule.effects.forEach((effect) => {
@@ -141,6 +143,5 @@ export const validateTraitDefinitions = () => {
   return errors
 }
 
-validateTraitDefinitions()
 
 export type { TraitId } from '../../systems/combat/combatTypes'

@@ -60,6 +60,14 @@
 .equipment-stat-value { min-width: max-content; flex: 0 0 auto; margin-left: auto; color: var(--ui-text); font-family: var(--font-mono); font-size: var(--text-xs); font-weight: 650; font-style: normal; line-height: 1.35; letter-spacing: .02em; font-variant-numeric: tabular-nums; text-align: right; }
 .equipment-screen .equipment-note { margin-top: 14px; }
 .equipment-screen .equipment-note svg { flex: 0 0 auto; color: var(--ui-success); }
+.equipment-combat-details { display: grid; gap: 8px; margin-top: 13px; }
+.equipment-combat-detail-section { display: grid; gap: 4px; padding-top: 9px; border-top: 1px solid var(--ui-border); }
+.equipment-combat-detail-section > span { color: var(--ui-accent); font: var(--text-micro) var(--font-mono); letter-spacing: .14em; }
+.equipment-combat-detail-section p, .equipment-combat-rule small { margin: 0; color: var(--ui-text-soft); font-size: var(--text-xs); line-height: 1.4; }
+.equipment-combat-rule { display: grid; gap: 3px; padding: 7px 8px; border: 1px solid var(--ui-border); border-radius: 7px; background: color-mix(in srgb, var(--ui-panel-strong) 62%, transparent); }
+.equipment-combat-rule strong { color: var(--ui-text); font-size: var(--text-xs); }
+.equipment-combat-rule small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
+.equipment-combat-details.is-compact { margin-top: 0; }
 .equipment-inspector-hero { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 11px; align-items: start; }
 .equipment-inspector-icon { width: 48px; height: 48px; font-size: 26px; }
 .equipment-inspector-hero h3 { margin: 4px 0; color: var(--ui-text); font-size: var(--text-base); }

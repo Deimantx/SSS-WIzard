@@ -90,6 +90,7 @@
 .inventory-detail-card > .inventory-detail-content::-webkit-scrollbar-thumb { border-radius: 99px; background: var(--ui-scrollbar-thumb); }
 .inventory-detail-hero { position: sticky; top: -1px; z-index: 4; background: linear-gradient(var(--ui-panel) 78%, transparent); }
 .inventory-detail-accordion { gap: 0; padding-top: 7px; }
+.inventory-detail-sub-label { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; }
 .inventory-detail-accordion-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; width: 100%; min-height: 34px; padding: 7px 6px; border: 0; border-radius: 6px; color: var(--ui-text-soft); background: transparent; cursor: pointer; text-align: left; }
 .inventory-detail-accordion-header:hover { background: var(--ui-accent-soft); color: var(--ui-text); }
 .inventory-detail-accordion-header:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 1px; }

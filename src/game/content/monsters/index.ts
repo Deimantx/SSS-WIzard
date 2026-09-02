@@ -4,7 +4,8 @@ import { ABANDONED_CATACOMBS_MONSTERS } from './abandonedCatacombs'
 import { HOWLING_DEN_MONSTERS } from './howlingDen'
 import { WHISPERING_WOODS_MONSTERS, WHISPERING_WOODS_MONSTER_IDS } from './whisperingWoods'
 import type { MonsterDefinition } from './monsterTypes'
-import { validateCombatEffect } from '../../systems/combat/combatEffectValidation'
+import { createCombatValidationContext, validateCombatEffect } from '../../systems/combat/combatEffectValidation'
+import { STATUS_DEFINITIONS } from '../statuses/statuses'
 import { MAX_ACTION_WORK_MS, MIN_ACTION_TIME_MS } from '../../core/balance/combatTiming'
 import { MAX_BLOCK_CHANCE, MAX_CRIT_CHANCE, MAX_CRIT_DAMAGE_MULTIPLIER, MAX_RESISTANCE, MIN_RESISTANCE } from '../../core/balance/combatStats'
 
@@ -26,7 +27,7 @@ const COMBAT_TAGS: readonly CombatTag[] = ['basic-attack', 'spell', 'weapon', 'e
 const DAMAGE_TYPES: readonly DamageType[] = ['physical', 'arcane', 'fire', 'water', 'earth', 'air']
 
 const validateEffects = (owner: string, effects: CombatEffect[], errors: string[]) => effects.forEach((effect) => {
-  errors.push(...validateCombatEffect(effect, owner))
+  errors.push(...validateCombatEffect(effect, owner, createCombatValidationContext(STATUS_DEFINITIONS)))
   if (effect.type === 'set-action-pattern' && !effect.patternId.trim()) errors.push(`${owner}: action pattern id is required`)
 })
 
@@ -66,5 +67,3 @@ export const validateMonsterDefinitions = (monsters: Record<string, MonsterDefin
   if (errors.length && import.meta.env.DEV) console.error(`[combat-monsters] ${errors.join('; ')}`)
   return errors
 }
-
-validateMonsterDefinitions()

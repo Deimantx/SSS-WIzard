@@ -1,6 +1,6 @@
 import { ArrowRight, PackageOpen } from 'lucide-react'
 import type { CSSProperties } from 'react'
-import { Button, Card, Status } from '../../components/ui'
+import { Button, Card, EquipmentCombatDetails, Status } from '../../components/ui'
 import { GameTooltip, TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { ItemIcon, ItemQuantity } from '../../components/ui/item'
 import { getItemSourceLabel, getResearchXp, ITEMS } from '../../game/content/items/items'
@@ -36,6 +36,7 @@ export function CollectionInspector({ itemId, inventory, progress, navigate }: C
     {source && <section className="collection-inspector-section"><span className="collection-section-label">SOURCE</span><div className="collection-source"><span>{getItemSourceLabel(itemId)}</span><Button variant="ghost" ariaLabel={`Go to ${source.label}`} tooltip={<TooltipContent title={`Open ${source.label}`} description="Navigate to the system that produces this item." />} onClick={() => navigate(source.destination)}>GO <ArrowRight size={13} /></Button></div></section>}
     {item.researchSchool && <section className="collection-inspector-section"><span className="collection-section-label">RESEARCH VALUE</span><div className="collection-value-list">{(Object.keys(SCHOOLS) as SchoolId[]).map((schoolId) => <DetailRow key={schoolId} label={SCHOOLS[schoolId].name} value={`${getResearchXp(itemId, schoolId)} XP`} />)}</div></section>}
     {item.stats && Object.keys(item.stats).length > 0 && <section className="collection-inspector-section"><span className="collection-section-label">STATS</span><div className="collection-value-list">{Object.entries(item.stats).filter(([, value]) => value !== 0).map(([key, value]) => <DetailRow key={key} label={friendlyStatLabel(key)} value={formatStat(key, value)} />)}</div></section>}
+    {item.kind === 'equipment' && <EquipmentCombatDetails item={item} />}
     {item.kind === 'equipment' && <section className="collection-inspector-section"><span className="collection-section-label">EQUIPMENT</span><DetailRow label="Slot" value={item.equipmentSlot ? EQUIPMENT_ITEM_SLOT_LABELS[item.equipmentSlot] : '—'} />{item.weaponHands && <DetailRow label="Weapon" value={`${item.weaponHands}H`} />}</section>}
     {uses.length > 0 && <section className="collection-inspector-section"><span className="collection-section-label">USED IN</span><div className="collection-use-list">{uses.map((use) => <GameTooltip block key={`${use.destination}-${use.label}`} content={<TooltipContent title={`Open ${use.label}`} description="Navigate to the system that uses this item." />}><button type="button" aria-label={`Open ${use.label}`} onClick={() => navigate(use.destination)}><span><strong>{use.label}</strong><small>{use.detail}</small></span><ArrowRight size={14} /></button></GameTooltip>)}</div></section>}
     {item.sellValue !== null && <section className="collection-inspector-section"><DetailRow label="Sell value" value={`${item.sellValue} Gold`} /></section>}

@@ -34,4 +34,12 @@ describe('EquipmentScreen stat typography structure', () => {
     expect(tooltip.textContent).toContain('2.20s')
     expect(tooltip.textContent).not.toContain('2200.00s')
   })
+
+  it('shows data-driven combat mechanics in the Gear Inspector', () => {
+    const state = useGameStore.getState()
+    useGameStore.setState({ equipment: { ...state.equipment, weapon: 'ember-staff' }, inventory: { ...state.inventory, 'ember-staff': 1 } })
+    render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
+    expect(screen.getByText('COMBAT EFFECTS')).toBeTruthy()
+    expect(screen.getAllByText('+20% Fire Spell Damage').length).toBeGreaterThan(0)
+  })
 })

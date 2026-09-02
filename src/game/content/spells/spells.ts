@@ -1,7 +1,8 @@
 import type { CombatEffect, SpellDefinition, SpellId } from '../../types'
 import { SCHOOLS } from '../schools/schools'
 import { periodicDamageStatus } from '../statuses/periodicDamageStatus'
-import { validateCombatEffect } from '../../systems/combat/combatEffectValidation'
+import { STATUS_DEFINITIONS } from '../statuses/statuses'
+import { createCombatValidationContext, validateCombatEffect } from '../../systems/combat/combatEffectValidation'
 
 const damage = (school: 'fire' | 'water' | 'earth' | 'air', coefficient: number): CombatEffect => ({
   type: 'deal-damage', target: 'opponent', components: [{ damageType: school, magnitude: { type: 'spell-power', coefficient } }], school, tags: ['direct'],
@@ -26,6 +27,7 @@ export const SPELLS: Record<SpellId, SpellDefinition> = {
 
 export const validateSpellDefinitions = () => {
   const errors: string[] = []
+  const validationContext = createCombatValidationContext(STATUS_DEFINITIONS)
   const ids = Object.values(SPELLS).map((spell) => spell.id)
   if (new Set(ids).size !== ids.length) errors.push('duplicate spell id')
   Object.entries(SPELLS).forEach(([key, spell]) => {
@@ -36,7 +38,7 @@ export const validateSpellDefinitions = () => {
     if (!Number.isFinite(spell.cooldownMs) || spell.cooldownMs < 0) errors.push(`${spell.id}: invalid cooldown`)
     if (!spell.effects.length) errors.push(`${spell.id}: effects must not be empty`)
     const validateEffect = (effect: CombatEffect) => {
-      errors.push(...validateCombatEffect(effect, `${spell.id}.effect`))
+      errors.push(...validateCombatEffect(effect, `${spell.id}.effect`, validationContext))
       if (effect.type === 'apply-status') {
         effect.periodicEffects?.forEach((periodicEffect) => {
           if (periodicEffect.type === 'deal-damage' && periodicEffect.components.some((component) => component.damageType !== spell.school)) errors.push(`${spell.id}: periodic damage school mismatch`)
@@ -51,5 +53,3 @@ export const validateSpellDefinitions = () => {
   if (errors.length && import.meta.env.DEV) console.error(`[spells] ${errors.join('; ')}`)
   return errors
 }
-
-validateSpellDefinitions()

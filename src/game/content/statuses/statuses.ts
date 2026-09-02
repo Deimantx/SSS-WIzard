@@ -1,5 +1,5 @@
 import type { CombatEffect, CombatModifier, ModifierKey, StatusDefinition, StatusId } from '../../systems/combat/combatTypes'
-import { COMBAT_MODIFIER_KEYS, validateCombatEffect, validateCombatModifier, validateCombatTriggerRule } from '../../systems/combat/combatEffectValidation'
+import { COMBAT_MODIFIER_KEYS, createCombatValidationContext, validateCombatModifier, validateCombatTriggerRule, validatePeriodicEffectList } from '../../systems/combat/combatEffectValidation'
 
 // Periodic effects are authored relative to the status holder. The runtime
 // maps the holder to self/opponent while retaining the original source.
@@ -71,12 +71,10 @@ export const STATUS_ORDER = Object.keys(STATUS_DEFINITIONS) as StatusId[]
 
 export const validateStatusDefinitions = () => {
   const errors: string[] = []
+  const validationContext = createCombatValidationContext(STATUS_DEFINITIONS)
   const modifierKeys = COMBAT_MODIFIER_KEYS
   const ids = Object.values(STATUS_DEFINITIONS).map((definition) => definition.id)
   if (new Set(ids).size !== ids.length) errors.push('duplicate status id')
-  const validateEffects = (owner: string, effects: CombatEffect[]) => effects.forEach((effect) => {
-    errors.push(...validateCombatEffect(effect, owner))
-  })
   Object.entries(STATUS_DEFINITIONS).forEach(([key, definition]) => {
     if (key !== definition.id) errors.push(`${key}: key/id mismatch`)
     if (definition.defaultDurationMs !== null && definition.defaultDurationMs < 0) errors.push(`${definition.id}: negative duration`)
@@ -93,9 +91,9 @@ export const validateStatusDefinitions = () => {
     }
     if (definition.stacking.maxStacks !== undefined && definition.stacking.maxStacks < 1) errors.push(`${definition.id}: maxStacks must be at least one`)
     if (definition.stacking.maxDurationMs !== undefined && (!Number.isFinite(definition.stacking.maxDurationMs) || definition.stacking.maxDurationMs < 0)) errors.push(`${definition.id}: invalid max duration`)
-    definition.modifiers?.forEach((entry) => { errors.push(...validateCombatModifier(entry, `${definition.id}:modifier`)) })
-    validateEffects(`${definition.id}: periodic`, definition.periodic?.effects ?? [])
-    definition.triggers?.forEach((rule) => { errors.push(...validateCombatTriggerRule(rule, `${definition.id}:${rule.id}`)) })
+    definition.modifiers?.forEach((entry) => { errors.push(...validateCombatModifier(entry, `${definition.id}:modifier`, validationContext)) })
+    errors.push(...validatePeriodicEffectList(definition.periodic?.effects ?? [], `${definition.id}: periodic`, validationContext))
+    definition.triggers?.forEach((rule) => { errors.push(...validateCombatTriggerRule(rule, `${definition.id}:${rule.id}`, validationContext)) })
   })
   if (errors.length && import.meta.env.DEV) console.error(`[combat-statuses] ${errors.join('; ')}`)
   return errors

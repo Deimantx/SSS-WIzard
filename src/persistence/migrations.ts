@@ -19,9 +19,11 @@ import { STATUS_DEFINITIONS } from '../game/content/statuses'
 import type { ActiveStatus, CombatSource, StatusId } from '../game/types'
 import { getSpellAutoCastFocusCost, MAX_SPELL_RANK, MIN_SPELL_RANK, normalizeSpellPresetState, syncAllSpellUnlocks, type SpellRank } from '../game/systems/spells'
 import { getStatusApplicationSourceKey } from '../game/systems/combat/statusRuntime'
-import { normalizePersistedPeriodicEffects, hasValidStatusModifierOverrides } from '../game/systems/combat/combatEffectValidation'
+import { createCombatValidationContext, normalizePersistedPeriodicEffects, hasValidStatusModifierOverrides } from '../game/systems/combat/combatEffectValidation'
 import { MAX_ACTION_WORK_MS, MIN_ACTION_TIME_MS } from '../game/core/balance/combatTiming'
 import { normalizeCombatRngState } from '../game/systems/combat/combatRng'
+
+const statusValidationContext = createCombatValidationContext(STATUS_DEFINITIONS)
 
 const normalizeScreen = (value: unknown, fallback: GameState['ui']['screen']): GameState['ui']['screen'] => {
   if (value === 'tower') return 'tower-channeling'
@@ -200,8 +202,8 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
       const instanceKey = typeof entry.instanceKey === 'string' && entry.instanceKey.trim()
         ? entry.instanceKey
         : definition.applicationPolicy === 'per-source' ? getStatusApplicationSourceKey(source) : `single:${statusId}`
-      const periodicEffects = normalizePersistedPeriodicEffects(entry.periodicEffects, statusId)
-      const modifierOverrides = isRecord(entry.modifierOverrides) && hasValidStatusModifierOverrides(statusId, entry.modifierOverrides)
+      const periodicEffects = normalizePersistedPeriodicEffects(entry.periodicEffects, statusId, statusValidationContext)
+      const modifierOverrides = isRecord(entry.modifierOverrides) && hasValidStatusModifierOverrides(statusId, entry.modifierOverrides, statusValidationContext)
         ? Object.fromEntries(Object.entries(entry.modifierOverrides))
         : undefined
       const initialRaw = nonNegativeNumber(entry.initialDurationMs) ?? nonNegativeNumber(entry.durationMs)

@@ -1,6 +1,6 @@
 import { ArrowRight, Check, ChevronDown, ChevronRight, LockKeyhole, PackageOpen } from 'lucide-react'
 import type { CSSProperties, ReactNode } from 'react'
-import { Button, Status } from '../../components/ui'
+import { Button, EquipmentCombatDetails, Status } from '../../components/ui'
 import { ItemIcon, ItemQuantity } from '../../components/ui/item'
 import { getItemSourceLabel, getResearchXp, ITEMS } from '../../game/content/items/items'
 import { SCHOOLS } from '../../game/content/schools/schools'
@@ -49,7 +49,7 @@ export function InventoryDetail({ itemId, inventory, protectedItems, equipment, 
 
     {item.stats && Object.keys(item.stats).length > 0 && <section className="inventory-detail-section"><span className="inventory-detail-label">STATS</span><div className="inventory-stat-list">{Object.entries(item.stats).filter(([, value]) => value !== 0).map(([key, value]) => <DetailRow key={key} label={friendlyStatLabel(key)} value={formatStat(key, value)} />)}</div></section>}
 
-    {item.kind === 'equipment' && <section className="inventory-detail-section"><span className="inventory-detail-label">EQUIPMENT COMPARISON</span>{equippedId ? <><div className="inventory-comparison-current"><span>CURRENT</span><strong>{ITEMS[equippedId].name}</strong></div><div className="inventory-comparison-head"><span>STAT</span><span>CURRENT</span><span>SELECTED</span><span>DELTA</span></div><div className="inventory-comparison-list">{comparison.map((row) => <div className="inventory-comparison-row" key={row.key}><span>{row.label}</span><small>{row.equippedValue}</small><strong>{row.selectedValue}</strong><em className={row.direction}>{row.delta}</em></div>)}</div></> : <p className="inventory-muted-note">No item currently equipped in this slot. This item's bonuses are additions.</p>}</section>}
+    {item.kind === 'equipment' && <section className="inventory-detail-section"><span className="inventory-detail-label">EQUIPMENT COMPARISON</span>{equippedId ? <><span className="inventory-detail-sub-label">DIRECT STAT CHANGES</span><div className="inventory-comparison-current"><span>CURRENT</span><strong>{ITEMS[equippedId].name}</strong></div><div className="inventory-comparison-head"><span>STAT</span><span>CURRENT</span><span>SELECTED</span><span>DELTA</span></div><div className="inventory-comparison-list">{comparison.map((row) => <div className="inventory-comparison-row" key={row.key}><span>{row.label}</span><small>{row.equippedValue}</small><strong>{row.selectedValue}</strong><em className={row.direction}>{row.delta}</em></div>)}</div></> : <p className="inventory-muted-note">No item currently equipped in this slot. This item's bonuses are additions.</p>}<EquipmentCombatDetails item={item} /></section>}
 
     {sourceLabel && <InventoryDetailSection section="source" title="SOURCE" count={1} open={openSections.source} onToggle={toggleSection}><div className="inventory-detail-source"><span>{sourceLabel}</span>{source && <Button variant="ghost" className="inventory-detail-go" ariaLabel={`Go to ${source.label}`} onClick={() => navigate?.(source.destination)}>GO <ArrowRight size={13} /></Button>}</div></InventoryDetailSection>}
 

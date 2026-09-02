@@ -138,7 +138,10 @@ export const runCombatTriggers = (
     if (event === 'on-hp-threshold' && !conditionHasHpThreshold(rule.condition)) return
     if (event === 'on-hp-threshold' && !conditionContainsCrossedHpThreshold(actor, rule.condition, context)) return
     if (!evaluateCombatCondition(state, actor, rule.condition, context)) return
-    // Guard eligibility before chance so blocked recursive rules do not consume RNG.
+    // A chance roll is an eligibility attempt. Consume that attempt before RNG
+    // so a failed provider rule cannot reroll from another event in this cascade.
+    if (cascade.attemptedRuleKeys.has(runtimeKey)) return
+    cascade.attemptedRuleKeys.add(runtimeKey)
     if (rule.chance !== undefined && nextCombatRandom(state) >= rule.chance) return
 
     cascade.executedRuleKeys.add(runtimeKey)

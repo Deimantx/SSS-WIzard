@@ -3,7 +3,7 @@ import { ITEMS, validateItemDefinitions } from '../../content/items/items'
 import { MONSTERS } from '../../content/monsters'
 import { createInitialState } from '../../../store/initialState'
 import type { GameState, ItemDefinition, ItemId } from '../../types'
-import type { CombatEffect, CombatEvent } from './combatTypes'
+import { createCombatResolutionContext, type CombatEffect, type CombatEvent } from './combatTypes'
 import { executeCombatEffects } from './effectResolver'
 import { getCombatModifiers } from './modifiers'
 import { applyStatus, tickStatuses } from './statusRuntime'
@@ -12,8 +12,9 @@ import { finishEnemy, spawnEnemy } from './combatRuntime'
 import { runCombatTriggers, getRuleRuntimeKey, tickRuleCooldowns } from './triggerRuntime'
 import { advanceGameState } from '../simulation/advanceGameState'
 import { validateStatusDefinitions, STATUS_DEFINITIONS } from '../../content/statuses'
-import { isPersistedCombatEffect, validateCombatEffect, validateCombatProvider } from './combatEffectValidation'
+import { createCombatValidationContext, isPersistedCombatEffect, validateCombatEffect, validateCombatProvider } from './combatEffectValidation'
 import { getCombatMetricSourceKey } from '../../telemetry/combat/combatTelemetryAggregator'
+import { nextCombatRandom } from './combatRng'
 
 const source = { actor: 'player' as const, kind: 'spell' as const, sourceId: 'hardening-test', school: 'water' as const, tags: ['spell' as const, 'magic' as const, 'water' as const] }
 const stateWithEnemy = () => {
@@ -134,8 +135,9 @@ describe('combat foundation hardening', () => {
   })
 
   it('validates status modifier overrides against the target status definition', () => {
-    expect(isPersistedCombatEffect({ type: 'apply-status', target: 'opponent', statusId: 'chilled', modifierOverrides: { 'damage-dealt-percent': -0.2 } })).toBe(false)
-    expect(isPersistedCombatEffect({ type: 'apply-status', target: 'opponent', statusId: 'chilled', modifierOverrides: { 'basic-attack-speed-percent': -0.2, 'action-speed-percent': -0.2 } })).toBe(true)
+    const validationContext = createCombatValidationContext(STATUS_DEFINITIONS)
+    expect(isPersistedCombatEffect({ type: 'apply-status', target: 'opponent', statusId: 'chilled', modifierOverrides: { 'damage-dealt-percent': -0.2 } }, validationContext)).toBe(false)
+    expect(isPersistedCombatEffect({ type: 'apply-status', target: 'opponent', statusId: 'chilled', modifierOverrides: { 'basic-attack-speed-percent': -0.2, 'action-speed-percent': -0.2 } }, validationContext)).toBe(true)
   })
 })
 
@@ -296,6 +298,50 @@ describe('equipment combat providers', () => {
     expect(damageEvents.filter((event) => event.sourceKind === 'equipment').map((event) => event.providerInstanceKey)).toEqual(expect.arrayContaining(['ring1', 'ring2']))
   })
 
+  it('allows a chance rule one attempt per cascade, including when the first roll fails', () => {
+    const failedSeed = (() => {
+      for (let seed = 0; seed < 10_000; seed += 1) {
+        const probe = { combatRngState: seed }
+        if (nextCombatRandom(probe) >= 0.2) return seed
+      }
+      throw new Error('Could not find deterministic failed chance seed')
+    })()
+    ITEMS[testItemId] = { ...testItem, combat: { rules: [{ id: 'failed-proc', event: 'on-damage-dealt', chance: 0.2, effects: [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 0 } }] }] } }
+    ITEMS[secondItemId] = { ...testItem, id: secondItemId, combat: { rules: [{ id: 'nested-damage', event: 'on-damage-dealt', effects: [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 1 } }] }] }] } }
+    const state = stateWithEnemy()
+    state.equipment.ring1 = testItemId
+    state.equipment.ring2 = secondItemId
+    state.combat.combatRngState = failedSeed
+    const events: CombatEvent[] = []
+    const resolution = createCombatResolutionContext()
+    const root: CombatEffect = { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 1 } }] }
+    const expectedRng = { combatRngState: failedSeed }
+    nextCombatRandom(expectedRng)
+    executeCombatEffects(state, [root], { actor: 'player', kind: 'system', sourceId: 'chance-root' }, undefined, { push: (event) => events.push(event) }, resolution)
+
+    const failedKey = getRuleRuntimeKey('player', 'equipment', testItemId, 'failed-proc', 'ring1')
+    expect(resolution.attemptedRuleKeys.has(failedKey)).toBe(true)
+    expect(state.combat.combatRngState).toBe(expectedRng.combatRngState)
+    expect(events.filter((event) => event.category === 'damage')).toHaveLength(2)
+
+    const nextResolution = createCombatResolutionContext()
+    executeCombatEffects(state, [root], { actor: 'player', kind: 'system', sourceId: 'chance-root' }, undefined, { push: (event) => events.push(event) }, nextResolution)
+    expect(nextResolution.attemptedRuleKeys.has(failedKey)).toBe(true)
+  })
+
+  it('keeps chance attempts independent for Ring 1 and Ring 2', () => {
+    ITEMS[testItemId] = { ...testItem, combat: { rules: [{ id: 'ring-attempt', event: 'on-damage-dealt', chance: 0, effects: [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 0 } }] }] } }
+    const state = stateWithEnemy()
+    state.equipment.ring1 = testItemId
+    state.equipment.ring2 = testItemId
+    const resolution = createCombatResolutionContext()
+    executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 1 } }] }], { actor: 'player', kind: 'system', sourceId: 'ring-root' }, undefined, undefined, resolution)
+    expect(resolution.attemptedRuleKeys).toEqual(new Set([
+      getRuleRuntimeKey('player', 'equipment', testItemId, 'ring-attempt', 'ring1'),
+      getRuleRuntimeKey('player', 'equipment', testItemId, 'ring-attempt', 'ring2'),
+    ]))
+  })
+
   it('keeps a split-type Hit atomic while preserving per-component mitigation', () => {
     const originalDefense = MONSTERS['forest-wisp'].defense
     const originalResistances = MONSTERS['forest-wisp'].resistances
@@ -356,6 +402,62 @@ describe('equipment combat providers', () => {
     }
   })
 
+  it('aggregates blocked amount across split Hit components and emits one event', () => {
+    const originalDefense = MONSTERS['forest-wisp'].defense
+    const originalResistances = MONSTERS['forest-wisp'].resistances
+    const originalBlockChance = MONSTERS['forest-wisp'].blockChance
+    ITEMS[testItemId] = { ...testItem, combat: { modifiers: [{ key: 'crit-chance', value: -1 }] } }
+    MONSTERS['forest-wisp'].defense = 0
+    MONSTERS['forest-wisp'].resistances = { physical: 0, arcane: 0 }
+    MONSTERS['forest-wisp'].blockChance = 1
+    try {
+      const state = stateWithEnemy()
+      state.equipment.ring1 = testItemId
+      const events: CombatEvent[] = []
+      executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 10 } }, { damageType: 'arcane', magnitude: { type: 'flat', value: 10 } }], tags: ['direct'] }], { actor: 'player', kind: 'spell', sourceId: 'blocked-split', tags: ['spell', 'direct'] }, undefined, { push: (event) => events.push(event) })
+      const damageEvents = events.filter((event) => event.healthDamage !== undefined)
+      expect(damageEvents).toHaveLength(1)
+      const event = damageEvents[0]
+      const componentBlocked = (event.damageComponents ?? []).reduce((total, component, index) => total + (index === 0 ? 10 : 10) - component.amount - component.barrierAbsorbed, 0)
+      expect(event).toMatchObject({ blocked: true, damageComponents: expect.arrayContaining([expect.objectContaining({ damageType: 'physical' }), expect.objectContaining({ damageType: 'arcane' })]) })
+      expect(event.blockedAmount).toBeCloseTo(componentBlocked)
+      expect(event.blockedAmount).toBeGreaterThan(0)
+    } finally {
+      MONSTERS['forest-wisp'].defense = originalDefense
+      MONSTERS['forest-wisp'].resistances = originalResistances
+      MONSTERS['forest-wisp'].blockChance = originalBlockChance
+    }
+  })
+
+  it('clamps effective Health damage and fires on-kill only on alive-to-dead crossing', () => {
+    ITEMS[testItemId] = { ...testItem, combat: { rules: [{ id: 'kill-barrier', event: 'on-kill', effects: [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 40 } }] }] } }
+    const state = stateWithEnemy()
+    state.equipment.ring1 = testItemId
+    state.combat.enemyMaxHp = 5
+    state.combat.enemyHp = 5
+    const events: CombatEvent[] = []
+    const lethal: CombatEffect = { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 100 } }] }
+    const sink = { push: (event: CombatEvent) => events.push(event) }
+
+    executeCombatEffects(state, [lethal], { actor: 'player', kind: 'system', sourceId: 'lethal-root' }, undefined, sink)
+    const firstDamage = events.find((event) => event.category === 'damage')
+    expect(firstDamage?.healthDamage).toBe(5)
+    expect(state.combat.enemyHp).toBe(0)
+    expect(state.combat.playerBarrier).toBe(40)
+    expect(events.filter((event) => event.sourceKind === 'equipment' && event.category === 'system')).toHaveLength(1)
+
+    executeCombatEffects(state, [lethal], { actor: 'player', kind: 'system', sourceId: 'later-root' }, undefined, sink)
+    expect(events.filter((event) => event.sourceKind === 'equipment' && event.category === 'system')).toHaveLength(1)
+
+    const multiHitState = stateWithEnemy()
+    multiHitState.equipment.ring1 = testItemId
+    multiHitState.combat.enemyMaxHp = 5
+    multiHitState.combat.enemyHp = 5
+    const multiEvents: CombatEvent[] = []
+    executeCombatEffects(multiHitState, [lethal, lethal], { actor: 'player', kind: 'system', sourceId: 'multi-hit-root' }, undefined, { push: (event) => multiEvents.push(event) })
+    expect(multiEvents.filter((event) => event.sourceKind === 'equipment' && event.category === 'system')).toHaveLength(1)
+  })
+
   it('validates malformed Equipment Combat providers through shared validators', () => {
     const malformed = { ...testItem, combat: { modifiers: [{ key: 'not-a-modifier', value: Number.NaN }], rules: [
       { id: 'duplicate', event: 'on-damage-dealt', effects: [{ type: 'deal-damage', target: 'opponent', components: [] }] },
@@ -370,5 +472,11 @@ describe('equipment combat providers', () => {
     expect(errors.some((error) => error.includes('cooldown must be finite and non-negative'))).toBe(true)
     expect(validateCombatProvider(malformed.combat, `${testItemId}.combat`).length).toBeGreaterThan(0)
     expect(validateCombatEffect({ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'fire', magnitude: { type: 'spell-power', coefficient: Number.NaN } }] })).toEqual(expect.arrayContaining([expect.stringContaining('coefficient')]))
+  })
+
+  it('rejects recursive periodic status spawning', () => {
+    const validationContext = createCombatValidationContext(STATUS_DEFINITIONS)
+    const nested = { type: 'apply-status', target: 'opponent', statusId: 'regeneration', periodicEffects: [{ type: 'apply-status', target: 'self', statusId: 'regeneration' }] }
+    expect(validateCombatEffect(nested, 'nested', validationContext)).toEqual(expect.arrayContaining([expect.stringContaining('nested periodic status spawning')]))
   })
 })

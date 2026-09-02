@@ -111,6 +111,15 @@ describe('multi-source periodic statuses', () => {
     expect(migrated.combat.enemyStatuses[0].initialDurationMs).toBe(5_000)
   })
 
+  it('drops persisted recursive periodic status payloads atomically', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({ ...initial, saveVersion: 23, combat: { ...initial.combat, active: true, enemyId: 'forest-wisp', enemyStatuses: [
+      { statusId: 'burning', source: source('recursive'), remainingMs: 2_000, stacks: 1, periodicEffects: [{ type: 'apply-status', target: 'self', statusId: 'regeneration' }] },
+    ] } } as any)
+    expect(migrated.combat.enemyStatuses).toHaveLength(1)
+    expect(migrated.combat.enemyStatuses[0].periodicEffects).toBeUndefined()
+  })
+
   it('rejects a mixed valid and invalid periodic override atomically', () => {
     const initial = createInitialState()
     const migrated = migrateSave({ ...initial, saveVersion: 21, combat: { ...initial.combat, active: true, enemyId: 'forest-wisp', enemyStatuses: [

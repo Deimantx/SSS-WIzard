@@ -6,7 +6,7 @@ import { resolveMagnitude } from './magnitude'
 import { runCombatTriggers } from './triggerRuntime'
 import type { CombatEffect, CombatEventSink, CombatResolutionContext, CombatSource, ActiveStatus, CombatTag, ModifierKey } from './combatTypes'
 import { getCombatModifiers } from './modifiers'
-import { hasValidStatusModifierOverrides, isPersistedCombatEffect } from './combatEffectValidation'
+import { createCombatValidationContext, hasValidStatusModifierOverrides, validatePeriodicEffectList } from './combatEffectValidation'
 import { buildPeriodicStatusCombatSource, getExecutablePeriodicStatusEffects, getRootCombatSourceProvenance } from './combatProvenance'
 
 export type ExecuteEffects = (state: GameState, effects: CombatEffect[], source: CombatSource, depth?: number, uiEvents?: CombatEventSink, resolution?: CombatResolutionContext) => void
@@ -21,6 +21,7 @@ export interface StatusRemovalOptions {
 
 const statusList = (state: GameState, actor: CombatActor): ActiveStatus[] => actor === 'player' ? state.combat.playerStatuses : state.combat.enemyStatuses
 const setStatusList = (state: GameState, actor: CombatActor, statuses: ActiveStatus[]) => { if (actor === 'player') state.combat.playerStatuses = statuses; else state.combat.enemyStatuses = statuses }
+const statusValidationContext = createCombatValidationContext(STATUS_DEFINITIONS)
 
 /** Stable source identity shared by application, persistence, UI, and tests. */
 export const getStatusApplicationSourceKey = (source: Pick<CombatSource, 'actor' | 'kind' | 'sourceId' | 'originSourceId' | 'ruleId' | 'providerInstanceKey' | 'sourceInstanceKey' | 'originInstanceKey'>): string => {
@@ -74,7 +75,7 @@ const relativeTargetForHolder = (holder: CombatActor, sourceActor: CombatActor, 
 const snapshotPeriodicEffects = (state: GameState, holder: CombatActor, source: CombatSource, effects: CombatEffect[] | undefined) => {
   if (!effects) return undefined
   // Runtime overrides follow the same atomic rule as persisted overrides.
-  if (!effects.every(isPersistedCombatEffect)) return undefined
+  if (validatePeriodicEffectList(effects, 'periodic', statusValidationContext).length > 0) return undefined
   return effects.map((effect) => {
     if (effect.type === 'deal-damage') {
       const target = relativeTargetForHolder(holder, source.actor, effect.target)
@@ -88,7 +89,7 @@ const snapshotPeriodicEffects = (state: GameState, holder: CombatActor, source: 
 
 const snapshotModifierOverrides = (statusId: StatusId, overrides: Partial<Record<ModifierKey, number>> | undefined) => {
   if (!overrides) return undefined
-  if (!hasValidStatusModifierOverrides(statusId, overrides)) return undefined
+  if (!hasValidStatusModifierOverrides(statusId, overrides, statusValidationContext)) return undefined
   return Object.keys(overrides).length ? { ...overrides } : undefined
 }
 

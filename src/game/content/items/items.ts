@@ -3,6 +3,8 @@ import type { EquipmentStats, InventoryCategory, InventoryMaterialSubtype, ItemD
 import { BALANCE } from '../../core/balance/balance'
 import { MAX_BLOCK_CHANCE, MAX_RESISTANCE, MIN_RESISTANCE } from '../../core/balance/combatStats'
 import { validateCombatProvider } from '../../systems/combat/combatEffectValidation'
+import { STATUS_DEFINITIONS } from '../statuses/statuses'
+import { createCombatValidationContext } from '../../systems/combat/combatEffectValidation'
 
 type AuthoredItemDefinition = Omit<ItemDefinition, 'inventoryCategory' | 'materialSubtype' | 'sellValue' | 'canDestroy' | 'actionRestrictionReason'> & Partial<Pick<ItemDefinition, 'inventoryCategory' | 'materialSubtype' | 'sellValue' | 'canDestroy' | 'actionRestrictionReason'>>
 const materialSubtypes: InventoryMaterialSubtype[] = ['elemental', 'creature', 'ore', 'refined', 'arcane']
@@ -110,13 +112,12 @@ export const validateItemDefinitions = (items: Record<string, ItemDefinition> = 
     if (key !== item.id) errors.push(`${key}: key/id mismatch`)
     validateEquipmentStats(item.id, item.stats, errors)
     if (item.combat && item.kind !== 'equipment') errors.push(`${item.id}: only equipment items may define combat metadata`)
-    errors.push(...validateCombatProvider(item.combat, `${item.id}.combat`))
+    errors.push(...validateCombatProvider(item.combat, `${item.id}.combat`, createCombatValidationContext(STATUS_DEFINITIONS)))
   })
   if (errors.length && import.meta.env.DEV) console.error(`[combat-items] ${errors.join('; ')}`)
   return errors
 }
 
-validateItemDefinitions()
 
 export const getResearchXp = (itemId: ItemId, targetSchoolId: SchoolId) => ITEMS[itemId].researchSchool === targetSchoolId ? BALANCE.research.matchingXp : BALANCE.research.nonMatchingXp
 

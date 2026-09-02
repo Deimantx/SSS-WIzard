@@ -71,7 +71,7 @@ describe('Combat Lab immortality and forced-resolution runtime', () => {
     expect(state.combat.enemyBarrier).toBe(0)
     expect(state.combat.enemyHp).toBe(1)
     expect(event?.amount).toBeCloseTo(250 * 1.5 * (1 - 10 / 110))
-    expect(event?.healthDamage).toBeCloseTo(250 * 1.5 * (1 - 10 / 110) - 100)
+    expect(event?.healthDamage).toBe(0)
     expect(event).toMatchObject({ barrierAbsorbed: 100 })
   })
 

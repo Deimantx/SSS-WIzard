@@ -175,14 +175,9 @@
 }
 .bestiary-pattern-list { display: grid; gap: 8px; }
 .bestiary-pattern-preview {
-  position: relative;
   display: grid;
   gap: 7px;
   min-width: 0;
-  padding: 8px;
-  border: 1px solid var(--ui-border);
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--ui-panel-strong) 58%, transparent);
 }
 .bestiary-pattern-label {
   display: flex;

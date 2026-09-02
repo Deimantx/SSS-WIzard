@@ -47,7 +47,7 @@
   place-items: center;
   width: auto;
   height: auto;
-  color: var(--ui-text-muted);
+  color: inherit;
   font-style: normal;
 }
 .combat-pattern-node i svg {

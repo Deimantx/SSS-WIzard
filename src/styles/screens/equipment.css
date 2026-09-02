@@ -53,11 +53,11 @@
 .equipment-stat-groups { display: grid; gap: 13px; }
 .equipment-stat-group { display: grid; gap: 6px; }
 .equipment-stat-group > span, .equipment-preview-label { color: var(--ui-accent); font: var(--text-micro) var(--font-mono); letter-spacing: .14em; }
-.equipment-stat-group > div { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--ui-border); }
-.equipment-stat-group > .game-tooltip-trigger { display: block; }
-.equipment-stat-group > .game-tooltip-trigger > div { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--ui-border); }
-.equipment-stat-group small { color: var(--ui-text-muted); font-size: var(--text-xs); }
-.equipment-stat-group strong { color: var(--ui-text); font: var(--text-xs) var(--font-mono); }
+.equipment-stat-group > .game-tooltip-trigger, .equipment-stat-group > .equipment-stat-row { display: block; }
+.equipment-stat-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--ui-border); }
+.equipment-stat-label { min-width: 0; color: var(--ui-text-muted); font: var(--text-xs) var(--font-sans); }
+.equipment-stat-value { color: var(--ui-text); font: var(--text-xs) var(--font-mono); }
+.equipment-stat-group .equipment-stat-value { flex: 0 0 auto; }
 .equipment-screen .equipment-note { margin-top: 14px; }
 .equipment-screen .equipment-note svg { flex: 0 0 auto; color: var(--ui-success); }
 .equipment-inspector-hero { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 11px; align-items: start; }
@@ -78,9 +78,10 @@
 .equipment-ring-replace input { margin-right: 7px; accent-color: var(--ui-accent); }
 .equipment-preview-impact { display: grid; gap: 6px; margin-top: 13px; }
 .equipment-impact-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: center; gap: 7px; padding: 6px 0; border-bottom: 1px solid var(--ui-border); font-size: var(--text-micro); }
-.equipment-impact-row span { color: var(--ui-text-muted); }
-.equipment-impact-row small { color: var(--ui-text-muted); }
-.equipment-impact-row strong { color: var(--ui-text); }
+.equipment-impact-row .equipment-stat-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.equipment-impact-row .equipment-stat-current { color: var(--ui-text-muted); }
+.equipment-impact-row .equipment-stat-value { white-space: nowrap; }
+.equipment-impact-row .equipment-stat-delta { font: var(--text-xs) var(--font-mono); white-space: nowrap; }
 .equipment-impact-row em { font-style: normal; font-family: var(--font-mono); }
 .equipment-impact-row em.negative { color: var(--ui-danger); }
 .equipment-inspector-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 15px; }

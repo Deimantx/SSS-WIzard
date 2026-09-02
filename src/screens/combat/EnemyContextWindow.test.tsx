@@ -25,14 +25,18 @@ describe('EnemyContextWindow', () => {
 
   it('anchors to the enemy card and clamps to a narrow viewport', () => {
     expect(getEnemyContextPosition({ left: 700, top: 80, width: 300 }, { width: 800, height: 600 })).toEqual({ top: 80, left: 484, width: 300, maxHeight: 504 })
+    expect(getEnemyContextPosition({ left: 40, top: 560, width: 300 }, { width: 800, height: 600 })).toEqual({ top: 324, left: 40, width: 300, maxHeight: 260 })
     expect(getEnemyContextPosition({ left: 0, top: 0, width: 600 }, { width: 320, height: 240 })).toEqual({ top: 16, left: 16, width: 288, maxHeight: 208 })
   })
 
-  it('keeps Defense and derived Damage Reduction visible in enemy stats', () => {
+  it('keeps Defense and derived Damage Reduction visible in enemy stats', async () => {
     render(<TooltipProvider><EnemyStatsContent /></TooltipProvider>)
     expect(screen.getByText('Defense')).toBeTruthy()
     expect(screen.getByText('Damage Reduction')).toBeTruthy()
+    expect(screen.getByText('0.36/s')).toBeTruthy()
     expect(screen.getByText('9.1%')).toBeTruthy()
+    screen.getByText('Basic Attack Speed').parentElement!.focus()
+    expect((await screen.findByRole('tooltip')).textContent).toContain('Current Basic Attack Time: 2.80s.')
   })
 
   it('switches Intel and Loot in place without modal body locking', async () => {

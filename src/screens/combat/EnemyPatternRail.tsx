@@ -2,8 +2,8 @@ import { buildCombatActionPresentation, classifyEnemyPatternStep } from '../../g
 import type { ActionPattern } from '../../game/systems/combat/combatTypes'
 import type { MonsterDefinition } from '../../game/content/monsters'
 import { GameTooltip } from '../../components/ui'
-import { EnemyActionTooltip, buildBasicAttackPresentation } from './EnemyActionTooltip'
-import { EnemyPatternIcon, getEnemyPatternIconLabel } from './EnemyPatternIcon'
+import { EnemyActionTooltip, buildBasicAttackPresentation } from '../../components/combat/EnemyActionTooltip'
+import { EnemyPatternIcon, getEnemyPatternIconLabel } from '../../components/combat/EnemyPatternIcon'
 
 export function EnemyPatternRail({ pattern, enemy, currentStepIndex, currentStepId, currentActionId, currentPatternOriginId, currentProgress, currentActionDurationMs }: { pattern?: ActionPattern; enemy?: MonsterDefinition | null; currentStepIndex: number; currentStepId: string | null; currentActionId: string | null; currentPatternOriginId: string | null; currentProgress?: number | null; currentActionDurationMs?: number }) {
   if (!pattern) return <div className="combat-pattern-empty">No enemy pattern loaded.</div>

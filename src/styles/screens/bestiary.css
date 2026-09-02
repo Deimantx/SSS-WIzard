@@ -50,11 +50,6 @@
 .bestiary-trait-list span, .bestiary-ability-list span { color: var(--ui-text-muted); font-size: var(--text-xs); line-height: 1.45; }
 .bestiary-ability-list > div > div { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .bestiary-ability-list small, .bestiary-loot-row small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
-.bestiary-sequence { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; color: var(--ui-text-muted); }
-.bestiary-sequence span { display: inline-flex; align-items: center; gap: 5px; padding: 6px 7px; border: 1px solid var(--ui-border); border-radius: 5px; font: var(--text-micro) var(--font-mono); }
-.bestiary-sequence span.special { border-color: color-mix(in srgb, var(--ui-secondary) 45%, var(--ui-border)); color: var(--ui-secondary); background: color-mix(in srgb, var(--ui-secondary) 8%, transparent); }
-.bestiary-sequence b { color: var(--ui-text-muted); font-weight: 400; }
-.bestiary-sequence em { color: var(--bestiary-color); font: var(--text-micro) var(--font-mono); font-style: normal; }
 .bestiary-loot-row { display: grid; grid-template-columns: 27px minmax(0, 1fr) auto; align-items: center; gap: 7px; padding: 7px; border: 1px solid var(--ui-border); border-radius: 6px; }
 .bestiary-loot-row > div { display: grid; gap: 3px; min-width: 0; }
 .bestiary-loot-row .status { white-space: nowrap; }
@@ -69,4 +64,177 @@
   .bestiary-portrait.boss { width: 84px; height: 84px; font-size: 36px; }
   .bestiary-loot-row { grid-template-columns: 27px minmax(0, 1fr); }
   .bestiary-loot-row .status { grid-column: 2; width: fit-content; }
+}
+
+/* Dossier combat data uses the same readable primitives as live Enemy Intel. */
+.bestiary-stat-grid {
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  gap: 7px;
+}
+.bestiary-stat-grid > .game-tooltip-trigger,
+.bestiary-defence-list > .game-tooltip-trigger,
+.bestiary-ability-list > .game-tooltip-trigger {
+  display: block;
+  min-width: 0;
+}
+.bestiary-stat-row {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  min-height: 52px;
+  padding: 8px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--ui-panel-strong) 70%, transparent);
+}
+.bestiary-stat-row span {
+  overflow: hidden;
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-sans);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bestiary-stat-row strong {
+  color: var(--ui-text-soft);
+  font: var(--text-xs) var(--font-mono);
+}
+.bestiary-stat-row:focus-visible,
+.bestiary-defence-row:focus-visible,
+.bestiary-ability-card:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+.bestiary-defence-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.bestiary-defence-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+  color: var(--ui-text-muted);
+  font-size: var(--text-xs);
+}
+.bestiary-defence-row strong {
+  color: var(--ui-text-soft);
+  font: var(--text-micro) var(--font-mono);
+  text-align: right;
+}
+.bestiary-defence-row.is-weakness strong { color: var(--ui-success); }
+.bestiary-defence-row.is-immunity strong { color: var(--ui-warning); }
+.bestiary-ability-list { gap: 6px; }
+.bestiary-ability-card {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--ui-panel-strong) 58%, transparent);
+}
+.bestiary-ability-card > div:first-child {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.bestiary-ability-card strong {
+  overflow: hidden;
+  color: var(--ui-text);
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bestiary-ability-card small {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--semantic-time);
+  font: 10px var(--font-mono);
+  white-space: nowrap;
+}
+.bestiary-ability-card p {
+  margin: 0;
+  color: var(--ui-text-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.bestiary-ability-effects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.bestiary-pattern-list { display: grid; gap: 8px; }
+.enemy-pattern-preview {
+  position: relative;
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  padding: 8px 28px 8px 9px;
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--ui-panel-strong) 58%, transparent);
+}
+.enemy-pattern-preview-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.enemy-pattern-preview-head strong {
+  color: var(--ui-text-soft);
+  font: var(--text-micro) var(--font-mono);
+  letter-spacing: .08em;
+}
+.enemy-pattern-preview-head span,
+.enemy-pattern-preview-repeat {
+  color: var(--bestiary-color, var(--ui-accent));
+  font: var(--text-micro) var(--font-mono);
+}
+.enemy-pattern-preview-sequence {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+}
+.enemy-pattern-preview-node-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.enemy-pattern-preview-node-wrap > .game-tooltip-trigger { width: auto; }
+.enemy-pattern-preview-node {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  max-width: 170px;
+  padding: 5px 7px;
+  border: 1px solid var(--ui-border);
+  border-radius: 5px;
+  color: var(--ui-text-muted);
+  background: var(--ui-panel);
+  cursor: pointer;
+  font: var(--text-micro) var(--font-sans);
+  text-align: left;
+}
+.enemy-pattern-preview-node:hover,
+.enemy-pattern-preview-node:focus-visible { border-color: var(--ui-accent); color: var(--ui-text); outline: none; }
+.enemy-pattern-preview-node i { display: inline-flex; color: currentColor; }
+.enemy-pattern-preview-node > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.enemy-pattern-preview-arrow { color: var(--ui-text-muted); font-weight: 400; }
+.enemy-pattern-preview-repeat { position: absolute; right: 9px; bottom: 9px; }
+
+@media (max-width: 520px) {
+  .bestiary-defence-list { grid-template-columns: 1fr; }
+  .enemy-pattern-preview-node { max-width: 145px; }
 }

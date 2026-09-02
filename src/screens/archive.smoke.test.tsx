@@ -45,6 +45,7 @@ describe('archive screens', () => {
     expect(screen.getByText('TRAITS')).toBeTruthy()
     expect(screen.getByText('ACTIONS')).toBeTruthy()
     expect(screen.getByText('ACTION PATTERN')).toBeTruthy()
+    expect(screen.queryByText('ACTION SEQUENCE')).toBeNull()
     expect(screen.getByText('LOOT TABLE')).toBeTruthy()
   })
 })

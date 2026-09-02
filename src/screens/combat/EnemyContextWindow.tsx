@@ -5,7 +5,7 @@ import { DUNGEONS } from '../../game/content/dungeons/dungeons'
 import { ITEMS } from '../../game/content/items/items'
 import { isBossMonster, MONSTERS } from '../../game/content/monsters'
 import { getTraitDefinitions } from '../../game/content/traits'
-import { buildCombatActionPresentation } from '../../game/presentation/combat'
+import { buildCombatActionPresentation, buildEnemyCombatStatRows, formatResistanceEffect } from '../../game/presentation/combat'
 import type { DungeonId, MonsterId } from '../../game/types'
 import { formatNumber, formatTime } from '../../game/utils'
 import { useGameStore } from '../../store/gameStore'
@@ -14,8 +14,9 @@ import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { ItemIcon, ItemTooltip } from '../../components/ui/item'
 import { MonsterPortrait } from './MonsterPortrait'
 import { getEnemyCombatStats } from '../../game/systems/combat/combatStats'
-import { BLOCK_DAMAGE_REDUCTION, MAX_RESISTANCE } from '../../game/core/balance/combatStats'
-import { CombatEffectChip } from './CombatEffectChip'
+import { CombatEffectChip } from '../../components/combat/CombatEffectChip'
+import { EnemyCombatStatList } from '../../components/combat/EnemyCombatStatList'
+import { EnemyActionTooltip } from '../../components/combat/EnemyActionTooltip'
 
 export type EnemyContextMode = 'intel' | 'stats' | 'loot'
 
@@ -37,15 +38,22 @@ export interface EnemyContextPosition {
   maxHeight: number
 }
 
+export const MIN_ENEMY_CONTEXT_HEIGHT = 260
+
 /** Anchors the non-modal context layer to the Enemy card instead of a side position. */
 export const getEnemyContextPosition = (anchorRect: EnemyContextAnchorRect, viewport: EnemyContextViewport): EnemyContextPosition => {
   const margin = 16
-  const availableWidth = Math.max(1, viewport.width - margin * 2)
+  const horizontalMargin = Math.min(margin, Math.max(0, viewport.width / 2))
+  const verticalMargin = Math.min(margin, Math.max(0, viewport.height / 2))
+  const availableWidth = Math.max(1, viewport.width - horizontalMargin * 2)
   const width = Math.min(Math.max(1, anchorRect.width), availableWidth)
-  const maxLeft = Math.max(margin, viewport.width - width - margin)
-  const left = Math.min(maxLeft, Math.max(margin, anchorRect.left))
-  const top = Math.min(Math.max(margin, anchorRect.top), Math.max(margin, viewport.height - margin))
-  return { top, left, width, maxHeight: Math.max(1, viewport.height - top - margin) }
+  const maxLeft = Math.max(horizontalMargin, viewport.width - width - horizontalMargin)
+  const left = Math.min(maxLeft, Math.max(horizontalMargin, anchorRect.left))
+  const safeHeight = Math.max(1, viewport.height - verticalMargin * 2)
+  if (viewport.height < MIN_ENEMY_CONTEXT_HEIGHT + verticalMargin * 2) return { top: verticalMargin, left, width, maxHeight: safeHeight }
+  const maxUsefulTop = Math.max(verticalMargin, viewport.height - verticalMargin - MIN_ENEMY_CONTEXT_HEIGHT)
+  const top = Math.min(Math.max(verticalMargin, anchorRect.top), maxUsefulTop)
+  return { top, left, width, maxHeight: Math.max(MIN_ENEMY_CONTEXT_HEIGHT, viewport.height - top - verticalMargin) }
 }
 
 interface EnemyContextWindowProps {
@@ -108,22 +116,7 @@ export function EnemyContextWindow({ mode, anchorRef, triggerRef, selectedDungeo
 export function EnemyStatsContent() {
   const state = useGameStore((current) => current)
   const stats = getEnemyCombatStats(state)
-  const rows: Array<[string, string, string]> = [
-    ['Max Health', formatNumber(stats.maxHealth), 'Maximum Health for the current encounter.'],
-    ['Basic Attack Damage', formatNumber(stats.basicAttackDamage), 'Raw damage of the enemy Basic Attack before mitigation.'],
-    ['Basic Attack Speed', `${stats.basicAttackSpeedMultiplier.toFixed(2)}x`, 'Multiplier applied to the enemy Basic Attack interval.'],
-    ['Defense', formatNumber(stats.defense), 'A rating that reduces Direct Hit damage with diminishing returns. Damage over Time ignores Defense.'],
-    ['Damage Reduction', `${(stats.defenseReduction * 100).toFixed(1)}%`, 'Current Direct Hit reduction produced by Defense. Capped at 80%. Damage over Time ignores Defense.'],
-    ['Crit Chance', `${Math.round(stats.critChance * 100)}%`, 'Chance for a direct enemy hit to critically strike.'],
-    ['Crit Damage', `${Math.round(stats.critDamageMultiplier * 100)}%`, 'Multiplier applied to a critical direct hit.'],
-  ]
-  if (stats.blockChance > 0) rows.push(['Block Chance', `${Math.round(stats.blockChance * 100)}%`, `Chance for a Direct Hit to be Blocked. A successful Block currently reduces that hit by ${Math.round(BLOCK_DAMAGE_REDUCTION * 100)}%. Damage over Time cannot be Blocked.`])
-  if (stats.healingDoneBonus !== 0) rows.push(['Healing Done', `${Math.round(stats.healingDoneBonus * 100)}%`, 'Bonus applied to the enemy healing effects.'])
-  if (stats.barrierPowerBonus !== 0) rows.push(['Barrier Power', `${Math.round(stats.barrierPowerBonus * 100)}%`, 'Bonus applied to the enemy Barrier effects.'])
-  if (stats.damageOverTimeBonus !== 0) rows.push(['Damage over Time', `${Math.round(stats.damageOverTimeBonus * 100)}%`, 'Bonus applied only to the enemy periodic damage effects.'])
-  if (stats.statusDurationBonus !== 0) rows.push(['Status Duration', `${Math.round(stats.statusDurationBonus * 100)}%`, 'Bonus to outgoing status duration.'])
-  Object.entries(stats.resistances).filter(([, value]) => Math.abs(value ?? 0) > 0.0001).forEach(([type, value]) => rows.push([`${pretty(type)} Resistance`, `${Math.round((value ?? 0) * 100)}%`, `Reduces damage of this type. Ordinary Resistance is capped at ${Math.round(MAX_RESISTANCE * 100)}%. Negative Resistance increases damage taken.`]))
-  return <section className="enemy-stats-content"><div className="enemy-stats-grid">{rows.map(([label, value, description]) => <GameTooltip key={label} block content={<TooltipContent title={label} description={description} />}><div tabIndex={0} className="enemy-stat-row"><span>{label}</span><strong>{value}</strong></div></GameTooltip>)}</div></section>
+  return <section className="enemy-stats-content"><EnemyCombatStatList rows={buildEnemyCombatStatRows(stats)} className="enemy-stats-grid" rowClassName="enemy-stat-row" /></section>
 }
 
 export function EnemyIntelContent({ selectedDungeonId }: { selectedDungeonId: DungeonId }) {
@@ -142,18 +135,18 @@ function IntelTraits({ monsterId }: { monsterId: MonsterId }) {
 function ResistanceIntel({ monsterId }: { monsterId: MonsterId }) {
   const monster = MONSTERS[monsterId]
   const state = useGameStore((current) => current)
-  const resistances = Object.entries(getEnemyCombatStats(state).resistances).filter(([, value]) => Math.abs(value ?? 0) > 0.0001)
+  const stats = getEnemyCombatStats(state)
+  const resistances = buildEnemyCombatStatRows(stats).filter((row) => row.group === 'resistance')
   const immunities = monster.damageImmunities ?? []
   const statusImmunities = monster.statusImmunities ?? []
   const statusTagImmunities = monster.statusTagImmunities ?? []
   const hasAny = resistances.length || immunities.length || statusImmunities.length || statusTagImmunities.length
-  return <section className="enemy-context-section"><div className="combat-subsection-label">DEFENCES</div>{hasAny ? <div className="enemy-intel-defences">{resistances.map(([type, value]) => <div key={type} className={`enemy-intel-defence ${value as number < 0 ? 'is-weakness' : 'is-resistance'}`}><span className={`damage-type damage-${type}`}>{pretty(type)}</span><strong>{Math.round(Math.abs(value as number) * 100)}% {value as number > 0 ? 'Resistance' : 'Weakness'}</strong></div>)}{immunities.map((type) => <div key={`immune-${type}`} className="enemy-intel-defence is-immunity"><span className={`damage-type damage-${type}`}>{pretty(type)}</span><strong>IMMUNE</strong></div>)}{statusImmunities.length > 0 && <div className="enemy-intel-defence is-immunity"><span>Status effects</span><strong>{statusImmunities.map(pretty).join(', ')}</strong></div>}{statusTagImmunities.length > 0 && <div className="enemy-intel-defence is-immunity"><span>Status categories</span><strong>{statusTagImmunities.map(pretty).join(', ')}</strong></div>}</div> : <p className="muted">No explicit defences.</p>}</section>
+  return <section className="enemy-context-section"><div className="combat-subsection-label">DEFENCES</div>{hasAny ? <div className="enemy-intel-defences">{resistances.map((row) => { const type = row.id.replace('resistance-', ''); const value = stats.resistances[type as keyof typeof stats.resistances] ?? 0; return <div key={row.id} className={`enemy-intel-defence ${value < 0 ? 'is-weakness' : 'is-resistance'}`}><span className={`damage-type damage-${type}`}>{pretty(type)}</span><strong>{formatResistanceEffect(value)}</strong></div> })}{immunities.map((type) => <div key={`immune-${type}`} className="enemy-intel-defence is-immunity"><span className={`damage-type damage-${type}`}>{pretty(type)}</span><strong>IMMUNE</strong></div>)}{statusImmunities.length > 0 && <div className="enemy-intel-defence is-immunity"><span>Status effects</span><strong>{statusImmunities.map(pretty).join(', ')}</strong></div>}{statusTagImmunities.length > 0 && <div className="enemy-intel-defence is-immunity"><span>Status categories</span><strong>{statusTagImmunities.map(pretty).join(', ')}</strong></div>}</div> : <p className="muted">No explicit defences.</p>}</section>
 }
 
 function ActionIntel({ monsterId }: { monsterId: MonsterId }) {
-  const activePattern = useGameStore((state) => state.combat.enemyActionPatternId)
   const monster = MONSTERS[monsterId]
-  return <section className="enemy-context-section"><div className="combat-subsection-label">ACTIONS</div><div className="enemy-intel-actions">{Object.values(monster.actions).map((action) => { const presentation = buildCombatActionPresentation(action); return <GameTooltip key={action.id} block wide content={<TooltipContent title={presentation.name} description={presentation.description}><div className="tooltip-section"><small>ACTION TIME</small><p>{formatTime(presentation.actionTimeMs)}</p></div><div className="enemy-intel-tooltip-effects">{presentation.effects.map((effect, index) => <CombatEffectChip detailed key={`${effect.label}-${index}`} effect={effect} />)}</div></TooltipContent>}><div tabIndex={0} className={`enemy-intel-action${presentation.effects[0] ? ` effect-tone-${presentation.effects[0].tone}` : ''}`}><div><strong>{presentation.name}</strong><span><Clock3 size={11} aria-hidden="true" />{formatTime(presentation.actionTimeMs)}</span></div><p>{presentation.description}</p><div className="enemy-intel-action-effects">{presentation.effects.map((effect, index) => <CombatEffectChip key={`${effect.label}-${index}`} effect={effect} />)}</div></div></GameTooltip>})}</div><div className="enemy-intel-pattern"><div className="combat-subsection-label">ACTION SEQUENCE</div><div className="enemy-intel-pattern-rail">{Object.values(monster.actionPatterns).map((pattern, index) => <div className={`enemy-intel-pattern-line${pattern.id === activePattern ? ' is-active' : ''}`} key={pattern.id}><span>{pattern.id === activePattern ? 'CURRENT' : index === 0 ? 'STANDARD' : 'ALTERNATE'}</span><strong>{pattern.steps.map((step) => step.type === 'basic' ? 'Basic Attack' : monster.actions[step.actionId]?.name ?? 'Action').join(' → ')}</strong></div>)}</div></div></section>
+  return <section className="enemy-context-section"><div className="combat-subsection-label">ACTIONS</div><div className="enemy-intel-actions">{Object.values(monster.actions).map((action) => { const presentation = buildCombatActionPresentation(action); return <GameTooltip key={action.id} block wide content={<EnemyActionTooltip action={presentation} />}><div tabIndex={0} className={`enemy-intel-action${presentation.effects[0] ? ` effect-tone-${presentation.effects[0].tone}` : ''}`}><div><strong>{presentation.name}</strong><span><Clock3 size={11} aria-hidden="true" />{formatTime(presentation.actionTimeMs)}</span></div><p>{presentation.description}</p><div className="enemy-intel-action-effects">{presentation.effects.map((effect, index) => <CombatEffectChip key={`${effect.label}-${index}`} effect={effect} />)}</div></div></GameTooltip>})}</div></section>
 }
 
 export function EnemyLootContent({ selectedDungeonId }: { selectedDungeonId: DungeonId }) {

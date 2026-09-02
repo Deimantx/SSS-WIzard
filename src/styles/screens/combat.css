@@ -1955,41 +1955,6 @@
 .combat-effect-line > div small {
   grid-column: 1 / -1;
 }
-.enemy-intel-pattern {
-  padding-top: 10px;
-  margin-top: 10px;
-  border-top: 1px solid var(--ui-border);
-}
-.enemy-intel-pattern-rail {
-  display: flex;
-  gap: 5px;
-  overflow-x: auto;
-  padding-top: 7px;
-  scrollbar-width: thin;
-}
-.enemy-intel-pattern-line {
-  display: grid;
-  gap: 3px;
-  min-width: 150px;
-  padding: 6px 7px;
-  border: 1px solid var(--ui-border);
-  border-radius: 5px;
-}
-.enemy-intel-pattern-line span {
-  color: var(--ui-text-muted);
-  font: var(--text-micro) var(--font-mono);
-}
-.enemy-intel-pattern-line strong {
-  overflow: hidden;
-  color: var(--ui-text-soft);
-  font-size: 9px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.enemy-intel-pattern-line.is-active {
-  border-color: color-mix(in srgb, var(--ui-accent) 54%, var(--ui-border));
-  background: var(--ui-accent-soft);
-}
 .enemy-context-empty {
   display: grid;
   gap: 7px;
@@ -3030,4 +2995,40 @@
   .combat-resource-trail,
   .combat-flow-pattern-node,
   .spell-combat-cooldown-overlay { transition: none; }
+}
+
+/* Shared enemy context readability and stat presentation. */
+.enemy-context-body {
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.enemy-stats-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.enemy-intel-action strong {
+  color: var(--ui-text);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: normal;
+}
+.enemy-intel-action p {
+  font-size: 11px;
+  line-height: 1.5;
+}
+.enemy-intel-action > div:first-child > span {
+  font-size: 10.5px;
+  line-height: 1.3;
+}
+.enemy-intel-action-effect {
+  font-size: 9.5px;
+}
+.enemy-intel-action-effect small {
+  font-size: 9px;
+}
+@media (max-width: 520px) {
+  .enemy-stats-grid { grid-template-columns: 1fr; }
 }

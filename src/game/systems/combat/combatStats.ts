@@ -1,6 +1,6 @@
 import { MONSTERS } from '../../content/monsters'
 import { BALANCE } from '../../core/balance/balance'
-import { DEFENSE_K, MAX_BLOCK_CHANCE, MAX_CRIT_CHANCE, MAX_CRIT_DAMAGE_MULTIPLIER, MAX_DEFENSE_REDUCTION, MAX_RESISTANCE, MIN_CRIT_DAMAGE_MULTIPLIER, MIN_RESISTANCE } from '../../core/balance/combatStats'
+import { DEFAULT_COMBAT_SPEED_MULTIPLIER, DEFAULT_ENEMY_CRIT_CHANCE, DEFAULT_ENEMY_CRIT_DAMAGE_MULTIPLIER, DEFAULT_ENEMY_DEFENSE, DEFENSE_K, MAX_BLOCK_CHANCE, MAX_CRIT_CHANCE, MAX_CRIT_DAMAGE_MULTIPLIER, MAX_DEFENSE_REDUCTION, MAX_RESISTANCE, MIN_CRIT_DAMAGE_MULTIPLIER, MIN_RESISTANCE } from '../../core/balance/combatStats'
 import { getEquipmentStats } from '../../core/equipment/equipmentStats'
 import { getManaCapacityBreakdown, getManaRegenBreakdown } from '../../engine/channelingEngine'
 import { getFocusCapacityBreakdown } from '../focus/focusCapacity'
@@ -10,7 +10,7 @@ import type { CombatActor } from './magnitude'
 import type { CombatSource, DamageType } from './combatTypes'
 import { getCombatModifiers, getResistance } from './modifiers'
 
-export { BLOCK_DAMAGE_REDUCTION, DEFENSE_K, MAX_BLOCK_CHANCE, MAX_CRIT_CHANCE, MAX_CRIT_DAMAGE_MULTIPLIER, MAX_DEFENSE_REDUCTION, MAX_RESISTANCE, MIN_CRIT_DAMAGE_MULTIPLIER, MIN_RESISTANCE } from '../../core/balance/combatStats'
+export { BLOCK_DAMAGE_REDUCTION, DEFAULT_COMBAT_SPEED_MULTIPLIER, DEFAULT_ENEMY_CRIT_CHANCE, DEFAULT_ENEMY_CRIT_DAMAGE_MULTIPLIER, DEFAULT_ENEMY_DEFENSE, DEFENSE_K, MAX_BLOCK_CHANCE, MAX_CRIT_CHANCE, MAX_CRIT_DAMAGE_MULTIPLIER, MAX_DEFENSE_REDUCTION, MAX_RESISTANCE, MIN_CRIT_DAMAGE_MULTIPLIER, MIN_RESISTANCE } from '../../core/balance/combatStats'
 
 const DAMAGE_TYPES: readonly DamageType[] = ['physical', 'arcane', 'fire', 'water', 'earth', 'air']
 
@@ -40,7 +40,7 @@ export interface CombatStats {
 
 const finite = (value: number | undefined, fallback = 0) => Number.isFinite(value) ? value as number : fallback
 const clampPercent = (value: number, min: number, max: number) => Math.min(max, Math.max(min, finite(value)))
-const clampSpeed = (value: number) => Math.min(10, Math.max(0.1, finite(value, 1)))
+const clampSpeed = (value: number) => Math.min(10, Math.max(0.1, finite(value, DEFAULT_COMBAT_SPEED_MULTIPLIER)))
 
 export const getDefenseReductionFromRating = (defense: number) => {
   const rating = Math.max(0, finite(defense))
@@ -140,19 +140,19 @@ export const getEnemyCombatStats = getEnemyStats
 export const getCombatStats = (state: GameState, actor: CombatActor) => actor === 'player' ? getPlayerCombatStats(state) : getEnemyCombatStats(state)
 
 export const getDefense = (state: GameState, actor: CombatActor) => {
-  const base = actor === 'player' ? BALANCE.player.baseDefense : (getEnemyBase(state)?.defense ?? 10)
+  const base = actor === 'player' ? BALANCE.player.baseDefense : (getEnemyBase(state)?.defense ?? DEFAULT_ENEMY_DEFENSE)
   return Math.max(0, base + getCombatModifiers(state, actor, 'defense-flat'))
 }
 
 export const getDefenseReduction = (state: GameState, actor: CombatActor) => getDefenseReductionFromRating(getDefense(state, actor))
 
 export const getCritChance = (state: GameState, actor: CombatActor, source?: CombatSource) => {
-  const base = actor === 'player' ? BALANCE.player.baseCritChance : (getEnemyBase(state)?.critChance ?? 0.05)
+  const base = actor === 'player' ? BALANCE.player.baseCritChance : (getEnemyBase(state)?.critChance ?? DEFAULT_ENEMY_CRIT_CHANCE)
   return clampPercent(base + getCombatModifiers(state, actor, 'crit-chance', { source, sourceTags: source?.tags }), 0, MAX_CRIT_CHANCE)
 }
 
 export const getCritDamageMultiplier = (state: GameState, actor: CombatActor, source?: CombatSource) => {
-  const base = actor === 'player' ? BALANCE.player.baseCritDamage : (getEnemyBase(state)?.critDamage ?? 1.5)
+  const base = actor === 'player' ? BALANCE.player.baseCritDamage : (getEnemyBase(state)?.critDamage ?? DEFAULT_ENEMY_CRIT_DAMAGE_MULTIPLIER)
   return clampPercent(base + getCombatModifiers(state, actor, 'crit-damage', { source, sourceTags: source?.tags }), MIN_CRIT_DAMAGE_MULTIPLIER, MAX_CRIT_DAMAGE_MULTIPLIER)
 }
 

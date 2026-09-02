@@ -5,7 +5,7 @@ import { appendLog, playerBasicDamage } from '../../engine'
 import type { GameState, SpellId, StatusId, TraitId } from '../../types'
 import { applyStatus, cleanseStatuses, dispelStatuses, removeStatus } from './statusRuntime'
 import type { CombatActor } from './magnitude'
-import { getActorHealth, resolveMagnitude } from './magnitude'
+import { getActorHealth, isCombatActorAlive, resolveMagnitude } from './magnitude'
 import { consumeBarrier, gainBarrierResult, gainBarrier as gainBarrierRuntime, getActiveBarrier } from './barrierRuntime'
 import { getCombatModifiers, getResistance, isImmuneToDamage } from './modifiers'
 import { BLOCK_DAMAGE_REDUCTION, getBlockChance, getCritChance, getCritDamageMultiplier, getDefense, getDefenseReduction } from './combatStats'
@@ -148,6 +148,9 @@ const calculateCombatDamageWithRolls = (state: GameState, raw: number, damageTyp
 export const calculateCombatDamage = (state: GameState, raw: number, damageType: DamageType, source: CombatSource, target: CombatActor, tags: CombatTag[] = source.tags ?? []): DamageBreakdown => calculateCombatDamageWithRolls(state, raw, damageType, source, target, tags)
 
 const applyDamage = (state: GameState, components: Array<{ raw: number; damageType: DamageType }>, source: CombatSource, target: CombatActor, tags: CombatTag[], execute: ExecuteCombatEffects, depth: number, uiEvents?: CombatEventSink, resolution?: CombatResolutionContext) => {
+  // A dead or missing target is not a Hit target. This guard must precede all
+  // direct-hit RNG so post-lethal effects cannot shift deterministic state.
+  if (!isCombatActorAlive(state, target)) return 0
   const rolls: DamageRolls = {}
   if (isDirectHit(tags)) {
     rolls.critical = nextCombatRandom(state) < getCritChance(state, source.actor, source)
@@ -213,6 +216,7 @@ const applyDamage = (state: GameState, components: Array<{ raw: number; damageTy
 }
 
 const applyHealing = (state: GameState, raw: number, source: CombatSource, target: CombatActor, tags: CombatTag[], execute: ExecuteCombatEffects, depth: number, uiEvents?: CombatEventSink, resolution?: CombatResolutionContext) => {
+  if (!isCombatActorAlive(state, target)) return 0
   const amount = Math.max(0, Math.round(raw * (1 + getCombatModifiers(state, source.actor, 'healing-done-percent', { source, sourceTags: tags }))))
   const received = Math.max(0, 1 + getCombatModifiers(state, target, 'healing-received-percent', { source, sourceTags: tags }))
   const before = getActorHealth(state, target)
@@ -248,7 +252,7 @@ const applyHealing = (state: GameState, raw: number, source: CombatSource, targe
 const executeResource = (state: GameState, effect: Extract<CombatEffect, { type: 'restore-resource' | 'drain-resource' }>, source: CombatSource) => {
   if (effect.resource !== 'mana') return 0
   const actor = targetActor(source, effect.target)
-  if (actor !== 'player') return 0
+  if (actor !== 'player' || !isCombatActorAlive(state, actor)) return 0
   const amount = Math.round(resolveMagnitude(state, effect.magnitude, source, actor))
   const before = state.player.mana
   state.player.mana = effect.type === 'restore-resource' ? Math.min(state.player.maxMana, state.player.mana + amount) : Math.max(0, state.player.mana - amount)
@@ -261,6 +265,9 @@ export const executeCombatEffect = (state: GameState, effect: CombatEffect, sour
   if (depth >= MAX_EFFECT_DEPTH) return
   const cascade = resolution ?? createCombatResolutionContext()
   const target = targetActor(source, effect.target)
+  // Liveness is target-relative: a detached/dead source may still resolve an
+  // effect against a living opponent, while a corpse cannot be affected.
+  if (!isCombatActorAlive(state, target)) return
   const tags = sourceTags(source, 'tags' in effect ? effect.tags : undefined)
   switch (effect.type) {
     case 'deal-damage': {
@@ -331,7 +338,7 @@ export const executeCombatEffect = (state: GameState, effect: CombatEffect, sour
       }
       break
     }
-    case 'set-action-pattern': if (target === 'enemy') setEnemyActionPattern(state, effect.patternId, uiEvents); break
+    case 'set-action-pattern': if (target === 'enemy' && isCombatActorAlive(state, target)) setEnemyActionPattern(state, effect.patternId, uiEvents); break
   }
 }
 

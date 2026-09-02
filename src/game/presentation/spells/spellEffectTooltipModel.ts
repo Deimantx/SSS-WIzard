@@ -27,7 +27,10 @@ export interface SpellEffectTooltipModel {
 
 const capitalize = (value: string) => `${value[0]?.toUpperCase() ?? ''}${value.slice(1)}`
 const targetLabel = (target: 'self' | 'opponent') => target === 'self' ? 'Self' : 'Enemy'
-const formatValue = (value: number) => Number.isInteger(value) ? `${value}` : value.toFixed(1)
+const formatValue = (value: number) => {
+  const rounded = Math.round(value * 10) / 10
+  return Number.isInteger(rounded) ? `${rounded}` : rounded.toFixed(1)
+}
 const formatSignedPercent = (value: number) => `${value >= 0 ? '+' : ''}${formatValue(value * 100)}%`
 
 export const formatSpellMagnitude = (magnitude: Magnitude) => {

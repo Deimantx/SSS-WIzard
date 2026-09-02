@@ -1,7 +1,7 @@
 import { appendLog } from '../../engine'
 import type { GameState } from '../../types'
 import type { CombatSource, CombatTag } from './combatTypes'
-import type { CombatActor } from './magnitude'
+import { isCombatActorAlive, type CombatActor } from './magnitude'
 import { getCombatModifiers } from './modifiers'
 
 export interface BarrierOptions {
@@ -44,6 +44,10 @@ export const getNextPlayerBarrierEventMs = (state: GameState): number | null => 
 export const getActiveBarrier = (state: GameState, actor: CombatActor) => getBarrier(state, actor)
 
 export const gainBarrierResult = (state: GameState, raw: number, source: CombatSource, target: CombatActor, tags: CombatTag[], options: BarrierOptions = {}): BarrierGainResult => {
+  if (!isCombatActorAlive(state, target)) {
+    const previous = getBarrier(state, target)
+    return { previous, current: previous, gained: 0, calculatedAmount: 0 }
+  }
   const modifierContext = { source, sourceTags: tags }
   const sourcePower = Math.max(0, 1 + getCombatModifiers(state, source.actor, 'barrier-power-percent', modifierContext))
   const targetPower = Math.max(0, 1 + getCombatModifiers(state, target, 'barrier-received-percent', modifierContext))

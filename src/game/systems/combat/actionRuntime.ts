@@ -1,7 +1,7 @@
 import { MONSTERS } from '../../content/monsters'
 import { appendLog } from '../../engine'
 import type { GameState } from '../../types'
-import type { CombatActor } from './magnitude'
+import { isCombatActorAlive, type CombatActor } from './magnitude'
 import { getCombatModifiers } from './modifiers'
 import { actorCannotAct } from './statusRuntime'
 import { runCombatTriggers, type CombatEventContext } from './triggerRuntime'
@@ -100,10 +100,11 @@ export const initializeEnemyActionRuntime = (state: GameState) => {
 
 export const setEnemyActionPattern = (state: GameState, patternId: string, uiEvents?: CombatEventSink) => {
   const pattern = patternFor(state, patternId)
-  if (!pattern || pattern.steps.length === 0 || !state.combat.enemyId) return false
+  const enemyId = state.combat.enemyId
+  if (!pattern || pattern.steps.length === 0 || !isCombatActorAlive(state, 'enemy') || !enemyId) return false
   state.combat.enemyActionPatternId = pattern.id
   state.combat.enemyNextActionIndex = 0
-  uiEvents?.push({ source: { kind: 'enemy', monsterId: state.combat.enemyId }, sourceKind: 'system', sourceMonsterId: state.combat.enemyId, sourceInstanceKey: state.combat.enemyInstanceKey ?? undefined, dungeonId: state.combat.dungeonId ?? undefined, category: 'pattern', sourceId: pattern.id })
+  uiEvents?.push({ source: { kind: 'enemy', monsterId: enemyId }, sourceKind: 'system', sourceMonsterId: enemyId, sourceInstanceKey: state.combat.enemyInstanceKey ?? undefined, dungeonId: state.combat.dungeonId ?? undefined, category: 'pattern', sourceId: pattern.id })
   return true
 }
 

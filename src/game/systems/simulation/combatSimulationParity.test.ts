@@ -382,4 +382,31 @@ describe('canonical simulation quantum parity', () => {
       random.mockRestore()
     }
   })
+
+  it('keeps a first-Hit lethal multi-hit chain and death transition identical for live and banked callers', () => {
+    const makeFixture = () => {
+      const state = combatFixture()
+      state.debug.freezePlayerActions = true
+      state.debug.freezeEnemyActions = true
+      state.combat.enemyHp = 5
+      state.combat.enemyMaxHp = 5
+      return state
+    }
+    const fine = makeFixture()
+    const coarse = cloneState(fine)
+    const hits = [1, 2, 3].map(() => ({ type: 'deal-damage' as const, target: 'opponent' as const, components: [{ damageType: 'physical' as const, magnitude: { type: 'flat' as const, value: 10 } }], tags: ['direct' as const] }))
+    const source = { actor: 'player' as const, kind: 'spell' as const, sourceId: 'parity-three-hit', tags: ['spell' as const, 'direct' as const] }
+
+    executeCombatEffects(fine, hits, source)
+    executeCombatEffects(coarse, hits, source)
+    expect(fine.combat.enemyHp).toBe(0)
+    expect(coarse.combat.enemyHp).toBe(0)
+
+    advanceFine(fine, 1)
+    advanceGameState(coarse, 1, { mode: 'banked' })
+
+    expect(snapshot(coarse)).toEqual(snapshot(fine))
+    expect(fine.combat.enemyId).toBeNull()
+    expect(fine.combat.enemyHp).toBe(0)
+  })
 })

@@ -2,7 +2,7 @@ import { STATUS_DEFINITIONS } from '../../content/statuses'
 import { MONSTERS } from '../../content/monsters'
 import type { GameState, StatusId } from '../../types'
 import type { CombatActor } from './magnitude'
-import { resolveMagnitude } from './magnitude'
+import { isCombatActorAlive, resolveMagnitude } from './magnitude'
 import { runCombatTriggers } from './triggerRuntime'
 import type { CombatEffect, CombatEventSink, CombatResolutionContext, CombatSource, ActiveStatus, CombatTag, ModifierKey } from './combatTypes'
 import { getCombatModifiers } from './modifiers'
@@ -116,6 +116,7 @@ export interface StatusTickOptions {
 }
 
 export const applyStatus = (state: GameState, actor: CombatActor, statusId: StatusId, source: CombatSource, options: ApplyStatusOptions = {}) => {
+  if (!isCombatActorAlive(state, actor)) return null
   const definition = STATUS_DEFINITIONS[statusId]
   if (!definition) return null
   if (actor === 'enemy' && state.combat.enemyId) {

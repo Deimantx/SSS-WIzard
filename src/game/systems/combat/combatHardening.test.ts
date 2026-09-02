@@ -14,6 +14,7 @@ import { advanceGameState } from '../simulation/advanceGameState'
 import { validateStatusDefinitions, STATUS_DEFINITIONS } from '../../content/statuses'
 import { createCombatValidationContext, isPersistedCombatEffect, validateCombatEffect, validateCombatProvider } from './combatEffectValidation'
 import { getCombatMetricSourceKey } from '../../telemetry/combat/combatTelemetryAggregator'
+import { combatTelemetrySink, useCombatTelemetryStore } from '../../telemetry/combat/combatTelemetryStore'
 import { nextCombatRandom } from './combatRng'
 
 const source = { actor: 'player' as const, kind: 'spell' as const, sourceId: 'hardening-test', school: 'water' as const, tags: ['spell' as const, 'magic' as const, 'water' as const] }
@@ -456,6 +457,139 @@ describe('equipment combat providers', () => {
     const multiEvents: CombatEvent[] = []
     executeCombatEffects(multiHitState, [lethal, lethal], { actor: 'player', kind: 'system', sourceId: 'multi-hit-root' }, undefined, { push: (event) => multiEvents.push(event) })
     expect(multiEvents.filter((event) => event.sourceKind === 'equipment' && event.category === 'system')).toHaveLength(1)
+  })
+
+  it('treats dead or missing targets as no-op before hit RNG, events, and procs', () => {
+    ITEMS[testItemId] = { ...testItem, combat: { rules: [
+      { id: 'damage-dealt-proc', event: 'on-damage-dealt', effects: [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 10 } }] },
+      { id: 'damage-taken-proc', event: 'on-damage-taken', effects: [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 10 } }] },
+      { id: 'spell-hit-proc', event: 'on-spell-hit', effects: [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 10 } }] },
+      { id: 'basic-hit-proc', event: 'on-basic-attack-hit', effects: [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 10 } }] },
+    ] } }
+    const state = stateWithEnemy()
+    state.equipment.ring1 = testItemId
+    state.combat.enemyHp = 0
+    state.combat.enemyBarrier = 25
+    const beforeRng = state.combat.combatRngState
+    const events: CombatEvent[] = []
+    const hit: CombatEffect = { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 100 } }], tags: ['spell', 'direct'] }
+    executeCombatEffects(state, [hit], source, undefined, { push: (event) => events.push(event) })
+    expect(state.combat.combatRngState).toBe(beforeRng)
+    expect(state.combat.enemyHp).toBe(0)
+    expect(state.combat.enemyBarrier).toBe(25)
+    expect(state.combat.playerBarrier).toBe(0)
+    expect(events).toHaveLength(0)
+
+    state.combat.enemyId = null
+    state.combat.enemyHp = 100
+    executeCombatEffects(state, [hit], source, undefined, { push: (event) => events.push(event) })
+    expect(state.combat.combatRngState).toBe(beforeRng)
+    expect(state.combat.enemyHp).toBe(100)
+    expect(events).toHaveLength(0)
+  })
+
+  it('ignores every ordinary effect aimed at a dead actor without blocking living self effects', () => {
+    const state = stateWithEnemy()
+    state.combat.enemyHp = 0
+    state.combat.enemyBarrier = 12
+    state.combat.enemyActionTimerMs = 77
+    state.combat.enemyActionPatternId = 'default'
+    state.player.mana = 50
+    const deadEnemyEffects: CombatEffect[] = [
+      { type: 'heal', target: 'opponent', magnitude: { type: 'flat', value: 40 } },
+      { type: 'gain-barrier', target: 'opponent', magnitude: { type: 'flat', value: 40 } },
+      { type: 'restore-resource', target: 'opponent', resource: 'mana', magnitude: { type: 'flat', value: 40 } },
+      { type: 'drain-resource', target: 'opponent', resource: 'mana', magnitude: { type: 'flat', value: 10 } },
+      { type: 'apply-status', target: 'opponent', statusId: 'burning' },
+      { type: 'modify-action-timer', target: 'opponent', action: 'current', amountMs: 500 },
+      { type: 'set-action-pattern', target: 'opponent', patternId: 'default' },
+    ]
+    executeCombatEffects(state, deadEnemyEffects, source)
+    expect(state.combat.enemyHp).toBe(0)
+    expect(state.combat.enemyBarrier).toBe(12)
+    expect(state.combat.enemyActionTimerMs).toBe(77)
+    expect(state.combat.enemyActionPatternId).toBe('default')
+    expect(state.combat.enemyStatuses).toHaveLength(0)
+    expect(state.player.mana).toBe(50)
+
+    state.player.health = 0
+    state.combat.playerBarrier = 8
+    const playerMana = state.player.mana
+    executeCombatEffects(state, [
+      { type: 'heal', target: 'opponent', magnitude: { type: 'flat', value: 40 } },
+      { type: 'gain-barrier', target: 'opponent', magnitude: { type: 'flat', value: 40 } },
+      { type: 'restore-resource', target: 'opponent', resource: 'mana', magnitude: { type: 'flat', value: 40 } },
+      { type: 'apply-status', target: 'opponent', statusId: 'quickening' },
+      { type: 'modify-action-timer', target: 'opponent', action: 'basic-attack', amountMs: 500 },
+    ], { actor: 'enemy', kind: 'action', sourceId: 'dead-enemy-action' })
+    expect(state.player.health).toBe(0)
+    expect(state.combat.playerBarrier).toBe(8)
+    expect(state.player.mana).toBe(playerMana)
+    expect(state.combat.playerStatuses).toHaveLength(0)
+  })
+
+  it('does not let a lethal reactive heal resurrect the player, but keeps nonlethal healing working', () => {
+    ITEMS[testItemId] = { ...testItem, combat: { rules: [{ id: 'reactive-heal', event: 'on-damage-taken', effects: [{ type: 'heal', target: 'self', magnitude: { type: 'flat', value: 20 } }] }] } }
+    const incoming = { actor: 'enemy' as const, kind: 'action' as const, sourceId: 'reactive-hit', tags: ['physical' as const] }
+    const lethal = stateWithEnemy()
+    lethal.equipment.ring1 = testItemId
+    lethal.player.maxHealth = 100
+    lethal.player.health = 20
+    executeCombatEffects(lethal, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 30 } }] }], incoming)
+    expect(lethal.player.health).toBe(0)
+
+    const nonlethal = stateWithEnemy()
+    nonlethal.equipment.ring1 = testItemId
+    nonlethal.player.maxHealth = 100
+    nonlethal.player.health = 100
+    executeCombatEffects(nonlethal, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 30 } }] }], incoming)
+    expect(nonlethal.player.health).toBe(90)
+  })
+
+  it('skips post-lethal opponent statuses while resolving later self effects', () => {
+    const state = stateWithEnemy()
+    state.combat.enemyHp = 5
+    state.combat.enemyMaxHp = 5
+    const events: CombatEvent[] = []
+    executeCombatEffects(state, [
+      { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 10 } }], tags: ['direct'] },
+      { type: 'apply-status', target: 'opponent', statusId: 'burning', statusSourceKey: 'post-lethal-burning' },
+      { type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 20 } },
+    ], { actor: 'player', kind: 'spell', sourceId: 'post-lethal-chain', tags: ['spell', 'direct'] }, undefined, { push: (event) => events.push(event) })
+    expect(state.combat.enemyHp).toBe(0)
+    expect(state.combat.enemyStatuses).toHaveLength(0)
+    expect(state.combat.playerBarrier).toBe(20)
+    expect(events.some((event) => event.category === 'status' && event.statusId === 'burning' && event.statusPhase === 'apply')).toBe(false)
+  })
+
+  it('counts only the first Hit after a kill and consumes only its direct-hit RNG', () => {
+    ITEMS[testItemId] = { ...testItem, combat: { rules: [{ id: 'multi-hit-kill', event: 'on-kill', effects: [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 15 } }] }] } }
+    useCombatTelemetryStore.getState().clear()
+    try {
+      const state = stateWithEnemy()
+      state.equipment.ring1 = testItemId
+      state.combat.enemyHp = 5
+      state.combat.enemyMaxHp = 5
+      useCombatTelemetryStore.getState().beginRun('whispering-woods')
+      useCombatTelemetryStore.getState().beginEncounter('forest-wisp')
+      const expectedRng = { combatRngState: state.combat.combatRngState }
+      nextCombatRandom(expectedRng)
+      nextCombatRandom(expectedRng)
+      const events: CombatEvent[] = []
+      const sink = { push: (event: CombatEvent) => { events.push(event); combatTelemetrySink.push(event) } }
+      const hits: CombatEffect[] = [1, 2, 3].map(() => ({ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 10 } }], tags: ['direct'] }))
+      executeCombatEffects(state, hits, { actor: 'player', kind: 'spell', sourceId: 'three-hit-spell', tags: ['spell', 'direct'] }, undefined, sink)
+      const damageEvents = events.filter((event) => event.sourceKind === 'spell' && event.category === 'spell')
+      expect(damageEvents).toHaveLength(1)
+      expect(damageEvents[0].healthDamage).toBe(5)
+      expect(state.combat.enemyHp).toBe(0)
+      expect(state.combat.combatRngState).toBe(expectedRng.combatRngState)
+      expect(events.filter((event) => event.sourceKind === 'equipment' && event.category === 'system')).toHaveLength(1)
+      expect(useCombatTelemetryStore.getState().run?.player.damageDone.total).toBe(damageEvents[0].amount)
+      expect(useCombatTelemetryStore.getState().run?.player.damageDone.bySource['spell:three-hit-spell'].events).toBe(1)
+    } finally {
+      useCombatTelemetryStore.getState().clear()
+    }
   })
 
   it('validates malformed Equipment Combat providers through shared validators', () => {

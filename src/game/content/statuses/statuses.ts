@@ -29,7 +29,7 @@ export const STATUS_DEFINITIONS: Record<StatusId, StatusDefinition> = {
     applicationPolicy: 'per-source', stacking: { mode: 'refresh' }, periodic: { intervalMs: 2000, effects: [damage('physical', 3)] }, cleanseable: true, dispellable: false,
   },
   bleeding: {
-    id: 'bleeding', name: 'Bleeding', description: 'Takes 4 Physical damage every 2 seconds.', classification: 'debuff', tags: ['debuff', 'dot', 'physical'], defaultDurationMs: 8000,
+    id: 'bleeding', name: 'Bleeding', description: 'Takes Physical damage over time.', classification: 'debuff', tags: ['debuff', 'dot', 'physical'], defaultDurationMs: 8000,
     applicationPolicy: 'per-source', stacking: { mode: 'refresh' }, periodic: { intervalMs: 2000, effects: [damage('physical', 4)] }, cleanseable: true, dispellable: false,
   },
   chilled: {

@@ -1,6 +1,10 @@
 import { STATUS_DEFINITIONS } from '../../content/statuses/statuses'
+import { formatSpellMagnitude } from '../spells/spellEffectTooltipModel'
 import type { ItemDefinition } from '../../types'
 import type { CombatCondition, CombatEffect, CombatModifier, CombatSource, CombatTag, CombatTriggerRule, DamageType, Magnitude, ModifierKey, StatusId } from '../../systems/combat/combatTypes'
+import { scaleMagnitude } from '../../systems/combat/combatTypes'
+import { COMBAT_MODIFIER_KEYS } from '../../systems/combat/combatEffectValidation'
+import { formatTime } from '../../utils'
 
 export interface EquipmentRulePresentation {
   id: string
@@ -59,7 +63,11 @@ const PERCENT_MODIFIERS = new Set<ModifierKey>([
 
 const titleCase = (value: string) => value.replace(/[-_]/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
 const signed = (value: number, suffix = '') => `${value >= 0 ? '+' : ''}${value}${suffix}`
-const percent = (value: number) => `${signed(Math.round(value * 100), '%')}`
+const formattedPercent = (value: number) => {
+  const rounded = Math.round(value * 1000) / 10
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1)
+}
+const percent = (value: number) => `${value >= 0 ? '+' : ''}${formattedPercent(value)}%`
 const finite = (value: number) => Number.isFinite(value) ? value : 0
 const amount = (value: number) => Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')
 const statusName = (statusId: string) => STATUS_DEFINITIONS[statusId as StatusId]?.name ?? titleCase(statusId)
@@ -95,7 +103,7 @@ const modifierMeaning = (modifier: CombatModifier) => {
 
   const numericValue = finite(modifier.value)
   const value = PERCENT_MODIFIERS.has(key) ? percent(numericValue) : signed(Number(amount(numericValue)))
-  return `${value} ${label}`
+  return `${value} ${label}${modifier.perStack ? ' per stack' : ''}`
 }
 
 const conditionMeaning = (condition: CombatCondition): string => {
@@ -141,7 +149,7 @@ const formatMagnitude = (magnitude: Magnitude, noun: string) => {
   }
 }
 
-const duration = (durationMs: number | null | undefined) => durationMs === null || durationMs === undefined ? null : `${durationMs / 1000}s`
+const duration = (durationMs: number | null | undefined) => durationMs === null || durationMs === undefined ? null : formatTime(durationMs)
 
 const effectMeaning = (effect: CombatEffect): string => {
   switch (effect.type) {
@@ -150,21 +158,57 @@ const effectMeaning = (effect: CombatEffect): string => {
     case 'gain-barrier': return `${effect.mode === 'replace' ? 'Set' : 'Gain'} ${formatMagnitude(effect.magnitude, 'Barrier')}`
     case 'restore-resource': return `Restore ${formatMagnitude(effect.magnitude, 'Mana')}`
     case 'drain-resource': return `Drain ${formatMagnitude(effect.magnitude, 'Mana')}`
-    case 'apply-status': return `Apply ${statusName(effect.statusId)}${duration(effect.durationMs) ? ` for ${duration(effect.durationMs)}` : ''}${effect.stacks && effect.stacks > 1 ? ` (${effect.stacks} stacks)` : ''}`
+    case 'apply-status': {
+      const statusDuration = effect.durationMs === undefined ? STATUS_DEFINITIONS[effect.statusId]?.defaultDurationMs : effect.durationMs
+      const stackText = effect.stacks === undefined ? '' : ` (${effect.stacks} ${effect.stacks === 1 ? 'stack' : 'stacks'})`
+      return `Apply ${statusName(effect.statusId)}${duration(statusDuration) ? ` for ${duration(statusDuration)}` : ''}${stackText}`
+    }
     case 'remove-status': return `Remove ${statusName(effect.statusId)}`
     case 'cleanse': return `Cleanse ${effect.mode === 'tag' ? `${TAG_NAMES[effect.tag as CombatTag]} statuses` : effect.mode === 'one' ? 'one debuff' : 'all debuffs'}`
     case 'dispel': return `Dispel ${effect.mode === 'tag' ? `${TAG_NAMES[effect.tag as CombatTag]} statuses` : effect.mode === 'one' ? 'one buff' : 'all buffs'}`
-    case 'modify-action-timer': return `${effect.amountMs < 0 ? 'Reduce' : 'Increase'} ${effect.action === 'current' ? 'current' : 'Basic Attack'} action time by ${Math.abs(effect.amountMs)}ms`
-    case 'modify-cooldown': return `${effect.amountMs < 0 ? 'Reduce' : 'Increase'} ${effect.spellId ? titleCase(effect.spellId) : 'Spell'} cooldown by ${Math.abs(effect.amountMs)}ms`
+    case 'modify-action-timer': return `${effect.amountMs < 0 ? 'Reduce' : 'Delay'} ${effect.action === 'current' ? 'current action' : 'Basic Attack'} by ${formatTime(Math.abs(effect.amountMs))}`
+    case 'modify-cooldown': return `${effect.amountMs < 0 ? 'Reduce' : 'Increase'} ${effect.spellId ? titleCase(effect.spellId) : 'Spell'} cooldown by ${formatTime(Math.abs(effect.amountMs))}`
     case 'set-action-pattern': return `Switch to ${titleCase(effect.patternId)} pattern`
   }
 }
+
+const periodicStatusDetails = (effect: Extract<CombatEffect, { type: 'apply-status' }>): string[] => {
+  const status = STATUS_DEFINITIONS[effect.statusId]
+  const periodicEffects = effect.periodicEffects ?? status?.periodic?.effects
+  if (!periodicEffects?.length) return []
+  const durationMs = effect.durationMs === undefined ? status?.defaultDurationMs : effect.durationMs
+  const intervalMs = status?.periodic?.intervalMs ?? 0
+  const tickCount = durationMs !== null && durationMs !== undefined && intervalMs > 0 ? Math.floor(Math.max(0, durationMs) / intervalMs) : 0
+  return periodicEffects.flatMap((periodicEffect) => {
+    if (periodicEffect.type !== 'deal-damage') {
+      return `${effectMeaning(periodicEffect)}${intervalMs > 0 ? ` per ${formatTime(intervalMs)}` : ''}`
+    }
+    return periodicEffect.components.map((component) => {
+      const totalMagnitude = tickCount > 0 ? scaleMagnitude(component.magnitude, tickCount) : component.magnitude
+      const cadence = tickCount > 0 ? 'total' : intervalMs > 0 ? `per ${formatTime(intervalMs)}` : 'per tick'
+      return `${formatSpellMagnitude(totalMagnitude)} ${cadence} ${DAMAGE_TYPE_NAMES[component.damageType]} damage`
+    })
+  })
+}
+
+const applyStatusDetails = (effect: Extract<CombatEffect, { type: 'apply-status' }>): string[] => {
+  const status = STATUS_DEFINITIONS[effect.statusId]
+  const modifierEntries = effect.modifierOverrides
+    ? Object.entries(effect.modifierOverrides)
+    : status?.modifiers?.map((modifier) => [modifier.key, modifier.value] as [string, number]) ?? []
+  const modifierDetails = modifierEntries.flatMap(([key, value]) => COMBAT_MODIFIER_KEYS.includes(key as ModifierKey) && Number.isFinite(value)
+    ? [modifierMeaning({ key: key as ModifierKey, value })]
+    : [])
+  return [effectMeaning(effect), ...modifierDetails, ...periodicStatusDetails(effect)]
+}
+
+const effectDetails = (effect: CombatEffect) => effect.type === 'apply-status' ? applyStatusDetails(effect) : [effectMeaning(effect)]
 
 const triggerMeaning = (rule: CombatTriggerRule) => {
   const labels: Record<CombatTriggerRule['event'], string> = {
     'on-combat-start': 'Combat Start', 'on-basic-attack-hit': 'Basic Attack Hit', 'on-spell-hit': 'Spell Hit', 'on-damage-dealt': 'Damage Dealt', 'on-damage-taken': 'Damage Taken', 'on-barrier-broken': 'Barrier Broken', 'on-status-applied': 'Status Applied', 'on-hp-threshold': 'Health Threshold', 'on-action-start': 'Action Start', 'on-action-resolve': 'Action Resolve', 'on-heal': 'Healing', 'on-heal-received': 'Healing Received', 'on-barrier-gained': 'Barrier Gained', 'on-status-removed': 'Status Removed', 'on-status-expired': 'Status Expired', 'on-kill': 'Kill',
   }
-  return rule.chance === undefined ? `On ${labels[rule.event]}` : `${Math.round(rule.chance * 100)}% chance on ${labels[rule.event]}`
+  return rule.chance === undefined ? `On ${labels[rule.event]}` : `${formattedPercent(rule.chance)}% chance on ${labels[rule.event]}`
 }
 
 export const getEquipmentCombatPresentation = (itemOrCombat: Pick<ItemDefinition, 'combat'> | EquipmentCombat | undefined): EquipmentCombatPresentation => {
@@ -175,9 +219,9 @@ export const getEquipmentCombatPresentation = (itemOrCombat: Pick<ItemDefinition
     : undefined
   const modifiers = combat?.modifiers?.map(modifierMeaning) ?? []
   const rules = combat?.rules?.map((rule) => {
-    const effects = rule.effects.map(effectMeaning)
+    const effects = rule.effects.flatMap(effectDetails)
     const condition = rule.condition ? conditionMeaning(rule.condition) : undefined
-    const cooldown = rule.cooldownMs && rule.cooldownMs > 0 ? `Cooldown: ${rule.cooldownMs / 1000}s` : undefined
+    const cooldown = rule.cooldownMs && rule.cooldownMs > 0 ? `Cooldown: ${formatTime(rule.cooldownMs)}` : undefined
     const summary = `${triggerMeaning(rule)}${condition ? ` · ${condition}` : ''}${effects[0] ? ` → ${effects[0]}` : ''}`
     return { id: rule.id, trigger: triggerMeaning(rule), condition, effects, cooldown, summary }
   }) ?? []

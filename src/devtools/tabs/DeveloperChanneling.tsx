@@ -17,7 +17,7 @@ export function DeveloperChanneling() {
   const maxEchoes = debug.ignoreEchoLimit ? 'unlimited' : '5'
 
   return <div className="developer-tab-grid">
-    <Card title="Channeling runtime">
+    <Card title="Channeling overview">
       <div className="developer-summary-grid">
         <Summary label="Echoes" value={`${activities.channeling.echoesAssigned} / ${maxEchoes}`} />
         <Summary label="Mana Generated" value={formatNumber(progress.channeling.totalManaGenerated)} />

@@ -49,11 +49,8 @@ export function DeveloperQuickSetup() {
     })
     Object.entries(loadout.slots).forEach(([position, itemId]) => { if (itemId) state.equipItem(itemId, position as keyof typeof state.equipment) })
   }
-  const restorePlayer = () => {
-    state.setPlayer({ health: state.player.maxHealth, mana: state.player.maxMana })
-    state.clearPlayerBarrier()
-    state.clearPlayerStatuses()
-  }
+  const restoreHealth = () => state.setPlayer({ health: state.player.maxHealth })
+  const restoreMana = () => state.setPlayer({ mana: state.player.maxMana })
   const grantResources = () => materialIds.forEach((itemId) => state.addItem(itemId, 100))
   const unlockRankOneSpells = () => getAllSpellsInOrder().forEach((spell) => state.debugUnlockSpellRankOne(spell.id))
 
@@ -61,8 +58,8 @@ export function DeveloperQuickSetup() {
     <Card title="Quick Setup" className="developer-quick-setup">
       <p className="muted">Tester fixtures compose the existing game actions and preserve authored dungeon unlock requirements.</p>
       <div className="developer-quick-grid">
-        <section><h3>Player</h3><div className="button-row"><Button onClick={restorePlayer}>Full Health / Mana</Button><Button variant="secondary" onClick={state.clearPlayerStatuses}>Clear Player Statuses</Button><Button variant="secondary" onClick={state.clearPlayerBarrier}>Clear Player Barrier</Button><Button variant={state.debug.playerImmortal ? 'success' : 'secondary'} onClick={() => state.setDebugPlayerImmortal(!state.debug.playerImmortal)}>God Mode: {state.debug.playerImmortal ? 'ON' : 'OFF'}</Button></div></section>
-        <section><h3>Fixtures</h3><div className="developer-fixture-list">{fixtureButtons.map((fixture) => <div key={fixture.id}><div><strong>{fixture.label}</strong><small>{fixture.description}</small></div><Button variant={fixture.id === 'fresh' ? 'danger' : 'secondary'} onClick={() => applyFixture(fixture.id)}>{fixture.id === 'fresh' ? 'Reset' : 'Load'}</Button></div>)}</div></section>
+        <section><h3>Player</h3><div className="button-row"><Button onClick={restoreHealth}>Full Health</Button><Button onClick={restoreMana}>Full Mana</Button><Button variant="secondary" onClick={state.clearPlayerStatuses}>Clear Player Statuses</Button><Button variant="secondary" onClick={state.clearPlayerBarrier}>Clear Player Barrier</Button><Button variant={state.debug.playerImmortal ? 'success' : 'secondary'} onClick={() => state.setDebugPlayerImmortal(!state.debug.playerImmortal)}>God Mode: {state.debug.playerImmortal ? 'ON' : 'OFF'}</Button></div></section>
+        <section><h3>Fixtures</h3><div className="developer-fixture-list">{fixtureButtons.map((fixture) => <div key={fixture.id}><div><strong>{fixture.label}</strong><small>{fixture.description}</small></div><Button variant={fixture.id === 'fresh' ? 'danger' : 'secondary'} onClick={() => applyFixture(fixture.id)}>{fixture.id === 'fresh' ? 'Reset Fresh Game' : `Load ${fixture.label}`}</Button></div>)}</div></section>
         <section><h3>Loadouts</h3><p className="muted">Each loadout uses its explicit authored slot map.</p><div className="developer-button-grid">{DEVELOPER_LOADOUTS.map((loadout) => <Button key={loadout.id} variant="secondary" onClick={() => loadLoadout(loadout)}>{loadout.label}</Button>)}</div></section>
         <section><h3>Resources &amp; Magic</h3><div className="button-row"><Button onClick={grantResources}>+100 Relevant Materials</Button><Button variant="secondary" onClick={() => state.grantTransmutationIngredients(firstRecipe)}>Grant Missing Recipe Ingredients</Button><Button variant="secondary" onClick={unlockRankOneSpells}>Unlock Rank-I Spells</Button><Button variant="secondary" onClick={state.resetSpellCooldowns}>Reset Spell Cooldowns</Button><Button variant="ghost" onClick={state.resetDebugOverrides}>Clear Debug Overrides</Button></div><small className="muted">Ingredient helper: {RECIPES[firstRecipe].name}</small></section>
       </div>

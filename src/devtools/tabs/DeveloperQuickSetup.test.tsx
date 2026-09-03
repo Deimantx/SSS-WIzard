@@ -19,6 +19,20 @@ describe('Developer Quick Setup', () => {
     expect(screen.getByRole('button', { name: 'Jump to Boss' })).toBeTruthy()
   })
 
+  it('uses existing actions for quick recovery, loadout, spawn, and reset controls', () => {
+    render(<DeveloperQuickSetup />)
+    fireEvent.click(screen.getByRole('button', { name: 'Full Mana' }))
+    expect(useGameStore.getState().player.mana).toBe(useGameStore.getState().player.maxMana)
+    fireEvent.click(screen.getByRole('button', { name: 'Woods Fire' }))
+    expect(useGameStore.getState().equipment.weapon).toBe('ember-staff')
+    fireEvent.click(screen.getByRole('button', { name: 'Spawn Enemy' }))
+    expect(useGameStore.getState().combat.enemyId).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'God Mode: OFF' }))
+    expect(useGameStore.getState().debug.playerImmortal).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Clear Debug Overrides' }))
+    expect(useGameStore.getState().debug.playerImmortal).toBe(false)
+  })
+
   it('uses the authored dungeon unlock chain for progression fixtures', () => {
     useGameStore.getState().applyDeveloperFixture('catacombs-ready')
     const state = useGameStore.getState()
@@ -31,7 +45,7 @@ describe('Developer Quick Setup', () => {
   it('requires confirmation before resetting to a fresh fixture', () => {
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
     render(<DeveloperQuickSetup />)
-    fireEvent.click(screen.getByRole('button', { name: 'Reset' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Reset Fresh Game' }))
     expect(confirm).toHaveBeenCalled()
     confirm.mockRestore()
   })

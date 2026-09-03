@@ -89,7 +89,7 @@ export function DeveloperToolsWindow() {
         <div className="developer-tools-header-actions">
           {!workspace && <GameTooltip content="Reset docked window position and size"><button className="icon-button" onClick={resetDeveloperToolsWindow} aria-label="Reset Developer Tools window position and size"><RotateCcw size={15} /></button></GameTooltip>}
           <GameTooltip content="Clear all debug overrides"><button className="icon-button" onClick={resetDebug} disabled={activeOverrides.length === 0} aria-label="Clear all debug overrides"><span className="developer-clear-label">CLEAR ALL</span></button></GameTooltip>
-          <GameTooltip content={workspace ? 'Move Developer Tools into a docked window' : 'Expand Developer Tools into the workspace'}><button className="icon-button" onClick={workspace ? dockDeveloperTools : workspaceDeveloperTools} aria-label={workspace ? 'Dock Developer Tools' : 'Expand Developer Tools to workspace'}><PanelRight size={16} /></button></GameTooltip>
+          <GameTooltip content={workspace ? 'Move Developer Tools into a docked window' : 'Open full Developer Workspace'}><button className="icon-button" onClick={workspace ? dockDeveloperTools : workspaceDeveloperTools} aria-label={workspace ? 'Dock Developer Tools' : 'Open full Developer Workspace'}><PanelRight size={16} /></button></GameTooltip>
           <GameTooltip content="Close Developer Tools"><button className="icon-button" onClick={closeDeveloperTools} aria-label="Close Developer Tools"><X size={18} /></button></GameTooltip>
         </div>
       </header>

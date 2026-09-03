@@ -36,7 +36,7 @@ const update = (changes: Partial<DeveloperToolsSessionState>, persistGeometry = 
 }
 
 export const getDeveloperToolsState = () => current
-export const openDeveloperTools = (activeTab: DeveloperToolsTab = current.activeTab) => update({ open: true, activeTab: normalizeDeveloperToolsTab(activeTab) })
+export const openDeveloperTools = (activeTab: DeveloperToolsTab = current.activeTab) => update({ open: true, activeTab: normalizeDeveloperToolsTab(activeTab) }, true)
 export const closeDeveloperTools = () => update({ open: false })
 export const toggleDeveloperTools = () => update({ open: !current.open })
 export const setDeveloperToolsTab = (activeTab: DeveloperToolsTab) => update({ activeTab: normalizeDeveloperToolsTab(activeTab) }, true)

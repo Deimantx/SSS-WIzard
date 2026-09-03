@@ -1,7 +1,7 @@
 import { Button, Card, Status } from '../../components/ui'
 import { SCHOOLS } from '../../game/content/schools/schools'
 import { formatDuration, formatNumber } from '../../game/content/presentation/balanceFormatters'
-import { getSchoolLevelStartXp } from '../../game/systems/schools'
+import { getSchoolLevelStartXp, getSchoolProgressInfo } from '../../game/systems/schools'
 import { formatSpellRank, getAllSpellsInOrder, getSpellAutoCastFocusCost, getAutoCastFocusCostForRank, getSpellRank } from '../../game/systems/spells'
 import type { SchoolId } from '../../game/types'
 import { useGameStore } from '../../store/gameStore'
@@ -21,7 +21,7 @@ export function DeveloperSchools() {
 
   return <div className="developer-tab-grid">
     <Card title="Magic schools">
-      <div className="developer-school-list">{schoolIds.map((id) => <div className="developer-school-row" key={id}><span className="school-glyph" style={{ color: SCHOOLS[id].color }}>{SCHOOLS[id].glyph}</span><div><strong>{SCHOOLS[id].name}</strong><small>Level {schools[id].level} · {formatNumber(schools[id].xp)} XP · {getAllSpellsInOrder().filter((spell) => spell.school === id && getSpellRank({ progress }, spell.id) !== null).length} spells known</small></div><NumberField label="XP" value={schools[id].xp} onChange={(value) => setSchoolDebug(id, value, schools[id].level)} /><NumberField label="Level" value={schools[id].level} onChange={(value) => setSchoolDebug(id, schools[id].xp, value)} /></div>)}</div>
+      <div className="developer-school-list">{schoolIds.map((id) => { const info = getSchoolProgressInfo({ schools, progress }, id); const knownSpells = getAllSpellsInOrder().filter((spell) => spell.school === id && getSpellRank({ progress }, spell.id)).length; const totalSpells = getAllSpellsInOrder().filter((spell) => spell.school === id).length; const xpProgress = info.atCap ? 'At cap' : `${formatNumber(info.xp)} / ${formatNumber(info.nextLevelXp ?? info.xp)} XP`; return <div className="developer-school-row" key={id}><span className="school-glyph" style={{ color: SCHOOLS[id].color }}>{SCHOOLS[id].glyph}</span><div><strong>{SCHOOLS[id].name}</strong><small>Level {info.level} / {info.cap} · {xpProgress} · {knownSpells} / {totalSpells} spells known</small><div className="button-row">{info.nextLevelXp === null ? <span className="muted">At level cap</span> : <Button variant="ghost" onClick={() => setSchoolDebug(id, info.nextLevelXp!, info.level + 1)}>Set next level</Button>}</div></div><NumberField label="XP" value={schools[id].xp} onChange={(value) => setSchoolDebug(id, value, schools[id].level)} /><NumberField label="Level" value={schools[id].level} onChange={(value) => setSchoolDebug(id, schools[id].xp, value)} /></div> })}</div>
     </Card>
     <Card title="School controls">
       <div className="developer-button-grid"><Button variant="secondary" onClick={() => setAllLevels(2)}>Set all to Level 2</Button><Button variant="secondary" onClick={() => setAllLevels(8)}>Set all to Level 8</Button><Button variant="secondary" onClick={() => setAllLevels(16)}>Set all to Level 16</Button><Button variant="secondary" onClick={() => setAllLevels(20)}>Set all to Level 20</Button><Button variant="success" onClick={unlockAll}>Unlock all Rank-I spells</Button><Button variant="ghost" onClick={resetCooldowns}>Reset spell cooldowns</Button></div>

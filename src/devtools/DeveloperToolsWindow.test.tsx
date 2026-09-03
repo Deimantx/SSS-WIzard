@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { DeveloperToolsWindow } from './DeveloperToolsWindow'
-import { closeDeveloperTools, getDeveloperToolsState, openDeveloperTools, resetDeveloperToolsWindow, setDeveloperToolsGeometry } from './developerToolsStore'
+import { closeDeveloperTools, getDeveloperToolsState, normalizeDeveloperToolsTab, openDeveloperTools, resetDeveloperToolsWindow, setDeveloperToolsGeometry } from './developerToolsStore'
 
 describe('Developer Tools window presentation', () => {
   beforeEach(() => {
@@ -33,7 +33,7 @@ describe('Developer Tools window presentation', () => {
     expect(windowElement.style.width).toBe('700px')
     expect(windowElement.style.height).toBe('450px')
     expect(view.container.querySelectorAll('.developer-tools-resize-handle')).toHaveLength(3)
-    expect(screen.getByRole('button', { name: 'Expand Developer Tools to workspace' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Open full Developer Workspace' })).toBeTruthy()
   })
 
   it('makes clear, mode, and close actions available in the header', () => {
@@ -41,9 +41,22 @@ describe('Developer Tools window presentation', () => {
     render(<DeveloperToolsWindow />)
     expect(screen.getByRole('button', { name: 'Clear all debug overrides' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Dock Developer Tools' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Expand Developer Tools to workspace' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Open full Developer Workspace' }))
     expect(getDeveloperToolsState().mode).toBe('workspace')
     fireEvent.click(screen.getByRole('button', { name: 'Close Developer Tools' }))
     expect(screen.queryByRole('dialog', { name: 'Developer Tools' })).toBeNull()
+  })
+
+  it('keeps the tester-first navigation flat and normalizes legacy tab ids', () => {
+    expect(normalizeDeveloperToolsTab('equipment')).toBe('inventory')
+    expect(normalizeDeveloperToolsTab('schools')).toBe('spells')
+    openDeveloperTools()
+    render(<DeveloperToolsWindow />)
+    expect(screen.getByRole('button', { name: 'Quick Setup' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Inventory & Equipment' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Spells & Schools' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Advanced Diagnostics' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /^Equipment$/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Magic Schools$/ })).toBeNull()
   })
 })

@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { Button, Card, FilterBar, Status, type FilterOption } from '../../components/ui'
 import { SCHOOLS } from '../../game/content/schools/schools'
 import { SPELLS } from '../../game/content/spells/spells'
-import { formatAutoCastCondition, formatCombatEffect, formatDuration, formatReadableId } from '../../game/content/presentation/balanceFormatters'
+import { formatDuration, formatReadableId } from '../../game/content/presentation/balanceFormatters'
 import { getAllSpellsInOrder, getSpellAutoCastFocusCost, getSpellRank } from '../../game/systems/spells'
 import type { SchoolId, SpellId, SpellType } from '../../game/types'
 import { useGameStore } from '../../store/gameStore'
 import { DeveloperAdvancedSection, DeveloperBrowser, DeveloperBrowserLayout, DeveloperSection } from '../components/DeveloperBrowser'
+import { getDeveloperSpellView } from '../developerReadModels'
 import { DeveloperSchools } from './DeveloperSchools'
 
 type SpellFilter = 'all' | SchoolId | SpellType | 'locked' | 'unlocked' | 'auto-cast'
@@ -49,11 +50,12 @@ function SpellInspector({ spellId }: { spellId: SpellId }) {
   const school = SCHOOLS[spell.school]
   const rank = getSpellRank(state, spellId)
   const autoCastCost = getSpellAutoCastFocusCost(state, spellId)
+  const view = getDeveloperSpellView(state, spellId)
   return <>
-    <div className="developer-inspector-title"><span className="developer-browser-icon" style={{ color: school.color }}>{school.glyph}</span><div><h2>{spell.name}</h2><small className="muted">{school.name} · {formatReadableId(spell.type)}</small></div><Status tone={rank ? 'success' : 'locked'}>{rank ? 'UNLOCKED' : 'LOCKED'}</Status></div>
-    <DeveloperSection title="Spell details"><p className="muted">{spell.description}</p><div className="developer-detail-grid"><span>SCHOOL<strong>{school.name}</strong></span><span>TYPE<strong>{formatReadableId(spell.type)}</strong></span><span>UNLOCKS AT<strong>Level {spell.unlockLevel}</strong></span><span>RANK<strong>{rank ? `Rank ${rank}` : 'Locked'}</strong></span><span>MANA COST<strong>{spell.manaCost}</strong></span><span>COOLDOWN<strong>{formatDuration(spell.cooldownMs)}</strong></span><span>AUTO-CAST FOCUS<strong>{autoCastCost === null ? 'Unavailable' : `${autoCastCost} Focus`}</strong></span><span>AUTO-CAST<strong>{state.activities.autoCast[spellId] ? 'Enabled' : 'Disabled'}</strong></span></div></DeveloperSection>
-    <DeveloperSection title="Effects"><div className="developer-relation-list">{spell.effects.map((effect, index) => <span key={`${spellId}-effect-${index}`}><strong>Effect {index + 1}</strong><small>{formatCombatEffect(effect)}</small></span>)}</div></DeveloperSection>
-    <DeveloperSection title="Auto-Cast condition"><p className="muted">{formatAutoCastCondition(spell.autoCondition)}</p></DeveloperSection>
+    <div className="developer-inspector-title"><span className="developer-browser-icon" style={{ color: school.color }}>{school.glyph}</span><div><h2>{view.name}</h2><small className="muted">{view.school} · {view.type}</small></div><Status tone={rank ? 'success' : 'locked'}>{rank ? 'UNLOCKED' : 'LOCKED'}</Status></div>
+    <DeveloperSection title="Spell details"><p className="muted">{spell.description}</p><div className="developer-detail-grid"><span>SCHOOL<strong>{view.school}</strong></span><span>TYPE<strong>{view.type}</strong></span><span>UNLOCKS AT<strong>Level {view.unlockLevel}</strong></span><span>RANK<strong>{view.rank}</strong></span><span>MANA COST<strong>{view.manaCost}</strong></span><span>COOLDOWN<strong>{view.cooldown}</strong></span><span>AUTO-CAST FOCUS<strong>{autoCastCost === null ? 'Unavailable' : `${autoCastCost} Focus`}</strong></span><span>AUTO-CAST<strong>{view.autoCast ? 'Enabled' : 'Disabled'}</strong></span></div></DeveloperSection>
+    <DeveloperSection title="Effects"><div className="developer-relation-list">{view.effects.map((effect, index) => <span key={`${spellId}-effect-${index}`}><strong>Effect {index + 1}</strong><small>{effect}</small></span>)}</div></DeveloperSection>
+    <DeveloperSection title="Auto-Cast condition"><p className="muted">{view.autoCastCondition}</p></DeveloperSection>
     <DeveloperSection title="Tester actions"><div className="button-row"><Button onClick={() => state.debugUnlockSpellRankOne(spellId)}>Unlock Rank I</Button><Button variant="danger" onClick={() => state.debugLockSpell(spellId)} disabled={!rank}>Lock spell</Button><Button variant="secondary" onClick={() => state.castSpell(spellId)} disabled={!rank}>Cast selected</Button><Button variant={state.activities.autoCast[spellId] ? 'success' : 'secondary'} onClick={() => state.toggleAutoCast(spellId)} disabled={!rank}>{state.activities.autoCast[spellId] ? 'Disable Auto-Cast' : 'Enable Auto-Cast'}</Button><Button variant="ghost" onClick={state.resetSpellCooldowns}>Reset cooldowns</Button></div></DeveloperSection>
     <DeveloperAdvancedSection title="Advanced spell details"><span>Content identifier: <code>{spell.id}</code></span><span>Auto-Cast rule type: <code>{spell.autoCondition?.type ?? 'always'}</code></span></DeveloperAdvancedSection>
   </>

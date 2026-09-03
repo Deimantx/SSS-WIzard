@@ -1,31 +1,30 @@
-import { ChevronDown, ChevronRight, LockKeyhole } from 'lucide-react'
+import { LockKeyhole } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
-import { Card, Status } from '../../../components/ui'
+import { Card } from '../../../components/ui'
 import { EquipmentCombatDetails } from '../../../components/ui/item/EquipmentCombatDetails'
 import { ItemIcon, ItemTooltip, flattenItemStats, formatStat, friendlyStatLabel } from '../../../components/ui/item'
 import { ITEMS } from '../../../game/content/items/items'
-import { SCHOOLS } from '../../../game/content/schools/schools'
 import type { RecipeDefinition } from '../../../game/content/recipes/recipes'
 import { getTransmutationEquipmentPreview, getTransmutationOutputInspection } from '../../../game/presentation/transmutation/transmutationOutputReadModel'
 import type { EquipmentItemSlot, EquipmentPosition, GameState } from '../../../game/types'
 import { useGameStore } from '../../../store/gameStore'
-import { setUiPreferences, useUiPreferences } from '../../../ui/preferences/uiPreferencesStore'
 
 export function OutputInspection({ recipe }: { recipe: RecipeDefinition }) {
   const state = useGameStore()
   const item = ITEMS[recipe.output.itemId]
   const inspection = getTransmutationOutputInspection(state, recipe)
   const [ringTarget, setRingTarget] = useState<EquipmentPosition | null>(null)
-  const ringNeedsChoice = inspection.equipment?.slot === 'ring' && Boolean(state.equipment.ring1 && state.equipment.ring2)
-  const targetPosition = ringNeedsChoice ? ringTarget ?? undefined : getDefaultTargetPosition(state, inspection.equipment?.slot)
-  const preview = inspection.equipment ? (ringNeedsChoice && !ringTarget ? null : getTransmutationEquipmentPreview(state, recipe.output.itemId, targetPosition)) : null
+  if (item.kind !== 'equipment' || !inspection.equipment) return null
+  const ringNeedsChoice = inspection.equipment.slot === 'ring' && Boolean(state.equipment.ring1 && state.equipment.ring2)
+  const targetPosition = ringNeedsChoice ? ringTarget ?? undefined : getDefaultTargetPosition(state, inspection.equipment.slot)
+  const preview = ringNeedsChoice && !ringTarget ? null : getTransmutationEquipmentPreview(state, recipe.output.itemId, targetPosition)
 
-  return <Card className="transmutation-output-preview" title={item.kind === 'equipment' ? 'OUTPUT INSPECTION · EQUIPMENT' : 'OUTPUT INSPECTION · MATERIAL'} action={<span className="transmutation-count">OWNED {inspection.owned.toLocaleString()}</span>}>
+  return <Card className="transmutation-output-preview" title="EQUIPMENT INSPECTION" action={<span className="transmutation-count">OWNED {inspection.owned.toLocaleString()}</span>}>
     <div className="transmutation-output-content">
       <ItemTooltip itemId={inspection.itemId} owned={inspection.owned}>
-        <div className="transmutation-output-hero" tabIndex={0}><span className="transmutation-output-icon"><ItemIcon itemId={inspection.itemId} size="large" /></span><div><span className="eyebrow">{item.kind.toUpperCase()}</span><h2>{item.name}</h2><p>{item.description}</p></div></div>
+        <div className="transmutation-output-hero" tabIndex={0}><span className="transmutation-output-icon"><ItemIcon itemId={inspection.itemId} size="large" /></span><div><span className="eyebrow">EQUIPMENT</span><h2>{item.name}</h2><p>{item.description}</p></div></div>
       </ItemTooltip>
-      {inspection.equipment ? <EquipmentOutput inspection={inspection} preview={preview} ringNeedsChoice={ringNeedsChoice} ringTarget={ringTarget} onRingTargetChange={setRingTarget} /> : <MaterialOutput inspection={inspection} />}
+      <EquipmentOutput inspection={inspection} preview={preview} ringNeedsChoice={ringNeedsChoice} ringTarget={ringTarget} onRingTargetChange={setRingTarget} />
     </div>
   </Card>
 }
@@ -44,19 +43,6 @@ function EquipmentOutput({ inspection, preview, ringNeedsChoice, ringTarget, onR
     {preview && !preview.compatible && <div className="transmutation-output-warning"><LockKeyhole size={14} aria-hidden="true" /><span>{preview.reason}</span></div>}
     {preview?.compatible && preview.preview && <DetailSection title="LOADOUT COMPARISON"><div className="transmutation-output-current"><span>CURRENT</span><strong>{getCurrentItemName(useGameStore.getState(), preview, inspection.equipment.slot)}</strong></div><div className="transmutation-output-stat-list comparison">{impactRows.map(([key, value]) => <div key={key}><span>{friendlyStatLabel(key)}</span><small>{formatSnapshotValue(key, preview.current)} → {formatSnapshotValue(key, preview.preview!)}</small><strong className={value > 0 ? 'positive' : 'negative'}>{formatSignedImpact(key, value)}</strong></div>)}</div>{impactRows.length === 0 && <p className="transmutation-output-note">No authored loadout stat change for this replacement.</p>}</DetailSection>}
     {!preview && ringNeedsChoice && <div className="transmutation-output-note">Select Ring 1 or Ring 2 to calculate the real loadout impact.</div>}
-  </>
-}
-
-function MaterialOutput({ inspection }: { inspection: ReturnType<typeof getTransmutationOutputInspection> }) {
-  const preferences = useUiPreferences()
-  if (!inspection.material) return null
-  const isUsedInOpen = preferences.screenState.transmutation.usedInOpen
-  const toggleUsedIn = () => setUiPreferences({ screenState: { transmutation: { usedInOpen: !isUsedInOpen } } })
-  return <>
-    <DetailSection title="MATERIAL PROFILE"><div className="transmutation-output-meta"><span><small>TIER</small><strong>{inspection.material.tier ? `T${inspection.material.tier}` : '—'}</strong></span><span><small>SUBTYPE</small><strong>{inspection.material.subtype ?? 'MATERIAL'}</strong></span><span><small>OWNED</small><strong>{inspection.owned.toLocaleString()}</strong></span></div></DetailSection>
-    <DetailSection title="SOURCE"><p className="transmutation-output-note">{inspection.material.source}</p></DetailSection>
-    {inspection.material.usedIn.length > 0 && <section className="transmutation-output-section transmutation-accordion"><button type="button" onClick={toggleUsedIn} aria-expanded={isUsedInOpen}><span className="eyebrow">USED IN Â· {inspection.material.usedIn.length}</span>{isUsedInOpen ? <ChevronDown size={15} aria-hidden="true" /> : <ChevronRight size={15} aria-hidden="true" />}</button>{isUsedInOpen && <div className="transmutation-uses">{inspection.material.usedIn.map((use) => <span key={`${use.destination}-${use.label}`}><strong>{use.label}</strong><small>{use.detail}</small></span>)}</div>}</section>}
-    {inspection.material.research.length > 0 && <DetailSection title="RESEARCH VALUE"><div className="transmutation-output-stat-list">{inspection.material.research.map(({ schoolId, xp }) => <div key={schoolId}><span>{SCHOOLS[schoolId].name}</span><strong>{xp.toLocaleString()} XP</strong></div>)}</div></DetailSection>}
   </>
 }
 
@@ -88,11 +74,7 @@ function getSnapshotValue(key: string, snapshot: NonNullable<ReturnType<typeof g
   return snapshot[mapping[key] ?? key as keyof typeof snapshot] as number
 }
 
-function formatSnapshotValue(key: string, current: NonNullable<ReturnType<typeof getTransmutationEquipmentPreview>['current']>) {
-  const value = getSnapshotValue(key, current)
-  return formatImpact(key, value)
-}
-
+function formatSnapshotValue(key: string, current: NonNullable<ReturnType<typeof getTransmutationEquipmentPreview>['current']>) { return formatImpact(key, getSnapshotValue(key, current)) }
 function formatSignedImpact(key: string, value: number) { return formatImpact(key, value, true) }
 function formatImpact(key: string, value: number, signed = false) {
   const sign = signed && value > 0 ? '+' : ''

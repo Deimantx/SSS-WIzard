@@ -3,7 +3,7 @@ import { MANA_PILLARS } from '../channeling/manaPillars'
 import { RECIPES } from '../recipes/recipes'
 import { getItemSourceLabel, ITEMS } from './items'
 import { FOCUS_IMPROVEMENT } from '../focus/focusImprovement'
-import type { InventoryCategory, InventoryMaterialSubtype, ItemId, ScreenId } from '../../types'
+import type { InventoryCategory, InventoryMaterialSubtype, ItemId, RecipeId, ScreenId } from '../../types'
 
 /** Player-facing inventory filters and classification are shared item-domain metadata. */
 export const INVENTORY_CATEGORIES = ['All', 'Materials', 'Loot', 'Equipment', 'Special'] as const
@@ -31,6 +31,7 @@ export interface InventoryDestination {
   label: string
   destination: ScreenId
   detail?: string
+  recipeId?: RecipeId
 }
 
 export function getItemSourceDestination(itemId: ItemId): InventoryDestination | null {
@@ -44,7 +45,7 @@ export const getItemProcessingChain = (itemId: ItemId): ItemId[] => ITEMS[itemId
 export function getItemUses(itemId: ItemId): InventoryDestination[] {
   const uses: InventoryDestination[] = []
   Object.values(RECIPES).forEach((recipe) => {
-    if (recipe.ingredients.some((ingredient) => ingredient.itemId === itemId)) uses.push({ label: recipe.name, destination: 'tower-transmutation', detail: 'Transmutation recipe' })
+    if (recipe.ingredients.some((ingredient) => ingredient.itemId === itemId)) uses.push({ label: recipe.name, destination: 'tower-transmutation', detail: 'Transmutation recipe', recipeId: recipe.id })
   })
   if (itemId === 'life-essence' || Object.values(MANA_PILLARS).some((pillar) => pillar.fragmentRequirements.includes(itemId))) {
     uses.push({ label: 'Pillars of Mana', destination: 'tower-channeling', detail: 'Permanent Tower progression' })

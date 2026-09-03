@@ -3,3 +3,4 @@ export { ItemTooltip, ItemTooltipContent, flattenItemStats, friendlyStatLabel, f
 export { EquipmentCombatDetails } from './EquipmentCombatDetails'
 export { ItemRequirementTile } from './ItemRequirementTile'
 export { ItemQuantity, formatItemQuantity } from './ItemQuantity'
+export { ItemUsesDialog } from './ItemUsesDialog'

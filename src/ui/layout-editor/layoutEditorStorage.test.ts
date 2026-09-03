@@ -56,12 +56,12 @@ describe('inventory layout compatibility', () => {
 })
 
 describe('Transmutation default layout', () => {
-  it('uses the compact fresh defaults', () => {
+  it('uses the larger Focus and Equipment Inspection defaults', () => {
     expect(DEFAULT_LAYOUTS['tower-transmutation']).toEqual({
       'transmutation-recipes': { x: 0, y: 0, w: 7, h: 15 },
-      'transmutation-focus': { x: 0, y: 15, w: 7, h: 6 },
+      'transmutation-focus': { x: 0, y: 15, w: 7, h: 12 },
       'transmutation-detail': { x: 7, y: 0, w: 5, h: 8 },
-      'transmutation-output-preview': { x: 7, y: 8, w: 5, h: 13 },
+      'transmutation-output-preview': { x: 7, y: 8, w: 5, h: 19 },
     })
   })
 
@@ -72,11 +72,11 @@ describe('Transmutation default layout', () => {
 
     expect(layouts['transmutation-recipes']).toEqual({ x: 1, y: 2, w: 6, h: 20 })
     expect(layouts['transmutation-detail']).toEqual({ x: 7, y: 0, w: 5, h: 8 })
-    expect(layouts['transmutation-focus']).toEqual({ x: 0, y: 15, w: 7, h: 6 })
-    expect(layouts['transmutation-output-preview']).toEqual({ x: 7, y: 8, w: 5, h: 13 })
+    expect(layouts['transmutation-focus']).toEqual({ x: 0, y: 15, w: 7, h: 12 })
+    expect(layouts['transmutation-output-preview']).toEqual({ x: 7, y: 8, w: 5, h: 19 })
   })
 
-  it('resets only Transmutation when migrating V7 to V8', () => {
+  it('resets only incomplete Transmutation layouts during V9 migration', () => {
     localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({
       version: 7,
       screens: {
@@ -89,6 +89,29 @@ describe('Transmutation default layout', () => {
     expect(document.screens['tower-transmutation']).toEqual({})
     expect(document.screens.inventory?.['inventory-catalog']).toEqual({ x: 2, y: 1, w: 7, h: 18 })
     expect(getScreenLayouts('tower-transmutation', document.screens['tower-transmutation'])).toEqual(DEFAULT_LAYOUTS['tower-transmutation'])
+  })
+
+  it('upgrades untouched V8 Transmutation defaults while preserving custom geometry and other screens', () => {
+    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({
+      version: 8,
+      screens: {
+        'tower-transmutation': {
+          'transmutation-recipes': { x: 1, y: 2, w: 6, h: 18 },
+          'transmutation-focus': { x: 0, y: 15, w: 7, h: 6 },
+          'transmutation-detail': { x: 7, y: 0, w: 5, h: 8 },
+          'transmutation-output-preview': { x: 7, y: 8, w: 5, h: 13 },
+        },
+        inventory: { 'inventory-catalog': { x: 2, y: 1, w: 7, h: 18 } },
+      },
+    }))
+
+    const document = loadUiLayouts()
+    expect(document.screens['tower-transmutation']).toMatchObject({
+      'transmutation-recipes': { x: 1, y: 2, w: 6, h: 18 },
+      'transmutation-focus': { x: 0, y: 15, w: 7, h: 12 },
+      'transmutation-output-preview': { x: 7, y: 8, w: 5, h: 19 },
+    })
+    expect(document.screens.inventory?.['inventory-catalog']).toEqual({ x: 2, y: 1, w: 7, h: 18 })
   })
 })
 

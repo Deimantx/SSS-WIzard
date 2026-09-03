@@ -11,6 +11,7 @@
 @import './components/tooltip.css';
 @import './components/select-menu.css';
 @import './components/archive.css';
+@import './components/item-uses-dialog.css';
 @import './components/semantic-values.css';
 @import './components/combat-pattern.css';
 @import './developer-tools.css';

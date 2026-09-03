@@ -20,6 +20,9 @@ export function EditableGrid({ screen, panels, children, layoutTransform }: { sc
   const grid = useMemo(() => toGridLayout(screen, saved, editor.isEditing), [editor.document, editor.isEditing, saved, screen])
   const transformedGrid = useMemo(() => editor.isEditing || !layoutTransform ? grid : layoutTransform(grid), [editor.isEditing, grid, layoutTransform])
   const definitions = getPanelDefinitions(screen)
+  const panelEntries = panels ?? Children.toArray(children).flatMap((child) => { if (!isValidElement(child)) return []; const props = child.props as { children?: ReactNode; 'data-panel-id'?: string }; const id = props['data-panel-id'] ?? (typeof child.key === 'string' ? child.key.replace(/^\$+/, '') : ''); return id ? [{ id, content: props.children }] : [] })
+  const available = new Map(panelEntries.map((panel) => [panel.id, panel.content]))
+  const availableDefinitions = definitions.filter((definition) => available.has(definition.id))
   const [measuredRows, setMeasuredRows] = useState<Record<string, number>>({})
   const handleNaturalHeightChange = useCallback((panelId: string, height: number) => {
     const panel = getPanelDefinitions(screen).find((definition) => definition.id === panelId)
@@ -27,15 +30,12 @@ export function EditableGrid({ screen, panels, children, layoutTransform }: { sc
     const rows = getRequiredGridRows(height, panel.minH ?? 1)
     setMeasuredRows((current) => current[panelId] === rows ? current : { ...current, [panelId]: rows })
   }, [screen])
-  const autoFlowGrid = useMemo(() => resolvePanelAutoFlowLayout(transformedGrid, measuredRows, definitions), [definitions, measuredRows, transformedGrid])
+  const autoFlowGrid = useMemo(() => resolvePanelAutoFlowLayout(transformedGrid.filter((item) => available.has(item.i)), measuredRows, availableDefinitions), [available, availableDefinitions, measuredRows, transformedGrid])
   const displayGrid = useMemo(() => {
     if (width <= 0 || width >= 760) return autoFlowGrid
     return stackPanelLayout(autoFlowGrid)
   }, [autoFlowGrid, width])
-  const childPanels = Children.toArray(children).flatMap((child) => { if (!isValidElement(child)) return []; const props = child.props as { children?: ReactNode; 'data-panel-id'?: string }; const id = props['data-panel-id'] ?? (typeof child.key === 'string' ? child.key.replace(/^\$+/, '') : ''); return id ? [{ id, content: props.children }] : [] })
-  const panelEntries = panels ?? childPanels
-  const available = new Map(panelEntries.map((panel) => [panel.id, panel.content]))
-  const renderedChildren = definitions.filter((definition) => autoFlowGrid.some((item) => item.i === definition.id) && available.has(definition.id)).map((definition) => <div key={definition.id}><EditableGridItem screen={screen} panelId={definition.id} onNaturalHeightChange={handleNaturalHeightChange}>{available.get(definition.id)}</EditableGridItem></div>)
+  const renderedChildren = availableDefinitions.filter((definition) => autoFlowGrid.some((item) => item.i === definition.id)).map((definition) => <div key={definition.id}><EditableGridItem screen={screen} panelId={definition.id} onNaturalHeightChange={handleNaturalHeightChange}>{available.get(definition.id)}</EditableGridItem></div>)
 
   const handleLayoutStop: EventCallback = (layout, _oldItem, newItem) => { if (editor.isEditing && newItem) commitGridLayout(screen, layout, newItem.i) }
   return <div className={`ui-editor-grid ${editor.isEditing ? 'editing' : ''}`} ref={containerRef}>

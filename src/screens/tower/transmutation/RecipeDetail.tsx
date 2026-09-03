@@ -1,29 +1,27 @@
-import { ChevronDown, ChevronRight, LockKeyhole } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { LockKeyhole } from 'lucide-react'
+import { useState, type ReactNode } from 'react'
 import { Card, Status } from '../../../components/ui'
-import { ItemIcon, ItemRequirementTile } from '../../../components/ui/item'
+import { ItemIcon, ItemRequirementTile, ItemUsesDialog } from '../../../components/ui/item'
 import { ITEMS, getItemSourceLabel } from '../../../game/content/items/items'
 import type { RecipeDefinition } from '../../../game/content/recipes/recipes'
+import { getVisibleItemUsesForTransmutation } from '../../../game/presentation/transmutation/transmutationUsedInReadModel'
 import { getRecipeConsumableRequirements, getRecipeCurrentEffectiveDuration, getRecipeCurrentOutputPerHour, getRecipeCurrentSpeedMultiplier, getRecipeManaDemandPerSecond, getRecipeStatus, getRecipeUnlockReason, getTransmutationFocusReserved, getTransmutationJob, type TransmutationStatus } from '../../../game/systems/transmutation/transmutationSelectors'
+import type { RecipeId } from '../../../game/types'
 import { formatNumber, formatSignedRate, formatTime } from '../../../game/utils'
-import { getItemUses } from '../../../game/content/items/inventoryMetadata'
-import { setUiPreferences, useUiPreferences } from '../../../ui/preferences/uiPreferencesStore'
 import { useGameStore } from '../../../store/gameStore'
 
-export function RecipeDetail({ recipe }: { recipe: RecipeDefinition }) {
+export function RecipeDetail({ recipe, onSelectRecipe }: { recipe: RecipeDefinition; onSelectRecipe?: (recipeId: RecipeId) => void }) {
   const state = useGameStore()
-  const preferences = useUiPreferences()
+  const [usesDialogOpen, setUsesDialogOpen] = useState(false)
   const job = getTransmutationJob(state, recipe.id)
   const echoes = Math.max(0, Math.floor(job?.echoesAssigned ?? 0))
   const status = getRecipeStatus(state, recipe)
   const item = ITEMS[recipe.output.itemId]
-  const uses = getItemUses(recipe.output.itemId)
+  const uses = getVisibleItemUsesForTransmutation(state, recipe.output.itemId)
   const requirements = getRecipeConsumableRequirements(state, recipe)
   const currentCycle = getRecipeCurrentEffectiveDuration(recipe, echoes)
   const currentSpeed = getRecipeCurrentSpeedMultiplier(echoes)
   const currentOutput = getRecipeCurrentOutputPerHour(recipe, echoes)
-  const isUsedInOpen = preferences.screenState.transmutation.usedInOpen
-  const toggleUsedIn = () => setUiPreferences({ screenState: { transmutation: { usedInOpen: !isUsedInOpen } } })
 
   return <Card className="transmutation-detail" title="RECIPE DETAIL">
     <div className="transmutation-detail-content">
@@ -40,9 +38,14 @@ export function RecipeDetail({ recipe }: { recipe: RecipeDefinition }) {
 
       {recipe.manaCost > 0 && <section className="transmutation-detail-section transmutation-mana-requirement"><span className="eyebrow">MANA / CYCLE</span><strong>{formatNumber(recipe.manaCost)} · {formatSignedRate(-getRecipeManaDemandPerSecond(recipe, echoes))} demand</strong><Status tone={status === 'waiting-mana' ? 'warning' : status === 'mana-limited' ? 'warning' : 'success'}>{status === 'waiting-mana' ? 'WAITING' : status === 'mana-limited' ? 'LIMITED' : 'FUNDED'}</Status></section>}
 
-      <section className="transmutation-detail-section transmutation-accordion"><button type="button" onClick={toggleUsedIn} aria-expanded={isUsedInOpen}><span className="eyebrow">USED IN {uses.length ? `· ${uses.length}` : ''}</span>{isUsedInOpen ? <ChevronDown size={15} aria-hidden="true" /> : <ChevronRight size={15} aria-hidden="true" />}</button>{isUsedInOpen && (uses.length ? <div className="transmutation-uses">{uses.map((use) => <span key={`${use.destination}-${use.label}`}><strong>{use.label}</strong><small>{use.detail}</small></span>)}</div> : <p className="muted">No known downstream use yet.</p>)}</section>
+      <UsedInSummary uses={uses} onOpen={() => setUsesDialogOpen(true)} />
     </div>
+    <ItemUsesDialog itemId={recipe.output.itemId} uses={uses} open={usesDialogOpen} onClose={() => setUsesDialogOpen(false)} onSelectRecipe={onSelectRecipe} />
   </Card>
+}
+
+function UsedInSummary({ uses, onOpen }: { uses: ReturnType<typeof getVisibleItemUsesForTransmutation>; onOpen: () => void }) {
+  return <section className="transmutation-detail-section transmutation-used-in-summary"><div className="transmutation-used-in-heading"><span className="eyebrow">USED IN</span>{uses.length > 0 && <span className="transmutation-used-in-count">{uses.length} downstream {uses.length === 1 ? 'use' : 'uses'}</span>}</div>{uses.length > 0 ? <div className="transmutation-used-in-row"><span>View every place this item is used.</span><button type="button" className="button ghost" onClick={onOpen}>VIEW</button></div> : <p className="muted">No known downstream use.</p>}</section>
 }
 
 function CurrentProduction({ echoes, currentCycle, currentSpeed, currentOutput }: { echoes: number; currentCycle: number | null; currentSpeed: number; currentOutput: number }) {

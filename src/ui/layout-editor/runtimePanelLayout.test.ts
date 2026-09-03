@@ -65,6 +65,11 @@ describe('runtime panel auto-flow', () => {
     expect(validateNoPanelOverlap(resolved)).toBe(true)
   })
 
+  it('keeps Transmutation Focus bounded with a usable minimum height', () => {
+    expect(getPanelDefinitions('tower-transmutation').find((panel) => panel.id === 'transmutation-focus')).toMatchObject({ heightMode: 'bounded-scroll', minH: 8 })
+    expect(DEFAULT_LAYOUTS['tower-transmutation']['transmutation-focus'].h).toBe(12)
+  })
+
   it('shifts locked runtime geometry while preserving the saved base object', () => {
     const saved = [item('growing', 0, 0, 12, 2), { ...item('locked', 0, 2, 12, 2), static: true }]
     const resolved = resolvePanelAutoFlowLayout(saved, { growing: 6 }, [definition('growing'), definition('locked')])

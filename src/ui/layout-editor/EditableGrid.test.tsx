@@ -53,4 +53,16 @@ describe('EditableGrid runtime geometry', () => {
       expect(latest.find((item) => item.i === 'transmutation-output-preview')?.y).toBe(9)
     })
   })
+
+  it('does not reserve geometry for a panel omitted by the runtime panel list', () => {
+    render(<EditableGrid screen="tower-transmutation" panels={[
+      { id: 'transmutation-recipes', content: <div>Recipes</div> },
+      { id: 'transmutation-focus', content: <div>Focus</div> },
+      { id: 'transmutation-detail', content: <div>Detail</div> },
+    ]} />)
+
+    const latest: Layout = gridState.layout[gridState.layout.length - 1] ?? []
+    expect(latest.some((item) => item.i === 'transmutation-output-preview')).toBe(false)
+    expect(document.querySelector('[data-panel-id="transmutation-output-preview"]')).toBeNull()
+  })
 })

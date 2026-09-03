@@ -32,7 +32,6 @@ export interface TransmutationScreenPreferences {
   materialTierFilter: TransmutationMaterialTierFilter
   craftableOnly: boolean
   activeOnly: boolean
-  usedInOpen: boolean
   collapsedCategories: Record<RecipeCategory, boolean>
 }
 

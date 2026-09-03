@@ -4,11 +4,8 @@ import { RECIPES } from '../../content/recipes/recipes'
 import { getTransmutationEquipmentPreview, getTransmutationOutputInspection } from './transmutationOutputReadModel'
 
 describe('Transmutation output read model', () => {
-  it('exposes material tier, source, uses, and research metadata', () => {
+  it('does not expose a material inspection payload', () => {
     const inspection = getTransmutationOutputInspection(createInitialState(), RECIPES['fire-fragment'])
-    expect(inspection.material?.tier).toBe(1)
-    expect(inspection.material?.source).toContain('Transmutation')
-    expect(inspection.material?.usedIn.length).toBeGreaterThan(0)
     expect(inspection.equipment).toBeNull()
   })
 

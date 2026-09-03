@@ -98,6 +98,7 @@ When replacing a system, remove the obsolete implementation after migration rath
 - Runtime panel placement must use the shared pure auto-flow solver and stable saved-order placement. Screen-specific transforms may prepare a layout but must not bypass the solver.
 - Responsive narrow layouts must stack every visible panel at `x=0`, `w=12`, using effective heights, and must remain collision-free after width/reflow changes.
 - Shared row/pixel conversion helpers own grid sizing math; do not duplicate magic row heights, margins, or pixel formulas in screens.
+- Large relationship/reference lists such as `Used In` must stay compact in normal panels and move into a dedicated scrollable modal/dialog or bounded inspector.
 
 
 ## Archive ownership

@@ -1,6 +1,6 @@
 import type { ScreenId } from '../../game/types'
 
-export const LAYOUT_VERSION = 8
+export const LAYOUT_VERSION = 9
 export const GRID_COLUMNS = 12
 export const GRID_ROW_HEIGHT = 30
 export const GRID_MARGIN: readonly [number, number] = [14, 14]

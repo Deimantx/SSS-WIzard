@@ -1,23 +1,33 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { RECIPES } from '../../../game/content/recipes/recipes'
 import { useGameStore } from '../../../store/gameStore'
 import { createInitialState } from '../../../store/initialState'
 import { resetAllUiPreferences } from '../../../ui/preferences/uiPreferencesStore'
 import { RecipeDetail } from './RecipeDetail'
 
-describe('RecipeDetail screen preferences', () => {
+describe('RecipeDetail Used In summary', () => {
   beforeEach(() => { useGameStore.getState().resetSave(); resetAllUiPreferences() })
 
-  it('persists the Used In accordion state across remounts', () => {
+  it('keeps Used In compact and opens the full list in a dialog', () => {
     const view = render(<RecipeDetail recipe={RECIPES['fire-fragment']} />)
-    fireEvent.click(screen.getByRole('button', { name: /USED IN/ }))
-    expect(screen.getByRole('button', { name: /USED IN/ }).getAttribute('aria-expanded')).toBe('false')
+    expect(screen.getByText(/downstream uses/)).toBeTruthy()
+    expect(screen.queryByText('Prismatic Fragment')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'VIEW' }))
+    expect(screen.getByRole('dialog', { name: /FIRE FRAGMENT/ })).toBeTruthy()
+    expect(screen.getByText('Prismatic Fragment')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Close Used In dialog' }))
+    expect(screen.queryByRole('dialog', { name: /FIRE FRAGMENT/ })).toBeNull()
     view.unmount()
+  })
 
-    render(<RecipeDetail recipe={RECIPES['fire-fragment']} />)
-
-    expect(screen.getByRole('button', { name: /USED IN/ }).getAttribute('aria-expanded')).toBe('false')
+  it('selects a downstream Transmutation recipe and closes the dialog', () => {
+    const onSelectRecipe = vi.fn()
+    render(<RecipeDetail recipe={RECIPES['fire-fragment']} onSelectRecipe={onSelectRecipe} />)
+    fireEvent.click(screen.getByRole('button', { name: 'VIEW' }))
+    fireEvent.click(screen.getByRole('button', { name: /Select Prismatic Fragment/ }))
+    expect(onSelectRecipe).toHaveBeenCalledWith('prismatic-fragment')
+    expect(screen.queryByRole('dialog')).toBeNull()
   })
 
   it('keeps production metrics without a duplicate live Current Cycle block', () => {

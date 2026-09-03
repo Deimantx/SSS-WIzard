@@ -15,7 +15,7 @@ const labels: Record<string, string> = {
 type PanelOverrides = Pick<PanelDefinition, 'minW' | 'minH' | 'heightMode'>
 const panelOverrides: Record<string, PanelOverrides> = {
   'transmutation-recipes': { minW: 5, minH: 10, heightMode: 'bounded-scroll' },
-  'transmutation-focus': { minW: 5, minH: 5, heightMode: 'bounded-scroll' },
+  'transmutation-focus': { minW: 5, minH: 8, heightMode: 'bounded-scroll' },
   'transmutation-detail': { minW: 4, minH: 7 },
   'transmutation-output-preview': { minW: 4, minH: 9 },
   'combat-stage': { minW: 6, minH: 13, heightMode: 'bounded-scroll' },

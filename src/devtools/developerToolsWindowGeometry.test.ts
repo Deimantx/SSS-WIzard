@@ -14,7 +14,7 @@ describe('Developer Tools window geometry', () => {
   })
 
   it('preserves minimized state while clamping explicit geometry', () => {
-    expect(clampDeveloperToolsGeometry({ x: 100, y: 100, width: 600, height: 400, minimized: true }, viewport).minimized).toBe(true)
+    expect(clampDeveloperToolsGeometry({ x: 100, y: 100, width: 600, height: 400, minimized: true, minimizedX: 100, minimizedY: 100 }, viewport).minimized).toBe(true)
   })
 
   it('keeps expanded geometry while clamping the compact title-bar position separately', () => {

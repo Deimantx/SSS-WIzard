@@ -21,7 +21,7 @@ const systemDocs = new Map<string, string>([
     '',
     '- TypeScript content and systems are the executable source of truth.',
     '- Markdown is a manual review surface; the game does not parse it.',
-    '- The manifest records the export snapshot, authored IDs, document paths, runtime source mappings, and registry counts.',
+    '- The manifest records the export snapshot, authored IDs, document paths, runtime source mappings, registry counts, canonical edit locations, and generated mirrors.',
     '- Normal content pages intentionally omit raw serialized objects and implementation-only field names.',
     '- Run the coverage command after exporting to verify that every authored content ID remains represented.',
     '',
@@ -44,6 +44,8 @@ const manifest = {
   },
   registries: balancing.registries,
   documents: balancing.documentInfo,
+  canonicalLocations: balancing.canonicalLocations,
+  mirrors: balancing.mirrors,
 }
 systemDocs.set('_System/balance-manifest.json', JSON.stringify(manifest, null, 2) + String.fromCharCode(10))
 

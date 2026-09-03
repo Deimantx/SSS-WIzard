@@ -1,23 +1,19 @@
 # Auto-Cast and Focus
 
-Auto-Cast spends Focus while an enabled spell waits for its authored trigger.
-
-| Spell ID | Spell | School | Auto-Cast trigger |
+| Spell | School | Auto-Cast trigger | Focus Cost |
 | --- | --- | --- | --- |
-| fire-bolt | Fire Bolt | Fire | Always |
-| ignite | Ignite | Fire | Always |
-| fireball | Fireball | Fire | Always |
-| water-ward | Water Ward | Water | when the caster's Barrier is below 10 |
-| flow-mend | Flow Mend | Water | when the caster's Health is below 70% |
-| frostbite | Frostbite | Water | Always |
-| earth-spike | Earth Spike | Earth | Always |
-| stoneguard | Stoneguard | Earth | when the caster's Barrier is below 10 |
-| fortify | Fortify | Earth | Always |
-| air-lance | Air Lance | Air | Always |
-| quickening | Quickening | Air | Always |
-| shock-spark | Shock Spark | Air | Always |
-
-## Rank Focus costs
+| Fire Bolt (fire-bolt) | Fire | Always | Rank based |
+| Ignite (ignite) | Fire | Always | Rank based |
+| Fireball (fireball) | Fire | Always | Rank based |
+| Water Ward (water-ward) | Water | when the caster's Barrier is below 10 | Rank based |
+| Flow Mend (flow-mend) | Water | when the caster's Health is below 70% | Rank based |
+| Frostbite (frostbite) | Water | Always | Rank based |
+| Earth Spike (earth-spike) | Earth | Always | Rank based |
+| Stoneguard (stoneguard) | Earth | when the caster's Barrier is below 10 | Rank based |
+| Fortify (fortify) | Earth | Always | Rank based |
+| Air Lance (air-lance) | Air | Always | Rank based |
+| Quickening (quickening) | Air | Always | Rank based |
+| Shock Spark (shock-spark) | Air | Always | Rank based |
 
 | Rank | Focus cost |
 | --- | --- |

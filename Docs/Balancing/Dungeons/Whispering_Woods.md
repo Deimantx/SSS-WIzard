@@ -1,24 +1,18 @@
 # Whispering Woods
 
-**ID:** `whispering-woods`
-
-A restless grove where living roots and arcane wisps guard the Forest Heart.
-
 | Setting | Value |
 | --- | --- |
-| Threat required | 20 |
+| Dungeon | Whispering Woods (whispering-woods) |
+| Threat / Requirement | 20 |
 | Boss | Forest Heart (forest-heart) |
 | Encounter delay | 5 s |
 | Unlock | Available from the start |
-| Tutorial milestone | No |
 
-## Normal encounter pool
+## Normal Enemies
 
-| Enemy ID | Name | Role |
-| --- | --- | --- |
-| forest-wisp | Forest Wisp | Normal |
-| thornling | Thornling | Normal |
-| stone-root | Stone Root | Normal |
-| grove-sentinel | Grove Sentinel | Normal |
-
-Boss: Forest Heart (forest-heart)
+| Enemy | Type |
+| --- | --- |
+| Forest Wisp (forest-wisp) | Normal |
+| Thornling (thornling) | Normal |
+| Stone Root (stone-root) | Normal |
+| Grove Sentinel (grove-sentinel) | Normal |

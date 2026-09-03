@@ -1,23 +1,17 @@
 # Abandoned Catacombs
 
-**ID:** `abandoned-catacombs`
-
-A dead mage’s tomb-complex where spirits and forgotten magic still linger.
-
 | Setting | Value |
 | --- | --- |
-| Threat required | 30 |
+| Dungeon | Abandoned Catacombs (abandoned-catacombs) |
+| Threat / Requirement | 30 |
 | Boss | Archmage Edrin's Shade (archmage-edrin-shade) |
 | Encounter delay | 5 s |
-| Unlock | Defeat Corrupted Greatbear |
-| Tutorial milestone | Yes |
+| Unlock | Defeat Corrupted Greatbear (corrupted-greatbear) |
 
-## Normal encounter pool
+## Normal Enemies
 
-| Enemy ID | Name | Role |
-| --- | --- | --- |
-| restless-skeleton | Restless Skeleton | Normal |
-| grave-wraith | Grave Wraith | Normal |
-| fallen-acolyte | Fallen Acolyte | Normal |
-
-Boss: Archmage Edrin's Shade (archmage-edrin-shade)
+| Enemy | Type |
+| --- | --- |
+| Restless Skeleton (restless-skeleton) | Normal |
+| Grave Wraith (grave-wraith) | Normal |
+| Fallen Acolyte (fallen-acolyte) | Normal |

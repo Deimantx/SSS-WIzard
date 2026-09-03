@@ -1,34 +1,17 @@
 # Guild progression
 
-## Arcane Supply
+## Ranks
 
-**ID:** `arcane-supply`
+| Rank | Required Reputation | Other Requirement | Permanent Reward | Unlocks |
+| --- | --- | --- | --- | --- |
+| Outsider | 0 | — | — | Guild unavailable until first Forest Heart clear |
+| Initiate | 0 | First Forest Heart clear | — | Guild requests |
+| Apprentice | 175 | All authored requests complete | +10 Focus | Promotion available |
 
-Donate Fire Fragments to light the guild hearth.
+## Requests
 
-**Activity:** Donation
-**Item:** Fire Fragment
-**Required amount:** 20
-**Reputation reward:** 50
-## Clear the Woods
-
-**ID:** `clear-the-woods`
-
-Defeat normal monsters in Whispering Woods.
-
-**Activity:** Kills
-**Item:** None
-**Required amount:** 30
-**Reputation reward:** 50
-## Sentinel Breaker
-
-**ID:** `sentinel-breaker`
-
-Defeat Grove Sentinel twice.
-
-**Activity:** Monster Kills
-**Item:** None
-**Required amount:** 2
-**Reputation reward:** 75
-
-Guild rank, reputation, and live request progress are profile state rather than authored balance values.
+| Request | Required Rank | Item | Qty | Reputation | Other Reward | Repeatable? |
+| --- | --- | --- | --- | --- | --- | --- |
+| Arcane Supply (arcane-supply) | Initiate | Fire Fragment (fire-fragment) | 20 | 50 | Donate Fire Fragments to light the guild hearth. | No |
+| Clear the Woods (clear-the-woods) | Initiate | — | 30 | 50 | Defeat normal monsters in Whispering Woods. | No |
+| Sentinel Breaker (sentinel-breaker) | Initiate | — | 2 | 75 | Defeat Grove Sentinel twice. | No |

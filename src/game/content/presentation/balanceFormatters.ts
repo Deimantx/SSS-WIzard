@@ -9,7 +9,7 @@ import type {
   ModifierKey,
   RecipeUnlockCondition,
 } from '../../types'
-import type { CombatTriggerRule } from '../../systems/combat/combatTypes'
+import type { CombatActionDefinition, CombatTriggerRule, TraitDefinition } from '../../systems/combat/combatTypes'
 import { DUNGEONS } from '../dungeons/dungeons'
 import { MONSTERS } from '../monsters'
 import { STATUS_DEFINITIONS } from '../statuses/statuses'
@@ -230,5 +230,62 @@ export const formatEquipmentEffectSummary = (item: ItemDefinition) => [
   ...(item.combat?.modifiers ?? []).map((modifier) => `Passive: ${formatCombatModifier(modifier)}`),
   ...(item.combat?.rules ?? []).map(formatCombatRule),
 ]
+
+const compactTriggerLabels: Record<string, string> = {
+  'on-combat-start': 'Combat start',
+  'on-action-resolve': 'Action resolves',
+  'on-kill': 'Kill',
+  'on-hp-threshold': 'HP threshold',
+  'on-barrier-broken': 'Barrier breaks',
+  'on-status-applied': 'Status applied',
+  'on-status-removed': 'Status removed',
+  'on-damage-taken': 'Damage taken',
+  'on-damage-dealt': 'Damage dealt',
+}
+
+export const formatCompactCombatEffect = (effect: CombatEffect, context: { statusHolder?: boolean } = {}): string => {
+  switch (effect.type) {
+    case 'deal-damage': return effect.components.map((component) => `${formatMagnitude(component.magnitude)} ${readableId(component.damageType)} damage`).join(' + ')
+    case 'heal': return `+${formatMagnitude(effect.magnitude)} Health`
+    case 'gain-barrier': return `+${formatMagnitude(effect.magnitude)} Barrier${effect.durationMs === null || effect.durationMs === undefined ? '' : ` (${formatDuration(effect.durationMs)})`}`
+    case 'restore-resource': return `+${formatMagnitude(effect.magnitude)} ${readableId(effect.resource)}`
+    case 'drain-resource': return `-${formatMagnitude(effect.magnitude)} ${readableId(effect.resource)}`
+    case 'apply-status': {
+      const duration = effect.durationMs === null || effect.durationMs === undefined ? '' : ` (${formatDuration(effect.durationMs)})`
+      const stacks = effect.stacks && effect.stacks > 1 ? ` x${effect.stacks}` : ''
+      const periodic = effect.periodicEffects?.length ? `; ${effect.periodicEffects.map((entry) => formatCompactCombatEffect(entry, { statusHolder: true })).join('; ')}` : ''
+      return `${statusName(effect.statusId)}${stacks}${duration}${periodic}`
+    }
+    case 'remove-status': return `Remove ${statusName(effect.statusId)}`
+    case 'cleanse': return `Cleanse ${effect.mode === 'tag' ? readableId(effect.tag ?? 'status') : effect.mode === 'all' ? 'all' : 'one'} status${effect.mode === 'all' ? 'es' : ''}`
+    case 'dispel': return `Dispel ${effect.mode === 'tag' ? readableId(effect.tag ?? 'status') : effect.mode === 'all' ? 'all' : 'one'} effect${effect.mode === 'all' ? 's' : ''}`
+    case 'modify-action-timer': return `${effect.amountMs >= 0 ? '+' : '-'}${formatDuration(Math.abs(effect.amountMs))} action time`
+    case 'modify-cooldown': return `${effect.amountMs >= 0 ? '+' : '-'}${formatDuration(Math.abs(effect.amountMs))} cooldown`
+    case 'set-action-pattern': return `Pattern: ${readableId(effect.patternId)}`
+  }
+}
+
+export const formatCompactCombatRule = (rule: CombatTriggerRule): string => {
+  const trigger = compactTriggerLabels[rule.event] ?? readableId(rule.event.replace(/^on-/, ''))
+  const requirement = rule.condition && formatCombatCondition(rule.condition) !== 'always' ? ` when ${formatCombatCondition(rule.condition)}` : ''
+  const details = rule.effects.map((effect) => formatCompactCombatEffect(effect)).join('; ')
+  const once = rule.oncePerEncounter ? ' (once/encounter)' : ''
+  const cooldown = rule.cooldownMs ? ` (${formatDuration(rule.cooldownMs)} CD)` : ''
+  const chance = rule.chance !== undefined ? ` (${formatPercent(rule.chance)} chance)` : ''
+  return `${trigger}${requirement} -> ${details}${once}${cooldown}${chance}`
+}
+
+export const formatCompactTrait = (trait: TraitDefinition) => [
+  trait.description,
+  ...(trait.modifiers ?? []).map(formatCombatModifier),
+  ...(trait.rules ?? []).map(formatCompactCombatRule),
+].filter(Boolean).join('; ')
+
+export const formatCompactPattern = (pattern: ActionPattern, actions: Record<string, CombatActionDefinition>) => formatActionPattern(pattern, actions)
+
+export const formatCompactEquipmentSpecial = (item: ItemDefinition) => [
+  ...(item.combat?.modifiers ?? []).map((modifier) => formatCombatModifier(modifier)),
+  ...(item.combat?.rules ?? []).map(formatCompactCombatRule),
+].filter(Boolean).join('; ')
 
 export const formatReadableId = readableId

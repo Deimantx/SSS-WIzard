@@ -1,23 +1,17 @@
 # Howling Den
 
-**ID:** `howling-den`
-
-A predator-haunted den twisted by unstable magic.
-
 | Setting | Value |
 | --- | --- |
-| Threat required | 25 |
+| Dungeon | Howling Den (howling-den) |
+| Threat / Requirement | 25 |
 | Boss | Corrupted Greatbear (corrupted-greatbear) |
 | Encounter delay | 5 s |
-| Unlock | Defeat Forest Heart |
-| Tutorial milestone | No |
+| Unlock | Defeat Forest Heart (forest-heart) |
 
-## Normal encounter pool
+## Normal Enemies
 
-| Enemy ID | Name | Role |
-| --- | --- | --- |
-| cavefang-wolf | Cavefang Wolf | Normal |
-| razorclaw-lynx | Razorclaw Lynx | Normal |
-| corrupted-dire-wolf | Corrupted Dire Wolf | Normal |
-
-Boss: Corrupted Greatbear (corrupted-greatbear)
+| Enemy | Type |
+| --- | --- |
+| Cavefang Wolf (cavefang-wolf) | Normal |
+| Razorclaw Lynx (razorclaw-lynx) | Normal |
+| Corrupted Dire Wolf (corrupted-dire-wolf) | Normal |

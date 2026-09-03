@@ -1,240 +1,67 @@
 # Materials
 
-## Prismatic Fragment
-
-**ID:** `prismatic-fragment`
-
-**Category:** Material
-**Subtype:** Arcane
-**Research school:** None
-**Source:** Transmutation
-**Sell value:** 20
-
-A harmonized shard formed from all four elemental forces. Used to strengthen the tower's Focus capacity.
-
-**Drop and source relationships:** Prismatic Fragment (Transmutation output)
-**Used by:** Corrupted Howlstaff, Graveglass Wand, Edrin's Remnant Staff, Soulward Focus, Soulward Shield, Acolyte Vestments, Wraithveil Hood, Ossuary Mantle, Soulglass Amulet, Gravebinder Ring
-## Life Essence
-
-**ID:** `life-essence`
-
-**Category:** Monster Loot
-**Subtype:** Creature
-**Research school:** None
-**Source:** All monsters
-**Sell value:** 2
-
-Vital residue released when living magic is defeated. A universal catalyst for permanent Tower upgrades.
-
-**Drop and source relationships:** Forest Wisp (Whispering Woods normal loot), Thornling (Whispering Woods normal loot), Stone Root (Whispering Woods normal loot), Grove Sentinel (Whispering Woods normal loot), Forest Heart (Whispering Woods boss loot), Cavefang Wolf (Howling Den normal loot), Razorclaw Lynx (Howling Den normal loot), Corrupted Dire Wolf (Howling Den normal loot), Corrupted Greatbear (Howling Den boss loot), Restless Skeleton (Abandoned Catacombs normal loot), Grave Wraith (Abandoned Catacombs normal loot), Fallen Acolyte (Abandoned Catacombs normal loot), Archmage Edrin's Shade (Abandoned Catacombs boss loot)
-**Used by:** Prismatic Fragment
-## Fire Fragment
-
-**ID:** `fire-fragment`
-
-**Category:** Elemental
-**Subtype:** Elemental
-**Research school:** Fire
-**Source:** Transmutation
-**Sell value:** 1
-
-A hot shard of transmuted elemental force.
-
-**Drop and source relationships:** Fire Fragment (Transmutation output)
-**Used by:** Prismatic Fragment, Ember Staff, Wispwood Wand, Fangbound Dagger, Soulglass Amulet
-## Water Fragment
-
-**ID:** `water-fragment`
-
-**Category:** Elemental
-**Subtype:** Elemental
-**Research school:** Water
-**Source:** Transmutation
-**Sell value:** 1
-
-A cool fragment shaped by transmutation.
-
-**Drop and source relationships:** Water Fragment (Transmutation output)
-**Used by:** Prismatic Fragment, Tide Focus, Wispveil Hood, Wispbound Ring, Howling Signet, Soulward Focus, Acolyte Vestments
-## Earth Fragment
-
-**ID:** `earth-fragment`
-
-**Category:** Elemental
-**Subtype:** Elemental
-**Research school:** Earth
-**Source:** Transmutation
-**Sell value:** 1
-
-Dense mineral magic made by transmutation.
-
-**Drop and source relationships:** Earth Fragment (Transmutation output)
-**Used by:** Prismatic Fragment, Stoneweave Robe, Grovekeeper Mantle, Fangbound Buckler, Predator-Hide Mantle, Greatbear Vestment, Soulward Shield, Ossuary Mantle
-## Air Fragment
-
-**ID:** `air-fragment`
-
-**Category:** Elemental
-**Subtype:** Elemental
-**Research school:** Air
-**Source:** Transmutation
-**Sell value:** 1
-
-A weightless mote formed through transmutation.
-
-**Drop and source relationships:** Air Fragment (Transmutation output)
-**Used by:** Prismatic Fragment, Wispwood Wand, Windthread Charm, Wispveil Hood, Wispbound Ring, Fangbound Dagger, Corrupted Howlstaff, Razorclaw Circlet, Howling Signet, Wraithveil Hood
-## Wisp Essence
-
-**ID:** `wisp-essence`
-
-**Category:** Monster Loot
-**Subtype:** Creature
-**Research school:** None
-**Source:** Whispering Woods normal monsters
-**Sell value:** 3
-
-Loot from the lesser spirits of Whispering Woods.
-
-**Drop and source relationships:** Forest Wisp (Whispering Woods normal loot), Thornling (Whispering Woods normal loot), Stone Root (Whispering Woods normal loot), Grove Sentinel (Whispering Woods normal loot)
-**Used by:** Ember Staff, Wispwood Wand, Tide Focus, Stoneweave Robe, Windthread Charm, Wispveil Hood, Grovekeeper Mantle, Wispbound Ring
-## Grove Bark
-
-**ID:** `grove-bark`
-
-**Category:** Monster Loot
-**Subtype:** Creature
-**Research school:** None
-**Source:** Grove Sentinel
-**Sell value:** 5
-
-Resilient bark shed by the Sentinel.
-
-**Drop and source relationships:** Grove Sentinel (Whispering Woods normal loot)
-**Used by:** Ember Staff, Wispwood Wand, Tide Focus, Stoneweave Robe, Windthread Charm, Wispveil Hood, Grovekeeper Mantle, Wispbound Ring
-## Heartseed
-
-**ID:** `heartseed`
-
-**Category:** Boss Loot
-**Subtype:** Creature
-**Research school:** None
-**Source:** Forest Heart first and repeat kills
-**Sell value:** Not sellable
-
-A living seed left by the Forest Heart.
-
-**Drop and source relationships:** Forest Heart (Whispering Woods boss loot)
-**Used by:** None
-## Predator Fang
-
-**ID:** `predator-fang`
-
-**Category:** Monster Loot
-**Subtype:** Creature
-**Research school:** None
-**Source:** Howling Den predators
-**Sell value:** 4
-
-A keen fang shed by the predators of Howling Den.
-
-**Drop and source relationships:** Cavefang Wolf (Howling Den normal loot), Razorclaw Lynx (Howling Den normal loot), Corrupted Dire Wolf (Howling Den normal loot)
-**Used by:** Fangbound Dagger, Fangbound Buckler, Razorclaw Circlet, Howling Signet
-## Predator Hide
-
-**ID:** `predator-hide`
-
-**Category:** Monster Loot
-**Subtype:** Creature
-**Research school:** None
-**Source:** Howling Den predators
-**Sell value:** 5
-
-Tough hide carrying the scent of the hunt.
-
-**Drop and source relationships:** Cavefang Wolf (Howling Den normal loot), Razorclaw Lynx (Howling Den normal loot), Corrupted Dire Wolf (Howling Den normal loot), Corrupted Greatbear (Howling Den boss loot)
-**Used by:** Fangbound Buckler, Razorclaw Circlet, Predator-Hide Mantle, Greatbear Vestment
-## Corrupted Beast Essence
-
-**ID:** `corrupted-beast-essence`
-
-**Category:** Monster Loot
-**Subtype:** Arcane
-**Research school:** None
-**Source:** Corrupted Dire Wolf and Corrupted Greatbear
-**Sell value:** 6
-
-Unstable essence drawn from beasts warped by magic.
-
-**Drop and source relationships:** Corrupted Dire Wolf (Howling Den normal loot), Corrupted Greatbear (Howling Den boss loot)
-**Used by:** Corrupted Howlstaff, Howling Signet
-## Greatbear Core
-
-**ID:** `greatbear-core`
-
-**Category:** Boss Loot
-**Subtype:** Arcane
-**Research school:** None
-**Source:** Corrupted Greatbear
-**Sell value:** 20
-
-A dense magical core left by the Corrupted Greatbear.
-
-**Drop and source relationships:** Corrupted Greatbear (Howling Den boss loot)
-**Used by:** Corrupted Howlstaff, Greatbear Vestment
-## Ossuary Remnant
-
-**ID:** `ossuary-remnant`
-
-**Category:** Monster Loot
-**Subtype:** Creature
-**Research school:** None
-**Source:** Restless Skeleton and Fallen Acolyte
-**Sell value:** 4
-
-A fragment of bone animated by forgotten commands.
-
-**Drop and source relationships:** Restless Skeleton (Abandoned Catacombs normal loot), Fallen Acolyte (Abandoned Catacombs normal loot)
-**Used by:** Soulward Shield, Acolyte Vestments, Ossuary Mantle
-## Graveglass Shard
-
-**ID:** `graveglass-shard`
-
-**Category:** Monster Loot
-**Subtype:** Arcane
-**Research school:** None
-**Source:** Grave Wraith, Fallen Acolyte, and Archmage Edrin’s Shade
-**Sell value:** 5
-
-A sharp shard of glass darkened by old sorcery.
-
-**Drop and source relationships:** Restless Skeleton (Abandoned Catacombs normal loot), Grave Wraith (Abandoned Catacombs normal loot), Fallen Acolyte (Abandoned Catacombs normal loot), Archmage Edrin's Shade (Abandoned Catacombs boss loot)
-**Used by:** Graveglass Wand, Edrin's Remnant Staff, Soulward Focus, Soulward Shield, Wraithveil Hood, Soulglass Amulet, Gravebinder Ring
-## Soul Residue
-
-**ID:** `soul-residue`
-
-**Category:** Monster Loot
-**Subtype:** Arcane
-**Research school:** None
-**Source:** Grave Wraith, Fallen Acolyte, and Archmage Edrin’s Shade
-**Sell value:** 6
-
-A quiet remnant of a spirit’s unfinished passage.
-
-**Drop and source relationships:** Grave Wraith (Abandoned Catacombs normal loot), Fallen Acolyte (Abandoned Catacombs normal loot), Archmage Edrin's Shade (Abandoned Catacombs boss loot)
-**Used by:** Graveglass Wand, Edrin's Remnant Staff, Soulward Focus, Acolyte Vestments, Wraithveil Hood, Ossuary Mantle, Soulglass Amulet, Gravebinder Ring
-## Edrin Remnant
-
-**ID:** `edrin-remnant`
-
-**Category:** Boss Loot
-**Subtype:** Arcane
-**Research school:** None
-**Source:** Archmage Edrin’s Shade
-**Sell value:** 20
-
-A rare remnant of the Archmage’s final spell.
-
-**Drop and source relationships:** Archmage Edrin's Shade (Abandoned Catacombs boss loot)
-**Used by:** Edrin's Remnant Staff
+| Material | Type | Dungeon / Tier | Primary Source | Min Drop | Max Drop | Chance Range | Sell | Recipes Using |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Prismatic Fragment (prismatic-fragment) | Arcane | — | Transmutation | — | — | — | 20 | 10 |
+| Life Essence (life-essence) | Creature | Whispering Woods, Howling Den, Abandoned Catacombs | All monsters | 1 | 3 | 100%–100% | 2 | 1 |
+| Fire Fragment (fire-fragment) | Elemental | — | Transmutation | — | — | — | 1 | 5 |
+| Water Fragment (water-fragment) | Elemental | — | Transmutation | — | — | — | 1 | 7 |
+| Earth Fragment (earth-fragment) | Elemental | — | Transmutation | — | — | — | 1 | 8 |
+| Air Fragment (air-fragment) | Elemental | — | Transmutation | — | — | — | 1 | 10 |
+| Wisp Essence (wisp-essence) | Creature | Whispering Woods | Whispering Woods normal monsters | 1 | 6 | 100%–100% | 3 | 8 |
+| Grove Bark (grove-bark) | Creature | Whispering Woods | Grove Sentinel | 2 | 3 | 100% | 5 | 8 |
+| Heartseed (heartseed) | Creature | Whispering Woods | Forest Heart first and repeat kills | 1 | 1 | 100% | — | 0 |
+| Predator Fang (predator-fang) | Creature | Howling Den | Howling Den predators | 1 | 1 | 25%–55% | 4 | 4 |
+| Predator Hide (predator-hide) | Creature | Howling Den | Howling Den predators | 1 | 4 | 30%–100% | 5 | 4 |
+| Corrupted Beast Essence (corrupted-beast-essence) | Arcane | Howling Den | Corrupted Dire Wolf and Corrupted Greatbear | 1 | 2 | 35%–100% | 6 | 2 |
+| Greatbear Core (greatbear-core) | Arcane | Howling Den | Corrupted Greatbear | 1 | 1 | 35% | 20 | 2 |
+| Ossuary Remnant (ossuary-remnant) | Creature | Abandoned Catacombs | Restless Skeleton and Fallen Acolyte | 1 | 1 | 20%–55% | 4 | 3 |
+| Graveglass Shard (graveglass-shard) | Arcane | Abandoned Catacombs | Grave Wraith, Fallen Acolyte, and Archmage Edrin’s Shade | 1 | 4 | 15%–100% | 5 | 7 |
+| Soul Residue (soul-residue) | Arcane | Abandoned Catacombs | Grave Wraith, Fallen Acolyte, and Archmage Edrin’s Shade | 1 | 3 | 30%–100% | 6 | 8 |
+| Edrin Remnant (edrin-remnant) | Arcane | Abandoned Catacombs | Archmage Edrin’s Shade | 1 | 1 | 35% | 20 | 1 |
+
+> Comparison view — edit drop quantities and chances in the dungeon enemy Loot sheets.
+
+## Drop Sources
+
+| Material | Enemy | Dungeon | Min | Max | Chance | Est. Qty / Kill |
+| --- | --- | --- | --- | --- | --- | --- |
+| Life Essence (life-essence) | Forest Wisp (forest-wisp) | Whispering Woods | 1 | 3 | 100% | 2 |
+| Life Essence (life-essence) | Thornling (thornling) | Whispering Woods | 1 | 3 | 100% | 2 |
+| Life Essence (life-essence) | Stone Root (stone-root) | Whispering Woods | 1 | 3 | 100% | 2 |
+| Life Essence (life-essence) | Grove Sentinel (grove-sentinel) | Whispering Woods | 1 | 3 | 100% | 2 |
+| Life Essence (life-essence) | Forest Heart (forest-heart) | Whispering Woods | 1 | 3 | 100% | 2 |
+| Life Essence (life-essence) | Cavefang Wolf (cavefang-wolf) | Howling Den | 1 | 3 | 100% | 2 |
+| Life Essence (life-essence) | Razorclaw Lynx (razorclaw-lynx) | Howling Den | 1 | 3 | 100% | 2 |
+| Life Essence (life-essence) | Corrupted Dire Wolf (corrupted-dire-wolf) | Howling Den | 1 | 3 | 100% | 2 |
+| Life Essence (life-essence) | Corrupted Greatbear (corrupted-greatbear) | Howling Den | 1 | 3 | 100% | 2 |
+| Life Essence (life-essence) | Restless Skeleton (restless-skeleton) | Abandoned Catacombs | 1 | 3 | 100% | 2 |
+| Life Essence (life-essence) | Grave Wraith (grave-wraith) | Abandoned Catacombs | 1 | 3 | 100% | 2 |
+| Life Essence (life-essence) | Fallen Acolyte (fallen-acolyte) | Abandoned Catacombs | 1 | 3 | 100% | 2 |
+| Life Essence (life-essence) | Archmage Edrin's Shade (archmage-edrin-shade) | Abandoned Catacombs | 1 | 3 | 100% | 2 |
+| Wisp Essence (wisp-essence) | Forest Wisp (forest-wisp) | Whispering Woods | 1 | 2 | 100% | 1.5 |
+| Wisp Essence (wisp-essence) | Thornling (thornling) | Whispering Woods | 1 | 2 | 100% | 1.5 |
+| Wisp Essence (wisp-essence) | Stone Root (stone-root) | Whispering Woods | 1 | 3 | 100% | 2 |
+| Wisp Essence (wisp-essence) | Grove Sentinel (grove-sentinel) | Whispering Woods | 4 | 6 | 100% | 5 |
+| Grove Bark (grove-bark) | Grove Sentinel (grove-sentinel) | Whispering Woods | 2 | 3 | 100% | 2.5 |
+| Heartseed (heartseed) | Forest Heart (forest-heart) | Whispering Woods | 1 | 1 | 100% | 1 |
+| Predator Fang (predator-fang) | Cavefang Wolf (cavefang-wolf) | Howling Den | 1 | 1 | 55% | 0.55 |
+| Predator Fang (predator-fang) | Razorclaw Lynx (razorclaw-lynx) | Howling Den | 1 | 1 | 45% | 0.45 |
+| Predator Fang (predator-fang) | Corrupted Dire Wolf (corrupted-dire-wolf) | Howling Den | 1 | 1 | 25% | 0.25 |
+| Predator Hide (predator-hide) | Cavefang Wolf (cavefang-wolf) | Howling Den | 1 | 1 | 30% | 0.3 |
+| Predator Hide (predator-hide) | Razorclaw Lynx (razorclaw-lynx) | Howling Den | 1 | 1 | 45% | 0.45 |
+| Predator Hide (predator-hide) | Corrupted Dire Wolf (corrupted-dire-wolf) | Howling Den | 1 | 1 | 30% | 0.3 |
+| Predator Hide (predator-hide) | Corrupted Greatbear (corrupted-greatbear) | Howling Den | 2 | 4 | 100% | 3 |
+| Corrupted Beast Essence (corrupted-beast-essence) | Corrupted Dire Wolf (corrupted-dire-wolf) | Howling Den | 1 | 1 | 35% | 0.35 |
+| Corrupted Beast Essence (corrupted-beast-essence) | Corrupted Greatbear (corrupted-greatbear) | Howling Den | 1 | 2 | 100% | 1.5 |
+| Greatbear Core (greatbear-core) | Corrupted Greatbear (corrupted-greatbear) | Howling Den | 1 | 1 | 35% | 0.35 |
+| Ossuary Remnant (ossuary-remnant) | Restless Skeleton (restless-skeleton) | Abandoned Catacombs | 1 | 1 | 55% | 0.55 |
+| Ossuary Remnant (ossuary-remnant) | Fallen Acolyte (fallen-acolyte) | Abandoned Catacombs | 1 | 1 | 20% | 0.2 |
+| Graveglass Shard (graveglass-shard) | Restless Skeleton (restless-skeleton) | Abandoned Catacombs | 1 | 1 | 15% | 0.15 |
+| Graveglass Shard (graveglass-shard) | Grave Wraith (grave-wraith) | Abandoned Catacombs | 1 | 1 | 30% | 0.3 |
+| Graveglass Shard (graveglass-shard) | Fallen Acolyte (fallen-acolyte) | Abandoned Catacombs | 1 | 1 | 35% | 0.35 |
+| Graveglass Shard (graveglass-shard) | Archmage Edrin's Shade (archmage-edrin-shade) | Abandoned Catacombs | 2 | 4 | 100% | 3 |
+| Soul Residue (soul-residue) | Grave Wraith (grave-wraith) | Abandoned Catacombs | 1 | 1 | 50% | 0.5 |
+| Soul Residue (soul-residue) | Fallen Acolyte (fallen-acolyte) | Abandoned Catacombs | 1 | 1 | 30% | 0.3 |
+| Soul Residue (soul-residue) | Archmage Edrin's Shade (archmage-edrin-shade) | Abandoned Catacombs | 2 | 3 | 100% | 2.5 |
+| Edrin Remnant (edrin-remnant) | Archmage Edrin's Shade (archmage-edrin-shade) | Abandoned Catacombs | 1 | 1 | 35% | 0.35 |

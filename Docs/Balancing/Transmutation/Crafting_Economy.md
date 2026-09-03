@@ -1,37 +1,37 @@
 # Crafting economy
 
-These comparisons are derived for planning and do not add new runtime values.
+Derived comparison values are marked Est. and do not add runtime values.
 
-| Recipe ID | Output | Ingredient count | Duration | Mana cost | Output per hour |
-| --- | --- | --- | --- | --- | --- |
-| fire-fragment | Fire Fragment x1 | 0 | 6 s | 15 | 600 output/hour |
-| water-fragment | Water Fragment x1 | 0 | 6 s | 15 | 600 output/hour |
-| earth-fragment | Earth Fragment x1 | 0 | 6 s | 15 | 600 output/hour |
-| air-fragment | Air Fragment x1 | 0 | 6 s | 15 | 600 output/hour |
-| prismatic-fragment | Prismatic Fragment x1 | 18 | 18 s | 0 | 200 output/hour |
-| ember-staff | Ember Staff x1 | 9 | 8 s | 0 | 450 output/hour |
-| wispwood-wand | Wispwood Wand x1 | 8 | 7 s | 0 | 514.29 output/hour |
-| tide-focus | Tide Focus x1 | 8 | 9 s | 0 | 400 output/hour |
-| stoneweave-robe | Stoneweave Robe x1 | 8 | 9 s | 0 | 400 output/hour |
-| windthread-charm | Windthread Charm x1 | 8 | 9 s | 0 | 400 output/hour |
-| wispveil-hood | Wispveil Hood x1 | 9 | 10 s | 0 | 360 output/hour |
-| grovekeeper-mantle | Grovekeeper Mantle x1 | 9 | 10 s | 0 | 360 output/hour |
-| wispbound-ring | Wispbound Ring x1 | 8 | 8 s | 0 | 450 output/hour |
-| fangbound-dagger | Fangbound Dagger x1 | 10 | 12 s | 0 | 300 output/hour |
-| fangbound-buckler | Fangbound Buckler x1 | 11 | 12 s | 0 | 300 output/hour |
-| corrupted-howlstaff | Corrupted Howlstaff x1 | 11 | 18 s | 0 | 200 output/hour |
-| razorclaw-circlet | Razorclaw Circlet x1 | 8 | 12 s | 0 | 300 output/hour |
-| predator-hide-mantle | Predator-Hide Mantle x1 | 10 | 12 s | 0 | 300 output/hour |
-| greatbear-vestment | Greatbear Vestment x1 | 15 | 18 s | 0 | 200 output/hour |
-| howling-signet | Howling Signet x1 | 10 | 14 s | 0 | 257.14 output/hour |
-| graveglass-wand | Graveglass Wand x1 | 11 | 18 s | 0 | 200 output/hour |
-| edrins-remnant-staff | Edrin's Remnant Staff x1 | 19 | 30 s | 0 | 120 output/hour |
-| soulward-focus | Soulward Focus x1 | 14 | 20 s | 0 | 180 output/hour |
-| soulward-shield | Soulward Shield x1 | 16 | 20 s | 0 | 180 output/hour |
-| acolyte-vestments | Acolyte Vestments x1 | 15 | 20 s | 0 | 180 output/hour |
-| wraithveil-hood | Wraithveil Hood x1 | 14 | 20 s | 0 | 180 output/hour |
-| ossuary-mantle | Ossuary Mantle x1 | 16 | 20 s | 0 | 180 output/hour |
-| soulglass-amulet | Soulglass Amulet x1 | 15 | 20 s | 0 | 180 output/hour |
-| gravebinder-ring | Gravebinder Ring x1 | 10 | 18 s | 0 | 200 output/hour |
+| Recipe | Dungeon | Monster Mats | Elemental Mats | Boss Mats | Total Items | Time | Est. Enemy Kills | Sell Value |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Fire Fragment (fire-fragment) | Elemental | 0 | 0 | 0 | 0 | 6 s | — | 1 |
+| Water Fragment (water-fragment) | Elemental | 0 | 0 | 0 | 0 | 6 s | — | 1 |
+| Earth Fragment (earth-fragment) | Elemental | 0 | 0 | 0 | 0 | 6 s | — | 1 |
+| Air Fragment (air-fragment) | Elemental | 0 | 0 | 0 | 0 | 6 s | — | 1 |
+| Prismatic Fragment (prismatic-fragment) | Material | 10 | 8 | 0 | 18 | 18 s | 5 | 20 |
+| Ember Staff (ember-staff) | Whispering Woods | 5 | 4 | 0 | 9 | 8 s | 0.8 | 40 |
+| Wispwood Wand (wispwood-wand) | Whispering Woods | 4 | 4 | 0 | 8 | 7 s | 0.6 | 40 |
+| Tide Focus (tide-focus) | Whispering Woods | 4 | 4 | 0 | 8 | 9 s | 0.6 | 40 |
+| Stoneweave Robe (stoneweave-robe) | Whispering Woods | 4 | 4 | 0 | 8 | 9 s | 0.6 | 40 |
+| Windthread Charm (windthread-charm) | Whispering Woods | 4 | 4 | 0 | 8 | 9 s | 0.6 | 40 |
+| Wispveil Hood (wispveil-hood) | Whispering Woods | 5 | 4 | 0 | 9 | 10 s | 0.8 | 40 |
+| Grovekeeper Mantle (grovekeeper-mantle) | Whispering Woods | 6 | 3 | 0 | 9 | 10 s | 0.8 | 40 |
+| Wispbound Ring (wispbound-ring) | Whispering Woods | 4 | 4 | 0 | 8 | 8 s | 0.6 | 40 |
+| Fangbound Dagger (fangbound-dagger) | Howling Den | 6 | 4 | 0 | 10 | 12 s | 10.91 | 70 |
+| Fangbound Buckler (fangbound-buckler) | Howling Den | 8 | 3 | 0 | 11 | 12 s | 13.33 | 70 |
+| Corrupted Howlstaff (corrupted-howlstaff) | Howling Den | 5 | 3 | 1 | 11 | 18 s | 14.29 | 70 |
+| Razorclaw Circlet (razorclaw-circlet) | Howling Den | 6 | 2 | 0 | 8 | 12 s | 7.27 | 70 |
+| Predator-Hide Mantle (predator-hide-mantle) | Howling Den | 7 | 3 | 0 | 10 | 12 s | 15.56 | 70 |
+| Greatbear Vestment (greatbear-vestment) | Howling Den | 10 | 4 | 1 | 15 | 18 s | 22.22 | 70 |
+| Howling Signet (howling-signet) | Howling Den | 6 | 4 | 0 | 10 | 14 s | 8.57 | 70 |
+| Graveglass Wand (graveglass-wand) | Abandoned Catacombs | 9 | 0 | 0 | 11 | 18 s | 17.14 | 110 |
+| Edrin's Remnant Staff (edrins-remnant-staff) | Abandoned Catacombs | 14 | 0 | 1 | 19 | 30 s | 22.86 | 110 |
+| Soulward Focus (soulward-focus) | Abandoned Catacombs | 9 | 3 | 0 | 14 | 20 s | 11.43 | 110 |
+| Soulward Shield (soulward-shield) | Abandoned Catacombs | 10 | 4 | 0 | 16 | 20 s | 11.43 | 110 |
+| Acolyte Vestments (acolyte-vestments) | Abandoned Catacombs | 10 | 3 | 0 | 15 | 20 s | 12 | 110 |
+| Wraithveil Hood (wraithveil-hood) | Abandoned Catacombs | 9 | 3 | 0 | 14 | 20 s | 11.43 | 110 |
+| Ossuary Mantle (ossuary-mantle) | Abandoned Catacombs | 11 | 3 | 0 | 16 | 20 s | 12.73 | 110 |
+| Soulglass Amulet (soulglass-amulet) | Abandoned Catacombs | 10 | 3 | 0 | 15 | 20 s | 14.29 | 110 |
+| Gravebinder Ring (gravebinder-ring) | Abandoned Catacombs | 8 | 0 | 0 | 10 | 18 s | 11.43 | 110 |
 
-Output per hour assumes one continuously assigned Echo, with no missing ingredients, unlock gates, Mana shortage, or downtime.
+Est. Enemy Kills uses the best authored normal-monster expected quantity for each monster material and takes the largest ingredient estimate. It does not estimate target farm time.

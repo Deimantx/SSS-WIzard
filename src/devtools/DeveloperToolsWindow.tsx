@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import { Bug, Check, Maximize2, Minus, RotateCcw, X } from 'lucide-react'
 import { GameTooltip, Status } from '../components/ui'
 import { useGameStore } from '../store/gameStore'
-import { clampDeveloperToolsToViewport, closeDeveloperTools, minimizeDeveloperTools, resetDeveloperToolsWindow, restoreDeveloperTools, setDeveloperToolsGeometry, setDeveloperToolsTab, useDeveloperToolsStore, type DeveloperToolsTab } from './developerToolsStore'
+import { clampDeveloperToolsToViewport, closeDeveloperTools, minimizeDeveloperTools, resetDeveloperToolsWindow, restoreDeveloperTools, setDeveloperToolsGeometry, setDeveloperToolsMinimizedPosition, setDeveloperToolsTab, useDeveloperToolsStore, type DeveloperToolsTab } from './developerToolsStore'
+import { getDeveloperToolsMinimizedWidth } from './developerToolsWindowGeometry'
 import { DeveloperTab } from './DeveloperToolTabs'
 import { getActiveDebugOverrides } from './debugOverridePresentation'
 
@@ -13,7 +14,7 @@ const tabGroups: readonly { label: string; tabs: readonly { id: DeveloperToolsTa
   { label: 'SYSTEM', tabs: [{ id: 'save', label: 'Save / Profile' }, { id: 'diagnostics', label: 'Diagnostics' }] },
 ]
 
-type Interaction = { pointerId: number; startX: number; startY: number; geometry: { x: number; y: number; width: number; height: number } }
+type Interaction = { pointerId: number; startX: number; startY: number; geometry: { x: number; y: number; width: number; height: number }; minimized: boolean }
 
 export function DeveloperToolsWindow() {
   const session = useDeveloperToolsStore()
@@ -41,14 +42,17 @@ export function DeveloperToolsWindow() {
 
   const beginDrag = (event: ReactPointerEvent<HTMLElement>) => {
     if ((event.target as HTMLElement).closest('button,input,select,textarea,a')) return
-    interaction.current = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, geometry: session }
+    interaction.current = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, geometry: { x: session.minimized ? session.minimizedX : session.x, y: session.minimized ? session.minimizedY : session.y, width: session.width, height: session.height }, minimized: session.minimized }
     event.currentTarget.setPointerCapture(event.pointerId)
     event.preventDefault()
   }
   const moveDrag = (event: ReactPointerEvent<HTMLElement>) => {
     const active = interaction.current
     if (!active || active.pointerId !== event.pointerId) return
-    setDeveloperToolsGeometry({ x: active.geometry.x + event.clientX - active.startX, y: active.geometry.y + event.clientY - active.startY }, false)
+    const x = active.geometry.x + event.clientX - active.startX
+    const y = active.geometry.y + event.clientY - active.startY
+    if (active.minimized) setDeveloperToolsMinimizedPosition(x, y, false)
+    else setDeveloperToolsGeometry({ x, y }, false)
   }
   const endInteraction = (event: ReactPointerEvent<HTMLElement>) => {
     if (interaction.current?.pointerId === event.pointerId) {
@@ -58,7 +62,7 @@ export function DeveloperToolsWindow() {
     }
   }
   const beginResize = (event: ReactPointerEvent<HTMLElement>, edge: 'right' | 'bottom' | 'corner') => {
-    interaction.current = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, geometry: session }
+    interaction.current = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, geometry: session, minimized: false }
     ;(event.currentTarget as HTMLElement).dataset.resizeEdge = edge
     event.currentTarget.setPointerCapture(event.pointerId)
     event.preventDefault()
@@ -73,16 +77,28 @@ export function DeveloperToolsWindow() {
     setDeveloperToolsGeometry({ width: edge === 'bottom' ? active.geometry.width : active.geometry.width + dx, height: edge === 'right' ? active.geometry.height : active.geometry.height + dy }, false)
   }
 
+  const minimized = session.minimized
+  const windowStyle = (minimized ? {
+    left: session.minimizedX,
+    top: session.minimizedY,
+    width: getDeveloperToolsMinimizedWidth(),
+    height: undefined,
+    '--developer-tools-left': `${session.minimizedX}px`,
+    '--developer-tools-top': `${session.minimizedY}px`,
+    '--developer-tools-width': `${getDeveloperToolsMinimizedWidth()}px`,
+  } : { left: session.x, top: session.y, width: session.width, height: session.height }) as CSSProperties
   return <div className="developer-tools-layer" aria-label="Developer Tools workspace">
-    <section className={`developer-tools-window${session.minimized ? ' minimized' : ''}`} style={{ left: session.x, top: session.y, width: session.minimized ? Math.min(session.width, 360) : session.width, height: session.minimized ? undefined : session.height }} role="dialog" aria-label="Developer Tools">
+    <section className={`developer-tools-window${minimized ? ' minimized' : ''}`} style={windowStyle} role="dialog" aria-label="Developer Tools">
       <header className="developer-tools-header" onPointerDown={beginDrag} onPointerMove={moveDrag} onPointerUp={endInteraction} onPointerCancel={endInteraction}>
-        <div className="developer-tools-title"><div className="eyebrow"><Bug size={13} /> DEVELOPER WORKSPACE</div><h2>Developer Tools</h2></div>
+        <div className="developer-tools-title">{minimized ? <strong className="developer-tools-minimized-title"><Bug size={13} /> DEV TOOLS</strong> : <><div className="eyebrow"><Bug size={13} /> DEVELOPER WORKSPACE</div><h2>Developer Tools</h2></>}</div>
+        <div className="developer-tools-header-status">
+          {activeOverrides.length > 0 && <GameTooltip content={`${activeOverrides.length} active debug override${activeOverrides.length === 1 ? '' : 's'}`}><Status tone="warning">{minimized ? `${activeOverrides.length} OVERRIDE${activeOverrides.length === 1 ? '' : 'S'}` : `${activeOverrides.length} ACTIVE OVERRIDE${activeOverrides.length === 1 ? '' : 'S'}`}</Status></GameTooltip>}
+          {copied && <Status tone={copied === 'Clipboard unavailable' ? 'warning' : 'success'}>{minimized ? 'COPIED' : copied === 'Clipboard unavailable' ? copied : <><Check size={13} /> {copied} copied</>}</Status>}
+        </div>
         <div className="developer-tools-header-actions">
-          {activeOverrides.length > 0 && <Status tone="warning">{activeOverrides.length} ACTIVE OVERRIDE{activeOverrides.length === 1 ? '' : 'S'}</Status>}
-          {copied && <Status tone={copied === 'Clipboard unavailable' ? 'warning' : 'success'}>{copied === 'Clipboard unavailable' ? copied : <><Check size={13} /> {copied} copied</>}</Status>}
           <GameTooltip content="Reset window position and size"><button className="icon-button" onClick={resetDeveloperToolsWindow} aria-label="Reset Developer Tools window position and size"><RotateCcw size={15} /></button></GameTooltip>
-          <GameTooltip content="Clear every runtime debug override"><button className="icon-button" onClick={resetDebug} disabled={activeOverrides.length === 0} aria-label="Clear all debug overrides"><span className="developer-clear-label">CLEAR ALL</span></button></GameTooltip>
-          <GameTooltip content={session.minimized ? 'Restore Developer Tools' : 'Minimize Developer Tools'}><button className="icon-button" onClick={session.minimized ? restoreDeveloperTools : minimizeDeveloperTools} aria-label={session.minimized ? 'Restore Developer Tools' : 'Minimize Developer Tools'}>{session.minimized ? <Maximize2 size={16} /> : <Minus size={16} />}</button></GameTooltip>
+          <GameTooltip content="Clear all debug overrides"><button className="icon-button" onClick={resetDebug} disabled={activeOverrides.length === 0} aria-label="Clear all debug overrides"><span className="developer-clear-label">{minimized ? 'CLEAR' : 'CLEAR ALL'}</span></button></GameTooltip>
+          <GameTooltip content={minimized ? 'Restore Developer Tools' : 'Minimize Developer Tools'}><button className="icon-button" onClick={minimized ? restoreDeveloperTools : minimizeDeveloperTools} aria-label={minimized ? 'Restore Developer Tools' : 'Minimize Developer Tools'}>{minimized ? <Maximize2 size={16} /> : <Minus size={16} />}</button></GameTooltip>
           <GameTooltip content="Close Developer Tools"><button className="icon-button" onClick={closeDeveloperTools} aria-label="Close Developer Tools"><X size={18} /></button></GameTooltip>
         </div>
       </header>

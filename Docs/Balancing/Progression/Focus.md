@@ -1,33 +1,28 @@
 # Focus
 
-## Focus settings
+## Capacity Sources
 
-| Stable setting ID | Setting | Value |
+| Source | Unlock | Focus | Permanent? |
+| --- | --- | --- | --- |
+| Starting capacity | Start | 100 | Yes |
+| Forest Heart | Forest Heart | 10 | Yes |
+| Guild Apprentice | Guild Apprentice | 10 | Yes |
+| Focus Capacity | Focus Capacity | 5 | Yes |
+
+## Focus Costs
+
+| System | Action / Rank | Focus Cost |
 | --- | --- | --- |
-| focus.startingMax | Starting Max | 100 |
-| focus.forestHeartBonus | Forest Heart Bonus | 10 |
-| focus.guildApprenticeBonus | Guild Apprentice Bonus | 10 |
+| Channeling | Arcane Echo | 10 |
+| Research | Echo assignment | 10 |
+| Transmutation | Echo assignment | 10 |
+| Auto-Cast | Rank 1 | 10 |
+| Auto-Cast | Rank 2 | 20 |
+| Auto-Cast | Rank 3 | 30 |
+| Auto-Cast | Rank 4 | 40 |
+| Auto-Cast | Rank 5 | 50 |
+| Auto-Cast | Rank 6 | 60 |
+| Auto-Cast | Rank 7 | 70 |
+| Auto-Cast | Rank 8 | 80 |
 
-## Focus Capacity improvement
-
-**ID:** `focus-capacity`
-
-Expands the tower's ability to sustain Arcane Echoes and automated spellwork.
-
-**Maximum level:** 10
-**Focus per level:** 5
-
-| Level | Primary fragment | Life Essence |
-| --- | --- | --- |
-| 1 | 5 | 10 |
-| 2 | 10 | 20 |
-| 3 | 15 | 30 |
-| 4 | 25 | 50 |
-| 5 | 40 | 80 |
-| 6 | 60 | 120 |
-| 7 | 90 | 180 |
-| 8 | 130 | 260 |
-| 9 | 180 | 360 |
-| 10 | 250 | 500 |
-
-Focus reservations and current capacity are derived live from the Focus selectors; this page lists authored inputs only.
+Focus Capacity upgrades reach 10 levels at 5 Focus per level.

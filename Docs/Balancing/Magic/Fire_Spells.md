@@ -1,46 +1,7 @@
 # Fire spells
 
-**ID:** `fire`
-
-**Tagline:** Momentum and direct damage
-**Fragment:** Fire Fragment (fire-fragment)
-
-## Fire Bolt
-
-**ID:** `fire-bolt`
-
-A fast, reliable bolt of flame.
-
-**Type:** Damage
-**Unlock level:** 2
-**Mana cost:** 12
-**Cooldown:** 3.5 s
-**Auto-Cast:** Always
-
-**What it does:** 60% of Spell Power Fire damage to the opponent
-## Ignite
-
-**ID:** `ignite`
-
-A spark that burns after it lands.
-
-**Type:** Dot
-**Unlock level:** 8
-**Mana cost:** 18
-**Cooldown:** 9 s
-**Auto-Cast:** Always
-
-**What it does:** 10% of Spell Power Fire damage to the opponent; Apply Burning to the opponent for 6 s; periodic effect: 16.67% of Spell Power Fire damage to the status holder
-## Fireball
-
-**ID:** `fireball`
-
-A heavy sphere of flame that erupts on impact and leaves a lasting burn.
-
-**Type:** Damage
-**Unlock level:** 16
-**Mana cost:** 28
-**Cooldown:** 10 s
-**Auto-Cast:** Always
-
-**What it does:** 100% of Spell Power Fire damage to the opponent; Apply Burning to the opponent for 10 s; periodic effect: 2% of Spell Power Fire damage to the status holder
+| Spell | School | Rank | Unlock Lv | Mana | Cooldown | Cast / Delay | Damage | Damage Type | Barrier | Heal | Status | Status Chance | Status Dur | DoT | Focus Cost | Special |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Fire Bolt (fire-bolt) | Fire | Rank I | 2 | 12 | 3.5 s | — | 60% of Spell Power Fire damage | Fire | — | — | — | — | — | — | — | Damage; Auto-Cast: Always |
+| Ignite (ignite) | Fire | Rank I | 8 | 18 | 9 s | — | 10% of Spell Power Fire damage | Fire | — | — | Burning (6 s); 16.67% of Spell Power Fire damage | — | 6 s | 16.67% of Spell Power Fire damage | — | Dot; Auto-Cast: Always |
+| Fireball (fireball) | Fire | Rank I | 16 | 28 | 10 s | — | 100% of Spell Power Fire damage | Fire | — | — | Burning (10 s); 2% of Spell Power Fire damage | — | 10 s | 2% of Spell Power Fire damage | — | Damage; Auto-Cast: Always |

@@ -1,16 +1,16 @@
 # Spell index
 
-| Spell ID | Spell | School | Type | Unlock level | Mana cost | Cooldown | What it does | Auto-Cast |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| fire-bolt | Fire Bolt | Fire | Damage | 2 | 12 | 3.5 s | 60% of Spell Power Fire damage to the opponent | Always |
-| ignite | Ignite | Fire | Dot | 8 | 18 | 9 s | 10% of Spell Power Fire damage to the opponent; Apply Burning to the opponent for 6 s; periodic effect: 16.67% of Spell Power Fire damage to the status holder | Always |
-| fireball | Fireball | Fire | Damage | 16 | 28 | 10 s | 100% of Spell Power Fire damage to the opponent; Apply Burning to the opponent for 10 s; periodic effect: 2% of Spell Power Fire damage to the status holder | Always |
-| water-ward | Water Ward | Water | Barrier | 2 | 15 | 8 s | Grant 70% of Spell Power Barrier to the caster (replacing the current Barrier) for 9 s | when the caster's Barrier is below 10 |
-| flow-mend | Flow Mend | Water | Heal | 8 | 18 | 10 s | Restore 80% of Spell Power Health to the caster | when the caster's Health is below 70% |
-| frostbite | Frostbite | Water | Damage | 16 | 22 | 10 s | 65% of Spell Power Water damage to the opponent; Apply Chilled to the opponent | Always |
-| earth-spike | Earth Spike | Earth | Damage | 2 | 18 | 5 s | 85% of Spell Power Earth damage to the opponent | Always |
-| stoneguard | Stoneguard | Earth | Barrier | 8 | 22 | 18 s | Grant 130% of Spell Power Barrier to the caster (replacing the current Barrier) for 9 s | when the caster's Barrier is below 10 |
-| fortify | Fortify | Earth | Buff | 16 | 20 | 18 s | Apply Fortified to the caster | Always |
-| air-lance | Air Lance | Air | Damage | 2 | 14 | 6 s | 60% of Spell Power Air damage to the opponent | Always |
-| quickening | Quickening | Air | Buff | 8 | 16 | 12 s | Apply Quickening to the caster | Always |
-| shock-spark | Shock Spark | Air | Damage | 16 | 18 | 8 s | 45% of Spell Power Air damage to the opponent; Apply Shock to the opponent | Always |
+| Spell | School | Rank | Unlock Lv | Mana | Cooldown | Cast / Delay | Damage | Damage Type | Barrier | Heal | Status | Status Chance | Status Dur | DoT | Focus Cost | Special |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Fire Bolt (fire-bolt) | Fire | Rank I | 2 | 12 | 3.5 s | — | 60% of Spell Power Fire damage | Fire | — | — | — | — | — | — | — | Damage; Auto-Cast: Always |
+| Ignite (ignite) | Fire | Rank I | 8 | 18 | 9 s | — | 10% of Spell Power Fire damage | Fire | — | — | Burning (6 s); 16.67% of Spell Power Fire damage | — | 6 s | 16.67% of Spell Power Fire damage | — | Dot; Auto-Cast: Always |
+| Fireball (fireball) | Fire | Rank I | 16 | 28 | 10 s | — | 100% of Spell Power Fire damage | Fire | — | — | Burning (10 s); 2% of Spell Power Fire damage | — | 10 s | 2% of Spell Power Fire damage | — | Damage; Auto-Cast: Always |
+| Water Ward (water-ward) | Water | Rank I | 2 | 15 | 8 s | — | — | — | +70% of Spell Power Barrier (9 s) | — | — | — | — | — | — | Barrier; Auto-Cast: when the caster's Barrier is below 10 |
+| Flow Mend (flow-mend) | Water | Rank I | 8 | 18 | 10 s | — | — | — | — | +80% of Spell Power Health | — | — | — | — | — | Heal; Auto-Cast: when the caster's Health is below 70% |
+| Frostbite (frostbite) | Water | Rank I | 16 | 22 | 10 s | — | 65% of Spell Power Water damage | Water | — | — | Chilled | — | 5 s | — | — | Damage; Auto-Cast: Always |
+| Earth Spike (earth-spike) | Earth | Rank I | 2 | 18 | 5 s | — | 85% of Spell Power Earth damage | Earth | — | — | — | — | — | — | — | Damage; Auto-Cast: Always |
+| Stoneguard (stoneguard) | Earth | Rank I | 8 | 22 | 18 s | — | — | — | +130% of Spell Power Barrier (9 s) | — | — | — | — | — | — | Barrier; Auto-Cast: when the caster's Barrier is below 10 |
+| Fortify (fortify) | Earth | Rank I | 16 | 20 | 18 s | — | — | — | — | — | Fortified | — | 8 s | — | — | Buff; Auto-Cast: Always |
+| Air Lance (air-lance) | Air | Rank I | 2 | 14 | 6 s | — | 60% of Spell Power Air damage | Air | — | — | — | — | — | — | — | Damage; Auto-Cast: Always |
+| Quickening (quickening) | Air | Rank I | 8 | 16 | 12 s | — | — | — | — | — | Quickening | — | 6 s | — | — | Buff; Auto-Cast: Always |
+| Shock Spark (shock-spark) | Air | Rank I | 16 | 18 | 8 s | — | 45% of Spell Power Air damage | Air | — | — | Shock | — | 8 s | — | — | Damage; Auto-Cast: Always |

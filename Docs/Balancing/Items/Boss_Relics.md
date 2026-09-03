@@ -1,53 +1,7 @@
 # Boss relics
 
-## Heartseed Necklace
-
-**ID:** `heartseed-necklace`
-
-**Dungeon set:** whispering-woods
-**Direct source:** Forest Heart direct drop
-**Sell value:** Not sellable
-
-### Stats
-
-- Max Health: 20
-
-### Combat effects
-
-- Passive: +5% Healing done
-- Living Seed: When HP Threshold and the caster's Health is below 30%: Grant 20 Barrier to the caster. Once per encounter.
-## Greatbear Heartstone
-
-**ID:** `greatbear-heartstone`
-
-**Dungeon set:** howling-den
-**Direct source:** Corrupted Greatbear direct drop
-**Sell value:** Not sellable
-
-### Stats
-
-- Max Health: 25
-- Fire resistance: +5%
-- Water resistance: +5%
-- Earth resistance: +5%
-- Air resistance: +5%
-
-### Combat effects
-
-- Unyielding: When HP Threshold and the caster's Health is below 35%: Grant 40 Barrier to the caster. Once per encounter.
-## Edrin's Signet
-
-**ID:** `edrins-signet`
-
-**Dungeon set:** abandoned-catacombs
-**Direct source:** Archmage Edrin’s Shade direct drop
-**Sell value:** Not sellable
-
-### Stats
-
-- Max Mana: 25
-- Mana cost reduction: +10%
-
-### Combat effects
-
-- Arcane Remnant: When Status Applied and the source is the opponent and the affected actor is the caster and the current status has the Debuff tag: Grant 20 Barrier to the caster. Cooldown: 30 s.
+| Item | Boss | Slot | HP | Mana | Focus | Spell Power | Resistances | Other Stats | Special Effect | Drop Chance | Sell |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Heartseed Necklace (heartseed-necklace) | Forest Heart (forest-heart) | Amulet | +20 | — | — | — | — | — | +5% Healing done; HP threshold when the caster's Health is below 30% -> +20 Barrier (once/encounter) | 5% | — |
+| Greatbear Heartstone (greatbear-heartstone) | Corrupted Greatbear (corrupted-greatbear) | Amulet | +25 | — | — | — | Fire +5%; Water +5%; Earth +5%; Air +5% | — | HP threshold when the caster's Health is below 35% -> +40 Barrier (once/encounter) | 5% | — |
+| Edrin's Signet (edrins-signet) | Archmage Edrin's Shade (archmage-edrin-shade) | Ring | — | +25 | — | — | — | Mana Cost Reduction Pct +10% | Status applied when the source is the opponent and the affected actor is the caster and the current status has the Debuff tag -> +20 Barrier (30 s CD) | 5% | — |

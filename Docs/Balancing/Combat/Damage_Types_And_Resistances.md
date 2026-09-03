@@ -1,36 +1,26 @@
 # Damage types and resistances
 
-## Damage types
-
-| Damage type | Meaning |
+| Damage Type | Meaning |
 | --- | --- |
-| physical | Physical damage |
-| arcane | Arcane damage |
-| fire | Fire school damage |
-| water | Water school damage |
-| earth | Earth damage |
-| air | Air school damage |
+| Physical | Physical damage |
+| Arcane | Arcane damage |
+| Fire | Fire damage |
+| Water | Water damage |
+| Earth | Earth damage |
+| Air | Air damage |
 
-## Resistance rules
-
-- Ordinary resistance is limited to -100% through +75%.
-- Immunity is authored separately from resistance and prevents that damage type from being applied.
-- Mitigated amount = max(0, resolved amount x (1 - resistance)).
-
-## Authored enemy resistance overview
-
-| Enemy | Name | Physical | Arcane | Fire | Water | Earth | Air | Immunities |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| forest-wisp | Forest Wisp | 0% | 0% | 0% | 0% | 0% | 0% | None |
-| thornling | Thornling | 0% | 0% | 0% | 0% | 0% | 0% | None |
-| stone-root | Stone Root | 0% | 0% | 0% | 0% | 0% | 0% | None |
-| grove-sentinel | Grove Sentinel | 0% | 0% | 0% | 0% | 0% | 0% | None |
-| forest-heart | Forest Heart | 0% | 0% | 0% | 0% | 0% | 0% | None |
-| cavefang-wolf | Cavefang Wolf | 0% | 0% | 0% | 0% | 0% | 0% | None |
-| razorclaw-lynx | Razorclaw Lynx | 0% | 0% | 0% | 0% | 0% | 0% | None |
-| corrupted-dire-wolf | Corrupted Dire Wolf | 0% | 0% | +10% | +10% | +10% | +10% | None |
-| corrupted-greatbear | Corrupted Greatbear | 0% | 0% | 0% | 0% | 0% | 0% | None |
-| restless-skeleton | Restless Skeleton | +25% | 0% | 0% | 0% | 0% | 0% | None |
-| grave-wraith | Grave Wraith | +50% | 0% | -25% | -25% | -25% | -25% | None |
-| fallen-acolyte | Fallen Acolyte | 0% | 0% | 0% | 0% | 0% | 0% | None |
-| archmage-edrin-shade | Archmage Edrin's Shade | 0% | 0% | +15% | +15% | +15% | +15% | None |
+| Enemy | Physical | Arcane | Fire | Water | Earth | Air | Immunities |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Forest Wisp (forest-wisp) | 0% | 0% | 0% | 0% | 0% | 0% | — |
+| Thornling (thornling) | 0% | 0% | 0% | 0% | 0% | 0% | — |
+| Stone Root (stone-root) | 0% | 0% | 0% | 0% | 0% | 0% | — |
+| Grove Sentinel (grove-sentinel) | 0% | 0% | 0% | 0% | 0% | 0% | — |
+| Forest Heart (forest-heart) | 0% | 0% | 0% | 0% | 0% | 0% | — |
+| Cavefang Wolf (cavefang-wolf) | 0% | 0% | 0% | 0% | 0% | 0% | — |
+| Razorclaw Lynx (razorclaw-lynx) | 0% | 0% | 0% | 0% | 0% | 0% | — |
+| Corrupted Dire Wolf (corrupted-dire-wolf) | 0% | 0% | +10% | +10% | +10% | +10% | — |
+| Corrupted Greatbear (corrupted-greatbear) | 0% | 0% | 0% | 0% | 0% | 0% | — |
+| Restless Skeleton (restless-skeleton) | +25% | 0% | 0% | 0% | 0% | 0% | — |
+| Grave Wraith (grave-wraith) | +50% | 0% | -25% | -25% | -25% | -25% | — |
+| Fallen Acolyte (fallen-acolyte) | 0% | 0% | 0% | 0% | 0% | 0% | — |
+| Archmage Edrin's Shade (archmage-edrin-shade) | 0% | 0% | +15% | +15% | +15% | +15% | — |

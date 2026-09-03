@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "snapshot": {
-    "commit": "e7762f48c8e9a17d152b7e692ea8a4ac15204cf8",
+    "commit": "ed804c00fefe980634739bdc7d39286abc5029b9",
     "workingTreeDirty": true,
-    "generatedAtUtc": "2026-09-03T05:43:35.477Z"
+    "generatedAtUtc": "2026-09-03T06:51:19.975Z"
   },
   "runtimePolicy": {
     "sourceOfTruth": "TypeScript runtime content and systems",
@@ -393,6 +393,7 @@
       ],
       "runtimeSources": [
         "src/game/content/traits/traits.ts",
+        "src/game/content/monsters",
         "src/game/systems/combat/combatTypes.ts"
       ]
     },
@@ -530,7 +531,8 @@
         "edrins-signet"
       ],
       "runtimeSources": [
-        "src/game/content/items/items.ts"
+        "src/game/content/items/items.ts",
+        "src/game/content/equipment/equipmentSets.ts"
       ]
     },
     "Items/Materials.md": {
@@ -555,7 +557,8 @@
       ],
       "runtimeSources": [
         "src/game/content/items/items.ts",
-        "src/game/content/contentRelations.ts"
+        "src/game/content/contentRelations.ts",
+        "src/game/content/monsters"
       ]
     },
     "Items/Equipment_Whispering_Woods.md": {
@@ -620,7 +623,8 @@
       ],
       "runtimeSources": [
         "src/game/content/items/items.ts",
-        "src/game/content/equipment/equipmentSets.ts"
+        "src/game/content/equipment/equipmentSets.ts",
+        "src/game/content/monsters"
       ]
     },
     "Loot/Monster_Drops.md": {
@@ -637,7 +641,8 @@
         "fallen-acolyte"
       ],
       "runtimeSources": [
-        "src/game/content/monsters"
+        "src/game/content/monsters",
+        "src/game/content/contentRelations.ts"
       ]
     },
     "Loot/Boss_Drops.md": {
@@ -720,7 +725,9 @@
         "gravebinder-ring"
       ],
       "runtimeSources": [
-        "src/game/content/recipes/recipes.ts"
+        "src/game/content/recipes/recipes.ts",
+        "src/game/content/monsters",
+        "src/game/content/items/items.ts"
       ]
     },
     "Progression/Research_XP.md": {
@@ -783,7 +790,9 @@
         "sentinel-breaker"
       ],
       "runtimeSources": [
-        "src/game/content/guild/guildRequests.ts"
+        "src/game/content/guild/guildRequests.ts",
+        "src/game/core/balance/balance.ts",
+        "src/store/actions/guildActions.ts"
       ]
     },
     "Progression/Progression_Overview.md": {
@@ -848,7 +857,8 @@
         "shock-spark"
       ],
       "runtimeSources": [
-        "src/game/content/spells/spells.ts"
+        "src/game/content/spells/spells.ts",
+        "src/game/content/statuses/statuses.ts"
       ]
     },
     "Magic/Fire_Spells.md": {
@@ -859,7 +869,8 @@
       ],
       "runtimeSources": [
         "src/game/content/spells/spells.ts",
-        "src/game/content/schools/schools.ts"
+        "src/game/content/schools/schools.ts",
+        "src/game/content/statuses/statuses.ts"
       ]
     },
     "Magic/Water_Spells.md": {
@@ -870,7 +881,8 @@
       ],
       "runtimeSources": [
         "src/game/content/spells/spells.ts",
-        "src/game/content/schools/schools.ts"
+        "src/game/content/schools/schools.ts",
+        "src/game/content/statuses/statuses.ts"
       ]
     },
     "Magic/Earth_Spells.md": {
@@ -881,7 +893,8 @@
       ],
       "runtimeSources": [
         "src/game/content/spells/spells.ts",
-        "src/game/content/schools/schools.ts"
+        "src/game/content/schools/schools.ts",
+        "src/game/content/statuses/statuses.ts"
       ]
     },
     "Magic/Air_Spells.md": {
@@ -892,7 +905,8 @@
       ],
       "runtimeSources": [
         "src/game/content/spells/spells.ts",
-        "src/game/content/schools/schools.ts"
+        "src/game/content/schools/schools.ts",
+        "src/game/content/statuses/statuses.ts"
       ]
     },
     "Magic/Magic_Schools.md": {
@@ -974,15 +988,38 @@
         "edrins-signet"
       ],
       "runtimeSources": [
-        "src/game/content/items/items.ts"
+        "src/game/content/items/items.ts",
+        "src/game/content/equipment/equipmentSets.ts",
+        "src/game/content/monsters"
       ]
     },
     "Economy/Current_Progression_Timings.md": {
       "stableIds": [],
       "runtimeSources": [
         "src/game/core/balance/balance.ts",
-        "src/game/content/recipes/recipes.ts"
+        "src/game/content/recipes/recipes.ts",
+        "src/game/content/monsters",
+        "src/game/content/items/items.ts"
       ]
     }
+  },
+  "canonicalLocations": {
+    "monster stats": "Enemies/{Dungeon}.md -> Core Combat Stats",
+    "monster traits and patterns": "Enemies/{Dungeon}.md -> Traits & Patterns",
+    "monster special actions": "Enemies/{Dungeon}.md -> Special Actions",
+    "monster loot": "Enemies/{Dungeon}.md -> Loot",
+    "equipment stats": "Items/Equipment_{Dungeon}.md -> Stats & Effects",
+    "equipment crafting": "Transmutation/Recipes.md",
+    "material drops": "Enemies/{Dungeon}.md -> Loot",
+    "recipes": "Transmutation/Recipes.md",
+    "spells": "Magic/{School}_Spells.md",
+    "statuses": "Combat/Status_Effects.md",
+    "traits": "Combat/Traits_And_Special_Attacks.md -> Traits"
+  },
+  "mirrors": {
+    "Enemies/{Dungeon}.md -> Loot": "Loot/Monster_Drops.md and Loot/Boss_Drops.md are generated comparison views.",
+    "Transmutation/Recipes.md": "Items/Equipment_{Dungeon}.md -> Crafting and Transmutation/Crafting_Economy.md are generated comparison views.",
+    "Enemies/{Dungeon}.md -> Core Combat Stats": "Enemies/Enemy_Index.md is a generated cross-dungeon comparison.",
+    "Magic/{School}_Spells.md": "Magic/Spell_Index.md is a generated global comparison."
   }
 }

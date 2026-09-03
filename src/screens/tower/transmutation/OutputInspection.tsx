@@ -1,4 +1,4 @@
-import { LockKeyhole } from 'lucide-react'
+import { ChevronDown, ChevronRight, LockKeyhole } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { Card, Status } from '../../../components/ui'
 import { EquipmentCombatDetails } from '../../../components/ui/item/EquipmentCombatDetails'
@@ -9,6 +9,7 @@ import type { RecipeDefinition } from '../../../game/content/recipes/recipes'
 import { getTransmutationEquipmentPreview, getTransmutationOutputInspection } from '../../../game/presentation/transmutation/transmutationOutputReadModel'
 import type { EquipmentItemSlot, EquipmentPosition, GameState } from '../../../game/types'
 import { useGameStore } from '../../../store/gameStore'
+import { setUiPreferences, useUiPreferences } from '../../../ui/preferences/uiPreferencesStore'
 
 export function OutputInspection({ recipe }: { recipe: RecipeDefinition }) {
   const state = useGameStore()
@@ -47,11 +48,14 @@ function EquipmentOutput({ inspection, preview, ringNeedsChoice, ringTarget, onR
 }
 
 function MaterialOutput({ inspection }: { inspection: ReturnType<typeof getTransmutationOutputInspection> }) {
+  const preferences = useUiPreferences()
   if (!inspection.material) return null
+  const isUsedInOpen = preferences.screenState.transmutation.usedInOpen
+  const toggleUsedIn = () => setUiPreferences({ screenState: { transmutation: { usedInOpen: !isUsedInOpen } } })
   return <>
     <DetailSection title="MATERIAL PROFILE"><div className="transmutation-output-meta"><span><small>TIER</small><strong>{inspection.material.tier ? `T${inspection.material.tier}` : '—'}</strong></span><span><small>SUBTYPE</small><strong>{inspection.material.subtype ?? 'MATERIAL'}</strong></span><span><small>OWNED</small><strong>{inspection.owned.toLocaleString()}</strong></span></div></DetailSection>
     <DetailSection title="SOURCE"><p className="transmutation-output-note">{inspection.material.source}</p></DetailSection>
-    {inspection.material.usedIn.length > 0 && <DetailSection title="USED IN"><div className="transmutation-output-links">{inspection.material.usedIn.map((use) => <span key={`${use.destination}-${use.label}`}><strong>{use.label}</strong><small>{use.detail}</small></span>)}</div></DetailSection>}
+    {inspection.material.usedIn.length > 0 && <section className="transmutation-output-section transmutation-accordion"><button type="button" onClick={toggleUsedIn} aria-expanded={isUsedInOpen}><span className="eyebrow">USED IN Â· {inspection.material.usedIn.length}</span>{isUsedInOpen ? <ChevronDown size={15} aria-hidden="true" /> : <ChevronRight size={15} aria-hidden="true" />}</button>{isUsedInOpen && <div className="transmutation-uses">{inspection.material.usedIn.map((use) => <span key={`${use.destination}-${use.label}`}><strong>{use.label}</strong><small>{use.detail}</small></span>)}</div>}</section>}
     {inspection.material.research.length > 0 && <DetailSection title="RESEARCH VALUE"><div className="transmutation-output-stat-list">{inspection.material.research.map(({ schoolId, xp }) => <div key={schoolId}><span>{SCHOOLS[schoolId].name}</span><strong>{xp.toLocaleString()} XP</strong></div>)}</div></DetailSection>}
   </>
 }

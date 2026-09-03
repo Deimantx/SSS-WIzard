@@ -1,12 +1,14 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { RECIPES } from '../../../game/content/recipes/recipes'
 import { useGameStore } from '../../../store/gameStore'
+import { resetAllUiPreferences } from '../../../ui/preferences/uiPreferencesStore'
 import { OutputInspection } from './OutputInspection'
 
 describe('Transmutation output inspection', () => {
   beforeEach(() => {
     useGameStore.getState().resetSave()
+    resetAllUiPreferences()
   })
 
   it('shows authored material tier, source, and downstream uses', () => {
@@ -35,5 +37,22 @@ describe('Transmutation output inspection', () => {
     expect(hero?.children).toHaveLength(2)
     expect(icon?.querySelector('.item-icon-large')).toBeTruthy()
     expect(icon?.parentElement).toBe(hero)
+  })
+
+  it('collapses Used In with the same persisted accordion control as Recipe Detail', () => {
+    const view = render(<OutputInspection recipe={RECIPES['fire-fragment']} />)
+    const usedIn = screen.getByRole('button', { name: /USED IN/ })
+
+    expect(usedIn.getAttribute('aria-expanded')).toBe('true')
+    expect(screen.getByText('Prismatic Fragment')).toBeTruthy()
+
+    fireEvent.click(usedIn)
+
+    expect(usedIn.getAttribute('aria-expanded')).toBe('false')
+    expect(screen.queryByText('Prismatic Fragment')).toBeNull()
+    view.unmount()
+
+    render(<OutputInspection recipe={RECIPES['fire-fragment']} />)
+    expect(screen.getByRole('button', { name: /USED IN/ }).getAttribute('aria-expanded')).toBe('false')
   })
 })

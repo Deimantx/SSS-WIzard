@@ -86,7 +86,7 @@ For Magic Schools:
 
 ## UI and testing
 
-- Keep the three Transmutation panels usable at narrow widths: recipe library, recipe detail, and Focus assignment must stack without horizontal overflow.
+- Keep all Transmutation panels usable at narrow widths: recipe library, recipe detail, Focus assignment, and output inspection must stack without horizontal overflow.
 - Editable screen panels must never visually bleed into adjacent panels; fit defaults and minimum sizes to intended content, and use responsive reflow or an internal themed scroll area when content can exceed a panel.
 - Add or update Vitest coverage when changing save migration, production payment, reservation, or offline-report behavior.
 - Run `npm run test:run` and `npm run build` before handoff.
@@ -98,12 +98,25 @@ For Magic Schools:
 - Reserve `npm run test:run` and `npm run build` for final handoff validation after implementation and targeted testing are complete.
 - The final handoff should include one full `npm run test:run` and one `npm run build`.
 
-## Archive ownership
+## Screen panel non-overlap contract
+
+- Every visible normal screen panel rendered through `EditableGrid` must have a rectangle with zero intersection area against every sibling panel. Intentional portal/overlay layers such as tooltips, modals, popovers, Developer Tools, Layout Editor controls, and toasts are excluded.
+- Normal panel content must not bleed outside its own panel into a sibling panel. Panel roots own clipping and narrow-width containment.
+- A locked panel cannot be moved or resized by the user, but runtime auto-flow may shift its effective position to avoid overlap. Its saved position remains unchanged.
+- Hidden panels do not reserve runtime space; they remain available only when the Layout Editor is showing hidden content.
+- `PanelDefinition.heightMode` is either `content` or `bounded-scroll`; content panels grow from measured natural content, while bounded-scroll panels keep their saved/minimum outer height and scroll internally.
+- Saved `x`, `y`, `w`, and `h` are the user's base geometry and are the only geometry persisted. Runtime measurement, auto-flow, responsive stacking, and layout transforms must never write sibling shifts back to saved layouts.
+- Natural content is measured through the shared `ResizeObserver` wrapper. Do not add polling or a global `MutationObserver` for panel sizing.
+- Runtime panel placement must use the shared pure auto-flow solver and stable saved-order placement. Screen-specific transforms may prepare a layout but must not bypass the solver.
+- Responsive narrow layouts must stack every visible panel at `x=0`, `w=12`, using effective heights, and must remain collision-free after width/reflow changes.
+- Shared row/pixel conversion helpers own grid sizing math; do not duplicate magic row heights, margins, or pixel formulas in screens.
 
 ## Transmutation presentation
 
 - Keep recipe filtering, unlock visibility, material tiers, output inspection, equipment comparison, and item tooltip data on shared game read-model/content helpers. Transmutation screens may format these helpers but must not duplicate recipe IDs, unlock rules, item stats, equipment effects, or slot logic.
 - The normal Transmutation library hides locked recipes. Developer-only reveal is inspection-only and must not bypass runtime unlock or crafting checks.
+
+## Archive ownership
 
 - Game/content/system modules must not import screen/UI modules; shared metadata belongs in game/content or system layers.
 - New filter/category controls should reuse the established shared filter-button visual language rather than invent screen-specific variants.

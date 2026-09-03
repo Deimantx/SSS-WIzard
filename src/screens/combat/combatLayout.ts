@@ -1,5 +1,6 @@
 import type { Layout } from 'react-grid-layout'
-import { GRID_COLUMNS, GRID_MARGIN, GRID_ROW_HEIGHT } from '../../ui/layout-editor/layoutEditorTypes'
+import { GRID_COLUMNS } from '../../ui/layout-editor/layoutEditorTypes'
+import { pixelsToGridRows } from '../../ui/layout-editor/runtimePanelLayout'
 
 const STAGE_ID = 'combat-stage'
 const SPELL_DECK_ID = 'combat-spell-deck'
@@ -24,10 +25,10 @@ export function getAdaptiveCombatLayout(layout: Layout, options: AdaptiveCombatL
   if (!stage || !deck || !analytics) return layout
 
   const requiredStageHeight = normalized.requiredStageContentHeight && normalized.requiredStageContentHeight > 0
-    ? Math.max(stage.h, Math.ceil((normalized.requiredStageContentHeight + GRID_MARGIN[1]) / (GRID_ROW_HEIGHT + GRID_MARGIN[1])))
+    ? Math.max(stage.h, pixelsToGridRows(normalized.requiredStageContentHeight))
     : stage.h
   const requiredDeckHeight = normalized.requiredDeckContentHeight && normalized.requiredDeckContentHeight > 0
-    ? Math.min(MAX_ADAPTIVE_COMBAT_SPELL_DECK_H, Math.ceil((normalized.requiredDeckContentHeight + GRID_MARGIN[1]) / (GRID_ROW_HEIGHT + GRID_MARGIN[1])))
+    ? Math.min(MAX_ADAPTIVE_COMBAT_SPELL_DECK_H, pixelsToGridRows(normalized.requiredDeckContentHeight))
     : deck.h
   const deckHeight = Math.max(deck.h > DEFAULT_COMBAT_SPELL_DECK_H ? deck.h : DEFAULT_COMBAT_SPELL_DECK_H, requiredDeckHeight)
   const lowerStartY = stage.y + requiredStageHeight

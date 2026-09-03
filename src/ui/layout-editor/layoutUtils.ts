@@ -3,6 +3,7 @@ import type { ScreenId } from '../../game/types'
 import { DEFAULT_LAYOUTS } from './defaultLayouts'
 import { getPanelDefinitions } from './panelRegistry'
 import { GRID_COLUMNS, type SavedPanelLayout, type ScreenLayouts } from './layoutEditorTypes'
+import { getRequiredGridRows } from './runtimePanelLayout'
 
 export const isDesktopLayout = () => typeof window === 'undefined' || window.innerWidth >= 1024
 
@@ -35,3 +36,5 @@ export function fromGridLayout(screen: ScreenId, current: ScreenLayouts, layout:
 }
 
 export const panelName = (screen: ScreenId, panelId: string) => getPanelDefinitions(screen).find((panel) => panel.id === panelId)?.label ?? panelId
+
+export { getRequiredGridRows }

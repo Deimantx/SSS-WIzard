@@ -5,6 +5,8 @@ export const GRID_COLUMNS = 12
 export const GRID_ROW_HEIGHT = 30
 export const GRID_MARGIN: readonly [number, number] = [14, 14]
 
+export type PanelHeightMode = 'content' | 'bounded-scroll'
+
 export interface SavedPanelLayout {
   x: number
   y: number
@@ -43,6 +45,7 @@ export interface PanelDefinition {
   maxW?: number
   maxH?: number
   canHide?: boolean
+  heightMode?: PanelHeightMode
 }
 
 export interface LayoutEditorState {

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { UI_LAYOUTS_KEY } from './layoutEditorStorage'
-import { beginTopbarReorder, beginTopbarResize, cancelTopbarInteraction, closeLayoutEditor, commitTopbarInteraction, getLayoutEditorState, getSavedScreenLayouts, getTopbarLayout, moveSelectedPanel, openLayoutEditor, previewTopbarOrder, previewTopbarResize, resetAllScreenLayouts, selectLayoutPanel, setLayoutTarget, togglePanelHidden, togglePanelLocked, undoLayout, redoLayout, updateSelectedPanel } from './layoutEditorStore'
+import { beginTopbarReorder, beginTopbarResize, cancelTopbarInteraction, closeLayoutEditor, commitGridLayout, commitTopbarInteraction, getLayoutEditorState, getSavedScreenLayouts, getTopbarLayout, moveSelectedPanel, openLayoutEditor, previewTopbarOrder, previewTopbarResize, resetAllScreenLayouts, selectLayoutPanel, setLayoutTarget, togglePanelHidden, togglePanelLocked, undoLayout, redoLayout, updateSelectedPanel } from './layoutEditorStore'
 import { clampPanelLayout } from './layoutUtils'
 import { getPanelDefinition } from './panelRegistry'
 
@@ -69,5 +69,18 @@ describe('layout editor persistence and session state', () => {
     expect(getPanelDefinition('tower-research', 'research-inspector')?.minH).toBe(12)
     expect(getPanelDefinition('tower-research', 'research-prepared')?.minH).toBe(7)
     expect(clampPanelLayout('tower-research', 'research-inspector', { h: 1 }).h).toBe(12)
+    expect(getPanelDefinition('tower-transmutation', 'transmutation-recipes')?.heightMode).toBe('bounded-scroll')
+    expect(getPanelDefinition('tower-transmutation', 'transmutation-detail')?.heightMode ?? 'content').toBe('content')
+  })
+
+  it('persists only the panel directly changed by a grid interaction', () => {
+    openLayoutEditor('home')
+    const before = getSavedScreenLayouts('home')
+    commitGridLayout('home', [
+      { i: 'home-objective', x: 0, y: 0, w: 12, h: 8 },
+      { i: 'home-school-mastery', x: 0, y: 8, w: 12, h: 10 },
+    ], 'home-objective')
+    expect(getSavedScreenLayouts('home')['home-objective'].h).toBe(8)
+    expect(getSavedScreenLayouts('home')['home-school-mastery']).toEqual(before['home-school-mastery'])
   })
 })

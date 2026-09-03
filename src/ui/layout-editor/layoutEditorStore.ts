@@ -4,6 +4,7 @@ import { DEFAULT_LAYOUTS } from './defaultLayouts'
 import { getPanelDefinitions } from './panelRegistry'
 import { loadUiLayouts, resetUiLayouts, saveUiLayouts } from './layoutEditorStorage'
 import { clampPanelLayout, getScreenLayouts, isDesktopLayout } from './layoutUtils'
+import { getRequiredGridRows } from './runtimePanelLayout'
 import { clampTopbarLayout, DEFAULT_TOPBAR_LAYOUT, moveTopbarResource, TOPBAR_PRESETS } from './shellLayout'
 import { LAYOUT_VERSION, type LayoutEditorState, SavedPanelLayout, ScreenLayouts, TopbarLayout, TopbarRegionId, UiLayoutDocument } from './layoutEditorTypes'
 
@@ -57,13 +58,14 @@ export function updateSelectedPanel(screen: ScreenId, changes: Partial<SavedPane
   updateScreenLayouts(screen, { ...current, [id]: clampPanelLayout(screen, id, { ...current[id], ...changes }) })
 }
 
-export function commitGridLayout(screen: ScreenId, layout: import('react-grid-layout').Layout) {
-  updateScreenLayouts(screen, requireCurrentGridLayouts(screen, layout))
+export function commitGridLayout(screen: ScreenId, layout: import('react-grid-layout').Layout, interactedPanelId?: string) {
+  updateScreenLayouts(screen, requireCurrentGridLayouts(screen, layout, interactedPanelId))
 }
 
-function requireCurrentGridLayouts(screen: ScreenId, layout: import('react-grid-layout').Layout) {
+function requireCurrentGridLayouts(screen: ScreenId, layout: import('react-grid-layout').Layout, interactedPanelId?: string) {
   const current = getSavedScreenLayouts(screen)
-  for (const item of layout) current[item.i] = clampPanelLayout(screen, item.i, { ...current[item.i], x: item.x, y: item.y, w: item.w, h: item.h })
+  const items = interactedPanelId ? layout.filter((item) => item.i === interactedPanelId) : layout
+  for (const item of items) current[item.i] = clampPanelLayout(screen, item.i, { ...current[item.i], x: item.x, y: item.y, w: item.w, h: item.h })
   return current
 }
 
@@ -108,6 +110,6 @@ export function fitSelectedPanel(screen: ScreenId) {
   if (!snapshot.selectedPanelId) return
   const element = document.querySelector(`[data-panel-id="${snapshot.selectedPanelId}"]`)
   if (!element) return
-  const rows = Math.max(4, Math.ceil((element.getBoundingClientRect().height + 14) / 44))
+  const rows = getRequiredGridRows(element.getBoundingClientRect().height, getPanelDefinitions(screen).find((panel) => panel.id === snapshot.selectedPanelId)?.minH ?? 1)
   updateSelectedPanel(screen, { h: rows })
 }

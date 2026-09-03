@@ -12,14 +12,52 @@ const labels: Record<string, string> = {
   'collection-summary': 'Collection summary', 'collection-content': 'Item collection', 'collection-inspector': 'Item inspection', 'bestiary-summary': 'Bestiary summary', 'bestiary-index': 'Bestiary index', 'bestiary-inspector': 'Creature dossier', 'settings-profile': 'Profile', 'settings-appearance': 'Appearance', 'settings-theme-preview': 'Theme preview', 'settings-save': 'Save', 'settings-layout': 'Interface layout', 'settings-developer': 'Developer', 'settings-info': 'Info',
 }
 
+type PanelOverrides = Pick<PanelDefinition, 'minW' | 'minH' | 'heightMode'>
+const panelOverrides: Record<string, PanelOverrides> = {
+  'transmutation-recipes': { minW: 5, minH: 10, heightMode: 'bounded-scroll' },
+  'transmutation-focus': { minW: 5, minH: 5, heightMode: 'bounded-scroll' },
+  'transmutation-detail': { minW: 4, minH: 7 },
+  'transmutation-output-preview': { minW: 4, minH: 9 },
+  'combat-stage': { minW: 6, minH: 13, heightMode: 'bounded-scroll' },
+  'combat-spell-deck': { minW: 6, minH: 5, heightMode: 'bounded-scroll' },
+  'combat-analytics': { minW: 8, minH: 8, heightMode: 'bounded-scroll' },
+  'focus-summary': { minW: 8, minH: 8, heightMode: 'bounded-scroll' },
+  'focus-reservations': { minW: 5, minH: 10, heightMode: 'bounded-scroll' },
+  'focus-improvement': { minW: 4, minH: 11, heightMode: 'bounded-scroll' },
+  'research-school-mastery': { minW: 6, minH: 4, heightMode: 'bounded-scroll' },
+  'research-library': { minH: 8, heightMode: 'bounded-scroll' },
+  'research-inspector': { minH: 12, heightMode: 'bounded-scroll' },
+  'research-prepared': { minH: 7, heightMode: 'bounded-scroll' },
+  'home-school-mastery': { minW: 6, minH: 5, heightMode: 'bounded-scroll' },
+  'home-arcane-work': { minW: 6, minH: 6, heightMode: 'bounded-scroll' },
+  'inventory-catalog': { heightMode: 'bounded-scroll' },
+  'inventory-detail': { heightMode: 'bounded-scroll' },
+  'inventory-actions': { minW: 3, minH: 5, heightMode: 'bounded-scroll' },
+  'guild-request-1': { minW: 3 },
+  'guild-request-2': { minW: 3 },
+  'guild-request-3': { minW: 3 },
+  'equipment-loadout': { minW: 7, minH: 13, heightMode: 'bounded-scroll' },
+  'equipment-stats': { minW: 5, minH: 13, heightMode: 'bounded-scroll' },
+  'equipment-owned': { minH: 13, heightMode: 'bounded-scroll' },
+  'equipment-inspector': { minH: 13, heightMode: 'bounded-scroll' },
+  'collection-content': { heightMode: 'bounded-scroll' },
+  'collection-inspector': { heightMode: 'bounded-scroll' },
+  'bestiary-index': { heightMode: 'bounded-scroll' },
+  'bestiary-inspector': { heightMode: 'bounded-scroll' },
+  'schools-browser': { heightMode: 'bounded-scroll' },
+  'schools-inspector': { heightMode: 'bounded-scroll' },
+  'schools-presets': { heightMode: 'bounded-scroll' },
+}
+
 export const PANEL_REGISTRY: PanelDefinition[] = (Object.entries(DEFAULT_LAYOUTS) as [ScreenId, Record<string, PanelDefinition['defaultLayout']>][]) .flatMap(([screen, layouts]) => Object.entries(layouts).map(([id, defaultLayout]) => ({
   id,
   screen,
   label: labels[id] ?? id,
   defaultLayout,
-  minW: id === 'transmutation-recipes' || id === 'transmutation-focus' ? 5 : id === 'transmutation-detail' || id === 'transmutation-output-preview' ? 4 : id === 'combat-stage' ? 6 : id === 'combat-spell-deck' ? 6 : id === 'combat-analytics' ? 8 : id === 'focus-summary' ? 8 : id === 'focus-reservations' ? 5 : id === 'focus-improvement' ? 4 : id === 'research-school-mastery' || id === 'home-school-mastery' || id === 'home-arcane-work' ? 6 : id === 'inventory-actions' || id.includes('request') ? 3 : 2,
-  minH: id === 'transmutation-recipes' ? 10 : id === 'transmutation-focus' ? 5 : id === 'transmutation-detail' ? 7 : id === 'transmutation-output-preview' ? 9 : id === 'combat-stage' ? 13 : id === 'combat-spell-deck' ? 5 : id === 'combat-analytics' ? 8 : id === 'focus-summary' ? 8 : id === 'focus-reservations' ? 10 : id === 'focus-improvement' ? 11 : id === 'inventory-actions' ? 5 : id === 'research-library' ? 8 : id === 'research-inspector' ? 12 : id === 'research-prepared' ? 7 : id === 'home-school-mastery' ? 5 : id === 'home-arcane-work' ? 6 : id === 'research-school-mastery' ? 4 : 4,
+  minW: 2,
+  minH: 4,
   canHide: true,
+  ...panelOverrides[id],
 })))
 
 export const getPanelDefinitions = (screen: ScreenId) => PANEL_REGISTRY.filter((panel) => panel.screen === screen)

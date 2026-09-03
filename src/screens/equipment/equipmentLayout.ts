@@ -1,5 +1,6 @@
 import type { Layout } from 'react-grid-layout'
-import { GRID_COLUMNS, GRID_MARGIN, GRID_ROW_HEIGHT } from '../../ui/layout-editor/layoutEditorTypes'
+import { GRID_COLUMNS } from '../../ui/layout-editor/layoutEditorTypes'
+import { pixelsToGridRows } from '../../ui/layout-editor/runtimePanelLayout'
 
 const LOADOUT_ID = 'equipment-loadout'
 const STATS_ID = 'equipment-stats'
@@ -13,7 +14,7 @@ export interface AdaptiveEquipmentLayoutOptions {
 
 function requiredPanelHeight(currentHeight: number, contentHeight = 0) {
   if (contentHeight <= 0) return currentHeight
-  return Math.max(currentHeight, Math.ceil((contentHeight + GRID_MARGIN[1]) / (GRID_ROW_HEIGHT + GRID_MARGIN[1])))
+  return Math.max(currentHeight, pixelsToGridRows(contentHeight))
 }
 
 /**

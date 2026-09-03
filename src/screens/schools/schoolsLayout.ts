@@ -1,5 +1,6 @@
 import type { Layout } from 'react-grid-layout'
-import { GRID_COLUMNS, GRID_MARGIN, GRID_ROW_HEIGHT } from '../../ui/layout-editor/layoutEditorTypes'
+import { GRID_COLUMNS } from '../../ui/layout-editor/layoutEditorTypes'
+import { pixelsToGridRows } from '../../ui/layout-editor/runtimePanelLayout'
 
 const INSPECTOR_PANEL_ID = 'schools-inspector'
 const PRESETS_PANEL_ID = 'schools-presets'
@@ -10,7 +11,7 @@ export function getAdaptiveSchoolsLayout(layout: Layout, inspectorContentHeight:
   const presets = layout.find((item) => item.i === PRESETS_PANEL_ID)
   if (!inspector || !presets) return layout
 
-  const requiredInspectorHeight = Math.max(inspector.h, Math.ceil((inspectorContentHeight + GRID_MARGIN[1]) / (GRID_ROW_HEIGHT + GRID_MARGIN[1])))
+  const requiredInspectorHeight = Math.max(inspector.h, pixelsToGridRows(inspectorContentHeight))
   const requiredPresetsY = Math.max(presets.y, inspector.y + requiredInspectorHeight)
   if (requiredInspectorHeight === inspector.h && requiredPresetsY === presets.y) return layout
 

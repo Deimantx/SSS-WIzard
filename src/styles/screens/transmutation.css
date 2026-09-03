@@ -1,5 +1,5 @@
 .transmutation-screen .ui-editor-grid-layout { min-height: 620px; }
-.transmutation-screen .ui-editor-panel-content > .card { height: 100%; min-height: 100%; }
+.transmutation-screen .ui-editor-panel.height-mode-bounded-scroll .ui-editor-panel-content > .card { height: 100%; min-height: 100%; }
 .transmutation-screen .card { overflow: hidden; }
 .transmutation-library, .transmutation-detail, .transmutation-focus { display: flex; min-height: 0; flex-direction: column; }
 .transmutation-search { display: flex; align-items: center; gap: 7px; margin-bottom: 9px; padding: 7px 9px; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text-muted); background: color-mix(in srgb, var(--ui-panel-strong) 82%, transparent); }

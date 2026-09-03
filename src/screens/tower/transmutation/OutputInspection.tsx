@@ -32,7 +32,7 @@ export function OutputInspection({ recipe }: { recipe: RecipeDefinition }) {
 function EquipmentOutput({ inspection, preview, ringNeedsChoice, ringTarget, onRingTargetChange }: { inspection: ReturnType<typeof getTransmutationOutputInspection>; preview: ReturnType<typeof getTransmutationEquipmentPreview> | null; ringNeedsChoice: boolean; ringTarget: EquipmentPosition | null; onRingTargetChange: (position: EquipmentPosition) => void }) {
   const item = ITEMS[inspection.itemId]
   if (!inspection.equipment) return null
-  const authoredStats = flattenItemStats(item.stats).filter(([, value]) => Math.abs(value) > 0)
+  const authoredStats = flattenItemStats(item.stats ?? {}).filter(([, value]) => Math.abs(value) > 0)
   const impactRows = preview ? getImpactEntries(preview.impact).filter(([, value]) => Math.abs(value) > 0.0001) : []
   return <>
     <DetailSection title="EQUIPMENT PROFILE"><div className="transmutation-output-meta"><span><small>SLOT</small><strong>{inspection.equipment.slot.toUpperCase()}</strong></span>{inspection.equipment.hands && <span><small>HANDS</small><strong>{inspection.equipment.hands}H</strong></span>}{inspection.equipment.presentation && <span><small>OFFHAND TYPE</small><strong>{inspection.equipment.presentation.toUpperCase()}</strong></span>}<span><small>OWNED</small><strong>{inspection.owned.toLocaleString()}</strong></span></div></DetailSection>

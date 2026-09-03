@@ -9,7 +9,8 @@ const emit = () => listeners.forEach((listener) => listener())
 const subscribe = (listener: () => void) => { listeners.add(listener); return () => listeners.delete(listener) }
 
 export const getUiPreferences = () => current
-type TransmutationPreferenceChanges = Partial<Omit<ScreenPreferences['transmutation'], 'collapsedCategories'>> & { collapsedCategories?: Partial<ScreenPreferences['transmutation']['collapsedCategories']> }
+type LegacyRecipeFilter = 'all' | 'elemental' | 'material' | 'equipment' | 'special' | 'craftable' | 'active'
+type TransmutationPreferenceChanges = Partial<Omit<ScreenPreferences['transmutation'], 'collapsedCategories'>> & { collapsedCategories?: Partial<ScreenPreferences['transmutation']['collapsedCategories']>; /** @deprecated Loaded and normalized only for pre-V2 preference compatibility. */ recipeFilter?: LegacyRecipeFilter }
 type UiPreferenceChanges = Omit<Partial<UiPreferences>, 'screenState'> & { screenState?: { inventory?: Partial<ScreenPreferences['inventory']>; transmutation?: TransmutationPreferenceChanges; research?: Partial<ScreenPreferences['research']>; combat?: Partial<ScreenPreferences['combat']> } }
 
 export const setUiPreferences = (changes: UiPreferenceChanges) => {

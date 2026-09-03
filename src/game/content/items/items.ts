@@ -116,7 +116,8 @@ export const validateItemDefinitions = (items: Record<string, ItemDefinition> = 
     if (key !== item.id) errors.push(`${key}: key/id mismatch`)
     if (item.kind === 'equipment' && !item.equipmentSlot) errors.push(`${item.id}: equipment slot is required`)
     if (item.kind === 'equipment' && item.materialTier !== undefined) errors.push(`${item.id}: equipment must not define materialTier`)
-    if (item.kind === 'material' && (!Number.isInteger(item.materialTier) || item.materialTier < 1)) errors.push(`${item.id}: materialTier must be a positive integer`)
+    const materialTier = item.materialTier
+    if (item.kind === 'material' && (materialTier === undefined || !Number.isInteger(materialTier) || materialTier < 1)) errors.push(`${item.id}: materialTier must be a positive integer`)
     if (item.kind !== 'equipment' && item.weaponHands !== undefined) errors.push(`${item.id}: only equipment items may define weaponHands`)
     if (item.weaponHands !== undefined && (item.equipmentSlot !== 'weapon' || (item.weaponHands !== 1 && item.weaponHands !== 2))) errors.push(`${item.id}: weaponHands requires a 1H or 2H weapon`)
     if (item.equipmentSlot === 'weapon' && item.weaponHands === undefined) errors.push(`${item.id}: weapons must define weaponHands`)

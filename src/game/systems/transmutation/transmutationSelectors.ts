@@ -130,7 +130,7 @@ export function getVisibleTransmutationRecipes(state: Pick<GameState, 'activitie
 }
 
 export function getTransmutationMaterialTierOptions() {
-  const tiers = getTransmutationRecipeEntries().map((recipe) => ITEMS[recipe.output.itemId].materialTier).filter((tier): tier is number => Number.isInteger(tier) && tier >= 1)
+  const tiers = getTransmutationRecipeEntries().map((recipe) => ITEMS[recipe.output.itemId].materialTier).filter((tier): tier is number => typeof tier === 'number' && Number.isInteger(tier) && tier >= 1)
   const maxTier = Math.max(3, ...tiers, 1)
   return Array.from({ length: maxTier }, (_, index) => index + 1)
 }

@@ -16,4 +16,22 @@ describe('FocusAssignment locked state', () => {
     expect(screen.queryByRole('button', { name: 'Remove Echo from Ember Staff' })).toBeNull()
     expect(screen.getByRole('button', { name: 'Remove Echo from Fire Fragment' })).toBeTruthy()
   })
+
+  it('places the entire Focus body inside one scroll viewport', () => {
+    render(<FocusAssignment selectedRecipeId="fire-fragment" onSelect={vi.fn()} />)
+    const body = document.querySelector('.transmutation-focus-body')
+    expect(body).toBeTruthy()
+    expect(body?.querySelector('.transmutation-focus-pool')).toBeTruthy()
+    expect(body?.querySelector('.transmutation-empty-assignments')).toBeTruthy()
+    expect(body?.querySelector('.transmutation-active-heading')).toBeTruthy()
+  })
+
+  it('renders every active assignment row inside the Focus body', () => {
+    const state = useGameStore.getState()
+    state.setTransmutationEchoes('fire-fragment', 1)
+    state.setTransmutationEchoes('water-fragment', 1)
+    render(<FocusAssignment selectedRecipeId="fire-fragment" onSelect={vi.fn()} />)
+    const body = document.querySelector('.transmutation-focus-body')
+    expect(body?.querySelectorAll('.transmutation-assignment-row')).toHaveLength(2)
+  })
 })

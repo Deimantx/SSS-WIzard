@@ -52,21 +52,8 @@ Before completing a UI screen, audit:
 ## Centralized gameplay definitions
 
 Do not duplicate authoritative lists, costs, formulas, slot definitions, recipe definitions, or Focus calculations inside UI components.
-
 UI must consume authoritative gameplay/data helpers.
-
 When replacing a system, remove the obsolete implementation after migration rather than keeping parallel legacy behavior.
-
-## Progression curve terminology
-
-Never use ambiguous progression helpers such as `LEVEL_XP(level)` when the value could mean either per-level XP or cumulative XP.
-
-For Magic Schools:
-
-- `XP to Next Level` means the incremental XP required from the current level to the next.
-- `Total XP to Reach This Level` means the cumulative absolute threshold at the start of that level.
-- Runtime, Dev Tools, save migration, tests, and `Docs/Balancing` must use the same centralized School XP helpers/table.
-- Do not hard-code School XP thresholds in fixtures, presets, UI, or tests.
 
 ## Tester-first Developer Tools
 
@@ -104,6 +91,7 @@ For Magic Schools:
 - Normal panel content must not bleed outside its own panel into a sibling panel. Panel roots own clipping and narrow-width containment.
 - A locked panel cannot be moved or resized by the user, but runtime auto-flow may shift its effective position to avoid overlap. Its saved position remains unchanged.
 - Hidden panels do not reserve runtime space; they remain available only when the Layout Editor is showing hidden content.
+- `bounded-scroll` panels must own an explicit internal scroll viewport; clipping overflow without a reachable themed scrollbar is invalid.
 - `PanelDefinition.heightMode` is either `content` or `bounded-scroll`; content panels grow from measured natural content, while bounded-scroll panels keep their saved/minimum outer height and scroll internally.
 - Saved `x`, `y`, `w`, and `h` are the user's base geometry and are the only geometry persisted. Runtime measurement, auto-flow, responsive stacking, and layout transforms must never write sibling shifts back to saved layouts.
 - Natural content is measured through the shared `ResizeObserver` wrapper. Do not add polling or a global `MutationObserver` for panel sizing.
@@ -111,10 +99,6 @@ For Magic Schools:
 - Responsive narrow layouts must stack every visible panel at `x=0`, `w=12`, using effective heights, and must remain collision-free after width/reflow changes.
 - Shared row/pixel conversion helpers own grid sizing math; do not duplicate magic row heights, margins, or pixel formulas in screens.
 
-## Transmutation presentation
-
-- Keep recipe filtering, unlock visibility, material tiers, output inspection, equipment comparison, and item tooltip data on shared game read-model/content helpers. Transmutation screens may format these helpers but must not duplicate recipe IDs, unlock rules, item stats, equipment effects, or slot logic.
-- The normal Transmutation library hides locked recipes. Developer-only reveal is inspection-only and must not bypass runtime unlock or crafting checks.
 
 ## Archive ownership
 

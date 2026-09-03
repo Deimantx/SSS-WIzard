@@ -14,6 +14,17 @@ describe('RecipeLibrary screen preferences', () => {
     expect(screen.getByText('5 / 5')).toBeTruthy()
   })
 
+  it('keeps controls outside one scrollable recipe region and renders the full dev library inside it', () => {
+    render(<RecipeLibrary selectedRecipeId="fire-fragment" onSelect={vi.fn()} />)
+    const controls = document.querySelector('.transmutation-library-controls')
+    const scroll = document.querySelector('.transmutation-library-scroll')
+    expect(controls).toBeTruthy()
+    expect(scroll).toBeTruthy()
+    expect(controls?.querySelector('.transmutation-recipe-tile')).toBeNull()
+    expect(scroll?.querySelectorAll('.transmutation-recipe-tile').length).toBeGreaterThan(30)
+    expect(scroll?.querySelector('.transmutation-recipe-group')).toBeTruthy()
+  })
+
   it('starts expanded and collapses a category without affecting other categories', () => {
     render(<RecipeLibrary selectedRecipeId="fire-fragment" onSelect={vi.fn()} />)
 

@@ -43,8 +43,9 @@ export function RecipeLibrary({ selectedRecipeId, onSelect }: { selectedRecipeId
   const emptyMessage = getEmptyMessage(filters, query, showLocked, counts)
 
   return <Card className="transmutation-library" title="RECIPE LIBRARY" action={<span className="transmutation-count">{visible.length} / {showLocked ? recipes.length : counts.unlocked}</span>}>
-    <label className="transmutation-search"><Search size={14} aria-hidden="true" /><SearchInput value={query} onChange={setQuery} placeholder="Search recipes..." /></label>
-    <div className="transmutation-filter-stack">
+    <div className="transmutation-library-controls">
+      <label className="transmutation-search"><Search size={14} aria-hidden="true" /><SearchInput value={query} onChange={setQuery} placeholder="Search recipes..." /></label>
+      <div className="transmutation-filter-stack">
       <FilterRow label="CATEGORY" options={(['all', ...categories] as const).map((value) => ({ value, label: value === 'all' ? 'ALL' : CATEGORY_LABELS[value], count: counts.categories[value] }))} value={filters.categoryFilter} onChange={(value) => update({ categoryFilter: value, equipmentSlotFilter: 'all', weaponHandsFilter: 'all', offhandPresentationFilter: 'all', materialTierFilter: 'all' })} />
       {filters.categoryFilter === 'equipment' && <>
         <FilterRow label="SLOT" options={(['all', 'weapon', 'offhand', 'armor', 'helmet', 'cape', 'amulet', 'ring'] as const).map((value) => ({ value, label: value === 'all' ? 'ALL' : SLOT_LABELS[value], count: value === 'all' ? counts.equipmentSlots.all : counts.equipmentSlots[value] }))} value={filters.equipmentSlotFilter} onChange={(value) => update({ equipmentSlotFilter: value, weaponHandsFilter: 'all', offhandPresentationFilter: 'all' })} />
@@ -53,9 +54,10 @@ export function RecipeLibrary({ selectedRecipeId, onSelect }: { selectedRecipeId
       </>}
       {filters.categoryFilter === 'material' && <FilterRow label="MATERIAL TIER" options={(['all', ...getTransmutationMaterialTierOptions()] as const).map((value) => ({ value, label: value === 'all' ? 'ALL' : `T${value}`, count: value === 'all' ? counts.categories.material : counts.materialTiers[value] ?? 0 }))} value={filters.materialTierFilter} onChange={(value) => update({ materialTierFilter: value })} />}
       <div className="transmutation-filter-row transmutation-filter-state"><span className="transmutation-filter-label">STATE</span><div className="transmutation-filter-options"><FilterToggle label="CRAFTABLE" pressed={filters.craftableOnly} count={counts.craftable} onClick={() => update({ craftableOnly: !filters.craftableOnly })} /><FilterToggle label="ACTIVE" pressed={filters.activeOnly} count={counts.active} onClick={() => update({ activeOnly: !filters.activeOnly })} /></div></div>
+      </div>
+      {showLocked && counts.hiddenLocked > 0 && <div className="transmutation-locked-banner"><LockKeyhole size={14} aria-hidden="true" /><span>DEV VIEW · {counts.hiddenLocked} locked recipes revealed. Unlock conditions still apply.</span></div>}
     </div>
-    {showLocked && counts.hiddenLocked > 0 && <div className="transmutation-locked-banner"><LockKeyhole size={14} aria-hidden="true" /><span>DEV VIEW · {counts.hiddenLocked} locked recipes revealed. Unlock conditions still apply.</span></div>}
-    <div className="transmutation-library-list">
+    <div className="transmutation-library-scroll">
       {visible.length === 0 ? <div className="empty-state small">{emptyMessage}</div> : groups.map((category) => {
         const categoryRecipes = visible.filter((recipe) => recipe.category === category)
         const collapsed = collapsedCategories[category] && !forceOpen

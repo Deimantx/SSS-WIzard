@@ -49,7 +49,7 @@ describe('EditableGrid runtime geometry', () => {
     Object.defineProperty(detailObserver?.target, 'getBoundingClientRect', { configurable: true, value: () => ({ height: 360 }) })
     act(() => detailObserver?.trigger())
     await waitFor(() => {
-      const latest = gridState.layout.at(-1) ?? []
+      const latest: Layout = gridState.layout[gridState.layout.length - 1] ?? []
       expect(latest.find((item) => item.i === 'transmutation-output-preview')?.y).toBe(9)
     })
   })

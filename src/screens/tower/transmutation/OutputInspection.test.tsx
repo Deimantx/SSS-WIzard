@@ -27,4 +27,13 @@ describe('Transmutation output inspection', () => {
     expect(screen.getByText('AUTHORED STATS')).toBeTruthy()
     expect(screen.getByText(/would be removed because this is a two-handed Weapon/)).toBeTruthy()
   })
+
+  it('keeps the output icon cell and copy as separate contained hero columns', () => {
+    const { container } = render(<OutputInspection recipe={RECIPES['ember-staff']} />)
+    const hero = container.querySelector('.transmutation-output-hero')
+    const icon = container.querySelector('.transmutation-output-icon')
+    expect(hero?.children).toHaveLength(2)
+    expect(icon?.querySelector('.item-icon-large')).toBeTruthy()
+    expect(icon?.parentElement).toBe(hero)
+  })
 })

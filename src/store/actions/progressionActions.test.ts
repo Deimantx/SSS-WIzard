@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest'
 import { getSchoolLevelStartXp } from '../../game/systems/schools'
 import { grantSchoolXp } from '../../game/engine'
 import { createInitialState } from '../initialState'
-import { setSchoolDebugAction, unlockAllSpellsAction } from './progressionActions'
+import { setSchoolLevelDebugAction, setSchoolXpDebugAction, unlockAllSpellsAction } from './progressionActions'
 
 describe('school progression debug controls', () => {
   it('uses canonical School Level start XP thresholds for quick sets', () => {
     expect([2, 8, 16, 20, 40].map(getSchoolLevelStartXp)).toEqual([100, 2070, 15120, 29870, 252310])
     const state = createInitialState()
-    setSchoolDebugAction(state, 'fire', getSchoolLevelStartXp(8), 8)
+    setSchoolLevelDebugAction(state, 'fire', 8)
     expect(state.schools.fire).toEqual({ xp: 2070, level: 8 })
     unlockAllSpellsAction(state)
     expect(state.schools.fire.xp).toBe(15120)
@@ -24,7 +24,7 @@ describe('school progression debug controls', () => {
 
   it('derives a level from an explicit total XP edit', () => {
     const state = createInitialState()
-    setSchoolDebugAction(state, 'fire', 240)
+    setSchoolXpDebugAction(state, 'fire', 240)
     expect(state.schools.fire).toEqual({ xp: 240, level: 3 })
   })
 

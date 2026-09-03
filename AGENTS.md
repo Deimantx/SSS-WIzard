@@ -100,6 +100,11 @@ For Magic Schools:
 
 ## Archive ownership
 
+## Transmutation presentation
+
+- Keep recipe filtering, unlock visibility, material tiers, output inspection, equipment comparison, and item tooltip data on shared game read-model/content helpers. Transmutation screens may format these helpers but must not duplicate recipe IDs, unlock rules, item stats, equipment effects, or slot logic.
+- The normal Transmutation library hides locked recipes. Developer-only reveal is inspection-only and must not bypass runtime unlock or crafting checks.
+
 - Game/content/system modules must not import screen/UI modules; shared metadata belongs in game/content or system layers.
 - New filter/category controls should reuse the established shared filter-button visual language rather than invent screen-specific variants.
 - Collection is item-only; creature data belongs in Bestiary.

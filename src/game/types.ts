@@ -69,6 +69,11 @@ export type ManaPillarId = 'leyline-conduit' | 'arcane-reservoir' | 'mana-resona
 export type ChannelingDiscoveryId = 'stable-leyline' | 'echo-resonance' | 'deep-reservoir'
 export type RecipeId = 'fire-fragment' | 'water-fragment' | 'earth-fragment' | 'air-fragment' | 'prismatic-fragment' | 'ember-staff' | 'wispwood-wand' | 'tide-focus' | 'stoneweave-robe' | 'windthread-charm' | 'wispveil-hood' | 'grovekeeper-mantle' | 'wispbound-ring' | 'heartseed-necklace' | 'fangbound-dagger' | 'fangbound-buckler' | 'corrupted-howlstaff' | 'razorclaw-circlet' | 'predator-hide-mantle' | 'greatbear-vestment' | 'howling-signet' | 'greatbear-heartstone' | 'graveglass-wand' | 'edrins-remnant-staff' | 'soulward-focus' | 'soulward-shield' | 'acolyte-vestments' | 'wraithveil-hood' | 'ossuary-mantle' | 'soulglass-amulet' | 'gravebinder-ring' | 'edrins-signet'
 export type RecipeCategory = 'elemental' | 'material' | 'equipment' | 'special'
+export type TransmutationCategoryFilter = 'all' | RecipeCategory
+export type TransmutationEquipmentSlotFilter = 'all' | EquipmentItemSlot
+export type TransmutationWeaponHandsFilter = 'all' | 1 | 2
+export type TransmutationOffhandFilter = 'all' | 'shield' | 'focus'
+export type TransmutationMaterialTierFilter = 'all' | number
 export type RecipeUnlockCondition =
   | { type: 'always' }
   | { type: 'boss-kill'; bossId: MonsterId; count?: number }
@@ -112,6 +117,8 @@ export interface ItemDefinition {
   /** Player-facing Vault classification. This is based on item function, not drop source. */
   inventoryCategory: InventoryCategory
   materialSubtype?: InventoryMaterialSubtype
+  /** Authored material progression tier; equipment must not define this field. */
+  materialTier?: number
   source: string
   sourceNavigation?: ScreenId
   /** Optional authored chain for future refined-material presentations. */
@@ -331,6 +338,7 @@ export interface DebugOverrides {
   allowFocusOverCap: boolean
   ignoreEchoLimit: boolean
   transmutationEchoCapacityOverride: number | null
+  showLockedTransmutationRecipes: boolean
   playerImmortal: boolean
   enemyImmortal: boolean
   infiniteMana: boolean

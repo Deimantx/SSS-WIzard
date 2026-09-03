@@ -37,11 +37,6 @@ export const setSchoolLevelDebugAction = (state: GameState, school: SchoolId, le
   syncSpellUnlocksForSchool(state, school)
 }
 
-/** Legacy-shaped entry point with explicit semantics: level wins when supplied; otherwise XP is derived. */
-export const setSchoolDebugAction = (state: GameState, school: SchoolId, xp: number, level?: number) => {
-  if (level !== undefined) setSchoolLevelDebugAction(state, school, level)
-  else setSchoolXpDebugAction(state, school, xp)
-}
 export const debugUnlockSpellRankOneAction = (state: GameState, spellId: SpellId) => {
   if (!SPELLS[spellId]) return false
   state.progress.spellRanks[spellId] = 1

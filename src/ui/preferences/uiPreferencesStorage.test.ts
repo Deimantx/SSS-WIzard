@@ -9,7 +9,7 @@ describe('screen UI preferences', () => {
     const preferences = normalizeUiPreferences({ theme: 'dark' })
 
     expect(preferences.screenState.inventory).toEqual({ currentNeedsOpen: true, sourceOpen: false, usedInOpen: true })
-    expect(preferences.screenState.transmutation).toEqual({ selectedRecipeId: 'fire-fragment', recipeFilter: 'all', usedInOpen: true, collapsedCategories: { elemental: false, material: false, equipment: false, special: false } })
+    expect(preferences.screenState.transmutation).toEqual({ selectedRecipeId: 'fire-fragment', categoryFilter: 'all', equipmentSlotFilter: 'all', weaponHandsFilter: 'all', offhandPresentationFilter: 'all', materialTierFilter: 'all', craftableOnly: false, activeOnly: false, usedInOpen: true, collapsedCategories: { elemental: false, material: false, equipment: false, special: false } })
     expect(preferences.screenState.combat).toEqual({ combatLogFontSize: 'medium', combatDetailsMode: 'damage-done', dungeonStatisticsMode: 'runs' })
   })
 
@@ -33,11 +33,11 @@ describe('screen UI preferences', () => {
     expect(preferences.screenState.transmutation).toEqual({ ...defaultUiPreferences().screenState.transmutation, collapsedCategories: { elemental: true, material: false, equipment: false, special: false } })
   })
 
-  it('serializes selected recipe, filter, and detail state independently of gameplay', () => {
+  it('migrates the legacy recipe filter and serializes detail state independently of gameplay', () => {
     setUiPreferences({ screenState: { transmutation: { selectedRecipeId: 'ember-staff', recipeFilter: 'equipment', usedInOpen: false, collapsedCategories: { equipment: true } } } })
 
-    expect(getUiPreferences().screenState.transmutation).toEqual({ selectedRecipeId: 'ember-staff', recipeFilter: 'equipment', usedInOpen: false, collapsedCategories: { elemental: false, material: false, equipment: true, special: false } })
-    expect(loadUiPreferences().screenState.transmutation).toEqual({ selectedRecipeId: 'ember-staff', recipeFilter: 'equipment', usedInOpen: false, collapsedCategories: { elemental: false, material: false, equipment: true, special: false } })
+    expect(getUiPreferences().screenState.transmutation).toMatchObject({ selectedRecipeId: 'ember-staff', categoryFilter: 'equipment', craftableOnly: false, activeOnly: false, usedInOpen: false, collapsedCategories: { elemental: false, material: false, equipment: true, special: false } })
+    expect(loadUiPreferences().screenState.transmutation).toMatchObject({ selectedRecipeId: 'ember-staff', categoryFilter: 'equipment', usedInOpen: false, collapsedCategories: { elemental: false, material: false, equipment: true, special: false } })
   })
 
   it('resetAppearance resets appearance only', () => {
@@ -64,6 +64,6 @@ describe('screen UI preferences', () => {
     expect(preferences.customTheme).toEqual(defaultUiPreferences().customTheme)
     expect(preferences.navigationGroups.tower).toBe(true)
     expect(preferences.screenState.inventory.usedInOpen).toBe(false)
-    expect(preferences.screenState.transmutation).toMatchObject({ selectedRecipeId: 'ember-staff', recipeFilter: 'equipment', usedInOpen: true, collapsedCategories: { equipment: true } })
+    expect(preferences.screenState.transmutation).toMatchObject({ selectedRecipeId: 'ember-staff', categoryFilter: 'equipment', usedInOpen: true, collapsedCategories: { equipment: true } })
   })
 })

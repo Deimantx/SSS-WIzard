@@ -13,6 +13,8 @@ import type { MonsterId, RecipeId } from '../../game/types'
 import type { DeveloperFixtureId } from '../../store/gameStore'
 import { useGameStore } from '../../store/gameStore'
 import { DEVELOPER_LOADOUTS, type DeveloperEquipmentLoadout } from '../developerLoadouts'
+import { useProfileSession } from '../../profiles/profileSessionStore'
+import { PROFILE_RESET_CONFIRMATION } from '../developerProfileReset'
 
 const materialIds = (Object.keys(ITEMS) as Array<keyof typeof ITEMS>).filter((itemId) => ITEMS[itemId].kind === 'material')
 const defaultRecipe = RECIPE_ORDER.find((id) => RECIPES[id].ingredients.length > 0) ?? RECIPE_ORDER[0]
@@ -31,6 +33,8 @@ const loadoutItemCounts = (loadout: DeveloperEquipmentLoadout) => Object.values(
 
 export function DeveloperQuickSetup() {
   const state = useGameStore()
+  const profileSession = useProfileSession()
+  const hasActiveProfile = Boolean(profileSession.activeProfileId)
   const [enemyQuery, setEnemyQuery] = useState('')
   const [selectedEnemy, setSelectedEnemy] = useState<MonsterId | null>(MONSTER_IDS[0] ?? null)
   const [selectedRecipe, setSelectedRecipe] = useState<RecipeId>(defaultRecipe)
@@ -66,6 +70,7 @@ export function DeveloperQuickSetup() {
     setRecipeFeedback(`Missing ingredients granted for: ${selectedRecipeDefinition.name}`)
   }
   const unlockRankOneSpells = () => getAllSpellsInOrder().forEach((spell) => state.debugUnlockSpellRankOne(spell.id))
+  const resetCurrentProfile = () => { if (window.confirm(PROFILE_RESET_CONFIRMATION)) state.resetSave() }
 
   return <div className="developer-tab-stack">
     <Card title="Quick Setup" className="developer-quick-setup">
@@ -73,6 +78,7 @@ export function DeveloperQuickSetup() {
       <div className="developer-quick-grid">
         <section><h3>Player</h3><div className="button-row"><Button onClick={restoreHealth}>Full Health</Button><Button onClick={restoreMana}>Full Mana</Button><Button variant="secondary" onClick={state.clearPlayerStatuses}>Clear Player Statuses</Button><Button variant="secondary" onClick={state.clearPlayerBarrier}>Clear Player Barrier</Button><Button variant={state.debug.playerImmortal ? 'success' : 'secondary'} onClick={() => state.setDebugPlayerImmortal(!state.debug.playerImmortal)}>God Mode: {state.debug.playerImmortal ? 'ON' : 'OFF'}</Button></div></section>
         <section><h3>Fixtures</h3><div className="developer-fixture-list">{fixtureButtons.map((fixture) => <div key={fixture.id}><div><strong>{fixture.label}</strong><small>{fixture.description}</small></div><Button variant={fixture.id === 'fresh' ? 'danger' : 'secondary'} onClick={() => applyFixture(fixture.id)}>{fixture.id === 'fresh' ? 'Reset Fresh Game' : `Load ${fixture.label}`}</Button></div>)}</div></section>
+        <section><h3>Fresh Start / Reset</h3><p className="muted">Reset the persisted gameplay state for the currently selected profile. UI appearance and custom layouts are preserved.</p><Button variant="danger" disabled={!hasActiveProfile} onClick={resetCurrentProfile}>Reset Current Profile Progress</Button></section>
         <section><h3>Loadouts</h3><p className="muted">Each loadout uses its explicit authored slot map.</p><div className="developer-button-grid">{DEVELOPER_LOADOUTS.map((loadout) => <Button key={loadout.id} variant="secondary" onClick={() => loadLoadout(loadout)}>{loadout.label}</Button>)}</div></section>
         <section><h3>Resources &amp; Magic</h3><label>Recipe<select aria-label="Quick Setup recipe" value={selectedRecipe} onChange={(event) => { setSelectedRecipe(event.target.value as RecipeId); setRecipeFeedback('') }}>{RECIPE_ORDER.map((id) => { const recipe = RECIPES[id]; const recipeStatus = getRecipeStatus(state, recipe); return <option value={id} key={id}>{recipe.name} · {formatReadableId(recipe.category)} · {formatReadableId(recipeStatus)}</option> })}</select></label><div className="button-row"><Button onClick={grantResources}>+100 Relevant Materials</Button><Button variant="secondary" onClick={grantMissingRecipeIngredients} disabled={selectedRecipeDefinition.ingredients.length === 0}>Grant Missing Ingredients</Button><Button variant="secondary" onClick={unlockRankOneSpells}>Unlock Rank-I Spells</Button><Button variant="secondary" onClick={state.resetSpellCooldowns}>Reset Spell Cooldowns</Button><Button variant="ghost" onClick={state.resetDebugOverrides}>Clear Debug Overrides</Button></div><small className="muted">Selected recipe: {selectedRecipeDefinition.name} · {formatReadableId(selectedRecipeDefinition.category)} · {formatReadableId(getRecipeStatus(state, selectedRecipeDefinition))}</small>{recipeFeedback && <Status tone="success">{recipeFeedback}</Status>}</section>
       </div>

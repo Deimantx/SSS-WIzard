@@ -65,6 +65,7 @@
 .transmutation-uses strong { color: var(--ui-text-soft); font-size: var(--text-xs); }
 .transmutation-uses small { color: var(--ui-text-muted); font-size: var(--text-micro); }
 .transmutation-focus-pool { display: grid; gap: 9px; padding: 9px; border: 1px solid var(--ui-border); border-radius: 8px; background: var(--ui-panel); }
+.transmutation-focus .transmutation-assignment-list { max-height: 230px; overflow: auto; scrollbar-gutter: stable; }
 .transmutation-focus-pool-heading { display: flex; justify-content: space-between; gap: 8px; }
 .transmutation-focus-pool-heading > div:first-child { display: grid; gap: 4px; }
 .transmutation-focus-pool-heading strong { color: var(--ui-text); font: var(--text-sm) var(--font-mono); }
@@ -114,3 +115,53 @@
 [data-text-size='extra-large'] .transmutation-recipe-tile { min-height: 98px; }
 [data-text-size='extra-large'] .transmutation-recipe-grid { grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); }
 [data-text-size='extra-large'] .transmutation-tile-icon .item-icon-tile { width: 36px; height: 36px; font-size: 22px; }
+
+.transmutation-library { min-height: 0; }
+.transmutation-filter-stack { display: grid; gap: 6px; padding-bottom: 9px; border-bottom: 1px solid var(--ui-border); }
+.transmutation-filter-row { display: grid; grid-template-columns: 76px minmax(0, 1fr); align-items: center; gap: 6px; min-width: 0; }
+.transmutation-filter-label { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .08em; }
+.transmutation-filter-options { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
+.transmutation-filter-options button { display: inline-flex; align-items: center; gap: 4px; min-width: 0; padding: 4px 6px; border: 1px solid var(--ui-border); border-radius: 5px; color: var(--ui-text-muted); background: var(--ui-panel); cursor: pointer; font: var(--text-micro) var(--font-mono); }
+.transmutation-filter-options button small { color: var(--ui-text-muted); font-size: .55rem; }
+.transmutation-filter-options button:hover, .transmutation-filter-options button:focus-visible, .transmutation-filter-options button.active { border-color: color-mix(in srgb, var(--ui-accent) 65%, var(--ui-border)); color: var(--ui-text); background: var(--ui-accent-soft); outline: none; }
+.transmutation-filter-state { padding-top: 2px; }
+.transmutation-locked-banner { display: flex; align-items: flex-start; gap: 6px; margin-top: 8px; padding: 7px; border: 1px solid color-mix(in srgb, var(--ui-warning) 42%, var(--ui-border)); border-radius: 6px; color: var(--ui-warning); font: var(--text-micro) / 1.35 var(--font-mono); }
+.transmutation-locked-banner svg { flex: 0 0 auto; margin-top: 1px; }
+.transmutation-tile-classification { width: 100%; overflow: hidden; color: var(--ui-text-muted); font: .51rem var(--font-mono); text-overflow: ellipsis; white-space: nowrap; }
+.transmutation-output-preview { display: flex; min-height: 0; flex-direction: column; }
+.transmutation-output-content { display: grid; align-content: start; gap: 12px; min-width: 0; min-height: 0; overflow: auto; padding-right: 3px; scrollbar-gutter: stable; }
+.transmutation-output-content > .game-tooltip-trigger { display: block; min-width: 0; }
+.transmutation-output-hero { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 10px; align-items: start; min-width: 0; padding: 8px; border: 1px solid color-mix(in srgb, var(--ui-accent) 30%, var(--ui-border)); border-radius: 8px; background: var(--ui-accent-soft); }
+.transmutation-output-icon { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 9px; background: color-mix(in srgb, var(--ui-accent) 13%, transparent); }
+.transmutation-output-hero h2 { margin: 3px 0; color: var(--ui-text); font-size: var(--text-base); overflow-wrap: anywhere; }
+.transmutation-output-hero p, .transmutation-output-note { margin: 0; color: var(--ui-text-muted); font-size: var(--text-xs); line-height: 1.45; }
+.transmutation-output-section { display: grid; gap: 7px; min-width: 0; padding-top: 10px; border-top: 1px solid var(--ui-border); }
+.transmutation-output-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.transmutation-output-meta span { display: grid; gap: 3px; min-width: 0; padding: 7px; border: 1px solid var(--ui-border); border-radius: 6px; background: var(--ui-panel); }
+.transmutation-output-meta small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
+.transmutation-output-meta strong { overflow-wrap: anywhere; color: var(--ui-text); font: var(--text-xs) var(--font-mono); }
+.transmutation-output-stat-list { display: grid; gap: 5px; }
+.transmutation-output-stat-list > div { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; padding: 5px 0; border-bottom: 1px solid var(--ui-border); }
+.transmutation-output-stat-list span { min-width: 0; overflow: hidden; color: var(--ui-text-muted); font-size: var(--text-xs); text-overflow: ellipsis; white-space: nowrap; }
+.transmutation-output-stat-list strong, .transmutation-output-stat-list small { flex: 0 0 auto; color: var(--ui-text); font: var(--text-micro) var(--font-mono); }
+.transmutation-output-stat-list.comparison small { color: var(--ui-text-muted); }
+.transmutation-output-stat-list.comparison strong.negative { color: var(--ui-danger); }
+.transmutation-output-stat-list.comparison strong.positive { color: var(--ui-success); }
+.transmutation-output-current { display: flex; justify-content: space-between; gap: 8px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
+.transmutation-output-current strong { color: var(--ui-text); }
+.transmutation-output-links { display: grid; gap: 5px; }
+.transmutation-output-links span { display: grid; gap: 3px; padding: 6px; border: 1px solid var(--ui-border); border-radius: 6px; }
+.transmutation-output-links strong { color: var(--ui-text-soft); font-size: var(--text-xs); }
+.transmutation-output-links small { color: var(--ui-text-muted); font-size: var(--text-micro); }
+.transmutation-ring-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.transmutation-ring-choice { display: grid; gap: 4px; min-width: 0; padding: 7px; border: 1px solid var(--ui-border); border-radius: 6px; color: var(--ui-text-muted); background: var(--ui-panel); cursor: pointer; text-align: left; }
+.transmutation-ring-choice:hover, .transmutation-ring-choice:focus-visible, .transmutation-ring-choice.selected { border-color: var(--ui-accent); background: var(--ui-accent-soft); outline: none; }
+.transmutation-ring-choice span { font: var(--text-micro) var(--font-mono); }
+.transmutation-ring-choice strong { overflow: hidden; color: var(--ui-text); font-size: var(--text-xs); text-overflow: ellipsis; white-space: nowrap; }
+.transmutation-output-warning { display: flex; align-items: flex-start; gap: 7px; padding: 8px; border: 1px solid color-mix(in srgb, var(--ui-warning) 42%, var(--ui-border)); border-radius: 7px; color: var(--ui-warning); font-size: var(--text-xs); line-height: 1.4; }
+.transmutation-output-warning svg { flex: 0 0 auto; }
+
+@media (max-width: 760px) {
+  .transmutation-filter-row { grid-template-columns: 1fr; align-items: start; }
+  .transmutation-output-content { max-height: 500px; }
+}

@@ -5,7 +5,14 @@ import { resetAllUiPreferences, setUiPreferences } from '../../../ui/preferences
 import { RecipeLibrary } from './RecipeLibrary'
 
 describe('RecipeLibrary screen preferences', () => {
-  beforeEach(() => { useGameStore.getState().resetSave(); resetAllUiPreferences() })
+  beforeEach(() => { useGameStore.getState().resetSave(); useGameStore.getState().setDebugShowLockedTransmutationRecipes(true); resetAllUiPreferences() })
+
+  it('hides locked authored recipes in the normal library', () => {
+    useGameStore.getState().setDebugShowLockedTransmutationRecipes(false)
+    render(<RecipeLibrary selectedRecipeId="fire-fragment" onSelect={vi.fn()} />)
+    expect(screen.queryByText('Ember Staff')).toBeNull()
+    expect(screen.getByText('5 / 5')).toBeTruthy()
+  })
 
   it('starts expanded and collapses a category without affecting other categories', () => {
     render(<RecipeLibrary selectedRecipeId="fire-fragment" onSelect={vi.fn()} />)
@@ -50,7 +57,7 @@ describe('RecipeLibrary screen preferences', () => {
     expect(screen.getByRole('button', { name: /Ember Staff/ })).toBeTruthy()
     expect(JSON.parse(window.localStorage.getItem('sss-wizard-ui-preferences-v1')!).screenState.transmutation.collapsedCategories.equipment).toBe(true)
 
-    fireEvent.click(screen.getByRole('tab', { name: 'ALL' }))
+    fireEvent.click(screen.getAllByRole('tab', { name: 'ALL' })[0])
     expect(screen.queryByRole('button', { name: /Ember Staff/ })).toBeNull()
   })
 

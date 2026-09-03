@@ -4,12 +4,12 @@ import { ITEMS } from '../../game/content/items/items'
 import { SCHOOLS } from '../../game/content/schools/schools'
 import { COMBAT_DETAILS_MODE_ORDER } from '../../game/presentation/combat/combatDetailsPresentation'
 import { DUNGEON_STATISTICS_MODE_ORDER } from '../../game/telemetry/dungeon/dungeonStatisticsTypes'
-import type { CombatLogFontSize, ScreenPreferences, TransmutationLibraryFilter, UiPreferences } from './uiPreferencesTypes'
+import type { CombatLogFontSize, ScreenPreferences, TransmutationCategoryFilter, TransmutationEquipmentSlotFilter, TransmutationMaterialTierFilter, TransmutationOffhandFilter, TransmutationWeaponHandsFilter, UiPreferences } from './uiPreferencesTypes'
 
 export const UI_PREFERENCES_KEY = 'sss-wizard-ui-preferences-v1'
 export const defaultScreenPreferences = (): ScreenPreferences => ({
   inventory: { currentNeedsOpen: true, sourceOpen: false, usedInOpen: true },
-  transmutation: { selectedRecipeId: RECIPE_ORDER[0], recipeFilter: 'all', usedInOpen: true, collapsedCategories: { elemental: false, material: false, equipment: false, special: false } },
+  transmutation: { selectedRecipeId: RECIPE_ORDER[0], categoryFilter: 'all', equipmentSlotFilter: 'all', weaponHandsFilter: 'all', offhandPresentationFilter: 'all', materialTierFilter: 'all', craftableOnly: false, activeOnly: false, usedInOpen: true, collapsedCategories: { elemental: false, material: false, equipment: false, special: false } },
   research: { selectedItemId: null, affinityFilter: 'all', targetSchoolId: 'fire' },
   combat: { combatLogFontSize: 'medium', combatDetailsMode: 'damage-done', dungeonStatisticsMode: 'runs' },
 })
@@ -30,8 +30,19 @@ export const normalizeUiPreferences = (value: unknown): UiPreferences => {
   const research = (screenState.research && typeof screenState.research === 'object' ? screenState.research : {}) as Partial<ScreenPreferences['research']>
   const combat = (screenState.combat && typeof screenState.combat === 'object' ? screenState.combat : {}) as Partial<ScreenPreferences['combat']>
   const collapsedCategories = (transmutation.collapsedCategories && typeof transmutation.collapsedCategories === 'object' ? transmutation.collapsedCategories : {}) as Partial<ScreenPreferences['transmutation']['collapsedCategories']>
-  const validFilters: TransmutationLibraryFilter[] = ['all', 'elemental', 'material', 'equipment', 'special', 'craftable', 'active']
-  const recipeFilter = validFilters.includes(transmutation.recipeFilter as TransmutationLibraryFilter) ? transmutation.recipeFilter as TransmutationLibraryFilter : defaults.screenState.transmutation.recipeFilter
+  const legacyFilters = ['all', 'elemental', 'material', 'equipment', 'special', 'craftable', 'active'] as const
+  const legacyFilter = legacyFilters.includes((transmutation as { recipeFilter?: unknown }).recipeFilter as typeof legacyFilters[number]) ? (transmutation as { recipeFilter: typeof legacyFilters[number] }).recipeFilter : undefined
+  const categoryFilters: TransmutationCategoryFilter[] = ['all', 'elemental', 'material', 'equipment', 'special']
+  const categoryFilter = categoryFilters.includes(transmutation.categoryFilter as TransmutationCategoryFilter) && !(legacyFilter && legacyFilter !== 'all')
+    ? transmutation.categoryFilter as TransmutationCategoryFilter
+    : legacyFilter === 'elemental' || legacyFilter === 'material' || legacyFilter === 'equipment' || legacyFilter === 'special' ? legacyFilter : defaults.screenState.transmutation.categoryFilter
+  const equipmentSlots: TransmutationEquipmentSlotFilter[] = ['all', 'weapon', 'offhand', 'armor', 'helmet', 'cape', 'amulet', 'ring']
+  const equipmentSlotFilter = equipmentSlots.includes(transmutation.equipmentSlotFilter as TransmutationEquipmentSlotFilter) ? transmutation.equipmentSlotFilter as TransmutationEquipmentSlotFilter : defaults.screenState.transmutation.equipmentSlotFilter
+  const weaponHandsFilter: TransmutationWeaponHandsFilter = transmutation.weaponHandsFilter === 1 || transmutation.weaponHandsFilter === 2 ? transmutation.weaponHandsFilter : 'all'
+  const offhandPresentationFilter: TransmutationOffhandFilter = transmutation.offhandPresentationFilter === 'shield' || transmutation.offhandPresentationFilter === 'focus' ? transmutation.offhandPresentationFilter : 'all'
+  const materialTierFilter: TransmutationMaterialTierFilter = transmutation.materialTierFilter === 'all' || (typeof transmutation.materialTierFilter === 'number' && Number.isInteger(transmutation.materialTierFilter) && transmutation.materialTierFilter >= 1) ? transmutation.materialTierFilter : 'all'
+  const craftableOnly = transmutation.craftableOnly === true || legacyFilter === 'craftable'
+  const activeOnly = transmutation.activeOnly === true || legacyFilter === 'active'
   const selectedRecipeId = typeof transmutation.selectedRecipeId === 'string' && RECIPE_ORDER.includes(transmutation.selectedRecipeId as (typeof RECIPE_ORDER)[number]) ? transmutation.selectedRecipeId : defaults.screenState.transmutation.selectedRecipeId
   const selectedItemId = typeof research.selectedItemId === 'string' && Boolean(ITEMS[research.selectedItemId as keyof typeof ITEMS]?.researchSchool) ? research.selectedItemId as keyof typeof ITEMS : null
   const affinityFilter = research.affinityFilter === 'fire' || research.affinityFilter === 'water' || research.affinityFilter === 'earth' || research.affinityFilter === 'air' ? research.affinityFilter : 'all'
@@ -40,7 +51,7 @@ export const normalizeUiPreferences = (value: unknown): UiPreferences => {
   const combatDetailsMode = COMBAT_DETAILS_MODE_ORDER.includes(combat.combatDetailsMode as typeof COMBAT_DETAILS_MODE_ORDER[number]) ? combat.combatDetailsMode as typeof COMBAT_DETAILS_MODE_ORDER[number] : defaults.screenState.combat.combatDetailsMode
   const storedDungeonStatisticsMode = (combat as { dungeonStatisticsMode?: unknown }).dungeonStatisticsMode === 'loot' ? 'drops' : (combat as { dungeonStatisticsMode?: unknown }).dungeonStatisticsMode
   const dungeonStatisticsMode = DUNGEON_STATISTICS_MODE_ORDER.includes(storedDungeonStatisticsMode as typeof DUNGEON_STATISTICS_MODE_ORDER[number]) ? storedDungeonStatisticsMode as typeof DUNGEON_STATISTICS_MODE_ORDER[number] : defaults.screenState.combat.dungeonStatisticsMode
-  return { theme: input.theme === 'dark' || input.theme === 'light' || input.theme === 'custom' ? input.theme : 'default', textSize: input.textSize === 'large' || input.textSize === 'extra-large' ? input.textSize : 'default', backgroundEffects: input.backgroundEffects !== false, reducedMotion: input.reducedMotion === true, customTheme: custom, navigationGroups: { combat: groups.combat === true, hero: groups.hero === true, tower: groups.tower === true, world: groups.world === true, system: groups.system === true }, screenState: { inventory: { currentNeedsOpen: inventory.currentNeedsOpen !== false, sourceOpen: inventory.sourceOpen === true, usedInOpen: inventory.usedInOpen !== false, }, transmutation: { selectedRecipeId, recipeFilter, usedInOpen: transmutation.usedInOpen !== false, collapsedCategories: { elemental: collapsedCategories.elemental === true, material: collapsedCategories.material === true, equipment: collapsedCategories.equipment === true, special: collapsedCategories.special === true } }, research: { selectedItemId, affinityFilter, targetSchoolId }, combat: { combatLogFontSize, combatDetailsMode, dungeonStatisticsMode } } }
+  return { theme: input.theme === 'dark' || input.theme === 'light' || input.theme === 'custom' ? input.theme : 'default', textSize: input.textSize === 'large' || input.textSize === 'extra-large' ? input.textSize : 'default', backgroundEffects: input.backgroundEffects !== false, reducedMotion: input.reducedMotion === true, customTheme: custom, navigationGroups: { combat: groups.combat === true, hero: groups.hero === true, tower: groups.tower === true, world: groups.world === true, system: groups.system === true }, screenState: { inventory: { currentNeedsOpen: inventory.currentNeedsOpen !== false, sourceOpen: inventory.sourceOpen === true, usedInOpen: inventory.usedInOpen !== false, }, transmutation: { selectedRecipeId, categoryFilter, equipmentSlotFilter, weaponHandsFilter, offhandPresentationFilter, materialTierFilter, craftableOnly, activeOnly, usedInOpen: transmutation.usedInOpen !== false, collapsedCategories: { elemental: collapsedCategories.elemental === true, material: collapsedCategories.material === true, equipment: collapsedCategories.equipment === true, special: collapsedCategories.special === true } }, research: { selectedItemId, affinityFilter, targetSchoolId }, combat: { combatLogFontSize, combatDetailsMode, dungeonStatisticsMode } } }
 }
 
 export const loadUiPreferences = (): UiPreferences => { try { const raw = window.localStorage.getItem(UI_PREFERENCES_KEY); return raw ? normalizeUiPreferences(JSON.parse(raw)) : defaultUiPreferences() } catch { return defaultUiPreferences() } }

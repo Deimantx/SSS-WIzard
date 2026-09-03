@@ -68,6 +68,8 @@ const formatPercentBonus = (value: number | undefined) => value === undefined ? 
 const readableSlot = (slot: string | undefined) => slot ? formatReadableId(slot) : dash
 const sellValue = (item: ItemDefinition) => item.sellValue === null ? dash : formatNumber(item.sellValue)
 const sourceText = (item: ItemDefinition) => item.source || dash
+const formatHumanInteger = (value: number) => Math.round(value).toLocaleString('en-US')
+const materialTierLabel = (item: ItemDefinition) => item.materialTier === undefined ? dash : `T${item.materialTier}`
 
 const addDoc = (path: string, contents: string, stableIds: readonly string[], runtimeSources: readonly string[]) => {
   docs.set(path, cleanDocument(contents))
@@ -277,7 +279,7 @@ addDoc('Transmutation/Crafting_Economy.md', block('# Crafting economy', '', 'Der
 
 addDoc('Progression/Research_XP.md', block('# Research XP', '', '## Core Settings', '', table(['Setting', 'Value'], balanceRows(BALANCE.research as unknown as Record<string, unknown>)), '', '## Researchable Items', '', table(['Item', 'School', 'Matching XP', 'Other XP', 'Mana', 'Time', 'XP/min Match', 'XP/min Other'], getResearchableItemIds().map((id) => [itemWithId(id), SCHOOLS[ITEMS[id].researchSchool!].name, formatNumber(BALANCE.research.matchingXp), formatNumber(BALANCE.research.nonMatchingXp), formatNumber(BALANCE.research.manaCostPerItem), formatDuration(BALANCE.research.durationPerItemMs), formatNumber(BALANCE.research.matchingXp * 60_000 / BALANCE.research.durationPerItemMs), formatNumber(BALANCE.research.nonMatchingXp * 60_000 / BALANCE.research.durationPerItemMs)]))), getResearchableItemIds(), ['src/game/core/balance/balance.ts', 'src/game/content/items/items.ts', 'src/game/content/schools/schools.ts'])
 const schoolLevels = Array.from({ length: SCHOOL_MAX_LEVEL }, (_, index) => index + 1)
-export const buildSchoolXpRows = () => schoolLevels.map((level) => [level, getSchoolXpToNext(level) === null ? '— CAP' : formatNumber(getSchoolXpToNext(level)!), formatNumber(getSchoolTotalXpForLevel(level))])
+export const buildSchoolXpRows = () => schoolLevels.map((level) => [level, getSchoolXpToNext(level) === null ? '— CAP' : formatHumanInteger(getSchoolXpToNext(level)!), formatHumanInteger(getSchoolTotalXpForLevel(level))])
 const schoolMilestones = [2, 8, 16, 20, 40]
 const derivedResearchTime = (level: number, echoes: number) => {
   const minutes = getSchoolTotalXpForLevel(level) * BALANCE.research.durationPerItemMs / BALANCE.research.matchingXp / echoes / 60_000
@@ -304,6 +306,29 @@ addDoc('Magic/AutoCast_And_Focus.md', block('# Auto-Cast and Focus', '', table([
 
 addDoc('Economy/Item_Values.md', block('# Item values', '', table(['Item', 'Type', 'Dungeon', 'Source', 'Sell', 'Craftable?', 'Boss Drop?', 'Destroy?'], itemIds.map((id) => { const item = ITEMS[id]; const origin = Object.entries(EQUIPMENT_BY_DUNGEON).find(([, ids]) => ids.includes(id))?.[0]; return [itemWithId(id), item.kind === 'equipment' ? 'Equipment' : 'Material', origin ? DUNGEONS[origin].name : dash, sourceText(item), sellValue(item), equipmentCrafting(id) ? 'Yes' : 'No', dropRowsForItem(id).some((drop) => drop.role === 'boss') ? 'Yes' : 'No', item.canDestroy ? 'Yes' : 'No'] }))), itemIds, ['src/game/content/items/items.ts', 'src/game/content/equipment/equipmentSets.ts', 'src/game/content/monsters'])
 addDoc('Economy/Current_Progression_Timings.md', block('# Current progression timings', '', '## Research', '', table(['Activity', 'XP/min', 'Mana/min'], [['Matching Research', formatNumber(BALANCE.research.matchingXp * 60_000 / BALANCE.research.durationPerItemMs), formatNumber(BALANCE.research.manaCostPerItem * 60_000 / BALANCE.research.durationPerItemMs)], ['Other-school Research', formatNumber(BALANCE.research.nonMatchingXp * 60_000 / BALANCE.research.durationPerItemMs), formatNumber(BALANCE.research.manaCostPerItem * 60_000 / BALANCE.research.durationPerItemMs)]]), '', '## Crafting', '', table(['Recipe', 'Time'], RECIPE_ORDER.map((id) => [nameWithId(RECIPES[id].name, id), formatDuration(RECIPES[id].baseDurationMs)])), '', '## Material Acquisition', '', table(['Material', 'Best Current Source', 'Est. Qty / Kill', 'Est. Kills for Common Recipe'], materialIds.map((id) => { const best = dropRowsForItem(id).sort((a, b) => b.expected - a.expected)[0]; const commonUse = getItemRecipeUses(id).sort((a, b) => a.ingredients.length - b.ingredients.length)[0]; const required = commonUse?.ingredients.find((ingredient) => ingredient.itemId === id)?.quantity; return [itemWithId(id), best ? `${monsterWithId(best.monsterId)} — ${best.dungeonName}` : sourceText(ITEMS[id]), best ? formatNumber(best.expected) : dash, best && required ? formatNumber(required / best.expected) : dash] }))), [], ['src/game/core/balance/balance.ts', 'src/game/content/recipes/recipes.ts', 'src/game/content/monsters', 'src/game/content/items/items.ts'])
+
+const materialDocument = docs.get('Items/Materials.md')
+if (materialDocument) {
+  const [materialTable, ...materialRemainder] = materialDocument.split('## Drop Sources')
+  const materialLines = materialTable.split(newline).map((line) => {
+    if (line.startsWith('| Material | Type |')) return line.replace('| Material | Type |', '| Material | Type | Material Tier |')
+    if (!line.startsWith('|')) return line
+    if (line.includes('---')) {
+      const separatorCells = line.split('|')
+      separatorCells.splice(3, 0, ' --- ')
+      return separatorCells.join('|')
+    }
+    const itemId = line.match(/\(([^)]+)\)/)?.[1] as ItemId | undefined
+    if (!itemId || !ITEMS[itemId]) return line
+    const cells = line.split('|')
+    cells.splice(3, 0, ` ${materialTierLabel(ITEMS[itemId])} `)
+    return cells.join('|')
+  })
+  docs.set('Items/Materials.md', [materialLines.join(newline), ...materialRemainder].join('## Drop Sources'))
+}
+
+const schoolXpDocument = docs.get('Progression/Magic_School_XP.md')
+if (schoolXpDocument) docs.set('Progression/Magic_School_XP.md', schoolXpDocument.replace(/\b\d{4,}\b/g, (value) => formatHumanInteger(Number(value))))
 
 export const buildBalancingDocuments = (): BalancingDocumentBuild => {
   const registry = (ids: readonly string[], documents: readonly string[], runtimeSources: readonly string[]) => ({ count: ids.length, ids: [...ids], documents: [...documents], runtimeSources: [...runtimeSources] })

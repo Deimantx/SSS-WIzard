@@ -2,10 +2,15 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useGameStore } from '../../store/gameStore'
 import { DeveloperQuickSetup } from './DeveloperQuickSetup'
+import { createProfile, enterProfile } from '../../profiles/profileController'
+import { PROFILE_RESET_CONFIRMATION } from '../developerProfileReset'
+import { refreshProfiles, setActiveProfileId } from '../../profiles/profileSessionStore'
 
 describe('Developer Quick Setup', () => {
   beforeEach(() => {
     window.localStorage.clear()
+    setActiveProfileId(null)
+    refreshProfiles()
     useGameStore.getState().resetSave()
   })
 
@@ -47,6 +52,19 @@ describe('Developer Quick Setup', () => {
     render(<DeveloperQuickSetup />)
     fireEvent.click(screen.getByRole('button', { name: 'Reset Fresh Game' }))
     expect(confirm).toHaveBeenCalled()
+    confirm.mockRestore()
+  })
+
+  it('exposes the persisted current-profile reset with the shared confirmation copy', () => {
+    expect(createProfile('slot-1', 'Quick Reset').ok).toBe(true)
+    expect(enterProfile('slot-1').ok).toBe(true)
+    useGameStore.getState().addItem('fire-fragment', 4)
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    render(<DeveloperQuickSetup />)
+    fireEvent.click(screen.getByRole('button', { name: 'Reset Current Profile Progress' }))
+    expect(confirm).toHaveBeenCalledWith(PROFILE_RESET_CONFIRMATION)
+    expect(useGameStore.getState().inventory).toEqual({})
+    expect(screen.getByText(/UI appearance and custom layouts are preserved/)).toBeTruthy()
     confirm.mockRestore()
   })
 

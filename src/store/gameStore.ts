@@ -23,7 +23,7 @@ import { createDefaultDebugOverrides, resetCombatDebugState, resetDebugState, sa
 import { addItemAction, destroyItemAction, removeItemAction, sellItemAction, toggleItemProtectionAction } from './actions/inventoryActions'
 import { equipItemAction, unequipItemAction } from './actions/equipmentActions'
 import { donateGuildRequestAction, claimGuildRewardAction, promoteGuildAction } from './actions/guildActions'
-import { debugLockSpellAction, debugUnlockSpellRankOneAction, resetSpellCooldownsAction, setSchoolDebugAction, setSchoolLevelDebugAction, setSchoolXpDebugAction, setLevelCapAction, setThreatAction, setBossKillsAction, unlockAllSpellsAction } from './actions/progressionActions'
+import { debugLockSpellAction, debugUnlockSpellRankOneAction, resetSpellCooldownsAction, setSchoolLevelDebugAction, setSchoolXpDebugAction, setLevelCapAction, setThreatAction, setBossKillsAction, unlockAllSpellsAction } from './actions/progressionActions'
 import { setChannelingEchoesAction, upgradeManaPillarAction, setManaPillarLevelAction, setChannelingManaGeneratedAction, setChannelingSustainAction, setChannelingDiscoveryAction } from './actions/channelingActions'
 import { canReserveFocusAction, setFocusImprovementLevelAction, upgradeFocusCapacityAction } from './actions/focusActions'
 import { assignResearchEchoAction, clearPreparedResearchAction, clearResearchEchoesAction, prepareResearchAction, removePreparedResearchAction, removeResearchEchoAction, setResearchEchoesAction } from './actions/researchActions'
@@ -73,6 +73,7 @@ export interface GameActions {
   setDebugAllowManaOverCap: (enabled: boolean) => void
   setDebugAllowFocusOverCap: (enabled: boolean) => void
   setDebugIgnoreEchoLimit: (enabled: boolean) => void
+  setDebugShowLockedTransmutationRecipes: (enabled: boolean) => void
   setDebugPlayerImmortal: (enabled: boolean) => void
   setDebugEnemyImmortal: (enabled: boolean) => void
   setDebugInfiniteMana: (enabled: boolean) => void
@@ -148,7 +149,6 @@ export interface GameActions {
   dismissNotification: (id: string) => void
   setPlayer: (changes: Partial<GameState['player']>) => void
   addMana: (amount: number) => void
-  setSchoolDebug: (school: SchoolId, xp: number, level?: number) => void
   setSchoolXpDebug: (school: SchoolId, xp: number) => void
   setSchoolLevelDebug: (school: SchoolId, level: number) => void
   setLevelCap: (cap: number) => void
@@ -231,6 +231,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   setDebugAllowManaOverCap: (enabled) => set((state) => { state.debug.allowManaOverCap = enabled; recalculateDerivedStats(state); return state }),
   setDebugAllowFocusOverCap: (enabled) => set((state) => { state.debug.allowFocusOverCap = enabled; return state }),
   setDebugIgnoreEchoLimit: (enabled) => set((state) => { state.debug.ignoreEchoLimit = enabled; return state }),
+  setDebugShowLockedTransmutationRecipes: (enabled) => set((state) => { state.debug.showLockedTransmutationRecipes = enabled; return state }),
   setDebugPlayerImmortal: (enabled) => set((state) => { state.debug.playerImmortal = enabled; return state }),
   setDebugEnemyImmortal: (enabled) => set((state) => { state.debug.enemyImmortal = enabled; return state }),
   setDebugInfiniteMana: (enabled) => set((state) => { state.debug.infiniteMana = enabled; return state }),
@@ -362,7 +363,6 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   dismissNotification: (id) => set((state) => { state.notifications = state.notifications.filter((note) => note.id !== id); return state }),
   setPlayer: (changes) => set((state) => { state.player = { ...state.player, ...changes }; recalculateDerivedStats(state); return state }),
   addMana: (amount) => set((state) => { state.player.mana = Math.max(0, state.player.mana + sanitizeDebugNumber(amount)); recalculateDerivedStats(state); return state }),
-  setSchoolDebug: (school, xp, level) => set((state) => { setSchoolDebugAction(state, school, xp, level); return state }),
   setSchoolXpDebug: (school, xp) => set((state) => { setSchoolXpDebugAction(state, school, xp); return state }),
   setSchoolLevelDebug: (school, level) => set((state) => { setSchoolLevelDebugAction(state, school, level); return state }),
   setLevelCap: (cap) => set((state) => { setLevelCapAction(state, cap); return state }),

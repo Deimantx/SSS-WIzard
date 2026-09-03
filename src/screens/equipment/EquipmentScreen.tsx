@@ -1,6 +1,7 @@
 import { LockKeyhole, Shield, Sparkles } from 'lucide-react'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Button, Card, EquipmentCombatDetails, GameTooltip, Status } from '../../components/ui'
+import { ItemTooltip } from '../../components/ui/item'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { ITEMS } from '../../game/content/items/items'
 import { EQUIPMENT_ITEM_SLOT_LABELS, EQUIPMENT_POSITION_LABELS, getEquippedCount, getItemPositions, isTwoHandedWeapon } from '../../game/core/equipment'
@@ -98,12 +99,12 @@ export function EquipmentScreenV2() {
         const emptyCopy = locked ? 'Blocked by 2H Weapon' : position === 'ring1' || position === 'ring2' ? 'Select Ring' : `Select ${EQUIPMENT_POSITION_LABELS[position]}`
         const tooltip = SLOT_TOOLTIP_COPY[position]
         return <div className="equipment-slot-grid-item" data-position={position} key={position}>
-          <GameTooltip block content={<TooltipContent title={tooltip.title} description={tooltip.description} />}>
+          <EquipmentSlotTooltip itemId={itemId} owned={itemId ? inventory[itemId] ?? 0 : 0} tooltip={tooltip}>
             <div className={`equipment-slot-card ${selectedPosition === position ? 'selected' : ''} ${locked ? 'locked' : ''}`} data-position={position} role="button" tabIndex={0} onClick={() => selectSlot(position)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); selectSlot(position) } }}>
               <div className="equipment-slot-card-head"><span>{EQUIPMENT_POSITION_LABELS[position]}</span>{item && <small>{item.weaponHands ? `${item.weaponHands}H` : 'EQUIPPED'}</small>}</div>
               {locked ? <div className="equipment-slot-lock"><LockKeyhole size={17} /><strong>{emptyCopy}</strong></div> : item ? <div className="equipment-slot-card-item"><span className="equipment-slot-icon" style={{ color: item.color }}>{item.icon}</span><strong>{item.name}</strong><small>{[flattenItemStats(item.stats).filter(([, value]) => value !== 0).map(([key, value]) => `${formatStat(key, value)} ${friendlyStatLabel(key)}`).join(' · '), getEquipmentPrimaryCombatSummary(item)].filter(Boolean).join(' · ') || 'Ready'}</small></div> : <div className="equipment-slot-empty"><span>+</span><small>{emptyCopy}</small></div>}
             </div>
-          </GameTooltip>
+          </EquipmentSlotTooltip>
         </div>
       })}
     </div>
@@ -124,7 +125,7 @@ export function EquipmentScreenV2() {
   const armory = <Card title="ARMORY" action={<span className="equipment-armory-count">{ownedEquipment.length} OWNED TYPES</span>}>
     <div className="equipment-filter-bar" role="tablist" aria-label="Equipment filters">{ARMORY_FILTERS.map((entry) => <button type="button" role="tab" aria-selected={filter === entry.id} className={filter === entry.id ? 'active' : ''} key={entry.id} onClick={() => { setFilter(entry.id); if (entry.id !== 'all' && entry.id !== 'ring') setSelectedPosition(entry.id) }}>{entry.label}</button>)}</div>
     {filter === 'weapon' && <div className="equipment-weapon-badges"><button type="button" className={weaponHandsFilter === 'all' ? 'active' : ''} onClick={() => setWeaponHandsFilter('all')}>ALL</button><button type="button" className={weaponHandsFilter === 1 ? 'active' : ''} onClick={() => setWeaponHandsFilter(1)}>1H</button><button type="button" className={weaponHandsFilter === 2 ? 'active' : ''} onClick={() => setWeaponHandsFilter(2)}>2H</button></div>}
-    {visibleEquipment.length === 0 ? <div className="equipment-empty-armory"><strong>NO {EMPTY_FILTER_LABELS[filter]} OWNED</strong><small>Future equipment will appear here.</small></div> : <div className="equipment-armory-grid">{visibleEquipment.map((id) => { const item = ITEMS[id]; const selected = id === selectedItemId; const equipped = getItemPositions(id).some((position) => equipment[position] === id); return <button type="button" className={`equipment-armory-card ${selected ? 'selected' : ''} ${equipped ? 'equipped' : ''}`} key={id} onClick={() => selectArmoryItem(id)}><span className="equipment-armory-icon" style={{ color: item.color }}>{item.icon}</span><span className="equipment-armory-copy"><strong>{item.name}</strong><small>{getEquipmentPrimaryCombatSummary(item) ?? (item.equipmentSlot ? EQUIPMENT_ITEM_SLOT_LABELS[item.equipmentSlot] : 'Equipment')}</small></span>{item.weaponHands && <Status tone="warning">{item.weaponHands}H</Status>}{equipped && <Status tone="success">EQUIPPED</Status>}</button> })}</div>}
+    {visibleEquipment.length === 0 ? <div className="equipment-empty-armory"><strong>NO {EMPTY_FILTER_LABELS[filter]} OWNED</strong><small>Future equipment will appear here.</small></div> : <div className="equipment-armory-grid">{visibleEquipment.map((id) => { const item = ITEMS[id]; const selected = id === selectedItemId; const equipped = getItemPositions(id).some((position) => equipment[position] === id); return <ItemTooltip itemId={id} owned={inventory[id] ?? 0} equipped={equipped} key={id}><button type="button" className={`equipment-armory-card ${selected ? 'selected' : ''} ${equipped ? 'equipped' : ''}`} onClick={() => selectArmoryItem(id)}><span className="equipment-armory-icon" style={{ color: item.color }}>{item.icon}</span><span className="equipment-armory-copy"><strong>{item.name}</strong><small>{getEquipmentPrimaryCombatSummary(item) ?? (item.equipmentSlot ? EQUIPMENT_ITEM_SLOT_LABELS[item.equipmentSlot] : 'Equipment')}</small></span>{item.weaponHands && <Status tone="warning">{item.weaponHands}H</Status>}{equipped && <Status tone="success">EQUIPPED</Status>}</button></ItemTooltip> })}</div>}
   </Card>
 
   const inspector = <Card title="GEAR INSPECTOR" className="equipment-inspector">
@@ -146,6 +147,10 @@ export function EquipmentScreenV2() {
 }
 
 export const EquipmentScreen = EquipmentScreenV2
+
+function EquipmentSlotTooltip({ itemId, owned, tooltip, children }: { itemId: ItemId | null; owned: number; tooltip: { title: string; description: ReactNode }; children: ReactNode }) {
+  return itemId ? <ItemTooltip itemId={itemId} owned={owned} equipped>{children}</ItemTooltip> : <GameTooltip block content={<TooltipContent title={tooltip.title} description={tooltip.description} />}>{children}</GameTooltip>
+}
 
 function MeasuredEquipmentCard({ children, onHeightChange, ...props }: { children: ReactNode; onHeightChange: (height: number) => void; className?: string; title?: string; action?: ReactNode; style?: React.CSSProperties }) {
   const cardRef = useRef<HTMLElement>(null)

@@ -109,6 +109,7 @@ export function advanceTransmutation(state: GameState, deltaMs: number, context:
 export const forceCompleteTransmutationCycle = (state: GameState, recipeId: RecipeId, context: TransmutationAdvanceContext) => {
   const recipe = RECIPES[recipeId]
   if (!recipe) return false
+  if (!isUnlocked(state, recipe)) return false
   const job = state.activities.transmutation.jobs[recipeId] ?? (state.activities.transmutation.jobs[recipeId] = { echoesAssigned: 0, progressMs: 0 })
   if (!hasMaterialsForCycle(state, recipe)) {
     job.progressMs = 0

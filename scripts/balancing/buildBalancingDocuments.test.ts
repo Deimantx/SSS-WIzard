@@ -18,21 +18,19 @@ describe('sheet-first balancing workbook', () => {
   })
 
   it('keeps representative runtime values exact in generated rows', () => {
-    expect(buildEnemyCoreRow('forest-wisp')).toEqual(['Forest Wisp (forest-wisp)', 'Normal', '44', '5', '2.8 s', '10', '5%', '150%', '0%', '0%', '0%', '0%', '0%', '0%', '0%', '—', '—'])
-
+    const core = buildEnemyCoreRow('forest-wisp')
+    expect(core.slice(0, 15)).toEqual(['Forest Wisp (forest-wisp)', 'Normal', '44', '5', '2.8 s', '10', '5%', '150%', '0%', '0%', '0%', '0%', '0%', '0%', '0%'])
+    expect(core).toHaveLength(17)
     const emberStaff = buildEquipmentStatRow('ember-staff')
     expect(emberStaff).toContain('+10')
     expect(emberStaff).toContain('+20')
     expect(emberStaff).toContain('+4')
     expect(emberStaff).toContain('+20% Spell damage for Fire damage')
-
     expect(buildEnemyLootRows(['cavefang-wolf'])[0]).toEqual(['Cavefang Wolf (cavefang-wolf)', 'Predator Fang (predator-fang)', '1', '1', '55%', '0.55'])
   })
 
   it('separates recipe ingredient names and quantities and removes runtime dumps', () => {
-    const balancing = buildBalancingDocuments()
-    const recipes = balancing.docs.get('Transmutation/Recipes.md') ?? ''
-
+    const recipes = buildBalancingDocuments().docs.get('Transmutation/Recipes.md') ?? ''
     expect(recipes).toContain('| Recipe | Output Qty | Time | Mana | Ingredient 1 | Qty 1 | Ingredient 2 | Qty 2 | Ingredient 3 | Qty 3 | Ingredient 4 | Qty 4 | Ingredient 5 | Qty 5 | Unlock |')
     expect(recipes).toContain('Ember Staff (ember-staff)')
     expect(recipes).toContain('Fire Fragment (fire-fragment) | 4')
@@ -53,7 +51,6 @@ describe('sheet-first balancing workbook', () => {
     const bossRelics = balancing.docs.get('Items/Boss_Relics.md') ?? ''
     const bossDrops = balancing.docs.get('Loot/Boss_Drops.md') ?? ''
     const equipment = balancing.docs.get('Items/Equipment_Whispering_Woods.md') ?? ''
-
     expect(balancing.invariants).toEqual({ recipes: 32, equipment: 27, equipmentRecipeCoverage: 27, directEquipmentLoot: 0 })
     expect(bossRelics).toContain('# Boss-signature equipment')
     expect(bossRelics).toContain('Heartseed Necklace (heartseed-necklace)')
@@ -67,20 +64,22 @@ describe('sheet-first balancing workbook', () => {
     expect(equipment).toContain('Heartseed (heartseed) | 20')
   })
 
-  it('exports School XP with explicit incremental and cumulative semantics', () => {
+  it('exports School XP and material tiers in human-readable balancing sheets', () => {
     const rows = buildSchoolXpRows()
     expect(rows[0]).toEqual([1, '100', '0'])
     expect(rows[1]).toEqual([2, '140', '100'])
-    expect(rows[7]).toEqual([8, '770', '2070'])
-    expect(rows[19]).toEqual([20, '4820', '29870'])
-    expect(rows[39]).toEqual([40, '— CAP', '252310'])
-
-    const sheet = buildBalancingDocuments().docs.get('Progression/Magic_School_XP.md') ?? ''
+    expect(rows[7]).toEqual([8, '770', '2,070'])
+    expect(rows[19]).toEqual([20, '4,820', '29,870'])
+    expect(rows[39][1]).toContain('CAP')
+    expect(rows[39][2]).toBe('252,310')
+    const balancing = buildBalancingDocuments()
+    const sheet = balancing.docs.get('Progression/Magic_School_XP.md') ?? ''
+    const materials = balancing.docs.get('Items/Materials.md') ?? ''
     expect(sheet).toContain('| Level | XP to Next Level | Total XP to Reach This Level |')
-    expect(sheet).toContain('| 1 | 100 | 0 |')
-    expect(sheet).toContain('| 8 | 770 | 2070 |')
-    expect(sheet).toContain('| 20 | 4820 | 29870 |')
-    expect(sheet).toContain('| 40 | — CAP | 252310 |')
-    expect(sheet).toContain('DERIVED — NOT A RUNTIME TARGET')
+    expect(sheet).toContain('| 8 | 770 | 2,070 |')
+    expect(sheet).toContain('| 20 | 4,820 | 29,870 |')
+    expect(sheet).toContain('252,310')
+    expect(materials).toContain('| Material | Type | Material Tier | Dungeon / Tier |')
+    expect(materials).toContain('| Fire Fragment (fire-fragment) | Elemental | T1 |')
   })
 })

@@ -427,7 +427,7 @@ describe('Developer channeling overrides', () => {
     expect(serialized).not.toHaveProperty('debug')
     game.resetDebugOverrides()
     const after = useGameStore.getState()
-    expect(after.debug).toEqual({ bonusManaRegenFlat: 0, bonusMaxManaFlat: 0, bonusMaxFocusFlat: 0, allowManaOverCap: false, allowFocusOverCap: false, ignoreEchoLimit: false, transmutationEchoCapacityOverride: null, playerImmortal: false, enemyImmortal: false, infiniteMana: false, ignoreSpellCooldowns: false, disablePlayerBasicAttack: false, disableAutoCast: false, freezePlayerActions: false, freezeEnemyActions: false, combatPaused: false, combatTimeScale: 1 })
+    expect(after.debug).toEqual({ bonusManaRegenFlat: 0, bonusMaxManaFlat: 0, bonusMaxFocusFlat: 0, allowManaOverCap: false, allowFocusOverCap: false, ignoreEchoLimit: false, transmutationEchoCapacityOverride: null, showLockedTransmutationRecipes: false, playerImmortal: false, enemyImmortal: false, infiniteMana: false, ignoreSpellCooldowns: false, disablePlayerBasicAttack: false, disableAutoCast: false, freezePlayerActions: false, freezeEnemyActions: false, combatPaused: false, combatTimeScale: 1 })
     expect(after.inventory['fire-fragment']).toBe(before.inventory['fire-fragment'])
     expect(after.progress.channeling.pillars['mana-resonance'].level).toBe(1)
   })

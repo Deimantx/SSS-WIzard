@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
-import { advanceTransmutation } from './transmutationEngine'
+import { advanceTransmutation, forceCompleteTransmutationCycle } from './transmutationEngine'
 
 const run = (stepMs: number, durationMs = 6_000) => {
   const state = createInitialState()
@@ -51,5 +51,15 @@ describe('Transmutation simulation', () => {
 
     expect(state.inventory['fire-fragment']).toBe(100)
     expect(state.notifications).toEqual([])
+  })
+
+  it('does not let the developer completion action bypass a recipe unlock', () => {
+    const state = createInitialState()
+    state.inventory['fire-fragment'] = 10
+    state.inventory['wisp-essence'] = 10
+
+    expect(forceCompleteTransmutationCycle(state, 'ember-staff', { mode: 'live' })).toBe(false)
+    expect(state.inventory['ember-staff']).toBeUndefined()
+    expect(state.activities.transmutation.jobs['ember-staff']).toBeUndefined()
   })
 })

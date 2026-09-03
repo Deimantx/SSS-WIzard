@@ -59,8 +59,9 @@ describe('Transmutation default layout', () => {
   it('uses the compact fresh defaults', () => {
     expect(DEFAULT_LAYOUTS['tower-transmutation']).toEqual({
       'transmutation-recipes': { x: 0, y: 0, w: 7, h: 15 },
-      'transmutation-detail': { x: 7, y: 0, w: 5, h: 9 },
-      'transmutation-focus': { x: 7, y: 9, w: 5, h: 6 },
+      'transmutation-focus': { x: 0, y: 15, w: 7, h: 6 },
+      'transmutation-detail': { x: 7, y: 0, w: 5, h: 8 },
+      'transmutation-output-preview': { x: 7, y: 8, w: 5, h: 13 },
     })
   })
 
@@ -70,8 +71,24 @@ describe('Transmutation default layout', () => {
     })
 
     expect(layouts['transmutation-recipes']).toEqual({ x: 1, y: 2, w: 6, h: 20 })
-    expect(layouts['transmutation-detail']).toEqual({ x: 7, y: 0, w: 5, h: 9 })
-    expect(layouts['transmutation-focus']).toEqual({ x: 7, y: 9, w: 5, h: 6 })
+    expect(layouts['transmutation-detail']).toEqual({ x: 7, y: 0, w: 5, h: 8 })
+    expect(layouts['transmutation-focus']).toEqual({ x: 0, y: 15, w: 7, h: 6 })
+    expect(layouts['transmutation-output-preview']).toEqual({ x: 7, y: 8, w: 5, h: 13 })
+  })
+
+  it('resets only Transmutation when migrating V7 to V8', () => {
+    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({
+      version: 7,
+      screens: {
+        'tower-transmutation': { 'transmutation-recipes': { x: 3, y: 4, w: 5, h: 20 } },
+        inventory: { 'inventory-catalog': { x: 2, y: 1, w: 7, h: 18 } },
+      },
+    }))
+
+    const document = loadUiLayouts()
+    expect(document.screens['tower-transmutation']).toEqual({})
+    expect(document.screens.inventory?.['inventory-catalog']).toEqual({ x: 2, y: 1, w: 7, h: 18 })
+    expect(getScreenLayouts('tower-transmutation', document.screens['tower-transmutation'])).toEqual(DEFAULT_LAYOUTS['tower-transmutation'])
   })
 })
 

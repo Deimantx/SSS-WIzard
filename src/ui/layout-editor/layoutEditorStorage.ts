@@ -3,8 +3,8 @@ import { DEFAULT_LAYOUTS } from './defaultLayouts'
 import { LAYOUT_VERSION, type SavedPanelLayout, type UiLayoutDocument } from './layoutEditorTypes'
 import { clampTopbarLayout, DEFAULT_TOPBAR_LAYOUT } from './shellLayout'
 
-export const UI_LAYOUTS_KEY = 'sss-wizard-ui-layout-v7'
-const LEGACY_UI_LAYOUTS_KEYS = ['sss-wizard-ui-layout-v6', 'sss-wizard-ui-layout-v5', 'sss-wizard-ui-layout-v4', 'sss-wizard-ui-layout-v3', 'sss-wizard-ui-layout-v2'] as const
+export const UI_LAYOUTS_KEY = 'sss-wizard-ui-layout-v8'
+const LEGACY_UI_LAYOUTS_KEYS = ['sss-wizard-ui-layout-v7', 'sss-wizard-ui-layout-v6', 'sss-wizard-ui-layout-v5', 'sss-wizard-ui-layout-v4', 'sss-wizard-ui-layout-v3', 'sss-wizard-ui-layout-v2'] as const
 
 const blankDocument = (): UiLayoutDocument => ({ version: LAYOUT_VERSION, screens: {}, shell: { topbar: clampTopbarLayout(DEFAULT_TOPBAR_LAYOUT) } })
 const validNumber = (value: unknown, fallback: number) => typeof value === 'number' && Number.isFinite(value) ? value : fallback
@@ -57,6 +57,12 @@ export function loadUiLayouts(): UiLayoutDocument {
     for (const screen of Object.keys(DEFAULT_LAYOUTS) as ScreenId[]) {
       const rawSource = parsed.screens?.[screen]
       if (!rawSource || typeof rawSource !== 'object') continue
+      if (screen === 'tower-transmutation' && layoutNeedsMigration) {
+        // The Transmutation composition changed to the V2 four-panel layout.
+        // Reset only this screen; all other screen and shell customizations survive.
+        screens[screen] = {}
+        continue
+      }
       if (screen === 'schools') {
         const legacySchoolIds = ['school-fire', 'school-water', 'school-earth', 'school-air', 'school-ceiling', 'school-ranks']
         const canonicalSchoolIds = ['schools-browser', 'schools-inspector', 'schools-presets']

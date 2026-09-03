@@ -11,9 +11,9 @@ const materialSubtypes: InventoryMaterialSubtype[] = ['elemental', 'creature', '
 const material = (id: ItemId, name: string, description: string, icon: string, color: string, category: ItemDefinition['category'], source: string, subtypeOrSchool?: InventoryMaterialSubtype | SchoolId, researchSchool?: SchoolId, sourceNavigation?: ScreenId): AuthoredItemDefinition => {
   const materialSubtype = subtypeOrSchool && materialSubtypes.includes(subtypeOrSchool as InventoryMaterialSubtype) ? subtypeOrSchool as InventoryMaterialSubtype : category === 'elemental' ? 'elemental' : 'creature'
   const affinity = subtypeOrSchool && !materialSubtypes.includes(subtypeOrSchool as InventoryMaterialSubtype) ? subtypeOrSchool as SchoolId : researchSchool
-  return { id, name, description, icon, color, kind: 'material', category, inventoryCategory: 'material', materialSubtype, source, ...(sourceNavigation ? { sourceNavigation } : {}), ...(affinity ? { researchSchool: affinity } : {}) }
+  return { id, name, description, icon, color, kind: 'material', category, inventoryCategory: 'material', materialSubtype, materialTier: 1, source, ...(sourceNavigation ? { sourceNavigation } : {}), ...(affinity ? { researchSchool: affinity } : {}) }
 }
-const universalMaterial = (id: ItemId, name: string, description: string, icon: string, color: string, category: ItemDefinition['category'], source: string, materialSubtype?: InventoryMaterialSubtype, sourceNavigation?: ScreenId): AuthoredItemDefinition => ({ id, name, description, icon, color, kind: 'material', category, inventoryCategory: 'material', ...(materialSubtype ? { materialSubtype } : {}), source, ...(sourceNavigation ? { sourceNavigation } : {}) })
+const universalMaterial = (id: ItemId, name: string, description: string, icon: string, color: string, category: ItemDefinition['category'], source: string, materialSubtype?: InventoryMaterialSubtype, sourceNavigation?: ScreenId): AuthoredItemDefinition => ({ id, name, description, icon, color, kind: 'material', category, inventoryCategory: 'material', ...(materialSubtype ? { materialSubtype } : {}), materialTier: 1, source, ...(sourceNavigation ? { sourceNavigation } : {}) })
 const equipment = (definition: Omit<AuthoredItemDefinition, 'kind' | 'category' | 'inventoryCategory'> & Pick<ItemDefinition, 'equipmentSlot'>): AuthoredItemDefinition => ({ ...definition, kind: 'equipment', category: 'equipment' })
 
 /** One authoritative item registry for materials, loot, and all authored equipment. */
@@ -115,6 +115,8 @@ export const validateItemDefinitions = (items: Record<string, ItemDefinition> = 
   Object.entries(items).forEach(([key, item]) => {
     if (key !== item.id) errors.push(`${key}: key/id mismatch`)
     if (item.kind === 'equipment' && !item.equipmentSlot) errors.push(`${item.id}: equipment slot is required`)
+    if (item.kind === 'equipment' && item.materialTier !== undefined) errors.push(`${item.id}: equipment must not define materialTier`)
+    if (item.kind === 'material' && (!Number.isInteger(item.materialTier) || item.materialTier < 1)) errors.push(`${item.id}: materialTier must be a positive integer`)
     if (item.kind !== 'equipment' && item.weaponHands !== undefined) errors.push(`${item.id}: only equipment items may define weaponHands`)
     if (item.weaponHands !== undefined && (item.equipmentSlot !== 'weapon' || (item.weaponHands !== 1 && item.weaponHands !== 2))) errors.push(`${item.id}: weaponHands requires a 1H or 2H weapon`)
     if (item.equipmentSlot === 'weapon' && item.weaponHands === undefined) errors.push(`${item.id}: weapons must define weaponHands`)

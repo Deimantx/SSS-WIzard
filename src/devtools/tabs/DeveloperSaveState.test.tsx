@@ -5,6 +5,7 @@ import { useGameStore } from '../../store/gameStore'
 import { loadProfileGame } from '../../persistence/profileSaveManager'
 import { createProfile, enterProfile } from '../../profiles/profileController'
 import { refreshProfiles, setActiveProfileId } from '../../profiles/profileSessionStore'
+import { PROFILE_RESET_CONFIRMATION } from '../developerProfileReset'
 
 describe('Developer Save/Profile controls', () => {
   beforeEach(() => {
@@ -23,7 +24,7 @@ describe('Developer Save/Profile controls', () => {
     render(<DeveloperSaveState copy={async () => undefined} />)
     fireEvent.click(screen.getByRole('button', { name: 'Reset Current Profile Progress' }))
 
-    expect(confirm).toHaveBeenCalledWith('Reset current profile progress?')
+    expect(confirm).toHaveBeenCalledWith(PROFILE_RESET_CONFIRMATION)
     expect(useGameStore.getState().schools.fire).toEqual({ level: 1, xp: 0 })
     expect(useGameStore.getState().inventory).toEqual({})
     expect(loadProfileGame('slot-1').state?.schools.fire).toEqual({ level: 1, xp: 0 })

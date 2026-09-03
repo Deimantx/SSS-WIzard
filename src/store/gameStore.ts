@@ -49,6 +49,7 @@ const combatEventSink = createCombatEventSink(combatLogSink, combatRecapSink, co
 const combatLogUiSink = combatEventSink
 
 export interface RecentAcquisition { itemId: ItemId; amount: number; timestamp: number; isNew: boolean }
+export type DeveloperFixtureId = 'fresh' | 'whispering-woods-ready' | 'howling-den-ready' | 'catacombs-ready' | 'edrin-ready'
 
 export interface GameActions {
   tick: (deltaMs: number) => void
@@ -166,6 +167,7 @@ export interface GameActions {
   promoteGuild: () => void
   setGuildReputation: (amount: number) => void
   setBossKills: (bossId: MonsterId, amount: number) => void
+  applyDeveloperFixture: (fixture: DeveloperFixtureId) => void
   preset: (name: 'fresh' | 'research' | 'combat' | 'boss' | 'guild' | 'main-boss' | 'chapter-complete') => void
   resumeFromHidden: (elapsedMs: number, notify?: boolean) => void
   advanceWithOfflineBank: (durationMs: number) => Promise<OfflineBankResult>
@@ -377,6 +379,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   promoteGuild: () => set((state) => { promoteGuildAction(state); return state }),
   setGuildReputation: (amount) => set((state) => { state.progress.guildReputation = Math.max(0, amount); return state }),
   setBossKills: (bossId, amount) => set((state) => { setBossKillsAction(state, bossId, amount); return state }),
+  applyDeveloperFixture: (_fixture) => undefined,
   preset: (name) => set((state) => { clearCombatLogUi(); Object.assign(state, createInitialState()); state.lastOfflineBankReport = null; if (name === 'research') { (['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'] as const).forEach((itemId) => { state.inventory[itemId] = 100 }); state.player.mana = 100; (['fire', 'water', 'earth', 'air'] as const).forEach((schoolId, index) => { prepareResearchAction(state, `${schoolId}-fragment` as ItemId, schoolId, 50); setResearchEchoesAction(state, `research-${index + 1}` as ResearchSlotId, index === 0 ? 2 : 1) }) } if (name === 'combat') { state.inventory['fire-fragment'] = 10; state.schools.fire = { xp: 20, level: 2 }; syncSpellUnlocksForSchool(state, 'fire'); state.player.mana = 100; state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; spawnNextEnemy(state, combatLogUiSink) } if (name === 'boss') { state.inventory['fire-fragment'] = 15; state.inventory['wisp-essence'] = 10; state.inventory['grove-bark'] = 2; state.schools.fire = { xp: 80, level: 4 }; syncSpellUnlocksForSchool(state, 'fire'); state.progress.guildUnlocked = true; state.progress.firstBossKill = true; state.progress.emberStaffUnlocked = true; state.progress.forestHeartUnlocked = true; state.progress.autoHuntBossUnlocked = true; state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; state.combat.threatCleared = 20; spawnNextEnemy(state, combatLogUiSink) } if (name === 'guild') { state.progress.guildUnlocked = true; state.progress.guildRank = 'initiate'; state.progress.firstBossKill = true; state.progress.emberStaffUnlocked = true; state.progress.forestHeartUnlocked = true; state.progress.autoHuntBossUnlocked = true; state.inventory['fire-fragment'] = 20; state.progress.lifetimeKills = 30; state.progress.requestProgress['clear-the-woods'] = 30; state.progress.bossKillsByBoss['grove-sentinel'] = 2; state.progress.requestProgress['sentinel-breaker'] = 2; state.progress.guildReputation = 100 } if (name === 'main-boss' || name === 'chapter-complete') { state.inventory['fire-fragment'] = 20; state.inventory['wisp-essence'] = 12; state.inventory['grove-bark'] = 4; state.progress.guildUnlocked = true; state.progress.guildRank = 'apprentice'; state.progress.firstBossKill = true; state.progress.emberStaffUnlocked = true; state.progress.forestHeartUnlocked = true; state.progress.autoHuntBossUnlocked = true; state.progress.permanentFocusBonuses['forest-heart'] = 10; state.progress.permanentFocusBonuses['guild-apprentice'] = 10; state.progress.magicLevelCap = 20; state.schools.fire = { xp: 380, level: 20 }; syncSpellUnlocksForSchool(state, 'fire'); state.progress.firstMainBossKill = true; state.inventory.heartseed = 1; recalculateDerivedStats(state); state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; spawnEnemy(state, 'forest-heart', combatLogUiSink); } return state }),
   resumeFromHidden: (elapsedMs, notify = true) => set((state) => { if (elapsedMs > 1000) { state.offlineBankMs += elapsedMs; if (notify) pushNotification(state, `${Math.round(elapsedMs / 1000)}s added to Offline Bank`, 'info') } return state }),
   advanceWithOfflineBank: async (durationMs) => {
@@ -388,6 +391,48 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
 
 // Presets replace gameplay state for developer testing; recent acquisition UI state is session-only too.
 const presetGameplayState = useGameStore.getState().preset
+const applyDeveloperFixture = (fixture: DeveloperFixtureId) => {
+  combatAlertsObserver.clear()
+  clearCombatRecap()
+  clearCombatDefeat()
+  clearDungeonStatistics()
+  combatTelemetryObserver.clear()
+  presetGameplayState('fresh')
+  if (fixture !== 'fresh') {
+    useGameStore.setState((state) => {
+      const completedDungeons = fixture === 'whispering-woods-ready' ? 0 : fixture === 'howling-den-ready' ? 1 : 2
+      DUNGEON_ORDER.slice(0, completedDungeons).forEach((dungeonId) => {
+        state.progress.bossKillsByBoss[DUNGEONS[dungeonId].boss] = 1
+      })
+      if (completedDungeons > 0) {
+        state.progress.firstBossKill = true
+        state.progress.guildUnlocked = true
+        state.progress.guildRank = 'initiate'
+        state.progress.emberStaffUnlocked = true
+        state.progress.forestHeartUnlocked = true
+        state.progress.autoHuntBossUnlocked = true
+        state.inventory['fire-fragment'] = 20
+        state.inventory['wisp-essence'] = 12
+      }
+      if (completedDungeons >= 2) state.progress.magicLevelCap = Math.max(state.progress.magicLevelCap, BALANCE.schoolProgression.tutorialCompleteCap)
+      state.schools.fire = { xp: completedDungeons > 0 ? 80 : 20, level: completedDungeons > 0 ? 4 : 2 }
+      syncSpellUnlocksForSchool(state, 'fire')
+      const dungeonId = fixture === 'whispering-woods-ready' ? 'whispering-woods' : fixture === 'howling-den-ready' ? 'howling-den' : 'abandoned-catacombs'
+      const dungeon = DUNGEONS[dungeonId]
+      state.player.mana = state.player.maxMana
+      state.combat.active = true
+      state.combat.dungeonId = dungeonId
+      state.combat.threatCleared = dungeon.threatRequired
+      if (fixture === 'edrin-ready') spawnEnemy(state, dungeon.boss, combatLogUiSink)
+      else spawnNextEnemy(state, combatLogUiSink)
+      return state
+    })
+  }
+  const fixtureState = useGameStore.getState()
+  if (fixtureState.combat.active && fixtureState.combat.dungeonId) dungeonStatisticsObserver.beginSession(fixtureState.combat.dungeonId)
+  useGameStore.setState({ recentAcquisitions: [], applyDeveloperFixture })
+}
+
 const prepareForestHeartPreset = () => useGameStore.setState((state) => {
   state.combat.active = true
   state.combat.dungeonId = 'whispering-woods'
@@ -405,7 +450,7 @@ const completeDungeonPreset = () => useGameStore.setState((state) => {
   state.combat.threatCleared = DUNGEONS['abandoned-catacombs'].threatRequired
   spawnEnemy(state, DUNGEONS['abandoned-catacombs'].boss, combatLogUiSink)
 })
-useGameStore.setState({ preset: (name) => { combatAlertsObserver.clear(); clearCombatRecap(); clearCombatDefeat(); clearDungeonStatistics(); combatTelemetryObserver.clear(); presetGameplayState(name); if (name === 'boss' || name === 'main-boss') prepareForestHeartPreset(); if (name === 'chapter-complete') completeDungeonPreset(); const presetState = useGameStore.getState(); if (presetState.combat.active && presetState.combat.dungeonId) dungeonStatisticsObserver.beginSession(presetState.combat.dungeonId); useGameStore.setState({ recentAcquisitions: [] }) } })
+useGameStore.setState({ applyDeveloperFixture, preset: (name) => { combatAlertsObserver.clear(); clearCombatRecap(); clearCombatDefeat(); clearDungeonStatistics(); combatTelemetryObserver.clear(); presetGameplayState(name); if (name === 'boss' || name === 'main-boss') prepareForestHeartPreset(); if (name === 'chapter-complete') completeDungeonPreset(); const presetState = useGameStore.getState(); if (presetState.combat.active && presetState.combat.dungeonId) dungeonStatisticsObserver.beginSession(presetState.combat.dungeonId); useGameStore.setState({ recentAcquisitions: [] }) } })
 
 export const useGameStoreSelectors = { selectUsedFocus, selectFreeFocus }
 export { selectUsedFocus, selectFreeFocus }

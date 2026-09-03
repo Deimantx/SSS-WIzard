@@ -1,5 +1,6 @@
 import { Button, Card, Status } from '../../components/ui'
 import { CHANNELING_DISCOVERIES, MANA_PILLAR_IDS, MANA_PILLARS } from '../../game/content/channeling'
+import { formatDuration, formatNumber } from '../../game/content/presentation/balanceFormatters'
 import { useGameStore } from '../../store/gameStore'
 import { NumberField, Summary } from './DeveloperTabPrimitives'
 
@@ -19,8 +20,8 @@ export function DeveloperChanneling() {
     <Card title="Channeling runtime">
       <div className="developer-summary-grid">
         <Summary label="Echoes" value={`${activities.channeling.echoesAssigned} / ${maxEchoes}`} />
-        <Summary label="Mana Generated" value={progress.channeling.totalManaGenerated} />
-        <Summary label="Five Echo Sustain" value={`${progress.channeling.fiveEchoSustainMs} ms`} />
+        <Summary label="Mana Generated" value={formatNumber(progress.channeling.totalManaGenerated)} />
+        <Summary label="Five Echo Sustain" value={formatDuration(progress.channeling.fiveEchoSustainMs)} />
         <Summary label="Discoveries" value={`${Object.values(progress.channeling.discoveries).filter(Boolean).length} / ${CHANNELING_DISCOVERIES.length}`} />
       </div>
       <div className="button-row"><Button variant="secondary" onClick={() => forceEchoes(5)}>Force 5 Echoes</Button><Button variant="danger" onClick={() => forceEchoes(20)}>Force 20 Echoes</Button></div>
@@ -30,7 +31,7 @@ export function DeveloperChanneling() {
         <NumberField label={`Force Echoes (cap: ${maxEchoes})`} value={activities.channeling.echoesAssigned} onChange={forceEchoes} />
         {MANA_PILLAR_IDS.map((id) => <NumberField key={id} label={`${MANA_PILLARS[id].name} Level (0-10)`} value={progress.channeling.pillars[id].level} onChange={(value) => forcePillar(id, value)} />)}
         <NumberField label="Total Mana Generated" value={progress.channeling.totalManaGenerated} onChange={setGenerated} />
-        <NumberField label="Five Echo Sustain (ms)" value={progress.channeling.fiveEchoSustainMs} onChange={setSustain} />
+        <NumberField label="Five Echo Sustain (seconds)" value={progress.channeling.fiveEchoSustainMs / 1000} onChange={(value) => setSustain(Math.max(0, value * 1000))} />
       </div>
       <p className="muted">Force controls do not consume materials or alter the normal upgrade path.</p>
     </Card>

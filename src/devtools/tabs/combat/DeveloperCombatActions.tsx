@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Button, Card, Progress } from '../../../components/ui'
 import { MONSTERS } from '../../../game/content/monsters'
 import { ITEMS } from '../../../game/content/items/items'
+import { formatCombatModifier, formatCombatRule, formatDuration, formatReadableId } from '../../../game/content/presentation/balanceFormatters'
 import { EQUIPMENT_POSITIONS } from '../../../game/core/equipment'
 import { getCurrentEnemyActionStep, getEnemyAction, getNextEnemyActionStep } from '../../../game/systems/combat/actionRuntime'
 import { getCurrentEnemyActionTiming, getPlayerBasicTiming } from '../../../game/systems/combat/actionTiming'
@@ -9,8 +10,9 @@ import { getMonsterTraits } from '../../../game/systems/combat/traitRuntime'
 import { getRuleRuntimeKey } from '../../../game/systems/combat/triggerRuntime'
 import { useGameStore } from '../../../store/gameStore'
 import { Summary } from '../DeveloperTabPrimitives'
+import { DeveloperAdvancedSection } from '../../components/DeveloperBrowser'
 
-const etaLabel = (etaMs: number | null) => etaMs === null ? 'PAUSED' : `${Math.floor(etaMs)}ms`
+const etaLabel = (etaMs: number | null) => etaMs === null ? 'Paused' : formatDuration(Math.max(0, etaMs))
 
 export function DeveloperCombatActions() {
   const [selectedActionId, setSelectedActionId] = useState('')
@@ -32,21 +34,21 @@ export function DeveloperCombatActions() {
     <Card title="Action inspector">
       <div className="developer-summary-grid">
         <Summary label="Player Basic" value="Current timed lane" />
-        <Summary label="Player base work" value={`${Math.floor(playerTiming.baseWorkMs)}ms`} />
-        <Summary label="Player remaining work" value={`${Math.floor(playerTiming.remainingWorkMs)}ms`} />
+        <Summary label="Player base work" value={formatDuration(playerTiming.baseWorkMs)} />
+        <Summary label="Player remaining work" value={formatDuration(playerTiming.remainingWorkMs)} />
         <Summary label="Player rate" value={`${playerTiming.rate.toFixed(2)}×`} />
         <Summary label="Player ETA" value={etaLabel(playerTiming.etaMs)} />
         <Summary label="Player progress" value={`${Math.round(playerTiming.progress)}%`} />
         <Summary label="Player blocked" value={playerTiming.blocked ? 'Yes' : 'No'} />
         <Summary label="Current enemy" value={enemy?.name ?? '-'} />
-        <Summary label="Pattern" value={combat.enemyActionPatternId ?? '-'} />
-        <Summary label="Pattern index" value={combat.enemyNextActionIndex} />
-        <Summary label="Current step" value={combat.enemyCurrentStepId ?? '-'} />
+        <Summary label="Pattern" value={formatReadableId(combat.enemyActionPatternId ?? '-')} />
+        <Summary label="Pattern position" value={combat.enemyNextActionIndex} />
+        <Summary label="Current step" value={currentStep?.type === 'basic' ? 'Basic Attack' : currentAction?.name ?? '-'} />
         <Summary label="Active action" value={currentAction?.name ?? (currentStep?.type === 'basic' ? 'Basic Attack' : '-')} />
-        <Summary label="Origin pattern" value={combat.enemyCurrentActionPatternId ?? '-'} />
+        <Summary label="Origin pattern" value={formatReadableId(combat.enemyCurrentActionPatternId ?? '-')} />
         <Summary label="Next step" value={nextLabel} />
-        <Summary label="Enemy base work" value={enemyTiming ? `${Math.floor(enemyTiming.baseWorkMs)}ms` : '-'} />
-        <Summary label="Enemy remaining work" value={enemyTiming ? `${Math.floor(enemyTiming.remainingWorkMs)}ms` : '-'} />
+        <Summary label="Enemy base work" value={enemyTiming ? formatDuration(enemyTiming.baseWorkMs) : '-'} />
+        <Summary label="Enemy remaining work" value={enemyTiming ? formatDuration(enemyTiming.remainingWorkMs) : '-'} />
         <Summary label="Enemy rate" value={enemyTiming ? `${enemyTiming.rate.toFixed(2)}×` : '-'} />
         <Summary label="Enemy ETA" value={!enemyTiming ? '-' : etaLabel(enemyTiming.etaMs)} />
         <Summary label="Enemy progress" value={`${Math.round(progress)}%`} />
@@ -56,8 +58,8 @@ export function DeveloperCombatActions() {
       {enemy && <Progress value={progress} label="Action progress" right={`${Math.round(progress)}%`} />}
     </Card>
     <Card title="Force enemy actions"><label className="developer-number-field">Selected action<select aria-label="Action to inspect" value={actionId} onChange={(event) => setSelectedActionId(event.target.value)}>{Object.values(enemy?.actions ?? {}).map((action) => <option key={action.id} value={action.id}>{action.name}</option>)}</select></label>{enemy && <div className="button-row"><Button onClick={() => start(actionId)} disabled={!actionId || Boolean(combat.enemyCurrentStepId)}>Start Selected Action</Button><Button variant="secondary" onClick={() => force(actionId)} disabled={!actionId || Boolean(combat.enemyCurrentStepId)}>Force Action</Button><Button variant="secondary" onClick={resolve} disabled={!combat.enemyCurrentStepId}>Force Resolve Active</Button><Button variant="ghost" onClick={advance} disabled={Boolean(combat.enemyCurrentStepId)}>Advance to Next Step</Button></div>}</Card>
-    <Card title="Pattern controls"><label className="developer-number-field">Pattern<select aria-label="Pattern to set" value={patternId} onChange={(event) => setSelectedPatternId(event.target.value)}>{Object.values(enemy?.actionPatterns ?? {}).map((pattern) => <option key={pattern.id} value={pattern.id}>{pattern.id}</option>)}</select></label><div className="button-row"><Button onClick={() => setPattern(patternId)} disabled={!enemy}>Set Pattern</Button><Button variant="secondary" onClick={resetPattern} disabled={!enemy}>Reset Pattern to Default</Button><Button variant="ghost" onClick={resetCursor} disabled={!enemy}>Reset Pattern Index</Button></div></Card>
-    <Card title="Trait / rule runtime"><div className="button-row"><Button variant="ghost" onClick={resetRules} disabled={!enemy}>Reset Trait / Rule Runtime</Button></div>{enemy ? getMonsterTraits(enemy).map((trait) => <div key={trait.id} className="developer-trait-inspector"><strong>{trait.name}</strong><small>{trait.id}</small><span>{trait.description}</span><span>Modifiers: {trait.modifiers?.length ?? 0} · Rules: {trait.rules?.length ?? 0}</span>{trait.rules?.map((rule) => { const key = getRuleRuntimeKey('enemy', 'trait', trait.id, rule.id); return <div key={rule.id} className="developer-trait-rule"><span>{rule.id} · {rule.event}</span><span>Priority {rule.priority ?? 0} · Cooldown {rule.cooldownMs ?? 0}ms · Remaining {combat.ruleCooldowns[key] ?? 0}ms</span><span>Once per encounter: {rule.oncePerEncounter ? 'Yes' : 'No'} · Fired: {combat.triggeredRuleIds.includes(key) ? 'Yes' : 'No'}</span></div> })}</div>) : <p className="muted">No active enemy traits.</p>}</Card>
-    <Card title="Equipment combat providers"><div className="developer-equipment-provider-list">{EQUIPMENT_POSITIONS.map((position) => { const itemId = combat.active ? equipment[position] : null; const item = itemId ? ITEMS[itemId] : undefined; if (!item?.combat) return null; return <div className="developer-equipment-provider" key={position}><strong>{item.name}</strong><small>{position} · {item.id}</small><span>Provider: {position} · Modifiers: {item.combat.modifiers?.length ?? 0} · Rules: {item.combat.rules?.length ?? 0}</span>{item.combat.rules?.map((rule) => { const key = getRuleRuntimeKey('player', 'equipment', item.id, rule.id, position); return <div className="developer-trait-rule" key={rule.id}><span>{rule.id} · {rule.event}</span><span>Cooldown {rule.cooldownMs ?? 0}ms · Remaining {combat.ruleCooldowns[key] ?? 0}ms</span><span>Once per encounter: {rule.oncePerEncounter ? 'Yes' : 'No'} · Fired: {combat.triggeredRuleIds.includes(key) ? 'Yes' : 'No'}</span></div> })}</div> })}</div>{!EQUIPMENT_POSITIONS.some((position) => { const itemId = combat.active ? equipment[position] : null; return Boolean(itemId && ITEMS[itemId]?.combat) }) && <p className="muted">No equipped Combat providers.</p>}</Card>
+    <Card title="Pattern controls"><label className="developer-number-field">Pattern<select aria-label="Pattern to set" value={patternId} onChange={(event) => setSelectedPatternId(event.target.value)}>{Object.values(enemy?.actionPatterns ?? {}).map((pattern) => <option key={pattern.id} value={pattern.id}>{formatReadableId(pattern.id)}</option>)}</select></label><div className="button-row"><Button onClick={() => setPattern(patternId)} disabled={!enemy}>Set pattern</Button><Button variant="secondary" onClick={resetPattern} disabled={!enemy}>Reset pattern to default</Button><Button variant="ghost" onClick={resetCursor} disabled={!enemy}>Reset pattern position</Button></div></Card>
+    <Card title="Traits and special rules"><div className="button-row"><Button variant="ghost" onClick={resetRules} disabled={!enemy}>Reset special rules</Button></div>{enemy ? getMonsterTraits(enemy).map((trait) => <div key={trait.id} className="developer-trait-inspector"><strong>{trait.name}</strong><span>{trait.description}</span>{trait.modifiers?.map((modifier) => <small key={modifier.key}>{formatCombatModifier(modifier)}</small>)}{trait.rules?.map((rule) => { const key = getRuleRuntimeKey('enemy', 'trait', trait.id, rule.id); return <div key={rule.id} className="developer-trait-rule"><span>{formatCombatRule(rule)}</span><span>Cooldown {formatDuration(rule.cooldownMs ?? 0)} · Remaining {formatDuration(combat.ruleCooldowns[key] ?? 0)}</span><span>{rule.oncePerEncounter ? 'Once per encounter' : 'Repeatable'} · {combat.triggeredRuleIds.includes(key) ? 'Fired' : 'Ready'}</span></div> })}</div>) : <p className="muted">No active enemy traits.</p>}</Card>
+    <Card title="Equipment effects in play"><div className="developer-equipment-provider-list">{EQUIPMENT_POSITIONS.map((position) => { const itemId = combat.active ? equipment[position] : null; const item = itemId ? ITEMS[itemId] : undefined; if (!item?.combat) return null; return <div className="developer-equipment-provider" key={position}><strong>{item.name}</strong><small>{formatReadableId(position)} · {item.combat.modifiers?.length ?? 0} passive effects · {item.combat.rules?.length ?? 0} special rules</small>{item.combat.modifiers?.map((modifier) => <span key={modifier.key}>{formatCombatModifier(modifier)}</span>)}{item.combat.rules?.map((rule) => { const key = getRuleRuntimeKey('player', 'equipment', item.id, rule.id, position); return <div className="developer-trait-rule" key={rule.id}><span>{formatCombatRule(rule)}</span><span>Cooldown {formatDuration(rule.cooldownMs ?? 0)} · Remaining {formatDuration(combat.ruleCooldowns[key] ?? 0)}</span><span>{rule.oncePerEncounter ? 'Once per encounter' : 'Repeatable'} · {combat.triggeredRuleIds.includes(key) ? 'Fired' : 'Ready'}</span></div> })}</div> })}</div>{!EQUIPMENT_POSITIONS.some((position) => { const itemId = combat.active ? equipment[position] : null; return Boolean(itemId && ITEMS[itemId]?.combat) }) && <p className="muted">No equipped equipment effects.</p>}<DeveloperAdvancedSection title="Advanced action identifiers"><span>Internal action and rule runtime data is available in Advanced Diagnostics.</span></DeveloperAdvancedSection></Card>
   </div>
 }

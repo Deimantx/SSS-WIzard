@@ -57,6 +57,22 @@ UI must consume authoritative gameplay/data helpers.
 
 When replacing a system, remove the obsolete implementation after migration rather than keeping parallel legacy behavior.
 
+## Tester-first Developer Tools
+
+- Developer Tools is a tester workspace. The first/default section is Quick Setup; navigation is grouped as QUICK, PLAYER, MAGIC, COMBAT, and SYSTEM.
+- Use only the explicit `workspace` and `docked` window modes. Workspace is centered with a backdrop and internal scrolling; docked is movable, resizable, clamped, and persists its own geometry. Do not reintroduce a minimized window mode.
+- Persist the last mode, selected tab, Combat Lab tab, and docked geometry in developer-only local storage. Normalize legacy UI tab ids (`equipment` → `inventory`, `schools` → `spells`) without changing gameplay save migrations.
+- Normal tester views must be human-readable: use shared pure presentation/read-model helpers for names, effects, conditions, percentages, and seconds. Keep raw identifiers, serialized state, provider/source metadata, event keys, and runtime implementation details inside collapsed Advanced sections or Advanced Diagnostics.
+- Quick Setup fixtures and loadouts must reuse authored dungeon unlock conditions, explicit slot maps, central item acquisition, and existing store/system actions. Do not add parallel gameplay or crafting systems.
+- Spells & Schools, Monsters, Statuses, Inventory & Equipment, Research, Channeling, Focus, and Transmutation screens must expose tester actions while preserving the authoritative content registries and runtime selectors.
+- Every redesigned Dev Tools screen must use shared `GameTooltip` infrastructure and must not use native `title` tooltips.
+
+## Developer Tools Definition of Done
+
+- Add or update focused Vitest coverage for window modes and persistence, navigation normalization, Quick Setup fixtures/actions, and raw-vs-human presentation boundaries.
+- Run targeted tests while iterating. At final handoff, run exactly one full `npm run test:run` and one `npm run build` after implementation is complete.
+- UI-only Dev Tools changes do not require balancing workbook regeneration or `npm run balancing:coverage`; authored gameplay/content changes still do.
+
 ## UI and testing
 
 - Keep the three Transmutation panels usable at narrow widths: recipe library, recipe detail, and Focus assignment must stack without horizontal overflow.

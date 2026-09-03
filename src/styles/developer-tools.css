@@ -64,8 +64,13 @@
  .developer-recipe-requirements > div > span { display: grid; gap: 3px; min-width: 0; }
  .developer-recipe-requirements small { color: var(--ui-text-muted); font-size: 10px; overflow-wrap: anywhere; }
  .developer-recipe-requirements > div > strong { color: var(--ui-text); font: var(--text-xs) var(--font-mono); text-align: right; }
- .developer-missing-value { color: var(--ui-warning) !important; }
-  @media (max-width: 760px) { .developer-tools-tab-group { display: flex; gap: 3px; align-items: center; margin: 0; }.developer-tools-tab-group-label { flex: 0 0 auto; padding: 8px 6px; }.developer-tools-tab-group button { flex: 0 0 auto !important; } }
+.developer-missing-value { color: var(--ui-warning) !important; }
+@media (max-width: 760px) { .developer-tools-tab-group { display: flex; gap: 3px; align-items: center; margin: 0; }.developer-tools-tab-group-label { flex: 0 0 auto; padding: 8px 6px; }.developer-tools-tab-group button { flex: 0 0 auto !important; } }
+
+.developer-advanced-section { margin-top: 12px; border-top: 1px solid var(--ui-border); color: var(--ui-text-muted); font-size: var(--text-xs); }
+.developer-advanced-section summary { padding: 10px 0 4px; color: var(--ui-text-muted); cursor: pointer; font: var(--text-xs) var(--font-mono); letter-spacing: .06em; text-transform: uppercase; }
+.developer-advanced-section > div { display: grid; gap: 7px; padding: 5px 0 2px; }
+.developer-advanced-section code { color: var(--ui-text-muted); overflow-wrap: anywhere; }
 
 /* Minimized Dev Tools is a floating title bar, never a collapsed expanded window. */
 .developer-tools-window.minimized { width: 360px; height: auto !important; min-width: 0; min-height: 0; }
@@ -87,3 +92,33 @@
 
 /* Mobile layout rules use !important for the expanded workspace; these values keep the minimized bar movable there too. */
 .developer-tools-window.minimized { left: var(--developer-tools-left) !important; top: var(--developer-tools-top) !important; width: var(--developer-tools-width) !important; }
+
+/* V3 window modes: workspace is a centered modal surface; docked is the
+   movable/resizable developer panel. There is no collapsed/minimized mode. */
+.developer-tools-layer.workspace-mode { display: grid; place-items: center; padding: 24px; pointer-events: auto; background: color-mix(in srgb, #05070d 58%, transparent); }
+.developer-tools-layer.docked-mode { pointer-events: none; }
+.developer-tools-window.workspace { position: relative; left: auto !important; top: auto !important; width: min(1080px, calc(100vw - 48px)); height: min(760px, calc(100vh - 48px)); max-width: 100%; max-height: 100%; }
+.developer-tools-window.docked { min-width: 0; min-height: 0; }
+.developer-tools-window.workspace .developer-tools-header { cursor: default; }
+.developer-tools-window.workspace .developer-tools-body { min-height: 0; }
+.developer-tools-window.workspace .developer-tools-content { scrollbar-gutter: stable; }
+.developer-tools-window.docked, .developer-tools-window.docked * { pointer-events: auto; }
+.developer-local-tabs { display: flex; gap: 4px; padding: 3px; border: 1px solid var(--ui-border); border-radius: 7px; background: var(--ui-panel); }
+.developer-local-tabs button { flex: 1; min-height: 32px; border: 0; border-radius: 5px; color: var(--ui-text-muted); background: transparent; cursor: pointer; font: var(--text-xs) var(--font-mono); letter-spacing: .08em; }
+.developer-local-tabs button:hover, .developer-local-tabs button.active { color: var(--ui-text); background: var(--ui-accent-soft); }
+.developer-quick-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.developer-quick-grid section { display: grid; gap: 8px; min-width: 0; padding: 11px; border: 1px solid var(--ui-border); border-radius: 8px; background: color-mix(in srgb, var(--ui-panel) 72%, transparent); }
+.developer-quick-grid h3 { margin: 0; color: var(--ui-accent); font: var(--text-xs) var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
+.developer-fixture-list { display: grid; gap: 6px; }
+.developer-fixture-list > div { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--ui-border); }
+.developer-fixture-list > div > div { display: grid; gap: 2px; min-width: 0; }
+.developer-fixture-list strong { color: var(--ui-text); font-size: var(--text-xs); }
+.developer-fixture-list small { color: var(--ui-text-muted); font-size: 10px; }
+.developer-quick-selection { display: flex; justify-content: space-between; gap: 10px; margin: 12px 0; padding: 9px; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text-muted); font-size: var(--text-xs); }
+.developer-quick-selection strong { color: var(--ui-text); }
+.developer-subheading { margin: 4px 0 0; color: var(--ui-text-muted); font: var(--text-xs) var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
+@media (max-width: 760px) { .developer-quick-grid { grid-template-columns: 1fr; } }
+@media (max-width: 760px) {
+  .developer-tools-layer.workspace-mode { padding: 12px; }
+  .developer-tools-window.workspace { width: calc(100vw - 24px) !important; height: calc(100vh - 24px) !important; }
+}

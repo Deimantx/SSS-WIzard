@@ -18,7 +18,7 @@ export function DeveloperBrowser<T extends DeveloperBrowserItem>({ items, select
         <span className="developer-browser-copy"><strong>{item.label}</strong>{item.meta && <small>{item.meta}</small>}</span>
         {item.status && <span className="developer-browser-status">{item.status}</span>}
       </button>
-      return item.meta ? <GameTooltip key={item.id} block content={`${item.label} · ${item.id}`}>{row}</GameTooltip> : <span key={item.id}>{row}</span>
+      return item.meta ? <GameTooltip key={item.id} block content={`${item.label} · Select to inspect`}>{row}</GameTooltip> : <span key={item.id}>{row}</span>
     })}
   </div>
 }
@@ -29,4 +29,8 @@ export function DeveloperBrowserLayout({ browser, inspector }: { browser: ReactN
 
 export function DeveloperSection({ title, children }: { title: string; children: ReactNode }) {
   return <div className="developer-inspector-section"><h3>{title}</h3>{children}</div>
+}
+
+export function DeveloperAdvancedSection({ title = 'Advanced details', children }: { title?: string; children: ReactNode }) {
+  return <details className="developer-advanced-section"><summary>{title}</summary><div>{children}</div></details>
 }

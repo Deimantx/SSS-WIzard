@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { Button, Card } from '../../../components/ui'
 import { STATUS_DEFINITIONS, STATUS_ORDER } from '../../../game/content/statuses'
+import { formatCombatEffect, formatCombatModifier, formatDuration, formatReadableId } from '../../../game/content/presentation/balanceFormatters'
 import { resolveCombatSourceLabel } from '../../../game/presentation/combat/combatSourcePresentation'
 import type { ActiveStatus, EquipmentPosition, ItemId, StatusId } from '../../../game/types'
 import { useGameStore } from '../../../store/gameStore'
+import { DeveloperAdvancedSection } from '../../components/DeveloperBrowser'
 import { NumberField } from '../DeveloperTabPrimitives'
 
 export function DeveloperCombatStatus() {
@@ -69,16 +71,16 @@ export function DeveloperCombatStatus() {
         <Button variant="secondary" onClick={() => { prepareEquipmentFixture('edrins-signet', 'ring1'); applyPlayer('chilled') }}>Edrin Signet hostile debuff</Button>
       </div>
     </Card>
-    <Card title="Raw status instances"><RawStatusInstances statuses={[...combat.playerStatuses.map((status) => ({ actor: 'player' as const, status })), ...combat.enemyStatuses.map((status) => ({ actor: 'enemy' as const, status }))]} /></Card>
+    <Card title="Active status instances"><DeveloperAdvancedSection title="Inspect active instances"><StatusInstances statuses={[...combat.playerStatuses.map((status) => ({ actor: 'player' as const, status })), ...combat.enemyStatuses.map((status) => ({ actor: 'enemy' as const, status }))]} /></DeveloperAdvancedSection></Card>
   </div>
 }
 
-function RawStatusInstances({ statuses }: { statuses: Array<{ actor: 'player' | 'enemy'; status: ActiveStatus }> }) {
+function StatusInstances({ statuses }: { statuses: Array<{ actor: 'player' | 'enemy'; status: ActiveStatus }> }) {
   if (!statuses.length) return <p className="muted">No active status instances.</p>
   return <div className="developer-status-instance-list">{statuses.map(({ actor, status }) => {
     const definition = STATUS_DEFINITIONS[status.statusId]
     const periodic = status.periodicEffects ?? definition?.periodic?.effects
-    const periodicLabel = periodic?.length ? periodic.map((effect) => effect.type === 'deal-damage' ? effect.components.map((component) => component.magnitude.type === 'flat' ? `${component.damageType} ${component.magnitude.value}/tick` : component.damageType).join(' + ') : effect.type).join(', ') : '-'
-    return <div className="developer-status-instance" key={`${actor}:${status.statusId}:${status.instanceKey}`}><strong>{definition?.name ?? status.statusId}</strong><span>Actor: {actor} · Status ID: {status.statusId}</span><span>Instance Key: {status.instanceKey}</span><span>Source: {resolveCombatSourceLabel(status.source)} · Origin: {status.source.originSourceKind ?? '-'} / {status.source.originSourceId ?? status.source.sourceId ?? '-'}</span><span>Provider: {status.source.providerInstanceKey ?? '-'} · Origin tags: {status.source.originTags?.join(', ') ?? status.source.tags?.join(', ') ?? '-'} · School: {status.source.originSchool ?? status.source.school ?? '-'}</span><span>Remaining: {status.remainingMs === null ? '∞' : `${Math.max(0, Math.floor(status.remainingMs))}ms`} · Initial: {status.initialDurationMs === null ? '∞' : `${Math.max(0, Math.floor(status.initialDurationMs ?? 0))}ms`} · Next tick: {status.nextTickMs === undefined ? '-' : `${Math.max(0, Math.floor(status.nextTickMs))}ms`}</span><span>Stacks: {status.stacks} · Potency: {status.modifierOverrides ? JSON.stringify(status.modifierOverrides) : '-'} · Periodic: {periodicLabel}</span></div>
+    const effects = [...(definition?.modifiers ?? []).map(formatCombatModifier), ...(periodic ?? []).map((effect) => formatCombatEffect(effect, { statusHolder: true }))]
+    return <div className="developer-status-instance" key={`${actor}:${status.statusId}:${status.instanceKey}`}><strong>{definition?.name ?? formatReadableId(status.statusId)}</strong><span>Actor: {actor === 'player' ? 'Player' : 'Enemy'} · Source: {resolveCombatSourceLabel(status.source)}</span><span>Remaining: {formatDuration(status.remainingMs)} · Original duration: {formatDuration(status.initialDurationMs)}</span><span>Stacks: {status.stacks} · Next tick: {status.nextTickMs === undefined ? 'Not periodic' : formatDuration(status.nextTickMs)}</span>{effects.length > 0 && <span>Effects: {effects.join('; ')}</span>}</div>
   })}</div>
 }

@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { DeveloperToolsWindow } from './DeveloperToolsWindow'
-import { closeDeveloperTools, getDeveloperToolsState, openDeveloperTools, resetDeveloperToolsWindow, restoreDeveloperTools, setDeveloperToolsGeometry } from './developerToolsStore'
+import { closeDeveloperTools, getDeveloperToolsState, openDeveloperTools, resetDeveloperToolsWindow, setDeveloperToolsGeometry } from './developerToolsStore'
 
 describe('Developer Tools window presentation', () => {
   beforeEach(() => {
@@ -10,52 +10,39 @@ describe('Developer Tools window presentation', () => {
     resetDeveloperToolsWindow()
   })
 
-  it('turns into a compact title bar without body, tabs, or resize handles', () => {
+  it('opens as a centered workspace with body content and no resize handles', () => {
     openDeveloperTools('combat')
     const view = render(<DeveloperToolsWindow />)
 
-    expect(screen.getByRole('navigation', { name: 'Developer tool sections' })).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Minimize Developer Tools' }))
-
-    const windowElement = view.container.querySelector('.developer-tools-window') as HTMLElement
-    expect(windowElement.className).toContain('minimized')
-    expect(view.container.querySelector('.developer-tools-body')).toBeNull()
-    expect(view.container.querySelector('.developer-tools-tabs')).toBeNull()
+    expect(view.container.querySelector('.developer-tools-layer.workspace-mode')).toBeTruthy()
+    expect(view.container.querySelector('.developer-tools-window.workspace')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Dock Developer Tools' })).toBeTruthy()
+    expect(view.container.querySelector('.developer-tools-body')).toBeTruthy()
     expect(view.container.querySelector('.developer-tools-resize-handle')).toBeNull()
-    expect(windowElement.style.height).toBe('')
-    expect(windowElement.style.width).toBe('360px')
-    expect(screen.getByText('CLEAR')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Restore Developer Tools' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Close Developer Tools' })).toBeTruthy()
   })
 
-  it('restores the previous expanded geometry and normal content', () => {
-    setDeveloperToolsGeometry({ x: 120, y: 90, width: 700, height: 450 }, false)
+  it('switches to docked mode while preserving its dock geometry', () => {
+    setDeveloperToolsGeometry({ dockedX: 120, dockedY: 90, dockedWidth: 700, dockedHeight: 450 }, false)
     openDeveloperTools('diagnostics')
     const view = render(<DeveloperToolsWindow />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Minimize Developer Tools' }))
-    expect(getDeveloperToolsState()).toMatchObject({ width: 700, height: 450, minimized: true })
-    fireEvent.click(screen.getByRole('button', { name: 'Restore Developer Tools' }))
-
+    fireEvent.click(screen.getByRole('button', { name: 'Dock Developer Tools' }))
+    expect(getDeveloperToolsState()).toMatchObject({ mode: 'docked', dockedWidth: 700, dockedHeight: 450 })
     const windowElement = view.container.querySelector('.developer-tools-window') as HTMLElement
-    expect(windowElement.className).not.toContain('minimized')
+    expect(windowElement.className).toContain('docked')
     expect(windowElement.style.width).toBe('700px')
     expect(windowElement.style.height).toBe('450px')
-    expect(view.container.querySelector('.developer-tools-body')).toBeTruthy()
     expect(view.container.querySelectorAll('.developer-tools-resize-handle')).toHaveLength(3)
-    expect(screen.getByRole('button', { name: 'Clear all debug overrides' })).toBeTruthy()
-
-    restoreDeveloperTools()
+    expect(screen.getByRole('button', { name: 'Expand Developer Tools to workspace' })).toBeTruthy()
   })
 
-  it('keeps clear, restore/minimize, and close actions available in the compact header', () => {
+  it('makes clear, mode, and close actions available in the header', () => {
     openDeveloperTools()
     render(<DeveloperToolsWindow />)
-    fireEvent.click(screen.getByRole('button', { name: 'Minimize Developer Tools' }))
-
     expect(screen.getByRole('button', { name: 'Clear all debug overrides' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Restore Developer Tools' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Dock Developer Tools' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Expand Developer Tools to workspace' }))
+    expect(getDeveloperToolsState().mode).toBe('workspace')
     fireEvent.click(screen.getByRole('button', { name: 'Close Developer Tools' }))
     expect(screen.queryByRole('dialog', { name: 'Developer Tools' })).toBeNull()
   })

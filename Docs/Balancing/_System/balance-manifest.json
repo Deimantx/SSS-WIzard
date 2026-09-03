@@ -761,12 +761,15 @@
     },
     "Progression/Magic_School_XP.md": {
       "stableIds": [
-        "SCHOOL_LEVEL_XP",
+        "SCHOOL_XP_TO_NEXT",
+        "SCHOOL_MAX_LEVEL",
         "schoolProgression.startingCap",
         "schoolProgression.tutorialCompleteCap"
       ],
       "runtimeSources": [
+        "src/game/core/balance/schoolXpCurve.ts",
         "src/game/core/balance/balance.ts",
+        "src/game/systems/schools",
         "src/game/systems/spells"
       ]
     },

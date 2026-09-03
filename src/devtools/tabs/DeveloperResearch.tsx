@@ -4,7 +4,7 @@ import { ITEMS } from '../../game/content/items/items'
 import { SCHOOLS } from '../../game/content/schools/schools'
 import { formatDuration, formatNumber, formatReadableId } from '../../game/content/presentation/balanceFormatters'
 import { getResearchBatchEtaMs, getResearchEffectiveDuration, getResearchEchoCapacity, getResearchEchoesAssigned, getResearchFocusReserved, getResearchJob, getResearchJobStatus, getResearchJobXpPerItem, getResearchManaPerSecond, getResearchNextLevelEtaMs, getResearchXpPerHour } from '../../game/systems/research/researchSelectors'
-import { getSchoolLevelStartXp, getSchoolProgressInfo } from '../../game/systems/schools'
+import { getSchoolProgressInfo } from '../../game/systems/schools'
 import { RESEARCH_SLOT_ORDER } from '../../game/systems/research/researchReservations'
 import type { ResearchSlotId, SchoolId } from '../../game/types'
 import { useGameStore } from '../../store/gameStore'
@@ -17,11 +17,11 @@ const slotLabel = (slotId: ResearchSlotId) => `Research slot ${RESEARCH_SLOT_ORD
 export function DeveloperResearch() {
   const state = useGameStore()
   const prepareFixture = () => { state.clearPreparedResearch(); schoolIds.forEach((school) => { const itemId = SCHOOLS[school].fragment; state.addItem(itemId, 100); state.prepareResearch(itemId, school, 50) }); RESEARCH_SLOT_ORDER.forEach((slotId, index) => state.setResearchEchoes(slotId, index === 0 ? 2 : 1)) }
-  const setSchoolLevel = (schoolId: SchoolId, level: number) => { const safeLevel = Math.max(1, Math.floor(level)); state.setSchoolDebug(schoolId, getSchoolLevelStartXp(safeLevel), safeLevel) }
-  const setSchoolXp = (schoolId: SchoolId, xp: number) => state.setSchoolDebug(schoolId, Math.max(0, Math.floor(xp)))
-  const setAtCurrentLevelStart = (schoolId: SchoolId) => { const info = getSchoolProgressInfo(state, schoolId); state.setSchoolDebug(schoolId, info.levelStartXp, info.level) }
-  const setBeforeNextLevel = (schoolId: SchoolId) => { const info = getSchoolProgressInfo(state, schoolId); if (info.nextLevelXp !== null) state.setSchoolDebug(schoolId, Math.max(info.levelStartXp, info.nextLevelXp - 1), info.level) }
-  const setNextLevel = (schoolId: SchoolId) => { const info = getSchoolProgressInfo(state, schoolId); if (info.nextLevelXp !== null) state.setSchoolDebug(schoolId, info.nextLevelXp, info.level + 1) }
+  const setSchoolLevel = (schoolId: SchoolId, level: number) => state.setSchoolLevelDebug(schoolId, level)
+  const setSchoolXp = (schoolId: SchoolId, xp: number) => state.setSchoolXpDebug(schoolId, xp)
+  const setAtCurrentLevelStart = (schoolId: SchoolId) => { const info = getSchoolProgressInfo(state, schoolId); state.setSchoolLevelDebug(schoolId, info.level) }
+  const setBeforeNextLevel = (schoolId: SchoolId) => { const info = getSchoolProgressInfo(state, schoolId); if (info.nextLevelXp !== null) state.setSchoolXpDebug(schoolId, info.nextLevelXp - 1) }
+  const setNextLevel = (schoolId: SchoolId) => { const info = getSchoolProgressInfo(state, schoolId); if (info.nextLevelXp !== null) state.setSchoolLevelDebug(schoolId, info.level + 1) }
 
   return <div className="developer-tab-grid">
     <Card title="Research progression"><p className="muted">Research grants XP directly to the selected Magic School. Use the activity cards below to see live rates, durations, and level timing.</p><div className="developer-summary-grid"><Summary label="Research Echoes" value={`${getResearchEchoesAssigned(state)} / ${getResearchEchoCapacity(state)}`} /><Summary label="Focus reserved" value={formatNumber(getResearchFocusReserved(state))} /><Summary label="Prepared batches" value={`${RESEARCH_SLOT_ORDER.filter((slotId) => Boolean(getResearchJob(state, slotId))).length} / ${BALANCE.research.maxPreparedSlots}`} /><Summary label="XP gain" value="Shown per batch" /></div><div className="button-row"><Button variant="secondary" onClick={prepareFixture}>Prepare Test Research</Button><Button variant="ghost" onClick={state.clearPreparedResearch}>Clear prepared Research</Button></div></Card>

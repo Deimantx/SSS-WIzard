@@ -57,6 +57,17 @@ UI must consume authoritative gameplay/data helpers.
 
 When replacing a system, remove the obsolete implementation after migration rather than keeping parallel legacy behavior.
 
+## Progression curve terminology
+
+Never use ambiguous progression helpers such as `LEVEL_XP(level)` when the value could mean either per-level XP or cumulative XP.
+
+For Magic Schools:
+
+- `XP to Next Level` means the incremental XP required from the current level to the next.
+- `Total XP to Reach This Level` means the cumulative absolute threshold at the start of that level.
+- Runtime, Dev Tools, save migration, tests, and `Docs/Balancing` must use the same centralized School XP helpers/table.
+- Do not hard-code School XP thresholds in fixtures, presets, UI, or tests.
+
 ## Tester-first Developer Tools
 
 - Developer Tools is a tester workspace. The first/default section is Quick Setup; navigation is grouped as QUICK, PLAYER, MAGIC, COMBAT, and SYSTEM.

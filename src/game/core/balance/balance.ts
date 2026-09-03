@@ -10,4 +10,3 @@ export const BALANCE = {
   dungeon: { encounterDelayMs: 5000, whisperingWoodsThreatRequired: 20 },
   schoolProgression: { startingCap: 20, tutorialCompleteCap: 40 },
 } as const
-export const SCHOOL_LEVEL_XP = (level: number) => level * 20

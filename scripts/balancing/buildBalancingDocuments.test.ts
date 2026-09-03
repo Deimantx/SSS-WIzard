@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildBalancingDocuments, buildEnemyCoreRow, buildEnemyLootRows, buildEquipmentStatRow } from './buildBalancingDocuments'
+import { buildBalancingDocuments, buildEnemyCoreRow, buildEnemyLootRows, buildEquipmentStatRow, buildSchoolXpRows } from './buildBalancingDocuments'
 
 describe('sheet-first balancing workbook', () => {
   it('uses fixed enemy and equipment sheet schemas', () => {
@@ -65,5 +65,22 @@ describe('sheet-first balancing workbook', () => {
     expect(bossDrops).not.toContain('edrins-signet')
     expect(equipment).toContain('Heartseed Necklace (heartseed-necklace)')
     expect(equipment).toContain('Heartseed (heartseed) | 20')
+  })
+
+  it('exports School XP with explicit incremental and cumulative semantics', () => {
+    const rows = buildSchoolXpRows()
+    expect(rows[0]).toEqual([1, '100', '0'])
+    expect(rows[1]).toEqual([2, '140', '100'])
+    expect(rows[7]).toEqual([8, '770', '2070'])
+    expect(rows[19]).toEqual([20, '4820', '29870'])
+    expect(rows[39]).toEqual([40, '— CAP', '252310'])
+
+    const sheet = buildBalancingDocuments().docs.get('Progression/Magic_School_XP.md') ?? ''
+    expect(sheet).toContain('| Level | XP to Next Level | Total XP to Reach This Level |')
+    expect(sheet).toContain('| 1 | 100 | 0 |')
+    expect(sheet).toContain('| 8 | 770 | 2070 |')
+    expect(sheet).toContain('| 20 | 4820 | 29870 |')
+    expect(sheet).toContain('| 40 | — CAP | 252310 |')
+    expect(sheet).toContain('DERIVED — NOT A RUNTIME TARGET')
   })
 })

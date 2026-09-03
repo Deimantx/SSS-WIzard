@@ -30,7 +30,7 @@ describe('V16 spell progression migration', () => {
       schools: { ...initial.schools, air: { level: 16, xp: 320 } },
     })
     expect(migrated.progress.spellRanks['shock-spark']).toBe(1)
-    expect(migrated.progress.magicLevelCap).toBe(60)
+    expect(migrated.progress.magicLevelCap).toBe(40)
   })
 
   it('raises migrated cap for Edrin evidence but not for Forest Heart alone', () => {

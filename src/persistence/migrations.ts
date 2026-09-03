@@ -8,6 +8,7 @@ import { isBossMonster, MONSTERS } from '../game/content/monsters'
 import { RECIPES } from '../game/content/recipes/recipes'
 import { RECIPE_ORDER } from '../game/content/recipes/recipes'
 import { BALANCE } from '../game/core/balance/balance'
+import { SCHOOL_MAX_LEVEL, getSchoolTotalXpForLevel } from '../game/core/balance/schoolXpCurve'
 import { SPELLS } from '../game/content/spells/spells'
 import { SCHOOLS } from '../game/content/schools/schools'
 import { EQUIPMENT_POSITIONS, normalizeEquipmentState } from '../game/core/equipment'
@@ -139,13 +140,29 @@ const normalizeSpellPresets = (migrated: GameState, raw: Record<string, any>) =>
 
 const normalizeSchoolCap = (migrated: GameState, raw: Record<string, any>) => {
   const rawProgress = isRecord(raw.progress) ? raw.progress : {}
-  const savedCap = nonNegativeNumber(rawProgress.magicLevelCap) ?? BALANCE.schoolProgression.startingCap
+  const savedCap = Math.min(SCHOOL_MAX_LEVEL, Math.floor(nonNegativeNumber(rawProgress.magicLevelCap) ?? BALANCE.schoolProgression.startingCap))
   const edrinDefeated = (migrated.progress.bossKillsByBoss['archmage-edrin-shade'] ?? 0) >= 1
-  migrated.progress.magicLevelCap = Math.max(
+  migrated.progress.magicLevelCap = Math.min(SCHOOL_MAX_LEVEL, Math.max(
     savedCap,
     BALANCE.schoolProgression.startingCap,
     ...(edrinDefeated ? [BALANCE.schoolProgression.tutorialCompleteCap] : []),
-  )
+  ))
+}
+
+/** V25 changes School XP meaning from the old curve to authored cumulative totals. */
+const normalizeSchoolXpCurveV25 = (migrated: GameState, raw: Record<string, any>, sourceVersion: number) => {
+  if (sourceVersion > 24) return
+  const rawSchools = isRecord(raw.schools) ? raw.schools : {}
+  const cap = Math.min(SCHOOL_MAX_LEVEL, Math.max(1, Math.floor(migrated.progress.magicLevelCap)))
+  Object.keys(migrated.schools).forEach((id) => {
+    const schoolId = id as SchoolId
+    const rawSchool = isRecord(rawSchools[schoolId]) ? rawSchools[schoolId] : {}
+    const storedLevel = typeof rawSchool.level === 'number' && Number.isFinite(rawSchool.level)
+      ? Math.floor(rawSchool.level)
+      : 1
+    const level = Math.min(cap, Math.max(1, storedLevel))
+    migrated.schools[schoolId] = { level, xp: getSchoolTotalXpForLevel(level) }
+  })
 }
 
 export const normalizeLegacyProgressEvidence = (progress: GameState['progress']) => {
@@ -553,6 +570,7 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   normalizeDynamicRecords(migrated, raw)
   normalizeLegacyProgressEvidence(migrated.progress)
   normalizeSchoolCap(migrated, raw)
+  normalizeSchoolXpCurveV25(migrated, raw, sourceVersion)
   normalizeSpellProgression(migrated, raw)
   normalizeSpellPresets(migrated, raw)
   normalizeCombatState(migrated, raw, sourceVersion)

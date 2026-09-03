@@ -2,12 +2,14 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { createInitialState } from '../store/initialState'
 import { useGameStore } from '../store/gameStore'
 import { loadProfileGame, saveProfileGame } from '../persistence/profileSaveManager'
-import { SCHOOL_LEVEL_XP } from '../game/core/balance/balance'
+import { getSchoolLevelStartXp } from '../game/systems/schools'
 import { LEGACY_SAVE_BACKUP_KEY, SAVE_KEY } from '../persistence/saveSchema'
 import { createProfile, enterProfile, leaveToProfiles } from './profileController'
 import { PROFILE_REGISTRY_KEY, profileSaveBackupKey, profileSaveKey } from './profileKeys'
 import { loadProfileRegistry, saveProfileRegistry } from './profileStorage'
-import { refreshProfiles, setActiveProfileId } from './profileSessionStore'
+import { getActiveProfileId, refreshProfiles, setActiveProfileId } from './profileSessionStore'
+import { UI_PREFERENCES_KEY } from '../ui/preferences/uiPreferencesStorage'
+import { setUiPreferences } from '../ui/preferences/uiPreferencesStore'
 
 describe('profile storage and session lifecycle', () => {
   beforeEach(() => {
@@ -26,6 +28,25 @@ describe('profile storage and session lifecycle', () => {
     expect(localStorage.getItem(profileSaveKey('slot-1'))).toBeTruthy()
     expect(localStorage.getItem(profileSaveKey('slot-2'))).toBeTruthy()
     expect(localStorage.getItem(profileSaveKey('slot-3'))).toBeNull()
+  })
+
+  it('resets only the active profile gameplay and keeps its profile and UI state', () => {
+    expect(createProfile('slot-1', 'Reset Test').ok).toBe(true)
+    expect(enterProfile('slot-1').ok).toBe(true)
+    useGameStore.getState().addItem('fire-fragment', 12)
+    useGameStore.getState().setSchoolXpDebug('fire', 2070)
+    useGameStore.setState((state) => { state.progress.lifetimeKills = 8; return state })
+    setUiPreferences({ reducedMotion: true })
+    const uiPreferencesBefore = localStorage.getItem(UI_PREFERENCES_KEY)
+
+    useGameStore.getState().resetSave()
+
+    expect(getActiveProfileId()).toBe('slot-1')
+    expect(useGameStore.getState().schools).toEqual(createInitialState().schools)
+    expect(useGameStore.getState().inventory).toEqual(createInitialState().inventory)
+    expect(useGameStore.getState().progress.lifetimeKills).toBe(0)
+    expect(loadProfileGame('slot-1').state?.schools).toEqual(createInitialState().schools)
+    expect(localStorage.getItem(UI_PREFERENCES_KEY)).toBe(uiPreferencesBefore)
   })
 
   it('migrates a legacy global save into Slot 1', () => {
@@ -138,10 +159,10 @@ describe('profile storage and session lifecycle', () => {
     useGameStore.getState().addItem('fire-fragment', 123)
     useGameStore.getState().addItem('water-fragment', 47)
     useGameStore.getState().addItem('life-essence', 99)
-    useGameStore.getState().setSchoolDebug('fire', SCHOOL_LEVEL_XP(6) + 5, 7)
-    useGameStore.getState().setSchoolDebug('water', SCHOOL_LEVEL_XP(3) + 5, 4)
-    useGameStore.getState().setSchoolDebug('earth', SCHOOL_LEVEL_XP(2) + 5, 3)
-    useGameStore.getState().setSchoolDebug('air', SCHOOL_LEVEL_XP(1) + 5, 2)
+    useGameStore.getState().setSchoolXpDebug('fire', getSchoolLevelStartXp(7) + 5)
+    useGameStore.getState().setSchoolXpDebug('water', getSchoolLevelStartXp(4) + 5)
+    useGameStore.getState().setSchoolXpDebug('earth', getSchoolLevelStartXp(3) + 5)
+    useGameStore.getState().setSchoolXpDebug('air', getSchoolLevelStartXp(2) + 5)
     useGameStore.getState().prepareResearch('fire-fragment', 'fire', 30)
     useGameStore.getState().setResearchEchoes('research-1', 1)
     useGameStore.getState().assignTransmutationEcho('fire-fragment')
@@ -156,10 +177,10 @@ describe('profile storage and session lifecycle', () => {
     expect(enterProfile('slot-1').ok).toBe(true)
     expect(useGameStore.getState().inventory).toMatchObject({ 'fire-fragment': 123, 'water-fragment': 47, 'life-essence': 99 })
     expect(useGameStore.getState().schools).toEqual({
-      fire: { xp: 125, level: 7 },
-      water: { xp: 65, level: 4 },
-      earth: { xp: 45, level: 3 },
-      air: { xp: 25, level: 2 },
+      fire: { xp: 1475, level: 7 },
+      water: { xp: 425, level: 4 },
+      earth: { xp: 245, level: 3 },
+      air: { xp: 105, level: 2 },
     })
     expect(useGameStore.getState().currencies.gold).toBe(321)
     expect(useGameStore.getState().equipment.weapon).toBeNull()
@@ -172,8 +193,8 @@ describe('profile storage and session lifecycle', () => {
     useGameStore.getState().hydrateState(createInitialState())
     useGameStore.getState().reloadFromStorage()
     expect(useGameStore.getState().inventory['fire-fragment']).toBe(130)
-    expect(useGameStore.getState().schools.fire).toEqual({ xp: 125, level: 7 })
-    expect(useGameStore.getState().schools.water).toEqual({ xp: 65, level: 4 })
+    expect(useGameStore.getState().schools.fire).toEqual({ xp: 1475, level: 7 })
+    expect(useGameStore.getState().schools.water).toEqual({ xp: 425, level: 4 })
   })
 
   it('recovers a valid backup when the primary profile save is corrupt', () => {

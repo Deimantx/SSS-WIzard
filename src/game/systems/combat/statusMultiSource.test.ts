@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createInitialState } from '../../../store/initialState'
+import { createInitialState, SAVE_VERSION } from '../../../store/initialState'
 import { migrateSave } from '../../../persistence/migrations'
 import { SPELLS } from '../../content/spells/spells'
 import { getCombatStatusGroups } from '../../presentation/combat/combatStatusPresentation'
@@ -94,7 +94,7 @@ describe('multi-source periodic statuses', () => {
       { statusId: 'burning', source: source('ignite'), remainingMs: 2_000, stacks: 1, nextTickMs: 500 },
       { statusId: 'fortified', source: source('fortify'), remainingMs: 2_000, stacks: 1 },
     ] } } as any)
-    expect(migrated.saveVersion).toBe(24)
+    expect(migrated.saveVersion).toBe(SAVE_VERSION)
     expect(migrated.combat.enemyStatuses).toMatchObject([
       { statusId: 'burning', instanceKey: getStatusApplicationSourceKey(source('ignite')), remainingMs: 2_000, nextTickMs: 500 },
       { statusId: 'fortified', instanceKey: 'single:fortified' },

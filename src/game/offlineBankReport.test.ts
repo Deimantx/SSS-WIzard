@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { BALANCE, SCHOOL_LEVEL_XP } from './core/balance/balance'
+import { BALANCE } from './core/balance/balance'
+import { getSchoolTotalXpForLevel } from './core/balance/schoolXpCurve'
 import { advanceGameState } from './systems/simulation/advanceGameState'
 import { advanceWithOfflineBank, isOfflineBankSimulationActive } from './systems/offline-bank/offlineBankSimulation'
 import { createOfflineBankReportCollector } from './systems/offline-bank/offlineBankReport'
@@ -66,7 +67,7 @@ describe('Offline Bank event reports', () => {
     const state = makeInitialState()
     state.inventory['fire-fragment'] = 1
     state.schools.fire.level = state.progress.magicLevelCap
-    state.schools.fire.xp = SCHOOL_LEVEL_XP(state.progress.magicLevelCap)
+    state.schools.fire.xp = getSchoolTotalXpForLevel(state.progress.magicLevelCap)
     state.activities.research = { ...state.activities.research, running: true, itemId: 'fire-fragment', targetSchoolId: 'fire', remainingQuantity: 1, progressMs: BALANCE.research.durationPerItemMs }
     const report = createOfflineBankReportCollector(state, 1, 1_000)
     const result = runTick(state, report)

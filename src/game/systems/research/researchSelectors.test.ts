@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
+import { getSchoolTotalXpForLevel } from '../../core/balance/schoolXpCurve'
 import { getResearchNextLevelEtaMs } from './researchSelectors'
 
 const withResearchJob = (quantity: number, progressMs = 0, echoesAssigned = 1) => {
@@ -11,10 +12,10 @@ const withResearchJob = (quantity: number, progressMs = 0, echoesAssigned = 1) =
 
 describe('research next-level ETA', () => {
   it('accounts for the current item before future full cycles', () => {
-    const state = withResearchJob(3, 2_000)
+    const state = withResearchJob(8, 2_000)
     state.schools.fire.xp = 10
     state.schools.fire.level = 1
-    expect(getResearchNextLevelEtaMs(state, 'research-1')).toEqual({ etaMs: 3_000, beyondBatch: false })
+    expect(getResearchNextLevelEtaMs(state, 'research-1')).toEqual({ etaMs: 38_000, beyondBatch: false })
   })
 
   it('reports beyond batch when remaining items cannot reach the threshold', () => {
@@ -23,15 +24,20 @@ describe('research next-level ETA', () => {
   })
 
   it('uses all assigned Echoes for the effective cycle time', () => {
-    const state = withResearchJob(1, 0, 5)
+    const state = withResearchJob(8, 0, 5)
     state.schools.fire.xp = 8
-    expect(getResearchNextLevelEtaMs(state, 'research-1')).toEqual({ etaMs: 1_000, beyondBatch: false })
+    expect(getResearchNextLevelEtaMs(state, 'research-1')).toEqual({ etaMs: 8_000, beyondBatch: false })
+  })
+
+  it('requires nine matching items to cross Level 1 to Level 2', () => {
+    const state = withResearchJob(9)
+    expect(getResearchNextLevelEtaMs(state, 'research-1')).toEqual({ etaMs: 45_000, beyondBatch: false })
   })
 
   it('returns no ETA for a capped school or an unassigned batch', () => {
     const state = withResearchJob(3)
     state.schools.fire.level = state.progress.magicLevelCap
-    state.schools.fire.xp = state.progress.magicLevelCap * 20
+    state.schools.fire.xp = getSchoolTotalXpForLevel(state.progress.magicLevelCap)
     expect(getResearchNextLevelEtaMs(state, 'research-1')).toEqual({ etaMs: null, beyondBatch: false })
     state.activities.research.slots['research-1']!.echoesAssigned = 0
     expect(getResearchNextLevelEtaMs(state, 'research-1')).toEqual({ etaMs: null, beyondBatch: false })

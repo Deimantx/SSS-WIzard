@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ResearchSlotId } from '../../types'
-import { BALANCE, SCHOOL_LEVEL_XP } from '../../core/balance/balance'
+import { BALANCE } from '../../core/balance/balance'
+import { getSchoolTotalXpForLevel } from '../../core/balance/schoolXpCurve'
 import { createInitialState } from '../../../store/initialState'
 import { deriveFocusReservations } from '../../engine'
 import { prepareResearchAction, assignResearchEchoAction, removeResearchEchoAction, removePreparedResearchAction } from '../../../store/actions/researchActions'
@@ -75,7 +76,7 @@ describe('Arcane Crucible V2', () => {
     advanceResearch(state, 1000)
     const progress = state.activities.research.slots['research-1']!.progressMs
     state.schools.fire.level = state.progress.magicLevelCap
-    state.schools.fire.xp = SCHOOL_LEVEL_XP(state.progress.magicLevelCap)
+    state.schools.fire.xp = getSchoolTotalXpForLevel(state.progress.magicLevelCap)
     advanceResearch(state, 1000)
     expect(state.activities.research.slots['research-1']).toMatchObject({ remainingQuantity: 3, progressMs: progress, echoesAssigned: 0, status: 'level-cap' })
     state.schools.fire.level = 1
@@ -119,7 +120,7 @@ describe('Arcane Crucible V2', () => {
     state.protectedItems['fire-fragment'] = false
     assignResearchEchoAction(state, 'research-1')
     state.schools.fire.level = state.progress.magicLevelCap
-    state.schools.fire.xp = SCHOOL_LEVEL_XP(state.progress.magicLevelCap)
+    state.schools.fire.xp = getSchoolTotalXpForLevel(state.progress.magicLevelCap)
     advanceResearch(state, 1_000)
     expect(state.player.mana).toBe(20)
     expect(state.activities.research.slots['research-1']).toMatchObject({ progressMs: 0, echoesAssigned: 0, status: 'level-cap' })

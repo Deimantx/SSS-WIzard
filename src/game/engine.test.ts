@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { BALANCE, SCHOOL_LEVEL_XP } from './data/balance'
+import { BALANCE } from './data/balance'
+import { getSchoolTotalXpForLevel } from './core/balance/schoolXpCurve'
 import { MANA_PILLARS, PILLAR_LEVEL_COSTS } from './data/manaPillars'
 import { chooseMonster } from './data/dungeons'
 import { MONSTERS } from './data/monsters'
@@ -57,7 +58,7 @@ describe('research rules', () => {
     state.inventory['fire-fragment'] = 1
     state.progress.magicLevelCap = 10
     state.schools.fire.level = 10
-    state.schools.fire.xp = SCHOOL_LEVEL_XP(10)
+    state.schools.fire.xp = getSchoolTotalXpForLevel(10)
     const result = completeResearchCycle(state, 'fire-fragment')
     expect(result).toMatchObject({ completed: false, reason: 'cap' })
     expect(state.inventory['fire-fragment']).toBe(1)
@@ -65,9 +66,9 @@ describe('research rules', () => {
 
   it('maps XP to the expected level thresholds', () => {
     expect(getSchoolLevel(0, 10)).toBe(1)
-    expect(getSchoolLevel(SCHOOL_LEVEL_XP(1), 10)).toBe(2)
-    expect(getSchoolLevel(SCHOOL_LEVEL_XP(9), 10)).toBe(10)
-    expect(getSchoolLevel(SCHOOL_LEVEL_XP(20), 20)).toBe(20)
+    expect(getSchoolLevel(getSchoolTotalXpForLevel(2), 10)).toBe(2)
+    expect(getSchoolLevel(getSchoolTotalXpForLevel(10) - 1, 10)).toBe(9)
+    expect(getSchoolLevel(getSchoolTotalXpForLevel(20), 20)).toBe(20)
   })
 })
 

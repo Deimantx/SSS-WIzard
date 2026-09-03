@@ -1,4 +1,5 @@
-import { BALANCE, SCHOOL_LEVEL_XP } from './core/balance/balance'
+import { BALANCE } from './core/balance/balance'
+import { SCHOOL_MAX_LEVEL, getSchoolTotalXpForLevel } from './core/balance/schoolXpCurve'
 import { ITEMS, getResearchXp } from './content/items/items'
 import { SCHOOLS } from './content/schools/schools'
 import { SPELLS } from './content/spells/spells'
@@ -64,8 +65,10 @@ export const playerBasicDamage = (state: Pick<GameState, 'equipment'>) => BALANC
 
 export const grantSchoolXp = (state: GameState, school: SchoolId, amount: number) => {
   const before = state.schools[school].level
-  const cap = state.progress.magicLevelCap
-  state.schools[school].xp = Math.min(SCHOOL_LEVEL_XP(cap), state.schools[school].xp + amount)
+  const cap = Math.min(SCHOOL_MAX_LEVEL, Math.max(1, Number.isFinite(state.progress.magicLevelCap) ? Math.floor(state.progress.magicLevelCap) : 1))
+  const safeAmount = Number.isFinite(amount) ? Math.max(0, amount) : 0
+  const currentXp = Number.isFinite(state.schools[school].xp) ? Math.max(0, state.schools[school].xp) : 0
+  state.schools[school].xp = Math.min(getSchoolTotalXpForLevel(cap), currentXp + safeAmount)
   state.schools[school].level = getSchoolLevel(state.schools[school].xp, cap)
   const unlockedSpellIds = syncSpellUnlocksForSchool(state, school)
   unlockedSpellIds.forEach((spellId) => pushNotification(state, `${SPELLS[spellId].name} unlocked · Rank I`, 'success'))

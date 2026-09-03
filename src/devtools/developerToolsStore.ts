@@ -47,6 +47,6 @@ export const setDeveloperToolsDockedPosition = (x: number, y: number, persist = 
 export const setDeveloperToolsDockedSize = (width: number, height: number, persist = true) => setDeveloperToolsGeometry({ dockedWidth: width, dockedHeight: height }, persist)
 export const dockDeveloperTools = () => setDeveloperToolsMode('docked')
 export const workspaceDeveloperTools = () => setDeveloperToolsMode('workspace')
-export const resetDeveloperToolsWindow = () => update(getDefaultDeveloperGeometry(), true)
+export const resetDeveloperToolsWindow = () => update({ ...getDefaultDeveloperGeometry(), mode: current.mode }, true)
 export const clampDeveloperToolsToViewport = () => update(clampDeveloperToolsGeometry(current), true)
 export const useDeveloperToolsStore = () => useSyncExternalStore((listener) => { listeners.add(listener); return () => listeners.delete(listener) }, () => current, () => current)

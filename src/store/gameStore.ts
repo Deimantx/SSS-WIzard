@@ -23,7 +23,7 @@ import { createDefaultDebugOverrides, resetCombatDebugState, resetDebugState, sa
 import { addItemAction, destroyItemAction, removeItemAction, sellItemAction, toggleItemProtectionAction } from './actions/inventoryActions'
 import { equipItemAction, unequipItemAction } from './actions/equipmentActions'
 import { donateGuildRequestAction, claimGuildRewardAction, promoteGuildAction } from './actions/guildActions'
-import { debugLockSpellAction, debugUnlockSpellRankOneAction, resetSpellCooldownsAction, setSchoolDebugAction, setLevelCapAction, setThreatAction, setBossKillsAction, unlockAllSpellsAction } from './actions/progressionActions'
+import { debugLockSpellAction, debugUnlockSpellRankOneAction, resetSpellCooldownsAction, setSchoolDebugAction, setSchoolLevelDebugAction, setSchoolXpDebugAction, setLevelCapAction, setThreatAction, setBossKillsAction, unlockAllSpellsAction } from './actions/progressionActions'
 import { setChannelingEchoesAction, upgradeManaPillarAction, setManaPillarLevelAction, setChannelingManaGeneratedAction, setChannelingSustainAction, setChannelingDiscoveryAction } from './actions/channelingActions'
 import { canReserveFocusAction, setFocusImprovementLevelAction, upgradeFocusCapacityAction } from './actions/focusActions'
 import { assignResearchEchoAction, clearPreparedResearchAction, clearResearchEchoesAction, prepareResearchAction, removePreparedResearchAction, removeResearchEchoAction, setResearchEchoesAction } from './actions/researchActions'
@@ -35,6 +35,7 @@ import { forceCompleteResearchCycle } from '../game/systems/research/researchEng
 import { advanceWithOfflineBank as runOfflineBankAdvance, isOfflineBankSimulationActive, type OfflineBankResult } from '../game/systems/offline-bank/offlineBankSimulation'
 import type { OfflineBankReport } from '../game/systems/offline-bank/offlineBankReport'
 import { getSpellAutoCastFocusCost, isSpellUnlocked, syncSpellUnlocksForSchool } from '../game/systems/spells'
+import { getSchoolLevelStartXp } from '../game/systems/schools'
 import { applySpellPresetAction, createSpellPresetAction, deleteSpellPresetAction, duplicateSpellPresetAction, renameSpellPresetAction, saveSpellPresetAction, type ApplySpellPresetResult } from './actions/spellPresetActions'
 import { clearCombatLogUi, combatLogUiSink as combatLogSink } from '../game/ui/combatLogStore'
 import { combatAlertsObserver, combatAlertsSink, clearCombatAlerts } from '../game/ui/combatAlertsStore'
@@ -148,6 +149,8 @@ export interface GameActions {
   setPlayer: (changes: Partial<GameState['player']>) => void
   addMana: (amount: number) => void
   setSchoolDebug: (school: SchoolId, xp: number, level?: number) => void
+  setSchoolXpDebug: (school: SchoolId, xp: number) => void
+  setSchoolLevelDebug: (school: SchoolId, level: number) => void
   setLevelCap: (cap: number) => void
   setThreat: (amount: number) => void
   addItem: (itemId: ItemId, quantity: number) => void
@@ -360,6 +363,8 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   setPlayer: (changes) => set((state) => { state.player = { ...state.player, ...changes }; recalculateDerivedStats(state); return state }),
   addMana: (amount) => set((state) => { state.player.mana = Math.max(0, state.player.mana + sanitizeDebugNumber(amount)); recalculateDerivedStats(state); return state }),
   setSchoolDebug: (school, xp, level) => set((state) => { setSchoolDebugAction(state, school, xp, level); return state }),
+  setSchoolXpDebug: (school, xp) => set((state) => { setSchoolXpDebugAction(state, school, xp); return state }),
+  setSchoolLevelDebug: (school, level) => set((state) => { setSchoolLevelDebugAction(state, school, level); return state }),
   setLevelCap: (cap) => set((state) => { setLevelCapAction(state, cap); return state }),
   setThreat: (amount) => set((state) => { setThreatAction(state, amount); return state }),
   addItem: (itemId, quantity) => set((state) => { addItemAction(state, itemId, quantity); return state }),
@@ -380,7 +385,81 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   setGuildReputation: (amount) => set((state) => { state.progress.guildReputation = Math.max(0, amount); return state }),
   setBossKills: (bossId, amount) => set((state) => { setBossKillsAction(state, bossId, amount); return state }),
   applyDeveloperFixture: (_fixture) => undefined,
-  preset: (name) => set((state) => { clearCombatLogUi(); Object.assign(state, createInitialState()); state.lastOfflineBankReport = null; if (name === 'research') { (['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'] as const).forEach((itemId) => { state.inventory[itemId] = 100 }); state.player.mana = 100; (['fire', 'water', 'earth', 'air'] as const).forEach((schoolId, index) => { prepareResearchAction(state, `${schoolId}-fragment` as ItemId, schoolId, 50); setResearchEchoesAction(state, `research-${index + 1}` as ResearchSlotId, index === 0 ? 2 : 1) }) } if (name === 'combat') { state.inventory['fire-fragment'] = 10; state.schools.fire = { xp: 20, level: 2 }; syncSpellUnlocksForSchool(state, 'fire'); state.player.mana = 100; state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; spawnNextEnemy(state, combatLogUiSink) } if (name === 'boss') { state.inventory['fire-fragment'] = 15; state.inventory['wisp-essence'] = 10; state.inventory['grove-bark'] = 2; state.schools.fire = { xp: 80, level: 4 }; syncSpellUnlocksForSchool(state, 'fire'); state.progress.guildUnlocked = true; state.progress.firstBossKill = true; state.progress.emberStaffUnlocked = true; state.progress.forestHeartUnlocked = true; state.progress.autoHuntBossUnlocked = true; state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; state.combat.threatCleared = 20; spawnNextEnemy(state, combatLogUiSink) } if (name === 'guild') { state.progress.guildUnlocked = true; state.progress.guildRank = 'initiate'; state.progress.firstBossKill = true; state.progress.emberStaffUnlocked = true; state.progress.forestHeartUnlocked = true; state.progress.autoHuntBossUnlocked = true; state.inventory['fire-fragment'] = 20; state.progress.lifetimeKills = 30; state.progress.requestProgress['clear-the-woods'] = 30; state.progress.bossKillsByBoss['grove-sentinel'] = 2; state.progress.requestProgress['sentinel-breaker'] = 2; state.progress.guildReputation = 100 } if (name === 'main-boss' || name === 'chapter-complete') { state.inventory['fire-fragment'] = 20; state.inventory['wisp-essence'] = 12; state.inventory['grove-bark'] = 4; state.progress.guildUnlocked = true; state.progress.guildRank = 'apprentice'; state.progress.firstBossKill = true; state.progress.emberStaffUnlocked = true; state.progress.forestHeartUnlocked = true; state.progress.autoHuntBossUnlocked = true; state.progress.permanentFocusBonuses['forest-heart'] = 10; state.progress.permanentFocusBonuses['guild-apprentice'] = 10; state.progress.magicLevelCap = 20; state.schools.fire = { xp: 380, level: 20 }; syncSpellUnlocksForSchool(state, 'fire'); state.progress.firstMainBossKill = true; state.inventory.heartseed = 1; recalculateDerivedStats(state); state.combat.active = true; state.combat.dungeonId = 'whispering-woods'; spawnEnemy(state, 'forest-heart', combatLogUiSink); } return state }),
+  preset: (name) => set((state) => {
+    clearCombatLogUi()
+    Object.assign(state, createInitialState())
+    state.lastOfflineBankReport = null
+    if (name === 'research') {
+      ;(['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'] as const).forEach((itemId) => { state.inventory[itemId] = 100 })
+      state.player.mana = 100
+      ;(['fire', 'water', 'earth', 'air'] as const).forEach((schoolId, index) => {
+        prepareResearchAction(state, `${schoolId}-fragment` as ItemId, schoolId, 50)
+        setResearchEchoesAction(state, `research-${index + 1}` as ResearchSlotId, index === 0 ? 2 : 1)
+      })
+    }
+    if (name === 'combat') {
+      state.inventory['fire-fragment'] = 10
+      state.schools.fire = { xp: getSchoolLevelStartXp(2), level: 2 }
+      syncSpellUnlocksForSchool(state, 'fire')
+      state.player.mana = 100
+      state.combat.active = true
+      state.combat.dungeonId = 'whispering-woods'
+      spawnNextEnemy(state, combatLogUiSink)
+    }
+    if (name === 'boss') {
+      state.inventory['fire-fragment'] = 15
+      state.inventory['wisp-essence'] = 10
+      state.inventory['grove-bark'] = 2
+      state.schools.fire = { xp: getSchoolLevelStartXp(4), level: 4 }
+      syncSpellUnlocksForSchool(state, 'fire')
+      state.progress.guildUnlocked = true
+      state.progress.firstBossKill = true
+      state.progress.emberStaffUnlocked = true
+      state.progress.forestHeartUnlocked = true
+      state.progress.autoHuntBossUnlocked = true
+      state.combat.active = true
+      state.combat.dungeonId = 'whispering-woods'
+      state.combat.threatCleared = 20
+      spawnNextEnemy(state, combatLogUiSink)
+    }
+    if (name === 'guild') {
+      state.progress.guildUnlocked = true
+      state.progress.guildRank = 'initiate'
+      state.progress.firstBossKill = true
+      state.progress.emberStaffUnlocked = true
+      state.progress.forestHeartUnlocked = true
+      state.progress.autoHuntBossUnlocked = true
+      state.inventory['fire-fragment'] = 20
+      state.progress.lifetimeKills = 30
+      state.progress.requestProgress['clear-the-woods'] = 30
+      state.progress.bossKillsByBoss['grove-sentinel'] = 2
+      state.progress.requestProgress['sentinel-breaker'] = 2
+      state.progress.guildReputation = 100
+    }
+    if (name === 'main-boss' || name === 'chapter-complete') {
+      state.inventory['fire-fragment'] = 20
+      state.inventory['wisp-essence'] = 12
+      state.inventory['grove-bark'] = 4
+      state.progress.guildUnlocked = true
+      state.progress.guildRank = 'apprentice'
+      state.progress.firstBossKill = true
+      state.progress.emberStaffUnlocked = true
+      state.progress.forestHeartUnlocked = true
+      state.progress.autoHuntBossUnlocked = true
+      state.progress.permanentFocusBonuses['forest-heart'] = 10
+      state.progress.permanentFocusBonuses['guild-apprentice'] = 10
+      state.progress.magicLevelCap = 20
+      state.schools.fire = { xp: getSchoolLevelStartXp(20), level: 20 }
+      syncSpellUnlocksForSchool(state, 'fire')
+      state.progress.firstMainBossKill = true
+      state.inventory.heartseed = 1
+      recalculateDerivedStats(state)
+      state.combat.active = true
+      state.combat.dungeonId = 'whispering-woods'
+      spawnEnemy(state, 'forest-heart', combatLogUiSink)
+    }
+    return state
+  }),
   resumeFromHidden: (elapsedMs, notify = true) => set((state) => { if (elapsedMs > 1000) { state.offlineBankMs += elapsedMs; if (notify) pushNotification(state, `${Math.round(elapsedMs / 1000)}s added to Offline Bank`, 'info') } return state }),
   advanceWithOfflineBank: async (durationMs) => {
     const result = await runOfflineBankAdvance(durationMs, get, (recipe) => set((state) => { recipe(state); return state }), () => { get().saveGame('autosave') }, (state, itemId, amount) => recordRecentAcquisition(state as GameStore, itemId, amount))
@@ -415,7 +494,8 @@ const applyDeveloperFixture = (fixture: DeveloperFixtureId) => {
         state.inventory['wisp-essence'] = 12
       }
       if (completedDungeons >= 2) state.progress.magicLevelCap = Math.max(state.progress.magicLevelCap, BALANCE.schoolProgression.tutorialCompleteCap)
-      state.schools.fire = { xp: completedDungeons > 0 ? 80 : 20, level: completedDungeons > 0 ? 4 : 2 }
+      const fixtureLevel = completedDungeons > 0 ? 4 : 2
+      state.schools.fire = { xp: getSchoolLevelStartXp(fixtureLevel), level: fixtureLevel }
       syncSpellUnlocksForSchool(state, 'fire')
       const dungeonId = fixture === 'whispering-woods-ready' ? 'whispering-woods' : fixture === 'howling-den-ready' ? 'howling-den' : 'abandoned-catacombs'
       const dungeon = DUNGEONS[dungeonId]

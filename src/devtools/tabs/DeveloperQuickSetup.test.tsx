@@ -49,4 +49,23 @@ describe('Developer Quick Setup', () => {
     expect(confirm).toHaveBeenCalled()
     confirm.mockRestore()
   })
+
+  it('grants exact missing quantities for a selected equipment recipe', () => {
+    render(<DeveloperQuickSetup />)
+    fireEvent.change(screen.getByRole('combobox', { name: 'Quick Setup recipe' }), { target: { value: 'ember-staff' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Grant Missing Ingredients' }))
+
+    expect(useGameStore.getState().inventory).toMatchObject({ 'fire-fragment': 4, 'wisp-essence': 4, 'grove-bark': 1 })
+    expect(screen.getByText('Missing ingredients granted for: Ember Staff')).toBeTruthy()
+  })
+
+  it('clears the selected enemy and disables selection actions for an empty search', () => {
+    render(<DeveloperQuickSetup />)
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search quick combat enemies' }), { target: { value: 'no-such-enemy' } })
+
+    expect(screen.getAllByText('No matching enemies').length).toBeGreaterThan(0)
+    expect((screen.getByRole('button', { name: 'Spawn Enemy' }) as HTMLButtonElement).disabled).toBe(true)
+    expect((screen.getByRole('button', { name: 'Jump to Boss' }) as HTMLButtonElement).disabled).toBe(true)
+    expect((screen.getByRole('combobox', { name: 'Quick combat enemy' }) as HTMLSelectElement).value).toBe('')
+  })
 })

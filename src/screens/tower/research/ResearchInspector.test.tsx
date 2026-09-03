@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
+import { getSchoolTotalXpForLevel } from '../../../game/core/balance/schoolXpCurve'
 import { useGameStore } from '../../../store/gameStore'
 import { prepareResearchAction } from '../../../store/actions/researchActions'
 import { resetAllUiPreferences } from '../../../ui/preferences/uiPreferencesStore'
@@ -40,7 +41,7 @@ describe('ResearchInspector', () => {
     expect(screen.getByText('PROJECTED SCHOOL')).toBeTruthy()
     expect(document.querySelector('.research-projection-school')?.textContent).toBe('Fire')
     const slider = screen.getByLabelText('Research quantity slider') as HTMLInputElement
-    fireEvent.change(slider, { target: { value: '2' } })
+    fireEvent.change(slider, { target: { value: '9' } })
     expect(document.querySelector('.research-projection-level strong')?.textContent).toContain('LV 2')
     fireEvent.click(screen.getByRole('button', { name: 'WATER' }))
     expect(document.querySelector('.research-projection-school')?.textContent).toBe('Water')
@@ -68,7 +69,7 @@ describe('ResearchInspector', () => {
     const state = createInitialState()
     state.inventory['fire-fragment'] = 10
     state.schools.fire.level = state.progress.magicLevelCap
-    state.schools.fire.xp = state.progress.magicLevelCap * 20
+    state.schools.fire.xp = getSchoolTotalXpForLevel(state.progress.magicLevelCap)
     useGameStore.getState().hydrateState(state)
     render(<ResearchInspector itemId="fire-fragment" />)
 

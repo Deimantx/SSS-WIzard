@@ -4,6 +4,7 @@ import { serializeGameState } from './profileSaveManager'
 import { createInitialState, SAVE_VERSION } from '../store/initialState'
 import { DUNGEONS, isDungeonUnlocked, isTutorialCompleted } from '../game/content/dungeons/dungeons'
 import { MAX_ACTION_WORK_MS } from '../game/core/balance/combatTiming'
+import { getSchoolTotalXpForLevel } from '../game/core/balance/schoolXpCurve'
 
 describe('save navigation migration', () => {
   it('maps the old aggregate Tower screen to Channeling', () => {
@@ -419,7 +420,7 @@ describe('save navigation migration', () => {
     } as any
 
     const migrated = migrateSave(v23)
-    expect(migrated.saveVersion).toBe(24)
+    expect(migrated.saveVersion).toBe(SAVE_VERSION)
     expect(migrated.inventory).toMatchObject({ 'ember-staff': 1, 'tide-focus': 1, 'fire-fragment': 17 })
     expect(migrated.inventory).not.toHaveProperty('apprentice-wand')
     expect(migrated.protectedItems).toEqual({ 'fire-fragment': true })
@@ -428,12 +429,12 @@ describe('save navigation migration', () => {
     expect(migrated.progress.discoveredItems).toEqual(['ember-staff', 'tide-focus'])
     expect(migrated.progress.lifetimeKillsByMonster['grove-sentinel']).toBe(3)
     expect(migrated.progress.bossKillsByBoss['forest-heart']).toBe(2)
-    expect(migrated.schools).toMatchObject({ fire: { xp: 321, level: 4 }, water: { xp: 87, level: 2 } })
+    expect(migrated.schools).toMatchObject({ fire: { xp: getSchoolTotalXpForLevel(4), level: 4 }, water: { xp: getSchoolTotalXpForLevel(2), level: 2 } })
     expect(migrated.currencies.gold).toBe(987)
     expect(migrated.activities.transmutation.jobs['fire-fragment']).toMatchObject({ echoesAssigned: 1, progressMs: 1000 })
 
     const rerun = migrateSave(migrated)
-    expect(rerun.saveVersion).toBe(24)
+    expect(rerun.saveVersion).toBe(SAVE_VERSION)
     expect(rerun.inventory).toEqual(migrated.inventory)
     expect(rerun.protectedItems).toEqual(migrated.protectedItems)
     expect(rerun.equipment).toEqual(migrated.equipment)
@@ -505,5 +506,64 @@ describe('save navigation migration', () => {
       },
     } as any)
     expect(migrated.activities.research.slots['research-1']).toMatchObject({ remainingQuantity: 3, echoesAssigned: 1, progressMs: 0, status: 'waiting-mana' })
+  })
+})
+
+describe('V25 Magic School XP semantic migration', () => {
+  it('preserves old School levels while discarding old partial XP', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({
+      ...initial,
+      saveVersion: 24,
+      schools: {
+        fire: { level: 1, xp: 17 },
+        water: { level: 8, xp: 153 },
+        earth: { level: 20, xp: 380 },
+        air: { level: Number.NaN, xp: 999 },
+      },
+    } as any)
+
+    expect(migrated.saveVersion).toBe(SAVE_VERSION)
+    expect(migrated.schools).toEqual({
+      fire: { level: 1, xp: 0 },
+      water: { level: 8, xp: 2070 },
+      earth: { level: 20, xp: 29870 },
+      air: { level: 1, xp: 0 },
+    })
+    expect(migrated.progress.spellRanks).toMatchObject({ 'water-ward': 1, 'flow-mend': 1 })
+  })
+
+  it('clamps a migrated level to the current cap and authored maximum', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({
+      ...initial,
+      saveVersion: 24,
+      progress: { ...initial.progress, magicLevelCap: 40 },
+      schools: { ...initial.schools, fire: { level: 999, xp: 1 } },
+    } as any)
+    expect(migrated.schools.fire).toEqual({ level: 40, xp: getSchoolTotalXpForLevel(40) })
+  })
+
+  it('does not remap already migrated V25 partial progress', () => {
+    const initial = createInitialState()
+    const v25 = {
+      ...initial,
+      saveVersion: 25,
+      progress: { ...initial.progress, magicLevelCap: 40 },
+      schools: { ...initial.schools, fire: { level: 8, xp: 2270 } },
+    }
+    const migrated = migrateSave(v25)
+    expect(migrated.schools.fire).toEqual({ level: 8, xp: 2270 })
+    expect(migrateSave(migrated).schools.fire).toEqual({ level: 8, xp: 2270 })
+  })
+
+  it('applies the same conversion to an older save representative', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({
+      ...initial,
+      saveVersion: 15,
+      schools: { ...initial.schools, fire: { level: 4, xp: 70 } },
+    } as any)
+    expect(migrated.schools.fire).toEqual({ level: 4, xp: getSchoolTotalXpForLevel(4) })
   })
 })

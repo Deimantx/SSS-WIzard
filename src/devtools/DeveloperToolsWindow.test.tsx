@@ -8,6 +8,7 @@ describe('Developer Tools window presentation', () => {
     window.localStorage.clear()
     closeDeveloperTools()
     resetDeveloperToolsWindow()
+    setDeveloperToolsGeometry({ mode: 'workspace' }, false)
   })
 
   it('opens as a centered workspace with body content and no resize handles', () => {
@@ -34,6 +35,12 @@ describe('Developer Tools window presentation', () => {
     expect(windowElement.style.height).toBe('450px')
     expect(view.container.querySelectorAll('.developer-tools-resize-handle')).toHaveLength(3)
     expect(screen.getByRole('button', { name: 'Open full Developer Workspace' })).toBeTruthy()
+  })
+
+  it('resets docked geometry without changing docked mode', () => {
+    setDeveloperToolsGeometry({ mode: 'docked', dockedX: 120, dockedY: 90, dockedWidth: 700, dockedHeight: 450 }, false)
+    resetDeveloperToolsWindow()
+    expect(getDeveloperToolsState()).toMatchObject({ mode: 'docked', dockedWidth: 640, dockedHeight: 560 })
   })
 
   it('makes clear, mode, and close actions available in the header', () => {

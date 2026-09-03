@@ -1,29 +1,229 @@
 # Traits and special attacks
 
-> Runtime snapshot: `056705bee442836821b12edf1b1929aebded8f0e`  
-> Generated from current game data.  
-> Human-editable balancing document.
+Traits are expanded below. Special actions live with their owning enemy in the dungeon files.
 
-## Authored traits
+## Flicker
 
-| Trait ID | Owner monster IDs | Name | Description | Modifiers | Rules |
-| --- | --- | --- | --- | --- | --- |
-| forest-wisp-flicker | forest-wisp | Flicker | After Arc Spark resolves, gains Haste for 3 seconds. | [] | [<br>  {<br>    "id": "forest-wisp-flicker-arc-spark",<br>    "event": "on-action-resolve",<br>    "condition": {<br>      "type": "event-action-is",<br>      "actionId": "arc-spark"<br>    },<br>    "effects": [<br>      {<br>        "type": "apply-status",<br>        "target": "self",<br>        "statusId": "haste",<br>        "durationMs": 3000<br>      }<br>    ]<br>  }<br>] |
-| thornling-barkskin | thornling | Barkskin | Basic Attack damage received is reduced by 15%. | [<br>  {<br>    "key": "damage-taken-percent",<br>    "value": -0.15,<br>    "sourceTags": [<br>      "basic-attack"<br>    ]<br>  }<br>] | [] |
-| stone-rooted-shell | stone-root | Rooted Shell | Starts with Barrier equal to 15% max HP. | [] | [<br>  {<br>    "id": "stone-rooted-shell-start",<br>    "event": "on-combat-start",<br>    "effects": [<br>      {<br>        "type": "gain-barrier",<br>        "target": "self",<br>        "magnitude": {<br>          "type": "source-max-health-percent",<br>          "value": 0.15<br>        },<br>        "mode": "add",<br>        "durationMs": null,<br>        "tags": [<br>          "barrier"<br>        ]<br>      }<br>    ],<br>    "oncePerEncounter": true<br>  }<br>] |
-| grove-sentinel-ancient-growth | grove-sentinel | Ancient Growth | At 40% HP, gains a large Barrier once. | [] | [<br>  {<br>    "id": "grove-sentinel-ancient-growth-threshold",<br>    "event": "on-hp-threshold",<br>    "condition": {<br>      "type": "self-hp-below-percent",<br>      "percent": 40<br>    },<br>    "effects": [<br>      {<br>        "type": "gain-barrier",<br>        "target": "self",<br>        "magnitude": {<br>          "type": "source-max-health-percent",<br>          "value": 0.2222222222222222<br>        },<br>        "mode": "add",<br>        "durationMs": null,<br>        "tags": [<br>          "barrier"<br>        ]<br>      }<br>    ],<br>    "oncePerEncounter": true<br>  }<br>] |
-| forest-heart-living-core | forest-heart | Living Core | At 50% HP, gains 15% Action speed once. | [] | [<br>  {<br>    "id": "forest-heart-living-core-threshold",<br>    "event": "on-hp-threshold",<br>    "condition": {<br>      "type": "self-hp-below-percent",<br>      "percent": 50<br>    },<br>    "effects": [<br>      {<br>        "type": "apply-status",<br>        "target": "self",<br>        "statusId": "haste"<br>      }<br>    ],<br>    "oncePerEncounter": true<br>  }<br>] |
-| cavefang-wolf-predator-instinct | cavefang-wolf | Predator Instinct | Deals 25% more damage while the target is at or below 35% HP. | [<br>  {<br>    "key": "damage-dealt-percent",<br>    "value": 0.25,<br>    "condition": {<br>      "type": "target-hp-below-percent",<br>      "percent": 35<br>    }<br>  }<br>] | [] |
-| razorclaw-lynx-relentless-hunter | razorclaw-lynx | Relentless Hunter | Deals 20% more damage to Bleeding targets. | [<br>  {<br>    "key": "damage-dealt-percent",<br>    "value": 0.2,<br>    "condition": {<br>      "type": "target-has-status",<br>      "statusId": "bleeding"<br>    }<br>  }<br>] | [] |
-| corrupted-dire-wolf-arcane-corruption | corrupted-dire-wolf | Arcane Corruption | Corruption grants 10% resistance to Fire, Water, Earth, and Air. | [] | [] |
-| corrupted-greatbear-thick-hide | corrupted-greatbear | Thick Hide | Basic Attack damage received is reduced by 20%. | [<br>  {<br>    "key": "damage-taken-percent",<br>    "value": -0.2,<br>    "sourceTags": [<br>      "basic-attack"<br>    ]<br>  }<br>] | [] |
-| corrupted-greatbear-unstable-corruption | corrupted-greatbear | Unstable Corruption | At 50% HP, gains Haste and shifts to the Corrupted Pattern once. | [] | [<br>  {<br>    "id": "corrupted-greatbear-unstable-corruption-threshold",<br>    "event": "on-hp-threshold",<br>    "condition": {<br>      "type": "self-hp-below-percent",<br>      "percent": 50<br>    },<br>    "effects": [<br>      {<br>        "type": "apply-status",<br>        "target": "self",<br>        "statusId": "haste"<br>      },<br>      {<br>        "type": "set-action-pattern",<br>        "target": "self",<br>        "patternId": "corrupted"<br>      }<br>    ],<br>    "oncePerEncounter": true<br>  }<br>] |
-| restless-skeleton-brittle-bones | restless-skeleton | Brittle Bones | Physical damage is reduced by 25%. | [] | [] |
-| grave-wraith-ethereal-form | grave-wraith | Ethereal Form | Physical damage is reduced by 50%; Fire, Water, Earth, and Air damage are increased by 25%. | [] | [] |
-| fallen-acolyte-grave-channeling | fallen-acolyte | Grave Channeling | Below 50% HP, healing done is increased by 50%. | [<br>  {<br>    "key": "healing-done-percent",<br>    "value": 0.5,<br>    "condition": {<br>      "type": "self-hp-below-percent",<br>      "percent": 50<br>    }<br>  }<br>] | [] |
-| archmage-edrin-arcane-remnant | archmage-edrin-shade | Arcane Remnant | Resists Fire, Water, Earth, and Air damage by 15%. | [] | [] |
-| archmage-edrin-unbound-spirit | archmage-edrin-shade | Unbound Spirit | At 50% HP, gains Haste and shifts to the Unbound Pattern once. | [] | [<br>  {<br>    "id": "archmage-edrin-unbound-spirit-threshold",<br>    "event": "on-hp-threshold",<br>    "condition": {<br>      "type": "self-hp-below-percent",<br>      "percent": 50<br>    },<br>    "effects": [<br>      {<br>        "type": "apply-status",<br>        "target": "self",<br>        "statusId": "haste"<br>      },<br>      {<br>        "type": "set-action-pattern",<br>        "target": "self",<br>        "patternId": "unbound"<br>      }<br>    ],<br>    "oncePerEncounter": true<br>  }<br>] |
+**ID:** `forest-wisp-flicker`
 
-## Special action definition shape
+**Owners:** Forest Wisp
 
-Monster special actions are documented in each dungeon enemy file. Each row keeps the action ID, name, duration, tags, description, and exact effect graph. Action pattern steps are included as JSON below each monster so pattern IDs and step order remain visible.
+After Arc Spark resolves, gains Haste for 3 seconds.
+
+### Modifiers
+
+- None
+
+### Trigger rules
+
+- When Action Resolve and the current action is Arc Spark: Apply Haste to the caster for 3 s.
+## Barkskin
+
+**ID:** `thornling-barkskin`
+
+**Owners:** Thornling
+
+Basic Attack damage received is reduced by 15%.
+
+### Modifiers
+
+- -15% Damage taken from Basic Attack sources
+
+### Trigger rules
+
+- None
+## Rooted Shell
+
+**ID:** `stone-rooted-shell`
+
+**Owners:** Stone Root
+
+Starts with Barrier equal to 15% max HP.
+
+### Modifiers
+
+- None
+
+### Trigger rules
+
+- When Combat Start: Grant 15% of the caster's Max Health Barrier to the caster. Once per encounter.
+## Ancient Growth
+
+**ID:** `grove-sentinel-ancient-growth`
+
+**Owners:** Grove Sentinel
+
+At 40% HP, gains a large Barrier once.
+
+### Modifiers
+
+- None
+
+### Trigger rules
+
+- When HP Threshold and the caster's Health is below 40%: Grant 22.22% of the caster's Max Health Barrier to the caster. Once per encounter.
+## Living Core
+
+**ID:** `forest-heart-living-core`
+
+**Owners:** Forest Heart
+
+At 50% HP, gains 15% Action speed once.
+
+### Modifiers
+
+- None
+
+### Trigger rules
+
+- When HP Threshold and the caster's Health is below 50%: Apply Haste to the caster. Once per encounter.
+## Predator Instinct
+
+**ID:** `cavefang-wolf-predator-instinct`
+
+**Owners:** Cavefang Wolf
+
+Deals 25% more damage while the target is at or below 35% HP.
+
+### Modifiers
+
+- +25% Damage dealt when the opponent's Health is below 35%
+
+### Trigger rules
+
+- None
+## Relentless Hunter
+
+**ID:** `razorclaw-lynx-relentless-hunter`
+
+**Owners:** Razorclaw Lynx
+
+Deals 20% more damage to Bleeding targets.
+
+### Modifiers
+
+- +20% Damage dealt when the opponent has Bleeding
+
+### Trigger rules
+
+- None
+## Arcane Corruption
+
+**ID:** `corrupted-dire-wolf-arcane-corruption`
+
+**Owners:** Corrupted Dire Wolf
+
+Corruption grants 10% resistance to Fire, Water, Earth, and Air.
+
+### Modifiers
+
+- None
+
+### Trigger rules
+
+- None
+## Thick Hide
+
+**ID:** `corrupted-greatbear-thick-hide`
+
+**Owners:** Corrupted Greatbear
+
+Basic Attack damage received is reduced by 20%.
+
+### Modifiers
+
+- -20% Damage taken from Basic Attack sources
+
+### Trigger rules
+
+- None
+## Unstable Corruption
+
+**ID:** `corrupted-greatbear-unstable-corruption`
+
+**Owners:** Corrupted Greatbear
+
+At 50% HP, gains Haste and shifts to the Corrupted Pattern once.
+
+### Modifiers
+
+- None
+
+### Trigger rules
+
+- When HP Threshold and the caster's Health is below 50%: Apply Haste to the caster; Switch the caster to the Corrupted action pattern. Once per encounter.
+## Brittle Bones
+
+**ID:** `restless-skeleton-brittle-bones`
+
+**Owners:** Restless Skeleton
+
+Physical damage is reduced by 25%.
+
+### Modifiers
+
+- None
+
+### Trigger rules
+
+- None
+## Ethereal Form
+
+**ID:** `grave-wraith-ethereal-form`
+
+**Owners:** Grave Wraith
+
+Physical damage is reduced by 50%; Fire, Water, Earth, and Air damage are increased by 25%.
+
+### Modifiers
+
+- None
+
+### Trigger rules
+
+- None
+## Grave Channeling
+
+**ID:** `fallen-acolyte-grave-channeling`
+
+**Owners:** Fallen Acolyte
+
+Below 50% HP, healing done is increased by 50%.
+
+### Modifiers
+
+- +50% Healing done when the caster's Health is below 50%
+
+### Trigger rules
+
+- None
+## Arcane Remnant
+
+**ID:** `archmage-edrin-arcane-remnant`
+
+**Owners:** Archmage Edrin's Shade
+
+Resists Fire, Water, Earth, and Air damage by 15%.
+
+### Modifiers
+
+- None
+
+### Trigger rules
+
+- None
+## Unbound Spirit
+
+**ID:** `archmage-edrin-unbound-spirit`
+
+**Owners:** Archmage Edrin's Shade
+
+At 50% HP, gains Haste and shifts to the Unbound Pattern once.
+
+### Modifiers
+
+- None
+
+### Trigger rules
+
+- When HP Threshold and the caster's Health is below 50%: Apply Haste to the caster; Switch the caster to the Unbound action pattern. Once per encounter.

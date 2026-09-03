@@ -1,22 +1,35 @@
 # Magic School XP
 
-> Runtime snapshot: `056705bee442836821b12edf1b1929aebded8f0e`  
-> Generated from current game data.  
-> Human-editable balancing document.
+School XP follows this authored curve:
 
-## Magic school XP
+**XP needed to start level N:** N x 20 XP.
 
-~~~text
-SCHOOL_LEVEL_XP(level) = level × 20
-School level start XP = the runtime helper getSchoolLevelStartXp(level)
-~~~
-
-| Curve ID | Runtime formula / value |
+| Level | XP to start level |
 | --- | --- |
-| SCHOOL_LEVEL_XP | level × 20 |
-| getSchoolLevelStartXp | level 1 start = 0; runtime helper defines subsequent start XP |
+| 1 | 20 |
+| 2 | 40 |
+| 3 | 60 |
+| 4 | 80 |
+| 5 | 100 |
+| 6 | 120 |
+| 7 | 140 |
+| 8 | 160 |
+| 9 | 180 |
+| 10 | 200 |
+| 11 | 220 |
+| 12 | 240 |
+| 13 | 260 |
+| 14 | 280 |
+| 15 | 300 |
+| 16 | 320 |
+| 17 | 340 |
+| 18 | 360 |
+| 19 | 380 |
+| 20 | 400 |
 
-## Rank-I auto-cast Focus reference
+The starting school cap is 20; after the tutorial milestone it becomes 40.
+
+## Auto-Cast Focus reference
 
 | Rank | Focus cost |
 | --- | --- |

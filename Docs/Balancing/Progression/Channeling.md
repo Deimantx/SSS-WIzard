@@ -1,38 +1,111 @@
 # Channeling
 
-> Runtime snapshot: `056705bee442836821b12edf1b1929aebded8f0e`  
-> Generated from current game data.  
-> Human-editable balancing document.
+## Channeling settings
 
-## Channeling constants
-
-| Balance ID | Runtime value |
-| --- | --- |
-| BALANCE.channeling.baseNaturalRegenPerSecond | 5 |
-| BALANCE.channeling.echoFocusCost | 10 |
-| BALANCE.channeling.echoManaPerSecond | 5 |
-| BALANCE.channeling.maxEchoes | 5 |
-| BALANCE.channeling.discoveryEchoMultiplier | 1.1 |
-| BALANCE.channeling.stableLeylineRegenBonus | 1 |
-| BALANCE.channeling.stableLeylineThreshold | 2500 |
-| BALANCE.channeling.echoResonanceDurationMs | 120000 |
-| BALANCE.channeling.deepReservoirThreshold | 225 |
-| BALANCE.channeling.deepReservoirCapacityBonus | 25 |
+| Stable setting ID | Setting | Value |
+| --- | --- | --- |
+| channeling.baseNaturalRegenPerSecond | Base Natural Regen Per Second | 5 |
+| channeling.echoFocusCost | Echo Focus Cost | 10 |
+| channeling.echoManaPerSecond | Echo Mana Per Second | 5 |
+| channeling.maxEchoes | Max Echoes | 5 |
+| channeling.discoveryEchoMultiplier | Discovery Echo Multiplier | 1.1 |
+| channeling.stableLeylineRegenBonus | Stable Leyline Regen Bonus | 1 |
+| channeling.stableLeylineThreshold | Stable Leyline Threshold | 2500 |
+| channeling.echoResonanceDurationMs | Echo Resonance Duration | 2 min |
+| channeling.deepReservoirThreshold | Deep Reservoir Threshold | 225 |
+| channeling.deepReservoirCapacityBonus | Deep Reservoir Capacity Bonus | 25 |
 
 ## Mana pillars
 
-| Pillar ID | Name | Effect | Effect label | Value per level | Max level | Fragment requirements | Level costs |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| leyline-conduit | Leyline Conduit | flat-regen | PASSIVE MANA REGEN | 1 | 10 | water-fragment, air-fragment | {<br>  "1": {<br>    "fragment": 5,<br>    "lifeEssence": 10<br>  },<br>  "2": {<br>    "fragment": 10,<br>    "lifeEssence": 20<br>  },<br>  "3": {<br>    "fragment": 15,<br>    "lifeEssence": 30<br>  },<br>  "4": {<br>    "fragment": 25,<br>    "lifeEssence": 50<br>  },<br>  "5": {<br>    "fragment": 40,<br>    "lifeEssence": 80<br>  },<br>  "6": {<br>    "fragment": 60,<br>    "lifeEssence": 120<br>  },<br>  "7": {<br>    "fragment": 90,<br>    "lifeEssence": 180<br>  },<br>  "8": {<br>    "fragment": 130,<br>    "lifeEssence": 260<br>  },<br>  "9": {<br>    "fragment": 180,<br>    "lifeEssence": 360<br>  },<br>  "10": {<br>    "fragment": 250,<br>    "lifeEssence": 500<br>  }<br>} |
-| arcane-reservoir | Arcane Reservoir | flat-capacity | MAX MANA | 25 | 10 | earth-fragment, water-fragment | {<br>  "1": {<br>    "fragment": 5,<br>    "lifeEssence": 10<br>  },<br>  "2": {<br>    "fragment": 10,<br>    "lifeEssence": 20<br>  },<br>  "3": {<br>    "fragment": 15,<br>    "lifeEssence": 30<br>  },<br>  "4": {<br>    "fragment": 25,<br>    "lifeEssence": 50<br>  },<br>  "5": {<br>    "fragment": 40,<br>    "lifeEssence": 80<br>  },<br>  "6": {<br>    "fragment": 60,<br>    "lifeEssence": 120<br>  },<br>  "7": {<br>    "fragment": 90,<br>    "lifeEssence": 180<br>  },<br>  "8": {<br>    "fragment": 130,<br>    "lifeEssence": 260<br>  },<br>  "9": {<br>    "fragment": 180,<br>    "lifeEssence": 360<br>  },<br>  "10": {<br>    "fragment": 250,<br>    "lifeEssence": 500<br>  }<br>} |
-| mana-resonance | Mana Resonance | passive-regen-percent | PASSIVE MANA AMPLIFICATION | 5 | 10 | fire-fragment, air-fragment | {<br>  "1": {<br>    "fragment": 5,<br>    "lifeEssence": 10<br>  },<br>  "2": {<br>    "fragment": 10,<br>    "lifeEssence": 20<br>  },<br>  "3": {<br>    "fragment": 15,<br>    "lifeEssence": 30<br>  },<br>  "4": {<br>    "fragment": 25,<br>    "lifeEssence": 50<br>  },<br>  "5": {<br>    "fragment": 40,<br>    "lifeEssence": 80<br>  },<br>  "6": {<br>    "fragment": 60,<br>    "lifeEssence": 120<br>  },<br>  "7": {<br>    "fragment": 90,<br>    "lifeEssence": 180<br>  },<br>  "8": {<br>    "fragment": 130,<br>    "lifeEssence": 260<br>  },<br>  "9": {<br>    "fragment": 180,<br>    "lifeEssence": 360<br>  },<br>  "10": {<br>    "fragment": 250,<br>    "lifeEssence": 500<br>  }<br>} |
-| astral-expansion | Astral Expansion | capacity-percent | MAX MANA AMPLIFICATION | 5 | 10 | earth-fragment, fire-fragment | {<br>  "1": {<br>    "fragment": 5,<br>    "lifeEssence": 10<br>  },<br>  "2": {<br>    "fragment": 10,<br>    "lifeEssence": 20<br>  },<br>  "3": {<br>    "fragment": 15,<br>    "lifeEssence": 30<br>  },<br>  "4": {<br>    "fragment": 25,<br>    "lifeEssence": 50<br>  },<br>  "5": {<br>    "fragment": 40,<br>    "lifeEssence": 80<br>  },<br>  "6": {<br>    "fragment": 60,<br>    "lifeEssence": 120<br>  },<br>  "7": {<br>    "fragment": 90,<br>    "lifeEssence": 180<br>  },<br>  "8": {<br>    "fragment": 130,<br>    "lifeEssence": 260<br>  },<br>  "9": {<br>    "fragment": 180,<br>    "lifeEssence": 360<br>  },<br>  "10": {<br>    "fragment": 250,<br>    "lifeEssence": 500<br>  }<br>} |
-| echo-attunement | Echo Attunement | echo-percent | ECHO MANA | 5 | 10 | fire-fragment, water-fragment, earth-fragment, air-fragment | {<br>  "1": {<br>    "fragment": 5,<br>    "lifeEssence": 10<br>  },<br>  "2": {<br>    "fragment": 10,<br>    "lifeEssence": 20<br>  },<br>  "3": {<br>    "fragment": 15,<br>    "lifeEssence": 30<br>  },<br>  "4": {<br>    "fragment": 25,<br>    "lifeEssence": 50<br>  },<br>  "5": {<br>    "fragment": 40,<br>    "lifeEssence": 80<br>  },<br>  "6": {<br>    "fragment": 60,<br>    "lifeEssence": 120<br>  },<br>  "7": {<br>    "fragment": 90,<br>    "lifeEssence": 180<br>  },<br>  "8": {<br>    "fragment": 130,<br>    "lifeEssence": 260<br>  },<br>  "9": {<br>    "fragment": 180,<br>    "lifeEssence": 360<br>  },<br>  "10": {<br>    "fragment": 250,<br>    "lifeEssence": 500<br>  }<br>} |
+## Leyline Conduit
+
+**ID:** `leyline-conduit`
+
+Strengthens the tower's natural connection to the leyline.
+
+**Effect:** PASSIVE MANA REGEN
+**Value per level:** 1
+**Maximum level:** 10
+**Required fragments:** Water Fragment, Air Fragment
+## Arcane Reservoir
+
+**ID:** `arcane-reservoir`
+
+Expands the tower's capacity to hold Mana.
+
+**Effect:** MAX MANA
+**Value per level:** 25
+**Maximum level:** 10
+**Required fragments:** Earth Fragment, Water Fragment
+## Mana Resonance
+
+**ID:** `mana-resonance`
+
+Amplifies all passive non-Echo Mana regeneration.
+
+**Effect:** PASSIVE MANA AMPLIFICATION
+**Value per level:** 5%
+**Maximum level:** 10
+**Required fragments:** Fire Fragment, Air Fragment
+## Astral Expansion
+
+**ID:** `astral-expansion`
+
+Amplifies final Max Mana, including equipment bonuses.
+
+**Effect:** MAX MANA AMPLIFICATION
+**Value per level:** 5%
+**Maximum level:** 10
+**Required fragments:** Earth Fragment, Fire Fragment
+## Echo Attunement
+
+**ID:** `echo-attunement`
+
+Increases Mana generated by Arcane Echoes.
+
+**Effect:** ECHO MANA
+**Value per level:** 5%
+**Maximum level:** 10
+**Required fragments:** Fire Fragment, Water Fragment, Earth Fragment, Air Fragment
+
+## Rank I level costs
+
+| Level | Primary fragment | Life Essence |
+| --- | --- | --- |
+| 1 | 5 | 10 |
+| 2 | 10 | 20 |
+| 3 | 15 | 30 |
+| 4 | 25 | 50 |
+| 5 | 40 | 80 |
+| 6 | 60 | 120 |
+| 7 | 90 | 180 |
+| 8 | 130 | 260 |
+| 9 | 180 | 360 |
+| 10 | 250 | 500 |
 
 ## Discoveries
 
-| Discovery ID | Name | Condition | Reward |
-| --- | --- | --- | --- |
-| stable-leyline | Stable Leyline | Generate 2,500 Mana through Channeling. | +1 Natural Mana Regeneration / second. |
-| echo-resonance | Echo Resonance | Maintain 5 Arcane Echoes simultaneously for 120 seconds. | Arcane Echo Mana generation +10%. |
-| deep-reservoir | Deep Reservoir | Reach 225 Maximum Mana. | +25 Max Mana. |
+## Stable Leyline
+
+**ID:** `stable-leyline`
+
+The tower’s natural current settles into a reliable rhythm.
+
+**Unlock:** Generate 2,500 Mana through Channeling.
+**Reward:** +1 Natural Mana Regeneration / second.
+## Echo Resonance
+
+**ID:** `echo-resonance`
+
+Five Arcane Echoes sustain a resonant harmonic.
+
+**Unlock:** Maintain 5 Arcane Echoes simultaneously for 120 seconds.
+**Reward:** Arcane Echo Mana generation +10%.
+## Deep Reservoir
+
+**ID:** `deep-reservoir`
+
+The tower learns to hold a deeper reserve of stored leyline power.
+
+**Unlock:** Reach 225 Maximum Mana.
+**Reward:** +25 Max Mana.

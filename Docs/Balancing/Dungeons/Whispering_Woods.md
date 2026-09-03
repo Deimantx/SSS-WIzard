@@ -1,27 +1,24 @@
 # Whispering Woods
 
-> Runtime snapshot: `056705bee442836821b12edf1b1929aebded8f0e`  
-> Generated from current game data.  
-> Human-editable balancing document.
+**ID:** `whispering-woods`
 
-**Dungeon ID:** whispering-woods  
-**Description:** A restless grove where living roots and arcane wisps guard the Forest Heart.
+A restless grove where living roots and arcane wisps guard the Forest Heart.
 
-| Field ID | Runtime value |
+| Setting | Value |
 | --- | --- |
-| threatRequired | 20 |
-| boss | forest-heart |
-| encounterDelayMs | 5000 ms (5 s) |
-| unlock | {<br>  "type": "always"<br>} |
-| completesTutorial | false |
+| Threat required | 20 |
+| Boss | Forest Heart (forest-heart) |
+| Encounter delay | 5 s |
+| Unlock | Available from the start |
+| Tutorial milestone | No |
 
 ## Normal encounter pool
 
-| Monster ID | Name | Role |
+| Enemy ID | Name | Role |
 | --- | --- | --- |
-| forest-wisp | Forest Wisp | normal |
-| thornling | Thornling | normal |
-| stone-root | Stone Root | normal |
-| grove-sentinel | Grove Sentinel | normal |
+| forest-wisp | Forest Wisp | Normal |
+| thornling | Thornling | Normal |
+| stone-root | Stone Root | Normal |
+| grove-sentinel | Grove Sentinel | Normal |
 
-Boss: forest-heart — Forest Heart
+Boss: Forest Heart (forest-heart)

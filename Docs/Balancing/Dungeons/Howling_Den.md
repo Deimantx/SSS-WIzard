@@ -1,26 +1,23 @@
 # Howling Den
 
-> Runtime snapshot: `056705bee442836821b12edf1b1929aebded8f0e`  
-> Generated from current game data.  
-> Human-editable balancing document.
+**ID:** `howling-den`
 
-**Dungeon ID:** howling-den  
-**Description:** A predator-haunted den twisted by unstable magic.
+A predator-haunted den twisted by unstable magic.
 
-| Field ID | Runtime value |
+| Setting | Value |
 | --- | --- |
-| threatRequired | 25 |
-| boss | corrupted-greatbear |
-| encounterDelayMs | 5000 ms (5 s) |
-| unlock | {<br>  "type": "boss-kill",<br>  "bossId": "forest-heart"<br>} |
-| completesTutorial | false |
+| Threat required | 25 |
+| Boss | Corrupted Greatbear (corrupted-greatbear) |
+| Encounter delay | 5 s |
+| Unlock | Defeat Forest Heart |
+| Tutorial milestone | No |
 
 ## Normal encounter pool
 
-| Monster ID | Name | Role |
+| Enemy ID | Name | Role |
 | --- | --- | --- |
-| cavefang-wolf | Cavefang Wolf | normal |
-| razorclaw-lynx | Razorclaw Lynx | normal |
-| corrupted-dire-wolf | Corrupted Dire Wolf | normal |
+| cavefang-wolf | Cavefang Wolf | Normal |
+| razorclaw-lynx | Razorclaw Lynx | Normal |
+| corrupted-dire-wolf | Corrupted Dire Wolf | Normal |
 
-Boss: corrupted-greatbear — Corrupted Greatbear
+Boss: Corrupted Greatbear (corrupted-greatbear)

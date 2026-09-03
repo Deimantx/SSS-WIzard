@@ -1,41 +1,37 @@
 # Crafting economy
 
-> Runtime snapshot: `056705bee442836821b12edf1b1929aebded8f0e`  
-> Generated from current game data.  
-> Human-editable balancing document.
+These comparisons are derived for planning and do not add new runtime values.
 
-These are authored per-cycle costs and durations. The estimates are derived for comparison and are not additional runtime constants.
-
-| Recipe ID | Output | Ingredient count | Duration | Mana cost | Output per hour at one Echo |
+| Recipe ID | Output | Ingredient count | Duration | Mana cost | Output per hour |
 | --- | --- | --- | --- | --- | --- |
-| fire-fragment | fire-fragment × 1 | 0 | 6000 ms (6 s) | 15 | 600.00 output/hour |
-| water-fragment | water-fragment × 1 | 0 | 6000 ms (6 s) | 15 | 600.00 output/hour |
-| earth-fragment | earth-fragment × 1 | 0 | 6000 ms (6 s) | 15 | 600.00 output/hour |
-| air-fragment | air-fragment × 1 | 0 | 6000 ms (6 s) | 15 | 600.00 output/hour |
-| prismatic-fragment | prismatic-fragment × 1 | 18 | 18000 ms (18 s) | 0 | 200.00 output/hour |
-| ember-staff | ember-staff × 1 | 9 | 8000 ms (8 s) | 0 | 450.00 output/hour |
-| wispwood-wand | wispwood-wand × 1 | 8 | 7000 ms (7 s) | 0 | 514.29 output/hour |
-| tide-focus | tide-focus × 1 | 8 | 9000 ms (9 s) | 0 | 400.00 output/hour |
-| stoneweave-robe | stoneweave-robe × 1 | 8 | 9000 ms (9 s) | 0 | 400.00 output/hour |
-| windthread-charm | windthread-charm × 1 | 8 | 9000 ms (9 s) | 0 | 400.00 output/hour |
-| wispveil-hood | wispveil-hood × 1 | 9 | 10000 ms (10 s) | 0 | 360.00 output/hour |
-| grovekeeper-mantle | grovekeeper-mantle × 1 | 9 | 10000 ms (10 s) | 0 | 360.00 output/hour |
-| wispbound-ring | wispbound-ring × 1 | 8 | 8000 ms (8 s) | 0 | 450.00 output/hour |
-| fangbound-dagger | fangbound-dagger × 1 | 10 | 12000 ms (12 s) | 0 | 300.00 output/hour |
-| fangbound-buckler | fangbound-buckler × 1 | 11 | 12000 ms (12 s) | 0 | 300.00 output/hour |
-| corrupted-howlstaff | corrupted-howlstaff × 1 | 11 | 18000 ms (18 s) | 0 | 200.00 output/hour |
-| razorclaw-circlet | razorclaw-circlet × 1 | 8 | 12000 ms (12 s) | 0 | 300.00 output/hour |
-| predator-hide-mantle | predator-hide-mantle × 1 | 10 | 12000 ms (12 s) | 0 | 300.00 output/hour |
-| greatbear-vestment | greatbear-vestment × 1 | 15 | 18000 ms (18 s) | 0 | 200.00 output/hour |
-| howling-signet | howling-signet × 1 | 10 | 14000 ms (14 s) | 0 | 257.14 output/hour |
-| graveglass-wand | graveglass-wand × 1 | 11 | 18000 ms (18 s) | 0 | 200.00 output/hour |
-| edrins-remnant-staff | edrins-remnant-staff × 1 | 19 | 30000 ms (30 s) | 0 | 120.00 output/hour |
-| soulward-focus | soulward-focus × 1 | 14 | 20000 ms (20 s) | 0 | 180.00 output/hour |
-| soulward-shield | soulward-shield × 1 | 16 | 20000 ms (20 s) | 0 | 180.00 output/hour |
-| acolyte-vestments | acolyte-vestments × 1 | 15 | 20000 ms (20 s) | 0 | 180.00 output/hour |
-| wraithveil-hood | wraithveil-hood × 1 | 14 | 20000 ms (20 s) | 0 | 180.00 output/hour |
-| ossuary-mantle | ossuary-mantle × 1 | 16 | 20000 ms (20 s) | 0 | 180.00 output/hour |
-| soulglass-amulet | soulglass-amulet × 1 | 15 | 20000 ms (20 s) | 0 | 180.00 output/hour |
-| gravebinder-ring | gravebinder-ring × 1 | 10 | 18000 ms (18 s) | 0 | 200.00 output/hour |
+| fire-fragment | Fire Fragment x1 | 0 | 6 s | 15 | 600 output/hour |
+| water-fragment | Water Fragment x1 | 0 | 6 s | 15 | 600 output/hour |
+| earth-fragment | Earth Fragment x1 | 0 | 6 s | 15 | 600 output/hour |
+| air-fragment | Air Fragment x1 | 0 | 6 s | 15 | 600 output/hour |
+| prismatic-fragment | Prismatic Fragment x1 | 18 | 18 s | 0 | 200 output/hour |
+| ember-staff | Ember Staff x1 | 9 | 8 s | 0 | 450 output/hour |
+| wispwood-wand | Wispwood Wand x1 | 8 | 7 s | 0 | 514.29 output/hour |
+| tide-focus | Tide Focus x1 | 8 | 9 s | 0 | 400 output/hour |
+| stoneweave-robe | Stoneweave Robe x1 | 8 | 9 s | 0 | 400 output/hour |
+| windthread-charm | Windthread Charm x1 | 8 | 9 s | 0 | 400 output/hour |
+| wispveil-hood | Wispveil Hood x1 | 9 | 10 s | 0 | 360 output/hour |
+| grovekeeper-mantle | Grovekeeper Mantle x1 | 9 | 10 s | 0 | 360 output/hour |
+| wispbound-ring | Wispbound Ring x1 | 8 | 8 s | 0 | 450 output/hour |
+| fangbound-dagger | Fangbound Dagger x1 | 10 | 12 s | 0 | 300 output/hour |
+| fangbound-buckler | Fangbound Buckler x1 | 11 | 12 s | 0 | 300 output/hour |
+| corrupted-howlstaff | Corrupted Howlstaff x1 | 11 | 18 s | 0 | 200 output/hour |
+| razorclaw-circlet | Razorclaw Circlet x1 | 8 | 12 s | 0 | 300 output/hour |
+| predator-hide-mantle | Predator-Hide Mantle x1 | 10 | 12 s | 0 | 300 output/hour |
+| greatbear-vestment | Greatbear Vestment x1 | 15 | 18 s | 0 | 200 output/hour |
+| howling-signet | Howling Signet x1 | 10 | 14 s | 0 | 257.14 output/hour |
+| graveglass-wand | Graveglass Wand x1 | 11 | 18 s | 0 | 200 output/hour |
+| edrins-remnant-staff | Edrin's Remnant Staff x1 | 19 | 30 s | 0 | 120 output/hour |
+| soulward-focus | Soulward Focus x1 | 14 | 20 s | 0 | 180 output/hour |
+| soulward-shield | Soulward Shield x1 | 16 | 20 s | 0 | 180 output/hour |
+| acolyte-vestments | Acolyte Vestments x1 | 15 | 20 s | 0 | 180 output/hour |
+| wraithveil-hood | Wraithveil Hood x1 | 14 | 20 s | 0 | 180 output/hour |
+| ossuary-mantle | Ossuary Mantle x1 | 16 | 20 s | 0 | 180 output/hour |
+| soulglass-amulet | Soulglass Amulet x1 | 15 | 20 s | 0 | 180 output/hour |
+| gravebinder-ring | Gravebinder Ring x1 | 10 | 18 s | 0 | 200 output/hour |
 
-> Derived: output/hour assumes one continuously assigned Echo and does not account for missing ingredients, unlocks, Mana availability, or activity downtime.
+Output per hour assumes one continuously assigned Echo, with no missing ingredients, unlock gates, Mana shortage, or downtime.

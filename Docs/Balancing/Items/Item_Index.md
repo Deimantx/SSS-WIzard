@@ -1,54 +1,50 @@
 # Item index
 
-> Runtime snapshot: `056705bee442836821b12edf1b1929aebded8f0e`  
-> Generated from current game data.  
-> Human-editable balancing document.
+Use this compact index to find every authored item. Equipment stats, crafting, and combat effects are expanded in the dungeon equipment files.
 
-Stats are exact authored runtime values. Percentage fields are stored as runtime fractions (for example 0.1 means 10%). Source relationships are derived from equipment sets, monster loot tables, and recipe outputs; the exporter does not parse the player-facing source text.
-
-| Item ID | Name | Kind | Category | Inventory category | Material subtype | Equipment slot | Weapon hands | Stats | Source label | Derived relationships | Sell value | Can destroy |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| prismatic-fragment | Prismatic Fragment | material | material | material | arcane | [NOT DEFINED IN RUNTIME] | [NOT DEFINED IN RUNTIME] | {} | Transmutation | recipe:prismatic-fragment (Transmutation output) | 20 | true |
-| life-essence | Life Essence | material | monster-loot | material | creature | [NOT DEFINED IN RUNTIME] | [NOT DEFINED IN RUNTIME] | {} | All monsters | monster:forest-wisp (Whispering Woods normal loot)<br>monster:thornling (Whispering Woods normal loot)<br>monster:stone-root (Whispering Woods normal loot)<br>monster:grove-sentinel (Whispering Woods normal loot)<br>monster:forest-heart (Whispering Woods boss loot)<br>monster:cavefang-wolf (Howling Den normal loot)<br>monster:razorclaw-lynx (Howling Den normal loot)<br>monster:corrupted-dire-wolf (Howling Den normal loot)<br>monster:corrupted-greatbear (Howling Den boss loot)<br>monster:restless-skeleton (Abandoned Catacombs normal loot)<br>monster:grave-wraith (Abandoned Catacombs normal loot)<br>monster:fallen-acolyte (Abandoned Catacombs normal loot)<br>monster:archmage-edrin-shade (Abandoned Catacombs boss loot) | 2 | true |
-| fire-fragment | Fire Fragment | material | elemental | material | elemental | [NOT DEFINED IN RUNTIME] | [NOT DEFINED IN RUNTIME] | {} | Transmutation | recipe:fire-fragment (Transmutation output) | 1 | true |
-| water-fragment | Water Fragment | material | elemental | material | elemental | [NOT DEFINED IN RUNTIME] | [NOT DEFINED IN RUNTIME] | {} | Transmutation | recipe:water-fragment (Transmutation output) | 1 | true |
-| earth-fragment | Earth Fragment | material | elemental | material | elemental | [NOT DEFINED IN RUNTIME] | [NOT DEFINED IN RUNTIME] | {} | Transmutation | recipe:earth-fragment (Transmutation output) | 1 | true |
-| air-fragment | Air Fragment | material | elemental | material | elemental | [NOT DEFINED IN RUNTIME] | [NOT DEFINED IN RUNTIME] | {} | Transmutation | recipe:air-fragment (Transmutation output) | 1 | true |
-| wisp-essence | Wisp Essence | material | monster-loot | material | creature | [NOT DEFINED IN RUNTIME] | [NOT DEFINED IN RUNTIME] | {} | Whispering Woods normal monsters | monster:forest-wisp (Whispering Woods normal loot)<br>monster:thornling (Whispering Woods normal loot)<br>monster:stone-root (Whispering Woods normal loot)<br>monster:grove-sentinel (Whispering Woods normal loot) | 3 | true |
-| grove-bark | Grove Bark | material | monster-loot | material | creature | [NOT DEFINED IN RUNTIME] | [NOT DEFINED IN RUNTIME] | {} | Grove Sentinel | monster:grove-sentinel (Whispering Woods normal loot) | 5 | true |
-| heartseed | Heartseed | material | boss-loot | loot | creature | [NOT DEFINED IN RUNTIME] | [NOT DEFINED IN RUNTIME] | {} | Forest Heart first and repeat kills | monster:forest-heart (Whispering Woods boss loot) | null | false |
-| ember-staff | Ember Staff | equipment | equipment | equipment | [NOT DEFINED IN RUNTIME] | weapon | 2 | {<br>  "basicDamage": 4,<br>  "maxMana": 10,<br>  "spellPower": 20<br>} | Transmutation | dungeon:whispering-woods (Equipment set origin)<br>recipe:ember-staff (Transmutation output) | 40 | true |
-| wispwood-wand | Wispwood Wand | equipment | equipment | equipment | [NOT DEFINED IN RUNTIME] | weapon | 1 | {<br>  "basicDamage": 2,<br>  "maxMana": 5,<br>  "spellPower": 10<br>} | Transmutation | dungeon:whispering-woods (Equipment set origin)<br>recipe:wispwood-wand (Transmutation output) | 40 | true |
-| tide-focus | Tide Focus | equipment | equipment | equipment | [NOT DEFINED IN RUNTIME] | offhand | [NOT DEFINED IN RUNTIME] | {<br>  "maxMana": 15,<br>  "spellPower": 10<br>} | Transmutation | dungeon:whispering-woods (Equipment set origin)<br>recipe:tide-focus (Transmutation output) | 40 | true |
-| stoneweave-robe | Stoneweave Robe | equipment | equipment | equipment | [NOT DEFINED IN RUNTIME] | armor | [NOT DEFINED IN RUNTIME] | {<br>  "maxHealth": 20<br>} | Transmutation | dungeon:whispering-woods (Equipment set origin)<br>recipe:stoneweave-robe (Transmutation output) | 40 | true |
-| windthread-charm | Windthread Charm | equipment | equipment | equipment | [NOT DEFINED IN RUNTIME] | amulet | [NOT DEFINED IN RUNTIME] | {<br>  "maxFocus": 10,<br>  "spellPower": 10<br>} | Transmutation | dungeon:whispering-woods (Equipment set origin)<br>recipe:windthread-charm (Transmutation output) | 40 | true |
-| wispveil-hood | Wispveil Hood | equipment | equipment | equipment | [NOT DEFINED IN RUNTIME] | helmet | [NOT DEFINED IN RUNTIME] | {<br>  "maxMana": 15,<br>  "manaRegen": 1<br>} | Transmutation | dungeon:whispering-woods (Equipment set origin)<br>recipe:wispveil-hood (Transmutation output) | 40 | true |
-| grovekeeper-mantle | Grovekeeper Mantle | equipment | equipment | equipment | [NOT DEFINED IN RUNTIME] | cape | [NOT DEFINED IN RUNTIME] | {<br>  "maxHealth": 15,<br>  "resistances": {<br>    "physical": 0.03<br>  }<br>} | Transmutation | dungeon:whispering-woods (Equipment set origin)<br>recipe:grovekeeper-mantle (Transmutation output) | 40 | true |
-| wispbound-ring | Wispbound Ring | equipment | equipment | equipment | [NOT DEFINED IN RUNTIME] | ring | [NOT DEFINED IN RUNTIME] | {<br>  "manaRegen": 1,<br>  "maxMana": 10<br>} | Transmutation | dungeon:whispering-woods (Equipment set origin)<br>recipe:wispbound-ring (Transmutation output) | 40 | true |
-| heartseed-necklace | Heartseed Necklace | equipment | equipment | equipment | [NOT DEFINED IN RUNTIME] | amulet | [NOT DEFINED IN RUNTIME] | {<br>  "maxHealth": 20<br>} | Forest Heart direct drop | dungeon:whispering-woods (Equipment set origin)<br>monster:forest-heart (Whispering Woods boss loot) | null | true |
-| predator-fang | Predator Fang | material | monster-loot | material | creature | [NOT DEFINED IN RUNTIME] | [NOT DEFINED IN RUNTIME] | {} | Howling Den predators | monster:cavefang-wolf (Howling Den normal loot)<br>monster:razorclaw-lynx (Howling Den normal loot)<br>monster:corrupted-dire-wolf (Howling Den normal loot) | 4 | true |
-| predator-hide | Predator Hide | material | monster-loot | material | creature | [NOT DEFINED IN RUNTIME] | [NOT DEFINED IN RUNTIME] | {} | Howling Den predators | monster:cavefang-wolf (Howling Den normal loot)<br>monster:razorclaw-lynx (Howling Den normal loot)<br>monster:corrupted-dire-wolf (Howling Den normal loot)<br>monster:corrupted-greatbear (Howling Den boss loot) | 5 | true |
-| corrupted-beast-essence | Corrupted Beast Essence | material | monster-loot | material | arcane | [NOT DEFINED IN RUNTIME] | [NOT DEFINED IN RUNTIME] | {} | Corrupted Dire Wolf and Corrupted Greatbear | monster:corrupted-dire-wolf (Howling Den normal loot)<br>monster:corrupted-greatbear (Howling Den boss loot) | 6 | true |
-| greatbear-core | Greatbear Core | material | boss-loot | material | arcane | [NOT DEFINED IN RUNTIME] | [NOT DEFINED IN RUNTIME] | {} | Corrupted Greatbear | monster:corrupted-greatbear (Howling Den boss loot) | 20 | true |
-| fangbound-dagger | Fangbound Dagger | equipment | equipment | equipment | [NOT DEFINED IN RUNTIME] | weapon | 1 | {<br>  "basicDamage": 8,<br>  "basicAttackSpeedPct": 0.08,<br>  "critChance": 0.05<br>} | Transmutation | dungeon:howling-den (Equipment set origin)<br>recipe:fangbound-dagger (Transmutation output) | 70 | true |
-| fangbound-buckler | Fangbound Buckler | equipment | equipment | equipment | [NOT DEFINED IN RUNTIME] | offhand | [NOT DEFINED IN RUNTIME] | {<br>  "maxHealth": 30,<br>  "blockChance": 0.15,<br>  "resistances": {<br>    "physical": 0.03<br>  }<br>} | Transmutation | dungeon:howling-den (Equipment set origin)<br>recipe:fangbound-buckler (Transmutation output) | 70 | true |
-| corrupted-howlstaff | Corrupted Howlstaff | equipment | equipment | equipment | [NOT DEFINED IN RUNTIME] | weapon | 2 | {<br>  "spellPower": 30,<br>  "cooldownRecoveryPct": 0.1,<br>  "statusDurationPct": 0.1<br>} | Transmutation | dungeon:howling-den (Equipment set origin)<br>recipe:corrupted-howlstaff (Transmutation output) | 70 | true |
-| razorclaw-circlet | Razorclaw Circlet | equipment | equipment | equipment | [NOT DEFINED IN RUNTIME] | helmet | [NOT DEFINED IN RUNTIME] | {<br>  "critChance": 0.02,<br>  "critDamage": 0.15,<br>  "basicAttackSpeedPct": 0.05<br>} | Transmutation | dungeon:howling-den (Equipment set origin)<br>recipe:razorclaw-circlet (Transmutation output) | 70 | true |
-| predator-hide-mantle | Predator-Hide Mantle | equipment | equipment | equipment | [NOT DEFINED IN RUNTIME] | cape | [NOT DEFINED IN RUNTIME] | {<br>  "resistances": {<br>    "physical": 0.05<br>  }<br>} | Transmutation | dungeon:howling-den (Equipment set origin)<br>recipe:predator-hide-mantle (Transmutation output) | 70 | true |
-| greatbear-vestment | Greatbear Vestment | equipment | equipment | equipment | [NOT DEFINED IN RUNTIME] | armor | [NOT DEFINED IN RUNTIME] | {<br>  "maxHealth": 40,<br>  "defense": 10,<br>  "resistances": {<br>    "physical": 0.1<br>  }<br>} | Transmutation | dungeon:howling-den (Equipment set origin)<br>recipe:greatbear-vestment (Transmutation output) | 70 | true |
-| howling-signet | Howling Signet | equipment | equipment | equipment | [NOT DEFINED IN RUNTIME] | ring | [NOT DEFINED IN RUNTIME] | {<br>  "maxMana": 20,<br>  "maxHealth": 10<br>} | Transmutation | dungeon:howling-den (Equipment set origin)<br>recipe:howling-signet (Transmutation output) | 70 | true |
-| greatbear-heartstone | Greatbear Heartstone | equipment | equipment | equipment | [NOT DEFINED IN RUNTIME] | amulet | [NOT DEFINED IN RUNTIME] | {<br>  "maxHealth": 25,<br>  "resistances": {<br>    "fire": 0.05,<br>    "water": 0.05,<br>    "earth": 0.05,<br>    "air": 0.05<br>  }<br>} | Corrupted Greatbear direct drop | dungeon:howling-den (Equipment set origin)<br>monster:corrupted-greatbear (Howling Den boss loot) | null | true |
-| ossuary-remnant | Ossuary Remnant | material | monster-loot | material | creature | [NOT DEFINED IN RUNTIME] | [NOT DEFINED IN RUNTIME] | {} | Restless Skeleton and Fallen Acolyte | monster:restless-skeleton (Abandoned Catacombs normal loot)<br>monster:fallen-acolyte (Abandoned Catacombs normal loot) | 4 | true |
-| graveglass-shard | Graveglass Shard | material | monster-loot | material | arcane | [NOT DEFINED IN RUNTIME] | [NOT DEFINED IN RUNTIME] | {} | Grave Wraith, Fallen Acolyte, and Archmage Edrin’s Shade | monster:restless-skeleton (Abandoned Catacombs normal loot)<br>monster:grave-wraith (Abandoned Catacombs normal loot)<br>monster:fallen-acolyte (Abandoned Catacombs normal loot)<br>monster:archmage-edrin-shade (Abandoned Catacombs boss loot) | 5 | true |
-| soul-residue | Soul Residue | material | monster-loot | material | arcane | [NOT DEFINED IN RUNTIME] | [NOT DEFINED IN RUNTIME] | {} | Grave Wraith, Fallen Acolyte, and Archmage Edrin’s Shade | monster:grave-wraith (Abandoned Catacombs normal loot)<br>monster:fallen-acolyte (Abandoned Catacombs normal loot)<br>monster:archmage-edrin-shade (Abandoned Catacombs boss loot) | 6 | true |
-| edrin-remnant | Edrin Remnant | material | boss-loot | material | arcane | [NOT DEFINED IN RUNTIME] | [NOT DEFINED IN RUNTIME] | {} | Archmage Edrin’s Shade | monster:archmage-edrin-shade (Abandoned Catacombs boss loot) | 20 | true |
-| graveglass-wand | Graveglass Wand | equipment | equipment | equipment | [NOT DEFINED IN RUNTIME] | weapon | 1 | {<br>  "spellPower": 30,<br>  "cooldownRecoveryPct": 0.1,<br>  "manaCostReductionPct": 0.1<br>} | Transmutation | dungeon:abandoned-catacombs (Equipment set origin)<br>recipe:graveglass-wand (Transmutation output) | 110 | true |
-| edrins-remnant-staff | Edrin's Remnant Staff | equipment | equipment | equipment | [NOT DEFINED IN RUNTIME] | weapon | 2 | {<br>  "spellPower": 50,<br>  "cooldownRecoveryPct": 0.1,<br>  "statusDurationPct": 0.15<br>} | Transmutation | dungeon:abandoned-catacombs (Equipment set origin)<br>recipe:edrins-remnant-staff (Transmutation output) | 110 | true |
-| soulward-focus | Soulward Focus | equipment | equipment | equipment | [NOT DEFINED IN RUNTIME] | offhand | [NOT DEFINED IN RUNTIME] | {<br>  "maxMana": 15,<br>  "manaRegen": 5,<br>  "barrierPowerPct": 0.15<br>} | Transmutation | dungeon:abandoned-catacombs (Equipment set origin)<br>recipe:soulward-focus (Transmutation output) | 110 | true |
-| soulward-shield | Soulward Shield | equipment | equipment | equipment | [NOT DEFINED IN RUNTIME] | offhand | [NOT DEFINED IN RUNTIME] | {<br>  "maxHealth": 20,<br>  "manaRegen": 1,<br>  "blockChance": 0.15,<br>  "barrierPowerPct": 0.1,<br>  "resistances": {<br>    "fire": 0.1,<br>    "water": 0.1,<br>    "earth": 0.1,<br>    "air": 0.1<br>  }<br>} | Transmutation | dungeon:abandoned-catacombs (Equipment set origin)<br>recipe:soulward-shield (Transmutation output) | 110 | true |
-| acolyte-vestments | Acolyte Vestments | equipment | equipment | equipment | [NOT DEFINED IN RUNTIME] | armor | [NOT DEFINED IN RUNTIME] | {<br>  "maxMana": 20,<br>  "healingDonePct": 0.1,<br>  "resistances": {<br>    "fire": 0.1,<br>    "water": 0.1,<br>    "earth": 0.1,<br>    "air": 0.1<br>  }<br>} | Transmutation | dungeon:abandoned-catacombs (Equipment set origin)<br>recipe:acolyte-vestments (Transmutation output) | 110 | true |
-| wraithveil-hood | Wraithveil Hood | equipment | equipment | equipment | [NOT DEFINED IN RUNTIME] | helmet | [NOT DEFINED IN RUNTIME] | {<br>  "spellPower": 25,<br>  "statusDurationPct": 0.15<br>} | Transmutation | dungeon:abandoned-catacombs (Equipment set origin)<br>recipe:wraithveil-hood (Transmutation output) | 110 | true |
-| ossuary-mantle | Ossuary Mantle | equipment | equipment | equipment | [NOT DEFINED IN RUNTIME] | cape | [NOT DEFINED IN RUNTIME] | {<br>  "maxHealth": 25,<br>  "maxMana": 20,<br>  "resistances": {<br>    "fire": 0.1,<br>    "water": 0.1,<br>    "earth": 0.1,<br>    "air": 0.1<br>  }<br>} | Transmutation | dungeon:abandoned-catacombs (Equipment set origin)<br>recipe:ossuary-mantle (Transmutation output) | 110 | true |
-| soulglass-amulet | Soulglass Amulet | equipment | equipment | equipment | [NOT DEFINED IN RUNTIME] | amulet | [NOT DEFINED IN RUNTIME] | {<br>  "spellPower": 10,<br>  "statusDurationPct": 0.15,<br>  "damageOverTimePct": 0.15<br>} | Transmutation | dungeon:abandoned-catacombs (Equipment set origin)<br>recipe:soulglass-amulet (Transmutation output) | 110 | true |
-| gravebinder-ring | Gravebinder Ring | equipment | equipment | equipment | [NOT DEFINED IN RUNTIME] | ring | [NOT DEFINED IN RUNTIME] | {<br>  "spellPower": 10<br>} | Transmutation | dungeon:abandoned-catacombs (Equipment set origin)<br>recipe:gravebinder-ring (Transmutation output) | 110 | true |
-| edrins-signet | Edrin's Signet | equipment | equipment | equipment | [NOT DEFINED IN RUNTIME] | ring | [NOT DEFINED IN RUNTIME] | {<br>  "maxMana": 25,<br>  "manaCostReductionPct": 0.1<br>} | Archmage Edrin’s Shade direct drop | dungeon:abandoned-catacombs (Equipment set origin)<br>monster:archmage-edrin-shade (Abandoned Catacombs boss loot) | null | true |
+| Item ID | Name | Kind | Category | Source | Sell value | Can destroy |
+| --- | --- | --- | --- | --- | --- | --- |
+| prismatic-fragment | Prismatic Fragment | material | Material | Transmutation | 20 | Yes |
+| life-essence | Life Essence | material | Monster Loot | All monsters | 2 | Yes |
+| fire-fragment | Fire Fragment | material | Elemental | Transmutation | 1 | Yes |
+| water-fragment | Water Fragment | material | Elemental | Transmutation | 1 | Yes |
+| earth-fragment | Earth Fragment | material | Elemental | Transmutation | 1 | Yes |
+| air-fragment | Air Fragment | material | Elemental | Transmutation | 1 | Yes |
+| wisp-essence | Wisp Essence | material | Monster Loot | Whispering Woods normal monsters | 3 | Yes |
+| grove-bark | Grove Bark | material | Monster Loot | Grove Sentinel | 5 | Yes |
+| heartseed | Heartseed | material | Boss Loot | Forest Heart first and repeat kills | Not sellable | No |
+| ember-staff | Ember Staff | equipment | Equipment | Transmutation | 40 | Yes |
+| wispwood-wand | Wispwood Wand | equipment | Equipment | Transmutation | 40 | Yes |
+| tide-focus | Tide Focus | equipment | Equipment | Transmutation | 40 | Yes |
+| stoneweave-robe | Stoneweave Robe | equipment | Equipment | Transmutation | 40 | Yes |
+| windthread-charm | Windthread Charm | equipment | Equipment | Transmutation | 40 | Yes |
+| wispveil-hood | Wispveil Hood | equipment | Equipment | Transmutation | 40 | Yes |
+| grovekeeper-mantle | Grovekeeper Mantle | equipment | Equipment | Transmutation | 40 | Yes |
+| wispbound-ring | Wispbound Ring | equipment | Equipment | Transmutation | 40 | Yes |
+| heartseed-necklace | Heartseed Necklace | equipment | Equipment | Forest Heart direct drop | Not sellable | Yes |
+| predator-fang | Predator Fang | material | Monster Loot | Howling Den predators | 4 | Yes |
+| predator-hide | Predator Hide | material | Monster Loot | Howling Den predators | 5 | Yes |
+| corrupted-beast-essence | Corrupted Beast Essence | material | Monster Loot | Corrupted Dire Wolf and Corrupted Greatbear | 6 | Yes |
+| greatbear-core | Greatbear Core | material | Boss Loot | Corrupted Greatbear | 20 | Yes |
+| fangbound-dagger | Fangbound Dagger | equipment | Equipment | Transmutation | 70 | Yes |
+| fangbound-buckler | Fangbound Buckler | equipment | Equipment | Transmutation | 70 | Yes |
+| corrupted-howlstaff | Corrupted Howlstaff | equipment | Equipment | Transmutation | 70 | Yes |
+| razorclaw-circlet | Razorclaw Circlet | equipment | Equipment | Transmutation | 70 | Yes |
+| predator-hide-mantle | Predator-Hide Mantle | equipment | Equipment | Transmutation | 70 | Yes |
+| greatbear-vestment | Greatbear Vestment | equipment | Equipment | Transmutation | 70 | Yes |
+| howling-signet | Howling Signet | equipment | Equipment | Transmutation | 70 | Yes |
+| greatbear-heartstone | Greatbear Heartstone | equipment | Equipment | Corrupted Greatbear direct drop | Not sellable | Yes |
+| ossuary-remnant | Ossuary Remnant | material | Monster Loot | Restless Skeleton and Fallen Acolyte | 4 | Yes |
+| graveglass-shard | Graveglass Shard | material | Monster Loot | Grave Wraith, Fallen Acolyte, and Archmage Edrin’s Shade | 5 | Yes |
+| soul-residue | Soul Residue | material | Monster Loot | Grave Wraith, Fallen Acolyte, and Archmage Edrin’s Shade | 6 | Yes |
+| edrin-remnant | Edrin Remnant | material | Boss Loot | Archmage Edrin’s Shade | 20 | Yes |
+| graveglass-wand | Graveglass Wand | equipment | Equipment | Transmutation | 110 | Yes |
+| edrins-remnant-staff | Edrin's Remnant Staff | equipment | Equipment | Transmutation | 110 | Yes |
+| soulward-focus | Soulward Focus | equipment | Equipment | Transmutation | 110 | Yes |
+| soulward-shield | Soulward Shield | equipment | Equipment | Transmutation | 110 | Yes |
+| acolyte-vestments | Acolyte Vestments | equipment | Equipment | Transmutation | 110 | Yes |
+| wraithveil-hood | Wraithveil Hood | equipment | Equipment | Transmutation | 110 | Yes |
+| ossuary-mantle | Ossuary Mantle | equipment | Equipment | Transmutation | 110 | Yes |
+| soulglass-amulet | Soulglass Amulet | equipment | Equipment | Transmutation | 110 | Yes |
+| gravebinder-ring | Gravebinder Ring | equipment | Equipment | Transmutation | 110 | Yes |
+| edrins-signet | Edrin's Signet | equipment | Equipment | Archmage Edrin’s Shade direct drop | Not sellable | Yes |

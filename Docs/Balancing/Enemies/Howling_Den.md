@@ -1,258 +1,257 @@
 # Howling Den enemies
 
-> Runtime snapshot: `056705bee442836821b12edf1b1929aebded8f0e`  
-> Generated from current game data.  
-> Human-editable balancing document.
+## Quick comparison
 
-| Monster ID | Name | Role | HP | Basic damage | Basic attack time | Defense | Crit chance | Crit damage | Block chance | Resistances | Status immunities | XP reward |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| cavefang-wolf | Cavefang Wolf | monster | 115 | 12 | 2200 ms (2.2 s) | 10 | 0.05 | 1.5 | 0 | {} | [NOT DEFINED IN RUNTIME] | [NOT DEFINED IN RUNTIME] |
-| razorclaw-lynx | Razorclaw Lynx | monster | 130 | 11 | 1900 ms (1.9 s) | 10 | 0.05 | 1.5 | 0 | {} | [NOT DEFINED IN RUNTIME] | [NOT DEFINED IN RUNTIME] |
-| corrupted-dire-wolf | Corrupted Dire Wolf | monster | 160 | 14 | 2300 ms (2.3 s) | 10 | 0.05 | 1.5 | 0 | {<br>  "fire": 0.1,<br>  "water": 0.1,<br>  "earth": 0.1,<br>  "air": 0.1<br>} | [NOT DEFINED IN RUNTIME] | [NOT DEFINED IN RUNTIME] |
-| corrupted-greatbear | Corrupted Greatbear | boss | 900 | 22 | 2800 ms (2.8 s) | 10 | 0.05 | 1.5 | 0 | {} | [NOT DEFINED IN RUNTIME] | [NOT DEFINED IN RUNTIME] |
+| Enemy ID | Name | Role | Max Health | Basic Attack | Basic Attack time | Defense |
+| --- | --- | --- | --- | --- | --- | --- |
+| cavefang-wolf | Cavefang Wolf | Normal | 115 | 12 | 2.2 s | 10 |
+| razorclaw-lynx | Razorclaw Lynx | Normal | 130 | 11 | 1.9 s | 10 |
+| corrupted-dire-wolf | Corrupted Dire Wolf | Normal | 160 | 14 | 2.3 s | 10 |
+| corrupted-greatbear | Corrupted Greatbear | Boss | 900 | 22 | 2.8 s | 10 |
 
-## Cavefang Wolf (cavefang-wolf)
+## Enemy details
+
+### Cavefang Wolf (cavefang-wolf)
 
 A patient predator that waits for weakness
 
+### Stats
+
+| Stat | Value |
+| --- | --- |
+| Role | Normal |
+| Max Health | 115 |
+| Basic Attack damage | 12 |
+| Basic Attack time | 2.2 s |
+| Defense | 10 |
+| Critical Strike chance | 5% |
+| Critical Strike damage | 1.5x |
+| Block chance | 0% |
+| Resistances | None |
+| Damage immunities | None |
+| Status immunities | None |
+
 ### Traits
 
-- cavefang-wolf-predator-instinct: Deals 25% more damage while the target is at or below 35% HP.
-
-### Actions
-
-| Action ID | Name | Action time | Tags | Description | Exact effects |
-| --- | --- | --- | --- | --- | --- |
-| pounce | Pounce | 1400 ms (1.4 s) | special, physical, melee, control | The predator lunges at the target and delays the Player's Basic Attack. | [<br>  {<br>    "type": "deal-damage",<br>    "target": "opponent",<br>    "components": [<br>      {<br>        "damageType": "physical",<br>        "magnitude": {<br>          "type": "source-basic-damage-percent",<br>          "value": 1.5<br>        }<br>      }<br>    ],<br>    "tags": [<br>      "direct"<br>    ]<br>  },<br>  {<br>    "type": "modify-action-timer",<br>    "target": "opponent",<br>    "action": "basic-attack",<br>    "amountMs": 500<br>  }<br>] |
+- Predator Instinct: Deals 25% more damage while the target is at or below 35% HP.
 
 ### Action patterns
 
-~~~json
-{
-  "default": {
-    "id": "default",
-    "steps": [
-      {
-        "id": "basic-1",
-        "type": "basic"
-      },
-      {
-        "id": "basic-2",
-        "type": "basic"
-      },
-      {
-        "id": "pounce-step",
-        "type": "action",
-        "actionId": "pounce"
-      }
-    ]
-  }
-}
-~~~
+- **default:** Basic Attack -> Basic Attack -> Pounce
+
+### Special actions
+
+#### Pounce
+
+**ID:** `pounce`
+
+**Action time:** 1.4 s
+**Tags:** Special, Physical, Melee, Control
+
+The predator lunges at the target and delays the Player's Basic Attack.
+
+**What it does:** 150% of Basic Attack damage Physical damage to the opponent; Delay the opponent's Basic Attack by 500 ms
 
 ### Loot
 
-| Item ID | Min | Max | Chance (runtime fraction) | Chance (%) |
-| --- | --- | --- | --- | --- |
-| predator-fang | 1 | 1 | 0.55 | 55.00000000000001% (runtime fraction 0.55) |
-| predator-hide | 1 | 1 | 0.3 | 30% (runtime fraction 0.3) |
-| life-essence | 1 | 3 | 1 | 100% (runtime fraction 1) |
+| Item ID | Item | Quantity | Chance |
+| --- | --- | --- | --- |
+| predator-fang | Predator Fang | 1-1 | 55% |
+| predator-hide | Predator Hide | 1-1 | 30% |
+| life-essence | Life Essence | 1-3 | 100% |
 
-## Razorclaw Lynx (razorclaw-lynx)
+### Razorclaw Lynx (razorclaw-lynx)
 
 A blur of claws and hungry momentum
 
+### Stats
+
+| Stat | Value |
+| --- | --- |
+| Role | Normal |
+| Max Health | 130 |
+| Basic Attack damage | 11 |
+| Basic Attack time | 1.9 s |
+| Defense | 10 |
+| Critical Strike chance | 5% |
+| Critical Strike damage | 1.5x |
+| Block chance | 0% |
+| Resistances | None |
+| Damage immunities | None |
+| Status immunities | None |
+
 ### Traits
 
-- razorclaw-lynx-relentless-hunter: Deals 20% more damage to Bleeding targets.
-
-### Actions
-
-| Action ID | Name | Action time | Tags | Description | Exact effects |
-| --- | --- | --- | --- | --- | --- |
-| rending-claws | Rending Claws | 1300 ms (1.3 s) | special, physical, melee, debuff | Raking claws cut the target and leave a lingering Bleeding wound. | [<br>  {<br>    "type": "deal-damage",<br>    "target": "opponent",<br>    "components": [<br>      {<br>        "damageType": "physical",<br>        "magnitude": {<br>          "type": "source-basic-damage-percent",<br>          "value": 1.25<br>        }<br>      }<br>    ],<br>    "tags": [<br>      "direct"<br>    ]<br>  },<br>  {<br>    "type": "apply-status",<br>    "target": "opponent",<br>    "statusId": "bleeding",<br>    "durationMs": 8000,<br>    "periodicEffects": [<br>      {<br>        "type": "deal-damage",<br>        "target": "self",<br>        "components": [<br>          {<br>            "damageType": "physical",<br>            "magnitude": {<br>              "type": "source-basic-damage-percent",<br>              "value": 0.3625<br>            }<br>          }<br>        ],<br>        "tags": [<br>          "dot",<br>          "physical"<br>        ]<br>      }<br>    ],<br>    "tags": [<br>      "debuff",<br>      "dot",<br>      "physical"<br>    ]<br>  }<br>] |
+- Relentless Hunter: Deals 20% more damage to Bleeding targets.
 
 ### Action patterns
 
-~~~json
-{
-  "default": {
-    "id": "default",
-    "steps": [
-      {
-        "id": "basic-1",
-        "type": "basic"
-      },
-      {
-        "id": "rending-claws-step",
-        "type": "action",
-        "actionId": "rending-claws"
-      },
-      {
-        "id": "basic-2",
-        "type": "basic"
-      }
-    ]
-  }
-}
-~~~
+- **default:** Basic Attack -> Rending Claws -> Basic Attack
+
+### Special actions
+
+#### Rending Claws
+
+**ID:** `rending-claws`
+
+**Action time:** 1.3 s
+**Tags:** Special, Physical, Melee, Debuff
+
+Raking claws cut the target and leave a lingering Bleeding wound.
+
+**What it does:** 125% of Basic Attack damage Physical damage to the opponent; Apply Bleeding to the opponent for 8 s; periodic effect: 36.25% of Basic Attack damage Physical damage to the status holder
 
 ### Loot
 
-| Item ID | Min | Max | Chance (runtime fraction) | Chance (%) |
-| --- | --- | --- | --- | --- |
-| predator-fang | 1 | 1 | 0.45 | 45% (runtime fraction 0.45) |
-| predator-hide | 1 | 1 | 0.45 | 45% (runtime fraction 0.45) |
-| life-essence | 1 | 3 | 1 | 100% (runtime fraction 1) |
+| Item ID | Item | Quantity | Chance |
+| --- | --- | --- | --- |
+| predator-fang | Predator Fang | 1-1 | 45% |
+| predator-hide | Predator Hide | 1-1 | 45% |
+| life-essence | Life Essence | 1-3 | 100% |
 
-## Corrupted Dire Wolf (corrupted-dire-wolf)
+### Corrupted Dire Wolf (corrupted-dire-wolf)
 
 A beast split between fang and sorcery
 
+### Stats
+
+| Stat | Value |
+| --- | --- |
+| Role | Normal |
+| Max Health | 160 |
+| Basic Attack damage | 14 |
+| Basic Attack time | 2.3 s |
+| Defense | 10 |
+| Critical Strike chance | 5% |
+| Critical Strike damage | 1.5x |
+| Block chance | 0% |
+| Resistances | Fire +10%, Water +10%, Earth +10%, Air +10% |
+| Damage immunities | None |
+| Status immunities | None |
+
 ### Traits
 
-- corrupted-dire-wolf-arcane-corruption: Corruption grants 10% resistance to Fire, Water, Earth, and Air.
-
-### Actions
-
-| Action ID | Name | Action time | Tags | Description | Exact effects |
-| --- | --- | --- | --- | --- | --- |
-| arcane-bite | Arcane Bite | 1600 ms (1.6 s) | special, physical, arcane, melee, direct | A corrupted bite tears through both body and warding. | [<br>  {<br>    "type": "deal-damage",<br>    "target": "opponent",<br>    "components": [<br>      {<br>        "damageType": "physical",<br>        "magnitude": {<br>          "type": "source-basic-damage-percent",<br>          "value": 0.7<br>        }<br>      },<br>      {<br>        "damageType": "arcane",<br>        "magnitude": {<br>          "type": "source-basic-damage-percent",<br>          "value": 0.7<br>        }<br>      }<br>    ],<br>    "tags": [<br>      "direct"<br>    ]<br>  }<br>] |
-| corrupted-howl | Corrupted Howl | 1800 ms (1.8 s) | special, buff | The howl fills the Corrupted Dire Wolf with Haste. | [<br>  {<br>    "type": "apply-status",<br>    "target": "self",<br>    "statusId": "haste",<br>    "durationMs": 6000,<br>    "tags": [<br>      "buff"<br>    ]<br>  }<br>] |
+- Arcane Corruption: Corruption grants 10% resistance to Fire, Water, Earth, and Air.
 
 ### Action patterns
 
-~~~json
-{
-  "default": {
-    "id": "default",
-    "steps": [
-      {
-        "id": "basic-1",
-        "type": "basic"
-      },
-      {
-        "id": "arcane-bite-step",
-        "type": "action",
-        "actionId": "arcane-bite"
-      },
-      {
-        "id": "basic-2",
-        "type": "basic"
-      },
-      {
-        "id": "basic-3",
-        "type": "basic"
-      },
-      {
-        "id": "corrupted-howl-step",
-        "type": "action",
-        "actionId": "corrupted-howl"
-      }
-    ]
-  }
-}
-~~~
+- **default:** Basic Attack -> Arcane Bite -> Basic Attack -> Basic Attack -> Corrupted Howl
+
+### Special actions
+
+#### Arcane Bite
+
+**ID:** `arcane-bite`
+
+**Action time:** 1.6 s
+**Tags:** Special, Physical, Arcane, Melee, Direct
+
+A corrupted bite tears through both body and warding.
+
+**What it does:** 70% of Basic Attack damage Physical damage to the opponent and 70% of Basic Attack damage Arcane damage to the opponent
+
+#### Corrupted Howl
+
+**ID:** `corrupted-howl`
+
+**Action time:** 1.8 s
+**Tags:** Special, Buff
+
+The howl fills the Corrupted Dire Wolf with Haste.
+
+**What it does:** Apply Haste to the caster for 6 s
 
 ### Loot
 
-| Item ID | Min | Max | Chance (runtime fraction) | Chance (%) |
-| --- | --- | --- | --- | --- |
-| corrupted-beast-essence | 1 | 1 | 0.35 | 35% (runtime fraction 0.35) |
-| predator-hide | 1 | 1 | 0.3 | 30% (runtime fraction 0.3) |
-| predator-fang | 1 | 1 | 0.25 | 25% (runtime fraction 0.25) |
-| life-essence | 1 | 3 | 1 | 100% (runtime fraction 1) |
+| Item ID | Item | Quantity | Chance |
+| --- | --- | --- | --- |
+| corrupted-beast-essence | Corrupted Beast Essence | 1-1 | 35% |
+| predator-hide | Predator Hide | 1-1 | 30% |
+| predator-fang | Predator Fang | 1-1 | 25% |
+| life-essence | Life Essence | 1-3 | 100% |
 
-## Corrupted Greatbear (corrupted-greatbear)
+### Corrupted Greatbear (corrupted-greatbear)
 
 A mountain of fur warped by hungry magic
 
+### Stats
+
+| Stat | Value |
+| --- | --- |
+| Role | Boss |
+| Max Health | 900 |
+| Basic Attack damage | 22 |
+| Basic Attack time | 2.8 s |
+| Defense | 10 |
+| Critical Strike chance | 5% |
+| Critical Strike damage | 1.5x |
+| Block chance | 0% |
+| Resistances | None |
+| Damage immunities | None |
+| Status immunities | None |
+
 ### Traits
 
-- corrupted-greatbear-thick-hide: Basic Attack damage received is reduced by 20%.
-- corrupted-greatbear-unstable-corruption: At 50% HP, gains Haste and shifts to the Corrupted Pattern once.
-
-### Actions
-
-| Action ID | Name | Action time | Tags | Description | Exact effects |
-| --- | --- | --- | --- | --- | --- |
-| crushing-maul | Crushing Maul | 1800 ms (1.8 s) | special, physical, melee, direct | A brutal maul strike crashes into the target. | [<br>  {<br>    "type": "deal-damage",<br>    "target": "opponent",<br>    "components": [<br>      {<br>        "damageType": "physical",<br>        "magnitude": {<br>          "type": "source-basic-damage-percent",<br>          "value": 1.55<br>        }<br>      }<br>    ],<br>    "tags": [<br>      "direct"<br>    ]<br>  }<br>] |
-| groundbreaker | Groundbreaker | 2500 ms (2.5 s) | special, physical, control | The Greatbear shakes the ground and delays the Player's Basic Attack. | [<br>  {<br>    "type": "deal-damage",<br>    "target": "opponent",<br>    "components": [<br>      {<br>        "damageType": "physical",<br>        "magnitude": {<br>          "type": "source-basic-damage-percent",<br>          "value": 1.2<br>        }<br>      }<br>    ],<br>    "tags": [<br>      "direct"<br>    ]<br>  },<br>  {<br>    "type": "modify-action-timer",<br>    "target": "opponent",<br>    "action": "basic-attack",<br>    "amountMs": 1200<br>  }<br>] |
-| corrupted-roar | Corrupted Roar | 2200 ms (2.2 s) | special, debuff | Makes the target Vulnerable. | [<br>  {<br>    "type": "apply-status",<br>    "target": "opponent",<br>    "statusId": "vulnerable",<br>    "tags": [<br>      "debuff"<br>    ]<br>  }<br>] |
-| arcane-rampage | Arcane Rampage | 3500 ms (3.5 s) | special, magic, arcane, direct | A heavy Arcane strike empowered by unstable corruption. | [<br>  {<br>    "type": "deal-damage",<br>    "target": "opponent",<br>    "components": [<br>      {<br>        "damageType": "arcane",<br>        "magnitude": {<br>          "type": "source-basic-damage-percent",<br>          "value": 2<br>        }<br>      }<br>    ],<br>    "tags": [<br>      "direct"<br>    ]<br>  }<br>] |
+- Thick Hide: Basic Attack damage received is reduced by 20%.
+- Unstable Corruption: At 50% HP, gains Haste and shifts to the Corrupted Pattern once.
 
 ### Action patterns
 
-~~~json
-{
-  "default": {
-    "id": "default",
-    "steps": [
-      {
-        "id": "basic-1",
-        "type": "basic"
-      },
-      {
-        "id": "basic-2",
-        "type": "basic"
-      },
-      {
-        "id": "crushing-maul-step",
-        "type": "action",
-        "actionId": "crushing-maul"
-      },
-      {
-        "id": "basic-3",
-        "type": "basic"
-      },
-      {
-        "id": "groundbreaker-step",
-        "type": "action",
-        "actionId": "groundbreaker"
-      }
-    ]
-  },
-  "corrupted": {
-    "id": "corrupted",
-    "steps": [
-      {
-        "id": "basic-1",
-        "type": "basic"
-      },
-      {
-        "id": "corrupted-roar-step",
-        "type": "action",
-        "actionId": "corrupted-roar"
-      },
-      {
-        "id": "crushing-maul-step",
-        "type": "action",
-        "actionId": "crushing-maul"
-      },
-      {
-        "id": "basic-2",
-        "type": "basic"
-      },
-      {
-        "id": "basic-3",
-        "type": "basic"
-      },
-      {
-        "id": "arcane-rampage-step",
-        "type": "action",
-        "actionId": "arcane-rampage"
-      }
-    ]
-  }
-}
-~~~
+- **default:** Basic Attack -> Basic Attack -> Crushing Maul -> Basic Attack -> Groundbreaker
+- **corrupted:** Basic Attack -> Corrupted Roar -> Crushing Maul -> Basic Attack -> Basic Attack -> Arcane Rampage
+
+### Special actions
+
+#### Crushing Maul
+
+**ID:** `crushing-maul`
+
+**Action time:** 1.8 s
+**Tags:** Special, Physical, Melee, Direct
+
+A brutal maul strike crashes into the target.
+
+**What it does:** 155% of Basic Attack damage Physical damage to the opponent
+
+#### Groundbreaker
+
+**ID:** `groundbreaker`
+
+**Action time:** 2.5 s
+**Tags:** Special, Physical, Control
+
+The Greatbear shakes the ground and delays the Player's Basic Attack.
+
+**What it does:** 120% of Basic Attack damage Physical damage to the opponent; Delay the opponent's Basic Attack by 1.2 s
+
+#### Corrupted Roar
+
+**ID:** `corrupted-roar`
+
+**Action time:** 2.2 s
+**Tags:** Special, Debuff
+
+Makes the target Vulnerable.
+
+**What it does:** Apply Vulnerable to the opponent
+
+#### Arcane Rampage
+
+**ID:** `arcane-rampage`
+
+**Action time:** 3.5 s
+**Tags:** Special, Magic, Arcane, Direct
+
+A heavy Arcane strike empowered by unstable corruption.
+
+**What it does:** 200% of Basic Attack damage Arcane damage to the opponent
 
 ### Loot
 
-| Item ID | Min | Max | Chance (runtime fraction) | Chance (%) |
-| --- | --- | --- | --- | --- |
-| predator-hide | 2 | 4 | 1 | 100% (runtime fraction 1) |
-| corrupted-beast-essence | 1 | 2 | 1 | 100% (runtime fraction 1) |
-| greatbear-core | 1 | 1 | 0.35 | 35% (runtime fraction 0.35) |
-| greatbear-heartstone | 1 | 1 | 0.05 | 5% (runtime fraction 0.05) |
-| life-essence | 1 | 3 | 1 | 100% (runtime fraction 1) |
+| Item ID | Item | Quantity | Chance |
+| --- | --- | --- | --- |
+| predator-hide | Predator Hide | 2-4 | 100% |
+| corrupted-beast-essence | Corrupted Beast Essence | 1-2 | 100% |
+| greatbear-core | Greatbear Core | 1-1 | 35% |
+| greatbear-heartstone | Greatbear Heartstone | 1-1 | 5% |
+| life-essence | Life Essence | 1-3 | 100% |

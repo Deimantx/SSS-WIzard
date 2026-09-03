@@ -1,35 +1,27 @@
 # Boss drops
 
-> Runtime snapshot: `056705bee442836821b12edf1b1929aebded8f0e`  
-> Generated from current game data.  
-> Human-editable balancing document.
-
-Every authored boss loot entry is listed separately so direct boss rewards are easy to find.
-
 ## Whispering Woods
 
-| Boss ID | Boss | Item ID | Min | Max | Chance (fraction) | Chance (%) |
-| --- | --- | --- | --- | --- | --- | --- |
-| forest-heart | Forest Heart | heartseed | 1 | 1 | 1 | 100% (runtime fraction 1) |
-| forest-heart | Forest Heart | heartseed-necklace | 1 | 1 | 0.05 | 5% (runtime fraction 0.05) |
-| forest-heart | Forest Heart | life-essence | 1 | 3 | 1 | 100% (runtime fraction 1) |
-
+| Boss ID | Boss | Item ID | Item | Quantity | Chance |
+| --- | --- | --- | --- | --- | --- |
+| forest-heart | Forest Heart | heartseed | Heartseed | 1-1 | 100% |
+| forest-heart | Forest Heart | heartseed-necklace | Heartseed Necklace | 1-1 | 5% |
+| forest-heart | Forest Heart | life-essence | Life Essence | 1-3 | 100% |
 ## Howling Den
 
-| Boss ID | Boss | Item ID | Min | Max | Chance (fraction) | Chance (%) |
-| --- | --- | --- | --- | --- | --- | --- |
-| corrupted-greatbear | Corrupted Greatbear | predator-hide | 2 | 4 | 1 | 100% (runtime fraction 1) |
-| corrupted-greatbear | Corrupted Greatbear | corrupted-beast-essence | 1 | 2 | 1 | 100% (runtime fraction 1) |
-| corrupted-greatbear | Corrupted Greatbear | greatbear-core | 1 | 1 | 0.35 | 35% (runtime fraction 0.35) |
-| corrupted-greatbear | Corrupted Greatbear | greatbear-heartstone | 1 | 1 | 0.05 | 5% (runtime fraction 0.05) |
-| corrupted-greatbear | Corrupted Greatbear | life-essence | 1 | 3 | 1 | 100% (runtime fraction 1) |
-
+| Boss ID | Boss | Item ID | Item | Quantity | Chance |
+| --- | --- | --- | --- | --- | --- |
+| corrupted-greatbear | Corrupted Greatbear | predator-hide | Predator Hide | 2-4 | 100% |
+| corrupted-greatbear | Corrupted Greatbear | corrupted-beast-essence | Corrupted Beast Essence | 1-2 | 100% |
+| corrupted-greatbear | Corrupted Greatbear | greatbear-core | Greatbear Core | 1-1 | 35% |
+| corrupted-greatbear | Corrupted Greatbear | greatbear-heartstone | Greatbear Heartstone | 1-1 | 5% |
+| corrupted-greatbear | Corrupted Greatbear | life-essence | Life Essence | 1-3 | 100% |
 ## Abandoned Catacombs
 
-| Boss ID | Boss | Item ID | Min | Max | Chance (fraction) | Chance (%) |
-| --- | --- | --- | --- | --- | --- | --- |
-| archmage-edrin-shade | Archmage Edrin's Shade | graveglass-shard | 2 | 4 | 1 | 100% (runtime fraction 1) |
-| archmage-edrin-shade | Archmage Edrin's Shade | soul-residue | 2 | 3 | 1 | 100% (runtime fraction 1) |
-| archmage-edrin-shade | Archmage Edrin's Shade | edrin-remnant | 1 | 1 | 0.35 | 35% (runtime fraction 0.35) |
-| archmage-edrin-shade | Archmage Edrin's Shade | edrins-signet | 1 | 1 | 0.05 | 5% (runtime fraction 0.05) |
-| archmage-edrin-shade | Archmage Edrin's Shade | life-essence | 1 | 3 | 1 | 100% (runtime fraction 1) |
+| Boss ID | Boss | Item ID | Item | Quantity | Chance |
+| --- | --- | --- | --- | --- | --- |
+| archmage-edrin-shade | Archmage Edrin's Shade | graveglass-shard | Graveglass Shard | 2-4 | 100% |
+| archmage-edrin-shade | Archmage Edrin's Shade | soul-residue | Soul Residue | 2-3 | 100% |
+| archmage-edrin-shade | Archmage Edrin's Shade | edrin-remnant | Edrin Remnant | 1-1 | 35% |
+| archmage-edrin-shade | Archmage Edrin's Shade | edrins-signet | Edrin's Signet | 1-1 | 5% |
+| archmage-edrin-shade | Archmage Edrin's Shade | life-essence | Life Essence | 1-3 | 100% |

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Button, Card, Progress } from '../../../components/ui'
 import { MONSTERS } from '../../../game/content/monsters'
 import { ITEMS } from '../../../game/content/items/items'
@@ -15,25 +15,17 @@ const etaLabel = (etaMs: number | null) => etaMs === null ? 'PAUSED' : `${Math.f
 export function DeveloperCombatActions() {
   const [selectedActionId, setSelectedActionId] = useState('')
   const [selectedPatternId, setSelectedPatternId] = useState('')
-  const combat = useGameStore((state) => state.combat)
-  const equipment = useGameStore((state) => state.equipment)
+  const state = useGameStore()
+  const { combat, equipment, debug } = state
   const enemy = combat.enemyId ? MONSTERS[combat.enemyId] : null
-  const debug = useGameStore((state) => state.debug)
-  const start = useGameStore((state) => state.startEnemyAction)
-  const force = useGameStore((state) => state.forceEnemyAction)
-  const resolve = useGameStore((state) => state.resolveCurrentEnemyAction)
-  const advance = useGameStore((state) => state.advanceEnemyAction)
-  const setPattern = useGameStore((state) => state.setEnemyActionPattern)
-  const resetPattern = useGameStore((state) => state.resetEnemyActionPattern)
-  const resetCursor = useGameStore((state) => state.resetEnemyActionCursor)
-  const resetRules = useGameStore((state) => state.resetCombatRuleRuntime)
-  const playerTiming = useGameStore(getPlayerBasicTiming)
-  const enemyTiming = useGameStore(getCurrentEnemyActionTiming)
+  const { startEnemyAction: start, forceEnemyAction: force, resolveCurrentEnemyAction: resolve, advanceEnemyAction: advance, setEnemyActionPattern: setPattern, resetEnemyActionPattern: resetPattern, resetEnemyActionCursor: resetCursor, resetCombatRuleRuntime: resetRules } = state
+  const playerTiming = useMemo(() => getPlayerBasicTiming(state), [state])
+  const enemyTiming = useMemo(() => getCurrentEnemyActionTiming(state), [state])
   const actionId = enemy ? selectedActionId && enemy.actions[selectedActionId] ? selectedActionId : Object.keys(enemy.actions)[0] ?? '' : ''
   const patternId = enemy ? selectedPatternId && enemy.actionPatterns[selectedPatternId] ? selectedPatternId : combat.enemyActionPatternId ?? enemy.defaultActionPatternId : ''
-  const currentStep = enemy ? getCurrentEnemyActionStep(useGameStore.getState()) : undefined
-  const nextStep = enemy ? getNextEnemyActionStep(useGameStore.getState()) : undefined
-  const currentAction = enemy ? getEnemyAction(useGameStore.getState(), combat.enemyCurrentActionId) : undefined
+  const currentStep = enemy ? getCurrentEnemyActionStep(state) : undefined
+  const nextStep = enemy ? getNextEnemyActionStep(state) : undefined
+  const currentAction = enemy ? getEnemyAction(state, combat.enemyCurrentActionId) : undefined
   const nextLabel = nextStep?.type === 'basic' ? 'Basic Attack' : nextStep ? enemy?.actions[nextStep.actionId]?.name ?? nextStep.actionId : '-'
   const progress = enemyTiming?.progress ?? 0
   return <div className="developer-tab-grid">

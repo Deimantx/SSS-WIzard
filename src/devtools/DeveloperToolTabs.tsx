@@ -20,8 +20,8 @@ export function DeveloperTab({ tab, copy }: { tab: DeveloperToolsTab; copy: (lab
   if (tab === 'focus') return <DeveloperFocus />
   if (tab === 'transmutation') return <DeveloperTransmutation />
   if (tab === 'research') return <DeveloperResearch />
-  if (tab === 'inventory') return <DeveloperInventory />
-  if (tab === 'equipment') return <DeveloperInventory />
+  if (tab === 'inventory') return <DeveloperInventory initialView="all" />
+  if (tab === 'equipment') return <DeveloperInventory initialView="equipment" />
   if (tab === 'combat') return <DeveloperCombat copy={copy} />
   if (tab === 'schools') return <DeveloperSchools />
   if (tab === 'spells') return <DeveloperSpells />

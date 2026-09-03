@@ -1,19 +1,17 @@
 # Player base stats
 
-> Runtime snapshot: `056705bee442836821b12edf1b1929aebded8f0e`  
-> Generated from current game data.  
-> Human-editable balancing document.
+These are the authored starting values used before equipment, progression, and combat modifiers are applied.
 
-| Balance ID | Runtime value | Unit / note |
+| Stable setting ID | Designer label | Value |
 | --- | --- | --- |
-| BALANCE.player.maxHealth | 100 | runtime value |
-| BALANCE.player.healthRegenPerSecond | 1 | runtime value |
-| BALANCE.player.outOfCombatRegenMultiplier | 5 | runtime value |
-| BALANCE.player.basicAttackDamage | 8 | runtime value |
-| BALANCE.player.basicAttackIntervalMs | 2200 | ms |
-| BALANCE.player.baseSpellPower | 100 | runtime value |
-| BALANCE.player.baseDefense | 10 | runtime value |
-| BALANCE.player.baseCritChance | 0.05 | runtime value; see combat formula |
-| BALANCE.player.baseCritDamage | 1.5 | runtime value; see combat formula |
+| player.maxHealth | Max Health | 100 |
+| player.healthRegenPerSecond | Health Regen Per Second | 1 |
+| player.outOfCombatRegenMultiplier | Out Of Combat Regen Multiplier | 5 |
+| player.basicAttackDamage | Basic Attack Damage | 8 |
+| player.basicAttackIntervalMs | Basic Attack Interval | 2.2 s |
+| player.baseSpellPower | Base Spell Power | 100 |
+| player.baseDefense | Base Defense | 10 |
+| player.baseCritChance | Base Crit Chance | 5% |
+| player.baseCritDamage | Base Crit Damage | 1.5 |
 
-Player save state also persists current, derived, and compatibility fields. Derived runtime values should be inspected through the combat/equipment read models rather than copied into this authored-base table.
+Basic Attack interval is authored in milliseconds and shown above as a readable duration. Chance values are shown as percentages.

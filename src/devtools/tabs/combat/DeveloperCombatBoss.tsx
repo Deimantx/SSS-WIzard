@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Button, Card, Progress, Status } from '../../../components/ui'
 import { DUNGEONS } from '../../../game/content/dungeons/dungeons'
 import { isBossMonster, MONSTERS } from '../../../game/content/monsters'
@@ -12,22 +12,15 @@ import { NumberField, Summary } from '../DeveloperTabPrimitives'
 export function DeveloperCombatBoss() {
   const [selectedDungeonId, setSelectedDungeonId] = useState<DungeonId>('whispering-woods')
   const [customPercent, setCustomPercent] = useState(50)
-  const combat = useGameStore((state) => state.combat)
-  const progress = useGameStore((state) => state.progress)
+  const state = useGameStore()
+  const { combat, progress } = state
   const currentEnemy = combat.enemyId ? MONSTERS[combat.enemyId] : null
   const dungeon = DUNGEONS[combat.dungeonId ?? selectedDungeonId]
   const boss = MONSTERS[dungeon.boss]
-  const currentStep = currentEnemy ? getCurrentEnemyActionStep(useGameStore.getState()) : undefined
-  const currentAction = currentEnemy ? getEnemyAction(useGameStore.getState(), combat.enemyCurrentActionId) : undefined
-  const actionTiming = useGameStore(getCurrentEnemyActionTiming)
-  const setHp = useGameStore((state) => state.setEnemyHealthPercent)
-  const restart = useGameStore((state) => state.restartDebugBoss)
-  const jump = useGameStore((state) => state.jumpDebugToBoss)
-  const resetPattern = useGameStore((state) => state.resetEnemyActionPattern)
-  const resetCursor = useGameStore((state) => state.resetEnemyActionCursor)
-  const resetRules = useGameStore((state) => state.resetCombatRuleRuntime)
-  const clearStatuses = useGameStore((state) => state.clearEnemyStatuses)
-  const clearBarrier = useGameStore((state) => state.clearEnemyBarrier)
+  const currentStep = currentEnemy ? getCurrentEnemyActionStep(state) : undefined
+  const currentAction = currentEnemy ? getEnemyAction(state, combat.enemyCurrentActionId) : undefined
+  const actionTiming = useMemo(() => getCurrentEnemyActionTiming(state), [state])
+  const { setEnemyHealthPercent: setHp, restartDebugBoss: restart, jumpDebugToBoss: jump, resetEnemyActionPattern: resetPattern, resetEnemyActionCursor: resetCursor, resetCombatRuleRuntime: resetRules, clearEnemyStatuses: clearStatuses, clearEnemyBarrier: clearBarrier } = state
   const isBossActive = Boolean(currentEnemy && isBossMonster(currentEnemy))
   const applyPercent = (percent: number) => setHp(percent)
   const actionEta = !actionTiming ? '-' : actionTiming.etaMs === null ? 'PAUSED' : `${Math.floor(actionTiming.etaMs)}ms`

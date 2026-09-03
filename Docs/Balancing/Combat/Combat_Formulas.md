@@ -1,49 +1,37 @@
 # Combat formulas
 
-> Runtime snapshot: `056705bee442836821b12edf1b1929aebded8f0e`  
-> Generated from current game data.  
-> Human-editable balancing document.
-
-These formulas are documented from the current runtime systems. They are written for designers to understand; changing a formula requires a code change and targeted runtime tests.
+These formulas describe the live combat order in designer language. The exact named settings are listed in the other Combat workbook pages.
 
 ## Player sheet
 
-~~~text
-Max Health = player.baseMaxHealth + equipment.maxHealth
-Max Mana = channeling capacity total (including equipment and authored amplification)
-Max Focus = Focus capacity breakdown total
-Spell Power = base spell power + authored equipment/combat modifiers
-Basic Attack Damage = BALANCE.player.basicAttackDamage + equipment.basicDamage
-Basic Attack Speed Multiplier = clamp(1 + basicAttackSpeed modifiers, 0.1, 10)
-Basic Attack Interval = BALANCE.player.basicAttackIntervalMs / Basic Attack Speed Multiplier
-Crit Chance = clamp(base crit chance + modifiers, 0, MAX_CRIT_CHANCE)
-Crit Damage Multiplier = clamp(base crit damage + modifiers, 1, MAX_CRIT_DAMAGE_MULTIPLIER)
-Defense = max(0, base defense + defense-flat modifiers)
-Defense Reduction = min(MAX_DEFENSE_REDUCTION, Defense / (Defense + DEFENSE_K))
-Effective Mana Cost = max(1, ceil(base cost × (1 - manaCostReductionPct)))
-Effective Focus Cost = max(1, ceil(base cost × (1 - focusEfficiencyPct)))
-~~~
+- Max Health = authored base Max Health + equipment Max Health.
+- Max Mana = Channeling capacity after equipment and progression bonuses.
+- Max Focus = authored capacity plus Focus improvements and other permanent bonuses.
+- Spell Power = authored base Spell Power + equipment and combat modifiers.
+- Basic Attack damage = authored base Basic Attack damage + equipment Basic Attack damage.
+- Basic Attack speed multiplier = clamp(1 + speed modifiers, 0.1, 10).
+- Basic Attack interval = authored Basic Attack interval / Basic Attack speed multiplier.
+- Critical Strike chance = clamp(base chance + modifiers, 0, the Critical Strike cap).
+- Critical Strike damage = clamp(base multiplier + modifiers, 1x, the Critical Strike damage cap).
+- Defense = max(0, authored Defense + flat Defense modifiers).
+- Defense reduction = min(the Defense reduction cap, Defense / (Defense + the Defense curve constant)).
+- Mana cost = max(1, ceil(base cost x (1 - Mana cost reduction))).
+- Focus cost = max(1, ceil(base cost x (1 - Focus efficiency))).
 
-## Damage resolution order
+## Damage order
 
-~~~text
-raw magnitude
-→ source damage-dealt modifiers
-→ Basic Attack / Spell / Melee / Ranged / DoT modifiers as applicable
-→ critical multiplier for direct damage
-→ target damage-taken modifiers
-→ defense reduction for direct damage
-→ resistance: max(0, amount × (1 - resistance))
-→ block reduction for direct damage when the block roll succeeds
-→ barrier absorption
-→ remaining health damage
-~~~
+1. Resolve the authored magnitude.
+2. Apply source damage modifiers.
+3. Apply Basic Attack, Spell, Melee, Ranged, and Damage over Time modifiers that match.
+4. Apply the direct-hit Critical Strike multiplier when the hit can critically strike.
+5. Apply the opponent's damage-taken modifiers.
+6. Apply Defense reduction to direct damage.
+7. Apply resistance: max(0, amount x (1 - resistance)).
+8. Apply Block reduction when the Block roll succeeds.
+9. Absorb damage with Barrier, then apply the remainder to Health.
 
-Runtime details: DoT and other non-direct effects do not roll crit or block; direct hits share one crit/block roll across multi-component hits. Immunity is resolved before damage is applied. Negative resistance increases damage through the same 1 - resistance expression.
+Damage over Time and other non-direct effects do not roll Critical Strike or Block. A multi-part direct hit shares one Critical Strike roll and one Block roll. Immunity is checked before damage is applied. Negative resistance increases damage through the same resistance expression.
 
-## Timing and status rules
+## Timing and statuses
 
-- Authored action and status durations are milliseconds. The simulation tick is 100 ms.
-- Status periodic intervals and payloads are authored in [Status Effects](./Status_Effects.md); application can snapshot a source-specific periodic payload.
-- Status duration, stacking, cleanse, dispel, and action prevention are defined per status and executed by the combat status runtime.
-- A status with defaultDurationMs: null is indefinite until removed or replaced by runtime rules.
+Authored action and status durations use milliseconds in code and are shown as seconds or minutes here. The simulation update interval is 100 ms. Status stacking, cleansing, dispelling, control, and periodic effects are listed in Status Effects.

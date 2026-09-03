@@ -25,10 +25,13 @@ export function SpellBrowserTile({ entry, state, selected, onSelect }: { entry: 
   const content = presentation
     ? <SpellCardTooltip presentation={presentation} />
     : <TooltipContent title={entry.kind === 'placeholder' ? 'Undiscovered spell' : 'Locked spell'} description={`${school.name} School Level ${entry.unlockLevel} is required. Continue researching to reveal this entry.`} />
+  const iconFrame = presentation
+    ? <GameTooltip block wide delay={120} placement="right" accent="elemental" content={content}><span className="spell-browser-icon-frame"><SpellIcon school={entry.school} locked={!unlocked} size="large" /></span></GameTooltip>
+    : <span className="spell-browser-icon-frame"><SpellIcon school={entry.school} locked={!unlocked} size="large" /></span>
   return <span className="spell-browser-tile-shell">
-    <GameTooltip block className="spell-browser-card-tooltip" wide={Boolean(presentation)} delay={presentation ? 120 : 500} placement={presentation ? 'right' : 'top'} accent={unlocked ? 'elemental' : 'warning'} content={content}>
+    <GameTooltip block className="spell-browser-card-tooltip" disabled={Boolean(presentation)} wide={Boolean(presentation)} delay={presentation ? 120 : 500} placement={presentation ? 'right' : 'top'} accent={unlocked ? 'elemental' : 'warning'} content={content}>
       <button type="button" style={{ '--spell-school-color': school.color } as React.CSSProperties} className={`spell-browser-tile${selected ? ' is-selected' : ''}${unlocked ? ' is-unlocked' : ' is-locked'}`} aria-label={visibleLabel} aria-pressed={selected} onClick={() => onSelect(entry.id)}>
-      <div className="spell-browser-tile-top"><span className="spell-browser-icon-frame"><SpellIcon school={entry.school} locked={!unlocked} size="large" /></span>{unlocked && autoCast && <span className="spell-tile-status" aria-label="Auto-Cast active"><CircleDot size={16} aria-hidden="true" /></span>}</div>
+      <div className="spell-browser-tile-top">{iconFrame}{unlocked && autoCast && <span className="spell-tile-status" aria-label="Auto-Cast active"><CircleDot size={16} aria-hidden="true" /></span>}</div>
       <span className="spell-browser-tile-main">
         {unlocked && entry.kind === 'spell' ? <><strong className="spell-browser-name">{SPELLS[entry.spellId].name}</strong><span className="spell-browser-rank">{school.name.toUpperCase()} · {formatSpellRank(entry.rank ?? 1).toUpperCase()}</span></> : <><strong className="spell-browser-name">???</strong><span className="spell-browser-rank">{school.name.toUpperCase()} · {entry.kind === 'placeholder' ? 'UNDISCOVERED' : 'LOCKED'}</span></>}
       </span>

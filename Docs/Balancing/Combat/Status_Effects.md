@@ -1,28 +1,355 @@
 # Status effects
 
-> Runtime snapshot: `056705bee442836821b12edf1b1929aebded8f0e`  
-> Generated from current game data.  
-> Human-editable balancing document.
+Each authored status is expanded below so a designer can review its duration, stacking, flags, modifiers, and periodic work.
 
-All rows come from STATUS_DEFINITIONS. Durations and periodic intervals are milliseconds. Modifier values use exact runtime fractions.
+## Burning
 
-| Status ID | Name | Classification | Tags | Default duration | Stacking | Cleanse | Dispel | Prevents action | Modifiers | Periodic | Triggers |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| burning | Burning | debuff | debuff, dot, fire | 5000 ms (5 s) | {<br>  "mode": "refresh"<br>} | true | false | false | [] | 1000 ms (1 s)<br>[<br>  {<br>    "type": "deal-damage",<br>    "target": "self",<br>    "components": [<br>      {<br>        "damageType": "fire",<br>        "magnitude": {<br>          "type": "flat",<br>          "value": 5<br>        }<br>      }<br>    ],<br>    "tags": [<br>      "dot",<br>      "fire"<br>    ]<br>  }<br>] | [] |
-| quickening | Quickening | buff | buff, air | 6000 ms (6 s) | {<br>  "mode": "refresh"<br>} | false | true | false | [<br>  {<br>    "key": "basic-attack-speed-percent",<br>    "value": 0.25<br>  }<br>] | [NOT DEFINED IN RUNTIME] | [] |
-| haste | Haste | buff | buff | indefinite (null) | {<br>  "mode": "refresh"<br>} | false | true | false | [<br>  {<br>    "key": "action-speed-percent",<br>    "value": 0.15<br>  }<br>] | [NOT DEFINED IN RUNTIME] | [] |
-| spectral-fade | Spectral Fade | buff | buff | 5000 ms (5 s) | {<br>  "mode": "strongest"<br>} | false | true | false | [<br>  {<br>    "key": "damage-taken-percent",<br>    "value": -0.25<br>  }<br>] | [NOT DEFINED IN RUNTIME] | [] |
-| thorn-wound | Thorn Wound | debuff | debuff, dot | 6000 ms (6 s) | {<br>  "mode": "refresh"<br>} | true | false | false | [] | 2000 ms (2 s)<br>[<br>  {<br>    "type": "deal-damage",<br>    "target": "self",<br>    "components": [<br>      {<br>        "damageType": "physical",<br>        "magnitude": {<br>          "type": "flat",<br>          "value": 3<br>        }<br>      }<br>    ],<br>    "tags": [<br>      "dot",<br>      "physical"<br>    ]<br>  }<br>] | [] |
-| bleeding | Bleeding | debuff | debuff, dot, physical | 8000 ms (8 s) | {<br>  "mode": "refresh"<br>} | true | false | false | [] | 2000 ms (2 s)<br>[<br>  {<br>    "type": "deal-damage",<br>    "target": "self",<br>    "components": [<br>      {<br>        "damageType": "physical",<br>        "magnitude": {<br>          "type": "flat",<br>          "value": 4<br>        }<br>      }<br>    ],<br>    "tags": [<br>      "dot",<br>      "physical"<br>    ]<br>  }<br>] | [] |
-| chilled | Chilled | debuff | debuff, control, water | 5000 ms (5 s) | {<br>  "mode": "strongest"<br>} | true | false | false | [<br>  {<br>    "key": "basic-attack-speed-percent",<br>    "value": -0.2<br>  },<br>  {<br>    "key": "action-speed-percent",<br>    "value": -0.2<br>  }<br>] | [NOT DEFINED IN RUNTIME] | [] |
-| regeneration | Regeneration | buff | buff, hot, water | 6000 ms (6 s) | {<br>  "mode": "refresh"<br>} | false | true | false | [] | 1000 ms (1 s)<br>[<br>  {<br>    "type": "heal",<br>    "target": "self",<br>    "magnitude": {<br>      "type": "flat",<br>      "value": 5<br>    },<br>    "tags": [<br>      "heal",<br>      "hot"<br>    ]<br>  }<br>] | [] |
-| fortified | Fortified | buff | buff, earth | 8000 ms (8 s) | {<br>  "mode": "strongest"<br>} | false | true | false | [<br>  {<br>    "key": "damage-taken-percent",<br>    "value": -0.15<br>  }<br>] | [NOT DEFINED IN RUNTIME] | [] |
-| shock | Shock | debuff | debuff, air | 8000 ms (8 s) | {<br>  "mode": "stacks",<br>  "maxStacks": 5<br>} | true | false | false | [<br>  {<br>    "key": "damage-taken-percent",<br>    "value": 0.04,<br>    "damageTypes": [<br>      "air"<br>    ],<br>    "perStack": true<br>  }<br>] | [NOT DEFINED IN RUNTIME] | [] |
-| staggered | Staggered | debuff | debuff, control, earth | 1000 ms (1 s) | {<br>  "mode": "refresh"<br>} | true | false | false | [] | [NOT DEFINED IN RUNTIME] | [] |
-| vulnerable | Vulnerable | debuff | debuff | 6000 ms (6 s) | {<br>  "mode": "strongest"<br>} | true | false | false | [<br>  {<br>    "key": "damage-taken-percent",<br>    "value": 0.15<br>  }<br>] | [NOT DEFINED IN RUNTIME] | [] |
-| purified | Purified | buff | buff, water | 4000 ms (4 s) | {<br>  "mode": "refresh"<br>} | false | true | false | [<br>  {<br>    "key": "status-duration-received-percent",<br>    "value": -0.5,<br>    "statusTags": [<br>      "debuff"<br>    ]<br>  }<br>] | [NOT DEFINED IN RUNTIME] | [] |
-| stunned | Stunned | debuff | debuff, control | 3000 ms (3 s) | {<br>  "mode": "refresh"<br>} | true | false | true | [] | [NOT DEFINED IN RUNTIME] | [] |
+**ID:** `burning`
 
-## Status authoring notes
+**Classification:** Debuff
+**Tags:** Debuff, Dot, Fire
+**Default duration:** 5 s
+**Stacking:** Refresh
+**Cleanseable:** Yes
+**Dispellable:** No
+**Prevents normal actions:** No
 
-Status IDs are stable references used by spells, monster actions, traits, equipment, saves, and telemetry. Application-time overrides are runtime mechanics and are not a second status registry.
+Takes Fire damage over time.
+
+### Modifiers
+
+- None
+
+### Periodic work
+
+Every 1 s: 5 Fire damage to the status holder
+
+### Trigger rules
+
+- None
+## Quickening
+
+**ID:** `quickening`
+
+**Classification:** Buff
+**Tags:** Buff, Air
+**Default duration:** 6 s
+**Stacking:** Refresh
+**Cleanseable:** No
+**Dispellable:** Yes
+**Prevents normal actions:** No
+
+Basic Attacks resolve 25% faster.
+
+### Modifiers
+
+- +25% Basic Attack speed
+
+### Periodic work
+
+None
+
+### Trigger rules
+
+- None
+## Haste
+
+**ID:** `haste`
+
+**Classification:** Buff
+**Tags:** Buff
+**Default duration:** Indefinite
+**Stacking:** Refresh
+**Cleanseable:** No
+**Dispellable:** Yes
+**Prevents normal actions:** No
+
+Action speed increased by 15%.
+
+### Modifiers
+
+- +15% Action speed
+
+### Periodic work
+
+None
+
+### Trigger rules
+
+- None
+## Spectral Fade
+
+**ID:** `spectral-fade`
+
+**Classification:** Buff
+**Tags:** Buff
+**Default duration:** 5 s
+**Stacking:** Strongest
+**Cleanseable:** No
+**Dispellable:** Yes
+**Prevents normal actions:** No
+
+Damage taken is reduced by 25%.
+
+### Modifiers
+
+- -25% Damage taken
+
+### Periodic work
+
+None
+
+### Trigger rules
+
+- None
+## Thorn Wound
+
+**ID:** `thorn-wound`
+
+**Classification:** Debuff
+**Tags:** Debuff, Dot
+**Default duration:** 6 s
+**Stacking:** Refresh
+**Cleanseable:** Yes
+**Dispellable:** No
+**Prevents normal actions:** No
+
+Thorns deal physical damage over time.
+
+### Modifiers
+
+- None
+
+### Periodic work
+
+Every 2 s: 3 Physical damage to the status holder
+
+### Trigger rules
+
+- None
+## Bleeding
+
+**ID:** `bleeding`
+
+**Classification:** Debuff
+**Tags:** Debuff, Dot, Physical
+**Default duration:** 8 s
+**Stacking:** Refresh
+**Cleanseable:** Yes
+**Dispellable:** No
+**Prevents normal actions:** No
+
+Takes Physical damage over time.
+
+### Modifiers
+
+- None
+
+### Periodic work
+
+Every 2 s: 4 Physical damage to the status holder
+
+### Trigger rules
+
+- None
+## Chilled
+
+**ID:** `chilled`
+
+**Classification:** Debuff
+**Tags:** Debuff, Control, Water
+**Default duration:** 5 s
+**Stacking:** Strongest
+**Cleanseable:** Yes
+**Dispellable:** No
+**Prevents normal actions:** No
+
+Basic Attacks and Action cadence are 20% slower.
+
+### Modifiers
+
+- -20% Basic Attack speed
+- -20% Action speed
+
+### Periodic work
+
+None
+
+### Trigger rules
+
+- None
+## Regeneration
+
+**ID:** `regeneration`
+
+**Classification:** Buff
+**Tags:** Buff, Hot, Water
+**Default duration:** 6 s
+**Stacking:** Refresh
+**Cleanseable:** No
+**Dispellable:** Yes
+**Prevents normal actions:** No
+
+Restores Health over time.
+
+### Modifiers
+
+- None
+
+### Periodic work
+
+Every 1 s: Restore 5 Health to the status holder
+
+### Trigger rules
+
+- None
+## Fortified
+
+**ID:** `fortified`
+
+**Classification:** Buff
+**Tags:** Buff, Earth
+**Default duration:** 8 s
+**Stacking:** Strongest
+**Cleanseable:** No
+**Dispellable:** Yes
+**Prevents normal actions:** No
+
+Damage taken is reduced by 15%.
+
+### Modifiers
+
+- -15% Damage taken
+
+### Periodic work
+
+None
+
+### Trigger rules
+
+- None
+## Shock
+
+**ID:** `shock`
+
+**Classification:** Debuff
+**Tags:** Debuff, Air
+**Default duration:** 8 s
+**Stacking:** Stacks, up to 5 stacks
+**Cleanseable:** Yes
+**Dispellable:** No
+**Prevents normal actions:** No
+
+Each stack increases Air damage taken by 4%.
+
+### Modifiers
+
+- +4% Damage taken for Air damage per stack
+
+### Periodic work
+
+None
+
+### Trigger rules
+
+- None
+## Staggered
+
+**ID:** `staggered`
+
+**Classification:** Debuff
+**Tags:** Debuff, Control, Earth
+**Default duration:** 1 s
+**Stacking:** Refresh
+**Cleanseable:** Yes
+**Dispellable:** No
+**Prevents normal actions:** No
+
+Recently suffered a stagger.
+
+### Modifiers
+
+- None
+
+### Periodic work
+
+None
+
+### Trigger rules
+
+- None
+## Vulnerable
+
+**ID:** `vulnerable`
+
+**Classification:** Debuff
+**Tags:** Debuff
+**Default duration:** 6 s
+**Stacking:** Strongest
+**Cleanseable:** Yes
+**Dispellable:** No
+**Prevents normal actions:** No
+
+Damage taken is increased by 15%.
+
+### Modifiers
+
+- +15% Damage taken
+
+### Periodic work
+
+None
+
+### Trigger rules
+
+- None
+## Purified
+
+**ID:** `purified`
+
+**Classification:** Buff
+**Tags:** Buff, Water
+**Default duration:** 4 s
+**Stacking:** Refresh
+**Cleanseable:** No
+**Dispellable:** Yes
+**Prevents normal actions:** No
+
+Incoming control and debuff durations are reduced by 50%.
+
+### Modifiers
+
+- -50% Status duration received for Debuff statuses
+
+### Periodic work
+
+None
+
+### Trigger rules
+
+- None
+## Stunned
+
+**ID:** `stunned`
+
+**Classification:** Debuff
+**Tags:** Debuff, Control
+**Default duration:** 3 s
+**Stacking:** Refresh
+**Cleanseable:** Yes
+**Dispellable:** No
+**Prevents normal actions:** Yes
+
+Cannot start or resolve normal actions.
+
+### Modifiers
+
+- None
+
+### Periodic work
+
+None
+
+### Trigger rules
+
+- None

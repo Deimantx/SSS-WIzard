@@ -1,30 +1,26 @@
 # Research XP
 
-> Runtime snapshot: `056705bee442836821b12edf1b1929aebded8f0e`  
-> Generated from current game data.  
-> Human-editable balancing document.
+## Research settings
 
-| Balance ID | Runtime value | Unit |
+| Stable setting ID | Setting | Value |
 | --- | --- | --- |
-| BALANCE.research.maxPreparedSlots | 4 | XP/item |
-| BALANCE.research.maxEchoes | 5 | runtime value |
-| BALANCE.research.echoFocusCost | 10 | runtime value |
-| BALANCE.research.manaCostPerItem | 5 | runtime value |
-| BALANCE.research.durationPerItemMs | 5000 | ms |
-| BALANCE.research.matchingXp | 12 | XP/item |
-| BALANCE.research.nonMatchingXp | 8 | XP/item |
+| research.maxPreparedSlots | Max Prepared Slots | 4 |
+| research.maxEchoes | Max Echoes | 5 |
+| research.echoFocusCost | Echo Focus Cost | 10 |
+| research.manaCostPerItem | Mana Cost Per Item | 5 |
+| research.durationPerItemMs | Duration Per Item | 5 s |
+| research.matchingXp | Matching XP | 12 |
+| research.nonMatchingXp | Non Matching XP | 8 |
 
-## Researchable item registry
+## Researchable items
 
-| Item ID | Name | Authored research school | Matching XP | Non-matching XP |
+| Item ID | Item | Research school | Matching XP | Other-school XP |
 | --- | --- | --- | --- | --- |
-| fire-fragment | Fire Fragment | fire | 12 | 8 |
-| water-fragment | Water Fragment | water | 12 | 8 |
-| earth-fragment | Earth Fragment | earth | 12 | 8 |
-| air-fragment | Air Fragment | air | 12 | 8 |
+| fire-fragment | Fire Fragment | Fire | 12 | 8 |
+| water-fragment | Water Fragment | Water | 12 | 8 |
+| earth-fragment | Earth Fragment | Earth | 12 | 8 |
+| air-fragment | Air Fragment | Air | 12 | 8 |
 
-## Research activity values
+## Activity reference
 
-| Activity ID | Duration per item | Mana per item | Matching XP | Non-matching XP | XP/minute at matching affinity |
-| --- | --- | --- | --- | --- | --- |
-| research | 5000 ms (5 s) | 5 | 12 | 8 | 144.00 |
+One research cycle takes 5 s, costs 5 Mana, and grants 12 XP with the matching school or 8 XP with another school.

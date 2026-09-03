@@ -1,291 +1,288 @@
 # Whispering Woods enemies
 
-> Runtime snapshot: `056705bee442836821b12edf1b1929aebded8f0e`  
-> Generated from current game data.  
-> Human-editable balancing document.
+## Quick comparison
 
-| Monster ID | Name | Role | HP | Basic damage | Basic attack time | Defense | Crit chance | Crit damage | Block chance | Resistances | Status immunities | XP reward |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| forest-wisp | Forest Wisp | monster | 44 | 5 | 2800 ms (2.8 s) | 10 | 0.05 | 1.5 | 0 | {} | [NOT DEFINED IN RUNTIME] | [NOT DEFINED IN RUNTIME] |
-| thornling | Thornling | monster | 64 | 8 | 2500 ms (2.5 s) | 10 | 0.05 | 1.5 | 0 | {} | [NOT DEFINED IN RUNTIME] | [NOT DEFINED IN RUNTIME] |
-| stone-root | Stone Root | monster | 92 | 11 | 3200 ms (3.2 s) | 10 | 0.05 | 1.5 | 0 | {} | [NOT DEFINED IN RUNTIME] | [NOT DEFINED IN RUNTIME] |
-| grove-sentinel | Grove Sentinel | monster | 360 | 15 | 2600 ms (2.6 s) | 10 | 0.05 | 1.5 | 0 | {} | [NOT DEFINED IN RUNTIME] | [NOT DEFINED IN RUNTIME] |
-| forest-heart | Forest Heart | boss | 600 | 20 | 2400 ms (2.4 s) | 10 | 0.05 | 1.5 | 0 | {} | [NOT DEFINED IN RUNTIME] | [NOT DEFINED IN RUNTIME] |
+| Enemy ID | Name | Role | Max Health | Basic Attack | Basic Attack time | Defense |
+| --- | --- | --- | --- | --- | --- | --- |
+| forest-wisp | Forest Wisp | Normal | 44 | 5 | 2.8 s | 10 |
+| thornling | Thornling | Normal | 64 | 8 | 2.5 s | 10 |
+| stone-root | Stone Root | Normal | 92 | 11 | 3.2 s | 10 |
+| grove-sentinel | Grove Sentinel | Normal | 360 | 15 | 2.6 s | 10 |
+| forest-heart | Forest Heart | Boss | 600 | 20 | 2.4 s | 10 |
 
-## Forest Wisp (forest-wisp)
+## Enemy details
+
+### Forest Wisp (forest-wisp)
 
 A curious lantern of the undergrowth
 
+### Stats
+
+| Stat | Value |
+| --- | --- |
+| Role | Normal |
+| Max Health | 44 |
+| Basic Attack damage | 5 |
+| Basic Attack time | 2.8 s |
+| Defense | 10 |
+| Critical Strike chance | 5% |
+| Critical Strike damage | 1.5x |
+| Block chance | 0% |
+| Resistances | None |
+| Damage immunities | None |
+| Status immunities | None |
+
 ### Traits
 
-- forest-wisp-flicker: After Arc Spark resolves, gains Haste for 3 seconds.
-
-### Actions
-
-| Action ID | Name | Action time | Tags | Description | Exact effects |
-| --- | --- | --- | --- | --- | --- |
-| arc-spark | Arc Spark | 2000 ms (2 s) | special, magic, arcane, direct | A bright Arcane spark lashes the target. | [<br>  {<br>    "type": "deal-damage",<br>    "target": "opponent",<br>    "components": [<br>      {<br>        "damageType": "arcane",<br>        "magnitude": {<br>          "type": "source-basic-damage-percent",<br>          "value": 2.4<br>        }<br>      }<br>    ],<br>    "tags": [<br>      "direct"<br>    ]<br>  }<br>] |
+- Flicker: After Arc Spark resolves, gains Haste for 3 seconds.
 
 ### Action patterns
 
-~~~json
-{
-  "default": {
-    "id": "default",
-    "steps": [
-      {
-        "id": "basic-1",
-        "type": "basic"
-      },
-      {
-        "id": "basic-2",
-        "type": "basic"
-      },
-      {
-        "id": "arc-spark-step",
-        "type": "action",
-        "actionId": "arc-spark"
-      }
-    ]
-  }
-}
-~~~
+- **default:** Basic Attack -> Basic Attack -> Arc Spark
+
+### Special actions
+
+#### Arc Spark
+
+**ID:** `arc-spark`
+
+**Action time:** 2 s
+**Tags:** Special, Magic, Arcane, Direct
+
+A bright Arcane spark lashes the target.
+
+**What it does:** 240% of Basic Attack damage Arcane damage to the opponent
 
 ### Loot
 
-| Item ID | Min | Max | Chance (runtime fraction) | Chance (%) |
-| --- | --- | --- | --- | --- |
-| wisp-essence | 1 | 2 | 1 | 100% (runtime fraction 1) |
-| life-essence | 1 | 3 | 1 | 100% (runtime fraction 1) |
+| Item ID | Item | Quantity | Chance |
+| --- | --- | --- | --- |
+| wisp-essence | Wisp Essence | 1-2 | 100% |
+| life-essence | Life Essence | 1-3 | 100% |
 
-## Thornling (thornling)
+### Thornling (thornling)
 
 A knot of spite and briars
 
+### Stats
+
+| Stat | Value |
+| --- | --- |
+| Role | Normal |
+| Max Health | 64 |
+| Basic Attack damage | 8 |
+| Basic Attack time | 2.5 s |
+| Defense | 10 |
+| Critical Strike chance | 5% |
+| Critical Strike damage | 1.5x |
+| Block chance | 0% |
+| Resistances | None |
+| Damage immunities | None |
+| Status immunities | None |
+
 ### Traits
 
-- thornling-barkskin: Basic Attack damage received is reduced by 15%.
-
-### Actions
-
-| Action ID | Name | Action time | Tags | Description | Exact effects |
-| --- | --- | --- | --- | --- | --- |
-| thorn-lash | Thorn Lash | 1800 ms (1.8 s) | special, physical, debuff | A thorned lash cuts the target and leaves a lingering Thorn Wound. | [<br>  {<br>    "type": "deal-damage",<br>    "target": "opponent",<br>    "components": [<br>      {<br>        "damageType": "physical",<br>        "magnitude": {<br>          "type": "source-basic-damage-percent",<br>          "value": 1.25<br>        }<br>      }<br>    ],<br>    "tags": [<br>      "direct"<br>    ]<br>  },<br>  {<br>    "type": "apply-status",<br>    "target": "opponent",<br>    "statusId": "thorn-wound",<br>    "durationMs": 6000,<br>    "periodicEffects": [<br>      {<br>        "type": "deal-damage",<br>        "target": "self",<br>        "components": [<br>          {<br>            "damageType": "physical",<br>            "magnitude": {<br>              "type": "source-basic-damage-percent",<br>              "value": 0.375<br>            }<br>          }<br>        ],<br>        "tags": [<br>          "dot",<br>          "physical"<br>        ]<br>      }<br>    ],<br>    "tags": [<br>      "debuff",<br>      "dot",<br>      "physical"<br>    ]<br>  }<br>] |
+- Barkskin: Basic Attack damage received is reduced by 15%.
 
 ### Action patterns
 
-~~~json
-{
-  "default": {
-    "id": "default",
-    "steps": [
-      {
-        "id": "basic-1",
-        "type": "basic"
-      },
-      {
-        "id": "basic-2",
-        "type": "basic"
-      },
-      {
-        "id": "thorn-lash-step",
-        "type": "action",
-        "actionId": "thorn-lash"
-      }
-    ]
-  }
-}
-~~~
+- **default:** Basic Attack -> Basic Attack -> Thorn Lash
+
+### Special actions
+
+#### Thorn Lash
+
+**ID:** `thorn-lash`
+
+**Action time:** 1.8 s
+**Tags:** Special, Physical, Debuff
+
+A thorned lash cuts the target and leaves a lingering Thorn Wound.
+
+**What it does:** 125% of Basic Attack damage Physical damage to the opponent; Apply Thorn Wound to the opponent for 6 s; periodic effect: 37.5% of Basic Attack damage Physical damage to the status holder
 
 ### Loot
 
-| Item ID | Min | Max | Chance (runtime fraction) | Chance (%) |
-| --- | --- | --- | --- | --- |
-| wisp-essence | 1 | 2 | 1 | 100% (runtime fraction 1) |
-| life-essence | 1 | 3 | 1 | 100% (runtime fraction 1) |
+| Item ID | Item | Quantity | Chance |
+| --- | --- | --- | --- |
+| wisp-essence | Wisp Essence | 1-2 | 100% |
+| life-essence | Life Essence | 1-3 | 100% |
 
-## Stone Root (stone-root)
+### Stone Root (stone-root)
 
 The forest floor given a heartbeat
 
+### Stats
+
+| Stat | Value |
+| --- | --- |
+| Role | Normal |
+| Max Health | 92 |
+| Basic Attack damage | 11 |
+| Basic Attack time | 3.2 s |
+| Defense | 10 |
+| Critical Strike chance | 5% |
+| Critical Strike damage | 1.5x |
+| Block chance | 0% |
+| Resistances | None |
+| Damage immunities | None |
+| Status immunities | None |
+
 ### Traits
 
-- stone-rooted-shell: Starts with Barrier equal to 15% max HP.
-
-### Actions
-
-| Action ID | Name | Action time | Tags | Description | Exact effects |
-| --- | --- | --- | --- | --- | --- |
-| root-slam | Root Slam | 2500 ms (2.5 s) | special, physical, control | A crushing root strike disrupts the Player's Basic Attack rhythm. | [<br>  {<br>    "type": "deal-damage",<br>    "target": "opponent",<br>    "components": [<br>      {<br>        "damageType": "physical",<br>        "magnitude": {<br>          "type": "source-basic-damage-percent",<br>          "value": 1.65<br>        }<br>      }<br>    ],<br>    "tags": [<br>      "direct"<br>    ]<br>  },<br>  {<br>    "type": "modify-action-timer",<br>    "target": "opponent",<br>    "action": "basic-attack",<br>    "amountMs": 700<br>  }<br>] |
+- Rooted Shell: Starts with Barrier equal to 15% max HP.
 
 ### Action patterns
 
-~~~json
-{
-  "default": {
-    "id": "default",
-    "steps": [
-      {
-        "id": "basic-1",
-        "type": "basic"
-      },
-      {
-        "id": "basic-2",
-        "type": "basic"
-      },
-      {
-        "id": "basic-3",
-        "type": "basic"
-      },
-      {
-        "id": "root-slam-step",
-        "type": "action",
-        "actionId": "root-slam"
-      }
-    ]
-  }
-}
-~~~
+- **default:** Basic Attack -> Basic Attack -> Basic Attack -> Root Slam
+
+### Special actions
+
+#### Root Slam
+
+**ID:** `root-slam`
+
+**Action time:** 2.5 s
+**Tags:** Special, Physical, Control
+
+A crushing root strike disrupts the Player's Basic Attack rhythm.
+
+**What it does:** 165% of Basic Attack damage Physical damage to the opponent; Delay the opponent's Basic Attack by 700 ms
 
 ### Loot
 
-| Item ID | Min | Max | Chance (runtime fraction) | Chance (%) |
-| --- | --- | --- | --- | --- |
-| wisp-essence | 1 | 3 | 1 | 100% (runtime fraction 1) |
-| life-essence | 1 | 3 | 1 | 100% (runtime fraction 1) |
+| Item ID | Item | Quantity | Chance |
+| --- | --- | --- | --- |
+| wisp-essence | Wisp Essence | 1-3 | 100% |
+| life-essence | Life Essence | 1-3 | 100% |
 
-## Grove Sentinel (grove-sentinel)
+### Grove Sentinel (grove-sentinel)
 
 An ancient guardian of the inner grove
 
+### Stats
+
+| Stat | Value |
+| --- | --- |
+| Role | Normal |
+| Max Health | 360 |
+| Basic Attack damage | 15 |
+| Basic Attack time | 2.6 s |
+| Defense | 10 |
+| Critical Strike chance | 5% |
+| Critical Strike damage | 1.5x |
+| Block chance | 0% |
+| Resistances | None |
+| Damage immunities | None |
+| Status immunities | None |
+
 ### Traits
 
-- grove-sentinel-ancient-growth: At 40% HP, gains a large Barrier once.
-
-### Actions
-
-| Action ID | Name | Action time | Tags | Description | Exact effects |
-| --- | --- | --- | --- | --- | --- |
-| root-crush | Root Crush | 2000 ms (2 s) | special, physical, direct | The guardian brings its roots down with crushing force. | [<br>  {<br>    "type": "deal-damage",<br>    "target": "opponent",<br>    "components": [<br>      {<br>        "damageType": "physical",<br>        "magnitude": {<br>          "type": "source-basic-damage-percent",<br>          "value": 1.35<br>        }<br>      }<br>    ],<br>    "tags": [<br>      "direct"<br>    ]<br>  }<br>] |
-| verdant-guard | Verdant Guard | 2500 ms (2.5 s) | special, barrier | The guardian gathers living energy into a protective Barrier. | [<br>  {<br>    "type": "gain-barrier",<br>    "target": "self",<br>    "magnitude": {<br>      "type": "source-max-health-percent",<br>      "value": 0.16666666666666666<br>    },<br>    "mode": "add",<br>    "durationMs": null,<br>    "tags": [<br>      "barrier"<br>    ]<br>  }<br>] |
+- Ancient Growth: At 40% HP, gains a large Barrier once.
 
 ### Action patterns
 
-~~~json
-{
-  "default": {
-    "id": "default",
-    "steps": [
-      {
-        "id": "basic-1",
-        "type": "basic"
-      },
-      {
-        "id": "basic-2",
-        "type": "basic"
-      },
-      {
-        "id": "root-crush-step",
-        "type": "action",
-        "actionId": "root-crush"
-      },
-      {
-        "id": "basic-3",
-        "type": "basic"
-      },
-      {
-        "id": "verdant-guard-step",
-        "type": "action",
-        "actionId": "verdant-guard"
-      }
-    ]
-  }
-}
-~~~
+- **default:** Basic Attack -> Basic Attack -> Root Crush -> Basic Attack -> Verdant Guard
+
+### Special actions
+
+#### Root Crush
+
+**ID:** `root-crush`
+
+**Action time:** 2 s
+**Tags:** Special, Physical, Direct
+
+The guardian brings its roots down with crushing force.
+
+**What it does:** 135% of Basic Attack damage Physical damage to the opponent
+
+#### Verdant Guard
+
+**ID:** `verdant-guard`
+
+**Action time:** 2.5 s
+**Tags:** Special, Barrier
+
+The guardian gathers living energy into a protective Barrier.
+
+**What it does:** Grant 16.67% of the caster's Max Health Barrier to the caster
 
 ### Loot
 
-| Item ID | Min | Max | Chance (runtime fraction) | Chance (%) |
-| --- | --- | --- | --- | --- |
-| grove-bark | 2 | 3 | 1 | 100% (runtime fraction 1) |
-| wisp-essence | 4 | 6 | 1 | 100% (runtime fraction 1) |
-| life-essence | 1 | 3 | 1 | 100% (runtime fraction 1) |
+| Item ID | Item | Quantity | Chance |
+| --- | --- | --- | --- |
+| grove-bark | Grove Bark | 2-3 | 100% |
+| wisp-essence | Wisp Essence | 4-6 | 100% |
+| life-essence | Life Essence | 1-3 | 100% |
 
-## Forest Heart (forest-heart)
+### Forest Heart (forest-heart)
 
 The pulse beneath the roots
 
+### Stats
+
+| Stat | Value |
+| --- | --- |
+| Role | Boss |
+| Max Health | 600 |
+| Basic Attack damage | 20 |
+| Basic Attack time | 2.4 s |
+| Defense | 10 |
+| Critical Strike chance | 5% |
+| Critical Strike damage | 1.5x |
+| Block chance | 0% |
+| Resistances | None |
+| Damage immunities | None |
+| Status immunities | None |
+
 ### Traits
 
-- forest-heart-living-core: At 50% HP, gains 15% Action speed once.
-
-### Actions
-
-| Action ID | Name | Action time | Tags | Description | Exact effects |
-| --- | --- | --- | --- | --- | --- |
-| heart-pulse | Heart Pulse | 2000 ms (2 s) | special, physical, direct | The Forest Heart releases a crushing pulse through the roots. | [<br>  {<br>    "type": "deal-damage",<br>    "target": "opponent",<br>    "components": [<br>      {<br>        "damageType": "physical",<br>        "magnitude": {<br>          "type": "source-basic-damage-percent",<br>          "value": 1.2<br>        }<br>      }<br>    ],<br>    "tags": [<br>      "direct"<br>    ]<br>  }<br>] |
-| root-prison | Root Prison | 2000 ms (2 s) | special, physical, control | Roots crush the target and delay the Player's next Basic Attack. | [<br>  {<br>    "type": "deal-damage",<br>    "target": "opponent",<br>    "components": [<br>      {<br>        "damageType": "physical",<br>        "magnitude": {<br>          "type": "source-basic-damage-percent",<br>          "value": 0.8<br>        }<br>      }<br>    ],<br>    "tags": [<br>      "direct"<br>    ]<br>  },<br>  {<br>    "type": "modify-action-timer",<br>    "target": "opponent",<br>    "action": "basic-attack",<br>    "amountMs": 1000<br>  }<br>] |
-| rejuvenating-sap | Rejuvenating Sap | 3000 ms (3 s) | special, heal, direct | The Heart draws restorative sap inward to recover Health. | [<br>  {<br>    "type": "heal",<br>    "target": "self",<br>    "magnitude": {<br>      "type": "source-max-health-percent",<br>      "value": 0.1<br>    },<br>    "tags": [<br>      "heal",<br>      "direct"<br>    ]<br>  }<br>] |
+- Living Core: At 50% HP, gains 15% Action speed once.
 
 ### Action patterns
 
-~~~json
-{
-  "default": {
-    "id": "default",
-    "steps": [
-      {
-        "id": "basic-1",
-        "type": "basic"
-      },
-      {
-        "id": "basic-2",
-        "type": "basic"
-      },
-      {
-        "id": "heart-pulse-step",
-        "type": "action",
-        "actionId": "heart-pulse"
-      },
-      {
-        "id": "basic-3",
-        "type": "basic"
-      },
-      {
-        "id": "basic-4",
-        "type": "basic"
-      },
-      {
-        "id": "root-prison-step",
-        "type": "action",
-        "actionId": "root-prison"
-      },
-      {
-        "id": "basic-5",
-        "type": "basic"
-      },
-      {
-        "id": "basic-6",
-        "type": "basic"
-      },
-      {
-        "id": "basic-7",
-        "type": "basic"
-      },
-      {
-        "id": "sap-step",
-        "type": "action",
-        "actionId": "rejuvenating-sap"
-      }
-    ]
-  }
-}
-~~~
+- **default:** Basic Attack -> Basic Attack -> Heart Pulse -> Basic Attack -> Basic Attack -> Root Prison -> Basic Attack -> Basic Attack -> Basic Attack -> Rejuvenating Sap
+
+### Special actions
+
+#### Heart Pulse
+
+**ID:** `heart-pulse`
+
+**Action time:** 2 s
+**Tags:** Special, Physical, Direct
+
+The Forest Heart releases a crushing pulse through the roots.
+
+**What it does:** 120% of Basic Attack damage Physical damage to the opponent
+
+#### Root Prison
+
+**ID:** `root-prison`
+
+**Action time:** 2 s
+**Tags:** Special, Physical, Control
+
+Roots crush the target and delay the Player's next Basic Attack.
+
+**What it does:** 80% of Basic Attack damage Physical damage to the opponent; Delay the opponent's Basic Attack by 1 s
+
+#### Rejuvenating Sap
+
+**ID:** `rejuvenating-sap`
+
+**Action time:** 3 s
+**Tags:** Special, Heal, Direct
+
+The Heart draws restorative sap inward to recover Health.
+
+**What it does:** Restore 10% of the caster's Max Health Health to the caster
 
 ### Loot
 
-| Item ID | Min | Max | Chance (runtime fraction) | Chance (%) |
-| --- | --- | --- | --- | --- |
-| heartseed | 1 | 1 | 1 | 100% (runtime fraction 1) |
-| heartseed-necklace | 1 | 1 | 0.05 | 5% (runtime fraction 0.05) |
-| life-essence | 1 | 3 | 1 | 100% (runtime fraction 1) |
+| Item ID | Item | Quantity | Chance |
+| --- | --- | --- | --- |
+| heartseed | Heartseed | 1-1 | 100% |
+| heartseed-necklace | Heartseed Necklace | 1-1 | 5% |
+| life-essence | Life Essence | 1-3 | 100% |

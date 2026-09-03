@@ -1,26 +1,23 @@
 # Abandoned Catacombs
 
-> Runtime snapshot: `056705bee442836821b12edf1b1929aebded8f0e`  
-> Generated from current game data.  
-> Human-editable balancing document.
+**ID:** `abandoned-catacombs`
 
-**Dungeon ID:** abandoned-catacombs  
-**Description:** A dead mage’s tomb-complex where spirits and forgotten magic still linger.
+A dead mage’s tomb-complex where spirits and forgotten magic still linger.
 
-| Field ID | Runtime value |
+| Setting | Value |
 | --- | --- |
-| threatRequired | 30 |
-| boss | archmage-edrin-shade |
-| encounterDelayMs | 5000 ms (5 s) |
-| unlock | {<br>  "type": "boss-kill",<br>  "bossId": "corrupted-greatbear"<br>} |
-| completesTutorial | true |
+| Threat required | 30 |
+| Boss | Archmage Edrin's Shade (archmage-edrin-shade) |
+| Encounter delay | 5 s |
+| Unlock | Defeat Corrupted Greatbear |
+| Tutorial milestone | Yes |
 
 ## Normal encounter pool
 
-| Monster ID | Name | Role |
+| Enemy ID | Name | Role |
 | --- | --- | --- |
-| restless-skeleton | Restless Skeleton | normal |
-| grave-wraith | Grave Wraith | normal |
-| fallen-acolyte | Fallen Acolyte | normal |
+| restless-skeleton | Restless Skeleton | Normal |
+| grave-wraith | Grave Wraith | Normal |
+| fallen-acolyte | Fallen Acolyte | Normal |
 
-Boss: archmage-edrin-shade — Archmage Edrin's Shade
+Boss: Archmage Edrin's Shade (archmage-edrin-shade)

@@ -1,18 +1,221 @@
 # Howling Den equipment
 
-> Runtime snapshot: `056705bee442836821b12edf1b1929aebded8f0e`  
-> Generated from current game data.  
-> Human-editable balancing document.
+## Fangbound Dagger
 
-| Equipment ID | Name | Slot | Hands | Stats | Combat modifiers | Combat rules | Origin relation | Recipe ID |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| fangbound-dagger | Fangbound Dagger | weapon | 1 | {<br>  "basicDamage": 8,<br>  "basicAttackSpeedPct": 0.08,<br>  "critChance": 0.05<br>} | [] | [] | howling-den | fangbound-dagger |
-| fangbound-buckler | Fangbound Buckler | offhand | [NOT DEFINED IN RUNTIME] | {<br>  "maxHealth": 30,<br>  "blockChance": 0.15,<br>  "resistances": {<br>    "physical": 0.03<br>  }<br>} | [] | [] | howling-den | fangbound-buckler |
-| corrupted-howlstaff | Corrupted Howlstaff | weapon | 2 | {<br>  "spellPower": 30,<br>  "cooldownRecoveryPct": 0.1,<br>  "statusDurationPct": 0.1<br>} | [] | [] | howling-den | corrupted-howlstaff |
-| razorclaw-circlet | Razorclaw Circlet | helmet | [NOT DEFINED IN RUNTIME] | {<br>  "critChance": 0.02,<br>  "critDamage": 0.15,<br>  "basicAttackSpeedPct": 0.05<br>} | [] | [] | howling-den | razorclaw-circlet |
-| predator-hide-mantle | Predator-Hide Mantle | cape | [NOT DEFINED IN RUNTIME] | {<br>  "resistances": {<br>    "physical": 0.05<br>  }<br>} | [<br>  {<br>    "key": "status-duration-received-percent",<br>    "value": -0.1,<br>    "statusTags": [<br>      "debuff"<br>    ]<br>  }<br>] | [] | howling-den | predator-hide-mantle |
-| greatbear-vestment | Greatbear Vestment | armor | [NOT DEFINED IN RUNTIME] | {<br>  "maxHealth": 40,<br>  "defense": 10,<br>  "resistances": {<br>    "physical": 0.1<br>  }<br>} | [] | [] | howling-den | greatbear-vestment |
-| howling-signet | Howling Signet | ring | [NOT DEFINED IN RUNTIME] | {<br>  "maxMana": 20,<br>  "maxHealth": 10<br>} | [] | [<br>  {<br>    "id": "predators-feast",<br>    "event": "on-kill",<br>    "effects": [<br>      {<br>        "type": "heal",<br>        "target": "self",<br>        "magnitude": {<br>          "type": "flat",<br>          "value": 25<br>        }<br>      }<br>    ],<br>    "ui": {<br>      "name": "Predator's Feast"<br>    }<br>  }<br>] | howling-den | howling-signet |
-| greatbear-heartstone | Greatbear Heartstone | amulet | [NOT DEFINED IN RUNTIME] | {<br>  "maxHealth": 25,<br>  "resistances": {<br>    "fire": 0.05,<br>    "water": 0.05,<br>    "earth": 0.05,<br>    "air": 0.05<br>  }<br>} | [] | [<br>  {<br>    "id": "unyielding",<br>    "event": "on-hp-threshold",<br>    "condition": {<br>      "type": "self-hp-below-percent",<br>      "percent": 35<br>    },<br>    "oncePerEncounter": true,<br>    "effects": [<br>      {<br>        "type": "gain-barrier",<br>        "target": "self",<br>        "magnitude": {<br>          "type": "flat",<br>          "value": 40<br>        }<br>      }<br>    ],<br>    "ui": {<br>      "name": "Unyielding"<br>    }<br>  }<br>] | howling-den | [NOT DEFINED IN RUNTIME] |
+**ID:** `fangbound-dagger`
 
-Boss relic membership is documented separately in [Boss Relics](./Boss_Relics.md); the item remains in its authored dungeon set here.
+**Slot:** Weapon
+**Weapon hands:** 1
+**Source:** Transmutation
+**Sell value:** 70
+
+A quick blade that rewards a steady Basic Attack rhythm.
+
+### Stats
+
+- Basic Attack damage: 8
+- Basic Attack speed: +8%
+- Critical Strike chance: +5%
+
+### Crafting
+
+Output: Fangbound Dagger x1
+Duration: 12 s
+Mana cost: 0
+Unlock: Unlock Howling Den
+Ingredients: Predator Fang x6, Air Fragment x2, Fire Fragment x2
+
+### Combat effects
+
+- None
+## Fangbound Buckler
+
+**ID:** `fangbound-buckler`
+
+**Slot:** Offhand
+
+**Source:** Transmutation
+**Sell value:** 70
+
+A predator’s buckler that turns momentum aside.
+
+### Stats
+
+- Max Health: 30
+- Block chance: +15%
+- Physical resistance: +3%
+
+### Crafting
+
+Output: Fangbound Buckler x1
+Duration: 12 s
+Mana cost: 0
+Unlock: Unlock Howling Den
+Ingredients: Predator Hide x6, Predator Fang x2, Earth Fragment x3
+
+### Combat effects
+
+- None
+## Corrupted Howlstaff
+
+**ID:** `corrupted-howlstaff`
+
+**Slot:** Weapon
+**Weapon hands:** 2
+**Source:** Transmutation
+**Sell value:** 70
+
+A warped staff that accelerates spells and stretches their statuses.
+
+### Stats
+
+- Spell Power: 30
+- Cooldown recovery: +10%
+- Status duration: +10%
+
+### Crafting
+
+Output: Corrupted Howlstaff x1
+Duration: 18 s
+Mana cost: 0
+Unlock: Unlock Howling Den
+Ingredients: Greatbear Core x1, Corrupted Beast Essence x5, Air Fragment x3, Prismatic Fragment x2
+
+### Combat effects
+
+- None
+## Razorclaw Circlet
+
+**ID:** `razorclaw-circlet`
+
+**Slot:** Helmet
+
+**Source:** Transmutation
+**Sell value:** 70
+
+A circlet honed for critical strikes and swift attacks.
+
+### Stats
+
+- Critical Strike chance: +2%
+- Critical Strike damage: +15%
+- Basic Attack speed: +5%
+
+### Crafting
+
+Output: Razorclaw Circlet x1
+Duration: 12 s
+Mana cost: 0
+Unlock: Unlock Howling Den
+Ingredients: Predator Fang x4, Predator Hide x2, Air Fragment x2
+
+### Combat effects
+
+- None
+## Predator-Hide Mantle
+
+**ID:** `predator-hide-mantle`
+
+**Slot:** Cape
+
+**Source:** Transmutation
+**Sell value:** 70
+
+A mantle that blunts physical blows and shakes off hostile magic.
+
+### Stats
+
+- Physical resistance: +5%
+
+### Crafting
+
+Output: Predator-Hide Mantle x1
+Duration: 12 s
+Mana cost: 0
+Unlock: Unlock Howling Den
+Ingredients: Predator Hide x7, Earth Fragment x3
+
+### Combat effects
+
+- Passive: -10% Status duration received for Debuff statuses
+## Greatbear Vestment
+
+**ID:** `greatbear-vestment`
+
+**Slot:** Armor
+
+**Source:** Transmutation
+**Sell value:** 70
+
+A massive vestment built for endurance.
+
+### Stats
+
+- Max Health: 40
+- Defense: 10
+- Physical resistance: +10%
+
+### Crafting
+
+Output: Greatbear Vestment x1
+Duration: 18 s
+Mana cost: 0
+Unlock: Unlock Howling Den
+Ingredients: Predator Hide x10, Greatbear Core x1, Earth Fragment x4
+
+### Combat effects
+
+- None
+## Howling Signet
+
+**ID:** `howling-signet`
+
+**Slot:** Ring
+
+**Source:** Transmutation
+**Sell value:** 70
+
+A signet that feeds the hunter after every kill.
+
+### Stats
+
+- Max Mana: 20
+- Max Health: 10
+
+### Crafting
+
+Output: Howling Signet x1
+Duration: 14 s
+Mana cost: 0
+Unlock: Unlock Howling Den
+Ingredients: Corrupted Beast Essence x3, Predator Fang x3, Water Fragment x2, Air Fragment x2
+
+### Combat effects
+
+- Predator's Feast: When Kill: Restore 25 Health to the caster.
+## Greatbear Heartstone
+
+**ID:** `greatbear-heartstone`
+
+**Slot:** Amulet
+
+**Source:** Corrupted Greatbear direct drop
+**Sell value:** Not sellable
+
+A corrupted heartstone that refuses to yield.
+
+### Stats
+
+- Max Health: 25
+- Fire resistance: +5%
+- Water resistance: +5%
+- Earth resistance: +5%
+- Air resistance: +5%
+
+### Crafting
+
+No transmutation recipe authored.
+
+### Combat effects
+
+- Unyielding: When HP Threshold and the caster's Health is below 35%: Grant 40 Barrier to the caster. Once per encounter.

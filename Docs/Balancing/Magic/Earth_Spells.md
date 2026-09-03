@@ -1,15 +1,46 @@
 # Earth spells
 
-> Runtime snapshot: `056705bee442836821b12edf1b1929aebded8f0e`  
-> Generated from current game data.  
-> Human-editable balancing document.
+**ID:** `earth`
 
-**School ID:** earth  
-**Tagline:** Wards and endurance  
-**Fragment ID:** earth-fragment
+**Tagline:** Wards and endurance
+**Fragment:** Earth Fragment (earth-fragment)
 
-| Spell ID | Name | Type | Unlock level | Mana cost | Cooldown | Effects |
-| --- | --- | --- | --- | --- | --- | --- |
-| earth-spike | Earth Spike | damage | 2 | 18 | 5000 ms (5 s) | [<br>  {<br>    "type": "deal-damage",<br>    "target": "opponent",<br>    "components": [<br>      {<br>        "damageType": "earth",<br>        "magnitude": {<br>          "type": "spell-power",<br>          "coefficient": 0.85<br>        }<br>      }<br>    ],<br>    "school": "earth",<br>    "tags": [<br>      "direct"<br>    ]<br>  }<br>] |
-| stoneguard | Stoneguard | barrier | 8 | 22 | 18000 ms (18 s) | [<br>  {<br>    "type": "gain-barrier",<br>    "target": "self",<br>    "magnitude": {<br>      "type": "spell-power",<br>      "coefficient": 1.3<br>    },<br>    "mode": "replace",<br>    "durationMs": 9000,<br>    "tags": [<br>      "barrier"<br>    ]<br>  }<br>] |
-| fortify | Fortify | buff | 16 | 20 | 18000 ms (18 s) | [<br>  {<br>    "type": "apply-status",<br>    "target": "self",<br>    "statusId": "fortified",<br>    "tags": [<br>      "buff"<br>    ]<br>  }<br>] |
+## Earth Spike
+
+**ID:** `earth-spike`
+
+A heavy spike that strikes with earthen force.
+
+**Type:** Damage
+**Unlock level:** 2
+**Mana cost:** 18
+**Cooldown:** 5 s
+**Auto-Cast:** Always
+
+**What it does:** 85% of Spell Power Earth damage to the opponent
+## Stoneguard
+
+**ID:** `stoneguard`
+
+A large shell of living stone prepared for danger.
+
+**Type:** Barrier
+**Unlock level:** 8
+**Mana cost:** 22
+**Cooldown:** 18 s
+**Auto-Cast:** when the caster's Barrier is below 10
+
+**What it does:** Grant 130% of Spell Power Barrier to the caster (replacing the current Barrier) for 9 s
+## Fortify
+
+**ID:** `fortify`
+
+Reduces all incoming damage for a short duration.
+
+**Type:** Buff
+**Unlock level:** 16
+**Mana cost:** 20
+**Cooldown:** 18 s
+**Auto-Cast:** Always
+
+**What it does:** Apply Fortified to the caster

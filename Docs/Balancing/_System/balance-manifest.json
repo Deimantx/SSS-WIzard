@@ -1,0 +1,988 @@
+{
+  "schemaVersion": 1,
+  "snapshot": {
+    "commit": "e7762f48c8e9a17d152b7e692ea8a4ac15204cf8",
+    "workingTreeDirty": true,
+    "generatedAtUtc": "2026-09-03T05:43:35.477Z"
+  },
+  "runtimePolicy": {
+    "sourceOfTruth": "TypeScript runtime content and systems",
+    "markdownIsRuntimeInput": false,
+    "exporterMode": "manual"
+  },
+  "registries": {
+    "items": {
+      "count": 44,
+      "ids": [
+        "prismatic-fragment",
+        "life-essence",
+        "fire-fragment",
+        "water-fragment",
+        "earth-fragment",
+        "air-fragment",
+        "wisp-essence",
+        "grove-bark",
+        "heartseed",
+        "ember-staff",
+        "wispwood-wand",
+        "tide-focus",
+        "stoneweave-robe",
+        "windthread-charm",
+        "wispveil-hood",
+        "grovekeeper-mantle",
+        "wispbound-ring",
+        "heartseed-necklace",
+        "predator-fang",
+        "predator-hide",
+        "corrupted-beast-essence",
+        "greatbear-core",
+        "fangbound-dagger",
+        "fangbound-buckler",
+        "corrupted-howlstaff",
+        "razorclaw-circlet",
+        "predator-hide-mantle",
+        "greatbear-vestment",
+        "howling-signet",
+        "greatbear-heartstone",
+        "ossuary-remnant",
+        "graveglass-shard",
+        "soul-residue",
+        "edrin-remnant",
+        "graveglass-wand",
+        "edrins-remnant-staff",
+        "soulward-focus",
+        "soulward-shield",
+        "acolyte-vestments",
+        "wraithveil-hood",
+        "ossuary-mantle",
+        "soulglass-amulet",
+        "gravebinder-ring",
+        "edrins-signet"
+      ],
+      "documents": [
+        "Items/Item_Index.md",
+        "Items/Materials.md"
+      ],
+      "runtimeSources": [
+        "src/game/content/items/items.ts"
+      ]
+    },
+    "equipment": {
+      "count": 27,
+      "ids": [
+        "ember-staff",
+        "wispwood-wand",
+        "tide-focus",
+        "stoneweave-robe",
+        "windthread-charm",
+        "wispveil-hood",
+        "grovekeeper-mantle",
+        "wispbound-ring",
+        "heartseed-necklace",
+        "fangbound-dagger",
+        "fangbound-buckler",
+        "corrupted-howlstaff",
+        "razorclaw-circlet",
+        "predator-hide-mantle",
+        "greatbear-vestment",
+        "howling-signet",
+        "greatbear-heartstone",
+        "graveglass-wand",
+        "edrins-remnant-staff",
+        "soulward-focus",
+        "soulward-shield",
+        "acolyte-vestments",
+        "wraithveil-hood",
+        "ossuary-mantle",
+        "soulglass-amulet",
+        "gravebinder-ring",
+        "edrins-signet"
+      ],
+      "documents": [
+        "Items/Equipment_Whispering_Woods.md",
+        "Items/Equipment_Howling_Den.md",
+        "Items/Equipment_Abandoned_Catacombs.md"
+      ],
+      "runtimeSources": [
+        "src/game/content/items/items.ts",
+        "src/game/content/equipment/equipmentSets.ts"
+      ]
+    },
+    "monsters": {
+      "count": 13,
+      "ids": [
+        "forest-wisp",
+        "thornling",
+        "stone-root",
+        "grove-sentinel",
+        "forest-heart",
+        "cavefang-wolf",
+        "razorclaw-lynx",
+        "corrupted-dire-wolf",
+        "corrupted-greatbear",
+        "restless-skeleton",
+        "grave-wraith",
+        "fallen-acolyte",
+        "archmage-edrin-shade"
+      ],
+      "documents": [
+        "Enemies/Enemy_Index.md",
+        "Enemies/Whispering_Woods.md",
+        "Enemies/Howling_Den.md",
+        "Enemies/Abandoned_Catacombs.md"
+      ],
+      "runtimeSources": [
+        "src/game/content/monsters"
+      ]
+    },
+    "dungeons": {
+      "count": 3,
+      "ids": [
+        "whispering-woods",
+        "howling-den",
+        "abandoned-catacombs"
+      ],
+      "documents": [
+        "Dungeons/Dungeon_Progression.md"
+      ],
+      "runtimeSources": [
+        "src/game/content/dungeons/dungeons.ts"
+      ]
+    },
+    "recipes": {
+      "count": 29,
+      "ids": [
+        "fire-fragment",
+        "water-fragment",
+        "earth-fragment",
+        "air-fragment",
+        "prismatic-fragment",
+        "ember-staff",
+        "wispwood-wand",
+        "tide-focus",
+        "stoneweave-robe",
+        "windthread-charm",
+        "wispveil-hood",
+        "grovekeeper-mantle",
+        "wispbound-ring",
+        "fangbound-dagger",
+        "fangbound-buckler",
+        "corrupted-howlstaff",
+        "razorclaw-circlet",
+        "predator-hide-mantle",
+        "greatbear-vestment",
+        "howling-signet",
+        "graveglass-wand",
+        "edrins-remnant-staff",
+        "soulward-focus",
+        "soulward-shield",
+        "acolyte-vestments",
+        "wraithveil-hood",
+        "ossuary-mantle",
+        "soulglass-amulet",
+        "gravebinder-ring"
+      ],
+      "documents": [
+        "Transmutation/Recipes.md",
+        "Transmutation/Crafting_Economy.md"
+      ],
+      "runtimeSources": [
+        "src/game/content/recipes/recipes.ts"
+      ]
+    },
+    "spells": {
+      "count": 12,
+      "ids": [
+        "fire-bolt",
+        "ignite",
+        "fireball",
+        "water-ward",
+        "flow-mend",
+        "frostbite",
+        "earth-spike",
+        "stoneguard",
+        "fortify",
+        "air-lance",
+        "quickening",
+        "shock-spark"
+      ],
+      "documents": [
+        "Magic/Spell_Index.md",
+        "Magic/Fire_Spells.md",
+        "Magic/Water_Spells.md",
+        "Magic/Earth_Spells.md",
+        "Magic/Air_Spells.md"
+      ],
+      "runtimeSources": [
+        "src/game/content/spells/spells.ts"
+      ]
+    },
+    "statuses": {
+      "count": 14,
+      "ids": [
+        "burning",
+        "quickening",
+        "haste",
+        "spectral-fade",
+        "thorn-wound",
+        "bleeding",
+        "chilled",
+        "regeneration",
+        "fortified",
+        "shock",
+        "staggered",
+        "vulnerable",
+        "purified",
+        "stunned"
+      ],
+      "documents": [
+        "Combat/Status_Effects.md"
+      ],
+      "runtimeSources": [
+        "src/game/content/statuses/statuses.ts"
+      ]
+    },
+    "traits": {
+      "count": 15,
+      "ids": [
+        "forest-wisp-flicker",
+        "thornling-barkskin",
+        "stone-rooted-shell",
+        "grove-sentinel-ancient-growth",
+        "forest-heart-living-core",
+        "cavefang-wolf-predator-instinct",
+        "razorclaw-lynx-relentless-hunter",
+        "corrupted-dire-wolf-arcane-corruption",
+        "corrupted-greatbear-thick-hide",
+        "corrupted-greatbear-unstable-corruption",
+        "restless-skeleton-brittle-bones",
+        "grave-wraith-ethereal-form",
+        "fallen-acolyte-grave-channeling",
+        "archmage-edrin-arcane-remnant",
+        "archmage-edrin-unbound-spirit"
+      ],
+      "documents": [
+        "Combat/Traits_And_Special_Attacks.md"
+      ],
+      "runtimeSources": [
+        "src/game/content/traits/traits.ts"
+      ]
+    }
+  },
+  "documents": {
+    "README.md": {
+      "stableIds": [],
+      "runtimeSources": [
+        "scripts/export-balancing-docs.ts",
+        "src/game/content"
+      ]
+    },
+    "BALANCE_OVERVIEW.md": {
+      "stableIds": [],
+      "runtimeSources": [
+        "src/game/core/balance",
+        "src/game/content"
+      ]
+    },
+    "Combat/Player_Base_Stats.md": {
+      "stableIds": [
+        "player.maxHealth",
+        "player.healthRegenPerSecond",
+        "player.outOfCombatRegenMultiplier",
+        "player.basicAttackDamage",
+        "player.basicAttackIntervalMs",
+        "player.baseSpellPower",
+        "player.baseDefense",
+        "player.baseCritChance",
+        "player.baseCritDamage"
+      ],
+      "runtimeSources": [
+        "src/game/core/balance/balance.ts"
+      ]
+    },
+    "Combat/Global_Combat_Values.md": {
+      "stableIds": [
+        "mana.startingMana",
+        "mana.maxMana",
+        "channeling.baseNaturalRegenPerSecond",
+        "channeling.echoFocusCost",
+        "channeling.echoManaPerSecond",
+        "channeling.maxEchoes",
+        "channeling.discoveryEchoMultiplier",
+        "channeling.stableLeylineRegenBonus",
+        "channeling.stableLeylineThreshold",
+        "channeling.echoResonanceDurationMs",
+        "channeling.deepReservoirThreshold",
+        "channeling.deepReservoirCapacityBonus",
+        "focus.startingMax",
+        "focus.forestHeartBonus",
+        "focus.guildApprenticeBonus",
+        "research.maxPreparedSlots",
+        "research.maxEchoes",
+        "research.echoFocusCost",
+        "research.manaCostPerItem",
+        "research.durationPerItemMs",
+        "research.matchingXp",
+        "research.nonMatchingXp",
+        "transmutation.echoFocusCost",
+        "transmutation.maxEchoes",
+        "dungeon.encounterDelayMs",
+        "dungeon.whisperingWoodsThreatRequired",
+        "schoolProgression.startingCap",
+        "schoolProgression.tutorialCompleteCap"
+      ],
+      "runtimeSources": [
+        "src/game/core/balance/balance.ts",
+        "src/game/core/balance/combatStats.ts",
+        "src/game/core/balance/combatTiming.ts"
+      ]
+    },
+    "Combat/Combat_Formulas.md": {
+      "stableIds": [],
+      "runtimeSources": [
+        "src/game/systems/combat",
+        "src/game/core/balance"
+      ]
+    },
+    "Combat/Damage_Types_And_Resistances.md": {
+      "stableIds": [],
+      "runtimeSources": [
+        "src/game/core/balance/combatStats.ts",
+        "src/game/content/monsters"
+      ]
+    },
+    "Combat/Status_Effects.md": {
+      "stableIds": [
+        "burning",
+        "quickening",
+        "haste",
+        "spectral-fade",
+        "thorn-wound",
+        "bleeding",
+        "chilled",
+        "regeneration",
+        "fortified",
+        "shock",
+        "staggered",
+        "vulnerable",
+        "purified",
+        "stunned"
+      ],
+      "runtimeSources": [
+        "src/game/content/statuses/statuses.ts",
+        "src/game/systems/combat/combatTypes.ts"
+      ]
+    },
+    "Combat/Traits_And_Special_Attacks.md": {
+      "stableIds": [
+        "forest-wisp-flicker",
+        "thornling-barkskin",
+        "stone-rooted-shell",
+        "grove-sentinel-ancient-growth",
+        "forest-heart-living-core",
+        "cavefang-wolf-predator-instinct",
+        "razorclaw-lynx-relentless-hunter",
+        "corrupted-dire-wolf-arcane-corruption",
+        "corrupted-greatbear-thick-hide",
+        "corrupted-greatbear-unstable-corruption",
+        "restless-skeleton-brittle-bones",
+        "grave-wraith-ethereal-form",
+        "fallen-acolyte-grave-channeling",
+        "archmage-edrin-arcane-remnant",
+        "archmage-edrin-unbound-spirit"
+      ],
+      "runtimeSources": [
+        "src/game/content/traits/traits.ts",
+        "src/game/systems/combat/combatTypes.ts"
+      ]
+    },
+    "Dungeons/Dungeon_Progression.md": {
+      "stableIds": [
+        "whispering-woods",
+        "howling-den",
+        "abandoned-catacombs"
+      ],
+      "runtimeSources": [
+        "src/game/content/dungeons/dungeons.ts"
+      ]
+    },
+    "Dungeons/Whispering_Woods.md": {
+      "stableIds": [],
+      "runtimeSources": [
+        "src/game/content/dungeons/dungeons.ts"
+      ]
+    },
+    "Dungeons/Howling_Den.md": {
+      "stableIds": [],
+      "runtimeSources": [
+        "src/game/content/dungeons/dungeons.ts"
+      ]
+    },
+    "Dungeons/Abandoned_Catacombs.md": {
+      "stableIds": [],
+      "runtimeSources": [
+        "src/game/content/dungeons/dungeons.ts"
+      ]
+    },
+    "Enemies/Enemy_Index.md": {
+      "stableIds": [
+        "forest-wisp",
+        "thornling",
+        "stone-root",
+        "grove-sentinel",
+        "forest-heart",
+        "cavefang-wolf",
+        "razorclaw-lynx",
+        "corrupted-dire-wolf",
+        "corrupted-greatbear",
+        "restless-skeleton",
+        "grave-wraith",
+        "fallen-acolyte",
+        "archmage-edrin-shade"
+      ],
+      "runtimeSources": [
+        "src/game/content/monsters",
+        "src/game/core/balance/combatStats.ts"
+      ]
+    },
+    "Enemies/Whispering_Woods.md": {
+      "stableIds": [
+        "forest-wisp",
+        "thornling",
+        "stone-root",
+        "grove-sentinel",
+        "forest-heart"
+      ],
+      "runtimeSources": [
+        "src/game/content/monsters",
+        "src/game/core/balance/combatStats.ts"
+      ]
+    },
+    "Enemies/Howling_Den.md": {
+      "stableIds": [
+        "cavefang-wolf",
+        "razorclaw-lynx",
+        "corrupted-dire-wolf",
+        "corrupted-greatbear"
+      ],
+      "runtimeSources": [
+        "src/game/content/monsters",
+        "src/game/core/balance/combatStats.ts"
+      ]
+    },
+    "Enemies/Abandoned_Catacombs.md": {
+      "stableIds": [
+        "restless-skeleton",
+        "grave-wraith",
+        "fallen-acolyte",
+        "archmage-edrin-shade"
+      ],
+      "runtimeSources": [
+        "src/game/content/monsters",
+        "src/game/core/balance/combatStats.ts"
+      ]
+    },
+    "Items/Item_Index.md": {
+      "stableIds": [
+        "prismatic-fragment",
+        "life-essence",
+        "fire-fragment",
+        "water-fragment",
+        "earth-fragment",
+        "air-fragment",
+        "wisp-essence",
+        "grove-bark",
+        "heartseed",
+        "ember-staff",
+        "wispwood-wand",
+        "tide-focus",
+        "stoneweave-robe",
+        "windthread-charm",
+        "wispveil-hood",
+        "grovekeeper-mantle",
+        "wispbound-ring",
+        "heartseed-necklace",
+        "predator-fang",
+        "predator-hide",
+        "corrupted-beast-essence",
+        "greatbear-core",
+        "fangbound-dagger",
+        "fangbound-buckler",
+        "corrupted-howlstaff",
+        "razorclaw-circlet",
+        "predator-hide-mantle",
+        "greatbear-vestment",
+        "howling-signet",
+        "greatbear-heartstone",
+        "ossuary-remnant",
+        "graveglass-shard",
+        "soul-residue",
+        "edrin-remnant",
+        "graveglass-wand",
+        "edrins-remnant-staff",
+        "soulward-focus",
+        "soulward-shield",
+        "acolyte-vestments",
+        "wraithveil-hood",
+        "ossuary-mantle",
+        "soulglass-amulet",
+        "gravebinder-ring",
+        "edrins-signet"
+      ],
+      "runtimeSources": [
+        "src/game/content/items/items.ts"
+      ]
+    },
+    "Items/Materials.md": {
+      "stableIds": [
+        "prismatic-fragment",
+        "life-essence",
+        "fire-fragment",
+        "water-fragment",
+        "earth-fragment",
+        "air-fragment",
+        "wisp-essence",
+        "grove-bark",
+        "heartseed",
+        "predator-fang",
+        "predator-hide",
+        "corrupted-beast-essence",
+        "greatbear-core",
+        "ossuary-remnant",
+        "graveglass-shard",
+        "soul-residue",
+        "edrin-remnant"
+      ],
+      "runtimeSources": [
+        "src/game/content/items/items.ts",
+        "src/game/content/contentRelations.ts"
+      ]
+    },
+    "Items/Equipment_Whispering_Woods.md": {
+      "stableIds": [
+        "ember-staff",
+        "wispwood-wand",
+        "tide-focus",
+        "stoneweave-robe",
+        "windthread-charm",
+        "wispveil-hood",
+        "grovekeeper-mantle",
+        "wispbound-ring",
+        "heartseed-necklace"
+      ],
+      "runtimeSources": [
+        "src/game/content/items/items.ts",
+        "src/game/content/equipment/equipmentSets.ts",
+        "src/game/content/recipes/recipes.ts"
+      ]
+    },
+    "Items/Equipment_Howling_Den.md": {
+      "stableIds": [
+        "fangbound-dagger",
+        "fangbound-buckler",
+        "corrupted-howlstaff",
+        "razorclaw-circlet",
+        "predator-hide-mantle",
+        "greatbear-vestment",
+        "howling-signet",
+        "greatbear-heartstone"
+      ],
+      "runtimeSources": [
+        "src/game/content/items/items.ts",
+        "src/game/content/equipment/equipmentSets.ts",
+        "src/game/content/recipes/recipes.ts"
+      ]
+    },
+    "Items/Equipment_Abandoned_Catacombs.md": {
+      "stableIds": [
+        "graveglass-wand",
+        "edrins-remnant-staff",
+        "soulward-focus",
+        "soulward-shield",
+        "acolyte-vestments",
+        "wraithveil-hood",
+        "ossuary-mantle",
+        "soulglass-amulet",
+        "gravebinder-ring",
+        "edrins-signet"
+      ],
+      "runtimeSources": [
+        "src/game/content/items/items.ts",
+        "src/game/content/equipment/equipmentSets.ts",
+        "src/game/content/recipes/recipes.ts"
+      ]
+    },
+    "Items/Boss_Relics.md": {
+      "stableIds": [
+        "heartseed-necklace",
+        "greatbear-heartstone",
+        "edrins-signet"
+      ],
+      "runtimeSources": [
+        "src/game/content/items/items.ts",
+        "src/game/content/equipment/equipmentSets.ts"
+      ]
+    },
+    "Loot/Monster_Drops.md": {
+      "stableIds": [
+        "forest-wisp",
+        "thornling",
+        "stone-root",
+        "grove-sentinel",
+        "cavefang-wolf",
+        "razorclaw-lynx",
+        "corrupted-dire-wolf",
+        "restless-skeleton",
+        "grave-wraith",
+        "fallen-acolyte"
+      ],
+      "runtimeSources": [
+        "src/game/content/monsters"
+      ]
+    },
+    "Loot/Boss_Drops.md": {
+      "stableIds": [
+        "forest-heart",
+        "corrupted-greatbear",
+        "archmage-edrin-shade"
+      ],
+      "runtimeSources": [
+        "src/game/content/monsters",
+        "src/game/content/dungeons/dungeons.ts"
+      ]
+    },
+    "Transmutation/Recipes.md": {
+      "stableIds": [
+        "fire-fragment",
+        "water-fragment",
+        "earth-fragment",
+        "air-fragment",
+        "prismatic-fragment",
+        "ember-staff",
+        "wispwood-wand",
+        "tide-focus",
+        "stoneweave-robe",
+        "windthread-charm",
+        "wispveil-hood",
+        "grovekeeper-mantle",
+        "wispbound-ring",
+        "fangbound-dagger",
+        "fangbound-buckler",
+        "corrupted-howlstaff",
+        "razorclaw-circlet",
+        "predator-hide-mantle",
+        "greatbear-vestment",
+        "howling-signet",
+        "graveglass-wand",
+        "edrins-remnant-staff",
+        "soulward-focus",
+        "soulward-shield",
+        "acolyte-vestments",
+        "wraithveil-hood",
+        "ossuary-mantle",
+        "soulglass-amulet",
+        "gravebinder-ring"
+      ],
+      "runtimeSources": [
+        "src/game/content/recipes/recipes.ts"
+      ]
+    },
+    "Transmutation/Crafting_Economy.md": {
+      "stableIds": [
+        "fire-fragment",
+        "water-fragment",
+        "earth-fragment",
+        "air-fragment",
+        "prismatic-fragment",
+        "ember-staff",
+        "wispwood-wand",
+        "tide-focus",
+        "stoneweave-robe",
+        "windthread-charm",
+        "wispveil-hood",
+        "grovekeeper-mantle",
+        "wispbound-ring",
+        "fangbound-dagger",
+        "fangbound-buckler",
+        "corrupted-howlstaff",
+        "razorclaw-circlet",
+        "predator-hide-mantle",
+        "greatbear-vestment",
+        "howling-signet",
+        "graveglass-wand",
+        "edrins-remnant-staff",
+        "soulward-focus",
+        "soulward-shield",
+        "acolyte-vestments",
+        "wraithveil-hood",
+        "ossuary-mantle",
+        "soulglass-amulet",
+        "gravebinder-ring"
+      ],
+      "runtimeSources": [
+        "src/game/content/recipes/recipes.ts"
+      ]
+    },
+    "Progression/Research_XP.md": {
+      "stableIds": [
+        "fire-fragment",
+        "water-fragment",
+        "earth-fragment",
+        "air-fragment"
+      ],
+      "runtimeSources": [
+        "src/game/core/balance/balance.ts",
+        "src/game/content/items/items.ts",
+        "src/game/content/schools/schools.ts"
+      ]
+    },
+    "Progression/Magic_School_XP.md": {
+      "stableIds": [
+        "SCHOOL_LEVEL_XP",
+        "schoolProgression.startingCap",
+        "schoolProgression.tutorialCompleteCap"
+      ],
+      "runtimeSources": [
+        "src/game/core/balance/balance.ts",
+        "src/game/systems/spells"
+      ]
+    },
+    "Progression/Channeling.md": {
+      "stableIds": [
+        "leyline-conduit",
+        "arcane-reservoir",
+        "mana-resonance",
+        "astral-expansion",
+        "echo-attunement",
+        "stable-leyline",
+        "echo-resonance",
+        "deep-reservoir"
+      ],
+      "runtimeSources": [
+        "src/game/core/balance/balance.ts",
+        "src/game/content/channeling"
+      ]
+    },
+    "Progression/Focus.md": {
+      "stableIds": [
+        "focus.startingMax",
+        "focus.forestHeartBonus",
+        "focus.guildApprenticeBonus",
+        "focus-capacity"
+      ],
+      "runtimeSources": [
+        "src/game/core/balance/balance.ts",
+        "src/game/content/focus/focusImprovement.ts",
+        "src/game/content/tower/rankOneUpgradeCosts.ts"
+      ]
+    },
+    "Progression/Guild_Progression.md": {
+      "stableIds": [
+        "arcane-supply",
+        "clear-the-woods",
+        "sentinel-breaker"
+      ],
+      "runtimeSources": [
+        "src/game/content/guild/guildRequests.ts"
+      ]
+    },
+    "Progression/Progression_Overview.md": {
+      "stableIds": [
+        "whispering-woods",
+        "howling-den",
+        "abandoned-catacombs"
+      ],
+      "runtimeSources": [
+        "src/game/content/dungeons/dungeons.ts",
+        "src/game/core/balance/balance.ts"
+      ]
+    },
+    "Progression/Unlock_Progression.md": {
+      "stableIds": [
+        "dungeon:whispering-woods",
+        "dungeon:howling-den",
+        "dungeon:abandoned-catacombs",
+        "recipe:ember-staff",
+        "recipe:wispwood-wand",
+        "recipe:tide-focus",
+        "recipe:stoneweave-robe",
+        "recipe:windthread-charm",
+        "recipe:wispveil-hood",
+        "recipe:grovekeeper-mantle",
+        "recipe:wispbound-ring",
+        "recipe:fangbound-dagger",
+        "recipe:fangbound-buckler",
+        "recipe:corrupted-howlstaff",
+        "recipe:razorclaw-circlet",
+        "recipe:predator-hide-mantle",
+        "recipe:greatbear-vestment",
+        "recipe:howling-signet",
+        "recipe:graveglass-wand",
+        "recipe:edrins-remnant-staff",
+        "recipe:soulward-focus",
+        "recipe:soulward-shield",
+        "recipe:acolyte-vestments",
+        "recipe:wraithveil-hood",
+        "recipe:ossuary-mantle",
+        "recipe:soulglass-amulet",
+        "recipe:gravebinder-ring"
+      ],
+      "runtimeSources": [
+        "src/game/content/dungeons/dungeons.ts",
+        "src/game/content/recipes/recipes.ts"
+      ]
+    },
+    "Magic/Spell_Index.md": {
+      "stableIds": [
+        "fire-bolt",
+        "ignite",
+        "fireball",
+        "water-ward",
+        "flow-mend",
+        "frostbite",
+        "earth-spike",
+        "stoneguard",
+        "fortify",
+        "air-lance",
+        "quickening",
+        "shock-spark"
+      ],
+      "runtimeSources": [
+        "src/game/content/spells/spells.ts"
+      ]
+    },
+    "Magic/Fire_Spells.md": {
+      "stableIds": [
+        "fire-bolt",
+        "ignite",
+        "fireball"
+      ],
+      "runtimeSources": [
+        "src/game/content/spells/spells.ts",
+        "src/game/content/schools/schools.ts"
+      ]
+    },
+    "Magic/Water_Spells.md": {
+      "stableIds": [
+        "water-ward",
+        "flow-mend",
+        "frostbite"
+      ],
+      "runtimeSources": [
+        "src/game/content/spells/spells.ts",
+        "src/game/content/schools/schools.ts"
+      ]
+    },
+    "Magic/Earth_Spells.md": {
+      "stableIds": [
+        "earth-spike",
+        "stoneguard",
+        "fortify"
+      ],
+      "runtimeSources": [
+        "src/game/content/spells/spells.ts",
+        "src/game/content/schools/schools.ts"
+      ]
+    },
+    "Magic/Air_Spells.md": {
+      "stableIds": [
+        "air-lance",
+        "quickening",
+        "shock-spark"
+      ],
+      "runtimeSources": [
+        "src/game/content/spells/spells.ts",
+        "src/game/content/schools/schools.ts"
+      ]
+    },
+    "Magic/Magic_Schools.md": {
+      "stableIds": [
+        "fire",
+        "water",
+        "earth",
+        "air"
+      ],
+      "runtimeSources": [
+        "src/game/content/schools/schools.ts"
+      ]
+    },
+    "Magic/AutoCast_And_Focus.md": {
+      "stableIds": [
+        "fire-bolt",
+        "ignite",
+        "fireball",
+        "water-ward",
+        "flow-mend",
+        "frostbite",
+        "earth-spike",
+        "stoneguard",
+        "fortify",
+        "air-lance",
+        "quickening",
+        "shock-spark"
+      ],
+      "runtimeSources": [
+        "src/game/content/spells/spells.ts",
+        "src/game/systems/spells"
+      ]
+    },
+    "Economy/Item_Values.md": {
+      "stableIds": [
+        "prismatic-fragment",
+        "life-essence",
+        "fire-fragment",
+        "water-fragment",
+        "earth-fragment",
+        "air-fragment",
+        "wisp-essence",
+        "grove-bark",
+        "heartseed",
+        "ember-staff",
+        "wispwood-wand",
+        "tide-focus",
+        "stoneweave-robe",
+        "windthread-charm",
+        "wispveil-hood",
+        "grovekeeper-mantle",
+        "wispbound-ring",
+        "heartseed-necklace",
+        "predator-fang",
+        "predator-hide",
+        "corrupted-beast-essence",
+        "greatbear-core",
+        "fangbound-dagger",
+        "fangbound-buckler",
+        "corrupted-howlstaff",
+        "razorclaw-circlet",
+        "predator-hide-mantle",
+        "greatbear-vestment",
+        "howling-signet",
+        "greatbear-heartstone",
+        "ossuary-remnant",
+        "graveglass-shard",
+        "soul-residue",
+        "edrin-remnant",
+        "graveglass-wand",
+        "edrins-remnant-staff",
+        "soulward-focus",
+        "soulward-shield",
+        "acolyte-vestments",
+        "wraithveil-hood",
+        "ossuary-mantle",
+        "soulglass-amulet",
+        "gravebinder-ring",
+        "edrins-signet"
+      ],
+      "runtimeSources": [
+        "src/game/content/items/items.ts"
+      ]
+    },
+    "Economy/Current_Progression_Timings.md": {
+      "stableIds": [],
+      "runtimeSources": [
+        "src/game/core/balance/balance.ts",
+        "src/game/content/recipes/recipes.ts"
+      ]
+    }
+  }
+}

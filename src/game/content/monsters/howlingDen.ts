@@ -39,6 +39,6 @@ export const HOWLING_DEN_MONSTERS = {
       default: { id: 'default', steps: [basic('basic-1'), basic('basic-2'), action('crushing-maul-step', 'crushing-maul'), basic('basic-3'), action('groundbreaker-step', 'groundbreaker')] },
       corrupted: { id: 'corrupted', steps: [basic('basic-1'), action('corrupted-roar-step', 'corrupted-roar'), action('crushing-maul-step', 'crushing-maul'), basic('basic-2'), basic('basic-3'), action('arcane-rampage-step', 'arcane-rampage')] },
     }, defaultActionPatternId: 'default',
-    loot: withLifeEssence([{ itemId: 'predator-hide', min: 2, max: 4, chance: 1 }, { itemId: 'corrupted-beast-essence', min: 1, max: 2, chance: 1 }, { itemId: 'greatbear-core', min: 1, max: 1, chance: 0.35 }, { itemId: 'greatbear-heartstone', min: 1, max: 1, chance: 0.05 }]),
+    loot: withLifeEssence([{ itemId: 'predator-hide', min: 2, max: 4, chance: 1 }, { itemId: 'corrupted-beast-essence', min: 1, max: 2, chance: 1 }, { itemId: 'greatbear-core', min: 1, max: 1, chance: 0.35 }]),
   },
 } satisfies Partial<Record<MonsterId, MonsterDefinition>>

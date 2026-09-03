@@ -10,15 +10,15 @@
 | Air Fragment (air-fragment) | Elemental | — | Transmutation | — | — | — | 1 | 10 |
 | Wisp Essence (wisp-essence) | Creature | Whispering Woods | Whispering Woods normal monsters | 1 | 6 | 100%–100% | 3 | 8 |
 | Grove Bark (grove-bark) | Creature | Whispering Woods | Grove Sentinel | 2 | 3 | 100% | 5 | 8 |
-| Heartseed (heartseed) | Creature | Whispering Woods | Forest Heart first and repeat kills | 1 | 1 | 100% | — | 0 |
+| Heartseed (heartseed) | Creature | Whispering Woods | Forest Heart first and repeat kills | 1 | 1 | 100% | — | 1 |
 | Predator Fang (predator-fang) | Creature | Howling Den | Howling Den predators | 1 | 1 | 25%–55% | 4 | 4 |
 | Predator Hide (predator-hide) | Creature | Howling Den | Howling Den predators | 1 | 4 | 30%–100% | 5 | 4 |
 | Corrupted Beast Essence (corrupted-beast-essence) | Arcane | Howling Den | Corrupted Dire Wolf and Corrupted Greatbear | 1 | 2 | 35%–100% | 6 | 2 |
-| Greatbear Core (greatbear-core) | Arcane | Howling Den | Corrupted Greatbear | 1 | 1 | 35% | 20 | 2 |
+| Greatbear Core (greatbear-core) | Arcane | Howling Den | Corrupted Greatbear | 1 | 1 | 35% | 20 | 3 |
 | Ossuary Remnant (ossuary-remnant) | Creature | Abandoned Catacombs | Restless Skeleton and Fallen Acolyte | 1 | 1 | 20%–55% | 4 | 3 |
 | Graveglass Shard (graveglass-shard) | Arcane | Abandoned Catacombs | Grave Wraith, Fallen Acolyte, and Archmage Edrin’s Shade | 1 | 4 | 15%–100% | 5 | 7 |
 | Soul Residue (soul-residue) | Arcane | Abandoned Catacombs | Grave Wraith, Fallen Acolyte, and Archmage Edrin’s Shade | 1 | 3 | 30%–100% | 6 | 8 |
-| Edrin Remnant (edrin-remnant) | Arcane | Abandoned Catacombs | Archmage Edrin’s Shade | 1 | 1 | 35% | 20 | 1 |
+| Edrin Remnant (edrin-remnant) | Arcane | Abandoned Catacombs | Archmage Edrin’s Shade | 1 | 1 | 35% | 20 | 2 |
 
 > Comparison view — edit drop quantities and chances in the dungeon enemy Loot sheets.
 

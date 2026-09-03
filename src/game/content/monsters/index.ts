@@ -43,7 +43,9 @@ export const validateMonsterDefinitions = (monsters: Record<string, MonsterDefin
     if (monster.blockChance !== undefined && (!Number.isFinite(monster.blockChance) || monster.blockChance < 0 || monster.blockChance > MAX_BLOCK_CHANCE)) errors.push(`${monster.id}: invalid block chance`)
     if (new Set(monster.traitIds).size !== monster.traitIds.length) errors.push(`${monster.id}: duplicate trait id`)
     monster.loot.forEach((drop) => {
-      if (!ITEMS[drop.itemId]) errors.push(`${monster.id}: unknown loot item ${drop.itemId}`)
+      const item = ITEMS[drop.itemId]
+      if (!item) errors.push(`${monster.id}: unknown loot item ${drop.itemId}`)
+      else if (item.kind !== 'material') errors.push(`${monster.id}: monster loot may only contain materials; ${drop.itemId} is ${item.kind}`)
       if (!Number.isFinite(drop.chance) || drop.chance < 0 || drop.chance > 1) errors.push(`${monster.id}: invalid loot chance`)
       if (!Number.isInteger(drop.min) || !Number.isInteger(drop.max) || drop.min < 1 || drop.max < drop.min) errors.push(`${monster.id}: invalid loot quantity`)
     })

@@ -28,9 +28,4 @@
 | Wispveil Hood (wispveil-hood) | 10 s | 0 | Water Fragment (water-fragment) | 2 | Air Fragment (air-fragment) | 2 | Wisp Essence (wisp-essence) | 4 | Grove Bark (grove-bark) | 1 | — | — | Defeat Grove Sentinel |
 | Grovekeeper Mantle (grovekeeper-mantle) | 10 s | 0 | Earth Fragment (earth-fragment) | 3 | Wisp Essence (wisp-essence) | 4 | Grove Bark (grove-bark) | 2 | — | — | — | — | Defeat Grove Sentinel |
 | Wispbound Ring (wispbound-ring) | 8 s | 0 | Water Fragment (water-fragment) | 2 | Air Fragment (air-fragment) | 2 | Wisp Essence (wisp-essence) | 3 | Grove Bark (grove-bark) | 1 | — | — | Defeat Grove Sentinel |
-
-## Direct Drops
-
-| Item | Boss | Chance | Slot | Special Effect | Sell |
-| --- | --- | --- | --- | --- | --- |
-| Heartseed Necklace (heartseed-necklace) | Forest Heart (forest-heart) | 5% | Amulet | +5% Healing done; HP threshold when the caster's Health is below 30% -> +20 Barrier (once/encounter) | — |
+| Heartseed Necklace (heartseed-necklace) | 10 s | 0 | Heartseed (heartseed) | 20 | — | — | — | — | — | — | — | — | Defeat Forest Heart |

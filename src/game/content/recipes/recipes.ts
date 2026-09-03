@@ -36,6 +36,7 @@ export const RECIPES: Record<RecipeId, RecipeDefinition> = {
   'wispveil-hood': equipmentRecipe('wispveil-hood', 'Wispveil Hood', [{ itemId: 'water-fragment', quantity: 2 }, { itemId: 'air-fragment', quantity: 2 }, { itemId: 'wisp-essence', quantity: 4 }, { itemId: 'grove-bark', quantity: 1 }], 10000, groveSentinel, 'A steady hood for the early caster.'),
   'grovekeeper-mantle': equipmentRecipe('grovekeeper-mantle', 'Grovekeeper Mantle', [{ itemId: 'earth-fragment', quantity: 3 }, { itemId: 'wisp-essence', quantity: 4 }, { itemId: 'grove-bark', quantity: 2 }], 10000, groveSentinel, 'A mantle of early survivability.'),
   'wispbound-ring': equipmentRecipe('wispbound-ring', 'Wispbound Ring', [{ itemId: 'water-fragment', quantity: 2 }, { itemId: 'air-fragment', quantity: 2 }, { itemId: 'wisp-essence', quantity: 3 }, { itemId: 'grove-bark', quantity: 1 }], 8000, groveSentinel, 'A ring for Mana and utility.'),
+  'heartseed-necklace': equipmentRecipe('heartseed-necklace', 'Heartseed Necklace', [{ itemId: 'heartseed', quantity: 20 }], 10000, { type: 'boss-kill', bossId: 'forest-heart' }, 'A living boss material shaped into a protective amulet.'),
 
   'fangbound-dagger': equipmentRecipe('fangbound-dagger', 'Fangbound Dagger', [{ itemId: 'predator-fang', quantity: 6 }, { itemId: 'air-fragment', quantity: 2 }, { itemId: 'fire-fragment', quantity: 2 }], 12000, howlingDen, 'A quick blade for Basic Attack builds.'),
   'fangbound-buckler': equipmentRecipe('fangbound-buckler', 'Fangbound Buckler', [{ itemId: 'predator-hide', quantity: 6 }, { itemId: 'predator-fang', quantity: 2 }, { itemId: 'earth-fragment', quantity: 3 }], 12000, howlingDen, 'A defensive one-handed offhand.'),
@@ -44,6 +45,7 @@ export const RECIPES: Record<RecipeId, RecipeDefinition> = {
   'predator-hide-mantle': equipmentRecipe('predator-hide-mantle', 'Predator-Hide Mantle', [{ itemId: 'predator-hide', quantity: 7 }, { itemId: 'earth-fragment', quantity: 3 }], 12000, howlingDen, 'Physical and status protection from the hunt.'),
   'greatbear-vestment': equipmentRecipe('greatbear-vestment', 'Greatbear Vestment', [{ itemId: 'predator-hide', quantity: 10 }, { itemId: 'greatbear-core', quantity: 1 }, { itemId: 'earth-fragment', quantity: 4 }], 18000, howlingDen, 'A tank vestment built for endurance.'),
   'howling-signet': equipmentRecipe('howling-signet', 'Howling Signet', [{ itemId: 'corrupted-beast-essence', quantity: 3 }, { itemId: 'predator-fang', quantity: 3 }, { itemId: 'water-fragment', quantity: 2 }, { itemId: 'air-fragment', quantity: 2 }], 14000, howlingDen, 'A ring that sustains long combat runs.'),
+  'greatbear-heartstone': equipmentRecipe('greatbear-heartstone', 'Greatbear Heartstone', [{ itemId: 'greatbear-core', quantity: 7 }], 18000, { type: 'boss-kill', bossId: 'corrupted-greatbear' }, 'Greatbear cores fused into an unyielding heartstone.'),
 
   'graveglass-wand': equipmentRecipe('graveglass-wand', 'Graveglass Wand', [{ itemId: 'graveglass-shard', quantity: 6 }, { itemId: 'soul-residue', quantity: 3 }, { itemId: 'prismatic-fragment', quantity: 2 }], 18000, abandonedCatacombs, 'A one-handed wand for efficient spellcasting.'),
   'edrins-remnant-staff': equipmentRecipe('edrins-remnant-staff', "Edrin's Remnant Staff", [{ itemId: 'edrin-remnant', quantity: 1 }, { itemId: 'graveglass-shard', quantity: 8 }, { itemId: 'soul-residue', quantity: 6 }, { itemId: 'prismatic-fragment', quantity: 4 }], 30000, { type: 'boss-kill', bossId: 'archmage-edrin-shade' }, 'A high-end staff for status builds.'),
@@ -54,13 +56,14 @@ export const RECIPES: Record<RecipeId, RecipeDefinition> = {
   'ossuary-mantle': equipmentRecipe('ossuary-mantle', 'Ossuary Mantle', [{ itemId: 'ossuary-remnant', quantity: 7 }, { itemId: 'soul-residue', quantity: 4 }, { itemId: 'earth-fragment', quantity: 3 }, { itemId: 'prismatic-fragment', quantity: 2 }], 20000, abandonedCatacombs, 'General Catacombs defense.'),
   'soulglass-amulet': equipmentRecipe('soulglass-amulet', 'Soulglass Amulet', [{ itemId: 'graveglass-shard', quantity: 5 }, { itemId: 'soul-residue', quantity: 5 }, { itemId: 'fire-fragment', quantity: 3 }, { itemId: 'prismatic-fragment', quantity: 2 }], 20000, abandonedCatacombs, 'A Burning and future DoT build amulet.'),
   'gravebinder-ring': equipmentRecipe('gravebinder-ring', 'Gravebinder Ring', [{ itemId: 'graveglass-shard', quantity: 4 }, { itemId: 'soul-residue', quantity: 4 }, { itemId: 'prismatic-fragment', quantity: 2 }], 18000, abandonedCatacombs, 'A universal status-build ring.'),
+  'edrins-signet': equipmentRecipe('edrins-signet', "Edrin's Signet", [{ itemId: 'edrin-remnant', quantity: 7 }], 30000, { type: 'boss-kill', bossId: 'archmage-edrin-shade' }, "Edrin remnants shaped into the Archmage's warding signet."),
 }
 
 export const RECIPE_ORDER: readonly RecipeId[] = [
   'fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment', 'prismatic-fragment',
-  'ember-staff', 'wispwood-wand', 'tide-focus', 'stoneweave-robe', 'windthread-charm', 'wispveil-hood', 'grovekeeper-mantle', 'wispbound-ring',
-  'fangbound-dagger', 'fangbound-buckler', 'corrupted-howlstaff', 'razorclaw-circlet', 'predator-hide-mantle', 'greatbear-vestment', 'howling-signet',
-  'graveglass-wand', 'edrins-remnant-staff', 'soulward-focus', 'soulward-shield', 'acolyte-vestments', 'wraithveil-hood', 'ossuary-mantle', 'soulglass-amulet', 'gravebinder-ring',
+  'ember-staff', 'wispwood-wand', 'tide-focus', 'stoneweave-robe', 'windthread-charm', 'wispveil-hood', 'grovekeeper-mantle', 'wispbound-ring', 'heartseed-necklace',
+  'fangbound-dagger', 'fangbound-buckler', 'corrupted-howlstaff', 'razorclaw-circlet', 'predator-hide-mantle', 'greatbear-vestment', 'howling-signet', 'greatbear-heartstone',
+  'graveglass-wand', 'edrins-remnant-staff', 'soulward-focus', 'soulward-shield', 'acolyte-vestments', 'wraithveil-hood', 'ossuary-mantle', 'soulglass-amulet', 'gravebinder-ring', 'edrins-signet',
 ]
 
 const hasProgress = (progress: GameState['progress'], monsterId: string, count: number) => Math.max(progress.lifetimeKillsByMonster[monsterId as keyof typeof progress.lifetimeKillsByMonster] ?? 0, progress.bossKillsByBoss[monsterId as keyof typeof progress.bossKillsByBoss] ?? 0) >= count
@@ -99,12 +102,18 @@ export const validateRecipeDefinitions = (recipes: Record<string, RecipeDefiniti
     if (!Number.isFinite(recipe.baseDurationMs) || recipe.baseDurationMs <= 0 || !Number.isFinite(recipe.manaCost) || recipe.manaCost < 0) errors.push(`${recipe.id}: invalid duration or Mana cost`)
     recipe.ingredients.forEach((ingredient) => { if (!ITEMS[ingredient.itemId]) errors.push(`${recipe.id}: unknown ingredient ${ingredient.itemId}`); if (!Number.isInteger(ingredient.quantity) || ingredient.quantity <= 0) errors.push(`${recipe.id}: invalid ingredient quantity`) })
     if (recipe.category === 'equipment' && ITEMS[recipe.output.itemId]?.kind !== 'equipment') errors.push(`${recipe.id}: equipment recipe must output equipment`)
+    if (ITEMS[recipe.output.itemId]?.kind === 'equipment' && recipe.category !== 'equipment') errors.push(`${recipe.id}: Equipment output must use category equipment`)
+    if (ITEMS[recipe.output.itemId]?.kind === 'equipment' && recipe.output.quantity !== 1) errors.push(`${recipe.id}: Equipment recipe output quantity must be 1`)
     if (recipe.unlock.type === 'boss-kill' && !MONSTERS[recipe.unlock.bossId]) errors.push(`${recipe.id}: unlock boss must be a known monster`)
     if (recipe.unlock.type === 'monster-kill' && !MONSTERS[recipe.unlock.monsterId]) errors.push(`${recipe.id}: unlock monster must be known`)
     if (recipe.unlock.type === 'dungeon-unlocked' && !DUNGEONS[recipe.unlock.dungeonId]) errors.push(`${recipe.id}: unlock dungeon must be known`)
   })
   if (new Set(order).size !== order.length) errors.push('RECIPE_ORDER contains duplicates')
   if (order.length !== Object.keys(recipes).length || order.some((id) => !recipes[id as RecipeId])) errors.push('RECIPE_ORDER must contain every recipe exactly once')
+  Object.entries(ITEMS).filter(([, item]) => item.kind === 'equipment').forEach(([itemId]) => {
+    const outputRecipes = Object.values(recipes).filter((recipe) => recipe.output.itemId === itemId)
+    if (outputRecipes.length !== 1) errors.push(`${itemId}: Equipment must have exactly one Transmutation recipe (found ${outputRecipes.length})`)
+  })
   if (errors.length && import.meta.env.DEV) console.error(`[recipes] ${errors.join('; ')}`)
   return errors
 }

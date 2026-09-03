@@ -48,7 +48,6 @@
 | Corrupted Greatbear (corrupted-greatbear) | Predator Hide (predator-hide) | 2 | 4 | 100% | 3 |
 | Corrupted Greatbear (corrupted-greatbear) | Corrupted Beast Essence (corrupted-beast-essence) | 1 | 2 | 100% | 1.5 |
 | Corrupted Greatbear (corrupted-greatbear) | Greatbear Core (greatbear-core) | 1 | 1 | 35% | 0.35 |
-| Corrupted Greatbear (corrupted-greatbear) | Greatbear Heartstone (greatbear-heartstone) | 1 | 1 | 5% | 0.05 |
 | Corrupted Greatbear (corrupted-greatbear) | Life Essence (life-essence) | 1 | 3 | 100% | 2 |
 
 Boss mechanics are represented by the Core Combat Stats, Traits & Patterns, and Special Actions sheets above.

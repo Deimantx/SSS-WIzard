@@ -88,15 +88,16 @@ describe('authored equipment content', () => {
     expect(getEffectiveManaCost(state, 10)).toBe(9)
   })
 
-  it('resolves direct Forest Heart loot through central item acquisition', () => {
+  it('resolves Forest Heart material loot through central item acquisition', () => {
     const state = createInitialState()
     const result = resolveMonsterLoot(state, 'forest-heart', undefined, () => 0)
 
     expect(result).toContain('Heartseed')
     expect(state.inventory.heartseed).toBe(1)
-    expect(state.inventory['heartseed-necklace']).toBe(1)
+    expect(state.inventory['heartseed-necklace']).toBeUndefined()
     expect(state.inventory['life-essence']).toBe(1)
-    expect(state.progress.discoveredItems).toEqual(expect.arrayContaining(['heartseed', 'heartseed-necklace', 'life-essence']))
+    expect(state.progress.discoveredItems).toEqual(expect.arrayContaining(['heartseed', 'life-essence']))
+    expect(state.progress.discoveredItems).not.toContain('heartseed-necklace')
   })
 
   it('uses progression and dungeon unlock definitions for equipment recipes', () => {

@@ -14,6 +14,7 @@ describe('sheet-first balancing workbook', () => {
     expect(enemy).toContain('## Loot')
     expect(enemy).not.toContain('## Enemy details')
     expect(equipment).not.toContain('## Ember Staff')
+    expect(equipment).not.toContain('## Direct Drops')
   })
 
   it('keeps representative runtime values exact in generated rows', () => {
@@ -37,7 +38,32 @@ describe('sheet-first balancing workbook', () => {
     expect(recipes).toContain('Fire Fragment (fire-fragment) | 4')
     expect(recipes).toContain('Wisp Essence (wisp-essence) | 4')
     expect(recipes).toContain('Defeat Grove Sentinel')
+    expect(recipes).toContain('Heartseed Necklace (heartseed-necklace)')
+    expect(recipes).toContain('Heartseed (heartseed) | 20')
+    expect(recipes).toContain('Greatbear Heartstone (greatbear-heartstone)')
+    expect(recipes).toContain('Greatbear Core (greatbear-core) | 7')
+    expect(recipes).toContain("Edrin's Signet (edrins-signet)")
+    expect(recipes).toContain('Edrin Remnant (edrin-remnant) | 7')
     expect(recipes).not.toContain('<br>')
     expect(recipes).not.toContain('"event"')
+  })
+
+  it('documents signature crafting without direct Equipment loot', () => {
+    const balancing = buildBalancingDocuments()
+    const bossRelics = balancing.docs.get('Items/Boss_Relics.md') ?? ''
+    const bossDrops = balancing.docs.get('Loot/Boss_Drops.md') ?? ''
+    const equipment = balancing.docs.get('Items/Equipment_Whispering_Woods.md') ?? ''
+
+    expect(balancing.invariants).toEqual({ recipes: 32, equipment: 27, equipmentRecipeCoverage: 27, directEquipmentLoot: 0 })
+    expect(bossRelics).toContain('# Boss-signature equipment')
+    expect(bossRelics).toContain('Heartseed Necklace (heartseed-necklace)')
+    expect(bossRelics).toContain('Heartseed (heartseed)')
+    expect(bossRelics).toContain('20')
+    expect(bossRelics).toContain('10 s')
+    expect(bossDrops).not.toContain('heartseed-necklace')
+    expect(bossDrops).not.toContain('greatbear-heartstone')
+    expect(bossDrops).not.toContain('edrins-signet')
+    expect(equipment).toContain('Heartseed Necklace (heartseed-necklace)')
+    expect(equipment).toContain('Heartseed (heartseed) | 20')
   })
 })

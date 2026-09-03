@@ -6,6 +6,24 @@
 - Keep simulation and resource mutation in `src/game/systems` and store actions. Selectors are the shared read model for UI, telemetry, inventory flow, and offline simulation.
 - Transmutation is the single item-creation system. New recipes belong in `src/game/content/recipes/recipes.ts`; do not add a second production queue.
 
+## Loot, Equipment, and Transmutation
+
+- Monster and boss loot tables may grant material items only. Never place finished `kind: equipment` items in monster loot.
+- All finished Equipment is created through Transmutation. Every `kind: equipment` item must have exactly one Transmutation recipe.
+- Rare boss/signature Equipment is represented through boss/signature crafting materials and a Transmutation recipe, never a direct finished-Equipment drop.
+- Transmutation remains the single normal item-creation system. Do not add a second production/crafting path.
+
+## Balancing documentation is part of content Definition of Done
+
+`Docs/Balancing/` is the human-editable balancing workbook and must stay synchronized with authored gameplay content.
+
+- Update/regenerate the affected balancing sheets when adding, removing, or changing items, materials, Equipment, monsters, loot, recipes, spells, statuses, traits, dungeons, Research, Channeling, Focus, Guild, economy, or progression values.
+- Every authored item, material, Equipment, monster, recipe, spell, status, trait, and dungeon must appear in its corresponding balancing sheet and comparison mirrors.
+- Every new Equipment item must appear in its dungeon Equipment sheet, `Transmutation/Recipes.md`, `Crafting_Economy.md`, and exactly one runtime Transmutation recipe.
+- Runtime TypeScript remains executable source; do not duplicate authoritative gameplay values in UI or treat Markdown as runtime input.
+- Preserve human edits: inspect and merge balancing-document conflicts before regenerating; do not blindly overwrite unapplied edits.
+- For authored content work, run `npm run balancing:coverage` as part of final handoff validation. Unrelated UI-only work does not require balancing coverage.
+
 ## Tooltips are mandatory UI infrastructure
 
 SSS Wizard uses the shared `GameTooltip` / `TooltipProvider` system.

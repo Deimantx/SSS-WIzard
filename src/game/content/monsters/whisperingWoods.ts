@@ -42,7 +42,7 @@ export const WHISPERING_WOODS_MONSTERS = {
       'rejuvenating-sap': { id: 'rejuvenating-sap', name: 'Rejuvenating Sap', actionTimeMs: 3000, description: 'The Heart draws restorative sap inward to recover Health.', effects: [scaledHeal(0.1)], tags: ['special', 'heal', 'direct'] },
     },
     actionPatterns: { default: { id: 'default', steps: [basic('basic-1'), basic('basic-2'), action('heart-pulse-step', 'heart-pulse'), basic('basic-3'), basic('basic-4'), action('root-prison-step', 'root-prison'), basic('basic-5'), basic('basic-6'), basic('basic-7'), action('sap-step', 'rejuvenating-sap')] } }, defaultActionPatternId: 'default',
-    loot: withLifeEssence([{ itemId: 'heartseed', min: 1, max: 1, chance: 1 }, { itemId: 'heartseed-necklace', min: 1, max: 1, chance: 0.05 }]),
+    loot: withLifeEssence([{ itemId: 'heartseed', min: 1, max: 1, chance: 1 }]),
   },
 } satisfies Partial<Record<MonsterId, MonsterDefinition>>
 

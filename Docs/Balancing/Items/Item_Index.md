@@ -19,7 +19,7 @@
 | Wispveil Hood | wispveil-hood | Equipment | Helmet | Whispering Woods | Transmutation | 40 | Yes |
 | Grovekeeper Mantle | grovekeeper-mantle | Equipment | Cape | Whispering Woods | Transmutation | 40 | Yes |
 | Wispbound Ring | wispbound-ring | Equipment | Ring | Whispering Woods | Transmutation | 40 | Yes |
-| Heartseed Necklace | heartseed-necklace | Equipment | Amulet | Whispering Woods | Forest Heart direct drop | — | Yes |
+| Heartseed Necklace | heartseed-necklace | Equipment | Amulet | Whispering Woods | Transmutation | — | Yes |
 | Predator Fang | predator-fang | Material | Creature | — | Howling Den predators | 4 | Yes |
 | Predator Hide | predator-hide | Material | Creature | — | Howling Den predators | 5 | Yes |
 | Corrupted Beast Essence | corrupted-beast-essence | Material | Arcane | — | Corrupted Dire Wolf and Corrupted Greatbear | 6 | Yes |
@@ -31,7 +31,7 @@
 | Predator-Hide Mantle | predator-hide-mantle | Equipment | Cape | Howling Den | Transmutation | 70 | Yes |
 | Greatbear Vestment | greatbear-vestment | Equipment | Armor | Howling Den | Transmutation | 70 | Yes |
 | Howling Signet | howling-signet | Equipment | Ring | Howling Den | Transmutation | 70 | Yes |
-| Greatbear Heartstone | greatbear-heartstone | Equipment | Amulet | Howling Den | Corrupted Greatbear direct drop | — | Yes |
+| Greatbear Heartstone | greatbear-heartstone | Equipment | Amulet | Howling Den | Transmutation | — | Yes |
 | Ossuary Remnant | ossuary-remnant | Material | Creature | — | Restless Skeleton and Fallen Acolyte | 4 | Yes |
 | Graveglass Shard | graveglass-shard | Material | Arcane | — | Grave Wraith, Fallen Acolyte, and Archmage Edrin’s Shade | 5 | Yes |
 | Soul Residue | soul-residue | Material | Arcane | — | Grave Wraith, Fallen Acolyte, and Archmage Edrin’s Shade | 6 | Yes |
@@ -45,4 +45,4 @@
 | Ossuary Mantle | ossuary-mantle | Equipment | Cape | Abandoned Catacombs | Transmutation | 110 | Yes |
 | Soulglass Amulet | soulglass-amulet | Equipment | Amulet | Abandoned Catacombs | Transmutation | 110 | Yes |
 | Gravebinder Ring | gravebinder-ring | Equipment | Ring | Abandoned Catacombs | Transmutation | 110 | Yes |
-| Edrin's Signet | edrins-signet | Equipment | Ring | Abandoned Catacombs | Archmage Edrin’s Shade direct drop | — | Yes |
+| Edrin's Signet | edrins-signet | Equipment | Ring | Abandoned Catacombs | Transmutation | — | Yes |

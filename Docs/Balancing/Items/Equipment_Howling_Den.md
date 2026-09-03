@@ -26,9 +26,4 @@
 | Predator-Hide Mantle (predator-hide-mantle) | 12 s | 0 | Predator Hide (predator-hide) | 7 | Earth Fragment (earth-fragment) | 3 | — | — | — | — | — | — | Unlock Howling Den |
 | Greatbear Vestment (greatbear-vestment) | 18 s | 0 | Predator Hide (predator-hide) | 10 | Greatbear Core (greatbear-core) | 1 | Earth Fragment (earth-fragment) | 4 | — | — | — | — | Unlock Howling Den |
 | Howling Signet (howling-signet) | 14 s | 0 | Corrupted Beast Essence (corrupted-beast-essence) | 3 | Predator Fang (predator-fang) | 3 | Water Fragment (water-fragment) | 2 | Air Fragment (air-fragment) | 2 | — | — | Unlock Howling Den |
-
-## Direct Drops
-
-| Item | Boss | Chance | Slot | Special Effect | Sell |
-| --- | --- | --- | --- | --- | --- |
-| Greatbear Heartstone (greatbear-heartstone) | Corrupted Greatbear (corrupted-greatbear) | 5% | Amulet | HP threshold when the caster's Health is below 35% -> +40 Barrier (once/encounter) | — |
+| Greatbear Heartstone (greatbear-heartstone) | 18 s | 0 | Greatbear Core (greatbear-core) | 7 | — | — | — | — | — | — | — | — | Defeat Corrupted Greatbear |

@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "snapshot": {
-    "commit": "ed804c00fefe980634739bdc7d39286abc5029b9",
+    "commit": "7f86fad9e13cf425ac4c15cddf77b8541539e21b",
     "workingTreeDirty": true,
-    "generatedAtUtc": "2026-09-03T06:51:19.975Z"
+    "generatedAtUtc": "2026-09-03T07:27:13.986Z"
   },
   "runtimePolicy": {
     "sourceOfTruth": "TypeScript runtime content and systems",
@@ -150,7 +150,7 @@
       ]
     },
     "recipes": {
-      "count": 29,
+      "count": 32,
       "ids": [
         "fire-fragment",
         "water-fragment",
@@ -165,6 +165,7 @@
         "wispveil-hood",
         "grovekeeper-mantle",
         "wispbound-ring",
+        "heartseed-necklace",
         "fangbound-dagger",
         "fangbound-buckler",
         "corrupted-howlstaff",
@@ -172,6 +173,7 @@
         "predator-hide-mantle",
         "greatbear-vestment",
         "howling-signet",
+        "greatbear-heartstone",
         "graveglass-wand",
         "edrins-remnant-staff",
         "soulward-focus",
@@ -180,7 +182,8 @@
         "wraithveil-hood",
         "ossuary-mantle",
         "soulglass-amulet",
-        "gravebinder-ring"
+        "gravebinder-ring",
+        "edrins-signet"
       ],
       "documents": [
         "Transmutation/Recipes.md",
@@ -268,6 +271,12 @@
         "src/game/content/traits/traits.ts"
       ]
     }
+  },
+  "invariants": {
+    "recipes": 32,
+    "equipment": 27,
+    "equipmentRecipeCoverage": 27,
+    "directEquipmentLoot": 0
   },
   "documents": {
     "README.md": {
@@ -624,6 +633,7 @@
       "runtimeSources": [
         "src/game/content/items/items.ts",
         "src/game/content/equipment/equipmentSets.ts",
+        "src/game/content/recipes/recipes.ts",
         "src/game/content/monsters"
       ]
     },
@@ -671,6 +681,7 @@
         "wispveil-hood",
         "grovekeeper-mantle",
         "wispbound-ring",
+        "heartseed-necklace",
         "fangbound-dagger",
         "fangbound-buckler",
         "corrupted-howlstaff",
@@ -678,6 +689,7 @@
         "predator-hide-mantle",
         "greatbear-vestment",
         "howling-signet",
+        "greatbear-heartstone",
         "graveglass-wand",
         "edrins-remnant-staff",
         "soulward-focus",
@@ -686,7 +698,8 @@
         "wraithveil-hood",
         "ossuary-mantle",
         "soulglass-amulet",
-        "gravebinder-ring"
+        "gravebinder-ring",
+        "edrins-signet"
       ],
       "runtimeSources": [
         "src/game/content/recipes/recipes.ts"
@@ -707,6 +720,7 @@
         "wispveil-hood",
         "grovekeeper-mantle",
         "wispbound-ring",
+        "heartseed-necklace",
         "fangbound-dagger",
         "fangbound-buckler",
         "corrupted-howlstaff",
@@ -714,6 +728,7 @@
         "predator-hide-mantle",
         "greatbear-vestment",
         "howling-signet",
+        "greatbear-heartstone",
         "graveglass-wand",
         "edrins-remnant-staff",
         "soulward-focus",
@@ -722,7 +737,8 @@
         "wraithveil-hood",
         "ossuary-mantle",
         "soulglass-amulet",
-        "gravebinder-ring"
+        "gravebinder-ring",
+        "edrins-signet"
       ],
       "runtimeSources": [
         "src/game/content/recipes/recipes.ts",
@@ -819,6 +835,7 @@
         "recipe:wispveil-hood",
         "recipe:grovekeeper-mantle",
         "recipe:wispbound-ring",
+        "recipe:heartseed-necklace",
         "recipe:fangbound-dagger",
         "recipe:fangbound-buckler",
         "recipe:corrupted-howlstaff",
@@ -826,6 +843,7 @@
         "recipe:predator-hide-mantle",
         "recipe:greatbear-vestment",
         "recipe:howling-signet",
+        "recipe:greatbear-heartstone",
         "recipe:graveglass-wand",
         "recipe:edrins-remnant-staff",
         "recipe:soulward-focus",
@@ -834,7 +852,8 @@
         "recipe:wraithveil-hood",
         "recipe:ossuary-mantle",
         "recipe:soulglass-amulet",
-        "recipe:gravebinder-ring"
+        "recipe:gravebinder-ring",
+        "recipe:edrins-signet"
       ],
       "runtimeSources": [
         "src/game/content/dungeons/dungeons.ts",

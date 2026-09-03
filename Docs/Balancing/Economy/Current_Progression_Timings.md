@@ -24,6 +24,7 @@
 | Wispveil Hood (wispveil-hood) | 10 s |
 | Grovekeeper Mantle (grovekeeper-mantle) | 10 s |
 | Wispbound Ring (wispbound-ring) | 8 s |
+| Heartseed Necklace (heartseed-necklace) | 10 s |
 | Fangbound Dagger (fangbound-dagger) | 12 s |
 | Fangbound Buckler (fangbound-buckler) | 12 s |
 | Corrupted Howlstaff (corrupted-howlstaff) | 18 s |
@@ -31,6 +32,7 @@
 | Predator-Hide Mantle (predator-hide-mantle) | 12 s |
 | Greatbear Vestment (greatbear-vestment) | 18 s |
 | Howling Signet (howling-signet) | 14 s |
+| Greatbear Heartstone (greatbear-heartstone) | 18 s |
 | Graveglass Wand (graveglass-wand) | 18 s |
 | Edrin's Remnant Staff (edrins-remnant-staff) | 30 s |
 | Soulward Focus (soulward-focus) | 20 s |
@@ -40,6 +42,7 @@
 | Ossuary Mantle (ossuary-mantle) | 20 s |
 | Soulglass Amulet (soulglass-amulet) | 20 s |
 | Gravebinder Ring (gravebinder-ring) | 18 s |
+| Edrin's Signet (edrins-signet) | 30 s |
 
 ## Material Acquisition
 
@@ -53,12 +56,12 @@
 | Air Fragment (air-fragment) | Transmutation | — | — |
 | Wisp Essence (wisp-essence) | Grove Sentinel (grove-sentinel) — Whispering Woods | 5 | 0.8 |
 | Grove Bark (grove-bark) | Grove Sentinel (grove-sentinel) — Whispering Woods | 2.5 | 0.4 |
-| Heartseed (heartseed) | Forest Heart (forest-heart) — Whispering Woods | 1 | — |
+| Heartseed (heartseed) | Forest Heart (forest-heart) — Whispering Woods | 1 | 20 |
 | Predator Fang (predator-fang) | Cavefang Wolf (cavefang-wolf) — Howling Den | 0.55 | 10.91 |
 | Predator Hide (predator-hide) | Corrupted Greatbear (corrupted-greatbear) — Howling Den | 3 | 2.33 |
 | Corrupted Beast Essence (corrupted-beast-essence) | Corrupted Greatbear (corrupted-greatbear) — Howling Den | 1.5 | 3.33 |
-| Greatbear Core (greatbear-core) | Corrupted Greatbear (corrupted-greatbear) — Howling Den | 0.35 | 2.86 |
+| Greatbear Core (greatbear-core) | Corrupted Greatbear (corrupted-greatbear) — Howling Den | 0.35 | 20 |
 | Ossuary Remnant (ossuary-remnant) | Restless Skeleton (restless-skeleton) — Abandoned Catacombs | 0.55 | 10.91 |
 | Graveglass Shard (graveglass-shard) | Archmage Edrin's Shade (archmage-edrin-shade) — Abandoned Catacombs | 3 | 2 |
 | Soul Residue (soul-residue) | Archmage Edrin's Shade (archmage-edrin-shade) — Abandoned Catacombs | 2.5 | 1.2 |
-| Edrin Remnant (edrin-remnant) | Archmage Edrin's Shade (archmage-edrin-shade) — Abandoned Catacombs | 0.35 | 2.86 |
+| Edrin Remnant (edrin-remnant) | Archmage Edrin's Shade (archmage-edrin-shade) — Abandoned Catacombs | 0.35 | 20 |

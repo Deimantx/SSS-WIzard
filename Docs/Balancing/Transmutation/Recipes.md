@@ -24,6 +24,7 @@ Canonical recipe sheet. Ingredient names and quantities are separate cells for d
 | Wispveil Hood (wispveil-hood) | 1 | 10 s | 0 | Water Fragment (water-fragment) | 2 | Air Fragment (air-fragment) | 2 | Wisp Essence (wisp-essence) | 4 | Grove Bark (grove-bark) | 1 | — | — | Defeat Grove Sentinel |
 | Grovekeeper Mantle (grovekeeper-mantle) | 1 | 10 s | 0 | Earth Fragment (earth-fragment) | 3 | Wisp Essence (wisp-essence) | 4 | Grove Bark (grove-bark) | 2 | — | — | — | — | Defeat Grove Sentinel |
 | Wispbound Ring (wispbound-ring) | 1 | 8 s | 0 | Water Fragment (water-fragment) | 2 | Air Fragment (air-fragment) | 2 | Wisp Essence (wisp-essence) | 3 | Grove Bark (grove-bark) | 1 | — | — | Defeat Grove Sentinel |
+| Heartseed Necklace (heartseed-necklace) | 1 | 10 s | 0 | Heartseed (heartseed) | 20 | — | — | — | — | — | — | — | — | Defeat Forest Heart |
 
 ## Howling Den
 
@@ -36,6 +37,7 @@ Canonical recipe sheet. Ingredient names and quantities are separate cells for d
 | Predator-Hide Mantle (predator-hide-mantle) | 1 | 12 s | 0 | Predator Hide (predator-hide) | 7 | Earth Fragment (earth-fragment) | 3 | — | — | — | — | — | — | Unlock Howling Den |
 | Greatbear Vestment (greatbear-vestment) | 1 | 18 s | 0 | Predator Hide (predator-hide) | 10 | Greatbear Core (greatbear-core) | 1 | Earth Fragment (earth-fragment) | 4 | — | — | — | — | Unlock Howling Den |
 | Howling Signet (howling-signet) | 1 | 14 s | 0 | Corrupted Beast Essence (corrupted-beast-essence) | 3 | Predator Fang (predator-fang) | 3 | Water Fragment (water-fragment) | 2 | Air Fragment (air-fragment) | 2 | — | — | Unlock Howling Den |
+| Greatbear Heartstone (greatbear-heartstone) | 1 | 18 s | 0 | Greatbear Core (greatbear-core) | 7 | — | — | — | — | — | — | — | — | Defeat Corrupted Greatbear |
 
 ## Abandoned Catacombs
 
@@ -50,5 +52,6 @@ Canonical recipe sheet. Ingredient names and quantities are separate cells for d
 | Ossuary Mantle (ossuary-mantle) | 1 | 20 s | 0 | Ossuary Remnant (ossuary-remnant) | 7 | Soul Residue (soul-residue) | 4 | Earth Fragment (earth-fragment) | 3 | Prismatic Fragment (prismatic-fragment) | 2 | — | — | Unlock Abandoned Catacombs |
 | Soulglass Amulet (soulglass-amulet) | 1 | 20 s | 0 | Graveglass Shard (graveglass-shard) | 5 | Soul Residue (soul-residue) | 5 | Fire Fragment (fire-fragment) | 3 | Prismatic Fragment (prismatic-fragment) | 2 | — | — | Unlock Abandoned Catacombs |
 | Gravebinder Ring (gravebinder-ring) | 1 | 18 s | 0 | Graveglass Shard (graveglass-shard) | 4 | Soul Residue (soul-residue) | 4 | Prismatic Fragment (prismatic-fragment) | 2 | — | — | — | — | Unlock Abandoned Catacombs |
+| Edrin's Signet (edrins-signet) | 1 | 30 s | 0 | Edrin Remnant (edrin-remnant) | 7 | — | — | — | — | — | — | — | — | Defeat Archmage Edrin's Shade |
 
 Transmutation is the single item-creation system. Dev Tools grants use the normal acquisition path.

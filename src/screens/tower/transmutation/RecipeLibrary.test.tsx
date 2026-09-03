@@ -30,7 +30,7 @@ describe('RecipeLibrary screen preferences', () => {
 
   it('persists category collapse state and reveals a collapsed category for its explicit filter', () => {
     const view = render(<RecipeLibrary selectedRecipeId="fire-fragment" onSelect={vi.fn()} />)
-    const equipment = screen.getByRole('button', { name: /^EQUIPMENT, 24 recipes$/i })
+    const equipment = screen.getByRole('button', { name: /^EQUIPMENT, 27 recipes$/i })
     fireEvent.click(equipment)
     expect(equipment.getAttribute('aria-expanded')).toBe('false')
     expect(screen.queryByRole('button', { name: /Ember Staff/ })).toBeNull()
@@ -38,14 +38,14 @@ describe('RecipeLibrary screen preferences', () => {
     view.unmount()
     render(<RecipeLibrary selectedRecipeId="fire-fragment" onSelect={vi.fn()} />)
 
-    const remountedEquipment = screen.getByRole('button', { name: /^EQUIPMENT, 24 recipes$/i })
+    const remountedEquipment = screen.getByRole('button', { name: /^EQUIPMENT, 27 recipes$/i })
     expect(remountedEquipment.getAttribute('aria-expanded')).toBe('false')
     expect(screen.queryByRole('button', { name: /Ember Staff/ })).toBeNull()
     expect(JSON.parse(window.localStorage.getItem('sss-wizard-ui-preferences-v1')!).screenState.transmutation.collapsedCategories.equipment).toBe(true)
 
     fireEvent.click(screen.getByRole('tab', { name: 'EQUIPMENT' }))
 
-    expect(screen.queryByRole('button', { name: /^EQUIPMENT, 24 recipes$/i })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^EQUIPMENT, 27 recipes$/i })).toBeNull()
     expect(document.querySelector('.transmutation-group-heading.is-static')).toBeTruthy()
     expect(screen.getByRole('button', { name: /Ember Staff/ })).toBeTruthy()
     expect(JSON.parse(window.localStorage.getItem('sss-wizard-ui-preferences-v1')!).screenState.transmutation.collapsedCategories.equipment).toBe(true)

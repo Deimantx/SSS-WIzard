@@ -13,6 +13,7 @@
 | Wispveil Hood (recipe:wispveil-hood) | Recipe | Defeat Grove Sentinel | — | — | Wispveil Hood (wispveil-hood) |
 | Grovekeeper Mantle (recipe:grovekeeper-mantle) | Recipe | Defeat Grove Sentinel | — | — | Grovekeeper Mantle (grovekeeper-mantle) |
 | Wispbound Ring (recipe:wispbound-ring) | Recipe | Defeat Grove Sentinel | — | — | Wispbound Ring (wispbound-ring) |
+| Heartseed Necklace (recipe:heartseed-necklace) | Recipe | Defeat Forest Heart | — | — | Heartseed Necklace (heartseed-necklace) |
 | Fangbound Dagger (recipe:fangbound-dagger) | Recipe | Unlock Howling Den | — | — | Fangbound Dagger (fangbound-dagger) |
 | Fangbound Buckler (recipe:fangbound-buckler) | Recipe | Unlock Howling Den | — | — | Fangbound Buckler (fangbound-buckler) |
 | Corrupted Howlstaff (recipe:corrupted-howlstaff) | Recipe | Unlock Howling Den | — | — | Corrupted Howlstaff (corrupted-howlstaff) |
@@ -20,6 +21,7 @@
 | Predator-Hide Mantle (recipe:predator-hide-mantle) | Recipe | Unlock Howling Den | — | — | Predator-Hide Mantle (predator-hide-mantle) |
 | Greatbear Vestment (recipe:greatbear-vestment) | Recipe | Unlock Howling Den | — | — | Greatbear Vestment (greatbear-vestment) |
 | Howling Signet (recipe:howling-signet) | Recipe | Unlock Howling Den | — | — | Howling Signet (howling-signet) |
+| Greatbear Heartstone (recipe:greatbear-heartstone) | Recipe | Defeat Corrupted Greatbear | — | — | Greatbear Heartstone (greatbear-heartstone) |
 | Graveglass Wand (recipe:graveglass-wand) | Recipe | Unlock Abandoned Catacombs | — | — | Graveglass Wand (graveglass-wand) |
 | Edrin's Remnant Staff (recipe:edrins-remnant-staff) | Recipe | Defeat Archmage Edrin's Shade | — | — | Edrin's Remnant Staff (edrins-remnant-staff) |
 | Soulward Focus (recipe:soulward-focus) | Recipe | Unlock Abandoned Catacombs | — | — | Soulward Focus (soulward-focus) |
@@ -29,3 +31,4 @@
 | Ossuary Mantle (recipe:ossuary-mantle) | Recipe | Unlock Abandoned Catacombs | — | — | Ossuary Mantle (ossuary-mantle) |
 | Soulglass Amulet (recipe:soulglass-amulet) | Recipe | Unlock Abandoned Catacombs | — | — | Soulglass Amulet (soulglass-amulet) |
 | Gravebinder Ring (recipe:gravebinder-ring) | Recipe | Unlock Abandoned Catacombs | — | — | Gravebinder Ring (gravebinder-ring) |
+| Edrin's Signet (recipe:edrins-signet) | Recipe | Defeat Archmage Edrin's Shade | — | — | Edrin's Signet (edrins-signet) |

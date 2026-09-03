@@ -1327,6 +1327,16 @@ Ne kiekvienas equipment item turi būti vien didesnis generic DPS.
 
 ---
 
+### Equipment Acquisition
+
+- Enemies and bosses drop crafting materials only.
+- Finished Equipment never drops directly from combat.
+- All finished Equipment is created through Transmutation.
+- Boss-signature Equipment uses boss/signature materials in its Transmutation recipe.
+- Rare chase rewards may use rare material drops or high material requirements, but final Equipment still comes from Transmutation.
+
+---
+
 # 22. Inventory, Collection ir Bestiary turi skirtingas paskirtis
 
 ## [PATVIRTINTA / IMPLEMENTUOTA]

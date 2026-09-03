@@ -51,7 +51,6 @@
 | Archmage Edrin's Shade (archmage-edrin-shade) | Graveglass Shard (graveglass-shard) | 2 | 4 | 100% | 3 |
 | Archmage Edrin's Shade (archmage-edrin-shade) | Soul Residue (soul-residue) | 2 | 3 | 100% | 2.5 |
 | Archmage Edrin's Shade (archmage-edrin-shade) | Edrin Remnant (edrin-remnant) | 1 | 1 | 35% | 0.35 |
-| Archmage Edrin's Shade (archmage-edrin-shade) | Edrin's Signet (edrins-signet) | 1 | 1 | 5% | 0.05 |
 | Archmage Edrin's Shade (archmage-edrin-shade) | Life Essence (life-essence) | 1 | 3 | 100% | 2 |
 
 Boss mechanics are represented by the Core Combat Stats, Traits & Patterns, and Special Actions sheets above.

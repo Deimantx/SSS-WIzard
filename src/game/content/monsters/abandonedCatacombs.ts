@@ -44,6 +44,6 @@ export const ABANDONED_CATACOMBS_MONSTERS = {
       default: { id: 'default', steps: [action('gravefire-step', 'gravefire'), basic('basic-1'), action('frostbind-step', 'frostbind'), action('arcane-ward-step', 'arcane-ward'), basic('basic-2'), action('soul-drain-step', 'soul-drain')] },
       unbound: { id: 'unbound', steps: [basic('basic-1'), action('gravefire-step', 'gravefire'), action('frostbind-step', 'frostbind'), action('soul-drain-step', 'soul-drain'), basic('basic-2'), action('final-incantation-step', 'final-incantation')] },
     }, defaultActionPatternId: 'default',
-    loot: withLifeEssence([{ itemId: 'graveglass-shard', min: 2, max: 4, chance: 1 }, { itemId: 'soul-residue', min: 2, max: 3, chance: 1 }, { itemId: 'edrin-remnant', min: 1, max: 1, chance: 0.35 }, { itemId: 'edrins-signet', min: 1, max: 1, chance: 0.05 }]),
+    loot: withLifeEssence([{ itemId: 'graveglass-shard', min: 2, max: 4, chance: 1 }, { itemId: 'soul-residue', min: 2, max: 3, chance: 1 }, { itemId: 'edrin-remnant', min: 1, max: 1, chance: 0.35 }]),
   },
 } satisfies Partial<Record<MonsterId, MonsterDefinition>>

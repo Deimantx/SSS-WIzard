@@ -47,7 +47,6 @@
 | Grove Sentinel (grove-sentinel) | Wisp Essence (wisp-essence) | 4 | 6 | 100% | 5 |
 | Grove Sentinel (grove-sentinel) | Life Essence (life-essence) | 1 | 3 | 100% | 2 |
 | Forest Heart (forest-heart) | Heartseed (heartseed) | 1 | 1 | 100% | 1 |
-| Forest Heart (forest-heart) | Heartseed Necklace (heartseed-necklace) | 1 | 1 | 5% | 0.05 |
 | Forest Heart (forest-heart) | Life Essence (life-essence) | 1 | 3 | 100% | 2 |
 
 Boss mechanics are represented by the Core Combat Stats, Traits & Patterns, and Special Actions sheets above.

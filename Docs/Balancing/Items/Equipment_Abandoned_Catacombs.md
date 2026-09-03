@@ -30,9 +30,4 @@
 | Ossuary Mantle (ossuary-mantle) | 20 s | 0 | Ossuary Remnant (ossuary-remnant) | 7 | Soul Residue (soul-residue) | 4 | Earth Fragment (earth-fragment) | 3 | Prismatic Fragment (prismatic-fragment) | 2 | — | — | Unlock Abandoned Catacombs |
 | Soulglass Amulet (soulglass-amulet) | 20 s | 0 | Graveglass Shard (graveglass-shard) | 5 | Soul Residue (soul-residue) | 5 | Fire Fragment (fire-fragment) | 3 | Prismatic Fragment (prismatic-fragment) | 2 | — | — | Unlock Abandoned Catacombs |
 | Gravebinder Ring (gravebinder-ring) | 18 s | 0 | Graveglass Shard (graveglass-shard) | 4 | Soul Residue (soul-residue) | 4 | Prismatic Fragment (prismatic-fragment) | 2 | — | — | — | — | Unlock Abandoned Catacombs |
-
-## Direct Drops
-
-| Item | Boss | Chance | Slot | Special Effect | Sell |
-| --- | --- | --- | --- | --- | --- |
-| Edrin's Signet (edrins-signet) | Archmage Edrin's Shade (archmage-edrin-shade) | 5% | Ring | Status applied when the source is the opponent and the affected actor is the caster and the current status has the Debuff tag -> +20 Barrier (30 s CD) | — |
+| Edrin's Signet (edrins-signet) | 30 s | 0 | Edrin Remnant (edrin-remnant) | 7 | — | — | — | — | — | — | — | — | Defeat Archmage Edrin's Shade |

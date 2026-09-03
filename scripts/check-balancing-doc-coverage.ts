@@ -10,6 +10,12 @@ const read = (relativePath: string) => readFileSync(resolve(docsRoot, relativePa
 const missing: string[] = []
 const forbiddenArtifacts = ['<br>', '"event":', '"target":', '"magnitude":', 'sourceKinds', 'condition', 'runtime fraction', 'BALANCE.', '[NOT DEFINED IN RUNTIME]', '{}', '[]']
 
+if (balancing.invariants.directEquipmentLoot !== 0) missing.push(`invariant: ${balancing.invariants.directEquipmentLoot} finished Equipment loot entries remain`)
+if (balancing.invariants.equipmentRecipeCoverage !== balancing.invariants.equipment) missing.push(`invariant: Equipment recipe coverage is ${balancing.invariants.equipmentRecipeCoverage}/${balancing.invariants.equipment}`)
+console.log('Recipes: ' + balancing.invariants.recipes)
+console.log('Equipment recipe coverage: ' + balancing.invariants.equipmentRecipeCoverage + '/' + balancing.invariants.equipment)
+console.log('Direct Equipment loot: ' + balancing.invariants.directEquipmentLoot)
+
 for (const [domain, registry] of Object.entries(balancing.registries)) {
   try {
     const documentedText = registry.documents.map(read).join('\n')
@@ -32,12 +38,16 @@ for (const relativePath of Object.keys(balancing.documentInfo).filter((path) => 
 try {
   const manifest = JSON.parse(read('_System/balance-manifest.json')) as {
     registries?: Record<string, { count?: number; ids?: string[] }>
+    invariants?: Record<string, number>
   }
   for (const [domain, registry] of Object.entries(balancing.registries)) {
     const entry = manifest.registries?.[domain]
     if (!entry || entry.count !== registry.count || JSON.stringify(entry.ids) !== JSON.stringify(registry.ids)) {
       missing.push('manifest: registry metadata is stale for ' + domain)
     }
+  }
+  for (const [key, value] of Object.entries(balancing.invariants)) {
+    if (manifest.invariants?.[key] !== value) missing.push('manifest: invariant metadata is stale for ' + key)
   }
 } catch (error) {
   missing.push('manifest: unable to read _System/balance-manifest.json: ' + String(error))

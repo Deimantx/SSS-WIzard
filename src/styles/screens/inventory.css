@@ -129,7 +129,7 @@
 .inventory-vault-header-meta { display: inline-flex; align-items: center; justify-content: flex-end; gap: 12px; flex-wrap: wrap; }
 .inventory-gold { display: inline-flex; align-items: center; gap: 5px; color: var(--ui-gold); font: var(--text-micro) var(--font-mono); letter-spacing: .08em; white-space: nowrap; }
 .inventory-gold svg { color: var(--ui-gold); }
-.inventory-actions-card { height: 100% !important; min-height: 0 !important; overflow: visible !important; display: flex; flex-direction: column; padding: 11px !important; }
+.inventory-actions-card { height: 100% !important; min-height: 0 !important; display: flex; flex-direction: column; padding: 11px !important; }
 .inventory-actions-card > .inventory-actions-content { flex: 1 1 auto; min-height: auto; overflow: visible; }
 .inventory-actions-content { display: grid; align-content: start; gap: 9px; min-width: 0; }
 .inventory-actions-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; min-height: 24px; }
@@ -173,4 +173,4 @@
 .inventory-detail-reserved { display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; padding: 9px; margin-top: 9px; border: 1px solid rgba(168,148,255,.22); border-radius: 6px; color: var(--ui-accent); font: 9px 'DM Mono'; }
 .inventory-detail-reserved strong { color: var(--ui-text); font-size: 11px; }
 .inventory-detail-reserved small { grid-column: 1 / -1; color: var(--muted); font: 9px 'Manrope'; line-height: 1.35; }
-@media (max-width: 760px) { .inventory-vault-header-meta { justify-content: flex-start; }.inventory-actions-card { height: auto !important; min-height: 0 !important; overflow: visible !important; }.inventory-actions-card > .inventory-actions-content { overflow: visible; }.inventory-actions-content { gap: 10px; } }
+@media (max-width: 760px) { .inventory-vault-header-meta { justify-content: flex-start; }.inventory-actions-card { height: auto !important; min-height: 0 !important; }.inventory-actions-card > .inventory-actions-content { overflow: visible; }.inventory-actions-content { gap: 10px; } }

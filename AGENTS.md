@@ -82,6 +82,8 @@ When replacing a system, remove the obsolete implementation after migration rath
 
 ## Game Feel and motion
 
+- Main screens must not clip their final content. Screen transition wrappers, shell containers, and decorative chrome must not own vertical sizing in a way that crops real content; each main screen needs a clear scroll owner and safe bottom padding.
+- Decorative panel chrome must remain fully bounded by its host panel. Pseudo-elements and accent layers may not leak outside panel edges, overlap content unexpectedly, or create stray visual artifacts.
 - Decorative motion is UI-only and must never delay or own gameplay state, timers, crafting, combat resolution, navigation, or saves.
 - Reuse shared Game Feel primitives for screen transitions, interaction feedback, value pulses, progress motion, and short FX; do not create competing per-screen animation systems.
 - Respect both the persisted Reduced Motion preference and `prefers-reduced-motion`.

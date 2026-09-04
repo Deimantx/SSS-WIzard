@@ -19,6 +19,10 @@ describe('screen smoke coverage', () => {
   it('renders each Wizard Tower system as its own focused screen', async () => {
     const user = userEvent.setup()
     render(<GameShell />)
+    const screenScroll = document.querySelector('.screen-scroll')
+    expect(screenScroll).toBeTruthy()
+    expect(screenScroll?.firstElementChild?.classList.contains('game-screen-transition')).toBe(true)
+    expect(screenScroll?.querySelector('.screen-content')).toBeTruthy()
     for (const item of [{ label: 'Channeling', heading: 'Channeling Chamber' }, { label: 'Focus', heading: 'Focus governs every parallel action.' }, { label: 'Transmutation', heading: 'Turn Mana and materials into matter.' }, { label: 'Research', heading: 'Research turns fragments into understanding.' }]) { await goToTower(user, item.label); expect(screen.getByRole('heading', { name: item.heading })).toBeTruthy() }
   })
 

@@ -367,6 +367,10 @@
 /* Arcane screen reveal. Navigation mounts immediately; only the already-mounted frame gets a short visual wake. */
 .game-screen-transition {
   position: relative;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 100%;
   isolation: isolate;
   animation: game-screen-arcane-reveal 235ms cubic-bezier(.2, .76, .28, 1) both;
 }
@@ -396,8 +400,8 @@
 }
 
 @keyframes game-screen-arcane-reveal {
-  from { opacity: .25; clip-path: inset(0 4% 0 0); }
-  to { opacity: 1; clip-path: inset(0); }
+  from { opacity: .25; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
 }
 
 @keyframes game-screen-arcane-sweep {
@@ -415,37 +419,128 @@
 /* Panel chrome is paint-only. It never participates in grid measurement or saved geometry. */
 .game-shell .screen-scroll [data-game-panel='true'] {
   position: relative;
+  overflow: hidden;
   isolation: isolate;
 }
 
 .game-shell .screen-scroll [data-game-panel='true']::before {
-  z-index: 0;
-  inset: 0;
+  z-index: -1;
+  inset: 1px;
   border-radius: inherit;
   background: linear-gradient(90deg, color-mix(in srgb, var(--ui-accent) 70%, transparent) 0 12px, transparent 12px 100%) top left / 100% 1px no-repeat,
-    linear-gradient(180deg, color-mix(in srgb, var(--ui-accent) 62%, transparent) 0 12px, transparent 12px 100%) top left / 1px 100% no-repeat,
-    linear-gradient(270deg, color-mix(in srgb, var(--ui-secondary) 56%, transparent) 0 12px, transparent 12px 100%) bottom right / 100% 1px no-repeat,
-    linear-gradient(0deg, color-mix(in srgb, var(--ui-secondary) 48%, transparent) 0 12px, transparent 12px 100%) bottom right / 1px 100% no-repeat;
+    linear-gradient(180deg, color-mix(in srgb, var(--ui-accent) 62%, transparent) 0 12px, transparent 12px 100%) top left / 1px 100% no-repeat;
   opacity: .65;
   content: '';
   pointer-events: none;
 }
 
 .game-shell .screen-scroll [data-game-panel='true']::after {
-  z-index: 0;
-  top: 0;
-  left: 18px;
-  width: 56px;
-  height: 2px;
-  border-radius: 99px;
-  background: linear-gradient(90deg, var(--ui-accent), var(--ui-secondary), transparent);
-  content: '';
-  opacity: .72;
-  pointer-events: none;
+  display: none;
 }
 
 .game-shell .screen-scroll .game-screen-transition [data-game-panel='true'] {
   animation: game-panel-wake 360ms ease-out both;
+}
+
+/* The current selection is a stable focus cue; hover remains a transient lift. */
+.game-shell .screen-scroll .transmutation-recipe-tile.selected,
+.game-shell .screen-scroll .inventory-item.selected,
+.game-shell .screen-scroll .equipment-armory-card.selected,
+.game-shell .screen-scroll .equipment-slot-card.selected,
+.game-shell .screen-scroll .research-item-tile.selected,
+.game-shell .screen-scroll .spell-browser-tile.is-selected,
+.game-shell .screen-scroll .spell-preset-card.is-selected,
+.game-shell .screen-scroll .transmutation-assignment-row.selected {
+  border-color: color-mix(in srgb, var(--ui-accent) 86%, var(--ui-border));
+  background-color: color-mix(in srgb, var(--ui-accent) 10%, var(--ui-panel-strong));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ui-accent) 58%, transparent), 0 0 0 1px color-mix(in srgb, var(--ui-accent) 24%, transparent), 0 8px 20px color-mix(in srgb, var(--ui-accent) 12%, transparent);
+}
+
+.game-shell .screen-scroll .transmutation-recipe-tile.selected:hover,
+.game-shell .screen-scroll .inventory-item.selected:hover,
+.game-shell .screen-scroll .equipment-armory-card.selected:hover,
+.game-shell .screen-scroll .equipment-slot-card.selected:hover,
+.game-shell .screen-scroll .research-item-tile.selected:hover,
+.game-shell .screen-scroll .spell-browser-tile.is-selected:hover,
+.game-shell .screen-scroll .spell-preset-card.is-selected:hover,
+.game-shell .screen-scroll .transmutation-assignment-row.selected:hover {
+  transform: none;
+}
+
+.game-shell .screen-scroll .schools-screen .card-head h2,
+.game-shell .screen-scroll .combat-screen .card-head h2,
+.game-shell .screen-scroll .inventory-screen .card-head h2,
+.game-shell .screen-scroll .transmutation-screen .card-head h2,
+.game-shell .screen-scroll .inventory-actions-head h2 {
+  color: var(--ui-text);
+  font-weight: 700;
+  letter-spacing: .05em;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--ui-accent) 76%, transparent), transparent) bottom left / 34px 1px no-repeat;
+}
+
+.game-shell .screen-scroll .schools-screen .card-head h2::before,
+.game-shell .screen-scroll .combat-screen .card-head h2::before,
+.game-shell .screen-scroll .inventory-screen .card-head h2::before,
+.game-shell .screen-scroll .transmutation-screen .card-head h2::before,
+.game-shell .screen-scroll .inventory-actions-head h2::before {
+  margin-right: 7px;
+  color: var(--ui-accent);
+  content: '\2726';
+  font-size: .68em;
+  line-height: 1;
+}
+
+.game-shell .screen-scroll .transmutation-recipe-tile.selected .transmutation-tile-icon,
+.game-shell .screen-scroll .inventory-item.selected .inventory-item-art,
+.game-shell .screen-scroll .equipment-armory-card.selected .equipment-armory-icon,
+.game-shell .screen-scroll .equipment-slot-card.selected .equipment-slot-icon,
+.game-shell .screen-scroll .spell-browser-tile.is-selected .spell-browser-icon-frame {
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--ui-accent) 38%, transparent));
+}
+
+.game-shell .screen-scroll .spell-browser-tile.is-locked .spell-browser-icon-frame,
+.game-shell .screen-scroll .equipment-slot-card.locked .equipment-slot-icon {
+  filter: saturate(.45);
+  opacity: .64;
+}
+
+/* Scroll regions retain themed bars and gain a quiet edge cue without masking content. */
+.game-shell .screen-scroll .spell-browser-grid,
+.game-shell .screen-scroll .transmutation-library-scroll,
+.game-shell .screen-scroll .transmutation-focus-body,
+.game-shell .screen-scroll .inventory-detail-card > .inventory-detail-content,
+.game-shell .screen-scroll .collection-inspector-scroll,
+.game-shell .screen-scroll .bestiary-inspector-scroll,
+.game-shell .screen-scroll .combat-details-rows,
+.game-shell .screen-scroll .dungeon-statistics-drops-list {
+  box-shadow: inset 0 -14px 18px -18px color-mix(in srgb, var(--ui-accent) 70%, transparent);
+  scroll-padding-block-end: 16px;
+}
+
+.game-shell .screen-scroll .game-value {
+  font-variant-numeric: tabular-nums;
+}
+
+.game-shell .screen-scroll .game-value.value-changed {
+  filter: drop-shadow(0 0 5px color-mix(in srgb, currentColor 48%, transparent));
+}
+
+.topbar-v3 .game-value.value-changed {
+  filter: drop-shadow(0 0 6px color-mix(in srgb, currentColor 55%, transparent));
+}
+
+/* Item relationship dialogs use the same short reveal as the existing screen-specific modals. */
+.item-uses-dialog-backdrop { animation: game-modal-backdrop 130ms ease-out both; }
+.item-uses-dialog { animation: game-modal-surface 160ms cubic-bezier(.2, .76, .28, 1) both; }
+
+@keyframes game-modal-backdrop {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes game-modal-surface {
+  from { opacity: 0; transform: translateY(5px) scale(.992); }
+  to { opacity: 1; transform: none; }
 }
 
 @keyframes game-panel-wake {
@@ -640,6 +735,8 @@
   .game-shell .screen-scroll .game-screen-transition [data-game-panel='true'] { animation: game-panel-reduced 80ms ease-out both; }
   .game-shell .main-area::before,
   .game-shell .main-area::after { transition: none; }
+  .item-uses-dialog-backdrop,
+  .item-uses-dialog { animation: none; }
   .transmutation-recipe-tile:hover .transmutation-tile-icon,
   .inventory-item:hover .inventory-item-art,
   .equipment-armory-card:hover .equipment-armory-icon,

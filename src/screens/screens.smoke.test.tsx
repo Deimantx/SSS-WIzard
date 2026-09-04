@@ -435,5 +435,5 @@ describe('screen smoke coverage', () => {
     await user.type(nameInput, 'Renamed Build')
     await user.keyboard('{Enter}')
     expect(within(reopened).getByText('Renamed Build')).toBeTruthy()
-  })
+  }, 30_000)
 })

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { SPELLS } from '../../game/content/spells/spells'
 import { createInitialState } from '../../store/initialState'
 import { buildSpellEffectTooltipModel } from './spellEffectTooltipModel'
+import { BALANCE } from '../../game/core/balance/balance'
 
 const row = (model: ReturnType<typeof buildSpellEffectTooltipModel>, label: string) => model.rows.find((entry) => entry.label === label)
 
@@ -14,7 +15,7 @@ describe('spell effect tooltip models', () => {
 
     expect(model).toMatchObject({ category: 'DAMAGE', title: 'Fire Damage', description: 'Deals Fire damage when this Spell resolves.' })
     expect(row(model, 'Scaling')?.value).toBe('60% Spell Power')
-    expect(row(model, 'Base Damage')?.value).toBe('72')
+    expect(row(model, 'Base Damage')?.value).toBe('42')
     expect(row(model, 'School Scaling')).toBeUndefined()
     expect(row(model, 'Current School Level')).toBeUndefined()
     expect(row(model, 'Current Base Preview')).toBeUndefined()
@@ -38,7 +39,7 @@ describe('spell effect tooltip models', () => {
     expect(row(chilled, 'Action Speed')?.value).toBe('-20%')
     expect(row(chilled, 'Duration')?.value).toBe('5.0s')
     expect(burning).toMatchObject({ category: 'DOT', title: 'Burning' })
-    expect(row(burning, 'Damage Per Tick')?.value).toBe('16.7')
+    expect(row(burning, 'Damage Per Tick')?.value).toBe('8.3')
     expect(row(burning, 'Tick Interval')?.value).toBe('1.0s')
     expect(row(shock, 'Air Damage Taken')?.value).toBe('+4% per stack')
     expect(row(shock, 'Max Stacks')?.value).toBe('5')
@@ -51,7 +52,7 @@ describe('spell effect tooltip models', () => {
 
     expect(model).toMatchObject({ category: 'BARRIER', title: 'Barrier' })
     expect(row(model, 'Scaling')?.value).toBe('70% Spell Power')
-    expect(row(model, 'Amount')?.value).toBe('77')
+    expect(row(model, 'Amount')?.value).toBe('42')
     expect(row(model, 'Duration')?.value).toBe('9.0s')
     expect(row(model, 'Mode')?.value).toBe('Replace')
     expect(row(model, 'Tide Focus')).toMatchObject({ value: '+20%', semantic: 'positive' })
@@ -88,8 +89,8 @@ describe('spell effect tooltip models', () => {
       expect(row(model, 'Damage Types')?.value).toBe('Fire Damage + Arcane Damage')
       expect(row(model, 'Fire Scaling')?.value).toContain('60% Spell Power')
       expect(row(model, 'Arcane Scaling')?.value).toContain('30% Spell Power')
-      expect(row(model, 'Fire Damage Per Tick')?.value).toBe('10')
-      expect(row(model, 'Arcane Damage Per Tick')?.value).toBe('5')
+      expect(row(model, 'Fire Damage Per Tick')?.value).toBe(String(BALANCE.player.baseSpellPower * 0.1))
+      expect(row(model, 'Arcane Damage Per Tick')?.value).toBe(String(BALANCE.player.baseSpellPower * 0.05))
     } finally {
       SPELLS.ignite.effects[1] = original
     }

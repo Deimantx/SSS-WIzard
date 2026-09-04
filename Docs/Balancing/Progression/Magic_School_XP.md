@@ -5,7 +5,7 @@
 ## Level Curve
 
 | Level | XP to Next Level | Total XP to Reach This Level |
-| --- | --- | --- |
+| ---: | ---: | ---: |
 | 1 | 100 | 0 |
 | 2 | 140 | 100 |
 | 3 | 180 | 240 |
@@ -56,7 +56,7 @@
 ## Milestone totals
 
 | Milestone | Total XP |
-| --- | --- |
+| --- | ---: |
 | Level 2 | 100 |
 | Level 8 | 2,070 |
 | Level 16 | 15,120 |
@@ -65,11 +65,11 @@
 
 ## Derived current Research pacing
 
-DERIVED — NOT A RUNTIME TARGET. Uses matching Research at 12 XP per item and 5 s per item; ignores material scarcity, Mana, Focus, downtime, and progression gates.
+DERIVED — NOT A RUNTIME TARGET. Uses matching Research at 12 XP per item and 5 seconds per item; ignores material scarcity, Mana, Focus, downtime, and progression gates.
 
 | Milestone | Total XP | 1 Echo | 5 Echoes |
-| --- | --- | --- | --- |
-| Level 2 | 100 | ~42 s | ~8 s |
+| --- | ---: | ---: | ---: |
+| Level 2 | 100 | ~42 sec | ~8 sec |
 | Level 8 | 2,070 | ~14.4 min | ~2.9 min |
 | Level 16 | 15,120 | ~1 h 45 min | ~21 min |
 | Level 20 | 29,870 | ~3 h 27.4 min | ~41.5 min |

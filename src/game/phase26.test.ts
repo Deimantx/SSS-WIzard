@@ -85,6 +85,7 @@ describe('Unified Transmutation', () => {
 
   it('aggregates simultaneous jobs into one Activity Monitor card', () => {
     const state = makeInitialState()
+    state.player.mana = state.player.maxMana
     state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 1, progressMs: 1000 }
     state.activities.transmutation.jobs['water-fragment'] = { echoesAssigned: 2, progressMs: 1000 }
     const cards = getActivityTelemetry(state).filter((item) => item.id === 'transmutation')

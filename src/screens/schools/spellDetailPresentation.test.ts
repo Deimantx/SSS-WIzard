@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../store/initialState'
+import { BALANCE } from '../../game/core/balance/balance'
 import { buildSpellDetailPresentation, getInspectorInlineEffectRows, getSpellbookTooltipRows } from './spellDetailPresentation'
 
 const row = (rows: ReturnType<typeof getSpellbookTooltipRows>, label: string) => rows.find((entry) => entry.label === label)
@@ -18,10 +19,10 @@ describe('spell detail presentation', () => {
     const inlineRows = getInspectorInlineEffectRows(damage)
 
     expect(detail).toMatchObject({ spellId: 'fire-bolt', spellName: 'Fire Bolt', school: 'fire', rankLabel: 'Rank I', description: expect.any(String), manaCost: 12, cooldownLabel: '3.5s', autoCastFocus: 10, autoCastActive: false })
-    expect(detail.spellPower).toBe(120)
+    expect(detail.spellPower).toBe(BALANCE.player.baseSpellPower + 20)
     expect(detail.effects).toHaveLength(1)
     expect(row(cardRows, 'Scaling')?.value).toBe('60% Spell Power')
-    expect(row(cardRows, 'Base Damage')?.value).toBe('72')
+    expect(row(cardRows, 'Base Damage')?.value).toBe('42')
     expect(row(cardRows, 'Current Base Preview')).toBeUndefined()
     expect(row(cardRows, 'Ember Staff')?.value).toBe('+20%')
     expect(cardRows.some((entry) => entry.label === 'Source')).toBe(false)

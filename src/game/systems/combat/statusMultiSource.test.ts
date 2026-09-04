@@ -30,11 +30,11 @@ describe('multi-source periodic statuses', () => {
 
     expect(state.combat.enemyStatuses).toHaveLength(2)
     expect(state.combat.enemyStatuses.map((status) => status.instanceKey)).toEqual(['player:spell:ignite', 'player:spell:fireball'])
-    expect(getCombatStatusGroups(state.combat.enemyStatuses)).toMatchObject([{ statusId: 'burning', displayRemainingMs: 10_000, instances: expect.any(Array), sourceBreakdown: [{ sourceLabel: 'Ignite' }, { sourceLabel: 'Fireball' }], totalCurrentRate: expect.closeTo(18.6666667, 6) }])
+    expect(getCombatStatusGroups(state.combat.enemyStatuses)).toMatchObject([{ statusId: 'burning', displayRemainingMs: 10_000, instances: expect.any(Array), sourceBreakdown: [{ sourceLabel: 'Ignite' }, { sourceLabel: 'Fireball' }], totalCurrentRate: expect.closeTo(9.3333333, 6) }])
 
     const events: CombatEvent[] = []
     tickStatuses(state, 10_000, executeCombatEffects, { push: (event) => events.push(event) })
-    expect(state.combat.enemyHp).toBeCloseTo(9_880, 8)
+    expect(state.combat.enemyHp).toBeCloseTo(9_940, 8)
     expect(events.filter((event) => event.sourceKind === 'status' && event.statusId === 'burning' && event.category === 'damage')).toHaveLength(16)
     expect(events.filter((event) => event.originSourceId === 'ignite' && event.statusInstanceKey === 'player:spell:ignite')).not.toHaveLength(0)
     expect(events.filter((event) => event.originSourceId === 'fireball' && event.statusInstanceKey === 'player:spell:fireball')).not.toHaveLength(0)

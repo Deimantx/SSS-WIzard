@@ -11,7 +11,7 @@ import type { GameState, RecipeId } from '../../../game/types'
 import { formatNumber, formatTime } from '../../../game/utils'
 import { useGameStore } from '../../../store/gameStore'
 import { emitGameFeelEvent } from '../../../ui/game-feel/gameFeelStore'
-import { didTransmutationCycleWrap } from '../../../ui/game-feel/craftCompletion'
+import { didTransmutationCycleWrap, getTransmutationCompletionSound } from '../../../ui/game-feel/craftCompletion'
 import { useSmartScrollState } from '../../../ui/game-feel/useSmartScrollState'
 
 export function FocusAssignment({ selectedRecipeId, onSelect }: { selectedRecipeId: RecipeId; onSelect: (recipeId: RecipeId) => void }) {
@@ -83,7 +83,7 @@ function AssignmentRow({ recipeId, state, selected, onSelect, onAdd, onRemove }:
     const rect = rowRef.current?.getBoundingClientRect()
     if (!rect || rect.width <= 0 || rect.height <= 0) return
     const item = ITEMS[recipe.output.itemId]
-    emitGameFeelEvent({ type: 'craft-complete', x: rect.left + rect.width * 0.28, y: rect.top + rect.height * 0.5, color: item.color, intensity: item.kind === 'equipment' ? 1.25 : 0.9 })
+    emitGameFeelEvent({ type: 'craft-complete', x: rect.left + rect.width * 0.28, y: rect.top + rect.height * 0.5, color: item.color, intensity: item.kind === 'equipment' ? 1.25 : 0.9, sound: getTransmutationCompletionSound(item.kind) })
     const pulseKey = ++pulseSerial.current
     setCompletionPulseKey(pulseKey)
     if (pulseTimer.current !== null) window.clearTimeout(pulseTimer.current)

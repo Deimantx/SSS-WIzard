@@ -26,7 +26,7 @@ export const enterProfile = (slotId: ProfileSlotId): ProfileOperationResult => {
   setSaveDiagnosticsProfile(slotId)
   const now = Date.now()
   const offlineElapsed = Math.max(0, now - previousSavedAt)
-  if (offlineElapsed > 1000) useGameStore.getState().resumeFromHidden(offlineElapsed, false)
+  if (offlineElapsed > 1000) useGameStore.getState().creditOfflineAbsence(offlineElapsed, false)
   const anchored = useGameStore.getState().saveGame('profile-anchor')
   if (!anchored.ok) { setActiveProfileId(null); setSaveDiagnosticsProfile(null); refreshProfiles(); return failure(anchored.error ?? 'The profile could not be anchored.') }
   const registry = loadProfileRegistry()

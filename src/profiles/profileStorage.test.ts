@@ -84,6 +84,14 @@ describe('profile storage and session lifecycle', () => {
     expect(secondBank).toBe(firstBank)
   })
 
+  it('does not generate Offline Bank during live ticks or autosaves', () => {
+    expect(createProfile('slot-1', 'Active Session').ok).toBe(true)
+    expect(enterProfile('slot-1').ok).toBe(true)
+    useGameStore.getState().tick(10 * 60 * 1000)
+    expect(useGameStore.getState().saveGame('autosave').ok).toBe(true)
+    expect(useGameStore.getState().offlineBankMs).toBe(0)
+  })
+
   it('keeps newly earned items through a manual save and profile switch', () => {
     expect(createProfile('slot-1', 'Inventory Test').ok).toBe(true)
     expect(enterProfile('slot-1').ok).toBe(true)

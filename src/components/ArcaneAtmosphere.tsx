@@ -1,6 +1,10 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 
+const ATMOSPHERE_TARGET_FRAME_MS = 1000 / 60
+const ATMOSPHERE_BASE_ROTATION_PER_SECOND = 0.00035 * 60
+const ATMOSPHERE_SECONDARY_ROTATION_PER_SECOND = 0.00016 * 60
+
 interface ArcaneAtmosphereProps {
   accentColor?: string
   secondaryColor?: string
@@ -49,12 +53,21 @@ export function ArcaneAtmosphere({ accentColor = '#a894ff', secondaryColor = '#e
     resize()
     window.addEventListener('resize', resize)
     let frame = 0
+    let lastRenderAt = 0
+    let lastMotionAt: number | null = null
     const media = typeof window.matchMedia === 'function' ? window.matchMedia('(prefers-reduced-motion: reduce)') : null
     const isReduced = () => settings.current.reducedMotion || Boolean(media?.matches)
-    const animate = () => {
+    const animate = (timestamp = performance.now()) => {
       frame = 0
       if (document.hidden) return
+      if (lastRenderAt !== 0 && timestamp - lastRenderAt < ATMOSPHERE_TARGET_FRAME_MS) {
+        frame = requestAnimationFrame(animate)
+        return
+      }
       const current = settings.current
+      const deltaSeconds = lastMotionAt === null ? 0 : Math.min(0.1, Math.max(0, timestamp - lastMotionAt) / 1000)
+      lastMotionAt = timestamp
+      lastRenderAt = timestamp
       targetPrimary.set(current.accentColor)
       targetSecondary.set(current.secondaryColor)
       primary.material.color.lerp(targetPrimary, 0.08)
@@ -62,20 +75,20 @@ export function ArcaneAtmosphere({ accentColor = '#a894ff', secondaryColor = '#e
       primary.material.opacity += (current.opacity * primary.layerOpacity * Math.max(0.55, current.intensity) - primary.material.opacity) * 0.08
       secondary.material.opacity += (current.opacity * secondary.layerOpacity * Math.max(0.55, current.intensity) - secondary.material.opacity) * 0.08
       if (!isReduced()) {
-        primary.points.rotation.y += 0.00035 * current.intensity * current.particleSpeed
-        primary.points.rotation.x = Math.sin(performance.now() * 0.00008 * current.particleSpeed) * 0.08
-        secondary.points.rotation.y -= 0.00016 * current.intensity * current.particleSpeed
-        secondary.points.rotation.x = Math.sin(performance.now() * 0.00005 * current.particleSpeed + 1.5) * 0.045
+        primary.points.rotation.y += ATMOSPHERE_BASE_ROTATION_PER_SECOND * deltaSeconds * current.intensity * current.particleSpeed
+        primary.points.rotation.x = Math.sin(timestamp * 0.00008 * current.particleSpeed) * 0.08
+        secondary.points.rotation.y -= ATMOSPHERE_SECONDARY_ROTATION_PER_SECOND * deltaSeconds * current.intensity * current.particleSpeed
+        secondary.points.rotation.x = Math.sin(timestamp * 0.00005 * current.particleSpeed + 1.5) * 0.045
         frame = requestAnimationFrame(animate)
       }
       renderer.render(scene, camera)
     }
-    const wake = () => { if (!document.hidden && frame === 0) animate() }
+    const wake = () => { if (!document.hidden && frame === 0) { lastRenderAt = 0; lastMotionAt = null; animate() } }
     wakeRenderer.current = wake
-    const visibility = () => { if (document.hidden) cancelAnimationFrame(frame); else wake() }
+    const visibility = () => { if (document.hidden) { if (frame) cancelAnimationFrame(frame); frame = 0; lastRenderAt = 0; lastMotionAt = null } else wake() }
     document.addEventListener('visibilitychange', visibility)
     animate()
-    return () => { wakeRenderer.current = null; cancelAnimationFrame(frame); document.removeEventListener('visibilitychange', visibility); window.removeEventListener('resize', resize); primary.geometry.dispose(); primary.material.dispose(); secondary.geometry.dispose(); secondary.material.dispose(); renderer.dispose(); if (renderer.domElement.parentNode === host) host.removeChild(renderer.domElement) }
+    return () => { wakeRenderer.current = null; if (frame) cancelAnimationFrame(frame); document.removeEventListener('visibilitychange', visibility); window.removeEventListener('resize', resize); primary.geometry.dispose(); primary.material.dispose(); secondary.geometry.dispose(); secondary.material.dispose(); renderer.dispose(); if (renderer.domElement.parentNode === host) host.removeChild(renderer.domElement) }
   }, [])
 
   return <div ref={ref} className="atmosphere" aria-hidden="true" />

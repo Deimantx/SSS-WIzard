@@ -2,15 +2,17 @@ import { Gauge } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { GameTooltip } from '../../components/ui/tooltip/Tooltip'
 import { useUiPreferences } from '../preferences/uiPreferencesStore'
-import { calculateFps, FPS_UPDATE_INTERVAL_MS, fpsTone } from './fpsSampler'
+import { calculateFps, FPS_UPDATE_INTERVAL_MS, fpsTone, smoothFps } from './fpsSampler'
 
 export function FpsCounter() {
   const { showFpsCounter } = useUiPreferences()
   const [fps, setFps] = useState<number | null>(null)
+  const [latestSample, setLatestSample] = useState<number | null>(null)
 
   useEffect(() => {
     if (!showFpsCounter) {
       setFps(null)
+      setLatestSample(null)
       return
     }
     let raf = 0
@@ -21,16 +23,20 @@ export function FpsCounter() {
       frames = 0
       windowStart = null
       setFps(null)
+      setLatestSample(null)
     }
     const sample = (timestamp: number) => {
       if (document.hidden) {
+        raf = 0
         reset()
         return
       }
       if (windowStart === null) windowStart = timestamp
       frames += 1
       if (windowStart !== null && timestamp - windowStart >= FPS_UPDATE_INTERVAL_MS) {
-        setFps(calculateFps(frames, timestamp - windowStart))
+        const latest = calculateFps(frames, timestamp - windowStart)
+        setLatestSample(latest)
+        setFps((previous) => smoothFps(previous, latest))
         frames = 0
         windowStart = timestamp
       }
@@ -55,7 +61,8 @@ export function FpsCounter() {
 
   if (!showFpsCounter || fps === null) return null
   const tone = fpsTone(fps)
-  return <GameTooltip content={<span>FPS<br />Current {fps}<br />Frame time ~{(1000 / fps).toFixed(1)} ms</span>}>
+  const frameTimeFps = latestSample ?? fps
+  return <GameTooltip content={<span>FPS<br />Smoothed {fps}<br />Latest sample {latestSample ?? '—'}<br />Frame time ~{(1000 / frameTimeFps).toFixed(1)} ms</span>}>
     <span className={`fps-counter fps-${tone}`} aria-label={`Current performance: ${fps} FPS`}><Gauge size={13} aria-hidden="true" /><strong>{fps}</strong><small>FPS</small></span>
   </GameTooltip>
 }

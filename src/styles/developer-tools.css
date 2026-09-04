@@ -113,3 +113,9 @@
   .developer-tools-layer.workspace-mode { padding: 12px; }
   .developer-tools-window.workspace { width: calc(100vw - 24px) !important; height: calc(100vh - 24px) !important; }
 }
+.developer-offline-bank { display: grid; gap: 12px; }
+.developer-offline-bank-current { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--ui-border); border-radius: 7px; background: var(--ui-panel); }
+.developer-offline-bank-current span { color: var(--ui-text-muted); font-size: var(--text-xs); }
+.developer-offline-bank-current strong { color: var(--ui-text); font: var(--text-lg) var(--font-mono); }
+.developer-offline-bank-actions { flex-wrap: wrap; }
+.developer-offline-bank .status { justify-self: start; }

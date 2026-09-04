@@ -34,13 +34,13 @@ import { MilestoneBannerLayer } from '../ui/rewards/MilestoneBannerLayer'
 import { clearLootReveals } from '../ui/rewards/lootRevealStore'
 import { clearMilestones } from '../ui/rewards/milestoneStore'
 import { DiscoveryAttentionObserver } from '../ui/attention/DiscoveryAttentionObserver'
+import { getLiveVisibilityTransition } from './liveVisibility'
 
 export function GameShell() {
   const screen = useGameStore((state) => state.ui.screen)
   const setScreen = useGameStore((state) => state.setScreen)
   const tick = useGameStore((state) => state.tick)
   const saveGame = useGameStore((state) => state.saveGame)
-  const resumeFromHidden = useGameStore((state) => state.resumeFromHidden)
   const editor = useLayoutEditorStore()
   const preferences = useUiPreferences()
   const appearance = themeColors(preferences.theme, preferences.customTheme)
@@ -52,7 +52,6 @@ export function GameShell() {
   const [offlineResultsOpen, setOfflineResultsOpen] = useState(false)
   const lastOfflineBankReport = useGameStore((state) => state.lastOfflineBankReport)
   const lastFrame = useRef(performance.now())
-  const hiddenAt = useRef<number | null>(null)
   const hiddenRef = useRef(false)
 
   useEffect(() => {
@@ -83,12 +82,12 @@ export function GameShell() {
   useEffect(() => {
     const interval = window.setInterval(() => { if (document.hidden || hiddenRef.current) return; const now = performance.now(); const elapsed = now - lastFrame.current; lastFrame.current = now; tick(elapsed) }, 100)
     const autosave = window.setInterval(() => saveGame('autosave'), AUTOSAVE_INTERVAL_MS)
-    const visibility = () => { if (document.hidden) { hiddenAt.current = Date.now(); hiddenRef.current = true; saveGame('visibility') } else if (hiddenAt.current) { resumeFromHidden(Date.now() - hiddenAt.current, false); hiddenAt.current = null; hiddenRef.current = false; lastFrame.current = performance.now(); saveGame('profile-anchor') } }
+    const visibility = () => { const transition = getLiveVisibilityTransition(document.hidden, performance.now(), lastFrame.current); hiddenRef.current = transition.hidden; lastFrame.current = transition.lastFrame; if (transition.shouldSaveSafetyAnchor) saveGame('visibility') }
     const pageHide = () => saveGame('visibility')
     document.addEventListener('visibilitychange', visibility)
     window.addEventListener('pagehide', pageHide)
     return () => { window.clearInterval(interval); window.clearInterval(autosave); document.removeEventListener('visibilitychange', visibility); window.removeEventListener('pagehide', pageHide) }
-  }, [resumeFromHidden, saveGame, tick])
+  }, [saveGame, tick])
 
   const toggleGroup = (id: string) => {
     if (id === 'overview') return

@@ -33,6 +33,7 @@ import { saveGameAction } from './actions/persistenceActions'
 import { advanceGameState } from '../game/systems/simulation/advanceGameState'
 import { forceCompleteResearchCycle } from '../game/systems/research/researchEngine'
 import { advanceWithOfflineBank as runOfflineBankAdvance, isOfflineBankSimulationActive, type OfflineBankResult } from '../game/systems/offline-bank/offlineBankSimulation'
+import { addOfflineBankMs, clampOfflineBankMs } from '../game/systems/offline-bank/offlineBankDuration'
 import type { OfflineBankReport } from '../game/systems/offline-bank/offlineBankReport'
 import { getSpellAutoCastFocusCost, isSpellUnlocked, syncSpellUnlocksForSchool } from '../game/systems/spells'
 import { getSchoolLevelStartXp } from '../game/systems/schools'
@@ -186,7 +187,10 @@ export interface GameActions {
   setBossKills: (bossId: MonsterId, amount: number) => void
   applyDeveloperFixture: (fixture: DeveloperFixtureId) => void
   preset: (name: 'fresh' | 'research' | 'combat' | 'boss' | 'guild' | 'main-boss' | 'chapter-complete') => void
-  resumeFromHidden: (elapsedMs: number, notify?: boolean) => void
+  creditOfflineAbsence: (elapsedMs: number, notify?: boolean) => void
+  debugAddOfflineBank: (durationMs: number) => void
+  debugSetOfflineBank: (durationMs: number) => void
+  debugClearOfflineBank: () => void
   advanceWithOfflineBank: (durationMs: number) => Promise<OfflineBankResult>
   lastOfflineBankReport: OfflineBankReport | null
 }
@@ -487,7 +491,17 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     }
     return state
   }),
-  resumeFromHidden: (elapsedMs, notify = true) => set((state) => { if (elapsedMs > 1000) { state.offlineBankMs += elapsedMs; if (notify) pushNotification(state, `${Math.round(elapsedMs / 1000)}s added to Offline Bank`, 'info') } return state }),
+  creditOfflineAbsence: (elapsedMs, notify = true) => set((state) => {
+    const safeElapsed = clampOfflineBankMs(elapsedMs)
+    if (safeElapsed <= 1000) return state
+    const before = clampOfflineBankMs(state.offlineBankMs)
+    state.offlineBankMs = addOfflineBankMs(before, safeElapsed)
+    if (notify && state.offlineBankMs > before) pushNotification(state, `${Math.round(safeElapsed / 1000)}s added to Offline Bank`, 'info')
+    return state
+  }),
+  debugAddOfflineBank: (durationMs) => set((state) => { state.offlineBankMs = addOfflineBankMs(state.offlineBankMs, durationMs); return state }),
+  debugSetOfflineBank: (durationMs) => set((state) => { state.offlineBankMs = clampOfflineBankMs(durationMs); return state }),
+  debugClearOfflineBank: () => set((state) => { state.offlineBankMs = 0; return state }),
   advanceWithOfflineBank: async (durationMs) => {
     const result = await runOfflineBankAdvance(durationMs, get, (recipe) => set((state) => { recipe(state); return state }), () => { get().saveGame('autosave') }, (state, itemId, amount) => recordRecentAcquisition(state as GameStore, itemId, amount))
     if (result.ok) set((state) => { state.lastOfflineBankReport = result.report ?? null; return state })

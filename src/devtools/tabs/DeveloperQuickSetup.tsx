@@ -9,7 +9,9 @@ import { formatReadableId } from '../../game/content/presentation/balanceFormatt
 import { getRecipeStatus } from '../../game/systems/transmutation/transmutationSelectors'
 import { SCHOOLS } from '../../game/content/schools/schools'
 import { getAllSpellsInOrder } from '../../game/systems/spells'
+import { OFFLINE_BANK_PRESETS, toOfflineDurationMs, type OfflineBankUnit } from '../../game/systems/offline-bank/offlineBankDuration'
 import type { MonsterId, RecipeId } from '../../game/types'
+import { formatOfflineBank } from '../../game/utils'
 import type { DeveloperFixtureId } from '../../store/gameStore'
 import { useGameStore } from '../../store/gameStore'
 import { DEVELOPER_LOADOUTS, type DeveloperEquipmentLoadout } from '../developerLoadouts'
@@ -39,6 +41,9 @@ export function DeveloperQuickSetup() {
   const [selectedEnemy, setSelectedEnemy] = useState<MonsterId | null>(MONSTER_IDS[0] ?? null)
   const [selectedRecipe, setSelectedRecipe] = useState<RecipeId>(defaultRecipe)
   const [recipeFeedback, setRecipeFeedback] = useState('')
+  const [offlineAmount, setOfflineAmount] = useState('1')
+  const [offlineUnit, setOfflineUnit] = useState<OfflineBankUnit>('hours')
+  const [offlineBankFeedback, setOfflineBankFeedback] = useState<{ text: string; tone: 'success' | 'warning' } | null>(null)
   const enemyOptions = useMemo(() => MONSTER_IDS.filter((id) => {
     const monster = MONSTERS[id]
     const dungeon = getMonsterDungeon(id)
@@ -71,6 +76,22 @@ export function DeveloperQuickSetup() {
   }
   const unlockRankOneSpells = () => getAllSpellsInOrder().forEach((spell) => state.debugUnlockSpellRankOne(spell.id))
   const resetCurrentProfile = () => { if (window.confirm(PROFILE_RESET_CONFIRMATION)) state.resetSave() }
+  const addOfflinePreset = (amount: number, unit: OfflineBankUnit, label: string) => {
+    state.debugAddOfflineBank(toOfflineDurationMs(amount, unit))
+    setOfflineBankFeedback({ text: `${label} added.`, tone: 'success' })
+  }
+  const applyOfflineCustom = (mode: 'add' | 'set') => {
+    const amount = offlineAmount.trim() === '' ? Number.NaN : Number(offlineAmount)
+    const invalid = !Number.isFinite(amount) || amount < 0
+    const durationMs = toOfflineDurationMs(amount, offlineUnit)
+    if (mode === 'add') state.debugAddOfflineBank(durationMs)
+    else state.debugSetOfflineBank(durationMs)
+    setOfflineBankFeedback({ text: invalid ? `Invalid amount safely normalized. Offline Bank ${mode === 'add' ? 'unchanged' : 'set to 0'}.` : `Offline Bank ${mode === 'add' ? 'updated' : 'set'}.`, tone: invalid ? 'warning' : 'success' })
+  }
+  const clearOfflineBank = () => {
+    state.debugClearOfflineBank()
+    setOfflineBankFeedback({ text: 'Offline Bank cleared.', tone: 'success' })
+  }
 
   return <div className="developer-tab-stack">
     <Card title="Quick Setup" className="developer-quick-setup">
@@ -82,6 +103,18 @@ export function DeveloperQuickSetup() {
         <section><h3>Loadouts</h3><p className="muted">Each loadout uses its explicit authored slot map.</p><div className="developer-button-grid">{DEVELOPER_LOADOUTS.map((loadout) => <Button key={loadout.id} variant="secondary" onClick={() => loadLoadout(loadout)}>{loadout.label}</Button>)}</div></section>
         <section><h3>Resources &amp; Magic</h3><label>Recipe<select aria-label="Quick Setup recipe" value={selectedRecipe} onChange={(event) => { setSelectedRecipe(event.target.value as RecipeId); setRecipeFeedback('') }}>{RECIPE_ORDER.map((id) => { const recipe = RECIPES[id]; const recipeStatus = getRecipeStatus(state, recipe); return <option value={id} key={id}>{recipe.name} · {formatReadableId(recipe.category)} · {formatReadableId(recipeStatus)}</option> })}</select></label><div className="button-row"><Button onClick={grantResources}>+100 Relevant Materials</Button><Button variant="secondary" onClick={grantMissingRecipeIngredients} disabled={selectedRecipeDefinition.ingredients.length === 0}>Grant Missing Ingredients</Button><Button variant="secondary" onClick={unlockRankOneSpells}>Unlock Rank-I Spells</Button><Button variant="secondary" onClick={state.resetSpellCooldowns}>Reset Spell Cooldowns</Button><Button variant="ghost" onClick={state.resetDebugOverrides}>Clear Debug Overrides</Button></div><small className="muted">Selected recipe: {selectedRecipeDefinition.name} · {formatReadableId(selectedRecipeDefinition.category)} · {formatReadableId(getRecipeStatus(state, selectedRecipeDefinition))}</small>{recipeFeedback && <Status tone="success">{recipeFeedback}</Status>}</section>
       </div>
+    </Card>
+
+    <Card title="Offline Bank" className="developer-offline-bank">
+      <div className="developer-offline-bank-current"><span>Current Offline Bank</span><strong>{formatOfflineBank(state.offlineBankMs)}</strong></div>
+      <div className="developer-button-grid">{OFFLINE_BANK_PRESETS.map((preset) => <Button key={preset.label} variant="secondary" uiSound="none" onClick={() => addOfflinePreset(preset.amount, preset.unit, preset.label)}>{preset.label}</Button>)}</div>
+      <div className="developer-form-grid developer-offline-bank-form">
+        <label>Amount<input type="number" step="any" inputMode="decimal" aria-label="Offline Bank amount" value={offlineAmount} onChange={(event) => setOfflineAmount(event.target.value)} /></label>
+        <label>Unit<select aria-label="Offline Bank unit" value={offlineUnit} onChange={(event) => setOfflineUnit(event.target.value as OfflineBankUnit)}><option value="minutes">Minutes</option><option value="hours">Hours</option><option value="days">Days</option></select></label>
+      </div>
+      <div className="button-row developer-offline-bank-actions"><Button variant="primary" uiSound="none" onClick={() => applyOfflineCustom('add')}>ADD</Button><Button variant="secondary" uiSound="none" onClick={() => applyOfflineCustom('set')}>SET</Button><Button variant="ghost" uiSound="none" onClick={clearOfflineBank}>CLEAR</Button></div>
+      {offlineBankFeedback && <Status tone={offlineBankFeedback.tone}>{offlineBankFeedback.text}</Status>}
+      <small className="muted">Tester-only controls. Values are validated and safely clamped by the store.</small>
     </Card>
 
     <Card title="Quick Combat" className="developer-quick-combat">

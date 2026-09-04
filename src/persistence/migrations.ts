@@ -23,6 +23,7 @@ import { getStatusApplicationSourceKey } from '../game/systems/combat/statusRunt
 import { createCombatValidationContext, normalizePersistedPeriodicEffects, hasValidStatusModifierOverrides } from '../game/systems/combat/combatEffectValidation'
 import { MAX_ACTION_WORK_MS, MIN_ACTION_TIME_MS } from '../game/core/balance/combatTiming'
 import { normalizeCombatRngState } from '../game/systems/combat/combatRng'
+import { clampOfflineBankMs } from '../game/systems/offline-bank/offlineBankDuration'
 
 const statusValidationContext = createCombatValidationContext(STATUS_DEFINITIONS)
 
@@ -561,6 +562,7 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   // V1-V7 retain their historical migration marker. V8+ are normalized into
   // the current save document.
   migrated.saveVersion = sourceVersion >= 8 ? SAVE_VERSION : 8
+  migrated.offlineBankMs = clampOfflineBankMs(migrated.offlineBankMs)
   // Debug overrides are runtime-only. Legacy godMode is retained on the type
   // solely for old object compatibility, but must never survive hydration.
   migrated.debug = createInitialState().debug

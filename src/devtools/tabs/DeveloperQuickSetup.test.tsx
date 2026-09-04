@@ -86,4 +86,47 @@ describe('Developer Quick Setup', () => {
     expect((screen.getByRole('button', { name: 'Jump to Boss' }) as HTMLButtonElement).disabled).toBe(true)
     expect((screen.getByRole('combobox', { name: 'Quick combat enemy' }) as HTMLSelectElement).value).toBe('')
   })
+
+  it('provides preset and custom Offline Bank controls through validated store actions', () => {
+    render(<DeveloperQuickSetup />)
+    const amount = screen.getByRole('spinbutton', { name: 'Offline Bank amount' })
+    const unit = screen.getByRole('combobox', { name: 'Offline Bank unit' })
+
+    fireEvent.click(screen.getByRole('button', { name: '+1 Hour' }))
+    fireEvent.click(screen.getByRole('button', { name: '+8 Hours' }))
+    fireEvent.click(screen.getByRole('button', { name: '+1 Day' }))
+    fireEvent.click(screen.getByRole('button', { name: '+7 Days' }))
+    expect(useGameStore.getState().offlineBankMs).toBe((1 + 8) * 60 * 60_000 + 8 * 24 * 60 * 60_000)
+
+    fireEvent.change(amount, { target: { value: '12' } })
+    fireEvent.change(unit, { target: { value: 'minutes' } })
+    fireEvent.click(screen.getByRole('button', { name: 'ADD' }))
+    expect(useGameStore.getState().offlineBankMs).toBe((1 + 8) * 60 * 60_000 + 8 * 24 * 60 * 60_000 + 12 * 60_000)
+
+    fireEvent.change(amount, { target: { value: '2' } })
+    fireEvent.change(unit, { target: { value: 'hours' } })
+    fireEvent.click(screen.getByRole('button', { name: 'SET' }))
+    expect(useGameStore.getState().offlineBankMs).toBe(2 * 60 * 60_000)
+
+    fireEvent.change(amount, { target: { value: '3' } })
+    fireEvent.change(unit, { target: { value: 'days' } })
+    fireEvent.click(screen.getByRole('button', { name: 'ADD' }))
+    expect(useGameStore.getState().offlineBankMs).toBe(3 * 24 * 60 * 60_000 + 2 * 60 * 60_000)
+    fireEvent.click(screen.getByRole('button', { name: 'CLEAR' }))
+    expect(useGameStore.getState().offlineBankMs).toBe(0)
+    expect(screen.getByText('Offline Bank cleared.')).toBeTruthy()
+  })
+
+  it('keeps invalid custom bank input safe', () => {
+    render(<DeveloperQuickSetup />)
+    const amount = screen.getByRole('spinbutton', { name: 'Offline Bank amount' })
+    useGameStore.getState().debugSetOfflineBank(60 * 60_000)
+
+    fireEvent.change(amount, { target: { value: '-4' } })
+    fireEvent.click(screen.getByRole('button', { name: 'ADD' }))
+    expect(useGameStore.getState().offlineBankMs).toBe(60 * 60_000)
+    fireEvent.click(screen.getByRole('button', { name: 'SET' }))
+    expect(useGameStore.getState().offlineBankMs).toBe(0)
+    expect(screen.getByText(/Invalid amount safely normalized/)).toBeTruthy()
+  })
 })

@@ -80,6 +80,14 @@ When replacing a system, remove the obsolete implementation after migration rath
 - Add or update Vitest coverage when changing save migration, production payment, reservation, or offline-report behavior.
 - Run `npm run test:run` and `npm run build` before handoff.
 
+## Runtime feedback and offline timing
+
+- Routine high-frequency production must not emit repetitive completion audio. Transmutation Material/Elemental output is silent; Equipment completion may use one shared craft cue after a successful Transmutation result.
+- Generic item-acquisition Game Feel may remain visual, but reward audio belongs to a semantic source such as Combat Loot Reveal or meaningful Equipment crafting; do not make every acquisition globally audible.
+- Offline Bank represents real time between game/profile sessions, not time while the same live document is hidden or minimized. Same-session visibility restoration must not credit Offline Bank.
+- Offline Bank accrual has one authoritative lifecycle path and is credited exactly once per real absence. Live simulation ticks never generate Offline Bank.
+- Performance fixes are measurement-driven. FPS may be smoothed for readability but must not falsify sustained frame loss; ambient WebGL may render at a lower rate than the browser UI when visually equivalent.
+
 ## Game Feel and motion
 
 - Real bounded scroll owners use the shared smart-scroll state helper; CSS reads its overflow and direction data attributes, and scroll position must not enter React state.

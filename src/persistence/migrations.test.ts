@@ -17,6 +17,12 @@ describe('save navigation migration', () => {
     expect(migrateSave(old).ui.screen).toBe('tower-transmutation')
   })
 
+  it('keeps malformed Offline Bank values finite and safely bounded', () => {
+    const initial = createInitialState()
+    expect(migrateSave({ ...initial, saveVersion: SAVE_VERSION, offlineBankMs: Number.POSITIVE_INFINITY }).offlineBankMs).toBe(0)
+    expect(migrateSave({ ...initial, saveVersion: SAVE_VERSION, offlineBankMs: Number.MAX_SAFE_INTEGER + 1 }).offlineBankMs).toBe(Number.MAX_SAFE_INTEGER)
+  })
+
   it('migrates V2 Auto Channel to one Arcane Echo with clean V7 defaults', () => {
     const migrated = migrateSave({ ...createInitialState(), saveVersion: 2, activities: { ...createInitialState().activities, autoChannel: true, channelCooldownMs: 500 } })
     expect(migrated.saveVersion).toBe(8)

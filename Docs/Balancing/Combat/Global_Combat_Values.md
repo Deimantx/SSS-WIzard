@@ -4,7 +4,7 @@
 
 | Setting | Value |
 | --- | --- |
-| Starting Mana | 50 |
+| Starting Mana | 0 |
 | Max Mana | 100 |
 | Base Natural Regen Per Second | 5 |
 | Echo Focus Cost | 10 |

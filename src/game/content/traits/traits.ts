@@ -22,8 +22,8 @@ export const TRAIT_DEFINITIONS: Record<TraitId, TraitDefinition> = {
   'forest-wisp-flicker': {
     id: 'forest-wisp-flicker',
     name: 'Flicker',
-    description: 'After Arc Spark resolves, gains Haste for 3 seconds.',
-    rules: [{ id: 'forest-wisp-flicker-arc-spark', event: 'on-action-resolve', condition: { type: 'event-action-is', actionId: 'arc-spark' }, effects: [applyStatus('haste', 3000)], }],
+    description: 'After Arc Spark resolves, gains Haste for 10 seconds.',
+    rules: [{ id: 'forest-wisp-flicker-arc-spark', event: 'on-action-resolve', condition: { type: 'event-action-is', actionId: 'arc-spark' }, effects: [applyStatus('haste', 10000)], }],
   },
   'thornling-barkskin': {
     id: 'thornling-barkskin',

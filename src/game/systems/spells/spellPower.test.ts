@@ -8,26 +8,27 @@ import { tickStatuses } from '../combat/statusRuntime'
 import { getSpellEquipmentBonusPreview } from './spellEquipmentPreview'
 import { getSpellPower, getSpellPowerBreakdown } from './spellPower'
 import type { CombatEffect, CombatSource } from '../../types'
+import { BALANCE } from '../../core/balance/balance'
 
 const spellSource: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'test-spell', school: 'fire', tags: ['spell', 'magic', 'fire'] }
 
 describe('Spell Power foundation', () => {
   it('derives one Spell Power total from the balance base and equipped flat bonuses', () => {
     const state = createInitialState()
-    expect(getSpellPower(state)).toBe(100)
-    expect(getSpellPowerBreakdown(state)).toEqual({ base: 100, equipment: 0, total: 100 })
+    expect(getSpellPower(state)).toBe(BALANCE.player.baseSpellPower)
+    expect(getSpellPowerBreakdown(state)).toEqual({ base: BALANCE.player.baseSpellPower, equipment: 0, total: BALANCE.player.baseSpellPower })
 
     state.equipment.weapon = 'ember-staff'
-    expect(getSpellPowerBreakdown(state)).toEqual({ base: 100, equipment: 20, total: 120 })
-    expect(getSpellPower(state)).toBe(120)
+    expect(getSpellPowerBreakdown(state)).toEqual({ base: BALANCE.player.baseSpellPower, equipment: 20, total: BALANCE.player.baseSpellPower + 20 })
+    expect(getSpellPower(state)).toBe(BALANCE.player.baseSpellPower + 20)
     expect(getSpellEquipmentBonusPreview(state, 'fireball')).toMatchObject({ spellPower: 20, totalPercent: 0.2 })
   })
 
   it('resolves Spell Power coefficients only for Spell sources', () => {
     const state = createInitialState()
     state.equipment.weapon = 'ember-staff'
-    expect(resolveMagnitude(state, { type: 'spell-power', coefficient: 1 }, spellSource, 'enemy')).toBe(120)
-    expect(resolveMagnitude(state, { type: 'spell-power', coefficient: 0.8 }, spellSource, 'player')).toBe(96)
+    expect(resolveMagnitude(state, { type: 'spell-power', coefficient: 1 }, spellSource, 'enemy')).toBe(BALANCE.player.baseSpellPower + 20)
+    expect(resolveMagnitude(state, { type: 'spell-power', coefficient: 0.8 }, spellSource, 'player')).toBe((BALANCE.player.baseSpellPower + 20) * 0.8)
     expect(resolveMagnitude(state, { type: 'spell-power', coefficient: 1 }, { actor: 'enemy', kind: 'action', sourceId: 'enemy-action' }, 'player')).toBe(0)
   })
 
@@ -53,6 +54,6 @@ describe('Spell Power foundation', () => {
     state.combat.enemyMaxHp = 1_000
     executeCombatEffects(state, [ignite], spellSource)
     tickStatuses(state, 1_000, executeCombatEffects)
-    expect(state.combat.enemyHp).toBe(980)
+    expect(state.combat.enemyHp).toBe(1_000 - (BALANCE.player.baseSpellPower + 20) / 6)
   })
 })

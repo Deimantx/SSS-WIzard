@@ -17,8 +17,10 @@ import { SPELLS } from '../../content/spells/spells'
 import { getEnemySkillActionRate, getPlayerBasicAttackRate } from './actionRuntime'
 import { getTimedActionState } from './actionTiming'
 import { getSpellEquipmentBonusPreview } from '../spells/spellEquipmentPreview'
+import { BALANCE } from '../../core/balance/balance'
 
 const playerSpell: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'test-spell', school: 'fire', tags: ['spell', 'magic'] }
+const playerDefenseReduction = BALANCE.player.baseDefense / (BALANCE.player.baseDefense + 100)
 const enemyAttack = (state: GameState): CombatSource => ({ actor: 'enemy', kind: 'basic-attack', sourceId: 'test-attack', sourceMonsterId: state.combat.enemyId ?? undefined, sourceInstanceKey: state.combat.enemyInstanceKey ?? undefined, tags: ['basic-attack', 'direct'] })
 const stateWithEnemy = (enemyId: Parameters<typeof spawnEnemy>[1] = 'forest-wisp') => {
   const state = createInitialState()
@@ -48,7 +50,7 @@ describe('universal combat effects', () => {
     state.combat.playerBarrier = 10
     damagePlayer(state, 15, enemyAttack(state))
     expect(state.combat.playerBarrier).toBe(0)
-    expect(state.player.health).toBeCloseTo(100 - (15 * 1.5 * (1 - 10 / 110) - 10))
+    expect(state.player.health).toBeCloseTo(100 - (15 * 1.5 * (1 - playerDefenseReduction) - 10))
     state.player.health = 99
     executeCombatEffects(state, [{ type: 'heal', target: 'self', magnitude: { type: 'flat', value: 20 } }, { type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 25 } }, { type: 'restore-resource', target: 'self', resource: 'mana', magnitude: { type: 'flat', value: 100 } }, { type: 'modify-action-timer', target: 'self', action: 'basic-attack', amountMs: 700 }, { type: 'modify-cooldown', target: 'self', spellId: 'fire-bolt', amountMs: -2000 }], playerSpell)
     expect(state.player.health).toBe(state.player.maxHealth)
@@ -165,13 +167,13 @@ describe('data-driven monster mechanics', () => {
     const thornling = stateWithEnemy('thornling')
     clearCurrentEnemyAction(thornling)
     forceResolveEnemyAction(thornling, 'thorn-lash', executeCombatEffects)
-    expect(thornling.player.health).toBeCloseTo(100 - 10 * 1.5 * (1 - 10 / 110))
+    expect(thornling.player.health).toBeCloseTo(100 - 10 * 1.5 * (1 - playerDefenseReduction))
     expect(thornling.combat.playerStatuses[0].statusId).toBe('thorn-wound')
     const root = stateWithEnemy('stone-root')
     clearCurrentEnemyAction(root)
     expect(root.combat.enemyBarrier).toBe(14)
     forceResolveEnemyAction(root, 'root-slam', executeCombatEffects)
-    expect(root.player.health).toBeCloseTo(100 - 18.15 * 1.5 * (1 - 10 / 110))
+    expect(root.player.health).toBeCloseTo(100 - 18.15 * 1.5 * (1 - playerDefenseReduction))
     expect(root.combat.playerAttackTimerMs).toBe(2900)
   })
 
@@ -288,17 +290,17 @@ describe('post-implementation combat audit regressions', () => {
 
     const baseWater = stateWithEnemy()
     executeCombatEffects(baseWater, SPELLS['water-ward'].effects, waterSource)
-    expect(baseWater.combat.playerBarrier).toBe(70)
+    expect(baseWater.combat.playerBarrier).toBe(35)
 
     const tideWater = stateWithEnemy()
     tideWater.equipment.offhand = 'tide-focus'
     executeCombatEffects(tideWater, SPELLS['water-ward'].effects, waterSource)
-    expect(tideWater.combat.playerBarrier).toBe(92)
+    expect(tideWater.combat.playerBarrier).toBe(50)
 
     const tideEarth = stateWithEnemy()
     tideEarth.equipment.offhand = 'tide-focus'
     executeCombatEffects(tideEarth, SPELLS.stoneguard.effects, earthSource)
-    expect(tideEarth.combat.playerBarrier).toBe(143)
+    expect(tideEarth.combat.playerBarrier).toBe(78)
   })
 
   it('keeps generic flat Barrier Received bonuses independent of Water scope', () => {
@@ -308,12 +310,12 @@ describe('post-implementation combat audit regressions', () => {
     const water = stateWithEnemy()
     water.equipment.armor = 'stoneweave-robe'
     executeCombatEffects(water, SPELLS['water-ward'].effects, waterSource)
-    expect(water.combat.playerBarrier).toBe(80)
+    expect(water.combat.playerBarrier).toBe(45)
 
     const earth = stateWithEnemy()
     earth.equipment.armor = 'stoneweave-robe'
     executeCombatEffects(earth, SPELLS.stoneguard.effects, earthSource)
-    expect(earth.combat.playerBarrier).toBe(140)
+    expect(earth.combat.playerBarrier).toBe(75)
   })
 
   it('keeps the Water Barrier equipment preview aligned with runtime scope', () => {
@@ -326,10 +328,10 @@ describe('post-implementation combat audit regressions', () => {
     const waterSource: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'water-ward', school: 'water', tags: ['spell', 'magic', 'water'] }
     const earthSource: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'stoneguard', school: 'earth', tags: ['spell', 'magic', 'earth'] }
     executeCombatEffects(state, SPELLS['water-ward'].effects, waterSource)
-    expect(state.combat.playerBarrier).toBe(92)
+    expect(state.combat.playerBarrier).toBe(50)
     state.combat.playerBarrier = 0
     executeCombatEffects(state, SPELLS.stoneguard.effects, earthSource)
-    expect(state.combat.playerBarrier).toBe(143)
+    expect(state.combat.playerBarrier).toBe(78)
   })
 
   it('keeps authored barrier duration and effect tags explicit', () => {

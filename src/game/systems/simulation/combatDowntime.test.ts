@@ -169,6 +169,7 @@ describe('active dungeon downtime timeline', () => {
     state.combat.dungeonId = 'whispering-woods'
     state.player.maxHealth = 100
     state.player.health = 75
+    state.player.mana = state.player.maxMana
     unlock(state, 'flow-mend')
     state.activities.autoCast['flow-mend'] = true
     spawnEnemy(state, 'thornling')

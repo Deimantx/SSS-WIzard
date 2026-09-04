@@ -17,12 +17,13 @@ describe('universal combat stats foundation', () => {
     state.combat.enemyId = 'forest-wisp'
     state.combat.enemyMaxHp = 1_000
 
-    expect(getDefense(state, 'player')).toBe(10)
-    expect(getDefenseReduction(state, 'player')).toBeCloseTo(10 / 110)
+    const playerDefenseReduction = BALANCE.player.baseDefense / (BALANCE.player.baseDefense + 100)
+    expect(getDefense(state, 'player')).toBe(BALANCE.player.baseDefense)
+    expect(getDefenseReduction(state, 'player')).toBeCloseTo(playerDefenseReduction)
     const direct = calculateCombatDamage(state, 100, 'physical', { actor: 'enemy', kind: 'basic-attack', sourceId: 'test', tags: ['basic-attack', 'direct'] }, 'player')
     const dot = calculateCombatDamage(state, 100, 'physical', { actor: 'enemy', kind: 'status', sourceId: 'test-dot', tags: ['status', 'dot'] }, 'player')
-    expect(direct.defenseReduction).toBeCloseTo(10 / 110)
-    expect(direct.resolvedBeforeBarrier).toBeCloseTo(100 * (1 - 10 / 110))
+    expect(direct.defenseReduction).toBeCloseTo(playerDefenseReduction)
+    expect(direct.resolvedBeforeBarrier).toBeCloseTo(100 * (1 - playerDefenseReduction))
     expect(dot.defenseReduction).toBe(0)
     expect(dot.resolvedBeforeBarrier).toBe(100)
   })
@@ -33,7 +34,7 @@ describe('universal combat stats foundation', () => {
     state.combat.enemyMaxHp = 1_000
     const player = getPlayerCombatStats(state)
     const enemy = getEnemyCombatStats(state)
-    expect(player).toMatchObject({ spellPower: BALANCE.player.baseSpellPower, critChance: 0.05, critDamageMultiplier: 1.5, defense: 10, blockChance: 0 })
+    expect(player).toMatchObject({ spellPower: BALANCE.player.baseSpellPower, critChance: 0.05, critDamageMultiplier: 1.5, defense: BALANCE.player.baseDefense, blockChance: 0 })
     expect(enemy).toMatchObject({ maxHealth: 1_000, defense: 10, critChance: 0.05, critDamageMultiplier: 1.5, blockChance: 0 })
     expect(getCritChance(state, 'player', playerSpell)).toBe(0.05)
     expect(getCritDamageMultiplier(state, 'player', playerSpell)).toBe(1.5)

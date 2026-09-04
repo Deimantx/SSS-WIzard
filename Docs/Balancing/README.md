@@ -13,7 +13,3 @@ Use npm run balancing:export to create missing files. Use npm run balancing:expo
 - Items and production: item index, materials, equipment, drops, recipes, and crafting economy.
 - Progression and magic: Research, Channeling, Focus, Guild, unlocks, schools, and spells.
 - Economy: item values and current activity timings.
-
-## Prompt for Codex when Editing something myself
-
-Apply all my balancing edits from the modified files in Docs/Balancing. Treat canonical table edits as intended gameplay changes. Update runtime TypeScript, then regenerate all affected balancing mirrors. Do not overwrite my edits before applying them. Run targeted tests during work, balancing coverage, then full tests/build once at the end.

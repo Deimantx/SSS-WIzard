@@ -11,6 +11,7 @@ import { clearCurrentEnemyAction, getCurrentEnemyActionStep, getNextEnemyActionS
 import { getCurrentEnemyActionTiming, getTimedActionState } from './actionTiming'
 import type { CombatEvent, CombatEventSink } from './combatTypes'
 import { migrateSave } from '../../../persistence/migrations'
+import { BALANCE } from '../../core/balance/balance'
 
 const stateWithEnemy = (enemyId: Parameters<typeof spawnEnemy>[1] = 'forest-wisp') => {
   const state = createInitialState()
@@ -36,6 +37,7 @@ const startAt = (state: ReturnType<typeof createInitialState>, index: number, si
   state.combat.enemyNextActionIndex = index
   expect(startNextEnemyAction(state, executeCombatEffects, 0, sink)).toBe(true)
 }
+const playerDefenseReduction = BALANCE.player.baseDefense / (BALANCE.player.baseDefense + 100)
 
 describe('classic real-time combat action timing', () => {
   it('starts with a timed Basic Attack and waits until expiry before damage', () => {
@@ -48,7 +50,7 @@ describe('classic real-time combat action timing', () => {
     advance(state, MONSTERS['forest-wisp'].basicAttackTimeMs - 1)
     expect(state.player.health).toBe(initialHealth)
     advance(state, 1)
-    expect(state.player.health).toBeCloseTo(initialHealth - MONSTERS['forest-wisp'].basicAttackDamage * (1 - 10 / 110))
+    expect(state.player.health).toBeCloseTo(initialHealth - MONSTERS['forest-wisp'].basicAttackDamage * (1 - playerDefenseReduction))
     expect(state.combat.enemyCurrentStepId).toBe('basic-2')
     expect(state.combat.enemyActionTimerMs).toBe(MONSTERS['forest-wisp'].basicAttackTimeMs)
   })
@@ -62,7 +64,7 @@ describe('classic real-time combat action timing', () => {
     advance(state, 1999)
     expect(state.player.health).toBe(initialHealth)
     advance(state, 1)
-    expect(state.player.health).toBeCloseTo(initialHealth - 12 * 1.5 * (1 - 10 / 110))
+    expect(state.player.health).toBeCloseTo(initialHealth - 12 * 1.5 * (1 - playerDefenseReduction))
   })
 
   it('starts the next Pattern step immediately after resolve with no recovery gap', () => {
@@ -214,7 +216,7 @@ describe('classic real-time combat action timing', () => {
     expect(state.combat.enemyActionTimerMs).toBe(0)
     expect(state.player.health).toBe(before)
     resolveCurrentEnemyAction(state, executeCombatEffects)
-    expect(state.player.health).toBeCloseTo(before - 12 * 1.5 * (1 - 10 / 110))
+    expect(state.player.health).toBeCloseTo(before - 12 * 1.5 * (1 - playerDefenseReduction))
   })
 
   it('cleans current timing state on enemy death and player defeat', () => {

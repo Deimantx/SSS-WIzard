@@ -9,6 +9,7 @@ import { forceKillEnemyForDebug, fastResolveNormalEnemiesForDebug } from './debu
 import { castSpellAction } from '../../engine/spellEngine'
 import { advanceGameState } from '../simulation/advanceGameState'
 import { applyStatus } from './statusRuntime'
+import { BALANCE } from '../../core/balance/balance'
 
 const source = { actor: 'player' as const, kind: 'spell' as const, sourceId: 'debug-spell', tags: ['spell' as const, 'direct' as const] }
 const enemySource = (state: GameState) => ({ actor: 'enemy' as const, kind: 'basic-attack' as const, sourceId: 'debug-enemy-hit', sourceMonsterId: state.combat.enemyId ?? undefined, sourceInstanceKey: state.combat.enemyInstanceKey ?? undefined, tags: ['basic-attack' as const, 'direct' as const] })
@@ -54,7 +55,8 @@ describe('Combat Lab immortality and forced-resolution runtime', () => {
     executeCombatEffects(state, [damage(500, 'enemy')], enemySource(state), 0, sink)
     expect(state.player.health).toBe(1)
     expect(resolveCombatDeaths(state, undefined, undefined, sink)).toBe(false)
-    expect(useCombatTelemetryStore.getState().run?.player.damageTaken.total).toBeCloseTo(500 * 1.5 * (1 - 10 / 110))
+    const playerDefenseReduction = BALANCE.player.baseDefense / (BALANCE.player.baseDefense + 100)
+    expect(useCombatTelemetryStore.getState().run?.player.damageTaken.total).toBeCloseTo(500 * 1.5 * (1 - playerDefenseReduction))
     expect(events.some((event) => event.sourceId === 'player-defeated')).toBe(false)
   })
 

@@ -11,6 +11,7 @@ import { applyStatus, removeStatus, tickStatuses } from './statusRuntime'
 import { conditionContainsCrossedHpThreshold, evaluateCombatCondition } from './conditionRuntime'
 import { resetCombatRuleRuntime, runCombatTriggers, tickRuleCooldowns } from './triggerRuntime'
 import { spawnEnemy } from './combatRuntime'
+import { BALANCE } from '../../core/balance/balance'
 
 const playerSource: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'trait-test', tags: ['spell', 'fire'] }
 const enemySource = (state: GameState): CombatSource => ({ actor: 'enemy', kind: 'basic-attack', sourceId: 'trait-test-attack', sourceMonsterId: state.combat.enemyId ?? undefined, sourceInstanceKey: state.combat.enemyInstanceKey ?? undefined, tags: ['basic-attack', 'direct'] })
@@ -38,6 +39,17 @@ const withTemporaryTrait = (trait: TraitDefinition, test: () => void) => {
 }
 
 describe('Universal Trait System V1', () => {
+  it('uses the edited combat rebalance values in runtime state and authored traits', () => {
+    const state = createInitialState()
+    const flicker = TRAIT_DEFINITIONS['forest-wisp-flicker']
+    const effect = flicker.rules?.[0]?.effects[0]
+
+    expect(state.player.mana).toBe(BALANCE.mana.startingMana)
+    expect(BALANCE.player).toMatchObject({ outOfCombatRegenMultiplier: 2, basicAttackDamage: 5, baseSpellPower: 50, baseDefense: 5 })
+    expect(effect).toMatchObject({ type: 'apply-status', statusId: 'haste', durationMs: 10_000 })
+    expect(flicker.description).toContain('10 seconds')
+  })
+
   it('evaluates conditional Trait modifiers through the canonical combat pipeline', () => {
     withTemporaryTrait({
       id: 'test-predator', name: 'Predator', description: 'Test.',

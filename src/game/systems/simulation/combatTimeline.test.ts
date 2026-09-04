@@ -7,6 +7,7 @@ import { clearCurrentEnemyAction, setEnemyActionPattern, startEnemyAction } from
 import { applyStatus, getNextCombatStatusEventMs } from '../combat/statusRuntime'
 import { spawnEnemy } from '../combat/combatRuntime'
 import { advanceGameState } from './advanceGameState'
+import { BALANCE } from '../../core/balance/balance'
 
 const playerSource: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'timeline-test', school: 'fire', tags: ['spell', 'magic', 'fire'] }
 
@@ -72,7 +73,8 @@ describe('shared combat timeline', () => {
     const statusDamage = events.findIndex((event) => event.sourceKind === 'status' && event.category === 'damage')
     expect(actionDamage).toBeGreaterThanOrEqual(0)
     expect(statusDamage).toBeGreaterThan(actionDamage)
-    expect(state.player.health).toBeCloseTo(10_000 - 5 * 1.5 * (1 - 10 / 110))
+    const playerDefenseReduction = BALANCE.player.baseDefense / (BALANCE.player.baseDefense + 100)
+    expect(state.player.health).toBeCloseTo(10_000 - 5 * 1.5 * (1 - playerDefenseReduction))
   })
 
   it('keeps a Stunned action frozen until the exact mid-quantum expiry boundary', () => {

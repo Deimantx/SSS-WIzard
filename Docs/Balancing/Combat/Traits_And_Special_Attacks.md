@@ -4,7 +4,7 @@
 
 | Trait | Used By | Trigger | Threshold | Effect | Value | Cooldown | Once? |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Flicker (forest-wisp-flicker) | Forest Wisp (forest-wisp) | Action resolves when the current action is Arc Spark -> Haste (3 s) | the current action is Arc Spark | After Arc Spark resolves, gains Haste for 3 seconds.; Haste (3 s) | Haste (3 s) | — | No |
+| Flicker (forest-wisp-flicker) | Forest Wisp (forest-wisp) | Action resolves when the current action is Arc Spark -> Haste (10 s) | the current action is Arc Spark | After Arc Spark resolves, gains Haste for 10 seconds.; Haste (10 s) | Haste (10 s) | — | No |
 | Barkskin (thornling-barkskin) | Thornling (thornling) | — | — | Basic Attack damage received is reduced by 15%. | -15% Damage taken from Basic Attack sources | — | No |
 | Rooted Shell (stone-rooted-shell) | Stone Root (stone-root) | Combat start -> +15% of the caster's Max Health Barrier (once/encounter) | — | Starts with Barrier equal to 15% max HP.; +15% of the caster's Max Health Barrier | +15% of the caster's Max Health Barrier | — | Yes |
 | Ancient Growth (grove-sentinel-ancient-growth) | Grove Sentinel (grove-sentinel) | HP threshold when the caster's Health is below 40% -> +22.22% of the caster's Max Health Barrier (once/encounter) | the caster's Health is below 40% | At 40% HP, gains a large Barrier once.; +22.22% of the caster's Max Health Barrier | +22.22% of the caster's Max Health Barrier | — | Yes |

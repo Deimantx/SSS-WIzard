@@ -13,6 +13,7 @@ import { spawnEnemy } from './combatRuntime'
 import { applyStatus, tickStatuses } from './statusRuntime'
 import { tickRuleCooldowns } from './triggerRuntime'
 import type { CombatSource } from './combatTypes'
+import { BALANCE } from '../../core/balance/balance'
 
 const playerSpell: CombatSource = {
   actor: 'player',
@@ -59,7 +60,7 @@ describe('authored equipment content', () => {
     recalculateDerivedStats(state)
 
     expect(getEquipmentStats(state)).toMatchObject({ spellPower: 20, maxMana: 25, basicDamage: 4 })
-    expect(getPlayerCombatStats(state)).toMatchObject({ spellPower: 120, basicAttackDamage: 12, maxMana: 125, cooldownRecovery: 1 })
+    expect(getPlayerCombatStats(state)).toMatchObject({ spellPower: BALANCE.player.baseSpellPower + 20, basicAttackDamage: BALANCE.player.basicAttackDamage + 4, maxMana: 125, cooldownRecovery: 1 })
     expect(getResistance(state, 'player', 'fire')).toBe(0)
     expect(getEffectiveManaCost(state, 10)).toBe(10)
 
@@ -69,14 +70,14 @@ describe('authored equipment content', () => {
     water.equipment.helmet = 'wispveil-hood'
     recalculateDerivedStats(water)
     expect(getEquipmentStats(water)).toMatchObject({ spellPower: 20, maxMana: 35, basicDamage: 2 })
-    expect(getPlayerCombatStats(water)).toMatchObject({ spellPower: 120, basicAttackDamage: 10, maxMana: 135 })
+    expect(getPlayerCombatStats(water)).toMatchObject({ spellPower: BALANCE.player.baseSpellPower + 20, basicAttackDamage: BALANCE.player.basicAttackDamage + 2, maxMana: 135 })
     expect(getCombatModifiers(water, 'player', 'barrier-power-percent', { source: { ...playerSpell, school: 'water', tags: ['spell', 'water'] }, damageType: 'water' })).toBeCloseTo(0.2)
 
     state.equipment.weapon = 'fangbound-dagger'
     state.equipment.offhand = 'fangbound-buckler'
     state.equipment.helmet = 'razorclaw-circlet'
     recalculateDerivedStats(state)
-    expect(getPlayerCombatStats(state)).toMatchObject({ basicAttackDamage: 16, basicAttackSpeedMultiplier: 1.13, critDamageMultiplier: 1.65, blockChance: 0.15 })
+    expect(getPlayerCombatStats(state)).toMatchObject({ basicAttackDamage: BALANCE.player.basicAttackDamage + 8, basicAttackSpeedMultiplier: 1.13, critDamageMultiplier: 1.65, blockChance: 0.15 })
     expect(getPlayerCombatStats(state).critChance).toBeCloseTo(0.12)
     expect(getResistance(state, 'player', 'physical')).toBe(0.03)
 
@@ -84,7 +85,7 @@ describe('authored equipment content', () => {
     state.equipment.offhand = null
     state.equipment.helmet = 'wispveil-hood'
     recalculateDerivedStats(state)
-    expect(getPlayerCombatStats(state)).toMatchObject({ spellPower: 130, maxMana: 115, cooldownRecovery: 1.1, manaCostReduction: 0.1 })
+    expect(getPlayerCombatStats(state)).toMatchObject({ spellPower: BALANCE.player.baseSpellPower + 30, maxMana: 115, cooldownRecovery: 1.1, manaCostReduction: 0.1 })
     expect(getEffectiveManaCost(state, 10)).toBe(9)
   })
 

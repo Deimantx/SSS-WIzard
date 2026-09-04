@@ -14,7 +14,7 @@
 
 | Enemy | Trait 1 | Trait 2 | Phase / Trigger | Default Pattern | Alt Pattern |
 | --- | --- | --- | --- | --- | --- |
-| Forest Wisp (forest-wisp) | Flicker: After Arc Spark resolves, gains Haste for 3 seconds.; Action resolves when the current action is Arc Spark -> Haste (3 s) | — | Action resolves when the current action is Arc Spark -> Haste (3 s) | Basic Attack -> Basic Attack -> Arc Spark | — |
+| Forest Wisp (forest-wisp) | Flicker: After Arc Spark resolves, gains Haste for 10 seconds.; Action resolves when the current action is Arc Spark -> Haste (10 s) | — | Action resolves when the current action is Arc Spark -> Haste (10 s) | Basic Attack -> Basic Attack -> Arc Spark | — |
 | Thornling (thornling) | Barkskin: Basic Attack damage received is reduced by 15%.; -15% Damage taken from Basic Attack sources | — | — | Basic Attack -> Basic Attack -> Thorn Lash | — |
 | Stone Root (stone-root) | Rooted Shell: Starts with Barrier equal to 15% max HP.; Combat start -> +15% of the caster's Max Health Barrier (once/encounter) | — | Combat start -> +15% of the caster's Max Health Barrier (once/encounter) | Basic Attack -> Basic Attack -> Basic Attack -> Root Slam | — |
 | Grove Sentinel (grove-sentinel) | Ancient Growth: At 40% HP, gains a large Barrier once.; HP threshold when the caster's Health is below 40% -> +22.22% of the caster's Max Health Barrier (once/encounter) | — | HP threshold when the caster's Health is below 40% -> +22.22% of the caster's Max Health Barrier (once/encounter) | Basic Attack -> Basic Attack -> Root Crush -> Basic Attack -> Verdant Guard | — |

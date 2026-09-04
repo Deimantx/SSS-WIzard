@@ -5,6 +5,7 @@ import { getEquipmentStatSnapshot, getEquipmentPreview } from '../../game/presen
 import type { ItemDefinition, ItemId } from '../../game/types'
 import { getEquippedReservedQuantity } from './inventoryActions'
 import { equipItemAction } from './equipmentActions'
+import { BALANCE } from '../../game/core/balance/balance'
 
 const testRingId = 'test-arcane-ring' as ItemId
 const testDefenseId = 'test-defense-robe' as ItemId
@@ -51,8 +52,8 @@ describe('equipment actions', () => {
     const state = createInitialState()
     state.inventory['ember-staff'] = 1
     const preview = getEquipmentPreview(state, 'ember-staff')
-    expect(preview.current.spellPower).toBe(100)
-    expect(preview.preview?.spellPower).toBe(120)
+    expect(preview.current.spellPower).toBe(BALANCE.player.baseSpellPower)
+    expect(preview.preview?.spellPower).toBe(BALANCE.player.baseSpellPower + 20)
     expect(preview.impact.spellPower).toBe(20)
   })
 
@@ -61,9 +62,11 @@ describe('equipment actions', () => {
     const state = createInitialState()
     state.inventory[testDefenseId] = 1
     const preview = getEquipmentPreview(state, testDefenseId)
-    expect(preview.current.damageReduction).toBeCloseTo(10 / 110)
-    expect(preview.preview?.damageReduction).toBeCloseTo(110 / 210)
-    expect(preview.impact.damageReduction).toBeCloseTo(110 / 210 - 10 / 110)
+    const currentDefenseReduction = BALANCE.player.baseDefense / (BALANCE.player.baseDefense + 100)
+    const previewDefenseReduction = (BALANCE.player.baseDefense + 100) / (BALANCE.player.baseDefense + 100 + 100)
+    expect(preview.current.damageReduction).toBeCloseTo(currentDefenseReduction)
+    expect(preview.preview?.damageReduction).toBeCloseTo(previewDefenseReduction)
+    expect(preview.impact.damageReduction).toBeCloseTo(previewDefenseReduction - currentDefenseReduction)
   })
 
   it('uses Ring 1 then Ring 2 and reserves duplicate copies safely', () => {

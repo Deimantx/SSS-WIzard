@@ -46,7 +46,7 @@ const panelOverrides: Record<string, PanelOverrides> = {
   'bestiary-inspector': { heightMode: 'bounded-scroll' },
   'schools-browser': { heightMode: 'bounded-scroll' },
   'schools-inspector': { heightMode: 'bounded-scroll' },
-  'schools-presets': { heightMode: 'bounded-scroll' },
+  'schools-presets': { heightMode: 'content' },
 }
 
 export const PANEL_REGISTRY: PanelDefinition[] = (Object.entries(DEFAULT_LAYOUTS) as [ScreenId, Record<string, PanelDefinition['defaultLayout']>][]) .flatMap(([screen, layouts]) => Object.entries(layouts).map(([id, defaultLayout]) => ({

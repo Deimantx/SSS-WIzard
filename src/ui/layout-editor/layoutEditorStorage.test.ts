@@ -318,6 +318,26 @@ describe('Home expansion layout compatibility', () => {
     expect(loaded.screens.home).toHaveProperty('home-objective')
     expect(getScreenLayouts('schools', loaded.screens.schools)).toEqual(DEFAULT_LAYOUTS.schools)
   })
+
+  it('migrates the untouched Schools preset height while preserving customized geometry', () => {
+    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({ version: 11, screens: {
+      schools: {
+        'schools-browser': { x: 0, y: 0, w: 7, h: 18 },
+        'schools-inspector': { x: 7, y: 0, w: 5, h: 18 },
+        'schools-presets': { x: 0, y: 18, w: 12, h: 5 },
+      },
+    } }))
+    expect(loadUiLayouts().screens.schools?.['schools-presets']).toEqual({ x: 0, y: 18, w: 12, h: 6 })
+
+    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({ version: 11, screens: {
+      schools: {
+        'schools-browser': { x: 0, y: 0, w: 7, h: 18 },
+        'schools-inspector': { x: 7, y: 0, w: 5, h: 18 },
+        'schools-presets': { x: 0, y: 20, w: 12, h: 5 },
+      },
+    } }))
+    expect(loadUiLayouts().screens.schools?.['schools-presets']).toEqual({ x: 0, y: 20, w: 12, h: 5 })
+  })
 })
 
 describe('Combat layout compatibility', () => {

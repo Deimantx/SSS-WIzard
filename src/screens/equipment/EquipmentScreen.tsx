@@ -15,6 +15,7 @@ import { formatBasicAttackTime } from '../../game/presentation/combat'
 import { getEquipmentPrimaryCombatSummary } from '../../game/presentation/equipment/equipmentCombatPresentation'
 import { getAdaptiveEquipmentLayout } from './equipmentLayout'
 import { InspectorTransition } from '../../ui/game-feel/InspectorTransition'
+import { useSmartScrollState } from '../../ui/game-feel/useSmartScrollState'
 
 type ArmoryFilter = 'all' | EquipmentItemSlot
 type WeaponHandsFilter = 'all' | 1 | 2
@@ -55,6 +56,8 @@ export function EquipmentScreenV2() {
   const ownedEquipment = useMemo(() => (Object.keys(ITEMS) as ItemId[]).filter((id) => ITEMS[id].kind === 'equipment' && (inventory[id] ?? 0) > 0), [inventory])
   const visibleEquipment = useMemo(() => ownedEquipment.filter((id) => (filter === 'all' || ITEMS[id].equipmentSlot === filter) && (filter !== 'weapon' || weaponHandsFilter === 'all' || ITEMS[id].weaponHands === weaponHandsFilter)), [ownedEquipment, filter, weaponHandsFilter])
   const selectedItem = selectedItemId ? ITEMS[selectedItemId] : null
+  const armoryScrollRef = useRef<HTMLDivElement>(null)
+  const inspectorScrollRef = useRef<HTMLDivElement>(null)
   const targetPosition = selectedItem?.equipmentSlot === 'ring'
     ? ringReplacement ?? (selectedPosition === 'ring1' || selectedPosition === 'ring2' ? selectedPosition : equipment.ring1 ? equipment.ring2 ? undefined : 'ring2' : 'ring1')
     : selectedPosition
@@ -68,6 +71,8 @@ export function EquipmentScreenV2() {
   const reportLoadoutContentHeight = useCallback((height: number) => setLoadoutContentHeight((current) => current === height ? current : height), [])
   const reportStatsContentHeight = useCallback((height: number) => setStatsContentHeight((current) => current === height ? current : height), [])
   const layoutTransform = useCallback((layout: Parameters<typeof getAdaptiveEquipmentLayout>[0]) => getAdaptiveEquipmentLayout(layout, { requiredLoadoutContentHeight: loadoutContentHeight, requiredStatsContentHeight: statsContentHeight }), [loadoutContentHeight, statsContentHeight])
+  useSmartScrollState(armoryScrollRef, { dependencies: [visibleEquipment.join('|'), filter, weaponHandsFilter] })
+  useSmartScrollState(inspectorScrollRef, { resetKey: selectedItemId })
 
   useEffect(() => {
     if (selectedItemId && !ownedEquipment.includes(selectedItemId)) setSelectedItemId(ownedEquipment[0] ?? null)
@@ -123,13 +128,13 @@ export function EquipmentScreenV2() {
     <div className="equipment-note"><Shield size={15} /><span>Equipped copies remain reserved from Research, Transmutation, Guild donation, Sell, and Destroy.</span></div>
   </MeasuredEquipmentCard>
 
-  const armory = <Card title="ARMORY" action={<span className="equipment-armory-count">{ownedEquipment.length} OWNED TYPES</span>}>
+  const armory = <Card title="ARMORY" className="equipment-armory-panel" action={<span className="equipment-armory-count">{ownedEquipment.length} OWNED TYPES</span>}>
     <div className="equipment-filter-bar" role="tablist" aria-label="Equipment filters">{ARMORY_FILTERS.map((entry) => <button type="button" role="tab" aria-selected={filter === entry.id} className={filter === entry.id ? 'active' : ''} key={entry.id} onClick={() => { setFilter(entry.id); if (entry.id !== 'all' && entry.id !== 'ring') setSelectedPosition(entry.id) }}>{entry.label}</button>)}</div>
     {filter === 'weapon' && <div className="equipment-weapon-badges"><button type="button" className={weaponHandsFilter === 'all' ? 'active' : ''} onClick={() => setWeaponHandsFilter('all')}>ALL</button><button type="button" className={weaponHandsFilter === 1 ? 'active' : ''} onClick={() => setWeaponHandsFilter(1)}>1H</button><button type="button" className={weaponHandsFilter === 2 ? 'active' : ''} onClick={() => setWeaponHandsFilter(2)}>2H</button></div>}
-    {visibleEquipment.length === 0 ? <div className="equipment-empty-armory"><strong>NO {EMPTY_FILTER_LABELS[filter]} OWNED</strong><small>Future equipment will appear here.</small></div> : <div className="equipment-armory-grid">{visibleEquipment.map((id) => { const item = ITEMS[id]; const selected = id === selectedItemId; const equipped = getItemPositions(id).some((position) => equipment[position] === id); return <ItemTooltip itemId={id} owned={inventory[id] ?? 0} equipped={equipped} key={id}><button type="button" className={`equipment-armory-card ${selected ? 'selected' : ''} ${equipped ? 'equipped' : ''}`} onClick={() => selectArmoryItem(id)}><span className="equipment-armory-icon" style={{ color: item.color }}>{item.icon}</span><span className="equipment-armory-copy"><strong>{item.name}</strong><small>{getEquipmentPrimaryCombatSummary(item) ?? (item.equipmentSlot ? EQUIPMENT_ITEM_SLOT_LABELS[item.equipmentSlot] : 'Equipment')}</small></span>{item.weaponHands && <Status tone="warning">{item.weaponHands}H</Status>}{equipped && <Status tone="success">EQUIPPED</Status>}</button></ItemTooltip> })}</div>}
+    {visibleEquipment.length === 0 ? <div className="equipment-empty-armory"><strong>NO {EMPTY_FILTER_LABELS[filter]} OWNED</strong><small>Future equipment will appear here.</small></div> : <div ref={armoryScrollRef} className="equipment-armory-grid smart-scroll-region">{visibleEquipment.map((id) => { const item = ITEMS[id]; const selected = id === selectedItemId; const equipped = getItemPositions(id).some((position) => equipment[position] === id); return <ItemTooltip itemId={id} owned={inventory[id] ?? 0} equipped={equipped} key={id}><button type="button" className={`equipment-armory-card ${selected ? 'selected' : ''} ${equipped ? 'equipped' : ''}`} onClick={() => selectArmoryItem(id)}><span className="equipment-armory-icon" style={{ color: item.color }}>{item.icon}</span><span className="equipment-armory-copy"><strong>{item.name}</strong><small>{getEquipmentPrimaryCombatSummary(item) ?? (item.equipmentSlot ? EQUIPMENT_ITEM_SLOT_LABELS[item.equipmentSlot] : 'Equipment')}</small></span>{item.weaponHands && <Status tone="warning">{item.weaponHands}H</Status>}{equipped && <Status tone="success">EQUIPPED</Status>}</button></ItemTooltip> })}</div>}
   </Card>
 
-  const inspector = <Card title="GEAR INSPECTOR" className="equipment-inspector"><InspectorTransition identity={selectedItemId}>
+  const inspector = <Card title="GEAR INSPECTOR" className="equipment-inspector"><InspectorTransition identity={selectedItemId} accent={selectedItem?.color} fill><div ref={inspectorScrollRef} className="equipment-inspector-content smart-scroll-region">
     {!selectedItem ? <div className="equipment-inspector-empty"><strong>SELECT GEAR</strong><small>Choose an item from the Armory to compare its real loadout impact.</small></div> : <>
       <div className="equipment-inspector-hero"><span className="equipment-inspector-icon" style={{ color: selectedItem.color }}>{selectedItem.icon}</span><div><div className="eyebrow">{selectedItem.equipmentSlot ? EQUIPMENT_ITEM_SLOT_LABELS[selectedItem.equipmentSlot] : 'EQUIPMENT'}</div><h3>{selectedItem.name}</h3><p>{selectedItem.description}</p></div></div>
       {copyAvailability && <GameTooltip block content={<TooltipContent title="Equipment copies" description="Owned copies include every copy reserved by the current loadout. A Ring needs one owned copy per occupied Ring position." />}><div className="equipment-copy-availability"><span>COPIES</span><strong>OWNED {copyAvailability.owned}</strong><strong>EQUIPPED {copyAvailability.equipped}</strong><strong>AVAILABLE {copyAvailability.available}</strong></div></GameTooltip>}
@@ -142,7 +147,7 @@ export function EquipmentScreenV2() {
       {equippedPositions.length > 0 && <div className="equipment-current-position"><Status tone="success">EQUIPPED IN {equippedPositions.map((position) => EQUIPMENT_POSITION_LABELS[position]).join(' + ')}</Status></div>}
       <div className="equipment-inspector-actions"><Button variant="primary" disabled={!preview?.compatible || ringNeedsChoice || equippedPositions.includes(preview?.position ?? 'weapon')} onClick={() => selectedItemId && equipItem(selectedItemId, preview?.position ?? undefined)}>EQUIP</Button>{inspectorTargetPosition && equipment[inspectorTargetPosition] === selectedItemId && <Button variant="ghost" onClick={() => unequipItem(inspectorTargetPosition)}>UNEQUIP {EQUIPMENT_POSITION_LABELS[inspectorTargetPosition].toUpperCase()}</Button>}</div>
     </>}
-  </InspectorTransition></Card>
+  </div></InspectorTransition></Card>
 
   return <div className="screen-content equipment-screen"><div className="screen-header"><div><div className="eyebrow">WIZARD LOADOUT · EQUIPMENT</div><h1>Build the tower’s answer.</h1><p>Eight equipment positions, owned gear, and honest loadout impact. Two-handed weapons trade away the Offhand.</p></div></div><EditableGrid screen="equipment" layoutTransform={layoutTransform} panels={[{ id: 'equipment-loadout', content: loadout }, { id: 'equipment-stats', content: statsPanel }, { id: 'equipment-owned', content: armory }, { id: 'equipment-inspector', content: inspector }]} /></div>
 }

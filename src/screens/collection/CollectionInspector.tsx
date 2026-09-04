@@ -1,5 +1,6 @@
 import { ArrowRight, PackageOpen } from 'lucide-react'
 import type { CSSProperties } from 'react'
+import { useRef } from 'react'
 import { Button, Card, EquipmentCombatDetails, Status } from '../../components/ui'
 import { GameTooltip, TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { ItemIcon, ItemQuantity } from '../../components/ui/item'
@@ -9,6 +10,7 @@ import type { GameState, ItemId, SchoolId, ScreenId } from '../../game/types'
 import { EQUIPMENT_ITEM_SLOT_LABELS } from '../../game/core/equipment'
 import { formatStat, friendlyStatLabel } from '../../components/ui/item/ItemTooltip'
 import { getInventoryCategoryLabel, getInventorySubcategoryLabel, getItemSourceDestination, getItemUses } from '../../game/content/items/inventoryMetadata'
+import { useSmartScrollState } from '../../ui/game-feel/useSmartScrollState'
 
 interface CollectionInspectorProps {
   itemId: ItemId | null
@@ -18,6 +20,8 @@ interface CollectionInspectorProps {
 }
 
 export function CollectionInspector({ itemId, inventory, progress, navigate }: CollectionInspectorProps) {
+  const inspectorScrollRef = useRef<HTMLDivElement>(null)
+  useSmartScrollState(inspectorScrollRef, { resetKey: itemId })
   if (!itemId) return <Card title="ITEM INSPECTION" className="collection-inspector"><EmptyInspector text="Select an item to inspect its archive record." /></Card>
   const item = ITEMS[itemId]
   if (!item) return <Card title="ITEM INSPECTION" className="collection-inspector"><EmptyInspector text="This item is no longer part of the archive." /></Card>
@@ -29,7 +33,7 @@ export function CollectionInspector({ itemId, inventory, progress, navigate }: C
   const source = getItemSourceDestination(itemId)
   const uses = getItemUses(itemId)
 
-  return <Card title="ITEM INSPECTION" className="collection-inspector"><div className="collection-inspector-scroll" style={{ '--collection-accent': item.color } as CSSProperties}>
+  return <Card title="ITEM INSPECTION" className="collection-inspector"><div ref={inspectorScrollRef} className="collection-inspector-scroll smart-scroll-region" style={{ '--collection-accent': item.color } as CSSProperties}>
     <div className="collection-inspector-hero"><div className="collection-inspector-icon"><ItemIcon itemId={itemId} size="large" /></div><div><span className="collection-inspector-category">{category}{item.equipmentSlot ? ` · ${EQUIPMENT_ITEM_SLOT_LABELS[item.equipmentSlot]}` : ''}</span><h2>{item.name}</h2><Status tone="success">Discovered</Status></div></div>
     <div className="collection-owned"><span>OWNED NOW</span><ItemQuantity value={quantity} /></div>
     <p className="collection-description">{item.description}</p>

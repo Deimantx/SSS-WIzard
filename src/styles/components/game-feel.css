@@ -254,9 +254,19 @@
   overflow: hidden;
   pointer-events: none;
 }
-.inspector-transition { min-width: 0; min-height: 0; animation: inspector-swap 140ms ease-out both; }
+.inspector-transition { position: relative; min-width: 0; min-height: 0; animation: inspector-swap 140ms ease-out both; }
+.inspector-transition.fill-bounded { display: flex; width: 100%; height: 100%; min-width: 0; min-height: 0; }
+.inspector-transition.fill-bounded > * { width: 100%; height: 100%; min-width: 0; min-height: 0; flex: 1 1 auto; }
+.inspector-transition::before { position: absolute; z-index: 3; top: 0; left: 0; width: 48px; height: 2px; border-radius: 0 999px 999px 0; background: linear-gradient(90deg, color-mix(in srgb, var(--inspector-accent, var(--ui-accent)) 82%, transparent), transparent); box-shadow: 0 0 12px color-mix(in srgb, var(--inspector-accent, var(--ui-accent)) 38%, transparent); content: ''; pointer-events: none; transform-origin: left center; animation: inspector-accent-wake 160ms ease-out both; }
+.inspector-transition > * :is(.bestiary-portrait, .spell-inspector-icon-frame, .inventory-detail-icon, .equipment-inspector-icon, .collection-inspector-icon, .transmutation-detail-icon, .transmutation-output-icon) { animation: inspector-icon-wake 170ms ease-out both; transform-origin: center; }
 @keyframes inspector-swap { from { opacity: 0; filter: brightness(1.22); } 55% { opacity: 1; filter: brightness(1.06); } to { opacity: 1; filter: none; } }
+@keyframes inspector-accent-wake { from { opacity: 0; transform: scaleX(.35); } 45% { opacity: .95; } to { opacity: 0; transform: scaleX(1); } }
+@keyframes inspector-icon-wake { from { filter: brightness(1.3) drop-shadow(0 0 12px color-mix(in srgb, var(--inspector-accent, var(--ui-accent)) 46%, transparent)); transform: scale(.96); } to { filter: none; transform: scale(1); } }
 :root[data-reduced-motion='true'] .inspector-transition { animation: inspector-swap-reduced 70ms ease-out both; }
+:root[data-reduced-motion='true'] .inspector-transition::before,
+:root[data-reduced-motion='true'] .inspector-transition > * :is(.bestiary-portrait, .spell-inspector-icon-frame, .inventory-detail-icon, .equipment-inspector-icon, .collection-inspector-icon, .transmutation-detail-icon, .transmutation-output-icon),
+.game-shell.reduced-motion .inspector-transition::before,
+.game-shell.reduced-motion .inspector-transition > * :is(.bestiary-portrait, .spell-inspector-icon-frame, .inventory-detail-icon, .equipment-inspector-icon, .collection-inspector-icon, .transmutation-detail-icon, .transmutation-output-icon) { animation: none; }
 @keyframes inspector-swap-reduced { from { opacity: 0; } to { opacity: 1; } }
 
 .game-feel-burst {
@@ -425,6 +435,7 @@
   position: relative;
   overflow: hidden;
   isolation: isolate;
+  transition: border-color 110ms ease, box-shadow 110ms ease;
 }
 
 .game-shell .screen-scroll [data-game-panel='true']::before {
@@ -440,6 +451,16 @@
 
 .game-shell .screen-scroll [data-game-panel='true']::after {
   display: none;
+}
+
+/* Large panels wake only under a fine pointer. Edit UI keeps its own selection language. */
+@media (hover: hover) and (pointer: fine) {
+  .game-shell:not(.editor-open) .screen-scroll [data-game-panel='true']:hover {
+    border-color: color-mix(in srgb, var(--ui-accent) 18%, var(--ui-border));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ui-accent) 8%, transparent), 0 10px 30px color-mix(in srgb, var(--ui-accent) 6%, transparent);
+  }
+
+  .game-shell:not(.editor-open) .screen-scroll [data-game-panel='true']:hover::before { opacity: .86; }
 }
 
 .game-shell .screen-scroll .game-screen-transition [data-game-panel='true'] {
@@ -514,18 +535,28 @@
   opacity: .64;
 }
 
-/* Scroll regions retain themed bars and gain a quiet edge cue without masking content. */
-.game-shell .screen-scroll .spell-browser-grid,
-.game-shell .screen-scroll .transmutation-library-scroll,
-.game-shell .screen-scroll .transmutation-focus-body,
-.game-shell .screen-scroll .inventory-detail-card > .inventory-detail-content,
-.game-shell .screen-scroll .collection-inspector-scroll,
-.game-shell .screen-scroll .bestiary-inspector-scroll,
-.game-shell .screen-scroll .combat-details-rows,
-.game-shell .screen-scroll .dungeon-statistics-drops-list {
-  box-shadow: inset 0 -14px 18px -18px color-mix(in srgb, var(--ui-accent) 70%, transparent);
-  scroll-padding-block-end: 16px;
+/* Smart scroll cues are painted on the real scroll owner and never affect layout. */
+.smart-scroll-region {
+  --scroll-indicator-accent: var(--inspector-accent, var(--ui-accent));
+  --scroll-indicator-strength: 13%;
+  scroll-padding-block: 16px;
+  transition: box-shadow 100ms ease;
 }
+.smart-scroll-region[data-scroll-up='true'] {
+  box-shadow: inset 0 16px 18px -20px color-mix(in srgb, var(--scroll-indicator-accent) var(--scroll-indicator-strength), transparent);
+}
+.smart-scroll-region[data-scroll-down='true'] {
+  box-shadow: inset 0 -16px 18px -20px color-mix(in srgb, var(--scroll-indicator-accent) var(--scroll-indicator-strength), transparent);
+}
+.smart-scroll-region[data-scroll-up='true'][data-scroll-down='true'] {
+  box-shadow: inset 0 16px 18px -20px color-mix(in srgb, var(--scroll-indicator-accent) var(--scroll-indicator-strength), transparent), inset 0 -16px 18px -20px color-mix(in srgb, var(--scroll-indicator-accent) var(--scroll-indicator-strength), transparent);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .smart-scroll-region:hover { --scroll-indicator-strength: 38%; }
+}
+
+.game-shell.editor-open .smart-scroll-region { --scroll-indicator-strength: 7%; }
 
 .game-shell .screen-scroll .game-value {
   font-variant-numeric: tabular-nums;
@@ -743,6 +774,8 @@
   .game-screen-transition::before { display: none; }
   .game-screen-transition::after { animation: game-screen-border-reduced 80ms ease-out both; }
   .game-shell .screen-scroll .game-screen-transition [data-game-panel='true'] { animation: game-panel-reduced 80ms ease-out both; }
+  .game-shell .screen-scroll [data-game-panel='true'] { transition: none; }
+  .smart-scroll-region { transition: none; }
   .game-shell .main-area::before,
   .game-shell .main-area::after { transition: none; }
   .item-uses-dialog-backdrop,
@@ -761,6 +794,8 @@
 .game-shell.reduced-motion .game-screen-transition::before { display: none; }
 .game-shell.reduced-motion .game-screen-transition::after { animation: game-screen-border-reduced 80ms ease-out both; }
 .game-shell.reduced-motion .screen-scroll .game-screen-transition [data-game-panel='true'] { animation: game-panel-reduced 80ms ease-out both; }
+.game-shell.reduced-motion .screen-scroll [data-game-panel='true'] { transition: none; }
+.game-shell.reduced-motion .smart-scroll-region { transition: none; }
 .game-shell.reduced-motion .nav-item.active svg:first-child { animation: none; }
 @keyframes game-screen-border-reduced { from { opacity: .2; } to { opacity: 0; } }
 @keyframes game-panel-reduced { from { border-color: var(--ui-accent); } to { border-color: var(--ui-border); } }

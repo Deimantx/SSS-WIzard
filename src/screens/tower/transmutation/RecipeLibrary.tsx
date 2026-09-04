@@ -12,6 +12,7 @@ import { useGameStore } from '../../../store/gameStore'
 import { getTransmutationRecipeCardMeta } from '../../../game/presentation/transmutation/transmutationRecipeCardPresentation'
 import { useProfileAttention } from '../../../ui/attention/attentionStore'
 import { getActiveProfileId } from '../../../profiles/profileSessionStore'
+import { useSmartScrollState } from '../../../ui/game-feel/useSmartScrollState'
 
 const CATEGORY_LABELS: Record<RecipeCategory, string> = { elemental: 'ELEMENTAL', material: 'MATERIALS', equipment: 'EQUIPMENT', special: 'SPECIAL' }
 const CATEGORY_ORDER: RecipeCategory[] = ['elemental', 'material', 'equipment', 'special']
@@ -43,6 +44,8 @@ export function RecipeLibrary({ selectedRecipeId, onSelect }: { selectedRecipeId
   const collapsedCategories = saved.collapsedCategories
   const tierCounts = filters.categoryFilter === 'elemental' || filters.categoryFilter === 'material' ? counts.tierCounts[filters.categoryFilter] : undefined
   const hasQuickFilters = filters.craftableOnly || filters.activeOnly || filters.unownedOnly
+  const libraryScrollRef = React.useRef<HTMLDivElement>(null)
+  useSmartScrollState(libraryScrollRef, { dependencies: [visible.map((recipe) => recipe.id).join('|'), query, filters.categoryFilter, filters.equipmentSlotFilter, filters.weaponHandsFilter, filters.offhandPresentationFilter, filters.tierFilter, filters.craftableOnly, filters.activeOnly, filters.unownedOnly] })
 
   const update = (value: Partial<typeof filters>) => setUiPreferences({ screenState: { transmutation: value } })
   const toggleCategory = (category: RecipeCategory) => setUiPreferences({ screenState: { transmutation: { collapsedCategories: { [category]: !collapsedCategories[category] } } } })
@@ -64,7 +67,7 @@ export function RecipeLibrary({ selectedRecipeId, onSelect }: { selectedRecipeId
       </div>
       {showLocked && counts.hiddenLocked > 0 && <div className="transmutation-locked-banner"><LockKeyhole size={14} aria-hidden="true" /><span>DEV VIEW · {counts.hiddenLocked} locked recipes revealed. Unlock conditions still apply.</span></div>}
     </div>
-    <div className="transmutation-library-scroll">
+    <div ref={libraryScrollRef} className="transmutation-library-scroll smart-scroll-region">
       {visible.length === 0 ? <div className="empty-state small">{emptyMessage}</div> : groups.map((category) => {
         const categoryRecipes = visible.filter((recipe) => recipe.category === category)
         const collapsed = collapsedCategories[category] && !forceOpen

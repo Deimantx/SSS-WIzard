@@ -1,5 +1,5 @@
 import { ArrowRight, Check, ChevronDown, ChevronRight, LockKeyhole, PackageOpen } from 'lucide-react'
-import type { CSSProperties, ReactNode } from 'react'
+import { useRef, type CSSProperties, type ReactNode } from 'react'
 import { Button, EquipmentCombatDetails, Status } from '../../components/ui'
 import { ItemIcon, ItemQuantity } from '../../components/ui/item'
 import { getItemSourceLabel, getResearchXp, ITEMS } from '../../game/content/items/items'
@@ -13,13 +13,16 @@ import { getItemNeeds, type ItemEconomyState, type ItemNeed } from './inventoryE
 import { EQUIPMENT_ITEM_SLOT_LABELS, getItemPositions } from '../../game/core/equipment'
 import { setUiPreferences, useUiPreferences } from '../../ui/preferences/uiPreferencesStore'
 import { getResearchReservedQuantity } from '../../game/systems/research/researchReservations'
+import { useSmartScrollState } from '../../ui/game-feel/useSmartScrollState'
 
 type DetailAccordionKey = 'currentNeeds' | 'source' | 'usedIn'
 type DetailAccordionState = Record<DetailAccordionKey, boolean>
 
 export function InventoryDetail({ itemId, inventory, protectedItems, equipment, economyState, navigate }: { itemId: ItemId | null; inventory: GameState['inventory']; protectedItems: GameState['protectedItems']; equipment: GameState['equipment']; economyState?: ItemEconomyState; navigate?: (screen: ScreenId) => void }) {
+  const detailScrollRef = useRef<HTMLDivElement>(null)
   const preferences = useUiPreferences()
   const openSections: DetailAccordionState = { currentNeeds: preferences.screenState.inventory.currentNeedsOpen, source: preferences.screenState.inventory.sourceOpen, usedIn: preferences.screenState.inventory.usedInOpen }
+  useSmartScrollState(detailScrollRef, { resetKey: itemId })
 
   if (!itemId) return <div className="inventory-detail-empty"><PackageOpen size={28} aria-hidden="true" /><strong>SELECT AN ITEM</strong><span>Choose an item from the Vault to inspect its source, uses, and protection.</span></div>
   const item = ITEMS[itemId]
@@ -38,7 +41,7 @@ export function InventoryDetail({ itemId, inventory, protectedItems, equipment, 
   const sourceLabel = getItemSourceLabel(itemId)
   const toggleSection = (section: DetailAccordionKey) => { const key = section === 'currentNeeds' ? 'currentNeedsOpen' : section === 'source' ? 'sourceOpen' : 'usedInOpen'; setUiPreferences({ screenState: { inventory: { [key]: !openSections[section] } } }) }
 
-  return <div className={`inventory-detail-content inventory-detail-${item.inventoryCategory}`} style={{ '--detail-accent': item.color } as CSSProperties}>
+  return <div ref={detailScrollRef} className={`inventory-detail-content inventory-detail-${item.inventoryCategory} smart-scroll-region`} style={{ '--detail-accent': item.color } as CSSProperties}>
     <div className="inventory-detail-hero"><div className="inventory-detail-icon"><ItemIcon itemId={itemId} size="large" /></div><div className="inventory-detail-title"><span className="inventory-detail-category">{category}{item.equipmentSlot ? ` · ${EQUIPMENT_ITEM_SLOT_LABELS[item.equipmentSlot]}` : ''}</span><h2>{item.name}</h2><div className="inventory-detail-badges">{equipped ? <Status tone="success"><Check size={12} /> Equipped</Status> : protectedItem ? <Status tone="warning"><LockKeyhole size={12} /> Protected</Status> : <Status>Available</Status>}</div></div></div>
     <div className="inventory-detail-owned"><span>OWNED</span><ItemQuantity value={quantity} /></div>
     {researchReserved > 0 && <div className="inventory-detail-reserved"><span>PREPARED FOR RESEARCH</span><strong>×{researchReserved.toLocaleString()}</strong><small>Unavailable to selling, destruction, Guild donations, and Transmutation.</small></div>}

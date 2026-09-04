@@ -12,6 +12,8 @@ import type { ItemId, SchoolId } from '../../../game/types'
 import { formatNumber } from '../../../game/utils'
 import { setUiPreferences, useUiPreferences } from '../../../ui/preferences/uiPreferencesStore'
 import { useGameStore } from '../../../store/gameStore'
+import { useRef } from 'react'
+import { useSmartScrollState } from '../../../ui/game-feel/useSmartScrollState'
 
 const SCHOOLS_ORDER = Object.keys(SCHOOLS) as SchoolId[]
 const RESEARCHABLE_ITEM_IDS = getResearchableItemIds()
@@ -28,13 +30,15 @@ export function ResearchLibrary({ selectedItemId, onSelect }: { selectedItemId: 
     return (Number(itemState[itemId].split('|')[0]) > 0 || reserved > 0) && (filter === 'all' || ITEMS[itemId].researchSchool === filter)
   })
   const allResearchable = RESEARCHABLE_ITEM_IDS.filter((itemId) => Number(itemState[itemId].split('|')[0]) > 0 || Number(itemState[itemId].split('|')[1]) > 0)
+  const libraryBodyRef = useRef<HTMLDivElement>(null)
+  useSmartScrollState(libraryBodyRef, { dependencies: [itemIds.join('|'), filter] })
   const setFilter = (next: 'all' | SchoolId) => setUiPreferences({ screenState: { research: { affinityFilter: next } } })
   return <Card className="research-library" title="RESEARCHABLE ITEMS" action={<span className="research-count">{itemIds.length} / {allResearchable.length}</span>}>
     <div className="research-filters" role="tablist" aria-label="Research affinity filters">
       <FilterButton label="ALL" active={filter === 'all'} onClick={() => setFilter('all')} />
       {SCHOOLS_ORDER.map((schoolId) => <FilterButton key={schoolId} label={SCHOOLS[schoolId].name.toUpperCase()} active={filter === schoolId} onClick={() => setFilter(schoolId)} />)}
     </div>
-    <div className="research-library-body">{itemIds.length === 0 ? <div className="empty-state small">{allResearchable.length ? 'No researchable items match this affinity.' : 'Fragments you own or prepare will appear here.'}</div> : <div className="research-item-grid">{itemIds.map((itemId) => <ResearchItemTile key={itemId} itemId={itemId} selected={selectedItemId === itemId} encodedState={itemState[itemId]} onSelect={onSelect} />)}</div>}</div>
+    <div ref={libraryBodyRef} className="research-library-body smart-scroll-region">{itemIds.length === 0 ? <div className="empty-state small">{allResearchable.length ? 'No researchable items match this affinity.' : 'Fragments you own or prepare will appear here.'}</div> : <div className="research-item-grid">{itemIds.map((itemId) => <ResearchItemTile key={itemId} itemId={itemId} selected={selectedItemId === itemId} encodedState={itemState[itemId]} onSelect={onSelect} />)}</div>}</div>
   </Card>
 }
 

@@ -32,9 +32,9 @@ export function TransmutationScreen() {
   const panels: EditableGridPanel[] = [
     { id: 'transmutation-recipes', content: <RecipeLibrary selectedRecipeId={selectedRecipeId} onSelect={setSelectedRecipeId} /> },
     { id: 'transmutation-focus', content: <FocusAssignment selectedRecipeId={selectedRecipeId} onSelect={setSelectedRecipeId} /> },
-    { id: 'transmutation-detail', content: <InspectorTransition identity={selectedRecipeId}><RecipeDetail recipe={recipe} onSelectRecipe={setSelectedRecipeId} /></InspectorTransition> },
+    { id: 'transmutation-detail', content: <InspectorTransition identity={selectedRecipeId} accent={ITEMS[recipe.output.itemId].color}><RecipeDetail recipe={recipe} onSelectRecipe={setSelectedRecipeId} /></InspectorTransition> },
   ]
-  if (ITEMS[recipe.output.itemId].kind === 'equipment') panels.push({ id: 'transmutation-output-preview', content: <InspectorTransition identity={selectedRecipeId}><OutputInspection recipe={recipe} /></InspectorTransition> })
+  if (ITEMS[recipe.output.itemId].kind === 'equipment') panels.push({ id: 'transmutation-output-preview', content: <InspectorTransition identity={selectedRecipeId} accent={ITEMS[recipe.output.itemId].color}><OutputInspection recipe={recipe} /></InspectorTransition> })
 
   return <TowerFrame eyebrow="WIZARD TOWER · TRANSMUTATION" title="Turn Mana and materials into matter." description="Assign Arcane Echoes to create elemental materials and equipment while the rest of the tower remains active."><EditableGrid screen="tower-transmutation" panels={panels} /></TowerFrame>
 }

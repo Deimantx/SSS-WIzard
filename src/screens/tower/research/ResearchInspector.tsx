@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Button, Card, GameTooltip, Status } from '../../../components/ui'
 import { TooltipContent } from '../../../components/ui/tooltip/Tooltip'
 import { ItemIcon } from '../../../components/ui/item'
@@ -12,6 +12,7 @@ import type { ItemId, SchoolId } from '../../../game/types'
 import { clamp, formatNumber, formatTime } from '../../../game/utils'
 import { setUiPreferences, useUiPreferences } from '../../../ui/preferences/uiPreferencesStore'
 import { useGameStore } from '../../../store/gameStore'
+import { useSmartScrollState } from '../../../ui/game-feel/useSmartScrollState'
 
 const SCHOOL_ORDER = Object.keys(SCHOOLS) as SchoolId[]
 
@@ -30,6 +31,8 @@ export function ResearchInspector({ itemId }: { itemId: ItemId | null }) {
   const projection = projectSchoolProgress(state, targetSchoolId, safeQuantity * xpPerItem)
   const canMerge = Boolean(itemId && Object.values(state.activities.research.slots).some((job) => job?.itemId === itemId && job.targetSchoolId === targetSchoolId))
   const uniqueSlotFull = !canMerge && getPreparedResearchCount(state) >= BALANCE.research.maxPreparedSlots
+  const inspectorBodyRef = useRef<HTMLDivElement>(null)
+  useSmartScrollState(inspectorBodyRef, { resetKey: itemId, dependencies: [targetSchoolId, safeQuantity, available] })
 
   useEffect(() => {
     setQuantity((current) => available > 0 ? clamp(current || 1, 1, available) : 0)
@@ -45,10 +48,10 @@ export function ResearchInspector({ itemId }: { itemId: ItemId | null }) {
     : disabled ? <TooltipContent title="Cannot prepare" description={available < 1 ? 'No unreserved quantity is available.' : 'Choose a valid quantity and target school.'} />
       : <TooltipContent title="Prepare Research" description="Reserve this quantity without consuming it. Assign Research Echoes in Prepared Research." />
 
-  if (!itemId || !item) return <Card className="research-inspector" title="ITEM INSPECTION"><div className="research-inspector-body"><div className="empty-state small">Select a Researchable Item to inspect its affinity, target school value, and quantity.</div></div></Card>
+  if (!itemId || !item) return <Card className="research-inspector" title="ITEM INSPECTION"><div ref={inspectorBodyRef} className="research-inspector-body smart-scroll-region"><div className="empty-state small">Select a Researchable Item to inspect its affinity, target school value, and quantity.</div></div></Card>
 
   return <Card className="research-inspector" title="ITEM INSPECTION">
-    <div className="research-inspector-body">
+    <div ref={inspectorBodyRef} className="research-inspector-body smart-scroll-region">
       <div className="research-inspection-hero"><div className="research-inspection-icon" style={{ '--research-accent': item.color } as CSSProperties}><ItemIcon itemId={itemId} size="tile" /></div><div><span className="eyebrow">{item.researchSchool ? SCHOOLS[item.researchSchool].name.toUpperCase() : 'RESEARCH' } AFFINITY</span><h2>{item.name}</h2><div className="research-inspection-stats"><span><small>OWNED</small><strong>{formatNumber(state.inventory[itemId] ?? 0)}</strong></span><span><small>AVAILABLE</small><strong>{formatNumber(available)}</strong></span><span><small>RESERVED</small><strong>{formatNumber(reserved)}</strong></span></div></div></div>
     <p className="research-inspection-description">{item.description}</p>
     <div className="research-source-line"><span>SOURCE</span><strong>{getItemSourceLabel(itemId)}</strong></div>

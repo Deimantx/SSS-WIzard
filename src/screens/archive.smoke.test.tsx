@@ -47,5 +47,8 @@ describe('archive screens', () => {
     expect(screen.getByText('ACTION PATTERN')).toBeTruthy()
     expect(screen.queryByText('ACTION SEQUENCE')).toBeNull()
     expect(screen.getByText('LOOT TABLE')).toBeTruthy()
+    const dossierTransition = document.querySelector('[data-inspector-identity="forest-wisp"]')
+    expect(dossierTransition?.classList.contains('fill-bounded')).toBe(true)
+    expect(dossierTransition?.querySelector('.bestiary-inspector-scroll')?.classList.contains('smart-scroll-region')).toBe(true)
   })
 })

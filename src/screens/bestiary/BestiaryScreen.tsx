@@ -9,6 +9,7 @@ import { BestiarySummary } from './BestiarySummary'
 import { clearAttention, useProfileAttention } from '../../ui/attention/attentionStore'
 import { getActiveProfileId } from '../../profiles/profileSessionStore'
 import { InspectorTransition } from '../../ui/game-feel/InspectorTransition'
+import { MONSTERS } from '../../game/content/monsters'
 
 export function BestiaryScreen() {
   const progress = useGameStore((state) => state.progress)
@@ -27,6 +28,6 @@ export function BestiaryScreen() {
   }, [visibleIds.join('|'), progress.discoveredMonsters.join('|')])
 
   const index = <BestiaryIndex progress={progress} search={search} category={category} onSearch={setSearch} onCategory={setCategory} selected={selected} newEntries={new Set(attention.unseenMonsters)} onSelect={(monsterId) => { clearAttention(getActiveProfileId(), 'monster', monsterId); setSelected(monsterId) }} />
-  const inspector = <InspectorTransition identity={selected}><BestiaryInspector monsterId={selected} progress={progress} /></InspectorTransition>
+  const inspector = <InspectorTransition identity={selected} accent={selected ? MONSTERS[selected]?.color : undefined} fill><BestiaryInspector monsterId={selected} progress={progress} /></InspectorTransition>
   return <div className="screen-content bestiary-screen"><div className="screen-header"><div><div className="eyebrow">FIELD ARCHIVE · BESTIARY</div><h1>Know what waits beyond the tower.</h1><p>Encounter a creature once to record its statistics, traits, attack patterns and loot table permanently.</p></div></div><EditableGrid screen="bestiary" panels={[{ id: 'bestiary-summary', content: <BestiarySummary progress={progress} /> }, { id: 'bestiary-index', content: index }, { id: 'bestiary-inspector', content: inspector }]} /></div>
 }

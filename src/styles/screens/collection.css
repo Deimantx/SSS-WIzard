@@ -22,7 +22,7 @@
 .collection-empty, .collection-inspector-empty { display: grid; place-content: center; justify-items: center; gap: 7px; min-height: 160px; padding: 20px; color: var(--ui-text-muted); text-align: center; }
 .collection-empty strong, .collection-inspector-empty strong { color: var(--ui-text-soft); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; }
 .collection-empty span, .collection-inspector-empty span { font-size: var(--text-xs); line-height: 1.45; }
-.collection-inspector-scroll { display: grid; align-content: start; gap: 12px; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 3px 3px 20px 0; scrollbar-color: var(--ui-scrollbar-thumb) transparent; scrollbar-width: thin; }
+.collection-inspector-scroll { display: grid; flex: 1 1 auto; align-content: start; gap: 12px; width: 100%; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 3px 3px 20px 0; scrollbar-color: var(--ui-scrollbar-thumb) transparent; scrollbar-width: thin; }
 .collection-inspector-scroll::-webkit-scrollbar { width: 6px; }
 .collection-inspector-scroll::-webkit-scrollbar-thumb { border-radius: 99px; background: var(--ui-scrollbar-thumb); }
 .collection-inspector-hero { display: flex; align-items: center; gap: 11px; min-width: 0; }

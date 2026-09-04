@@ -11,6 +11,7 @@ import { dismissGameTooltips } from '../../components/ui/tooltip/Tooltip'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { SpellPresetDialog } from '../schools/SpellPresetDialog'
 import { CombatSpellTile } from './CombatSpellTile'
+import { useSmartScrollState } from '../../ui/game-feel/useSmartScrollState'
 
 type SchoolFilter = 'all' | SchoolId
 
@@ -51,6 +52,7 @@ export function CombatSpellDeck({ onRequiredHeightChange }: { onRequiredHeightCh
   }), [activities, autoOnly, query, school, unlockedSpells])
   const globalBlocker = playerStunned ? 'stunned' : !combatActive ? 'inactive' : !enemyId ? 'no-target' : null
   const banner = globalBlocker === 'stunned' ? 'PLAYER STUNNED · MANUAL SPELLS TEMPORARILY DISABLED' : globalBlocker === 'inactive' ? 'MANUAL CASTING DISABLED · ENTER A DUNGEON' : globalBlocker === 'no-target' ? 'WAITING FOR NEXT TARGET' : null
+  useSmartScrollState(gridRef, { dependencies: [visibleSpells.join('|'), school, autoOnly, query] })
 
   const measureRequiredHeight = useCallback(() => {
     if (!onRequiredHeightChange || !deckHeadRef.current || !deckBodyRef.current || !gridRegionRef.current || !deckFootRef.current) return
@@ -109,7 +111,7 @@ export function CombatSpellDeck({ onRequiredHeightChange }: { onRequiredHeightCh
       {banner && <div className="combat-spell-banner" role="status"><CircleDot size={13} aria-hidden="true" />{banner}</div>}
       {presetNotice && <div className="combat-spell-preset-notice" role="alert"><AlertTriangle size={13} aria-hidden="true" />{presetNotice}</div>}
       <div className="combat-spell-filter-toolbar" role="group" aria-label="Spell Deck filters"><SearchInput value={search} onChange={setSearch} placeholder="Search Spells…" ariaLabel="Search Spells" /><SelectMenu options={schoolOptions} value={school} onChange={setSchool} ariaLabel="Spell school filter" /><FilterButton active={autoOnly} onClick={() => setAutoOnly((current) => !current)}><CircleDot size={12} /> AUTO ONLY</FilterButton></div>
-      <div ref={gridRegionRef} className="combat-spell-grid-region">{visibleSpells.length ? <div ref={gridRef} className="combat-spell-grid">{visibleSpells.map((spellId) => <CombatSpellTile key={spellId} spellId={spellId} presentationState={state} globalBlocker={globalBlocker} />)}</div> : <div className="combat-spell-empty"><CircleDot size={20} aria-hidden="true" /><strong>{autoOnly ? 'No Auto-Cast Spells enabled.' : query ? 'No Spells match the current filters.' : school !== 'all' ? `No unlocked ${SCHOOLS[school].name} Spells.` : 'No unlocked Spells.'}</strong></div>}</div>
+      <div ref={gridRegionRef} className="combat-spell-grid-region">{visibleSpells.length ? <div ref={gridRef} className="combat-spell-grid smart-scroll-region">{visibleSpells.map((spellId) => <CombatSpellTile key={spellId} spellId={spellId} presentationState={state} globalBlocker={globalBlocker} />)}</div> : <div className="combat-spell-empty"><CircleDot size={20} aria-hidden="true" /><strong>{autoOnly ? 'No Auto-Cast Spells enabled.' : query ? 'No Spells match the current filters.' : school !== 'all' ? `No unlocked ${SCHOOLS[school].name} Spells.` : 'No unlocked Spells.'}</strong></div>}</div>
     </div>
     <div ref={deckFootRef} className="combat-spell-deck-foot"><Status tone={focus.freeFocus < 0 ? 'warning' : 'success'}>{focus.autoCastFocus} Focus reserved · {focus.freeFocus} free</Status><small>{debugAllowFocusOverCap ? 'Developer Focus override active.' : `${visibleSpells.length} Spell${visibleSpells.length === 1 ? '' : 's'} shown`}</small></div>
     <SpellPresetDialog open={presetOpen} onClose={() => setPresetOpen(false)} />

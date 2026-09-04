@@ -12,6 +12,7 @@ import { formatNumber, formatTime } from '../../../game/utils'
 import { useGameStore } from '../../../store/gameStore'
 import { emitGameFeelEvent } from '../../../ui/game-feel/gameFeelStore'
 import { didTransmutationCycleWrap } from '../../../ui/game-feel/craftCompletion'
+import { useSmartScrollState } from '../../../ui/game-feel/useSmartScrollState'
 
 export function FocusAssignment({ selectedRecipeId, onSelect }: { selectedRecipeId: RecipeId; onSelect: (recipeId: RecipeId) => void }) {
   const state = useGameStore()
@@ -30,6 +31,8 @@ export function FocusAssignment({ selectedRecipeId, onSelect }: { selectedRecipe
   const transmutationFocus = getTransmutationFocusReserved(totalEchoes)
   const freeFocus = selectFreeFocus(state)
   const pipCount = Math.min(10, Math.max(0, capacity))
+  const focusBodyRef = useRef<HTMLDivElement>(null)
+  useSmartScrollState(focusBodyRef, { dependencies: [selectedRecipeId, totalEchoes, capacity] })
   const selectedCycle = getRecipeCurrentEffectiveDuration(recipe, selectedEchoes)
   const selectedOutput = getRecipeCurrentOutputPerHour(recipe, selectedEchoes)
   const selectedMana = getRecipeManaDemandPerSecond(recipe, selectedEchoes)
@@ -48,7 +51,7 @@ export function FocusAssignment({ selectedRecipeId, onSelect }: { selectedRecipe
   const clearWithFeel = () => changeFocus(clear)
 
   return <Card className="transmutation-focus" title="FOCUS ASSIGNMENT">
-    <div className="transmutation-focus-body">
+    <div ref={focusBodyRef} className="transmutation-focus-body smart-scroll-region">
       <div className="transmutation-focus-pool"><div className="transmutation-focus-pool-heading"><strong>ECHOES {totalEchoes} / {capacity}</strong><span>FOCUS {formatNumber(transmutationFocus)} reserved &middot; {formatNumber(freeFocus)} free</span></div><div className="transmutation-echo-pips" aria-label={`${totalEchoes} of ${capacity} Transmutation Echoes assigned`}>{Array.from({ length: pipCount }, (_, index) => <i className={index < totalEchoes ? 'filled' : ''} key={index} />)}</div></div>
       <div className={`transmutation-focus-selected ${locked ? 'locked' : ''}`}>
         <div className="transmutation-focus-selected-name"><ItemIcon itemId={recipe.output.itemId} size="tiny" /><div><span className="eyebrow">SELECTED</span><strong>{recipe.name} <small className={`transmutation-focus-selected-status ${status}`}>{statusLabel(status)}</small></strong>{locked ? <small className="transmutation-focus-locked-note">{addReason}</small> : selectedEchoes > 0 ? <small className="transmutation-focus-selected-metrics">{selectedEchoes} {selectedEchoes === 1 ? 'Echo' : 'Echoes'} &middot; {formatTime(selectedCycle ?? recipe.baseDurationMs)} &middot; {formatOutputRate(selectedOutput)} &middot; {formatManaDemand(selectedMana)}</small> : <small className="transmutation-focus-selected-metrics">NO ECHOES &middot; Assign an Arcane Echo to begin production.</small>}</div></div>

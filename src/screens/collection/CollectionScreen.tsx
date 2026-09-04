@@ -9,6 +9,7 @@ import { getCollectionVisibleItems, type CollectionCategoryFilter, type Collecti
 import { clearAttention, useProfileAttention } from '../../ui/attention/attentionStore'
 import { getActiveProfileId } from '../../profiles/profileSessionStore'
 import { InspectorTransition } from '../../ui/game-feel/InspectorTransition'
+import { ITEMS } from '../../game/content/items/items'
 
 export function CollectionScreen() {
   const progress = useGameStore((state) => state.progress)
@@ -26,6 +27,6 @@ export function CollectionScreen() {
   }, [visibleIds.join('|')])
 
   const library = <CollectionLibrary progress={progress} inventory={inventory} search={search} category={category} status={status} onSearch={setSearch} onCategory={setCategory} onStatus={setStatus} selected={selected} newItems={new Set(attention.unseenItems)} onSelect={(itemId) => { clearAttention(getActiveProfileId(), 'item', itemId); setSelected(itemId) }} />
-  const inspector = <InspectorTransition identity={selected}><CollectionInspector itemId={selected} inventory={inventory} progress={progress} navigate={navigate} /></InspectorTransition>
+  const inspector = <InspectorTransition identity={selected} accent={selected ? ITEMS[selected]?.color : undefined} fill><CollectionInspector itemId={selected} inventory={inventory} progress={progress} navigate={navigate} /></InspectorTransition>
   return <div className="screen-content collection-screen"><div className="screen-header"><div><div className="eyebrow">TOWER ARCHIVE · COLLECTION</div><h1>Every relic leaves a record.</h1><p>Discover materials, loot and equipment once, then keep their details permanently in the tower archive.</p></div></div><EditableGrid screen="collection" panels={[{ id: 'collection-summary', content: <CollectionSummary progress={progress} /> }, { id: 'collection-content', content: library }, { id: 'collection-inspector', content: inspector }]} /></div>
 }

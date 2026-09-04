@@ -19,7 +19,7 @@
 .bestiary-empty strong, .bestiary-inspector-empty strong { color: var(--ui-text-soft); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; }
 .bestiary-empty span, .bestiary-inspector-empty span { font-size: var(--text-xs); line-height: 1.45; }
 .bestiary-index-note { display: block; flex: 0 0 auto; margin-top: 8px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
-.bestiary-inspector-scroll { display: grid; align-content: start; gap: 12px; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 3px 3px 22px 0; scrollbar-color: var(--ui-scrollbar-thumb) transparent; scrollbar-width: thin; }
+.bestiary-inspector-scroll { display: grid; flex: 1 1 auto; align-content: start; gap: 12px; width: 100%; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 3px 3px 22px 0; scrollbar-color: var(--ui-scrollbar-thumb) transparent; scrollbar-width: thin; }
 .bestiary-inspector-scroll::-webkit-scrollbar { width: 6px; }
 .bestiary-inspector-scroll::-webkit-scrollbar-thumb { border-radius: 99px; background: var(--ui-scrollbar-thumb); }
 .bestiary-dossier-hero { display: flex; align-items: center; gap: 12px; min-width: 0; }

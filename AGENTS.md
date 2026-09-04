@@ -82,6 +82,8 @@ When replacing a system, remove the obsolete implementation after migration rath
 
 ## Game Feel and motion
 
+- Real bounded scroll owners use the shared smart-scroll state helper; CSS reads its overflow and direction data attributes, and scroll position must not enter React state.
+- Master-detail identity changes use `InspectorTransition` with metadata-driven accents and optional fill mode; same-identity value updates must keep the transition node stable.
 - Main screens must not clip their final content. Screen transition wrappers, shell containers, and decorative chrome must not own vertical sizing in a way that crops real content; each main screen needs a clear scroll owner and safe bottom padding.
 - Decorative panel chrome must remain fully bounded by its host panel. Pseudo-elements and accent layers may not leak outside panel edges, overlap content unexpectedly, or create stray visual artifacts.
 - Decorative motion is UI-only and must never delay or own gameplay state, timers, crafting, combat resolution, navigation, or saves.

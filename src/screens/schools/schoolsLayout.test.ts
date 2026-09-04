@@ -5,7 +5,7 @@ import { getAdaptiveSchoolsLayout } from './schoolsLayout'
 const baseLayout: Layout = [
   { i: 'schools-browser', x: 0, y: 0, w: 7, h: 18 },
   { i: 'schools-inspector', x: 7, y: 0, w: 5, h: 18 },
-  { i: 'schools-presets', x: 0, y: 18, w: 12, h: 5 },
+  { i: 'schools-presets', x: 0, y: 18, w: 12, h: 6 },
 ]
 
 describe('adaptive Schools layout', () => {

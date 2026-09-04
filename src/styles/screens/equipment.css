@@ -1,6 +1,8 @@
 .equipment-screen .ui-editor-grid-layout { min-height: 590px; }
 .equipment-screen .ui-editor-panel-content > .card { height: 100%; min-height: 100%; }
 .equipment-screen .card { overflow: hidden; }
+.equipment-armory-panel, .equipment-inspector { display: flex; flex-direction: column; }
+.equipment-armory-panel > .card-head, .equipment-inspector > .card-head { flex: 0 0 auto; }
 .equipment-loadout-board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-areas: "cape helmet ." "weapon armor offhand" "ring1 amulet ring2"; gap: 12px; }
 .equipment-slot-card { display: flex; min-width: 0; height: 116px; min-height: 116px; flex-direction: column; gap: 7px; padding: 10px; border: 1px solid var(--ui-border); border-radius: 9px; color: var(--ui-text-soft); background: linear-gradient(145deg, color-mix(in srgb, var(--ui-panel-strong) 80%, transparent), color-mix(in srgb, var(--ui-panel) 92%, transparent)); cursor: pointer; transition: border-color .15s ease, transform .15s ease, background .15s ease; }
 .equipment-slot-grid-item { min-width: 0; }
@@ -36,7 +38,9 @@
 .equipment-filter-bar button:hover, .equipment-filter-bar button.active, .equipment-weapon-badges button.active { border-color: color-mix(in srgb, var(--ui-accent) 62%, var(--ui-border)); color: var(--ui-text); background: var(--ui-accent-soft); }
 .equipment-weapon-badges { margin-top: -5px; }
 .equipment-weapon-badges button { padding: 4px 7px; color: var(--ui-accent); font-size: .58rem; }
-.equipment-armory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
+.equipment-armory-grid { display: grid; flex: 1 1 auto; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; min-height: 0; overflow-x: hidden; overflow-y: auto; padding-right: 3px; padding-bottom: 20px; scrollbar-color: var(--ui-scrollbar-thumb) transparent; scrollbar-width: thin; }
+.equipment-armory-grid::-webkit-scrollbar, .equipment-inspector-content::-webkit-scrollbar { width: 6px; }
+.equipment-armory-grid::-webkit-scrollbar-thumb, .equipment-inspector-content::-webkit-scrollbar-thumb { border-radius: 99px; background: var(--ui-scrollbar-thumb); }
 .equipment-armory-card { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; gap: 8px; min-width: 0; padding: 9px; border: 1px solid var(--ui-border); border-radius: 8px; color: var(--ui-text); background: var(--ui-panel-strong); cursor: pointer; text-align: left; }
 .equipment-armory-card:hover, .equipment-armory-card.selected { border-color: color-mix(in srgb, var(--ui-accent) 70%, var(--ui-border)); background: var(--ui-accent-soft); outline: none; }
 .equipment-armory-card.equipped { border-color: color-mix(in srgb, var(--ui-success) 35%, var(--ui-border)); }
@@ -96,6 +100,8 @@
 .equipment-impact-row em { font-style: normal; font-family: var(--font-mono); }
 .equipment-impact-row em.negative { color: var(--ui-danger); }
 .equipment-inspector-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 15px; }
+.equipment-inspector > .inspector-transition.fill-bounded { flex: 1 1 auto; overflow: hidden; }
+.equipment-inspector-content { height: 100%; min-height: 0; overflow-x: hidden; overflow-y: auto; padding-right: 3px; padding-bottom: 20px; scrollbar-color: var(--ui-scrollbar-thumb) transparent; scrollbar-width: thin; }
 
 @media (max-width: 900px) and (min-width: 761px) {
   .equipment-loadout-board { gap: 8px; }

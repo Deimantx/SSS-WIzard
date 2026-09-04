@@ -7,7 +7,7 @@ export interface RankOneUpgradeCost {
 
 /** Shared Rank I curve for permanent Tower upgrades. */
 export const RANK_ONE_TOWER_UPGRADE_COSTS: Record<RankOneUpgradeLevel, RankOneUpgradeCost> = {
-  1: { primary: 5, lifeEssence: 10 },
+  1: { primary: 4, lifeEssence: 10 },
   2: { primary: 10, lifeEssence: 20 },
   3: { primary: 15, lifeEssence: 30 },
   4: { primary: 25, lifeEssence: 50 },

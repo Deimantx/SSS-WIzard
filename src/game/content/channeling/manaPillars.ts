@@ -38,7 +38,7 @@ export const MANA_PILLARS: Record<ManaPillarId, ManaPillarDefinition> = {
     effectLabel: 'PASSIVE MANA REGEN',
     valuePerLevel: 1,
     maxLevel: 10,
-    fragmentRequirements: ['water-fragment', 'air-fragment'],
+    fragmentRequirements: ['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'],
   },
   'arcane-reservoir': {
     id: 'arcane-reservoir',
@@ -48,7 +48,7 @@ export const MANA_PILLARS: Record<ManaPillarId, ManaPillarDefinition> = {
     effectLabel: 'MAX MANA',
     valuePerLevel: 25,
     maxLevel: 10,
-    fragmentRequirements: ['earth-fragment', 'water-fragment'],
+    fragmentRequirements: ['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'],
   },
   'mana-resonance': {
     id: 'mana-resonance',
@@ -58,7 +58,7 @@ export const MANA_PILLARS: Record<ManaPillarId, ManaPillarDefinition> = {
     effectLabel: 'PASSIVE MANA AMPLIFICATION',
     valuePerLevel: 5,
     maxLevel: 10,
-    fragmentRequirements: ['fire-fragment', 'air-fragment'],
+    fragmentRequirements: ['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'],
   },
   'astral-expansion': {
     id: 'astral-expansion',
@@ -68,7 +68,7 @@ export const MANA_PILLARS: Record<ManaPillarId, ManaPillarDefinition> = {
     effectLabel: 'MAX MANA AMPLIFICATION',
     valuePerLevel: 5,
     maxLevel: 10,
-    fragmentRequirements: ['earth-fragment', 'fire-fragment'],
+    fragmentRequirements: ['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'],
   },
   'echo-attunement': {
     id: 'echo-attunement',

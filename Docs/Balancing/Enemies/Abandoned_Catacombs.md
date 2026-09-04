@@ -4,10 +4,10 @@
 
 | Enemy | Type | HP | Basic Dmg | Attack | DEF | Crit | Crit Dmg | Block | Phys Res | Arc Res | Fire Res | Water Res | Earth Res | Air Res | Damage Immune | Status Immune |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Restless Skeleton (restless-skeleton) | Normal | 180 | 15 | 2.7 s | 10 | 5% | 150% | 0% | +25% | 0% | 0% | 0% | 0% | 0% | — | — |
-| Grave Wraith (grave-wraith) | Normal | 160 | 14 | 2.4 s | 10 | 5% | 150% | 0% | +50% | 0% | -25% | -25% | -25% | -25% | — | — |
-| Fallen Acolyte (fallen-acolyte) | Normal | 220 | 16 | 2.6 s | 10 | 5% | 150% | 0% | 0% | 0% | 0% | 0% | 0% | 0% | — | — |
-| Archmage Edrin's Shade (archmage-edrin-shade) | Boss | 1300 | 20 | 2.5 s | 10 | 5% | 150% | 0% | 0% | 0% | +15% | +15% | +15% | +15% | — | — |
+| Restless Skeleton (restless-skeleton) | Normal | 680 | 35 | 2.7 s | 30 | 5% | 150% | 0% | +25% | 0% | 0% | 0% | 0% | 0% | — | — |
+| Grave Wraith (grave-wraith) | Normal | 600 | 36 | 2.4 s | 20 | 5% | 150% | 0% | +50% | 0% | -25% | -25% | -25% | -25% | — | — |
+| Fallen Acolyte (fallen-acolyte) | Normal | 550 | 30 | 2.6 s | 18 | 5% | 150% | 0% | 0% | 0% | 0% | 0% | 0% | 0% | — | — |
+| Archmage Edrin's Shade (archmage-edrin-shade) | Boss | 5800 | 65 | 2.5 s | 45 | 5% | 150% | 0% | 0% | 0% | +15% | +15% | +15% | +15% | — | — |
 
 ## Traits & Patterns
 

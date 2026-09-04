@@ -20,9 +20,9 @@
 .combat-run-bar {
   display: grid;
   grid-template-columns: minmax(150px, 1.05fr) minmax(190px, 1.45fr) minmax(
-      150px,
-      1.1fr
-    ) auto minmax(250px, auto);
+      125px,
+      0.8fr
+    ) minmax(215px, auto) minmax(130px, auto);
   gap: 16px;
   align-items: center;
   min-width: 0;
@@ -145,6 +145,21 @@
   opacity: 0.55;
   cursor: not-allowed;
 }
+.combat-run-boss-controls {
+  display: flex;
+  min-width: 0;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.combat-run-boss-controls .button {
+  flex: 0 1 auto;
+  min-width: 0;
+  padding: 8px 10px;
+  font-size: 9px;
+}
+.combat-run-engage-label-short { display: none; }
 .combat-run-actions {
   display: flex;
   justify-content: flex-end;
@@ -1442,6 +1457,7 @@
     grid-column: 1 / -1;
   }
   .combat-run-actions {
+    grid-column: 1 / -1;
     justify-content: stretch;
   }
   .combat-run-actions .button {
@@ -1460,6 +1476,10 @@
   .combat-run-actions {
     grid-column: 1 / -1;
   }
+}
+@container (max-width: 1050px) {
+  .combat-run-engage-label-long { display: none; }
+  .combat-run-engage-label-short { display: inline; }
 }
 @container (max-width: 480px) {
   .combat-run-bar {

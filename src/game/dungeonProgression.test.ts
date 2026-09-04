@@ -18,26 +18,43 @@ describe('dungeon progression helpers', () => {
     expect(isTutorialCompleted(state.progress)).toBe(true)
   })
 
-  it('does not replace an active normal monster when engaging a boss', () => {
+  it('replaces an active normal monster without resolving it when engaging a boss', () => {
     const game = useGameStore.getState()
     game.resetSave()
     game.setBossKills('forest-heart', 1)
     game.enterDungeon('howling-den')
     game.spawnDebugEnemy('cavefang-wolf')
     game.setThreat(DUNGEONS['howling-den'].threatRequired)
+    game.setPlayerBarrier(37)
+    useGameStore.setState((state) => ({ combat: { ...state.combat, spellCooldowns: { ...state.combat.spellCooldowns, 'fire-bolt': 123 } } }))
     const before = useGameStore.getState()
+    const beforeHealth = before.player.health
+    const beforeMana = before.player.mana
+    const beforeBarrier = before.combat.playerBarrier
+    const beforeCooldown = before.combat.spellCooldowns['fire-bolt']
+    const beforeThreat = before.combat.threatCleared
+    const beforeKills = before.progress.lifetimeKills
+    const beforeMonsterKills = before.progress.lifetimeKillsByMonster['cavefang-wolf'] ?? 0
+    const beforeInventory = { ...before.inventory }
 
     game.engageBoss('corrupted-greatbear')
 
     const after = useGameStore.getState()
-    expect(after.combat.enemyId).toBe('cavefang-wolf')
-    expect(after.combat.enemyHp).toBe(before.combat.enemyHp)
-    expect(after.combat.inBossFight).toBe(false)
-    expect(after.combat.threatCleared).toBe(DUNGEONS['howling-den'].threatRequired)
+    expect(after.combat.enemyId).toBe('corrupted-greatbear')
+    expect(after.combat.enemyHp).toBe(after.combat.enemyMaxHp)
+    expect(after.combat.inBossFight).toBe(true)
+    expect(after.combat.threatCleared).toBe(beforeThreat)
+    expect(after.player.health).toBe(beforeHealth)
+    expect(after.player.mana).toBe(beforeMana)
+    expect(after.combat.playerBarrier).toBe(beforeBarrier)
+    expect(after.combat.spellCooldowns['fire-bolt']).toBe(beforeCooldown)
+    expect(after.progress.lifetimeKills).toBe(beforeKills)
+    expect(after.progress.lifetimeKillsByMonster['cavefang-wolf'] ?? 0).toBe(beforeMonsterKills)
+    expect(after.inventory).toEqual(beforeInventory)
     expect(after.progress.bossKillsByBoss['corrupted-greatbear']).toBeUndefined()
   })
 
-  it('consumes a queued boss when manually engaging it during the encounter gap', () => {
+  it('does not duplicate a boss transition when a boss is already queued by Auto Hunt', () => {
     const game = useGameStore.getState()
     game.resetSave()
     game.setBossKills('forest-heart', 1)
@@ -49,15 +66,13 @@ describe('dungeon progression helpers', () => {
     expect(useGameStore.getState().combat.pendingBossId).toBe('corrupted-greatbear')
 
     game.engageBoss('corrupted-greatbear')
-    expect(useGameStore.getState().combat.pendingBossId).toBeNull()
-    expect(useGameStore.getState().combat.enemyId).toBe('corrupted-greatbear')
-    expect(useGameStore.getState().combat.inBossFight).toBe(true)
+    expect(useGameStore.getState().combat.pendingBossId).toBe('corrupted-greatbear')
+    expect(useGameStore.getState().combat.enemyId).toBeNull()
 
-    game.killCurrentEnemy()
     for (let index = 0; index < DUNGEONS['howling-den'].encounterDelayMs / 1000; index += 1) game.tick(1000)
     const nextEnemy = useGameStore.getState().combat.enemyId
-    expect(nextEnemy).not.toBe('corrupted-greatbear')
-    expect(nextEnemy ? DUNGEONS['howling-den'].monsterPool : []).toContain(nextEnemy)
+    expect(nextEnemy).toBe('corrupted-greatbear')
+    expect(useGameStore.getState().combat.inBossFight).toBe(true)
   })
 })
 

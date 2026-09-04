@@ -23,7 +23,7 @@ describe('Focus Capacity', () => {
 
   it('consumes the exact Prismatic-only Level 1 cost and updates derived Max Focus', () => {
     const state = createInitialState()
-    state.inventory['prismatic-fragment'] = 5
+    state.inventory['prismatic-fragment'] = 4
 
     expect(upgradeFocusCapacityAction(state)).toBe(true)
     expect(state.progress.focusImprovement).toEqual({ rank: 1, level: 1 })
@@ -34,12 +34,12 @@ describe('Focus Capacity', () => {
 
   it('blocks protected materials without changing progression or inventory', () => {
     const state = createInitialState()
-    state.inventory['prismatic-fragment'] = 5
+    state.inventory['prismatic-fragment'] = 4
     state.protectedItems['prismatic-fragment'] = true
 
     expect(upgradeFocusCapacityAction(state)).toBe(false)
     expect(state.progress.focusImprovement.level).toBe(0)
-    expect(state.inventory['prismatic-fragment']).toBe(5)
+    expect(state.inventory['prismatic-fragment']).toBe(4)
   })
 
   it('stops at Rank I mastery and grants the full bonus', () => {

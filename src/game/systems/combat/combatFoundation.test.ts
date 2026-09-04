@@ -64,9 +64,9 @@ describe('universal combat effects', () => {
     const state = stateWithEnemy('thornling')
     state.combat.enemyBarrier = 5
     const dealt = damageEnemy(state, 10, 'basic')
-    expect(dealt).toBeCloseTo(10 * 1.5 * 0.85 * (1 - 10 / 110) - 5)
+    expect(dealt).toBeCloseTo(10 * 1.5 * 0.85 * (1 - 12 / 112) - 5)
     expect(state.combat.enemyBarrier).toBe(0)
-    expect(state.combat.enemyHp).toBeCloseTo(64 - dealt)
+    expect(state.combat.enemyHp).toBeCloseTo(240 - dealt)
     expect(state.combat.log).toContain('Barrier breaks.')
   })
 })
@@ -78,7 +78,7 @@ describe('authored status runtime', () => {
     expect(state.combat.enemyStatuses[0]).toMatchObject({ statusId: 'burning', source: playerSpell, remainingMs: 5000 })
     const first = state.combat.enemyStatuses[0]
     tickStatuses(state, 1000, executeCombatEffects)
-    expect(state.combat.enemyHp).toBe(39)
+    expect(state.combat.enemyHp).toBe(195)
     applyStatus(state, 'enemy', 'burning', playerSpell)
     expect(state.combat.enemyStatuses[0]).toMatchObject({ remainingMs: 5000, source: playerSpell })
     expect(first.statusId).toBe('burning')
@@ -91,7 +91,7 @@ describe('authored status runtime', () => {
     for (let index = 0; index < 6; index += 1) applyStatus(state, 'enemy', 'shock', playerSpell)
     expect(state.combat.enemyStatuses[0].stacks).toBe(5)
     executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'air', magnitude: { type: 'flat', value: 10 } }], tags: ['spell'] }], { ...playerSpell, school: 'air' })
-    expect(state.combat.enemyHp).toBe(32)
+    expect(state.combat.enemyHp).toBe(188)
     applyStatus(state, 'player', 'quickening', { actor: 'player', kind: 'spell', sourceId: 'quickening', tags: ['spell'] })
     expect(getTimedActionState(1200, 1200, getPlayerBasicAttackRate(state)).etaMs).toBe(960)
   })
@@ -171,7 +171,7 @@ describe('data-driven monster mechanics', () => {
     expect(thornling.combat.playerStatuses[0].statusId).toBe('thorn-wound')
     const root = stateWithEnemy('stone-root')
     clearCurrentEnemyAction(root)
-    expect(root.combat.enemyBarrier).toBe(14)
+    expect(root.combat.enemyBarrier).toBe(42)
     forceResolveEnemyAction(root, 'root-slam', executeCombatEffects)
     expect(root.player.health).toBeCloseTo(100 - 18.15 * 1.5 * (1 - playerDefenseReduction))
     expect(root.combat.playerAttackTimerMs).toBe(2900)
@@ -180,12 +180,12 @@ describe('data-driven monster mechanics', () => {
   it('fires authored threshold rules once per encounter', () => {
     const sentinel = stateWithEnemy('grove-sentinel')
     damageEnemy(sentinel, 220, 'spell')
-    expect(sentinel.combat.enemyBarrier).toBe(80)
+    expect(sentinel.combat.enemyBarrier).toBe(71)
     damageEnemy(sentinel, 10, 'spell')
-    expect(sentinel.combat.enemyBarrier).toBeCloseTo(80 - 10 * (1 - 10 / 110))
+    expect(sentinel.combat.enemyBarrier).toBeCloseTo(71 - 10 * (1 - 20 / 120))
     expect(sentinel.combat.triggeredRuleIds).toEqual(['enemy:trait:grove-sentinel-ancient-growth:grove-sentinel-ancient-growth-threshold'])
     const heart = stateWithEnemy('forest-heart')
-    damageEnemy(heart, 310, 'spell')
+    damageEnemy(heart, 410, 'spell')
     expect(heart.combat.enemyStatuses[0]).toMatchObject({ statusId: 'haste', remainingMs: null })
     expect(getTimedActionState(2400, 2400, getEnemySkillActionRate(heart)).etaMs).toBeCloseTo(2400 / 1.15)
   })
@@ -432,8 +432,8 @@ describe('post-implementation combat audit regressions', () => {
       const ranged = stateWithEnemy()
       applyStatus(ranged, 'player', 'quickening', playerSpell)
       executeCombatEffects(ranged, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 10 } }], tags: ['direct'] }], { actor: 'player', kind: 'weapon', sourceId: 'ranged', tags: ['weapon', 'ranged'] })
-      expect(melee.combat.enemyHp).toBeCloseTo(44 - 10 * 1.5 * 1.5 * (1 - 10 / 110))
-      expect(ranged.combat.enemyHp).toBeCloseTo(44 - 10 * 1.5 * (1 - 10 / 110))
+      expect(melee.combat.enemyHp).toBeCloseTo(200 - 10 * 1.5 * 1.5 * (1 - 8 / 108))
+      expect(ranged.combat.enemyHp).toBeCloseTo(200 - 10 * 1.5 * (1 - 8 / 108))
     } finally {
       STATUS_DEFINITIONS.quickening.modifiers = original
     }
@@ -456,17 +456,17 @@ describe('post-implementation combat audit regressions', () => {
     const source: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'fire-bolt', school: 'fire', tags: ['spell', 'magic'] }
     const preview = getCombatDamagePreview(state, 10, source, 'enemy', 'fire')
     executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 10 } }], school: 'fire' }], source)
-    expect(state.combat.enemyHp).toBe(44 - preview.healthDamage)
+    expect(state.combat.enemyHp).toBe(200 - preview.healthDamage)
   })
 
   it('fires HP threshold rules only when health crosses downward', () => {
     const trait = { id: 'audit-threshold-owner', name: 'Audit Threshold Owner', description: 'Test trait.', rules: [{ id: 'audit-threshold-rule', event: 'on-hp-threshold' as const, condition: { type: 'self-hp-below-percent' as const, percent: 50 }, effects: [{ type: 'gain-barrier' as const, target: 'self' as const, magnitude: { type: 'flat' as const, value: 5 } }] }] }
     withTemporaryTrait(trait, () => {
       const state = stateWithEnemy()
-      damageEnemy(state, 25, 'spell')
+      damageEnemy(state, 105, 'spell')
       expect(state.combat.enemyBarrier).toBe(5)
       damageEnemy(state, 1, 'spell')
-      expect(state.combat.enemyBarrier).toBeCloseTo(5 - 1 * (1 - 10 / 110))
+      expect(state.combat.enemyBarrier).toBeCloseTo(5 - 1 * (1 - 8 / 108))
     })
   })
 

@@ -19,7 +19,7 @@ describe('sheet-first balancing workbook', () => {
 
   it('keeps representative runtime values exact in generated rows', () => {
     const core = buildEnemyCoreRow('forest-wisp')
-    expect(core.slice(0, 15)).toEqual(['Forest Wisp (forest-wisp)', 'Normal', '44', '5', '2.8 s', '10', '5%', '150%', '0%', '0%', '0%', '0%', '0%', '0%', '0%'])
+    expect(core.slice(0, 15)).toEqual(['Forest Wisp (forest-wisp)', 'Normal', '200', '5', '2.8 s', '8', '5%', '150%', '0%', '0%', '0%', '0%', '0%', '0%', '0%'])
     expect(core).toHaveLength(17)
     const emberStaff = buildEquipmentStatRow('ember-staff')
     expect(emberStaff).toContain('+10')
@@ -33,15 +33,15 @@ describe('sheet-first balancing workbook', () => {
     const recipes = buildBalancingDocuments().docs.get('Transmutation/Recipes.md') ?? ''
     expect(recipes).toContain('| Recipe | Output Qty | Time | Mana | Ingredient 1 | Qty 1 | Ingredient 2 | Qty 2 | Ingredient 3 | Qty 3 | Ingredient 4 | Qty 4 | Ingredient 5 | Qty 5 | Unlock |')
     expect(recipes).toContain('Ember Staff (ember-staff)')
-    expect(recipes).toContain('Fire Fragment (fire-fragment) | 4')
-    expect(recipes).toContain('Wisp Essence (wisp-essence) | 4')
+    expect(recipes).toContain('Fire Fragment (fire-fragment) | 12')
+    expect(recipes).toContain('Wisp Essence (wisp-essence) | 6')
     expect(recipes).toContain('Defeat Grove Sentinel')
     expect(recipes).toContain('Heartseed Necklace (heartseed-necklace)')
     expect(recipes).toContain('Heartseed (heartseed) | 20')
     expect(recipes).toContain('Greatbear Heartstone (greatbear-heartstone)')
-    expect(recipes).toContain('Greatbear Core (greatbear-core) | 7')
+    expect(recipes).toContain('Greatbear Core (greatbear-core) | 3')
     expect(recipes).toContain("Edrin's Signet (edrins-signet)")
-    expect(recipes).toContain('Edrin Remnant (edrin-remnant) | 7')
+    expect(recipes).toContain('Edrin Remnant (edrin-remnant) | 5')
     expect(recipes).not.toContain('<br>')
     expect(recipes).not.toContain('"event"')
   })

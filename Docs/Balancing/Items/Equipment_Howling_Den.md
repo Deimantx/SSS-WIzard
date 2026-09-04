@@ -19,11 +19,11 @@
 
 | Item | Time | Mana | Ingredient 1 | Qty 1 | Ingredient 2 | Qty 2 | Ingredient 3 | Qty 3 | Ingredient 4 | Qty 4 | Ingredient 5 | Qty 5 | Unlock |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Fangbound Dagger (fangbound-dagger) | 12 s | 0 | Predator Fang (predator-fang) | 6 | Air Fragment (air-fragment) | 2 | Fire Fragment (fire-fragment) | 2 | — | — | — | — | Unlock Howling Den |
-| Fangbound Buckler (fangbound-buckler) | 12 s | 0 | Predator Hide (predator-hide) | 6 | Predator Fang (predator-fang) | 2 | Earth Fragment (earth-fragment) | 3 | — | — | — | — | Unlock Howling Den |
-| Corrupted Howlstaff (corrupted-howlstaff) | 18 s | 0 | Greatbear Core (greatbear-core) | 1 | Corrupted Beast Essence (corrupted-beast-essence) | 5 | Air Fragment (air-fragment) | 3 | Prismatic Fragment (prismatic-fragment) | 2 | — | — | Unlock Howling Den |
-| Razorclaw Circlet (razorclaw-circlet) | 12 s | 0 | Predator Fang (predator-fang) | 4 | Predator Hide (predator-hide) | 2 | Air Fragment (air-fragment) | 2 | — | — | — | — | Unlock Howling Den |
-| Predator-Hide Mantle (predator-hide-mantle) | 12 s | 0 | Predator Hide (predator-hide) | 7 | Earth Fragment (earth-fragment) | 3 | — | — | — | — | — | — | Unlock Howling Den |
-| Greatbear Vestment (greatbear-vestment) | 18 s | 0 | Predator Hide (predator-hide) | 10 | Greatbear Core (greatbear-core) | 1 | Earth Fragment (earth-fragment) | 4 | — | — | — | — | Unlock Howling Den |
-| Howling Signet (howling-signet) | 14 s | 0 | Corrupted Beast Essence (corrupted-beast-essence) | 3 | Predator Fang (predator-fang) | 3 | Water Fragment (water-fragment) | 2 | Air Fragment (air-fragment) | 2 | — | — | Unlock Howling Den |
-| Greatbear Heartstone (greatbear-heartstone) | 18 s | 0 | Greatbear Core (greatbear-core) | 7 | — | — | — | — | — | — | — | — | Defeat Corrupted Greatbear |
+| Fangbound Dagger (fangbound-dagger) | 12 s | 0 | Predator Fang (predator-fang) | 5 | Air Fragment (air-fragment) | 2 | Fire Fragment (fire-fragment) | 2 | — | — | — | — | Unlock Howling Den |
+| Fangbound Buckler (fangbound-buckler) | 12 s | 0 | Predator Hide (predator-hide) | 4 | Predator Fang (predator-fang) | 5 | Earth Fragment (earth-fragment) | 3 | — | — | — | — | Unlock Howling Den |
+| Corrupted Howlstaff (corrupted-howlstaff) | 18 s | 0 | Greatbear Core (greatbear-core) | 3 | Corrupted Beast Essence (corrupted-beast-essence) | 4 | Air Fragment (air-fragment) | 3 | Prismatic Fragment (prismatic-fragment) | 2 | — | — | Unlock Howling Den |
+| Razorclaw Circlet (razorclaw-circlet) | 12 s | 0 | Predator Fang (predator-fang) | 5 | Predator Hide (predator-hide) | 4 | Air Fragment (air-fragment) | 2 | — | — | — | — | Unlock Howling Den |
+| Predator-Hide Mantle (predator-hide-mantle) | 12 s | 0 | Predator Hide (predator-hide) | 4 | Earth Fragment (earth-fragment) | 3 | — | — | — | — | — | — | Unlock Howling Den |
+| Greatbear Vestment (greatbear-vestment) | 18 s | 0 | Predator Hide (predator-hide) | 4 | Greatbear Core (greatbear-core) | 3 | Earth Fragment (earth-fragment) | 4 | — | — | — | — | Unlock Howling Den |
+| Howling Signet (howling-signet) | 14 s | 0 | Corrupted Beast Essence (corrupted-beast-essence) | 4 | Predator Fang (predator-fang) | 5 | Water Fragment (water-fragment) | 2 | Air Fragment (air-fragment) | 2 | — | — | Unlock Howling Den |
+| Greatbear Heartstone (greatbear-heartstone) | 18 s | 0 | Greatbear Core (greatbear-core) | 3 | — | — | — | — | — | — | — | — | Defeat Corrupted Greatbear |

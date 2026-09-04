@@ -7,6 +7,7 @@ import { SPELLS } from '../game/content/spells/spells'
 import { castSpellAction } from './actions/combatActions'
 import { manaRegenPerSecond, pushNotification, recalculateDerivedStats, selectFreeFocus, selectUsedFocus } from '../game/engine'
 import { debugApplyStatus, spawnEnemy, spawnNextEnemy, type CombatLootObserver } from '../game/systems/combat/combatRuntime'
+import { canManuallyEngageDungeonBoss, isAutoHuntEnabledForDungeon, isBossCurrentlyActive } from '../game/systems/combat/combatBossSelectors'
 import { removeStatus as removeCombatStatus } from '../game/systems/combat/statusRuntime'
 import { damagePlayer, executeCombatEffects } from '../game/systems/combat/effectResolver'
 import { forceResolveEnemyAction as forceResolveEnemyActionRuntime, resolveCurrentEnemyAction as resolveCurrentEnemyActionRuntime, setEnemyActionPattern as setEnemyActionPatternRuntime, startEnemyAction as startEnemyActionRuntime, startNextEnemyAction as startNextEnemyActionRuntime } from '../game/systems/combat/actionRuntime'
@@ -300,14 +301,15 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   enterDungeon: (dungeonId = 'whispering-woods') => set((state) => { const dungeon = DUNGEONS[dungeonId]; if (state.combat.active || !dungeon) return state; if (!isDungeonUnlocked(dungeon, state.progress)) { pushNotification(state, `${getDungeonUnlockRequirement(dungeon) ?? 'Requirement'} to unlock ${dungeon.name}.`, 'warning'); return state } clearCombatLogUi(); clearCombatDefeat(); beginCombatRecapRun(); combatAlertsObserver.beginRun(dungeonId); combatTelemetryObserver.beginRun(dungeonId); dungeonStatisticsObserver.beginSession(dungeonId); resetAllCombatRuleRuntime(state); state.combat.active = true; state.combat.dungeonId = dungeonId; state.combat.encounterTimerMs = 0; state.player.health = Math.max(1, state.player.health); spawnNextEnemy(state, combatEventSink); pushNotification(state, `${dungeon.name} entered`, 'info'); return state }),
   leaveDungeon: () => { combatAlertsObserver.clear(); combatTelemetryObserver.endRun('leave'); dungeonStatisticsObserver.endSession('leave'); clearCombatDefeat(); return set((state) => { state.combat = { ...createInitialState().combat, log: ['Left the dungeon. Threat Cleared resets.'] }; return state }) },
   engageBoss: (bossId) => set((state) => {
-    const dungeon = DUNGEONS[state.combat.dungeonId ?? 'whispering-woods']
+    const dungeon = state.combat.dungeonId ? DUNGEONS[state.combat.dungeonId] : null
     const boss = MONSTERS[bossId]
-    if (!state.combat.active) { pushNotification(state, `Enter ${dungeon.name} first`, 'warning'); return state }
-    if (state.combat.enemyId) { pushNotification(state, 'Finish the current encounter before challenging the boss.', 'warning'); return state }
+    if (!state.combat.active || !dungeon) { pushNotification(state, 'Enter a Dungeon first', 'warning'); return state }
     if (!isDungeonUnlocked(dungeon, state.progress)) { pushNotification(state, `${dungeon.name} is locked.`, 'warning'); return state }
     if (!boss || dungeon.boss !== bossId) { pushNotification(state, `${boss?.name ?? bossId} is not the boss of ${dungeon.name}.`, 'warning'); return state }
     if (state.combat.threatCleared < dungeon.threatRequired) { pushNotification(state, `${boss.name} requires ${dungeon.threatRequired} Threat Cleared`, 'warning'); return state }
-    if (state.combat.pendingBossId === bossId) state.combat.pendingBossId = null
+    if (isBossCurrentlyActive(state) || state.combat.pendingBossId || isAutoHuntEnabledForDungeon(state, dungeon.id)) return state
+    if (!canManuallyEngageDungeonBoss(state, dungeon)) return state
+    state.combat.pendingBossId = null
     state.combat.encounterTimerMs = 0
     spawnEnemy(state, bossId, combatLogUiSink)
     pushNotification(state, `${boss.name} engaged`, 'warning')

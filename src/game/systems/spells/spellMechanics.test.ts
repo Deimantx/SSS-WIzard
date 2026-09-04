@@ -24,8 +24,8 @@ describe('Rank-I spell mechanics', () => {
   it('casts Fireball from Spell Power and applies its Burning proc', () => {
     const state = spellState('fireball', 'fire')
     expect(castSpellAction(state, 'fireball')).toBe(true)
-    expect(state.combat.enemyHp).toBeCloseTo(1000 - BALANCE.player.baseSpellPower * 1.5 * (1 - 10 / 110))
-    expect(state.player.mana).toBe(72)
+    expect(state.combat.enemyHp).toBeCloseTo(1000 - BALANCE.player.baseSpellPower * 1.5 * (1 - 8 / 108))
+    expect(state.player.mana).toBe(40)
     expect(state.combat.spellCooldowns.fireball).toBe(10000)
     expect(state.combat.enemyStatuses).toMatchObject([{ statusId: 'burning', instanceKey: 'player:spell:fireball', remainingMs: 10000 }])
   })
@@ -33,7 +33,7 @@ describe('Rank-I spell mechanics', () => {
   it('casts Frostbite and applies the existing Chilled status', () => {
     const state = spellState('frostbite', 'water')
     expect(castSpellAction(state, 'frostbite')).toBe(true)
-    expect(state.combat.enemyHp).toBeCloseTo(1000 - BALANCE.player.baseSpellPower * 0.65 * 1.5 * (1 - 10 / 110))
+    expect(state.combat.enemyHp).toBeCloseTo(1000 - BALANCE.player.baseSpellPower * 0.65 * 1.5 * (1 - 8 / 108))
     expect(state.combat.enemyStatuses[0]).toMatchObject({ statusId: 'chilled', stacks: 1 })
   })
 
@@ -51,7 +51,7 @@ describe('Rank-I spell mechanics', () => {
   it('casts Shock Spark and applies one existing Shock stack', () => {
     const state = spellState('shock-spark', 'air')
     expect(castSpellAction(state, 'shock-spark')).toBe(true)
-    expect(state.combat.enemyHp).toBeCloseTo(1000 - BALANCE.player.baseSpellPower * 0.45 * 1.5 * (1 - 10 / 110))
+    expect(state.combat.enemyHp).toBeCloseTo(1000 - BALANCE.player.baseSpellPower * 0.45 * 1.5 * (1 - 8 / 108))
     expect(state.combat.enemyStatuses[0]).toMatchObject({ statusId: 'shock', stacks: 1 })
   })
 })

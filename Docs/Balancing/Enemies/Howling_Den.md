@@ -4,10 +4,10 @@
 
 | Enemy | Type | HP | Basic Dmg | Attack | DEF | Crit | Crit Dmg | Block | Phys Res | Arc Res | Fire Res | Water Res | Earth Res | Air Res | Damage Immune | Status Immune |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Cavefang Wolf (cavefang-wolf) | Normal | 115 | 12 | 2.2 s | 10 | 5% | 150% | 0% | 0% | 0% | 0% | 0% | 0% | 0% | — | — |
-| Razorclaw Lynx (razorclaw-lynx) | Normal | 130 | 11 | 1.9 s | 10 | 5% | 150% | 0% | 0% | 0% | 0% | 0% | 0% | 0% | — | — |
-| Corrupted Dire Wolf (corrupted-dire-wolf) | Normal | 160 | 14 | 2.3 s | 10 | 5% | 150% | 0% | 0% | 0% | +10% | +10% | +10% | +10% | — | — |
-| Corrupted Greatbear (corrupted-greatbear) | Boss | 900 | 22 | 2.8 s | 10 | 5% | 150% | 0% | 0% | 0% | 0% | 0% | 0% | 0% | — | — |
+| Cavefang Wolf (cavefang-wolf) | Normal | 350 | 22 | 2.2 s | 16 | 5% | 150% | 0% | 0% | 0% | 0% | 0% | 0% | 0% | — | — |
+| Razorclaw Lynx (razorclaw-lynx) | Normal | 360 | 21 | 1.9 s | 16 | 5% | 150% | 0% | 0% | 0% | 0% | 0% | 0% | 0% | — | — |
+| Corrupted Dire Wolf (corrupted-dire-wolf) | Normal | 420 | 24 | 2.3 s | 16 | 5% | 150% | 0% | 0% | 0% | +10% | +10% | +10% | +10% | — | — |
+| Corrupted Greatbear (corrupted-greatbear) | Boss | 1800 | 40 | 2.8 s | 30 | 5% | 150% | 0% | 0% | 0% | 0% | 0% | 0% | 0% | — | — |
 
 ## Traits & Patterns
 

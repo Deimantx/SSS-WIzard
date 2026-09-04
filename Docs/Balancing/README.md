@@ -20,7 +20,7 @@ Apply the balancing edits I made in `Docs/Balancing`.
 
 First classify the task:
 
-- **Class A — Pure numeric balancing:** existing values only; no content IDs, formulas, schemas, registry shapes, ingredient structure, unlock-condition type, or system behavior changes.
+- **Class A — Pure numeric balancing:** existing values only; no content IDs, formulas, schemas, registry shapes, ingredient structure, unlock-rule type, or system behavior changes.
 - **Class B — Structural authored content:** adds, removes, or reshapes authored content.
 - **Class C — System/formula/architecture:** changes runtime behavior, formulas, save shape, simulation, or architecture.
 

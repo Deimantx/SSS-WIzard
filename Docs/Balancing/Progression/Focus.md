@@ -25,4 +25,19 @@
 | Auto-Cast | Rank 7 | 70 |
 | Auto-Cast | Rank 8 | 80 |
 
+## Focus Capacity Upgrade Costs
+
+| Improvement | Level | Material | Quantity |
+| --- | --- | --- | --- |
+| Focus Capacity (focus-capacity) | 1 | Prismatic Fragment (prismatic-fragment) | 4 |
+| Focus Capacity (focus-capacity) | 2 | Prismatic Fragment (prismatic-fragment) | 10 |
+| Focus Capacity (focus-capacity) | 3 | Prismatic Fragment (prismatic-fragment) | 15 |
+| Focus Capacity (focus-capacity) | 4 | Prismatic Fragment (prismatic-fragment) | 25 |
+| Focus Capacity (focus-capacity) | 5 | Prismatic Fragment (prismatic-fragment) | 40 |
+| Focus Capacity (focus-capacity) | 6 | Prismatic Fragment (prismatic-fragment) | 60 |
+| Focus Capacity (focus-capacity) | 7 | Prismatic Fragment (prismatic-fragment) | 90 |
+| Focus Capacity (focus-capacity) | 8 | Prismatic Fragment (prismatic-fragment) | 130 |
+| Focus Capacity (focus-capacity) | 9 | Prismatic Fragment (prismatic-fragment) | 180 |
+| Focus Capacity (focus-capacity) | 10 | Prismatic Fragment (prismatic-fragment) | 250 |
+
 Focus Capacity upgrades reach 10 levels at 5 Focus per level.

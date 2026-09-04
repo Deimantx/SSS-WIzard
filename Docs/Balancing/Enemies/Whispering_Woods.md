@@ -4,11 +4,11 @@
 
 | Enemy | Type | HP | Basic Dmg | Attack | DEF | Crit | Crit Dmg | Block | Phys Res | Arc Res | Fire Res | Water Res | Earth Res | Air Res | Damage Immune | Status Immune |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Forest Wisp (forest-wisp) | Normal | 44 | 5 | 2.8 s | 10 | 5% | 150% | 0% | 0% | 0% | 0% | 0% | 0% | 0% | — | — |
-| Thornling (thornling) | Normal | 64 | 8 | 2.5 s | 10 | 5% | 150% | 0% | 0% | 0% | 0% | 0% | 0% | 0% | — | — |
-| Stone Root (stone-root) | Normal | 92 | 11 | 3.2 s | 10 | 5% | 150% | 0% | 0% | 0% | 0% | 0% | 0% | 0% | — | — |
-| Grove Sentinel (grove-sentinel) | Normal | 360 | 15 | 2.6 s | 10 | 5% | 150% | 0% | 0% | 0% | 0% | 0% | 0% | 0% | — | — |
-| Forest Heart (forest-heart) | Boss | 600 | 20 | 2.4 s | 10 | 5% | 150% | 0% | 0% | 0% | 0% | 0% | 0% | 0% | — | — |
+| Forest Wisp (forest-wisp) | Normal | 200 | 5 | 2.8 s | 8 | 5% | 150% | 0% | 0% | 0% | 0% | 0% | 0% | 0% | — | — |
+| Thornling (thornling) | Normal | 240 | 8 | 2.5 s | 12 | 5% | 150% | 0% | 0% | 0% | 0% | 0% | 0% | 0% | — | — |
+| Stone Root (stone-root) | Normal | 280 | 11 | 3.2 s | 12 | 5% | 150% | 0% | 0% | 0% | 0% | 0% | 0% | 0% | — | — |
+| Grove Sentinel (grove-sentinel) | Normal | 320 | 15 | 2.6 s | 20 | 5% | 150% | 0% | 0% | 0% | 0% | 0% | 0% | 0% | — | — |
+| Forest Heart (forest-heart) | Boss | 800 | 25 | 2.4 s | 30 | 5% | 150% | 0% | 0% | 0% | 0% | 0% | 0% | 0% | — | — |
 
 ## Traits & Patterns
 

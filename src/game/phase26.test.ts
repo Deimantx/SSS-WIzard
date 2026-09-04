@@ -17,9 +17,9 @@ describe('Unified Transmutation', () => {
     expect(['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'].map((id) => RECIPES[id as keyof typeof RECIPES].manaCost)).toEqual([25, 25, 25, 25])
     expect(['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'].map((id) => RECIPES[id as keyof typeof RECIPES].baseDurationMs)).toEqual([8000, 8000, 8000, 8000])
     expect(RECIPES['ember-staff'].ingredients).toEqual([
-      { itemId: 'fire-fragment', quantity: 4 },
-      { itemId: 'wisp-essence', quantity: 4 },
-      { itemId: 'grove-bark', quantity: 1 },
+      { itemId: 'fire-fragment', quantity: 12 },
+      { itemId: 'wisp-essence', quantity: 6 },
+      { itemId: 'grove-bark', quantity: 3 },
     ])
     expect(RECIPES['ember-staff'].manaCost).toBe(0)
     expect(RECIPES['ember-staff'].unlock).toEqual({ type: 'monster-kill', monsterId: 'grove-sentinel' })

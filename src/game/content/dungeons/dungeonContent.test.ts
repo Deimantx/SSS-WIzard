@@ -65,14 +65,14 @@ describe('first three dungeon content', () => {
   it('keeps converted current raw outputs close to their previous authored values', () => {
     const expected: Array<[keyof typeof MONSTERS, string, number, number]> = [
       ['forest-wisp', 'arc-spark', 0, 12], ['thornling', 'thorn-lash', 0, 10], ['stone-root', 'root-slam', 0, 18.15],
-      ['grove-sentinel', 'root-crush', 0, 20.25], ['grove-sentinel', 'verdant-guard', 0, 60], ['forest-heart', 'heart-pulse', 0, 24],
-      ['forest-heart', 'root-prison', 0, 16], ['forest-heart', 'rejuvenating-sap', 0, 60], ['cavefang-wolf', 'pounce', 0, 18],
-      ['razorclaw-lynx', 'rending-claws', 0, 13.75], ['corrupted-dire-wolf', 'arcane-bite', 0, 9.8], ['corrupted-greatbear', 'crushing-maul', 0, 34.1],
-      ['corrupted-greatbear', 'groundbreaker', 0, 26.4], ['corrupted-greatbear', 'arcane-rampage', 0, 44], ['restless-skeleton', 'bone-cleaver', 0, 27.75],
-      ['grave-wraith', 'chilling-touch', 0, 18.2], ['fallen-acolyte', 'grave-bolt', 0, 24], ['fallen-acolyte', 'soul-drain', 0, 18],
-      ['fallen-acolyte', 'soul-drain', 1, 19.8], ['fallen-acolyte', 'death-ward', 0, 45.1], ['archmage-edrin-shade', 'gravefire', 0, 28],
-      ['archmage-edrin-shade', 'frostbind', 0, 24], ['archmage-edrin-shade', 'arcane-ward', 0, 70.2], ['archmage-edrin-shade', 'soul-drain', 0, 24],
-      ['archmage-edrin-shade', 'soul-drain', 1, 29.9], ['archmage-edrin-shade', 'final-incantation', 0, 70],
+      ['grove-sentinel', 'root-crush', 0, 20.25], ['grove-sentinel', 'verdant-guard', 0, 53.333333333333336], ['forest-heart', 'heart-pulse', 0, 30],
+      ['forest-heart', 'root-prison', 0, 20], ['forest-heart', 'rejuvenating-sap', 0, 80], ['cavefang-wolf', 'pounce', 0, 33],
+      ['razorclaw-lynx', 'rending-claws', 0, 26.25], ['corrupted-dire-wolf', 'arcane-bite', 0, 16.8], ['corrupted-greatbear', 'crushing-maul', 0, 62],
+      ['corrupted-greatbear', 'groundbreaker', 0, 48], ['corrupted-greatbear', 'arcane-rampage', 0, 80], ['restless-skeleton', 'bone-cleaver', 0, 64.75],
+      ['grave-wraith', 'chilling-touch', 0, 46.8], ['fallen-acolyte', 'grave-bolt', 0, 45], ['fallen-acolyte', 'soul-drain', 0, 33.75],
+      ['fallen-acolyte', 'soul-drain', 1, 49.5], ['fallen-acolyte', 'death-ward', 0, 112.75], ['archmage-edrin-shade', 'gravefire', 0, 91],
+      ['archmage-edrin-shade', 'frostbind', 0, 78], ['archmage-edrin-shade', 'arcane-ward', 0, 313.2], ['archmage-edrin-shade', 'soul-drain', 0, 78],
+      ['archmage-edrin-shade', 'soul-drain', 1, 133.4], ['archmage-edrin-shade', 'final-incantation', 0, 227.5],
     ]
     expected.forEach(([monsterId, actionId, effectIndex, amount]) => {
       const effect = MONSTERS[monsterId].actions[actionId].effects[effectIndex]
@@ -96,7 +96,7 @@ describe('first three dungeon content', () => {
     state.combat.active = true
     state.combat.dungeonId = 'howling-den'
     spawnEnemy(state, 'corrupted-greatbear')
-    damageEnemy(state, 500, 'spell')
+    damageEnemy(state, 1000, 'spell')
     expect(state.combat.enemyActionPatternId).toBe('corrupted')
     expect(state.combat.enemyStatuses.some((status) => status.statusId === 'haste')).toBe(true)
     const firstPattern = state.combat.enemyActionPatternId
@@ -107,7 +107,7 @@ describe('first three dungeon content', () => {
     edrin.combat.active = true
     edrin.combat.dungeonId = 'abandoned-catacombs'
     spawnEnemy(edrin, 'archmage-edrin-shade')
-    damageEnemy(edrin, 700, 'spell')
+    damageEnemy(edrin, 3000, 'spell')
     expect(edrin.combat.enemyActionPatternId).toBe('unbound')
     expect(edrin.combat.enemyStatuses.some((status) => status.statusId === 'haste')).toBe(true)
 

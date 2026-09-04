@@ -6,16 +6,17 @@ import { BALANCE } from '../../core/balance/balance'
 import { selectFreeFocus } from '../../engine'
 import { manaRegenPerSecond } from '../../engine/channelingEngine'
 import { continuousManaPerSecond, estimateContinuousFundingRatio, CONTINUOUS_MANA_EPSILON, getContinuousManaDemandPerSecond } from '../simulation/continuousManaScheduler'
-import type { EquipmentItemSlot, GameState, RecipeCategory, RecipeId, TransmutationCategoryFilter, TransmutationEquipmentSlotFilter, TransmutationJobState, TransmutationMaterialTierFilter, TransmutationOffhandFilter, TransmutationWeaponHandsFilter } from '../../types'
+import type { EquipmentItemSlot, GameState, ItemId, RecipeCategory, RecipeId, TransmutationCategoryFilter, TransmutationEquipmentSlotFilter, TransmutationJobState, TransmutationOffhandFilter, TransmutationTierFilter, TransmutationWeaponHandsFilter } from '../../types'
 
 export interface TransmutationRecipeFilters {
   categoryFilter: TransmutationCategoryFilter
   equipmentSlotFilter: TransmutationEquipmentSlotFilter
   weaponHandsFilter: TransmutationWeaponHandsFilter
   offhandPresentationFilter: TransmutationOffhandFilter
-  materialTierFilter: TransmutationMaterialTierFilter
+  tierFilter: TransmutationTierFilter
   craftableOnly: boolean
   activeOnly: boolean
+  unownedOnly: boolean
 }
 
 export interface TransmutationRecipeFilterCounts {
@@ -26,9 +27,10 @@ export interface TransmutationRecipeFilterCounts {
   equipmentSlots: Record<'all' | 'weapon' | 'offhand' | 'armor' | 'helmet' | 'cape' | 'amulet' | 'ring', number>
   weaponHands: Record<'all' | 1 | 2, number>
   offhand: Record<'all' | 'shield' | 'focus', number>
-  materialTiers: Record<number, number>
+  tierCounts: { elemental: Record<number, number>; material: Record<number, number> }
   craftable: number
   active: number
+  unowned: number
 }
 
 export type TransmutationStatus = 'paused' | 'active' | 'mana-limited' | 'waiting-mana' | 'waiting-materials' | 'locked'
@@ -40,6 +42,12 @@ export interface RecipeConsumableRequirement {
   equipped: number
   available: number
   protected: boolean
+}
+
+export interface RecipeMaterialCapacity {
+  cycles: number | null
+  limitingItemId: ItemId | null
+  missing: Array<{ itemId: ItemId; quantity: number }>
 }
 
 export const isRecipeUnlocked = isAuthoredRecipeUnlocked
@@ -73,6 +81,15 @@ export function getRecipeConsumableRequirements(state: Pick<GameState, 'inventor
   }))
 }
 
+/** Derived material-only production limits. Mana is intentionally not part of this capacity. */
+export function getRecipeMaterialCapacity(requirements: RecipeConsumableRequirement[]): RecipeMaterialCapacity {
+  if (requirements.length === 0) return { cycles: null, limitingItemId: null, missing: [] }
+  const ratios = requirements.map((requirement) => ({ requirement, cycles: Math.floor(Math.max(0, requirement.available) / Math.max(1, requirement.required)) }))
+  const cycles = Math.min(...ratios.map(({ cycles: availableCycles }) => availableCycles))
+  const limitingItemId = ratios.find(({ cycles: availableCycles }) => availableCycles === cycles)?.requirement.itemId ?? null
+  return { cycles, limitingItemId, missing: requirements.flatMap((requirement) => { const quantity = Math.max(0, requirement.required - requirement.available); return quantity > 0 ? [{ itemId: requirement.itemId, quantity }] : [] }) }
+}
+
 export const hasRecipeMaterials = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment'>, recipe: RecipeDefinition) => getRecipeConsumableRequirements(state, recipe).every((requirement) => requirement.available >= requirement.required)
 export const isRecipeCraftable = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment' | 'player' | 'progress'>, recipe: RecipeDefinition) => isRecipeUnlocked(state, recipe) && state.player.mana >= recipe.manaCost && hasRecipeMaterials(state, recipe)
 
@@ -102,13 +119,14 @@ function recipeSearchText(recipe: RecipeDefinition) {
   return [recipe.name, recipe.description, item.name, item.description, item.source, item.materialSubtype, item.equipmentSlot ? EQUIPMENT_SLOT_LABELS[item.equipmentSlot] : '', item.equipmentPresentation, item.weaponHands ? `${item.weaponHands}h` : '', CATEGORY_LABELS[recipe.category]].filter(Boolean).join(' ').toLowerCase()
 }
 
-function matchesRecipeContext(recipe: RecipeDefinition, filters: TransmutationRecipeFilters) {
+function matchesRecipeContext(state: Pick<GameState, 'inventory' | 'equipment'>, recipe: RecipeDefinition, filters: TransmutationRecipeFilters) {
   const item = ITEMS[recipe.output.itemId]
   if (filters.categoryFilter !== 'all' && recipe.category !== filters.categoryFilter) return false
   if (filters.equipmentSlotFilter !== 'all' && (recipe.category !== 'equipment' || item.equipmentSlot !== filters.equipmentSlotFilter)) return false
   if (filters.weaponHandsFilter !== 'all' && (item.equipmentSlot !== 'weapon' || item.weaponHands !== filters.weaponHandsFilter)) return false
   if (filters.offhandPresentationFilter !== 'all' && (item.equipmentSlot !== 'offhand' || item.equipmentPresentation !== filters.offhandPresentationFilter)) return false
-  if (filters.materialTierFilter !== 'all' && (recipe.category !== 'material' || item.materialTier !== filters.materialTierFilter)) return false
+  if (filters.tierFilter !== 'all' && (recipe.category !== 'elemental' && recipe.category !== 'material' || item.materialTier !== filters.tierFilter)) return false
+  if (filters.unownedOnly && (recipe.category !== 'equipment' || (state.inventory[recipe.output.itemId] ?? 0) > 0 || getEquippedReservedQuantity(state, recipe.output.itemId) > 0)) return false
   return true
 }
 
@@ -120,7 +138,7 @@ function matchesRecipeState(state: Pick<GameState, 'activities' | 'inventory' | 
 
 export function matchesTransmutationRecipe(state: Pick<GameState, 'activities' | 'inventory' | 'protectedItems' | 'equipment' | 'player' | 'progress' | 'schools'> & Partial<Pick<GameState, 'debug'>>, recipe: RecipeDefinition, filters: TransmutationRecipeFilters, query = '', showLocked = false) {
   if (!showLocked && !isRecipeUnlocked(state, recipe)) return false
-  if (!matchesRecipeContext(recipe, filters) || !matchesRecipeState(state, recipe, filters)) return false
+  if (!matchesRecipeContext(state, recipe, filters) || !matchesRecipeState(state, recipe, filters)) return false
   const normalizedQuery = query.trim().toLowerCase()
   return normalizedQuery.length === 0 || recipeSearchText(recipe).includes(normalizedQuery)
 }
@@ -129,7 +147,7 @@ export function getVisibleTransmutationRecipes(state: Pick<GameState, 'activitie
   return getTransmutationRecipeEntries().filter((recipe) => matchesTransmutationRecipe(state, recipe, filters, query, showLocked))
 }
 
-export function getTransmutationMaterialTierOptions() {
+export function getTransmutationTierOptions() {
   const tiers = getTransmutationRecipeEntries().map((recipe) => ITEMS[recipe.output.itemId].materialTier).filter((tier): tier is number => typeof tier === 'number' && Number.isInteger(tier) && tier >= 1)
   const maxTier = Math.max(3, ...tiers, 1)
   return Array.from({ length: maxTier }, (_, index) => index + 1)
@@ -146,9 +164,10 @@ export function getTransmutationRecipeFilterCounts(state: Pick<GameState, 'activ
     equipmentSlots: { all: 0, weapon: 0, offhand: 0, armor: 0, helmet: 0, cape: 0, amulet: 0, ring: 0 },
     weaponHands: { all: 0, 1: 0, 2: 0 },
     offhand: { all: 0, shield: 0, focus: 0 },
-    materialTiers: {},
+    tierCounts: { elemental: {}, material: {} },
     craftable: accessible.filter((recipe) => isRecipeCraftable(state, recipe)).length,
     active: accessible.filter((recipe) => Math.max(0, Math.floor(getTransmutationJob(state, recipe.id)?.echoesAssigned ?? 0)) > 0).length,
+    unowned: accessible.filter((recipe) => recipe.category === 'equipment' && (state.inventory[recipe.output.itemId] ?? 0) <= 0 && getEquippedReservedQuantity(state, recipe.output.itemId) <= 0).length,
   }
   for (const recipe of accessible) {
     counts.categories[recipe.category] += 1
@@ -165,7 +184,9 @@ export function getTransmutationRecipeFilterCounts(state: Pick<GameState, 'activ
         counts.offhand[item.equipmentPresentation] += 1
       }
     }
-    if (recipe.category === 'material' && item.materialTier) counts.materialTiers[item.materialTier] = (counts.materialTiers[item.materialTier] ?? 0) + 1
+    if ((recipe.category === 'elemental' || recipe.category === 'material') && item.materialTier) {
+      counts.tierCounts[recipe.category][item.materialTier] = (counts.tierCounts[recipe.category][item.materialTier] ?? 0) + 1
+    }
   }
   return counts
 }

@@ -5,7 +5,7 @@ import { ItemIcon, ItemRequirementTile, ItemUsesDialog } from '../../../componen
 import { ITEMS, getItemSourceLabel } from '../../../game/content/items/items'
 import type { RecipeDefinition } from '../../../game/content/recipes/recipes'
 import { getVisibleItemUsesForTransmutation } from '../../../game/presentation/transmutation/transmutationUsedInReadModel'
-import { getRecipeConsumableRequirements, getRecipeCurrentEffectiveDuration, getRecipeCurrentOutputPerHour, getRecipeCurrentSpeedMultiplier, getRecipeManaDemandPerSecond, getRecipeStatus, getRecipeUnlockReason, getTransmutationFocusReserved, getTransmutationJob, type TransmutationStatus } from '../../../game/systems/transmutation/transmutationSelectors'
+import { getRecipeConsumableRequirements, getRecipeCurrentEffectiveDuration, getRecipeCurrentOutputPerHour, getRecipeCurrentSpeedMultiplier, getRecipeManaDemandPerSecond, getRecipeMaterialCapacity, getRecipeStatus, getRecipeUnlockReason, getTransmutationFocusReserved, getTransmutationJob, type RecipeConsumableRequirement, type TransmutationStatus } from '../../../game/systems/transmutation/transmutationSelectors'
 import type { RecipeId } from '../../../game/types'
 import { formatNumber, formatSignedRate, formatTime } from '../../../game/utils'
 import { useGameStore } from '../../../store/gameStore'
@@ -36,6 +36,8 @@ export function RecipeDetail({ recipe, onSelectRecipe }: { recipe: RecipeDefinit
 
       {requirements.length > 0 && <DetailSection title="MATERIAL REQUIREMENTS"><div className="transmutation-requirements-grid">{requirements.map((requirement) => <ItemRequirementTile key={requirement.itemId} itemId={requirement.itemId} owned={requirement.owned} available={requirement.available} equipped={requirement.equipped} required={requirement.required} protectedItem={requirement.protected} source={getItemSourceLabel(requirement.itemId)} />)}</div></DetailSection>}
 
+      {(recipe.category === 'elemental' || recipe.category === 'material') && <MaterialCapacity requirements={requirements} outputQuantity={recipe.output.quantity} />}
+
       {recipe.manaCost > 0 && <section className="transmutation-detail-section transmutation-mana-requirement"><span className="eyebrow">MANA / CYCLE</span><strong>{formatNumber(recipe.manaCost)} · {formatSignedRate(-getRecipeManaDemandPerSecond(recipe, echoes))} demand</strong><Status tone={status === 'waiting-mana' ? 'warning' : status === 'mana-limited' ? 'warning' : 'success'}>{status === 'waiting-mana' ? 'WAITING' : status === 'mana-limited' ? 'LIMITED' : 'FUNDED'}</Status></section>}
 
       <UsedInSummary uses={uses} onOpen={() => setUsesDialogOpen(true)} />
@@ -51,6 +53,11 @@ function UsedInSummary({ uses, onOpen }: { uses: ReturnType<typeof getVisibleIte
 function CurrentProduction({ echoes, currentCycle, currentSpeed, currentOutput }: { echoes: number; currentCycle: number | null; currentSpeed: number; currentOutput: number }) {
   if (!echoes) return <div className="transmutation-production-paused"><Status>PAUSED</Status><span>Assign an Arcane Echo to begin production.</span></div>
   return <div className="transmutation-current-summary"><DetailStat label="ECHOES" value={String(echoes)} /><DetailStat label="SPEED" value={`${currentSpeed}×`} /><DetailStat label="EFFECTIVE TIME" value={currentCycle === null ? '—' : formatTime(currentCycle)} /><DetailStat label="OUTPUT / H" value={formatNumber(currentOutput)} /><DetailStat label="FOCUS" value={String(getTransmutationFocusReserved(echoes))} /></div>
+}
+
+function MaterialCapacity({ requirements, outputQuantity }: { requirements: RecipeConsumableRequirement[]; outputQuantity: number }) {
+  const capacity = getRecipeMaterialCapacity(requirements)
+  return <section className="transmutation-detail-section transmutation-material-capacity"><span className="eyebrow">MATERIAL CAPACITY</span><div className="transmutation-capacity-grid">{capacity.cycles === null ? <DetailStat label="MATERIAL LIMIT" value="NONE" /> : <DetailStat label="CAN CRAFT" value={`${formatNumber(capacity.cycles)} ${capacity.cycles === 1 ? 'cycle' : 'cycles'}${outputQuantity > 1 ? ` · ${formatNumber(capacity.cycles * outputQuantity)} output` : ''}`} />}{capacity.limitingItemId && <DetailStat label="LIMITING MATERIAL" value={ITEMS[capacity.limitingItemId].name} />}</div>{capacity.missing.length > 0 && <div className="transmutation-missing-materials"><small>MISSING</small>{capacity.missing.map((missing) => <span key={missing.itemId}><ItemIcon itemId={missing.itemId} size="tiny" />{ITEMS[missing.itemId].name} ×{formatNumber(missing.quantity)}</span>)}</div>}</section>
 }
 
 function DetailSection({ title, children }: { title: string; children: ReactNode }) { return <section className="transmutation-detail-section"><span className="eyebrow">{title}</span>{children}</section> }

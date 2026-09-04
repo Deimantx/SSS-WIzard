@@ -99,6 +99,9 @@ When replacing a system, remove the obsolete implementation after migration rath
 - Responsive narrow layouts must stack every visible panel at `x=0`, `w=12`, using effective heights, and must remain collision-free after width/reflow changes.
 - Shared row/pixel conversion helpers own grid sizing math; do not duplicate magic row heights, margins, or pixel formulas in screens.
 - Large relationship/reference lists such as `Used In` must stay compact in normal panels and move into a dedicated scrollable modal/dialog or bounded inspector.
+- Transmutation recipe cards must prioritize readable identity and classification over maximum density. Use shared typography tokens; do not add one-off micro-font sizes for card metadata.
+- Tier filtering for Elemental/Material Transmutation content is shared and metadata-driven; do not maintain per-category item-ID tier lists.
+- Modal/dialog components must render through the shared portal layer and have a guaranteed contained overlay baseline.
 
 
 ## Archive ownership

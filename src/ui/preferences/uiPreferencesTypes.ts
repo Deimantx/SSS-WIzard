@@ -1,11 +1,11 @@
-import type { ItemId, RecipeCategory, SchoolId, TransmutationCategoryFilter, TransmutationEquipmentSlotFilter, TransmutationMaterialTierFilter, TransmutationOffhandFilter, TransmutationWeaponHandsFilter } from '../../game/types'
+import type { ItemId, RecipeCategory, SchoolId, TransmutationCategoryFilter, TransmutationEquipmentSlotFilter, TransmutationOffhandFilter, TransmutationTierFilter, TransmutationWeaponHandsFilter } from '../../game/types'
 import type { CombatDetailsMode } from '../../game/presentation/combat/combatDetailsPresentation'
 import type { DungeonStatisticsMode } from '../../game/telemetry/dungeon/dungeonStatisticsTypes'
 
 export type UiTheme = 'default' | 'dark' | 'light' | 'custom'
 export type TextSize = 'default' | 'large' | 'extra-large'
 export type NavigationGroupId = 'combat' | 'hero' | 'tower' | 'world' | 'system'
-export type { TransmutationCategoryFilter, TransmutationEquipmentSlotFilter, TransmutationMaterialTierFilter, TransmutationOffhandFilter, TransmutationWeaponHandsFilter } from '../../game/types'
+export type { TransmutationCategoryFilter, TransmutationEquipmentSlotFilter, TransmutationOffhandFilter, TransmutationTierFilter, TransmutationWeaponHandsFilter } from '../../game/types'
 
 export interface CustomThemeColors {
   background: string
@@ -29,9 +29,10 @@ export interface TransmutationScreenPreferences {
   equipmentSlotFilter: TransmutationEquipmentSlotFilter
   weaponHandsFilter: TransmutationWeaponHandsFilter
   offhandPresentationFilter: TransmutationOffhandFilter
-  materialTierFilter: TransmutationMaterialTierFilter
+  tierFilter: TransmutationTierFilter
   craftableOnly: boolean
   activeOnly: boolean
+  unownedOnly: boolean
   collapsedCategories: Record<RecipeCategory, boolean>
 }
 

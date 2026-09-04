@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom'
 import { useEffect, useRef, type MouseEvent, type ReactNode } from 'react'
+import '../../styles/components/modal-portal.css'
 
 interface ModalPortalProps {
   open: boolean
@@ -73,8 +74,8 @@ export function ModalPortal({ open, onClose, children, backdropClassName, surfac
     if (event.target === event.currentTarget) (onBackdropClick ?? onClose)()
   }
   return createPortal(
-    <div className={backdropClassName} role="presentation" onMouseDown={handleBackdropMouseDown}>
-      <div ref={surfaceRef} className={surfaceClassName} role="dialog" aria-modal="true" aria-label={ariaLabel} aria-labelledby={ariaLabelledBy} aria-describedby={ariaDescribedBy}>
+    <div className={`modal-portal-backdrop ${backdropClassName}`.trim()} role="presentation" onMouseDown={handleBackdropMouseDown}>
+      <div ref={surfaceRef} className={`modal-portal-surface ${surfaceClassName}`.trim()} role="dialog" aria-modal="true" aria-label={ariaLabel} aria-labelledby={ariaLabelledBy} aria-describedby={ariaDescribedBy}>
         {children}
       </div>
     </div>,

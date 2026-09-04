@@ -73,4 +73,27 @@ describe('RecipeDetail Used In summary', () => {
     expect(document.querySelector('.transmutation-mana-requirement')).toBeNull()
     expect(screen.getByText('MANA')).toBeTruthy()
   })
+
+  it('shows derived material capacity and missing ingredients only for material recipes', () => {
+    const state = createInitialState()
+    state.inventory['fire-fragment'] = 2
+    state.inventory['water-fragment'] = 11
+    state.inventory['earth-fragment'] = 11
+    state.inventory['air-fragment'] = 11
+    state.inventory['life-essence'] = 20
+    useGameStore.getState().hydrateState(state)
+    const view = render(<RecipeDetail recipe={RECIPES['prismatic-fragment']} />)
+
+    expect(screen.getByText('MATERIAL CAPACITY')).toBeTruthy()
+    expect(screen.getByText('CAN CRAFT')).toBeTruthy()
+    expect(screen.getByText('LIMITING MATERIAL')).toBeTruthy()
+    expect(screen.getByText(/Fire Fragment/)).toBeTruthy()
+
+    view.unmount()
+    const equipmentState = createInitialState()
+    equipmentState.progress.firstBossKill = true
+    useGameStore.getState().hydrateState(equipmentState)
+    render(<RecipeDetail recipe={RECIPES['ember-staff']} />)
+    expect(screen.queryByText('MATERIAL CAPACITY')).toBeNull()
+  })
 })

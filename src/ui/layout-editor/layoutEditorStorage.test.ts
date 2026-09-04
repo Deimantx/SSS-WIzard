@@ -59,7 +59,7 @@ describe('Transmutation default layout', () => {
   it('uses the larger Focus and Equipment Inspection defaults', () => {
     expect(DEFAULT_LAYOUTS['tower-transmutation']).toEqual({
       'transmutation-recipes': { x: 0, y: 0, w: 7, h: 15 },
-      'transmutation-focus': { x: 0, y: 15, w: 7, h: 12 },
+      'transmutation-focus': { x: 0, y: 15, w: 7, h: 18 },
       'transmutation-detail': { x: 7, y: 0, w: 5, h: 8 },
       'transmutation-output-preview': { x: 7, y: 8, w: 5, h: 19 },
     })
@@ -72,11 +72,11 @@ describe('Transmutation default layout', () => {
 
     expect(layouts['transmutation-recipes']).toEqual({ x: 1, y: 2, w: 6, h: 20 })
     expect(layouts['transmutation-detail']).toEqual({ x: 7, y: 0, w: 5, h: 8 })
-    expect(layouts['transmutation-focus']).toEqual({ x: 0, y: 15, w: 7, h: 12 })
+    expect(layouts['transmutation-focus']).toEqual({ x: 0, y: 15, w: 7, h: 18 })
     expect(layouts['transmutation-output-preview']).toEqual({ x: 7, y: 8, w: 5, h: 19 })
   })
 
-  it('resets only incomplete Transmutation layouts during V9 migration', () => {
+  it('resets only incomplete Transmutation layouts during V10 migration', () => {
     localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({
       version: 7,
       screens: {
@@ -91,13 +91,13 @@ describe('Transmutation default layout', () => {
     expect(getScreenLayouts('tower-transmutation', document.screens['tower-transmutation'])).toEqual(DEFAULT_LAYOUTS['tower-transmutation'])
   })
 
-  it('upgrades untouched V8 Transmutation defaults while preserving custom geometry and other screens', () => {
+  it('upgrades untouched V9 Transmutation defaults while preserving custom geometry and other screens', () => {
     localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({
-      version: 8,
+      version: 9,
       screens: {
         'tower-transmutation': {
           'transmutation-recipes': { x: 1, y: 2, w: 6, h: 18 },
-          'transmutation-focus': { x: 0, y: 15, w: 7, h: 6 },
+          'transmutation-focus': { x: 0, y: 15, w: 7, h: 12 },
           'transmutation-detail': { x: 7, y: 0, w: 5, h: 8 },
           'transmutation-output-preview': { x: 7, y: 8, w: 5, h: 13 },
         },
@@ -108,10 +108,26 @@ describe('Transmutation default layout', () => {
     const document = loadUiLayouts()
     expect(document.screens['tower-transmutation']).toMatchObject({
       'transmutation-recipes': { x: 1, y: 2, w: 6, h: 18 },
-      'transmutation-focus': { x: 0, y: 15, w: 7, h: 12 },
+      'transmutation-focus': { x: 0, y: 15, w: 7, h: 18 },
       'transmutation-output-preview': { x: 7, y: 8, w: 5, h: 19 },
     })
     expect(document.screens.inventory?.['inventory-catalog']).toEqual({ x: 2, y: 1, w: 7, h: 18 })
+  })
+
+  it('preserves custom Focus geometry during the V10 default migration', () => {
+    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({
+      version: 9,
+      screens: {
+        'tower-transmutation': {
+          'transmutation-recipes': { x: 0, y: 0, w: 7, h: 15 },
+          'transmutation-focus': { x: 1, y: 16, w: 6, h: 14 },
+          'transmutation-detail': { x: 7, y: 0, w: 5, h: 8 },
+          'transmutation-output-preview': { x: 7, y: 8, w: 5, h: 19 },
+        },
+      },
+    }))
+
+    expect(loadUiLayouts().screens['tower-transmutation']?.['transmutation-focus']).toEqual({ x: 1, y: 16, w: 6, h: 14 })
   })
 })
 

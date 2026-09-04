@@ -34,4 +34,12 @@ describe('FocusAssignment locked state', () => {
     const body = document.querySelector('.transmutation-focus-body')
     expect(body?.querySelectorAll('.transmutation-assignment-row')).toHaveLength(2)
   })
+
+  it('shows authoritative output and Mana rates for active assignments', () => {
+    useGameStore.getState().setTransmutationEchoes('fire-fragment', 1)
+    render(<FocusAssignment selectedRecipeId="fire-fragment" onSelect={vi.fn()} />)
+
+    expect(document.querySelector('.transmutation-assignment-metrics')?.textContent).toContain('600 / hr')
+    expect(document.querySelector('.transmutation-assignment-metrics')?.textContent).toContain('2.5 Mana/s')
+  })
 })

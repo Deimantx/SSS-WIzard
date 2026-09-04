@@ -73,7 +73,9 @@ export type TransmutationCategoryFilter = 'all' | RecipeCategory
 export type TransmutationEquipmentSlotFilter = 'all' | EquipmentItemSlot
 export type TransmutationWeaponHandsFilter = 'all' | 1 | 2
 export type TransmutationOffhandFilter = 'all' | 'shield' | 'focus'
-export type TransmutationMaterialTierFilter = 'all' | number
+export type TransmutationTierFilter = 'all' | number
+/** @deprecated Use TransmutationTierFilter. */
+export type TransmutationMaterialTierFilter = TransmutationTierFilter
 export type RecipeUnlockCondition =
   | { type: 'always' }
   | { type: 'boss-kill'; bossId: MonsterId; count?: number }

@@ -5,7 +5,7 @@ import { TooltipContent } from '../../../components/ui/tooltip/Tooltip'
 import { ItemIcon, ItemQuantity } from '../../../components/ui/item'
 import { RECIPES, RECIPE_ORDER } from '../../../game/content/recipes/recipes'
 import { selectFreeFocus } from '../../../game/engine'
-import { getRecipeCurrentEffectiveDuration, getRecipeManaDemandPerSecond, getRecipeProgressPercent, getRecipeStatus, getRecipeUnlockReason, getTransmutationEchoCapacity, getTransmutationEchoFocusCost, getTransmutationEchoesAssigned, getTransmutationFocusReserved, getTransmutationJob, canAssignTransmutationEcho } from '../../../game/systems/transmutation/transmutationSelectors'
+import { getRecipeCurrentEffectiveDuration, getRecipeCurrentOutputPerHour, getRecipeManaDemandPerSecond, getRecipeProgressPercent, getRecipeStatus, getRecipeUnlockReason, getTransmutationEchoCapacity, getTransmutationEchoFocusCost, getTransmutationEchoesAssigned, getTransmutationFocusReserved, getTransmutationJob, canAssignTransmutationEcho } from '../../../game/systems/transmutation/transmutationSelectors'
 import type { GameState, RecipeId } from '../../../game/types'
 import { formatNumber, formatSignedRate, formatTime } from '../../../game/utils'
 import { useGameStore } from '../../../store/gameStore'
@@ -52,7 +52,21 @@ function AssignmentRow({ recipeId, state, selected, onSelect, onAdd, onRemove }:
   const canAdd = status !== 'locked' && canAssignTransmutationEcho(state)
   const addReason = status === 'locked' ? getRecipeUnlockReason(recipe) ?? 'This recipe is locked.' : 'Assign one more Echo if Focus and capacity allow.'
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelect(recipeId) } }
-  return <div role="button" tabIndex={0} className={`transmutation-assignment-row ${selected ? 'selected' : ''}`} onClick={() => onSelect(recipeId)} onKeyDown={handleKeyDown} aria-label={`Select ${recipe.name}, ${echoes} Echoes assigned`}><ItemIcon itemId={recipe.output.itemId} size="tiny" /><span className="transmutation-assignment-copy"><strong>{recipe.name}</strong><small>{echoes}E · {statusLabel(status)}</small><Progress value={getRecipeProgressPercent(recipe, job?.progressMs ?? 0)} tone="gold" /></span><ItemQuantity value={state.inventory[recipe.output.itemId] ?? 0} compact /><span onClick={(event) => event.stopPropagation()}><Button variant="ghost" ariaLabel={`Remove Echo from ${recipe.name}`} tooltip="Remove one Echo. Progress is preserved." onClick={() => onRemove(recipeId)}><Minus size={12} aria-hidden="true" /></Button></span><span onClick={(event) => event.stopPropagation()}><Button variant="ghost" ariaLabel={`Add Echo to ${recipe.name}`} tooltip={canAdd ? addReason : addReason} onClick={() => onAdd(recipeId)} disabled={!canAdd}><Plus size={12} aria-hidden="true" /></Button></span></div>
+  const outputPerHour = getRecipeCurrentOutputPerHour(recipe, echoes)
+  const manaDemand = getRecipeManaDemandPerSecond(recipe, echoes)
+  return <div role="button" tabIndex={0} className={`transmutation-assignment-row ${selected ? 'selected' : ''}`} onClick={() => onSelect(recipeId)} onKeyDown={handleKeyDown} aria-label={`Select ${recipe.name}, ${echoes} Echoes assigned`}><ItemIcon itemId={recipe.output.itemId} size="tiny" /><span className="transmutation-assignment-copy"><strong>{recipe.name}</strong><small>{echoes}E · {statusLabel(status)}</small><small className="transmutation-assignment-metrics">{formatOutputRate(outputPerHour)} · {formatManaDemand(manaDemand)}</small><Progress value={getRecipeProgressPercent(recipe, job?.progressMs ?? 0)} tone="gold" /></span><ItemQuantity value={state.inventory[recipe.output.itemId] ?? 0} compact /><span onClick={(event) => event.stopPropagation()}><Button variant="ghost" ariaLabel={`Remove Echo from ${recipe.name}`} tooltip="Remove one Echo. Progress is preserved." onClick={() => onRemove(recipeId)}><Minus size={12} aria-hidden="true" /></Button></span><span onClick={(event) => event.stopPropagation()}><Button variant="ghost" ariaLabel={`Add Echo to ${recipe.name}`} tooltip={canAdd ? addReason : addReason} onClick={() => onAdd(recipeId)} disabled={!canAdd}><Plus size={12} aria-hidden="true" /></Button></span></div>
+}
+
+function formatOutputRate(value: number) {
+  const safe = Math.max(0, value)
+  const formatted = safe >= 10 ? Math.round(safe).toLocaleString() : safe.toFixed(1).replace(/\.0$/, '')
+  return `${formatted} / hr`
+}
+
+function formatManaDemand(value: number) {
+  const safe = Math.max(0, value)
+  const formatted = safe >= 10 ? safe.toFixed(1).replace(/\.0$/, '') : safe < 0.01 ? safe.toFixed(3) : safe.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')
+  return `${formatted} Mana/s`
 }
 
 function statusLabel(status: ReturnType<typeof getRecipeStatus>) { return status.replace('-', ' ').toUpperCase() }

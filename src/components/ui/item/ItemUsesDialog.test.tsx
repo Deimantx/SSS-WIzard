@@ -15,7 +15,11 @@ describe('ItemUsesDialog', () => {
     const uses = getVisibleItemUsesForTransmutation(state, 'fire-fragment')
     render(<ItemUsesDialog itemId="fire-fragment" uses={uses} open onClose={onClose} />)
 
-    expect(screen.getByRole('dialog', { name: /FIRE FRAGMENT/ })).toBeTruthy()
+    const dialog = screen.getByRole('dialog', { name: /FIRE FRAGMENT/ })
+    expect(dialog.classList.contains('modal-portal-surface')).toBe(true)
+    expect(dialog.classList.contains('item-uses-dialog')).toBe(true)
+    expect(dialog.parentElement?.classList.contains('modal-portal-backdrop')).toBe(true)
+    expect(dialog.parentElement?.classList.contains('item-uses-dialog-backdrop')).toBe(true)
     expect(screen.getByRole('heading', { name: 'TRANSMUTATION' })).toBeTruthy()
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search uses' }), { target: { value: 'prismatic' } })
     expect(screen.getByText('Prismatic Fragment')).toBeTruthy()

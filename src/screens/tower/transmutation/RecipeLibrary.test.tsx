@@ -114,4 +114,33 @@ describe('RecipeLibrary screen preferences', () => {
     expect(screen.getByText('Ember Staff')).toBeTruthy()
     expect(screen.queryByText('Fire Fragment')).toBeNull()
   })
+
+  it('shows shared Elemental tier controls and category-correct empty states', () => {
+    render(<RecipeLibrary selectedRecipeId="fire-fragment" onSelect={vi.fn()} />)
+    fireEvent.click(screen.getByRole('tab', { name: 'ELEMENTAL' }))
+
+    expect(screen.getByText('ELEMENT TIER')).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'T1' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'T2' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'T3' })).toBeTruthy()
+    expect(screen.getByText('Fire Fragment')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('tab', { name: 'T2' }))
+    expect(screen.getByText('No T2 elemental recipes are available.')).toBeTruthy()
+  })
+
+  it('uses readable badge metadata and Equipment-only Unowned state', () => {
+    render(<RecipeLibrary selectedRecipeId="fire-fragment" onSelect={vi.fn()} />)
+    const fireTile = screen.getByRole('button', { name: /Fire Fragment/ })
+    expect(fireTile.querySelector('.transmutation-badge.tier')?.textContent).toBe('T1')
+    expect(fireTile.querySelectorAll('.transmutation-badge')).toHaveLength(2)
+    expect(fireTile.textContent).toContain('ELEMENTAL')
+    expect(fireTile.textContent).toContain('OWNED 0')
+
+    fireEvent.click(screen.getByRole('tab', { name: 'EQUIPMENT' }))
+    expect(screen.getByRole('button', { name: 'UNOWNED' })).toBeTruthy()
+    expect(screen.queryByText('ELEMENT TIER')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'UNOWNED' }))
+    expect(JSON.parse(window.localStorage.getItem('sss-wizard-ui-preferences-v1')!).screenState.transmutation.unownedOnly).toBe(true)
+  })
 })

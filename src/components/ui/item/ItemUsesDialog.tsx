@@ -1,6 +1,8 @@
 import { Search, X } from 'lucide-react'
 import { useEffect, useId, useMemo, useState } from 'react'
 import { ModalPortal } from '../ModalPortal'
+import { SearchInput } from '../index'
+import '../../../styles/components/item-uses-dialog.css'
 import { ITEMS } from '../../../game/content/items/items'
 import type { InventoryDestination } from '../../../game/content/items/inventoryMetadata'
 import type { RecipeId } from '../../../game/types'
@@ -29,7 +31,7 @@ export function ItemUsesDialog({ itemId, uses, open, onClose, onSelectRecipe }: 
 
   return <ModalPortal open={open} onClose={onClose} backdropClassName="item-uses-dialog-backdrop" surfaceClassName="item-uses-dialog" ariaLabelledBy={titleId}>
     <header className="item-uses-dialog-header"><div><span className="eyebrow">ITEM RELATIONSHIPS</span><h2 id={titleId}>{item.name.toUpperCase()} — USED IN</h2><p>{uses.length} visible {uses.length === 1 ? 'use' : 'uses'}</p></div><button type="button" className="icon-button" onClick={onClose} aria-label="Close Used In dialog"><X size={18} aria-hidden="true" /></button></header>
-    <label className="item-uses-dialog-search"><Search size={15} aria-hidden="true" /><span className="sr-only">Search uses</span><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search uses..." /></label>
+    <label className="item-uses-dialog-search"><Search size={15} aria-hidden="true" /><span className="sr-only">Search uses</span><SearchInput type="search" value={query} onChange={setQuery} placeholder="Search uses..." ariaLabel="Search uses" /></label>
     <div className="item-uses-dialog-scroll">
       {groups.length > 0 ? groups.map((group) => <section className="item-uses-dialog-group" key={group.id}><h3>{group.label}</h3>{group.uses.map((use) => <UseRow key={`${use.destination}-${use.recipeId ?? use.label}`} use={use} onSelectRecipe={onSelectRecipe} onClose={onClose} />)}</section>) : <p className="item-uses-dialog-empty">No uses match “{query}”.</p>}
     </div>

@@ -9,7 +9,7 @@ describe('screen UI preferences', () => {
     const preferences = normalizeUiPreferences({ theme: 'dark' })
 
     expect(preferences.screenState.inventory).toEqual({ currentNeedsOpen: true, sourceOpen: false, usedInOpen: true })
-    expect(preferences.screenState.transmutation).toEqual({ selectedRecipeId: 'fire-fragment', categoryFilter: 'all', equipmentSlotFilter: 'all', weaponHandsFilter: 'all', offhandPresentationFilter: 'all', materialTierFilter: 'all', craftableOnly: false, activeOnly: false, collapsedCategories: { elemental: false, material: false, equipment: false, special: false } })
+    expect(preferences.screenState.transmutation).toEqual({ selectedRecipeId: 'fire-fragment', categoryFilter: 'all', equipmentSlotFilter: 'all', weaponHandsFilter: 'all', offhandPresentationFilter: 'all', tierFilter: 'all', craftableOnly: false, activeOnly: false, unownedOnly: false, collapsedCategories: { elemental: false, material: false, equipment: false, special: false } })
     expect(preferences.screenState.combat).toEqual({ combatLogFontSize: 'medium', combatDetailsMode: 'damage-done', dungeonStatisticsMode: 'runs' })
   })
 
@@ -38,6 +38,13 @@ describe('screen UI preferences', () => {
 
     expect(getUiPreferences().screenState.transmutation).toMatchObject({ selectedRecipeId: 'ember-staff', categoryFilter: 'equipment', craftableOnly: false, activeOnly: false, collapsedCategories: { elemental: false, material: false, equipment: true, special: false } })
     expect(loadUiPreferences().screenState.transmutation).toMatchObject({ selectedRecipeId: 'ember-staff', categoryFilter: 'equipment', collapsedCategories: { elemental: false, material: false, equipment: true, special: false } })
+  })
+
+  it('migrates the old material tier preference and removes the obsolete field', () => {
+    const preferences = normalizeUiPreferences({ screenState: { transmutation: { materialTierFilter: 2, unownedOnly: true } } })
+    expect(preferences.screenState.transmutation.tierFilter).toBe(2)
+    expect(preferences.screenState.transmutation.unownedOnly).toBe(true)
+    expect('materialTierFilter' in preferences.screenState.transmutation).toBe(false)
   })
 
   it('resetAppearance resets appearance only', () => {

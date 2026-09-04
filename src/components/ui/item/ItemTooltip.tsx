@@ -3,7 +3,7 @@ import { getItemSourceLabel, getResearchXp, ITEMS } from '../../../game/content/
 import { SCHOOLS } from '../../../game/content/schools/schools'
 import type { ItemId } from '../../../game/types'
 import { GameTooltip, TooltipContent } from '../tooltip/Tooltip'
-import { getInventoryCategoryLabel, getInventorySubcategoryLabel, getItemUses } from '../../../game/content/items/inventoryMetadata'
+import { getInventoryCategoryLabel, getInventorySubcategoryLabel } from '../../../game/content/items/inventoryMetadata'
 import { ItemIcon } from './ItemIcon'
 import { EquipmentCombatDetails } from './EquipmentCombatDetails'
 import { formatFlowEta, formatItemFlowRate, type ItemFlow } from '../../../game/systems/inventory/itemFlow'
@@ -36,7 +36,6 @@ export function ItemTooltip({ itemId, owned, protectedItem = false, equipped = f
 
 export function ItemTooltipContent({ itemId, owned, protectedItem = false, equipped = false, recentlyGained, flow, recipeContext, extraContent }: ItemTooltipContentProps) {
   const item = ITEMS[itemId]
-  const uses = getItemUses(itemId)
   const category = getInventorySubcategoryLabel(itemId) ? `${getInventorySubcategoryLabel(itemId)} Material` : getInventoryCategoryLabel(itemId)
   return <TooltipContent title={item.name.toUpperCase()} description={category}>
     <div className="item-tooltip-heading"><ItemIcon itemId={itemId} size="tiny" /><span>{item.description}</span></div>
@@ -51,7 +50,6 @@ export function ItemTooltipContent({ itemId, owned, protectedItem = false, equip
     {extraContent}
     {flow && <div className="tooltip-section"><small>CURRENT FLOW</small>{flow.production.map((source) => <TooltipRow key={`production-${source.label}`} label={source.label} value={formatItemFlowRate(source.ratePerHour)} />)}{flow.consumption.map((source) => <TooltipRow key={`consumption-${source.label}`} label={source.label} value={formatItemFlowRate(-source.ratePerHour)} />)}<TooltipRow label="Net" value={formatItemFlowRate(flow.netPerHour)} />{flow.depletionEtaMs !== null && <TooltipRow label="Depletes in" value={formatFlowEta(flow.depletionEtaMs) ?? '-'} />}</div>}
     <div className="tooltip-section"><small>SOURCE</small><p>{getItemSourceLabel(itemId)}</p></div>
-    {uses.length > 0 && <div className="tooltip-section"><small>USED IN</small>{uses.map((use) => <p key={`${use.destination}-${use.label}`}>{use.label}</p>)}</div>}
   </TooltipContent>
 }
 

@@ -8,6 +8,36 @@ import { ItemTooltip } from './ItemTooltip'
 describe('equipment Item Tooltip presentation', () => {
   afterEach(() => vi.useRealTimers())
 
+  it('keeps reused material tooltips compact while retaining Source', () => {
+    vi.useFakeTimers()
+    const itemId = 'fire-fragment' as ItemId
+    render(<TooltipProvider><ItemTooltip itemId={itemId} owned={7}><button>Fire Fragment</button></ItemTooltip></TooltipProvider>)
+    fireEvent.pointerEnter(screen.getByRole('button', { name: 'Fire Fragment' }))
+    act(() => { vi.advanceTimersByTime(500) })
+    const tooltip = screen.getByRole('tooltip')
+
+    expect(tooltip.textContent).toContain('SOURCE')
+    expect(tooltip.textContent).toContain('Transmutation')
+    expect(tooltip.textContent).not.toContain('USED IN')
+    expect(tooltip.textContent).not.toContain('Prismatic Fragment')
+    expect(tooltip.textContent).not.toContain('Ember Staff')
+    expect(tooltip.textContent).not.toContain('Wispwood Wand')
+  })
+
+  it('retains compact Transmutation recipe context', () => {
+    vi.useFakeTimers()
+    render(<TooltipProvider><ItemTooltip itemId="fire-fragment" owned={7} recipeContext={{ status: 'ACTIVE', baseDurationMs: 6_000, manaCost: 15, outputQuantity: 1, ingredients: [] }}><button>Fire Fragment recipe</button></ItemTooltip></TooltipProvider>)
+    fireEvent.pointerEnter(screen.getByRole('button', { name: 'Fire Fragment recipe' }))
+    act(() => { vi.advanceTimersByTime(500) })
+    const tooltip = screen.getByRole('tooltip')
+
+    expect(tooltip.textContent).toContain('RECIPE')
+    expect(tooltip.textContent).toContain('ACTIVE')
+    expect(tooltip.textContent).toContain('Base time')
+    expect(tooltip.textContent).toContain('Mana')
+    expect(tooltip.textContent).toContain('Output')
+  })
+
   it('shows universal combat mechanics from item.combat', () => {
     vi.useFakeTimers()
     render(<TooltipProvider><ItemTooltip itemId="ember-staff" owned={1}><button>Ember Staff</button></ItemTooltip></TooltipProvider>)

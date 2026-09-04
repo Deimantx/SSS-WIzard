@@ -1,5 +1,5 @@
 /* Magic Schools V3 — restrained surfaces, explicit grids, and theme-safe accents. */
-.schools-screen { min-width: 0; max-width: 1520px; }
+.schools-screen { min-width: 0; }
 .schools-screen .screen-header { align-items: flex-end; margin-bottom: 17px; }
 .schools-screen .ui-editor-grid { min-height: 0; }
 .schools-screen .ui-editor-panel-content { min-width: 0; height: 100%; }

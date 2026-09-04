@@ -1,6 +1,5 @@
 /* Combat V1.1 — container-aware live workspace with readable information hierarchy. */
 .combat-screen {
-  max-width: 1520px;
   container-type: inline-size;
 }
 .combat-screen .screen-header {

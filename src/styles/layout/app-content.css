@@ -1,7 +1,7 @@
 :root {
   --app-content-width-base: 1120px;
-  --app-content-width-wide: 1280px;
-  --app-content-width-ultrawide: 1480px;
+  --app-content-width-wide: 1520px;
+  --app-content-width-ultrawide: 1520px;
   --app-content-max-width: var(--app-content-width-base);
   --app-content-gutter: 24px;
   --app-content-padding-inline: clamp(24px, 3vw, 48px);

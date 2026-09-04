@@ -37,6 +37,7 @@ Rules:
 - Default hover delay is 500 ms.
 - Only one tooltip may be active at a time.
 - Tooltips must follow the active game theme.
+- Shared item tooltips must remain compact and must not render unbounded relationship lists such as `Used In`; relationship browsing belongs in explicit `View` / dialog / inspector UI.
 - Preserve keyboard-focus tooltip behavior where appropriate.
 - Do not create local competing tooltip systems.
 - Tooltip coverage is part of the Definition of Done for every new or redesigned screen.
@@ -73,6 +74,7 @@ When replacing a system, remove the obsolete implementation after migration rath
 
 ## UI and testing
 
+- All normal game screens must use the shared `screen-content` / `app-content-shell` outer width contract. Keep the standard desktop maximum centralized in `src/styles/layout/app-content.css`; screen-specific CSS may control internal grids, panels, dialogs, and text columns but must not create a different outer page width. Combat is not a width exception; its container-query behavior is internal.
 - Keep all Transmutation panels usable at narrow widths: recipe library, recipe detail, Focus assignment, and output inspection must stack without horizontal overflow.
 - Editable screen panels must never visually bleed into adjacent panels; fit defaults and minimum sizes to intended content, and use responsive reflow or an internal themed scroll area when content can exceed a panel.
 - Add or update Vitest coverage when changing save migration, production payment, reservation, or offline-report behavior.

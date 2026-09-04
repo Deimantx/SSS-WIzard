@@ -63,6 +63,8 @@ export interface UiPreferences {
   backgroundEffects: boolean
   reducedMotion: boolean
   customCursor: boolean
+  uiSounds: boolean
+  uiSoundVolume: number
   customTheme: CustomThemeColors
   navigationGroups: Record<NavigationGroupId, boolean>
   screenState: ScreenPreferences

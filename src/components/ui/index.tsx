@@ -6,7 +6,7 @@ export { GameValue } from '../../ui/game-feel/GameValue'
 export type { GameValueTone } from '../../ui/game-feel/GameValue'
 
 export const Card = forwardRef<HTMLElement, { children: ReactNode; className?: string; title?: string; action?: ReactNode; style?: CSSProperties }>(function Card({ children, className = '', title, action, style }, ref) {
-  return <section ref={ref} style={style} className={`card ${className}`}>{title && <div className="card-head"><h2>{title}</h2>{action}</div>}{children}</section>
+  return <section ref={ref} style={style} data-game-panel="true" className={`card ${className}`}>{title && <div className="card-head"><h2>{title}</h2>{action}</div>}{children}</section>
 })
 
 export function Button({ children, onClick, variant = 'primary', disabled = false, className = '', tooltip, ariaLabel, icon = false }: { children: ReactNode; onClick?: () => void; variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'success'; disabled?: boolean; className?: string; tooltip?: TooltipNode; ariaLabel?: string; icon?: boolean }) {

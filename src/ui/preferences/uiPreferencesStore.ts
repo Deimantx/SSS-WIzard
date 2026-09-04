@@ -29,7 +29,7 @@ export const setUiPreferences = (changes: UiPreferenceChanges) => {
 export const setCustomThemeColor = (key: keyof CustomThemeColors, value: string) => setUiPreferences({ customTheme: { ...current.customTheme, [key]: value } })
 export const resetAppearance = () => {
   const defaults = defaultUiPreferences()
-  current = normalizeUiPreferences({ ...current, theme: defaults.theme, textSize: defaults.textSize, backgroundEffects: defaults.backgroundEffects, reducedMotion: defaults.reducedMotion, customCursor: defaults.customCursor, customTheme: defaults.customTheme })
+  current = normalizeUiPreferences({ ...current, theme: defaults.theme, textSize: defaults.textSize, backgroundEffects: defaults.backgroundEffects, reducedMotion: defaults.reducedMotion, customCursor: defaults.customCursor, uiSounds: defaults.uiSounds, uiSoundVolume: defaults.uiSoundVolume, customTheme: defaults.customTheme })
   saveUiPreferences(current)
   applyUiPreferences(current)
   emit()

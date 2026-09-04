@@ -89,6 +89,11 @@ When replacing a system, remove the obsolete implementation after migration rath
 - Short craft and unlock effects are transient UI state only, never persisted, pointer-transparent, and bounded/capped.
 - Gameplay/content/system modules must not import Game Feel UI modules. Visual effects observe authoritative state/results from the UI/store boundary.
 - Custom cursors use the native CSS cursor pipeline; do not replace the system cursor with a JavaScript mouse-following element.
+- Perceptible feedback should stay semantic and bounded: action cursors remain accent-dominant, and craft/unlock/item/equipment/focus/error/success cues must correspond to real UI-visible results.
+- Panel chrome is CSS paint only: it must not alter panel geometry or create a constant pulse or a per-panel animation loop.
+- Pointer-reactive lighting uses direct CSS custom-property updates from one delegated listener; do not put pointer coordinates in React state or add 3D tilt.
+- UI audio uses one lazy, shared Web Audio engine with a master volume; do not create AudioContexts per screen or attach one sound listener per button.
+- Generic hover/click cues are delegated and rate-limited; stronger sounds belong to confirmations and semantic results, not every simulation tick.
 
 ## Test execution workflow
 

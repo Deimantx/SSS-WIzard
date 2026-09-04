@@ -9,6 +9,8 @@ describe('screen UI preferences', () => {
     const preferences = normalizeUiPreferences({ theme: 'dark' })
 
     expect(preferences.customCursor).toBe(true)
+    expect(preferences.uiSounds).toBe(true)
+    expect(preferences.uiSoundVolume).toBe(0.35)
     expect(preferences.screenState.inventory).toEqual({ currentNeedsOpen: true, sourceOpen: false, usedInOpen: true })
     expect(preferences.screenState.transmutation).toEqual({ selectedRecipeId: 'fire-fragment', categoryFilter: 'all', equipmentSlotFilter: 'all', weaponHandsFilter: 'all', offhandPresentationFilter: 'all', tierFilter: 'all', craftableOnly: false, activeOnly: false, unownedOnly: false, collapsedCategories: { elemental: false, material: false, equipment: false, special: false } })
     expect(preferences.screenState.combat).toEqual({ combatLogFontSize: 'medium', combatDetailsMode: 'damage-done', dungeonStatisticsMode: 'runs' })

@@ -288,6 +288,11 @@
 
 .game-feel-unlock .game-feel-ring { width: 30px; height: 30px; animation-duration: 700ms; }
 .game-feel-unlock .game-feel-spark { width: 5px; height: 5px; animation-duration: 720ms; }
+.game-feel-item-gain .game-feel-ring { border-color: var(--ui-success); box-shadow: 0 0 10px var(--ui-success); }
+.game-feel-equip .game-feel-ring { border-color: var(--ui-accent); box-shadow: 0 0 12px var(--ui-accent); }
+.game-feel-focus .game-feel-ring { border-color: var(--ui-secondary); box-shadow: 0 0 12px var(--ui-secondary); }
+.game-feel-error .game-feel-ring { border-color: var(--ui-warning); box-shadow: 0 0 10px var(--ui-warning); }
+.game-feel-success .game-feel-ring { border-color: var(--ui-success); box-shadow: 0 0 13px var(--ui-success); }
 
 @keyframes game-feel-ring {
   from { opacity: .7; transform: translate(-50%, -50%) scale(.35); }
@@ -351,4 +356,316 @@
 
 @media (max-width: 700px) {
   .game-shell.effects-enabled .main-area::before { opacity: calc(var(--ambient-strength, .8) * .22); }
+}
+
+/* V2 cursor: the action state stays accent-led, with secondary color reserved for its rune. */
+@media (pointer: fine) {
+  .game-shell.cursor-enabled button:disabled,
+  .game-shell.cursor-enabled [aria-disabled='true'] { cursor: var(--game-cursor-disabled, not-allowed); }
+}
+
+/* Arcane screen reveal. Navigation mounts immediately; only the already-mounted frame gets a short visual wake. */
+.game-screen-transition {
+  position: relative;
+  isolation: isolate;
+  animation: game-screen-arcane-reveal 235ms cubic-bezier(.2, .76, .28, 1) both;
+}
+
+.game-screen-transition::before,
+.game-screen-transition::after {
+  position: absolute;
+  pointer-events: none;
+  content: '';
+}
+
+.game-screen-transition::before {
+  z-index: 3;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 0 38%, color-mix(in srgb, var(--ui-accent) 24%, transparent) 48%, color-mix(in srgb, var(--ui-secondary) 12%, transparent) 52%, transparent 64%);
+  opacity: 0;
+  transform: translateX(-115%);
+  animation: game-screen-arcane-sweep 520ms cubic-bezier(.2, .74, .25, 1) both;
+}
+
+.game-screen-transition::after {
+  z-index: 2;
+  inset: 1px;
+  border: 1px solid color-mix(in srgb, var(--ui-accent) 32%, transparent);
+  opacity: 0;
+  animation: game-screen-border-wake 420ms ease-out both;
+}
+
+@keyframes game-screen-arcane-reveal {
+  from { opacity: .25; clip-path: inset(0 4% 0 0); }
+  to { opacity: 1; clip-path: inset(0); }
+}
+
+@keyframes game-screen-arcane-sweep {
+  0% { opacity: 0; transform: translateX(-115%); }
+  18% { opacity: .9; }
+  66% { opacity: .2; }
+  100% { opacity: 0; transform: translateX(115%); }
+}
+
+@keyframes game-screen-border-wake {
+  0%, 100% { opacity: 0; box-shadow: 0 0 0 transparent; }
+  35% { opacity: .55; box-shadow: 0 0 24px color-mix(in srgb, var(--ui-accent) 13%, transparent); }
+}
+
+/* Panel chrome is paint-only. It never participates in grid measurement or saved geometry. */
+.game-shell .screen-scroll [data-game-panel='true'] {
+  position: relative;
+  isolation: isolate;
+}
+
+.game-shell .screen-scroll [data-game-panel='true']::before {
+  z-index: 0;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--ui-accent) 70%, transparent) 0 12px, transparent 12px 100%) top left / 100% 1px no-repeat,
+    linear-gradient(180deg, color-mix(in srgb, var(--ui-accent) 62%, transparent) 0 12px, transparent 12px 100%) top left / 1px 100% no-repeat,
+    linear-gradient(270deg, color-mix(in srgb, var(--ui-secondary) 56%, transparent) 0 12px, transparent 12px 100%) bottom right / 100% 1px no-repeat,
+    linear-gradient(0deg, color-mix(in srgb, var(--ui-secondary) 48%, transparent) 0 12px, transparent 12px 100%) bottom right / 1px 100% no-repeat;
+  opacity: .65;
+  content: '';
+  pointer-events: none;
+}
+
+.game-shell .screen-scroll [data-game-panel='true']::after {
+  z-index: 0;
+  top: 0;
+  left: 18px;
+  width: 56px;
+  height: 2px;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--ui-accent), var(--ui-secondary), transparent);
+  content: '';
+  opacity: .72;
+  pointer-events: none;
+}
+
+.game-shell .screen-scroll .game-screen-transition [data-game-panel='true'] {
+  animation: game-panel-wake 360ms ease-out both;
+}
+
+@keyframes game-panel-wake {
+  from { border-color: color-mix(in srgb, var(--ui-accent) 52%, var(--ui-border)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ui-accent) 28%, transparent), 0 0 22px color-mix(in srgb, var(--ui-accent) 12%, transparent); }
+  to { border-color: var(--ui-border); }
+}
+
+/* Stronger feedback for real clickable surfaces. Static cards and editor surfaces are intentionally absent. */
+.transmutation-recipe-tile,
+.inventory-item,
+.equipment-armory-card,
+.equipment-slot-card,
+.research-item-tile,
+.spell-browser-tile,
+.spell-preset-card,
+.spell-preset-available-tile,
+.transmutation-assignment-row,
+.transmutation-ring-choice,
+.quick-card,
+.activity-card,
+.activity-mini-summary,
+.dungeon-atlas-list-item,
+.inventory-recent-item,
+.inventory-use-row,
+.inventory-need-row,
+.theme-choice,
+.preference-choice,
+.button,
+.nav-item,
+.nav-group-header {
+  position: relative;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+[data-pointer-lit='true']::after {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at var(--pointer-x, 50%) var(--pointer-y, 50%), color-mix(in srgb, var(--ui-accent) 19%, transparent), transparent 48%);
+  content: '';
+  opacity: .78;
+  pointer-events: none;
+}
+
+[data-pointer-lit='true'] > * { position: relative; z-index: 1; }
+
+.transmutation-recipe-tile:hover,
+.inventory-item:hover,
+.equipment-armory-card:hover,
+.equipment-slot-card:hover,
+.research-item-tile:hover,
+.spell-browser-tile:hover,
+.spell-preset-card:hover,
+.spell-preset-available-tile:hover,
+.transmutation-assignment-row:hover,
+.transmutation-ring-choice:hover,
+.quick-card:hover,
+.activity-card:hover,
+.activity-mini-summary:hover,
+.dungeon-atlas-list-item:hover,
+.inventory-recent-item:hover,
+.inventory-use-row:hover,
+.inventory-need-row:hover,
+.theme-choice:hover,
+.preference-choice:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--ui-accent) 60%, var(--ui-border));
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--ui-accent) 14%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--ui-accent) 14%, transparent);
+}
+
+.transmutation-recipe-tile:active,
+.inventory-item:active,
+.equipment-armory-card:active,
+.equipment-slot-card:active,
+.research-item-tile:active,
+.spell-browser-tile:active,
+.spell-preset-card:active,
+.spell-preset-available-tile:active,
+.transmutation-assignment-row:active,
+.transmutation-ring-choice:active,
+.quick-card:active,
+.activity-card:active,
+.activity-mini-summary:active,
+.dungeon-atlas-list-item:active,
+.inventory-recent-item:active,
+.inventory-use-row:active,
+.inventory-need-row:active,
+.theme-choice:active,
+.preference-choice:active,
+.game-shell .button:not(:disabled):active {
+  transform: translateY(0) scale(.98);
+  filter: brightness(.97);
+  transition-duration: 70ms;
+}
+
+.transmutation-tile-icon,
+.inventory-item-art,
+.equipment-armory-icon,
+.equipment-slot-icon,
+.research-item-icon,
+.spell-browser-icon-frame,
+.quick-icon {
+  transition: transform 150ms cubic-bezier(.2, .72, .25, 1), filter 150ms ease;
+}
+
+.transmutation-recipe-tile:hover .transmutation-tile-icon,
+.inventory-item:hover .inventory-item-art,
+.equipment-armory-card:hover .equipment-armory-icon,
+.equipment-slot-card:hover .equipment-slot-icon,
+.research-item-tile:hover .research-item-icon,
+.spell-browser-tile:hover .spell-browser-icon-frame,
+.quick-card:hover .quick-icon {
+  transform: scale(1.035);
+  filter: drop-shadow(0 0 7px color-mix(in srgb, var(--ui-accent) 28%, transparent));
+}
+
+.transmutation-recipe-tile.selected,
+.inventory-item.selected,
+.equipment-armory-card.selected,
+.equipment-slot-card.selected,
+.research-item-tile.selected,
+.spell-browser-tile.is-selected,
+.transmutation-assignment-row.selected,
+.theme-choice.active,
+.preference-choice.active {
+  animation: game-selected-ring 220ms ease-out both;
+}
+
+.equipment-armory-card.equipped,
+.inventory-item.equipped { border-color: color-mix(in srgb, var(--ui-success) 62%, var(--ui-border)); box-shadow: 0 0 16px color-mix(in srgb, var(--ui-success) 13%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--ui-success) 18%, transparent); }
+
+.transmutation-recipe-tile.locked,
+.research-item-tile.unavailable,
+.spell-browser-tile.is-locked,
+.equipment-slot-card.locked { background-image: repeating-linear-gradient(135deg, transparent 0 8px, color-mix(in srgb, var(--ui-text-disabled) 4%, transparent) 8px 9px); border-style: dashed; filter: saturate(.72); }
+
+.transmutation-recipe-tile.locked::before,
+.spell-browser-tile.is-locked::before,
+.equipment-slot-card.locked::before { opacity: .3; }
+
+@keyframes game-selected-ring {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ui-accent) 0%, transparent); }
+  40% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-accent) 36%, transparent), 0 0 19px color-mix(in srgb, var(--ui-accent) 15%, transparent); }
+  100% { box-shadow: 0 0 0 1px color-mix(in srgb, var(--ui-accent) 20%, transparent); }
+}
+
+/* Ambient profile variables transition independently from content navigation. */
+.game-shell .main-area::before {
+  background: radial-gradient(ellipse at var(--ambient-bias-x, 76%) var(--ambient-bias-y, 12%), color-mix(in srgb, var(--ambient-accent, var(--ui-accent)) 24%, transparent), transparent 48%), radial-gradient(ellipse at 22% 92%, color-mix(in srgb, var(--ambient-secondary, var(--ui-secondary)) 13%, transparent), transparent 44%), repeating-conic-gradient(from 210deg at 52% 42%, color-mix(in srgb, var(--ambient-accent, var(--ui-accent)) 2%, transparent) 0deg 16deg, transparent 16deg 34deg);
+  transition: opacity 520ms ease, background 520ms ease;
+}
+
+.game-shell .main-area::after {
+  background: radial-gradient(ellipse at var(--ambient-bias-x, 76%) var(--ambient-bias-y, 12%), transparent 32%, color-mix(in srgb, var(--ui-bg) 58%, transparent) 100%);
+  transition: opacity 520ms ease, background 520ms ease;
+}
+
+.game-shell.effects-enabled .main-area::before { opacity: calc(var(--ambient-strength, .8) * var(--ambient-fog-opacity, .3)); }
+.game-shell.effects-enabled .main-area::after { opacity: var(--ambient-vignette-opacity, .28); }
+
+/* Sidebar rail and group transitions. Collapsed groups remain inert and keyboard-safe. */
+.nav-group-items { display: grid; max-height: 520px; overflow: hidden; opacity: 1; transform: translateY(0); transition: max-height 180ms ease, opacity 160ms ease, transform 180ms ease; }
+.nav-group.collapsed .nav-group-items { display: grid; max-height: 0; opacity: 0; transform: translateY(-4px); }
+.nav-group-header svg { transition: transform 160ms ease, color 160ms ease; }
+.nav-group-header:hover { color: var(--ui-text); background: color-mix(in srgb, var(--ui-accent) 5%, transparent); }
+.nav-group-header:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: -2px; }
+.nav-item { transition: color 160ms ease, background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease; }
+.nav-item.active { border-color: color-mix(in srgb, var(--ui-accent) 38%, var(--ui-border)); box-shadow: inset 4px 0 var(--ui-accent), 0 0 16px color-mix(in srgb, var(--ui-accent) 10%, transparent); }
+.nav-item.active svg:first-child { animation: nav-rune-pulse 260ms ease-out both; }
+.nav-item:hover:not(.active) { box-shadow: inset 2px 0 color-mix(in srgb, var(--ui-accent) 55%, transparent); }
+@keyframes nav-rune-pulse { from { transform: scale(.9); filter: drop-shadow(0 0 0 transparent); } 48% { transform: scale(1.12); filter: drop-shadow(0 0 7px color-mix(in srgb, var(--ui-accent) 62%, transparent)); } to { transform: scale(1); } }
+
+/* Remove website-like affordances from game chrome while preserving editable text and layout dragging. */
+.game-shell button,
+.game-shell [role='button'],
+.game-shell [role='tab'],
+.game-shell summary { -webkit-tap-highlight-color: transparent; user-select: none; }
+.game-shell img,
+.game-shell svg { user-select: none; -webkit-user-drag: none; }
+.game-shell input,
+.game-shell textarea,
+.game-shell select,
+.game-shell [contenteditable='true'] { user-select: text; -webkit-user-select: text; }
+
+@media (prefers-reduced-motion: reduce) {
+  .game-screen-transition { animation: game-screen-reduced-enter 80ms ease-out both; clip-path: none; }
+  .game-screen-transition::before { display: none; }
+  .game-screen-transition::after { animation: game-screen-border-reduced 80ms ease-out both; }
+  .game-shell .screen-scroll .game-screen-transition [data-game-panel='true'] { animation: game-panel-reduced 80ms ease-out both; }
+  .game-shell .main-area::before,
+  .game-shell .main-area::after { transition: none; }
+  .transmutation-recipe-tile:hover .transmutation-tile-icon,
+  .inventory-item:hover .inventory-item-art,
+  .equipment-armory-card:hover .equipment-armory-icon,
+  .equipment-slot-card:hover .equipment-slot-icon,
+  .research-item-tile:hover .research-item-icon,
+  .spell-browser-tile:hover .spell-browser-icon-frame,
+  .quick-card:hover .quick-icon { transform: none; filter: none; }
+  .nav-item.active svg:first-child { animation: none; }
+}
+
+.game-shell.reduced-motion .game-screen-transition { animation: game-screen-reduced-enter 80ms ease-out both; clip-path: none; }
+.game-shell.reduced-motion .game-screen-transition::before { display: none; }
+.game-shell.reduced-motion .game-screen-transition::after { animation: game-screen-border-reduced 80ms ease-out both; }
+.game-shell.reduced-motion .screen-scroll .game-screen-transition [data-game-panel='true'] { animation: game-panel-reduced 80ms ease-out both; }
+.game-shell.reduced-motion .nav-item.active svg:first-child { animation: none; }
+@keyframes game-screen-border-reduced { from { opacity: .2; } to { opacity: 0; } }
+@keyframes game-panel-reduced { from { border-color: var(--ui-accent); } to { border-color: var(--ui-border); } }
+
+.settings-feedback-section { padding-top: 2px; }
+.ui-sound-volume { display: grid; grid-template-columns: minmax(0, 1fr) minmax(130px, 42%); align-items: center; gap: 14px; margin-top: 11px; }
+.ui-sound-volume > span { display: grid; gap: 3px; }
+.ui-sound-volume strong { color: var(--ui-text); font-size: var(--text-sm); }
+.ui-sound-volume small { color: var(--ui-text-muted); font-size: var(--text-xs); }
+.ui-sound-volume input { width: 100%; accent-color: var(--ui-accent); cursor: pointer; }
+.ui-sound-volume input:disabled { cursor: not-allowed; opacity: .45; }
+
+@media (max-width: 560px) {
+  .ui-sound-volume { grid-template-columns: 1fr; gap: 6px; }
 }

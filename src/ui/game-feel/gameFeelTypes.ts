@@ -1,4 +1,4 @@
-export type GameFeelEventType = 'craft-complete' | 'unlock'
+export type GameFeelEventType = 'craft-complete' | 'unlock' | 'item-gain' | 'equip' | 'focus' | 'error' | 'success'
 
 export interface GameFeelEvent {
   id: string

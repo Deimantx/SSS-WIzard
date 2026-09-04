@@ -24,7 +24,7 @@ export const emitGameFeelEvent = (input: GameFeelEventInput) => {
   }
   events = [...events, event]
   emit()
-  const timer = setTimeout(() => removeGameFeelEvent(event.id), input.type === 'unlock' ? 760 : 680)
+  const timer = setTimeout(() => removeGameFeelEvent(event.id), input.type === 'unlock' || input.type === 'success' ? 760 : 680)
   removalTimers.set(event.id, timer)
   return event.id
 }
@@ -45,4 +45,3 @@ export const clearGameFeelEvents = () => {
   events = []
   emit()
 }
-

@@ -26,7 +26,7 @@ export function Sidebar({ screen, setScreen, preferences, toggleGroup, activePro
         const collapsed = group.id !== 'overview' && preferences.navigationGroups[group.id] === true
         return <section className={`nav-group ${collapsed ? 'collapsed' : ''}`} key={group.id}>
           <button className="nav-group-header" onClick={() => toggleGroup(group.id)} aria-label={`Toggle ${group.label} group`} aria-expanded={!collapsed}><span>{group.label}</span>{group.id !== 'overview' && (collapsed ? <ChevronRight size={15} /> : <ChevronDown size={15} />)}</button>
-          {!collapsed && <div className="nav-group-items">{group.items.map(({ id, label, icon: Icon, hint }) => <GameTooltip block key={id} content={hint}><button key={id} className={`nav-item ${screen === id ? 'active' : ''}`} onClick={() => setScreen(id)} aria-label={label}><Icon size={16} /><span>{label}</span>{screen === id && <ChevronRight className="nav-chevron" size={14} />}</button></GameTooltip>)}</div>}
+          <div className="nav-group-items" aria-hidden={collapsed} inert={collapsed}>{group.items.map(({ id, label, icon: Icon, hint }) => <GameTooltip block key={id} content={hint}><button key={id} className={`nav-item ${screen === id ? 'active' : ''}`} onClick={() => setScreen(id)} aria-label={label}><Icon size={16} /><span>{label}</span>{screen === id && <ChevronRight className="nav-chevron" size={14} />}</button></GameTooltip>)}</div>
         </section>
       })}
     </nav>

@@ -33,16 +33,29 @@ export function FocusAssignment({ selectedRecipeId, onSelect }: { selectedRecipe
   const selectedCycle = getRecipeCurrentEffectiveDuration(recipe, selectedEchoes)
   const selectedOutput = getRecipeCurrentOutputPerHour(recipe, selectedEchoes)
   const selectedMana = getRecipeManaDemandPerSecond(recipe, selectedEchoes)
+  const changeFocus = (action: () => void) => {
+    const before = selectFreeFocus(state)
+    action()
+    const afterState = useGameStore.getState()
+    const after = selectFreeFocus(afterState)
+    if (after === before) return
+    const anchor = document.querySelector<HTMLElement>('.transmutation-focus-selected, .transmutation-focus-pool')
+    const rect = anchor?.getBoundingClientRect()
+    emitGameFeelEvent({ type: 'focus', x: rect && rect.width > 0 ? rect.left + rect.width / 2 : window.innerWidth * 0.6, y: rect && rect.height > 0 ? rect.top + rect.height / 2 : 150, color: 'var(--ui-secondary)', intensity: 0.9 })
+  }
+  const addWithFeel = (recipeId: RecipeId) => changeFocus(() => add(recipeId))
+  const removeWithFeel = (recipeId: RecipeId) => changeFocus(() => remove(recipeId))
+  const clearWithFeel = () => changeFocus(clear)
 
   return <Card className="transmutation-focus" title="FOCUS ASSIGNMENT">
     <div className="transmutation-focus-body">
       <div className="transmutation-focus-pool"><div className="transmutation-focus-pool-heading"><strong>ECHOES {totalEchoes} / {capacity}</strong><span>FOCUS {formatNumber(transmutationFocus)} reserved &middot; {formatNumber(freeFocus)} free</span></div><div className="transmutation-echo-pips" aria-label={`${totalEchoes} of ${capacity} Transmutation Echoes assigned`}>{Array.from({ length: pipCount }, (_, index) => <i className={index < totalEchoes ? 'filled' : ''} key={index} />)}</div></div>
       <div className={`transmutation-focus-selected ${locked ? 'locked' : ''}`}>
         <div className="transmutation-focus-selected-name"><ItemIcon itemId={recipe.output.itemId} size="tiny" /><div><span className="eyebrow">SELECTED</span><strong>{recipe.name} <small className={`transmutation-focus-selected-status ${status}`}>{statusLabel(status)}</small></strong>{locked ? <small className="transmutation-focus-locked-note">{addReason}</small> : selectedEchoes > 0 ? <small className="transmutation-focus-selected-metrics">{selectedEchoes} {selectedEchoes === 1 ? 'Echo' : 'Echoes'} &middot; {formatTime(selectedCycle ?? recipe.baseDurationMs)} &middot; {formatOutputRate(selectedOutput)} &middot; {formatManaDemand(selectedMana)}</small> : <small className="transmutation-focus-selected-metrics">NO ECHOES &middot; Assign an Arcane Echo to begin production.</small>}</div></div>
-        {!locked && <div className="transmutation-echo-control"><Button variant="ghost" ariaLabel={`Remove Echo from ${recipe.name}`} tooltip="Remove one Echo. Progress is preserved." onClick={() => remove(selectedRecipeId)} disabled={selectedEchoes <= 0}><Minus size={13} aria-hidden="true" /></Button><strong>{selectedEchoes}</strong><Button variant="secondary" ariaLabel={`Assign Echo to ${recipe.name}`} tooltip={canAdd ? <TooltipContent title="Arcane Echo" description={`Each Echo reserves ${getTransmutationEchoFocusCost()} Focus and adds another 1x base crafting speed.`} /> : <TooltipContent title="Cannot assign Echo" description={addReason} />} onClick={() => add(selectedRecipeId)} disabled={!canAdd}><Plus size={13} aria-hidden="true" /></Button></div>}
+        {!locked && <div className="transmutation-echo-control"><Button variant="ghost" ariaLabel={`Remove Echo from ${recipe.name}`} tooltip="Remove one Echo. Progress is preserved." onClick={() => removeWithFeel(selectedRecipeId)} disabled={selectedEchoes <= 0}><Minus size={13} aria-hidden="true" /></Button><strong>{selectedEchoes}</strong><Button variant="secondary" ariaLabel={`Assign Echo to ${recipe.name}`} tooltip={canAdd ? <TooltipContent title="Arcane Echo" description={`Each Echo reserves ${getTransmutationEchoFocusCost()} Focus and adds another 1x base crafting speed.`} /> : <TooltipContent title="Cannot assign Echo" description={addReason} />} onClick={() => addWithFeel(selectedRecipeId)} disabled={!canAdd}><Plus size={13} aria-hidden="true" /></Button></div>}
       </div>
-      <div className="transmutation-active-heading"><span className="eyebrow">ACTIVE ASSIGNMENTS</span>{totalEchoes > 0 && <Button variant="ghost" onClick={clear} tooltip="Release all Transmutation Echoes. Partial recipe progress is preserved.">CLEAR ALL</Button>}</div>
-      {totalEchoes === 0 ? <div className="transmutation-empty-assignments"><strong>NO ECHOES ASSIGNED</strong><span>Select a recipe and assign an Arcane Echo to begin production.</span></div> : <div className="transmutation-assignment-list">{RECIPE_ORDER.map((recipeId) => <AssignmentRow key={recipeId} recipeId={recipeId} state={state} selected={recipeId === selectedRecipeId} onSelect={onSelect} onAdd={add} onRemove={remove} />)}</div>}
+      <div className="transmutation-active-heading"><span className="eyebrow">ACTIVE ASSIGNMENTS</span>{totalEchoes > 0 && <Button variant="ghost" onClick={clearWithFeel} tooltip="Release all Transmutation Echoes. Partial recipe progress is preserved.">CLEAR ALL</Button>}</div>
+      {totalEchoes === 0 ? <div className="transmutation-empty-assignments"><strong>NO ECHOES ASSIGNED</strong><span>Select a recipe and assign an Arcane Echo to begin production.</span></div> : <div className="transmutation-assignment-list">{RECIPE_ORDER.map((recipeId) => <AssignmentRow key={recipeId} recipeId={recipeId} state={state} selected={recipeId === selectedRecipeId} onSelect={onSelect} onAdd={addWithFeel} onRemove={removeWithFeel} />)}</div>}
     </div>
   </Card>
 }

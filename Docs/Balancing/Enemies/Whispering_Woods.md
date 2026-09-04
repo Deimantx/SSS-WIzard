@@ -37,16 +37,16 @@
 
 | Enemy | Item | Min | Max | Chance | Est. Qty / Kill |
 | --- | --- | --- | --- | --- | --- |
-| Forest Wisp (forest-wisp) | Wisp Essence (wisp-essence) | 1 | 2 | 100% | 1.5 |
+| Forest Wisp (forest-wisp) | Wisp Essence (wisp-essence) | 1 | 2 | 20% | 0.3 |
 | Forest Wisp (forest-wisp) | Life Essence (life-essence) | 1 | 3 | 100% | 2 |
-| Thornling (thornling) | Wisp Essence (wisp-essence) | 1 | 2 | 100% | 1.5 |
+| Thornling (thornling) | Wisp Essence (wisp-essence) | 1 | 2 | 20% | 0.3 |
 | Thornling (thornling) | Life Essence (life-essence) | 1 | 3 | 100% | 2 |
-| Stone Root (stone-root) | Wisp Essence (wisp-essence) | 1 | 3 | 100% | 2 |
-| Stone Root (stone-root) | Life Essence (life-essence) | 1 | 3 | 100% | 2 |
-| Grove Sentinel (grove-sentinel) | Grove Bark (grove-bark) | 2 | 3 | 100% | 2.5 |
-| Grove Sentinel (grove-sentinel) | Wisp Essence (wisp-essence) | 4 | 6 | 100% | 5 |
-| Grove Sentinel (grove-sentinel) | Life Essence (life-essence) | 1 | 3 | 100% | 2 |
+| Stone Root (stone-root) | Wisp Essence (wisp-essence) | 1 | 3 | 20% | 0.4 |
+| Stone Root (stone-root) | Life Essence (life-essence) | 1 | 3 | 20% | 0.4 |
+| Grove Sentinel (grove-sentinel) | Grove Bark (grove-bark) | 1 | 3 | 20% | 0.4 |
+| Grove Sentinel (grove-sentinel) | Wisp Essence (wisp-essence) | 2 | 4 | 30% | 0.9 |
+| Grove Sentinel (grove-sentinel) | Life Essence (life-essence) | 2 | 5 | 100% | 3.5 |
 | Forest Heart (forest-heart) | Heartseed (heartseed) | 1 | 1 | 100% | 1 |
-| Forest Heart (forest-heart) | Life Essence (life-essence) | 1 | 3 | 100% | 2 |
+| Forest Heart (forest-heart) | Life Essence (life-essence) | 10 | 18 | 100% | 14 |
 
 Boss mechanics are represented by the Core Combat Stats, Traits & Patterns, and Special Actions sheets above.

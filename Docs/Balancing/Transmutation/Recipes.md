@@ -6,11 +6,11 @@ Canonical recipe sheet. Ingredient names and quantities are separate cells for d
 
 | Recipe | Output Qty | Time | Mana | Ingredient 1 | Qty 1 | Ingredient 2 | Qty 2 | Ingredient 3 | Qty 3 | Ingredient 4 | Qty 4 | Ingredient 5 | Qty 5 | Unlock |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Fire Fragment (fire-fragment) | 1 | 6 s | 15 | — | — | — | — | — | — | — | — | — | — | Available from the start |
-| Water Fragment (water-fragment) | 1 | 6 s | 15 | — | — | — | — | — | — | — | — | — | — | Available from the start |
-| Earth Fragment (earth-fragment) | 1 | 6 s | 15 | — | — | — | — | — | — | — | — | — | — | Available from the start |
-| Air Fragment (air-fragment) | 1 | 6 s | 15 | — | — | — | — | — | — | — | — | — | — | Available from the start |
-| Prismatic Fragment (prismatic-fragment) | 1 | 18 s | 0 | Fire Fragment (fire-fragment) | 2 | Water Fragment (water-fragment) | 2 | Earth Fragment (earth-fragment) | 2 | Air Fragment (air-fragment) | 2 | Life Essence (life-essence) | 10 | Available from the start |
+| Fire Fragment (fire-fragment) | 1 | 8 s | 25 | — | — | — | — | — | — | — | — | — | — | Available from the start |
+| Water Fragment (water-fragment) | 1 | 8 s | 25 | — | — | — | — | — | — | — | — | — | — | Available from the start |
+| Earth Fragment (earth-fragment) | 1 | 8 s | 25 | — | — | — | — | — | — | — | — | — | — | Available from the start |
+| Air Fragment (air-fragment) | 1 | 8 s | 25 | — | — | — | — | — | — | — | — | — | — | Available from the start |
+| Prismatic Fragment (prismatic-fragment) | 1 | 24 s | 50 | Fire Fragment (fire-fragment) | 2 | Water Fragment (water-fragment) | 2 | Earth Fragment (earth-fragment) | 2 | Air Fragment (air-fragment) | 2 | Life Essence (life-essence) | 10 | Available from the start |
 
 ## Whispering Woods
 

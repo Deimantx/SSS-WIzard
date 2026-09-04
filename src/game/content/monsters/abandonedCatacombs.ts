@@ -7,7 +7,7 @@ export const ABANDONED_CATACOMBS_MONSTERS = {
     maxHealth: 180, basicAttackDamage: 15, basicAttackTimeMs: 2700, color: '#c9c3ae', ui: { portraitIcon: 'skeleton' }, traitIds: ['restless-skeleton-brittle-bones'], resistances: { physical: 0.25 },
     actions: { 'bone-cleaver': { id: 'bone-cleaver', name: 'Bone Cleaver', actionTimeMs: 2200, description: 'A heavy cleaver blow splits through the target.', effects: [scaledDirectDamage('physical', 1.85)], tags: ['special', 'physical', 'melee', 'direct'] } },
     actionPatterns: { default: { id: 'default', steps: [basic('basic-1'), basic('basic-2'), action('bone-cleaver-step', 'bone-cleaver')] } }, defaultActionPatternId: 'default',
-    loot: withLifeEssence([{ itemId: 'ossuary-remnant', min: 1, max: 1, chance: 0.55 }, { itemId: 'graveglass-shard', min: 1, max: 1, chance: 0.15 }]),
+    loot: withLifeEssence([{ itemId: 'ossuary-remnant', min: 1, max: 1, chance: 0.2 }, { itemId: 'graveglass-shard', min: 1, max: 1, chance: 0.05 }], { min: 4, max: 8 }),
   },
   'grave-wraith': {
     id: 'grave-wraith', bestiaryCategory: 'monster', name: 'Grave Wraith', subtitle: 'A cold memory refusing to fade',
@@ -17,7 +17,7 @@ export const ABANDONED_CATACOMBS_MONSTERS = {
       fade: { id: 'fade', name: 'Fade', actionTimeMs: 1700, description: 'The Grave Wraith slips into Spectral Fade.', effects: [applyStatus('spectral-fade', 'self', 5000)], tags: ['special', 'buff'] },
     },
     actionPatterns: { default: { id: 'default', steps: [basic('basic-1'), action('chilling-touch-step', 'chilling-touch'), basic('basic-2'), basic('basic-3'), action('fade-step', 'fade')] } }, defaultActionPatternId: 'default',
-    loot: withLifeEssence([{ itemId: 'soul-residue', min: 1, max: 1, chance: 0.5 }, { itemId: 'graveglass-shard', min: 1, max: 1, chance: 0.3 }]),
+    loot: withLifeEssence([{ itemId: 'soul-residue', min: 1, max: 1, chance: 0.15 }, { itemId: 'graveglass-shard', min: 1, max: 1, chance: 0.1 }], { min: 4, max: 8 }),
   },
   'fallen-acolyte': {
     id: 'fallen-acolyte', bestiaryCategory: 'monster', name: 'Fallen Acolyte', subtitle: 'A ritualist still serving a forgotten master',
@@ -28,7 +28,7 @@ export const ABANDONED_CATACOMBS_MONSTERS = {
       'death-ward': { id: 'death-ward', name: 'Death Ward', actionTimeMs: 2000, description: 'A deathly ward gathers a protective Barrier around the caster.', effects: [scaledBarrier(0.205)], tags: ['special', 'barrier'] },
     },
     actionPatterns: { default: { id: 'default', steps: [action('grave-bolt-step', 'grave-bolt'), basic('basic-1'), action('soul-drain-step', 'soul-drain'), basic('basic-2'), basic('basic-3'), action('death-ward-step', 'death-ward'), basic('basic-4')] } }, defaultActionPatternId: 'default',
-    loot: withLifeEssence([{ itemId: 'graveglass-shard', min: 1, max: 1, chance: 0.35 }, { itemId: 'soul-residue', min: 1, max: 1, chance: 0.3 }, { itemId: 'ossuary-remnant', min: 1, max: 1, chance: 0.2 }]),
+    loot: withLifeEssence([{ itemId: 'graveglass-shard', min: 1, max: 1, chance: 0.1 }, { itemId: 'soul-residue', min: 1, max: 1, chance: 0.2 }, { itemId: 'ossuary-remnant', min: 1, max: 1, chance: 0.1 }], { min: 5, max: 10 }),
   },
   'archmage-edrin-shade': {
     id: 'archmage-edrin-shade', bestiaryCategory: 'boss', name: "Archmage Edrin's Shade", subtitle: 'The last spell of a wizard who would not rest',
@@ -44,6 +44,6 @@ export const ABANDONED_CATACOMBS_MONSTERS = {
       default: { id: 'default', steps: [action('gravefire-step', 'gravefire'), basic('basic-1'), action('frostbind-step', 'frostbind'), action('arcane-ward-step', 'arcane-ward'), basic('basic-2'), action('soul-drain-step', 'soul-drain')] },
       unbound: { id: 'unbound', steps: [basic('basic-1'), action('gravefire-step', 'gravefire'), action('frostbind-step', 'frostbind'), action('soul-drain-step', 'soul-drain'), basic('basic-2'), action('final-incantation-step', 'final-incantation')] },
     }, defaultActionPatternId: 'default',
-    loot: withLifeEssence([{ itemId: 'graveglass-shard', min: 2, max: 4, chance: 1 }, { itemId: 'soul-residue', min: 2, max: 3, chance: 1 }, { itemId: 'edrin-remnant', min: 1, max: 1, chance: 0.35 }]),
+    loot: withLifeEssence([{ itemId: 'graveglass-shard', min: 2, max: 4, chance: 1 }, { itemId: 'soul-residue', min: 2, max: 3, chance: 1 }, { itemId: 'edrin-remnant', min: 1, max: 1, chance: 0.35 }], { min: 21, max: 48 }),
   },
 } satisfies Partial<Record<MonsterId, MonsterDefinition>>

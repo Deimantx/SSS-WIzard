@@ -35,19 +35,19 @@
 
 | Enemy | Item | Min | Max | Chance | Est. Qty / Kill |
 | --- | --- | --- | --- | --- | --- |
-| Cavefang Wolf (cavefang-wolf) | Predator Fang (predator-fang) | 1 | 1 | 55% | 0.55 |
-| Cavefang Wolf (cavefang-wolf) | Predator Hide (predator-hide) | 1 | 1 | 30% | 0.3 |
-| Cavefang Wolf (cavefang-wolf) | Life Essence (life-essence) | 1 | 3 | 100% | 2 |
-| Razorclaw Lynx (razorclaw-lynx) | Predator Fang (predator-fang) | 1 | 1 | 45% | 0.45 |
-| Razorclaw Lynx (razorclaw-lynx) | Predator Hide (predator-hide) | 1 | 1 | 45% | 0.45 |
-| Razorclaw Lynx (razorclaw-lynx) | Life Essence (life-essence) | 1 | 3 | 100% | 2 |
-| Corrupted Dire Wolf (corrupted-dire-wolf) | Corrupted Beast Essence (corrupted-beast-essence) | 1 | 1 | 35% | 0.35 |
-| Corrupted Dire Wolf (corrupted-dire-wolf) | Predator Hide (predator-hide) | 1 | 1 | 30% | 0.3 |
-| Corrupted Dire Wolf (corrupted-dire-wolf) | Predator Fang (predator-fang) | 1 | 1 | 25% | 0.25 |
-| Corrupted Dire Wolf (corrupted-dire-wolf) | Life Essence (life-essence) | 1 | 3 | 100% | 2 |
+| Cavefang Wolf (cavefang-wolf) | Predator Fang (predator-fang) | 1 | 1 | 20% | 0.2 |
+| Cavefang Wolf (cavefang-wolf) | Predator Hide (predator-hide) | 1 | 1 | 10% | 0.1 |
+| Cavefang Wolf (cavefang-wolf) | Life Essence (life-essence) | 3 | 5 | 100% | 4 |
+| Razorclaw Lynx (razorclaw-lynx) | Predator Fang (predator-fang) | 1 | 1 | 15% | 0.15 |
+| Razorclaw Lynx (razorclaw-lynx) | Predator Hide (predator-hide) | 1 | 1 | 15% | 0.15 |
+| Razorclaw Lynx (razorclaw-lynx) | Life Essence (life-essence) | 3 | 5 | 100% | 4 |
+| Corrupted Dire Wolf (corrupted-dire-wolf) | Corrupted Beast Essence (corrupted-beast-essence) | 1 | 1 | 15% | 0.15 |
+| Corrupted Dire Wolf (corrupted-dire-wolf) | Predator Hide (predator-hide) | 1 | 1 | 15% | 0.15 |
+| Corrupted Dire Wolf (corrupted-dire-wolf) | Predator Fang (predator-fang) | 1 | 1 | 15% | 0.15 |
+| Corrupted Dire Wolf (corrupted-dire-wolf) | Life Essence (life-essence) | 3 | 5 | 100% | 4 |
 | Corrupted Greatbear (corrupted-greatbear) | Predator Hide (predator-hide) | 2 | 4 | 100% | 3 |
 | Corrupted Greatbear (corrupted-greatbear) | Corrupted Beast Essence (corrupted-beast-essence) | 1 | 2 | 100% | 1.5 |
 | Corrupted Greatbear (corrupted-greatbear) | Greatbear Core (greatbear-core) | 1 | 1 | 35% | 0.35 |
-| Corrupted Greatbear (corrupted-greatbear) | Life Essence (life-essence) | 1 | 3 | 100% | 2 |
+| Corrupted Greatbear (corrupted-greatbear) | Life Essence (life-essence) | 12 | 30 | 100% | 21 |
 
 Boss mechanics are represented by the Core Combat Stats, Traits & Patterns, and Special Actions sheets above.

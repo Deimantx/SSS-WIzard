@@ -26,7 +26,7 @@ describe('sheet-first balancing workbook', () => {
     expect(emberStaff).toContain('+20')
     expect(emberStaff).toContain('+4')
     expect(emberStaff).toContain('+20% Spell damage for Fire damage')
-    expect(buildEnemyLootRows(['cavefang-wolf'])[0]).toEqual(['Cavefang Wolf (cavefang-wolf)', 'Predator Fang (predator-fang)', '1', '1', '55%', '0.55'])
+    expect(buildEnemyLootRows(['cavefang-wolf'])[0]).toEqual(['Cavefang Wolf (cavefang-wolf)', 'Predator Fang (predator-fang)', '1', '1', '20%', '0.2'])
   })
 
   it('separates recipe ingredient names and quantities and removes runtime dumps', () => {

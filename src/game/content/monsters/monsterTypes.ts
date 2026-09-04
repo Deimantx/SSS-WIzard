@@ -34,7 +34,7 @@ export interface MonsterDefinition {
 export const basic = (id: string): ActionStep => ({ id, type: 'basic' })
 export const action = (id: string, actionId: string): ActionStep => ({ id, type: 'action', actionId })
 export const lifeEssenceDrop = { itemId: 'life-essence' as const, min: 1, max: 3, chance: 1 }
-export const withLifeEssence = (drops: MonsterDefinition['loot']): MonsterDefinition['loot'] => [...drops, lifeEssenceDrop]
+export const withLifeEssence = (drops: MonsterDefinition['loot'], overrides: Partial<Pick<typeof lifeEssenceDrop, 'min' | 'max' | 'chance'>> = {}): MonsterDefinition['loot'] => [...drops, { ...lifeEssenceDrop, ...overrides }]
 
 /** Default Monster authoring: damage scales from Basic Attack Damage. */
 export const scaledDirectDamage = (damageType: DamageType, coefficient: number, tags: CombatTag[] = ['direct']): CombatEffect => ({ type: 'deal-damage', target: 'opponent', components: [{ damageType, magnitude: { type: 'source-basic-damage-percent', value: coefficient } }], tags })

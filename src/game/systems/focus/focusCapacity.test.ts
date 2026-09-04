@@ -54,7 +54,7 @@ describe('Focus Capacity', () => {
 
   it('defines the Prismatic Fragment recipe and normal Echo acceleration', () => {
     const recipe = RECIPES['prismatic-fragment']
-    expect(recipe).toMatchObject({ baseDurationMs: 18_000, manaCost: 0, output: { itemId: 'prismatic-fragment', quantity: 1 } })
+    expect(recipe).toMatchObject({ baseDurationMs: 24_000, manaCost: 50, output: { itemId: 'prismatic-fragment', quantity: 1 } })
     expect(recipe.ingredients).toEqual([
       { itemId: 'fire-fragment', quantity: 2 },
       { itemId: 'water-fragment', quantity: 2 },
@@ -62,7 +62,7 @@ describe('Focus Capacity', () => {
       { itemId: 'air-fragment', quantity: 2 },
       { itemId: 'life-essence', quantity: 10 },
     ])
-    expect(getRecipeCurrentEffectiveDuration(recipe, 1)).toBe(18_000)
-    expect(getRecipeCurrentEffectiveDuration(recipe, 3)).toBe(6_000)
+    expect(getRecipeCurrentEffectiveDuration(recipe, 1)).toBe(24_000)
+    expect(getRecipeCurrentEffectiveDuration(recipe, 3)).toBe(8_000)
   })
 })

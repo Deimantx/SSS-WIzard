@@ -22,35 +22,35 @@ describe('continuous Mana scheduler', () => {
     expect(state.player.mana).toBe(0)
   })
 
-  it('does not pre-complete one Echo work while Mana is accumulating', () => {
+  it('does not pre-complete one Echo work before the new eight-second cycle ends', () => {
     const state = createInitialState()
     state.player.mana = 0
     state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 1, progressMs: 0 }
-    advance(state, 5_900)
+    advance(state, 7_900)
     expect(state.inventory['fire-fragment'] ?? 0).toBe(0)
-    expect(state.player.mana).toBeCloseTo(14.75, 8)
-    expect(state.activities.transmutation.jobs['fire-fragment']?.progressMs).toBeCloseTo(5900, 8)
+    expect(state.player.mana).toBeCloseTo(14.8125, 8)
+    expect(state.activities.transmutation.jobs['fire-fragment']?.progressMs).toBeCloseTo(7900, 8)
     advance(state, 100)
     expect(state.inventory['fire-fragment']).toBe(1)
     expect(state.player.mana).toBeCloseTo(15, 8)
     expect(state.activities.transmutation.jobs['fire-fragment']?.progressMs).toBeCloseTo(0, 8)
   })
 
-  it('throttles five Echoes to two Fire Fragments in six seconds at 5 Mana/s', () => {
+  it('throttles five Echoes to one Fire Fragment in six seconds at 5 Mana/s', () => {
     const state = createInitialState()
     state.player.mana = 0
     state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 5, progressMs: 0 }
     advance(state, 6_000)
-    expect(state.inventory['fire-fragment']).toBe(2)
+    expect(state.inventory['fire-fragment']).toBe(1)
     expect(state.player.mana).toBeCloseTo(0, 8)
-    expect(state.activities.transmutation.jobs['fire-fragment']?.progressMs).toBeCloseTo(0, 8)
+    expect(state.activities.transmutation.jobs['fire-fragment']?.progressMs).toBeCloseTo(1600, 8)
   })
 
-  it('keeps five Echoes at their intended 1.2 second cycle when fully funded', () => {
+  it('keeps five Echoes at their intended 1.6 second cycle when fully funded', () => {
     const state = createInitialState()
     state.player.mana = 100
     state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 5, progressMs: 0 }
-    advanceTransmutation(state, 1_100)
+    advanceTransmutation(state, 1_500)
     expect(state.inventory['fire-fragment'] ?? 0).toBe(0)
     advanceTransmutation(state, 100)
     expect(state.inventory['fire-fragment']).toBe(1)
@@ -73,7 +73,7 @@ describe('continuous Mana scheduler', () => {
     ;(['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'] as const).forEach((recipeId) => {
       state.activities.transmutation.jobs[recipeId] = { echoesAssigned: 1, progressMs: 0 }
     })
-    advance(state, 12_000)
+    advance(state, 20_000)
     expect(state.inventory['fire-fragment']).toBe(1)
     expect(state.inventory['water-fragment']).toBe(1)
     expect(state.inventory['earth-fragment']).toBe(1)

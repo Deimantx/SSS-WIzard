@@ -38,19 +38,19 @@
 
 | Enemy | Item | Min | Max | Chance | Est. Qty / Kill |
 | --- | --- | --- | --- | --- | --- |
-| Restless Skeleton (restless-skeleton) | Ossuary Remnant (ossuary-remnant) | 1 | 1 | 55% | 0.55 |
-| Restless Skeleton (restless-skeleton) | Graveglass Shard (graveglass-shard) | 1 | 1 | 15% | 0.15 |
-| Restless Skeleton (restless-skeleton) | Life Essence (life-essence) | 1 | 3 | 100% | 2 |
-| Grave Wraith (grave-wraith) | Soul Residue (soul-residue) | 1 | 1 | 50% | 0.5 |
-| Grave Wraith (grave-wraith) | Graveglass Shard (graveglass-shard) | 1 | 1 | 30% | 0.3 |
-| Grave Wraith (grave-wraith) | Life Essence (life-essence) | 1 | 3 | 100% | 2 |
-| Fallen Acolyte (fallen-acolyte) | Graveglass Shard (graveglass-shard) | 1 | 1 | 35% | 0.35 |
-| Fallen Acolyte (fallen-acolyte) | Soul Residue (soul-residue) | 1 | 1 | 30% | 0.3 |
-| Fallen Acolyte (fallen-acolyte) | Ossuary Remnant (ossuary-remnant) | 1 | 1 | 20% | 0.2 |
-| Fallen Acolyte (fallen-acolyte) | Life Essence (life-essence) | 1 | 3 | 100% | 2 |
+| Restless Skeleton (restless-skeleton) | Ossuary Remnant (ossuary-remnant) | 1 | 1 | 20% | 0.2 |
+| Restless Skeleton (restless-skeleton) | Graveglass Shard (graveglass-shard) | 1 | 1 | 5% | 0.05 |
+| Restless Skeleton (restless-skeleton) | Life Essence (life-essence) | 4 | 8 | 100% | 6 |
+| Grave Wraith (grave-wraith) | Soul Residue (soul-residue) | 1 | 1 | 15% | 0.15 |
+| Grave Wraith (grave-wraith) | Graveglass Shard (graveglass-shard) | 1 | 1 | 10% | 0.1 |
+| Grave Wraith (grave-wraith) | Life Essence (life-essence) | 4 | 8 | 100% | 6 |
+| Fallen Acolyte (fallen-acolyte) | Graveglass Shard (graveglass-shard) | 1 | 1 | 10% | 0.1 |
+| Fallen Acolyte (fallen-acolyte) | Soul Residue (soul-residue) | 1 | 1 | 20% | 0.2 |
+| Fallen Acolyte (fallen-acolyte) | Ossuary Remnant (ossuary-remnant) | 1 | 1 | 10% | 0.1 |
+| Fallen Acolyte (fallen-acolyte) | Life Essence (life-essence) | 5 | 10 | 100% | 7.5 |
 | Archmage Edrin's Shade (archmage-edrin-shade) | Graveglass Shard (graveglass-shard) | 2 | 4 | 100% | 3 |
 | Archmage Edrin's Shade (archmage-edrin-shade) | Soul Residue (soul-residue) | 2 | 3 | 100% | 2.5 |
 | Archmage Edrin's Shade (archmage-edrin-shade) | Edrin Remnant (edrin-remnant) | 1 | 1 | 35% | 0.35 |
-| Archmage Edrin's Shade (archmage-edrin-shade) | Life Essence (life-essence) | 1 | 3 | 100% | 2 |
+| Archmage Edrin's Shade (archmage-edrin-shade) | Life Essence (life-essence) | 21 | 48 | 100% | 34.5 |
 
 Boss mechanics are represented by the Core Combat Stats, Traits & Patterns, and Special Actions sheets above.

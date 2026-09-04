@@ -14,8 +14,8 @@ import { clampResourcePercent } from '../app/shell/Topbar'
 describe('Unified Transmutation', () => {
   it('defines four fragment and four equipment recipes with the intended costs', () => {
     expect(Object.keys(RECIPES)).toHaveLength(32)
-    expect(['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'].map((id) => RECIPES[id as keyof typeof RECIPES].manaCost)).toEqual([15, 15, 15, 15])
-    expect(['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'].map((id) => RECIPES[id as keyof typeof RECIPES].baseDurationMs)).toEqual([6000, 6000, 6000, 6000])
+    expect(['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'].map((id) => RECIPES[id as keyof typeof RECIPES].manaCost)).toEqual([25, 25, 25, 25])
+    expect(['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'].map((id) => RECIPES[id as keyof typeof RECIPES].baseDurationMs)).toEqual([8000, 8000, 8000, 8000])
     expect(RECIPES['ember-staff'].ingredients).toEqual([
       { itemId: 'fire-fragment', quantity: 4 },
       { itemId: 'wisp-essence', quantity: 4 },
@@ -45,19 +45,19 @@ describe('Unified Transmutation', () => {
     advanceGameState(state, 1000, { mode: 'banked' })
     expect(state.activities.transmutation.jobs['fire-fragment']?.progressMs).toBe(3000)
     expect(state.activities.transmutation.jobs['water-fragment']?.progressMs).toBe(3000)
-    for (let index = 0; index < 3; index += 1) advanceGameState(state, 1000, { mode: 'banked' })
+    for (let index = 0; index < 5; index += 1) advanceGameState(state, 1000, { mode: 'banked' })
     expect(state.inventory['fire-fragment']).toBe(1)
     expect(state.inventory['water-fragment']).toBe(1)
     expect(state.activities.transmutation.jobs['fire-fragment']?.progressMs).toBeGreaterThan(0)
-    expect(state.activities.transmutation.jobs['fire-fragment']?.progressMs).toBeLessThan(6000)
+    expect(state.activities.transmutation.jobs['fire-fragment']?.progressMs).toBeLessThan(8000)
   })
 
   it('charges only the funded Mana for the final portion of an elemental cycle', () => {
     const state = makeInitialState()
     state.player.mana = 20
-    state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 1, progressMs: 5999 }
+    state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 1, progressMs: 7999 }
     advanceGameState(state, 1, { mode: 'banked' })
-    expect(state.player.mana).toBeCloseTo(20.0025)
+    expect(state.player.mana).toBeCloseTo(20.001875)
     expect(state.inventory['fire-fragment']).toBe(1)
   })
 
@@ -92,7 +92,7 @@ describe('Unified Transmutation', () => {
     expect(cards).toHaveLength(1)
     expect(cards[0].subtitle).toContain('2 recipes')
     expect(cards[0].subtitle).toContain('3 Echoes')
-    expect(cards[0].metrics.find((metric) => metric.label === 'Output')?.value).toBe('1.8k/h')
+    expect(cards[0].metrics.find((metric) => metric.label === 'Output')?.value).toBe('1.4k/h')
   })
 
   it('separates Transmutation Mana demand from channeling Echo output', () => {
@@ -101,7 +101,7 @@ describe('Unified Transmutation', () => {
     state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 1, progressMs: 0 }
     const flow = getManaFlowBreakdown(state)
     expect(flow.production).toBe(10)
-    expect(flow.demand).toBe(2.5)
+    expect(flow.demand).toBe(3.125)
     expect(flow.demandSources.map((source) => source.id)).toContain('transmutation-fire-fragment')
   })
 

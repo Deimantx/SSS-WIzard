@@ -23,15 +23,15 @@ describe('material-only loot and Transmutation-only Equipment', () => {
   it('keeps boss materials as the only signature drop path', () => {
     expect(MONSTERS['forest-heart'].loot).toEqual(expect.arrayContaining([
       { itemId: 'heartseed', min: 1, max: 1, chance: 1 },
-      { itemId: 'life-essence', min: 1, max: 3, chance: 1 },
+      { itemId: 'life-essence', min: 10, max: 18, chance: 1 },
     ]))
     expect(MONSTERS['corrupted-greatbear'].loot).toEqual(expect.arrayContaining([
       { itemId: 'greatbear-core', min: 1, max: 1, chance: 0.35 },
-      { itemId: 'life-essence', min: 1, max: 3, chance: 1 },
+      { itemId: 'life-essence', min: 12, max: 30, chance: 1 },
     ]))
     expect(MONSTERS['archmage-edrin-shade'].loot).toEqual(expect.arrayContaining([
       { itemId: 'edrin-remnant', min: 1, max: 1, chance: 0.35 },
-      { itemId: 'life-essence', min: 1, max: 3, chance: 1 },
+      { itemId: 'life-essence', min: 21, max: 48, chance: 1 },
     ]))
     expect(MONSTERS['forest-heart'].loot.some((drop) => drop.itemId === 'heartseed-necklace')).toBe(false)
     expect(MONSTERS['corrupted-greatbear'].loot.some((drop) => drop.itemId === 'greatbear-heartstone')).toBe(false)

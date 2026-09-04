@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "snapshot": {
-    "commit": "33d9e624c556548240c62203cbbaf488449a340f",
+    "commit": "9c9b98d68d11e8754a7f43567a803624f0cedf1f",
     "workingTreeDirty": true,
-    "generatedAtUtc": "2026-09-04T12:55:47.595Z"
+    "generatedAtUtc": "2026-09-04T14:16:54.754Z"
   },
   "runtimePolicy": {
     "sourceOfTruth": "TypeScript runtime content and systems",

@@ -27,53 +27,53 @@
 
 | Pillar | Level | Cost | Mana Bonus | Other Bonus |
 | --- | --- | --- | --- | --- |
-| Leyline Conduit (leyline-conduit) | 1 | 4 Fire Fragment + 4 Water Fragment + 4 Earth Fragment + 4 Air Fragment + 10 Life Essence | — | PASSIVE MANA REGEN: 1 |
-| Leyline Conduit (leyline-conduit) | 2 | 10 Fire Fragment + 10 Water Fragment + 10 Earth Fragment + 10 Air Fragment + 20 Life Essence | — | PASSIVE MANA REGEN: 1 |
-| Leyline Conduit (leyline-conduit) | 3 | 15 Fire Fragment + 15 Water Fragment + 15 Earth Fragment + 15 Air Fragment + 30 Life Essence | — | PASSIVE MANA REGEN: 1 |
-| Leyline Conduit (leyline-conduit) | 4 | 25 Fire Fragment + 25 Water Fragment + 25 Earth Fragment + 25 Air Fragment + 50 Life Essence | — | PASSIVE MANA REGEN: 1 |
-| Leyline Conduit (leyline-conduit) | 5 | 40 Fire Fragment + 40 Water Fragment + 40 Earth Fragment + 40 Air Fragment + 80 Life Essence | — | PASSIVE MANA REGEN: 1 |
-| Leyline Conduit (leyline-conduit) | 6 | 60 Fire Fragment + 60 Water Fragment + 60 Earth Fragment + 60 Air Fragment + 120 Life Essence | — | PASSIVE MANA REGEN: 1 |
-| Leyline Conduit (leyline-conduit) | 7 | 90 Fire Fragment + 90 Water Fragment + 90 Earth Fragment + 90 Air Fragment + 180 Life Essence | — | PASSIVE MANA REGEN: 1 |
-| Leyline Conduit (leyline-conduit) | 8 | 130 Fire Fragment + 130 Water Fragment + 130 Earth Fragment + 130 Air Fragment + 260 Life Essence | — | PASSIVE MANA REGEN: 1 |
-| Leyline Conduit (leyline-conduit) | 9 | 180 Fire Fragment + 180 Water Fragment + 180 Earth Fragment + 180 Air Fragment + 360 Life Essence | — | PASSIVE MANA REGEN: 1 |
-| Leyline Conduit (leyline-conduit) | 10 | 250 Fire Fragment + 250 Water Fragment + 250 Earth Fragment + 250 Air Fragment + 500 Life Essence | — | PASSIVE MANA REGEN: 1 |
-| Arcane Reservoir (arcane-reservoir) | 1 | 4 Fire Fragment + 4 Water Fragment + 4 Earth Fragment + 4 Air Fragment + 10 Life Essence | 25 | MAX MANA: 25 |
-| Arcane Reservoir (arcane-reservoir) | 2 | 10 Fire Fragment + 10 Water Fragment + 10 Earth Fragment + 10 Air Fragment + 20 Life Essence | 25 | MAX MANA: 25 |
-| Arcane Reservoir (arcane-reservoir) | 3 | 15 Fire Fragment + 15 Water Fragment + 15 Earth Fragment + 15 Air Fragment + 30 Life Essence | 25 | MAX MANA: 25 |
-| Arcane Reservoir (arcane-reservoir) | 4 | 25 Fire Fragment + 25 Water Fragment + 25 Earth Fragment + 25 Air Fragment + 50 Life Essence | 25 | MAX MANA: 25 |
-| Arcane Reservoir (arcane-reservoir) | 5 | 40 Fire Fragment + 40 Water Fragment + 40 Earth Fragment + 40 Air Fragment + 80 Life Essence | 25 | MAX MANA: 25 |
-| Arcane Reservoir (arcane-reservoir) | 6 | 60 Fire Fragment + 60 Water Fragment + 60 Earth Fragment + 60 Air Fragment + 120 Life Essence | 25 | MAX MANA: 25 |
-| Arcane Reservoir (arcane-reservoir) | 7 | 90 Fire Fragment + 90 Water Fragment + 90 Earth Fragment + 90 Air Fragment + 180 Life Essence | 25 | MAX MANA: 25 |
-| Arcane Reservoir (arcane-reservoir) | 8 | 130 Fire Fragment + 130 Water Fragment + 130 Earth Fragment + 130 Air Fragment + 260 Life Essence | 25 | MAX MANA: 25 |
-| Arcane Reservoir (arcane-reservoir) | 9 | 180 Fire Fragment + 180 Water Fragment + 180 Earth Fragment + 180 Air Fragment + 360 Life Essence | 25 | MAX MANA: 25 |
-| Arcane Reservoir (arcane-reservoir) | 10 | 250 Fire Fragment + 250 Water Fragment + 250 Earth Fragment + 250 Air Fragment + 500 Life Essence | 25 | MAX MANA: 25 |
-| Mana Resonance (mana-resonance) | 1 | 4 Fire Fragment + 4 Water Fragment + 4 Earth Fragment + 4 Air Fragment + 10 Life Essence | — | PASSIVE MANA AMPLIFICATION: 5% |
-| Mana Resonance (mana-resonance) | 2 | 10 Fire Fragment + 10 Water Fragment + 10 Earth Fragment + 10 Air Fragment + 20 Life Essence | — | PASSIVE MANA AMPLIFICATION: 5% |
-| Mana Resonance (mana-resonance) | 3 | 15 Fire Fragment + 15 Water Fragment + 15 Earth Fragment + 15 Air Fragment + 30 Life Essence | — | PASSIVE MANA AMPLIFICATION: 5% |
-| Mana Resonance (mana-resonance) | 4 | 25 Fire Fragment + 25 Water Fragment + 25 Earth Fragment + 25 Air Fragment + 50 Life Essence | — | PASSIVE MANA AMPLIFICATION: 5% |
-| Mana Resonance (mana-resonance) | 5 | 40 Fire Fragment + 40 Water Fragment + 40 Earth Fragment + 40 Air Fragment + 80 Life Essence | — | PASSIVE MANA AMPLIFICATION: 5% |
-| Mana Resonance (mana-resonance) | 6 | 60 Fire Fragment + 60 Water Fragment + 60 Earth Fragment + 60 Air Fragment + 120 Life Essence | — | PASSIVE MANA AMPLIFICATION: 5% |
-| Mana Resonance (mana-resonance) | 7 | 90 Fire Fragment + 90 Water Fragment + 90 Earth Fragment + 90 Air Fragment + 180 Life Essence | — | PASSIVE MANA AMPLIFICATION: 5% |
-| Mana Resonance (mana-resonance) | 8 | 130 Fire Fragment + 130 Water Fragment + 130 Earth Fragment + 130 Air Fragment + 260 Life Essence | — | PASSIVE MANA AMPLIFICATION: 5% |
-| Mana Resonance (mana-resonance) | 9 | 180 Fire Fragment + 180 Water Fragment + 180 Earth Fragment + 180 Air Fragment + 360 Life Essence | — | PASSIVE MANA AMPLIFICATION: 5% |
-| Mana Resonance (mana-resonance) | 10 | 250 Fire Fragment + 250 Water Fragment + 250 Earth Fragment + 250 Air Fragment + 500 Life Essence | — | PASSIVE MANA AMPLIFICATION: 5% |
-| Astral Expansion (astral-expansion) | 1 | 4 Fire Fragment + 4 Water Fragment + 4 Earth Fragment + 4 Air Fragment + 10 Life Essence | 5% | MAX MANA AMPLIFICATION: 5 |
-| Astral Expansion (astral-expansion) | 2 | 10 Fire Fragment + 10 Water Fragment + 10 Earth Fragment + 10 Air Fragment + 20 Life Essence | 5% | MAX MANA AMPLIFICATION: 5 |
-| Astral Expansion (astral-expansion) | 3 | 15 Fire Fragment + 15 Water Fragment + 15 Earth Fragment + 15 Air Fragment + 30 Life Essence | 5% | MAX MANA AMPLIFICATION: 5 |
-| Astral Expansion (astral-expansion) | 4 | 25 Fire Fragment + 25 Water Fragment + 25 Earth Fragment + 25 Air Fragment + 50 Life Essence | 5% | MAX MANA AMPLIFICATION: 5 |
-| Astral Expansion (astral-expansion) | 5 | 40 Fire Fragment + 40 Water Fragment + 40 Earth Fragment + 40 Air Fragment + 80 Life Essence | 5% | MAX MANA AMPLIFICATION: 5 |
-| Astral Expansion (astral-expansion) | 6 | 60 Fire Fragment + 60 Water Fragment + 60 Earth Fragment + 60 Air Fragment + 120 Life Essence | 5% | MAX MANA AMPLIFICATION: 5 |
-| Astral Expansion (astral-expansion) | 7 | 90 Fire Fragment + 90 Water Fragment + 90 Earth Fragment + 90 Air Fragment + 180 Life Essence | 5% | MAX MANA AMPLIFICATION: 5 |
-| Astral Expansion (astral-expansion) | 8 | 130 Fire Fragment + 130 Water Fragment + 130 Earth Fragment + 130 Air Fragment + 260 Life Essence | 5% | MAX MANA AMPLIFICATION: 5 |
-| Astral Expansion (astral-expansion) | 9 | 180 Fire Fragment + 180 Water Fragment + 180 Earth Fragment + 180 Air Fragment + 360 Life Essence | 5% | MAX MANA AMPLIFICATION: 5 |
-| Astral Expansion (astral-expansion) | 10 | 250 Fire Fragment + 250 Water Fragment + 250 Earth Fragment + 250 Air Fragment + 500 Life Essence | 5% | MAX MANA AMPLIFICATION: 5 |
-| Echo Attunement (echo-attunement) | 1 | 4 Fire Fragment + 4 Water Fragment + 4 Earth Fragment + 4 Air Fragment + 10 Life Essence | — | ECHO MANA: 5% |
-| Echo Attunement (echo-attunement) | 2 | 10 Fire Fragment + 10 Water Fragment + 10 Earth Fragment + 10 Air Fragment + 20 Life Essence | — | ECHO MANA: 5% |
-| Echo Attunement (echo-attunement) | 3 | 15 Fire Fragment + 15 Water Fragment + 15 Earth Fragment + 15 Air Fragment + 30 Life Essence | — | ECHO MANA: 5% |
-| Echo Attunement (echo-attunement) | 4 | 25 Fire Fragment + 25 Water Fragment + 25 Earth Fragment + 25 Air Fragment + 50 Life Essence | — | ECHO MANA: 5% |
-| Echo Attunement (echo-attunement) | 5 | 40 Fire Fragment + 40 Water Fragment + 40 Earth Fragment + 40 Air Fragment + 80 Life Essence | — | ECHO MANA: 5% |
-| Echo Attunement (echo-attunement) | 6 | 60 Fire Fragment + 60 Water Fragment + 60 Earth Fragment + 60 Air Fragment + 120 Life Essence | — | ECHO MANA: 5% |
-| Echo Attunement (echo-attunement) | 7 | 90 Fire Fragment + 90 Water Fragment + 90 Earth Fragment + 90 Air Fragment + 180 Life Essence | — | ECHO MANA: 5% |
-| Echo Attunement (echo-attunement) | 8 | 130 Fire Fragment + 130 Water Fragment + 130 Earth Fragment + 130 Air Fragment + 260 Life Essence | — | ECHO MANA: 5% |
-| Echo Attunement (echo-attunement) | 9 | 180 Fire Fragment + 180 Water Fragment + 180 Earth Fragment + 180 Air Fragment + 360 Life Essence | — | ECHO MANA: 5% |
-| Echo Attunement (echo-attunement) | 10 | 250 Fire Fragment + 250 Water Fragment + 250 Earth Fragment + 250 Air Fragment + 500 Life Essence | — | ECHO MANA: 5% |
+| Leyline Conduit (leyline-conduit) | 1 | 20 Fire Fragment + 20 Water Fragment + 20 Earth Fragment + 20 Air Fragment + 50 Life Essence | — | PASSIVE MANA REGEN: 1 |
+| Leyline Conduit (leyline-conduit) | 2 | 40 Fire Fragment + 40 Water Fragment + 40 Earth Fragment + 40 Air Fragment + 100 Life Essence | — | PASSIVE MANA REGEN: 1 |
+| Leyline Conduit (leyline-conduit) | 3 | 60 Fire Fragment + 60 Water Fragment + 60 Earth Fragment + 60 Air Fragment + 150 Life Essence | — | PASSIVE MANA REGEN: 1 |
+| Leyline Conduit (leyline-conduit) | 4 | 100 Fire Fragment + 100 Water Fragment + 100 Earth Fragment + 100 Air Fragment + 250 Life Essence | — | PASSIVE MANA REGEN: 1 |
+| Leyline Conduit (leyline-conduit) | 5 | 160 Fire Fragment + 160 Water Fragment + 160 Earth Fragment + 160 Air Fragment + 400 Life Essence | — | PASSIVE MANA REGEN: 1 |
+| Leyline Conduit (leyline-conduit) | 6 | 240 Fire Fragment + 240 Water Fragment + 240 Earth Fragment + 240 Air Fragment + 600 Life Essence | — | PASSIVE MANA REGEN: 1 |
+| Leyline Conduit (leyline-conduit) | 7 | 360 Fire Fragment + 360 Water Fragment + 360 Earth Fragment + 360 Air Fragment + 900 Life Essence | — | PASSIVE MANA REGEN: 1 |
+| Leyline Conduit (leyline-conduit) | 8 | 520 Fire Fragment + 520 Water Fragment + 520 Earth Fragment + 520 Air Fragment + 1300 Life Essence | — | PASSIVE MANA REGEN: 1 |
+| Leyline Conduit (leyline-conduit) | 9 | 720 Fire Fragment + 720 Water Fragment + 720 Earth Fragment + 720 Air Fragment + 1800 Life Essence | — | PASSIVE MANA REGEN: 1 |
+| Leyline Conduit (leyline-conduit) | 10 | 1000 Fire Fragment + 1000 Water Fragment + 1000 Earth Fragment + 1000 Air Fragment + 2500 Life Essence | — | PASSIVE MANA REGEN: 1 |
+| Arcane Reservoir (arcane-reservoir) | 1 | 20 Fire Fragment + 20 Water Fragment + 20 Earth Fragment + 20 Air Fragment + 50 Life Essence | 25 | MAX MANA: 25 |
+| Arcane Reservoir (arcane-reservoir) | 2 | 40 Fire Fragment + 40 Water Fragment + 40 Earth Fragment + 40 Air Fragment + 100 Life Essence | 25 | MAX MANA: 25 |
+| Arcane Reservoir (arcane-reservoir) | 3 | 60 Fire Fragment + 60 Water Fragment + 60 Earth Fragment + 60 Air Fragment + 150 Life Essence | 25 | MAX MANA: 25 |
+| Arcane Reservoir (arcane-reservoir) | 4 | 100 Fire Fragment + 100 Water Fragment + 100 Earth Fragment + 100 Air Fragment + 250 Life Essence | 25 | MAX MANA: 25 |
+| Arcane Reservoir (arcane-reservoir) | 5 | 160 Fire Fragment + 160 Water Fragment + 160 Earth Fragment + 160 Air Fragment + 400 Life Essence | 25 | MAX MANA: 25 |
+| Arcane Reservoir (arcane-reservoir) | 6 | 240 Fire Fragment + 240 Water Fragment + 240 Earth Fragment + 240 Air Fragment + 600 Life Essence | 25 | MAX MANA: 25 |
+| Arcane Reservoir (arcane-reservoir) | 7 | 360 Fire Fragment + 360 Water Fragment + 360 Earth Fragment + 360 Air Fragment + 900 Life Essence | 25 | MAX MANA: 25 |
+| Arcane Reservoir (arcane-reservoir) | 8 | 520 Fire Fragment + 520 Water Fragment + 520 Earth Fragment + 520 Air Fragment + 1300 Life Essence | 25 | MAX MANA: 25 |
+| Arcane Reservoir (arcane-reservoir) | 9 | 720 Fire Fragment + 720 Water Fragment + 720 Earth Fragment + 720 Air Fragment + 1800 Life Essence | 25 | MAX MANA: 25 |
+| Arcane Reservoir (arcane-reservoir) | 10 | 1000 Fire Fragment + 1000 Water Fragment + 1000 Earth Fragment + 1000 Air Fragment + 2500 Life Essence | 25 | MAX MANA: 25 |
+| Mana Resonance (mana-resonance) | 1 | 20 Fire Fragment + 20 Water Fragment + 20 Earth Fragment + 20 Air Fragment + 50 Life Essence | — | PASSIVE MANA AMPLIFICATION: 5% |
+| Mana Resonance (mana-resonance) | 2 | 40 Fire Fragment + 40 Water Fragment + 40 Earth Fragment + 40 Air Fragment + 100 Life Essence | — | PASSIVE MANA AMPLIFICATION: 5% |
+| Mana Resonance (mana-resonance) | 3 | 60 Fire Fragment + 60 Water Fragment + 60 Earth Fragment + 60 Air Fragment + 150 Life Essence | — | PASSIVE MANA AMPLIFICATION: 5% |
+| Mana Resonance (mana-resonance) | 4 | 100 Fire Fragment + 100 Water Fragment + 100 Earth Fragment + 100 Air Fragment + 250 Life Essence | — | PASSIVE MANA AMPLIFICATION: 5% |
+| Mana Resonance (mana-resonance) | 5 | 160 Fire Fragment + 160 Water Fragment + 160 Earth Fragment + 160 Air Fragment + 400 Life Essence | — | PASSIVE MANA AMPLIFICATION: 5% |
+| Mana Resonance (mana-resonance) | 6 | 240 Fire Fragment + 240 Water Fragment + 240 Earth Fragment + 240 Air Fragment + 600 Life Essence | — | PASSIVE MANA AMPLIFICATION: 5% |
+| Mana Resonance (mana-resonance) | 7 | 360 Fire Fragment + 360 Water Fragment + 360 Earth Fragment + 360 Air Fragment + 900 Life Essence | — | PASSIVE MANA AMPLIFICATION: 5% |
+| Mana Resonance (mana-resonance) | 8 | 520 Fire Fragment + 520 Water Fragment + 520 Earth Fragment + 520 Air Fragment + 1300 Life Essence | — | PASSIVE MANA AMPLIFICATION: 5% |
+| Mana Resonance (mana-resonance) | 9 | 720 Fire Fragment + 720 Water Fragment + 720 Earth Fragment + 720 Air Fragment + 1800 Life Essence | — | PASSIVE MANA AMPLIFICATION: 5% |
+| Mana Resonance (mana-resonance) | 10 | 1000 Fire Fragment + 1000 Water Fragment + 1000 Earth Fragment + 1000 Air Fragment + 2500 Life Essence | — | PASSIVE MANA AMPLIFICATION: 5% |
+| Astral Expansion (astral-expansion) | 1 | 20 Fire Fragment + 20 Water Fragment + 20 Earth Fragment + 20 Air Fragment + 50 Life Essence | 5% | MAX MANA AMPLIFICATION: 5 |
+| Astral Expansion (astral-expansion) | 2 | 40 Fire Fragment + 40 Water Fragment + 40 Earth Fragment + 40 Air Fragment + 100 Life Essence | 5% | MAX MANA AMPLIFICATION: 5 |
+| Astral Expansion (astral-expansion) | 3 | 60 Fire Fragment + 60 Water Fragment + 60 Earth Fragment + 60 Air Fragment + 150 Life Essence | 5% | MAX MANA AMPLIFICATION: 5 |
+| Astral Expansion (astral-expansion) | 4 | 100 Fire Fragment + 100 Water Fragment + 100 Earth Fragment + 100 Air Fragment + 250 Life Essence | 5% | MAX MANA AMPLIFICATION: 5 |
+| Astral Expansion (astral-expansion) | 5 | 160 Fire Fragment + 160 Water Fragment + 160 Earth Fragment + 160 Air Fragment + 400 Life Essence | 5% | MAX MANA AMPLIFICATION: 5 |
+| Astral Expansion (astral-expansion) | 6 | 240 Fire Fragment + 240 Water Fragment + 240 Earth Fragment + 240 Air Fragment + 600 Life Essence | 5% | MAX MANA AMPLIFICATION: 5 |
+| Astral Expansion (astral-expansion) | 7 | 360 Fire Fragment + 360 Water Fragment + 360 Earth Fragment + 360 Air Fragment + 900 Life Essence | 5% | MAX MANA AMPLIFICATION: 5 |
+| Astral Expansion (astral-expansion) | 8 | 520 Fire Fragment + 520 Water Fragment + 520 Earth Fragment + 520 Air Fragment + 1300 Life Essence | 5% | MAX MANA AMPLIFICATION: 5 |
+| Astral Expansion (astral-expansion) | 9 | 720 Fire Fragment + 720 Water Fragment + 720 Earth Fragment + 720 Air Fragment + 1800 Life Essence | 5% | MAX MANA AMPLIFICATION: 5 |
+| Astral Expansion (astral-expansion) | 10 | 1000 Fire Fragment + 1000 Water Fragment + 1000 Earth Fragment + 1000 Air Fragment + 2500 Life Essence | 5% | MAX MANA AMPLIFICATION: 5 |
+| Echo Attunement (echo-attunement) | 1 | 20 Fire Fragment + 20 Water Fragment + 20 Earth Fragment + 20 Air Fragment + 50 Life Essence | — | ECHO MANA: 5% |
+| Echo Attunement (echo-attunement) | 2 | 40 Fire Fragment + 40 Water Fragment + 40 Earth Fragment + 40 Air Fragment + 100 Life Essence | — | ECHO MANA: 5% |
+| Echo Attunement (echo-attunement) | 3 | 60 Fire Fragment + 60 Water Fragment + 60 Earth Fragment + 60 Air Fragment + 150 Life Essence | — | ECHO MANA: 5% |
+| Echo Attunement (echo-attunement) | 4 | 100 Fire Fragment + 100 Water Fragment + 100 Earth Fragment + 100 Air Fragment + 250 Life Essence | — | ECHO MANA: 5% |
+| Echo Attunement (echo-attunement) | 5 | 160 Fire Fragment + 160 Water Fragment + 160 Earth Fragment + 160 Air Fragment + 400 Life Essence | — | ECHO MANA: 5% |
+| Echo Attunement (echo-attunement) | 6 | 240 Fire Fragment + 240 Water Fragment + 240 Earth Fragment + 240 Air Fragment + 600 Life Essence | — | ECHO MANA: 5% |
+| Echo Attunement (echo-attunement) | 7 | 360 Fire Fragment + 360 Water Fragment + 360 Earth Fragment + 360 Air Fragment + 900 Life Essence | — | ECHO MANA: 5% |
+| Echo Attunement (echo-attunement) | 8 | 520 Fire Fragment + 520 Water Fragment + 520 Earth Fragment + 520 Air Fragment + 1300 Life Essence | — | ECHO MANA: 5% |
+| Echo Attunement (echo-attunement) | 9 | 720 Fire Fragment + 720 Water Fragment + 720 Earth Fragment + 720 Air Fragment + 1800 Life Essence | — | ECHO MANA: 5% |
+| Echo Attunement (echo-attunement) | 10 | 1000 Fire Fragment + 1000 Water Fragment + 1000 Earth Fragment + 1000 Air Fragment + 2500 Life Essence | — | ECHO MANA: 5% |

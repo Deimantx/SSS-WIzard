@@ -23,8 +23,8 @@ describe('transmutation developer ingredient grants', () => {
 
     grantTransmutationMissingIngredientsAction(state, 'ember-staff', 10)
 
-    expect(getConsumableQuantity(state, 'wisp-essence')).toBe(60)
-    expect(getConsumableQuantity(state, 'fire-fragment')).toBe(120)
-    expect(getConsumableQuantity(state, 'grove-bark')).toBe(30)
+    expect(getConsumableQuantity(state, 'wisp-essence')).toBe(40)
+    expect(getConsumableQuantity(state, 'fire-fragment')).toBe(40)
+    expect(getConsumableQuantity(state, 'grove-bark')).toBe(10)
   })
 })

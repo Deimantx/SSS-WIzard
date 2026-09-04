@@ -33,16 +33,16 @@ describe('Offline Bank event reports', () => {
     const state = makeInitialState()
     state.progress.firstBossKill = true
     state.progress.lifetimeKillsByMonster['grove-sentinel'] = 1
-    state.inventory['fire-fragment'] = 12
-    state.inventory['wisp-essence'] = 6
-    state.inventory['grove-bark'] = 3
+    state.inventory['fire-fragment'] = 4
+    state.inventory['wisp-essence'] = 4
+    state.inventory['grove-bark'] = 1
     state.activities.transmutation.jobs['ember-staff'] = { echoesAssigned: 1, progressMs: 7_999 }
     const report = createOfflineBankReportCollector(state, 1, 1_000)
     const result = runTick(state, report)
 
     expect(result.production.craftsByRecipe['ember-staff']).toBe(1)
     expect(result.production.transmutation['ember-staff']).toBe(1)
-    expect(result.consumption.transmutation).toEqual({ 'fire-fragment': 12, 'wisp-essence': 6, 'grove-bark': 3 })
+    expect(result.consumption.transmutation).toEqual({ 'fire-fragment': 4, 'wisp-essence': 4, 'grove-bark': 1 })
   })
 
   it('reports real combat defeats and loot events', () => {
@@ -82,9 +82,9 @@ describe('Offline Bank event reports', () => {
     state.player.mana = state.player.maxMana
     state.progress.firstBossKill = true
     state.progress.lifetimeKillsByMonster['grove-sentinel'] = 1
-    state.inventory['fire-fragment'] = 12
-    state.inventory['wisp-essence'] = 6
-    state.inventory['grove-bark'] = 3
+    state.inventory['fire-fragment'] = 4
+    state.inventory['wisp-essence'] = 4
+    state.inventory['grove-bark'] = 1
     state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 1, progressMs: 5999 }
     state.activities.research = { ...state.activities.research, running: true, itemId: 'fire-fragment', targetSchoolId: 'fire', remainingQuantity: 1, progressMs: BALANCE.research.durationPerItemMs - 1 }
     state.activities.transmutation.jobs['ember-staff'] = { echoesAssigned: 1, progressMs: 7_999 }
@@ -103,7 +103,7 @@ describe('Offline Bank event reports', () => {
     expect(result.research.researchedItems['fire-fragment']).toBe(1)
     expect(result.production.craftsByRecipe['ember-staff']).toBe(1)
     expect(result.combat.killsTotal).toBe(1)
-    expect(result.netInventory['fire-fragment']).toBe(-12)
+    expect(result.netInventory['fire-fragment']).toBe(-4)
   })
 
   it('aggregates multiple Research jobs during Offline Bank simulation', () => {

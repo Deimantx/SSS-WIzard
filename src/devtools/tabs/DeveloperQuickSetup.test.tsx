@@ -73,7 +73,7 @@ describe('Developer Quick Setup', () => {
     fireEvent.change(screen.getByRole('combobox', { name: 'Quick Setup recipe' }), { target: { value: 'ember-staff' } })
     fireEvent.click(screen.getByRole('button', { name: 'Grant Missing Ingredients' }))
 
-    expect(useGameStore.getState().inventory).toMatchObject({ 'fire-fragment': 12, 'wisp-essence': 6, 'grove-bark': 3 })
+    expect(useGameStore.getState().inventory).toMatchObject({ 'fire-fragment': 4, 'wisp-essence': 4, 'grove-bark': 1 })
     expect(screen.getByText('Missing ingredients granted for: Ember Staff')).toBeTruthy()
   })
 

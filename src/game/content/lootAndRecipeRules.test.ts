@@ -73,7 +73,7 @@ describe('material-only loot and Transmutation-only Equipment', () => {
 
   it('uses the transition signature recipe values', () => {
     expect(RECIPES['heartseed-necklace']).toMatchObject({ ingredients: [{ itemId: 'heartseed', quantity: 20 }], baseDurationMs: 10_000, manaCost: 0, unlock: { type: 'boss-kill', bossId: 'forest-heart' }, output: { quantity: 1 } })
-    expect(RECIPES['greatbear-heartstone']).toMatchObject({ ingredients: [{ itemId: 'greatbear-core', quantity: 3 }], baseDurationMs: 18_000, manaCost: 0, unlock: { type: 'boss-kill', bossId: 'corrupted-greatbear' }, output: { quantity: 1 } })
-    expect(RECIPES['edrins-signet']).toMatchObject({ ingredients: [{ itemId: 'edrin-remnant', quantity: 5 }], baseDurationMs: 30_000, manaCost: 0, unlock: { type: 'boss-kill', bossId: 'archmage-edrin-shade' }, output: { quantity: 1 } })
+    expect(RECIPES['greatbear-heartstone']).toMatchObject({ ingredients: [{ itemId: 'greatbear-core', quantity: 7 }], baseDurationMs: 18_000, manaCost: 0, unlock: { type: 'boss-kill', bossId: 'corrupted-greatbear' }, output: { quantity: 1 } })
+    expect(RECIPES['edrins-signet']).toMatchObject({ ingredients: [{ itemId: 'edrin-remnant', quantity: 7 }], baseDurationMs: 30_000, manaCost: 0, unlock: { type: 'boss-kill', bossId: 'archmage-edrin-shade' }, output: { quantity: 1 } })
   })
 })

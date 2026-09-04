@@ -80,6 +80,16 @@ When replacing a system, remove the obsolete implementation after migration rath
 - Add or update Vitest coverage when changing save migration, production payment, reservation, or offline-report behavior.
 - Run `npm run test:run` and `npm run build` before handoff.
 
+## Game Feel and motion
+
+- Decorative motion is UI-only and must never delay or own gameplay state, timers, crafting, combat resolution, navigation, or saves.
+- Reuse shared Game Feel primitives for screen transitions, interaction feedback, value pulses, progress motion, and short FX; do not create competing per-screen animation systems.
+- Respect both the persisted Reduced Motion preference and `prefers-reduced-motion`.
+- Persistent ambience uses the existing single `ArcaneAtmosphere` renderer; do not create additional permanent WebGL/canvas animation loops for individual screens.
+- Short craft and unlock effects are transient UI state only, never persisted, pointer-transparent, and bounded/capped.
+- Gameplay/content/system modules must not import Game Feel UI modules. Visual effects observe authoritative state/results from the UI/store boundary.
+- Custom cursors use the native CSS cursor pipeline; do not replace the system cursor with a JavaScript mouse-following element.
+
 ## Test execution workflow
 
 - During implementation, run only targeted Vitest files relevant to the code currently being changed.

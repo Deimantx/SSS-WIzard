@@ -11,6 +11,7 @@ export const applyUiPreferences = (preferences: UiPreferences) => {
   root.dataset.theme = preferences.theme
   root.dataset.textSize = preferences.textSize
   root.dataset.reducedMotion = preferences.reducedMotion ? 'true' : 'false'
+  root.dataset.customCursor = preferences.customCursor ? 'true' : 'false'
   INLINE_VARIABLES.forEach((variable) => root.style.removeProperty(variable))
   if (preferences.theme === 'custom') {
     const values: Record<string, string> = { '--ui-bg': colors.background, '--ui-bg-elevated': colors.backgroundElevated, '--ui-sidebar': colors.sidebar, '--ui-topbar': colors.topbar, '--ui-panel': colors.panel, '--ui-panel-strong': colors.panelStrong, '--ui-panel-hover': colors.panelHover, '--ui-border': colors.border, '--ui-border-strong': colors.borderStrong, '--ui-text': colors.text, '--ui-text-soft': colors.text, '--ui-text-muted': colors.muted, '--ui-text-disabled': colors.textDisabled, '--ui-accent': colors.accent, '--ui-accent-strong': colors.accentStrong, '--ui-accent-soft': colors.accentSoft, '--ui-secondary': colors.secondary, '--ui-shadow': colors.shadow, '--ui-panel-gradient-start': colors.panelGradientStart, '--ui-panel-gradient-end': colors.panelGradientEnd }

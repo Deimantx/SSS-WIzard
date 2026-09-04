@@ -1,3 +1,5 @@
+import { GameValue } from '../../../ui/game-feel/GameValue'
+
 export function formatItemQuantity(value: number) {
   const quantity = Math.max(0, value)
   if (quantity >= 1_000_000) return `${trimCompact(quantity / 1_000_000)}M`
@@ -10,5 +12,5 @@ function trimCompact(value: number) {
 }
 
 export function ItemQuantity({ value, compact = false, className = '' }: { value: number; compact?: boolean; className?: string }) {
-  return <span className={`item-quantity ${className}`}>×{compact ? formatItemQuantity(value) : Math.max(0, Math.floor(value)).toLocaleString()}</span>
+  return <GameValue value={value} tone="neutral" className={`item-quantity ${className}`} formatted={<>×{compact ? formatItemQuantity(value) : Math.max(0, Math.floor(value)).toLocaleString()}</>} />
 }

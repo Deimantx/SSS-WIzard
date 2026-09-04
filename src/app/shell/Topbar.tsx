@@ -11,6 +11,7 @@ import { getTopbarLayout, useLayoutEditorStore } from '../../ui/layout-editor/la
 import { EditableTopbarRegion } from '../../ui/layout-editor/EditableTopbarRegion'
 import { TOPBAR_RESOURCE_IDS } from '../../ui/layout-editor/shellLayout'
 import type { TopbarRegionId } from '../../ui/layout-editor/layoutEditorTypes'
+import { GameValue } from '../../ui/game-feel/GameValue'
 
 interface TopbarProps {
   screen: ScreenId
@@ -47,20 +48,20 @@ export function Topbar({ screen, editor, offlineBankOpen, onOfflineBankToggle, o
 
   const resource = (id: TopbarRegionId, children: ReactNode, tooltip: ReactNode, accent: 'neutral' | 'mana' | 'health' | 'focus' = 'neutral') => {
     const content = <EditableTopbarRegion regionId={id} label={id === 'topbar-health' ? 'Health' : id === 'topbar-mana' ? 'Mana' : 'Focus'} editing={editor.isEditing} width={layout.widths[id]}>{children}</EditableTopbarRegion>
-    return <div className={`topbar-resource-slot topbar-resource-slot-${id.replace('topbar-', '')}`} style={{ width: `${layout.widths[id]}px` }}>
+    return <div key={id} className={`topbar-resource-slot topbar-resource-slot-${id.replace('topbar-', '')}`} style={{ width: `${layout.widths[id]}px` }}>
       <GameTooltip block disabled={shellEditing} content={tooltip} accent={accent}>{content}</GameTooltip>
     </div>
   }
 
   const renderResource = (id: TopbarRegionId) => {
-    if (id === 'topbar-health') return resource(id, <div className={`topbar-resource hp-resource ${hpPercent < 35 ? 'low-resource' : ''}`}><Heart size={15} /><div><small>HP</small><strong>{formatNumber(player.health)} / {formatNumber(player.maxHealth)}</strong><Meter value={hpPercent} tone="hp" /></div></div>, <TooltipContent title="Health" description="Current vitality for the wizard."><TooltipRow label="Current" value={`${formatNumber(player.health)} / ${formatNumber(player.maxHealth)}`} /></TooltipContent>, 'health')
+    if (id === 'topbar-health') return resource(id, <div className={`topbar-resource hp-resource ${hpPercent < 35 ? 'low-resource' : ''}`}><Heart size={15} /><div><small>HP</small><strong><GameValue value={player.health} tone="health" formatted={`${formatNumber(player.health)} / ${formatNumber(player.maxHealth)}`} /></strong><Meter value={hpPercent} tone="hp" /></div></div>, <TooltipContent title="Health" description="Current vitality for the wizard."><TooltipRow label="Current" value={`${formatNumber(player.health)} / ${formatNumber(player.maxHealth)}`} /></TooltipContent>, 'health')
     if (id === 'topbar-mana') return resource(id, <div className={`mana-hero flow-${flow.state}`}>
       <div className="mana-hero-head"><span><Sparkles size={13} /> MANA</span><strong>{formatNumber(player.mana)} / {formatNumber(player.maxMana)}</strong></div>
       <Meter value={manaPercent} tone="mana" />
       {isManaOverCap && <span className="mana-cap-state">OVER CAP</span>}
       <details className="mana-flow-details"><summary onClick={() => dismissGameTooltips()}><span>{flowLabel} {formatSignedRate(flow.net)}</span>{flowDetail && <small> · {flowDetail}</small>}</summary><div className="mana-flow-popover"><strong>Mana Flow</strong><div className="flow-row"><span>Production</span><b>{formatSignedRate(flow.production)}</b></div><div className="flow-row flow-demand-heading"><span>Consumption</span><b>{formatSignedRate(-flow.demand)}</b></div>{flow.demandSources.length ? flow.demandSources.map((source) => <div className="flow-row flow-source" key={source.id}><span>{source.label}{source.estimated ? ' · estimated' : ''}</span><b>{formatSignedRate(-source.manaPerSecond)}</b></div>) : <div className="flow-empty">No active Mana consumers.</div>}<div className="flow-row flow-net"><span>Net</span><b>{formatSignedRate(flow.net)}</b></div></div></details>
     </div>, <TooltipContent title="Mana" description="Current reserves, production, and active consumption."><TooltipRow label="Current" value={`${formatNumber(player.mana)} / ${formatNumber(player.maxMana)}`} /><TooltipRow label="Net flow" value={formatSignedRate(flow.net)} /></TooltipContent>, 'mana')
-    return resource(id, <div className={`topbar-resource focus-resource ${freeFocus < 10 ? 'tight-resource' : ''}`} tabIndex={0} aria-label="Focus allocation"><div className="focus-head"><span><Target size={14} /> FOCUS</span><strong>{formatNumber(freeFocus)} FREE</strong></div><small>{formatNumber(usedFocus)} RESERVED / {formatNumber(player.maxFocus)} MAX</small><Meter value={focusPercent} tone="focus" /></div>, <TooltipContent title="Focus allocation" description="Reserved Focus is derived from active automated systems."><TooltipRow label="Free" value={formatNumber(freeFocus)} /><TooltipRow label="Reserved" value={formatNumber(usedFocus)} /><TooltipRow label="Maximum" value={formatNumber(player.maxFocus)} />{reservations.length > 0 && <div className="tooltip-section"><small>RESERVATIONS</small>{reservations.map((reservation) => <TooltipRow key={reservation.id} label={reservation.label} value={formatNumber(reservation.amount)} />)}</div>}</TooltipContent>, 'focus')
+    return resource(id, <div className={`topbar-resource focus-resource ${freeFocus < 10 ? 'tight-resource' : ''}`} tabIndex={0} aria-label="Focus allocation"><div className="focus-head"><span><Target size={14} /> FOCUS</span><strong><GameValue value={freeFocus} tone="focus" formatted={`${formatNumber(freeFocus)} FREE`} /></strong></div><small>{formatNumber(usedFocus)} RESERVED / {formatNumber(player.maxFocus)} MAX</small><Meter value={focusPercent} tone="focus" /></div>, <TooltipContent title="Focus allocation" description="Reserved Focus is derived from active automated systems."><TooltipRow label="Free" value={formatNumber(freeFocus)} /><TooltipRow label="Reserved" value={formatNumber(usedFocus)} /><TooltipRow label="Maximum" value={formatNumber(player.maxFocus)} />{reservations.length > 0 && <div className="tooltip-section"><small>RESERVATIONS</small>{reservations.map((reservation) => <TooltipRow key={reservation.id} label={reservation.label} value={formatNumber(reservation.amount)} />)}</div>}</TooltipContent>, 'focus')
   }
 
   const utilities = <div className={`topbar-utility-cluster ${shellDragging ? 'is-interacting' : ''}`} aria-label="Header utilities">

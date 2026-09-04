@@ -2,6 +2,8 @@ import type { HTMLInputTypeAttribute } from 'react'
 import { forwardRef, type CSSProperties, type ReactNode } from 'react'
 import { GameTooltip } from './tooltip/Tooltip'
 import type { ReactNode as TooltipNode } from 'react'
+export { GameValue } from '../../ui/game-feel/GameValue'
+export type { GameValueTone } from '../../ui/game-feel/GameValue'
 
 export const Card = forwardRef<HTMLElement, { children: ReactNode; className?: string; title?: string; action?: ReactNode; style?: CSSProperties }>(function Card({ children, className = '', title, action, style }, ref) {
   return <section ref={ref} style={style} className={`card ${className}`}>{title && <div className="card-head"><h2>{title}</h2>{action}</div>}{children}</section>
@@ -12,8 +14,9 @@ export function Button({ children, onClick, variant = 'primary', disabled = fals
   return tooltip ? <GameTooltip block content={tooltip}>{button}</GameTooltip> : button
 }
 
-export function Progress({ value, tone = 'violet', label, right }: { value: number; tone?: string; label?: string; right?: ReactNode }) {
-  return <div className="progress-wrap">{(label || right) && <div className="progress-label"><span>{label}</span><strong>{right}</strong></div>}<div className="progress"><i className={tone} style={{ width: `${Math.max(0, Math.min(100, value))}%` }} /></div></div>
+export function Progress({ value, tone = 'violet', label, right, running = false, completionPulseKey }: { value: number; tone?: string; label?: string; right?: ReactNode; running?: boolean; completionPulseKey?: string | number }) {
+  const clamped = Math.max(0, Math.min(100, value))
+  return <div className={`progress-wrap ${running ? 'is-running' : ''} ${completionPulseKey !== undefined ? 'has-completion-pulse' : ''}`.trim()}>{(label || right) && <div className="progress-label"><span>{label}</span><strong>{right}</strong></div>}<div className="progress"><i key={completionPulseKey} className={tone} style={{ width: `${clamped}%` }} /></div></div>
 }
 
 export function Status({ children, tone = 'neutral' }: { children: ReactNode; tone?: 'neutral' | 'success' | 'warning' | 'active' | 'locked' }) { return <span className={`status ${tone}`}>{children}</span> }

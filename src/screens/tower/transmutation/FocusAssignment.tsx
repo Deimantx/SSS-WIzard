@@ -1,14 +1,17 @@
 import { Minus, Plus } from 'lucide-react'
-import type { KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { Button, Card, Progress } from '../../../components/ui'
 import { TooltipContent } from '../../../components/ui/tooltip/Tooltip'
 import { ItemIcon } from '../../../components/ui/item'
 import { RECIPES, RECIPE_ORDER } from '../../../game/content/recipes/recipes'
+import { ITEMS } from '../../../game/content/items/items'
 import { selectFreeFocus } from '../../../game/engine'
 import { getRecipeCurrentEffectiveDuration, getRecipeCurrentOutputPerHour, getRecipeManaDemandPerSecond, getRecipeProgressPercent, getRecipeStatus, getRecipeUnlockReason, getTransmutationEchoCapacity, getTransmutationEchoFocusCost, getTransmutationEchoesAssigned, getTransmutationFocusReserved, getTransmutationJob, canAssignTransmutationEcho } from '../../../game/systems/transmutation/transmutationSelectors'
 import type { GameState, RecipeId } from '../../../game/types'
 import { formatNumber, formatTime } from '../../../game/utils'
 import { useGameStore } from '../../../store/gameStore'
+import { emitGameFeelEvent } from '../../../ui/game-feel/gameFeelStore'
+import { didTransmutationCycleWrap } from '../../../ui/game-feel/craftCompletion'
 
 export function FocusAssignment({ selectedRecipeId, onSelect }: { selectedRecipeId: RecipeId; onSelect: (recipeId: RecipeId) => void }) {
   const state = useGameStore()
@@ -48,14 +51,35 @@ function AssignmentRow({ recipeId, state, selected, onSelect, onAdd, onRemove }:
   const recipe = RECIPES[recipeId]
   const job = getTransmutationJob(state, recipeId)
   const echoes = Math.max(0, Math.floor(job?.echoesAssigned ?? 0))
-  if (!echoes) return null
   const status = getRecipeStatus(state, recipe)
+  const rowRef = useRef<HTMLDivElement>(null)
+  const progress = Math.max(0, job?.progressMs ?? 0)
+  const previousProgress = useRef<number | null>(null)
+  const pulseSerial = useRef(0)
+  const pulseTimer = useRef<number | null>(null)
+  const [completionPulseKey, setCompletionPulseKey] = useState<number | null>(null)
+  useEffect(() => () => { if (pulseTimer.current !== null) window.clearTimeout(pulseTimer.current) }, [])
+  useEffect(() => {
+    const previous = previousProgress.current
+    previousProgress.current = progress
+    const running = status === 'active' || status === 'mana-limited' || status === 'waiting-mana' || status === 'waiting-materials'
+    if (!didTransmutationCycleWrap({ previousProgress: previous, currentProgress: progress, durationMs: recipe.baseDurationMs, echoes, running })) return
+    const rect = rowRef.current?.getBoundingClientRect()
+    if (!rect || rect.width <= 0 || rect.height <= 0) return
+    const item = ITEMS[recipe.output.itemId]
+    emitGameFeelEvent({ type: 'craft-complete', x: rect.left + rect.width * 0.28, y: rect.top + rect.height * 0.5, color: item.color, intensity: item.kind === 'equipment' ? 1.25 : 0.9 })
+    const pulseKey = ++pulseSerial.current
+    setCompletionPulseKey(pulseKey)
+    if (pulseTimer.current !== null) window.clearTimeout(pulseTimer.current)
+    pulseTimer.current = window.setTimeout(() => { setCompletionPulseKey(null); pulseTimer.current = null }, 300)
+  }, [echoes, progress, recipe, status])
+  if (!echoes) return null
   const canAdd = status !== 'locked' && canAssignTransmutationEcho(state)
   const addReason = status === 'locked' ? getRecipeUnlockReason(recipe) ?? 'This recipe is locked.' : 'Assign one more Echo if Focus and capacity allow.'
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelect(recipeId) } }
   const outputPerHour = getRecipeCurrentOutputPerHour(recipe, echoes)
   const manaDemand = getRecipeManaDemandPerSecond(recipe, echoes)
-  return <div role="button" tabIndex={0} className={`transmutation-assignment-row ${selected ? 'selected' : ''}`} onClick={() => onSelect(recipeId)} onKeyDown={handleKeyDown} aria-label={`Select ${recipe.name}, ${echoes} Echoes assigned`}><ItemIcon itemId={recipe.output.itemId} size="tiny" /><span className="transmutation-assignment-copy"><strong>{recipe.name}</strong><small>{echoes}E &middot; {statusLabel(status)}</small><small className="transmutation-assignment-metrics">{formatOutputRate(outputPerHour)} &middot; {formatManaDemand(manaDemand)}</small><Progress value={getRecipeProgressPercent(recipe, job?.progressMs ?? 0)} tone="gold" /></span><span className="transmutation-assignment-owned">OWNED {formatOwned(state.inventory[recipe.output.itemId] ?? 0)}</span><span onClick={(event) => event.stopPropagation()}><Button variant="ghost" ariaLabel={`Remove Echo from ${recipe.name}`} tooltip="Remove one Echo. Progress is preserved." onClick={() => onRemove(recipeId)}><Minus size={12} aria-hidden="true" /></Button></span><span onClick={(event) => event.stopPropagation()}><Button variant="ghost" ariaLabel={`Add Echo to ${recipe.name}`} tooltip={canAdd ? addReason : addReason} onClick={() => onAdd(recipeId)} disabled={!canAdd}><Plus size={12} aria-hidden="true" /></Button></span></div>
+  return <div ref={rowRef} role="button" tabIndex={0} className={`transmutation-assignment-row ${selected ? 'selected' : ''} ${completionPulseKey !== null ? 'craft-complete' : ''}`} onClick={() => onSelect(recipeId)} onKeyDown={handleKeyDown} aria-label={`Select ${recipe.name}, ${echoes} Echoes assigned`}><ItemIcon itemId={recipe.output.itemId} size="tiny" /><span className="transmutation-assignment-copy"><strong>{recipe.name}</strong><small>{echoes}E &middot; {statusLabel(status)}</small><small className="transmutation-assignment-metrics">{formatOutputRate(outputPerHour)} &middot; {formatManaDemand(manaDemand)}</small><Progress value={getRecipeProgressPercent(recipe, progress)} tone="gold" running={status === 'active' || status === 'mana-limited'} completionPulseKey={completionPulseKey ?? undefined} /></span><span className="transmutation-assignment-owned">OWNED {formatOwned(state.inventory[recipe.output.itemId] ?? 0)}</span><span onClick={(event) => event.stopPropagation()}><Button variant="ghost" ariaLabel={`Remove Echo from ${recipe.name}`} tooltip="Remove one Echo. Progress is preserved." onClick={() => onRemove(recipeId)}><Minus size={12} aria-hidden="true" /></Button></span><span onClick={(event) => event.stopPropagation()}><Button variant="ghost" ariaLabel={`Add Echo to ${recipe.name}`} tooltip={canAdd ? addReason : addReason} onClick={() => onAdd(recipeId)} disabled={!canAdd}><Plus size={12} aria-hidden="true" /></Button></span></div>
 }
 
 function formatOwned(value: number) {

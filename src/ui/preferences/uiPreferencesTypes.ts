@@ -62,6 +62,7 @@ export interface UiPreferences {
   textSize: TextSize
   backgroundEffects: boolean
   reducedMotion: boolean
+  customCursor: boolean
   customTheme: CustomThemeColors
   navigationGroups: Record<NavigationGroupId, boolean>
   screenState: ScreenPreferences

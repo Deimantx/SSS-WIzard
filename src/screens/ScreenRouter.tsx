@@ -10,6 +10,7 @@ import { InventoryScreenV2 } from './inventory/InventoryScreen'
 import { MagicSchoolsScreenV2 } from './schools/MagicSchoolsScreen'
 import { SettingsScreenV2 } from './settings/SettingsScreen'
 import { TowerChannelingScreen, TowerFocusScreen, TowerResearchScreen, TowerTransmutationScreen } from './tower/TowerScreens'
+import { ScreenTransitionFrame } from '../ui/game-feel/ScreenTransitionFrame'
 
 function CurrentScreen() {
   const screen = useGameStore((state) => state.ui.screen)
@@ -30,5 +31,5 @@ function CurrentScreen() {
 
 export function ScreenRouter() {
   const screen = useGameStore((state) => state.ui.screen)
-  return <ScreenErrorBoundary key={screen} screen={screen}><CurrentScreen /></ScreenErrorBoundary>
+  return <ScreenErrorBoundary key={screen} screen={screen}><ScreenTransitionFrame key={screen} screen={screen}><CurrentScreen /></ScreenTransitionFrame></ScreenErrorBoundary>
 }

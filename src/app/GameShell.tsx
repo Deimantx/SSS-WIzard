@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useGameStore } from '../store/gameStore'
 import { ArcaneAtmosphere } from '../components/ArcaneAtmosphere'
 import { ScreenRouter } from '../screens/ScreenRouter'
@@ -21,6 +21,11 @@ import { ToastStack } from './shell/ToastStack'
 import { SaveProtectionNotice } from './shell/SaveProtectionNotice'
 import { TooltipProvider, dismissGameTooltips } from '../components/ui/tooltip/Tooltip'
 import { DefeatSummaryModal } from '../screens/combat/DefeatSummaryModal'
+import { createCursorValue } from '../ui/game-feel/gameCursor'
+import { GameFeelLayer } from '../ui/game-feel/GameFeelLayer'
+import { ProgressionFeelObserver } from '../ui/game-feel/ProgressionFeelObserver'
+
+const AMBIENT_INTENSITY: Record<string, number> = { overview: 0.75, hero: 0.8, tower: 1, combat: 1.15, world: 0.85, system: 0.55 }
 
 export function GameShell() {
   const screen = useGameStore((state) => state.ui.screen)
@@ -81,8 +86,10 @@ export function GameShell() {
   const toggleEditor = () => { dismissGameTooltips(); if (editor.isEditing) closeLayoutEditor(); else openLayoutEditor(screen, 'shell') }
   const switchProfile = () => { const result = leaveToProfiles(); if (!result.ok) setProfileSwitchError(result.error) }
 
-  return <TooltipProvider><div className="game-shell">
-    {preferences.backgroundEffects && <ArcaneAtmosphere accentColor={appearance.accent} opacity={preferences.theme === 'light' ? 0.22 : 0.72} reducedMotion={preferences.reducedMotion} />}
+  const ambientIntensity = AMBIENT_INTENSITY[navigation.group.id] ?? 0.8
+  const shellStyle = { '--game-cursor-default': createCursorValue(appearance.accent, 'default'), '--game-cursor-action': createCursorValue(appearance.accent, 'action'), '--ambient-strength': ambientIntensity, '--ambient-drift': preferences.reducedMotion ? '0s' : '18s' } as CSSProperties
+  return <TooltipProvider><div className={`game-shell ${preferences.reducedMotion ? 'reduced-motion' : 'motion-enabled'} ${preferences.customCursor ? 'cursor-enabled' : ''} ${preferences.backgroundEffects ? 'effects-enabled' : 'effects-disabled'}`} data-nav-group={navigation.group.id} data-background-effects={preferences.backgroundEffects ? 'on' : 'off'} style={shellStyle}>
+    {preferences.backgroundEffects && <ArcaneAtmosphere accentColor={appearance.accent} secondaryColor={appearance.secondary} opacity={preferences.theme === 'light' ? 0.22 : 0.72} intensity={ambientIntensity} reducedMotion={preferences.reducedMotion} />}
     <Sidebar screen={screen} setScreen={setScreen} preferences={preferences} toggleGroup={toggleGroup} activeProfile={activeProfile} profileSwitchError={profileSwitchError} switchProfile={switchProfile} />
     <main className={`main-area ${editor.isEditing ? 'editor-open' : ''}`}>
       <Topbar screen={screen} editor={editor} offlineBankOpen={offlineBankOpen} onOfflineBankToggle={() => { dismissGameTooltips(); setOfflineResultsOpen(false); setOfflineBankOpen((open) => !open) }} onDeveloperTools={openDevTools} onEditUi={toggleEditor} onSettings={() => { dismissGameTooltips(); setOfflineBankOpen(false); setOfflineResultsOpen(false); setScreen('settings') }} onMobileMenu={() => setScreen('home')} />
@@ -90,6 +97,8 @@ export function GameShell() {
       <div className="screen-scroll"><ScreenRouter /></div>
       <ActivityMonitor />
     </main>
+    <ProgressionFeelObserver profileKey={profileSession.activeProfileId} />
+    <GameFeelLayer />
     <LayoutEditorDrawer screen={screen} />
     <DeveloperToolsWindow />
     <OfflineBankResultsDialog report={lastOfflineBankReport} open={offlineResultsOpen} onClose={() => setOfflineResultsOpen(false)} onOpenInventory={() => { setOfflineResultsOpen(false); setScreen('inventory') }} />

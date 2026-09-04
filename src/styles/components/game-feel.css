@@ -1,0 +1,354 @@
+/* Shared game-feel contract. Decorative motion is opt-in, transient, and pointer-transparent. */
+.game-shell {
+  --game-feel-press-duration: 70ms;
+}
+
+@media (pointer: fine) {
+  .game-shell.cursor-enabled {
+    cursor: var(--game-cursor-default);
+  }
+
+  .game-shell.cursor-enabled button:not(:disabled),
+  .game-shell.cursor-enabled [role='button'],
+  .game-shell.cursor-enabled [role='tab'],
+  .game-shell.cursor-enabled summary {
+    cursor: var(--game-cursor-action);
+  }
+
+  .game-shell.cursor-enabled input,
+  .game-shell.cursor-enabled textarea,
+  .game-shell.cursor-enabled select,
+  .game-shell.cursor-enabled [contenteditable='true'] {
+    cursor: text;
+  }
+
+  .game-shell.cursor-enabled select {
+    cursor: pointer;
+  }
+
+  .game-shell.cursor-enabled button:disabled,
+  .game-shell.cursor-enabled [aria-disabled='true'] {
+    cursor: not-allowed;
+  }
+
+  .game-shell.cursor-enabled .topbar-region-grip,
+  .game-shell.cursor-enabled [draggable='true'] {
+    cursor: grab;
+  }
+
+  .game-shell.cursor-enabled .topbar-region-grip:active,
+  .game-shell.cursor-enabled [draggable='true']:active {
+    cursor: grabbing;
+  }
+
+  .game-shell.cursor-enabled .topbar-region-resize,
+  .game-shell.cursor-enabled [class*='resize-handle'],
+  .game-shell.cursor-enabled [class*='resize-handle']:active {
+    cursor: ew-resize;
+  }
+}
+
+.game-shell button:not(:disabled):active {
+  transform: translateY(1px) scale(.988);
+  filter: brightness(.97);
+  transition-duration: var(--game-feel-press-duration);
+}
+
+.game-shell button:focus-visible,
+.game-shell [role='button']:focus-visible,
+.game-shell [role='tab']:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--ui-accent) 78%, white);
+  outline-offset: 2px;
+}
+
+.game-shell button:disabled:hover,
+.game-shell button:disabled:active {
+  transform: none;
+  filter: none;
+}
+
+.transmutation-recipe-tile,
+.inventory-item,
+.equipment-armory-card,
+.research-item-tile,
+.spell-browser-tile,
+.spell-preset-card,
+.spell-preset-available-tile,
+.transmutation-assignment-row,
+.transmutation-ring-choice,
+.activity-card,
+.activity-mini-summary,
+.dungeon-atlas-list-item,
+.inventory-recent-item,
+.inventory-use-row,
+.inventory-need-row,
+.theme-choice,
+.preference-choice {
+  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease, box-shadow 120ms ease, filter 100ms ease;
+}
+
+.transmutation-recipe-tile:hover,
+.inventory-item:hover,
+.equipment-armory-card:hover,
+.research-item-tile:hover,
+.spell-browser-tile:hover,
+.spell-preset-card:hover,
+.spell-preset-available-tile:hover,
+.transmutation-assignment-row:hover,
+.transmutation-ring-choice:hover,
+.activity-card:hover,
+.activity-mini-summary:hover,
+.dungeon-atlas-list-item:hover,
+.inventory-recent-item:hover,
+.inventory-use-row:hover,
+.inventory-need-row:hover,
+.theme-choice:hover,
+.preference-choice:hover {
+  transform: translateY(-1px);
+}
+
+.transmutation-recipe-tile:active,
+.inventory-item:active,
+.equipment-armory-card:active,
+.research-item-tile:active,
+.spell-browser-tile:active,
+.spell-preset-card:active,
+.spell-preset-available-tile:active,
+.transmutation-assignment-row:active,
+.transmutation-ring-choice:active,
+.activity-card:active,
+.activity-mini-summary:active,
+.dungeon-atlas-list-item:active,
+.inventory-recent-item:active,
+.inventory-use-row:active,
+.inventory-need-row:active,
+.theme-choice:active,
+.preference-choice:active {
+  transform: translateY(0) scale(.992);
+  filter: brightness(.98);
+}
+
+.game-screen-transition {
+  width: 100%;
+  min-width: 0;
+  animation: game-screen-enter 190ms cubic-bezier(.22, .75, .28, 1) both;
+  transform-origin: 50% 0;
+}
+
+@keyframes game-screen-enter {
+  from { opacity: 0; transform: translateY(6px) scale(.997); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.main-area::before,
+.main-area::after {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: '';
+}
+
+.main-area::before {
+  z-index: 0;
+  opacity: 0;
+  background: radial-gradient(ellipse at 76% 12%, color-mix(in srgb, var(--ui-accent) 20%, transparent), transparent 47%), radial-gradient(ellipse at 22% 92%, color-mix(in srgb, var(--ui-secondary) 12%, transparent), transparent 42%);
+  animation: game-ambient-drift var(--ambient-drift, 18s) ease-in-out infinite alternate;
+}
+
+.main-area::after {
+  z-index: 0;
+  opacity: 0;
+  background: radial-gradient(ellipse at center, transparent 46%, color-mix(in srgb, var(--ui-bg) 56%, transparent) 100%);
+}
+
+.game-shell.effects-enabled .main-area::before { opacity: calc(var(--ambient-strength, .8) * .34); }
+.game-shell.effects-enabled .main-area::after { opacity: calc(var(--ambient-strength, .8) * .34); }
+
+.main-area > .screen-scroll {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes game-ambient-drift {
+  from { transform: translate3d(-1.5%, -1%, 0) scale(1); }
+  to { transform: translate3d(1.5%, 1%, 0) scale(1.035); }
+}
+
+.game-value {
+  display: inline-block;
+  transform-origin: center;
+}
+
+.game-value.value-increased {
+  animation: game-value-gain 260ms ease-out both;
+}
+
+.game-value.value-decreased {
+  animation: game-value-loss 260ms ease-out both;
+}
+
+@keyframes game-value-gain {
+  0% { color: var(--ui-success); text-shadow: 0 0 0 transparent; transform: scale(1); }
+  42% { text-shadow: 0 0 12px color-mix(in srgb, var(--ui-success) 62%, transparent); transform: scale(1.04); }
+  100% { color: inherit; text-shadow: 0 0 0 transparent; transform: scale(1); }
+}
+
+@keyframes game-value-loss {
+  0% { color: var(--ui-danger); text-shadow: 0 0 0 transparent; transform: scale(1); }
+  42% { text-shadow: 0 0 12px color-mix(in srgb, var(--ui-danger) 56%, transparent); transform: scale(1.035); }
+  100% { color: inherit; text-shadow: 0 0 0 transparent; transform: scale(1); }
+}
+
+.game-value-health.value-increased { color: var(--ui-success); }
+.game-value-health.value-decreased { color: var(--ui-danger); }
+.game-value-focus.value-increased { color: var(--ui-success); }
+.game-value-focus.value-decreased { color: var(--ui-secondary); }
+
+.progress i {
+  transition: width 130ms linear;
+}
+
+.progress-wrap.is-running .progress {
+  position: relative;
+}
+
+.progress-wrap.is-running .progress::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -24%;
+  width: 24%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 22%), transparent);
+  content: '';
+  animation: game-progress-sheen 1.9s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.progress-wrap.has-completion-pulse .progress {
+  animation: game-progress-complete 280ms ease-out both;
+}
+
+.transmutation-assignment-row.craft-complete {
+  animation: game-craft-anchor 300ms ease-out both;
+}
+
+@keyframes game-craft-anchor {
+  0%, 100% { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ui-accent) 55%, transparent); }
+  42% { border-color: var(--ui-secondary); box-shadow: inset 0 0 0 1px var(--ui-secondary), 0 0 18px color-mix(in srgb, var(--ui-secondary) 35%, transparent); }
+}
+
+@keyframes game-progress-sheen {
+  from { transform: translateX(0); }
+  to { transform: translateX(520%); }
+}
+
+@keyframes game-progress-complete {
+  0%, 100% { box-shadow: 0 0 0 transparent; }
+  45% { box-shadow: 0 0 12px color-mix(in srgb, var(--ui-secondary) 65%, transparent); }
+}
+
+.game-feel-layer {
+  position: fixed;
+  z-index: var(--z-context, 800);
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.game-feel-burst {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  color: var(--game-feel-color, var(--ui-accent));
+  opacity: var(--game-feel-intensity, 1);
+}
+
+.game-feel-ring {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: game-feel-ring 560ms ease-out both;
+  box-shadow: 0 0 10px currentColor;
+}
+
+.game-feel-spark {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border: 1px solid currentColor;
+  background: color-mix(in srgb, currentColor 72%, white);
+  box-shadow: 0 0 7px currentColor;
+  transform: translate(-50%, -50%);
+  animation: game-feel-spark 620ms cubic-bezier(.18, .72, .3, 1) var(--game-feel-delay, 0ms) both;
+  rotate: 45deg;
+}
+
+.game-feel-unlock .game-feel-ring { width: 30px; height: 30px; animation-duration: 700ms; }
+.game-feel-unlock .game-feel-spark { width: 5px; height: 5px; animation-duration: 720ms; }
+
+@keyframes game-feel-ring {
+  from { opacity: .7; transform: translate(-50%, -50%) scale(.35); }
+  to { opacity: 0; transform: translate(-50%, -50%) scale(2.3); }
+}
+
+@keyframes game-feel-spark {
+  from { opacity: 0; transform: translate(-50%, -50%) rotate(45deg) scale(.4); }
+  18% { opacity: 1; }
+  to { opacity: 0; transform: translate(calc(-50% + var(--game-feel-x)), calc(-50% + var(--game-feel-y))) rotate(45deg) scale(.7); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-shell button:not(:disabled):active { transform: none; }
+  .transmutation-recipe-tile:hover, .inventory-item:hover, .equipment-armory-card:hover, .research-item-tile:hover, .spell-browser-tile:hover, .spell-preset-card:hover, .spell-preset-available-tile:hover, .transmutation-assignment-row:hover, .transmutation-ring-choice:hover, .activity-card:hover, .activity-mini-summary:hover, .dungeon-atlas-list-item:hover, .inventory-recent-item:hover, .inventory-use-row:hover, .inventory-need-row:hover, .theme-choice:hover, .preference-choice:hover { transform: none; }
+  .game-screen-transition { animation: game-screen-reduced-enter 80ms ease-out both; }
+  .main-area::before { animation: none; }
+  .game-value.value-increased, .game-value.value-decreased { animation: game-value-static 240ms ease-out both; }
+  .game-shell .progress i { transition: none !important; }
+  .progress-wrap.is-running .progress::after { display: none; }
+  .game-feel-spark { display: none; }
+  .game-feel-ring { animation: game-feel-static 220ms ease-out both; }
+}
+
+@keyframes game-screen-reduced-enter {
+  from { opacity: .72; }
+  to { opacity: 1; }
+}
+
+@keyframes game-value-static {
+  from { color: var(--ui-accent); text-shadow: 0 0 10px currentColor; }
+  to { color: inherit; text-shadow: none; }
+}
+
+@keyframes game-feel-static {
+  from { opacity: .8; transform: translate(-50%, -50%) scale(.8); }
+  to { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+}
+
+.game-shell.reduced-motion button:not(:disabled):active { transform: none; }
+.game-shell.reduced-motion .transmutation-recipe-tile:hover, .game-shell.reduced-motion .inventory-item:hover, .game-shell.reduced-motion .equipment-armory-card:hover, .game-shell.reduced-motion .research-item-tile:hover, .game-shell.reduced-motion .spell-browser-tile:hover, .game-shell.reduced-motion .spell-preset-card:hover, .game-shell.reduced-motion .spell-preset-available-tile:hover, .game-shell.reduced-motion .transmutation-assignment-row:hover, .game-shell.reduced-motion .transmutation-ring-choice:hover, .game-shell.reduced-motion .activity-card:hover, .game-shell.reduced-motion .activity-mini-summary:hover, .game-shell.reduced-motion .dungeon-atlas-list-item:hover, .game-shell.reduced-motion .inventory-recent-item:hover, .game-shell.reduced-motion .inventory-use-row:hover, .game-shell.reduced-motion .inventory-need-row:hover, .game-shell.reduced-motion .theme-choice:hover, .game-shell.reduced-motion .preference-choice:hover { transform: none; }
+.game-shell.reduced-motion .game-screen-transition { animation: game-screen-reduced-enter 80ms ease-out both; }
+.game-shell.reduced-motion .main-area::before { animation: none; }
+.game-shell.reduced-motion .game-value.value-increased,
+.game-shell.reduced-motion .game-value.value-decreased { animation: game-value-static 240ms ease-out both; }
+.game-shell.reduced-motion .progress i { transition: none; }
+.game-shell.reduced-motion .progress-wrap.is-running .progress::after { display: none; }
+.game-shell.reduced-motion .game-feel-spark { display: none; }
+.game-shell.reduced-motion .game-feel-ring { animation: game-feel-static 220ms ease-out both; }
+
+.game-shell.editor-open .game-screen-transition,
+.game-shell.editor-open .game-screen-transition .react-grid-item {
+  animation: none;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-shell.editor-open .game-screen-transition,
+  .game-shell.editor-open .game-screen-transition .react-grid-item { animation: none; transform: none; }
+}
+
+@media (max-width: 700px) {
+  .game-shell.effects-enabled .main-area::before { opacity: calc(var(--ambient-strength, .8) * .22); }
+}

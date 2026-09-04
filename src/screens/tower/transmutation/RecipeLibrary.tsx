@@ -110,13 +110,13 @@ function RecipeTile({ recipe, selected, onSelect }: { recipe: RecipeDefinition; 
   const locked = status === 'locked'
   const cardMeta = getTransmutationRecipeCardMeta(item)
   return <ItemTooltip itemId={recipe.output.itemId} owned={owned} recipeContext={{ status: statusText(status), baseDurationMs: recipe.baseDurationMs, manaCost: recipe.manaCost, outputQuantity: recipe.output.quantity, ingredients: recipe.ingredients.map((ingredient) => ({ itemId: ingredient.itemId, quantity: ingredient.quantity })), unlockReason: locked ? getRecipeUnlockReason(recipe) ?? undefined : undefined }}>
-    <button type="button" aria-pressed={selected} className={`transmutation-recipe-tile ${selected ? 'selected' : ''} ${locked ? 'locked' : ''} ${echoes > 0 ? 'assigned' : ''}`} style={{ '--recipe-accent': item.color } as CSSProperties} onClick={() => onSelect(recipe.id)}>
+    <button type="button" data-recipe-id={recipe.id} aria-pressed={selected} className={`transmutation-recipe-tile ${selected ? 'selected' : ''} ${locked ? 'locked' : ''} ${echoes > 0 ? 'assigned' : ''}`} style={{ '--recipe-accent': item.color } as CSSProperties} onClick={() => onSelect(recipe.id)}>
       <span className="transmutation-tile-top">{locked ? <LockKeyhole size={13} aria-label="Locked" /> : <span aria-hidden="true" />}{echoes > 0 && <span className="transmutation-echo-badge">{echoes}E</span>}</span>
       <span className="transmutation-tile-icon"><ItemIcon itemId={recipe.output.itemId} size="tile" /></span>
       <strong>{recipe.name}</strong>
       <span className="transmutation-tile-badges" aria-label={cardMeta.badges.join(', ')}>{cardMeta.badges.map((badge, index) => <span className={`transmutation-badge ${cardMeta.tier !== null && index === 0 ? 'tier' : ''}`} key={badge}>{badge}</span>)}</span>
       <span className="transmutation-tile-footer"><span className="transmutation-tile-owned">OWNED {formatOwned(owned)}</span>{status !== 'paused' && <span className="transmutation-tile-status"><Status tone={locked ? 'locked' : status === 'active' ? 'active' : status === 'mana-limited' || status === 'waiting-mana' || status === 'waiting-materials' ? 'warning' : 'neutral'}>{statusText(status)}</Status></span>}</span>
-      {echoes > 0 && <Progress value={getRecipeProgressPercent(recipe, progress)} tone="gold" />}
+      {echoes > 0 && <Progress value={getRecipeProgressPercent(recipe, progress)} tone="gold" running={status === 'active' || status === 'mana-limited'} />}
     </button>
   </ItemTooltip>
 }

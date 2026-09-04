@@ -11,7 +11,7 @@ describe('RecipeDetail Used In summary', () => {
 
   it('keeps Used In compact and opens the full list in a dialog', () => {
     const view = render(<RecipeDetail recipe={RECIPES['fire-fragment']} />)
-    expect(screen.getByText(/downstream uses/)).toBeTruthy()
+    expect(screen.getByText(/USED IN.*4 uses/)).toBeTruthy()
     expect(screen.queryByText('Prismatic Fragment')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'VIEW' }))
     expect(screen.getByRole('dialog', { name: /FIRE FRAGMENT/ })).toBeTruthy()
@@ -84,7 +84,7 @@ describe('RecipeDetail Used In summary', () => {
     useGameStore.getState().hydrateState(state)
     const view = render(<RecipeDetail recipe={RECIPES['prismatic-fragment']} />)
 
-    expect(screen.getByText('MATERIAL CAPACITY')).toBeTruthy()
+    expect(screen.getByText('PRODUCTION CAPACITY')).toBeTruthy()
     expect(screen.getByText('CAN CRAFT')).toBeTruthy()
     expect(screen.getByText('LIMITING MATERIAL')).toBeTruthy()
     expect(screen.getByText(/Fire Fragment/)).toBeTruthy()
@@ -94,6 +94,16 @@ describe('RecipeDetail Used In summary', () => {
     equipmentState.progress.firstBossKill = true
     useGameStore.getState().hydrateState(equipmentState)
     render(<RecipeDetail recipe={RECIPES['ember-staff']} />)
-    expect(screen.queryByText('MATERIAL CAPACITY')).toBeNull()
+    expect(screen.queryByText('PRODUCTION CAPACITY')).toBeNull()
+  })
+
+  it('shows a fixed Used In row without a View action when there are no uses', () => {
+    const state = createInitialState()
+    state.progress.firstBossKill = true
+    useGameStore.getState().hydrateState(state)
+    render(<RecipeDetail recipe={RECIPES['ember-staff']} />)
+
+    expect(screen.getByText(/USED IN.*NONE/)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'VIEW' })).toBeNull()
   })
 })

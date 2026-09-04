@@ -102,6 +102,7 @@ When replacing a system, remove the obsolete implementation after migration rath
 - Transmutation recipe cards must prioritize readable identity and classification over maximum density. Use shared typography tokens; do not add one-off micro-font sizes for card metadata.
 - Tier filtering for Elemental/Material Transmutation content is shared and metadata-driven; do not maintain per-category item-ID tier lists.
 - Modal/dialog components must render through the shared portal layer and have a guaranteed contained overlay baseline.
+- Filter controls must visually communicate their semantics: mutually exclusive category/context choices use tab/radio-style presentation, while combinable filters use toggle/checkbox-style presentation. Do not style both interaction models identically.
 
 
 ## Archive ownership

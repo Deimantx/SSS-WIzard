@@ -3,8 +3,8 @@ import { DEFAULT_LAYOUTS } from './defaultLayouts'
 import { LAYOUT_VERSION, type SavedPanelLayout, type UiLayoutDocument } from './layoutEditorTypes'
 import { clampTopbarLayout, DEFAULT_TOPBAR_LAYOUT } from './shellLayout'
 
-export const UI_LAYOUTS_KEY = 'sss-wizard-ui-layout-v10'
-const LEGACY_UI_LAYOUTS_KEYS = ['sss-wizard-ui-layout-v9', 'sss-wizard-ui-layout-v8', 'sss-wizard-ui-layout-v7', 'sss-wizard-ui-layout-v6', 'sss-wizard-ui-layout-v5', 'sss-wizard-ui-layout-v4', 'sss-wizard-ui-layout-v3', 'sss-wizard-ui-layout-v2'] as const
+export const UI_LAYOUTS_KEY = 'sss-wizard-ui-layout-v11'
+const LEGACY_UI_LAYOUTS_KEYS = ['sss-wizard-ui-layout-v10', 'sss-wizard-ui-layout-v9', 'sss-wizard-ui-layout-v8', 'sss-wizard-ui-layout-v7', 'sss-wizard-ui-layout-v6', 'sss-wizard-ui-layout-v5', 'sss-wizard-ui-layout-v4', 'sss-wizard-ui-layout-v3', 'sss-wizard-ui-layout-v2'] as const
 
 const blankDocument = (): UiLayoutDocument => ({ version: LAYOUT_VERSION, screens: {}, shell: { topbar: clampTopbarLayout(DEFAULT_TOPBAR_LAYOUT) } })
 const validNumber = (value: unknown, fallback: number) => typeof value === 'number' && Number.isFinite(value) ? value : fallback
@@ -140,6 +140,7 @@ export function loadUiLayouts(): UiLayoutDocument {
       const panels: Record<string, SavedPanelLayout> = {}
       for (const [id, value] of Object.entries(source)) { const normalized = normalizePanel(screen, id, value); if (normalized) panels[id] = normalized }
       if (screen === 'tower-transmutation' && layoutNeedsMigration) {
+        if (hasUnmodifiedGeometry(source['transmutation-focus'], { x: 0, y: 15, w: 7, h: 18 })) panels['transmutation-focus'] = { ...panels['transmutation-focus'], ...DEFAULT_LAYOUTS['tower-transmutation']['transmutation-focus'] }
         if (hasUnmodifiedGeometry(source['transmutation-focus'], { x: 0, y: 15, w: 7, h: 12 })) panels['transmutation-focus'] = { ...panels['transmutation-focus'], ...DEFAULT_LAYOUTS['tower-transmutation']['transmutation-focus'] }
         if (hasUnmodifiedGeometry(source['transmutation-focus'], { x: 0, y: 15, w: 7, h: 6 })) panels['transmutation-focus'] = { ...panels['transmutation-focus'], ...DEFAULT_LAYOUTS['tower-transmutation']['transmutation-focus'] }
         if (hasUnmodifiedGeometry(source['transmutation-output-preview'], { x: 7, y: 8, w: 5, h: 13 })) panels['transmutation-output-preview'] = { ...panels['transmutation-output-preview'], ...DEFAULT_LAYOUTS['tower-transmutation']['transmutation-output-preview'] }

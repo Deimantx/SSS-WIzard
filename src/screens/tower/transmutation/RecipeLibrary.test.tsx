@@ -143,4 +143,40 @@ describe('RecipeLibrary screen preferences', () => {
     fireEvent.click(screen.getByRole('button', { name: 'UNOWNED' }))
     expect(JSON.parse(window.localStorage.getItem('sss-wizard-ui-preferences-v1')!).screenState.transmutation.unownedOnly).toBe(true)
   })
+
+  it('makes Show Only controls combinable and clears only quick filters', () => {
+    render(<RecipeLibrary selectedRecipeId="fire-fragment" onSelect={vi.fn()} />)
+    fireEvent.click(screen.getByRole('tab', { name: 'EQUIPMENT' }))
+    fireEvent.click(screen.getByRole('button', { name: 'CRAFTABLE' }))
+    fireEvent.click(screen.getByRole('button', { name: 'UNOWNED' }))
+
+    expect(screen.getByText('SHOW ONLY')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'CRAFTABLE' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByRole('button', { name: 'UNOWNED' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByRole('button', { name: 'Clear Show Only filters' })).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear Show Only filters' }))
+    expect(screen.getByRole('button', { name: 'CRAFTABLE' }).getAttribute('aria-pressed')).toBe('false')
+    expect(screen.getByRole('button', { name: 'UNOWNED' }).getAttribute('aria-pressed')).toBe('false')
+    expect(screen.getByRole('tab', { name: 'EQUIPMENT' }).getAttribute('aria-selected')).toBe('true')
+  })
+
+  it('keeps selected, assigned, tier, and locked card semantics distinct', () => {
+    render(<RecipeLibrary selectedRecipeId="fire-fragment" onSelect={vi.fn()} />)
+    act(() => { useGameStore.getState().setTransmutationEchoes('water-fragment', 1) })
+
+    const selectedTile = screen.getByRole('button', { name: /Fire Fragment/ })
+    const activeTile = screen.getByRole('button', { name: /Water Fragment/ })
+    expect(selectedTile.classList.contains('selected')).toBe(true)
+    expect(selectedTile.classList.contains('assigned')).toBe(false)
+    expect(activeTile.classList.contains('assigned')).toBe(true)
+    expect(activeTile.classList.contains('selected')).toBe(false)
+    expect(selectedTile.querySelector('.transmutation-badge.tier')?.textContent).toBe('T1')
+    expect(selectedTile.querySelector('.transmutation-tile-footer')).toBeTruthy()
+  })
+
+  it('marks library group headings for contained sticky positioning', () => {
+    render(<RecipeLibrary selectedRecipeId="fire-fragment" onSelect={vi.fn()} />)
+    expect(document.querySelector('.transmutation-library-scroll .transmutation-group-heading')).toBeTruthy()
+  })
 })

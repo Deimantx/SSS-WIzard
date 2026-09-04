@@ -39,10 +39,11 @@ export function RecipeLibrary({ selectedRecipeId, onSelect }: { selectedRecipeId
   const groups = categories.filter((category) => visible.some((recipe) => recipe.category === category))
   const collapsedCategories = saved.collapsedCategories
   const tierCounts = filters.categoryFilter === 'elemental' || filters.categoryFilter === 'material' ? counts.tierCounts[filters.categoryFilter] : undefined
+  const hasQuickFilters = filters.craftableOnly || filters.activeOnly || filters.unownedOnly
 
   const update = (value: Partial<typeof filters>) => setUiPreferences({ screenState: { transmutation: value } })
   const toggleCategory = (category: RecipeCategory) => setUiPreferences({ screenState: { transmutation: { collapsedCategories: { [category]: !collapsedCategories[category] } } } })
-  const forceOpen = filters.categoryFilter !== 'all' || query.trim().length > 0 || filters.craftableOnly || filters.activeOnly || filters.unownedOnly
+  const forceOpen = filters.categoryFilter !== 'all' || query.trim().length > 0 || hasQuickFilters
   const emptyMessage = getEmptyMessage(filters, query, showLocked, counts)
 
   return <Card className="transmutation-library" title="RECIPE LIBRARY" action={<span className="transmutation-count">{visible.length} / {showLocked ? recipes.length : counts.unlocked}</span>}>
@@ -56,7 +57,7 @@ export function RecipeLibrary({ selectedRecipeId, onSelect }: { selectedRecipeId
         {filters.equipmentSlotFilter === 'offhand' && <FilterRow label="TYPE" options={(['all', 'shield', 'focus'] as const).map((value) => ({ value, label: value === 'all' ? 'ALL' : OFFHAND_LABELS[value], count: counts.offhand[value] }))} value={filters.offhandPresentationFilter} onChange={(value) => update({ offhandPresentationFilter: value })} />}
       </>}
       {(filters.categoryFilter === 'elemental' || filters.categoryFilter === 'material') && <FilterRow label={`${filters.categoryFilter === 'elemental' ? 'ELEMENT' : 'MATERIAL'} TIER`} options={(['all', ...getTransmutationTierOptions()] as const).map((value) => ({ value, label: value === 'all' ? 'ALL' : `T${value}`, count: value === 'all' ? counts.categories[filters.categoryFilter] : tierCounts?.[value] ?? 0 }))} value={filters.tierFilter} onChange={(value) => update({ tierFilter: value })} />}
-      <div className="transmutation-filter-row transmutation-filter-state"><span className="transmutation-filter-label">STATE</span><div className="transmutation-filter-options"><FilterToggle label="CRAFTABLE" pressed={filters.craftableOnly} count={counts.craftable} onClick={() => update({ craftableOnly: !filters.craftableOnly })} /><FilterToggle label="ACTIVE" pressed={filters.activeOnly} count={counts.active} onClick={() => update({ activeOnly: !filters.activeOnly })} />{filters.categoryFilter === 'equipment' && <FilterToggle label="UNOWNED" pressed={filters.unownedOnly} count={counts.unowned} onClick={() => update({ unownedOnly: !filters.unownedOnly })} />}</div></div>
+      <div className="transmutation-filter-row transmutation-quick-filters"><div className="transmutation-quick-filter-label"><span className="transmutation-filter-label">SHOW ONLY</span><small>Combine filters</small></div><div className="transmutation-filter-options"><FilterToggle label="CRAFTABLE" pressed={filters.craftableOnly} count={counts.craftable} onClick={() => update({ craftableOnly: !filters.craftableOnly })} /><FilterToggle label="ACTIVE" pressed={filters.activeOnly} count={counts.active} onClick={() => update({ activeOnly: !filters.activeOnly })} />{filters.categoryFilter === 'equipment' && <FilterToggle label="UNOWNED" pressed={filters.unownedOnly} count={counts.unowned} onClick={() => update({ unownedOnly: !filters.unownedOnly })} />}{hasQuickFilters && <button type="button" className="transmutation-quick-filter-clear" aria-label="Clear Show Only filters" onClick={() => update({ craftableOnly: false, activeOnly: false, unownedOnly: false })}>CLEAR</button>}</div></div>
       </div>
       {showLocked && counts.hiddenLocked > 0 && <div className="transmutation-locked-banner"><LockKeyhole size={14} aria-hidden="true" /><span>DEV VIEW · {counts.hiddenLocked} locked recipes revealed. Unlock conditions still apply.</span></div>}
     </div>
@@ -77,7 +78,7 @@ function FilterRow<T extends string | number>({ label, options, value, onChange 
 }
 
 function FilterToggle({ label, pressed, count, onClick }: { label: string; pressed: boolean; count: number; onClick: () => void }) {
-  return <button type="button" aria-label={label} aria-pressed={pressed} className={pressed ? 'active' : ''} onClick={onClick}><span>{label}</span><small>{count}</small></button>
+  return <button type="button" aria-label={label} aria-pressed={pressed} className={`transmutation-quick-filter ${pressed ? 'active' : ''}`} onClick={onClick}><span className="transmutation-quick-filter-icon" aria-hidden="true">{pressed ? '✓' : ''}</span><span>{label}</span><small>{count}</small></button>
 }
 
 function getEmptyMessage(filters: TransmutationRecipeFilters, query: string, showLocked: boolean, counts: ReturnType<typeof getTransmutationRecipeFilterCounts>) {
@@ -114,8 +115,7 @@ function RecipeTile({ recipe, selected, onSelect }: { recipe: RecipeDefinition; 
       <span className="transmutation-tile-icon"><ItemIcon itemId={recipe.output.itemId} size="tile" /></span>
       <strong>{recipe.name}</strong>
       <span className="transmutation-tile-badges" aria-label={cardMeta.badges.join(', ')}>{cardMeta.badges.map((badge, index) => <span className={`transmutation-badge ${cardMeta.tier !== null && index === 0 ? 'tier' : ''}`} key={badge}>{badge}</span>)}</span>
-      <span className="transmutation-tile-owned">OWNED {formatOwned(owned)}</span>
-      {status !== 'paused' && <span className="transmutation-tile-status"><Status tone={locked ? 'locked' : status === 'active' ? 'active' : status === 'mana-limited' || status === 'waiting-mana' || status === 'waiting-materials' ? 'warning' : 'neutral'}>{statusText(status)}</Status></span>}
+      <span className="transmutation-tile-footer"><span className="transmutation-tile-owned">OWNED {formatOwned(owned)}</span>{status !== 'paused' && <span className="transmutation-tile-status"><Status tone={locked ? 'locked' : status === 'active' ? 'active' : status === 'mana-limited' || status === 'waiting-mana' || status === 'waiting-materials' ? 'warning' : 'neutral'}>{statusText(status)}</Status></span>}</span>
       {echoes > 0 && <Progress value={getRecipeProgressPercent(recipe, progress)} tone="gold" />}
     </button>
   </ItemTooltip>

@@ -67,7 +67,7 @@ describe('runtime panel auto-flow', () => {
 
   it('keeps Transmutation Focus bounded with a usable minimum height', () => {
     expect(getPanelDefinitions('tower-transmutation').find((panel) => panel.id === 'transmutation-focus')).toMatchObject({ heightMode: 'bounded-scroll', minH: 8 })
-    expect(DEFAULT_LAYOUTS['tower-transmutation']['transmutation-focus'].h).toBe(18)
+    expect(DEFAULT_LAYOUTS['tower-transmutation']['transmutation-focus'].h).toBe(15)
   })
 
   it('shifts locked runtime geometry while preserving the saved base object', () => {

@@ -2,7 +2,7 @@ import { ITEMS, getResearchXp } from '../../content/items/items'
 import { SCHOOLS } from '../../content/schools/schools'
 import { BALANCE } from '../../core/balance/balance'
 import { getEquippedReservedQuantity } from '../../core/equipment/equipmentRules'
-import { grantSchoolXp, pushNotification } from '../../engine'
+import { grantSchoolXp } from '../../engine'
 import type { GameState, ItemId, ResearchActivity, ResearchJobState, ResearchSlotId, SchoolId } from '../../types'
 import { allocateContinuousMana, CONTINUOUS_MANA_EPSILON, requestedManaForProgress, type ContinuousManaAllocation, type ContinuousManaFundingResult, type ContinuousManaWorkRequest } from '../simulation/continuousManaScheduler'
 import { RESEARCH_SLOT_ORDER } from './researchReservations'
@@ -115,7 +115,6 @@ const completeResearchCycle = (state: GameState, slotId: ResearchSlotId, job: Re
   const levels = grantSchoolXp(state, job.targetSchoolId, xp)
   context.report?.recordResearch(job.itemId, job.targetSchoolId, xp)
   job.remainingQuantity -= 1
-  if (levels.after > levels.before) pushNotification(state, `${SCHOOLS[job.targetSchoolId].name} reached Level ${levels.after}`, 'success')
   return 'complete' as const
 }
 

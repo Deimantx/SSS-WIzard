@@ -7,7 +7,7 @@ import { getPanelDefinition } from './panelRegistry'
 import { getSavedScreenLayouts, selectLayoutPanel, togglePanelHidden, togglePanelLocked, useLayoutEditorStore } from './layoutEditorStore'
 import { usePanelNaturalHeight } from './usePanelNaturalHeight'
 
-export function EditableGridItem({ screen, panelId, children, onNaturalHeightChange }: { screen: ScreenId; panelId: string; children: ReactNode; onNaturalHeightChange?: (panelId: string, height: number) => void }) {
+export function EditableGridItem({ screen, panelId, sequenceIndex = 0, children, onNaturalHeightChange }: { screen: ScreenId; panelId: string; sequenceIndex?: number; children: ReactNode; onNaturalHeightChange?: (panelId: string, height: number) => void }) {
   const editor = useLayoutEditorStore()
   const layout = getSavedScreenLayouts(screen)[panelId]
   const panel = getPanelDefinition(screen, panelId)
@@ -23,7 +23,7 @@ export function EditableGridItem({ screen, panelId, children, onNaturalHeightCha
       <div className="ui-editor-item-actions"><GameTooltip content={layout?.locked ? 'Unlock panel' : 'Lock panel'}><button type="button" className="ui-editor-no-drag" onClick={(event) => { event.stopPropagation(); togglePanelLocked(screen, panelId) }} aria-label={layout?.locked ? 'Unlock panel' : 'Lock panel'}>{layout?.locked ? <Lock size={12} /> : <Unlock size={12} />}</button></GameTooltip><GameTooltip content={layout?.hidden ? 'Show panel' : 'Hide panel'}><button type="button" className="ui-editor-no-drag" onClick={(event) => { event.stopPropagation(); togglePanelHidden(screen, panelId) }} aria-label={layout?.hidden ? 'Show panel' : 'Hide panel'}><EyeOff size={12} /></button></GameTooltip></div>
     </div>}
     <div className="ui-editor-panel-viewport">
-      <div ref={naturalContentRef} className={`ui-editor-panel-content ui-editor-panel-natural-content height-mode-${panel.heightMode ?? 'content'} ${editor.isEditing && !editor.panelInteraction ? 'ui-editor-interaction-off' : ''}`}>{children}</div>
+      <div ref={naturalContentRef} className={`ui-editor-panel-content ui-editor-panel-natural-content height-mode-${panel.heightMode ?? 'content'} ${editor.isEditing && !editor.panelInteraction ? 'ui-editor-interaction-off' : ''}`} data-panel-sequence-index={sequenceIndex} style={{ '--panel-sequence-delay': `${30 + sequenceIndex * 25}ms` } as React.CSSProperties}>{children}</div>
     </div>
   </div>
 }

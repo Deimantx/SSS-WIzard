@@ -14,6 +14,7 @@ import { BLOCK_DAMAGE_REDUCTION, MAX_RESISTANCE } from '../../game/core/balance/
 import { formatBasicAttackTime } from '../../game/presentation/combat'
 import { getEquipmentPrimaryCombatSummary } from '../../game/presentation/equipment/equipmentCombatPresentation'
 import { getAdaptiveEquipmentLayout } from './equipmentLayout'
+import { InspectorTransition } from '../../ui/game-feel/InspectorTransition'
 
 type ArmoryFilter = 'all' | EquipmentItemSlot
 type WeaponHandsFilter = 'all' | 1 | 2
@@ -128,7 +129,7 @@ export function EquipmentScreenV2() {
     {visibleEquipment.length === 0 ? <div className="equipment-empty-armory"><strong>NO {EMPTY_FILTER_LABELS[filter]} OWNED</strong><small>Future equipment will appear here.</small></div> : <div className="equipment-armory-grid">{visibleEquipment.map((id) => { const item = ITEMS[id]; const selected = id === selectedItemId; const equipped = getItemPositions(id).some((position) => equipment[position] === id); return <ItemTooltip itemId={id} owned={inventory[id] ?? 0} equipped={equipped} key={id}><button type="button" className={`equipment-armory-card ${selected ? 'selected' : ''} ${equipped ? 'equipped' : ''}`} onClick={() => selectArmoryItem(id)}><span className="equipment-armory-icon" style={{ color: item.color }}>{item.icon}</span><span className="equipment-armory-copy"><strong>{item.name}</strong><small>{getEquipmentPrimaryCombatSummary(item) ?? (item.equipmentSlot ? EQUIPMENT_ITEM_SLOT_LABELS[item.equipmentSlot] : 'Equipment')}</small></span>{item.weaponHands && <Status tone="warning">{item.weaponHands}H</Status>}{equipped && <Status tone="success">EQUIPPED</Status>}</button></ItemTooltip> })}</div>}
   </Card>
 
-  const inspector = <Card title="GEAR INSPECTOR" className="equipment-inspector">
+  const inspector = <Card title="GEAR INSPECTOR" className="equipment-inspector"><InspectorTransition identity={selectedItemId}>
     {!selectedItem ? <div className="equipment-inspector-empty"><strong>SELECT GEAR</strong><small>Choose an item from the Armory to compare its real loadout impact.</small></div> : <>
       <div className="equipment-inspector-hero"><span className="equipment-inspector-icon" style={{ color: selectedItem.color }}>{selectedItem.icon}</span><div><div className="eyebrow">{selectedItem.equipmentSlot ? EQUIPMENT_ITEM_SLOT_LABELS[selectedItem.equipmentSlot] : 'EQUIPMENT'}</div><h3>{selectedItem.name}</h3><p>{selectedItem.description}</p></div></div>
       {copyAvailability && <GameTooltip block content={<TooltipContent title="Equipment copies" description="Owned copies include every copy reserved by the current loadout. A Ring needs one owned copy per occupied Ring position." />}><div className="equipment-copy-availability"><span>COPIES</span><strong>OWNED {copyAvailability.owned}</strong><strong>EQUIPPED {copyAvailability.equipped}</strong><strong>AVAILABLE {copyAvailability.available}</strong></div></GameTooltip>}
@@ -141,7 +142,7 @@ export function EquipmentScreenV2() {
       {equippedPositions.length > 0 && <div className="equipment-current-position"><Status tone="success">EQUIPPED IN {equippedPositions.map((position) => EQUIPMENT_POSITION_LABELS[position]).join(' + ')}</Status></div>}
       <div className="equipment-inspector-actions"><Button variant="primary" disabled={!preview?.compatible || ringNeedsChoice || equippedPositions.includes(preview?.position ?? 'weapon')} onClick={() => selectedItemId && equipItem(selectedItemId, preview?.position ?? undefined)}>EQUIP</Button>{inspectorTargetPosition && equipment[inspectorTargetPosition] === selectedItemId && <Button variant="ghost" onClick={() => unequipItem(inspectorTargetPosition)}>UNEQUIP {EQUIPMENT_POSITION_LABELS[inspectorTargetPosition].toUpperCase()}</Button>}</div>
     </>}
-  </Card>
+  </InspectorTransition></Card>
 
   return <div className="screen-content equipment-screen"><div className="screen-header"><div><div className="eyebrow">WIZARD LOADOUT · EQUIPMENT</div><h1>Build the tower’s answer.</h1><p>Eight equipment positions, owned gear, and honest loadout impact. Two-handed weapons trade away the Offhand.</p></div></div><EditableGrid screen="equipment" layoutTransform={layoutTransform} panels={[{ id: 'equipment-loadout', content: loadout }, { id: 'equipment-stats', content: statsPanel }, { id: 'equipment-owned', content: armory }, { id: 'equipment-inspector', content: inspector }]} /></div>
 }

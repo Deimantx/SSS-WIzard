@@ -4,7 +4,7 @@ import { getGameFeelEvents, subscribeGameFeelEvents } from './gameFeelStore'
 import { playUiSound, type UiSoundName } from './audio/uiAudioEngine'
 import type { GameFeelEvent } from './gameFeelTypes'
 
-const SOUND_BY_EVENT: Partial<Record<GameFeelEvent['type'], UiSoundName>> = { 'craft-complete': 'craft', unlock: 'unlock', 'item-gain': 'item-gain', equip: 'equip', focus: 'focus', error: 'error', success: 'success' }
+const SOUND_BY_EVENT: Partial<Record<GameFeelEvent['type'], UiSoundName>> = { 'craft-complete': 'craft', unlock: 'unlock', 'item-gain': 'item-gain', equip: 'equip', unequip: 'click', protect: 'success', unprotect: 'click', sell: 'confirm', destroy: 'success', 'autocast-on': 'focus', 'autocast-off': 'click', focus: 'focus', echo: 'focus', error: 'error', success: 'success' }
 
 export function GameFeelAudioObserver() {
   const events = useSyncExternalStore(subscribeGameFeelEvents, getGameFeelEvents, getGameFeelEvents)

@@ -63,6 +63,7 @@ export interface UiPreferences {
   backgroundEffects: boolean
   reducedMotion: boolean
   customCursor: boolean
+  showFpsCounter: boolean
   uiSounds: boolean
   uiSoundVolume: number
   customTheme: CustomThemeColors

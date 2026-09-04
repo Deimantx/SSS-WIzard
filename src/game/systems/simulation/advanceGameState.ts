@@ -7,7 +7,7 @@ import { advanceChanneling } from '../../engine/channelingEngine'
 import { appendLog, playerBasicDamage, pushNotification, recalculateDerivedStats } from '../../engine'
 import { castSpellInternal, getSpellCastFailure } from '../../engine/spellEngine'
 import { executeCombatEffects, getBasicAttackTags } from '../combat/effectResolver'
-import { resolveCombatDeaths, spawnNextEnemy } from '../combat/combatRuntime'
+import { resolveCombatDeaths, spawnNextEnemy, type CombatLootObserver } from '../combat/combatRuntime'
 import { getCurrentEnemyActionRate, getPlayerBasicAttackRate, resolveCurrentEnemyAction, startNextEnemyAction } from '../combat/actionRuntime'
 import { actorCannotAct, expirePendingStatuses, getNextCombatStatusEventMs, getNextPlayerStatusEventMs, tickStatuses } from '../combat/statusRuntime'
 import { getNextCombatBarrierEventMs, getNextPlayerBarrierEventMs, tickBarriers } from '../combat/barrierRuntime'
@@ -31,6 +31,7 @@ export interface AdvanceContext {
   mode: 'live' | 'banked'
   report?: SimulationReportCollector
   onItemAcquired?: (itemId: ItemId, quantity: number) => void
+  onCombatLoot?: CombatLootObserver
   uiEvents?: CombatEventSink
   telemetry?: CombatTelemetryObserver
   alerts?: CombatAlertObserver
@@ -38,6 +39,7 @@ export interface AdvanceContext {
 }
 
 const spellUnlocked = isSpellUnlocked
+const resolveDeaths = (state: GameState, context: AdvanceContext) => resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents, { onLootResolved: context.onCombatLoot })
 
 const meetsAutoCondition = (state: GameState, spellId: SpellId) => {
   const condition = SPELLS[spellId].autoCondition
@@ -69,7 +71,7 @@ const autoCastReadySpells = (state: GameState, context: AdvanceContext) => {
       if (latchIndex >= 0) latches.splice(latchIndex, 1)
       castSpellInternal(state, spellId, true, context.uiEvents)
       if (getSpellCastFailure(state, spellId) === 'mana' && !latches.includes(spellId)) latches.push(spellId)
-      if (resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents)) return
+      if (resolveDeaths(state, context)) return
     }
   }
 }
@@ -141,7 +143,7 @@ const advanceCombatTimeline = (state: GameState, delta: number, context: Advance
     guard += 1
     if (!state.combat.enemyCurrentStepId && !actorCannotAct(state, 'enemy') && !state.debug.freezeEnemyActions) {
       startNextEnemyAction(state, executeCombatEffects, 0, context.uiEvents)
-      if (resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents)) break
+      if (resolveDeaths(state, context)) break
     }
     ensurePlayerBasicRuntime(state)
     if (!state.combat.enemyId) break
@@ -191,7 +193,7 @@ const advanceCombatTimeline = (state: GameState, delta: number, context: Advance
     advanceObservers(state, elapsed, context)
 
     // Status/Barrier callbacks have priority at an exact boundary.
-    const combatEnded = resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents)
+    const combatEnded = resolveDeaths(state, context)
     expirePendingStatuses(state, pendingStatusExpirations, executeCombatEffects, context.uiEvents)
     if (combatEnded) break
 
@@ -202,7 +204,7 @@ const advanceCombatTimeline = (state: GameState, delta: number, context: Advance
       state.combat.playerAttackDurationMs = Math.min(MAX_ACTION_WORK_MS, Math.max(MIN_ACTION_TIME_MS, BALANCE.player.basicAttackIntervalMs))
       state.combat.playerAttackTimerMs = state.combat.playerAttackDurationMs
       playerBasicResolved = true
-      if (resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents)) break
+      if (resolveDeaths(state, context)) break
     }
 
     const reachedMeaningfulBoundary = elapsed <= 0 || boundaries.some((value) => value <= elapsed)
@@ -210,7 +212,7 @@ const advanceCombatTimeline = (state: GameState, delta: number, context: Advance
     if (!state.combat.enemyId) break
     if (!actorCannotAct(state, 'enemy') && !state.debug.freezeEnemyActions && state.combat.enemyCurrentStepId && state.combat.enemyActionTimerMs <= 0) {
       resolveCurrentEnemyAction(state, executeCombatEffects, 0, context.uiEvents)
-      if (resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents)) break
+      if (resolveDeaths(state, context)) break
       // An enemy action can make a conditional spell ready at this exact
       // timestamp (for example, Flow Mend after taking damage).
       autoCastReadySpells(state, context)
@@ -226,7 +228,7 @@ const advanceCombatDowntimeTimeline = (state: GameState, delta: number, context:
     guard += 1
     if (state.combat.encounterTimerMs <= 0) {
       spawnNextEnemy(state, context.uiEvents)
-      if (resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents)) break
+      if (resolveDeaths(state, context)) break
       // Spawn is an exact boundary. A ready spell must not wait for the next
       // outer simulation quantum before attempting its first cast.
       autoCastReadySpells(state, context)
@@ -252,12 +254,12 @@ const advanceCombatDowntimeTimeline = (state: GameState, delta: number, context:
     remaining = Math.max(0, remaining - elapsed)
     advanceObservers(state, elapsed, context)
 
-    const combatEnded = resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents)
+    const combatEnded = resolveDeaths(state, context)
     expirePendingStatuses(state, pendingStatusExpirations, executeCombatEffects, context.uiEvents)
     if (combatEnded) break
     if (state.combat.encounterTimerMs <= 0) {
       spawnNextEnemy(state, context.uiEvents)
-      if (resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents)) break
+      if (resolveDeaths(state, context)) break
       autoCastReadySpells(state, context)
       break
     }

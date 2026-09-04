@@ -133,3 +133,13 @@ When replacing a system, remove the obsolete implementation after migration rath
 - All positive item grants go through the central item-acquisition helper so Collection discovery remains correct.
 - Monster discovery happens on encounter, not first kill.
 - UI icons and ambiguous controls use the shared `GameTooltip` system, never browser `title` tooltips.
+
+## Feedback and reward presentation
+
+- Use the shared hierarchy: common live item rewards use Loot Reveal, meaningful progression unlocks use Milestone Banner, generic system information uses Toast, and short local reactions use Game Feel FX. Do not present one event redundantly through every layer.
+- Loot and reward queues are transient UI state, bounded, source-aware, and coalesced for frequent farming. Never replay historical or offline acquisitions as a notification flood.
+- Emit reward presentation from UI/store result boundaries after authoritative gameplay resolution succeeds; low-level gameplay and loot modules must not import reward UI.
+- First-discovery markers use authoritative Collection, Bestiary, spell, and recipe truth. Presentation attention is profile-aware and never replaces progression state.
+- Master-detail screens use the shared inspector transition for identity changes only; same-identity quantity or stat updates must not replay the full transition.
+- Screen panel sequencing is screen-entry-only and must animate safe inner panel surfaces, never React Grid Layout root transforms.
+- FPS is a UI preference and performance readout only; its sampler must not update React state every animation frame.

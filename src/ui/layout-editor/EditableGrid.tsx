@@ -35,7 +35,7 @@ export function EditableGrid({ screen, panels, children, layoutTransform }: { sc
     if (width <= 0 || width >= 760) return autoFlowGrid
     return stackPanelLayout(autoFlowGrid)
   }, [autoFlowGrid, width])
-  const renderedChildren = availableDefinitions.filter((definition) => autoFlowGrid.some((item) => item.i === definition.id)).map((definition) => <div key={definition.id}><EditableGridItem screen={screen} panelId={definition.id} onNaturalHeightChange={handleNaturalHeightChange}>{available.get(definition.id)}</EditableGridItem></div>)
+  const renderedChildren = availableDefinitions.filter((definition) => autoFlowGrid.some((item) => item.i === definition.id)).map((definition, sequenceIndex) => <div key={definition.id}><EditableGridItem screen={screen} panelId={definition.id} sequenceIndex={sequenceIndex} onNaturalHeightChange={handleNaturalHeightChange}>{available.get(definition.id)}</EditableGridItem></div>)
 
   const handleLayoutStop: EventCallback = (layout, _oldItem, newItem) => { if (editor.isEditing && newItem) commitGridLayout(screen, layout, newItem.i) }
   return <div className={`ui-editor-grid ${editor.isEditing ? 'editing' : ''}`} ref={containerRef}>

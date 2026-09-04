@@ -11,6 +11,7 @@ export function NotificationFeelObserver() {
     notifications.forEach((note) => {
       if (seen.current.has(note.id)) return
       seen.current.add(note.id)
+      if (note.key?.startsWith('action-') || note.text.includes('Auto-Cast enabled') || note.text.includes('Cannot enable Auto-Cast')) return
       if (note.tone === 'warning') emitGameFeelEvent({ type: 'error', x: window.innerWidth - 170, y: 58, color: 'var(--ui-warning)', intensity: 0.8 })
       if (note.tone === 'success') emitGameFeelEvent({ type: 'success', x: window.innerWidth - 170, y: 58, color: 'var(--ui-success)', intensity: 0.9 })
     })

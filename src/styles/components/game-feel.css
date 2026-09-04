@@ -254,6 +254,10 @@
   overflow: hidden;
   pointer-events: none;
 }
+.inspector-transition { min-width: 0; min-height: 0; animation: inspector-swap 140ms ease-out both; }
+@keyframes inspector-swap { from { opacity: 0; filter: brightness(1.22); } 55% { opacity: 1; filter: brightness(1.06); } to { opacity: 1; filter: none; } }
+:root[data-reduced-motion='true'] .inspector-transition { animation: inspector-swap-reduced 70ms ease-out both; }
+@keyframes inspector-swap-reduced { from { opacity: 0; } to { opacity: 1; } }
 
 .game-feel-burst {
   position: absolute;
@@ -441,6 +445,12 @@
 .game-shell .screen-scroll .game-screen-transition [data-game-panel='true'] {
   animation: game-panel-wake 360ms ease-out both;
 }
+.game-shell .screen-scroll .game-screen-transition[data-screen-entry='true'] .ui-editor-panel-content {
+  animation: game-panel-sequence 260ms ease-out var(--panel-sequence-delay, 30ms) both;
+}
+.game-shell.editor-open .screen-scroll .game-screen-transition[data-screen-entry='true'] .ui-editor-panel-content,
+.game-shell.reduced-motion .screen-scroll .game-screen-transition[data-screen-entry='true'] .ui-editor-panel-content { animation: none; }
+@keyframes game-panel-sequence { from { opacity: .38; filter: brightness(1.2); } 55% { opacity: 1; filter: brightness(1.04); } to { opacity: 1; filter: none; } }
 
 /* The current selection is a stable focus cue; hover remains a transient lift. */
 .game-shell .screen-scroll .transmutation-recipe-tile.selected,

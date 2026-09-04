@@ -6,12 +6,16 @@ import { getBestiaryEntriesByCategory, getBestiarySearchText, type BestiaryCateg
 import { BestiaryIndex } from './BestiaryIndex'
 import { BestiaryInspector } from './BestiaryInspector'
 import { BestiarySummary } from './BestiarySummary'
+import { clearAttention, useProfileAttention } from '../../ui/attention/attentionStore'
+import { getActiveProfileId } from '../../profiles/profileSessionStore'
+import { InspectorTransition } from '../../ui/game-feel/InspectorTransition'
 
 export function BestiaryScreen() {
   const progress = useGameStore((state) => state.progress)
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState<BestiaryCategoryFilter>('all')
   const [selected, setSelected] = useState<MonsterId | null>(null)
+  const attention = useProfileAttention(getActiveProfileId())
   const visibleIds = useMemo(() => getBestiaryEntriesByCategory(category).filter((monster) => {
     const discovered = progress.discoveredMonsters.includes(monster.id)
     return !search.trim() || discovered && getBestiarySearchText(monster).includes(search.trim().toLowerCase())
@@ -22,7 +26,7 @@ export function BestiaryScreen() {
     setSelected((current) => current && visibleIds.includes(current) ? current : discoveredVisibleId)
   }, [visibleIds.join('|'), progress.discoveredMonsters.join('|')])
 
-  const index = <BestiaryIndex progress={progress} search={search} category={category} onSearch={setSearch} onCategory={setCategory} selected={selected} onSelect={setSelected} />
-  const inspector = <BestiaryInspector monsterId={selected} progress={progress} />
+  const index = <BestiaryIndex progress={progress} search={search} category={category} onSearch={setSearch} onCategory={setCategory} selected={selected} newEntries={new Set(attention.unseenMonsters)} onSelect={(monsterId) => { clearAttention(getActiveProfileId(), 'monster', monsterId); setSelected(monsterId) }} />
+  const inspector = <InspectorTransition identity={selected}><BestiaryInspector monsterId={selected} progress={progress} /></InspectorTransition>
   return <div className="screen-content bestiary-screen"><div className="screen-header"><div><div className="eyebrow">FIELD ARCHIVE · BESTIARY</div><h1>Know what waits beyond the tower.</h1><p>Encounter a creature once to record its statistics, traits, attack patterns and loot table permanently.</p></div></div><EditableGrid screen="bestiary" panels={[{ id: 'bestiary-summary', content: <BestiarySummary progress={progress} /> }, { id: 'bestiary-index', content: index }, { id: 'bestiary-inspector', content: inspector }]} /></div>
 }

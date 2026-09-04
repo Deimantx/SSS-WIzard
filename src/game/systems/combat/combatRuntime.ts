@@ -68,11 +68,17 @@ export const spawnNextEnemy = (state: GameState, uiEvents?: CombatEventSink) => 
   spawnEnemy(state, chooseMonster(dungeon.monsterPool, () => nextCombatRandom(state)), uiEvents)
 }
 
-export const finishEnemy = (state: GameState, report?: SimulationReportCollector, onItemAcquired?: (itemId: ItemId, quantity: number) => void, uiEvents?: CombatEventSink) => {
+export interface CombatLootDrop { itemId: ItemId; quantity: number; isNewDiscovery: boolean }
+export type CombatLootObserver = (state: GameState, enemyId: MonsterId, drops: readonly CombatLootDrop[]) => void
+
+export const finishEnemy = (state: GameState, report?: SimulationReportCollector, onItemAcquired?: (itemId: ItemId, quantity: number) => void, uiEvents?: CombatEventSink, onLootResolved?: CombatLootObserver) => {
   const enemyId = state.combat.enemyId
   if (!enemyId) return
   const monster = MONSTERS[enemyId]
-  const drops = resolveMonsterLoot(state, enemyId, (itemId, quantity) => { onItemAcquired?.(itemId, quantity); report?.recordLoot(itemId, quantity); uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'loot', sourceId: 'loot-drop', itemId, amount: quantity }) })
+  const undiscoveredItems = new Set(state.progress.discoveredItems)
+  const resolvedDrops: CombatLootDrop[] = []
+  const drops = resolveMonsterLoot(state, enemyId, (itemId, quantity) => { onItemAcquired?.(itemId, quantity); report?.recordLoot(itemId, quantity); resolvedDrops.push({ itemId, quantity, isNewDiscovery: !undiscoveredItems.has(itemId) }); uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'loot', sourceId: 'loot-drop', itemId, amount: quantity }) })
+  if (resolvedDrops.length) onLootResolved?.(state, enemyId, resolvedDrops)
   report?.recordKill(enemyId)
   state.combat.enemyId = null
   state.combat.enemyInstanceKey = null
@@ -99,7 +105,6 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
       state.progress.emberStaffUnlocked = true
       state.progress.forestHeartUnlocked = true
       pushNotification(state, 'Forest Heart defeated - Guild unlocked', 'success')
-      pushNotification(state, 'Four equipment recipes are now available', 'success')
     }
     if (bossId === 'forest-heart' && !state.progress.permanentFocusBonuses['forest-heart']) {
       state.progress.permanentFocusBonuses['forest-heart'] = BALANCE.focus.forestHeartBonus
@@ -131,7 +136,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   }
 }
 
-export interface ResolveCombatDeathsOptions { forceEnemyDeath?: boolean }
+export interface ResolveCombatDeathsOptions { forceEnemyDeath?: boolean; onLootResolved?: CombatLootObserver }
 
 export const resolveCombatDeaths = (state: GameState, report?: SimulationReportCollector, onItemAcquired?: (itemId: ItemId, quantity: number) => void, uiEvents?: CombatEventSink, options: ResolveCombatDeathsOptions = {}) => {
   // The legacy field is only honored for direct in-memory compatibility with
@@ -168,7 +173,7 @@ export const resolveCombatDeaths = (state: GameState, report?: SimulationReportC
   if (state.combat.enemyId && state.combat.enemyHp <= 0) {
     const enemyId = state.combat.enemyId
     uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'death', sourceId: 'enemy-defeated' })
-    finishEnemy(state, report, onItemAcquired, uiEvents)
+    finishEnemy(state, report, onItemAcquired, uiEvents, options.onLootResolved)
     return true
   }
   return false

@@ -10,3 +10,4 @@
 .nav-item svg:first-child { opacity: .78; }
 .nav-item.active svg:first-child { color: var(--ui-accent); opacity: 1; }
 .sidebar .nav-list { flex: 1; }
+.nav-attention-dot { display: inline-block; width: 5px; height: 5px; margin-left: auto; border-radius: 50%; background: var(--ui-secondary); box-shadow: 0 0 8px var(--ui-secondary); }

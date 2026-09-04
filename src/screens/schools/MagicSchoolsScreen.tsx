@@ -8,6 +8,9 @@ import { SpellPresetDialog } from './SpellPresetDialog'
 import { SpellPresetSummary } from './SpellPresetSummary'
 import { getSpellBrowserEntries, type SpellBrowserFilters } from './spellBrowserSelectors'
 import { getAdaptiveSchoolsLayout } from './schoolsLayout'
+import { clearAttention, useProfileAttention } from '../../ui/attention/attentionStore'
+import { getActiveProfileId } from '../../profiles/profileSessionStore'
+import { InspectorTransition } from '../../ui/game-feel/InspectorTransition'
 
 const DEFAULT_FILTERS: SpellBrowserFilters = { school: 'all', search: '', showUnlockedOnly: true, type: 'All Types', sort: 'Unlock Level' }
 
@@ -18,6 +21,7 @@ export function MagicSchoolsScreenV2() {
   const activities = useGameStore((state) => state.activities)
   const maxFocus = useGameStore((state) => state.player.maxFocus)
   const allowFocusOverCap = useGameStore((state) => state.debug.allowFocusOverCap)
+  const attention = useProfileAttention(getActiveProfileId())
   const toggleAutoCast = useGameStore((state) => state.toggleAutoCast)
   const browserState = useMemo(() => ({ schools, progress, equipment, activities }), [schools, progress, equipment, activities])
   const inspectorState = useMemo(() => ({ schools, progress, equipment, activities, player: { maxFocus }, debug: { allowFocusOverCap } }), [schools, progress, equipment, activities, maxFocus, allowFocusOverCap])
@@ -41,8 +45,8 @@ export function MagicSchoolsScreenV2() {
   return <div className="screen-content schools-screen">
     <div className="screen-header schools-screen-header"><div><div className="eyebrow">MAGIC SCHOOL ARCHIVE</div><h1>Magic Schools</h1><p>Browse your known Spells, inspect their effects and configure reusable Auto-Cast presets.</p></div></div>
     <EditableGrid screen="schools" layoutTransform={layoutTransform} panels={[
-      { id: 'schools-browser', content: <SpellBrowser state={browserState} filters={filters} onFiltersChange={setFilters} selectedEntryId={selectedEntryId} onSelect={(id) => { dismissGameTooltips(); setSelectedEntryId(id); setRankPathOpen(false) }} /> },
-      { id: 'schools-inspector', content: <SpellInspector entry={selectedEntry} state={inspectorState} onContentHeightChange={reportInspectorContentHeight} rankPathOpen={rankPathOpen} onToggleRankPath={() => { dismissGameTooltips(); setRankPathOpen((open) => !open) }} onToggleAutoCast={toggleAutoCast} /> },
+      { id: 'schools-browser', content: <SpellBrowser state={browserState} filters={filters} onFiltersChange={setFilters} selectedEntryId={selectedEntryId} newSpells={new Set(attention.unseenSpells)} onSelect={(id) => { dismissGameTooltips(); clearAttention(getActiveProfileId(), 'spell', id); setSelectedEntryId(id); setRankPathOpen(false) }} /> },
+      { id: 'schools-inspector', content: <InspectorTransition identity={selectedEntry?.id}><SpellInspector entry={selectedEntry} state={inspectorState} onContentHeightChange={reportInspectorContentHeight} rankPathOpen={rankPathOpen} onToggleRankPath={() => { dismissGameTooltips(); setRankPathOpen((open) => !open) }} onToggleAutoCast={toggleAutoCast} /></InspectorTransition> },
       { id: 'schools-presets', content: <SpellPresetSummary onManage={() => { dismissGameTooltips(); setRankPathOpen(false); setPresetsOpen(true) }} /> },
     ]} />
     <SpellPresetDialog open={presetsOpen} onClose={() => setPresetsOpen(false)} />

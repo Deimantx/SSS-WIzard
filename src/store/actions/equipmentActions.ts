@@ -23,15 +23,15 @@ export const equipItemAction = (state: GameState, itemId: ItemId, targetPosition
     const message = result.reason === 'incompatible' && item?.equipmentSlot === 'offhand' && isTwoHandedWeapon(state.equipment.weapon)
       ? 'Requires a one-handed Weapon.'
       : failureMessage[result.reason]
-    pushNotification(state, message, 'warning')
+    pushNotification(state, message, 'warning', { key: 'action-equip', cooldownMs: 1 })
     return result
   }
 
   const removedOffhand = result.removedOffhand
   state.equipment = result.nextEquipment
   recalculateDerivedStats(state)
-  if (removedOffhand) pushNotification(state, `${item.name} equipped. ${ITEMS[removedOffhand]?.name ?? removedOffhand} was unequipped.`, 'success')
-  else pushNotification(state, `${item.name} equipped`, 'success')
+  if (removedOffhand) pushNotification(state, `${item.name} equipped. ${ITEMS[removedOffhand]?.name ?? removedOffhand} was unequipped.`, 'success', { key: 'action-equip', cooldownMs: 1 })
+  else pushNotification(state, `${item.name} equipped`, 'success', { key: 'action-equip', cooldownMs: 1 })
   return { ok: true, position: result.position, unequippedOffhand: removedOffhand }
 }
 

@@ -6,7 +6,7 @@ import { MONSTERS } from '../game/content/monsters'
 import { SPELLS } from '../game/content/spells/spells'
 import { castSpellAction } from './actions/combatActions'
 import { manaRegenPerSecond, pushNotification, recalculateDerivedStats, selectFreeFocus, selectUsedFocus } from '../game/engine'
-import { debugApplyStatus, spawnEnemy, spawnNextEnemy } from '../game/systems/combat/combatRuntime'
+import { debugApplyStatus, spawnEnemy, spawnNextEnemy, type CombatLootObserver } from '../game/systems/combat/combatRuntime'
 import { removeStatus as removeCombatStatus } from '../game/systems/combat/statusRuntime'
 import { damagePlayer, executeCombatEffects } from '../game/systems/combat/effectResolver'
 import { forceResolveEnemyAction as forceResolveEnemyActionRuntime, resolveCurrentEnemyAction as resolveCurrentEnemyActionRuntime, setEnemyActionPattern as setEnemyActionPatternRuntime, startEnemyAction as startEnemyActionRuntime, startNextEnemyAction as startNextEnemyActionRuntime } from '../game/systems/combat/actionRuntime'
@@ -45,9 +45,23 @@ import { createCombatEventSink } from '../game/systems/combat/combatEventSink'
 import { combatTelemetryObserver, combatTelemetrySink } from '../game/telemetry/combat/combatTelemetryStore'
 import { clearDungeonStatistics, dungeonStatisticsObserver, dungeonStatisticsSink } from '../game/telemetry/dungeon/dungeonStatisticsStore'
 import { advanceCombatOnlyForDebug, clearToBossForDebug, despawnEnemyForDebug, fastResolveNormalEnemiesForDebug, forceKillEnemyForDebug, jumpToBossForDebug, restartBossForDebug } from '../game/systems/combat/debugCombatRuntime'
+import { enqueueCombatLootReveal } from '../ui/rewards/lootRevealStore'
+import { resetProfileAttention } from '../ui/attention/attentionStore'
+import { emitGameFeelEvent } from '../ui/game-feel/gameFeelStore'
+import type { GameFeelEventType } from '../ui/game-feel/gameFeelTypes'
 
 const combatEventSink = createCombatEventSink(combatLogSink, combatRecapSink, combatDefeatSink, combatAlertsSink, dungeonStatisticsSink, combatTelemetrySink)
 const combatLogUiSink = combatEventSink
+const combatLootObserver: CombatLootObserver = (state, enemyId, drops) => {
+  const dungeon = DUNGEONS[state.combat.dungeonId ?? 'whispering-woods']
+  const monster = MONSTERS[enemyId]
+  enqueueCombatLootReveal({ sourceLabel: dungeon?.name ?? 'Combat', sourceDetail: monster?.name ?? enemyId, items: drops.map(({ itemId, quantity, isNewDiscovery }) => ({ itemId, quantity, isNewDiscovery })) })
+}
+const emitActionFeel = (type: GameFeelEventType, selector: string, color = 'var(--ui-accent)', intensity = 0.95) => {
+  const element = typeof document === 'undefined' ? null : document.querySelector<HTMLElement>(selector)
+  const rect = element?.getBoundingClientRect()
+  emitGameFeelEvent({ type, x: rect && rect.width > 0 ? rect.left + rect.width / 2 : (typeof window === 'undefined' ? 0 : window.innerWidth * 0.62), y: rect && rect.height > 0 ? rect.top + rect.height / 2 : 128, color, intensity })
+}
 
 export interface RecentAcquisition { itemId: ItemId; amount: number; timestamp: number; isNew: boolean }
 export type DeveloperFixtureId = 'fresh' | 'whispering-woods-ready' | 'howling-den-ready' | 'catacombs-ready' | 'edrin-ready'
@@ -198,23 +212,35 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   lastOfflineBankReport: null,
   tick: (deltaMs) => set((state) => {
     if (isOfflineBankSimulationActive()) return state
-    return advanceGameState(state, deltaMs, { mode: 'live', onItemAcquired: (itemId, amount) => recordRecentAcquisition(state, itemId, amount), uiEvents: combatEventSink, telemetry: combatTelemetryObserver, alerts: combatAlertsObserver, statistics: dungeonStatisticsObserver })
+    return advanceGameState(state, deltaMs, { mode: 'live', onItemAcquired: (itemId, amount) => recordRecentAcquisition(state, itemId, amount), onCombatLoot: combatLootObserver, uiEvents: combatEventSink, telemetry: combatTelemetryObserver, alerts: combatAlertsObserver, statistics: dungeonStatisticsObserver })
   }),
   setScreen: (screen) => set((state) => { state.ui.screen = screen; return state }),
-  addArcaneEcho: () => set((state) => {
+  addArcaneEcho: () => {
+    const before = get().activities.channeling.echoesAssigned
+    set((state) => {
     const current = state.activities.channeling.echoesAssigned
     if (current >= BALANCE.channeling.maxEchoes) return state
     if (!canReserveFocus(state, BALANCE.channeling.echoFocusCost)) {
-      pushNotification(state, `Not enough free Focus. Arcane Echo requires ${BALANCE.channeling.echoFocusCost} Focus. Free Focus: ${selectFreeFocus(state)}`, 'warning')
+      pushNotification(state, `Not enough free Focus. Arcane Echo requires ${BALANCE.channeling.echoFocusCost} Focus. Free Focus: ${selectFreeFocus(state)}`, 'warning', { key: 'action-echo', cooldownMs: 1 })
       return state
     }
     state.activities.channeling.echoesAssigned = current + 1
     return state
-  }),
-  removeArcaneEcho: () => set((state) => {
+    })
+    const changed = get().activities.channeling.echoesAssigned !== before
+    emitActionFeel(changed ? 'echo' : 'error', '.echo-counter', 'var(--ui-secondary)')
+    return changed
+  },
+  removeArcaneEcho: () => {
+    const before = get().activities.channeling.echoesAssigned
+    set((state) => {
     state.activities.channeling.echoesAssigned = Math.max(0, state.activities.channeling.echoesAssigned - 1)
     return state
-  }),
+    })
+    const changed = get().activities.channeling.echoesAssigned !== before
+    if (changed) emitActionFeel('echo', '.echo-counter', 'var(--ui-secondary)')
+    return changed
+  },
   setChannelingEchoes: (amount) => set((state) => { setChannelingEchoesAction(state, amount); return state }),
   forceSetEchoes: (amount) => set((state) => { setChannelingEchoesAction(state, sanitizeDebugNumber(amount), true); return state }),
   upgradeManaPillar: (pillarId) => set((state) => { upgradeManaPillarAction(state, pillarId); return state }),
@@ -252,15 +278,15 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   clearResearchEchoes: () => set((state) => { clearResearchEchoesAction(state); return state }),
   clearPreparedResearch: () => set((state) => { clearPreparedResearchAction(state); return state }),
   forceResearchCycle: (slotId) => set((state) => { forceCompleteResearchCycle(state, slotId, { mode: 'live' }); return state }),
-  assignTransmutationEcho: (recipeId) => set((state) => { assignTransmutationEchoAction(state, recipeId); return state }),
-  removeTransmutationEcho: (recipeId) => set((state) => { removeTransmutationEchoAction(state, recipeId); return state }),
+  assignTransmutationEcho: (recipeId) => { let result = false; set((state) => { result = assignTransmutationEchoAction(state, recipeId); return state }); return result },
+  removeTransmutationEcho: (recipeId) => { const before = get().activities.transmutation.jobs[recipeId]?.echoesAssigned ?? 0; set((state) => { removeTransmutationEchoAction(state, recipeId); return state }); return (get().activities.transmutation.jobs[recipeId]?.echoesAssigned ?? 0) < before },
   setTransmutationEchoes: (recipeId, amount) => set((state) => { setTransmutationEchoesAction(state, recipeId, amount); return state }),
   clearTransmutationAssignments: () => set((state) => { clearTransmutationAssignmentsAction(state); return state }),
   completeTransmutationCycle: (recipeId) => set((state) => { forceCompleteTransmutationCycle(state, recipeId, { mode: 'live' }); return state }),
   grantTransmutationIngredients: (recipeId, cycles = 1) => set((state) => { grantTransmutationMissingIngredientsAction(state, recipeId, cycles); return state }),
   setDebugTransmutationEchoCapacity: (amount) => set((state) => { setTransmutationEchoCapacityOverrideAction(state, amount); return state }),
   castSpell: (spellId) => set((state) => { castSpellAction(state, spellId, combatEventSink); return state }),
-  toggleAutoCast: (spellId) => set((state) => { const cost = getSpellAutoCastFocusCost(state, spellId); if (!spellUnlocked(state, spellId) || cost === null) return state; const latchIndex = state.combat.autoCastManaStarvedSpells.indexOf(spellId); if (latchIndex >= 0) state.combat.autoCastManaStarvedSpells.splice(latchIndex, 1); if (state.activities.autoCast[spellId]) { state.activities.autoCast[spellId] = false; state.spellPresets.lastAppliedPresetId = null } else if (canReserveFocus(state, cost)) { state.activities.autoCast[spellId] = true; state.spellPresets.lastAppliedPresetId = null; pushNotification(state, `${SPELLS[spellId].name} Auto-Cast enabled`, 'success') } else pushNotification(state, `Cannot enable Auto-Cast · Requires ${cost} Focus · Free Focus: ${selectFreeFocus(state)}`, 'warning'); return state }),
+  toggleAutoCast: (spellId) => { const before = Boolean(get().activities.autoCast[spellId]); set((state) => { const cost = getSpellAutoCastFocusCost(state, spellId); if (!spellUnlocked(state, spellId) || cost === null) return state; const latchIndex = state.combat.autoCastManaStarvedSpells.indexOf(spellId); if (latchIndex >= 0) state.combat.autoCastManaStarvedSpells.splice(latchIndex, 1); if (state.activities.autoCast[spellId]) { state.activities.autoCast[spellId] = false; state.spellPresets.lastAppliedPresetId = null } else if (canReserveFocus(state, cost)) { state.activities.autoCast[spellId] = true; state.spellPresets.lastAppliedPresetId = null; pushNotification(state, `${SPELLS[spellId].name} Auto-Cast enabled`, 'success') } else pushNotification(state, `Cannot enable Auto-Cast · Requires ${cost} Focus · Free Focus: ${selectFreeFocus(state)}`, 'warning'); return state }); const after = Boolean(get().activities.autoCast[spellId]); if (after !== before) emitActionFeel(after ? 'autocast-on' : 'autocast-off', `[data-spell-id="${spellId}"], .spell-combat-tile`, 'var(--ui-secondary)'); else emitActionFeel('error', `[data-spell-id="${spellId}"], .spell-combat-tile`, 'var(--ui-warning)', 0.75); return after !== before },
   createSpellPreset: (name) => { let result!: SpellPresetId; set((state) => { result = createSpellPresetAction(state, name); return state }); return result },
   renameSpellPreset: (id, name) => { let result = false; set((state) => { result = renameSpellPresetAction(state, id, name); return state }); return result },
   duplicateSpellPreset: (id) => { let result: SpellPresetId | null = null; set((state) => { result = duplicateSpellPresetAction(state, id); return state }); return result },
@@ -286,11 +312,11 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   toggleAutoHunt: (dungeonId = 'whispering-woods') => set((state) => { const dungeon = DUNGEONS[dungeonId]; if (!dungeon || !isDungeonUnlocked(dungeon, state.progress)) return state; const unlocked = state.progress.autoHuntBossUnlocked || Object.values(state.progress.bossKillsByBoss).some((kills) => kills > 0) || state.progress.firstBossKill; if (!unlocked) { pushNotification(state, 'Auto Hunt unlocks after the first dungeon boss kill', 'warning'); return state } state.progress.autoHuntBossUnlocked = true; state.progress.autoHuntBossByDungeon[dungeonId] = !state.progress.autoHuntBossByDungeon[dungeonId]; return state }),
   killCurrentEnemy: () => set((state) => { forceKillEnemyForDebug(state, { uiEvents: combatLogUiSink }); return state }),
   despawnDebugEnemy: () => set((state) => { despawnEnemyForDebug(state); return state }),
-  fastResolveDebugEnemies: (amount, dungeonId, stopAtBossReady = true) => set((state) => { fastResolveNormalEnemiesForDebug(state, amount, dungeonId ?? state.combat.dungeonId ?? 'whispering-woods', stopAtBossReady, { uiEvents: combatLogUiSink, onItemAcquired: (itemId, quantity) => recordRecentAcquisition(state, itemId, quantity) }); return state }),
-  clearDebugThreatToBoss: (dungeonId) => set((state) => { clearToBossForDebug(state, dungeonId ?? state.combat.dungeonId ?? 'whispering-woods', { uiEvents: combatLogUiSink, onItemAcquired: (itemId, quantity) => recordRecentAcquisition(state, itemId, quantity) }); return state }),
+  fastResolveDebugEnemies: (amount, dungeonId, stopAtBossReady = true) => set((state) => { fastResolveNormalEnemiesForDebug(state, amount, dungeonId ?? state.combat.dungeonId ?? 'whispering-woods', stopAtBossReady, { uiEvents: combatLogUiSink, onItemAcquired: (itemId, quantity) => recordRecentAcquisition(state, itemId, quantity), onCombatLoot: combatLootObserver }); return state }),
+  clearDebugThreatToBoss: (dungeonId) => set((state) => { clearToBossForDebug(state, dungeonId ?? state.combat.dungeonId ?? 'whispering-woods', { uiEvents: combatLogUiSink, onItemAcquired: (itemId, quantity) => recordRecentAcquisition(state, itemId, quantity), onCombatLoot: combatLootObserver }); return state }),
   jumpDebugToBoss: (dungeonId) => set((state) => { jumpToBossForDebug(state, dungeonId ?? state.combat.dungeonId ?? 'whispering-woods', { uiEvents: combatLogUiSink }); return state }),
   restartDebugBoss: () => set((state) => { restartBossForDebug(state, { uiEvents: combatLogUiSink }); return state }),
-  advanceCombatDebug: (durationMs) => set((state) => { advanceCombatOnlyForDebug(state, durationMs, { mode: 'live', uiEvents: combatEventSink, telemetry: combatTelemetryObserver, alerts: combatAlertsObserver, statistics: dungeonStatisticsObserver, onItemAcquired: (itemId, amount) => recordRecentAcquisition(state, itemId, amount) }); return state }),
+  advanceCombatDebug: (durationMs) => set((state) => { advanceCombatOnlyForDebug(state, durationMs, { mode: 'live', uiEvents: combatEventSink, telemetry: combatTelemetryObserver, alerts: combatAlertsObserver, statistics: dungeonStatisticsObserver, onItemAcquired: (itemId, amount) => recordRecentAcquisition(state, itemId, amount), onCombatLoot: combatLootObserver }); return state }),
   spawnDebugEnemy: (enemyId, dungeonId) => set((state) => {
     const contextDungeonId = dungeonId ?? state.combat.dungeonId ?? 'whispering-woods'
     state.combat.active = true
@@ -343,6 +369,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   resetSave: () => {
     const fresh = createInitialState()
     const activeProfileId = getActiveProfileId()
+    resetProfileAttention(activeProfileId)
     if (activeProfileId) {
       const saved = resetProfileGame(activeProfileId, fresh)
       if (!saved.ok) {
@@ -369,12 +396,12 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   setThreat: (amount) => set((state) => { setThreatAction(state, amount); return state }),
   addItem: (itemId, quantity) => set((state) => { addItemAction(state, itemId, quantity); return state }),
   removeItem: (itemId, quantity) => set((state) => { removeItemAction(state, itemId, quantity); return state }),
-  toggleItemProtection: (itemId) => set((state) => { toggleItemProtectionAction(state, itemId); return state }),
-  sellItem: (itemId, quantity) => set((state) => { sellItemAction(state, itemId, quantity); return state }),
-  destroyItem: (itemId, quantity) => set((state) => { destroyItemAction(state, itemId, quantity); return state }),
+  toggleItemProtection: (itemId) => { const before = Boolean(get().protectedItems[itemId]); set((state) => { toggleItemProtectionAction(state, itemId); return state }); const after = Boolean(get().protectedItems[itemId]); if (after !== before) emitActionFeel(after ? 'protect' : 'unprotect', `[data-item-id="${itemId}"], .inventory-actions-content`, 'var(--ui-secondary)'); else emitActionFeel('error', `[data-item-id="${itemId}"], .inventory-actions-content`, 'var(--ui-warning)', 0.75); return after !== before },
+  sellItem: (itemId, quantity) => { let sold = 0; set((state) => { sold = sellItemAction(state, itemId, quantity); return state }); emitActionFeel(sold > 0 ? 'sell' : 'error', `[data-item-id="${itemId}"], .inventory-actions-content`, sold > 0 ? 'var(--ui-gold)' : 'var(--ui-warning)', sold > 0 ? 0.95 : 0.75); return sold },
+  destroyItem: (itemId, quantity) => { let destroyed = 0; set((state) => { destroyed = destroyItemAction(state, itemId, quantity); return state }); emitActionFeel(destroyed > 0 ? 'destroy' : 'error', `[data-item-id="${itemId}"], .inventory-actions-content`, destroyed > 0 ? 'var(--ui-danger)' : 'var(--ui-warning)', destroyed > 0 ? 0.95 : 0.75); return destroyed },
   clearRecentNew: (itemId) => set((state) => { const entry = state.recentAcquisitions.find((item) => item.itemId === itemId); if (entry) entry.isNew = false; return state }),
-  equipItem: (itemId, targetPosition) => set((state) => { equipItemAction(state, itemId, targetPosition); return state }),
-  unequipItem: (position) => set((state) => { unequipItemAction(state, position); return state }),
+  equipItem: (itemId, targetPosition) => { let succeeded = false; set((state) => { succeeded = equipItemAction(state, itemId, targetPosition).ok; return state }); if (succeeded) emitActionFeel('equip', `.equipment-slot-card.selected, .equipment-armory-card.selected, .equipment-inspector-actions`, 'var(--ui-accent)', 1.05); else emitActionFeel('error', `.equipment-slot-card.selected, .equipment-armory-card.selected, .equipment-inspector-actions`, 'var(--ui-warning)', 0.8) },
+  unequipItem: (position) => { let result = false; set((state) => { result = unequipItemAction(state, position); return state }); if (result) emitActionFeel('unequip', `.equipment-slot-card.selected, .equipment-inspector-actions`, 'var(--ui-accent)', 0.8); else emitActionFeel('error', `.equipment-slot-card.selected, .equipment-inspector-actions`, 'var(--ui-warning)', 0.75) },
   unlockAllSpells: () => set((state) => { unlockAllSpellsAction(state); return state }),
   debugUnlockSpellRankOne: (spellId) => set((state) => { debugUnlockSpellRankOneAction(state, spellId); return state }),
   debugLockSpell: (spellId) => set((state) => { debugLockSpellAction(state, spellId); return state }),
@@ -471,6 +498,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
 // Presets replace gameplay state for developer testing; recent acquisition UI state is session-only too.
 const presetGameplayState = useGameStore.getState().preset
 const applyDeveloperFixture = (fixture: DeveloperFixtureId) => {
+  resetProfileAttention(getActiveProfileId())
   combatAlertsObserver.clear()
   clearCombatRecap()
   clearCombatDefeat()
@@ -530,7 +558,7 @@ const completeDungeonPreset = () => useGameStore.setState((state) => {
   state.combat.threatCleared = DUNGEONS['abandoned-catacombs'].threatRequired
   spawnEnemy(state, DUNGEONS['abandoned-catacombs'].boss, combatLogUiSink)
 })
-useGameStore.setState({ applyDeveloperFixture, preset: (name) => { combatAlertsObserver.clear(); clearCombatRecap(); clearCombatDefeat(); clearDungeonStatistics(); combatTelemetryObserver.clear(); presetGameplayState(name); if (name === 'boss' || name === 'main-boss') prepareForestHeartPreset(); if (name === 'chapter-complete') completeDungeonPreset(); const presetState = useGameStore.getState(); if (presetState.combat.active && presetState.combat.dungeonId) dungeonStatisticsObserver.beginSession(presetState.combat.dungeonId); useGameStore.setState({ recentAcquisitions: [] }) } })
+useGameStore.setState({ applyDeveloperFixture, preset: (name) => { resetProfileAttention(getActiveProfileId()); combatAlertsObserver.clear(); clearCombatRecap(); clearCombatDefeat(); clearDungeonStatistics(); combatTelemetryObserver.clear(); presetGameplayState(name); if (name === 'boss' || name === 'main-boss') prepareForestHeartPreset(); if (name === 'chapter-complete') completeDungeonPreset(); const presetState = useGameStore.getState(); if (presetState.combat.active && presetState.combat.dungeonId) dungeonStatisticsObserver.beginSession(presetState.combat.dungeonId); useGameStore.setState({ recentAcquisitions: [] }) } })
 
 export const useGameStoreSelectors = { selectUsedFocus, selectFreeFocus }
 export { selectUsedFocus, selectFreeFocus }

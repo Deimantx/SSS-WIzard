@@ -1,6 +1,6 @@
 import { getUiPreferences } from '../../preferences/uiPreferencesStore'
 
-export type UiSoundName = 'hover' | 'click' | 'confirm' | 'error' | 'success' | 'item-gain' | 'equip' | 'focus' | 'craft' | 'unlock'
+export type UiSoundName = 'hover' | 'click' | 'confirm' | 'error' | 'success' | 'item-gain' | 'equip' | 'focus' | 'craft' | 'unlock' | 'loot' | 'loot-discovery'
 
 type SoundVoice = { frequency: number; duration: number; gain: number; type: OscillatorType; delay?: number }
 
@@ -15,6 +15,8 @@ const SOUND_VOICES: Record<UiSoundName, readonly SoundVoice[]> = {
   focus: [{ frequency: 300, duration: 0.13, gain: 0.08, type: 'sine' }, { frequency: 390, duration: 0.16, gain: 0.065, type: 'sine', delay: 0.08 }],
   craft: [{ frequency: 390, duration: 0.09, gain: 0.085, type: 'triangle' }, { frequency: 585, duration: 0.15, gain: 0.1, type: 'sine', delay: 0.055 }],
   unlock: [{ frequency: 410, duration: 0.12, gain: 0.09, type: 'sine' }, { frequency: 615, duration: 0.16, gain: 0.09, type: 'sine', delay: 0.07 }, { frequency: 820, duration: 0.2, gain: 0.075, type: 'sine', delay: 0.15 }],
+  loot: [{ frequency: 470, duration: 0.07, gain: 0.065, type: 'sine' }, { frequency: 700, duration: 0.1, gain: 0.045, type: 'sine', delay: 0.04 }],
+  'loot-discovery': [{ frequency: 470, duration: 0.08, gain: 0.075, type: 'sine' }, { frequency: 700, duration: 0.12, gain: 0.07, type: 'sine', delay: 0.045 }, { frequency: 940, duration: 0.16, gain: 0.055, type: 'sine', delay: 0.11 }],
 }
 
 let context: AudioContext | null = null

@@ -25,7 +25,7 @@ export const addItemAction = (state: GameState, itemId: ItemId, quantity: number
 }
 
 export const removeItemAction = (state: GameState, itemId: ItemId, quantity: number) => { if (isProtectedItem(state, itemId)) { pushNotification(state, `${ITEMS[itemId].name} is protected or equipped`, 'warning'); return } state.inventory[itemId] = Math.max(0, safeQuantity(state.inventory[itemId]) - safeQuantity(quantity)) }
-export const toggleItemProtectionAction = (state: GameState, itemId: ItemId) => { if (isEquippedItem(state, itemId)) { pushNotification(state, 'Equipped items are always protected.', 'warning'); return } state.protectedItems[itemId] = !state.protectedItems[itemId] }
+export const toggleItemProtectionAction = (state: GameState, itemId: ItemId) => { if (isEquippedItem(state, itemId)) { pushNotification(state, 'Equipped items are always protected.', 'warning', { key: 'action-protect', cooldownMs: 1 }); return } state.protectedItems[itemId] = !state.protectedItems[itemId] }
 
 const clampActionQuantity = (quantity: number, maximum: number) => Math.max(0, Math.min(maximum, safeQuantity(quantity)))
 const itemQuantityLabel = (itemId: ItemId, quantity: number) => `${ITEMS[itemId].name}${quantity === 1 ? '' : 's'}`
@@ -35,19 +35,19 @@ export const sellItemAction = (state: GameState, itemId: ItemId, requestedQuanti
   const maximum = getActionableQuantity(state, itemId)
   const quantity = clampActionQuantity(requestedQuantity, maximum)
   if (!item || item.sellValue === null || maximum <= 0 || quantity < 1) {
-    pushNotification(state, item && state.protectedItems[itemId] ? `${item.name} is protected. Unprotect it before selling.` : item && maximum === 0 && getEquippedReservedQuantity(state, itemId) > 0 ? 'The equipped copy cannot be sold.' : item ? `${item.name} cannot be sold.` : 'That item cannot be sold.', 'warning')
+    pushNotification(state, item && state.protectedItems[itemId] ? `${item.name} is protected. Unprotect it before selling.` : item && maximum === 0 && getEquippedReservedQuantity(state, itemId) > 0 ? 'The equipped copy cannot be sold.' : item ? `${item.name} cannot be sold.` : 'That item cannot be sold.', 'warning', { key: 'action-sell', cooldownMs: 1 })
     return 0
   }
   const value = safeQuantity(item.sellValue)
   const reward = quantity * value
   const currentGold = safeGold(state.currencies.gold)
   if (!Number.isSafeInteger(reward) || currentGold > Number.MAX_SAFE_INTEGER - reward) {
-    pushNotification(state, 'Gold limit reached. Nothing was sold.', 'warning')
+    pushNotification(state, 'Gold limit reached. Nothing was sold.', 'warning', { key: 'action-sell', cooldownMs: 1 })
     return 0
   }
   state.inventory[itemId] = Math.max(0, safeQuantity(state.inventory[itemId]) - quantity)
   state.currencies.gold = currentGold + reward
-  pushNotification(state, `Sold ${itemQuantityLabel(itemId, quantity)} for ${reward.toLocaleString()} Gold.`, 'success')
+  pushNotification(state, `Sold ${itemQuantityLabel(itemId, quantity)} for ${reward.toLocaleString()} Gold.`, 'success', { key: 'action-sell', cooldownMs: 1 })
   return quantity
 }
 
@@ -56,10 +56,10 @@ export const destroyItemAction = (state: GameState, itemId: ItemId, requestedQua
   const maximum = getActionableQuantity(state, itemId)
   const quantity = clampActionQuantity(requestedQuantity, maximum)
   if (!item || item.canDestroy === false || maximum <= 0 || quantity < 1) {
-    pushNotification(state, item && state.protectedItems[itemId] ? `${item.name} is protected. Unprotect it before destroying.` : item && item.canDestroy === false ? item.actionRestrictionReason ?? `${item.name} cannot be destroyed.` : item && maximum === 0 && getEquippedReservedQuantity(state, itemId) > 0 ? 'The equipped copy cannot be destroyed.' : 'That item cannot be destroyed.', 'warning')
+    pushNotification(state, item && state.protectedItems[itemId] ? `${item.name} is protected. Unprotect it before destroying.` : item && item.canDestroy === false ? item.actionRestrictionReason ?? `${item.name} cannot be destroyed.` : item && maximum === 0 && getEquippedReservedQuantity(state, itemId) > 0 ? 'The equipped copy cannot be destroyed.' : 'That item cannot be destroyed.', 'warning', { key: 'action-destroy', cooldownMs: 1 })
     return 0
   }
   state.inventory[itemId] = Math.max(0, safeQuantity(state.inventory[itemId]) - quantity)
-  pushNotification(state, `Destroyed ${itemQuantityLabel(itemId, quantity)}.`, 'success')
+  pushNotification(state, `Destroyed ${itemQuantityLabel(itemId, quantity)}.`, 'success', { key: 'action-destroy', cooldownMs: 1 })
   return quantity
 }

@@ -56,6 +56,14 @@
 .offline-bank-trigger svg { color: var(--ui-secondary); }
 .offline-bank-trigger.has-bank { border-color: color-mix(in srgb, var(--ui-secondary) 42%, var(--ui-border)); background: color-mix(in srgb, var(--ui-secondary) 7%, var(--ui-panel)); }
 .offline-bank-trigger strong { color: var(--ui-text); font: var(--text-xs) var(--font-mono); }
+.fps-counter { display: inline-flex; align-items: baseline; gap: 4px; min-height: 34px; padding: 7px 8px; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text-soft); background: var(--ui-panel); font: var(--text-micro) var(--font-mono); white-space: nowrap; }
+.fps-counter svg { align-self: center; color: var(--ui-accent); }
+.fps-counter strong { color: var(--ui-text); font-size: var(--text-xs); }
+.fps-counter small { color: var(--ui-text-muted); font-size: 9px; letter-spacing: .04em; }
+.fps-counter.fps-warning { border-color: color-mix(in srgb, var(--ui-warning) 60%, var(--ui-border)); }
+.fps-counter.fps-warning svg, .fps-counter.fps-warning strong { color: var(--ui-warning); }
+.fps-counter.fps-danger { border-color: color-mix(in srgb, var(--ui-danger) 65%, var(--ui-border)); }
+.fps-counter.fps-danger svg, .fps-counter.fps-danger strong { color: var(--ui-danger); }
 .topbar-settings-button { flex: 0 0 auto; }
 body.shell-layout-interacting, body.shell-layout-interacting * { user-select: none !important; }
 .topbar-region-overlay { position: absolute; z-index: 30; inset: 2px; display: flex; align-items: flex-start; justify-content: space-between; padding: 3px 4px; border: 1px dashed var(--ui-accent); border-radius: 6px; color: var(--ui-accent); background: color-mix(in srgb, var(--ui-accent-soft) 18%, transparent); pointer-events: none; font: var(--text-micro) var(--font-mono); letter-spacing: .04em; user-select: none; }

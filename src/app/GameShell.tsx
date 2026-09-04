@@ -29,7 +29,11 @@ import { GameFeelInteractionLayer } from '../ui/game-feel/GameFeelInteractionLay
 import { GameFeelAudioObserver } from '../ui/game-feel/GameFeelAudioObserver'
 import { NotificationFeelObserver } from '../ui/game-feel/NotificationFeelObserver'
 import { AcquisitionFeelObserver } from '../ui/game-feel/AcquisitionFeelObserver'
-import { EquipmentFeelObserver } from '../ui/game-feel/EquipmentFeelObserver'
+import { LootRevealLayer } from '../ui/rewards/LootRevealLayer'
+import { MilestoneBannerLayer } from '../ui/rewards/MilestoneBannerLayer'
+import { clearLootReveals } from '../ui/rewards/lootRevealStore'
+import { clearMilestones } from '../ui/rewards/milestoneStore'
+import { DiscoveryAttentionObserver } from '../ui/attention/DiscoveryAttentionObserver'
 
 export function GameShell() {
   const screen = useGameStore((state) => state.ui.screen)
@@ -72,6 +76,11 @@ export function GameShell() {
   }, [lastOfflineBankReport])
 
   useEffect(() => {
+    clearLootReveals()
+    clearMilestones()
+  }, [profileSession.activeProfileId])
+
+  useEffect(() => {
     const interval = window.setInterval(() => { if (document.hidden || hiddenRef.current) return; const now = performance.now(); const elapsed = now - lastFrame.current; lastFrame.current = now; tick(elapsed) }, 100)
     const autosave = window.setInterval(() => saveGame('autosave'), AUTOSAVE_INTERVAL_MS)
     const visibility = () => { if (document.hidden) { hiddenAt.current = Date.now(); hiddenRef.current = true; saveGame('visibility') } else if (hiddenAt.current) { resumeFromHidden(Date.now() - hiddenAt.current, false); hiddenAt.current = null; hiddenRef.current = false; lastFrame.current = performance.now(); saveGame('profile-anchor') } }
@@ -95,7 +104,7 @@ export function GameShell() {
   const shellStyle = { '--game-cursor-default': createCursorValue({ accent: appearance.accent, secondary: appearance.secondary, variant: 'default' }), '--game-cursor-action': createCursorValue({ accent: appearance.accent, secondary: appearance.secondary, variant: 'action' }), '--game-cursor-disabled': createCursorValue({ accent: appearance.accent, secondary: appearance.secondary, variant: 'disabled' }), '--ambient-strength': ambient.intensity, '--ambient-drift': preferences.reducedMotion ? '0s' : `${ambient.driftDuration}s`, '--ambient-accent': ambient.accentColor, '--ambient-secondary': ambient.secondaryColor, '--ambient-fog-opacity': ambient.fogOpacity, '--ambient-vignette-opacity': ambient.vignetteOpacity, '--ambient-particle-speed': ambient.particleSpeed, '--ambient-bias-x': ambient.biasX, '--ambient-bias-y': ambient.biasY } as CSSProperties
   return <TooltipProvider><div className={`game-shell ${preferences.reducedMotion ? 'reduced-motion' : 'motion-enabled'} ${preferences.customCursor ? 'cursor-enabled' : ''} ${preferences.backgroundEffects ? 'effects-enabled' : 'effects-disabled'}`} data-nav-group={navigation.group.id} data-ambient-profile={ambient.id} data-background-effects={preferences.backgroundEffects ? 'on' : 'off'} style={shellStyle}>
     {preferences.backgroundEffects && <ArcaneAtmosphere accentColor={ambient.accentColor} secondaryColor={ambient.secondaryColor} opacity={atmosphereOpacity} intensity={ambient.intensity} particleSpeed={ambient.particleSpeed} reducedMotion={preferences.reducedMotion} />}
-    <Sidebar screen={screen} setScreen={setScreen} preferences={preferences} toggleGroup={toggleGroup} activeProfile={activeProfile} profileSwitchError={profileSwitchError} switchProfile={switchProfile} />
+    <Sidebar screen={screen} setScreen={setScreen} preferences={preferences} toggleGroup={toggleGroup} activeProfile={activeProfile} profileKey={profileSession.activeProfileId} profileSwitchError={profileSwitchError} switchProfile={switchProfile} />
     <main className={`main-area ${editor.isEditing ? 'editor-open' : ''}`}>
       <Topbar screen={screen} editor={editor} offlineBankOpen={offlineBankOpen} onOfflineBankToggle={() => { dismissGameTooltips(); setOfflineResultsOpen(false); setOfflineBankOpen((open) => !open) }} onDeveloperTools={openDevTools} onEditUi={toggleEditor} onSettings={() => { dismissGameTooltips(); setOfflineBankOpen(false); setOfflineResultsOpen(false); setScreen('settings') }} onMobileMenu={() => setScreen('home')} />
       <OfflineBankPopover open={offlineBankOpen} onClose={() => setOfflineBankOpen(false)} onViewLastResults={() => { setOfflineBankOpen(false); setOfflineResultsOpen(true) }} />
@@ -103,12 +112,14 @@ export function GameShell() {
       <ActivityMonitor />
     </main>
     <ProgressionFeelObserver profileKey={profileSession.activeProfileId} />
+    <DiscoveryAttentionObserver profileKey={profileSession.activeProfileId} />
     <NotificationFeelObserver />
     <AcquisitionFeelObserver />
-    <EquipmentFeelObserver />
     <GameFeelAudioObserver />
     <GameFeelInteractionLayer />
     <GameFeelLayer />
+    <LootRevealLayer />
+    <MilestoneBannerLayer />
     <LayoutEditorDrawer screen={screen} />
     <DeveloperToolsWindow />
     <OfflineBankResultsDialog report={lastOfflineBankReport} open={offlineResultsOpen} onClose={() => setOfflineResultsOpen(false)} onOpenInventory={() => { setOfflineResultsOpen(false); setScreen('inventory') }} />

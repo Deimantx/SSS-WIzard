@@ -23,6 +23,7 @@
 .transmutation-group-heading small { color: inherit; font: var(--text-micro) var(--font-mono); }
 .transmutation-recipe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; min-width: 0; }
 .transmutation-recipe-tile { position: relative; display: grid; grid-template-rows: 16px 36px minmax(28px, auto) auto auto; align-content: start; align-items: center; justify-items: center; gap: 3px; width: 100%; min-width: 0; min-height: 112px; padding: 6px; border: 1px solid color-mix(in srgb, var(--recipe-accent, var(--ui-accent)) 28%, var(--ui-border)); border-radius: 8px; color: var(--ui-text-soft); background: linear-gradient(155deg, color-mix(in srgb, var(--recipe-accent, var(--ui-accent)) 9%, var(--ui-panel-strong)), var(--ui-panel)); cursor: pointer; text-align: center; }
+.recipe-new-badge { top: 5px; right: 5px; }
 .transmutation-recipe-tile:hover, .transmutation-recipe-tile:focus-visible { border-color: color-mix(in srgb, var(--recipe-accent, var(--ui-accent)) 75%, var(--ui-border)); background: color-mix(in srgb, var(--recipe-accent, var(--ui-accent)) 14%, var(--ui-panel-strong)); box-shadow: 0 5px 15px color-mix(in srgb, var(--recipe-accent, var(--ui-accent)) 12%, transparent); outline: none; }
 .transmutation-recipe-tile.selected { border-color: var(--ui-accent); background: var(--ui-accent-soft); box-shadow: inset 0 0 0 2px var(--ui-accent), 0 0 0 1px var(--ui-accent-soft); }
 .transmutation-recipe-tile.assigned { border-bottom-color: var(--ui-secondary); box-shadow: inset 0 -2px 0 var(--ui-secondary); }

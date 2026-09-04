@@ -9,6 +9,7 @@ describe('screen UI preferences', () => {
     const preferences = normalizeUiPreferences({ theme: 'dark' })
 
     expect(preferences.customCursor).toBe(true)
+    expect(preferences.showFpsCounter).toBe(true)
     expect(preferences.uiSounds).toBe(true)
     expect(preferences.uiSoundVolume).toBe(0.35)
     expect(preferences.screenState.inventory).toEqual({ currentNeedsOpen: true, sourceOpen: false, usedInOpen: true })
@@ -72,6 +73,7 @@ describe('screen UI preferences', () => {
     expect(preferences.backgroundEffects).toBe(true)
     expect(preferences.reducedMotion).toBe(false)
     expect(preferences.customCursor).toBe(true)
+    expect(preferences.showFpsCounter).toBe(true)
     expect(preferences.customTheme).toEqual(defaultUiPreferences().customTheme)
     expect(preferences.navigationGroups.tower).toBe(true)
     expect(preferences.screenState.inventory.usedInOpen).toBe(false)

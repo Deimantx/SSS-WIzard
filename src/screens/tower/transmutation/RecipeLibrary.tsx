@@ -10,6 +10,8 @@ import type { EquipmentItemSlot, RecipeCategory, RecipeId } from '../../../game/
 import { setUiPreferences, useUiPreferences } from '../../../ui/preferences/uiPreferencesStore'
 import { useGameStore } from '../../../store/gameStore'
 import { getTransmutationRecipeCardMeta } from '../../../game/presentation/transmutation/transmutationRecipeCardPresentation'
+import { useProfileAttention } from '../../../ui/attention/attentionStore'
+import { getActiveProfileId } from '../../../profiles/profileSessionStore'
 
 const CATEGORY_LABELS: Record<RecipeCategory, string> = { elemental: 'ELEMENTAL', material: 'MATERIALS', equipment: 'EQUIPMENT', special: 'SPECIAL' }
 const CATEGORY_ORDER: RecipeCategory[] = ['elemental', 'material', 'equipment', 'special']
@@ -19,6 +21,7 @@ const OFFHAND_LABELS = { shield: 'SHIELD', focus: 'FOCUS' } as const
 export function RecipeLibrary({ selectedRecipeId, onSelect }: { selectedRecipeId: RecipeId; onSelect: (recipeId: RecipeId) => void }) {
   const preferences = useUiPreferences()
   const state = useGameStore()
+  const attention = useProfileAttention(getActiveProfileId())
   const [query, setQuery] = React.useState('')
   const recipes = getTransmutationRecipeEntries()
   const saved = preferences.screenState.transmutation
@@ -67,7 +70,7 @@ export function RecipeLibrary({ selectedRecipeId, onSelect }: { selectedRecipeId
         const collapsed = collapsedCategories[category] && !forceOpen
         const contentId = `transmutation-${category}-recipes`
         const headingContent = <><span className="transmutation-group-heading-label">{CATEGORY_LABELS[category]}</span><span className="transmutation-group-heading-meta"><small>{categoryRecipes.length} RECIPES</small>{!forceOpen && (collapsed ? <ChevronRight size={15} aria-hidden="true" /> : <ChevronDown size={15} aria-hidden="true" />)}</span></>
-        return <section className="transmutation-recipe-group" key={category}>{forceOpen ? <div className="transmutation-group-heading is-static" aria-label={`${CATEGORY_LABELS[category]}, ${categoryRecipes.length} recipes`}>{headingContent}</div> : <button type="button" className="transmutation-group-heading" aria-label={`${CATEGORY_LABELS[category]}, ${categoryRecipes.length} recipes`} aria-expanded={!collapsed} aria-controls={contentId} onClick={() => toggleCategory(category)}>{headingContent}</button>}{!collapsed && <div id={contentId} className="transmutation-recipe-grid">{categoryRecipes.map((recipe) => <RecipeTile key={recipe.id} recipe={recipe} selected={recipe.id === selectedRecipeId} onSelect={onSelect} />)}</div>}</section>
+        return <section className="transmutation-recipe-group" key={category}>{forceOpen ? <div className="transmutation-group-heading is-static" aria-label={`${CATEGORY_LABELS[category]}, ${categoryRecipes.length} recipes`}>{headingContent}</div> : <button type="button" className="transmutation-group-heading" aria-label={`${CATEGORY_LABELS[category]}, ${categoryRecipes.length} recipes`} aria-expanded={!collapsed} aria-controls={contentId} onClick={() => toggleCategory(category)}>{headingContent}</button>}{!collapsed && <div id={contentId} className="transmutation-recipe-grid">{categoryRecipes.map((recipe) => <RecipeTile key={recipe.id} recipe={recipe} selected={recipe.id === selectedRecipeId} newRecipe={attention.unseenRecipes.includes(recipe.id)} onSelect={onSelect} />)}</div>}</section>
       })}
     </div>
   </Card>
@@ -100,7 +103,7 @@ function hasActiveContextFilter(filters: TransmutationRecipeFilters) {
   return filters.categoryFilter !== 'all' || filters.equipmentSlotFilter !== 'all' || filters.weaponHandsFilter !== 'all' || filters.offhandPresentationFilter !== 'all' || filters.tierFilter !== 'all' || filters.craftableOnly || filters.activeOnly || filters.unownedOnly
 }
 
-function RecipeTile({ recipe, selected, onSelect }: { recipe: RecipeDefinition; selected: boolean; onSelect: (recipeId: RecipeId) => void }) {
+function RecipeTile({ recipe, selected, newRecipe = false, onSelect }: { recipe: RecipeDefinition; selected: boolean; newRecipe?: boolean; onSelect: (recipeId: RecipeId) => void }) {
   const state = useGameStore()
   const item = ITEMS[recipe.output.itemId]
   const owned = state.inventory[recipe.output.itemId] ?? 0
@@ -114,6 +117,7 @@ function RecipeTile({ recipe, selected, onSelect }: { recipe: RecipeDefinition; 
       <span className="transmutation-tile-top">{locked ? <LockKeyhole size={13} aria-label="Locked" /> : <span aria-hidden="true" />}{echoes > 0 && <span className="transmutation-echo-badge">{echoes}E</span>}</span>
       <span className="transmutation-tile-icon"><ItemIcon itemId={recipe.output.itemId} size="tile" /></span>
       <strong>{recipe.name}</strong>
+      {newRecipe && <span className="archive-new-badge recipe-new-badge">NEW</span>}
       <span className="transmutation-tile-badges" aria-label={cardMeta.badges.join(', ')}>{cardMeta.badges.map((badge, index) => <span className={`transmutation-badge ${cardMeta.tier !== null && index === 0 ? 'tier' : ''}`} key={badge}>{badge}</span>)}</span>
       <span className="transmutation-tile-footer"><span className="transmutation-tile-owned">OWNED {formatOwned(owned)}</span>{status !== 'paused' && <span className="transmutation-tile-status"><Status tone={locked ? 'locked' : status === 'active' ? 'active' : status === 'mana-limited' || status === 'waiting-mana' || status === 'waiting-materials' ? 'warning' : 'neutral'}>{statusText(status)}</Status></span>}</span>
       {echoes > 0 && <Progress value={getRecipeProgressPercent(recipe, progress)} tone="gold" running={status === 'active' || status === 'mana-limited'} />}

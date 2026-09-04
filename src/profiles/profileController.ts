@@ -7,6 +7,7 @@ import { setSaveDiagnosticsProfile } from '../persistence/saveDiagnosticsStore'
 import { createProfileMetadata, loadProfileRegistry, saveProfileRegistry } from './profileStorage'
 import { closeCreateProfileDialog, getActiveProfileId, refreshProfiles, setActiveProfileId } from './profileSessionStore'
 import type { ProfileSlotId } from './profileTypes'
+import { clearProfileAttention } from '../ui/attention/attentionStore'
 
 export interface ProfileOperationResult { ok: boolean; error: string | null }
 
@@ -60,6 +61,7 @@ export const createProfile = (slotId: ProfileSlotId, name: string): ProfileOpera
   const state = createInitialState()
   const saved = resetProfileGame(slotId, state)
   if (!saved.ok) return failure(saved.error ?? 'The new profile could not be saved.')
+  clearProfileAttention(slotId)
   const metadata = createProfileMetadata(slotId, trimmed)
   registry.slots[slotId] = { ...metadata, lastSavedAt: state.lastSavedAt }
   if (!saveProfileRegistry(registry)) {
@@ -82,6 +84,7 @@ export const deleteProfile = (slotId: ProfileSlotId): ProfileOperationResult => 
     saveProfileRegistry(registry)
     return failure(cleared.error ?? 'The profile save could not be removed.')
   }
+  clearProfileAttention(slotId)
   refreshProfiles()
   return success()
 }

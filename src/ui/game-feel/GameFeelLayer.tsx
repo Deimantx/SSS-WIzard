@@ -2,7 +2,7 @@ import { useSyncExternalStore, type CSSProperties } from 'react'
 import { getGameFeelEvents, subscribeGameFeelEvents } from './gameFeelStore'
 import type { GameFeelEvent } from './gameFeelTypes'
 
-const sparkCount = (event: GameFeelEvent) => event.type === 'unlock' ? 10 : event.intensity && event.intensity > 1 ? 9 : 7
+const sparkCount = (event: GameFeelEvent) => event.type === 'unlock' || event.type === 'protect' || event.type === 'autocast-on' ? 10 : event.intensity && event.intensity > 1 ? 9 : 7
 
 export function GameFeelLayer() {
   const events = useSyncExternalStore(subscribeGameFeelEvents, getGameFeelEvents, getGameFeelEvents)

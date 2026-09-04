@@ -12,6 +12,7 @@ import { EditableTopbarRegion } from '../../ui/layout-editor/EditableTopbarRegio
 import { TOPBAR_RESOURCE_IDS } from '../../ui/layout-editor/shellLayout'
 import type { TopbarRegionId } from '../../ui/layout-editor/layoutEditorTypes'
 import { GameValue } from '../../ui/game-feel/GameValue'
+import { FpsCounter } from '../../ui/performance/FpsCounter'
 
 interface TopbarProps {
   screen: ScreenId
@@ -68,6 +69,7 @@ export function Topbar({ screen, editor, offlineBankOpen, onOfflineBankToggle, o
     <GameTooltip disabled={shellEditing} content={<TooltipContent title="Offline Bank" description={`${formatOfflineBank(offlineBankMs)} banked. Spend it to advance active systems.`} />}>
       <button className={`topbar-tool-button offline-bank-trigger ${offlineBankOpen ? 'active' : ''} ${offlineBankMs > 0 ? 'has-bank' : ''}`} onClick={onOfflineBankToggle} disabled={shellDragging} aria-label="Offline Bank"><Clock3 size={15} /><span className="offline-bank-label">OFFLINE</span><strong>{formatOfflineBank(offlineBankMs)}</strong></button>
     </GameTooltip>
+    <FpsCounter />
     <GameTooltip disabled={shellEditing} content="Developer Tools">
       <button className="topbar-tool-button" onClick={onDeveloperTools} disabled={shellDragging} aria-label="Dev Tools"><Wrench size={15} /><span>Dev Tools</span></button>
     </GameTooltip>

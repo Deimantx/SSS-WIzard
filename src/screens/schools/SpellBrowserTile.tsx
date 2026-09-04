@@ -13,7 +13,7 @@ import type { SpellBrowserEntry, SpellCatalogTag } from './spellBrowserSelectors
 import { SpellCardTooltip } from './SpellCardTooltip'
 import { buildSpellDetailPresentation, type SpellPresentationState } from './spellDetailPresentation'
 
-export function SpellBrowserTile({ entry, state, selected, onSelect }: { entry: SpellBrowserEntry; state: SpellPresentationState; selected: boolean; onSelect: (id: SpellId | string) => void }) {
+export function SpellBrowserTile({ entry, state, selected, newSpell = false, onSelect }: { entry: SpellBrowserEntry; state: SpellPresentationState; selected: boolean; newSpell?: boolean; onSelect: (id: SpellId | string) => void }) {
   const school = SCHOOLS[entry.school]
   const unlocked = entry.kind === 'spell' && entry.unlocked
   const presentation = unlocked && entry.kind === 'spell' ? buildSpellDetailPresentation(state, entry.spellId, entry.rank ?? 1) : null
@@ -35,6 +35,7 @@ export function SpellBrowserTile({ entry, state, selected, onSelect }: { entry: 
       <span className="spell-browser-tile-main">
         {unlocked && entry.kind === 'spell' ? <><strong className="spell-browser-name">{SPELLS[entry.spellId].name}</strong><span className="spell-browser-rank">{school.name.toUpperCase()} · {formatSpellRank(entry.rank ?? 1).toUpperCase()}</span></> : <><strong className="spell-browser-name">???</strong><span className="spell-browser-rank">{school.name.toUpperCase()} · {entry.kind === 'placeholder' ? 'UNDISCOVERED' : 'LOCKED'}</span></>}
       </span>
+      {unlocked && newSpell && <span className="archive-new-badge spell-new-badge">NEW</span>}
       <span className="spell-browser-effect-slot" aria-hidden="true" />
       {unlocked && entry.kind === 'spell' ? <span className="spell-browser-footer"><span className="ui-mana" aria-label="Mana cost"><Droplet size={12} aria-hidden="true" />{getEffectiveManaCost(state, SPELLS[entry.spellId].manaCost)}</span><span className="ui-time" aria-label="Cooldown"><Clock3 size={12} aria-hidden="true" />{formatTime(SPELLS[entry.spellId].cooldownMs)}</span></span> : <span className="spell-browser-footer"><CircleDot size={11} aria-hidden="true" />Requires Lv {entry.unlockLevel}</span>}
       </button>

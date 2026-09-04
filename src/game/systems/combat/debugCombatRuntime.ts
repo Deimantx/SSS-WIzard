@@ -3,7 +3,7 @@ import { isBossMonster, MONSTERS } from '../../content/monsters'
 import type { DungeonId, GameState, ItemId, MonsterId } from '../../types'
 import type { CombatEventSink } from './combatTypes'
 import { advanceCombatState, type AdvanceContext } from '../simulation/advanceGameState'
-import { finishEnemy, resolveCombatDeaths, spawnEnemy } from './combatRuntime'
+import { finishEnemy, resolveCombatDeaths, spawnEnemy, type CombatLootObserver } from './combatRuntime'
 import { resetEnemyActionRuntime } from './actionRuntime'
 import { clearEnemyRuleCooldowns } from './triggerRuntime'
 import { nextCombatRandom } from './combatRng'
@@ -11,6 +11,7 @@ import { nextCombatRandom } from './combatRng'
 export interface DebugCombatRuntimeContext {
   uiEvents?: CombatEventSink
   onItemAcquired?: (itemId: ItemId, quantity: number) => void
+  onCombatLoot?: CombatLootObserver
 }
 
 const resetEncounterWithoutRewards = (state: GameState) => {
@@ -37,7 +38,7 @@ export const despawnEnemyForDebug = (state: GameState) => {
 export const forceKillEnemyForDebug = (state: GameState, context: DebugCombatRuntimeContext = {}) => {
   if (!state.combat.enemyId) return false
   state.combat.enemyHp = 0
-  return resolveCombatDeaths(state, undefined, context.onItemAcquired, context.uiEvents, { forceEnemyDeath: true })
+  return resolveCombatDeaths(state, undefined, context.onItemAcquired, context.uiEvents, { forceEnemyDeath: true, onLootResolved: context.onCombatLoot })
 }
 
 const ensureDungeon = (state: GameState, dungeonId: DungeonId) => {
@@ -69,7 +70,7 @@ export const fastResolveNormalEnemiesForDebug = (
     const enemyId = chooseMonster(dungeon.monsterPool, () => nextCombatRandom(state))
     spawnEnemy(state, enemyId, context.uiEvents)
     state.combat.enemyHp = 0
-    if (!resolveCombatDeaths(state, undefined, context.onItemAcquired, context.uiEvents, { forceEnemyDeath: true })) break
+    if (!resolveCombatDeaths(state, undefined, context.onItemAcquired, context.uiEvents, { forceEnemyDeath: true, onLootResolved: context.onCombatLoot })) break
     resolved += 1
   }
   return { resolved, bossReady: state.combat.threatCleared >= dungeon.threatRequired }

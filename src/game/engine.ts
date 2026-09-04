@@ -71,7 +71,6 @@ export const grantSchoolXp = (state: GameState, school: SchoolId, amount: number
   state.schools[school].xp = Math.min(getSchoolTotalXpForLevel(cap), currentXp + safeAmount)
   state.schools[school].level = getSchoolLevel(state.schools[school].xp, cap)
   const unlockedSpellIds = syncSpellUnlocksForSchool(state, school)
-  unlockedSpellIds.forEach((spellId) => pushNotification(state, `${SPELLS[spellId].name} unlocked · Rank I`, 'success'))
   return { before, after: state.schools[school].level, unlockedSpellIds }
 }
 

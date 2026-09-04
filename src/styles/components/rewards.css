@@ -1,0 +1,32 @@
+.loot-reveal-layer { position: fixed; z-index: calc(var(--z-context, 800) + 10); top: calc(82px + 12px); right: 20px; display: grid; gap: 8px; width: min(340px, calc(100vw - 32px)); pointer-events: none; }
+.loot-reveal-card { position: relative; display: grid; gap: 8px; width: 100%; padding: 11px 12px 10px; border: 1px solid color-mix(in srgb, var(--loot-accent, var(--ui-accent)) 48%, var(--ui-border)); border-left: 3px solid var(--loot-accent, var(--ui-accent)); border-radius: 9px; color: var(--ui-text); background: color-mix(in srgb, var(--ui-panel-strong) 95%, transparent); box-shadow: 0 12px 34px var(--ui-shadow); cursor: pointer; pointer-events: auto; text-align: left; animation: loot-reveal-in 190ms cubic-bezier(.2,.8,.2,1) both; transition: border-color 130ms ease, box-shadow 130ms ease, transform 100ms ease; }
+.loot-reveal-card:hover, .loot-reveal-card:focus-visible { border-color: var(--ui-secondary); box-shadow: 0 12px 38px var(--ui-shadow), 0 0 0 2px color-mix(in srgb, var(--ui-secondary) 22%, transparent); outline: none; }
+.loot-reveal-card:active { transform: scale(.985); }
+.loot-reveal-card.is-new { --loot-accent: var(--ui-secondary); box-shadow: 0 12px 38px var(--ui-shadow), inset 0 0 20px color-mix(in srgb, var(--ui-secondary) 8%, transparent); }
+.loot-reveal-heading, .loot-reveal-item, .loot-reveal-source { display: flex; align-items: center; min-width: 0; }
+.loot-reveal-heading { justify-content: space-between; gap: 10px; color: var(--loot-accent, var(--ui-accent)); font: var(--text-micro) var(--font-mono); letter-spacing: .08em; }
+.loot-reveal-heading small { color: var(--ui-text-muted); font-size: 8px; letter-spacing: .05em; }
+.loot-reveal-items { display: grid; gap: 5px; }
+.loot-reveal-item { gap: 7px; min-width: 0; }
+.loot-reveal-item .item-icon { flex: 0 0 auto; }
+.loot-reveal-item strong { overflow: hidden; flex: 1 1 auto; min-width: 0; color: var(--ui-text); font: var(--text-xs) var(--font-sans); text-overflow: ellipsis; white-space: nowrap; }
+.loot-reveal-item b { flex: 0 0 auto; color: var(--loot-accent, var(--ui-accent)); font: var(--text-xs) var(--font-mono); }
+.loot-reveal-discovery { color: var(--ui-secondary); font: var(--text-micro) var(--font-mono); letter-spacing: .04em; }
+.loot-reveal-source { overflow: hidden; color: var(--ui-text-muted); font: var(--text-micro) var(--font-sans); text-overflow: ellipsis; white-space: nowrap; }
+.loot-reveal-more { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
+.milestone-layer { position: fixed; z-index: calc(var(--z-context, 800) + 20); top: calc(82px + 14px); left: 50%; width: min(460px, calc(100vw - 32px)); pointer-events: none; transform: translateX(-50%); }
+.milestone-banner { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 11px; padding: 12px 15px; border: 1px solid color-mix(in srgb, var(--milestone-accent, var(--ui-accent)) 58%, var(--ui-border)); border-top: 2px solid var(--milestone-accent, var(--ui-accent)); border-radius: 9px; background: color-mix(in srgb, var(--ui-panel-strong) 96%, transparent); box-shadow: 0 14px 42px var(--ui-shadow), inset 0 0 26px color-mix(in srgb, var(--milestone-accent, var(--ui-accent)) 8%, transparent); animation: milestone-in 220ms cubic-bezier(.2,.8,.2,1) both; }
+.milestone-banner > svg { color: var(--milestone-accent, var(--ui-accent)); }
+.milestone-banner > div { display: grid; gap: 2px; min-width: 0; }
+.milestone-eyebrow { color: var(--milestone-accent, var(--ui-accent)); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; }
+.milestone-title { overflow: hidden; color: var(--ui-text); font: 600 var(--text-sm) var(--font-sans); text-overflow: ellipsis; white-space: nowrap; }
+.milestone-banner small { overflow: hidden; color: var(--ui-text-muted); font: var(--text-micro) var(--font-sans); text-overflow: ellipsis; white-space: nowrap; }
+.milestone-dismiss { display: grid; place-items: center; width: 24px; height: 24px; border: 0; color: var(--ui-text-muted); background: transparent; cursor: pointer; pointer-events: auto; }
+.milestone-dismiss:hover { color: var(--milestone-accent, var(--ui-accent)); }
+@keyframes loot-reveal-in { from { opacity: 0; transform: translateX(16px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes milestone-in { from { opacity: 0; transform: translateY(-8px) scale(.98); } to { opacity: 1; transform: none; } }
+:root[data-reduced-motion='true'] .loot-reveal-card, :root[data-reduced-motion='true'] .milestone-banner { animation: reward-fade-in 140ms ease-out both; }
+:root[data-reduced-motion='true'] .loot-reveal-card { transition: border-color 130ms ease, box-shadow 130ms ease; }
+@media (max-width: 760px) { .loot-reveal-layer { top: calc(140px + 10px); right: 12px; left: 12px; width: auto; }.milestone-layer { top: calc(140px + 10px); } }
+@keyframes reward-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .loot-reveal-card, .milestone-banner { animation: reward-fade-in 140ms ease-out both; transition: none; } }

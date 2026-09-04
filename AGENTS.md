@@ -13,16 +13,54 @@
 - Rare boss/signature Equipment is represented through boss/signature crafting materials and a Transmutation recipe, never a direct finished-Equipment drop.
 - Transmutation remains the single normal item-creation system. Do not add a second production/crafting path.
 
-## Balancing documentation is part of content Definition of Done
+## Balancing workflow
 
-`Docs/Balancing/` is the human-editable balancing workbook and must stay synchronized with authored gameplay content.
+`Docs/Balancing/` is the human-editable balancing workbook and must remain synchronized with authoritative runtime content. Classify balancing work before validating it.
 
-- Update/regenerate the affected balancing sheets when adding, removing, or changing items, materials, Equipment, monsters, loot, recipes, spells, statuses, traits, dungeons, Research, Channeling, Focus, Guild, economy, or progression values.
+### Class A — Pure numeric balancing
+
+Use this fast path when only existing authored numeric values change and no content IDs, formulas, schemas, registry shapes, ingredient topology, unlock-condition types, or system behavior change. This includes values such as damage, HP, Defence, costs, cooldowns, durations, XP, research values, drop quantities/chances, item values, craft durations, resource quantities, status magnitudes, trait coefficients, and numeric unlock thresholds.
+
+- Apply only the intentionally edited values to authoritative runtime TypeScript.
+- Update or regenerate only directly affected balancing sheets and mirrors.
+- Run `npm run balancing:coverage` once at the end.
+- Run targeted Vitest only when an existing test directly asserts the changed value or a relevant formula boundary.
+- Do not run the full `npm run test:run`.
+- Do not run `npm run build`.
+- Do not audit unrelated systems, broaden the task, or regenerate unrelated balancing sections.
+
+This Class A fast path overrides the generic final full-test/build rule elsewhere in `AGENTS.md`. If the task reveals a formula, schema, new ID, enum, registry-shape, or system-behavior change, explicitly reclassify it as Class B or Class C and explain why.
+
+### Class B — Structural authored-content changes
+
+Use this class when authored content topology changes, including adding or removing items, monsters, spells, recipes, ingredients, loot entries, traits, statuses, or actions; changing Equipment slots/categories, unlock-condition structure, recipe output identity, dungeon rosters, or authored registry object shape.
+
+- Apply the requested content change and update affected balancing sheets and mirrors.
+- Run relevant targeted tests during implementation.
+- Run `npm run balancing:coverage` once at the end.
+- Run `npm run build` when TypeScript or content-registry shape can be affected.
+- Run the full `npm run test:run` only for broad or cross-system consequences, multiple touched invariants, insufficient targeted coverage, or an explicit user request.
+
+Full-suite testing is not automatically mandatory merely because authored content changed.
+
+### Class C — System, formula, or architecture changes
+
+Use this class for changes to formulas, simulation or resource behavior, save schema, combat sequencing, loot resolution, progression logic, Transmutation behavior, or runtime architecture.
+
+- Run targeted tests while iterating.
+- Update balancing documentation when authored values are affected and run `npm run balancing:coverage` when applicable.
+- Run one full `npm run test:run` and one `npm run build` at final handoff.
+
+General balancing rules:
+
+- Runtime TypeScript remains executable source; Markdown is never runtime input.
+- Preserve human edits: inspect and merge balancing-document conflicts before regenerating mirrors; do not blindly overwrite unapplied edits.
+- Update or regenerate affected balancing sheets and mirrors for authored changes to items, materials, Equipment, monsters, loot, recipes, spells, statuses, traits, dungeons, Research, Channeling, Focus, Guild, economy, or progression values, within the applicable task class.
 - Every authored item, material, Equipment, monster, recipe, spell, status, trait, and dungeon must appear in its corresponding balancing sheet and comparison mirrors.
 - Every new Equipment item must appear in its dungeon Equipment sheet, `Transmutation/Recipes.md`, `Crafting_Economy.md`, and exactly one runtime Transmutation recipe.
-- Runtime TypeScript remains executable source; do not duplicate authoritative gameplay values in UI or treat Markdown as runtime input.
-- Preserve human edits: inspect and merge balancing-document conflicts before regenerating; do not blindly overwrite unapplied edits.
-- For authored content work, run `npm run balancing:coverage` as part of final handoff validation. Unrelated UI-only work does not require balancing coverage.
+- Class A still requires all directly affected cross-sheet mirrors, but unrelated sheets remain untouched.
+- Unrelated UI-only work does not require balancing coverage.
+- Every balancing handoff must report its Class A/B/C classification and state which validation commands were run or intentionally skipped.
 
 ## Tooltips are mandatory UI infrastructure
 
@@ -111,8 +149,10 @@ When replacing a system, remove the obsolete implementation after migration rath
 
 - During implementation, run only targeted Vitest files relevant to the code currently being changed.
 - Do not repeatedly run the full test suite or production build after individual edits.
-- Reserve `npm run test:run` and `npm run build` for final handoff validation after implementation and targeted testing are complete.
-- The final handoff should include one full `npm run test:run` and one `npm run build`.
+- For normal system/code tasks, reserve `npm run test:run` and `npm run build` for final handoff validation after implementation and targeted testing are complete.
+- Pure numeric balancing tasks follow the Class A fast balancing workflow and do not require the full suite or production build.
+- Structural authored-content tasks follow the Class B workflow.
+- If a task-specific section defines a narrower validation workflow, that task-specific rule takes precedence over this generic section.
 
 ## Screen panel non-overlap contract
 

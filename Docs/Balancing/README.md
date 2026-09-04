@@ -14,6 +14,29 @@ Use npm run balancing:export to create missing files. Use npm run balancing:expo
 - Progression and magic: Research, Channeling, Focus, Guild, unlocks, schools, and spells.
 - Economy: item values and current activity timings.
 
-## Prompt for Codex when Editing something myself
+## Prompt for Codex when editing balancing values myself
 
-Apply all my balancing edits from the modified files in Docs/Balancing. Treat canonical table edits as intended gameplay changes. Update runtime TypeScript, then regenerate all affected balancing mirrors. Do not overwrite my edits before applying them. Run targeted tests during work, balancing coverage, then full tests/build once at the end.
+Apply the balancing edits I made in `Docs/Balancing`.
+
+First classify the task:
+
+- **Class A — Pure numeric balancing:** existing values only; no content IDs, formulas, schemas, registry shapes, ingredient structure, unlock-condition type, or system behavior changes.
+- **Class B — Structural authored content:** adds, removes, or reshapes authored content.
+- **Class C — System/formula/architecture:** changes runtime behavior, formulas, save shape, simulation, or architecture.
+
+For Class A pure numeric balancing:
+
+1. Inspect my modified balancing files and preserve my edits.
+2. Apply only those intended values to the authoritative runtime TypeScript.
+3. Update or regenerate only directly affected balancing mirrors.
+4. Run `npm run balancing:coverage` once at the end.
+5. Run targeted Vitest only if an existing test directly asserts the changed value or relevant formula boundary.
+6. Do not run the full `npm run test:run`.
+7. Do not run `npm run build`.
+8. Do not audit or regenerate unrelated systems or balancing sections.
+
+For Class B structural authored-content changes, run relevant targeted tests, update affected sheets and mirrors, and run `npm run balancing:coverage`. Run the build when TypeScript or content-registry structure can be affected. Use the full test suite only for broad or cross-system changes, insufficient targeted coverage, or an explicit request.
+
+For Class C formula, system, or architecture changes, use the normal workflow: targeted tests while iterating, balancing coverage when applicable, then one full `npm run test:run` and one `npm run build` at final handoff.
+
+Runtime TypeScript remains the live source. Markdown is never loaded by the game. Keep stable content IDs unchanged unless the requested edit explicitly changes content structure. Report the task class and explicitly state which validation commands were run or skipped. If a supposed Class A edit requires a structural or behavior change, reclassify it as Class B or C before continuing.

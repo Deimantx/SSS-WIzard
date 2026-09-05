@@ -25,7 +25,7 @@ export const WHISPERING_WOODS_MONSTERS = {
   },
   'grove-sentinel': {
     id: 'grove-sentinel', bestiaryCategory: 'monster', name: 'Grove Sentinel', subtitle: 'An ancient guardian of the inner grove',
-    maxHealth: 320, basicAttackDamage: 22, basicAttackTimeMs: 2600, defense: 20, color: '#d39b59', ui: { portraitIcon: 'guardian' }, traitIds: ['grove-sentinel-ancient-growth'],
+    maxHealth: 320, basicAttackDamage: 14, basicAttackTimeMs: 2600, defense: 20, color: '#d39b59', ui: { portraitIcon: 'guardian' }, traitIds: ['grove-sentinel-ancient-growth'],
     actions: {
       'root-crush': { id: 'root-crush', name: 'Root Crush', actionTimeMs: 2000, description: 'The guardian brings its roots down with crushing force.', effects: [scaledDirectDamage('physical', 1.35)], tags: ['special', 'physical', 'direct'] },
       'verdant-guard': { id: 'verdant-guard', name: 'Verdant Guard', actionTimeMs: 2500, description: 'The guardian gathers living energy into a protective Barrier.', effects: [scaledBarrier(1 / 6)], tags: ['special', 'barrier'] },

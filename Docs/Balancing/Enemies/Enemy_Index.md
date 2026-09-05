@@ -7,7 +7,7 @@ Global comparison sheet. The dungeon pages are the canonical editing locations f
 | Forest Wisp (forest-wisp) | Whispering Woods | Normal | 200 | 10 | 2.8 s | 8 | 5% | 150% | 0% | 0% | 0% | 0% | 0% | 0% | 0% |
 | Thornling (thornling) | Whispering Woods | Normal | 240 | 12 | 2.5 s | 12 | 5% | 150% | 0% | 0% | 0% | 0% | 0% | 0% | 0% |
 | Stone Root (stone-root) | Whispering Woods | Normal | 280 | 12 | 3.2 s | 12 | 5% | 150% | 0% | 0% | 0% | 0% | 0% | 0% | 0% |
-| Grove Sentinel (grove-sentinel) | Whispering Woods | Normal | 320 | 22 | 2.6 s | 20 | 5% | 150% | 0% | 0% | 0% | 0% | 0% | 0% | 0% |
+| Grove Sentinel (grove-sentinel) | Whispering Woods | Normal | 320 | 14 | 2.6 s | 20 | 5% | 150% | 0% | 0% | 0% | 0% | 0% | 0% | 0% |
 | Forest Heart (forest-heart) | Whispering Woods | Boss | 900 | 35 | 2.4 s | 30 | 5% | 150% | 0% | 0% | 0% | 0% | 0% | 0% | 0% |
 | Cavefang Wolf (cavefang-wolf) | Howling Den | Normal | 350 | 30 | 2.2 s | 16 | 5% | 150% | 0% | 0% | 0% | 0% | 0% | 0% | 0% |
 | Razorclaw Lynx (razorclaw-lynx) | Howling Den | Normal | 360 | 33 | 1.9 s | 16 | 5% | 150% | 0% | 0% | 0% | 0% | 0% | 0% | 0% |

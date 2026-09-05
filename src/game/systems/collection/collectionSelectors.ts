@@ -23,7 +23,7 @@ export const getCollectionCategoryCounts = (state: Pick<GameState, 'progress'>) 
   }),
 ) as Record<InventoryCategory, { discovered: number; total: number }>
 
-const categoryForFilter: Record<CollectionCategoryFilter, InventoryCategory | null> = { All: null, Materials: 'material', Loot: 'loot', Equipment: 'equipment', Special: 'special' }
+const categoryForFilter: Record<CollectionCategoryFilter, InventoryCategory | null> = { All: null, Materials: 'material', Equipment: 'equipment', Special: 'special' }
 
 const searchText = (itemId: ItemId) => {
   const item = ITEMS[itemId]

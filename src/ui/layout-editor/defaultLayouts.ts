@@ -18,7 +18,7 @@ export const DEFAULT_LAYOUTS: Record<ScreenId, ScreenLayouts> = {
   combat: {
     'combat-stage': layout(0, 0, 12, 14), 'combat-spell-deck': layout(0, 14, 12, 7), 'combat-analytics': layout(0, 21, 12, 8),
   },
-  inventory: { 'inventory-catalog': layout(0, 0, 8, 12), 'inventory-detail': layout(8, 0, 4, 12), 'inventory-actions': layout(8, 12, 4, 5) },
+  inventory: { 'inventory-catalog': layout(0, 0, 7, 24), 'inventory-detail': layout(7, 0, 5, 24) },
   equipment: { 'equipment-loadout': layout(0, 0, 7, 13), 'equipment-stats': layout(7, 0, 5, 13), 'equipment-owned': layout(0, 13, 8, 13), 'equipment-inspector': layout(8, 13, 4, 13) },
   guild: { 'guild-banner': layout(0, 0, 12, 5), 'guild-request-1': layout(0, 5, 4, 11), 'guild-request-2': layout(4, 5, 4, 11), 'guild-request-3': layout(8, 5, 4, 11), 'guild-rank': layout(0, 16, 12, 6) },
   collection: { 'collection-summary': layout(0, 0, 12, 5), 'collection-content': layout(0, 5, 7, 17), 'collection-inspector': layout(7, 5, 5, 17) },

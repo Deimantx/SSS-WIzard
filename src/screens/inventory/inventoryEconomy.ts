@@ -2,9 +2,11 @@ import { GUILD_REQUESTS } from '../../game/content/guild/guildRequests'
 import { MANA_PILLARS, getManaPillarLevelCost } from '../../game/content/channeling/manaPillars'
 import { FOCUS_IMPROVEMENT, getFocusImprovementLevelCost } from '../../game/content/focus/focusImprovement'
 import { RECIPES } from '../../game/content/recipes/recipes'
+import { ARTIFICING_RECIPES } from '../../game/content/recipes/artificingRecipes'
 import { ITEMS } from '../../game/content/items/items'
 import { isRecipeUnlocked } from '../../game/systems/transmutation/transmutationSelectors'
 import { getItemFlow, type ItemFlow } from '../../game/systems/inventory/itemFlow'
+import { getConsumableQuantity } from '../../game/core/inventory/inventoryConsumption'
 import type { GameState, ItemId, ScreenId } from '../../game/types'
 
 export type ItemEconomyState = Pick<GameState, 'inventory' | 'protectedItems' | 'equipment' | 'progress' | 'activities'>
@@ -17,6 +19,7 @@ export interface ItemNeed {
   detail: string
   destination: ScreenId
   owned: number
+  available: number
   required: number
   missing: number
   status: ItemNeedStatus
@@ -29,11 +32,12 @@ const isProtected = (state: Pick<GameState, 'protectedItems' | 'equipment'>, ite
 const need = (id: string, label: string, detail: string, destination: ScreenId, itemId: ItemId, required: number, state: ItemEconomyState, flow: ItemFlow | null): ItemNeed => {
   const owned = Math.max(0, state.inventory[itemId] ?? 0)
   const safeRequired = Math.max(0, Math.floor(required))
-  const missing = Math.max(0, safeRequired - owned)
+  const available = getConsumableQuantity(state, itemId)
+  const missing = Math.max(0, safeRequired - available)
   const protectedEnough = isProtected(state, itemId) && owned >= safeRequired
   const status: ItemNeedStatus = protectedEnough ? 'PROTECTED' : owned >= safeRequired ? 'READY' : 'MISSING'
   const readyInMs = status === 'MISSING' && flow && flow.netPerHour > 0 ? missing / flow.netPerHour * HOUR_MS : null
-  return { id, label, detail, destination, owned, required: safeRequired, missing, status, readyInMs }
+  return { id, label, detail, destination, owned: available, available, required: safeRequired, missing, status, readyInMs }
 }
 
 /** Returns the small, actionable set of requirements relevant to this material now. */
@@ -73,9 +77,17 @@ export function getItemNeeds(itemId: ItemId, state: ItemEconomyState): ItemNeed[
     needs.push(need(`focus:${FOCUS_IMPROVEMENT.id}`, `${FOCUS_IMPROVEMENT.name} Lv ${focusLevel + 1}`, 'Next Focus Capacity level', 'tower-focus', itemId, focusCost.primary, state, flow))
   }
 
-  return needs.slice(0, 5)
+  return needs
 }
 
-export function getNeededItemIds(state: ItemEconomyState): ItemId[] {
-  return (Object.keys(ITEMS) as ItemId[]).filter((itemId) => (state.inventory[itemId] ?? 0) > 0 && getItemNeeds(itemId, state).length > 0)
+export function getNeededItemIds(state: ItemEconomyState, pinnedRecipeId: import('../../game/types').ArtificingRecipeId | null = null): ItemId[] {
+  return (Object.keys(ITEMS) as ItemId[]).filter((itemId) => (state.inventory[itemId] ?? 0) > 0 && getPinnedArtificingItemNeed(itemId, state, pinnedRecipeId) !== null)
+}
+
+export function getPinnedArtificingItemNeed(itemId: ItemId, state: ItemEconomyState | undefined, pinnedRecipeId: import('../../game/types').ArtificingRecipeId | null): ItemNeed | null {
+  if (!state || !pinnedRecipeId) return null
+  const recipe = ARTIFICING_RECIPES[pinnedRecipeId]
+  const ingredient = recipe?.ingredients.find(entry => entry.itemId === itemId)
+  if (!recipe || !ingredient) return null
+  return need(`pinned:${recipe.id}`, recipe.name, 'Pinned Artificing recipe', 'tower-artificing', itemId, ingredient.quantity, state, getItemFlow(itemId, state))
 }

@@ -8,7 +8,7 @@ const labels: Record<string, string> = {
   'channeling-mana-core': 'Mana Core', 'channeling-echoes': 'Arcane Echoes', 'channeling-pillars': 'Pillars of Mana', 'focus-summary': 'Focus overview', 'focus-reservations': 'Active Focus usage', 'focus-improvement': 'Focus improvement', 'research-school-mastery': 'Magic School Mastery', 'research-library': 'Researchable items', 'research-inspector': 'Item inspection', 'research-prepared': 'Prepared Research', 'transmutation-recipes': 'Recipe library', 'transmutation-focus': 'Focus assignment', 'transmutation-detail': 'Recipe detail',
   'schools-browser': 'Spell browser', 'schools-inspector': 'Spell inspector', 'schools-presets': 'Spell presets',
   'combat-stage': 'Combat Stage', 'combat-spell-deck': 'Spell Deck', 'combat-analytics': 'Combat Analytics',
-  'inventory-catalog': 'Item Vault', 'inventory-detail': 'Item Details', 'inventory-actions': 'Item Actions', 'equipment-loadout': 'Equipment loadout', 'equipment-stats': 'Equipment stats', 'equipment-owned': 'Armory', 'equipment-inspector': 'Gear inspector',
+  'inventory-catalog': 'Item Vault', 'inventory-detail': 'Item Details', 'equipment-loadout': 'Equipment loadout', 'equipment-stats': 'Equipment stats', 'equipment-owned': 'Armory', 'equipment-inspector': 'Gear inspector',
   'guild-banner': 'Guild banner', 'guild-request-1': 'Request one', 'guild-request-2': 'Request two', 'guild-request-3': 'Request three', 'guild-rank': 'Guild rank',
   'collection-summary': 'Collection summary', 'collection-content': 'Item collection', 'collection-inspector': 'Item inspection', 'bestiary-summary': 'Bestiary summary', 'bestiary-index': 'Bestiary index', 'bestiary-inspector': 'Creature dossier', 'settings-profile': 'Profile', 'settings-appearance': 'Appearance', 'settings-theme-preview': 'Theme preview', 'settings-save': 'Save', 'settings-layout': 'Interface layout', 'settings-developer': 'Developer', 'settings-info': 'Info',
 }
@@ -35,7 +35,7 @@ const panelOverrides: Record<string, PanelOverrides> = {
   'home-arcane-work': { minW: 6, minH: 6, heightMode: 'bounded-scroll' },
   'inventory-catalog': { heightMode: 'bounded-scroll' },
   'inventory-detail': { heightMode: 'bounded-scroll' },
-  'inventory-actions': { minW: 3, minH: 5, heightMode: 'bounded-scroll' },
+
   'guild-request-1': { minW: 3 },
   'guild-request-2': { minW: 3 },
   'guild-request-3': { minW: 3 },

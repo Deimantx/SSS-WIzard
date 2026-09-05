@@ -6,7 +6,7 @@ import { FOCUS_IMPROVEMENT } from '../focus/focusImprovement'
 import type { InventoryCategory, InventoryMaterialSubtype, ItemId, RecipeId, ScreenId } from '../../types'
 
 /** Player-facing inventory filters and classification are shared item-domain metadata. */
-export const INVENTORY_CATEGORIES = ['All', 'Materials', 'Loot', 'Equipment', 'Special'] as const
+export const INVENTORY_CATEGORIES = ['All', 'Materials', 'Equipment', 'Special'] as const
 export type InventoryCategoryFilter = typeof INVENTORY_CATEGORIES[number]
 export const MATERIAL_SUBCATEGORIES = ['All Materials', 'Elemental', 'Creature', 'Ore', 'Refined', 'Arcane'] as const
 export type MaterialSubcategoryFilter = typeof MATERIAL_SUBCATEGORIES[number]

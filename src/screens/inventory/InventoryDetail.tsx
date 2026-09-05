@@ -1,5 +1,5 @@
 import { ArrowRight, Check, ChevronDown, ChevronRight, LockKeyhole, PackageOpen } from 'lucide-react'
-import { useRef, type CSSProperties, type ReactNode } from 'react'
+import { useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { Button, EquipmentCombatDetails, Status } from '../../components/ui'
 import { ItemIcon, ItemQuantity } from '../../components/ui/item'
 import { getItemSourceLabel, getResearchXp, ITEMS } from '../../game/content/items/items'
@@ -10,6 +10,9 @@ import { getInventoryCategoryLabel, getInventorySubcategoryLabel, getItemProcess
 import { getEquipmentComparison } from './inventoryEquipmentComparison'
 import { formatFlowEta, formatItemFlowRate, getItemFlow, type ItemFlow } from '../../game/systems/inventory/itemFlow'
 import { getItemNeeds, type ItemEconomyState, type ItemNeed } from './inventoryEconomy'
+import { getPinnedArtificingItemNeed } from './inventoryEconomy'
+import { InventoryActions } from './InventoryActions'
+import { ItemUsesDialog } from '../../components/ui/item/ItemUsesDialog'
 import { EQUIPMENT_ITEM_SLOT_LABELS, getItemPositions } from '../../game/core/equipment'
 import { setUiPreferences, useUiPreferences } from '../../ui/preferences/uiPreferencesStore'
 import { getResearchReservedQuantity } from '../../game/systems/research/researchReservations'
@@ -18,9 +21,10 @@ import { useSmartScrollState } from '../../ui/game-feel/useSmartScrollState'
 type DetailAccordionKey = 'currentNeeds' | 'source' | 'usedIn'
 type DetailAccordionState = Record<DetailAccordionKey, boolean>
 
-export function InventoryDetail({ itemId, inventory, protectedItems, equipment, economyState, navigate }: { itemId: ItemId | null; inventory: GameState['inventory']; protectedItems: GameState['protectedItems']; equipment: GameState['equipment']; economyState?: ItemEconomyState; navigate?: (screen: ScreenId) => void }) {
+export function InventoryDetail({ itemId, inventory, protectedItems, equipment, economyState, navigate, toggleProtection, equipItem, sellItem, destroyItem }: { itemId: ItemId | null; inventory: GameState['inventory']; protectedItems: GameState['protectedItems']; equipment: GameState['equipment']; economyState?: ItemEconomyState; navigate?: (screen: ScreenId) => void; toggleProtection?: (id: ItemId) => void; equipItem?: (id: ItemId) => void; sellItem?: (id: ItemId, quantity: number) => void; destroyItem?: (id: ItemId, quantity: number) => void }) {
   const detailScrollRef = useRef<HTMLDivElement>(null)
   const preferences = useUiPreferences()
+  const [usesOpen, setUsesOpen] = useState(false)
   const openSections: DetailAccordionState = { currentNeeds: preferences.screenState.inventory.currentNeedsOpen, source: preferences.screenState.inventory.sourceOpen, usedIn: preferences.screenState.inventory.usedInOpen }
   useSmartScrollState(detailScrollRef, { resetKey: itemId })
 
@@ -38,6 +42,7 @@ export function InventoryDetail({ itemId, inventory, protectedItems, equipment, 
   const processingChain = getItemProcessingChain(itemId).filter((chainItem) => Boolean(ITEMS[chainItem]))
   const flow = economyState ? getItemFlow(itemId, economyState) : null
   const needs = economyState ? getItemNeeds(itemId, economyState) : []
+  const pinnedNeed = getPinnedArtificingItemNeed(itemId, economyState, preferences.screenState.artificing.pinnedRecipeId)
   const sourceLabel = getItemSourceLabel(itemId)
   const toggleSection = (section: DetailAccordionKey) => { const key = section === 'currentNeeds' ? 'currentNeedsOpen' : section === 'source' ? 'sourceOpen' : 'usedInOpen'; setUiPreferences({ screenState: { inventory: { [key]: !openSections[section] } } }) }
 
@@ -46,6 +51,9 @@ export function InventoryDetail({ itemId, inventory, protectedItems, equipment, 
     <div className="inventory-detail-owned"><span>OWNED</span><ItemQuantity value={quantity} /></div>
     {researchReserved > 0 && <div className="inventory-detail-reserved"><span>PREPARED FOR RESEARCH</span><strong>×{researchReserved.toLocaleString()}</strong><small>Unavailable to selling, destruction, Guild donations, and Transmutation.</small></div>}
     <p className="inventory-detail-description">{item.description}</p>
+
+    {economyState && toggleProtection && equipItem && sellItem && destroyItem && <InventoryActions itemId={itemId} inventory={inventory} protectedItems={protectedItems} equipment={equipment} activities={economyState.activities} toggleProtection={toggleProtection} equipItem={equipItem} sellItem={sellItem} destroyItem={destroyItem} contextActions={<div className="inventory-context-actions">{item.inventoryCategory === 'material' && uses.length > 0 && <Button variant="secondary" onClick={() => setUsesOpen(true)}>VIEW RECIPES</Button>}{item.researchSchool && <Button variant="ghost" onClick={() => { setUiPreferences({ screenState: { research: { selectedItemId: itemId } } }); navigate?.('tower-research') }}>RESEARCH</Button>}{item.kind === 'equipment' && <Button variant="ghost" onClick={() => document.querySelector('.inventory-comparison-current')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })}>COMPARE</Button>}</div>} />}
+    {pinnedNeed && <GoalSection need={pinnedNeed} navigate={navigate} />}
 
     {flow && <FlowSection flow={flow} />}
     {needs.length > 0 && <InventoryDetailSection section="currentNeeds" title="CURRENT NEEDS" count={needs.length} open={openSections.currentNeeds} onToggle={toggleSection}><NeedsSection needs={needs} navigate={navigate} /></InventoryDetailSection>}
@@ -60,7 +68,8 @@ export function InventoryDetail({ itemId, inventory, protectedItems, equipment, 
 
     {item.researchSchool && <section className="inventory-detail-section"><span className="inventory-detail-label">RESEARCH VALUE</span><div className="inventory-research-values">{(Object.keys(SCHOOLS) as SchoolId[]).map((schoolId) => <DetailRow key={schoolId} label={SCHOOLS[schoolId].name} value={`${getResearchXp(itemId, schoolId)} XP`} />)}</div><Button variant="ghost" className="inventory-inline-action" onClick={() => navigate?.('tower-research')}>GO TO RESEARCH <ArrowRight size={13} /></Button></section>}
 
-    {uses.length > 0 && <InventoryDetailSection section="usedIn" title="USED IN" count={uses.length} open={openSections.usedIn} onToggle={toggleSection}><div className="inventory-use-list">{uses.map((use) => <button type="button" className="inventory-use-row" key={`${use.destination}-${use.label}`} onClick={() => navigate?.(use.destination)}><span><strong>{use.label}</strong><small>{use.detail}</small></span><ArrowRight size={14} aria-hidden="true" /></button>)}</div></InventoryDetailSection>}
+    {uses.length > 0 && <InventoryDetailSection section="usedIn" title="USED IN" count={uses.length} open={openSections.usedIn} onToggle={toggleSection}><div className="inventory-use-list">{uses.slice(0, 3).map((use) => <button type="button" className="inventory-use-row" key={`${use.destination}-${use.label}`} onClick={() => navigate?.(use.destination)}><span><strong>{use.label}</strong><small>{use.detail}</small></span><ArrowRight size={14} aria-hidden="true" /></button>)}{uses.length > 3 && <Button variant="ghost" onClick={() => setUsesOpen(true)}>VIEW ALL {uses.length}</Button>}</div></InventoryDetailSection>}
+    <ItemUsesDialog itemId={itemId} uses={uses} open={usesOpen} onClose={() => setUsesOpen(false)} />
 
   </div>
 }
@@ -83,6 +92,10 @@ function FlowSection({ flow }: { flow: ItemFlow }) {
 
 function NeedsSection({ needs, navigate }: { needs: ItemNeed[]; navigate?: (screen: ScreenId) => void }) {
   return <div className="inventory-needs-list">{needs.map((entry) => <button type="button" className="inventory-need-row" key={entry.id} onClick={() => navigate?.(entry.destination)}><span className="inventory-need-copy"><strong>{entry.label}</strong><small>{entry.detail} · {entry.owned.toLocaleString()} / {entry.required.toLocaleString()}{entry.status === 'MISSING' ? ` · Missing ${entry.missing.toLocaleString()}` : ''}</small></span><span className={`inventory-need-status inventory-need-${entry.status.toLowerCase()}`}>{entry.status === 'MISSING' && entry.readyInMs !== null ? `READY IN ${formatFlowEta(entry.readyInMs)}` : entry.status}</span><ArrowRight size={14} aria-hidden="true" /></button>)}</div>
+}
+
+function GoalSection({ need, navigate }: { need: ItemNeed; navigate?: (screen: ScreenId) => void }) {
+  return <section className="inventory-detail-section inventory-goal-section"><span className="inventory-detail-label">CURRENT GOAL</span><button type="button" className="inventory-goal-card" onClick={() => navigate?.(need.destination)}><span><strong>{need.label}</strong><small>PINNED RECIPE · REQUIRED {need.required} · AVAILABLE {need.owned}</small></span><Status tone={need.status === 'MISSING' ? 'warning' : 'success'}>{need.status === 'MISSING' ? `MISSING ${need.missing}` : need.status}</Status></button></section>
 }
 
 function FlowRow({ label, value, emphasis = false, tone = 'neutral' }: { label: string; value: string; emphasis?: boolean; tone?: 'positive' | 'negative' | 'neutral' }) { return <span className={`inventory-flow-row ${emphasis ? 'emphasis' : ''} ${tone}`}><span>{label}</span><strong>{value}</strong></span> }

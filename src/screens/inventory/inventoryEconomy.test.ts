@@ -45,7 +45,8 @@ describe('inventory economy selectors', () => {
 
     state.protectedItems['fire-fragment'] = true
     expect(getItemNeeds('fire-fragment', state).filter(entry => entry.owned >= entry.required).every((entry) => entry.status === 'PROTECTED')).toBe(true)
-    expect(getNeededItemIds(state)).toContain('fire-fragment')
+    expect(getNeededItemIds(state)).toEqual([])
+    expect(getNeededItemIds(state, 'ember-staff')).toContain('fire-fragment')
   })
 
   it('reports Focus Capacity as a Prismatic-only need', () => {

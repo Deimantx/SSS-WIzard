@@ -74,7 +74,7 @@ const sourceNavigationByItem: Partial<Record<ItemId, ScreenId>> = {
   'predator-fang': 'combat', 'predator-hide': 'combat', 'corrupted-beast-essence': 'combat', 'greatbear-core': 'combat', 'fangbound-dagger': 'tower-transmutation', 'fangbound-buckler': 'tower-transmutation', 'corrupted-howlstaff': 'tower-transmutation', 'razorclaw-circlet': 'tower-transmutation', 'predator-hide-mantle': 'tower-transmutation', 'greatbear-vestment': 'tower-transmutation', 'howling-signet': 'tower-transmutation', 'greatbear-heartstone': 'tower-transmutation',
   'ossuary-remnant': 'combat', 'graveglass-shard': 'combat', 'soul-residue': 'combat', 'edrin-remnant': 'combat', 'graveglass-wand': 'tower-transmutation', 'edrins-remnant-staff': 'tower-transmutation', 'soulward-focus': 'tower-transmutation', 'soulward-shield': 'tower-transmutation', 'acolyte-vestments': 'tower-transmutation', 'wraithveil-hood': 'tower-transmutation', 'ossuary-mantle': 'tower-transmutation', 'soulglass-amulet': 'tower-transmutation', 'gravebinder-ring': 'tower-transmutation', 'edrins-signet': 'tower-transmutation',
 }
-const inventoryCategoryOverrides: Partial<Record<ItemId, InventoryCategory>> = { heartseed: 'loot', 'heartseed-necklace': 'equipment', 'greatbear-heartstone': 'equipment', 'edrins-signet': 'equipment' }
+const inventoryCategoryOverrides: Partial<Record<ItemId, InventoryCategory>> = { 'heartseed-necklace': 'equipment', 'greatbear-heartstone': 'equipment', 'edrins-signet': 'equipment' }
 const sellValues: Record<ItemId, number | null> = {
   'prismatic-fragment': 20, 'life-essence': 2, 'fire-fragment': 1, 'water-fragment': 1, 'earth-fragment': 1, 'air-fragment': 1, 'wisp-essence': 3, 'grove-bark': 5, heartseed: null,
   'ember-staff': 40, 'wispwood-wand': 40, 'tide-focus': 40, 'stoneweave-robe': 40, 'windthread-charm': 40, 'wispveil-hood': 40, 'grovekeeper-mantle': 40, 'wispbound-ring': 40, 'heartseed-necklace': null,
@@ -86,7 +86,7 @@ const actionRestrictionReasons: Partial<Record<ItemId, string>> = { heartseed: '
 
 export const ITEMS: Record<ItemId, ItemDefinition> = Object.fromEntries(Object.entries(authoredItems).map(([id, item]) => {
   const itemId = id as ItemId
-  const inventoryCategory = inventoryCategoryOverrides[itemId] ?? item.inventoryCategory ?? (item.kind === 'equipment' ? 'equipment' : item.category === 'boss-loot' ? 'loot' : 'material')
+  const inventoryCategory = inventoryCategoryOverrides[itemId] ?? item.inventoryCategory ?? (item.kind === 'equipment' ? 'equipment' : 'material')
   return [id, { ...item, inventoryCategory, ...(inventoryCategory === 'material' ? { materialSubtype: item.materialSubtype ?? (item.category === 'elemental' ? 'elemental' : 'creature') } : {}), sourceNavigation: item.sourceNavigation ?? sourceNavigationByItem[itemId], sellValue: item.sellValue !== undefined ? item.sellValue : sellValues[itemId], canDestroy: item.canDestroy ?? destroyability[itemId] ?? true, ...(item.actionRestrictionReason || actionRestrictionReasons[itemId] ? { actionRestrictionReason: item.actionRestrictionReason ?? actionRestrictionReasons[itemId] } : {}) }]
 })) as Record<ItemId, ItemDefinition>
 

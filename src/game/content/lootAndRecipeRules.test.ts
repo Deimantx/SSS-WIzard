@@ -71,7 +71,7 @@ describe('material-only loot and Artificing-only Equipment', () => {
 
   it('uses the transition signature recipe values', () => {
     expect(RECIPES['heartseed-necklace']).toMatchObject({ ingredients: [{ itemId: 'heartseed', quantity: 20 }], unlock: { type: 'boss-kill', bossId: 'forest-heart' }, output: { quantity: 1 } })
-    expect(RECIPES['greatbear-heartstone']).toMatchObject({ ingredients: [{ itemId: 'greatbear-core', quantity: 21 }], unlock: { type: 'boss-kill', bossId: 'corrupted-greatbear' }, output: { quantity: 1 } })
+    expect(RECIPES['greatbear-heartstone']).toMatchObject({ ingredients: [{ itemId: 'greatbear-core', quantity: 20 }], unlock: { type: 'boss-kill', bossId: 'corrupted-greatbear' }, output: { quantity: 1 } })
     expect(RECIPES['edrins-signet']).toMatchObject({ ingredients: [{ itemId: 'edrin-remnant', quantity: 35 }], unlock: { type: 'boss-kill', bossId: 'archmage-edrin-shade' }, output: { quantity: 1 } })
   })
 })

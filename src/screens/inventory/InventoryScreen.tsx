@@ -7,7 +7,6 @@ import type { ItemId } from '../../game/types'
 import { CATEGORY_LABELS, INVENTORY_CATEGORIES, MATERIAL_SUBCATEGORIES, type MaterialSubcategoryFilter } from '../../game/content/items/inventoryMetadata'
 import { groupOwnedItemIds, inventorySummary, materialSubcategoryCount, selectOwnedItemIds, selectVisibleItemIds, type InventoryFilter, type InventorySort, INVENTORY_SORTS } from './inventorySelectors'
 import { InventoryDetail } from './InventoryDetail'
-import { InventoryActions } from './InventoryActions'
 import { InventoryItemTile } from './InventoryItemTile'
 import { InventoryRecent } from './InventoryRecent'
 import { getItemFlow } from '../../game/systems/inventory/itemFlow'
@@ -17,6 +16,7 @@ import { getActiveProfileId } from '../../profiles/profileSessionStore'
 import { InspectorTransition } from '../../ui/game-feel/InspectorTransition'
 import { ITEMS } from '../../game/content/items/items'
 import { useSmartScrollState } from '../../ui/game-feel/useSmartScrollState'
+import { useUiPreferences } from '../../ui/preferences/uiPreferencesStore'
 
 export function InventoryScreenV2() {
   const [search, setSearch] = useState('')
@@ -30,6 +30,7 @@ export function InventoryScreenV2() {
   const equipment = useGameStore((state) => state.equipment)
   const progress = useGameStore((state) => state.progress)
   const activities = useGameStore((state) => state.activities)
+  const pinnedRecipeId = useUiPreferences().screenState.artificing.pinnedRecipeId
   const currencies = useGameStore((state) => state.currencies)
   const recentAcquisitions = useGameStore((state) => state.recentAcquisitions)
   const toggleProtection = useGameStore((state) => state.toggleItemProtection)
@@ -42,7 +43,7 @@ export function InventoryScreenV2() {
   const ownedIds = useMemo(() => selectOwnedItemIds(inventory), [inventory])
   const recentOrder = useMemo(() => recentAcquisitions.map((entry) => entry.itemId), [recentAcquisitions])
   const economyState = useMemo<ItemEconomyState>(() => ({ inventory, protectedItems, equipment, progress, activities }), [inventory, protectedItems, equipment, progress, activities])
-  const neededIds = useMemo(() => getNeededItemIds(economyState), [economyState])
+  const neededIds = useMemo(() => getNeededItemIds(economyState, pinnedRecipeId), [economyState, pinnedRecipeId])
   const flowById = useMemo(() => new Map(ownedIds.map((id) => [id, getItemFlow(id, economyState)])), [ownedIds, economyState])
   const visibleIds = useMemo(() => selectVisibleItemIds(inventory, protectedItems, equipment, search, filter, sort, materialSubcategory, recentOrder, neededIds), [inventory, protectedItems, equipment, search, filter, sort, materialSubcategory, recentOrder, neededIds])
   const summary = useMemo(() => inventorySummary(ownedIds, inventory), [ownedIds, inventory])
@@ -76,7 +77,7 @@ export function InventoryScreenV2() {
 
   const renderGrid = () => {
     if (visibleIds.length === 0) return <div className="inventory-empty-state"><div className="inventory-empty-mark">◇</div><strong>{noMatchText}</strong><span>Inventory shows only what the tower currently owns. Browse unowned discoveries in Collection.</span></div>
-    const filteredCategory = filter === 'Materials' ? 'material' : filter === 'Loot' ? 'loot' : filter === 'Equipment' ? 'equipment' : 'special'
+    const filteredCategory = filter === 'Materials' ? 'material' : filter === 'Equipment' ? 'equipment' : 'special'
     const groups = filter === 'All' || filter === 'Protected' || filter === 'Needed' ? groupOwnedItemIds(visibleIds) : [{ category: filteredCategory as 'material' | 'loot' | 'equipment' | 'special', ids: visibleIds }]
     return <div className="inventory-groups">{groups.map((group) => <section className="inventory-group" key={group.category}><div className="inventory-group-heading"><span>{CATEGORY_LABELS[group.category]}</span><small>{group.ids.length} {group.ids.length === 1 ? 'TYPE' : 'TYPES'}</small></div><div className="inventory-grid">{group.ids.map((id) => <InventoryItemTile key={id} itemId={id} inventory={inventory} protectedItems={protectedItems} equipment={equipment} selected={selected === id} newItem={newItems.has(id)} flow={flowById.get(id)} flowDirection={flowById.get(id)?.direction ?? undefined} onSelect={() => selectItem(id)} />)}</div></section>)}</div>
   }
@@ -88,7 +89,6 @@ export function InventoryScreenV2() {
     <InventoryRecent entries={recentAcquisitions} inventory={inventory} protectedItems={protectedItems} equipment={equipment} flows={flowById} onSelect={selectRecent} />
     <div ref={catalogScrollRef} className="inventory-vault-content smart-scroll-region">{renderGrid()}</div>
   </Card>
-  const detailPanel = <Card title="ITEM DETAILS" className="inventory-detail-card"><InspectorTransition identity={selected} accent={selected ? ITEMS[selected]?.color : undefined} fill>{selected ? <InventoryDetail itemId={selected} inventory={inventory} protectedItems={protectedItems} equipment={equipment} economyState={economyState} navigate={navigate} /> : <div className="inventory-detail-empty"><div className="inventory-empty-mark">◇</div><strong>SELECT AN ITEM</strong><span>Choose an item from the Vault to inspect its source, uses, and protection.</span></div>}</InspectorTransition></Card>
-  const actionsPanel = <Card className="inventory-actions-card"><InventoryActions itemId={selected} inventory={inventory} protectedItems={protectedItems} equipment={equipment} activities={activities} toggleProtection={toggleProtection} equipItem={equipItem} sellItem={sellItem} destroyItem={destroyItem} /></Card>
-  return <div className="screen-content inventory-screen"><div className="screen-header"><div><div className="eyebrow">TOWER VAULT · INVENTORY</div><h1>Everything the tower currently holds.</h1><p>Inspect owned materials and equipment, trace their sources, and see exactly where they are used.</p></div></div><EditableGrid screen="inventory" panels={[{ id: 'inventory-catalog', content: catalog }, { id: 'inventory-detail', content: detailPanel }, { id: 'inventory-actions', content: actionsPanel }]} /></div>
+  const detailPanel = <Card title="ITEM DETAILS" className="inventory-detail-card"><InspectorTransition identity={selected} accent={selected ? ITEMS[selected]?.color : undefined} fill>{selected ? <InventoryDetail itemId={selected} inventory={inventory} protectedItems={protectedItems} equipment={equipment} economyState={economyState} navigate={navigate} toggleProtection={toggleProtection} equipItem={equipItem} sellItem={sellItem} destroyItem={destroyItem} /> : <div className="inventory-detail-empty"><div className="inventory-empty-mark">◇</div><strong>SELECT AN ITEM</strong><span>Choose an item from the Vault to inspect its source, uses, and protection.</span></div>}</InspectorTransition></Card>
+  return <div className="screen-content inventory-screen"><div className="screen-header"><div><div className="eyebrow">TOWER VAULT · INVENTORY</div><h1>Everything the tower currently holds.</h1><p>Inspect owned materials and equipment, trace their sources, and see exactly where they are used.</p></div></div><EditableGrid screen="inventory" panels={[{ id: 'inventory-catalog', content: catalog }, { id: 'inventory-detail', content: detailPanel }, ]} /></div>
 }

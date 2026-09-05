@@ -225,6 +225,7 @@ export function loadUiLayouts(): UiLayoutDocument {
         panels['inventory-actions'] = { x, y: Math.max(0, detail.y + detail.h), w: width, h: 5 }
       }
       if (screen === 'inventory' && panels['inventory-actions'] && panels['inventory-actions'].h < 5) panels['inventory-actions'] = { ...panels['inventory-actions'], h: 5 }
+      if (screen === 'inventory') delete panels['inventory-actions']
       if (Object.keys(panels).length) screens[screen] = panels
     }
     return { version: LAYOUT_VERSION, screens, shell: { topbar: clampTopbarLayout(parsed.shell?.topbar) } }

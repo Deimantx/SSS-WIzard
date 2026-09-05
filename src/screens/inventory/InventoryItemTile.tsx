@@ -18,6 +18,7 @@ export function InventoryItemTile({ itemId, inventory, protectedItems, equipment
       <span className="inventory-item-state" aria-hidden="true">{equipped ? <Check size={13} /> : protectedItem ? <Lock size={12} /> : null}</span>
       <span className="inventory-item-art"><ItemIcon itemId={itemId} size="tile" /><ItemQuantity value={quantity} compact /></span>
       <strong>{item.name}</strong>
+      <span className="inventory-item-status">{equipped ? 'EQUIPPED' : protectedItem ? 'PROTECTED' : newItem ? 'NEW' : 'AVAILABLE'}</span>
     </button>
   </ItemTooltip>
 }

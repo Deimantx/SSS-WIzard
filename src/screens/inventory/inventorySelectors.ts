@@ -5,15 +5,12 @@ import { getInventoryCategory, getMaterialSubtype, INVENTORY_CATEGORIES, matches
 export { INVENTORY_CATEGORIES, MATERIAL_SUBCATEGORIES }
 export const INVENTORY_FILTERS = INVENTORY_CATEGORIES
 export const INVENTORY_UTILITY_FILTERS = ['Protected', 'Needed'] as const
-export type InventoryFilter = InventoryCategoryFilter | typeof INVENTORY_UTILITY_FILTERS[number] | 'Elemental' | 'Monster Loot' | 'Boss Loot'
+export type InventoryFilter = InventoryCategoryFilter | typeof INVENTORY_UTILITY_FILTERS[number]
 export const INVENTORY_SORTS = ['Category', 'Name', 'Quantity', 'Recent'] as const
 export type InventorySort = typeof INVENTORY_SORTS[number]
 
 const categoryFilterMatches = (id: ItemId, filter: InventoryFilter, materialSubcategory: MaterialSubcategoryFilter) => {
   const item = ITEMS[id]
-  if (filter === 'Elemental') return item.inventoryCategory === 'material' && item.materialSubtype === 'elemental'
-  if (filter === 'Monster Loot') return item.category === 'monster-loot'
-  if (filter === 'Boss Loot') return item.category === 'boss-loot'
   if (filter === 'All' || filter === 'Protected' || filter === 'Needed') return true
   if (filter === 'Materials') return item.inventoryCategory === 'material' && (materialSubcategory === 'All Materials' || item.materialSubtype === materialSubcategory.toLowerCase())
   return getInventoryCategory(id) === filter.toLowerCase() as 'loot' | 'equipment' | 'special'

@@ -60,8 +60,9 @@ describe('layout editor persistence and session state', () => {
     expect(getTopbarLayout().widths['topbar-mana']).toBe(480)
   })
 
-  it('keeps Item Actions at its functional minimum height', () => {
-    expect(clampPanelLayout('inventory', 'inventory-actions', { h: 1 }).h).toBe(5)
+  it('keeps the merged Item Details panel as the Inventory action owner', () => {
+    expect(getPanelDefinition('inventory', 'inventory-actions')).toBeUndefined()
+    expect(getPanelDefinition('inventory', 'inventory-detail')?.heightMode).toBe('bounded-scroll')
   })
 
   it('keeps Research panels at safe minimum heights', () => {

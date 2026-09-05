@@ -8,4 +8,4 @@ Continuous elemental/material production: Arcane Echo driven, Mana funded, repea
 | Water Fragment (water-fragment) | 1 | 8 s | 25 | — | — | — | — | — | — | — | — | — | — | Available from the start |
 | Earth Fragment (earth-fragment) | 1 | 8 s | 25 | — | — | — | — | — | — | — | — | — | — | Available from the start |
 | Air Fragment (air-fragment) | 1 | 8 s | 25 | — | — | — | — | — | — | — | — | — | — | Available from the start |
-| Prismatic Fragment (prismatic-fragment) | 1 | 24 s | 50 | Fire Fragment (fire-fragment) | 2 | Water Fragment (water-fragment) | 2 | Earth Fragment (earth-fragment) | 2 | Air Fragment (air-fragment) | 2 | Life Essence (life-essence) | 10 | Available from the start |
+| Prismatic Fragment (prismatic-fragment) | 1 | 24 s | 50 | Fire Fragment (fire-fragment) | 6 | Water Fragment (water-fragment) | 6 | Earth Fragment (earth-fragment) | 6 | Air Fragment (air-fragment) | 6 | Life Essence (life-essence) | 10 | Available from the start |

@@ -1,5 +1,5 @@
 import { Check, LockKeyhole, ShieldCheck, Unlock } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Button, GameTooltip } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { ITEMS } from '../../game/content/items/items'
@@ -22,13 +22,15 @@ type InventoryActionsProps = {
   equipItem: (itemId: ItemId) => void
   sellItem: (itemId: ItemId, quantity: number) => void
   destroyItem: (itemId: ItemId, quantity: number) => void
+  contextActions?: ReactNode
 }
 
-export function InventoryActions({ itemId, inventory, protectedItems, equipment, activities, toggleProtection, equipItem, sellItem, destroyItem }: InventoryActionsProps) {
+export function InventoryActions({ itemId, inventory, protectedItems, equipment, activities, toggleProtection, equipItem, sellItem, destroyItem, contextActions }: InventoryActionsProps) {
   const [quantity, setQuantity] = useState(1)
   const [quantityEditing, setQuantityEditing] = useState(false)
   const [quantityDraft, setQuantityDraft] = useState('1')
   const [destroyConfirming, setDestroyConfirming] = useState(false)
+  const [moreOpen, setMoreOpen] = useState(false)
   const item = itemId ? ITEMS[itemId] : null
   const maximum = itemId ? getActionableQuantity({ inventory, protectedItems, equipment, activities }, itemId) : 0
 
@@ -37,6 +39,7 @@ export function InventoryActions({ itemId, inventory, protectedItems, equipment,
     setQuantityDraft('1')
     setQuantityEditing(false)
     setDestroyConfirming(false)
+    setMoreOpen(false)
   }, [itemId])
 
   useEffect(() => {
@@ -88,7 +91,10 @@ export function InventoryActions({ itemId, inventory, protectedItems, equipment,
         : null
 
   const updateQuantity = (value: number) => {
-    setQuantity(clampInventoryQuantity(value, maximum))
+    const next = clampInventoryQuantity(value, maximum)
+    setQuantity(next)
+    setQuantityDraft(String(next))
+    setQuantityEditing(false)
     setDestroyConfirming(false)
   }
   const beginQuantityEdit = () => {
@@ -127,14 +133,16 @@ export function InventoryActions({ itemId, inventory, protectedItems, equipment,
       onToggleProtection={toggleItemProtection}
       onEquip={equipSelectedItem}
     />
+    {contextActions}
+    {maximum > 0 && <div className="inventory-quick-actions" aria-label="Quick quantity"><span>QUANTITY</span>{[1, 10, 100].map(value => <Button key={value} variant="ghost" disabled={maximum < 1} onClick={() => updateQuantity(value)}>{value}</Button>)}<Button variant="ghost" disabled={maximum < 1} onClick={() => updateQuantity(maximum)}>MAX</Button></div>}
     <InventoryQuantitySlider value={quantity} max={maximum} disabled={maximum < 1} onChange={updateQuantity} />
     <div className="inventory-action-values">
       {destroyConfirming ? <div className="inventory-action-value inventory-actions-confirming" role="status" aria-live="assertive" aria-label="Destroy confirmation required. This action cannot be undone."><span>DESTROY</span><strong>NO REWARD</strong></div> : <GameTooltip block content={item.sellValue === null ? <TooltipContent title="SALE VALUE"><p>This item cannot be sold.</p></TooltipContent> : <TooltipContent title="SALE VALUE"><p>{item.sellValue.toLocaleString()} Gold each<br />{quantity} selected<br />Total: {saleValue?.toLocaleString()} Gold</p></TooltipContent>}><div className="inventory-action-value inventory-action-sale" tabIndex={0}><span>SALE VALUE</span>{item.sellValue === null ? <strong className="inventory-action-unavailable">CANNOT SELL</strong> : <strong className="inventory-action-gold">{saleValue?.toLocaleString()} GOLD</strong>}</div></GameTooltip>}
-      <GameTooltip block content={quantityTooltip}><div className="inventory-action-value inventory-action-quantity"><span>QUANTITY</span>{quantityEditing ? <div className="inventory-action-quantity-edit"><input className="inventory-action-quantity-input" type="number" min={1} max={Math.max(1, maximum)} step={1} inputMode="numeric" value={quantityDraft} aria-label="Selected quantity" onChange={(event) => setQuantityDraft(event.currentTarget.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); commitQuantityEdit() } if (event.key === 'Escape') { event.preventDefault(); cancelQuantityEdit() } }} onBlur={commitQuantityEdit} autoFocus /><span>/ {maximum}</span></div> : <button type="button" className="inventory-action-quantity-button" disabled={maximum < 1} onClick={beginQuantityEdit}>{quantityLabel}</button>}</div></GameTooltip>
+      <GameTooltip block content={quantityTooltip}><div className="inventory-action-value inventory-action-quantity"><span>QUANTITY</span><div className="inventory-action-quantity-edit"><input className="inventory-action-quantity-input" type="number" min={1} max={Math.max(1, maximum)} step={1} inputMode="numeric" value={quantityEditing ? quantityDraft : quantity} aria-label="Selected quantity" onChange={(event) => { setQuantityDraft(event.currentTarget.value); setQuantityEditing(true) }} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); commitQuantityEdit() } if (event.key === 'Escape') { event.preventDefault(); cancelQuantityEdit() } }} onBlur={quantityEditing ? commitQuantityEdit : undefined} /><span>/ {maximum}</span></div></div></GameTooltip>
     </div>
     {reason && <p className="inventory-action-note">{manuallyProtected ? 'PROTECTED · ' : ''}{reason}</p>}
     <div className="inventory-actions-buttons">
-      {destroyConfirming ? <><Button variant="ghost" onClick={() => setDestroyConfirming(false)}>CANCEL</Button><Button variant="danger" disabled={!destroyable || quantity < 1} ariaLabel="Confirm destroy" onClick={() => { destroyItem(itemId, quantity); setDestroyConfirming(false) }}>CONFIRM DESTROY</Button></> : <><Button className="inventory-action-sell" variant="secondary" disabled={!sellable || quantity < 1} tooltip={<span>{sellable ? sellTooltip : reason ?? 'This item cannot be sold.'}</span>} onClick={() => sellItem(itemId, quantity)}>SELL</Button><Button variant="danger" disabled={!destroyable || quantity < 1} tooltip={<span>{destroyable ? destroyTooltip : item.actionRestrictionReason ?? reason ?? 'This item cannot be destroyed.'}</span>} onClick={() => setDestroyConfirming(true)}>DESTROY</Button></>}
+      {destroyConfirming ? <><Button variant="ghost" onClick={() => setDestroyConfirming(false)}>CANCEL</Button><Button variant="danger" disabled={!destroyable || quantity < 1} ariaLabel="Confirm destroy" onClick={() => { destroyItem(itemId, quantity); setDestroyConfirming(false) }}>CONFIRM DESTROY</Button></> : <><Button className="inventory-action-sell" variant="secondary" disabled={!sellable || quantity < 1} tooltip={<span>{sellable ? sellTooltip : reason ?? 'This item cannot be sold.'}</span>} onClick={() => sellItem(itemId, quantity)}>SELL {quantity} → {saleValue ?? 0} GOLD</Button><Button variant="ghost" onClick={() => setMoreOpen(current => !current)}>… MORE</Button>{moreOpen && <Button variant="danger" disabled={!destroyable || quantity < 1} tooltip={<span>{destroyable ? destroyTooltip : item.actionRestrictionReason ?? reason ?? 'This item cannot be destroyed.'}</span>} onClick={() => { setMoreOpen(false); setDestroyConfirming(true) }}>DESTROY…</Button>}</>}
     </div>
   </div>
 }

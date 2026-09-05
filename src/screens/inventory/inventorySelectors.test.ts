@@ -26,7 +26,7 @@ describe('Inventory V3 selectors and display rules', () => {
     state.protectedItems['fire-fragment'] = true
 
     expect(selectVisibleItemIds(state.inventory, state.protectedItems, state.equipment, 'fire', 'All', 'Name')).toEqual(['ember-staff', 'fire-fragment'])
-    expect(selectVisibleItemIds(state.inventory, state.protectedItems, state.equipment, '', 'Elemental', 'Quantity')).toEqual(['fire-fragment', 'water-fragment'])
+    expect(selectVisibleItemIds(state.inventory, state.protectedItems, state.equipment, '', 'Materials', 'Quantity', 'Elemental')).toEqual(['fire-fragment', 'water-fragment'])
     expect(selectVisibleItemIds(state.inventory, state.protectedItems, state.equipment, '', 'Protected', 'Category')).toEqual(['fire-fragment'])
     expect(selectVisibleItemIds(state.inventory, state.protectedItems, state.equipment, '', 'Equipment', 'Name')).toEqual(['ember-staff'])
   })
@@ -41,11 +41,11 @@ describe('Inventory V3 selectors and display rules', () => {
   })
 
   it('uses the Vault category model and material subcategories', () => {
-    expect(INVENTORY_FILTERS).toEqual(['All', 'Materials', 'Loot', 'Equipment', 'Special'])
+    expect(INVENTORY_FILTERS).toEqual(['All', 'Materials', 'Equipment', 'Special'])
     expect(MATERIAL_SUBCATEGORIES).toEqual(['All Materials', 'Elemental', 'Creature', 'Ore', 'Refined', 'Arcane'])
     expect(getInventoryCategory('fire-fragment')).toBe('material')
     expect(getInventoryCategory('life-essence')).toBe('material')
-    expect(getInventoryCategory('heartseed')).toBe('loot')
+    expect(getInventoryCategory('heartseed')).toBe('material')
     expect(getInventoryCategory('ember-staff')).toBe('equipment')
   })
 
@@ -55,7 +55,7 @@ describe('Inventory V3 selectors and display rules', () => {
     state.inventory['wisp-essence'] = 2
     state.inventory.heartseed = 1
     expect(selectVisibleItemIds(state.inventory, state.protectedItems, state.equipment, '', 'Materials', 'Category', 'Elemental')).toEqual(['fire-fragment'])
-    expect(selectVisibleItemIds(state.inventory, state.protectedItems, state.equipment, '', 'Loot', 'Category')).toEqual(['heartseed'])
+    expect(selectVisibleItemIds(state.inventory, state.protectedItems, state.equipment, '', 'Materials', 'Category', 'Creature')).toEqual(['heartseed', 'wisp-essence'])
     const runtime = state as typeof state & { recentAcquisitions?: RecentAcquisition[] }
     recordRecentAcquisition(runtime, 'fire-fragment', 5)
     expect(runtime.recentAcquisitions).toMatchObject([{ itemId: 'fire-fragment', amount: 5, isNew: true }])

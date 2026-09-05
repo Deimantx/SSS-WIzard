@@ -1,6 +1,6 @@
 import { BALANCE } from '../../core/balance/balance'
 import { deriveFocusReservations } from '../../engine'
-import { RECIPES } from '../../content/recipes/recipes'
+import { TRANSMUTATION_RECIPES as RECIPES } from '../../content/recipes/recipes'
 import { getRecipeStatus } from '../transmutation/transmutationSelectors'
 import { formatSpellRank, getSpellRank } from '../spells'
 import type { FocusReservation, GameState, ResearchJobStatus, SpellId } from '../../types'

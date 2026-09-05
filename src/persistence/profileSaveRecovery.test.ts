@@ -44,7 +44,7 @@ describe('profile save recovery and historical compatibility', () => {
       expect(loaded.state?.equipment).toMatchObject({ weapon: null, armor: 'stoneweave-robe', offhand: 'tide-focus', amulet: 'windthread-charm' })
       expect(loaded.state?.currencies.gold).toBe(0)
       expect(loaded.state?.activities.research.slots['research-1']).toMatchObject({ itemId: 'fire-fragment', remainingQuantity: 9 })
-      expect(loaded.state?.activities.transmutation.jobs['ember-staff']).toMatchObject({ echoesAssigned: 1 })
+      expect(loaded.state?.activities.transmutation.jobs).not.toHaveProperty('ember-staff')
       expect(loaded.state?.activities.transmutation.jobs['water-fragment']).toBeDefined()
       expect(loaded.state?.progress.channeling.pillars['arcane-reservoir'].level).toBe(3)
     }

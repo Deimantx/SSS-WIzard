@@ -1,20 +1,82 @@
-.artificing-screen .ui-editor-grid-layout { min-height: 620px; }
-.artificing-catalog,.artificing-detail,.artificing-inspection { height:100%; overflow:hidden; }
-.artificing-search { display:flex; gap:7px; align-items:center; padding:8px; border:1px solid var(--ui-border); margin-bottom:8px; }
-.artificing-search input { flex:1; border:0; outline:0; background:transparent; color:var(--ui-text); }
-.artificing-filters { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px; }
-.artificing-filters button,.artificing-item-card { border:1px solid var(--ui-border); background:var(--ui-panel); color:var(--ui-text-muted); cursor:pointer; }
-.artificing-filters button { padding:5px; font:var(--text-micro) var(--font-mono); }
-.artificing-filters button.active,.artificing-item-card.selected { border-color:var(--ui-accent); background:var(--ui-accent-soft); color:var(--ui-text); }
-.artificing-item-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:6px; overflow:auto; max-height:calc(100% - 100px); }
-.artificing-item-card { display:grid; gap:4px; padding:8px; text-align:left; }
-.artificing-item-card small { color:var(--ui-text-muted); }
-.artificing-detail-hero,.artificing-inspection-head { display:flex; gap:12px; align-items:center; }
-.artificing-material-list { display:grid; gap:6px; margin:16px 0; }
-.artificing-material-list > div { display:flex; gap:8px; align-items:center; padding:7px; border:1px solid var(--ui-border); }
-.artificing-material-list strong { margin-left:auto; }
-.artificing-material-list .missing { color:var(--ui-warning); }
-.artificing-empty { display:grid; place-items:center; gap:10px; min-height:220px; color:var(--ui-text-muted); text-align:center; }
-.artificing-stat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px; margin-top:16px; }
-.artificing-stat-grid span { display:grid; gap:3px; }
-@media (max-width:700px) { .artificing-item-grid { max-height:none; } }
+.artificing-screen .card { min-width: 0; overflow: hidden; }
+.artificing-screen .height-mode-bounded-scroll .ui-editor-panel-content > .card { height: 100%; min-height: 100%; }
+.artificing-catalog { display: flex; flex-direction: column; min-height: 0; }
+.artificing-catalog > .card-head { flex: 0 0 auto; }
+.artificing-controls { flex: 0 0 auto; min-width: 0; }
+.artificing-search { display: flex; align-items: center; gap: 7px; padding: 7px 9px; margin-bottom: 9px; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text-muted); background: color-mix(in srgb, var(--ui-panel-strong) 82%, transparent); }
+.artificing-search:focus-within { border-color: var(--ui-accent); box-shadow: 0 0 0 3px var(--ui-accent-soft); }
+.artificing-search input { width: 100%; min-width: 0; padding: 0; border: 0; outline: 0; color: var(--ui-text); background: transparent; }
+.artificing-filter-stack { display: grid; gap: 7px; padding-bottom: 10px; border-bottom: 1px solid var(--ui-border); }
+.artificing-filter-row { display: grid; grid-template-columns: 76px minmax(0, 1fr); align-items: start; gap: 6px; }
+.artificing-filter-label, .artificing-count, .artificing-owned, .artificing-badge { font-family: var(--font-mono); font-size: var(--text-micro); color: var(--ui-text-muted); letter-spacing: .05em; }
+.artificing-filter-label { padding-top: 7px; }
+.artificing-filter-options { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
+.artificing-filter-options button, .artificing-craftable-toggle { padding: 6px 8px; border: 1px solid var(--ui-border); border-radius: 6px; color: var(--ui-text-muted); background: var(--ui-panel); cursor: pointer; font-family: var(--font-mono); font-size: var(--text-micro); line-height: 1.4; }
+.artificing-filter-options button:hover, .artificing-filter-options button:focus-visible, .artificing-filter-options button.active { border-color: var(--ui-accent); color: var(--ui-text); background: var(--ui-accent-soft); }
+.artificing-craftable-toggle { display: inline-flex; align-items: center; gap: 6px; border-radius: 4px; }
+.artificing-craftable-toggle.active { color: var(--ui-success); border-color: var(--ui-success); background: color-mix(in srgb, var(--ui-success) 8%, var(--ui-panel)); }
+.artificing-catalog-scroll { flex: 1 1 0; min-height: 100px; min-width: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; scrollbar-gutter: stable; margin-top: 10px; padding: 0 3px 12px 0; }
+.artificing-item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(145px, 100%), 1fr)); gap: 8px; align-content: start; }
+.artificing-item-grid > .game-tooltip-trigger { min-width: 0; height: 100%; }
+.artificing-item-card { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; height: 100%; padding: 9px; min-width: 0; border: 1px solid color-mix(in srgb, var(--recipe-accent) 28%, var(--ui-border)); border-radius: 8px; color: var(--ui-text-soft); background: linear-gradient(155deg, color-mix(in srgb, var(--recipe-accent) 9%, var(--ui-panel-strong)), var(--ui-panel)); cursor: pointer; }
+.artificing-item-card:hover, .artificing-item-card:focus-visible { border-color: var(--recipe-accent); background: color-mix(in srgb, var(--recipe-accent) 14%, var(--ui-panel-strong)); }
+.artificing-item-card.selected { border-color: var(--ui-accent); background: var(--ui-accent-soft); box-shadow: inset 0 0 0 1px var(--ui-accent); }
+.artificing-item-card.locked { opacity: .7; }
+.artificing-item-card > strong { color: var(--ui-text); font-size: var(--text-xs); line-height: 1.4; overflow-wrap: anywhere; }
+.artificing-card-top { display: flex; width: 100%; min-height: 15px; color: var(--ui-warning); }
+.artificing-badge { padding: 3px 5px; border: 1px solid var(--ui-border); border-radius: 4px; }
+.artificing-source { color: var(--ui-text-muted); font-size: var(--text-xs); line-height: 1.4; }
+.artificing-detail-content { display: grid; gap: 12px; min-width: 0; }
+.artificing-detail-hero { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; }
+.artificing-detail-hero h2 { margin: 4px 0; color: var(--ui-text); font-size: var(--text-base); overflow-wrap: anywhere; }
+.artificing-description { margin: 0; color: var(--ui-text-muted); font-size: var(--text-xs); line-height: 1.5; }
+.artificing-section { display: grid; gap: 9px; padding-top: 11px; border-top: 1px solid var(--ui-border); }
+.artificing-material-list { display: grid; gap: 7px; min-width: 0; }
+.artificing-material-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 8px; padding: 8px; border: 1px solid var(--ui-border); border-radius: 7px; background: var(--ui-panel); font-size: var(--text-xs); }
+.artificing-material-row strong { font-family: var(--font-mono); font-size: var(--text-xs); }
+.artificing-material-row > span { overflow-wrap: anywhere; }
+.artificing-material-row.missing { border-color: color-mix(in srgb, var(--ui-warning) 35%, var(--ui-border)); color: var(--ui-warning); }
+.artificing-craft-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.artificing-empty { display: grid; place-items: center; gap: 9px; min-height: 200px; padding: 18px; text-align: center; color: var(--ui-text-muted); }
+.artificing-empty strong { font-family: var(--font-mono); font-size: var(--text-micro); letter-spacing: .1em; }
+.artificing-empty p { font-size: var(--text-xs); line-height: 1.5; }
+.artificing-locked-banner { display: flex; align-items: flex-start; gap: 7px; margin-top: 8px; padding: 8px; border: 1px solid color-mix(in srgb, var(--ui-warning) 40%, var(--ui-border)); border-radius: 7px; color: var(--ui-warning); font-size: var(--text-xs); }
+.artificing-locked-banner svg { flex-shrink: 0; }
+.artificing-output-preview { display: flex; min-height: 0; flex-direction: column; }
+.artificing-output-content { display: grid; align-content: start; gap: 12px; min-width: 0; min-height: 0; overflow: clip; padding-right: 3px; }
+.artificing-output-content > .game-tooltip-trigger { display: block; min-width: 0; }
+.artificing-output-hero { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 10px; align-items: start; min-width: 0; overflow: hidden; padding: 8px; border: 1px solid color-mix(in srgb, var(--ui-accent) 30%, var(--ui-border)); border-radius: 8px; background: var(--ui-accent-soft); }
+.artificing-output-hero > * { min-width: 0; }
+.artificing-output-icon { display: grid; place-items: center; width: 52px; height: 52px; min-width: 52px; min-height: 52px; overflow: hidden; border-radius: 9px; background: color-mix(in srgb, var(--ui-accent) 13%, transparent); line-height: 1; }
+.artificing-output-icon .item-icon-large { display: grid; place-items: center; width: 42px; height: 42px; max-width: 42px; max-height: 42px; overflow: hidden; font-size: 30px; line-height: 1; }
+.artificing-output-icon img { display: block; width: 100%; height: 100%; max-width: 100%; max-height: 100%; object-fit: contain; }
+.artificing-output-hero h2 { margin: 3px 0; color: var(--ui-text); font-size: var(--text-base); overflow-wrap: anywhere; }
+.artificing-output-hero p, .artificing-output-note { margin: 0; color: var(--ui-text-muted); font-size: var(--text-xs); line-height: 1.45; }
+.artificing-output-section { display: grid; gap: 7px; min-width: 0; padding-top: 10px; border-top: 1px solid var(--ui-border); }
+.artificing-output-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.artificing-output-meta span { display: grid; gap: 3px; min-width: 0; padding: 7px; border: 1px solid var(--ui-border); border-radius: 6px; background: var(--ui-panel); }
+.artificing-output-meta small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
+.artificing-output-meta strong { overflow-wrap: anywhere; color: var(--ui-text); font: var(--text-xs) var(--font-mono); }
+.artificing-output-stat-list { display: grid; gap: 5px; }
+.artificing-output-stat-list > div { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; padding: 5px 0; border-bottom: 1px solid var(--ui-border); }
+.artificing-output-stat-list span { min-width: 0; overflow: hidden; color: var(--ui-text-muted); font-size: var(--text-xs); text-overflow: ellipsis; white-space: nowrap; }
+.artificing-output-stat-list strong, .artificing-output-stat-list small { flex: 0 0 auto; color: var(--ui-text); font: var(--text-micro) var(--font-mono); }
+.artificing-output-stat-list.comparison small { color: var(--ui-text-muted); }
+.artificing-output-stat-list.comparison strong.negative { color: var(--ui-danger); }
+.artificing-output-stat-list.comparison strong.positive { color: var(--ui-success); }
+.artificing-output-current { display: flex; justify-content: space-between; gap: 8px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
+.artificing-output-current strong { color: var(--ui-text); }
+.artificing-ring-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.artificing-ring-choice { display: grid; gap: 4px; min-width: 0; padding: 7px; border: 1px solid var(--ui-border); border-radius: 6px; color: var(--ui-text-muted); background: var(--ui-panel); cursor: pointer; text-align: left; }
+.artificing-ring-choice:hover, .artificing-ring-choice:focus-visible, .artificing-ring-choice.selected { border-color: var(--ui-accent); background: var(--ui-accent-soft); outline: none; }
+.artificing-ring-choice span { font: var(--text-micro) var(--font-mono); }
+.artificing-ring-choice strong { overflow: hidden; color: var(--ui-text); font-size: var(--text-xs); text-overflow: ellipsis; white-space: nowrap; }
+.artificing-output-warning { display: flex; align-items: flex-start; gap: 7px; padding: 8px; border: 1px solid color-mix(in srgb, var(--ui-warning) 42%, var(--ui-border)); border-radius: 7px; color: var(--ui-warning); font-size: var(--text-xs); line-height: 1.4; }
+.artificing-output-warning svg { flex: 0 0 auto; }
+  .artificing-output-content { max-height: none; }
+.artificing-output-content { overflow: visible; }
+@media (max-width: 760px) {
+ .artificing-filter-row { grid-template-columns: 1fr; gap: 4px; }
+ .artificing-output-stat-list.comparison > div { grid-template-columns: minmax(0, 1fr) auto; }
+ .artificing-output-stat-list.comparison small { grid-column: 1 / -1; }
+}

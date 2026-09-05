@@ -58,7 +58,7 @@ export function loadUiLayouts(): UiLayoutDocument {
       const rawSource = parsed.screens?.[screen]
       if (!rawSource || typeof rawSource !== 'object') continue
       if (screen === 'tower-transmutation' && layoutNeedsMigration) {
-        const transmutationPanelIds = ['transmutation-recipes', 'transmutation-focus', 'transmutation-detail', 'transmutation-output-preview']
+        const transmutationPanelIds = ['transmutation-recipes', 'transmutation-focus', 'transmutation-detail']
         if (!transmutationPanelIds.every((id) => Object.prototype.hasOwnProperty.call(rawSource, id))) {
           // Older Transmutation compositions do not have enough canonical geometry to migrate safely.
           screens[screen] = {}
@@ -146,7 +146,6 @@ export function loadUiLayouts(): UiLayoutDocument {
         if (hasUnmodifiedGeometry(source['transmutation-focus'], { x: 0, y: 15, w: 7, h: 18 })) panels['transmutation-focus'] = { ...panels['transmutation-focus'], ...DEFAULT_LAYOUTS['tower-transmutation']['transmutation-focus'] }
         if (hasUnmodifiedGeometry(source['transmutation-focus'], { x: 0, y: 15, w: 7, h: 12 })) panels['transmutation-focus'] = { ...panels['transmutation-focus'], ...DEFAULT_LAYOUTS['tower-transmutation']['transmutation-focus'] }
         if (hasUnmodifiedGeometry(source['transmutation-focus'], { x: 0, y: 15, w: 7, h: 6 })) panels['transmutation-focus'] = { ...panels['transmutation-focus'], ...DEFAULT_LAYOUTS['tower-transmutation']['transmutation-focus'] }
-        if (hasUnmodifiedGeometry(source['transmutation-output-preview'], { x: 7, y: 8, w: 5, h: 13 })) panels['transmutation-output-preview'] = { ...panels['transmutation-output-preview'], ...DEFAULT_LAYOUTS['tower-transmutation']['transmutation-output-preview'] }
       }
       if (screen === 'combat') {
         const analytics = panels['combat-analytics']

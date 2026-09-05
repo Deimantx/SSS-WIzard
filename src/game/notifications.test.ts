@@ -7,9 +7,10 @@ describe('notification policy', () => {
   it('keeps important manual action warnings', () => {
     const state = createInitialState()
 
-    assignTransmutationEchoAction(state, 'ember-staff')
+    state.player.maxFocus = 0
+    assignTransmutationEchoAction(state, 'fire-fragment')
 
-    expect(state.notifications[0]?.text).toBe('Defeat any monster in Whispering Woods to unlock this recipe.')
+    expect(state.notifications[0]?.text).toContain('Not enough free Focus.')
   })
 
   it('keeps important warnings while rate limiting a semantic warning key', () => {

@@ -9,7 +9,7 @@ import { getActiveDebugOverrides } from './debugOverridePresentation'
 const tabGroups: readonly { label: string; tabs: readonly { id: DeveloperToolsTab; label: string }[] }[] = [
   { label: 'QUICK', tabs: [{ id: 'quick', label: 'Quick Setup' }] },
   { label: 'PLAYER', tabs: [{ id: 'character', label: 'Character' }, { id: 'inventory', label: 'Inventory & Equipment' }, { id: 'progression', label: 'Progression' }] },
-  { label: 'MAGIC', tabs: [{ id: 'spells', label: 'Spells & Schools' }, { id: 'research', label: 'Research' }, { id: 'channeling', label: 'Channeling' }, { id: 'focus', label: 'Focus' }, { id: 'transmutation', label: 'Transmutation' }] },
+  { label: 'MAGIC', tabs: [{ id: 'spells', label: 'Spells & Schools' }, { id: 'research', label: 'Research' }, { id: 'channeling', label: 'Channeling' }, { id: 'focus', label: 'Focus' }, { id: 'transmutation', label: 'Transmutation' }, { id: 'artificing', label: 'Artificing' }] },
   { label: 'COMBAT', tabs: [{ id: 'combat', label: 'Combat Lab' }, { id: 'monsters', label: 'Monsters' }, { id: 'statuses', label: 'Statuses' }] },
   { label: 'SYSTEM', tabs: [{ id: 'save', label: 'Save / Profile' }, { id: 'diagnostics', label: 'Advanced Diagnostics' }] },
 ]

@@ -68,11 +68,10 @@ export type { ActionPattern, ActionStep, ActiveStatus, CombatActionDefinition, C
 export type ManaPillarId = 'leyline-conduit' | 'arcane-reservoir' | 'mana-resonance' | 'astral-expansion' | 'echo-attunement'
 export type ChannelingDiscoveryId = 'stable-leyline' | 'echo-resonance' | 'deep-reservoir'
 export type RecipeId = 'fire-fragment' | 'water-fragment' | 'earth-fragment' | 'air-fragment' | 'prismatic-fragment' | 'ember-staff' | 'wispwood-wand' | 'tide-focus' | 'stoneweave-robe' | 'windthread-charm' | 'wispveil-hood' | 'grovekeeper-mantle' | 'wispbound-ring' | 'heartseed-necklace' | 'fangbound-dagger' | 'fangbound-buckler' | 'corrupted-howlstaff' | 'razorclaw-circlet' | 'predator-hide-mantle' | 'greatbear-vestment' | 'howling-signet' | 'greatbear-heartstone' | 'graveglass-wand' | 'edrins-remnant-staff' | 'soulward-focus' | 'soulward-shield' | 'acolyte-vestments' | 'wraithveil-hood' | 'ossuary-mantle' | 'soulglass-amulet' | 'gravebinder-ring' | 'edrins-signet'
-export type RecipeCategory = 'elemental' | 'material' | 'equipment' | 'special'
+export type TransmutationRecipeId = 'fire-fragment' | 'water-fragment' | 'earth-fragment' | 'air-fragment' | 'prismatic-fragment'
+export type ArtificingRecipeId = Exclude<RecipeId, TransmutationRecipeId>
+export type RecipeCategory = 'elemental' | 'material'
 export type TransmutationCategoryFilter = 'all' | RecipeCategory
-export type TransmutationEquipmentSlotFilter = 'all' | EquipmentItemSlot
-export type TransmutationWeaponHandsFilter = 'all' | 1 | 2
-export type TransmutationOffhandFilter = 'all' | 'shield' | 'focus'
 export type TransmutationTierFilter = 'all' | number
 /** @deprecated Use TransmutationTierFilter. */
 export type TransmutationMaterialTierFilter = TransmutationTierFilter
@@ -216,7 +215,7 @@ export interface ResearchActivity {
   status?: ResearchStatus | 'idle' | 'paused' | 'waiting-focus' | 'completed'
 }
 export interface TransmutationJobState { echoesAssigned: number; progressMs: number }
-export interface TransmutationActivity { jobs: Partial<Record<RecipeId, TransmutationJobState>> }
+export interface TransmutationActivity { jobs: Partial<Record<TransmutationRecipeId, TransmutationJobState>> }
 export interface ActivitiesState {
   channeling: ChannelingActivity
   research: ResearchActivity
@@ -342,6 +341,7 @@ export interface DebugOverrides {
   ignoreEchoLimit: boolean
   transmutationEchoCapacityOverride: number | null
   showLockedTransmutationRecipes: boolean
+  showLockedArtificingRecipes: boolean
   playerImmortal: boolean
   enemyImmortal: boolean
   infiniteMana: boolean

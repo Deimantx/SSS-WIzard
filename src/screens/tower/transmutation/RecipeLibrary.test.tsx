@@ -5,7 +5,7 @@ import { resetAllUiPreferences, setUiPreferences } from '../../../ui/preferences
 import { RecipeLibrary } from './RecipeLibrary'
 
 describe('RecipeLibrary screen preferences', () => {
-  beforeEach(() => { useGameStore.getState().resetSave(); useGameStore.getState().setDebugShowLockedTransmutationRecipes(true); resetAllUiPreferences() })
+  beforeEach(() => { useGameStore.getState().resetSave(); useGameStore.getState().setDebugShowLockedTransmutationRecipes(true); useGameStore.setState(state => { state.player.mana = 100 }); resetAllUiPreferences() })
 
   it('hides locked authored recipes in the normal library', () => {
     useGameStore.getState().setDebugShowLockedTransmutationRecipes(false)
@@ -21,7 +21,7 @@ describe('RecipeLibrary screen preferences', () => {
     expect(controls).toBeTruthy()
     expect(scroll).toBeTruthy()
     expect(controls?.querySelector('.transmutation-recipe-tile')).toBeNull()
-    expect(scroll?.querySelectorAll('.transmutation-recipe-tile').length).toBeGreaterThan(30)
+    expect(scroll?.querySelectorAll('.transmutation-recipe-tile').length).toBe(5)
     expect(scroll?.querySelector('.transmutation-recipe-group')).toBeTruthy()
   })
 
@@ -31,14 +31,14 @@ describe('RecipeLibrary screen preferences', () => {
     const elemental = screen.getByRole('button', { name: /^ELEMENTAL, 4 recipes$/i })
     expect(elemental.getAttribute('aria-expanded')).toBe('true')
     expect(screen.getByRole('button', { name: /Fire Fragment/ })).toBeTruthy()
-    expect(screen.getByRole('button', { name: /Ember Staff/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Prismatic Fragment/ })).toBeTruthy()
 
     fireEvent.click(elemental)
 
     expect(elemental.getAttribute('aria-expanded')).toBe('false')
     expect(document.getElementById('transmutation-elemental-recipes')).toBeNull()
     expect(screen.queryByRole('button', { name: /Fire Fragment/ })).toBeNull()
-    expect(screen.getByRole('button', { name: /Ember Staff/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Prismatic Fragment/ })).toBeTruthy()
 
     fireEvent.click(elemental)
     expect(elemental.getAttribute('aria-expanded')).toBe('true')
@@ -48,45 +48,45 @@ describe('RecipeLibrary screen preferences', () => {
 
   it('persists category collapse state and reveals a collapsed category for its explicit filter', () => {
     const view = render(<RecipeLibrary selectedRecipeId="fire-fragment" onSelect={vi.fn()} />)
-    const equipment = screen.getByRole('button', { name: /^EQUIPMENT, 27 recipes$/i })
+    const equipment = screen.getByRole('button', { name: /^MATERIALS, 1 recipes$/i })
     fireEvent.click(equipment)
     expect(equipment.getAttribute('aria-expanded')).toBe('false')
-    expect(screen.queryByRole('button', { name: /Ember Staff/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Prismatic Fragment/ })).toBeNull()
 
     view.unmount()
     render(<RecipeLibrary selectedRecipeId="fire-fragment" onSelect={vi.fn()} />)
 
-    const remountedEquipment = screen.getByRole('button', { name: /^EQUIPMENT, 27 recipes$/i })
+    const remountedEquipment = screen.getByRole('button', { name: /^MATERIALS, 1 recipes$/i })
     expect(remountedEquipment.getAttribute('aria-expanded')).toBe('false')
-    expect(screen.queryByRole('button', { name: /Ember Staff/ })).toBeNull()
-    expect(JSON.parse(window.localStorage.getItem('sss-wizard-ui-preferences-v1')!).screenState.transmutation.collapsedCategories.equipment).toBe(true)
+    expect(screen.queryByRole('button', { name: /Prismatic Fragment/ })).toBeNull()
+    expect(JSON.parse(window.localStorage.getItem('sss-wizard-ui-preferences-v1')!).screenState.transmutation.collapsedCategories.material).toBe(true)
 
-    fireEvent.click(screen.getByRole('tab', { name: 'EQUIPMENT' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'MATERIALS' }))
 
-    expect(screen.queryByRole('button', { name: /^EQUIPMENT, 27 recipes$/i })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^MATERIALS, 1 recipes$/i })).toBeNull()
     expect(document.querySelector('.transmutation-group-heading.is-static')).toBeTruthy()
-    expect(screen.getByRole('button', { name: /Ember Staff/ })).toBeTruthy()
-    expect(JSON.parse(window.localStorage.getItem('sss-wizard-ui-preferences-v1')!).screenState.transmutation.collapsedCategories.equipment).toBe(true)
+    expect(screen.getByRole('button', { name: /Prismatic Fragment/ })).toBeTruthy()
+    expect(JSON.parse(window.localStorage.getItem('sss-wizard-ui-preferences-v1')!).screenState.transmutation.collapsedCategories.material).toBe(true)
 
     fireEvent.click(screen.getAllByRole('tab', { name: 'ALL' })[0])
-    expect(screen.queryByRole('button', { name: /Ember Staff/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Prismatic Fragment/ })).toBeNull()
   })
 
   it('temporarily reveals matching groups while searching and keeps idle tiles quiet', () => {
-    setUiPreferences({ screenState: { transmutation: { collapsedCategories: { equipment: true } } } })
+    setUiPreferences({ screenState: { transmutation: { collapsedCategories: { material: true } } } })
     render(<RecipeLibrary selectedRecipeId="fire-fragment" onSelect={vi.fn()} />)
 
-    expect(screen.queryByRole('button', { name: /Ember Staff/ })).toBeNull()
-    fireEvent.change(screen.getByPlaceholderText('Search recipes...'), { target: { value: 'ember' } })
+    expect(screen.queryByRole('button', { name: /Prismatic Fragment/ })).toBeNull()
+    fireEvent.change(screen.getByPlaceholderText('Search recipes...'), { target: { value: 'prismatic' } })
 
-    expect(screen.queryByRole('button', { name: /^EQUIPMENT, 1 recipes$/i })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^MATERIALS, 1 recipes$/i })).toBeNull()
     expect(document.querySelector('.transmutation-group-heading.is-static')).toBeTruthy()
-    expect(screen.getByRole('button', { name: /Ember Staff/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Prismatic Fragment/ })).toBeTruthy()
     expect(screen.queryByText('PAUSED')).toBeNull()
-    expect(screen.getByText('LOCKED')).toBeTruthy()
+    expect(screen.queryByText('LOCKED')).toBeNull()
 
     fireEvent.change(screen.getByPlaceholderText('Search recipes...'), { target: { value: '' } })
-    expect(screen.queryByRole('button', { name: /Ember Staff/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Prismatic Fragment/ })).toBeNull()
   })
 
   it('uses a single ACTIVE status alongside the Echo badge', () => {
@@ -103,62 +103,36 @@ describe('RecipeLibrary screen preferences', () => {
 
   it('persists its filter while search remains temporary', () => {
     const view = render(<RecipeLibrary selectedRecipeId="fire-fragment" onSelect={vi.fn()} />)
-    fireEvent.click(screen.getByRole('tab', { name: 'EQUIPMENT' }))
-    fireEvent.change(screen.getByPlaceholderText('Search recipes...'), { target: { value: 'ember' } })
-    expect(screen.getByText('Ember Staff')).toBeTruthy()
+    fireEvent.click(screen.getByRole('tab', { name: 'MATERIALS' }))
+    fireEvent.change(screen.getByPlaceholderText('Search recipes...'), { target: { value: 'prismatic' } })
+    expect(screen.getByText('Prismatic Fragment')).toBeTruthy()
     view.unmount()
 
     render(<RecipeLibrary selectedRecipeId="fire-fragment" onSelect={vi.fn()} />)
 
-    expect(screen.getByRole('tab', { name: 'EQUIPMENT' }).getAttribute('aria-selected')).toBe('true')
-    expect(screen.getByText('Ember Staff')).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'MATERIALS' }).getAttribute('aria-selected')).toBe('true')
+    expect(screen.getByText('Prismatic Fragment')).toBeTruthy()
     expect(screen.queryByText('Fire Fragment')).toBeNull()
   })
 
-  it('shows shared Elemental tier controls and category-correct empty states', () => {
+  it('does not offer unavailable tiers in a single-tier registry', () => {
     render(<RecipeLibrary selectedRecipeId="fire-fragment" onSelect={vi.fn()} />)
     fireEvent.click(screen.getByRole('tab', { name: 'ELEMENTAL' }))
-
-    expect(screen.getByText('ELEMENT TIER')).toBeTruthy()
-    expect(screen.getByRole('tab', { name: 'T1' })).toBeTruthy()
-    expect(screen.getByRole('tab', { name: 'T2' })).toBeTruthy()
-    expect(screen.getByRole('tab', { name: 'T3' })).toBeTruthy()
     expect(screen.getByText('Fire Fragment')).toBeTruthy()
-
-    fireEvent.click(screen.getByRole('tab', { name: 'T2' }))
-    expect(screen.getByText('No T2 elemental recipes are available.')).toBeTruthy()
+    expect(screen.queryByRole('tab', { name: 'T2' })).toBeNull()
   })
 
-  it('uses readable badge metadata and Equipment-only Unowned state', () => {
+  it('uses material metadata and combinable production-only quick filters', () => {
     render(<RecipeLibrary selectedRecipeId="fire-fragment" onSelect={vi.fn()} />)
-    const fireTile = screen.getByRole('button', { name: /Fire Fragment/ })
-    expect(fireTile.querySelector('.transmutation-badge.tier')?.textContent).toBe('T1')
-    expect(fireTile.querySelectorAll('.transmutation-badge')).toHaveLength(2)
-    expect(fireTile.textContent).toContain('ELEMENTAL')
-    expect(fireTile.textContent).toContain('OWNED 0')
-
-    fireEvent.click(screen.getByRole('tab', { name: 'EQUIPMENT' }))
-    expect(screen.getByRole('button', { name: 'UNOWNED' })).toBeTruthy()
-    expect(screen.queryByText('ELEMENT TIER')).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: 'UNOWNED' }))
-    expect(JSON.parse(window.localStorage.getItem('sss-wizard-ui-preferences-v1')!).screenState.transmutation.unownedOnly).toBe(true)
-  })
-
-  it('makes Show Only controls combinable and clears only quick filters', () => {
-    render(<RecipeLibrary selectedRecipeId="fire-fragment" onSelect={vi.fn()} />)
-    fireEvent.click(screen.getByRole('tab', { name: 'EQUIPMENT' }))
+    expect(screen.getByRole('button', { name: /Fire Fragment/ }).querySelector('.transmutation-badge.tier')?.textContent).toBe('T1')
+    expect(screen.queryByRole('tab', { name: 'EQUIPMENT' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'UNOWNED' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'CRAFTABLE' }))
-    fireEvent.click(screen.getByRole('button', { name: 'UNOWNED' }))
-
-    expect(screen.getByText('SHOW ONLY')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'ACTIVE' }))
     expect(screen.getByRole('button', { name: 'CRAFTABLE' }).getAttribute('aria-pressed')).toBe('true')
-    expect(screen.getByRole('button', { name: 'UNOWNED' }).getAttribute('aria-pressed')).toBe('true')
-    expect(screen.getByRole('button', { name: 'Clear Show Only filters' })).toBeTruthy()
-
+    expect(screen.getByRole('button', { name: 'ACTIVE' }).getAttribute('aria-pressed')).toBe('true')
     fireEvent.click(screen.getByRole('button', { name: 'Clear Show Only filters' }))
-    expect(screen.getByRole('button', { name: 'CRAFTABLE' }).getAttribute('aria-pressed')).toBe('false')
-    expect(screen.getByRole('button', { name: 'UNOWNED' }).getAttribute('aria-pressed')).toBe('false')
-    expect(screen.getByRole('tab', { name: 'EQUIPMENT' }).getAttribute('aria-selected')).toBe('true')
+    expect(screen.getByRole('button', { name: 'ACTIVE' }).getAttribute('aria-pressed')).toBe('false')
   })
 
   it('keeps selected, assigned, tier, and locked card semantics distinct', () => {

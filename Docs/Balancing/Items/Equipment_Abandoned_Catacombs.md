@@ -17,17 +17,17 @@
 
 ## Crafting
 
-> Comparison view — edit recipe costs in `Transmutation/Recipes.md`.
+> Comparison view — edit recipe costs in `Artificing/Recipes.md`.
 
-| Item | Time | Mana | Ingredient 1 | Qty 1 | Ingredient 2 | Qty 2 | Ingredient 3 | Qty 3 | Ingredient 4 | Qty 4 | Ingredient 5 | Qty 5 | Unlock |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Graveglass Wand (graveglass-wand) | 30 s | 0 | Graveglass Shard (graveglass-shard) | 30 | Soul Residue (soul-residue) | 9 | Prismatic Fragment (prismatic-fragment) | 2 | — | — | — | — | Unlock Abandoned Catacombs |
-| Edrin's Remnant Staff (edrins-remnant-staff) | 30 s | 0 | Edrin Remnant (edrin-remnant) | 5 | Graveglass Shard (graveglass-shard) | 40 | Soul Residue (soul-residue) | 18 | Prismatic Fragment (prismatic-fragment) | 4 | — | — | Defeat Archmage Edrin's Shade |
-| Soulward Focus (soulward-focus) | 30 s | 0 | Soul Residue (soul-residue) | 15 | Graveglass Shard (graveglass-shard) | 20 | Water Fragment (water-fragment) | 3 | Prismatic Fragment (prismatic-fragment) | 2 | — | — | Unlock Abandoned Catacombs |
-| Soulward Shield (soulward-shield) | 30 s | 0 | Ossuary Remnant (ossuary-remnant) | 24 | Graveglass Shard (graveglass-shard) | 20 | Earth Fragment (earth-fragment) | 4 | Prismatic Fragment (prismatic-fragment) | 2 | — | — | Unlock Abandoned Catacombs |
-| Acolyte Vestments (acolyte-vestments) | 30 s | 0 | Soul Residue (soul-residue) | 18 | Ossuary Remnant (ossuary-remnant) | 16 | Water Fragment (water-fragment) | 3 | Prismatic Fragment (prismatic-fragment) | 2 | — | — | Unlock Abandoned Catacombs |
-| Wraithveil Hood (wraithveil-hood) | 20 s | 0 | Soul Residue (soul-residue) | 15 | Graveglass Shard (graveglass-shard) | 20 | Air Fragment (air-fragment) | 3 | Prismatic Fragment (prismatic-fragment) | 2 | — | — | Unlock Abandoned Catacombs |
-| Ossuary Mantle (ossuary-mantle) | 30 s | 0 | Ossuary Remnant (ossuary-remnant) | 28 | Soul Residue (soul-residue) | 12 | Earth Fragment (earth-fragment) | 3 | Prismatic Fragment (prismatic-fragment) | 2 | — | — | Unlock Abandoned Catacombs |
-| Soulglass Amulet (soulglass-amulet) | 30 s | 0 | Graveglass Shard (graveglass-shard) | 25 | Soul Residue (soul-residue) | 15 | Fire Fragment (fire-fragment) | 3 | Prismatic Fragment (prismatic-fragment) | 2 | — | — | Unlock Abandoned Catacombs |
-| Gravebinder Ring (gravebinder-ring) | 30 s | 0 | Graveglass Shard (graveglass-shard) | 20 | Soul Residue (soul-residue) | 12 | Prismatic Fragment (prismatic-fragment) | 2 | — | — | — | — | Unlock Abandoned Catacombs |
-| Edrin's Signet (edrins-signet) | 30 s | 0 | Edrin Remnant (edrin-remnant) | 35 | — | — | — | — | — | — | — | — | Defeat Archmage Edrin's Shade |
+| Item | Ingredient 1 | Qty 1 | Ingredient 2 | Qty 2 | Ingredient 3 | Qty 3 | Ingredient 4 | Qty 4 | Ingredient 5 | Qty 5 | Unlock |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Graveglass Wand (graveglass-wand) | Graveglass Shard (graveglass-shard) | 30 | Soul Residue (soul-residue) | 9 | Prismatic Fragment (prismatic-fragment) | 2 | — | — | — | — | Unlock Abandoned Catacombs |
+| Edrin's Remnant Staff (edrins-remnant-staff) | Edrin Remnant (edrin-remnant) | 5 | Graveglass Shard (graveglass-shard) | 40 | Soul Residue (soul-residue) | 18 | Prismatic Fragment (prismatic-fragment) | 4 | — | — | Defeat Archmage Edrin's Shade |
+| Soulward Focus (soulward-focus) | Soul Residue (soul-residue) | 15 | Graveglass Shard (graveglass-shard) | 20 | Water Fragment (water-fragment) | 3 | Prismatic Fragment (prismatic-fragment) | 2 | — | — | Unlock Abandoned Catacombs |
+| Soulward Shield (soulward-shield) | Ossuary Remnant (ossuary-remnant) | 24 | Graveglass Shard (graveglass-shard) | 20 | Earth Fragment (earth-fragment) | 4 | Prismatic Fragment (prismatic-fragment) | 2 | — | — | Unlock Abandoned Catacombs |
+| Acolyte Vestments (acolyte-vestments) | Soul Residue (soul-residue) | 18 | Ossuary Remnant (ossuary-remnant) | 16 | Water Fragment (water-fragment) | 3 | Prismatic Fragment (prismatic-fragment) | 2 | — | — | Unlock Abandoned Catacombs |
+| Wraithveil Hood (wraithveil-hood) | Soul Residue (soul-residue) | 15 | Graveglass Shard (graveglass-shard) | 20 | Air Fragment (air-fragment) | 3 | Prismatic Fragment (prismatic-fragment) | 2 | — | — | Unlock Abandoned Catacombs |
+| Ossuary Mantle (ossuary-mantle) | Ossuary Remnant (ossuary-remnant) | 28 | Soul Residue (soul-residue) | 12 | Earth Fragment (earth-fragment) | 3 | Prismatic Fragment (prismatic-fragment) | 2 | — | — | Unlock Abandoned Catacombs |
+| Soulglass Amulet (soulglass-amulet) | Graveglass Shard (graveglass-shard) | 25 | Soul Residue (soul-residue) | 15 | Fire Fragment (fire-fragment) | 3 | Prismatic Fragment (prismatic-fragment) | 2 | — | — | Unlock Abandoned Catacombs |
+| Gravebinder Ring (gravebinder-ring) | Graveglass Shard (graveglass-shard) | 20 | Soul Residue (soul-residue) | 12 | Prismatic Fragment (prismatic-fragment) | 2 | — | — | — | — | Unlock Abandoned Catacombs |
+| Edrin's Signet (edrins-signet) | Edrin Remnant (edrin-remnant) | 35 | — | — | — | — | — | — | — | — | Defeat Archmage Edrin's Shade |

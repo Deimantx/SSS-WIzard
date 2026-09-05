@@ -13,7 +13,7 @@ describe('screen UI preferences', () => {
     expect(preferences.uiSounds).toBe(true)
     expect(preferences.uiSoundVolume).toBe(0.35)
     expect(preferences.screenState.inventory).toEqual({ currentNeedsOpen: true, sourceOpen: false, usedInOpen: true })
-    expect(preferences.screenState.transmutation).toEqual({ selectedRecipeId: 'fire-fragment', categoryFilter: 'all', equipmentSlotFilter: 'all', weaponHandsFilter: 'all', offhandPresentationFilter: 'all', tierFilter: 'all', craftableOnly: false, activeOnly: false, unownedOnly: false, collapsedCategories: { elemental: false, material: false, equipment: false, special: false } })
+    expect(preferences.screenState.transmutation).toEqual({ selectedRecipeId: 'fire-fragment', categoryFilter: 'all', tierFilter: 'all', craftableOnly: false, activeOnly: false, collapsedCategories: { elemental: false, material: false } })
     expect(preferences.screenState.combat).toEqual({ combatLogFontSize: 'medium', combatDetailsMode: 'damage-done', dungeonStatisticsMode: 'runs' })
   })
 
@@ -34,20 +34,24 @@ describe('screen UI preferences', () => {
     const preferences = normalizeUiPreferences({ screenState: { inventory: { currentNeedsOpen: 'yes', sourceOpen: 1, usedInOpen: false }, transmutation: { selectedRecipeId: 7, recipeFilter: 'invalid', collapsedCategories: { elemental: true, material: 'yes', equipment: false } } } })
 
     expect(preferences.screenState.inventory).toEqual({ currentNeedsOpen: true, sourceOpen: false, usedInOpen: false })
-    expect(preferences.screenState.transmutation).toEqual({ ...defaultUiPreferences().screenState.transmutation, collapsedCategories: { elemental: true, material: false, equipment: false, special: false } })
+    expect(preferences.screenState.transmutation).toEqual({ ...defaultUiPreferences().screenState.transmutation, collapsedCategories: { elemental: true, material: false } })
   })
 
-  it('migrates the legacy recipe filter and serializes detail state independently of gameplay', () => {
-    setUiPreferences({ screenState: { transmutation: { selectedRecipeId: 'ember-staff', recipeFilter: 'equipment', collapsedCategories: { equipment: true } } } })
-
-    expect(getUiPreferences().screenState.transmutation).toMatchObject({ selectedRecipeId: 'ember-staff', categoryFilter: 'equipment', craftableOnly: false, activeOnly: false, collapsedCategories: { elemental: false, material: false, equipment: true, special: false } })
-    expect(loadUiPreferences().screenState.transmutation).toMatchObject({ selectedRecipeId: 'ember-staff', categoryFilter: 'equipment', collapsedCategories: { elemental: false, material: false, equipment: true, special: false } })
+  it('discards legacy Equipment filters and persists Artificing independently', () => {
+    const preferences = normalizeUiPreferences({ screenState: { transmutation: { selectedRecipeId: 'ember-staff', categoryFilter: 'equipment', equipmentSlotFilter: 'weapon', unownedOnly: true } } })
+    expect(preferences.screenState.transmutation.selectedRecipeId).toBe('fire-fragment')
+    expect(preferences.screenState.transmutation).not.toHaveProperty('equipmentSlotFilter')
+    expect(preferences.screenState.transmutation).not.toHaveProperty('unownedOnly')
+    setUiPreferences({ screenState: { artificing: { selectedRecipeId: 'ember-staff', slotFilter: 'weapon', weaponHandsFilter: 2, sourceDungeonFilter: 'whispering-woods', craftableOnly: true, ownershipFilter: 'unowned' } } })
+    expect(loadUiPreferences().screenState.artificing).toEqual(getUiPreferences().screenState.artificing)
+    expect(loadUiPreferences().screenState.artificing.selectedRecipeId).toBe('ember-staff')
+    expect(normalizeUiPreferences({ screenState: { artificing: { selectedRecipeId: 'fire-fragment' } } }).screenState.artificing.selectedRecipeId).toBeNull()
   })
 
   it('migrates the old material tier preference and removes the obsolete field', () => {
     const preferences = normalizeUiPreferences({ screenState: { transmutation: { materialTierFilter: 2, unownedOnly: true } } })
     expect(preferences.screenState.transmutation.tierFilter).toBe(2)
-    expect(preferences.screenState.transmutation.unownedOnly).toBe(true)
+    expect(preferences.screenState.transmutation).not.toHaveProperty('unownedOnly')
     expect('materialTierFilter' in preferences.screenState.transmutation).toBe(false)
   })
 
@@ -60,7 +64,7 @@ describe('screen UI preferences', () => {
       navigationGroups: { combat: false, hero: false, tower: true, world: false, system: false },
       screenState: {
         inventory: { usedInOpen: false },
-        transmutation: { selectedRecipeId: 'ember-staff', recipeFilter: 'equipment', collapsedCategories: { equipment: true } },
+        artificing: { selectedRecipeId: 'ember-staff', slotFilter: 'weapon' },
       },
     })
     setCustomThemeColor('accent', '#123456')
@@ -77,6 +81,6 @@ describe('screen UI preferences', () => {
     expect(preferences.customTheme).toEqual(defaultUiPreferences().customTheme)
     expect(preferences.navigationGroups.tower).toBe(true)
     expect(preferences.screenState.inventory.usedInOpen).toBe(false)
-    expect(preferences.screenState.transmutation).toMatchObject({ selectedRecipeId: 'ember-staff', categoryFilter: 'equipment', collapsedCategories: { equipment: true } })
+    expect(preferences.screenState.artificing).toMatchObject({ selectedRecipeId: 'ember-staff', slotFilter: 'weapon' })
   })
 })

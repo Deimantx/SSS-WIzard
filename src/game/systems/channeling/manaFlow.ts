@@ -1,5 +1,5 @@
 import { SPELLS } from '../../content/spells/spells'
-import { RECIPES, RECIPE_ORDER } from '../../content/recipes/recipes'
+import { TRANSMUTATION_RECIPES as RECIPES, TRANSMUTATION_RECIPE_ORDER as RECIPE_ORDER } from '../../content/recipes/recipes'
 import { BALANCE } from '../../core/balance/balance'
 import { getManaRegenBreakdown } from '../../engine/channelingEngine'
 import { getRecipeManaDemandPerSecond, getRecipeStatus } from '../transmutation/transmutationSelectors'

@@ -5,14 +5,14 @@ import { DUNGEONS } from '../game/content/dungeons/dungeons'
 import { GUILD_REQUESTS } from '../game/content/guild/guildRequests'
 import { ITEMS } from '../game/content/items/items'
 import { isBossMonster, MONSTERS } from '../game/content/monsters'
-import { RECIPES } from '../game/content/recipes/recipes'
+import { TRANSMUTATION_RECIPES as RECIPES } from '../game/content/recipes/recipes'
 import { TRANSMUTATION_RECIPE_ORDER as RECIPE_ORDER } from '../game/content/recipes/recipes'
 import { BALANCE } from '../game/core/balance/balance'
 import { SCHOOL_MAX_LEVEL, getSchoolTotalXpForLevel } from '../game/core/balance/schoolXpCurve'
 import { SPELLS } from '../game/content/spells/spells'
 import { SCHOOLS } from '../game/content/schools/schools'
 import { EQUIPMENT_POSITIONS, normalizeEquipmentState } from '../game/core/equipment'
-import type { EquipmentPosition, GameState, ItemId, MonsterId, RecipeId, ResearchActivity, ResearchJobState, SchoolId, SpellId, TransmutationJobState } from '../game/types'
+import type { EquipmentPosition, GameState, ItemId, MonsterId, TransmutationRecipeId, ResearchActivity, ResearchJobState, SchoolId, SpellId, TransmutationJobState } from '../game/types'
 import { RESEARCH_SLOT_ORDER } from '../game/systems/research/researchReservations'
 import { isRecord, SaveMigrationError } from './saveSchema'
 import { recalculateDerivedStats } from '../game/engine'
@@ -500,7 +500,7 @@ const normalizedProgress = (value: unknown, oldDuration: number, newDuration: nu
 const normalizeTransmutationJobs = (migrated: GameState, raw: Record<string, any>) => {
   const rawActivities = isRecord(raw.activities) ? raw.activities : {}
   const rawTransmutation = isRecord(rawActivities.transmutation) ? rawActivities.transmutation : {}
-  const jobs: Partial<Record<RecipeId, TransmutationJobState>> = {}
+  const jobs: Partial<Record<TransmutationRecipeId, TransmutationJobState>> = {}
   const rawJobs = isRecord(rawTransmutation.jobs) ? rawTransmutation.jobs : {}
   RECIPE_ORDER.forEach((recipeId) => {
     const rawJob = isRecord(rawJobs[recipeId]) ? rawJobs[recipeId] : null
@@ -513,7 +513,7 @@ const normalizeTransmutationJobs = (migrated: GameState, raw: Record<string, any
   })
 
   if (rawTransmutation.running === true && validContentId(rawTransmutation.recipeId, recipeIds)) {
-    const recipeId = rawTransmutation.recipeId as RecipeId
+    const recipeId = rawTransmutation.recipeId as TransmutationRecipeId
     const recipe = RECIPES[recipeId]
     const progress = normalizedProgress(rawTransmutation.progressMs, typeof rawTransmutation.durationMs === 'number' ? rawTransmutation.durationMs : recipe.baseDurationMs, recipe.baseDurationMs)
     jobs[recipeId] = { echoesAssigned: Math.max(1, jobs[recipeId]?.echoesAssigned ?? 0), progressMs: progress >= recipe.baseDurationMs ? 0 : progress }
@@ -521,7 +521,7 @@ const normalizeTransmutationJobs = (migrated: GameState, raw: Record<string, any
 
   const rawCondense = isRecord(rawActivities.condense) ? rawActivities.condense : {}
   if (rawCondense.running === true && validContentId(rawCondense.element, ['fire', 'water', 'earth', 'air'])) {
-    const recipeId = `${rawCondense.element}-fragment` as RecipeId
+    const recipeId = `${rawCondense.element}-fragment` as TransmutationRecipeId
     const progress = normalizedProgress(rawCondense.progressMs, LEGACY_CONDENSATION_DURATION_MS, RECIPES[recipeId].baseDurationMs)
     jobs[recipeId] = { echoesAssigned: Math.max(1, jobs[recipeId]?.echoesAssigned ?? 0), progressMs: progress >= RECIPES[recipeId].baseDurationMs ? 0 : progress }
   }
@@ -532,7 +532,7 @@ const normalizeTransmutationJobs = (migrated: GameState, raw: Record<string, any
     + researchEchoFocus
     + Object.entries(migrated.activities.autoCast).filter(([, active]) => active).reduce((sum, [spellId]) => sum + (getSpellAutoCastFocusCost(migrated, spellId as SpellId) ?? 0), 0)
   let remaining = Math.max(0, Math.min(BALANCE.transmutation.maxEchoes, Math.floor((migrated.player.maxFocus - nonTransmutationFocus) / BALANCE.transmutation.echoFocusCost)))
-  const normalized: Partial<Record<RecipeId, TransmutationJobState>> = {}
+  const normalized: Partial<Record<TransmutationRecipeId, TransmutationJobState>> = {}
   RECIPE_ORDER.forEach((recipeId) => {
     const job = jobs[recipeId]
     if (!job) return

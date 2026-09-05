@@ -157,39 +157,7 @@
 .transmutation-filter-options .transmutation-quick-filter-clear:hover, .transmutation-filter-options .transmutation-quick-filter-clear:focus-visible { border-color: var(--ui-border); color: var(--ui-text); background: var(--ui-panel); }
 .transmutation-locked-banner { display: flex; align-items: flex-start; gap: 6px; margin-top: 8px; padding: 7px; border: 1px solid color-mix(in srgb, var(--ui-warning) 42%, var(--ui-border)); border-radius: 6px; color: var(--ui-warning); font: var(--text-micro) / 1.35 var(--font-mono); }
 .transmutation-locked-banner svg { flex: 0 0 auto; margin-top: 1px; }
-.transmutation-output-preview { display: flex; min-height: 0; flex-direction: column; }
-.transmutation-output-content { display: grid; align-content: start; gap: 12px; min-width: 0; min-height: 0; overflow: clip; padding-right: 3px; }
-.transmutation-output-content > .game-tooltip-trigger { display: block; min-width: 0; }
-.transmutation-output-hero { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 10px; align-items: start; min-width: 0; overflow: hidden; padding: 8px; border: 1px solid color-mix(in srgb, var(--ui-accent) 30%, var(--ui-border)); border-radius: 8px; background: var(--ui-accent-soft); }
-.transmutation-output-hero > * { min-width: 0; }
-.transmutation-output-icon { display: grid; place-items: center; width: 52px; height: 52px; min-width: 52px; min-height: 52px; overflow: hidden; border-radius: 9px; background: color-mix(in srgb, var(--ui-accent) 13%, transparent); line-height: 1; }
-.transmutation-output-icon .item-icon-large { display: grid; place-items: center; width: 42px; height: 42px; max-width: 42px; max-height: 42px; overflow: hidden; font-size: 30px; line-height: 1; }
-.transmutation-output-icon img { display: block; width: 100%; height: 100%; max-width: 100%; max-height: 100%; object-fit: contain; }
-.transmutation-output-hero h2 { margin: 3px 0; color: var(--ui-text); font-size: var(--text-base); overflow-wrap: anywhere; }
-.transmutation-output-hero p, .transmutation-output-note { margin: 0; color: var(--ui-text-muted); font-size: var(--text-xs); line-height: 1.45; }
-.transmutation-output-section { display: grid; gap: 7px; min-width: 0; padding-top: 10px; border-top: 1px solid var(--ui-border); }
-.transmutation-output-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
-.transmutation-output-meta span { display: grid; gap: 3px; min-width: 0; padding: 7px; border: 1px solid var(--ui-border); border-radius: 6px; background: var(--ui-panel); }
-.transmutation-output-meta small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
-.transmutation-output-meta strong { overflow-wrap: anywhere; color: var(--ui-text); font: var(--text-xs) var(--font-mono); }
-.transmutation-output-stat-list { display: grid; gap: 5px; }
-.transmutation-output-stat-list > div { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; padding: 5px 0; border-bottom: 1px solid var(--ui-border); }
-.transmutation-output-stat-list span { min-width: 0; overflow: hidden; color: var(--ui-text-muted); font-size: var(--text-xs); text-overflow: ellipsis; white-space: nowrap; }
-.transmutation-output-stat-list strong, .transmutation-output-stat-list small { flex: 0 0 auto; color: var(--ui-text); font: var(--text-micro) var(--font-mono); }
-.transmutation-output-stat-list.comparison small { color: var(--ui-text-muted); }
-.transmutation-output-stat-list.comparison strong.negative { color: var(--ui-danger); }
-.transmutation-output-stat-list.comparison strong.positive { color: var(--ui-success); }
-.transmutation-output-current { display: flex; justify-content: space-between; gap: 8px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
-.transmutation-output-current strong { color: var(--ui-text); }
-.transmutation-ring-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
-.transmutation-ring-choice { display: grid; gap: 4px; min-width: 0; padding: 7px; border: 1px solid var(--ui-border); border-radius: 6px; color: var(--ui-text-muted); background: var(--ui-panel); cursor: pointer; text-align: left; }
-.transmutation-ring-choice:hover, .transmutation-ring-choice:focus-visible, .transmutation-ring-choice.selected { border-color: var(--ui-accent); background: var(--ui-accent-soft); outline: none; }
-.transmutation-ring-choice span { font: var(--text-micro) var(--font-mono); }
-.transmutation-ring-choice strong { overflow: hidden; color: var(--ui-text); font-size: var(--text-xs); text-overflow: ellipsis; white-space: nowrap; }
-.transmutation-output-warning { display: flex; align-items: flex-start; gap: 7px; padding: 8px; border: 1px solid color-mix(in srgb, var(--ui-warning) 42%, var(--ui-border)); border-radius: 7px; color: var(--ui-warning); font-size: var(--text-xs); line-height: 1.4; }
-.transmutation-output-warning svg { flex: 0 0 auto; }
 
 @media (max-width: 760px) {
   .transmutation-filter-row { grid-template-columns: 1fr; align-items: start; }
-  .transmutation-output-content { max-height: none; }
 }

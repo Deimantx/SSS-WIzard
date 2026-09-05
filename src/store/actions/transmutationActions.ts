@@ -5,11 +5,11 @@ import { canReserveFocusAction } from './focusActions'
 import { pushNotification } from '../../game/engine'
 import { getRecipeUnlockReason, getTransmutationEchoesAssigned, getTransmutationEchoCapacity, isRecipeUnlocked } from '../../game/systems/transmutation/transmutationSelectors'
 import { grantItem } from '../../game/systems/inventory/itemAcquisition'
-import type { GameState, RecipeId } from '../../game/types'
+import type { GameState, TransmutationRecipeId } from '../../game/types'
 
-const ensureJob = (state: GameState, recipeId: RecipeId) => state.activities.transmutation.jobs[recipeId] ?? (state.activities.transmutation.jobs[recipeId] = { echoesAssigned: 0, progressMs: 0 })
+const ensureJob = (state: GameState, recipeId: TransmutationRecipeId) => state.activities.transmutation.jobs[recipeId] ?? (state.activities.transmutation.jobs[recipeId] = { echoesAssigned: 0, progressMs: 0 })
 
-export const assignTransmutationEchoAction = (state: GameState, recipeId: RecipeId) => {
+export const assignTransmutationEchoAction = (state: GameState, recipeId: TransmutationRecipeId) => {
   const recipe = RECIPES[recipeId]
   if (!recipe || !isRecipeUnlocked(state, recipe)) { pushNotification(state, recipe ? getRecipeUnlockReason(recipe) ?? 'This recipe is locked.' : 'Unknown Transmutation recipe.', 'warning', { key: 'transmutation-locked', cooldownMs: 1500 }); return false }
   if (getTransmutationEchoesAssigned(state) >= getTransmutationEchoCapacity(state)) { const capacity = getTransmutationEchoCapacity(state); pushNotification(state, `Transmutation Echo capacity reached: ${capacity} / ${capacity}.`, 'warning', { key: 'transmutation-capacity', cooldownMs: 1500 }); return false }
@@ -18,13 +18,13 @@ export const assignTransmutationEchoAction = (state: GameState, recipeId: Recipe
   return true
 }
 
-export const removeTransmutationEchoAction = (state: GameState, recipeId: RecipeId) => {
+export const removeTransmutationEchoAction = (state: GameState, recipeId: TransmutationRecipeId) => {
   const job = state.activities.transmutation.jobs[recipeId]
   if (job) job.echoesAssigned = Math.max(0, Math.floor(job.echoesAssigned) - 1)
   return true
 }
 
-export const setTransmutationEchoesAction = (state: GameState, recipeId: RecipeId, amount: number, force = false) => {
+export const setTransmutationEchoesAction = (state: GameState, recipeId: TransmutationRecipeId, amount: number, force = false) => {
   const recipe = RECIPES[recipeId]
   if (!recipe) return false
   const target = Math.max(0, Math.floor(Number.isFinite(amount) ? amount : 0))
@@ -38,7 +38,7 @@ export const setTransmutationEchoesAction = (state: GameState, recipeId: RecipeI
   return true
 }
 
-const getTransmutationAssignableEchoes = (state: GameState, recipeId: RecipeId) => {
+const getTransmutationAssignableEchoes = (state: GameState, recipeId: TransmutationRecipeId) => {
   const current = Math.max(0, Math.floor(state.activities.transmutation.jobs[recipeId]?.echoesAssigned ?? 0))
   return Math.max(0, getTransmutationEchoCapacity(state) - getTransmutationEchoesAssigned(state) + current)
 }
@@ -47,7 +47,7 @@ export const clearTransmutationAssignmentsAction = (state: GameState) => Object.
 export const setTransmutationEchoCapacityOverrideAction = (state: GameState, amount: number | null) => { state.debug.transmutationEchoCapacityOverride = amount === null || !Number.isFinite(amount) ? null : Math.max(0, Math.floor(amount)) }
 
 /** Grants only the missing consumable ingredients for one or more test cycles. */
-export const grantTransmutationMissingIngredientsAction = (state: GameState, recipeId: RecipeId, cycles = 1) => {
+export const grantTransmutationMissingIngredientsAction = (state: GameState, recipeId: TransmutationRecipeId, cycles = 1) => {
   const recipe = RECIPES[recipeId]
   if (!recipe) return false
   const multiplier = Math.max(1, Math.floor(Number.isFinite(cycles) ? cycles : 1))

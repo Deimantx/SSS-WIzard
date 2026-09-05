@@ -201,15 +201,16 @@ describe('save navigation migration', () => {
       activities: { ...initial.activities, condense: { running: true, element: 'water', progressMs: 3000 } },
     } as any)
 
-    expect(migrated.activities.transmutation.jobs['water-fragment']).toEqual({ echoesAssigned: 1, progressMs: 3000 })
+    expect(migrated.activities.transmutation.jobs['water-fragment']).toEqual({ echoesAssigned: 1, progressMs: 4000 })
     expect(migrated.activities.transmutation.jobs['fire-fragment']).toBeUndefined()
   })
 
-  it('migrates an active old Transmutation queue and preserves both legacy activities', () => {
+  it('drops legacy Equipment jobs while preserving fragment work and inventory', () => {
     const initial = createInitialState()
     const migrated = migrateSave({
       ...initial,
       saveVersion: 7,
+      inventory: { ...initial.inventory, 'ember-staff': 2, 'fire-fragment': 48, 'wisp-essence': 24 },
       activities: {
         ...initial.activities,
         condense: { running: true, element: 'fire', progressMs: 1500 },
@@ -217,8 +218,9 @@ describe('save navigation migration', () => {
       },
     } as any)
 
-    expect(migrated.activities.transmutation.jobs['fire-fragment']).toEqual({ echoesAssigned: 1, progressMs: 1500 })
-    expect(migrated.activities.transmutation.jobs['ember-staff']).toEqual({ echoesAssigned: 1, progressMs: 4000 })
+    expect(migrated.activities.transmutation.jobs['fire-fragment']).toEqual({ echoesAssigned: 1, progressMs: 2000 })
+    expect(migrated.activities.transmutation.jobs).not.toHaveProperty('ember-staff')
+    expect(migrated.inventory).toMatchObject({ 'ember-staff': 2, 'fire-fragment': 48, 'wisp-essence': 24 })
     expect(migrated.saveVersion).toBe(8)
   })
 
@@ -488,7 +490,7 @@ describe('save navigation migration', () => {
     const migrated = migrateSave({
       ...initial,
       saveVersion: 10,
-      activities: { ...initial.activities, transmutation: { jobs: { 'fire-fragment': { echoesAssigned: 1, progressMs: 6000 } } } },
+      activities: { ...initial.activities, transmutation: { jobs: { 'fire-fragment': { echoesAssigned: 1, progressMs: 8000 } } } },
     } as any)
     expect(migrated.activities.transmutation.jobs['fire-fragment']).toEqual({ echoesAssigned: 1, progressMs: 0 })
   })
@@ -503,7 +505,7 @@ describe('save navigation migration', () => {
         ...initial.activities,
         research: {
           slots: {
-            'research-1': { itemId: 'fire-fragment', targetSchoolId: 'fire', requestedQuantity: 3, remainingQuantity: 3, progressMs: 5000, echoesAssigned: 1, status: 'waiting-mana' },
+            'research-1': { itemId: 'fire-fragment', targetSchoolId: 'fire', requestedQuantity: 3, remainingQuantity: 3, progressMs: 10000, echoesAssigned: 1, status: 'waiting-mana' },
             'research-2': null,
             'research-3': null,
             'research-4': null,

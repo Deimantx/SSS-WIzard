@@ -1,5 +1,5 @@
 import type { GameState } from '../../types'
-import { isRecipeUnlocked, RECIPES, RECIPE_ORDER } from '../../content/recipes/recipes'
+import { isRecipeUnlocked, TRANSMUTATION_RECIPES as RECIPES, TRANSMUTATION_RECIPE_ORDER as RECIPE_ORDER } from '../../content/recipes/recipes'
 import { ITEMS } from '../../content/items/items'
 import { SCHOOLS } from '../../content/schools/schools'
 import { BALANCE } from '../../core/balance/balance'

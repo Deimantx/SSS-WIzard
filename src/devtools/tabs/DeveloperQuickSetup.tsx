@@ -4,13 +4,13 @@ import { getMonsterDungeon } from '../../game/content/contentRelations'
 import { DUNGEONS } from '../../game/content/dungeons/dungeons'
 import { ITEMS } from '../../game/content/items/items'
 import { MONSTERS, MONSTER_IDS, isBossMonster } from '../../game/content/monsters'
-import { RECIPES, RECIPE_ORDER } from '../../game/content/recipes/recipes'
+import { TRANSMUTATION_RECIPES as RECIPES, TRANSMUTATION_RECIPE_ORDER as RECIPE_ORDER } from '../../game/content/recipes/recipes'
 import { formatReadableId } from '../../game/content/presentation/balanceFormatters'
 import { getRecipeStatus } from '../../game/systems/transmutation/transmutationSelectors'
 import { SCHOOLS } from '../../game/content/schools/schools'
 import { getAllSpellsInOrder } from '../../game/systems/spells'
 import { OFFLINE_BANK_PRESETS, toOfflineDurationMs, type OfflineBankUnit } from '../../game/systems/offline-bank/offlineBankDuration'
-import type { MonsterId, RecipeId } from '../../game/types'
+import type { MonsterId, TransmutationRecipeId } from '../../game/types'
 import { formatOfflineBank } from '../../game/utils'
 import type { DeveloperFixtureId } from '../../store/gameStore'
 import { useGameStore } from '../../store/gameStore'
@@ -39,7 +39,7 @@ export function DeveloperQuickSetup() {
   const hasActiveProfile = Boolean(profileSession.activeProfileId)
   const [enemyQuery, setEnemyQuery] = useState('')
   const [selectedEnemy, setSelectedEnemy] = useState<MonsterId | null>(MONSTER_IDS[0] ?? null)
-  const [selectedRecipe, setSelectedRecipe] = useState<RecipeId>(defaultRecipe)
+  const [selectedRecipe, setSelectedRecipe] = useState<TransmutationRecipeId>(defaultRecipe)
   const [recipeFeedback, setRecipeFeedback] = useState('')
   const [offlineAmount, setOfflineAmount] = useState('1')
   const [offlineUnit, setOfflineUnit] = useState<OfflineBankUnit>('hours')
@@ -101,7 +101,7 @@ export function DeveloperQuickSetup() {
         <section><h3>Fixtures</h3><div className="developer-fixture-list">{fixtureButtons.map((fixture) => <div key={fixture.id}><div><strong>{fixture.label}</strong><small>{fixture.description}</small></div><Button variant={fixture.id === 'fresh' ? 'danger' : 'secondary'} onClick={() => applyFixture(fixture.id)}>{fixture.id === 'fresh' ? 'Reset Fresh Game' : `Load ${fixture.label}`}</Button></div>)}</div></section>
         <section><h3>Fresh Start / Reset</h3><p className="muted">Reset the persisted gameplay state for the currently selected profile. UI appearance and custom layouts are preserved.</p><Button variant="danger" disabled={!hasActiveProfile} onClick={resetCurrentProfile}>Reset Current Profile Progress</Button></section>
         <section><h3>Loadouts</h3><p className="muted">Each loadout uses its explicit authored slot map.</p><div className="developer-button-grid">{DEVELOPER_LOADOUTS.map((loadout) => <Button key={loadout.id} variant="secondary" onClick={() => loadLoadout(loadout)}>{loadout.label}</Button>)}</div></section>
-        <section><h3>Resources &amp; Magic</h3><label>Recipe<select aria-label="Quick Setup recipe" value={selectedRecipe} onChange={(event) => { setSelectedRecipe(event.target.value as RecipeId); setRecipeFeedback('') }}>{RECIPE_ORDER.map((id) => { const recipe = RECIPES[id]; const recipeStatus = getRecipeStatus(state, recipe); return <option value={id} key={id}>{recipe.name} · {formatReadableId(recipe.category)} · {formatReadableId(recipeStatus)}</option> })}</select></label><div className="button-row"><Button onClick={grantResources}>+100 Relevant Materials</Button><Button variant="secondary" onClick={grantMissingRecipeIngredients} disabled={selectedRecipeDefinition.ingredients.length === 0}>Grant Missing Ingredients</Button><Button variant="secondary" onClick={unlockRankOneSpells}>Unlock Rank-I Spells</Button><Button variant="secondary" onClick={state.resetSpellCooldowns}>Reset Spell Cooldowns</Button><Button variant="ghost" onClick={state.resetDebugOverrides}>Clear Debug Overrides</Button></div><small className="muted">Selected recipe: {selectedRecipeDefinition.name} · {formatReadableId(selectedRecipeDefinition.category)} · {formatReadableId(getRecipeStatus(state, selectedRecipeDefinition))}</small>{recipeFeedback && <Status tone="success">{recipeFeedback}</Status>}</section>
+        <section><h3>Resources &amp; Magic</h3><label>Recipe<select aria-label="Quick Setup recipe" value={selectedRecipe} onChange={(event) => { setSelectedRecipe(event.target.value as TransmutationRecipeId); setRecipeFeedback('') }}>{RECIPE_ORDER.map((id) => { const recipe = RECIPES[id]; const recipeStatus = getRecipeStatus(state, recipe); return <option value={id} key={id}>{recipe.name} · {formatReadableId(recipe.category)} · {formatReadableId(recipeStatus)}</option> })}</select></label><div className="button-row"><Button onClick={grantResources}>+100 Relevant Materials</Button><Button variant="secondary" onClick={grantMissingRecipeIngredients} disabled={selectedRecipeDefinition.ingredients.length === 0}>Grant Missing Ingredients</Button><Button variant="secondary" onClick={unlockRankOneSpells}>Unlock Rank-I Spells</Button><Button variant="secondary" onClick={state.resetSpellCooldowns}>Reset Spell Cooldowns</Button><Button variant="ghost" onClick={state.resetDebugOverrides}>Clear Debug Overrides</Button></div><small className="muted">Selected recipe: {selectedRecipeDefinition.name} · {formatReadableId(selectedRecipeDefinition.category)} · {formatReadableId(getRecipeStatus(state, selectedRecipeDefinition))}</small>{recipeFeedback && <Status tone="success">{recipeFeedback}</Status>}</section>
       </div>
     </Card>
 

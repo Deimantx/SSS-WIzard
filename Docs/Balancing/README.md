@@ -10,6 +10,8 @@ Use npm run balancing:export to create missing files. Use npm run balancing:expo
 
 - Combat: player values, formulas, statuses, traits, and damage types.
 - Enemies: one comparison page per dungeon with combat, traits, actions, and loot sheets.
+- Transmutation: [five continuous material recipes](Transmutation/Recipes.md) and [production economy](Transmutation/Crafting_Economy.md).
+- Artificing: [27 manual Equipment recipes](Artificing/Recipes.md) and [material acquisition economy](Artificing/Crafting_Economy.md).
 - Items and production: item index, materials, equipment, drops, recipes, and crafting economy.
 - Progression and magic: Research, Channeling, Focus, Guild, unlocks, schools, and spells.
 - Economy: item values and current activity timings.

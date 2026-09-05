@@ -12,12 +12,15 @@ src/
     content/            authored items, monsters, spells, schools, dungeons, recipes, guild, Pillars, discoveries
     data/               compatibility exports for older imports
     systems/            gameplay ownership (channeling, activity telemetry, combat, loot, simulation, offline bank)
+      transmutation/    continuous elemental/material production
+      artificing/       atomic manual Equipment crafting and shared catalog selectors
     engine.ts           shared derived-stat and cross-system calculations
   screens/
     tower/channeling/  Channeling panels and discoveries
     tower/focus/       Focus destination
     tower/research/    Research destination
-    tower/transmutation/ Transmutation destination
+    tower/transmutation/ continuous material production
+    tower/artificing/  Equipment catalog, manual forge, rich Equipment inspection
   store/
     gameStore.ts       Zustand/Immer composition and persistence bridge
     actions/            domain actions (channeling, focus, tower activities, combat, inventory, equipment, guild, progression, persistence, debug)
@@ -35,3 +38,5 @@ Mana Flow is derived UI information: authoritative Channeling production minus a
 The persistent shell is composed from `app/GameShell.tsx`, `app/shell/Topbar.tsx`, `Sidebar.tsx`, `ActivityMonitor.tsx`, `OfflineBankPopover.tsx`, and `ToastStack.tsx`. Developer overrides remain runtime-only; profile serializers strip them.
 
 Developer overrides are runtime-only test controls kept under `GameState.debug`; profile serializers strip the field, so normal V8 progression never records temporary bonuses or cap toggles.
+
+Recipe definitions are physically owned by `game/content/recipes/transmutationRecipes.ts` (five timed, Mana-funded recipes) and `artificingRecipes.ts` (27 Equipment recipes with explicit dungeon sources). `recipeUnlocks.ts` is their shared unlock evaluator; `recipes.ts` is only an aggregate for relationships and tooling. Artificing consumes one validated ingredient cost and grants one item immediately through central acquisition. It never assigns Echoes, creates jobs, repeats, or runs during Offline Bank simulation. Legacy Equipment jobs are discarded on save migration without consuming inventory. Developer Tools has independent Transmutation and Artificing tabs and Show Locked flags; visibility overrides never bypass craft unlocks.

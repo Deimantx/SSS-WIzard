@@ -6,7 +6,7 @@ import { ItemIcon, ItemTooltip } from '../../../components/ui/item'
 import { ITEMS } from '../../../game/content/items/items'
 import type { RecipeDefinition } from '../../../game/content/recipes/recipes'
 import { getRecipeProgressPercent, getRecipeStatus, getRecipeUnlockReason, getTransmutationFocusReserved, getTransmutationJob, getTransmutationRecipeEntries, getTransmutationRecipeFilterCounts, getTransmutationTierOptions, getVisibleTransmutationRecipes, type TransmutationRecipeFilters, type TransmutationStatus } from '../../../game/systems/transmutation/transmutationSelectors'
-import type { EquipmentItemSlot, RecipeCategory, RecipeId } from '../../../game/types'
+import type { RecipeCategory, TransmutationRecipeId } from '../../../game/types'
 import { setUiPreferences, useUiPreferences } from '../../../ui/preferences/uiPreferencesStore'
 import { useGameStore } from '../../../store/gameStore'
 import { getTransmutationRecipeCardMeta } from '../../../game/presentation/transmutation/transmutationRecipeCardPresentation'
@@ -14,12 +14,10 @@ import { useProfileAttention } from '../../../ui/attention/attentionStore'
 import { getActiveProfileId } from '../../../profiles/profileSessionStore'
 import { useSmartScrollState } from '../../../ui/game-feel/useSmartScrollState'
 
-const CATEGORY_LABELS: Record<RecipeCategory, string> = { elemental: 'ELEMENTAL', material: 'MATERIALS', equipment: 'EQUIPMENT', special: 'SPECIAL' }
-const CATEGORY_ORDER: RecipeCategory[] = ['elemental', 'material', 'equipment', 'special']
-const SLOT_LABELS: Record<EquipmentItemSlot, string> = { weapon: 'WEAPON', offhand: 'OFFHAND', armor: 'ARMOR', helmet: 'HELMET', cape: 'CAPE', amulet: 'AMULET', ring: 'RING' }
-const OFFHAND_LABELS = { shield: 'SHIELD', focus: 'FOCUS' } as const
+const CATEGORY_LABELS: Record<RecipeCategory, string> = { elemental: 'ELEMENTAL', material: 'MATERIALS' }
+const CATEGORY_ORDER: RecipeCategory[] = ['elemental', 'material']
 
-export function RecipeLibrary({ selectedRecipeId, onSelect }: { selectedRecipeId: RecipeId; onSelect: (recipeId: RecipeId) => void }) {
+export function RecipeLibrary({ selectedRecipeId, onSelect }: { selectedRecipeId: TransmutationRecipeId; onSelect: (recipeId: TransmutationRecipeId) => void }) {
   const preferences = useUiPreferences()
   const state = useGameStore()
   const attention = useProfileAttention(getActiveProfileId())
@@ -28,24 +26,20 @@ export function RecipeLibrary({ selectedRecipeId, onSelect }: { selectedRecipeId
   const saved = preferences.screenState.transmutation
   const filters: TransmutationRecipeFilters = {
     categoryFilter: saved.categoryFilter,
-    equipmentSlotFilter: saved.equipmentSlotFilter,
-    weaponHandsFilter: saved.weaponHandsFilter,
-    offhandPresentationFilter: saved.offhandPresentationFilter,
     tierFilter: saved.tierFilter,
     craftableOnly: saved.craftableOnly,
     activeOnly: saved.activeOnly,
-    unownedOnly: saved.unownedOnly,
   }
   const showLocked = state.debug.showLockedTransmutationRecipes
   const visible = getVisibleTransmutationRecipes(state, filters, query, showLocked)
   const counts = getTransmutationRecipeFilterCounts(state, filters, query, showLocked)
-  const categories = CATEGORY_ORDER.filter((category) => category !== 'equipment' && recipes.some((recipe) => recipe.category === category))
+  const categories = CATEGORY_ORDER.filter((category) => recipes.some((recipe) => recipe.category === category))
   const groups = categories.filter((category) => visible.some((recipe) => recipe.category === category))
   const collapsedCategories = saved.collapsedCategories
   const tierCounts = filters.categoryFilter === 'elemental' || filters.categoryFilter === 'material' ? counts.tierCounts[filters.categoryFilter] : undefined
-  const hasQuickFilters = filters.craftableOnly || filters.activeOnly || filters.unownedOnly
+  const hasQuickFilters = filters.craftableOnly || filters.activeOnly
   const libraryScrollRef = React.useRef<HTMLDivElement>(null)
-  useSmartScrollState(libraryScrollRef, { dependencies: [visible.map((recipe) => recipe.id).join('|'), query, filters.categoryFilter, filters.equipmentSlotFilter, filters.weaponHandsFilter, filters.offhandPresentationFilter, filters.tierFilter, filters.craftableOnly, filters.activeOnly, filters.unownedOnly] })
+  useSmartScrollState(libraryScrollRef, { dependencies: [visible.map((recipe) => recipe.id).join('|'), query, filters.categoryFilter, filters.tierFilter, filters.craftableOnly, filters.activeOnly] })
 
   const update = (value: Partial<typeof filters>) => setUiPreferences({ screenState: { transmutation: value } })
   const toggleCategory = (category: RecipeCategory) => setUiPreferences({ screenState: { transmutation: { collapsedCategories: { [category]: !collapsedCategories[category] } } } })
@@ -56,8 +50,9 @@ export function RecipeLibrary({ selectedRecipeId, onSelect }: { selectedRecipeId
     <div className="transmutation-library-controls">
       <label className="transmutation-search"><Search size={14} aria-hidden="true" /><SearchInput value={query} onChange={setQuery} placeholder="Search recipes..." /></label>
       <div className="transmutation-filter-stack">
-      {(filters.categoryFilter === 'elemental' || filters.categoryFilter === 'material') && <FilterRow label={`${filters.categoryFilter === 'elemental' ? 'ELEMENT' : 'MATERIAL'} TIER`} options={(['all', ...getTransmutationTierOptions()] as const).map((value) => ({ value, label: value === 'all' ? 'ALL' : `T${value}`, count: value === 'all' ? counts.categories[filters.categoryFilter] : tierCounts?.[value] ?? 0 }))} value={filters.tierFilter} onChange={(value) => update({ tierFilter: value })} />}
-      <div className="transmutation-filter-row transmutation-quick-filters"><div className="transmutation-quick-filter-label"><span className="transmutation-filter-label">SHOW ONLY</span><small>Combine filters</small></div><div className="transmutation-filter-options"><FilterToggle label="CRAFTABLE" pressed={filters.craftableOnly} count={counts.craftable} onClick={() => update({ craftableOnly: !filters.craftableOnly })} /><FilterToggle label="ACTIVE" pressed={filters.activeOnly} count={counts.active} onClick={() => update({ activeOnly: !filters.activeOnly })} />{hasQuickFilters && <button type="button" className="transmutation-quick-filter-clear" aria-label="Clear Show Only filters" onClick={() => update({ craftableOnly: false, activeOnly: false, unownedOnly: false })}>CLEAR</button>}</div></div>
+      <FilterRow label="CATEGORY" options={[{ value: 'all' as const, label: 'ALL', count: counts.categories.all }, ...categories.map(value => ({ value, label: CATEGORY_LABELS[value], count: counts.categories[value] }))]} value={filters.categoryFilter} onChange={value => update({ categoryFilter: value, tierFilter: 'all' })} />
+      {getTransmutationTierOptions().length > 1 && (filters.categoryFilter === 'elemental' || filters.categoryFilter === 'material') && <FilterRow label={`${filters.categoryFilter === 'elemental' ? 'ELEMENT' : 'MATERIAL'} TIER`} options={(['all', ...getTransmutationTierOptions()] as const).map((value) => ({ value, label: value === 'all' ? 'ALL' : `T${value}`, count: value === 'all' ? counts.categories[filters.categoryFilter] : tierCounts?.[value] ?? 0 }))} value={filters.tierFilter} onChange={(value) => update({ tierFilter: value })} />}
+      <div className="transmutation-filter-row transmutation-quick-filters"><div className="transmutation-quick-filter-label"><span className="transmutation-filter-label">SHOW ONLY</span><small>Combine filters</small></div><div className="transmutation-filter-options"><FilterToggle label="CRAFTABLE" pressed={filters.craftableOnly} count={counts.craftable} onClick={() => update({ craftableOnly: !filters.craftableOnly })} /><FilterToggle label="ACTIVE" pressed={filters.activeOnly} count={counts.active} onClick={() => update({ activeOnly: !filters.activeOnly })} />{hasQuickFilters && <button type="button" className="transmutation-quick-filter-clear" aria-label="Clear Show Only filters" onClick={() => update({ craftableOnly: false, activeOnly: false })}>CLEAR</button>}</div></div>
       </div>
       {showLocked && counts.hiddenLocked > 0 && <div className="transmutation-locked-banner"><LockKeyhole size={14} aria-hidden="true" /><span>DEV VIEW · {counts.hiddenLocked} locked recipes revealed. Unlock conditions still apply.</span></div>}
     </div>
@@ -85,22 +80,17 @@ function getEmptyMessage(filters: TransmutationRecipeFilters, query: string, sho
   const normalizedQuery = query.trim()
   if (normalizedQuery) return `No recipes match "${normalizedQuery}"${hasActiveContextFilter(filters) ? ' within the selected filters' : ''}.`
   if (!showLocked && counts.unlocked === 0) return 'No recipes are unlocked yet.'
-  if (filters.craftableOnly && filters.categoryFilter === 'equipment') return 'No craftable Equipment recipes match.'
   if (filters.craftableOnly) return 'No unlocked recipes are craftable with the current Mana and materials.'
   if (filters.activeOnly) return 'No recipes currently have Arcane Echoes assigned.'
-  if (filters.categoryFilter === 'equipment' && filters.equipmentSlotFilter === 'weapon' && filters.weaponHandsFilter !== 'all') return `No ${filters.weaponHandsFilter}H Weapon recipes match the current filters.`
-  if (filters.categoryFilter === 'equipment' && filters.equipmentSlotFilter === 'offhand' && filters.offhandPresentationFilter !== 'all') return `No ${filters.offhandPresentationFilter === 'shield' ? 'Shield' : 'Focus'} Offhand recipes match the current filters.`
-  if (filters.categoryFilter === 'equipment' && filters.equipmentSlotFilter !== 'all') return `No ${SLOT_LABELS[filters.equipmentSlotFilter]} recipes match this selection.`
   if ((filters.categoryFilter === 'elemental' || filters.categoryFilter === 'material') && filters.tierFilter !== 'all') return `No T${filters.tierFilter} ${filters.categoryFilter} recipes are available.`
-  if (filters.categoryFilter === 'equipment' && filters.unownedOnly) return 'No unowned Equipment recipes match the current filters.'
   return 'No recipes match this filter.'
 }
 
 function hasActiveContextFilter(filters: TransmutationRecipeFilters) {
-  return filters.categoryFilter !== 'all' || filters.equipmentSlotFilter !== 'all' || filters.weaponHandsFilter !== 'all' || filters.offhandPresentationFilter !== 'all' || filters.tierFilter !== 'all' || filters.craftableOnly || filters.activeOnly || filters.unownedOnly
+  return filters.categoryFilter !== 'all' || filters.tierFilter !== 'all' || filters.craftableOnly || filters.activeOnly
 }
 
-function RecipeTile({ recipe, selected, newRecipe = false, onSelect }: { recipe: RecipeDefinition; selected: boolean; newRecipe?: boolean; onSelect: (recipeId: RecipeId) => void }) {
+function RecipeTile({ recipe, selected, newRecipe = false, onSelect }: { recipe: RecipeDefinition; selected: boolean; newRecipe?: boolean; onSelect: (recipeId: TransmutationRecipeId) => void }) {
   const state = useGameStore()
   const item = ITEMS[recipe.output.itemId]
   const owned = state.inventory[recipe.output.itemId] ?? 0

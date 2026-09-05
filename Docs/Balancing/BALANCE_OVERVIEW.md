@@ -8,7 +8,8 @@ Start with the wide table for the system you want to compare. Detail notes are i
 | Equipment | 27 | Items/Equipment files |
 | Monsters | 13 | Enemies/Enemy_Index.md |
 | Dungeons | 3 | Dungeons/Dungeon_Progression.md |
-| Recipes | 32 | Transmutation/Recipes.md |
+| Transmutation recipes | 5 | Transmutation/Recipes.md |
+| Artificing recipes | 27 | Artificing/Recipes.md |
 | Spells | 12 | Magic/Spell_Index.md |
 | Statuses | 14 | Combat/Status_Effects.md |
 | Traits | 15 | Combat/Traits_And_Special_Attacks.md |

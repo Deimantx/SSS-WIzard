@@ -60,10 +60,10 @@ describe('continuous Mana scheduler', () => {
     const state = createInitialState()
     state.progress.firstBossKill = true
     state.player.mana = 100
-    state.activities.transmutation.jobs['ember-staff'] = { echoesAssigned: 1, progressMs: 0 }
+    ;(state.activities.transmutation.jobs as Record<string, { echoesAssigned: number; progressMs: number }>)['ember-staff'] = { echoesAssigned: 1, progressMs: 0 }
     advance(state, 1_000)
     expect(state.player.mana).toBe(100)
-    expect(state.activities.transmutation.jobs['ember-staff']?.progressMs).toBe(0)
+    expect((state.activities.transmutation.jobs as Record<string, { echoesAssigned: number; progressMs: number }>)['ember-staff']?.progressMs).toBe(0)
     expect(getManaFlowBreakdown(state).demand).toBe(0)
   })
 

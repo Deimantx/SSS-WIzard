@@ -1,3 +1,4 @@
+import { isTransmutationRecipeId } from '../../game/content/recipes/recipes'
 import { useSyncExternalStore } from 'react'
 import type { ItemId, MonsterId, RecipeId, SpellId } from '../../game/types'
 
@@ -62,4 +63,4 @@ export const clearProfileAttention = (profileKey: string | null) => {
   listeners.forEach((listener) => listener())
 }
 export const resetProfileAttention = clearProfileAttention
-export const hasUnseenAttention = (attention: ProfileAttentionState, destination: 'inventory' | 'collection' | 'bestiary' | 'schools' | 'transmutation') => destination === 'inventory' || destination === 'collection' ? attention.unseenItems.length > 0 : destination === 'bestiary' ? attention.unseenMonsters.length > 0 : destination === 'schools' ? attention.unseenSpells.length > 0 : attention.unseenRecipes.length > 0
+export const hasUnseenAttention = (attention: ProfileAttentionState, destination: 'inventory' | 'collection' | 'bestiary' | 'schools' | 'transmutation' | 'artificing') => destination === 'inventory' || destination === 'collection' ? attention.unseenItems.length > 0 : destination === 'bestiary' ? attention.unseenMonsters.length > 0 : destination === 'schools' ? attention.unseenSpells.length > 0 : attention.unseenRecipes.some(id => destination === 'transmutation' ? isTransmutationRecipeId(id) : !isTransmutationRecipeId(id))

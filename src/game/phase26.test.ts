@@ -14,14 +14,14 @@ import { clampResourcePercent } from '../app/shell/Topbar'
 describe('Unified Transmutation', () => {
   it('defines four fragment and four equipment recipes with the intended costs', () => {
     expect(Object.keys(RECIPES)).toHaveLength(32)
-    expect(['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'].map((id) => RECIPES[id as keyof typeof RECIPES].manaCost)).toEqual([25, 25, 25, 25])
-    expect(['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'].map((id) => RECIPES[id as keyof typeof RECIPES].baseDurationMs)).toEqual([8000, 8000, 8000, 8000])
+    expect(['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'].map((id) => RECIPES[id as import('./types').TransmutationRecipeId].manaCost)).toEqual([25, 25, 25, 25])
+    expect(['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'].map((id) => RECIPES[id as import('./types').TransmutationRecipeId].baseDurationMs)).toEqual([8000, 8000, 8000, 8000])
     expect(RECIPES['ember-staff'].ingredients).toEqual([
       { itemId: 'fire-fragment', quantity: 48 },
       { itemId: 'wisp-essence', quantity: 24 },
       { itemId: 'grove-bark', quantity: 3 },
     ])
-    expect(RECIPES['ember-staff'].manaCost).toBe(0)
+    expect('manaCost' in RECIPES['ember-staff']).toBe(false)
     expect(RECIPES['ember-staff'].unlock).toEqual({ type: 'dungeon-monster-kills', dungeonId: 'whispering-woods', count: 1 })
   })
 
@@ -91,11 +91,11 @@ describe('Unified Transmutation', () => {
     const state = makeInitialState()
     state.progress.firstBossKill = true
     state.progress.lifetimeKillsByMonster['grove-sentinel'] = 1
-    state.activities.transmutation.jobs['ember-staff'] = { echoesAssigned: 1, progressMs: 30000 }
+    Object.assign(state.activities.transmutation.jobs, { 'ember-staff': { echoesAssigned: 1, progressMs: 30000 } })
     advanceGameState(state, 1, { mode: 'banked' })
-    expect(state.activities.transmutation.jobs['ember-staff']?.progressMs).toBe(0)
+    expect((state.activities.transmutation.jobs as Record<string, { progressMs: number }>)['ember-staff']?.progressMs).toBe(30000)
     expect(state.inventory['ember-staff'] ?? 0).toBe(0)
-    expect(getActivityTelemetry(state).find((item) => item.id === 'transmutation')?.status).toBe('waiting-materials')
+    expect(getActivityTelemetry(state).find((item) => item.id === 'transmutation')?.status).toBeUndefined()
   })
 
   it('aggregates simultaneous jobs into one Activity Monitor card', () => {

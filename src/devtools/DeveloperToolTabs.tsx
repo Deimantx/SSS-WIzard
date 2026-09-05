@@ -1,3 +1,4 @@
+import { DeveloperArtificing } from './tabs/DeveloperArtificing'
 import type { DeveloperToolsTab } from './developerToolsStore'
 import { DeveloperQuickSetup } from './tabs/DeveloperQuickSetup'
 import { DeveloperCombat } from './tabs/DeveloperCombat'
@@ -19,6 +20,7 @@ export function DeveloperTab({ tab, copy }: { tab: DeveloperToolsTab; copy: (lab
   if (tab === 'character') return <DeveloperCharacter />
   if (tab === 'channeling') return <DeveloperChanneling />
   if (tab === 'focus') return <DeveloperFocus />
+  if (tab === 'artificing') return <DeveloperArtificing />
   if (tab === 'transmutation') return <DeveloperTransmutation />
   if (tab === 'research') return <DeveloperResearch />
   if (tab === 'inventory') return <DeveloperInventory initialView="all" />

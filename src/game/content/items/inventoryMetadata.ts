@@ -45,7 +45,7 @@ export const getItemProcessingChain = (itemId: ItemId): ItemId[] => ITEMS[itemId
 export function getItemUses(itemId: ItemId): InventoryDestination[] {
   const uses: InventoryDestination[] = []
   Object.values(RECIPES).forEach((recipe) => {
-    if (recipe.ingredients.some((ingredient) => ingredient.itemId === itemId)) uses.push({ label: recipe.name, destination: 'tower-transmutation', detail: 'Transmutation recipe', recipeId: recipe.id })
+    if (recipe.ingredients.some((ingredient) => ingredient.itemId === itemId)) uses.push({ label: recipe.name, destination: 'sourceDungeonId' in recipe ? 'tower-artificing' : 'tower-transmutation', detail: 'sourceDungeonId' in recipe ? 'Artificing recipe' : 'Transmutation recipe', recipeId: recipe.id })
   })
   if (itemId === 'life-essence' || Object.values(MANA_PILLARS).some((pillar) => pillar.fragmentRequirements.includes(itemId))) {
     uses.push({ label: 'Pillars of Mana', destination: 'tower-channeling', detail: 'Permanent Tower progression' })

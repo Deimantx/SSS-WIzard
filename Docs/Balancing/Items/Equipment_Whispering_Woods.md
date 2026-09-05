@@ -16,16 +16,16 @@
 
 ## Crafting
 
-> Comparison view — edit recipe costs in `Transmutation/Recipes.md`.
+> Comparison view — edit recipe costs in `Artificing/Recipes.md`.
 
-| Item | Time | Mana | Ingredient 1 | Qty 1 | Ingredient 2 | Qty 2 | Ingredient 3 | Qty 3 | Ingredient 4 | Qty 4 | Ingredient 5 | Qty 5 | Unlock |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Ember Staff (ember-staff) | 30 s | 0 | Fire Fragment (fire-fragment) | 48 | Wisp Essence (wisp-essence) | 24 | Grove Bark (grove-bark) | 3 | — | — | — | — | Defeat any Whispering Woods monster |
-| Wispwood Wand (wispwood-wand) | 30 s | 0 | Fire Fragment (fire-fragment) | 24 | Air Fragment (air-fragment) | 24 | Wisp Essence (wisp-essence) | 18 | Grove Bark (grove-bark) | 3 | — | — | Defeat any Whispering Woods monster |
-| Tide Focus (tide-focus) | 30 s | 0 | Water Fragment (water-fragment) | 48 | Wisp Essence (wisp-essence) | 18 | Grove Bark (grove-bark) | 3 | — | — | — | — | Defeat any Whispering Woods monster |
-| Stoneweave Robe (stoneweave-robe) | 30 s | 0 | Earth Fragment (earth-fragment) | 48 | Wisp Essence (wisp-essence) | 18 | Grove Bark (grove-bark) | 3 | — | — | — | — | Defeat any Whispering Woods monster |
-| Windthread Charm (windthread-charm) | 30 s | 0 | Air Fragment (air-fragment) | 48 | Wisp Essence (wisp-essence) | 18 | Grove Bark (grove-bark) | 3 | — | — | — | — | Defeat any Whispering Woods monster |
-| Wispveil Hood (wispveil-hood) | 30 s | 0 | Water Fragment (water-fragment) | 24 | Air Fragment (air-fragment) | 24 | Wisp Essence (wisp-essence) | 24 | Grove Bark (grove-bark) | 3 | — | — | Defeat any Whispering Woods monster |
-| Grovekeeper Mantle (grovekeeper-mantle) | 30 s | 0 | Earth Fragment (earth-fragment) | 36 | Wisp Essence (wisp-essence) | 24 | Grove Bark (grove-bark) | 6 | — | — | — | — | Defeat any Whispering Woods monster |
-| Wispbound Ring (wispbound-ring) | 30 s | 0 | Water Fragment (water-fragment) | 24 | Air Fragment (air-fragment) | 24 | Wisp Essence (wisp-essence) | 18 | Grove Bark (grove-bark) | 3 | — | — | Defeat any Whispering Woods monster |
-| Heartseed Necklace (heartseed-necklace) | 30 s | 0 | Heartseed (heartseed) | 20 | — | — | — | — | — | — | — | — | Defeat Forest Heart |
+| Item | Ingredient 1 | Qty 1 | Ingredient 2 | Qty 2 | Ingredient 3 | Qty 3 | Ingredient 4 | Qty 4 | Ingredient 5 | Qty 5 | Unlock |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Ember Staff (ember-staff) | Fire Fragment (fire-fragment) | 48 | Wisp Essence (wisp-essence) | 24 | Grove Bark (grove-bark) | 3 | — | — | — | — | Defeat any monster in Whispering Woods |
+| Wispwood Wand (wispwood-wand) | Fire Fragment (fire-fragment) | 24 | Air Fragment (air-fragment) | 24 | Wisp Essence (wisp-essence) | 18 | Grove Bark (grove-bark) | 3 | — | — | Defeat any monster in Whispering Woods |
+| Tide Focus (tide-focus) | Water Fragment (water-fragment) | 48 | Wisp Essence (wisp-essence) | 18 | Grove Bark (grove-bark) | 3 | — | — | — | — | Defeat any monster in Whispering Woods |
+| Stoneweave Robe (stoneweave-robe) | Earth Fragment (earth-fragment) | 48 | Wisp Essence (wisp-essence) | 18 | Grove Bark (grove-bark) | 3 | — | — | — | — | Defeat any monster in Whispering Woods |
+| Windthread Charm (windthread-charm) | Air Fragment (air-fragment) | 48 | Wisp Essence (wisp-essence) | 18 | Grove Bark (grove-bark) | 3 | — | — | — | — | Defeat any monster in Whispering Woods |
+| Wispveil Hood (wispveil-hood) | Water Fragment (water-fragment) | 24 | Air Fragment (air-fragment) | 24 | Wisp Essence (wisp-essence) | 24 | Grove Bark (grove-bark) | 3 | — | — | Defeat any monster in Whispering Woods |
+| Grovekeeper Mantle (grovekeeper-mantle) | Earth Fragment (earth-fragment) | 36 | Wisp Essence (wisp-essence) | 24 | Grove Bark (grove-bark) | 6 | — | — | — | — | Defeat any monster in Whispering Woods |
+| Wispbound Ring (wispbound-ring) | Water Fragment (water-fragment) | 24 | Air Fragment (air-fragment) | 24 | Wisp Essence (wisp-essence) | 18 | Grove Bark (grove-bark) | 3 | — | — | Defeat any monster in Whispering Woods |
+| Heartseed Necklace (heartseed-necklace) | Heartseed (heartseed) | 20 | — | — | — | — | — | — | — | — | Defeat Forest Heart |

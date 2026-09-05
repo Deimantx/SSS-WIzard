@@ -187,10 +187,13 @@
       ],
       "documents": [
         "Transmutation/Recipes.md",
-        "Transmutation/Crafting_Economy.md"
+        "Transmutation/Crafting_Economy.md",
+        "Artificing/Recipes.md",
+        "Artificing/Crafting_Economy.md"
       ],
       "runtimeSources": [
-        "src/game/content/recipes/recipes.ts"
+        "src/game/content/recipes/transmutationRecipes.ts",
+        "src/game/content/recipes/artificingRecipes.ts"
       ]
     },
     "spells": {
@@ -672,37 +675,10 @@
         "water-fragment",
         "earth-fragment",
         "air-fragment",
-        "prismatic-fragment",
-        "ember-staff",
-        "wispwood-wand",
-        "tide-focus",
-        "stoneweave-robe",
-        "windthread-charm",
-        "wispveil-hood",
-        "grovekeeper-mantle",
-        "wispbound-ring",
-        "heartseed-necklace",
-        "fangbound-dagger",
-        "fangbound-buckler",
-        "corrupted-howlstaff",
-        "razorclaw-circlet",
-        "predator-hide-mantle",
-        "greatbear-vestment",
-        "howling-signet",
-        "greatbear-heartstone",
-        "graveglass-wand",
-        "edrins-remnant-staff",
-        "soulward-focus",
-        "soulward-shield",
-        "acolyte-vestments",
-        "wraithveil-hood",
-        "ossuary-mantle",
-        "soulglass-amulet",
-        "gravebinder-ring",
-        "edrins-signet"
+        "prismatic-fragment"
       ],
       "runtimeSources": [
-        "src/game/content/recipes/recipes.ts"
+        "src/game/content/recipes/transmutationRecipes.ts"
       ]
     },
     "Transmutation/Crafting_Economy.md": {
@@ -711,37 +687,10 @@
         "water-fragment",
         "earth-fragment",
         "air-fragment",
-        "prismatic-fragment",
-        "ember-staff",
-        "wispwood-wand",
-        "tide-focus",
-        "stoneweave-robe",
-        "windthread-charm",
-        "wispveil-hood",
-        "grovekeeper-mantle",
-        "wispbound-ring",
-        "heartseed-necklace",
-        "fangbound-dagger",
-        "fangbound-buckler",
-        "corrupted-howlstaff",
-        "razorclaw-circlet",
-        "predator-hide-mantle",
-        "greatbear-vestment",
-        "howling-signet",
-        "greatbear-heartstone",
-        "graveglass-wand",
-        "edrins-remnant-staff",
-        "soulward-focus",
-        "soulward-shield",
-        "acolyte-vestments",
-        "wraithveil-hood",
-        "ossuary-mantle",
-        "soulglass-amulet",
-        "gravebinder-ring",
-        "edrins-signet"
+        "prismatic-fragment"
       ],
       "runtimeSources": [
-        "src/game/content/recipes/recipes.ts",
+        "src/game/content/recipes/transmutationRecipes.ts",
         "src/game/content/monsters",
         "src/game/content/items/items.ts"
       ]
@@ -1023,6 +972,76 @@
         "src/game/content/monsters",
         "src/game/content/items/items.ts"
       ]
+    },
+    "Artificing/Recipes.md": {
+      "stableIds": [
+        "ember-staff",
+        "wispwood-wand",
+        "tide-focus",
+        "stoneweave-robe",
+        "windthread-charm",
+        "wispveil-hood",
+        "grovekeeper-mantle",
+        "wispbound-ring",
+        "heartseed-necklace",
+        "fangbound-dagger",
+        "fangbound-buckler",
+        "corrupted-howlstaff",
+        "razorclaw-circlet",
+        "predator-hide-mantle",
+        "greatbear-vestment",
+        "howling-signet",
+        "greatbear-heartstone",
+        "graveglass-wand",
+        "edrins-remnant-staff",
+        "soulward-focus",
+        "soulward-shield",
+        "acolyte-vestments",
+        "wraithveil-hood",
+        "ossuary-mantle",
+        "soulglass-amulet",
+        "gravebinder-ring",
+        "edrins-signet"
+      ],
+      "runtimeSources": [
+        "src/game/content/recipes/artificingRecipes.ts"
+      ]
+    },
+    "Artificing/Crafting_Economy.md": {
+      "stableIds": [
+        "ember-staff",
+        "wispwood-wand",
+        "tide-focus",
+        "stoneweave-robe",
+        "windthread-charm",
+        "wispveil-hood",
+        "grovekeeper-mantle",
+        "wispbound-ring",
+        "heartseed-necklace",
+        "fangbound-dagger",
+        "fangbound-buckler",
+        "corrupted-howlstaff",
+        "razorclaw-circlet",
+        "predator-hide-mantle",
+        "greatbear-vestment",
+        "howling-signet",
+        "greatbear-heartstone",
+        "graveglass-wand",
+        "edrins-remnant-staff",
+        "soulward-focus",
+        "soulward-shield",
+        "acolyte-vestments",
+        "wraithveil-hood",
+        "ossuary-mantle",
+        "soulglass-amulet",
+        "gravebinder-ring",
+        "edrins-signet"
+      ],
+      "runtimeSources": [
+        "src/game/content/recipes/artificingRecipes.ts",
+        "src/game/content/monsters",
+        "src/game/content/items/items.ts"
+      ]
     }
   },
   "canonicalLocations": {
@@ -1031,16 +1050,17 @@
     "monster special actions": "Enemies/{Dungeon}.md -> Special Actions",
     "monster loot": "Enemies/{Dungeon}.md -> Loot",
     "equipment stats": "Items/Equipment_{Dungeon}.md -> Stats & Effects",
-    "equipment crafting": "Transmutation/Recipes.md",
+    "equipment crafting": "Artificing/Recipes.md",
     "material drops": "Enemies/{Dungeon}.md -> Loot",
-    "recipes": "Transmutation/Recipes.md",
+    "recipes": "Transmutation/Recipes.md and Artificing/Recipes.md",
     "spells": "Magic/{School}_Spells.md",
     "statuses": "Combat/Status_Effects.md",
     "traits": "Combat/Traits_And_Special_Attacks.md -> Traits"
   },
   "mirrors": {
     "Enemies/{Dungeon}.md -> Loot": "Loot/Monster_Drops.md and Loot/Boss_Drops.md are generated comparison views.",
-    "Transmutation/Recipes.md": "Items/Equipment_{Dungeon}.md -> Crafting and Transmutation/Crafting_Economy.md are generated comparison views.",
+    "Transmutation/Recipes.md": "Transmutation/Crafting_Economy.md is a generated comparison view.",
+    "Artificing/Recipes.md": "Items/Equipment_{Dungeon}.md -> Crafting and Artificing/Crafting_Economy.md are generated comparison views.",
     "Enemies/{Dungeon}.md -> Core Combat Stats": "Enemies/Enemy_Index.md is a generated cross-dungeon comparison.",
     "Magic/{School}_Spells.md": "Magic/Spell_Index.md is a generated global comparison."
   }

@@ -5,17 +5,8 @@ import { resetAllUiPreferences } from '../../../ui/preferences/uiPreferencesStor
 import { FocusAssignment } from './FocusAssignment'
 
 describe('FocusAssignment locked state', () => {
-  beforeEach(() => { useGameStore.getState().resetSave(); resetAllUiPreferences() })
+  beforeEach(() => { useGameStore.getState().resetSave(); useGameStore.setState(state => { state.player.mana = 100 }); resetAllUiPreferences() })
 
-  it('does not render Echo controls for a locked selected recipe', () => {
-    useGameStore.getState().setTransmutationEchoes('fire-fragment', 1)
-    render(<FocusAssignment selectedRecipeId="ember-staff" onSelect={vi.fn()} />)
-
-    expect(screen.getByText('LOCKED')).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Assign Echo to Ember Staff' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Remove Echo from Ember Staff' })).toBeNull()
-    expect(screen.getByRole('button', { name: 'Remove Echo from Fire Fragment' })).toBeTruthy()
-  })
 
   it('places the entire Focus body inside one scroll viewport', () => {
     render(<FocusAssignment selectedRecipeId="fire-fragment" onSelect={vi.fn()} />)
@@ -39,8 +30,8 @@ describe('FocusAssignment locked state', () => {
     useGameStore.getState().setTransmutationEchoes('fire-fragment', 1)
     render(<FocusAssignment selectedRecipeId="fire-fragment" onSelect={vi.fn()} />)
 
-    expect(document.querySelector('.transmutation-assignment-metrics')?.textContent).toContain('600 / hr')
-    expect(document.querySelector('.transmutation-assignment-metrics')?.textContent).toContain('2.5 Mana/s')
+    expect(document.querySelector('.transmutation-assignment-metrics')?.textContent).toContain('450 / hr')
+    expect(document.querySelector('.transmutation-assignment-metrics')?.textContent).toContain('3.13 Mana/s')
   })
 
   it('keeps selected active recipe metrics compact without a duplicate cycle line', () => {
@@ -49,7 +40,7 @@ describe('FocusAssignment locked state', () => {
 
     expect(document.querySelector('.transmutation-focus-selected-name strong')?.textContent).toContain('Fire Fragment')
     expect(document.querySelector('.transmutation-focus-selected-status')?.textContent).toBe('ACTIVE')
-    expect(document.querySelector('.transmutation-focus-selected-metrics')?.textContent).toMatch(/1 Echo.*6\.0s.*600 \/ hr.*2\.5 Mana\/s/)
+    expect(document.querySelector('.transmutation-focus-selected-metrics')?.textContent).toMatch(/1 Echo.*8\.0s.*450 \/ hr.*3\.13 Mana\/s/)
     expect(document.querySelector('.transmutation-focus-effective-time')).toBeNull()
   })
 })

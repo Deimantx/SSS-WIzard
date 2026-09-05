@@ -17,7 +17,7 @@ describe('Offline Bank event reports', () => {
   it('reports Transmutation and research independently when their net inventory change is zero', () => {
     const state = makeInitialState()
     state.player.mana = state.player.maxMana
-    state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 1, progressMs: 5999 }
+    state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 1, progressMs: 7999 }
     state.inventory['fire-fragment'] = 1
     state.activities.research = { ...state.activities.research, running: true, itemId: 'fire-fragment', targetSchoolId: 'fire', remainingQuantity: 1, progressMs: BALANCE.research.durationPerItemMs - 1 }
     const report = createOfflineBankReportCollector(state, 1, 1_000)
@@ -29,20 +29,23 @@ describe('Offline Bank event reports', () => {
     expect(result.netInventory['fire-fragment']).toBe(0)
   })
 
-  it('reports successful equipment Transmutation ingredients and output', () => {
+  it('never produces Equipment from stale jobs or reports offline Artificing', () => {
     const state = makeInitialState()
     state.progress.firstBossKill = true
     state.progress.lifetimeKillsByMonster['grove-sentinel'] = 1
     state.inventory['fire-fragment'] = 4
     state.inventory['wisp-essence'] = 4
     state.inventory['grove-bark'] = 1
-    state.activities.transmutation.jobs['ember-staff'] = { echoesAssigned: 1, progressMs: 7_999 }
+    ;(state.activities.transmutation.jobs as Record<string, { echoesAssigned: number; progressMs: number }>)['ember-staff'] = { echoesAssigned: 1, progressMs: 7_999 }
     const report = createOfflineBankReportCollector(state, 1, 1_000)
     const result = runTick(state, report)
 
-    expect(result.production.craftsByRecipe['ember-staff']).toBe(1)
-    expect(result.production.transmutation['ember-staff']).toBe(1)
-    expect(result.consumption.transmutation).toEqual({ 'fire-fragment': 4, 'wisp-essence': 4, 'grove-bark': 1 })
+    expect(result.production.craftsByRecipe['ember-staff']).toBeUndefined()
+    expect(result.production.transmutation['ember-staff']).toBeUndefined()
+    expect(result.consumption.transmutation).toEqual({})
+    expect(state.inventory['fire-fragment']).toBe(4)
+    expect(state.inventory['wisp-essence']).toBe(4)
+    expect(state.inventory['grove-bark']).toBe(1)
   })
 
   it('reports real combat defeats and loot events', () => {
@@ -85,9 +88,9 @@ describe('Offline Bank event reports', () => {
     state.inventory['fire-fragment'] = 4
     state.inventory['wisp-essence'] = 4
     state.inventory['grove-bark'] = 1
-    state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 1, progressMs: 5999 }
+    state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 1, progressMs: 7999 }
     state.activities.research = { ...state.activities.research, running: true, itemId: 'fire-fragment', targetSchoolId: 'fire', remainingQuantity: 1, progressMs: BALANCE.research.durationPerItemMs - 1 }
-    state.activities.transmutation.jobs['ember-staff'] = { echoesAssigned: 1, progressMs: 7_999 }
+    ;(state.activities.transmutation.jobs as Record<string, { echoesAssigned: number; progressMs: number }>)['ember-staff'] = { echoesAssigned: 1, progressMs: 7_999 }
     state.combat.active = true
     state.combat.dungeonId = 'whispering-woods'
     state.combat.enemyId = 'forest-wisp'
@@ -101,9 +104,9 @@ describe('Offline Bank event reports', () => {
 
     expect(result.production.transmutation['fire-fragment']).toBe(1)
     expect(result.research.researchedItems['fire-fragment']).toBe(1)
-    expect(result.production.craftsByRecipe['ember-staff']).toBe(1)
+    expect(result.production.craftsByRecipe['ember-staff']).toBeUndefined()
     expect(result.combat.killsTotal).toBe(1)
-    expect(result.netInventory['fire-fragment']).toBe(-4)
+    expect(result.netInventory['fire-fragment']).toBe(0)
   })
 
   it('aggregates multiple Research jobs during Offline Bank simulation', () => {
@@ -115,9 +118,9 @@ describe('Offline Bank event reports', () => {
     prepareResearchAction(state, 'water-fragment', 'water', 5)
     setResearchEchoesAction(state, 'research-1', 2)
     setResearchEchoesAction(state, 'research-2', 1)
-    const report = createOfflineBankReportCollector(state, 5_000, 5_000)
+    const report = createOfflineBankReportCollector(state, 10_000, 10_000)
 
-    for (let index = 0; index < 5; index += 1) advanceGameState(state, 1_000, { mode: 'banked', report })
+    for (let index = 0; index < 10; index += 1) advanceGameState(state, 1_000, { mode: 'banked', report })
     const result = report.finalize(state)
 
     expect(result.research.researchedItems).toEqual({ 'fire-fragment': 2, 'water-fragment': 1 })

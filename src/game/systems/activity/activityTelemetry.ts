@@ -1,7 +1,7 @@
 import { DUNGEONS } from '../../content/dungeons/dungeons'
 import { ITEMS } from '../../content/items/items'
 import { MONSTERS } from '../../content/monsters'
-import { isRecipeUnlocked, RECIPES, RECIPE_ORDER } from '../../content/recipes/recipes'
+import { isRecipeUnlocked, TRANSMUTATION_RECIPES as RECIPES, TRANSMUTATION_RECIPE_ORDER as RECIPE_ORDER } from '../../content/recipes/recipes'
 import { SCHOOLS } from '../../content/schools/schools'
 import { BALANCE } from '../../core/balance/balance'
 import { getCurrentEnemyActionStep, getEnemyAction, getNextEnemyActionStep } from '../combat/actionRuntime'

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { RECIPES } from './recipes'
+import { TRANSMUTATION_RECIPES as RECIPES } from './transmutationRecipes'
 
 describe('player-facing transmutation recipe content', () => {
   it('does not expose internal tuning markers in elemental descriptions', () => {

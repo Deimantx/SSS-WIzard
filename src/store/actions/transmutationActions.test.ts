@@ -9,9 +9,9 @@ describe('transmutation developer ingredient grants', () => {
     const state = createInitialState()
     state.inventory['fire-fragment'] = 1
 
-    grantTransmutationMissingIngredientsAction(state, 'ember-staff')
+    grantTransmutationMissingIngredientsAction(state, 'prismatic-fragment')
 
-    const recipe = RECIPES['ember-staff']
+    const recipe = RECIPES['prismatic-fragment']
     recipe.ingredients.forEach((ingredient) => {
       expect(getConsumableQuantity(state, ingredient.itemId)).toBe(ingredient.quantity)
     })
@@ -21,10 +21,10 @@ describe('transmutation developer ingredient grants', () => {
     const state = createInitialState()
     state.inventory['wisp-essence'] = 4
 
-    grantTransmutationMissingIngredientsAction(state, 'ember-staff', 10)
+    grantTransmutationMissingIngredientsAction(state, 'prismatic-fragment', 10)
 
-    expect(getConsumableQuantity(state, 'wisp-essence')).toBe(40)
-    expect(getConsumableQuantity(state, 'fire-fragment')).toBe(40)
-    expect(getConsumableQuantity(state, 'grove-bark')).toBe(10)
+    expect(getConsumableQuantity(state, 'life-essence')).toBe(100)
+    expect(getConsumableQuantity(state, 'fire-fragment')).toBe(20)
+    expect(getConsumableQuantity(state, 'water-fragment')).toBe(20)
   })
 })

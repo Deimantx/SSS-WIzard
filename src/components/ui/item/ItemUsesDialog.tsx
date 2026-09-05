@@ -8,10 +8,11 @@ import type { InventoryDestination } from '../../../game/content/items/inventory
 import type { RecipeId } from '../../../game/types'
 
 type ItemUseEntry = InventoryDestination & { locked?: boolean }
-type ItemUseGroup = 'transmutation' | 'research' | 'tower-progression' | 'guild' | 'other'
+type ItemUseGroup = 'artificing' | 'transmutation' | 'research' | 'tower-progression' | 'guild' | 'other'
 
 const GROUPS: Array<{ id: ItemUseGroup; label: string }> = [
   { id: 'transmutation', label: 'TRANSMUTATION' },
+  { id: 'artificing', label: 'ARTIFICING' },
   { id: 'research', label: 'RESEARCH' },
   { id: 'tower-progression', label: 'TOWER PROGRESSION' },
   { id: 'guild', label: 'GUILD' },
@@ -45,6 +46,7 @@ function UseRow({ use, onSelectRecipe, onClose }: { use: ItemUseEntry; onSelectR
 }
 
 function groupFor(use: ItemUseEntry): ItemUseGroup {
+  if (use.destination === 'tower-artificing') return 'artificing'
   if (use.destination === 'tower-transmutation') return 'transmutation'
   if (use.destination === 'tower-research') return 'research'
   if (use.destination === 'tower-channeling' || use.destination === 'tower-focus') return 'tower-progression'

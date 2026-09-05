@@ -1,4 +1,4 @@
-import { RECIPES } from '../../content/recipes/recipes'
+import { TRANSMUTATION_RECIPES as RECIPES } from '../../content/recipes/recipes'
 import { ITEMS } from '../../content/items/items'
 import { getRecipeCraftsPerHour, isRecipeUnlocked } from '../transmutation/transmutationSelectors'
 import type { GameState, ItemId, ScreenId } from '../../types'

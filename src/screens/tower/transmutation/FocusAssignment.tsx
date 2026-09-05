@@ -7,14 +7,14 @@ import { TRANSMUTATION_RECIPES as RECIPES, TRANSMUTATION_RECIPE_ORDER as RECIPE_
 import { ITEMS } from '../../../game/content/items/items'
 import { selectFreeFocus } from '../../../game/engine'
 import { getRecipeCurrentEffectiveDuration, getRecipeCurrentOutputPerHour, getRecipeManaDemandPerSecond, getRecipeProgressPercent, getRecipeStatus, getRecipeUnlockReason, getTransmutationEchoCapacity, getTransmutationEchoFocusCost, getTransmutationEchoesAssigned, getTransmutationFocusReserved, getTransmutationJob, canAssignTransmutationEcho } from '../../../game/systems/transmutation/transmutationSelectors'
-import type { GameState, RecipeId } from '../../../game/types'
+import type { GameState, TransmutationRecipeId } from '../../../game/types'
 import { formatNumber, formatTime } from '../../../game/utils'
 import { useGameStore } from '../../../store/gameStore'
 import { emitGameFeelEvent } from '../../../ui/game-feel/gameFeelStore'
 import { didTransmutationCycleWrap, getTransmutationCompletionSound } from '../../../ui/game-feel/craftCompletion'
 import { useSmartScrollState } from '../../../ui/game-feel/useSmartScrollState'
 
-export function FocusAssignment({ selectedRecipeId, onSelect }: { selectedRecipeId: RecipeId; onSelect: (recipeId: RecipeId) => void }) {
+export function FocusAssignment({ selectedRecipeId, onSelect }: { selectedRecipeId: TransmutationRecipeId; onSelect: (recipeId: TransmutationRecipeId) => void }) {
   const state = useGameStore()
   const add = useGameStore((current) => current.assignTransmutationEcho)
   const remove = useGameStore((current) => current.removeTransmutationEcho)
@@ -46,8 +46,8 @@ export function FocusAssignment({ selectedRecipeId, onSelect }: { selectedRecipe
     const rect = anchor?.getBoundingClientRect()
     emitGameFeelEvent({ type: 'focus', x: rect && rect.width > 0 ? rect.left + rect.width / 2 : window.innerWidth * 0.6, y: rect && rect.height > 0 ? rect.top + rect.height / 2 : 150, color: 'var(--ui-secondary)', intensity: 0.9 })
   }
-  const addWithFeel = (recipeId: RecipeId) => changeFocus(() => add(recipeId))
-  const removeWithFeel = (recipeId: RecipeId) => changeFocus(() => remove(recipeId))
+  const addWithFeel = (recipeId: TransmutationRecipeId) => changeFocus(() => add(recipeId))
+  const removeWithFeel = (recipeId: TransmutationRecipeId) => changeFocus(() => remove(recipeId))
   const clearWithFeel = () => changeFocus(clear)
 
   return <Card className="transmutation-focus" title="FOCUS ASSIGNMENT">
@@ -63,7 +63,7 @@ export function FocusAssignment({ selectedRecipeId, onSelect }: { selectedRecipe
   </Card>
 }
 
-function AssignmentRow({ recipeId, state, selected, onSelect, onAdd, onRemove }: { recipeId: RecipeId; state: GameState; selected: boolean; onSelect: (recipeId: RecipeId) => void; onAdd: (recipeId: RecipeId) => void; onRemove: (recipeId: RecipeId) => void }) {
+function AssignmentRow({ recipeId, state, selected, onSelect, onAdd, onRemove }: { recipeId: TransmutationRecipeId; state: GameState; selected: boolean; onSelect: (recipeId: TransmutationRecipeId) => void; onAdd: (recipeId: TransmutationRecipeId) => void; onRemove: (recipeId: TransmutationRecipeId) => void }) {
   const recipe = RECIPES[recipeId]
   const job = getTransmutationJob(state, recipeId)
   const echoes = Math.max(0, Math.floor(job?.echoesAssigned ?? 0))

@@ -1,3 +1,6 @@
+import { ARTIFICING_RECIPES } from '../game/content/recipes/artificingRecipes'
+import { grantItem } from '../game/systems/inventory/itemAcquisition'
+import { getConsumableQuantity } from '../game/core/inventory/inventoryConsumption'
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { BALANCE } from '../game/core/balance/balance'
@@ -18,7 +21,7 @@ import { type SaveReason } from '../persistence/saveConstants'
 import { getActiveProfileId } from '../profiles/profileSessionStore'
 import { updateProfileMetadata } from '../profiles/profileStorage'
 import { createInitialState } from './initialState'
-import type { ChannelingDiscoveryId, DungeonId, EquipmentPosition, GameState, ItemId, ManaPillarId, MonsterId, RecipeId, ResearchSlotId, SchoolId, ScreenId, SpellId, SpellPreset, SpellPresetId, StatusId } from '../game/types'
+import type { ChannelingDiscoveryId, DungeonId, EquipmentPosition, GameState, ItemId, ManaPillarId, MonsterId, TransmutationRecipeId, ResearchSlotId, SchoolId, ScreenId, SpellId, SpellPreset, SpellPresetId, StatusId } from '../game/types'
 import { clamp } from '../game/utils'
 import { createDefaultDebugOverrides, resetCombatDebugState, resetDebugState, sanitizeCombatTimeScale, sanitizeDebugNumber } from './actions/debugActions'
 import { addItemAction, destroyItemAction, removeItemAction, sellItemAction, toggleItemProtectionAction } from './actions/inventoryActions'
@@ -107,6 +110,7 @@ export interface GameActions {
   setDebugAllowFocusOverCap: (enabled: boolean) => void
   setDebugIgnoreEchoLimit: (enabled: boolean) => void
   setDebugShowLockedTransmutationRecipes: (enabled: boolean) => void
+  setDebugShowLockedArtificingRecipes: (enabled: boolean) => void
   setDebugPlayerImmortal: (enabled: boolean) => void
   setDebugEnemyImmortal: (enabled: boolean) => void
   setDebugInfiniteMana: (enabled: boolean) => void
@@ -127,13 +131,14 @@ export interface GameActions {
   clearResearchEchoes: () => void
   clearPreparedResearch: () => void
   forceResearchCycle: (slotId: ResearchSlotId) => void
-  assignTransmutationEcho: (recipeId: RecipeId) => void
-  removeTransmutationEcho: (recipeId: RecipeId) => void
-  setTransmutationEchoes: (recipeId: RecipeId, amount: number) => void
+  assignTransmutationEcho: (recipeId: TransmutationRecipeId) => void
+  removeTransmutationEcho: (recipeId: TransmutationRecipeId) => void
+  setTransmutationEchoes: (recipeId: TransmutationRecipeId, amount: number) => void
   clearTransmutationAssignments: () => void
-  completeTransmutationCycle: (recipeId: RecipeId) => void
-  grantTransmutationIngredients: (recipeId: RecipeId, cycles?: number) => void
-  craftArtificingRecipe: (recipeId: RecipeId) => boolean
+  completeTransmutationCycle: (recipeId: TransmutationRecipeId) => void
+  grantTransmutationIngredients: (recipeId: TransmutationRecipeId, cycles?: number) => void
+  grantArtificingIngredients: (recipeId: import('../game/types').ArtificingRecipeId) => void
+  craftArtificingRecipe: (recipeId: import('../game/types').ArtificingRecipeId) => boolean
   setDebugTransmutationEchoCapacity: (amount: number | null) => void
   castSpell: (spellId: SpellId) => void
   toggleAutoCast: (spellId: SpellId) => void
@@ -280,6 +285,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   setDebugAllowManaOverCap: (enabled) => set((state) => { state.debug.allowManaOverCap = enabled; recalculateDerivedStats(state); return state }),
   setDebugAllowFocusOverCap: (enabled) => set((state) => { state.debug.allowFocusOverCap = enabled; return state }),
   setDebugIgnoreEchoLimit: (enabled) => set((state) => { state.debug.ignoreEchoLimit = enabled; return state }),
+  setDebugShowLockedArtificingRecipes: (enabled) => set((state) => { state.debug.showLockedArtificingRecipes = enabled; return state }),
   setDebugShowLockedTransmutationRecipes: (enabled) => set((state) => { state.debug.showLockedTransmutationRecipes = enabled; return state }),
   setDebugPlayerImmortal: (enabled) => set((state) => { state.debug.playerImmortal = enabled; return state }),
   setDebugEnemyImmortal: (enabled) => set((state) => { state.debug.enemyImmortal = enabled; return state }),
@@ -307,7 +313,8 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   clearTransmutationAssignments: () => set((state) => { clearTransmutationAssignmentsAction(state); return state }),
   completeTransmutationCycle: (recipeId) => set((state) => { forceCompleteTransmutationCycle(state, recipeId, { mode: 'live' }); return state }),
   grantTransmutationIngredients: (recipeId, cycles = 1) => set((state) => { grantTransmutationMissingIngredientsAction(state, recipeId, cycles); return state }),
-  craftArtificingRecipe: (recipeId) => { let ok = false; set((state) => { const result = craftArtificing(state, recipeId); ok = result.ok; if (!result.ok) pushNotification(state, result.reason, 'warning', { key: 'artificing-craft-failed', cooldownMs: 1200 }); return state }); if (ok) emitActionFeel('craft-complete', '.artificing-craft-button'); return ok },
+  grantArtificingIngredients: (recipeId) => set(state => { const recipe = ARTIFICING_RECIPES[recipeId]; if (recipe) recipe.ingredients.forEach(i => { const missing = Math.max(0, i.quantity - getConsumableQuantity(state, i.itemId)); if (missing) grantItem(state, i.itemId, missing) }); }),
+  craftArtificingRecipe: (recipeId) => { let ok = false; set((state) => { const result = craftArtificing(state, recipeId); ok = result.ok; if (result.ok) recordRecentAcquisition(state, result.itemId, 1); if (!result.ok) pushNotification(state, result.reason, 'warning', { key: 'artificing-craft-failed', cooldownMs: 1200 }); return state }); if (ok) emitActionFeel('craft-complete', '.artificing-craft-button'); return ok },
   setDebugTransmutationEchoCapacity: (amount) => set((state) => { setTransmutationEchoCapacityOverrideAction(state, amount); return state }),
   castSpell: (spellId) => set((state) => { castSpellAction(state, spellId, combatEventSink); return state }),
   toggleAutoCast: (spellId) => { const before = Boolean(get().activities.autoCast[spellId]); set((state) => { const cost = getSpellAutoCastFocusCost(state, spellId); if (!spellUnlocked(state, spellId) || cost === null) return state; const latchIndex = state.combat.autoCastManaStarvedSpells.indexOf(spellId); if (latchIndex >= 0) state.combat.autoCastManaStarvedSpells.splice(latchIndex, 1); if (state.activities.autoCast[spellId]) { state.activities.autoCast[spellId] = false; state.spellPresets.lastAppliedPresetId = null } else if (canReserveFocus(state, cost)) { state.activities.autoCast[spellId] = true; state.spellPresets.lastAppliedPresetId = null; pushNotification(state, `${SPELLS[spellId].name} Auto-Cast enabled`, 'success') } else pushNotification(state, `Cannot enable Auto-Cast · Requires ${cost} Focus · Free Focus: ${selectFreeFocus(state)}`, 'warning'); return state }); const after = Boolean(get().activities.autoCast[spellId]); if (after !== before) emitActionFeel(after ? 'autocast-on' : 'autocast-off', `[data-spell-id="${spellId}"], .spell-combat-tile`, 'var(--ui-secondary)'); else emitActionFeel('error', `[data-spell-id="${spellId}"], .spell-combat-tile`, 'var(--ui-warning)', 0.75); return after !== before },

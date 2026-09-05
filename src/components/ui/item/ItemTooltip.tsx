@@ -10,8 +10,8 @@ import { formatFlowEta, formatItemFlowRate, type ItemFlow } from '../../../game/
 
 export interface ItemTooltipRecipeContext {
   status: string
-  baseDurationMs: number
-  manaCost: number
+  baseDurationMs?: number
+  manaCost?: number
   outputQuantity: number
   ingredients: Array<{ itemId: ItemId; quantity: number }>
   unlockReason?: string
@@ -46,7 +46,7 @@ export function ItemTooltipContent({ itemId, owned, protectedItem = false, equip
     {item.researchSchool && <div className="tooltip-section"><small>RESEARCH</small>{(Object.keys(SCHOOLS) as Array<keyof typeof SCHOOLS>).map((schoolId) => <TooltipRow key={schoolId} label={SCHOOLS[schoolId].name} value={`${getResearchXp(itemId, schoolId)} XP`} />)}</div>}
     {item.stats && Object.keys(item.stats).length > 0 && <div className="tooltip-section"><small>STATS</small>{flattenItemStats(item.stats).filter(([, value]) => value !== 0).map(([key, value]) => <TooltipRow key={key} label={friendlyStatLabel(key)} value={formatStat(key, value)} />)}</div>}
     {item.kind === 'equipment' && <EquipmentCombatDetails item={item} />}
-    {recipeContext && <div className="tooltip-section"><small>RECIPE</small><TooltipRow label="Status" value={recipeContext.status} /><TooltipRow label="Base time" value={formatDuration(recipeContext.baseDurationMs)} /><TooltipRow label="Mana" value={recipeContext.manaCost.toLocaleString()} /><TooltipRow label="Output" value={`×${recipeContext.outputQuantity}`} /><p>{recipeContext.ingredients.length ? recipeContext.ingredients.map((ingredient) => `${ITEMS[ingredient.itemId].name} ×${ingredient.quantity}`).join(' · ') : 'Mana only'}</p>{recipeContext.unlockReason && <p>{recipeContext.unlockReason}</p>}</div>}
+    {recipeContext && <div className="tooltip-section"><small>RECIPE</small><TooltipRow label="Status" value={recipeContext.status} />{recipeContext.baseDurationMs !== undefined && <TooltipRow label="Base time" value={formatDuration(recipeContext.baseDurationMs)} />}{recipeContext.manaCost !== undefined && <TooltipRow label="Mana" value={recipeContext.manaCost.toLocaleString()} />}<TooltipRow label="Output" value={`×${recipeContext.outputQuantity}`} /><p>{recipeContext.ingredients.length ? recipeContext.ingredients.map((ingredient) => `${ITEMS[ingredient.itemId].name} ×${ingredient.quantity}`).join(' · ') : 'Mana only'}</p>{recipeContext.unlockReason && <p>{recipeContext.unlockReason}</p>}</div>}
     {extraContent}
     {flow && <div className="tooltip-section"><small>CURRENT FLOW</small>{flow.production.map((source) => <TooltipRow key={`production-${source.label}`} label={source.label} value={formatItemFlowRate(source.ratePerHour)} />)}{flow.consumption.map((source) => <TooltipRow key={`consumption-${source.label}`} label={source.label} value={formatItemFlowRate(-source.ratePerHour)} />)}<TooltipRow label="Net" value={formatItemFlowRate(flow.netPerHour)} />{flow.depletionEtaMs !== null && <TooltipRow label="Depletes in" value={formatFlowEta(flow.depletionEtaMs) ?? '-'} />}</div>}
     <div className="tooltip-section"><small>SOURCE</small><p>{getItemSourceLabel(itemId)}</p></div>

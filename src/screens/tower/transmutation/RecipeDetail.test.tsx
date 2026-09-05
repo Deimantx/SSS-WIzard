@@ -47,14 +47,6 @@ describe('RecipeDetail Used In summary', () => {
     expect(screen.getByText('Assign an Arcane Echo to begin production.')).toBeTruthy()
   })
 
-  it('shows only the unlock explanation for locked recipes', () => {
-    render(<RecipeDetail recipe={RECIPES['ember-staff']} />)
-
-    expect(screen.getByText('LOCKED')).toBeTruthy()
-    expect(document.querySelector('.transmutation-lock-reason .status')).toBeNull()
-    expect(screen.queryByText('CURRENT PRODUCTION')).toBeNull()
-    expect(screen.queryByText('PAUSED')).toBeNull()
-  })
 
   it('omits the empty material section while keeping the Mana requirement', () => {
     render(<RecipeDetail recipe={RECIPES['fire-fragment']} />)
@@ -63,16 +55,6 @@ describe('RecipeDetail Used In summary', () => {
     expect(document.querySelector('.transmutation-mana-requirement')).toBeTruthy()
   })
 
-  it('hides the dedicated Mana requirement for zero-Mana equipment recipes', () => {
-    const state = createInitialState()
-    state.progress.firstBossKill = true
-    useGameStore.getState().hydrateState(state)
-    render(<RecipeDetail recipe={RECIPES['ember-staff']} />)
-
-    expect(screen.getByText('MATERIAL REQUIREMENTS')).toBeTruthy()
-    expect(document.querySelector('.transmutation-mana-requirement')).toBeNull()
-    expect(screen.getByText('MANA')).toBeTruthy()
-  })
 
   it('shows derived material capacity and missing ingredients only for material recipes', () => {
     const state = createInitialState()
@@ -90,20 +72,6 @@ describe('RecipeDetail Used In summary', () => {
     expect(screen.getByText(/Fire Fragment/)).toBeTruthy()
 
     view.unmount()
-    const equipmentState = createInitialState()
-    equipmentState.progress.firstBossKill = true
-    useGameStore.getState().hydrateState(equipmentState)
-    render(<RecipeDetail recipe={RECIPES['ember-staff']} />)
-    expect(screen.queryByText('PRODUCTION CAPACITY')).toBeNull()
   })
 
-  it('shows a fixed Used In row without a View action when there are no uses', () => {
-    const state = createInitialState()
-    state.progress.firstBossKill = true
-    useGameStore.getState().hydrateState(state)
-    render(<RecipeDetail recipe={RECIPES['ember-staff']} />)
-
-    expect(screen.getByText(/USED IN.*NONE/)).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'VIEW' })).toBeNull()
-  })
 })

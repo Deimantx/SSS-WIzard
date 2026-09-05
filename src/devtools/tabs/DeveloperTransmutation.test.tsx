@@ -11,7 +11,8 @@ describe('Developer Transmutation controls', () => {
 
   it('reveals locked recipes for inspection without changing unlock progress', () => {
     render(<DeveloperTransmutation />)
-    expect(screen.getByText('Ember Staff')).toBeTruthy()
+    expect(screen.queryByText('Ember Staff')).toBeNull()
+    expect(screen.getByText('Prismatic Fragment')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'SHOW LOCKED RECIPES' }))
     expect(useGameStore.getState().debug.showLockedTransmutationRecipes).toBe(true)
     expect(useGameStore.getState().progress.lifetimeKillsByMonster['grove-sentinel']).toBeUndefined()

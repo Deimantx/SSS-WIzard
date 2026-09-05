@@ -21,6 +21,8 @@ export const getActiveDebugOverrides = (debug: DebugOverrides): ActiveDebugOverr
   if (debug.combatPaused) add('combat-paused', 'COMBAT PAUSED', 'combat', 'danger')
   if (debug.combatTimeScale !== 1) add('combat-speed', `COMBAT ×${debug.combatTimeScale}`, 'combat')
   if (debug.bonusManaRegenFlat || debug.bonusMaxManaFlat || debug.bonusMaxFocusFlat || debug.allowManaOverCap || debug.allowFocusOverCap || debug.ignoreEchoLimit || debug.transmutationEchoCapacityOverride !== null) add('resource-overrides', 'RESOURCE OVERRIDES', 'resource')
+  if (debug.showLockedTransmutationRecipes) add('show-locked-transmutation', 'Show Locked Transmutation Recipes', 'system')
+  if (debug.showLockedArtificingRecipes) add('show-locked-artificing', 'Show Locked Artificing Recipes', 'system')
   return active
 }
 

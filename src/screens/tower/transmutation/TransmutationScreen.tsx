@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { TRANSMUTATION_RECIPES as RECIPES, TRANSMUTATION_RECIPE_ORDER as RECIPE_ORDER } from '../../../game/content/recipes/recipes'
 import { ITEMS } from '../../../game/content/items/items'
 import { isRecipeUnlocked } from '../../../game/systems/transmutation/transmutationSelectors'
-import type { RecipeId } from '../../../game/types'
+import type { TransmutationRecipeId } from '../../../game/types'
 import { useGameStore } from '../../../store/gameStore'
 import { setUiPreferences, useUiPreferences } from '../../../ui/preferences/uiPreferencesStore'
 import { EditableGrid, type EditableGridPanel } from '../../../ui/layout-editor/EditableGrid'
@@ -19,14 +19,14 @@ export function TransmutationScreen() {
   const state = useGameStore()
   const persistedRecipeId = preferences.screenState.transmutation.selectedRecipeId
   const persistedExists = Object.prototype.hasOwnProperty.call(RECIPES, persistedRecipeId)
-  const persistedVisible = persistedExists && (state.debug.showLockedTransmutationRecipes || isRecipeUnlocked(state, RECIPES[persistedRecipeId as RecipeId]))
-  const selectedRecipeId: RecipeId = persistedVisible ? persistedRecipeId as RecipeId : RECIPE_ORDER.find((recipeId) => isRecipeUnlocked(state, RECIPES[recipeId])) ?? RECIPE_ORDER[0]
+  const persistedVisible = persistedExists && (state.debug.showLockedTransmutationRecipes || isRecipeUnlocked(state, RECIPES[persistedRecipeId as TransmutationRecipeId]))
+  const selectedRecipeId: TransmutationRecipeId = persistedVisible ? persistedRecipeId as TransmutationRecipeId : RECIPE_ORDER.find((recipeId) => isRecipeUnlocked(state, RECIPES[recipeId])) ?? RECIPE_ORDER[0]
 
   useEffect(() => {
     if (selectedRecipeId !== persistedRecipeId) setUiPreferences({ screenState: { transmutation: { selectedRecipeId } } })
   }, [persistedRecipeId, selectedRecipeId])
 
-  const setSelectedRecipeId = (recipeId: RecipeId) => { clearAttention(getActiveProfileId(), 'recipe', recipeId); setUiPreferences({ screenState: { transmutation: { selectedRecipeId: recipeId } } }) }
+  const setSelectedRecipeId = (recipeId: TransmutationRecipeId) => { clearAttention(getActiveProfileId(), 'recipe', recipeId); setUiPreferences({ screenState: { transmutation: { selectedRecipeId: recipeId } } }) }
   const recipe = RECIPES[selectedRecipeId]
   const panels: EditableGridPanel[] = [
     { id: 'transmutation-recipes', content: <RecipeLibrary selectedRecipeId={selectedRecipeId} onSelect={setSelectedRecipeId} /> },

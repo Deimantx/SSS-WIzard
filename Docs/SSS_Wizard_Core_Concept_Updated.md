@@ -70,7 +70,7 @@ Svarbu:
 | Pagrindinis energijos resursas | Mana |
 | Paralelinių veiklų limitas | Focus |
 | Paralelinių veiklų vykdytojai | Arcane Echoes |
-| Pagrindinis crafting | Transmutation |
+| Materialų gamyba / Equipment crafting | Transmutation / Artificing |
 | Magic School XP | Research / Arcane Crucible sunaikinant daiktus |
 | Pagrindinis power gate | Main Boss keliami Magic School level cap |
 | Antra progreso ašis | Guild Requests / Guild Rank |
@@ -378,8 +378,7 @@ Transmutation apima:
 ```text
 Mana → matter
 materials → processed materials
-Mana + materials → advanced items
-materials + materials → equipment / catalysts / special items
+Mana + materials → processed materials
 ```
 
 Todėl ateities dokumentuose nereikia kurti atskiros `Condensation` profesijos ar screen.
@@ -808,28 +807,9 @@ Svarbu:
 
 ## [PATVIRTINTA / IMPLEMENTUOTA]
 
-Transmutation yra **vienintelė pagrindinė crafting sistema**.
+Transmutation yra nuolatinė elementinių fragmentų ir materialų gamyba: Fire, Water, Earth, Air ir Prismatic Fragment. Jai naudojami Mana, Arcane Echoes ir funded progress; ji veikia Offline Bank metu.
 
-Ji gali konvertuoti:
-
-```text
-Mana → material
-material → material
-materials → processed material
-materials + Mana → item
-materials → equipment
-```
-
-Ateityje tuo pačiu modeliu gali veikti:
-
-- ores → bars;
-- fragments → crystals;
-- crystals → orbs;
-- boss materials → equipment;
-- catalysts;
-- potions;
-- runes;
-- special progression items.
+Equipment gamyba priklauso **Artificing / Arcane Forge**: vienas paspaudimas iškart sukuria vieną daiktą ir sunaudoja vieną recipe kainą. Nėra Mana kainos, Echo, timer, queue, repeat ar offline gamybos. Visos 27 Equipment recipes turi autoriaus nurodytą dungeon šaltinį ir išsaugo esamus unlock reikalavimus. Equipment ekranas lieka loadout valdymui.
 
 ---
 
@@ -871,7 +851,7 @@ Tai leidžia pasirinkti tarp:
 
 ## [PATVIRTINTA / IMPLEMENTUOTA]
 
-Output **negali atsirasti iškart pradėjus recipe**.
+Transmutation output **negali atsirasti iškart pradėjus recipe**. Ši funded-progress taisyklė netaikoma momentiniam Artificing.
 
 Recipe turi realiai užbaigti savo funded progress.
 
@@ -1331,9 +1311,9 @@ Ne kiekvienas equipment item turi būti vien didesnis generic DPS.
 
 - Enemies and bosses drop crafting materials only.
 - Finished Equipment never drops directly from combat.
-- All finished Equipment is created through Transmutation.
-- Boss-signature Equipment uses boss/signature materials in its Transmutation recipe.
-- Rare chase rewards may use rare material drops or high material requirements, but final Equipment still comes from Transmutation.
+- All finished Equipment is created through Artificing.
+- Boss-signature Equipment uses boss/signature materials in its Artificing recipe.
+- Rare chase rewards may use rare material drops or high material requirements, but final Equipment still comes from Artificing.
 
 ---
 
@@ -2665,7 +2645,7 @@ Naujame pokalbyje šių klausimų nereikia iš naujo atidarinėti be aiškios pr
 ### Transmutation
 
 - Condensation atskiro screen nėra;
-- Transmutation yra main crafting;
+- Transmutation gamina materialus; Artificing gamina Equipment;
 - iki 5 Echo;
 - daugiau Echo = greitesnis recipe processing;
 - Echo galima skirstyti per kelis recipes.
@@ -2756,7 +2736,7 @@ Svarbiausia:
 
 # 59. Dabartinis Core Loop vienu sakiniu
 
-> **SSS Wizard** yra mage-only incremental RPG apie vieną magą, kuris per Channeling kuria Mana infrastruktūrą, per Transmutation paverčia Maną ir lootą materialais bei equipmentu, per Research sunaikina pasirinktus materialus dėl Fire, Water, Earth arba Air XP, o ribotą Focus paskirsto Arcane Echoes ir auto-cast automatizacijai. Combat vyksta semi-automatic dungeon ciklais: monsteriai turi authored traits, special attacks ir kartojamas sekas, o normal kills didina `Threat Cleared` iki Dungeon Boss. Main Boss progresija kelia Magic School level cap, Guild suteikia antrą permanent progression ašį, Collection archyvuoja items, Bestiary archyvuoja creatures, o offline laikas kaupiamas pasirinktinai naudojamame Offline Bank. Viso progreso prestige reset nėra.
+> **SSS Wizard** yra mage-only incremental RPG apie vieną magą, kuris per Channeling kuria Mana infrastruktūrą, per Transmutation paverčia Maną ir lootą materialais, per Artificing rankiniu būdu gamina Equipment, per Research sunaikina pasirinktus materialus dėl Fire, Water, Earth arba Air XP, o ribotą Focus paskirsto Arcane Echoes ir auto-cast automatizacijai. Combat vyksta semi-automatic dungeon ciklais: monsteriai turi authored traits, special attacks ir kartojamas sekas, o normal kills didina `Threat Cleared` iki Dungeon Boss. Main Boss progresija kelia Magic School level cap, Guild suteikia antrą permanent progression ašį, Collection archyvuoja items, Bestiary archyvuoja creatures, o offline laikas kaupiamas pasirinktinai naudojamame Offline Bank. Viso progreso prestige reset nėra.
 
 ---
 
@@ -2785,7 +2765,7 @@ Prieš projektuojant naują sistemą:
 - [x] Arcane Echoes atlieka paralelinį darbą.
 - [x] Channeling daugiausia valdo Mana infrastruktūrą.
 - [x] Condensation nebėra atskira sistema.
-- [x] Transmutation yra main crafting.
+- [x] Transmutation gamina materialus; Artificing gamina Equipment.
 - [x] Research sunaikina items dėl pasirinktos Magic School XP.
 - [x] Research turi 4 prepared slots ir 5 Echo pool.
 - [x] Transmutation turi 5 Echo pool.

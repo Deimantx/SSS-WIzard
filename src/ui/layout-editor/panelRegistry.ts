@@ -3,8 +3,9 @@ import type { PanelDefinition } from './layoutEditorTypes'
 import { DEFAULT_LAYOUTS } from './defaultLayouts'
 
 const labels: Record<string, string> = {
+  'artificing-catalog': 'Equipment Catalog', 'artificing-detail': 'Arcane Forge', 'artificing-inspection': 'Equipment Inspection',
   'home-objective': 'Main objective', 'home-school-mastery': 'Magic School Mastery', 'home-checklist': 'Chapter checklist', 'home-wizard': 'The wizard', 'home-arcane-work': 'Current Arcane Work',
-  'channeling-mana-core': 'Mana Core', 'channeling-echoes': 'Arcane Echoes', 'channeling-pillars': 'Pillars of Mana', 'focus-summary': 'Focus overview', 'focus-reservations': 'Active Focus usage', 'focus-improvement': 'Focus improvement', 'research-school-mastery': 'Magic School Mastery', 'research-library': 'Researchable items', 'research-inspector': 'Item inspection', 'research-prepared': 'Prepared Research', 'transmutation-recipes': 'Recipe library', 'transmutation-focus': 'Focus assignment', 'transmutation-detail': 'Recipe detail', 'transmutation-output-preview': 'Output inspection',
+  'channeling-mana-core': 'Mana Core', 'channeling-echoes': 'Arcane Echoes', 'channeling-pillars': 'Pillars of Mana', 'focus-summary': 'Focus overview', 'focus-reservations': 'Active Focus usage', 'focus-improvement': 'Focus improvement', 'research-school-mastery': 'Magic School Mastery', 'research-library': 'Researchable items', 'research-inspector': 'Item inspection', 'research-prepared': 'Prepared Research', 'transmutation-recipes': 'Recipe library', 'transmutation-focus': 'Focus assignment', 'transmutation-detail': 'Recipe detail',
   'schools-browser': 'Spell browser', 'schools-inspector': 'Spell inspector', 'schools-presets': 'Spell presets',
   'combat-stage': 'Combat Stage', 'combat-spell-deck': 'Spell Deck', 'combat-analytics': 'Combat Analytics',
   'inventory-catalog': 'Item Vault', 'inventory-detail': 'Item Details', 'inventory-actions': 'Item Actions', 'equipment-loadout': 'Equipment loadout', 'equipment-stats': 'Equipment stats', 'equipment-owned': 'Armory', 'equipment-inspector': 'Gear inspector',
@@ -17,7 +18,9 @@ const panelOverrides: Record<string, PanelOverrides> = {
   'transmutation-recipes': { minW: 5, minH: 10, heightMode: 'bounded-scroll' },
   'transmutation-focus': { minW: 5, minH: 8, heightMode: 'bounded-scroll' },
   'transmutation-detail': { minW: 4, minH: 7 },
-  'transmutation-output-preview': { minW: 4, minH: 9 },
+  'artificing-catalog': { minW: 4, minH: 16, heightMode: 'bounded-scroll' },
+  'artificing-detail': { minW: 4, minH: 8, heightMode: 'content' },
+  'artificing-inspection': { minW: 4, minH: 9, heightMode: 'content' },
   'combat-stage': { minW: 6, minH: 13, heightMode: 'bounded-scroll' },
   'combat-spell-deck': { minW: 6, minH: 5, heightMode: 'bounded-scroll' },
   'combat-analytics': { minW: 8, minH: 8, heightMode: 'bounded-scroll' },

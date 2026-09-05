@@ -1,3 +1,5 @@
+import { isTransmutationRecipeId } from '../../../game/content/recipes/recipes'
+import { setUiPreferences } from '../../../ui/preferences/uiPreferencesStore'
 import { LockKeyhole } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { Card, Status } from '../../../components/ui'
@@ -6,11 +8,11 @@ import { ITEMS, getItemSourceLabel } from '../../../game/content/items/items'
 import type { RecipeDefinition } from '../../../game/content/recipes/recipes'
 import { getVisibleItemUsesForTransmutation } from '../../../game/presentation/transmutation/transmutationUsedInReadModel'
 import { getRecipeConsumableRequirements, getRecipeCurrentEffectiveDuration, getRecipeCurrentOutputPerHour, getRecipeCurrentSpeedMultiplier, getRecipeManaDemandPerSecond, getRecipeMaterialCapacity, getRecipeStatus, getRecipeUnlockReason, getTransmutationFocusReserved, getTransmutationJob, type RecipeConsumableRequirement, type RecipeMaterialCapacity, type TransmutationStatus } from '../../../game/systems/transmutation/transmutationSelectors'
-import type { RecipeId } from '../../../game/types'
+import type { TransmutationRecipeId } from '../../../game/types'
 import { formatNumber, formatSignedRate, formatTime } from '../../../game/utils'
 import { useGameStore } from '../../../store/gameStore'
 
-export function RecipeDetail({ recipe, onSelectRecipe }: { recipe: RecipeDefinition; onSelectRecipe?: (recipeId: RecipeId) => void }) {
+export function RecipeDetail({ recipe, onSelectRecipe }: { recipe: RecipeDefinition; onSelectRecipe?: (recipeId: TransmutationRecipeId) => void }) {
   const state = useGameStore()
   const [usesDialogOpen, setUsesDialogOpen] = useState(false)
   const job = getTransmutationJob(state, recipe.id)
@@ -43,7 +45,7 @@ export function RecipeDetail({ recipe, onSelectRecipe }: { recipe: RecipeDefinit
 
       <UsedInSummary uses={uses} onOpen={() => setUsesDialogOpen(true)} />
     </div>
-    <ItemUsesDialog itemId={recipe.output.itemId} uses={uses} open={usesDialogOpen} onClose={() => setUsesDialogOpen(false)} onSelectRecipe={onSelectRecipe} />
+    <ItemUsesDialog itemId={recipe.output.itemId} uses={uses} open={usesDialogOpen} onClose={() => setUsesDialogOpen(false)} onSelectRecipe={(id) => { if (isTransmutationRecipeId(id)) onSelectRecipe?.(id); else { setUiPreferences({ screenState: { artificing: { selectedRecipeId: id } } }); state.setScreen('tower-artificing') } }} />
   </Card>
 }
 

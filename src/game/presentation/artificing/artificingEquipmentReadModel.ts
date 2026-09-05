@@ -1,21 +1,21 @@
 import { ITEMS } from '../../content/items/items'
 import { getEquipmentPreview, type EquipmentPreview } from '../equipment/equipmentReadModel'
 import type { EquipmentItemSlot, EquipmentPosition, GameState, ItemId } from '../../types'
-import type { RecipeDefinition } from '../../content/recipes/recipes'
+import type { ArtificingRecipeDefinition } from '../../content/recipes/artificingRecipes'
 
-export interface TransmutationEquipmentInspection {
+export interface ArtificingEquipmentInspection {
   slot: EquipmentItemSlot
   hands: 1 | 2 | null
   presentation: 'shield' | 'focus' | null
 }
 
-export interface TransmutationOutputInspection {
+export interface ArtificingOutputInspection {
   itemId: ItemId
   owned: number
-  equipment: TransmutationEquipmentInspection | null
+  equipment: ArtificingEquipmentInspection | null
 }
 
-export function getTransmutationOutputInspection(state: Pick<GameState, 'inventory' | 'equipment' | 'player' | 'progress' | 'activities'>, recipe: RecipeDefinition): TransmutationOutputInspection {
+export function getArtificingOutputInspection(state: Pick<GameState, 'inventory' | 'equipment' | 'player' | 'progress' | 'activities'>, recipe: ArtificingRecipeDefinition): ArtificingOutputInspection {
   const item = ITEMS[recipe.output.itemId]
   return {
     itemId: recipe.output.itemId,
@@ -24,7 +24,7 @@ export function getTransmutationOutputInspection(state: Pick<GameState, 'invento
   }
 }
 
-export function getTransmutationEquipmentPreview(state: Pick<GameState, 'inventory' | 'equipment' | 'player' | 'progress' | 'activities'>, itemId: ItemId, targetPosition?: EquipmentPosition): EquipmentPreview {
+export function getArtificingEquipmentPreview(state: Pick<GameState, 'inventory' | 'equipment' | 'player' | 'progress' | 'activities'>, itemId: ItemId, targetPosition?: EquipmentPosition): EquipmentPreview {
   const inventory = { ...state.inventory, [itemId]: Math.max(1, Math.floor(state.inventory[itemId] ?? 0)) }
   return getEquipmentPreview({ ...state, inventory }, itemId, targetPosition)
 }

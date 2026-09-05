@@ -1,11 +1,11 @@
-import type { ItemId, RecipeCategory, SchoolId, TransmutationCategoryFilter, TransmutationEquipmentSlotFilter, TransmutationOffhandFilter, TransmutationTierFilter, TransmutationWeaponHandsFilter } from '../../game/types'
+import type { ItemId, RecipeCategory, SchoolId, TransmutationCategoryFilter, TransmutationTierFilter } from '../../game/types'
 import type { CombatDetailsMode } from '../../game/presentation/combat/combatDetailsPresentation'
 import type { DungeonStatisticsMode } from '../../game/telemetry/dungeon/dungeonStatisticsTypes'
 
 export type UiTheme = 'default' | 'dark' | 'light' | 'custom'
 export type TextSize = 'default' | 'large' | 'extra-large'
 export type NavigationGroupId = 'combat' | 'hero' | 'tower' | 'world' | 'system'
-export type { TransmutationCategoryFilter, TransmutationEquipmentSlotFilter, TransmutationOffhandFilter, TransmutationTierFilter, TransmutationWeaponHandsFilter } from '../../game/types'
+export type { TransmutationCategoryFilter, TransmutationTierFilter } from '../../game/types'
 
 export interface CustomThemeColors {
   background: string
@@ -24,19 +24,15 @@ export interface InventoryScreenPreferences {
 }
 
 export interface TransmutationScreenPreferences {
-  selectedRecipeId: string
+  selectedRecipeId: import('../../game/types').TransmutationRecipeId
   categoryFilter: TransmutationCategoryFilter
-  equipmentSlotFilter: TransmutationEquipmentSlotFilter
-  weaponHandsFilter: TransmutationWeaponHandsFilter
-  offhandPresentationFilter: TransmutationOffhandFilter
   tierFilter: TransmutationTierFilter
   craftableOnly: boolean
   activeOnly: boolean
-  unownedOnly: boolean
   collapsedCategories: Record<RecipeCategory, boolean>
 }
 export interface ArtificingScreenPreferences {
-  selectedRecipeId: string | null
+  selectedRecipeId: import('../../game/types').ArtificingRecipeId | null
   slotFilter: 'all' | import('../../game/types').EquipmentItemSlot
   weaponHandsFilter: 'all' | 1 | 2
   offhandPresentationFilter: 'all' | 'shield' | 'focus'
@@ -62,7 +58,7 @@ export interface CombatScreenPreferences {
 export interface ScreenPreferences {
   inventory: InventoryScreenPreferences
   transmutation: TransmutationScreenPreferences
-  artificing?: ArtificingScreenPreferences
+  artificing: ArtificingScreenPreferences
   research: ResearchScreenPreferences
   combat: CombatScreenPreferences
 }

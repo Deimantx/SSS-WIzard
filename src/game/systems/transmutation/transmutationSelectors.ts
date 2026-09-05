@@ -6,17 +6,13 @@ import { BALANCE } from '../../core/balance/balance'
 import { selectFreeFocus } from '../../engine'
 import { manaRegenPerSecond } from '../../engine/channelingEngine'
 import { continuousManaPerSecond, estimateContinuousFundingRatio, CONTINUOUS_MANA_EPSILON, getContinuousManaDemandPerSecond } from '../simulation/continuousManaScheduler'
-import type { EquipmentItemSlot, GameState, ItemId, RecipeCategory, RecipeId, TransmutationCategoryFilter, TransmutationEquipmentSlotFilter, TransmutationJobState, TransmutationOffhandFilter, TransmutationTierFilter, TransmutationWeaponHandsFilter } from '../../types'
+import type { EquipmentItemSlot, GameState, ItemId, RecipeCategory, TransmutationRecipeId, TransmutationCategoryFilter, TransmutationJobState, TransmutationTierFilter } from '../../types'
 
 export interface TransmutationRecipeFilters {
   categoryFilter: TransmutationCategoryFilter
-  equipmentSlotFilter: TransmutationEquipmentSlotFilter
-  weaponHandsFilter: TransmutationWeaponHandsFilter
-  offhandPresentationFilter: TransmutationOffhandFilter
   tierFilter: TransmutationTierFilter
   craftableOnly: boolean
   activeOnly: boolean
-  unownedOnly: boolean
 }
 
 export interface TransmutationRecipeFilterCounts {
@@ -24,13 +20,9 @@ export interface TransmutationRecipeFilterCounts {
   unlocked: number
   hiddenLocked: number
   categories: Record<'all' | RecipeCategory, number>
-  equipmentSlots: Record<'all' | 'weapon' | 'offhand' | 'armor' | 'helmet' | 'cape' | 'amulet' | 'ring', number>
-  weaponHands: Record<'all' | 1 | 2, number>
-  offhand: Record<'all' | 'shield' | 'focus', number>
   tierCounts: { elemental: Record<number, number>; material: Record<number, number> }
   craftable: number
   active: number
-  unowned: number
 }
 
 export type TransmutationStatus = 'paused' | 'active' | 'mana-limited' | 'waiting-mana' | 'waiting-materials' | 'locked'
@@ -51,7 +43,7 @@ export interface RecipeMaterialCapacity {
 }
 
 export const isRecipeUnlocked = isAuthoredRecipeUnlocked
-export const getTransmutationJob = (state: Pick<GameState, 'activities'>, recipeId: RecipeId): TransmutationJobState | undefined => state.activities.transmutation.jobs[recipeId]
+export const getTransmutationJob = (state: Pick<GameState, 'activities'>, recipeId: TransmutationRecipeId): TransmutationJobState | undefined => state.activities.transmutation.jobs[recipeId]
 export const getTransmutationEchoesAssigned = (state: Pick<GameState, 'activities'>) => RECIPE_ORDER.reduce((total, recipeId) => total + Math.max(0, Math.floor(state.activities.transmutation.jobs[recipeId]?.echoesAssigned ?? 0)), 0)
 export const getTransmutationEchoCapacity = (state: Pick<GameState, 'activities'> & Partial<Pick<GameState, 'debug'>>) => state.debug?.ignoreEchoLimit ? Number.MAX_SAFE_INTEGER : Math.max(0, Math.floor(state.debug?.transmutationEchoCapacityOverride ?? BALANCE.transmutation.maxEchoes))
 export const getTransmutationFreeEchoCapacity = (state: Pick<GameState, 'activities'> & Partial<Pick<GameState, 'debug'>>) => Math.max(0, getTransmutationEchoCapacity(state) - getTransmutationEchoesAssigned(state))
@@ -111,22 +103,17 @@ export function getRecipeStatus(state: Pick<GameState, 'activities' | 'inventory
 export const getTransmutationRecipeEntries = () => RECIPE_ORDER.map((id) => RECIPES[id])
 export const getRecipeUnlockReason = getRecipeUnlockRequirement
 
-const CATEGORY_LABELS: Record<RecipeCategory, string> = { elemental: 'elemental', material: 'materials', equipment: 'equipment', special: 'special' }
-const EQUIPMENT_SLOT_LABELS: Record<Exclude<EquipmentItemSlot, 'all'>, string> = { weapon: 'weapon', offhand: 'offhand', armor: 'armor', helmet: 'helmet', cape: 'cape', amulet: 'amulet', ring: 'ring' }
+const CATEGORY_LABELS: Record<RecipeCategory, string> = { elemental: 'elemental', material: 'materials' }
 
 function recipeSearchText(recipe: RecipeDefinition) {
   const item = ITEMS[recipe.output.itemId]
-  return [recipe.name, recipe.description, item.name, item.description, item.source, item.materialSubtype, item.equipmentSlot ? EQUIPMENT_SLOT_LABELS[item.equipmentSlot] : '', item.equipmentPresentation, item.weaponHands ? `${item.weaponHands}h` : '', CATEGORY_LABELS[recipe.category]].filter(Boolean).join(' ').toLowerCase()
+  return [recipe.name, recipe.description, item.name, item.description, item.source, item.materialSubtype, CATEGORY_LABELS[recipe.category]].filter(Boolean).join(' ').toLowerCase()
 }
 
 function matchesRecipeContext(state: Pick<GameState, 'inventory' | 'equipment'>, recipe: RecipeDefinition, filters: TransmutationRecipeFilters) {
   const item = ITEMS[recipe.output.itemId]
   if (filters.categoryFilter !== 'all' && recipe.category !== filters.categoryFilter) return false
-  if (filters.equipmentSlotFilter !== 'all' && (recipe.category !== 'equipment' || item.equipmentSlot !== filters.equipmentSlotFilter)) return false
-  if (filters.weaponHandsFilter !== 'all' && (item.equipmentSlot !== 'weapon' || item.weaponHands !== filters.weaponHandsFilter)) return false
-  if (filters.offhandPresentationFilter !== 'all' && (item.equipmentSlot !== 'offhand' || item.equipmentPresentation !== filters.offhandPresentationFilter)) return false
   if (filters.tierFilter !== 'all' && (recipe.category !== 'elemental' && recipe.category !== 'material' || item.materialTier !== filters.tierFilter)) return false
-  if (filters.unownedOnly && (recipe.category !== 'equipment' || (state.inventory[recipe.output.itemId] ?? 0) > 0 || getEquippedReservedQuantity(state, recipe.output.itemId) > 0)) return false
   return true
 }
 
@@ -149,8 +136,7 @@ export function getVisibleTransmutationRecipes(state: Pick<GameState, 'activitie
 
 export function getTransmutationTierOptions() {
   const tiers = getTransmutationRecipeEntries().map((recipe) => ITEMS[recipe.output.itemId].materialTier).filter((tier): tier is number => typeof tier === 'number' && Number.isInteger(tier) && tier >= 1)
-  const maxTier = Math.max(3, ...tiers, 1)
-  return Array.from({ length: maxTier }, (_, index) => index + 1)
+  return [...new Set(tiers)].sort((a, b) => a - b)
 }
 
 export function getTransmutationRecipeFilterCounts(state: Pick<GameState, 'activities' | 'inventory' | 'protectedItems' | 'equipment' | 'player' | 'progress' | 'schools'> & Partial<Pick<GameState, 'debug'>>, filters: TransmutationRecipeFilters, query = '', showLocked = false): TransmutationRecipeFilterCounts {
@@ -160,30 +146,14 @@ export function getTransmutationRecipeFilterCounts(state: Pick<GameState, 'activ
     visible: getVisibleTransmutationRecipes(state, filters, query, showLocked).length,
     unlocked: recipes.filter((recipe) => isRecipeUnlocked(state, recipe)).length,
     hiddenLocked: recipes.filter((recipe) => !isRecipeUnlocked(state, recipe)).length,
-    categories: { all: accessible.length, elemental: 0, material: 0, equipment: 0, special: 0 },
-    equipmentSlots: { all: 0, weapon: 0, offhand: 0, armor: 0, helmet: 0, cape: 0, amulet: 0, ring: 0 },
-    weaponHands: { all: 0, 1: 0, 2: 0 },
-    offhand: { all: 0, shield: 0, focus: 0 },
-    tierCounts: { elemental: {}, material: {} },
+    categories: { all: accessible.length, elemental: 0, material: 0 },
+          tierCounts: { elemental: {}, material: {} },
     craftable: accessible.filter((recipe) => isRecipeCraftable(state, recipe)).length,
     active: accessible.filter((recipe) => Math.max(0, Math.floor(getTransmutationJob(state, recipe.id)?.echoesAssigned ?? 0)) > 0).length,
-    unowned: accessible.filter((recipe) => recipe.category === 'equipment' && (state.inventory[recipe.output.itemId] ?? 0) <= 0 && getEquippedReservedQuantity(state, recipe.output.itemId) <= 0).length,
-  }
+    }
   for (const recipe of accessible) {
     counts.categories[recipe.category] += 1
     const item = ITEMS[recipe.output.itemId]
-    if (recipe.category === 'equipment' && item.equipmentSlot) {
-      counts.equipmentSlots.all += 1
-      counts.equipmentSlots[item.equipmentSlot] += 1
-      if (item.equipmentSlot === 'weapon' && item.weaponHands) {
-        counts.weaponHands.all += 1
-        counts.weaponHands[item.weaponHands] += 1
-      }
-      if (item.equipmentSlot === 'offhand' && item.equipmentPresentation) {
-        counts.offhand.all += 1
-        counts.offhand[item.equipmentPresentation] += 1
-      }
-    }
     if ((recipe.category === 'elemental' || recipe.category === 'material') && item.materialTier) {
       counts.tierCounts[recipe.category][item.materialTier] = (counts.tierCounts[recipe.category][item.materialTier] ?? 0) + 1
     }

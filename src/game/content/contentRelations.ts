@@ -67,7 +67,7 @@ const getItemRelations = (itemId: ItemId): ContentRelation[] => {
   RECIPE_ORDER.forEach((recipeId) => {
     const recipe = RECIPES[recipeId]
     if (recipe.output.itemId === itemId) {
-      relations.push({ kind: 'recipe', id: recipeId, label: recipe.name, detail: 'Transmutation output' })
+      relations.push({ kind: 'recipe', id: recipeId, label: recipe.name, detail: 'sourceDungeonId' in recipe ? 'Artificing output' : 'Transmutation output' })
     }
   })
   return relations

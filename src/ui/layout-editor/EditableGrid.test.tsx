@@ -40,9 +40,9 @@ describe('EditableGrid runtime geometry', () => {
   })
 
   it('reflows a lower panel after natural content measurement', async () => {
-    render(<EditableGrid screen="tower-transmutation" panels={[
-      { id: 'transmutation-detail', content: <div>Detail content</div> },
-      { id: 'transmutation-output-preview', content: <div>Output content</div> },
+    render(<EditableGrid screen="tower-artificing" panels={[
+      { id: 'artificing-detail', content: <div>Detail content</div> },
+      { id: 'artificing-inspection', content: <div>Output content</div> },
     ]} />)
     const detailObserver = ResizeObserverMock.instances.find((observer) => observer.target?.className.toString().includes('height-mode-content'))
     expect(detailObserver?.target).toBeTruthy()
@@ -50,7 +50,7 @@ describe('EditableGrid runtime geometry', () => {
     act(() => detailObserver?.trigger())
     await waitFor(() => {
       const latest: Layout = gridState.layout[gridState.layout.length - 1] ?? []
-      expect(latest.find((item) => item.i === 'transmutation-output-preview')?.y).toBe(9)
+      expect(latest.find((item) => item.i === 'artificing-inspection')?.y).toBe(18)
     })
   })
 
@@ -63,6 +63,6 @@ describe('EditableGrid runtime geometry', () => {
 
     const latest: Layout = gridState.layout[gridState.layout.length - 1] ?? []
     expect(latest.some((item) => item.i === 'transmutation-output-preview')).toBe(false)
-    expect(document.querySelector('[data-panel-id="transmutation-output-preview"]')).toBeNull()
+    expect(document.querySelector('[data-panel-id="artificing-inspection"]')).toBeNull()
   })
 })

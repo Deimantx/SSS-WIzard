@@ -1,14 +1,14 @@
 import { useSyncExternalStore } from 'react'
 import { clampDeveloperToolsGeometry, getDefaultDeveloperGeometry, loadDeveloperToolsGeometry, saveDeveloperToolsGeometry, type DeveloperToolsGeometry, type DeveloperToolsMode } from './developerToolsWindowGeometry'
 
-export type DeveloperToolsTab = 'quick' | 'character' | 'progression' | 'inventory' | 'spells' | 'research' | 'channeling' | 'focus' | 'transmutation' | 'combat' | 'monsters' | 'statuses' | 'save' | 'diagnostics'
+export type DeveloperToolsTab = 'quick' | 'character' | 'progression' | 'inventory' | 'spells' | 'research' | 'channeling' | 'focus' | 'transmutation' | 'artificing' | 'combat' | 'monsters' | 'statuses' | 'save' | 'diagnostics'
 export type DeveloperCombatTab = 'live' | 'encounter' | 'boss' | 'actions' | 'status' | 'telemetry'
 export interface DeveloperToolsSessionState extends DeveloperToolsGeometry { open: boolean; activeTab: DeveloperToolsTab; combatTab: DeveloperCombatTab }
 
 export function normalizeDeveloperToolsTab(tab: string): DeveloperToolsTab {
   if (tab === 'equipment') return 'inventory'
   if (tab === 'schools') return 'spells'
-  const allowed: DeveloperToolsTab[] = ['quick', 'character', 'progression', 'inventory', 'spells', 'research', 'channeling', 'focus', 'transmutation', 'combat', 'monsters', 'statuses', 'save', 'diagnostics']
+  const allowed: DeveloperToolsTab[] = ['quick', 'character', 'progression', 'inventory', 'spells', 'research', 'channeling', 'focus', 'transmutation', 'artificing', 'combat', 'monsters', 'statuses', 'save', 'diagnostics']
   return allowed.includes(tab as DeveloperToolsTab) ? tab as DeveloperToolsTab : 'quick'
 }
 

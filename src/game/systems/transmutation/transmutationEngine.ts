@@ -1,22 +1,22 @@
 import { TRANSMUTATION_RECIPES as RECIPES, TRANSMUTATION_RECIPE_ORDER as RECIPE_ORDER } from '../../content/recipes/recipes'
 import { isRecipeUnlocked } from './transmutationSelectors'
 import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
-import type { GameState, ItemId, RecipeId } from '../../types'
+import type { GameState, ItemId, TransmutationRecipeId } from '../../types'
 import { grantItem } from '../inventory/itemAcquisition'
 import { allocateContinuousMana, CONTINUOUS_MANA_EPSILON, requestedManaForProgress, type ContinuousManaAllocation, type ContinuousManaFundingResult, type ContinuousManaWorkRequest } from '../simulation/continuousManaScheduler'
 
 export interface TransmutationAdvanceContext {
   mode: 'live' | 'banked'
-  report?: { recordTransmutation: (recipeId: RecipeId, output: ItemId, quantity: number, ingredients: { itemId: ItemId; quantity: number }[]) => void }
+  report?: { recordTransmutation: (recipeId: TransmutationRecipeId, output: ItemId, quantity: number, ingredients: { itemId: ItemId; quantity: number }[]) => void }
   onItemAcquired?: (itemId: ItemId, quantity: number) => void
 }
 
 const finiteNonNegative = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : 0
 const finiteEchoes = (value: unknown) => Math.max(0, Math.floor(finiteNonNegative(value)))
 const isUnlocked = isRecipeUnlocked
-const requestKey = (recipeId: RecipeId) => `transmutation-${recipeId}`
+const requestKey = (recipeId: TransmutationRecipeId) => `transmutation-${recipeId}`
 
-const getAvailableCrafts = (state: GameState, recipe: (typeof RECIPES)[RecipeId]) => {
+const getAvailableCrafts = (state: GameState, recipe: (typeof RECIPES)[TransmutationRecipeId]) => {
   if (recipe.ingredients.length === 0) return Number.POSITIVE_INFINITY
   return Math.min(...recipe.ingredients.map((ingredient) => Math.floor(getConsumableQuantity(state, ingredient.itemId) / Math.max(1, ingredient.quantity))))
 }
@@ -33,7 +33,7 @@ const normalizeProgress = (job: { progressMs: number }, durationMs: number) => {
   return job.progressMs
 }
 
-const hasMaterialsForCycle = (state: GameState, recipe: (typeof RECIPES)[RecipeId]) => recipe.ingredients.every((ingredient) => getConsumableQuantity(state, ingredient.itemId) >= ingredient.quantity)
+const hasMaterialsForCycle = (state: GameState, recipe: (typeof RECIPES)[TransmutationRecipeId]) => recipe.ingredients.every((ingredient) => getConsumableQuantity(state, ingredient.itemId) >= ingredient.quantity)
 
 /** Builds all eligible Transmutation demand before any continuous work mutates inventory. */
 export const buildTransmutationWorkRequests = (state: GameState, deltaMs: number): ContinuousManaWorkRequest[] => {
@@ -106,7 +106,7 @@ export function advanceTransmutation(state: GameState, deltaMs: number, context:
 }
 
 /** DEBUG ONLY: bypasses normal Mana timing to finish one cycle for test setup. */
-export const forceCompleteTransmutationCycle = (state: GameState, recipeId: RecipeId, context: TransmutationAdvanceContext) => {
+export const forceCompleteTransmutationCycle = (state: GameState, recipeId: TransmutationRecipeId, context: TransmutationAdvanceContext) => {
   const recipe = RECIPES[recipeId]
   if (!recipe) return false
   if (!isUnlocked(state, recipe)) return false
@@ -120,8 +120,8 @@ export const forceCompleteTransmutationCycle = (state: GameState, recipeId: Reci
 }
 
 /** Completion consumes discrete ingredients and creates output; Mana was paid while work progressed. */
-export const completeTransmutationCycle = (state: GameState, recipe: (typeof RECIPES)[RecipeId], context: TransmutationAdvanceContext) => {
-  if (!hasMaterialsForCycle(state, recipe)) return false
+export const completeTransmutationCycle = (state: GameState, recipe: (typeof RECIPES)[TransmutationRecipeId], context: TransmutationAdvanceContext) => {
+  if (RECIPES[recipe.id] !== recipe || !hasMaterialsForCycle(state, recipe)) return false
   recipe.ingredients.forEach((ingredient) => {
     state.inventory[ingredient.itemId] = Math.max(0, (state.inventory[ingredient.itemId] ?? 0) - ingredient.quantity)
   })

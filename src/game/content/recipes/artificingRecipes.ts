@@ -1,13 +1,45 @@
-import type { ItemId, RecipeUnlockCondition, RecipeId } from '../../types'
-import { ARTIFICING_RECIPES as authored, ARTIFICING_RECIPE_ORDER as authoredOrder } from './recipes'
-
+import type { ItemId, ArtificingRecipeId, DungeonId, RecipeUnlockCondition } from '../../types'
 export interface ArtificingRecipeDefinition {
-  id: RecipeId
-  name: string
-  output: { itemId: ItemId; quantity: 1 }
-  ingredients: { itemId: ItemId; quantity: number }[]
-  unlock: RecipeUnlockCondition
-  description?: string
+ id: ArtificingRecipeId
+ name: string
+ output: { itemId: ArtificingRecipeId; quantity: 1 }
+ ingredients: { itemId: ItemId; quantity: number }[]
+ unlock: RecipeUnlockCondition
+ sourceDungeonId: DungeonId
+ description?: string
 }
-export const ARTIFICING_RECIPE_ORDER = authoredOrder
-export const ARTIFICING_RECIPES = Object.fromEntries(Object.entries(authored).map(([id, recipe]) => [id, { id: recipe.id, name: recipe.name, output: { ...recipe.output, quantity: 1 as const }, ingredients: recipe.ingredients, unlock: recipe.unlock, description: recipe.description }])) as Record<typeof ARTIFICING_RECIPE_ORDER[number], ArtificingRecipeDefinition>
+const whisperingWoodsMonsterKill: RecipeUnlockCondition = { type: 'dungeon-monster-kills', dungeonId: 'whispering-woods', count: 1 }
+const howlingDen: RecipeUnlockCondition = { type: 'dungeon-unlocked', dungeonId: 'howling-den' }
+const abandonedCatacombs: RecipeUnlockCondition = { type: 'dungeon-unlocked', dungeonId: 'abandoned-catacombs' }
+
+const equipmentRecipe = (id: ArtificingRecipeId, name: string, ingredients: { itemId: ItemId; quantity: number }[], sourceDungeonId: DungeonId, unlock: RecipeUnlockCondition, description: string): ArtificingRecipeDefinition => ({ id, name, output: { itemId: id, quantity: 1 }, ingredients, sourceDungeonId, unlock, description })
+export const ARTIFICING_RECIPES: Record<ArtificingRecipeId, ArtificingRecipeDefinition> = {
+  'ember-staff': equipmentRecipe('ember-staff', 'Ember Staff', [{ itemId: 'fire-fragment', quantity: 48 }, { itemId: 'wisp-essence', quantity: 24 }, { itemId: 'grove-bark', quantity: 3 }], 'whispering-woods', whisperingWoodsMonsterKill, 'A staff that makes every Fire spell burn brighter.'),
+  'wispwood-wand': equipmentRecipe('wispwood-wand', 'Wispwood Wand', [{ itemId: 'fire-fragment', quantity: 24 }, { itemId: 'air-fragment', quantity: 24 }, { itemId: 'wisp-essence', quantity: 18 }, { itemId: 'grove-bark', quantity: 3 }], 'whispering-woods', whisperingWoodsMonsterKill, 'A flexible one-handed caster weapon.'),
+  'tide-focus': equipmentRecipe('tide-focus', 'Tide Focus', [{ itemId: 'water-fragment', quantity: 48 }, { itemId: 'wisp-essence', quantity: 18 }, { itemId: 'grove-bark', quantity: 3 }], 'whispering-woods', whisperingWoodsMonsterKill, 'A fluid focus that deepens Water barriers.'),
+  'stoneweave-robe': equipmentRecipe('stoneweave-robe', 'Stoneweave Robe', [{ itemId: 'earth-fragment', quantity: 48 }, { itemId: 'wisp-essence', quantity: 18 }, { itemId: 'grove-bark', quantity: 3 }], 'whispering-woods', whisperingWoodsMonsterKill, 'A heavy robe that turns barriers into shelter.'),
+  'windthread-charm': equipmentRecipe('windthread-charm', 'Windthread Charm', [{ itemId: 'air-fragment', quantity: 48 }, { itemId: 'wisp-essence', quantity: 18 }, { itemId: 'grove-bark', quantity: 3 }], 'whispering-woods', whisperingWoodsMonsterKill, 'A charm that leaves room for one more automation.'),
+  'wispveil-hood': equipmentRecipe('wispveil-hood', 'Wispveil Hood', [{ itemId: 'water-fragment', quantity: 24 }, { itemId: 'air-fragment', quantity: 24 }, { itemId: 'wisp-essence', quantity: 24 }, { itemId: 'grove-bark', quantity: 3 }], 'whispering-woods', whisperingWoodsMonsterKill, 'A steady hood for the early caster.'),
+  'grovekeeper-mantle': equipmentRecipe('grovekeeper-mantle', 'Grovekeeper Mantle', [{ itemId: 'earth-fragment', quantity: 36 }, { itemId: 'wisp-essence', quantity: 24 }, { itemId: 'grove-bark', quantity: 6 }], 'whispering-woods', whisperingWoodsMonsterKill, 'A mantle of early survivability.'),
+  'wispbound-ring': equipmentRecipe('wispbound-ring', 'Wispbound Ring', [{ itemId: 'water-fragment', quantity: 24 }, { itemId: 'air-fragment', quantity: 24 }, { itemId: 'wisp-essence', quantity: 18 }, { itemId: 'grove-bark', quantity: 3 }], 'whispering-woods', whisperingWoodsMonsterKill, 'A ring for Mana and utility.'),
+  'heartseed-necklace': equipmentRecipe('heartseed-necklace', 'Heartseed Necklace', [{ itemId: 'heartseed', quantity: 20 }], 'whispering-woods', { type: 'boss-kill', bossId: 'forest-heart' }, 'A living boss material shaped into a protective amulet.'),
+  'fangbound-dagger': equipmentRecipe('fangbound-dagger', 'Fangbound Dagger', [{ itemId: 'predator-fang', quantity: 30 }, { itemId: 'air-fragment', quantity: 2 }, { itemId: 'fire-fragment', quantity: 2 }], 'howling-den', howlingDen, 'A quick blade for Basic Attack builds.'),
+  'fangbound-buckler': equipmentRecipe('fangbound-buckler', 'Fangbound Buckler', [{ itemId: 'predator-hide', quantity: 24 }, { itemId: 'predator-fang', quantity: 10 }, { itemId: 'earth-fragment', quantity: 3 }], 'howling-den', howlingDen, 'A defensive one-handed offhand.'),
+  'corrupted-howlstaff': equipmentRecipe('corrupted-howlstaff', 'Corrupted Howlstaff', [{ itemId: 'greatbear-core', quantity: 3 }, { itemId: 'corrupted-beast-essence', quantity: 20 }, { itemId: 'air-fragment', quantity: 3 }, { itemId: 'prismatic-fragment', quantity: 2 }], 'howling-den', howlingDen, 'A fast multi-school spellcaster staff.'),
+  'razorclaw-circlet': equipmentRecipe('razorclaw-circlet', 'Razorclaw Circlet', [{ itemId: 'predator-fang', quantity: 20 }, { itemId: 'predator-hide', quantity: 8 }, { itemId: 'air-fragment', quantity: 2 }], 'howling-den', howlingDen, 'A circlet for Crit and speed.'),
+  'predator-hide-mantle': equipmentRecipe('predator-hide-mantle', 'Predator-Hide Mantle', [{ itemId: 'predator-hide', quantity: 28 }, { itemId: 'earth-fragment', quantity: 3 }], 'howling-den', howlingDen, 'Physical and status protection from the hunt.'),
+  'greatbear-vestment': equipmentRecipe('greatbear-vestment', 'Greatbear Vestment', [{ itemId: 'predator-hide', quantity: 40 }, { itemId: 'greatbear-core', quantity: 3 }, { itemId: 'earth-fragment', quantity: 4 }], 'howling-den', howlingDen, 'A tank vestment built for endurance.'),
+  'howling-signet': equipmentRecipe('howling-signet', 'Howling Signet', [{ itemId: 'corrupted-beast-essence', quantity: 12 }, { itemId: 'predator-fang', quantity: 15 }, { itemId: 'water-fragment', quantity: 2 }, { itemId: 'air-fragment', quantity: 2 }], 'howling-den', howlingDen, 'A ring that sustains long combat runs.'),
+  'greatbear-heartstone': equipmentRecipe('greatbear-heartstone', 'Greatbear Heartstone', [{ itemId: 'greatbear-core', quantity: 21 }], 'howling-den', { type: 'boss-kill', bossId: 'corrupted-greatbear' }, 'Greatbear cores fused into an unyielding heartstone.'),
+  'graveglass-wand': equipmentRecipe('graveglass-wand', 'Graveglass Wand', [{ itemId: 'graveglass-shard', quantity: 30 }, { itemId: 'soul-residue', quantity: 9 }, { itemId: 'prismatic-fragment', quantity: 2 }], 'abandoned-catacombs', abandonedCatacombs, 'A one-handed wand for efficient spellcasting.'),
+  'edrins-remnant-staff': equipmentRecipe('edrins-remnant-staff', "Edrin's Remnant Staff", [{ itemId: 'edrin-remnant', quantity: 5 }, { itemId: 'graveglass-shard', quantity: 40 }, { itemId: 'soul-residue', quantity: 18 }, { itemId: 'prismatic-fragment', quantity: 4 }], 'abandoned-catacombs', { type: 'boss-kill', bossId: 'archmage-edrin-shade' }, 'A high-end staff for status builds.'),
+  'soulward-focus': equipmentRecipe('soulward-focus', 'Soulward Focus', [{ itemId: 'soul-residue', quantity: 15 }, { itemId: 'graveglass-shard', quantity: 20 }, { itemId: 'water-fragment', quantity: 3 }, { itemId: 'prismatic-fragment', quantity: 2 }], 'abandoned-catacombs', abandonedCatacombs, 'A focus that turns broken Barriers into Mana.'),
+  'soulward-shield': equipmentRecipe('soulward-shield', 'Soulward Shield', [{ itemId: 'ossuary-remnant', quantity: 24 }, { itemId: 'graveglass-shard', quantity: 20 }, { itemId: 'earth-fragment', quantity: 4 }, { itemId: 'prismatic-fragment', quantity: 2 }], 'abandoned-catacombs', abandonedCatacombs, 'A defensive caster shield.'),
+  'acolyte-vestments': equipmentRecipe('acolyte-vestments', 'Acolyte Vestments', [{ itemId: 'soul-residue', quantity: 18 }, { itemId: 'ossuary-remnant', quantity: 16 }, { itemId: 'water-fragment', quantity: 3 }, { itemId: 'prismatic-fragment', quantity: 2 }], 'abandoned-catacombs', abandonedCatacombs, 'Elemental-resistant defensive caster wear.'),
+  'wraithveil-hood': equipmentRecipe('wraithveil-hood', 'Wraithveil Hood', [{ itemId: 'soul-residue', quantity: 15 }, { itemId: 'graveglass-shard', quantity: 20 }, { itemId: 'air-fragment', quantity: 3 }, { itemId: 'prismatic-fragment', quantity: 2 }], 'abandoned-catacombs', abandonedCatacombs, 'A hood for status casters.'),
+  'ossuary-mantle': equipmentRecipe('ossuary-mantle', 'Ossuary Mantle', [{ itemId: 'ossuary-remnant', quantity: 28 }, { itemId: 'soul-residue', quantity: 12 }, { itemId: 'earth-fragment', quantity: 3 }, { itemId: 'prismatic-fragment', quantity: 2 }], 'abandoned-catacombs', abandonedCatacombs, 'General Catacombs defense.'),
+  'soulglass-amulet': equipmentRecipe('soulglass-amulet', 'Soulglass Amulet', [{ itemId: 'graveglass-shard', quantity: 25 }, { itemId: 'soul-residue', quantity: 15 }, { itemId: 'fire-fragment', quantity: 3 }, { itemId: 'prismatic-fragment', quantity: 2 }], 'abandoned-catacombs', abandonedCatacombs, 'A Burning and future DoT build amulet.'),
+  'gravebinder-ring': equipmentRecipe('gravebinder-ring', 'Gravebinder Ring', [{ itemId: 'graveglass-shard', quantity: 20 }, { itemId: 'soul-residue', quantity: 12 }, { itemId: 'prismatic-fragment', quantity: 2 }], 'abandoned-catacombs', abandonedCatacombs, 'A universal status-build ring.'),
+  'edrins-signet': equipmentRecipe('edrins-signet', "Edrin's Signet", [{ itemId: 'edrin-remnant', quantity: 35 }], 'abandoned-catacombs', { type: 'boss-kill', bossId: 'archmage-edrin-shade' }, "Edrin remnants shaped into the Archmage's warding signet."),
+}
+export const ARTIFICING_RECIPE_ORDER: readonly ArtificingRecipeId[] = ["ember-staff","wispwood-wand","tide-focus","stoneweave-robe","windthread-charm","wispveil-hood","grovekeeper-mantle","wispbound-ring","heartseed-necklace","fangbound-dagger","fangbound-buckler","corrupted-howlstaff","razorclaw-circlet","predator-hide-mantle","greatbear-vestment","howling-signet","greatbear-heartstone","graveglass-wand","edrins-remnant-staff","soulward-focus","soulward-shield","acolyte-vestments","wraithveil-hood","ossuary-mantle","soulglass-amulet","gravebinder-ring","edrins-signet"]

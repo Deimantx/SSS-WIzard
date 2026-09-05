@@ -32,20 +32,23 @@
 .equipment-slot-lock strong { font: var(--text-micro) var(--font-mono); letter-spacing: .07em; }
 .equipment-loadout-note { margin: 12px 0 0; color: var(--ui-text-muted); font-size: var(--text-xs); line-height: 1.5; }
 .equipment-armory-count { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
-.equipment-filter-bar, .equipment-weapon-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px; }
+.equipment-search { display: block; margin-bottom: 8px; }
+.equipment-search .search-input { width: 100%; }
+.equipment-filter-bar, .equipment-weapon-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
 .equipment-filter-bar { padding-bottom: 10px; border-bottom: 1px solid var(--ui-border); }
 .equipment-filter-bar button, .equipment-weapon-badges button { padding: 7px 9px; border: 1px solid var(--ui-border); border-radius: 6px; color: var(--ui-text-muted); background: var(--ui-panel); cursor: pointer; font: var(--text-micro) var(--font-mono); letter-spacing: .06em; }
 .equipment-filter-bar button:hover, .equipment-filter-bar button.active, .equipment-weapon-badges button.active { border-color: color-mix(in srgb, var(--ui-accent) 62%, var(--ui-border)); color: var(--ui-text); background: var(--ui-accent-soft); }
 .equipment-weapon-badges { margin-top: -5px; }
 .equipment-weapon-badges button { padding: 4px 7px; color: var(--ui-accent); font-size: .58rem; }
-.equipment-armory-grid { display: grid; flex: 1 1 auto; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; min-height: 0; overflow-x: hidden; overflow-y: auto; padding-right: 3px; padding-bottom: 20px; scrollbar-color: var(--ui-scrollbar-thumb) transparent; scrollbar-width: thin; }
+.equipment-armory-grid { display: grid; flex: 1 1 auto; align-content: start; grid-auto-rows: min-content; grid-template-columns: repeat(auto-fill, minmax(155px, 175px)); justify-content: start; gap: 7px; min-height: 0; overflow-x: hidden; overflow-y: auto; padding-right: 3px; padding-bottom: 20px; scrollbar-color: var(--ui-scrollbar-thumb) transparent; scrollbar-width: thin; }
 .equipment-armory-grid::-webkit-scrollbar, .equipment-inspector-content::-webkit-scrollbar { width: 6px; }
 .equipment-armory-grid::-webkit-scrollbar-thumb, .equipment-inspector-content::-webkit-scrollbar-thumb { border-radius: 99px; background: var(--ui-scrollbar-thumb); }
-.equipment-armory-card { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; gap: 8px; min-width: 0; padding: 9px; border: 1px solid var(--ui-border); border-radius: 8px; color: var(--ui-text); background: var(--ui-panel-strong); cursor: pointer; text-align: left; }
+.equipment-armory-card { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: center; gap: 7px; min-width: 0; min-height: 58px; padding: 7px; border: 1px solid var(--ui-border); border-radius: 8px; color: var(--ui-text); background: var(--ui-panel-strong); cursor: pointer; text-align: left; }
 .equipment-armory-card:hover, .equipment-armory-card.selected { border-color: color-mix(in srgb, var(--ui-accent) 70%, var(--ui-border)); background: var(--ui-accent-soft); outline: none; }
+.equipment-armory-card.selected { box-shadow: 0 0 0 1px color-mix(in srgb, var(--ui-accent) 45%, transparent), 0 0 16px color-mix(in srgb, var(--ui-accent) 16%, transparent); }
 .equipment-armory-card.equipped { border-color: color-mix(in srgb, var(--ui-success) 35%, var(--ui-border)); }
 .equipment-armory-icon, .equipment-inspector-icon { display: grid; place-items: center; border-radius: 8px; background: color-mix(in srgb, currentColor 11%, transparent); font-size: 19px; }
-.equipment-armory-icon { width: 34px; height: 34px; }
+.equipment-armory-icon { width: 30px; height: 30px; font-size: 17px; }
 .equipment-armory-copy { display: grid; min-width: 0; gap: 3px; }
 .equipment-armory-copy strong, .equipment-armory-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .equipment-armory-copy strong { font-size: var(--text-xs); }
@@ -76,7 +79,9 @@
 .equipment-inspector-icon { width: 48px; height: 48px; font-size: 26px; }
 .equipment-inspector-hero h3 { margin: 4px 0; color: var(--ui-text); font-size: var(--text-base); }
 .equipment-inspector-hero p { margin: 0; color: var(--ui-text-muted); font-size: var(--text-xs); line-height: 1.45; }
-.equipment-copy-availability { display: flex; flex-wrap: wrap; align-items: center; gap: 7px 10px; margin-top: 12px; padding: 9px; border: 1px solid var(--ui-border); border-radius: 7px; background: color-mix(in srgb, var(--ui-panel-strong) 70%, transparent); font: var(--text-micro) var(--font-mono); }
+.equipment-inspector-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 5px 10px; margin-top: 10px; padding: 7px 9px; border: 1px solid var(--ui-border); border-radius: 7px; background: color-mix(in srgb, var(--ui-panel-strong) 70%, transparent); font: var(--text-micro) var(--font-mono); }
+.equipment-inspector-meta span { color: var(--ui-accent); letter-spacing: .08em; text-transform: uppercase; }
+.equipment-inspector-meta strong { color: var(--ui-text-soft); font-weight: 600; letter-spacing: .03em; }
 .equipment-copy-availability span { margin-right: auto; color: var(--ui-accent); letter-spacing: .1em; }
 .equipment-copy-availability strong { color: var(--ui-text-soft); font-weight: 600; letter-spacing: .04em; }
 .equipment-hands, .equipment-impact-warning, .equipment-incompatible, .equipment-current-position { display: flex; align-items: center; justify-content: space-between; gap: 9px; margin-top: 12px; padding: 9px; border: 1px solid var(--ui-border); border-radius: 7px; }
@@ -91,7 +96,19 @@
 .equipment-ring-replace strong { color: var(--ui-accent); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; }
 .equipment-ring-replace label { color: var(--ui-text-soft); font-size: var(--text-xs); }
 .equipment-ring-replace input { margin-right: 7px; accent-color: var(--ui-accent); }
-.equipment-preview-impact { display: grid; gap: 6px; margin-top: 13px; }
+.equipment-inspector-stats { display: grid; gap: 0; margin-top: 13px; }
+.equipment-inspector-stats > span { padding-bottom: 5px; color: var(--ui-accent); font: var(--text-micro) var(--font-mono); letter-spacing: .14em; }
+.equipment-inspector-stat-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 5px 0; border-bottom: 1px solid var(--ui-border); }
+.equipment-inspector-stat-row span { color: var(--ui-text-muted); font-size: var(--text-xs); }
+.equipment-inspector-stat-row strong { color: var(--ui-text); font: 650 var(--text-xs) var(--font-mono); }
+.equipment-preview-impact { display: grid; gap: 0; margin-top: 13px; }
+.equipment-preview-label { padding-bottom: 5px; }
+.equipment-comparison-visual { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; margin: 1px 0 7px; padding: 7px 9px; border: 1px solid var(--ui-border); border-radius: 7px; background: color-mix(in srgb, var(--ui-panel-strong) 58%, transparent); }
+.equipment-comparison-visual > div { display: grid; justify-items: center; gap: 4px; min-width: 0; }
+.equipment-comparison-visual small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .08em; text-align: center; }
+.equipment-comparison-visual b { color: var(--ui-accent); font-size: var(--text-sm); }
+.equipment-comparison-icon { display: grid; place-items: center; width: 32px; height: 32px; border: 1px solid color-mix(in srgb, currentColor 40%, var(--ui-border)); border-radius: 7px; color: var(--ui-text); background: color-mix(in srgb, currentColor 12%, transparent); font-size: 18px; }
+.equipment-comparison-empty { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
 .equipment-impact-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: center; gap: 7px; padding: 6px 0; border-bottom: 1px solid var(--ui-border); font-size: var(--text-micro); }
 .equipment-impact-row .equipment-stat-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .equipment-impact-row .equipment-stat-current { color: var(--ui-text-muted); }
@@ -99,6 +116,8 @@
 .equipment-impact-row .equipment-stat-delta { font: var(--text-xs) var(--font-mono); white-space: nowrap; }
 .equipment-impact-row em { font-style: normal; font-family: var(--font-mono); }
 .equipment-impact-row em.negative { color: var(--ui-danger); }
+.equipment-impact-row em.positive { color: var(--ui-success); }
+.equipment-impact-row em:not(.positive):not(.negative) { color: var(--ui-text-muted); }
 .equipment-inspector-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 15px; }
 .equipment-inspector > .inspector-transition.fill-bounded { flex: 1 1 auto; overflow: hidden; }
 .equipment-inspector-content { height: 100%; min-height: 0; overflow-x: hidden; overflow-y: auto; padding-right: 3px; padding-bottom: 20px; scrollbar-color: var(--ui-scrollbar-thumb) transparent; scrollbar-width: thin; }

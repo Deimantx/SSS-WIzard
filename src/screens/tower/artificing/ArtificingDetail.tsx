@@ -1,6 +1,5 @@
 import { Hammer, LockKeyhole } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import type React from 'react'
 import { Button, Card, Status } from '../../../components/ui'
 import { ItemIcon, ItemTooltip } from '../../../components/ui/item'
 import { ITEMS } from '../../../game/content/items/items'
@@ -11,6 +10,7 @@ import { getArtificingProfile, canCraftArtificingRecipe, getArtificingCraftCapac
 import { useGameStore } from '../../../store/gameStore'
 import { setUiPreferences, useUiPreferences } from '../../../ui/preferences/uiPreferencesStore'
 import { getItemDropSources, getItemSources } from '../../../game/content/contentRelations'
+import { ActiveArtificingCraft } from './ActiveArtificingCraft'
 import { EquipmentInspection } from './EquipmentInspection'
 
 export function ArtificingDetail({ recipe }: { recipe: ArtificingRecipeDefinition | null }) {
@@ -21,7 +21,8 @@ export function ArtificingDetail({ recipe }: { recipe: ArtificingRecipeDefinitio
   const activeId = state.activities.artificing.activeRecipeId
   const activeRecipe = activeId ? ARTIFICING_RECIPES[activeId] : null
   useEffect(() => { if (sources && recipe && !recipe.ingredients.some(i => i.itemId === sources && getConsumableQuantity(state, i.itemId) < i.quantity)) setSources(null) }, [sources, recipe, state.inventory, state.protectedItems])
-  if (!recipe) return <Card className="artificing-detail" title="ARCANE FORGE"><div className="artificing-empty"><Hammer size={28} /><strong>SELECT EQUIPMENT</strong><p>Choose a blueprint from the catalog to inspect its requirements.</p></div></Card>
+  useEffect(() => { if (recipe && state.recentAcquisitions?.[0]?.itemId === recipe.output.itemId) setCrafted(ITEMS[recipe.output.itemId].name) }, [state.recentAcquisitions?.[0]?.timestamp, recipe?.output.itemId])
+  if (!recipe) return <Card className="artificing-detail" title="ARCANE FORGE"><ActiveArtificingCraft /><div className="artificing-empty"><Hammer size={28} /><strong>SELECT EQUIPMENT</strong><p>Choose a blueprint from the catalog to inspect its requirements.</p></div></Card>
   const item = ITEMS[recipe.output.itemId]
   const unlocked = isRecipeUnlocked(state, recipe)
   const craftable = canCraftArtificingRecipe(state, recipe.id)
@@ -29,11 +30,10 @@ export function ArtificingDetail({ recipe }: { recipe: ArtificingRecipeDefinitio
   const limiting = getArtificingLimitingIngredient(state, recipe.id)
   const missing = getArtificingMissingIngredients(state, recipe.id).filter(entry => entry.missing > 0)
   const reason = activeRecipe ? `${ITEMS[activeRecipe.output.itemId].name} is currently being crafted.` : !unlocked ? getRecipeUnlockRequirement(recipe) : !craftable ? 'Not enough legal materials. Protected, equipped, and reserved copies cannot be consumed.' : undefined
-  useEffect(() => { if (state.recentAcquisitions?.[0]?.itemId === item.id) setCrafted(item.name) }, [state.recentAcquisitions?.[0]?.timestamp, item.id, item.name])
   return <Card className="artificing-detail" title="ARCANE FORGE">
     <div className="artificing-detail-content">
       <ItemTooltip itemId={item.id} owned={state.inventory[item.id] ?? 0}><div className="artificing-detail-hero" tabIndex={0}><ItemIcon itemId={item.id} size="large" /><div><span className="eyebrow">{getArtificingProfile(recipe)}</span><h2>{item.name}</h2><span className="artificing-owned">OWNED {(state.inventory[item.id] ?? 0).toLocaleString()}</span></div></div></ItemTooltip>
-      <p className="artificing-description">{item.description}</p>{activeRecipe && <div className="artificing-active-craft"><span className="eyebrow">CRAFTING · {ITEMS[activeRecipe.output.itemId].name}</span><div className="artificing-progress-track"><div className="artificing-progress-fill" style={{ width: `${Math.min(100, state.activities.artificing.progressMs / activeRecipe.baseDurationMs * 100)}%` }} /></div><small>{(state.activities.artificing.progressMs / 1000).toFixed(1)}s / {(activeRecipe.baseDurationMs / 1000).toFixed(1)}s</small></div>}<EquipmentInspection recipe={recipe} />
+      <p className="artificing-description">{item.description}</p><ActiveArtificingCraft /><EquipmentInspection recipe={recipe} />
       {!unlocked && <div className="artificing-locked-banner"><LockKeyhole size={15} /><span>{getRecipeUnlockRequirement(recipe)}</span></div>}
       <section className="artificing-section"><span className="eyebrow">REQUIRED MATERIALS</span><div className="artificing-material-list">{recipe.ingredients.map(ingredient => {
         const available = getConsumableQuantity(state, ingredient.itemId)

@@ -36,7 +36,7 @@ import { forceCompleteTransmutationCycle } from '../game/systems/transmutation/t
 import { saveGameAction } from './actions/persistenceActions'
 import { advanceGameState } from '../game/systems/simulation/advanceGameState'
 import { forceCompleteResearchCycle } from '../game/systems/research/researchEngine'
-import { craftArtificingRecipe as craftArtificing } from '../game/systems/artificing/artificingEngine'
+import { cancelArtificingCraft, craftArtificingRecipe as craftArtificing } from '../game/systems/artificing/artificingEngine'
 import { advanceWithOfflineBank as runOfflineBankAdvance, isOfflineBankSimulationActive, type OfflineBankResult, type OfflineBankSimulationObservers } from '../game/systems/offline-bank/offlineBankSimulation'
 import { addOfflineBankMs, clampOfflineBankMs } from '../game/systems/offline-bank/offlineBankDuration'
 import type { OfflineBankReport } from '../game/systems/offline-bank/offlineBankReport'
@@ -139,6 +139,7 @@ export interface GameActions {
   grantTransmutationIngredients: (recipeId: TransmutationRecipeId, cycles?: number) => void
   grantArtificingIngredients: (recipeId: import('../game/types').ArtificingRecipeId) => void
   craftArtificingRecipe: (recipeId: import('../game/types').ArtificingRecipeId) => boolean
+  cancelArtificingCraft: () => void
   setDebugTransmutationEchoCapacity: (amount: number | null) => void
   castSpell: (spellId: SpellId) => void
   toggleAutoCast: (spellId: SpellId) => void
@@ -313,6 +314,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   clearTransmutationAssignments: () => set((state) => { clearTransmutationAssignmentsAction(state); return state }),
   completeTransmutationCycle: (recipeId) => set((state) => { forceCompleteTransmutationCycle(state, recipeId, { mode: 'live' }); return state }),
   grantTransmutationIngredients: (recipeId, cycles = 1) => set((state) => { grantTransmutationMissingIngredientsAction(state, recipeId, cycles); return state }),
+  cancelArtificingCraft: () => set(state => { cancelArtificingCraft(state) }),
   grantArtificingIngredients: (recipeId) => set(state => { const recipe = ARTIFICING_RECIPES[recipeId]; if (recipe) recipe.ingredients.forEach(i => { const missing = Math.max(0, i.quantity - getConsumableQuantity(state, i.itemId)); if (missing) grantItem(state, i.itemId, missing) }); }),
   craftArtificingRecipe: (recipeId) => { let ok = false; set((state) => { const result = craftArtificing(state, recipeId); ok = result.ok; if (!result.ok) pushNotification(state, result.reason, 'warning', { key: 'artificing-craft-failed', cooldownMs: 1200 }); return state }); return ok },
   setDebugTransmutationEchoCapacity: (amount) => set((state) => { setTransmutationEchoCapacityOverrideAction(state, amount); return state }),

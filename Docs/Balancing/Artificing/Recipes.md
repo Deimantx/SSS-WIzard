@@ -1,5 +1,7 @@
 # Artificing recipes
 
+Active crafts can be cancelled from Arcane Forge. Cancellation discards progress and refunds the committed recipe ingredients exactly once; it grants no Equipment. Completed crafts cannot be cancelled.
+
 Manual Equipment crafting: one click commits one recipe cost and starts one 5-second craft. Output is granted once on completion. No Mana, Echoes, queue, repeat, or offline production. All current 27 recipes use 5,000 ms.
 
 ## Whispering Woods

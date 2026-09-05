@@ -26,6 +26,17 @@ export const startArtificingCraft = (state: GameState, recipeId: ArtificingRecip
   return { ok: true, itemId: recipe.output.itemId }
 }
 
+/** Refund the committed recipe once; cancelled work cannot complete on a later tick. */
+export const cancelArtificingCraft = (state: GameState): boolean => {
+  const activeId = state.activities.artificing.activeRecipeId
+  if (!activeId) return false
+  const recipe = getRecipe(activeId)
+  if (!recipe) return false
+  state.activities.artificing = { activeRecipeId: null, progressMs: 0 }
+  recipe.ingredients.forEach(({ itemId, quantity }) => grantItem(state, itemId, quantity))
+  return true
+}
+
 export const completeArtificingCraft = (state: GameState): ArtificingCraftResult | null => {
   const activeId = state.activities.artificing.activeRecipeId
   if (!activeId) return null

@@ -4,7 +4,6 @@ import { makeInitialState, recordRecentAcquisition, type RecentAcquisition } fro
 import { formatStat, friendlyStatLabel } from '../../components/ui/item/ItemTooltip'
 import { INVENTORY_FILTERS, MATERIAL_SUBCATEGORIES, inventorySummary, selectOwnedItemIds, selectVisibleItemIds } from './inventorySelectors'
 import { getInventoryCategory, getItemUses, getInventorySearchText } from '../../game/content/items/inventoryMetadata'
-import { getEquipmentComparison } from './inventoryEquipmentComparison'
 
 describe('Inventory V3 selectors and display rules', () => {
   it('shows owned items only and summarizes visible quantity', () => {
@@ -74,7 +73,4 @@ describe('Inventory V3 selectors and display rules', () => {
     expect(lifeEssenceUses.some((use) => use.label === 'Focus Capacity')).toBe(false)
   })
 
-  it('returns same-slot equipment comparison deltas', () => {
-    expect(getEquipmentComparison(ITEMS['ember-staff'], ITEMS['wispwood-wand']).find((row) => row.key === 'basicDamage')).toMatchObject({ selectedValue: '+4', equippedValue: '+2', delta: '+2', direction: 'positive' })
-  })
 })

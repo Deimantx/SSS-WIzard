@@ -4,7 +4,7 @@ import { recalculateDerivedStats } from './engine'
 import { selectUsedFocus } from './engine'
 import { advanceChanneling } from './engine/channelingEngine'
 import { BALANCE } from './core/balance/balance'
-import { RECIPES } from './content/recipes/recipes'
+import { isRecipeUnlocked, RECIPES } from './content/recipes/recipes'
 import { advanceGameState } from './systems/simulation/advanceGameState'
 import { getManaFlowBreakdown } from './systems/channeling/manaFlow'
 import { getActivityTelemetry } from './systems/activity/activityTelemetry'
@@ -22,7 +22,22 @@ describe('Unified Transmutation', () => {
       { itemId: 'grove-bark', quantity: 3 },
     ])
     expect(RECIPES['ember-staff'].manaCost).toBe(0)
-    expect(RECIPES['ember-staff'].unlock).toEqual({ type: 'monster-kill', monsterId: 'grove-sentinel' })
+    expect(RECIPES['ember-staff'].unlock).toEqual({ type: 'dungeon-monster-kills', dungeonId: 'whispering-woods', count: 1 })
+  })
+
+  it('unlocks Whispering Woods equipment after any one normal monster kill, but not its boss', () => {
+    const normalMonsters = ['forest-wisp', 'thornling', 'stone-root', 'grove-sentinel'] as const
+    normalMonsters.forEach((monsterId) => {
+      const state = makeInitialState()
+      state.progress.lifetimeKillsByMonster[monsterId] = 1
+      expect(isRecipeUnlocked(state, RECIPES['ember-staff'])).toBe(true)
+    })
+    const bossOnlyState = makeInitialState()
+    bossOnlyState.progress.lifetimeKillsByMonster['forest-heart'] = 1
+    expect(isRecipeUnlocked(bossOnlyState, RECIPES['ember-staff'])).toBe(false)
+    expect(isRecipeUnlocked(makeInitialState(), RECIPES['heartseed-necklace'])).toBe(false)
+    bossOnlyState.progress.bossKillsByBoss['forest-heart'] = 1
+    expect(isRecipeUnlocked(bossOnlyState, RECIPES['heartseed-necklace'])).toBe(true)
   })
 
   it('assigns Echoes across independent jobs and reserves ten Focus per Echo', () => {

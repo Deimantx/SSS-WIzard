@@ -80,6 +80,7 @@ export type RecipeUnlockCondition =
   | { type: 'always' }
   | { type: 'boss-kill'; bossId: MonsterId; count?: number }
   | { type: 'monster-kill'; monsterId: MonsterId; count?: number }
+  | { type: 'dungeon-monster-kills'; dungeonId: DungeonId; count?: number }
   | { type: 'dungeon-unlocked'; dungeonId: DungeonId }
   /** @deprecated V1-V23 compatibility for external callers and old authored data. */
   | { type: 'first-dungeon-boss-kill' }

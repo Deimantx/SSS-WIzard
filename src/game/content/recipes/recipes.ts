@@ -16,7 +16,7 @@ export interface RecipeDefinition {
 }
 
 const always: RecipeUnlockCondition = { type: 'always' }
-const groveSentinel: RecipeUnlockCondition = { type: 'monster-kill', monsterId: 'grove-sentinel' }
+const whisperingWoodsMonsterKill: RecipeUnlockCondition = { type: 'dungeon-monster-kills', dungeonId: 'whispering-woods', count: 1 }
 const howlingDen: RecipeUnlockCondition = { type: 'dungeon-unlocked', dungeonId: 'howling-den' }
 const abandonedCatacombs: RecipeUnlockCondition = { type: 'dungeon-unlocked', dungeonId: 'abandoned-catacombs' }
 const equipmentRecipe = (id: RecipeId, name: string, ingredients: { itemId: ItemId; quantity: number }[], baseDurationMs: number, unlock: RecipeUnlockCondition, description: string): RecipeDefinition => ({ id, name, output: { itemId: id, quantity: 1 }, category: 'equipment', baseDurationMs, manaCost: 0, ingredients, unlock, description })
@@ -28,14 +28,14 @@ export const RECIPES: Record<RecipeId, RecipeDefinition> = {
   'air-fragment': { id: 'air-fragment', name: 'Air Fragment', output: { itemId: 'air-fragment', quantity: 1 }, category: 'elemental', baseDurationMs: 8000, manaCost: 25, ingredients: [], unlock: always, description: 'Shape Mana into a stable Air Fragment.' },
   'prismatic-fragment': { id: 'prismatic-fragment', name: 'Prismatic Fragment', output: { itemId: 'prismatic-fragment', quantity: 1 }, category: 'material', baseDurationMs: 24000, manaCost: 50, ingredients: [{ itemId: 'fire-fragment', quantity: 2 }, { itemId: 'water-fragment', quantity: 2 }, { itemId: 'earth-fragment', quantity: 2 }, { itemId: 'air-fragment', quantity: 2 }, { itemId: 'life-essence', quantity: 10 }], unlock: always, description: 'Harmonize all four elemental forces through Life Essence.' },
 
-  'ember-staff': equipmentRecipe('ember-staff', 'Ember Staff', [{ itemId: 'fire-fragment', quantity: 48 }, { itemId: 'wisp-essence', quantity: 24 }, { itemId: 'grove-bark', quantity: 3 }], 30000, groveSentinel, 'A staff that makes every Fire spell burn brighter.'),
-  'wispwood-wand': equipmentRecipe('wispwood-wand', 'Wispwood Wand', [{ itemId: 'fire-fragment', quantity: 24 }, { itemId: 'air-fragment', quantity: 24 }, { itemId: 'wisp-essence', quantity: 18 }, { itemId: 'grove-bark', quantity: 3 }], 30000, groveSentinel, 'A flexible one-handed caster weapon.'),
-  'tide-focus': equipmentRecipe('tide-focus', 'Tide Focus', [{ itemId: 'water-fragment', quantity: 48 }, { itemId: 'wisp-essence', quantity: 18 }, { itemId: 'grove-bark', quantity: 3 }], 30000, groveSentinel, 'A fluid focus that deepens Water barriers.'),
-  'stoneweave-robe': equipmentRecipe('stoneweave-robe', 'Stoneweave Robe', [{ itemId: 'earth-fragment', quantity: 48 }, { itemId: 'wisp-essence', quantity: 18 }, { itemId: 'grove-bark', quantity: 3 }], 30000, groveSentinel, 'A heavy robe that turns barriers into shelter.'),
-  'windthread-charm': equipmentRecipe('windthread-charm', 'Windthread Charm', [{ itemId: 'air-fragment', quantity: 48 }, { itemId: 'wisp-essence', quantity: 18 }, { itemId: 'grove-bark', quantity: 3 }], 30000, groveSentinel, 'A charm that leaves room for one more automation.'),
-  'wispveil-hood': equipmentRecipe('wispveil-hood', 'Wispveil Hood', [{ itemId: 'water-fragment', quantity: 24 }, { itemId: 'air-fragment', quantity: 24 }, { itemId: 'wisp-essence', quantity: 24 }, { itemId: 'grove-bark', quantity: 3 }], 30000, groveSentinel, 'A steady hood for the early caster.'),
-  'grovekeeper-mantle': equipmentRecipe('grovekeeper-mantle', 'Grovekeeper Mantle', [{ itemId: 'earth-fragment', quantity: 36 }, { itemId: 'wisp-essence', quantity: 24 }, { itemId: 'grove-bark', quantity: 6 }], 30000, groveSentinel, 'A mantle of early survivability.'),
-  'wispbound-ring': equipmentRecipe('wispbound-ring', 'Wispbound Ring', [{ itemId: 'water-fragment', quantity: 24 }, { itemId: 'air-fragment', quantity: 24 }, { itemId: 'wisp-essence', quantity: 18 }, { itemId: 'grove-bark', quantity: 3 }], 30000, groveSentinel, 'A ring for Mana and utility.'),
+  'ember-staff': equipmentRecipe('ember-staff', 'Ember Staff', [{ itemId: 'fire-fragment', quantity: 48 }, { itemId: 'wisp-essence', quantity: 24 }, { itemId: 'grove-bark', quantity: 3 }], 30000, whisperingWoodsMonsterKill, 'A staff that makes every Fire spell burn brighter.'),
+  'wispwood-wand': equipmentRecipe('wispwood-wand', 'Wispwood Wand', [{ itemId: 'fire-fragment', quantity: 24 }, { itemId: 'air-fragment', quantity: 24 }, { itemId: 'wisp-essence', quantity: 18 }, { itemId: 'grove-bark', quantity: 3 }], 30000, whisperingWoodsMonsterKill, 'A flexible one-handed caster weapon.'),
+  'tide-focus': equipmentRecipe('tide-focus', 'Tide Focus', [{ itemId: 'water-fragment', quantity: 48 }, { itemId: 'wisp-essence', quantity: 18 }, { itemId: 'grove-bark', quantity: 3 }], 30000, whisperingWoodsMonsterKill, 'A fluid focus that deepens Water barriers.'),
+  'stoneweave-robe': equipmentRecipe('stoneweave-robe', 'Stoneweave Robe', [{ itemId: 'earth-fragment', quantity: 48 }, { itemId: 'wisp-essence', quantity: 18 }, { itemId: 'grove-bark', quantity: 3 }], 30000, whisperingWoodsMonsterKill, 'A heavy robe that turns barriers into shelter.'),
+  'windthread-charm': equipmentRecipe('windthread-charm', 'Windthread Charm', [{ itemId: 'air-fragment', quantity: 48 }, { itemId: 'wisp-essence', quantity: 18 }, { itemId: 'grove-bark', quantity: 3 }], 30000, whisperingWoodsMonsterKill, 'A charm that leaves room for one more automation.'),
+  'wispveil-hood': equipmentRecipe('wispveil-hood', 'Wispveil Hood', [{ itemId: 'water-fragment', quantity: 24 }, { itemId: 'air-fragment', quantity: 24 }, { itemId: 'wisp-essence', quantity: 24 }, { itemId: 'grove-bark', quantity: 3 }], 30000, whisperingWoodsMonsterKill, 'A steady hood for the early caster.'),
+  'grovekeeper-mantle': equipmentRecipe('grovekeeper-mantle', 'Grovekeeper Mantle', [{ itemId: 'earth-fragment', quantity: 36 }, { itemId: 'wisp-essence', quantity: 24 }, { itemId: 'grove-bark', quantity: 6 }], 30000, whisperingWoodsMonsterKill, 'A mantle of early survivability.'),
+  'wispbound-ring': equipmentRecipe('wispbound-ring', 'Wispbound Ring', [{ itemId: 'water-fragment', quantity: 24 }, { itemId: 'air-fragment', quantity: 24 }, { itemId: 'wisp-essence', quantity: 18 }, { itemId: 'grove-bark', quantity: 3 }], 30000, whisperingWoodsMonsterKill, 'A ring for Mana and utility.'),
   'heartseed-necklace': equipmentRecipe('heartseed-necklace', 'Heartseed Necklace', [{ itemId: 'heartseed', quantity: 20 }], 30000, { type: 'boss-kill', bossId: 'forest-heart' }, 'A living boss material shaped into a protective amulet.'),
 
   'fangbound-dagger': equipmentRecipe('fangbound-dagger', 'Fangbound Dagger', [{ itemId: 'predator-fang', quantity: 30 }, { itemId: 'air-fragment', quantity: 2 }, { itemId: 'fire-fragment', quantity: 2 }], 30000, howlingDen, 'A quick blade for Basic Attack builds.'),
@@ -74,6 +74,12 @@ export const isRecipeUnlocked = (state: Pick<GameState, 'progress'>, recipe: Rec
     case 'first-dungeon-boss-kill': return state.progress.firstBossKill
     case 'boss-kill': return Boolean(MONSTERS[recipe.unlock.bossId]) && hasProgress(state.progress, recipe.unlock.bossId, Math.max(1, recipe.unlock.count ?? 1))
     case 'monster-kill': return Boolean(MONSTERS[recipe.unlock.monsterId]) && hasProgress(state.progress, recipe.unlock.monsterId, Math.max(1, recipe.unlock.count ?? 1))
+    case 'dungeon-monster-kills': {
+      const dungeon = DUNGEONS[recipe.unlock.dungeonId]
+      const count = Math.max(1, recipe.unlock.count ?? 1)
+      const totalKills = dungeon?.monsterPool.reduce((total, monsterId) => total + (state.progress.lifetimeKillsByMonster[monsterId] ?? 0), 0) ?? 0
+      return Boolean(dungeon) && totalKills >= count
+    }
     case 'dungeon-unlocked': {
       const dungeon = DUNGEONS[recipe.unlock.dungeonId]
       return Boolean(dungeon) && (dungeon.unlock?.type !== 'boss-kill' || hasProgress(state.progress, dungeon.unlock.bossId, 1))
@@ -87,6 +93,7 @@ export const getRecipeUnlockRequirement = (recipe: RecipeDefinition): string | n
     case 'first-dungeon-boss-kill': return 'Defeat the first dungeon boss to unlock this recipe.'
     case 'boss-kill': return `Defeat ${MONSTERS[recipe.unlock.bossId]?.name ?? recipe.unlock.bossId}${(recipe.unlock.count ?? 1) > 1 ? ` ${recipe.unlock.count} times` : ''} to unlock this recipe.`
     case 'monster-kill': return `Defeat ${MONSTERS[recipe.unlock.monsterId]?.name ?? recipe.unlock.monsterId}${(recipe.unlock.count ?? 1) > 1 ? ` ${recipe.unlock.count} times` : ''} to unlock this recipe.`
+    case 'dungeon-monster-kills': return `Defeat any monster in ${DUNGEONS[recipe.unlock.dungeonId]?.name ?? recipe.unlock.dungeonId}${(recipe.unlock.count ?? 1) > 1 ? ` ${recipe.unlock.count} times` : ''} to unlock this recipe.`
     case 'dungeon-unlocked': return `Unlock ${DUNGEONS[recipe.unlock.dungeonId]?.name ?? recipe.unlock.dungeonId} to access this recipe.`
   }
 }
@@ -106,6 +113,7 @@ export const validateRecipeDefinitions = (recipes: Record<string, RecipeDefiniti
     if (ITEMS[recipe.output.itemId]?.kind === 'equipment' && recipe.output.quantity !== 1) errors.push(`${recipe.id}: Equipment recipe output quantity must be 1`)
     if (recipe.unlock.type === 'boss-kill' && !MONSTERS[recipe.unlock.bossId]) errors.push(`${recipe.id}: unlock boss must be a known monster`)
     if (recipe.unlock.type === 'monster-kill' && !MONSTERS[recipe.unlock.monsterId]) errors.push(`${recipe.id}: unlock monster must be known`)
+    if (recipe.unlock.type === 'dungeon-monster-kills' && !DUNGEONS[recipe.unlock.dungeonId]) errors.push(`${recipe.id}: unlock dungeon must be known`)
     if (recipe.unlock.type === 'dungeon-unlocked' && !DUNGEONS[recipe.unlock.dungeonId]) errors.push(`${recipe.id}: unlock dungeon must be known`)
   })
   if (new Set(order).size !== order.length) errors.push('RECIPE_ORDER contains duplicates')

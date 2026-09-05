@@ -20,12 +20,12 @@
 
 | Item | Time | Mana | Ingredient 1 | Qty 1 | Ingredient 2 | Qty 2 | Ingredient 3 | Qty 3 | Ingredient 4 | Qty 4 | Ingredient 5 | Qty 5 | Unlock |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Ember Staff (ember-staff) | 30 s | 0 | Fire Fragment (fire-fragment) | 48 | Wisp Essence (wisp-essence) | 24 | Grove Bark (grove-bark) | 3 | — | — | — | — | Defeat Grove Sentinel |
-| Wispwood Wand (wispwood-wand) | 30 s | 0 | Fire Fragment (fire-fragment) | 24 | Air Fragment (air-fragment) | 24 | Wisp Essence (wisp-essence) | 18 | Grove Bark (grove-bark) | 3 | — | — | Defeat Grove Sentinel |
-| Tide Focus (tide-focus) | 30 s | 0 | Water Fragment (water-fragment) | 48 | Wisp Essence (wisp-essence) | 18 | Grove Bark (grove-bark) | 3 | — | — | — | — | Defeat Grove Sentinel |
-| Stoneweave Robe (stoneweave-robe) | 30 s | 0 | Earth Fragment (earth-fragment) | 48 | Wisp Essence (wisp-essence) | 18 | Grove Bark (grove-bark) | 3 | — | — | — | — | Defeat Grove Sentinel |
-| Windthread Charm (windthread-charm) | 30 s | 0 | Air Fragment (air-fragment) | 48 | Wisp Essence (wisp-essence) | 18 | Grove Bark (grove-bark) | 3 | — | — | — | — | Defeat Grove Sentinel |
-| Wispveil Hood (wispveil-hood) | 30 s | 0 | Water Fragment (water-fragment) | 24 | Air Fragment (air-fragment) | 24 | Wisp Essence (wisp-essence) | 24 | Grove Bark (grove-bark) | 3 | — | — | Defeat Grove Sentinel |
-| Grovekeeper Mantle (grovekeeper-mantle) | 30 s | 0 | Earth Fragment (earth-fragment) | 36 | Wisp Essence (wisp-essence) | 24 | Grove Bark (grove-bark) | 6 | — | — | — | — | Defeat Grove Sentinel |
-| Wispbound Ring (wispbound-ring) | 30 s | 0 | Water Fragment (water-fragment) | 24 | Air Fragment (air-fragment) | 24 | Wisp Essence (wisp-essence) | 18 | Grove Bark (grove-bark) | 3 | — | — | Defeat Grove Sentinel |
+| Ember Staff (ember-staff) | 30 s | 0 | Fire Fragment (fire-fragment) | 48 | Wisp Essence (wisp-essence) | 24 | Grove Bark (grove-bark) | 3 | — | — | — | — | Defeat any Whispering Woods monster |
+| Wispwood Wand (wispwood-wand) | 30 s | 0 | Fire Fragment (fire-fragment) | 24 | Air Fragment (air-fragment) | 24 | Wisp Essence (wisp-essence) | 18 | Grove Bark (grove-bark) | 3 | — | — | Defeat any Whispering Woods monster |
+| Tide Focus (tide-focus) | 30 s | 0 | Water Fragment (water-fragment) | 48 | Wisp Essence (wisp-essence) | 18 | Grove Bark (grove-bark) | 3 | — | — | — | — | Defeat any Whispering Woods monster |
+| Stoneweave Robe (stoneweave-robe) | 30 s | 0 | Earth Fragment (earth-fragment) | 48 | Wisp Essence (wisp-essence) | 18 | Grove Bark (grove-bark) | 3 | — | — | — | — | Defeat any Whispering Woods monster |
+| Windthread Charm (windthread-charm) | 30 s | 0 | Air Fragment (air-fragment) | 48 | Wisp Essence (wisp-essence) | 18 | Grove Bark (grove-bark) | 3 | — | — | — | — | Defeat any Whispering Woods monster |
+| Wispveil Hood (wispveil-hood) | 30 s | 0 | Water Fragment (water-fragment) | 24 | Air Fragment (air-fragment) | 24 | Wisp Essence (wisp-essence) | 24 | Grove Bark (grove-bark) | 3 | — | — | Defeat any Whispering Woods monster |
+| Grovekeeper Mantle (grovekeeper-mantle) | 30 s | 0 | Earth Fragment (earth-fragment) | 36 | Wisp Essence (wisp-essence) | 24 | Grove Bark (grove-bark) | 6 | — | — | — | — | Defeat any Whispering Woods monster |
+| Wispbound Ring (wispbound-ring) | 30 s | 0 | Water Fragment (water-fragment) | 24 | Air Fragment (air-fragment) | 24 | Wisp Essence (wisp-essence) | 18 | Grove Bark (grove-bark) | 3 | — | — | Defeat any Whispering Woods monster |
 | Heartseed Necklace (heartseed-necklace) | 30 s | 0 | Heartseed (heartseed) | 20 | — | — | — | — | — | — | — | — | Defeat Forest Heart |

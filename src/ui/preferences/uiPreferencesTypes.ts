@@ -18,9 +18,8 @@ export interface CustomThemeColors {
 }
 
 export interface InventoryScreenPreferences {
-  currentNeedsOpen: boolean
   sourceOpen: boolean
-  usedInOpen: boolean
+  researchValueOpen: boolean
 }
 
 export interface TransmutationScreenPreferences {

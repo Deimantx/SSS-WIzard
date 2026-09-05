@@ -12,7 +12,7 @@ describe('screen UI preferences', () => {
     expect(preferences.showFpsCounter).toBe(true)
     expect(preferences.uiSounds).toBe(true)
     expect(preferences.uiSoundVolume).toBe(0.35)
-    expect(preferences.screenState.inventory).toEqual({ currentNeedsOpen: true, sourceOpen: false, usedInOpen: true })
+    expect(preferences.screenState.inventory).toEqual({ sourceOpen: false, researchValueOpen: false })
     expect(preferences.screenState.transmutation).toEqual({ selectedRecipeId: 'fire-fragment', categoryFilter: 'all', tierFilter: 'all', craftableOnly: false, activeOnly: false, collapsedCategories: { elemental: false, material: false } })
     expect(preferences.screenState.combat).toEqual({ combatLogFontSize: 'medium', combatDetailsMode: 'damage-done', dungeonStatisticsMode: 'runs' })
   })
@@ -33,7 +33,7 @@ describe('screen UI preferences', () => {
   it('normalizes malformed screen preferences without affecting gameplay', () => {
     const preferences = normalizeUiPreferences({ screenState: { inventory: { currentNeedsOpen: 'yes', sourceOpen: 1, usedInOpen: false }, transmutation: { selectedRecipeId: 7, recipeFilter: 'invalid', collapsedCategories: { elemental: true, material: 'yes', equipment: false } } } })
 
-    expect(preferences.screenState.inventory).toEqual({ currentNeedsOpen: true, sourceOpen: false, usedInOpen: false })
+    expect(preferences.screenState.inventory).toEqual({ sourceOpen: false, researchValueOpen: false })
     expect(preferences.screenState.transmutation).toEqual({ ...defaultUiPreferences().screenState.transmutation, collapsedCategories: { elemental: true, material: false } })
   })
 
@@ -63,7 +63,7 @@ describe('screen UI preferences', () => {
       reducedMotion: true,
       navigationGroups: { combat: false, hero: false, tower: true, world: false, system: false },
       screenState: {
-        inventory: { usedInOpen: false },
+        inventory: { sourceOpen: false, researchValueOpen: false },
         artificing: { selectedRecipeId: 'ember-staff', slotFilter: 'weapon' },
       },
     })
@@ -80,7 +80,7 @@ describe('screen UI preferences', () => {
     expect(preferences.showFpsCounter).toBe(true)
     expect(preferences.customTheme).toEqual(defaultUiPreferences().customTheme)
     expect(preferences.navigationGroups.tower).toBe(true)
-    expect(preferences.screenState.inventory.usedInOpen).toBe(false)
+    expect(preferences.screenState.inventory.researchValueOpen).toBe(false)
     expect(preferences.screenState.artificing).toMatchObject({ selectedRecipeId: 'ember-staff', slotFilter: 'weapon' })
   })
 })

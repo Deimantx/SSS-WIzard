@@ -314,7 +314,10 @@ const advanceGameStateStep = (state: GameState, delta: number, context: AdvanceC
 
 export const advanceGameState = (state: GameState, deltaMs: number, context: AdvanceContext = { mode: 'live' }) => {
   const bounded = Math.min(MAX_SIMULATION_DELTA_MS, Math.max(0, deltaMs))
-  const simulationContext = context.mode === 'live' ? context : { ...context, uiEvents: undefined, telemetry: undefined, alerts: undefined, statistics: undefined }
+  // Banked simulation keeps analytical observation parity while omitting
+  // presentation-only alert delivery. Its caller supplies an analytics-only
+  // event sink, so skipped combat never replays the live UI history.
+  const simulationContext = context.mode === 'live' ? context : { ...context, alerts: undefined }
   let remaining = bounded
 
   while (remaining > 0) {

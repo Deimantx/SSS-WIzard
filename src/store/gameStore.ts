@@ -33,7 +33,7 @@ import { forceCompleteTransmutationCycle } from '../game/systems/transmutation/t
 import { saveGameAction } from './actions/persistenceActions'
 import { advanceGameState } from '../game/systems/simulation/advanceGameState'
 import { forceCompleteResearchCycle } from '../game/systems/research/researchEngine'
-import { advanceWithOfflineBank as runOfflineBankAdvance, isOfflineBankSimulationActive, type OfflineBankResult } from '../game/systems/offline-bank/offlineBankSimulation'
+import { advanceWithOfflineBank as runOfflineBankAdvance, isOfflineBankSimulationActive, type OfflineBankResult, type OfflineBankSimulationObservers } from '../game/systems/offline-bank/offlineBankSimulation'
 import { addOfflineBankMs, clampOfflineBankMs } from '../game/systems/offline-bank/offlineBankDuration'
 import type { OfflineBankReport } from '../game/systems/offline-bank/offlineBankReport'
 import { getSpellAutoCastFocusCost, isSpellUnlocked, syncSpellUnlocksForSchool } from '../game/systems/spells'
@@ -44,8 +44,8 @@ import { combatAlertsObserver, combatAlertsSink, clearCombatAlerts } from '../ga
 import { beginCombatRecapRun, clearCombatRecap, combatRecapSink } from '../game/ui/combatRecapStore'
 import { clearCombatDefeat, combatDefeatSink } from '../game/ui/combatDefeatStore'
 import { createCombatEventSink } from '../game/systems/combat/combatEventSink'
-import { combatTelemetryObserver, combatTelemetrySink } from '../game/telemetry/combat/combatTelemetryStore'
-import { clearDungeonStatistics, dungeonStatisticsObserver, dungeonStatisticsSink } from '../game/telemetry/dungeon/dungeonStatisticsStore'
+import { combatTelemetryObserver, combatTelemetrySink, useCombatTelemetryStore } from '../game/telemetry/combat/combatTelemetryStore'
+import { clearDungeonStatistics, dungeonStatisticsObserver, dungeonStatisticsSink, useDungeonStatisticsStore } from '../game/telemetry/dungeon/dungeonStatisticsStore'
 import { advanceCombatOnlyForDebug, clearToBossForDebug, despawnEnemyForDebug, fastResolveNormalEnemiesForDebug, forceKillEnemyForDebug, jumpToBossForDebug, restartBossForDebug } from '../game/systems/combat/debugCombatRuntime'
 import { enqueueCombatLootReveal } from '../ui/rewards/lootRevealStore'
 import { resetProfileAttention } from '../ui/attention/attentionStore'
@@ -53,6 +53,22 @@ import { emitGameFeelEvent } from '../ui/game-feel/gameFeelStore'
 import type { GameFeelEventType } from '../ui/game-feel/gameFeelTypes'
 
 const combatEventSink = createCombatEventSink(combatLogSink, combatRecapSink, combatDefeatSink, combatAlertsSink, dungeonStatisticsSink, combatTelemetrySink)
+const offlineBankCombatAnalyticsSink = createCombatEventSink(dungeonStatisticsSink, combatTelemetrySink)
+const cloneAnalyticsState = <T,>(value: T) => JSON.parse(JSON.stringify(value)) as T
+const offlineBankAnalyticsObservers: OfflineBankSimulationObservers = {
+  uiEvents: offlineBankCombatAnalyticsSink,
+  telemetry: combatTelemetryObserver,
+  statistics: dungeonStatisticsObserver,
+  snapshot: () => ({
+    combat: cloneAnalyticsState(useCombatTelemetryStore.getState()),
+    dungeon: cloneAnalyticsState(useDungeonStatisticsStore.getState()),
+  }),
+  restore: (snapshot) => {
+    const state = snapshot as { combat: ReturnType<typeof useCombatTelemetryStore.getState>; dungeon: ReturnType<typeof useDungeonStatisticsStore.getState> }
+    useCombatTelemetryStore.setState(state.combat)
+    useDungeonStatisticsStore.setState(state.dungeon)
+  },
+}
 const combatLogUiSink = combatEventSink
 const combatLootObserver: CombatLootObserver = (state, enemyId, drops) => {
   const dungeon = DUNGEONS[state.combat.dungeonId ?? 'whispering-woods']
@@ -505,7 +521,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   debugSetOfflineBank: (durationMs) => set((state) => { state.offlineBankMs = clampOfflineBankMs(durationMs); return state }),
   debugClearOfflineBank: () => set((state) => { state.offlineBankMs = 0; return state }),
   advanceWithOfflineBank: async (durationMs) => {
-    const result = await runOfflineBankAdvance(durationMs, get, (recipe) => set((state) => { recipe(state); return state }), () => { get().saveGame('autosave') }, (state, itemId, amount) => recordRecentAcquisition(state as GameStore, itemId, amount))
+    const result = await runOfflineBankAdvance(durationMs, get, (recipe) => set((state) => { recipe(state); return state }), () => { get().saveGame('autosave') }, (state, itemId, amount) => recordRecentAcquisition(state as GameStore, itemId, amount), offlineBankAnalyticsObservers)
     if (result.ok) set((state) => { state.lastOfflineBankReport = result.report ?? null; return state })
     return result
   },

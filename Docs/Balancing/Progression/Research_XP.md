@@ -7,7 +7,7 @@
 | Max Prepared Slots | 4 |
 | Max Echoes | 5 |
 | Echo Focus Cost | 10 |
-| Mana Cost Per Item | 15 |
+| Mana Cost Per Item | 30 |
 | Duration Per Item | 10 s |
 | Matching XP | 12 |
 | Non Matching XP | 8 |
@@ -16,7 +16,7 @@
 
 | Item | School | Matching XP | Other XP | Mana | Time | XP/min Match | XP/min Other |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Fire Fragment (fire-fragment) | Fire | 12 | 8 | 15 | 10 s | 72 | 48 |
-| Water Fragment (water-fragment) | Water | 12 | 8 | 15 | 10 s | 72 | 48 |
-| Earth Fragment (earth-fragment) | Earth | 12 | 8 | 15 | 10 s | 72 | 48 |
-| Air Fragment (air-fragment) | Air | 12 | 8 | 15 | 10 s | 72 | 48 |
+| Fire Fragment (fire-fragment) | Fire | 12 | 8 | 30 | 10 s | 72 | 48 |
+| Water Fragment (water-fragment) | Water | 12 | 8 | 30 | 10 s | 72 | 48 |
+| Earth Fragment (earth-fragment) | Earth | 12 | 8 | 30 | 10 s | 72 | 48 |
+| Air Fragment (air-fragment) | Air | 12 | 8 | 30 | 10 s | 72 | 48 |

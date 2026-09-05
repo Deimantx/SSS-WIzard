@@ -34,18 +34,30 @@
 .artificing-material-row { display: grid; grid-template-columns: 1fr; justify-items: center; align-items: center; gap: 5px; padding: 8px; text-align: center; border: 1px solid var(--ui-border); border-radius: 7px; background: var(--ui-panel); font-size: var(--text-xs); }
 .artificing-material-row strong { font-family: var(--font-mono); font-size: var(--text-xs); }
 .artificing-material-row > span { overflow-wrap: anywhere; font-size: var(--text-micro); }
+.artificing-source-button { padding: 2px 0; border: 0; color: var(--ui-accent); background: transparent; cursor: pointer; font: var(--text-micro) var(--font-mono); }
+.artificing-material-sources { display: grid; gap: 5px; padding: 8px; border: 1px solid var(--ui-accent); border-radius: 6px; background: var(--ui-accent-soft); font-size: var(--text-micro); }
+.artificing-material-sources span { color: var(--ui-text-muted); }
+.artificing-material-sources button { justify-self: start; padding: 4px 7px; border: 1px solid var(--ui-border); border-radius: 4px; color: var(--ui-text); background: var(--ui-panel); cursor: pointer; font: var(--text-micro) var(--font-mono); }
 .artificing-material-row.missing { border-color: color-mix(in srgb, var(--ui-warning) 35%, var(--ui-border)); color: var(--ui-warning); }
+.artificing-missing-summary { display: grid; gap: 3px; padding: 7px; border-left: 2px solid var(--ui-warning); color: var(--ui-warning); background: color-mix(in srgb, var(--ui-warning) 7%, transparent); font-size: var(--text-micro); }
+.artificing-missing-summary strong { font-family: var(--font-mono); letter-spacing: .06em; }
 .artificing-capacity-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
 .artificing-capacity-grid span { display: grid; gap: 3px; padding: 7px; border: 1px solid var(--ui-border); border-radius: 6px; background: var(--ui-panel); }
 .artificing-capacity-grid small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
 .artificing-capacity-grid strong { color: var(--ui-text); font: var(--text-xs) var(--font-mono); overflow-wrap: anywhere; }
+.artificing-pin-button { padding: 5px 8px; border: 1px solid var(--ui-border); border-radius: 5px; color: var(--ui-accent); background: transparent; cursor: pointer; font: var(--text-micro) var(--font-mono); }
 .artificing-craft-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .artificing-empty { display: grid; place-items: center; gap: 9px; min-height: 200px; padding: 18px; text-align: center; color: var(--ui-text-muted); }
+.craft-success { animation: artificing-craft-flash 560ms ease-out; }
+.artificing-crafted-result { display: grid; gap: 8px; padding: 9px; border: 1px solid var(--ui-success); border-radius: 7px; color: var(--ui-success); background: color-mix(in srgb, var(--ui-success) 8%, var(--ui-panel)); }
+.artificing-crafted-result div { display: flex; flex-wrap: wrap; gap: 7px; }
+@keyframes artificing-craft-flash { from { box-shadow: 0 0 0 3px var(--ui-success); } to { box-shadow: 0 0 0 0 transparent; } }
+@media (prefers-reduced-motion: reduce) { .artificing-craft-success { animation: none; } }
 .artificing-empty strong { font-family: var(--font-mono); font-size: var(--text-micro); letter-spacing: .1em; }
 .artificing-empty p { font-size: var(--text-xs); line-height: 1.5; }
 .artificing-locked-banner { display: flex; align-items: flex-start; gap: 7px; margin-top: 8px; padding: 8px; border: 1px solid color-mix(in srgb, var(--ui-warning) 40%, var(--ui-border)); border-radius: 7px; color: var(--ui-warning); font-size: var(--text-xs); }
 .artificing-locked-banner svg { flex-shrink: 0; }
-.artificing-output-preview { display: flex; min-height: 0; flex-direction: column; }
+.artificing-output-preview { display: grid; min-width: 0; gap: 8px; }
 .artificing-output-content { display: grid; align-content: start; gap: 12px; min-width: 0; min-height: 0; overflow: clip; padding-right: 3px; }
 .artificing-output-content > .game-tooltip-trigger { display: block; min-width: 0; }
 .artificing-output-hero { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 10px; align-items: start; min-width: 0; overflow: hidden; padding: 8px; border: 1px solid color-mix(in srgb, var(--ui-accent) 30%, var(--ui-border)); border-radius: 8px; background: var(--ui-accent-soft); }

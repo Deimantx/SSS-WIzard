@@ -9,8 +9,8 @@ export interface ArtificingRecipeDefinition {
  description?: string
 }
 const whisperingWoodsMonsterKill: RecipeUnlockCondition = { type: 'dungeon-monster-kills', dungeonId: 'whispering-woods', count: 1 }
-const howlingDen: RecipeUnlockCondition = { type: 'dungeon-unlocked', dungeonId: 'howling-den' }
-const abandonedCatacombs: RecipeUnlockCondition = { type: 'dungeon-unlocked', dungeonId: 'abandoned-catacombs' }
+const howlingDen: RecipeUnlockCondition = { type: 'dungeon-monster-kills', dungeonId: 'howling-den', count: 1 }
+const abandonedCatacombs: RecipeUnlockCondition = { type: 'dungeon-monster-kills', dungeonId: 'abandoned-catacombs', count: 1 }
 
 const equipmentRecipe = (id: ArtificingRecipeId, name: string, ingredients: { itemId: ItemId; quantity: number }[], sourceDungeonId: DungeonId, unlock: RecipeUnlockCondition, description: string): ArtificingRecipeDefinition => ({ id, name, output: { itemId: id, quantity: 1 }, ingredients, sourceDungeonId, unlock, description })
 export const ARTIFICING_RECIPES: Record<ArtificingRecipeId, ArtificingRecipeDefinition> = {

@@ -34,6 +34,6 @@ export function ArtificingScreen() {
     { id: 'artificing-catalog', content: <EquipmentCatalog selected={recipe?.id ?? null} onSelect={select} query={query} onQueryChange={setQuery} /> },
     { id: 'artificing-detail', content: <InspectorTransition identity={recipe?.id ?? 'none'} accent={recipe ? ITEMS[recipe.output.itemId].color : undefined}><ArtificingDetail recipe={recipe} /></InspectorTransition> },
   ]
-  if (recipe) panels.push({ id: 'artificing-inspection', content: <InspectorTransition identity={recipe.id} accent={ITEMS[recipe.output.itemId].color}><EquipmentInspection key={recipe.id} recipe={recipe} /></InspectorTransition> })
+  if (recipe) panels[1].content = <InspectorTransition identity={recipe.id} accent={ITEMS[recipe.output.itemId].color}><ArtificingDetail recipe={recipe} inspection={<EquipmentInspection key={recipe.id} recipe={recipe} />} /></InspectorTransition>
   return <TowerFrame className="artificing-screen" eyebrow="WIZARD TOWER · ARTIFICING" title="Arcane Forge" description="Forge magical equipment from elemental and dungeon materials. Each craft creates exactly one item."><EditableGrid screen="tower-artificing" panels={panels} /></TowerFrame>
 }

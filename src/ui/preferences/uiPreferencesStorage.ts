@@ -12,7 +12,7 @@ export const UI_PREFERENCES_KEY = 'sss-wizard-ui-preferences-v1'
 export const defaultScreenPreferences = (): ScreenPreferences => ({
   inventory: { currentNeedsOpen: true, sourceOpen: false, usedInOpen: true },
   transmutation: { selectedRecipeId: RECIPE_ORDER[0], categoryFilter: 'all', tierFilter: 'all', craftableOnly: false, activeOnly: false, collapsedCategories: { elemental: false, material: false } },
-  artificing: { selectedRecipeId: null, slotFilter: 'all', weaponHandsFilter: 'all', offhandPresentationFilter: 'all', craftableOnly: false, ownershipFilter: 'all' },
+  artificing: { selectedRecipeId: null, pinnedRecipeId: null, slotFilter: 'all', weaponHandsFilter: 'all', offhandPresentationFilter: 'all', craftableOnly: false, ownershipFilter: 'all' },
   research: { selectedItemId: null, affinityFilter: 'all', targetSchoolId: 'fire' },
   combat: { combatLogFontSize: 'medium', combatDetailsMode: 'damage-done', dungeonStatisticsMode: 'runs' },
 })
@@ -58,6 +58,7 @@ export const normalizeUiPreferences = (value: unknown): UiPreferences => {
   const oneOf = <T extends string | number>(value: unknown, options: readonly T[], fallback: T): T => options.includes(value as T) ? value as T : fallback
   const artificing: ScreenPreferences['artificing'] = {
     selectedRecipeId: typeof a.selectedRecipeId === 'string' && ARTIFICING_RECIPE_ORDER.includes(a.selectedRecipeId as ArtificingRecipeId) ? a.selectedRecipeId as ArtificingRecipeId : null,
+    pinnedRecipeId: typeof a.pinnedRecipeId === 'string' && ARTIFICING_RECIPE_ORDER.includes(a.pinnedRecipeId as ArtificingRecipeId) ? a.pinnedRecipeId as ArtificingRecipeId : null,
     slotFilter: oneOf(a.slotFilter, ['all', 'weapon', 'offhand', 'armor', 'helmet', 'cape', 'amulet', 'ring'] as const, 'all'),
     weaponHandsFilter: oneOf(a.weaponHandsFilter, ['all', 1, 2] as const, 'all'),
     offhandPresentationFilter: oneOf(a.offhandPresentationFilter, ['all', 'shield', 'focus'] as const, 'all'),

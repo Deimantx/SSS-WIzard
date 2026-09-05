@@ -50,3 +50,10 @@
   .activity-monitor { right: 10px; bottom: 10px; width: min(300px, calc(100vw - 20px)); max-height: min(460px, calc(100vh - 112px)); }
   .activity-monitor-collapsed { width: min(400px, calc(100vw - 20px)); }
 }
+.pinned-recipe-tracker { position: fixed; z-index: var(--z-sticky); right: 18px; bottom: 18px; width: min(320px, calc(100vw - 36px)); padding: 8px; border: 1px solid var(--ui-border); border-radius: 8px; background: color-mix(in srgb, var(--ui-panel-strong) 94%, transparent); box-shadow: 0 15px 42px var(--ui-shadow); }
+.pinned-recipe-tracker button { display: grid; gap: 4px; width: 100%; padding: 7px; border: 1px solid var(--ui-accent); border-radius: 6px; color: var(--ui-text); background: var(--ui-accent-soft); cursor: pointer; text-align: left; }
+.pinned-recipe-tracker strong { font: var(--text-micro) var(--font-mono); letter-spacing: .06em; }
+.pinned-recipe-tracker span { color: var(--ui-success); font: var(--text-xs) var(--font-mono); }
+.pinned-recipe-tracker small { color: var(--ui-text-muted); }
+.pinned-recipe-tracker.pinned-ready button { border-color: var(--ui-success); }
+.activity-monitor + .pinned-recipe-tracker { bottom: 610px; }

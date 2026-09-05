@@ -142,7 +142,6 @@ export function loadUiLayouts(): UiLayoutDocument {
       if (screen === 'tower-artificing' && layoutNeedsMigration) {
         if (hasUnmodifiedGeometry(source['artificing-catalog'], { x: 0, y: 0, w: 5, h: 18 }) && panels['artificing-catalog']) panels['artificing-catalog'] = { ...panels['artificing-catalog'], ...DEFAULT_LAYOUTS['tower-artificing']['artificing-catalog'] }
         if (hasUnmodifiedGeometry(source['artificing-detail'], { x: 5, y: 0, w: 7, h: 18 }) && panels['artificing-detail']) panels['artificing-detail'] = { ...panels['artificing-detail'], ...DEFAULT_LAYOUTS['tower-artificing']['artificing-detail'] }
-        if (hasUnmodifiedGeometry(source['artificing-inspection'], { x: 0, y: 18, w: 12, h: 18 }) && panels['artificing-inspection']) panels['artificing-inspection'] = { ...panels['artificing-inspection'], ...DEFAULT_LAYOUTS['tower-artificing']['artificing-inspection'] }
       }
       if (screen === 'schools' && layoutNeedsMigration && hasGeometry(source['schools-presets'], { x: 0, y: 18, w: 12, h: 5 }) && panels['schools-presets']) {
         panels['schools-presets'] = { ...panels['schools-presets'], h: DEFAULT_LAYOUTS.schools['schools-presets'].h }

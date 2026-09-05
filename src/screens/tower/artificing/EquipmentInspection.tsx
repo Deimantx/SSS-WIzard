@@ -1,6 +1,5 @@
 import { LockKeyhole } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
-import { Card } from '../../../components/ui'
 import { EquipmentCombatDetails } from '../../../components/ui/item/EquipmentCombatDetails'
 import { ItemIcon, ItemTooltip, flattenItemStats, formatStat, friendlyStatLabel } from '../../../components/ui/item'
 import { ITEMS } from '../../../game/content/items/items'
@@ -19,14 +18,14 @@ export function EquipmentInspection({ recipe }: { recipe: ArtificingRecipeDefini
   const targetPosition = ringNeedsChoice ? ringTarget ?? undefined : getDefaultTargetPosition(state, inspection.equipment.slot)
   const preview = ringNeedsChoice && !ringTarget ? null : getArtificingEquipmentPreview(state, recipe.output.itemId, targetPosition)
 
-  return <Card className="artificing-output-preview" title="EQUIPMENT INSPECTION" action={<span className="artificing-count">OWNED {inspection.owned.toLocaleString()}</span>}>
+  return <div className="artificing-output-preview"><span className="eyebrow">EQUIPMENT INSPECTION</span>
     <div className="artificing-output-content">
       <ItemTooltip itemId={inspection.itemId} owned={inspection.owned}>
         <div className="artificing-output-hero" tabIndex={0}><span className="artificing-output-icon"><ItemIcon itemId={inspection.itemId} size="large" /></span><div><span className="eyebrow">EQUIPMENT</span><h2>{item.name}</h2><p>{item.description}</p></div></div>
       </ItemTooltip>
       <EquipmentOutput inspection={inspection} preview={preview} ringNeedsChoice={ringNeedsChoice} ringTarget={ringTarget} onRingTargetChange={setRingTarget} />
     </div>
-  </Card>
+  </div>
 }
 
 function EquipmentOutput({ inspection, preview, ringNeedsChoice, ringTarget, onRingTargetChange }: { inspection: ReturnType<typeof getArtificingOutputInspection>; preview: ReturnType<typeof getArtificingEquipmentPreview> | null; ringNeedsChoice: boolean; ringTarget: EquipmentPosition | null; onRingTargetChange: (position: EquipmentPosition) => void }) {

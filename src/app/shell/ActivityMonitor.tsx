@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { getActivityTelemetry } from '../../game/systems/activity/activityTelemetry'
 import { formatCompactDuration } from '../../game/utils'
 import { useGameStore } from '../../store/gameStore'
+import { PinnedRecipeTracker } from './PinnedRecipeTracker'
 import type { ActivityTelemetry } from '../../game/types'
 import { GameTooltip, TooltipContent } from '../../components/ui/tooltip/Tooltip'
 
@@ -22,21 +23,22 @@ export function ActivityMonitor() {
     try { window.localStorage.setItem(collapsedStorageKey, String(collapsed)) } catch { /* storage is optional */ }
   }, [collapsed])
 
-  if (!activities.length) return null
+  const pinned = <PinnedRecipeTracker />
+  if (!activities.length) return pinned
   if (collapsed) {
-    return <aside className="activity-monitor activity-monitor-collapsed" aria-label="Activity Monitor">
+    return <>{pinned}<aside className="activity-monitor activity-monitor-collapsed" aria-label="Activity Monitor">
       <div className="activity-monitor-collapsed-head"><strong>{activities.length} ACTIVE</strong><GameTooltip content="Expand Activity Monitor"><button onClick={() => setCollapsed(false)} aria-label="Expand Activity Monitor"><ChevronUp size={14} /></button></GameTooltip></div>
       <div className="activity-monitor-mini-list">
         {activities.slice(0, 2).map((activity) => <GameTooltip block content={<TooltipContent title={activity.label} description={`Open ${activity.label} to manage this activity.`} />} accent={activity.accent === 'red' ? 'danger' : activity.accent === 'orange' ? 'warning' : activity.accent === 'gold' ? 'mana' : 'neutral'} key={activity.id}><button className={`activity-mini-summary accent-${activity.accent}`} onClick={() => setScreen(activity.screen)}><strong>{activity.label}</strong><span>{summaryFor(activity)}</span></button></GameTooltip>)}
       </div>
       {activities.length > 2 && <small className="activity-monitor-more">+{activities.length - 2} more active</small>}
-    </aside>
+    </aside></>
   }
 
-  return <aside className="activity-monitor" aria-label="Activity Monitor">
+  return <><PinnedRecipeTracker /><aside className="activity-monitor" aria-label="Activity Monitor">
     <div className="activity-monitor-header"><span>ACTIVITY MONITOR · {activities.length} ACTIVE</span><GameTooltip content="Collapse Activity Monitor"><button onClick={() => setCollapsed(true)} aria-label="Collapse Activity Monitor"><ChevronDown size={14} /></button></GameTooltip></div>
     <div className="activity-monitor-track">{activities.map((activity) => <GameTooltip block content={<TooltipContent title={activity.label} description={`Open ${activity.label} to manage this activity.`} />} accent={activity.accent === 'red' ? 'danger' : activity.accent === 'orange' ? 'warning' : activity.accent === 'gold' ? 'mana' : 'neutral'} key={activity.id}><ActivityCard activity={activity} onClick={() => setScreen(activity.screen)} /></GameTooltip>)}</div>
-  </aside>
+  </aside></>
 }
 
 function ActivityCard({ activity, onClick }: { activity: ActivityTelemetry; onClick: () => void }) {

@@ -33,6 +33,7 @@ export interface TransmutationScreenPreferences {
 }
 export interface ArtificingScreenPreferences {
   selectedRecipeId: import('../../game/types').ArtificingRecipeId | null
+  pinnedRecipeId: import('../../game/types').ArtificingRecipeId | null
   slotFilter: 'all' | import('../../game/types').EquipmentItemSlot
   weaponHandsFilter: 'all' | 1 | 2
   offhandPresentationFilter: 'all' | 'shield' | 'focus'

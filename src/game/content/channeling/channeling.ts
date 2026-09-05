@@ -1,6 +1,6 @@
 /** Shared Channeling tuning. Permanent Pillar definitions live in manaPillars.ts. */
 export const CHANNELING_DEFAULTS = {
-  baseNaturalRegenPerSecond: 5,
+  baseNaturalRegenPerSecond: 0,
   echoFocusCost: 10,
   echoManaPerSecond: 5,
   maxEchoes: 5,

@@ -4,7 +4,7 @@
 
 | Setting | Value |
 | --- | --- |
-| Base Natural Regen Per Second | 5 |
+| Base Natural Regen Per Second | 0 |
 | Echo Focus Cost | 10 |
 | Echo Mana Per Second | 5 |
 | Max Echoes | 5 |

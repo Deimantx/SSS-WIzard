@@ -11,6 +11,7 @@ export const MAX_ADAPTIVE_COMBAT_SPELL_DECK_H = 9
 export interface AdaptiveCombatLayoutOptions {
   requiredStageContentHeight?: number
   requiredDeckContentHeight?: number
+  requiredAnalyticsContentHeight?: number
 }
 
 /**
@@ -34,10 +35,11 @@ export function getAdaptiveCombatLayout(layout: Layout, options: AdaptiveCombatL
   const lowerStartY = stage.y + requiredStageHeight
   const deckY = Math.max(deck.y, lowerStartY)
   const bottomY = deckY + deckHeight
+  const analyticsHeight = Math.max(analytics.h, pixelsToGridRows(normalized.requiredAnalyticsContentHeight ?? 0))
   const next = layout.map((item) => {
     if (item.i === STAGE_ID) return { ...item, h: requiredStageHeight, x: Math.max(0, Math.min(GRID_COLUMNS - item.w, item.x)) }
     if (item.i === SPELL_DECK_ID) return { ...item, y: deckY, h: deckHeight }
-    if (item.i === ANALYTICS_ID) return { ...item, y: bottomY }
+    if (item.i === ANALYTICS_ID) return { ...item, y: bottomY, h: analyticsHeight }
     return item
   })
   return next.every((item, index) => item.i === layout[index]?.i && item.x === layout[index]?.x && item.y === layout[index]?.y && item.w === layout[index]?.w && item.h === layout[index]?.h) ? layout : next

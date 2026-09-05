@@ -17,9 +17,9 @@ describe('Unified Transmutation', () => {
     expect(['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'].map((id) => RECIPES[id as keyof typeof RECIPES].manaCost)).toEqual([25, 25, 25, 25])
     expect(['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'].map((id) => RECIPES[id as keyof typeof RECIPES].baseDurationMs)).toEqual([8000, 8000, 8000, 8000])
     expect(RECIPES['ember-staff'].ingredients).toEqual([
-      { itemId: 'fire-fragment', quantity: 4 },
-      { itemId: 'wisp-essence', quantity: 4 },
-      { itemId: 'grove-bark', quantity: 1 },
+      { itemId: 'fire-fragment', quantity: 48 },
+      { itemId: 'wisp-essence', quantity: 24 },
+      { itemId: 'grove-bark', quantity: 3 },
     ])
     expect(RECIPES['ember-staff'].manaCost).toBe(0)
     expect(RECIPES['ember-staff'].unlock).toEqual({ type: 'monster-kill', monsterId: 'grove-sentinel' })
@@ -76,7 +76,7 @@ describe('Unified Transmutation', () => {
     const state = makeInitialState()
     state.progress.firstBossKill = true
     state.progress.lifetimeKillsByMonster['grove-sentinel'] = 1
-    state.activities.transmutation.jobs['ember-staff'] = { echoesAssigned: 1, progressMs: 8000 }
+    state.activities.transmutation.jobs['ember-staff'] = { echoesAssigned: 1, progressMs: 30000 }
     advanceGameState(state, 1, { mode: 'banked' })
     expect(state.activities.transmutation.jobs['ember-staff']?.progressMs).toBe(0)
     expect(state.inventory['ember-staff'] ?? 0).toBe(0)
@@ -100,7 +100,7 @@ describe('Unified Transmutation', () => {
     state.activities.channeling.echoesAssigned = 1
     state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 1, progressMs: 0 }
     const flow = getManaFlowBreakdown(state)
-    expect(flow.production).toBe(10)
+    expect(flow.production).toBe(5)
     expect(flow.demand).toBe(3.125)
     expect(flow.demandSources.map((source) => source.id)).toContain('transmutation-fire-fragment')
   })
@@ -113,6 +113,7 @@ describe('Unified Transmutation', () => {
   it('continues Mana regeneration above Max Mana only while the debug override is enabled', () => {
     const state = makeInitialState()
     state.player.mana = state.player.maxMana
+    state.debug.bonusManaRegenFlat = 5
     state.debug.allowManaOverCap = true
     advanceChanneling(state, 1000)
     expect(state.player.mana).toBeGreaterThan(state.player.maxMana)

@@ -26,7 +26,7 @@ describe('Rank-I spell mechanics', () => {
     expect(castSpellAction(state, 'fireball')).toBe(true)
     expect(state.combat.enemyHp).toBeCloseTo(1000 - BALANCE.player.baseSpellPower * 1.5 * (1 - 8 / 108))
     expect(state.player.mana).toBe(40)
-    expect(state.combat.spellCooldowns.fireball).toBe(10000)
+    expect(state.combat.spellCooldowns.fireball).toBe(12000)
     expect(state.combat.enemyStatuses).toMatchObject([{ statusId: 'burning', instanceKey: 'player:spell:fireball', remainingMs: 10000 }])
   })
 

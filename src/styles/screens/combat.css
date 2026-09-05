@@ -1,6 +1,7 @@
 /* Combat V1.1 — container-aware live workspace with readable information hierarchy. */
 .combat-screen {
   container-type: inline-size;
+  padding-bottom: 28px;
 }
 .combat-screen .screen-header {
   margin-bottom: 16px;
@@ -2421,7 +2422,9 @@
 .dungeon-statistics-mode-button:focus-visible,
 .dungeon-statistics-reset-button:hover,
 .dungeon-statistics-reset-button:focus-visible { border-color: var(--ui-gold); color: var(--ui-text); background: color-mix(in srgb, var(--ui-gold) 12%, transparent); outline: none; }
-.dungeon-statistics-body { display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; gap: 8px; }
+.dungeon-statistics-body { display: flex; flex-direction: column; min-height: 0; gap: 8px; }
+.dungeon-statistics-context { flex: 0 0 auto; }
+.dungeon-statistics-body > .dungeon-statistics-content { flex: 1 1 auto; }
 .dungeon-statistics-context { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; padding-bottom: 7px; border-bottom: 1px solid var(--ui-border); }
 .dungeon-statistics-context span { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .07em; }
 .dungeon-statistics-context span.is-active { color: var(--ui-gold); }
@@ -2584,7 +2587,8 @@
 .combat-analytics-panel {
   container-type: inline-size;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: max-content max-content;
+  align-content: start;
   min-width: 0;
   min-height: 0;
   gap: 8px;
@@ -2596,12 +2600,16 @@
 .combat-analytics-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; min-width: 0; padding-bottom: 8px; border-bottom: 1px solid var(--ui-border); }
 .combat-analytics-head small { overflow: hidden; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); text-overflow: ellipsis; white-space: nowrap; }
 .combat-analytics-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; min-width: 0; min-height: 0; overflow: hidden; }
-.combat-analytics-grid > .card { width: auto; height: 100%; min-width: 0; min-height: 0; margin: 0; overflow: hidden; }
+.combat-analytics-grid > .card { width: auto; height: auto; min-width: 0; min-height: 0; margin: 0; overflow: hidden; }
+.combat-analytics-grid .dungeon-statistics-panel { grid-template-rows: max-content auto; align-content: start; gap: 10px; }
+/* Bound only long lists; the surrounding analytics content determines its own height. */
+.combat-analytics-grid .combat-details-rows,
+.combat-analytics-grid .dungeon-statistics-drops-list { max-height: 180px; flex: 0 1 auto; }
 .combat-analytics-grid .combat-details-panel { display: grid; }
 .combat-analytics-grid .combat-details-panel,
 .combat-analytics-grid .dungeon-statistics-panel { min-height: 0; }
 @container (max-width: 720px) {
-  .combat-analytics-grid { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(260px, 1fr) minmax(260px, 1fr); overflow-y: auto; }
+  .combat-analytics-grid { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; }
   .combat-analytics-grid > .card { height: auto; min-height: 260px; }
   .combat-analytics-head { display: grid; gap: 3px; }
 }

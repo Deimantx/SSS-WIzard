@@ -4,7 +4,7 @@ import { LockKeyhole } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { Card, Status } from '../../../components/ui'
 import { ItemIcon, ItemRequirementTile, ItemUsesDialog } from '../../../components/ui/item'
-import { ITEMS, getItemSourceLabel } from '../../../game/content/items/items'
+import { ITEMS } from '../../../game/content/items/items'
 import type { RecipeDefinition } from '../../../game/content/recipes/recipes'
 import { getVisibleItemUsesForTransmutation } from '../../../game/presentation/transmutation/transmutationUsedInReadModel'
 import { getRecipeConsumableRequirements, getRecipeCurrentEffectiveDuration, getRecipeCurrentOutputPerHour, getRecipeCurrentSpeedMultiplier, getRecipeManaDemandPerSecond, getRecipeMaterialCapacity, getRecipeStatus, getRecipeUnlockReason, getTransmutationFocusReserved, getTransmutationJob, type RecipeConsumableRequirement, type RecipeMaterialCapacity, type TransmutationStatus } from '../../../game/systems/transmutation/transmutationSelectors'
@@ -37,7 +37,7 @@ export function RecipeDetail({ recipe, onSelectRecipe }: { recipe: RecipeDefinit
 
       {status !== 'locked' && <DetailSection title="CURRENT PRODUCTION"><CurrentProduction echoes={echoes} currentCycle={currentCycle} currentSpeed={currentSpeed} currentOutput={currentOutput} /></DetailSection>}
 
-      {requirements.length > 0 && <DetailSection title="MATERIAL REQUIREMENTS"><div className="transmutation-requirements-grid">{requirements.map((requirement) => <ItemRequirementTile key={requirement.itemId} itemId={requirement.itemId} owned={requirement.owned} available={requirement.available} equipped={requirement.equipped} required={requirement.required} protectedItem={requirement.protected} source={getItemSourceLabel(requirement.itemId)} />)}</div></DetailSection>}
+      {requirements.length > 0 && <DetailSection title="MATERIAL REQUIREMENTS"><div className="transmutation-requirements-grid">{requirements.map((requirement) => <ItemRequirementTile key={requirement.itemId} itemId={requirement.itemId} owned={requirement.owned} available={requirement.available} equipped={requirement.equipped} required={requirement.required} protectedItem={requirement.protected} />)}</div></DetailSection>}
 
       {materialCapacity && (materialCapacity.cycles !== null || materialCapacity.missing.length > 0) && <MaterialCapacity capacity={materialCapacity} outputQuantity={recipe.output.quantity} />}
 

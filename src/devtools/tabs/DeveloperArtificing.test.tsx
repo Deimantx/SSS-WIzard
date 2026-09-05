@@ -6,8 +6,12 @@ describe('Developer Artificing', () => {
   beforeEach(() => useGameStore.getState().resetSave())
   it('lists 27 Equipment recipes with independent visibility and normal craft rules', () => {
     render(<DeveloperArtificing />)
-    expect(screen.getByText('27 Equipment recipes')).toBeTruthy()
+    expect(screen.getByText('27 / 27 Equipment recipes')).toBeTruthy()
     expect(screen.queryByText('Assign one Echo')).toBeNull()
+    fireEvent.click(screen.getByRole('tab', { name: 'WEAPON' }))
+    expect(screen.getByText(/\/ 27 Equipment recipes/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('tab', { name: '2H' }))
+    expect(screen.getByText(/\/ 27 Equipment recipes/)).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'SHOW LOCKED EQUIPMENT RECIPES' }))
     fireEvent.click(screen.getByRole('button', { name: 'GRANT MISSING' }))
     expect(useGameStore.getState().debug.showLockedArtificingRecipes).toBe(true)

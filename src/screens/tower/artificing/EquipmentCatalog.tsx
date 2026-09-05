@@ -4,7 +4,6 @@ import { LockKeyhole, Search } from 'lucide-react'
 import { Card, SearchInput, Status, GameTooltip } from '../../../components/ui'
 import { ItemIcon, ItemTooltip } from '../../../components/ui/item'
 import { ITEMS } from '../../../game/content/items/items'
-import { DUNGEONS, DUNGEON_ORDER } from '../../../game/content/dungeons/dungeons'
 import { isRecipeUnlocked, getRecipeUnlockRequirement } from '../../../game/content/recipes/recipeUnlocks'
 import { getVisibleArtificingRecipes, getArtificingFilterCounts, getArtificingProfile, canCraftArtificingRecipe } from '../../../game/systems/artificing/artificingSelectors'
 import type { ArtificingRecipeId, EquipmentItemSlot } from '../../../game/types'
@@ -34,7 +33,6 @@ export function EquipmentCatalog({ selected, onSelect, query, onQueryChange }: P
         <FilterRow label="SLOT" options={slots.map(value => ({ value, label: value.toUpperCase() }))} value={filters.slotFilter} onChange={value => update({ slotFilter: value, weaponHandsFilter: 'all', offhandPresentationFilter: 'all' })} />
         {filters.slotFilter === 'weapon' && <FilterRow label="HANDS" options={(['all', 1, 2] as const).map(value => ({ value, label: value === 'all' ? 'ALL' : `${value}H` }))} value={filters.weaponHandsFilter} onChange={value => update({ weaponHandsFilter: value })} />}
         {filters.slotFilter === 'offhand' && <FilterRow label="TYPE" options={(['all', 'shield', 'focus'] as const).map(value => ({ value, label: value.toUpperCase() }))} value={filters.offhandPresentationFilter} onChange={value => update({ offhandPresentationFilter: value })} />}
-        <FilterRow label="SOURCE" options={[{ value: 'all' as const, label: 'ALL' }, ...DUNGEON_ORDER.map(value => ({ value, label: DUNGEONS[value].name.toUpperCase() }))]} value={filters.sourceDungeonFilter} onChange={value => update({ sourceDungeonFilter: value })} />
         <FilterRow label="OWNERSHIP" options={(['all', 'unowned', 'owned'] as const).map(value => ({ value, label: value.toUpperCase() }))} value={filters.ownershipFilter} onChange={value => update({ ownershipFilter: value })} />
         <GameTooltip content="Show only unlocked recipes with enough legally consumable ingredients. Protected, equipped, and reserved copies cannot be spent."><button type="button" className={`artificing-craftable-toggle ${filters.craftableOnly ? 'active' : ''}`} aria-pressed={filters.craftableOnly} onClick={() => update({ craftableOnly: !filters.craftableOnly })}><span aria-hidden="true">{filters.craftableOnly ? '☑' : '☐'}</span> CRAFTABLE <small>{counts.craftable}</small></button></GameTooltip>
       </div>
@@ -46,13 +44,14 @@ export function EquipmentCatalog({ selected, onSelect, query, onQueryChange }: P
         const owned = state.inventory[item.id] ?? 0
         const locked = !isRecipeUnlocked(state, recipe)
         const craftable = canCraftArtificingRecipe(state, recipe.id)
+        const status = locked ? 'LOCKED' : craftable ? 'READY' : 'MISSING'
         return <ItemTooltip key={recipe.id} itemId={item.id} owned={owned} recipeContext={{ status: locked ? 'Locked' : craftable ? 'Craftable' : 'Missing materials', outputQuantity: 1, ingredients: recipe.ingredients, unlockReason: locked ? getRecipeUnlockRequirement(recipe) ?? undefined : undefined }}>
           <button type="button" data-recipe-id={recipe.id} className={`artificing-item-card ${selected === recipe.id ? 'selected' : ''} ${locked ? 'locked' : ''}`} style={{ '--recipe-accent': item.color } as CSSProperties} aria-pressed={selected === recipe.id} onClick={() => onSelect(recipe.id)}>
             <span className="artificing-card-top">{locked && <LockKeyhole size={14} aria-label="Locked" />}{attention.unseenRecipes.includes(recipe.id) && <span className="archive-new-badge">NEW</span>}</span>
-            <ItemIcon itemId={item.id} size="tile" /><strong>{item.name}</strong>
-            <span className="artificing-badge">{getArtificingProfile(recipe)}</span><span className="artificing-source">{DUNGEONS[recipe.sourceDungeonId].name}</span>
+            <ItemIcon itemId={item.id} size="tiny" /><strong>{item.name}</strong>
+            <span className="artificing-badge">{getArtificingProfile(recipe)}</span>
             <span className="artificing-owned">OWNED {owned.toLocaleString()}</span>
-            {(locked || craftable) && <Status tone={locked ? 'locked' : 'success'}>{locked ? 'LOCKED' : 'CRAFTABLE'}</Status>}
+            <Status tone={locked ? 'locked' : craftable ? 'success' : 'warning'}>{status}</Status>
           </button>
         </ItemTooltip>
       })}</div>}

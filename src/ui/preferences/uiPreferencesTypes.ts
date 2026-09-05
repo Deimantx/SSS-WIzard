@@ -36,7 +36,6 @@ export interface ArtificingScreenPreferences {
   slotFilter: 'all' | import('../../game/types').EquipmentItemSlot
   weaponHandsFilter: 'all' | 1 | 2
   offhandPresentationFilter: 'all' | 'shield' | 'focus'
-  sourceDungeonFilter: 'all' | import('../../game/types').DungeonId
   craftableOnly: boolean
   ownershipFilter: 'all' | 'owned' | 'unowned'
 }

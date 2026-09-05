@@ -42,7 +42,7 @@ describe('screen UI preferences', () => {
     expect(preferences.screenState.transmutation.selectedRecipeId).toBe('fire-fragment')
     expect(preferences.screenState.transmutation).not.toHaveProperty('equipmentSlotFilter')
     expect(preferences.screenState.transmutation).not.toHaveProperty('unownedOnly')
-    setUiPreferences({ screenState: { artificing: { selectedRecipeId: 'ember-staff', slotFilter: 'weapon', weaponHandsFilter: 2, sourceDungeonFilter: 'whispering-woods', craftableOnly: true, ownershipFilter: 'unowned' } } })
+    setUiPreferences({ screenState: { artificing: { selectedRecipeId: 'ember-staff', slotFilter: 'weapon', weaponHandsFilter: 2, craftableOnly: true, ownershipFilter: 'unowned' } } })
     expect(loadUiPreferences().screenState.artificing).toEqual(getUiPreferences().screenState.artificing)
     expect(loadUiPreferences().screenState.artificing.selectedRecipeId).toBe('ember-staff')
     expect(normalizeUiPreferences({ screenState: { artificing: { selectedRecipeId: 'fire-fragment' } } }).screenState.artificing.selectedRecipeId).toBeNull()

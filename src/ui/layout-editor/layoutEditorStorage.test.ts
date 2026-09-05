@@ -55,6 +55,12 @@ describe('inventory layout compatibility', () => {
   })
 })
 
+describe('Artificing default layout', () => {
+  it('uses a wide catalog and right-side forge stack', () => {
+    expect(DEFAULT_LAYOUTS['tower-artificing']).toEqual({ 'artificing-catalog': { x: 0, y: 0, w: 7, h: 30 }, 'artificing-detail': { x: 7, y: 0, w: 5, h: 12 }, 'artificing-inspection': { x: 7, y: 12, w: 5, h: 19 } })
+  })
+})
+
 describe('Transmutation default layout', () => {
   it('uses the compact Transmutation defaults', () => {
     expect(DEFAULT_LAYOUTS['tower-transmutation']).toEqual({

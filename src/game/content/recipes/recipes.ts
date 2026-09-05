@@ -66,9 +66,15 @@ export const RECIPE_ORDER: readonly RecipeId[] = [
   'graveglass-wand', 'edrins-remnant-staff', 'soulward-focus', 'soulward-shield', 'acolyte-vestments', 'wraithveil-hood', 'ossuary-mantle', 'soulglass-amulet', 'gravebinder-ring', 'edrins-signet',
 ]
 
+/** Runtime ownership is deliberately split: only these recipes may be scheduled. */
+export const TRANSMUTATION_RECIPE_ORDER = RECIPE_ORDER.slice(0, 5) as readonly RecipeId[]
+export const ARTIFICING_RECIPE_ORDER = RECIPE_ORDER.slice(5) as readonly RecipeId[]
+export const TRANSMUTATION_RECIPES = Object.fromEntries(TRANSMUTATION_RECIPE_ORDER.map((id) => [id, RECIPES[id]])) as Pick<typeof RECIPES, typeof TRANSMUTATION_RECIPE_ORDER[number]>
+export const ARTIFICING_RECIPES = Object.fromEntries(ARTIFICING_RECIPE_ORDER.map((id) => [id, RECIPES[id]])) as Pick<typeof RECIPES, typeof ARTIFICING_RECIPE_ORDER[number]>
+
 const hasProgress = (progress: GameState['progress'], monsterId: string, count: number) => Math.max(progress.lifetimeKillsByMonster[monsterId as keyof typeof progress.lifetimeKillsByMonster] ?? 0, progress.bossKillsByBoss[monsterId as keyof typeof progress.bossKillsByBoss] ?? 0) >= count
 
-export const isRecipeUnlocked = (state: Pick<GameState, 'progress'>, recipe: RecipeDefinition) => {
+export const isRecipeUnlocked = (state: Pick<GameState, 'progress'>, recipe: Pick<RecipeDefinition, 'unlock'>) => {
   switch (recipe.unlock.type) {
     case 'always': return true
     case 'first-dungeon-boss-kill': return state.progress.firstBossKill
@@ -87,7 +93,7 @@ export const isRecipeUnlocked = (state: Pick<GameState, 'progress'>, recipe: Rec
   }
 }
 
-export const getRecipeUnlockRequirement = (recipe: RecipeDefinition): string | null => {
+export const getRecipeUnlockRequirement = (recipe: Pick<RecipeDefinition, 'unlock'>): string | null => {
   switch (recipe.unlock.type) {
     case 'always': return null
     case 'first-dungeon-boss-kill': return 'Defeat the first dungeon boss to unlock this recipe.'

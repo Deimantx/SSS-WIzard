@@ -1,4 +1,4 @@
-import { RECIPES, RECIPE_ORDER } from '../../content/recipes/recipes'
+import { TRANSMUTATION_RECIPES as RECIPES, TRANSMUTATION_RECIPE_ORDER as RECIPE_ORDER } from '../../content/recipes/recipes'
 import { isRecipeUnlocked } from './transmutationSelectors'
 import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
 import type { GameState, ItemId, RecipeId } from '../../types'

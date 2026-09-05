@@ -6,7 +6,7 @@ import { GUILD_REQUESTS } from '../game/content/guild/guildRequests'
 import { ITEMS } from '../game/content/items/items'
 import { isBossMonster, MONSTERS } from '../game/content/monsters'
 import { RECIPES } from '../game/content/recipes/recipes'
-import { RECIPE_ORDER } from '../game/content/recipes/recipes'
+import { TRANSMUTATION_RECIPE_ORDER as RECIPE_ORDER } from '../game/content/recipes/recipes'
 import { BALANCE } from '../game/core/balance/balance'
 import { SCHOOL_MAX_LEVEL, getSchoolTotalXpForLevel } from '../game/core/balance/schoolXpCurve'
 import { SPELLS } from '../game/content/spells/spells'
@@ -29,7 +29,7 @@ const statusValidationContext = createCombatValidationContext(STATUS_DEFINITIONS
 
 const normalizeScreen = (value: unknown, fallback: GameState['ui']['screen']): GameState['ui']['screen'] => {
   if (value === 'tower') return 'tower-channeling'
-  const valid = ['home', 'combat', 'schools', 'inventory', 'equipment', 'collection', 'bestiary', 'tower-channeling', 'tower-focus', 'tower-research', 'tower-transmutation', 'guild', 'settings']
+  const valid = ['home', 'combat', 'schools', 'inventory', 'equipment', 'collection', 'bestiary', 'tower-channeling', 'tower-focus', 'tower-research', 'tower-transmutation', 'tower-artificing', 'guild', 'settings']
   if (value === 'tower-condensation') return 'tower-transmutation'
   return typeof value === 'string' && valid.includes(value) ? value as GameState['ui']['screen'] : fallback
 }

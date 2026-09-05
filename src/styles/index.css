@@ -21,6 +21,7 @@
 @import './screens/inventory.css';
 @import './screens/equipment.css';
 @import './screens/transmutation.css';
+@import './screens/artificing.css';
 @import './layout-editor.css';
 @import './screens/research.css';
 @import './screens/focus.css';

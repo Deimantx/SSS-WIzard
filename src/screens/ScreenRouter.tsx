@@ -9,7 +9,7 @@ import { HomeScreenV2 } from './home/HomeScreen'
 import { InventoryScreenV2 } from './inventory/InventoryScreen'
 import { MagicSchoolsScreenV2 } from './schools/MagicSchoolsScreen'
 import { SettingsScreenV2 } from './settings/SettingsScreen'
-import { TowerChannelingScreen, TowerFocusScreen, TowerResearchScreen, TowerTransmutationScreen } from './tower/TowerScreens'
+import { TowerChannelingScreen, TowerFocusScreen, TowerResearchScreen, TowerTransmutationScreen, TowerArtificingScreen } from './tower/TowerScreens'
 import { ScreenTransitionFrame } from '../ui/game-feel/ScreenTransitionFrame'
 
 function CurrentScreen() {
@@ -19,6 +19,7 @@ function CurrentScreen() {
   if (screen === 'tower-focus') return <TowerFocusScreen />
   if (screen === 'tower-research') return <TowerResearchScreen />
   if (screen === 'tower-transmutation') return <TowerTransmutationScreen />
+  if (screen === 'tower-artificing') return <TowerArtificingScreen />
   if (screen === 'schools') return <MagicSchoolsScreenV2 />
   if (screen === 'combat') return <CombatScreenV2 />
   if (screen === 'inventory') return <InventoryScreenV2 />

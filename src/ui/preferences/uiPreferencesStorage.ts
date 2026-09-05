@@ -1,5 +1,5 @@
 import { customFromPreset, THEME_PRESETS } from '../theme/themePresets'
-import { RECIPE_ORDER } from '../../game/content/recipes/recipes'
+import { TRANSMUTATION_RECIPE_ORDER as RECIPE_ORDER } from '../../game/content/recipes/recipes'
 import { ITEMS } from '../../game/content/items/items'
 import { SCHOOLS } from '../../game/content/schools/schools'
 import { COMBAT_DETAILS_MODE_ORDER } from '../../game/presentation/combat/combatDetailsPresentation'
@@ -10,6 +10,7 @@ export const UI_PREFERENCES_KEY = 'sss-wizard-ui-preferences-v1'
 export const defaultScreenPreferences = (): ScreenPreferences => ({
   inventory: { currentNeedsOpen: true, sourceOpen: false, usedInOpen: true },
   transmutation: { selectedRecipeId: RECIPE_ORDER[0], categoryFilter: 'all', equipmentSlotFilter: 'all', weaponHandsFilter: 'all', offhandPresentationFilter: 'all', tierFilter: 'all', craftableOnly: false, activeOnly: false, unownedOnly: false, collapsedCategories: { elemental: false, material: false, equipment: false, special: false } },
+  artificing: { selectedRecipeId: null, slotFilter: 'all', weaponHandsFilter: 'all', offhandPresentationFilter: 'all', sourceDungeonFilter: 'all', craftableOnly: false, ownershipFilter: 'all' },
   research: { selectedItemId: null, affinityFilter: 'all', targetSchoolId: 'fire' },
   combat: { combatLogFontSize: 'medium', combatDetailsMode: 'damage-done', dungeonStatisticsMode: 'runs' },
 })
@@ -33,14 +34,14 @@ export const normalizeUiPreferences = (value: unknown): UiPreferences => {
   const collapsedCategories = (transmutation.collapsedCategories && typeof transmutation.collapsedCategories === 'object' ? transmutation.collapsedCategories : {}) as Partial<ScreenPreferences['transmutation']['collapsedCategories']>
   const legacyFilters = ['all', 'elemental', 'material', 'equipment', 'special', 'craftable', 'active'] as const
   const legacyFilter = legacyFilters.includes((transmutation as { recipeFilter?: unknown }).recipeFilter as typeof legacyFilters[number]) ? (transmutation as { recipeFilter: typeof legacyFilters[number] }).recipeFilter : undefined
-  const categoryFilters: TransmutationCategoryFilter[] = ['all', 'elemental', 'material', 'equipment', 'special']
+  const categoryFilters: TransmutationCategoryFilter[] = ['all', 'elemental', 'material', 'special']
   const categoryFilter = categoryFilters.includes(transmutation.categoryFilter as TransmutationCategoryFilter) && !(legacyFilter && legacyFilter !== 'all')
     ? transmutation.categoryFilter as TransmutationCategoryFilter
-    : legacyFilter === 'elemental' || legacyFilter === 'material' || legacyFilter === 'equipment' || legacyFilter === 'special' ? legacyFilter : defaults.screenState.transmutation.categoryFilter
+    : legacyFilter === 'elemental' || legacyFilter === 'material' || legacyFilter === 'special' ? legacyFilter : defaults.screenState.transmutation.categoryFilter
   const equipmentSlots: TransmutationEquipmentSlotFilter[] = ['all', 'weapon', 'offhand', 'armor', 'helmet', 'cape', 'amulet', 'ring']
-  const equipmentSlotFilter = equipmentSlots.includes(transmutation.equipmentSlotFilter as TransmutationEquipmentSlotFilter) ? transmutation.equipmentSlotFilter as TransmutationEquipmentSlotFilter : defaults.screenState.transmutation.equipmentSlotFilter
-  const weaponHandsFilter: TransmutationWeaponHandsFilter = transmutation.weaponHandsFilter === 1 || transmutation.weaponHandsFilter === 2 ? transmutation.weaponHandsFilter : 'all'
-  const offhandPresentationFilter: TransmutationOffhandFilter = transmutation.offhandPresentationFilter === 'shield' || transmutation.offhandPresentationFilter === 'focus' ? transmutation.offhandPresentationFilter : 'all'
+  const equipmentSlotFilter = 'all'
+  const weaponHandsFilter: TransmutationWeaponHandsFilter = 'all'
+  const offhandPresentationFilter: TransmutationOffhandFilter = 'all'
   const legacyTierFilter = (transmutation as { materialTierFilter?: unknown }).materialTierFilter
   const inputTierFilter = transmutation.tierFilter ?? legacyTierFilter
   const tierFilter: TransmutationTierFilter = inputTierFilter === 'all' || (typeof inputTierFilter === 'number' && Number.isInteger(inputTierFilter) && inputTierFilter >= 1) ? inputTierFilter : 'all'
@@ -54,7 +55,7 @@ export const normalizeUiPreferences = (value: unknown): UiPreferences => {
   const combatDetailsMode = COMBAT_DETAILS_MODE_ORDER.includes(combat.combatDetailsMode as typeof COMBAT_DETAILS_MODE_ORDER[number]) ? combat.combatDetailsMode as typeof COMBAT_DETAILS_MODE_ORDER[number] : defaults.screenState.combat.combatDetailsMode
   const storedDungeonStatisticsMode = (combat as { dungeonStatisticsMode?: unknown }).dungeonStatisticsMode === 'loot' ? 'drops' : (combat as { dungeonStatisticsMode?: unknown }).dungeonStatisticsMode
   const dungeonStatisticsMode = DUNGEON_STATISTICS_MODE_ORDER.includes(storedDungeonStatisticsMode as typeof DUNGEON_STATISTICS_MODE_ORDER[number]) ? storedDungeonStatisticsMode as typeof DUNGEON_STATISTICS_MODE_ORDER[number] : defaults.screenState.combat.dungeonStatisticsMode
-  const unownedOnly = transmutation.unownedOnly === true
+  const unownedOnly = false
   return { theme: input.theme === 'dark' || input.theme === 'light' || input.theme === 'custom' ? input.theme : 'default', textSize: input.textSize === 'large' || input.textSize === 'extra-large' ? input.textSize : 'default', backgroundEffects: input.backgroundEffects !== false, reducedMotion: input.reducedMotion === true, customCursor: input.customCursor !== false, showFpsCounter: input.showFpsCounter !== false, uiSounds: input.uiSounds !== false, uiSoundVolume: validVolume(input.uiSoundVolume, defaults.uiSoundVolume), customTheme: custom, navigationGroups: { combat: groups.combat === true, hero: groups.hero === true, tower: groups.tower === true, world: groups.world === true, system: groups.system === true }, screenState: { inventory: { currentNeedsOpen: inventory.currentNeedsOpen !== false, sourceOpen: inventory.sourceOpen === true, usedInOpen: inventory.usedInOpen !== false, }, transmutation: { selectedRecipeId, categoryFilter, equipmentSlotFilter, weaponHandsFilter, offhandPresentationFilter, tierFilter, craftableOnly, activeOnly, unownedOnly, collapsedCategories: { elemental: collapsedCategories.elemental === true, material: collapsedCategories.material === true, equipment: collapsedCategories.equipment === true, special: collapsedCategories.special === true } }, research: { selectedItemId, affinityFilter, targetSchoolId }, combat: { combatLogFontSize, combatDetailsMode, dungeonStatisticsMode } } }
 }
 

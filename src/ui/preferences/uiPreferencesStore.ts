@@ -11,7 +11,7 @@ const subscribe = (listener: () => void) => { listeners.add(listener); return ()
 export const getUiPreferences = () => current
 type LegacyRecipeFilter = 'all' | 'elemental' | 'material' | 'equipment' | 'special' | 'craftable' | 'active'
 type TransmutationPreferenceChanges = Partial<Omit<ScreenPreferences['transmutation'], 'collapsedCategories'>> & { collapsedCategories?: Partial<ScreenPreferences['transmutation']['collapsedCategories']>; /** @deprecated Loaded and normalized only for pre-V2 preference compatibility. */ recipeFilter?: LegacyRecipeFilter }
-type UiPreferenceChanges = Omit<Partial<UiPreferences>, 'screenState'> & { screenState?: { inventory?: Partial<ScreenPreferences['inventory']>; transmutation?: TransmutationPreferenceChanges; research?: Partial<ScreenPreferences['research']>; combat?: Partial<ScreenPreferences['combat']> } }
+type UiPreferenceChanges = Omit<Partial<UiPreferences>, 'screenState'> & { screenState?: { inventory?: Partial<ScreenPreferences['inventory']>; transmutation?: TransmutationPreferenceChanges; artificing?: Partial<NonNullable<ScreenPreferences['artificing']>>; research?: Partial<ScreenPreferences['research']>; combat?: Partial<ScreenPreferences['combat']> } }
 
 export const setUiPreferences = (changes: UiPreferenceChanges) => {
   const screenState = changes.screenState
@@ -19,7 +19,7 @@ export const setUiPreferences = (changes: UiPreferenceChanges) => {
     ...current,
     ...changes,
     customTheme: changes.customTheme ? { ...current.customTheme, ...changes.customTheme } : current.customTheme,
-    screenState: screenState ? { ...current.screenState, ...screenState, inventory: { ...current.screenState.inventory, ...screenState.inventory }, transmutation: { ...current.screenState.transmutation, ...screenState.transmutation, collapsedCategories: { ...current.screenState.transmutation.collapsedCategories, ...screenState.transmutation?.collapsedCategories } }, research: { ...current.screenState.research, ...screenState.research }, combat: { ...current.screenState.combat, ...screenState.combat } } : current.screenState,
+    screenState: screenState ? { ...current.screenState, ...screenState, inventory: { ...current.screenState.inventory, ...screenState.inventory }, transmutation: { ...current.screenState.transmutation, ...screenState.transmutation, collapsedCategories: { ...current.screenState.transmutation.collapsedCategories, ...screenState.transmutation?.collapsedCategories } }, artificing: { ...current.screenState.artificing, ...screenState.artificing }, research: { ...current.screenState.research, ...screenState.research }, combat: { ...current.screenState.combat, ...screenState.combat } } : current.screenState,
   })
   saveUiPreferences(current)
   applyUiPreferences(current)

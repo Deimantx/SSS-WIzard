@@ -14,7 +14,7 @@ const material = (id: ItemId, name: string, description: string, icon: string, c
   return { id, name, description, icon, color, kind: 'material', category, inventoryCategory: 'material', materialSubtype, materialTier: 1, source, ...(sourceNavigation ? { sourceNavigation } : {}), ...(affinity ? { researchSchool: affinity } : {}) }
 }
 const universalMaterial = (id: ItemId, name: string, description: string, icon: string, color: string, category: ItemDefinition['category'], source: string, materialSubtype?: InventoryMaterialSubtype, sourceNavigation?: ScreenId): AuthoredItemDefinition => ({ id, name, description, icon, color, kind: 'material', category, inventoryCategory: 'material', ...(materialSubtype ? { materialSubtype } : {}), materialTier: 1, source, ...(sourceNavigation ? { sourceNavigation } : {}) })
-const equipment = (definition: Omit<AuthoredItemDefinition, 'kind' | 'category' | 'inventoryCategory'> & Pick<ItemDefinition, 'equipmentSlot'>): AuthoredItemDefinition => ({ ...definition, kind: 'equipment', category: 'equipment' })
+const equipment = (definition: Omit<AuthoredItemDefinition, 'kind' | 'category' | 'inventoryCategory'> & Pick<ItemDefinition, 'equipmentSlot'>): AuthoredItemDefinition => ({ ...definition, source: 'Artificing', sourceNavigation: 'tower-artificing', kind: 'equipment', category: 'equipment' })
 
 /** One authoritative item registry for materials, loot, and all authored equipment. */
 const authoredItems: Record<ItemId, AuthoredItemDefinition> = {

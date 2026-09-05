@@ -2,3 +2,4 @@ export { ChannelingScreen as TowerChannelingScreen } from './channeling/Channeli
 export { FocusScreen as TowerFocusScreen } from './focus/FocusScreen'
 export { ResearchScreen as TowerResearchScreen } from './research/ResearchScreen'
 export { TransmutationScreen as TowerTransmutationScreen } from './transmutation/TransmutationScreen'
+export { ArtificingScreen as TowerArtificingScreen } from './artificing/ArtificingScreen'

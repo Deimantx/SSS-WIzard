@@ -1,4 +1,4 @@
-import { RECIPES, RECIPE_ORDER, getRecipeUnlockRequirement, isRecipeUnlocked as isAuthoredRecipeUnlocked, type RecipeDefinition } from '../../content/recipes/recipes'
+import { TRANSMUTATION_RECIPES as RECIPES, TRANSMUTATION_RECIPE_ORDER as RECIPE_ORDER, getRecipeUnlockRequirement, isRecipeUnlocked as isAuthoredRecipeUnlocked, type RecipeDefinition } from '../../content/recipes/recipes'
 import { ITEMS } from '../../content/items/items'
 import { getEquippedReservedQuantity } from '../../core/equipment/equipmentRules'
 import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'

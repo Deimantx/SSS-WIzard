@@ -35,6 +35,15 @@ export interface TransmutationScreenPreferences {
   unownedOnly: boolean
   collapsedCategories: Record<RecipeCategory, boolean>
 }
+export interface ArtificingScreenPreferences {
+  selectedRecipeId: string | null
+  slotFilter: 'all' | import('../../game/types').EquipmentItemSlot
+  weaponHandsFilter: 'all' | 1 | 2
+  offhandPresentationFilter: 'all' | 'shield' | 'focus'
+  sourceDungeonFilter: 'all' | import('../../game/types').DungeonId
+  craftableOnly: boolean
+  ownershipFilter: 'all' | 'owned' | 'unowned'
+}
 
 export type ResearchAffinityFilter = 'all' | SchoolId
 export interface ResearchScreenPreferences {
@@ -53,6 +62,7 @@ export interface CombatScreenPreferences {
 export interface ScreenPreferences {
   inventory: InventoryScreenPreferences
   transmutation: TransmutationScreenPreferences
+  artificing?: ArtificingScreenPreferences
   research: ResearchScreenPreferences
   combat: CombatScreenPreferences
 }

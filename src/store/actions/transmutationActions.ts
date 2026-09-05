@@ -1,4 +1,4 @@
-import { RECIPES } from '../../game/content/recipes/recipes'
+import { TRANSMUTATION_RECIPES as RECIPES } from '../../game/content/recipes/recipes'
 import { BALANCE } from '../../game/core/balance/balance'
 import { getConsumableQuantity } from '../../game/core/inventory/inventoryConsumption'
 import { canReserveFocusAction } from './focusActions'

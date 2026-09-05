@@ -12,6 +12,7 @@ export interface CriticalSaveSnapshot {
     channeling: GameState['activities']['channeling']
     research: GameState['activities']['research']
     transmutation: GameState['activities']['transmutation']
+    artificing: GameState['activities']['artificing']
     autoCast: GameState['activities']['autoCast']
   }
   progress: GameState['progress']
@@ -50,6 +51,7 @@ export const getCriticalSaveSnapshot = (state: Pick<GameState, 'inventory' | 'pr
     channeling: state.activities.channeling,
     research: state.activities.research,
     transmutation: state.activities.transmutation,
+    artificing: state.activities.artificing,
     autoCast: state.activities.autoCast,
   },
   progress: (() => {

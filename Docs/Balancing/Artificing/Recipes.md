@@ -1,6 +1,6 @@
 # Artificing recipes
 
-Manual Equipment crafting: one click creates one item immediately. No Mana, Echoes, timer, queue, repeat, or offline production.
+Manual Equipment crafting: one click commits one recipe cost and starts one 5-second craft. Output is granted once on completion. No Mana, Echoes, queue, repeat, or offline production. All current 27 recipes use 5,000 ms.
 
 ## Whispering Woods
 

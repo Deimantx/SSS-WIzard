@@ -7,12 +7,13 @@ export interface ArtificingRecipeDefinition {
  unlock: RecipeUnlockCondition
  sourceDungeonId: DungeonId
  description?: string
+ baseDurationMs: number
 }
 const whisperingWoodsMonsterKill: RecipeUnlockCondition = { type: 'dungeon-monster-kills', dungeonId: 'whispering-woods', count: 1 }
 const howlingDen: RecipeUnlockCondition = { type: 'dungeon-monster-kills', dungeonId: 'howling-den', count: 1 }
 const abandonedCatacombs: RecipeUnlockCondition = { type: 'dungeon-monster-kills', dungeonId: 'abandoned-catacombs', count: 1 }
 
-const equipmentRecipe = (id: ArtificingRecipeId, name: string, ingredients: { itemId: ItemId; quantity: number }[], sourceDungeonId: DungeonId, unlock: RecipeUnlockCondition, description: string): ArtificingRecipeDefinition => ({ id, name, output: { itemId: id, quantity: 1 }, ingredients, sourceDungeonId, unlock, description })
+const equipmentRecipe = (id: ArtificingRecipeId, name: string, ingredients: { itemId: ItemId; quantity: number }[], sourceDungeonId: DungeonId, unlock: RecipeUnlockCondition, description: string): ArtificingRecipeDefinition => ({ id, name, output: { itemId: id, quantity: 1 }, ingredients, sourceDungeonId, unlock, baseDurationMs: 5000, description })
 export const ARTIFICING_RECIPES: Record<ArtificingRecipeId, ArtificingRecipeDefinition> = {
   'ember-staff': equipmentRecipe('ember-staff', 'Ember Staff', [{ itemId: 'fire-fragment', quantity: 48 }, { itemId: 'wisp-essence', quantity: 24 }, { itemId: 'grove-bark', quantity: 3 }], 'whispering-woods', whisperingWoodsMonsterKill, 'A staff that makes every Fire spell burn brighter.'),
   'wispwood-wand': equipmentRecipe('wispwood-wand', 'Wispwood Wand', [{ itemId: 'fire-fragment', quantity: 24 }, { itemId: 'air-fragment', quantity: 24 }, { itemId: 'wisp-essence', quantity: 18 }, { itemId: 'grove-bark', quantity: 3 }], 'whispering-woods', whisperingWoodsMonsterKill, 'A flexible one-handed caster weapon.'),

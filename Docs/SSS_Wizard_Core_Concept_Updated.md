@@ -809,7 +809,7 @@ Svarbu:
 
 Transmutation yra nuolatinė elementinių fragmentų ir materialų gamyba: Fire, Water, Earth, Air ir Prismatic Fragment. Jai naudojami Mana, Arcane Echoes ir funded progress; ji veikia Offline Bank metu.
 
-Equipment gamyba priklauso **Artificing / Arcane Forge**: vienas paspaudimas iškart sukuria vieną daiktą ir sunaudoja vieną recipe kainą. Nėra Mana kainos, Echo, timer, queue, repeat ar offline gamybos. Visos 27 Equipment recipes turi autoriaus nurodytą dungeon šaltinį ir išsaugo esamus unlock reikalavimus. Equipment ekranas lieka loadout valdymui.
+Equipment gamyba priklauso **Artificing / Arcane Forge**: vienas paspaudimas sunaudoja vieną recipe kainą ir paleidžia 5 sekundžių craft laikmatį, kurio pabaigoje sukuriamas vienas daiktas. Nėra Mana kainos, Echo, queue, repeat ar offline gamybos. Visos 27 Equipment recipes turi autoriaus nurodytą dungeon šaltinį ir išsaugo esamus unlock reikalavimus. Equipment ekranas lieka loadout valdymui.
 
 ---
 
@@ -851,7 +851,7 @@ Tai leidžia pasirinkti tarp:
 
 ## [PATVIRTINTA / IMPLEMENTUOTA]
 
-Transmutation output **negali atsirasti iškart pradėjus recipe**. Ši funded-progress taisyklė netaikoma momentiniam Artificing.
+Transmutation output **negali atsirasti iškart pradėjus recipe**. Ši funded-progress taisyklė netaikoma gyvai simuliuojamam 5 sekundžių Artificing craft laikmačiui.
 
 Recipe turi realiai užbaigti savo funded progress.
 

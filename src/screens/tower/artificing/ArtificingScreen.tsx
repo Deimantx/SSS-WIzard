@@ -12,7 +12,7 @@ import { EditableGrid } from '../../../ui/layout-editor/EditableGrid'
 import { InspectorTransition } from '../../../ui/game-feel/InspectorTransition'
 import { EquipmentCatalog } from './EquipmentCatalog'
 import { ArtificingDetail } from './ArtificingDetail'
-import { EquipmentInspection } from './EquipmentInspection'
+import { PinnedRecipePanel } from './PinnedRecipePanel'
 
 export function ArtificingScreen() {
   const state = useGameStore()
@@ -33,7 +33,7 @@ export function ArtificingScreen() {
   const panels = [
     { id: 'artificing-catalog', content: <EquipmentCatalog selected={recipe?.id ?? null} onSelect={select} query={query} onQueryChange={setQuery} /> },
     { id: 'artificing-detail', content: <InspectorTransition identity={recipe?.id ?? 'none'} accent={recipe ? ITEMS[recipe.output.itemId].color : undefined}><ArtificingDetail recipe={recipe} /></InspectorTransition> },
+    ...(preferences.pinnedRecipeId && ARTIFICING_RECIPES[preferences.pinnedRecipeId] ? [{ id: 'artificing-pinned-recipe', content: <PinnedRecipePanel recipe={ARTIFICING_RECIPES[preferences.pinnedRecipeId]} onSelect={select} /> }] : []),
   ]
-  if (recipe) panels[1].content = <InspectorTransition identity={recipe.id} accent={ITEMS[recipe.output.itemId].color}><ArtificingDetail recipe={recipe} inspection={<EquipmentInspection key={recipe.id} recipe={recipe} />} /></InspectorTransition>
   return <TowerFrame className="artificing-screen" eyebrow="WIZARD TOWER · ARTIFICING" title="Arcane Forge" description="Forge magical equipment from elemental and dungeon materials. Each craft creates exactly one item."><EditableGrid screen="tower-artificing" panels={panels} /></TowerFrame>
 }

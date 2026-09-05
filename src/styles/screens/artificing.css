@@ -16,9 +16,9 @@
 .artificing-craftable-toggle { display: inline-flex; align-items: center; gap: 6px; border-radius: 4px; }
 .artificing-craftable-toggle.active { color: var(--ui-success); border-color: var(--ui-success); background: color-mix(in srgb, var(--ui-success) 8%, var(--ui-panel)); }
 .artificing-catalog-scroll { flex: 1 1 0; min-height: 100px; min-width: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; scrollbar-gutter: stable; margin-top: 10px; padding: 0 3px 12px 0; }
-.artificing-item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(145px, 100%), 1fr)); gap: 8px; align-content: start; }
+.artificing-item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(124px, 100%), 1fr)); gap: 7px; align-content: start; }
 .artificing-item-grid > .game-tooltip-trigger { min-width: 0; height: 100%; }
-.artificing-item-card { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; height: 100%; padding: 9px; min-width: 0; border: 1px solid color-mix(in srgb, var(--recipe-accent) 28%, var(--ui-border)); border-radius: 8px; color: var(--ui-text-soft); background: linear-gradient(155deg, color-mix(in srgb, var(--recipe-accent) 9%, var(--ui-panel-strong)), var(--ui-panel)); cursor: pointer; }
+.artificing-item-card { position: relative; display: flex; flex-direction: column; align-items: center; gap: 5px; width: 100%; height: 100%; padding: 8px; min-width: 0; border: 1px solid color-mix(in srgb, var(--recipe-accent) 28%, var(--ui-border)); border-radius: 8px; color: var(--ui-text-soft); background: linear-gradient(155deg, color-mix(in srgb, var(--recipe-accent) 9%, var(--ui-panel-strong)), var(--ui-panel)); cursor: pointer; }
 .artificing-item-card:hover, .artificing-item-card:focus-visible { border-color: var(--recipe-accent); background: color-mix(in srgb, var(--recipe-accent) 14%, var(--ui-panel-strong)); }
 .artificing-item-card.selected { border-color: var(--ui-accent); background: var(--ui-accent-soft); box-shadow: inset 0 0 0 1px var(--ui-accent); }
 .artificing-item-card.locked { opacity: .7; }
@@ -94,4 +94,4 @@
  .artificing-filter-row { grid-template-columns: 1fr; gap: 4px; }
  .artificing-output-stat-list.comparison > div { grid-template-columns: minmax(0, 1fr) auto; }
  .artificing-output-stat-list.comparison small { grid-column: 1 / -1; }
-}
+}\n.artificing-comparison-icon { display: inline-grid; place-items: center; width: 34px; height: 34px; border: 1px solid var(--ui-border); border-radius: 6px; background: var(--ui-panel); }\n.artificing-empty-slot { padding: 8px 5px; color: var(--ui-text-muted); }\n.artificing-active-craft { display: grid; gap: 5px; padding: 8px; border: 1px solid var(--ui-accent); border-radius: 7px; background: var(--ui-accent-soft); }\n.artificing-progress-track { height: 6px; overflow: hidden; border-radius: 4px; background: var(--ui-border); }\n.artificing-progress-fill { height: 100%; background: var(--ui-accent); transition: width 180ms linear; }\n.artificing-pinned-content { display: grid; gap: 8px; }\n.artificing-pinned-material { display: flex; justify-content: space-between; gap: 8px; color: var(--ui-text-muted); font-size: var(--text-xs); }

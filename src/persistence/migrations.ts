@@ -7,6 +7,7 @@ import { ITEMS } from '../game/content/items/items'
 import { isBossMonster, MONSTERS } from '../game/content/monsters'
 import { TRANSMUTATION_RECIPES as RECIPES } from '../game/content/recipes/recipes'
 import { TRANSMUTATION_RECIPE_ORDER as RECIPE_ORDER } from '../game/content/recipes/recipes'
+import { ARTIFICING_RECIPES } from '../game/content/recipes/artificingRecipes'
 import { BALANCE } from '../game/core/balance/balance'
 import { SCHOOL_MAX_LEVEL, getSchoolTotalXpForLevel } from '../game/core/balance/schoolXpCurve'
 import { SPELLS } from '../game/content/spells/spells'
@@ -91,6 +92,9 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
 
   migrated.inventory = normalizeDynamicRecord(fresh.inventory, raw.inventory, itemIds, nonNegativeInteger)
   migrated.protectedItems = normalizeDynamicRecord(fresh.protectedItems, raw.protectedItems, itemIds, booleanValue)
+  const rawArtificing = isRecord(rawActivities.artificing) ? rawActivities.artificing : {}
+  const activeRecipeId = typeof rawArtificing.activeRecipeId === 'string' && Object.prototype.hasOwnProperty.call(ARTIFICING_RECIPES, rawArtificing.activeRecipeId) ? rawArtificing.activeRecipeId as GameState['activities']['artificing']['activeRecipeId'] : null
+  migrated.activities.artificing = { activeRecipeId, progressMs: activeRecipeId ? Math.max(0, nonNegativeNumber(rawArtificing.progressMs) ?? 0) : 0 }
   migrated.activities.autoCast = normalizeDynamicRecord(fresh.activities.autoCast, rawActivities.autoCast, spellIds, booleanValue) as GameState['activities']['autoCast']
   migrated.combat.spellCooldowns = normalizeDynamicRecord(fresh.combat.spellCooldowns, rawCombat.spellCooldowns, spellIds, nonNegativeNumber) as GameState['combat']['spellCooldowns']
   migrated.progress.requestProgress = normalizeDynamicRecord(fresh.progress.requestProgress, rawProgress.requestProgress, requestIds, nonNegativeInteger)

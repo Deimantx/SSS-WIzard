@@ -16,20 +16,16 @@ describe('Artificing equipment output inspection', () => {
       equipment: { ...state.equipment, offhand: 'tide-focus' },
     })
     render(<EquipmentInspection recipe={RECIPES['ember-staff']} />)
-    expect(screen.getByRole('heading', { name: 'EQUIPMENT INSPECTION' })).toBeTruthy()
-    expect(screen.getByText('2H')).toBeTruthy()
-    expect(screen.getByText('AUTHORED STATS')).toBeTruthy()
+    expect(screen.getByText('STATS')).toBeTruthy()
     expect(screen.getByText(/would be removed because this is a two-handed Weapon/)).toBeTruthy()
   })
 
-  it('keeps the output icon cell and copy as separate contained hero columns', () => {
+  it('keeps inspection content-only without a duplicate identity hero', () => {
     const state = useGameStore.getState()
     useGameStore.setState({ progress: { ...state.progress, firstBossKill: true } })
     const { container } = render(<EquipmentInspection recipe={RECIPES['ember-staff']} />)
-    const hero = container.querySelector('.artificing-output-hero')
-    const icon = container.querySelector('.artificing-output-icon')
-    expect(hero?.children).toHaveLength(2)
-    expect(icon?.querySelector('.item-icon-large')).toBeTruthy()
-    expect(icon?.parentElement).toBe(hero)
+    expect(container.querySelector('.artificing-output-hero')).toBeNull()
+    expect(container.querySelector('.artificing-output-icon')).toBeNull()
+    expect(screen.getByText('STATS')).toBeTruthy()
   })
 })

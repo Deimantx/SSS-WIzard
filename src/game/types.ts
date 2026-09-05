@@ -216,10 +216,12 @@ export interface ResearchActivity {
 }
 export interface TransmutationJobState { echoesAssigned: number; progressMs: number }
 export interface TransmutationActivity { jobs: Partial<Record<TransmutationRecipeId, TransmutationJobState>> }
+export interface ArtificingActivity { activeRecipeId: ArtificingRecipeId | null; progressMs: number }
 export interface ActivitiesState {
   channeling: ChannelingActivity
   research: ResearchActivity
   transmutation: TransmutationActivity
+  artificing: ArtificingActivity
   autoCast: Record<SpellId, boolean>
 }
 export interface SpellPreset {

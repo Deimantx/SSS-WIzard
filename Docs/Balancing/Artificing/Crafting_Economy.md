@@ -34,4 +34,4 @@ Derived comparison values are marked Est. and do not add runtime values.
 
 Est. Enemy Kills uses the best authored normal-monster expected quantity for each monster material and takes the largest ingredient estimate. It does not estimate target farm time.
 
-Crafting is manual and immediate. Material sourcing, not a forge timer, determines acquisition pacing.
+Crafting is manual with a 5-second completion timer per current recipe. Material sourcing remains the primary acquisition pacing factor; there is no queue or offline production.

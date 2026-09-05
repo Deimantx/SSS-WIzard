@@ -16,33 +16,33 @@
 | Earth Fragment (earth-fragment) | 8 s |
 | Air Fragment (air-fragment) | 8 s |
 | Prismatic Fragment (prismatic-fragment) | 24 s |
-| Ember Staff (ember-staff) | Manual, immediate |
-| Wispwood Wand (wispwood-wand) | Manual, immediate |
-| Tide Focus (tide-focus) | Manual, immediate |
-| Stoneweave Robe (stoneweave-robe) | Manual, immediate |
-| Windthread Charm (windthread-charm) | Manual, immediate |
-| Wispveil Hood (wispveil-hood) | Manual, immediate |
-| Grovekeeper Mantle (grovekeeper-mantle) | Manual, immediate |
-| Wispbound Ring (wispbound-ring) | Manual, immediate |
-| Heartseed Necklace (heartseed-necklace) | Manual, immediate |
-| Fangbound Dagger (fangbound-dagger) | Manual, immediate |
-| Fangbound Buckler (fangbound-buckler) | Manual, immediate |
-| Corrupted Howlstaff (corrupted-howlstaff) | Manual, immediate |
-| Razorclaw Circlet (razorclaw-circlet) | Manual, immediate |
-| Predator-Hide Mantle (predator-hide-mantle) | Manual, immediate |
-| Greatbear Vestment (greatbear-vestment) | Manual, immediate |
-| Howling Signet (howling-signet) | Manual, immediate |
-| Greatbear Heartstone (greatbear-heartstone) | Manual, immediate |
-| Graveglass Wand (graveglass-wand) | Manual, immediate |
-| Edrin's Remnant Staff (edrins-remnant-staff) | Manual, immediate |
-| Soulward Focus (soulward-focus) | Manual, immediate |
-| Soulward Shield (soulward-shield) | Manual, immediate |
-| Acolyte Vestments (acolyte-vestments) | Manual, immediate |
-| Wraithveil Hood (wraithveil-hood) | Manual, immediate |
-| Ossuary Mantle (ossuary-mantle) | Manual, immediate |
-| Soulglass Amulet (soulglass-amulet) | Manual, immediate |
-| Gravebinder Ring (gravebinder-ring) | Manual, immediate |
-| Edrin's Signet (edrins-signet) | Manual, immediate |
+| Ember Staff (ember-staff) | Manual, 5s timer |
+| Wispwood Wand (wispwood-wand) | Manual, 5s timer |
+| Tide Focus (tide-focus) | Manual, 5s timer |
+| Stoneweave Robe (stoneweave-robe) | Manual, 5s timer |
+| Windthread Charm (windthread-charm) | Manual, 5s timer |
+| Wispveil Hood (wispveil-hood) | Manual, 5s timer |
+| Grovekeeper Mantle (grovekeeper-mantle) | Manual, 5s timer |
+| Wispbound Ring (wispbound-ring) | Manual, 5s timer |
+| Heartseed Necklace (heartseed-necklace) | Manual, 5s timer |
+| Fangbound Dagger (fangbound-dagger) | Manual, 5s timer |
+| Fangbound Buckler (fangbound-buckler) | Manual, 5s timer |
+| Corrupted Howlstaff (corrupted-howlstaff) | Manual, 5s timer |
+| Razorclaw Circlet (razorclaw-circlet) | Manual, 5s timer |
+| Predator-Hide Mantle (predator-hide-mantle) | Manual, 5s timer |
+| Greatbear Vestment (greatbear-vestment) | Manual, 5s timer |
+| Howling Signet (howling-signet) | Manual, 5s timer |
+| Greatbear Heartstone (greatbear-heartstone) | Manual, 5s timer |
+| Graveglass Wand (graveglass-wand) | Manual, 5s timer |
+| Edrin's Remnant Staff (edrins-remnant-staff) | Manual, 5s timer |
+| Soulward Focus (soulward-focus) | Manual, 5s timer |
+| Soulward Shield (soulward-shield) | Manual, 5s timer |
+| Acolyte Vestments (acolyte-vestments) | Manual, 5s timer |
+| Wraithveil Hood (wraithveil-hood) | Manual, 5s timer |
+| Ossuary Mantle (ossuary-mantle) | Manual, 5s timer |
+| Soulglass Amulet (soulglass-amulet) | Manual, 5s timer |
+| Gravebinder Ring (gravebinder-ring) | Manual, 5s timer |
+| Edrin's Signet (edrins-signet) | Manual, 5s timer |
 
 ## Material Acquisition
 

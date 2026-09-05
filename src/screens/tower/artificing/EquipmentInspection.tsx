@@ -18,14 +18,7 @@ export function EquipmentInspection({ recipe }: { recipe: ArtificingRecipeDefini
   const targetPosition = ringNeedsChoice ? ringTarget ?? undefined : getDefaultTargetPosition(state, inspection.equipment.slot)
   const preview = ringNeedsChoice && !ringTarget ? null : getArtificingEquipmentPreview(state, recipe.output.itemId, targetPosition)
 
-  return <div className="artificing-output-preview"><span className="eyebrow">EQUIPMENT INSPECTION</span>
-    <div className="artificing-output-content">
-      <ItemTooltip itemId={inspection.itemId} owned={inspection.owned}>
-        <div className="artificing-output-hero" tabIndex={0}><span className="artificing-output-icon"><ItemIcon itemId={inspection.itemId} size="large" /></span><div><span className="eyebrow">EQUIPMENT</span><h2>{item.name}</h2><p>{item.description}</p></div></div>
-      </ItemTooltip>
-      <EquipmentOutput inspection={inspection} preview={preview} ringNeedsChoice={ringNeedsChoice} ringTarget={ringTarget} onRingTargetChange={setRingTarget} />
-    </div>
-  </div>
+  return <div className="artificing-output-preview"><EquipmentOutput inspection={inspection} preview={preview} ringNeedsChoice={ringNeedsChoice} ringTarget={ringTarget} onRingTargetChange={setRingTarget} /></div>
 }
 
 function EquipmentOutput({ inspection, preview, ringNeedsChoice, ringTarget, onRingTargetChange }: { inspection: ReturnType<typeof getArtificingOutputInspection>; preview: ReturnType<typeof getArtificingEquipmentPreview> | null; ringNeedsChoice: boolean; ringTarget: EquipmentPosition | null; onRingTargetChange: (position: EquipmentPosition) => void }) {
@@ -34,13 +27,12 @@ function EquipmentOutput({ inspection, preview, ringNeedsChoice, ringTarget, onR
   const authoredStats = flattenItemStats(item.stats ?? {}).filter(([, value]) => Math.abs(value) > 0)
   const impactRows = preview ? getImpactEntries(preview.impact).filter(([, value]) => Math.abs(value) > 0.0001) : []
   return <>
-    <DetailSection title="EQUIPMENT PROFILE"><div className="artificing-output-meta"><span><small>SLOT</small><strong>{inspection.equipment.slot.toUpperCase()}</strong></span>{inspection.equipment.hands && <span><small>HANDS</small><strong>{inspection.equipment.hands}H</strong></span>}{inspection.equipment.presentation && <span><small>OFFHAND TYPE</small><strong>{inspection.equipment.presentation.toUpperCase()}</strong></span>}<span><small>OWNED</small><strong>{inspection.owned.toLocaleString()}</strong></span></div></DetailSection>
-    {authoredStats.length > 0 && <DetailSection title="AUTHORED STATS"><div className="artificing-output-stat-list">{authoredStats.map(([key, value]) => <div key={key}><span>{friendlyStatLabel(key)}</span><strong>{formatStat(key, value)}</strong></div>)}</div></DetailSection>}
+    {authoredStats.length > 0 && <DetailSection title="STATS"><div className="artificing-output-stat-list">{authoredStats.map(([key, value]) => <div key={key}><span>{friendlyStatLabel(key)}</span><strong>{formatStat(key, value)}</strong></div>)}</div></DetailSection>}
     <EquipmentCombatDetails item={item} />
     {ringNeedsChoice && <DetailSection title="RING POSITION"><p className="artificing-output-note">Both Ring positions are occupied. Choose which existing Ring this output would replace.</p><div className="artificing-ring-choices"><RingChoice position="ring1" itemId={useGameStore.getState().equipment.ring1} selected={ringTarget === 'ring1'} onClick={() => onRingTargetChange('ring1')} /><RingChoice position="ring2" itemId={useGameStore.getState().equipment.ring2} selected={ringTarget === 'ring2'} onClick={() => onRingTargetChange('ring2')} /></div></DetailSection>}
     {preview?.removedOffhand && <div className="artificing-output-warning"><LockKeyhole size={14} aria-hidden="true" /><span>{ITEMS[preview.removedOffhand].name} would be removed because this is a two-handed Weapon.</span></div>}
     {preview && !preview.compatible && <div className="artificing-output-warning"><LockKeyhole size={14} aria-hidden="true" /><span>{preview.reason}</span></div>}
-    {preview?.compatible && preview.preview && <DetailSection title="LOADOUT COMPARISON"><div className="artificing-output-current"><span>CURRENT</span><strong>{getCurrentItemName(useGameStore.getState(), preview, inspection.equipment.slot)}</strong></div><div className="artificing-output-stat-list comparison">{impactRows.map(([key, value]) => <div key={key}><span>{friendlyStatLabel(key)}</span><small>{formatSnapshotValue(key, preview.current)} → {formatSnapshotValue(key, preview.preview!)}</small><strong className={value > 0 ? 'positive' : 'negative'}>{formatSignedImpact(key, value)}</strong></div>)}</div>{impactRows.length === 0 && <p className="artificing-output-note">No authored loadout stat change for this replacement.</p>}</DetailSection>}
+    {preview?.compatible && preview.preview && <DetailSection title="LOADOUT COMPARISON"><div className="artificing-output-current"><span>CURRENT</span><ComparisonItem itemId={getCurrentItemId(useGameStore.getState(), preview, inspection.equipment.slot)} /><span>→</span><span>CRAFTED PREVIEW</span><ItemTooltip itemId={inspection.itemId} owned={inspection.owned}><span className="artificing-comparison-icon"><ItemIcon itemId={inspection.itemId} size="tiny" /></span></ItemTooltip></div><div className="artificing-output-stat-list comparison">{impactRows.map(([key, value]) => <div key={key}><span>{friendlyStatLabel(key)}</span><small>{formatSnapshotValue(key, preview.current)} → {formatSnapshotValue(key, preview.preview!)}</small><strong className={value > 0 ? 'positive' : 'negative'}>{formatSignedImpact(key, value)}</strong></div>)}</div>{impactRows.length === 0 && <p className="artificing-output-note">No authored loadout stat change for this replacement.</p>}</DetailSection>}
     {!preview && ringNeedsChoice && <div className="artificing-output-note">Select Ring 1 or Ring 2 to calculate the real loadout impact.</div>}
   </>
 }
@@ -57,11 +49,13 @@ function getDefaultTargetPosition(state: Pick<GameState, 'equipment'>, slot?: Eq
   return slot
 }
 
-function getCurrentItemName(state: Pick<GameState, 'equipment'>, preview: NonNullable<ReturnType<typeof getArtificingEquipmentPreview>>, slot: NonNullable<ReturnType<typeof getArtificingOutputInspection>['equipment']>['slot']) {
+function getCurrentItemId(state: Pick<GameState, 'equipment'>, preview: NonNullable<ReturnType<typeof getArtificingEquipmentPreview>>, slot: NonNullable<ReturnType<typeof getArtificingOutputInspection>['equipment']>['slot']) {
   const position = preview.position ?? (slot === 'ring' ? 'ring1' : slot)
   const current = position ? state.equipment[position] : null
-  return current ? ITEMS[current].name : 'Empty'
+  return current
 }
+
+function ComparisonItem({ itemId }: { itemId: GameState['equipment']['ring1'] }) { if (!itemId) return <span className="artificing-empty-slot">EMPTY</span>; return <ItemTooltip itemId={itemId} owned={useGameStore.getState().inventory[itemId] ?? 0}><span className="artificing-comparison-icon"><ItemIcon itemId={itemId} size="tiny" /></span></ItemTooltip> }
 
 function getImpactEntries(impact: ReturnType<typeof getArtificingEquipmentPreview>['impact']): Array<[string, number]> {
   return Object.entries(impact).flatMap(([key, value]) => key === 'resistances' && value && typeof value === 'object' ? Object.entries(value).map(([damageType, resistance]) => [`resistance-${damageType}`, Number(resistance)]) : [[key, Number(value)]])

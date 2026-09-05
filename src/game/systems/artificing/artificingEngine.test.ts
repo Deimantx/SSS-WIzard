@@ -1,18 +1,25 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
-import { craftArtificingRecipe } from './artificingEngine'
+import { advanceArtificing, craftArtificingRecipe } from './artificingEngine'
 
 describe('Artificing', () => {
-  it('crafts exactly one equipment item and one recipe cost', () => {
+  it('starts once, consumes once, and completes exactly one output after five seconds', () => {
     const state = createInitialState()
     state.progress.lifetimeKillsByMonster['forest-wisp'] = 1
     state.inventory['fire-fragment'] = 48
     state.inventory['wisp-essence'] = 24
     state.inventory['grove-bark'] = 3
     expect(craftArtificingRecipe(state, 'ember-staff').ok).toBe(true)
-    expect(state.inventory['ember-staff']).toBe(1)
+    expect(state.inventory['ember-staff']).toBeUndefined()
     expect(state.inventory['fire-fragment']).toBe(0)
+    expect(state.activities.artificing).toEqual({ activeRecipeId: 'ember-staff', progressMs: 0 })
     expect(craftArtificingRecipe(state, 'ember-staff').ok).toBe(false)
+    advanceArtificing(state, 4999)
+    expect(state.inventory['ember-staff']).toBeUndefined()
+    advanceArtificing(state, 1)
+    expect(state.inventory['ember-staff']).toBe(1)
+    expect(state.activities.artificing).toEqual({ activeRecipeId: null, progressMs: 0 })
+    advanceArtificing(state, 5000)
     expect(state.inventory['ember-staff']).toBe(1)
   })
 

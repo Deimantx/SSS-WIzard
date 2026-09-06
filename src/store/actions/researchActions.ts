@@ -3,7 +3,7 @@ import { SCHOOLS } from '../../game/content/schools/schools'
 import { BALANCE } from '../../game/core/balance/balance'
 import { canReserveFocusAction } from './focusActions'
 import { pushNotification, selectFreeFocus } from '../../game/engine'
-import { getResearchAvailableQuantity, getResearchEchoCapacity, getResearchEchoesAssigned, getResearchJobStatus } from '../../game/systems/research/researchSelectors'
+import { getResearchAssignOneEachState, getResearchAvailableQuantity, getResearchEchoCapacity, getResearchEchoesAssigned, getResearchJobStatus } from '../../game/systems/research/researchSelectors'
 import { RESEARCH_SLOT_ORDER } from '../../game/systems/research/researchReservations'
 import type { GameState, ItemId, ResearchJobState, ResearchSlotId, SchoolId } from '../../game/types'
 
@@ -47,6 +47,11 @@ export const removePreparedResearchAction = (state: GameState, slotId: ResearchS
   return true
 }
 
+const addResearchEcho = (job: ResearchJobState) => {
+  job.echoesAssigned = Math.max(0, Math.floor(job.echoesAssigned)) + 1
+  job.status = 'running'
+}
+
 export const assignResearchEchoAction = (state: GameState, slotId: ResearchSlotId) => {
   const job = state.activities.research.slots[slotId]
   if (!job) return false
@@ -58,8 +63,21 @@ export const assignResearchEchoAction = (state: GameState, slotId: ResearchSlotI
   const capacity = getResearchEchoCapacity(state)
   if (getResearchEchoesAssigned(state) >= capacity) { notify(state, `Research Echo capacity reached: ${capacity} / ${capacity}.`); return false }
   if (!canReserveFocusAction(state, BALANCE.research.echoFocusCost)) { notify(state, `Not enough free Focus. Each Research Echo requires ${BALANCE.research.echoFocusCost} Focus. Free Focus: ${selectFreeFocus(state)}`); return false }
-  job.echoesAssigned = Math.max(0, Math.floor(job.echoesAssigned)) + 1
-  job.status = 'running'
+  addResearchEcho(job)
+  return true
+}
+
+export const assignOneResearchEchoEachAction = (state: GameState) => {
+  const assignment = getResearchAssignOneEachState(state)
+  if (!assignment.canAssign) {
+    if (assignment.blockedReason === 'echo-capacity') notify(state, `Need ${assignment.targetCount} free Research Echo slots to assign one to every prepared batch. Free slots: ${assignment.freeEchoSlots}.`)
+    else if (assignment.blockedReason === 'focus') notify(state, `Assigning one Echo to each batch requires ${assignment.requiredFocus} Focus. Free Focus: ${assignment.freeFocus}.`)
+    return false
+  }
+  assignment.targetSlotIds.forEach((slotId) => {
+    const job = state.activities.research.slots[slotId]
+    if (job) addResearchEcho(job)
+  })
   return true
 }
 

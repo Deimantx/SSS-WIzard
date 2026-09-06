@@ -5,6 +5,7 @@ import { createProfile, deleteProfile, enterProfile } from './profileController'
 import { closeCreateProfileDialog, openCreateProfileDialog, useProfileSession } from './profileSessionStore'
 import { DIFFICULTIES, GAME_MODES, type ProfileMetadata, type ProfileSlotId } from './profileTypes'
 import { PROFILE_SLOT_IDS } from './profileKeys'
+import { isAllowedNativeDragTarget, isNativeInteractionTarget } from '../ui/game-feel/gameClientInteraction'
 
 const formatDate = (value: number | null, emptyLabel: string) => {
   if (!value) return emptyLabel
@@ -27,7 +28,7 @@ export function ProfileSelectScreen() {
     const result = deleteProfile(profile.slotId)
     if (!result.ok) setError(result.error)
   }
-  return <div className="profile-launcher">
+  return <div className="profile-launcher" onContextMenu={(event) => { if (!isNativeInteractionTarget(event.target)) event.preventDefault() }} onDragStart={(event) => { if (!isAllowedNativeDragTarget(event.target)) event.preventDefault() }}>
     <div className="profile-launcher-glow" />
     <main className="profile-launcher-main" aria-label="Profile selection">
       <header className="profile-launcher-header"><div className="profile-brand-mark">SSS</div><div><div className="eyebrow">ARCANE INCREMENTAL RPG</div><h1>Choose a Profile</h1><p>Each profile has an independent gameplay save. Your interface layout and appearance remain shared on this browser.</p></div></header>

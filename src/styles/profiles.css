@@ -1,4 +1,13 @@
-.profile-launcher { position: relative; min-height: 100vh; overflow: hidden; color: var(--ui-text); background: radial-gradient(circle at 50% 0%, var(--ui-accent-soft), transparent 42%), var(--ui-bg); }
+.profile-launcher { position: relative; min-height: 100vh; overflow: hidden; color: var(--ui-text); background: radial-gradient(circle at 50% 0%, var(--ui-accent-soft), transparent 42%), var(--ui-bg); user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
+.profile-launcher input,
+.profile-launcher textarea,
+.profile-launcher select,
+.profile-launcher [contenteditable='true'],
+.profile-launcher .allow-text-selection,
+.profile-launcher [data-native-interaction='true'] { user-select: text; -webkit-user-select: text; }
+.profile-launcher img { -webkit-user-drag: none; user-select: none; }
+.profile-launcher button:not(:disabled):active { transform: translateY(1px); filter: brightness(.97); transition-duration: 70ms; }
+.profile-launcher button:disabled:active { transform: none; filter: none; }
 .profile-launcher-glow { position: absolute; width: 52vw; height: 52vw; top: -28vw; left: 50%; transform: translateX(-50%); border-radius: 50%; background: var(--ui-accent); opacity: .07; filter: blur(80px); pointer-events: none; }
 .profile-launcher-main { position: relative; width: min(1120px, calc(100% - 48px)); margin: 0 auto; padding: 8vh 0 28px; }
 .profile-launcher-header { display: flex; align-items: flex-start; gap: 18px; max-width: 700px; margin-bottom: 42px; }

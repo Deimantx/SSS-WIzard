@@ -96,7 +96,7 @@
 .research-echo-pips { display: flex; flex: 0 0 auto; gap: 4px; margin-left: 10px; }
 .research-echo-pips i { display: block; width: 11px; height: 11px; border: 1px solid var(--ui-accent); border-radius: 50%; background: transparent; }
 .research-echo-pips i.filled { background: var(--ui-accent); box-shadow: 0 0 8px var(--ui-accent); }
-.research-prepared-actions { display: flex; gap: 6px; margin-left: auto; }
+.research-prepared-actions { display: flex; gap: 5px; margin-left: auto; }
 .research-prepared-actions .button { padding: 7px 9px; font-size: var(--text-micro); }
 .research-prepared > .empty-state { flex: 1 1 auto; min-height: 0; }
 .prepared-research-list { display: grid; flex: 1 1 auto; min-height: 0; gap: 8px; align-content: start; overflow-y: auto; overflow-x: hidden; padding-top: 11px; padding-right: 3px; scrollbar-gutter: stable; }

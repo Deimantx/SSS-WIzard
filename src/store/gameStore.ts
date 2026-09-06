@@ -30,7 +30,7 @@ import { donateGuildRequestAction, claimGuildRewardAction, promoteGuildAction } 
 import { debugLockSpellAction, debugUnlockSpellRankOneAction, resetSpellCooldownsAction, setSchoolLevelDebugAction, setSchoolXpDebugAction, setLevelCapAction, setThreatAction, setBossKillsAction, unlockAllSpellsAction } from './actions/progressionActions'
 import { setChannelingEchoesAction, upgradeManaPillarAction, setManaPillarLevelAction, setChannelingManaGeneratedAction, setChannelingSustainAction, setChannelingDiscoveryAction } from './actions/channelingActions'
 import { canReserveFocusAction, setFocusImprovementLevelAction, upgradeFocusCapacityAction } from './actions/focusActions'
-import { assignResearchEchoAction, clearPreparedResearchAction, clearResearchEchoesAction, prepareResearchAction, removePreparedResearchAction, removeResearchEchoAction, setResearchEchoesAction } from './actions/researchActions'
+import { assignOneResearchEchoEachAction, assignResearchEchoAction, clearPreparedResearchAction, clearResearchEchoesAction, prepareResearchAction, removePreparedResearchAction, removeResearchEchoAction, setResearchEchoesAction } from './actions/researchActions'
 import { assignTransmutationEchoAction, clearTransmutationAssignmentsAction, grantTransmutationMissingIngredientsAction, removeTransmutationEchoAction, setTransmutationEchoCapacityOverrideAction, setTransmutationEchoesAction } from './actions/transmutationActions'
 import { forceCompleteTransmutationCycle } from '../game/systems/transmutation/transmutationEngine'
 import { saveGameAction } from './actions/persistenceActions'
@@ -126,6 +126,7 @@ export interface GameActions {
   prepareResearch: (itemId: ItemId, targetSchoolId: SchoolId, quantity: number) => void
   removePreparedResearch: (slotId: ResearchSlotId) => void
   assignResearchEcho: (slotId: ResearchSlotId) => void
+  assignOneResearchEchoEach: () => void
   removeResearchEcho: (slotId: ResearchSlotId) => void
   setResearchEchoes: (slotId: ResearchSlotId, amount: number) => void
   clearResearchEchoes: () => void
@@ -303,6 +304,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   prepareResearch: (itemId, targetSchoolId, quantity) => set((state) => { prepareResearchAction(state, itemId, targetSchoolId, quantity); return state }),
   removePreparedResearch: (slotId) => set((state) => { removePreparedResearchAction(state, slotId); return state }),
   assignResearchEcho: (slotId) => set((state) => { assignResearchEchoAction(state, slotId); return state }),
+  assignOneResearchEchoEach: () => set((state) => { assignOneResearchEchoEachAction(state); return state }),
   removeResearchEcho: (slotId) => set((state) => { removeResearchEchoAction(state, slotId); return state }),
   setResearchEchoes: (slotId, amount) => set((state) => { setResearchEchoesAction(state, slotId, amount); return state }),
   clearResearchEchoes: () => set((state) => { clearResearchEchoesAction(state); return state }),

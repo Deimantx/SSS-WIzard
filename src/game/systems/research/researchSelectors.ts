@@ -38,6 +38,31 @@ export const getResearchEchoCapacity = (state: Pick<GameState, 'activities'> & P
 export const getResearchEchoFocusCost = () => BALANCE.research.echoFocusCost
 export const getResearchFocusReserved = (state: Pick<GameState, 'activities'>) => getResearchEchoesAssigned(state) * getResearchEchoFocusCost()
 
+export interface ResearchAssignOneEachState {
+  targetSlotIds: ResearchSlotId[]
+  targetCount: number
+  requiredFocus: number
+  freeFocus: number
+  freeEchoSlots: number
+  canAssign: boolean
+  blockedReason: 'no-targets' | 'echo-capacity' | 'focus' | null
+}
+
+export const getResearchAssignOneEachState = (state: GameState): ResearchAssignOneEachState => {
+  const targetSlotIds = RESEARCH_SLOT_ORDER.filter((slotId) => {
+    const job = getResearchJob(state, slotId)
+    if (!job) return false
+    const status = getResearchJobStatus(state, slotId)
+    return status !== 'level-cap' && status !== 'protected' && status !== 'missing-item'
+  })
+  const targetCount = targetSlotIds.length
+  const requiredFocus = targetCount * getResearchEchoFocusCost()
+  const freeEchoSlots = Math.max(0, getResearchEchoCapacity(state) - getResearchEchoesAssigned(state))
+  const freeFocus = selectFreeFocus(state)
+  const blockedReason = targetCount === 0 ? 'no-targets' : freeEchoSlots < targetCount ? 'echo-capacity' : freeFocus < requiredFocus ? 'focus' : null
+  return { targetSlotIds, targetCount, requiredFocus, freeFocus, freeEchoSlots, canAssign: blockedReason === null, blockedReason }
+}
+
 export function getResearchAvailableQuantity(state: Pick<GameState, 'activities' | 'inventory' | 'protectedItems' | 'equipment'>, itemId: ItemId) {
   return getConsumableQuantity(state, itemId)
 }

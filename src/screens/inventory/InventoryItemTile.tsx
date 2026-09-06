@@ -47,9 +47,9 @@ export function InventoryItemTile({ itemId, inventory, protectedItems, equipment
         ? (['ring1', 'ring2'] as const).map((position) => ({ position, result: evaluateEquipmentChange({ inventory, equipment }, itemId, position) })).filter((entry) => entry.result.ok)
         : [evaluateEquipmentChange({ inventory, equipment }, itemId)].filter((entry): entry is { ok: true; position: EquipmentPosition; nextEquipment: GameState['equipment']; removedOffhand: ItemId | null } => entry.ok).map((result) => ({ position: result.position, result }))
       : []
-    const quickEquipOptions = equipTargets.length > 1 ? equipTargets.map(({ position }) => ({ label: `EQUIP TO ${position === 'ring1' ? 'RING 1' : 'RING 2'}`, onSelect: () => onEquip(itemId, position) })) : undefined
+    const quickEquipOptions = equipTargets.length > 1 ? equipTargets.map(({ position }) => ({ label: `Equip to ${position === 'ring1' ? 'Ring 1' : 'Ring 2'}`, onSelect: () => onEquip(itemId, position) })) : undefined
     const quickEquip = equipTargets.length === 1 ? () => onEquip(itemId, equipTargets[0].position) : undefined
-    const quickUnequipOptions = equippedPositions.map((position) => ({ label: `UNEQUIP ${position === 'ring1' ? 'RING 1' : position === 'ring2' ? 'RING 2' : position.toUpperCase()}`, onSelect: () => onUnequip(position) }))
+    const quickUnequipOptions = equippedPositions.map((position) => ({ label: `Unequip ${position === 'ring1' ? 'Ring 1' : position === 'ring2' ? 'Ring 2' : position[0].toUpperCase() + position.slice(1)}`, onSelect: () => onUnequip(position) }))
     const navigateWithItem = (screen: ScreenId) => { setNavigationIntent({ inventoryItemId: itemId }); onNavigate(screen) }
     const firstDrop = getItemDropSources(itemId)[0]
     openContextMenu({ x, y, anchor, header: { title: item.name, meta: `${item.kind.toUpperCase()} · OWNED ${quantity}` }, sections: buildItemContextSections({

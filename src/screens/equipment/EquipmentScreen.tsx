@@ -127,8 +127,8 @@ export function EquipmentScreenV2() {
       ? (['ring1', 'ring2'] as const).map((position) => ({ position, result: evaluateEquipmentChange({ inventory, equipment }, itemId, position) })).filter((entry) => entry.result.ok)
       : item.equipmentSlot ? [{ position: item.equipmentSlot as EquipmentPosition, result: evaluateEquipmentChange({ inventory, equipment }, itemId) }].filter((entry) => entry.result.ok) : []
       : []
-    const quickEquipOptions = equipTargets.length > 1 ? equipTargets.map(({ position }) => ({ label: `EQUIP TO ${position === 'ring1' ? 'RING 1' : 'RING 2'}`, onSelect: () => { selectArmoryItem(itemId); equipItem(itemId, position) } })) : undefined
-    const quickUnequipOptions = positions.map((position) => ({ label: `UNEQUIP ${EQUIPMENT_POSITION_LABELS[position].toUpperCase()}`, onSelect: () => { selectSlot(position); unequipItem(position) } }))
+    const quickEquipOptions = equipTargets.length > 1 ? equipTargets.map(({ position }) => ({ label: `Equip to ${position === 'ring1' ? 'Ring 1' : 'Ring 2'}`, onSelect: () => { selectArmoryItem(itemId); equipItem(itemId, position) } })) : undefined
+    const quickUnequipOptions = positions.map((position) => ({ label: `Unequip ${EQUIPMENT_POSITION_LABELS[position]}`, onSelect: () => { selectSlot(position); unequipItem(position) } }))
     const artificingOutput = getItemSources(itemId).find((relation) => relation.kind === 'recipe' && relation.detail === 'Artificing output')
     const transmutationOutput = getItemSources(itemId).find((relation) => relation.kind === 'recipe' && relation.detail === 'Transmutation output')
     const selectForComparison = () => {

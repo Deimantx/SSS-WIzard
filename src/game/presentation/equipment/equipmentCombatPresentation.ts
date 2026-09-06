@@ -14,6 +14,7 @@ export interface EquipmentRulePresentation {
   condition?: string
   effects: string[]
   cooldown?: string
+  usageLimit?: string
   summary: string
 }
 
@@ -220,8 +221,9 @@ export const getEquipmentCombatPresentation = (itemOrCombat: Pick<ItemDefinition
     const effects = rule.effects.flatMap(effectDetails)
     const condition = rule.condition ? conditionMeaning(rule.condition) : undefined
     const cooldown = rule.cooldownMs && rule.cooldownMs > 0 ? `Cooldown: ${formatTime(rule.cooldownMs)}` : undefined
+    const usageLimit = rule.oncePerEncounter ? 'Once per encounter' : undefined
     const summary = `${triggerMeaning(rule)}${condition ? ` · ${condition}` : ''}${effects[0] ? ` → ${effects[0]}` : ''}`
-    return { id: rule.id, name: rule.ui?.name, description: rule.ui?.description, trigger: triggerMeaning(rule), condition, effects, cooldown, summary }
+    return { id: rule.id, name: rule.ui?.name, description: rule.ui?.description, trigger: triggerMeaning(rule), condition, effects, cooldown, usageLimit, summary }
   }) ?? []
   return { modifiers, rules, primarySummary: modifiers[0] ?? rules[0]?.summary ?? null }
 }

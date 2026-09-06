@@ -4,18 +4,15 @@
 
 | Item | Slot | Hands | HP | Health Regen | Mana | Mana Regen | Focus | Spell Power | Basic Dmg | Basic AS | Crit | Crit Dmg | DEF | Block | Phys Res | Arc Res | Fire Res | Water Res | Earth Res | Air Res | CDR | Mana Cost | Status Dur | Neg Status Dur | Healing | Barrier | DoT | Fire Spell | Water Spell | Earth Spell | Air Spell | Special Effect | Sell |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Fangbound Dagger (fangbound-dagger) | Weapon | 1H | — | — | — | — | — | +8 | +8% | +5% | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | 70 |
-| Fangbound Buckler (fangbound-buckler) | Offhand | — | +30 | — | — | — | — | — | — | — | — | — | +15% | +3% | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | 70 |
-| Corrupted Howlstaff (corrupted-howlstaff) | Weapon | 2H | — | — | — | — | +30 | — | — | — | — | — | — | — | — | — | — | — | — | +10% | — | +10% | — | — | — | — | — | — | — | — | — | 70 |
-| Razorclaw Circlet (razorclaw-circlet) | Helmet | — | — | — | — | — | — | — | +5% | +2% | +15% | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | 70 |
-| Predator-Hide Mantle (predator-hide-mantle) | Cape | — | — | — | — | — | — | — | — | — | — | — | — | +5% | — | — | — | — | — | — | — | — | -10% | — | — | — | — | — | — | — | -10% Status duration received for Debuff statuses | 70 |
-| Greatbear Vestment (greatbear-vestment) | Armor | — | +40 | — | — | — | — | — | — | — | — | +10 | — | +10% | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | 70 |
-| Howling Signet (howling-signet) | Ring | — | +10 | +20 | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | Kill -> +25 Health | 70 |
-| Greatbear Heartstone (greatbear-heartstone) | Amulet | — | +25 | — | — | — | — | — | — | — | — | — | — | — | — | +5% | +5% | +5% | +5% | — | — | — | — | — | — | — | — | — | — | — | HP threshold when the caster's Health is below 35% -> +40 Barrier (once/encounter) | — |
-
+| Fangbound Dagger (fangbound-dagger) | Weapon | 1H | — | — | — | — | — | — | +8 | +8% | +5% | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | 70 |
+| Fangbound Buckler (fangbound-buckler) | Offhand | — | +30 | — | — | — | — | — | — | — | — | — | — | +15% | +3% | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | 70 |
+| Corrupted Howlstaff (corrupted-howlstaff) | Weapon | 2H | — | — | — | — | — | +30 | — | — | — | — | — | — | — | — | — | — | — | — | +10% | — | +10% | — | — | — | — | — | — | — | — | — | 70 |
+| Razorclaw Circlet (razorclaw-circlet) | Helmet | — | — | — | — | — | — | — | — | +5% | +2% | +15% | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | 70 |
+| Predator-Hide Mantle (predator-hide-mantle) | Cape | — | — | — | — | — | — | — | — | — | — | — | — | — | +5% | — | — | — | — | — | — | — | — | -10% | — | — | — | — | — | — | — | -10% Status duration received for Debuff statuses | 70 |
+| Greatbear Vestment (greatbear-vestment) | Armor | — | +40 | — | — | — | — | — | — | — | — | — | +10 | — | +10% | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | 70 |
+| Howling Signet (howling-signet) | Ring | — | +10 | — | +20 | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | Kill -> +25 Health | 70 |
+| Greatbear Heartstone (greatbear-heartstone) | Amulet | — | +25 | +1 | — | — | — | — | — | — | — | — | +10 | — | — | — | +5% | +5% | +5% | +5% | — | — | — | — | — | — | — | — | — | — | — | HP threshold when the caster's Health is below 35% -> +40 Barrier (once/encounter) | — |
 ## Crafting
-
-Health Regen column values for the authored relic: Greatbear Heartstone — HP +25, Health Regen +1, DEF +10, Fire/Water/Earth/Air Resistance +5% each. Its Unyielding effect is unchanged.
 
 > Comparison view — edit recipe costs in `Artificing/Recipes.md`.
 

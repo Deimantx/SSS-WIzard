@@ -44,10 +44,11 @@ export function EquipmentCatalog({ selected, onSelect, query, onQueryChange }: P
         const owned = state.inventory[item.id] ?? 0
         const locked = !isRecipeUnlocked(state, recipe)
         const craftable = canCraftArtificingRecipe(state, recipe.id)
+        const equipped = Object.values(state.equipment).includes(item.id)
         const status = locked ? 'LOCKED' : craftable ? 'READY' : 'MISSING'
         return <ItemTooltip key={recipe.id} itemId={item.id} owned={owned} recipeContext={{ status: locked ? 'Locked' : craftable ? 'Craftable' : 'Missing materials', outputQuantity: 1, ingredients: recipe.ingredients, unlockReason: locked ? getRecipeUnlockRequirement(recipe) ?? undefined : undefined }}>
           <button type="button" data-recipe-id={recipe.id} className={`artificing-item-card ${selected === recipe.id ? 'selected' : ''} ${locked ? 'locked' : ''}`} style={{ '--recipe-accent': item.color } as CSSProperties} aria-pressed={selected === recipe.id} onClick={() => onSelect(recipe.id)}>
-            <span className="artificing-card-top">{locked && <LockKeyhole size={14} aria-label="Locked" />}{attention.unseenRecipes.includes(recipe.id) && <span className="archive-new-badge">NEW</span>}</span>
+            <span className="artificing-card-top">{locked && <LockKeyhole size={14} aria-label="Locked" />}{attention.unseenRecipes.includes(recipe.id) && <span className="archive-new-badge">NEW</span>}{equipped && <span className="artificing-equipped-badge" aria-label="Currently equipped">E</span>}</span>
             <ItemIcon itemId={item.id} size="tiny" /><strong>{item.name}</strong>
             <span className="artificing-badge">{getArtificingProfile(recipe)}</span>
             <span className="artificing-owned">OWNED {owned.toLocaleString()}</span>

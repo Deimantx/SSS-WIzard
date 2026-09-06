@@ -154,4 +154,16 @@ describe('shared combat timeline', () => {
 
     expect(getNextCombatStatusEventMs(state)).toBe(80)
   })
+
+  it('resolves combat health regeneration on the shared timeline boundary', () => {
+    const state = stateWithEnemy()
+    state.player.health = state.player.maxHealth - 10
+    state.player.healthRegenTimerMs = 100
+    const events: CombatEvent[] = []
+
+    advanceGameState(state, 1_000, { mode: 'live', uiEvents: { push: (event) => events.push(event) } })
+
+    expect(state.player.health).toBe(state.player.maxHealth - 9)
+    expect(state.player.healthRegenTimerMs).toBe(BALANCE.player.healthRegenIntervalMs - 900)
+  })
 })

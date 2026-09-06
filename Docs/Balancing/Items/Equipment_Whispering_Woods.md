@@ -4,19 +4,16 @@
 
 | Item | Slot | Hands | HP | Health Regen | Mana | Mana Regen | Focus | Spell Power | Basic Dmg | Basic AS | Crit | Crit Dmg | DEF | Block | Phys Res | Arc Res | Fire Res | Water Res | Earth Res | Air Res | CDR | Mana Cost | Status Dur | Neg Status Dur | Healing | Barrier | DoT | Fire Spell | Water Spell | Earth Spell | Air Spell | Special Effect | Sell |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Ember Staff (ember-staff) | Weapon | 2H | — | +10 | — | — | +20 | +4 | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | +20% | — | — | — | +20% Spell damage for Fire damage | 40 |
-| Wispwood Wand (wispwood-wand) | Weapon | 1H | — | +5 | — | — | +10 | +2 | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | 40 |
-| Tide Focus (tide-focus) | Offhand | — | — | +15 | — | — | +10 | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | +20% Barrier power for Water damage | 40 |
-| Stoneweave Robe (stoneweave-robe) | Armor | — | +20 | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | +10 Barrier received | 40 |
-| Windthread Charm (windthread-charm) | Amulet | — | — | — | — | +10 | +10 | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | +10% | +10% Spell damage for Air damage | 40 |
-| Wispveil Hood (wispveil-hood) | Helmet | — | — | +15 | +1 | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | 40 |
-| Grovekeeper Mantle (grovekeeper-mantle) | Cape | — | +15 | — | — | — | — | — | — | — | — | — | — | +3% | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | 40 |
-| Wispbound Ring (wispbound-ring) | Ring | — | — | +10 | +1 | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | 40 |
-| Heartseed Necklace (heartseed-necklace) | Amulet | — | +20 | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | +5% Healing done; HP threshold when the caster's Health is below 30% -> +20 Barrier (once/encounter) | — |
-
+| Ember Staff (ember-staff) | Weapon | 2H | — | — | +10 | — | — | +20 | +4 | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | +20% | — | — | — | +20% Spell damage for Fire damage | 40 |
+| Wispwood Wand (wispwood-wand) | Weapon | 1H | — | — | +5 | — | — | +10 | +2 | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | 40 |
+| Tide Focus (tide-focus) | Offhand | — | — | — | +15 | — | — | +10 | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | +20% Barrier power for Water damage | 40 |
+| Stoneweave Robe (stoneweave-robe) | Armor | — | +20 | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | +10 Barrier received | 40 |
+| Windthread Charm (windthread-charm) | Amulet | — | — | — | — | — | +10 | +10 | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | +10% Spell damage for Air damage | — | 40 |
+| Wispveil Hood (wispveil-hood) | Helmet | — | — | — | +15 | +1 | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | 40 |
+| Grovekeeper Mantle (grovekeeper-mantle) | Cape | — | +15 | — | — | — | — | — | — | — | — | — | — | — | +3% | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | 40 |
+| Wispbound Ring (wispbound-ring) | Ring | — | — | — | +10 | +1 | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | 40 |
+| Heartseed Necklace (heartseed-necklace) | Amulet | — | +20 | — | — | — | — | — | +3 | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | +5% Healing done; HP threshold when the caster's Health is below 30% -> +20 Barrier (once/encounter) | — |
 ## Crafting
-
-Health Regen column values for the authored relic: Heartseed Necklace — HP +20, Health Regen —, Basic Dmg +3. Its existing Healing Done and Living Seed effect are unchanged.
 
 > Comparison view — edit recipe costs in `Artificing/Recipes.md`.
 

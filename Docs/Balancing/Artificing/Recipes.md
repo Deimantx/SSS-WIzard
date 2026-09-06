@@ -16,7 +16,7 @@ Manual Equipment crafting: one click commits one recipe cost and starts one 5-se
 | Wispveil Hood (wispveil-hood) | Helmet | Whispering Woods | Water Fragment (water-fragment) | 24 | Air Fragment (air-fragment) | 24 | Wisp Essence (wisp-essence) | 24 | Grove Bark (grove-bark) | 3 | — | — | Defeat any monster in Whispering Woods |
 | Grovekeeper Mantle (grovekeeper-mantle) | Cape | Whispering Woods | Earth Fragment (earth-fragment) | 36 | Wisp Essence (wisp-essence) | 24 | Grove Bark (grove-bark) | 6 | — | — | — | — | Defeat any monster in Whispering Woods |
 | Wispbound Ring (wispbound-ring) | Ring | Whispering Woods | Water Fragment (water-fragment) | 24 | Air Fragment (air-fragment) | 24 | Wisp Essence (wisp-essence) | 18 | Grove Bark (grove-bark) | 3 | — | — | Defeat any monster in Whispering Woods |
-| Heartseed Necklace (heartseed-necklace) | Amulet | Whispering Woods | Heartseed (heartseed) | 20 | — | — | — | — | — | — | — | — | Defeat Forest Heart |
+| Heartseed Necklace (heartseed-necklace) | Amulet | Whispering Woods | Heartseed (heartseed) | 8 | — | — | — | — | — | — | — | — | Defeat Forest Heart |
 
 ## Howling Den
 
@@ -29,7 +29,7 @@ Manual Equipment crafting: one click commits one recipe cost and starts one 5-se
 | Predator-Hide Mantle (predator-hide-mantle) | Cape | Howling Den | Predator Hide (predator-hide) | 28 | Earth Fragment (earth-fragment) | 38 | — | — | — | — | — | — | Unlock Howling Den |
 | Greatbear Vestment (greatbear-vestment) | Armor | Howling Den | Predator Hide (predator-hide) | 40 | Greatbear Core (greatbear-core) | 3 | Earth Fragment (earth-fragment) | 28 | — | — | — | — | Unlock Howling Den |
 | Howling Signet (howling-signet) | Ring | Howling Den | Corrupted Beast Essence (corrupted-beast-essence) | 12 | Predator Fang (predator-fang) | 15 | Water Fragment (water-fragment) | 28 | Air Fragment (air-fragment) | 28 | — | — | Unlock Howling Den |
-| Greatbear Heartstone (greatbear-heartstone) | Amulet | Howling Den | Greatbear Core (greatbear-core) | 20 | — | — | — | — | — | — | — | — | Defeat Corrupted Greatbear |
+| Greatbear Heartstone (greatbear-heartstone) | Amulet | Howling Den | Greatbear Core (greatbear-core) | 8 | — | — | — | — | — | — | — | — | Defeat Corrupted Greatbear |
 
 ## Abandoned Catacombs
 
@@ -44,4 +44,4 @@ Manual Equipment crafting: one click commits one recipe cost and starts one 5-se
 | Ossuary Mantle (ossuary-mantle) | Cape | Abandoned Catacombs | Ossuary Remnant (ossuary-remnant) | 28 | Soul Residue (soul-residue) | 12 | Earth Fragment (earth-fragment) | 3 | Prismatic Fragment (prismatic-fragment) | 16 | — | — | Unlock Abandoned Catacombs |
 | Soulglass Amulet (soulglass-amulet) | Amulet | Abandoned Catacombs | Graveglass Shard (graveglass-shard) | 25 | Soul Residue (soul-residue) | 20 | Fire Fragment (fire-fragment) | 124 | Prismatic Fragment (prismatic-fragment) | 20 | — | — | Unlock Abandoned Catacombs |
 | Gravebinder Ring (gravebinder-ring) | Ring | Abandoned Catacombs | Graveglass Shard (graveglass-shard) | 20 | Soul Residue (soul-residue) | 12 | Prismatic Fragment (prismatic-fragment) | 16 | — | — | — | — | Unlock Abandoned Catacombs |
-| Edrin's Signet (edrins-signet) | Ring | Abandoned Catacombs | Edrin Remnant (edrin-remnant) | 35 | — | — | — | — | — | — | — | — | Defeat Archmage Edrin's Shade |
+| Edrin's Signet (edrins-signet) | Ring | Abandoned Catacombs | Edrin Remnant (edrin-remnant) | 20 | — | — | — | — | — | — | — | — | Defeat Archmage Edrin's Shade |

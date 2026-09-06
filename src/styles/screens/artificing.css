@@ -23,7 +23,8 @@
 .artificing-item-card.selected { border-color: var(--ui-accent); background: var(--ui-accent-soft); box-shadow: inset 0 0 0 1px var(--ui-accent); }
 .artificing-item-card.locked { opacity: .7; }
 .artificing-item-card > strong { color: var(--ui-text); font-size: var(--text-xs); line-height: 1.4; overflow-wrap: anywhere; }
-.artificing-card-top { display: flex; width: 100%; min-height: 15px; color: var(--ui-warning); }
+.artificing-card-top { position: absolute; top: 7px; right: 8px; display: flex; justify-content: flex-end; width: auto; min-height: 15px; color: var(--ui-warning); }
+.artificing-equipped-badge { display: grid; place-items: center; width: 16px; height: 16px; border: 1px solid color-mix(in srgb, var(--ui-success) 75%, var(--ui-border)); border-radius: 50%; color: var(--ui-success); background: color-mix(in srgb, var(--ui-success) 12%, var(--ui-panel)); font: 700 .58rem var(--font-mono); line-height: 1; }
 .artificing-badge { padding: 3px 5px; border: 1px solid var(--ui-border); border-radius: 4px; }
 .artificing-detail-content { display: grid; gap: 12px; min-width: 0; }
 .artificing-detail-hero { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; }

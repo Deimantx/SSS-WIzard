@@ -133,7 +133,7 @@ const advanceObservers = (state: GameState, delta: number, context: AdvanceConte
   context.statistics?.advance(delta, state)
 }
 
-const getNextHealthRegenEventMs = (state: GameState) => Math.max(0, state.player.healthRegenTimerMs)
+const getNextHealthRegenEventMs = (state: GameState) => state.player.healthRegenTimerMs > 0 ? state.player.healthRegenTimerMs : Number.POSITIVE_INFINITY
 
 const resolveHealthRegenTick = (state: GameState, activeCombat: boolean, context: AdvanceContext) => {
   const interval = BALANCE.player.healthRegenIntervalMs
@@ -204,6 +204,7 @@ const advanceCombatTimeline = (state: GameState, delta: number, context: Advance
       enemyRemaining,
       getNextCombatStatusEventMs(state),
       getNextCombatBarrierEventMs(state),
+      getNextHealthRegenEventMs(state),
       getNextAutoCastCooldownEventMs(state, cooldownRecovery),
     ].filter((value): value is number => value !== null && Number.isFinite(value))
     const untilEvent = boundaries.length ? Math.min(...boundaries) : remaining
@@ -270,6 +271,7 @@ const advanceCombatDowntimeTimeline = (state: GameState, delta: number, context:
       Math.max(0, state.combat.encounterTimerMs),
       getNextPlayerStatusEventMs(state),
       getNextPlayerBarrierEventMs(state),
+      getNextHealthRegenEventMs(state),
     ].filter((value): value is number => value !== null && Number.isFinite(value))
     const untilEvent = boundaries.length ? Math.min(...boundaries) : remaining
     const elapsed = Math.min(remaining, Math.max(0, untilEvent))

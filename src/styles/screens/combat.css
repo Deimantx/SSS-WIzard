@@ -2601,10 +2601,10 @@
 .combat-analytics-head small { overflow: hidden; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); text-overflow: ellipsis; white-space: nowrap; }
 .combat-analytics-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; min-width: 0; min-height: 0; overflow: hidden; }
 .combat-analytics-grid > .card { width: auto; height: auto; min-width: 0; min-height: 0; margin: 0; overflow: hidden; }
-.combat-analytics-grid .dungeon-statistics-panel { grid-template-rows: max-content auto; align-content: start; gap: 10px; }
-/* Bound only long lists; the surrounding analytics content determines its own height. */
-.combat-analytics-grid .combat-details-rows,
-.combat-analytics-grid .dungeon-statistics-drops-list { max-height: 180px; flex: 0 1 auto; }
+.combat-analytics-grid .dungeon-statistics-panel { grid-template-rows: auto minmax(0, 1fr); align-content: stretch; gap: 10px; }
+/* Combat Details keeps its compact bounded log; Drops uses the assigned panel height. */
+.combat-analytics-grid .combat-details-rows { max-height: 180px; flex: 0 1 auto; }
+.combat-analytics-grid .dungeon-statistics-drops-list { flex: 1 1 auto; }
 .combat-analytics-grid .combat-details-panel { display: grid; }
 .combat-analytics-grid .combat-details-panel,
 .combat-analytics-grid .dungeon-statistics-panel { min-height: 0; }

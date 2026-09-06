@@ -35,6 +35,7 @@ import { clearLootReveals } from '../ui/rewards/lootRevealStore'
 import { clearMilestones } from '../ui/rewards/milestoneStore'
 import { DiscoveryAttentionObserver } from '../ui/attention/DiscoveryAttentionObserver'
 import { getLiveVisibilityTransition } from './liveVisibility'
+import { isAllowedNativeDragTarget, isNativeInteractionTarget } from '../ui/game-feel/gameClientInteraction'
 
 export function GameShell() {
   const screen = useGameStore((state) => state.ui.screen)
@@ -101,7 +102,7 @@ export function GameShell() {
   const ambient = getAmbientProfile(screen, appearance)
   const atmosphereOpacity = preferences.theme === 'light' ? 0.22 : 0.72
   const shellStyle = { '--game-cursor-default': createCursorValue({ accent: appearance.accent, secondary: appearance.secondary, variant: 'default' }), '--game-cursor-action': createCursorValue({ accent: appearance.accent, secondary: appearance.secondary, variant: 'action' }), '--game-cursor-disabled': createCursorValue({ accent: appearance.accent, secondary: appearance.secondary, variant: 'disabled' }), '--ambient-strength': ambient.intensity, '--ambient-drift': preferences.reducedMotion ? '0s' : `${ambient.driftDuration}s`, '--ambient-accent': ambient.accentColor, '--ambient-secondary': ambient.secondaryColor, '--ambient-fog-opacity': ambient.fogOpacity, '--ambient-vignette-opacity': ambient.vignetteOpacity, '--ambient-particle-speed': ambient.particleSpeed, '--ambient-bias-x': ambient.biasX, '--ambient-bias-y': ambient.biasY } as CSSProperties
-  return <TooltipProvider><div className={`game-shell ${preferences.reducedMotion ? 'reduced-motion' : 'motion-enabled'} ${preferences.customCursor ? 'cursor-enabled' : ''} ${preferences.backgroundEffects ? 'effects-enabled' : 'effects-disabled'}`} data-nav-group={navigation.group.id} data-ambient-profile={ambient.id} data-background-effects={preferences.backgroundEffects ? 'on' : 'off'} style={shellStyle}>
+  return <TooltipProvider><div className={`game-shell ${preferences.reducedMotion ? 'reduced-motion' : 'motion-enabled'} ${preferences.customCursor ? 'cursor-enabled' : ''} ${preferences.backgroundEffects ? 'effects-enabled' : 'effects-disabled'}`} data-nav-group={navigation.group.id} data-ambient-profile={ambient.id} data-background-effects={preferences.backgroundEffects ? 'on' : 'off'} style={shellStyle} onContextMenu={(event) => { if (!isNativeInteractionTarget(event.target)) event.preventDefault() }} onDragStart={(event) => { if (!isAllowedNativeDragTarget(event.target)) event.preventDefault() }}>
     {preferences.backgroundEffects && <ArcaneAtmosphere accentColor={ambient.accentColor} secondaryColor={ambient.secondaryColor} opacity={atmosphereOpacity} intensity={ambient.intensity} particleSpeed={ambient.particleSpeed} reducedMotion={preferences.reducedMotion} />}
     <Sidebar screen={screen} setScreen={setScreen} preferences={preferences} toggleGroup={toggleGroup} activeProfile={activeProfile} profileKey={profileSession.activeProfileId} profileSwitchError={profileSwitchError} switchProfile={switchProfile} />
     <main className={`main-area ${editor.isEditing ? 'editor-open' : ''}`}>

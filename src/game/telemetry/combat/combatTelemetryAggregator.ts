@@ -58,7 +58,8 @@ const eventKind = (event: CombatEvent): CombatMetricSourceContribution['kind'] =
 }
 
 const metadataForEvent = (event: CombatEvent): CombatTelemetrySourceMetadata | null => {
-  const actor = event.source.kind === 'player' ? 'player' : event.source.kind === 'enemy' ? 'enemy' : null
+  const isHealthRegeneration = event.source.kind === 'system' && event.sourceId === 'health-regeneration'
+  const actor = event.source.kind === 'player' || isHealthRegeneration ? 'player' : event.source.kind === 'enemy' ? 'enemy' : null
   if (!actor) return null
   const kind = eventKind(event)
   const monsterId = event.source.kind === 'enemy' ? event.source.monsterId : undefined
@@ -108,7 +109,7 @@ export const getCombatMetricSourceMetadata = (event: CombatEvent): CombatTelemet
 
 const contributionFor = (aggregate: CombatMetricAggregate, event: CombatEvent): CombatMetricSourceContribution | null => {
   const metadata = metadataForEvent(event)
-  if (!metadata || metadata.kind === 'system') return null
+  if (!metadata || (metadata.kind === 'system' && metadata.sourceId !== 'health-regeneration')) return null
   const key = getCombatMetricSourceKey(event)
   const existing = aggregate.bySource[key]
   if (existing) return existing
@@ -190,10 +191,10 @@ export const reconcileCombatBarrierTelemetry = (scope: CombatTelemetryScope, sta
 }
 
 export const consumeCombatEvent = (scope: CombatTelemetryScope, event: CombatEvent): void => {
-  const sourceActor = event.source.kind === 'player' || event.source.kind === 'enemy' ? event.source.kind : null
+  const sourceActor = event.source.kind === 'player' || event.source.kind === 'enemy' ? event.source.kind : event.source.kind === 'system' && event.sourceId === 'health-regeneration' ? 'player' : null
   if (!sourceActor) return
   const metadata = metadataForEvent(event)
-  if (!metadata || metadata.kind === 'system') return
+  if (!metadata || (metadata.kind === 'system' && metadata.sourceId !== 'health-regeneration')) return
 
   if (event.category === 'damage' || event.category === 'basic-attack' || event.category === 'spell' || event.category === 'enemy-action' || event.category === 'trait') {
     const amount = finite(event.amount)

@@ -16,6 +16,7 @@ export interface CombatMetricSourcePresentation {
 }
 
 export const presentCombatMetricSource = (source: CombatMetricSourceContribution): CombatMetricSourcePresentation => {
+  if (source.kind === 'system' && source.sourceId === 'health-regeneration') return { name: 'Health Regeneration', subtitle: 'Passive recovery', icon: 'heart', accent: 'healing' }
   if (source.kind === 'spell') {
     const name = resolveCombatSourceLabel({ kind: 'spell', sourceId: source.spellId ?? source.sourceId })
     const spell = source.spellId ? SPELLS[source.spellId] : undefined

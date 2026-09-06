@@ -11,7 +11,7 @@ import { resolveCombatDeaths, spawnNextEnemy, type CombatLootObserver } from '..
 import { getCurrentEnemyActionRate, getPlayerBasicAttackRate, resolveCurrentEnemyAction, startNextEnemyAction } from '../combat/actionRuntime'
 import { actorCannotAct, expirePendingStatuses, getNextCombatStatusEventMs, getNextPlayerStatusEventMs, tickStatuses } from '../combat/statusRuntime'
 import { getNextCombatBarrierEventMs, getNextPlayerBarrierEventMs, tickBarriers } from '../combat/barrierRuntime'
-import { getCooldownRecoveryMultiplier, getEffectiveManaCost } from '../combat/combatStats'
+import { getCooldownRecoveryMultiplier, getEffectiveManaCost, getPlayerCombatStats } from '../combat/combatStats'
 import { tickRuleCooldowns } from '../combat/triggerRuntime'
 import type { GameState, ItemId, SpellId, CombatSource } from '../../types'
 import type { CombatAlertObserver, CombatEventSink } from '../combat/combatTypes'
@@ -133,6 +133,33 @@ const advanceObservers = (state: GameState, delta: number, context: AdvanceConte
   context.statistics?.advance(delta, state)
 }
 
+const getNextHealthRegenEventMs = (state: GameState) => Math.max(0, state.player.healthRegenTimerMs)
+
+const resolveHealthRegenTick = (state: GameState, activeCombat: boolean, context: AdvanceContext) => {
+  const interval = BALANCE.player.healthRegenIntervalMs
+  state.player.healthRegenTimerMs = interval
+  if (activeCombat && state.player.health <= 0) return
+  const rate = getPlayerCombatStats(state).healthRegen * (activeCombat ? 1 : BALANCE.player.outOfCombatRegenMultiplier)
+  const attemptedAmount = Math.max(0, rate)
+  const effectiveAmount = Math.min(Math.max(0, state.player.maxHealth - state.player.health), attemptedAmount)
+  state.player.health = clamp(state.player.health + effectiveAmount, 0, state.player.maxHealth)
+  if (activeCombat && effectiveAmount > 0) context.telemetry?.consume({ source: { kind: 'system' }, sourceKind: 'system', target: 'player', category: 'heal', sourceId: 'health-regeneration', amount: effectiveAmount, attemptedAmount, effectiveAmount, overheal: Math.max(0, attemptedAmount - effectiveAmount) })
+}
+
+const advanceHealthRegenTimer = (state: GameState, delta: number, activeCombat: boolean, context: AdvanceContext) => {
+  let remaining = Math.max(0, delta)
+  let guard = 0
+  while (remaining > 0 && guard++ < 1000) {
+    const untilTick = getNextHealthRegenEventMs(state)
+    const elapsed = Math.min(remaining, untilTick)
+    state.player.healthRegenTimerMs = Math.max(0, state.player.healthRegenTimerMs - elapsed)
+    remaining -= elapsed
+    if (state.player.healthRegenTimerMs > 0) break
+    resolveHealthRegenTick(state, activeCombat, context)
+  }
+  if (delta === 0 && state.player.healthRegenTimerMs <= 0) resolveHealthRegenTick(state, activeCombat, context)
+}
+
 /**
  * Advances every combat-local clock on one chronological timeline. The outer
  * simulation quantum remains a batching limit; it is not a gameplay boundary.
@@ -188,6 +215,7 @@ const advanceCombatTimeline = (state: GameState, delta: number, context: Advance
     const pendingStatusExpirations = tickStatuses(state, elapsed, executeCombatEffects, context.uiEvents, ['player', 'enemy'], { deferExpiry: true })
     tickBarriers(state, elapsed)
     tickSpellCooldowns(state, elapsed, cooldownRecovery)
+    advanceHealthRegenTimer(state, elapsed, true, context)
     remaining = Math.max(0, remaining - elapsed)
 
     // Observe only the exact engaged segment. Death/despawn resolution below
@@ -252,6 +280,7 @@ const advanceCombatDowntimeTimeline = (state: GameState, delta: number, context:
     // downtime; enemy-owned cooldowns were cleared when the enemy died.
     tickRuleCooldowns(state, elapsed, 'player')
     tickSpellCooldowns(state, elapsed, cooldownRecovery)
+    advanceHealthRegenTimer(state, elapsed, true, context)
     state.combat.encounterTimerMs = Math.max(0, state.combat.encounterTimerMs - elapsed)
     remaining = Math.max(0, remaining - elapsed)
     advanceObservers(state, elapsed, context)
@@ -300,7 +329,7 @@ const advanceGameStateStep = (state: GameState, delta: number, context: AdvanceC
     const discovery = CHANNELING_DISCOVERIES.find((entry) => entry.id === id)
     if (discovery) pushNotification(state, `Arcane Discovery: ${discovery.name}`, 'success')
   })
-  if (!state.combat.active) state.player.health = clamp(state.player.health + BALANCE.player.healthRegenPerSecond * delta / 1000 * BALANCE.player.outOfCombatRegenMultiplier, 0, state.player.maxHealth)
+  if (!state.combat.active) advanceHealthRegenTimer(state, delta, false, context)
   if (context.mode === 'live') advanceArtificing(state, delta, (itemId) => { context.onItemAcquired?.(itemId, 1); context.onArtificingComplete?.(itemId) })
   const researchRequests = buildResearchWorkRequests(state, delta, context)
   const transmutationRequests = buildTransmutationWorkRequests(state, delta)

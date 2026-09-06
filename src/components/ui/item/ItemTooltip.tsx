@@ -54,13 +54,14 @@ export function ItemTooltipContent({ itemId, owned, protectedItem = false, equip
 }
 
 export function friendlyStatLabel(key: string) {
-  const labels: Record<string, string> = { basicDamage: 'Basic Attack Damage', spellPower: 'Spell Power', maxHealth: 'Max Health', maxMana: 'Max Mana', manaRegen: 'Mana Regen', maxFocus: 'Max Focus', defense: 'Defense', critChance: 'Crit Chance', critDamage: 'Crit Damage', basicAttackSpeedPct: 'Basic Attack Speed', blockChance: 'Block Chance', cooldownRecoveryPct: 'Cooldown Recovery', healingDonePct: 'Healing Done', barrierPowerPct: 'Barrier Power', damageOverTimePct: 'Damage over Time', statusDurationPct: 'Status Duration', manaCostReductionPct: 'Mana Cost Reduction', focusEfficiencyPct: 'Focus Efficiency' }
+  const labels: Record<string, string> = { basicDamage: 'Basic Attack Damage', spellPower: 'Spell Power', maxHealth: 'Max Health', healthRegen: 'Health Regen', maxMana: 'Max Mana', manaRegen: 'Mana Regen', maxFocus: 'Max Focus', defense: 'Defense', critChance: 'Crit Chance', critDamage: 'Crit Damage', basicAttackSpeedPct: 'Basic Attack Speed', blockChance: 'Block Chance', cooldownRecoveryPct: 'Cooldown Recovery', healingDonePct: 'Healing Done', barrierPowerPct: 'Barrier Power', damageOverTimePct: 'Damage over Time', statusDurationPct: 'Status Duration', manaCostReductionPct: 'Mana Cost Reduction', focusEfficiencyPct: 'Focus Efficiency' }
   if (key.startsWith('resistance-')) return `${key.replace('resistance-', '').replace(/^./, (value) => value.toUpperCase())} Resistance`
   return labels[key] ?? key.replace(/([A-Z])/g, ' $1').replace(/^./, (value) => value.toUpperCase())
 }
 
 export function formatStat(key: string, value: number) {
   const percent = key.endsWith('Pct') || ['critChance', 'critDamage', 'blockChance'].includes(key) || key.startsWith('resistance-')
+  if (key === 'healthRegen' || key === 'manaRegen') return `${value >= 0 ? '+' : ''}${value}/s`
   return `${value >= 0 ? '+' : ''}${percent ? `${Math.round(value * 100)}%` : value}`
 }
 

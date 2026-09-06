@@ -89,6 +89,7 @@ export interface EquipmentStats {
   basicDamage?: number
   spellPower?: number
   maxHealth?: number
+  healthRegen?: number
   maxMana?: number
   manaRegen?: number
   maxFocus?: number
@@ -170,6 +171,7 @@ export interface PlayerState {
   baseMaxFocus: number
   /** @deprecated Compatibility-only legacy field. Runtime immortality lives in GameState.debug. */
   godMode: boolean
+  healthRegenTimerMs: number
 }
 export interface ChannelingActivity { echoesAssigned: number }
 export type ResearchSlotId = 'research-1' | 'research-2' | 'research-3' | 'research-4'

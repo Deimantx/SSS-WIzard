@@ -83,11 +83,16 @@ const sellValues: Record<ItemId, number | null> = {
 }
 const destroyability: Partial<Record<ItemId, boolean>> = { heartseed: false }
 const actionRestrictionReasons: Partial<Record<ItemId, string>> = { heartseed: 'This progression item cannot be destroyed.' }
+const bossRelicStatOverrides: Partial<Record<ItemId, EquipmentStats>> = {
+  'heartseed-necklace': { maxHealth: 20, basicDamage: 3 },
+  'greatbear-heartstone': { maxHealth: 25, healthRegen: 1, defense: 10, resistances: { fire: 0.05, water: 0.05, earth: 0.05, air: 0.05 } },
+  'edrins-signet': { maxHealth: 20, maxMana: 20, manaRegen: 3, spellPower: 20, manaCostReductionPct: 0.1 },
+}
 
 export const ITEMS: Record<ItemId, ItemDefinition> = Object.fromEntries(Object.entries(authoredItems).map(([id, item]) => {
   const itemId = id as ItemId
   const inventoryCategory = inventoryCategoryOverrides[itemId] ?? item.inventoryCategory ?? (item.kind === 'equipment' ? 'equipment' : 'material')
-  return [id, { ...item, inventoryCategory, ...(inventoryCategory === 'material' ? { materialSubtype: item.materialSubtype ?? (item.category === 'elemental' ? 'elemental' : 'creature') } : {}), sourceNavigation: item.sourceNavigation ?? sourceNavigationByItem[itemId], sellValue: item.sellValue !== undefined ? item.sellValue : sellValues[itemId], canDestroy: item.canDestroy ?? destroyability[itemId] ?? true, ...(item.actionRestrictionReason || actionRestrictionReasons[itemId] ? { actionRestrictionReason: item.actionRestrictionReason ?? actionRestrictionReasons[itemId] } : {}) }]
+  return [id, { ...item, ...(bossRelicStatOverrides[itemId] ? { stats: bossRelicStatOverrides[itemId] } : {}), inventoryCategory, ...(inventoryCategory === 'material' ? { materialSubtype: item.materialSubtype ?? (item.category === 'elemental' ? 'elemental' : 'creature') } : {}), sourceNavigation: item.sourceNavigation ?? sourceNavigationByItem[itemId], sellValue: item.sellValue !== undefined ? item.sellValue : sellValues[itemId], canDestroy: item.canDestroy ?? destroyability[itemId] ?? true, ...(item.actionRestrictionReason || actionRestrictionReasons[itemId] ? { actionRestrictionReason: item.actionRestrictionReason ?? actionRestrictionReasons[itemId] } : {}) }]
 })) as Record<ItemId, ItemDefinition>
 
 /** The eight provisional dungeon materials introduced with the first equipment slice. */
@@ -97,7 +102,7 @@ export const SUPPORTING_DUNGEON_MATERIAL_IDS: readonly ItemId[] = [
 ]
 
 const DAMAGE_TYPES: readonly DamageType[] = ['physical', 'arcane', 'fire', 'water', 'earth', 'air']
-const EQUIPMENT_NUMERIC_FIELDS: readonly (keyof EquipmentStats)[] = ['basicDamage', 'spellPower', 'maxHealth', 'maxMana', 'manaRegen', 'maxFocus', 'defense', 'critChance', 'critDamage', 'basicAttackSpeedPct', 'blockChance', 'cooldownRecoveryPct', 'healingDonePct', 'barrierPowerPct', 'damageOverTimePct', 'statusDurationPct', 'manaCostReductionPct', 'focusEfficiencyPct']
+const EQUIPMENT_NUMERIC_FIELDS: readonly (keyof EquipmentStats)[] = ['basicDamage', 'spellPower', 'maxHealth', 'healthRegen', 'maxMana', 'manaRegen', 'maxFocus', 'defense', 'critChance', 'critDamage', 'basicAttackSpeedPct', 'blockChance', 'cooldownRecoveryPct', 'healingDonePct', 'barrierPowerPct', 'damageOverTimePct', 'statusDurationPct', 'manaCostReductionPct', 'focusEfficiencyPct']
 const validateEquipmentStats = (itemId: string, stats: EquipmentStats | undefined, errors: string[]) => {
   if (stats === undefined) return
   if (!stats || typeof stats !== 'object' || Array.isArray(stats)) { errors.push(`${itemId}: invalid equipment stats`); return }

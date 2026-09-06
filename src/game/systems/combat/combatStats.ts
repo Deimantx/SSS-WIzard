@@ -16,6 +16,7 @@ const DAMAGE_TYPES: readonly DamageType[] = ['physical', 'arcane', 'fire', 'wate
 
 export interface CombatStats {
   maxHealth: number
+  healthRegen: number
   maxMana: number
   manaRegen: number
   maxFocus: number
@@ -57,6 +58,7 @@ const getPlayerSheetStats = (state: PlayerSheetState): CombatStats => {
   const defense = Math.max(0, BALANCE.player.baseDefense + finite(equipment.defense))
   return {
     maxHealth: playerBaseMaxHealth(state),
+    healthRegen: BALANCE.player.healthRegenPerSecond + playerEquipmentStat(state, 'healthRegen'),
     maxMana: getManaCapacityBreakdown(state).total,
     manaRegen: getManaRegenBreakdown(state).total,
     maxFocus: getFocusCapacityBreakdown(state).total,
@@ -113,6 +115,7 @@ const getEnemyStats = (state: GameState): CombatStats => {
   const defense = getDefense(state, 'enemy')
   return {
     maxHealth: state.combat.enemyMaxHp || monster?.maxHealth || 0,
+    healthRegen: 0,
     maxMana: 0,
     manaRegen: 0,
     maxFocus: 0,

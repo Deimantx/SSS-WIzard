@@ -182,6 +182,7 @@ export const formatStatLabel = (key: string) => {
     basicDamage: 'Basic Attack damage',
     spellPower: 'Spell Power',
     maxHealth: 'Max Health',
+    healthRegen: 'Health Regen',
     maxMana: 'Max Mana',
     manaRegen: 'Mana regeneration',
     maxFocus: 'Max Focus',
@@ -202,7 +203,7 @@ export const formatStatLabel = (key: string) => {
   return labels[key] ?? readableId(key)
 }
 
-export const formatStatValue = (key: string, value: number) => key.endsWith('Pct') || ['critChance', 'critDamage', 'blockChance'].includes(key) ? formatSignedPercent(value) : formatNumber(value)
+export const formatStatValue = (key: string, value: number) => key === 'healthRegen' || key === 'manaRegen' ? `${formatNumber(value)}/s` : key.endsWith('Pct') || ['critChance', 'critDamage', 'blockChance'].includes(key) ? formatSignedPercent(value) : formatNumber(value)
 
 export const formatItemStats = (item: ItemDefinition) => Object.entries(item.stats ?? {}).flatMap(([key, value]) => key === 'resistances'
   ? Object.entries(value ?? {}).map(([damageType, resistance]) => `${readableId(damageType)} resistance: ${formatSignedPercent(Number(resistance))}`)

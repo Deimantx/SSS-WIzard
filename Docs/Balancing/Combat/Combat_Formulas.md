@@ -19,3 +19,11 @@ Damage over Time and other non-direct effects do not roll Crit or Block. A multi
 | Basic Attack interval formula | Authored interval / final speed multiplier |
 | Mana cost floor | 1 |
 | Focus cost floor | 1 |
+
+Health Regen tick interval = 1s.
+
+Combat Health Regen = Base Health Regen + Equipment Health Regen.
+
+Out-of-Combat Health Regen = Combat Health Regen × Out-of-Combat Regen Multiplier.
+
+Health Regen is passive recovery; it is not multiplied by Healing Done or Healing Received modifiers in V1.

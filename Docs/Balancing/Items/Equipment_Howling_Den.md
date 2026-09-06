@@ -2,7 +2,7 @@
 
 ## Stats & Effects
 
-| Item | Slot | Hands | HP | Mana | Mana Regen | Focus | Spell Power | Basic Dmg | Basic AS | Crit | Crit Dmg | DEF | Block | Phys Res | Arc Res | Fire Res | Water Res | Earth Res | Air Res | CDR | Mana Cost | Status Dur | Neg Status Dur | Healing | Barrier | DoT | Fire Spell | Water Spell | Earth Spell | Air Spell | Special Effect | Sell |
+| Item | Slot | Hands | HP | Health Regen | Mana | Mana Regen | Focus | Spell Power | Basic Dmg | Basic AS | Crit | Crit Dmg | DEF | Block | Phys Res | Arc Res | Fire Res | Water Res | Earth Res | Air Res | CDR | Mana Cost | Status Dur | Neg Status Dur | Healing | Barrier | DoT | Fire Spell | Water Spell | Earth Spell | Air Spell | Special Effect | Sell |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Fangbound Dagger (fangbound-dagger) | Weapon | 1H | — | — | — | — | — | +8 | +8% | +5% | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | 70 |
 | Fangbound Buckler (fangbound-buckler) | Offhand | — | +30 | — | — | — | — | — | — | — | — | — | +15% | +3% | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | 70 |
@@ -15,6 +15,8 @@
 
 ## Crafting
 
+Health Regen column values for the authored relic: Greatbear Heartstone — HP +25, Health Regen +1, DEF +10, Fire/Water/Earth/Air Resistance +5% each. Its Unyielding effect is unchanged.
+
 > Comparison view — edit recipe costs in `Artificing/Recipes.md`.
 
 | Item | Ingredient 1 | Qty 1 | Ingredient 2 | Qty 2 | Ingredient 3 | Qty 3 | Ingredient 4 | Qty 4 | Ingredient 5 | Qty 5 | Unlock |
@@ -26,4 +28,4 @@
 | Predator-Hide Mantle (predator-hide-mantle) | Predator Hide (predator-hide) | 28 | Earth Fragment (earth-fragment) | 3 | — | — | — | — | — | — | Unlock Howling Den |
 | Greatbear Vestment (greatbear-vestment) | Predator Hide (predator-hide) | 40 | Greatbear Core (greatbear-core) | 3 | Earth Fragment (earth-fragment) | 4 | — | — | — | — | Unlock Howling Den |
 | Howling Signet (howling-signet) | Corrupted Beast Essence (corrupted-beast-essence) | 12 | Predator Fang (predator-fang) | 15 | Water Fragment (water-fragment) | 2 | Air Fragment (air-fragment) | 2 | — | — | Unlock Howling Den |
-| Greatbear Heartstone (greatbear-heartstone) | Greatbear Core (greatbear-core) | 21 | — | — | — | — | — | — | — | — | Defeat Corrupted Greatbear |
+| Greatbear Heartstone (greatbear-heartstone) | Greatbear Core (greatbear-core) | 8 | — | — | — | — | — | — | — | — | Defeat Corrupted Greatbear |

@@ -11,3 +11,5 @@
 | Base Defense | 5 |
 | Base Crit Chance | 5% |
 | Base Crit Damage | 1.5 |
+
+Health Regen is active during Combat. Equipment Health Regen adds to the base value; outside Combat, the total is multiplied by the Out Of Combat Regen Multiplier.

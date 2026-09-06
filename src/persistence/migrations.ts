@@ -60,6 +60,10 @@ const permanentFocusIds = ['forest-heart', 'guild-apprentice']
 const nonNegativeInteger = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.floor(value)) : undefined
 const nonNegativeGold = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, Math.floor(value))) : undefined
 const nonNegativeNumber = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : undefined
+const normalizeHealthRegenTimer = (value: unknown) => {
+  const interval = BALANCE.player.healthRegenIntervalMs
+  return typeof value === 'number' && Number.isFinite(value) ? Math.min(interval, Math.max(0, value)) : interval
+}
 const booleanValue = (value: unknown) => typeof value === 'boolean' ? value : undefined
 const validContentId = (value: unknown, validIds: readonly string[]) => typeof value === 'string' && validIds.includes(value)
 const boundedActionWork = (value: number, fallback: number) => Math.min(MAX_ACTION_WORK_MS, Math.max(0, Number.isFinite(value) ? value : fallback))
@@ -571,6 +575,7 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   // solely for old object compatibility, but must never survive hydration.
   migrated.debug = createInitialState().debug
   migrated.player.godMode = false
+  migrated.player.healthRegenTimerMs = normalizeHealthRegenTimer(isRecord(raw.player) ? raw.player.healthRegenTimerMs : undefined)
   migrated.progress.channeling = migrateChanneling(raw.progress, createInitialState().progress)
   migrated.ui.screen = normalizeScreen(isRecord(raw.ui) ? raw.ui.screen : undefined, migrated.ui.screen)
   normalizeDynamicRecords(migrated, raw)

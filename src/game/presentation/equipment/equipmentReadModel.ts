@@ -9,6 +9,7 @@ export type EquipmentSheetState = Pick<GameState, 'player' | 'progress' | 'activ
 
 export interface EquipmentStatSnapshot {
   maxHealth: number
+  healthRegen: number
   maxMana: number
   maxFocus: number
   manaRegen: number
@@ -71,6 +72,7 @@ export const getEquipmentStatSnapshot = (state: EquipmentSheetState, equipment: 
   const equipmentModifiers = getStableEquipmentModifiers(equipment)
   return {
     maxHealth: sheet.maxHealth,
+    healthRegen: sheet.healthRegen,
     maxMana: sheet.maxMana,
     maxFocus: sheet.maxFocus,
     manaRegen: sheet.manaRegen,
@@ -97,6 +99,7 @@ export const getEquipmentStatSnapshot = (state: EquipmentSheetState, equipment: 
 
 const subtractSnapshots = (current: EquipmentStatSnapshot, preview: EquipmentStatSnapshot): EquipmentImpactStats => ({
   maxHealth: preview.maxHealth - current.maxHealth,
+  healthRegen: preview.healthRegen - current.healthRegen,
   maxMana: preview.maxMana - current.maxMana,
   maxFocus: preview.maxFocus - current.maxFocus,
   manaRegen: preview.manaRegen - current.manaRegen,

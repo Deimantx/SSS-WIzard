@@ -2,7 +2,7 @@
 
 ## Stats & Effects
 
-| Item | Slot | Hands | HP | Mana | Mana Regen | Focus | Spell Power | Basic Dmg | Basic AS | Crit | Crit Dmg | DEF | Block | Phys Res | Arc Res | Fire Res | Water Res | Earth Res | Air Res | CDR | Mana Cost | Status Dur | Neg Status Dur | Healing | Barrier | DoT | Fire Spell | Water Spell | Earth Spell | Air Spell | Special Effect | Sell |
+| Item | Slot | Hands | HP | Health Regen | Mana | Mana Regen | Focus | Spell Power | Basic Dmg | Basic AS | Crit | Crit Dmg | DEF | Block | Phys Res | Arc Res | Fire Res | Water Res | Earth Res | Air Res | CDR | Mana Cost | Status Dur | Neg Status Dur | Healing | Barrier | DoT | Fire Spell | Water Spell | Earth Spell | Air Spell | Special Effect | Sell |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Ember Staff (ember-staff) | Weapon | 2H | — | +10 | — | — | +20 | +4 | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | +20% | — | — | — | +20% Spell damage for Fire damage | 40 |
 | Wispwood Wand (wispwood-wand) | Weapon | 1H | — | +5 | — | — | +10 | +2 | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | 40 |
@@ -16,6 +16,8 @@
 
 ## Crafting
 
+Health Regen column values for the authored relic: Heartseed Necklace — HP +20, Health Regen —, Basic Dmg +3. Its existing Healing Done and Living Seed effect are unchanged.
+
 > Comparison view — edit recipe costs in `Artificing/Recipes.md`.
 
 | Item | Ingredient 1 | Qty 1 | Ingredient 2 | Qty 2 | Ingredient 3 | Qty 3 | Ingredient 4 | Qty 4 | Ingredient 5 | Qty 5 | Unlock |
@@ -28,4 +30,4 @@
 | Wispveil Hood (wispveil-hood) | Water Fragment (water-fragment) | 24 | Air Fragment (air-fragment) | 24 | Wisp Essence (wisp-essence) | 24 | Grove Bark (grove-bark) | 3 | — | — | Defeat any monster in Whispering Woods |
 | Grovekeeper Mantle (grovekeeper-mantle) | Earth Fragment (earth-fragment) | 36 | Wisp Essence (wisp-essence) | 24 | Grove Bark (grove-bark) | 6 | — | — | — | — | Defeat any monster in Whispering Woods |
 | Wispbound Ring (wispbound-ring) | Water Fragment (water-fragment) | 24 | Air Fragment (air-fragment) | 24 | Wisp Essence (wisp-essence) | 18 | Grove Bark (grove-bark) | 3 | — | — | Defeat any monster in Whispering Woods |
-| Heartseed Necklace (heartseed-necklace) | Heartseed (heartseed) | 20 | — | — | — | — | — | — | — | — | Defeat Forest Heart |
+| Heartseed Necklace (heartseed-necklace) | Heartseed (heartseed) | 8 | — | — | — | — | — | — | — | — | Defeat Forest Heart |

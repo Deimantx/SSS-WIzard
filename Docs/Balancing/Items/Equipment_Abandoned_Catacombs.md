@@ -2,7 +2,7 @@
 
 ## Stats & Effects
 
-| Item | Slot | Hands | HP | Mana | Mana Regen | Focus | Spell Power | Basic Dmg | Basic AS | Crit | Crit Dmg | DEF | Block | Phys Res | Arc Res | Fire Res | Water Res | Earth Res | Air Res | CDR | Mana Cost | Status Dur | Neg Status Dur | Healing | Barrier | DoT | Fire Spell | Water Spell | Earth Spell | Air Spell | Special Effect | Sell |
+| Item | Slot | Hands | HP | Health Regen | Mana | Mana Regen | Focus | Spell Power | Basic Dmg | Basic AS | Crit | Crit Dmg | DEF | Block | Phys Res | Arc Res | Fire Res | Water Res | Earth Res | Air Res | CDR | Mana Cost | Status Dur | Neg Status Dur | Healing | Barrier | DoT | Fire Spell | Water Spell | Earth Spell | Air Spell | Special Effect | Sell |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Graveglass Wand (graveglass-wand) | Weapon | 1H | — | — | — | — | +30 | — | — | — | — | — | — | — | — | — | — | — | — | +10% | -10% | — | — | — | — | — | — | — | — | — | — | 110 |
 | Edrin's Remnant Staff (edrins-remnant-staff) | Weapon | 2H | — | — | — | — | +50 | — | — | — | — | — | — | — | — | — | — | — | — | +10% | — | +15% | — | — | — | — | — | — | — | — | +10% Damage dealt when the opponent has a Debuff status | 110 |
@@ -17,6 +17,8 @@
 
 ## Crafting
 
+Health Regen column values for the authored relic: Edrin's Signet — HP +20, Health Regen —, Mana +20, Mana Regen +3, Spell Power +20, Mana Cost -10%. Its Arcane Remnant effect is unchanged.
+
 > Comparison view — edit recipe costs in `Artificing/Recipes.md`.
 
 | Item | Ingredient 1 | Qty 1 | Ingredient 2 | Qty 2 | Ingredient 3 | Qty 3 | Ingredient 4 | Qty 4 | Ingredient 5 | Qty 5 | Unlock |
@@ -30,4 +32,4 @@
 | Ossuary Mantle (ossuary-mantle) | Ossuary Remnant (ossuary-remnant) | 28 | Soul Residue (soul-residue) | 12 | Earth Fragment (earth-fragment) | 3 | Prismatic Fragment (prismatic-fragment) | 2 | — | — | Unlock Abandoned Catacombs |
 | Soulglass Amulet (soulglass-amulet) | Graveglass Shard (graveglass-shard) | 25 | Soul Residue (soul-residue) | 15 | Fire Fragment (fire-fragment) | 3 | Prismatic Fragment (prismatic-fragment) | 2 | — | — | Unlock Abandoned Catacombs |
 | Gravebinder Ring (gravebinder-ring) | Graveglass Shard (graveglass-shard) | 20 | Soul Residue (soul-residue) | 12 | Prismatic Fragment (prismatic-fragment) | 2 | — | — | — | — | Unlock Abandoned Catacombs |
-| Edrin's Signet (edrins-signet) | Edrin Remnant (edrin-remnant) | 35 | — | — | — | — | — | — | — | — | Defeat Archmage Edrin's Shade |
+| Edrin's Signet (edrins-signet) | Edrin Remnant (edrin-remnant) | 20 | — | — | — | — | — | — | — | — | Defeat Archmage Edrin's Shade |

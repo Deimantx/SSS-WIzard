@@ -24,6 +24,19 @@ export const removeTransmutationEchoAction = (state: GameState, recipeId: Transm
   return true
 }
 
+export const assignMaxTransmutationEchoesAction = (state: GameState, recipeId: TransmutationRecipeId) => {
+  const current = Math.max(0, Math.floor(state.activities.transmutation.jobs[recipeId]?.echoesAssigned ?? 0))
+  const capacity = getTransmutationEchoCapacity(state)
+  const maxAttempts = Number.isSafeInteger(capacity) ? capacity : 1000
+  for (let index = 0; index < maxAttempts; index += 1) if (!assignTransmutationEchoAction(state, recipeId)) break
+  return Math.max(0, Math.floor(state.activities.transmutation.jobs[recipeId]?.echoesAssigned ?? 0)) - current
+}
+
+export const clearTransmutationRecipeEchoesAction = (state: GameState, recipeId: TransmutationRecipeId) => {
+  const job = state.activities.transmutation.jobs[recipeId]
+  if (job) job.echoesAssigned = 0
+}
+
 export const setTransmutationEchoesAction = (state: GameState, recipeId: TransmutationRecipeId, amount: number, force = false) => {
   const recipe = RECIPES[recipeId]
   if (!recipe) return false

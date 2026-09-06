@@ -1,11 +1,11 @@
-import { ChevronDown, ChevronRight, LockKeyhole, Search } from 'lucide-react'
+import { ChevronDown, ChevronRight, Library, LockKeyhole, Pin, Search, ShoppingBag, Square } from 'lucide-react'
 import type { CSSProperties } from 'react'
 import React from 'react'
 import { Card, Progress, SearchInput, Status } from '../../../components/ui'
 import { ItemIcon, ItemTooltip } from '../../../components/ui/item'
 import { ITEMS } from '../../../game/content/items/items'
-import type { RecipeDefinition } from '../../../game/content/recipes/recipes'
-import { getRecipeProgressPercent, getRecipeStatus, getRecipeUnlockReason, getTransmutationFocusReserved, getTransmutationJob, getTransmutationRecipeEntries, getTransmutationRecipeFilterCounts, getTransmutationTierOptions, getVisibleTransmutationRecipes, type TransmutationRecipeFilters, type TransmutationStatus } from '../../../game/systems/transmutation/transmutationSelectors'
+import { isTransmutationRecipeId, type RecipeDefinition } from '../../../game/content/recipes/recipes'
+import { canAssignTransmutationEcho, getRecipeProgressPercent, getRecipeStatus, getRecipeUnlockReason, getTransmutationFocusReserved, getTransmutationJob, getTransmutationRecipeEntries, getTransmutationRecipeFilterCounts, getTransmutationTierOptions, getVisibleTransmutationRecipes, type TransmutationRecipeFilters, type TransmutationStatus } from '../../../game/systems/transmutation/transmutationSelectors'
 import type { RecipeCategory, TransmutationRecipeId } from '../../../game/types'
 import { setUiPreferences, useUiPreferences } from '../../../ui/preferences/uiPreferencesStore'
 import { useGameStore } from '../../../store/gameStore'
@@ -14,7 +14,9 @@ import { useProfileAttention } from '../../../ui/attention/attentionStore'
 import { getActiveProfileId } from '../../../profiles/profileSessionStore'
 import { useSmartScrollState } from '../../../ui/game-feel/useSmartScrollState'
 import { useGameContextMenu } from '../../../ui/context-menu/GameContextMenuProvider'
-import { Eye, Minus, Plus } from 'lucide-react'
+import { ItemUsesDialog } from '../../../components/ui/item/ItemUsesDialog'
+import { getVisibleItemUsesForTransmutation } from '../../../game/presentation/transmutation/transmutationUsedInReadModel'
+import { setNavigationIntent } from '../../../ui/navigation/navigationIntent'
 
 const CATEGORY_LABELS: Record<RecipeCategory, string> = { elemental: 'ELEMENTAL', material: 'MATERIALS' }
 const CATEGORY_ORDER: RecipeCategory[] = ['elemental', 'material']
@@ -95,6 +97,7 @@ function hasActiveContextFilter(filters: TransmutationRecipeFilters) {
 function RecipeTile({ recipe, selected, newRecipe = false, onSelect }: { recipe: RecipeDefinition; selected: boolean; newRecipe?: boolean; onSelect: (recipeId: TransmutationRecipeId) => void }) {
   const state = useGameStore()
   const { openContextMenu } = useGameContextMenu()
+  const preferences = useUiPreferences()
   const item = ITEMS[recipe.output.itemId]
   const owned = state.inventory[recipe.output.itemId] ?? 0
   const echoes = Math.max(0, Math.floor(getTransmutationJob(state, recipe.id)?.echoesAssigned ?? 0))
@@ -102,8 +105,10 @@ function RecipeTile({ recipe, selected, newRecipe = false, onSelect }: { recipe:
   const status = getRecipeStatus(state, recipe)
   const locked = status === 'locked'
   const cardMeta = getTransmutationRecipeCardMeta(item)
-  return <ItemTooltip itemId={recipe.output.itemId} owned={owned} recipeContext={{ status: statusText(status), baseDurationMs: recipe.baseDurationMs, manaCost: recipe.manaCost, outputQuantity: recipe.output.quantity, ingredients: recipe.ingredients.map((ingredient) => ({ itemId: ingredient.itemId, quantity: ingredient.quantity })), unlockReason: locked ? getRecipeUnlockReason(recipe) ?? undefined : undefined }}>
-    <button type="button" data-recipe-id={recipe.id} aria-pressed={selected} className={`transmutation-recipe-tile ${selected ? 'selected' : ''} ${locked ? 'locked' : ''} ${echoes > 0 ? 'assigned' : ''}`} style={{ '--recipe-accent': item.color } as CSSProperties} onClick={() => onSelect(recipe.id)} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); openContextMenu({ x: event.clientX, y: event.clientY, header: { title: recipe.name, meta: `${item.name} · ${statusText(status)}` }, sections: [{ id: 'inspect', actions: [{ id: 'inspect', label: 'INSPECT', icon: Eye, onSelect: () => onSelect(recipe.id) }] }, { id: 'echoes', actions: [{ id: 'add-echo', label: echoes ? 'ASSIGN +1 ECHO' : 'START PRODUCTION', icon: Plus, disabled: locked, onSelect: () => { onSelect(recipe.id); state.assignTransmutationEcho(recipe.id) } }, { id: 'remove-echo', label: 'REMOVE 1 ECHO', icon: Minus, disabled: echoes <= 0, onSelect: () => { onSelect(recipe.id); state.removeTransmutationEcho(recipe.id) } }] }] }) }}>
+  const [usesOpen, setUsesOpen] = React.useState(false)
+  const uses = getVisibleItemUsesForTransmutation(state, recipe.output.itemId)
+  return <><ItemTooltip itemId={recipe.output.itemId} owned={owned} recipeContext={{ status: statusText(status), baseDurationMs: recipe.baseDurationMs, manaCost: recipe.manaCost, outputQuantity: recipe.output.quantity, ingredients: recipe.ingredients.map((ingredient) => ({ itemId: ingredient.itemId, quantity: ingredient.quantity })), unlockReason: locked ? getRecipeUnlockReason(recipe) ?? undefined : undefined }}>
+    <button type="button" data-recipe-id={recipe.id} aria-pressed={selected} className={`transmutation-recipe-tile ${selected ? 'selected' : ''} ${locked ? 'locked' : ''} ${echoes > 0 ? 'assigned' : ''}`} style={{ '--recipe-accent': item.color } as CSSProperties} onClick={() => onSelect(recipe.id)} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); openContextMenu({ x: event.clientX, y: event.clientY, anchor: event.currentTarget, header: { title: recipe.name, meta: `${item.name} · ${statusText(status)}` }, sections: [{ id: 'echoes', actions: [{ id: 'start', label: echoes ? 'ASSIGN +1 ECHO' : 'START PRODUCTION', disabled: locked, disabledReason: locked ? getRecipeUnlockReason(recipe) ?? 'Recipe locked' : undefined, onSelect: () => { onSelect(recipe.id); state.assignTransmutationEcho(recipe.id) } }, { id: 'max', label: 'ASSIGN MAX AVAILABLE ECHOES', disabled: locked || !canAssignTransmutationEcho(state), disabledReason: locked ? getRecipeUnlockReason(recipe) ?? 'Recipe locked' : 'No free Echo capacity or Focus', onSelect: () => { onSelect(recipe.id); state.assignMaxTransmutationEchoes(recipe.id) } }, { id: 'remove', label: 'REMOVE 1 ECHO', disabled: echoes <= 0, onSelect: () => { onSelect(recipe.id); state.removeTransmutationEcho(recipe.id) } }, { id: 'stop', label: 'STOP PRODUCTION', icon: Square, disabled: echoes <= 0, onSelect: () => { onSelect(recipe.id); state.clearTransmutationRecipeEchoes(recipe.id) } }] }, { id: 'recipe', actions: [{ id: 'pin', label: preferences.screenState.transmutation.pinnedRecipeId === recipe.id ? 'UNPIN RECIPE' : 'PIN RECIPE', icon: Pin, onSelect: () => setUiPreferences({ screenState: { transmutation: { pinnedRecipeId: preferences.screenState.transmutation.pinnedRecipeId === recipe.id ? null : recipe.id } } }) }, { id: 'output', label: 'OPEN OUTPUT IN INVENTORY', icon: ShoppingBag, onSelect: () => { setNavigationIntent({ inventoryItemId: recipe.output.itemId }); state.setScreen('inventory') } }, ...(uses.length > 0 ? [{ id: 'uses', label: 'USED IN...', icon: Library, onSelect: () => setUsesOpen(true) }] : [])] }] }) }}>
       <span className="transmutation-tile-top">{locked ? <LockKeyhole size={13} aria-label="Locked" /> : <span aria-hidden="true" />}{echoes > 0 && <span className="transmutation-echo-badge">{echoes}E</span>}</span>
       <span className="transmutation-tile-icon"><ItemIcon itemId={recipe.output.itemId} size="tile" /></span>
       <strong>{recipe.name}</strong>
@@ -112,7 +117,7 @@ function RecipeTile({ recipe, selected, newRecipe = false, onSelect }: { recipe:
       <span className="transmutation-tile-footer"><span className="transmutation-tile-owned">OWNED {formatOwned(owned)}</span>{status !== 'paused' && <span className="transmutation-tile-status"><Status tone={locked ? 'locked' : status === 'active' ? 'active' : status === 'mana-limited' || status === 'waiting-mana' || status === 'waiting-materials' ? 'warning' : 'neutral'}>{statusText(status)}</Status></span>}</span>
       {echoes > 0 && <Progress value={getRecipeProgressPercent(recipe, progress)} tone="gold" running={status === 'active' || status === 'mana-limited'} />}
     </button>
-  </ItemTooltip>
+  </ItemTooltip><ItemUsesDialog itemId={recipe.output.itemId} uses={uses} open={usesOpen} onClose={() => setUsesOpen(false)} onSelectRecipe={(id) => { setUsesOpen(false); if (isTransmutationRecipeId(id)) onSelect(id); else { setUiPreferences({ screenState: { artificing: { selectedRecipeId: id } } }); state.setScreen('tower-artificing') } }} /></>
 }
 
 function formatOwned(value: number) {

@@ -14,12 +14,16 @@ const sortOptions: readonly SpellBrowserSort[] = ['Unlock Level', 'Name', 'Schoo
 const typeMenuOptions = typeFilters.map((type) => ({ value: type, label: type === 'All Types' ? 'All' : type }))
 const sortMenuOptions = sortOptions.map((sort) => ({ value: sort, label: sort === 'Unlock Level' ? 'Unlock' : sort }))
 
-export function SpellBrowser({ state, filters, onFiltersChange, selectedEntryId, newSpells, onSelect }: {
+export function SpellBrowser({ state, filters, onFiltersChange, selectedEntryId, newSpells, onSelect, onToggleAutoCast, onTogglePresetSpell, presetContainsSpell, onOpenPresetManager }: {
   state: SpellPresentationState
   filters: SpellBrowserFilters
   onFiltersChange: (next: SpellBrowserFilters) => void
   selectedEntryId: string | null
   onSelect: (id: SpellId | string) => void
+  onToggleAutoCast: (spellId: SpellId) => void
+  onTogglePresetSpell?: (spellId: SpellId) => void
+  presetContainsSpell?: (spellId: SpellId) => boolean
+  onOpenPresetManager: () => void
   newSpells?: ReadonlySet<SpellId>
 }) {
   const entries = getSpellBrowserEntries(state, filters)
@@ -39,7 +43,7 @@ export function SpellBrowser({ state, filters, onFiltersChange, selectedEntryId,
       <SelectMenu options={sortMenuOptions} value={filters.sort} onChange={(value) => update('sort', value)} ariaLabel="Spell sort" prefix="Sort: " />
     </div>
     <div ref={browserGridRef} className="spell-browser-grid smart-scroll-region" aria-label="Spell catalog">
-      {entries.map((entry: SpellBrowserEntry) => <SpellBrowserTile key={entry.id} entry={entry} state={state} selected={entry.id === selectedEntryId} newSpell={entry.kind === 'spell' && newSpells?.has(entry.spellId)} onSelect={onSelect} />)}
+      {entries.map((entry: SpellBrowserEntry) => <SpellBrowserTile key={entry.id} entry={entry} state={state} selected={entry.id === selectedEntryId} newSpell={entry.kind === 'spell' && newSpells?.has(entry.spellId)} onSelect={onSelect} onToggleAutoCast={onToggleAutoCast} onTogglePresetSpell={onTogglePresetSpell} presetContainsSpell={entry.kind === 'spell' ? presetContainsSpell?.(entry.spellId) : false} onOpenPresetManager={onOpenPresetManager} />)}
       {!entries.length && <div className="schools-empty-state">{showKnownEmptyState ? <><h3>NO SPELLS LEARNED YET</h3><p>Reach School Level 2 through Research to reveal your first Spells.</p><small>Turn off Unlocked Only to preview locked slots.</small></> : <p>No visible Spells match these filters.</p>}</div>}
     </div>
   </div>

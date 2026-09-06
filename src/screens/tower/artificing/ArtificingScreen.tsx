@@ -14,19 +14,28 @@ import { EquipmentCatalog } from './EquipmentCatalog'
 import { ArtificingDetail } from './ArtificingDetail'
 import { arrangeArtificingPanels } from './artificingLayout'
 import { PinnedRecipePanel } from './PinnedRecipePanel'
+import { setNavigationIntent, useNavigationIntent } from '../../../ui/navigation/navigationIntent'
 
 export function ArtificingScreen() {
   const state = useGameStore()
   const preferences = useUiPreferences().screenState.artificing
+  const navigationIntent = useNavigationIntent()
+  const intentRecipeId = navigationIntent.artificingRecipeId && Object.prototype.hasOwnProperty.call(ARTIFICING_RECIPES, navigationIntent.artificingRecipeId) ? navigationIntent.artificingRecipeId : null
   const [query, setQuery] = useState('')
   const visible = getVisibleArtificingRecipes(state, preferences, query)
-  const selected = preferences.selectedRecipeId
+  const selected = intentRecipeId ?? preferences.selectedRecipeId
   // Search/filter context never changes acquisition or the selected blueprint.
   // A hidden/invalid selection simply has no inspector until visible again.
-  const recipe = selected && visible.some(entry => entry.id === selected) ? ARTIFICING_RECIPES[selected] : null
+  const recipe = selected && ARTIFICING_RECIPES[selected] && (Boolean(intentRecipeId) || visible.some(entry => entry.id === selected)) ? ARTIFICING_RECIPES[selected] : null
   useEffect(() => {
+    if (intentRecipeId) {
+      setQuery('')
+      setUiPreferences({ screenState: { artificing: { selectedRecipeId: intentRecipeId, slotFilter: 'all', weaponHandsFilter: 'all', offhandPresentationFilter: 'all', ownershipFilter: 'all' } } })
+      setNavigationIntent({ artificingRecipeId: null })
+      return
+    }
     if (selected && !Object.prototype.hasOwnProperty.call(ARTIFICING_RECIPES, selected)) setUiPreferences({ screenState: { artificing: { selectedRecipeId: null } } })
-  }, [selected])
+  }, [intentRecipeId, selected])
   const select = (id: ArtificingRecipeId) => {
     clearAttention(getActiveProfileId(), 'recipe', id)
     setUiPreferences({ screenState: { artificing: { selectedRecipeId: id } } })

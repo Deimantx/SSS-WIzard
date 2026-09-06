@@ -18,6 +18,9 @@ import { getResearchReservedQuantity } from '../../game/systems/research/researc
 import { useSmartScrollState } from '../../ui/game-feel/useSmartScrollState'
 import { getEquipmentPreview, type EquipmentPreview } from '../../game/presentation/equipment/equipmentReadModel'
 import { useGameStore } from '../../store/gameStore'
+import { getItemDropSources, getItemSources } from '../../game/content/contentRelations'
+import { isTransmutationRecipeId } from '../../game/content/recipes/recipes'
+import { setNavigationIntent } from '../../ui/navigation/navigationIntent'
 
 type DetailAccordionKey = 'source' | 'researchValue'
 type DetailAccordionState = Record<DetailAccordionKey, boolean>
@@ -51,6 +54,18 @@ export function InventoryDetail({ itemId, inventory, protectedItems, equipment, 
   const pinnedNeed = getPinnedArtificingItemNeed(itemId, economyState, preferences.screenState.artificing.pinnedRecipeId)
   const sourceLabel = getItemSourceLabel(itemId)
   const toggleSection = (section: DetailAccordionKey) => { const key = section === 'source' ? 'sourceOpen' : 'researchValueOpen'; setUiPreferences({ screenState: { inventory: { [key]: !openSections[section] } } }) }
+  const openResearch = () => { setNavigationIntent({ researchItemId: itemId, researchSchoolId: null }); navigate?.('tower-research') }
+  const openSource = () => {
+    const drop = getItemDropSources(itemId)[0]
+    if (source?.destination === 'combat' && drop) setNavigationIntent({ combatDungeonId: drop.dungeonId, combatMonsterId: drop.monsterId })
+    else if (source?.destination === 'tower-research') setNavigationIntent({ researchItemId: itemId, researchSchoolId: null })
+    else if (source?.destination === 'tower-artificing' || source?.destination === 'tower-transmutation') {
+      const output = getItemSources(itemId).find((relation) => relation.kind === 'recipe' && relation.detail === (source.destination === 'tower-artificing' ? 'Artificing output' : 'Transmutation output'))
+      if (output) setNavigationIntent(source.destination === 'tower-artificing' ? { artificingRecipeId: output.id as never } : { transmutationRecipeId: output.id as never })
+    }
+    navigate?.(source?.destination ?? 'inventory')
+  }
+  const openUse = (recipeId: import('../../game/types').RecipeId) => { if (isTransmutationRecipeId(recipeId)) { setNavigationIntent({ transmutationRecipeId: recipeId }); navigate?.('tower-transmutation') } else { setNavigationIntent({ artificingRecipeId: recipeId as never }); navigate?.('tower-artificing') } }
 
   return <div ref={detailScrollRef} className={`inventory-detail-content inventory-detail-${item.inventoryCategory} smart-scroll-region`} style={{ '--detail-accent': item.color } as CSSProperties}>
     <div className="inventory-detail-hero"><div className="inventory-detail-icon"><ItemIcon itemId={itemId} size="large" /></div><div className="inventory-detail-title"><span className="inventory-detail-category">{category}{item.equipmentSlot ? ` · ${EQUIPMENT_ITEM_SLOT_LABELS[item.equipmentSlot]}` : ''}</span><h2>{item.name}</h2><div className="inventory-detail-badges">{equipped ? <Status tone="success"><Check size={12} /> Equipped</Status> : protectedItem ? <Status tone="warning"><LockKeyhole size={12} /> Protected</Status> : <Status>Available</Status>}</div></div></div>
@@ -58,7 +73,7 @@ export function InventoryDetail({ itemId, inventory, protectedItems, equipment, 
     {researchReserved > 0 && <div className="inventory-detail-reserved"><span>PREPARED FOR RESEARCH</span><strong>×{researchReserved.toLocaleString()}</strong><small>Unavailable to selling, destruction, Guild donations, and Transmutation.</small></div>}
     <p className="inventory-detail-description">{item.description}</p>
 
-    {economyState && toggleProtection && equipItem && sellItem && destroyItem && <InventoryActions itemId={itemId} inventory={inventory} protectedItems={protectedItems} equipment={equipment} activities={economyState.activities} toggleProtection={toggleProtection} equipItem={equipItem} sellItem={sellItem} destroyItem={destroyItem} contextActions={<div className="inventory-context-actions">{item.inventoryCategory === 'material' && recipeUses.length > 0 && <Button variant="secondary" onClick={() => setUsesOpen(true)}>VIEW RECIPES</Button>}{item.researchSchool && <Button variant="ghost" onClick={() => { setUiPreferences({ screenState: { research: { selectedItemId: itemId } } }); navigate?.('tower-research') }}>RESEARCH</Button>}{item.kind === 'equipment' && <Button variant="ghost" onClick={() => document.querySelector('.inventory-loadout-comparison')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })}>COMPARE</Button>}</div>} />}
+    {economyState && toggleProtection && equipItem && sellItem && destroyItem && <InventoryActions itemId={itemId} inventory={inventory} protectedItems={protectedItems} equipment={equipment} activities={economyState.activities} toggleProtection={toggleProtection} equipItem={equipItem} sellItem={sellItem} destroyItem={destroyItem} contextActions={<div className="inventory-context-actions">{item.inventoryCategory === 'material' && recipeUses.length > 0 && <Button variant="secondary" onClick={() => setUsesOpen(true)}>VIEW RECIPES</Button>}{item.researchSchool && <Button variant="ghost" onClick={openResearch}>RESEARCH</Button>}{item.kind === 'equipment' && <Button variant="ghost" onClick={() => document.querySelector('.inventory-loadout-comparison')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })}>COMPARE</Button>}</div>} />}
     {pinnedNeed && <GoalSection need={pinnedNeed} navigate={navigate} />}
 
     {flow && <FlowSection flow={flow} />}
@@ -67,13 +82,13 @@ export function InventoryDetail({ itemId, inventory, protectedItems, equipment, 
     {item.kind === 'equipment' && <EquipmentCombatDetails item={item} />}
 
     {item.kind === 'equipment' && <InventoryLoadoutComparison itemId={itemId} equippedId={equippedId} quantity={quantity} inventory={inventory} preview={equipmentPreview} ringTarget={ringTarget} onRingTargetChange={setRingTarget} />}
-    {sourceLabel && <InventoryDetailSection section="source" title="SOURCE" count={1} open={openSections.source} onToggle={toggleSection}><div className="inventory-detail-source"><span>{sourceLabel}</span>{source && <Button variant="ghost" className="inventory-detail-go" ariaLabel={`Go to ${source.label}`} onClick={() => navigate?.(source.destination)}>GO <ArrowRight size={13} /></Button>}</div></InventoryDetailSection>}
+    {sourceLabel && <InventoryDetailSection section="source" title="SOURCE" count={1} open={openSections.source} onToggle={toggleSection}><div className="inventory-detail-source"><span>{sourceLabel}</span>{source && <Button variant="ghost" className="inventory-detail-go" ariaLabel={`Go to ${source.label}`} onClick={openSource}>GO <ArrowRight size={13} /></Button>}</div></InventoryDetailSection>}
 
     {processingChain.length > 1 && <section className="inventory-detail-section"><span className="inventory-detail-label">PROCESSING CHAIN</span><div className="inventory-processing-chain">{processingChain.map((chainItem, index) => <span key={chainItem}><strong>{ITEMS[chainItem].name}</strong>{index < processingChain.length - 1 && <ArrowRight size={13} aria-hidden="true" />}</span>)}</div></section>}
 
-    {item.researchSchool && <InventoryDetailSection section="researchValue" title="RESEARCH VALUE" open={openSections.researchValue} onToggle={toggleSection}><div className="inventory-research-values">{(Object.keys(SCHOOLS) as SchoolId[]).map((schoolId) => <DetailRow key={schoolId} label={SCHOOLS[schoolId].name} value={`${getResearchXp(itemId, schoolId)} XP`} />)}</div><Button variant="ghost" className="inventory-inline-action" onClick={() => navigate?.('tower-research')}>GO TO RESEARCH <ArrowRight size={13} /></Button></InventoryDetailSection>}
+    {item.researchSchool && <InventoryDetailSection section="researchValue" title="RESEARCH VALUE" open={openSections.researchValue} onToggle={toggleSection}><div className="inventory-research-values">{(Object.keys(SCHOOLS) as SchoolId[]).map((schoolId) => <DetailRow key={schoolId} label={SCHOOLS[schoolId].name} value={`${getResearchXp(itemId, schoolId)} XP`} />)}</div><Button variant="ghost" className="inventory-inline-action" onClick={openResearch}>GO TO RESEARCH <ArrowRight size={13} /></Button></InventoryDetailSection>}
 
-    <ItemUsesDialog itemId={itemId} uses={recipeUses} open={usesOpen} onClose={() => setUsesOpen(false)} />
+    <ItemUsesDialog itemId={itemId} uses={recipeUses} open={usesOpen} onClose={() => setUsesOpen(false)} onSelectRecipe={openUse} />
 
   </div>
 }

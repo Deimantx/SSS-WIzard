@@ -10,7 +10,9 @@ import type { GameState, ItemId, SchoolId, ScreenId } from '../../game/types'
 import { EQUIPMENT_ITEM_SLOT_LABELS } from '../../game/core/equipment'
 import { formatStat, friendlyStatLabel } from '../../components/ui/item/ItemTooltip'
 import { getInventoryCategoryLabel, getInventorySubcategoryLabel, getItemSourceDestination, getItemUses } from '../../game/content/items/inventoryMetadata'
+import { getItemDropSources, getItemSources } from '../../game/content/contentRelations'
 import { useSmartScrollState } from '../../ui/game-feel/useSmartScrollState'
+import { setNavigationIntent } from '../../ui/navigation/navigationIntent'
 
 interface CollectionInspectorProps {
   itemId: ItemId | null
@@ -32,17 +34,35 @@ export function CollectionInspector({ itemId, inventory, progress, navigate }: C
   const category = subcategory ? `${subcategory} Material` : getInventoryCategoryLabel(itemId)
   const source = getItemSourceDestination(itemId)
   const uses = getItemUses(itemId)
+  const openSource = () => {
+    if (!source) return
+    const drop = getItemDropSources(itemId)[0]
+    if (source.destination === 'combat' && drop) setNavigationIntent({ combatDungeonId: drop.dungeonId, combatMonsterId: drop.monsterId })
+    else if (source.destination === 'tower-research') setNavigationIntent({ researchItemId: itemId, researchSchoolId: null })
+    else if (source.destination === 'tower-artificing' || source.destination === 'tower-transmutation') {
+      const output = getItemSources(itemId).find((relation) => relation.kind === 'recipe' && relation.detail === (source.destination === 'tower-artificing' ? 'Artificing output' : 'Transmutation output'))
+      if (output) setNavigationIntent(source.destination === 'tower-artificing' ? { artificingRecipeId: output.id as never } : { transmutationRecipeId: output.id as never })
+    }
+    navigate(source.destination)
+  }
+  const openUse = (use: ReturnType<typeof getItemUses>[number]) => {
+    if (use.recipeId) {
+      if (use.destination === 'tower-artificing') setNavigationIntent({ artificingRecipeId: use.recipeId as never })
+      else if (use.destination === 'tower-transmutation') setNavigationIntent({ transmutationRecipeId: use.recipeId as never })
+    } else if (use.destination === 'tower-research') setNavigationIntent({ researchItemId: itemId, researchSchoolId: null })
+    navigate(use.destination)
+  }
 
   return <Card title="ITEM INSPECTION" className="collection-inspector"><div ref={inspectorScrollRef} className="collection-inspector-scroll smart-scroll-region" style={{ '--collection-accent': item.color } as CSSProperties}>
     <div className="collection-inspector-hero"><div className="collection-inspector-icon"><ItemIcon itemId={itemId} size="large" /></div><div><span className="collection-inspector-category">{category}{item.equipmentSlot ? ` · ${EQUIPMENT_ITEM_SLOT_LABELS[item.equipmentSlot]}` : ''}</span><h2>{item.name}</h2><Status tone="success">Discovered</Status></div></div>
     <div className="collection-owned"><span>OWNED NOW</span><ItemQuantity value={quantity} /></div>
     <p className="collection-description">{item.description}</p>
-    {source && <section className="collection-inspector-section"><span className="collection-section-label">SOURCE</span><div className="collection-source"><span>{getItemSourceLabel(itemId)}</span><Button variant="ghost" ariaLabel={`Go to ${source.label}`} tooltip={<TooltipContent title={`Open ${source.label}`} description="Navigate to the system that produces this item." />} onClick={() => navigate(source.destination)}>GO <ArrowRight size={13} /></Button></div></section>}
+    {source && <section className="collection-inspector-section"><span className="collection-section-label">SOURCE</span><div className="collection-source"><span>{getItemSourceLabel(itemId)}</span><Button variant="ghost" ariaLabel={`Go to ${source.label}`} tooltip={<TooltipContent title={`Open ${source.label}`} description="Navigate to the system that produces this item." />} onClick={openSource}>GO <ArrowRight size={13} /></Button></div></section>}
     {item.researchSchool && <section className="collection-inspector-section"><span className="collection-section-label">RESEARCH VALUE</span><div className="collection-value-list">{(Object.keys(SCHOOLS) as SchoolId[]).map((schoolId) => <DetailRow key={schoolId} label={SCHOOLS[schoolId].name} value={`${getResearchXp(itemId, schoolId)} XP`} />)}</div></section>}
     {item.stats && Object.keys(item.stats).length > 0 && <section className="collection-inspector-section"><span className="collection-section-label">STATS</span><div className="collection-value-list">{Object.entries(item.stats).filter(([, value]) => value !== 0).map(([key, value]) => <DetailRow key={key} label={friendlyStatLabel(key)} value={formatStat(key, value)} />)}</div></section>}
     {item.kind === 'equipment' && <EquipmentCombatDetails item={item} />}
     {item.kind === 'equipment' && <section className="collection-inspector-section"><span className="collection-section-label">EQUIPMENT</span><DetailRow label="Slot" value={item.equipmentSlot ? EQUIPMENT_ITEM_SLOT_LABELS[item.equipmentSlot] : '—'} />{item.weaponHands && <DetailRow label="Weapon" value={`${item.weaponHands}H`} />}</section>}
-    {uses.length > 0 && <section className="collection-inspector-section"><span className="collection-section-label">USED IN</span><div className="collection-use-list">{uses.map((use) => <GameTooltip block key={`${use.destination}-${use.label}`} content={<TooltipContent title={`Open ${use.label}`} description="Navigate to the system that uses this item." />}><button type="button" aria-label={`Open ${use.label}`} onClick={() => navigate(use.destination)}><span><strong>{use.label}</strong><small>{use.detail}</small></span><ArrowRight size={14} /></button></GameTooltip>)}</div></section>}
+    {uses.length > 0 && <section className="collection-inspector-section"><span className="collection-section-label">USED IN</span><div className="collection-use-list">{uses.map((use) => <GameTooltip block key={`${use.destination}-${use.label}`} content={<TooltipContent title={`Open ${use.label}`} description="Navigate to the system that uses this item." />}><button type="button" aria-label={`Open ${use.label}`} onClick={() => openUse(use)}><span><strong>{use.label}</strong><small>{use.detail}</small></span><ArrowRight size={14} /></button></GameTooltip>)}</div></section>}
     {item.sellValue !== null && <section className="collection-inspector-section"><DetailRow label="Sell value" value={`${item.sellValue} Gold`} /></section>}
   </div></Card>
 }

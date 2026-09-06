@@ -89,6 +89,22 @@ export const removeResearchEchoAction = (state: GameState, slotId: ResearchSlotI
   return true
 }
 
+export const assignMaxResearchEchoesAction = (state: GameState, slotId: ResearchSlotId) => {
+  const current = Math.max(0, finiteQuantity(state.activities.research.slots[slotId]?.echoesAssigned))
+  const capacity = getResearchEchoCapacity(state)
+  const maxAttempts = Number.isSafeInteger(capacity) ? capacity : 1000
+  for (let index = 0; index < maxAttempts; index += 1) if (!assignResearchEchoAction(state, slotId)) break
+  return Math.max(0, finiteQuantity(state.activities.research.slots[slotId]?.echoesAssigned)) - current
+}
+
+export const pauseResearchAction = (state: GameState, slotId: ResearchSlotId) => {
+  const job = state.activities.research.slots[slotId]
+  if (!job) return false
+  job.echoesAssigned = 0
+  if (job.status === 'running' || job.status === 'mana-limited' || job.status === 'waiting-mana') job.status = 'prepared'
+  return true
+}
+
 export const setResearchEchoesAction = (state: GameState, slotId: ResearchSlotId, amount: number, force = false) => {
   const job = state.activities.research.slots[slotId]
   if (!job) return false

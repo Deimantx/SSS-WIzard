@@ -2,7 +2,7 @@ import { ChevronLeft, ChevronRight, Gauge, Package, RotateCcw, Timer } from 'luc
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { Card, GameTooltip, Progress } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
-import { ItemIcon } from '../../components/ui/item/ItemIcon'
+import { ItemIcon, ItemUsesDialog } from '../../components/ui/item'
 import { ITEMS } from '../../game/content/items/items'
 import { getDungeonStatisticsPresentation } from '../../game/presentation/combat/dungeonStatisticsPresentation'
 import { formatUiCount } from '../../game/presentation/numbers'
@@ -10,6 +10,13 @@ import { useDungeonStatisticsStore } from '../../game/telemetry/dungeon/dungeonS
 import { DUNGEON_STATISTICS_MODE_ORDER, type DungeonStatisticsMode } from '../../game/telemetry/dungeon/dungeonStatisticsTypes'
 import { setUiPreferences, useUiPreferences } from '../../ui/preferences/uiPreferencesStore'
 import { useSmartScrollState } from '../../ui/game-feel/useSmartScrollState'
+import { useGameContextMenu } from '../../ui/context-menu/GameContextMenuProvider'
+import { buildItemContextSections } from '../../ui/context-menu/itemContextActions'
+import { getItemDropSources, getItemSources } from '../../game/content/contentRelations'
+import { getItemUses } from '../../game/content/items/inventoryMetadata'
+import { isTransmutationRecipeId } from '../../game/content/recipes/recipes'
+import { useGameStore } from '../../store/gameStore'
+import { setNavigationIntent } from '../../ui/navigation/navigationIntent'
 
 const modeLabels: Record<DungeonStatisticsMode, string> = { runs: 'RUNS', drops: 'DROPS', efficiency: 'EFFICIENCY' }
 
@@ -54,13 +61,23 @@ function DropsMode({ presentation, dropsListRef }: { presentation: ReturnType<ty
 }
 
 function DropRow({ row, sessionTime }: { row: ReturnType<typeof getDungeonStatisticsPresentation>['dropRows'][number]; sessionTime: string }) {
+  const state = useGameStore()
+  const { openContextMenu } = useGameContextMenu()
+  const preferences = useUiPreferences()
   const [isNew, setIsNew] = useState(true)
+  const [usesOpen, setUsesOpen] = useState(false)
   useEffect(() => {
     const timer = window.setTimeout(() => setIsNew(false), 180)
     return () => window.clearTimeout(timer)
   }, [])
   const quantityLabel = formatUiCount(row.quantity)
-  return <GameTooltip block content={<TooltipContent title={ITEMS[row.itemId].name.toUpperCase()} description={`${ITEMS[row.itemId].description} ${quantityLabel} collected over ${sessionTime}.`}><div className="tooltip-row"><span>EXACT QUANTITY</span><b>{quantityLabel}</b></div><div className="tooltip-row"><span>RATE</span><b>{row.perHourLabel}</b></div></TooltipContent>}><div className={`dungeon-statistics-drop-row${isNew ? ' is-new' : ''}`} tabIndex={0} aria-label={`${row.name}, ${row.perHourLabel}`}><span className="dungeon-statistics-drop-icon"><ItemIcon itemId={row.itemId} size="tiny" /></span><strong>{row.name}</strong><span className="dungeon-statistics-drop-rate">{row.perHourLabel}</span></div></GameTooltip>
+  const item = ITEMS[row.itemId]
+  const output = getItemSources(row.itemId).find((relation) => relation.kind === 'recipe' && relation.detail.endsWith('output'))
+  const uses = getItemUses(row.itemId)
+  const firstDrop = getItemDropSources(row.itemId)[0]
+  const openItem = () => { setNavigationIntent({ inventoryItemId: row.itemId }); state.setScreen('inventory') }
+  const openRecipe = () => { if (!output) return; if (output.detail === 'Artificing output') setUiPreferences({ screenState: { artificing: { selectedRecipeId: output.id as never } } }); else setUiPreferences({ screenState: { transmutation: { selectedRecipeId: output.id as never } } }); state.setScreen(output.detail === 'Artificing output' ? 'tower-artificing' : 'tower-transmutation') }
+  return <><GameTooltip block content={<TooltipContent title={item.name.toUpperCase()} description={`${item.description} ${quantityLabel} collected over ${sessionTime}.`}><div className="tooltip-row"><span>EXACT QUANTITY</span><b>{quantityLabel}</b></div><div className="tooltip-row"><span>RATE</span><b>{row.perHourLabel}</b></div></TooltipContent>}><div className={`dungeon-statistics-drop-row${isNew ? ' is-new' : ''}`} tabIndex={0} aria-label={`${row.name}, ${row.perHourLabel}`} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); openContextMenu({ x: event.clientX, y: event.clientY, anchor: event.currentTarget, header: { title: item.name, meta: `DUNGEON DROP · ${quantityLabel}` }, sections: [{ id: 'item', actions: [{ id: 'inventory', label: 'OPEN IN INVENTORY', onSelect: openItem }, { id: 'collection', label: 'OPEN COLLECTION', onSelect: () => { setNavigationIntent({ inventoryItemId: row.itemId }); state.setScreen('collection') } }, ...(uses.length > 0 ? [{ id: 'uses', label: 'USED IN...', onSelect: () => setUsesOpen(true) }] : []), ...(output ? [{ id: 'output', label: 'OPEN OUTPUT RECIPE', onSelect: openRecipe }] : []), ...(firstDrop ? [{ id: 'source', label: 'WHERE TO GET', onSelect: () => { setNavigationIntent({ combatDungeonId: firstDrop.dungeonId, combatMonsterId: firstDrop.monsterId }); state.setScreen('combat') } }] : []), { id: 'track', label: preferences.trackedItemId === row.itemId ? 'UNTRACK ITEM' : 'TRACK ITEM', onSelect: () => setUiPreferences({ trackedItemId: preferences.trackedItemId === row.itemId ? null : row.itemId }) }] }] }) }}><span className="dungeon-statistics-drop-icon"><ItemIcon itemId={row.itemId} size="tiny" /></span><strong>{row.name}</strong><span className="dungeon-statistics-drop-rate">{row.perHourLabel}</span></div></GameTooltip><ItemUsesDialog itemId={row.itemId} uses={uses} open={usesOpen} onClose={() => setUsesOpen(false)} onSelectRecipe={(recipeId) => { setUsesOpen(false); if (isTransmutationRecipeId(recipeId)) { setNavigationIntent({ transmutationRecipeId: recipeId }); state.setScreen('tower-transmutation') } else { setNavigationIntent({ artificingRecipeId: recipeId as never }); state.setScreen('tower-artificing') } }} /></>
 }
 
 function EfficiencyMode({ presentation }: { presentation: ReturnType<typeof getDungeonStatisticsPresentation> }) {

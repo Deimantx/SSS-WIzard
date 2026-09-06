@@ -30,8 +30,8 @@ import { donateGuildRequestAction, claimGuildRewardAction, promoteGuildAction } 
 import { debugLockSpellAction, debugUnlockSpellRankOneAction, resetSpellCooldownsAction, setSchoolLevelDebugAction, setSchoolXpDebugAction, setLevelCapAction, setThreatAction, setBossKillsAction, unlockAllSpellsAction } from './actions/progressionActions'
 import { setChannelingEchoesAction, upgradeManaPillarAction, setManaPillarLevelAction, setChannelingManaGeneratedAction, setChannelingSustainAction, setChannelingDiscoveryAction } from './actions/channelingActions'
 import { canReserveFocusAction, setFocusImprovementLevelAction, upgradeFocusCapacityAction } from './actions/focusActions'
-import { assignOneResearchEchoEachAction, assignResearchEchoAction, clearPreparedResearchAction, clearResearchEchoesAction, prepareResearchAction, removePreparedResearchAction, removeResearchEchoAction, setResearchEchoesAction } from './actions/researchActions'
-import { assignTransmutationEchoAction, clearTransmutationAssignmentsAction, grantTransmutationMissingIngredientsAction, removeTransmutationEchoAction, setTransmutationEchoCapacityOverrideAction, setTransmutationEchoesAction } from './actions/transmutationActions'
+import { assignMaxResearchEchoesAction, assignOneResearchEchoEachAction, assignResearchEchoAction, clearPreparedResearchAction, clearResearchEchoesAction, pauseResearchAction, prepareResearchAction, removePreparedResearchAction, removeResearchEchoAction, setResearchEchoesAction } from './actions/researchActions'
+import { assignMaxTransmutationEchoesAction, assignTransmutationEchoAction, clearTransmutationAssignmentsAction, clearTransmutationRecipeEchoesAction, grantTransmutationMissingIngredientsAction, removeTransmutationEchoAction, setTransmutationEchoCapacityOverrideAction, setTransmutationEchoesAction } from './actions/transmutationActions'
 import { forceCompleteTransmutationCycle } from '../game/systems/transmutation/transmutationEngine'
 import { saveGameAction } from './actions/persistenceActions'
 import { advanceGameState } from '../game/systems/simulation/advanceGameState'
@@ -126,6 +126,8 @@ export interface GameActions {
   prepareResearch: (itemId: ItemId, targetSchoolId: SchoolId, quantity: number) => void
   removePreparedResearch: (slotId: ResearchSlotId) => void
   assignResearchEcho: (slotId: ResearchSlotId) => void
+  assignMaxResearchEchoes: (slotId: ResearchSlotId) => void
+  pauseResearch: (slotId: ResearchSlotId) => void
   assignOneResearchEchoEach: () => void
   removeResearchEcho: (slotId: ResearchSlotId) => void
   setResearchEchoes: (slotId: ResearchSlotId, amount: number) => void
@@ -134,6 +136,8 @@ export interface GameActions {
   forceResearchCycle: (slotId: ResearchSlotId) => void
   assignTransmutationEcho: (recipeId: TransmutationRecipeId) => void
   removeTransmutationEcho: (recipeId: TransmutationRecipeId) => void
+  assignMaxTransmutationEchoes: (recipeId: TransmutationRecipeId) => void
+  clearTransmutationRecipeEchoes: (recipeId: TransmutationRecipeId) => void
   setTransmutationEchoes: (recipeId: TransmutationRecipeId, amount: number) => void
   clearTransmutationAssignments: () => void
   completeTransmutationCycle: (recipeId: TransmutationRecipeId) => void
@@ -304,6 +308,8 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   prepareResearch: (itemId, targetSchoolId, quantity) => set((state) => { prepareResearchAction(state, itemId, targetSchoolId, quantity); return state }),
   removePreparedResearch: (slotId) => set((state) => { removePreparedResearchAction(state, slotId); return state }),
   assignResearchEcho: (slotId) => set((state) => { assignResearchEchoAction(state, slotId); return state }),
+  assignMaxResearchEchoes: (slotId) => set((state) => { assignMaxResearchEchoesAction(state, slotId); return state }),
+  pauseResearch: (slotId) => set((state) => { pauseResearchAction(state, slotId); return state }),
   assignOneResearchEchoEach: () => set((state) => { assignOneResearchEchoEachAction(state); return state }),
   removeResearchEcho: (slotId) => set((state) => { removeResearchEchoAction(state, slotId); return state }),
   setResearchEchoes: (slotId, amount) => set((state) => { setResearchEchoesAction(state, slotId, amount); return state }),
@@ -312,6 +318,8 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   forceResearchCycle: (slotId) => set((state) => { forceCompleteResearchCycle(state, slotId, { mode: 'live' }); return state }),
   assignTransmutationEcho: (recipeId) => { let result = false; set((state) => { result = assignTransmutationEchoAction(state, recipeId); return state }); return result },
   removeTransmutationEcho: (recipeId) => { const before = get().activities.transmutation.jobs[recipeId]?.echoesAssigned ?? 0; set((state) => { removeTransmutationEchoAction(state, recipeId); return state }); return (get().activities.transmutation.jobs[recipeId]?.echoesAssigned ?? 0) < before },
+  assignMaxTransmutationEchoes: (recipeId) => set((state) => { assignMaxTransmutationEchoesAction(state, recipeId); return state }),
+  clearTransmutationRecipeEchoes: (recipeId) => set((state) => { clearTransmutationRecipeEchoesAction(state, recipeId); return state }),
   setTransmutationEchoes: (recipeId, amount) => set((state) => { setTransmutationEchoesAction(state, recipeId, amount); return state }),
   clearTransmutationAssignments: () => set((state) => { clearTransmutationAssignmentsAction(state); return state }),
   completeTransmutationCycle: (recipeId) => set((state) => { forceCompleteTransmutationCycle(state, recipeId, { mode: 'live' }); return state }),

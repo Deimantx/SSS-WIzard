@@ -24,6 +24,7 @@ export interface InventoryScreenPreferences {
 
 export interface TransmutationScreenPreferences {
   selectedRecipeId: import('../../game/types').TransmutationRecipeId
+  pinnedRecipeId: import('../../game/types').TransmutationRecipeId | null
   categoryFilter: TransmutationCategoryFilter
   tierFilter: TransmutationTierFilter
   craftableOnly: boolean
@@ -73,5 +74,6 @@ export interface UiPreferences {
   uiSoundVolume: number
   customTheme: CustomThemeColors
   navigationGroups: Record<NavigationGroupId, boolean>
+  trackedItemId: ItemId | null
   screenState: ScreenPreferences
 }

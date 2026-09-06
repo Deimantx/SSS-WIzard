@@ -10,11 +10,13 @@ import { clearAttention, useProfileAttention } from '../../ui/attention/attentio
 import { getActiveProfileId } from '../../profiles/profileSessionStore'
 import { InspectorTransition } from '../../ui/game-feel/InspectorTransition'
 import { ITEMS } from '../../game/content/items/items'
+import { setNavigationIntent, useNavigationIntent } from '../../ui/navigation/navigationIntent'
 
 export function CollectionScreen() {
   const progress = useGameStore((state) => state.progress)
   const inventory = useGameStore((state) => state.inventory)
   const navigate = useGameStore((state) => state.setScreen)
+  const navigationIntent = useNavigationIntent()
   const attention = useProfileAttention(getActiveProfileId())
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState<CollectionCategoryFilter>('All')
@@ -25,6 +27,16 @@ export function CollectionScreen() {
   useEffect(() => {
     setSelected((current) => current && visibleIds.includes(current) ? current : visibleIds[0] ?? null)
   }, [visibleIds.join('|')])
+
+  useEffect(() => {
+    const itemId = navigationIntent.inventoryItemId
+    if (!itemId) return
+    setSearch('')
+    setCategory('All')
+    setStatus('All')
+    setSelected(itemId)
+    setNavigationIntent({ inventoryItemId: null })
+  }, [navigationIntent.inventoryItemId])
 
   const library = <CollectionLibrary progress={progress} inventory={inventory} search={search} category={category} status={status} onSearch={setSearch} onCategory={setCategory} onStatus={setStatus} selected={selected} newItems={new Set(attention.unseenItems)} onSelect={(itemId) => { clearAttention(getActiveProfileId(), 'item', itemId); setSelected(itemId) }} />
   const inspector = <InspectorTransition identity={selected} accent={selected ? ITEMS[selected]?.color : undefined} fill><CollectionInspector itemId={selected} inventory={inventory} progress={progress} navigate={navigate} /></InspectorTransition>

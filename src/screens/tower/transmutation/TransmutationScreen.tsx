@@ -13,18 +13,27 @@ import { RecipeLibrary } from './RecipeLibrary'
 import { clearAttention } from '../../../ui/attention/attentionStore'
 import { getActiveProfileId } from '../../../profiles/profileSessionStore'
 import { InspectorTransition } from '../../../ui/game-feel/InspectorTransition'
+import { setNavigationIntent, useNavigationIntent } from '../../../ui/navigation/navigationIntent'
 
 export function TransmutationScreen() {
   const preferences = useUiPreferences()
   const state = useGameStore()
+  const navigationIntent = useNavigationIntent()
   const persistedRecipeId = preferences.screenState.transmutation.selectedRecipeId
-  const persistedExists = Object.prototype.hasOwnProperty.call(RECIPES, persistedRecipeId)
-  const persistedVisible = persistedExists && (state.debug.showLockedTransmutationRecipes || isRecipeUnlocked(state, RECIPES[persistedRecipeId as TransmutationRecipeId]))
-  const selectedRecipeId: TransmutationRecipeId = persistedVisible ? persistedRecipeId as TransmutationRecipeId : RECIPE_ORDER.find((recipeId) => isRecipeUnlocked(state, RECIPES[recipeId])) ?? RECIPE_ORDER[0]
+  const intentRecipeId = navigationIntent.transmutationRecipeId && Object.prototype.hasOwnProperty.call(RECIPES, navigationIntent.transmutationRecipeId) ? navigationIntent.transmutationRecipeId : null
+  const requestedRecipeId = intentRecipeId ?? persistedRecipeId
+  const requestedExists = Object.prototype.hasOwnProperty.call(RECIPES, requestedRecipeId)
+  const requestedVisible = requestedExists && (Boolean(intentRecipeId) || state.debug.showLockedTransmutationRecipes || isRecipeUnlocked(state, RECIPES[requestedRecipeId as TransmutationRecipeId]))
+  const selectedRecipeId: TransmutationRecipeId = requestedVisible ? requestedRecipeId as TransmutationRecipeId : RECIPE_ORDER.find((recipeId) => isRecipeUnlocked(state, RECIPES[recipeId])) ?? RECIPE_ORDER[0]
 
   useEffect(() => {
+    if (intentRecipeId) {
+      setUiPreferences({ screenState: { transmutation: { selectedRecipeId: intentRecipeId, categoryFilter: 'all', tierFilter: 'all', craftableOnly: false, activeOnly: false } } })
+      setNavigationIntent({ transmutationRecipeId: null })
+      return
+    }
     if (selectedRecipeId !== persistedRecipeId) setUiPreferences({ screenState: { transmutation: { selectedRecipeId } } })
-  }, [persistedRecipeId, selectedRecipeId])
+  }, [intentRecipeId, persistedRecipeId, selectedRecipeId])
 
   const setSelectedRecipeId = (recipeId: TransmutationRecipeId) => { clearAttention(getActiveProfileId(), 'recipe', recipeId); setUiPreferences({ screenState: { transmutation: { selectedRecipeId: recipeId } } }) }
   const recipe = RECIPES[selectedRecipeId]

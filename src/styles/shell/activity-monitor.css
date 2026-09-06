@@ -57,3 +57,23 @@
 .pinned-recipe-tracker small { color: var(--ui-text-muted); }
 .pinned-recipe-tracker.pinned-ready button { border-color: var(--ui-success); }
 .activity-monitor + .pinned-recipe-tracker { bottom: 610px; }
+.tracked-item-monitor { position: fixed; z-index: var(--z-sticky); right: 18px; bottom: 18px; display: flex; align-items: stretch; width: min(320px, calc(100vw - 36px)); padding: 7px; border: 1px solid var(--ui-border); border-radius: 9px; background: color-mix(in srgb, var(--ui-panel-strong) 94%, transparent); box-shadow: 0 15px 42px var(--ui-shadow); backdrop-filter: blur(16px); }
+.tracked-item-monitor-main { display: grid; flex: 1; gap: 4px; padding: 5px 7px; border: 0; color: var(--ui-text); background: transparent; cursor: pointer; text-align: left; }
+.tracked-item-monitor-label { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .08em; }
+.tracked-item-monitor-value { display: flex; align-items: center; gap: 7px; font: var(--text-xs) var(--font-mono); }
+.tracked-item-monitor-value b { margin-left: auto; color: var(--ui-secondary); }
+.tracked-item-monitor-remove { align-self: center; padding: 4px 7px; border: 0; color: var(--ui-text-muted); background: transparent; cursor: pointer; font-size: 16px; }
+.tracked-item-monitor-remove:hover { color: var(--ui-text); }
+.tracked-item-monitor + .pinned-recipe-tracker { bottom: 92px; }
+.activity-monitor.has-tracked-item { bottom: 132px; }
+.activity-monitor-collapsed.has-tracked-item { bottom: 132px; }
+.transmutation-pinned-tracker { position: fixed; z-index: var(--z-sticky); right: 18px; bottom: 18px; width: min(320px, calc(100vw - 36px)); padding: 8px; border: 1px solid var(--ui-border); border-radius: 8px; background: color-mix(in srgb, var(--ui-panel-strong) 94%, transparent); box-shadow: 0 15px 42px var(--ui-shadow); }
+.transmutation-pinned-tracker button { display: grid; gap: 4px; width: 100%; padding: 7px; border: 1px solid var(--ui-secondary); border-radius: 6px; color: var(--ui-text); background: var(--ui-accent-soft); cursor: pointer; text-align: left; }
+.transmutation-pinned-tracker strong { font: var(--text-micro) var(--font-mono); letter-spacing: .06em; }
+.transmutation-pinned-tracker span { color: var(--ui-secondary); font: var(--text-xs) var(--font-mono); }
+.transmutation-pinned-tracker + .pinned-recipe-tracker { bottom: 92px; }
+.transmutation-pinned-tracker ~ .activity-monitor { bottom: 132px; }
+.tracked-item-monitor + .transmutation-pinned-tracker { bottom: 92px; }
+.tracked-item-monitor + .transmutation-pinned-tracker + .pinned-recipe-tracker { bottom: 166px; }
+.tracked-item-monitor + .transmutation-pinned-tracker ~ .activity-monitor { bottom: 206px; }
+@media (max-width: 680px) { .tracked-item-monitor { right: 10px; bottom: 10px; width: min(300px, calc(100vw - 20px)); } .tracked-item-monitor + .pinned-recipe-tracker { bottom: 84px; } }

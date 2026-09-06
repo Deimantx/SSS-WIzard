@@ -10,12 +10,14 @@ import { clearAttention, useProfileAttention } from '../../ui/attention/attentio
 import { getActiveProfileId } from '../../profiles/profileSessionStore'
 import { InspectorTransition } from '../../ui/game-feel/InspectorTransition'
 import { MONSTERS } from '../../game/content/monsters'
+import { useNavigationIntent } from '../../ui/navigation/navigationIntent'
 
 export function BestiaryScreen() {
   const progress = useGameStore((state) => state.progress)
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState<BestiaryCategoryFilter>('all')
-  const [selected, setSelected] = useState<MonsterId | null>(null)
+  const navigationIntent = useNavigationIntent()
+  const [selected, setSelected] = useState<MonsterId | null>(() => navigationIntent.combatMonsterId)
   const attention = useProfileAttention(getActiveProfileId())
   const visibleIds = useMemo(() => getBestiaryEntriesByCategory(category).filter((monster) => {
     const discovered = progress.discoveredMonsters.includes(monster.id)
@@ -26,6 +28,10 @@ export function BestiaryScreen() {
     const discoveredVisibleId = visibleIds.find((monsterId) => progress.discoveredMonsters.includes(monsterId)) ?? null
     setSelected((current) => current && visibleIds.includes(current) ? current : discoveredVisibleId)
   }, [visibleIds.join('|'), progress.discoveredMonsters.join('|')])
+
+  useEffect(() => {
+    if (navigationIntent.combatMonsterId && visibleIds.includes(navigationIntent.combatMonsterId)) setSelected(navigationIntent.combatMonsterId)
+  }, [navigationIntent.combatMonsterId, visibleIds.join('|')])
 
   const index = <BestiaryIndex progress={progress} search={search} category={category} onSearch={setSearch} onCategory={setCategory} selected={selected} newEntries={new Set(attention.unseenMonsters)} onSelect={(monsterId) => { clearAttention(getActiveProfileId(), 'monster', monsterId); setSelected(monsterId) }} />
   const inspector = <InspectorTransition identity={selected} accent={selected ? MONSTERS[selected]?.color : undefined} fill><BestiaryInspector monsterId={selected} progress={progress} /></InspectorTransition>

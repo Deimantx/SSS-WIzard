@@ -15,35 +15,39 @@ import { getAdaptiveCombatLayout } from './combatLayout'
 import { useCombatDefeatStore } from '../../game/ui/combatDefeatStore'
 import { isBossMonster } from '../../game/content/monsters'
 import { CombatAmbientBackdrop } from './CombatAmbientBackdrop'
+import { useNavigationIntent } from '../../ui/navigation/navigationIntent'
 
 export function CombatScreenV2() {
   const combatDungeonId = useGameStore((state) => state.combat.dungeonId)
   const progress = useGameStore((state) => state.progress)
   const combat = useGameStore((state) => state.combat)
   const [selectedDungeonId, setSelectedDungeonId] = useState<DungeonId>(() => combatDungeonId ?? getFirstUnlockedDungeon(progress))
+  const navigationIntent = useNavigationIntent()
   const [atlasOpen, setAtlasOpen] = useState(false)
   const [leaveOpen, setLeaveOpen] = useState(false)
   const [enemyContextMode, setEnemyContextMode] = useState<EnemyContextMode | null>(null)
   const enemyCardRef = useRef<HTMLElement>(null)
-  const enemyContextTriggerRef = useRef<HTMLButtonElement>(null)
+  const enemyContextTriggerRef = useRef<HTMLElement>(null)
   const [stageContentHeight, setStageContentHeight] = useState(0)
   const [deckContentHeight, setDeckContentHeight] = useState(0)
   const [analyticsContentHeight, setAnalyticsContentHeight] = useState(0)
   const defeatSnapshot = useCombatDefeatStore((state) => state.snapshot)
   const previousDungeonId = useRef<DungeonId | null>(combatDungeonId)
   useEffect(() => { if (combatDungeonId) setSelectedDungeonId(combatDungeonId) }, [combatDungeonId])
+  useEffect(() => { if (!combat.active && navigationIntent.combatDungeonId) setSelectedDungeonId(navigationIntent.combatDungeonId) }, [combat.active, navigationIntent.combatDungeonId])
   const openAtlas = useCallback(() => { dismissGameTooltips(); setAtlasOpen(true) }, [])
   const closeAtlas = useCallback(() => setAtlasOpen(false), [])
   const closeLeave = useCallback(() => setLeaveOpen(false), [])
   const closeEnemyContext = useCallback(() => setEnemyContextMode(null), [])
-  const openEnemyContext = useCallback((trigger: HTMLButtonElement) => {
+  const openEnemyContext = useCallback((trigger: HTMLElement, mode: EnemyContextMode = 'intel') => {
     dismissGameTooltips()
     const currentCombat = useGameStore.getState().combat
     if (!currentCombat.active || !currentCombat.enemyId || !MONSTERS[currentCombat.enemyId]) return
     if (enemyContextMode && enemyContextTriggerRef.current === trigger) { setEnemyContextMode(null); return }
     enemyContextTriggerRef.current = trigger
-    setEnemyContextMode('intel')
+    setEnemyContextMode(mode)
   }, [enemyContextMode])
+  const openEnemyLootContext = useCallback(() => { if (combat.active && combat.enemyId) setEnemyContextMode('loot') }, [combat.active, combat.enemyId])
   useEffect(() => { if (!combat.active) setEnemyContextMode(null) }, [combat.active])
   const previousEnemyId = useRef(combat.enemyId)
   useEffect(() => {

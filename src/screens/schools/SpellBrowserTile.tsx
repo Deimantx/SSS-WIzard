@@ -1,4 +1,4 @@
-import { CircleDot, Clock3, Droplet, Flame, HeartPulse, Shield, Snowflake, Sparkles, Zap } from 'lucide-react'
+import { CircleDot, Clock3, Droplet, Flame, HeartPulse, Plus, Settings2, Shield, Snowflake, Sparkles, Zap } from 'lucide-react'
 import { SCHOOLS } from '../../game/content/schools/schools'
 import { SPELLS } from '../../game/content/spells/spells'
 import { STATUS_DEFINITIONS } from '../../game/content/statuses'
@@ -12,8 +12,12 @@ import { SpellIcon } from './SpellIcon'
 import type { SpellBrowserEntry, SpellCatalogTag } from './spellBrowserSelectors'
 import { SpellCardTooltip } from './SpellCardTooltip'
 import { buildSpellDetailPresentation, type SpellPresentationState } from './spellDetailPresentation'
+import { useGameContextMenu } from '../../ui/context-menu/GameContextMenuProvider'
+import { useGameStore } from '../../store/gameStore'
 
-export function SpellBrowserTile({ entry, state, selected, newSpell = false, onSelect }: { entry: SpellBrowserEntry; state: SpellPresentationState; selected: boolean; newSpell?: boolean; onSelect: (id: SpellId | string) => void }) {
+export function SpellBrowserTile({ entry, state, selected, newSpell = false, onSelect, onToggleAutoCast, onTogglePresetSpell, presetContainsSpell = false, onOpenPresetManager }: { entry: SpellBrowserEntry; state: SpellPresentationState; selected: boolean; newSpell?: boolean; onSelect: (id: SpellId | string) => void; onToggleAutoCast: (spellId: SpellId) => void; onTogglePresetSpell?: (spellId: SpellId) => void; presetContainsSpell?: boolean; onOpenPresetManager: () => void }) {
+  const { openContextMenu } = useGameContextMenu()
+  const setScreen = useGameStore((current) => current.setScreen)
   const school = SCHOOLS[entry.school]
   const unlocked = entry.kind === 'spell' && entry.unlocked
   const presentation = unlocked && entry.kind === 'spell' ? buildSpellDetailPresentation(state, entry.spellId, entry.rank ?? 1) : null
@@ -25,12 +29,16 @@ export function SpellBrowserTile({ entry, state, selected, newSpell = false, onS
   const content = presentation
     ? <SpellCardTooltip presentation={presentation} />
     : <TooltipContent title={entry.kind === 'placeholder' ? 'Undiscovered spell' : 'Locked spell'} description={`${school.name} School Level ${entry.unlockLevel} is required. Continue researching to reveal this entry.`} />
+  const openSpellMenu = (x: number, y: number, anchor?: HTMLElement) => {
+    if (!presentation || entry.kind !== 'spell') return
+    openContextMenu({ x, y, anchor, header: { title: SPELLS[entry.spellId].name, meta: `${school.name} · ${formatSpellRank(entry.rank ?? 1)}` }, sections: [{ id: 'spell', actions: [ ...(onTogglePresetSpell ? [{ id: 'preset', label: presetContainsSpell ? 'REMOVE FROM CURRENT PRESET' : 'ADD TO CURRENT PRESET', icon: Plus, onSelect: () => onTogglePresetSpell(entry.spellId) }] : []), { id: 'autocast', label: autoCast ? 'DISABLE AUTO-CAST' : 'ENABLE AUTO-CAST', icon: CircleDot, onSelect: () => onToggleAutoCast(entry.spellId) }, { id: 'manager', label: 'OPEN PRESET MANAGER', icon: Settings2, onSelect: onOpenPresetManager } ] }] })
+  }
   const iconFrame = presentation
     ? <GameTooltip block wide delay={120} placement="right" accent="elemental" content={content}><span className="spell-browser-icon-frame"><SpellIcon school={entry.school} locked={!unlocked} size="large" /></span></GameTooltip>
     : <span className="spell-browser-icon-frame"><SpellIcon school={entry.school} locked={!unlocked} size="large" /></span>
   return <span className="spell-browser-tile-shell">
     <GameTooltip block className="spell-browser-card-tooltip" disabled={Boolean(presentation)} wide={Boolean(presentation)} delay={presentation ? 120 : 500} placement={presentation ? 'right' : 'top'} accent={unlocked ? 'elemental' : 'warning'} content={content}>
-      <button type="button" data-spell-id={entry.kind === 'spell' ? entry.spellId : undefined} style={{ '--spell-school-color': school.color } as React.CSSProperties} className={`spell-browser-tile${selected ? ' is-selected' : ''}${unlocked ? ' is-unlocked' : ' is-locked'}`} aria-label={visibleLabel} aria-pressed={selected} onClick={() => onSelect(entry.id)}>
+      <button type="button" data-spell-id={entry.kind === 'spell' ? entry.spellId : undefined} style={{ '--spell-school-color': school.color } as React.CSSProperties} className={`spell-browser-tile${selected ? ' is-selected' : ''}${unlocked ? ' is-unlocked' : ' is-locked'}`} aria-label={visibleLabel} aria-pressed={selected} onClick={() => onSelect(entry.id)} onContextMenu={(event) => { if (!unlocked) return; event.preventDefault(); event.stopPropagation(); openSpellMenu(event.clientX, event.clientY, event.currentTarget) }}>
       <div className="spell-browser-tile-top">{iconFrame}{unlocked && autoCast && <span className="spell-tile-status" aria-label="Auto-Cast active"><CircleDot size={16} aria-hidden="true" /></span>}</div>
       <span className="spell-browser-tile-main">
         {unlocked && entry.kind === 'spell' ? <><strong className="spell-browser-name">{SPELLS[entry.spellId].name}</strong><span className="spell-browser-rank">{school.name.toUpperCase()} · {formatSpellRank(entry.rank ?? 1).toUpperCase()}</span></> : <><strong className="spell-browser-name">???</strong><span className="spell-browser-rank">{school.name.toUpperCase()} · {entry.kind === 'placeholder' ? 'UNDISCOVERED' : 'LOCKED'}</span></>}

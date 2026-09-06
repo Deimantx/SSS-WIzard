@@ -1,6 +1,6 @@
 import { EQUIPMENT_ITEM_SLOTS } from '../../../game/core/equipment/equipmentRules'
 import { useRef, type CSSProperties } from 'react'
-import { LockKeyhole, Search } from 'lucide-react'
+import { Hammer, LockKeyhole, Pin, Search, ShoppingBag, Swords } from 'lucide-react'
 import { Card, SearchInput, Status, GameTooltip } from '../../../components/ui'
 import { ItemIcon, ItemTooltip } from '../../../components/ui/item'
 import { ITEMS } from '../../../game/content/items/items'
@@ -13,6 +13,8 @@ import type { ArtificingScreenPreferences } from '../../../ui/preferences/uiPref
 import { useProfileAttention } from '../../../ui/attention/attentionStore'
 import { getActiveProfileId } from '../../../profiles/profileSessionStore'
 import { useSmartScrollState } from '../../../ui/game-feel/useSmartScrollState'
+import { useGameContextMenu } from '../../../ui/context-menu/GameContextMenuProvider'
+import { setNavigationIntent } from '../../../ui/navigation/navigationIntent'
 
 interface Props { selected: ArtificingRecipeId | null; onSelect: (id: ArtificingRecipeId) => void; query: string; onQueryChange: (query: string) => void }
 const slots: readonly ('all' | EquipmentItemSlot)[] = ['all', ...EQUIPMENT_ITEM_SLOTS]
@@ -24,6 +26,7 @@ export function EquipmentCatalog({ selected, onSelect, query, onQueryChange }: P
   const visible = getVisibleArtificingRecipes(state, filters, query)
   const counts = getArtificingFilterCounts(state, filters, query)
   const attention = useProfileAttention(getActiveProfileId())
+  const { openContextMenu } = useGameContextMenu()
   const scroll = useRef<HTMLDivElement>(null)
   useSmartScrollState(scroll, { dependencies: [visible.map(recipe => recipe.id).join('|'), query] })
   return <Card className="artificing-catalog" title="EQUIPMENT CATALOG" action={<span className="artificing-count">{counts.visible} SHOWN</span>}>
@@ -47,7 +50,7 @@ export function EquipmentCatalog({ selected, onSelect, query, onQueryChange }: P
         const equipped = Object.values(state.equipment).includes(item.id)
         const status = locked ? 'LOCKED' : craftable ? 'READY' : 'MISSING'
         return <ItemTooltip key={recipe.id} itemId={item.id} owned={owned} recipeContext={{ status: locked ? 'Locked' : craftable ? 'Craftable' : 'Missing materials', outputQuantity: 1, ingredients: recipe.ingredients, unlockReason: locked ? getRecipeUnlockRequirement(recipe) ?? undefined : undefined }}>
-          <button type="button" data-recipe-id={recipe.id} className={`artificing-item-card ${selected === recipe.id ? 'selected' : ''} ${locked ? 'locked' : ''}`} style={{ '--recipe-accent': item.color } as CSSProperties} aria-pressed={selected === recipe.id} onClick={() => onSelect(recipe.id)}>
+          <button type="button" data-recipe-id={recipe.id} className={`artificing-item-card ${selected === recipe.id ? 'selected' : ''} ${locked ? 'locked' : ''}`} style={{ '--recipe-accent': item.color } as CSSProperties} aria-pressed={selected === recipe.id} onClick={() => onSelect(recipe.id)} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); openContextMenu({ x: event.clientX, y: event.clientY, anchor: event.currentTarget, header: { title: recipe.name, meta: `${item.name} · ${locked ? 'LOCKED' : craftable ? 'READY' : 'MISSING MATERIALS'}` }, sections: [{ id: 'craft', actions: [{ id: 'craft-one', label: 'CRAFT ONE', icon: Hammer, disabled: locked || !craftable || Boolean(state.activities.artificing.activeRecipeId), disabledReason: locked ? getRecipeUnlockRequirement(recipe) ?? 'Recipe locked' : !craftable ? 'Missing materials' : 'Another craft is already active', onSelect: () => { onSelect(recipe.id); state.craftArtificingRecipe(recipe.id) } }] }, { id: 'recipe', actions: [{ id: 'pin', label: filters.pinnedRecipeId === recipe.id ? 'UNPIN RECIPE' : 'PIN RECIPE', icon: Pin, onSelect: () => setUiPreferences({ screenState: { artificing: { pinnedRecipeId: filters.pinnedRecipeId === recipe.id ? null : recipe.id } } }) }, { id: 'compare', label: 'COMPARE OUTPUT', icon: Swords, onSelect: () => { setNavigationIntent({ equipmentItemId: item.id }); state.setScreen('equipment') } }, { id: 'inventory', label: 'OPEN OUTPUT IN INVENTORY', icon: ShoppingBag, onSelect: () => { setNavigationIntent({ inventoryItemId: item.id }); state.setScreen('inventory') } }] }] }) }}>
             <span className="artificing-card-top">{locked && <LockKeyhole size={14} aria-label="Locked" />}{attention.unseenRecipes.includes(recipe.id) && <span className="archive-new-badge">NEW</span>}{equipped && <span className="artificing-equipped-badge" aria-label="Currently equipped">E</span>}</span>
             <ItemIcon itemId={item.id} size="tiny" /><strong>{item.name}</strong>
             <span className="artificing-badge">{getArtificingProfile(recipe)}</span>

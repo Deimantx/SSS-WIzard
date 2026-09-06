@@ -38,6 +38,7 @@ export function CombatSpellDeck({ onRequiredHeightChange }: { onRequiredHeightCh
   const enemyId = useGameStore((state) => state.combat.enemyId)
   const playerStunned = useGameStore((state) => actorCannotAct(state, 'player'))
   const applySpellPreset = useGameStore((state) => state.applySpellPreset)
+  const saveSpellPreset = useGameStore((state) => state.saveSpellPreset)
   const state = useMemo(() => ({ schools, equipment, progress, activities }), [schools, equipment, progress, activities])
   const focusState = useMemo(() => ({ activities, progress, player: { maxFocus }, debug: { allowFocusOverCap: debugAllowFocusOverCap } }), [activities, progress, maxFocus, debugAllowFocusOverCap])
   const focus = useMemo(() => getSpellPresetFocusBreakdown(focusState), [focusState])
@@ -100,6 +101,10 @@ export function CombatSpellDeck({ onRequiredHeightChange }: { onRequiredHeightCh
     else showPresetNotice('This preset is no longer available.')
   }
   const openPresetManager = () => { dismissGameTooltips(); setPresetOpen(true) }
+  const removeFromCurrentPreset = (spellId: SpellId) => {
+    const preset = presets.find((entry) => entry.id === useGameStore.getState().spellPresets.lastAppliedPresetId)
+    if (preset) saveSpellPreset({ ...preset, spellIds: preset.spellIds.filter((id) => id !== spellId) })
+  }
 
   return <Card className="combat-spell-deck">
     <div ref={deckHeadRef} className="combat-spell-deck-head">
@@ -111,7 +116,7 @@ export function CombatSpellDeck({ onRequiredHeightChange }: { onRequiredHeightCh
       {banner && <div className="combat-spell-banner" role="status"><CircleDot size={13} aria-hidden="true" />{banner}</div>}
       {presetNotice && <div className="combat-spell-preset-notice" role="alert"><AlertTriangle size={13} aria-hidden="true" />{presetNotice}</div>}
       <div className="combat-spell-filter-toolbar" role="group" aria-label="Spell Deck filters"><SearchInput value={search} onChange={setSearch} placeholder="Search Spells…" ariaLabel="Search Spells" /><SelectMenu options={schoolOptions} value={school} onChange={setSchool} ariaLabel="Spell school filter" /><FilterButton active={autoOnly} onClick={() => setAutoOnly((current) => !current)}><CircleDot size={12} /> AUTO ONLY</FilterButton></div>
-      <div ref={gridRegionRef} className="combat-spell-grid-region">{visibleSpells.length ? <div ref={gridRef} className="combat-spell-grid smart-scroll-region">{visibleSpells.map((spellId) => <CombatSpellTile key={spellId} spellId={spellId} presentationState={state} globalBlocker={globalBlocker} />)}</div> : <div className="combat-spell-empty"><CircleDot size={20} aria-hidden="true" /><strong>{autoOnly ? 'No Auto-Cast Spells enabled.' : query ? 'No Spells match the current filters.' : school !== 'all' ? `No unlocked ${SCHOOLS[school].name} Spells.` : 'No unlocked Spells.'}</strong></div>}</div>
+      <div ref={gridRegionRef} className="combat-spell-grid-region">{visibleSpells.length ? <div ref={gridRef} className="combat-spell-grid smart-scroll-region">{visibleSpells.map((spellId) => <CombatSpellTile key={spellId} spellId={spellId} presentationState={state} globalBlocker={globalBlocker} onOpenPresetManager={openPresetManager} onRemoveFromPreset={removeFromCurrentPreset} />)}</div> : <div className="combat-spell-empty"><CircleDot size={20} aria-hidden="true" /><strong>{autoOnly ? 'No Auto-Cast Spells enabled.' : query ? 'No Spells match the current filters.' : school !== 'all' ? `No unlocked ${SCHOOLS[school].name} Spells.` : 'No unlocked Spells.'}</strong></div>}</div>
     </div>
     <div ref={deckFootRef} className="combat-spell-deck-foot"><Status tone={focus.freeFocus < 0 ? 'warning' : 'success'}>{focus.autoCastFocus} Focus reserved · {focus.freeFocus} free</Status><small>{debugAllowFocusOverCap ? 'Developer Focus override active.' : `${visibleSpells.length} Spell${visibleSpells.length === 1 ? '' : 's'} shown`}</small></div>
     <SpellPresetDialog open={presetOpen} onClose={() => setPresetOpen(false)} />

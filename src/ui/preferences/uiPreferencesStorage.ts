@@ -11,13 +11,13 @@ import type { CombatLogFontSize, ScreenPreferences, TransmutationCategoryFilter,
 export const UI_PREFERENCES_KEY = 'sss-wizard-ui-preferences-v1'
 export const defaultScreenPreferences = (): ScreenPreferences => ({
   inventory: { sourceOpen: false, researchValueOpen: false },
-  transmutation: { selectedRecipeId: RECIPE_ORDER[0], categoryFilter: 'all', tierFilter: 'all', craftableOnly: false, activeOnly: false, collapsedCategories: { elemental: false, material: false } },
+  transmutation: { selectedRecipeId: RECIPE_ORDER[0], pinnedRecipeId: null, categoryFilter: 'all', tierFilter: 'all', craftableOnly: false, activeOnly: false, collapsedCategories: { elemental: false, material: false } },
   artificing: { selectedRecipeId: null, pinnedRecipeId: null, slotFilter: 'all', weaponHandsFilter: 'all', offhandPresentationFilter: 'all', craftableOnly: false, ownershipFilter: 'all' },
   research: { selectedItemId: null, affinityFilter: 'all', targetSchoolId: 'fire' },
   combat: { combatLogFontSize: 'medium', combatDetailsMode: 'damage-done', dungeonStatisticsMode: 'runs' },
 })
 
-export const defaultUiPreferences = (): UiPreferences => ({ theme: 'default', textSize: 'default', backgroundEffects: true, reducedMotion: false, customCursor: true, showFpsCounter: true, uiSounds: true, uiSoundVolume: 0.35, customTheme: customFromPreset(THEME_PRESETS.default), navigationGroups: { combat: false, hero: false, tower: false, world: false, system: false }, screenState: defaultScreenPreferences() })
+export const defaultUiPreferences = (): UiPreferences => ({ theme: 'default', textSize: 'default', backgroundEffects: true, reducedMotion: false, customCursor: true, showFpsCounter: true, uiSounds: true, uiSoundVolume: 0.35, customTheme: customFromPreset(THEME_PRESETS.default), navigationGroups: { combat: false, hero: false, tower: false, world: false, system: false }, trackedItemId: null, screenState: defaultScreenPreferences() })
 const validColor = (value: unknown, fallback: string) => typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value) ? value : fallback
 const validVolume = (value: unknown, fallback: number) => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : fallback
 
@@ -46,6 +46,7 @@ export const normalizeUiPreferences = (value: unknown): UiPreferences => {
   const craftableOnly = transmutation.craftableOnly === true || legacyFilter === 'craftable'
   const activeOnly = transmutation.activeOnly === true || legacyFilter === 'active'
   const selectedRecipeId = typeof transmutation.selectedRecipeId === 'string' && RECIPE_ORDER.includes(transmutation.selectedRecipeId as (typeof RECIPE_ORDER)[number]) ? transmutation.selectedRecipeId as TransmutationRecipeId : defaults.screenState.transmutation.selectedRecipeId
+  const pinnedRecipeId = typeof transmutation.pinnedRecipeId === 'string' && RECIPE_ORDER.includes(transmutation.pinnedRecipeId as (typeof RECIPE_ORDER)[number]) ? transmutation.pinnedRecipeId as TransmutationRecipeId : null
   const selectedItemId = typeof research.selectedItemId === 'string' && Boolean(ITEMS[research.selectedItemId as keyof typeof ITEMS]?.researchSchool) ? research.selectedItemId as keyof typeof ITEMS : null
   const affinityFilter = research.affinityFilter === 'fire' || research.affinityFilter === 'water' || research.affinityFilter === 'earth' || research.affinityFilter === 'air' ? research.affinityFilter : 'all'
   const targetSchoolId = research.targetSchoolId && SCHOOLS[research.targetSchoolId] ? research.targetSchoolId : defaults.screenState.research.targetSchoolId
@@ -65,7 +66,8 @@ export const normalizeUiPreferences = (value: unknown): UiPreferences => {
     craftableOnly: a.craftableOnly === true,
     ownershipFilter: oneOf(a.ownershipFilter, ['all', 'owned', 'unowned'] as const, 'all'),
   }
-  return { theme: input.theme === 'dark' || input.theme === 'light' || input.theme === 'custom' ? input.theme : 'default', textSize: input.textSize === 'large' || input.textSize === 'extra-large' ? input.textSize : 'default', backgroundEffects: input.backgroundEffects !== false, reducedMotion: input.reducedMotion === true, customCursor: input.customCursor !== false, showFpsCounter: input.showFpsCounter !== false, uiSounds: input.uiSounds !== false, uiSoundVolume: validVolume(input.uiSoundVolume, defaults.uiSoundVolume), customTheme: custom, navigationGroups: { combat: groups.combat === true, hero: groups.hero === true, tower: groups.tower === true, world: groups.world === true, system: groups.system === true }, screenState: { artificing, inventory: { sourceOpen: inventory.sourceOpen === true, researchValueOpen: inventory.researchValueOpen === true }, transmutation: { selectedRecipeId, categoryFilter, tierFilter, craftableOnly, activeOnly , collapsedCategories: { elemental: collapsedCategories.elemental === true, material: collapsedCategories.material === true } }, research: { selectedItemId, affinityFilter, targetSchoolId }, combat: { combatLogFontSize, combatDetailsMode, dungeonStatisticsMode } } }
+  const trackedItemId = typeof input.trackedItemId === 'string' && Boolean(ITEMS[input.trackedItemId as keyof typeof ITEMS]) ? input.trackedItemId as keyof typeof ITEMS : null
+  return { theme: input.theme === 'dark' || input.theme === 'light' || input.theme === 'custom' ? input.theme : 'default', textSize: input.textSize === 'large' || input.textSize === 'extra-large' ? input.textSize : 'default', backgroundEffects: input.backgroundEffects !== false, reducedMotion: input.reducedMotion === true, customCursor: input.customCursor !== false, showFpsCounter: input.showFpsCounter !== false, uiSounds: input.uiSounds !== false, uiSoundVolume: validVolume(input.uiSoundVolume, defaults.uiSoundVolume), customTheme: custom, navigationGroups: { combat: groups.combat === true, hero: groups.hero === true, tower: groups.tower === true, world: groups.world === true, system: groups.system === true }, trackedItemId, screenState: { artificing, inventory: { sourceOpen: inventory.sourceOpen === true, researchValueOpen: inventory.researchValueOpen === true }, transmutation: { selectedRecipeId, pinnedRecipeId, categoryFilter, tierFilter, craftableOnly, activeOnly , collapsedCategories: { elemental: collapsedCategories.elemental === true, material: collapsedCategories.material === true } }, research: { selectedItemId, affinityFilter, targetSchoolId }, combat: { combatLogFontSize, combatDetailsMode, dungeonStatisticsMode } } }
 }
 
 export const loadUiPreferences = (): UiPreferences => { try { const raw = window.localStorage.getItem(UI_PREFERENCES_KEY); return raw ? normalizeUiPreferences(JSON.parse(raw)) : defaultUiPreferences() } catch { return defaultUiPreferences() } }

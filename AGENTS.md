@@ -4,14 +4,14 @@
 
 - Keep balance, recipe definitions, unlock conditions, and item metadata in `src/game/content` or the central balance modules. Screens and components may format these values, but must not duplicate gameplay constants or rules.
 - Keep simulation and resource mutation in `src/game/systems` and store actions. Selectors are the shared read model for UI, telemetry, inventory flow, and offline simulation.
-- Transmutation is the single item-creation system. New recipes belong in `src/game/content/recipes/recipes.ts`; do not add a second production queue.
+- Transmutation is the elemental/material production system. Artificing is the Equipment crafting system; keep their recipes in the central recipe registries.
 
 ## Loot, Equipment, and Transmutation
 
 - Monster and boss loot tables may grant material items only. Never place finished `kind: equipment` items in monster loot.
-- All finished Equipment is created through Transmutation. Every `kind: equipment` item must have exactly one Transmutation recipe.
-- Rare boss/signature Equipment is represented through boss/signature crafting materials and a Transmutation recipe, never a direct finished-Equipment drop.
-- Transmutation remains the single normal item-creation system. Do not add a second production/crafting path.
+- All finished Equipment is created through Artificing. Every `kind: equipment` item must have exactly one Artificing recipe.
+- Rare boss/signature Equipment is represented through boss/signature crafting materials and an Artificing recipe, never a direct finished-Equipment drop.
+- Transmutation remains the elemental/material production system; do not add a parallel normal production path.
 
 ## Balancing workflow
 
@@ -22,7 +22,7 @@
 Use this fast path when only existing authored numeric values change and no content IDs, formulas, schemas, registry shapes, ingredient topology, unlock-condition types, or system behavior change. This includes values such as damage, HP, Defence, costs, cooldowns, durations, XP, research values, drop quantities/chances, item values, craft durations, resource quantities, status magnitudes, trait coefficients, and numeric unlock thresholds.
 
 - Apply only the intentionally edited values to authoritative runtime TypeScript.
-- Update or regenerate only directly affected balancing sheets and mirrors.
+- Update or regenerate only the directly affected canonical balancing page; numeric mirrors are not maintained.
 - Run `npm run balancing:coverage` once at the end.
 - Run targeted Vitest only when an existing test directly asserts the changed value or a relevant formula boundary.
 - Do not run the full `npm run test:run`.
@@ -35,7 +35,7 @@ This Class A fast path overrides the generic final full-test/build rule elsewher
 
 Use this class when authored content topology changes, including adding or removing items, monsters, spells, recipes, ingredients, loot entries, traits, statuses, or actions; changing Equipment slots/categories, unlock-condition structure, recipe output identity, dungeon rosters, or authored registry object shape.
 
-- Apply the requested content change and update affected balancing sheets and mirrors.
+- Apply the requested content change and update the affected canonical balancing pages; do not create numeric mirrors.
 - Run relevant targeted tests during implementation.
 - Run `npm run balancing:coverage` once at the end.
 - Run `npm run build` when TypeScript or content-registry shape can be affected.
@@ -54,11 +54,11 @@ Use this class for changes to formulas, simulation or resource behavior, save sc
 General balancing rules:
 
 - Runtime TypeScript remains executable source; Markdown is never runtime input.
-- Preserve human edits: inspect and merge balancing-document conflicts before regenerating mirrors; do not blindly overwrite unapplied edits.
-- Update or regenerate affected balancing sheets and mirrors for authored changes to items, materials, Equipment, monsters, loot, recipes, spells, statuses, traits, dungeons, Research, Channeling, Focus, Guild, economy, or progression values, within the applicable task class.
-- Every authored item, material, Equipment, monster, recipe, spell, status, trait, and dungeon must appear in its corresponding balancing sheet and comparison mirrors.
-- Every new Equipment item must appear in its dungeon Equipment sheet, `Transmutation/Recipes.md`, `Crafting_Economy.md`, and exactly one runtime Transmutation recipe.
-- Class A still requires all directly affected cross-sheet mirrors, but unrelated sheets remain untouched.
+- Preserve human edits when exporting intentionally, but keep one canonical page per value domain and use cross-page references instead of numeric mirrors.
+- Update or regenerate the directly affected canonical page for authored changes to items, materials, Equipment, monsters, loot, recipes, spells, statuses, traits, dungeons, Research, Channeling, Focus, Guild, economy, or progression values.
+- Every authored item, material, Equipment, monster, recipe, spell, status, trait, and dungeon must appear in its canonical page.
+- Every Equipment item must have exactly one runtime Artificing recipe; Equipment stats belong in `Items/Items.md` and both recipe systems belong in `Crafting/Crafting.md`.
+- Class A requires one coverage run and no full suite/build; Class B/C validation follows the structural/system rules above.
 - Unrelated UI-only work does not require balancing coverage.
 - Every balancing handoff must report its Class A/B/C classification and state which validation commands were run or intentionally skipped.
 

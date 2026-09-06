@@ -6,6 +6,11 @@ export const table = (headers: readonly string[], rows: readonly (readonly unkno
   ...rows.map((row) => `| ${row.map((value) => escapeCell(String(value))).join(' | ')} |`),
 ].join('\n')
 
+export const compactTable = (headers: readonly string[], rows: readonly (readonly unknown[])[]) => {
+  if (headers.length > 10) throw new Error(`Balancing table has ${headers.length} columns; maximum is 10`)
+  return table(headers, rows)
+}
+
 export const bullets = (items: readonly string[], empty = 'None') => items.length ? items.map((item) => `- ${item}`).join('\n') : `- ${empty}`
 
 export const idLine = (id: string) => `**ID:** \`${id}\``

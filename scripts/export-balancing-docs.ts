@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync, readdirSync, rmdirSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { buildBalancingDocuments } from './balancing/buildBalancingDocuments'
@@ -9,10 +9,19 @@ const scriptDirectory = dirname(fileURLToPath(import.meta.url))
 const repositoryRoot = resolve(scriptDirectory, '..')
 const docsRoot = resolve(repositoryRoot, 'Docs', 'Balancing')
 const force = process.argv.includes('--force')
+const prune = process.argv.includes('--prune')
 const snapshotCommit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repositoryRoot, encoding: 'utf8' }).trim()
 const statusText = execFileSync('git', ['status', '--porcelain'], { cwd: repositoryRoot, encoding: 'utf8' }).trim()
 const balancing = buildBalancingDocuments()
 
+const previousManifestPath = resolve(docsRoot, '_System', 'balance-manifest.json')
+let previousManagedPaths: string[] = []
+if (existsSync(previousManifestPath)) {
+  try {
+    const previous = JSON.parse(readFileSync(previousManifestPath, 'utf8')) as { managedPaths?: string[]; documents?: Record<string, unknown> }
+    previousManagedPaths = previous.managedPaths ?? Object.keys(previous.documents ?? {}).concat(['_System/README.md', '_System/balance-manifest.json'])
+  } catch { previousManagedPaths = [] }
+}
 const systemDocs = new Map<string, string>([
   ['_System/README.md', cleanDocument([
     '# Balancing system metadata',
@@ -21,7 +30,7 @@ const systemDocs = new Map<string, string>([
     '',
     '- TypeScript content and systems are the executable source of truth.',
     '- Markdown is a manual review surface; the game does not parse it.',
-    '- The manifest records the export snapshot, authored IDs, document paths, runtime source mappings, registry counts, acquisition invariants, canonical edit locations, and generated mirrors.',
+    '- The manifest records the export snapshot, authored IDs, document paths, runtime source mappings, registry counts, invariants, and canonical edit locations.',
     '- Normal content pages intentionally omit raw serialized objects and implementation-only field names.',
     '- Run the coverage command after exporting to verify that every authored content ID remains represented.',
     '',
@@ -31,7 +40,7 @@ const systemDocs = new Map<string, string>([
 ])
 
 const manifest = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   snapshot: {
     commit: snapshotCommit,
     workingTreeDirty: statusText.length > 0,
@@ -46,11 +55,13 @@ const manifest = {
   invariants: balancing.invariants,
   documents: balancing.documentInfo,
   canonicalLocations: balancing.canonicalLocations,
-  mirrors: balancing.mirrors,
+  mirrors: {},
+  managedPaths: [] as string[],
 }
-systemDocs.set('_System/balance-manifest.json', JSON.stringify(manifest, null, 2) + String.fromCharCode(10))
-
 const outputs = new Map([...balancing.docs.entries(), ...systemDocs.entries()])
+manifest.managedPaths = [...outputs.keys()].sort()
+systemDocs.set('_System/balance-manifest.json', JSON.stringify(manifest, null, 2) + String.fromCharCode(10))
+outputs.set('_System/balance-manifest.json', systemDocs.get('_System/balance-manifest.json')!)
 const ensureSafeToWrite = () => {
   const existing = [...outputs.keys()]
     .map((relativePath) => resolve(docsRoot, relativePath))
@@ -61,6 +72,21 @@ const ensureSafeToWrite = () => {
 }
 
 ensureSafeToWrite()
+if (prune) {
+  const outputPaths = new Set(outputs.keys())
+  for (const relativePath of previousManagedPaths) {
+    if (outputPaths.has(relativePath)) continue
+    const target = resolve(docsRoot, relativePath)
+    const relative = resolve(docsRoot).length === target.length ? '' : target.slice(resolve(docsRoot).length + 1)
+    if (!relative || relative.startsWith('..') || relative.includes(':') || !existsSync(target)) continue
+    unlinkSync(target)
+    console.log('Pruned managed balancing document ' + relativePath)
+  }
+  for (const directory of ['Combat', 'Dungeons', 'Items', 'Crafting', 'Magic', 'Progression', 'Economy', 'Enemies', 'Loot', 'Artificing', 'Transmutation', '_System']) {
+    const target = resolve(docsRoot, directory)
+    if (existsSync(target) && readdirSync(target).length === 0) rmdirSync(target)
+  }
+}
 for (const [relativePath, contents] of outputs) {
   const target = resolve(docsRoot, relativePath)
   mkdirSync(dirname(target), { recursive: true })

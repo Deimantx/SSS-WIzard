@@ -13,6 +13,8 @@ import { getTransmutationRecipeCardMeta } from '../../../game/presentation/trans
 import { useProfileAttention } from '../../../ui/attention/attentionStore'
 import { getActiveProfileId } from '../../../profiles/profileSessionStore'
 import { useSmartScrollState } from '../../../ui/game-feel/useSmartScrollState'
+import { useGameContextMenu } from '../../../ui/context-menu/GameContextMenuProvider'
+import { Eye, Minus, Plus } from 'lucide-react'
 
 const CATEGORY_LABELS: Record<RecipeCategory, string> = { elemental: 'ELEMENTAL', material: 'MATERIALS' }
 const CATEGORY_ORDER: RecipeCategory[] = ['elemental', 'material']
@@ -92,6 +94,7 @@ function hasActiveContextFilter(filters: TransmutationRecipeFilters) {
 
 function RecipeTile({ recipe, selected, newRecipe = false, onSelect }: { recipe: RecipeDefinition; selected: boolean; newRecipe?: boolean; onSelect: (recipeId: TransmutationRecipeId) => void }) {
   const state = useGameStore()
+  const { openContextMenu } = useGameContextMenu()
   const item = ITEMS[recipe.output.itemId]
   const owned = state.inventory[recipe.output.itemId] ?? 0
   const echoes = Math.max(0, Math.floor(getTransmutationJob(state, recipe.id)?.echoesAssigned ?? 0))
@@ -100,7 +103,7 @@ function RecipeTile({ recipe, selected, newRecipe = false, onSelect }: { recipe:
   const locked = status === 'locked'
   const cardMeta = getTransmutationRecipeCardMeta(item)
   return <ItemTooltip itemId={recipe.output.itemId} owned={owned} recipeContext={{ status: statusText(status), baseDurationMs: recipe.baseDurationMs, manaCost: recipe.manaCost, outputQuantity: recipe.output.quantity, ingredients: recipe.ingredients.map((ingredient) => ({ itemId: ingredient.itemId, quantity: ingredient.quantity })), unlockReason: locked ? getRecipeUnlockReason(recipe) ?? undefined : undefined }}>
-    <button type="button" data-recipe-id={recipe.id} aria-pressed={selected} className={`transmutation-recipe-tile ${selected ? 'selected' : ''} ${locked ? 'locked' : ''} ${echoes > 0 ? 'assigned' : ''}`} style={{ '--recipe-accent': item.color } as CSSProperties} onClick={() => onSelect(recipe.id)}>
+    <button type="button" data-recipe-id={recipe.id} aria-pressed={selected} className={`transmutation-recipe-tile ${selected ? 'selected' : ''} ${locked ? 'locked' : ''} ${echoes > 0 ? 'assigned' : ''}`} style={{ '--recipe-accent': item.color } as CSSProperties} onClick={() => onSelect(recipe.id)} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); openContextMenu({ x: event.clientX, y: event.clientY, header: { title: recipe.name, meta: `${item.name} · ${statusText(status)}` }, sections: [{ id: 'inspect', actions: [{ id: 'inspect', label: 'INSPECT', icon: Eye, onSelect: () => onSelect(recipe.id) }] }, { id: 'echoes', actions: [{ id: 'add-echo', label: echoes ? 'ASSIGN +1 ECHO' : 'START PRODUCTION', icon: Plus, disabled: locked, onSelect: () => { onSelect(recipe.id); state.assignTransmutationEcho(recipe.id) } }, { id: 'remove-echo', label: 'REMOVE 1 ECHO', icon: Minus, disabled: echoes <= 0, onSelect: () => { onSelect(recipe.id); state.removeTransmutationEcho(recipe.id) } }] }] }) }}>
       <span className="transmutation-tile-top">{locked ? <LockKeyhole size={13} aria-label="Locked" /> : <span aria-hidden="true" />}{echoes > 0 && <span className="transmutation-echo-badge">{echoes}E</span>}</span>
       <span className="transmutation-tile-icon"><ItemIcon itemId={recipe.output.itemId} size="tile" /></span>
       <strong>{recipe.name}</strong>

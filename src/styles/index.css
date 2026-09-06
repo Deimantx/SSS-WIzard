@@ -22,6 +22,7 @@
 @import './screens/equipment.css';
 @import './screens/transmutation.css';
 @import './screens/artificing.css';
+@import './components/context-menu.css';
 @import './layout-editor.css';
 @import './screens/research.css';
 @import './screens/focus.css';

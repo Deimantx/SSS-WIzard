@@ -54,7 +54,6 @@ export function EquipmentCatalog({ selected, onSelect, query, onQueryChange }: P
             <span className="artificing-card-top">{locked && <LockKeyhole size={14} aria-label="Locked" />}{attention.unseenRecipes.includes(recipe.id) && <span className="archive-new-badge">NEW</span>}{equipped && <span className="artificing-equipped-badge" aria-label="Currently equipped">E</span>}</span>
             <ItemIcon itemId={item.id} size="tiny" /><strong>{item.name}</strong>
             <span className="artificing-badge">{getArtificingProfile(recipe)}</span>
-            <span className="artificing-owned">OWNED {owned.toLocaleString()}</span>
             <Status tone={locked ? 'locked' : craftable ? 'success' : 'warning'}>{status}</Status>
           </button>
         </ItemTooltip>

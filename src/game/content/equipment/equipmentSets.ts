@@ -3,9 +3,9 @@ import type { DungeonId, ItemDefinition, ItemId } from '../../types'
 
 /** Authored Equipment origin groups used by Dev Tools and future archive filters. */
 export const EQUIPMENT_BY_DUNGEON: Record<DungeonId, readonly ItemId[]> = {
-  'whispering-woods': ['ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'prismatic-focus', 'wispweave-robe', 'wispveil-hood', 'wispwood-wand', 'tide-focus', 'stoneweave-robe', 'windthread-charm', 'grovekeeper-mantle', 'wispbound-ring', 'heartseed-necklace'],
-  'howling-den': ['fangbound-dagger', 'fangbound-buckler', 'corrupted-howlstaff', 'razorclaw-circlet', 'predator-hide-mantle', 'greatbear-vestment', 'howling-signet', 'greatbear-heartstone'],
-  'abandoned-catacombs': ['graveglass-wand', 'edrins-remnant-staff', 'soulward-focus', 'soulward-shield', 'acolyte-vestments', 'wraithveil-hood', 'ossuary-mantle', 'soulglass-amulet', 'gravebinder-ring', 'edrins-signet'],
+  'whispering-woods': ['ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'prismatic-focus', 'wispweave-robe', 'wispveil-hood', 'windthread-charm', 'grovekeeper-mantle', 'wispbound-ring', 'heartseed-necklace'],
+  'howling-den': ['predator-hide-mantle', 'howling-signet', 'greatbear-heartstone'],
+  'abandoned-catacombs': ['ossuary-mantle', 'soulglass-amulet', 'gravebinder-ring', 'edrins-signet'],
 }
 
 /** Boss-signature Equipment crafted through Transmutation from boss materials; never direct monster drops. */

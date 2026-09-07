@@ -15,22 +15,22 @@ describe('equipment actions', () => {
   it('automatically removes an Offhand when equipping a 2H weapon', () => {
     const state = createInitialState()
     state.inventory['ember-staff'] = 1
-    state.inventory['tide-focus'] = 1
-    state.equipment.offhand = 'tide-focus'
+    state.inventory['prismatic-focus'] = 1
+    state.equipment.offhand = 'prismatic-focus'
     const result = equipItemAction(state, 'ember-staff')
     expect(result.ok).toBe(true)
     expect(state.equipment.weapon).toBe('ember-staff')
     expect(state.equipment.offhand).toBeNull()
-    expect(state.inventory['tide-focus']).toBe(1)
+    expect(state.inventory['prismatic-focus']).toBe(1)
     expect(state.notifications).toHaveLength(1)
-    expect(state.notifications[0].text).toBe('Ember Staff equipped. Tide Focus was unequipped.')
+    expect(state.notifications[0].text).toBe('Ember Staff equipped. Prismatic Focus was unequipped.')
   })
 
   it('blocks an Offhand while a 2H weapon is active', () => {
     const state = createInitialState()
-    state.inventory['tide-focus'] = 1
+    state.inventory['prismatic-focus'] = 1
     state.equipment.weapon = 'ember-staff'
-    const result = equipItemAction(state, 'tide-focus')
+    const result = equipItemAction(state, 'prismatic-focus')
     expect(result).toMatchObject({ ok: false, reason: 'incompatible' })
     expect(state.equipment.offhand).toBeNull()
     expect(state.notifications[0].text).toBe('Requires a one-handed Weapon.')
@@ -39,11 +39,11 @@ describe('equipment actions', () => {
   it('previews the same final values that a 2H equip produces', () => {
     const state = createInitialState()
     state.inventory['ember-staff'] = 1
-    state.inventory['tide-focus'] = 1
-    state.equipment.offhand = 'tide-focus'
+    state.inventory['prismatic-focus'] = 1
+    state.equipment.offhand = 'prismatic-focus'
     const preview = getEquipmentPreview(state, 'ember-staff')
     expect(preview.compatible).toBe(true)
-    expect(preview.removedOffhand).toBe('tide-focus')
+    expect(preview.removedOffhand).toBe('prismatic-focus')
     equipItemAction(state, 'ember-staff')
     expect(getEquipmentStatSnapshot(state, state.equipment)).toEqual(preview.preview)
   })
@@ -53,8 +53,8 @@ describe('equipment actions', () => {
     state.inventory['ember-staff'] = 1
     const preview = getEquipmentPreview(state, 'ember-staff')
     expect(preview.current.spellPower).toBe(BALANCE.player.baseSpellPower)
-    expect(preview.preview?.spellPower).toBe(BALANCE.player.baseSpellPower + 20)
-    expect(preview.impact.spellPower).toBe(20)
+    expect(preview.preview?.spellPower).toBe(BALANCE.player.baseSpellPower + 16)
+    expect(preview.impact.spellPower).toBe(16)
   })
 
   it('previews the derived Defense damage reduction change', () => {
@@ -69,15 +69,15 @@ describe('equipment actions', () => {
     expect(preview.impact.damageReduction).toBeCloseTo(previewDefenseReduction - currentDefenseReduction)
   })
 
-  it('uses Ring 1 then Ring 2 and reserves duplicate copies safely', () => {
+  it('uses Ring 1 then Ring 2 and reserves each equipped Ring safely', () => {
     ITEMS[testRingId] = { id: testRingId, name: 'Test Arcane Ring', description: 'Test ring', icon: '◌', color: '#fff', kind: 'equipment', category: 'equipment', inventoryCategory: 'equipment', source: 'Test', sellValue: 1, canDestroy: true, equipmentSlot: 'ring', stats: {} } satisfies ItemDefinition
     const state = createInitialState()
-    state.inventory[testRingId] = 2
-    expect(equipItemAction(state, testRingId)).toMatchObject({ ok: true, position: 'ring1' })
-    expect(equipItemAction(state, testRingId)).toMatchObject({ ok: true, position: 'ring2' })
-    expect(getEquippedReservedQuantity(state, testRingId)).toBe(2)
     state.inventory[testRingId] = 1
-    expect(equipItemAction(state, testRingId, 'ring1')).toMatchObject({ ok: false, reason: 'insufficient-copies' })
-    expect(equipItemAction(state, testRingId, 'ring2')).toMatchObject({ ok: false, reason: 'insufficient-copies' })
+    state.inventory['wispbound-ring'] = 1
+    expect(equipItemAction(state, testRingId)).toMatchObject({ ok: true, position: 'ring1' })
+    expect(equipItemAction(state, 'wispbound-ring', 'ring2')).toMatchObject({ ok: true, position: 'ring2' })
+    expect(getEquippedReservedQuantity(state, testRingId)).toBe(1)
+    expect(getEquippedReservedQuantity(state, 'wispbound-ring')).toBe(1)
+    expect(equipItemAction(state, testRingId, 'ring2')).toMatchObject({ ok: false, reason: 'duplicate-ring' })
   })
 })

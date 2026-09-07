@@ -5,10 +5,9 @@ import { getEquipmentCombatPresentation } from './equipmentCombatPresentation'
 
 describe('equipment combat presentation', () => {
   it('translates authored filtered modifiers into readable player language', () => {
-    expect(getEquipmentCombatPresentation(ITEMS['ember-staff']).modifiers).toContain('+20% Fire Spell Damage')
-    expect(getEquipmentCombatPresentation(ITEMS['ember-staff']).modifiers.join(' ')).not.toContain('from Spells')
-    expect(getEquipmentCombatPresentation(ITEMS['tide-focus']).modifiers).toContain('+20% Barrier Power from Water Spells')
-    expect(getEquipmentCombatPresentation(ITEMS['stoneweave-robe']).modifiers).toContain('+10 Barrier Received')
+    expect(getEquipmentCombatPresentation(ITEMS['windthread-charm']).modifiers).toContain('+10% Air Spell Damage')
+    expect(getEquipmentCombatPresentation(ITEMS['windthread-charm']).modifiers.join(' ')).not.toContain('from Spells')
+    expect(getEquipmentCombatPresentation(ITEMS['predator-hide-mantle']).modifiers).toContain('-10% Status Duration Received (for Debuff statuses)')
   })
 
   it('keeps provenance wording when it adds information beyond the base label', () => {

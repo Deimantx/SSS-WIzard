@@ -158,13 +158,13 @@ describe('save navigation migration', () => {
     const migrated = migrateSave({
       ...initial,
       saveVersion: 6,
-      inventory: { ...initial.inventory, 'tide-focus': 1 },
-      equipment: { weapon: 'apprentice-wand', offhand: null, armor: null, helmet: null, amulet: null, earrings: 'tide-focus', ring1: null, ring2: null },
+      inventory: { ...initial.inventory, 'prismatic-focus': 1 },
+      equipment: { weapon: 'apprentice-wand', offhand: null, armor: null, helmet: null, amulet: null, earrings: 'prismatic-focus', ring1: null, ring2: null },
     })
     expect(migrated.saveVersion).toBe(8)
     expect(migrated.equipment.cape).toBeNull()
     expect('earrings' in migrated.equipment).toBe(false)
-    expect(migrated.inventory['tide-focus']).toBe(1)
+    expect(migrated.inventory['prismatic-focus']).toBe(1)
   })
 
   it('ignores an invalid v6 Earrings value without creating a Cape item', () => {
@@ -288,10 +288,10 @@ describe('save navigation migration', () => {
 
   it('preserves a non-default current V9 gameplay snapshot through serialization and migration', () => {
     const state = createInitialState()
-    state.inventory = { 'wispwood-wand': 1, 'fire-fragment': 123, 'water-fragment': 47, 'life-essence': 99 }
+    state.inventory = { 'tideglass-wand': 1, 'fire-fragment': 123, 'water-fragment': 47, 'life-essence': 99 }
     state.schools = { fire: { xp: 125, level: 7 }, water: { xp: 65, level: 4 }, earth: { xp: 45, level: 3 }, air: { xp: 25, level: 2 } }
     state.currencies.gold = 321
-    state.equipment.weapon = 'wispwood-wand'
+    state.equipment.weapon = 'tideglass-wand'
     state.progress.channeling.pillars['leyline-conduit'] = { rank: 1, level: 3 }
     state.activities.research.slots['research-1'] = { itemId: 'fire-fragment', targetSchoolId: 'fire', requestedQuantity: 30, remainingQuantity: 30, progressMs: 0, echoesAssigned: 1, status: 'running' }
     state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 1, progressMs: 0 }
@@ -301,7 +301,7 @@ describe('save navigation migration', () => {
     expect(migrated.inventory).toMatchObject({ 'fire-fragment': 123, 'water-fragment': 47, 'life-essence': 99 })
     expect(migrated.schools).toEqual(state.schools)
     expect(migrated.currencies).toEqual({ gold: 321 })
-    expect(migrated.equipment.weapon).toBe('wispwood-wand')
+    expect(migrated.equipment.weapon).toBe('tideglass-wand')
     expect(migrated.progress.channeling.pillars['leyline-conduit']).toEqual({ rank: 1, level: 3 })
     expect(migrated.activities.research.slots['research-1']).toEqual(state.activities.research.slots['research-1'])
     expect(migrated.activities.transmutation.jobs['fire-fragment']).toEqual({ echoesAssigned: 1, progressMs: 0 })
@@ -420,21 +420,21 @@ describe('save navigation migration', () => {
       saveVersion: 23,
       schools: { ...initial.schools, fire: { xp: 321, level: 4 }, water: { xp: 87, level: 2 } },
       currencies: { gold: 987 },
-      inventory: { ...initial.inventory, 'apprentice-wand': 1, 'ember-staff': 1, 'tide-focus': 1, 'fire-fragment': 17 },
+      inventory: { ...initial.inventory, 'apprentice-wand': 1, 'ember-staff': 1, 'prismatic-focus': 1, 'fire-fragment': 17 },
       protectedItems: { 'apprentice-wand': true, 'fire-fragment': true },
-      equipment: { ...initial.equipment, weapon: 'apprentice-wand', offhand: 'tide-focus' },
-      progress: { ...initial.progress, discoveredItems: ['apprentice-wand', 'ember-staff', 'tide-focus'], lifetimeKillsByMonster: { 'grove-sentinel': 3 }, bossKillsByBoss: { 'forest-heart': 2 } },
+      equipment: { ...initial.equipment, weapon: 'apprentice-wand', offhand: 'prismatic-focus' },
+      progress: { ...initial.progress, discoveredItems: ['apprentice-wand', 'ember-staff', 'prismatic-focus'], lifetimeKillsByMonster: { 'grove-sentinel': 3 }, bossKillsByBoss: { 'forest-heart': 2 } },
       activities: { ...initial.activities, transmutation: { jobs: { 'fire-fragment': { echoesAssigned: 1, progressMs: 1000 } } } },
     } as any
 
     const migrated = migrateSave(v23)
     expect(migrated.saveVersion).toBe(SAVE_VERSION)
-    expect(migrated.inventory).toMatchObject({ 'ember-staff': 1, 'tide-focus': 1, 'fire-fragment': 17 })
+    expect(migrated.inventory).toMatchObject({ 'ember-staff': 1, 'prismatic-focus': 1, 'fire-fragment': 17 })
     expect(migrated.inventory).not.toHaveProperty('apprentice-wand')
     expect(migrated.protectedItems).toEqual({ 'fire-fragment': true })
     expect(migrated.equipment.weapon).toBeNull()
-    expect(migrated.equipment.offhand).toBe('tide-focus')
-    expect(migrated.progress.discoveredItems).toEqual(['ember-staff', 'tide-focus'])
+    expect(migrated.equipment.offhand).toBe('prismatic-focus')
+    expect(migrated.progress.discoveredItems).toEqual(['ember-staff', 'prismatic-focus'])
     expect(migrated.progress.lifetimeKillsByMonster['grove-sentinel']).toBe(3)
     expect(migrated.progress.bossKillsByBoss['forest-heart']).toBe(2)
     expect(migrated.schools).toMatchObject({ fire: { xp: getSchoolTotalXpForLevel(4), level: 4 }, water: { xp: getSchoolTotalXpForLevel(2), level: 2 } })
@@ -471,15 +471,15 @@ describe('save navigation migration', () => {
       ...initial,
       saveVersion: 17,
       currencies: { gold: 321 },
-      inventory: { ...initial.inventory, 'fire-fragment': 37, 'wispwood-wand': 1 },
-      equipment: { ...initial.equipment, weapon: 'wispwood-wand' },
+      inventory: { ...initial.inventory, 'fire-fragment': 37, 'tideglass-wand': 1 },
+      equipment: { ...initial.equipment, weapon: 'tideglass-wand' },
       progress: { ...initial.progress, spellRanks: { ...initial.progress.spellRanks, 'fire-bolt': 1 }, bossKillsByBoss: { ...initial.progress.bossKillsByBoss, 'forest-heart': 2 } },
       combat: { ...initial.combat, active: true, dungeonId: 'whispering-woods', enemyId: 'forest-wisp', playerAttackTimerMs: 500 },
     })
 
     expect(migrated.currencies.gold).toBe(321)
     expect(migrated.inventory['fire-fragment']).toBe(37)
-    expect(migrated.equipment.weapon).toBe('wispwood-wand')
+    expect(migrated.equipment.weapon).toBe('tideglass-wand')
     expect(migrated.progress.spellRanks['fire-bolt']).toBe(1)
     expect(migrated.progress.bossKillsByBoss['forest-heart']).toBe(2)
     expect(migrated.combat.playerAttackTimerMs).toBe(migrated.combat.playerAttackDurationMs)

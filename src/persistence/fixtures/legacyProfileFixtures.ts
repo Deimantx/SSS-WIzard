@@ -8,9 +8,9 @@ export const LEGACY_V4_PROFILE = {
   saveVersion: 4,
   player: { health: 91, maxHealth: 100, mana: 37, maxMana: 100, maxFocus: 100, baseMaxHealth: 100, baseMaxMana: 100, baseMaxFocus: 100, godMode: false },
   schools: { fire: { xp: 125, level: 7 }, water: { xp: 65, level: 4 }, earth: { xp: 45, level: 3 }, air: { xp: 25, level: 2 } },
-  inventory: { 'apprentice-wand': 1, 'fire-fragment': 37, 'water-fragment': 19, 'life-essence': 9, 'tide-focus': 1, 'stoneweave-robe': 1, 'windthread-charm': 1 },
-  protectedItems: { 'apprentice-wand': true, 'tide-focus': true, 'stoneweave-robe': true, 'windthread-charm': true },
-  equipment: { weapon: 'apprentice-wand', robe: 'stoneweave-robe', focus: 'tide-focus', charm: 'windthread-charm' },
+  inventory: { 'apprentice-wand': 1, 'fire-fragment': 37, 'water-fragment': 19, 'life-essence': 9, 'prismatic-focus': 1, 'wispweave-robe': 1, 'windthread-charm': 1 },
+  protectedItems: { 'apprentice-wand': true, 'prismatic-focus': true, 'wispweave-robe': true, 'windthread-charm': true },
+  equipment: { weapon: 'apprentice-wand', robe: 'wispweave-robe', focus: 'prismatic-focus', charm: 'windthread-charm' },
   activities: {
     channeling: { echoesAssigned: 2 },
     condense: { running: true, element: 'water', progressMs: 1800 },

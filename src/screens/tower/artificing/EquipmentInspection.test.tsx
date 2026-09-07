@@ -12,11 +12,11 @@ describe('Artificing equipment output inspection', () => {
     const state = useGameStore.getState()
     useGameStore.setState({
       progress: { ...state.progress, firstBossKill: true },
-      inventory: { ...state.inventory, 'tide-focus': 1 },
-      equipment: { ...state.equipment, offhand: 'tide-focus' },
+      inventory: { ...state.inventory, 'prismatic-focus': 1 },
+      equipment: { ...state.equipment, offhand: 'prismatic-focus' },
     })
     render(<EquipmentInspection recipe={RECIPES['ember-staff']} />)
-    expect(screen.getByText('STATS')).toBeTruthy()
+    expect(screen.getByText('LOADOUT COMPARISON')).toBeTruthy()
     expect(screen.getByText(/would be removed because this is a two-handed Weapon/)).toBeTruthy()
   })
 
@@ -26,6 +26,6 @@ describe('Artificing equipment output inspection', () => {
     const { container } = render(<EquipmentInspection recipe={RECIPES['ember-staff']} />)
     expect(container.querySelector('.artificing-output-hero')).toBeNull()
     expect(container.querySelector('.artificing-output-icon')).toBeNull()
-    expect(screen.getByText('STATS')).toBeTruthy()
+    expect(screen.getByText('LOADOUT COMPARISON')).toBeTruthy()
   })
 })

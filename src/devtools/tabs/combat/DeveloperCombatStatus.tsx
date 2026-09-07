@@ -63,10 +63,6 @@ export function DeveloperCombatStatus() {
         <Button variant="secondary" onClick={() => prepareThresholdFixture('greatbear-heartstone', 'amulet', 0.3)}>Unyielding threshold</Button>
         <Button variant="secondary" onClick={() => prepareEquipmentFixture('howling-signet', 'ring1')}>Predator's Feast setup</Button>
         <Button variant="secondary" onClick={() => { prepareEquipmentFixture('howling-signet', 'ring1'); killEnemy() }}>Predator's Feast kill</Button>
-        <Button variant="secondary" onClick={() => { prepareEquipmentFixture('soulward-focus', 'offhand'); setPlayerBarrier(20) }}>Soulward Focus barrier break setup</Button>
-        <Button variant="secondary" onClick={() => { prepareEquipmentFixture('soulward-focus', 'offhand'); setPlayerBarrier(20); damagePlayer(100) }}>Soulward Focus barrier break</Button>
-        <Button variant="secondary" onClick={() => { prepareEquipmentFixture('soulward-shield', 'offhand'); setPlayerBarrier(20) }}>Soulward Shield barrier break setup</Button>
-        <Button variant="secondary" onClick={() => { prepareEquipmentFixture('soulward-shield', 'offhand'); setPlayerBarrier(20); damagePlayer(100) }}>Soulward Shield barrier break</Button>
         <Button variant="secondary" onClick={() => { prepareEquipmentFixture('gravebinder-ring', 'ring1'); applyEnemy('chilled'); advanceCombat(2200) }}>Gravebinder debuffed hit</Button>
         <Button variant="secondary" onClick={() => { prepareEquipmentFixture('edrins-signet', 'ring1'); applyPlayer('chilled') }}>Edrin Signet hostile debuff</Button>
       </div>

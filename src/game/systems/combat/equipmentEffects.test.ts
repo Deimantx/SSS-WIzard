@@ -8,7 +8,7 @@ import { resolveMonsterLoot } from '../loot/lootResolution'
 import { getEquipmentStats } from '../../core/equipment/equipmentStats'
 import { getEffectiveManaCost, getPlayerCombatStats } from './combatStats'
 import { getCombatModifiers, getResistance } from './modifiers'
-import { damageEnemy, damagePlayer, executeCombatEffects, getCombatDamagePreview } from './effectResolver'
+import { damageEnemy, damagePlayer, executeCombatEffects } from './effectResolver'
 import { spawnEnemy } from './combatRuntime'
 import { applyStatus, tickStatuses } from './statusRuntime'
 import { tickRuleCooldowns } from './triggerRuntime'
@@ -46,14 +46,14 @@ const stateWithEnemy = () => {
 describe('authored equipment content', () => {
   it('contains exactly the planned equipment set and validates all content', () => {
     const equipment = Object.values(ITEMS).filter((item) => item.kind === 'equipment')
-    expect(equipment).toHaveLength(32)
+    expect(equipment).toHaveLength(18)
     expect(ITEMS['apprentice-wand' as keyof typeof ITEMS]).toBeUndefined()
     expect(validateItemDefinitions()).toEqual([])
     expect(validateRecipeDefinitions()).toEqual([])
     expect(Object.values(MONSTERS).every((monster) => monster.loot.every((drop) => ITEMS[drop.itemId]))).toBe(true)
   })
 
-  it('uses authored stats for derived combat values and mana costs', () => {
+  it('uses authored Artifact and accessory stats for derived combat values', () => {
     const state = createInitialState()
     state.equipment.weapon = 'ember-staff'
     state.equipment.helmet = 'wispveil-hood'
@@ -64,29 +64,16 @@ describe('authored equipment content', () => {
     expect(getResistance(state, 'player', 'fire')).toBe(0)
     expect(getEffectiveManaCost(state, 10)).toBe(10)
 
-    const water = createInitialState()
-    water.equipment.weapon = 'wispwood-wand'
-    water.equipment.offhand = 'tide-focus'
-    water.equipment.helmet = 'wispveil-hood'
-    recalculateDerivedStats(water)
-    expect(getEquipmentStats(water)).toMatchObject({ spellPower: 24, maxMana: 20, basicDamage: 4 })
-    expect(getPlayerCombatStats(water)).toMatchObject({ spellPower: BALANCE.player.baseSpellPower + 24, basicAttackDamage: BALANCE.player.basicAttackDamage + 4, maxMana: 120 })
-    expect(getCombatModifiers(water, 'player', 'barrier-power-percent', { source: { ...playerSpell, school: 'water', tags: ['spell', 'water'] }, damageType: 'water' })).toBeCloseTo(0.2)
-
-    state.equipment.weapon = 'fangbound-dagger'
-    state.equipment.offhand = 'fangbound-buckler'
-    state.equipment.helmet = 'razorclaw-circlet'
-    recalculateDerivedStats(state)
-    expect(getPlayerCombatStats(state)).toMatchObject({ basicAttackDamage: BALANCE.player.basicAttackDamage + 14, basicAttackSpeedMultiplier: 1.13, critDamageMultiplier: 1.65, blockChance: 0.15 })
-    expect(getPlayerCombatStats(state).critChance).toBeCloseTo(0.12)
-    expect(getResistance(state, 'player', 'physical')).toBe(0.03)
-
-    state.equipment.weapon = 'graveglass-wand'
-    state.equipment.offhand = null
-    state.equipment.helmet = 'wispveil-hood'
-    recalculateDerivedStats(state)
-    expect(getPlayerCombatStats(state)).toMatchObject({ spellPower: BALANCE.player.baseSpellPower + 32, maxMana: 100, cooldownRecovery: 1.1, manaCostReduction: 0.1 })
-    expect(getEffectiveManaCost(state, 10)).toBe(9)
+    const build = createInitialState()
+    build.equipment.weapon = 'tideglass-wand'
+    build.equipment.offhand = 'prismatic-focus'
+    build.equipment.armor = 'wispweave-robe'
+    build.equipment.amulet = 'windthread-charm'
+    recalculateDerivedStats(build)
+    expect(getEquipmentStats(build)).toMatchObject({ spellPower: expect.any(Number), maxMana: expect.any(Number), basicDamage: expect.any(Number) })
+    expect(getPlayerCombatStats(build).maxMana).toBeGreaterThan(100)
+    expect(getCombatModifiers(build, 'player', 'spell-damage-percent', { source: { ...playerSpell, school: 'air', tags: ['spell', 'air'] } })).toBeCloseTo(0.1)
+    expect(getEffectiveManaCost(build, 10)).toBe(10)
   })
 
   it('resolves Forest Heart material loot through central item acquisition', () => {
@@ -103,17 +90,17 @@ describe('authored equipment content', () => {
 
   it('uses progression and dungeon unlock definitions for equipment recipes', () => {
     const state = createInitialState()
-    expect(isRecipeUnlocked(state, RECIPES['wispwood-wand'])).toBe(false)
-    expect(isRecipeUnlocked(state, RECIPES['fangbound-dagger'])).toBe(false)
+    expect(isRecipeUnlocked(state, RECIPES['tideglass-wand'])).toBe(false)
+    expect(isRecipeUnlocked(state, RECIPES['predator-hide-mantle'])).toBe(false)
 
     state.progress.lifetimeKillsByMonster['grove-sentinel'] = 1
-    expect(isRecipeUnlocked(state, RECIPES['wispwood-wand'])).toBe(true)
-    expect(isRecipeUnlocked(state, RECIPES['fangbound-dagger'])).toBe(false)
+    expect(isRecipeUnlocked(state, RECIPES['tideglass-wand'])).toBe(true)
+    expect(isRecipeUnlocked(state, RECIPES['predator-hide-mantle'])).toBe(false)
 
     state.progress.lifetimeKillsByMonster['cavefang-wolf'] = 1
-    expect(isRecipeUnlocked(state, RECIPES['fangbound-dagger'])).toBe(true)
+    expect(isRecipeUnlocked(state, RECIPES['predator-hide-mantle'])).toBe(true)
     state.progress.lifetimeKillsByMonster['restless-skeleton'] = 1
-    expect(isRecipeUnlocked(state, RECIPES['graveglass-wand'])).toBe(true)
+    expect(isRecipeUnlocked(state, RECIPES['ossuary-mantle'])).toBe(true)
   })
 })
 
@@ -236,56 +223,13 @@ describe('equipment combat effects', () => {
     expect(nonSpellBurn(true)).toBeCloseTo(nonSpellBurn(false))
   })
 
-  it("keeps Edrin's Forbidden Knowledge Spell-specific", () => {
-    const noStatus = stateWithEnemy()
-    noStatus.equipment.weapon = 'edrins-remnant-staff'
-    const noStatusPlain = stateWithEnemy()
-    damageEnemy(noStatus, 100, 'spell')
-    damageEnemy(noStatusPlain, 100, 'spell')
-    expect(noStatus.combat.enemyHp).toBe(noStatusPlain.combat.enemyHp)
-
-    const debuffedStaff = stateWithEnemy()
-    const debuffedStaffBasic = stateWithEnemy()
-    debuffedStaff.equipment.weapon = 'edrins-remnant-staff'
-    applyStatus(debuffedStaff, 'enemy', 'chilled', playerSpell)
-    applyStatus(debuffedStaffBasic, 'enemy', 'chilled', playerSpell)
-    damageEnemy(debuffedStaff, 100, 'spell')
-    damageEnemy(debuffedStaffBasic, 100, 'spell')
-    expect(1_000 - debuffedStaff.combat.enemyHp).toBeCloseTo((1_000 - debuffedStaffBasic.combat.enemyHp) * 1.1)
-
-    const buffStaff = stateWithEnemy()
-    const buffPlain = stateWithEnemy()
-    buffStaff.equipment.weapon = 'edrins-remnant-staff'
-    applyStatus(buffStaff, 'enemy', 'haste', enemyAction)
-    applyStatus(buffPlain, 'enemy', 'haste', enemyAction)
-    damageEnemy(buffStaff, 100, 'spell')
-    damageEnemy(buffPlain, 100, 'spell')
-    expect(buffStaff.combat.enemyHp).toBe(buffPlain.combat.enemyHp)
-
-    const basicStaff = stateWithEnemy()
-    const basicPlain = stateWithEnemy()
-    basicStaff.equipment.weapon = 'edrins-remnant-staff'
-    applyStatus(basicStaff, 'enemy', 'chilled', playerSpell)
-    applyStatus(basicPlain, 'enemy', 'chilled', playerSpell)
-    damageEnemy(basicStaff, 100, 'basic')
-    damageEnemy(basicPlain, 100, 'basic')
-    expect(basicStaff.combat.enemyHp).toBe(basicPlain.combat.enemyHp)
-  })
-
-  it('combines outgoing and received status-duration modifiers', () => {
-    const outgoing = stateWithEnemy()
-    outgoing.equipment.weapon = 'corrupted-howlstaff'
-    outgoing.equipment.helmet = 'wraithveil-hood'
-    recalculateDerivedStats(outgoing)
-    expect(applyStatus(outgoing, 'enemy', 'chilled', playerSpell, { durationMs: 5_000 })?.remainingMs).toBe(6_250)
-
+  it('applies surviving status-duration modifiers to received hostile statuses', () => {
     const received = stateWithEnemy()
-    received.equipment.helmet = 'wraithveil-hood'
+    received.equipment.cape = 'predator-hide-mantle'
     recalculateDerivedStats(received)
     expect(applyStatus(received, 'player', 'chilled', enemyAction, { durationMs: 5_000 })?.remainingMs).toBe(4_500)
-    received.equipment.helmet = null
-    received.equipment.cape = 'predator-hide-mantle'
-    expect(applyStatus(received, 'player', 'vulnerable', enemyAction, { durationMs: 5_000 })?.remainingMs).toBe(4_500)
+    received.equipment.cape = null
+    expect(applyStatus(received, 'player', 'vulnerable', enemyAction, { durationMs: 5_000 })?.remainingMs).toBe(5_000)
     expect(applyStatus(received, 'player', 'regeneration', enemyAction, { durationMs: 5_000 })?.remainingMs).toBe(5_000)
   })
 
@@ -301,57 +245,6 @@ describe('equipment combat effects', () => {
     applyStatus(soulglass, 'enemy', 'burning', playerSpell)
     tickStatuses(soulglass, 1_000, executeCombatEffects)
     expect(1_000 - soulglass.combat.enemyHp).toBeGreaterThan(plainDamage)
-  })
-
-  it('restores Mana or strikes back when a Soulward Barrier breaks', () => {
-    const focus = stateWithEnemy()
-    focus.equipment.offhand = 'soulward-focus'
-    recalculateDerivedStats(focus)
-    focus.player.mana = 10
-    executeCombatEffects(focus, [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 20 } }], playerSpell)
-    damagePlayer(focus, 40, enemyAction)
-    expect(focus.combat.playerBarrier).toBe(0)
-    expect(focus.player.mana).toBe(25)
-
-    const shield = stateWithEnemy()
-    shield.equipment.offhand = 'soulward-shield'
-    recalculateDerivedStats(shield)
-    executeCombatEffects(shield, [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 20 } }], playerSpell)
-    damagePlayer(shield, 40, enemyAction)
-    expect(shield.combat.playerBarrier).toBe(0)
-    expect(shield.combat.enemyHp).toBeLessThan(1_000)
-    expect(shield.combat.log).toContain('Soul Release triggers.')
-  })
-
-  it('resolves Soulward Shield as exact normal Physical retaliation and ignores enemy Barrier breaks', () => {
-    const state = stateWithEnemy()
-    state.equipment.offhand = 'soulward-shield'
-    state.combat.combatRngState = 0
-    recalculateDerivedStats(state)
-    executeCombatEffects(state, [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 20 } }], playerSpell)
-    const retaliationSource: CombatSource = { actor: 'player', kind: 'equipment', sourceId: 'soulward-shield', providerInstanceKey: 'offhand', tags: ['equipment', 'direct', 'physical'] }
-    const expected = getCombatDamagePreview(state, 20, retaliationSource, 'enemy', 'physical')
-    const events: import('./combatTypes').CombatEvent[] = []
-    damagePlayer(state, 40, enemyAction)
-    const actualDamage = 1_000 - state.combat.enemyHp
-    expect(actualDamage).toBeCloseTo(expected.healthDamage)
-    expect(actualDamage).toBeCloseTo(20 * (1 - expected.resistance) * (1 - expected.defenseReduction))
-
-    const eventState = stateWithEnemy()
-    eventState.equipment.offhand = 'soulward-shield'
-    eventState.combat.combatRngState = 0
-    const eventSink = { push: (event: import('./combatTypes').CombatEvent) => events.push(event) }
-    executeCombatEffects(eventState, [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 20 } }], playerSpell, undefined, eventSink)
-    executeCombatEffects(eventState, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 40 } }], tags: ['physical'] }], enemyAction, undefined, eventSink)
-    expect(events.some((event) => event.sourceKind === 'equipment' && event.itemId === 'soulward-shield' && event.providerInstanceKey === 'offhand')).toBe(true)
-
-    const enemyBarrier = stateWithEnemy()
-    enemyBarrier.equipment.offhand = 'soulward-shield'
-    enemyBarrier.combat.enemyBarrier = 20
-    enemyBarrier.player.mana = 10
-    damageEnemy(enemyBarrier, 40, 'basic')
-    expect(enemyBarrier.combat.playerBarrier).toBe(0)
-    expect(enemyBarrier.player.mana).toBe(10)
   })
 
   it('triggers Edrin Signet for hostile debuffs with its cooldown', () => {

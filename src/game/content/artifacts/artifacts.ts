@@ -1,5 +1,7 @@
 import type { ArtifactId, EquipmentStats, ItemDefinition, ItemId, MonsterId } from '../../types'
 import type { CombatModifier, CombatTriggerRule } from '../../systems/combat/combatTypes'
+import { createCombatValidationContext, validateCombatProvider } from '../../systems/combat/combatEffectValidation'
+import { STATUS_DEFINITIONS } from '../statuses/statuses'
 
 export interface ArtifactForgeDefinition { ingredients: { itemId: ItemId; quantity: number }[] }
 export interface ArtifactLevelUpgradeDefinition { fromLevel: number; toLevel: number; ingredients: { itemId: ItemId; quantity: number }[] }
@@ -279,6 +281,7 @@ export const getArtifactDefinition = (itemId: ItemId) => ARTIFACTS[itemId]
 /** Structural checks for the shared Artifact foundation. Balance power is intentionally out of scope. */
 export const validateArtifactDefinitions = (items: Record<string, ItemDefinition>, monsters?: Record<string, { id: string; bestiaryCategory?: string }>) => {
   const errors: string[] = []
+  const combatValidationContext = createCombatValidationContext(STATUS_DEFINITIONS)
   Object.entries(ARTIFACTS).forEach(([key, definition]) => {
     if (!definition) return
     if (key !== definition.id || definition.itemId !== definition.id) errors.push(`${key}: Artifact key/id mismatch`)
@@ -331,6 +334,7 @@ export const validateArtifactDefinitions = (items: Record<string, ItemDefinition
     definition.nodes.forEach((node) => {
       if (nodeIds.has(node.id)) errors.push(`${definition.id}: duplicate node id ${node.id}`)
       nodeIds.add(node.id)
+      errors.push(...validateCombatProvider(node.combat, definition.id + '.' + node.id + '.combat', combatValidationContext))
       if (node.artifactId !== definition.id) errors.push(`${definition.id}/${node.id}: wrong artifactId`)
       if (!Number.isInteger(node.pointCost) || node.pointCost <= 0) errors.push(`${definition.id}/${node.id}: pointCost must be a positive integer`)
       if (!Number.isInteger(node.requiresLevel) || node.requiresLevel < 1 || node.requiresLevel > definition.maxLevel) errors.push(`${definition.id}/${node.id}: requiresLevel is outside Artifact levels`)

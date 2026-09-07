@@ -16,7 +16,6 @@ import { STATUS_DEFINITIONS } from '../../content/statuses'
 import { SPELLS } from '../../content/spells/spells'
 import { getEnemySkillActionRate, getPlayerBasicAttackRate } from './actionRuntime'
 import { getTimedActionState } from './actionTiming'
-import { getSpellEquipmentBonusPreview } from '../spells/spellEquipmentPreview'
 import { BALANCE } from '../../core/balance/balance'
 
 const playerSpell: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'test-spell', school: 'fire', tags: ['spell', 'magic'] }
@@ -284,55 +283,6 @@ describe('post-implementation combat audit regressions', () => {
     expect(state.combat.playerBarrierRemainingMs).toBe(remaining - 1000)
   })
 
-  it('scopes Tide Focus to Water-aligned player Barriers', () => {
-    const waterSource: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'water-barrier-test', school: 'water', tags: ['spell', 'magic', 'water'] }
-    const earthSource: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'earth-barrier-test', school: 'earth', tags: ['spell', 'magic', 'earth'] }
-
-    const baseWater = stateWithEnemy()
-    executeCombatEffects(baseWater, SPELLS['water-ward'].effects, waterSource)
-    expect(baseWater.combat.playerBarrier).toBe(35)
-
-    const tideWater = stateWithEnemy()
-    tideWater.equipment.offhand = 'tide-focus'
-    executeCombatEffects(tideWater, SPELLS['water-ward'].effects, waterSource)
-    expect(tideWater.combat.playerBarrier).toBe(50)
-
-    const tideEarth = stateWithEnemy()
-    tideEarth.equipment.offhand = 'tide-focus'
-    executeCombatEffects(tideEarth, SPELLS.stoneguard.effects, earthSource)
-    expect(tideEarth.combat.playerBarrier).toBe(78)
-  })
-
-  it('keeps generic flat Barrier Received bonuses independent of Water scope', () => {
-    const waterSource: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'water-barrier-test', school: 'water', tags: ['spell', 'water'] }
-    const earthSource: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'earth-barrier-test', school: 'earth', tags: ['spell', 'earth'] }
-
-    const water = stateWithEnemy()
-    water.equipment.armor = 'stoneweave-robe'
-    executeCombatEffects(water, SPELLS['water-ward'].effects, waterSource)
-    expect(water.combat.playerBarrier).toBe(45)
-
-    const earth = stateWithEnemy()
-    earth.equipment.armor = 'stoneweave-robe'
-    executeCombatEffects(earth, SPELLS.stoneguard.effects, earthSource)
-    expect(earth.combat.playerBarrier).toBe(75)
-  })
-
-  it('keeps the Water Barrier equipment preview aligned with runtime scope', () => {
-    const state = stateWithEnemy()
-    state.equipment.offhand = 'tide-focus'
-
-    expect(getSpellEquipmentBonusPreview(state, 'water-ward')).toMatchObject({ totalPercent: 0.2, current: [expect.objectContaining({ itemId: 'tide-focus' })] })
-    expect(getSpellEquipmentBonusPreview(state, 'stoneguard')).toMatchObject({ totalPercent: 0, current: [] })
-
-    const waterSource: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'water-ward', school: 'water', tags: ['spell', 'magic', 'water'] }
-    const earthSource: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'stoneguard', school: 'earth', tags: ['spell', 'magic', 'earth'] }
-    executeCombatEffects(state, SPELLS['water-ward'].effects, waterSource)
-    expect(state.combat.playerBarrier).toBe(50)
-    state.combat.playerBarrier = 0
-    executeCombatEffects(state, SPELLS.stoneguard.effects, earthSource)
-    expect(state.combat.playerBarrier).toBe(78)
-  })
 
   it('keeps authored barrier duration and effect tags explicit', () => {
     const state = stateWithEnemy()

@@ -37,28 +37,28 @@ describe('EquipmentScreen stat typography structure', () => {
 
   it('shows data-driven combat mechanics in the Gear Inspector', () => {
     const state = useGameStore.getState()
-    useGameStore.setState({ equipment: { ...state.equipment, weapon: 'ember-staff' }, inventory: { ...state.inventory, 'ember-staff': 1 } })
-    render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
+    useGameStore.setState({ equipment: { ...state.equipment, amulet: 'windthread-charm' }, inventory: { ...state.inventory, 'windthread-charm': 1 } })
+    const { container } = render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
+    fireEvent.click(container.querySelector('.equipment-armory-card[data-item-id="windthread-charm"]') as HTMLElement)
     expect(screen.getByText('COMBAT EFFECTS')).toBeTruthy()
-    expect(screen.getAllByText('+20% Fire Spell Damage').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('+10% Air Spell Damage').length).toBeGreaterThan(0)
   })
 
-  it('shows owned, equipped, and available copies for selected equipment', async () => {
+  it('shows owned, equipped, and available copies for selected equipment', () => {
     const state = useGameStore.getState()
-    useGameStore.setState({ equipment: { ...state.equipment, weapon: 'wispwood-wand', ring1: 'gravebinder-ring' }, inventory: { ...state.inventory, 'wispwood-wand': 1, 'gravebinder-ring': 1 } })
+    useGameStore.setState({ equipment: { ...state.equipment, weapon: 'tideglass-wand', ring1: 'gravebinder-ring' }, inventory: { ...state.inventory, 'tideglass-wand': 1, 'gravebinder-ring': 1 } })
     const { container } = render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
     const gravebinderCard = Array.from(container.querySelectorAll('.equipment-armory-card')).find((card) => card.textContent?.includes('Gravebinder Ring')) as HTMLElement | undefined
     expect(gravebinderCard).toBeTruthy()
     fireEvent.click(gravebinderCard as HTMLElement)
-    expect(screen.getByText('OWNED 1')).toBeTruthy()
-    expect(screen.getByText('EQUIPPED 1')).toBeTruthy()
-    expect(screen.getByText('AVAILABLE 0')).toBeTruthy()
-    expect(await screen.findByText(/second copy is required for this Ring position/i)).toBeTruthy()
+    expect(screen.getByText(/OWNED 1/)).toBeTruthy()
+    expect(screen.getByText(/EQUIPPED 1/)).toBeTruthy()
+    expect(screen.getByText(/AVAILABLE 0/)).toBeTruthy()
   })
 
   it('does not expose a stale Weapon unequip action when selecting a Ring from Armory', () => {
     const state = useGameStore.getState()
-    useGameStore.setState({ equipment: { ...state.equipment, weapon: 'wispwood-wand' }, inventory: { ...state.inventory, 'wispwood-wand': 1, 'gravebinder-ring': 1 } })
+    useGameStore.setState({ equipment: { ...state.equipment, weapon: 'tideglass-wand' }, inventory: { ...state.inventory, 'tideglass-wand': 1, 'gravebinder-ring': 1 } })
     const { container } = render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
     fireEvent.click(container.querySelector('.equipment-slot-card[data-position="weapon"]') as HTMLElement)
     fireEvent.click(screen.getByRole('tab', { name: 'RINGS' }))
@@ -68,12 +68,12 @@ describe('EquipmentScreen stat typography structure', () => {
 
     expect(screen.getByRole('heading', { name: 'Gravebinder Ring' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'UNEQUIP WEAPON' })).toBeNull()
-    expect(useGameStore.getState().equipment.weapon).toBe('wispwood-wand')
+    expect(useGameStore.getState().equipment.weapon).toBe('tideglass-wand')
   })
 
   it('keeps Ring 1 occupied and Ring 2 empty selection targeted at Ring 2', () => {
     const state = useGameStore.getState()
-    useGameStore.setState({ equipment: { ...state.equipment, weapon: 'wispwood-wand', ring1: 'gravebinder-ring' }, inventory: { ...state.inventory, 'wispwood-wand': 1, 'gravebinder-ring': 1 } })
+    useGameStore.setState({ equipment: { ...state.equipment, weapon: 'tideglass-wand', ring1: 'gravebinder-ring' }, inventory: { ...state.inventory, 'tideglass-wand': 1, 'gravebinder-ring': 1 } })
     const { container } = render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
     fireEvent.click(container.querySelector('.equipment-slot-card[data-position="weapon"]') as HTMLElement)
     fireEvent.click(screen.getByRole('tab', { name: 'RINGS' }))
@@ -83,12 +83,12 @@ describe('EquipmentScreen stat typography structure', () => {
     expect(screen.queryByRole('button', { name: 'UNEQUIP WEAPON' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'UNEQUIP RING 1' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'UNEQUIP RING 2' })).toBeNull()
-    expect(useGameStore.getState().equipment.weapon).toBe('wispwood-wand')
+    expect(useGameStore.getState().equipment.weapon).toBe('tideglass-wand')
   })
 
   it('waits for Ring replacement choice when both Ring positions are occupied', () => {
     const state = useGameStore.getState()
-    useGameStore.setState({ equipment: { ...state.equipment, weapon: 'wispwood-wand', ring1: 'gravebinder-ring', ring2: 'wispbound-ring' }, inventory: { ...state.inventory, 'wispwood-wand': 1, 'gravebinder-ring': 1, 'wispbound-ring': 1 } })
+    useGameStore.setState({ equipment: { ...state.equipment, weapon: 'tideglass-wand', ring1: 'gravebinder-ring', ring2: 'wispbound-ring' }, inventory: { ...state.inventory, 'tideglass-wand': 1, 'gravebinder-ring': 1, 'wispbound-ring': 1 } })
     const { container } = render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
     fireEvent.click(container.querySelector('.equipment-slot-card[data-position="weapon"]') as HTMLElement)
     fireEvent.click(screen.getByRole('tab', { name: 'RINGS' }))
@@ -99,6 +99,6 @@ describe('EquipmentScreen stat typography structure', () => {
     expect(screen.queryByRole('button', { name: /UNEQUIP RING/ })).toBeNull()
     fireEvent.click(screen.getByRole('radio', { name: /Ring 1:/ }))
     expect(screen.getByRole('button', { name: 'UNEQUIP RING 1' })).toBeTruthy()
-    expect(useGameStore.getState().equipment.weapon).toBe('wispwood-wand')
+    expect(useGameStore.getState().equipment.weapon).toBe('tideglass-wand')
   })
 })

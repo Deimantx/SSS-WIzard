@@ -9,8 +9,8 @@ describe('Transmutation recipe card metadata', () => {
   })
 
   it('presents authored Equipment slot, hands, and offhand type without inventing a tier', () => {
-    expect(getTransmutationRecipeCardMeta(ITEMS['wispwood-wand'])).toMatchObject({ badges: ['WEAPON', '1H'], tier: null })
+    expect(getTransmutationRecipeCardMeta(ITEMS['tideglass-wand'])).toMatchObject({ badges: ['WEAPON', '1H'], tier: null })
     expect(getTransmutationRecipeCardMeta(ITEMS['ember-staff'])).toMatchObject({ badges: ['WEAPON', '2H'], tier: null })
-    expect(getTransmutationRecipeCardMeta(ITEMS['soulward-focus'])).toMatchObject({ badges: ['OFFHAND', 'FOCUS'], tier: null })
+    expect(getTransmutationRecipeCardMeta(ITEMS['prismatic-focus'])).toMatchObject({ badges: ['OFFHAND', 'FOCUS'], tier: null })
   })
 })

@@ -15,11 +15,11 @@ describe('spell effect tooltip models', () => {
 
     expect(model).toMatchObject({ category: 'DAMAGE', title: 'Fire Damage', description: 'Deals Fire damage when this Spell resolves.' })
     expect(row(model, 'Scaling')?.value).toBe('60% Spell Power')
-    expect(row(model, 'Base Damage')?.value).toBe('42')
+    expect(row(model, 'Base Damage')?.value).toBe('39.6')
     expect(row(model, 'School Scaling')).toBeUndefined()
     expect(row(model, 'Current School Level')).toBeUndefined()
     expect(row(model, 'Current Base Preview')).toBeUndefined()
-    expect(row(model, 'Ember Staff')).toMatchObject({ value: '+20%', semantic: 'positive' })
+    expect(row(model, 'Ember Staff')).toBeUndefined()
     expect(row(model, 'Target')?.value).toBe('Enemy')
     expect(row(model, 'Source')?.value).toBe('Fire Bolt')
   })
@@ -47,15 +47,15 @@ describe('spell effect tooltip models', () => {
 
   it('shows barrier duration, mode, target, source, and safe barrier equipment contribution', () => {
     const state = createInitialState()
-    state.equipment.offhand = 'tide-focus'
+    state.equipment.offhand = 'prismatic-focus'
     const model = buildSpellEffectTooltipModel(state, 'water-ward', 0)
 
     expect(model).toMatchObject({ category: 'BARRIER', title: 'Barrier' })
     expect(row(model, 'Scaling')?.value).toBe('70% Spell Power')
-    expect(row(model, 'Amount')?.value).toBe('42')
+    expect(row(model, 'Amount')?.value).toBe('40')
     expect(row(model, 'Duration')?.value).toBe('9.0s')
     expect(row(model, 'Mode')?.value).toBe('Replace')
-    expect(row(model, 'Tide Focus')).toMatchObject({ value: '+20%', semantic: 'positive' })
+    expect(row(model, 'Tideglass Wand')).toBeUndefined()
     expect(row(model, 'Target')?.value).toBe('Self')
     expect(row(model, 'Source')?.value).toBe('Water Ward')
   })

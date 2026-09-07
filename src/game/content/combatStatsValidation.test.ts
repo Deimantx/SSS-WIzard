@@ -9,7 +9,7 @@ describe('authored combat stat validation', () => {
   it('rejects non-finite and out-of-range equipment stats', () => {
     const itemId = 'invalid-combat-stats' as ItemId
     const item = {
-      ...ITEMS['wispwood-wand'],
+      ...ITEMS['tideglass-wand'],
       id: itemId,
       stats: {
         defense: -1,

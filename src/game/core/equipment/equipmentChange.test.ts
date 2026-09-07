@@ -12,9 +12,9 @@ const withOwned = (itemId: keyof ReturnType<typeof createInitialState>['inventor
 
 describe('evaluateEquipmentChange', () => {
   it.each([
-    ['one-handed Weapon', 'wispwood-wand' as const, 'weapon' as const],
-    ['Offhand', 'tide-focus' as const, 'offhand' as const],
-    ['Armor', 'stoneweave-robe' as const, 'armor' as const],
+    ['one-handed Weapon', 'tideglass-wand' as const, 'weapon' as const],
+    ['Offhand', 'prismatic-focus' as const, 'offhand' as const],
+    ['Armor', 'wispweave-robe' as const, 'armor' as const],
   ])('accepts an owned compatible %s', (_label, itemId, position) => {
     const result = evaluateEquipmentChange(withOwned(itemId), itemId, position)
     expect(result).toMatchObject({ ok: true, position })
@@ -22,30 +22,30 @@ describe('evaluateEquipmentChange', () => {
 
   it('clears an existing Offhand for a two-handed Weapon and keeps the action in parity', () => {
     const previewState = withOwned('ember-staff')
-    previewState.inventory['tide-focus'] = 1
-    previewState.equipment.offhand = 'tide-focus'
+    previewState.inventory['prismatic-focus'] = 1
+    previewState.equipment.offhand = 'prismatic-focus'
     const preview = evaluateEquipmentChange(previewState, 'ember-staff')
-    expect(preview).toMatchObject({ ok: true, removedOffhand: 'tide-focus', nextEquipment: { weapon: 'ember-staff', offhand: null } })
+    expect(preview).toMatchObject({ ok: true, removedOffhand: 'prismatic-focus', nextEquipment: { weapon: 'ember-staff', offhand: null } })
 
     const actionState = withOwned('ember-staff')
-    actionState.inventory['tide-focus'] = 1
-    actionState.equipment.offhand = 'tide-focus'
+    actionState.inventory['prismatic-focus'] = 1
+    actionState.equipment.offhand = 'prismatic-focus'
     const action = equipItemAction(actionState, 'ember-staff')
-    expect(action).toMatchObject({ ok: true, unequippedOffhand: 'tide-focus' })
+    expect(action).toMatchObject({ ok: true, unequippedOffhand: 'prismatic-focus' })
     expect(actionState.equipment).toEqual(preview.ok ? preview.nextEquipment : null)
   })
 
   it('rejects an Offhand while a two-handed Weapon is active', () => {
-    const state = withOwned('tide-focus')
+    const state = withOwned('prismatic-focus')
     state.equipment.weapon = 'ember-staff'
-    expect(evaluateEquipmentChange(state, 'tide-focus')).toEqual({ ok: false, reason: 'incompatible' })
-    expect(equipItemAction(state, 'tide-focus')).toMatchObject({ ok: false, reason: 'incompatible' })
+    expect(evaluateEquipmentChange(state, 'prismatic-focus')).toEqual({ ok: false, reason: 'incompatible' })
+    expect(equipItemAction(state, 'prismatic-focus')).toMatchObject({ ok: false, reason: 'incompatible' })
   })
 
   it('rejects missing ownership and incompatible target positions', () => {
     expect(evaluateEquipmentChange(createInitialState(), 'ember-staff')).toEqual({ ok: false, reason: 'not-owned' })
-    const state = withOwned('tide-focus')
-    expect(evaluateEquipmentChange(state, 'tide-focus', 'helmet')).toEqual({ ok: false, reason: 'incompatible' })
+    const state = withOwned('prismatic-focus')
+    expect(evaluateEquipmentChange(state, 'prismatic-focus', 'helmet')).toEqual({ ok: false, reason: 'incompatible' })
     state.inventory['gravebinder-ring'] = 1
     expect(evaluateEquipmentChange(state, 'gravebinder-ring', 'helmet')).toEqual({ ok: false, reason: 'incompatible' })
   })

@@ -1,6 +1,6 @@
 import { Check, ChevronRight, Target } from 'lucide-react'
-import type { ItemId } from '../../game/types'
 import { DUNGEONS, isDungeonCompleted, isTutorialCompleted } from '../../game/content/dungeons/dungeons'
+import { ITEMS } from '../../game/content/items/items'
 import { useGameStore } from '../../store/gameStore'
 import { Button, Card, Status } from '../../components/ui'
 import { formatNumber, formatOfflineBank } from '../../game/utils'
@@ -20,7 +20,7 @@ export function HomeScreenV2() {
   const offlineBankMs = useGameStore((state) => state.offlineBankMs)
   const setScreen = useGameStore((state) => state.setScreen)
   const hasAuto = Object.values(activities.autoCast).some(Boolean)
-  const hasEquipment = Object.values(equipment).some((id) => id && (['ember-staff', 'tide-focus', 'stoneweave-robe', 'windthread-charm'] as ItemId[]).includes(id))
+  const hasEquipment = Object.values(equipment).some((id) => id && ITEMS[id].kind === 'equipment')
   const permanentFocus = Object.values(progress.permanentFocusBonuses).reduce((sum, value) => sum + value, 0)
   const woodsComplete = isDungeonCompleted('whispering-woods', progress)
   const denComplete = isDungeonCompleted('howling-den', progress)

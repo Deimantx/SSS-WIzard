@@ -86,10 +86,10 @@ describe('spell preset foundation', () => {
   it('reads only effect-relevant current equipment modifiers from authored item stats', () => {
     const state = createInitialState()
     state.equipment.weapon = 'ember-staff'
-    state.equipment.offhand = 'tide-focus'
+    state.equipment.offhand = 'prismatic-focus'
     state.equipment.amulet = 'windthread-charm'
-    expect(getSpellEquipmentBonusPreview(state, 'fireball').current).toMatchObject([{ itemId: 'ember-staff', value: 0.2 }])
-    expect(getSpellEquipmentBonusPreview(state, 'water-ward').current).toMatchObject([{ itemId: 'tide-focus', value: 0.2 }])
+    expect(getSpellEquipmentBonusPreview(state, 'fireball').current).toEqual([])
+    expect(getSpellEquipmentBonusPreview(state, 'water-ward').current).toEqual([])
     expect(getSpellEquipmentBonusPreview(state, 'frostbite').current).toEqual([])
     expect(getSpellEquipmentBonusPreview(state, 'flow-mend').current).toEqual([])
     expect(getSpellEquipmentBonusPreview(state, 'air-lance').current).toMatchObject([{ itemId: 'windthread-charm', value: 0.1 }])

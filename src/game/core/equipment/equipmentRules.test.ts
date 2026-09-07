@@ -9,9 +9,9 @@ describe('equipment slot rules', () => {
     expect(EQUIPMENT_POSITIONS).toEqual(['weapon', 'offhand', 'armor', 'helmet', 'cape', 'amulet', 'earring', 'ring1', 'ring2'])
     expect(EQUIPMENT_ITEM_SLOTS).toEqual(['weapon', 'offhand', 'armor', 'helmet', 'cape', 'amulet', 'earring', 'ring'])
     expect(Object.keys(state.equipment)).toEqual(['weapon', 'offhand', 'armor', 'helmet', 'cape', 'amulet', 'earring', 'ring1', 'ring2'])
-    expect(isPositionCompatible('wispwood-wand', 'weapon')).toBe(true)
-    expect(isPositionCompatible('tide-focus', 'offhand')).toBe(true)
-    expect(isPositionCompatible('tide-focus', 'armor')).toBe(false)
+    expect(isPositionCompatible('tideglass-wand', 'weapon')).toBe(true)
+    expect(isPositionCompatible('prismatic-focus', 'offhand')).toBe(true)
+    expect(isPositionCompatible('prismatic-focus', 'armor')).toBe(false)
     expect(isTwoHandedWeapon('ember-staff')).toBe(true)
     expect(getEquippedCount(state)).toBe(0)
   })
@@ -21,18 +21,18 @@ describe('equipment slot rules', () => {
     const migrated = migrateSave({
       ...initial,
       saveVersion: 5,
-      inventory: { ...initial.inventory, 'ember-staff': 1, 'tide-focus': 1, 'stoneweave-robe': 1, 'windthread-charm': 1 },
-      equipment: { weapon: 'ember-staff', focus: 'tide-focus', robe: 'stoneweave-robe', charm: 'windthread-charm' },
+      inventory: { ...initial.inventory, 'ember-staff': 1, 'prismatic-focus': 1, 'wispweave-robe': 1, 'windthread-charm': 1 },
+      equipment: { weapon: 'ember-staff', focus: 'prismatic-focus', robe: 'wispweave-robe', charm: 'windthread-charm' },
     })
     expect(migrated.saveVersion).toBe(8)
-    expect(migrated.equipment).toMatchObject({ weapon: 'ember-staff', offhand: null, armor: 'stoneweave-robe', amulet: 'windthread-charm', helmet: null, cape: null, ring1: null, ring2: null })
-    expect(migrated.inventory['tide-focus']).toBe(1)
+    expect(migrated.equipment).toMatchObject({ weapon: 'ember-staff', offhand: null, armor: 'wispweave-robe', amulet: 'windthread-charm', helmet: null, cape: null, ring1: null, ring2: null })
+    expect(migrated.inventory['prismatic-focus']).toBe(1)
   })
 
   it('normalizes position mismatches without crashing', () => {
-    const equipment = normalizeEquipmentState({ weapon: 'wispwood-wand', ring1: 'tide-focus', ring2: 'tide-focus' }, { 'wispwood-wand': 1, 'tide-focus': 1 })
+    const equipment = normalizeEquipmentState({ weapon: 'tideglass-wand', ring1: 'prismatic-focus', ring2: 'prismatic-focus' }, { 'tideglass-wand': 1, 'prismatic-focus': 1 })
     expect(equipment.ring1).toBeNull()
     expect(equipment.ring2).toBeNull()
-    expect(getEquippedReservedQuantity({ equipment }, 'wispwood-wand')).toBe(1)
+    expect(getEquippedReservedQuantity({ equipment }, 'tideglass-wand')).toBe(1)
   })
 })

@@ -59,8 +59,8 @@ describe('authored equipment content', () => {
     state.equipment.helmet = 'wispveil-hood'
     recalculateDerivedStats(state)
 
-    expect(getEquipmentStats(state)).toMatchObject({ spellPower: 20, maxMana: 25, basicDamage: 4 })
-    expect(getPlayerCombatStats(state)).toMatchObject({ spellPower: BALANCE.player.baseSpellPower + 20, basicAttackDamage: BALANCE.player.basicAttackDamage + 4, maxMana: 125, cooldownRecovery: 1 })
+    expect(getEquipmentStats(state)).toMatchObject({ spellPower: 24, maxMana: 25, basicDamage: 6 })
+    expect(getPlayerCombatStats(state)).toMatchObject({ spellPower: BALANCE.player.baseSpellPower + 24, basicAttackDamage: BALANCE.player.basicAttackDamage + 6, maxMana: 125, cooldownRecovery: 1 })
     expect(getResistance(state, 'player', 'fire')).toBe(0)
     expect(getEffectiveManaCost(state, 10)).toBe(10)
 
@@ -69,15 +69,15 @@ describe('authored equipment content', () => {
     water.equipment.offhand = 'tide-focus'
     water.equipment.helmet = 'wispveil-hood'
     recalculateDerivedStats(water)
-    expect(getEquipmentStats(water)).toMatchObject({ spellPower: 20, maxMana: 35, basicDamage: 2 })
-    expect(getPlayerCombatStats(water)).toMatchObject({ spellPower: BALANCE.player.baseSpellPower + 20, basicAttackDamage: BALANCE.player.basicAttackDamage + 2, maxMana: 135 })
+    expect(getEquipmentStats(water)).toMatchObject({ spellPower: 24, maxMana: 35, basicDamage: 4 })
+    expect(getPlayerCombatStats(water)).toMatchObject({ spellPower: BALANCE.player.baseSpellPower + 24, basicAttackDamage: BALANCE.player.basicAttackDamage + 4, maxMana: 135 })
     expect(getCombatModifiers(water, 'player', 'barrier-power-percent', { source: { ...playerSpell, school: 'water', tags: ['spell', 'water'] }, damageType: 'water' })).toBeCloseTo(0.2)
 
     state.equipment.weapon = 'fangbound-dagger'
     state.equipment.offhand = 'fangbound-buckler'
     state.equipment.helmet = 'razorclaw-circlet'
     recalculateDerivedStats(state)
-    expect(getPlayerCombatStats(state)).toMatchObject({ basicAttackDamage: BALANCE.player.basicAttackDamage + 8, basicAttackSpeedMultiplier: 1.13, critDamageMultiplier: 1.65, blockChance: 0.15 })
+    expect(getPlayerCombatStats(state)).toMatchObject({ basicAttackDamage: BALANCE.player.basicAttackDamage + 14, basicAttackSpeedMultiplier: 1.13, critDamageMultiplier: 1.65, blockChance: 0.15 })
     expect(getPlayerCombatStats(state).critChance).toBeCloseTo(0.12)
     expect(getResistance(state, 'player', 'physical')).toBe(0.03)
 
@@ -85,7 +85,7 @@ describe('authored equipment content', () => {
     state.equipment.offhand = null
     state.equipment.helmet = 'wispveil-hood'
     recalculateDerivedStats(state)
-    expect(getPlayerCombatStats(state)).toMatchObject({ spellPower: BALANCE.player.baseSpellPower + 30, maxMana: 115, cooldownRecovery: 1.1, manaCostReduction: 0.1 })
+    expect(getPlayerCombatStats(state)).toMatchObject({ spellPower: BALANCE.player.baseSpellPower + 32, maxMana: 115, cooldownRecovery: 1.1, manaCostReduction: 0.1 })
     expect(getEffectiveManaCost(state, 10)).toBe(9)
   })
 
@@ -96,7 +96,7 @@ describe('authored equipment content', () => {
     expect(result).toContain('Heartseed')
     expect(state.inventory.heartseed).toBe(1)
     expect(state.inventory['heartseed-necklace']).toBeUndefined()
-    expect(state.inventory['life-essence']).toBe(1)
+    expect(state.inventory['life-essence']).toBe(10)
     expect(state.progress.discoveredItems).toEqual(expect.arrayContaining(['heartseed', 'life-essence']))
     expect(state.progress.discoveredItems).not.toContain('heartseed-necklace')
   })
@@ -110,9 +110,9 @@ describe('authored equipment content', () => {
     expect(isRecipeUnlocked(state, RECIPES['wispwood-wand'])).toBe(true)
     expect(isRecipeUnlocked(state, RECIPES['fangbound-dagger'])).toBe(false)
 
-    state.progress.bossKillsByBoss['forest-heart'] = 1
+    state.progress.lifetimeKillsByMonster['cavefang-wolf'] = 1
     expect(isRecipeUnlocked(state, RECIPES['fangbound-dagger'])).toBe(true)
-    state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
+    state.progress.lifetimeKillsByMonster['restless-skeleton'] = 1
     expect(isRecipeUnlocked(state, RECIPES['graveglass-wand'])).toBe(true)
   })
 })

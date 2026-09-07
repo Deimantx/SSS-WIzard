@@ -94,7 +94,7 @@ const snapshotModifierOverrides = (statusId: StatusId, overrides: Partial<Record
 }
 
 /** Scale only rate-like periodic effects for a partial natural-expiry interval. */
-const scalePeriodicEffects = (effects: CombatEffect[], fraction: number): CombatEffect[] => effects.flatMap((effect) => {
+const scalePeriodicEffects = (effects: CombatEffect[], fraction: number): CombatEffect[] => effects.flatMap((effect): CombatEffect[] => {
   if (effect.type === 'deal-damage') return [{ ...effect, components: effect.components.map((component) => ({ ...component, magnitude: scaleMagnitude(component.magnitude, fraction) })) }]
   if (effect.type === 'heal' || effect.type === 'gain-barrier' || effect.type === 'restore-resource' || effect.type === 'drain-resource') return [{ ...effect, magnitude: scaleMagnitude(effect.magnitude, fraction) }]
   return []

@@ -84,6 +84,19 @@ describe('multi-source periodic statuses', () => {
     expect(damageForDuration(7_000)).toMatchObject({ damage: 70, remainingStatuses: 0 })
   })
 
+  it('keeps fractional periodic healing through natural expiry', () => {
+    const healingForDuration = (durationMs: number) => {
+      const state = stateWithEnemy()
+      state.player.health = 20
+      applyStatus(state, 'player', 'regeneration', source('regeneration'), { durationMs })
+      tickStatuses(state, durationMs, executeCombatEffects)
+      return { healed: state.player.health - 20, remainingStatuses: state.combat.playerStatuses.length }
+    }
+
+    expect(healingForDuration(6_900)).toMatchObject({ healed: 34.5, remainingStatuses: 0 })
+    expect(healingForDuration(7_000)).toMatchObject({ healed: 35, remainingStatuses: 0 })
+  })
+
   it('removes a whole visible status group with one removal event', () => {
     const state = stateWithEnemy()
     applyStatus(state, 'enemy', 'burning', source('ignite'))

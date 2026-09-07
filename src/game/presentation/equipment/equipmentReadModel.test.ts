@@ -32,4 +32,17 @@ describe('Equipment read model', () => {
     expect(preview).toMatchObject({ compatible: false, failureReason: 'insufficient-copies' })
     expect(preview.reason).toContain('second copy')
   })
+
+  it('projects Spell-origin Equipment modifiers into stable comparisons', () => {
+    const state = createInitialState()
+    state.inventory['ember-staff'] = 1
+    state.equipment.weapon = 'ember-staff'
+    const ember = getEquipmentStatSnapshot(state, state.equipment)
+    expect(ember.fireSpellDamage).toBeCloseTo(0.2)
+
+    const windState = createInitialState()
+    windState.inventory['windthread-charm'] = 1
+    windState.equipment.amulet = 'windthread-charm'
+    expect(getEquipmentStatSnapshot(windState, windState.equipment).airSpellDamage).toBeCloseTo(0.1)
+  })
 })

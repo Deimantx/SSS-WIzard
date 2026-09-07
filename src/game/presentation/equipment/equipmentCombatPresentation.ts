@@ -96,8 +96,9 @@ const modifierMeaning = (modifier: CombatModifier) => {
   const sourceTags = tagPhrase(modifier.sourceTags)
   const originSources = sourcePhrase(modifier.originSourceKinds)
   const originTags = tagPhrase(modifier.originTags)
+  const originSourceIsConveyed = key === 'spell-damage-percent' && damage && originSources === 'Spells'
   if (sourceTags) filters.push(`with ${sourceTags} tags`)
-  if (originSources) filters.push(`from ${originSources}`)
+  if (originSources && !originSourceIsConveyed) filters.push(`from ${originSources}`)
   if (originTags) filters.push(`with ${originTags} origin tags`)
   if (modifier.statusIds?.length) filters.push(`for ${modifier.statusIds.map(statusName).join(', ')}`)
   if (modifier.statusTags?.length) filters.push(`for ${tagPhrase(modifier.statusTags)} statuses`)

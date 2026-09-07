@@ -4,6 +4,8 @@ import type { CombatModifier, CombatTag, DamageType, EquipmentStats, GameState, 
 export interface EquipmentModifierContext {
   sourceKinds?: CombatModifier['sourceKinds']
   sourceTags?: CombatTag[]
+  originSourceKinds?: CombatModifier['originSourceKinds']
+  originTags?: CombatModifier['originTags']
   damageType?: DamageType
   statusTags?: CombatTag[]
 }
@@ -32,12 +34,15 @@ export const getEquipmentStats = (state: Pick<GameState, 'equipment'>): Equipmen
 /** Sums unconditional authored Equipment modifiers for stable sheet read models. */
 export const getEquipmentCombatModifierTotal = (state: Pick<GameState, 'equipment'>, key: ModifierKey, context: EquipmentModifierContext = {}) => {
   const sourceTags = context.sourceTags ?? []
+  const originTags = context.originTags ?? []
   return Object.values(state.equipment).reduce((total, itemId) => {
     const modifiers = itemId ? ITEMS[itemId]?.combat?.modifiers ?? [] : []
     return total + modifiers.reduce((itemTotal, modifier) => {
       if (modifier.key !== key || modifier.condition) return itemTotal
       if (context.sourceKinds?.length && (!modifier.sourceKinds || !context.sourceKinds.some((kind) => modifier.sourceKinds?.includes(kind)))) return itemTotal
       if (modifier.sourceTags?.length && !modifier.sourceTags.every((tag) => sourceTags.includes(tag))) return itemTotal
+      if (context.originSourceKinds?.length && (!modifier.originSourceKinds || !context.originSourceKinds.some((kind) => modifier.originSourceKinds?.includes(kind)))) return itemTotal
+      if (modifier.originTags?.length && !modifier.originTags.every((tag) => originTags.includes(tag))) return itemTotal
       if (context.damageType && modifier.damageTypes?.length && !modifier.damageTypes.includes(context.damageType)) return itemTotal
       if (context.statusTags && modifier.statusTags?.length && !modifier.statusTags.every((tag) => context.statusTags?.includes(tag))) return itemTotal
       return itemTotal + modifier.value

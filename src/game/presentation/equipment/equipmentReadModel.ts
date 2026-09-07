@@ -58,9 +58,10 @@ export interface EquipmentPreview {
   impact: EquipmentImpactStats
 }
 
+/** Compatibility projections for the current Equipment sheet; filtered modifiers use the generic evaluator. */
 const getStableEquipmentModifiers = (equipment: GameState['equipment']) => ({
-  fireSpellDamage: getEquipmentCombatModifierTotal({ equipment }, 'spell-damage-percent', { sourceKinds: ['spell'], damageType: 'fire' }),
-  airSpellDamage: getEquipmentCombatModifierTotal({ equipment }, 'spell-damage-percent', { sourceKinds: ['spell'], damageType: 'air' }),
+  fireSpellDamage: getEquipmentCombatModifierTotal({ equipment }, 'spell-damage-percent', { originSourceKinds: ['spell'], damageType: 'fire' }),
+  airSpellDamage: getEquipmentCombatModifierTotal({ equipment }, 'spell-damage-percent', { originSourceKinds: ['spell'], damageType: 'air' }),
   waterBarrierPower: getEquipmentCombatModifierTotal({ equipment }, 'barrier-power-percent', { sourceKinds: ['spell'], damageType: 'water' }),
   barrierReceivedFlat: getEquipmentCombatModifierTotal({ equipment }, 'barrier-received-flat'),
   negativeStatusDurationReceived: getEquipmentCombatModifierTotal({ equipment }, 'status-duration-received-percent', { statusTags: ['debuff'] }),

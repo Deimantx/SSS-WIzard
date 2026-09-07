@@ -1,10 +1,10 @@
 import { getTraitDefinition, getTraitDefinitions } from '../traits'
-import type { CombatEffect, CombatTag, DamageType, MonsterId } from '../../types'
+import type { CombatEffect, DamageType, MonsterId } from '../../types'
 import { ABANDONED_CATACOMBS_MONSTERS } from './abandonedCatacombs'
 import { HOWLING_DEN_MONSTERS } from './howlingDen'
 import { WHISPERING_WOODS_MONSTERS, WHISPERING_WOODS_MONSTER_IDS } from './whisperingWoods'
 import type { MonsterDefinition } from './monsterTypes'
-import { createCombatValidationContext, validateCombatEffect } from '../../systems/combat/combatEffectValidation'
+import { COMBAT_TAGS, DAMAGE_TYPES, createCombatValidationContext, validateCombatEffect } from '../../systems/combat/combatEffectValidation'
 import { STATUS_DEFINITIONS } from '../statuses/statuses'
 import { MAX_ACTION_WORK_MS, MIN_ACTION_TIME_MS } from '../../core/balance/combatTiming'
 import { MAX_BLOCK_CHANCE, MAX_CRIT_CHANCE, MAX_CRIT_DAMAGE_MULTIPLIER, MAX_RESISTANCE, MIN_RESISTANCE } from '../../core/balance/combatStats'
@@ -23,9 +23,6 @@ export const MONSTERS = Object.assign({}, ...MONSTER_REGISTRIES) as Record<Monst
 
 export const isBossMonster = (monster: MonsterDefinition) => monster.bestiaryCategory === 'boss'
 export const MONSTER_IDS = Object.keys(MONSTERS) as MonsterId[]
-
-const COMBAT_TAGS: readonly CombatTag[] = ['basic-attack', 'spell', 'weapon', 'equipment', 'melee', 'ranged', 'magic', 'direct', 'heal', 'dot', 'hot', 'status', 'special', 'trait', 'buff', 'debuff', 'control', 'barrier', 'physical', 'arcane', 'fire', 'water', 'earth', 'air']
-const DAMAGE_TYPES: readonly DamageType[] = ['physical', 'arcane', 'fire', 'water', 'earth', 'air']
 
 const validateEffects = (owner: string, effects: CombatEffect[], errors: string[]) => effects.forEach((effect) => {
   errors.push(...validateCombatEffect(effect, owner, createCombatValidationContext(STATUS_DEFINITIONS)))

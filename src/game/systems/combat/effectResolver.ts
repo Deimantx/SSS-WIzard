@@ -217,12 +217,12 @@ const applyDamage = (state: GameState, components: Array<{ raw: number; damageTy
 
 const applyHealing = (state: GameState, raw: number, source: CombatSource, target: CombatActor, tags: CombatTag[], execute: ExecuteCombatEffects, depth: number, uiEvents?: CombatEventSink, resolution?: CombatResolutionContext) => {
   if (!isCombatActorAlive(state, target)) return 0
-  const amount = Math.max(0, Math.round(raw * (1 + getCombatModifiers(state, source.actor, 'healing-done-percent', { source, sourceTags: tags }))))
+  const amount = Math.max(0, raw * (1 + getCombatModifiers(state, source.actor, 'healing-done-percent', { source, sourceTags: tags })))
   const received = Math.max(0, 1 + getCombatModifiers(state, target, 'healing-received-percent', { source, sourceTags: tags }))
   const before = getActorHealth(state, target)
   const max = target === 'player' ? state.player.maxHealth : state.combat.enemyMaxHp
-  const healed = Math.max(0, Math.min(max, before + Math.round(amount * received)) - before)
-  const attemptedAmount = Math.max(0, Math.round(amount * received))
+  const attemptedAmount = Math.max(0, amount * received)
+  const healed = Math.max(0, Math.min(max, before + attemptedAmount) - before)
   if (target === 'player') state.player.health += healed
   else state.combat.enemyHp += healed
   if (attemptedAmount > 0) {

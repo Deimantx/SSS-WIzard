@@ -6,8 +6,14 @@ import { getEquipmentCombatPresentation } from './equipmentCombatPresentation'
 describe('equipment combat presentation', () => {
   it('translates authored filtered modifiers into readable player language', () => {
     expect(getEquipmentCombatPresentation(ITEMS['ember-staff']).modifiers).toContain('+20% Fire Spell Damage')
+    expect(getEquipmentCombatPresentation(ITEMS['ember-staff']).modifiers.join(' ')).not.toContain('from Spells')
     expect(getEquipmentCombatPresentation(ITEMS['tide-focus']).modifiers).toContain('+20% Barrier Power from Water Spells')
     expect(getEquipmentCombatPresentation(ITEMS['stoneweave-robe']).modifiers).toContain('+10 Barrier Received')
+  })
+
+  it('keeps provenance wording when it adds information beyond the base label', () => {
+    const presentation = getEquipmentCombatPresentation({ combat: { modifiers: [{ key: 'damage-dealt-percent', value: 0.2, originSourceKinds: ['spell'] }] } })
+    expect(presentation.modifiers).toContain('+20% Damage Dealt (from Spells)')
   })
 
   it('presents trigger chance, effect and cooldown without exposing engine keys', () => {

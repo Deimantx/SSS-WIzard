@@ -116,6 +116,7 @@ const conditionMeaning = (condition: CombatCondition): string => {
     case 'self-hp-below-percent': return `While below ${condition.percent}% Health`
     case 'target-hp-below-percent': return `While target is below ${condition.percent}% Health`
     case 'self-hp-above-percent': return `While above ${condition.percent}% Health`
+    case 'self-mana-above-percent': return `While above ${condition.percent}% Mana`
     case 'target-hp-above-percent': return `While target is above ${condition.percent}% Health`
     case 'self-has-status': return `While affected by ${statusName(condition.statusId)}`
     case 'target-has-status': return `Against targets affected by ${statusName(condition.statusId)}`

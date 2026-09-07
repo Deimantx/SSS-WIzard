@@ -52,8 +52,8 @@ export const validateMagnitude = (value: unknown, owner = 'magnitude'): string[]
 export const validateCombatCondition = (value: unknown, owner = 'condition', context: CombatValidationContext = {}): string[] => {
   if (!isRecord(value) || typeof value.type !== 'string') return [`${owner}: invalid condition`]
   const errors: string[] = []
-  const threshold = value.type === 'self-hp-below-percent' || value.type === 'target-hp-below-percent' || value.type === 'self-hp-above-percent' || value.type === 'target-hp-above-percent'
-  if (threshold && (!isFiniteNumber(value.percent) || value.percent < 0 || value.percent > 100)) errors.push(`${owner}: invalid HP threshold`)
+  const threshold = value.type === 'self-hp-below-percent' || value.type === 'target-hp-below-percent' || value.type === 'self-hp-above-percent' || value.type === 'target-hp-above-percent' || value.type === 'self-mana-above-percent'
+  if (threshold && (!isFiniteNumber(value.percent) || value.percent < 0 || value.percent > 100)) errors.push(`${owner}: invalid percent threshold`)
   if (value.type === 'self-status-stacks-at-least' || value.type === 'target-status-stacks-at-least') {
     if (typeof value.statusId !== 'string' || !isStatusId(value.statusId, context)) errors.push(`${owner}: invalid status reference`)
     if (!Number.isInteger(value.stacks) || Number(value.stacks) < 1) errors.push(`${owner}: invalid status stack threshold`)
@@ -75,7 +75,7 @@ export const validateCombatCondition = (value: unknown, owner = 'condition', con
   } else if (value.type === 'not') {
     errors.push(...validateCombatCondition(value.condition, `${owner}.not`, context))
   }
-  const known = ['always', 'self-hp-below-percent', 'target-hp-below-percent', 'self-has-status', 'target-has-status', 'self-has-barrier', 'target-has-barrier', 'self-hp-above-percent', 'target-hp-above-percent', 'self-status-stacks-at-least', 'target-status-stacks-at-least', 'self-barrier-at-least', 'self-barrier-at-most', 'target-barrier-at-least', 'target-barrier-at-most', 'source-has-tag', 'event-status-is', 'event-status-has-tag', 'event-action-is', 'event-action-has-tag', 'event-damage-type-is', 'target-has-status-tag', 'event-target-is-self', 'source-is-self', 'source-is-opponent', 'all', 'any', 'not']
+  const known = ['always', 'self-hp-below-percent', 'target-hp-below-percent', 'self-has-status', 'target-has-status', 'self-has-barrier', 'target-has-barrier', 'self-hp-above-percent', 'self-mana-above-percent', 'target-hp-above-percent', 'self-status-stacks-at-least', 'target-status-stacks-at-least', 'self-barrier-at-least', 'self-barrier-at-most', 'target-barrier-at-least', 'target-barrier-at-most', 'source-has-tag', 'event-status-is', 'event-status-has-tag', 'event-action-is', 'event-action-has-tag', 'event-damage-type-is', 'target-has-status-tag', 'event-target-is-self', 'source-is-self', 'source-is-opponent', 'all', 'any', 'not']
   if (!known.includes(value.type)) errors.push(`${owner}: unsupported condition operator ${value.type}`)
   return errors
 }

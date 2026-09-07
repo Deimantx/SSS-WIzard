@@ -328,6 +328,7 @@ export type CombatCondition =
   | { type: 'self-has-barrier' }
   | { type: 'target-has-barrier' }
   | { type: 'self-hp-above-percent'; percent: number }
+  | { type: 'self-mana-above-percent'; percent: number }
   | { type: 'target-hp-above-percent'; percent: number }
   | { type: 'self-status-stacks-at-least'; statusId: StatusId; stacks: number }
   | { type: 'target-status-stacks-at-least'; statusId: StatusId; stacks: number }

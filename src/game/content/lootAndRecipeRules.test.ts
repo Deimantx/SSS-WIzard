@@ -41,8 +41,8 @@ describe('material-only loot and Artificing-only Equipment', () => {
   it('defines one material-only Artificing recipe for every Equipment item', () => {
     const equipment = Object.values(ITEMS).filter((item) => item.kind === 'equipment')
     const equipmentOutputs = Object.values(RECIPES).filter((recipe) => ITEMS[recipe.output.itemId]?.kind === 'equipment')
-    expect(equipment).toHaveLength(27)
-    expect(new Set(equipmentOutputs.map((recipe) => recipe.output.itemId)).size).toBe(27)
+    expect(equipment).toHaveLength(32)
+    expect(new Set(equipmentOutputs.map((recipe) => recipe.output.itemId)).size).toBe(32)
     expect(validateRecipeDefinitions()).toEqual([])
   })
 

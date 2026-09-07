@@ -46,7 +46,7 @@ const stateWithEnemy = () => {
 describe('authored equipment content', () => {
   it('contains exactly the planned equipment set and validates all content', () => {
     const equipment = Object.values(ITEMS).filter((item) => item.kind === 'equipment')
-    expect(equipment).toHaveLength(27)
+    expect(equipment).toHaveLength(32)
     expect(ITEMS['apprentice-wand' as keyof typeof ITEMS]).toBeUndefined()
     expect(validateItemDefinitions()).toEqual([])
     expect(validateRecipeDefinitions()).toEqual([])
@@ -59,8 +59,8 @@ describe('authored equipment content', () => {
     state.equipment.helmet = 'wispveil-hood'
     recalculateDerivedStats(state)
 
-    expect(getEquipmentStats(state)).toMatchObject({ spellPower: 24, maxMana: 25, basicDamage: 6 })
-    expect(getPlayerCombatStats(state)).toMatchObject({ spellPower: BALANCE.player.baseSpellPower + 24, basicAttackDamage: BALANCE.player.basicAttackDamage + 6, maxMana: 125, cooldownRecovery: 1 })
+    expect(getEquipmentStats(state)).toMatchObject({ spellPower: 16, maxHealth: 10, basicDamage: 5 })
+    expect(getPlayerCombatStats(state)).toMatchObject({ spellPower: BALANCE.player.baseSpellPower + 16, basicAttackDamage: BALANCE.player.basicAttackDamage + 5, maxMana: 100, cooldownRecovery: 1 })
     expect(getResistance(state, 'player', 'fire')).toBe(0)
     expect(getEffectiveManaCost(state, 10)).toBe(10)
 
@@ -69,8 +69,8 @@ describe('authored equipment content', () => {
     water.equipment.offhand = 'tide-focus'
     water.equipment.helmet = 'wispveil-hood'
     recalculateDerivedStats(water)
-    expect(getEquipmentStats(water)).toMatchObject({ spellPower: 24, maxMana: 35, basicDamage: 4 })
-    expect(getPlayerCombatStats(water)).toMatchObject({ spellPower: BALANCE.player.baseSpellPower + 24, basicAttackDamage: BALANCE.player.basicAttackDamage + 4, maxMana: 135 })
+    expect(getEquipmentStats(water)).toMatchObject({ spellPower: 24, maxMana: 20, basicDamage: 4 })
+    expect(getPlayerCombatStats(water)).toMatchObject({ spellPower: BALANCE.player.baseSpellPower + 24, basicAttackDamage: BALANCE.player.basicAttackDamage + 4, maxMana: 120 })
     expect(getCombatModifiers(water, 'player', 'barrier-power-percent', { source: { ...playerSpell, school: 'water', tags: ['spell', 'water'] }, damageType: 'water' })).toBeCloseTo(0.2)
 
     state.equipment.weapon = 'fangbound-dagger'
@@ -85,7 +85,7 @@ describe('authored equipment content', () => {
     state.equipment.offhand = null
     state.equipment.helmet = 'wispveil-hood'
     recalculateDerivedStats(state)
-    expect(getPlayerCombatStats(state)).toMatchObject({ spellPower: BALANCE.player.baseSpellPower + 32, maxMana: 115, cooldownRecovery: 1.1, manaCostReduction: 0.1 })
+    expect(getPlayerCombatStats(state)).toMatchObject({ spellPower: BALANCE.player.baseSpellPower + 32, maxMana: 100, cooldownRecovery: 1.1, manaCostReduction: 0.1 })
     expect(getEffectiveManaCost(state, 10)).toBe(9)
   })
 
@@ -209,29 +209,30 @@ describe('equipment combat effects', () => {
 
   it('applies Ember Staff Fire Spell damage to direct and Spell-origin Burning only', () => {
     const fireHit: CombatEffect[] = [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 100 } }], tags: ['direct', 'fire'] }]
+    const equipEmber = (state: ReturnType<typeof stateWithEnemy>) => { state.inventory['ember-staff'] = 1; state.equipment.weapon = 'ember-staff'; state.artifactProgress['ember-staff'] = { level: 2, allocatedNodeIds: ['arcane-kindling'], attunedNodeIds: [] }; recalculateDerivedStats(state) }
     const spellBurn = (withStaff: boolean) => {
       const state = stateWithEnemy()
-      if (withStaff) { state.equipment.weapon = 'ember-staff'; recalculateDerivedStats(state) }
+      if (withStaff) equipEmber(state)
       applyStatus(state, 'enemy', 'burning', { ...playerSpell, sourceId: 'ignite' }, { durationMs: 1_000, periodicEffects: [{ type: 'deal-damage', target: 'self', components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 100 } }], tags: ['dot', 'fire'] }] })
       tickStatuses(state, 1_000, executeCombatEffects)
       return 1_000 - state.combat.enemyHp
     }
     const directSpell = (withStaff: boolean) => {
       const state = stateWithEnemy()
-      if (withStaff) { state.equipment.weapon = 'ember-staff'; recalculateDerivedStats(state) }
+      if (withStaff) equipEmber(state)
       executeCombatEffects(state, fireHit, playerSpell)
       return 1_000 - state.combat.enemyHp
     }
     const nonSpellBurn = (withStaff: boolean) => {
       const state = stateWithEnemy()
-      if (withStaff) { state.equipment.weapon = 'ember-staff'; recalculateDerivedStats(state) }
+      if (withStaff) equipEmber(state)
       applyStatus(state, 'enemy', 'burning', { actor: 'player', kind: 'status', sourceId: 'environment-burning', tags: ['status', 'dot', 'fire'] }, { durationMs: 1_000, periodicEffects: [{ type: 'deal-damage', target: 'self', components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 100 } }], tags: ['dot', 'fire'] }] })
       tickStatuses(state, 1_000, executeCombatEffects)
       return 1_000 - state.combat.enemyHp
     }
 
-    expect(directSpell(true)).toBeCloseTo(directSpell(false) * 1.2)
-    expect(spellBurn(true)).toBeCloseTo(spellBurn(false) * 1.2)
+    expect(directSpell(true)).toBeCloseTo(directSpell(false) * 1.05)
+    expect(spellBurn(true)).toBeCloseTo(spellBurn(false) * 1.05)
     expect(nonSpellBurn(true)).toBeCloseTo(nonSpellBurn(false))
   })
 

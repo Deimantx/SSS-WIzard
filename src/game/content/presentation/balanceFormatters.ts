@@ -94,6 +94,7 @@ export const formatCombatCondition = (condition: CombatCondition | undefined): s
     case 'self-hp-below-percent': return `${conditionSubject('self')} Health is below ${formatPercent(condition.percent / 100)}`
     case 'target-hp-below-percent': return `${conditionSubject('target')} Health is below ${formatPercent(condition.percent / 100)}`
     case 'self-hp-above-percent': return `${conditionSubject('self')} Health is above ${formatPercent(condition.percent / 100)}`
+    case 'self-mana-above-percent': return `${conditionSubject('self')} Mana is above ${formatPercent(condition.percent / 100)}`
     case 'target-hp-above-percent': return `${conditionSubject('target')} Health is above ${formatPercent(condition.percent / 100)}`
     case 'self-has-status': return `the caster has ${statusName(condition.statusId)}`
     case 'target-has-status': return `the opponent has ${statusName(condition.statusId)}`

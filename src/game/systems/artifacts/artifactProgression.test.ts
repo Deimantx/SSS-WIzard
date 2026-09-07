@@ -13,6 +13,14 @@ describe('Artifact progression foundation', () => {
     expect(state.artifactProgress['ember-staff']).toEqual({ level: 1, allocatedNodeIds: [], attunedNodeIds: [] })
   })
 
+  it('repairs missing progression when an owned Artifact is granted again', () => {
+    const state = createInitialState()
+    state.inventory['tideglass-wand'] = 1
+    expect(state.artifactProgress['tideglass-wand']).toBeUndefined()
+    expect(grantItem(state, 'tideglass-wand', 1)).toBe(0)
+    expect(state.artifactProgress['tideglass-wand']).toEqual({ level: 1, allocatedNodeIds: [], attunedNodeIds: [] })
+  })
+
   it('does not consume an upgrade when progression is missing and does not acquire an item on completion', () => {
     const state = createInitialState()
     state.inventory['ember-staff'] = 1
@@ -44,4 +52,3 @@ describe('Artifact progression foundation', () => {
     expect(getArtifactNodeEligibility(state, 'ember-staff', 'heartfed-embers').status).toBe('missingCatalyst')
   })
 })
-

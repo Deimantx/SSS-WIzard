@@ -1,7 +1,7 @@
 import { ArrowRight, Check, ChevronDown, ChevronRight, LockKeyhole, PackageOpen } from 'lucide-react'
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { Button, EquipmentCombatDetails, Status } from '../../components/ui'
-import { ItemIcon, ItemQuantity, ItemTooltip } from '../../components/ui/item'
+import { EquipmentMetadata, ItemIcon, ItemQuantity, ItemTooltip } from '../../components/ui/item'
 import { getItemSourceLabel, getResearchXp, ITEMS } from '../../game/content/items/items'
 import { SCHOOLS } from '../../game/content/schools/schools'
 import type { GameState, ItemId, SchoolId, ScreenId } from '../../game/types'
@@ -68,7 +68,7 @@ export function InventoryDetail({ itemId, inventory, protectedItems, equipment, 
   const openUse = (recipeId: import('../../game/types').RecipeId) => { if (isTransmutationRecipeId(recipeId)) { setNavigationIntent({ transmutationRecipeId: recipeId }); navigate?.('tower-transmutation') } else { setNavigationIntent({ artificingRecipeId: recipeId as never }); navigate?.('tower-artificing') } }
 
   return <div ref={detailScrollRef} className={`inventory-detail-content inventory-detail-${item.inventoryCategory} smart-scroll-region`} style={{ '--detail-accent': item.color } as CSSProperties}>
-    <div className="inventory-detail-hero"><div className="inventory-detail-icon"><ItemIcon itemId={itemId} size="large" /></div><div className="inventory-detail-title"><span className="inventory-detail-category">{category}{item.equipmentSlot ? ` · ${EQUIPMENT_ITEM_SLOT_LABELS[item.equipmentSlot]}` : ''}</span><h2>{item.name}</h2><div className="inventory-detail-badges">{equipped ? <Status tone="success"><Check size={12} /> Equipped</Status> : protectedItem ? <Status tone="warning"><LockKeyhole size={12} /> Protected</Status> : <Status>Available</Status>}</div></div></div>
+    <div className="inventory-detail-hero"><div className="inventory-detail-icon"><ItemIcon itemId={itemId} size="large" /></div><div className="inventory-detail-title"><span className="inventory-detail-category">{category}{item.equipmentSlot ? ` · ${EQUIPMENT_ITEM_SLOT_LABELS[item.equipmentSlot]}` : ''}</span><h2>{item.name}</h2>{item.kind === 'equipment' && <EquipmentMetadata item={item} />}<div className="inventory-detail-badges">{equipped ? <Status tone="success"><Check size={12} /> Equipped</Status> : protectedItem ? <Status tone="warning"><LockKeyhole size={12} /> Protected</Status> : <Status>Available</Status>}</div></div></div>
     <div className="inventory-detail-owned"><span>OWNED</span><ItemQuantity value={quantity} /></div>
     {researchReserved > 0 && <div className="inventory-detail-reserved"><span>PREPARED FOR RESEARCH</span><strong>×{researchReserved.toLocaleString()}</strong><small>Unavailable to selling, destruction, Guild donations, and Transmutation.</small></div>}
     <p className="inventory-detail-description">{item.description}</p>

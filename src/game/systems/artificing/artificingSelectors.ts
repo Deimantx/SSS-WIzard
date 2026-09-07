@@ -1,5 +1,6 @@
 import { ARTIFICING_RECIPES, ARTIFICING_RECIPE_ORDER, type ArtificingRecipeDefinition } from '../../content/recipes/artificingRecipes'
 import { ITEMS } from '../../content/items/items'
+import { EQUIPMENT_BUILD_TAG_LABELS } from '../../content/items/equipmentBalance'
 import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
 import { isRecipeUnlocked, getRecipeUnlockRequirement } from '../../content/recipes/recipeUnlocks'
 import { canCraftArtificingRecipe } from './artificingEngine'
@@ -34,7 +35,7 @@ export function getVisibleArtificingRecipes(state: GameState, filters: Artificin
     if (filters.craftableOnly && !canCraftArtificingRecipe(state, recipe.id)) return false
     const owned = (state.inventory[recipe.output.itemId] ?? 0) > 0
     if (filters.ownershipFilter === 'owned' && !owned || filters.ownershipFilter === 'unowned' && owned) return false
-    return !search || [recipe.id, recipe.name, item.name, item.equipmentSlot].join(' ').toLowerCase().includes(search)
+    return !search || [recipe.id, recipe.name, item.name, item.equipmentSlot, item.buildTags?.map((tag) => `${tag} ${EQUIPMENT_BUILD_TAG_LABELS[tag]}`).join(' ')].filter(Boolean).join(' ').toLowerCase().includes(search)
   })
 }
 export function getArtificingFilterCounts(state: GameState, filters: ArtificingFilters, query = '') {

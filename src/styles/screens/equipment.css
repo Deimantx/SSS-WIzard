@@ -68,6 +68,12 @@
 .equipment-stat-value { min-width: max-content; flex: 0 0 auto; margin-left: auto; color: var(--ui-text); font-family: var(--font-mono); font-size: var(--text-xs); font-weight: 650; font-style: normal; line-height: 1.35; letter-spacing: .02em; font-variant-numeric: tabular-nums; text-align: right; }
 .equipment-screen .equipment-note { margin-top: 14px; }
 .equipment-screen .equipment-note svg { flex: 0 0 auto; color: var(--ui-success); }
+.equipment-metadata { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; min-width: 0; margin-top: 5px; color: var(--ui-text-muted); }
+.equipment-tier-badge, .equipment-build-tag { display: inline-flex; align-items: center; min-width: 0; padding: 2px 5px; border: 1px solid var(--ui-border); border-radius: 4px; font: var(--text-micro) var(--font-mono); line-height: 1.2; }
+.equipment-tier-badge { color: var(--ui-accent); border-color: color-mix(in srgb, var(--ui-accent) 38%, var(--ui-border)); background: var(--ui-accent-soft); letter-spacing: .05em; }
+.equipment-build-tags { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
+.equipment-build-tag { color: var(--ui-text-muted); background: color-mix(in srgb, var(--ui-panel-strong) 72%, transparent); }
+.game-tooltip-content .equipment-metadata { margin-top: 2px; }
 .equipment-combat-details { display: grid; gap: 8px; margin-top: 13px; }
 .equipment-combat-detail-section { display: grid; gap: 4px; padding-top: 9px; border-top: 1px solid var(--ui-border); }
 .equipment-combat-detail-section > span { color: var(--ui-accent); font: var(--text-micro) var(--font-mono); letter-spacing: .14em; }

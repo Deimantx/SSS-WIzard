@@ -5,6 +5,7 @@ import type { ItemId } from '../../../game/types'
 import { GameTooltip, TooltipContent } from '../tooltip/Tooltip'
 import { getInventoryCategoryLabel, getInventorySubcategoryLabel } from '../../../game/content/items/inventoryMetadata'
 import { ItemIcon } from './ItemIcon'
+import { EquipmentMetadata } from './EquipmentMetadata'
 import { EquipmentCombatDetails } from './EquipmentCombatDetails'
 import { formatFlowEta, formatItemFlowRate, type ItemFlow } from '../../../game/systems/inventory/itemFlow'
 
@@ -39,6 +40,7 @@ export function ItemTooltipContent({ itemId, owned, protectedItem = false, equip
   const category = getInventorySubcategoryLabel(itemId) ? `${getInventorySubcategoryLabel(itemId)} Material` : getInventoryCategoryLabel(itemId)
   return <TooltipContent title={item.name.toUpperCase()} description={category}>
     <div className="item-tooltip-heading"><ItemIcon itemId={itemId} size="tiny" /><span>{item.description}</span></div>
+    {item.kind === 'equipment' && <EquipmentMetadata item={item} />}
     <TooltipRow label="Owned" value={owned.toLocaleString()} />
     {recentlyGained !== undefined && <TooltipRow label="Recently gained" value={`+${recentlyGained.toLocaleString()}`} />}
     {equipped ? <TooltipRow label="State" value="Equipped" /> : <TooltipRow label="Protected" value={protectedItem ? 'Yes' : 'No'} />}

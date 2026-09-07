@@ -1,7 +1,7 @@
 import { Hammer, LockKeyhole } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button, Card, Status } from '../../../components/ui'
-import { ItemIcon, ItemTooltip, ItemUsesDialog } from '../../../components/ui/item'
+import { EquipmentMetadata, ItemIcon, ItemTooltip, ItemUsesDialog } from '../../../components/ui/item'
 import { ITEMS } from '../../../game/content/items/items'
 import { ARTIFICING_RECIPES, type ArtificingRecipeDefinition } from '../../../game/content/recipes/artificingRecipes'
 import { isRecipeUnlocked, getRecipeUnlockRequirement } from '../../../game/content/recipes/recipeUnlocks'
@@ -42,7 +42,7 @@ export function ArtificingDetail({ recipe }: { recipe: ArtificingRecipeDefinitio
   const openCraftedInventory = () => { setNavigationIntent({ inventoryItemId: item.id }); state.setScreen('inventory') }
   return <Card className="artificing-detail" title="ARCANE FORGE">
     <div className="artificing-detail-content">
-      <ItemTooltip itemId={item.id} owned={state.inventory[item.id] ?? 0}><div className="artificing-detail-hero" tabIndex={0}><ItemIcon itemId={item.id} size="large" /><div><span className="eyebrow">{getArtificingProfile(recipe)}</span><h2>{item.name}</h2><span className="artificing-owned">OWNED {(state.inventory[item.id] ?? 0).toLocaleString()}</span></div></div></ItemTooltip>
+      <ItemTooltip itemId={item.id} owned={state.inventory[item.id] ?? 0}><div className="artificing-detail-hero" tabIndex={0}><ItemIcon itemId={item.id} size="large" /><div><span className="eyebrow">{getArtificingProfile(recipe)}</span><h2>{item.name}</h2><EquipmentMetadata item={item} /><span className="artificing-owned">OWNED {(state.inventory[item.id] ?? 0).toLocaleString()}</span></div></div></ItemTooltip>
       <p className="artificing-description">{item.description}</p><ActiveArtificingCraft /><EquipmentInspection recipe={recipe} />
       {!unlocked && <div className="artificing-locked-banner"><LockKeyhole size={15} /><span>{getRecipeUnlockRequirement(recipe)}</span></div>}
       <section className="artificing-section"><span className="eyebrow">REQUIRED MATERIALS</span><div className="artificing-material-list">{recipe.ingredients.map(ingredient => {

@@ -3,6 +3,7 @@ import { MANA_PILLARS } from '../channeling/manaPillars'
 import { RECIPES } from '../recipes/recipes'
 import { getItemSourceLabel, ITEMS } from './items'
 import { FOCUS_IMPROVEMENT } from '../focus/focusImprovement'
+import { EQUIPMENT_BUILD_TAG_LABELS } from './equipmentBalance'
 import type { InventoryCategory, InventoryMaterialSubtype, ItemId, RecipeId, ScreenId } from '../../types'
 
 /** Player-facing inventory filters and classification are shared item-domain metadata. */
@@ -80,6 +81,7 @@ export function getInventorySearchText(itemId: ItemId): string {
     item.researchSchool ? 'research researchable' : '',
     uses.map((use) => `${use.label} ${use.detail ?? ''}`).join(' '),
     stats.join(' '),
+    item.buildTags?.map((tag) => `${tag} ${EQUIPMENT_BUILD_TAG_LABELS[tag]}`).join(' '),
     item.combat?.modifiers?.map((modifier) => `${modifier.key} ${(modifier.damageTypes ?? []).join(' ')} ${(modifier.sourceKinds ?? []).join(' ')}`).join(' '),
   ]
   return fields.filter(Boolean).join(' ').toLowerCase()

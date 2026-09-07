@@ -16,4 +16,15 @@ describe('Artificing dungeon discovery', () => {
     state.progress.lifetimeKillsByMonster['restless-skeleton'] = 1
     expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['ossuary-mantle'])).toBe(true)
   })
+
+  it('keeps Soulglass Amulet locked to Edrin and its eight-remnant recipe', () => {
+    const state = createInitialState()
+    expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['soulglass-amulet'])).toBe(false)
+    state.progress.lifetimeKillsByMonster['restless-skeleton'] = 1
+    expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['soulglass-amulet'])).toBe(false)
+    state.progress.bossKillsByBoss['archmage-edrin-shade'] = 1
+    expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['soulglass-amulet'])).toBe(true)
+    expect(ARTIFICING_RECIPES['soulglass-amulet'].ingredients).toEqual([{ itemId: 'edrin-remnant', quantity: 8 }])
+    expect(ARTIFICING_RECIPES['edrins-signet'].ingredients).toEqual([{ itemId: 'edrin-remnant', quantity: 20 }])
+  })
 })

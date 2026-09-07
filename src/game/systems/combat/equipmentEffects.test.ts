@@ -46,7 +46,7 @@ const stateWithEnemy = () => {
 describe('authored equipment content', () => {
   it('contains exactly the planned equipment set and validates all content', () => {
     const equipment = Object.values(ITEMS).filter((item) => item.kind === 'equipment')
-    expect(equipment).toHaveLength(18)
+    expect(equipment).toHaveLength(21)
     expect(ITEMS['apprentice-wand' as keyof typeof ITEMS]).toBeUndefined()
     expect(validateItemDefinitions()).toEqual([])
     expect(validateRecipeDefinitions()).toEqual([])

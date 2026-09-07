@@ -3,9 +3,9 @@ import type { DungeonId, ItemDefinition, ItemId } from '../../types'
 
 /** Authored Equipment origin groups used by Dev Tools and future archive filters. */
 export const EQUIPMENT_BY_DUNGEON: Record<DungeonId, readonly ItemId[]> = {
-  'whispering-woods': ['ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'prismatic-focus', 'wispweave-robe', 'wispveil-hood', 'windthread-charm', 'grovekeeper-mantle', 'wispbound-ring', 'heartseed-necklace'],
-  'howling-den': ['predator-hide-mantle', 'howling-signet', 'greatbear-heartstone'],
-  'abandoned-catacombs': ['ossuary-mantle', 'soulglass-amulet', 'gravebinder-ring', 'edrins-signet'],
+  'whispering-woods': ['ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'prismatic-focus', 'wispweave-robe', 'wispveil-hood', 'grovekeeper-mantle', 'wispglass-earring', 'wispbound-ring', 'windthread-charm', 'heartseed-necklace'],
+  'howling-den': ['predator-hide-mantle', 'fangwire-earring', 'howling-signet', 'greatbear-heartstone'],
+  'abandoned-catacombs': ['ossuary-mantle', 'mourning-glass-earring', 'gravebinder-ring', 'edrins-signet', 'soulglass-amulet'],
 }
 
 /** Boss-signature Equipment crafted through Transmutation from boss materials; never direct monster drops. */

@@ -10,7 +10,7 @@ describe('Artificing catalog', () => {
     state.debug.showLockedTransmutationRecipes = true
     expect(getVisibleArtificingRecipes(state)).toHaveLength(0)
     state.debug.showLockedArtificingRecipes = true
-    expect(getVisibleArtificingRecipes(state)).toHaveLength(18)
+    expect(getVisibleArtificingRecipes(state)).toHaveLength(21)
     expect(canCraftArtificingRecipe(state, 'ember-staff')).toBe(false)
     expect(getVisibleArtificingRecipes(state, { ...defaults, craftableOnly: true })).toHaveLength(0)
   })

@@ -36,6 +36,12 @@ describe('authored combat stat validation', () => {
     ]))
   })
 
+  it('requires Earrings to have at least two positive core/resource stats', () => {
+    const itemId = 'invalid-earring-chassis' as ItemId
+    const item = { ...ITEMS['wispglass-earring'], id: itemId, stats: { critChance: 0.03, critDamage: 0.1 } } as ItemDefinition
+    expect(validateItemDefinitions({ [itemId]: item })).toContain(`${itemId}: earrings requires at least two positive core/resource stats`)
+  })
+
   it('rejects invalid optional monster combat stats and resistance keys', () => {
     const monsterId = 'invalid-combat-monster' as MonsterDefinition['id']
     const monster = {

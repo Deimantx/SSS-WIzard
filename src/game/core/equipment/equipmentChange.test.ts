@@ -50,6 +50,16 @@ describe('evaluateEquipmentChange', () => {
     expect(evaluateEquipmentChange(state, 'gravebinder-ring', 'helmet')).toEqual({ ok: false, reason: 'incompatible' })
   })
 
+  it('equips one Earring and replaces it through the shared Equipment path', () => {
+    const state = withOwned('wispglass-earring')
+    expect(equipItemAction(state, 'wispglass-earring')).toMatchObject({ ok: true, position: 'earring' })
+    state.inventory['fangwire-earring'] = 1
+    expect(equipItemAction(state, 'fangwire-earring')).toMatchObject({ ok: true, position: 'earring' })
+    expect(state.equipment.earring).toBe('fangwire-earring')
+    expect(state.inventory['wispglass-earring']).toBe(1)
+    expect(state.inventory['fangwire-earring']).toBe(1)
+  })
+
   it('requires a ring target when both Ring positions are occupied', () => {
     const state = withOwned('gravebinder-ring', 1)
     state.equipment.ring1 = 'wispbound-ring'

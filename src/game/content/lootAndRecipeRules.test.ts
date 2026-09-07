@@ -41,9 +41,15 @@ describe('material-only loot and Artificing-only Equipment', () => {
   it('defines one material-only Artificing recipe for every Equipment item', () => {
     const equipment = Object.values(ITEMS).filter((item) => item.kind === 'equipment')
     const equipmentOutputs = Object.values(RECIPES).filter((recipe) => ITEMS[recipe.output.itemId]?.kind === 'equipment')
-    expect(equipment).toHaveLength(18)
-    expect(new Set(equipmentOutputs.map((recipe) => recipe.output.itemId)).size).toBe(18)
+    expect(equipment).toHaveLength(21)
+    expect(new Set(equipmentOutputs.map((recipe) => recipe.output.itemId)).size).toBe(21)
     expect(validateRecipeDefinitions()).toEqual([])
+  })
+
+  it('keeps Equipment flavor descriptions aligned between items and Artificing recipes', () => {
+    const equipmentRecipes = Object.values(RECIPES).filter((recipe) => 'sourceDungeonId' in recipe)
+    expect(equipmentRecipes).toHaveLength(21)
+    equipmentRecipes.forEach((recipe) => expect(recipe.description).toBe(ITEMS[recipe.output.itemId].description))
   })
 
   it('rejects missing, duplicate, and wrongly categorized Equipment recipes', () => {
@@ -73,5 +79,6 @@ describe('material-only loot and Artificing-only Equipment', () => {
     expect(RECIPES['heartseed-necklace']).toMatchObject({ ingredients: [{ itemId: 'heartseed', quantity: 8 }], unlock: { type: 'boss-kill', bossId: 'forest-heart' }, output: { quantity: 1 } })
     expect(RECIPES['greatbear-heartstone']).toMatchObject({ ingredients: [{ itemId: 'greatbear-core', quantity: 8 }], unlock: { type: 'boss-kill', bossId: 'corrupted-greatbear' }, output: { quantity: 1 } })
     expect(RECIPES['edrins-signet']).toMatchObject({ ingredients: [{ itemId: 'edrin-remnant', quantity: 20 }], unlock: { type: 'boss-kill', bossId: 'archmage-edrin-shade' }, output: { quantity: 1 } })
+    expect(RECIPES['soulglass-amulet']).toMatchObject({ ingredients: [{ itemId: 'edrin-remnant', quantity: 8 }], unlock: { type: 'boss-kill', bossId: 'archmage-edrin-shade' }, output: { quantity: 1 } })
   })
 })

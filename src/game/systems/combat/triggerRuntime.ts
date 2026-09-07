@@ -58,7 +58,7 @@ export const collectOwnedRules = (state: GameState, actor: CombatActor, transien
       stableOrder += 1
     })
     if (itemId) getAllocatedArtifactCombatProviders(state, itemId).forEach((provider) => provider.rules.forEach((rule) => {
-      const providerInstanceKey = `artifact-node:${itemId}:${provider.node.id}`
+      const providerInstanceKey = `artifact-node:${position}:${itemId}:${provider.node.id}`
       owned.push({ rule, ownerKind: 'equipment', ownerId: providerInstanceKey, ownerName: provider.node.name, actor, sourceTags: ['equipment'], providerInstanceKey, stableOrder })
       stableOrder += 1
     }))
@@ -70,7 +70,7 @@ export const getRuleRuntimeKey = (actor: CombatActor, ownerKind: OwnedRule['owne
   // Keep the established persisted key shape while incorporating the
   // provider instance where equipment can have two authored instances.
   if (ownerKind === 'equipment') {
-    const provider = providerInstanceKey?.startsWith('equipment:') ? providerInstanceKey : equipmentPosition ? `equipment:${equipmentPosition}:${ownerId}` : undefined
+    const provider = providerInstanceKey?.startsWith('artifact-node:') || providerInstanceKey?.startsWith('equipment:') ? providerInstanceKey : equipmentPosition ? `equipment:${equipmentPosition}:${ownerId}` : undefined
     if (provider) return `${actor}:${provider}:${ruleId}`
   }
   // Per-source statuses intentionally cannot own shared trigger rules in V1;
@@ -158,8 +158,10 @@ export const runCombatTriggers = (
     // Encounter/cooldown state is recorded before effects as a second, longer-lived guard.
     if (rule.oncePerEncounter) state.combat.triggeredRuleIds.push(runtimeKey)
     if (rule.cooldownMs && rule.cooldownMs > 0) state.combat.ruleCooldowns[runtimeKey] = rule.cooldownMs
-    const source: CombatSource = { actor, kind: ownerKind === 'equipment' ? 'equipment' : ownerKind, sourceId: ownerId, sourceMonsterId: actor === 'enemy' ? state.combat.enemyId ?? undefined : undefined, sourceInstanceKey: actor === 'enemy' ? state.combat.enemyInstanceKey ?? undefined : undefined, providerInstanceKey: ownerKind === 'equipment' ? equipmentPosition : undefined, ruleId: rule.id, tags: sourceTags }
-    uiEvents?.push({ source: actor === 'enemy' && state.combat.enemyId ? { kind: 'enemy', monsterId: state.combat.enemyId } : actor === 'player' ? { kind: 'player' } : { kind: 'system' }, sourceKind: ownerKind === 'equipment' ? 'equipment' : 'system', sourceMonsterId: source.sourceMonsterId, sourceInstanceKey: source.sourceInstanceKey, target: context.eventTarget, targetMonsterId: context.eventTarget === 'enemy' ? state.combat.enemyId ?? undefined : undefined, category: ownerKind === 'trait' ? 'trait' : 'system', sourceId: ownerId, providerInstanceKey: ownerKind === 'equipment' ? equipmentPosition : undefined, itemId: ownerKind === 'equipment' ? ownerId as ItemId : undefined, traitId: ownerKind === 'trait' ? ownerId as TraitId : undefined, statusId: ownerKind === 'status' ? ownerId as StatusId : undefined, amount: context.amount, damageType: context.damageType, healthDamage: context.healthDamage, barrierAbsorbed: context.barrierDamage })
+    const isArtifactProvider = providerInstanceKey?.startsWith('artifact-node:') ?? false
+    const providerKey = ownerKind === 'equipment' ? isArtifactProvider ? providerInstanceKey : equipmentPosition : undefined
+    const source: CombatSource = { actor, kind: ownerKind === 'equipment' ? 'equipment' : ownerKind, sourceId: ownerId, sourceMonsterId: actor === 'enemy' ? state.combat.enemyId ?? undefined : undefined, sourceInstanceKey: actor === 'enemy' ? state.combat.enemyInstanceKey ?? undefined : undefined, providerInstanceKey: providerKey, ruleId: rule.id, tags: sourceTags }
+    uiEvents?.push({ source: actor === 'enemy' && state.combat.enemyId ? { kind: 'enemy', monsterId: state.combat.enemyId } : actor === 'player' ? { kind: 'player' } : { kind: 'system' }, sourceKind: ownerKind === 'equipment' ? 'equipment' : 'system', sourceMonsterId: source.sourceMonsterId, sourceInstanceKey: source.sourceInstanceKey, target: context.eventTarget, targetMonsterId: context.eventTarget === 'enemy' ? state.combat.enemyId ?? undefined : undefined, category: ownerKind === 'trait' ? 'trait' : 'system', sourceId: ownerId, providerInstanceKey: providerKey, itemId: ownerKind === 'equipment' && !isArtifactProvider ? ownerId as ItemId : undefined, traitId: ownerKind === 'trait' ? ownerId as TraitId : undefined, statusId: ownerKind === 'status' ? ownerId as StatusId : undefined, amount: context.amount, damageType: context.damageType, healthDamage: context.healthDamage, barrierAbsorbed: context.barrierDamage })
     executeEffects(state, rule.effects, source, depth + 1, uiEvents, cascade)
     appendLog(state, `${rule.ui?.name ?? ownerName} triggers.`)
   })

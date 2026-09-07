@@ -40,8 +40,8 @@ const SLOT_TOOLTIP_COPY: Record<EquipmentPosition, { title: string; description:
   cape: { title: 'CAPE', description: <>Back equipment such as magical cloaks and capes.<br />Cape effects depend on the individual item.</> },
   amulet: { title: 'AMULET', description: <>Neck equipment such as magical amulets and charms.</> },
   earring: { title: 'EARRING', description: <>One accessory slot for future Earring equipment.</> },
-  ring1: { title: 'RING', description: <>Ring accessory slot.<br />The same Ring may occupy both Ring slots if two copies are owned.</> },
-  ring2: { title: 'RING', description: <>Ring accessory slot.<br />The same Ring may occupy both Ring slots if two copies are owned.</> },
+  ring1: { title: 'RING', description: <>Ring accessory slot.<br />The same Ring cannot occupy both Ring slots.</> },
+  ring2: { title: 'RING', description: <>Ring accessory slot.<br />The same Ring cannot occupy both Ring slots.</> },
 }
 
 export function EquipmentScreenV2() {

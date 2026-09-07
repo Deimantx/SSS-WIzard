@@ -18,7 +18,7 @@ import type { CombatAlertObserver, CombatEventSink } from '../combat/combatTypes
 import { clamp } from '../../utils'
 import type { SimulationReportCollector } from '../offline-bank/offlineBankReport'
 import { applyTransmutationAllocations, buildTransmutationWorkRequests } from '../transmutation/transmutationEngine'
-import { advanceArtificing } from '../artificing/artificingEngine'
+import { advanceArtificing, type ArtificingCompletion } from '../artificing/artificingEngine'
 import { applyResearchAllocations, buildResearchWorkRequests } from '../research/researchEngine'
 import { allocateContinuousMana } from './continuousManaScheduler'
 import { isSpellUnlocked } from '../spells'
@@ -32,7 +32,7 @@ export interface AdvanceContext {
   mode: 'live' | 'banked'
   report?: SimulationReportCollector
   onItemAcquired?: (itemId: ItemId, quantity: number) => void
-  onArtificingComplete?: (itemId: ItemId) => void
+  onArtificingComplete?: (completion: ArtificingCompletion) => void
   onCombatLoot?: CombatLootObserver
   uiEvents?: CombatEventSink
   telemetry?: CombatTelemetryObserver
@@ -332,7 +332,11 @@ const advanceGameStateStep = (state: GameState, delta: number, context: AdvanceC
     if (discovery) pushNotification(state, `Arcane Discovery: ${discovery.name}`, 'success')
   })
   if (!state.combat.active) advanceHealthRegenTimer(state, delta, false, context)
-  if (context.mode === 'live') advanceArtificing(state, delta, (itemId) => { context.onItemAcquired?.(itemId, 1); context.onArtificingComplete?.(itemId) })
+  if (context.mode === 'live') advanceArtificing(state, delta, (completion) => {
+    if (completion.kind === 'recipe' || completion.kind === 'artifact-forge') context.onItemAcquired?.(completion.itemId, 1)
+    if (completion.kind !== 'recipe') recalculateDerivedStats(state)
+    context.onArtificingComplete?.(completion)
+  })
   const researchRequests = buildResearchWorkRequests(state, delta, context)
   const transmutationRequests = buildTransmutationWorkRequests(state, delta)
   const funding = allocateContinuousMana(state, [...researchRequests, ...transmutationRequests])

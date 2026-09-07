@@ -4,6 +4,8 @@ import { EQUIPMENT_BUILD_TAG_LABELS } from '../../content/items/equipmentBalance
 import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
 import { isRecipeUnlocked, getRecipeUnlockRequirement } from '../../content/recipes/recipeUnlocks'
 import { canCraftArtificingRecipe } from './artificingEngine'
+import { ARTIFACTS } from '../../content/artifacts/artifacts'
+import { canUpgradeArtifact, getArtifactLevel, getArtifactLevelCap, getArtifactUpgrade } from '../artifacts/artifactProgression'
 import type { GameState, EquipmentItemSlot } from '../../types'
 export { canCraftArtificingRecipe }
 export const getArtificingUnlockReason = getRecipeUnlockRequirement
@@ -23,6 +25,36 @@ export const getArtificingRecipeEntries = () => ARTIFICING_RECIPE_ORDER.map(id =
 export const getArtificingProfile = (recipe: ArtificingRecipeDefinition) => {
   const item = ITEMS[recipe.output.itemId]
   return [item.equipmentSlot?.toUpperCase(), item.weaponHands ? `${item.weaponHands}H` : item.equipmentPresentation?.toUpperCase()].filter(Boolean).join(' · ')
+}
+
+export interface ArtifactArtificingState {
+  owned: boolean
+  tier: number
+  level: number
+  maxLevel: number
+  levelCap: number
+  mode: 'forge' | 'upgrade' | 'level-cap' | 'max-level'
+  ingredients: { itemId: import('../../types').ItemId; quantity: number }[]
+  canStart: boolean
+  reason?: string
+}
+
+export const getArtifactArtificingState = (state: GameState, recipeId: import('../../types').ArtificingRecipeId): ArtifactArtificingState | null => {
+  const artifact = ARTIFACTS[recipeId]
+  const recipe = ARTIFICING_RECIPES[recipeId]
+  if (!artifact || !recipe) return null
+  const inventoryOwned = (state.inventory[recipeId] ?? 0) > 0
+  const progress = state.artifactProgress?.[recipeId]
+  const owned = inventoryOwned && Boolean(progress)
+  const level = progress?.level ?? 0
+  const levelCap = getArtifactLevelCap(state, recipeId)
+  const base = { owned, tier: artifact.tier, level, maxLevel: artifact.maxLevel, levelCap, ingredients: [] as ArtifactArtificingState['ingredients'], canStart: false }
+  if (!owned) return { ...base, level: 0, mode: 'forge', ingredients: artifact.forge.ingredients, canStart: canCraftArtificingRecipe(state, recipeId), reason: !isRecipeUnlocked(state, recipe) ? getRecipeUnlockRequirement(recipe) ?? undefined : undefined }
+  if (level >= artifact.maxLevel) return { ...base, mode: 'max-level', reason: 'MAX ARTIFACT LEVEL' }
+  const upgrade = getArtifactUpgrade(recipeId, level)
+  if (level >= levelCap) return { ...base, mode: 'level-cap', reason: `Continue progression to unlock Artifact Level ${levelCap + 1}.` }
+  if (!upgrade) return { ...base, mode: 'max-level', reason: 'MAX ARTIFACT LEVEL' }
+  return { ...base, mode: 'upgrade', ingredients: upgrade.ingredients, canStart: canUpgradeArtifact(state, recipeId), reason: canUpgradeArtifact(state, recipeId) ? undefined : 'Not enough legal upgrade materials.' }
 }
 export function getVisibleArtificingRecipes(state: GameState, filters: ArtificingFilters = DEFAULT_ARTIFICING_FILTERS, query = '', showLocked = state.debug.showLockedArtificingRecipes) {
   const search = query.trim().toLowerCase()

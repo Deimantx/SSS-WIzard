@@ -35,15 +35,32 @@ export const getAllocatedArtifactCombatProviders = (state: Pick<GameState, 'arti
 }
 export const getArtifactUpgrade = (id: ArtifactId, fromLevel: number) => ARTIFACTS[id]?.upgrades.find(upgrade => upgrade.fromLevel === fromLevel) ?? null
 export const canUpgradeArtifact = (state: Pick<GameState, 'artifactProgress' | 'progress' | 'inventory' | 'protectedItems' | 'equipment' | 'activities'>, id: ArtifactId) => {
-  const definition = ARTIFACTS[id]; const progress = getArtifactProgress(state, id); const upgrade = getArtifactUpgrade(id, progress.level)
-  return Boolean(definition && (state.inventory[id] ?? 0) > 0 && !state.activities.artificing.activeJob && progress.level < getArtifactLevelCap(state, id) && upgrade?.ingredients.every(item => getConsumableQuantity(state, item.itemId) >= item.quantity))
+  const definition = ARTIFACTS[id]; const progress = state.artifactProgress?.[id]; const upgrade = progress ? getArtifactUpgrade(id, progress.level) : null
+  return Boolean(definition && progress && (state.inventory[id] ?? 0) > 0 && !state.activities.artificing.activeJob && progress.level < getArtifactLevelCap(state, id) && upgrade?.ingredients.every(item => getConsumableQuantity(state, item.itemId) >= item.quantity))
 }
 export const getArtifactNode = (id: ArtifactId, nodeId: string) => ARTIFACTS[id]?.nodes.find(node => node.id === nodeId) ?? null
-export const canAllocateArtifactNode = (state: Pick<GameState, 'artifactProgress' | 'progress' | 'inventory'>, id: ArtifactId, nodeId: string) => {
-  const node = getArtifactNode(id, nodeId); const progress = getArtifactProgress(state, id)
-  if (!node || !state.artifactProgress?.[id] || (state.inventory[id] ?? 0) < 1 || progress.allocatedNodeIds.includes(nodeId) || progress.level < node.requiresLevel || getArtifactAvailablePoints(state, id) < node.pointCost || (node.requiresBossKill && (state.progress.bossKillsByBoss[node.requiresBossKill] ?? 0) < 1)) return false
-  return (node.prerequisites ?? []).every(prerequisite => progress.allocatedNodeIds.includes(prerequisite))
+export type ArtifactNodeEligibilityStatus = 'allocated' | 'attuned' | 'available' | 'missingLevel' | 'missingPoints' | 'missingPrerequisites' | 'missingBoss' | 'missingCatalyst' | 'unowned'
+export interface ArtifactNodeEligibility {
+  status: ArtifactNodeEligibilityStatus
+  canAllocate: boolean
+  missingPrerequisiteIds: string[]
+  missingBossId?: import('../../types').MonsterId
+  catalystRequired?: { itemId: ItemId; quantity: number }
 }
+export const getArtifactNodeEligibility = (state: Pick<GameState, 'artifactProgress' | 'progress' | 'inventory' | 'protectedItems' | 'equipment' | 'activities'>, id: ArtifactId, nodeId: string): ArtifactNodeEligibility => {
+  const node = getArtifactNode(id, nodeId); const progress = state.artifactProgress?.[id]
+  if (!node || !progress || (state.inventory[id] ?? 0) < 1) return { status: 'unowned', canAllocate: false, missingPrerequisiteIds: [] }
+  if (progress.allocatedNodeIds.includes(nodeId)) return { status: 'allocated', canAllocate: false, missingPrerequisiteIds: [] }
+  if (progress.level < node.requiresLevel) return { status: 'missingLevel', canAllocate: false, missingPrerequisiteIds: [] }
+  const missingPrerequisiteIds = (node.prerequisites ?? []).filter((prerequisite) => !progress.allocatedNodeIds.includes(prerequisite))
+  if (missingPrerequisiteIds.length) return { status: 'missingPrerequisites', canAllocate: false, missingPrerequisiteIds }
+  if (node.requiresBossKill && (state.progress.bossKillsByBoss[node.requiresBossKill] ?? 0) < 1) return { status: 'missingBoss', canAllocate: false, missingPrerequisiteIds: [], missingBossId: node.requiresBossKill }
+  const catalystRequired = node.catalyst && !progress.attunedNodeIds.includes(nodeId) ? node.catalyst : undefined
+  if (catalystRequired && getConsumableQuantity(state, catalystRequired.itemId) < catalystRequired.quantity) return { status: 'missingCatalyst', canAllocate: false, missingPrerequisiteIds: [], catalystRequired }
+  if (getArtifactAvailablePoints(state, id) < node.pointCost) return { status: 'missingPoints', canAllocate: false, missingPrerequisiteIds: [], catalystRequired }
+  return { status: progress.attunedNodeIds.includes(nodeId) ? 'attuned' : 'available', canAllocate: true, missingPrerequisiteIds: [], catalystRequired }
+}
+export const canAllocateArtifactNode = (state: Pick<GameState, 'artifactProgress' | 'progress' | 'inventory' | 'protectedItems' | 'equipment' | 'activities'>, id: ArtifactId, nodeId: string) => getArtifactNodeEligibility(state, id, nodeId).canAllocate
 export const allocateArtifactNode = (state: GameState, id: ArtifactId, nodeId: string) => {
   const node = getArtifactNode(id, nodeId); if (!node || !canAllocateArtifactNode(state, id, nodeId)) return false
   const progress = state.artifactProgress[id] ??= { ...EMPTY, allocatedNodeIds: [], attunedNodeIds: [] }
@@ -55,4 +72,4 @@ export const allocateArtifactNode = (state: GameState, id: ArtifactId, nodeId: s
   progress.allocatedNodeIds.push(nodeId); return true
 }
 export const respecArtifact = (state: GameState, id: ArtifactId) => { const progress = state.artifactProgress[id]; if (!progress) return false; progress.allocatedNodeIds = []; return true }
-export const completeArtifactForge = (state: GameState, id: ArtifactId) => { if (state.artifactProgress[id] || (state.inventory[id] ?? 0) > 0) return false; grantItem(state, id, 1); state.artifactProgress[id] = { ...EMPTY, allocatedNodeIds: [], attunedNodeIds: [] }; return true }
+export const completeArtifactForge = (state: GameState, id: ArtifactId) => { if (state.artifactProgress?.[id] || (state.inventory[id] ?? 0) > 0) return false; state.artifactProgress ??= {}; grantItem(state, id, 1); state.artifactProgress[id] = { ...EMPTY, allocatedNodeIds: [], attunedNodeIds: [] }; return true }

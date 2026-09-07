@@ -6,8 +6,11 @@ import { isArtifactItem } from '../artifacts/artifactProgression'
 export function grantItem(state: GameState, itemId: ItemId, quantity: number) {
   const amount = Number.isFinite(quantity) ? Math.floor(quantity) : 0
   if (amount <= 0) return 0
-  state.inventory[itemId] = isArtifactItem(itemId) ? Math.min(1, state.inventory[itemId] ?? 0 + amount) : (state.inventory[itemId] ?? 0) + amount
-  if (isArtifactItem(itemId) && !state.artifactProgress[itemId]) state.artifactProgress[itemId] = { level: 1, allocatedNodeIds: [], attunedNodeIds: [] }
-  discoverItem(state, itemId)
-  return amount
+  const current = Math.max(0, state.inventory[itemId] ?? 0)
+  const next = isArtifactItem(itemId) ? Math.min(1, current + amount) : current + amount
+  const granted = next - current
+  state.inventory[itemId] = next
+  if (isArtifactItem(itemId) && granted > 0 && !state.artifactProgress[itemId]) state.artifactProgress[itemId] = { level: 1, allocatedNodeIds: [], attunedNodeIds: [] }
+  if (granted > 0) discoverItem(state, itemId)
+  return granted
 }

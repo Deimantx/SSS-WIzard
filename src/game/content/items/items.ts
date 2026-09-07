@@ -2,7 +2,7 @@ import type { DamageType } from '../../systems/combat/combatTypes'
 import type { EquipmentBuildTag, EquipmentBudgetProfileId, EquipmentStats, InventoryCategory, InventoryMaterialSubtype, ItemDefinition, ItemId, SchoolId, ScreenId } from '../../types'
 import { BALANCE } from '../../core/balance/balance'
 import { MAX_BLOCK_CHANCE, MAX_RESISTANCE, MIN_RESISTANCE } from '../../core/balance/combatStats'
-import { ARTIFACTS } from '../artifacts/artifacts'
+import { ARTIFACTS, validateArtifactDefinitions } from '../artifacts/artifacts'
 import { createCombatValidationContext, validateCombatProvider } from '../../systems/combat/combatEffectValidation'
 import { STATUS_DEFINITIONS } from '../statuses/statuses'
 import { EQUIPMENT_BUILD_TAG_LABELS, EQUIPMENT_BUDGET_PROFILES, validateEquipmentBudgetProfiles } from './equipmentBalance'
@@ -187,6 +187,7 @@ export const validateItemDefinitions = (items: Record<string, ItemDefinition> = 
     if (item.combat && item.kind !== 'equipment') errors.push(`${item.id}: only equipment items may define combat metadata`)
     errors.push(...validateCombatProvider(item.combat, `${item.id}.combat`, createCombatValidationContext(STATUS_DEFINITIONS)))
   })
+  errors.push(...validateArtifactDefinitions(items))
   if (errors.length && import.meta.env.DEV) console.error(`[combat-items] ${errors.join('; ')}`)
   return errors
 }

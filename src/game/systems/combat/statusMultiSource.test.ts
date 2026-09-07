@@ -72,6 +72,18 @@ describe('multi-source periodic statuses', () => {
     expect(events.filter((event) => event.statusPhase === 'expire')).toHaveLength(1)
   })
 
+  it('resolves a proportional final periodic tick without double-ticking exact boundaries', () => {
+    const damageForDuration = (durationMs: number) => {
+      const state = stateWithEnemy()
+      applyStatus(state, 'enemy', 'burning', source('ignite'), { durationMs, periodicEffects: [{ type: 'deal-damage', target: 'self', components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 10 } }] }] })
+      tickStatuses(state, durationMs, executeCombatEffects)
+      return { damage: 10_000 - state.combat.enemyHp, remainingStatuses: state.combat.enemyStatuses.length }
+    }
+
+    expect(damageForDuration(6_900)).toMatchObject({ damage: 69, remainingStatuses: 0 })
+    expect(damageForDuration(7_000)).toMatchObject({ damage: 70, remainingStatuses: 0 })
+  })
+
   it('removes a whole visible status group with one removal event', () => {
     const state = stateWithEnemy()
     applyStatus(state, 'enemy', 'burning', source('ignite'))

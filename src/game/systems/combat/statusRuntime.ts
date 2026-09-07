@@ -2,7 +2,7 @@ import { STATUS_DEFINITIONS } from '../../content/statuses'
 import { MONSTERS } from '../../content/monsters'
 import type { GameState, StatusId } from '../../types'
 import type { CombatActor } from './magnitude'
-import { isCombatActorAlive, resolveMagnitude } from './magnitude'
+import { isCombatActorAlive, resolveMagnitude, scaleMagnitude } from './magnitude'
 import { runCombatTriggers } from './triggerRuntime'
 import type { CombatEffect, CombatEventSink, CombatResolutionContext, CombatSource, ActiveStatus, CombatTag, ModifierKey } from './combatTypes'
 import { getCombatModifiers } from './modifiers'
@@ -92,6 +92,13 @@ const snapshotModifierOverrides = (statusId: StatusId, overrides: Partial<Record
   if (!hasValidStatusModifierOverrides(statusId, overrides, statusValidationContext)) return undefined
   return Object.keys(overrides).length ? { ...overrides } : undefined
 }
+
+/** Scale only rate-like periodic effects for a partial natural-expiry interval. */
+const scalePeriodicEffects = (effects: CombatEffect[], fraction: number): CombatEffect[] => effects.flatMap((effect) => {
+  if (effect.type === 'deal-damage') return [{ ...effect, components: effect.components.map((component) => ({ ...component, magnitude: scaleMagnitude(component.magnitude, fraction) })) }]
+  if (effect.type === 'heal' || effect.type === 'gain-barrier' || effect.type === 'restore-resource' || effect.type === 'drain-resource') return [{ ...effect, magnitude: scaleMagnitude(effect.magnitude, fraction) }]
+  return []
+})
 
 const setApplicationPayload = (active: ActiveStatus, duration: number | null, periodicEffects: CombatEffect[] | undefined, modifierOverrides: Partial<Record<ModifierKey, number>> | undefined) => {
   active.initialDurationMs = duration
@@ -351,6 +358,15 @@ export const tickStatuses = (state: GameState, deltaMs: number, executeEffects: 
         live.remainingMs = nextRemainingMs
         if (nextTickMs !== undefined) live.nextTickMs = nextTickMs
         return
+      }
+      if (previousRemaining !== null && previousRemaining > 0 && timeToTick !== undefined && definition.periodic && (actor !== 'enemy' || Boolean(state.combat.enemyId))) {
+        const remainingUntilNextTick = timeToTick - activeWindow
+        const elapsedSincePreviousTick = definition.periodic.intervalMs - remainingUntilNextTick
+        const fraction = Math.max(0, Math.min(1, elapsedSincePreviousTick / definition.periodic.intervalMs))
+        if (fraction > 0 && fraction < 1) {
+          const partialEffects = scalePeriodicEffects(getExecutablePeriodicStatusEffects(original), fraction)
+          if (partialEffects.length) executeEffects(state, partialEffects, buildPeriodicStatusCombatSource(original), undefined, uiEvents)
+        }
       }
       if (options.deferExpiry) {
         live.remainingMs = 0

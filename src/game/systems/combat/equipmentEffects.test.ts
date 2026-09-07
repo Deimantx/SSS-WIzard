@@ -12,7 +12,7 @@ import { damageEnemy, damagePlayer, executeCombatEffects, getCombatDamagePreview
 import { spawnEnemy } from './combatRuntime'
 import { applyStatus, tickStatuses } from './statusRuntime'
 import { tickRuleCooldowns } from './triggerRuntime'
-import type { CombatSource } from './combatTypes'
+import type { CombatEffect, CombatSource } from './combatTypes'
 import { BALANCE } from '../../core/balance/balance'
 
 const playerSpell: CombatSource = {
@@ -205,6 +205,34 @@ describe('equipment combat effects', () => {
     const before = double.combat.enemyHp
     damageEnemy(double, 100, 'basic')
     expect(before - double.combat.enemyHp).toBeCloseTo((1_000 - doublePlain.combat.enemyHp) * 1.2)
+  })
+
+  it('applies Ember Staff Fire Spell damage to direct and Spell-origin Burning only', () => {
+    const fireHit: CombatEffect[] = [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 100 } }], tags: ['direct', 'fire'] }]
+    const spellBurn = (withStaff: boolean) => {
+      const state = stateWithEnemy()
+      if (withStaff) { state.equipment.weapon = 'ember-staff'; recalculateDerivedStats(state) }
+      applyStatus(state, 'enemy', 'burning', { ...playerSpell, sourceId: 'ignite' }, { durationMs: 1_000, periodicEffects: [{ type: 'deal-damage', target: 'self', components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 100 } }], tags: ['dot', 'fire'] }] })
+      tickStatuses(state, 1_000, executeCombatEffects)
+      return 1_000 - state.combat.enemyHp
+    }
+    const directSpell = (withStaff: boolean) => {
+      const state = stateWithEnemy()
+      if (withStaff) { state.equipment.weapon = 'ember-staff'; recalculateDerivedStats(state) }
+      executeCombatEffects(state, fireHit, playerSpell)
+      return 1_000 - state.combat.enemyHp
+    }
+    const nonSpellBurn = (withStaff: boolean) => {
+      const state = stateWithEnemy()
+      if (withStaff) { state.equipment.weapon = 'ember-staff'; recalculateDerivedStats(state) }
+      applyStatus(state, 'enemy', 'burning', { actor: 'player', kind: 'status', sourceId: 'environment-burning', tags: ['status', 'dot', 'fire'] }, { durationMs: 1_000, periodicEffects: [{ type: 'deal-damage', target: 'self', components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 100 } }], tags: ['dot', 'fire'] }] })
+      tickStatuses(state, 1_000, executeCombatEffects)
+      return 1_000 - state.combat.enemyHp
+    }
+
+    expect(directSpell(true)).toBeCloseTo(directSpell(false) * 1.2)
+    expect(spellBurn(true)).toBeCloseTo(spellBurn(false) * 1.2)
+    expect(nonSpellBurn(true)).toBeCloseTo(nonSpellBurn(false))
   })
 
   it("keeps Edrin's Forbidden Knowledge Spell-specific", () => {

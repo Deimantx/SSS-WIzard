@@ -23,6 +23,7 @@ export function ArtificingScreen() {
   const intentRecipeId = navigationIntent.artificingRecipeId && Object.prototype.hasOwnProperty.call(ARTIFICING_RECIPES, navigationIntent.artificingRecipeId) ? navigationIntent.artificingRecipeId : null
   const [query, setQuery] = useState('')
   const visible = getVisibleArtificingRecipes(state, preferences, query)
+  const visibleIds = visible.map((entry) => entry.id).join('|')
   const selected = intentRecipeId ?? preferences.selectedRecipeId
   // Search/filter context never changes acquisition or the selected blueprint.
   // A hidden/invalid selection simply has no inspector until visible again.
@@ -30,12 +31,14 @@ export function ArtificingScreen() {
   useEffect(() => {
     if (intentRecipeId) {
       setQuery('')
-      setUiPreferences({ screenState: { artificing: { selectedRecipeId: intentRecipeId, slotFilter: 'all', weaponHandsFilter: 'all', offhandPresentationFilter: 'all', ownershipFilter: 'all' } } })
+      setUiPreferences({ screenState: { artificing: { selectedRecipeId: intentRecipeId, slotFilter: 'all', kindFilter: 'all', weaponHandsFilter: 'all', offhandPresentationFilter: 'all', ownershipFilter: 'all' } } })
       setNavigationIntent({ artificingRecipeId: null })
       return
     }
-    if (selected && !Object.prototype.hasOwnProperty.call(ARTIFICING_RECIPES, selected)) setUiPreferences({ screenState: { artificing: { selectedRecipeId: null } } })
-  }, [intentRecipeId, selected])
+    if (selected && (!Object.prototype.hasOwnProperty.call(ARTIFICING_RECIPES, selected) || !visibleIds.split('|').includes(selected))) {
+      setUiPreferences({ screenState: { artificing: { selectedRecipeId: visible[0]?.id ?? null } } })
+    }
+  }, [intentRecipeId, selected, visibleIds])
   const select = (id: ArtificingRecipeId) => {
     clearAttention(getActiveProfileId(), 'recipe', id)
     setUiPreferences({ screenState: { artificing: { selectedRecipeId: id } } })

@@ -27,6 +27,10 @@ const equipment = (definition: AuthoredEquipmentDefinition): AuthoredItemDefinit
 
 /** One authoritative item registry for materials, loot, and all authored equipment. */
 const authoredItems: Record<ItemId, AuthoredItemDefinition> = {
+  'thorn-fiber': material('thorn-fiber', 'Thorn Fiber', 'Tough living strands stripped from thorn growth; light, flexible, and eager to hold enchantment.', '~', '#cb7899', 'monster-loot', 'Thornling', 'creature', undefined, 'combat'),
+  'rootstone-shard': material('rootstone-shard', 'Rootstone Shard', 'A petrified knot of root and mineral formed where ancient growth drank deeply of stone.', '#', '#b28f79', 'monster-loot', 'Stone Root', 'creature', undefined, 'combat'),
+  'predator-sinew': material('predator-sinew', 'Predator Sinew', 'Dense tendon harvested from den predators, prized for bindings that must flex without yielding.', '~', '#c18b73', 'monster-loot', 'Cavefang Wolf', 'creature', undefined, 'combat'),
+  'burial-cloth': material('burial-cloth', 'Burial Cloth', 'Age-darkened funerary wrapping steeped in grave dust and lingering soul resonance.', '=', '#a99a9f', 'monster-loot', 'Restless Skeleton and Fallen Acolyte', 'creature', undefined, 'combat'),
   'prismatic-fragment': universalMaterial('prismatic-fragment', 'Prismatic Fragment', "A harmonized shard formed from all four elemental forces. Used to strengthen the tower's Focus capacity.", '*', '#c8a8ff', 'material', 'Transmutation', 'arcane', 'tower-transmutation'),
   'life-essence': universalMaterial('life-essence', 'Life Essence', 'Vital residue released when living magic is defeated. A universal catalyst for permanent Tower upgrades.', '+', '#8fe0c0', 'monster-loot', 'All monsters', undefined, 'combat'),
   'fire-fragment': material('fire-fragment', 'Fire Fragment', 'A hot shard of transmuted elemental force.', '◆', '#ff745d', 'elemental', 'Transmutation', 'fire'),
@@ -72,16 +76,16 @@ const authoredItems: Record<ItemId, AuthoredItemDefinition> = {
 
 const sourceNavigationByItem: Partial<Record<ItemId, ScreenId>> = {
   'prismatic-fragment': 'tower-transmutation', 'life-essence': 'combat', 'fire-fragment': 'tower-transmutation', 'water-fragment': 'tower-transmutation', 'earth-fragment': 'tower-transmutation', 'air-fragment': 'tower-transmutation',
-  'wisp-essence': 'combat', 'grove-bark': 'combat', heartseed: 'combat',
-  'predator-fang': 'combat', 'predator-hide': 'combat', 'corrupted-beast-essence': 'combat', 'greatbear-core': 'combat',
-  'ossuary-remnant': 'combat', 'graveglass-shard': 'combat', 'soul-residue': 'combat', 'edrin-remnant': 'combat',
+  'wisp-essence': 'combat', 'thorn-fiber': 'combat', 'rootstone-shard': 'combat', 'grove-bark': 'combat', heartseed: 'combat',
+  'predator-fang': 'combat', 'predator-hide': 'combat', 'predator-sinew': 'combat', 'corrupted-beast-essence': 'combat', 'greatbear-core': 'combat',
+  'ossuary-remnant': 'combat', 'graveglass-shard': 'combat', 'soul-residue': 'combat', 'burial-cloth': 'combat', 'edrin-remnant': 'combat',
 }
 const inventoryCategoryOverrides: Partial<Record<ItemId, InventoryCategory>> = { 'heartseed-necklace': 'equipment', 'greatbear-heartstone': 'equipment', 'edrins-signet': 'equipment' }
 const sellValues: Record<ItemId, number | null> = {
-  'prismatic-fragment': 20, 'life-essence': 2, 'fire-fragment': 1, 'water-fragment': 1, 'earth-fragment': 1, 'air-fragment': 1, 'wisp-essence': 3, 'grove-bark': 5, heartseed: null,
+  'prismatic-fragment': 20, 'life-essence': 2, 'fire-fragment': 1, 'water-fragment': 1, 'earth-fragment': 1, 'air-fragment': 1, 'wisp-essence': 3, 'thorn-fiber': 4, 'rootstone-shard': 5, 'grove-bark': 5, heartseed: null,
   'ember-staff': null, 'tideglass-wand': null, 'stoneheart-scepter': null, 'windthread-wand': null, 'prismatic-focus': null, 'wispweave-robe': null, 'windthread-charm': 40, 'wispveil-hood': null, 'grovekeeper-mantle': 40, 'wispglass-earring': 40, 'wispbound-ring': 40, 'heartseed-necklace': null,
-  'predator-fang': 4, 'predator-hide': 5, 'corrupted-beast-essence': 6, 'greatbear-core': 20, 'predator-hide-mantle': 70, 'fangwire-earring': 70, 'howling-signet': 70, 'greatbear-heartstone': null,
-  'ossuary-remnant': 4, 'graveglass-shard': 5, 'soul-residue': 6, 'edrin-remnant': 20, 'ossuary-mantle': 110, 'mourning-glass-earring': 110, 'soulglass-amulet': 110, 'gravebinder-ring': 110, 'edrins-signet': null,
+  'predator-fang': 4, 'predator-hide': 5, 'predator-sinew': 6, 'corrupted-beast-essence': 6, 'greatbear-core': 20, 'predator-hide-mantle': 70, 'fangwire-earring': 70, 'howling-signet': 70, 'greatbear-heartstone': null,
+  'ossuary-remnant': 4, 'graveglass-shard': 5, 'soul-residue': 6, 'burial-cloth': 6, 'edrin-remnant': 20, 'ossuary-mantle': 110, 'mourning-glass-earring': 110, 'soulglass-amulet': 110, 'gravebinder-ring': 110, 'edrins-signet': null,
 }
 const destroyability: Partial<Record<ItemId, boolean>> = { heartseed: false }
 const actionRestrictionReasons: Partial<Record<ItemId, string>> = { heartseed: 'This progression item cannot be destroyed.' }
@@ -92,11 +96,14 @@ export const ITEMS: Record<ItemId, ItemDefinition> = Object.fromEntries(Object.e
   return [id, { ...item, inventoryCategory, ...(inventoryCategory === 'material' ? { materialSubtype: item.materialSubtype ?? (item.category === 'elemental' ? 'elemental' : 'creature') } : {}), sourceNavigation: item.sourceNavigation ?? sourceNavigationByItem[itemId], sellValue: isArtifact ? null : item.sellValue !== undefined ? item.sellValue : sellValues[itemId], canDestroy: isArtifact ? false : item.canDestroy ?? destroyability[itemId] ?? true, ...(isArtifact || item.actionRestrictionReason || actionRestrictionReasons[itemId] ? { actionRestrictionReason: isArtifact ? 'Artifact Equipment cannot be sold or destroyed.' : item.actionRestrictionReason ?? actionRestrictionReasons[itemId] } : {}) }]
 })) as Record<ItemId, ItemDefinition>
 
-/** The eight provisional dungeon materials introduced with the first equipment slice. */
+/** Provisional dungeon materials used by the first equipment slice. */
 export const SUPPORTING_DUNGEON_MATERIAL_IDS: readonly ItemId[] = [
-  'predator-fang', 'predator-hide', 'corrupted-beast-essence', 'greatbear-core',
-  'ossuary-remnant', 'graveglass-shard', 'soul-residue', 'edrin-remnant',
+  'wisp-essence', 'thorn-fiber', 'rootstone-shard', 'grove-bark', 'heartseed',
+  'predator-fang', 'predator-hide', 'predator-sinew', 'corrupted-beast-essence', 'greatbear-core',
+  'ossuary-remnant', 'graveglass-shard', 'soul-residue', 'burial-cloth', 'edrin-remnant',
 ]
+
+export const NEW_DUNGEON_MATERIAL_IDS: readonly ItemId[] = ['thorn-fiber', 'rootstone-shard', 'predator-sinew', 'burial-cloth']
 
 const DAMAGE_TYPES: readonly DamageType[] = ['physical', 'arcane', 'fire', 'water', 'earth', 'air']
 const EQUIPMENT_NUMERIC_FIELDS: readonly (keyof EquipmentStats)[] = ['basicDamage', 'spellPower', 'maxHealth', 'healthRegen', 'maxMana', 'manaRegen', 'maxFocus', 'defense', 'critChance', 'critDamage', 'basicAttackSpeedPct', 'blockChance', 'cooldownRecoveryPct', 'healingDonePct', 'barrierPowerPct', 'damageOverTimePct', 'statusDurationPct', 'manaCostReductionPct', 'focusEfficiencyPct']

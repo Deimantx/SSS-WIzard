@@ -13,13 +13,14 @@ import { clampResourcePercent } from '../app/shell/Topbar'
 
 describe('Unified Transmutation', () => {
   it('defines four fragment and four equipment recipes with the intended costs', () => {
-    expect(Object.keys(RECIPES)).toHaveLength(32)
+    expect(Object.keys(RECIPES)).toHaveLength(26)
     expect(['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'].map((id) => RECIPES[id as import('./types').TransmutationRecipeId].manaCost)).toEqual([25, 25, 25, 25])
     expect(['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'].map((id) => RECIPES[id as import('./types').TransmutationRecipeId].baseDurationMs)).toEqual([8000, 8000, 8000, 8000])
     expect(RECIPES['ember-staff'].ingredients).toEqual([
-      { itemId: 'fire-fragment', quantity: 48 },
-      { itemId: 'wisp-essence', quantity: 24 },
-      { itemId: 'grove-bark', quantity: 3 },
+      { itemId: 'fire-fragment', quantity: 20 },
+      { itemId: 'wisp-essence', quantity: 15 },
+      { itemId: 'thorn-fiber', quantity: 10 },
+      { itemId: 'life-essence', quantity: 95 },
     ])
     expect('manaCost' in RECIPES['ember-staff']).toBe(false)
     expect(RECIPES['ember-staff'].unlock).toEqual({ type: 'dungeon-monster-kills', dungeonId: 'whispering-woods', count: 1 })

@@ -10,6 +10,8 @@ export type ItemId =
   | 'air-fragment'
   | 'prismatic-fragment'
   | 'wisp-essence'
+  | 'thorn-fiber'
+  | 'rootstone-shard'
   | 'grove-bark'
   | 'heartseed'
   | 'life-essence'
@@ -27,6 +29,7 @@ export type ItemId =
   | 'wispglass-earring'
   | 'predator-fang'
   | 'predator-hide'
+  | 'predator-sinew'
   | 'corrupted-beast-essence'
   | 'greatbear-core'
   | 'predator-hide-mantle'
@@ -36,6 +39,7 @@ export type ItemId =
   | 'ossuary-remnant'
   | 'graveglass-shard'
   | 'soul-residue'
+  | 'burial-cloth'
   | 'edrin-remnant'
   | 'ossuary-mantle'
   | 'mourning-glass-earring'
@@ -72,6 +76,7 @@ export type TransmutationCategoryFilter = 'all' | RecipeCategory
 export type TransmutationTierFilter = 'all' | number
 export type EquipmentPlayerTier = 1 | 2 | 3
 export type ArtificingTierFilter = 'all' | EquipmentPlayerTier
+export type ArtificingKindFilter = 'all' | 'artifact' | 'equipment'
 /** @deprecated Use TransmutationTierFilter. */
 export type TransmutationMaterialTierFilter = TransmutationTierFilter
 export type RecipeUnlockCondition =

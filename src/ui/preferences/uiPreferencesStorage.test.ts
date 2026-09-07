@@ -61,6 +61,13 @@ describe('screen UI preferences', () => {
     expect(loadUiPreferences().screenState.artificing.tierFilter).toBe(3)
   })
 
+  it('preserves and safely normalizes the Artificing craft type filter', () => {
+    expect(normalizeUiPreferences({ screenState: { artificing: { kindFilter: 'artifact' } } }).screenState.artificing.kindFilter).toBe('artifact')
+    expect(normalizeUiPreferences({ screenState: { artificing: { kindFilter: 'stale' } } }).screenState.artificing.kindFilter).toBe('all')
+    setUiPreferences({ screenState: { artificing: { kindFilter: 'equipment' } } })
+    expect(loadUiPreferences().screenState.artificing.kindFilter).toBe('equipment')
+  })
+
   it('migrates the old material tier preference and removes the obsolete field', () => {
     const preferences = normalizeUiPreferences({ screenState: { transmutation: { materialTierFilter: 2, unownedOnly: true } } })
     expect(preferences.screenState.transmutation.tierFilter).toBe(2)

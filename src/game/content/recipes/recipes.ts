@@ -1,4 +1,4 @@
-import { ITEMS } from '../items/items'
+import { ITEMS, NEW_DUNGEON_MATERIAL_IDS } from '../items/items'
 import { DUNGEONS } from '../dungeons/dungeons'
 import { MONSTERS } from '../monsters'
 import type { RecipeId, TransmutationRecipeId } from '../../types'
@@ -26,6 +26,7 @@ export const validateRecipeDefinitions = (recipes: Record<string, CraftingRecipe
     if ('sourceDungeonId' in recipe) {
       if (!DUNGEONS[recipe.sourceDungeonId]) errors.push(`${recipe.id}: unknown Artificing source dungeon`)
       if (ITEMS[recipe.output.itemId]?.kind !== 'equipment') errors.push(`${recipe.id}: Artificing output must be Equipment`)
+      if (new Set(recipe.ingredients.map((ingredient) => ingredient.itemId)).size < 4) errors.push(`${recipe.id}: Artificing recipe must have at least 4 distinct ingredients`)
     } else if (ITEMS[recipe.output.itemId]?.kind !== 'material') errors.push(`${recipe.id}: Transmutation output must be material`)
     recipe.ingredients.forEach((ingredient) => { if (!ITEMS[ingredient.itemId]) errors.push(`${recipe.id}: unknown ingredient ${ingredient.itemId}`); if (!Number.isInteger(ingredient.quantity) || ingredient.quantity <= 0) errors.push(`${recipe.id}: invalid ingredient quantity`) })
     if (ITEMS[recipe.output.itemId]?.kind === 'equipment' && recipe.output.quantity !== 1) errors.push(`${recipe.id}: Equipment recipe output quantity must be 1`)
@@ -33,6 +34,9 @@ export const validateRecipeDefinitions = (recipes: Record<string, CraftingRecipe
     if (recipe.unlock.type === 'monster-kill' && !MONSTERS[recipe.unlock.monsterId]) errors.push(`${recipe.id}: unlock monster must be known`)
     if (recipe.unlock.type === 'dungeon-monster-kills' && !DUNGEONS[recipe.unlock.dungeonId]) errors.push(`${recipe.id}: unlock dungeon must be known`)
     if (recipe.unlock.type === 'dungeon-unlocked' && !DUNGEONS[recipe.unlock.dungeonId]) errors.push(`${recipe.id}: unlock dungeon must be known`)
+  })
+  NEW_DUNGEON_MATERIAL_IDS.forEach((itemId) => {
+    if (!Object.values(recipes).some((recipe) => 'sourceDungeonId' in recipe && recipe.ingredients.some((ingredient) => ingredient.itemId === itemId))) errors.push(`${itemId}: new dungeon material must be used by an Artificing recipe`)
   })
   if (new Set(order).size !== order.length) errors.push('RECIPE_ORDER contains duplicates')
   if (order.length !== Object.keys(recipes).length || order.some((id) => !recipes[id as RecipeId])) errors.push('RECIPE_ORDER must contain every recipe exactly once')

@@ -24,7 +24,17 @@ describe('Artificing dungeon discovery', () => {
     expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['soulglass-amulet'])).toBe(false)
     state.progress.bossKillsByBoss['archmage-edrin-shade'] = 1
     expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['soulglass-amulet'])).toBe(true)
-    expect(ARTIFICING_RECIPES['soulglass-amulet'].ingredients).toEqual([{ itemId: 'edrin-remnant', quantity: 8 }])
-    expect(ARTIFICING_RECIPES['edrins-signet'].ingredients).toEqual([{ itemId: 'edrin-remnant', quantity: 20 }])
+    expect(ARTIFICING_RECIPES['soulglass-amulet'].ingredients).toEqual([
+      { itemId: 'edrin-remnant', quantity: 8 },
+      { itemId: 'graveglass-shard', quantity: 12 },
+      { itemId: 'soul-residue', quantity: 10 },
+      { itemId: 'prismatic-fragment', quantity: 8 },
+    ])
+    expect(ARTIFICING_RECIPES['edrins-signet'].ingredients).toEqual([
+      { itemId: 'edrin-remnant', quantity: 20 },
+      { itemId: 'graveglass-shard', quantity: 8 },
+      { itemId: 'soul-residue', quantity: 8 },
+      { itemId: 'burial-cloth', quantity: 8 },
+    ])
   })
 })

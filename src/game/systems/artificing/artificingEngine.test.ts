@@ -7,7 +7,7 @@ describe('Artificing', () => {
   it('refunds a saved in-progress craft once and prevents later output', () => {
     let state = createInitialState()
     state.progress.lifetimeKillsByMonster['forest-wisp'] = 1
-    state.inventory = { 'fire-fragment': 40, 'wisp-essence': 20, 'life-essence': 100 }
+    state.inventory = { 'fire-fragment': 40, 'wisp-essence': 20, 'thorn-fiber': 10, 'life-essence': 100 }
     const before = { ...state.inventory }
     craftArtificingRecipe(state, 'ember-staff')
     advanceArtificing(state, 2100)
@@ -30,6 +30,7 @@ describe('Artificing', () => {
     state.progress.lifetimeKillsByMonster['forest-wisp'] = 1
     state.inventory['fire-fragment'] = 20
     state.inventory['wisp-essence'] = 20
+    state.inventory['thorn-fiber'] = 10
     state.inventory['life-essence'] = 100
     expect(craftArtificingRecipe(state, 'ember-staff').ok).toBe(true)
     expect(state.inventory['ember-staff']).toBeUndefined()
@@ -49,6 +50,7 @@ describe('Artificing', () => {
     const state = createInitialState()
     state.inventory['fire-fragment'] = 20
     state.inventory['wisp-essence'] = 20
+    state.inventory['thorn-fiber'] = 10
     state.inventory['life-essence'] = 100
     expect(craftArtificingRecipe(state, 'ember-staff').ok).toBe(false)
     expect(state.inventory['fire-fragment']).toBe(20)

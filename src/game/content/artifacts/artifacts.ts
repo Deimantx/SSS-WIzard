@@ -208,7 +208,7 @@ const wispveilNodes: ArtifactNodeDefinition[] = [
 export const ARTIFACTS: Partial<Record<ArtifactId, ArtifactDefinition>> = {
   'ember-staff': {
     id: 'ember-staff', itemId: 'ember-staff', tier: 1, maxLevel: 10, coreStatsByLevel: emberStats,
-    forge: { ingredients: [fire(20), { itemId: 'wisp-essence', quantity: 20 }, { itemId: 'life-essence', quantity: 100 }] },
+    forge: { ingredients: [fire(20), material('wisp-essence', 15), material('thorn-fiber', 10), material('life-essence', 95)] },
     branches: [
       { id: 'burning', name: 'Burning', description: 'Persistent Fire damage and Burning.' },
       { id: 'direct-fire', name: 'Direct Fire', description: 'Direct Fire hits, Criticals, and spell tempo.' },
@@ -217,7 +217,7 @@ export const ARTIFACTS: Partial<Record<ArtifactId, ArtifactDefinition>> = {
   },
   'tideglass-wand': {
     id: 'tideglass-wand', itemId: 'tideglass-wand', tier: 1, maxLevel: 10, coreStatsByLevel: tideglassStats,
-    forge: { ingredients: [material('water-fragment', 20), material('wisp-essence', 20), material('life-essence', 100)] },
+    forge: { ingredients: [material('water-fragment', 20), material('wisp-essence', 12), material('rootstone-shard', 8), material('life-essence', 100)] },
     upgrades: elementalUpgrades('water-fragment'),
     branches: [
       { id: 'tidal-ward', name: 'Tidal Ward', description: 'Water Barrier strength, Mana, and defensive spell support.' },
@@ -227,7 +227,7 @@ export const ARTIFACTS: Partial<Record<ArtifactId, ArtifactDefinition>> = {
   },
   'stoneheart-scepter': {
     id: 'stoneheart-scepter', itemId: 'stoneheart-scepter', tier: 1, maxLevel: 10, coreStatsByLevel: stoneheartStats,
-    forge: { ingredients: [material('earth-fragment', 20), material('wisp-essence', 20), material('life-essence', 100)] },
+    forge: { ingredients: [material('earth-fragment', 20), material('rootstone-shard', 15), material('grove-bark', 5), material('life-essence', 100)] },
     upgrades: elementalUpgrades('earth-fragment'),
     branches: [
       { id: 'living-bastion', name: 'Living Bastion', description: 'Defense, regeneration, resistance, and emergency Barrier.' },
@@ -237,7 +237,7 @@ export const ARTIFACTS: Partial<Record<ArtifactId, ArtifactDefinition>> = {
   },
   'windthread-wand': {
     id: 'windthread-wand', itemId: 'windthread-wand', tier: 1, maxLevel: 10, coreStatsByLevel: windthreadStats,
-    forge: { ingredients: [material('air-fragment', 20), material('wisp-essence', 20), material('life-essence', 100)] },
+    forge: { ingredients: [material('air-fragment', 20), material('wisp-essence', 12), material('thorn-fiber', 8), material('life-essence', 100)] },
     upgrades: elementalUpgrades('air-fragment'),
     branches: [
       { id: 'tempest-tempo', name: 'Tempest Tempo', description: 'Cooldown, Mana efficiency, sustain, and high-Mana Air damage.' },
@@ -247,7 +247,7 @@ export const ARTIFACTS: Partial<Record<ArtifactId, ArtifactDefinition>> = {
   },
   'prismatic-focus': {
     id: 'prismatic-focus', itemId: 'prismatic-focus', tier: 1, maxLevel: 10, coreStatsByLevel: prismaticStats,
-    forge: { ingredients: [material('prismatic-fragment', 30), material('wisp-essence', 20), material('life-essence', 100)] },
+    forge: { ingredients: [material('prismatic-fragment', 30), material('wisp-essence', 10), material('rootstone-shard', 10), material('life-essence', 100)] },
     upgrades: prismaticUpgrades,
     branches: [
       { id: 'mana-engine', name: 'Mana Engine', description: 'Mana capacity, regeneration, and spell-cost efficiency.' },
@@ -257,7 +257,7 @@ export const ARTIFACTS: Partial<Record<ArtifactId, ArtifactDefinition>> = {
   },
   'wispweave-robe': {
     id: 'wispweave-robe', itemId: 'wispweave-robe', tier: 1, maxLevel: 10, coreStatsByLevel: wispweaveStats,
-    forge: { ingredients: [material('wisp-essence', 40), material('grove-bark', 25), material('life-essence', 100)] },
+    forge: { ingredients: [material('wisp-essence', 25), material('thorn-fiber', 15), material('grove-bark', 10), material('life-essence', 100)] },
     upgrades: wispweaveUpgrades,
     branches: [
       { id: 'living-bastion', name: 'Living Bastion', description: 'Health, Defense, regeneration, and emergency survival.' },
@@ -267,7 +267,7 @@ export const ARTIFACTS: Partial<Record<ArtifactId, ArtifactDefinition>> = {
   },
   'wispveil-hood': {
     id: 'wispveil-hood', itemId: 'wispveil-hood', tier: 1, maxLevel: 10, coreStatsByLevel: wispveilStats,
-    forge: { ingredients: [material('wisp-essence', 30), material('prismatic-fragment', 20), material('life-essence', 100)] },
+    forge: { ingredients: [material('wisp-essence', 20), material('thorn-fiber', 10), material('prismatic-fragment', 20), material('life-essence', 100)] },
     upgrades: wispveilUpgrades,
     branches: [
       { id: 'arcane-insight', name: 'Arcane Insight', description: 'Mana, Status Duration, cooldowns, and hostile-status protection.' },

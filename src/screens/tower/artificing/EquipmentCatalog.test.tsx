@@ -5,7 +5,7 @@ import { useGameStore } from '../../../store/gameStore'
 import { resetAllUiPreferences } from '../../../ui/preferences/uiPreferencesStore'
 import { EquipmentCatalog } from './EquipmentCatalog'
 
-describe('Artificing equipment catalog tier filter', () => {
+describe('Artificing equipment catalog filters', () => {
   beforeEach(() => {
     window.localStorage.clear()
     useGameStore.getState().resetSave()
@@ -23,7 +23,7 @@ describe('Artificing equipment catalog tier filter', () => {
     fireEvent.click(within(tierFilter).getByRole('button', { name: 'T2' }))
     expect(within(tierFilter).getByRole('button', { name: 'T2' }).getAttribute('aria-pressed')).toBe('true')
     expect(screen.getByText('0 SHOWN')).toBeTruthy()
-    expect(screen.getByText('No Equipment matches these filters.')).toBeTruthy()
+    expect(screen.getByText('No Artificing recipes match the current filters.')).toBeTruthy()
 
     fireEvent.click(within(tierFilter).getByRole('button', { name: 'T1' }))
     expect(screen.getByText('21 SHOWN')).toBeTruthy()
@@ -34,5 +34,32 @@ describe('Artificing equipment catalog tier filter', () => {
 
     fireEvent.click(within(tierFilter).getByRole('button', { name: 'T2' }))
     expect(screen.getByText('0 SHOWN')).toBeTruthy()
+  })
+
+  it('separates Artifact and Equipment cards through the persisted Craft Type filter', () => {
+    render(<TooltipProvider><EquipmentCatalog selected={null} onSelect={vi.fn()} query="" onQueryChange={vi.fn()} /></TooltipProvider>)
+
+    const craftType = screen.getByRole('group', { name: 'CRAFT TYPE' })
+    expect(within(craftType).getByRole('button', { name: 'ALL' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByRole('region', { name: 'ARTIFACTS' })).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'EQUIPMENT' })).toBeTruthy()
+
+    fireEvent.click(within(craftType).getByRole('button', { name: 'ARTIFACTS' }))
+    expect(screen.getByText('7 SHOWN')).toBeTruthy()
+    expect(screen.getByText('Ember Staff')).toBeTruthy()
+    expect(screen.queryByText('Windthread Charm')).toBeNull()
+    expect(within(craftType).getByRole('button', { name: 'ARTIFACTS' }).getAttribute('aria-pressed')).toBe('true')
+
+    fireEvent.click(within(craftType).getByRole('button', { name: 'EQUIPMENT' }))
+    expect(screen.getByText('14 SHOWN')).toBeTruthy()
+    expect(screen.getByText('Windthread Charm')).toBeTruthy()
+    expect(screen.queryByText('Ember Staff')).toBeNull()
+    expect(within(craftType).getByRole('button', { name: 'EQUIPMENT' }).getAttribute('aria-pressed')).toBe('true')
+
+    const slotFilter = screen.getByRole('group', { name: 'SLOT' })
+    fireEvent.click(within(slotFilter).getByRole('button', { name: 'EARRING' }))
+    expect(screen.getByText('3 SHOWN')).toBeTruthy()
+    expect(screen.getByText('Fangwire Earring')).toBeTruthy()
+    expect(screen.queryByText('Ember Staff')).toBeNull()
   })
 })

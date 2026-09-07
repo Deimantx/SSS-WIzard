@@ -1,4 +1,4 @@
-import type { ArtificingTierFilter, ItemId, RecipeCategory, SchoolId, TransmutationCategoryFilter, TransmutationTierFilter } from '../../game/types'
+import type { ArtificingKindFilter, ArtificingTierFilter, ItemId, RecipeCategory, SchoolId, TransmutationCategoryFilter, TransmutationTierFilter } from '../../game/types'
 import type { CombatDetailsMode } from '../../game/presentation/combat/combatDetailsPresentation'
 import type { DungeonStatisticsMode } from '../../game/telemetry/dungeon/dungeonStatisticsTypes'
 
@@ -36,6 +36,7 @@ export interface ArtificingScreenPreferences {
   pinnedRecipeId: import('../../game/types').ArtificingRecipeId | null
   slotFilter: 'all' | import('../../game/types').EquipmentItemSlot
   tierFilter: ArtificingTierFilter
+  kindFilter: ArtificingKindFilter
   weaponHandsFilter: 'all' | 1 | 2
   offhandPresentationFilter: 'all' | 'shield' | 'focus'
   craftableOnly: boolean

@@ -48,6 +48,8 @@ export const validateDungeonDefinitions = () => {
     if (!Number.isInteger(dungeon.threatRequired) || dungeon.threatRequired <= 0) errors.push(`${dungeon.id}: threatRequired must be a positive integer`)
     if (!Number.isFinite(dungeon.encounterDelayMs) || dungeon.encounterDelayMs <= 0) errors.push(`${dungeon.id}: encounterDelayMs must be positive`)
     dungeon.monsterPool.forEach((monsterId) => { if (!MONSTERS[monsterId]) errors.push(`${dungeon.id}: unknown monster ${monsterId}`) })
+    const regularMaterialIds = new Set(dungeon.monsterPool.flatMap((monsterId) => MONSTERS[monsterId]?.loot.filter((drop) => drop.itemId !== 'life-essence').map((drop) => drop.itemId) ?? []))
+    if (regularMaterialIds.size < 4) errors.push(`${dungeon.id}: normal monster roster must expose at least 4 dungeon materials`)
     if (!MONSTERS[dungeon.boss]) errors.push(`${dungeon.id}: unknown boss ${dungeon.boss}`)
     if (dungeon.monsterPool.includes(dungeon.boss)) errors.push(`${dungeon.id}: boss must not be in the normal monster pool`)
     if (dungeon.unlock?.type === 'boss-kill' && (!MONSTERS[dungeon.unlock.bossId] || !isBossMonster(MONSTERS[dungeon.unlock.bossId]))) errors.push(`${dungeon.id}: unlock boss must be a known boss monster`)

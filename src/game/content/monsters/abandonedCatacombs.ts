@@ -7,7 +7,7 @@ export const ABANDONED_CATACOMBS_MONSTERS = {
     maxHealth: 680, basicAttackDamage: 45, basicAttackTimeMs: 2700, defense: 30, color: '#c9c3ae', ui: { portraitIcon: 'skeleton' }, traitIds: ['restless-skeleton-brittle-bones'], resistances: { physical: 0.25 },
     actions: { 'bone-cleaver': { id: 'bone-cleaver', name: 'Bone Cleaver', actionTimeMs: 2200, description: 'A heavy cleaver blow splits through the target.', effects: [scaledDirectDamage('physical', 1.85)], tags: ['special', 'physical', 'melee', 'direct'] } },
     actionPatterns: { default: { id: 'default', steps: [basic('basic-1'), basic('basic-2'), action('bone-cleaver-step', 'bone-cleaver')] } }, defaultActionPatternId: 'default',
-    loot: withLifeEssence([{ itemId: 'ossuary-remnant', min: 1, max: 1, chance: 0.2 }, { itemId: 'graveglass-shard', min: 1, max: 1, chance: 0.05 }], { min: 4, max: 8 }),
+    loot: withLifeEssence([{ itemId: 'ossuary-remnant', min: 1, max: 1, chance: 0.2 }, { itemId: 'graveglass-shard', min: 1, max: 1, chance: 0.05 }, { itemId: 'burial-cloth', min: 1, max: 1, chance: 0.1 }], { min: 4, max: 8 }),
   },
   'grave-wraith': {
     id: 'grave-wraith', bestiaryCategory: 'monster', name: 'Grave Wraith', subtitle: 'A cold memory refusing to fade',
@@ -28,7 +28,7 @@ export const ABANDONED_CATACOMBS_MONSTERS = {
       'death-ward': { id: 'death-ward', name: 'Death Ward', actionTimeMs: 2000, description: 'A deathly ward gathers a protective Barrier around the caster.', effects: [scaledBarrier(0.205)], tags: ['special', 'barrier'] },
     },
     actionPatterns: { default: { id: 'default', steps: [action('grave-bolt-step', 'grave-bolt'), basic('basic-1'), action('soul-drain-step', 'soul-drain'), basic('basic-2'), basic('basic-3'), action('death-ward-step', 'death-ward'), basic('basic-4')] } }, defaultActionPatternId: 'default',
-    loot: withLifeEssence([{ itemId: 'graveglass-shard', min: 1, max: 1, chance: 0.1 }, { itemId: 'soul-residue', min: 1, max: 1, chance: 0.2 }, { itemId: 'ossuary-remnant', min: 1, max: 1, chance: 0.1 }], { min: 5, max: 10 }),
+    loot: withLifeEssence([{ itemId: 'graveglass-shard', min: 1, max: 1, chance: 0.1 }, { itemId: 'soul-residue', min: 1, max: 1, chance: 0.2 }, { itemId: 'ossuary-remnant', min: 1, max: 1, chance: 0.1 }, { itemId: 'burial-cloth', min: 1, max: 1, chance: 0.15 }], { min: 5, max: 10 }),
   },
   'archmage-edrin-shade': {
     id: 'archmage-edrin-shade', bestiaryCategory: 'boss', name: "Archmage Edrin's Shade", subtitle: 'The last spell of a wizard who would not rest',

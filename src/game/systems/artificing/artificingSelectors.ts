@@ -6,7 +6,7 @@ import { isRecipeUnlocked, getRecipeUnlockRequirement } from '../../content/reci
 import { canCraftArtificingRecipe } from './artificingEngine'
 import { ARTIFACTS } from '../../content/artifacts/artifacts'
 import { canUpgradeArtifact, getArtifactLevel, getArtifactLevelCap, getArtifactUpgrade } from '../artifacts/artifactProgression'
-import type { ArtificingTierFilter, GameState, EquipmentItemSlot } from '../../types'
+import type { ArtificingKindFilter, ArtificingTierFilter, GameState, EquipmentItemSlot } from '../../types'
 export { canCraftArtificingRecipe }
 export const getArtificingUnlockReason = getRecipeUnlockRequirement
 export interface ArtificingIngredientProgress { itemId: import('../../types').ItemId; available: number; required: number; missing: number; ready: boolean }
@@ -16,12 +16,13 @@ export const getArtificingLimitingIngredient = (state: Pick<GameState, 'inventor
 export interface ArtificingFilters {
   slotFilter: 'all' | EquipmentItemSlot
   tierFilter: ArtificingTierFilter
+  kindFilter: ArtificingKindFilter
   weaponHandsFilter: 'all' | 1 | 2
   offhandPresentationFilter: 'all' | 'shield' | 'focus'
   craftableOnly: boolean
   ownershipFilter: 'all' | 'owned' | 'unowned'
 }
-export const DEFAULT_ARTIFICING_FILTERS: ArtificingFilters = { slotFilter: 'all', tierFilter: 'all', weaponHandsFilter: 'all', offhandPresentationFilter: 'all', craftableOnly: false, ownershipFilter: 'all' }
+export const DEFAULT_ARTIFICING_FILTERS: ArtificingFilters = { slotFilter: 'all', tierFilter: 'all', kindFilter: 'all', weaponHandsFilter: 'all', offhandPresentationFilter: 'all', craftableOnly: false, ownershipFilter: 'all' }
 export const getArtificingRecipeEntries = () => ARTIFICING_RECIPE_ORDER.map(id => ARTIFICING_RECIPES[id])
 export const getArtificingProfile = (recipe: ArtificingRecipeDefinition) => {
   const item = ITEMS[recipe.output.itemId]
@@ -33,6 +34,8 @@ export const getArtificingRecipePlayerTier = (recipe: ArtificingRecipeDefinition
   const artifact = ARTIFACTS[recipe.output.itemId]
   return artifact?.tier ?? (item.equipmentTier === undefined ? undefined : getPlayerEquipmentTier(item.equipmentTier))
 }
+
+export const isArtifactArtificingRecipe = (recipe: ArtificingRecipeDefinition) => Boolean(ARTIFACTS[recipe.output.itemId])
 
 export interface ArtifactArtificingState {
   owned: boolean
@@ -70,6 +73,8 @@ export function getVisibleArtificingRecipes(state: GameState, filters: Artificin
     if (!showLocked && !isRecipeUnlocked(state, recipe)) return false
     if (filters.slotFilter !== 'all' && item.equipmentSlot !== filters.slotFilter) return false
     if (filters.tierFilter !== 'all' && getArtificingRecipePlayerTier(recipe) !== filters.tierFilter) return false
+    if (filters.kindFilter === 'artifact' && !isArtifactArtificingRecipe(recipe)) return false
+    if (filters.kindFilter === 'equipment' && isArtifactArtificingRecipe(recipe)) return false
     if (filters.slotFilter === 'weapon' && filters.weaponHandsFilter !== 'all' && item.weaponHands !== filters.weaponHandsFilter) return false
     if (filters.slotFilter === 'offhand' && filters.offhandPresentationFilter !== 'all' && item.equipmentPresentation !== filters.offhandPresentationFilter) return false
     if (filters.craftableOnly && !canCraftArtificingRecipe(state, recipe.id)) return false
@@ -79,8 +84,11 @@ export function getVisibleArtificingRecipes(state: GameState, filters: Artificin
   })
 }
 export function getArtificingFilterCounts(state: GameState, filters: ArtificingFilters, query = '') {
+  const visible = getVisibleArtificingRecipes(state, filters, query)
   return {
-    visible: getVisibleArtificingRecipes(state, filters, query).length,
+    visible: visible.length,
+    artifacts: visible.filter(isArtifactArtificingRecipe).length,
+    equipment: visible.filter((recipe) => !isArtifactArtificingRecipe(recipe)).length,
     craftable: getVisibleArtificingRecipes(state, { ...filters, craftableOnly: true }, query).length,
     unlocked: getArtificingRecipeEntries().filter(recipe => isRecipeUnlocked(state, recipe)).length,
   }

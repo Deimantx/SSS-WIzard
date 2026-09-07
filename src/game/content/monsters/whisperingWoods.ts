@@ -14,14 +14,14 @@ export const WHISPERING_WOODS_MONSTERS = {
     maxHealth: 240, basicAttackDamage: 12, basicAttackTimeMs: 2500, defense: 12, color: '#cb7899', ui: { portraitIcon: 'plant' }, traitIds: ['thornling-barkskin'],
     actions: { 'thorn-lash': { id: 'thorn-lash', name: 'Thorn Lash', actionTimeMs: 1800, description: 'A thorned lash cuts the target and leaves a lingering Thorn Wound.', effects: [scaledDirectDamage('physical', 1.25), scaledDot('thorn-wound', 'physical', 1.125, 6000)], tags: ['special', 'physical', 'debuff'] } },
     actionPatterns: { default: { id: 'default', steps: [basic('basic-1'), basic('basic-2'), action('thorn-lash-step', 'thorn-lash')] } }, defaultActionPatternId: 'default',
-    loot: withLifeEssence([{ itemId: 'wisp-essence', min: 1, max: 2, chance: 0.2 }]),
+    loot: withLifeEssence([{ itemId: 'thorn-fiber', min: 1, max: 2, chance: 0.2 }]),
   },
   'stone-root': {
     id: 'stone-root', bestiaryCategory: 'monster', name: 'Stone Root', subtitle: 'The forest floor given a heartbeat',
     maxHealth: 280, basicAttackDamage: 12, basicAttackTimeMs: 3200, defense: 12, color: '#b28f79', ui: { portraitIcon: 'stone' }, traitIds: ['stone-rooted-shell'],
     actions: { 'root-slam': { id: 'root-slam', name: 'Root Slam', actionTimeMs: 2500, description: "A crushing root strike disrupts the Player's Basic Attack rhythm.", effects: [scaledDirectDamage('physical', 1.65), delayBasicAttack(700)], tags: ['special', 'physical', 'control'] } },
     actionPatterns: { default: { id: 'default', steps: [basic('basic-1'), basic('basic-2'), basic('basic-3'), action('root-slam-step', 'root-slam')] } }, defaultActionPatternId: 'default',
-    loot: withLifeEssence([{ itemId: 'wisp-essence', min: 1, max: 3, chance: 0.2 }], { chance: 0.2 }),
+    loot: withLifeEssence([{ itemId: 'rootstone-shard', min: 1, max: 3, chance: 0.2 }], { chance: 0.2 }),
   },
   'grove-sentinel': {
     id: 'grove-sentinel', bestiaryCategory: 'monster', name: 'Grove Sentinel', subtitle: 'An ancient guardian of the inner grove',

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 import { Button, EquipmentCombatDetails, Status } from '../../components/ui'
 import { EquipmentMetadata, ItemIcon, ItemQuantity, ItemTooltip } from '../../components/ui/item'
 import { getItemSourceLabel, getResearchXp, ITEMS } from '../../game/content/items/items'
+import { getArtifactDefinition } from '../../game/content/artifacts/artifacts'
 import { SCHOOLS } from '../../game/content/schools/schools'
 import type { ArtifactId, GameState, ItemId, SchoolId, ScreenId } from '../../game/types'
 import { flattenItemStats, formatStat, friendlyStatLabel } from '../../components/ui/item/ItemTooltip'
@@ -80,7 +81,7 @@ export function InventoryDetail({ itemId, inventory, protectedItems, equipment, 
 
     {flow && <FlowSection flow={flow} />}
 
-    {isArtifactItem(itemId) ? <section className="inventory-detail-section"><span className="inventory-detail-label">T1 ARTIFACT · LEVEL {getArtifactLevel({ artifactProgress }, itemId)} / 10</span><div className="inventory-stat-list">{flattenItemStats(getArtifactEffectiveStats({ artifactProgress }, itemId)).filter(([, value]) => value !== 0).map(([key, value]) => <DetailRow key={key} label={friendlyStatLabel(key)} value={formatStat(key, value)} />)}</div><p>Artifact Points {getArtifactAvailablePoints({ artifactProgress }, itemId)} / {getArtifactTotalPoints({ artifactProgress }, itemId)}</p><Button variant="secondary" onClick={() => onOpenArtifactPath?.(itemId)}>ARTIFACT PATH</Button></section> : item.stats && Object.keys(item.stats).length > 0 && <section className="inventory-detail-section"><span className="inventory-detail-label">STATS</span><div className="inventory-stat-list">{flattenItemStats(item.stats).filter(([, value]) => value !== 0).map(([key, value]) => <DetailRow key={key} label={friendlyStatLabel(key)} value={formatStat(key, value)} />)}</div></section>}
+    {isArtifactItem(itemId) ? <section className="inventory-detail-section"><span className="inventory-detail-label">T{getArtifactDefinition(itemId)?.tier ?? 1} ARTIFACT · LEVEL {getArtifactLevel({ artifactProgress }, itemId)} / 10</span><div className="inventory-stat-list">{flattenItemStats(getArtifactEffectiveStats({ artifactProgress }, itemId)).filter(([, value]) => value !== 0).map(([key, value]) => <DetailRow key={key} label={friendlyStatLabel(key)} value={formatStat(key, value)} />)}</div><p>Artifact Points {getArtifactAvailablePoints({ artifactProgress }, itemId)} / {getArtifactTotalPoints({ artifactProgress }, itemId)}</p><Button variant="secondary" onClick={() => onOpenArtifactPath?.(itemId)}>ARTIFACT PATH</Button></section> : item.stats && Object.keys(item.stats).length > 0 && <section className="inventory-detail-section"><span className="inventory-detail-label">STATS</span><div className="inventory-stat-list">{flattenItemStats(item.stats).filter(([, value]) => value !== 0).map(([key, value]) => <DetailRow key={key} label={friendlyStatLabel(key)} value={formatStat(key, value)} />)}</div></section>}
     {item.kind === 'equipment' && <EquipmentCombatDetails item={item} />}
 
     {item.kind === 'equipment' && <InventoryLoadoutComparison itemId={itemId} equippedId={equippedId} quantity={quantity} inventory={inventory} preview={equipmentPreview} ringTarget={ringTarget} onRingTargetChange={setRingTarget} />}

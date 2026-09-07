@@ -38,4 +38,20 @@ describe('Artificing catalog', () => {
       'mourning-glass-earring',
     ])
   })
+
+  it('filters by player-facing tier and composes with the Earring slot filter', () => {
+    const state = createInitialState()
+    state.debug.showLockedArtificingRecipes = true
+
+    expect(getVisibleArtificingRecipes(state)).toHaveLength(21)
+    expect(getVisibleArtificingRecipes(state, { ...defaults, tierFilter: 1 })).toHaveLength(21)
+    expect(getVisibleArtificingRecipes(state, { ...defaults, tierFilter: 2 })).toHaveLength(0)
+    expect(getVisibleArtificingRecipes(state, { ...defaults, tierFilter: 3 })).toHaveLength(0)
+    expect(getVisibleArtificingRecipes(state, { ...defaults, slotFilter: 'earring', tierFilter: 1 }, '', true).map(recipe => recipe.output.itemId)).toEqual([
+      'wispglass-earring',
+      'fangwire-earring',
+      'mourning-glass-earring',
+    ])
+    expect(getVisibleArtificingRecipes(state, { ...defaults, slotFilter: 'earring', tierFilter: 2 }, '', true)).toHaveLength(0)
+  })
 })

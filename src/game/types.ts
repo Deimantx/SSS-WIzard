@@ -70,6 +70,8 @@ export type ArtificingRecipeId = Exclude<RecipeId, TransmutationRecipeId>
 export type RecipeCategory = 'elemental' | 'material'
 export type TransmutationCategoryFilter = 'all' | RecipeCategory
 export type TransmutationTierFilter = 'all' | number
+export type EquipmentPlayerTier = 1 | 2 | 3
+export type ArtificingTierFilter = 'all' | EquipmentPlayerTier
 /** @deprecated Use TransmutationTierFilter. */
 export type TransmutationMaterialTierFilter = TransmutationTierFilter
 export type RecipeUnlockCondition =

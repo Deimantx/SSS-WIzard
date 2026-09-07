@@ -5,7 +5,7 @@ import { MAX_BLOCK_CHANCE, MAX_RESISTANCE, MIN_RESISTANCE } from '../../core/bal
 import { ARTIFACTS, validateArtifactDefinitions } from '../artifacts/artifacts'
 import { createCombatValidationContext, validateCombatProvider } from '../../systems/combat/combatEffectValidation'
 import { STATUS_DEFINITIONS } from '../statuses/statuses'
-import { EQUIPMENT_BUILD_TAG_LABELS, EQUIPMENT_BUDGET_PROFILES, getPlayerEquipmentTier, validateEquipmentBudgetProfiles } from './equipmentBalance'
+import { EQUIPMENT_BUILD_TAG_LABELS, EQUIPMENT_BUDGET_PROFILES, validateEquipmentBudgetProfiles } from './equipmentBalance'
 
 type AuthoredItemDefinition = Omit<ItemDefinition, 'inventoryCategory' | 'materialSubtype' | 'sellValue' | 'canDestroy' | 'actionRestrictionReason'> & Partial<Pick<ItemDefinition, 'inventoryCategory' | 'materialSubtype' | 'sellValue' | 'canDestroy' | 'actionRestrictionReason'>>
 
@@ -144,7 +144,6 @@ const validateEquipmentMetadata = (item: ItemDefinition, errors: string[]) => {
   }
   if (ARTIFACTS[item.id]) return
   if (item.equipmentTier === undefined || !Number.isFinite(item.equipmentTier) || item.equipmentTier <= 0) errors.push(`${item.id}: equipmentTier must be finite and greater than 0`)
-  else if (getPlayerEquipmentTier(item.equipmentTier) === undefined) errors.push(`${item.id}: equipmentTier has no player-facing tier mapping`)
   const tags = item.buildTags
   if (!Array.isArray(tags) || tags.length < 1 || tags.length > 4) errors.push(`${item.id}: buildTags must contain 1 to 4 tags`)
   else {

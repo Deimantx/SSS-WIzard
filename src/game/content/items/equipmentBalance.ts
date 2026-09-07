@@ -34,17 +34,8 @@ export const EQUIPMENT_BUILD_TAG_LABELS = {
 
 export const formatEquipmentTier = (tier: number) => Number.isInteger(tier) ? tier.toFixed(1) : String(tier)
 
-const PLAYER_EQUIPMENT_TIER_BY_INTERNAL_BAND: ReadonlyMap<number, number> = new Map([
-  [1.0, 1],
-  [1.3, 2],
-  [1.6, 3],
-])
-
-export const getPlayerEquipmentTier = (internalTier: number) => PLAYER_EQUIPMENT_TIER_BY_INTERNAL_BAND.get(internalTier)
-export const formatPlayerEquipmentTier = (internalTier: number) => {
-  const playerTier = getPlayerEquipmentTier(internalTier)
-  return playerTier === undefined ? 'T?' : `T${playerTier}`
-}
+export const getPlayerEquipmentTier = (internalTier: number): number => Math.floor(internalTier)
+export const formatPlayerEquipmentTier = (internalTier: number): string => `T${getPlayerEquipmentTier(internalTier)}`
 
 /** Collect development errors without throwing during authored-definition validation. */
 export function validateEquipmentBudgetProfiles(errors: string[] = []) {

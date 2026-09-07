@@ -1,12 +1,12 @@
 import { ARTIFICING_RECIPES, ARTIFICING_RECIPE_ORDER, type ArtificingRecipeDefinition } from '../../content/recipes/artificingRecipes'
 import { ITEMS } from '../../content/items/items'
-import { EQUIPMENT_BUILD_TAG_LABELS } from '../../content/items/equipmentBalance'
+import { EQUIPMENT_BUILD_TAG_LABELS, getPlayerEquipmentTier } from '../../content/items/equipmentBalance'
 import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
 import { isRecipeUnlocked, getRecipeUnlockRequirement } from '../../content/recipes/recipeUnlocks'
 import { canCraftArtificingRecipe } from './artificingEngine'
 import { ARTIFACTS } from '../../content/artifacts/artifacts'
 import { canUpgradeArtifact, getArtifactLevel, getArtifactLevelCap, getArtifactUpgrade } from '../artifacts/artifactProgression'
-import type { GameState, EquipmentItemSlot } from '../../types'
+import type { ArtificingTierFilter, GameState, EquipmentItemSlot } from '../../types'
 export { canCraftArtificingRecipe }
 export const getArtificingUnlockReason = getRecipeUnlockRequirement
 export interface ArtificingIngredientProgress { itemId: import('../../types').ItemId; available: number; required: number; missing: number; ready: boolean }
@@ -15,16 +15,23 @@ export const getArtificingCraftCapacity = (state: Pick<GameState, 'inventory' | 
 export const getArtificingLimitingIngredient = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment' | 'activities'>, recipeId: import('../../types').ArtificingRecipeId) => { const recipe = ARTIFICING_RECIPES[recipeId]; if (!recipe) return null; return recipe.ingredients.reduce((lowest, ingredient) => getConsumableQuantity(state, ingredient.itemId) / ingredient.quantity < getConsumableQuantity(state, lowest.itemId) / lowest.quantity ? ingredient : lowest, recipe.ingredients[0]) ? ITEMS[recipe.ingredients.reduce((lowest, ingredient) => getConsumableQuantity(state, ingredient.itemId) / ingredient.quantity < getConsumableQuantity(state, lowest.itemId) / lowest.quantity ? ingredient : lowest, recipe.ingredients[0]).itemId] : null }
 export interface ArtificingFilters {
   slotFilter: 'all' | EquipmentItemSlot
+  tierFilter: ArtificingTierFilter
   weaponHandsFilter: 'all' | 1 | 2
   offhandPresentationFilter: 'all' | 'shield' | 'focus'
   craftableOnly: boolean
   ownershipFilter: 'all' | 'owned' | 'unowned'
 }
-export const DEFAULT_ARTIFICING_FILTERS: ArtificingFilters = { slotFilter: 'all', weaponHandsFilter: 'all', offhandPresentationFilter: 'all', craftableOnly: false, ownershipFilter: 'all' }
+export const DEFAULT_ARTIFICING_FILTERS: ArtificingFilters = { slotFilter: 'all', tierFilter: 'all', weaponHandsFilter: 'all', offhandPresentationFilter: 'all', craftableOnly: false, ownershipFilter: 'all' }
 export const getArtificingRecipeEntries = () => ARTIFICING_RECIPE_ORDER.map(id => ARTIFICING_RECIPES[id])
 export const getArtificingProfile = (recipe: ArtificingRecipeDefinition) => {
   const item = ITEMS[recipe.output.itemId]
   return [item.equipmentSlot?.toUpperCase(), item.weaponHands ? `${item.weaponHands}H` : item.equipmentPresentation?.toUpperCase()].filter(Boolean).join(' · ')
+}
+
+export const getArtificingRecipePlayerTier = (recipe: ArtificingRecipeDefinition): number | undefined => {
+  const item = ITEMS[recipe.output.itemId]
+  const artifact = ARTIFACTS[recipe.output.itemId]
+  return artifact?.tier ?? (item.equipmentTier === undefined ? undefined : getPlayerEquipmentTier(item.equipmentTier))
 }
 
 export interface ArtifactArtificingState {
@@ -62,6 +69,7 @@ export function getVisibleArtificingRecipes(state: GameState, filters: Artificin
     const item = ITEMS[recipe.output.itemId]
     if (!showLocked && !isRecipeUnlocked(state, recipe)) return false
     if (filters.slotFilter !== 'all' && item.equipmentSlot !== filters.slotFilter) return false
+    if (filters.tierFilter !== 'all' && getArtificingRecipePlayerTier(recipe) !== filters.tierFilter) return false
     if (filters.slotFilter === 'weapon' && filters.weaponHandsFilter !== 'all' && item.weaponHands !== filters.weaponHandsFilter) return false
     if (filters.slotFilter === 'offhand' && filters.offhandPresentationFilter !== 'all' && item.equipmentPresentation !== filters.offhandPresentationFilter) return false
     if (filters.craftableOnly && !canCraftArtificingRecipe(state, recipe.id)) return false

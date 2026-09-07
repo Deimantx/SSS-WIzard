@@ -13,7 +13,7 @@ export const UI_PREFERENCES_KEY = 'sss-wizard-ui-preferences-v1'
 export const defaultScreenPreferences = (): ScreenPreferences => ({
   inventory: { sourceOpen: false, researchValueOpen: false },
   transmutation: { selectedRecipeId: RECIPE_ORDER[0], pinnedRecipeId: null, categoryFilter: 'all', tierFilter: 'all', craftableOnly: false, activeOnly: false, collapsedCategories: { elemental: false, material: false } },
-  artificing: { selectedRecipeId: null, pinnedRecipeId: null, slotFilter: 'all', weaponHandsFilter: 'all', offhandPresentationFilter: 'all', craftableOnly: false, ownershipFilter: 'all' },
+  artificing: { selectedRecipeId: null, pinnedRecipeId: null, slotFilter: 'all', tierFilter: 'all', weaponHandsFilter: 'all', offhandPresentationFilter: 'all', craftableOnly: false, ownershipFilter: 'all' },
   research: { selectedItemId: null, affinityFilter: 'all', targetSchoolId: 'fire' },
   combat: { combatLogFontSize: 'medium', combatDetailsMode: 'damage-done', dungeonStatisticsMode: 'runs' },
 })
@@ -63,6 +63,7 @@ export const normalizeUiPreferences = (value: unknown): UiPreferences => {
     selectedRecipeId: typeof a.selectedRecipeId === 'string' && ARTIFICING_RECIPE_ORDER.includes(a.selectedRecipeId as ArtificingRecipeId) ? a.selectedRecipeId as ArtificingRecipeId : null,
     pinnedRecipeId: typeof a.pinnedRecipeId === 'string' && ARTIFICING_RECIPE_ORDER.includes(a.pinnedRecipeId as ArtificingRecipeId) ? a.pinnedRecipeId as ArtificingRecipeId : null,
     slotFilter: oneOf(a.slotFilter, artificingSlotFilters, 'all'),
+    tierFilter: oneOf(a.tierFilter, ['all', 1, 2, 3] as const, 'all'),
     weaponHandsFilter: oneOf(a.weaponHandsFilter, ['all', 1, 2] as const, 'all'),
     offhandPresentationFilter: oneOf(a.offhandPresentationFilter, ['all', 'shield', 'focus'] as const, 'all'),
     craftableOnly: a.craftableOnly === true,

@@ -54,6 +54,13 @@ describe('screen UI preferences', () => {
     expect(loadUiPreferences().screenState.artificing.slotFilter).toBe('earring')
   })
 
+  it('preserves and safely normalizes the Artificing player tier filter', () => {
+    expect(normalizeUiPreferences({ screenState: { artificing: { tierFilter: 2 } } }).screenState.artificing.tierFilter).toBe(2)
+    expect(normalizeUiPreferences({ screenState: { artificing: { tierFilter: 1.3 } } }).screenState.artificing.tierFilter).toBe('all')
+    setUiPreferences({ screenState: { artificing: { tierFilter: 3 } } })
+    expect(loadUiPreferences().screenState.artificing.tierFilter).toBe(3)
+  })
+
   it('migrates the old material tier preference and removes the obsolete field', () => {
     const preferences = normalizeUiPreferences({ screenState: { transmutation: { materialTierFilter: 2, unownedOnly: true } } })
     expect(preferences.screenState.transmutation.tierFilter).toBe(2)

@@ -21,6 +21,8 @@ import { useGameStore } from '../../store/gameStore'
 import { getItemDropSources, getItemSources } from '../../game/content/contentRelations'
 import { isTransmutationRecipeId } from '../../game/content/recipes/recipes'
 import { setNavigationIntent } from '../../ui/navigation/navigationIntent'
+import { isArtifactItem, getArtifactLevel, getArtifactTotalPoints, getArtifactAvailablePoints, getArtifactEffectiveStats } from '../../game/systems/artifacts/artifactProgression'
+import { ArtifactPathModal } from '../../components/artifacts/ArtifactPathModal'
 
 type DetailAccordionKey = 'source' | 'researchValue'
 type DetailAccordionState = Record<DetailAccordionKey, boolean>
@@ -31,8 +33,10 @@ export function InventoryDetail({ itemId, inventory, protectedItems, equipment, 
   const player = useGameStore((state) => state.player)
   const progress = useGameStore((state) => state.progress)
   const activities = useGameStore((state) => state.activities)
+  const artifactProgress = useGameStore((state) => state.artifactProgress)
   const [usesOpen, setUsesOpen] = useState(false)
   const [ringTarget, setRingTarget] = useState<'ring1' | 'ring2' | null>(null)
+  const [artifactPathOpen, setArtifactPathOpen] = useState(false)
   const openSections: DetailAccordionState = { source: preferences.screenState.inventory.sourceOpen, researchValue: preferences.screenState.inventory.researchValueOpen }
   useSmartScrollState(detailScrollRef, { resetKey: itemId })
   useEffect(() => setUsesOpen(false), [itemId])
@@ -47,7 +51,7 @@ export function InventoryDetail({ itemId, inventory, protectedItems, equipment, 
   const source = getItemSourceDestination(itemId)
   const recipeUses = getItemUses(itemId).filter((use) => Boolean(use.recipeId))
   const equippedId = item.equipmentSlot ? getItemPositions(item).map((position) => equipment[position]).find(Boolean) ?? null : null
-  const equipmentPreview = item.kind === 'equipment' ? getEquipmentPreview({ player, progress, activities, equipment, inventory }, itemId, ringTarget ?? undefined) : null
+  const equipmentPreview = item.kind === 'equipment' ? getEquipmentPreview({ player, progress, activities, equipment, inventory, artifactProgress }, itemId, ringTarget ?? undefined) : null
   const category = getInventorySubcategoryLabel(itemId) ? `${getInventorySubcategoryLabel(itemId)} Material` : getInventoryCategoryLabel(itemId)
   const processingChain = getItemProcessingChain(itemId).filter((chainItem) => Boolean(ITEMS[chainItem]))
   const flow = economyState ? getItemFlow(itemId, economyState) : null
@@ -78,7 +82,7 @@ export function InventoryDetail({ itemId, inventory, protectedItems, equipment, 
 
     {flow && <FlowSection flow={flow} />}
 
-    {item.stats && Object.keys(item.stats).length > 0 && <section className="inventory-detail-section"><span className="inventory-detail-label">STATS</span><div className="inventory-stat-list">{flattenItemStats(item.stats).filter(([, value]) => value !== 0).map(([key, value]) => <DetailRow key={key} label={friendlyStatLabel(key)} value={formatStat(key, value)} />)}</div></section>}
+    {isArtifactItem(itemId) ? <section className="inventory-detail-section"><span className="inventory-detail-label">TIER 1 ARTIFACT · LEVEL {getArtifactLevel({ artifactProgress }, itemId)} / 10</span><div className="inventory-stat-list">{flattenItemStats(getArtifactEffectiveStats({ artifactProgress }, itemId)).filter(([, value]) => value !== 0).map(([key, value]) => <DetailRow key={key} label={friendlyStatLabel(key)} value={formatStat(key, value)} />)}</div><p>Artifact Points {getArtifactAvailablePoints({ artifactProgress }, itemId)} / {getArtifactTotalPoints({ artifactProgress }, itemId)}</p><Button variant="secondary" onClick={() => setArtifactPathOpen(true)}>ARTIFACT PATH</Button></section> : item.stats && Object.keys(item.stats).length > 0 && <section className="inventory-detail-section"><span className="inventory-detail-label">STATS</span><div className="inventory-stat-list">{flattenItemStats(item.stats).filter(([, value]) => value !== 0).map(([key, value]) => <DetailRow key={key} label={friendlyStatLabel(key)} value={formatStat(key, value)} />)}</div></section>}
     {item.kind === 'equipment' && <EquipmentCombatDetails item={item} />}
 
     {item.kind === 'equipment' && <InventoryLoadoutComparison itemId={itemId} equippedId={equippedId} quantity={quantity} inventory={inventory} preview={equipmentPreview} ringTarget={ringTarget} onRingTargetChange={setRingTarget} />}
@@ -88,7 +92,7 @@ export function InventoryDetail({ itemId, inventory, protectedItems, equipment, 
 
     {item.researchSchool && <InventoryDetailSection section="researchValue" title="RESEARCH VALUE" open={openSections.researchValue} onToggle={toggleSection}><div className="inventory-research-values">{(Object.keys(SCHOOLS) as SchoolId[]).map((schoolId) => <DetailRow key={schoolId} label={SCHOOLS[schoolId].name} value={`${getResearchXp(itemId, schoolId)} XP`} />)}</div><Button variant="ghost" className="inventory-inline-action" onClick={openResearch}>GO TO RESEARCH <ArrowRight size={13} /></Button></InventoryDetailSection>}
 
-    <ItemUsesDialog itemId={itemId} uses={recipeUses} open={usesOpen} onClose={() => setUsesOpen(false)} onSelectRecipe={openUse} />
+    <ItemUsesDialog itemId={itemId} uses={recipeUses} open={usesOpen} onClose={() => setUsesOpen(false)} onSelectRecipe={openUse} />{artifactPathOpen && isArtifactItem(itemId) && <ArtifactPathModal artifactId={itemId} onClose={() => setArtifactPathOpen(false)} />}
 
   </div>
 }

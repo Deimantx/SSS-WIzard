@@ -2,6 +2,7 @@ import type { DamageType } from '../../systems/combat/combatTypes'
 import type { EquipmentBuildTag, EquipmentBudgetProfileId, EquipmentStats, InventoryCategory, InventoryMaterialSubtype, ItemDefinition, ItemId, SchoolId, ScreenId } from '../../types'
 import { BALANCE } from '../../core/balance/balance'
 import { MAX_BLOCK_CHANCE, MAX_RESISTANCE, MIN_RESISTANCE } from '../../core/balance/combatStats'
+import { ARTIFACTS } from '../artifacts/artifacts'
 import { createCombatValidationContext, validateCombatProvider } from '../../systems/combat/combatEffectValidation'
 import { STATUS_DEFINITIONS } from '../statuses/statuses'
 import { EQUIPMENT_BUILD_TAG_LABELS, EQUIPMENT_BUDGET_PROFILES, validateEquipmentBudgetProfiles } from './equipmentBalance'
@@ -84,12 +85,12 @@ const sourceNavigationByItem: Partial<Record<ItemId, ScreenId>> = {
 const inventoryCategoryOverrides: Partial<Record<ItemId, InventoryCategory>> = { 'heartseed-necklace': 'equipment', 'greatbear-heartstone': 'equipment', 'edrins-signet': 'equipment' }
 const sellValues: Record<ItemId, number | null> = {
   'prismatic-fragment': 20, 'life-essence': 2, 'fire-fragment': 1, 'water-fragment': 1, 'earth-fragment': 1, 'air-fragment': 1, 'wisp-essence': 3, 'grove-bark': 5, heartseed: null,
-  'ember-staff': 40, 'wispwood-wand': 40, 'tide-focus': 40, 'stoneweave-robe': 40, 'windthread-charm': 40, 'wispveil-hood': 40, 'grovekeeper-mantle': 40, 'wispbound-ring': 40, 'heartseed-necklace': null,
+  'ember-staff': null, 'wispwood-wand': 40, 'tide-focus': 40, 'stoneweave-robe': 40, 'windthread-charm': 40, 'wispveil-hood': 40, 'grovekeeper-mantle': 40, 'wispbound-ring': 40, 'heartseed-necklace': null,
   'predator-fang': 4, 'predator-hide': 5, 'corrupted-beast-essence': 6, 'greatbear-core': 20, 'fangbound-dagger': 70, 'fangbound-buckler': 70, 'corrupted-howlstaff': 70, 'razorclaw-circlet': 70, 'predator-hide-mantle': 70, 'greatbear-vestment': 70, 'howling-signet': 70, 'greatbear-heartstone': null,
   'ossuary-remnant': 4, 'graveglass-shard': 5, 'soul-residue': 6, 'edrin-remnant': 20, 'graveglass-wand': 110, 'edrins-remnant-staff': 110, 'soulward-focus': 110, 'soulward-shield': 110, 'acolyte-vestments': 110, 'wraithveil-hood': 110, 'ossuary-mantle': 110, 'soulglass-amulet': 110, 'gravebinder-ring': 110, 'edrins-signet': null,
 }
-const destroyability: Partial<Record<ItemId, boolean>> = { heartseed: false }
-const actionRestrictionReasons: Partial<Record<ItemId, string>> = { heartseed: 'This progression item cannot be destroyed.' }
+const destroyability: Partial<Record<ItemId, boolean>> = { heartseed: false, 'ember-staff': false }
+const actionRestrictionReasons: Partial<Record<ItemId, string>> = { heartseed: 'This progression item cannot be destroyed.', 'ember-staff': 'Artifact Equipment cannot be sold or destroyed.' }
 export const ITEMS: Record<ItemId, ItemDefinition> = Object.fromEntries(Object.entries(authoredItems).map(([id, item]) => {
   const itemId = id as ItemId
   const inventoryCategory = inventoryCategoryOverrides[itemId] ?? item.inventoryCategory ?? (item.kind === 'equipment' ? 'equipment' : 'material')
@@ -129,6 +130,7 @@ const requireEquipmentCoreStats = (itemId: string, stats: EquipmentStats | undef
 }
 const validateEquipmentChassis = (item: ItemDefinition, errors: string[]) => {
   if (item.kind !== 'equipment') return
+  if (ARTIFACTS[item.id]) return
   if (item.equipmentSlot === 'weapon') requireEquipmentStats(item.id, item.stats, ['basicDamage', 'spellPower'], errors)
   if (item.equipmentSlot === 'armor' || item.equipmentSlot === 'helmet' || item.equipmentSlot === 'cape') requireEquipmentStats(item.id, item.stats, ['maxHealth', 'defense'], errors)
   if (item.equipmentSlot === 'offhand' && item.equipmentPresentation === 'focus') requireEquipmentStats(item.id, item.stats, ['maxMana', 'spellPower'], errors)
@@ -144,6 +146,7 @@ const validateEquipmentMetadata = (item: ItemDefinition, errors: string[]) => {
     if (item.equipmentBudgetProfile !== undefined) errors.push(`${item.id}: only equipment items may define equipmentBudgetProfile`)
     return
   }
+  if (ARTIFACTS[item.id]) return
   if (item.equipmentTier === undefined || !Number.isFinite(item.equipmentTier) || item.equipmentTier <= 0) errors.push(`${item.id}: equipmentTier must be finite and greater than 0`)
   const tags = item.buildTags
   if (!Array.isArray(tags) || tags.length < 1 || tags.length > 4) errors.push(`${item.id}: buildTags must contain 1 to 4 tags`)

@@ -20,7 +20,13 @@ export const getArtifactSpentPoints = (state: Pick<GameState, 'artifactProgress'
 export const getArtifactAvailablePoints = (state: Pick<GameState, 'artifactProgress'>, id: ArtifactId) => Math.max(0, getArtifactTotalPoints(state, id) - getArtifactSpentPoints(state, id))
 export const getArtifactEffectiveStats = (state: Pick<GameState, 'artifactProgress'>, id: ArtifactId) => {
   const definition = ARTIFACTS[id]; const progress = getArtifactProgress(state, id); const total = { ...(definition?.coreStatsByLevel[progress.level] ?? {}) }
-  progress.allocatedNodeIds.forEach(nodeId => Object.entries(definition?.nodes.find(node => node.id === nodeId)?.stats ?? {}).forEach(([key, value]) => { total[key as keyof typeof total] = ((total[key as keyof typeof total] ?? 0) as number + (value ?? 0)) as never }))
+  progress.allocatedNodeIds.forEach(nodeId => Object.entries(definition?.nodes.find(node => node.id === nodeId)?.stats ?? {}).forEach(([key, value]) => {
+    if (key === 'resistances' && value && typeof value === 'object') {
+      total.resistances = { ...(total.resistances ?? {}), ...Object.fromEntries(Object.entries(value as Record<string, number>).map(([damageType, resistance]) => [damageType, (total.resistances?.[damageType as keyof NonNullable<typeof total.resistances>] ?? 0) + resistance])) }
+      return
+    }
+    total[key as keyof typeof total] = ((total[key as keyof typeof total] ?? 0) as number + (value ?? 0)) as never
+  }))
   return total
 }
 export const getAllocatedArtifactCombatProviders = (state: Pick<GameState, 'artifactProgress'>, id: ArtifactId) => {
@@ -35,15 +41,15 @@ export const canUpgradeArtifact = (state: Pick<GameState, 'artifactProgress' | '
 export const getArtifactNode = (id: ArtifactId, nodeId: string) => ARTIFACTS[id]?.nodes.find(node => node.id === nodeId) ?? null
 export const canAllocateArtifactNode = (state: Pick<GameState, 'artifactProgress' | 'progress' | 'inventory'>, id: ArtifactId, nodeId: string) => {
   const node = getArtifactNode(id, nodeId); const progress = getArtifactProgress(state, id)
-  if (!node || progress.allocatedNodeIds.includes(nodeId) || progress.level < node.requiresLevel || getArtifactAvailablePoints(state, id) < node.pointCost || (node.requiresBossKill && (state.progress.bossKillsByBoss[node.requiresBossKill] ?? 0) < 1)) return false
+  if (!node || !state.artifactProgress?.[id] || (state.inventory[id] ?? 0) < 1 || progress.allocatedNodeIds.includes(nodeId) || progress.level < node.requiresLevel || getArtifactAvailablePoints(state, id) < node.pointCost || (node.requiresBossKill && (state.progress.bossKillsByBoss[node.requiresBossKill] ?? 0) < 1)) return false
   return (node.prerequisites ?? []).every(prerequisite => progress.allocatedNodeIds.includes(prerequisite))
 }
 export const allocateArtifactNode = (state: GameState, id: ArtifactId, nodeId: string) => {
   const node = getArtifactNode(id, nodeId); if (!node || !canAllocateArtifactNode(state, id, nodeId)) return false
   const progress = state.artifactProgress[id] ??= { ...EMPTY, allocatedNodeIds: [], attunedNodeIds: [] }
   if (node.catalyst && !progress.attunedNodeIds.includes(nodeId)) {
-    if ((state.inventory[node.catalyst.itemId] ?? 0) < node.catalyst.quantity) return false
-    state.inventory[node.catalyst.itemId] = (state.inventory[node.catalyst.itemId] ?? 0) - node.catalyst.quantity
+    if (getConsumableQuantity(state, node.catalyst.itemId) < node.catalyst.quantity) return false
+    state.inventory[node.catalyst.itemId] = Math.max(0, (state.inventory[node.catalyst.itemId] ?? 0) - node.catalyst.quantity)
     progress.attunedNodeIds.push(nodeId)
   }
   progress.allocatedNodeIds.push(nodeId); return true

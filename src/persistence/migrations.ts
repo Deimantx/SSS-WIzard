@@ -25,6 +25,7 @@ import { createCombatValidationContext, normalizePersistedPeriodicEffects, hasVa
 import { MAX_ACTION_WORK_MS, MIN_ACTION_TIME_MS } from '../game/core/balance/combatTiming'
 import { normalizeCombatRngState } from '../game/systems/combat/combatRng'
 import { clampOfflineBankMs } from '../game/systems/offline-bank/offlineBankDuration'
+import { ARTIFACTS } from '../game/content/artifacts/artifacts'
 
 const statusValidationContext = createCombatValidationContext(STATUS_DEFINITIONS)
 
@@ -95,6 +96,19 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
   const rawCombat = isRecord(raw.combat) ? raw.combat : {}
 
   migrated.inventory = normalizeDynamicRecord(fresh.inventory, raw.inventory, itemIds, nonNegativeInteger)
+  const rawArtifacts = isRecord(raw.artifactProgress) ? raw.artifactProgress : {}
+  migrated.artifactProgress = Object.fromEntries(Object.entries(ARTIFACTS).flatMap(([artifactId, definition]) => {
+    const rawProgress = isRecord(rawArtifacts[artifactId]) ? rawArtifacts[artifactId] : null
+    if (!rawProgress) return []
+    const level = Math.max(1, Math.min(definition!.maxLevel, Math.floor(nonNegativeNumber(rawProgress.level) ?? 1)))
+    const nodeIds = new Set(definition!.nodes.map(node => node.id))
+    const catalystIds = new Set(definition!.nodes.filter(node => node.catalyst).map(node => node.id))
+    const requested = Array.isArray(rawProgress.allocatedNodeIds) ? [...new Set(rawProgress.allocatedNodeIds.filter((id): id is string => typeof id === 'string' && nodeIds.has(id)))] : []
+    const allocated: string[] = []
+    requested.forEach((id) => { const node = definition!.nodes.find(item => item.id === id); if (node && node.requiresLevel <= level && (node.prerequisites ?? []).every(prerequisite => allocated.includes(prerequisite))) allocated.push(id) })
+    const attuned = Array.isArray(rawProgress.attunedNodeIds) ? [...new Set(rawProgress.attunedNodeIds.filter((id): id is string => typeof id === 'string' && catalystIds.has(id)))] : []
+    return [[artifactId, { level, allocatedNodeIds: allocated, attunedNodeIds: attuned }]]
+  })) as GameState['artifactProgress']
   migrated.protectedItems = normalizeDynamicRecord(fresh.protectedItems, raw.protectedItems, itemIds, booleanValue)
   const rawArtificing = isRecord(rawActivities.artificing) ? rawActivities.artificing : {}
   const activeRecipeId = typeof rawArtificing.activeRecipeId === 'string' && Object.prototype.hasOwnProperty.call(ARTIFICING_RECIPES, rawArtificing.activeRecipeId) ? rawArtificing.activeRecipeId as GameState['activities']['artificing']['activeRecipeId'] : null

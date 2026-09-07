@@ -117,3 +117,17 @@
 .artificing-pinned-material.missing { border-color: color-mix(in srgb, var(--ui-warning) 35%, var(--ui-border)); }
 .artificing-pinned-summary { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
 .artificing-pinned-summary strong { color: var(--ui-text); }
+.artifact-modal-backdrop { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 5vh 5vw; background: rgb(4 6 18 / 78%); }
+.artifact-path-modal { width: min(900px, 90vw); max-height: 90vh; overflow: auto; padding: 24px; color: var(--ui-text); background: var(--ui-panel, #12152a); border: 1px solid var(--ui-border); box-shadow: 0 20px 80px #000b; }
+.artifact-path-modal header, .artifact-path-modal footer, .artifact-points { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.artifact-path-modal header button { color: inherit; background: transparent; border: 0; cursor: pointer; }
+.artifact-path-modal header h2 { margin: 4px 0; }
+.artifact-path-modal header p { margin: 0; color: var(--ui-muted); }
+.artifact-points { margin: 18px 0; padding: 12px; border: 1px solid var(--ui-border); }
+.artifact-node-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.artifact-node { display: grid; grid-template-columns: 24px 1fr; gap: 2px 8px; padding: 12px; color: inherit; text-align: left; background: var(--ui-surface, #171a31); border: 1px solid var(--ui-border); cursor: pointer; }
+.artifact-node small { grid-column: 2; color: var(--ui-muted); }
+.artifact-node.allocated { border-color: var(--ui-success); }.artifact-node.available { border-color: var(--ui-accent); }.artifact-node.locked { opacity: .58; }
+.artifact-node-inspector { display: grid; gap: 8px; margin-top: 16px; padding: 16px; border: 1px solid var(--ui-border); }.artifact-node-inspector small { color: var(--ui-muted); }
+.artifact-path-modal footer { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--ui-border); }
+@media (max-width: 600px) { .artifact-node-grid { grid-template-columns: 1fr; } .artifact-modal-backdrop { padding: 2vh 2vw; } .artifact-path-modal { width: 96vw; } }

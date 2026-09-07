@@ -5,7 +5,7 @@ import { getEquipmentCombatPresentation } from './equipmentCombatPresentation'
 
 describe('equipment combat presentation', () => {
   it('translates authored filtered modifiers into readable player language', () => {
-    expect(getEquipmentCombatPresentation(ITEMS['ember-staff']).modifiers).toContain('+20% Fire Spell Damage')
+    expect(getEquipmentCombatPresentation(ITEMS['ember-staff']).modifiers).toContain('+20% Fire Spell Damage (from Spells)')
     expect(getEquipmentCombatPresentation(ITEMS['tide-focus']).modifiers).toContain('+20% Barrier Power from Water Spells')
     expect(getEquipmentCombatPresentation(ITEMS['stoneweave-robe']).modifiers).toContain('+10 Barrier Received')
   })

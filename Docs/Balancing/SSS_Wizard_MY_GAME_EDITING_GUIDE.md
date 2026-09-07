@@ -407,7 +407,7 @@ combat: {
     {
       key: 'spell-damage-percent',
       value: 0.2,
-      sourceKinds: ['spell'],
+      originSourceKinds: ['spell'],
       damageTypes: ['fire'],
     },
   ],
@@ -417,8 +417,10 @@ combat: {
 This means approximately:
 
 ```text
-+20% Fire Spell Damage
++20% Fire Spell Damage, including Burning applied by those spells
 ```
+
+`originSourceKinds: ['spell']` includes damage over time whose original source is a spell. `sourceKinds: ['spell']` restricts the bonus to damage resolved directly by a spell and excludes Burning ticks. The Fire damage filter still applies.
 
 Changing:
 

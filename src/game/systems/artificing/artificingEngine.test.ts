@@ -4,6 +4,24 @@ import { advanceArtificing, cancelArtificingCraft, craftArtificingRecipe } from 
 import { migrateSave } from '../../../persistence/migrations'
 
 describe('Artificing', () => {
+  it('crafts Corrupted Howlstaff from normal Howling Den loot before defeating Greatbear', () => {
+    const state = createInitialState()
+    state.inventory = { 'predator-fang': 20, 'corrupted-beast-essence': 20, 'air-fragment': 44, 'prismatic-fragment': 8 }
+    const before = { ...state.inventory }
+    expect(craftArtificingRecipe(state, 'corrupted-howlstaff').ok).toBe(false)
+    expect(state.inventory).toEqual(before)
+
+    state.progress.bossKillsByBoss['forest-heart'] = 1
+    state.progress.lifetimeKillsByMonster['cavefang-wolf'] = 1
+    expect(state.progress.bossKillsByBoss['corrupted-greatbear'] ?? 0).toBe(0)
+    expect(craftArtificingRecipe(state, 'corrupted-howlstaff').ok).toBe(true)
+    expect(state.inventory['greatbear-core']).toBeUndefined()
+    expect(state.inventory['predator-fang']).toBe(0)
+    advanceArtificing(state, 5000)
+    expect(state.inventory['corrupted-howlstaff']).toBe(1)
+    expect(state.progress.discoveredItems).toContain('corrupted-howlstaff')
+  })
+
   it('refunds a saved in-progress craft once and prevents later output', () => {
     let state = createInitialState()
     state.progress.lifetimeKillsByMonster['forest-wisp'] = 1

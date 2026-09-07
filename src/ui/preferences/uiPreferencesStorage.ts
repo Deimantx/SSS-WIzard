@@ -6,6 +6,7 @@ import { ITEMS } from '../../game/content/items/items'
 import { SCHOOLS } from '../../game/content/schools/schools'
 import { COMBAT_DETAILS_MODE_ORDER } from '../../game/presentation/combat/combatDetailsPresentation'
 import { DUNGEON_STATISTICS_MODE_ORDER } from '../../game/telemetry/dungeon/dungeonStatisticsTypes'
+import { EQUIPMENT_ITEM_SLOTS } from '../../game/core/equipment'
 import type { CombatLogFontSize, ScreenPreferences, TransmutationCategoryFilter, TransmutationTierFilter, UiPreferences } from './uiPreferencesTypes'
 
 export const UI_PREFERENCES_KEY = 'sss-wizard-ui-preferences-v1'
@@ -18,6 +19,7 @@ export const defaultScreenPreferences = (): ScreenPreferences => ({
 })
 
 export const defaultUiPreferences = (): UiPreferences => ({ theme: 'default', textSize: 'default', backgroundEffects: true, reducedMotion: false, customCursor: true, showFpsCounter: true, uiSounds: true, uiSoundVolume: 0.35, customTheme: customFromPreset(THEME_PRESETS.default), navigationGroups: { combat: false, hero: false, tower: false, world: false, system: false }, trackedItemId: null, screenState: defaultScreenPreferences() })
+const artificingSlotFilters = ['all', ...EQUIPMENT_ITEM_SLOTS] as const
 const validColor = (value: unknown, fallback: string) => typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value) ? value : fallback
 const validVolume = (value: unknown, fallback: number) => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : fallback
 
@@ -60,7 +62,7 @@ export const normalizeUiPreferences = (value: unknown): UiPreferences => {
   const artificing: ScreenPreferences['artificing'] = {
     selectedRecipeId: typeof a.selectedRecipeId === 'string' && ARTIFICING_RECIPE_ORDER.includes(a.selectedRecipeId as ArtificingRecipeId) ? a.selectedRecipeId as ArtificingRecipeId : null,
     pinnedRecipeId: typeof a.pinnedRecipeId === 'string' && ARTIFICING_RECIPE_ORDER.includes(a.pinnedRecipeId as ArtificingRecipeId) ? a.pinnedRecipeId as ArtificingRecipeId : null,
-    slotFilter: oneOf(a.slotFilter, ['all', 'weapon', 'offhand', 'armor', 'helmet', 'cape', 'amulet', 'ring'] as const, 'all'),
+    slotFilter: oneOf(a.slotFilter, artificingSlotFilters, 'all'),
     weaponHandsFilter: oneOf(a.weaponHandsFilter, ['all', 1, 2] as const, 'all'),
     offhandPresentationFilter: oneOf(a.offhandPresentationFilter, ['all', 'shield', 'focus'] as const, 'all'),
     craftableOnly: a.craftableOnly === true,

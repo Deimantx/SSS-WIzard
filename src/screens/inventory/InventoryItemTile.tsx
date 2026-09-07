@@ -4,14 +4,15 @@ import { ITEMS } from '../../game/content/items/items'
 import { getItemDropSources, getItemSources } from '../../game/content/contentRelations'
 import { getItemUses } from '../../game/content/items/inventoryMetadata'
 import { evaluateEquipmentChange, getEquippedPositions } from '../../game/core/equipment'
-import type { EquipmentPosition, GameState, ItemId, ScreenId } from '../../game/types'
+import type { ArtifactId, EquipmentPosition, GameState, ItemId, ScreenId } from '../../game/types'
 import { getInventoryAccentClass } from '../../game/content/items/inventoryMetadata'
 import type { ItemFlow, ItemFlowDirection } from '../../game/systems/inventory/itemFlow'
 import { useGameContextMenu } from '../../ui/context-menu/GameContextMenuProvider'
 import { buildItemContextSections } from '../../ui/context-menu/itemContextActions'
 import { setNavigationIntent } from '../../ui/navigation/navigationIntent'
+import { isArtifactItem } from '../../game/systems/artifacts/artifactProgression'
 
-export function InventoryItemTile({ itemId, inventory, protectedItems, equipment, selected, newItem = false, flow, flowDirection, onSelect, onNavigate, onToggleProtection, onTrack, tracked, onOpenUses, onEquip, onUnequip }: {
+export function InventoryItemTile({ itemId, inventory, protectedItems, equipment, selected, newItem = false, flow, flowDirection, onSelect, onNavigate, onToggleProtection, onTrack, tracked, onOpenUses, onOpenArtifactPath, onEquip, onUnequip }: {
   itemId: ItemId
   inventory: GameState['inventory']
   protectedItems: GameState['protectedItems']
@@ -26,6 +27,7 @@ export function InventoryItemTile({ itemId, inventory, protectedItems, equipment
   onTrack: (itemId: ItemId) => void
   tracked: boolean
   onOpenUses?: (itemId: ItemId) => void
+  onOpenArtifactPath?: (itemId: ArtifactId) => void
   onEquip: (itemId: ItemId, targetPosition?: EquipmentPosition) => void
   onUnequip: (position: EquipmentPosition) => void
 }) {
@@ -64,6 +66,7 @@ export function InventoryItemTile({ itemId, inventory, protectedItems, equipment
       quickUnequipOptions: quickUnequipOptions.length > 1 ? quickUnequipOptions : undefined,
       onQuickUnequip: quickUnequipOptions.length === 1 ? quickUnequipOptions[0].onSelect : undefined,
       onCompare: item.kind === 'equipment' ? () => { setNavigationIntent({ equipmentItemId: itemId, equipmentPosition: equippedPositions[0] ?? null }); onNavigate('equipment') } : undefined,
+      onOpenArtifactPath: isArtifactItem(itemId) && onOpenArtifactPath ? () => onOpenArtifactPath(itemId) : undefined,
       onResearch: item.researchSchool ? () => { setNavigationIntent({ researchItemId: itemId, researchSchoolId: null }); onNavigate('tower-research') } : undefined,
       onOpenArtificing: artificingOutput ? () => { setNavigationIntent({ artificingRecipeId: artificingOutput.id as never }); onNavigate('tower-artificing') } : undefined,
       onOpenTransmutation: transmutationOutput ? () => { setNavigationIntent({ transmutationRecipeId: transmutationOutput.id as never }); onNavigate('tower-transmutation') } : undefined,

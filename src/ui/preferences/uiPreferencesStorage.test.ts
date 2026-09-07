@@ -13,7 +13,7 @@ describe('screen UI preferences', () => {
     expect(preferences.uiSounds).toBe(true)
     expect(preferences.uiSoundVolume).toBe(0.35)
     expect(preferences.screenState.inventory).toEqual({ sourceOpen: false, researchValueOpen: false })
-    expect(preferences.screenState.transmutation).toEqual({ selectedRecipeId: 'fire-fragment', categoryFilter: 'all', tierFilter: 'all', craftableOnly: false, activeOnly: false, collapsedCategories: { elemental: false, material: false } })
+    expect(preferences.screenState.transmutation).toEqual({ selectedRecipeId: 'fire-fragment', pinnedRecipeId: null, categoryFilter: 'all', tierFilter: 'all', craftableOnly: false, activeOnly: false, collapsedCategories: { elemental: false, material: false } })
     expect(preferences.screenState.combat).toEqual({ combatLogFontSize: 'medium', combatDetailsMode: 'damage-done', dungeonStatisticsMode: 'runs' })
   })
 
@@ -46,6 +46,12 @@ describe('screen UI preferences', () => {
     expect(loadUiPreferences().screenState.artificing).toEqual(getUiPreferences().screenState.artificing)
     expect(loadUiPreferences().screenState.artificing.selectedRecipeId).toBe('ember-staff')
     expect(normalizeUiPreferences({ screenState: { artificing: { selectedRecipeId: 'fire-fragment' } } }).screenState.artificing.selectedRecipeId).toBeNull()
+  })
+
+  it('preserves the canonical Artificing Earring slot filter through normalization and reload', () => {
+    expect(normalizeUiPreferences({ screenState: { artificing: { slotFilter: 'earring' } } }).screenState.artificing.slotFilter).toBe('earring')
+    setUiPreferences({ screenState: { artificing: { slotFilter: 'earring' } } })
+    expect(loadUiPreferences().screenState.artificing.slotFilter).toBe('earring')
   })
 
   it('migrates the old material tier preference and removes the obsolete field', () => {

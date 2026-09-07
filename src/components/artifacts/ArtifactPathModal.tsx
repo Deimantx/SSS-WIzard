@@ -46,7 +46,7 @@ export function ArtifactPathModal({ artifactId, onClose }: { artifactId: Artifac
           <div>
             <div className="artifact-path-identity">
               <span className="artifact-path-icon"><ItemIcon itemId={artifactId} size="large" /></span>
-              <div><span className="eyebrow">TIER {definition.tier} ARTIFACT</span><h2>{item.name}</h2><p>{tags.join(' · ') || 'Artifact equipment'}</p></div>
+              <div><span className="eyebrow">T{definition.tier} ARTIFACT</span><h2>{item.name}</h2><p>{tags.join(' · ') || 'Artifact equipment'}</p></div>
             </div>
             <div className="artifact-path-meta">
               <div className="artifact-level-block"><div className="artifact-level-label"><span>LEVEL {level} / {definition.maxLevel}</span><span>CURRENT CAP · {cap}</span></div><div className="artifact-level-track"><div className="artifact-level-fill" style={{ width: `${Math.min(100, level / definition.maxLevel * 100)}%` }} /></div><div className="artifact-level-milestones">{milestones.map((milestone) => <span key={milestone}>Lv{milestone}</span>)}</div></div>

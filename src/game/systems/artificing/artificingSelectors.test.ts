@@ -27,4 +27,15 @@ describe('Artificing catalog', () => {
     expect(getVisibleArtificingRecipes(state, { ...filters, ownershipFilter: 'owned' }).map(recipe => recipe.id)).toEqual(['ember-staff'])
     expect(getVisibleArtificingRecipes(state, { ...filters, ownershipFilter: 'unowned' }, 'ember-staff')).toHaveLength(0)
   })
+
+  it('returns exactly the three Earring recipes when locked recipes are shown', () => {
+    const state = createInitialState()
+    const recipes = getVisibleArtificingRecipes(state, { ...defaults, slotFilter: 'earring' }, '', true)
+
+    expect(recipes.map((recipe) => recipe.output.itemId)).toEqual([
+      'wispglass-earring',
+      'fangwire-earring',
+      'mourning-glass-earring',
+    ])
+  })
 })

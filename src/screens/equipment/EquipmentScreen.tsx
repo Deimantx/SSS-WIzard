@@ -5,7 +5,7 @@ import { EquipmentMetadata, ItemTooltip } from '../../components/ui/item'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { ITEMS } from '../../game/content/items/items'
 import { EQUIPMENT_ITEM_SLOT_LABELS, EQUIPMENT_POSITION_LABELS, EQUIPMENT_POSITIONS, evaluateEquipmentChange, getEquippedCount, getItemPositions, isTwoHandedWeapon } from '../../game/core/equipment'
-import type { EquipmentItemSlot, EquipmentPosition, ItemId } from '../../game/types'
+import type { ArtifactId, EquipmentItemSlot, EquipmentPosition, ItemId } from '../../game/types'
 import { useGameStore } from '../../store/gameStore'
 import { EditableGrid } from '../../ui/layout-editor/EditableGrid'
 import { getEquipmentCopyAvailability, getEquipmentPreview, getEquipmentStatSnapshot } from '../../game/presentation/equipment/equipmentReadModel'
@@ -39,7 +39,7 @@ const SLOT_TOOLTIP_COPY: Record<EquipmentPosition, { title: string; description:
   helmet: { title: 'HELMET', description: <>Head equipment such as wizard hats, hoods, circlets, or helmets.</> },
   cape: { title: 'CAPE', description: <>Back equipment such as magical cloaks and capes.<br />Cape effects depend on the individual item.</> },
   amulet: { title: 'AMULET', description: <>Neck equipment such as magical amulets and charms.</> },
-  earring: { title: 'EARRING', description: <>One accessory slot for future Earring equipment.</> },
+  earring: { title: 'EARRING', description: <>One accessory slot for magical earrings.</> },
   ring1: { title: 'RING', description: <>Ring accessory slot.<br />The same Ring cannot occupy both Ring slots.</> },
   ring2: { title: 'RING', description: <>Ring accessory slot.<br />The same Ring cannot occupy both Ring slots.</> },
 }
@@ -87,7 +87,7 @@ export function EquipmentScreenV2() {
   const copyAvailability = selectedItemId ? getEquipmentCopyAvailability({ equipment, inventory }, selectedItemId) : null
   const statSnapshot = getEquipmentStatSnapshot(stateForPreview, equipment)
   const equippedCount = getEquippedCount({ equipment })
-  const [artifactPath, setArtifactPath] = useState<ItemId | null>(null)
+  const [artifactPath, setArtifactPath] = useState<ArtifactId | null>(null)
   const equippedPositions = selectedItemId ? getItemPositions(selectedItemId).filter((position) => equipment[position] === selectedItemId) : []
   const ringNeedsChoice = selectedItem?.equipmentSlot === 'ring' && !ringReplacement && Boolean(equipment.ring1 && equipment.ring2) && selectedPosition !== 'ring1' && selectedPosition !== 'ring2'
   const reportLoadoutContentHeight = useCallback((height: number) => setLoadoutContentHeight((current) => current === height ? current : height), [])
@@ -157,6 +157,7 @@ export function EquipmentScreenV2() {
       onQuickUnequip: quickUnequipOptions.length === 1 ? quickUnequipOptions[0].onSelect : undefined,
       quickUnequipOptions: quickUnequipOptions.length > 1 ? quickUnequipOptions : undefined,
       onCompare: compare ? selectForComparison : undefined,
+      onOpenArtifactPath: isArtifactItem(itemId) ? () => setArtifactPath(itemId) : undefined,
       onOpenInventory: () => { setNavigationIntent({ inventoryItemId: itemId }); useGameStore.getState().setScreen('inventory') },
       onOpenArtificing: artificingOutput ? () => { setNavigationIntent({ artificingRecipeId: artificingOutput.id as never }); useGameStore.getState().setScreen('tower-artificing') } : undefined,
       onOpenTransmutation: transmutationOutput ? () => { setNavigationIntent({ transmutationRecipeId: transmutationOutput.id as never }); useGameStore.getState().setScreen('tower-transmutation') } : undefined,
@@ -206,7 +207,7 @@ export function EquipmentScreenV2() {
   const inspector = <Card title="GEAR INSPECTOR" className="equipment-inspector"><InspectorTransition identity={selectedItemId} accent={selectedItem?.color} fill><div ref={inspectorScrollRef} className="equipment-inspector-content smart-scroll-region">
     {!selectedItem ? <div className="equipment-inspector-empty"><strong>SELECT GEAR</strong><small>Choose an item from the Armory to compare its real loadout impact.</small></div> : <>
       <div className="equipment-inspector-hero"><ItemTooltip itemId={selectedItemId!} owned={inventory[selectedItemId!] ?? 0} equipped={equippedPositions.length > 0}><span className="equipment-inspector-icon" style={{ color: selectedItem.color }}>{selectedItem.icon}</span></ItemTooltip><div><div className="eyebrow">{selectedItem.equipmentSlot ? EQUIPMENT_ITEM_SLOT_LABELS[selectedItem.equipmentSlot] : 'EQUIPMENT'}</div><h3>{selectedItem.name}</h3><EquipmentMetadata item={selectedItem} /><p>{selectedItem.description}</p></div></div>
-      {isArtifactItem(selectedItemId!) && <div className="equipment-inspector-meta"><strong>TIER 1 ARTIFACT · LEVEL {getArtifactLevel({ artifactProgress }, selectedItemId!)} / 10</strong><span>ARTIFACT POINTS {getArtifactAvailablePoints({ artifactProgress }, selectedItemId!)} / {getArtifactTotalPoints({ artifactProgress }, selectedItemId!)}</span><Button variant="secondary" onClick={() => setArtifactPath(selectedItemId)}>ARTIFACT PATH</Button></div>}
+      {isArtifactItem(selectedItemId!) && <div className="equipment-inspector-meta"><strong>T1 ARTIFACT · LEVEL {getArtifactLevel({ artifactProgress }, selectedItemId!)} / 10</strong><span>ARTIFACT POINTS {getArtifactAvailablePoints({ artifactProgress }, selectedItemId!)} / {getArtifactTotalPoints({ artifactProgress }, selectedItemId!)}</span><Button variant="secondary" onClick={() => setArtifactPath(selectedItemId)}>ARTIFACT PATH</Button></div>}
       {copyAvailability && <GameTooltip block content={<TooltipContent title="Equipment copies" description="Owned copies include every copy reserved by the current loadout. The same Ring cannot occupy both Ring positions." />}><div className="equipment-inspector-meta"><span>{selectedItem.equipmentSlot ? EQUIPMENT_ITEM_SLOT_LABELS[selectedItem.equipmentSlot] : 'EQUIPMENT'}{selectedItem.weaponHands ? ` · ${selectedItem.weaponHands}H` : ''}</span><strong>OWNED {copyAvailability.owned} · EQUIPPED {copyAvailability.equipped} · AVAILABLE {copyAvailability.available}</strong></div></GameTooltip>}
       {preview?.removedOffhand && <div className="equipment-impact-warning"><LockKeyhole size={14} /><span>{ITEMS[preview.removedOffhand].name} will be unequipped automatically.</span></div>}
       <section className="equipment-inspector-stats"><span>STATS</span>{flattenItemStats(selectedStats).filter(([, value]) => value !== 0).map(([key, value]) => <div className="equipment-inspector-stat-row" key={key}><span>{friendlyStat(key)}</span><strong>{formatStat(key, value)}</strong></div>)}</section>
@@ -215,11 +216,11 @@ export function EquipmentScreenV2() {
       {preview && !preview.compatible && <div className="equipment-incompatible"><strong>INCOMPATIBLE</strong><span>{preview.reason}</span></div>}
       {preview?.compatible && <div className="equipment-preview-impact"><span className="equipment-preview-label">LOADOUT COMPARISON</span><div className="equipment-comparison-visual"><div><small>CURRENT</small>{equipment[preview.position ?? 'weapon'] ? <ItemTooltip itemId={equipment[preview.position ?? 'weapon']!} owned={inventory[equipment[preview.position ?? 'weapon']!] ?? 0} equipped><span className="equipment-comparison-icon" style={{ color: ITEMS[equipment[preview.position ?? 'weapon']!].color }}>{ITEMS[equipment[preview.position ?? 'weapon']!].icon}</span></ItemTooltip> : <span className="equipment-comparison-empty">EMPTY</span>}</div><b aria-hidden="true">→</b><div><small>SELECTED PREVIEW</small><ItemTooltip itemId={selectedItemId!} owned={inventory[selectedItemId!] ?? 0}><span className="equipment-comparison-icon" style={{ color: selectedItem.color }}>{selectedItem.icon}</span></ItemTooltip></div></div>{getImpactEntries(preview.impact).filter(([, value]) => Math.abs(value ?? 0) > 0.0001).map(([key, value]) => <div className="equipment-impact-row" key={key}><span className="equipment-stat-label">{friendlyStat(key)}</span><small className="equipment-stat-current equipment-stat-value">{formatSnapshotValue(key, preview.current)}</small><strong className="equipment-stat-value">{formatSnapshotValue(key, preview.preview!)}</strong><em className={`equipment-stat-delta ${(value ?? 0) > 0 ? 'positive' : 'negative'}`}>{formatSignedStat(key, value as number)}</em></div>)}</div>}
       {equippedPositions.length > 0 && <div className="equipment-current-position"><Status tone="success">EQUIPPED IN {equippedPositions.map((position) => EQUIPMENT_POSITION_LABELS[position]).join(' + ')}</Status></div>}
-      <div className="equipment-inspector-actions"><Button variant="primary" disabled={!preview?.compatible || ringNeedsChoice || equippedPositions.includes(preview?.position ?? 'weapon')} onClick={() => selectedItemId && equipItem(selectedItemId, preview?.position ?? undefined)}>EQUIP</Button>{inspectorTargetPosition && equipment[inspectorTargetPosition] === selectedItemId && <Button variant="ghost" onClick={() => unequipItem(inspectorTargetPosition)}>UNEQUIP {EQUIPMENT_POSITION_LABELS[inspectorTargetPosition].toUpperCase()}</Button>}</div>{artifactPath && <ArtifactPathModal artifactId={artifactPath} onClose={() => setArtifactPath(null)} />}
+      <div className="equipment-inspector-actions"><Button variant="primary" disabled={!preview?.compatible || ringNeedsChoice || equippedPositions.includes(preview?.position ?? 'weapon')} onClick={() => selectedItemId && equipItem(selectedItemId, preview?.position ?? undefined)}>EQUIP</Button>{inspectorTargetPosition && equipment[inspectorTargetPosition] === selectedItemId && <Button variant="ghost" onClick={() => unequipItem(inspectorTargetPosition)}>UNEQUIP {EQUIPMENT_POSITION_LABELS[inspectorTargetPosition].toUpperCase()}</Button>}</div>
     </>}
   </div></InspectorTransition></Card>
 
-  return <div className="screen-content equipment-screen"><div className="screen-header"><div><div className="eyebrow">WIZARD LOADOUT · EQUIPMENT</div><h1>Build the tower’s answer.</h1><p>Eight equipment positions, owned gear, and honest loadout impact. Two-handed weapons trade away the Offhand.</p></div></div><EditableGrid screen="equipment" layoutTransform={layoutTransform} panels={[{ id: 'equipment-loadout', content: loadout }, { id: 'equipment-stats', content: statsPanel }, { id: 'equipment-owned', content: armory }, { id: 'equipment-inspector', content: inspector }]} /></div>
+  return <div className="screen-content equipment-screen"><div className="screen-header"><div><div className="eyebrow">WIZARD LOADOUT · EQUIPMENT</div><h1>Build the tower’s answer.</h1><p>Build your loadout from Artifacts and swappable accessories. Two-handed weapons trade away the Offhand.</p></div></div><EditableGrid screen="equipment" layoutTransform={layoutTransform} panels={[{ id: 'equipment-loadout', content: loadout }, { id: 'equipment-stats', content: statsPanel }, { id: 'equipment-owned', content: armory }, { id: 'equipment-inspector', content: inspector }]} />{artifactPath && <ArtifactPathModal artifactId={artifactPath} onClose={() => setArtifactPath(null)} />}</div>
 }
 
 export const EquipmentScreen = EquipmentScreenV2

@@ -4,7 +4,7 @@ import { Button, EquipmentCombatDetails, Status } from '../../components/ui'
 import { EquipmentMetadata, ItemIcon, ItemQuantity, ItemTooltip } from '../../components/ui/item'
 import { getItemSourceLabel, getResearchXp, ITEMS } from '../../game/content/items/items'
 import { SCHOOLS } from '../../game/content/schools/schools'
-import type { GameState, ItemId, SchoolId, ScreenId } from '../../game/types'
+import type { ArtifactId, GameState, ItemId, SchoolId, ScreenId } from '../../game/types'
 import { flattenItemStats, formatStat, friendlyStatLabel } from '../../components/ui/item/ItemTooltip'
 import { getInventoryCategoryLabel, getInventorySubcategoryLabel, getItemProcessingChain, getItemSourceDestination, getItemUses } from '../../game/content/items/inventoryMetadata'
 import { formatFlowEta, formatItemFlowRate, getItemFlow, type ItemFlow } from '../../game/systems/inventory/itemFlow'
@@ -22,12 +22,11 @@ import { getItemDropSources, getItemSources } from '../../game/content/contentRe
 import { isTransmutationRecipeId } from '../../game/content/recipes/recipes'
 import { setNavigationIntent } from '../../ui/navigation/navigationIntent'
 import { isArtifactItem, getArtifactLevel, getArtifactTotalPoints, getArtifactAvailablePoints, getArtifactEffectiveStats } from '../../game/systems/artifacts/artifactProgression'
-import { ArtifactPathModal } from '../../components/artifacts/ArtifactPathModal'
 
 type DetailAccordionKey = 'source' | 'researchValue'
 type DetailAccordionState = Record<DetailAccordionKey, boolean>
 
-export function InventoryDetail({ itemId, inventory, protectedItems, equipment, economyState, navigate, toggleProtection, equipItem, sellItem, destroyItem }: { itemId: ItemId | null; inventory: GameState['inventory']; protectedItems: GameState['protectedItems']; equipment: GameState['equipment']; economyState?: ItemEconomyState; navigate?: (screen: ScreenId) => void; toggleProtection?: (id: ItemId) => void; equipItem?: (id: ItemId) => void; sellItem?: (id: ItemId, quantity: number) => void; destroyItem?: (id: ItemId, quantity: number) => void }) {
+export function InventoryDetail({ itemId, inventory, protectedItems, equipment, economyState, navigate, toggleProtection, equipItem, sellItem, destroyItem, onOpenArtifactPath }: { itemId: ItemId | null; inventory: GameState['inventory']; protectedItems: GameState['protectedItems']; equipment: GameState['equipment']; economyState?: ItemEconomyState; navigate?: (screen: ScreenId) => void; toggleProtection?: (id: ItemId) => void; equipItem?: (id: ItemId) => void; sellItem?: (id: ItemId, quantity: number) => void; destroyItem?: (id: ItemId, quantity: number) => void; onOpenArtifactPath?: (id: ArtifactId) => void }) {
   const detailScrollRef = useRef<HTMLDivElement>(null)
   const preferences = useUiPreferences()
   const player = useGameStore((state) => state.player)
@@ -36,7 +35,6 @@ export function InventoryDetail({ itemId, inventory, protectedItems, equipment, 
   const artifactProgress = useGameStore((state) => state.artifactProgress)
   const [usesOpen, setUsesOpen] = useState(false)
   const [ringTarget, setRingTarget] = useState<'ring1' | 'ring2' | null>(null)
-  const [artifactPathOpen, setArtifactPathOpen] = useState(false)
   const openSections: DetailAccordionState = { source: preferences.screenState.inventory.sourceOpen, researchValue: preferences.screenState.inventory.researchValueOpen }
   useSmartScrollState(detailScrollRef, { resetKey: itemId })
   useEffect(() => setUsesOpen(false), [itemId])
@@ -82,7 +80,7 @@ export function InventoryDetail({ itemId, inventory, protectedItems, equipment, 
 
     {flow && <FlowSection flow={flow} />}
 
-    {isArtifactItem(itemId) ? <section className="inventory-detail-section"><span className="inventory-detail-label">TIER 1 ARTIFACT · LEVEL {getArtifactLevel({ artifactProgress }, itemId)} / 10</span><div className="inventory-stat-list">{flattenItemStats(getArtifactEffectiveStats({ artifactProgress }, itemId)).filter(([, value]) => value !== 0).map(([key, value]) => <DetailRow key={key} label={friendlyStatLabel(key)} value={formatStat(key, value)} />)}</div><p>Artifact Points {getArtifactAvailablePoints({ artifactProgress }, itemId)} / {getArtifactTotalPoints({ artifactProgress }, itemId)}</p><Button variant="secondary" onClick={() => setArtifactPathOpen(true)}>ARTIFACT PATH</Button></section> : item.stats && Object.keys(item.stats).length > 0 && <section className="inventory-detail-section"><span className="inventory-detail-label">STATS</span><div className="inventory-stat-list">{flattenItemStats(item.stats).filter(([, value]) => value !== 0).map(([key, value]) => <DetailRow key={key} label={friendlyStatLabel(key)} value={formatStat(key, value)} />)}</div></section>}
+    {isArtifactItem(itemId) ? <section className="inventory-detail-section"><span className="inventory-detail-label">T1 ARTIFACT · LEVEL {getArtifactLevel({ artifactProgress }, itemId)} / 10</span><div className="inventory-stat-list">{flattenItemStats(getArtifactEffectiveStats({ artifactProgress }, itemId)).filter(([, value]) => value !== 0).map(([key, value]) => <DetailRow key={key} label={friendlyStatLabel(key)} value={formatStat(key, value)} />)}</div><p>Artifact Points {getArtifactAvailablePoints({ artifactProgress }, itemId)} / {getArtifactTotalPoints({ artifactProgress }, itemId)}</p><Button variant="secondary" onClick={() => onOpenArtifactPath?.(itemId)}>ARTIFACT PATH</Button></section> : item.stats && Object.keys(item.stats).length > 0 && <section className="inventory-detail-section"><span className="inventory-detail-label">STATS</span><div className="inventory-stat-list">{flattenItemStats(item.stats).filter(([, value]) => value !== 0).map(([key, value]) => <DetailRow key={key} label={friendlyStatLabel(key)} value={formatStat(key, value)} />)}</div></section>}
     {item.kind === 'equipment' && <EquipmentCombatDetails item={item} />}
 
     {item.kind === 'equipment' && <InventoryLoadoutComparison itemId={itemId} equippedId={equippedId} quantity={quantity} inventory={inventory} preview={equipmentPreview} ringTarget={ringTarget} onRingTargetChange={setRingTarget} />}
@@ -92,7 +90,7 @@ export function InventoryDetail({ itemId, inventory, protectedItems, equipment, 
 
     {item.researchSchool && <InventoryDetailSection section="researchValue" title="RESEARCH VALUE" open={openSections.researchValue} onToggle={toggleSection}><div className="inventory-research-values">{(Object.keys(SCHOOLS) as SchoolId[]).map((schoolId) => <DetailRow key={schoolId} label={SCHOOLS[schoolId].name} value={`${getResearchXp(itemId, schoolId)} XP`} />)}</div><Button variant="ghost" className="inventory-inline-action" onClick={openResearch}>GO TO RESEARCH <ArrowRight size={13} /></Button></InventoryDetailSection>}
 
-    <ItemUsesDialog itemId={itemId} uses={recipeUses} open={usesOpen} onClose={() => setUsesOpen(false)} onSelectRecipe={openUse} />{artifactPathOpen && isArtifactItem(itemId) && <ArtifactPathModal artifactId={itemId} onClose={() => setArtifactPathOpen(false)} />}
+    <ItemUsesDialog itemId={itemId} uses={recipeUses} open={usesOpen} onClose={() => setUsesOpen(false)} onSelectRecipe={openUse} />
 
   </div>
 }

@@ -1,4 +1,4 @@
-import { BookOpen, Library, MapPin, Pin, Shield, ShoppingBag, Swords, Wrench } from 'lucide-react'
+import { BookOpen, Library, MapPin, Pin, Shield, ShoppingBag, Sparkles, Swords, Wrench } from 'lucide-react'
 import { ITEMS } from '../../game/content/items/items'
 import type { ItemId, ScreenId } from '../../game/types'
 import type { GameContextMenuSection } from './gameContextMenuTypes'
@@ -6,7 +6,7 @@ import type { GameContextMenuSection } from './gameContextMenuTypes'
 type ItemMenuSource = 'inventory' | 'collection' | 'reference'
 
 /** Shared item capabilities; callers own exact cross-screen selection. */
-export function buildItemContextSections({ itemId, owned, protectedItem, equipped, tracked = false, source = 'reference', onResearch, onToggleProtection, onQuickEquip, quickEquipOptions, onQuickUnequip, quickUnequipOptions, onCompare, onOpenArtificing, onOpenTransmutation, onOpenUses, onWhereToGet, onTrack, onOpenInventory, onOpenCollection, onNavigate }: {
+export function buildItemContextSections({ itemId, owned, protectedItem, equipped, tracked = false, source = 'reference', onResearch, onToggleProtection, onQuickEquip, quickEquipOptions, onQuickUnequip, quickUnequipOptions, onCompare, onOpenArtifactPath, onOpenArtificing, onOpenTransmutation, onOpenUses, onWhereToGet, onTrack, onOpenInventory, onOpenCollection, onNavigate }: {
   itemId: ItemId
   owned: number
   protectedItem?: boolean
@@ -20,6 +20,7 @@ export function buildItemContextSections({ itemId, owned, protectedItem, equippe
   onQuickUnequip?: () => void
   quickUnequipOptions?: Array<{ label: string; onSelect: () => void; disabled?: boolean; disabledReason?: string }>
   onCompare?: () => void
+  onOpenArtifactPath?: () => void
   onOpenArtificing?: () => void
   onOpenTransmutation?: () => void
   onOpenUses?: () => void
@@ -34,6 +35,7 @@ export function buildItemContextSections({ itemId, owned, protectedItem, equippe
     ...(quickEquipOptions?.length ? quickEquipOptions.map((option, index) => ({ id: `quick-equip-${index}`, icon: Swords, ...option })) : onQuickEquip ? [{ id: 'quick-equip', label: 'Quick Equip', icon: Swords, onSelect: onQuickEquip }] : []),
     ...(quickUnequipOptions?.length ? quickUnequipOptions.map((option, index) => ({ id: `quick-unequip-${index}`, icon: Swords, ...option })) : onQuickUnequip ? [{ id: 'quick-unequip', label: 'Quick Unequip', icon: Swords, onSelect: onQuickUnequip }] : []),
     ...(onCompare ? [{ id: 'compare', label: 'Compare Loadout', onSelect: onCompare }] : []),
+    ...(onOpenArtifactPath ? [{ id: 'artifact-path', label: 'Artifact Path', icon: Sparkles, onSelect: onOpenArtifactPath }] : []),
   ]
   const craftingActions = [
     ...(onResearch ? [{ id: 'research', label: 'Research', icon: BookOpen, onSelect: onResearch }] : []),

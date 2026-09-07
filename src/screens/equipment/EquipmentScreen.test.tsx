@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { TooltipProvider } from '../../components/ui/tooltip/Tooltip'
+import { GameContextMenuProvider } from '../../ui/context-menu/GameContextMenuProvider'
 import { useGameStore } from '../../store/gameStore'
 import { EquipmentScreen } from './EquipmentScreen'
 
@@ -100,5 +101,28 @@ describe('EquipmentScreen stat typography structure', () => {
     fireEvent.click(screen.getByRole('radio', { name: /Ring 1:/ }))
     expect(screen.getByRole('button', { name: 'UNEQUIP RING 1' })).toBeTruthy()
     expect(useGameStore.getState().equipment.weapon).toBe('tideglass-wand')
+  })
+
+  it('opens Artifact Path directly from equipment context actions', () => {
+    const state = useGameStore.getState()
+    useGameStore.setState({ ui: { screen: 'equipment' }, equipment: { ...state.equipment, weapon: 'ember-staff' }, inventory: { ...state.inventory, 'ember-staff': 1 } })
+    const { container } = render(<TooltipProvider><GameContextMenuProvider><EquipmentScreen /></GameContextMenuProvider></TooltipProvider>)
+    const card = container.querySelector('.equipment-armory-card[data-item-id="ember-staff"]') as HTMLElement
+
+    fireEvent.contextMenu(card, { clientX: 20, clientY: 20 })
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Artifact Path' }))
+
+    expect(screen.getByRole('dialog', { name: 'Ember Staff Artifact Path' })).toBeTruthy()
+    expect(useGameStore.getState().ui.screen).toBe('equipment')
+  })
+
+  it('uses the concise player-facing Artifact tier label', () => {
+    const state = useGameStore.getState()
+    useGameStore.setState({ equipment: { ...state.equipment, weapon: 'ember-staff' }, inventory: { ...state.inventory, 'ember-staff': 1 } })
+    const { container } = render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
+    fireEvent.click(container.querySelector('.equipment-armory-card[data-item-id="ember-staff"]') as HTMLElement)
+
+    expect(Array.from(container.querySelectorAll('.equipment-inspector-meta strong')).some((element) => element.textContent?.includes('T1 ARTIFACT'))).toBe(true)
+    expect(screen.queryByText(/TIER 1 ARTIFACT/)).toBeNull()
   })
 })

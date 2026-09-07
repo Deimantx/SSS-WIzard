@@ -29,16 +29,17 @@ describe('Equipment read model', () => {
     state.inventory['gravebinder-ring'] = 1
     state.equipment.ring1 = 'gravebinder-ring'
     const preview = getEquipmentPreview(state, 'gravebinder-ring', 'ring2')
-    expect(preview).toMatchObject({ compatible: false, failureReason: 'insufficient-copies' })
-    expect(preview.reason).toContain('second copy')
+    expect(preview).toMatchObject({ compatible: false, failureReason: 'duplicate-ring' })
+    expect(preview.reason).toContain('same Ring')
   })
 
   it('projects Spell-origin Equipment modifiers into stable comparisons', () => {
     const state = createInitialState()
     state.inventory['ember-staff'] = 1
     state.equipment.weapon = 'ember-staff'
+    state.artifactProgress['ember-staff'] = { level: 2, allocatedNodeIds: ['arcane-kindling'], attunedNodeIds: [] }
     const ember = getEquipmentStatSnapshot(state, state.equipment)
-    expect(ember.fireSpellDamage).toBeCloseTo(0.2)
+    expect(ember.fireSpellDamage).toBeCloseTo(0.05)
 
     const windState = createInitialState()
     windState.inventory['windthread-charm'] = 1

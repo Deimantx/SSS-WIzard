@@ -23,8 +23,8 @@ export function ArtificingDetail({ recipe }: { recipe: ArtificingRecipeDefinitio
   const uiPreferences = useUiPreferences().screenState.artificing
   const [sources, setSources] = useState<import('../../../game/types').ItemId | null>(null)
   const [crafted, setCrafted] = useState<string | null>(null)
-  const activeId = state.activities.artificing.activeRecipeId
-  const activeRecipe = activeId ? ARTIFICING_RECIPES[activeId] : null
+  const activeId = state.activities.artificing.activeJob
+  const activeRecipe = activeId?.kind === 'recipe' ? ARTIFICING_RECIPES[activeId.recipeId] : null
   useEffect(() => { if (sources && recipe && !recipe.ingredients.some(i => i.itemId === sources && getConsumableQuantity(state, i.itemId) < i.quantity)) setSources(null) }, [sources, recipe, state.inventory, state.protectedItems])
   useEffect(() => { if (recipe && state.recentAcquisitions?.[0]?.itemId === recipe.output.itemId) setCrafted(ITEMS[recipe.output.itemId].name) }, [state.recentAcquisitions?.[0]?.timestamp, recipe?.output.itemId])
   if (!recipe) return <Card className="artificing-detail" title="ARCANE FORGE"><ActiveArtificingCraft /><div className="artificing-empty"><Hammer size={28} /><strong>SELECT EQUIPMENT</strong><p>Choose a blueprint from the catalog to inspect its requirements.</p></div></Card>
@@ -34,7 +34,7 @@ export function ArtificingDetail({ recipe }: { recipe: ArtificingRecipeDefinitio
   const capacity = getArtificingCraftCapacity(state, recipe.id)
   const limiting = getArtificingLimitingIngredient(state, recipe.id)
   const missing = getArtificingMissingIngredients(state, recipe.id).filter(entry => entry.missing > 0)
-  const reason = activeRecipe ? `${ITEMS[activeRecipe.output.itemId].name} is currently being crafted.` : !unlocked ? getRecipeUnlockRequirement(recipe) : !craftable ? 'Not enough legal materials. Protected, equipped, and reserved copies cannot be consumed.' : undefined
+  const reason = activeId ? 'Another Artificing job is already in progress.' : !unlocked ? getRecipeUnlockRequirement(recipe) : !craftable ? 'Not enough legal materials. Protected, equipped, and reserved copies cannot be consumed.' : undefined
   const sourceDrops = sources ? getItemDropSources(sources) : []
   const sourceTransmutation = sources ? getItemSources(sources).find((relation) => relation.kind === 'recipe' && relation.detail === 'Transmutation output') : undefined
   const openSourceTransmutation = () => { if (!sourceTransmutation) return; setNavigationIntent({ transmutationRecipeId: sourceTransmutation.id as never }); state.setScreen('tower-transmutation') }

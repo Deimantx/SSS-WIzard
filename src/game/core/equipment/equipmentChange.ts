@@ -9,6 +9,7 @@ export type EquipmentChangeFailureReason =
   | 'incompatible'
   | 'ring-target-required'
   | 'insufficient-copies'
+  | 'duplicate-ring'
 
 export interface EquipmentChangeSuccess {
   ok: true
@@ -55,6 +56,10 @@ export const evaluateEquipmentChange = (
   if (!position) return { ok: false, reason: 'ring-target-required' }
   if (!isEquipmentPosition(position) || !isPositionCompatible(itemId, position)) return { ok: false, reason: 'incompatible' }
   if (item.equipmentSlot === 'offhand' && isTwoHandedWeapon(state.equipment.weapon)) return { ok: false, reason: 'incompatible' }
+  if (item.equipmentSlot === 'ring' && (position === 'ring1' || position === 'ring2')) {
+    const other = position === 'ring1' ? 'ring2' : 'ring1'
+    if (state.equipment[other] === itemId) return { ok: false, reason: 'duplicate-ring' }
+  }
 
   const replacedSameCopy = state.equipment[position] === itemId ? 1 : 0
   const ownedCopies = Math.max(0, Math.floor(state.inventory[itemId] ?? 0))

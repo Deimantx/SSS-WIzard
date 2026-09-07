@@ -4,11 +4,11 @@ import { migrateSave } from '../../../persistence/migrations'
 import { EQUIPMENT_ITEM_SLOTS, EQUIPMENT_POSITIONS, getEquippedCount, getEquippedReservedQuantity, isPositionCompatible, isTwoHandedWeapon, normalizeEquipmentState } from './equipmentRules'
 
 describe('equipment slot rules', () => {
-  it('defines eight loadout positions and separate ring item positions', () => {
+  it('defines loadout positions including one Earring and separate ring item positions', () => {
     const state = createInitialState()
-    expect(EQUIPMENT_POSITIONS).toEqual(['weapon', 'offhand', 'armor', 'helmet', 'cape', 'amulet', 'ring1', 'ring2'])
-    expect(EQUIPMENT_ITEM_SLOTS).toEqual(['weapon', 'offhand', 'armor', 'helmet', 'cape', 'amulet', 'ring'])
-    expect(Object.keys(state.equipment)).toEqual(['weapon', 'offhand', 'armor', 'helmet', 'cape', 'amulet', 'ring1', 'ring2'])
+    expect(EQUIPMENT_POSITIONS).toEqual(['weapon', 'offhand', 'armor', 'helmet', 'cape', 'amulet', 'earring', 'ring1', 'ring2'])
+    expect(EQUIPMENT_ITEM_SLOTS).toEqual(['weapon', 'offhand', 'armor', 'helmet', 'cape', 'amulet', 'earring', 'ring'])
+    expect(Object.keys(state.equipment)).toEqual(['weapon', 'offhand', 'armor', 'helmet', 'cape', 'amulet', 'earring', 'ring1', 'ring2'])
     expect(isPositionCompatible('wispwood-wand', 'weapon')).toBe(true)
     expect(isPositionCompatible('tide-focus', 'offhand')).toBe(true)
     expect(isPositionCompatible('tide-focus', 'armor')).toBe(false)

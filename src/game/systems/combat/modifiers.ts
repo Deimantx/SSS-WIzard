@@ -10,6 +10,7 @@ import { getActorTraits } from './traitRuntime'
 import type { CombatModifier, CombatSource, CombatTag, DamageType, ModifierKey } from './combatTypes'
 import { getStatusGroupStacks } from './statusSelectors'
 import { getRootCombatSourceProvenance, isEnemySourceOwnerActive } from './combatProvenance'
+import { getAllocatedArtifactCombatProviders } from '../artifacts/artifactProgression'
 
 export interface ModifierContext {
   source?: CombatSource
@@ -83,6 +84,9 @@ export const getCombatModifiers = (state: GameState, actor: CombatActor, key: Mo
       ITEMS[itemId]?.combat?.modifiers?.forEach((modifier) => {
         if (modifier.key === key && matchesModifier(modifier, context) && evaluateCombatCondition(state, actor, modifier.condition, context)) total += modifier.value
       })
+      getAllocatedArtifactCombatProviders(state, itemId).forEach(provider => provider.modifiers.forEach(modifier => {
+        if (modifier.key === key && matchesModifier(modifier, context) && evaluateCombatCondition(state, actor, modifier.condition, context)) total += modifier.value
+      }))
     })
     const equipmentField = EQUIPMENT_MODIFIER_STATS[key]
     if (equipmentField) total += Number(getEquipmentStats(state)[equipmentField] ?? 0)

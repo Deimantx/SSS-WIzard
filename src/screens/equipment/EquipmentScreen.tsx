@@ -26,10 +26,10 @@ type ArmoryFilter = 'all' | EquipmentItemSlot
 type WeaponHandsFilter = 'all' | 1 | 2
 
 const ARMORY_FILTERS: { id: ArmoryFilter; label: string }[] = [
-  { id: 'all', label: 'ALL' }, { id: 'weapon', label: 'WEAPON' }, { id: 'offhand', label: 'OFFHAND' }, { id: 'armor', label: 'ARMOR' }, { id: 'helmet', label: 'HELMET' }, { id: 'cape', label: 'CAPE' }, { id: 'amulet', label: 'AMULET' }, { id: 'ring', label: 'RINGS' },
+  { id: 'all', label: 'ALL' }, { id: 'weapon', label: 'WEAPON' }, { id: 'offhand', label: 'OFFHAND' }, { id: 'armor', label: 'ARMOR' }, { id: 'helmet', label: 'HELMET' }, { id: 'cape', label: 'CAPE' }, { id: 'amulet', label: 'AMULET' }, { id: 'earring', label: 'EARRING' }, { id: 'ring', label: 'RINGS' },
 ]
-const EMPTY_FILTER_LABELS: Record<ArmoryFilter, string> = { all: 'EQUIPMENT', weapon: 'WEAPONS', offhand: 'OFFHANDS', armor: 'ARMOR', helmet: 'HELMETS', cape: 'CAPES', amulet: 'AMULETS', ring: 'RINGS' }
-const LOADOUT_VISUAL_ORDER: readonly EquipmentPosition[] = ['cape', 'helmet', 'weapon', 'armor', 'offhand', 'ring1', 'amulet', 'ring2']
+const EMPTY_FILTER_LABELS: Record<ArmoryFilter, string> = { all: 'EQUIPMENT', weapon: 'WEAPONS', offhand: 'OFFHANDS', armor: 'ARMOR', helmet: 'HELMETS', cape: 'CAPES', amulet: 'AMULETS', earring: 'EARRINGS', ring: 'RINGS' }
+const LOADOUT_VISUAL_ORDER: readonly EquipmentPosition[] = ['cape', 'helmet', 'earring', 'weapon', 'armor', 'offhand', 'ring1', 'amulet', 'ring2']
 const SLOT_TOOLTIP_COPY: Record<EquipmentPosition, { title: string; description: ReactNode }> = {
   weapon: { title: 'WEAPON', description: <>Main-hand equipment.<br />Supports one-handed and two-handed weapons.<br />Two-handed weapons disable Offhand.</> },
   offhand: { title: 'OFFHAND', description: <>Shields, magical focuses, books, or other secondary equipment.<br />Cannot be equipped with a two-handed Weapon.</> },
@@ -37,6 +37,7 @@ const SLOT_TOOLTIP_COPY: Record<EquipmentPosition, { title: string; description:
   helmet: { title: 'HELMET', description: <>Head equipment such as wizard hats, hoods, circlets, or helmets.</> },
   cape: { title: 'CAPE', description: <>Back equipment such as magical cloaks and capes.<br />Cape effects depend on the individual item.</> },
   amulet: { title: 'AMULET', description: <>Neck equipment such as magical amulets and charms.</> },
+  earring: { title: 'EARRING', description: <>One accessory slot for future Earring equipment.</> },
   ring1: { title: 'RING', description: <>Ring accessory slot.<br />The same Ring may occupy both Ring slots if two copies are owned.</> },
   ring2: { title: 'RING', description: <>Ring accessory slot.<br />The same Ring may occupy both Ring slots if two copies are owned.</> },
 }

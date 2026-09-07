@@ -14,6 +14,7 @@ const failureMessage: Record<EquipmentChangeFailureReason, string> = {
   incompatible: 'This item cannot be equipped in that slot.',
   'ring-target-required': 'Choose Ring 1 or Ring 2 to replace.',
   'insufficient-copies': 'You do not own enough copies of this item.',
+  'duplicate-ring': 'The same Ring cannot be equipped twice.',
 }
 
 export const equipItemAction = (state: GameState, itemId: ItemId, targetPosition?: EquipmentPosition): EquipItemResult => {

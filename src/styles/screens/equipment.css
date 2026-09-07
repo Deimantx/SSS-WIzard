@@ -3,12 +3,13 @@
 .equipment-screen .card { overflow: hidden; }
 .equipment-armory-panel, .equipment-inspector { display: flex; flex-direction: column; }
 .equipment-armory-panel > .card-head, .equipment-inspector > .card-head { flex: 0 0 auto; }
-.equipment-loadout-board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-areas: "cape helmet ." "weapon armor offhand" "ring1 amulet ring2"; gap: 12px; }
+.equipment-loadout-board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-areas: "cape helmet earring" "weapon armor offhand" "ring1 amulet ring2"; gap: 12px; }
 .equipment-slot-card { display: flex; min-width: 0; height: 116px; min-height: 116px; flex-direction: column; gap: 7px; padding: 10px; border: 1px solid var(--ui-border); border-radius: 9px; color: var(--ui-text-soft); background: linear-gradient(145deg, color-mix(in srgb, var(--ui-panel-strong) 80%, transparent), color-mix(in srgb, var(--ui-panel) 92%, transparent)); cursor: pointer; transition: border-color .15s ease, transform .15s ease, background .15s ease; }
 .equipment-slot-grid-item { min-width: 0; }
 .equipment-slot-grid-item > .game-tooltip-trigger { height: 100%; }
 .equipment-loadout-board > .equipment-slot-grid-item[data-position="cape"] { grid-area: cape; }
 .equipment-loadout-board > .equipment-slot-grid-item[data-position="helmet"] { grid-area: helmet; }
+.equipment-loadout-board > .equipment-slot-grid-item[data-position="earring"] { grid-area: earring; }
 .equipment-loadout-board > .equipment-slot-grid-item[data-position="weapon"] { grid-area: weapon; }
 .equipment-loadout-board > .equipment-slot-grid-item[data-position="armor"] { grid-area: armor; }
 .equipment-loadout-board > .equipment-slot-grid-item[data-position="offhand"] { grid-area: offhand; }
@@ -136,7 +137,7 @@
 
 @media (max-width: 760px) {
   .equipment-screen .ui-editor-grid-layout { min-height: 0; }
-  .equipment-loadout-board { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "cape helmet" "weapon offhand" "armor amulet" "ring1 ring2"; gap: 8px; }
+  .equipment-loadout-board { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "cape helmet" "earring weapon" "armor offhand" "ring1 amulet" "ring2 ring2"; gap: 8px; }
   .equipment-slot-card { height: 116px; min-height: 116px; }
   .equipment-armory-grid { grid-template-columns: 1fr; }
   .equipment-impact-row { grid-template-columns: minmax(0, 1fr) auto; }

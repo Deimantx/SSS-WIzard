@@ -1,5 +1,6 @@
 import { ITEMS } from '../../content/items/items'
 import type { CombatModifier, CombatTag, DamageType, EquipmentStats, GameState, ModifierKey } from '../../types'
+import { getArtifactEffectiveStats, getAllocatedArtifactCombatProviders, isArtifactItem } from '../../systems/artifacts/artifactProgression'
 
 export interface EquipmentModifierContext {
   sourceKinds?: CombatModifier['sourceKinds']
@@ -11,11 +12,14 @@ export interface EquipmentModifierContext {
 }
 
 /** Aggregates authored equipped-item stats for every derived combat/system selector. */
-export const getEquipmentStats = (state: Pick<GameState, 'equipment'>): EquipmentStats => {
+export const getEffectiveEquipmentItemStats = (state: Pick<GameState, 'equipment'> & Partial<Pick<GameState, 'artifactProgress'>>, itemId: import('../../types').ItemId): EquipmentStats =>
+  isArtifactItem(itemId) && state.artifactProgress ? getArtifactEffectiveStats(state as Pick<GameState, 'artifactProgress'>, itemId) : (ITEMS[itemId]?.stats ?? {})
+
+export const getEquipmentStats = (state: Pick<GameState, 'equipment'> & Partial<Pick<GameState, 'artifactProgress'>>): EquipmentStats => {
   const total: EquipmentStats = {}
   Object.values(state.equipment).forEach((itemId) => {
     if (!itemId || !ITEMS[itemId]) return
-    const stats = ITEMS[itemId].stats ?? {}
+    const stats = getEffectiveEquipmentItemStats(state, itemId)
     Object.entries(stats).forEach(([key, value]) => {
       if (key === 'resistances' && value && typeof value === 'object') {
         const resistances = (total.resistances ?? {}) as NonNullable<EquipmentStats['resistances']>
@@ -32,11 +36,11 @@ export const getEquipmentStats = (state: Pick<GameState, 'equipment'>): Equipmen
 }
 
 /** Sums unconditional authored Equipment modifiers for stable sheet read models. */
-export const getEquipmentCombatModifierTotal = (state: Pick<GameState, 'equipment'>, key: ModifierKey, context: EquipmentModifierContext = {}) => {
+export const getEquipmentCombatModifierTotal = (state: Pick<GameState, 'equipment'> & Partial<Pick<GameState, 'artifactProgress'>>, key: ModifierKey, context: EquipmentModifierContext = {}) => {
   const sourceTags = context.sourceTags ?? []
   const originTags = context.originTags ?? []
   return Object.values(state.equipment).reduce((total, itemId) => {
-    const modifiers = itemId ? ITEMS[itemId]?.combat?.modifiers ?? [] : []
+    const modifiers = itemId ? [...(ITEMS[itemId]?.combat?.modifiers ?? []), ...(state.artifactProgress ? getAllocatedArtifactCombatProviders(state as Pick<GameState, 'artifactProgress'>, itemId).flatMap(provider => provider.modifiers) : [])] : []
     return total + modifiers.reduce((itemTotal, modifier) => {
       if (modifier.key !== key || modifier.condition) return itemTotal
       if (context.sourceKinds?.length && (!modifier.sourceKinds || !context.sourceKinds.some((kind) => modifier.sourceKinds?.includes(kind)))) return itemTotal

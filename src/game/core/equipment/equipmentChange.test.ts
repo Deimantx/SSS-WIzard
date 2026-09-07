@@ -57,16 +57,16 @@ describe('evaluateEquipmentChange', () => {
     expect(evaluateEquipmentChange(state, 'gravebinder-ring')).toEqual({ ok: false, reason: 'ring-target-required' })
   })
 
-  it('allows one owned Ring in one position and two owned copies in both positions', () => {
+  it('allows one owned Ring in one position and blocks the same Ring in both positions', () => {
     const one = withOwned('gravebinder-ring', 1)
     expect(evaluateEquipmentChange(one, 'gravebinder-ring', 'ring1')).toMatchObject({ ok: true, position: 'ring1' })
     one.equipment.ring1 = 'gravebinder-ring'
     expect(evaluateEquipmentChange(one, 'gravebinder-ring', 'ring1')).toMatchObject({ ok: true, position: 'ring1' })
-    expect(evaluateEquipmentChange(one, 'gravebinder-ring', 'ring2')).toEqual({ ok: false, reason: 'insufficient-copies' })
+    expect(evaluateEquipmentChange(one, 'gravebinder-ring', 'ring2')).toEqual({ ok: false, reason: 'duplicate-ring' })
 
     const two = withOwned('gravebinder-ring', 2)
     two.equipment.ring1 = 'gravebinder-ring'
-    expect(evaluateEquipmentChange(two, 'gravebinder-ring', 'ring2')).toMatchObject({ ok: true, position: 'ring2' })
+    expect(evaluateEquipmentChange(two, 'gravebinder-ring', 'ring2')).toEqual({ ok: false, reason: 'duplicate-ring' })
   })
 
   it('permits replacing one Ring copy while preserving the other reserved copy', () => {
@@ -76,7 +76,7 @@ describe('evaluateEquipmentChange', () => {
     state.equipment.ring2 = 'gravebinder-ring'
     expect(evaluateEquipmentChange(state, 'wispbound-ring', 'ring1')).toMatchObject({ ok: true, position: 'ring1' })
     state.equipment.ring1 = 'wispbound-ring'
-    expect(evaluateEquipmentChange(state, 'wispbound-ring', 'ring2')).toEqual({ ok: false, reason: 'insufficient-copies' })
+    expect(evaluateEquipmentChange(state, 'wispbound-ring', 'ring2')).toEqual({ ok: false, reason: 'duplicate-ring' })
   })
 
   it('never treats an unknown position as a compatible target', () => {

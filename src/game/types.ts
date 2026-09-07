@@ -54,8 +54,9 @@ export type SpellPresetId = string
 export type MonsterId = 'forest-wisp' | 'thornling' | 'stone-root' | 'grove-sentinel' | 'forest-heart' | 'cavefang-wolf' | 'razorclaw-lynx' | 'corrupted-dire-wolf' | 'corrupted-greatbear' | 'restless-skeleton' | 'grave-wraith' | 'fallen-acolyte' | 'archmage-edrin-shade'
 export type BestiaryCategory = 'monster' | 'boss'
 export type DungeonId = 'whispering-woods' | 'howling-den' | 'abandoned-catacombs'
-export type EquipmentItemSlot = 'weapon' | 'offhand' | 'armor' | 'helmet' | 'cape' | 'amulet' | 'ring'
-export type EquipmentPosition = 'weapon' | 'offhand' | 'armor' | 'helmet' | 'cape' | 'amulet' | 'ring1' | 'ring2'
+export type EquipmentItemSlot = 'weapon' | 'offhand' | 'armor' | 'helmet' | 'cape' | 'amulet' | 'earring' | 'ring'
+export type EquipmentPosition = 'weapon' | 'offhand' | 'armor' | 'helmet' | 'cape' | 'amulet' | 'earring' | 'ring1' | 'ring2'
+export type ArtifactId = ItemId
 export type EquipmentBuildTag = 'spell' | 'basic-attack' | 'hybrid' | 'crit' | 'status' | 'dot' | 'barrier' | 'defense' | 'sustain' | 'mana' | 'focus' | 'healing' | 'fire' | 'water' | 'earth' | 'air'
 export type EquipmentBudgetProfileId = 'standard' | 'signature' | 'boss'
 /** @deprecated Use EquipmentItemSlot for item metadata or EquipmentPosition for loadout state. */
@@ -226,7 +227,12 @@ export interface ResearchActivity {
 }
 export interface TransmutationJobState { echoesAssigned: number; progressMs: number }
 export interface TransmutationActivity { jobs: Partial<Record<TransmutationRecipeId, TransmutationJobState>> }
-export interface ArtificingActivity { activeRecipeId: ArtificingRecipeId | null; progressMs: number }
+export type ArtificingJob =
+  | { kind: 'recipe'; recipeId: ArtificingRecipeId }
+  | { kind: 'artifact-forge'; artifactId: ArtifactId }
+  | { kind: 'artifact-upgrade'; artifactId: ArtifactId; fromLevel: number; toLevel: number }
+export interface ArtificingActivity { activeJob: ArtificingJob | null; activeRecipeId?: ArtificingRecipeId | null; progressMs: number }
+export interface ArtifactProgressState { level: number; allocatedNodeIds: string[]; attunedNodeIds: string[] }
 export interface ActivitiesState {
   channeling: ChannelingActivity
   research: ResearchActivity
@@ -334,6 +340,7 @@ export interface GameState {
   inventory: Partial<Record<ItemId, number>>
   protectedItems: Partial<Record<ItemId, boolean>>
   equipment: Record<EquipmentPosition, ItemId | null>
+  artifactProgress: Partial<Record<ArtifactId, ArtifactProgressState>>
   activities: ActivitiesState
   combat: CombatState
   progress: ProgressState

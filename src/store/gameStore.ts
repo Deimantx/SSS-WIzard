@@ -36,7 +36,8 @@ import { forceCompleteTransmutationCycle } from '../game/systems/transmutation/t
 import { saveGameAction } from './actions/persistenceActions'
 import { advanceGameState } from '../game/systems/simulation/advanceGameState'
 import { forceCompleteResearchCycle } from '../game/systems/research/researchEngine'
-import { cancelArtificingCraft, craftArtificingRecipe as craftArtificing } from '../game/systems/artificing/artificingEngine'
+import { cancelArtificingCraft, craftArtificingRecipe as craftArtificing, startArtifactUpgrade } from '../game/systems/artificing/artificingEngine'
+import { allocateArtifactNode, respecArtifact } from '../game/systems/artifacts/artifactProgression'
 import { advanceWithOfflineBank as runOfflineBankAdvance, isOfflineBankSimulationActive, type OfflineBankResult, type OfflineBankSimulationObservers } from '../game/systems/offline-bank/offlineBankSimulation'
 import { addOfflineBankMs, clampOfflineBankMs } from '../game/systems/offline-bank/offlineBankDuration'
 import type { OfflineBankReport } from '../game/systems/offline-bank/offlineBankReport'
@@ -144,6 +145,9 @@ export interface GameActions {
   grantTransmutationIngredients: (recipeId: TransmutationRecipeId, cycles?: number) => void
   grantArtificingIngredients: (recipeId: import('../game/types').ArtificingRecipeId) => void
   craftArtificingRecipe: (recipeId: import('../game/types').ArtificingRecipeId) => boolean
+  upgradeArtifact: (artifactId: import('../game/types').ArtifactId) => boolean
+  allocateArtifactNode: (artifactId: import('../game/types').ArtifactId, nodeId: string) => boolean
+  respecArtifact: (artifactId: import('../game/types').ArtifactId) => boolean
   cancelArtificingCraft: () => void
   setDebugTransmutationEchoCapacity: (amount: number | null) => void
   castSpell: (spellId: SpellId) => void
@@ -327,6 +331,9 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   cancelArtificingCraft: () => set(state => { cancelArtificingCraft(state) }),
   grantArtificingIngredients: (recipeId) => set(state => { const recipe = ARTIFICING_RECIPES[recipeId]; if (recipe) recipe.ingredients.forEach(i => { const missing = Math.max(0, i.quantity - getConsumableQuantity(state, i.itemId)); if (missing) grantItem(state, i.itemId, missing) }); }),
   craftArtificingRecipe: (recipeId) => { let ok = false; set((state) => { const result = craftArtificing(state, recipeId); ok = result.ok; if (!result.ok) pushNotification(state, result.reason, 'warning', { key: 'artificing-craft-failed', cooldownMs: 1200 }); return state }); return ok },
+  upgradeArtifact: (artifactId) => { let ok = false; set((state) => { const result = startArtifactUpgrade(state, artifactId); ok = result.ok; if (!result.ok) pushNotification(state, result.reason, 'warning', { key: 'artifact-upgrade-failed', cooldownMs: 1200 }); return state }); return ok },
+  allocateArtifactNode: (artifactId, nodeId) => { let ok = false; set((state) => { ok = allocateArtifactNode(state, artifactId, nodeId); if (!ok) pushNotification(state, 'Artifact Node requirements are not satisfied.', 'warning'); recalculateDerivedStats(state); return state }); return ok },
+  respecArtifact: (artifactId) => { let ok = false; set((state) => { ok = respecArtifact(state, artifactId); recalculateDerivedStats(state); return state }); return ok },
   setDebugTransmutationEchoCapacity: (amount) => set((state) => { setTransmutationEchoCapacityOverrideAction(state, amount); return state }),
   castSpell: (spellId) => set((state) => { castSpellAction(state, spellId, combatEventSink); return state }),
   toggleAutoCast: (spellId) => { const before = Boolean(get().activities.autoCast[spellId]); set((state) => { const cost = getSpellAutoCastFocusCost(state, spellId); if (!spellUnlocked(state, spellId) || cost === null) return state; const latchIndex = state.combat.autoCastManaStarvedSpells.indexOf(spellId); if (latchIndex >= 0) state.combat.autoCastManaStarvedSpells.splice(latchIndex, 1); if (state.activities.autoCast[spellId]) { state.activities.autoCast[spellId] = false; state.spellPresets.lastAppliedPresetId = null } else if (canReserveFocus(state, cost)) { state.activities.autoCast[spellId] = true; state.spellPresets.lastAppliedPresetId = null; pushNotification(state, `${SPELLS[spellId].name} Auto-Cast enabled`, 'success') } else pushNotification(state, `Cannot enable Auto-Cast · Requires ${cost} Focus · Free Focus: ${selectFreeFocus(state)}`, 'warning'); return state }); const after = Boolean(get().activities.autoCast[spellId]); if (after !== before) emitActionFeel(after ? 'autocast-on' : 'autocast-off', `[data-spell-id="${spellId}"]`, 'var(--ui-secondary)'); else emitActionFeel('error', `[data-spell-id="${spellId}"]`, 'var(--ui-warning)', 0.75); return after !== before },

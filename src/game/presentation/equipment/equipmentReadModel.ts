@@ -5,7 +5,7 @@ import { isTwoHandedWeapon } from '../../core/equipment/equipmentRules'
 import { getPlayerSheetCombatStats } from '../../systems/combat/combatStats'
 import type { DamageType, EquipmentStats, EquipmentPosition, GameState, ItemId } from '../../types'
 
-export type EquipmentSheetState = Pick<GameState, 'player' | 'progress' | 'activities' | 'equipment' | 'inventory'> & Partial<Pick<GameState, 'debug'>>
+export type EquipmentSheetState = Pick<GameState, 'player' | 'progress' | 'activities' | 'equipment' | 'inventory'> & Partial<Pick<GameState, 'debug' | 'artifactProgress'>>
 
 export interface EquipmentStatSnapshot {
   maxHealth: number
@@ -59,18 +59,18 @@ export interface EquipmentPreview {
 }
 
 /** Compatibility projections for the current Equipment sheet; filtered modifiers use the generic evaluator. */
-const getStableEquipmentModifiers = (equipment: GameState['equipment']) => ({
-  fireSpellDamage: getEquipmentCombatModifierTotal({ equipment }, 'spell-damage-percent', { originSourceKinds: ['spell'], damageType: 'fire' }),
-  airSpellDamage: getEquipmentCombatModifierTotal({ equipment }, 'spell-damage-percent', { originSourceKinds: ['spell'], damageType: 'air' }),
-  waterBarrierPower: getEquipmentCombatModifierTotal({ equipment }, 'barrier-power-percent', { sourceKinds: ['spell'], damageType: 'water' }),
-  barrierReceivedFlat: getEquipmentCombatModifierTotal({ equipment }, 'barrier-received-flat'),
-  negativeStatusDurationReceived: getEquipmentCombatModifierTotal({ equipment }, 'status-duration-received-percent', { statusTags: ['debuff'] }),
+const getStableEquipmentModifiers = (state: EquipmentSheetState, equipment: GameState['equipment']) => ({
+  fireSpellDamage: getEquipmentCombatModifierTotal({ ...state, equipment }, 'spell-damage-percent', { originSourceKinds: ['spell'], damageType: 'fire' }),
+  airSpellDamage: getEquipmentCombatModifierTotal({ ...state, equipment }, 'spell-damage-percent', { originSourceKinds: ['spell'], damageType: 'air' }),
+  waterBarrierPower: getEquipmentCombatModifierTotal({ ...state, equipment }, 'barrier-power-percent', { sourceKinds: ['spell'], damageType: 'water' }),
+  barrierReceivedFlat: getEquipmentCombatModifierTotal({ ...state, equipment }, 'barrier-received-flat'),
+  negativeStatusDurationReceived: getEquipmentCombatModifierTotal({ ...state, equipment }, 'status-duration-received-percent', { statusTags: ['debuff'] }),
 })
 
 export const getEquipmentStatSnapshot = (state: EquipmentSheetState, equipment: GameState['equipment']): EquipmentStatSnapshot => {
   const runtimeState = { ...state, equipment }
   const sheet = getPlayerSheetCombatStats(runtimeState)
-  const equipmentModifiers = getStableEquipmentModifiers(equipment)
+  const equipmentModifiers = getStableEquipmentModifiers(state, equipment)
   return {
     maxHealth: sheet.maxHealth,
     healthRegen: sheet.healthRegen,
@@ -134,6 +134,7 @@ const failureMessage: Record<EquipmentChangeFailureReason, string> = {
   incompatible: 'This item cannot be equipped in that slot.',
   'ring-target-required': 'Choose Ring 1 or Ring 2 to replace.',
   'insufficient-copies': 'A second copy is required for this Ring position.',
+  'duplicate-ring': 'The same Ring cannot be equipped twice.',
 }
 
 const getFailureMessage = (state: EquipmentSheetState, itemId: ItemId, reason: EquipmentChangeFailureReason) => reason === 'incompatible' && ITEMS[itemId]?.equipmentSlot === 'offhand' && isTwoHandedWeapon(state.equipment.weapon)

@@ -1,6 +1,5 @@
 import { BALANCE } from '../../core/balance/balance'
-import { getEquipmentStats } from '../../core/equipment/equipmentStats'
-import type { GameState } from '../../types'
+import { getEquipmentStats, type EquipmentStatsState } from '../../core/equipment/equipmentStats'
 
 export interface SpellPowerBreakdown {
   base: number
@@ -9,11 +8,11 @@ export interface SpellPowerBreakdown {
   total: number
 }
 
-/** Canonical V1 Spell Power: authored base plus flat equipped Spell Power. */
-export const getSpellPowerBreakdown = (state: Pick<GameState, 'equipment'>): SpellPowerBreakdown => {
+/** Canonical Spell Power: authored base plus effective equipped-build Spell Power. */
+export const getSpellPowerBreakdown = (state: EquipmentStatsState): SpellPowerBreakdown => {
   const base = BALANCE.player.baseSpellPower
   const equipment = getEquipmentStats(state).spellPower ?? 0
   return { base, equipment, total: Math.max(0, base + equipment) }
 }
 
-export const getSpellPower = (state: Pick<GameState, 'equipment'>) => getSpellPowerBreakdown(state).total
+export const getSpellPower = (state: EquipmentStatsState) => getSpellPowerBreakdown(state).total

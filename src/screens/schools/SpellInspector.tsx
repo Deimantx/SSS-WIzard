@@ -5,8 +5,7 @@ import { SPELLS } from '../../game/content/spells/spells'
 import { formatSpellRank, getSpellPresetFocusBreakdown, type SpellRank } from '../../game/systems/spells'
 import { getSpellEquipmentBonusPreview } from '../../game/systems/spells/spellEquipmentPreview'
 import type { CombatEffect } from '../../game/systems/combat/combatTypes'
-import type { GameState, SpellId } from '../../game/types'
-import { formatTime } from '../../game/utils'
+import type { SpellId } from '../../game/types'
 import { Button, Card, GameTooltip, Status } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { SpellIcon } from './SpellIcon'
@@ -16,12 +15,12 @@ import { SpellEquipmentBonuses } from './SpellEquipmentBonuses'
 import { SpellEffectTooltip } from './SpellEffectTooltip'
 import { SpellRankPath } from './SpellRankPath'
 import type { SpellEffectTooltipCategoryKey } from './spellEffectTooltipModel'
-import { buildSpellDetailPresentation } from './spellDetailPresentation'
+import { buildSpellDetailPresentation, type SpellPresentationState } from './spellDetailPresentation'
 import { useSmartScrollState } from '../../ui/game-feel/useSmartScrollState'
 
 export function SpellInspector({ entry, state, onContentHeightChange, rankPathOpen, onToggleRankPath, onToggleAutoCast }: {
   entry: SpellBrowserEntry | null
-  state: Pick<GameState, 'schools' | 'progress' | 'equipment' | 'activities'> & { player: Pick<GameState['player'], 'maxFocus'>; debug: Pick<GameState['debug'], 'allowFocusOverCap'> }
+  state: SpellPresentationState
   onContentHeightChange?: (height: number) => void
   rankPathOpen: boolean
   onToggleRankPath: () => void
@@ -77,7 +76,7 @@ export function SpellInspector({ entry, state, onContentHeightChange, rankPathOp
       <div ref={inspectorMainRef} className="spell-inspector-main">
         <div className="spell-inspector-title"><span className="spell-inspector-icon-frame"><SpellIcon school={spell.school} size="large" /></span><div><div className="spell-inspector-meta">{school.name.toUpperCase()} · {formatSpellRank(rank).toUpperCase()}</div><h2>{spell.name}</h2><p>Learned at Lv{spell.unlockLevel}</p></div></div>
         <p className="spell-inspector-description">{spell.description}</p>
-        <div className="spell-inspector-section"><div className="section-label">CORE CASTING</div><div className="spell-core-grid"><Metric semantic="mana" icon={<Droplet size={14} />} label="Mana" value={`${detail.manaCost}`} description="Mana spent when this Spell is cast after current Mana Cost Reduction." /><Metric semantic="time" icon={<Clock3 size={14} />} label="Cooldown" value={formatTime(spell.cooldownMs)} description="Time before this Spell can be cast again." /><Metric semantic="focus" icon={<CircleDot size={14} />} label="Auto-Cast Focus" value={`${focusCost}`} description="Focus reserved while this Spell is enabled for Auto-Cast." /><Metric semantic="spell-power" icon={<Sparkles size={14} />} label="Spell Power" value={`${detail.spellPower}`} description="Current Spell Power used by authored Spell scaling coefficients." /></div></div>
+        <div className="spell-inspector-section"><div className="section-label">CORE CASTING</div><div className="spell-core-grid"><Metric semantic="mana" icon={<Droplet size={14} />} label="Mana" value={`${detail.manaCost}`} description="Mana spent when this Spell is cast after current Mana Cost Reduction." /><Metric semantic="time" icon={<Clock3 size={14} />} label="Cooldown" value={detail.cooldownLabel} description="Current cooldown after active Cooldown Recovery." /><Metric semantic="focus" icon={<CircleDot size={14} />} label="Auto-Cast Focus" value={`${focusCost}`} description="Focus reserved while this Spell is enabled for Auto-Cast." /><Metric semantic="spell-power" icon={<Sparkles size={14} />} label="Spell Power" value={`${detail.spellPower}`} description={`Current Spell Power. Base ${detail.spellPowerBreakdown.base}; equipped build ${detail.spellPowerBreakdown.equipment}.`} /></div></div>
         <div className="spell-inspector-section"><div className="section-label">EFFECTS</div><div className="spell-effects">{detail.effects.map((model, index) => <EffectRow model={model} effect={spell.effects[index]} key={`${model.categoryKey}-${index}`} />)}</div></div>
         <div className={`spell-autocast-card${autoCast ? ' is-active' : ''}${!canEnable ? ' is-blocked' : ''}`}><GameTooltip block accent={autoCast ? 'success' : !canEnable ? 'warning' : 'focus'} content={<TooltipContent title="Auto-Cast" description={autoCastTooltip} />}><button type="button" className="spell-autocast-control" aria-label={`Auto-Cast ${autoCast ? 'ON' : 'OFF'}`} aria-pressed={autoCast} disabled={!autoCast && !canEnable} onClick={() => onToggleAutoCast(spell.id)}><span className="spell-autocast-control-label"><span className="section-label">AUTO-CAST</span><strong>{autoCast ? 'ON' : 'OFF'}</strong></span><span className="spell-autocast-control-status">{autoCast ? 'ACTIVE' : <CircleDot size={16} aria-hidden="true" />}</span></button></GameTooltip><div className="spell-autocast-details"><strong>{conditionLabel(spell.autoCondition)}</strong><small>{autoCast ? `${focusCost} Focus reserved` : !canEnable ? `Need ${focusCost} Focus` : `${focusCost} Focus when enabled`}</small></div></div>
         <details className="spell-equipment-details"><summary><span>EQUIPMENT MODIFIERS</span>{preview.current.length || preview.spellPower !== 0 ? <Status tone="success">{preview.current.length + (preview.spellPower !== 0 ? 1 : 0)} ACTIVE</Status> : <Status>NONE</Status>}</summary><SpellEquipmentBonuses preview={preview} /></details>

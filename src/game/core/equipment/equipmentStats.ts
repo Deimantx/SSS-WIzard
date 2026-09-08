@@ -11,11 +11,13 @@ export interface EquipmentModifierContext {
   statusTags?: CombatTag[]
 }
 
+export type EquipmentStatsState = Pick<GameState, 'equipment'> & Partial<Pick<GameState, 'artifactProgress'>>
+
 /** Aggregates authored equipped-item stats for every derived combat/system selector. */
-export const getEffectiveEquipmentItemStats = (state: Pick<GameState, 'equipment'> & Partial<Pick<GameState, 'artifactProgress'>>, itemId: import('../../types').ItemId): EquipmentStats =>
+export const getEffectiveEquipmentItemStats = (state: EquipmentStatsState, itemId: import('../../types').ItemId): EquipmentStats =>
   isArtifactItem(itemId) && state.artifactProgress ? getArtifactEffectiveStats(state as Pick<GameState, 'artifactProgress'>, itemId) : (ITEMS[itemId]?.stats ?? {})
 
-export const getEquipmentStats = (state: Pick<GameState, 'equipment'> & Partial<Pick<GameState, 'artifactProgress'>>): EquipmentStats => {
+export const getEquipmentStats = (state: EquipmentStatsState): EquipmentStats => {
   const total: EquipmentStats = {}
   Object.values(state.equipment).forEach((itemId) => {
     if (!itemId || !ITEMS[itemId]) return
@@ -36,7 +38,7 @@ export const getEquipmentStats = (state: Pick<GameState, 'equipment'> & Partial<
 }
 
 /** Sums unconditional authored Equipment modifiers for stable sheet read models. */
-export const getEquipmentCombatModifierTotal = (state: Pick<GameState, 'equipment'> & Partial<Pick<GameState, 'artifactProgress'>>, key: ModifierKey, context: EquipmentModifierContext = {}) => {
+export const getEquipmentCombatModifierTotal = (state: EquipmentStatsState, key: ModifierKey, context: EquipmentModifierContext = {}) => {
   const sourceTags = context.sourceTags ?? []
   const originTags = context.originTags ?? []
   return Object.values(state.equipment).reduce((total, itemId) => {

@@ -8,7 +8,7 @@ import { getSpellPower } from '../spells/spellPower'
 import type { EquipmentStats, GameState } from '../../types'
 import type { CombatActor } from './magnitude'
 import type { CombatSource, DamageType } from './combatTypes'
-import { getCombatModifiers, getResistance } from './modifiers'
+import { getCombatModifiers, getResistance, type CombatModifierState } from './modifiers'
 
 export { BLOCK_DAMAGE_REDUCTION, DEFAULT_COMBAT_SPEED_MULTIPLIER, DEFAULT_ENEMY_CRIT_CHANCE, DEFAULT_ENEMY_CRIT_DAMAGE_MULTIPLIER, DEFAULT_ENEMY_DEFENSE, DEFENSE_K, MAX_BLOCK_CHANCE, MAX_CRIT_CHANCE, MAX_CRIT_DAMAGE_MULTIPLIER, MAX_DEFENSE_REDUCTION, MAX_RESISTANCE, MIN_CRIT_DAMAGE_MULTIPLIER, MIN_RESISTANCE } from '../../core/balance/combatStats'
 
@@ -39,7 +39,7 @@ export interface CombatStats {
   focusEfficiency: number
 }
 
-export type PlayerSheetState = Pick<GameState, 'player' | 'progress' | 'activities' | 'equipment'> & Partial<Pick<GameState, 'debug'>>
+export type PlayerSheetState = Pick<GameState, 'player' | 'progress' | 'activities' | 'equipment'> & Partial<Pick<GameState, 'artifactProgress' | 'debug'>>
 
 const finite = (value: number | undefined, fallback = 0) => Number.isFinite(value) ? value as number : fallback
 const clampPercent = (value: number, min: number, max: number) => Math.min(max, Math.max(min, finite(value)))
@@ -177,7 +177,7 @@ export const getDamageOverTimeBonus = (state: GameState, actor: CombatActor, sou
 export const getStatusDurationBonus = (state: GameState, actor: CombatActor, source?: CombatSource) => getCombatModifiers(state, actor, 'status-duration-dealt-percent', { source, sourceTags: source?.tags })
 export const getHealingDoneBonus = (state: GameState, actor: CombatActor, source?: CombatSource) => getCombatModifiers(state, actor, 'healing-done-percent', { source, sourceTags: source?.tags })
 export const getBarrierPowerBonus = (state: GameState, actor: CombatActor, source?: CombatSource) => getCombatModifiers(state, actor, 'barrier-power-percent', { source, sourceTags: source?.tags })
-export const getCooldownRecoveryMultiplier = (state: GameState, actor: CombatActor = 'player') => Math.max(0, Math.min(10, 1 + getCombatModifiers(state, actor, 'cooldown-recovery-percent')))
+export const getCooldownRecoveryMultiplier = (state: CombatModifierState, actor: CombatActor = 'player') => Math.max(0, Math.min(10, 1 + getCombatModifiers(state, actor, 'cooldown-recovery-percent')))
 
-export const getEffectiveManaCost = (state: Pick<GameState, 'equipment'>, baseManaCost: number) => Math.max(1, Math.ceil(Math.max(0, baseManaCost) * (1 - clampPercent(playerEquipmentStat(state, 'manaCostReductionPct'), 0, 0.8))))
-export const getEffectiveFocusCost = (state: Pick<GameState, 'equipment'>, baseFocusCost: number) => Math.max(1, Math.ceil(Math.max(0, baseFocusCost) * (1 - clampPercent(playerEquipmentStat(state, 'focusEfficiencyPct'), 0, 0.8))))
+export const getEffectiveManaCost = (state: Pick<GameState, 'equipment'> & Partial<Pick<GameState, 'artifactProgress'>>, baseManaCost: number) => Math.max(1, Math.ceil(Math.max(0, baseManaCost) * (1 - clampPercent(playerEquipmentStat(state, 'manaCostReductionPct'), 0, 0.8))))
+export const getEffectiveFocusCost = (state: Pick<GameState, 'equipment'> & Partial<Pick<GameState, 'artifactProgress'>>, baseFocusCost: number) => Math.max(1, Math.ceil(Math.max(0, baseFocusCost) * (1 - clampPercent(playerEquipmentStat(state, 'focusEfficiencyPct'), 0, 0.8))))

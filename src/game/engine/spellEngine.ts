@@ -3,9 +3,10 @@ import { appendLog, pushNotification } from '../engine'
 import { executeCombatEffects } from '../systems/combat/effectResolver'
 import { actorCannotAct } from '../systems/combat/statusRuntime'
 import { isSpellUnlocked } from '../systems/spells'
-import type { CombatSource, GameState, SpellId } from '../types'
+import type { GameState, SpellId } from '../types'
 import type { CombatEventSink } from '../systems/combat/combatTypes'
 import { getEffectiveManaCost } from '../systems/combat/combatStats'
+import { getSpellCombatSource } from '../systems/spells/spellSource'
 
 const hasEnemyTarget = (spellId: SpellId) => SPELLS[spellId].effects.some((effect) => effect.target === 'opponent')
 
@@ -57,7 +58,7 @@ export const castSpellInternal = (state: GameState, spellId: SpellId, quiet = fa
   }
   if (!state.debug.infiniteMana) state.player.mana -= getEffectiveManaCost(state, spell.manaCost)
   state.combat.spellCooldowns[spellId] = state.debug.ignoreSpellCooldowns ? 0 : spell.cooldownMs
-  const source: CombatSource = { actor: 'player', kind: 'spell', sourceId: spell.id, school: spell.school, tags: ['spell', 'magic', spell.school] }
+  const source = getSpellCombatSource(spellId)
   executeCombatEffects(state, spell.effects, source, undefined, uiEvents)
   const damageEffect = spell.effects.some((effect) => effect.type === 'deal-damage')
   appendLog(state, `${spell.name} cast${damageEffect ? ` for ${state.combat.lastDamageDealt}` : ''}.`)

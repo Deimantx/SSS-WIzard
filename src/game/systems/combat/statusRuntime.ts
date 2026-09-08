@@ -5,7 +5,7 @@ import type { CombatActor } from './magnitude'
 import { isCombatActorAlive, resolveMagnitude, scaleMagnitude } from './magnitude'
 import { runCombatTriggers } from './triggerRuntime'
 import type { CombatEffect, CombatEventSink, CombatResolutionContext, CombatSource, ActiveStatus, CombatTag, ModifierKey } from './combatTypes'
-import { getCombatModifiers } from './modifiers'
+import { getCombatModifiers, type CombatModifierEvaluation } from './modifiers'
 import { createCombatValidationContext, hasValidStatusModifierOverrides, validatePeriodicEffectList } from './combatEffectValidation'
 import { buildPeriodicStatusCombatSource, getExecutablePeriodicStatusEffects, getRootCombatSourceProvenance } from './combatProvenance'
 
@@ -17,6 +17,12 @@ export interface StatusRemovalOptions {
   reason?: 'removed' | 'expired'
   uiEvents?: CombatEventSink
   resolution?: CombatResolutionContext
+}
+
+export interface StatusDurationResolutionOptions {
+  /** Generic previews omit receiver-side modifiers; runtime keeps them enabled. */
+  includeReceiverModifiers?: boolean
+  modifierEvaluation?: CombatModifierEvaluation
 }
 
 const statusList = (state: GameState, actor: CombatActor): ActiveStatus[] => actor === 'player' ? state.combat.playerStatuses : state.combat.enemyStatuses
@@ -57,12 +63,14 @@ export const getNextPlayerStatusEventMs = (state: GameState): number | null => g
 
 export const actorCannotAct = (state: GameState, actor: CombatActor) => statusList(state, actor).some((status) => STATUS_DEFINITIONS[status.statusId]?.preventsAction === true)
 
-const resolvedDuration = (state: GameState, actor: CombatActor, statusId: StatusId, durationMs: number | null, source: CombatSource) => {
+export const resolveStatusDuration = (state: Pick<GameState, 'player' | 'combat' | 'equipment' | 'artifactProgress'>, actor: CombatActor, statusId: StatusId, durationMs: number | null, source: CombatSource, options: StatusDurationResolutionOptions = {}) => {
   if (durationMs === null) return null
   const definition = STATUS_DEFINITIONS[statusId]
-  const received = getCombatModifiers(state, actor, 'status-duration-received-percent', { source, statusTags: definition.tags })
-  const controlReceived = definition.tags.includes('control') ? getCombatModifiers(state, actor, 'control-duration-received-percent', { source, statusTags: definition.tags }) : 0
-  const dealt = getCombatModifiers(state, source.actor, 'status-duration-dealt-percent', { source, statusTags: definition.tags })
+  const evaluation = options.modifierEvaluation ?? 'active'
+  const includeReceiverModifiers = options.includeReceiverModifiers ?? true
+  const received = includeReceiverModifiers ? getCombatModifiers(state, actor, 'status-duration-received-percent', { source, statusTags: definition.tags }, evaluation) : 0
+  const controlReceived = includeReceiverModifiers && definition.tags.includes('control') ? getCombatModifiers(state, actor, 'control-duration-received-percent', { source, statusTags: definition.tags }, evaluation) : 0
+  const dealt = getCombatModifiers(state, source.actor, 'status-duration-dealt-percent', { source, statusTags: definition.tags }, evaluation)
   return Math.max(0, Math.round(durationMs * Math.max(0, 1 + received + controlReceived + dealt)))
 }
 
@@ -138,7 +146,7 @@ export const applyStatus = (state: GameState, actor: CombatActor, statusId: Stat
   const existing = statuses.find((status) => status.statusId === statusId && status.instanceKey === instanceKey)
   const requestedDuration = options.durationMs === undefined ? definition.defaultDurationMs : options.durationMs
   if (requestedDuration !== null && requestedDuration !== undefined && !Number.isFinite(requestedDuration)) return null
-  const duration = resolvedDuration(state, actor, statusId, requestedDuration ?? definition.defaultDurationMs, source)
+  const duration = resolveStatusDuration(state, actor, statusId, requestedDuration ?? definition.defaultDurationMs, source)
   if (duration !== null && duration <= 0) return null
   const requestedStacks = Math.max(1, Math.floor(Number.isFinite(options.stacks ?? 1) ? options.stacks ?? 1 : 1))
   const nextTickMs = definition.periodic ? definition.periodic.intervalMs : undefined
@@ -376,4 +384,20 @@ export const tickStatuses = (state: GameState, deltaMs: number, executeEffects: 
     })
   })
   return pending
+}
+
+/** Natural periodic expiry timing shared by runtime-facing previews. */
+export interface PeriodicTiming {
+  fullTicks: number
+  partialTickFraction: number
+  totalTickEquivalents: number
+}
+
+export const getPeriodicTiming = (durationMs: number | null, intervalMs: number): PeriodicTiming | null => {
+  if (durationMs === null || !Number.isFinite(durationMs) || !Number.isFinite(intervalMs) || intervalMs <= 0) return null
+  const duration = Math.max(0, durationMs)
+  const fullTicks = Math.floor(duration / intervalMs)
+  const remainder = duration - fullTicks * intervalMs
+  const partialTickFraction = remainder > 0 ? remainder / intervalMs : 0
+  return { fullTicks, partialTickFraction, totalTickEquivalents: fullTicks + partialTickFraction }
 }

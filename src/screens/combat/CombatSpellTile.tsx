@@ -14,7 +14,6 @@ import { SpellIcon } from '../../components/spells/SpellIcon'
 import { buildSpellDetailPresentation, type SpellPresentationState } from '../../game/presentation/spells/spellDetailPresentation'
 import { formatCooldownNumber, getCooldownFraction } from '../../game/presentation/combat/combatCooldownPresentation'
 import { useGameStore } from '../../store/gameStore'
-import { getEffectiveManaCost } from '../../game/systems/combat/combatStats'
 import { useGameContextMenu } from '../../ui/context-menu/GameContextMenuProvider'
 import { setNavigationIntent } from '../../ui/navigation/navigationIntent'
 
@@ -35,7 +34,7 @@ export function CombatSpellTile({ spellId, presentationState, globalBlocker, onO
   const combatActive = useGameStore((state) => state.combat.active)
   const enemyId = useGameStore((state) => state.combat.enemyId)
   const playerStunned = useGameStore((state) => actorCannotAct(state, 'player'))
-  const manaCost = getEffectiveManaCost(presentationState, spell.manaCost)
+  const manaCost = presentation.manaCost
   useEffect(() => {
     const previous = previousCooldown.current
     if (previous <= 0 && cooldown > 0) {
@@ -56,7 +55,7 @@ export function CombatSpellTile({ spellId, presentationState, globalBlocker, onO
   const manualDisabled = Boolean(globalBlocker || failure)
   const stateLabel = cooldown > 0 ? `${formatTime(cooldown)} remaining` : localFailure ?? (manualDisabled ? 'Unavailable' : 'READY')
   const label = `${spell.name}, ${formatSpellRank(rank ?? 1)}, ${manaCost} Mana, ${stateLabel}`
-  const cooldownFraction = getCooldownFraction(cooldown, spell.cooldownMs)
+  const cooldownFraction = getCooldownFraction(cooldown, presentation.cooldownMs)
   const openSpellMenu = (x: number, y: number, anchor?: HTMLElement) => openContextMenu({ x, y, anchor, header: { title: spell.name, meta: `${SCHOOLS[spell.school].name} · ${formatSpellRank(rank ?? 1)}` }, sections: [{ id: 'spell', actions: [{ id: 'autocast', label: active ? 'Disable Auto-Cast' : 'Enable Auto-Cast', icon: CircleDot, onSelect: () => toggle(spellId) }, ...(onRemoveFromPreset ? [{ id: 'remove-preset', label: 'Remove from Preset', icon: UserMinus, onSelect: () => onRemoveFromPreset(spellId) }] : []), { id: 'school', label: 'Open Magic School', icon: BookOpen, onSelect: () => { setNavigationIntent({ schoolSpellId: spellId, schoolId: spell.school }); useGameStore.getState().setScreen('schools') } }, { id: 'manager', label: 'Preset Manager', icon: Settings2, onSelect: onOpenPresetManager }] }] })
   return <div data-spell-id={spellId} className={`spell-combat-tile${active ? ' is-auto' : ''}${failure && failure !== 'cooldown' ? ' is-unavailable' : ''}${cooldown > 0 ? ' is-cooldown' : ''}${justResolved ? ' is-casting' : ''}${justReady ? ' is-ready' : ''}${failure === 'mana' ? ' is-mana-starved' : ''}`} style={{ '--spell-school-color': SCHOOLS[spell.school].color, '--cooldown-percent': `${cooldownFraction * 100}%` } as React.CSSProperties} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); openSpellMenu(event.clientX, event.clientY, event.currentTarget) }}>
     <GameTooltip block wide placement="top" accent="elemental" content={<SpellCardTooltip presentation={presentation} />}>

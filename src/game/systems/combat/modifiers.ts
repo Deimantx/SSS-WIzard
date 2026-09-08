@@ -1,6 +1,6 @@
 import { STATUS_DEFINITIONS } from '../../content/statuses'
 import { MONSTERS } from '../../content/monsters'
-import { getEquipmentStats } from '../../core/equipment/equipmentStats'
+import { getEffectiveEquipmentItemStats, getEquipmentStats } from '../../core/equipment/equipmentStats'
 import { MAX_RESISTANCE, MIN_RESISTANCE } from '../../core/balance/combatStats'
 import { ITEMS } from '../../content/items/items'
 import type { EquipmentStats, GameState, StatusId } from '../../types'
@@ -12,6 +12,9 @@ import { getStatusGroupStacks } from './statusSelectors'
 import { getRootCombatSourceProvenance, isEnemySourceOwnerActive } from './combatProvenance'
 import { getAllocatedArtifactCombatProviders } from '../artifacts/artifactProgression'
 
+export type CombatModifierState = Pick<GameState, 'player' | 'combat' | 'equipment' | 'artifactProgress'>
+export type CombatModifierEvaluation = 'active' | 'unconditional' | 'all'
+
 export interface ModifierContext {
   source?: CombatSource
   sourceTags?: CombatTag[]
@@ -21,6 +24,14 @@ export interface ModifierContext {
   damageTypes?: DamageType[]
   statusId?: StatusId
   statusTags?: CombatTag[]
+}
+
+export interface CombatModifierContribution {
+  modifier: CombatModifier
+  value: number
+  sourceType: 'status' | 'trait' | 'equipment' | 'equipment-stats' | 'artifact'
+  sourceId?: string
+  sourceName?: string
 }
 
 const EQUIPMENT_MODIFIER_STATS: Partial<Record<ModifierKey, keyof EquipmentStats>> = {
@@ -36,7 +47,7 @@ const EQUIPMENT_MODIFIER_STATS: Partial<Record<ModifierKey, keyof EquipmentStats
   'status-duration-dealt-percent': 'statusDurationPct',
 }
 
-const activeStatuses = (state: GameState, actor: CombatActor) => actor === 'player' ? state.combat.playerStatuses : state.combat.enemyStatuses
+const activeStatuses = (state: CombatModifierState, actor: CombatActor) => actor === 'player' ? state.combat.playerStatuses : state.combat.enemyStatuses
 
 const matchesModifier = (modifier: CombatModifier, context: ModifierContext) => {
   const sourceTags = [...new Set([...(context.source?.tags ?? []), ...(context.sourceTags ?? [])])]
@@ -56,47 +67,65 @@ const matchesModifier = (modifier: CombatModifier, context: ModifierContext) => 
   return true
 }
 
-const statusModifierValue = (state: GameState, actor: CombatActor, active: GameState['combat']['playerStatuses'][number], modifier: CombatModifier) => {
+const statusModifierValue = (state: CombatModifierState, actor: CombatActor, active: GameState['combat']['playerStatuses'][number], modifier: CombatModifier) => {
   const stacks = getStatusGroupStacks(state, actor, active.statusId)
   if (stacks <= 0) return 0
   const value = active.modifierOverrides?.[modifier.key] ?? modifier.value
   return modifier.perStack ? value * Math.max(1, stacks) : value
 }
 
-export const getCombatModifiers = (state: GameState, actor: CombatActor, key: ModifierKey, context: ModifierContext = {}) => {
+const conditionMatches = (state: CombatModifierState, actor: CombatActor, modifier: CombatModifier, context: ModifierContext, evaluation: CombatModifierEvaluation) => {
+  if (evaluation === 'all') return true
+  if (evaluation === 'unconditional') return !modifier.condition || modifier.condition.type === 'always'
+  return evaluateCombatCondition(state, actor, modifier.condition, context)
+}
+
+export const getCombatModifierContributions = (state: CombatModifierState, actor: CombatActor, key: ModifierKey, context: ModifierContext = {}, evaluation: CombatModifierEvaluation = 'active'): CombatModifierContribution[] => {
   // Source-side Enemy modifiers belong to the encounter instance that
   // authored the source. A lingering source may still resolve its snapshot,
   // but it cannot borrow the next Enemy's traits/statuses.
-  if (actor === 'enemy' && context.source?.actor === 'enemy' && !isEnemySourceOwnerActive(state, context.source)) return 0
-  let total = 0
+  if (actor === 'enemy' && context.source?.actor === 'enemy' && !isEnemySourceOwnerActive(state, context.source)) return []
+  const contributions: CombatModifierContribution[] = []
+  const add = (modifier: CombatModifier, sourceType: CombatModifierContribution['sourceType'], sourceId?: string, sourceName?: string, value = modifier.value) => {
+    if (modifier.key !== key || !matchesModifier(modifier, context) || !conditionMatches(state, actor, modifier, context, evaluation)) return
+    contributions.push({ modifier, value, sourceType, sourceId, sourceName })
+  }
   activeStatuses(state, actor).forEach((active) => {
     const definition = STATUS_DEFINITIONS[active.statusId]
     definition?.modifiers?.forEach((modifier) => {
-      if (modifier.key === key && matchesModifier(modifier, context) && evaluateCombatCondition(state, actor, modifier.condition, context)) total += statusModifierValue(state, actor, active, modifier)
+      add(modifier, 'status', active.statusId, definition.name, statusModifierValue(state, actor, active, modifier))
     })
   })
   getActorTraits(state, actor).forEach((trait) => trait.modifiers?.forEach((modifier) => {
-    if (modifier.key === key && matchesModifier(modifier, context) && evaluateCombatCondition(state, actor, modifier.condition, context)) total += modifier.value
+    add(modifier, 'trait', trait.id, trait.name)
   }))
   if (actor === 'player') {
-    Object.entries(state.equipment).forEach(([position, itemId]) => {
+    Object.values(state.equipment).forEach((itemId) => {
       if (!itemId) return
       ITEMS[itemId]?.combat?.modifiers?.forEach((modifier) => {
-        if (modifier.key === key && matchesModifier(modifier, context) && evaluateCombatCondition(state, actor, modifier.condition, context)) total += modifier.value
+        add(modifier, 'equipment', itemId, ITEMS[itemId]?.name)
       })
       getAllocatedArtifactCombatProviders(state, itemId).forEach(provider => provider.modifiers.forEach(modifier => {
-        if (modifier.key === key && matchesModifier(modifier, context) && evaluateCombatCondition(state, actor, modifier.condition, context)) total += modifier.value
+        add(modifier, 'artifact', itemId, provider.node.name)
       }))
     })
     const equipmentField = EQUIPMENT_MODIFIER_STATS[key]
-    if (equipmentField) total += Number(getEquipmentStats(state)[equipmentField] ?? 0)
+    if (equipmentField) Object.values(state.equipment).forEach((itemId) => {
+      if (!itemId) return
+      const value = Number(getEffectiveEquipmentItemStats(state, itemId)[equipmentField] ?? 0)
+      if (value !== 0) add({ key, value }, 'equipment-stats', itemId, ITEMS[itemId]?.name, value)
+    })
   }
-  return total
+  return contributions
+}
+
+export const getCombatModifiers = (state: CombatModifierState, actor: CombatActor, key: ModifierKey, context: ModifierContext = {}, evaluation: CombatModifierEvaluation = 'active') => {
+  return getCombatModifierContributions(state, actor, key, context, evaluation).reduce((total, contribution) => total + contribution.value, 0)
 }
 
 export const resolveModifier = getCombatModifiers
 
-export const getResistance = (state: GameState, actor: CombatActor, damageType: DamageType, context: ModifierContext = {}) => {
+export const getResistance = (state: CombatModifierState, actor: CombatActor, damageType: DamageType, context: ModifierContext = {}) => {
   if (actor === 'enemy' && !state.combat.enemyId) return 0
   const authored = actor === 'player'
     ? getEquipmentStats(state).resistances?.[damageType] ?? 0

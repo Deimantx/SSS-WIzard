@@ -5,20 +5,21 @@ import type { CombatCondition, CombatConditionContext } from './combatTypes'
 import { getStatusGroupStacks, hasStatus } from './statusSelectors'
 
 const opponentOf = (actor: CombatActor): CombatActor => actor === 'player' ? 'enemy' : 'player'
-const barrierFor = (state: GameState, actor: CombatActor) => actor === 'player' ? state.combat.playerBarrier : state.combat.enemyBarrier
-const hpPercent = (state: GameState, actor: CombatActor) => {
+export type CombatConditionState = Pick<GameState, 'player' | 'combat'>
+const barrierFor = (state: CombatConditionState, actor: CombatActor) => actor === 'player' ? state.combat.playerBarrier : state.combat.enemyBarrier
+const hpPercent = (state: CombatConditionState, actor: CombatActor) => {
   const max = actor === 'player' ? state.player.maxHealth : state.combat.enemyMaxHp
   const hp = actor === 'player' ? state.player.health : state.combat.enemyHp
   return hp / Math.max(1, max) * 100
 }
 
 const changedActorFor = (context: CombatConditionContext) => context.changedActor ?? context.eventTarget
-const contextualHpPercent = (state: GameState, actor: CombatActor, context: CombatConditionContext) => changedActorFor(context) === actor && context.currentHpPercent !== undefined ? context.currentHpPercent : hpPercent(state, actor)
+const contextualHpPercent = (state: CombatConditionState, actor: CombatActor, context: CombatConditionContext) => changedActorFor(context) === actor && context.currentHpPercent !== undefined ? context.currentHpPercent : hpPercent(state, actor)
 const sourceTagsFor = (context: CombatConditionContext) => [...new Set([...(context.source?.tags ?? []), ...(context.sourceTags ?? [])])]
-const hasStatusTag = (state: GameState, actor: CombatActor, tag: import('./combatTypes').CombatTag) => (actor === 'player' ? state.combat.playerStatuses : state.combat.enemyStatuses).some((active) => STATUS_DEFINITIONS[active.statusId]?.tags.includes(tag))
+const hasStatusTag = (state: CombatConditionState, actor: CombatActor, tag: import('./combatTypes').CombatTag) => (actor === 'player' ? state.combat.playerStatuses : state.combat.enemyStatuses).some((active) => STATUS_DEFINITIONS[active.statusId]?.tags.includes(tag))
 
 /** Evaluates a condition against the actor that owns the condition. */
-export const evaluateCombatCondition = (state: GameState, actor: CombatActor, condition: CombatCondition | undefined, context: CombatConditionContext = {}): boolean => {
+export const evaluateCombatCondition = (state: CombatConditionState, actor: CombatActor, condition: CombatCondition | undefined, context: CombatConditionContext = {}): boolean => {
   if (!condition || condition.type === 'always') return true
   const target = opponentOf(actor)
   switch (condition.type) {

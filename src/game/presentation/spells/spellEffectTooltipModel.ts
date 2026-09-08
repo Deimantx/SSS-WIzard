@@ -1,12 +1,19 @@
 import { STATUS_DEFINITIONS } from '../../content/statuses'
 import { SPELLS } from '../../content/spells/spells'
-import { getSpellEquipmentBonusPreview } from '../../systems/spells/spellEquipmentPreview'
-import { getSpellPower } from '../../systems/spells/spellPower'
-import { scaleMagnitude } from '../../systems/combat/combatTypes'
 import type { CombatEffect, CombatModifier, Magnitude } from '../../systems/combat/combatTypes'
-import type { GameState, SchoolId, SpellId } from '../../types'
+import type { SchoolId, SpellId } from '../../types'
 import { formatTime } from '../../utils'
 import { getEffectiveAppliedStatusModifiers } from '../combat/statusEffectPresentation'
+import {
+  getEffectiveSpellBarrierPreview,
+  getEffectiveSpellDirectDamagePreview,
+  getEffectiveSpellDotPreview,
+  getEffectiveSpellHealingPreview,
+  getEffectiveSpellStatusDurationPreview,
+  type SpellPresentationState,
+  type SpellPreviewModifier,
+} from './effectiveSpellPresentation'
+import { scaleMagnitude } from '../../systems/combat/combatTypes'
 
 export type SpellEffectTooltipSemantic = 'mana' | 'time' | 'focus' | 'positive' | 'negative' | 'school' | 'neutral'
 export type SpellEffectTooltipCategoryKey = 'damage' | 'heal' | 'barrier' | 'buff' | 'debuff' | 'control' | 'dot' | 'effect'
@@ -77,14 +84,37 @@ const modifierLabel = (modifier: CombatModifier) => {
 
 const modifierValue = (modifier: CombatModifier) => `${formatSignedPercent(modifier.value)}${modifier.perStack ? ' per stack' : ''}`
 const stackingLabel = (mode: string) => mode === 'stacks' ? 'Stacks' : `${mode[0].toUpperCase()}${mode.slice(1)}`
-const equipmentRows = (state: Pick<GameState, 'equipment'>, spellId: SpellId): SpellEffectTooltipRow[] => getSpellEquipmentBonusPreview(state, spellId).current.map((modifier) => ({ label: modifier.itemName, value: formatSignedPercent(modifier.value), semantic: modifier.value >= 0 ? 'positive' : 'negative' }))
 
 const appendTargetAndSource = (rows: SpellEffectTooltipRow[], effect: CombatEffect, spellName: string) => {
   rows.push({ label: 'Target', value: targetLabel(effect.target) })
   rows.push({ label: 'Source', value: spellName })
 }
 
-export function buildSpellEffectTooltipModel(state: Pick<GameState, 'schools' | 'equipment'>, spellId: SpellId, effectIndex: number): SpellEffectTooltipModel {
+const appendPreviewModifiers = (rows: SpellEffectTooltipRow[], modifiers: SpellPreviewModifier[], showSource = false) => {
+  modifiers.forEach((modifier) => rows.push({
+    label: showSource && modifier.sourceName ? modifier.sourceName : modifier.label,
+    value: formatSignedPercent(modifier.value),
+    semantic: modifier.value >= 0 ? 'positive' : 'negative',
+  }))
+}
+
+const appendConditionalModifiers = (rows: SpellEffectTooltipRow[], modifiers: SpellPreviewModifier[]) => {
+  modifiers.forEach((modifier) => rows.push({
+    label: `Conditional: ${modifier.label}`,
+    value: `${formatSignedPercent(modifier.value)}${modifier.condition ? ` · ${modifier.condition}` : ''}`,
+    semantic: modifier.value >= 0 ? 'positive' : 'negative',
+  }))
+}
+
+const appendEffectiveAmount = (rows: SpellEffectTooltipRow[], label: string, base: number, effective: number, semantic: SpellEffectTooltipSemantic = 'school') => {
+  if (effective !== base) {
+    const effectiveLabel = label === 'Base Damage' ? 'Damage' : label === 'Total Base Damage' ? 'Total Damage' : label
+    rows.push({ label: effectiveLabel, value: formatValue(effective), semantic })
+    rows.push({ label: label.startsWith('Base ') || label.startsWith('Total Base ') ? label : `Base ${label}`, value: formatValue(base), semantic: 'neutral' })
+  } else rows.push({ label, value: formatValue(base), semantic })
+}
+
+export function buildSpellEffectTooltipModel(state: SpellPresentationState, spellId: SpellId, effectIndex: number): SpellEffectTooltipModel {
   const spell = SPELLS[spellId]
   const effect = spell.effects[effectIndex]
   const category = getSpellEffectCategory(effect)
@@ -94,72 +124,74 @@ export function buildSpellEffectTooltipModel(state: Pick<GameState, 'schools' | 
     const damageTypes = effect.components.map((component) => component.damageType)
     const damageType = damageTypes.length === 1 ? capitalize(damageTypes[0]) : 'Split'
     effect.components.forEach((component, index) => {
+      const preview = getEffectiveSpellDirectDamagePreview(state, spellId, effect, component)
       const componentLabel = effect.components.length === 1 ? 'Base Damage' : `${capitalize(component.damageType)} Damage`
-      const magnitude = component.magnitude
-      if (magnitude.type === 'spell-power') {
-        rows.push({ label: 'Scaling', value: formatSpellMagnitude(magnitude), semantic: 'school' })
-        rows.push({ label: componentLabel, value: formatValue(getSpellPower(state) * magnitude.coefficient), semantic: 'school' })
-      } else if (magnitude.type === 'school-level') {
-        const level = state.schools[magnitude.school]?.level ?? 0
-        rows.push({ label: componentLabel, value: formatValue(magnitude.base), semantic: 'school' })
-        rows.push({ label: 'School Scaling', value: `+${formatValue(magnitude.perLevel)} / ${capitalize(magnitude.school)} Level`, semantic: 'school' })
+      if (component.magnitude.type === 'spell-power') rows.push({ label: 'Scaling', value: formatSpellMagnitude(component.magnitude), semantic: 'school' })
+      if (component.magnitude.type === 'school-level') {
+        const level = state.schools[component.magnitude.school]?.level ?? 0
+        rows.push({ label: 'School Scaling', value: `+${formatValue(component.magnitude.perLevel)} / ${capitalize(component.magnitude.school)} Level`, semantic: 'school' })
         rows.push({ label: 'Current School Level', value: `${level}`, semantic: 'school' })
-        rows.push({ label: 'Current Base Preview', value: formatValue(magnitude.base + level * magnitude.perLevel), semantic: 'school' })
-      } else rows.push({ label: componentLabel, value: formatSpellMagnitude(magnitude), semantic: 'school' })
+      }
+      appendEffectiveAmount(rows, componentLabel, preview.base, preview.effective)
       if (effect.components.length === 1) rows.push({ label: 'Damage Type', value: `${capitalize(component.damageType)} Damage`, semantic: 'school' })
       else if (index === 0) rows.push({ label: 'Damage Types', value: damageTypes.map((type) => `${capitalize(type)} Damage`).join(' + '), semantic: 'school' })
+      appendPreviewModifiers(rows, preview.modifiers, true)
+      appendConditionalModifiers(rows, preview.conditionalModifiers)
     })
     appendTargetAndSource(rows, effect, spell.name)
-    rows.push(...equipmentRows(state, spellId))
     return { school: spell.school, ...category, title: `${damageType} Damage`, description: `Deals ${damageType} damage when this Spell resolves.`, rows }
   }
 
   if (effect.type === 'heal') {
-    if (effect.magnitude.type === 'spell-power') {
-      rows.push({ label: 'Scaling', value: formatSpellMagnitude(effect.magnitude), semantic: 'school' })
-      rows.push({ label: 'Amount', value: formatValue(Math.round(getSpellPower(state) * effect.magnitude.coefficient)), semantic: 'school' })
-    } else rows.push({ label: 'Amount', value: formatSpellMagnitude(effect.magnitude) })
+    if (effect.magnitude.type === 'spell-power') rows.push({ label: 'Scaling', value: formatSpellMagnitude(effect.magnitude), semantic: 'school' })
+    const preview = getEffectiveSpellHealingPreview(state, spellId, effect)
+    appendEffectiveAmount(rows, 'Amount', preview.base, preview.effective)
+    if (preview.effective !== preview.base) {
+      appendPreviewModifiers(rows, preview.modifiers ?? [])
+    }
+    appendConditionalModifiers(rows, preview.conditionalModifiers ?? [])
     appendTargetAndSource(rows, effect, spell.name)
     return { school: spell.school, ...category, title: 'Healing', description: 'Restores Health to the selected target.', rows }
   }
 
   if (effect.type === 'gain-barrier') {
-    if (effect.magnitude.type === 'spell-power') {
-      rows.push({ label: 'Scaling', value: formatSpellMagnitude(effect.magnitude), semantic: 'school' })
-      rows.push({ label: 'Amount', value: formatValue(Math.round(getSpellPower(state) * effect.magnitude.coefficient)), semantic: 'school' })
-    } else rows.push({ label: 'Amount', value: formatSpellMagnitude(effect.magnitude) })
+    if (effect.magnitude.type === 'spell-power') rows.push({ label: 'Scaling', value: formatSpellMagnitude(effect.magnitude), semantic: 'school' })
+    const preview = getEffectiveSpellBarrierPreview(state, spellId, effect)
+    appendEffectiveAmount(rows, 'Amount', preview.base, preview.effective)
+    if (preview.effective !== preview.base) {
+      appendPreviewModifiers(rows, preview.modifiers ?? [])
+    }
+    appendConditionalModifiers(rows, preview.conditionalModifiers ?? [])
     if (effect.durationMs !== undefined && effect.durationMs !== null) rows.push({ label: 'Duration', value: formatTime(effect.durationMs), semantic: 'time' })
     rows.push({ label: 'Mode', value: effect.mode === 'replace' ? 'Replace' : 'Add' })
     appendTargetAndSource(rows, effect, spell.name)
-    rows.push(...equipmentRows(state, spellId))
     return { school: spell.school, ...category, title: 'Barrier', description: effect.mode === 'replace' ? 'Replaces the current Barrier on the target.' : 'Adds to the current Barrier on the target.', rows }
   }
 
   if (effect.type === 'apply-status') {
     const status = STATUS_DEFINITIONS[effect.statusId]
-    const durationMs = effect.durationMs === undefined ? status?.defaultDurationMs ?? null : effect.durationMs
+    const durationPreview = getEffectiveSpellStatusDurationPreview(state, spellId, effect)
     getEffectiveAppliedStatusModifiers(effect.statusId, effect.modifierOverrides).forEach((modifier) => rows.push({ label: modifierLabel(modifier), value: modifierValue(modifier), semantic: modifier.value >= 0 ? 'positive' : 'negative' }))
+    appendPreviewModifiers(rows, durationPreview.modifiers)
+    appendConditionalModifiers(rows, durationPreview.conditionalModifiers)
+
     const periodicEffects = effect.periodicEffects ?? status?.periodic?.effects
     const periodicDamageEffects = periodicEffects?.filter((entry) => entry.type === 'deal-damage') ?? []
-    const periodicDamageComponents = periodicDamageEffects.flatMap((entry) => entry.components)
-    const intervalMs = status?.periodic?.intervalMs ?? 0
-    const tickCount = durationMs !== null && intervalMs > 0 ? Math.floor(durationMs / intervalMs) : 0
+    const periodicDamageComponents = periodicDamageEffects.flatMap((entry) => entry.components.map((component) => ({ component, effect: entry })))
     const multipleComponents = periodicDamageComponents.length > 1
-    periodicDamageComponents.forEach((periodicComponent) => {
-      const componentPrefix = multipleComponents ? `${capitalize(periodicComponent.damageType)} ` : ''
-      if (periodicComponent.magnitude.type === 'spell-power' && tickCount > 0) {
-        const totalMagnitude = scaleMagnitude(periodicComponent.magnitude, tickCount)
-        const totalCoefficient = periodicComponent.magnitude.coefficient * tickCount
-        rows.push({ label: `${componentPrefix}Scaling`.trim(), value: `${formatSpellMagnitude(totalMagnitude)} over ${formatTime(durationMs!)}`, semantic: 'school' })
-        rows.push({ label: `${componentPrefix}Total Base Damage`.trim(), value: formatValue(getSpellPower(state) * totalCoefficient), semantic: 'school' })
-        rows.push({ label: `${componentPrefix}Damage Per Tick`.trim(), value: formatValue(getSpellPower(state) * periodicComponent.magnitude.coefficient), semantic: 'school' })
-      } else {
-        rows.push({ label: `${componentPrefix}Damage Per Tick`.trim(), value: formatSpellMagnitude(periodicComponent.magnitude), semantic: 'school' })
-        if (durationMs !== null && tickCount > 0 && periodicComponent.magnitude.type === 'flat') rows.push({ label: `${componentPrefix}Total Base Damage`.trim(), value: formatValue(periodicComponent.magnitude.value * tickCount), semantic: 'school' })
-      }
+    periodicDamageComponents.forEach(({ component, effect: periodicEffect }) => {
+      const preview = getEffectiveSpellDotPreview(state, spellId, effect, periodicEffect, component, durationPreview.effective)
+      if (!preview) return
+      const componentPrefix = multipleComponents ? `${capitalize(component.damageType)} ` : ''
+      if (component.magnitude.type === 'spell-power') rows.push({ label: `${componentPrefix}Scaling`.trim(), value: `${formatSpellMagnitude(scaleMagnitude(component.magnitude, preview.fullTicks + preview.partialTickFraction))} over ${formatTime(durationPreview.effective)}`, semantic: 'school' })
+      appendEffectiveAmount(rows, `${componentPrefix}Damage Per Tick`.trim(), preview.damagePerTick.base, preview.damagePerTick.effective)
+      appendEffectiveAmount(rows, `${componentPrefix}Total Base Damage`.trim(), preview.totalDamage.base, preview.totalDamage.effective)
+      appendPreviewModifiers(rows, preview.modifiers)
+      appendConditionalModifiers(rows, preview.conditionalModifiers)
     })
-    if (periodicDamageComponents.length === 1) rows.push({ label: 'Damage Type', value: `${capitalize(periodicDamageComponents[0].damageType)} Damage`, semantic: 'school' })
-    else if (periodicDamageComponents.length > 1) rows.push({ label: 'Damage Types', value: periodicDamageComponents.map((component) => `${capitalize(component.damageType)} Damage`).join(' + '), semantic: 'school' })
+    if (periodicDamageComponents.length === 1) rows.push({ label: 'Damage Type', value: `${capitalize(periodicDamageComponents[0].component.damageType)} Damage`, semantic: 'school' })
+    else if (periodicDamageComponents.length > 1) rows.push({ label: 'Damage Types', value: periodicDamageComponents.map(({ component }) => `${capitalize(component.damageType)} Damage`).join(' + '), semantic: 'school' })
+    const intervalMs = status?.periodic?.intervalMs ?? 0
     if (periodicDamageComponents.length > 0) rows.push({ label: 'Tick Interval', value: formatTime(intervalMs), semantic: 'time' })
     periodicEffects?.filter((entry) => entry.type !== 'deal-damage').forEach((periodicEffect) => {
       if ('magnitude' in periodicEffect) rows.push({ label: `Periodic ${capitalize(periodicEffect.type.replace(/-/g, ' '))}`, value: formatSpellMagnitude(periodicEffect.magnitude), semantic: 'positive' })
@@ -168,7 +200,10 @@ export function buildSpellEffectTooltipModel(state: Pick<GameState, 'schools' | 
     if (effect.stacks !== undefined) rows.push({ label: 'Applied Stacks', value: `${effect.stacks}` })
     if (status?.stacking.maxStacks !== undefined) rows.push({ label: 'Max Stacks', value: `${status.stacking.maxStacks}` })
     if (status) rows.push({ label: 'Stacking', value: stackingLabel(status.stacking.mode) })
-    if (durationMs !== null) rows.push({ label: 'Duration', value: formatTime(durationMs), semantic: 'time' })
+    if (durationPreview.effective !== durationPreview.base) {
+      rows.push({ label: 'Duration', value: formatTime(durationPreview.effective), semantic: 'time' })
+      rows.push({ label: 'Base Duration', value: formatTime(durationPreview.base), semantic: 'time' })
+    } else if (durationPreview.base !== 0) rows.push({ label: 'Duration', value: formatTime(durationPreview.base), semantic: 'time' })
     appendTargetAndSource(rows, effect, spell.name)
     return { school: spell.school, ...category, title: status?.name ?? capitalize(effect.statusId), description: status?.description ?? 'Applies a combat status.', rows }
   }

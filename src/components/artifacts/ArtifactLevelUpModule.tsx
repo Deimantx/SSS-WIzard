@@ -8,6 +8,7 @@ import { getConsumableQuantity } from '../../game/core/inventory/inventoryConsum
 import { getArtifactArtificingState } from '../../game/systems/artificing/artificingSelectors'
 import { getArtifactUpgrade } from '../../game/systems/artifacts/artifactProgression'
 import type { ArtifactId, ArtificingRecipeId, EquipmentStats, GameState, ItemId } from '../../game/types'
+import type { ReactNode } from 'react'
 import type { ArtifactArtificingState } from '../../game/systems/artificing/artificingSelectors'
 import type { GameStore } from '../../store/gameStore'
 
@@ -30,6 +31,8 @@ export function ArtifactLevelUpModule({ state, artifactId }: ArtifactLevelUpModu
   const isUpgrade = artifactState.mode === 'upgrade'
   const isCapped = artifactState.mode === 'level-cap'
   const isMax = artifactState.mode === 'max-level'
+  const activeJob = state.activities.artificing.activeJob
+  const activeUpgrade = isUpgrade && activeJob?.kind === 'artifact-upgrade' && activeJob.artifactId === artifactId ? activeJob : null
   const currentLevel = artifactState.owned ? artifactState.level : 0
   const nextLevel = isMax ? null : currentLevel + 1
   const nextUpgrade = nextLevel !== null && nextLevel <= definition.maxLevel ? getArtifactUpgrade(artifactId, currentLevel) : null
@@ -58,13 +61,15 @@ export function ArtifactLevelUpModule({ state, artifactId }: ArtifactLevelUpModu
         </div>
       </div>
       <div className="artifact-level-up-action">
-        <GameTooltip content={tooltip} accent={buttonDisabled ? 'warning' : 'success'} wide>
-          <Button variant={isUpgrade && artifactState.canStart ? 'success' : 'secondary'} disabled={buttonDisabled} onClick={() => state.upgradeArtifact(artifactId)}>{buttonLabel}</Button>
-        </GameTooltip>
-        <GameTooltip content={<TooltipContent title={stateLabel} description={buttonDisabled ? blockReason : 'All required materials are ready for the next Artifact level.'} />} accent={buttonDisabled ? 'warning' : 'success'}>
-          <span className={`artifact-level-up-state${buttonDisabled ? ' blocked' : ' ready'}`}>{stateLabel}</span>
-        </GameTooltip>
-        {buttonDisabled && <p className="artifact-level-up-blocked-reason">{blockReason}</p>}
+        {activeUpgrade ? <ActiveUpgradeState fromLevel={activeUpgrade.fromLevel} toLevel={activeUpgrade.toLevel} progressMs={state.activities.artificing.progressMs} tooltip={tooltip} /> : <>
+          <GameTooltip content={tooltip} accent={buttonDisabled ? 'warning' : 'success'} wide>
+            <Button variant={isUpgrade && artifactState.canStart ? 'success' : 'secondary'} disabled={buttonDisabled} onClick={() => state.upgradeArtifact(artifactId)}>{buttonLabel}</Button>
+          </GameTooltip>
+          <GameTooltip content={<TooltipContent title={stateLabel} description={buttonDisabled ? blockReason : 'All required materials are ready for the next Artifact level.'} />} accent={buttonDisabled ? 'warning' : 'success'}>
+            <span className={`artifact-level-up-state${buttonDisabled ? ' blocked' : ' ready'}`}>{stateLabel}</span>
+          </GameTooltip>
+          {buttonDisabled && <p className="artifact-level-up-blocked-reason">{blockReason}</p>}
+        </>}
       </div>
     </div>
   </section>
@@ -84,7 +89,16 @@ function toCost(state: GameState, itemId: ItemId, required: number): LevelUpCost
 
 function LevelUpCost({ cost }: { cost: LevelUpCostData }) {
   const item = ITEMS[cost.itemId]
-  return <ItemTooltip itemId={cost.itemId} owned={cost.owned}><span className={`artifact-level-up-cost${cost.missing > 0 ? ' missing' : ' sufficient'}`}><ItemIcon itemId={cost.itemId} size="tiny" /><strong>{cost.owned.toLocaleString()} / {cost.required.toLocaleString()}</strong><small>{item?.name ?? cost.itemId}</small></span></ItemTooltip>
+  return <ItemTooltip itemId={cost.itemId} owned={cost.owned}><span aria-label={`${item?.name ?? cost.itemId}: owned ${cost.owned}, required ${cost.required}`} className={`artifact-level-up-cost${cost.missing > 0 ? ' missing' : ' sufficient'}`}><ItemIcon itemId={cost.itemId} size="tiny" /><strong>{cost.required.toLocaleString()}</strong><small>OWNED {cost.owned.toLocaleString()}</small></span></ItemTooltip>
+}
+
+function ActiveUpgradeState({ fromLevel, toLevel, progressMs, tooltip }: { fromLevel: number; toLevel: number; progressMs: number; tooltip: ReactNode }) {
+  const elapsedMs = Math.min(5000, Math.max(0, progressMs))
+  return <GameTooltip content={tooltip} accent="success" wide><div className="artifact-level-up-active" aria-label={`Upgrading Artifact, level ${fromLevel} to ${toLevel}`}>
+    <div className="artifact-level-up-active-label"><strong>UPGRADING...</strong><span>LV {fromLevel} → {toLevel}</span></div>
+    <div className="artifact-level-up-active-track" role="progressbar" aria-label="Artifact upgrade progress" aria-valuemin={0} aria-valuemax={5000} aria-valuenow={elapsedMs}><span style={{ width: `${elapsedMs / 5000 * 100}%` }} /></div>
+    <div className="artifact-level-up-active-meta"><span>{(elapsedMs / 1000).toFixed(1)}s / 5.0s</span><span>LEVEL {fromLevel} → {toLevel}</span></div>
+  </div></GameTooltip>
 }
 
 function getStatPreview(current: EquipmentStats, next: EquipmentStats): StatPreview[] {

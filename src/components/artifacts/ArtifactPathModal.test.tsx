@@ -51,7 +51,8 @@ describe('Artifact Path presentation', () => {
   it('shows the real next-level cost, stat preview, and no fake XP progress', () => {
     render(<ArtifactPathModal artifactId="ember-staff" onClose={() => undefined} />)
     expect((screen.getByRole('button', { name: 'MISSING MATERIALS' }) as HTMLButtonElement).disabled).toBe(true)
-    expect(screen.getByText('0 / 50')).toBeTruthy()
+    expect(document.querySelector('.artifact-level-up-cost strong')?.textContent).toBe('50')
+    expect(document.querySelector('.artifact-level-up-cost small')?.textContent).toBe('OWNED 0')
     expect(screen.getByText('Basic Attack Damage')).toBeTruthy()
     const statPreviews = Array.from(document.querySelectorAll('.artifact-level-up-stat strong')).map((element) => element.textContent ?? '')
     expect(statPreviews.some((value) => value.includes('+5') && value.includes('+6'))).toBe(true)
@@ -67,6 +68,10 @@ describe('Artifact Path presentation', () => {
     fireEvent.click(button)
     expect(useGameStore.getState().activities.artificing.activeJob).toEqual({ kind: 'artifact-upgrade', artifactId: 'ember-staff', fromLevel: 1, toLevel: 2 })
     expect(useGameStore.getState().inventory['fire-fragment']).toBe(0)
+    expect(screen.getByText('UPGRADING...')).toBeTruthy()
+    expect(screen.getByText('0.0s / 5.0s')).toBeTruthy()
+    expect(screen.getByRole('progressbar', { name: 'Artifact upgrade progress' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'LEVEL UP' })).toBeNull()
   })
 
   it('explains the current cap and absolute maximum states', () => {

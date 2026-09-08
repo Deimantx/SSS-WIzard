@@ -52,16 +52,16 @@ describe('material-only loot and Artificing-only Equipment', () => {
       expect([...regularMaterials].sort()).toEqual([...expected].sort())
     })
 
-    expect(MONSTERS['forest-wisp'].loot).toEqual(expect.arrayContaining([{ itemId: 'wisp-essence', min: 1, max: 2, chance: 0.2 }]))
-    expect(MONSTERS.thornling.loot).toEqual(expect.arrayContaining([{ itemId: 'thorn-fiber', min: 1, max: 2, chance: 0.2 }]))
-    expect(MONSTERS['stone-root'].loot).toEqual(expect.arrayContaining([{ itemId: 'rootstone-shard', min: 1, max: 2, chance: 0.2 }]))
-    expect(MONSTERS['grove-sentinel'].loot).toEqual(expect.arrayContaining([{ itemId: 'grove-bark', min: 1, max: 2, chance: 0.2 }]))
-    expect(MONSTERS['cavefang-wolf'].loot).toEqual(expect.arrayContaining([{ itemId: 'predator-fang', min: 1, max: 2, chance: 0.2 }, { itemId: 'predator-hide', min: 1, max: 1, chance: 0.1 }]))
-    expect(MONSTERS['razorclaw-lynx'].loot).toEqual(expect.arrayContaining([{ itemId: 'predator-sinew', min: 1, max: 2, chance: 0.2 }, { itemId: 'predator-hide', min: 1, max: 1, chance: 0.1 }]))
-    expect(MONSTERS['corrupted-dire-wolf'].loot).toEqual(expect.arrayContaining([{ itemId: 'corrupted-beast-essence', min: 1, max: 2, chance: 0.2 }, { itemId: 'predator-hide', min: 1, max: 1, chance: 0.1 }]))
-    expect(MONSTERS['restless-skeleton'].loot).toEqual(expect.arrayContaining([{ itemId: 'ossuary-remnant', min: 1, max: 2, chance: 0.2 }, { itemId: 'graveglass-shard', min: 1, max: 1, chance: 0.1 }]))
-    expect(MONSTERS['grave-wraith'].loot).toEqual(expect.arrayContaining([{ itemId: 'soul-residue', min: 1, max: 2, chance: 0.2 }, { itemId: 'graveglass-shard', min: 1, max: 1, chance: 0.1 }]))
-    expect(MONSTERS['fallen-acolyte'].loot).toEqual(expect.arrayContaining([{ itemId: 'burial-cloth', min: 1, max: 2, chance: 0.2 }, { itemId: 'graveglass-shard', min: 1, max: 1, chance: 0.1 }]))
+    expect(MONSTERS['forest-wisp'].loot).toEqual(expect.arrayContaining([{ itemId: 'wisp-essence', min: 1, max: 2, chance: 0.27 }]))
+    expect(MONSTERS.thornling.loot).toEqual(expect.arrayContaining([{ itemId: 'thorn-fiber', min: 1, max: 2, chance: 0.27 }]))
+    expect(MONSTERS['stone-root'].loot).toEqual(expect.arrayContaining([{ itemId: 'rootstone-shard', min: 1, max: 2, chance: 0.27 }]))
+    expect(MONSTERS['grove-sentinel'].loot).toEqual(expect.arrayContaining([{ itemId: 'grove-bark', min: 1, max: 2, chance: 0.27 }]))
+    expect(MONSTERS['cavefang-wolf'].loot).toEqual(expect.arrayContaining([{ itemId: 'predator-fang', min: 1, max: 2, chance: 0.27 }, { itemId: 'predator-hide', min: 1, max: 1, chance: 0.13 }]))
+    expect(MONSTERS['razorclaw-lynx'].loot).toEqual(expect.arrayContaining([{ itemId: 'predator-sinew', min: 1, max: 2, chance: 0.27 }, { itemId: 'predator-hide', min: 1, max: 1, chance: 0.13 }]))
+    expect(MONSTERS['corrupted-dire-wolf'].loot).toEqual(expect.arrayContaining([{ itemId: 'corrupted-beast-essence', min: 1, max: 2, chance: 0.27 }, { itemId: 'predator-hide', min: 1, max: 1, chance: 0.13 }]))
+    expect(MONSTERS['restless-skeleton'].loot).toEqual(expect.arrayContaining([{ itemId: 'ossuary-remnant', min: 1, max: 2, chance: 0.27 }, { itemId: 'graveglass-shard', min: 1, max: 1, chance: 0.13 }]))
+    expect(MONSTERS['grave-wraith'].loot).toEqual(expect.arrayContaining([{ itemId: 'soul-residue', min: 1, max: 2, chance: 0.27 }, { itemId: 'graveglass-shard', min: 1, max: 1, chance: 0.13 }]))
+    expect(MONSTERS['fallen-acolyte'].loot).toEqual(expect.arrayContaining([{ itemId: 'burial-cloth', min: 1, max: 2, chance: 0.27 }, { itemId: 'graveglass-shard', min: 1, max: 1, chance: 0.13 }]))
 
     expect(MONSTERS['forest-heart'].loot).toEqual(expect.arrayContaining([
       { itemId: 'wisp-essence', min: 1, max: 2, chance: 1 }, { itemId: 'thorn-fiber', min: 1, max: 2, chance: 1 },
@@ -79,7 +79,7 @@ describe('material-only loot and Artificing-only Equipment', () => {
 
   it('preserves Life Essence behavior and signature rates', () => {
     const expectedLifeDrops = {
-      'forest-wisp': [1, 3, 1], 'thornling': [1, 3, 1], 'stone-root': [1, 3, 0.2], 'grove-sentinel': [2, 5, 1], 'forest-heart': [10, 18, 1],
+      'forest-wisp': [1, 3, 1], 'thornling': [1, 3, 1], 'stone-root': [1, 3, 0.27], 'grove-sentinel': [2, 5, 1], 'forest-heart': [10, 18, 1],
       'cavefang-wolf': [3, 5, 1], 'razorclaw-lynx': [3, 5, 1], 'corrupted-dire-wolf': [3, 5, 1], 'corrupted-greatbear': [12, 30, 1],
       'restless-skeleton': [4, 8, 1], 'grave-wraith': [4, 8, 1], 'fallen-acolyte': [5, 10, 1], 'archmage-edrin-shade': [21, 48, 1],
     } as const

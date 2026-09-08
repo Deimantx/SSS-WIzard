@@ -44,7 +44,7 @@ export function ArtifactTreeGraph({ state, artifactId, selectedNodeId, onSelect 
       <div className="artifact-tree-root-label">CORE PATH</div>
       {graph.branches.map((branch, index) => {
         const x = graph.width * (index + 1) / (graph.branches.length + 1)
-        return <div className="artifact-tree-branch-label" key={branch.branch.id} style={{ left: x - 118, top: 120 }}><strong>{branch.branch.name}</strong>{branch.branch.description && <span>{branch.branch.description}</span>}</div>
+        return <div className="artifact-tree-branch-label" key={branch.branch.id} style={{ left: x - 118, top: 180 }}><strong>{branch.branch.name}</strong>{branch.branch.description && <span>{branch.branch.description}</span>}</div>
       })}
       {graph.nodes.map((entry) => <TreeGraphNode key={entry.node.id} entry={entry} state={state} artifactId={artifactId} selected={selectedNodeId === entry.node.id} onSelect={onSelect} />)}
     </div>

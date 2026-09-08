@@ -9,6 +9,7 @@ describe('Artifact Path presentation', () => {
     setArtifactDevPanelVisible(false)
     useGameStore.getState().resetSave()
     useGameStore.getState().addItem('ember-staff', 1)
+    useGameStore.getState().debugSetArtifactLevel('ember-staff', 1)
   })
 
   it('renders the artifact summary, graph, connectors, and selected-node inspector', () => {
@@ -45,5 +46,39 @@ describe('Artifact Path presentation', () => {
     const view = render(<ArtifactPathModal artifactId="tideglass-wand" onClose={() => undefined} />)
     expect(screen.getByRole('dialog', { name: 'Tideglass Wand Artifact Path' })).toBeTruthy()
     expect(document.querySelector('.artifact-tree-connector')).toBeTruthy()
+  })
+
+  it('shows the real next-level cost, stat preview, and no fake XP progress', () => {
+    render(<ArtifactPathModal artifactId="ember-staff" onClose={() => undefined} />)
+    expect((screen.getByRole('button', { name: 'MISSING MATERIALS' }) as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.getByText('0 / 50')).toBeTruthy()
+    expect(screen.getByText('Basic Attack Damage')).toBeTruthy()
+    const statPreviews = Array.from(document.querySelectorAll('.artifact-level-up-stat strong')).map((element) => element.textContent ?? '')
+    expect(statPreviews.some((value) => value.includes('+5') && value.includes('+6'))).toBe(true)
+    expect(statPreviews.some((value) => value.includes('+16') && value.includes('+20'))).toBe(true)
+    expect(screen.queryByText(/ARTIFACT XP|XP PROGRESS/i)).toBeNull()
+  })
+
+  it('uses the real player Artifact upgrade action when materials are ready', () => {
+    useGameStore.getState().addItem('fire-fragment', 50)
+    render(<ArtifactPathModal artifactId="ember-staff" onClose={() => undefined} />)
+    const button = screen.getByRole('button', { name: 'LEVEL UP' })
+    expect((button as HTMLButtonElement).disabled).toBe(false)
+    fireEvent.click(button)
+    expect(useGameStore.getState().activities.artificing.activeJob).toEqual({ kind: 'artifact-upgrade', artifactId: 'ember-staff', fromLevel: 1, toLevel: 2 })
+    expect(useGameStore.getState().inventory['fire-fragment']).toBe(0)
+  })
+
+  it('explains the current cap and absolute maximum states', () => {
+    useGameStore.getState().debugSetArtifactLevel('ember-staff', 4)
+    const capped = render(<ArtifactPathModal artifactId="ember-staff" onClose={() => undefined} />)
+    expect((screen.getByRole('button', { name: 'LEVEL CAP REACHED' }) as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.getByText(/Current cap: 4\. Defeat Forest Heart/)).toBeTruthy()
+    capped.unmount()
+
+    useGameStore.getState().debugSetArtifactLevel('ember-staff', 10)
+    render(<ArtifactPathModal artifactId="ember-staff" onClose={() => undefined} />)
+    expect((screen.getByRole('button', { name: 'MAX LEVEL' }) as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.getByText('MAXIMUM LEVEL')).toBeTruthy()
   })
 })

@@ -14,6 +14,7 @@ import { useGameStore } from '../../store/gameStore'
 import { ArtifactNodeInspector, ArtifactInspectorEmpty } from './ArtifactNodeInspector'
 import { ArtifactPathDevMiniPanel } from './ArtifactPathDevMiniPanel'
 import { ArtifactTreeGraph } from './ArtifactTreeGraph'
+import { ArtifactLevelUpModule } from './ArtifactLevelUpModule'
 
 export function ArtifactPathModal({ artifactId, onClose }: { artifactId: ArtifactId; onClose: () => void }) {
   const state = useGameStore()
@@ -53,6 +54,7 @@ export function ArtifactPathModal({ artifactId, onClose }: { artifactId: Artifac
               </div>
               <div className="artifact-points-block"><span className="eyebrow">PATH POINTS</span><div className="artifact-points"><PointCard label="AVAILABLE" value={getArtifactAvailablePoints(state, artifactId)} description="Unspent points ready to allocate." /><PointCard label="SPENT" value={getArtifactSpentPoints(state, artifactId)} description="Points committed to this path." /><PointCard label="TOTAL" value={getArtifactTotalPoints(state, artifactId)} description="Points earned from levels and session tools." /></div></div>
             </div>
+            <ArtifactLevelUpModule state={state} artifactId={artifactId} />
           </div>
           <button type="button" className="artifact-path-header-close" aria-label="Close Artifact Path" onClick={onClose}><X size={18} /></button>
         </header>

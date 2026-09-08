@@ -1,6 +1,12 @@
 # SSS Wizard — MY GAME EDITING GUIDE
 
 > Personal quick-reference for editing the game directly in VS Code.
+
+
+> Updated for the current Artifact / Equipment / Artificing / T1 material architecture.
+>
+> The guide remains a **navigation/editing reference**, not a second balance database. Exact current Artifact costs should be read from runtime content files.
+
 >
 > This is **not** a second balancing database and should not copy every current value.
 > Its job is only to tell me:
@@ -19,7 +25,7 @@ https://github.com/Deimantx/SSS-WIzard
 Guide checked against committed HEAD:
 
 ```text
-adbdd415cbebcb6f7828162543621f6adc4271bb
+f5c4a9d1f150f14be3e2a2dd69e7b65299e873eb
 ```
 
 ---
@@ -127,32 +133,94 @@ But before Health Regen existed, creating the entire `healthRegen` mechanic was 
 
 # 3. FASTEST MAP — WHERE DO I GO?
 
-| I want to edit | Main file |
-| --- | --- |
-| Item / Equipment stats | `src/game/content/items/items.ts` |
-| Item descriptions / sell values / source metadata | `src/game/content/items/items.ts` |
-| Allowed Equipment stat fields | `src/game/types.ts` |
-| Artificing Equipment recipe costs | `src/game/content/recipes/artificingRecipes.ts` |
-| Artificing unlock conditions | `src/game/content/recipes/artificingRecipes.ts` / `recipeUnlocks.ts` |
-| Transmutation costs / Mana / time / ingredients | `src/game/content/recipes/transmutationRecipes.ts` |
-| Whispering Woods monsters + loot | `src/game/content/monsters/whisperingWoods.ts` |
-| Howling Den monsters + loot | `src/game/content/monsters/howlingDen.ts` |
-| Abandoned Catacombs monsters + loot | `src/game/content/monsters/abandonedCatacombs.ts` |
-| Monster helper/effect syntax | `src/game/content/monsters/monsterTypes.ts` |
-| Dungeon pools / bosses / progression metadata | `src/game/content/dungeons/dungeons.ts` |
-| Spell Mana / cooldown / unlock / effect numbers | `src/game/content/spells/spells.ts` |
-| Magic School definitions | `src/game/content/schools/schools.ts` |
-| Global base balance | `src/game/core/balance/balance.ts` |
-| Mana Pillar upgrades | `src/game/content/channeling/manaPillars.ts` |
-| Channeling discoveries | `src/game/content/channeling/channelingDiscoveries.ts` |
-| Focus Improvement progression | `src/game/content/focus/focusImprovement.ts` |
-| Guild request values | `src/game/content/guild/guildRequests.ts` |
-| Research global values | `src/game/core/balance/balance.ts` |
-| Research runtime mechanics | `src/game/systems/research/researchEngine.ts` |
-| Research calculations/readouts | `src/game/systems/research/researchSelectors.ts` |
-| Status definitions | `src/game/content/statuses/` |
-| Equipment set definitions | `src/game/content/equipment/equipmentSets.ts` |
-| Core type / ID registry | `src/game/types.ts` |
+This is the most important section of this guide.
+
+If I know **what I want to change**, start here instead of searching the whole repository.
+
+| I want to edit | Go here first | Important |
+| --- | --- | --- |
+| Item / normal Equipment stats | `src/game/content/items/items.ts` | Main authored item registry |
+| Item descriptions / source metadata / sell behavior | `src/game/content/items/items.ts` | Main item identity file |
+| Allowed Equipment stat fields | `src/game/types.ts` | Check `EquipmentStats` before inventing a field |
+| Equipment internal tier / player-facing tier mapping / build tags / budget profiles | `src/game/content/items/equipmentBalance.ts` | Internal `1.0 / 1.3 / 1.6` currently all display as player-facing `T1` through `Math.floor()` |
+| Equipment slots / ring positions / Earring support | `src/game/types.ts` | Item slot uses `ring`; loadout uses `ring1` + `ring2`; `earring` is its own slot |
+| Normal Artificing Equipment recipe costs | `src/game/content/recipes/artificingRecipes.ts` | For non-Artifact Equipment this is the recipe cost source |
+| Artificing unlock conditions | `src/game/content/recipes/artificingRecipes.ts` + `src/game/content/recipes/recipeUnlocks.ts` | Existing unlock types are easier to tune than inventing new ones |
+| Artificing Artifact-vs-Equipment / tier catalog UI | `src/screens/tower/artificing/EquipmentCatalog.tsx` | UI/filter behavior, not balance data |
+| **Artifact base item identity / slot / build tags** | `src/game/content/items/items.ts` | Name, description, slot, color, tags; **not** Artifact level scaling |
+| **Artifact forge ingredients — actual consumed cost** | `src/game/content/artifacts/artifacts.ts` | `ARTIFACTS[id].forge.ingredients` is the runtime source used by the Artificing engine |
+| **Artifact forge recipe mirror / Artificing presentation** | `src/game/content/recipes/artificingRecipes.ts` | Must stay identical to the Artifact forge list |
+| **Artifact stats at Lv1–10** | `src/game/content/artifacts/artifacts.ts` | Edit `coreStatsByLevel` |
+| **Artifact Lv1→10 upgrade material costs** | `src/game/content/artifacts/artifacts.ts` | Edit the Artifact `upgrades` arrays here |
+| **Artifact Path branches / nodes / point costs / catalysts / boss gates** | `src/game/content/artifacts/artifacts.ts` | Main authored Artifact Path content |
+| **Artifact level caps / points / node eligibility / respec / effective stats** | `src/game/systems/artifacts/artifactProgression.ts` | Runtime/system logic; be more careful |
+| **Artifact forge + level-up 5s job execution** | `src/game/systems/artificing/artificingEngine.ts` | Consumes costs, starts/cancels/completes Artifact jobs |
+| **Player Artifact forge / upgrade UI in Artificing** | `src/screens/tower/artificing/ArtificingDetail.tsx` | Current player-facing Forge / Upgrade flow |
+| **Artifact Path modal / header / side panel** | `src/components/artifacts/ArtifactPathModal.tsx` | Main Artifact Path shell |
+| **Artifact tree nodes / connectors / drag-to-pan** | `src/components/artifacts/ArtifactTreeGraph.tsx` | Fixed tree presentation/interaction |
+| **Artifact selected-node inspector** | `src/components/artifacts/ArtifactNodeInspector.tsx` | Effects, requirements, allocation action |
+| **Artifact Path tree layout/read model** | `src/game/presentation/artifacts/artifactPathReadModel.ts` | Tree presentation structure, not gameplay balance |
+| **Artifact node text/effect presentation** | `src/game/presentation/artifacts/artifactPresentation.ts` | Human-readable node effect text |
+| **Artifact Path styling** | `src/styles/components/artifacts.css` | Visual/game-feel CSS |
+| **Artifact DevTools main tab** | `src/devtools/tabs/DeveloperArtifacts.tsx` | Free levels, caps, points, forced nodes, overrides, batch tools |
+| **Artifact Path small inline Dev panel** | `src/components/artifacts/ArtifactPathDevMiniPanel.tsx` | Only shown when enabled from DevTools |
+| **Artifact debug state/actions** | `src/store/gameStore.ts` + `src/game/systems/artifacts/artifactProgression.ts` | Dev bypasses ultimately affect runtime state/eligibility |
+| Transmutation costs / Mana / time / ingredients | `src/game/content/recipes/transmutationRecipes.ts` | Base fragments + Prismatic Fragment |
+| Whispering Woods monsters + loot | `src/game/content/monsters/whisperingWoods.ts` | Wisp / Thorn / Rootstone / Grove + Heartseed boss |
+| Howling Den monsters + loot | `src/game/content/monsters/howlingDen.ts` | Fang / Hide / Corrupted Essence / Sinew + Greatbear Core |
+| Abandoned Catacombs monsters + loot | `src/game/content/monsters/abandonedCatacombs.ts` | Ossuary / Soul / Graveglass / Burial Cloth + Edrin Remnant |
+| Monster helper/effect syntax | `src/game/content/monsters/monsterTypes.ts` | Includes `withLifeEssence()` |
+| Dungeon pools / bosses / Threat requirements / encounter delay / unlock chain | `src/game/content/dungeons/dungeons.ts` | Current T1 dungeons are 20 / 25 / 30 Threat |
+| Spell Mana / cooldown / unlock / effect numbers | `src/game/content/spells/spells.ts` | Main spell content |
+| Magic School definitions | `src/game/content/schools/schools.ts` | School-authored content |
+| Global base balance | `src/game/core/balance/balance.ts` | Powerful shared values |
+| Mana Pillar upgrades | `src/game/content/channeling/manaPillars.ts` | Pillar progression |
+| Channeling discoveries | `src/game/content/channeling/channelingDiscoveries.ts` | Discovery definitions |
+| Focus Improvement progression | `src/game/content/focus/focusImprovement.ts` | Focus upgrade costs/progression |
+| Guild request values | `src/game/content/guild/guildRequests.ts` | Request requirements/rewards |
+| Research global values | `src/game/core/balance/balance.ts` | Shared Research tuning |
+| Research runtime mechanics | `src/game/systems/research/researchEngine.ts` | Runtime behavior |
+| Research calculations/readouts | `src/game/systems/research/researchSelectors.ts` | Derived values/UI projections |
+| Status definitions | `src/game/content/statuses/` | Existing status content |
+| Equipment set definitions | `src/game/content/equipment/equipmentSets.ts` | Set/grouping logic |
+| Item right-click / context actions | `src/ui/context-menu/itemContextActions.ts` | Where-to-get / open systems / tracking actions |
+| Core type / ID registry | `src/game/types.ts` | IDs, slots, state shapes, supported fields |
+
+## Artifact quick rule
+
+If I only remember one Artifact rule, remember this:
+
+```text
+Artifact item identity
+→ items.ts
+
+Artifact forge + Lv1–10 stats + upgrade costs + Path nodes
+→ artifacts.ts
+
+Artifact runtime rules / caps / points / respec
+→ artifactProgression.ts
+
+Artifact actual Forge / Upgrade job execution
+→ artificingEngine.ts
+
+Artifact player UI
+→ ArtificingDetail.tsx + components/artifacts/
+
+Artifact developer controls
+→ DeveloperArtifacts.tsx
+```
+
+And the most important duplication rule:
+
+```text
+ARTIFACT FORGE COST
+must match in BOTH:
+
+src/game/content/artifacts/artifacts.ts
+src/game/content/recipes/artificingRecipes.ts
+```
+
+The Artificing engine prefers the Artifact definition for actual Artifact forge consumption, so changing only the recipe mirror is **not enough**.
 
 ---
 
@@ -183,7 +251,57 @@ sell behavior after normalization
 
 For normal Equipment stat balancing, this is usually the first place to go.
 
+
+## Important recent Equipment tier rule
+
+Equipment can have internal authored values such as:
+
+```text
+1.0
+1.3
+1.6
+```
+
+Those are **internal balancing sub-tiers**, not separate player-facing T1/T2/T3 tiers.
+
+Current mapping lives in:
+
+```text
+src/game/content/items/equipmentBalance.ts
+```
+
+and is:
+
+```ts
+getPlayerEquipmentTier(internalTier) = Math.floor(internalTier)
+```
+
+Therefore:
+
+```text
+1.0 → T1
+1.3 → T1
+1.6 → T1
+2.x → T2
+3.x → T3
+```
+
+If I only want to change one item's internal authored power tier:
+
+```text
+src/game/content/items/items.ts
+```
+
+If I want to change what the **player-facing tier means globally**:
+
+```text
+src/game/content/items/equipmentBalance.ts
+```
+
+That global mapping is 🟡/🔴 because it changes UI/filter semantics across Equipment and Artificing.
+
 ---
+
 
 # 5. EQUIPMENT STATS I CAN ALREADY USE
 
@@ -379,7 +497,7 @@ equipmentSlot: 'offhand',
 equipmentPresentation: 'shield',
 ```
 
-Other valid item slots currently:
+Current **item metadata slots** are:
 
 ```text
 weapon
@@ -388,8 +506,37 @@ armor
 helmet
 cape
 amulet
+earring
 ring
 ```
+
+Current **loadout positions** are:
+
+```text
+weapon
+offhand
+armor
+helmet
+cape
+amulet
+earring
+ring1
+ring2
+```
+
+Important:
+
+```text
+Equipment item:
+equipmentSlot: 'ring'
+
+Player loadout:
+ring1 / ring2
+```
+
+So a Ring item does not author itself as `ring1` or `ring2`.
+
+`earring` is now a real dedicated Equipment slot.
 
 Changing an existing item's slot is 🟡 because it can affect loadout behavior and balance.
 
@@ -551,16 +698,32 @@ create brand-new item
 src/game/content/recipes/artificingRecipes.ts
 ```
 
-This file contains:
+This file contains the Artificing recipe catalog used for:
 
 ```text
-Equipment recipes
+normal Equipment recipes
+Artifact recipe mirrors / presentation
 ingredients
 quantities
 source dungeon
 unlock condition
 craft duration
 ```
+
+Important distinction:
+
+```text
+NORMAL EQUIPMENT
+actual cost → artificingRecipes.ts
+
+ARTIFACT FORGE
+actual consumed cost → artifacts.ts
+recipe/display mirror → artificingRecipes.ts
+```
+
+The Artifact recipe mirror is intentionally validated against the Artifact forge ingredients.
+
+So for an Artifact Forge cost change I must update **both files**.
 
 Current recipe helper gives Equipment recipes:
 
@@ -650,7 +813,532 @@ Creating a brand-new unlock condition type is 🔴.
 
 ---
 
-# 17. TRANSMUTATION
+
+# 17. ARTIFACTS — START HERE
+
+Artifacts now have their own full progression system.
+
+Current persistent Artifact set:
+
+```text
+Ember Staff
+Tideglass Wand
+Stoneheart Scepter
+Windthread Wand
+Prismatic Focus
+Wispweave Robe
+Wispveil Hood
+```
+
+All current Artifacts are T1 and have:
+
+```text
+Level 1 → 10
+Artifact Points
+Artifact Path nodes
+two build branches
+boss-gated/catalyst nodes
+```
+
+The most important thing is that Artifact data is split by responsibility.
+
+## Artifact file ownership
+
+```text
+src/game/content/items/items.ts
+→ item identity
+→ name
+→ description
+→ slot
+→ weaponHands / offhand presentation
+→ build tags
+→ equipmentTier
+```
+
+```text
+src/game/content/artifacts/artifacts.ts
+→ Artifact forge ingredients
+→ Level 1–10 core stats
+→ Level 1–10 upgrade costs
+→ branches
+→ Path nodes
+→ node point costs
+→ node level requirements
+→ catalysts
+→ boss requirements
+→ node stats/modifiers/rules
+```
+
+```text
+src/game/systems/artifacts/artifactProgression.ts
+→ current Artifact level
+→ current level cap
+→ earned/spent/available points
+→ effective Artifact stats
+→ upgrade eligibility
+→ node eligibility
+→ catalyst consumption
+→ respec behavior
+→ forge completion
+```
+
+```text
+src/game/systems/artificing/artificingEngine.ts
+→ starts Artifact forge
+→ starts Artifact upgrade
+→ consumes materials
+→ 5-second Artificing job
+→ cancel/refund
+→ completion
+```
+
+This split is now important enough that I should not treat an Artifact like ordinary Equipment.
+
+---
+
+# 18. ARTIFACT FORGE COSTS — IMPORTANT DUPLICATION RULE
+
+For normal Equipment, changing a recipe quantity in:
+
+```text
+src/game/content/recipes/artificingRecipes.ts
+```
+
+is normally enough.
+
+For an **Artifact Forge**, it is different.
+
+The Artificing engine resolves Artifact forge ingredients from:
+
+```text
+ARTIFACTS[id].forge.ingredients
+```
+
+inside:
+
+```text
+src/game/content/artifacts/artifacts.ts
+```
+
+The corresponding entry in:
+
+```text
+src/game/content/recipes/artificingRecipes.ts
+```
+
+is a synchronized recipe/presentation mirror.
+
+Therefore:
+
+```text
+Artifact Forge cost change
+→ edit artifacts.ts
+→ edit matching artificingRecipes.ts entry
+→ keep item order + quantities identical
+```
+
+Example shape:
+
+```ts
+'prismatic-focus': {
+  ...
+  forge: {
+    ingredients: [
+      material('prismatic-fragment', 2),
+      material('wisp-essence', 5),
+      ...
+    ],
+  },
+}
+```
+
+and the same ingredients must exist in:
+
+```ts
+ARTIFICING_RECIPES['prismatic-focus']
+```
+
+Changing only `artificingRecipes.ts` can make the UI/data mirror disagree with the actual Artifact cost.
+
+Treat Artifact Forge ingredient edits as 🟡 even though the numbers themselves are simple.
+
+---
+
+# 19. ARTIFACT LEVEL STATS + LEVEL-UP COSTS
+
+## Main file
+
+```text
+src/game/content/artifacts/artifacts.ts
+```
+
+### Artifact stats by level
+
+Example shape:
+
+```ts
+const emberStats: Record<number, EquipmentStats> = {
+  1: { basicDamage: 5, spellPower: 16 },
+  2: { basicDamage: 6, spellPower: 20 },
+  ...
+  10: { basicDamage: 17, spellPower: 75 },
+}
+```
+
+If I want to change how strong an Artifact is at a specific existing level:
+
+```text
+coreStatsByLevel / the corresponding *Stats table
+```
+
+is the place to edit.
+
+Changing an existing numeric stat at one level is usually 🟢/🟡.
+
+Do **not** try to balance Artifact Lv5 by adding ordinary `stats:` to its `items.ts` entry.
+
+Artifact effective core stats come from the Artifact progression definition.
+
+### Artifact level-up material costs
+
+The same file contains arrays like:
+
+```ts
+upgrade(4, [
+  material('predator-hide', 15),
+  material('predator-fang', 15),
+  ...
+])
+```
+
+Meaning:
+
+```text
+fromLevel 4
+→ upgrade to Level 5
+```
+
+Changing an existing material quantity is usually 🟢/🟡.
+
+Changing which existing material is used is 🟡.
+
+Creating a new upgrade mechanic is 🔴.
+
+### Prismatic Focus recent rule
+
+Prismatic Focus was recently rebalanced so its own Prismatic Fragment progression cost is much lower.
+
+Do not copy old Prismatic Focus numbers from old chats/docs.
+
+Always use:
+
+```text
+src/game/content/artifacts/artifacts.ts
+```
+
+as the current source for its level-up costs.
+
+Its Forge mirror must still match:
+
+```text
+src/game/content/recipes/artificingRecipes.ts
+```
+
+---
+
+# 20. ARTIFACT LEVEL CAPS + POINTS
+
+## Runtime file
+
+```text
+src/game/systems/artifacts/artifactProgression.ts
+```
+
+Current normal cap structure is:
+
+```text
+before Howling Den unlock
+→ Level 4 cap
+
+Howling Den unlocked
+→ Level 7 cap
+
+Abandoned Catacombs unlocked
+→ Level 10 cap
+```
+
+Current normal Artifact Points are derived from:
+
+```text
+Artifact Level - 1
+```
+
+So normally:
+
+```text
+Lv1  = 0 points
+Lv4  = 3 points
+Lv7  = 6 points
+Lv10 = 9 points
+```
+
+DevTools can add temporary bonus points, but that is not normal progression.
+
+This file also owns:
+
+```text
+getArtifactLevelCap()
+getArtifactTotalPoints()
+getArtifactSpentPoints()
+getArtifactAvailablePoints()
+canUpgradeArtifact()
+getArtifactNodeEligibility()
+allocateArtifactNode()
+respecArtifact()
+```
+
+Changing authored Artifact costs/stats:
+
+```text
+artifacts.ts
+```
+
+Changing **how Artifact progression works**:
+
+```text
+artifactProgression.ts
+```
+
+The second one is 🔴/Codex territory unless I intentionally understand the system impact.
+
+---
+
+# 21. ARTIFACT PATH NODES / CATALYSTS / RESPEC
+
+## Main authored content
+
+```text
+src/game/content/artifacts/artifacts.ts
+```
+
+Current node shape contains fields such as:
+
+```ts
+{
+  id: 'example-node',
+  artifactId: 'ember-staff',
+  name: 'Example Node',
+  type: 'minor', // minor | major | capstone
+  branch: 'burning',
+  pointCost: 1,
+  requiresLevel: 4,
+  prerequisites: ['previous-node'],
+  catalyst: {
+    itemId: 'heartseed',
+    quantity: 1,
+  },
+  requiresBossKill: 'forest-heart',
+  stats: { ... },
+  combat: {
+    modifiers: [ ... ],
+    rules: [ ... ],
+  },
+}
+```
+
+### Safe-ish edits
+
+Changing an existing:
+
+```text
+pointCost
+requiresLevel
+catalyst quantity
+existing stat number
+existing modifier number
+```
+
+is 🟡.
+
+Branch/name/description text is usually 🟢.
+
+### System-level edits
+
+Creating:
+
+```text
+new modifier key
+new combat trigger type
+new condition type
+new node mechanic
+new point system
+new catalyst lifecycle
+```
+
+is 🔴.
+
+### Important catalyst / Respec behavior
+
+Normal allocation of a catalyst node consumes the catalyst only if that node has never been attuned before.
+
+Artifact progress keeps both:
+
+```text
+allocatedNodeIds
+attunedNodeIds
+```
+
+Current normal Respec:
+
+```text
+allocatedNodeIds = []
+```
+
+but **does not clear**:
+
+```text
+attunedNodeIds
+```
+
+Meaning:
+
+> once a catalyst node has been attuned, normal Respec does not make me pay that catalyst again.
+
+Do not manually change this behavior unless I intentionally want a system redesign.
+
+---
+
+# 22. ARTIFACT UI — WHERE TO CHANGE WHAT I SEE
+
+Artifact player UI is now split into two main places.
+
+## Player Forge / Level Upgrade presentation
+
+```text
+src/screens/tower/artificing/ArtificingDetail.tsx
+```
+
+This currently owns the player-facing Artifact Artificing detail flow:
+
+```text
+Forge Artifact
+Upgrade Artifact
+current Artifact level/cap state
+next upgrade ingredients
+required material rows
+Artifact Path button
+```
+
+So if I am asking:
+
+```text
+"Where is the normal Artifact Forge / Upgrade UI?"
+```
+
+start here.
+
+## Artifact Path UI
+
+Main shell:
+
+```text
+src/components/artifacts/ArtifactPathModal.tsx
+```
+
+Tree:
+
+```text
+src/components/artifacts/ArtifactTreeGraph.tsx
+```
+
+Selected-node inspector:
+
+```text
+src/components/artifacts/ArtifactNodeInspector.tsx
+```
+
+Small inline dev panel:
+
+```text
+src/components/artifacts/ArtifactPathDevMiniPanel.tsx
+```
+
+Tree/read-model helpers:
+
+```text
+src/game/presentation/artifacts/artifactPathReadModel.ts
+src/game/presentation/artifacts/artifactPresentation.ts
+```
+
+Styles:
+
+```text
+src/styles/components/artifacts.css
+```
+
+Simple visual CSS tweaks can be 🟢/🟡.
+
+Changing the tree interaction model, layout architecture, selection model, drag behavior, or responsive structure is 🔴/Codex recommended.
+
+---
+
+# 23. ARTIFACT DEVTOOLS
+
+The main Artifact developer panel now lives in:
+
+```text
+src/devtools/tabs/DeveloperArtifacts.tsx
+```
+
+It includes practical Artifact testing controls such as:
+
+```text
+select Artifact
+set level
++1 level
+max to current cap
+max absolute
+reset level
+
++1 temporary Path Point
+refill points
+respec path
+
+normal node unlock
+force selected node
+lock selected node if safe
+unlock non-capstones
+unlock all nodes
+force capstones
+
+ignore dungeon / boss gates
+ignore level cap
+ignore node prerequisites
+allow beyond normal limit
+free upgrade mode
+
+max all owned Artifacts
+unlock all Artifact paths
+reset all paths
+grant Artifact materials
+```
+
+The small panel inside Artifact Path is:
+
+```text
+src/components/artifacts/ArtifactPathDevMiniPanel.tsx
+```
+
+and its visibility toggle is controlled from the main Artifact DevTools tab.
+
+Developer overrides are for testing.
+
+Do not rebalance normal gameplay by editing debug bypass behavior.
+
+---
+
+
+# 24. TRANSMUTATION
 
 ## File
 
@@ -673,7 +1361,7 @@ unlock
 
 ---
 
-# 18. TRANSMUTATION EXAMPLE
+# 25. TRANSMUTATION EXAMPLE
 
 ```ts
 'prismatic-fragment': {
@@ -724,7 +1412,7 @@ Remember:
 
 ---
 
-# 19. MONSTERS — WHERE THEY LIVE
+# 26. MONSTERS — WHERE THEY LIVE
 
 Monster content is split by dungeon:
 
@@ -738,7 +1426,7 @@ This is excellent for manual balancing.
 
 ---
 
-# 20. SIMPLE MONSTER STATS
+# 27. SIMPLE MONSTER STATS
 
 Example:
 
@@ -774,7 +1462,7 @@ defense: 10,
 
 ---
 
-# 21. MONSTER ATTACK TIME
+# 28. MONSTER ATTACK TIME
 
 Milliseconds:
 
@@ -799,7 +1487,7 @@ slower attack
 
 ---
 
-# 22. MONSTER LOOT
+# 29. MONSTER LOOT
 
 Loot is authored in the monster definition.
 
@@ -833,6 +1521,45 @@ chance
 
 are 🟢.
 
+
+## Current T1 dungeon material identity
+
+The current economy is deliberately structured around **four regular materials + one boss signature** per dungeon.
+
+```text
+WHISPERING WOODS
+Wisp Essence
+Thorn Fiber
+Rootstone Shard
+Grove Bark
+Boss: Heartseed
+```
+
+```text
+HOWLING DEN
+Predator Fang
+Predator Hide
+Corrupted Beast Essence
+Predator Sinew
+Boss: Greatbear Core
+```
+
+```text
+ABANDONED CATACOMBS
+Ossuary Remnant
+Soul Residue
+Graveglass Shard
+Burial Cloth
+Boss: Edrin Remnant
+```
+
+The four regular materials were recently rebalanced toward approximately equal long-term demand.
+
+Therefore changing only one material's drop rate can now disturb a deliberately balanced 1:1-ish dungeon economy.
+
+Simple drop-number edits are still technically 🟢, but broad loot/economy changes should be treated as 🟡.
+
+
 Percent reminder:
 
 ```text
@@ -843,7 +1570,7 @@ Percent reminder:
 
 ---
 
-# 23. LIFE ESSENCE LOOT
+# 30. LIFE ESSENCE LOOT
 
 The game uses:
 
@@ -858,7 +1585,7 @@ Example:
 ```ts
 withLifeEssence(
   [
-    { itemId: 'grove-bark', min: 1, max: 3, chance: 0.2 },
+    { itemId: 'grove-bark', min: 1, max: 2, chance: 0.2 },
   ],
   { min: 2, max: 5 }
 )
@@ -878,7 +1605,7 @@ Changing how `withLifeEssence()` globally works is 🔴/system-wide.
 
 ---
 
-# 24. MONSTER SPECIAL ACTIONS
+# 31. MONSTER SPECIAL ACTIONS
 
 Example:
 
@@ -904,7 +1631,7 @@ is 🟡.
 
 ---
 
-# 25. MONSTER DAMAGE COEFFICIENT
+# 32. MONSTER DAMAGE COEFFICIENT
 
 Example:
 
@@ -929,7 +1656,7 @@ Changing what `scaledDirectDamage()` means globally is 🔴.
 
 ---
 
-# 26. MONSTER ACTION PATTERNS
+# 33. MONSTER ACTION PATTERNS
 
 Example:
 
@@ -951,7 +1678,7 @@ Inventing a new action/effect mechanic is 🔴.
 
 ---
 
-# 27. BOSS VALUES
+# 34. BOSS VALUES
 
 Bosses are in the same dungeon monster file.
 
@@ -974,7 +1701,7 @@ Boss HP / Basic Damage / attack timing / existing loot numbers are just as edita
 
 ---
 
-# 28. DUNGEONS
+# 35. DUNGEONS
 
 ## File
 
@@ -997,7 +1724,7 @@ Treat most dungeon membership/unlock changes as 🟡.
 
 ---
 
-# 29. SPELLS
+# 36. SPELLS
 
 ## File
 
@@ -1020,7 +1747,7 @@ This is another good file for direct balancing.
 
 ---
 
-# 30. SIMPLE SPELL EXAMPLE
+# 37. SIMPLE SPELL EXAMPLE
 
 ```ts
 'fire-bolt': {
@@ -1050,7 +1777,7 @@ mostly 🟢/🟡.
 
 ---
 
-# 31. SPELL COOLDOWN
+# 38. SPELL COOLDOWN
 
 ```text
 5000  = 5 sec
@@ -1061,7 +1788,7 @@ mostly 🟢/🟡.
 
 ---
 
-# 32. SPELL DAMAGE
+# 39. SPELL DAMAGE
 
 The helper:
 
@@ -1085,7 +1812,7 @@ That would be 🔴.
 
 ---
 
-# 33. SPELL HEAL / BARRIER
+# 40. SPELL HEAL / BARRIER
 
 Current helper examples:
 
@@ -1106,7 +1833,7 @@ Changing how healing/barrier formulas globally work is 🔴.
 
 ---
 
-# 34. SPELL STATUS EFFECTS
+# 41. SPELL STATUS EFFECTS
 
 Example:
 
@@ -1142,7 +1869,7 @@ validation
 
 ---
 
-# 35. AUTO-CAST CONDITIONS
+# 42. AUTO-CAST CONDITIONS
 
 Existing examples:
 
@@ -1171,7 +1898,7 @@ Creating a new Auto-Cast condition type is 🔴.
 
 ---
 
-# 36. GLOBAL BASE BALANCE
+# 43. GLOBAL BASE BALANCE
 
 ## File
 
@@ -1208,7 +1935,7 @@ Treat as 🟡 even when syntax is simple.
 
 ---
 
-# 37. CURRENT GLOBAL BALANCE SHAPE
+# 44. CURRENT GLOBAL BALANCE SHAPE
 
 Example structure:
 
@@ -1251,7 +1978,7 @@ is technically easy but affects everything, so 🟡.
 
 ---
 
-# 38. HEALTH REGEN
+# 45. HEALTH REGEN
 
 Current global base values live in:
 
@@ -1299,7 +2026,7 @@ Changing the Health Regen runtime mechanic/timing architecture:
 
 ---
 
-# 39. CHANNELING
+# 46. CHANNELING
 
 Main content files:
 
@@ -1317,7 +2044,7 @@ src/game/core/balance/balance.ts
 
 ---
 
-# 40. MANA PILLARS
+# 47. MANA PILLARS
 
 ## File
 
@@ -1337,7 +2064,7 @@ Do not redesign Pillar progression structure manually unless I understand all co
 
 ---
 
-# 41. CHANNELING DISCOVERIES
+# 48. CHANNELING DISCOVERIES
 
 ## File
 
@@ -1361,7 +2088,7 @@ New discovery type/mechanic:
 
 ---
 
-# 42. FOCUS IMPROVEMENT
+# 49. FOCUS IMPROVEMENT
 
 ## File
 
@@ -1385,7 +2112,7 @@ Changing how Focus itself is calculated/reserved:
 
 ---
 
-# 43. RESEARCH — SIMPLE VALUES
+# 50. RESEARCH — SIMPLE VALUES
 
 Global Research tuning currently lives partly in:
 
@@ -1409,7 +2136,7 @@ Changing these existing values is 🟡 because they affect the whole Research sy
 
 ---
 
-# 44. RESEARCH — DO NOT CASUALLY EDIT ENGINE
+# 51. RESEARCH — DO NOT CASUALLY EDIT ENGINE
 
 Main runtime system:
 
@@ -1454,7 +2181,7 @@ use Codex.
 
 ---
 
-# 45. GUILD
+# 52. GUILD
 
 ## File
 
@@ -1478,7 +2205,7 @@ Changing Guild rank architecture/unlock lifecycle:
 
 ---
 
-# 46. MAGIC SCHOOLS
+# 53. MAGIC SCHOOLS
 
 ## File
 
@@ -1498,7 +2225,7 @@ Do not put spell balance into school definitions unless that is already how the 
 
 ---
 
-# 47. STATUSES
+# 54. STATUSES
 
 Main content folder:
 
@@ -1529,7 +2256,7 @@ is 🔴.
 
 ---
 
-# 48. EQUIPMENT SETS
+# 55. EQUIPMENT SETS
 
 ## File
 
@@ -1549,7 +2276,7 @@ Do not move item stats into the set file.
 
 ---
 
-# 49. TYPES.TS — VERY IMPORTANT BUT DO NOT RANDOMLY EDIT
+# 56. TYPES.TS — VERY IMPORTANT BUT DO NOT RANDOMLY EDIT
 
 ## File
 
@@ -1599,7 +2326,7 @@ edit types.ts carefully
 
 ---
 
-# 50. WHEN I CAN COPY AN EXISTING EXAMPLE
+# 57. WHEN I CAN COPY AN EXISTING EXAMPLE
 
 This is probably the easiest manual workflow.
 
@@ -1669,7 +2396,7 @@ The project already contains many good examples.
 
 ---
 
-# 51. VS CODE SEARCH WORKFLOW
+# 58. VS CODE SEARCH WORKFLOW
 
 Useful shortcuts:
 
@@ -1707,7 +2434,7 @@ This is often faster than searching Docs.
 
 ---
 
-# 52. SAFE DIRECT EDIT WORKFLOW
+# 59. SAFE DIRECT EDIT WORKFLOW
 
 For a simple balance tweak:
 
@@ -1732,7 +2459,7 @@ change.
 
 ---
 
-# 53. GOOD EXAMPLES OF CHANGES I CAN DO MYSELF
+# 60. GOOD EXAMPLES OF CHANGES I CAN DO MYSELF
 
 ## Equipment
 
@@ -1878,7 +2605,7 @@ damage('fire', 0.7)
 
 ---
 
-# 54. CHANGES I SHOULD PROBABLY GIVE TO CODEX
+# 61. CHANGES I SHOULD PROBABLY GIVE TO CODEX
 
 ```text
 "Add Lifesteal as a new Equipment stat."
@@ -1910,7 +2637,7 @@ These are not just number edits.
 
 ---
 
-# 55. IF TYPESCRIPT SHOWS RED ERROR AFTER MY EDIT
+# 62. IF TYPESCRIPT SHOWS RED ERROR AFTER MY EDIT
 
 First check simple syntax.
 
@@ -1953,7 +2680,7 @@ That is a Codex/system change.
 
 ---
 
-# 56. DO NOT USE `as any` TO FORCE NEW CONTENT
+# 63. DO NOT USE `as any` TO FORCE NEW CONTENT
 
 Bad:
 
@@ -1976,7 +2703,7 @@ give the feature to Codex
 
 ---
 
-# 57. IF GAME DOES NOT UPDATE AFTER A SIMPLE VALUE CHANGE
+# 64. IF GAME DOES NOT UPDATE AFTER A SIMPLE VALUE CHANGE
 
 Check:
 
@@ -1992,7 +2719,7 @@ For basic authored content, Vite should normally hot-reload the change.
 
 ---
 
-# 58. WHEN A NUMBER IS NOT THE FINAL NUMBER
+# 65. WHEN A NUMBER IS NOT THE FINAL NUMBER
 
 Some fields are direct:
 
@@ -2019,7 +2746,7 @@ Before changing one heavily, inspect how a nearby example behaves in-game.
 
 ---
 
-# 59. UI CHANGES ARE A DIFFERENT AREA
+# 66. UI CHANGES ARE A DIFFERENT AREA
 
 This guide is mainly for game content / balance.
 
@@ -2055,7 +2782,7 @@ because layout-editor ownership and responsive behavior can make a "small" UI ch
 
 ---
 
-# 60. QUICK UI SEARCH RULE
+# 67. QUICK UI SEARCH RULE
 
 If I want to edit a visible screen:
 
@@ -2095,7 +2822,7 @@ Use direct CSS editing only for obvious micro changes.
 
 ---
 
-# 61. CONTENT VS SYSTEM RULE
+# 68. CONTENT VS SYSTEM RULE
 
 A good rule:
 
@@ -2115,7 +2842,7 @@ that is probably a system change.
 
 ---
 
-# 62. MY PERSONAL EDITING TIERS
+# 69. MY PERSONAL EDITING TIERS
 
 ## Tier 1 — I edit myself
 
@@ -2172,7 +2899,7 @@ new UI framework behavior
 
 ---
 
-# 63. AFTER THE NEW DOCS/BALANCING REWORK
+# 70. AFTER THE NEW DOCS/BALANCING REWORK
 
 I can compare two workflows.
 
@@ -2205,7 +2932,7 @@ learn the project naturally
 
 ---
 
-# 64. POSSIBLE FINAL HYBRID
+# 71. POSSIBLE FINAL HYBRID
 
 The best long-term setup may be:
 
@@ -2227,14 +2954,18 @@ The balancing documentation does not need to be my only editing surface.
 
 ---
 
-# 65. FILES I SHOULD FAVORITE IN VS CODE
+# 72. FILES I SHOULD FAVORITE IN VS CODE
 
 If I manually balance often, keep these near the top:
 
 ```text
 src/game/content/items/items.ts
+src/game/content/items/equipmentBalance.ts
 src/game/content/recipes/artificingRecipes.ts
 src/game/content/recipes/transmutationRecipes.ts
+
+src/game/content/artifacts/artifacts.ts
+src/game/systems/artifacts/artifactProgression.ts
 
 src/game/content/monsters/whisperingWoods.ts
 src/game/content/monsters/howlingDen.ts
@@ -2254,17 +2985,44 @@ These files cover a very large portion of day-to-day balance editing.
 
 ---
 
-# 66. ULTRA-SHORT CHEAT SHEET
+# 73. ULTRA-SHORT CHEAT SHEET
 
 ```text
-ITEM / EQUIPMENT STATS
+ITEM / NORMAL EQUIPMENT STATS
 src/game/content/items/items.ts
 
-WHAT STATS EXIST?
+EQUIPMENT TIER MAPPING / BUILD TAGS / BUDGET PROFILES
+src/game/content/items/equipmentBalance.ts
+
+WHAT STATS / SLOTS / IDS EXIST?
 src/game/types.ts
 
-ARTIFICING COSTS
+NORMAL ARTIFICING EQUIPMENT COSTS
 src/game/content/recipes/artificingRecipes.ts
+
+ARTIFACT ITEM IDENTITY
+src/game/content/items/items.ts
+
+ARTIFACT FORGE / LV1-10 STATS / LEVEL-UP COSTS / PATH NODES
+src/game/content/artifacts/artifacts.ts
+
+ARTIFACT FORGE MIRROR
+src/game/content/recipes/artificingRecipes.ts
+
+ARTIFACT CAPS / POINTS / NODE ELIGIBILITY / RESPEC
+src/game/systems/artifacts/artifactProgression.ts
+
+ARTIFACT FORGE + UPGRADE JOB RUNTIME
+src/game/systems/artificing/artificingEngine.ts
+
+ARTIFACT PLAYER FORGE / UPGRADE UI
+src/screens/tower/artificing/ArtificingDetail.tsx
+
+ARTIFACT PATH UI
+src/components/artifacts/
+
+ARTIFACT DEVTOOLS
+src/devtools/tabs/DeveloperArtifacts.tsx
 
 TRANSMUTATION
 src/game/content/recipes/transmutationRecipes.ts
@@ -2274,7 +3032,7 @@ src/game/content/monsters/whisperingWoods.ts
 src/game/content/monsters/howlingDen.ts
 src/game/content/monsters/abandonedCatacombs.ts
 
-DUNGEON POOLS
+DUNGEON POOLS / THREAT / BOSS
 src/game/content/dungeons/dungeons.ts
 
 SPELLS
@@ -2298,7 +3056,7 @@ src/game/content/guild/guildRequests.ts
 
 ---
 
-# 67. FINAL RULE
+# 74. FINAL RULE
 
 Before manually editing something, ask:
 

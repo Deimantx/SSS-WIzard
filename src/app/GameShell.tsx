@@ -121,14 +121,16 @@ export function GameShell() {
     <GameFeelAudioObserver />
     <GameFeelInteractionLayer />
     <GameFeelLayer />
-    <LootRevealLayer />
-    <MilestoneBannerLayer />
     <LayoutEditorDrawer screen={screen} />
     <DeveloperToolsWindow />
     <OfflineBankResultsDialog report={lastOfflineBankReport} open={offlineResultsOpen} onClose={() => setOfflineResultsOpen(false)} onOpenInventory={() => { setOfflineResultsOpen(false); setScreen('inventory') }} />
-    {!editor.isEditing && editor.notice && <div className="layout-editor-notice-toast" role="status">{editor.notice}</div>}
-    <SaveProtectionNotice />
-    <ToastStack />
+    <div className="global-feedback-stack">
+      <SaveProtectionNotice />
+      {!editor.isEditing && editor.notice && <div className="layout-editor-notice-toast" role="status">{editor.notice}</div>}
+      <ToastStack />
+      <MilestoneBannerLayer />
+      <LootRevealLayer />
+    </div>
     <DefeatSummaryModal />
   </div></GameContextMenuProvider></TooltipProvider>
 }

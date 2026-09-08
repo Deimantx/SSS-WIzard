@@ -30,3 +30,8 @@
 @media (max-width: 760px) { .loot-reveal-layer { right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); left: 12px; width: auto; transform: none; }.milestone-layer { top: calc(140px + 10px); } }
 @keyframes reward-fade-in { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .loot-reveal-card, .milestone-banner { animation: reward-fade-in 140ms ease-out both; transition: none; } }
+.global-feedback-stack { position: fixed; z-index: var(--z-toast, 3000); right: 0; bottom: 0; left: 0; display: grid; justify-items: center; gap: 8px; max-height: 100vh; padding: 0 16px max(18px, env(safe-area-inset-bottom)); pointer-events: none; }
+.global-feedback-stack > .loot-reveal-layer, .global-feedback-stack > .milestone-layer, .global-feedback-stack > .toast-stack, .global-feedback-stack > .save-protection-notice, .global-feedback-stack > .layout-editor-notice-toast { position: static; inset: auto; z-index: auto; width: min(100%, 460px); max-width: 100%; margin: 0; transform: none; }
+.global-feedback-stack > .loot-reveal-layer { width: min(100%, 340px); }
+.global-feedback-stack > .toast-stack { width: min(100%, 290px); }
+.global-feedback-stack > .save-protection-notice, .global-feedback-stack > .layout-editor-notice-toast { width: min(100%, 420px); }

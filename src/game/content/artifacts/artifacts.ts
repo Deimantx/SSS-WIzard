@@ -97,15 +97,15 @@ const windthreadUpgrades = [
   upgrade(9, [material('air-fragment', 2750), material('ossuary-remnant', 70), material('soul-residue', 45), material('graveglass-shard', 70), material('burial-cloth', 45), material('prismatic-fragment', 45), material('life-essence', 375)]),
 ]
 const prismaticUpgrades = [
-  upgrade(1, [material('prismatic-fragment', 13)]),
-  upgrade(2, [material('prismatic-fragment', 25), material('wisp-essence', 7), material('thorn-fiber', 6), material('rootstone-shard', 6), material('grove-bark', 6), material('life-essence', 8)]),
-  upgrade(3, [material('prismatic-fragment', 45), material('wisp-essence', 13), material('thorn-fiber', 14), material('rootstone-shard', 14), material('grove-bark', 14), material('life-essence', 30)]),
-  upgrade(4, [material('prismatic-fragment', 70), material('predator-hide', 15), material('predator-fang', 15), material('life-essence', 55)]),
-  upgrade(5, [material('prismatic-fragment', 113), material('predator-hide', 15), material('predator-fang', 15), material('corrupted-beast-essence', 15), material('predator-sinew', 15), material('life-essence', 95)]),
-  upgrade(6, [material('prismatic-fragment', 175), material('predator-hide', 18), material('predator-fang', 18), material('corrupted-beast-essence', 32), material('predator-sinew', 32), material('life-essence', 163)]),
-  upgrade(7, [material('prismatic-fragment', 238), material('soul-residue', 25), material('graveglass-shard', 25), material('life-essence', 213)]),
-  upgrade(8, [material('prismatic-fragment', 350), material('ossuary-remnant', 25), material('soul-residue', 25), material('graveglass-shard', 25), material('burial-cloth', 25), material('life-essence', 288)]),
-  upgrade(9, [material('prismatic-fragment', 525), material('ossuary-remnant', 70), material('soul-residue', 45), material('graveglass-shard', 45), material('burial-cloth', 70), material('life-essence', 400)]),
+  upgrade(1, [material('prismatic-fragment', 4)]),
+  upgrade(2, [material('prismatic-fragment', 7), material('wisp-essence', 7), material('thorn-fiber', 6), material('rootstone-shard', 6), material('grove-bark', 6), material('life-essence', 8)]),
+  upgrade(3, [material('prismatic-fragment', 12), material('wisp-essence', 13), material('thorn-fiber', 14), material('rootstone-shard', 14), material('grove-bark', 14), material('life-essence', 30)]),
+  upgrade(4, [material('prismatic-fragment', 18), material('predator-hide', 15), material('predator-fang', 15), material('life-essence', 55)]),
+  upgrade(5, [material('prismatic-fragment', 29), material('predator-hide', 15), material('predator-fang', 15), material('corrupted-beast-essence', 15), material('predator-sinew', 15), material('life-essence', 95)]),
+  upgrade(6, [material('prismatic-fragment', 44), material('predator-hide', 18), material('predator-fang', 18), material('corrupted-beast-essence', 32), material('predator-sinew', 32), material('life-essence', 163)]),
+  upgrade(7, [material('prismatic-fragment', 60), material('soul-residue', 25), material('graveglass-shard', 25), material('life-essence', 213)]),
+  upgrade(8, [material('prismatic-fragment', 88), material('ossuary-remnant', 25), material('soul-residue', 25), material('graveglass-shard', 25), material('burial-cloth', 25), material('life-essence', 288)]),
+  upgrade(9, [material('prismatic-fragment', 132), material('ossuary-remnant', 70), material('soul-residue', 45), material('graveglass-shard', 45), material('burial-cloth', 70), material('life-essence', 400)]),
 ]
 const wispweaveUpgrades = [
   upgrade(1, [material('wisp-essence', 13), material('thorn-fiber', 13), material('rootstone-shard', 12), material('grove-bark', 12), material('life-essence', 13)]),
@@ -279,7 +279,7 @@ export const ARTIFACTS: Partial<Record<ArtifactId, ArtifactDefinition>> = {
   },
   'prismatic-focus': {
     id: 'prismatic-focus', itemId: 'prismatic-focus', tier: 1, maxLevel: 10, coreStatsByLevel: prismaticStats,
-    forge: { ingredients: [material('prismatic-fragment', 8), material('wisp-essence', 5), material('rootstone-shard', 10), material('thorn-fiber', 5), material('life-essence', 25)] },
+    forge: { ingredients: [material('prismatic-fragment', 2), material('wisp-essence', 5), material('rootstone-shard', 10), material('thorn-fiber', 5), material('life-essence', 25)] },
     upgrades: prismaticUpgrades,
     branches: [
       { id: 'mana-engine', name: 'Mana Engine', description: 'Mana capacity, regeneration, and spell-cost efficiency.' },

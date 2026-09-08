@@ -161,6 +161,23 @@ describe('material-only loot and Artificing-only Equipment', () => {
     expect(validateRecipeDefinitions()).toEqual([])
   })
 
+  it('applies the Prismatic Focus-only Fragment reduction', () => {
+    expect(ARTIFICING_RECIPES['prismatic-focus'].ingredients).toEqual([
+      { itemId: 'prismatic-fragment', quantity: 2 }, { itemId: 'wisp-essence', quantity: 5 },
+      { itemId: 'rootstone-shard', quantity: 10 }, { itemId: 'thorn-fiber', quantity: 5 }, { itemId: 'life-essence', quantity: 25 },
+    ])
+    expect(ARTIFACTS['prismatic-focus'].forge.ingredients).toEqual(ARTIFICING_RECIPES['prismatic-focus'].ingredients)
+    expect(ARTIFACTS['prismatic-focus'].upgrades.map((entry) => entry.ingredients.find((ingredient) => ingredient.itemId === 'prismatic-fragment')?.quantity)).toEqual([4, 7, 12, 18, 29, 44, 60, 88, 132])
+    expect(Object.fromEntries(Object.entries(ARTIFACTS).filter(([id]) => id !== 'prismatic-focus').map(([id, artifact]) => [id, artifact.upgrades.flatMap((entry) => entry.ingredients.filter((ingredient) => ingredient.itemId === 'prismatic-fragment').map((ingredient) => ingredient.quantity))]))).toEqual({
+      'ember-staff': [5, 9, 14, 20, 30, 45],
+      'tideglass-wand': [5, 9, 14, 20, 30, 45],
+      'stoneheart-scepter': [5, 9, 14, 20, 30, 45],
+      'windthread-wand': [5, 9, 14, 20, 30, 45],
+      'wispweave-robe': [5, 8, 13, 20, 25, 38, 55],
+      'wispveil-hood': [5, 8, 10, 15, 23, 30, 43, 63],
+    })
+  })
+
   it('validates every Artifact upgrade and long-term use of new dungeon materials', () => {
     const upgradeIngredients = Object.values(ARTIFACTS).flatMap((artifact) => artifact.upgrades.flatMap((upgradeDefinition) => upgradeDefinition.ingredients))
     Object.values(ARTIFACTS).forEach((artifact) => expect(artifact.upgrades.map((entry) => [entry.fromLevel, entry.toLevel])).toEqual([[1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8], [8, 9], [9, 10]]))
@@ -179,15 +196,15 @@ describe('material-only loot and Artificing-only Equipment', () => {
     expect(only(recipeDungeonTotals('whispering-woods'), ['wisp-essence', 'thorn-fiber', 'rootstone-shard', 'grove-bark'])).toEqual({ 'wisp-essence': 80, 'thorn-fiber': 80, 'rootstone-shard': 80, 'grove-bark': 81 })
     expect(only(recipeDungeonTotals('howling-den'), ['predator-fang', 'predator-hide', 'corrupted-beast-essence', 'predator-sinew'])).toEqual({ 'predator-fang': 40, 'predator-hide': 40, 'corrupted-beast-essence': 41, 'predator-sinew': 40 })
     expect(only(recipeDungeonTotals('abandoned-catacombs'), ['ossuary-remnant', 'soul-residue', 'graveglass-shard', 'burial-cloth'])).toEqual({ 'ossuary-remnant': 49, 'soul-residue': 49, 'graveglass-shard': 48, 'burial-cloth': 48 })
-    expect(only(recipeTotals, ['life-essence', 'prismatic-fragment'])).toEqual({ 'life-essence': 184, 'prismatic-fragment': 23 })
+    expect(only(recipeTotals, ['life-essence', 'prismatic-fragment'])).toEqual({ 'life-essence': 184, 'prismatic-fragment': 17 })
     expect(only(upgradeTotals, ['wisp-essence', 'thorn-fiber', 'rootstone-shard', 'grove-bark'])).toEqual({ 'wisp-essence': 285, 'thorn-fiber': 285, 'rootstone-shard': 285, 'grove-bark': 285 })
     expect(only(upgradeTotals, ['predator-fang', 'predator-hide', 'corrupted-beast-essence', 'predator-sinew'])).toEqual({ 'predator-fang': 503, 'predator-hide': 503, 'corrupted-beast-essence': 502, 'predator-sinew': 502 })
     expect(only(upgradeTotals, ['ossuary-remnant', 'soul-residue', 'graveglass-shard', 'burial-cloth'])).toEqual({ 'ossuary-remnant': 863, 'soul-residue': 863, 'graveglass-shard': 862, 'burial-cloth': 862 })
-    expect(only(upgradeTotals, ['life-essence', 'prismatic-fragment'])).toEqual({ 'life-essence': 8777, 'prismatic-fragment': 2407 })
+    expect(only(upgradeTotals, ['life-essence', 'prismatic-fragment'])).toEqual({ 'life-essence': 8777, 'prismatic-fragment': 1247 })
     expect(only(addTotals(recipeTotals, upgradeTotals), ['wisp-essence', 'thorn-fiber', 'rootstone-shard', 'grove-bark'])).toEqual({ 'wisp-essence': 365, 'thorn-fiber': 365, 'rootstone-shard': 365, 'grove-bark': 366 })
     expect(only(addTotals(recipeTotals, upgradeTotals), ['predator-fang', 'predator-hide', 'corrupted-beast-essence', 'predator-sinew'])).toEqual({ 'predator-fang': 543, 'predator-hide': 543, 'corrupted-beast-essence': 543, 'predator-sinew': 542 })
     expect(only(addTotals(recipeTotals, upgradeTotals), ['ossuary-remnant', 'soul-residue', 'graveglass-shard', 'burial-cloth'])).toEqual({ 'ossuary-remnant': 912, 'soul-residue': 912, 'graveglass-shard': 910, 'burial-cloth': 910 })
-    expect(only(addTotals(recipeTotals, upgradeTotals), ['life-essence', 'prismatic-fragment'])).toEqual({ 'life-essence': 8961, 'prismatic-fragment': 2430 })
+    expect(only(addTotals(recipeTotals, upgradeTotals), ['life-essence', 'prismatic-fragment'])).toEqual({ 'life-essence': 8961, 'prismatic-fragment': 1264 })
     expect(only(addTotals(recipeTotals, upgradeTotals), ['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'])).toEqual({ 'fire-fragment': 7320, 'water-fragment': 7364, 'earth-fragment': 7364, 'air-fragment': 7454 })
     expect(only(recipeTotals, ['heartseed', 'greatbear-core', 'edrin-remnant'])).toEqual({ heartseed: 8, 'greatbear-core': 8, 'edrin-remnant': 28 })
   })

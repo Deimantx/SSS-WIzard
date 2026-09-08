@@ -44,7 +44,7 @@ import { addOfflineBankMs, clampOfflineBankMs } from '../game/systems/offline-ba
 import type { OfflineBankReport } from '../game/systems/offline-bank/offlineBankReport'
 import { getSpellAutoCastFocusCost, isSpellUnlocked, syncSpellUnlocksForSchool } from '../game/systems/spells'
 import { getSchoolLevelStartXp } from '../game/systems/schools'
-import { applySpellPresetAction, createSpellPresetAction, deleteSpellPresetAction, duplicateSpellPresetAction, renameSpellPresetAction, saveSpellPresetAction, type ApplySpellPresetResult } from './actions/spellPresetActions'
+import { applySpellPresetAction, clearAutoCastAction, createSpellPresetAction, deleteSpellPresetAction, duplicateSpellPresetAction, renameSpellPresetAction, saveSpellPresetAction, type ApplySpellPresetResult } from './actions/spellPresetActions'
 import { clearCombatLogUi, combatLogUiSink as combatLogSink } from '../game/ui/combatLogStore'
 import { combatAlertsObserver, combatAlertsSink, clearCombatAlerts } from '../game/ui/combatAlertsStore'
 import { beginCombatRecapRun, clearCombatRecap, combatRecapSink } from '../game/ui/combatRecapStore'
@@ -172,6 +172,7 @@ export interface GameActions {
   setDebugTransmutationEchoCapacity: (amount: number | null) => void
   castSpell: (spellId: SpellId) => void
   toggleAutoCast: (spellId: SpellId) => void
+  clearAutoCast: () => boolean
   createSpellPreset: (name: string) => SpellPresetId
   renameSpellPreset: (id: SpellPresetId, name: string) => boolean
   duplicateSpellPreset: (id: SpellPresetId) => SpellPresetId | null
@@ -410,6 +411,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   debugGrantArtifactMaterials: () => set((state) => { grantDebugArtifactMaterialsInState(state); return state }),
   setDebugTransmutationEchoCapacity: (amount) => set((state) => { setTransmutationEchoCapacityOverrideAction(state, amount); return state }),
   castSpell: (spellId) => set((state) => { castSpellAction(state, spellId, combatEventSink); return state }),
+  clearAutoCast: () => { let cleared = false; set((state) => { cleared = clearAutoCastAction(state); return state }); if (cleared) emitActionFeel('autocast-off', '.combat-spell-deck-foot', 'var(--ui-secondary)'); return cleared },
   toggleAutoCast: (spellId) => { const before = Boolean(get().activities.autoCast[spellId]); set((state) => { const cost = getSpellAutoCastFocusCost(state, spellId); if (!spellUnlocked(state, spellId) || cost === null) return state; const latchIndex = state.combat.autoCastManaStarvedSpells.indexOf(spellId); if (latchIndex >= 0) state.combat.autoCastManaStarvedSpells.splice(latchIndex, 1); if (state.activities.autoCast[spellId]) { state.activities.autoCast[spellId] = false; state.spellPresets.lastAppliedPresetId = null } else if (canReserveFocus(state, cost)) { state.activities.autoCast[spellId] = true; state.spellPresets.lastAppliedPresetId = null; pushNotification(state, `${SPELLS[spellId].name} Auto-Cast enabled`, 'success') } else pushNotification(state, `Cannot enable Auto-Cast · Requires ${cost} Focus · Free Focus: ${selectFreeFocus(state)}`, 'warning'); return state }); const after = Boolean(get().activities.autoCast[spellId]); if (after !== before) emitActionFeel(after ? 'autocast-on' : 'autocast-off', `[data-spell-id="${spellId}"]`, 'var(--ui-secondary)'); else emitActionFeel('error', `[data-spell-id="${spellId}"]`, 'var(--ui-warning)', 0.75); return after !== before },
   createSpellPreset: (name) => { let result!: SpellPresetId; set((state) => { result = createSpellPresetAction(state, name); return state }); return result },
   renameSpellPreset: (id, name) => { let result = false; set((state) => { result = renameSpellPresetAction(state, id, name); return state }); return result },

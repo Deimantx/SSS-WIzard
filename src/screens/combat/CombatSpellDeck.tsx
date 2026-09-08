@@ -38,6 +38,7 @@ export function CombatSpellDeck({ onRequiredHeightChange }: { onRequiredHeightCh
   const enemyId = useGameStore((state) => state.combat.enemyId)
   const playerStunned = useGameStore((state) => actorCannotAct(state, 'player'))
   const applySpellPreset = useGameStore((state) => state.applySpellPreset)
+  const clearAutoCast = useGameStore((state) => state.clearAutoCast)
   const saveSpellPreset = useGameStore((state) => state.saveSpellPreset)
   const state = useMemo(() => ({ schools, equipment, progress, activities }), [schools, equipment, progress, activities])
   const focusState = useMemo(() => ({ activities, progress, player: { maxFocus }, debug: { allowFocusOverCap: debugAllowFocusOverCap } }), [activities, progress, maxFocus, debugAllowFocusOverCap])
@@ -119,6 +120,7 @@ export function CombatSpellDeck({ onRequiredHeightChange }: { onRequiredHeightCh
       <div ref={gridRegionRef} className="combat-spell-grid-region">{visibleSpells.length ? <div ref={gridRef} className="combat-spell-grid smart-scroll-region">{visibleSpells.map((spellId) => <CombatSpellTile key={spellId} spellId={spellId} presentationState={state} globalBlocker={globalBlocker} onOpenPresetManager={openPresetManager} onRemoveFromPreset={removeFromCurrentPreset} />)}</div> : <div className="combat-spell-empty"><CircleDot size={20} aria-hidden="true" /><strong>{autoOnly ? 'No Auto-Cast Spells enabled.' : query ? 'No Spells match the current filters.' : school !== 'all' ? `No unlocked ${SCHOOLS[school].name} Spells.` : 'No unlocked Spells.'}</strong></div>}</div>
     </div>
     <div ref={deckFootRef} className="combat-spell-deck-foot"><Status tone={focus.freeFocus < 0 ? 'warning' : 'success'}>{focus.autoCastFocus} Focus reserved · {focus.freeFocus} free</Status><small>{debugAllowFocusOverCap ? 'Developer Focus override active.' : `${visibleSpells.length} Spell${visibleSpells.length === 1 ? '' : 's'} shown`}</small></div>
+    <GameTooltip accent="focus" content={<TooltipContent title="Remove all Echoes" description="Disable Auto-Cast on every active spell and release the reserved Focus." />}><Button className="combat-clear-autocast" variant="ghost" disabled={focus.autoCastFocus <= 0} onClick={clearAutoCast}><CircleDot size={12} /> REMOVE ALL ECHOES</Button></GameTooltip>
     <SpellPresetDialog open={presetOpen} onClose={() => setPresetOpen(false)} />
   </Card>
 }

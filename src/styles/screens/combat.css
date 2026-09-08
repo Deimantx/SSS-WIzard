@@ -987,6 +987,7 @@
 }
 /* Spell Deck */
 .combat-spell-deck {
+  position: relative;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   background: linear-gradient(
@@ -995,6 +996,7 @@
     var(--ui-panel-gradient-end)
   );
 }
+.combat-clear-autocast { position: absolute; bottom: 11px; left: 50%; z-index: 1; transform: translateX(-50%); min-height: 30px; padding: 6px 9px; color: var(--ui-text-muted); font-size: var(--text-micro); letter-spacing: .04em; }
 .combat-spell-deck-head {
   display: grid;
   grid-template-columns: minmax(145px, 0.85fr) minmax(250px, 1.35fr) minmax(135px, 0.7fr);

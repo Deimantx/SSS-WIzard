@@ -30,6 +30,25 @@ describe('CombatSpellDeck V2', () => {
     expect(screen.getByText('CUSTOM', { selector: '.select-menu-label' })).toBeTruthy()
   })
 
+  it('removes every active Auto-Cast assignment from the footer control', async () => {
+    const user = userEvent.setup()
+    const current = useGameStore.getState()
+    useGameStore.setState({
+      activities: { ...current.activities, autoCast: { ...current.activities.autoCast, 'fire-bolt': true, ignite: true } },
+      combat: { ...current.combat, autoCastManaStarvedSpells: ['fire-bolt'] },
+    })
+    render(<TooltipProvider><CombatSpellDeck /></TooltipProvider>)
+
+    const clearButton = screen.getByRole('button', { name: 'REMOVE ALL ECHOES' })
+    expect((clearButton as HTMLButtonElement).disabled).toBe(false)
+    await user.click(clearButton)
+
+    expect(Object.values(useGameStore.getState().activities.autoCast).every((enabled) => !enabled)).toBe(true)
+    expect(useGameStore.getState().combat.autoCastManaStarvedSpells).toEqual([])
+    expect(screen.getByText(/0 Focus reserved/)).toBeTruthy()
+    expect((screen.getByRole('button', { name: 'REMOVE ALL ECHOES' }) as HTMLButtonElement).disabled).toBe(true)
+  })
+
   it('keeps the live configuration unchanged when a preset exceeds Focus', async () => {
     const user = userEvent.setup()
     const current = useGameStore.getState()

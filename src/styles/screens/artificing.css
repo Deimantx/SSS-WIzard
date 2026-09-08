@@ -44,6 +44,8 @@
 .artificing-detail-hero h2 { margin: 4px 0; color: var(--ui-text); font-size: var(--text-base); overflow-wrap: anywhere; }
 .artificing-description { margin: 0; color: var(--ui-text-muted); font-size: var(--text-xs); line-height: 1.5; }
 .artificing-section { display: grid; gap: 9px; padding-top: 11px; border-top: 1px solid var(--ui-border); }
+.artificing-detail-content > .artificing-section > strong { display: block; color: var(--ui-text); font: 700 var(--text-sm) var(--font-mono); letter-spacing: .06em; line-height: 1.25; }
+.artificing-detail-content > .artificing-section > span:not(.eyebrow) { display: block; max-width: 52ch; color: var(--ui-text-muted); font-size: var(--text-xs); line-height: 1.45; }
 .artificing-material-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; min-width: 0; }
 .artificing-material-row { display: grid; grid-template-columns: 1fr; justify-items: center; align-items: center; gap: 5px; padding: 8px; text-align: center; border: 1px solid var(--ui-border); border-radius: 7px; background: var(--ui-panel); font-size: var(--text-xs); }
 .artificing-material-row strong { font-family: var(--font-mono); font-size: var(--text-xs); }

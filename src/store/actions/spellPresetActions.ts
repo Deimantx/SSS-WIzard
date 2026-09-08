@@ -11,6 +11,14 @@ export interface ApplySpellPresetResult {
 
 const normalizedSpellIds = (spellIds: readonly SpellId[]) => [...new Set(spellIds.filter((spellId) => Boolean(SPELLS[spellId])))]
 
+export const clearAutoCastAction = (state: GameState) => {
+  const hadActiveAutoCast = Object.values(state.activities.autoCast).some(Boolean)
+  Object.keys(SPELLS).forEach((spellId) => { state.activities.autoCast[spellId as SpellId] = false })
+  state.combat.autoCastManaStarvedSpells = []
+  state.spellPresets.lastAppliedPresetId = null
+  return hadActiveAutoCast
+}
+
 export const createSpellPresetAction = (state: GameState, name: string): SpellPresetId => {
   const id = getNextSpellPresetId(state.spellPresets.presets)
   state.spellPresets.presets.push({ id, name: normalizeSpellPresetName(name), spellIds: [] })
@@ -61,8 +69,7 @@ export const applySpellPresetAction = (state: GameState, id: SpellPresetId): App
     pushPresetNotification(state, `Cannot apply ${preset.name} · Requires ${required} more Focus.`, 'warning')
     return { ok: false, reason: 'focus', requiredExtraFocus: required, unavailableSpellIds: projection.unavailableSpellIds }
   }
-  Object.keys(SPELLS).forEach((spellId) => { state.activities.autoCast[spellId as SpellId] = false })
-  state.combat.autoCastManaStarvedSpells = []
+  clearAutoCastAction(state)
   projection.validSpellIds.forEach((spellId) => { state.activities.autoCast[spellId] = true })
   state.spellPresets.lastAppliedPresetId = projection.unavailableSpellIds.length ? null : id
   if (projection.unavailableSpellIds.length) {

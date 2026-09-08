@@ -4,6 +4,9 @@ import { TooltipProvider } from '../../../components/ui/tooltip/Tooltip'
 import { useGameStore } from '../../../store/gameStore'
 import { resetAllUiPreferences } from '../../../ui/preferences/uiPreferencesStore'
 import { EquipmentCatalog } from './EquipmentCatalog'
+import { GameContextMenuProvider } from '../../../ui/context-menu/GameContextMenuProvider'
+import { ARTIFICING_RECIPES } from '../../../game/content/recipes/artificingRecipes'
+import { getArtificingCraftIngredients } from '../../../game/systems/artificing/artificingSelectors'
 
 describe('Artificing equipment catalog filters', () => {
   beforeEach(() => {
@@ -12,6 +15,18 @@ describe('Artificing equipment catalog filters', () => {
     useGameStore.getState().setDebugShowLockedArtificingRecipes(true)
     resetAllUiPreferences()
   })
+
+  const unlockWhisperingWoods = () => {
+    const current = useGameStore.getState()
+    useGameStore.setState({ progress: { ...current.progress, lifetimeKillsByMonster: { ...current.progress.lifetimeKillsByMonster, 'forest-wisp': 1 } } })
+  }
+
+  const provideIngredients = (recipeId: keyof typeof ARTIFICING_RECIPES) => {
+    const current = useGameStore.getState()
+    const inventory = { ...current.inventory }
+    getArtificingCraftIngredients(recipeId)?.forEach(({ itemId, quantity }) => { inventory[itemId] = Math.max(inventory[itemId] ?? 0, quantity) })
+    useGameStore.setState({ inventory })
+  }
 
   it('renders compact player-tier boxes and combines them with the slot filter', () => {
     render(<TooltipProvider><EquipmentCatalog selected={null} onSelect={vi.fn()} query="" onQueryChange={vi.fn()} /></TooltipProvider>)
@@ -61,5 +76,56 @@ describe('Artificing equipment catalog filters', () => {
     expect(screen.getByText('3 SHOWN')).toBeTruthy()
     expect(screen.getByText('Fangwire Earring')).toBeTruthy()
     expect(screen.queryByText('Ember Staff')).toBeNull()
+  })
+
+  it('shows owned Artifacts as FORGED with their current level', () => {
+    unlockWhisperingWoods()
+    const current = useGameStore.getState()
+    useGameStore.setState({ inventory: { ...current.inventory, 'ember-staff': 1 }, artifactProgress: { ...current.artifactProgress, 'ember-staff': { level: 3, allocatedNodeIds: [], attunedNodeIds: [] } } })
+    render(<TooltipProvider><EquipmentCatalog selected="ember-staff" onSelect={vi.fn()} query="ember-staff" onQueryChange={vi.fn()} /></TooltipProvider>)
+
+    const card = document.querySelector('[data-recipe-id="ember-staff"]') as HTMLElement
+    expect(card).toBeTruthy()
+    expect(within(card).getByText('FORGED')).toBeTruthy()
+    expect(within(card).getByText('LV 3 / 10')).toBeTruthy()
+    expect(card.classList.contains('artifact-forged')).toBe(true)
+    expect(within(card).queryByText('MISSING')).toBeNull()
+  })
+
+  it('keeps a materially-ready card READY while another recipe is crafting', () => {
+    unlockWhisperingWoods()
+    provideIngredients('ember-staff')
+    provideIngredients('windthread-charm')
+    const current = useGameStore.getState()
+    useGameStore.setState({ activities: { ...current.activities, artificing: { activeJob: { kind: 'recipe', recipeId: 'windthread-charm' }, activeRecipeId: 'windthread-charm', progressMs: 1000 } } })
+    render(<TooltipProvider><EquipmentCatalog selected="ember-staff" onSelect={vi.fn()} query="" onQueryChange={vi.fn()} /></TooltipProvider>)
+
+    const ember = document.querySelector('[data-recipe-id="ember-staff"]') as HTMLElement
+    const windthread = document.querySelector('[data-recipe-id="windthread-charm"]') as HTMLElement
+    expect(within(ember).getByText('READY')).toBeTruthy()
+    expect(within(windthread).getByText('CRAFTING')).toBeTruthy()
+  })
+
+  it('explains a busy Artificing slot in the catalog context menu', () => {
+    unlockWhisperingWoods()
+    provideIngredients('ember-staff')
+    provideIngredients('windthread-charm')
+    const current = useGameStore.getState()
+    useGameStore.setState({ activities: { ...current.activities, artificing: { activeJob: { kind: 'recipe', recipeId: 'windthread-charm' }, activeRecipeId: 'windthread-charm', progressMs: 1000 } } })
+    render(<TooltipProvider><GameContextMenuProvider><EquipmentCatalog selected="ember-staff" onSelect={vi.fn()} query="ember-staff" onQueryChange={vi.fn()} /></GameContextMenuProvider></TooltipProvider>)
+
+    fireEvent.contextMenu(document.querySelector('[data-recipe-id="ember-staff"]') as HTMLElement)
+    expect(screen.getByText('Another Artificing job is already active')).toBeTruthy()
+    expect(screen.getByRole('menuitem', { name: /Craft One/ }).getAttribute('aria-disabled')).toBe('true')
+  })
+
+  it('does not offer repeat forging for a forged Artifact', () => {
+    unlockWhisperingWoods()
+    const current = useGameStore.getState()
+    useGameStore.setState({ inventory: { ...current.inventory, 'ember-staff': 1 }, artifactProgress: { ...current.artifactProgress, 'ember-staff': { level: 1, allocatedNodeIds: [], attunedNodeIds: [] } } })
+    render(<TooltipProvider><GameContextMenuProvider><EquipmentCatalog selected="ember-staff" onSelect={vi.fn()} query="ember-staff" onQueryChange={vi.fn()} /></GameContextMenuProvider></TooltipProvider>)
+
+    fireEvent.contextMenu(document.querySelector('[data-recipe-id="ember-staff"]') as HTMLElement)
+    expect(screen.queryByRole('menuitem', { name: /Craft One/ })).toBeNull()
   })
 })

@@ -1,11 +1,11 @@
 import { EQUIPMENT_ITEM_SLOT_LABELS, EQUIPMENT_ITEM_SLOTS } from '../../../game/core/equipment/equipmentRules'
 import { useRef, type CSSProperties } from 'react'
-import { Hammer, LockKeyhole, Pin, Search, ShoppingBag, Swords } from 'lucide-react'
+import { Check, Hammer, LockKeyhole, Pin, Search, ShoppingBag, Swords } from 'lucide-react'
 import { Card, SearchInput, Status, GameTooltip } from '../../../components/ui'
 import { ItemIcon, ItemTooltip } from '../../../components/ui/item'
 import { ITEMS } from '../../../game/content/items/items'
 import { isRecipeUnlocked, getRecipeUnlockRequirement } from '../../../game/content/recipes/recipeUnlocks'
-import { getVisibleArtificingRecipes, getArtificingFilterCounts, getArtificingProfile, canCraftArtificingRecipe, getArtificingRecipePlayerTier, isArtifactArtificingRecipe } from '../../../game/systems/artificing/artificingSelectors'
+import { getVisibleArtificingRecipes, getArtificingFilterCounts, getArtificingProfile, getArtificingCatalogRecipeState, getArtificingCraftIngredients, getArtificingRecipePlayerTier, isArtifactArtificingRecipe } from '../../../game/systems/artificing/artificingSelectors'
 import type { ArtificingRecipeId, EquipmentItemSlot } from '../../../game/types'
 import { useGameStore } from '../../../store/gameStore'
 import { setUiPreferences, useUiPreferences } from '../../../ui/preferences/uiPreferencesStore'
@@ -35,18 +35,35 @@ export function EquipmentCatalog({ selected, onSelect, query, onQueryChange }: P
   const renderRecipeCard = (recipe: (typeof visible)[number]) => {
     const item = ITEMS[recipe.output.itemId]
     const owned = state.inventory[item.id] ?? 0
-    const locked = !isRecipeUnlocked(state, recipe)
-    const craftable = canCraftArtificingRecipe(state, recipe.id)
+    const catalogState = getArtificingCatalogRecipeState(state, recipe.id)
+    if (!catalogState) return null
+    const { status, locked, active, activeForThis, materialReady, ownedArtifact } = catalogState
     const equipped = Object.values(state.equipment).includes(item.id)
-    const artifact = isArtifactArtificingRecipe(recipe)
-    const status = locked ? 'LOCKED' : craftable ? 'READY' : 'MISSING'
-    return <ItemTooltip key={recipe.id} itemId={item.id} owned={owned} recipeContext={{ status: locked ? 'Locked' : craftable ? 'Craftable' : 'Missing materials', outputQuantity: 1, ingredients: recipe.ingredients, unlockReason: locked ? getRecipeUnlockRequirement(recipe) ?? undefined : undefined }}>
-      <button type="button" data-recipe-id={recipe.id} className={`artificing-item-card ${selected === recipe.id ? 'selected' : ''} ${locked ? 'locked' : ''}`} style={{ '--recipe-accent': item.color } as CSSProperties} aria-pressed={selected === recipe.id} onClick={() => onSelect(recipe.id)} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); openContextMenu({ x: event.clientX, y: event.clientY, anchor: event.currentTarget, header: { title: recipe.name, meta: `${item.name} · ${locked ? 'LOCKED' : craftable ? 'READY' : 'MISSING MATERIALS'}` }, sections: [{ id: 'craft', actions: [{ id: 'craft-one', label: 'Craft One', icon: Hammer, disabled: locked || !craftable || Boolean(state.activities.artificing.activeRecipeId), disabledReason: locked ? getRecipeUnlockRequirement(recipe) ?? 'Recipe locked' : !craftable ? 'Missing materials' : 'Another craft is already active', onSelect: () => { onSelect(recipe.id); state.craftArtificingRecipe(recipe.id) } }] }, { id: 'recipe', actions: [{ id: 'pin', label: filters.pinnedRecipeId === recipe.id ? 'Unpin Recipe' : 'Pin Recipe', icon: Pin, onSelect: () => setUiPreferences({ screenState: { artificing: { pinnedRecipeId: filters.pinnedRecipeId === recipe.id ? null : recipe.id } } }) }, { id: 'compare', label: 'Compare Output', icon: Swords, onSelect: () => { setNavigationIntent({ equipmentItemId: item.id }); state.setScreen('equipment') } }, { id: 'inventory', label: 'Open in Inventory', icon: ShoppingBag, onSelect: () => { setNavigationIntent({ inventoryItemId: item.id }); state.setScreen('inventory') } }] }] }) }}>
-        <span className="artificing-card-top">{locked && <LockKeyhole size={14} aria-label="Locked" />}{attention.unseenRecipes.includes(recipe.id) && <span className="archive-new-badge">NEW</span>}{equipped && <span className="artificing-equipped-badge" aria-label="Currently equipped">E</span>}</span>
+    const artifact = catalogState.kind === 'artifact'
+    const ingredients = getArtificingCraftIngredients(recipe.id) ?? []
+    const recipeContext = status === 'FORGED' ? undefined : { status: status === 'LOCKED' ? 'Locked' : status === 'READY' ? 'Craftable' : status === 'MISSING' ? 'Missing materials' : status, outputQuantity: 1 as const, ingredients, unlockReason: locked ? getRecipeUnlockRequirement(recipe) ?? undefined : undefined }
+    const craftDisabled = locked || ownedArtifact || !materialReady || active
+    const craftDisabledReason = locked
+      ? getRecipeUnlockRequirement(recipe) ?? 'Recipe locked'
+      : ownedArtifact
+        ? 'Artifact already forged'
+        : activeForThis
+          ? artifact ? 'This Artifact is already being forged' : 'This recipe is already being crafted'
+          : !materialReady
+            ? 'Missing materials'
+            : active
+              ? 'Another Artificing job is already active'
+              : undefined
+    const cardClassName = ['artificing-item-card', selected === recipe.id ? 'selected' : '', locked ? 'locked' : '', ownedArtifact ? 'artifact-forged' : '', activeForThis ? 'is-crafting' : ''].filter(Boolean).join(' ')
+    const craftActions = artifact && ownedArtifact ? [] : [{ id: 'craft-one', label: 'Craft One', icon: Hammer, disabled: craftDisabled, disabledReason: craftDisabledReason, onSelect: () => { onSelect(recipe.id); state.craftArtificingRecipe(recipe.id) } }]
+    return <ItemTooltip key={recipe.id} itemId={item.id} owned={owned} recipeContext={recipeContext}>
+      <button type="button" data-recipe-id={recipe.id} className={cardClassName} style={{ '--recipe-accent': item.color } as CSSProperties} aria-pressed={selected === recipe.id} onClick={() => onSelect(recipe.id)} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); openContextMenu({ x: event.clientX, y: event.clientY, anchor: event.currentTarget, header: { title: recipe.name, meta: `${item.name} · ${status}` }, sections: [...(craftActions.length ? [{ id: 'craft', actions: craftActions }] : []), { id: 'recipe', actions: [{ id: 'pin', label: filters.pinnedRecipeId === recipe.id ? 'Unpin Recipe' : 'Pin Recipe', icon: Pin, onSelect: () => setUiPreferences({ screenState: { artificing: { pinnedRecipeId: filters.pinnedRecipeId === recipe.id ? null : recipe.id } } }) }, { id: 'compare', label: 'Compare Output', icon: Swords, onSelect: () => { setNavigationIntent({ equipmentItemId: item.id }); state.setScreen('equipment') } }, { id: 'inventory', label: 'Open in Inventory', icon: ShoppingBag, onSelect: () => { setNavigationIntent({ inventoryItemId: item.id }); state.setScreen('inventory') } }] }] }) }}>
+        <span className="artificing-card-top">{locked && <LockKeyhole size={14} aria-label="Locked" />}{attention.unseenRecipes.includes(recipe.id) && <span className="archive-new-badge">NEW</span>}{ownedArtifact && <span className="artificing-forged-badge" aria-label="Forged Artifact"><Check size={11} /></span>}{equipped && <span className="artificing-equipped-badge" aria-label="Currently equipped">E</span>}</span>
         <ItemIcon itemId={item.id} size="tiny" /><strong>{item.name}</strong>
         <span className={`artificing-kind-badge ${artifact ? 'artifact' : 'equipment'}`}>{artifact ? `T${getArtificingRecipePlayerTier(recipe)} ARTIFACT` : 'EQUIPMENT'}</span>
         <span className="artificing-badge">{getArtificingProfile(recipe)}</span>
-        <Status tone={locked ? 'locked' : craftable ? 'success' : 'warning'}>{status}</Status>
+        {ownedArtifact && <span className="artificing-artifact-level">LV {catalogState.artifactLevel} / {catalogState.artifactMaxLevel}</span>}
+        <Status tone={status === 'LOCKED' ? 'locked' : status === 'MISSING' ? 'warning' : status === 'READY' || status === 'FORGED' ? 'success' : 'active'}>{status}</Status>
       </button>
     </ItemTooltip>
   }

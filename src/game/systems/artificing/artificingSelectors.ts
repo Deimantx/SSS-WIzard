@@ -3,16 +3,16 @@ import { ITEMS } from '../../content/items/items'
 import { EQUIPMENT_BUILD_TAG_LABELS, getPlayerEquipmentTier } from '../../content/items/equipmentBalance'
 import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
 import { isRecipeUnlocked, getRecipeUnlockRequirement } from '../../content/recipes/recipeUnlocks'
-import { canCraftArtificingRecipe } from './artificingEngine'
+import { canCraftArtificingRecipe, getArtificingCraftIngredients, hasArtificingRecipeRequirements } from './artificingEngine'
 import { ARTIFACTS } from '../../content/artifacts/artifacts'
 import { canUpgradeArtifact, getArtifactLevel, getArtifactLevelCap, getArtifactUpgrade } from '../artifacts/artifactProgression'
-import type { ArtificingKindFilter, ArtificingTierFilter, GameState, EquipmentItemSlot } from '../../types'
-export { canCraftArtificingRecipe }
+import type { ArtificingKindFilter, ArtificingTierFilter, ArtificingRecipeId, GameState, EquipmentItemSlot } from '../../types'
+export { canCraftArtificingRecipe, getArtificingCraftIngredients, hasArtificingRecipeRequirements }
 export const getArtificingUnlockReason = getRecipeUnlockRequirement
 export interface ArtificingIngredientProgress { itemId: import('../../types').ItemId; available: number; required: number; missing: number; ready: boolean }
-export const getArtificingMissingIngredients = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment' | 'activities'>, recipeId: import('../../types').ArtificingRecipeId): ArtificingIngredientProgress[] => { const recipe = ARTIFICING_RECIPES[recipeId]; return recipe ? recipe.ingredients.map(i => { const available = getConsumableQuantity(state, i.itemId); return { itemId: i.itemId, available, required: i.quantity, missing: Math.max(0, i.quantity - available), ready: available >= i.quantity } }) : [] }
-export const getArtificingCraftCapacity = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment' | 'activities'>, recipeId: import('../../types').ArtificingRecipeId) => { const recipe = ARTIFICING_RECIPES[recipeId]; return recipe ? Math.min(...recipe.ingredients.map(i => Math.floor(getConsumableQuantity(state, i.itemId) / i.quantity))) : 0 }
-export const getArtificingLimitingIngredient = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment' | 'activities'>, recipeId: import('../../types').ArtificingRecipeId) => { const recipe = ARTIFICING_RECIPES[recipeId]; if (!recipe) return null; return recipe.ingredients.reduce((lowest, ingredient) => getConsumableQuantity(state, ingredient.itemId) / ingredient.quantity < getConsumableQuantity(state, lowest.itemId) / lowest.quantity ? ingredient : lowest, recipe.ingredients[0]) ? ITEMS[recipe.ingredients.reduce((lowest, ingredient) => getConsumableQuantity(state, ingredient.itemId) / ingredient.quantity < getConsumableQuantity(state, lowest.itemId) / lowest.quantity ? ingredient : lowest, recipe.ingredients[0]).itemId] : null }
+export const getArtificingMissingIngredients = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment' | 'activities'>, recipeId: import('../../types').ArtificingRecipeId): ArtificingIngredientProgress[] => { const ingredients = getArtificingCraftIngredients(recipeId); return ingredients ? ingredients.map(i => { const available = getConsumableQuantity(state, i.itemId); return { itemId: i.itemId, available, required: i.quantity, missing: Math.max(0, i.quantity - available), ready: available >= i.quantity } }) : [] }
+export const getArtificingCraftCapacity = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment' | 'activities'>, recipeId: import('../../types').ArtificingRecipeId) => { const ingredients = getArtificingCraftIngredients(recipeId); return ingredients?.length ? Math.min(...ingredients.map(i => Math.floor(getConsumableQuantity(state, i.itemId) / i.quantity))) : 0 }
+export const getArtificingLimitingIngredient = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment' | 'activities'>, recipeId: import('../../types').ArtificingRecipeId) => { const ingredients = getArtificingCraftIngredients(recipeId); if (!ingredients?.length) return null; const limiting = ingredients.reduce((lowest, ingredient) => getConsumableQuantity(state, ingredient.itemId) / ingredient.quantity < getConsumableQuantity(state, lowest.itemId) / lowest.quantity ? ingredient : lowest, ingredients[0]); return ITEMS[limiting.itemId] ?? null }
 export interface ArtificingFilters {
   slotFilter: 'all' | EquipmentItemSlot
   tierFilter: ArtificingTierFilter
@@ -49,13 +49,48 @@ export interface ArtifactArtificingState {
   reason?: string
 }
 
+export type ArtificingCatalogRecipeStatus = 'LOCKED' | 'FORGING' | 'CRAFTING' | 'FORGED' | 'READY' | 'MISSING'
+export interface ArtificingCatalogRecipeState {
+  kind: 'artifact' | 'equipment'
+  locked: boolean
+  ownedArtifact: boolean
+  active: boolean
+  activeForThis: boolean
+  materialReady: boolean
+  canStartNow: boolean
+  status: ArtificingCatalogRecipeStatus
+  artifactLevel?: number
+  artifactMaxLevel?: number
+}
+
+export const getActiveArtificingJob = (state: Pick<GameState, 'activities'>) => state.activities.artificing.activeJob ?? (state.activities.artificing.activeRecipeId ? { kind: 'recipe' as const, recipeId: state.activities.artificing.activeRecipeId } : null)
+
+const isOwnedArtifact = (state: Pick<GameState, 'inventory' | 'artifactProgress'>, recipeId: ArtificingRecipeId) => (state.inventory[recipeId] ?? 0) > 0 && Boolean(state.artifactProgress?.[recipeId])
+
+export const getArtificingCatalogRecipeState = (state: GameState, recipeId: ArtificingRecipeId): ArtificingCatalogRecipeState | null => {
+  const recipe = ARTIFICING_RECIPES[recipeId]
+  if (!recipe) return null
+  const artifact = ARTIFACTS[recipeId]
+  const activeJob = getActiveArtificingJob(state)
+  const activeForThis = Boolean(activeJob && (activeJob.kind === 'recipe' ? activeJob.recipeId === recipeId : activeJob.artifactId === recipeId))
+  const locked = !isRecipeUnlocked(state, recipe)
+  const ownedArtifact = Boolean(artifact && isOwnedArtifact(state, recipeId))
+  const materialReady = hasArtificingRecipeRequirements(state, recipeId)
+  let status: ArtificingCatalogRecipeStatus
+  if (locked) status = 'LOCKED'
+  else if (activeForThis) status = artifact ? 'FORGING' : 'CRAFTING'
+  else if (ownedArtifact) status = 'FORGED'
+  else if (materialReady) status = 'READY'
+  else status = 'MISSING'
+  return { kind: artifact ? 'artifact' : 'equipment', locked, ownedArtifact, active: Boolean(activeJob), activeForThis, materialReady, canStartNow: materialReady && !activeJob, status, ...(artifact ? { artifactLevel: state.artifactProgress?.[recipeId]?.level ?? 0, artifactMaxLevel: artifact.maxLevel } : {}) }
+}
+
 export const getArtifactArtificingState = (state: GameState, recipeId: import('../../types').ArtificingRecipeId): ArtifactArtificingState | null => {
   const artifact = ARTIFACTS[recipeId]
   const recipe = ARTIFICING_RECIPES[recipeId]
   if (!artifact || !recipe) return null
-  const inventoryOwned = (state.inventory[recipeId] ?? 0) > 0
   const progress = state.artifactProgress?.[recipeId]
-  const owned = inventoryOwned && Boolean(progress)
+  const owned = isOwnedArtifact(state, recipeId)
   const level = progress?.level ?? 0
   const levelCap = getArtifactLevelCap(state, recipeId)
   const base = { owned, tier: artifact.tier, level, maxLevel: artifact.maxLevel, levelCap, ingredients: [] as ArtifactArtificingState['ingredients'], canStart: false }
@@ -77,7 +112,7 @@ export function getVisibleArtificingRecipes(state: GameState, filters: Artificin
     if (filters.kindFilter === 'equipment' && isArtifactArtificingRecipe(recipe)) return false
     if (filters.slotFilter === 'weapon' && filters.weaponHandsFilter !== 'all' && item.weaponHands !== filters.weaponHandsFilter) return false
     if (filters.slotFilter === 'offhand' && filters.offhandPresentationFilter !== 'all' && item.equipmentPresentation !== filters.offhandPresentationFilter) return false
-    if (filters.craftableOnly && !canCraftArtificingRecipe(state, recipe.id)) return false
+    if (filters.craftableOnly && !hasArtificingRecipeRequirements(state, recipe.id)) return false
     const owned = (state.inventory[recipe.output.itemId] ?? 0) > 0
     if (filters.ownershipFilter === 'owned' && !owned || filters.ownershipFilter === 'unowned' && owned) return false
     return !search || [recipe.id, recipe.name, item.name, item.equipmentSlot, item.buildTags?.map((tag) => `${tag} ${EQUIPMENT_BUILD_TAG_LABELS[tag]}`).join(' ')].filter(Boolean).join(' ').toLowerCase().includes(search)

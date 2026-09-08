@@ -12,10 +12,12 @@ export type ArtificingCompletion =
   | { kind: 'artifact-forge'; artifactId: ArtifactId; itemId: ItemId }
 const active = (state: GameState) => state.activities.artificing.activeJob ?? (state.activities.artificing.activeRecipeId ? { kind: 'recipe' as const, recipeId: state.activities.artificing.activeRecipeId } : null)
 const clear = (state: GameState) => { state.activities.artificing = { activeJob: null, activeRecipeId: null, progressMs: 0 } }
-const ingredientsFor = (id: ArtificingRecipeId) => ARTIFACTS[id]?.forge.ingredients ?? ARTIFICING_RECIPES[id]?.ingredients
-export const canCraftArtificingRecipe = (state: Pick<GameState, 'progress' | 'inventory' | 'protectedItems' | 'equipment' | 'activities' | 'artifactProgress'>, id: ArtificingRecipeId) => Boolean(ARTIFICING_RECIPES[id] && isRecipeUnlocked(state, ARTIFICING_RECIPES[id]) && !active(state as GameState) && !(ARTIFACTS[id] && (state.inventory[id] ?? 0) > 0) && ingredientsFor(id)?.every(i => getConsumableQuantity(state, i.itemId) >= i.quantity))
+export const getArtificingCraftIngredients = (id: ArtificingRecipeId | ArtifactId) => ARTIFACTS[id as ArtifactId]?.forge.ingredients ?? ARTIFICING_RECIPES[id as ArtificingRecipeId]?.ingredients
+const artifactAlreadyOwned = (state: Pick<GameState, 'inventory' | 'artifactProgress'>, id: ArtificingRecipeId) => Boolean(ARTIFACTS[id] && ((state.inventory[id] ?? 0) > 0 || state.artifactProgress?.[id]))
+export const hasArtificingRecipeRequirements = (state: Pick<GameState, 'progress' | 'inventory' | 'protectedItems' | 'equipment' | 'activities' | 'artifactProgress'>, id: ArtificingRecipeId) => Boolean(ARTIFICING_RECIPES[id] && isRecipeUnlocked(state, ARTIFICING_RECIPES[id]) && !artifactAlreadyOwned(state, id) && getArtificingCraftIngredients(id)?.every(i => getConsumableQuantity(state, i.itemId) >= i.quantity))
+export const canCraftArtificingRecipe = (state: Pick<GameState, 'progress' | 'inventory' | 'protectedItems' | 'equipment' | 'activities' | 'artifactProgress'>, id: ArtificingRecipeId) => Boolean(hasArtificingRecipeRequirements(state, id) && !active(state as GameState))
 export const startArtificingCraft = (state: GameState, id: ArtificingRecipeId): ArtificingCraftResult => {
-  const recipe = ARTIFICING_RECIPES[id]; const ingredients = ingredientsFor(id)
+  const recipe = ARTIFICING_RECIPES[id]; const ingredients = getArtificingCraftIngredients(id)
   if (!recipe || ITEMS[recipe.output.itemId]?.kind !== 'equipment') return { ok: false, reason: 'Unknown Artificing recipe.' }
   if (active(state)) return { ok: false, reason: 'Another Artificing job is already in progress.' }
   if (!isRecipeUnlocked(state, recipe)) return { ok: false, reason: getRecipeUnlockRequirement(recipe) ?? 'This recipe is locked.' }
@@ -38,7 +40,7 @@ export const upgradeArtifactInstant = (state: GameState, id: ArtifactId, options
   progress.level = upgrade.toLevel
   return { ok: true, itemId: id }
 }
-export const cancelArtificingCraft = (state: GameState) => { const job = active(state); if (!job) return false; const ingredients = job.kind === 'recipe' ? ARTIFICING_RECIPES[job.recipeId]?.ingredients : ARTIFACTS[job.artifactId]?.forge.ingredients; ingredients?.forEach(({ itemId, quantity }) => grantItem(state, itemId, quantity)); clear(state); return true }
+export const cancelArtificingCraft = (state: GameState) => { const job = active(state); if (!job) return false; const ingredients = getArtificingCraftIngredients(job.kind === 'recipe' ? job.recipeId : job.artifactId); ingredients?.forEach(({ itemId, quantity }) => grantItem(state, itemId, quantity)); clear(state); return true }
 export const advanceArtificing = (state: GameState, deltaMs: number, onComplete?: (completion: ArtificingCompletion) => void) => {
   const job = active(state); if (!job || deltaMs <= 0) return null; state.activities.artificing.progressMs = Math.min(5000, Math.max(0, state.activities.artificing.progressMs + deltaMs)); if (state.activities.artificing.progressMs < 5000) return null
   let completion: ArtificingCompletion

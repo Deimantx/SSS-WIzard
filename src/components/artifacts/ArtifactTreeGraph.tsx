@@ -67,17 +67,24 @@ function TreeGraphNode({ entry, state, artifactId, selected, onSelect }: { entry
   const eligibility = getArtifactNodeEligibility(state, artifactId, node.id)
   const presentation = getArtifactNodePresentation(node)
   const stateClass = eligibility.status === 'allocated' ? 'allocated' : eligibility.status === 'attuned' ? 'attuned' : eligibility.status === 'available' ? 'available' : 'locked'
-  const blocked = ['missingLevel', 'missingBoss', 'missingCatalyst', 'unowned'].includes(eligibility.status)
+  const blocked = !['allocated', 'attuned', 'available'].includes(eligibility.status)
   const reason = getEligibilityLabel(artifactId, node, eligibility.status, eligibility.missingPrerequisiteIds)
+  const meaningfulReason = shouldShowReason(eligibility.status) ? reason : null
+  const showPointCost = node.pointCost > 1
   const nodeStyle = { left: entry.x - 98, top: entry.y } as CSSProperties
   return <GameTooltip wide content={<TooltipContent title={`${typeLabel(node.type)} · ${node.name}`} description={`${presentation.summary} · ${reason}`} />}>
-    <button type="button" className={`artifact-tree-node artifact-node-${node.type} artifact-node-state-${stateClass}${blocked ? ' blocked' : ''}${selected ? ' selected' : ''}`} style={nodeStyle} aria-label={`${node.name}, ${reason}`} onClick={() => onSelect(node.id)}>
+    <button type="button" className={`artifact-tree-node artifact-node-${node.type} artifact-node-state-${stateClass}${blocked ? ' blocked' : ''}${selected ? ' selected' : ''}`} style={nodeStyle} aria-label={`${node.name}. ${typeLabel(node.type)} node. Cost ${node.pointCost} Artifact Point${node.pointCost === 1 ? '' : 's'}. Effect: ${presentation.summary}. State: ${reason}.`} onClick={() => onSelect(node.id)}>
       <span className="artifact-node-glyph" aria-hidden="true">{glyphFor(node.type)}</span>
-      <span className="artifact-node-copy"><strong>{node.name}</strong><small>{typeLabel(node.type)} · {node.pointCost} PT</small></span>
-      <span className="artifact-node-state">{stateClass === 'locked' ? (blocked ? 'BLOCKED' : `LEVEL ${node.requiresLevel}`) : stateClass.toUpperCase()}</span>
-      <small className="artifact-node-reason">{reason}</small>
+      <span className="artifact-node-copy"><strong>{node.name}</strong></span>
+      <span className="artifact-node-state">{stateClass === 'locked' ? 'BLOCKED' : stateClass.toUpperCase()}{showPointCost && <small className="artifact-node-cost" aria-label={`${node.pointCost} Artifact Points`}>{node.pointCost} PT</small>}</span>
+      <span className="artifact-node-effect">{presentation.summary}</span>
+      {meaningfulReason && <small className="artifact-node-reason">{meaningfulReason}</small>}
     </button>
   </GameTooltip>
+}
+
+function shouldShowReason(status: ReturnType<typeof getArtifactNodeEligibility>['status']) {
+  return !['allocated', 'attuned', 'available'].includes(status)
 }
 
 function getEligibilityLabel(artifactId: ArtifactId, node: ArtifactNodeDefinition, status: ReturnType<typeof getArtifactNodeEligibility>['status'], missingPrerequisiteIds: string[]) {

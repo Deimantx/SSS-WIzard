@@ -1,6 +1,8 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { ArtifactPathModal } from './ArtifactPathModal'
+import { ARTIFACTS } from '../../game/content/artifacts/artifacts'
+import { getArtifactNodePresentation } from '../../game/presentation/artifacts/artifactPresentation'
 import { setArtifactDevPanelVisible } from '../../devtools/developerToolsStore'
 import { useGameStore } from '../../store/gameStore'
 
@@ -23,6 +25,36 @@ describe('Artifact Path presentation', () => {
     fireEvent.click(screen.getByRole('button', { name: /Arcane Kindling/ }))
     expect(screen.getByRole('heading', { name: 'Arcane Kindling' })).toBeTruthy()
     expect(screen.getByText('REQUIREMENTS')).toBeTruthy()
+  })
+
+  it('shows canonical node effects and keeps card metadata focused', () => {
+    render(<ArtifactPathModal artifactId="ember-staff" onClose={() => undefined} />)
+
+    const arcaneKindling = ARTIFACTS['ember-staff'].nodes.find((node) => node.id === 'arcane-kindling')!
+    const arcaneCard = screen.getByRole('button', { name: /Arcane Kindling/ })
+    expect(arcaneCard.querySelector('.artifact-node-effect')?.textContent).toBe(getArtifactNodePresentation(arcaneKindling).summary)
+    expect(arcaneCard.textContent).not.toContain('MINOR')
+    expect(arcaneCard.textContent).not.toContain('1 PT')
+    expect(arcaneCard.querySelector('.artifact-node-cost')).toBeNull()
+
+    const capstoneCard = screen.getByRole('button', { name: /Edrin's Inferno/ })
+    expect(capstoneCard.querySelector('.artifact-node-cost')?.textContent).toBe('2 PT')
+  })
+
+  it('shows one generic state and preserves a meaningful blocker reason', () => {
+    useGameStore.getState().debugSetArtifactLevel('ember-staff', 4)
+    useGameStore.getState().debugForceArtifactNode('ember-staff', 'arcane-kindling')
+    useGameStore.getState().debugForceArtifactNode('ember-staff', 'cinder-memory')
+    useGameStore.getState().debugForceArtifactNode('ember-staff', 'lingering-flame')
+    render(<ArtifactPathModal artifactId="ember-staff" onClose={() => undefined} />)
+
+    const allocatedCard = screen.getByRole('button', { name: /Arcane Kindling/ })
+    expect(allocatedCard.textContent?.match(/ALLOCATED/g)).toHaveLength(1)
+
+    const blockedCard = screen.getByRole('button', { name: /Heartfed Embers/ })
+    const heartfedEmbers = ARTIFACTS['ember-staff'].nodes.find((node) => node.id === 'heartfed-embers')!
+    expect(blockedCard.querySelector('.artifact-node-effect')?.textContent).toBe(getArtifactNodePresentation(heartfedEmbers).summary)
+    expect(blockedCard.querySelector('.artifact-node-reason')?.textContent).toBe('Forest Heart REQUIRED')
   })
 
   it('pans the fixed tree without rearranging nodes', () => {

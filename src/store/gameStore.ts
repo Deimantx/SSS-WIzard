@@ -37,7 +37,7 @@ import { forceCompleteTransmutationCycle } from '../game/systems/transmutation/t
 import { saveGameAction } from './actions/persistenceActions'
 import { advanceGameState } from '../game/systems/simulation/advanceGameState'
 import { forceCompleteResearchCycle } from '../game/systems/research/researchEngine'
-import { cancelArtificingCraft, craftArtificingRecipe as craftArtificing, startArtifactUpgrade } from '../game/systems/artificing/artificingEngine'
+import { cancelArtificingCraft, craftArtificingRecipe as craftArtificing, upgradeArtifactInstant } from '../game/systems/artificing/artificingEngine'
 import { allocateArtifactNode, getArtifactLevelCap, respecArtifact } from '../game/systems/artifacts/artifactProgression'
 import { advanceWithOfflineBank as runOfflineBankAdvance, isOfflineBankSimulationActive, type OfflineBankResult, type OfflineBankSimulationObservers } from '../game/systems/offline-bank/offlineBankSimulation'
 import { addOfflineBankMs, clampOfflineBankMs } from '../game/systems/offline-bank/offlineBankDuration'
@@ -155,6 +155,7 @@ export interface GameActions {
   allocateArtifactNode: (artifactId: import('../game/types').ArtifactId, nodeId: string) => boolean
   respecArtifact: (artifactId: import('../game/types').ArtifactId) => boolean
   debugSetArtifactLevel: (artifactId: ArtifactId, level: number) => void
+  debugDecreaseArtifactLevel: (artifactId: ArtifactId) => void
   debugIncreaseArtifactLevel: (artifactId: ArtifactId) => void
   debugGrantArtifactPoints: (artifactId: ArtifactId, amount: number) => void
   debugRefillArtifactPoints: (artifactId: ArtifactId) => void
@@ -390,10 +391,11 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   cancelArtificingCraft: () => set(state => { cancelArtificingCraft(state) }),
   grantArtificingIngredients: (recipeId) => set(state => { const recipe = ARTIFICING_RECIPES[recipeId]; if (recipe) recipe.ingredients.forEach(i => { const missing = Math.max(0, i.quantity - getConsumableQuantity(state, i.itemId)); if (missing) grantItem(state, i.itemId, missing) }); }),
   craftArtificingRecipe: (recipeId) => { let ok = false; set((state) => { const result = craftArtificing(state, recipeId); ok = result.ok; if (!result.ok) pushNotification(state, result.reason, 'warning', { key: 'artificing-craft-failed', cooldownMs: 1200 }); return state }); return ok },
-  upgradeArtifact: (artifactId) => { let ok = false; set((state) => { if (state.debug.artifactFreeUpgrade) { const progress = state.artifactProgress[artifactId]; const cap = getArtifactLevelCap(state, artifactId); if (progress && progress.level < cap) { progress.level += 1; ok = true; recalculateDerivedStats(state); return state } } const result = startArtifactUpgrade(state, artifactId); ok = result.ok; if (!result.ok) pushNotification(state, result.reason, 'warning', { key: 'artifact-upgrade-failed', cooldownMs: 1200 }); return state }); return ok },
+  upgradeArtifact: (artifactId) => { let ok = false; set((state) => { const result = upgradeArtifactInstant(state, artifactId, { free: state.debug.artifactFreeUpgrade }); ok = result.ok; if (result.ok) recalculateDerivedStats(state); else pushNotification(state, result.reason, 'warning', { key: 'artifact-upgrade-failed', cooldownMs: 1200 }); return state }); if (ok) emitActionFeel('success', `[data-artifact-id="${artifactId}"]`, 'var(--ui-success)', 1.05); return ok },
   allocateArtifactNode: (artifactId, nodeId) => { let ok = false; set((state) => { ok = allocateArtifactNode(state, artifactId, nodeId); if (!ok) pushNotification(state, 'Artifact Node requirements are not satisfied.', 'warning'); recalculateDerivedStats(state); return state }); return ok },
   respecArtifact: (artifactId) => { let ok = false; set((state) => { ok = respecArtifact(state, artifactId); recalculateDerivedStats(state); return state }); return ok },
   debugSetArtifactLevel: (artifactId, level) => set((state) => { setDebugArtifactLevelInState(state, artifactId, level); recalculateDerivedStats(state); return state }),
+  debugDecreaseArtifactLevel: (artifactId) => set((state) => { const progress = ensureDebugArtifact(state, artifactId); if (progress) setDebugArtifactLevelInState(state, artifactId, progress.level - 1); recalculateDerivedStats(state); return state }),
   debugIncreaseArtifactLevel: (artifactId) => set((state) => { const progress = ensureDebugArtifact(state, artifactId); if (progress) setDebugArtifactLevelInState(state, artifactId, progress.level + 1); recalculateDerivedStats(state); return state }),
   debugGrantArtifactPoints: (artifactId, amount) => set((state) => { if (!ensureDebugArtifact(state, artifactId)) return state; state.debug.artifactBonusPointsByArtifact[artifactId] = Math.max(0, Math.floor(sanitizeDebugNumber(state.debug.artifactBonusPointsByArtifact[artifactId] ?? 0) + sanitizeDebugNumber(amount))); return state }),
   debugRefillArtifactPoints: (artifactId) => set((state) => { if (!ensureDebugArtifact(state, artifactId)) return state; state.debug.artifactBonusPointsByArtifact[artifactId] = 999; return state }),

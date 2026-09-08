@@ -60,18 +60,29 @@ describe('Artifact Path presentation', () => {
     expect(screen.queryByText(/ARTIFACT XP|XP PROGRESS/i)).toBeNull()
   })
 
-  it('uses the real player Artifact upgrade action when materials are ready', () => {
+  it('renders multi-material upgrades as compact horizontal cost cards', () => {
+    useGameStore.getState().debugSetArtifactLevel('ember-staff', 2)
+    render(<ArtifactPathModal artifactId="ember-staff" onClose={() => undefined} />)
+    const costs = document.querySelector('.artifact-level-up-costs')
+    expect(costs).toBeTruthy()
+    expect(costs?.classList.contains('artifact-level-up-costs')).toBe(true)
+    expect(costs?.querySelectorAll('.artifact-level-up-cost')).toHaveLength(4)
+    expect(screen.queryByText('Fire Fragment')).toBeNull()
+    expect(screen.getByLabelText(/Fire Fragment: owned 0, required 100/)).toBeTruthy()
+  })
+
+  it('uses the real player Artifact upgrade action immediately when materials are ready', () => {
     useGameStore.getState().addItem('fire-fragment', 50)
     render(<ArtifactPathModal artifactId="ember-staff" onClose={() => undefined} />)
     const button = screen.getByRole('button', { name: 'LEVEL UP' })
     expect((button as HTMLButtonElement).disabled).toBe(false)
     fireEvent.click(button)
-    expect(useGameStore.getState().activities.artificing.activeJob).toEqual({ kind: 'artifact-upgrade', artifactId: 'ember-staff', fromLevel: 1, toLevel: 2 })
+    expect(useGameStore.getState().artifactProgress['ember-staff']?.level).toBe(2)
     expect(useGameStore.getState().inventory['fire-fragment']).toBe(0)
-    expect(screen.getByText('UPGRADING...')).toBeTruthy()
-    expect(screen.getByText('0.0s / 5.0s')).toBeTruthy()
-    expect(screen.getByRole('progressbar', { name: 'Artifact upgrade progress' })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'LEVEL UP' })).toBeNull()
+    expect(useGameStore.getState().activities.artificing.activeJob).toBeNull()
+    expect(screen.queryByText('UPGRADING...')).toBeNull()
+    expect(screen.queryByRole('progressbar', { name: 'Artifact upgrade progress' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'MISSING MATERIALS' })).toBeTruthy()
   })
 
   it('explains the current cap and absolute maximum states', () => {

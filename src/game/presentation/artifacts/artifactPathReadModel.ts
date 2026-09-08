@@ -42,7 +42,7 @@ export const getArtifactPathGraph = (definition: ArtifactDefinition): ArtifactPa
     branchNodes.forEach((entry) => {
       const offset = sameDepth.get(entry.depth) ?? 0
       sameDepth.set(entry.depth, offset + 1)
-      nodes.push({ ...entry, x, y: 120 + entry.depth * 128 + offset * 128, column: branch.id })
+      nodes.push({ ...entry, x, y: 120 + entry.depth * 140 + offset * 150, column: branch.id })
     })
   })
   const nodeById = new Map(nodes.map((entry) => [entry.node.id, entry]))

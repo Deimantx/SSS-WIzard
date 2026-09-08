@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { grantItem } from '../inventory/itemAcquisition'
-import { advanceArtificing, startArtifactUpgrade } from '../artificing/artificingEngine'
-import { getArtifactLevelCap, getArtifactNodeEligibility } from './artifactProgression'
+import { upgradeArtifactInstant } from '../artificing/artificingEngine'
+import { canUpgradeArtifact, getArtifactLevelCap, getArtifactNodeEligibility } from './artifactProgression'
 
 describe('Artifact progression foundation', () => {
   it('caps Artifact ownership and returns the actual granted amount', () => {
@@ -21,19 +21,20 @@ describe('Artifact progression foundation', () => {
     expect(state.artifactProgress['tideglass-wand']).toEqual({ level: 1, allocatedNodeIds: [], attunedNodeIds: [] })
   })
 
-  it('does not consume an upgrade when progression is missing and does not acquire an item on completion', () => {
+  it('upgrades immediately, consumes exact materials, and does not acquire an extra item', () => {
     const state = createInitialState()
     state.inventory['ember-staff'] = 1
     state.inventory['fire-fragment'] = 50
-    expect(startArtifactUpgrade(state, 'ember-staff')).toMatchObject({ ok: false })
+    expect(upgradeArtifactInstant(state, 'ember-staff')).toMatchObject({ ok: false })
     expect(state.inventory['fire-fragment']).toBe(50)
     state.artifactProgress['ember-staff'] = { level: 1, allocatedNodeIds: [], attunedNodeIds: [] }
-    expect(startArtifactUpgrade(state, 'ember-staff')).toMatchObject({ ok: true })
-    const completions: unknown[] = []
-    advanceArtificing(state, 5000, (completion) => completions.push(completion))
+    state.activities.artificing.activeJob = { kind: 'recipe', recipeId: 'windthread-wand' }
+    expect(canUpgradeArtifact(state, 'ember-staff')).toBe(true)
+    expect(upgradeArtifactInstant(state, 'ember-staff')).toMatchObject({ ok: true })
     expect(state.inventory['ember-staff']).toBe(1)
+    expect(state.inventory['fire-fragment']).toBe(0)
     expect(state.artifactProgress['ember-staff'].level).toBe(2)
-    expect(completions).toEqual([{ kind: 'artifact-upgrade', artifactId: 'ember-staff', fromLevel: 1, toLevel: 2 }])
+    expect(state.activities.artificing.activeJob).toEqual({ kind: 'recipe', recipeId: 'windthread-wand' })
   })
 
   it('reports specific node eligibility states', () => {

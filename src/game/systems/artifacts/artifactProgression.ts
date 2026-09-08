@@ -38,7 +38,7 @@ export const getAllocatedArtifactCombatProviders = (state: Pick<GameState, 'arti
 export const getArtifactUpgrade = (id: ArtifactId, fromLevel: number) => ARTIFACTS[id]?.upgrades.find(upgrade => upgrade.fromLevel === fromLevel) ?? null
 export const canUpgradeArtifact = (state: Pick<GameState, 'artifactProgress' | 'progress' | 'inventory' | 'protectedItems' | 'equipment' | 'activities'> & Partial<Pick<GameState, 'debug'>>, id: ArtifactId) => {
   const definition = ARTIFACTS[id]; const progress = state.artifactProgress?.[id]; const upgrade = progress ? getArtifactUpgrade(id, progress.level) : null
-  return Boolean(definition && progress && (state.inventory[id] ?? 0) > 0 && !state.activities.artificing.activeJob && progress.level < getArtifactLevelCap(state, id) && upgrade?.ingredients.every(item => getConsumableQuantity(state, item.itemId) >= item.quantity))
+  return Boolean(definition && progress && (state.inventory[id] ?? 0) > 0 && progress.level < getArtifactLevelCap(state, id) && upgrade && (state.debug?.artifactFreeUpgrade || upgrade.ingredients.every(item => getConsumableQuantity(state, item.itemId) >= item.quantity)))
 }
 export const getArtifactNode = (id: ArtifactId, nodeId: string) => ARTIFACTS[id]?.nodes.find(node => node.id === nodeId) ?? null
 export type ArtifactNodeEligibilityStatus = 'allocated' | 'attuned' | 'available' | 'missingLevel' | 'missingPoints' | 'missingPrerequisites' | 'missingBoss' | 'missingCatalyst' | 'unowned'

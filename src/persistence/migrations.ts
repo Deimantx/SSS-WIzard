@@ -13,7 +13,7 @@ import { SCHOOL_MAX_LEVEL, getSchoolTotalXpForLevel } from '../game/core/balance
 import { SPELLS } from '../game/content/spells/spells'
 import { SCHOOLS } from '../game/content/schools/schools'
 import { EQUIPMENT_POSITIONS, normalizeEquipmentState } from '../game/core/equipment'
-import type { EquipmentPosition, GameState, ItemId, MonsterId, TransmutationRecipeId, ResearchActivity, ResearchJobState, SchoolId, SpellId, TransmutationJobState } from '../game/types'
+import type { ArtifactId, EquipmentPosition, GameState, ItemId, MonsterId, TransmutationRecipeId, ResearchActivity, ResearchJobState, SchoolId, SpellId, TransmutationJobState } from '../game/types'
 import { RESEARCH_SLOT_ORDER } from '../game/systems/research/researchReservations'
 import { isRecord, SaveMigrationError } from './saveSchema'
 import { recalculateDerivedStats } from '../game/engine'
@@ -112,8 +112,19 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
   migrated.protectedItems = normalizeDynamicRecord(fresh.protectedItems, raw.protectedItems, itemIds, booleanValue)
   const rawArtificing = isRecord(rawActivities.artificing) ? rawActivities.artificing : {}
   const activeRecipeId = typeof rawArtificing.activeRecipeId === 'string' && Object.prototype.hasOwnProperty.call(ARTIFICING_RECIPES, rawArtificing.activeRecipeId) ? rawArtificing.activeRecipeId as GameState['activities']['artificing']['activeRecipeId'] : null
-  const rawJob = isRecord(rawArtificing.activeJob) && (rawArtificing.activeJob.kind === 'recipe' || rawArtificing.activeJob.kind === 'artifact-forge' || rawArtificing.activeJob.kind === 'artifact-upgrade') ? rawArtificing.activeJob : null
-  migrated.activities.artificing = { activeJob: rawJob as GameState['activities']['artificing']['activeJob'] ?? (activeRecipeId ? { kind: 'recipe', recipeId: activeRecipeId } : null), activeRecipeId, progressMs: Math.max(0, nonNegativeNumber(rawArtificing.progressMs) ?? 0) }
+  const rawActiveJob = isRecord(rawArtificing.activeJob) ? rawArtificing.activeJob : null
+  if (rawActiveJob?.kind === 'artifact-upgrade') {
+    const artifactId = typeof rawActiveJob.artifactId === 'string' && ARTIFACTS[rawActiveJob.artifactId as ArtifactId] ? rawActiveJob.artifactId as ArtifactId : null
+    const fromLevel = nonNegativeInteger(rawActiveJob.fromLevel)
+    const toLevel = nonNegativeInteger(rawActiveJob.toLevel)
+    const progress = artifactId ? migrated.artifactProgress[artifactId] : undefined
+    const upgrade = artifactId && fromLevel !== undefined ? ARTIFACTS[artifactId]?.upgrades.find(candidate => candidate.fromLevel === fromLevel) : undefined
+    if (progress && upgrade && toLevel !== undefined && upgrade.toLevel === toLevel && progress.level === fromLevel) progress.level = toLevel
+  }
+  const rawJob = rawActiveJob && (rawActiveJob.kind === 'recipe' || rawActiveJob.kind === 'artifact-forge') ? rawActiveJob : null
+  const legacyUpgrade = rawActiveJob?.kind === 'artifact-upgrade'
+  const normalizedJob = rawJob as GameState['activities']['artificing']['activeJob'] ?? (!legacyUpgrade && activeRecipeId ? { kind: 'recipe', recipeId: activeRecipeId } : null)
+  migrated.activities.artificing = { activeJob: normalizedJob, activeRecipeId: legacyUpgrade ? null : activeRecipeId, progressMs: normalizedJob ? Math.max(0, nonNegativeNumber(rawArtificing.progressMs) ?? 0) : 0 }
   migrated.activities.autoCast = normalizeDynamicRecord(fresh.activities.autoCast, rawActivities.autoCast, spellIds, booleanValue) as GameState['activities']['autoCast']
   migrated.combat.spellCooldowns = normalizeDynamicRecord(fresh.combat.spellCooldowns, rawCombat.spellCooldowns, spellIds, nonNegativeNumber) as GameState['combat']['spellCooldowns']
   migrated.progress.requestProgress = normalizeDynamicRecord(fresh.progress.requestProgress, rawProgress.requestProgress, requestIds, nonNegativeInteger)

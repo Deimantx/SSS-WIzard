@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { DeveloperArtifacts } from './DeveloperArtifacts'
 import { useGameStore } from '../../store/gameStore'
@@ -17,9 +17,12 @@ describe('Developer Artifacts tab', () => {
     fireEvent.change(selector, { target: { value: 'prismatic-focus' } })
     expect(screen.getByText('Prismatic Focus')).toBeTruthy()
     fireEvent.click(screen.getByRole('checkbox', { name: /Free upgrade/ }))
-    useGameStore.getState().debugSetArtifactLevel('prismatic-focus', 1)
-    expect(useGameStore.getState().upgradeArtifact('prismatic-focus')).toBe(true)
+    act(() => useGameStore.getState().debugSetArtifactLevel('prismatic-focus', 1))
+    act(() => expect(useGameStore.getState().upgradeArtifact('prismatic-focus')).toBe(true))
     expect(useGameStore.getState().artifactProgress['prismatic-focus']?.level).toBe(2)
+    fireEvent.click(screen.getByRole('button', { name: '-1 LEVEL' }))
+    expect(useGameStore.getState().artifactProgress['prismatic-focus']?.level).toBe(1)
+    expect((screen.getByRole('button', { name: '-1 LEVEL' }) as HTMLButtonElement).disabled).toBe(true)
     fireEvent.click(screen.getByRole('button', { name: 'MAX ABSOLUTE' }))
     expect(useGameStore.getState().artifactProgress['prismatic-focus']?.level).toBe(10)
     fireEvent.click(screen.getByRole('checkbox', { name: /Ignore dungeon/ }))

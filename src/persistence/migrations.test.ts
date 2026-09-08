@@ -575,3 +575,23 @@ describe('V25 Magic School XP semantic migration', () => {
     expect(migrated.schools.fire).toEqual({ level: 4, xp: getSchoolTotalXpForLevel(4) })
   })
 })
+
+describe('legacy Artifact level-up migration', () => {
+  it('finalizes a valid timed upgrade and clears the obsolete Artificing job', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({
+      ...initial,
+      saveVersion: SAVE_VERSION,
+      inventory: { ...initial.inventory, 'ember-staff': 1 },
+      artifactProgress: { ...initial.artifactProgress, 'ember-staff': { level: 1, allocatedNodeIds: [], attunedNodeIds: [] } },
+      activities: {
+        ...initial.activities,
+        artificing: { activeJob: { kind: 'artifact-upgrade', artifactId: 'ember-staff', fromLevel: 1, toLevel: 2 }, activeRecipeId: null, progressMs: 2500 },
+      },
+    } as any)
+
+    expect(migrated.artifactProgress['ember-staff']?.level).toBe(2)
+    expect(migrated.activities.artificing.activeJob).toBeNull()
+    expect(migrated.activities.artificing.progressMs).toBe(0)
+  })
+})

@@ -231,7 +231,6 @@ export interface TransmutationActivity { jobs: Partial<Record<TransmutationRecip
 export type ArtificingJob =
   | { kind: 'recipe'; recipeId: ArtificingRecipeId }
   | { kind: 'artifact-forge'; artifactId: ArtifactId }
-  | { kind: 'artifact-upgrade'; artifactId: ArtifactId; fromLevel: number; toLevel: number }
 export interface ArtificingActivity { activeJob: ArtificingJob | null; activeRecipeId?: ArtificingRecipeId | null; progressMs: number }
 export interface ArtifactProgressState { level: number; allocatedNodeIds: string[]; attunedNodeIds: string[] }
 export interface ActivitiesState {

@@ -8,8 +8,8 @@ import { canUpgradeArtifact, getArtifactUpgrade, getArtifactLevelCap, completeAr
 import type { ArtificingRecipeId, ArtifactId, GameState, ItemId } from '../../types'
 export type ArtificingCraftResult = { ok: true; itemId: ItemId } | { ok: false; reason: string }
 export type ArtificingCompletion =
-  | { kind: 'recipe'; itemId: ItemId; quantity: 1 }
-  | { kind: 'artifact-forge'; artifactId: ArtifactId; itemId: ItemId }
+  | { kind: 'recipe'; recipeId: ArtificingRecipeId; itemId: ItemId; quantity: 1 }
+  | { kind: 'artifact-forge'; recipeId: ArtificingRecipeId; artifactId: ArtifactId; itemId: ItemId }
 const active = (state: GameState) => state.activities.artificing.activeJob ?? (state.activities.artificing.activeRecipeId ? { kind: 'recipe' as const, recipeId: state.activities.artificing.activeRecipeId } : null)
 const clear = (state: GameState) => { state.activities.artificing = { activeJob: null, activeRecipeId: null, progressMs: 0 } }
 export const getArtificingCraftIngredients = (id: ArtificingRecipeId | ArtifactId) => ARTIFACTS[id as ArtifactId]?.forge.ingredients ?? ARTIFICING_RECIPES[id as ArtificingRecipeId]?.ingredients
@@ -44,8 +44,8 @@ export const cancelArtificingCraft = (state: GameState) => { const job = active(
 export const advanceArtificing = (state: GameState, deltaMs: number, onComplete?: (completion: ArtificingCompletion) => void) => {
   const job = active(state); if (!job || deltaMs <= 0) return null; state.activities.artificing.progressMs = Math.min(5000, Math.max(0, state.activities.artificing.progressMs + deltaMs)); if (state.activities.artificing.progressMs < 5000) return null
   let completion: ArtificingCompletion
-  if (job.kind === 'artifact-forge') { if (!completeArtifactForge(state, job.artifactId)) { clear(state); return null }; completion = { kind: 'artifact-forge', artifactId: job.artifactId, itemId: job.artifactId } }
-  else { const itemId = ARTIFICING_RECIPES[job.recipeId].output.itemId; grantItem(state, itemId, 1); completion = { kind: 'recipe', itemId, quantity: 1 } }
+  if (job.kind === 'artifact-forge') { if (!completeArtifactForge(state, job.artifactId)) { clear(state); return null }; completion = { kind: 'artifact-forge', recipeId: job.artifactId as ArtificingRecipeId, artifactId: job.artifactId, itemId: job.artifactId } }
+  else { const itemId = ARTIFICING_RECIPES[job.recipeId].output.itemId; grantItem(state, itemId, 1); completion = { kind: 'recipe', recipeId: job.recipeId, itemId, quantity: 1 } }
   clear(state); onComplete?.(completion); return { ok: true, completion } as const
 }
 export const craftArtificingRecipe = startArtificingCraft

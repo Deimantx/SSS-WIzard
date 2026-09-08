@@ -45,4 +45,41 @@ describe('Offline Bank analytics wiring', () => {
     expect(statistics.advance).not.toHaveBeenCalled()
     expect(restore).toHaveBeenCalledWith(snapshot)
   })
+
+  it('reports and returns successful banked Artificing completions after the simulation commits', async () => {
+    const state = createInitialState()
+    state.offlineBankMs = 5_000
+    state.progress.lifetimeKillsByMonster['forest-wisp'] = 1
+    state.inventory['air-fragment'] = 40
+    state.inventory['wisp-essence'] = 8
+    state.inventory['thorn-fiber'] = 12
+    state.inventory['grove-bark'] = 9
+    state.activities.artificing.activeJob = { kind: 'recipe', recipeId: 'windthread-charm' }
+
+    const result = await advanceWithOfflineBank(5_000, () => state, (recipe) => recipe(state), vi.fn(), undefined)
+
+    expect(result.ok).toBe(true)
+    expect(result.completedArtificingRecipeIds).toEqual(['windthread-charm'])
+    expect(result.report?.production.craftsByRecipe['windthread-charm']).toBe(1)
+    expect(state.inventory['windthread-charm']).toBe(1)
+    expect(state.activities.artificing.activeJob).toBeNull()
+  })
+
+  it('does not expose a banked completion when the simulation rolls back', async () => {
+    const state = createInitialState()
+    state.offlineBankMs = 5_000
+    state.progress.lifetimeKillsByMonster['forest-wisp'] = 1
+    state.inventory['air-fragment'] = 40
+    state.inventory['wisp-essence'] = 8
+    state.inventory['thorn-fiber'] = 12
+    state.inventory['grove-bark'] = 9
+    state.activities.artificing.activeJob = { kind: 'recipe', recipeId: 'windthread-charm' }
+    const before = JSON.stringify(state)
+
+    const result = await advanceWithOfflineBank(5_000, () => state, (recipe) => recipe(state), () => { throw new Error('save failed') })
+
+    expect(result.ok).toBe(false)
+    expect(result.completedArtificingRecipeIds).toBeUndefined()
+    expect(JSON.stringify(state)).toBe(before)
+  })
 })

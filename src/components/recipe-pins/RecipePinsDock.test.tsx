@@ -27,7 +27,7 @@ describe('Recipe Pins Dock', () => {
     expect(screen.queryByText('Life Essence')).toBeNull()
   })
 
-  it('shows READY when all requirements are satisfied and FORGED after an Artifact is acquired', () => {
+  it('shows READY and removes a pin after an Artifact is acquired', () => {
     const current = useGameStore.getState()
     useGameStore.setState({ inventory: { ...current.inventory, 'fire-fragment': 20, 'wisp-essence': 10, 'thorn-fiber': 10, 'grove-bark': 5, 'life-essence': 24 } })
     setUiPreferences({ screenState: { artificing: { pinnedRecipeIds: ['ember-staff'] } } })
@@ -35,8 +35,28 @@ describe('Recipe Pins Dock', () => {
     expect(screen.getByText('READY TO FORGE')).toBeTruthy()
 
     act(() => useGameStore.setState({ inventory: { ...useGameStore.getState().inventory, 'ember-staff': 1 }, artifactProgress: { ...useGameStore.getState().artifactProgress, 'ember-staff': { level: 1, allocatedNodeIds: [], attunedNodeIds: [] } } }))
-    expect(screen.getByText('FORGED')).toBeTruthy()
+    expect(screen.queryByText('FORGED')).toBeNull()
+    expect(getUiPreferences().screenState.artificing.pinnedRecipeIds).toEqual([])
+  })
+
+  it('auto-unpins both Artifact Forge and repeatable Equipment on successful live completion', () => {
+    const current = useGameStore.getState()
+    useGameStore.setState({ inventory: { ...current.inventory, 'fire-fragment': 20, 'wisp-essence': 10, 'thorn-fiber': 10, 'grove-bark': 5, 'life-essence': 24 } })
+    setUiPreferences({ screenState: { artificing: { pinnedRecipeIds: ['ember-staff'] } } })
+    expect(useGameStore.getState().craftArtificingRecipe('ember-staff')).toBe(true)
     expect(getUiPreferences().screenState.artificing.pinnedRecipeIds).toEqual(['ember-staff'])
+    act(() => {
+      for (let index = 0; index < 5; index += 1) useGameStore.getState().tick(1_000)
+    })
+    expect(getUiPreferences().screenState.artificing.pinnedRecipeIds).toEqual([])
+
+    useGameStore.setState({ inventory: { ...useGameStore.getState().inventory, 'air-fragment': 40, 'wisp-essence': 8, 'thorn-fiber': 12, 'grove-bark': 9 } })
+    setUiPreferences({ screenState: { artificing: { pinnedRecipeIds: ['windthread-charm'] } } })
+    expect(useGameStore.getState().craftArtificingRecipe('windthread-charm')).toBe(true)
+    act(() => {
+      for (let index = 0; index < 5; index += 1) useGameStore.getState().tick(1_000)
+    })
+    expect(getUiPreferences().screenState.artificing.pinnedRecipeIds).toEqual([])
   })
 
   it('collapses and expands without removing the pins', () => {

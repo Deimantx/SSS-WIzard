@@ -57,6 +57,7 @@ import { enqueueCombatLootReveal } from '../ui/rewards/lootRevealStore'
 import { resetProfileAttention } from '../ui/attention/attentionStore'
 import { emitGameFeelEvent } from '../ui/game-feel/gameFeelStore'
 import type { GameFeelEventType } from '../ui/game-feel/gameFeelTypes'
+import { unpinArtificingRecipe } from '../ui/preferences/uiPreferencesStore'
 
 const combatEventSink = createCombatEventSink(combatLogSink, combatRecapSink, combatDefeatSink, combatAlertsSink, dungeonStatisticsSink, combatTelemetrySink)
 const offlineBankCombatAnalyticsSink = createCombatEventSink(dungeonStatisticsSink, combatTelemetrySink)
@@ -306,7 +307,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   lastOfflineBankReport: null,
   tick: (deltaMs) => set((state) => {
     if (isOfflineBankSimulationActive()) return state
-    return advanceGameState(state, deltaMs, { mode: 'live', onItemAcquired: (itemId, amount) => recordRecentAcquisition(state, itemId, amount), onCombatLoot: combatLootObserver, uiEvents: combatEventSink, telemetry: combatTelemetryObserver, alerts: combatAlertsObserver, statistics: dungeonStatisticsObserver, onArtificingComplete: () => emitActionFeel('craft-complete', '.artificing-craft-button') })
+    return advanceGameState(state, deltaMs, { mode: 'live', onItemAcquired: (itemId, amount) => recordRecentAcquisition(state, itemId, amount), onCombatLoot: combatLootObserver, uiEvents: combatEventSink, telemetry: combatTelemetryObserver, alerts: combatAlertsObserver, statistics: dungeonStatisticsObserver, onArtificingComplete: (completion) => { emitActionFeel('craft-complete', '.artificing-craft-button'); unpinArtificingRecipe(completion.recipeId) } })
   }),
   setScreen: (screen) => set((state) => { state.ui.screen = screen; return state }),
   addArcaneEcho: () => {
@@ -627,7 +628,10 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   debugClearOfflineBank: () => set((state) => { state.offlineBankMs = 0; return state }),
   advanceWithOfflineBank: async (durationMs) => {
     const result = await runOfflineBankAdvance(durationMs, get, (recipe) => set((state) => { recipe(state); return state }), () => { get().saveGame('autosave') }, (state, itemId, amount) => recordRecentAcquisition(state as GameStore, itemId, amount), offlineBankAnalyticsObservers)
-    if (result.ok) set((state) => { state.lastOfflineBankReport = result.report ?? null; return state })
+    if (result.ok) {
+      result.completedArtificingRecipeIds?.forEach((recipeId) => unpinArtificingRecipe(recipeId))
+      set((state) => { state.lastOfflineBankReport = result.report ?? null; return state })
+    }
     return result
   },
 })))

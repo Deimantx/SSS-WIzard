@@ -332,7 +332,8 @@ const advanceGameStateStep = (state: GameState, delta: number, context: AdvanceC
     if (discovery) pushNotification(state, `Arcane Discovery: ${discovery.name}`, 'success')
   })
   if (!state.combat.active) advanceHealthRegenTimer(state, delta, false, context)
-  if (context.mode === 'live') advanceArtificing(state, delta, (completion) => {
+  advanceArtificing(state, delta, (completion) => {
+    context.report?.recordArtificing(completion.recipeId, completion.itemId)
     if (completion.kind === 'recipe' || completion.kind === 'artifact-forge') context.onItemAcquired?.(completion.itemId, 1)
     if (completion.kind !== 'recipe') recalculateDerivedStats(state)
     context.onArtificingComplete?.(completion)

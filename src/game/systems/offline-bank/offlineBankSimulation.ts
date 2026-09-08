@@ -1,13 +1,13 @@
 import { advanceGameState } from '../simulation/advanceGameState'
 import { pushNotification } from '../../engine'
-import type { GameState, ItemId } from '../../types'
+import type { ArtificingRecipeId, GameState, ItemId } from '../../types'
 import type { CombatEventSink } from '../combat/combatTypes'
 import type { CombatTelemetryObserver } from '../../telemetry/combat/combatTelemetryTypes'
 import type { DungeonStatisticsObserver } from '../../telemetry/dungeon/dungeonStatisticsTypes'
 import { formatOfflineBank } from '../../utils'
 import { createOfflineBankReportCollector, type OfflineBankReport } from './offlineBankReport'
 
-export interface OfflineBankResult { ok: boolean; error?: string; report?: OfflineBankReport }
+export interface OfflineBankResult { ok: boolean; error?: string; report?: OfflineBankReport; completedArtificingRecipeIds?: ArtificingRecipeId[] }
 type StateSetter = (recipe: (state: GameState) => void) => void
 type SilentSave = () => void
 type ItemAcquired = (state: GameState, itemId: ItemId, quantity: number) => void
@@ -40,6 +40,7 @@ export const advanceWithOfflineBank = async (durationMs: number, getState: () =>
   const previousNotifications = before.notifications
   const previousIds = new Set(previousNotifications.map((note) => note.id))
   const collector = createOfflineBankReportCollector(before, duration, available)
+  const completedArtificingRecipeIds = new Set<ArtificingRecipeId>()
   try {
     const steps = Math.ceil(duration / 1000)
     let remaining = duration
@@ -48,7 +49,7 @@ export const advanceWithOfflineBank = async (durationMs: number, getState: () =>
       remaining -= step
       setState((state) => {
         state.offlineBankMs = Math.max(0, state.offlineBankMs - step)
-        advanceGameState(state, step, { mode: 'banked', report: collector, onItemAcquired: (itemId, quantity) => onItemAcquired?.(state, itemId, quantity), uiEvents: observers?.uiEvents, telemetry: observers?.telemetry, statistics: observers?.statistics })
+        advanceGameState(state, step, { mode: 'banked', report: collector, onItemAcquired: (itemId, quantity) => onItemAcquired?.(state, itemId, quantity), onArtificingComplete: (completion) => completedArtificingRecipeIds.add(completion.recipeId), uiEvents: observers?.uiEvents, telemetry: observers?.telemetry, statistics: observers?.statistics })
       })
       if (index > 0 && index % 50 === 0) await yieldToBrowser()
     }
@@ -60,7 +61,7 @@ export const advanceWithOfflineBank = async (durationMs: number, getState: () =>
       pushNotification(state, `Advanced ${formatOfflineBank(duration)} using Offline Bank.`, 'info')
     })
     silentSave()
-    return { ok: true, report }
+    return { ok: true, report, completedArtificingRecipeIds: [...completedArtificingRecipeIds] }
   } catch (error) {
     try { setState((state) => { Object.assign(state, snapshot); return state }) } catch { /* preserve the original failure result */ }
     try { if (analyticsSnapshot !== undefined) observers?.restore?.(analyticsSnapshot) } catch { /* preserve the original failure result */ }

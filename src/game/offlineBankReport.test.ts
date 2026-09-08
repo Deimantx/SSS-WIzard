@@ -29,7 +29,7 @@ describe('Offline Bank event reports', () => {
     expect(result.netInventory['fire-fragment']).toBe(0)
   })
 
-  it('never produces Equipment from stale jobs or reports offline Artificing', () => {
+  it('ignores stale transmutation jobs that use an Artificing recipe id', () => {
     const state = makeInitialState()
     state.progress.firstBossKill = true
     state.progress.lifetimeKillsByMonster['grove-sentinel'] = 1

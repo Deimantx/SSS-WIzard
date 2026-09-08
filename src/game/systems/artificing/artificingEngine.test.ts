@@ -40,11 +40,28 @@ describe('Artificing', () => {
     expect(craftArtificingRecipe(state, 'ember-staff').ok).toBe(false)
     advanceArtificing(state, 4999)
     expect(state.inventory['ember-staff']).toBeUndefined()
-    advanceArtificing(state, 1)
+    const completions: unknown[] = []
+    advanceArtificing(state, 1, (completion) => completions.push(completion))
     expect(state.inventory['ember-staff']).toBe(1)
     expect(state.activities.artificing.activeJob).toBeNull()
     advanceArtificing(state, 5000)
     expect(state.inventory['ember-staff']).toBe(1)
+    expect(completions).toEqual([{ kind: 'artifact-forge', recipeId: 'ember-staff', artifactId: 'ember-staff', itemId: 'ember-staff' }])
+  })
+
+  it('identifies the originating recipe in normal Equipment completion payloads', () => {
+    const state = createInitialState()
+    state.progress.lifetimeKillsByMonster['forest-wisp'] = 1
+    state.inventory['air-fragment'] = 40
+    state.inventory['wisp-essence'] = 8
+    state.inventory['thorn-fiber'] = 12
+    state.inventory['grove-bark'] = 9
+    const completions: unknown[] = []
+
+    expect(craftArtificingRecipe(state, 'windthread-charm').ok).toBe(true)
+    advanceArtificing(state, 5_000, (completion) => completions.push(completion))
+
+    expect(completions).toEqual([{ kind: 'recipe', recipeId: 'windthread-charm', itemId: 'windthread-charm', quantity: 1 }])
   })
 
   it('does not partially consume on failure or bypass unlocks', () => {

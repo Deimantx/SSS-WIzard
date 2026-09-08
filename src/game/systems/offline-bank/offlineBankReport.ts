@@ -1,6 +1,6 @@
 import { isBossMonster, MONSTERS } from '../../content/monsters'
 import { ITEMS } from '../../content/items/items'
-import type { ChannelingDiscoveryId, GameState, ItemId, MonsterId, RecipeId, SchoolId, SpellId } from '../../types'
+import type { ArtificingRecipeId, ChannelingDiscoveryId, GameState, ItemId, MonsterId, RecipeId, SchoolId, SpellId } from '../../types'
 
 export interface OfflineBankReport {
   durationMs: number
@@ -21,6 +21,7 @@ export interface SimulationReportCollector {
   recordLoot: (itemId: ItemId, quantity: number) => void
   recordPlayerDeath: () => void
   recordTransmutation: (recipeId: RecipeId, output: ItemId, quantity: number, ingredients: { itemId: ItemId; quantity: number }[]) => void
+  recordArtificing: (recipeId: ArtificingRecipeId, output: ItemId) => void
   recordResearch: (itemId: ItemId, schoolId: SchoolId, xp: number) => void
   recordResearchStoppedAtCap: () => void
   recordDiscovery: (id: ChannelingDiscoveryId) => void
@@ -53,6 +54,7 @@ export function createOfflineBankReportCollector(state: GameState, durationMs: n
     recordLoot: (itemId, quantity) => { touch(itemId); add(report.combat.loot, itemId, quantity) },
     recordPlayerDeath: () => { report.combat.playerDeaths += 1 },
     recordTransmutation: (recipeId, output, quantity, ingredients) => { touch(output); add(report.production.craftsByRecipe, recipeId, quantity); add(report.production.transmutation, output, quantity); ingredients.forEach((ingredient) => { touch(ingredient.itemId); add(report.consumption.transmutation, ingredient.itemId, ingredient.quantity) }) },
+    recordArtificing: (recipeId, output) => { touch(output); add(report.production.craftsByRecipe, recipeId, 1) },
     recordResearch: (itemId, schoolId, xp) => { touch(itemId); add(report.research.researchedItems, itemId, 1); add(report.research.xpBySchool, schoolId, xp); add(report.consumption.research, itemId, 1) },
     recordResearchStoppedAtCap: () => { report.research.stoppedAtCap = true },
     recordDiscovery: (id) => { if (!report.progression.discoveriesUnlocked.includes(id)) report.progression.discoveriesUnlocked.push(id) },

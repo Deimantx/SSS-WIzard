@@ -15,7 +15,7 @@ describe('spell effect tooltip models', () => {
 
     expect(model).toMatchObject({ category: 'DAMAGE', title: 'Fire Damage', description: 'Deals Fire damage when this Spell resolves.' })
     expect(row(model, 'Scaling')?.value).toBe('60% Spell Power')
-    expect(row(model, 'Base Damage')?.value).toBe('39.6')
+    expect(row(model, 'Damage')?.value).toBe('39.6')
     expect(row(model, 'School Scaling')).toBeUndefined()
     expect(row(model, 'Current School Level')).toBeUndefined()
     expect(row(model, 'Current Base Preview')).toBeUndefined()

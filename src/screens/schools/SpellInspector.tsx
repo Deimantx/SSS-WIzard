@@ -95,7 +95,7 @@ function conditionLabel(condition: typeof SPELLS[SpellId]['autoCondition']) {
   return `Barrier below ${condition.value}`
 }
 function EffectRow({ model, effect }: { model: ReturnType<typeof buildSpellDetailPresentation>['effects'][number]; effect: CombatEffect }) {
-  return <GameTooltip block delay={120} placement="right" accent={model.categoryKey === 'heal' ? 'success' : model.categoryKey === 'barrier' ? 'mana' : model.categoryKey === 'debuff' ? 'warning' : 'elemental'} content={<SpellEffectTooltip model={model} />}>
+  return <GameTooltip block wide delay={120} placement="right" accent={model.categoryKey === 'heal' ? 'success' : model.categoryKey === 'barrier' ? 'mana' : model.categoryKey === 'debuff' ? 'warning' : 'elemental'} content={<SpellEffectTooltip model={model} />}>
     <div tabIndex={0} aria-label={`${model.category}: ${model.title}`} className={`spell-effect-row effect-${model.categoryKey}`}><span className="spell-effect-icon" aria-hidden="true"><EffectIcon categoryKey={model.categoryKey} effect={effect} /></span><SpellEffectDetailBlock model={model} density="inline" /></div>
   </GameTooltip>
 }

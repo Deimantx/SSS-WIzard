@@ -3,11 +3,14 @@
 .game-tooltip { position: fixed; z-index: var(--z-tooltip); width: max-content; max-width: min(360px, calc(100vw - 16px)); padding: 8px 10px; border: 1px solid var(--tooltip-border, var(--ui-border-strong)); border-left: 2px solid var(--tooltip-accent, var(--ui-accent)); border-radius: 7px; color: var(--tooltip-text, var(--ui-text)); background: var(--tooltip-bg, var(--ui-panel-strong)); box-shadow: 0 14px 34px var(--ui-shadow); font: var(--ui-font-small) var(--font-sans); line-height: 1.45; pointer-events: none; opacity: 0; transform: translateY(3px); transition: opacity 130ms ease, transform 130ms ease; }
 .game-tooltip-modal { z-index: var(--z-modal-tooltip); }
 .game-tooltip.is-positioned { opacity: 1; transform: translateY(0); }
-.game-tooltip-wide { max-width: min(420px, calc(100vw - 16px)); max-height: min(620px, calc(100vh - 16px)); overflow-y: auto; overscroll-behavior: contain; pointer-events: auto; scrollbar-color: var(--ui-border-strong) transparent; scrollbar-width: thin; }
+.game-tooltip-wide { max-width: min(420px, calc(100vw - 16px)); max-height: calc(100vh - 16px); overflow-y: auto; overscroll-behavior: contain; pointer-events: auto; scrollbar-color: var(--ui-border-strong) transparent; scrollbar-width: thin; }
 .game-tooltip-wide::-webkit-scrollbar { width: 6px; }
 .game-tooltip-wide::-webkit-scrollbar-thumb { border-radius: 999px; background: var(--ui-border-strong); }
 .game-tooltip-content { display: grid; gap: 4px; min-width: 180px; max-width: 260px; }
 .game-tooltip-content.game-tooltip-rich { width: min(320px, calc(100vw - 28px)); max-width: 340px; }
+.game-tooltip-content.game-tooltip-rich { max-height: calc(100vh - 24px); overflow-y: auto; overscroll-behavior: contain; scrollbar-color: var(--ui-border-strong) transparent; scrollbar-width: thin; }
+.game-tooltip-content.game-tooltip-rich::-webkit-scrollbar { width: 6px; }
+.game-tooltip-content.game-tooltip-rich::-webkit-scrollbar-thumb { border-radius: 999px; background: var(--ui-border-strong); }
 .game-tooltip-wide .game-tooltip-content.game-tooltip-rich { width: min(380px, calc(100vw - 52px)); max-width: none; }
 .game-tooltip-content > strong { color: var(--tooltip-title, var(--ui-text)); font: var(--ui-font-small) var(--font-mono); letter-spacing: .02em; }
 .game-tooltip-content > p { margin: 0; color: var(--tooltip-muted, var(--ui-text-muted)); font-size: var(--ui-font-micro); line-height: 1.5; }
@@ -45,6 +48,8 @@
 .spell-effect-detail-block.is-inline .spell-effect-detail-grid { margin-top: 3px; padding-top: 6px; }
 .spell-effect-detail-block.is-inline .spell-effect-detail-row { gap: 10px; font-size: var(--text-micro); }
 .spell-effect-detail-block.is-inline .spell-effect-detail-row b { max-width: 155px; }
+.spell-tooltip-detail-hint { display: flex; align-items: center; justify-content: flex-end; gap: 6px; margin-top: 4px; padding-top: 7px; border-top: 1px solid var(--ui-border); color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
+.spell-tooltip-detail-hint kbd { padding: 1px 5px; border: 1px solid var(--ui-border-strong); border-radius: 4px; color: var(--ui-text-soft); font: inherit; letter-spacing: .04em; }
 .spell-effect-hover-tooltip { min-width: 0; }
 .spell-card-tooltip { min-width: 0; }
 .spell-card-tooltip-header { display: grid; gap: 4px; padding-bottom: 7px; border-bottom: 1px solid var(--ui-border); }

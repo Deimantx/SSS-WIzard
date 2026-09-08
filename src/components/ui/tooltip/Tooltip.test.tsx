@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { GameTooltip, TooltipProvider } from './Tooltip'
+import { GameTooltip, TooltipProvider, useTooltipDetailMode } from './Tooltip'
 
 function TooltipFixture() {
   return <TooltipProvider><GameTooltip content="Alpha details"><button>A</button></GameTooltip><GameTooltip content="Beta details"><button>B</button></GameTooltip></TooltipProvider>
@@ -8,6 +8,15 @@ function TooltipFixture() {
 
 function WideTooltipFixture() {
   return <TooltipProvider><GameTooltip wide delay={0} content={<div>Wide details {Array.from({ length: 40 }, (_, index) => <span key={index}> row</span>)}</div>}><button>Wide</button></GameTooltip></TooltipProvider>
+}
+
+function DetailModeProbe() {
+  const { advanced } = useTooltipDetailMode()
+  return <output data-testid="tooltip-detail-mode">{advanced ? 'advanced' : 'compact'}</output>
+}
+
+function DetailModeTooltipFixture() {
+  return <TooltipProvider><GameTooltip delay={0} content={<DetailModeProbe />}><button>Details</button></GameTooltip></TooltipProvider>
 }
 
 describe('TooltipProvider singleton timing', () => {
@@ -56,6 +65,34 @@ describe('TooltipProvider singleton timing', () => {
     expect(screen.getByRole('tooltip')).toBe(tooltip)
     fireEvent.wheel(tooltip)
     fireEvent.pointerLeave(tooltip)
+    expect(screen.queryByRole('tooltip')).toBeNull()
+  })
+
+  it('tracks Alt centrally, resets it on keyup and blur, and supports Alt before opening', () => {
+    vi.useFakeTimers()
+    render(<DetailModeTooltipFixture />)
+    expect(screen.queryByTestId('tooltip-detail-mode')).toBeNull()
+
+    fireEvent.keyDown(window, { key: 'Alt' })
+    fireEvent.pointerEnter(screen.getByRole('button', { name: 'Details' }))
+    act(() => { vi.advanceTimersByTime(1) })
+    expect(screen.getByTestId('tooltip-detail-mode').textContent).toBe('advanced')
+
+    fireEvent.keyUp(window, { key: 'Alt' })
+    expect(screen.getByTestId('tooltip-detail-mode').textContent).toBe('compact')
+    fireEvent.keyDown(window, { key: 'Alt' })
+    fireEvent.blur(window)
+    expect(screen.getByTestId('tooltip-detail-mode').textContent).toBe('compact')
+  })
+
+  it('keeps Escape dismissal independent from Alt handling', () => {
+    vi.useFakeTimers()
+    render(<TooltipFixture />)
+    const trigger = screen.getByRole('button', { name: 'A' })
+    fireEvent.focus(trigger)
+    act(() => { vi.advanceTimersByTime(500) })
+    expect(screen.getByRole('tooltip')).toBeTruthy()
+    fireEvent.keyDown(trigger, { key: 'Escape' })
     expect(screen.queryByRole('tooltip')).toBeNull()
   })
 })

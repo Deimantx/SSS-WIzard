@@ -1,4 +1,4 @@
-import { cloneElement, createContext, isValidElement, useContext, useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactElement, type ReactNode } from 'react'
+import { cloneElement, createContext, isValidElement, useContext, useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactElement, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 
 export type TooltipAccent = 'neutral' | 'mana' | 'health' | 'focus' | 'success' | 'warning' | 'danger' | 'elemental'
@@ -7,13 +7,17 @@ export type TooltipPlacement = 'top' | 'bottom' | 'left' | 'right'
 interface TooltipRequest { id: string; element: HTMLElement; content: ReactNode; accent: TooltipAccent; placement: TooltipPlacement; tooltipId: string; wide: boolean; modal?: boolean }
 interface TooltipContextValue { request: (request: TooltipRequest, delay?: number) => void; leave: (id: string) => void; dismiss: () => void; touch: (request: TooltipRequest) => void }
 const TooltipContext = createContext<TooltipContextValue | null>(null)
+export interface TooltipDetailMode { advanced: boolean }
+const TooltipDetailModeContext = createContext<TooltipDetailMode>({ advanced: false })
 let providerDismiss: (() => void) | null = null
 
 export function dismissGameTooltips() { providerDismiss?.() }
+export function useTooltipDetailMode(): TooltipDetailMode { return useContext(TooltipDetailModeContext) }
 
 export function TooltipProvider({ children }: { children: ReactNode }) {
   const [pending, setPending] = useState<TooltipRequest | null>(null)
   const [active, setActive] = useState<TooltipRequest | null>(null)
+  const [advanced, setAdvanced] = useState(false)
   const [position, setPosition] = useState({ top: 0, left: 0 })
   const timer = useRef<number | null>(null)
   const closeTimer = useRef<number | null>(null)
@@ -58,6 +62,16 @@ export function TooltipProvider({ children }: { children: ReactNode }) {
   }
   const touch = (next: TooltipRequest) => { request(next, 0); touchTimer.current = window.setTimeout(dismiss, 1800) }
 
+  useEffect(() => {
+    const setAltHeld = (held: boolean) => setAdvanced((current) => current === held ? current : held)
+    const onKeyDown = (event: globalThis.KeyboardEvent) => { if (event.key === 'Alt') setAltHeld(true) }
+    const onKeyUp = (event: globalThis.KeyboardEvent) => { if (event.key === 'Alt') setAltHeld(false) }
+    const onBlur = () => setAltHeld(false)
+    window.addEventListener('keydown', onKeyDown)
+    window.addEventListener('keyup', onKeyUp)
+    window.addEventListener('blur', onBlur)
+    return () => { window.removeEventListener('keydown', onKeyDown); window.removeEventListener('keyup', onKeyUp); window.removeEventListener('blur', onBlur) }
+  }, [])
   useEffect(() => { providerDismiss = dismiss; return () => { if (providerDismiss === dismiss) providerDismiss = null; clearTimers() } }, [])
   useEffect(() => {
     if (!active) return
@@ -82,10 +96,11 @@ export function TooltipProvider({ children }: { children: ReactNode }) {
     const observer = typeof MutationObserver !== 'undefined' ? new MutationObserver(updatePosition) : null
     observer?.observe(document.body, { childList: true, subtree: true })
     return () => { cancelAnimationFrame(frame); observer?.disconnect(); removeEventListener('resize', updatePosition); removeEventListener('scroll', updatePosition, true) }
-  }, [active])
+  }, [active, advanced])
 
   const value = { request, leave, dismiss, touch }
-  return <TooltipContext.Provider value={value}><>{children}</>{active && typeof document !== 'undefined' && createPortal(<div ref={layerRef} id={active.tooltipId} className={`game-tooltip game-tooltip-${active.accent}${active.wide ? ' game-tooltip-wide' : ''}${active.modal ? ' game-tooltip-modal' : ''} ${position.top > 0 ? 'is-positioned' : ''}`} role="tooltip" onPointerEnter={active.wide ? cancelClose : undefined} onPointerLeave={active.wide ? dismiss : undefined} style={{ top: position.top, left: position.left }}>{active.content}</div>, document.body)}</TooltipContext.Provider>
+  const detailMode = { advanced }
+  return <TooltipContext.Provider value={value}><TooltipDetailModeContext.Provider value={detailMode}><>{children}</>{active && typeof document !== 'undefined' && createPortal(<div ref={layerRef} id={active.tooltipId} className={`game-tooltip game-tooltip-${active.accent}${active.wide ? ' game-tooltip-wide' : ''}${active.modal ? ' game-tooltip-modal' : ''} ${position.top > 0 ? 'is-positioned' : ''}`} role="tooltip" onPointerEnter={active.wide ? cancelClose : undefined} onPointerLeave={active.wide ? dismiss : undefined} style={{ top: position.top, left: position.left }}>{active.content}</div>, document.body)}</TooltipDetailModeContext.Provider></TooltipContext.Provider>
 }
 
 interface GameTooltipProps { children: ReactNode; content: ReactNode; accent?: TooltipAccent; placement?: TooltipPlacement; className?: string; block?: boolean; disabled?: boolean; delay?: number; wide?: boolean }
@@ -98,7 +113,7 @@ export function GameTooltip({ children, content, accent = 'neutral', placement =
   const tooltipId = `game-tooltip-${id}`
   const request = () => { if (!disabled && content && triggerRef.current) (context ?? fallback).request({ id, element: triggerRef.current, content, accent, placement, tooltipId, wide, modal: Boolean(triggerRef.current.closest('[aria-modal="true"]')) }, delay) }
   const leave = () => (context ?? fallback).leave(id)
-  const onKeyDown = (event: KeyboardEvent<HTMLSpanElement>) => { if (event.key === 'Escape') { event.preventDefault(); (context ?? fallback).dismiss() } }
+  const onKeyDown = (event: ReactKeyboardEvent<HTMLSpanElement>) => { if (event.key === 'Escape') { event.preventDefault(); (context ?? fallback).dismiss() } }
   const describedChild = isValidElement(children) ? cloneElement(children as ReactElement<{ 'aria-describedby'?: string }>, { 'aria-describedby': `${(children.props as { 'aria-describedby'?: string })['aria-describedby'] ?? ''} ${tooltipId}`.trim() }) : children
   return <span ref={triggerRef} className={`game-tooltip-trigger ${block ? 'block' : ''} ${className}`} onPointerEnter={(event) => event.pointerType !== 'touch' && request()} onPointerLeave={(event) => event.pointerType !== 'touch' && leave()} onFocusCapture={request} onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) leave() }} onPointerDown={(event) => { if (event.pointerType === 'touch' && triggerRef.current) (context ?? fallback).touch({ id, element: triggerRef.current, content, accent, placement, tooltipId, wide, modal: Boolean(triggerRef.current.closest('[aria-modal="true"]')) }) }} onKeyDown={onKeyDown}>{describedChild}</span>
 }

@@ -4,6 +4,7 @@ import { MONSTERS } from '../monsters'
 import type { RecipeId, TransmutationRecipeId } from '../../types'
 import { TRANSMUTATION_RECIPES, TRANSMUTATION_RECIPE_ORDER, type TransmutationRecipeDefinition } from './transmutationRecipes'
 import { ARTIFICING_RECIPES, ARTIFICING_RECIPE_ORDER, type ArtificingRecipeDefinition } from './artificingRecipes'
+import { ARTIFACTS } from '../artifacts/artifacts'
 export * from './transmutationRecipes'
 export * from './artificingRecipes'
 export * from './recipeUnlocks'
@@ -27,6 +28,10 @@ export const validateRecipeDefinitions = (recipes: Record<string, CraftingRecipe
       if (!DUNGEONS[recipe.sourceDungeonId]) errors.push(`${recipe.id}: unknown Artificing source dungeon`)
       if (ITEMS[recipe.output.itemId]?.kind !== 'equipment') errors.push(`${recipe.id}: Artificing output must be Equipment`)
       if (new Set(recipe.ingredients.map((ingredient) => ingredient.itemId)).size < 4) errors.push(`${recipe.id}: Artificing recipe must have at least 4 distinct ingredients`)
+      const artifact = ARTIFACTS[recipe.output.itemId]
+      if (artifact && (artifact.forge.ingredients.length !== recipe.ingredients.length || artifact.forge.ingredients.some((ingredient, index) => ingredient.itemId !== recipe.ingredients[index]?.itemId || ingredient.quantity !== recipe.ingredients[index]?.quantity))) {
+        errors.push(`${recipe.id}: Artificing recipe and Artifact forge ingredients must match`)
+      }
     } else if (ITEMS[recipe.output.itemId]?.kind !== 'material') errors.push(`${recipe.id}: Transmutation output must be material`)
     recipe.ingredients.forEach((ingredient) => { if (!ITEMS[ingredient.itemId]) errors.push(`${recipe.id}: unknown ingredient ${ingredient.itemId}`); if (!Number.isInteger(ingredient.quantity) || ingredient.quantity <= 0) errors.push(`${recipe.id}: invalid ingredient quantity`) })
     if (ITEMS[recipe.output.itemId]?.kind === 'equipment' && recipe.output.quantity !== 1) errors.push(`${recipe.id}: Equipment recipe output quantity must be 1`)

@@ -3,7 +3,8 @@ import { getItemDropSources, getItemSourceInfo } from './contentRelations'
 import { ITEMS } from './items/items'
 import { MONSTERS, validateMonsterDefinitions, type MonsterDefinition } from './monsters'
 import { DUNGEONS } from './dungeons/dungeons'
-import { RECIPES, RECIPE_ORDER, type CraftingRecipeDefinition, validateRecipeDefinitions } from './recipes/recipes'
+import { ARTIFICING_RECIPES, RECIPES, RECIPE_ORDER, type CraftingRecipeDefinition, validateRecipeDefinitions } from './recipes/recipes'
+import { ARTIFACTS } from './artifacts/artifacts'
 import type { ItemId, RecipeId } from '../types'
 
 describe('material-only loot and Artificing-only Equipment', () => {
@@ -39,7 +40,7 @@ describe('material-only loot and Artificing-only Equipment', () => {
     expect(MONSTERS['archmage-edrin-shade'].loot.some((drop) => drop.itemId === 'edrins-signet')).toBe(false)
   })
 
-  it('distributes four regular crafting materials across each dungeon roster', () => {
+  it('distributes the intended four regular crafting materials across each dungeon roster', () => {
     const expectedMaterials = {
       'whispering-woods': ['wisp-essence', 'thorn-fiber', 'rootstone-shard', 'grove-bark'],
       'howling-den': ['predator-fang', 'predator-hide', 'corrupted-beast-essence', 'predator-sinew'],
@@ -48,16 +49,55 @@ describe('material-only loot and Artificing-only Equipment', () => {
 
     Object.entries(expectedMaterials).forEach(([dungeonId, expected]) => {
       const regularMaterials = new Set(DUNGEONS[dungeonId as keyof typeof DUNGEONS].monsterPool.flatMap((monsterId) => MONSTERS[monsterId].loot.filter((drop) => drop.itemId !== 'life-essence').map((drop) => drop.itemId)))
-      expect(regularMaterials.size).toBeGreaterThanOrEqual(4)
-      expect([...regularMaterials]).toEqual(expect.arrayContaining([...expected]))
+      expect([...regularMaterials].sort()).toEqual([...expected].sort())
     })
 
     expect(MONSTERS['forest-wisp'].loot).toEqual(expect.arrayContaining([{ itemId: 'wisp-essence', min: 1, max: 2, chance: 0.2 }]))
     expect(MONSTERS.thornling.loot).toEqual(expect.arrayContaining([{ itemId: 'thorn-fiber', min: 1, max: 2, chance: 0.2 }]))
-    expect(MONSTERS['stone-root'].loot).toEqual(expect.arrayContaining([{ itemId: 'rootstone-shard', min: 1, max: 3, chance: 0.2 }]))
-    expect(MONSTERS['cavefang-wolf'].loot).toEqual(expect.arrayContaining([{ itemId: 'predator-sinew', min: 1, max: 1, chance: 0.1 }]))
-    expect(MONSTERS['restless-skeleton'].loot).toEqual(expect.arrayContaining([{ itemId: 'burial-cloth', min: 1, max: 1, chance: 0.1 }]))
-    expect(MONSTERS['fallen-acolyte'].loot).toEqual(expect.arrayContaining([{ itemId: 'burial-cloth', min: 1, max: 1, chance: 0.15 }]))
+    expect(MONSTERS['stone-root'].loot).toEqual(expect.arrayContaining([{ itemId: 'rootstone-shard', min: 1, max: 2, chance: 0.2 }]))
+    expect(MONSTERS['grove-sentinel'].loot).toEqual(expect.arrayContaining([{ itemId: 'grove-bark', min: 1, max: 2, chance: 0.2 }]))
+    expect(MONSTERS['cavefang-wolf'].loot).toEqual(expect.arrayContaining([{ itemId: 'predator-fang', min: 1, max: 2, chance: 0.2 }, { itemId: 'predator-hide', min: 1, max: 1, chance: 0.1 }]))
+    expect(MONSTERS['razorclaw-lynx'].loot).toEqual(expect.arrayContaining([{ itemId: 'predator-sinew', min: 1, max: 2, chance: 0.2 }, { itemId: 'predator-hide', min: 1, max: 1, chance: 0.1 }]))
+    expect(MONSTERS['corrupted-dire-wolf'].loot).toEqual(expect.arrayContaining([{ itemId: 'corrupted-beast-essence', min: 1, max: 2, chance: 0.2 }, { itemId: 'predator-hide', min: 1, max: 1, chance: 0.1 }]))
+    expect(MONSTERS['restless-skeleton'].loot).toEqual(expect.arrayContaining([{ itemId: 'ossuary-remnant', min: 1, max: 2, chance: 0.2 }, { itemId: 'graveglass-shard', min: 1, max: 1, chance: 0.1 }]))
+    expect(MONSTERS['grave-wraith'].loot).toEqual(expect.arrayContaining([{ itemId: 'soul-residue', min: 1, max: 2, chance: 0.2 }, { itemId: 'graveglass-shard', min: 1, max: 1, chance: 0.1 }]))
+    expect(MONSTERS['fallen-acolyte'].loot).toEqual(expect.arrayContaining([{ itemId: 'burial-cloth', min: 1, max: 2, chance: 0.2 }, { itemId: 'graveglass-shard', min: 1, max: 1, chance: 0.1 }]))
+
+    expect(MONSTERS['forest-heart'].loot).toEqual(expect.arrayContaining([
+      { itemId: 'wisp-essence', min: 1, max: 2, chance: 1 }, { itemId: 'thorn-fiber', min: 1, max: 2, chance: 1 },
+      { itemId: 'rootstone-shard', min: 1, max: 2, chance: 1 }, { itemId: 'grove-bark', min: 1, max: 2, chance: 1 },
+    ]))
+    expect(MONSTERS['corrupted-greatbear'].loot).toEqual(expect.arrayContaining([
+      { itemId: 'predator-fang', min: 1, max: 2, chance: 1 }, { itemId: 'predator-hide', min: 1, max: 2, chance: 1 },
+      { itemId: 'corrupted-beast-essence', min: 1, max: 2, chance: 1 }, { itemId: 'predator-sinew', min: 1, max: 2, chance: 1 },
+    ]))
+    expect(MONSTERS['archmage-edrin-shade'].loot).toEqual(expect.arrayContaining([
+      { itemId: 'ossuary-remnant', min: 1, max: 2, chance: 1 }, { itemId: 'soul-residue', min: 1, max: 2, chance: 1 },
+      { itemId: 'graveglass-shard', min: 1, max: 2, chance: 1 }, { itemId: 'burial-cloth', min: 1, max: 2, chance: 1 },
+    ]))
+  })
+
+  it('preserves Life Essence behavior and signature rates', () => {
+    const expectedLifeDrops = {
+      'forest-wisp': [1, 3, 1], 'thornling': [1, 3, 1], 'stone-root': [1, 3, 0.2], 'grove-sentinel': [2, 5, 1], 'forest-heart': [10, 18, 1],
+      'cavefang-wolf': [3, 5, 1], 'razorclaw-lynx': [3, 5, 1], 'corrupted-dire-wolf': [3, 5, 1], 'corrupted-greatbear': [12, 30, 1],
+      'restless-skeleton': [4, 8, 1], 'grave-wraith': [4, 8, 1], 'fallen-acolyte': [5, 10, 1], 'archmage-edrin-shade': [21, 48, 1],
+    } as const
+    Object.entries(expectedLifeDrops).forEach(([monsterId, [min, max, chance]]) => {
+      expect(MONSTERS[monsterId as keyof typeof MONSTERS].loot).toContainEqual({ itemId: 'life-essence', min, max, chance })
+    })
+    expect(MONSTERS['forest-heart'].loot).toContainEqual({ itemId: 'heartseed', min: 1, max: 1, chance: 1 })
+    expect(MONSTERS['corrupted-greatbear'].loot).toContainEqual({ itemId: 'greatbear-core', min: 1, max: 1, chance: 0.35 })
+    expect(MONSTERS['archmage-edrin-shade'].loot).toContainEqual({ itemId: 'edrin-remnant', min: 1, max: 1, chance: 0.35 })
+
+    const signatureIds = ['heartseed', 'greatbear-core', 'edrin-remnant'] as const
+    Object.values(MONSTERS).filter((monster) => monster.bestiaryCategory !== 'boss').forEach((monster) => {
+      expect(monster.loot.some((drop) => signatureIds.includes(drop.itemId as typeof signatureIds[number]))).toBe(false)
+    })
+    const signatureSources = { heartseed: 'forest-heart', 'greatbear-core': 'corrupted-greatbear', 'edrin-remnant': 'archmage-edrin-shade' } as const
+    Object.entries(signatureSources).forEach(([itemId, bossId]) => {
+      expect(Object.values(MONSTERS).filter((monster) => monster.loot.some((drop) => drop.itemId === itemId)).map((monster) => monster.id)).toEqual([bossId])
+    })
   })
 
   it('defines one material-only Artificing recipe for every Equipment item', () => {
@@ -98,10 +138,10 @@ describe('material-only loot and Artificing-only Equipment', () => {
   })
 
   it('uses the transition signature recipe values', () => {
-    expect(RECIPES['heartseed-necklace']).toMatchObject({ ingredients: [{ itemId: 'heartseed', quantity: 8 }, { itemId: 'grove-bark', quantity: 10 }, { itemId: 'rootstone-shard', quantity: 10 }, { itemId: 'life-essence', quantity: 40 }], unlock: { type: 'boss-kill', bossId: 'forest-heart' }, output: { quantity: 1 } })
-    expect(RECIPES['greatbear-heartstone']).toMatchObject({ ingredients: [{ itemId: 'greatbear-core', quantity: 8 }, { itemId: 'corrupted-beast-essence', quantity: 8 }, { itemId: 'predator-hide', quantity: 8 }, { itemId: 'predator-sinew', quantity: 8 }], unlock: { type: 'boss-kill', bossId: 'corrupted-greatbear' }, output: { quantity: 1 } })
-    expect(RECIPES['edrins-signet']).toMatchObject({ ingredients: [{ itemId: 'edrin-remnant', quantity: 20 }, { itemId: 'graveglass-shard', quantity: 8 }, { itemId: 'soul-residue', quantity: 8 }, { itemId: 'burial-cloth', quantity: 8 }], unlock: { type: 'boss-kill', bossId: 'archmage-edrin-shade' }, output: { quantity: 1 } })
-    expect(RECIPES['soulglass-amulet']).toMatchObject({ ingredients: [{ itemId: 'edrin-remnant', quantity: 8 }, { itemId: 'graveglass-shard', quantity: 12 }, { itemId: 'soul-residue', quantity: 10 }, { itemId: 'prismatic-fragment', quantity: 8 }], unlock: { type: 'boss-kill', bossId: 'archmage-edrin-shade' }, output: { quantity: 1 } })
+    expect(RECIPES['heartseed-necklace']).toMatchObject({ ingredients: [{ itemId: 'heartseed', quantity: 8 }, { itemId: 'rootstone-shard', quantity: 8 }, { itemId: 'grove-bark', quantity: 10 }, { itemId: 'thorn-fiber', quantity: 2 }, { itemId: 'life-essence', quantity: 10 }], unlock: { type: 'boss-kill', bossId: 'forest-heart' }, output: { quantity: 1 } })
+    expect(RECIPES['greatbear-heartstone']).toMatchObject({ ingredients: [{ itemId: 'greatbear-core', quantity: 8 }, { itemId: 'predator-hide', quantity: 9 }, { itemId: 'predator-sinew', quantity: 4 }, { itemId: 'predator-fang', quantity: 2 }, { itemId: 'corrupted-beast-essence', quantity: 9 }], unlock: { type: 'boss-kill', bossId: 'corrupted-greatbear' }, output: { quantity: 1 } })
+    expect(RECIPES['edrins-signet']).toMatchObject({ ingredients: [{ itemId: 'edrin-remnant', quantity: 20 }, { itemId: 'burial-cloth', quantity: 8 }, { itemId: 'soul-residue', quantity: 6 }, { itemId: 'graveglass-shard', quantity: 5 }, { itemId: 'ossuary-remnant', quantity: 5 }], unlock: { type: 'boss-kill', bossId: 'archmage-edrin-shade' }, output: { quantity: 1 } })
+    expect(RECIPES['soulglass-amulet']).toMatchObject({ ingredients: [{ itemId: 'edrin-remnant', quantity: 8 }, { itemId: 'graveglass-shard', quantity: 5 }, { itemId: 'soul-residue', quantity: 9 }, { itemId: 'ossuary-remnant', quantity: 4 }, { itemId: 'burial-cloth', quantity: 4 }, { itemId: 'prismatic-fragment', quantity: 2 }], unlock: { type: 'boss-kill', bossId: 'archmage-edrin-shade' }, output: { quantity: 1 } })
   })
 
   it('requires four distinct ingredients and uses every new dungeon material', () => {
@@ -114,5 +154,41 @@ describe('material-only loot and Artificing-only Equipment', () => {
 
     const invalid = { ...RECIPES, 'ember-staff': { ...RECIPES['ember-staff'], ingredients: RECIPES['ember-staff'].ingredients.slice(0, 3) } }
     expect(validateRecipeDefinitions(invalid)).toContain('ember-staff: Artificing recipe must have at least 4 distinct ingredients')
+  })
+
+  it('keeps Artifact forge costs synchronized with their Artificing recipes', () => {
+    Object.values(ARTIFACTS).forEach((artifact) => expect(artifact.forge.ingredients).toEqual(ARTIFICING_RECIPES[artifact.id].ingredients))
+    expect(validateRecipeDefinitions()).toEqual([])
+  })
+
+  it('validates every Artifact upgrade and long-term use of new dungeon materials', () => {
+    const upgradeIngredients = Object.values(ARTIFACTS).flatMap((artifact) => artifact.upgrades.flatMap((upgradeDefinition) => upgradeDefinition.ingredients))
+    Object.values(ARTIFACTS).forEach((artifact) => expect(artifact.upgrades.map((entry) => [entry.fromLevel, entry.toLevel])).toEqual([[1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8], [8, 9], [9, 10]]))
+    upgradeIngredients.forEach((ingredient) => expect(ITEMS[ingredient.itemId]).toBeDefined())
+    ;(['thorn-fiber', 'rootstone-shard', 'predator-sinew', 'burial-cloth'] as const).forEach((itemId) => expect(upgradeIngredients.some((ingredient) => ingredient.itemId === itemId)).toBe(true))
+  })
+
+  it('matches the authored recipe and Artifact progression aggregate totals', () => {
+    const sumIngredients = (ingredients: { itemId: string; quantity: number }[]) => ingredients.reduce<Record<string, number>>((totals, ingredient) => ({ ...totals, [ingredient.itemId]: (totals[ingredient.itemId] ?? 0) + ingredient.quantity }), {})
+    const addTotals = (...totalsList: Record<string, number>[]) => totalsList.reduce<Record<string, number>>((combined, totals) => Object.entries(totals).reduce((next, [itemId, quantity]) => ({ ...next, [itemId]: (next[itemId] ?? 0) + quantity }), combined), {})
+    const recipeTotals = sumIngredients(Object.values(RECIPES).filter((recipe) => 'sourceDungeonId' in recipe).flatMap((recipe) => recipe.ingredients))
+    const upgradeTotals = sumIngredients(Object.values(ARTIFACTS).flatMap((artifact) => artifact.upgrades.flatMap((entry) => entry.ingredients)))
+    const recipeDungeonTotals = (dungeonId: keyof typeof DUNGEONS) => sumIngredients(Object.values(RECIPES).filter((recipe) => 'sourceDungeonId' in recipe && recipe.sourceDungeonId === dungeonId).flatMap((recipe) => recipe.ingredients))
+    const only = (totals: Record<string, number>, ids: readonly string[]) => Object.fromEntries(ids.map((id) => [id, totals[id] ?? 0]))
+
+    expect(only(recipeDungeonTotals('whispering-woods'), ['wisp-essence', 'thorn-fiber', 'rootstone-shard', 'grove-bark'])).toEqual({ 'wisp-essence': 80, 'thorn-fiber': 80, 'rootstone-shard': 80, 'grove-bark': 81 })
+    expect(only(recipeDungeonTotals('howling-den'), ['predator-fang', 'predator-hide', 'corrupted-beast-essence', 'predator-sinew'])).toEqual({ 'predator-fang': 40, 'predator-hide': 40, 'corrupted-beast-essence': 41, 'predator-sinew': 40 })
+    expect(only(recipeDungeonTotals('abandoned-catacombs'), ['ossuary-remnant', 'soul-residue', 'graveglass-shard', 'burial-cloth'])).toEqual({ 'ossuary-remnant': 49, 'soul-residue': 49, 'graveglass-shard': 48, 'burial-cloth': 48 })
+    expect(only(recipeTotals, ['life-essence', 'prismatic-fragment'])).toEqual({ 'life-essence': 184, 'prismatic-fragment': 23 })
+    expect(only(upgradeTotals, ['wisp-essence', 'thorn-fiber', 'rootstone-shard', 'grove-bark'])).toEqual({ 'wisp-essence': 285, 'thorn-fiber': 285, 'rootstone-shard': 285, 'grove-bark': 285 })
+    expect(only(upgradeTotals, ['predator-fang', 'predator-hide', 'corrupted-beast-essence', 'predator-sinew'])).toEqual({ 'predator-fang': 503, 'predator-hide': 503, 'corrupted-beast-essence': 502, 'predator-sinew': 502 })
+    expect(only(upgradeTotals, ['ossuary-remnant', 'soul-residue', 'graveglass-shard', 'burial-cloth'])).toEqual({ 'ossuary-remnant': 863, 'soul-residue': 863, 'graveglass-shard': 862, 'burial-cloth': 862 })
+    expect(only(upgradeTotals, ['life-essence', 'prismatic-fragment'])).toEqual({ 'life-essence': 8777, 'prismatic-fragment': 2407 })
+    expect(only(addTotals(recipeTotals, upgradeTotals), ['wisp-essence', 'thorn-fiber', 'rootstone-shard', 'grove-bark'])).toEqual({ 'wisp-essence': 365, 'thorn-fiber': 365, 'rootstone-shard': 365, 'grove-bark': 366 })
+    expect(only(addTotals(recipeTotals, upgradeTotals), ['predator-fang', 'predator-hide', 'corrupted-beast-essence', 'predator-sinew'])).toEqual({ 'predator-fang': 543, 'predator-hide': 543, 'corrupted-beast-essence': 543, 'predator-sinew': 542 })
+    expect(only(addTotals(recipeTotals, upgradeTotals), ['ossuary-remnant', 'soul-residue', 'graveglass-shard', 'burial-cloth'])).toEqual({ 'ossuary-remnant': 912, 'soul-residue': 912, 'graveglass-shard': 910, 'burial-cloth': 910 })
+    expect(only(addTotals(recipeTotals, upgradeTotals), ['life-essence', 'prismatic-fragment'])).toEqual({ 'life-essence': 8961, 'prismatic-fragment': 2430 })
+    expect(only(addTotals(recipeTotals, upgradeTotals), ['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'])).toEqual({ 'fire-fragment': 7320, 'water-fragment': 7364, 'earth-fragment': 7364, 'air-fragment': 7454 })
+    expect(only(recipeTotals, ['heartseed', 'greatbear-core', 'edrin-remnant'])).toEqual({ heartseed: 8, 'greatbear-core': 8, 'edrin-remnant': 28 })
   })
 })

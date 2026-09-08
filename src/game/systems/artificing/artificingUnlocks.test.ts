@@ -26,15 +26,18 @@ describe('Artificing dungeon discovery', () => {
     expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['soulglass-amulet'])).toBe(true)
     expect(ARTIFICING_RECIPES['soulglass-amulet'].ingredients).toEqual([
       { itemId: 'edrin-remnant', quantity: 8 },
-      { itemId: 'graveglass-shard', quantity: 12 },
-      { itemId: 'soul-residue', quantity: 10 },
-      { itemId: 'prismatic-fragment', quantity: 8 },
+      { itemId: 'graveglass-shard', quantity: 5 },
+      { itemId: 'soul-residue', quantity: 9 },
+      { itemId: 'ossuary-remnant', quantity: 4 },
+      { itemId: 'burial-cloth', quantity: 4 },
+      { itemId: 'prismatic-fragment', quantity: 2 },
     ])
     expect(ARTIFICING_RECIPES['edrins-signet'].ingredients).toEqual([
       { itemId: 'edrin-remnant', quantity: 20 },
-      { itemId: 'graveglass-shard', quantity: 8 },
-      { itemId: 'soul-residue', quantity: 8 },
       { itemId: 'burial-cloth', quantity: 8 },
+      { itemId: 'soul-residue', quantity: 6 },
+      { itemId: 'graveglass-shard', quantity: 5 },
+      { itemId: 'ossuary-remnant', quantity: 5 },
     ])
   })
 })

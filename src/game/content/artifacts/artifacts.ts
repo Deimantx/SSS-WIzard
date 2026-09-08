@@ -33,7 +33,6 @@ export interface ArtifactDefinition {
 }
 
 const upgrade = (fromLevel: number, ingredients: ArtifactLevelUpgradeDefinition['ingredients']) => ({ fromLevel, toLevel: fromLevel + 1, ingredients })
-const fire = (value: number) => ({ itemId: 'fire-fragment' as ItemId, quantity: value })
 const emberNodes: ArtifactNodeDefinition[] = [
   { id: 'arcane-kindling', artifactId: 'ember-staff', name: 'Arcane Kindling', type: 'minor', branch: 'shared', pointCost: 1, requiresLevel: 2, combat: { modifiers: [{ key: 'spell-damage-percent', value: 0.05, originSourceKinds: ['spell'], damageTypes: ['fire'] }] } },
   { id: 'cinder-memory', artifactId: 'ember-staff', name: 'Cinder Memory', type: 'minor', branch: 'burning', pointCost: 1, requiresLevel: 3, prerequisites: ['arcane-kindling'], combat: { modifiers: [{ key: 'damage-over-time-percent', value: 0.1 }] } },
@@ -53,49 +52,82 @@ const emberNodes: ArtifactNodeDefinition[] = [
 const emberStats: Record<number, EquipmentStats> = { 1: { basicDamage: 5, spellPower: 16 }, 2: { basicDamage: 6, spellPower: 20 }, 3: { basicDamage: 7, spellPower: 24 }, 4: { basicDamage: 8, spellPower: 29 }, 5: { basicDamage: 9, spellPower: 35 }, 6: { basicDamage: 10, spellPower: 41 }, 7: { basicDamage: 11, spellPower: 48 }, 8: { basicDamage: 13, spellPower: 56 }, 9: { basicDamage: 15, spellPower: 65 }, 10: { basicDamage: 17, spellPower: 75 } }
 
 const material = (itemId: ItemId, quantity: number) => ({ itemId, quantity })
-const elementalUpgrades = (fragmentId: ItemId) => [
-  upgrade(1, [material(fragmentId, 50)]),
-  upgrade(2, [material(fragmentId, 100), material('wisp-essence', 20), material('life-essence', 20)]),
-  upgrade(3, [material(fragmentId, 200), material('wisp-essence', 40), material('grove-bark', 10), material('life-essence', 100)]),
-  upgrade(4, [material(fragmentId, 300), material('prismatic-fragment', 20), material('predator-fang', 30), material('life-essence', 200)]),
-  upgrade(5, [material(fragmentId, 500), material('prismatic-fragment', 35), material('predator-hide', 40), material('corrupted-beast-essence', 20), material('life-essence', 350)]),
-  upgrade(6, [material(fragmentId, 750), material('prismatic-fragment', 55), material('predator-fang', 60), material('corrupted-beast-essence', 40), material('life-essence', 600)]),
-  upgrade(7, [material(fragmentId, 1000), material('prismatic-fragment', 80), material('ossuary-remnant', 50), material('life-essence', 800)]),
-  upgrade(8, [material(fragmentId, 1650), material('prismatic-fragment', 120), material('soul-residue', 70), material('graveglass-shard', 30), material('life-essence', 1100)]),
-  upgrade(9, [material(fragmentId, 2750), material('prismatic-fragment', 180), material('soul-residue', 100), material('graveglass-shard', 50), material('ossuary-remnant', 80), material('life-essence', 1500)]),
+const emberUpgrades = [
+  upgrade(1, [material('fire-fragment', 50)]),
+  upgrade(2, [material('fire-fragment', 100), material('wisp-essence', 10), material('thorn-fiber', 10), material('life-essence', 5)]),
+  upgrade(3, [material('fire-fragment', 200), material('wisp-essence', 8), material('thorn-fiber', 8), material('rootstone-shard', 17), material('grove-bark', 17), material('life-essence', 25)]),
+  upgrade(4, [material('fire-fragment', 300), material('predator-hide', 15), material('predator-fang', 15), material('prismatic-fragment', 5), material('life-essence', 50)]),
+  upgrade(5, [material('fire-fragment', 500), material('predator-hide', 15), material('predator-fang', 15), material('corrupted-beast-essence', 15), material('predator-sinew', 15), material('prismatic-fragment', 9), material('life-essence', 88)]),
+  upgrade(6, [material('fire-fragment', 750), material('predator-hide', 18), material('predator-fang', 18), material('corrupted-beast-essence', 32), material('predator-sinew', 32), material('prismatic-fragment', 14), material('life-essence', 150)]),
+  upgrade(7, [material('fire-fragment', 1000), material('ossuary-remnant', 25), material('soul-residue', 25), material('prismatic-fragment', 20), material('life-essence', 200)]),
+  upgrade(8, [material('fire-fragment', 1650), material('ossuary-remnant', 25), material('soul-residue', 25), material('graveglass-shard', 25), material('burial-cloth', 25), material('prismatic-fragment', 30), material('life-essence', 275)]),
+  upgrade(9, [material('fire-fragment', 2750), material('ossuary-remnant', 45), material('soul-residue', 45), material('graveglass-shard', 70), material('burial-cloth', 70), material('prismatic-fragment', 45), material('life-essence', 375)]),
+]
+const tideglassUpgrades = [
+  upgrade(1, [material('water-fragment', 50)]),
+  upgrade(2, [material('water-fragment', 100), material('rootstone-shard', 10), material('grove-bark', 10), material('life-essence', 5)]),
+  upgrade(3, [material('water-fragment', 200), material('wisp-essence', 17), material('thorn-fiber', 17), material('rootstone-shard', 8), material('grove-bark', 8), material('life-essence', 25)]),
+  upgrade(4, [material('water-fragment', 300), material('corrupted-beast-essence', 15), material('predator-sinew', 15), material('prismatic-fragment', 5), material('life-essence', 50)]),
+  upgrade(5, [material('water-fragment', 500), material('predator-hide', 15), material('predator-fang', 15), material('corrupted-beast-essence', 15), material('predator-sinew', 15), material('prismatic-fragment', 9), material('life-essence', 88)]),
+  upgrade(6, [material('water-fragment', 750), material('predator-hide', 32), material('predator-fang', 32), material('corrupted-beast-essence', 18), material('predator-sinew', 18), material('prismatic-fragment', 14), material('life-essence', 150)]),
+  upgrade(7, [material('water-fragment', 1000), material('graveglass-shard', 25), material('burial-cloth', 25), material('prismatic-fragment', 20), material('life-essence', 200)]),
+  upgrade(8, [material('water-fragment', 1650), material('ossuary-remnant', 25), material('soul-residue', 25), material('graveglass-shard', 25), material('burial-cloth', 25), material('prismatic-fragment', 30), material('life-essence', 275)]),
+  upgrade(9, [material('water-fragment', 2750), material('ossuary-remnant', 70), material('soul-residue', 70), material('graveglass-shard', 45), material('burial-cloth', 45), material('prismatic-fragment', 45), material('life-essence', 375)]),
+]
+const stoneheartUpgrades = [
+  upgrade(1, [material('earth-fragment', 50)]),
+  upgrade(2, [material('earth-fragment', 100), material('rootstone-shard', 10), material('grove-bark', 10), material('life-essence', 5)]),
+  upgrade(3, [material('earth-fragment', 200), material('wisp-essence', 17), material('thorn-fiber', 17), material('rootstone-shard', 8), material('grove-bark', 8), material('life-essence', 25)]),
+  upgrade(4, [material('earth-fragment', 300), material('predator-hide', 15), material('corrupted-beast-essence', 15), material('prismatic-fragment', 5), material('life-essence', 50)]),
+  upgrade(5, [material('earth-fragment', 500), material('predator-hide', 15), material('predator-fang', 15), material('corrupted-beast-essence', 15), material('predator-sinew', 15), material('prismatic-fragment', 9), material('life-essence', 88)]),
+  upgrade(6, [material('earth-fragment', 750), material('predator-hide', 18), material('predator-fang', 32), material('corrupted-beast-essence', 18), material('predator-sinew', 32), material('prismatic-fragment', 14), material('life-essence', 150)]),
+  upgrade(7, [material('earth-fragment', 1000), material('ossuary-remnant', 25), material('graveglass-shard', 25), material('prismatic-fragment', 20), material('life-essence', 200)]),
+  upgrade(8, [material('earth-fragment', 1650), material('ossuary-remnant', 25), material('soul-residue', 25), material('graveglass-shard', 25), material('burial-cloth', 25), material('prismatic-fragment', 30), material('life-essence', 275)]),
+  upgrade(9, [material('earth-fragment', 2750), material('ossuary-remnant', 45), material('soul-residue', 70), material('graveglass-shard', 45), material('burial-cloth', 70), material('prismatic-fragment', 45), material('life-essence', 375)]),
+]
+const windthreadUpgrades = [
+  upgrade(1, [material('air-fragment', 50)]),
+  upgrade(2, [material('air-fragment', 100), material('wisp-essence', 10), material('thorn-fiber', 10), material('life-essence', 5)]),
+  upgrade(3, [material('air-fragment', 200), material('wisp-essence', 8), material('thorn-fiber', 8), material('rootstone-shard', 17), material('grove-bark', 17), material('life-essence', 25)]),
+  upgrade(4, [material('air-fragment', 300), material('predator-fang', 15), material('predator-sinew', 15), material('prismatic-fragment', 5), material('life-essence', 50)]),
+  upgrade(5, [material('air-fragment', 500), material('predator-hide', 15), material('predator-fang', 15), material('corrupted-beast-essence', 15), material('predator-sinew', 15), material('prismatic-fragment', 9), material('life-essence', 88)]),
+  upgrade(6, [material('air-fragment', 750), material('predator-hide', 32), material('predator-fang', 18), material('corrupted-beast-essence', 32), material('predator-sinew', 18), material('prismatic-fragment', 14), material('life-essence', 150)]),
+  upgrade(7, [material('air-fragment', 1000), material('soul-residue', 25), material('burial-cloth', 25), material('prismatic-fragment', 20), material('life-essence', 200)]),
+  upgrade(8, [material('air-fragment', 1650), material('ossuary-remnant', 25), material('soul-residue', 25), material('graveglass-shard', 25), material('burial-cloth', 25), material('prismatic-fragment', 30), material('life-essence', 275)]),
+  upgrade(9, [material('air-fragment', 2750), material('ossuary-remnant', 70), material('soul-residue', 45), material('graveglass-shard', 70), material('burial-cloth', 45), material('prismatic-fragment', 45), material('life-essence', 375)]),
 ]
 const prismaticUpgrades = [
-  upgrade(1, [material('prismatic-fragment', 50)]),
-  upgrade(2, [material('prismatic-fragment', 100), material('wisp-essence', 25), material('life-essence', 30)]),
-  upgrade(3, [material('prismatic-fragment', 180), material('wisp-essence', 40), material('grove-bark', 15), material('life-essence', 120)]),
-  upgrade(4, [material('prismatic-fragment', 280), material('predator-fang', 30), material('life-essence', 220)]),
-  upgrade(5, [material('prismatic-fragment', 450), material('predator-hide', 40), material('corrupted-beast-essence', 20), material('life-essence', 380)]),
-  upgrade(6, [material('prismatic-fragment', 700), material('predator-fang', 60), material('corrupted-beast-essence', 40), material('life-essence', 650)]),
-  upgrade(7, [material('prismatic-fragment', 950), material('ossuary-remnant', 50), material('life-essence', 850)]),
-  upgrade(8, [material('prismatic-fragment', 1400), material('soul-residue', 70), material('graveglass-shard', 30), material('life-essence', 1150)]),
-  upgrade(9, [material('prismatic-fragment', 2100), material('soul-residue', 100), material('graveglass-shard', 50), material('ossuary-remnant', 80), material('life-essence', 1600)]),
+  upgrade(1, [material('prismatic-fragment', 13)]),
+  upgrade(2, [material('prismatic-fragment', 25), material('wisp-essence', 7), material('thorn-fiber', 6), material('rootstone-shard', 6), material('grove-bark', 6), material('life-essence', 8)]),
+  upgrade(3, [material('prismatic-fragment', 45), material('wisp-essence', 13), material('thorn-fiber', 14), material('rootstone-shard', 14), material('grove-bark', 14), material('life-essence', 30)]),
+  upgrade(4, [material('prismatic-fragment', 70), material('predator-hide', 15), material('predator-fang', 15), material('life-essence', 55)]),
+  upgrade(5, [material('prismatic-fragment', 113), material('predator-hide', 15), material('predator-fang', 15), material('corrupted-beast-essence', 15), material('predator-sinew', 15), material('life-essence', 95)]),
+  upgrade(6, [material('prismatic-fragment', 175), material('predator-hide', 18), material('predator-fang', 18), material('corrupted-beast-essence', 32), material('predator-sinew', 32), material('life-essence', 163)]),
+  upgrade(7, [material('prismatic-fragment', 238), material('soul-residue', 25), material('graveglass-shard', 25), material('life-essence', 213)]),
+  upgrade(8, [material('prismatic-fragment', 350), material('ossuary-remnant', 25), material('soul-residue', 25), material('graveglass-shard', 25), material('burial-cloth', 25), material('life-essence', 288)]),
+  upgrade(9, [material('prismatic-fragment', 525), material('ossuary-remnant', 70), material('soul-residue', 45), material('graveglass-shard', 45), material('burial-cloth', 70), material('life-essence', 400)]),
 ]
 const wispweaveUpgrades = [
-  upgrade(1, [material('wisp-essence', 50), material('life-essence', 50)]),
-  upgrade(2, [material('wisp-essence', 100), material('grove-bark', 30), material('life-essence', 100)]),
-  upgrade(3, [material('wisp-essence', 180), material('grove-bark', 60), material('prismatic-fragment', 20), material('life-essence', 200)]),
-  upgrade(4, [material('predator-hide', 100), material('prismatic-fragment', 30), material('life-essence', 300)]),
-  upgrade(5, [material('predator-hide', 160), material('corrupted-beast-essence', 40), material('prismatic-fragment', 50), material('life-essence', 500)]),
-  upgrade(6, [material('predator-hide', 250), material('corrupted-beast-essence', 80), material('prismatic-fragment', 80), material('life-essence', 750)]),
-  upgrade(7, [material('ossuary-remnant', 120), material('prismatic-fragment', 100), material('life-essence', 1000)]),
-  upgrade(8, [material('ossuary-remnant', 180), material('soul-residue', 100), material('prismatic-fragment', 150), material('life-essence', 1350)]),
-  upgrade(9, [material('ossuary-remnant', 300), material('soul-residue', 160), material('graveglass-shard', 80), material('prismatic-fragment', 220), material('life-essence', 1800)]),
+  upgrade(1, [material('wisp-essence', 13), material('thorn-fiber', 13), material('rootstone-shard', 12), material('grove-bark', 12), material('life-essence', 13)]),
+  upgrade(2, [material('wisp-essence', 32), material('thorn-fiber', 32), material('rootstone-shard', 33), material('grove-bark', 33), material('life-essence', 25)]),
+  upgrade(3, [material('wisp-essence', 60), material('thorn-fiber', 60), material('rootstone-shard', 60), material('grove-bark', 60), material('prismatic-fragment', 5), material('life-essence', 50)]),
+  upgrade(4, [material('predator-hide', 25), material('predator-fang', 25), material('corrupted-beast-essence', 25), material('predator-sinew', 25), material('prismatic-fragment', 8), material('life-essence', 75)]),
+  upgrade(5, [material('predator-hide', 50), material('predator-fang', 50), material('corrupted-beast-essence', 50), material('predator-sinew', 50), material('prismatic-fragment', 13), material('life-essence', 125)]),
+  upgrade(6, [material('predator-hide', 83), material('predator-fang', 83), material('corrupted-beast-essence', 82), material('predator-sinew', 82), material('prismatic-fragment', 20), material('life-essence', 188)]),
+  upgrade(7, [material('ossuary-remnant', 30), material('soul-residue', 30), material('graveglass-shard', 30), material('burial-cloth', 30), material('prismatic-fragment', 25), material('life-essence', 250)]),
+  upgrade(8, [material('ossuary-remnant', 70), material('soul-residue', 70), material('graveglass-shard', 70), material('burial-cloth', 70), material('prismatic-fragment', 38), material('life-essence', 338)]),
+  upgrade(9, [material('ossuary-remnant', 135), material('soul-residue', 135), material('graveglass-shard', 135), material('burial-cloth', 135), material('prismatic-fragment', 55), material('life-essence', 450)]),
 ]
 const wispveilUpgrades = [
-  upgrade(1, [material('wisp-essence', 50), material('life-essence', 40)]),
-  upgrade(2, [material('wisp-essence', 100), material('prismatic-fragment', 20), material('life-essence', 80)]),
-  upgrade(3, [material('wisp-essence', 180), material('grove-bark', 30), material('prismatic-fragment', 30), material('life-essence', 160)]),
-  upgrade(4, [material('predator-hide', 80), material('prismatic-fragment', 40), material('life-essence', 250)]),
-  upgrade(5, [material('predator-fang', 100), material('corrupted-beast-essence', 30), material('prismatic-fragment', 60), material('life-essence', 420)]),
-  upgrade(6, [material('predator-fang', 160), material('corrupted-beast-essence', 60), material('prismatic-fragment', 90), material('life-essence', 650)]),
-  upgrade(7, [material('ossuary-remnant', 100), material('prismatic-fragment', 120), material('life-essence', 900)]),
-  upgrade(8, [material('soul-residue', 100), material('graveglass-shard', 40), material('prismatic-fragment', 170), material('life-essence', 1200)]),
-  upgrade(9, [material('soul-residue', 180), material('graveglass-shard', 70), material('ossuary-remnant', 120), material('prismatic-fragment', 250), material('life-essence', 1650)]),
+  upgrade(1, [material('wisp-essence', 13), material('thorn-fiber', 13), material('rootstone-shard', 12), material('grove-bark', 12), material('life-essence', 10)]),
+  upgrade(2, [material('wisp-essence', 25), material('thorn-fiber', 25), material('rootstone-shard', 25), material('grove-bark', 25), material('prismatic-fragment', 5), material('life-essence', 20)]),
+  upgrade(3, [material('wisp-essence', 52), material('thorn-fiber', 52), material('rootstone-shard', 53), material('grove-bark', 53), material('prismatic-fragment', 8), material('life-essence', 40)]),
+  upgrade(4, [material('predator-hide', 20), material('predator-fang', 20), material('corrupted-beast-essence', 20), material('predator-sinew', 20), material('prismatic-fragment', 10), material('life-essence', 63)]),
+  upgrade(5, [material('predator-hide', 32), material('predator-fang', 32), material('corrupted-beast-essence', 33), material('predator-sinew', 33), material('prismatic-fragment', 15), material('life-essence', 105)]),
+  upgrade(6, [material('predator-hide', 55), material('predator-fang', 55), material('corrupted-beast-essence', 55), material('predator-sinew', 55), material('prismatic-fragment', 23), material('life-essence', 163)]),
+  upgrade(7, [material('ossuary-remnant', 25), material('soul-residue', 25), material('graveglass-shard', 25), material('burial-cloth', 25), material('prismatic-fragment', 30), material('life-essence', 225)]),
+  upgrade(8, [material('ossuary-remnant', 35), material('soul-residue', 35), material('graveglass-shard', 35), material('burial-cloth', 35), material('prismatic-fragment', 43), material('life-essence', 300)]),
+  upgrade(9, [material('ossuary-remnant', 93), material('soul-residue', 93), material('graveglass-shard', 92), material('burial-cloth', 92), material('prismatic-fragment', 63), material('life-essence', 413)]),
 ]
 
 const tideglassStats: Record<number, EquipmentStats> = { 1: { basicDamage: 4, spellPower: 11 }, 2: { basicDamage: 5, spellPower: 14 }, 3: { basicDamage: 6, spellPower: 17 }, 4: { basicDamage: 7, spellPower: 21 }, 5: { basicDamage: 8, spellPower: 25 }, 6: { basicDamage: 9, spellPower: 30 }, 7: { basicDamage: 10, spellPower: 35 }, 8: { basicDamage: 11, spellPower: 41 }, 9: { basicDamage: 13, spellPower: 48 }, 10: { basicDamage: 15, spellPower: 56 } }
@@ -208,17 +240,17 @@ const wispveilNodes: ArtifactNodeDefinition[] = [
 export const ARTIFACTS: Partial<Record<ArtifactId, ArtifactDefinition>> = {
   'ember-staff': {
     id: 'ember-staff', itemId: 'ember-staff', tier: 1, maxLevel: 10, coreStatsByLevel: emberStats,
-    forge: { ingredients: [fire(20), material('wisp-essence', 15), material('thorn-fiber', 10), material('life-essence', 95)] },
+    forge: { ingredients: [material('fire-fragment', 20), material('wisp-essence', 10), material('thorn-fiber', 10), material('grove-bark', 5), material('life-essence', 24)] },
     branches: [
       { id: 'burning', name: 'Burning', description: 'Persistent Fire damage and Burning.' },
       { id: 'direct-fire', name: 'Direct Fire', description: 'Direct Fire hits, Criticals, and spell tempo.' },
     ],
-    upgrades: [upgrade(1, [fire(50)]), upgrade(2, [fire(100), { itemId: 'wisp-essence', quantity: 20 }, { itemId: 'life-essence', quantity: 20 }]), upgrade(3, [fire(200), { itemId: 'wisp-essence', quantity: 40 }, { itemId: 'grove-bark', quantity: 10 }, { itemId: 'life-essence', quantity: 100 }]), upgrade(4, [fire(300), { itemId: 'prismatic-fragment', quantity: 20 }, { itemId: 'predator-fang', quantity: 30 }, { itemId: 'life-essence', quantity: 200 }]), upgrade(5, [fire(500), { itemId: 'prismatic-fragment', quantity: 35 }, { itemId: 'predator-hide', quantity: 40 }, { itemId: 'corrupted-beast-essence', quantity: 20 }, { itemId: 'life-essence', quantity: 350 }]), upgrade(6, [fire(750), { itemId: 'prismatic-fragment', quantity: 55 }, { itemId: 'predator-fang', quantity: 60 }, { itemId: 'corrupted-beast-essence', quantity: 40 }, { itemId: 'life-essence', quantity: 600 }]), upgrade(7, [fire(1000), { itemId: 'prismatic-fragment', quantity: 80 }, { itemId: 'ossuary-remnant', quantity: 50 }, { itemId: 'life-essence', quantity: 800 }]), upgrade(8, [fire(1650), { itemId: 'prismatic-fragment', quantity: 120 }, { itemId: 'soul-residue', quantity: 70 }, { itemId: 'graveglass-shard', quantity: 30 }, { itemId: 'life-essence', quantity: 1100 }]), upgrade(9, [fire(2750), { itemId: 'prismatic-fragment', quantity: 180 }, { itemId: 'soul-residue', quantity: 100 }, { itemId: 'graveglass-shard', quantity: 50 }, { itemId: 'ossuary-remnant', quantity: 80 }, { itemId: 'life-essence', quantity: 1500 }])], nodes: emberNodes,
+    upgrades: emberUpgrades, nodes: emberNodes,
   },
   'tideglass-wand': {
     id: 'tideglass-wand', itemId: 'tideglass-wand', tier: 1, maxLevel: 10, coreStatsByLevel: tideglassStats,
-    forge: { ingredients: [material('water-fragment', 20), material('wisp-essence', 12), material('rootstone-shard', 8), material('life-essence', 100)] },
-    upgrades: elementalUpgrades('water-fragment'),
+    forge: { ingredients: [material('water-fragment', 20), material('wisp-essence', 7), material('rootstone-shard', 8), material('grove-bark', 5), material('life-essence', 25)] },
+    upgrades: tideglassUpgrades,
     branches: [
       { id: 'tidal-ward', name: 'Tidal Ward', description: 'Water Barrier strength, Mana, and defensive spell support.' },
       { id: 'frozen-current', name: 'Frozen Current', description: 'Direct Water damage, Chill interaction, and spell tempo.' },
@@ -227,8 +259,8 @@ export const ARTIFACTS: Partial<Record<ArtifactId, ArtifactDefinition>> = {
   },
   'stoneheart-scepter': {
     id: 'stoneheart-scepter', itemId: 'stoneheart-scepter', tier: 1, maxLevel: 10, coreStatsByLevel: stoneheartStats,
-    forge: { ingredients: [material('earth-fragment', 20), material('rootstone-shard', 15), material('grove-bark', 5), material('life-essence', 100)] },
-    upgrades: elementalUpgrades('earth-fragment'),
+    forge: { ingredients: [material('earth-fragment', 20), material('rootstone-shard', 10), material('grove-bark', 10), material('life-essence', 25)] },
+    upgrades: stoneheartUpgrades,
     branches: [
       { id: 'living-bastion', name: 'Living Bastion', description: 'Defense, regeneration, resistance, and emergency Barrier.' },
       { id: 'crushing-earth', name: 'Crushing Earth', description: 'Heavy direct Earth Spell hits and conditional damage.' },
@@ -237,8 +269,8 @@ export const ARTIFACTS: Partial<Record<ArtifactId, ArtifactDefinition>> = {
   },
   'windthread-wand': {
     id: 'windthread-wand', itemId: 'windthread-wand', tier: 1, maxLevel: 10, coreStatsByLevel: windthreadStats,
-    forge: { ingredients: [material('air-fragment', 20), material('wisp-essence', 12), material('thorn-fiber', 8), material('life-essence', 100)] },
-    upgrades: elementalUpgrades('air-fragment'),
+    forge: { ingredients: [material('air-fragment', 20), material('wisp-essence', 5), material('thorn-fiber', 10), material('grove-bark', 5), material('life-essence', 25)] },
+    upgrades: windthreadUpgrades,
     branches: [
       { id: 'tempest-tempo', name: 'Tempest Tempo', description: 'Cooldown, Mana efficiency, sustain, and high-Mana Air damage.' },
       { id: 'storm-precision', name: 'Storm Precision', description: 'Direct Air Critical damage and Debuff interaction.' },
@@ -247,7 +279,7 @@ export const ARTIFACTS: Partial<Record<ArtifactId, ArtifactDefinition>> = {
   },
   'prismatic-focus': {
     id: 'prismatic-focus', itemId: 'prismatic-focus', tier: 1, maxLevel: 10, coreStatsByLevel: prismaticStats,
-    forge: { ingredients: [material('prismatic-fragment', 30), material('wisp-essence', 10), material('rootstone-shard', 10), material('life-essence', 100)] },
+    forge: { ingredients: [material('prismatic-fragment', 8), material('wisp-essence', 5), material('rootstone-shard', 10), material('thorn-fiber', 5), material('life-essence', 25)] },
     upgrades: prismaticUpgrades,
     branches: [
       { id: 'mana-engine', name: 'Mana Engine', description: 'Mana capacity, regeneration, and spell-cost efficiency.' },
@@ -257,7 +289,7 @@ export const ARTIFACTS: Partial<Record<ArtifactId, ArtifactDefinition>> = {
   },
   'wispweave-robe': {
     id: 'wispweave-robe', itemId: 'wispweave-robe', tier: 1, maxLevel: 10, coreStatsByLevel: wispweaveStats,
-    forge: { ingredients: [material('wisp-essence', 25), material('thorn-fiber', 15), material('grove-bark', 10), material('life-essence', 100)] },
+    forge: { ingredients: [material('wisp-essence', 15), material('thorn-fiber', 15), material('grove-bark', 10), material('rootstone-shard', 10), material('life-essence', 25)] },
     upgrades: wispweaveUpgrades,
     branches: [
       { id: 'living-bastion', name: 'Living Bastion', description: 'Health, Defense, regeneration, and emergency survival.' },
@@ -267,7 +299,7 @@ export const ARTIFACTS: Partial<Record<ArtifactId, ArtifactDefinition>> = {
   },
   'wispveil-hood': {
     id: 'wispveil-hood', itemId: 'wispveil-hood', tier: 1, maxLevel: 10, coreStatsByLevel: wispveilStats,
-    forge: { ingredients: [material('wisp-essence', 20), material('thorn-fiber', 10), material('prismatic-fragment', 20), material('life-essence', 100)] },
+    forge: { ingredients: [material('wisp-essence', 10), material('thorn-fiber', 10), material('rootstone-shard', 5), material('grove-bark', 5), material('prismatic-fragment', 5), material('life-essence', 25)] },
     upgrades: wispveilUpgrades,
     branches: [
       { id: 'arcane-insight', name: 'Arcane Insight', description: 'Mana, Status Duration, cooldowns, and hostile-status protection.' },

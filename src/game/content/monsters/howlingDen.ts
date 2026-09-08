@@ -7,14 +7,14 @@ export const HOWLING_DEN_MONSTERS = {
     maxHealth: 350, basicAttackDamage: 20, basicAttackTimeMs: 2200, defense: 16, color: '#b8a0a0', ui: { portraitIcon: 'wolf' }, traitIds: ['cavefang-wolf-predator-instinct'],
     actions: { pounce: { id: 'pounce', name: 'Pounce', actionTimeMs: 1400, description: "The predator lunges at the target and delays the Player's Basic Attack.", effects: [scaledDirectDamage('physical', 1.5), delayBasicAttack(500)], tags: ['special', 'physical', 'melee', 'control'] } },
     actionPatterns: { default: { id: 'default', steps: [basic('basic-1'), basic('basic-2'), action('pounce-step', 'pounce')] } }, defaultActionPatternId: 'default',
-    loot: withLifeEssence([{ itemId: 'predator-fang', min: 1, max: 1, chance: 0.2 }, { itemId: 'predator-hide', min: 1, max: 1, chance: 0.1 }, { itemId: 'predator-sinew', min: 1, max: 1, chance: 0.1 }], { min: 3, max: 5 }),
+    loot: withLifeEssence([{ itemId: 'predator-fang', min: 1, max: 2, chance: 0.2 }, { itemId: 'predator-hide', min: 1, max: 1, chance: 0.1 }], { min: 3, max: 5 }),
   },
   'razorclaw-lynx': {
     id: 'razorclaw-lynx', bestiaryCategory: 'monster', name: 'Razorclaw Lynx', subtitle: 'A blur of claws and hungry momentum',
     maxHealth: 360, basicAttackDamage: 21, basicAttackTimeMs: 1900, defense: 16, color: '#c18b73', ui: { portraitIcon: 'claw' }, traitIds: ['razorclaw-lynx-relentless-hunter'],
     actions: { 'rending-claws': { id: 'rending-claws', name: 'Rending Claws', actionTimeMs: 1300, description: 'Raking claws cut the target and leave a lingering Bleeding wound.', effects: [scaledDirectDamage('physical', 1.25), scaledDot('bleeding', 'physical', 1.45, 8000)], tags: ['special', 'physical', 'melee', 'debuff'] } },
     actionPatterns: { default: { id: 'default', steps: [basic('basic-1'), action('rending-claws-step', 'rending-claws'), basic('basic-2')] } }, defaultActionPatternId: 'default',
-    loot: withLifeEssence([{ itemId: 'predator-fang', min: 1, max: 1, chance: 0.15 }, { itemId: 'predator-hide', min: 1, max: 1, chance: 0.15 }], { min: 3, max: 5 }),
+    loot: withLifeEssence([{ itemId: 'predator-sinew', min: 1, max: 2, chance: 0.2 }, { itemId: 'predator-hide', min: 1, max: 1, chance: 0.1 }], { min: 3, max: 5 }),
   },
   'corrupted-dire-wolf': {
     id: 'corrupted-dire-wolf', bestiaryCategory: 'monster', name: 'Corrupted Dire Wolf', subtitle: 'A beast split between fang and sorcery',
@@ -24,7 +24,7 @@ export const HOWLING_DEN_MONSTERS = {
       'corrupted-howl': { id: 'corrupted-howl', name: 'Corrupted Howl', actionTimeMs: 1800, description: 'The howl fills the Corrupted Dire Wolf with Haste.', effects: [applyStatus('haste', 'self', 6000)], tags: ['special', 'buff'] },
     },
     actionPatterns: { default: { id: 'default', steps: [basic('basic-1'), action('arcane-bite-step', 'arcane-bite'), basic('basic-2'), basic('basic-3'), action('corrupted-howl-step', 'corrupted-howl')] } }, defaultActionPatternId: 'default',
-    loot: withLifeEssence([{ itemId: 'corrupted-beast-essence', min: 1, max: 1, chance: 0.15 }, { itemId: 'predator-hide', min: 1, max: 1, chance: 0.15 }, { itemId: 'predator-fang', min: 1, max: 1, chance: 0.15 }], { min: 3, max: 5 }),
+    loot: withLifeEssence([{ itemId: 'corrupted-beast-essence', min: 1, max: 2, chance: 0.2 }, { itemId: 'predator-hide', min: 1, max: 1, chance: 0.1 }], { min: 3, max: 5 }),
   },
   'corrupted-greatbear': {
     id: 'corrupted-greatbear', bestiaryCategory: 'boss', name: 'Corrupted Greatbear', subtitle: 'A mountain of fur warped by hungry magic',
@@ -39,6 +39,12 @@ export const HOWLING_DEN_MONSTERS = {
       default: { id: 'default', steps: [basic('basic-1'), basic('basic-2'), action('crushing-maul-step', 'crushing-maul'), basic('basic-3'), action('groundbreaker-step', 'groundbreaker')] },
       corrupted: { id: 'corrupted', steps: [basic('basic-1'), action('corrupted-roar-step', 'corrupted-roar'), action('crushing-maul-step', 'crushing-maul'), basic('basic-2'), basic('basic-3'), action('arcane-rampage-step', 'arcane-rampage')] },
     }, defaultActionPatternId: 'default',
-    loot: withLifeEssence([{ itemId: 'predator-hide', min: 2, max: 4, chance: 1 }, { itemId: 'corrupted-beast-essence', min: 1, max: 2, chance: 1 }, { itemId: 'greatbear-core', min: 1, max: 1, chance: 0.35 }], { min: 12, max: 30 }),
+    loot: withLifeEssence([
+      { itemId: 'predator-fang', min: 1, max: 2, chance: 1 },
+      { itemId: 'predator-hide', min: 1, max: 2, chance: 1 },
+      { itemId: 'corrupted-beast-essence', min: 1, max: 2, chance: 1 },
+      { itemId: 'predator-sinew', min: 1, max: 2, chance: 1 },
+      { itemId: 'greatbear-core', min: 1, max: 1, chance: 0.35 },
+    ], { min: 12, max: 30 }),
   },
 } satisfies Partial<Record<MonsterId, MonsterDefinition>>

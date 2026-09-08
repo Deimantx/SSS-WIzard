@@ -18,9 +18,10 @@ describe('Unified Transmutation', () => {
     expect(['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'].map((id) => RECIPES[id as import('./types').TransmutationRecipeId].baseDurationMs)).toEqual([8000, 8000, 8000, 8000])
     expect(RECIPES['ember-staff'].ingredients).toEqual([
       { itemId: 'fire-fragment', quantity: 20 },
-      { itemId: 'wisp-essence', quantity: 15 },
+      { itemId: 'wisp-essence', quantity: 10 },
       { itemId: 'thorn-fiber', quantity: 10 },
-      { itemId: 'life-essence', quantity: 95 },
+      { itemId: 'grove-bark', quantity: 5 },
+      { itemId: 'life-essence', quantity: 24 },
     ])
     expect('manaCost' in RECIPES['ember-staff']).toBe(false)
     expect(RECIPES['ember-staff'].unlock).toEqual({ type: 'dungeon-monster-kills', dungeonId: 'whispering-woods', count: 1 })

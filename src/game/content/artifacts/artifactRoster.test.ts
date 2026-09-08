@@ -5,7 +5,7 @@ import { ITEMS } from '../items/items'
 import { MONSTERS } from '../monsters'
 import { ARTIFICING_RECIPES, isRecipeUnlocked } from '../recipes/recipes'
 import { ARTIFACTS, validateArtifactDefinitions } from './artifacts'
-import { getArtifactEffectiveStats } from '../../systems/artifacts/artifactProgression'
+import { getArtifactEffectiveStats, getArtifactLevelCap } from '../../systems/artifacts/artifactProgression'
 import { getCombatModifiers, getResistance } from '../../systems/combat/modifiers'
 import { damagePlayer } from '../../systems/combat/effectResolver'
 import { normalizeEquipmentState } from '../../core/equipment/equipmentRules'
@@ -47,6 +47,24 @@ describe('Tier 1 Artifact roster', () => {
     const bossState = createInitialState()
     bossState.progress.bossKillsByBoss['forest-heart'] = 1
     expect(isRecipeUnlocked(bossState, ARTIFICING_RECIPES['heartseed-necklace'])).toBe(true)
+  })
+
+  it('keeps the 4/7/10 progression caps and Artifact Path catalyst requirements', () => {
+    const state = createInitialState()
+    expect(getArtifactLevelCap(state, 'ember-staff')).toBe(4)
+    state.progress.bossKillsByBoss['forest-heart'] = 1
+    expect(getArtifactLevelCap(state, 'ember-staff')).toBe(7)
+    state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
+    expect(getArtifactLevelCap(state, 'ember-staff')).toBe(10)
+
+    const expectedPath = [
+      '4:forest-heart:heartseed:1', '4:forest-heart:heartseed:1',
+      '7:corrupted-greatbear:greatbear-core:1', '7:corrupted-greatbear:greatbear-core:1',
+      '10:archmage-edrin-shade:edrin-remnant:1', '10:archmage-edrin-shade:edrin-remnant:1',
+    ]
+    artifactIds.forEach((id) => {
+      expect(ARTIFACTS[id].nodes.filter((node) => node.catalyst).map((node) => `${node.requiresLevel}:${node.requiresBossKill}:${node.catalyst?.itemId}:${node.catalyst?.quantity}`).sort()).toEqual(expectedPath.sort())
+    })
   })
 
   it('supports one-handed Artifact plus Focus and rejects the two-handed Ember combination', () => {

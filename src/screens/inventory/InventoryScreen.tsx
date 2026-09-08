@@ -40,7 +40,7 @@ export function InventoryScreenV2() {
   const progress = useGameStore((state) => state.progress)
   const activities = useGameStore((state) => state.activities)
   const uiPreferences = useUiPreferences()
-  const pinnedRecipeId = uiPreferences.screenState.artificing.pinnedRecipeId
+  const pinnedRecipeIds = uiPreferences.screenState.artificing.pinnedRecipeIds
   const trackedItemId = uiPreferences.trackedItemId
   const currencies = useGameStore((state) => state.currencies)
   const recentAcquisitions = useGameStore((state) => state.recentAcquisitions)
@@ -54,7 +54,7 @@ export function InventoryScreenV2() {
   const ownedIds = useMemo(() => selectOwnedItemIds(inventory), [inventory])
   const recentOrder = useMemo(() => recentAcquisitions.map((entry) => entry.itemId), [recentAcquisitions])
   const economyState = useMemo<ItemEconomyState>(() => ({ inventory, protectedItems, equipment, progress, activities }), [inventory, protectedItems, equipment, progress, activities])
-  const neededIds = useMemo(() => getNeededItemIds(economyState, pinnedRecipeId), [economyState, pinnedRecipeId])
+  const neededIds = useMemo(() => getNeededItemIds(economyState, pinnedRecipeIds), [economyState, pinnedRecipeIds])
   const flowById = useMemo(() => new Map(ownedIds.map((id) => [id, getItemFlow(id, economyState)])), [ownedIds, economyState])
   const visibleIds = useMemo(() => selectVisibleItemIds(inventory, protectedItems, equipment, search, filter, sort, materialSubcategory, recentOrder, neededIds), [inventory, protectedItems, equipment, search, filter, sort, materialSubcategory, recentOrder, neededIds])
   const summary = useMemo(() => inventorySummary(ownedIds, inventory), [ownedIds, inventory])

@@ -80,8 +80,9 @@ export function getItemNeeds(itemId: ItemId, state: ItemEconomyState): ItemNeed[
   return needs
 }
 
-export function getNeededItemIds(state: ItemEconomyState, pinnedRecipeId: import('../../game/types').ArtificingRecipeId | null = null): ItemId[] {
-  return (Object.keys(ITEMS) as ItemId[]).filter((itemId) => (state.inventory[itemId] ?? 0) > 0 && getPinnedArtificingItemNeed(itemId, state, pinnedRecipeId) !== null)
+export function getNeededItemIds(state: ItemEconomyState, pinnedRecipeIds: readonly import('../../game/types').ArtificingRecipeId[] | import('../../game/types').ArtificingRecipeId | null = null): ItemId[] {
+  const ids = Array.isArray(pinnedRecipeIds) ? pinnedRecipeIds : pinnedRecipeIds ? [pinnedRecipeIds] : []
+  return (Object.keys(ITEMS) as ItemId[]).filter((itemId) => (state.inventory[itemId] ?? 0) > 0 && ids.some((recipeId) => getPinnedArtificingItemNeed(itemId, state, recipeId) !== null))
 }
 
 export function getPinnedArtificingItemNeed(itemId: ItemId, state: ItemEconomyState | undefined, pinnedRecipeId: import('../../game/types').ArtificingRecipeId | null): ItemNeed | null {

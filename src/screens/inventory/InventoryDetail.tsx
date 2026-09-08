@@ -54,7 +54,7 @@ export function InventoryDetail({ itemId, inventory, protectedItems, equipment, 
   const category = getInventorySubcategoryLabel(itemId) ? `${getInventorySubcategoryLabel(itemId)} Material` : getInventoryCategoryLabel(itemId)
   const processingChain = getItemProcessingChain(itemId).filter((chainItem) => Boolean(ITEMS[chainItem]))
   const flow = economyState ? getItemFlow(itemId, economyState) : null
-  const pinnedNeed = getPinnedArtificingItemNeed(itemId, economyState, preferences.screenState.artificing.pinnedRecipeId)
+  const pinnedNeed = getPinnedArtificingItemNeed(itemId, economyState, preferences.screenState.artificing.pinnedRecipeIds[0] ?? null)
   const sourceLabel = getItemSourceLabel(itemId)
   const toggleSection = (section: DetailAccordionKey) => { const key = section === 'source' ? 'sourceOpen' : 'researchValueOpen'; setUiPreferences({ screenState: { inventory: { [key]: !openSections[section] } } }) }
   const openResearch = () => { setNavigationIntent({ researchItemId: itemId, researchSchoolId: null }); navigate?.('tower-research') }

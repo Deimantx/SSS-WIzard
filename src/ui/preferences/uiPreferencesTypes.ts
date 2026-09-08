@@ -6,6 +6,7 @@ export type UiTheme = 'default' | 'dark' | 'light' | 'custom'
 export type TextSize = 'default' | 'large' | 'extra-large'
 export type NavigationGroupId = 'combat' | 'hero' | 'tower' | 'world' | 'system'
 export type { TransmutationCategoryFilter, TransmutationTierFilter } from '../../game/types'
+export const MAX_ARTIFICING_RECIPE_PINS = 6
 
 export interface CustomThemeColors {
   background: string
@@ -33,7 +34,8 @@ export interface TransmutationScreenPreferences {
 }
 export interface ArtificingScreenPreferences {
   selectedRecipeId: import('../../game/types').ArtificingRecipeId | null
-  pinnedRecipeId: import('../../game/types').ArtificingRecipeId | null
+  pinnedRecipeIds: import('../../game/types').ArtificingRecipeId[]
+  pinsCollapsed: boolean
   slotFilter: 'all' | import('../../game/types').EquipmentItemSlot
   tierFilter: ArtificingTierFilter
   kindFilter: ArtificingKindFilter

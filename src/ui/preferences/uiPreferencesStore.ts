@@ -1,7 +1,10 @@
 import { useSyncExternalStore } from 'react'
 import { applyUiPreferences } from '../theme/themeManager'
 import { defaultUiPreferences, loadUiPreferences, normalizeUiPreferences, resetUiPreferences, saveUiPreferences } from './uiPreferencesStorage'
+import { MAX_ARTIFICING_RECIPE_PINS } from './uiPreferencesTypes'
+import type { ArtificingRecipeId } from '../../game/types'
 import type { CustomThemeColors, ScreenPreferences, UiPreferences } from './uiPreferencesTypes'
+import { ARTIFICING_RECIPE_ORDER } from '../../game/content/recipes/artificingRecipes'
 
 let current = loadUiPreferences()
 const listeners = new Set<() => void>()
@@ -26,6 +29,19 @@ export const setUiPreferences = (changes: UiPreferenceChanges) => {
   emit()
   return current
 }
+export const isArtificingRecipePinned = (recipeId: ArtificingRecipeId) => current.screenState.artificing.pinnedRecipeIds.includes(recipeId)
+export const canPinArtificingRecipe = (recipeId: ArtificingRecipeId) => ARTIFICING_RECIPE_ORDER.includes(recipeId) && (isArtificingRecipePinned(recipeId) || current.screenState.artificing.pinnedRecipeIds.length < MAX_ARTIFICING_RECIPE_PINS)
+export const pinArtificingRecipe = (recipeId: ArtificingRecipeId) => {
+  if (!ARTIFICING_RECIPE_ORDER.includes(recipeId) || isArtificingRecipePinned(recipeId) || current.screenState.artificing.pinnedRecipeIds.length >= MAX_ARTIFICING_RECIPE_PINS) return false
+  setUiPreferences({ screenState: { artificing: { pinnedRecipeIds: [...current.screenState.artificing.pinnedRecipeIds, recipeId] } } })
+  return true
+}
+export const unpinArtificingRecipe = (recipeId: ArtificingRecipeId) => {
+  if (!isArtificingRecipePinned(recipeId)) return false
+  setUiPreferences({ screenState: { artificing: { pinnedRecipeIds: current.screenState.artificing.pinnedRecipeIds.filter((id) => id !== recipeId) } } })
+  return true
+}
+export const toggleArtificingRecipePin = (recipeId: ArtificingRecipeId) => isArtificingRecipePinned(recipeId) ? unpinArtificingRecipe(recipeId) : pinArtificingRecipe(recipeId)
 export const setCustomThemeColor = (key: keyof CustomThemeColors, value: string) => setUiPreferences({ customTheme: { ...current.customTheme, [key]: value } })
 export const resetAppearance = () => {
   const defaults = defaultUiPreferences()

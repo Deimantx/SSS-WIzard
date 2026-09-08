@@ -7,13 +7,13 @@ import { SCHOOLS } from '../../game/content/schools/schools'
 import { COMBAT_DETAILS_MODE_ORDER } from '../../game/presentation/combat/combatDetailsPresentation'
 import { DUNGEON_STATISTICS_MODE_ORDER } from '../../game/telemetry/dungeon/dungeonStatisticsTypes'
 import { EQUIPMENT_ITEM_SLOTS } from '../../game/core/equipment'
-import type { CombatLogFontSize, ScreenPreferences, TransmutationCategoryFilter, TransmutationTierFilter, UiPreferences } from './uiPreferencesTypes'
+import { MAX_ARTIFICING_RECIPE_PINS, type CombatLogFontSize, type ScreenPreferences, type TransmutationCategoryFilter, type TransmutationTierFilter, type UiPreferences } from './uiPreferencesTypes'
 
 export const UI_PREFERENCES_KEY = 'sss-wizard-ui-preferences-v1'
 export const defaultScreenPreferences = (): ScreenPreferences => ({
   inventory: { sourceOpen: false, researchValueOpen: false },
   transmutation: { selectedRecipeId: RECIPE_ORDER[0], pinnedRecipeId: null, categoryFilter: 'all', tierFilter: 'all', craftableOnly: false, activeOnly: false, collapsedCategories: { elemental: false, material: false } },
-  artificing: { selectedRecipeId: null, pinnedRecipeId: null, slotFilter: 'all', tierFilter: 'all', kindFilter: 'all', weaponHandsFilter: 'all', offhandPresentationFilter: 'all', craftableOnly: false, ownershipFilter: 'all' },
+  artificing: { selectedRecipeId: null, pinnedRecipeIds: [], pinsCollapsed: false, slotFilter: 'all', tierFilter: 'all', kindFilter: 'all', weaponHandsFilter: 'all', offhandPresentationFilter: 'all', craftableOnly: false, ownershipFilter: 'all' },
   research: { selectedItemId: null, affinityFilter: 'all', targetSchoolId: 'fire' },
   combat: { combatLogFontSize: 'medium', combatDetailsMode: 'damage-done', dungeonStatisticsMode: 'runs' },
 })
@@ -59,9 +59,13 @@ export const normalizeUiPreferences = (value: unknown): UiPreferences => {
   const rawArtificing = screenState.artificing && typeof screenState.artificing === 'object' ? screenState.artificing : {}
   const a = rawArtificing as Partial<ScreenPreferences['artificing']>
   const oneOf = <T extends string | number>(value: unknown, options: readonly T[], fallback: T): T => options.includes(value as T) ? value as T : fallback
+  const rawPinnedRecipeIds = (a as { pinnedRecipeIds?: unknown }).pinnedRecipeIds
+  const pinnedRecipeSource = Array.isArray(rawPinnedRecipeIds) ? rawPinnedRecipeIds : [(a as { pinnedRecipeId?: unknown }).pinnedRecipeId]
+  const pinnedRecipeIds = Array.from(new Set(pinnedRecipeSource.filter((id): id is ArtificingRecipeId => typeof id === 'string' && ARTIFICING_RECIPE_ORDER.includes(id as ArtificingRecipeId)))).slice(0, MAX_ARTIFICING_RECIPE_PINS)
   const artificing: ScreenPreferences['artificing'] = {
     selectedRecipeId: typeof a.selectedRecipeId === 'string' && ARTIFICING_RECIPE_ORDER.includes(a.selectedRecipeId as ArtificingRecipeId) ? a.selectedRecipeId as ArtificingRecipeId : null,
-    pinnedRecipeId: typeof a.pinnedRecipeId === 'string' && ARTIFICING_RECIPE_ORDER.includes(a.pinnedRecipeId as ArtificingRecipeId) ? a.pinnedRecipeId as ArtificingRecipeId : null,
+    pinnedRecipeIds,
+    pinsCollapsed: a.pinsCollapsed === true,
     slotFilter: oneOf(a.slotFilter, artificingSlotFilters, 'all'),
     tierFilter: oneOf(a.tierFilter, ['all', 1, 2, 3] as const, 'all'),
     kindFilter: oneOf(a.kindFilter, ['all', 'artifact', 'equipment'] as const, 'all'),

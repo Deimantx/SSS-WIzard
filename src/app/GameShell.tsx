@@ -15,6 +15,7 @@ import { leaveToProfiles } from '../profiles/profileController'
 import { Sidebar } from './shell/Sidebar'
 import { Topbar } from './shell/Topbar'
 import { ActivityMonitor } from './shell/ActivityMonitor'
+import { RecipePinsDock } from '../components/recipe-pins/RecipePinsDock'
 import { OfflineBankPopover } from './shell/OfflineBankPopover'
 import { OfflineBankResultsDialog } from './shell/OfflineBankResultsDialog'
 import { ToastStack } from './shell/ToastStack'
@@ -110,6 +111,7 @@ export function GameShell() {
       <Topbar screen={screen} editor={editor} offlineBankOpen={offlineBankOpen} onOfflineBankToggle={() => { dismissGameTooltips(); setOfflineResultsOpen(false); setOfflineBankOpen((open) => !open) }} onDeveloperTools={openDevTools} onEditUi={toggleEditor} onSettings={() => { dismissGameTooltips(); setOfflineBankOpen(false); setOfflineResultsOpen(false); setScreen('settings') }} onMobileMenu={() => setScreen('home')} />
       <OfflineBankPopover open={offlineBankOpen} onClose={() => setOfflineBankOpen(false)} onViewLastResults={() => { setOfflineBankOpen(false); setOfflineResultsOpen(true) }} />
       <div className="screen-scroll"><ScreenRouter /></div>
+      <RecipePinsDock />
       <ActivityMonitor />
     </main>
     <ProgressionFeelObserver profileKey={profileSession.activeProfileId} />

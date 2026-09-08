@@ -12,8 +12,6 @@ import { EditableGrid } from '../../../ui/layout-editor/EditableGrid'
 import { InspectorTransition } from '../../../ui/game-feel/InspectorTransition'
 import { EquipmentCatalog } from './EquipmentCatalog'
 import { ArtificingDetail } from './ArtificingDetail'
-import { arrangeArtificingPanels } from './artificingLayout'
-import { PinnedRecipePanel } from './PinnedRecipePanel'
 import { setNavigationIntent, useNavigationIntent } from '../../../ui/navigation/navigationIntent'
 
 export function ArtificingScreen() {
@@ -46,7 +44,6 @@ export function ArtificingScreen() {
   const panels = [
     { id: 'artificing-catalog', content: <EquipmentCatalog selected={recipe?.id ?? null} onSelect={select} query={query} onQueryChange={setQuery} /> },
     { id: 'artificing-detail', content: <InspectorTransition identity={recipe?.id ?? 'none'} accent={recipe ? ITEMS[recipe.output.itemId].color : undefined}><ArtificingDetail recipe={recipe} /></InspectorTransition> },
-    ...(preferences.pinnedRecipeId && ARTIFICING_RECIPES[preferences.pinnedRecipeId] ? [{ id: 'artificing-pinned-recipe', content: <PinnedRecipePanel recipe={ARTIFICING_RECIPES[preferences.pinnedRecipeId]} onSelect={select} /> }] : []),
   ]
-  return <TowerFrame className="artificing-screen" eyebrow="WIZARD TOWER · ARTIFICING" title="Arcane Forge" description="Forge magical equipment from elemental and dungeon materials. Each craft creates exactly one item."><EditableGrid screen="tower-artificing" panels={panels} layoutTransform={arrangeArtificingPanels} /></TowerFrame>
+  return <TowerFrame className="artificing-screen" eyebrow="WIZARD TOWER · ARTIFICING" title="Arcane Forge" description="Forge magical equipment from elemental and dungeon materials. Each craft creates exactly one item."><EditableGrid screen="tower-artificing" panels={panels} /></TowerFrame>
 }

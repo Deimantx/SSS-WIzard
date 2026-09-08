@@ -48,6 +48,13 @@ describe('screen UI preferences', () => {
     expect(normalizeUiPreferences({ screenState: { artificing: { selectedRecipeId: 'fire-fragment' } } }).screenState.artificing.selectedRecipeId).toBeNull()
   })
 
+  it('migrates, deduplicates, validates, and caps Artificing recipe pins', () => {
+    expect(normalizeUiPreferences({ screenState: { artificing: { pinnedRecipeId: 'ember-staff' } } }).screenState.artificing.pinnedRecipeIds).toEqual(['ember-staff'])
+    expect(normalizeUiPreferences({ screenState: { artificing: { pinnedRecipeIds: ['ember-staff', 'fake-item', 'ember-staff'] } } }).screenState.artificing.pinnedRecipeIds).toEqual(['ember-staff'])
+    expect(normalizeUiPreferences({ screenState: { artificing: { pinnedRecipeIds: ['ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'prismatic-focus', 'wispweave-robe', 'wispveil-hood'] } } }).screenState.artificing.pinnedRecipeIds).toEqual(['ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'prismatic-focus', 'wispweave-robe'])
+    expect(normalizeUiPreferences({ screenState: { artificing: { pinsCollapsed: true } } }).screenState.artificing.pinsCollapsed).toBe(true)
+  })
+
   it('preserves the canonical Artificing Earring slot filter through normalization and reload', () => {
     expect(normalizeUiPreferences({ screenState: { artificing: { slotFilter: 'earring' } } }).screenState.artificing.slotFilter).toBe('earring')
     setUiPreferences({ screenState: { artificing: { slotFilter: 'earring' } } })

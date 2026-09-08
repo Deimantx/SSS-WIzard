@@ -53,8 +53,8 @@ describe('inventory layout compatibility', () => {
 })
 
 describe('Artificing default layout', () => {
-  it('uses a wide catalog and right-side forge stack', () => {
-    expect(DEFAULT_LAYOUTS['tower-artificing']).toEqual({ 'artificing-catalog': { x: 0, y: 0, w: 7, h: 30 }, 'artificing-detail': { x: 7, y: 0, w: 5, h: 30 }, 'artificing-pinned-recipe': { x: 7, y: 30, w: 5, h: 9 } })
+  it('keeps only the editable catalog and forge panels', () => {
+    expect(DEFAULT_LAYOUTS['tower-artificing']).toEqual({ 'artificing-catalog': { x: 0, y: 0, w: 7, h: 30 }, 'artificing-detail': { x: 7, y: 0, w: 5, h: 30 } })
   })
 })
 

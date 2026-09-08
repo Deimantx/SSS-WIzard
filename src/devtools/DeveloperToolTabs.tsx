@@ -14,6 +14,7 @@ import { DeveloperSaveState } from './tabs/DeveloperSaveState'
 import { DeveloperSpells } from './tabs/DeveloperSpells'
 import { DeveloperMonsters } from './tabs/DeveloperMonsters'
 import { DeveloperStatuses } from './tabs/DeveloperStatuses'
+import { DeveloperArtifacts } from './tabs/DeveloperArtifacts'
 
 export function DeveloperTab({ tab, copy }: { tab: DeveloperToolsTab; copy: (label: string, value: unknown) => Promise<void> }) {
   if (tab === 'quick') return <DeveloperQuickSetup />
@@ -21,6 +22,7 @@ export function DeveloperTab({ tab, copy }: { tab: DeveloperToolsTab; copy: (lab
   if (tab === 'channeling') return <DeveloperChanneling />
   if (tab === 'focus') return <DeveloperFocus />
   if (tab === 'artificing') return <DeveloperArtificing />
+  if (tab === 'artifacts') return <DeveloperArtifacts />
   if (tab === 'transmutation') return <DeveloperTransmutation />
   if (tab === 'research') return <DeveloperResearch />
   if (tab === 'inventory') return <DeveloperInventory initialView="all" />

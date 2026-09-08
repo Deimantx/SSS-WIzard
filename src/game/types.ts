@@ -372,6 +372,13 @@ export interface DebugOverrides {
   freezeEnemyActions: boolean
   combatPaused: boolean
   combatTimeScale: number
+  /** Artifact-only tester controls. These values are reset on load and excluded from saves. */
+  artifactBonusPointsByArtifact: Partial<Record<ArtifactId, number>>
+  artifactIgnoreDungeonGate: boolean
+  artifactIgnoreLevelCap: boolean
+  artifactIgnoreNodePrerequisites: boolean
+  artifactAllowBeyondLimit: boolean
+  artifactFreeUpgrade: boolean
 }
 export interface NotificationItem { id: string; text: string; tone: 'info' | 'success' | 'warning'; key?: string; createdAt?: number }
 export interface FocusReservation {

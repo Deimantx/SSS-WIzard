@@ -1,4 +1,5 @@
 import { ARTIFICING_RECIPES } from '../game/content/recipes/artificingRecipes'
+import { ARTIFACTS } from '../game/content/artifacts/artifacts'
 import { grantItem } from '../game/systems/inventory/itemAcquisition'
 import { getConsumableQuantity } from '../game/core/inventory/inventoryConsumption'
 import { create } from 'zustand'
@@ -21,7 +22,7 @@ import { type SaveReason } from '../persistence/saveConstants'
 import { getActiveProfileId } from '../profiles/profileSessionStore'
 import { updateProfileMetadata } from '../profiles/profileStorage'
 import { createInitialState } from './initialState'
-import type { ChannelingDiscoveryId, DungeonId, EquipmentPosition, GameState, ItemId, ManaPillarId, MonsterId, TransmutationRecipeId, ResearchSlotId, SchoolId, ScreenId, SpellId, SpellPreset, SpellPresetId, StatusId } from '../game/types'
+import type { ArtifactId, ChannelingDiscoveryId, DungeonId, EquipmentPosition, GameState, ItemId, ManaPillarId, MonsterId, TransmutationRecipeId, ResearchSlotId, SchoolId, ScreenId, SpellId, SpellPreset, SpellPresetId, StatusId } from '../game/types'
 import { clamp } from '../game/utils'
 import { createDefaultDebugOverrides, resetCombatDebugState, resetDebugState, sanitizeCombatTimeScale, sanitizeDebugNumber } from './actions/debugActions'
 import { addItemAction, destroyItemAction, removeItemAction, sellItemAction, toggleItemProtectionAction } from './actions/inventoryActions'
@@ -37,7 +38,7 @@ import { saveGameAction } from './actions/persistenceActions'
 import { advanceGameState } from '../game/systems/simulation/advanceGameState'
 import { forceCompleteResearchCycle } from '../game/systems/research/researchEngine'
 import { cancelArtificingCraft, craftArtificingRecipe as craftArtificing, startArtifactUpgrade } from '../game/systems/artificing/artificingEngine'
-import { allocateArtifactNode, respecArtifact } from '../game/systems/artifacts/artifactProgression'
+import { allocateArtifactNode, getArtifactLevelCap, respecArtifact } from '../game/systems/artifacts/artifactProgression'
 import { advanceWithOfflineBank as runOfflineBankAdvance, isOfflineBankSimulationActive, type OfflineBankResult, type OfflineBankSimulationObservers } from '../game/systems/offline-bank/offlineBankSimulation'
 import { addOfflineBankMs, clampOfflineBankMs } from '../game/systems/offline-bank/offlineBankDuration'
 import type { OfflineBankReport } from '../game/systems/offline-bank/offlineBankReport'
@@ -122,6 +123,11 @@ export interface GameActions {
   setDebugFreezeEnemyActions: (enabled: boolean) => void
   setDebugCombatPaused: (enabled: boolean) => void
   setDebugCombatTimeScale: (scale: number) => void
+  setDebugArtifactIgnoreDungeonGate: (enabled: boolean) => void
+  setDebugArtifactIgnoreLevelCap: (enabled: boolean) => void
+  setDebugArtifactIgnoreNodePrerequisites: (enabled: boolean) => void
+  setDebugArtifactAllowBeyondLimit: (enabled: boolean) => void
+  setDebugArtifactFreeUpgrade: (enabled: boolean) => void
   clearCombatDebugOverrides: () => void
   resetDebugOverrides: () => void
   prepareResearch: (itemId: ItemId, targetSchoolId: SchoolId, quantity: number) => void
@@ -148,6 +154,19 @@ export interface GameActions {
   upgradeArtifact: (artifactId: import('../game/types').ArtifactId) => boolean
   allocateArtifactNode: (artifactId: import('../game/types').ArtifactId, nodeId: string) => boolean
   respecArtifact: (artifactId: import('../game/types').ArtifactId) => boolean
+  debugSetArtifactLevel: (artifactId: ArtifactId, level: number) => void
+  debugIncreaseArtifactLevel: (artifactId: ArtifactId) => void
+  debugGrantArtifactPoints: (artifactId: ArtifactId, amount: number) => void
+  debugRefillArtifactPoints: (artifactId: ArtifactId) => void
+  debugForceArtifactNode: (artifactId: ArtifactId, nodeId: string) => boolean
+  debugAllocateArtifactNode: (artifactId: ArtifactId, nodeId: string) => boolean
+  debugLockArtifactNode: (artifactId: ArtifactId, nodeId: string) => boolean
+  debugUnlockArtifactNodes: (artifactId: ArtifactId, mode?: 'non-capstone' | 'all' | 'capstones') => void
+  debugResetArtifactPath: (artifactId: ArtifactId) => void
+  debugMaxArtifactLevels: (absolute: boolean) => void
+  debugUnlockAllArtifactPaths: () => void
+  debugResetAllArtifactPaths: () => void
+  debugGrantArtifactMaterials: () => void
   cancelArtificingCraft: () => void
   setDebugTransmutationEchoCapacity: (amount: number | null) => void
   castSpell: (spellId: SpellId) => void
@@ -241,6 +260,41 @@ export const recordRecentAcquisition = (state: GameState & { recentAcquisitions?
   state.recentAcquisitions = [{ itemId, amount, timestamp: Date.now(), isNew: priorEntry?.isNew ?? !wasOwned }, ...previous.filter((entry) => entry.itemId !== itemId)].slice(0, 8)
 }
 
+const ensureDebugArtifact = (state: GameState, artifactId: ArtifactId) => {
+  if (!ARTIFACTS[artifactId]) return null
+  if ((state.inventory[artifactId] ?? 0) < 1) grantItem(state, artifactId, 1)
+  return state.artifactProgress[artifactId] ??= { level: 1, allocatedNodeIds: [], attunedNodeIds: [] }
+}
+
+const forceArtifactNodeInState = (state: GameState, artifactId: ArtifactId, nodeId: string) => {
+  const progress = ensureDebugArtifact(state, artifactId)
+  const node = ARTIFACTS[artifactId]?.nodes.find((candidate) => candidate.id === nodeId)
+  if (!progress || !node) return false
+  if (!progress.allocatedNodeIds.includes(nodeId)) progress.allocatedNodeIds.push(nodeId)
+  if (node.catalyst && !progress.attunedNodeIds.includes(nodeId)) progress.attunedNodeIds.push(nodeId)
+  return true
+}
+
+const setDebugArtifactLevelInState = (state: GameState, artifactId: ArtifactId, level: number) => {
+  const progress = ensureDebugArtifact(state, artifactId)
+  const definition = ARTIFACTS[artifactId]
+  if (!progress || !definition) return
+  progress.level = clamp(Math.floor(sanitizeDebugNumber(level)), 1, definition.maxLevel)
+}
+
+const unlockDebugArtifactNodesInState = (state: GameState, artifactId: ArtifactId, mode: 'non-capstone' | 'all' | 'capstones' = 'all') => {
+  const nodes = ARTIFACTS[artifactId]?.nodes.filter((node) => mode === 'all' || (mode === 'capstones' ? node.type === 'capstone' : node.type !== 'capstone')) ?? []
+  nodes.forEach((node) => forceArtifactNodeInState(state, artifactId, node.id))
+}
+
+const grantDebugArtifactMaterialsInState = (state: GameState) => {
+  Object.values(ARTIFACTS).forEach((definition) => {
+    if (!definition) return
+    const ingredients = [...definition.forge.ingredients, ...definition.upgrades.flatMap((upgrade) => upgrade.ingredients), ...definition.nodes.flatMap((node) => node.catalyst ? [node.catalyst] : [])]
+    ingredients.forEach(({ itemId, quantity }) => grantItem(state, itemId, quantity))
+  })
+}
+
 const spellUnlocked = isSpellUnlocked
 const canReserveFocus = canReserveFocusAction
 
@@ -307,6 +361,11 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   setDebugFreezeEnemyActions: (enabled) => set((state) => { state.debug.freezeEnemyActions = enabled; return state }),
   setDebugCombatPaused: (enabled) => set((state) => { state.debug.combatPaused = enabled; return state }),
   setDebugCombatTimeScale: (scale) => set((state) => { state.debug.combatTimeScale = sanitizeCombatTimeScale(scale); return state }),
+  setDebugArtifactIgnoreDungeonGate: (enabled) => set((state) => { state.debug.artifactIgnoreDungeonGate = enabled; return state }),
+  setDebugArtifactIgnoreLevelCap: (enabled) => set((state) => { state.debug.artifactIgnoreLevelCap = enabled; return state }),
+  setDebugArtifactIgnoreNodePrerequisites: (enabled) => set((state) => { state.debug.artifactIgnoreNodePrerequisites = enabled; return state }),
+  setDebugArtifactAllowBeyondLimit: (enabled) => set((state) => { state.debug.artifactAllowBeyondLimit = enabled; return state }),
+  setDebugArtifactFreeUpgrade: (enabled) => set((state) => { state.debug.artifactFreeUpgrade = enabled; return state }),
   clearCombatDebugOverrides: () => set((state) => { resetCombatDebugState(state); return state }),
   resetDebugOverrides: () => set((state) => { resetDebugState(state); state.activities.channeling.echoesAssigned = clamp(state.activities.channeling.echoesAssigned, 0, BALANCE.channeling.maxEchoes); recalculateDerivedStats(state); return state }),
   prepareResearch: (itemId, targetSchoolId, quantity) => set((state) => { prepareResearchAction(state, itemId, targetSchoolId, quantity); return state }),
@@ -331,9 +390,22 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   cancelArtificingCraft: () => set(state => { cancelArtificingCraft(state) }),
   grantArtificingIngredients: (recipeId) => set(state => { const recipe = ARTIFICING_RECIPES[recipeId]; if (recipe) recipe.ingredients.forEach(i => { const missing = Math.max(0, i.quantity - getConsumableQuantity(state, i.itemId)); if (missing) grantItem(state, i.itemId, missing) }); }),
   craftArtificingRecipe: (recipeId) => { let ok = false; set((state) => { const result = craftArtificing(state, recipeId); ok = result.ok; if (!result.ok) pushNotification(state, result.reason, 'warning', { key: 'artificing-craft-failed', cooldownMs: 1200 }); return state }); return ok },
-  upgradeArtifact: (artifactId) => { let ok = false; set((state) => { const result = startArtifactUpgrade(state, artifactId); ok = result.ok; if (!result.ok) pushNotification(state, result.reason, 'warning', { key: 'artifact-upgrade-failed', cooldownMs: 1200 }); return state }); return ok },
+  upgradeArtifact: (artifactId) => { let ok = false; set((state) => { if (state.debug.artifactFreeUpgrade) { const progress = state.artifactProgress[artifactId]; const cap = getArtifactLevelCap(state, artifactId); if (progress && progress.level < cap) { progress.level += 1; ok = true; recalculateDerivedStats(state); return state } } const result = startArtifactUpgrade(state, artifactId); ok = result.ok; if (!result.ok) pushNotification(state, result.reason, 'warning', { key: 'artifact-upgrade-failed', cooldownMs: 1200 }); return state }); return ok },
   allocateArtifactNode: (artifactId, nodeId) => { let ok = false; set((state) => { ok = allocateArtifactNode(state, artifactId, nodeId); if (!ok) pushNotification(state, 'Artifact Node requirements are not satisfied.', 'warning'); recalculateDerivedStats(state); return state }); return ok },
   respecArtifact: (artifactId) => { let ok = false; set((state) => { ok = respecArtifact(state, artifactId); recalculateDerivedStats(state); return state }); return ok },
+  debugSetArtifactLevel: (artifactId, level) => set((state) => { setDebugArtifactLevelInState(state, artifactId, level); recalculateDerivedStats(state); return state }),
+  debugIncreaseArtifactLevel: (artifactId) => set((state) => { const progress = ensureDebugArtifact(state, artifactId); if (progress) setDebugArtifactLevelInState(state, artifactId, progress.level + 1); recalculateDerivedStats(state); return state }),
+  debugGrantArtifactPoints: (artifactId, amount) => set((state) => { if (!ensureDebugArtifact(state, artifactId)) return state; state.debug.artifactBonusPointsByArtifact[artifactId] = Math.max(0, Math.floor(sanitizeDebugNumber(state.debug.artifactBonusPointsByArtifact[artifactId] ?? 0) + sanitizeDebugNumber(amount))); return state }),
+  debugRefillArtifactPoints: (artifactId) => set((state) => { if (!ensureDebugArtifact(state, artifactId)) return state; state.debug.artifactBonusPointsByArtifact[artifactId] = 999; return state }),
+  debugForceArtifactNode: (artifactId, nodeId) => { let ok = false; set((state) => { ok = forceArtifactNodeInState(state, artifactId, nodeId); recalculateDerivedStats(state); return state }); return ok },
+  debugAllocateArtifactNode: (artifactId, nodeId) => { let ok = false; set((state) => { ok = allocateArtifactNode(state, artifactId, nodeId); recalculateDerivedStats(state); return state }); return ok },
+  debugLockArtifactNode: (artifactId, nodeId) => { let ok = false; set((state) => { const progress = state.artifactProgress[artifactId]; const definition = ARTIFACTS[artifactId]; if (!progress || !definition || definition.nodes.some((node) => progress.allocatedNodeIds.includes(node.id) && (node.prerequisites ?? []).includes(nodeId))) return state; const index = progress.allocatedNodeIds.indexOf(nodeId); if (index < 0) return state; progress.allocatedNodeIds.splice(index, 1); progress.attunedNodeIds = progress.attunedNodeIds.filter((id) => id !== nodeId); ok = true; recalculateDerivedStats(state); return state }); return ok },
+  debugUnlockArtifactNodes: (artifactId, mode = 'all') => set((state) => { unlockDebugArtifactNodesInState(state, artifactId, mode); recalculateDerivedStats(state); return state }),
+  debugResetArtifactPath: (artifactId) => set((state) => { respecArtifact(state, artifactId); delete state.debug.artifactBonusPointsByArtifact[artifactId]; recalculateDerivedStats(state); return state }),
+  debugMaxArtifactLevels: (absolute) => set((state) => { Object.entries(ARTIFACTS).forEach(([artifactId, definition]) => { if (!definition || (state.inventory[artifactId as ArtifactId] ?? 0) < 1) return; setDebugArtifactLevelInState(state, artifactId as ArtifactId, absolute ? definition.maxLevel : getArtifactLevelCap(state, artifactId as ArtifactId)) }); recalculateDerivedStats(state); return state }),
+  debugUnlockAllArtifactPaths: () => set((state) => { Object.entries(ARTIFACTS).forEach(([artifactId, definition]) => { if (!definition) return; const id = artifactId as ArtifactId; ensureDebugArtifact(state, id); setDebugArtifactLevelInState(state, id, definition.maxLevel); unlockDebugArtifactNodesInState(state, id, 'all') }); recalculateDerivedStats(state); return state }),
+  debugResetAllArtifactPaths: () => set((state) => { Object.keys(ARTIFACTS).forEach((artifactId) => { respecArtifact(state, artifactId as ArtifactId); delete state.debug.artifactBonusPointsByArtifact[artifactId as ArtifactId] }); recalculateDerivedStats(state); return state }),
+  debugGrantArtifactMaterials: () => set((state) => { grantDebugArtifactMaterialsInState(state); return state }),
   setDebugTransmutationEchoCapacity: (amount) => set((state) => { setTransmutationEchoCapacityOverrideAction(state, amount); return state }),
   castSpell: (spellId) => set((state) => { castSpellAction(state, spellId, combatEventSink); return state }),
   toggleAutoCast: (spellId) => { const before = Boolean(get().activities.autoCast[spellId]); set((state) => { const cost = getSpellAutoCastFocusCost(state, spellId); if (!spellUnlocked(state, spellId) || cost === null) return state; const latchIndex = state.combat.autoCastManaStarvedSpells.indexOf(spellId); if (latchIndex >= 0) state.combat.autoCastManaStarvedSpells.splice(latchIndex, 1); if (state.activities.autoCast[spellId]) { state.activities.autoCast[spellId] = false; state.spellPresets.lastAppliedPresetId = null } else if (canReserveFocus(state, cost)) { state.activities.autoCast[spellId] = true; state.spellPresets.lastAppliedPresetId = null; pushNotification(state, `${SPELLS[spellId].name} Auto-Cast enabled`, 'success') } else pushNotification(state, `Cannot enable Auto-Cast · Requires ${cost} Focus · Free Focus: ${selectFreeFocus(state)}`, 'warning'); return state }); const after = Boolean(get().activities.autoCast[spellId]); if (after !== before) emitActionFeel(after ? 'autocast-on' : 'autocast-off', `[data-spell-id="${spellId}"]`, 'var(--ui-secondary)'); else emitActionFeel('error', `[data-spell-id="${spellId}"]`, 'var(--ui-warning)', 0.75); return after !== before },

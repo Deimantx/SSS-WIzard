@@ -2,14 +2,14 @@ import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as R
 import { Bug, Check, PanelRight, RotateCcw, X } from 'lucide-react'
 import { GameTooltip, Status } from '../components/ui'
 import { useGameStore } from '../store/gameStore'
-import { clampDeveloperToolsToViewport, closeDeveloperTools, dockDeveloperTools, resetDeveloperToolsWindow, setDeveloperToolsDockedPosition, setDeveloperToolsGeometry, setDeveloperToolsTab, useDeveloperToolsStore, workspaceDeveloperTools, type DeveloperToolsTab } from './developerToolsStore'
+import { clampDeveloperToolsToViewport, closeDeveloperTools, dockDeveloperTools, resetDeveloperToolsWindow, setArtifactDevPanelVisible, setDeveloperToolsDockedPosition, setDeveloperToolsGeometry, setDeveloperToolsTab, useDeveloperToolsStore, workspaceDeveloperTools, type DeveloperToolsTab } from './developerToolsStore'
 import { DeveloperTab } from './DeveloperToolTabs'
 import { getActiveDebugOverrides } from './debugOverridePresentation'
 
 const tabGroups: readonly { label: string; tabs: readonly { id: DeveloperToolsTab; label: string }[] }[] = [
   { label: 'QUICK', tabs: [{ id: 'quick', label: 'Quick Setup' }] },
   { label: 'PLAYER', tabs: [{ id: 'character', label: 'Character' }, { id: 'inventory', label: 'Inventory & Equipment' }, { id: 'progression', label: 'Progression' }] },
-  { label: 'MAGIC', tabs: [{ id: 'spells', label: 'Spells & Schools' }, { id: 'research', label: 'Research' }, { id: 'channeling', label: 'Channeling' }, { id: 'focus', label: 'Focus' }, { id: 'transmutation', label: 'Transmutation' }, { id: 'artificing', label: 'Artificing' }] },
+  { label: 'MAGIC', tabs: [{ id: 'spells', label: 'Spells & Schools' }, { id: 'research', label: 'Research' }, { id: 'channeling', label: 'Channeling' }, { id: 'focus', label: 'Focus' }, { id: 'transmutation', label: 'Transmutation' }, { id: 'artificing', label: 'Artificing' }, { id: 'artifacts', label: 'Artifacts' }] },
   { label: 'COMBAT', tabs: [{ id: 'combat', label: 'Combat Lab' }, { id: 'monsters', label: 'Monsters' }, { id: 'statuses', label: 'Statuses' }] },
   { label: 'SYSTEM', tabs: [{ id: 'save', label: 'Save / Profile' }, { id: 'diagnostics', label: 'Advanced Diagnostics' }] },
 ]
@@ -90,6 +90,7 @@ export function DeveloperToolsWindow() {
           {!workspace && <GameTooltip content="Reset docked window position and size"><button className="icon-button" onClick={resetDeveloperToolsWindow} aria-label="Reset Developer Tools window position and size"><RotateCcw size={15} /></button></GameTooltip>}
           <GameTooltip content="Clear all debug overrides"><button className="icon-button" onClick={resetDebug} disabled={activeOverrides.length === 0} aria-label="Clear all debug overrides"><span className="developer-clear-label">CLEAR ALL</span></button></GameTooltip>
           <GameTooltip content={workspace ? 'Move Developer Tools into a docked window' : 'Open full Developer Workspace'}><button className="icon-button" onClick={workspace ? dockDeveloperTools : workspaceDeveloperTools} aria-label={workspace ? 'Dock Developer Tools' : 'Open full Developer Workspace'}><PanelRight size={16} /></button></GameTooltip>
+          <GameTooltip content="Show compact Artifact Path developer controls while an Artifact Path is open"><button type="button" className={`developer-artifact-panel-toggle${session.showArtifactDevPanel ? ' active' : ''}`} aria-pressed={session.showArtifactDevPanel} aria-label="Show Artifact Path Dev Panel" onClick={() => setArtifactDevPanelVisible(!session.showArtifactDevPanel)}>ARTIFACT PANEL {session.showArtifactDevPanel ? 'ON' : 'OFF'}</button></GameTooltip>
           <GameTooltip content="Close Developer Tools"><button className="icon-button" onClick={closeDeveloperTools} aria-label="Close Developer Tools"><X size={18} /></button></GameTooltip>
         </div>
       </header>

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { grantItem } from '../inventory/itemAcquisition'
 import { advanceArtificing, startArtifactUpgrade } from '../artificing/artificingEngine'
-import { getArtifactNodeEligibility } from './artifactProgression'
+import { getArtifactLevelCap, getArtifactNodeEligibility } from './artifactProgression'
 
 describe('Artifact progression foundation', () => {
   it('caps Artifact ownership and returns the actual granted amount', () => {
@@ -50,5 +50,21 @@ describe('Artifact progression foundation', () => {
     expect(getArtifactNodeEligibility(state, 'ember-staff', 'heartfed-embers').status).toBe('missingBoss')
     state.progress.bossKillsByBoss['forest-heart'] = 1
     expect(getArtifactNodeEligibility(state, 'ember-staff', 'heartfed-embers').status).toBe('missingCatalyst')
+  })
+
+  it('keeps authored caps and gates intact until artifact overrides are enabled', () => {
+    const state = createInitialState()
+    state.inventory['ember-staff'] = 1
+    state.artifactProgress['ember-staff'] = { level: 10, allocatedNodeIds: ['arcane-kindling', 'cinder-memory', 'lingering-flame'], attunedNodeIds: [] }
+    expect(getArtifactLevelCap(state, 'ember-staff')).toBe(4)
+    state.debug.artifactIgnoreLevelCap = true
+    expect(getArtifactLevelCap(state, 'ember-staff')).toBe(10)
+
+    state.artifactProgress['ember-staff'].level = 4
+    state.debug.artifactBonusPointsByArtifact['ember-staff'] = 1
+    state.inventory.heartseed = 1
+    expect(getArtifactNodeEligibility(state, 'ember-staff', 'heartfed-embers').status).toBe('missingBoss')
+    state.debug.artifactIgnoreDungeonGate = true
+    expect(getArtifactNodeEligibility(state, 'ember-staff', 'heartfed-embers').status).toBe('available')
   })
 })

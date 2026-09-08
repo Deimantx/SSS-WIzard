@@ -36,6 +36,40 @@ describe('Tier 1 Artifact roster', () => {
     expect(getArtifactEffectiveStats(state, 'wispveil-hood')).toMatchObject({ maxHealth: 49, defense: 14 })
   })
 
+  it('uses the reduced dungeon material costs for Wispweave Robe and Wispveil Hood upgrades', () => {
+    const amounts = (artifactId: ArtificingRecipeId, itemIds: readonly string[]) => ARTIFACTS[artifactId].upgrades.map(({ ingredients }) => (
+      Object.fromEntries(itemIds.map((itemId) => [itemId, ingredients.find((ingredient) => ingredient.itemId === itemId)?.quantity ?? 0]))
+    ))
+    const universalAmounts = (artifactId: ArtificingRecipeId, itemId: string) => ARTIFACTS[artifactId].upgrades.map(({ ingredients }) => ingredients.find((ingredient) => ingredient.itemId === itemId)?.quantity ?? 0)
+
+    expect(amounts('wispweave-robe', ['wisp-essence', 'thorn-fiber', 'rootstone-shard', 'grove-bark', 'predator-hide', 'predator-fang', 'corrupted-beast-essence', 'predator-sinew', 'ossuary-remnant', 'soul-residue', 'graveglass-shard', 'burial-cloth'])).toEqual([
+      { 'wisp-essence': 7, 'thorn-fiber': 7, 'rootstone-shard': 6, 'grove-bark': 6, 'predator-hide': 0, 'predator-fang': 0, 'corrupted-beast-essence': 0, 'predator-sinew': 0, 'ossuary-remnant': 0, 'soul-residue': 0, 'graveglass-shard': 0, 'burial-cloth': 0 },
+      { 'wisp-essence': 16, 'thorn-fiber': 16, 'rootstone-shard': 17, 'grove-bark': 17, 'predator-hide': 0, 'predator-fang': 0, 'corrupted-beast-essence': 0, 'predator-sinew': 0, 'ossuary-remnant': 0, 'soul-residue': 0, 'graveglass-shard': 0, 'burial-cloth': 0 },
+      { 'wisp-essence': 30, 'thorn-fiber': 30, 'rootstone-shard': 30, 'grove-bark': 30, 'predator-hide': 0, 'predator-fang': 0, 'corrupted-beast-essence': 0, 'predator-sinew': 0, 'ossuary-remnant': 0, 'soul-residue': 0, 'graveglass-shard': 0, 'burial-cloth': 0 },
+      { 'wisp-essence': 0, 'thorn-fiber': 0, 'rootstone-shard': 0, 'grove-bark': 0, 'predator-hide': 13, 'predator-fang': 13, 'corrupted-beast-essence': 13, 'predator-sinew': 13, 'ossuary-remnant': 0, 'soul-residue': 0, 'graveglass-shard': 0, 'burial-cloth': 0 },
+      { 'wisp-essence': 0, 'thorn-fiber': 0, 'rootstone-shard': 0, 'grove-bark': 0, 'predator-hide': 25, 'predator-fang': 25, 'corrupted-beast-essence': 25, 'predator-sinew': 25, 'ossuary-remnant': 0, 'soul-residue': 0, 'graveglass-shard': 0, 'burial-cloth': 0 },
+      { 'wisp-essence': 0, 'thorn-fiber': 0, 'rootstone-shard': 0, 'grove-bark': 0, 'predator-hide': 42, 'predator-fang': 42, 'corrupted-beast-essence': 41, 'predator-sinew': 41, 'ossuary-remnant': 0, 'soul-residue': 0, 'graveglass-shard': 0, 'burial-cloth': 0 },
+      { 'wisp-essence': 0, 'thorn-fiber': 0, 'rootstone-shard': 0, 'grove-bark': 0, 'predator-hide': 0, 'predator-fang': 0, 'corrupted-beast-essence': 0, 'predator-sinew': 0, 'ossuary-remnant': 15, 'soul-residue': 15, 'graveglass-shard': 15, 'burial-cloth': 15 },
+      { 'wisp-essence': 0, 'thorn-fiber': 0, 'rootstone-shard': 0, 'grove-bark': 0, 'predator-hide': 0, 'predator-fang': 0, 'corrupted-beast-essence': 0, 'predator-sinew': 0, 'ossuary-remnant': 35, 'soul-residue': 35, 'graveglass-shard': 35, 'burial-cloth': 35 },
+      { 'wisp-essence': 0, 'thorn-fiber': 0, 'rootstone-shard': 0, 'grove-bark': 0, 'predator-hide': 0, 'predator-fang': 0, 'corrupted-beast-essence': 0, 'predator-sinew': 0, 'ossuary-remnant': 68, 'soul-residue': 68, 'graveglass-shard': 68, 'burial-cloth': 68 },
+    ])
+    expect(amounts('wispveil-hood', ['wisp-essence', 'thorn-fiber', 'rootstone-shard', 'grove-bark', 'predator-hide', 'predator-fang', 'corrupted-beast-essence', 'predator-sinew', 'ossuary-remnant', 'soul-residue', 'graveglass-shard', 'burial-cloth'])).toEqual([
+      { 'wisp-essence': 7, 'thorn-fiber': 7, 'rootstone-shard': 6, 'grove-bark': 6, 'predator-hide': 0, 'predator-fang': 0, 'corrupted-beast-essence': 0, 'predator-sinew': 0, 'ossuary-remnant': 0, 'soul-residue': 0, 'graveglass-shard': 0, 'burial-cloth': 0 },
+      { 'wisp-essence': 13, 'thorn-fiber': 13, 'rootstone-shard': 13, 'grove-bark': 13, 'predator-hide': 0, 'predator-fang': 0, 'corrupted-beast-essence': 0, 'predator-sinew': 0, 'ossuary-remnant': 0, 'soul-residue': 0, 'graveglass-shard': 0, 'burial-cloth': 0 },
+      { 'wisp-essence': 26, 'thorn-fiber': 26, 'rootstone-shard': 27, 'grove-bark': 27, 'predator-hide': 0, 'predator-fang': 0, 'corrupted-beast-essence': 0, 'predator-sinew': 0, 'ossuary-remnant': 0, 'soul-residue': 0, 'graveglass-shard': 0, 'burial-cloth': 0 },
+      { 'wisp-essence': 0, 'thorn-fiber': 0, 'rootstone-shard': 0, 'grove-bark': 0, 'predator-hide': 10, 'predator-fang': 10, 'corrupted-beast-essence': 10, 'predator-sinew': 10, 'ossuary-remnant': 0, 'soul-residue': 0, 'graveglass-shard': 0, 'burial-cloth': 0 },
+      { 'wisp-essence': 0, 'thorn-fiber': 0, 'rootstone-shard': 0, 'grove-bark': 0, 'predator-hide': 16, 'predator-fang': 16, 'corrupted-beast-essence': 17, 'predator-sinew': 17, 'ossuary-remnant': 0, 'soul-residue': 0, 'graveglass-shard': 0, 'burial-cloth': 0 },
+      { 'wisp-essence': 0, 'thorn-fiber': 0, 'rootstone-shard': 0, 'grove-bark': 0, 'predator-hide': 28, 'predator-fang': 28, 'corrupted-beast-essence': 28, 'predator-sinew': 28, 'ossuary-remnant': 0, 'soul-residue': 0, 'graveglass-shard': 0, 'burial-cloth': 0 },
+      { 'wisp-essence': 0, 'thorn-fiber': 0, 'rootstone-shard': 0, 'grove-bark': 0, 'predator-hide': 0, 'predator-fang': 0, 'corrupted-beast-essence': 0, 'predator-sinew': 0, 'ossuary-remnant': 13, 'soul-residue': 13, 'graveglass-shard': 13, 'burial-cloth': 13 },
+      { 'wisp-essence': 0, 'thorn-fiber': 0, 'rootstone-shard': 0, 'grove-bark': 0, 'predator-hide': 0, 'predator-fang': 0, 'corrupted-beast-essence': 0, 'predator-sinew': 0, 'ossuary-remnant': 18, 'soul-residue': 18, 'graveglass-shard': 18, 'burial-cloth': 18 },
+      { 'wisp-essence': 0, 'thorn-fiber': 0, 'rootstone-shard': 0, 'grove-bark': 0, 'predator-hide': 0, 'predator-fang': 0, 'corrupted-beast-essence': 0, 'predator-sinew': 0, 'ossuary-remnant': 47, 'soul-residue': 47, 'graveglass-shard': 46, 'burial-cloth': 46 },
+    ])
+    expect(universalAmounts('wispweave-robe', 'life-essence')).toEqual([13, 25, 50, 75, 125, 188, 250, 338, 450])
+    expect(universalAmounts('wispveil-hood', 'life-essence')).toEqual([10, 20, 40, 63, 105, 163, 225, 300, 413])
+    expect(universalAmounts('wispweave-robe', 'prismatic-fragment')).toEqual([0, 0, 5, 8, 13, 20, 25, 38, 55])
+    expect(universalAmounts('wispveil-hood', 'prismatic-fragment')).toEqual([0, 5, 8, 10, 15, 23, 30, 43, 63])
+  })
+
   it('unlocks every Tier 1 Artifact recipe after any one normal Whispering Woods kill', () => {
     firstKillMonsters.forEach((monsterId) => {
       const state = createInitialState()

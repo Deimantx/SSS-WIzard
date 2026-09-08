@@ -19,6 +19,10 @@ function DetailModeTooltipFixture() {
   return <TooltipProvider><GameTooltip delay={0} content={<DetailModeProbe />}><button>Details</button></GameTooltip></TooltipProvider>
 }
 
+function DetailModePairFixture({ delay = 0 }: { delay?: number }) {
+  return <TooltipProvider><GameTooltip delay={delay} content={<DetailModeProbe />}><button>A</button></GameTooltip><GameTooltip delay={delay} content={<DetailModeProbe />}><button>B</button></GameTooltip></TooltipProvider>
+}
+
 describe('TooltipProvider singleton timing', () => {
   afterEach(() => { vi.useRealTimers() })
 
@@ -94,5 +98,94 @@ describe('TooltipProvider singleton timing', () => {
     expect(screen.getByRole('tooltip')).toBeTruthy()
     fireEvent.keyDown(trigger, { key: 'Escape' })
     expect(screen.queryByRole('tooltip')).toBeNull()
+  })
+
+  it('reopens the same tooltip with Alt details after a complete close', () => {
+    vi.useFakeTimers()
+    render(<DetailModePairFixture />)
+    const trigger = screen.getByRole('button', { name: 'A' })
+
+    fireEvent.pointerEnter(trigger)
+    act(() => { vi.advanceTimersByTime(1) })
+    fireEvent.keyDown(window, { key: 'Alt' })
+    expect(screen.getByTestId('tooltip-detail-mode').textContent).toBe('advanced')
+    fireEvent.keyUp(window, { key: 'Alt' })
+    fireEvent.pointerLeave(trigger)
+    act(() => { vi.advanceTimersByTime(70) })
+    expect(screen.queryByRole('tooltip')).toBeNull()
+
+    fireEvent.pointerEnter(trigger)
+    act(() => { vi.advanceTimersByTime(1) })
+    expect(screen.getByTestId('tooltip-detail-mode').textContent).toBe('compact')
+    fireEvent.keyDown(window, { key: 'Alt' })
+    expect(screen.getByTestId('tooltip-detail-mode').textContent).toBe('advanced')
+    fireEvent.keyUp(window, { key: 'Alt' })
+  })
+
+  it('applies Alt details independently to a different tooltip target', () => {
+    vi.useFakeTimers()
+    render(<DetailModePairFixture />)
+    const first = screen.getByRole('button', { name: 'A' })
+    const second = screen.getByRole('button', { name: 'B' })
+
+    fireEvent.pointerEnter(first)
+    act(() => { vi.advanceTimersByTime(1) })
+    fireEvent.keyDown(window, { key: 'Alt' })
+    expect(screen.getByTestId('tooltip-detail-mode').textContent).toBe('advanced')
+    fireEvent.keyUp(window, { key: 'Alt' })
+    fireEvent.pointerLeave(first)
+    act(() => { vi.advanceTimersByTime(70) })
+
+    fireEvent.pointerEnter(second)
+    act(() => { vi.advanceTimersByTime(1) })
+    fireEvent.keyDown(window, { key: 'Alt' })
+    expect(screen.getByTestId('tooltip-detail-mode').textContent).toBe('advanced')
+    fireEvent.keyUp(window, { key: 'Alt' })
+  })
+
+  it('captures bare Alt only while a tooltip is pending or active', () => {
+    vi.useFakeTimers()
+    render(<DetailModePairFixture delay={500} />)
+    const trigger = screen.getByRole('button', { name: 'A' })
+
+    const withoutTooltip = new KeyboardEvent('keydown', { key: 'Alt', cancelable: true })
+    window.dispatchEvent(withoutTooltip)
+    expect(withoutTooltip.defaultPrevented).toBe(false)
+    fireEvent.keyUp(window, { key: 'Alt' })
+
+    fireEvent.pointerEnter(trigger)
+    const whilePending = new KeyboardEvent('keydown', { key: 'Alt', cancelable: true })
+    window.dispatchEvent(whilePending)
+    expect(whilePending.defaultPrevented).toBe(true)
+    act(() => { vi.advanceTimersByTime(500) })
+    expect(screen.getByTestId('tooltip-detail-mode').textContent).toBe('advanced')
+
+    fireEvent.keyUp(window, { key: 'Alt' })
+    const whileActive = new KeyboardEvent('keydown', { key: 'Alt', cancelable: true })
+    window.dispatchEvent(whileActive)
+    expect(whileActive.defaultPrevented).toBe(true)
+    fireEvent.keyUp(window, { key: 'Alt' })
+  })
+
+  it('recovers after blur and can use Alt again after closing', () => {
+    vi.useFakeTimers()
+    render(<DetailModePairFixture />)
+    const trigger = screen.getByRole('button', { name: 'A' })
+
+    fireEvent.pointerEnter(trigger)
+    act(() => { vi.advanceTimersByTime(1) })
+    fireEvent.keyDown(window, { key: 'Alt' })
+    expect(screen.getByTestId('tooltip-detail-mode').textContent).toBe('advanced')
+    fireEvent.blur(window)
+    expect(screen.getByTestId('tooltip-detail-mode').textContent).toBe('compact')
+    fireEvent.pointerLeave(trigger)
+    act(() => { vi.advanceTimersByTime(70) })
+
+    fireEvent.pointerEnter(trigger)
+    act(() => { vi.advanceTimersByTime(1) })
+    expect(screen.getByTestId('tooltip-detail-mode').textContent).toBe('compact')
+    fireEvent.keyDown(window, { key: 'Alt' })
+    expect(screen.getByTestId('tooltip-detail-mode').textContent).toBe('advanced')
+    fireEvent.keyUp(window, { key: 'Alt' })
   })
 })

@@ -17,7 +17,7 @@ export function useTooltipDetailMode(): TooltipDetailMode { return useContext(To
 export function TooltipProvider({ children }: { children: ReactNode }) {
   const [pending, setPending] = useState<TooltipRequest | null>(null)
   const [active, setActive] = useState<TooltipRequest | null>(null)
-  const [advanced, setAdvanced] = useState(false)
+  const [altPressed, setAltPressed] = useState(false)
   const [position, setPosition] = useState({ top: 0, left: 0 })
   const timer = useRef<number | null>(null)
   const closeTimer = useRef<number | null>(null)
@@ -25,6 +25,7 @@ export function TooltipProvider({ children }: { children: ReactNode }) {
   const pendingRef = useRef<TooltipRequest | null>(null)
   const activeRef = useRef<TooltipRequest | null>(null)
   const layerRef = useRef<HTMLDivElement>(null)
+  const advanced = altPressed && (activeRef.current !== null || pendingRef.current !== null)
 
   const clearTimers = () => {
     if (timer.current !== null) window.clearTimeout(timer.current)
@@ -63,14 +64,20 @@ export function TooltipProvider({ children }: { children: ReactNode }) {
   const touch = (next: TooltipRequest) => { request(next, 0); touchTimer.current = window.setTimeout(dismiss, 1800) }
 
   useEffect(() => {
-    const setAltHeld = (held: boolean) => setAdvanced((current) => current === held ? current : held)
-    const onKeyDown = (event: globalThis.KeyboardEvent) => { if (event.key === 'Alt') setAltHeld(true) }
-    const onKeyUp = (event: globalThis.KeyboardEvent) => { if (event.key === 'Alt') setAltHeld(false) }
-    const onBlur = () => setAltHeld(false)
+    const onKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== 'Alt') return
+      if (event.ctrlKey || event.metaKey || event.shiftKey) return
+      if (activeRef.current !== null || pendingRef.current !== null) event.preventDefault()
+      setAltPressed(true)
+    }
+    const onKeyUp = (event: globalThis.KeyboardEvent) => { if (event.key === 'Alt') setAltPressed(false) }
+    const onBlur = () => setAltPressed(false)
+    const onVisibilityChange = () => { if (document.hidden) setAltPressed(false) }
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('keyup', onKeyUp)
     window.addEventListener('blur', onBlur)
-    return () => { window.removeEventListener('keydown', onKeyDown); window.removeEventListener('keyup', onKeyUp); window.removeEventListener('blur', onBlur) }
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    return () => { window.removeEventListener('keydown', onKeyDown); window.removeEventListener('keyup', onKeyUp); window.removeEventListener('blur', onBlur); document.removeEventListener('visibilitychange', onVisibilityChange) }
   }, [])
   useEffect(() => { providerDismiss = dismiss; return () => { if (providerDismiss === dismiss) providerDismiss = null; clearTimers() } }, [])
   useEffect(() => {

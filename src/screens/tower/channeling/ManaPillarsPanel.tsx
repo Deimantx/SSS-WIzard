@@ -3,11 +3,12 @@ import { Button, Card, Status } from '../../../components/ui'
 import { GameTooltip, TooltipContent } from '../../../components/ui/tooltip/Tooltip'
 import { ItemRequirementTile } from '../../../components/ui/item/ItemRequirementTile'
 import { MANA_PILLARS, MANA_PILLAR_IDS, getManaPillarLevelCost, type ManaPillarDefinition } from '../../../game/content/channeling/manaPillars'
-import { getManaPillarLevel } from '../../../game/engine/channelingEngine'
 import { getConsumableQuantity } from '../../../game/core/inventory/inventoryConsumption'
 import { getEquippedReservedQuantity } from '../../../game/core/equipment/equipmentRules'
-import type { ItemId, ManaPillarId } from '../../../game/types'
+import type { GameState, ItemId, ManaPillarId } from '../../../game/types'
 import { useGameStore } from '../../../store/gameStore'
+
+type ManaPillars = GameState['progress']['channeling']['pillars']
 
 const PILLAR_CATEGORIES: Record<ManaPillarId, 'FOUNDATION' | 'AMPLIFICATION'> = {
   'leyline-conduit': 'FOUNDATION',
@@ -27,12 +28,12 @@ const PILLAR_ACCENTS: Record<ManaPillarId, string> = {
 
 export function ManaPillarsPanel() {
   const [selectedPillarId, setSelectedPillarId] = useState<ManaPillarId>('leyline-conduit')
-  const state = useGameStore()
-  const mastered = MANA_PILLAR_IDS.filter((id) => getManaPillarLevel(state, id) >= MANA_PILLARS[id].maxLevel).length
+  const pillars = useGameStore((state) => state.progress.channeling.pillars)
+  const mastered = MANA_PILLAR_IDS.filter((id) => getSafePillarLevel(pillars, id) >= MANA_PILLARS[id].maxLevel).length
 
-  return <Card className="mana-pillars-panel" title="PILLARS OF MANA" action={<div className="mana-mastery-summary"><span>RANK I MASTERY</span><strong>{mastered} / {MANA_PILLAR_IDS.length}</strong><PillarMastery pillars={state.progress.channeling.pillars} /></div>}>
+  return <Card className="mana-pillars-panel" title="PILLARS OF MANA" action={<div className="mana-mastery-summary"><span>RANK I MASTERY</span><strong>{mastered} / {MANA_PILLAR_IDS.length}</strong><PillarMastery pillars={pillars} /></div>}>
     <p className="mana-pillars-intro">Strengthen the foundations that govern the tower's Mana economy.</p>
-    <div className="mana-pillar-bonus-summary"><span>ACTIVE BONUSES</span><strong>Regen {summaryEffect(state, 'leyline-conduit')} · Capacity {summaryEffect(state, 'arcane-reservoir')} · Resonance {summaryEffect(state, 'mana-resonance')} · Max Mana {summaryEffect(state, 'astral-expansion')} · Echo {summaryEffect(state, 'echo-attunement')}</strong></div>
+    <div className="mana-pillar-bonus-summary"><span>ACTIVE BONUSES</span><strong>Regen {summaryEffect(pillars, 'leyline-conduit')} · Capacity {summaryEffect(pillars, 'arcane-reservoir')} · Resonance {summaryEffect(pillars, 'mana-resonance')} · Max Mana {summaryEffect(pillars, 'astral-expansion')} · Echo {summaryEffect(pillars, 'echo-attunement')}</strong></div>
     <div className="mana-pillar-selector-grid" aria-label="Mana Pillars">
       {MANA_PILLAR_IDS.map((pillarId) => <PillarSelector key={pillarId} pillarId={pillarId} selected={selectedPillarId === pillarId} onSelect={() => setSelectedPillarId(pillarId)} />)}
     </div>
@@ -40,14 +41,13 @@ export function ManaPillarsPanel() {
   </Card>
 }
 
-function PillarMastery({ pillars }: { pillars: ReturnType<typeof useGameStore.getState>['progress']['channeling']['pillars'] }) {
-  return <div className="mana-mastery-indicators" aria-label="Rank I pillar mastery">{MANA_PILLAR_IDS.map((id) => { const level = pillars[id].level; const mastered = pillars[id].rank === 1 && level >= MANA_PILLARS[id].maxLevel; return <GameTooltip key={id} content={<TooltipContent title={MANA_PILLARS[id].name} description={`Rank I · Level ${level} / ${MANA_PILLARS[id].maxLevel}${mastered ? ' · Mastered' : ''}`} />} accent={mastered ? 'success' : 'neutral'}><span className={`mana-mastery-indicator mastery-${id} ${mastered ? 'filled' : ''}`} aria-label={`${MANA_PILLARS[id].name} Rank I Level ${level} of ${MANA_PILLARS[id].maxLevel}${mastered ? ', Mastered' : ''}`} /></GameTooltip> })}</div>
+function PillarMastery({ pillars }: { pillars: ManaPillars }) {
+  return <div className="mana-mastery-indicators" aria-label="Rank I pillar mastery">{MANA_PILLAR_IDS.map((id) => { const level = getSafePillarLevel(pillars, id); const mastered = level >= MANA_PILLARS[id].maxLevel; return <GameTooltip key={id} content={<TooltipContent title={MANA_PILLARS[id].name} description={`Rank I · Level ${level} / ${MANA_PILLARS[id].maxLevel}${mastered ? ' · Mastered' : ''}`} />} accent={mastered ? 'success' : 'neutral'}><span className={`mana-mastery-indicator mastery-${id} ${mastered ? 'filled' : ''}`} aria-label={`${MANA_PILLARS[id].name} Rank I Level ${level} of ${MANA_PILLARS[id].maxLevel}${mastered ? ', Mastered' : ''}`} /></GameTooltip> })}</div>
 }
 
 function PillarSelector({ pillarId, selected, onSelect }: { pillarId: ManaPillarId; selected: boolean; onSelect: () => void }) {
-  const state = useGameStore()
   const pillar = MANA_PILLARS[pillarId]
-  const level = getManaPillarLevel(state, pillarId)
+  const level = useGameStore((state) => getSafePillarLevel(state.progress.channeling.pillars, pillarId))
   const mastered = level >= pillar.maxLevel
   const description = `${pillar.description} ${pillarTooltip(pillar)} Current level: ${level} / ${pillar.maxLevel}${mastered ? ' · Rank I mastered.' : ''}`
   return <GameTooltip block content={<TooltipContent title={pillar.name} description={description} />} accent="mana">
@@ -58,14 +58,19 @@ function PillarSelector({ pillarId, selected, onSelect }: { pillarId: ManaPillar
 }
 
 function SelectedPillarInspector({ pillarId }: { pillarId: ManaPillarId }) {
-  const state = useGameStore()
   const pillar = MANA_PILLARS[pillarId]
-  const level = getManaPillarLevel(state, pillarId)
+  const level = useGameStore((state) => getSafePillarLevel(state.progress.channeling.pillars, pillarId))
+  const inventory = useGameStore((state) => state.inventory)
+  const protectedItems = useGameStore((state) => state.protectedItems)
+  const equipment = useGameStore((state) => state.equipment)
+  const activities = useGameStore((state) => state.activities)
+  const upgrade = useGameStore((state) => state.upgradeManaPillar)
+  const consumableState = { inventory, protectedItems, equipment, activities }
   const mastered = level >= pillar.maxLevel
   const cost = mastered ? null : getManaPillarLevelCost(level + 1)
   const requiredItems: ItemId[] = [...pillar.fragmentRequirements, 'life-essence']
-  const protectedMaterial = requiredItems.find((itemId) => Boolean(state.protectedItems[itemId]))
-  const missingMaterial = cost ? requiredItems.find((itemId) => getConsumableQuantity(state, itemId) < requiredFor(itemId, cost.fragment, cost.lifeEssence)) : undefined
+  const protectedMaterial = requiredItems.find((itemId) => Boolean(protectedItems[itemId]))
+  const missingMaterial = cost ? requiredItems.find((itemId) => getConsumableQuantity(consumableState, itemId) < requiredFor(itemId, cost.fragment, cost.lifeEssence)) : undefined
   const canUpgrade = Boolean(cost && !mastered && !protectedMaterial && !missingMaterial)
   const reason = mastered ? 'Rank I already mastered.' : protectedMaterial ? 'Required material is protected.' : missingMaterial ? 'Missing required materials.' : ''
 
@@ -74,8 +79,8 @@ function SelectedPillarInspector({ pillarId }: { pillarId: ManaPillarId }) {
     <p className="mana-pillar-selected-description">{pillar.description}</p>
     <div className="mana-pillar-level"><span>LEVEL PROGRESSION</span><div className="mana-pillar-marks" aria-label={`${pillar.name} progress ${level} of ${pillar.maxLevel}`}>{Array.from({ length: pillar.maxLevel }, (_, index) => <i className={index < level ? 'filled' : ''} key={index} />)}</div></div>
     {mastered ? <div className="mana-pillar-selected-effect is-mastered"><div><span>CURRENT</span><strong>{effectValue(pillar, level)}</strong></div><p>RANK I MASTERED<br /><small>Further attunement has not yet been discovered.</small></p></div> : <GameTooltip block content={<TooltipContent title={pillar.effectLabel} description={pillarTooltip(pillar)} />} accent="mana"><div className="mana-pillar-selected-effect"><div><span>CURRENT</span><strong>{effectValue(pillar, level)}</strong></div><b aria-hidden="true">→</b><div><span>NEXT</span><strong>{effectValue(pillar, level + 1)}</strong></div></div></GameTooltip>}
-    {!mastered && cost && <div className="mana-pillar-selected-costs"><span className="eyebrow">COST · OWNED / AVAILABLE / REQUIRED</span><div className="mana-pillar-requirements">{requiredItems.map((itemId) => <ItemRequirementTile key={itemId} itemId={itemId} owned={state.inventory[itemId] ?? 0} available={getConsumableQuantity(state, itemId)} equipped={getEquippedReservedQuantity(state, itemId)} required={requiredFor(itemId, cost.fragment, cost.lifeEssence)} protectedItem={Boolean(state.protectedItems[itemId])} />)}</div></div>}
-    <GameTooltip block disabled={canUpgrade} content={reason}><Button variant={canUpgrade ? 'secondary' : 'ghost'} disabled={!canUpgrade} ariaLabel={reason || `Upgrade ${pillar.name}`} onClick={() => state.upgradeManaPillar(pillarId)}>{mastered ? 'RANK I MASTERED' : 'UPGRADE'}</Button></GameTooltip>
+    {!mastered && cost && <div className="mana-pillar-selected-costs"><span className="eyebrow">COST · OWNED / AVAILABLE / REQUIRED</span><div className="mana-pillar-requirements">{requiredItems.map((itemId) => <ItemRequirementTile key={itemId} itemId={itemId} owned={inventory[itemId] ?? 0} available={getConsumableQuantity(consumableState, itemId)} equipped={getEquippedReservedQuantity({ equipment }, itemId)} required={requiredFor(itemId, cost.fragment, cost.lifeEssence)} protectedItem={Boolean(protectedItems[itemId])} />)}</div></div>}
+    <GameTooltip block disabled={canUpgrade} content={reason}><Button variant={canUpgrade ? 'secondary' : 'ghost'} disabled={!canUpgrade} ariaLabel={reason || `Upgrade ${pillar.name}`} onClick={() => upgrade(pillarId)}>{mastered ? 'RANK I MASTERED' : 'UPGRADE'}</Button></GameTooltip>
   </section>
 }
 
@@ -86,8 +91,13 @@ function effectValue(pillar: ManaPillarDefinition, level: number) {
   return `+${value}%`
 }
 
-function summaryEffect(state: ReturnType<typeof useGameStore.getState>, pillarId: ManaPillarId) {
-  return effectValue(MANA_PILLARS[pillarId], getManaPillarLevel(state, pillarId))
+function getSafePillarLevel(pillars: ManaPillars, pillarId: ManaPillarId) {
+  const level = pillars[pillarId]?.level
+  return typeof level === 'number' && Number.isFinite(level) ? Math.max(0, Math.min(MANA_PILLARS[pillarId].maxLevel, Math.floor(level))) : 0
+}
+
+function summaryEffect(pillars: ManaPillars, pillarId: ManaPillarId) {
+  return effectValue(MANA_PILLARS[pillarId], getSafePillarLevel(pillars, pillarId))
 }
 
 function requiredFor(itemId: ItemId, fragment: number, lifeEssence: number) {

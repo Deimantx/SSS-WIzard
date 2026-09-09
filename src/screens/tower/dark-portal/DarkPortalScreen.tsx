@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import { Card } from '../../../components/ui'
 import { GameTooltip, TooltipContent } from '../../../components/ui/tooltip/Tooltip'
 import { ItemIcon } from '../../../components/ui/item'
@@ -27,9 +28,12 @@ export function DarkPortalScreen() {
       <div className="dark-portal-shard-rail dark-portal-shard-rail-bottom">{bottomShards.map((shard) => <PortalShardSlot key={shard.id} shard={shard} />)}</div>
     </div>
     <Card className="dark-portal-lore">
-      <div><span className="dark-portal-section-kicker">SHARD PROGRESSION</span><h2>The gate remembers what the tower has endured.</h2></div>
-      <p>Each recovered portal shard restores another fragment of the Dark Portal. Major bosses can reveal new rooms, systems, and future paths.</p>
-      <div className="dark-portal-lore-status"><span>RESTORATION STATE</span><strong>{ownedCount} / {totalSlots} recovered</strong><small>Further progression is not yet available.</small></div>
+      <div className="dark-portal-lore-copy">
+        <span className="dark-portal-section-kicker">SHARD PROGRESSION</span>
+        <h2>Each recovered shard restores another fragment of the gate.</h2>
+        <p>Major bosses can reveal unique portal shards. Recovering them can open new rooms, systems, dungeons, and future paths through the Wizard Tower.</p>
+      </div>
+      <div className="dark-portal-lore-status"><span>RESTORATION STATE</span><strong>{ownedCount} / {totalSlots}</strong><small>SHARDS RECOVERED</small></div>
     </Card>
   </TowerFrame>
 }
@@ -37,14 +41,22 @@ export function DarkPortalScreen() {
 function PortalCore({ ownedCount, totalSlots, progress }: { ownedCount: number; totalSlots: number; progress: number }) {
   return <section className="dark-portal-core-panel" aria-label="Dark Portal restoration progress">
     <div className="dark-portal-core-kicker"><span>PORTAL CORE</span><strong>{ownedCount > 0 ? 'AWAKENED' : 'DORMANT'}</strong></div>
-    <div className={`dark-portal-visual${ownedCount > 0 ? ' is-awakened' : ''}`} aria-hidden="true">
-      <span className="dark-portal-halo dark-portal-halo-outer" />
-      <span className="dark-portal-halo dark-portal-halo-mid" />
-      <span className="dark-portal-halo dark-portal-halo-inner" />
-      <span className="dark-portal-rune dark-portal-rune-top">✦</span>
-      <span className="dark-portal-rune dark-portal-rune-right">·</span>
-      <span className="dark-portal-rune dark-portal-rune-bottom">✧</span>
-      <span className="dark-portal-rune dark-portal-rune-left">·</span>
+    <div className={`dark-portal-visual${ownedCount > 0 ? ' is-awakened' : ''}`} style={{ '--portal-charge': Math.max(0, Math.min(1, ownedCount / Math.max(1, totalSlots))) } as CSSProperties} aria-hidden="true">
+      <span className="dark-portal-energy-field" />
+      <span className="dark-portal-frame dark-portal-frame-outer" />
+      <span className="dark-portal-frame dark-portal-frame-mid" />
+      <span className="dark-portal-frame dark-portal-frame-inner" />
+      <span className="dark-portal-rune-track">
+        <i>✦</i><i>·</i><i>◆</i><i>·</i><i>✧</i><i>·</i><i>◆</i><i>·</i>
+      </span>
+      <span className="dark-portal-rift"><span className="dark-portal-rift-depth" /><span className="dark-portal-rift-vortex" /><span className="dark-portal-rift-core" /></span>
+      <span className="dark-portal-arc dark-portal-arc-a" />
+      <span className="dark-portal-arc dark-portal-arc-b" />
+      <span className="dark-portal-arc dark-portal-arc-c" />
+      <span className="dark-portal-particle dark-portal-particle-a" />
+      <span className="dark-portal-particle dark-portal-particle-b" />
+      <span className="dark-portal-particle dark-portal-particle-c" />
+      <span className="dark-portal-particle dark-portal-particle-d" />
       <span className="dark-portal-core-glyph">◈</span>
     </div>
     <div className="dark-portal-restoration"><span>PORTAL RESTORATION</span><strong>{ownedCount} / {totalSlots} SHARDS RECOVERED</strong><div className="dark-portal-progress" role="progressbar" aria-valuemin={0} aria-valuemax={totalSlots} aria-valuenow={ownedCount} aria-label={`${ownedCount} of ${totalSlots} portal shards recovered`}><i style={{ width: `${progress}%` }} /></div><small>The chamber responds to every recovered shard.</small></div>

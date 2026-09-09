@@ -1,4 +1,4 @@
-import { cloneElement, createContext, isValidElement, useContext, useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactElement, type ReactNode } from 'react'
+import { cloneElement, createContext, isValidElement, useContext, useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactElement, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 
 export type TooltipAccent = 'neutral' | 'mana' | 'health' | 'focus' | 'success' | 'warning' | 'danger' | 'elemental'
@@ -40,7 +40,15 @@ export function TooltipProvider({ children }: { children: ReactNode }) {
     }
   }
   const dismiss = () => { clearTimers(); pendingRef.current = null; activeRef.current = null; setPending(null); setActive(null) }
+  const scheduleClose = () => { cancelClose(); closeTimer.current = window.setTimeout(dismiss, 70) }
   const request = (next: TooltipRequest, delay = 500) => {
+    if (activeRef.current?.id === next.id) {
+      cancelClose()
+      activeRef.current = next
+      setActive(next)
+      return
+    }
+    if (pendingRef.current?.id === next.id) return
     clearTimers();
     pendingRef.current = next
     activeRef.current = null
@@ -57,8 +65,7 @@ export function TooltipProvider({ children }: { children: ReactNode }) {
   const leave = (id: string) => {
     if (pendingRef.current?.id === id) { clearTimers(); pendingRef.current = null; setPending(null) }
     if (activeRef.current?.id === id) {
-      cancelClose()
-      closeTimer.current = window.setTimeout(dismiss, 70)
+      scheduleClose()
     }
   }
   const touch = (next: TooltipRequest) => { request(next, 0); touchTimer.current = window.setTimeout(dismiss, 1800) }
@@ -80,7 +87,7 @@ export function TooltipProvider({ children }: { children: ReactNode }) {
     return () => { window.removeEventListener('keydown', onKeyDown); window.removeEventListener('keyup', onKeyUp); window.removeEventListener('blur', onBlur); document.removeEventListener('visibilitychange', onVisibilityChange) }
   }, [])
   useEffect(() => { providerDismiss = dismiss; return () => { if (providerDismiss === dismiss) providerDismiss = null; clearTimers() } }, [])
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!active) return
     const updatePosition = () => {
       if (!document.body.contains(active.element)) { dismiss(); return }
@@ -98,16 +105,16 @@ export function TooltipProvider({ children }: { children: ReactNode }) {
       if (side === 'right') { top = trigger.top + (trigger.height - layer.height) / 2; left = trigger.right + gap }
       setPosition({ top: Math.max(margin, Math.min(innerHeight - layer.height - margin, top)), left: Math.max(margin, Math.min(innerWidth - layer.width - margin, left)) })
     }
-    const frame = requestAnimationFrame(updatePosition)
+    updatePosition()
     addEventListener('resize', updatePosition); addEventListener('scroll', updatePosition, true)
-    const observer = typeof MutationObserver !== 'undefined' ? new MutationObserver(updatePosition) : null
-    observer?.observe(document.body, { childList: true, subtree: true })
-    return () => { cancelAnimationFrame(frame); observer?.disconnect(); removeEventListener('resize', updatePosition); removeEventListener('scroll', updatePosition, true) }
+    const observer = typeof ResizeObserver !== 'undefined' && layerRef.current ? new ResizeObserver(updatePosition) : null
+    if (observer && layerRef.current) observer.observe(layerRef.current)
+    return () => { observer?.disconnect(); removeEventListener('resize', updatePosition); removeEventListener('scroll', updatePosition, true) }
   }, [active, advanced])
 
   const value = { request, leave, dismiss, touch }
   const detailMode = { advanced }
-  return <TooltipContext.Provider value={value}><TooltipDetailModeContext.Provider value={detailMode}><>{children}</>{active && typeof document !== 'undefined' && createPortal(<div ref={layerRef} id={active.tooltipId} className={`game-tooltip game-tooltip-${active.accent}${active.wide ? ' game-tooltip-wide' : ''}${active.modal ? ' game-tooltip-modal' : ''} ${position.top > 0 ? 'is-positioned' : ''}`} role="tooltip" onPointerEnter={active.wide ? cancelClose : undefined} onPointerLeave={active.wide ? dismiss : undefined} style={{ top: position.top, left: position.left }}>{active.content}</div>, document.body)}</TooltipDetailModeContext.Provider></TooltipContext.Provider>
+  return <TooltipContext.Provider value={value}><TooltipDetailModeContext.Provider value={detailMode}><>{children}</>{active && typeof document !== 'undefined' && createPortal(<div ref={layerRef} id={active.tooltipId} className={`game-tooltip game-tooltip-${active.accent}${active.wide ? ' game-tooltip-wide' : ''}${active.modal ? ' game-tooltip-modal' : ''} ${position.top > 0 ? 'is-positioned' : ''}`} role="tooltip" onPointerEnter={active.wide ? cancelClose : undefined} onPointerLeave={active.wide ? scheduleClose : undefined} style={{ top: position.top, left: position.left }}>{active.content}</div>, document.body)}</TooltipDetailModeContext.Provider></TooltipContext.Provider>
 }
 
 interface GameTooltipProps { children: ReactNode; content: ReactNode; accent?: TooltipAccent; placement?: TooltipPlacement; className?: string; block?: boolean; disabled?: boolean; delay?: number; wide?: boolean }

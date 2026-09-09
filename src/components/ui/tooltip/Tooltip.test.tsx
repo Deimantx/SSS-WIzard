@@ -19,8 +19,17 @@ function DetailModeTooltipFixture() {
   return <TooltipProvider><GameTooltip delay={0} content={<DetailModeProbe />}><button>Details</button></GameTooltip></TooltipProvider>
 }
 
-function DetailModePairFixture({ delay = 0 }: { delay?: number }) {
-  return <TooltipProvider><GameTooltip delay={delay} content={<DetailModeProbe />}><button>A</button></GameTooltip><GameTooltip delay={delay} content={<DetailModeProbe />}><button>B</button></GameTooltip></TooltipProvider>
+function DetailModePairFixture({ delay = 0, wide = false }: { delay?: number; wide?: boolean }) {
+  return <TooltipProvider><GameTooltip delay={delay} wide={wide} content={<DetailModeProbe />}><button>A</button></GameTooltip><GameTooltip delay={delay} wide={wide} content={<DetailModeProbe />}><button>B</button></GameTooltip></TooltipProvider>
+}
+
+function ResizeProbe() {
+  const { advanced } = useTooltipDetailMode()
+  return <div style={{ height: advanced ? 500 : 80 }}>{advanced ? 'Advanced size' : 'Compact size'}</div>
+}
+
+function ResizingWideTooltipFixture() {
+  return <TooltipProvider><GameTooltip wide delay={0} content={<ResizeProbe />}><button>Resize</button></GameTooltip></TooltipProvider>
 }
 
 describe('TooltipProvider singleton timing', () => {
@@ -69,6 +78,7 @@ describe('TooltipProvider singleton timing', () => {
     expect(screen.getByRole('tooltip')).toBe(tooltip)
     fireEvent.wheel(tooltip)
     fireEvent.pointerLeave(tooltip)
+    act(() => { vi.advanceTimersByTime(70) })
     expect(screen.queryByRole('tooltip')).toBeNull()
   })
 
@@ -102,7 +112,7 @@ describe('TooltipProvider singleton timing', () => {
 
   it('reopens the same tooltip with Alt details after a complete close', () => {
     vi.useFakeTimers()
-    render(<DetailModePairFixture />)
+    render(<DetailModePairFixture wide />)
     const trigger = screen.getByRole('button', { name: 'A' })
 
     fireEvent.pointerEnter(trigger)
@@ -187,5 +197,52 @@ describe('TooltipProvider singleton timing', () => {
     fireEvent.keyDown(window, { key: 'Alt' })
     expect(screen.getByTestId('tooltip-detail-mode').textContent).toBe('advanced')
     fireEvent.keyUp(window, { key: 'Alt' })
+  })
+
+  it('keeps a same-ID active request open without restarting its delay', () => {
+    vi.useFakeTimers()
+    render(<DetailModePairFixture delay={500} />)
+    const trigger = screen.getByRole('button', { name: 'A' })
+    fireEvent.pointerEnter(trigger)
+    act(() => { vi.advanceTimersByTime(500) })
+    const tooltip = screen.getByRole('tooltip')
+
+    fireEvent.pointerEnter(trigger)
+    expect(screen.getByRole('tooltip')).toBe(tooltip)
+    act(() => { vi.advanceTimersByTime(501) })
+    expect(screen.getByRole('tooltip')).toBe(tooltip)
+  })
+
+  it('bridges pointer movement across a wide tooltip and its trigger', () => {
+    vi.useFakeTimers()
+    render(<DetailModePairFixture wide />)
+    const trigger = screen.getByRole('button', { name: 'A' })
+    fireEvent.pointerEnter(trigger)
+    act(() => { vi.advanceTimersByTime(1) })
+    const tooltip = screen.getByRole('tooltip')
+
+    fireEvent.pointerLeave(trigger)
+    fireEvent.pointerEnter(tooltip)
+    fireEvent.pointerLeave(tooltip)
+    fireEvent.pointerEnter(trigger)
+    act(() => { vi.advanceTimersByTime(501) })
+    expect(screen.getByRole('tooltip')).toBe(tooltip)
+  })
+
+  it('does not destroy the wide tooltip when Alt changes its content size', () => {
+    vi.useFakeTimers()
+    render(<ResizingWideTooltipFixture />)
+    const trigger = screen.getByRole('button', { name: 'Resize' })
+    fireEvent.pointerEnter(trigger)
+    act(() => { vi.advanceTimersByTime(1) })
+    const tooltip = screen.getByRole('tooltip')
+    expect(screen.getByText('Compact size')).toBeTruthy()
+
+    fireEvent.keyDown(window, { key: 'Alt' })
+    expect(screen.getByRole('tooltip')).toBe(tooltip)
+    expect(screen.getByText('Advanced size')).toBeTruthy()
+    fireEvent.keyUp(window, { key: 'Alt' })
+    expect(screen.getByRole('tooltip')).toBe(tooltip)
+    expect(screen.getByText('Compact size')).toBeTruthy()
   })
 })

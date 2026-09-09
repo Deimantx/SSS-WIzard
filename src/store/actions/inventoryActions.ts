@@ -24,7 +24,7 @@ export const addItemAction = (state: GameState, itemId: ItemId, quantity: number
   return grantItem(state, itemId, quantity)
 }
 
-export const removeItemAction = (state: GameState, itemId: ItemId, quantity: number) => { if (isProtectedItem(state, itemId)) { pushNotification(state, `${ITEMS[itemId].name} is protected or equipped`, 'warning'); return } state.inventory[itemId] = Math.max(0, safeQuantity(state.inventory[itemId]) - safeQuantity(quantity)) }
+export const removeItemAction = (state: GameState, itemId: ItemId, quantity: number) => { if (isProtectedItem(state, itemId)) { pushNotification(state, `${ITEMS[itemId].name} is protected or equipped`, 'warning'); return } if (ITEMS[itemId]?.canDestroy === false) { pushNotification(state, ITEMS[itemId].actionRestrictionReason ?? `${ITEMS[itemId].name} cannot be destroyed.`, 'warning'); return } state.inventory[itemId] = Math.max(0, safeQuantity(state.inventory[itemId]) - safeQuantity(quantity)) }
 export const toggleItemProtectionAction = (state: GameState, itemId: ItemId) => { if (isEquippedItem(state, itemId)) { pushNotification(state, 'Equipped items are always protected.', 'warning', { key: 'action-protect', cooldownMs: 1 }); return } state.protectedItems[itemId] = !state.protectedItems[itemId] }
 
 const clampActionQuantity = (quantity: number, maximum: number) => Math.max(0, Math.min(maximum, safeQuantity(quantity)))

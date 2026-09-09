@@ -40,6 +40,7 @@ export function ModalPortal({ open, onClose, children, backdropClassName, surfac
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault()
+        event.stopPropagation()
         closeRef.current()
         return
       }

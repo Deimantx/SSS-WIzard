@@ -26,12 +26,13 @@ import { MAX_ACTION_WORK_MS, MIN_ACTION_TIME_MS } from '../game/core/balance/com
 import { normalizeCombatRngState } from '../game/systems/combat/combatRng'
 import { clampOfflineBankMs } from '../game/systems/offline-bank/offlineBankDuration'
 import { ARTIFACTS } from '../game/content/artifacts/artifacts'
+import { isScreenUnlocked, reconcileStoryProgression } from '../game/systems/story/storyProgression'
 
 const statusValidationContext = createCombatValidationContext(STATUS_DEFINITIONS)
 
 const normalizeScreen = (value: unknown, fallback: GameState['ui']['screen']): GameState['ui']['screen'] => {
   if (value === 'tower') return 'tower-channeling'
-  const valid = ['home', 'combat', 'schools', 'inventory', 'equipment', 'collection', 'bestiary', 'tower-channeling', 'tower-focus', 'tower-research', 'tower-transmutation', 'tower-artificing', 'guild', 'settings']
+  const valid = ['home', 'combat', 'schools', 'inventory', 'equipment', 'collection', 'bestiary', 'tower-channeling', 'tower-focus', 'tower-research', 'tower-transmutation', 'tower-artificing', 'tower-dark-portal', 'guild', 'settings']
   if (value === 'tower-condensation') return 'tower-transmutation'
   return typeof value === 'string' && valid.includes(value) ? value as GameState['ui']['screen'] : fallback
 }
@@ -650,6 +651,8 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   normalizeDirectContentReferences(migrated, raw, sourceVersion)
   removeDeletedPrismaticFocus(migrated, raw, sourceVersion)
   seedLegacyItemDiscoveries(migrated, raw, sourceVersion)
+  reconcileStoryProgression(migrated)
+  if (!isScreenUnlocked(migrated, migrated.ui.screen)) migrated.ui.screen = 'home'
   normalizeResearch(migrated, raw, sourceVersion)
   recalculateDerivedStats(migrated)
   normalizeTransmutationJobs(migrated, raw)

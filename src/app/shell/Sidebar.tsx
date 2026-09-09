@@ -1,10 +1,11 @@
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import type { ScreenId } from '../../game/types'
-import { navigationGroups } from '../navigation'
+import { isNavigationItemVisible, navigationGroups } from '../navigation'
 import type { UiPreferences } from '../../ui/preferences/uiPreferencesTypes'
 import { GameTooltip } from '../../components/ui/tooltip/Tooltip'
 import { useSaveDiagnosticsStore } from '../../persistence/saveDiagnosticsStore'
 import { hasUnseenAttention, useProfileAttention } from '../../ui/attention/attentionStore'
+import { useGameStore } from '../../store/gameStore'
 
 interface SidebarProps {
   screen: ScreenId
@@ -20,6 +21,7 @@ interface SidebarProps {
 export function Sidebar({ screen, setScreen, preferences, toggleGroup, activeProfile, profileKey, profileSwitchError, switchProfile }: SidebarProps) {
   const saveDiagnostics = useSaveDiagnosticsStore()
   const attention = useProfileAttention(profileKey)
+  const storyProgress = useGameStore((state) => state.storyProgress)
   const saveBlocked = saveDiagnostics.health === 'protected'
   const saveError = saveDiagnostics.health === 'error'
   return <aside className="sidebar">
@@ -27,9 +29,10 @@ export function Sidebar({ screen, setScreen, preferences, toggleGroup, activePro
     <nav className="nav-list" aria-label="Main navigation">
       {navigationGroups.map((group) => {
         const collapsed = group.id !== 'overview' && preferences.navigationGroups[group.id] === true
+        const visibleItems = group.items.filter((item) => isNavigationItemVisible(item, { storyProgress }))
         return <section className={`nav-group ${collapsed ? 'collapsed' : ''}`} key={group.id}>
           <button className="nav-group-header" onClick={() => toggleGroup(group.id)} aria-label={`Toggle ${group.label} group`} aria-expanded={!collapsed}><span>{group.label}</span>{group.id !== 'overview' && (collapsed ? <ChevronRight size={15} /> : <ChevronDown size={15} />)}</button>
-          <div className="nav-group-items" aria-hidden={collapsed} inert={collapsed}>{group.items.map(({ id, label, icon: Icon, hint }) => { const destination = id === 'inventory' || id === 'collection' || id === 'bestiary' || id === 'schools' || id === 'tower-transmutation' || id === 'tower-artificing' ? id === 'tower-transmutation' ? 'transmutation' : id === 'tower-artificing' ? 'artificing' : id : null; const hasNew = destination ? hasUnseenAttention(attention, destination) : false; return <GameTooltip block key={id} content={hasNew ? `${hint} · New discoveries available` : hint}><button key={id} className={`nav-item ${screen === id ? 'active' : ''}`} onClick={() => setScreen(id)} aria-label={`${label}${hasNew ? ', new discoveries available' : ''}`}><Icon size={16} /><span>{label}</span>{hasNew && <i className="nav-attention-dot" aria-hidden="true" />}{screen === id && <ChevronRight className="nav-chevron" size={14} />}</button></GameTooltip> })}</div>
+          <div className="nav-group-items" aria-hidden={collapsed} inert={collapsed}>{visibleItems.map(({ id, label, icon: Icon, hint }) => { const destination = id === 'inventory' || id === 'collection' || id === 'bestiary' || id === 'schools' || id === 'tower-transmutation' || id === 'tower-artificing' ? id === 'tower-transmutation' ? 'transmutation' : id === 'tower-artificing' ? 'artificing' : id : null; const hasNew = destination ? hasUnseenAttention(attention, destination) : false; return <GameTooltip block key={id} content={hasNew ? `${hint} · New discoveries available` : hint}><button key={id} className={`nav-item ${screen === id ? 'active' : ''}`} onClick={() => setScreen(id)} aria-label={`${label}${hasNew ? ', new discoveries available' : ''}`}><Icon size={16} /><span>{label}</span>{hasNew && <i className="nav-attention-dot" aria-hidden="true" />}{screen === id && <ChevronRight className="nav-chevron" size={14} />}</button></GameTooltip> })}</div>
         </section>
       })}
     </nav>

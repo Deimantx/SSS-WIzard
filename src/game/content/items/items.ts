@@ -27,6 +27,7 @@ const equipment = (definition: AuthoredEquipmentDefinition): AuthoredItemDefinit
 
 /** One authoritative item registry for materials, loot, and all authored equipment. */
 const authoredItems: Record<ItemId, AuthoredItemDefinition> = {
+  'black-portal-shard': { id: 'black-portal-shard', name: 'Black Portal Shard', description: 'A shard of impossible black crystal recovered from Archmage Edrin. Cold light shifts beneath its fractured surface, and the Wizard Tower itself seems to answer its presence.', icon: '◆', color: '#7760a8', kind: 'material', category: 'material', inventoryCategory: 'special', materialTier: 1, source: "Archmage Edrin's Shade — first defeat", sourceNavigation: 'combat', sellValue: null, canDestroy: false, actionRestrictionReason: 'The shard is bound to the Dark Portal and cannot be discarded.' },
   'thorn-fiber': material('thorn-fiber', 'Thorn Fiber', 'Tough living strands stripped from thorn growth; light, flexible, and eager to hold enchantment.', '~', '#cb7899', 'monster-loot', 'Thornling', 'creature', undefined, 'combat'),
   'rootstone-shard': material('rootstone-shard', 'Rootstone Shard', 'A petrified knot of root and mineral formed where ancient growth drank deeply of stone.', '#', '#b28f79', 'monster-loot', 'Stone Root', 'creature', undefined, 'combat'),
   'predator-sinew': material('predator-sinew', 'Predator Sinew', 'Dense tendon harvested from den predators, prized for bindings that must flex without yielding.', '~', '#c18b73', 'monster-loot', 'Cavefang Wolf', 'creature', undefined, 'combat'),
@@ -81,7 +82,7 @@ const sourceNavigationByItem: Partial<Record<ItemId, ScreenId>> = {
 }
 const inventoryCategoryOverrides: Partial<Record<ItemId, InventoryCategory>> = { 'heartseed-necklace': 'equipment', 'greatbear-heartstone': 'equipment', 'edrins-signet': 'equipment' }
 const sellValues: Record<ItemId, number | null> = {
-  'prismatic-fragment': 20, 'life-essence': 2, 'fire-fragment': 1, 'water-fragment': 1, 'earth-fragment': 1, 'air-fragment': 1, 'wisp-essence': 3, 'thorn-fiber': 4, 'rootstone-shard': 5, 'grove-bark': 5, heartseed: null,
+  'black-portal-shard': null, 'prismatic-fragment': 20, 'life-essence': 2, 'fire-fragment': 1, 'water-fragment': 1, 'earth-fragment': 1, 'air-fragment': 1, 'wisp-essence': 3, 'thorn-fiber': 4, 'rootstone-shard': 5, 'grove-bark': 5, heartseed: null,
   'ember-staff': null, 'tideglass-wand': null, 'stoneheart-scepter': null, 'windthread-wand': null, 'wispweave-robe': null, 'windthread-charm': 40, 'wispveil-hood': null, 'grovekeeper-mantle': 40, 'wispglass-earring': 40, 'wispbound-ring': 40, 'heartseed-necklace': null,
   'predator-fang': 4, 'predator-hide': 5, 'predator-sinew': 6, 'corrupted-beast-essence': 6, 'greatbear-core': 20, 'predator-hide-mantle': 70, 'fangwire-earring': 70, 'howling-signet': 70, 'greatbear-heartstone': null,
   'ossuary-remnant': 4, 'graveglass-shard': 5, 'soul-residue': 6, 'burial-cloth': 6, 'edrin-remnant': 20, 'ossuary-mantle': 110, 'mourning-glass-earring': 110, 'soulglass-amulet': 110, 'gravebinder-ring': 110, 'edrins-signet': null,

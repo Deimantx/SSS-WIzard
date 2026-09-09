@@ -1,5 +1,6 @@
 import { ScreenErrorBoundary } from '../components/errors/ScreenErrorBoundary'
 import { useGameStore } from '../store/gameStore'
+import type { ScreenId } from '../game/types'
 import { CollectionScreen } from './collection/CollectionScreen'
 import { BestiaryScreen } from './bestiary/BestiaryScreen'
 import { CombatScreenV2 } from './combat/CombatScreen'
@@ -11,15 +12,17 @@ import { MagicSchoolsScreenV2 } from './schools/MagicSchoolsScreen'
 import { SettingsScreenV2 } from './settings/SettingsScreen'
 import { TowerChannelingScreen, TowerFocusScreen, TowerResearchScreen, TowerTransmutationScreen, TowerArtificingScreen } from './tower/TowerScreens'
 import { ScreenTransitionFrame } from '../ui/game-feel/ScreenTransitionFrame'
+import { isScreenUnlocked } from '../game/systems/story/storyProgression'
+import { DarkPortalScreen } from './tower/dark-portal/DarkPortalScreen'
 
-function CurrentScreen() {
-  const screen = useGameStore((state) => state.ui.screen)
+function CurrentScreen({ screen }: { screen: ScreenId }) {
   if (screen === 'home') return <HomeScreenV2 />
   if (screen === 'tower-channeling') return <TowerChannelingScreen />
   if (screen === 'tower-focus') return <TowerFocusScreen />
   if (screen === 'tower-research') return <TowerResearchScreen />
   if (screen === 'tower-transmutation') return <TowerTransmutationScreen />
   if (screen === 'tower-artificing') return <TowerArtificingScreen />
+  if (screen === 'tower-dark-portal') return <DarkPortalScreen />
   if (screen === 'schools') return <MagicSchoolsScreenV2 />
   if (screen === 'combat') return <CombatScreenV2 />
   if (screen === 'inventory') return <InventoryScreenV2 />
@@ -31,6 +34,8 @@ function CurrentScreen() {
 }
 
 export function ScreenRouter() {
-  const screen = useGameStore((state) => state.ui.screen)
-  return <ScreenErrorBoundary key={screen} screen={screen}><ScreenTransitionFrame key={screen} screen={screen}><CurrentScreen /></ScreenTransitionFrame></ScreenErrorBoundary>
+  const requestedScreen = useGameStore((state) => state.ui.screen)
+  const storyProgress = useGameStore((state) => state.storyProgress)
+  const screen = isScreenUnlocked({ storyProgress }, requestedScreen) ? requestedScreen : 'home'
+  return <ScreenErrorBoundary key={screen} screen={screen}><ScreenTransitionFrame key={screen} screen={screen}><CurrentScreen screen={screen} /></ScreenTransitionFrame></ScreenErrorBoundary>
 }

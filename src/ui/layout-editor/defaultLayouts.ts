@@ -4,6 +4,7 @@ import type { SavedPanelLayout, ScreenLayouts } from './layoutEditorTypes'
 const layout = (x: number, y: number, w: number, h: number): SavedPanelLayout => ({ x, y, w, h })
 
 export const DEFAULT_LAYOUTS: Record<ScreenId, ScreenLayouts> = {
+  'tower-dark-portal': {},
   home: {
     'home-objective': layout(0, 0, 12, 4), 'home-school-mastery': layout(0, 4, 12, 6), 'home-checklist': layout(0, 10, 7, 10), 'home-wizard': layout(7, 10, 5, 10), 'home-arcane-work': layout(0, 20, 12, 7),
   },

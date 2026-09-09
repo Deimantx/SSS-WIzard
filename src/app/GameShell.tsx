@@ -38,6 +38,7 @@ import { DiscoveryAttentionObserver } from '../ui/attention/DiscoveryAttentionOb
 import { getLiveVisibilityTransition } from './liveVisibility'
 import { isAllowedNativeDragTarget, isNativeInteractionTarget } from '../ui/game-feel/gameClientInteraction'
 import { GameContextMenuProvider } from '../ui/context-menu/GameContextMenuProvider'
+import { StoryEventModal } from '../components/story/StoryEventModal'
 
 export function GameShell() {
   const screen = useGameStore((state) => state.ui.screen)
@@ -132,5 +133,6 @@ export function GameShell() {
       <LootRevealLayer />
     </div>
     <DefeatSummaryModal />
+    <StoryEventModal />
   </div></GameContextMenuProvider></TooltipProvider>
 }

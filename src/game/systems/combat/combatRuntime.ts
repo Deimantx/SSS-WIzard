@@ -14,6 +14,7 @@ import { discoverMonster } from '../collection/discovery'
 import type { SimulationReportCollector } from '../offline-bank/offlineBankReport'
 import { MAX_ACTION_WORK_MS, MIN_ACTION_TIME_MS } from '../../core/balance/combatTiming'
 import { nextCombatRandom } from './combatRng'
+import { reconcileStoryProgression } from '../story/storyProgression'
 
 export { applyStatus, clearStatuses, damageEnemy, damagePlayer, executeCombatEffects, gainBarrier }
 
@@ -119,6 +120,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
         pushNotification(state, `Magic School cap increased to ${state.progress.magicLevelCap}`, 'success')
       }
     }
+    reconcileStoryProgression(state)
     report?.recordNotable(`${monster.name} defeated`)
     appendLog(state, `${monster.name} defeated${drops ? ` - ${drops}` : ''}. Threat Cleared resets.`)
   } else {

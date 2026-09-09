@@ -23,7 +23,7 @@ import { type SaveReason } from '../persistence/saveConstants'
 import { getActiveProfileId } from '../profiles/profileSessionStore'
 import { updateProfileMetadata } from '../profiles/profileStorage'
 import { createInitialState } from './initialState'
-import type { ArtifactId, ChannelingDiscoveryId, DungeonId, EquipmentPosition, GameState, ItemId, ManaPillarId, MonsterId, TransmutationRecipeId, ResearchSlotId, SchoolId, ScreenId, SpellId, SpellPreset, SpellPresetId, StatusId } from '../game/types'
+import type { ArtifactId, ChannelingDiscoveryId, DungeonId, EquipmentPosition, GameState, ItemId, ManaPillarId, MonsterId, TransmutationRecipeId, ResearchSlotId, SchoolId, ScreenId, SpellId, SpellPreset, SpellPresetId, StatusId, StoryEventId } from '../game/types'
 import { clamp } from '../game/utils'
 import { createDefaultDebugOverrides, resetCombatDebugState, resetDebugState, sanitizeCombatTimeScale, sanitizeDebugNumber } from './actions/debugActions'
 import { addItemAction, destroyItemAction, removeItemAction, sellItemAction, toggleItemProtectionAction } from './actions/inventoryActions'
@@ -59,6 +59,7 @@ import { resetProfileAttention } from '../ui/attention/attentionStore'
 import { emitGameFeelEvent } from '../ui/game-feel/gameFeelStore'
 import type { GameFeelEventType } from '../ui/game-feel/gameFeelTypes'
 import { unpinArtificingRecipe } from '../ui/preferences/uiPreferencesStore'
+import { completeStoryEvent as completeStoryEventAction, isScreenUnlocked } from '../game/systems/story/storyProgression'
 
 const combatEventSink = createCombatEventSink(combatLogSink, combatRecapSink, combatDefeatSink, combatAlertsSink, dungeonStatisticsSink, combatTelemetrySink)
 const offlineBankCombatAnalyticsSink = createCombatEventSink(dungeonStatisticsSink, combatTelemetrySink)
@@ -95,6 +96,7 @@ export type DeveloperFixtureId = 'fresh' | 'whispering-woods-ready' | 'howling-d
 export interface GameActions {
   tick: (deltaMs: number) => void
   setScreen: (screen: ScreenId) => void
+  completeStoryEvent: (eventId: StoryEventId) => void
   addArcaneEcho: () => void
   removeArcaneEcho: () => void
   setChannelingEchoes: (amount: number) => void
@@ -310,7 +312,8 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     if (isOfflineBankSimulationActive()) return state
     return advanceGameState(state, deltaMs, { mode: 'live', onItemAcquired: (itemId, amount) => recordRecentAcquisition(state, itemId, amount), onCombatLoot: combatLootObserver, uiEvents: combatEventSink, telemetry: combatTelemetryObserver, alerts: combatAlertsObserver, statistics: dungeonStatisticsObserver, onArtificingComplete: (completion) => { emitActionFeel('craft-complete', '.artificing-craft-button'); unpinArtificingRecipe(completion.recipeId) } })
   }),
-  setScreen: (screen) => set((state) => { state.ui.screen = screen; return state }),
+  setScreen: (screen) => set((state) => { state.ui.screen = isScreenUnlocked(state, screen) ? screen : 'home'; return state }),
+  completeStoryEvent: (eventId) => set((state) => { const destination = completeStoryEventAction(state, eventId); if (destination) state.ui.screen = isScreenUnlocked(state, destination) ? destination : 'home'; return state }),
   addArcaneEcho: () => {
     const before = get().activities.channeling.echoesAssigned
     set((state) => {
@@ -493,7 +496,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     clearCombatDefeat()
     clearDungeonStatistics()
     combatTelemetryObserver.clear()
-    set((state) => { Object.assign(state, loaded.state as GameState); state.player.godMode = false; state.debug = createDefaultDebugOverrides(); state.recentAcquisitions = []; state.lastOfflineBankReport = null; recalculateDerivedStats(state); return state })
+    set((state) => { Object.assign(state, loaded.state as GameState); state.player.godMode = false; state.debug = createDefaultDebugOverrides(); state.recentAcquisitions = []; state.lastOfflineBankReport = null; if (!isScreenUnlocked(state, state.ui.screen)) state.ui.screen = 'home'; recalculateDerivedStats(state); return state })
   },
   resetSave: () => {
     const fresh = createInitialState()
@@ -515,7 +518,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     set((state) => { Object.assign(state, fresh); state.recentAcquisitions = []; state.lastOfflineBankReport = null; return state })
     if (activeProfileId) updateProfileMetadata(activeProfileId, { lastSavedAt: fresh.lastSavedAt })
   },
-  hydrateState: (nextState) => { clearCombatLogUi(); clearCombatAlerts(); clearCombatRecap(); clearCombatDefeat(); clearDungeonStatistics(); combatTelemetryObserver.clear(); return set((state) => { Object.assign(state, nextState); state.player.godMode = false; state.debug = createDefaultDebugOverrides(); state.recentAcquisitions = []; state.lastOfflineBankReport = null; recalculateDerivedStats(state); return state }) },
+  hydrateState: (nextState) => { clearCombatLogUi(); clearCombatAlerts(); clearCombatRecap(); clearCombatDefeat(); clearDungeonStatistics(); combatTelemetryObserver.clear(); return set((state) => { Object.assign(state, nextState); state.player.godMode = false; state.debug = createDefaultDebugOverrides(); state.recentAcquisitions = []; state.lastOfflineBankReport = null; if (!isScreenUnlocked(state, state.ui.screen)) state.ui.screen = 'home'; recalculateDerivedStats(state); return state }) },
   dismissNotification: (id) => set((state) => { state.notifications = state.notifications.filter((note) => note.id !== id); return state }),
   setPlayer: (changes) => set((state) => { state.player = { ...state.player, ...changes }; recalculateDerivedStats(state); return state }),
   addMana: (amount) => set((state) => { state.player.mana = Math.max(0, state.player.mana + sanitizeDebugNumber(amount)); recalculateDerivedStats(state); return state }),

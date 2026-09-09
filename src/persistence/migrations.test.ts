@@ -6,6 +6,27 @@ import { DUNGEONS, isDungeonUnlocked, isTutorialCompleted } from '../game/conten
 import { MAX_ACTION_WORK_MS } from '../game/core/balance/combatTiming'
 import { getSchoolTotalXpForLevel } from '../game/core/balance/schoolXpCurve'
 
+describe('V27 story progression migration', () => {
+  it('keeps the Dark Portal hidden when an old save has no Edrin kill', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({ ...initial, saveVersion: 27, storyProgress: undefined, ui: { screen: 'home' } })
+
+    expect(migrated.saveVersion).toBe(28)
+    expect(migrated.storyProgress).toEqual({ pendingEventIds: [], completedEventIds: [] })
+    expect(migrated.inventory['black-portal-shard']).toBeUndefined()
+  })
+
+  it('queues the new event and restores one shard for an old save with Edrin killed', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({ ...initial, saveVersion: 27, storyProgress: undefined, progress: { ...initial.progress, bossKillsByBoss: { 'archmage-edrin-shade': 1 } } })
+
+    expect(migrated.saveVersion).toBe(28)
+    expect(migrated.inventory['black-portal-shard']).toBe(1)
+    expect(migrated.storyProgress.pendingEventIds).toEqual(['edrin-dark-portal-discovery'])
+    expect(migrated.storyProgress.completedEventIds).toEqual([])
+  })
+})
+
 describe('save navigation migration', () => {
   it('maps the old aggregate Tower screen to Channeling', () => {
     const old = { ...createInitialState(), saveVersion: 1, ui: { screen: 'tower' } }
@@ -494,7 +515,7 @@ describe('save navigation migration', () => {
       progress: { ...initial.progress, discoveredItems: ['prismatic-focus'] },
       activities: { ...initial.activities, artificing: { activeJob: { kind: 'recipe', recipeId: 'prismatic-focus' }, activeRecipeId: 'prismatic-focus', progressMs: 12_000 } },
     } as any)
-    expect(migrated.saveVersion).toBe(27)
+    expect(migrated.saveVersion).toBe(28)
     expect(migrated.inventory).not.toHaveProperty('prismatic-focus')
     expect(migrated.protectedItems).not.toHaveProperty('prismatic-focus')
     expect(migrated.artifactProgress).not.toHaveProperty('prismatic-focus')

@@ -1,0 +1,15 @@
+.story-event-backdrop { z-index: calc(var(--z-modal-backdrop) + 10); background: radial-gradient(circle at 50% 45%, rgb(41 21 72 / 22%), transparent 42%), rgb(3 4 10 / 82%); backdrop-filter: blur(10px); }
+.story-event-modal { z-index: calc(var(--z-modal) + 10); width: min(680px, calc(100vw - 32px)); max-height: min(760px, calc(100vh - 32px)); overflow: auto; padding: clamp(26px, 5vw, 48px); border-color: color-mix(in srgb, #7760a8 62%, var(--ui-border-strong)); background: radial-gradient(circle at 50% 0%, color-mix(in srgb, #7760a8 14%, transparent), transparent 42%), linear-gradient(145deg, color-mix(in srgb, #0a0714 96%, var(--ui-panel)), var(--ui-panel)); box-shadow: 0 0 0 1px rgb(119 96 168 / 10%), 0 28px 110px rgb(0 0 0 / 62%), 0 0 70px rgb(75 47 130 / 18%); }
+.story-event-modal::before { position: absolute; inset: 12px; border: 1px solid rgb(119 96 168 / 18%); border-radius: 6px; content: ''; pointer-events: none; }
+.story-event-kicker { position: relative; color: #a58bd9; font: var(--text-micro) var(--font-mono); letter-spacing: .22em; }
+.story-event-modal h2 { position: relative; margin: 9px 0 25px; color: var(--ui-text); font-size: clamp(24px, 5vw, 38px); letter-spacing: -.04em; line-height: 1.05; }
+.story-event-body { position: relative; display: grid; gap: 14px; color: var(--ui-text-soft); font-size: var(--text-md); line-height: 1.7; }
+.story-event-block { position: relative; display: grid; gap: 7px; margin-top: 22px; padding: 13px 15px; border: 1px solid color-mix(in srgb, #7760a8 35%, var(--ui-border)); border-radius: 7px; background: color-mix(in srgb, #7760a8 8%, transparent); }
+.story-event-block > span { color: #a58bd9; font: var(--text-micro) var(--font-mono); letter-spacing: .16em; }
+.story-event-block strong { display: flex; align-items: center; gap: 8px; color: var(--ui-text); font-size: var(--text-sm); font-weight: 600; }
+.story-event-block .item-icon { font-size: 1rem; }
+.story-event-actions { position: relative; display: flex; justify-content: flex-end; margin-top: 30px; }
+.story-event-actions .button { min-width: 130px; }
+@media (max-width: 560px) { .story-event-modal { padding: 24px 20px; }.story-event-modal h2 { font-size: 25px; }.story-event-body { font-size: var(--text-sm); }.story-event-actions .button { width: 100%; } }
+:root[data-reduced-motion='true'] .story-event-modal { animation: none; }
+

@@ -26,6 +26,7 @@
 @import './layout-editor.css';
 @import './screens/research.css';
 @import './screens/focus.css';
+@import './screens/dark-portal.css';
 @import './screens/home.css';
 @import './screens/collection.css';
 @import './screens/bestiary.css';
@@ -36,3 +37,4 @@
 @import './components/game-feel.css';
 @import './components/rewards.css';
 @import './components/artifacts.css';
+@import './components/story-event.css';

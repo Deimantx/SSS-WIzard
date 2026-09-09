@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../initialState'
 import { equipItemAction } from './equipmentActions'
-import { destroyItemAction, getActionableQuantity, sellItemAction, toggleItemProtectionAction } from './inventoryActions'
+import { destroyItemAction, getActionableQuantity, removeItemAction, sellItemAction, toggleItemProtectionAction } from './inventoryActions'
 import { prepareResearchAction } from './researchActions'
 
 describe('inventory transactions', () => {
@@ -57,6 +57,16 @@ describe('inventory transactions', () => {
     starterState.inventory['heartseed'] = 1
     expect(destroyItemAction(starterState, 'heartseed', 1)).toBe(0)
     expect(starterState.inventory['heartseed']).toBe(1)
+  })
+
+  it('keeps the Black Portal Shard bound to story progression', () => {
+    const state = createInitialState()
+    state.inventory['black-portal-shard'] = 1
+
+    expect(sellItemAction(state, 'black-portal-shard', 1)).toBe(0)
+    expect(destroyItemAction(state, 'black-portal-shard', 1)).toBe(0)
+    removeItemAction(state, 'black-portal-shard', 1)
+    expect(state.inventory['black-portal-shard']).toBe(1)
   })
 
   it('excludes Research reservations from sell and destroy quantities', () => {

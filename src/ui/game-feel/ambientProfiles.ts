@@ -23,6 +23,7 @@ export const getAmbientProfile = (screen: ScreenId, colors: ThemeColors): Ambien
   if (screen === 'tower-research') return { ...base, id: 'research-cool', secondaryColor: '#72bfff', intensity: 0.9, fogOpacity: 0.3, vignetteOpacity: 0.25, particleSpeed: 0.72, biasX: '65%', biasY: '18%', driftDuration: 21 }
   if (screen === 'tower-channeling') return { ...base, id: 'channeling-pulse', accentColor: '#55aef4', secondaryColor: colors.accent, intensity: 0.98, fogOpacity: 0.34, vignetteOpacity: 0.26, particleSpeed: 1, biasX: '58%', biasY: '37%', driftDuration: 15 }
   if (screen === 'tower-focus') return { ...base, id: 'focus-low-noise', accentColor: colors.secondary, secondaryColor: colors.accent, intensity: 0.76, fogOpacity: 0.25, vignetteOpacity: 0.25, particleSpeed: 0.62, biasX: '50%', biasY: '30%', driftDuration: 23 }
+  if (screen === 'tower-dark-portal') return { ...base, id: 'dark-portal-sealed', accentColor: '#7760a8', secondaryColor: '#a58bd9', intensity: 0.95, fogOpacity: 0.38, vignetteOpacity: 0.42, particleSpeed: 0.58, biasX: '50%', biasY: '40%', driftDuration: 24 }
   if (screen === 'schools') return { ...base, id: 'schools-neutral', intensity: 0.84, fogOpacity: 0.29, vignetteOpacity: 0.25, particleSpeed: 0.76, biasX: '70%', biasY: '18%', driftDuration: 19 }
   if (screen === 'settings') return { ...base, id: 'system-quiet', intensity: 0.5, fogOpacity: 0.18, vignetteOpacity: 0.2, particleSpeed: 0.35, biasX: '82%', biasY: '8%', driftDuration: 28 }
   return { ...base, id: `screen-${screen}` }

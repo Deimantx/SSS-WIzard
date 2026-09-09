@@ -1,6 +1,6 @@
 export type SchoolId = 'fire' | 'water' | 'earth' | 'air'
 export type ElementId = SchoolId
-export type ScreenId = 'home' | 'combat' | 'schools' | 'inventory' | 'equipment' | 'collection' | 'bestiary' | 'tower-channeling' | 'tower-focus' | 'tower-research' | 'tower-transmutation' | 'tower-artificing' | 'guild' | 'settings'
+export type ScreenId = 'home' | 'combat' | 'schools' | 'inventory' | 'equipment' | 'collection' | 'bestiary' | 'tower-channeling' | 'tower-focus' | 'tower-research' | 'tower-transmutation' | 'tower-artificing' | 'tower-dark-portal' | 'guild' | 'settings'
 export type ActivityStatus = 'running' | 'mana-limited' | 'paused' | 'waiting-mana' | 'waiting-focus' | 'completed' | 'locked' | 'recovering'
 
 export type ItemId =
@@ -40,11 +40,14 @@ export type ItemId =
   | 'soul-residue'
   | 'burial-cloth'
   | 'edrin-remnant'
+  | 'black-portal-shard'
   | 'ossuary-mantle'
   | 'mourning-glass-earring'
   | 'soulglass-amulet'
   | 'gravebinder-ring'
   | 'edrins-signet'
+
+export type StoryEventId = 'edrin-dark-portal-discovery'
 
 export type SpellId = 'fire-bolt' | 'ignite' | 'fireball' | 'water-ward' | 'flow-mend' | 'frostbite' | 'earth-spike' | 'stoneguard' | 'fortify' | 'air-lance' | 'quickening' | 'shock-spark'
 export type SpellPresetId = string
@@ -309,6 +312,11 @@ export interface ProgressState {
   channeling: ChannelingProgress
 }
 
+export interface StoryProgressState {
+  pendingEventIds: StoryEventId[]
+  completedEventIds: StoryEventId[]
+}
+
 export interface FocusImprovementState {
   rank: number
   level: number
@@ -339,6 +347,7 @@ export interface GameState {
   activities: ActivitiesState
   combat: CombatState
   progress: ProgressState
+  storyProgress: StoryProgressState
   spellPresets: SpellPresetState
   ui: UiState
   offlineBankMs: number

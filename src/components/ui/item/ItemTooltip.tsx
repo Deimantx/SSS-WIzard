@@ -10,6 +10,9 @@ import { ItemIcon } from './ItemIcon'
 import { EquipmentMetadata } from './EquipmentMetadata'
 import { EquipmentCombatDetails } from './EquipmentCombatDetails'
 import { formatFlowEta, formatItemFlowRate, type ItemFlow } from '../../../game/systems/inventory/itemFlow'
+import { friendlyStatLabel, formatStat } from '../../../game/presentation/equipment/equipmentStatPresentation'
+
+export { friendlyStatLabel, formatStat } from '../../../game/presentation/equipment/equipmentStatPresentation'
 
 export interface ItemTooltipRecipeContext {
   status: string
@@ -35,14 +38,17 @@ interface ItemTooltipContentProps {
   extraContent?: ReactNode
 }
 
-export function ItemTooltip({ itemId, owned, protectedItem = false, equipped = false, recentlyGained, flow, recipeContext, children }: ItemTooltipContentProps & { children: ReactNode }) {
+export function ItemTooltip({ itemId, owned, protectedItem = false, equipped = false, recentlyGained, flow, recipeContext, effectiveStats, artifactTier, artifactLevel, artifactMaxLevel, children }: ItemTooltipContentProps & { children: ReactNode }) {
   const item = ITEMS[itemId]
   const artifactProgress = useGameStore((state) => state.artifactProgress)
   const artifact = item.kind === 'equipment' && isArtifactItem(itemId)
-  const effectiveStats = artifact ? getArtifactEffectiveStats({ artifactProgress }, itemId) : item.stats
+  const resolvedStats = effectiveStats ?? (artifact ? getArtifactEffectiveStats({ artifactProgress }, itemId) : item.stats)
   const artifactDefinition = artifact ? getArtifactDefinition(itemId) : undefined
+  const resolvedArtifactTier = artifactTier ?? artifactDefinition?.tier
+  const resolvedArtifactLevel = artifactLevel ?? (artifact ? getArtifactLevel({ artifactProgress }, itemId) : undefined)
+  const resolvedArtifactMaxLevel = artifactMaxLevel ?? artifactDefinition?.maxLevel
   const accent = item.inventoryCategory === 'equipment' ? 'success' : item.inventoryCategory === 'loot' ? 'warning' : item.materialSubtype === 'elemental' ? 'elemental' : 'neutral'
-  return <GameTooltip block accent={accent} content={<ItemTooltipContent itemId={itemId} owned={owned} protectedItem={protectedItem} equipped={equipped} recentlyGained={recentlyGained} flow={flow} recipeContext={recipeContext} effectiveStats={effectiveStats} artifactTier={artifact ? artifactDefinition?.tier : undefined} artifactLevel={artifact ? getArtifactLevel({ artifactProgress }, itemId) : undefined} artifactMaxLevel={artifact ? artifactDefinition?.maxLevel : undefined} />}>{children}</GameTooltip>
+  return <GameTooltip block accent={accent} content={<ItemTooltipContent itemId={itemId} owned={owned} protectedItem={protectedItem} equipped={equipped} recentlyGained={recentlyGained} flow={flow} recipeContext={recipeContext} effectiveStats={resolvedStats} artifactTier={resolvedArtifactTier} artifactLevel={resolvedArtifactLevel} artifactMaxLevel={resolvedArtifactMaxLevel} />}>{children}</GameTooltip>
 }
 
 export function ItemTooltipContent({ itemId, owned, protectedItem = false, equipped = false, recentlyGained, flow, recipeContext, effectiveStats, artifactTier, artifactLevel, artifactMaxLevel, extraContent }: ItemTooltipContentProps) {
@@ -65,18 +71,6 @@ export function ItemTooltipContent({ itemId, owned, protectedItem = false, equip
     {flow && <div className="tooltip-section"><small>CURRENT FLOW</small>{flow.production.map((source) => <TooltipRow key={`production-${source.label}`} label={source.label} value={formatItemFlowRate(source.ratePerHour)} />)}{flow.consumption.map((source) => <TooltipRow key={`consumption-${source.label}`} label={source.label} value={formatItemFlowRate(-source.ratePerHour)} />)}<TooltipRow label="Net" value={formatItemFlowRate(flow.netPerHour)} />{flow.depletionEtaMs !== null && <TooltipRow label="Depletes in" value={formatFlowEta(flow.depletionEtaMs) ?? '-'} />}</div>}
     <div className="tooltip-section"><small>SOURCE</small><p>{getItemSourceLabel(itemId)}</p></div>
   </TooltipContent>
-}
-
-export function friendlyStatLabel(key: string) {
-  const labels: Record<string, string> = { basicDamage: 'Basic Attack Damage', spellPower: 'Spell Power', maxHealth: 'Max Health', healthRegen: 'Health Regen', maxMana: 'Max Mana', manaRegen: 'Mana Regen', maxFocus: 'Max Focus', defense: 'Defense', critChance: 'Crit Chance', critDamage: 'Crit Damage', basicAttackSpeedPct: 'Basic Attack Speed', blockChance: 'Block Chance', cooldownRecoveryPct: 'Cooldown Recovery', healingDonePct: 'Healing Done', barrierPowerPct: 'Barrier Power', damageOverTimePct: 'Damage over Time', statusDurationPct: 'Status Duration', manaCostReductionPct: 'Mana Cost Reduction', focusEfficiencyPct: 'Focus Efficiency' }
-  if (key.startsWith('resistance-')) return `${key.replace('resistance-', '').replace(/^./, (value) => value.toUpperCase())} Resistance`
-  return labels[key] ?? key.replace(/([A-Z])/g, ' $1').replace(/^./, (value) => value.toUpperCase())
-}
-
-export function formatStat(key: string, value: number) {
-  const percent = key.endsWith('Pct') || ['critChance', 'critDamage', 'blockChance'].includes(key) || key.startsWith('resistance-')
-  if (key === 'healthRegen' || key === 'manaRegen') return `${value >= 0 ? '+' : ''}${value}/s`
-  return `${value >= 0 ? '+' : ''}${percent ? `${Math.round(value * 100)}%` : value}`
 }
 
 function formatDuration(ms: number) {

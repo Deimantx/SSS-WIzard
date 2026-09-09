@@ -87,6 +87,25 @@ describe('equipment Item Tooltip presentation', () => {
     }
   })
 
+  it('uses explicit Artifact tooltip overrides over global progression', () => {
+    vi.useFakeTimers()
+    const previous = useGameStore.getState().artifactProgress
+    useGameStore.setState({ artifactProgress: { 'prismatic-focus': { level: 10, allocatedNodeIds: [], attunedNodeIds: [] } } })
+    try {
+      render(<TooltipProvider><ItemTooltip itemId="prismatic-focus" owned={0} effectiveStats={{ basicDamage: 2, spellPower: 11, maxMana: 10, maxFocus: 2 }} artifactLevel={1} artifactMaxLevel={10}><button>Prismatic Focus preview</button></ItemTooltip></TooltipProvider>)
+      fireEvent.pointerEnter(screen.getByRole('button', { name: 'Prismatic Focus preview' }))
+      act(() => { vi.advanceTimersByTime(500) })
+      const tooltip = screen.getByRole('tooltip')
+      expect(tooltip.textContent).toContain('LEVEL 1 / 10')
+      expect(tooltip.textContent).toContain('Basic Attack Damage+2')
+      expect(tooltip.textContent).toContain('Spell Power+11')
+      expect(tooltip.textContent).not.toContain('Basic Attack Damage+10')
+      expect(tooltip.textContent).not.toContain('LEVEL 10 / 10')
+    } finally {
+      useGameStore.setState({ artifactProgress: previous })
+    }
+  })
+
   it('shows effective Level 10 Ember Staff stats', () => {
     vi.useFakeTimers()
     const previous = useGameStore.getState().artifactProgress

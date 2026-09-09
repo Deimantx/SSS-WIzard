@@ -1,8 +1,12 @@
 import { ITEMS } from '../../content/items/items'
+import { EQUIPMENT_BUILD_TAG_LABELS } from '../../content/items/equipmentBalance'
 import { getEquipmentCombatModifierTotal } from '../../core/equipment/equipmentStats'
 import { evaluateEquipmentChange, type EquipmentChangeFailureReason } from '../../core/equipment/equipmentChange'
 import { getPlayerSheetCombatStats } from '../../systems/combat/combatStats'
 import { validateFocusForEquipment, type FocusLoadoutValidation } from '../../systems/focus/focusLoadoutValidation'
+import { getArtifactEffectiveStats, isArtifactItem } from '../../systems/artifacts/artifactProgression'
+import { getEquipmentPrimaryCombatSummary } from './equipmentCombatPresentation'
+import { formatEquipmentStat, getEquipmentStatLabel } from './equipmentStatPresentation'
 import type { DamageType, EquipmentStats, EquipmentPosition, GameState, ItemId } from '../../types'
 
 export type EquipmentSheetState = Pick<GameState, 'player' | 'progress' | 'activities' | 'equipment' | 'inventory' | 'artifactProgress'> & Partial<Pick<GameState, 'debug'>>
@@ -56,6 +60,53 @@ export interface EquipmentPreview {
   preview: EquipmentStatSnapshot | null
   impact: EquipmentImpactStats
   focusValidation: FocusLoadoutValidation | null
+}
+
+export interface EquipmentKeyChange {
+  key: string
+  label: string
+  value: number
+  direction: 'increase' | 'decrease'
+  formatted: string
+}
+
+const KEY_CHANGE_PRIORITY = ['maxHealth', 'basicDamage', 'spellPower', 'maxMana', 'maxFocus', 'defense', 'critChance', 'critDamage', 'cooldownRecoveryPct', 'manaRegen', 'focusEfficiencyPct']
+
+const getImpactEntries = (impact: EquipmentImpactStats): Array<[string, number]> => Object.entries(impact).flatMap(([key, value]) => key === 'resistances' && value && typeof value === 'object'
+  ? Object.entries(value).map(([damageType, resistance]) => [`resistance-${damageType}`, Number(resistance)] as [string, number])
+  : [[key, Number(value)] as [string, number]])
+
+/** Ranks only meaningful non-zero loadout changes for compact comparison summaries. */
+export function getEquipmentKeyChanges(impact: EquipmentImpactStats, limit = 5): EquipmentKeyChange[] {
+  const priority = new Map(KEY_CHANGE_PRIORITY.map((key, index) => [key, index]))
+  return getImpactEntries(impact)
+    .filter(([, value]) => Number.isFinite(value) && Math.abs(value) > 0.0001)
+    .sort(([left], [right]) => (priority.get(left) ?? KEY_CHANGE_PRIORITY.length) - (priority.get(right) ?? KEY_CHANGE_PRIORITY.length) || left.localeCompare(right))
+    .slice(0, limit)
+    .map(([key, value]) => ({ key, label: getEquipmentStatLabel(key), value, direction: value > 0 ? 'increase' : 'decrease', formatted: formatEquipmentStat(key, value) }))
+}
+
+const getEquipmentSearchStats = (itemId: ItemId, state?: Pick<GameState, 'artifactProgress'>) => {
+  const item = ITEMS[itemId]
+  return item.kind === 'equipment' && isArtifactItem(itemId) && state ? getArtifactEffectiveStats(state, itemId) : item.stats ?? {}
+}
+
+/** Small indexed Equipment search projection; it intentionally indexes concepts, not numeric values. */
+export function getEquipmentSearchText(itemId: ItemId, state?: Pick<GameState, 'artifactProgress'>): string {
+  const item = ITEMS[itemId]
+  const stats = Object.keys(getEquipmentSearchStats(itemId, state)).map(getEquipmentStatLabel)
+  const tags = item.buildTags?.flatMap((tag) => [tag, EQUIPMENT_BUILD_TAG_LABELS[tag]]) ?? []
+  const combatSummary = getEquipmentPrimaryCombatSummary(item)
+  return [item.name, item.id, item.equipmentSlot, item.description, item.equipmentTier ? `tier ${item.equipmentTier}` : '', ...tags, ...stats, combatSummary ?? ''].filter(Boolean).join(' ').toLowerCase()
+}
+
+export function getEquipmentPrimarySummary(itemId: ItemId, state?: Pick<GameState, 'artifactProgress'>): string | null {
+  const item = ITEMS[itemId]
+  const combatSummary = getEquipmentPrimaryCombatSummary(item)
+  if (combatSummary) return combatSummary
+  const stats = getEquipmentSearchStats(itemId, state)
+  const entries = Object.entries(stats).filter(([, value]) => typeof value === 'number' && value !== 0).slice(0, 2)
+  return entries.length ? entries.map(([key, value]) => `${formatEquipmentStat(key, Number(value))} ${getEquipmentStatLabel(key)}`).join(' · ') : null
 }
 
 /** Compatibility projections for the current Equipment sheet; filtered modifiers use the generic evaluator. */
@@ -144,9 +195,10 @@ export function getEquipmentPreview(state: EquipmentSheetState, itemId: ItemId, 
   const result = evaluateEquipmentChange(state, itemId, targetPosition)
   if (!result.ok) return { compatible: false, reason: getFailureMessage(state, itemId, result.reason), failureReason: result.reason, position: targetPosition ?? null, equipment: null, current, preview: null, impact: {}, focusValidation: null }
   const focusValidation = validateFocusForEquipment(state, result.nextEquipment)
-  if (!focusValidation.valid) return { compatible: false, reason: `Free ${focusValidation.deficit} Focus before equipping this item.`, failureReason: 'insufficient-focus-capacity', position: result.position, equipment: result.nextEquipment, current, preview: null, impact: {}, focusValidation }
   const preview = getEquipmentStatSnapshot(state, result.nextEquipment)
-  return { compatible: true, reason: null, failureReason: null, position: result.position, equipment: result.nextEquipment, current, preview, impact: subtractSnapshots(current, preview), focusValidation }
+  const impact = subtractSnapshots(current, preview)
+  if (!focusValidation.valid) return { compatible: false, reason: `Free ${focusValidation.deficit} Focus before equipping this item.`, failureReason: 'insufficient-focus-capacity', position: result.position, equipment: result.nextEquipment, current, preview, impact, focusValidation }
+  return { compatible: true, reason: null, failureReason: null, position: result.position, equipment: result.nextEquipment, current, preview, impact, focusValidation }
 }
 
 export const getEquipmentCopyAvailability = (state: Pick<GameState, 'equipment' | 'inventory'>, itemId: ItemId) => {

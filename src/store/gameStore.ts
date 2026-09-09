@@ -7,6 +7,7 @@ import { immer } from 'zustand/middleware/immer'
 import { BALANCE } from '../game/core/balance/balance'
 import { DUNGEONS, DUNGEON_ORDER, getDungeonUnlockRequirement, isDungeonUnlocked } from '../game/content/dungeons/dungeons'
 import { MONSTERS } from '../game/content/monsters'
+import { ITEMS } from '../game/content/items/items'
 import { SPELLS } from '../game/content/spells/spells'
 import { castSpellAction } from './actions/combatActions'
 import { manaRegenPerSecond, pushNotification, recalculateDerivedStats, selectFreeFocus, selectUsedFocus } from '../game/engine'
@@ -528,8 +529,8 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   sellItem: (itemId, quantity) => { let sold = 0; set((state) => { sold = sellItemAction(state, itemId, quantity); return state }); emitActionFeel(sold > 0 ? 'sell' : 'error', `[data-item-id="${itemId}"], .inventory-actions-content`, sold > 0 ? 'var(--ui-gold)' : 'var(--ui-warning)', sold > 0 ? 0.95 : 0.75); return sold },
   destroyItem: (itemId, quantity) => { let destroyed = 0; set((state) => { destroyed = destroyItemAction(state, itemId, quantity); return state }); emitActionFeel(destroyed > 0 ? 'destroy' : 'error', `[data-item-id="${itemId}"], .inventory-actions-content`, destroyed > 0 ? 'var(--ui-danger)' : 'var(--ui-warning)', destroyed > 0 ? 0.95 : 0.75); return destroyed },
   clearRecentNew: (itemId) => set((state) => { const entry = state.recentAcquisitions.find((item) => item.itemId === itemId); if (entry) entry.isNew = false; return state }),
-  equipItem: (itemId, targetPosition) => { let succeeded = false; set((state) => { succeeded = equipItemAction(state, itemId, targetPosition).ok; return state }); if (succeeded) emitActionFeel('equip', `.equipment-slot-card.selected, .equipment-armory-card.selected, .equipment-inspector-actions`, 'var(--ui-accent)', 1.05); else emitActionFeel('error', `.equipment-slot-card.selected, .equipment-armory-card.selected, .equipment-inspector-actions`, 'var(--ui-warning)', 0.8) },
-  unequipItem: (position) => { let result = false; set((state) => { result = unequipItemAction(state, position).ok; return state }); if (result) emitActionFeel('unequip', `.equipment-slot-card.selected, .equipment-inspector-actions`, 'var(--ui-accent)', 0.8); else emitActionFeel('error', `.equipment-slot-card.selected, .equipment-inspector-actions`, 'var(--ui-warning)', 0.75) },
+  equipItem: (itemId, targetPosition) => { let succeeded = false; let changedPosition: EquipmentPosition | null = null; set((state) => { const result = equipItemAction(state, itemId, targetPosition); succeeded = result.ok; if (result.ok) changedPosition = result.position; return state }); if (succeeded && changedPosition) emitActionFeel('equip', `.equipment-slot-card[data-position="${changedPosition}"]`, ITEMS[itemId].color, 1.05); else emitActionFeel('error', targetPosition ? `.equipment-slot-card[data-position="${targetPosition}"]` : `.equipment-armory-card.selected, .equipment-inspector-actions`, 'var(--ui-warning)', 0.8) },
+  unequipItem: (position) => { let changed = false; set((state) => { changed = unequipItemAction(state, position).ok; return state }); if (changed) emitActionFeel('unequip', `.equipment-slot-card[data-position="${position}"]`, 'var(--ui-text-muted)', 0.8); else emitActionFeel('error', `.equipment-slot-card[data-position="${position}"]`, 'var(--ui-warning)', 0.75) },
   unlockAllSpells: () => set((state) => { unlockAllSpellsAction(state); return state }),
   debugUnlockSpellRankOne: (spellId) => set((state) => { debugUnlockSpellRankOneAction(state, spellId); return state }),
   debugLockSpell: (spellId) => set((state) => { debugLockSpellAction(state, spellId); return state }),

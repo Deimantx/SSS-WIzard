@@ -46,7 +46,7 @@
 .equipment-armory-card.equipped { border-color: color-mix(in srgb, var(--ui-success) 35%, var(--ui-border)); }
 .equipment-armory-icon, .equipment-inspector-icon { display: grid; place-items: center; border-radius: 8px; background: color-mix(in srgb, currentColor 11%, transparent); font-size: 19px; }
 .equipment-armory-icon { width: 30px; height: 30px; font-size: 17px; }
-.equipment-armory-copy { display: grid; min-width: 0; gap: 3px; }
+.equipment-armory-copy { display: grid; min-width: 0; gap: 3px; overflow: hidden; }
 .equipment-armory-copy strong, .equipment-armory-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .equipment-armory-copy strong { font-size: var(--text-xs); }
 .equipment-armory-copy small { color: var(--ui-text-muted); font-size: var(--text-micro); }
@@ -153,7 +153,7 @@
 .equipment-armory-card { align-items: start; }
 .equipment-armory-copy { gap: 4px; padding-top: 1px; }
 .equipment-armory-copy strong { line-height: 1.2; }
-.equipment-armory-meta-line { display: flex; flex-wrap: nowrap; align-items: center; gap: 4px; min-width: 0; overflow: hidden; white-space: nowrap; }
+.equipment-armory-meta-line { display: flex; flex-wrap: nowrap; align-items: center; gap: 4px; max-width: 100%; min-width: 0; overflow: hidden; white-space: nowrap; }
 .equipment-armory-summary { display: block; overflow: hidden; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
 .equipment-armory-markers { display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-end; gap: 4px; max-width: 72px; min-width: 0; height: 16px; overflow: hidden; white-space: nowrap; }
 .equipment-armory-markers > * { flex: 0 0 auto; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -161,6 +161,7 @@
 .equipment-armory-marker.new { border-color: color-mix(in srgb, var(--ui-gold) 45%, var(--ui-border)); color: var(--ui-gold); }
 .equipment-armory-marker.tracked { border-color: color-mix(in srgb, var(--ui-secondary) 44%, var(--ui-border)); color: var(--ui-secondary); }
 .equipment-level-chip { display: inline-flex; align-items: center; padding: 2px 4px; border: 1px solid color-mix(in srgb, var(--ui-secondary) 42%, var(--ui-border)); border-radius: 4px; color: var(--ui-secondary); background: color-mix(in srgb, var(--ui-secondary) 8%, transparent); font: var(--text-micro) var(--font-mono); letter-spacing: .04em; line-height: 1.1; white-space: nowrap; }
+.equipment-armory-artifact-meta { display: inline-flex; align-items: center; max-width: 100%; min-width: 0; overflow: hidden; padding: 2px 5px; border: 1px solid color-mix(in srgb, var(--ui-secondary) 42%, var(--ui-border)); border-radius: 4px; color: var(--ui-secondary); background: color-mix(in srgb, var(--ui-secondary) 8%, transparent); font: var(--text-micro) var(--font-mono); font-size: .55rem; letter-spacing: .03em; line-height: 1.1; text-overflow: ellipsis; white-space: nowrap; }
 .equipment-slot-card[style] { border-color: color-mix(in srgb, var(--item-color) 45%, var(--ui-border)); }
 .equipment-slot-card[style]:hover, .equipment-slot-card[style]:focus-visible, .equipment-slot-card[style].selected { border-color: color-mix(in srgb, var(--item-color) 64%, var(--ui-accent)); }
 .equipment-slot-card-meta { display: inline-flex; align-items: center; justify-content: flex-end; gap: 5px; }

@@ -51,7 +51,7 @@ export const getTransmutationEchoFocusCost = () => BALANCE.transmutation.echoFoc
 export const getTransmutationFocusReserved = (echoesAssigned: number) => Math.max(0, Math.floor(echoesAssigned)) * BALANCE.transmutation.echoFocusCost
 export const getTransmutationSpeedMultiplier = (echoesAssigned: number) => Math.max(1, Math.floor(echoesAssigned))
 export const getRecipeCurrentSpeedMultiplier = (echoesAssigned: number) => Math.max(0, Math.floor(Number.isFinite(echoesAssigned) ? echoesAssigned : 0))
-export const canAssignTransmutationEcho = (state: Pick<GameState, 'activities' | 'progress' | 'player'> & Partial<Pick<GameState, 'debug'>>) => getTransmutationFreeEchoCapacity(state) > 0 && Boolean(state.debug?.allowFocusOverCap || selectFreeFocus(state) >= BALANCE.transmutation.echoFocusCost)
+export const canAssignTransmutationEcho = (state: Pick<GameState, 'activities' | 'progress' | 'player' | 'equipment' | 'artifactProgress'> & Partial<Pick<GameState, 'debug'>>) => getTransmutationFreeEchoCapacity(state) > 0 && Boolean(state.debug?.allowFocusOverCap || selectFreeFocus(state) >= BALANCE.transmutation.echoFocusCost)
 export const getRecipeEffectiveDuration = (recipe: RecipeDefinition, echoesAssigned: number) => recipe.baseDurationMs / Math.max(1, echoesAssigned)
 export const getRecipeCurrentEffectiveDuration = (recipe: RecipeDefinition, echoesAssigned: number) => getRecipeCurrentSpeedMultiplier(echoesAssigned) > 0 ? recipe.baseDurationMs / getRecipeCurrentSpeedMultiplier(echoesAssigned) : null
 export const getRecipeCurrentRemainingDuration = (recipe: RecipeDefinition, progressMs: number, echoesAssigned: number) => getRecipeCurrentSpeedMultiplier(echoesAssigned) > 0 ? getRecipeRemainingMs(recipe, progressMs) / getRecipeCurrentSpeedMultiplier(echoesAssigned) : null
@@ -85,7 +85,7 @@ export function getRecipeMaterialCapacity(requirements: RecipeConsumableRequirem
 export const hasRecipeMaterials = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment'>, recipe: RecipeDefinition) => getRecipeConsumableRequirements(state, recipe).every((requirement) => requirement.available >= requirement.required)
 export const isRecipeCraftable = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment' | 'player' | 'progress'>, recipe: RecipeDefinition) => isRecipeUnlocked(state, recipe) && state.player.mana >= recipe.manaCost && hasRecipeMaterials(state, recipe)
 
-export function getRecipeStatus(state: Pick<GameState, 'activities' | 'inventory' | 'protectedItems' | 'equipment' | 'player' | 'progress' | 'schools'> & Partial<Pick<GameState, 'debug'>>, recipe: RecipeDefinition): TransmutationStatus {
+export function getRecipeStatus(state: Pick<GameState, 'activities' | 'inventory' | 'protectedItems' | 'equipment' | 'artifactProgress' | 'player' | 'progress' | 'schools'> & Partial<Pick<GameState, 'debug'>>, recipe: RecipeDefinition): TransmutationStatus {
   if (!isRecipeUnlocked(state, recipe)) return 'locked'
   const job = state.activities.transmutation.jobs[recipe.id]
   const echoes = Math.max(0, Math.floor(job?.echoesAssigned ?? 0))

@@ -25,11 +25,11 @@ export function getAutoCastFocusCostForRank(rank: SpellRank): number {
   return rank * 10
 }
 
-export function getSpellAutoCastFocusCost(state: Pick<GameState, 'progress'> & Partial<Pick<GameState, 'equipment' | 'artifactProgress'>>, spellId: SpellId): number | null {
+export function getSpellAutoCastFocusCost(state: Pick<GameState, 'progress' | 'equipment' | 'artifactProgress'>, spellId: SpellId): number | null {
   const rank = getSpellRank(state, spellId)
   if (rank === null) return null
   const base = getAutoCastFocusCostForRank(rank)
-  return state.equipment ? getEffectiveFocusCost({ equipment: state.equipment, artifactProgress: state.artifactProgress }, base) : base
+  return getEffectiveFocusCost(state, base)
 }
 
 export function formatSpellRank(rank: SpellRank): string {

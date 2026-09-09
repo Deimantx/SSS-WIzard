@@ -24,7 +24,7 @@ export function EquipmentInspection({ recipe }: { recipe: ArtificingRecipeDefini
 function EquipmentOutput({ inspection, preview, ringNeedsChoice, ringTarget, onRingTargetChange }: { inspection: ReturnType<typeof getArtificingOutputInspection>; preview: ReturnType<typeof getArtificingEquipmentPreview> | null; ringNeedsChoice: boolean; ringTarget: EquipmentPosition | null; onRingTargetChange: (position: EquipmentPosition) => void }) {
   const item = ITEMS[inspection.itemId]
   if (!inspection.equipment) return null
-  const authoredStats = flattenItemStats(item.stats ?? {}).filter(([, value]) => Math.abs(value) > 0)
+  const authoredStats = flattenItemStats(inspection.stats).filter(([, value]) => Math.abs(value) > 0)
   const impactRows = preview ? getImpactEntries(preview.impact).filter(([, value]) => Math.abs(value) > 0.0001) : []
   return <>
     {authoredStats.length > 0 && <DetailSection title="STATS"><div className="artificing-output-stat-list">{authoredStats.map(([key, value]) => <div key={key}><span>{friendlyStatLabel(key)}</span><strong>{formatStat(key, value)}</strong></div>)}</div></DetailSection>}

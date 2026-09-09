@@ -1,7 +1,7 @@
 import { MONSTERS } from '../../content/monsters'
 import { BALANCE } from '../../core/balance/balance'
 import { DEFAULT_COMBAT_SPEED_MULTIPLIER, DEFAULT_ENEMY_CRIT_CHANCE, DEFAULT_ENEMY_CRIT_DAMAGE_MULTIPLIER, DEFAULT_ENEMY_DEFENSE, DEFENSE_K, MAX_BLOCK_CHANCE, MAX_CRIT_CHANCE, MAX_CRIT_DAMAGE_MULTIPLIER, MAX_DEFENSE_REDUCTION, MAX_RESISTANCE, MIN_CRIT_DAMAGE_MULTIPLIER, MIN_RESISTANCE } from '../../core/balance/combatStats'
-import { getEquipmentStats } from '../../core/equipment/equipmentStats'
+import { getEquipmentStats, type EquipmentStatsState } from '../../core/equipment/equipmentStats'
 import { getManaCapacityBreakdown, getManaRegenBreakdown } from '../../engine/channelingEngine'
 import { getFocusCapacityBreakdown } from '../focus/focusCapacity'
 import { getSpellPower } from '../spells/spellPower'
@@ -39,7 +39,7 @@ export interface CombatStats {
   focusEfficiency: number
 }
 
-export type PlayerSheetState = Pick<GameState, 'player' | 'progress' | 'activities' | 'equipment'> & Partial<Pick<GameState, 'artifactProgress' | 'debug'>>
+export type PlayerSheetState = Pick<GameState, 'player' | 'progress' | 'activities' | 'equipment' | 'artifactProgress'> & Partial<Pick<GameState, 'debug'>>
 
 const finite = (value: number | undefined, fallback = 0) => Number.isFinite(value) ? value as number : fallback
 const clampPercent = (value: number, min: number, max: number) => Math.min(max, Math.max(min, finite(value)))
@@ -50,8 +50,8 @@ export const getDefenseReductionFromRating = (defense: number) => {
   return Math.min(MAX_DEFENSE_REDUCTION, rating / (rating + DEFENSE_K))
 }
 
-const playerEquipmentStat = (state: Pick<GameState, 'equipment'>, key: keyof EquipmentStats) => finite(getEquipmentStats(state)[key] as number | undefined)
-const playerBaseMaxHealth = (state: Pick<GameState, 'player' | 'equipment'>) => finite(state.player.baseMaxHealth, BALANCE.player.maxHealth) + playerEquipmentStat(state, 'maxHealth')
+const playerEquipmentStat = (state: EquipmentStatsState, key: keyof EquipmentStats) => finite(getEquipmentStats(state)[key] as number | undefined)
+const playerBaseMaxHealth = (state: PlayerSheetState) => finite(state.player.baseMaxHealth, BALANCE.player.maxHealth) + playerEquipmentStat(state, 'maxHealth')
 const getPlayerSheetStats = (state: PlayerSheetState): CombatStats => {
   const equipment = getEquipmentStats(state)
   const basicAttackSpeedMultiplier = clampSpeed(1 + finite(equipment.basicAttackSpeedPct))
@@ -179,5 +179,5 @@ export const getHealingDoneBonus = (state: GameState, actor: CombatActor, source
 export const getBarrierPowerBonus = (state: GameState, actor: CombatActor, source?: CombatSource) => getCombatModifiers(state, actor, 'barrier-power-percent', { source, sourceTags: source?.tags })
 export const getCooldownRecoveryMultiplier = (state: CombatModifierState, actor: CombatActor = 'player') => Math.max(0, Math.min(10, 1 + getCombatModifiers(state, actor, 'cooldown-recovery-percent')))
 
-export const getEffectiveManaCost = (state: Pick<GameState, 'equipment'> & Partial<Pick<GameState, 'artifactProgress'>>, baseManaCost: number) => Math.max(1, Math.ceil(Math.max(0, baseManaCost) * (1 - clampPercent(playerEquipmentStat(state, 'manaCostReductionPct'), 0, 0.8))))
-export const getEffectiveFocusCost = (state: Pick<GameState, 'equipment'> & Partial<Pick<GameState, 'artifactProgress'>>, baseFocusCost: number) => Math.max(1, Math.ceil(Math.max(0, baseFocusCost) * (1 - clampPercent(playerEquipmentStat(state, 'focusEfficiencyPct'), 0, 0.8))))
+export const getEffectiveManaCost = (state: EquipmentStatsState, baseManaCost: number) => Math.max(1, Math.ceil(Math.max(0, baseManaCost) * (1 - clampPercent(playerEquipmentStat(state, 'manaCostReductionPct'), 0, 0.8))))
+export const getEffectiveFocusCost = (state: EquipmentStatsState, baseFocusCost: number) => Math.max(1, Math.ceil(Math.max(0, baseFocusCost) * (1 - clampPercent(playerEquipmentStat(state, 'focusEfficiencyPct'), 0, 0.8))))

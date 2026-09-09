@@ -10,9 +10,10 @@ export function ManaCorePanel({ expanded, onToggle }: { expanded: boolean; onTog
   const activities = useGameStore((state) => state.activities)
   const progress = useGameStore((state) => state.progress)
   const equipment = useGameStore((state) => state.equipment)
+  const artifactProgress = useGameStore((state) => state.artifactProgress)
   const debug = useGameStore((state) => state.debug)
-  const regen = getManaRegenBreakdown({ activities, progress, equipment, debug })
-  const capacity = getManaCapacityBreakdown({ player, progress, equipment, debug })
+  const regen = getManaRegenBreakdown({ activities, progress, equipment, artifactProgress, debug })
+  const capacity = getManaCapacityBreakdown({ player, progress, equipment, artifactProgress, debug })
   const overCap = player.mana > player.maxMana
   return <Card title="Mana Core" action={<Status tone="active">+{rate(regen.total)}/s</Status>}>
     <div className="channeling-mana-hero"><div><span className="eyebrow">CURRENT MANA</span><strong>{Math.floor(player.mana)} <small>/ {player.maxMana}</small></strong>{overCap && <Status tone="warning">OVER CAP</Status>}</div><span className="channeling-mana-orb">✦</span></div>

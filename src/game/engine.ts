@@ -1,17 +1,15 @@
 import { BALANCE } from './core/balance/balance'
 import { SCHOOL_MAX_LEVEL, getSchoolTotalXpForLevel } from './core/balance/schoolXpCurve'
 import { ITEMS, getResearchXp } from './content/items/items'
-import { SCHOOLS } from './content/schools/schools'
-import { SPELLS } from './content/spells/spells'
 import { getManaCapacityBreakdown, manaRegenPerSecond as getChannelingManaRegen } from './engine/channelingEngine'
-import type { FocusReservation, GameState, ItemId, SchoolId, SpellId } from './types'
-import { TRANSMUTATION_RECIPES as RECIPES, TRANSMUTATION_RECIPE_ORDER as RECIPE_ORDER } from './content/recipes/recipes'
+import type { GameState, ItemId, SchoolId } from './types'
 import { clamp, uid } from './utils'
-import { RESEARCH_SLOT_ORDER } from './systems/research/researchReservations'
 import { getSchoolLevel as getCentralSchoolLevel, getSchoolProgressInfo } from './systems/schools'
 import { getFocusCapacityBreakdown } from './systems/focus/focusCapacity'
-import { getSpellAutoCastFocusCost, syncSpellUnlocksForSchool } from './systems/spells/spellProgression'
+import { syncSpellUnlocksForSchool } from './systems/spells/spellProgression'
 import { getEquipmentStats } from './core/equipment/equipmentStats'
+import { deriveFocusReservations } from './systems/focus/focusReservations'
+export { canReserveFocus, deriveFocusReservations, selectFreeFocus, selectRawFreeFocus, selectUsedFocus, usedFocus, freeFocus } from './systems/focus/focusReservations'
 export { getSpellPower, getSpellPowerBreakdown } from './systems/spells/spellPower'
 
 export const getSchoolLevel = getCentralSchoolLevel
@@ -27,41 +25,11 @@ export const recalculateDerivedStats = (state: GameState) => {
   state.player.mana = state.debug.allowManaOverCap ? Math.max(0, state.player.mana) : clamp(state.player.mana, 0, state.player.maxMana)
 }
 
-export const deriveFocusReservations = (state: Pick<GameState, 'activities' | 'progress'> & Partial<Pick<GameState, 'equipment'>>): FocusReservation[] => {
-  const reservations: FocusReservation[] = []
-  const echoes = state.activities.channeling.echoesAssigned
-  if (echoes > 0) reservations.push({ id: 'channeling-echoes', sourceType: 'channeling', sourceId: 'echoes', amount: echoes * BALANCE.channeling.echoFocusCost, label: 'Arcane Echo Channeling' })
-  const research = state.activities.research
-  const researchJobs = research.slots
-    ? RESEARCH_SLOT_ORDER.map((slotId) => ({ slotId, job: research.slots[slotId] })).filter((entry): entry is { slotId: typeof RESEARCH_SLOT_ORDER[number]; job: NonNullable<typeof entry.job> } => Boolean(entry.job && entry.job.echoesAssigned > 0))
-    : research.running && research.itemId && research.targetSchoolId ? [{ slotId: 'research-1' as const, job: { itemId: research.itemId, targetSchoolId: research.targetSchoolId, requestedQuantity: research.requestedQuantity ?? research.remainingQuantity ?? 0, remainingQuantity: research.remainingQuantity ?? 0, progressMs: research.progressMs ?? 0, echoesAssigned: 1, status: 'running' as const } }] : []
-  researchJobs.forEach(({ slotId, job }) => reservations.push({ id: `research-${slotId}`, sourceType: 'research', sourceId: slotId, amount: Math.max(0, Math.floor(job.echoesAssigned)) * BALANCE.research.echoFocusCost, label: `Research · ${ITEMS[job.itemId]?.name ?? job.itemId} → ${SCHOOLS[job.targetSchoolId]?.name ?? job.targetSchoolId}` }))
-  RECIPE_ORDER.forEach((recipeId) => {
-    const echoes = Math.max(0, Math.floor(state.activities.transmutation.jobs[recipeId]?.echoesAssigned ?? 0))
-    if (!echoes) return
-    reservations.push({ id: `transmutation-${recipeId}`, sourceType: 'transmutation', sourceId: recipeId, amount: echoes * BALANCE.transmutation.echoFocusCost, label: `Transmutation · ${RECIPES[recipeId].name}` })
-  })
-  Object.entries(state.activities.autoCast).forEach(([spellId, active]) => {
-    if (!active) return
-    const spell = SPELLS[spellId as SpellId]
-    const amount = getSpellAutoCastFocusCost(state, spellId as SpellId)
-    if (!spell || amount === null) return
-    reservations.push({ id: `autocast-${spellId}`, sourceType: 'autocast', sourceId: spellId, amount, label: `${spell.name} Auto-Cast` })
-  })
-  return reservations
-}
-
-export const selectUsedFocus = (state: Pick<GameState, 'activities' | 'progress'> & Partial<Pick<GameState, 'equipment'>>) => deriveFocusReservations(state).reduce((sum, reservation) => sum + reservation.amount, 0)
-export const selectRawFreeFocus = (state: Pick<GameState, 'activities' | 'progress' | 'player'> & Partial<Pick<GameState, 'equipment'>>) => state.player.maxFocus - selectUsedFocus(state)
-export const selectFreeFocus = (state: Pick<GameState, 'activities' | 'progress' | 'player'> & Partial<Pick<GameState, 'equipment'>>) => Math.max(0, selectRawFreeFocus(state))
-export const usedFocus = selectUsedFocus
-export const freeFocus = selectFreeFocus
-export const canReserveFocus = (state: Pick<GameState, 'activities' | 'progress' | 'player'> & Partial<Pick<GameState, 'equipment'>>, amount: number) => selectFreeFocus(state) >= amount
 export const manaRegenPerSecond = getChannelingManaRegen
 export const schoolProgress = (state: GameState, school: SchoolId) => {
   return getSchoolProgressInfo(state, school).progress
 }
-export const playerBasicDamage = (state: Pick<GameState, 'equipment'>) => BALANCE.player.basicAttackDamage + (equipmentStats(state).basicDamage ?? 0)
+export const playerBasicDamage = (state: Pick<GameState, 'equipment' | 'artifactProgress'>) => BALANCE.player.basicAttackDamage + (equipmentStats(state).basicDamage ?? 0)
 
 export const grantSchoolXp = (state: GameState, school: SchoolId, amount: number) => {
   const before = state.schools[school].level

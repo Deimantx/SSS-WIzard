@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
+import { recalculateDerivedStats } from '../../engine'
 import { getEquipmentPreview, getEquipmentStatSnapshot } from './equipmentReadModel'
 
 describe('Equipment read model', () => {
@@ -45,5 +46,26 @@ describe('Equipment read model', () => {
     windState.inventory['windthread-charm'] = 1
     windState.equipment.amulet = 'windthread-charm'
     expect(getEquipmentStatSnapshot(windState, windState.equipment).airSpellDamage).toBeCloseTo(0.1)
+  })
+
+  it('blocks an invalid Prismatic swap and permits it after Focus is freed', () => {
+    const state = createInitialState()
+    state.inventory['prismatic-focus'] = 1
+    state.inventory['ember-staff'] = 1
+    state.equipment.weapon = 'prismatic-focus'
+    state.artifactProgress['prismatic-focus'] = { level: 10, allocatedNodeIds: [], attunedNodeIds: [] }
+    state.progress.spellRanks = { fireball: 7 }
+    state.activities.channeling.echoesAssigned = 5
+    state.activities.autoCast.fireball = true
+    recalculateDerivedStats(state)
+
+    const blocked = getEquipmentPreview(state, 'ember-staff')
+    expect(blocked).toMatchObject({ compatible: false, failureReason: 'insufficient-focus-capacity', focusValidation: { maxFocus: 100, usedFocus: 120, deficit: 20 } })
+    expect(blocked.reason).toBe('Free 20 Focus before equipping this item.')
+    expect(state.equipment.weapon).toBe('prismatic-focus')
+
+    state.activities.channeling.echoesAssigned = 3
+    const allowed = getEquipmentPreview(state, 'ember-staff')
+    expect(allowed).toMatchObject({ compatible: true, focusValidation: { maxFocus: 100, usedFocus: 100, deficit: 0 }, impact: { maxFocus: -20 } })
   })
 })

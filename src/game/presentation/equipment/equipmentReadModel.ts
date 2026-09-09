@@ -2,9 +2,10 @@ import { ITEMS } from '../../content/items/items'
 import { getEquipmentCombatModifierTotal } from '../../core/equipment/equipmentStats'
 import { evaluateEquipmentChange, type EquipmentChangeFailureReason } from '../../core/equipment/equipmentChange'
 import { getPlayerSheetCombatStats } from '../../systems/combat/combatStats'
+import { validateFocusForEquipment, type FocusLoadoutValidation } from '../../systems/focus/focusLoadoutValidation'
 import type { DamageType, EquipmentStats, EquipmentPosition, GameState, ItemId } from '../../types'
 
-export type EquipmentSheetState = Pick<GameState, 'player' | 'progress' | 'activities' | 'equipment' | 'inventory'> & Partial<Pick<GameState, 'debug' | 'artifactProgress'>>
+export type EquipmentSheetState = Pick<GameState, 'player' | 'progress' | 'activities' | 'equipment' | 'inventory' | 'artifactProgress'> & Partial<Pick<GameState, 'debug'>>
 
 export interface EquipmentStatSnapshot {
   maxHealth: number
@@ -48,12 +49,13 @@ export interface EquipmentImpactStats extends EquipmentStats {
 export interface EquipmentPreview {
   compatible: boolean
   reason: string | null
-  failureReason: EquipmentChangeFailureReason | null
+  failureReason: EquipmentChangeFailureReason | 'insufficient-focus-capacity' | null
   position: EquipmentPosition | null
   equipment: GameState['equipment'] | null
   current: EquipmentStatSnapshot
   preview: EquipmentStatSnapshot | null
   impact: EquipmentImpactStats
+  focusValidation: FocusLoadoutValidation | null
 }
 
 /** Compatibility projections for the current Equipment sheet; filtered modifiers use the generic evaluator. */
@@ -140,9 +142,11 @@ const getFailureMessage = (_state: EquipmentSheetState, _itemId: ItemId, reason:
 export function getEquipmentPreview(state: EquipmentSheetState, itemId: ItemId, targetPosition?: EquipmentPosition): EquipmentPreview {
   const current = getEquipmentStatSnapshot(state, state.equipment)
   const result = evaluateEquipmentChange(state, itemId, targetPosition)
-  if (!result.ok) return { compatible: false, reason: getFailureMessage(state, itemId, result.reason), failureReason: result.reason, position: targetPosition ?? null, equipment: null, current, preview: null, impact: {} }
+  if (!result.ok) return { compatible: false, reason: getFailureMessage(state, itemId, result.reason), failureReason: result.reason, position: targetPosition ?? null, equipment: null, current, preview: null, impact: {}, focusValidation: null }
+  const focusValidation = validateFocusForEquipment(state, result.nextEquipment)
+  if (!focusValidation.valid) return { compatible: false, reason: `Free ${focusValidation.deficit} Focus before equipping this item.`, failureReason: 'insufficient-focus-capacity', position: result.position, equipment: result.nextEquipment, current, preview: null, impact: {}, focusValidation }
   const preview = getEquipmentStatSnapshot(state, result.nextEquipment)
-  return { compatible: true, reason: null, failureReason: null, position: result.position, equipment: result.nextEquipment, current, preview, impact: subtractSnapshots(current, preview) }
+  return { compatible: true, reason: null, failureReason: null, position: result.position, equipment: result.nextEquipment, current, preview, impact: subtractSnapshots(current, preview), focusValidation }
 }
 
 export const getEquipmentCopyAvailability = (state: Pick<GameState, 'equipment' | 'inventory'>, itemId: ItemId) => {

@@ -10,13 +10,15 @@ export function DeveloperFocus() {
   const debug = useGameStore((state) => state.debug)
   const activities = useGameStore((state) => state.activities)
   const progress = useGameStore((state) => state.progress)
+  const equipment = useGameStore((state) => state.equipment)
+  const artifactProgress = useGameStore((state) => state.artifactProgress)
   const used = useGameStore(selectUsedFocus)
   const free = useGameStore(selectFreeFocus)
   const rawFree = useGameStore(selectRawFreeFocus)
   const setBonus = useGameStore((state) => state.setDebugMaxFocusBonus)
   const focusImprovement = useGameStore((state) => state.progress.focusImprovement)
   const setFocusImprovementLevel = useGameStore((state) => state.setFocusImprovementLevel)
-  const reservations = deriveFocusReservations({ activities, progress })
+  const reservations = deriveFocusReservations({ activities, progress, equipment, artifactProgress })
   return <div className="developer-tab-grid">
     <Card title="Focus Improvement"><NumberField label="Rank I Level (0-10)" value={focusImprovement.level} onChange={setFocusImprovementLevel} /><div className="developer-diagnostics"><span>Sets the permanent Focus Capacity level and recalculates Max Focus.</span><span>Bonus per level <b>+{FOCUS_IMPROVEMENT.focusPerLevel} Max Focus</b></span><span>Upgrade material <b>Prismatic Fragment only</b></span></div></Card>
     <Card title="Focus availability"><div className="developer-summary-grid"><Summary label="Final Max Focus" value={player.maxFocus} /><Summary label="Used Focus" value={used} /><Summary label="Available Focus" value={free} /><Summary label="Available before cap" value={rawFree} /></div><div className="developer-diagnostics"><span>Available Focus is clamped to 0 when reservations exceed capacity.</span><span>Debug mode <b>{debug.allowFocusOverCap ? 'allows over-reservation testing' : 'does not change reservations'}</b>.</span></div></Card>

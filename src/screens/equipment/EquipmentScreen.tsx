@@ -167,7 +167,6 @@ export function EquipmentScreenV2() {
       {LOADOUT_VISUAL_ORDER.map((position) => {
         const itemId = equipment[position]
         const item = itemId ? ITEMS[itemId] : null
-        const locked = false
         const emptyCopy = position === 'ring1' || position === 'ring2' ? 'Select Ring' : `Select ${EQUIPMENT_POSITION_LABELS[position]}`
         const tooltip = SLOT_TOOLTIP_COPY[position]
         return <div className="equipment-slot-grid-item" data-position={position} key={position}>

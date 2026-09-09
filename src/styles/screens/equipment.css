@@ -3,7 +3,7 @@
 .equipment-screen .card { overflow: hidden; }
 .equipment-armory-panel, .equipment-inspector { display: flex; flex-direction: column; }
 .equipment-armory-panel > .card-head, .equipment-inspector > .card-head { flex: 0 0 auto; }
-.equipment-loadout-board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-areas: "cape helmet earring" "amulet weapon armor" "ring1 ring2 ring2"; gap: 12px; }
+.equipment-loadout-board { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); grid-template-areas: "cape cape helmet helmet earring earring" "amulet amulet weapon weapon armor armor" ". ring1 ring1 ring2 ring2 ."; gap: 12px; }
 .equipment-slot-card { display: flex; min-width: 0; height: 116px; min-height: 116px; flex-direction: column; gap: 7px; padding: 10px; border: 1px solid var(--ui-border); border-radius: 9px; color: var(--ui-text-soft); background: linear-gradient(145deg, color-mix(in srgb, var(--ui-panel-strong) 80%, transparent), color-mix(in srgb, var(--ui-panel) 92%, transparent)); cursor: pointer; transition: border-color .15s ease, transform .15s ease, background .15s ease; }
 .equipment-slot-grid-item { min-width: 0; }
 .equipment-slot-grid-item > .game-tooltip-trigger { height: 100%; }
@@ -31,12 +31,10 @@
 .equipment-armory-count { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
 .equipment-search { display: block; margin-bottom: 8px; }
 .equipment-search .search-input { width: 100%; }
-.equipment-filter-bar, .equipment-weapon-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+.equipment-filter-bar { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
 .equipment-filter-bar { padding-bottom: 10px; border-bottom: 1px solid var(--ui-border); }
-.equipment-filter-bar button, .equipment-weapon-badges button { padding: 7px 9px; border: 1px solid var(--ui-border); border-radius: 6px; color: var(--ui-text-muted); background: var(--ui-panel); cursor: pointer; font: var(--text-micro) var(--font-mono); letter-spacing: .06em; }
-.equipment-filter-bar button:hover, .equipment-filter-bar button.active, .equipment-weapon-badges button.active { border-color: color-mix(in srgb, var(--ui-accent) 62%, var(--ui-border)); color: var(--ui-text); background: var(--ui-accent-soft); }
-.equipment-weapon-badges { margin-top: -5px; }
-.equipment-weapon-badges button { padding: 4px 7px; color: var(--ui-accent); font-size: .58rem; }
+.equipment-filter-bar button { padding: 7px 9px; border: 1px solid var(--ui-border); border-radius: 6px; color: var(--ui-text-muted); background: var(--ui-panel); cursor: pointer; font: var(--text-micro) var(--font-mono); letter-spacing: .06em; }
+.equipment-filter-bar button:hover, .equipment-filter-bar button.active { border-color: color-mix(in srgb, var(--ui-accent) 62%, var(--ui-border)); color: var(--ui-text); background: var(--ui-accent-soft); }
 .equipment-armory-grid { display: grid; flex: 1 1 auto; align-content: start; grid-auto-rows: min-content; grid-template-columns: repeat(auto-fill, minmax(155px, 175px)); justify-content: start; gap: 7px; min-height: 0; overflow-x: hidden; overflow-y: auto; padding-right: 3px; padding-bottom: 20px; scrollbar-color: var(--ui-scrollbar-thumb) transparent; scrollbar-width: thin; }
 .equipment-armory-grid::-webkit-scrollbar, .equipment-inspector-content::-webkit-scrollbar { width: 6px; }
 .equipment-armory-grid::-webkit-scrollbar-thumb, .equipment-inspector-content::-webkit-scrollbar-thumb { border-radius: 99px; background: var(--ui-scrollbar-thumb); }

@@ -75,7 +75,7 @@ export const getResearchJob = (state: Pick<GameState, 'activities'>, slotId: Res
   return null
 }
 
-export function getResearchJobStatus(state: Pick<GameState, 'activities' | 'inventory' | 'protectedItems' | 'equipment' | 'schools' | 'progress' | 'player'>, slotId: ResearchSlotId): ResearchJobStatus | 'empty' {
+export function getResearchJobStatus(state: Pick<GameState, 'activities' | 'inventory' | 'protectedItems' | 'equipment' | 'artifactProgress' | 'schools' | 'progress' | 'player'>, slotId: ResearchSlotId): ResearchJobStatus | 'empty' {
   const job = getResearchJob(state, slotId)
   if (!job || finiteQuantity(job.remainingQuantity) <= 0) return 'empty'
   const item = ITEMS[job.itemId]
@@ -122,7 +122,7 @@ export interface ResearchNextLevelEta {
 }
 
 /** Estimate when this prepared batch alone reaches its target school's next level. */
-export const getResearchNextLevelEtaMs = (state: Pick<GameState, 'activities' | 'inventory' | 'protectedItems' | 'equipment' | 'schools' | 'progress' | 'player'>, slotId: ResearchSlotId): ResearchNextLevelEta => {
+export const getResearchNextLevelEtaMs = (state: Pick<GameState, 'activities' | 'inventory' | 'protectedItems' | 'equipment' | 'artifactProgress' | 'schools' | 'progress' | 'player'>, slotId: ResearchSlotId): ResearchNextLevelEta => {
   const job = getResearchJob(state, slotId)
   if (!job || finiteQuantity(job.remainingQuantity) <= 0 || finiteQuantity(job.echoesAssigned) <= 0) return { etaMs: null, beyondBatch: false }
   const status = getResearchJobStatus(state, slotId)

@@ -1,5 +1,5 @@
 import { BALANCE } from '../../core/balance/balance'
-import { deriveFocusReservations } from '../../engine'
+import { deriveFocusReservations } from './focusReservations'
 import { TRANSMUTATION_RECIPES as RECIPES } from '../../content/recipes/recipes'
 import { getRecipeStatus } from '../transmutation/transmutationSelectors'
 import { formatSpellRank, getSpellRank } from '../spells'

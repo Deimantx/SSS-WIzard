@@ -27,6 +27,7 @@ export function CurrentArcaneWork() {
   const activities = useGameStore((state) => state.activities)
   const progress = useGameStore((state) => state.progress)
   const equipment = useGameStore((state) => state.equipment)
+  const artifactProgress = useGameStore((state) => state.artifactProgress)
   const debug = useGameStore((state) => state.debug)
   const setScreen = useGameStore((state) => state.setScreen)
   const researchJobs = getPreparedResearchJobs({ activities })
@@ -39,7 +40,7 @@ export function CurrentArcaneWork() {
   })
   const transmutationEchoes = getTransmutationEchoesAssigned({ activities })
   const channelingEchoes = Math.max(0, Math.floor(activities.channeling.echoesAssigned))
-  const channelingRate = manaRegenPerSecond({ activities, progress, equipment, debug })
+  const channelingRate = manaRegenPerSecond({ activities, progress, equipment, artifactProgress, debug })
 
   return <Card className="current-arcane-work" title="CURRENT ARCANE WORK" action={<span className="current-arcane-work-summary">{Number(channelingEchoes > 0) + Number(researchEchoes > 0) + Number(transmutationEchoes > 0)} SYSTEMS ACTIVE</span>}><div className="arcane-work-list"><WorkRow label="Channeling" status={channelingEchoes > 0 ? 'ACTIVE' : 'IDLE'} statusTone={channelingEchoes > 0 ? 'active' : 'neutral'} detail={channelingEchoes > 0 ? `${channelingEchoes} Echoes · +${formatNumber(channelingRate)} Mana/s total.` : 'No Echoes assigned'} screen="tower-channeling" onNavigate={setScreen} /><WorkRow label="Research" status={researchEchoes > 0 ? 'ACTIVE' : researchJobs.length > 0 ? 'PREPARED' : 'IDLE'} statusTone={researchEchoes > 0 ? 'active' : researchJobs.length > 0 ? 'neutral' : 'neutral'} detail={researchEchoes > 0 ? `${researchJobs.length} prepared ${researchJobs.length === 1 ? 'batch' : 'batches'} · ${researchEchoes} Echoes · ${formatNumber(researchXpPerHour)} XP/h.` : researchJobs.length > 0 ? `${researchJobs.length} ${researchJobs.length === 1 ? 'batch' : 'batches'} prepared` : 'No Echoes assigned'} screen="tower-research" onNavigate={setScreen} /><WorkRow label="Transmutation" status={transmutationEchoes > 0 ? 'ACTIVE' : 'IDLE'} statusTone={transmutationEchoes > 0 ? 'active' : 'neutral'} detail={transmutationEchoes > 0 ? `${transmutationJobs.length} active ${transmutationJobs.length === 1 ? 'recipe' : 'recipes'} · ${transmutationEchoes} Echoes · Focus ${formatNumber(getTransmutationFocusReserved(transmutationEchoes))}.` : 'No active recipes'} screen="tower-transmutation" onNavigate={setScreen} /></div></Card>
 }

@@ -1,5 +1,6 @@
 import { Check } from 'lucide-react'
 import { doesCurrentAutoCastMatchPreset, getSpellPresetFocusBreakdown } from '../../game/systems/spells'
+import type { SpellPresetFocusState } from '../../game/systems/spells'
 import { SPELLS } from '../../game/content/spells/spells'
 import type { SpellId } from '../../game/types'
 import { useGameStore } from '../../store/gameStore'
@@ -12,11 +13,12 @@ export function SpellPresetSummary({ onManage }: { onManage: () => void }) {
   const spellPresets = useGameStore((state) => state.spellPresets)
   const activities = useGameStore((state) => state.activities)
   const progress = useGameStore((state) => state.progress)
-  const debug = useGameStore((state) => state.debug)
+  const equipment = useGameStore((state) => state.equipment)
+  const artifactProgress = useGameStore((state) => state.artifactProgress)
   const maxFocus = useGameStore((state) => state.player.maxFocus)
-  const state = { spellPresets, activities, progress, player: { maxFocus }, debug }
-  const focus = getSpellPresetFocusBreakdown(state)
-  const applied = spellPresets.presets.find((preset) => doesCurrentAutoCastMatchPreset(state, preset))
+  const focusState: SpellPresetFocusState = { activities, progress, equipment, artifactProgress, player: { maxFocus } }
+  const focus = getSpellPresetFocusBreakdown(focusState)
+  const applied = spellPresets.presets.find((preset) => doesCurrentAutoCastMatchPreset(focusState, preset))
   const activeSpellIds = Object.keys(SPELLS).filter((spellId) => activities.autoCast[spellId as SpellId]) as SpellId[]
   const shownSpellIds = activeSpellIds.slice(0, 4)
   const remainingCount = Math.max(0, activeSpellIds.length - shownSpellIds.length)

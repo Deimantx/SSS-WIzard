@@ -21,15 +21,10 @@ describe('Focus Capacity', () => {
     expect(getFocusCapacityBreakdown(state)).toEqual({ base: 100, improvement: 15, permanentRewards: 20, equipment: 10, debug: 0, total: 145 })
   })
 
-  it('uses effective Prismatic Focus Artifact stats for equipment Max Focus', () => {
+  it('uses authored Windthread Charm stats for equipment Max Focus', () => {
     const state = createInitialState()
-    state.equipment.weapon = 'prismatic-focus'
-    state.inventory['prismatic-focus'] = 1
-    state.artifactProgress['prismatic-focus'] = { level: 1, allocatedNodeIds: [], attunedNodeIds: [] }
-    expect(getFocusCapacityBreakdown(state).equipment).toBe(2)
-
-    state.artifactProgress['prismatic-focus'] = { level: 10, allocatedNodeIds: [], attunedNodeIds: [] }
-    expect(getFocusCapacityBreakdown(state).equipment).toBe(20)
+    state.equipment.amulet = 'windthread-charm'
+    expect(getFocusCapacityBreakdown(state).equipment).toBe(10)
   })
 
   it('consumes the exact Prismatic-only Level 1 cost and updates derived Max Focus', () => {

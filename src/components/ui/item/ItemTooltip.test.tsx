@@ -49,57 +49,19 @@ describe('equipment Item Tooltip presentation', () => {
     expect(tooltip.textContent).toContain('+20% Fire Spell Damage')
   })
 
-  it('shows effective Level 1 Prismatic Focus stats and level context', () => {
-    vi.useFakeTimers()
-    const previous = useGameStore.getState().artifactProgress
-    useGameStore.setState({ artifactProgress: {} })
-    try {
-      render(<TooltipProvider><ItemTooltip itemId="prismatic-focus" owned={0}><button>Prismatic Focus</button></ItemTooltip></TooltipProvider>)
-      fireEvent.pointerEnter(screen.getByRole('button', { name: 'Prismatic Focus' }))
-      act(() => { vi.advanceTimersByTime(500) })
-      const tooltip = screen.getByRole('tooltip')
-      expect(tooltip.textContent).toContain('LEVEL 1 / 10')
-      expect(tooltip.textContent).toContain('Basic Attack Damage+2')
-      expect(tooltip.textContent).toContain('Spell Power+11')
-      expect(tooltip.textContent).toContain('Max Mana+10')
-      expect(tooltip.textContent).toContain('Max Focus+2')
-    } finally {
-      useGameStore.setState({ artifactProgress: previous })
-    }
-  })
-
-  it('shows effective Level 10 Prismatic Focus stats', () => {
-    vi.useFakeTimers()
-    const previous = useGameStore.getState().artifactProgress
-    useGameStore.setState({ artifactProgress: { 'prismatic-focus': { level: 10, allocatedNodeIds: [], attunedNodeIds: [] } } })
-    try {
-      render(<TooltipProvider><ItemTooltip itemId="prismatic-focus" owned={1}><button>Prismatic Focus max</button></ItemTooltip></TooltipProvider>)
-      fireEvent.pointerEnter(screen.getByRole('button', { name: 'Prismatic Focus max' }))
-      act(() => { vi.advanceTimersByTime(500) })
-      const tooltip = screen.getByRole('tooltip')
-      expect(tooltip.textContent).toContain('LEVEL 10 / 10')
-      expect(tooltip.textContent).toContain('Basic Attack Damage+10')
-      expect(tooltip.textContent).toContain('Spell Power+58')
-      expect(tooltip.textContent).toContain('Max Mana+42')
-      expect(tooltip.textContent).toContain('Max Focus+20')
-    } finally {
-      useGameStore.setState({ artifactProgress: previous })
-    }
-  })
-
   it('uses explicit Artifact tooltip overrides over global progression', () => {
     vi.useFakeTimers()
     const previous = useGameStore.getState().artifactProgress
-    useGameStore.setState({ artifactProgress: { 'prismatic-focus': { level: 10, allocatedNodeIds: [], attunedNodeIds: [] } } })
+    useGameStore.setState({ artifactProgress: { 'ember-staff': { level: 10, allocatedNodeIds: [], attunedNodeIds: [] } } })
     try {
-      render(<TooltipProvider><ItemTooltip itemId="prismatic-focus" owned={0} effectiveStats={{ basicDamage: 2, spellPower: 11, maxMana: 10, maxFocus: 2 }} artifactLevel={1} artifactMaxLevel={10}><button>Prismatic Focus preview</button></ItemTooltip></TooltipProvider>)
-      fireEvent.pointerEnter(screen.getByRole('button', { name: 'Prismatic Focus preview' }))
+      render(<TooltipProvider><ItemTooltip itemId="ember-staff" owned={0} effectiveStats={{ basicDamage: 5, spellPower: 16 }} artifactLevel={1} artifactMaxLevel={10}><button>Ember Staff preview</button></ItemTooltip></TooltipProvider>)
+      fireEvent.pointerEnter(screen.getByRole('button', { name: 'Ember Staff preview' }))
       act(() => { vi.advanceTimersByTime(500) })
       const tooltip = screen.getByRole('tooltip')
       expect(tooltip.textContent).toContain('LEVEL 1 / 10')
-      expect(tooltip.textContent).toContain('Basic Attack Damage+2')
-      expect(tooltip.textContent).toContain('Spell Power+11')
-      expect(tooltip.textContent).not.toContain('Basic Attack Damage+10')
+      expect(tooltip.textContent).toContain('Basic Attack Damage+5')
+      expect(tooltip.textContent).toContain('Spell Power+16')
+      expect(tooltip.textContent).not.toContain('Basic Attack Damage+17')
       expect(tooltip.textContent).not.toContain('LEVEL 10 / 10')
     } finally {
       useGameStore.setState({ artifactProgress: previous })

@@ -41,7 +41,7 @@ describe('Artificing detail ownership labels', () => {
   })
 
   it('disables an unpinned action when the six-pin limit is full', () => {
-    setUiPreferences({ screenState: { artificing: { pinnedRecipeIds: ['ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'prismatic-focus', 'wispweave-robe'] } } })
+    setUiPreferences({ screenState: { artificing: { pinnedRecipeIds: ['ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'wispweave-robe', 'wispveil-hood'] } } })
     render(<TooltipProvider><ArtificingDetail recipe={ARTIFICING_RECIPES['windthread-charm']} /></TooltipProvider>)
 
     expect((screen.getByRole('button', { name: 'Pin Windthread Charm' }) as HTMLButtonElement).disabled).toBe(true)

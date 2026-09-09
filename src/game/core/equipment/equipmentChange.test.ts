@@ -13,7 +13,6 @@ const withOwned = (itemId: keyof ReturnType<typeof createInitialState>['inventor
 describe('evaluateEquipmentChange', () => {
   it.each([
     ['Weapon', 'tideglass-wand' as const, 'weapon' as const],
-    ['Weapon', 'prismatic-focus' as const, 'weapon' as const],
     ['Armor', 'wispweave-robe' as const, 'armor' as const],
   ])('accepts an owned compatible %s', (_label, itemId, position) => {
     const result = evaluateEquipmentChange(withOwned(itemId), itemId, position)
@@ -21,20 +20,20 @@ describe('evaluateEquipmentChange', () => {
   })
 
   it('replaces the current Weapon without removing a secondary item', () => {
-    const state = withOwned('prismatic-focus')
+    const state = withOwned('tideglass-wand')
     state.inventory['ember-staff'] = 1
     state.equipment.weapon = 'ember-staff'
-    const preview = evaluateEquipmentChange(state, 'prismatic-focus')
-    expect(preview).toMatchObject({ ok: true, position: 'weapon', nextEquipment: { weapon: 'prismatic-focus' } })
-    const action = equipItemAction(state, 'prismatic-focus')
+    const preview = evaluateEquipmentChange(state, 'tideglass-wand')
+    expect(preview).toMatchObject({ ok: true, position: 'weapon', nextEquipment: { weapon: 'tideglass-wand' } })
+    const action = equipItemAction(state, 'tideglass-wand')
     expect(action).toEqual({ ok: true, position: 'weapon' })
-    expect(state.equipment.weapon).toBe('prismatic-focus')
+    expect(state.equipment.weapon).toBe('tideglass-wand')
   })
 
   it('rejects missing ownership and incompatible target positions', () => {
     expect(evaluateEquipmentChange(createInitialState(), 'ember-staff')).toEqual({ ok: false, reason: 'not-owned' })
-    const state = withOwned('prismatic-focus')
-    expect(evaluateEquipmentChange(state, 'prismatic-focus', 'helmet')).toEqual({ ok: false, reason: 'incompatible' })
+    const state = withOwned('tideglass-wand')
+    expect(evaluateEquipmentChange(state, 'tideglass-wand', 'helmet')).toEqual({ ok: false, reason: 'incompatible' })
     state.inventory['gravebinder-ring'] = 1
     expect(evaluateEquipmentChange(state, 'gravebinder-ring', 'helmet')).toEqual({ ok: false, reason: 'incompatible' })
   })

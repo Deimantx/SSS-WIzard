@@ -4,15 +4,15 @@ import { playerBasicDamage } from '../../engine'
 import { getEffectiveEquipmentItemStats, getEquipmentStats } from './equipmentStats'
 
 describe('effective Equipment stats', () => {
-  it('resolves Prismatic Focus core stats from its Artifact level', () => {
+  it('resolves Ember Staff core stats from its Artifact level', () => {
     const state = createInitialState()
-    state.equipment.weapon = 'prismatic-focus'
+    state.equipment.weapon = 'ember-staff'
 
-    expect(getEffectiveEquipmentItemStats(state, 'prismatic-focus')).toEqual({ basicDamage: 2, spellPower: 11, maxMana: 10, maxFocus: 2 })
+    expect(getEffectiveEquipmentItemStats(state, 'ember-staff')).toEqual({ basicDamage: 5, spellPower: 16 })
 
-    state.artifactProgress['prismatic-focus'] = { level: 10, allocatedNodeIds: [], attunedNodeIds: [] }
-    expect(getEffectiveEquipmentItemStats(state, 'prismatic-focus')).toEqual({ basicDamage: 10, spellPower: 58, maxMana: 42, maxFocus: 20 })
-    expect(getEquipmentStats(state)).toMatchObject({ basicDamage: 10, spellPower: 58, maxMana: 42, maxFocus: 20 })
+    state.artifactProgress['ember-staff'] = { level: 10, allocatedNodeIds: [], attunedNodeIds: [] }
+    expect(getEffectiveEquipmentItemStats(state, 'ember-staff')).toEqual({ basicDamage: 17, spellPower: 75 })
+    expect(getEquipmentStats(state)).toMatchObject({ basicDamage: 17, spellPower: 75 })
   })
 
   it('includes current Artifact level in weapon Basic Damage', () => {

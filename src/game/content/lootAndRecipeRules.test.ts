@@ -5,7 +5,7 @@ import { MONSTERS, validateMonsterDefinitions, type MonsterDefinition } from './
 import { DUNGEONS } from './dungeons/dungeons'
 import { ARTIFICING_RECIPES, RECIPES, RECIPE_ORDER, type CraftingRecipeDefinition, validateRecipeDefinitions } from './recipes/recipes'
 import { ARTIFACTS } from './artifacts/artifacts'
-import type { ItemId, RecipeId } from '../types'
+import type { ArtificingRecipeId, ItemId, RecipeId } from '../types'
 
 describe('material-only loot and Artificing-only Equipment', () => {
   it('keeps every current monster and boss loot entry material-only', () => {
@@ -157,25 +157,8 @@ describe('material-only loot and Artificing-only Equipment', () => {
   })
 
   it('keeps Artifact forge costs synchronized with their Artificing recipes', () => {
-    Object.values(ARTIFACTS).forEach((artifact) => expect(artifact.forge.ingredients).toEqual(ARTIFICING_RECIPES[artifact.id].ingredients))
+    Object.values(ARTIFACTS).forEach((artifact) => expect(artifact.forge.ingredients).toEqual(ARTIFICING_RECIPES[artifact.id as ArtificingRecipeId].ingredients))
     expect(validateRecipeDefinitions()).toEqual([])
-  })
-
-  it('applies the Prismatic Focus-only Fragment reduction', () => {
-    expect(ARTIFICING_RECIPES['prismatic-focus'].ingredients).toEqual([
-      { itemId: 'prismatic-fragment', quantity: 2 }, { itemId: 'wisp-essence', quantity: 5 },
-      { itemId: 'rootstone-shard', quantity: 10 }, { itemId: 'thorn-fiber', quantity: 5 }, { itemId: 'life-essence', quantity: 25 },
-    ])
-    expect(ARTIFACTS['prismatic-focus'].forge.ingredients).toEqual(ARTIFICING_RECIPES['prismatic-focus'].ingredients)
-    expect(ARTIFACTS['prismatic-focus'].upgrades.map((entry) => entry.ingredients.find((ingredient) => ingredient.itemId === 'prismatic-fragment')?.quantity)).toEqual([4, 7, 12, 18, 29, 44, 60, 88, 132])
-    expect(Object.fromEntries(Object.entries(ARTIFACTS).filter(([id]) => id !== 'prismatic-focus').map(([id, artifact]) => [id, artifact.upgrades.flatMap((entry) => entry.ingredients.filter((ingredient) => ingredient.itemId === 'prismatic-fragment').map((ingredient) => ingredient.quantity))]))).toEqual({
-      'ember-staff': [5, 9, 14, 20, 30, 45],
-      'tideglass-wand': [5, 9, 14, 20, 30, 45],
-      'stoneheart-scepter': [5, 9, 14, 20, 30, 45],
-      'windthread-wand': [5, 9, 14, 20, 30, 45],
-      'wispweave-robe': [5, 8, 13, 20, 25, 38, 55],
-      'wispveil-hood': [5, 8, 10, 15, 23, 30, 43, 63],
-    })
   })
 
   it('validates every Artifact upgrade and long-term use of new dungeon materials', () => {

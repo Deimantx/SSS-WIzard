@@ -57,6 +57,7 @@ const requestIds = Object.keys(GUILD_REQUESTS)
 const spellIds = Object.keys(SPELLS)
 const recipeIds = Object.keys(RECIPES)
 const permanentFocusIds = ['forest-heart', 'guild-apprentice']
+const REMOVED_PRISMATIC_FOCUS_ID = 'prismatic-focus'
 
 const nonNegativeInteger = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.floor(value)) : undefined
 const nonNegativeGold = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, Math.floor(value))) : undefined
@@ -441,6 +442,36 @@ const normalizeDirectContentReferences = (migrated: GameState, raw: Record<strin
   migrated.combat.pendingBossId = pendingBossId === null ? null : validContentId(pendingBossId, monsterIds) ? pendingBossId as GameState['combat']['pendingBossId'] : fresh.combat.pendingBossId
 }
 
+/** Explicit V26→V27 cleanup for the removed Prismatic Focus content. */
+const removeDeletedPrismaticFocus = (migrated: GameState, raw: Record<string, any>, sourceVersion: number) => {
+  if (sourceVersion >= 27) return
+
+  delete (migrated.inventory as Record<string, unknown>)[REMOVED_PRISMATIC_FOCUS_ID]
+  delete (migrated.protectedItems as Record<string, unknown>)[REMOVED_PRISMATIC_FOCUS_ID]
+  delete (migrated.artifactProgress as Record<string, unknown>)[REMOVED_PRISMATIC_FOCUS_ID]
+  migrated.progress.discoveredItems = migrated.progress.discoveredItems.filter((itemId) => (itemId as string) !== REMOVED_PRISMATIC_FOCUS_ID)
+
+  EQUIPMENT_POSITIONS.forEach((position) => {
+    if ((migrated.equipment[position] as string | null) === REMOVED_PRISMATIC_FOCUS_ID) migrated.equipment[position] = null
+  })
+
+  const rawActivities = isRecord(raw.activities) ? raw.activities : {}
+  const rawArtificing = isRecord(rawActivities.artificing) ? rawActivities.artificing : {}
+  const rawActiveJob = isRecord(rawArtificing.activeJob) ? rawArtificing.activeJob : null
+  const activeJob = migrated.activities.artificing.activeJob
+  const activeJobWasRemoved = Boolean(
+    (activeJob?.kind === 'recipe' && (activeJob as { recipeId?: unknown }).recipeId === REMOVED_PRISMATIC_FOCUS_ID)
+    || (activeJob?.kind === 'artifact-forge' && (activeJob as { artifactId?: unknown }).artifactId === REMOVED_PRISMATIC_FOCUS_ID)
+    || (rawActiveJob?.kind === 'recipe' && rawActiveJob.recipeId === REMOVED_PRISMATIC_FOCUS_ID)
+    || (rawActiveJob?.kind === 'artifact-forge' && rawActiveJob.artifactId === REMOVED_PRISMATIC_FOCUS_ID),
+  )
+  const migratedActiveRecipeId = migrated.activities.artificing.activeRecipeId as string | null
+  const activeRecipeWasRemoved = migratedActiveRecipeId === null
+    ? rawArtificing.activeRecipeId === REMOVED_PRISMATIC_FOCUS_ID
+    : migratedActiveRecipeId === REMOVED_PRISMATIC_FOCUS_ID
+  if (activeJobWasRemoved || activeRecipeWasRemoved) migrated.activities.artificing = { activeJob: null, activeRecipeId: null, progressMs: 0 }
+}
+
 const validResearchStatus = (value: unknown): ResearchJobState['status'] => value === 'running' || value === 'mana-limited' || value === 'waiting-mana' || value === 'level-cap' || value === 'protected' || value === 'missing-item' || value === 'prepared' ? value : 'prepared'
 
 /** Normalizes both the V8 single queue and the V9 slot document. */
@@ -617,6 +648,7 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   normalizeSpellPresets(migrated, raw)
   normalizeCombatState(migrated, raw, sourceVersion)
   normalizeDirectContentReferences(migrated, raw, sourceVersion)
+  removeDeletedPrismaticFocus(migrated, raw, sourceVersion)
   seedLegacyItemDiscoveries(migrated, raw, sourceVersion)
   normalizeResearch(migrated, raw, sourceVersion)
   recalculateDerivedStats(migrated)

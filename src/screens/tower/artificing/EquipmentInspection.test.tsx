@@ -12,8 +12,8 @@ describe('Artificing equipment output inspection', () => {
     const state = useGameStore.getState()
     useGameStore.setState({
       progress: { ...state.progress, firstBossKill: true },
-      inventory: { ...state.inventory, 'prismatic-focus': 1 },
-      equipment: { ...state.equipment, weapon: 'prismatic-focus' },
+      inventory: { ...state.inventory, 'tideglass-wand': 1 },
+      equipment: { ...state.equipment, weapon: 'tideglass-wand' },
     })
     render(<EquipmentInspection recipe={RECIPES['ember-staff']} />)
     expect(screen.getByText('LOADOUT COMPARISON')).toBeTruthy()

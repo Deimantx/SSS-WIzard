@@ -5,7 +5,7 @@ import { COMBAT_RNG_DEFAULT_SEED } from '../game/core/balance/combatRng'
 
 // Combat Action System V3 stores authored base work plus remaining work for
 // dynamic-rate action progression.
-export const SAVE_VERSION = 26
+export const SAVE_VERSION = 27
 
 export const createInitialState = (): GameState => ({
   saveVersion: SAVE_VERSION,

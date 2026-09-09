@@ -15,25 +15,25 @@ describe('equipment actions', () => {
   it('equips a Weapon into the single Weapon slot and keeps the owned copies', () => {
     const state = createInitialState()
     state.inventory['ember-staff'] = 1
-    state.inventory['prismatic-focus'] = 1
+    state.inventory['tideglass-wand'] = 1
     state.equipment.weapon = 'ember-staff'
-    const result = equipItemAction(state, 'prismatic-focus')
+    const result = equipItemAction(state, 'tideglass-wand')
     expect(result.ok).toBe(true)
-    expect(state.equipment.weapon).toBe('prismatic-focus')
+    expect(state.equipment.weapon).toBe('tideglass-wand')
     expect(state.inventory['ember-staff']).toBe(1)
     expect(state.notifications).toHaveLength(1)
-    expect(state.notifications[0].text).toBe('Prismatic Focus equipped')
+    expect(state.notifications[0].text).toBe('Tideglass Wand equipped')
   })
 
   it('previews the same final values as the Weapon equip action', () => {
     const state = createInitialState()
     state.inventory['ember-staff'] = 1
-    state.inventory['prismatic-focus'] = 1
+    state.inventory['tideglass-wand'] = 1
     state.equipment.weapon = 'ember-staff'
-    const preview = getEquipmentPreview(state, 'prismatic-focus')
+    const preview = getEquipmentPreview(state, 'tideglass-wand')
     expect(preview.compatible).toBe(true)
     expect('removedOffhand' in preview).toBe(false)
-    equipItemAction(state, 'prismatic-focus')
+    equipItemAction(state, 'tideglass-wand')
     expect(getEquipmentStatSnapshot(state, state.equipment)).toEqual(preview.preview)
   })
 

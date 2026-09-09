@@ -86,7 +86,6 @@ describe('spell preset foundation', () => {
   it('reads only effect-relevant current equipment modifiers from authored item stats', () => {
     const state = createInitialState()
     state.equipment.weapon = 'ember-staff'
-    state.equipment.weapon = 'prismatic-focus'
     state.equipment.amulet = 'windthread-charm'
     expect(getSpellEquipmentBonusPreview(state, 'fireball').current).toEqual([])
     expect(getSpellEquipmentBonusPreview(state, 'water-ward').current).toEqual([])

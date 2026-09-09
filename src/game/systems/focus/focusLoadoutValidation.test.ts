@@ -13,10 +13,9 @@ afterEach(() => { delete ITEMS[focusEfficientWeapon] })
 
 const overcommittedState = () => {
   const state = createInitialState()
-  state.inventory['prismatic-focus'] = 1
-  state.inventory['ember-staff'] = 1
-  state.equipment.weapon = 'prismatic-focus'
-  state.artifactProgress['prismatic-focus'] = { level: 10, allocatedNodeIds: [], attunedNodeIds: [] }
+  state.inventory['windthread-charm'] = 1
+  state.inventory['heartseed-necklace'] = 1
+  state.equipment.amulet = 'windthread-charm'
   state.progress.spellRanks = { fireball: 7 }
   state.activities.autoCast.fireball = true
   state.activities.channeling.echoesAssigned = 5
@@ -25,27 +24,27 @@ const overcommittedState = () => {
 }
 
 describe('Focus candidate loadout validation', () => {
-  it('blocks swapping away from an overcommitted Prismatic Focus loadout', () => {
+  it('blocks swapping away from an overcommitted Focus-capacity loadout', () => {
     const state = overcommittedState()
-    expect(state.player.maxFocus).toBe(120)
+    expect(state.player.maxFocus).toBe(110)
     expect(selectUsedFocus(state)).toBe(120)
 
-    const result = equipItemAction(state, 'ember-staff')
+    const result = equipItemAction(state, 'heartseed-necklace', 'amulet')
 
     expect(result).toMatchObject({ ok: false, reason: 'insufficient-focus-capacity', maxFocus: 100, usedFocus: 120, deficit: 20 })
-    expect(state.equipment.weapon).toBe('prismatic-focus')
+    expect(state.equipment.amulet).toBe('windthread-charm')
     expect(state.activities.channeling.echoesAssigned).toBe(5)
     expect(state.activities.autoCast.fireball).toBe(true)
-    expect(state.notifications.at(-1)?.text).toContain('Free 20 Focus')
+    expect(state.notifications[state.notifications.length - 1]?.text).toContain('Free 20 Focus')
   })
 
-  it('blocks unequipping Prismatic Focus while reservations exceed the candidate capacity', () => {
+  it('blocks unequipping Focus-capacity equipment while reservations exceed the candidate capacity', () => {
     const state = overcommittedState()
 
-    const result = unequipItemAction(state, 'weapon')
+    const result = unequipItemAction(state, 'amulet')
 
     expect(result).toMatchObject({ ok: false, reason: 'insufficient-focus-capacity', maxFocus: 100, usedFocus: 120, deficit: 20 })
-    expect(state.equipment.weapon).toBe('prismatic-focus')
+    expect(state.equipment.amulet).toBe('windthread-charm')
   })
 
   it('allows the swap after the player frees enough Focus', () => {
@@ -53,10 +52,10 @@ describe('Focus candidate loadout validation', () => {
     state.activities.channeling.echoesAssigned = 3
     expect(selectUsedFocus(state)).toBe(100)
 
-    const result = equipItemAction(state, 'ember-staff')
+    const result = equipItemAction(state, 'heartseed-necklace', 'amulet')
 
-    expect(result).toMatchObject({ ok: true, position: 'weapon' })
-    expect(state.equipment.weapon).toBe('ember-staff')
+    expect(result).toMatchObject({ ok: true, position: 'amulet' })
+    expect(state.equipment.amulet).toBe('heartseed-necklace')
   })
 
   it('uses candidate Focus Efficiency when recalculating Auto-Cast reservations', () => {

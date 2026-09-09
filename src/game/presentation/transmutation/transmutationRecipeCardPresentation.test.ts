@@ -11,6 +11,5 @@ describe('Transmutation recipe card metadata', () => {
   it('presents the authored Weapon slot without handedness metadata', () => {
     expect(getTransmutationRecipeCardMeta(ITEMS['tideglass-wand'])).toMatchObject({ badges: ['WEAPON'], tier: null })
     expect(getTransmutationRecipeCardMeta(ITEMS['ember-staff'])).toMatchObject({ badges: ['WEAPON'], tier: null })
-    expect(getTransmutationRecipeCardMeta(ITEMS['prismatic-focus'])).toMatchObject({ badges: ['WEAPON'], tier: null })
   })
 })

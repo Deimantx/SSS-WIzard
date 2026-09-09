@@ -51,7 +51,7 @@ describe('screen UI preferences', () => {
   it('migrates, deduplicates, validates, and caps Artificing recipe pins', () => {
     expect(normalizeUiPreferences({ screenState: { artificing: { pinnedRecipeId: 'ember-staff' } } }).screenState.artificing.pinnedRecipeIds).toEqual(['ember-staff'])
     expect(normalizeUiPreferences({ screenState: { artificing: { pinnedRecipeIds: ['ember-staff', 'fake-item', 'ember-staff'] } } }).screenState.artificing.pinnedRecipeIds).toEqual(['ember-staff'])
-    expect(normalizeUiPreferences({ screenState: { artificing: { pinnedRecipeIds: ['ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'prismatic-focus', 'wispweave-robe', 'wispveil-hood'] } } }).screenState.artificing.pinnedRecipeIds).toEqual(['ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'prismatic-focus', 'wispweave-robe'])
+    expect(normalizeUiPreferences({ screenState: { artificing: { pinnedRecipeIds: ['ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'wispweave-robe', 'wispveil-hood', 'windthread-charm'] } } }).screenState.artificing.pinnedRecipeIds).toEqual(['ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'wispweave-robe', 'wispveil-hood'])
     expect(normalizeUiPreferences({ screenState: { artificing: { pinsCollapsed: true } } }).screenState.artificing.pinsCollapsed).toBe(true)
   })
 

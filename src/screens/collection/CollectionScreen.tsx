@@ -31,6 +31,7 @@ export function CollectionScreen() {
   useEffect(() => {
     const itemId = navigationIntent.inventoryItemId
     if (!itemId) return
+    if (!ITEMS[itemId]) { setNavigationIntent({ inventoryItemId: null }); return }
     setSearch('')
     setCategory('All')
     setStatus('All')

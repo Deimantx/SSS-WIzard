@@ -30,7 +30,8 @@ export function InventoryScreenV2() {
   const [materialSubcategory, setMaterialSubcategory] = useState<MaterialSubcategoryFilter>('All Materials')
   const [sort, setSort] = useState<InventorySort>('Category')
   const navigationIntent = useNavigationIntent()
-  const [selected, setSelected] = useState<ItemId | null>(() => navigationIntent.inventoryItemId)
+  const initialNavigationItemId = navigationIntent.inventoryItemId && ITEMS[navigationIntent.inventoryItemId] ? navigationIntent.inventoryItemId : null
+  const [selected, setSelected] = useState<ItemId | null>(() => initialNavigationItemId)
   const [usesItemId, setUsesItemId] = useState<ItemId | null>(null)
   const [artifactPathItemId, setArtifactPathItemId] = useState<ArtifactId | null>(null)
   const [clearedNew, setClearedNew] = useState<Set<ItemId>>(() => new Set())
@@ -68,7 +69,9 @@ export function InventoryScreenV2() {
 
   useEffect(() => {
     const itemId = navigationIntent.inventoryItemId
-    if (!itemId || !visibleIds.includes(itemId)) return
+    if (!itemId) return
+    if (!ITEMS[itemId]) { setNavigationIntent({ inventoryItemId: null }); return }
+    if (!visibleIds.includes(itemId)) return
     setSearch('')
     setFilter('All')
     setMaterialSubcategory('All Materials')

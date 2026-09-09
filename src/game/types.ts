@@ -19,7 +19,6 @@ export type ItemId =
   | 'tideglass-wand'
   | 'stoneheart-scepter'
   | 'windthread-wand'
-  | 'prismatic-focus'
   | 'wispweave-robe'
   | 'windthread-charm'
   | 'heartseed-necklace'
@@ -68,7 +67,7 @@ import type { ActiveStatus, CombatEffect, StatusId, TraitDefinition } from './sy
 export type { ActionPattern, ActionStep, ActiveStatus, CombatActionDefinition, CombatCondition, CombatConditionContext, CombatDamageComponentEvent, CombatEffect, CombatEvent, CombatEventSink, CombatModifier, CombatResolutionContext, CombatSource, CombatTag, DamageComponent, DamageType, EffectTarget, Magnitude, ModifierKey, StatusId, StatusDefinition, TraitDefinition, TraitId } from './systems/combat/combatTypes'
 export type ManaPillarId = 'leyline-conduit' | 'arcane-reservoir' | 'mana-resonance' | 'astral-expansion' | 'echo-attunement'
 export type ChannelingDiscoveryId = 'stable-leyline' | 'echo-resonance' | 'deep-reservoir'
-export type RecipeId = 'fire-fragment' | 'water-fragment' | 'earth-fragment' | 'air-fragment' | 'prismatic-fragment' | 'ember-staff' | 'tideglass-wand' | 'stoneheart-scepter' | 'windthread-wand' | 'prismatic-focus' | 'wispweave-robe' | 'windthread-charm' | 'wispveil-hood' | 'grovekeeper-mantle' | 'wispbound-ring' | 'wispglass-earring' | 'heartseed-necklace' | 'predator-hide-mantle' | 'fangwire-earring' | 'howling-signet' | 'greatbear-heartstone' | 'ossuary-mantle' | 'mourning-glass-earring' | 'soulglass-amulet' | 'gravebinder-ring' | 'edrins-signet'
+export type RecipeId = 'fire-fragment' | 'water-fragment' | 'earth-fragment' | 'air-fragment' | 'prismatic-fragment' | 'ember-staff' | 'tideglass-wand' | 'stoneheart-scepter' | 'windthread-wand' | 'wispweave-robe' | 'windthread-charm' | 'wispveil-hood' | 'grovekeeper-mantle' | 'wispbound-ring' | 'wispglass-earring' | 'heartseed-necklace' | 'predator-hide-mantle' | 'fangwire-earring' | 'howling-signet' | 'greatbear-heartstone' | 'ossuary-mantle' | 'mourning-glass-earring' | 'soulglass-amulet' | 'gravebinder-ring' | 'edrins-signet'
 export type TransmutationRecipeId = 'fire-fragment' | 'water-fragment' | 'earth-fragment' | 'air-fragment' | 'prismatic-fragment'
 export type ArtificingRecipeId = Exclude<RecipeId, TransmutationRecipeId>
 export type RecipeCategory = 'elemental' | 'material'

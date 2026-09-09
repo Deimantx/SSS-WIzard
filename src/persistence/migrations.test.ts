@@ -158,13 +158,13 @@ describe('save navigation migration', () => {
     const migrated = migrateSave({
       ...initial,
       saveVersion: 6,
-      inventory: { ...initial.inventory, 'prismatic-focus': 1 },
-      equipment: { weapon: 'apprentice-wand', offhand: null, armor: null, helmet: null, amulet: null, earrings: 'prismatic-focus', ring1: null, ring2: null },
+      inventory: { ...initial.inventory, 'ember-staff': 1 },
+      equipment: { weapon: 'apprentice-wand', offhand: null, armor: null, helmet: null, amulet: null, earrings: 'ember-staff', ring1: null, ring2: null },
     })
     expect(migrated.saveVersion).toBe(8)
     expect(migrated.equipment.cape).toBeNull()
     expect('earrings' in migrated.equipment).toBe(false)
-    expect(migrated.inventory['prismatic-focus']).toBe(1)
+    expect(migrated.inventory['ember-staff']).toBe(1)
   })
 
   it('ignores an invalid v6 Earrings value without creating a Cape item', () => {
@@ -413,14 +413,14 @@ describe('save navigation migration', () => {
     expect(migrated.combat.enemyId).toBe('forest-wisp')
   })
 
-  it('migrates a realistic V23 Equipment save to V24 without wiping valid progression', () => {
+  it('migrates a realistic V23 Equipment save to V27 without wiping valid progression', () => {
     const initial = createInitialState()
     const v23 = {
       ...initial,
       saveVersion: 23,
       schools: { ...initial.schools, fire: { xp: 321, level: 4 }, water: { xp: 87, level: 2 } },
       currencies: { gold: 987 },
-      inventory: { ...initial.inventory, 'apprentice-wand': 1, 'ember-staff': 1, 'prismatic-focus': 1, 'fire-fragment': 17 },
+       inventory: { ...initial.inventory, 'apprentice-wand': 1, 'ember-staff': 1, 'prismatic-focus': 1, 'fire-fragment': 17 },
       protectedItems: { 'apprentice-wand': true, 'fire-fragment': true },
       equipment: { ...initial.equipment, weapon: 'apprentice-wand', offhand: 'prismatic-focus' },
       progress: { ...initial.progress, discoveredItems: ['apprentice-wand', 'ember-staff', 'prismatic-focus'], lifetimeKillsByMonster: { 'grove-sentinel': 3 }, bossKillsByBoss: { 'forest-heart': 2 } },
@@ -429,12 +429,13 @@ describe('save navigation migration', () => {
 
     const migrated = migrateSave(v23)
     expect(migrated.saveVersion).toBe(SAVE_VERSION)
-    expect(migrated.inventory).toMatchObject({ 'ember-staff': 1, 'prismatic-focus': 1, 'fire-fragment': 17 })
+    expect(migrated.inventory).toMatchObject({ 'ember-staff': 1, 'fire-fragment': 17 })
+    expect(migrated.inventory).not.toHaveProperty('prismatic-focus')
     expect(migrated.inventory).not.toHaveProperty('apprentice-wand')
     expect(migrated.protectedItems).toEqual({ 'fire-fragment': true })
     expect(migrated.equipment.weapon).toBeNull()
     expect(migrated.equipment).not.toHaveProperty('offhand')
-    expect(migrated.progress.discoveredItems).toEqual(['ember-staff', 'prismatic-focus'])
+    expect(migrated.progress.discoveredItems).toEqual(['ember-staff'])
     expect(migrated.progress.lifetimeKillsByMonster['grove-sentinel']).toBe(3)
     expect(migrated.progress.bossKillsByBoss['forest-heart']).toBe(2)
     expect(migrated.schools).toMatchObject({ fire: { xp: getSchoolTotalXpForLevel(4), level: 4 }, water: { xp: getSchoolTotalXpForLevel(2), level: 2 } })
@@ -456,17 +457,17 @@ describe('save navigation migration', () => {
     const migrateLegacyEquipment = (weapon: unknown, offhand: unknown) => migrateSave({
       ...initial,
       saveVersion: SAVE_VERSION - 1,
-      inventory: { ...initial.inventory, 'tideglass-wand': 1, 'prismatic-focus': 1, 'ember-staff': 1 },
+      inventory: { ...initial.inventory, 'tideglass-wand': 1, 'ember-staff': 1 },
       equipment: { ...initial.equipment, weapon, offhand },
     } as any)
 
-    const existingWeapon = migrateLegacyEquipment('tideglass-wand', 'prismatic-focus')
+    const existingWeapon = migrateLegacyEquipment('tideglass-wand', 'ember-staff')
     expect(existingWeapon.equipment.weapon).toBe('tideglass-wand')
     expect(existingWeapon.equipment).not.toHaveProperty('offhand')
-    expect(existingWeapon.inventory['prismatic-focus']).toBe(1)
+    expect(existingWeapon.inventory['ember-staff']).toBe(1)
 
-    const secondaryOnly = migrateLegacyEquipment(null, 'prismatic-focus')
-    expect(secondaryOnly.equipment.weapon).toBe('prismatic-focus')
+    const secondaryOnly = migrateLegacyEquipment(null, 'ember-staff')
+    expect(secondaryOnly.equipment.weapon).toBe('ember-staff')
     expect(secondaryOnly.equipment).not.toHaveProperty('offhand')
 
     const empty = migrateLegacyEquipment(null, null)
@@ -478,19 +479,35 @@ describe('save navigation migration', () => {
     expect(stale.equipment).not.toHaveProperty('offhand')
   })
 
-  it('preserves Prismatic Artifact progression while removing the legacy equipment position', () => {
+  it('cleans removed Prismatic Focus content from V26 saves', () => {
     const initial = createInitialState()
     const migrated = migrateSave({
       ...initial,
-      saveVersion: SAVE_VERSION - 1,
+      saveVersion: 26,
       inventory: { ...initial.inventory, 'prismatic-focus': 1 },
-      equipment: { ...initial.equipment, weapon: 'tideglass-wand', offhand: 'prismatic-focus' },
+      protectedItems: { 'prismatic-focus': true },
+      equipment: { ...initial.equipment, weapon: 'prismatic-focus' },
       artifactProgress: {
         ...initial.artifactProgress,
         'prismatic-focus': { level: 6, allocatedNodeIds: ['prismatic-conduit', 'reservoir'], attunedNodeIds: ['heartwell'] },
       },
+      progress: { ...initial.progress, discoveredItems: ['prismatic-focus'] },
+      activities: { ...initial.activities, artificing: { activeJob: { kind: 'recipe', recipeId: 'prismatic-focus' }, activeRecipeId: 'prismatic-focus', progressMs: 12_000 } },
     } as any)
-    expect(migrated.artifactProgress['prismatic-focus']).toEqual({ level: 6, allocatedNodeIds: ['prismatic-conduit', 'reservoir'], attunedNodeIds: ['heartwell'] })
+    expect(migrated.saveVersion).toBe(27)
+    expect(migrated.inventory).not.toHaveProperty('prismatic-focus')
+    expect(migrated.protectedItems).not.toHaveProperty('prismatic-focus')
+    expect(migrated.artifactProgress).not.toHaveProperty('prismatic-focus')
+    expect(migrated.progress.discoveredItems).not.toContain('prismatic-focus')
+    expect(migrated.equipment.weapon).toBeNull()
+    expect(migrated.activities.artificing).toEqual({ activeJob: null, activeRecipeId: null, progressMs: 0 })
+
+    const artifactForge = migrateSave({
+      ...initial,
+      saveVersion: 26,
+      activities: { ...initial.activities, artificing: { activeJob: { kind: 'artifact-forge', artifactId: 'prismatic-focus' }, activeRecipeId: null, progressMs: 12_000 } },
+    } as any)
+    expect(artifactForge.activities.artificing).toEqual({ activeJob: null, activeRecipeId: null, progressMs: 0 })
   })
 
   it('migrates suspended legacy periodic damage into the first-class Hit payload', () => {

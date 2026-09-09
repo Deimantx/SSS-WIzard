@@ -65,7 +65,7 @@ describe('authored equipment content', () => {
     expect(getEffectiveManaCost(state, 10)).toBe(10)
 
     const build = createInitialState()
-    build.equipment.weapon = 'prismatic-focus'
+    build.equipment.weapon = 'ember-staff'
     build.equipment.armor = 'wispweave-robe'
     build.equipment.amulet = 'windthread-charm'
     recalculateDerivedStats(build)

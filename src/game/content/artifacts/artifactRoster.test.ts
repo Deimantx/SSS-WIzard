@@ -11,12 +11,12 @@ import { damagePlayer } from '../../systems/combat/effectResolver'
 import { normalizeEquipmentState } from '../../core/equipment/equipmentRules'
 import type { ArtificingRecipeId, CombatSource } from '../../types'
 
-const artifactIds: ArtificingRecipeId[] = ['ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'prismatic-focus', 'wispweave-robe', 'wispveil-hood']
+const artifactIds: ArtificingRecipeId[] = ['ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'wispweave-robe', 'wispveil-hood']
 const firstKillMonsters = ['forest-wisp', 'thornling', 'stone-root', 'grove-sentinel'] as const
 const spellSource = (school: 'water' | 'earth' | 'air'): CombatSource => ({ actor: 'player', kind: 'spell', sourceId: `artifact-${school}`, school, tags: ['spell', school] })
 
 describe('Tier 1 Artifact roster', () => {
-  it('contains exactly seven validated Artifact bases without item-level stat/combat duplicates', () => {
+  it('contains exactly six validated Artifact bases without item-level stat/combat duplicates', () => {
     expect(Object.keys(ARTIFACTS)).toEqual(artifactIds)
     expect(validateArtifactDefinitions(ITEMS, MONSTERS)).toEqual([])
     artifactIds.forEach((id) => {
@@ -34,12 +34,8 @@ describe('Tier 1 Artifact roster', () => {
     expect(getArtifactEffectiveStats(state, 'tideglass-wand')).toMatchObject({ basicDamage: 16, spellPower: 72 })
     expect(getArtifactEffectiveStats(state, 'stoneheart-scepter')).toMatchObject({ basicDamage: 19, spellPower: 67 })
     expect(getArtifactEffectiveStats(state, 'windthread-wand')).toMatchObject({ basicDamage: 14, spellPower: 73 })
-    expect(getArtifactEffectiveStats(state, 'prismatic-focus')).toMatchObject({ basicDamage: 10, spellPower: 58, maxMana: 42, maxFocus: 20 })
     expect(getArtifactEffectiveStats(state, 'wispweave-robe')).toMatchObject({ maxHealth: 92, defense: 19 })
     expect(getArtifactEffectiveStats(state, 'wispveil-hood')).toMatchObject({ maxHealth: 49, defense: 14 })
-
-    state.artifactProgress['prismatic-focus'] = { level: 1, allocatedNodeIds: [], attunedNodeIds: [] }
-    expect(getArtifactEffectiveStats(state, 'prismatic-focus')).toMatchObject({ basicDamage: 2, spellPower: 11, maxMana: 10, maxFocus: 2 })
   })
 
   it('uses the reduced dungeon material costs for Wispweave Robe and Wispveil Hood upgrades', () => {
@@ -108,8 +104,8 @@ describe('Tier 1 Artifact roster', () => {
   })
 
   it('treats every current Artifact as compatible with the single Weapon slot', () => {
-    const inventory = { 'ember-staff': 1, 'tideglass-wand': 1, 'stoneheart-scepter': 1, 'windthread-wand': 1, 'prismatic-focus': 1 }
-    artifactIds.slice(0, 5).forEach((id) => expect(normalizeEquipmentState({ weapon: id }, inventory).weapon).toBe(id))
+    const inventory = { 'ember-staff': 1, 'tideglass-wand': 1, 'stoneheart-scepter': 1, 'windthread-wand': 1 }
+    artifactIds.slice(0, 4).forEach((id) => expect(normalizeEquipmentState({ weapon: id }, inventory).weapon).toBe(id))
   })
 
   it('filters Tideglass Barrier power to Water-origin Spell Barriers', () => {

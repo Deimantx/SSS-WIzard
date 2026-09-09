@@ -10,7 +10,7 @@ import { EQUIPMENT_ITEM_SLOT_LABELS, EQUIPMENT_POSITION_LABELS, EQUIPMENT_POSITI
 import type { ArtifactId, EquipmentItemSlot, EquipmentPosition, ItemId } from '../../game/types'
 import { useGameStore } from '../../store/gameStore'
 import { EditableGrid } from '../../ui/layout-editor/EditableGrid'
-import { getEquipmentCopyAvailability, getEquipmentKeyChanges, getEquipmentPreview, getEquipmentPrimarySummary, getEquipmentSearchText, getEquipmentStatSnapshot } from '../../game/presentation/equipment/equipmentReadModel'
+import { getEquipmentCopyAvailability, getEquipmentKeyChanges, getEquipmentLoadoutIdentity, getEquipmentPreview, getEquipmentPrimarySummary, getEquipmentSearchText, getEquipmentStatSnapshot } from '../../game/presentation/equipment/equipmentReadModel'
 import { formatEquipmentStat, getEquipmentStatDescription, getEquipmentStatLabel } from '../../game/presentation/equipment/equipmentStatPresentation'
 import { getAdaptiveEquipmentLayout } from './equipmentLayout'
 import { InspectorTransition } from '../../ui/game-feel/InspectorTransition'
@@ -62,7 +62,9 @@ export function EquipmentScreenV2() {
   const [selectedPosition, setSelectedPosition] = useState<EquipmentPosition>(() => navigationIntent.equipmentPosition ?? 'weapon')
   const [filter, setFilter] = useState<ArmoryFilter>('all')
   const [search, setSearch] = useState('')
-  const [selectedItemId, setSelectedItemId] = useState<ItemId | null>(() => navigationIntent.equipmentItemId ?? equipment.weapon)
+  const initialNavigationItemId = navigationIntent.equipmentItemId && ITEMS[navigationIntent.equipmentItemId] ? navigationIntent.equipmentItemId : null
+  const initialWeaponId = equipment.weapon && ITEMS[equipment.weapon] ? equipment.weapon : null
+  const [selectedItemId, setSelectedItemId] = useState<ItemId | null>(() => initialNavigationItemId ?? initialWeaponId)
   const [ringReplacement, setRingReplacement] = useState<EquipmentPosition | null>(null)
   const [sortMode, setSortMode] = useState<ArmorySort>('tier')
   const [availableOnly, setAvailableOnly] = useState(false)
@@ -108,12 +110,15 @@ export function EquipmentScreenV2() {
   useSmartScrollState(inspectorScrollRef, { resetKey: selectedItemId })
 
   useEffect(() => {
-    if (selectedItemId && !ownedEquipment.includes(selectedItemId) && selectedItemId !== navigationIntent.equipmentItemId) setSelectedItemId(ownedEquipment[0] ?? null)
+    if (selectedItemId && !ITEMS[selectedItemId]) setSelectedItemId(ownedEquipment[0] ?? null)
+    else if (selectedItemId && !ownedEquipment.includes(selectedItemId) && selectedItemId !== navigationIntent.equipmentItemId) setSelectedItemId(ownedEquipment[0] ?? null)
   }, [ownedEquipment, selectedItemId, navigationIntent.equipmentItemId])
 
   useEffect(() => {
-    if (!navigationIntent.equipmentItemId) return
-    setSelectedItemId(navigationIntent.equipmentItemId)
+    const itemId = navigationIntent.equipmentItemId
+    if (!itemId) return
+    if (!ITEMS[itemId]) { setNavigationIntent({ equipmentItemId: null }); return }
+    setSelectedItemId(itemId)
     if (navigationIntent.equipmentPosition) setSelectedPosition(navigationIntent.equipmentPosition)
   }, [navigationIntent.equipmentItemId, navigationIntent.equipmentPosition])
 
@@ -204,8 +209,8 @@ export function EquipmentScreenV2() {
         return <div className="equipment-slot-grid-item" data-position={position} key={position}>
           <EquipmentSlotTooltip itemId={itemId} owned={itemId ? inventory[itemId] ?? 0 : 0} tooltip={tooltip}>
             <div className={`equipment-slot-card ${selectedPosition === position ? 'selected' : ''}`} data-position={position} role="button" tabIndex={0} style={item ? { '--item-color': item.color } as CSSProperties : undefined} onClick={() => selectSlot(position)} onContextMenu={(event) => { if (!itemId) return; event.preventDefault(); event.stopPropagation(); openEquipmentMenu(itemId, [position], event.clientX, event.clientY) }} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); selectSlot(position) } }}>
-              <div className="equipment-slot-card-head"><span>{EQUIPMENT_POSITION_LABELS[position]}</span><span className="equipment-slot-card-meta">{item && isArtifactItem(item.id) && <span className="equipment-level-chip">L{getArtifactLevel({ artifactProgress }, item.id)}/{getArtifactDefinition(item.id)?.maxLevel ?? 10}</span>}{item && <small>EQUIPPED</small>}</span></div>
-              {item ? <div className="equipment-slot-card-item"><span className="equipment-slot-icon" style={{ color: item.color }}>{item.icon}</span><strong>{item.name}</strong><small className="equipment-slot-summary">{getEquipmentPrimarySummary(item.id, stateForPreview) ?? 'Ready'}</small></div> : <div className="equipment-slot-empty"><SlotGhostIcon size={23} strokeWidth={1.4} aria-hidden="true" /><small>{emptyCopy}</small></div>}
+              <div className="equipment-slot-card-head"><span>{EQUIPMENT_POSITION_LABELS[position]}</span><span className="equipment-slot-card-meta">{item && <span className="equipment-tier-badge">{formatPlayerEquipmentTier(item.equipmentTier ?? 1)}</span>}{item && isArtifactItem(item.id) && <span className="equipment-level-chip">L{getArtifactLevel({ artifactProgress }, item.id)}/{getArtifactDefinition(item.id)?.maxLevel ?? 10}</span>}</span></div>
+              {item ? <div className="equipment-slot-card-item"><span className="equipment-slot-icon" style={{ color: item.color }}>{item.icon}</span><span className="equipment-slot-card-copy"><strong>{item.name}</strong><small className="equipment-slot-identity">{getEquipmentLoadoutIdentity(item.id).join(' · ')}</small></span></div> : <div className="equipment-slot-empty"><SlotGhostIcon size={23} strokeWidth={1.4} aria-hidden="true" /><small>{emptyCopy}</small></div>}
             </div>
           </EquipmentSlotTooltip>
         </div>

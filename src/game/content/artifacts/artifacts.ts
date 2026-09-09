@@ -96,17 +96,6 @@ const windthreadUpgrades = [
   upgrade(8, [material('air-fragment', 1650), material('ossuary-remnant', 25), material('soul-residue', 25), material('graveglass-shard', 25), material('burial-cloth', 25), material('prismatic-fragment', 30), material('life-essence', 275)]),
   upgrade(9, [material('air-fragment', 2750), material('ossuary-remnant', 70), material('soul-residue', 45), material('graveglass-shard', 70), material('burial-cloth', 45), material('prismatic-fragment', 45), material('life-essence', 375)]),
 ]
-const prismaticUpgrades = [
-  upgrade(1, [material('prismatic-fragment', 4)]),
-  upgrade(2, [material('prismatic-fragment', 7), material('wisp-essence', 7), material('thorn-fiber', 6), material('rootstone-shard', 6), material('grove-bark', 6), material('life-essence', 8)]),
-  upgrade(3, [material('prismatic-fragment', 12), material('wisp-essence', 13), material('thorn-fiber', 14), material('rootstone-shard', 14), material('grove-bark', 14), material('life-essence', 30)]),
-  upgrade(4, [material('prismatic-fragment', 18), material('predator-hide', 15), material('predator-fang', 15), material('life-essence', 55)]),
-  upgrade(5, [material('prismatic-fragment', 29), material('predator-hide', 15), material('predator-fang', 15), material('corrupted-beast-essence', 15), material('predator-sinew', 15), material('life-essence', 95)]),
-  upgrade(6, [material('prismatic-fragment', 44), material('predator-hide', 18), material('predator-fang', 18), material('corrupted-beast-essence', 32), material('predator-sinew', 32), material('life-essence', 163)]),
-  upgrade(7, [material('prismatic-fragment', 60), material('soul-residue', 25), material('graveglass-shard', 25), material('life-essence', 213)]),
-  upgrade(8, [material('prismatic-fragment', 88), material('ossuary-remnant', 25), material('soul-residue', 25), material('graveglass-shard', 25), material('burial-cloth', 25), material('life-essence', 288)]),
-  upgrade(9, [material('prismatic-fragment', 132), material('ossuary-remnant', 70), material('soul-residue', 45), material('graveglass-shard', 45), material('burial-cloth', 70), material('life-essence', 400)]),
-]
 const wispweaveUpgrades = [
   upgrade(1, [material('wisp-essence', 7), material('thorn-fiber', 7), material('rootstone-shard', 6), material('grove-bark', 6), material('life-essence', 13)]),
   upgrade(2, [material('wisp-essence', 16), material('thorn-fiber', 16), material('rootstone-shard', 17), material('grove-bark', 17), material('life-essence', 25)]),
@@ -133,7 +122,6 @@ const wispveilUpgrades = [
 const tideglassStats: Record<number, EquipmentStats> = { 1: { basicDamage: 5, spellPower: 15 }, 2: { basicDamage: 6, spellPower: 19 }, 3: { basicDamage: 7, spellPower: 23 }, 4: { basicDamage: 8, spellPower: 28 }, 5: { basicDamage: 9, spellPower: 34 }, 6: { basicDamage: 10, spellPower: 40 }, 7: { basicDamage: 11, spellPower: 47 }, 8: { basicDamage: 12, spellPower: 55 }, 9: { basicDamage: 14, spellPower: 63 }, 10: { basicDamage: 16, spellPower: 72 } }
 const stoneheartStats: Record<number, EquipmentStats> = { 1: { basicDamage: 6, spellPower: 14 }, 2: { basicDamage: 7, spellPower: 18 }, 3: { basicDamage: 8, spellPower: 22 }, 4: { basicDamage: 9, spellPower: 27 }, 5: { basicDamage: 10, spellPower: 32 }, 6: { basicDamage: 11, spellPower: 38 }, 7: { basicDamage: 13, spellPower: 44 }, 8: { basicDamage: 15, spellPower: 51 }, 9: { basicDamage: 17, spellPower: 59 }, 10: { basicDamage: 19, spellPower: 67 } }
 const windthreadStats: Record<number, EquipmentStats> = { 1: { basicDamage: 4, spellPower: 15 }, 2: { basicDamage: 5, spellPower: 19 }, 3: { basicDamage: 6, spellPower: 23 }, 4: { basicDamage: 7, spellPower: 28 }, 5: { basicDamage: 8, spellPower: 34 }, 6: { basicDamage: 9, spellPower: 41 }, 7: { basicDamage: 10, spellPower: 48 }, 8: { basicDamage: 11, spellPower: 56 }, 9: { basicDamage: 12, spellPower: 64 }, 10: { basicDamage: 14, spellPower: 73 } }
-const prismaticStats: Record<number, EquipmentStats> = { 1: { basicDamage: 2, spellPower: 11, maxMana: 10, maxFocus: 2 }, 2: { basicDamage: 3, spellPower: 14, maxMana: 12, maxFocus: 4 }, 3: { basicDamage: 4, spellPower: 17, maxMana: 14, maxFocus: 6 }, 4: { basicDamage: 5, spellPower: 21, maxMana: 17, maxFocus: 8 }, 5: { basicDamage: 6, spellPower: 26, maxMana: 20, maxFocus: 10 }, 6: { basicDamage: 7, spellPower: 31, maxMana: 23, maxFocus: 12 }, 7: { basicDamage: 8, spellPower: 37, maxMana: 27, maxFocus: 14 }, 8: { basicDamage: 9, spellPower: 43, maxMana: 31, maxFocus: 16 }, 9: { basicDamage: 9, spellPower: 50, maxMana: 36, maxFocus: 18 }, 10: { basicDamage: 10, spellPower: 58, maxMana: 42, maxFocus: 20 } }
 const wispweaveStats: Record<number, EquipmentStats> = { 1: { maxHealth: 20, defense: 4 }, 2: { maxHealth: 24, defense: 5 }, 3: { maxHealth: 29, defense: 6 }, 4: { maxHealth: 35, defense: 7 }, 5: { maxHealth: 42, defense: 8 }, 6: { maxHealth: 50, defense: 10 }, 7: { maxHealth: 59, defense: 12 }, 8: { maxHealth: 69, defense: 14 }, 9: { maxHealth: 80, defense: 16 }, 10: { maxHealth: 92, defense: 19 } }
 const wispveilStats: Record<number, EquipmentStats> = { 1: { maxHealth: 10, defense: 2 }, 2: { maxHealth: 12, defense: 3 }, 3: { maxHealth: 15, defense: 4 }, 4: { maxHealth: 18, defense: 5 }, 5: { maxHealth: 22, defense: 6 }, 6: { maxHealth: 26, defense: 7 }, 7: { maxHealth: 31, defense: 8 }, 8: { maxHealth: 36, defense: 10 }, 9: { maxHealth: 42, defense: 12 }, 10: { maxHealth: 49, defense: 14 } }
 
@@ -188,22 +176,6 @@ const windthreadNodes: ArtifactNodeDefinition[] = [
   { id: 'pressure-spike', artifactId: 'windthread-wand', name: 'Pressure Spike', type: 'minor', branch: 'storm-precision', pointCost: 1, requiresLevel: 6, prerequisites: ['heartstorm'], combat: { modifiers: [spellDamage(0.05, 'air')] } },
   { id: 'corrupted-lightning', artifactId: 'windthread-wand', name: 'Corrupted Lightning', type: 'major', branch: 'storm-precision', pointCost: 1, requiresLevel: 7, prerequisites: ['pressure-spike'], catalyst: { itemId: 'greatbear-core', quantity: 1 }, requiresBossKill: 'corrupted-greatbear', combat: { modifiers: [directSpellDamage(0.15, 'air', { type: 'target-has-status-tag', tag: 'debuff' })] } },
   { id: 'edrins-sky-rend', artifactId: 'windthread-wand', name: "Edrin's Sky Rend", type: 'capstone', branch: 'storm-precision', pointCost: 2, requiresLevel: 10, prerequisites: ['corrupted-lightning'], catalyst: { itemId: 'edrin-remnant', quantity: 1 }, requiresBossKill: 'archmage-edrin-shade', combat: { modifiers: [directSpellDamage(0.25, 'air', { type: 'target-has-status-tag', tag: 'debuff' })] } },
-]
-
-const prismaticNodes: ArtifactNodeDefinition[] = [
-  { id: 'prismatic-conduit', artifactId: 'prismatic-focus', name: 'Prismatic Conduit', type: 'minor', branch: 'shared', pointCost: 1, requiresLevel: 2, stats: { maxMana: 5 } },
-  { id: 'reservoir', artifactId: 'prismatic-focus', name: 'Reservoir', type: 'minor', branch: 'mana-engine', pointCost: 1, requiresLevel: 3, prerequisites: ['prismatic-conduit'], stats: { maxMana: 10 } },
-  { id: 'stable-flow', artifactId: 'prismatic-focus', name: 'Stable Flow', type: 'minor', branch: 'mana-engine', pointCost: 1, requiresLevel: 4, prerequisites: ['reservoir'], stats: { manaRegen: 1 } },
-  { id: 'heartwell', artifactId: 'prismatic-focus', name: 'Heartwell', type: 'major', branch: 'mana-engine', pointCost: 1, requiresLevel: 4, prerequisites: ['stable-flow'], catalyst: { itemId: 'heartseed', quantity: 1 }, requiresBossKill: 'forest-heart', stats: { manaCostReductionPct: 0.05 } },
-  { id: 'efficient-weave', artifactId: 'prismatic-focus', name: 'Efficient Weave', type: 'minor', branch: 'mana-engine', pointCost: 1, requiresLevel: 6, prerequisites: ['heartwell'], stats: { manaCostReductionPct: 0.05 } },
-  { id: 'greatbear-reservoir', artifactId: 'prismatic-focus', name: 'Greatbear Reservoir', type: 'major', branch: 'mana-engine', pointCost: 1, requiresLevel: 7, prerequisites: ['efficient-weave'], catalyst: { itemId: 'greatbear-core', quantity: 1 }, requiresBossKill: 'corrupted-greatbear', stats: { manaRegen: 3 } },
-  { id: 'edrins-infinite-well', artifactId: 'prismatic-focus', name: "Edrin's Infinite Well", type: 'capstone', branch: 'mana-engine', pointCost: 2, requiresLevel: 10, prerequisites: ['greatbear-reservoir'], catalyst: { itemId: 'edrin-remnant', quantity: 1 }, requiresBossKill: 'archmage-edrin-shade', stats: { manaRegen: 3, manaCostReductionPct: 0.1 } },
-  { id: 'prismatic-guard', artifactId: 'prismatic-focus', name: 'Prismatic Guard', type: 'minor', branch: 'arcane-ward', pointCost: 1, requiresLevel: 3, prerequisites: ['prismatic-conduit'], combat: { modifiers: [{ key: 'barrier-power-percent', value: 0.1 }] } },
-  { id: 'reinforced-focus', artifactId: 'prismatic-focus', name: 'Reinforced Focus', type: 'minor', branch: 'arcane-ward', pointCost: 1, requiresLevel: 4, prerequisites: ['prismatic-guard'], stats: { defense: 5 } },
-  { id: 'heartward', artifactId: 'prismatic-focus', name: 'Heartward', type: 'major', branch: 'arcane-ward', pointCost: 1, requiresLevel: 4, prerequisites: ['reinforced-focus'], catalyst: { itemId: 'heartseed', quantity: 1 }, requiresBossKill: 'forest-heart', combat: { modifiers: [{ key: 'barrier-received-flat', value: 10 }] } },
-  { id: 'rapid-ward', artifactId: 'prismatic-focus', name: 'Rapid Ward', type: 'minor', branch: 'arcane-ward', pointCost: 1, requiresLevel: 6, prerequisites: ['heartward'], combat: { modifiers: [{ key: 'cooldown-recovery-percent', value: 0.05 }] } },
-  { id: 'greatbear-ward', artifactId: 'prismatic-focus', name: 'Greatbear Ward', type: 'major', branch: 'arcane-ward', pointCost: 1, requiresLevel: 7, prerequisites: ['rapid-ward'], catalyst: { itemId: 'greatbear-core', quantity: 1 }, requiresBossKill: 'corrupted-greatbear', combat: { modifiers: [{ key: 'barrier-power-percent', value: 0.15 }] } },
-  { id: 'edrins-prismatic-shell', artifactId: 'prismatic-focus', name: "Edrin's Prismatic Shell", type: 'capstone', branch: 'arcane-ward', pointCost: 2, requiresLevel: 10, prerequisites: ['greatbear-ward'], catalyst: { itemId: 'edrin-remnant', quantity: 1 }, requiresBossKill: 'archmage-edrin-shade', combat: { rules: [{ id: 'prismatic-shell', event: 'on-barrier-broken', cooldownMs: 30_000, effects: [{ type: 'restore-resource', target: 'self', resource: 'mana', magnitude: { type: 'flat', value: 20 } }, { type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 20 } }] }] } },
 ]
 
 const wispweaveNodes: ArtifactNodeDefinition[] = [
@@ -277,16 +249,6 @@ export const ARTIFACTS: Partial<Record<ArtifactId, ArtifactDefinition>> = {
     ],
     nodes: windthreadNodes,
   },
-  'prismatic-focus': {
-    id: 'prismatic-focus', itemId: 'prismatic-focus', tier: 1, maxLevel: 10, coreStatsByLevel: prismaticStats,
-    forge: { ingredients: [material('prismatic-fragment', 2), material('wisp-essence', 5), material('rootstone-shard', 10), material('thorn-fiber', 5), material('life-essence', 25)] },
-    upgrades: prismaticUpgrades,
-    branches: [
-      { id: 'mana-engine', name: 'Mana Engine', description: 'Mana capacity, regeneration, and spell-cost efficiency.' },
-      { id: 'arcane-ward', name: 'Arcane Ward', description: 'Barrier power, Defense, and Barrier-break recovery.' },
-    ],
-    nodes: prismaticNodes,
-  },
   'wispweave-robe': {
     id: 'wispweave-robe', itemId: 'wispweave-robe', tier: 1, maxLevel: 10, coreStatsByLevel: wispweaveStats,
     forge: { ingredients: [material('wisp-essence', 15), material('thorn-fiber', 15), material('grove-bark', 10), material('rootstone-shard', 10), material('life-essence', 25)] },
@@ -340,11 +302,6 @@ export const validateArtifactDefinitions = (items: Record<string, ItemDefinition
       if (item?.equipmentSlot === 'weapon') {
         if (!(stats.basicDamage && stats.basicDamage > 0)) errors.push(`${definition.id}: weapon Artifact requires positive basicDamage at level ${level}`)
         if (!(stats.spellPower && stats.spellPower > 0)) errors.push(`${definition.id}: weapon Artifact requires positive spellPower at level ${level}`)
-      }
-      if (item?.id === 'prismatic-focus') {
-        if (!(stats.maxMana && stats.maxMana > 0)) errors.push(`${definition.id}: focus Artifact requires positive maxMana at level ${level}`)
-        if (!(stats.maxFocus && stats.maxFocus > 0)) errors.push(`${definition.id}: focus Artifact requires positive maxFocus at level ${level}`)
-        if (!(stats.spellPower && stats.spellPower > 0)) errors.push(`${definition.id}: focus Artifact requires positive spellPower at level ${level}`)
       }
       if (item?.equipmentSlot === 'armor' || item?.equipmentSlot === 'helmet') {
         if (!(stats.maxHealth && stats.maxHealth > 0)) errors.push(`${definition.id}: ${item.equipmentSlot} Artifact requires positive maxHealth at level ${level}`)

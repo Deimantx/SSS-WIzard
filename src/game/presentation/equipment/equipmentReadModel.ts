@@ -7,7 +7,8 @@ import { validateFocusForEquipment, type FocusLoadoutValidation } from '../../sy
 import { getArtifactEffectiveStats, isArtifactItem } from '../../systems/artifacts/artifactProgression'
 import { getEquipmentPrimaryCombatSummary } from './equipmentCombatPresentation'
 import { formatEquipmentStat, getEquipmentStatLabel } from './equipmentStatPresentation'
-import type { DamageType, EquipmentStats, EquipmentPosition, GameState, ItemId } from '../../types'
+import { EQUIPMENT_ITEM_SLOT_LABELS } from '../../core/equipment/equipmentRules'
+import type { DamageType, EquipmentBuildTag, EquipmentStats, EquipmentPosition, GameState, ItemId } from '../../types'
 
 export type EquipmentSheetState = Pick<GameState, 'player' | 'progress' | 'activities' | 'equipment' | 'inventory' | 'artifactProgress'> & Partial<Pick<GameState, 'debug'>>
 
@@ -71,6 +72,7 @@ export interface EquipmentKeyChange {
 }
 
 const KEY_CHANGE_PRIORITY = ['maxHealth', 'basicDamage', 'spellPower', 'maxMana', 'maxFocus', 'defense', 'critChance', 'critDamage', 'cooldownRecoveryPct', 'manaRegen', 'focusEfficiencyPct']
+const LOADOUT_IDENTITY_PRIORITY: readonly EquipmentBuildTag[] = ['fire', 'water', 'earth', 'air', 'dot', 'crit', 'barrier', 'defense', 'healing', 'sustain', 'status', 'basic-attack', 'mana', 'focus', 'hybrid', 'spell']
 
 const getImpactEntries = (impact: EquipmentImpactStats): Array<[string, number]> => Object.entries(impact).flatMap(([key, value]) => key === 'resistances' && value && typeof value === 'object'
   ? Object.entries(value).map(([damageType, resistance]) => [`resistance-${damageType}`, Number(resistance)] as [string, number])
@@ -98,6 +100,18 @@ export function getEquipmentSearchText(itemId: ItemId, state?: Pick<GameState, '
   const tags = item.buildTags?.flatMap((tag) => [tag, EQUIPMENT_BUILD_TAG_LABELS[tag]]) ?? []
   const combatSummary = getEquipmentPrimaryCombatSummary(item)
   return [item.name, item.id, item.equipmentSlot, item.description, item.equipmentTier ? `tier ${item.equipmentTier}` : '', ...tags, ...stats, combatSummary ?? ''].filter(Boolean).join(' ').toLowerCase()
+}
+
+/** Returns the compact two-tag identity used by filled Wizard Loadout cards. */
+export function getEquipmentLoadoutIdentity(itemId: ItemId): string[] {
+  const item = ITEMS[itemId]
+  const tags = item.kind === 'equipment' ? item.buildTags ?? [] : []
+  const priority = new Map(LOADOUT_IDENTITY_PRIORITY.map((tag, index) => [tag, index]))
+  const identity = [...tags]
+    .sort((left, right) => (priority.get(left) ?? LOADOUT_IDENTITY_PRIORITY.length) - (priority.get(right) ?? LOADOUT_IDENTITY_PRIORITY.length))
+    .slice(0, 2)
+    .map((tag) => EQUIPMENT_BUILD_TAG_LABELS[tag].toUpperCase())
+  return identity.length > 0 ? identity : item.equipmentSlot ? [EQUIPMENT_ITEM_SLOT_LABELS[item.equipmentSlot].toUpperCase()] : []
 }
 
 export function getEquipmentPrimarySummary(itemId: ItemId, state?: Pick<GameState, 'artifactProgress'>): string | null {

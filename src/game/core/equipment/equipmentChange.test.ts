@@ -12,34 +12,23 @@ const withOwned = (itemId: keyof ReturnType<typeof createInitialState>['inventor
 
 describe('evaluateEquipmentChange', () => {
   it.each([
-    ['one-handed Weapon', 'tideglass-wand' as const, 'weapon' as const],
-    ['Offhand', 'prismatic-focus' as const, 'offhand' as const],
+    ['Weapon', 'tideglass-wand' as const, 'weapon' as const],
+    ['Weapon', 'prismatic-focus' as const, 'weapon' as const],
     ['Armor', 'wispweave-robe' as const, 'armor' as const],
   ])('accepts an owned compatible %s', (_label, itemId, position) => {
     const result = evaluateEquipmentChange(withOwned(itemId), itemId, position)
     expect(result).toMatchObject({ ok: true, position })
   })
 
-  it('clears an existing Offhand for a two-handed Weapon and keeps the action in parity', () => {
-    const previewState = withOwned('ember-staff')
-    previewState.inventory['prismatic-focus'] = 1
-    previewState.equipment.offhand = 'prismatic-focus'
-    const preview = evaluateEquipmentChange(previewState, 'ember-staff')
-    expect(preview).toMatchObject({ ok: true, removedOffhand: 'prismatic-focus', nextEquipment: { weapon: 'ember-staff', offhand: null } })
-
-    const actionState = withOwned('ember-staff')
-    actionState.inventory['prismatic-focus'] = 1
-    actionState.equipment.offhand = 'prismatic-focus'
-    const action = equipItemAction(actionState, 'ember-staff')
-    expect(action).toMatchObject({ ok: true, unequippedOffhand: 'prismatic-focus' })
-    expect(actionState.equipment).toEqual(preview.ok ? preview.nextEquipment : null)
-  })
-
-  it('rejects an Offhand while a two-handed Weapon is active', () => {
+  it('replaces the current Weapon without removing a secondary item', () => {
     const state = withOwned('prismatic-focus')
+    state.inventory['ember-staff'] = 1
     state.equipment.weapon = 'ember-staff'
-    expect(evaluateEquipmentChange(state, 'prismatic-focus')).toEqual({ ok: false, reason: 'incompatible' })
-    expect(equipItemAction(state, 'prismatic-focus')).toMatchObject({ ok: false, reason: 'incompatible' })
+    const preview = evaluateEquipmentChange(state, 'prismatic-focus')
+    expect(preview).toMatchObject({ ok: true, position: 'weapon', nextEquipment: { weapon: 'prismatic-focus' } })
+    const action = equipItemAction(state, 'prismatic-focus')
+    expect(action).toEqual({ ok: true, position: 'weapon' })
+    expect(state.equipment.weapon).toBe('prismatic-focus')
   })
 
   it('rejects missing ownership and incompatible target positions', () => {

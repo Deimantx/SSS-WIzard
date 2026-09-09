@@ -52,8 +52,8 @@ export type SpellPresetId = string
 export type MonsterId = 'forest-wisp' | 'thornling' | 'stone-root' | 'grove-sentinel' | 'forest-heart' | 'cavefang-wolf' | 'razorclaw-lynx' | 'corrupted-dire-wolf' | 'corrupted-greatbear' | 'restless-skeleton' | 'grave-wraith' | 'fallen-acolyte' | 'archmage-edrin-shade'
 export type BestiaryCategory = 'monster' | 'boss'
 export type DungeonId = 'whispering-woods' | 'howling-den' | 'abandoned-catacombs'
-export type EquipmentItemSlot = 'weapon' | 'offhand' | 'armor' | 'helmet' | 'cape' | 'amulet' | 'earring' | 'ring'
-export type EquipmentPosition = 'weapon' | 'offhand' | 'armor' | 'helmet' | 'cape' | 'amulet' | 'earring' | 'ring1' | 'ring2'
+export type EquipmentItemSlot = 'weapon' | 'armor' | 'helmet' | 'cape' | 'amulet' | 'earring' | 'ring'
+export type EquipmentPosition = 'weapon' | 'armor' | 'helmet' | 'cape' | 'amulet' | 'earring' | 'ring1' | 'ring2'
 export type ArtifactId = ItemId
 export type EquipmentBuildTag = 'spell' | 'basic-attack' | 'hybrid' | 'crit' | 'status' | 'dot' | 'barrier' | 'defense' | 'sustain' | 'mana' | 'focus' | 'healing' | 'fire' | 'water' | 'earth' | 'air'
 export type EquipmentBudgetProfileId = 'standard' | 'signature' | 'boss'
@@ -134,10 +134,6 @@ export interface ItemDefinition {
   canDestroy: boolean
   actionRestrictionReason?: string
   equipmentSlot?: EquipmentItemSlot
-  /** Only authored for Weapon items. */
-  weaponHands?: 1 | 2
-  /** Presentation hint for Offhand items; it does not create another slot system. */
-  equipmentPresentation?: 'shield' | 'focus'
   /** Equipment-only reward power metadata; Materials must not define this field. */
   equipmentTier?: number
   /** Equipment-only build direction metadata; Materials must not define this field. */

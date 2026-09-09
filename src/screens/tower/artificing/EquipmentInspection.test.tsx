@@ -8,16 +8,16 @@ describe('Artificing equipment output inspection', () => {
   beforeEach(() => useGameStore.getState().resetSave())
 
 
-  it('shows equipment stats, combat effects, and the real two-handed preview warning', () => {
+  it('shows equipment stats and compares a replacement Weapon without secondary-slot warnings', () => {
     const state = useGameStore.getState()
     useGameStore.setState({
       progress: { ...state.progress, firstBossKill: true },
       inventory: { ...state.inventory, 'prismatic-focus': 1 },
-      equipment: { ...state.equipment, offhand: 'prismatic-focus' },
+      equipment: { ...state.equipment, weapon: 'prismatic-focus' },
     })
     render(<EquipmentInspection recipe={RECIPES['ember-staff']} />)
     expect(screen.getByText('LOADOUT COMPARISON')).toBeTruthy()
-    expect(screen.getByText(/would be removed because this is a two-handed Weapon/)).toBeTruthy()
+    expect(screen.queryByText(/would be removed because/)).toBeNull()
   })
 
   it('keeps inspection content-only without a duplicate identity hero', () => {

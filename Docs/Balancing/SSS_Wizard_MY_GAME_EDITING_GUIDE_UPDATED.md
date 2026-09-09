@@ -467,41 +467,18 @@ Creating a totally new damage type is 🔴.
 
 ---
 
-# 9. EQUIPMENT SLOT / WEAPON HANDS
+# 9. EQUIPMENT SLOTS
 
 Examples:
 
 ```ts
 equipmentSlot: 'weapon',
-weaponHands: 1,
-```
-
-or:
-
-```ts
-equipmentSlot: 'weapon',
-weaponHands: 2,
-```
-
-Offhand:
-
-```ts
-equipmentSlot: 'offhand',
-equipmentPresentation: 'focus',
-```
-
-or:
-
-```ts
-equipmentSlot: 'offhand',
-equipmentPresentation: 'shield',
 ```
 
 Current **item metadata slots** are:
 
 ```text
 weapon
-offhand
 armor
 helmet
 cape
@@ -514,7 +491,6 @@ Current **loadout positions** are:
 
 ```text
 weapon
-offhand
 armor
 helmet
 cape
@@ -850,7 +826,6 @@ src/game/content/items/items.ts
 → name
 → description
 → slot
-→ weaponHands / offhand presentation
 → build tags
 → equipmentTier
 ```

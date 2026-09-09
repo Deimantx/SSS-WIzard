@@ -39,8 +39,6 @@ export interface ArtificingScreenPreferences {
   slotFilter: 'all' | import('../../game/types').EquipmentItemSlot
   tierFilter: ArtificingTierFilter
   kindFilter: ArtificingKindFilter
-  weaponHandsFilter: 'all' | 1 | 2
-  offhandPresentationFilter: 'all' | 'shield' | 'focus'
   craftableOnly: boolean
   ownershipFilter: 'all' | 'owned' | 'unowned'
 }

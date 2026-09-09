@@ -1,7 +1,6 @@
 import { ITEMS } from '../../content/items/items'
 import { getEquipmentCombatModifierTotal } from '../../core/equipment/equipmentStats'
 import { evaluateEquipmentChange, type EquipmentChangeFailureReason } from '../../core/equipment/equipmentChange'
-import { isTwoHandedWeapon } from '../../core/equipment/equipmentRules'
 import { getPlayerSheetCombatStats } from '../../systems/combat/combatStats'
 import type { DamageType, EquipmentStats, EquipmentPosition, GameState, ItemId } from '../../types'
 
@@ -52,7 +51,6 @@ export interface EquipmentPreview {
   failureReason: EquipmentChangeFailureReason | null
   position: EquipmentPosition | null
   equipment: GameState['equipment'] | null
-  removedOffhand: ItemId | null
   current: EquipmentStatSnapshot
   preview: EquipmentStatSnapshot | null
   impact: EquipmentImpactStats
@@ -137,16 +135,14 @@ const failureMessage: Record<EquipmentChangeFailureReason, string> = {
   'duplicate-ring': 'The same Ring cannot be equipped twice.',
 }
 
-const getFailureMessage = (state: EquipmentSheetState, itemId: ItemId, reason: EquipmentChangeFailureReason) => reason === 'incompatible' && ITEMS[itemId]?.equipmentSlot === 'offhand' && isTwoHandedWeapon(state.equipment.weapon)
-  ? 'Requires a one-handed Weapon.'
-  : failureMessage[reason]
+const getFailureMessage = (_state: EquipmentSheetState, _itemId: ItemId, reason: EquipmentChangeFailureReason) => failureMessage[reason]
 
 export function getEquipmentPreview(state: EquipmentSheetState, itemId: ItemId, targetPosition?: EquipmentPosition): EquipmentPreview {
   const current = getEquipmentStatSnapshot(state, state.equipment)
   const result = evaluateEquipmentChange(state, itemId, targetPosition)
-  if (!result.ok) return { compatible: false, reason: getFailureMessage(state, itemId, result.reason), failureReason: result.reason, position: targetPosition ?? null, equipment: null, removedOffhand: null, current, preview: null, impact: {} }
+  if (!result.ok) return { compatible: false, reason: getFailureMessage(state, itemId, result.reason), failureReason: result.reason, position: targetPosition ?? null, equipment: null, current, preview: null, impact: {} }
   const preview = getEquipmentStatSnapshot(state, result.nextEquipment)
-  return { compatible: true, reason: null, failureReason: null, position: result.position, equipment: result.nextEquipment, removedOffhand: result.removedOffhand, current, preview, impact: subtractSnapshots(current, preview) }
+  return { compatible: true, reason: null, failureReason: null, position: result.position, equipment: result.nextEquipment, current, preview, impact: subtractSnapshots(current, preview) }
 }
 
 export const getEquipmentCopyAvailability = (state: Pick<GameState, 'equipment' | 'inventory'>, itemId: ItemId) => {

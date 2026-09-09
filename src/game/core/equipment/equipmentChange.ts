@@ -1,6 +1,6 @@
 import { ITEMS } from '../../content/items/items'
 import type { EquipmentPosition, GameState, ItemId } from '../../types'
-import { EQUIPMENT_POSITIONS, isPositionCompatible, isTwoHandedWeapon } from './equipmentRules'
+import { EQUIPMENT_POSITIONS, isPositionCompatible } from './equipmentRules'
 
 export type EquipmentChangeFailureReason =
   | 'missing-item'
@@ -15,7 +15,6 @@ export interface EquipmentChangeSuccess {
   ok: true
   position: EquipmentPosition
   nextEquipment: GameState['equipment']
-  removedOffhand: ItemId | null
 }
 
 export interface EquipmentChangeFailure {
@@ -55,7 +54,6 @@ export const evaluateEquipmentChange = (
     : targetPosition ?? item.equipmentSlot as EquipmentPosition
   if (!position) return { ok: false, reason: 'ring-target-required' }
   if (!isEquipmentPosition(position) || !isPositionCompatible(itemId, position)) return { ok: false, reason: 'incompatible' }
-  if (item.equipmentSlot === 'offhand' && isTwoHandedWeapon(state.equipment.weapon)) return { ok: false, reason: 'incompatible' }
   if (item.equipmentSlot === 'ring' && (position === 'ring1' || position === 'ring2')) {
     const other = position === 'ring1' ? 'ring2' : 'ring1'
     if (state.equipment[other] === itemId) return { ok: false, reason: 'duplicate-ring' }
@@ -66,8 +64,6 @@ export const evaluateEquipmentChange = (
   if (countEquipped(state.equipment, itemId) - replacedSameCopy + 1 > ownedCopies) return { ok: false, reason: 'insufficient-copies' }
 
   const nextEquipment = { ...state.equipment }
-  const removedOffhand = isTwoHandedWeapon(itemId) ? nextEquipment.offhand : null
-  if (removedOffhand) nextEquipment.offhand = null
   nextEquipment[position] = itemId
-  return { ok: true, position, nextEquipment, removedOffhand }
+  return { ok: true, position, nextEquipment }
 }

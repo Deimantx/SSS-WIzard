@@ -5,7 +5,7 @@ import { COMBAT_RNG_DEFAULT_SEED } from '../game/core/balance/combatRng'
 
 // Combat Action System V3 stores authored base work plus remaining work for
 // dynamic-rate action progression.
-export const SAVE_VERSION = 25
+export const SAVE_VERSION = 26
 
 export const createInitialState = (): GameState => ({
   saveVersion: SAVE_VERSION,
@@ -14,7 +14,7 @@ export const createInitialState = (): GameState => ({
   currencies: { gold: 0 },
   inventory: {},
   protectedItems: {},
-  equipment: { weapon: null, offhand: null, armor: null, helmet: null, cape: null, amulet: null, earring: null, ring1: null, ring2: null },
+  equipment: { weapon: null, armor: null, helmet: null, cape: null, amulet: null, earring: null, ring1: null, ring2: null },
   artifactProgress: {},
   activities: {
     channeling: { echoesAssigned: 0 },

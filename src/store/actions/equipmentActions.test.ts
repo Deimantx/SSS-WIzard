@@ -12,39 +12,28 @@ const testDefenseId = 'test-defense-robe' as ItemId
 afterEach(() => { delete ITEMS[testRingId]; delete ITEMS[testDefenseId] })
 
 describe('equipment actions', () => {
-  it('automatically removes an Offhand when equipping a 2H weapon', () => {
+  it('equips a Weapon into the single Weapon slot and keeps the owned copies', () => {
     const state = createInitialState()
     state.inventory['ember-staff'] = 1
-    state.inventory['prismatic-focus'] = 1
-    state.equipment.offhand = 'prismatic-focus'
-    const result = equipItemAction(state, 'ember-staff')
-    expect(result.ok).toBe(true)
-    expect(state.equipment.weapon).toBe('ember-staff')
-    expect(state.equipment.offhand).toBeNull()
-    expect(state.inventory['prismatic-focus']).toBe(1)
-    expect(state.notifications).toHaveLength(1)
-    expect(state.notifications[0].text).toBe('Ember Staff equipped. Prismatic Focus was unequipped.')
-  })
-
-  it('blocks an Offhand while a 2H weapon is active', () => {
-    const state = createInitialState()
     state.inventory['prismatic-focus'] = 1
     state.equipment.weapon = 'ember-staff'
     const result = equipItemAction(state, 'prismatic-focus')
-    expect(result).toMatchObject({ ok: false, reason: 'incompatible' })
-    expect(state.equipment.offhand).toBeNull()
-    expect(state.notifications[0].text).toBe('Requires a one-handed Weapon.')
+    expect(result.ok).toBe(true)
+    expect(state.equipment.weapon).toBe('prismatic-focus')
+    expect(state.inventory['ember-staff']).toBe(1)
+    expect(state.notifications).toHaveLength(1)
+    expect(state.notifications[0].text).toBe('Prismatic Focus equipped')
   })
 
-  it('previews the same final values that a 2H equip produces', () => {
+  it('previews the same final values as the Weapon equip action', () => {
     const state = createInitialState()
     state.inventory['ember-staff'] = 1
     state.inventory['prismatic-focus'] = 1
-    state.equipment.offhand = 'prismatic-focus'
-    const preview = getEquipmentPreview(state, 'ember-staff')
+    state.equipment.weapon = 'ember-staff'
+    const preview = getEquipmentPreview(state, 'prismatic-focus')
     expect(preview.compatible).toBe(true)
-    expect(preview.removedOffhand).toBe('prismatic-focus')
-    equipItemAction(state, 'ember-staff')
+    expect('removedOffhand' in preview).toBe(false)
+    equipItemAction(state, 'prismatic-focus')
     expect(getEquipmentStatSnapshot(state, state.equipment)).toEqual(preview.preview)
   })
 

@@ -433,7 +433,7 @@ describe('save navigation migration', () => {
     expect(migrated.inventory).not.toHaveProperty('apprentice-wand')
     expect(migrated.protectedItems).toEqual({ 'fire-fragment': true })
     expect(migrated.equipment.weapon).toBeNull()
-    expect(migrated.equipment.offhand).toBe('prismatic-focus')
+    expect(migrated.equipment).not.toHaveProperty('offhand')
     expect(migrated.progress.discoveredItems).toEqual(['ember-staff', 'prismatic-focus'])
     expect(migrated.progress.lifetimeKillsByMonster['grove-sentinel']).toBe(3)
     expect(migrated.progress.bossKillsByBoss['forest-heart']).toBe(2)
@@ -449,6 +449,48 @@ describe('save navigation migration', () => {
     expect(rerun.schools).toEqual(migrated.schools)
     expect(rerun.progress).toEqual(migrated.progress)
     expect(rerun.activities).toEqual(migrated.activities)
+  })
+
+  it('converts legacy secondary equipment into the single Weapon slot without changing ownership', () => {
+    const initial = createInitialState()
+    const migrateLegacyEquipment = (weapon: unknown, offhand: unknown) => migrateSave({
+      ...initial,
+      saveVersion: SAVE_VERSION - 1,
+      inventory: { ...initial.inventory, 'tideglass-wand': 1, 'prismatic-focus': 1, 'ember-staff': 1 },
+      equipment: { ...initial.equipment, weapon, offhand },
+    } as any)
+
+    const existingWeapon = migrateLegacyEquipment('tideglass-wand', 'prismatic-focus')
+    expect(existingWeapon.equipment.weapon).toBe('tideglass-wand')
+    expect(existingWeapon.equipment).not.toHaveProperty('offhand')
+    expect(existingWeapon.inventory['prismatic-focus']).toBe(1)
+
+    const secondaryOnly = migrateLegacyEquipment(null, 'prismatic-focus')
+    expect(secondaryOnly.equipment.weapon).toBe('prismatic-focus')
+    expect(secondaryOnly.equipment).not.toHaveProperty('offhand')
+
+    const empty = migrateLegacyEquipment(null, null)
+    expect(empty.equipment.weapon).toBeNull()
+    expect(empty.equipment).not.toHaveProperty('offhand')
+
+    const stale = migrateLegacyEquipment(null, 'removed-equipment')
+    expect(stale.equipment.weapon).toBeNull()
+    expect(stale.equipment).not.toHaveProperty('offhand')
+  })
+
+  it('preserves Prismatic Artifact progression while removing the legacy equipment position', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({
+      ...initial,
+      saveVersion: SAVE_VERSION - 1,
+      inventory: { ...initial.inventory, 'prismatic-focus': 1 },
+      equipment: { ...initial.equipment, weapon: 'tideglass-wand', offhand: 'prismatic-focus' },
+      artifactProgress: {
+        ...initial.artifactProgress,
+        'prismatic-focus': { level: 6, allocatedNodeIds: ['prismatic-conduit', 'reservoir'], attunedNodeIds: ['heartwell'] },
+      },
+    } as any)
+    expect(migrated.artifactProgress['prismatic-focus']).toEqual({ level: 6, allocatedNodeIds: ['prismatic-conduit', 'reservoir'], attunedNodeIds: ['heartwell'] })
   })
 
   it('migrates suspended legacy periodic damage into the first-class Hit payload', () => {

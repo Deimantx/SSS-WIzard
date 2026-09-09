@@ -47,7 +47,7 @@ export function InventoryItemTile({ itemId, inventory, protectedItems, equipment
     const equipTargets = item.kind === 'equipment' && !equipped
       ? item.equipmentSlot === 'ring'
         ? (['ring1', 'ring2'] as const).map((position) => ({ position, result: evaluateEquipmentChange({ inventory, equipment }, itemId, position) })).filter((entry) => entry.result.ok)
-        : [evaluateEquipmentChange({ inventory, equipment }, itemId)].filter((entry): entry is { ok: true; position: EquipmentPosition; nextEquipment: GameState['equipment']; removedOffhand: ItemId | null } => entry.ok).map((result) => ({ position: result.position, result }))
+        : [evaluateEquipmentChange({ inventory, equipment }, itemId)].filter((entry): entry is { ok: true; position: EquipmentPosition; nextEquipment: GameState['equipment'] } => entry.ok).map((result) => ({ position: result.position, result }))
       : []
     const quickEquipOptions = equipTargets.length > 1 ? equipTargets.map(({ position }) => ({ label: `Equip to ${position === 'ring1' ? 'Ring 1' : 'Ring 2'}`, onSelect: () => onEquip(itemId, position) })) : undefined
     const quickEquip = equipTargets.length === 1 ? () => onEquip(itemId, equipTargets[0].position) : undefined

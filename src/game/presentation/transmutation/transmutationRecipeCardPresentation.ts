@@ -17,8 +17,6 @@ const MATERIAL_SUBTYPE_LABELS: Record<NonNullable<ItemDefinition['materialSubtyp
 export function getTransmutationRecipeCardMeta(item: ItemDefinition): TransmutationRecipeCardMeta {
   if (item.kind === 'equipment') {
     const badges = [item.equipmentSlot?.toUpperCase() ?? 'EQUIPMENT']
-    if (item.weaponHands) badges.push(`${item.weaponHands}H`)
-    if (item.equipmentPresentation) badges.push(item.equipmentPresentation.toUpperCase())
     return { badges, tier: null }
   }
 

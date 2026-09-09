@@ -5,8 +5,6 @@ import type { ArtificingRecipeDefinition } from '../../content/recipes/artificin
 
 export interface ArtificingEquipmentInspection {
   slot: EquipmentItemSlot
-  hands: 1 | 2 | null
-  presentation: 'shield' | 'focus' | null
 }
 
 export interface ArtificingOutputInspection {
@@ -20,7 +18,7 @@ export function getArtificingOutputInspection(state: Pick<GameState, 'inventory'
   return {
     itemId: recipe.output.itemId,
     owned: Math.max(0, Math.floor(state.inventory[recipe.output.itemId] ?? 0)),
-    equipment: item.kind === 'equipment' && item.equipmentSlot ? { slot: item.equipmentSlot, hands: item.weaponHands ?? null, presentation: item.equipmentPresentation ?? null } : null,
+    equipment: item.kind === 'equipment' && item.equipmentSlot ? { slot: item.equipmentSlot } : null,
   }
 }
 

@@ -37,7 +37,10 @@ const pillarLevel = (state: Pick<GameState, 'progress'>, id: ManaPillarId) => Ma
 
 export const getManaPillarLevel = (state: Pick<GameState, 'progress'>, id: ManaPillarId) => pillarLevel(state, id)
 
-export const getManaCapacityBreakdown = (state: Pick<GameState, 'player' | 'progress' | 'equipment'> & Partial<Pick<GameState, 'debug'>>): ManaCapacityBreakdown => {
+type ChannelingCapacityState = Pick<GameState, 'player' | 'progress' | 'equipment'> & Partial<Pick<GameState, 'artifactProgress' | 'debug'>>
+type ChannelingRegenState = Pick<GameState, 'activities' | 'progress' | 'equipment'> & Partial<Pick<GameState, 'artifactProgress' | 'debug'>>
+
+export const getManaCapacityBreakdown = (state: ChannelingCapacityState): ManaCapacityBreakdown => {
   const stats = getEquipmentStats(state)
   const arcaneReservoirBonus = pillarLevel(state, 'arcane-reservoir') * 25
   const deepReservoirBonus = state.progress.channeling.discoveries['deep-reservoir'] ? BALANCE.channeling.deepReservoirCapacityBonus : 0
@@ -59,7 +62,7 @@ export const getManaCapacityBreakdown = (state: Pick<GameState, 'player' | 'prog
   }
 }
 
-export const getManaRegenBreakdown = (state: Pick<GameState, 'activities' | 'progress' | 'equipment'> & Partial<Pick<GameState, 'debug'>>): ManaRegenBreakdown => {
+export const getManaRegenBreakdown = (state: ChannelingRegenState): ManaRegenBreakdown => {
   const stats = getEquipmentStats(state)
   const echoes = state.debug?.ignoreEchoLimit ? Math.max(0, state.activities.channeling.echoesAssigned) : clamp(state.activities.channeling.echoesAssigned, 0, BALANCE.channeling.maxEchoes)
   const baseNatural = BALANCE.channeling.baseNaturalRegenPerSecond
@@ -77,7 +80,7 @@ export const getManaRegenBreakdown = (state: Pick<GameState, 'activities' | 'pro
   return { baseNatural, leylineConduitBonus, stableLeylineBonus, equipmentPassiveBonus, developerBonus, passiveBeforeResonance, manaResonanceMultiplier, passiveAfterResonance, echoBase, echoAttunementMultiplier, echoDiscoveryMultiplier, echoTotal, total: passiveAfterResonance + echoTotal }
 }
 
-export const manaRegenPerSecond = (state: Pick<GameState, 'activities' | 'progress' | 'equipment'> & Partial<Pick<GameState, 'debug'>>) => getManaRegenBreakdown(state).total
+export const manaRegenPerSecond = (state: ChannelingRegenState) => getManaRegenBreakdown(state).total
 
 export const getManaPillarDefinition = (id: ManaPillarId) => MANA_PILLARS[id]
 

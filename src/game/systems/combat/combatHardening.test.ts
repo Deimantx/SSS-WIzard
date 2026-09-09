@@ -219,7 +219,7 @@ describe('equipment combat providers', () => {
 
   it('uses the real weapon Item ID when an authored weapon has attack tags', () => {
     const weaponId = 'hardening-test-weapon' as ItemId
-    ITEMS[weaponId] = { ...testItem, id: weaponId, name: 'Hardening Test Weapon', equipmentSlot: 'weapon', weaponHands: 1, attackTags: ['melee'], damageType: 'fire' }
+    ITEMS[weaponId] = { ...testItem, id: weaponId, name: 'Hardening Test Weapon', equipmentSlot: 'weapon', attackTags: ['melee'], damageType: 'fire' }
     try {
       const state = stateWithEnemy()
       state.equipment.weapon = weaponId

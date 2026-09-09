@@ -17,8 +17,6 @@ import { NumberField } from './DeveloperTabPrimitives'
 type InventoryCategoryFilter = 'all' | 'materials' | 'equipment'
 type InventorySourceFilter = 'all' | 'transmutation' | DungeonId | 'boss-relics' | 'monster-drops' | 'boss-drops'
 type InventorySlotFilter = 'all' | EquipmentItemSlot
-type WeaponHandsFilter = 'all' | '1H' | '2H'
-
 const CATEGORY_FILTERS: readonly FilterOption<InventoryCategoryFilter>[] = [
   { value: 'all', label: 'ALL' },
   { value: 'materials', label: 'MATERIALS' },
@@ -26,12 +24,6 @@ const CATEGORY_FILTERS: readonly FilterOption<InventoryCategoryFilter>[] = [
 ]
 const SOURCE_FILTERS: readonly FilterOption<InventorySourceFilter>[] = [{ value: 'all', label: 'ALL SOURCES' }, { value: 'transmutation', label: 'TRANSMUTATION' }, { value: 'monster-drops', label: 'MONSTER DROPS' }, { value: 'boss-drops', label: 'BOSS DROPS' }, ...DUNGEON_ORDER.map((id) => ({ value: id, label: DUNGEONS[id].name.toUpperCase() })), { value: 'boss-relics', label: 'BOSS RELICS' }]
 const SLOT_FILTERS: readonly FilterOption<InventorySlotFilter>[] = [{ value: 'all', label: 'ALL SLOTS' }, ...EQUIPMENT_ITEM_SLOTS.map((id) => ({ value: id, label: EQUIPMENT_ITEM_SLOT_LABELS[id] }))]
-const HAND_FILTERS: readonly FilterOption<WeaponHandsFilter>[] = [
-  { value: 'all', label: 'ALL WEAPONS' },
-  { value: '1H', label: '1H' },
-  { value: '2H', label: '2H' },
-]
-
 const ITEM_IDS = Object.keys(ITEMS) as ItemId[]
 const EQUIPMENT_IDS = ITEM_IDS.filter((id) => ITEMS[id].kind === 'equipment')
 const MATERIAL_IDS = ITEM_IDS.filter((id) => ITEMS[id].kind === 'material')
@@ -63,13 +55,12 @@ export function DeveloperInventory({ initialView = 'all' }: { initialView?: Inve
   const [categoryFilter, setCategoryFilter] = useState<InventoryCategoryFilter>(initialView)
   const [sourceFilter, setSourceFilter] = useState<InventorySourceFilter>('all')
   const [slotFilter, setSlotFilter] = useState<InventorySlotFilter>('all')
-  const [handsFilter, setHandsFilter] = useState<WeaponHandsFilter>('all')
   const [selected, setSelected] = useState<ItemId | null>('fire-fragment')
   const [quantity, setQuantity] = useState(1)
   const itemOptions = useMemo(() => ITEM_IDS.filter((id) => {
     const item = ITEMS[id]
-    return matchesCategory(id, categoryFilter) && matchesSource(id, sourceFilter) && matchesSlot(id, slotFilter) && (handsFilter === 'all' || (item.equipmentSlot === 'weapon' && `${item.weaponHands}H` === handsFilter)) && getInventorySearchText(id).includes(query.trim().toLowerCase())
-  }), [categoryFilter, handsFilter, query, slotFilter, sourceFilter])
+    return matchesCategory(id, categoryFilter) && matchesSource(id, sourceFilter) && matchesSlot(id, slotFilter) && getInventorySearchText(id).includes(query.trim().toLowerCase())
+  }), [categoryFilter, query, slotFilter, sourceFilter])
   const selectedItem = selected ? ITEMS[selected] : null
   const equippedPositions = selected ? EQUIPMENT_POSITIONS.filter((position) => state.equipment[position] === selected) : []
 
@@ -118,7 +109,7 @@ export function DeveloperInventory({ initialView = 'all' }: { initialView?: Inve
         <label>Search items<input aria-label="Search items" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Fragments, equipment..." /></label>
         <div className="developer-filter-label">SOURCE / ORIGIN<FilterBar options={SOURCE_FILTERS} value={sourceFilter} onChange={setSourceFilter} ariaLabel="Developer inventory source" /></div>
         <div className="developer-filter-label">EQUIPMENT SLOT<FilterBar options={SLOT_FILTERS} value={slotFilter} onChange={setSlotFilter} ariaLabel="Developer equipment slot" /></div>
-        {(slotFilter === 'all' || slotFilter === 'weapon') && <div className="developer-filter-label">WEAPON HANDS<FilterBar options={HAND_FILTERS} value={handsFilter} onChange={setHandsFilter} ariaLabel="Developer weapon hands" /></div>}
+
       </div>
         <DeveloperBrowserLayout
         browser={<><div className="developer-browser-heading"><strong>{itemOptions.length} authored items</strong><small>Click an item to inspect its source, stats, and tester actions.</small></div><DeveloperBrowser items={itemOptions.map((id) => ({ id, label: ITEMS[id].name, icon: ITEMS[id].icon, accent: ITEMS[id].color, meta: `${formatReadableId(ITEMS[id].kind)}${ITEMS[id].equipmentSlot ? ` · ${formatReadableId(ITEMS[id].equipmentSlot)}` : ''}`, status: <>{state.inventory[id] ?? 0}{Object.values(state.equipment).includes(id) && <span className="developer-mini-status">EQUIPPED</span>}{state.protectedItems[id] && <span className="developer-mini-status">PROTECTED</span>}</> }))} selectedId={selected} onSelect={(id) => setSelected(id as ItemId)} emptyMessage="No matching items. Change the filters or search." /></>}
@@ -126,7 +117,7 @@ export function DeveloperInventory({ initialView = 'all' }: { initialView?: Inve
           <div className="developer-inspector-title"><span className="developer-browser-icon" style={{ color: selectedItem.color }}>{selectedItem.icon}</span><div><h2>{selectedItem.name}</h2><small className="muted">{formatReadableId(selectedItem.kind)}</small></div><Status tone={equippedPositions.length > 0 ? 'warning' : state.protectedItems[selected] ? 'warning' : 'neutral'}>{equippedPositions.length > 0 ? 'EQUIPPED' : state.protectedItems[selected] ? 'PROTECTED' : `${state.inventory[selected] ?? 0} OWNED`}</Status></div>
           <DeveloperSection title="Identity"><div className="developer-detail-grid"><span>KIND<strong>{selectedItem.kind}</strong></span><span>CATEGORY<strong>{selectedItem.category}</strong></span><span>VAULT<strong>{selectedItem.inventoryCategory}</strong></span><span>OWNED<strong>{state.inventory[selected] ?? 0}</strong></span><span>SELL VALUE<strong>{selectedItem.sellValue ?? '—'}</strong></span><span>DESTROY<strong>{selectedItem.canDestroy ? 'Allowed' : selectedItem.actionRestrictionReason ?? 'Blocked'}</strong></span></div><p className="muted">{selectedItem.description}</p></DeveloperSection>
           <DeveloperSection title="Source relationships"><p className="developer-relation-line"><strong>Primary source:</strong> {selectedItem.source}</p><div className="developer-relation-list">{sourceInfo?.relations.length ? sourceInfo.relations.map((relation) => <span key={`${relation.kind}-${relation.id}`}><strong>{relation.label}</strong><small>{formatReadableId(relation.kind)} · {relation.detail}</small></span>) : <span className="muted">No derived relationship is authored for this item.</span>}</div></DeveloperSection>
-          {selectedItem.kind === 'equipment' && <DeveloperSection title="Equipment definition"><div className="developer-detail-grid"><span>SLOT<strong>{selectedItem.equipmentSlot}</strong></span>{selectedItem.weaponHands && <span>HANDS<strong>{selectedItem.weaponHands}H</strong></span>}<span>POSITIONS<strong>{selectedItem.equipmentSlot === 'ring' ? 'Ring 1 / Ring 2' : selectedItem.equipmentSlot}</strong></span></div>{selectedItem.stats && <div className="developer-stat-list">{Object.entries(selectedItem.stats).flatMap(([key, value]) => key === 'resistances' ? Object.entries(value ?? {}).map(([damageType, resistance]) => <span key={`resistance-${damageType}`}><small>{formatStatLabel(`${damageType} resistance`)}</small><strong>{formatPercent(Number(resistance))}</strong></span>) : <span key={key}><small>{formatStatLabel(key)}</small><strong>{formatStatValue(key, Number(value))}</strong></span>)}</div>}<div className="developer-relation-list">{formatEquipmentEffectSummary(selectedItem).length ? formatEquipmentEffectSummary(selectedItem).map((effect) => <span key={effect}><strong>{effect.startsWith('Passive:') ? 'Passive effect' : 'Triggered effect'}</strong><small>{effect.replace(/^(Passive: |[^:]+: )/, '')}</small></span>) : <span className="muted">No additional combat effect is authored.</span>}</div></DeveloperSection>}
+          {selectedItem.kind === 'equipment' && <DeveloperSection title="Equipment definition"><div className="developer-detail-grid"><span>SLOT<strong>{selectedItem.equipmentSlot}</strong></span><span>POSITIONS<strong>{selectedItem.equipmentSlot === 'ring' ? 'Ring 1 / Ring 2' : selectedItem.equipmentSlot}</strong></span></div>{selectedItem.stats && <div className="developer-stat-list">{Object.entries(selectedItem.stats).flatMap(([key, value]) => key === 'resistances' ? Object.entries(value ?? {}).map(([damageType, resistance]) => <span key={`resistance-${damageType}`}><small>{formatStatLabel(`${damageType} resistance`)}</small><strong>{formatPercent(Number(resistance))}</strong></span>) : <span key={key}><small>{formatStatLabel(key)}</small><strong>{formatStatValue(key, Number(value))}</strong></span>)}</div>}<div className="developer-relation-list">{formatEquipmentEffectSummary(selectedItem).length ? formatEquipmentEffectSummary(selectedItem).map((effect) => <span key={effect}><strong>{effect.startsWith('Passive:') ? 'Passive effect' : 'Triggered effect'}</strong><small>{effect.replace(/^(Passive: |[^:]+: )/, '')}</small></span>) : <span className="muted">No additional combat effect is authored.</span>}</div></DeveloperSection>}
           {selectedItem.kind === 'material' && <DeveloperSection title="Material definition"><div className="developer-detail-grid"><span>SUBTYPE<strong>{selectedItem.materialSubtype ?? '—'}</strong></span><span>RESEARCH<strong>{selectedItem.researchSchool ?? '—'}</strong></span></div><div className="developer-relation-list">{dropSources.length ? dropSources.map((drop) => <span key={`${drop.monsterId}-${drop.min}-${drop.max}`}><strong>{drop.monsterName} · {drop.role}</strong><small>{drop.dungeonName} · {drop.min}–{drop.max} quantity · {(drop.chance * 100).toFixed(2)}% chance</small></span>) : <span className="muted">No direct monster drop entry is authored.</span>}</div></DeveloperSection>}
           {selectedRecipe && <DeveloperSection title="Recipe and unlock"><div className="developer-detail-grid"><span>RECIPE<strong>{selectedRecipe.name}</strong></span><span>UNLOCKED<strong>{isRecipeUnlocked(state, selectedRecipe) ? 'Yes' : 'No'}</strong></span></div><p className="developer-relation-line">{getRecipeUnlockRequirement(selectedRecipe) ?? 'Always unlocked'}</p><div className="developer-relation-list">{selectedRecipe.ingredients.map((ingredient) => <span key={ingredient.itemId}><strong>{ITEMS[ingredient.itemId].name}</strong><small>{ingredient.quantity} required</small></span>)}</div></DeveloperSection>}
           <DeveloperSection title="Recipe uses"><div className="developer-relation-list">{recipeUses.length ? recipeUses.map((recipe) => <span key={recipe.id}><strong>{recipe.name}</strong><small>{recipe.ingredients.find((ingredient) => ingredient.itemId === selected)?.quantity ?? 0} required</small></span>) : <span className="muted">No recipe consumes this item.</span>}</div></DeveloperSection>

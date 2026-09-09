@@ -47,12 +47,12 @@ describe('spell effect tooltip models', () => {
 
   it('shows barrier duration, mode, target, source, and safe barrier equipment contribution', () => {
     const state = createInitialState()
-    state.equipment.offhand = 'prismatic-focus'
+    state.equipment.weapon = 'prismatic-focus'
     const model = buildSpellEffectTooltipModel(state, 'water-ward', 0)
 
     expect(model).toMatchObject({ category: 'BARRIER', title: 'Barrier' })
     expect(row(model, 'Scaling')?.value).toBe('70% Spell Power')
-    expect(row(model, 'Amount')?.value).toBe('40')
+    expect(row(model, 'Amount')?.value).toBe('43')
     expect(row(model, 'Duration')?.value).toBe('9.0s')
     expect(row(model, 'Mode')?.value).toBe('Replace')
     expect(row(model, 'Tideglass Wand')).toBeUndefined()

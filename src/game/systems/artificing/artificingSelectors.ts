@@ -17,16 +17,14 @@ export interface ArtificingFilters {
   slotFilter: 'all' | EquipmentItemSlot
   tierFilter: ArtificingTierFilter
   kindFilter: ArtificingKindFilter
-  weaponHandsFilter: 'all' | 1 | 2
-  offhandPresentationFilter: 'all' | 'shield' | 'focus'
   craftableOnly: boolean
   ownershipFilter: 'all' | 'owned' | 'unowned'
 }
-export const DEFAULT_ARTIFICING_FILTERS: ArtificingFilters = { slotFilter: 'all', tierFilter: 'all', kindFilter: 'all', weaponHandsFilter: 'all', offhandPresentationFilter: 'all', craftableOnly: false, ownershipFilter: 'all' }
+export const DEFAULT_ARTIFICING_FILTERS: ArtificingFilters = { slotFilter: 'all', tierFilter: 'all', kindFilter: 'all', craftableOnly: false, ownershipFilter: 'all' }
 export const getArtificingRecipeEntries = () => ARTIFICING_RECIPE_ORDER.map(id => ARTIFICING_RECIPES[id])
 export const getArtificingProfile = (recipe: ArtificingRecipeDefinition) => {
   const item = ITEMS[recipe.output.itemId]
-  return [item.equipmentSlot?.toUpperCase(), item.weaponHands ? `${item.weaponHands}H` : item.equipmentPresentation?.toUpperCase()].filter(Boolean).join(' · ')
+  return item.equipmentSlot?.toUpperCase() ?? ''
 }
 
 export const getArtificingRecipePlayerTier = (recipe: ArtificingRecipeDefinition): number | undefined => {
@@ -110,8 +108,6 @@ export function getVisibleArtificingRecipes(state: GameState, filters: Artificin
     if (filters.tierFilter !== 'all' && getArtificingRecipePlayerTier(recipe) !== filters.tierFilter) return false
     if (filters.kindFilter === 'artifact' && !isArtifactArtificingRecipe(recipe)) return false
     if (filters.kindFilter === 'equipment' && isArtifactArtificingRecipe(recipe)) return false
-    if (filters.slotFilter === 'weapon' && filters.weaponHandsFilter !== 'all' && item.weaponHands !== filters.weaponHandsFilter) return false
-    if (filters.slotFilter === 'offhand' && filters.offhandPresentationFilter !== 'all' && item.equipmentPresentation !== filters.offhandPresentationFilter) return false
     if (filters.craftableOnly && !hasArtificingRecipeRequirements(state, recipe.id)) return false
     const owned = (state.inventory[recipe.output.itemId] ?? 0) > 0
     if (filters.ownershipFilter === 'owned' && !owned || filters.ownershipFilter === 'unowned' && owned) return false

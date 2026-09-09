@@ -130,10 +130,10 @@ const wispveilUpgrades = [
   upgrade(9, [material('ossuary-remnant', 47), material('soul-residue', 47), material('graveglass-shard', 46), material('burial-cloth', 46), material('prismatic-fragment', 63), material('life-essence', 413)]),
 ]
 
-const tideglassStats: Record<number, EquipmentStats> = { 1: { basicDamage: 4, spellPower: 11 }, 2: { basicDamage: 5, spellPower: 14 }, 3: { basicDamage: 6, spellPower: 17 }, 4: { basicDamage: 7, spellPower: 21 }, 5: { basicDamage: 8, spellPower: 25 }, 6: { basicDamage: 9, spellPower: 30 }, 7: { basicDamage: 10, spellPower: 35 }, 8: { basicDamage: 11, spellPower: 41 }, 9: { basicDamage: 13, spellPower: 48 }, 10: { basicDamage: 15, spellPower: 56 } }
-const stoneheartStats: Record<number, EquipmentStats> = { 1: { basicDamage: 5, spellPower: 10 }, 2: { basicDamage: 6, spellPower: 13 }, 3: { basicDamage: 7, spellPower: 16 }, 4: { basicDamage: 8, spellPower: 20 }, 5: { basicDamage: 9, spellPower: 24 }, 6: { basicDamage: 10, spellPower: 29 }, 7: { basicDamage: 11, spellPower: 34 }, 8: { basicDamage: 13, spellPower: 40 }, 9: { basicDamage: 15, spellPower: 47 }, 10: { basicDamage: 17, spellPower: 54 } }
-const windthreadStats: Record<number, EquipmentStats> = { 1: { basicDamage: 4, spellPower: 12 }, 2: { basicDamage: 5, spellPower: 15 }, 3: { basicDamage: 6, spellPower: 18 }, 4: { basicDamage: 7, spellPower: 22 }, 5: { basicDamage: 8, spellPower: 27 }, 6: { basicDamage: 9, spellPower: 32 }, 7: { basicDamage: 10, spellPower: 38 }, 8: { basicDamage: 11, spellPower: 44 }, 9: { basicDamage: 12, spellPower: 51 }, 10: { basicDamage: 14, spellPower: 59 } }
-const prismaticStats: Record<number, EquipmentStats> = { 1: { maxMana: 10, spellPower: 7 }, 2: { maxMana: 12, spellPower: 9 }, 3: { maxMana: 14, spellPower: 11 }, 4: { maxMana: 17, spellPower: 14 }, 5: { maxMana: 20, spellPower: 17 }, 6: { maxMana: 23, spellPower: 20 }, 7: { maxMana: 27, spellPower: 24 }, 8: { maxMana: 31, spellPower: 28 }, 9: { maxMana: 36, spellPower: 33 }, 10: { maxMana: 42, spellPower: 39 } }
+const tideglassStats: Record<number, EquipmentStats> = { 1: { basicDamage: 5, spellPower: 15 }, 2: { basicDamage: 6, spellPower: 19 }, 3: { basicDamage: 7, spellPower: 23 }, 4: { basicDamage: 8, spellPower: 28 }, 5: { basicDamage: 9, spellPower: 34 }, 6: { basicDamage: 10, spellPower: 40 }, 7: { basicDamage: 11, spellPower: 47 }, 8: { basicDamage: 12, spellPower: 55 }, 9: { basicDamage: 14, spellPower: 63 }, 10: { basicDamage: 16, spellPower: 72 } }
+const stoneheartStats: Record<number, EquipmentStats> = { 1: { basicDamage: 6, spellPower: 14 }, 2: { basicDamage: 7, spellPower: 18 }, 3: { basicDamage: 8, spellPower: 22 }, 4: { basicDamage: 9, spellPower: 27 }, 5: { basicDamage: 10, spellPower: 32 }, 6: { basicDamage: 11, spellPower: 38 }, 7: { basicDamage: 13, spellPower: 44 }, 8: { basicDamage: 15, spellPower: 51 }, 9: { basicDamage: 17, spellPower: 59 }, 10: { basicDamage: 19, spellPower: 67 } }
+const windthreadStats: Record<number, EquipmentStats> = { 1: { basicDamage: 4, spellPower: 15 }, 2: { basicDamage: 5, spellPower: 19 }, 3: { basicDamage: 6, spellPower: 23 }, 4: { basicDamage: 7, spellPower: 28 }, 5: { basicDamage: 8, spellPower: 34 }, 6: { basicDamage: 9, spellPower: 41 }, 7: { basicDamage: 10, spellPower: 48 }, 8: { basicDamage: 11, spellPower: 56 }, 9: { basicDamage: 12, spellPower: 64 }, 10: { basicDamage: 14, spellPower: 73 } }
+const prismaticStats: Record<number, EquipmentStats> = { 1: { basicDamage: 2, spellPower: 11, maxMana: 10, maxFocus: 2 }, 2: { basicDamage: 3, spellPower: 14, maxMana: 12, maxFocus: 4 }, 3: { basicDamage: 4, spellPower: 17, maxMana: 14, maxFocus: 6 }, 4: { basicDamage: 5, spellPower: 21, maxMana: 17, maxFocus: 8 }, 5: { basicDamage: 6, spellPower: 26, maxMana: 20, maxFocus: 10 }, 6: { basicDamage: 7, spellPower: 31, maxMana: 23, maxFocus: 12 }, 7: { basicDamage: 8, spellPower: 37, maxMana: 27, maxFocus: 14 }, 8: { basicDamage: 9, spellPower: 43, maxMana: 31, maxFocus: 16 }, 9: { basicDamage: 9, spellPower: 50, maxMana: 36, maxFocus: 18 }, 10: { basicDamage: 10, spellPower: 58, maxMana: 42, maxFocus: 20 } }
 const wispweaveStats: Record<number, EquipmentStats> = { 1: { maxHealth: 20, defense: 4 }, 2: { maxHealth: 24, defense: 5 }, 3: { maxHealth: 29, defense: 6 }, 4: { maxHealth: 35, defense: 7 }, 5: { maxHealth: 42, defense: 8 }, 6: { maxHealth: 50, defense: 10 }, 7: { maxHealth: 59, defense: 12 }, 8: { maxHealth: 69, defense: 14 }, 9: { maxHealth: 80, defense: 16 }, 10: { maxHealth: 92, defense: 19 } }
 const wispveilStats: Record<number, EquipmentStats> = { 1: { maxHealth: 10, defense: 2 }, 2: { maxHealth: 12, defense: 3 }, 3: { maxHealth: 15, defense: 4 }, 4: { maxHealth: 18, defense: 5 }, 5: { maxHealth: 22, defense: 6 }, 6: { maxHealth: 26, defense: 7 }, 7: { maxHealth: 31, defense: 8 }, 8: { maxHealth: 36, defense: 10 }, 9: { maxHealth: 42, defense: 12 }, 10: { maxHealth: 49, defense: 14 } }
 
@@ -326,8 +326,7 @@ export const validateArtifactDefinitions = (items: Record<string, ItemDefinition
       if (item.combat !== undefined) errors.push(`${definition.id}: Artifact item must not define static combat effects`)
       if (item.sellValue !== null) errors.push(`${definition.id}: Artifact item must not be sellable`)
       if (item.canDestroy) errors.push(`${definition.id}: Artifact item must not be destroyable`)
-      if (!['weapon', 'offhand', 'armor', 'helmet'].includes(item.equipmentSlot ?? '')) errors.push(`${definition.id}: Artifact slot is not supported`)
-      if (item.equipmentSlot === 'weapon' && item.weaponHands === undefined) errors.push(`${definition.id}: Artifact Weapons require weaponHands`)
+      if (!['weapon', 'armor', 'helmet'].includes(item.equipmentSlot ?? '')) errors.push(`${definition.id}: Artifact slot is not supported`)
     }
     if (!Number.isFinite(definition.tier) || definition.tier <= 0) errors.push(`${definition.id}: tier must be finite and greater than 0`)
     if (!Number.isInteger(definition.maxLevel) || definition.maxLevel < 1) errors.push(`${definition.id}: maxLevel must be a positive integer`)
@@ -342,8 +341,9 @@ export const validateArtifactDefinitions = (items: Record<string, ItemDefinition
         if (!(stats.basicDamage && stats.basicDamage > 0)) errors.push(`${definition.id}: weapon Artifact requires positive basicDamage at level ${level}`)
         if (!(stats.spellPower && stats.spellPower > 0)) errors.push(`${definition.id}: weapon Artifact requires positive spellPower at level ${level}`)
       }
-      if (item?.equipmentSlot === 'offhand' && item.equipmentPresentation === 'focus') {
+      if (item?.id === 'prismatic-focus') {
         if (!(stats.maxMana && stats.maxMana > 0)) errors.push(`${definition.id}: focus Artifact requires positive maxMana at level ${level}`)
+        if (!(stats.maxFocus && stats.maxFocus > 0)) errors.push(`${definition.id}: focus Artifact requires positive maxFocus at level ${level}`)
         if (!(stats.spellPower && stats.spellPower > 0)) errors.push(`${definition.id}: focus Artifact requires positive spellPower at level ${level}`)
       }
       if (item?.equipmentSlot === 'armor' || item?.equipmentSlot === 'helmet') {

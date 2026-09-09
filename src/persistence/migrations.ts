@@ -414,10 +414,10 @@ const seedLegacyItemDiscoveries = (migrated: GameState, raw: Record<string, any>
   migrated.progress.discoveredItems = itemIds.filter((itemId) => discovered.has(itemId as ItemId)) as ItemId[]
 }
 
-const normalizeDirectContentReferences = (migrated: GameState, raw: Record<string, any>) => {
+const normalizeDirectContentReferences = (migrated: GameState, raw: Record<string, any>, sourceVersion: number) => {
   const fresh = createInitialState()
   const rawEquipment = isRecord(raw.equipment) ? raw.equipment : {}
-  const legacyToNew: Partial<Record<EquipmentPosition, keyof typeof rawEquipment>> = { offhand: 'focus', armor: 'robe', amulet: 'charm' }
+  const legacyToNew: Partial<Record<EquipmentPosition, keyof typeof rawEquipment>> = { armor: 'robe', amulet: 'charm' }
   const candidate: Partial<Record<EquipmentPosition, ItemId | null>> = {}
   EQUIPMENT_POSITIONS.forEach((position) => {
     const hasNewValue = Object.prototype.hasOwnProperty.call(rawEquipment, position)
@@ -425,6 +425,11 @@ const normalizeDirectContentReferences = (migrated: GameState, raw: Record<strin
     const hasLegacyValue = legacyPosition ? Object.prototype.hasOwnProperty.call(rawEquipment, legacyPosition) : false
     candidate[position] = hasNewValue ? rawEquipment[position] as ItemId | null : legacyPosition && hasLegacyValue ? rawEquipment[legacyPosition] as ItemId | null : migrated.equipment[position]
   })
+  if (sourceVersion < SAVE_VERSION && (Object.prototype.hasOwnProperty.call(rawEquipment, 'offhand') || Object.prototype.hasOwnProperty.call(rawEquipment, 'focus'))) {
+    const oldWeapon = Object.prototype.hasOwnProperty.call(rawEquipment, 'weapon') ? rawEquipment.weapon : null
+    const oldSecondary = Object.prototype.hasOwnProperty.call(rawEquipment, 'offhand') ? rawEquipment.offhand : rawEquipment.focus
+    if (!oldWeapon && typeof oldSecondary === 'string') candidate.weapon = oldSecondary as ItemId
+  }
   migrated.equipment = normalizeEquipmentState(candidate, migrated.inventory)
 
   const rawCombat = isRecord(raw.combat) ? raw.combat : {}
@@ -611,7 +616,7 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   normalizeSpellProgression(migrated, raw)
   normalizeSpellPresets(migrated, raw)
   normalizeCombatState(migrated, raw, sourceVersion)
-  normalizeDirectContentReferences(migrated, raw)
+  normalizeDirectContentReferences(migrated, raw, sourceVersion)
   seedLegacyItemDiscoveries(migrated, raw, sourceVersion)
   normalizeResearch(migrated, raw, sourceVersion)
   recalculateDerivedStats(migrated)
@@ -641,7 +646,7 @@ const migrateV1 = (raw: Record<string, any>): GameState => {
     player: { ...fresh.player, ...oldPlayer, baseMaxHealth: typeof oldPlayer.baseMaxHealth === 'number' ? oldPlayer.baseMaxHealth : oldMaxHealth, baseMaxMana: typeof oldPlayer.baseMaxMana === 'number' ? oldPlayer.baseMaxMana : oldMaxMana, baseMaxFocus: typeof oldPlayer.baseMaxFocus === 'number' ? oldPlayer.baseMaxFocus : oldMaxFocus },
     inventory: { ...fresh.inventory, ...(isRecord(raw.inventory) ? raw.inventory : {}) },
     protectedItems: { ...fresh.protectedItems, ...(oldWeapon ? { [oldWeapon]: true } : {}) },
-    equipment: { ...fresh.equipment, weapon: oldWeapon ?? fresh.equipment.weapon, offhand: oldFocus ?? null },
+    equipment: { ...fresh.equipment, weapon: oldWeapon ?? oldFocus ?? fresh.equipment.weapon },
     activities: { ...fresh.activities, channeling: { echoesAssigned: oldActivities.autoChannel === true ? 1 : 0 }, research, autoCast: { ...fresh.activities.autoCast, ...(isRecord(oldActivities.autoCast) ? oldActivities.autoCast : {}) } },
     progress: { ...fresh.progress, ...(oldProgress as Partial<GameState['progress']>) },
     combat: { ...fresh.combat, ...(isRecord(raw.combat) ? raw.combat : {}) },

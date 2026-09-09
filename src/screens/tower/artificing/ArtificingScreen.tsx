@@ -29,7 +29,7 @@ export function ArtificingScreen() {
   useEffect(() => {
     if (intentRecipeId) {
       setQuery('')
-      setUiPreferences({ screenState: { artificing: { selectedRecipeId: intentRecipeId, slotFilter: 'all', kindFilter: 'all', weaponHandsFilter: 'all', offhandPresentationFilter: 'all', ownershipFilter: 'all' } } })
+      setUiPreferences({ screenState: { artificing: { selectedRecipeId: intentRecipeId, slotFilter: 'all', kindFilter: 'all', ownershipFilter: 'all' } } })
       setNavigationIntent({ artificingRecipeId: null })
       return
     }

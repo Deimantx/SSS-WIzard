@@ -35,7 +35,7 @@ describe('universal combat stats foundation', () => {
     const player = getPlayerCombatStats(state)
     const enemy = getEnemyCombatStats(state)
     expect(player).toMatchObject({ spellPower: BALANCE.player.baseSpellPower, critChance: 0.05, critDamageMultiplier: 1.5, defense: BALANCE.player.baseDefense, blockChance: 0 })
-    expect(enemy).toMatchObject({ maxHealth: 1_000, defense: 10, critChance: 0.05, critDamageMultiplier: 1.5, blockChance: 0 })
+    expect(enemy).toMatchObject({ maxHealth: 1_000, defense: 8, critChance: 0.05, critDamageMultiplier: 1.5, blockChance: 0 })
     expect(getCritChance(state, 'player', playerSpell)).toBe(0.05)
     expect(getCritDamageMultiplier(state, 'player', playerSpell)).toBe(1.5)
     expect(getBlockChance(state, 'player', playerSpell)).toBe(0)
@@ -71,11 +71,11 @@ describe('universal combat stats foundation', () => {
     const item: ItemDefinition = { ...ITEMS['tideglass-wand'], id: itemId, stats: { resistances: { fire: 0.5 } } }
     ITEMS[itemId] = item
     const secondItemId = 'stats-resistance-test-2' as ItemId
-    ITEMS[secondItemId] = { ...ITEMS['tideglass-wand'], id: secondItemId, stats: { resistances: { fire: 0.4 } } }
+    ITEMS[secondItemId] = { ...ITEMS['tideglass-wand'], id: secondItemId, equipmentSlot: 'armor', stats: { resistances: { fire: 0.4 } } }
     try {
       const state = createInitialState()
       state.equipment.weapon = itemId
-      state.equipment.offhand = secondItemId
+      state.equipment.armor = secondItemId
       expect(getResistance(state, 'player', 'fire')).toBe(0.75)
       state.combat.enemyId = 'forest-wisp'
       expect(getResistance(state, 'enemy', 'fire')).toBe(0)

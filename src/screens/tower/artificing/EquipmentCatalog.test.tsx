@@ -44,6 +44,9 @@ describe('Artificing equipment catalog filters', () => {
     expect(screen.getByText('21 SHOWN')).toBeTruthy()
 
     const slotFilter = screen.getByRole('group', { name: 'SLOT' })
+    expect(within(slotFilter).getByRole('button', { name: 'WEAPON' })).toBeTruthy()
+    expect(within(slotFilter).queryByRole('button', { name: 'OFFHAND' })).toBeNull()
+    expect(screen.queryByText('HANDS')).toBeNull()
     fireEvent.click(within(slotFilter).getByRole('button', { name: 'EARRING' }))
     expect(screen.getByText('3 SHOWN')).toBeTruthy()
 

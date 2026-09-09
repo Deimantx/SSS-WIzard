@@ -1,10 +1,10 @@
 import { ITEMS } from '../../game/content/items/items'
 import { pushNotification, recalculateDerivedStats } from '../../game/engine'
-import { evaluateEquipmentChange, isTwoHandedWeapon, type EquipmentChangeFailureReason } from '../../game/core/equipment'
+import { evaluateEquipmentChange, type EquipmentChangeFailureReason } from '../../game/core/equipment'
 import type { EquipmentPosition, GameState, ItemId } from '../../game/types'
 
 export type EquipItemResult =
-  | { ok: true; position: EquipmentPosition; unequippedOffhand: ItemId | null }
+  | { ok: true; position: EquipmentPosition }
   | { ok: false; reason: EquipmentChangeFailureReason }
 
 const failureMessage: Record<EquipmentChangeFailureReason, string> = {
@@ -21,19 +21,14 @@ export const equipItemAction = (state: GameState, itemId: ItemId, targetPosition
   const item = ITEMS[itemId]
   const result = evaluateEquipmentChange(state, itemId, targetPosition)
   if (!result.ok) {
-    const message = result.reason === 'incompatible' && item?.equipmentSlot === 'offhand' && isTwoHandedWeapon(state.equipment.weapon)
-      ? 'Requires a one-handed Weapon.'
-      : failureMessage[result.reason]
-    pushNotification(state, message, 'warning', { key: 'action-equip', cooldownMs: 1 })
+    pushNotification(state, failureMessage[result.reason], 'warning', { key: 'action-equip', cooldownMs: 1 })
     return result
   }
 
-  const removedOffhand = result.removedOffhand
   state.equipment = result.nextEquipment
   recalculateDerivedStats(state)
-  if (removedOffhand) pushNotification(state, `${item.name} equipped. ${ITEMS[removedOffhand]?.name ?? removedOffhand} was unequipped.`, 'success', { key: 'action-equip', cooldownMs: 1 })
-  else pushNotification(state, `${item.name} equipped`, 'success', { key: 'action-equip', cooldownMs: 1 })
-  return { ok: true, position: result.position, unequippedOffhand: removedOffhand }
+  pushNotification(state, `${item.name} equipped`, 'success', { key: 'action-equip', cooldownMs: 1 })
+  return { ok: true, position: result.position }
 }
 
 export const unequipItemAction = (state: GameState, position: EquipmentPosition) => {

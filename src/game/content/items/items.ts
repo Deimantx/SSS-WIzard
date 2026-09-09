@@ -19,7 +19,7 @@ const universalMaterial = (id: ItemId, name: string, description: string, icon: 
 type AuthoredEquipmentDefinition = Omit<AuthoredItemDefinition, 'kind' | 'category' | 'inventoryCategory' | 'source' | 'sourceNavigation' | 'equipmentTier' | 'buildTags' | 'equipmentBudgetProfile'> & Required<Pick<ItemDefinition, 'equipmentSlot' | 'equipmentTier' | 'buildTags' | 'equipmentBudgetProfile'>>
 /**
  * Equipment stat chassis:
- * Weapon: Basic Damage + Spell Power; Focus: Mana + Spell Power; Shield: Health + Defense + Block.
+ * Weapon: Basic Damage + Spell Power.
  * Armor/Helmet/Cape: Health + Defense; Amulet/Ring/Earring: two meaningful core/resource stats.
  * Additional stats and combat effects define the build.
  */
@@ -41,11 +41,11 @@ const authoredItems: Record<ItemId, AuthoredItemDefinition> = {
   'grove-bark': material('grove-bark', 'Grove Bark', 'Resilient bark shed by the Sentinel.', '▰', '#9eaa75', 'monster-loot', 'Grove Sentinel', 'creature', undefined, 'combat'),
   heartseed: material('heartseed', 'Heartseed', 'A living seed left by the Forest Heart.', '✤', '#f4c46e', 'boss-loot', 'Forest Heart first and repeat kills', 'creature', undefined, 'combat'),
 
-  'ember-staff': equipment({ id: 'ember-staff', name: 'Ember Staff', description: 'A blackened staff veined with embers that never cool; each reforging wakes a deeper furnace sealed within its core.', icon: '⚒', color: '#ff956f', equipmentTier: 1.0, buildTags: ['spell', 'fire', 'dot', 'status'], equipmentBudgetProfile: 'signature', equipmentSlot: 'weapon', weaponHands: 2 }),
-  'tideglass-wand': equipment({ id: 'tideglass-wand', name: 'Tideglass Wand', description: 'Sea-blue glass beads with cold water even in dry air, bending every incantation into a steadier and more deliberate current.', icon: '◇', color: '#64b7ff', equipmentTier: 1.0, buildTags: ['spell', 'water', 'barrier', 'status'], equipmentBudgetProfile: 'signature', equipmentSlot: 'weapon', weaponHands: 1 }),
-  'stoneheart-scepter': equipment({ id: 'stoneheart-scepter', name: 'Stoneheart Scepter', description: 'Carved around a living stone core, the scepter answers every spell with a deeper pulse, as though the earth itself were listening.', icon: '⬟', color: '#d5a36b', equipmentTier: 1.0, buildTags: ['spell', 'earth', 'defense', 'barrier'], equipmentBudgetProfile: 'signature', equipmentSlot: 'weapon', weaponHands: 1 }),
-  'windthread-wand': equipment({ id: 'windthread-wand', name: 'Windthread Wand', description: 'Silverwood bound with threads of captive wind trembles before a spell is spoken, snapping released magic forward like a drawn bowstring.', icon: '~', color: '#b9d8d0', equipmentTier: 1.0, buildTags: ['spell', 'air', 'crit', 'mana'], equipmentBudgetProfile: 'signature', equipmentSlot: 'weapon', weaponHands: 1 }),
-  'prismatic-focus': equipment({ id: 'prismatic-focus', name: 'Prismatic Focus', description: 'A many-faceted crystal that catches stray mana and folds it back toward the caster, its colors shifting with every school it touches.', icon: '◈', color: '#c8a8ff', equipmentTier: 1.0, buildTags: ['spell', 'mana', 'barrier', 'focus'], equipmentBudgetProfile: 'signature', equipmentSlot: 'offhand', equipmentPresentation: 'focus' }),
+  'ember-staff': equipment({ id: 'ember-staff', name: 'Ember Staff', description: 'A blackened staff veined with embers that never cool; each reforging wakes a deeper furnace sealed within its core.', icon: '⚒', color: '#ff956f', equipmentTier: 1.0, buildTags: ['spell', 'fire', 'dot', 'status'], equipmentBudgetProfile: 'signature', equipmentSlot: 'weapon' }),
+  'tideglass-wand': equipment({ id: 'tideglass-wand', name: 'Tideglass Wand', description: 'Sea-blue glass beads with cold water even in dry air, bending every incantation into a steadier and more deliberate current.', icon: '◇', color: '#64b7ff', equipmentTier: 1.0, buildTags: ['spell', 'water', 'barrier', 'status'], equipmentBudgetProfile: 'signature', equipmentSlot: 'weapon' }),
+  'stoneheart-scepter': equipment({ id: 'stoneheart-scepter', name: 'Stoneheart Scepter', description: 'Carved around a living stone core, the scepter answers every spell with a deeper pulse, as though the earth itself were listening.', icon: '⬟', color: '#d5a36b', equipmentTier: 1.0, buildTags: ['spell', 'earth', 'defense', 'barrier'], equipmentBudgetProfile: 'signature', equipmentSlot: 'weapon' }),
+  'windthread-wand': equipment({ id: 'windthread-wand', name: 'Windthread Wand', description: 'Silverwood bound with threads of captive wind trembles before a spell is spoken, snapping released magic forward like a drawn bowstring.', icon: '~', color: '#b9d8d0', equipmentTier: 1.0, buildTags: ['spell', 'air', 'crit', 'mana'], equipmentBudgetProfile: 'signature', equipmentSlot: 'weapon' }),
+  'prismatic-focus': equipment({ id: 'prismatic-focus', name: 'Prismatic Focus', description: 'A many-faceted crystal that catches stray mana and folds it back toward the caster, its colors shifting with every school it touches.', icon: '◈', color: '#c8a8ff', equipmentTier: 1.0, buildTags: ['spell', 'mana', 'barrier', 'focus'], equipmentBudgetProfile: 'signature', equipmentSlot: 'weapon' }),
   'wispweave-robe': equipment({ id: 'wispweave-robe', name: 'Wispweave Robe', description: 'Pale spirit-thread tightens around incoming force as though unseen hands were pulling every stitch into place at the moment of impact.', icon: '◇', color: '#a9b8d8', equipmentTier: 1.0, buildTags: ['defense', 'sustain', 'barrier', 'mana'], equipmentBudgetProfile: 'signature', equipmentSlot: 'armor' }),
   'windthread-charm': equipment({ id: 'windthread-charm', name: 'Windthread Charm', description: 'A knot of silver thread wound around a captured gust, keeping a sliver of the mind clear even while several spells compete for attention.', icon: '~', color: '#b9d8d0', equipmentTier: 1.0, buildTags: ['spell', 'air', 'focus'], equipmentBudgetProfile: 'signature', equipmentSlot: 'amulet', stats: { maxMana: 10, maxFocus: 10, spellPower: 8 }, combat: { modifiers: [{ key: 'spell-damage-percent', value: 0.1, originSourceKinds: ['spell'], damageTypes: ['air'] }] } }),
   'wispveil-hood': equipment({ id: 'wispveil-hood', name: 'Wispveil Hood', description: 'Violet mist clings to the inside of this hood; beneath its veil, wandering thoughts sharpen and hostile enchantments struggle to take hold.', icon: '◇', color: '#b8a8e8', equipmentTier: 1.0, buildTags: ['spell', 'mana', 'status', 'crit'], equipmentBudgetProfile: 'signature', equipmentSlot: 'helmet' }),
@@ -135,8 +135,6 @@ const validateEquipmentChassis = (item: ItemDefinition, errors: string[]) => {
   if (ARTIFACTS[item.id]) return
   if (item.equipmentSlot === 'weapon') requireEquipmentStats(item.id, item.stats, ['basicDamage', 'spellPower'], errors)
   if (item.equipmentSlot === 'armor' || item.equipmentSlot === 'helmet' || item.equipmentSlot === 'cape') requireEquipmentStats(item.id, item.stats, ['maxHealth', 'defense'], errors)
-  if (item.equipmentSlot === 'offhand' && item.equipmentPresentation === 'focus') requireEquipmentStats(item.id, item.stats, ['maxMana', 'spellPower'], errors)
-  if (item.equipmentSlot === 'offhand' && item.equipmentPresentation === 'shield') requireEquipmentStats(item.id, item.stats, ['maxHealth', 'defense', 'blockChance'], errors)
   if (item.equipmentSlot === 'amulet') requireEquipmentCoreStats(item.id, item.stats, ['maxHealth', 'maxMana', 'spellPower', 'defense'], 'amulets', errors)
   if (item.equipmentSlot === 'ring') requireEquipmentCoreStats(item.id, item.stats, ['maxHealth', 'maxMana', 'spellPower', 'manaRegen'], 'rings', errors)
   if (item.equipmentSlot === 'earring') requireEquipmentCoreStats(item.id, item.stats, ['maxHealth', 'maxMana', 'spellPower', 'manaRegen'], 'earrings', errors)
@@ -181,9 +179,6 @@ export const validateItemDefinitions = (items: Record<string, ItemDefinition> = 
     if (item.kind === 'equipment' && item.materialTier !== undefined) errors.push(`${item.id}: equipment must not define materialTier`)
     const materialTier = item.materialTier
     if (item.kind === 'material' && (materialTier === undefined || !Number.isInteger(materialTier) || materialTier < 1)) errors.push(`${item.id}: materialTier must be a positive integer`)
-    if (item.kind !== 'equipment' && item.weaponHands !== undefined) errors.push(`${item.id}: only equipment items may define weaponHands`)
-    if (item.weaponHands !== undefined && (item.equipmentSlot !== 'weapon' || (item.weaponHands !== 1 && item.weaponHands !== 2))) errors.push(`${item.id}: weaponHands requires a 1H or 2H weapon`)
-    if (item.equipmentSlot === 'weapon' && item.weaponHands === undefined) errors.push(`${item.id}: weapons must define weaponHands`)
     validateEquipmentStats(item.id, item.stats, errors)
     validateEquipmentChassis(item, errors)
     validateEquipmentMetadata(item, errors)

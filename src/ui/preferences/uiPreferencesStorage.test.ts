@@ -42,7 +42,7 @@ describe('screen UI preferences', () => {
     expect(preferences.screenState.transmutation.selectedRecipeId).toBe('fire-fragment')
     expect(preferences.screenState.transmutation).not.toHaveProperty('equipmentSlotFilter')
     expect(preferences.screenState.transmutation).not.toHaveProperty('unownedOnly')
-    setUiPreferences({ screenState: { artificing: { selectedRecipeId: 'ember-staff', slotFilter: 'weapon', weaponHandsFilter: 2, craftableOnly: true, ownershipFilter: 'unowned' } } })
+    setUiPreferences({ screenState: { artificing: { selectedRecipeId: 'ember-staff', slotFilter: 'weapon', craftableOnly: true, ownershipFilter: 'unowned' } } })
     expect(loadUiPreferences().screenState.artificing).toEqual(getUiPreferences().screenState.artificing)
     expect(loadUiPreferences().screenState.artificing.selectedRecipeId).toBe('ember-staff')
     expect(normalizeUiPreferences({ screenState: { artificing: { selectedRecipeId: 'fire-fragment' } } }).screenState.artificing.selectedRecipeId).toBeNull()
@@ -59,6 +59,13 @@ describe('screen UI preferences', () => {
     expect(normalizeUiPreferences({ screenState: { artificing: { slotFilter: 'earring' } } }).screenState.artificing.slotFilter).toBe('earring')
     setUiPreferences({ screenState: { artificing: { slotFilter: 'earring' } } })
     expect(loadUiPreferences().screenState.artificing.slotFilter).toBe('earring')
+  })
+
+  it('moves the removed legacy Offhand filter to the Weapon slot', () => {
+    const preferences = normalizeUiPreferences({ screenState: { artificing: { slotFilter: 'offhand', weaponHandsFilter: 2, offhandPresentationFilter: 'focus' } } })
+    expect(preferences.screenState.artificing.slotFilter).toBe('weapon')
+    expect(preferences.screenState.artificing).not.toHaveProperty('weaponHandsFilter')
+    expect(preferences.screenState.artificing).not.toHaveProperty('offhandPresentationFilter')
   })
 
   it('preserves and safely normalizes the Artificing player tier filter', () => {

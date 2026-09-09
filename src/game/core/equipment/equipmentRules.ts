@@ -1,12 +1,11 @@
 import { ITEMS } from '../../content/items/items'
 import type { EquipmentItemSlot, EquipmentPosition, GameState, ItemId, ItemDefinition } from '../../types'
 
-export const EQUIPMENT_POSITIONS: readonly EquipmentPosition[] = ['weapon', 'offhand', 'armor', 'helmet', 'cape', 'amulet', 'earring', 'ring1', 'ring2']
-export const EQUIPMENT_ITEM_SLOTS: readonly EquipmentItemSlot[] = ['weapon', 'offhand', 'armor', 'helmet', 'cape', 'amulet', 'earring', 'ring']
+export const EQUIPMENT_POSITIONS: readonly EquipmentPosition[] = ['weapon', 'armor', 'helmet', 'cape', 'amulet', 'earring', 'ring1', 'ring2']
+export const EQUIPMENT_ITEM_SLOTS: readonly EquipmentItemSlot[] = ['weapon', 'armor', 'helmet', 'cape', 'amulet', 'earring', 'ring']
 
 export const EQUIPMENT_POSITION_LABELS: Record<EquipmentPosition, string> = {
   weapon: 'Weapon',
-  offhand: 'Offhand',
   armor: 'Armor',
   helmet: 'Helmet',
   cape: 'Cape',
@@ -18,7 +17,6 @@ export const EQUIPMENT_POSITION_LABELS: Record<EquipmentPosition, string> = {
 
 export const EQUIPMENT_ITEM_SLOT_LABELS: Record<EquipmentItemSlot, string> = {
   weapon: 'Weapon',
-  offhand: 'Offhand',
   armor: 'Armor',
   helmet: 'Helmet',
   cape: 'Cape',
@@ -29,7 +27,6 @@ export const EQUIPMENT_ITEM_SLOT_LABELS: Record<EquipmentItemSlot, string> = {
 
 export const EMPTY_EQUIPMENT: Record<EquipmentPosition, null> = {
   weapon: null,
-  offhand: null,
   armor: null,
   helmet: null,
   cape: null,
@@ -41,11 +38,6 @@ export const EMPTY_EQUIPMENT: Record<EquipmentPosition, null> = {
 
 export function getItemDefinition(itemOrId: ItemId | ItemDefinition | null | undefined) {
   return typeof itemOrId === 'string' ? ITEMS[itemOrId] : itemOrId ?? null
-}
-
-export function isTwoHandedWeapon(itemOrId: ItemId | ItemDefinition | null | undefined) {
-  const item = getItemDefinition(itemOrId)
-  return item?.kind === 'equipment' && item.equipmentSlot === 'weapon' && item.weaponHands === 2
 }
 
 export function isWeapon(itemOrId: ItemId | ItemDefinition | null | undefined) {
@@ -98,7 +90,6 @@ export function normalizeEquipmentState(
     used.set(itemId, nextUsed)
   }
 
-  if (isTwoHandedWeapon(normalized.weapon)) normalized.offhand = null
   if (normalized.ring1 && normalized.ring1 === normalized.ring2) normalized.ring2 = null
   return normalized
 }

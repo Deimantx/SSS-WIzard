@@ -3,7 +3,7 @@
 .equipment-screen .card { overflow: hidden; }
 .equipment-armory-panel, .equipment-inspector { display: flex; flex-direction: column; }
 .equipment-armory-panel > .card-head, .equipment-inspector > .card-head { flex: 0 0 auto; }
-.equipment-loadout-board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-areas: "cape helmet earring" "weapon armor offhand" "ring1 amulet ring2"; gap: 12px; }
+.equipment-loadout-board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-areas: "cape helmet earring" "amulet weapon armor" "ring1 ring2 ring2"; gap: 12px; }
 .equipment-slot-card { display: flex; min-width: 0; height: 116px; min-height: 116px; flex-direction: column; gap: 7px; padding: 10px; border: 1px solid var(--ui-border); border-radius: 9px; color: var(--ui-text-soft); background: linear-gradient(145deg, color-mix(in srgb, var(--ui-panel-strong) 80%, transparent), color-mix(in srgb, var(--ui-panel) 92%, transparent)); cursor: pointer; transition: border-color .15s ease, transform .15s ease, background .15s ease; }
 .equipment-slot-grid-item { min-width: 0; }
 .equipment-slot-grid-item > .game-tooltip-trigger { height: 100%; }
@@ -12,7 +12,6 @@
 .equipment-loadout-board > .equipment-slot-grid-item[data-position="earring"] { grid-area: earring; }
 .equipment-loadout-board > .equipment-slot-grid-item[data-position="weapon"] { grid-area: weapon; }
 .equipment-loadout-board > .equipment-slot-grid-item[data-position="armor"] { grid-area: armor; }
-.equipment-loadout-board > .equipment-slot-grid-item[data-position="offhand"] { grid-area: offhand; }
 .equipment-loadout-board > .equipment-slot-grid-item[data-position="ring1"] { grid-area: ring1; }
 .equipment-loadout-board > .equipment-slot-grid-item[data-position="amulet"] { grid-area: amulet; }
 .equipment-loadout-board > .equipment-slot-grid-item[data-position="ring2"] { grid-area: ring2; }
@@ -28,9 +27,6 @@
 .equipment-slot-empty { display: grid; place-items: center; gap: 4px; height: 100%; color: var(--ui-text-muted); text-align: center; }
 .equipment-slot-empty span { color: var(--ui-accent); font-size: 23px; font-weight: 300; }
 .equipment-slot-empty small { font: var(--text-micro) var(--font-mono); letter-spacing: .05em; }
-.equipment-slot-lock { display: grid; place-items: center; gap: 6px; height: 100%; color: var(--ui-warning); text-align: center; }
-.equipment-slot-lock svg { opacity: .8; }
-.equipment-slot-lock strong { font: var(--text-micro) var(--font-mono); letter-spacing: .07em; }
 .equipment-loadout-note { margin: 12px 0 0; color: var(--ui-text-muted); font-size: var(--text-xs); line-height: 1.5; }
 .equipment-armory-count { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
 .equipment-search { display: block; margin-bottom: 8px; }
@@ -92,10 +88,7 @@
 .equipment-inspector-meta strong { color: var(--ui-text-soft); font-weight: 600; letter-spacing: .03em; }
 .equipment-copy-availability span { margin-right: auto; color: var(--ui-accent); letter-spacing: .1em; }
 .equipment-copy-availability strong { color: var(--ui-text-soft); font-weight: 600; letter-spacing: .04em; }
-.equipment-hands, .equipment-impact-warning, .equipment-incompatible, .equipment-current-position { display: flex; align-items: center; justify-content: space-between; gap: 9px; margin-top: 12px; padding: 9px; border: 1px solid var(--ui-border); border-radius: 7px; }
-.equipment-hands span, .equipment-hands strong { font: var(--text-micro) var(--font-mono); }
-.equipment-hands span { color: var(--ui-text-muted); }
-.equipment-hands strong { color: var(--ui-accent); }
+.equipment-impact-warning, .equipment-incompatible, .equipment-current-position { display: flex; align-items: center; justify-content: space-between; gap: 9px; margin-top: 12px; padding: 9px; border: 1px solid var(--ui-border); border-radius: 7px; }
 .equipment-impact-warning { justify-content: flex-start; color: var(--ui-warning); font-size: var(--text-xs); line-height: 1.4; }
 .equipment-incompatible { display: grid; justify-content: initial; color: var(--ui-warning); }
 .equipment-incompatible strong { font: var(--text-micro) var(--font-mono); letter-spacing: .1em; }
@@ -137,7 +130,7 @@
 
 @media (max-width: 760px) {
   .equipment-screen .ui-editor-grid-layout { min-height: 0; }
-  .equipment-loadout-board { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "cape helmet" "earring weapon" "armor offhand" "ring1 amulet" "ring2 ring2"; gap: 8px; }
+  .equipment-loadout-board { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "cape helmet" "earring amulet" "weapon armor" "ring1 ring2"; gap: 8px; }
   .equipment-slot-card { height: 116px; min-height: 116px; }
   .equipment-armory-grid { grid-template-columns: 1fr; }
   .equipment-impact-row { grid-template-columns: minmax(0, 1fr) auto; }

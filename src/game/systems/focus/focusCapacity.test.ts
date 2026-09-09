@@ -21,9 +21,20 @@ describe('Focus Capacity', () => {
     expect(getFocusCapacityBreakdown(state)).toEqual({ base: 100, improvement: 15, permanentRewards: 20, equipment: 10, debug: 0, total: 145 })
   })
 
+  it('uses effective Prismatic Focus Artifact stats for equipment Max Focus', () => {
+    const state = createInitialState()
+    state.equipment.weapon = 'prismatic-focus'
+    state.inventory['prismatic-focus'] = 1
+    state.artifactProgress['prismatic-focus'] = { level: 1, allocatedNodeIds: [], attunedNodeIds: [] }
+    expect(getFocusCapacityBreakdown(state).equipment).toBe(2)
+
+    state.artifactProgress['prismatic-focus'] = { level: 10, allocatedNodeIds: [], attunedNodeIds: [] }
+    expect(getFocusCapacityBreakdown(state).equipment).toBe(20)
+  })
+
   it('consumes the exact Prismatic-only Level 1 cost and updates derived Max Focus', () => {
     const state = createInitialState()
-    state.inventory['prismatic-fragment'] = 5
+    state.inventory['prismatic-fragment'] = 20
 
     expect(upgradeFocusCapacityAction(state)).toBe(true)
     expect(state.progress.focusImprovement).toEqual({ rank: 1, level: 1 })
@@ -56,10 +67,10 @@ describe('Focus Capacity', () => {
     const recipe = RECIPES['prismatic-fragment']
     expect(recipe).toMatchObject({ baseDurationMs: 24_000, manaCost: 50, output: { itemId: 'prismatic-fragment', quantity: 1 } })
     expect(recipe.ingredients).toEqual([
-      { itemId: 'fire-fragment', quantity: 2 },
-      { itemId: 'water-fragment', quantity: 2 },
-      { itemId: 'earth-fragment', quantity: 2 },
-      { itemId: 'air-fragment', quantity: 2 },
+      { itemId: 'fire-fragment', quantity: 6 },
+      { itemId: 'water-fragment', quantity: 6 },
+      { itemId: 'earth-fragment', quantity: 6 },
+      { itemId: 'air-fragment', quantity: 6 },
       { itemId: 'life-essence', quantity: 10 },
     ])
     expect(getRecipeCurrentEffectiveDuration(recipe, 1)).toBe(24_000)

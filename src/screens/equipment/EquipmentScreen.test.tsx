@@ -57,6 +57,12 @@ describe('EquipmentScreen stat typography structure', () => {
     expect(screen.getByText(/AVAILABLE 0/)).toBeTruthy()
   })
 
+  it('renders one Weapon slot and no Offhand position', () => {
+    const { container } = render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
+    expect([...container.querySelectorAll('.equipment-slot-card')].map((card) => card.getAttribute('data-position'))).toEqual(['cape', 'helmet', 'earring', 'amulet', 'weapon', 'armor', 'ring1', 'ring2'])
+    expect(container.querySelector('[data-position="offhand"]')).toBeNull()
+  })
+
   it('does not expose a stale Weapon unequip action when selecting a Ring from Armory', () => {
     const state = useGameStore.getState()
     useGameStore.setState({ equipment: { ...state.equipment, weapon: 'tideglass-wand' }, inventory: { ...state.inventory, 'tideglass-wand': 1, 'gravebinder-ring': 1 } })

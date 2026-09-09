@@ -13,7 +13,7 @@ export const UI_PREFERENCES_KEY = 'sss-wizard-ui-preferences-v1'
 export const defaultScreenPreferences = (): ScreenPreferences => ({
   inventory: { sourceOpen: false, researchValueOpen: false },
   transmutation: { selectedRecipeId: RECIPE_ORDER[0], pinnedRecipeId: null, categoryFilter: 'all', tierFilter: 'all', craftableOnly: false, activeOnly: false, collapsedCategories: { elemental: false, material: false } },
-  artificing: { selectedRecipeId: null, pinnedRecipeIds: [], pinsCollapsed: false, slotFilter: 'all', tierFilter: 'all', kindFilter: 'all', weaponHandsFilter: 'all', offhandPresentationFilter: 'all', craftableOnly: false, ownershipFilter: 'all' },
+  artificing: { selectedRecipeId: null, pinnedRecipeIds: [], pinsCollapsed: false, slotFilter: 'all', tierFilter: 'all', kindFilter: 'all', craftableOnly: false, ownershipFilter: 'all' },
   research: { selectedItemId: null, affinityFilter: 'all', targetSchoolId: 'fire' },
   combat: { combatLogFontSize: 'medium', combatDetailsMode: 'damage-done', dungeonStatisticsMode: 'runs' },
 })
@@ -59,6 +59,7 @@ export const normalizeUiPreferences = (value: unknown): UiPreferences => {
   const rawArtificing = screenState.artificing && typeof screenState.artificing === 'object' ? screenState.artificing : {}
   const a = rawArtificing as Partial<ScreenPreferences['artificing']>
   const oneOf = <T extends string | number>(value: unknown, options: readonly T[], fallback: T): T => options.includes(value as T) ? value as T : fallback
+  const rawSlotFilter = (a as { slotFilter?: unknown }).slotFilter
   const rawPinnedRecipeIds = (a as { pinnedRecipeIds?: unknown }).pinnedRecipeIds
   const pinnedRecipeSource = Array.isArray(rawPinnedRecipeIds) ? rawPinnedRecipeIds : [(a as { pinnedRecipeId?: unknown }).pinnedRecipeId]
   const pinnedRecipeIds = Array.from(new Set(pinnedRecipeSource.filter((id): id is ArtificingRecipeId => typeof id === 'string' && ARTIFICING_RECIPE_ORDER.includes(id as ArtificingRecipeId)))).slice(0, MAX_ARTIFICING_RECIPE_PINS)
@@ -66,11 +67,9 @@ export const normalizeUiPreferences = (value: unknown): UiPreferences => {
     selectedRecipeId: typeof a.selectedRecipeId === 'string' && ARTIFICING_RECIPE_ORDER.includes(a.selectedRecipeId as ArtificingRecipeId) ? a.selectedRecipeId as ArtificingRecipeId : null,
     pinnedRecipeIds,
     pinsCollapsed: a.pinsCollapsed === true,
-    slotFilter: oneOf(a.slotFilter, artificingSlotFilters, 'all'),
+    slotFilter: rawSlotFilter === 'offhand' ? 'weapon' : oneOf(rawSlotFilter, artificingSlotFilters, 'all'),
     tierFilter: oneOf(a.tierFilter, ['all', 1, 2, 3] as const, 'all'),
     kindFilter: oneOf(a.kindFilter, ['all', 'artifact', 'equipment'] as const, 'all'),
-    weaponHandsFilter: oneOf(a.weaponHandsFilter, ['all', 1, 2] as const, 'all'),
-    offhandPresentationFilter: oneOf(a.offhandPresentationFilter, ['all', 'shield', 'focus'] as const, 'all'),
     craftableOnly: a.craftableOnly === true,
     ownershipFilter: oneOf(a.ownershipFilter, ['all', 'owned', 'unowned'] as const, 'all'),
   }

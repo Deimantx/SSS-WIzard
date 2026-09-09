@@ -1,18 +1,62 @@
-.dark-portal-screen .screen-header { margin-bottom: 26px; }
-.dark-portal-card { position: relative; display: grid; grid-template-columns: minmax(150px, .7fr) minmax(0, 1.3fr); gap: 28px; align-items: center; max-width: 860px; min-height: 410px; overflow: hidden; border-color: color-mix(in srgb, #7760a8 48%, var(--ui-border)); background: radial-gradient(circle at 20% 42%, color-mix(in srgb, #7760a8 14%, transparent), transparent 28%), linear-gradient(145deg, color-mix(in srgb, #0a0714 92%, var(--ui-panel)), var(--ui-panel)); }
-.dark-portal-card::before { position: absolute; inset: 14px; border: 1px solid color-mix(in srgb, #7760a8 18%, transparent); border-radius: 7px; content: ''; pointer-events: none; }
-.dark-portal-visual { position: relative; display: grid; place-items: center; width: min(220px, 100%); aspect-ratio: 1; justify-self: center; border: 1px solid color-mix(in srgb, #7760a8 40%, var(--ui-border)); border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, #7760a8 22%, transparent), transparent 57%); box-shadow: 0 0 50px color-mix(in srgb, #160c2d 80%, transparent), inset 0 0 30px color-mix(in srgb, #7760a8 18%, transparent); }
-.dark-portal-ring { position: absolute; border: 1px solid color-mix(in srgb, #9e80dc 65%, transparent); border-radius: 50%; transform: rotate(-18deg); }
-.dark-portal-ring-outer { inset: 12%; border-right-color: transparent; border-bottom-color: color-mix(in srgb, #4c337a 70%, transparent); }
-.dark-portal-ring-inner { inset: 27%; border-left-color: transparent; border-top-color: color-mix(in srgb, #b59bea 70%, transparent); }
-.dark-portal-core { color: #bba2f0; font-size: 2.2rem; text-shadow: 0 0 22px color-mix(in srgb, #9e80dc 75%, transparent); }
-.dark-portal-copy { position: relative; display: grid; gap: 14px; max-width: 510px; color: var(--ui-text-soft); font-size: var(--text-md); line-height: 1.7; }
-.dark-portal-status-grid { position: relative; grid-column: 2; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 18px; border-top: 1px solid var(--ui-border); }
-.dark-portal-relic { display: flex; align-items: center; gap: 12px; }
-.dark-portal-relic > div { display: grid; gap: 4px; }
-.dark-portal-relic span, .dark-portal-endpoint > span { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .14em; }
-.dark-portal-relic strong { color: #cbb7f4; font: var(--text-lg) var(--font-mono); }
-.dark-portal-endpoint { position: relative; grid-column: 2; display: grid; gap: 6px; padding: 13px 14px; border: 1px solid color-mix(in srgb, #7760a8 28%, var(--ui-border)); border-radius: 7px; background: color-mix(in srgb, #7760a8 8%, transparent); }
-.dark-portal-endpoint strong { color: var(--ui-text-soft); font-size: var(--text-sm); font-weight: 500; }
-@media (max-width: 700px) { .dark-portal-card { grid-template-columns: 1fr; gap: 20px; min-height: 0; padding: 30px 22px; }.dark-portal-visual { width: min(170px, 62vw); }.dark-portal-copy, .dark-portal-status-grid, .dark-portal-endpoint { grid-column: 1; }.dark-portal-status-grid { align-items: flex-start; flex-direction: column; } }
-
+.dark-portal-screen .screen-header { margin-bottom: 22px; }
+.dark-portal-field { display: grid; grid-template-columns: minmax(132px, .64fr) minmax(430px, 1.9fr) minmax(132px, .64fr); grid-template-rows: auto minmax(420px, auto) auto; grid-template-areas: 'top top top' 'left core right' 'bottom bottom bottom'; gap: 14px; width: min(1120px, 100%); margin: 0 auto; }
+.dark-portal-shard-rail { display: grid; align-items: center; gap: 10px; }
+.dark-portal-shard-rail-top { grid-area: top; grid-template-columns: repeat(3, minmax(0, 172px)); justify-content: center; }
+.dark-portal-shard-rail-bottom { grid-area: bottom; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.dark-portal-shard-column { display: grid; align-content: space-around; gap: 12px; min-width: 0; }
+.dark-portal-shard-column-left { grid-area: left; }
+.dark-portal-shard-column-right { grid-area: right; }
+.dark-portal-shard-slot { position: relative; display: grid; grid-template-columns: 32px minmax(0, 1fr); align-items: center; gap: 8px; min-width: 0; min-height: 66px; padding: 9px 10px; overflow: hidden; border: 1px solid color-mix(in srgb, #7760a8 24%, var(--ui-border)); border-radius: 8px; background: linear-gradient(135deg, color-mix(in srgb, var(--ui-panel-strong) 91%, #0c0719), color-mix(in srgb, var(--ui-panel) 95%, #180d2d)); box-shadow: inset 0 1px rgb(255 255 255 / 3%); outline: 0; transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease, transform 140ms ease; }
+.dark-portal-shard-slot:hover, .dark-portal-shard-slot:focus-visible { border-color: color-mix(in srgb, #a58bd9 68%, var(--ui-border-strong)); background: linear-gradient(135deg, color-mix(in srgb, var(--ui-panel-strong) 84%, #160d29), color-mix(in srgb, var(--ui-panel) 92%, #251344)); box-shadow: 0 8px 25px rgb(0 0 0 / 20%), 0 0 20px rgb(119 96 168 / 10%); transform: translateY(-1px); }
+.dark-portal-shard-slot.is-owned { border-color: color-mix(in srgb, #a58bd9 66%, var(--ui-border)); background: linear-gradient(135deg, color-mix(in srgb, #7760a8 13%, var(--ui-panel-strong)), color-mix(in srgb, var(--ui-panel) 93%, #160b27)); box-shadow: 0 0 22px rgb(119 96 168 / 13%), inset 0 0 20px rgb(119 96 168 / 5%); }
+.dark-portal-shard-slot.is-owned:hover, .dark-portal-shard-slot.is-owned:focus-visible { border-color: #bba2f0; box-shadow: 0 8px 25px rgb(0 0 0 / 20%), 0 0 25px rgb(119 96 168 / 23%); }
+.dark-portal-shard-icon { display: grid; place-items: center; width: 31px; height: 38px; border: 1px solid color-mix(in srgb, #7760a8 34%, var(--ui-border)); border-radius: 6px; color: #6e6090; background: rgb(9 6 20 / 68%); font: var(--text-micro) var(--font-mono); }
+.dark-portal-shard-slot.is-owned .dark-portal-shard-icon { border-color: color-mix(in srgb, #a58bd9 48%, var(--ui-border)); background: rgb(119 96 168 / 11%); }
+.dark-portal-shard-icon .item-icon-tiny { width: 28px; height: 32px; font-size: 22px; filter: drop-shadow(0 0 8px color-mix(in srgb, currentColor 44%, transparent)); }
+.dark-portal-shard-copy { display: grid; min-width: 0; gap: 2px; }
+.dark-portal-shard-copy span, .dark-portal-shard-copy small { overflow: hidden; color: var(--ui-text-muted); font: 9px var(--font-mono); letter-spacing: .08em; text-overflow: ellipsis; white-space: nowrap; }
+.dark-portal-shard-copy strong { overflow: hidden; color: var(--ui-text-soft); font-size: var(--text-xs); font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.dark-portal-shard-slot.is-owned .dark-portal-shard-copy strong { color: #d5c8f4; }
+.dark-portal-shard-slot.is-owned .dark-portal-shard-copy small { color: var(--ui-success); }
+.dark-portal-shard-signal { position: absolute; top: 7px; right: 8px; width: 5px; height: 5px; border-radius: 50%; background: #bba2f0; box-shadow: 0 0 10px 2px rgb(187 162 240 / 60%); }
+.dark-portal-core-panel { position: relative; display: grid; align-content: center; justify-items: center; grid-area: core; min-width: 0; min-height: 420px; padding: 24px 30px; overflow: hidden; border: 1px solid color-mix(in srgb, #7760a8 56%, var(--ui-border-strong)); border-radius: 13px; background: radial-gradient(circle at 50% 40%, rgb(60 33 105 / 14%), transparent 32%), linear-gradient(145deg, color-mix(in srgb, #0a0714 94%, var(--ui-panel)), color-mix(in srgb, var(--ui-panel-strong) 96%, #100820)); box-shadow: 0 22px 55px rgb(0 0 0 / 28%), 0 0 42px rgb(119 96 168 / 13%), inset 0 0 55px rgb(28 13 54 / 25%); }
+.dark-portal-core-panel::before { position: absolute; inset: 12px; border: 1px solid rgb(165 139 217 / 16%); border-radius: 9px; content: ''; pointer-events: none; }
+.dark-portal-core-panel::after { position: absolute; inset: 0; background: linear-gradient(110deg, transparent 15%, rgb(187 162 240 / 5%) 48%, transparent 78%); content: ''; pointer-events: none; }
+.dark-portal-core-kicker { position: absolute; top: 25px; right: 28px; left: 28px; display: flex; justify-content: space-between; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .16em; }
+.dark-portal-core-kicker strong { color: #bba2f0; font-weight: 500; }
+.dark-portal-visual { position: relative; display: grid; place-items: center; width: clamp(210px, 34vw, 285px); aspect-ratio: 1; margin: 18px 0 24px; border: 1px solid rgb(165 139 217 / 50%); border-radius: 50%; background: radial-gradient(circle at 50% 47%, rgb(119 96 168 / 21%), rgb(8 5 17 / 91%) 48%, rgb(4 3 10 / 99%) 70%); box-shadow: 0 0 35px rgb(119 96 168 / 17%), 0 0 90px rgb(60 33 105 / 17%), inset 0 0 35px rgb(119 96 168 / 15%); }
+.dark-portal-visual::before, .dark-portal-visual::after { position: absolute; border: 1px solid rgb(187 162 240 / 48%); border-radius: 48% 52% 50% 46%; content: ''; transform: rotate(31deg); }
+.dark-portal-visual::before { inset: 7%; border-right-color: transparent; border-bottom-color: rgb(76 51 122 / 80%); animation: dark-portal-orbit 19s linear infinite; }
+.dark-portal-visual::after { inset: 18%; border-left-color: transparent; border-top-color: rgb(181 155 234 / 70%); transform: rotate(-24deg); animation: dark-portal-orbit-reverse 13s linear infinite; }
+.dark-portal-visual.is-awakened { box-shadow: 0 0 42px rgb(119 96 168 / 28%), 0 0 100px rgb(60 33 105 / 22%), inset 0 0 40px rgb(119 96 168 / 21%); }
+.dark-portal-halo { position: absolute; border: 1px dashed rgb(165 139 217 / 22%); border-radius: 50%; pointer-events: none; }
+.dark-portal-halo-outer { inset: -10%; animation: dark-portal-pulse 4.8s ease-in-out infinite; }
+.dark-portal-halo-mid { inset: 27%; border-style: solid; border-color: rgb(165 139 217 / 32%); }
+.dark-portal-halo-inner { inset: 38%; border-color: rgb(187 162 240 / 22%); }
+.dark-portal-core-glyph { position: relative; z-index: 1; color: #d1c1f6; font-size: clamp(40px, 6vw, 58px); text-shadow: 0 0 28px rgb(165 139 217 / 80%), 0 0 64px rgb(119 96 168 / 36%); animation: dark-portal-core-breathe 4.2s ease-in-out infinite; }
+.dark-portal-rune { position: absolute; z-index: 1; color: rgb(187 162 240 / 62%); font: var(--text-sm) var(--font-mono); }
+.dark-portal-rune-top { top: 14%; }
+.dark-portal-rune-right { right: 17%; }
+.dark-portal-rune-bottom { bottom: 14%; }
+.dark-portal-rune-left { left: 17%; }
+.dark-portal-restoration { position: relative; z-index: 1; display: grid; justify-items: center; width: min(390px, 100%); gap: 7px; text-align: center; }
+.dark-portal-restoration > span, .dark-portal-section-kicker, .dark-portal-lore-status span { color: #a58bd9; font: var(--text-micro) var(--font-mono); letter-spacing: .17em; }
+.dark-portal-restoration > strong { color: var(--ui-text); font: var(--text-md) var(--font-mono); letter-spacing: .04em; }
+.dark-portal-restoration small { color: var(--ui-text-muted); font-size: var(--text-xs); }
+.dark-portal-progress { width: 100%; height: 6px; margin: 4px 0; overflow: hidden; border: 1px solid rgb(165 139 217 / 32%); border-radius: 99px; background: rgb(6 4 14 / 86%); }
+.dark-portal-progress i { display: block; height: 100%; min-width: 0; border-radius: inherit; background: linear-gradient(90deg, #7760a8, #bba2f0); box-shadow: 0 0 12px rgb(165 139 217 / 50%); transition: width 300ms ease; }
+.dark-portal-lore { display: grid; grid-template-columns: minmax(180px, .65fr) minmax(0, 1.35fr) auto; align-items: center; gap: 22px; width: min(1120px, 100%); margin: 18px auto 0; padding: 18px 20px; border-color: color-mix(in srgb, #7760a8 32%, var(--ui-border)); background: linear-gradient(100deg, color-mix(in srgb, #7760a8 8%, var(--ui-panel-strong)), var(--ui-panel)); }
+.dark-portal-lore h2 { margin: 5px 0 0; color: var(--ui-text); font-size: var(--text-sm); font-weight: 600; }
+.dark-portal-lore p { margin: 0; color: var(--ui-text-soft); font-size: var(--text-sm); line-height: 1.55; }
+.dark-portal-lore-status { display: grid; gap: 4px; justify-items: end; white-space: nowrap; }
+.dark-portal-lore-status strong { color: #cbb7f4; font: var(--text-xs) var(--font-mono); }
+.dark-portal-lore-status small { color: var(--ui-text-muted); font-size: 10px; }
+@keyframes dark-portal-orbit { to { transform: rotate(391deg); } }
+@keyframes dark-portal-orbit-reverse { to { transform: rotate(-384deg); } }
+@keyframes dark-portal-pulse { 0%, 100% { opacity: .34; transform: scale(.98); } 50% { opacity: .72; transform: scale(1.03); } }
+@keyframes dark-portal-core-breathe { 0%, 100% { opacity: .72; transform: scale(.96); } 50% { opacity: 1; transform: scale(1.05); } }
+@media (max-width: 1050px) { .dark-portal-field { grid-template-columns: minmax(112px, .52fr) minmax(350px, 1.8fr) minmax(112px, .52fr); }.dark-portal-shard-slot { padding: 8px; }.dark-portal-shard-copy strong { font-size: 11px; }.dark-portal-shard-rail-top { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 900px) { .dark-portal-field { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto auto auto; grid-template-areas: 'core core' 'top top' 'left right' 'bottom bottom'; gap: 10px; }.dark-portal-core-panel { min-height: 390px; grid-area: core; padding: 22px 18px; }.dark-portal-shard-rail-top { grid-template-columns: repeat(3, minmax(0, 1fr)); }.dark-portal-shard-column { grid-template-rows: repeat(2, auto); align-content: initial; gap: 10px; }.dark-portal-shard-rail-bottom { grid-template-columns: repeat(2, minmax(0, 1fr)); }.dark-portal-lore { grid-template-columns: 1fr; gap: 12px; }.dark-portal-lore-status { justify-items: start; } }
+@media (max-width: 470px) { .dark-portal-shard-slot { grid-template-columns: 27px minmax(0, 1fr); min-height: 61px; padding: 7px; gap: 6px; }.dark-portal-shard-icon { width: 27px; height: 32px; }.dark-portal-shard-icon .item-icon-tiny { width: 24px; height: 28px; font-size: 19px; }.dark-portal-shard-copy span, .dark-portal-shard-copy small { font-size: 8px; }.dark-portal-shard-copy strong { font-size: 10px; }.dark-portal-visual { width: min(245px, 74vw); }.dark-portal-restoration > strong { font-size: 12px; } }
+@media (prefers-reduced-motion: reduce) { .dark-portal-visual::before, .dark-portal-visual::after, .dark-portal-halo-outer, .dark-portal-core-glyph { animation: none; }.dark-portal-progress i { transition: none; } }
+:root[data-reduced-motion='true'] .dark-portal-visual::before, :root[data-reduced-motion='true'] .dark-portal-visual::after, :root[data-reduced-motion='true'] .dark-portal-halo-outer, :root[data-reduced-motion='true'] .dark-portal-core-glyph { animation: none; }

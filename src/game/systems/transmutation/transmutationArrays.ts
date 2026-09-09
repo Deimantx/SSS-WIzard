@@ -49,3 +49,12 @@ export const getEffectiveTransmutationDuration = (state: Pick<GameState, 'progre
 export const getEffectiveTransmutationCraftsPerHour = (state: Pick<GameState, 'progress'>, recipe: RecipeDefinition, echoesAssigned: number) => getEffectiveTransmutationWorkMultiplier(state, echoesAssigned) * 3_600_000 / Math.max(1, recipe.baseDurationMs)
 
 export const getEffectiveTransmutationOutputPerHour = (state: Pick<GameState, 'progress'>, recipe: RecipeDefinition, echoesAssigned: number) => getEffectiveTransmutationCraftsPerHour(state, recipe, echoesAssigned) * recipe.output.quantity * (1 + getTransmutationArrayBonuses(state).replicationChance)
+
+export const getExpectedTransmutationIngredientConsumptionPerHour = (
+  state: Pick<GameState, 'progress'>,
+  recipe: RecipeDefinition,
+  echoesAssigned: number,
+  ingredientQuantity: number,
+) => getEffectiveTransmutationCraftsPerHour(state, recipe, echoesAssigned)
+  * Math.max(0, ingredientQuantity)
+  * (1 - getTransmutationArrayBonuses(state).preservationChance)

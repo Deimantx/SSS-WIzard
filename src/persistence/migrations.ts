@@ -28,6 +28,7 @@ import { normalizeCombatRngState } from '../game/systems/combat/combatRng'
 import { clampOfflineBankMs } from '../game/systems/offline-bank/offlineBankDuration'
 import { ARTIFACTS } from '../game/content/artifacts/artifacts'
 import { isScreenUnlocked, reconcileStoryProgression } from '../game/systems/story/storyProgression'
+import { getTransmutationArrayBonuses } from '../game/systems/transmutation/transmutationArrays'
 
 const statusValidationContext = createCombatValidationContext(STATUS_DEFINITIONS)
 
@@ -614,7 +615,9 @@ const normalizeTransmutationJobs = (migrated: GameState, raw: Record<string, any
   const nonTransmutationFocus = Math.max(0, Math.floor(migrated.activities.channeling.echoesAssigned)) * BALANCE.channeling.echoFocusCost
     + researchEchoFocus
     + Object.entries(migrated.activities.autoCast).filter(([, active]) => active).reduce((sum, [spellId]) => sum + (getSpellAutoCastFocusCost(migrated, spellId as SpellId) ?? 0), 0)
-  let remaining = Math.max(0, Math.min(BALANCE.transmutation.maxEchoes, Math.floor((migrated.player.maxFocus - nonTransmutationFocus) / BALANCE.transmutation.echoFocusCost)))
+  const effectiveTransmutationCapacity = BALANCE.transmutation.maxEchoes + getTransmutationArrayBonuses(migrated).echoCapacityBonus
+  const focusCapacity = Math.floor((migrated.player.maxFocus - nonTransmutationFocus) / BALANCE.transmutation.echoFocusCost)
+  let remaining = Math.max(0, Math.min(effectiveTransmutationCapacity, focusCapacity))
   const normalized: Partial<Record<TransmutationRecipeId, TransmutationJobState>> = {}
   RECIPE_ORDER.forEach((recipeId) => {
     const job = jobs[recipeId]

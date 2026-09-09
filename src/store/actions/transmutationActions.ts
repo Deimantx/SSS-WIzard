@@ -6,7 +6,6 @@ import { canReserveFocusAction } from './focusActions'
 import { pushNotification } from '../../game/engine'
 import { getRecipeUnlockReason, getTransmutationEchoesAssigned, getTransmutationEchoCapacity, isRecipeUnlocked } from '../../game/systems/transmutation/transmutationSelectors'
 import { grantItem } from '../../game/systems/inventory/itemAcquisition'
-import { isProtectedItem } from './inventoryActions'
 import { TRANSMUTATION_ARRAYS, getTransmutationArrayLevelCost, getTransmutationArrayFragmentItemId } from '../../game/content/transmutation/transmutationArrays'
 import type { GameState, TransmutationArrayId, TransmutationRecipeId } from '../../game/types'
 import { clamp } from '../../game/utils'
@@ -85,7 +84,7 @@ export const upgradeTransmutationArrayAction = (state: GameState, arrayId: Trans
   const cost = getTransmutationArrayLevelCost(arrayId, nextLevel)
   if (!cost) return false
   const requirements = [...(['fire', 'water', 'earth', 'air'] as const).map((element) => ({ itemId: getTransmutationArrayFragmentItemId(element), quantity: cost.fragments[element] })), { itemId: 'life-essence' as const, quantity: cost.lifeEssence }]
-  const blocked = requirements.find(({ itemId }) => isProtectedItem(state, itemId))
+  const blocked = requirements.find(({ itemId }) => Boolean(state.protectedItems[itemId]))
   if (blocked) { pushNotification(state, `Upgrade blocked. ${ITEMS[blocked.itemId].name} is protected.`, 'warning'); return false }
   const missing = requirements.find(({ itemId, quantity }) => getConsumableQuantity(state, itemId) < quantity)
   if (missing) { pushNotification(state, `Not enough ${ITEMS[missing.itemId].name}. Need ${missing.quantity}.`, 'warning'); return false }

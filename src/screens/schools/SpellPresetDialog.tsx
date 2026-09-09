@@ -4,6 +4,7 @@ import { FRAGMENT_ORDER, SCHOOLS } from '../../game/data/schools'
 import { SPELLS } from '../../game/content/spells/spells'
 import { DEFAULT_SPELL_PRESET_NAME, doesCurrentAutoCastMatchPreset, getSpellPresetFocusBreakdown, getSpellPresetFocusProjection, getSpellAutoCastFocusCost, isSpellUnlocked, SPELL_PRESET_NAME_MAX_LENGTH } from '../../game/systems/spells'
 import { formatSpellRank, getAllSpellsInOrder, getSpellRank } from '../../game/systems/spells/spellProgression'
+import type { SpellPresetProjectionState } from '../../game/systems/spells'
 import type { GameState, SchoolId, SpellId, SpellPreset, SpellPresetId } from '../../game/types'
 import { useGameStore } from '../../store/gameStore'
 import { Button, FilterBar, GameTooltip, ModalPortal, SearchInput, Status } from '../../components/ui'
@@ -30,7 +31,9 @@ export function SpellPresetDialog({ open, onClose }: { open: boolean; onClose: (
   const spellPresets = useGameStore((state) => state.spellPresets)
   const progress = useGameStore((state) => state.progress)
   const activities = useGameStore((state) => state.activities)
-  const debug = useGameStore((state) => state.debug)
+  const equipment = useGameStore((state) => state.equipment)
+  const artifactProgress = useGameStore((state) => state.artifactProgress)
+  const debugAllowFocusOverCap = useGameStore((state) => state.debug.allowFocusOverCap)
   const maxFocus = useGameStore((state) => state.player.maxFocus)
   const createSpellPreset = useGameStore((state) => state.createSpellPreset)
   const saveSpellPreset = useGameStore((state) => state.saveSpellPreset)
@@ -48,7 +51,7 @@ export function SpellPresetDialog({ open, onClose }: { open: boolean; onClose: (
   const [editingName, setEditingName] = useState(false)
   const [savedFeedback, setSavedFeedback] = useState(false)
   const nameBeforeEditRef = useRef('')
-  const state = useMemo(() => ({ spellPresets, progress, activities, player: { maxFocus }, debug }), [spellPresets, progress, activities, maxFocus, debug])
+  const state = useMemo<SpellPresetProjectionState>(() => ({ progress, activities, equipment, artifactProgress, player: { maxFocus }, debug: { allowFocusOverCap: debugAllowFocusOverCap } }), [progress, activities, equipment, artifactProgress, maxFocus, debugAllowFocusOverCap])
 
   useEffect(() => {
     if (!open) return
@@ -70,7 +73,7 @@ export function SpellPresetDialog({ open, onClose }: { open: boolean; onClose: (
   dirtyRef.current = dirty
   const focus = getSpellPresetFocusBreakdown(state)
   const projection = draft ? getSpellPresetFocusProjection(state, draft) : null
-  const activePresetId = useMemo(() => spellPresets.presets.find((preset) => doesCurrentAutoCastMatchPreset(state, preset))?.id ?? null, [spellPresets, activities, progress])
+  const activePresetId = useMemo(() => spellPresets.presets.find((preset) => doesCurrentAutoCastMatchPreset(state, preset))?.id ?? null, [spellPresets, state])
   const presetRows = useMemo(() => spellPresets.presets.map((preset) => ({ preset, projection: getSpellPresetFocusProjection(state, preset) })), [spellPresets, state])
 
   const requestClose = () => { if (dirtyRef.current) setConfirmation({ kind: 'close' }); else onClose() }
@@ -152,7 +155,7 @@ export function SpellPresetDialog({ open, onClose }: { open: boolean; onClose: (
       <header className="spell-preset-dialog-head"><div><div className="panel-kicker">AUTO-CAST CONFIGURATION</div><h2 id="spell-preset-dialog-title">SPELL PRESET MANAGER</h2><p id="spell-preset-dialog-description">Build reusable Auto-Cast setups and preview Focus usage.</p></div><Button icon variant="ghost" ariaLabel="Close spell preset manager" onClick={requestClose}><X size={16} aria-hidden="true" /></Button></header>
       <div className="spell-preset-dialog-body">
         <aside className="spell-preset-sidebar"><div className="spell-preset-list-head"><strong>PRESETS</strong><Button variant="secondary" onClick={() => requestAction({ kind: 'new' })}>+ NEW</Button></div>{draft.id === null && <button type="button" className="spell-preset-card spell-preset-local-row is-selected" onClick={() => requestAction({ kind: 'new' })}><span className="spell-preset-card-title">New Preset</span><PresetMiniIcons spellIds={draft.spellIds} /><small>0 Spells · 0 Focus</small><Status tone={dirty ? 'warning' : 'neutral'}>{dirty ? 'UNSAVED' : 'NEW'}</Status></button>}{presetRows.map(({ preset, projection: presetProjection }) => { const active = activePresetId === preset.id; const selected = preset.id === selectedId; const selectedDirty = selected && dirty; return <button type="button" className={`spell-preset-card${selected ? ' is-selected' : ''}`} key={preset.id} onClick={() => requestAction({ kind: 'select', preset })}><span className="spell-preset-card-title">{preset.name}</span><PresetMiniIcons spellIds={preset.spellIds} /><small>{preset.spellIds.length} Spells · {presetProjection.presetAutoCastFocus} Focus</small><Status tone={selectedDirty ? 'warning' : active ? 'success' : 'neutral'}>{selectedDirty ? 'UNSAVED' : active ? 'ACTIVE' : 'SAVED'}</Status></button> })}</aside>
-        <section className="spell-preset-available-column"><div className="dialog-section-head"><div><div className="panel-kicker">ACTION LIBRARY</div><h3>AVAILABLE SPELLS</h3></div><span>Known Spells only</span></div><div className="dialog-filter-row"><FilterBar options={[{ value: 'all' as const, label: 'All' }, ...FRAGMENT_ORDER.map((school) => ({ value: school, label: <><span className="schools-filter-glyph" aria-hidden="true">{SCHOOLS[school].glyph}</span>{SCHOOLS[school].name}</> }))]} value={availableSchool} onChange={setAvailableSchool} ariaLabel="Available spell school" /><SearchInput value={availableSearch} onChange={setAvailableSearch} placeholder="Search available Spells…" ariaLabel="Search available Spells" /></div><AvailableSpells state={{ progress }} selectedIds={draft.spellIds} school={availableSchool} search={availableSearch} onAdd={addSpell} /></section>
+        <section className="spell-preset-available-column"><div className="dialog-section-head"><div><div className="panel-kicker">ACTION LIBRARY</div><h3>AVAILABLE SPELLS</h3></div><span>Known Spells only</span></div><div className="dialog-filter-row"><FilterBar options={[{ value: 'all' as const, label: 'All' }, ...FRAGMENT_ORDER.map((school) => ({ value: school, label: <><span className="schools-filter-glyph" aria-hidden="true">{SCHOOLS[school].glyph}</span>{SCHOOLS[school].name}</> }))]} value={availableSchool} onChange={setAvailableSchool} ariaLabel="Available spell school" /><SearchInput value={availableSearch} onChange={setAvailableSearch} placeholder="Search available Spells…" ariaLabel="Search available Spells" /></div><AvailableSpells state={state} selectedIds={draft.spellIds} school={availableSchool} search={availableSearch} onAdd={addSpell} /></section>
         <section className="spell-preset-loadout-column"><div className="dialog-section-head"><div><div className="panel-kicker">EDITOR</div><h3>PRESET LOADOUT</h3></div>{dirty && <Status tone="warning">UNSAVED</Status>}</div><EditablePresetName value={draft.name} editing={editingName} error={nameError} autoFocus={draft.id === null && editingName} maxLength={SPELL_PRESET_NAME_MAX_LENGTH} onChange={rename} onStartEdit={beginRename} onCommit={commitName} onCancel={cancelRename} /><div className="spell-preset-contents">{draft.spellIds.map((spellId, index) => { const available = isSpellUnlocked(state, spellId); const spell = available ? SPELLS[spellId] : null; return <PresetLoadoutSpellTile key={`${spellId}-${index}`} spell={spell} spellId={spellId} index={index} total={draft.spellIds.length} rank={available ? getSpellRank(state, spellId) : null} focusCost={available ? getSpellAutoCastFocusCost(state, spellId) : null} onMove={moveSpell} onRemove={removeSpell} /> })}{!draft.spellIds.length && <div className="spell-preset-empty-loadout"><strong><Plus size={14} aria-hidden="true" /> ADD SPELLS</strong><span className="spell-preset-empty-caption">Choose Spells from the library.</span><span className="spell-preset-empty-legacy">NO SPELLS IN THIS PRESET</span></div>}</div><FocusBudget projection={projection} maxFocus={focus.maxFocus} /></section>
       </div>
       <footer className="spell-preset-dialog-foot"><div className="spell-preset-dialog-status">{savedFeedback && <Status tone="success">✓ SAVED</Status>}{!savedFeedback && applyError && <p role="alert">{applyError}</p>}{!savedFeedback && !applyError && projection.validSpellIds.length === 0 && <Status tone="warning">Add at least one Spell to enable Apply.</Status>}{!savedFeedback && !applyError && projection.validSpellIds.length > 0 && !projection.canApply && <Status tone="warning">Need {Math.max(0, projection.totalAfterApply - state.player.maxFocus)} more Focus.</Status>}{!savedFeedback && !applyError && projection.canApply && projection.unavailableSpellIds.length > 0 && <Status tone="warning">{projection.unavailableSpellIds.length} unavailable Spell{projection.unavailableSpellIds.length === 1 ? '' : 's'} will be skipped.</Status>}</div><div className="spell-preset-dialog-actions"><Button variant="ghost" disabled={!draft.id} onClick={duplicate}>DUPLICATE</Button><Button variant="danger" disabled={!draft.id} onClick={deletePreset}>DELETE</Button><span className="spell-preset-dialog-spacer" /><Button variant="ghost" onClick={requestClose}>CANCEL</Button><Button variant="secondary" onClick={save}>{savedFeedback ? '✓ SAVED' : 'SAVE'}</Button><GameTooltip content={<TooltipContent title="Apply" description="Replace live Auto-Cast with this loadout when Focus allows it." />}><Button variant="success" disabled={!projection.canApply} onClick={apply}>APPLY</Button></GameTooltip></div></footer>
@@ -160,7 +163,7 @@ export function SpellPresetDialog({ open, onClose }: { open: boolean; onClose: (
   </ModalPortal>
 }
 
-function AvailableSpells({ state, selectedIds, school, search, onAdd }: { state: Pick<GameState, 'progress'>; selectedIds: SpellId[]; school: 'all' | SchoolId; search: string; onAdd: (spellId: SpellId) => void }) {
+function AvailableSpells({ state, selectedIds, school, search, onAdd }: { state: Pick<GameState, 'progress' | 'equipment' | 'artifactProgress'>; selectedIds: SpellId[]; school: 'all' | SchoolId; search: string; onAdd: (spellId: SpellId) => void }) {
   const query = search.trim().toLocaleLowerCase()
   const spells = useMemo(() => getAllSpellsInOrder().filter((spell) => {
     if (school !== 'all' && spell.school !== school) return false

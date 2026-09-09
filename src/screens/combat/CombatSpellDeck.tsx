@@ -4,6 +4,7 @@ import { FRAGMENT_ORDER, SCHOOLS } from '../../game/data/schools'
 import { SPELLS } from '../../game/content/spells/spells'
 import { actorCannotAct } from '../../game/systems/combat/statusRuntime'
 import { doesCurrentAutoCastMatchPreset, getSpellPresetFocusBreakdown, getSpellPresetFocusProjection, getAllSpellsInOrder, getSpellRank } from '../../game/systems/spells'
+import type { SpellPresetProjectionState } from '../../game/systems/spells'
 import type { SchoolId, SpellId } from '../../game/types'
 import { useGameStore } from '../../store/gameStore'
 import { Button, Card, GameTooltip, SearchInput, SelectMenu, Status, type SelectMenuOption } from '../../components/ui'
@@ -44,9 +45,9 @@ export function CombatSpellDeck({ onRequiredHeightChange }: { onRequiredHeightCh
   const clearAutoCast = useGameStore((state) => state.clearAutoCast)
   const saveSpellPreset = useGameStore((state) => state.saveSpellPreset)
   const state = useMemo(() => ({ schools, equipment, artifactProgress, progress, activities, player, combat, debug: { allowFocusOverCap: debugAllowFocusOverCap } }), [schools, equipment, artifactProgress, progress, activities, player, combat, debugAllowFocusOverCap])
-  const focusState = useMemo(() => ({ activities, progress, player: { maxFocus }, debug: { allowFocusOverCap: debugAllowFocusOverCap } }), [activities, progress, maxFocus, debugAllowFocusOverCap])
+  const focusState = useMemo<SpellPresetProjectionState>(() => ({ activities, progress, equipment, artifactProgress, player: { maxFocus }, debug: { allowFocusOverCap: debugAllowFocusOverCap } }), [activities, progress, equipment, artifactProgress, maxFocus, debugAllowFocusOverCap])
   const focus = useMemo(() => getSpellPresetFocusBreakdown(focusState), [focusState])
-  const activePreset = useMemo(() => presets.find((preset) => doesCurrentAutoCastMatchPreset({ activities, progress }, preset)), [activities, presets, progress])
+  const activePreset = useMemo(() => presets.find((preset) => doesCurrentAutoCastMatchPreset(focusState, preset)), [focusState, presets])
   const presetOptions = useMemo<SelectMenuOption<string>[]>(() => [{ value: 'custom', label: 'CUSTOM' }, ...presets.map((preset) => ({ value: preset.id, label: preset.name }))], [presets])
   const schoolOptions = useMemo<SelectMenuOption<SchoolFilter>[]>(() => [{ value: 'all', label: 'All Schools' }, ...FRAGMENT_ORDER.map((schoolId) => ({ value: schoolId, label: <span className="combat-school-option"><span style={{ color: SCHOOLS[schoolId].color }}>{SCHOOLS[schoolId].glyph}</span>{SCHOOLS[schoolId].name}</span> }))], [])
   const query = search.trim().toLocaleLowerCase()

@@ -76,6 +76,21 @@ describe('CombatSpellDeck V2', () => {
     expect(activeButton.classList.contains('is-active')).toBe(true)
   })
 
+  it('renders active preset Focus calculations with equipment context', () => {
+    const current = useGameStore.getState()
+    useGameStore.setState({
+      progress: { ...current.progress, spellRanks: { ...current.progress.spellRanks, 'fire-bolt': 1 } },
+      activities: { ...current.activities, autoCast: { ...current.activities.autoCast, 'fire-bolt': true } },
+    })
+    const id = useGameStore.getState().createSpellPreset('Fire focus')
+    useGameStore.getState().saveSpellPreset({ id, name: 'Fire focus', spellIds: ['fire-bolt'] })
+
+    render(<TooltipProvider><CombatSpellDeck /></TooltipProvider>)
+
+    expect(screen.getByText('Fire focus', { selector: '.select-menu-label' })).toBeTruthy()
+    expect(screen.getByText('10 Focus', { selector: '.ui-focus' })).toBeTruthy()
+  })
+
   it('keeps cooldown presentation on the icon with a readable countdown', () => {
     const current = useGameStore.getState()
     useGameStore.setState({ combat: { ...current.combat, active: true, enemyId: 'forest-wisp', spellCooldowns: { ...current.combat.spellCooldowns, 'fire-bolt': 3400 } } })

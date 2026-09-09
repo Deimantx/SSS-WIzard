@@ -8,6 +8,7 @@ import { isBossMonster, MONSTERS } from '../game/content/monsters'
 import { TRANSMUTATION_RECIPES as RECIPES } from '../game/content/recipes/recipes'
 import { TRANSMUTATION_RECIPE_ORDER as RECIPE_ORDER } from '../game/content/recipes/recipes'
 import { ARTIFICING_RECIPES } from '../game/content/recipes/artificingRecipes'
+import { TRANSMUTATION_ARRAY_IDS } from '../game/content/transmutation/transmutationArrays'
 import { BALANCE } from '../game/core/balance/balance'
 import { SCHOOL_MAX_LEVEL, getSchoolTotalXpForLevel } from '../game/core/balance/schoolXpCurve'
 import { SPELLS } from '../game/content/spells/spells'
@@ -561,6 +562,17 @@ const migrateChanneling = (rawProgress: unknown, fresh: GameState['progress']): 
   }
 }
 
+const migrateTransmutationArrays = (rawProgress: unknown, fresh: GameState['progress']): GameState['progress']['transmutation'] => {
+  const source = isRecord(rawProgress) && isRecord(rawProgress.transmutation) ? rawProgress.transmutation : {}
+  const sourceArrays = isRecord(source.arrays) ? source.arrays : {}
+  const arrays = { ...fresh.transmutation.arrays }
+  TRANSMUTATION_ARRAY_IDS.forEach((id) => {
+    const rawArray = isRecord(sourceArrays[id]) ? sourceArrays[id] : {}
+    arrays[id] = { rank: 1, level: safeLevel(rawArray.level) }
+  })
+  return { arrays } as GameState['progress']['transmutation']
+}
+
 const LEGACY_CONDENSATION_DURATION_MS = 6000
 const normalizedProgress = (value: unknown, oldDuration: number, newDuration: number) => {
   const progress = nonNegativeNumber(value) ?? 0
@@ -640,6 +652,7 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   migrated.player.godMode = false
   migrated.player.healthRegenTimerMs = normalizeHealthRegenTimer(isRecord(raw.player) ? raw.player.healthRegenTimerMs : undefined)
   migrated.progress.channeling = migrateChanneling(raw.progress, createInitialState().progress)
+  migrated.progress.transmutation = migrateTransmutationArrays(raw.progress, createInitialState().progress)
   migrated.ui.screen = normalizeScreen(isRecord(raw.ui) ? raw.ui.screen : undefined, migrated.ui.screen)
   normalizeDynamicRecords(migrated, raw)
   normalizeLegacyProgressEvidence(migrated.progress)

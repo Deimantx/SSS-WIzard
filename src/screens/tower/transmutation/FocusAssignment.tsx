@@ -33,9 +33,9 @@ export function FocusAssignment({ selectedRecipeId, onSelect }: { selectedRecipe
   const pipCount = Math.min(10, Math.max(0, capacity))
   const focusBodyRef = useRef<HTMLDivElement>(null)
   useSmartScrollState(focusBodyRef, { dependencies: [selectedRecipeId, totalEchoes, capacity] })
-  const selectedCycle = getRecipeCurrentEffectiveDuration(recipe, selectedEchoes)
-  const selectedOutput = getRecipeCurrentOutputPerHour(recipe, selectedEchoes)
-  const selectedMana = getRecipeManaDemandPerSecond(recipe, selectedEchoes)
+  const selectedCycle = getRecipeCurrentEffectiveDuration(recipe, selectedEchoes, state)
+  const selectedOutput = getRecipeCurrentOutputPerHour(recipe, selectedEchoes, state)
+  const selectedMana = getRecipeManaDemandPerSecond(recipe, selectedEchoes, state)
   const changeFocus = (action: () => void) => {
     const before = selectFreeFocus(state)
     action()
@@ -93,8 +93,8 @@ function AssignmentRow({ recipeId, state, selected, onSelect, onAdd, onRemove }:
   const canAdd = status !== 'locked' && canAssignTransmutationEcho(state)
   const addReason = status === 'locked' ? getRecipeUnlockReason(recipe) ?? 'This recipe is locked.' : 'Assign one more Echo if Focus and capacity allow.'
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelect(recipeId) } }
-  const outputPerHour = getRecipeCurrentOutputPerHour(recipe, echoes)
-  const manaDemand = getRecipeManaDemandPerSecond(recipe, echoes)
+  const outputPerHour = getRecipeCurrentOutputPerHour(recipe, echoes, state)
+  const manaDemand = getRecipeManaDemandPerSecond(recipe, echoes, state)
   return <div ref={rowRef} role="button" tabIndex={0} className={`transmutation-assignment-row ${selected ? 'selected' : ''} ${completionPulseKey !== null ? 'craft-complete' : ''}`} onClick={() => onSelect(recipeId)} onKeyDown={handleKeyDown} aria-label={`Select ${recipe.name}, ${echoes} Echoes assigned`}><ItemIcon itemId={recipe.output.itemId} size="tiny" /><span className="transmutation-assignment-copy"><strong>{recipe.name}</strong><small>{echoes}E &middot; {statusLabel(status)}</small><small className="transmutation-assignment-metrics">{formatOutputRate(outputPerHour)} &middot; {formatManaDemand(manaDemand)}</small><Progress value={getRecipeProgressPercent(recipe, progress)} tone="gold" running={status === 'active' || status === 'mana-limited'} completionPulseKey={completionPulseKey ?? undefined} /></span><span className="transmutation-assignment-owned">OWNED {formatOwned(state.inventory[recipe.output.itemId] ?? 0)}</span><span onClick={(event) => event.stopPropagation()}><Button variant="ghost" ariaLabel={`Remove Echo from ${recipe.name}`} tooltip="Remove one Echo. Progress is preserved." onClick={() => onRemove(recipeId)}><Minus size={12} aria-hidden="true" /></Button></span><span onClick={(event) => event.stopPropagation()}><Button variant="ghost" ariaLabel={`Add Echo to ${recipe.name}`} tooltip={canAdd ? addReason : addReason} onClick={() => onAdd(recipeId)} disabled={!canAdd}><Plus size={12} aria-hidden="true" /></Button></span></div>
 }
 

@@ -23,7 +23,7 @@ import { type SaveReason } from '../persistence/saveConstants'
 import { getActiveProfileId } from '../profiles/profileSessionStore'
 import { updateProfileMetadata } from '../profiles/profileStorage'
 import { createInitialState } from './initialState'
-import type { ArtifactId, ChannelingDiscoveryId, DungeonId, EquipmentPosition, GameState, ItemId, ManaPillarId, MonsterId, TransmutationRecipeId, ResearchSlotId, SchoolId, ScreenId, SpellId, SpellPreset, SpellPresetId, StatusId, StoryEventId } from '../game/types'
+import type { ArtifactId, ChannelingDiscoveryId, DungeonId, EquipmentPosition, GameState, ItemId, ManaPillarId, MonsterId, TransmutationArrayId, TransmutationRecipeId, ResearchSlotId, SchoolId, ScreenId, SpellId, SpellPreset, SpellPresetId, StatusId, StoryEventId } from '../game/types'
 import { clamp } from '../game/utils'
 import { createDefaultDebugOverrides, resetCombatDebugState, resetDebugState, sanitizeCombatTimeScale, sanitizeDebugNumber } from './actions/debugActions'
 import { addItemAction, destroyItemAction, removeItemAction, sellItemAction, toggleItemProtectionAction } from './actions/inventoryActions'
@@ -33,7 +33,7 @@ import { debugLockSpellAction, debugUnlockSpellRankOneAction, resetSpellCooldown
 import { setChannelingEchoesAction, upgradeManaPillarAction, setManaPillarLevelAction, setChannelingManaGeneratedAction, setChannelingSustainAction, setChannelingDiscoveryAction } from './actions/channelingActions'
 import { canReserveFocusAction, setFocusImprovementLevelAction, upgradeFocusCapacityAction } from './actions/focusActions'
 import { assignMaxResearchEchoesAction, assignOneResearchEchoEachAction, assignResearchEchoAction, clearPreparedResearchAction, clearResearchEchoesAction, pauseResearchAction, prepareResearchAction, removePreparedResearchAction, removeResearchEchoAction, setResearchEchoesAction } from './actions/researchActions'
-import { assignMaxTransmutationEchoesAction, assignTransmutationEchoAction, clearTransmutationAssignmentsAction, clearTransmutationRecipeEchoesAction, grantTransmutationMissingIngredientsAction, removeTransmutationEchoAction, setTransmutationEchoCapacityOverrideAction, setTransmutationEchoesAction } from './actions/transmutationActions'
+import { assignMaxTransmutationEchoesAction, assignTransmutationEchoAction, clearTransmutationAssignmentsAction, clearTransmutationRecipeEchoesAction, forceSetTransmutationArrayLevelAction, grantTransmutationMissingIngredientsAction, removeTransmutationEchoAction, setTransmutationEchoCapacityOverrideAction, setTransmutationEchoesAction, upgradeTransmutationArrayAction } from './actions/transmutationActions'
 import { forceCompleteTransmutationCycle } from '../game/systems/transmutation/transmutationEngine'
 import { saveGameAction } from './actions/persistenceActions'
 import { advanceGameState } from '../game/systems/simulation/advanceGameState'
@@ -104,6 +104,8 @@ export interface GameActions {
   upgradeManaPillar: (pillarId: ManaPillarId) => void
   setManaPillarLevel: (pillarId: ManaPillarId, level: number) => void
   forceSetManaPillarLevel: (pillarId: ManaPillarId, level: number) => void
+  upgradeTransmutationArray: (arrayId: TransmutationArrayId) => boolean
+  forceSetTransmutationArrayLevel: (arrayId: TransmutationArrayId, level: number) => void
   upgradeFocusCapacity: () => void
   setFocusImprovementLevel: (level: number) => void
   setChannelingManaGenerated: (amount: number) => void
@@ -345,6 +347,8 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   upgradeManaPillar: (pillarId) => set((state) => { upgradeManaPillarAction(state, pillarId); return state }),
   setManaPillarLevel: (pillarId, level) => set((state) => { setManaPillarLevelAction(state, pillarId, level); return state }),
   forceSetManaPillarLevel: (pillarId, level) => get().setManaPillarLevel(pillarId, level),
+  upgradeTransmutationArray: (arrayId) => { let ok = false; set((state) => { ok = upgradeTransmutationArrayAction(state, arrayId); return state }); return ok },
+  forceSetTransmutationArrayLevel: (arrayId, level) => set((state) => { forceSetTransmutationArrayLevelAction(state, arrayId, sanitizeDebugNumber(level)); return state }),
   upgradeFocusCapacity: () => set((state) => { upgradeFocusCapacityAction(state); return state }),
   setFocusImprovementLevel: (level) => set((state) => { setFocusImprovementLevelAction(state, level); return state }),
   setChannelingManaGenerated: (amount) => set((state) => { setChannelingManaGeneratedAction(state, amount); return state }),

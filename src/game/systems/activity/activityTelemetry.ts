@@ -5,7 +5,7 @@ import { isRecipeUnlocked, TRANSMUTATION_RECIPES as RECIPES, TRANSMUTATION_RECIP
 import { SCHOOLS } from '../../content/schools/schools'
 import { BALANCE } from '../../core/balance/balance'
 import { getCurrentEnemyActionStep, getEnemyAction, getNextEnemyActionStep } from '../combat/actionRuntime'
-import { getRecipeCraftsPerHour, getRecipeCurrentRemainingDuration, getRecipeManaDemandPerSecond, getRecipeStatus } from '../transmutation/transmutationSelectors'
+import { getRecipeOutputPerHour, getRecipeCurrentRemainingDuration, getRecipeManaDemandPerSecond, getRecipeStatus } from '../transmutation/transmutationSelectors'
 import { getPreparedResearchJobs, getResearchBatchEtaMs, getResearchFocusReserved, getResearchItemsPerHour, getResearchJobProgressPercent, getResearchJobStatus, getResearchManaPerSecond, getResearchXpPerHour } from '../research/researchSelectors'
 import type { ActivityMetric, ActivityTelemetry, GameState } from '../../types'
 import { clamp, formatCompactDuration, formatNumber, formatRatePerHour, formatSignedRate } from '../../utils'
@@ -113,13 +113,13 @@ export const getActivityTelemetry = (state: GameState): ActivityTelemetry[] => {
   if (jobs.length > 0) {
     const totalEchoes = jobs.reduce((sum, entry) => sum + entry.echoes, 0)
     const totalFocus = totalEchoes * BALANCE.transmutation.echoFocusCost
-    const totalOutput = jobs.reduce((sum, entry) => sum + getRecipeCraftsPerHour(entry.recipe, entry.echoes) * entry.recipe.output.quantity, 0)
-    const manaDemand = jobs.reduce((sum, entry) => sum + getRecipeManaDemandPerSecond(entry.recipe, entry.echoes), 0)
+    const totalOutput = jobs.reduce((sum, entry) => sum + getRecipeOutputPerHour(entry.recipe, entry.echoes, state), 0)
+    const manaDemand = jobs.reduce((sum, entry) => sum + getRecipeManaDemandPerSecond(entry.recipe, entry.echoes, state), 0)
     const waitingMana = jobs.filter((entry) => entry.status === 'waiting-mana').length
     const manaLimited = jobs.filter((entry) => entry.status === 'mana-limited').length
     const waitingMaterials = jobs.filter((entry) => entry.status === 'waiting-materials').length
     const remainingMs = manaLimited === 0 && waitingMana === 0 && waitingMaterials === 0
-      ? Math.min(...jobs.map((entry) => getRecipeCurrentRemainingDuration(entry.recipe, entry.job.progressMs ?? 0, entry.echoes) ?? 0))
+      ? Math.min(...jobs.map((entry) => getRecipeCurrentRemainingDuration(entry.recipe, entry.job.progressMs ?? 0, entry.echoes, state) ?? 0))
       : undefined
     const status = waitingMaterials === jobs.length ? 'waiting-materials' : waitingMana === jobs.length ? 'waiting-mana' : manaLimited > 0 ? 'mana-limited' : 'running'
     activities.push({ id: 'transmutation', label: 'TRANSMUTATION', subtitle: `${jobs.length} recipe${jobs.length === 1 ? '' : 's'} · ${totalEchoes} Echoes`, screen: 'tower-transmutation', status, progressPercent: Math.round(jobs.reduce((sum, entry) => sum + (entry.job.progressMs ?? 0) / entry.recipe.baseDurationMs, 0) / jobs.length * 100), remainingMs, collapsedSummary: `Transmutation · ${jobs.length} recipe${jobs.length === 1 ? '' : 's'} · ${totalEchoes} Echoes`, metrics: [metric('Output', formatRatePerHour(totalOutput)), metric('Mana', `${formatSignedRate(-manaDemand)} /s`, 'negative'), metric('Focus', `${totalFocus}`), ...(waitingMana + waitingMaterials > 0 ? [metric('Waiting', `${waitingMana + waitingMaterials}`,'warning')] : [])], accent: 'gold' })

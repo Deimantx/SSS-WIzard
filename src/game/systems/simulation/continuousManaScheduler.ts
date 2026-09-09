@@ -5,6 +5,7 @@ import { SCHOOLS } from '../../content/schools/schools'
 import { BALANCE } from '../../core/balance/balance'
 import { getEquippedReservedQuantity } from '../../core/equipment/equipmentRules'
 import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
+import { getEffectiveTransmutationManaCost, getEffectiveTransmutationWorkMultiplier } from '../transmutation/transmutationArrays'
 
 export type ContinuousManaConsumerSystem = 'research' | 'transmutation'
 
@@ -92,7 +93,7 @@ export const getContinuousManaDemandPerSecond = (state: ContinuousManaDemandStat
     const echoes = Math.max(0, Math.floor(finiteNonNegative(job?.echoesAssigned)))
     const unlocked = isRecipeUnlocked(state, recipe)
     const hasMaterials = recipe.ingredients.every((ingredient) => getConsumableQuantity(state, ingredient.itemId) >= ingredient.quantity)
-    if (echoes > 0 && unlocked && recipe.manaCost > 0 && hasMaterials) demand += continuousManaPerSecond(recipe.manaCost, recipe.baseDurationMs, echoes)
+    if (echoes > 0 && unlocked && recipe.manaCost > 0 && hasMaterials) demand += continuousManaPerSecond(getEffectiveTransmutationManaCost(state, recipe), recipe.baseDurationMs, getEffectiveTransmutationWorkMultiplier(state, echoes))
   })
 
   const research = state.activities.research

@@ -4,11 +4,13 @@ import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption
 import type { GameState, ItemId, TransmutationRecipeId } from '../../types'
 import { grantItem } from '../inventory/itemAcquisition'
 import { allocateContinuousMana, CONTINUOUS_MANA_EPSILON, requestedManaForProgress, type ContinuousManaAllocation, type ContinuousManaFundingResult, type ContinuousManaWorkRequest } from '../simulation/continuousManaScheduler'
+import { getEffectiveTransmutationManaCost, getEffectiveTransmutationWorkMultiplier, getTransmutationArrayBonuses } from './transmutationArrays'
 
 export interface TransmutationAdvanceContext {
   mode: 'live' | 'banked'
   report?: { recordTransmutation: (recipeId: TransmutationRecipeId, output: ItemId, quantity: number, ingredients: { itemId: ItemId; quantity: number }[]) => void }
   onItemAcquired?: (itemId: ItemId, quantity: number) => void
+  random?: () => number
 }
 
 const finiteNonNegative = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : 0
@@ -52,16 +54,17 @@ export const buildTransmutationWorkRequests = (state: GameState, deltaMs: number
     const workCapacity = Number.isFinite(availableCrafts)
       ? Math.max(0, availableCrafts * recipe.baseDurationMs - progress)
       : Number.POSITIVE_INFINITY
-    const requestedProgressMs = Math.min(delta * echoes, workCapacity)
+    const requestedProgressMs = Math.min(delta * getEffectiveTransmutationWorkMultiplier(state, echoes), workCapacity)
     if (requestedProgressMs <= CONTINUOUS_MANA_EPSILON) continue
+    const manaPerCycle = getEffectiveTransmutationManaCost(state, recipe)
     requests.push({
       key: requestKey(recipeId),
       system: 'transmutation',
       sourceId: recipeId,
       requestedProgressMs,
-      manaPerCycle: recipe.manaCost,
+      manaPerCycle,
       cycleDurationMs: recipe.baseDurationMs,
-      requestedMana: requestedManaForProgress(recipe.manaCost, requestedProgressMs, recipe.baseDurationMs),
+      requestedMana: requestedManaForProgress(manaPerCycle, requestedProgressMs, recipe.baseDurationMs),
     })
   }
   return requests
@@ -122,11 +125,17 @@ export const forceCompleteTransmutationCycle = (state: GameState, recipeId: Tran
 /** Completion consumes discrete ingredients and creates output; Mana was paid while work progressed. */
 export const completeTransmutationCycle = (state: GameState, recipe: (typeof RECIPES)[TransmutationRecipeId], context: TransmutationAdvanceContext) => {
   if (RECIPES[recipe.id] !== recipe || !hasMaterialsForCycle(state, recipe)) return false
-  recipe.ingredients.forEach((ingredient) => {
+  const roll = context.random ?? Math.random
+  const bonuses = getTransmutationArrayBonuses(state)
+  const preserved = recipe.ingredients.length > 0 && roll() < bonuses.preservationChance
+  const consumedIngredients = preserved ? [] : recipe.ingredients
+  if (!preserved) recipe.ingredients.forEach((ingredient) => {
     state.inventory[ingredient.itemId] = Math.max(0, (state.inventory[ingredient.itemId] ?? 0) - ingredient.quantity)
   })
-  grantItem(state, recipe.output.itemId, recipe.output.quantity)
-  context.onItemAcquired?.(recipe.output.itemId, recipe.output.quantity)
-  context.report?.recordTransmutation(recipe.id, recipe.output.itemId, recipe.output.quantity, recipe.ingredients)
+  const replicated = roll() < bonuses.replicationChance
+  const outputQuantity = recipe.output.quantity * (replicated ? 2 : 1)
+  grantItem(state, recipe.output.itemId, outputQuantity)
+  context.onItemAcquired?.(recipe.output.itemId, outputQuantity)
+  context.report?.recordTransmutation(recipe.id, recipe.output.itemId, outputQuantity, consumedIngredients)
   return true
 }

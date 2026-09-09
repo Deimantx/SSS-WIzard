@@ -18,6 +18,7 @@ const panelOverrides: Record<string, PanelOverrides> = {
   'transmutation-recipes': { minW: 5, minH: 10, heightMode: 'bounded-scroll' },
   'transmutation-focus': { minW: 5, minH: 8, heightMode: 'bounded-scroll' },
   'transmutation-detail': { minW: 4, minH: 7 },
+  'transmutation-arrays': { minW: 8, minH: 20, heightMode: 'content' },
   'artificing-catalog': { minW: 4, minH: 16, heightMode: 'bounded-scroll' },
   'artificing-detail': { minW: 4, minH: 20, heightMode: 'content' },
   'combat-stage': { minW: 6, minH: 13, heightMode: 'bounded-scroll' },

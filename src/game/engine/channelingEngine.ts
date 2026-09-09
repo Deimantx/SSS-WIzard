@@ -48,7 +48,7 @@ export const getManaCapacityBreakdown = (state: ChannelingCapacityState): ManaCa
   const futureFlatBonus = 0
   const developerCapacityBonus = state.debug?.bonusMaxManaFlat ?? 0
   const preAmplification = state.player.baseMaxMana + arcaneReservoirBonus + deepReservoirBonus + equipmentBonus + futureFlatBonus + developerCapacityBonus
-  const astralExpansionMultiplier = 1 + pillarLevel(state, 'astral-expansion') * 0.05
+  const astralExpansionMultiplier = 1 + pillarLevel(state, 'astral-expansion') * 0.01
   return {
     base: state.player.baseMaxMana,
     arcaneReservoirBonus,

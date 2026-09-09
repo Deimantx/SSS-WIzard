@@ -66,7 +66,7 @@ export const MANA_PILLARS: Record<ManaPillarId, ManaPillarDefinition> = {
     description: 'Amplifies final Max Mana, including equipment bonuses.',
     effect: 'capacity-percent',
     effectLabel: 'MAX MANA AMPLIFICATION',
-    valuePerLevel: 5,
+    valuePerLevel: 1,
     maxLevel: 10,
     fragmentRequirements: ['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'],
   },

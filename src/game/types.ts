@@ -69,6 +69,7 @@ export type SpellType = 'damage' | 'heal' | 'barrier' | 'dot' | 'buff'
 import type { ActiveStatus, CombatEffect, StatusId, TraitDefinition } from './systems/combat/combatTypes'
 export type { ActionPattern, ActionStep, ActiveStatus, CombatActionDefinition, CombatCondition, CombatConditionContext, CombatDamageComponentEvent, CombatEffect, CombatEvent, CombatEventSink, CombatModifier, CombatResolutionContext, CombatSource, CombatTag, DamageComponent, DamageType, EffectTarget, Magnitude, ModifierKey, StatusId, StatusDefinition, TraitDefinition, TraitId } from './systems/combat/combatTypes'
 export type ManaPillarId = 'leyline-conduit' | 'arcane-reservoir' | 'mana-resonance' | 'astral-expansion' | 'echo-attunement'
+export type TransmutationArrayId = 'temporal-array' | 'conservation-array' | 'replication-array' | 'mana-refinement-array' | 'echo-stabilization-array'
 export type ChannelingDiscoveryId = 'stable-leyline' | 'echo-resonance' | 'deep-reservoir'
 export type RecipeId = 'fire-fragment' | 'water-fragment' | 'earth-fragment' | 'air-fragment' | 'prismatic-fragment' | 'ember-staff' | 'tideglass-wand' | 'stoneheart-scepter' | 'windthread-wand' | 'wispweave-robe' | 'windthread-charm' | 'wispveil-hood' | 'grovekeeper-mantle' | 'wispbound-ring' | 'wispglass-earring' | 'heartseed-necklace' | 'predator-hide-mantle' | 'fangwire-earring' | 'howling-signet' | 'greatbear-heartstone' | 'ossuary-mantle' | 'mourning-glass-earring' | 'soulglass-amulet' | 'gravebinder-ring' | 'edrins-signet'
 export type TransmutationRecipeId = 'fire-fragment' | 'water-fragment' | 'earth-fragment' | 'air-fragment' | 'prismatic-fragment'
@@ -310,6 +311,16 @@ export interface ProgressState {
   bossKillsByBoss: Partial<Record<MonsterId, number>>
   autoHuntBossByDungeon: Record<DungeonId, boolean>
   channeling: ChannelingProgress
+  transmutation: TransmutationProgress
+}
+
+export interface TransmutationProgress {
+  arrays: Record<TransmutationArrayId, TransmutationArrayState>
+}
+
+export interface TransmutationArrayState {
+  rank: number
+  level: number
 }
 
 export interface StoryProgressState {

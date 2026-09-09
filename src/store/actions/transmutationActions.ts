@@ -5,7 +5,9 @@ import { canReserveFocusAction } from './focusActions'
 import { pushNotification } from '../../game/engine'
 import { getRecipeUnlockReason, getTransmutationEchoesAssigned, getTransmutationEchoCapacity, isRecipeUnlocked } from '../../game/systems/transmutation/transmutationSelectors'
 import { grantItem } from '../../game/systems/inventory/itemAcquisition'
-import type { GameState, TransmutationRecipeId } from '../../game/types'
+import { TRANSMUTATION_ARRAYS, getTransmutationArrayLevelCost, getTransmutationArrayFragmentItemId } from '../../game/content/transmutation/transmutationArrays'
+import type { GameState, TransmutationArrayId, TransmutationRecipeId } from '../../game/types'
+import { clamp } from '../../game/utils'
 
 const ensureJob = (state: GameState, recipeId: TransmutationRecipeId) => state.activities.transmutation.jobs[recipeId] ?? (state.activities.transmutation.jobs[recipeId] = { echoesAssigned: 0, progressMs: 0 })
 
@@ -69,5 +71,34 @@ export const grantTransmutationMissingIngredientsAction = (state: GameState, rec
     const missing = Math.max(0, required - getConsumableQuantity(state, ingredient.itemId))
     if (missing > 0) grantItem(state, ingredient.itemId, missing)
   })
+  return true
+}
+
+export const upgradeTransmutationArrayAction = (state: GameState, arrayId: TransmutationArrayId) => {
+  const definition = TRANSMUTATION_ARRAYS[arrayId]
+  const array = state.progress.transmutation.arrays[arrayId]
+  if (!definition || !array) return false
+  const nextLevel = Math.floor(array.level) + 1
+  if (nextLevel > definition.maxLevel) { pushNotification(state, `${definition.name} is already mastered`, 'warning'); return false }
+  const cost = getTransmutationArrayLevelCost(arrayId, nextLevel)
+  if (!cost) return false
+  const requirements = [...(['fire', 'water', 'earth', 'air'] as const).map((element) => ({ itemId: getTransmutationArrayFragmentItemId(element), quantity: cost.fragments[element] })), { itemId: 'life-essence' as const, quantity: cost.lifeEssence }]
+  const blocked = requirements.find(({ itemId }) => isProtected(state, itemId))
+  if (blocked) { pushNotification(state, `Upgrade blocked. ${ITEMS[blocked.itemId].name} is protected.`, 'warning'); return false }
+  const missing = requirements.find(({ itemId, quantity }) => getConsumableQuantity(state, itemId) < quantity)
+  if (missing) { pushNotification(state, `Not enough ${ITEMS[missing.itemId].name}. Need ${missing.quantity}.`, 'warning'); return false }
+  requirements.forEach(({ itemId, quantity }) => { state.inventory[itemId] = Math.max(0, (state.inventory[itemId] ?? 0) - quantity) })
+  array.rank = 1
+  array.level = nextLevel
+  pushNotification(state, nextLevel === definition.maxLevel ? `${definition.name} mastered Rank I` : `${definition.name} reached Level ${nextLevel}`, 'success')
+  return true
+}
+
+export const forceSetTransmutationArrayLevelAction = (state: GameState, arrayId: TransmutationArrayId, level: number) => {
+  const array = state.progress.transmutation.arrays[arrayId]
+  const definition = TRANSMUTATION_ARRAYS[arrayId]
+  if (!array || !definition) return false
+  array.rank = 1
+  array.level = clamp(Math.round(Number.isFinite(level) ? level : 0), 0, definition.maxLevel)
   return true
 }

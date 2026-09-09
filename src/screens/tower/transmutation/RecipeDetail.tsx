@@ -7,7 +7,8 @@ import { ItemIcon, ItemRequirementTile, ItemUsesDialog } from '../../../componen
 import { ITEMS } from '../../../game/content/items/items'
 import type { RecipeDefinition } from '../../../game/content/recipes/recipes'
 import { getVisibleItemUsesForTransmutation } from '../../../game/presentation/transmutation/transmutationUsedInReadModel'
-import { getRecipeConsumableRequirements, getRecipeCurrentEffectiveDuration, getRecipeCurrentOutputPerHour, getRecipeCurrentSpeedMultiplier, getRecipeManaDemandPerSecond, getRecipeMaterialCapacity, getRecipeStatus, getRecipeUnlockReason, getTransmutationFocusReserved, getTransmutationJob, type RecipeConsumableRequirement, type RecipeMaterialCapacity, type TransmutationStatus } from '../../../game/systems/transmutation/transmutationSelectors'
+import { getRecipeConsumableRequirements, getRecipeCurrentEffectiveDuration, getRecipeCurrentOutputPerHour, getRecipeManaDemandPerSecond, getRecipeMaterialCapacity, getRecipeStatus, getRecipeUnlockReason, getTransmutationFocusReserved, getTransmutationJob, type RecipeConsumableRequirement, type RecipeMaterialCapacity, type TransmutationStatus } from '../../../game/systems/transmutation/transmutationSelectors'
+import { getEffectiveTransmutationManaCost, getEffectiveTransmutationWorkMultiplier, getTransmutationArrayBonuses } from '../../../game/systems/transmutation/transmutationArrays'
 import type { TransmutationRecipeId } from '../../../game/types'
 import { formatNumber, formatSignedRate, formatTime } from '../../../game/utils'
 import { useGameStore } from '../../../store/gameStore'
@@ -21,9 +22,10 @@ export function RecipeDetail({ recipe, onSelectRecipe }: { recipe: RecipeDefinit
   const item = ITEMS[recipe.output.itemId]
   const uses = getVisibleItemUsesForTransmutation(state, recipe.output.itemId)
   const requirements = getRecipeConsumableRequirements(state, recipe)
-  const currentCycle = getRecipeCurrentEffectiveDuration(recipe, echoes)
-  const currentSpeed = getRecipeCurrentSpeedMultiplier(echoes)
-  const currentOutput = getRecipeCurrentOutputPerHour(recipe, echoes)
+  const currentCycle = getRecipeCurrentEffectiveDuration(recipe, echoes, state)
+  const currentSpeed = getEffectiveTransmutationWorkMultiplier(state, echoes)
+  const currentOutput = getRecipeCurrentOutputPerHour(recipe, echoes, state)
+  const arrayBonuses = getTransmutationArrayBonuses(state)
   const materialCapacity = recipe.category === 'elemental' || recipe.category === 'material' ? getRecipeMaterialCapacity(requirements) : null
 
   return <Card className="transmutation-detail" title="RECIPE DETAIL">
@@ -37,11 +39,13 @@ export function RecipeDetail({ recipe, onSelectRecipe }: { recipe: RecipeDefinit
 
       {status !== 'locked' && <DetailSection title="CURRENT PRODUCTION"><CurrentProduction echoes={echoes} currentCycle={currentCycle} currentSpeed={currentSpeed} currentOutput={currentOutput} /></DetailSection>}
 
+      <DetailSection title="ARRAY EFFECTS"><div className="transmutation-stat-grid"><DetailStat label="CRAFT SPEED" value={`+${formatPercent(arrayBonuses.craftSpeedPct)}`} /><DetailStat label="MANA REDUCTION" value={`−${formatPercent(arrayBonuses.manaCostReductionPct)}`} /><DetailStat label="REPLICATION" value={`+${formatPercent(arrayBonuses.replicationChance)} expected`} /><DetailStat label="PRESERVATION" value={recipe.ingredients.length > 0 ? formatPercent(arrayBonuses.preservationChance) : 'N/A · no ingredients'} /></div></DetailSection>
+
       {requirements.length > 0 && <DetailSection title="MATERIAL REQUIREMENTS"><div className="transmutation-requirements-grid">{requirements.map((requirement) => <ItemRequirementTile key={requirement.itemId} itemId={requirement.itemId} owned={requirement.owned} available={requirement.available} equipped={requirement.equipped} required={requirement.required} protectedItem={requirement.protected} />)}</div></DetailSection>}
 
       {materialCapacity && (materialCapacity.cycles !== null || materialCapacity.missing.length > 0) && <MaterialCapacity capacity={materialCapacity} outputQuantity={recipe.output.quantity} />}
 
-      {recipe.manaCost > 0 && <section className="transmutation-detail-section transmutation-mana-requirement"><span className="eyebrow">MANA / CYCLE</span><strong>{formatNumber(recipe.manaCost)} · {formatSignedRate(-getRecipeManaDemandPerSecond(recipe, echoes))} demand</strong><Status tone={status === 'waiting-mana' ? 'warning' : status === 'mana-limited' ? 'warning' : 'success'}>{status === 'waiting-mana' ? 'WAITING' : status === 'mana-limited' ? 'LIMITED' : 'FUNDED'}</Status></section>}
+      {recipe.manaCost > 0 && <section className="transmutation-detail-section transmutation-mana-requirement"><span className="eyebrow">MANA / CYCLE</span><strong>{formatNumber(getEffectiveTransmutationManaCost(state, recipe))} effective · {formatSignedRate(-getRecipeManaDemandPerSecond(recipe, echoes, state))} demand</strong><small className="transmutation-base-note">BASE {formatNumber(recipe.manaCost)}</small><Status tone={status === 'waiting-mana' ? 'warning' : status === 'mana-limited' ? 'warning' : 'success'}>{status === 'waiting-mana' ? 'WAITING' : status === 'mana-limited' ? 'LIMITED' : 'FUNDED'}</Status></section>}
 
       <UsedInSummary uses={uses} onOpen={() => setUsesDialogOpen(true)} />
     </div>
@@ -66,3 +70,4 @@ function DetailSection({ title, children }: { title: string; children: ReactNode
 function DetailStat({ label, value }: { label: string; value: string }) { return <span><small>{label}</small><strong>{value}</strong></span> }
 function statusTone(status: TransmutationStatus): 'neutral' | 'success' | 'warning' | 'active' | 'locked' { return status === 'locked' ? 'locked' : status === 'active' ? 'active' : status === 'mana-limited' || status === 'waiting-mana' || status === 'waiting-materials' ? 'warning' : 'neutral' }
 function statusLabel(status: TransmutationStatus) { return status.replace('-', ' ').toUpperCase() }
+function formatPercent(value: number) { return `${(value * 100).toFixed(value * 100 % 1 === 0 ? 0 : 1)}%` }

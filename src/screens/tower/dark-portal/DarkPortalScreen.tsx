@@ -31,6 +31,9 @@ export function DarkPortalScreen() {
       <div className="dark-portal-shard-rail dark-portal-shard-rail-bottom">{bottomShards.map((shard) => <PortalShardSlot key={shard.id} shard={shard} selected={shard.id === selectedShard?.id} onSelect={() => setSelectedShardId(shard.id)} />)}</div>
     </div>
     <Card className="dark-portal-details">
+      <section className="dark-portal-shard-inspector" aria-live="polite">
+        <SelectedPortalShardInfo shard={selectedShard} ownedCount={ownedCount} totalSlots={totalSlots} />
+      </section>
       <aside className="dark-portal-details-sidebar">
         <section className="dark-portal-restoration-summary">
           <span className="dark-portal-section-kicker">RESTORATION STATE</span>
@@ -43,9 +46,6 @@ export function DarkPortalScreen() {
           <p>Major bosses can reveal unique portal shards. Recovered shards can open new rooms, systems, dungeons, and future paths through the Wizard Tower.</p>
         </section>
       </aside>
-      <section className="dark-portal-shard-inspector" aria-live="polite">
-        <SelectedPortalShardInfo shard={selectedShard} ownedCount={ownedCount} totalSlots={totalSlots} />
-      </section>
     </Card>
   </TowerFrame>
 }

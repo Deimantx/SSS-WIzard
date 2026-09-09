@@ -17,7 +17,7 @@ export const getManaDemandBreakdown = (state: GameState): ManaDemandSource[] => 
     const echoes = Math.max(0, Math.floor(state.activities.transmutation.jobs[recipeId]?.echoesAssigned ?? 0))
     const status = getRecipeStatus(state, recipe)
     if (!echoes || recipe.manaCost <= 0 || status === 'locked' || status === 'paused' || status === 'waiting-materials') return
-    sources.push({ id: `transmutation-${recipeId}`, label: `Transmutation · ${recipe.name}`, manaPerSecond: getRecipeManaDemandPerSecond(recipe, echoes) })
+    sources.push({ id: `transmutation-${recipeId}`, label: `Transmutation · ${recipe.name}`, manaPerSecond: getRecipeManaDemandPerSecond(recipe, echoes, state) })
   })
 
   const researchJobs = getPreparedResearchJobs(state).filter((job) => {

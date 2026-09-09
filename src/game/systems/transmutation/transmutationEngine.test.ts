@@ -62,4 +62,37 @@ describe('Transmutation simulation', () => {
     expect(state.inventory['ember-staff']).toBeUndefined()
     expect((state.activities.transmutation.jobs as Record<string, { echoesAssigned: number; progressMs: number }>)['ember-staff']).toBeUndefined()
   })
+
+  it('applies Temporal work speed and Mana Refinement to funded work', () => {
+    const state = createInitialState()
+    state.player.mana = 100
+    state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 1, progressMs: 0 }
+    state.progress.transmutation.arrays['temporal-array'].level = 10
+    state.progress.transmutation.arrays['mana-refinement-array'].level = 10
+
+    advanceTransmutation(state, 8_000, { mode: 'live' })
+
+    expect(state.inventory['fire-fragment']).toBe(1)
+    expect(state.activities.transmutation.jobs['fire-fragment']?.progressMs).toBeCloseTo(2_400, 6)
+    expect(state.player.mana).toBeCloseTo(74, 6)
+  })
+
+  it('resolves deterministic preservation and replication at completion', () => {
+    const state = createInitialState()
+    state.inventory['fire-fragment'] = 6
+    state.inventory['water-fragment'] = 6
+    state.inventory['earth-fragment'] = 6
+    state.inventory['air-fragment'] = 6
+    state.inventory['life-essence'] = 10
+    state.progress.transmutation.arrays['conservation-array'].level = 10
+    state.progress.transmutation.arrays['replication-array'].level = 10
+    const rolls = [0, 0]
+    const report: { quantity?: number; ingredients?: { itemId: import('../../types').ItemId; quantity: number }[] } = {}
+
+    expect(forceCompleteTransmutationCycle(state, 'prismatic-fragment', { mode: 'live', random: () => rolls.shift() ?? 1, report: { recordTransmutation: (_id, _output, quantity, ingredients) => { report.quantity = quantity; report.ingredients = ingredients } } })).toBe(true)
+    expect(state.inventory['prismatic-fragment']).toBe(2)
+    expect(state.inventory['fire-fragment']).toBe(6)
+    expect(state.inventory['life-essence']).toBe(10)
+    expect(report).toEqual({ quantity: 2, ingredients: [] })
+  })
 })

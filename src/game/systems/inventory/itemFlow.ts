@@ -1,6 +1,6 @@
 import { TRANSMUTATION_RECIPES as RECIPES } from '../../content/recipes/recipes'
 import { ITEMS } from '../../content/items/items'
-import { getRecipeCraftsPerHour, isRecipeUnlocked } from '../transmutation/transmutationSelectors'
+import { getRecipeCraftsPerHour, getRecipeOutputPerHour, isRecipeUnlocked } from '../transmutation/transmutationSelectors'
 import type { GameState, ItemId, ScreenId } from '../../types'
 import { getPreparedResearchJobs, getResearchItemsPerHour } from '../research/researchSelectors'
 
@@ -49,10 +49,10 @@ export function getItemFlow(itemId: ItemId, state: Pick<GameState, 'inventory' |
     if (!echoes || !isRecipeUnlocked(state, recipe)) return
     const ingredient = recipe.ingredients.find((candidate) => candidate.itemId === itemId)
     if (ingredient) {
-      const source = flowSource(recipe.name, ingredient.quantity * getRecipeCraftsPerHour(recipe, echoes), 'tower-transmutation')
+      const source = flowSource(recipe.name, ingredient.quantity * getRecipeCraftsPerHour(recipe, echoes, state), 'tower-transmutation')
       if (source) consumption.push(source)
     }
-    const output = recipe.output.itemId === itemId ? flowSource(recipe.name, recipe.output.quantity * getRecipeCraftsPerHour(recipe, echoes), 'tower-transmutation') : null
+    const output = recipe.output.itemId === itemId ? flowSource(recipe.name, getRecipeOutputPerHour(recipe, echoes, state), 'tower-transmutation') : null
     if (output) production.push(output)
   })
 

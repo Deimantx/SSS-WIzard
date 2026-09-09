@@ -8,7 +8,7 @@ import type { ChannelingDiscoveryId, GameState, ManaPillarId } from '../../game/
 import { clamp } from '../../game/utils'
 import { getConsumableQuantity } from '../../game/core/inventory/inventoryConsumption'
 
-const isProtected = (state: GameState, itemId: keyof GameState['inventory']) => Boolean(state.protectedItems[itemId]) || Object.values(state.equipment).includes(itemId)
+const isProtected = (state: GameState, itemId: keyof GameState['inventory']) => Boolean(state.protectedItems[itemId])
 const canReserveFocus = (state: GameState, amount: number) => state.debug.allowFocusOverCap || canReserveFocusNormal(state, amount)
 const announceDiscoveries = (state: GameState, ids: ChannelingDiscoveryId[]) => ids.forEach((id) => { const discovery = CHANNELING_DISCOVERIES.find((entry) => entry.id === id); if (discovery) pushNotification(state, `Arcane Discovery: ${discovery.name}`, 'success') })
 

@@ -1,11 +1,21 @@
-import { useLayoutEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Card } from '../../components/ui'
+import { useGameStore } from '../../store/gameStore'
 import { CombatDetailsPanel } from './CombatDetailsPanel'
 import { DungeonStatisticsPanel } from './DungeonStatisticsPanel'
+
+type CombatAnalyticsView = 'details' | 'dungeon'
 
 export function CombatAnalyticsPanel({ onRequiredHeightChange }: { onRequiredHeightChange?: (height: number) => void }) {
   const panelRef = useRef<HTMLElement>(null)
   const gridRef = useRef<HTMLDivElement>(null)
+  const combatActive = useGameStore((state) => state.combat.active)
+  const [view, setView] = useState<CombatAnalyticsView>('details')
+
+  useEffect(() => {
+    if (combatActive) setView('details')
+  }, [combatActive])
+
   useLayoutEffect(() => {
     const panel = panelRef.current
     const grid = gridRef.current
@@ -27,12 +37,14 @@ export function CombatAnalyticsPanel({ onRequiredHeightChange }: { onRequiredHei
   }, [onRequiredHeightChange])
   return <Card ref={panelRef} className="combat-analytics-panel">
     <header className="combat-analytics-head">
-      <span className="combat-subsection-label">COMBAT ANALYTICS</span>
-      <small>Live combat performance and dungeon session data.</small>
+      <div className="combat-analytics-title"><span className="combat-subsection-label">COMBAT ANALYTICS</span><small>Live performance, session, and farming readouts.</small></div>
+      <div className="combat-analytics-tabs" role="tablist" aria-label="Combat analytics views">
+        <button type="button" role="tab" aria-selected={view === 'details'} className={view === 'details' ? 'is-active' : ''} onClick={() => setView('details')}>COMBAT DETAILS</button>
+        <button type="button" role="tab" aria-selected={view === 'dungeon'} className={view === 'dungeon' ? 'is-active' : ''} onClick={() => setView('dungeon')}>DUNGEON STATISTICS</button>
+      </div>
     </header>
     <div ref={gridRef} className="combat-analytics-grid">
-      <CombatDetailsPanel />
-      <DungeonStatisticsPanel />
+      {view === 'details' ? <CombatDetailsPanel key="details" /> : <DungeonStatisticsPanel key="dungeon" />}
     </div>
   </Card>
 }

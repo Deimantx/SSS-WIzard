@@ -1,13 +1,18 @@
-import { Heart, Shield, ShieldAlert, Sparkles, Swords, TimerReset } from 'lucide-react'
-import { useMemo } from 'react'
+import { ShieldAlert, WandSparkles } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { DUNGEONS } from '../../game/content/dungeons/dungeons'
 import { MONSTERS } from '../../game/content/monsters'
+import { SPELLS } from '../../game/content/spells/spells'
 import { type CombatEffectPresentation } from '../../game/presentation/combat'
 import { getCombatFlowPresentation, type CombatFlowTimeline } from '../../game/presentation/combat/combatFlowPresentation'
+import { classifyEnemyActionPatternIcon } from '../../game/presentation/combat/enemyPatternIconPresentation'
 import { getCurrentEnemyActionStep, getEnemyAction, getEnemyActionPattern, getNextEnemyActionStep } from '../../game/systems/combat/actionRuntime'
 import { getCurrentEnemyActionTiming, getPlayerBasicTiming } from '../../game/systems/combat/actionTiming'
-import type { DungeonId } from '../../game/types'
+import type { DungeonId, MonsterId } from '../../game/types'
+import type { CombatLogEntry } from '../../game/systems/combat/combatTypes'
+import { buildCombatActionPresentation, type CombatActionPresentation } from '../../game/presentation/combat/combatActionPresentation'
 import { useGameStore } from '../../store/gameStore'
+import { useCombatLogStore } from '../../game/ui/combatLogStore'
 import { selectPlayerBasicDamage } from '../../store/selectors'
 import { formatTime } from '../../game/utils'
 import { GameTooltip, Progress } from '../../components/ui'
@@ -31,6 +36,11 @@ export function CombatFlowPanel({ selectedDungeonId }: { selectedDungeonId: Dung
   const nextStep = useGameStore((state) => state.combat.enemyId ? getNextEnemyActionStep(state) : undefined)
   const currentStep = useGameStore((state) => state.combat.enemyId ? getCurrentEnemyActionStep(state) : undefined)
   const currentAction = useGameStore((state) => state.combat.enemyId ? getEnemyAction(state, state.combat.enemyCurrentActionId) : undefined)
+  const latestEvent = useCombatLogStore((state) => {
+    const encounterStartIndex = state.entries.findIndex((entry) => entry.sourceId === 'encounter-start' && entry.targetMonsterId === combat.enemyId)
+    const encounterEntries = encounterStartIndex >= 0 ? state.entries.slice(0, encounterStartIndex) : state.entries
+    return encounterEntries.find((entry) => getRelevantCombatEvent(entry, combat.enemyId)) ?? null
+  })
   const presentation = useMemo(() => getCombatFlowPresentation({
     active: combat.active,
     dungeonId: combat.dungeonId,
@@ -59,14 +69,34 @@ export function CombatFlowPanel({ selectedDungeonId }: { selectedDungeonId: Dung
     currentAction,
   }), [combat, currentAction, currentStep, dungeon, enemy, enemyTiming, nextStep, pattern, playerBasicDamage, playerTiming, selectedDungeonId])
 
+  const recentEvent = useMemo(() => getRelevantCombatEvent(latestEvent, combat.enemyId), [combat.enemyId, latestEvent])
+  const nextIntent = useMemo(() => getNextIntent(presentation, nextStep), [nextStep, presentation])
+  const currentActor = presentation.enemyCurrentAction && presentation.enemyTimeline ? 'enemy' : 'player'
+  const currentTimeline = currentActor === 'enemy' ? presentation.enemyTimeline : presentation.playerTimeline
+  const currentLabel = currentActor === 'enemy' ? presentation.enemyCurrentAction?.label ?? 'Enemy Action' : 'Basic Attack'
+  const currentIcon = currentActor === 'enemy' && presentation.enemyCurrentAction ? <EnemyPatternIcon kind={presentation.enemyCurrentAction.iconKind} /> : <WandSparkles size={19} aria-hidden="true" />
+  const currentState = currentTimeline?.state === 'stunned' ? 'STUNNED' : currentTimeline?.state === 'paused' ? 'PAUSED' : currentTimeline?.state === 'disabled' ? 'DISABLED' : 'CASTING'
+  const currentEta = currentTimeline?.etaMs === null || currentTimeline?.etaMs === undefined ? '—' : formatTime(currentTimeline.etaMs)
+  const currentProgress = currentTimeline?.progress ?? 0
+
   if (presentation.mode === 'tower') return <section className="combat-flow-panel is-tower"><div className="combat-flow-kicker">AT THE TOWER</div><ShieldAlert size={28} aria-hidden="true" /><strong>Enter a Dungeon to begin Combat.</strong></section>
   if (presentation.mode === 'boss-ready') return <section className="combat-flow-panel is-boss-ready"><div className="combat-flow-kicker">BOSS READY</div><ShieldAlert size={28} aria-hidden="true" /><strong>{MONSTERS[presentation.dungeon.boss].name} awaits.</strong><p>The route is clear. Engage the Boss from the Run Bar when ready.</p></section>
   if (presentation.mode === 'encounter-delay') return <section className="combat-flow-panel is-encounter-delay"><div className="combat-flow-delay-label">NEXT ENCOUNTER</div><strong className="combat-flow-delay">{formatTime(presentation.encounterTimerMs)}</strong><Progress value={Math.max(0, Math.min(100, (1 - presentation.encounterTimerMs / Math.max(1, presentation.dungeon.encounterDelayMs)) * 100))} tone="time" label="Encounter progress" /><div className="combat-flow-delay-context"><span>Searching the {presentation.dungeon.name}...</span><span>THREAT {combat.threatCleared} / {presentation.dungeon.threatRequired}</span>{presentation.dungeon.threatRequired <= combat.threatCleared && <strong>BOSS APPROACHING</strong>}</div></section>
 
-  return <section className="combat-flow-panel" style={{ '--enemy-accent': presentation.enemy?.color } as React.CSSProperties}>
-    <header className="combat-flow-head"><span className="combat-flow-kicker">COMBAT FLOW</span></header>
-    <div className="combat-flow-timelines"><TimelineRow timeline={presentation.playerTimeline} /><TimelineRow timeline={presentation.enemyTimeline} /></div>
-    {presentation.enemyCurrentAction && <CurrentEnemyAction currentAction={presentation.enemyCurrentAction} basicDamage={presentation.enemy?.basicAttackDamage ?? 0} actionTimeMs={presentation.enemyTimeline?.baseWorkMs ?? presentation.currentActionDurationMs} progress={presentation.enemyTimeline?.progress ?? 0} />}
+  return <section className="combat-flow-panel" style={{ '--enemy-accent': presentation.enemy?.color } as CSSProperties}>
+    <header className="combat-flow-head"><div><span className="combat-flow-kicker">COMBAT STAGE</span><strong className="combat-flow-live-label">LIVE DUEL CONSOLE</strong></div><span className="combat-flow-live-dot">{combat.active ? 'LIVE' : 'STANDBY'}</span></header>
+    <div className={`combat-flow-stage is-actor-${currentActor}`}>
+      <div className="combat-flow-lanes"><TimelineRow timeline={presentation.playerTimeline} /><span className="combat-flow-lane-axis" aria-hidden="true"><i /><i /></span><TimelineRow timeline={presentation.enemyTimeline} /></div>
+      <div className={`combat-flow-action-core is-actor-${currentActor}${presentation.enemyCurrentAction?.special ? ' is-special' : ''}`}>
+        <span className={`combat-flow-action-glyph combat-pattern-icon-${currentActor === 'enemy' && presentation.enemyCurrentAction ? presentation.enemyCurrentAction.iconKind : 'basic-attack'}`}>{currentIcon}</span>
+        <span className="combat-subsection-label">{currentActor === 'enemy' ? 'ENEMY ACTION' : 'PLAYER ACTION'}</span>
+        <strong>{currentLabel}</strong>
+        <div className="combat-flow-action-meta"><span>{currentState}</span><b>{currentEta}</b></div>
+        <div className="combat-flow-action-progress" style={{ '--current-action-progress': `${Math.max(0, Math.min(100, currentProgress))}%` } as CSSProperties}><i /></div>
+      </div>
+      {recentEvent && <CombatImpactLayer event={recentEvent} enemy={presentation.enemy} />}
+    </div>
+    <CombatEnemyIntent intent={nextIntent} current={Boolean(presentation.enemyCurrentAction)} etaMs={presentation.enemyTimeline?.etaMs ?? null} />
     <div className="combat-flow-pattern"><div className="combat-subsection-label">ENEMY PATTERN</div><EnemyPatternRail pattern={presentation.pattern} enemy={presentation.enemy} currentStepIndex={presentation.currentStepIndex} currentStepId={presentation.currentStepId} currentActionId={presentation.currentActionId} currentPatternOriginId={presentation.currentPatternOriginId} currentProgress={presentation.enemyTimeline?.progress} currentActionDurationMs={presentation.enemyTimeline?.baseWorkMs ?? presentation.currentActionDurationMs} /></div>
   </section>
 }
@@ -80,22 +110,59 @@ function TimelineRow({ timeline }: { timeline: CombatFlowTimeline | null }) {
   return <div className={`combat-flow-timeline combat-flow-timeline-${timeline.actor}${stateClass}${progress >= 90 ? ' is-near-complete' : ''}`}><div className="combat-flow-timeline-head"><span className="combat-subsection-label">{label}</span><strong>{timeline.label}</strong><span className="combat-flow-timeline-time ui-time">{timeline.state === 'disabled' ? 'DISABLED' : timeline.etaMs === null ? 'PAUSED' : formatTime(timeline.etaMs)}</span></div><CombatActionProgress value={progress} />{blockLabel && <div className="combat-flow-paused">{blockLabel}</div>}</div>
 }
 
-function CombatEffectRow({ effect }: { effect: CombatEffectPresentation }) {
-  const value = effect.kind === 'damage' ? `${effect.value ?? ''} ${effect.label}`.trim() : effect.kind === 'barrier' ? `+${effect.value ?? 0} BARRIER` : effect.kind === 'heal' ? `HEAL ${effect.value ?? 0}` : effect.kind === 'status' ? effect.label.replace(/^Applies /, '').toUpperCase() : effect.kind === 'control' && effect.label === 'Basic Attack' ? `BASIC ATTACK DELAY ${effect.value ?? ''}`.trim() : [effect.label, effect.value].filter(Boolean).join(' ')
-  const detail = [effect.detail, effect.timeLabel].filter(Boolean).join(' · ')
-  return <div className={`combat-flow-effect effect-kind-${effect.kind}${effect.damageType ? ` damage-type-${effect.damageType}` : ''}`}><span className="combat-flow-effect-icon"><IntentEffectIcon kind={effect.kind} /></span><strong>{value}</strong>{effect.scalingLabel && <small>Scaling: {effect.scalingLabel}</small>}{detail && <small>{detail}</small>}</div>
+type CombatIntent = {
+  label: string
+  action: CombatActionPresentation | null
+  basic: CombatEffectPresentation | null
+  special: boolean
+  iconKind: ReturnType<typeof classifyEnemyActionPatternIcon>
+  basicDamage: number
+  actionTimeMs: number
 }
 
-function IntentEffectIcon({ kind }: { kind: CombatEffectPresentation['kind'] }) {
-  if (kind === 'damage') return <Swords size={13} aria-hidden="true" />
-  if (kind === 'barrier') return <Shield size={13} aria-hidden="true" />
-  if (kind === 'heal') return <Heart size={13} aria-hidden="true" />
-  if (kind === 'control') return <TimerReset size={13} aria-hidden="true" />
-  return <Sparkles size={13} aria-hidden="true" />
+function getNextIntent(presentation: ReturnType<typeof getCombatFlowPresentation>, nextStep: ReturnType<typeof getNextEnemyActionStep>): CombatIntent | null {
+  if (presentation.enemyCurrentAction) return { ...presentation.enemyCurrentAction, basicDamage: presentation.enemy?.basicAttackDamage ?? 0, actionTimeMs: presentation.enemyTimeline?.baseWorkMs ?? presentation.currentActionDurationMs }
+  if (!presentation.enemy || !nextStep) return null
+  if (nextStep.type === 'basic') return { label: 'Basic Attack', action: null, basic: buildBasicAttackPresentation(presentation.enemy.basicAttackDamage, presentation.enemy.basicAttackTimeMs).effects[0] ?? null, special: false, iconKind: 'basic-attack', basicDamage: presentation.enemy.basicAttackDamage, actionTimeMs: presentation.enemy.basicAttackTimeMs }
+  const action = presentation.enemy.actions[nextStep.actionId]
+  if (!action) return null
+  return { label: action.name, action: buildCombatActionPresentation(action, { actor: 'enemy', kind: 'action', sourceMonsterId: presentation.enemy.id }, { monster: presentation.enemy }), basic: null, special: true, iconKind: classifyEnemyActionPatternIcon(action), basicDamage: presentation.enemy.basicAttackDamage, actionTimeMs: action.actionTimeMs }
 }
 
-function CurrentEnemyAction({ currentAction, basicDamage, actionTimeMs, progress }: { currentAction: NonNullable<ReturnType<typeof getCombatFlowPresentation>['enemyCurrentAction']>; basicDamage: number; actionTimeMs: number; progress: number }) {
-  const action = currentAction.action ?? (currentAction.basic ? buildBasicAttackPresentation(basicDamage, actionTimeMs) : null)
-  const style = { '--current-action-progress': `${Math.max(0, Math.min(100, progress))}%` } as React.CSSProperties
-  return <GameTooltip block wide placement="bottom" accent={currentAction.special ? 'warning' : 'neutral'} content={action ? <EnemyActionTooltip action={action} /> : undefined}><div className={`combat-flow-current-action${currentAction.special ? ' is-special' : ''} combat-current-action-${currentAction.iconKind}`}><div className="combat-flow-subhead"><span style={style} className={`combat-flow-current-action-icon combat-pattern-icon-${currentAction.iconKind}`}><EnemyPatternIcon kind={currentAction.iconKind} /></span><span className="combat-subsection-label">CURRENT ACTION</span><strong>{currentAction.label}</strong></div>{currentAction.action ? <div className="combat-flow-effects">{currentAction.action.effects.map((effect, index) => <CombatEffectRow key={`${effect.label}-${index}`} effect={effect} />)}</div> : currentAction.basic ? <div className="combat-flow-effects"><CombatEffectRow effect={currentAction.basic} /></div> : null}</div></GameTooltip>
+function CombatEnemyIntent({ intent, current, etaMs }: { intent: CombatIntent | null; current: boolean; etaMs: number | null }) {
+  if (!intent) return null
+  const action = intent.action ?? (intent.basic ? buildBasicAttackPresentation(intent.basicDamage, intent.actionTimeMs) : null)
+  const countdown = current && etaMs !== null ? formatTime(etaMs) : 'NEXT UP'
+  return <GameTooltip block wide placement="bottom" accent={intent.special ? 'warning' : 'neutral'} content={action ? <EnemyActionTooltip action={action} /> : undefined}><div className={`combat-enemy-intent${intent.special ? ' is-special' : ''}`}><div className="combat-enemy-intent-icon"><EnemyPatternIcon kind={intent.iconKind} /></div><div className="combat-enemy-intent-copy"><span className="combat-subsection-label">{current ? 'ENEMY INTENT' : 'NEXT ENEMY INTENT'}</span><strong>{intent.label}</strong><small>{intent.special ? 'Canonical special action' : 'Basic attack'} · {countdown}</small></div><span className="combat-enemy-intent-countdown">{countdown}</span></div></GameTooltip>
+}
+
+function getRelevantCombatEvent(event: CombatLogEntry | null, enemyId: MonsterId | null) {
+  if (!event || !enemyId || event.category === 'system' || event.category === 'loot' || event.category === 'death') return null
+  const belongsToEncounter = event.source.kind === 'enemy' ? event.source.monsterId === enemyId : event.target === 'enemy' && event.targetMonsterId === enemyId
+  return belongsToEncounter ? event : null
+}
+
+function CombatImpactLayer({ event, enemy }: { event: CombatLogEntry; enemy: ReturnType<typeof getCombatFlowPresentation>['enemy'] }) {
+  const initialSequence = useRef(event.sequence)
+  const [isNew, setIsNew] = useState(false)
+  useEffect(() => {
+    if (event.sequence === initialSequence.current) return
+    initialSequence.current = event.sequence
+    setIsNew(true)
+    const timer = window.setTimeout(() => setIsNew(false), 240)
+    return () => window.clearTimeout(timer)
+  }, [event.sequence])
+  const actor = event.source.kind === 'enemy' ? 'enemy' : event.source.kind === 'player' ? 'player' : null
+  if (!actor) return null
+  const periodic = event.sourceKind === 'status' || event.originTags?.includes('dot') || event.originTags?.includes('hot')
+  const spellName = event.spellId && SPELLS[event.spellId] ? SPELLS[event.spellId].name : null
+  const actionName = event.actionId && enemy?.actions[event.actionId] ? enemy.actions[event.actionId].name : null
+  const label = spellName ?? actionName ?? (event.category === 'basic-attack' ? 'Basic Attack' : event.category === 'enemy-action' ? 'Enemy Action' : actor === 'player' ? 'Player Effect' : 'Enemy Effect')
+  const healthDamage = event.healthDamage ?? 0
+  const barrierAbsorbed = event.barrierAbsorbed ?? 0
+  const amount = event.amount ?? event.effectiveAmount ?? 0
+  const result = healthDamage > 0 ? `−${Math.round(healthDamage).toLocaleString()} HP` : barrierAbsorbed > 0 ? `${Math.round(barrierAbsorbed).toLocaleString()} BARRIER ABSORBED` : event.category === 'heal' ? `+${Math.round(event.effectiveAmount ?? amount).toLocaleString()} HP` : event.category === 'barrier' ? `+${Math.round(event.barrierGranted ?? amount).toLocaleString()} BARRIER` : event.category === 'status' ? 'STATUS APPLIED' : event.category === 'spell' ? 'SPELL RESOLVED' : 'RESOLVED'
+  const resultKind = healthDamage > 0 || barrierAbsorbed > 0 ? 'damage' : event.category === 'heal' ? 'heal' : event.category === 'barrier' ? 'barrier' : event.category === 'status' ? 'status' : 'neutral'
+  const actorLabel = event.category === 'heal' || event.category === 'barrier' || event.category === 'status' ? `${actor === 'player' ? 'PLAYER' : 'ENEMY'} EFFECT` : actor === 'player' ? 'PLAYER HIT' : 'ENEMY HIT'
+  return <div className={`combat-impact-layer is-${actor}${periodic ? ' is-periodic' : ''}${isNew ? ' is-new' : ''}`} aria-hidden="true"><span className="combat-impact-energy" /><span className="combat-impact-flash" /><div className={`combat-impact-result is-${resultKind}`}><span>{actorLabel}</span><strong>{label}</strong><small>{result}</small></div></div>
 }

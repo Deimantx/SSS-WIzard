@@ -997,28 +997,6 @@
   border-right: 1px solid var(--ui-border);
   background: color-mix(in srgb, var(--ui-panel) 68%, transparent);
 }
-.combat-navigation-panel-head {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 12px;
-  min-width: 0;
-}
-.combat-navigation-panel-head > div {
-  display: grid;
-  gap: 4px;
-  min-width: 0;
-}
-.combat-navigation-panel-head strong {
-  color: var(--ui-text);
-  font-size: 15px;
-}
-.combat-navigation-panel-head small {
-  color: var(--ui-text-muted);
-  font: var(--text-micro) var(--font-mono);
-  letter-spacing: 0.08em;
-  white-space: nowrap;
-}
 .atlas-map-view {
   display: flex;
   min-width: 0;
@@ -1222,6 +1200,9 @@
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--ui-accent) 14%, transparent), 0 0 28px color-mix(in srgb, var(--ui-accent) 34%, transparent), inset 0 0 20px color-mix(in srgb, var(--ui-accent) 16%, transparent);
   transform: translateY(-2px);
 }
+.atlas-waypoint.is-selected .atlas-waypoint-halo {
+  animation: atlas-waypoint-breathe 2.6s ease-in-out infinite;
+}
 .atlas-waypoint:hover .atlas-waypoint-halo,
 .atlas-waypoint:focus-visible .atlas-waypoint-halo,
 .atlas-waypoint.is-selected .atlas-waypoint-halo {
@@ -1314,7 +1295,6 @@
   min-width: 0;
 }
 .atlas-world-plate-copy strong,
-.atlas-world-plate-copy small,
 .atlas-world-plate-copy em {
   display: block;
   overflow: hidden;
@@ -1325,7 +1305,6 @@
   color: var(--ui-text);
   font-size: 13px;
 }
-.atlas-world-plate-copy small,
 .atlas-world-plate-copy em {
   color: var(--ui-text-muted);
   font: var(--text-micro) var(--font-mono);
@@ -1354,26 +1333,13 @@
   border-right: 1px solid;
   border-bottom: 1px solid;
 }
-.arcane-atlas-helper {
-  position: absolute;
-  right: 12px;
-  bottom: 10px;
-  z-index: 3;
-  padding: 4px 7px;
-  border: 1px solid var(--ui-border);
-  border-radius: 4px;
-  color: var(--ui-text-muted);
-  background: color-mix(in srgb, var(--ui-panel-strong) 86%, transparent);
-  font: var(--text-micro) var(--font-mono);
-  letter-spacing: 0.07em;
-  pointer-events: none;
-}
-.arcane-atlas-helper span {
-  color: var(--ui-accent);
-}
 @keyframes arcane-atlas-view-in {
   from { opacity: 0; transform: translateY(5px); }
   to { opacity: 1; transform: translateY(0); }
+}
+@keyframes atlas-waypoint-breathe {
+  0%, 100% { opacity: 0.72; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.045); }
 }
 @media (prefers-reduced-motion: reduce) {
   .atlas-map-view,
@@ -1617,20 +1583,6 @@
   font-size: 10px;
   line-height: 1.4;
   text-align: right;
-}
-.combat-navigation-world-lore {
-  display: grid;
-  gap: 7px;
-  padding: 11px;
-  border: 1px solid color-mix(in srgb, var(--ui-accent) 26%, var(--ui-border));
-  border-radius: 7px;
-  background: color-mix(in srgb, var(--ui-accent) 6%, transparent);
-}
-.combat-navigation-world-lore p {
-  margin: 0;
-  color: var(--ui-text-muted);
-  font-size: 11px;
-  line-height: 1.45;
 }
 .combat-confirm-dialog {
   position: relative;
@@ -3711,14 +3663,6 @@
 @media (max-width: 480px) {
   .combat-navigation-mode-switch button {
     padding-inline: 7px;
-  }
-  .combat-navigation-panel-head {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 5px;
-  }
-  .combat-navigation-panel-head small {
-    white-space: normal;
   }
   .arcane-atlas-viewport {
     min-height: 420px;

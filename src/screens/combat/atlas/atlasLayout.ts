@@ -5,17 +5,17 @@ export const REGION_ATLAS_STAGE = { width: 1000, height: 460 } as const
 export const WORLD_ATLAS_STAGE = { width: 1000, height: 620 } as const
 
 export const REGION_WAYPOINT_LAYOUT: Record<DungeonId, { x: number; y: number }> = {
-  'whispering-woods': { x: 180, y: 145 },
-  'howling-den': { x: 500, y: 260 },
-  'abandoned-catacombs': { x: 820, y: 145 },
+  'whispering-woods': { x: 160, y: 230 },
+  'howling-den': { x: 500, y: 230 },
+  'abandoned-catacombs': { x: 840, y: 230 },
 }
 
 export const WORLD_REGION_SLOT_LAYOUT: Record<WorldRegionSlot, { x: number; y: number }> = {
-  north: { x: 500, y: 115 },
-  west: { x: 185, y: 310 },
+  north: { x: 500, y: 140 },
+  west: { x: 200, y: 310 },
   center: { x: 500, y: 310 },
-  east: { x: 815, y: 310 },
-  south: { x: 500, y: 505 },
+  east: { x: 800, y: 310 },
+  south: { x: 500, y: 480 },
 }
 
 export const WORLD_REGION_PLATE_BOUNDS = { width: 260, height: 142 } as const

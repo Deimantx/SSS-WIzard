@@ -16,7 +16,6 @@ import { useCombatDefeatStore } from '../../game/ui/combatDefeatStore'
 import { isBossMonster } from '../../game/content/monsters'
 import { CombatAmbientBackdrop } from './CombatAmbientBackdrop'
 import { useNavigationIntent } from '../../ui/navigation/navigationIntent'
-import type { CombatNavigationMode } from './combatNavigationTypes'
 
 export function CombatScreenV2() {
   const combatDungeonId = useGameStore((state) => state.combat.dungeonId)
@@ -25,7 +24,6 @@ export function CombatScreenV2() {
   const [selectedDungeonId, setSelectedDungeonId] = useState<DungeonId>(() => combatDungeonId ?? getFirstUnlockedDungeon(progress))
   const navigationIntent = useNavigationIntent()
   const [atlasOpen, setAtlasOpen] = useState(false)
-  const [atlasMode, setAtlasMode] = useState<CombatNavigationMode>('region')
   const [leaveOpen, setLeaveOpen] = useState(false)
   const [enemyContextMode, setEnemyContextMode] = useState<EnemyContextMode | null>(null)
   const enemyCardRef = useRef<HTMLElement>(null)
@@ -37,7 +35,7 @@ export function CombatScreenV2() {
   const previousDungeonId = useRef<DungeonId | null>(combatDungeonId)
   useEffect(() => { if (combatDungeonId) setSelectedDungeonId(combatDungeonId) }, [combatDungeonId])
   useEffect(() => { if (!combat.active && navigationIntent.combatDungeonId) setSelectedDungeonId(navigationIntent.combatDungeonId) }, [combat.active, navigationIntent.combatDungeonId])
-  const openAtlas = useCallback((mode: CombatNavigationMode = 'region') => { dismissGameTooltips(); setAtlasMode(mode); setAtlasOpen(true) }, [])
+  const openAtlas = useCallback(() => { dismissGameTooltips(); setAtlasOpen(true) }, [])
   const closeAtlas = useCallback(() => setAtlasOpen(false), [])
   const closeLeave = useCallback(() => setLeaveOpen(false), [])
   const closeEnemyContext = useCallback(() => setEnemyContextMode(null), [])
@@ -68,5 +66,5 @@ export function CombatScreenV2() {
   const layoutTransform = useCallback((layout: Parameters<typeof getAdaptiveCombatLayout>[0]) => getAdaptiveCombatLayout(layout, { requiredStageContentHeight: stageContentHeight, requiredDeckContentHeight: deckContentHeight, requiredAnalyticsContentHeight: analyticsContentHeight }), [analyticsContentHeight, deckContentHeight, stageContentHeight])
   useEffect(() => { if (defeatSnapshot) { setEnemyContextMode(null); setAtlasOpen(false); setLeaveOpen(false) } }, [defeatSnapshot])
   const bossActive = Boolean(combat.active && combat.enemyId && isBossMonster(MONSTERS[combat.enemyId]))
-  return <div className={`screen-content combat-screen combat-ambient-screen${bossActive ? ' is-boss-active' : ''}`}><CombatAmbientBackdrop combatActive={combat.active} bossActive={bossActive} /><div className="screen-header"><div><div className="eyebrow">ARCANE COMBAT</div><h1>Combat</h1><p>Read enemy intent, manage Mana, and control your Spell automation.</p></div></div><CombatRunBar selectedDungeonId={selectedDungeonId} onOpenAtlas={openAtlas} onRequestLeave={requestLeave} /><EditableGrid screen="combat" layoutTransform={layoutTransform} panels={[{ id: 'combat-stage', content: <CombatStage selectedDungeonId={selectedDungeonId} onContentHeightChange={reportStageContentHeight} enemyCardRef={enemyCardRef} onOpenEnemyContext={openEnemyContext} /> }, { id: 'combat-spell-deck', content: <CombatSpellDeck onRequiredHeightChange={reportDeckContentHeight} /> }, { id: 'combat-analytics', content: <CombatAnalyticsPanel onRequiredHeightChange={reportAnalyticsContentHeight} /> }]} />{enemyContextMode && <EnemyContextWindow mode={enemyContextMode} anchorRef={enemyCardRef} triggerRef={enemyContextTriggerRef} selectedDungeonId={selectedDungeonId} onModeChange={setEnemyContextMode} onClose={closeEnemyContext} />}{atlasOpen && <DungeonAtlasDialog selectedDungeonId={selectedDungeonId} onSelect={setSelectedDungeonId} onClose={closeAtlas} initialMode={atlasMode} />}{leaveOpen && <LeaveDungeonDialog onClose={closeLeave} />}</div>
+  return <div className={`screen-content combat-screen combat-ambient-screen${bossActive ? ' is-boss-active' : ''}`}><CombatAmbientBackdrop combatActive={combat.active} bossActive={bossActive} /><div className="screen-header"><div><div className="eyebrow">ARCANE COMBAT</div><h1>Combat</h1><p>Read enemy intent, manage Mana, and control your Spell automation.</p></div></div><CombatRunBar selectedDungeonId={selectedDungeonId} onOpenAtlas={openAtlas} onRequestLeave={requestLeave} /><EditableGrid screen="combat" layoutTransform={layoutTransform} panels={[{ id: 'combat-stage', content: <CombatStage selectedDungeonId={selectedDungeonId} onContentHeightChange={reportStageContentHeight} enemyCardRef={enemyCardRef} onOpenEnemyContext={openEnemyContext} /> }, { id: 'combat-spell-deck', content: <CombatSpellDeck onRequiredHeightChange={reportDeckContentHeight} /> }, { id: 'combat-analytics', content: <CombatAnalyticsPanel onRequiredHeightChange={reportAnalyticsContentHeight} /> }]} />{enemyContextMode && <EnemyContextWindow mode={enemyContextMode} anchorRef={enemyCardRef} triggerRef={enemyContextTriggerRef} selectedDungeonId={selectedDungeonId} onModeChange={setEnemyContextMode} onClose={closeEnemyContext} />}{atlasOpen && <DungeonAtlasDialog selectedDungeonId={selectedDungeonId} onSelect={setSelectedDungeonId} onClose={closeAtlas} />}{leaveOpen && <LeaveDungeonDialog onClose={closeLeave} />}</div>
 }

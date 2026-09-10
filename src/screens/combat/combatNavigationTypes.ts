@@ -40,7 +40,6 @@ export interface CombatRegionMap {
 export interface WorldRegionMapNode {
   id: WorldRegionId
   name: string
-  subtitle: string
   description: string
   slot: WorldRegionSlot
   status: 'locked' | 'available' | 'current'
@@ -51,7 +50,6 @@ export interface WorldRegionMapNode {
 
 export interface WorldRegionMap {
   name: string
-  subtitle: string
   description: string
   nodes: WorldRegionMapNode[]
   connections: CombatMapConnection[]

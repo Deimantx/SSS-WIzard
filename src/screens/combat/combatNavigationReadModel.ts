@@ -15,11 +15,11 @@ export const getRegionForDungeon = (dungeonId: DungeonId): WorldRegionId => {
 }
 
 const WORLD_REGION_DEFINITIONS: Omit<WorldRegionMapNode, 'status' | 'unlockText'>[] = [
-  { id: 'deep-woods', name: 'Deep Woods', subtitle: 'TUTORIAL REGION', description: 'The first living frontier of the tower. Three routes wind through the grove toward the Forest Heart.', slot: 'center', linkedRegionMapId: 'deep-woods', accent: 'violet' },
-  { id: 'frostmarch', name: 'Frostmarch', subtitle: 'DORMANT FRONTIER', description: 'A frozen expanse where old leyline channels sleep beneath the ice.', slot: 'north', linkedRegionMapId: null, accent: 'blue' },
-  { id: 'emberreach', name: 'Emberreach', subtitle: 'DORMANT FRONTIER', description: 'A volcanic borderland lit by a furnace that never cools.', slot: 'east', linkedRegionMapId: null, accent: 'orange' },
-  { id: 'stormcoast', name: 'Stormcoast', subtitle: 'DORMANT FRONTIER', description: 'A charged coastline where thunder rolls through the arcane mist.', slot: 'west', linkedRegionMapId: null, accent: 'cyan' },
-  { id: 'duskmoor', name: 'Duskmoor', subtitle: 'DORMANT FRONTIER', description: 'A silent moor filled with half-remembered paths and dark water.', slot: 'south', linkedRegionMapId: null, accent: 'red' },
+  { id: 'deep-woods', name: 'Deep Woods', description: 'The first living frontier of the tower. Three routes wind through the grove toward the Forest Heart.', slot: 'center', linkedRegionMapId: 'deep-woods', accent: 'violet' },
+  { id: 'frostmarch', name: 'Frostmarch', description: 'A frozen expanse where old leyline channels sleep beneath the ice.', slot: 'north', linkedRegionMapId: null, accent: 'blue' },
+  { id: 'emberreach', name: 'Emberreach', description: 'A volcanic borderland lit by a furnace that never cools.', slot: 'east', linkedRegionMapId: null, accent: 'orange' },
+  { id: 'stormcoast', name: 'Stormcoast', description: 'A charged coastline where thunder rolls through the arcane mist.', slot: 'west', linkedRegionMapId: null, accent: 'cyan' },
+  { id: 'duskmoor', name: 'Duskmoor', description: 'A silent moor filled with half-remembered paths and dark water.', slot: 'south', linkedRegionMapId: null, accent: 'red' },
 ]
 
 export const isWorldMapUnlocked = (progress: CombatNavigationProgress) => (progress.bossKillsByBoss['archmage-edrin-shade'] ?? 0) >= 1
@@ -81,7 +81,6 @@ export const buildWorldRegionMap = (progress: CombatNavigationProgress): WorldRe
   }))
   return {
     name: 'The World Map',
-    subtitle: 'MACRO ROUTES · THE SHATTERED FRONTIER',
     description: 'The tower has revealed a wider network of regions. Recovered paths will open new destinations beyond the Deep Woods.',
     nodes,
     connections: [

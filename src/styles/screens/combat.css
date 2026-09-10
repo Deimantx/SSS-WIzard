@@ -2344,7 +2344,7 @@
 .spell-combat-cast > * { position: relative; z-index: 1; }
 .spell-combat-icon { position: relative; z-index: 2; width: 30px; height: 30px; isolation: isolate; }
 .spell-combat-icon .spell-icon-shell { position: relative; z-index: 0; }
-.spell-combat-cooldown-overlay { position: absolute; z-index: 1; inset: 0; display: grid; place-items: center; border-radius: 7px; background: conic-gradient(from -90deg, var(--combat-cooldown-overlay) 0 var(--cooldown-percent), transparent var(--cooldown-percent) 100%); pointer-events: none; }
+.spell-combat-cooldown-overlay { position: absolute; z-index: 1; inset: 0; display: grid; place-items: center; border-radius: 7px; background: rgb(4 5 10 / 28%); pointer-events: none; }
 .spell-combat-cooldown-overlay::after { position: absolute; inset: 0; border-radius: inherit; background: rgb(4 5 10 / 20%); content: ''; }
 .spell-combat-cooldown-number { position: relative; z-index: 1; color: white; font: 700 12px/1 var(--font-mono); letter-spacing: -0.04em; text-shadow: 0 1px 3px rgb(0 0 0 / 90%), 0 0 2px rgb(0 0 0 / 90%); }
 .spell-combat-tile:not(.is-cooldown) .spell-combat-cooldown-overlay { display: none; }
@@ -2425,13 +2425,6 @@
 @keyframes spell-mana-warning { 50% { box-shadow: 0 0 0 2px color-mix(in srgb, var(--semantic-mana) 42%, transparent); } }
 @keyframes spell-auto-brighten { 50% { filter: brightness(1.35); } }
 
-.combat-flow-pattern-node.is-current { position: relative; border-color: transparent; background: linear-gradient(var(--ui-panel-strong), var(--ui-panel-strong)) padding-box, conic-gradient(from -90deg, var(--enemy-accent, var(--ui-warning)) 0 var(--pattern-progress, 0%), var(--ui-border) var(--pattern-progress, 0%) 100%) border-box; }
-.combat-flow-pattern-node.is-current::after,
-.combat-flow-current-action.is-special .combat-flow-current-action-icon::after { position: absolute; inset: -3px; border: 1px solid transparent; border-radius: inherit; content: ''; mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0); mask-composite: exclude; pointer-events: none; }
-.combat-flow-pattern-node.is-current::after { background: conic-gradient(from -90deg, var(--enemy-accent, var(--combat-current-action-warning)) 0 var(--pattern-progress, 0%), transparent var(--pattern-progress, 0%) 100%) border-box; }
-.combat-flow-current-action.is-special .combat-flow-current-action-icon::after { background: conic-gradient(from -90deg, var(--enemy-accent, var(--combat-current-action-warning)) 0 var(--current-action-progress, 0%), transparent var(--current-action-progress, 0%) 100%) border-box; }
-.combat-flow-current-action.is-special .combat-flow-current-action-icon { position: relative; border-color: transparent; background: linear-gradient(color-mix(in srgb, var(--ui-panel-strong) 88%, transparent), color-mix(in srgb, var(--ui-panel-strong) 88%, transparent)) padding-box, conic-gradient(from -90deg, var(--combat-current-action-warning) 0 var(--current-action-progress, 0%), var(--ui-border) var(--current-action-progress, 0%) 100%) border-box; }
-.combat-flow-current-action.is-special .combat-flow-current-action-icon::after { inset: -3px; }
 .combat-flow-current-action.is-special.combat-current-action-barrier { --combat-current-action-warning: var(--semantic-barrier); }
 .combat-flow-current-action.is-special.combat-current-action-heal { --combat-current-action-warning: var(--semantic-health); }
 .combat-flow-current-action.is-special.combat-current-action-control { --combat-current-action-warning: var(--semantic-control); }
@@ -2443,7 +2436,7 @@
 
 .combat-status-chip { font-variant-numeric: tabular-nums; }
 .combat-status-chip.is-timed .combat-status-icon { position: relative; width: 19px; height: 19px; place-items: center; }
-.combat-status-chip.is-timed .combat-status-icon::before { position: absolute; inset: -1px; border: 2px solid transparent; border-radius: 50%; background: conic-gradient(from -90deg, currentColor 0 var(--status-duration-percent), color-mix(in srgb, currentColor 22%, transparent) var(--status-duration-percent) 100%) border-box; content: ''; mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0); mask-composite: exclude; }
+.combat-status-chip.is-timed .combat-status-icon::before { display: none; }
 .combat-status-chip.is-timed .combat-status-icon svg { position: relative; z-index: 1; width: 11px; height: 11px; }
 .combat-status-chip.is-new { animation: combat-status-apply 180ms ease-out both; }
 
@@ -2508,6 +2501,56 @@
 
 /* Drop rows keep quantity and projection visually distinct without adding height. */
 .dungeon-statistics-drops-list { gap: 1px; margin-top: 3px; }
+
+/* V4.1 freeze guard: live combat paint uses bounded bars, not conic masks. */
+.combat-screen .combat-flow-pattern-node.is-current {
+  position: relative;
+  border-color: color-mix(in srgb, var(--enemy-accent, var(--ui-warning)) 55%, var(--ui-border));
+  background: var(--ui-panel-strong);
+}
+.combat-screen .combat-flow-pattern-node.is-current::after { display: none; }
+.combat-screen .combat-pattern-progress {
+  position: absolute;
+  right: 3px;
+  bottom: 2px;
+  left: 3px;
+  height: 2px;
+  border-radius: 99px;
+  background: var(--enemy-accent, var(--ui-warning));
+  box-shadow: 0 0 5px color-mix(in srgb, var(--enemy-accent, var(--ui-warning)) 70%, transparent);
+  transform-origin: left center;
+  pointer-events: none;
+}
+.combat-screen .combat-status-chip.is-timed::after { display: none; }
+.combat-screen .combat-status-duration-bar {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--status-duration-percent);
+  height: 2px;
+  border-radius: inherit;
+  background: currentColor;
+  box-shadow: 0 0 6px currentColor;
+  content: '';
+  opacity: .72;
+  pointer-events: none;
+}
+.combat-screen .spell-combat-cooldown-overlay {
+  overflow: hidden;
+  background: rgb(4 5 10 / 28%);
+}
+.combat-screen .spell-combat-cooldown-overlay::before {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: var(--cooldown-percent);
+  background: var(--combat-cooldown-overlay);
+  content: '';
+  opacity: .24;
+}
+.combat-screen .spell-combat-cooldown-overlay::after { background: transparent; }
 .dungeon-statistics-rate-context {
   display: flex;
   align-items: baseline;
@@ -2549,7 +2592,7 @@
 
 /* Cooldown readability and state separation. */
 .spell-combat-cooldown-overlay {
-  background: conic-gradient(from -90deg, rgb(4 5 10 / 78%) 0 var(--cooldown-percent), transparent var(--cooldown-percent) 100%);
+  background: rgb(4 5 10 / 28%);
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 12%);
 }
 .spell-combat-cooldown-overlay::before {
@@ -2754,7 +2797,7 @@
 .combat-flow-action-meta { display: flex; align-items: baseline; gap: 7px; color: var(--ui-text-muted); font: 600 var(--text-micro) var(--font-mono); letter-spacing: .08em; }
 .combat-flow-action-meta b { color: var(--semantic-time); font-size: 12px; }
 .combat-flow-action-progress { width: min(210px, 100%); height: 4px; overflow: hidden; border-radius: 99px; background: color-mix(in srgb, var(--ui-border) 72%, transparent); }
-.combat-flow-action-progress i { display: block; width: var(--current-action-progress); height: 100%; border-radius: inherit; background: linear-gradient(90deg, color-mix(in srgb, var(--ui-accent) 54%, var(--ui-text)), var(--ui-accent)); box-shadow: 0 0 9px color-mix(in srgb, var(--ui-accent) 52%, transparent); transition: width 100ms linear; }
+.combat-flow-action-progress i { display: block; width: 100%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, color-mix(in srgb, var(--ui-accent) 54%, var(--ui-text)), var(--ui-accent)); box-shadow: 0 0 9px color-mix(in srgb, var(--ui-accent) 52%, transparent); transition: width 100ms linear; }
 .combat-flow-action-core.is-actor-enemy .combat-flow-action-progress i { background: linear-gradient(90deg, color-mix(in srgb, var(--flow-accent) 54%, var(--ui-warning)), var(--flow-accent)); box-shadow: 0 0 9px color-mix(in srgb, var(--flow-accent) 52%, transparent); }
 .combat-flow-intent-spacer { display: none; }
 .combat-enemy-intent.game-tooltip-trigger { display: block; width: 100%; }

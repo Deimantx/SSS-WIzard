@@ -1,237 +1,854 @@
 ---
 name: sss-wizard-ui
-description: Design, modify, review, and visually validate UI for the SSS Wizard browser game. Use for screens, panels, shell, navigation, themes, responsive layout, Edit UI, tooltips, game-feel presentation, UI components, and visual consistency.
+description: Orchestrates all UI design, redesign, review, and visual validation work for the SSS Wizard browser game. Use for screens, panels, navigation, overlays, tooltips, responsive layout, Edit UI, game-feel, visual polish, and any premium/high-quality interface task. For major visual work, this skill MUST coordinate the repository's frontend-design, game-ui-frontend, and high-end-visual-design skills instead of replacing them.
 ---
 
-# SSS Wizard UI
+# SSS Wizard UI — Repository UI Orchestrator
 
-## Purpose
+## 1. Purpose
 
-Use this skill for UI work in **SSS Wizard**. It specializes the generic frontend/game UI skills for this repository's actual interface architecture.
+Use this skill for all meaningful UI work in **SSS Wizard**.
 
-SSS Wizard is an **information-dense, screen-based mage-only incremental RPG**, not a low-chrome 3D action game and not a SaaS dashboard. Persistent shell chrome, dense progression information, master-detail screens, editable panels, and contextual inspectors are intentional parts of the product.
+SSS Wizard is an information-dense, screen-based mage-only incremental RPG. It is not:
 
-If a generic UI skill conflicts with this skill, prefer this repository-specific skill for SSS Wizard design decisions. `AGENTS.md`, current runtime code, and the current Core Concept remain higher-priority sources of truth.
+- a SaaS dashboard,
+- a generic website,
+- a low-chrome 3D action game,
+- or an Awwwards landing page.
 
-This skill was prepared from the repository state on **2026-09-09**. When the implementation has changed, inspect the current code before assuming an old detail is still true.
+Its established identity is:
 
-## Read Before Editing
+- arcane dark fantasy,
+- futuristic magical instrumentation,
+- compact but readable information density,
+- strong game-state hierarchy,
+- persistent game shell,
+- master-detail interaction,
+- contextual inspectors,
+- rich tooltips,
+- restrained but high-quality game feel,
+- premium motion for meaningful interactions.
 
-For meaningful UI work, inspect only the relevant parts of these sources before coding:
+This skill is the **repository-specific orchestration layer**.
 
-1. `AGENTS.md` — mandatory repository rules and current Definition of Done.
-2. `Docs/ARCHITECTURE.md` — feature ownership and shell/system boundaries.
-3. The target screen in `src/screens/`.
-4. The target screen's CSS under `src/styles/screens/`, `src/styles/tower-screens.css`, or the relevant shared style file.
-5. `src/components/ui/index.tsx` and nearby shared components before creating a new primitive.
-6. `src/styles/themes.css` and `src/styles/typography.css` before introducing visual tokens.
-7. `src/ui/layout-editor/defaultLayouts.ts` and `layoutEditorTypes.ts` when the screen uses `EditableGrid`.
-8. `src/app/GameShell.tsx` and `src/app/shell/` only when changing persistent shell UI.
+It does NOT replace generic visual design skills.
 
-Do not audit unrelated systems unless the task requires them.
+For major visual work, it MUST explicitly use the other design skills described below.
 
-## Core Product UI Model
+---
 
-Preserve the established hierarchy:
+# 2. Source-of-truth priority
 
-- persistent **left Sidebar** for primary navigation;
-- persistent **Topbar** for global context/resources/utilities;
-- one main scrollable screen surface;
-- screen header / `TowerFrame` framing where appropriate;
-- `EditableGrid` for normal editable screen panels;
-- **Activity Monitor** as persistent ongoing-activity feedback;
-- shared overlays for tooltips, menus, dialogs, toasts, rewards, Developer Tools, and Edit UI.
+When instructions conflict, use this priority:
 
-Do not replace this with a generic dashboard shell, route-local navigation chrome, or a canvas-only interface.
+1. User's current request
+2. Current repository code and content
+3. `AGENTS.md`
+4. SSS Wizard architecture / design system
+5. This `sss-wizard-ui` skill
+6. Generic frontend/game/high-end design skills
 
-## Visual Direction
+Generic skills are used to improve design quality, not to override SSS Wizard's established product rules.
 
-The default visual identity is **arcane dark fantasy**:
+Example:
 
-- near-black / midnight-violet background;
-- layered dark violet panels;
-- restrained violet magical accent;
-- warm gold as secondary/progression emphasis;
-- strong semantic resource colors for Health, Mana, Focus, status, and elemental damage;
-- compact, information-dense typography;
-- subtle magical atmosphere rather than ornamental clutter;
-- crisp game-tool UI with restrained radii and bounded decorative chrome.
+If `high-end-visual-design` says:
 
-The game also supports Dark, Light, and Custom themes. Never make a feature visually correct only in the default theme.
+```text
+never use Inter
+```
 
-Read `references/design-system.md` for the current system.
+but SSS Wizard's actual typography system uses Inter intentionally:
 
-## UI Hierarchy Rules
+```text
+KEEP THE SSS WIZARD TYPOGRAPHY SYSTEM
+```
 
-Prioritize information in this order when relevant:
+Do not blindly apply generic hard bans.
 
-1. **Current actionable state** — what is running, selected, blocked, ready, or dangerous.
-2. **Primary action / decision** — what the player can do next.
-3. **Progress / cost / resource impact** — Mana, Focus, materials, timers, XP, caps, threat, etc.
-4. **Build/detail information** — stats, modifiers, relationships, source details.
-5. **Reference/diagnostic information** — keep deep detail behind inspectors, dialogs, advanced sections, or tooltips.
+Likewise, do not force:
+- huge landing-page whitespace,
+- oversized marketing typography,
+- giant pill buttons,
+- massive rounded cards,
+- blur-heavy surfaces,
+- generic agency page structure,
+
+when they conflict with the game's dense RPG interface.
+
+---
+
+# 3. REQUIRED SKILL ORCHESTRATION
+
+## 3.1 Minor maintenance / bugfix UI task
+
+Examples:
+- overlap fix,
+- wrong spacing,
+- tooltip bug,
+- one missing state,
+- button alignment,
+- small responsive fix.
+
+Required skills:
+
+```text
+sss-wizard-ui
+```
+
+Also use:
+
+```text
+sss-wizard-code-quality
+```
+
+when code structure, cleanup, or architecture is involved.
+
+Do not load every design skill for trivial fixes.
+
+---
+
+## 3.2 Major visual redesign / new screen / navigation system
+
+This is mandatory for tasks such as:
+
+- redesigning a whole screen,
+- replacing a navigation system,
+- creating a new major panel/workspace,
+- creating campaign/Act navigation,
+- designing map/tree progression,
+- creating a new major modal,
+- user asks for "premium",
+- user asks for "high quality",
+- user asks for "advanced game feel",
+- user says current UI looks generic/cheap/bad,
+- substantial layout/composition changes.
+
+Before coding, MUST inspect and apply:
+
+```text
+../frontend-design/SKILL.md
+../game-ui-frontend/SKILL.md
+../high-end-visual-design/SKILL.md
+```
+
+Also inspect:
+
+```text
+../sss-wizard-code-quality/SKILL.md
+```
+
+when implementation touches architecture or introduces multiple components.
+
+Use:
+
+```text
+../game-playtest/SKILL.md
+```
+
+for visual/runtime validation when that environment is available.
+
+### HARD RULE
+
+Do NOT skip these generic design skills merely because `sss-wizard-ui` is more specific.
+
+For major visual tasks:
+
+```text
+sss-wizard-ui = constraints / game identity
+frontend-design = distinctive visual concept
+game-ui-frontend = game UX / interaction hierarchy
+high-end-visual-design = premium finishing / motion / depth
+```
+
+They are complementary.
+
+---
+
+# 4. Major visual task workflow — mandatory
+
+For any major visual redesign, follow this sequence.
+
+## PHASE 1 — Inspect
+
+Before editing:
+
+- read `AGENTS.md`,
+- inspect the actual target screen,
+- inspect its owning CSS,
+- inspect one or two visually related SSS Wizard screens,
+- inspect shared UI primitives,
+- inspect theme/typography tokens,
+- inspect relevant layout-editor definitions,
+- inspect the required design skills from Section 3.
+
+Do not redesign from memory.
+
+---
+
+## PHASE 2 — Visual direction gate
+
+Before writing JSX/CSS, explicitly determine the following internally:
+
+### A. Visual concept
+What is the screen supposed to feel like?
+
+Examples:
+- arcane campaign console,
+- magical command chamber,
+- dark ritual interface,
+- enchanted progression map,
+- scholar's research desk,
+- tactical spell-control surface.
+
+### B. Hero element
+What is the single dominant visual/interactive element?
+
+Examples:
+- progression tree,
+- spell deck,
+- portal,
+- map,
+- selected equipment,
+- selected research project.
+
+### C. Hierarchy
+Define:
+
+```text
+1. primary state
+2. primary action
+3. progression/cost
+4. secondary detail
+5. reference/diagnostic detail
+```
+
+### D. Spatial composition
+Decide:
+- master-detail,
+- asymmetric split,
+- stage + inspector,
+- two-row workspace,
+- compact selector + selected inspector,
+- progression canvas + information rail,
+- another intentional structure.
+
+Do not automatically use a generic equal-card grid.
+
+### E. Motion language
+Define:
+- what moves,
+- why it moves,
+- how strong the motion is,
+- which state changes deserve stronger feedback.
+
+### F. Distinctive feature
+Every major screen redesign should have at least one memorable interaction or visual motif.
+
+Examples:
+- animated progression rail,
+- selected-node energy propagation,
+- portal resonance,
+- arcane scanning line,
+- meaningful active-route glow,
+- contextual layered inspector transition.
+
+If no clear answers exist, the design is not ready to code.
+
+---
+
+# 5. Anti-generic design rule
+
+For major redesigns:
+
+```text
+FUNCTIONALLY CORRECT IS NOT ENOUGH.
+```
+
+The result must not look like:
+- a generic admin dashboard,
+- a CSS component gallery,
+- a React-flow demo,
+- a bootstrap card grid,
+- "dark mode SaaS",
+- random purple glowing rectangles,
+- placeholder developer UI.
+
+Before finishing, ask:
+
+```text
+Could this screenshot obviously belong to SSS Wizard?
+```
+
+If not, it needs another visual pass.
+
+---
+
+# 6. Reuse infrastructure, not weak composition
+
+Existing code is not automatically good design.
+
+For user-requested major redesigns:
+
+```text
+Reuse:
+- game state,
+- gameplay systems,
+- shared primitives,
+- theme tokens,
+- accessibility patterns,
+- tooltips,
+- sound/game-feel infrastructure.
+
+Do NOT automatically preserve:
+- weak layout,
+- generic panel composition,
+- old spacing,
+- redundant text,
+- bad information hierarchy,
+- legacy UI simply because it already exists.
+```
+
+If the user explicitly asks to replace the old composition, replace it.
+
+---
+
+# 7. SSS Wizard visual identity
+
+Default SSS Wizard direction:
+
+- near-black / midnight-violet background,
+- layered dark violet/navy surfaces,
+- restrained arcane violet accent,
+- warm gold for milestones / bosses / progression,
+- semantic resource colors for Mana / HP / Focus / damage,
+- compact information-dense typography,
+- crisp geometric instrumentation,
+- subtle magical atmosphere,
+- futuristic arcane detail,
+- controlled glows,
+- restrained radii,
+- clear state borders,
+- depth without excessive blur.
+
+The game should feel like:
+
+```text
+an arcane RPG interface
++
+a magical command system
++
+a premium modern browser-game frontend
+```
+
+not a normal website.
+
+---
+
+# 8. Typography
+
+Use the existing SSS Wizard typography system unless the user explicitly requests a typography redesign.
+
+Do not apply generic skill font bans blindly.
+
+Hierarchy should come from:
+- weight,
+- size,
+- tracking,
+- contrast,
+- spacing,
+- grouping,
+
+not constant oversized headings.
+
+Dense game UI must remain readable.
+
+---
+
+# 9. Icons
+
+Use the existing icon system unless the task includes an icon-system redesign.
+
+Do not blindly replace existing icons because a generic skill bans a library.
+
+For important major visual surfaces:
+- avoid visually heavy generic icons,
+- prefer clean, light, precise glyphs,
+- use existing game/domain icons where available,
+- maintain consistent stroke weight.
+
+---
+
+# 10. Layout hierarchy
+
+Prioritize information in this order:
+
+1. Current actionable state
+2. Primary action / decision
+3. Progress / cost / resource impact
+4. Build / system detail
+5. Reference / diagnostic information
 
 Do not make every statistic equal visual weight.
 
-## Implementation Workflow
+Use progressive disclosure for:
+- formulas,
+- provider breakdowns,
+- source provenance,
+- long relationship lists,
+- developer diagnostics.
 
-### 1. Inspect the existing UI
+Normal player-facing screens must not look like DevTools.
 
-Before redesigning a screen:
+---
 
-- inspect the current screen composition;
-- inspect one or two visually related screens;
-- identify reusable shared components;
-- identify its `EditableGrid` panel definitions/default layout;
-- identify the screen's existing state/selectors/actions;
-- identify the style file that currently owns the screen.
+# 11. Established SSS Wizard screen patterns
 
-Do not redesign from memory when the repository already has an implementation.
+Use the pattern that fits the feature.
 
-### 2. Separate presentation from gameplay
+Examples:
 
-A UI task must not silently move gameplay rules into components.
+```text
+master-detail
+Inventory
+Collection
+Bestiary
+Schools
+Artificing
 
-- Screens compose and present.
-- Gameplay/content definitions stay in their authoritative game modules.
-- Mutations use existing store/system actions.
-- Reads should use current selectors/read models when available.
-- UI preferences and layout state stay in UI infrastructure, not gameplay state.
+summary + workspace
+Channeling
+Focus
+Equipment
 
-If the requested visual change requires a gameplay behavior change, state that boundary explicitly before implementing it.
+stage + support/inspector
+Combat
 
-### 3. Reuse the design system
+library + inspector + active work
+Research
+Transmutation
 
-Before adding CSS values or primitives:
+progression canvas + inspector
+Campaign / Act navigation
+future large progression systems
+```
 
-- use existing `--ui-*`, resource, semantic, typography, z-index, and content-width variables;
-- reuse `Card`, `Button`, `Progress`, `Status`, `GameTooltip`, `SearchInput`, `Tabs`, `FilterBar`, `SelectMenu`, `ModalPortal`, and existing domain components where appropriate;
-- reuse existing Game Feel primitives for feedback and transitions;
-- reuse the themed scrollbar system for actual scroll owners.
+Do not force every feature into the same panel layout.
 
-Do not create a second design system inside one screen.
+---
 
-### 4. Respect the layout system
+# 12. Major progression / navigation screens
 
-For normal editable screens:
+For:
+- Combat Campaign,
+- Act tree,
+- progression maps,
+- dungeon trees,
+- Dark Portal progression,
+- other large navigation systems,
 
-- keep `EditableGrid` as the panel layout owner;
-- maintain the 12-column model;
-- register/change default geometry through the shared layout infrastructure;
-- obey panel non-overlap, height-mode, and responsive stacking contracts;
-- preserve saved user layouts unless a deliberate layout migration is required;
-- keep the outer screen width under the shared `screen-content` / `app-content-shell` contract.
+prefer:
 
-Read `references/layout-rules.md` before changing panel geometry.
+```text
+one hero progression canvas/stage
++
+one compact contextual inspector
++
+one compact global selector / timeline
+```
 
-### 5. Design dense UI intentionally
+Avoid:
+- many equal-weight panels,
+- excessive tiny labels,
+- admin-like metadata,
+- repeated headers,
+- unnecessary cards around every text block.
 
-Information density is allowed and expected, but it must stay scannable.
+The central interactive progression surface should dominate.
+
+---
+
+# 13. Tooltips
+
+Use the shared `GameTooltip`.
+
+Never use native:
+
+```html
+title=""
+```
+
+Tooltips are required for:
+- icons,
+- abbreviations,
+- costs,
+- restrictions,
+- unknown states,
+- non-obvious mechanics,
+- locked reasons,
+- progression nodes.
+
+But tooltips are supplemental.
+
+Important information must also exist in the main inspector/state when needed.
+
+---
+
+# 14. Motion / advanced game feel
+
+Use motion intentionally.
+
+## Stronger motion belongs to:
+- unlocks,
+- milestones,
+- rewards,
+- boss-ready state,
+- Act completion,
+- major selection changes,
+- new system reveals.
+
+## Small motion belongs to:
+- hover,
+- selected-state change,
+- node activation,
+- buttons,
+- inspector transitions.
+
+Avoid constant visual noise.
 
 Prefer:
+- transform,
+- opacity,
+- subtle filter/lighting where performant,
+- custom easing,
+- short spring-like state feedback.
 
-- clear panel purpose;
-- strong primary/secondary hierarchy;
-- compact metadata rows;
-- master-detail layouts for catalogs and inspectors;
-- grouped controls with explicit semantics;
-- progressive disclosure for long relationship lists and diagnostics;
-- meaningful empty, locked, active, warning, and disabled states.
+Respect:
+- persisted Reduced Motion,
+- `prefers-reduced-motion`.
 
-Avoid solving density by shrinking text below the shared typography system.
+No animation may delay gameplay state.
 
-### 6. Tooltips and interaction states
+---
 
-The shared `GameTooltip` system is mandatory for contextual game UI.
+# 15. Premium finishing — selective use of high-end-visual-design
 
-- Never use native browser `title=` tooltips.
-- Add tooltips to icons, abbreviations, costs, restrictions, non-obvious stats, and ambiguous actions.
-- Keep item tooltips compact; large relationship lists belong in explicit View/dialog/inspector UI.
-- Preserve keyboard focus behavior.
-- Keep only one tooltip active at a time through the shared provider.
+Use `high-end-visual-design` for:
 
-Every interactive element must have readable hover, active/selected, focus-visible, disabled, and locked states when applicable.
+- composition quality,
+- depth,
+- spacing rhythm,
+- border layering,
+- selected-state hierarchy,
+- subtle material treatment,
+- motion choreography,
+- high-quality interaction feedback,
+- anti-generic thinking.
 
-### 7. Motion and game feel
+Do NOT automatically apply:
+- huge marketing whitespace,
+- massive rounded pills everywhere,
+- full landing-page archetypes,
+- excessive backdrop blur,
+- giant section padding,
+- arbitrary font replacement,
+- decorative gimmicks that hurt game density.
 
-Use motion to communicate real state change, not to decorate every surface.
+Translate premium design principles into SSS Wizard's game context.
 
-- Respect both persisted Reduced Motion and `prefers-reduced-motion`.
-- Use shared screen/value/inspector/reward feedback infrastructure.
-- Stronger motion belongs to milestones, rewards, danger, unlocks, crafting completion, and meaningful state changes.
-- Same-identity value updates must not replay identity-change transitions.
-- Decorative motion must never own or delay gameplay state.
-- Do not add permanent per-screen WebGL/canvas loops; persistent ambience already has a shared owner.
+---
 
-### 8. Responsive and overflow pass
+# 16. Game UI principles — use game-ui-frontend
 
-Before finishing, inspect at least:
+Use `game-ui-frontend` to ensure:
 
-- normal desktop;
-- a narrower desktop/tablet-like width;
-- narrow/mobile behavior when the screen supports it;
-- increased text-size preference where the changed UI is text-dense.
+- interaction hierarchy is obvious,
+- screen feels game-native,
+- persistent UI does not become admin chrome,
+- player actions remain clear,
+- overlays/modal input boundaries are correct,
+- map/tree drag does not fight buttons/tooltips,
+- desktop and responsive behavior are considered.
+
+For SSS Wizard, "protect playfield" means:
+
+```text
+protect the hero interaction/progression surface
+```
+
+not necessarily a 3D camera.
+
+---
+
+# 17. Distinctive frontend direction — use frontend-design
+
+Use `frontend-design` for:
+
+- choosing a strong visual concept,
+- avoiding generic AI UI,
+- creating an intentional composition,
+- atmospheric background treatment,
+- memorable interaction motif,
+- visual differentiation.
+
+Then constrain the result to SSS Wizard's existing:
+- theme,
+- typography,
+- density,
+- component system.
+
+---
+
+# 18. Responsive / overflow rules
+
+Before finishing meaningful UI work, inspect:
+
+- normal desktop,
+- wide desktop,
+- narrower desktop/tablet-like width,
+- mobile/narrow if supported,
+- increased text size when relevant.
 
 Check:
+- no sibling overlap,
+- no clipped final content,
+- no accidental page-level horizontal overflow,
+- themed scroll owners,
+- modals fit viewport,
+- tooltips stay contained,
+- long names do not break cards,
+- values do not overlap badges,
+- drag/pan remains usable.
 
-- zero sibling panel overlap;
-- no clipped final content;
-- no accidental horizontal page overflow;
-- internal scroll owners remain reachable and themed;
-- dialogs/menus/tooltips remain contained in the viewport;
-- long names and large values do not destroy geometry.
+---
 
-### 9. Visual validation
+# 19. Visual QA is mandatory for major redesigns
 
-When available, use the existing `game-playtest` skill/browser workflow after meaningful visual changes.
+A TypeScript build is not visual QA.
 
-Validation order:
+For major visual tasks, when tooling permits:
 
-1. run focused tests while iterating;
-2. launch the game;
-3. navigate to the changed screen/state;
-4. inspect the actual rendered result;
-5. test relevant theme/state/viewport variants;
-6. fix visual defects found by inspection;
-7. follow the current final validation rules in `AGENTS.md`.
+```text
+1. launch game
+2. navigate to changed screen
+3. inspect actual rendered UI
+4. inspect requested gameplay state
+5. capture/review screenshot if possible
+6. compare against user feedback/mockup
+7. fix visual problems
+8. repeat focused visual pass
+```
 
-A successful TypeScript build is not visual QA.
+If live visual inspection is impossible:
 
-## Screen Design Patterns Already Established
+```text
+state that explicitly in the completion report.
+```
 
-Do not force every screen into the same arrangement. Reuse the pattern that fits the task:
+Do NOT claim:
 
-- **master-detail:** Inventory, Collection, Bestiary, Schools, Artificing, parts of Research/Transmutation;
-- **summary + working panels:** Channeling, Focus, Equipment, Settings;
-- **stage + supporting strips:** Combat;
-- **wide progression/summary + grouped work:** Home, Guild;
-- **library + inspector + prepared/active work:** Research;
-- **catalog/recipes + inspector + active production:** Transmutation/Artificing.
+```text
+looks good
+pixel-perfect
+premium
+```
 
-The current default panel geometry lives in `src/ui/layout-editor/defaultLayouts.ts`; treat that file, not this prose, as the exact source of truth.
+from code inspection alone.
 
-## Definition of Done for UI Work
+---
+
+# 20. Screenshot feedback rule
+
+When the user provides a screenshot and says:
+
+```text
+node is too high
+panel overlaps
+spacing is wrong
+text is lost
+map feels empty
+```
+
+treat that visual feedback as ground truth.
+
+Do not argue from CSS theory that the layout "should" be correct.
+
+Fix the rendered result.
+
+---
+
+# 21. Major visual completion gate
+
+Before saying a major redesign is complete, verify:
+
+```text
+VISUAL CONCEPT
+- clear and intentional
+
+HIERARCHY
+- primary interaction obvious
+
+COMPOSITION
+- not generic
+
+GAME FEEL
+- meaningful hover/select/action feedback
+
+SSS WIZARD IDENTITY
+- unmistakable
+
+FUNCTION
+- gameplay wiring preserved
+
+TOOLTIPS
+- complete where needed
+
+RESPONSIVE
+- no overlap/clipping
+
+RUNTIME VISUAL QA
+- performed if tooling available
+```
+
+If one of these clearly fails, do another polish pass.
+
+---
+
+# 22. Code architecture
+
+Separate:
+- gameplay/content data,
+- read models/selectors,
+- UI state,
+- presentation,
+- interaction.
+
+Do not:
+- hardcode gameplay rules in JSX,
+- duplicate canonical numbers into CSS/components,
+- create a second tooltip system,
+- create a second sound system,
+- create a second theme system.
+
+Reuse current infrastructure.
+
+---
+
+# 23. Layout editor
+
+For screens using `EditableGrid`:
+
+- keep the 12-column model,
+- use `DEFAULT_LAYOUTS` as canonical geometry,
+- obey content vs bounded-scroll behavior,
+- no sibling overlap,
+- no visual escape from bounded panels.
+
+Project policy:
+
+```text
+when canonical screen geometry changes materially
+→ update DEFAULT_LAYOUTS
+→ bump LAYOUT_VERSION
+→ old screen layouts reset
+```
+
+Do not reintroduce historical per-screen geometry migrations.
+
+---
+
+# 24. Testing policy
+
+Follow the current task's explicit validation instructions first.
+
+For this repository, broad test runs can be extremely expensive.
+
+Do not automatically run the entire Vitest suite for UI work.
+
+If the task explicitly says:
+
+```text
+NO VITEST
+```
+
+that instruction wins.
+
+Prefer:
+- focused reasoning,
+- visual runtime inspection,
+- targeted tests only when explicitly requested/appropriate,
+- at most the requested build workflow.
+
+---
+
+# 25. Agent skill reporting
+
+For meaningful UI work, completion report must include:
+
+```text
+SKILLS USED
+```
+
+with exact paths.
+
+Example:
+
+```text
+SKILLS USED
+- sss-wizard-ui — .agents/skills/sss-wizard-ui/SKILL.md
+- frontend-design — .agents/skills/frontend-design/SKILL.md
+- game-ui-frontend — .agents/skills/game-ui-frontend/SKILL.md
+- high-end-visual-design — .agents/skills/high-end-visual-design/SKILL.md
+- game-playtest — .agents/skills/game-playtest/SKILL.md
+```
+
+If a required skill could not be found/read:
+
+```text
+state that explicitly.
+```
+
+Do not silently omit it on a major visual redesign.
+
+---
+
+# 26. Major redesign anti-pattern checklist
+
+A major UI redesign fails if it ends up as:
+
+- generic equal cards,
+- huge empty panel with tiny content,
+- random node placements,
+- excessive micro-labels,
+- developer terminology visible to player,
+- default browser-feeling controls,
+- weak selected state,
+- unclear primary action,
+- flat dark rectangles with purple borders,
+- motion everywhere with no purpose,
+- copied agency website aesthetics that do not fit the game,
+- preserved bad old layout just because it existed,
+- "looks good" claimed without rendered inspection when inspection was possible.
+
+---
+
+# 27. Final definition of done
 
 Before handoff, confirm:
 
-- requested functionality is preserved unless explicitly changed;
-- existing source-of-truth gameplay values were not duplicated into UI;
-- shared components/tokens were reused where appropriate;
-- the active theme system still works;
-- contextual tooltips are complete;
-- no native `title=` tooltip was introduced;
-- panel overlap/clipping/overflow was checked;
-- responsive behavior was checked;
-- reduced-motion behavior was preserved;
-- the visual result was inspected in the running game when tooling permits;
-- targeted tests were added/updated when behavior changed;
-- final validation follows `AGENTS.md`.
+- requested functionality is preserved unless intentionally changed;
+- canonical gameplay data remains authoritative;
+- required complementary design skills were actually read for major visual work;
+- visual concept was chosen before coding;
+- screen has a clear hero interaction;
+- design is not generic dashboard UI;
+- SSS Wizard identity is preserved;
+- shared components/tokens are reused appropriately;
+- tooltips are correct;
+- hover/selected/focus/disabled/locked states exist;
+- motion communicates state instead of adding noise;
+- responsive/overflow behavior was checked;
+- runtime visual inspection was performed when available;
+- screenshot/user feedback was treated as source of truth;
+- completion report lists exact skills used.
 
-## References
-
-Read these only when relevant to the task:
-
-- `references/design-system.md` — colors, typography, theme, semantic styling, motion.
-- `references/layout-rules.md` — shell, outer width, `EditableGrid`, panel and responsive contracts.
-- `references/component-rules.md` — shared primitives and reuse decisions.
-- `references/ui-antipatterns.md` — SSS Wizard-specific UI failure modes to avoid.

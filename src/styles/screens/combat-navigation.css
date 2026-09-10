@@ -361,6 +361,7 @@
   left: 0;
   transform-origin: 0 0;
   transition: transform 230ms cubic-bezier(.22, .8, .28, 1);
+  will-change: transform;
 }
 
 .combat-progression-viewport.is-dragging .combat-progression-stage {
@@ -496,6 +497,36 @@
   stroke-width: 3;
 }
 
+.combat-progression-viewport.is-dragging .combat-progression-connection,
+.combat-progression-viewport.is-dragging .combat-progression-connection-underlay {
+  filter: none;
+}
+
+.combat-progression-viewport.is-dragging .combat-progression-connection-underlay {
+  opacity: .05;
+}
+
+.combat-progression-viewport.is-dragging .combat-progression-connection-underlay.is-main {
+  opacity: .08;
+}
+
+.combat-progression-viewport.is-dragging .combat-progression-connection-sweep {
+  animation: none;
+  opacity: 0;
+}
+
+.combat-progression-junction {
+  position: absolute;
+  z-index: 1;
+  width: 7px;
+  height: 7px;
+  border: 1px solid color-mix(in srgb, var(--ui-gold) 76%, var(--ui-border));
+  background: var(--ui-panel-strong);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--ui-gold) 28%, transparent);
+  pointer-events: none;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
 .combat-progression-chapter {
   position: absolute;
   z-index: 1;
@@ -546,7 +577,6 @@
 
 .combat-progression-node.is-branch {
   min-height: 158px;
-  transform: translate(-50%, -50%) scale(.88);
 }
 
 .combat-progression-node.is-final {
@@ -557,39 +587,11 @@
 
 .combat-progression-node:hover {
   filter: brightness(1.1);
-  transform: translate(-50%, -50%) translateY(-3px);
-}
-
-.combat-progression-node.is-branch:hover {
-  transform: translate(-50%, -50%) scale(.91) translateY(-3px);
-}
-
-.combat-progression-node.is-final:hover {
-  transform: translate(-50%, -50%) scale(1.02) translateY(-3px);
 }
 
 .combat-progression-node:focus-visible {
   outline: 2px solid var(--node-accent);
   outline-offset: 5px;
-}
-
-.combat-progression-node-halo {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 70px;
-  height: 70px;
-  border: 1px solid color-mix(in srgb, var(--node-accent) 24%, transparent);
-  border-radius: 50%;
-  opacity: .78;
-  pointer-events: none;
-  transform: translate(-50%, -50%);
-  transition: opacity 180ms cubic-bezier(.22, .8, .28, 1), border-color 180ms cubic-bezier(.22, .8, .28, 1);
-}
-
-.combat-progression-node.is-final .combat-progression-node-halo {
-  width: 94px;
-  height: 94px;
 }
 
 .combat-progression-node-core {
@@ -602,9 +604,9 @@
   width: 58px;
   height: 58px;
   border: 1px solid color-mix(in srgb, var(--node-accent) 74%, var(--ui-border));
-  border-radius: 50%;
+  border-radius: 6px;
   color: var(--node-accent);
-  background: radial-gradient(circle at 42% 36%, color-mix(in srgb, var(--node-accent) 29%, var(--ui-panel-strong)), var(--ui-panel));
+  background: linear-gradient(145deg, color-mix(in srgb, var(--node-accent) 24%, var(--ui-panel-strong)), var(--ui-panel) 72%);
   box-shadow: inset 0 0 16px color-mix(in srgb, var(--node-accent) 14%, transparent), 0 0 18px color-mix(in srgb, var(--node-accent) 19%, transparent);
   transform: translate(-50%, -50%);
 }
@@ -613,7 +615,7 @@
   position: absolute;
   inset: 5px;
   border: 1px solid color-mix(in srgb, var(--node-accent) 34%, transparent);
-  border-radius: 50%;
+  border-radius: 2px;
   content: '';
 }
 
@@ -621,19 +623,31 @@
   position: absolute;
   inset: -7px;
   border: 1px solid color-mix(in srgb, var(--node-accent) 30%, transparent);
-  border-radius: 50%;
+  border-radius: 8px;
   content: '';
 }
 
+.combat-progression-node.is-branch .combat-progression-node-core {
+  width: 48px;
+  height: 48px;
+}
+
+.combat-progression-node.is-branch .combat-progression-node-core::after {
+  inset: -5px;
+  border-radius: 6px;
+}
+
 .combat-progression-node.is-final .combat-progression-node-core {
-  width: 76px;
-  height: 76px;
+  width: 72px;
+  height: 72px;
+  border-radius: 7px;
   box-shadow: inset 0 0 22px color-mix(in srgb, var(--node-accent) 18%, transparent), 0 0 26px color-mix(in srgb, var(--node-accent) 28%, transparent);
 }
 
 .combat-progression-node.is-final .combat-progression-node-core::after {
   inset: -9px;
-  border-style: dashed;
+  border-width: 2px;
+  border-radius: 9px;
 }
 
 .combat-progression-node-copy {
@@ -689,10 +703,14 @@
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--node-accent) 18%, transparent), 0 10px 22px color-mix(in srgb, var(--node-accent) 14%, transparent);
 }
 
-.combat-progression-node.is-selected .combat-progression-node-halo,
-.combat-progression-node:hover .combat-progression-node-halo {
-  border-color: color-mix(in srgb, var(--node-accent) 70%, transparent);
-  opacity: 1;
+.combat-progression-node.is-selected .combat-progression-node-core {
+  border-color: color-mix(in srgb, var(--node-accent) 92%, white);
+  box-shadow: inset 0 0 16px color-mix(in srgb, var(--node-accent) 18%, transparent), 0 0 0 3px color-mix(in srgb, var(--node-accent) 16%, transparent), 0 0 22px color-mix(in srgb, var(--node-accent) 24%, transparent);
+}
+
+.combat-progression-node.is-selected .combat-progression-node-core::after,
+.combat-progression-node:hover .combat-progression-node-core::after {
+  border-color: color-mix(in srgb, var(--node-accent) 76%, transparent);
 }
 
 .combat-progression-node.is-locked {
@@ -719,22 +737,25 @@
 }
 
 .combat-progression-node.is-active .combat-progression-node-core {
-  box-shadow: inset 0 0 18px color-mix(in srgb, var(--node-accent) 18%, transparent), 0 0 24px color-mix(in srgb, var(--node-accent) 31%, transparent);
+  box-shadow: inset 0 0 18px color-mix(in srgb, var(--node-accent) 18%, transparent), 0 0 20px color-mix(in srgb, var(--node-accent) 25%, transparent);
 }
 
-.combat-progression-node.is-active .combat-progression-node-copy::before {
+.combat-progression-node.is-active::after {
   position: absolute;
-  top: -8px;
-  right: 8px;
-  padding: 2px 5px;
-  border: 1px solid color-mix(in srgb, var(--node-accent) 60%, var(--ui-border));
-  border-radius: 3px;
-  color: var(--node-accent);
-  background: var(--ui-panel-strong);
-  content: 'ACTIVE ROUTE';
-  font: 7px var(--font-mono);
-  letter-spacing: .08em;
+  top: calc(50% - 34px);
+  left: calc(50% + 27px);
+  width: 7px;
+  height: 7px;
+  border: 1px solid color-mix(in srgb, var(--node-accent) 84%, white);
+  background: var(--node-accent);
+  box-shadow: 0 0 9px color-mix(in srgb, var(--node-accent) 60%, transparent);
   pointer-events: none;
+  transform: rotate(45deg);
+}
+
+.combat-progression-node.is-final.is-active::after {
+  top: calc(50% - 43px);
+  left: calc(50% + 35px);
 }
 
 .combat-progression-node.is-prototype {
@@ -743,8 +764,16 @@
 }
 
 .combat-progression-node.is-prototype .combat-progression-node-core {
-  border-radius: 14px;
+  border-radius: 5px;
   border-style: dashed;
+}
+
+.combat-progression-viewport.is-dragging .combat-progression-node-core {
+  box-shadow: inset 0 0 10px color-mix(in srgb, var(--node-accent) 12%, transparent);
+}
+
+.combat-progression-viewport.is-dragging .combat-progression-node-copy {
+  box-shadow: none;
 }
 
 .combat-act-tree-hint {
@@ -1329,23 +1358,12 @@
   }
 }
 
-@keyframes combat-progression-breathe {
-  0%, 100% {
-    opacity: .55;
-    transform: translateX(-50%) scale(1);
-  }
-  50% {
-    opacity: .95;
-    transform: translateX(-50%) scale(1.04);
-  }
-}
-
 @keyframes combat-progression-boss-pulse {
   0%, 100% {
-    box-shadow: inset 0 0 22px color-mix(in srgb, var(--node-accent) 18%, transparent), 0 0 22px color-mix(in srgb, var(--node-accent) 22%, transparent);
+    box-shadow: inset 0 0 20px color-mix(in srgb, var(--node-accent) 18%, transparent), 0 0 20px color-mix(in srgb, var(--node-accent) 22%, transparent);
   }
   50% {
-    box-shadow: inset 0 0 26px color-mix(in srgb, var(--node-accent) 24%, transparent), 0 0 34px color-mix(in srgb, var(--node-accent) 34%, transparent);
+    box-shadow: inset 0 0 24px color-mix(in srgb, var(--node-accent) 24%, transparent), 0 0 28px color-mix(in srgb, var(--node-accent) 32%, transparent);
   }
 }
 
@@ -1353,18 +1371,17 @@
   animation: combat-progression-entry 190ms cubic-bezier(.22, .8, .28, 1) both;
 }
 
-.combat-progression-node.is-selected .combat-progression-node-halo {
-  animation: combat-progression-breathe 2.8s cubic-bezier(.42, 0, .58, 1) infinite;
-}
-
 .combat-progression-node.is-final .combat-progression-node-core,
 .combat-progression-node.is-boss-ready .combat-progression-node-core {
   animation: combat-progression-boss-pulse 2.8s cubic-bezier(.42, 0, .58, 1) infinite;
 }
 
+.combat-progression-viewport.is-dragging .combat-progression-node-core {
+  animation: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .combat-act-navigation-dialog,
-  .combat-progression-node.is-selected .combat-progression-node-halo,
   .combat-progression-connection-sweep,
   .combat-progression-node.is-final .combat-progression-node-core,
   .combat-progression-node.is-boss-ready .combat-progression-node-core {
@@ -1379,7 +1396,6 @@
 }
 
 :root[data-reduced-motion='true'] .combat-act-navigation-dialog,
-:root[data-reduced-motion='true'] .combat-progression-node.is-selected .combat-progression-node-halo,
 :root[data-reduced-motion='true'] .combat-progression-connection-sweep,
 :root[data-reduced-motion='true'] .combat-progression-node.is-final .combat-progression-node-core,
 :root[data-reduced-motion='true'] .combat-progression-node.is-boss-ready .combat-progression-node-core {
@@ -1481,6 +1497,11 @@
   .combat-progression-node-core {
     width: 49px;
     height: 49px;
+  }
+
+  .combat-progression-node.is-branch .combat-progression-node-core {
+    width: 43px;
+    height: 43px;
   }
 
   .combat-progression-node.is-final .combat-progression-node-core {

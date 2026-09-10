@@ -39,14 +39,39 @@ const getFitTransform = (viewport: StageSize, contentBounds: ProgressionBounds):
 
 export function CombatProgressionViewport({ stage, contentBounds, resetKey, ariaLabel, children }: { stage: StageSize; contentBounds: ProgressionBounds; resetKey: string; ariaLabel: string; children: ReactNode }) {
   const viewportRef = useRef<HTMLDivElement>(null)
+  const stageRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<{ pointerId: number; startX: number; startY: number; originX: number; originY: number } | null>(null)
   const transformRef = useRef<ViewTransform>({ x: 0, y: 0, scale: DEFAULT_ZOOM })
+  const pendingTransformRef = useRef<ViewTransform | null>(null)
+  const animationFrameRef = useRef<number | null>(null)
   const layoutKeyRef = useRef('')
   const [viewport, setViewport] = useState<StageSize>({ width: 0, height: 0 })
-  const [transform, setTransform] = useState<ViewTransform>(transformRef.current)
   const [dragging, setDragging] = useState(false)
   const layoutKey = useMemo(() => `${resetKey}:${viewport.width}:${viewport.height}:${contentBounds.left}:${contentBounds.right}:${contentBounds.top}:${contentBounds.bottom}`, [contentBounds.bottom, contentBounds.left, contentBounds.right, contentBounds.top, resetKey, viewport.height, viewport.width])
-  const updateTransform = useCallback((next: ViewTransform) => { const safe = clampTransform(next, viewport, contentBounds); transformRef.current = safe; setTransform(safe) }, [contentBounds, viewport])
+  const applyStageTransform = useCallback((next: ViewTransform) => {
+    const safe = clampTransform(next, viewport, contentBounds)
+    transformRef.current = safe
+    pendingTransformRef.current = null
+    const stageElement = stageRef.current
+    if (stageElement) stageElement.style.transform = `translate3d(${safe.x}px, ${safe.y}px, 0) scale(${safe.scale})`
+    return safe
+  }, [contentBounds, viewport])
+  const scheduleStageTransform = useCallback((next: ViewTransform) => {
+    const safe = clampTransform(next, viewport, contentBounds)
+    transformRef.current = safe
+    pendingTransformRef.current = safe
+    if (typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function') {
+      applyStageTransform(safe)
+      return
+    }
+    if (animationFrameRef.current !== null) return
+    animationFrameRef.current = window.requestAnimationFrame(() => {
+      animationFrameRef.current = null
+      const pending = pendingTransformRef.current
+      pendingTransformRef.current = null
+      if (pending) applyStageTransform(pending)
+    })
+  }, [applyStageTransform, contentBounds, viewport])
 
   useEffect(() => {
     const element = viewportRef.current
@@ -63,25 +88,31 @@ export function CombatProgressionViewport({ stage, contentBounds, resetKey, aria
   useEffect(() => {
     if (!viewport.width || !viewport.height || layoutKeyRef.current === layoutKey) return
     layoutKeyRef.current = layoutKey
-    updateTransform(getFitTransform(viewport, contentBounds))
+    applyStageTransform(getFitTransform(viewport, contentBounds))
     setDragging(false)
     dragRef.current = null
-  }, [contentBounds, layoutKey, updateTransform, viewport])
+  }, [applyStageTransform, contentBounds, layoutKey, viewport])
 
   useEffect(() => {
-    updateTransform(transformRef.current)
-  }, [contentBounds, updateTransform, viewport])
+    applyStageTransform(transformRef.current)
+  }, [applyStageTransform])
 
-  const fitView = useCallback(() => updateTransform(getFitTransform(viewport, contentBounds)), [contentBounds, updateTransform, viewport])
+  useEffect(() => () => {
+    if (animationFrameRef.current !== null && typeof window !== 'undefined') window.cancelAnimationFrame(animationFrameRef.current)
+    animationFrameRef.current = null
+    pendingTransformRef.current = null
+  }, [])
+
+  const fitView = useCallback(() => applyStageTransform(getFitTransform(viewport, contentBounds)), [applyStageTransform, contentBounds, viewport])
   const zoomAt = useCallback((factor: number, focalX: number, focalY: number) => {
     const current = transformRef.current
     const nextScale = clamp(current.scale * factor, MIN_ZOOM, MAX_ZOOM)
     if (nextScale === current.scale) return false
     const worldX = (focalX - current.x) / current.scale
     const worldY = (focalY - current.y) / current.scale
-    updateTransform({ scale: nextScale, x: focalX - worldX * nextScale, y: focalY - worldY * nextScale })
+    applyStageTransform({ scale: nextScale, x: focalX - worldX * nextScale, y: focalY - worldY * nextScale })
     return true
-  }, [updateTransform])
+  }, [applyStageTransform])
 
   const handleWheel = (event: ReactWheelEvent<HTMLDivElement>) => {
     if (!Number.isFinite(event.deltaY) || event.deltaY === 0) return
@@ -114,17 +145,18 @@ export function CombatProgressionViewport({ stage, contentBounds, resetKey, aria
     const deltaY = event.clientY - drag.startY
     if (!dragging && Math.abs(deltaX) < PAN_THRESHOLD && Math.abs(deltaY) < PAN_THRESHOLD) return
     event.preventDefault()
-    setDragging(true)
-    updateTransform({ ...transformRef.current, x: drag.originX + deltaX, y: drag.originY + deltaY })
+    if (!dragging) setDragging(true)
+    scheduleStageTransform({ ...transformRef.current, x: drag.originX + deltaX, y: drag.originY + deltaY })
   }
 
   const handlePointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (dragRef.current?.pointerId !== event.pointerId) return
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId)
     dragRef.current = null
+    applyStageTransform(transformRef.current)
     setDragging(false)
   }
 
-  const stageStyle = { width: `${stage.width}px`, height: `${stage.height}px`, transform: `translate3d(${transform.x}px, ${transform.y}px, 0) scale(${transform.scale})` } as CSSProperties
-  return <div ref={viewportRef} className={`combat-progression-viewport${dragging ? ' is-dragging' : ''}`} tabIndex={0} aria-label={ariaLabel} onWheel={handleWheel} onKeyDown={handleKeyDown} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} onDragStart={(event) => event.preventDefault()}><div className="combat-progression-ambient combat-progression-ambient-one" aria-hidden="true" /><div className="combat-progression-ambient combat-progression-ambient-two" aria-hidden="true" /><div className="combat-progression-stage" style={stageStyle}>{children}</div></div>
+  const stageStyle = { width: `${stage.width}px`, height: `${stage.height}px` } as CSSProperties
+  return <div ref={viewportRef} className={`combat-progression-viewport${dragging ? ' is-dragging' : ''}`} tabIndex={0} aria-label={ariaLabel} onWheel={handleWheel} onKeyDown={handleKeyDown} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} onDragStart={(event) => event.preventDefault()}><div className="combat-progression-ambient combat-progression-ambient-one" aria-hidden="true" /><div className="combat-progression-ambient combat-progression-ambient-two" aria-hidden="true" /><div ref={stageRef} className="combat-progression-stage" style={stageStyle}>{children}</div></div>
 }

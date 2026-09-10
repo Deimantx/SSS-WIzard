@@ -1,39 +1,55 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
+import { Maximize2, Minus, Plus } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type WheelEvent as ReactWheelEvent } from 'react'
+import { GameTooltip } from '../../../components/ui'
+import { TooltipContent } from '../../../components/ui/tooltip/Tooltip'
 
 interface StageSize { width: number; height: number }
 export interface ProgressionBounds { left: number; right: number; top: number; bottom: number }
 interface PanBounds { x: { min: number; max: number }; y: { min: number; max: number } }
+interface ViewTransform { x: number; y: number; scale: number }
 
-const FIT_PADDING = 28
+export const MIN_ZOOM = 0.65
+export const MAX_ZOOM = 1.6
+export const DEFAULT_ZOOM = 1
 const PAN_THRESHOLD = 5
+const FIT_PADDING_RATIO = 0.12
 
-const getFitScale = (viewport: StageSize, stage: StageSize) => {
-  if (viewport.width <= 0 || viewport.height <= 0) return 1
-  return Math.max(0.1, Math.min((viewport.width - FIT_PADDING * 2) / stage.width, (viewport.height - FIT_PADDING * 2) / stage.height))
+const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value))
+const getViewportPadding = (viewport: StageSize) => Math.max(24, Math.min(72, Math.min(viewport.width, viewport.height) * FIT_PADDING_RATIO))
+
+const getPanBounds = (viewport: StageSize, scale: number, contentBounds: ProgressionBounds): PanBounds => {
+  if (viewport.width <= 0 || viewport.height <= 0) return { x: { min: 0, max: 0 }, y: { min: 0, max: 0 } }
+  const padding = getViewportPadding(viewport)
+  return {
+    x: { min: padding - contentBounds.right * scale, max: viewport.width - padding - contentBounds.left * scale },
+    y: { min: padding - contentBounds.bottom * scale, max: viewport.height - padding - contentBounds.top * scale },
+  }
 }
 
-const getPanBounds = (viewport: StageSize, stage: StageSize, scale: number, contentBounds: ProgressionBounds): PanBounds => {
-  if (viewport.width <= 0 || viewport.height <= 0) return { x: { min: 0, max: 0 }, y: { min: 0, max: 0 } }
-  const baseLeft = viewport.width / 2 + (contentBounds.left - stage.width / 2) * scale
-  const baseRight = viewport.width / 2 + (contentBounds.right - stage.width / 2) * scale
-  const baseTop = viewport.height / 2 + (contentBounds.top - stage.height / 2) * scale
-  const baseBottom = viewport.height / 2 + (contentBounds.bottom - stage.height / 2) * scale
-  const xLower = FIT_PADDING - baseLeft
-  const xUpper = viewport.width - FIT_PADDING - baseRight
-  const yLower = FIT_PADDING - baseTop
-  const yUpper = viewport.height - FIT_PADDING - baseBottom
-  return { x: { min: Math.min(xLower, xUpper), max: Math.max(xLower, xUpper) }, y: { min: Math.min(yLower, yUpper), max: Math.max(yLower, yUpper) } }
+const clampTransform = (transform: ViewTransform, viewport: StageSize, contentBounds: ProgressionBounds): ViewTransform => {
+  const bounds = getPanBounds(viewport, transform.scale, contentBounds)
+  return { ...transform, x: clamp(transform.x, bounds.x.min, bounds.x.max), y: clamp(transform.y, bounds.y.min, bounds.y.max) }
+}
+
+const getFitTransform = (viewport: StageSize, contentBounds: ProgressionBounds): ViewTransform => {
+  if (viewport.width <= 0 || viewport.height <= 0) return { x: 0, y: 0, scale: DEFAULT_ZOOM }
+  const padding = getViewportPadding(viewport)
+  const contentWidth = Math.max(1, contentBounds.right - contentBounds.left)
+  const contentHeight = Math.max(1, contentBounds.bottom - contentBounds.top)
+  const scale = clamp(Math.min((viewport.width - padding * 2) / contentWidth, (viewport.height - padding * 2) / contentHeight), MIN_ZOOM, MAX_ZOOM)
+  return clampTransform({ scale, x: viewport.width / 2 - ((contentBounds.left + contentBounds.right) / 2) * scale, y: viewport.height / 2 - ((contentBounds.top + contentBounds.bottom) / 2) * scale }, viewport, contentBounds)
 }
 
 export function CombatProgressionViewport({ stage, contentBounds, resetKey, ariaLabel, children }: { stage: StageSize; contentBounds: ProgressionBounds; resetKey: string; ariaLabel: string; children: ReactNode }) {
   const viewportRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<{ pointerId: number; startX: number; startY: number; originX: number; originY: number } | null>(null)
+  const transformRef = useRef<ViewTransform>({ x: 0, y: 0, scale: DEFAULT_ZOOM })
+  const layoutKeyRef = useRef('')
   const [viewport, setViewport] = useState<StageSize>({ width: 0, height: 0 })
-  const [pan, setPan] = useState({ x: 0, y: 0 })
+  const [transform, setTransform] = useState<ViewTransform>(transformRef.current)
   const [dragging, setDragging] = useState(false)
-  const fitScale = useMemo(() => getFitScale(viewport, stage), [stage, viewport])
-  const scale = Math.max(0.55, Math.min(1, fitScale * 1.08))
-  const panBounds = useMemo(() => getPanBounds(viewport, stage, scale, contentBounds), [contentBounds, scale, stage, viewport])
+  const layoutKey = useMemo(() => `${resetKey}:${viewport.width}:${viewport.height}:${contentBounds.left}:${contentBounds.right}:${contentBounds.top}:${contentBounds.bottom}`, [contentBounds.bottom, contentBounds.left, contentBounds.right, contentBounds.top, resetKey, viewport.height, viewport.width])
+  const updateTransform = useCallback((next: ViewTransform) => { const safe = clampTransform(next, viewport, contentBounds); transformRef.current = safe; setTransform(safe) }, [contentBounds, viewport])
 
   useEffect(() => {
     const element = viewportRef.current
@@ -47,20 +63,50 @@ export function CombatProgressionViewport({ stage, contentBounds, resetKey, aria
     return () => observer.disconnect()
   }, [])
 
-  useEffect(() => { setPan({ x: 0, y: 0 }); setDragging(false); dragRef.current = null }, [resetKey])
   useEffect(() => {
-    setPan((current) => {
-      const x = Math.max(panBounds.x.min, Math.min(panBounds.x.max, current.x))
-      const y = Math.max(panBounds.y.min, Math.min(panBounds.y.max, current.y))
-      return x === current.x && y === current.y ? current : { x, y }
-    })
-  }, [panBounds])
+    if (!viewport.width || !viewport.height || layoutKeyRef.current === layoutKey) return
+    layoutKeyRef.current = layoutKey
+    updateTransform(getFitTransform(viewport, contentBounds))
+    setDragging(false)
+    dragRef.current = null
+  }, [contentBounds, layoutKey, updateTransform, viewport])
+
+  useEffect(() => {
+    updateTransform(transformRef.current)
+  }, [contentBounds, updateTransform, viewport])
+
+  const fitView = useCallback(() => updateTransform(getFitTransform(viewport, contentBounds)), [contentBounds, updateTransform, viewport])
+  const zoomAt = useCallback((factor: number, focalX: number, focalY: number) => {
+    const current = transformRef.current
+    const nextScale = clamp(current.scale * factor, MIN_ZOOM, MAX_ZOOM)
+    if (nextScale === current.scale) return false
+    const worldX = (focalX - current.x) / current.scale
+    const worldY = (focalY - current.y) / current.scale
+    updateTransform({ scale: nextScale, x: focalX - worldX * nextScale, y: focalY - worldY * nextScale })
+    return true
+  }, [updateTransform])
+
+  const handleWheel = (event: ReactWheelEvent<HTMLDivElement>) => {
+    if (!Number.isFinite(event.deltaY) || event.deltaY === 0) return
+    const rect = event.currentTarget.getBoundingClientRect()
+    const consumed = zoomAt(Math.exp(-event.deltaY * 0.0015), event.clientX - rect.left, event.clientY - rect.top)
+    if (consumed) event.preventDefault()
+  }
+  const handleKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) return
+    const rect = viewportRef.current?.getBoundingClientRect()
+    if (!rect) return
+    if (event.key === '+' || event.key === '=') { event.preventDefault(); zoomAt(1.1, rect.width / 2, rect.height / 2) }
+    if (event.key === '-') { event.preventDefault(); zoomAt(1 / 1.1, rect.width / 2, rect.height / 2) }
+    if (event.key === '0') { event.preventDefault(); fitView() }
+  }
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.pointerType === 'mouse' && event.button !== 0) return
     if ((event.target as HTMLElement).closest('[data-combat-progression-interactive="true"]')) return
     event.currentTarget.setPointerCapture(event.pointerId)
-    dragRef.current = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, originX: pan.x, originY: pan.y }
+    const current = transformRef.current
+    dragRef.current = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, originX: current.x, originY: current.y }
   }
   const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
     const drag = dragRef.current
@@ -70,7 +116,7 @@ export function CombatProgressionViewport({ stage, contentBounds, resetKey, aria
     if (!dragging && Math.abs(deltaX) < PAN_THRESHOLD && Math.abs(deltaY) < PAN_THRESHOLD) return
     event.preventDefault()
     setDragging(true)
-    setPan({ x: Math.max(panBounds.x.min, Math.min(panBounds.x.max, drag.originX + deltaX)), y: Math.max(panBounds.y.min, Math.min(panBounds.y.max, drag.originY + deltaY)) })
+    updateTransform({ ...transformRef.current, x: drag.originX + deltaX, y: drag.originY + deltaY })
   }
   const handlePointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (dragRef.current?.pointerId !== event.pointerId) return
@@ -79,6 +125,6 @@ export function CombatProgressionViewport({ stage, contentBounds, resetKey, aria
     setDragging(false)
   }
 
-  const stageStyle = { width: `${stage.width}px`, height: `${stage.height}px`, transform: `translate3d(calc(-50% + ${pan.x / scale}px), calc(-50% + ${pan.y / scale}px), 0) scale(${scale})` } as CSSProperties
-  return <div ref={viewportRef} className={`combat-progression-viewport${dragging ? ' is-dragging' : ''}`} aria-label={ariaLabel} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} onDragStart={(event) => event.preventDefault()}><div className="combat-progression-ambient combat-progression-ambient-one" aria-hidden="true" /><div className="combat-progression-ambient combat-progression-ambient-two" aria-hidden="true" /><div className="combat-progression-stage" style={stageStyle}>{children}</div></div>
+  const stageStyle = { width: `${stage.width}px`, height: `${stage.height}px`, transform: `translate3d(${transform.x}px, ${transform.y}px, 0) scale(${transform.scale})` } as CSSProperties
+  return <div ref={viewportRef} className={`combat-progression-viewport${dragging ? ' is-dragging' : ''}`} tabIndex={0} aria-label={ariaLabel} onWheel={handleWheel} onKeyDown={handleKeyDown} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} onDragStart={(event) => event.preventDefault()}><div className="combat-progression-ambient combat-progression-ambient-one" aria-hidden="true" /><div className="combat-progression-ambient combat-progression-ambient-two" aria-hidden="true" /><div className="combat-progression-controls" aria-label="Progression view controls"><GameTooltip block content={<TooltipContent title="Zoom out" description={`Reduce the chronicle view to ${Math.round(MIN_ZOOM * 100)}% minimum.`} />}><button type="button" data-combat-progression-interactive="true" data-zoom-control="true" className="combat-progression-control" aria-label="Zoom out" onClick={() => zoomAt(1 / 1.1, viewport.width / 2, viewport.height / 2)}><Minus size={13} aria-hidden="true" /></button></GameTooltip><GameTooltip block content={<TooltipContent title="Zoom in" description={`Enlarge the chronicle view to ${Math.round(MAX_ZOOM * 100)}% maximum.`} />}><button type="button" data-combat-progression-interactive="true" data-zoom-control="true" className="combat-progression-control" aria-label="Zoom in" onClick={() => zoomAt(1.1, viewport.width / 2, viewport.height / 2)}><Plus size={13} aria-hidden="true" /></button></GameTooltip><GameTooltip block content={<TooltipContent title="Fit tree" description="Recenter the authored progression tree with safe breathing room." />}><button type="button" data-combat-progression-interactive="true" data-zoom-control="true" className="combat-progression-fit" aria-label="Fit progression view" onClick={fitView}><Maximize2 size={12} aria-hidden="true" /> FIT</button></GameTooltip></div><div className="combat-progression-stage" style={stageStyle}>{children}</div></div>
 }

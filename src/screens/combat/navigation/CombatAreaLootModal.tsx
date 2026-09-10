@@ -5,6 +5,7 @@ import { ITEMS } from '../../../game/content/items/items'
 import { MONSTERS } from '../../../game/content/monsters'
 import { formatDropChance, formatDropQuantity } from '../../../game/systems/bestiary/bestiarySelectors'
 import { useGameStore } from '../../../store/gameStore'
+import type { ItemId } from '../../../game/types'
 import type { CombatActNodeViewModel } from './combatActNavigationTypes'
 
 export function CombatAreaLootModal({ node, onClose }: { node: CombatActNodeViewModel; onClose: () => void }) {
@@ -17,5 +18,12 @@ export function CombatAreaLootModal({ node, onClose }: { node: CombatActNodeView
 function LootSource({ encounter, progress, inventory }: { encounter: CombatActNodeViewModel['encounters'][number] | NonNullable<CombatActNodeViewModel['boss']>; progress: ReturnType<typeof useGameStore.getState>['progress']; inventory: ReturnType<typeof useGameStore.getState>['inventory'] }) {
   const monster = encounter.monsterId ? MONSTERS[encounter.monsterId] : null
   if (!monster || !encounter.known) return <section className={`combat-area-loot-source is-unknown${encounter.role === 'boss' ? ' is-boss' : ''}`}><div className="combat-area-loot-source-head"><span className="combat-area-loot-source-glyph">?</span><div><strong>{encounter.role === 'boss' ? 'UNKNOWN BOSS' : 'UNKNOWN CREATURE'}</strong><small>Loot information undiscovered</small></div><Status tone="locked">HIDDEN</Status></div></section>
-  return <section className={`combat-area-loot-source${encounter.role === 'boss' ? ' is-boss' : ''}`}><div className="combat-area-loot-source-head"><span className="combat-area-loot-source-glyph">{encounter.role === 'boss' ? '♛' : '◇'}</span><div><strong>{monster.name}</strong><small>{encounter.role === 'boss' ? 'BOSS LOOT' : 'NORMAL ENCOUNTER'}</small></div><Status tone="success">DISCOVERED</Status></div><div className="combat-area-loot-drop-list">{monster.loot.map((drop) => { const item = ITEMS[drop.itemId]; return <ItemTooltip key={drop.itemId} itemId={drop.itemId} owned={inventory[drop.itemId] ?? 0}><div className="combat-area-loot-drop"><ItemIcon itemId={drop.itemId} size="tiny" /><strong>{item.name}</strong><span>{formatDropQuantity(drop.min, drop.max)}</span><small>{formatDropChance(drop.chance)}</small></div></ItemTooltip>})}</div></section>
+  return <section className={`combat-area-loot-source${encounter.role === 'boss' ? ' is-boss' : ''}`}><div className="combat-area-loot-source-head"><span className="combat-area-loot-source-glyph">{encounter.role === 'boss' ? '♛' : '◇'}</span><div><strong>{monster.name}</strong><small>{encounter.role === 'boss' ? 'BOSS LOOT' : 'NORMAL ENCOUNTER'}</small></div><Status tone="success">DISCOVERED</Status></div><div className="combat-area-loot-drop-grid">{monster.loot.map((drop) => <LootDropTile key={drop.itemId} drop={drop} sourceName={monster.name} inventory={inventory} />)}</div></section>
+}
+
+function LootDropTile({ drop, sourceName, inventory }: { drop: { itemId: ItemId; min: number; max: number; chance: number }; sourceName: string; inventory: ReturnType<typeof useGameStore.getState>['inventory'] }) {
+  const item = ITEMS[drop.itemId]
+  const chance = formatDropChance(drop.chance)
+  const quantity = formatDropQuantity(drop.min, drop.max)
+  return <ItemTooltip itemId={drop.itemId} owned={inventory[drop.itemId] ?? 0} extraContent={<div className="tooltip-section"><small>DROP</small><span className="tooltip-row"><span>Chance</span><b>{chance}</b></span><span className="tooltip-row"><span>Quantity</span><b>{quantity}</b></span><span className="tooltip-row"><span>Source</span><b>{sourceName}</b></span></div>}><div className="combat-area-loot-tile" role="img" aria-label={`${item.name}: ${chance}, quantity ${quantity}`}><span className="combat-area-loot-icon"><ItemIcon itemId={drop.itemId} size="tile" /></span><span className="combat-area-loot-values"><b>{chance}</b><small>{quantity}</small></span></div></ItemTooltip>
 }

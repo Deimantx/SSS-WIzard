@@ -63,6 +63,8 @@ export interface CombatTelemetryScope {
   dungeonId?: DungeonId
   monsterId?: MonsterId
   startedAtSequence: number
+  /** Changes only when an analytics aggregate changes; clock updates do not bump it. */
+  aggregateRevision: number
   engagedMs: number
   elapsedMs: number
   player: CombatActorMetrics

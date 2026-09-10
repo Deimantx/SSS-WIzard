@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Card } from '../../components/ui'
+import { useCombatRenderIsolation } from '../../devtools/combatRenderIsolationStore'
 import { useGameStore } from '../../store/gameStore'
 import { CombatDetailsPanel } from './CombatDetailsPanel'
 import { DungeonStatisticsPanel } from './DungeonStatisticsPanel'
@@ -8,6 +9,7 @@ type CombatAnalyticsView = 'details' | 'dungeon'
 
 export function CombatAnalyticsPanel() {
   const combatActive = useGameStore((state) => state.combat.active)
+  const renderIsolation = useCombatRenderIsolation()
   const [view, setView] = useState<CombatAnalyticsView>('details')
 
   useEffect(() => {
@@ -23,7 +25,7 @@ export function CombatAnalyticsPanel() {
       </div>
     </header>
     <div className="combat-analytics-grid">
-      {view === 'details' ? <CombatDetailsPanel key="details" /> : <DungeonStatisticsPanel key="dungeon" />}
+      {!renderIsolation.renderCombatAnalytics ? <div className="combat-analytics-isolation-placeholder"><strong>COMBAT ANALYTICS ISOLATED</strong><span>Gameplay and combat simulation continue normally.</span></div> : view === 'details' ? renderIsolation.renderCombatDetails ? <CombatDetailsPanel key="details" /> : <div className="combat-analytics-isolation-placeholder"><strong>COMBAT DETAILS ISOLATED</strong><span>Telemetry collection remains active for validation.</span></div> : <DungeonStatisticsPanel key="dungeon" />}
     </div>
   </Card>
 }

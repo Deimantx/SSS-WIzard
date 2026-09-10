@@ -20,6 +20,7 @@ export const createCombatTelemetryScope = (scopeId: string, startedAtSequence: n
   dungeonId,
   monsterId,
   startedAtSequence,
+  aggregateRevision: 0,
   engagedMs: 0,
   elapsedMs: 0,
   player: createCombatActorMetrics(),
@@ -190,6 +191,20 @@ export const reconcileCombatBarrierTelemetry = (scope: CombatTelemetryScope, sta
   ;(['player', 'enemy'] as const).forEach((owner) => reconcileBarrierOwner(scope, owner, finite(barrierFor(state, owner))))
 }
 
+/**
+ * Time advances are intentionally allowed to share the aggregate object graph.
+ * A drift means the live combat state changed a barrier outside the telemetry
+ * event boundary, so the caller must clone before reconciling it.
+ */
+export const hasCombatBarrierTelemetryDrift = (scope: CombatTelemetryScope, state: { combat: { playerBarrier: number; enemyBarrier: number } }): boolean => {
+  return (['player', 'enemy'] as const).some((owner) => {
+    const tracked = scope.barrierLayers.filter((layer) => layer.owner === owner).reduce((total, layer) => total + layer.remaining, 0)
+    return Math.abs(tracked - finite(barrierFor(state, owner))) > 0.0001
+  })
+}
+
+const bumpAggregateRevision = (scope: CombatTelemetryScope) => { scope.aggregateRevision += 1 }
+
 export const consumeCombatEvent = (scope: CombatTelemetryScope, event: CombatEvent): void => {
   const sourceActor = event.source.kind === 'player' || event.source.kind === 'enemy' ? event.source.kind : event.source.kind === 'system' && event.sourceId === 'health-regeneration' ? 'player' : null
   if (!sourceActor) return
@@ -199,6 +214,7 @@ export const consumeCombatEvent = (scope: CombatTelemetryScope, event: CombatEve
   if (event.category === 'damage' || event.category === 'basic-attack' || event.category === 'spell' || event.category === 'enemy-action' || event.category === 'trait') {
     const amount = finite(event.amount)
     if (amount <= 0) return
+    bumpAggregateRevision(scope)
     const componentAmounts = event.damageComponents?.map((component) => ({ damageType: component.damageType, amount: finite(component.amount) })) ?? (event.damageType ? [{ damageType: event.damageType, amount }] : [])
     const sourceMetrics = metricActor(scope, sourceActor)
     const sourceContribution = contributionFor(sourceMetrics.damageDone, event)
@@ -235,6 +251,8 @@ export const consumeCombatEvent = (scope: CombatTelemetryScope, event: CombatEve
     const effective = finite(event.effectiveAmount ?? event.amount)
     const attempted = finite(event.attemptedAmount ?? effective)
     const overheal = finite(event.overheal ?? Math.max(0, attempted - effective))
+    if (effective <= 0 && overheal <= 0) return
+    bumpAggregateRevision(scope)
     const metrics = metricActor(scope, sourceActor)
     const contribution = contributionFor(metrics.healingDone, event)
     metrics.healingDone.total += effective
@@ -255,6 +273,7 @@ export const consumeCombatEvent = (scope: CombatTelemetryScope, event: CombatEve
     const metadata = metadataForEvent(event)
     const key = getCombatMetricSourceKey(event)
     if (metadata && amount > 0) {
+      bumpAggregateRevision(scope)
       const metrics = metricActor(scope, sourceActor)
       const contribution = contributionForMetadata(metrics.healingDone, key, metadata)
       metrics.barrierGranted += amount

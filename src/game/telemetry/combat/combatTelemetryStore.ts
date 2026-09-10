@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { CombatEvent, CombatEventSink } from '../../systems/combat/combatTypes'
-import { advanceCombatTelemetryScope, cloneCombatTelemetryScope, consumeCombatEvent, createCombatTelemetryScope, reconcileCombatBarrierTelemetry } from './combatTelemetryAggregator'
+import { advanceCombatTelemetryScope, cloneCombatTelemetryScope, consumeCombatEvent, createCombatTelemetryScope, hasCombatBarrierTelemetryDrift, reconcileCombatBarrierTelemetry } from './combatTelemetryAggregator'
 import type { CombatTelemetryObserver, CombatTelemetryState } from './combatTelemetryTypes'
 import type { DungeonId, GameState, MonsterId } from '../../types'
 
@@ -39,14 +39,16 @@ export const useCombatTelemetryStore = create<CombatTelemetryStore>((set) => ({
     if (gameState.combat.active && gameState.combat.enemyId && (!encounter || encounter.monsterId !== gameState.combat.enemyId)) encounter = newScope('encounter', run?.dungeonId ?? gameState.combat.dungeonId ?? undefined, gameState.combat.enemyId)
     if (!run && !encounter) return state
     if (run) {
-      run = cloneCombatTelemetryScope(run)
+      const needsBarrierReconcile = hasCombatBarrierTelemetryDrift(run, gameState)
+      run = needsBarrierReconcile ? cloneCombatTelemetryScope(run) : { ...run }
       advanceCombatTelemetryScope(run, deltaMs, gameState.combat.active && Boolean(gameState.combat.enemyId))
-      reconcileCombatBarrierTelemetry(run, gameState)
+      if (needsBarrierReconcile) reconcileCombatBarrierTelemetry(run, gameState)
     }
     if (encounter && gameState.combat.active && gameState.combat.enemyId === encounter.monsterId) {
-      encounter = cloneCombatTelemetryScope(encounter)
+      const needsBarrierReconcile = hasCombatBarrierTelemetryDrift(encounter, gameState)
+      encounter = needsBarrierReconcile ? cloneCombatTelemetryScope(encounter) : { ...encounter }
       advanceCombatTelemetryScope(encounter, deltaMs, true)
-      reconcileCombatBarrierTelemetry(encounter, gameState)
+      if (needsBarrierReconcile) reconcileCombatBarrierTelemetry(encounter, gameState)
     }
     return { ...state, run, encounter }
   }),

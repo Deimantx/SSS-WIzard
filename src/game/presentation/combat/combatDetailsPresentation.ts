@@ -53,7 +53,9 @@ export const cycleCombatDetailsMode = (mode: CombatDetailsMode, direction: -1 | 
   return COMBAT_DETAILS_MODE_ORDER[(safeIndex + direction + COMBAT_DETAILS_MODE_ORDER.length) % COMBAT_DETAILS_MODE_ORDER.length]
 }
 
-export const getCombatDetailsPresentation = (scope: CombatTelemetryScope | null, mode: CombatDetailsMode): CombatDetailsPresentation => {
+export type CombatDetailsScope = Pick<CombatTelemetryScope, 'engagedMs' | 'elapsedMs' | 'player'>
+
+export const getCombatDetailsPresentation = (scope: CombatDetailsScope | null, mode: CombatDetailsMode): CombatDetailsPresentation => {
   const config = COMBAT_DETAILS_MODE_CONFIG[mode]
   const engagedMs = scope?.engagedMs ?? 0
   const empty: CombatDetailsPresentation = { mode, config, total: 0, totalLabel: '0', rate: 0, rateLabel: '0', engagedMs, engagedLabel: formatUiDuration(engagedMs / 1000), elapsedMs: scope?.elapsedMs ?? 0, rows: [] }

@@ -202,6 +202,26 @@ describe('combat telemetry foundation', () => {
     expect(scope.elapsedMs).toBe(10_000)
   })
 
+  it('keeps aggregate references stable while only telemetry time advances', () => {
+    combatTelemetryObserver.beginRun('whispering-woods')
+    combatTelemetryObserver.beginEncounter('forest-wisp')
+    const before = useCombatTelemetryStore.getState()
+    const beforeRun = before.run!
+    const beforeEncounter = before.encounter!
+    const beforeRevision = beforeRun.aggregateRevision
+
+    combatTelemetryObserver.advance(1_000, { combat: { active: true, enemyId: 'forest-wisp', playerBarrier: 0, enemyBarrier: 0 } } as ReturnType<typeof createInitialState>)
+
+    const after = useCombatTelemetryStore.getState()
+    expect(after.run?.player).toBe(beforeRun.player)
+    expect(after.run?.enemy).toBe(beforeRun.enemy)
+    expect(after.encounter?.player).toBe(beforeEncounter.player)
+    expect(after.encounter?.enemy).toBe(beforeEncounter.enemy)
+    expect(after.run?.aggregateRevision).toBe(beforeRevision)
+    expect(after.run?.engagedMs).toBe(1_000)
+    expect(after.encounter?.engagedMs).toBe(1_000)
+  })
+
   it('resets encounters while retaining run totals, then keeps a completed run transiently inspectable', () => {
     combatTelemetryObserver.beginRun('whispering-woods')
     combatTelemetryObserver.beginEncounter('grove-sentinel')

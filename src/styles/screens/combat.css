@@ -2314,6 +2314,9 @@
 .combat-analytics-grid .combat-details-panel { display: grid; }
 .combat-analytics-grid .combat-details-panel,
 .combat-analytics-grid .dungeon-statistics-panel { min-height: 0; }
+.combat-analytics-isolation-placeholder { display: grid; min-height: 160px; place-content: center; gap: 6px; padding: 24px; color: var(--ui-text-muted); text-align: center; }
+.combat-analytics-isolation-placeholder strong { color: var(--ui-text); font: var(--text-label) var(--font-mono); letter-spacing: .08em; }
+.combat-analytics-isolation-placeholder span { font: var(--text-micro) var(--font-mono); }
 @container (max-width: 720px) {
   .combat-analytics-grid { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; }
   .combat-analytics-grid > .card { height: auto; min-height: 260px; }

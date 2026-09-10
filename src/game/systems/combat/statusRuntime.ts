@@ -5,7 +5,7 @@ import type { CombatActor } from './magnitude'
 import { isCombatActorAlive, resolveMagnitude, scaleMagnitude } from './magnitude'
 import { runCombatTriggers } from './triggerRuntime'
 import type { CombatEffect, CombatEventSink, CombatResolutionContext, CombatSource, ActiveStatus, CombatTag, ModifierKey } from './combatTypes'
-import { getCombatModifiers, type CombatModifierEvaluation } from './modifiers'
+import { getCombatModifiers, type CombatModifierEvaluation, type CombatModifierState } from './modifiers'
 import { createCombatValidationContext, hasValidStatusModifierOverrides, validatePeriodicEffectList } from './combatEffectValidation'
 import { buildPeriodicStatusCombatSource, getExecutablePeriodicStatusEffects, getRootCombatSourceProvenance } from './combatProvenance'
 
@@ -63,7 +63,7 @@ export const getNextPlayerStatusEventMs = (state: GameState): number | null => g
 
 export const actorCannotAct = (state: GameState, actor: CombatActor) => statusList(state, actor).some((status) => STATUS_DEFINITIONS[status.statusId]?.preventsAction === true)
 
-export const resolveStatusDuration = (state: Pick<GameState, 'player' | 'combat' | 'equipment' | 'artifactProgress'>, actor: CombatActor, statusId: StatusId, durationMs: number | null, source: CombatSource, options: StatusDurationResolutionOptions = {}) => {
+export const resolveStatusDuration = (state: CombatModifierState, actor: CombatActor, statusId: StatusId, durationMs: number | null, source: CombatSource, options: StatusDurationResolutionOptions = {}) => {
   if (durationMs === null) return null
   const definition = STATUS_DEFINITIONS[statusId]
   const evaluation = options.modifierEvaluation ?? 'active'

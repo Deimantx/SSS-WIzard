@@ -12,7 +12,12 @@ import { getStatusGroupStacks } from './statusSelectors'
 import { getRootCombatSourceProvenance, isEnemySourceOwnerActive } from './combatProvenance'
 import { getAllocatedArtifactCombatProviders } from '../artifacts/artifactProgression'
 
-export type CombatModifierState = Pick<GameState, 'player' | 'combat' | 'equipment' | 'artifactProgress'>
+export type CombatModifierState = {
+  player: Pick<GameState['player'], 'health' | 'maxHealth' | 'mana' | 'maxMana'>
+  combat: Pick<GameState['combat'], 'enemyId' | 'enemyInstanceKey' | 'enemyHp' | 'enemyMaxHp' | 'playerBarrier' | 'enemyBarrier' | 'playerStatuses' | 'enemyStatuses'>
+  equipment: GameState['equipment']
+  artifactProgress: GameState['artifactProgress']
+}
 export type CombatModifierEvaluation = 'active' | 'unconditional' | 'all'
 
 export interface ModifierContext {

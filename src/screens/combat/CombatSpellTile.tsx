@@ -1,8 +1,7 @@
 import { AlertTriangle, BookOpen, CircleDot, Droplet, Settings2, UserMinus } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { SPELLS } from '../../game/content/spells/spells'
 import { SCHOOLS } from '../../game/content/schools/schools'
-import { actorCannotAct } from '../../game/systems/combat/statusRuntime'
 import { getSpellRank } from '../../game/systems/spells'
 import { formatSpellRank } from '../../game/systems/spells/spellProgression'
 import type { SpellId } from '../../game/types'
@@ -17,7 +16,7 @@ import { useGameStore } from '../../store/gameStore'
 import { useGameContextMenu } from '../../ui/context-menu/GameContextMenuProvider'
 import { setNavigationIntent } from '../../ui/navigation/navigationIntent'
 
-export function CombatSpellTile({ spellId, presentationState, globalBlocker, onOpenPresetManager, onRemoveFromPreset }: { spellId: SpellId; presentationState: SpellPresentationState; globalBlocker?: 'inactive' | 'no-target' | 'stunned' | null; onOpenPresetManager: () => void; onRemoveFromPreset?: (spellId: SpellId) => void }) {
+export const CombatSpellTile = memo(function CombatSpellTile({ spellId, presentationState, globalBlocker, onOpenPresetManager, onRemoveFromPreset }: { spellId: SpellId; presentationState: SpellPresentationState; globalBlocker?: 'inactive' | 'no-target' | 'stunned' | null; onOpenPresetManager: () => void; onRemoveFromPreset?: (spellId: SpellId) => void }) {
   const { openContextMenu } = useGameContextMenu()
   const playerMana = useGameStore((state) => state.player.mana)
   const active = useGameStore((state) => state.activities.autoCast[spellId])
@@ -31,9 +30,6 @@ export function CombatSpellTile({ spellId, presentationState, globalBlocker, onO
   const castFeedbackTimer = useRef<number | null>(null)
   const [justResolved, setJustResolved] = useState(false)
   const [justReady, setJustReady] = useState(false)
-  const combatActive = useGameStore((state) => state.combat.active)
-  const enemyId = useGameStore((state) => state.combat.enemyId)
-  const playerStunned = useGameStore((state) => actorCannotAct(state, 'player'))
   const manaCost = presentation.manaCost
   useEffect(() => {
     const previous = previousCooldown.current
@@ -50,7 +46,7 @@ export function CombatSpellTile({ spellId, presentationState, globalBlocker, onO
     previousCooldown.current = cooldown
   }, [cooldown])
   useEffect(() => () => { if (castFeedbackTimer.current !== null) window.clearTimeout(castFeedbackTimer.current) }, [])
-  const failure = rank === null ? 'locked' : playerStunned || globalBlocker === 'stunned' ? 'stunned' : globalBlocker === 'inactive' || !combatActive ? 'inactive' : globalBlocker === 'no-target' || spell.effects.some((effect) => effect.target === 'opponent') && !enemyId ? 'no-target' : cooldown > 0 ? 'cooldown' : playerMana < manaCost ? 'mana' : null
+  const failure = rank === null ? 'locked' : globalBlocker === 'stunned' ? 'stunned' : globalBlocker === 'inactive' ? 'inactive' : globalBlocker === 'no-target' ? 'no-target' : cooldown > 0 ? 'cooldown' : playerMana < manaCost ? 'mana' : null
   const localFailure = failure === 'mana' ? `Need ${Math.max(0, manaCost - playerMana)}` : undefined
   const manualDisabled = Boolean(globalBlocker || failure)
   const stateLabel = cooldown > 0 ? `${formatTime(cooldown)} remaining` : localFailure ?? (manualDisabled ? 'Unavailable' : 'READY')
@@ -64,6 +60,6 @@ export function CombatSpellTile({ spellId, presentationState, globalBlocker, onO
     </GameTooltip>
     <div className="spell-combat-auto-slot"><GameTooltip accent="focus" content={<TooltipContent title={active ? 'AUTO-CAST ACTIVE' : 'AUTO-CAST'} description={active ? `${presentation.autoCastFocus} Focus reserved. Condition: ${autoConditionLabel(spell.autoCondition)}.` : `${presentation.autoCastFocus} Focus will be reserved. Condition: ${autoConditionLabel(spell.autoCondition)}.`} />}><button type="button" className={`spell-combat-auto${active ? ' is-active' : ''}`} aria-label={`${active ? 'Disable' : 'Enable'} Auto-Cast for ${spell.name}`} aria-pressed={active} onClick={() => toggle(spellId)}><CircleDot size={14} aria-hidden="true" /></button></GameTooltip></div>
   </div>
-}
+})
 
 function autoConditionLabel(condition: typeof SPELLS[SpellId]['autoCondition']) { if (!condition || condition.type === 'always') return 'Always'; if (condition.type === 'health-below') return `Health below ${condition.percent}%`; return `Barrier below ${condition.value}` }

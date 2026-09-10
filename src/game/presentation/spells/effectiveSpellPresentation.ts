@@ -9,7 +9,19 @@ import { getSpellCombatSource } from '../../systems/spells/spellSource'
 import type { CombatEffect, CombatSource, CombatTag, DamageComponent, DamageType, GameState, Magnitude, ModifierKey, SpellId } from '../../types'
 import { formatTime } from '../../utils'
 
-export type SpellPresentationState = Pick<GameState, 'schools' | 'equipment' | 'artifactProgress' | 'progress' | 'activities' | 'player' | 'combat'> & {
+/**
+ * State required to describe a Spell. Live timers/cooldowns are deliberately
+ * not part of this read model so Combat can keep the structural presentation
+ * stable while its simulation clock advances.
+ */
+export type SpellPresentationState = {
+  schools: GameState['schools']
+  equipment: GameState['equipment']
+  artifactProgress: GameState['artifactProgress']
+  progress: Pick<GameState['progress'], 'spellRanks'>
+  activities: Pick<GameState['activities'], 'autoCast'>
+  player: Pick<GameState['player'], 'health' | 'maxHealth' | 'mana' | 'maxMana'>
+  combat: Pick<GameState['combat'], 'enemyId' | 'enemyHp' | 'enemyMaxHp' | 'enemyBarrier' | 'playerBarrier' | 'enemyInstanceKey' | 'playerStatuses' | 'enemyStatuses'>
   debug: Pick<GameState['debug'], 'allowFocusOverCap'>
 }
 

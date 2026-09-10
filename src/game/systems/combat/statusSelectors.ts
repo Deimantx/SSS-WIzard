@@ -5,6 +5,16 @@ import type { CombatActor } from './magnitude'
 type StatusState = Pick<GameState, 'combat'>
 const statusList = (state: StatusState, actor: CombatActor): ActiveStatus[] => actor === 'player' ? state.combat.playerStatuses : state.combat.enemyStatuses
 
+const modifierOverrideKey = (overrides: ActiveStatus['modifierOverrides']) => Object.entries(overrides ?? {})
+  .sort(([left], [right]) => left.localeCompare(right))
+  .map(([key, value]) => `${key}:${value}`)
+  .join(',')
+
+/** Stable status identity for live selectors; timer fields are intentionally excluded. */
+export const getCombatStatusStructureKey = (statuses: ActiveStatus[]) => statuses
+  .map((status) => `${status.statusId}:${status.stacks}:${modifierOverrideKey(status.modifierOverrides)}`)
+  .join('|')
+
 /** Returns every live instance belonging to one visible status group. */
 export const getStatusInstances = (state: StatusState, actor: CombatActor, statusId: StatusId): ActiveStatus[] => statusList(state, actor).filter((status) => status.statusId === statusId)
 

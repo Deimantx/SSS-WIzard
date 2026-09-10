@@ -2,7 +2,7 @@ import type { ActionPattern } from '../../game/systems/combat/combatTypes'
 import type { MonsterDefinition } from '../../game/content/monsters'
 import { EnemyPatternTrack } from '../../components/combat/EnemyPatternTrack'
 
-export function EnemyPatternRail({ pattern, enemy, currentStepIndex, currentStepId, currentActionId, currentPatternOriginId }: { pattern?: ActionPattern; enemy?: MonsterDefinition | null; currentStepIndex: number; currentStepId: string | null; currentActionId: string | null; currentPatternOriginId: string | null }) {
+export function EnemyPatternRail({ pattern, enemy, currentStepIndex, currentStepId, currentActionId, currentPatternOriginId, currentProgress = 0 }: { pattern?: ActionPattern; enemy?: MonsterDefinition | null; currentStepIndex: number; currentStepId: string | null; currentActionId: string | null; currentPatternOriginId: string | null; currentProgress?: number }) {
   if (!pattern) return <div className="combat-pattern-empty">No enemy pattern loaded.</div>
   const currentOriginIsDifferent = Boolean(currentPatternOriginId && currentPatternOriginId !== pattern.id && (currentStepId || currentActionId))
   const currentActionLabel = currentActionId ? enemy?.actions[currentActionId]?.name ?? 'Enemy Action' : 'Basic Attack'
@@ -19,6 +19,7 @@ export function EnemyPatternRail({ pattern, enemy, currentStepIndex, currentStep
       currentStepId={currentStepId}
       currentActionId={currentActionId}
       currentPatternOriginId={currentPatternOriginId}
+      currentProgress={currentProgress}
       showLiveState
       ariaLabel="Enemy pattern"
     />

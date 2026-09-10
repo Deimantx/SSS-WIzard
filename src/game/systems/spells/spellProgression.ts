@@ -12,12 +12,14 @@ const SCHOOL_ORDER: readonly SchoolId[] = ['fire', 'water', 'earth', 'air']
 
 const isSpellRank = (value: unknown): value is SpellRank => typeof value === 'number' && Number.isInteger(value) && value >= MIN_SPELL_RANK && value <= MAX_SPELL_RANK
 
-export function getSpellRank(state: Pick<GameState, 'progress'>, spellId: SpellId): SpellRank | null {
+type SpellRankState = Pick<GameState['progress'], 'spellRanks'>
+
+export function getSpellRank(state: { progress: SpellRankState }, spellId: SpellId): SpellRank | null {
   const rank = state.progress.spellRanks[spellId]
   return isSpellRank(rank) ? rank : null
 }
 
-export function isSpellUnlocked(state: Pick<GameState, 'progress'>, spellId: SpellId): boolean {
+export function isSpellUnlocked(state: { progress: SpellRankState }, spellId: SpellId): boolean {
   return getSpellRank(state, spellId) !== null
 }
 
@@ -25,7 +27,7 @@ export function getAutoCastFocusCostForRank(rank: SpellRank): number {
   return rank * 10
 }
 
-export function getSpellAutoCastFocusCost(state: Pick<GameState, 'progress' | 'equipment' | 'artifactProgress'>, spellId: SpellId): number | null {
+export function getSpellAutoCastFocusCost(state: { progress: SpellRankState; equipment: GameState['equipment']; artifactProgress: GameState['artifactProgress'] }, spellId: SpellId): number | null {
   const rank = getSpellRank(state, spellId)
   if (rank === null) return null
   const base = getAutoCastFocusCostForRank(rank)

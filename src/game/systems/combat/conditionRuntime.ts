@@ -5,7 +5,10 @@ import type { CombatCondition, CombatConditionContext } from './combatTypes'
 import { getStatusGroupStacks, hasStatus } from './statusSelectors'
 
 const opponentOf = (actor: CombatActor): CombatActor => actor === 'player' ? 'enemy' : 'player'
-export type CombatConditionState = Pick<GameState, 'player' | 'combat'>
+export type CombatConditionState = {
+  player: Pick<GameState['player'], 'health' | 'maxHealth' | 'mana' | 'maxMana'>
+  combat: Pick<GameState['combat'], 'enemyHp' | 'enemyMaxHp' | 'playerBarrier' | 'enemyBarrier' | 'playerStatuses' | 'enemyStatuses'>
+}
 const barrierFor = (state: CombatConditionState, actor: CombatActor) => actor === 'player' ? state.combat.playerBarrier : state.combat.enemyBarrier
 const hpPercent = (state: CombatConditionState, actor: CombatActor) => {
   const max = actor === 'player' ? state.player.maxHealth : state.combat.enemyMaxHp

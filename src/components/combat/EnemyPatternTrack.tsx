@@ -6,7 +6,6 @@ import type { ActionStep } from '../../game/systems/combat/combatTypes'
 import { GameTooltip } from '../ui'
 import { EnemyActionTooltip, buildBasicAttackPresentation } from './EnemyActionTooltip'
 import { EnemyPatternIcon, getEnemyPatternIconLabel } from './EnemyPatternIcon'
-import { useEnemyCombatActionTiming } from './combatLiveTiming'
 
 interface EnemyPatternTrackProps {
   monster?: MonsterDefinition | null
@@ -16,6 +15,7 @@ interface EnemyPatternTrackProps {
   currentStepId?: string | null
   currentActionId?: string | null
   currentPatternOriginId?: string | null
+  currentProgress?: number
   showLiveState?: boolean
   showRepeat?: boolean
   className?: string
@@ -31,6 +31,7 @@ export const EnemyPatternTrack = memo(function EnemyPatternTrack({
   currentStepId = null,
   currentActionId = null,
   currentPatternOriginId = null,
+  currentProgress = 0,
   showLiveState = false,
   showRepeat = false,
   className = '',
@@ -59,7 +60,7 @@ export const EnemyPatternTrack = memo(function EnemyPatternTrack({
         <GameTooltip block wide placement="bottom" accent={current ? 'warning' : 'neutral'} content={<EnemyActionTooltip action={presentation} />}>
           <button type="button" className={`combat-pattern-node${showLiveState ? ' combat-flow-pattern-node' : ''} is-${state} combat-pattern-icon-${kind}`} aria-label={label} aria-current={current ? 'step' : undefined}>
             <i><EnemyPatternIcon kind={kind} /></i>
-            {showLiveState && current && <CurrentPatternProgress />}
+            {showLiveState && current && <CurrentPatternProgress progress={currentProgress} />}
           </button>
         </GameTooltip>
         {index < steps.length - 1 && <span className="combat-pattern-arrow" aria-hidden="true">→</span>}
@@ -69,8 +70,7 @@ export const EnemyPatternTrack = memo(function EnemyPatternTrack({
   </div>
 })
 
-function CurrentPatternProgress() {
-  const timing = useEnemyCombatActionTiming()
-  const progress = Math.max(0, Math.min(100, timing?.progress ?? 0))
+function CurrentPatternProgress({ progress: rawProgress }: { progress: number }) {
+  const progress = Math.max(0, Math.min(100, rawProgress))
   return <i className="combat-pattern-progress" style={{ transform: `scaleX(${progress / 100})` }} aria-hidden="true" />
 }

@@ -1,5 +1,5 @@
 import { ShieldAlert, WandSparkles } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { memo, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { DUNGEONS } from '../../game/content/dungeons/dungeons'
 import { MONSTERS } from '../../game/content/monsters'
 import { SPELLS } from '../../game/content/spells/spells'
@@ -7,7 +7,7 @@ import { type CombatEffectPresentation } from '../../game/presentation/combat'
 import { getCombatFlowPresentation } from '../../game/presentation/combat/combatFlowPresentation'
 import { classifyEnemyActionPatternIcon } from '../../game/presentation/combat/enemyPatternIconPresentation'
 import { getCurrentEnemyActionStep, getEnemyAction, getEnemyActionPattern, getNextEnemyActionStep } from '../../game/systems/combat/actionRuntime'
-import type { TimedActionState } from '../../game/systems/combat/actionTiming'
+import { getTimedActionState, type TimedActionState } from '../../game/systems/combat/actionTiming'
 import type { ActionStep, CombatLogEntry } from '../../game/systems/combat/combatTypes'
 import type { DungeonId, MonsterId } from '../../game/types'
 import { buildCombatActionPresentation, type CombatActionPresentation } from '../../game/presentation/combat/combatActionPresentation'
@@ -94,15 +94,7 @@ export function CombatFlowPanel({ selectedDungeonId }: { selectedDungeonId: Dung
 
   return <section className="combat-flow-panel" style={{ '--enemy-accent': enemy?.color } as CSSProperties}>
     <header className="combat-flow-head"><div><span className="combat-flow-kicker">COMBAT STAGE</span><strong className="combat-flow-live-label">LIVE DUEL CONSOLE</strong></div><span className="combat-flow-live-dot">{flowState.active ? 'LIVE' : 'STANDBY'}</span></header>
-    <div className={`combat-flow-stage is-actor-${currentActor}`}>
-      <div className="combat-flow-lanes"><CombatPlayerTimelineRow /><span className="combat-flow-lane-axis" aria-hidden="true"><i /><i /></span>{presentation.enemyTimeline && <CombatEnemyTimelineRow label={presentation.enemyTimeline.label} />}</div>
-      {currentActor === 'enemy'
-        ? <CombatEnemyActionCore label={currentLabel} icon={currentIcon} special={Boolean(presentation.enemyCurrentAction?.special)} />
-        : <CombatPlayerActionCore label={currentLabel} icon={currentIcon} />}
-      <CombatImpactLayer enemyId={flowState.enemyId} />
-    </div>
-    <CombatEnemyIntent intent={nextIntent} current={Boolean(presentation.enemyCurrentAction)} />
-    <div className="combat-flow-pattern"><div className="combat-subsection-label">ENEMY PATTERN</div><EnemyPatternRail pattern={presentation.pattern} enemy={enemy} currentStepIndex={presentation.currentStepIndex} currentStepId={presentation.currentStepId} currentActionId={presentation.currentActionId} currentPatternOriginId={presentation.currentPatternOriginId} /></div>
+    <CombatLiveFlowBoundary enemyId={flowState.enemyId} currentActor={currentActor} currentLabel={currentLabel} currentIcon={currentIcon} currentSpecial={Boolean(presentation.enemyCurrentAction?.special)} enemyTimelineLabel={presentation.enemyTimeline?.label} intent={nextIntent} currentIntent={Boolean(presentation.enemyCurrentAction)} enemy={enemy} pattern={presentation.pattern} currentStepIndex={presentation.currentStepIndex} currentStepId={presentation.currentStepId} currentActionId={presentation.currentActionId} currentPatternOriginId={presentation.currentPatternOriginId} />
   </section>
 }
 
@@ -120,13 +112,21 @@ function actionStateLabel(timing: TimedActionState) {
   return 'CASTING'
 }
 
-function CombatPlayerTimelineRow() {
-  return <TimelineRow actor="player" label="Basic Attack" timing={usePlayerCombatActionTiming()} />
-}
-
-function CombatEnemyTimelineRow({ label }: { label: string }) {
-  const timing = useEnemyCombatActionTiming()
-  return timing ? <TimelineRow actor="enemy" label={label} timing={timing} /> : null
+function CombatLiveFlowBoundary({ enemyId, currentActor, currentLabel, currentIcon, currentSpecial, enemyTimelineLabel, intent, currentIntent, enemy, pattern, currentStepIndex, currentStepId, currentActionId, currentPatternOriginId }: { enemyId: MonsterId | null; currentActor: 'player' | 'enemy'; currentLabel: string; currentIcon: ReactNode; currentSpecial: boolean; enemyTimelineLabel?: string; intent: CombatIntent | null; currentIntent: boolean; enemy: ReturnType<typeof getCombatFlowPresentation>['enemy']; pattern: ReturnType<typeof getCombatFlowPresentation>['pattern']; currentStepIndex: number; currentStepId: string | null; currentActionId: string | null; currentPatternOriginId: string | null }) {
+  const playerTiming = usePlayerCombatActionTiming()
+  const enemyTiming = useEnemyCombatActionTiming()
+  const enemyCountdown = currentIntent && enemyTiming ? enemyTiming.etaMs === null ? 'PAUSED' : formatTime(enemyTiming.etaMs) : 'NEXT UP'
+  return <>
+    <div className={`combat-flow-stage is-actor-${currentActor}`}>
+      <div className="combat-flow-lanes"><TimelineRow actor="player" label="Basic Attack" timing={playerTiming} /><span className="combat-flow-lane-axis" aria-hidden="true"><i /><i /></span>{enemyTimelineLabel && enemyTiming && <TimelineRow actor="enemy" label={enemyTimelineLabel} timing={enemyTiming} />}</div>
+      {currentActor === 'enemy'
+        ? enemyTiming && <ActionCore actor="enemy" label={currentLabel} icon={currentIcon} timing={enemyTiming} special={currentSpecial} />
+        : <ActionCore actor="player" label={currentLabel} icon={currentIcon} timing={playerTiming} />}
+      <CombatImpactLayer enemyId={enemyId} />
+    </div>
+    <CombatEnemyIntent intent={intent} current={currentIntent} countdown={enemyCountdown} />
+    <div className="combat-flow-pattern"><div className="combat-subsection-label">ENEMY PATTERN</div><EnemyPatternRail pattern={pattern} enemy={enemy} currentStepIndex={currentStepIndex} currentStepId={currentStepId} currentActionId={currentActionId} currentPatternOriginId={currentPatternOriginId} currentProgress={enemyTiming?.progress ?? 0} /></div>
+  </>
 }
 
 function TimelineRow({ actor, label, timing }: { actor: 'player' | 'enemy'; label: string; timing: TimedActionState }) {
@@ -134,15 +134,6 @@ function TimelineRow({ actor, label, timing }: { actor: 'player' | 'enemy'; labe
   const progress = Math.max(0, Math.min(100, timing.progress))
   const blockLabel = state === 'stunned' ? 'STUNNED · PAUSED' : state === 'paused' ? 'DEBUG PAUSED' : state === 'disabled' ? 'DISABLED' : null
   return <div className={`combat-flow-timeline combat-flow-timeline-${actor} is-${state}${progress >= 90 ? ' is-near-complete' : ''}`}><div className="combat-flow-timeline-head"><span className="combat-subsection-label">{actor === 'player' ? 'PLAYER' : 'ENEMY'}</span><strong>{label}</strong><span className="combat-flow-timeline-time ui-time">{timing.blockReason === 'disabled' ? 'DISABLED' : timing.etaMs === null ? 'PAUSED' : formatTime(timing.etaMs)}</span></div><CombatActionProgress value={progress} />{blockLabel && <div className="combat-flow-paused">{blockLabel}</div>}</div>
-}
-
-function CombatPlayerActionCore({ label, icon }: { label: string; icon: ReactNode }) {
-  return <ActionCore actor="player" label={label} icon={icon} timing={usePlayerCombatActionTiming()} />
-}
-
-function CombatEnemyActionCore({ label, icon, special }: { label: string; icon: ReactNode; special: boolean }) {
-  const timing = useEnemyCombatActionTiming()
-  return timing ? <ActionCore actor="enemy" label={label} icon={icon} timing={timing} special={special} /> : null
 }
 
 function ActionCore({ actor, label, icon, timing, special = false }: { actor: 'player' | 'enemy'; label: string; icon: ReactNode; timing: TimedActionState; special?: boolean }) {
@@ -184,17 +175,10 @@ function getNextIntent(presentation: ReturnType<typeof getCombatFlowPresentation
   return { label: action.name, action: buildCombatActionPresentation(action, { actor: 'enemy', kind: 'action', sourceMonsterId: presentation.enemy.id }, { monster: presentation.enemy }), basic: null, special: true, iconKind: classifyEnemyActionPatternIcon(action), basicDamage: presentation.enemy.basicAttackDamage, actionTimeMs: action.actionTimeMs }
 }
 
-function CombatEnemyIntent({ intent, current }: { intent: CombatIntent | null; current: boolean }) {
+function CombatEnemyIntent({ intent, current, countdown }: { intent: CombatIntent | null; current: boolean; countdown: string }) {
   const action = useMemo(() => intent?.action ?? (intent?.basic ? buildBasicAttackPresentation(intent.basicDamage, intent.actionTimeMs) : null), [intent])
   if (!intent) return null
-  return <GameTooltip block wide placement="bottom" accent={intent.special ? 'warning' : 'neutral'} content={action ? <EnemyActionTooltip action={action} /> : undefined}><div className={`combat-enemy-intent${intent.special ? ' is-special' : ''}`}><div className="combat-enemy-intent-icon"><EnemyPatternIcon kind={intent.iconKind} /></div><div className="combat-enemy-intent-copy"><span className="combat-subsection-label">{current ? 'ENEMY INTENT' : 'NEXT ENEMY INTENT'}</span><strong>{intent.label}</strong><small>{intent.special ? 'Canonical special action' : 'Basic attack'} · <EnemyIntentCountdown current={current} /></small></div><span className="combat-enemy-intent-countdown"><EnemyIntentCountdown current={current} /></span></div></GameTooltip>
-}
-
-function EnemyIntentCountdown({ current }: { current: boolean }) {
-  const timing = useEnemyCombatActionTiming()
-  if (!current) return <>NEXT UP</>
-  if (!timing) return <>NEXT UP</>
-  return <>{timing.etaMs === null ? 'PAUSED' : formatTime(timing.etaMs)}</>
+  return <GameTooltip block wide placement="bottom" accent={intent.special ? 'warning' : 'neutral'} content={action ? <EnemyActionTooltip action={action} /> : undefined}><div className={`combat-enemy-intent${intent.special ? ' is-special' : ''}`}><div className="combat-enemy-intent-icon"><EnemyPatternIcon kind={intent.iconKind} /></div><div className="combat-enemy-intent-copy"><span className="combat-subsection-label">{current ? 'ENEMY INTENT' : 'NEXT ENEMY INTENT'}</span><strong>{intent.label}</strong><small>{intent.special ? 'Canonical special action' : 'Basic attack'} · {countdown}</small></div><span className="combat-enemy-intent-countdown">{countdown}</span></div></GameTooltip>
 }
 
 function getRelevantCombatEvent(event: CombatLogEntry | null, enemyId: MonsterId | null) {
@@ -203,7 +187,7 @@ function getRelevantCombatEvent(event: CombatLogEntry | null, enemyId: MonsterId
   return belongsToEncounter ? event : null
 }
 
-function CombatImpactLayer({ enemyId }: { enemyId: MonsterId | null }) {
+const CombatImpactLayer = memo(function CombatImpactLayer({ enemyId }: { enemyId: MonsterId | null }) {
   const latestEvent = useCombatLogStore((state) => {
     for (const entry of state.entries) {
       if (entry.sourceId === 'encounter-start' && entry.targetMonsterId === enemyId) break
@@ -215,7 +199,7 @@ function CombatImpactLayer({ enemyId }: { enemyId: MonsterId | null }) {
   const enemy = enemyId ? MONSTERS[enemyId] ?? null : null
   if (!latestEvent) return null
   return <CombatImpactEvent event={latestEvent} enemy={enemy} />
-}
+})
 
 function CombatImpactEvent({ event, enemy }: { event: CombatLogEntry; enemy: ReturnType<typeof getCombatFlowPresentation>['enemy'] }) {
   const initialSequence = useRef(event.sequence)

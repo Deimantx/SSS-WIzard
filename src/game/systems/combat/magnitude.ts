@@ -8,7 +8,13 @@ import { getRootCombatSourceProvenance } from './combatProvenance'
 export { scaleMagnitude } from './combatTypes'
 
 export type CombatActor = 'player' | 'enemy'
-export type MagnitudeState = Pick<GameState, 'player' | 'combat' | 'schools' | 'equipment' | 'artifactProgress'>
+export type MagnitudeState = {
+  player: Pick<GameState['player'], 'health' | 'maxHealth'>
+  combat: Pick<GameState['combat'], 'enemyId' | 'enemyHp' | 'enemyMaxHp'>
+  schools: GameState['schools']
+  equipment: GameState['equipment']
+  artifactProgress: GameState['artifactProgress']
+}
 
 export const getActorMaxHealth = (state: MagnitudeState, actor: CombatActor) => actor === 'player' ? state.player.maxHealth : state.combat.enemyMaxHp
 export const getActorHealth = (state: MagnitudeState, actor: CombatActor) => actor === 'player' ? state.player.health : state.combat.enemyHp

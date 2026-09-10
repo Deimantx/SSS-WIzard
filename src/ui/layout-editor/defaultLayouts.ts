@@ -8,7 +8,7 @@ export const DEFAULT_LAYOUTS: Record<ScreenId, ScreenLayouts> = {
   home: {
     'home-objective': layout(0, 0, 12, 4), 'home-school-mastery': layout(0, 4, 12, 6), 'home-checklist': layout(0, 10, 7, 10), 'home-wizard': layout(7, 10, 5, 10), 'home-arcane-work': layout(0, 20, 12, 7),
   },
-  'tower-channeling': { 'channeling-mana-core': layout(0, 0, 6, 10), 'channeling-echoes': layout(6, 0, 6, 9), 'channeling-breakdown': layout(0, 9, 6, 15), 'channeling-pillars': layout(7, 9, 6, 15) },
+  'tower-channeling': { 'channeling-mana-core': layout(0, 0, 6, 10), 'channeling-echoes': layout(6, 0, 6, 10), 'channeling-breakdown': layout(0, 9, 6, 15), 'channeling-pillars': layout(7, 9, 6, 15) },
   'tower-focus': { 'focus-summary': layout(0, 0, 12, 14), 'focus-reservations': layout(0, 14, 7, 16), 'focus-improvement': layout(7, 14, 5, 16) },
   'tower-research': { 'research-school-mastery': layout(0, 0, 12, 4), 'research-library': layout(0, 4, 6, 12), 'research-inspector': layout(6, 4, 6, 12), 'research-prepared': layout(0, 16, 12, 10) },
   'tower-transmutation': { 'transmutation-recipes': layout(0, 0, 7, 15), 'transmutation-focus': layout(0, 15, 7, 15), 'transmutation-detail': layout(7, 0, 5, 12), 'transmutation-arrays': layout(7, 12, 5, 18) },

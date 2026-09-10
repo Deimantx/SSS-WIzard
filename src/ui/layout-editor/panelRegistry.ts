@@ -15,6 +15,7 @@ const labels: Record<string, string> = {
 
 type PanelOverrides = Pick<PanelDefinition, 'minW' | 'minH' | 'heightMode'>
 const panelOverrides: Record<string, PanelOverrides> = {
+  'channeling-echoes': { minH: 10 },
   'channeling-breakdown': { minW: 5, minH: 10, heightMode: 'content' },
   'channeling-pillars': { minW: 4, minH: 10, heightMode: 'content' },
   'transmutation-recipes': { minW: 5, minH: 10, heightMode: 'bounded-scroll' },

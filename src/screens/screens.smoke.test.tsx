@@ -52,16 +52,18 @@ describe('screen smoke coverage', () => {
     expect(screen.queryByText('Forest Wisp')).toBeNull()
   })
 
-  it('keeps Channeling readable by collapsing formulas and grouping Pillars', async () => {
+  it('keeps Channeling readable with a persistent breakdown and grouped Pillars', async () => {
     const user = userEvent.setup()
     render(<GameShell />)
     await goToTower(user, 'Channeling')
     expect(screen.getByRole('heading', { name: 'Foundation Pillars' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Amplification Pillars' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Channeling Breakdown' })).toBeTruthy()
     expect(screen.getByText('AVAILABLE MATERIALS')).toBeTruthy()
-    expect(screen.queryByText('Base Echo Output')).toBeNull()
-    await user.click(screen.getByRole('button', { name: 'View Detailed Breakdown' }))
-    expect(screen.getByText('Base Echo Output')).toBeTruthy()
+    expect(screen.getByText('Base Mana / Echo')).toBeTruthy()
+    expect(screen.getByText('PASSIVE TOTAL')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'View Detailed Breakdown' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'View Echo Modifiers' })).toBeNull()
   })
 
   it('navigates every major screen through grouped shell navigation', async () => {

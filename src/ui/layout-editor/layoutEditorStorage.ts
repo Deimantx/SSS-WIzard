@@ -3,8 +3,8 @@ import { DEFAULT_LAYOUTS } from './defaultLayouts'
 import { LAYOUT_VERSION, type SavedPanelLayout, type UiLayoutDocument } from './layoutEditorTypes'
 import { clampTopbarLayout, DEFAULT_TOPBAR_LAYOUT } from './shellLayout'
 
-export const UI_LAYOUTS_KEY = 'sss-wizard-ui-layout-v13'
-const LEGACY_UI_LAYOUTS_KEYS = ['sss-wizard-ui-layout-v12', 'sss-wizard-ui-layout-v11', 'sss-wizard-ui-layout-v10', 'sss-wizard-ui-layout-v9', 'sss-wizard-ui-layout-v8', 'sss-wizard-ui-layout-v7', 'sss-wizard-ui-layout-v6', 'sss-wizard-ui-layout-v5', 'sss-wizard-ui-layout-v4', 'sss-wizard-ui-layout-v3', 'sss-wizard-ui-layout-v2'] as const
+export const UI_LAYOUTS_KEY = 'sss-wizard-ui-layout-v14'
+const LEGACY_UI_LAYOUTS_KEYS = ['sss-wizard-ui-layout-v13', 'sss-wizard-ui-layout-v12', 'sss-wizard-ui-layout-v11', 'sss-wizard-ui-layout-v10', 'sss-wizard-ui-layout-v9', 'sss-wizard-ui-layout-v8', 'sss-wizard-ui-layout-v7', 'sss-wizard-ui-layout-v6', 'sss-wizard-ui-layout-v5', 'sss-wizard-ui-layout-v4', 'sss-wizard-ui-layout-v3', 'sss-wizard-ui-layout-v2'] as const
 
 const blankDocument = (): UiLayoutDocument => ({ version: LAYOUT_VERSION, screens: {}, shell: { topbar: clampTopbarLayout(DEFAULT_TOPBAR_LAYOUT) } })
 const validNumber = (value: unknown, fallback: number) => typeof value === 'number' && Number.isFinite(value) ? value : fallback
@@ -139,8 +139,17 @@ export function loadUiLayouts(): UiLayoutDocument {
       if (screen === 'tower-channeling' && ('channeling-main' in source || 'channeling-stats' in source)) continue
       const panels: Record<string, SavedPanelLayout> = {}
       for (const [id, value] of Object.entries(source)) { const normalized = normalizePanel(screen, id, value); if (normalized) panels[id] = normalized }
-      if (screen === 'tower-channeling' && layoutNeedsMigration && hasGeometry(source['channeling-pillars'], { x: 0, y: 9, w: 12, h: 25 }) && panels['channeling-pillars']) {
-        panels['channeling-pillars'] = { ...DEFAULT_LAYOUTS['tower-channeling']['channeling-pillars'], ...panelFlags(source['channeling-pillars']) }
+      if (screen === 'tower-channeling' && layoutNeedsMigration) {
+        const hasLegacyTopRow = hasGeometry(source['channeling-mana-core'], { x: 0, y: 0, w: 6, h: 9 }) && hasGeometry(source['channeling-echoes'], { x: 6, y: 0, w: 6, h: 9 })
+        const hasLegacyPillars = hasGeometry(source['channeling-pillars'], { x: 0, y: 9, w: 12, h: 15 }) || hasGeometry(source['channeling-pillars'], { x: 0, y: 9, w: 12, h: 25 })
+        if (hasLegacyTopRow && hasLegacyPillars) {
+          panels['channeling-mana-core'] = { ...DEFAULT_LAYOUTS['tower-channeling']['channeling-mana-core'], ...panelFlags(source['channeling-mana-core']) }
+          panels['channeling-echoes'] = { ...DEFAULT_LAYOUTS['tower-channeling']['channeling-echoes'], ...panelFlags(source['channeling-echoes']) }
+          panels['channeling-breakdown'] = { ...DEFAULT_LAYOUTS['tower-channeling']['channeling-breakdown'] }
+          panels['channeling-pillars'] = { ...DEFAULT_LAYOUTS['tower-channeling']['channeling-pillars'], ...panelFlags(source['channeling-pillars']) }
+        } else {
+          placeMissingPanel(screen, 'channeling-breakdown', panels)
+        }
       }
       if (screen === 'tower-artificing' && layoutNeedsMigration) {
         if (hasUnmodifiedGeometry(source['artificing-catalog'], { x: 0, y: 0, w: 5, h: 18 }) && panels['artificing-catalog']) panels['artificing-catalog'] = { ...panels['artificing-catalog'], ...DEFAULT_LAYOUTS['tower-artificing']['artificing-catalog'] }

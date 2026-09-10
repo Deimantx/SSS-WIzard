@@ -14,7 +14,7 @@ export interface CombatMapCanvasNode {
   unlockText: string | null
 }
 
-export function CombatMapCanvas({ nodes, connections, selectedId, onSelect, mapLabel }: { nodes: CombatMapCanvasNode[]; connections: CombatMapConnection[]; selectedId: string; onSelect: (id: string) => void; mapLabel: string }) {
+export function CombatMapCanvas({ nodes, connections, selectedId, onSelect, mapLabel, panLimit = 110 }: { nodes: CombatMapCanvasNode[]; connections: CombatMapConnection[]; selectedId: string; onSelect: (id: string) => void; mapLabel: string; panLimit?: number }) {
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const [dragging, setDragging] = useState(false)
   const dragRef = useRef<{ pointerId: number; startX: number; startY: number; originX: number; originY: number } | null>(null)
@@ -24,19 +24,22 @@ export function CombatMapCanvas({ nodes, connections, selectedId, onSelect, mapL
     setPan({ x: 0, y: 0 })
   }, [mapLabel])
 
-  const clampPan = (value: number) => Math.max(-130, Math.min(130, value))
+  const clampPan = (value: number) => Math.max(-panLimit, Math.min(panLimit, value))
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.pointerType === 'mouse' && event.button !== 0) return
     if ((event.target as HTMLElement).closest('.combat-map-node')) return
     event.preventDefault()
     event.currentTarget.setPointerCapture(event.pointerId)
     dragRef.current = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, originX: pan.x, originY: pan.y }
-    setDragging(true)
   }
   const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
     const drag = dragRef.current
     if (!drag || drag.pointerId !== event.pointerId) return
-    setPan({ x: clampPan(drag.originX + event.clientX - drag.startX), y: clampPan(drag.originY + event.clientY - drag.startY) })
+    const deltaX = event.clientX - drag.startX
+    const deltaY = event.clientY - drag.startY
+    if (Math.abs(deltaX) < 5 && Math.abs(deltaY) < 5) return
+    setDragging(true)
+    setPan({ x: clampPan(drag.originX + deltaX), y: clampPan(drag.originY + deltaY) })
   }
   const handlePointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (dragRef.current?.pointerId !== event.pointerId) return
@@ -45,12 +48,12 @@ export function CombatMapCanvas({ nodes, connections, selectedId, onSelect, mapL
     setDragging(false)
   }
 
-  return <div className={`combat-map-viewport${dragging ? ' is-dragging' : ''}`} aria-label={mapLabel} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp}>
+  return <div className={`combat-map-viewport${dragging ? ' is-dragging' : ''}`} aria-label={mapLabel} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} onDragStart={(event) => event.preventDefault()}>
     <div className="combat-map-grid-lines" aria-hidden="true" />
     <div className="combat-map-orbit combat-map-orbit-one" aria-hidden="true" />
     <div className="combat-map-orbit combat-map-orbit-two" aria-hidden="true" />
     <div className="combat-map-stage" style={{ '--map-pan-x': `${pan.x}px`, '--map-pan-y': `${pan.y}px` } as CSSProperties}>
-      <svg className="combat-map-connections" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+      <svg className="combat-map-connections" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" focusable="false">
         {connections.map((connection) => {
           const from = nodeById.get(connection.from)
           const to = nodeById.get(connection.to)

@@ -5,9 +5,9 @@ import { isBossCurrentlyActive } from '../../game/systems/combat/combatBossSelec
 import type { CombatNavigationProgress, CombatRegionMap, CombatRegionMapNode, WorldRegionMap, WorldRegionMapNode, WorldRegionId } from './combatNavigationTypes'
 
 const REGION_NODE_LAYOUT: Record<CombatRegionMapNode['id'], { x: number; y: number }> = {
-  'whispering-woods': { x: 19, y: 53 },
-  'howling-den': { x: 50, y: 30 },
-  'abandoned-catacombs': { x: 81, y: 58 },
+  'whispering-woods': { x: 23, y: 56 },
+  'howling-den': { x: 50, y: 40 },
+  'abandoned-catacombs': { x: 77, y: 56 },
 }
 
 const WORLD_NODE_LAYOUT: Record<WorldRegionId, { x: number; y: number }> = {

@@ -1,7 +1,4 @@
-import { Maximize2, Minus, Plus } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type WheelEvent as ReactWheelEvent } from 'react'
-import { GameTooltip } from '../../../components/ui'
-import { TooltipContent } from '../../../components/ui/tooltip/Tooltip'
 
 interface StageSize { width: number; height: number }
 export interface ProgressionBounds { left: number; right: number; top: number; bottom: number }
@@ -92,6 +89,7 @@ export function CombatProgressionViewport({ stage, contentBounds, resetKey, aria
     const consumed = zoomAt(Math.exp(-event.deltaY * 0.0015), event.clientX - rect.left, event.clientY - rect.top)
     if (consumed) event.preventDefault()
   }
+
   const handleKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     if (event.target !== event.currentTarget) return
     const rect = viewportRef.current?.getBoundingClientRect()
@@ -108,6 +106,7 @@ export function CombatProgressionViewport({ stage, contentBounds, resetKey, aria
     const current = transformRef.current
     dragRef.current = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, originX: current.x, originY: current.y }
   }
+
   const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
     const drag = dragRef.current
     if (!drag || drag.pointerId !== event.pointerId) return
@@ -118,6 +117,7 @@ export function CombatProgressionViewport({ stage, contentBounds, resetKey, aria
     setDragging(true)
     updateTransform({ ...transformRef.current, x: drag.originX + deltaX, y: drag.originY + deltaY })
   }
+
   const handlePointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (dragRef.current?.pointerId !== event.pointerId) return
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId)
@@ -126,5 +126,5 @@ export function CombatProgressionViewport({ stage, contentBounds, resetKey, aria
   }
 
   const stageStyle = { width: `${stage.width}px`, height: `${stage.height}px`, transform: `translate3d(${transform.x}px, ${transform.y}px, 0) scale(${transform.scale})` } as CSSProperties
-  return <div ref={viewportRef} className={`combat-progression-viewport${dragging ? ' is-dragging' : ''}`} tabIndex={0} aria-label={ariaLabel} onWheel={handleWheel} onKeyDown={handleKeyDown} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} onDragStart={(event) => event.preventDefault()}><div className="combat-progression-ambient combat-progression-ambient-one" aria-hidden="true" /><div className="combat-progression-ambient combat-progression-ambient-two" aria-hidden="true" /><div className="combat-progression-controls" aria-label="Progression view controls"><GameTooltip block content={<TooltipContent title="Zoom out" description={`Reduce the chronicle view to ${Math.round(MIN_ZOOM * 100)}% minimum.`} />}><button type="button" data-combat-progression-interactive="true" data-zoom-control="true" className="combat-progression-control" aria-label="Zoom out" onClick={() => zoomAt(1 / 1.1, viewport.width / 2, viewport.height / 2)}><Minus size={13} aria-hidden="true" /></button></GameTooltip><GameTooltip block content={<TooltipContent title="Zoom in" description={`Enlarge the chronicle view to ${Math.round(MAX_ZOOM * 100)}% maximum.`} />}><button type="button" data-combat-progression-interactive="true" data-zoom-control="true" className="combat-progression-control" aria-label="Zoom in" onClick={() => zoomAt(1.1, viewport.width / 2, viewport.height / 2)}><Plus size={13} aria-hidden="true" /></button></GameTooltip><GameTooltip block content={<TooltipContent title="Fit tree" description="Recenter the authored progression tree with safe breathing room." />}><button type="button" data-combat-progression-interactive="true" data-zoom-control="true" className="combat-progression-fit" aria-label="Fit progression view" onClick={fitView}><Maximize2 size={12} aria-hidden="true" /> FIT</button></GameTooltip></div><div className="combat-progression-stage" style={stageStyle}>{children}</div></div>
+  return <div ref={viewportRef} className={`combat-progression-viewport${dragging ? ' is-dragging' : ''}`} tabIndex={0} aria-label={ariaLabel} onWheel={handleWheel} onKeyDown={handleKeyDown} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} onDragStart={(event) => event.preventDefault()}><div className="combat-progression-ambient combat-progression-ambient-one" aria-hidden="true" /><div className="combat-progression-ambient combat-progression-ambient-two" aria-hidden="true" /><div className="combat-progression-stage" style={stageStyle}>{children}</div></div>
 }

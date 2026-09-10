@@ -1,6 +1,10 @@
 import type { ScreenId } from '../../game/types'
 
-export const LAYOUT_VERSION = 14
+// Bump when canonical screen panel composition changes.
+// A version mismatch intentionally resets all saved screen layouts to
+// DEFAULT_LAYOUTS. Do not add per-screen geometry migrations; SSS Wizard UI
+// is still evolving.
+export const LAYOUT_VERSION = 15
 export const GRID_COLUMNS = 12
 export const GRID_ROW_HEIGHT = 30
 export const GRID_MARGIN: readonly [number, number] = [14, 14]

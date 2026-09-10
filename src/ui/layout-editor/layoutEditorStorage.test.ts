@@ -1,437 +1,82 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { DEFAULT_LAYOUTS } from './defaultLayouts'
-import { UI_LAYOUTS_KEY, loadUiLayouts } from './layoutEditorStorage'
+import { UI_LAYOUTS_KEY, loadUiLayouts, resetUiLayouts } from './layoutEditorStorage'
+import { LAYOUT_VERSION } from './layoutEditorTypes'
+import { clampTopbarLayout, DEFAULT_TOPBAR_LAYOUT } from './shellLayout'
+import type { TopbarLayout } from './layoutEditorTypes'
 import { getScreenLayouts } from './layoutUtils'
 
-describe('inventory layout compatibility', () => {
+describe('UI layout version policy', () => {
   beforeEach(() => localStorage.clear())
 
-  it('migrates the previous untouched 9/3 inventory default and removes the retired action panel', () => {
+  it('preserves same-version screen customization and ignores unknown panels', () => {
     localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({
-      version: 3,
-      screens: { inventory: {
-        'inventory-catalog': { x: 0, y: 0, w: 9, h: 15 },
-        'inventory-detail': { x: 9, y: 0, w: 3, h: 15 },
-      } },
-    }))
-
-    expect(loadUiLayouts().screens.inventory).toMatchObject({
-      'inventory-catalog': { x: 0, y: 0, w: 8, h: 17 },
-      'inventory-detail': { x: 8, y: 0, w: 4, h: 12 },
-    })
-  })
-
-  it('preserves a genuinely customized inventory split', () => {
-    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({
-      version: 3,
-      screens: { inventory: {
-        'inventory-catalog': { x: 0, y: 0, w: 7, h: 18 },
-        'inventory-detail': { x: 7, y: 0, w: 5, h: 18 },
-      } },
-    }))
-
-    expect(loadUiLayouts().screens.inventory).toMatchObject({
-      'inventory-catalog': { x: 0, y: 0, w: 7, h: 18 },
-      'inventory-detail': { x: 7, y: 0, w: 5, h: 18 },
-    })
-  })
-
-  it('migrates the previous 8/4 full-height default without touching custom panels', () => {
-    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({
-      version: 3,
-      screens: { inventory: {
-        'inventory-catalog': { x: 0, y: 0, w: 8, h: 15 },
-        'inventory-detail': { x: 8, y: 0, w: 4, h: 15 },
-      } },
-    }))
-
-    expect(loadUiLayouts().screens.inventory).toMatchObject({
-      'inventory-catalog': { x: 0, y: 0, w: 8, h: 17 },
-      'inventory-detail': { x: 8, y: 0, w: 4, h: 12 },
-    })
-  })
-})
-
-describe('Artificing default layout', () => {
-  it('keeps only the editable catalog and forge panels', () => {
-    expect(DEFAULT_LAYOUTS['tower-artificing']).toEqual({ 'artificing-catalog': { x: 0, y: 0, w: 7, h: 30 }, 'artificing-detail': { x: 7, y: 0, w: 5, h: 30 } })
-  })
-})
-
-describe('Transmutation default layout', () => {
-  it('uses the compact Transmutation defaults', () => {
-    expect(DEFAULT_LAYOUTS['tower-transmutation']).toEqual({
-      'transmutation-recipes': { x: 0, y: 0, w: 7, h: 15 },
-      'transmutation-focus': { x: 0, y: 15, w: 7, h: 15 },
-      'transmutation-detail': { x: 7, y: 0, w: 5, h: 8 },
-    })
-  })
-
-  it('preserves custom geometry when defaults change', () => {
-    const layouts = getScreenLayouts('tower-transmutation', {
-      'transmutation-recipes': { x: 1, y: 2, w: 6, h: 20 },
-    })
-
-    expect(layouts['transmutation-recipes']).toEqual({ x: 1, y: 2, w: 6, h: 20 })
-    expect(layouts['transmutation-detail']).toEqual({ x: 7, y: 0, w: 5, h: 8 })
-    expect(layouts['transmutation-focus']).toEqual({ x: 0, y: 15, w: 7, h: 15 })
-  })
-
-  it('resets only incomplete Transmutation layouts during migration', () => {
-    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({
-      version: 7,
+      version: LAYOUT_VERSION,
       screens: {
-        'tower-transmutation': { 'transmutation-recipes': { x: 3, y: 4, w: 5, h: 20 } },
-        inventory: { 'inventory-catalog': { x: 2, y: 1, w: 7, h: 18 } },
-      },
-    }))
-
-    const document = loadUiLayouts()
-    expect(document.screens['tower-transmutation']).toEqual({})
-    expect(document.screens.inventory?.['inventory-catalog']).toEqual({ x: 2, y: 1, w: 7, h: 18 })
-    expect(getScreenLayouts('tower-transmutation', document.screens['tower-transmutation'])).toEqual(DEFAULT_LAYOUTS['tower-transmutation'])
-  })
-
-  it('upgrades untouched V10 Transmutation defaults while preserving custom geometry and other screens', () => {
-    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({
-      version: 10,
-      screens: {
-        'tower-transmutation': {
-          'transmutation-recipes': { x: 1, y: 2, w: 6, h: 18 },
-          'transmutation-focus': { x: 0, y: 15, w: 7, h: 18 },
-          'transmutation-detail': { x: 7, y: 0, w: 5, h: 8 },
-        },
-        inventory: { 'inventory-catalog': { x: 2, y: 1, w: 7, h: 18 } },
-      },
-    }))
-
-    const document = loadUiLayouts()
-    expect(document.screens['tower-transmutation']).toMatchObject({
-      'transmutation-recipes': { x: 1, y: 2, w: 6, h: 18 },
-      'transmutation-focus': { x: 0, y: 15, w: 7, h: 15 },
-    })
-    expect(document.screens.inventory?.['inventory-catalog']).toEqual({ x: 2, y: 1, w: 7, h: 18 })
-  })
-
-  it('preserves custom Focus geometry during the V11 default migration', () => {
-    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({
-      version: 10,
-      screens: {
-        'tower-transmutation': {
-          'transmutation-recipes': { x: 0, y: 0, w: 7, h: 15 },
-          'transmutation-focus': { x: 1, y: 16, w: 6, h: 14 },
-          'transmutation-detail': { x: 7, y: 0, w: 5, h: 8 },
-          'transmutation-output-preview': { x: 7, y: 8, w: 5, h: 19 },
+        equipment: {
+          'equipment-loadout': { x: 1, y: 3, w: 7, h: 14, hidden: true, locked: true },
+          'removed-panel': { x: 4, y: 4, w: 4, h: 4 },
         },
       },
+      shell: { topbar: DEFAULT_TOPBAR_LAYOUT },
     }))
-
-    expect(loadUiLayouts().screens['tower-transmutation']?.['transmutation-focus']).toEqual({ x: 1, y: 16, w: 6, h: 14 })
-  })
-})
-
-describe('Research layout compatibility', () => {
-  it('uses the mastery-first Research defaults', () => {
-    expect(DEFAULT_LAYOUTS['tower-research']).toEqual({
-      'research-school-mastery': { x: 0, y: 0, w: 12, h: 4 },
-      'research-library': { x: 0, y: 4, w: 6, h: 12 },
-      'research-inspector': { x: 6, y: 4, w: 6, h: 12 },
-      'research-prepared': { x: 0, y: 16, w: 12, h: 10 },
-    })
-  })
-
-  it('migrates only the previous untouched Research default', () => {
-    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({
-      version: 3,
-      screens: { 'tower-research': {
-        'research-library': { x: 0, y: 0, w: 6, h: 10 },
-        'research-inspector': { x: 6, y: 0, w: 6, h: 10 },
-        'research-prepared': { x: 0, y: 10, w: 12, h: 10 },
-      } },
-    }))
-
-    expect(loadUiLayouts().screens['tower-research']).toMatchObject(DEFAULT_LAYOUTS['tower-research'])
-  })
-
-  it('preserves custom Research geometry', () => {
-    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({
-      version: 3,
-      screens: { 'tower-research': {
-        'research-library': { x: 0, y: 0, w: 5, h: 15 },
-        'research-inspector': { x: 5, y: 0, w: 7, h: 15 },
-        'research-prepared': { x: 0, y: 15, w: 12, h: 8 },
-      } },
-    }))
-
-    expect(loadUiLayouts().screens['tower-research']).toMatchObject({
-      'research-library': { x: 0, y: 0, w: 5, h: 15 },
-      'research-inspector': { x: 5, y: 0, w: 7, h: 15 },
-      'research-prepared': { x: 0, y: 15, w: 12, h: 8 },
-    })
-  })
-
-  it('migrates the previous twelve-row default and keeps panel flags', () => {
-    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({
-      version: 3,
-      screens: { 'tower-research': {
-        'research-library': { x: 0, y: 0, w: 6, h: 12, locked: true },
-        'research-inspector': { x: 6, y: 0, w: 6, h: 12 },
-        'research-prepared': { x: 0, y: 12, w: 12, h: 10 },
-      } },
-    }))
-
-    expect(loadUiLayouts().screens['tower-research']).toMatchObject({
-      ...DEFAULT_LAYOUTS['tower-research'],
-      'research-library': { ...DEFAULT_LAYOUTS['tower-research']['research-library'], locked: true },
-    })
-  })
-
-  it('maps legacy Research panels to the safe defaults', () => {
-    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({
-      version: 3,
-      screens: { 'tower-research': {
-        'research-config': { x: 0, y: 0, w: 4, h: 4, locked: true },
-        'research-queue': { x: 4, y: 0, w: 8, h: 4, hidden: true },
-      } },
-    }))
-
-    expect(loadUiLayouts().screens['tower-research']).toMatchObject({
-      'research-library': { ...DEFAULT_LAYOUTS['tower-research']['research-library'], locked: true },
-      'research-inspector': { ...DEFAULT_LAYOUTS['tower-research']['research-inspector'], hidden: true },
-      'research-prepared': DEFAULT_LAYOUTS['tower-research']['research-prepared'],
-    })
-  })
-})
-
-describe('Focus layout compatibility', () => {
-  it('uses the three-panel Focus defaults', () => {
-    expect(DEFAULT_LAYOUTS['tower-focus']).toEqual({
-      'focus-summary': { x: 0, y: 0, w: 12, h: 14 },
-      'focus-reservations': { x: 0, y: 14, w: 7, h: 16 },
-      'focus-improvement': { x: 7, y: 14, w: 5, h: 16 },
-    })
-  })
-
-  it('migrates the untouched previous Focus default to the improved geometry', () => {
-    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({ version: 3, screens: { 'tower-focus': {
-      'focus-summary': { x: 0, y: 0, w: 12, h: 6 },
-      'focus-reservations': { x: 0, y: 6, w: 7, h: 14 },
-      'focus-improvement': { x: 7, y: 6, w: 5, h: 14 },
-    } } }))
-
-    expect(loadUiLayouts().screens['tower-focus']).toEqual(DEFAULT_LAYOUTS['tower-focus'])
-  })
-
-  it('migrates the untouched 11-row Focus default to the taller Overview', () => {
-    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({ version: 3, screens: { 'tower-focus': {
-      'focus-summary': { x: 0, y: 0, w: 12, h: 11 },
-      'focus-reservations': { x: 0, y: 11, w: 7, h: 16 },
-      'focus-improvement': { x: 7, y: 11, w: 5, h: 16 },
-    } } }))
-
-    expect(loadUiLayouts().screens['tower-focus']).toEqual(DEFAULT_LAYOUTS['tower-focus'])
-  })
-
-  it('preserves a customized Focus layout even when its panels use old geometry', () => {
-    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({ version: 3, screens: { 'tower-focus': {
-      'focus-summary': { x: 0, y: 0, w: 12, h: 6 },
-      'focus-reservations': { x: 0, y: 6, w: 7, h: 14 },
-      'focus-improvement': { x: 7, y: 6, w: 5, h: 14, locked: true },
-    } } }))
-
-    expect(loadUiLayouts().screens['tower-focus']).toMatchObject({
-      'focus-summary': { x: 0, y: 0, w: 12, h: 6 },
-      'focus-reservations': { x: 0, y: 6, w: 7, h: 14 },
-      'focus-improvement': { x: 7, y: 6, w: 5, h: 14, locked: true },
-    })
-  })
-
-  it('places the new improvement panel below a stored two-panel Focus layout', () => {
-    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({ version: 3, screens: { 'tower-focus': {
-      'focus-summary': { x: 0, y: 0, w: 7, h: 12 },
-      'focus-reservations': { x: 7, y: 0, w: 5, h: 12 },
-    } } }))
-
-    expect(loadUiLayouts().screens['tower-focus']).toMatchObject({
-      'focus-summary': { x: 0, y: 0, w: 7, h: 12 },
-      'focus-reservations': { x: 7, y: 0, w: 5, h: 12 },
-      'focus-improvement': { x: 7, y: 14, w: 5, h: 16 },
-    })
-  })
-})
-
-describe('Home expansion layout compatibility', () => {
-  it('uses the mastery and current work defaults', () => {
-    expect(DEFAULT_LAYOUTS.home).toEqual({
-      'home-objective': { x: 0, y: 0, w: 12, h: 4 },
-      'home-school-mastery': { x: 0, y: 4, w: 12, h: 6 },
-      'home-checklist': { x: 0, y: 10, w: 7, h: 10 },
-      'home-wizard': { x: 7, y: 10, w: 5, h: 10 },
-      'home-arcane-work': { x: 0, y: 20, w: 12, h: 7 },
-    })
-  })
-
-  it('migrates the previous canonical Home layout without dropping flags', () => {
-    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({
-      version: 3,
-      screens: { home: {
-        'home-objective': { x: 0, y: 0, w: 12, h: 4 },
-        'home-checklist': { x: 0, y: 4, w: 7, h: 10, hidden: true },
-        'home-wizard': { x: 7, y: 4, w: 5, h: 10 },
-      } },
-    }))
-
-    expect(loadUiLayouts().screens.home).toMatchObject({
-      ...DEFAULT_LAYOUTS.home,
-      'home-checklist': { ...DEFAULT_LAYOUTS.home['home-checklist'], hidden: true },
-    })
-  })
-
-  it('preserves customized Home geometry and adds new panels below it', () => {
-    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({
-      version: 3,
-      screens: { home: {
-        'home-objective': { x: 0, y: 0, w: 8, h: 5 },
-        'home-checklist': { x: 8, y: 0, w: 4, h: 12 },
-        'home-wizard': { x: 0, y: 5, w: 8, h: 12 },
-      } },
-    }))
-
-    const home = loadUiLayouts().screens.home
-    expect(home).toMatchObject({
-      'home-objective': { x: 0, y: 0, w: 8, h: 5 },
-      'home-checklist': { x: 8, y: 0, w: 4, h: 12 },
-      'home-wizard': { x: 0, y: 5, w: 8, h: 12 },
-      'home-school-mastery': { x: 0, y: 17, w: 12, h: 6 },
-      'home-arcane-work': { x: 0, y: 23, w: 12, h: 7 },
-    })
-  })
-
-  it('resets only the Schools layout when legacy school panel IDs are saved', () => {
-    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({ version: 3, screens: {
-      schools: { 'school-fire': { x: 4, y: 3, w: 4, h: 8 }, 'school-ranks': { x: 0, y: 20, w: 12, h: 4 } },
-      home: { 'home-objective': { x: 1, y: 1, w: 10, h: 4 } },
-    } }))
-    const loaded = loadUiLayouts()
-    expect(loaded.screens.schools).toEqual({})
-    expect(loaded.screens.home).toHaveProperty('home-objective')
-    expect(getScreenLayouts('schools', loaded.screens.schools)).toEqual(DEFAULT_LAYOUTS.schools)
-  })
-
-  it('migrates the untouched Schools preset height while preserving customized geometry', () => {
-    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({ version: 11, screens: {
-      schools: {
-        'schools-browser': { x: 0, y: 0, w: 7, h: 18 },
-        'schools-inspector': { x: 7, y: 0, w: 5, h: 18 },
-        'schools-presets': { x: 0, y: 18, w: 12, h: 5 },
-      },
-    } }))
-    expect(loadUiLayouts().screens.schools?.['schools-presets']).toEqual({ x: 0, y: 18, w: 12, h: 6 })
-
-    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({ version: 11, screens: {
-      schools: {
-        'schools-browser': { x: 0, y: 0, w: 7, h: 18 },
-        'schools-inspector': { x: 7, y: 0, w: 5, h: 18 },
-        'schools-presets': { x: 0, y: 20, w: 12, h: 5 },
-      },
-    } }))
-    expect(loadUiLayouts().screens.schools?.['schools-presets']).toEqual({ x: 0, y: 20, w: 12, h: 5 })
-  })
-})
-
-describe('Combat layout compatibility', () => {
-  it('resets legacy combat panels to the new stage, deck, and details defaults', () => {
-    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({ version: 3, screens: {
-      combat: {
-        'combat-dungeon': { x: 0, y: 0, w: 4, h: 8 },
-        'combat-enemy': { x: 4, y: 0, w: 4, h: 8 },
-        'combat-timeline': { x: 8, y: 0, w: 4, h: 8 },
-        'combat-spells': { x: 0, y: 8, w: 8, h: 8 },
-        'combat-log': { x: 8, y: 8, w: 4, h: 8 },
-      },
-    } }))
 
     const loaded = loadUiLayouts()
-    expect(loaded.screens.combat).toEqual({})
+    expect(loaded.screens.equipment).toEqual({ 'equipment-loadout': { x: 1, y: 3, w: 7, h: 14, hidden: true, locked: true } })
+    expect(getScreenLayouts('equipment', loaded.screens.equipment)).toMatchObject(DEFAULT_LAYOUTS.equipment)
+  })
+
+  it('resets every screen layout and panel flag on version mismatch', () => {
+    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({
+      version: LAYOUT_VERSION - 1,
+      screens: {
+        combat: { 'combat-stage': { x: 4, y: 9, w: 6, h: 18, hidden: true, locked: true } },
+        inventory: { 'inventory-catalog': { x: 2, y: 2, w: 8, h: 20 } },
+      },
+      shell: { topbar: DEFAULT_TOPBAR_LAYOUT },
+    }))
+
+    const loaded = loadUiLayouts()
+    expect(loaded.screens).toEqual({})
     expect(getScreenLayouts('combat', loaded.screens.combat)).toEqual(DEFAULT_LAYOUTS.combat)
+    expect(JSON.parse(localStorage.getItem(UI_LAYOUTS_KEY) ?? '{}')).toMatchObject({ version: LAYOUT_VERSION, screens: {} })
   })
 
-  it('keeps canonical combat geometry while removing the permanent log', () => {
-    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({ version: 3, screens: {
-      combat: {
-        'combat-stage': { x: 0, y: 0, w: 10, h: 18, locked: true },
-        'combat-spell-deck': { x: 0, y: 18, w: 10, h: 12 },
-      'combat-log': { x: 0, y: 30, w: 10, h: 8, hidden: true },
-      },
-    } }))
+  it('preserves and clamps the topbar when screen layouts reset', () => {
+    const topbar = {
+      order: ['topbar-focus', 'unknown', 'topbar-health'],
+      widths: { 'topbar-focus': -100, 'topbar-mana': 5000, 'topbar-health': 1000 },
+    } as unknown as Partial<TopbarLayout>
+    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({ version: LAYOUT_VERSION - 1, screens: { home: { 'home-objective': { x: 2, y: 2, w: 8, h: 5 } } }, shell: { topbar } }))
 
-    expect(loadUiLayouts().screens.combat).toEqual({
-      'combat-stage': { x: 0, y: 0, w: 10, h: 18, locked: true },
-      'combat-spell-deck': { x: 0, y: 18, w: 10, h: 12 },
-      'combat-analytics': { x: 0, y: 30, w: 12, h: 8 },
-    })
+    const loaded = loadUiLayouts()
+    expect(loaded.screens).toEqual({})
+    expect(loaded.shell.topbar).toEqual(clampTopbarLayout(topbar))
+    expect(loaded.shell.topbar).not.toEqual(DEFAULT_TOPBAR_LAYOUT)
   })
 
-  it('migrates the V3.5 full-width Details default into the Combat Analytics parent', () => {
-    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({ version: 4, screens: { combat: {
-      'combat-stage': { x: 0, y: 0, w: 12, h: 14 },
-      'combat-spell-deck': { x: 0, y: 14, w: 12, h: 7 },
-      'combat-details': { x: 0, y: 21, w: 12, h: 8 },
-    } } }))
+  it('imports a versioned legacy key only to preserve the topbar', () => {
+    localStorage.setItem('sss-wizard-ui-layout-v14', JSON.stringify({
+      version: 14,
+      screens: { 'tower-channeling': { 'channeling-pillars': { x: 0, y: 9, w: 12, h: 25, hidden: true } } },
+      shell: { topbar: { ...DEFAULT_TOPBAR_LAYOUT, widths: { ...DEFAULT_TOPBAR_LAYOUT.widths, 'topbar-mana': 600 } } },
+    }))
 
-    expect(loadUiLayouts().screens.combat).toEqual({
-      'combat-stage': { x: 0, y: 0, w: 12, h: 14 },
-      'combat-spell-deck': { x: 0, y: 14, w: 12, h: 7 },
-      'combat-analytics': { x: 0, y: 21, w: 12, h: 8 },
-    })
+    const loaded = loadUiLayouts()
+    expect(loaded.screens).toEqual({})
+    expect(loaded.shell.topbar.widths['topbar-mana']).toBe(600)
+    expect(JSON.parse(localStorage.getItem(UI_LAYOUTS_KEY) ?? '{}')).toMatchObject({ version: LAYOUT_VERSION, screens: {} })
   })
 
-  it('migrates the V3.7 split panels into one editable Combat Analytics parent', () => {
-    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({ version: 6, screens: { combat: {
-      'combat-stage': { x: 0, y: 0, w: 12, h: 14 },
-      'combat-spell-deck': { x: 0, y: 14, w: 12, h: 7 },
-      'combat-details': { x: 0, y: 21, w: 6, h: 8 },
-      'combat-dungeon-statistics': { x: 6, y: 21, w: 6, h: 8 },
-    } } }))
+  it('explicitly resets the stable and transition storage keys', () => {
+    localStorage.setItem(UI_LAYOUTS_KEY, '{}')
+    localStorage.setItem('sss-wizard-ui-layout-v14', '{}')
+    localStorage.setItem('sss-wizard-ui-layout-v2', '{}')
 
-    expect(loadUiLayouts().screens.combat).toEqual({
-      'combat-stage': { x: 0, y: 0, w: 12, h: 14 },
-      'combat-spell-deck': { x: 0, y: 14, w: 12, h: 7 },
-      'combat-analytics': { x: 0, y: 21, w: 12, h: 8 },
-    })
-  })
+    resetUiLayouts()
 
-  it('resets only the untouched V3.3 combat stack to the new full-width defaults', () => {
-    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({ version: 3, screens: { combat: {
-      'combat-stage': { x: 0, y: 0, w: 12, h: 14 },
-      'combat-spell-deck': { x: 0, y: 14, w: 12, h: 7 },
-      'combat-log': { x: 0, y: 21, w: 12, h: 8 },
-    } } }))
-
-    expect(loadUiLayouts().screens.combat).toEqual({})
-    expect(getScreenLayouts('combat', {})).toEqual(DEFAULT_LAYOUTS.combat)
-  })
-
-  it('resets the untouched V3.6 analytics split to the current 50/50 defaults', () => {
-    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({ version: 5, screens: { combat: {
-      'combat-stage': { x: 0, y: 0, w: 12, h: 14 },
-      'combat-spell-deck': { x: 0, y: 14, w: 12, h: 7 },
-      'combat-details': { x: 0, y: 21, w: 7, h: 8 },
-      'combat-dungeon-statistics': { x: 7, y: 21, w: 5, h: 8 },
-    } } }))
-
-    expect(loadUiLayouts().screens.combat).toEqual({})
-    expect(getScreenLayouts('combat', {})).toEqual(DEFAULT_LAYOUTS.combat)
-  })
-
-  it('resets the untouched V2 lower stack to the current Combat defaults', () => {
-    localStorage.setItem(UI_LAYOUTS_KEY, JSON.stringify({ version: 3, screens: { combat: {
-      'combat-stage': { x: 0, y: 0, w: 12, h: 16 },
-      'combat-spell-deck': { x: 0, y: 16, w: 12, h: 10 },
-      'combat-log': { x: 0, y: 26, w: 12, h: 10 },
-    } } }))
-
-    expect(loadUiLayouts().screens.combat).toEqual({})
-    expect(getScreenLayouts('combat', {})).toEqual(DEFAULT_LAYOUTS.combat)
+    expect(localStorage.getItem(UI_LAYOUTS_KEY)).toBeNull()
+    expect(localStorage.getItem('sss-wizard-ui-layout-v14')).toBeNull()
+    expect(localStorage.getItem('sss-wizard-ui-layout-v2')).toBeNull()
   })
 })

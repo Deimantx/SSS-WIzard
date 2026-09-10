@@ -3,6 +3,7 @@ import { UI_LAYOUTS_KEY } from './layoutEditorStorage'
 import { beginTopbarReorder, beginTopbarResize, cancelTopbarInteraction, closeLayoutEditor, commitGridLayout, commitTopbarInteraction, getLayoutEditorState, getSavedScreenLayouts, getTopbarLayout, moveSelectedPanel, openLayoutEditor, previewTopbarOrder, previewTopbarResize, resetAllScreenLayouts, selectLayoutPanel, setLayoutTarget, togglePanelHidden, togglePanelLocked, undoLayout, redoLayout, updateSelectedPanel } from './layoutEditorStore'
 import { clampPanelLayout } from './layoutUtils'
 import { getPanelDefinition } from './panelRegistry'
+import { LAYOUT_VERSION } from './layoutEditorTypes'
 
 describe('layout editor persistence and session state', () => {
   beforeEach(() => { localStorage.clear(); resetAllScreenLayouts(); closeLayoutEditor(); Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1280 }) })
@@ -13,7 +14,7 @@ describe('layout editor persistence and session state', () => {
     updateSelectedPanel('home', { x: 5, w: 6 })
     closeLayoutEditor()
     expect(getLayoutEditorState().isEditing).toBe(false)
-    expect(JSON.parse(localStorage.getItem(UI_LAYOUTS_KEY) ?? '{}')).toMatchObject({ version: 12, screens: { home: { 'home-wizard': { x: 5, w: 6 } } }, shell: { topbar: { widths: { 'topbar-mana': 480 } } } })
+    expect(JSON.parse(localStorage.getItem(UI_LAYOUTS_KEY) ?? '{}')).toMatchObject({ version: LAYOUT_VERSION, screens: { home: { 'home-wizard': { x: 5, w: 6 } } }, shell: { topbar: { widths: { 'topbar-mana': 480 } } } })
     expect(Object.prototype.hasOwnProperty.call(getLayoutEditorState(), 'document')).toBe(true)
   })
 

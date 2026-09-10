@@ -7,7 +7,7 @@ import type { ScreenId } from '../../game/types'
 export const LAYOUT_VERSION = 15
 export const GRID_COLUMNS = 12
 export const GRID_ROW_HEIGHT = 30
-export const GRID_MARGIN: readonly [number, number] = [14, 14]
+export const GRID_MARGIN: readonly [number, number] = [6, 6]
 
 export type PanelHeightMode = 'content' | 'bounded-scroll'
 

@@ -13,10 +13,11 @@ import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { SpellPresetDialog } from '../schools/SpellPresetDialog'
 import { CombatSpellTile } from './CombatSpellTile'
 import { useSmartScrollState } from '../../ui/game-feel/useSmartScrollState'
+import { pixelsToGridRows } from '../../ui/layout-editor/runtimePanelLayout'
 
 type SchoolFilter = 'all' | SchoolId
 
-export function CombatSpellDeck({ onRequiredHeightChange }: { onRequiredHeightChange?: (height: number) => void }) {
+export function CombatSpellDeck({ onRequiredRowsChange }: { onRequiredRowsChange?: (rows: number) => void }) {
   const [school, setSchool] = useState<SchoolFilter>('all')
   const [autoOnly, setAutoOnly] = useState(false)
   const [search, setSearch] = useState('')
@@ -61,7 +62,7 @@ export function CombatSpellDeck({ onRequiredHeightChange }: { onRequiredHeightCh
   useSmartScrollState(gridRef, { dependencies: [visibleSpells.join('|'), school, autoOnly, query] })
 
   const measureRequiredHeight = useCallback(() => {
-    if (!onRequiredHeightChange || !deckHeadRef.current || !deckBodyRef.current || !gridRegionRef.current || !deckFootRef.current) return
+    if (!onRequiredRowsChange || !deckHeadRef.current || !deckBodyRef.current || !gridRegionRef.current || !deckFootRef.current) return
     const grid = gridRef.current
     const region = gridRegionRef.current
     const rowTops = grid ? [...new Set([...grid.children].map((child) => Math.round((child as HTMLElement).getBoundingClientRect().top)))] : []
@@ -74,15 +75,22 @@ export function CombatSpellDeck({ onRequiredHeightChange }: { onRequiredHeightCh
     const outerHeight = (element: HTMLElement) => { const style = getComputedStyle(element); return element.getBoundingClientRect().height + (Number.parseFloat(style.marginTop) || 0) + (Number.parseFloat(style.marginBottom) || 0) }
     const bodyStaticHeight = [...deckBodyRef.current.children].filter((child) => child !== region).reduce((total, child) => total + outerHeight(child as HTMLElement), 0)
     const cardFrameHeight = outerHeight(deckHeadRef.current) + outerHeight(deckFootRef.current) + 32
-    onRequiredHeightChange(Math.ceil(cardFrameHeight + bodyStaticHeight + desiredGridHeight))
-  }, [onRequiredHeightChange])
+    onRequiredRowsChange(pixelsToGridRows(Math.ceil(cardFrameHeight + bodyStaticHeight + desiredGridHeight)))
+  }, [onRequiredRowsChange])
 
   useLayoutEffect(() => {
     measureRequiredHeight()
     if (typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver(measureRequiredHeight)
-    if (deckBodyRef.current) observer.observe(deckBodyRef.current)
-    if (gridRef.current) observer.observe(gridRef.current)
+    const region = gridRegionRef.current
+    if (!region) return
+    let previousWidth = Math.round(region.getBoundingClientRect().width)
+    const observer = new ResizeObserver(([entry]) => {
+      const width = Math.round(entry.contentRect.width)
+      if (width === previousWidth) return
+      previousWidth = width
+      measureRequiredHeight()
+    })
+    observer.observe(region)
     return () => observer.disconnect()
   }, [measureRequiredHeight, visibleSpells.length, banner, presetNotice])
 

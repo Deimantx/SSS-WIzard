@@ -10,9 +10,9 @@ describe('getAdaptiveCombatLayout', () => {
 
   it('expands the stage and pushes the following stack down without shrinking', () => {
     expect(getAdaptiveCombatLayout(base, 800)).toEqual([
-      { i: 'combat-stage', x: 0, y: 0, w: 12, h: 19 },
-      { i: 'combat-spell-deck', x: 0, y: 19, w: 12, h: 7 },
-      { i: 'combat-analytics', x: 0, y: 26, w: 12, h: 8 },
+      { i: 'combat-stage', x: 0, y: 0, w: 12, h: 23 },
+      { i: 'combat-spell-deck', x: 0, y: 23, w: 12, h: 7 },
+      { i: 'combat-analytics', x: 0, y: 30, w: 12, h: 8 },
     ])
   })
 
@@ -31,10 +31,10 @@ describe('getAdaptiveCombatLayout', () => {
     expect(getAdaptiveCombatLayout(custom, {})).toEqual(custom.map((item) => item.i === 'combat-analytics' ? { ...item, y: 21 } : item))
   })
 
-  it('uses a stage high-water mark so the bottom row does not jump between encounters', () => {
-    const expanded = getAdaptiveCombatLayout(base, { requiredStageContentHeight: 800 })
-    const stabilized = getAdaptiveCombatLayout(base, { requiredStageContentHeight: 800 })
+  it('uses the current stage requirement without retaining a session high-water mark', () => {
+    const expanded = getAdaptiveCombatLayout(base, { requiredStageRows: 19 })
+    const compact = getAdaptiveCombatLayout(base, { requiredStageRows: 11 })
     expect(expanded.find((item) => item.i === 'combat-analytics')?.y).toBe(26)
-    expect(stabilized.find((item) => item.i === 'combat-analytics')?.y).toBe(26)
+    expect(compact.find((item) => item.i === 'combat-analytics')?.y).toBe(21)
   })
 })

@@ -16,50 +16,82 @@ import { useCombatLogStore } from '../../game/ui/combatLogStore'
 import { selectPlayerBasicDamage } from '../../store/selectors'
 import { formatTime } from '../../game/utils'
 import { GameTooltip, Progress } from '../../components/ui'
+import { useShallow } from 'zustand/react/shallow'
 import { EnemyPatternRail } from './EnemyPatternRail'
 import { CombatActionProgress } from './CombatActionProgress'
 import { EnemyActionTooltip, buildBasicAttackPresentation } from './EnemyActionTooltip'
 import { EnemyPatternIcon } from './EnemyPatternIcon'
 
 export function CombatFlowPanel({ selectedDungeonId }: { selectedDungeonId: DungeonId }) {
-  const combat = useGameStore((state) => state.combat)
-  const enemy = useGameStore((state) => state.combat.enemyId ? MONSTERS[state.combat.enemyId] ?? null : null)
-  const dungeon = DUNGEONS[combat.active ? combat.dungeonId ?? selectedDungeonId : selectedDungeonId]
+  const flowState = useGameStore(useShallow((state) => ({
+    active: state.combat.active,
+    dungeonId: state.combat.dungeonId,
+    enemyId: state.combat.enemyId,
+    enemyHp: state.combat.enemyHp,
+    enemyMaxHp: state.combat.enemyMaxHp,
+    enemyBarrier: state.combat.enemyBarrier,
+    playerBarrier: state.combat.playerBarrier,
+    threatCleared: state.combat.threatCleared,
+    inBossFight: state.combat.inBossFight,
+    encounterTimerMs: state.combat.encounterTimerMs,
+    playerAttackTimerMs: state.combat.playerAttackTimerMs,
+    playerAttackDurationMs: state.combat.playerAttackDurationMs,
+    enemyActionTimerMs: state.combat.enemyActionTimerMs,
+    enemyActionDurationMs: state.combat.enemyActionDurationMs,
+    enemyNextActionIndex: state.combat.enemyNextActionIndex,
+    enemyCurrentActionId: state.combat.enemyCurrentActionId,
+    enemyCurrentStepId: state.combat.enemyCurrentStepId,
+    enemyCurrentActionPatternId: state.combat.enemyCurrentActionPatternId,
+    enemyActionPatternId: state.combat.enemyActionPatternId,
+    playerHealth: state.player.health,
+    playerMaxHealth: state.player.maxHealth,
+    playerMana: state.player.mana,
+    playerMaxMana: state.player.maxMana,
+    playerStatuses: state.combat.playerStatuses,
+    enemyStatuses: state.combat.enemyStatuses,
+    equipment: state.equipment,
+    artifactProgress: state.artifactProgress,
+    debugFreezePlayerActions: state.debug.freezePlayerActions,
+    debugDisablePlayerBasicAttack: state.debug.disablePlayerBasicAttack,
+    debugFreezeEnemyActions: state.debug.freezeEnemyActions,
+  })))
+  const enemy = flowState.enemyId ? MONSTERS[flowState.enemyId] ?? null : null
+  const dungeon = DUNGEONS[flowState.active ? flowState.dungeonId ?? selectedDungeonId : selectedDungeonId]
   const playerBasicDamage = useGameStore(selectPlayerBasicDamage)
-  // Timing selectors return structured values, so compute them from the
-  // stable store snapshot rather than subscribing with a fresh object on
-  // every getSnapshot call.
-  const timingState = useGameStore()
+  const timingState = useGameStore.getState()
   const playerTiming = useMemo(() => getPlayerBasicTiming(timingState), [timingState])
   const enemyTiming = useMemo(() => getCurrentEnemyActionTiming(timingState), [timingState])
-  const pattern = useGameStore((state) => state.combat.enemyId ? getEnemyActionPattern(state) : undefined)
-  const nextStep = useGameStore((state) => state.combat.enemyId ? getNextEnemyActionStep(state) : undefined)
-  const currentStep = useGameStore((state) => state.combat.enemyId ? getCurrentEnemyActionStep(state) : undefined)
-  const currentAction = useGameStore((state) => state.combat.enemyId ? getEnemyAction(state, state.combat.enemyCurrentActionId) : undefined)
+  const pattern = useMemo(() => flowState.enemyId ? getEnemyActionPattern(timingState) : undefined, [flowState.enemyId, flowState.enemyActionPatternId, timingState])
+  const nextStep = useMemo(() => flowState.enemyId ? getNextEnemyActionStep(timingState) : undefined, [flowState.enemyId, flowState.enemyNextActionIndex, flowState.enemyActionPatternId, timingState])
+  const currentStep = useMemo(() => flowState.enemyId ? getCurrentEnemyActionStep(timingState) : undefined, [flowState.enemyId, flowState.enemyCurrentStepId, flowState.enemyCurrentActionPatternId, timingState])
+  const currentAction = useMemo(() => flowState.enemyId ? getEnemyAction(timingState, flowState.enemyCurrentActionId) : undefined, [flowState.enemyId, flowState.enemyCurrentActionId, timingState])
   const latestEvent = useCombatLogStore((state) => {
-    const encounterStartIndex = state.entries.findIndex((entry) => entry.sourceId === 'encounter-start' && entry.targetMonsterId === combat.enemyId)
-    const encounterEntries = encounterStartIndex >= 0 ? state.entries.slice(0, encounterStartIndex) : state.entries
-    return encounterEntries.find((entry) => getRelevantCombatEvent(entry, combat.enemyId)) ?? null
+    for (const entry of state.entries) {
+      if (entry.sourceId === 'encounter-start' && entry.targetMonsterId === flowState.enemyId) break
+      const relevant = getRelevantCombatEvent(entry, flowState.enemyId)
+      if (relevant) return relevant
+    }
+    return null
   })
   const presentation = useMemo(() => getCombatFlowPresentation({
-    active: combat.active,
-    dungeonId: combat.dungeonId,
+    active: flowState.active,
+    dungeonId: flowState.dungeonId,
     selectedDungeonId,
-    enemyId: combat.enemyId,
+    enemyId: flowState.enemyId,
     dungeon,
     enemy,
-    threatCleared: combat.threatCleared,
-    inBossFight: combat.inBossFight,
-    encounterTimerMs: combat.encounterTimerMs,
-    playerAttackTimerMs: combat.playerAttackTimerMs,
-    playerAttackDurationMs: combat.playerAttackDurationMs || playerTiming.baseWorkMs,
-    enemyActionTimerMs: combat.enemyActionTimerMs,
-    enemyActionDurationMs: combat.enemyActionDurationMs,
-    enemyNextActionIndex: combat.enemyNextActionIndex,
-    enemyCurrentActionId: combat.enemyCurrentActionId,
-    enemyCurrentStepId: combat.enemyCurrentStepId,
-    enemyCurrentActionPatternId: combat.enemyCurrentActionPatternId,
-    enemyActionPatternId: combat.enemyActionPatternId,
+    threatCleared: flowState.threatCleared,
+    inBossFight: flowState.inBossFight,
+    encounterTimerMs: flowState.encounterTimerMs,
+    playerAttackTimerMs: flowState.playerAttackTimerMs,
+    playerAttackDurationMs: flowState.playerAttackDurationMs || playerTiming.baseWorkMs,
+    enemyActionTimerMs: flowState.enemyActionTimerMs,
+    enemyActionDurationMs: flowState.enemyActionDurationMs,
+    enemyNextActionIndex: flowState.enemyNextActionIndex,
+    enemyCurrentActionId: flowState.enemyCurrentActionId,
+    enemyCurrentStepId: flowState.enemyCurrentStepId,
+    enemyCurrentActionPatternId: flowState.enemyCurrentActionPatternId,
+    enemyActionPatternId: flowState.enemyActionPatternId,
     playerBasicDamage,
     playerTiming,
     enemyTiming,
@@ -67,9 +99,9 @@ export function CombatFlowPanel({ selectedDungeonId }: { selectedDungeonId: Dung
     nextStep,
     currentStep,
     currentAction,
-  }), [combat, currentAction, currentStep, dungeon, enemy, enemyTiming, nextStep, pattern, playerBasicDamage, playerTiming, selectedDungeonId])
+  }), [currentAction, currentStep, dungeon, enemy, enemyTiming, flowState, nextStep, pattern, playerBasicDamage, playerTiming, selectedDungeonId])
 
-  const recentEvent = useMemo(() => getRelevantCombatEvent(latestEvent, combat.enemyId), [combat.enemyId, latestEvent])
+  const recentEvent = useMemo(() => getRelevantCombatEvent(latestEvent, flowState.enemyId), [flowState.enemyId, latestEvent])
   const nextIntent = useMemo(() => getNextIntent(presentation, nextStep), [nextStep, presentation])
   const currentActor = presentation.enemyCurrentAction && presentation.enemyTimeline ? 'enemy' : 'player'
   const currentTimeline = currentActor === 'enemy' ? presentation.enemyTimeline : presentation.playerTimeline
@@ -81,10 +113,10 @@ export function CombatFlowPanel({ selectedDungeonId }: { selectedDungeonId: Dung
 
   if (presentation.mode === 'tower') return <section className="combat-flow-panel is-tower"><div className="combat-flow-kicker">AT THE TOWER</div><ShieldAlert size={28} aria-hidden="true" /><strong>Enter a Dungeon to begin Combat.</strong></section>
   if (presentation.mode === 'boss-ready') return <section className="combat-flow-panel is-boss-ready"><div className="combat-flow-kicker">BOSS READY</div><ShieldAlert size={28} aria-hidden="true" /><strong>{MONSTERS[presentation.dungeon.boss].name} awaits.</strong><p>The route is clear. Engage the Boss from the Run Bar when ready.</p></section>
-  if (presentation.mode === 'encounter-delay') return <section className="combat-flow-panel is-encounter-delay"><div className="combat-flow-delay-label">NEXT ENCOUNTER</div><strong className="combat-flow-delay">{formatTime(presentation.encounterTimerMs)}</strong><Progress value={Math.max(0, Math.min(100, (1 - presentation.encounterTimerMs / Math.max(1, presentation.dungeon.encounterDelayMs)) * 100))} tone="time" label="Encounter progress" /><div className="combat-flow-delay-context"><span>Searching the {presentation.dungeon.name}...</span><span>THREAT {combat.threatCleared} / {presentation.dungeon.threatRequired}</span>{presentation.dungeon.threatRequired <= combat.threatCleared && <strong>BOSS APPROACHING</strong>}</div></section>
+  if (presentation.mode === 'encounter-delay') return <section className="combat-flow-panel is-encounter-delay"><div className="combat-flow-delay-label">NEXT ENCOUNTER</div><strong className="combat-flow-delay">{formatTime(presentation.encounterTimerMs)}</strong><Progress value={Math.max(0, Math.min(100, (1 - presentation.encounterTimerMs / Math.max(1, presentation.dungeon.encounterDelayMs)) * 100))} tone="time" label="Encounter progress" /><div className="combat-flow-delay-context"><span>Searching the {presentation.dungeon.name}...</span><span>THREAT {flowState.threatCleared} / {presentation.dungeon.threatRequired}</span>{presentation.dungeon.threatRequired <= flowState.threatCleared && <strong>BOSS APPROACHING</strong>}</div></section>
 
   return <section className="combat-flow-panel" style={{ '--enemy-accent': presentation.enemy?.color } as CSSProperties}>
-    <header className="combat-flow-head"><div><span className="combat-flow-kicker">COMBAT STAGE</span><strong className="combat-flow-live-label">LIVE DUEL CONSOLE</strong></div><span className="combat-flow-live-dot">{combat.active ? 'LIVE' : 'STANDBY'}</span></header>
+    <header className="combat-flow-head"><div><span className="combat-flow-kicker">COMBAT STAGE</span><strong className="combat-flow-live-label">LIVE DUEL CONSOLE</strong></div><span className="combat-flow-live-dot">{flowState.active ? 'LIVE' : 'STANDBY'}</span></header>
     <div className={`combat-flow-stage is-actor-${currentActor}`}>
       <div className="combat-flow-lanes"><TimelineRow timeline={presentation.playerTimeline} /><span className="combat-flow-lane-axis" aria-hidden="true"><i /><i /></span><TimelineRow timeline={presentation.enemyTimeline} /></div>
       <div className={`combat-flow-action-core is-actor-${currentActor}${presentation.enemyCurrentAction?.special ? ' is-special' : ''}`}>

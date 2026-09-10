@@ -9,8 +9,12 @@ export const DEFAULT_COMBAT_SPELL_DECK_H = 7
 export const MAX_ADAPTIVE_COMBAT_SPELL_DECK_H = 9
 
 export interface AdaptiveCombatLayoutOptions {
+  requiredStageRows?: number
+  requiredDeckRows?: number
+  /** Compatibility input for callers that still report natural pixels. */
   requiredStageContentHeight?: number
   requiredDeckContentHeight?: number
+  /** @deprecated Analytics uses its saved bounded height. */
   requiredAnalyticsContentHeight?: number
 }
 
@@ -25,17 +29,19 @@ export function getAdaptiveCombatLayout(layout: Layout, options: AdaptiveCombatL
   const analytics = layout.find((item) => item.i === ANALYTICS_ID)
   if (!stage || !deck || !analytics) return layout
 
-  const requiredStageHeight = normalized.requiredStageContentHeight && normalized.requiredStageContentHeight > 0
-    ? Math.max(stage.h, pixelsToGridRows(normalized.requiredStageContentHeight))
-    : stage.h
-  const requiredDeckHeight = normalized.requiredDeckContentHeight && normalized.requiredDeckContentHeight > 0
-    ? Math.min(MAX_ADAPTIVE_COMBAT_SPELL_DECK_H, pixelsToGridRows(normalized.requiredDeckContentHeight))
+  // The saved height is a floor for a bounded panel; the current measurement
+  // is the only adaptive input. Nothing here retains a session high-water mark.
+  const stageRows = normalized.requiredStageRows ?? (normalized.requiredStageContentHeight && normalized.requiredStageContentHeight > 0 ? pixelsToGridRows(normalized.requiredStageContentHeight) : 0)
+  const requiredStageHeight = stageRows > 0 ? Math.max(stage.h, Math.ceil(stageRows)) : stage.h
+  const deckRows = normalized.requiredDeckRows ?? (normalized.requiredDeckContentHeight && normalized.requiredDeckContentHeight > 0 ? pixelsToGridRows(normalized.requiredDeckContentHeight) : 0)
+  const requiredDeckHeight = deckRows > 0
+    ? Math.min(MAX_ADAPTIVE_COMBAT_SPELL_DECK_H, Math.ceil(deckRows))
     : deck.h
   const deckHeight = Math.max(deck.h > DEFAULT_COMBAT_SPELL_DECK_H ? deck.h : DEFAULT_COMBAT_SPELL_DECK_H, requiredDeckHeight)
   const lowerStartY = stage.y + requiredStageHeight
   const deckY = Math.max(deck.y, lowerStartY)
   const bottomY = deckY + deckHeight
-  const analyticsHeight = Math.max(analytics.h, pixelsToGridRows(normalized.requiredAnalyticsContentHeight ?? 0))
+  const analyticsHeight = analytics.h
   const next = layout.map((item) => {
     if (item.i === STAGE_ID) return { ...item, h: requiredStageHeight, x: Math.max(0, Math.min(GRID_COLUMNS - item.w, item.x)) }
     if (item.i === SPELL_DECK_ID) return { ...item, y: deckY, h: deckHeight }

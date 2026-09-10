@@ -2882,3 +2882,12 @@
   .combat-impact-layer.is-new .combat-impact-result { transform: translateY(-50%); }
   .combat-flow-live-dot::before { box-shadow: none; }
 }
+
+/* Runtime adaptive layout measures natural content, never the assigned panel height. */
+.combat-screen .combat-stage-panel { display: block; }
+.combat-screen .combat-stage-grid { height: auto; }
+
+/* Analytics is a bounded readout; tab changes must not feed back into panel geometry. */
+.combat-screen .combat-analytics-panel { grid-template-rows: auto minmax(0, 1fr); }
+.combat-screen .combat-analytics-grid { height: 100%; }
+.combat-screen .combat-analytics-grid > .card { height: 100%; }

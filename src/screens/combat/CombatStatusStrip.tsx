@@ -1,6 +1,6 @@
 import { Flame, HeartPulse, Shield, Snowflake, Sparkles, Zap } from 'lucide-react'
 import type { CSSProperties } from 'react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { ActiveStatus } from '../../game/types'
 import { STATUS_DEFINITIONS } from '../../game/content/statuses'
 import { formatUiCombatRate } from '../../game/presentation/numbers'
@@ -9,10 +9,27 @@ import { formatTime } from '../../game/utils'
 import { GameTooltip } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { useGameStore } from '../../store/gameStore'
+import { useShallow } from 'zustand/react/shallow'
 
 export function CombatStatusStrip({ statuses, label }: { statuses: ActiveStatus[]; label: string }) {
-  const state = useGameStore()
-  const groups = getCombatStatusGroups(statuses, state)
+  const statusState = useGameStore(useShallow((state) => ({
+    playerHealth: state.player.health,
+    playerMaxHealth: state.player.maxHealth,
+    playerMana: state.player.mana,
+    playerMaxMana: state.player.maxMana,
+    enemyId: state.combat.enemyId,
+    enemyInstanceKey: state.combat.enemyInstanceKey,
+    enemyHp: state.combat.enemyHp,
+    enemyMaxHp: state.combat.enemyMaxHp,
+    playerBarrier: state.combat.playerBarrier,
+    enemyBarrier: state.combat.enemyBarrier,
+    playerStatuses: state.combat.playerStatuses,
+    enemyStatuses: state.combat.enemyStatuses,
+    schools: state.schools,
+    equipment: state.equipment,
+    artifactProgress: state.artifactProgress,
+  })))
+  const groups = useMemo(() => getCombatStatusGroups(statuses, useGameStore.getState()), [statuses, statusState])
   return <section className={`combat-status-strip${groups.length ? ' is-active' : ' is-empty'}`} aria-label={label}><div className="combat-subsection-label">{label}</div>{groups.length ? <div className="combat-status-list">{groups.map((group) => <CombatStatusChip key={group.statusId} group={group} />)}</div> : <span className="combat-status-empty">None active</span>}</section>
 }
 

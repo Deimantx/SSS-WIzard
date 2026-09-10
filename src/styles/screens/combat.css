@@ -1019,7 +1019,15 @@
   letter-spacing: 0.08em;
   white-space: nowrap;
 }
-.combat-map-viewport {
+.atlas-map-view {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  animation: arcane-atlas-view-in 240ms ease both;
+}
+.arcane-atlas-viewport {
   position: relative;
   min-width: 0;
   min-height: 450px;
@@ -1028,67 +1036,74 @@
   border: 1px solid var(--ui-border-strong);
   border-radius: 11px;
   background:
-    radial-gradient(circle at 50% 48%, color-mix(in srgb, var(--ui-accent) 15%, transparent), transparent 31%),
+    radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--ui-accent) 15%, transparent), transparent 31%),
     radial-gradient(circle at 15% 85%, color-mix(in srgb, var(--ui-secondary) 9%, transparent), transparent 27%),
     linear-gradient(145deg, color-mix(in srgb, var(--ui-panel-strong) 97%, transparent), color-mix(in srgb, var(--ui-bg) 88%, transparent));
-  cursor: grab;
-  container-type: inline-size;
   isolation: isolate;
-  touch-action: none;
   user-select: none;
 }
-.combat-map-viewport.is-dragging {
+.arcane-atlas-viewport.is-none {
+  cursor: default;
+}
+.arcane-atlas-viewport.is-bounded {
+  cursor: grab;
+  touch-action: none;
+}
+.arcane-atlas-viewport.is-dragging {
   cursor: grabbing;
 }
-.combat-map-viewport::before {
+.arcane-atlas-viewport::before {
   position: absolute;
-  z-index: -1;
+  z-index: -2;
   inset: 0;
-  opacity: 0.5;
+  opacity: 0.46;
   background-image: linear-gradient(color-mix(in srgb, var(--ui-accent) 10%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--ui-accent) 10%, transparent) 1px, transparent 1px);
   background-size: 42px 42px;
   content: '';
-  mask-image: linear-gradient(to bottom, black, transparent 88%);
+  mask-image: linear-gradient(to bottom, black, transparent 90%);
+  pointer-events: none;
 }
-.combat-map-grid-lines {
+.arcane-atlas-viewport::after {
   position: absolute;
-  z-index: -1;
+  z-index: 4;
   inset: 0;
-  opacity: 0.28;
-  background: repeating-radial-gradient(ellipse at 50% 50%, transparent 0 50px, color-mix(in srgb, var(--ui-accent) 18%, transparent) 51px 52px, transparent 53px 82px);
+  border: 1px solid color-mix(in srgb, var(--ui-accent) 12%, transparent);
+  background: radial-gradient(ellipse at center, transparent 48%, rgb(3 6 14 / 38%) 100%);
+  content: '';
   pointer-events: none;
 }
-.combat-map-orbit {
+.arcane-atlas-ambient {
   position: absolute;
   z-index: -1;
-  width: 46%;
-  aspect-ratio: 1;
-  border: 1px solid color-mix(in srgb, var(--ui-accent) 16%, transparent);
+  width: 42%;
+  height: 58%;
   border-radius: 50%;
+  opacity: 0.22;
+  filter: blur(18px);
   pointer-events: none;
 }
-.combat-map-orbit-one {
+.arcane-atlas-ambient-one {
   top: 8%;
-  left: 28%;
-  transform: rotate(22deg) scaleX(1.8);
+  left: 32%;
+  background: radial-gradient(ellipse, color-mix(in srgb, var(--ui-accent) 45%, transparent), transparent 68%);
 }
-.combat-map-orbit-two {
-  top: 20%;
-  left: 24%;
-  transform: rotate(-31deg) scaleX(1.4);
-  border-color: color-mix(in srgb, var(--ui-secondary) 12%, transparent);
+.arcane-atlas-ambient-two {
+  right: 15%;
+  bottom: -8%;
+  background: radial-gradient(ellipse, color-mix(in srgb, var(--ui-secondary) 38%, transparent), transparent 70%);
 }
-.combat-map-stage {
+.arcane-atlas-stage {
   position: absolute;
   z-index: 1;
-  inset: 0;
-  transform: translate3d(var(--map-pan-x), var(--map-pan-y), 0);
-  transition: transform 180ms ease-out;
+  left: 50%;
+  top: 50%;
+  transform-origin: center;
+  transition: transform 240ms cubic-bezier(0.22, 0.8, 0.28, 1);
 }
-.combat-map-viewport.is-dragging .combat-map-stage {
+.arcane-atlas-viewport.is-dragging .arcane-atlas-stage {
   transition: none;
 }
-.combat-map-connections {
+.atlas-graph-connections {
   position: absolute;
   z-index: 0;
   inset: 0;
@@ -1097,23 +1112,42 @@
   overflow: visible;
   pointer-events: none;
 }
-.combat-map-connections line {
+.atlas-region-route {
+  fill: none;
   stroke: color-mix(in srgb, var(--ui-border-strong) 78%, var(--ui-accent));
-  stroke-width: 0.48;
-  stroke-dasharray: 2 2;
+  stroke-width: 4;
+  stroke-linecap: round;
   vector-effect: non-scaling-stroke;
 }
-.combat-map-connections line.is-active {
-  stroke: color-mix(in srgb, var(--ui-accent) 62%, var(--ui-border));
-  stroke-dasharray: none;
-  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--ui-accent) 45%, transparent));
+.atlas-region-route.is-dormant {
+  opacity: 0.52;
+  stroke-dasharray: 7 9;
 }
-.combat-map-node {
+.atlas-region-route.is-energized {
+  stroke: color-mix(in srgb, var(--ui-accent) 72%, var(--ui-border));
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--ui-accent) 42%, transparent));
+}
+.atlas-world-route {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ui-secondary) 54%, var(--ui-border-strong));
+  stroke-width: 2;
+  stroke-dasharray: 3 9;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+.atlas-world-junction {
+  fill: var(--ui-panel-strong);
+  stroke: color-mix(in srgb, var(--ui-secondary) 70%, var(--ui-border));
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+.atlas-waypoint {
+  --node-accent: var(--ui-accent);
   position: absolute;
   z-index: 2;
   display: grid;
   justify-items: center;
-  width: var(--combat-map-node-width, clamp(96px, 22cqw, 158px));
+  width: 240px;
   padding: 0;
   border: 0;
   color: var(--ui-text-soft);
@@ -1122,100 +1156,210 @@
   text-align: center;
   transform: translate(-50%, -50%);
 }
-.combat-map-node:hover .combat-map-node-core,
-.combat-map-node:focus-visible .combat-map-node-core,
-.combat-map-node.is-selected .combat-map-node-core {
-  border-color: var(--ui-accent);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--ui-accent) 14%, transparent), 0 0 28px color-mix(in srgb, var(--ui-accent) 34%, transparent), inset 0 0 20px color-mix(in srgb, var(--ui-accent) 16%, transparent);
-}
-.combat-map-node:focus-visible {
+.atlas-waypoint:focus-visible {
   outline: none;
 }
-.combat-map-node-halo {
+.atlas-waypoint-halo {
   position: absolute;
-  top: -7px;
-  width: 76px;
-  height: 76px;
-  border: 1px solid color-mix(in srgb, var(--node-accent, var(--ui-accent)) 27%, transparent);
+  top: -8px;
+  width: 82px;
+  height: 82px;
+  border: 1px solid color-mix(in srgb, var(--node-accent) 32%, transparent);
   border-radius: 50%;
-  opacity: 0.66;
+  opacity: 0.7;
   pointer-events: none;
+  transition: opacity 140ms ease, transform 140ms ease, border-color 140ms ease;
 }
-.combat-map-node-core {
+.atlas-waypoint-core {
   position: relative;
   display: grid;
   place-items: center;
-  width: 61px;
-  height: 61px;
-  border: 1px solid color-mix(in srgb, var(--node-accent, var(--ui-accent)) 68%, var(--ui-border));
+  width: 66px;
+  height: 66px;
+  border: 1px solid color-mix(in srgb, var(--node-accent) 72%, var(--ui-border));
   border-radius: 50%;
-  color: var(--node-accent, var(--ui-accent));
-  background: radial-gradient(circle, color-mix(in srgb, var(--node-accent, var(--ui-accent)) 24%, var(--ui-panel-strong)), var(--ui-panel));
-  box-shadow: 0 0 15px color-mix(in srgb, var(--node-accent, var(--ui-accent)) 18%, transparent), inset 0 0 12px color-mix(in srgb, var(--node-accent, var(--ui-accent)) 10%, transparent);
+  color: var(--node-accent);
+  background: radial-gradient(circle, color-mix(in srgb, var(--node-accent) 24%, var(--ui-panel-strong)), var(--ui-panel));
+  box-shadow: 0 0 16px color-mix(in srgb, var(--node-accent) 20%, transparent), inset 0 0 14px color-mix(in srgb, var(--node-accent) 11%, transparent);
   transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
 }
-.combat-map-node:hover .combat-map-node-core,
-.combat-map-node:focus-visible .combat-map-node-core {
-  transform: translateY(-2px);
-}
-.combat-map-node-glyph {
-  font: 26px var(--font-mono);
+.atlas-waypoint-core span {
+  font: 27px var(--font-mono);
   line-height: 1;
   text-shadow: 0 0 13px currentColor;
 }
-.combat-map-node-copy {
+.atlas-waypoint-label {
   display: grid;
   gap: 3px;
-  min-width: 0;
-  margin-top: 9px;
-  padding: 5px 8px 6px;
-  border: 1px solid color-mix(in srgb, var(--node-accent, var(--ui-accent)) 28%, var(--ui-border));
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--ui-panel-strong) 92%, transparent);
+  min-width: 150px;
+  margin-top: 10px;
+  padding: 6px 11px 7px;
+  border: 1px solid color-mix(in srgb, var(--node-accent) 34%, var(--ui-border));
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--ui-panel-strong) 94%, transparent);
+  box-shadow: 0 8px 20px rgb(0 0 0 / 18%);
 }
-.combat-map-node-copy strong,
-.combat-map-node-copy small {
+.atlas-waypoint-label strong,
+.atlas-waypoint-label small {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.combat-map-node-copy strong {
+.atlas-waypoint-label strong {
   color: var(--ui-text);
-  font-size: 11px;
+  font-size: 12px;
 }
-.combat-map-node-copy small {
-  color: var(--node-accent, var(--ui-text-muted));
+.atlas-waypoint-label small {
+  color: var(--node-accent);
   font: var(--text-micro) var(--font-mono);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.07em;
 }
-.combat-map-node.is-locked {
+.atlas-waypoint:hover .atlas-waypoint-core,
+.atlas-waypoint:focus-visible .atlas-waypoint-core,
+.atlas-waypoint.is-selected .atlas-waypoint-core {
+  border-color: var(--ui-accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--ui-accent) 14%, transparent), 0 0 28px color-mix(in srgb, var(--ui-accent) 34%, transparent), inset 0 0 20px color-mix(in srgb, var(--ui-accent) 16%, transparent);
+  transform: translateY(-2px);
+}
+.atlas-waypoint:hover .atlas-waypoint-halo,
+.atlas-waypoint:focus-visible .atlas-waypoint-halo,
+.atlas-waypoint.is-selected .atlas-waypoint-halo {
+  border-color: color-mix(in srgb, var(--ui-accent) 60%, transparent);
+  opacity: 1;
+  transform: scale(1.08);
+}
+.atlas-waypoint.is-locked {
   --node-accent: var(--ui-text-disabled);
-  opacity: 0.72;
+  opacity: 0.7;
 }
-.combat-map-node.is-locked .combat-map-node-core {
+.atlas-waypoint.is-locked .atlas-waypoint-core,
+.atlas-waypoint.is-locked .atlas-waypoint-label {
   border-style: dashed;
   box-shadow: none;
 }
-.combat-map-node.is-locked .combat-map-node-copy {
-  border-style: dashed;
-}
-.combat-map-node.is-completed {
+.atlas-waypoint.is-completed {
   --node-accent: var(--ui-success);
 }
-.combat-map-node.is-boss-ready {
+.atlas-waypoint.is-boss-ready {
   --node-accent: var(--ui-gold);
 }
-.combat-map-node.is-active,
-.combat-map-node.is-available {
+.atlas-waypoint.is-active,
+.atlas-waypoint.is-available {
   --node-accent: var(--ui-accent);
 }
-.combat-map-pan-hint {
+.atlas-world-plate {
+  --plate-accent: var(--ui-text-disabled);
   position: absolute;
-  right: 11px;
-  bottom: 9px;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  align-items: center;
+  width: 260px;
+  min-height: 142px;
+  padding: 20px 23px;
+  border: 1px solid color-mix(in srgb, var(--plate-accent) 38%, var(--ui-border));
+  clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px), 0 10px);
+  color: var(--ui-text-soft);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--plate-accent) 9%, var(--ui-panel-strong)), color-mix(in srgb, var(--ui-panel) 96%, transparent));
+  cursor: pointer;
+  text-align: left;
+  transform: translate(-50%, -50%);
+  transition: border-color 140ms ease, filter 140ms ease, transform 140ms ease;
+}
+.atlas-world-plate::before {
+  position: absolute;
+  inset: 7px;
+  border: 1px solid color-mix(in srgb, var(--plate-accent) 13%, transparent);
+  clip-path: inherit;
+  content: '';
+  pointer-events: none;
+}
+.atlas-world-plate:focus-visible {
+  outline: 1px solid var(--ui-accent);
+  outline-offset: 3px;
+}
+.atlas-world-plate:hover,
+.atlas-world-plate.is-selected {
+  --plate-accent: var(--ui-accent);
+  border-color: color-mix(in srgb, var(--ui-accent) 76%, var(--ui-border));
+  filter: brightness(1.08);
+}
+.atlas-world-plate.is-selected {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-accent) 13%, transparent), 0 0 30px color-mix(in srgb, var(--ui-accent) 19%, transparent);
+}
+.atlas-world-plate.is-current {
+  --plate-accent: var(--ui-accent);
+}
+.atlas-world-plate.is-locked {
+  border-style: dashed;
+  opacity: 0.7;
+}
+.atlas-world-plate-rune {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 1px solid color-mix(in srgb, var(--plate-accent) 55%, var(--ui-border));
+  border-radius: 10px;
+  color: var(--plate-accent);
+  background: color-mix(in srgb, var(--plate-accent) 12%, var(--ui-panel));
+  box-shadow: inset 0 0 15px color-mix(in srgb, var(--plate-accent) 9%, transparent);
+}
+.atlas-world-plate-copy {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.atlas-world-plate-copy strong,
+.atlas-world-plate-copy small,
+.atlas-world-plate-copy em {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.atlas-world-plate-copy strong {
+  color: var(--ui-text);
+  font-size: 13px;
+}
+.atlas-world-plate-copy small,
+.atlas-world-plate-copy em {
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-mono);
+  letter-spacing: 0.07em;
+}
+.atlas-world-plate-copy em {
+  color: var(--plate-accent);
+  font-style: normal;
+}
+.atlas-world-plate-corner {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-color: color-mix(in srgb, var(--plate-accent) 70%, transparent);
+  pointer-events: none;
+}
+.atlas-world-plate-corner-one {
+  top: 13px;
+  right: 16px;
+  border-top: 1px solid;
+  border-right: 1px solid;
+}
+.atlas-world-plate-corner-two {
+  right: 16px;
+  bottom: 13px;
+  border-right: 1px solid;
+  border-bottom: 1px solid;
+}
+.arcane-atlas-helper {
+  position: absolute;
+  right: 12px;
+  bottom: 10px;
   z-index: 3;
-  padding: 4px 6px;
+  padding: 4px 7px;
   border: 1px solid var(--ui-border);
   border-radius: 4px;
   color: var(--ui-text-muted);
@@ -1224,9 +1368,27 @@
   letter-spacing: 0.07em;
   pointer-events: none;
 }
-.combat-map-pan-hint span {
+.arcane-atlas-helper span {
   color: var(--ui-accent);
 }
+@keyframes arcane-atlas-view-in {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .atlas-map-view,
+  .atlas-region-route.is-energized,
+  .arcane-atlas-stage,
+  .atlas-waypoint-core,
+  .atlas-waypoint-halo,
+  .atlas-world-plate { animation: none; transition: none; }
+}
+:root[data-reduced-motion='true'] .atlas-map-view,
+:root[data-reduced-motion='true'] .atlas-region-route.is-energized,
+:root[data-reduced-motion='true'] .arcane-atlas-stage,
+:root[data-reduced-motion='true'] .atlas-waypoint-core,
+:root[data-reduced-motion='true'] .atlas-waypoint-halo,
+:root[data-reduced-motion='true'] .atlas-world-plate { animation: none; transition: none; }
 .combat-navigation-inspector {
   display: flex;
   min-width: 0;
@@ -3558,16 +3720,20 @@
   .combat-navigation-panel-head small {
     white-space: normal;
   }
-  .combat-map-node {
-    width: var(--combat-map-node-width, 96px);
+  .arcane-atlas-viewport {
+    min-height: 420px;
   }
-  .combat-map-node-core {
-    width: 54px;
-    height: 54px;
+  .atlas-waypoint {
+    width: 220px;
   }
-  .combat-map-node-halo {
-    width: 68px;
-    height: 68px;
+  .atlas-waypoint-core {
+    width: 58px;
+    height: 58px;
+  }
+  .atlas-world-plate {
+    width: 230px;
+    min-height: 128px;
+    padding: 17px 18px;
   }
   .combat-navigation-inspector-top {
     grid-template-columns: 43px minmax(0, 1fr);

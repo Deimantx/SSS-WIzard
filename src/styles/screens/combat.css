@@ -1032,6 +1032,7 @@
     radial-gradient(circle at 15% 85%, color-mix(in srgb, var(--ui-secondary) 9%, transparent), transparent 27%),
     linear-gradient(145deg, color-mix(in srgb, var(--ui-panel-strong) 97%, transparent), color-mix(in srgb, var(--ui-bg) 88%, transparent));
   cursor: grab;
+  container-type: inline-size;
   isolation: isolate;
   touch-action: none;
   user-select: none;
@@ -1080,7 +1081,7 @@
 .combat-map-stage {
   position: absolute;
   z-index: 1;
-  inset: -55px;
+  inset: 0;
   transform: translate3d(var(--map-pan-x), var(--map-pan-y), 0);
   transition: transform 180ms ease-out;
 }
@@ -1112,7 +1113,7 @@
   z-index: 2;
   display: grid;
   justify-items: center;
-  width: 158px;
+  width: var(--combat-map-node-width, clamp(96px, 22cqw, 158px));
   padding: 0;
   border: 0;
   color: var(--ui-text-soft);
@@ -3558,7 +3559,7 @@
     white-space: normal;
   }
   .combat-map-node {
-    width: 135px;
+    width: var(--combat-map-node-width, 96px);
   }
   .combat-map-node-core {
     width: 54px;

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import { GameTooltip } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import type { CombatMapConnection } from './combatNavigationTypes'
@@ -14,17 +14,77 @@ export interface CombatMapCanvasNode {
   unlockText: string | null
 }
 
-export function CombatMapCanvas({ nodes, connections, selectedId, onSelect, mapLabel, panLimit = 110 }: { nodes: CombatMapCanvasNode[]; connections: CombatMapConnection[]; selectedId: string; onSelect: (id: string) => void; mapLabel: string; panLimit?: number }) {
+interface MapViewportSize {
+  width: number
+  height: number
+}
+
+interface MapPanBounds {
+  x: { min: number; max: number }
+  y: { min: number; max: number }
+}
+
+const getNodeWidth = (viewportWidth: number) => viewportWidth > 0 ? Math.min(158, Math.max(96, viewportWidth * 0.22)) : 158
+const getNodeHeight = (viewportWidth: number) => viewportWidth > 0 && viewportWidth <= 480 ? 105 : 115
+
+const getPanBounds = (nodes: CombatMapCanvasNode[], viewport: MapViewportSize): MapPanBounds => {
+  if (!nodes.length || viewport.width <= 0 || viewport.height <= 0) return { x: { min: 0, max: 0 }, y: { min: 0, max: 0 } }
+  const halfNodeWidth = getNodeWidth(viewport.width) / 2
+  const halfNodeHeight = getNodeHeight(viewport.width) / 2
+  const bounds = nodes.reduce((current, node) => ({
+    minX: Math.min(current.minX, viewport.width * node.x / 100 - halfNodeWidth),
+    maxX: Math.max(current.maxX, viewport.width * node.x / 100 + halfNodeWidth),
+    minY: Math.min(current.minY, viewport.height * node.y / 100 - halfNodeHeight),
+    maxY: Math.max(current.maxY, viewport.height * node.y / 100 + halfNodeHeight),
+  }), { minX: Number.POSITIVE_INFINITY, maxX: Number.NEGATIVE_INFINITY, minY: Number.POSITIVE_INFINITY, maxY: Number.NEGATIVE_INFINITY })
+  const horizontalSlack = Math.max(0, viewport.width - (bounds.maxX - bounds.minX))
+  const verticalSlack = Math.max(0, viewport.height - (bounds.maxY - bounds.minY))
+  const horizontalAllowance = Math.min(horizontalSlack / 2, viewport.width * 0.08)
+  const verticalAllowance = Math.min(verticalSlack / 2, viewport.height * 0.08)
+  const clampAxis = (allowance: number, minVisible: number, maxVisible: number) => ({
+    min: Math.max(-allowance, -minVisible),
+    max: Math.min(allowance, viewport.width - maxVisible),
+  })
+  const x = clampAxis(horizontalAllowance, bounds.minX, bounds.maxX)
+  const y = {
+    min: Math.max(-verticalAllowance, -bounds.minY),
+    max: Math.min(verticalAllowance, viewport.height - bounds.maxY),
+  }
+  return { x: x.min <= x.max ? x : { min: 0, max: 0 }, y: y.min <= y.max ? y : { min: 0, max: 0 } }
+}
+
+export function CombatMapCanvas({ nodes, connections, selectedId, onSelect, mapLabel }: { nodes: CombatMapCanvasNode[]; connections: CombatMapConnection[]; selectedId: string; onSelect: (id: string) => void; mapLabel: string }) {
+  const viewportRef = useRef<HTMLDivElement>(null)
   const [pan, setPan] = useState({ x: 0, y: 0 })
+  const [viewport, setViewport] = useState<MapViewportSize>({ width: 0, height: 0 })
   const [dragging, setDragging] = useState(false)
   const dragRef = useRef<{ pointerId: number; startX: number; startY: number; originX: number; originY: number } | null>(null)
   const nodeById = new Map(nodes.map((node) => [node.id, node]))
+  const panBounds = useMemo(() => getPanBounds(nodes, viewport), [nodes, viewport])
 
   useEffect(() => {
     setPan({ x: 0, y: 0 })
   }, [mapLabel])
 
-  const clampPan = (value: number) => Math.max(-panLimit, Math.min(panLimit, value))
+  useEffect(() => {
+    const element = viewportRef.current
+    if (!element || typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect
+      setViewport((current) => current.width === width && current.height === height ? current : { width, height })
+    })
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    setPan((current) => {
+      const next = { x: Math.max(panBounds.x.min, Math.min(panBounds.x.max, current.x)), y: Math.max(panBounds.y.min, Math.min(panBounds.y.max, current.y)) }
+      return next.x === current.x && next.y === current.y ? current : next
+    })
+  }, [panBounds])
+
+  const clampPan = (value: number, axis: 'x' | 'y') => Math.max(panBounds[axis].min, Math.min(panBounds[axis].max, value))
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.pointerType === 'mouse' && event.button !== 0) return
     if ((event.target as HTMLElement).closest('.combat-map-node')) return
@@ -39,7 +99,7 @@ export function CombatMapCanvas({ nodes, connections, selectedId, onSelect, mapL
     const deltaY = event.clientY - drag.startY
     if (Math.abs(deltaX) < 5 && Math.abs(deltaY) < 5) return
     setDragging(true)
-    setPan({ x: clampPan(drag.originX + deltaX), y: clampPan(drag.originY + deltaY) })
+    setPan({ x: clampPan(drag.originX + deltaX, 'x'), y: clampPan(drag.originY + deltaY, 'y') })
   }
   const handlePointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (dragRef.current?.pointerId !== event.pointerId) return
@@ -48,7 +108,7 @@ export function CombatMapCanvas({ nodes, connections, selectedId, onSelect, mapL
     setDragging(false)
   }
 
-  return <div className={`combat-map-viewport${dragging ? ' is-dragging' : ''}`} aria-label={mapLabel} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} onDragStart={(event) => event.preventDefault()}>
+  return <div ref={viewportRef} className={`combat-map-viewport${dragging ? ' is-dragging' : ''}`} aria-label={mapLabel} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} onDragStart={(event) => event.preventDefault()} style={{ '--combat-map-node-width': `${getNodeWidth(viewport.width)}px` } as CSSProperties}>
     <div className="combat-map-grid-lines" aria-hidden="true" />
     <div className="combat-map-orbit combat-map-orbit-one" aria-hidden="true" />
     <div className="combat-map-orbit combat-map-orbit-two" aria-hidden="true" />

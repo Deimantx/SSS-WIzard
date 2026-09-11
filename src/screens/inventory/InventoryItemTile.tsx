@@ -84,8 +84,9 @@ export function InventoryItemTile({ itemId, inventory, protectedItems, equipment
       {newItem && <span className="inventory-new-marker" aria-hidden="true" />}
       {flowGlyph && <span className={`inventory-flow-indicator inventory-flow-${flowDirection}`} aria-label={flowDirection === 'production' ? 'Actively produced' : flowDirection === 'consumption' ? 'Actively consumed' : 'Actively produced and consumed'}>{flowGlyph}</span>}
       <span className="inventory-item-state" aria-hidden="true">{equipped ? <Check size={13} /> : protectedItem ? <Lock size={12} /> : null}</span>
-      <span className="inventory-item-art"><ItemIcon itemId={itemId} size="tile" /><ItemQuantity value={quantity} compact /></span>
+      <span className="inventory-item-art"><ItemIcon itemId={itemId} size="tile" /></span>
       <strong>{item.name}</strong>
+      <ItemQuantity value={quantity} compact />
     </button>
   </ItemTooltip>
 }

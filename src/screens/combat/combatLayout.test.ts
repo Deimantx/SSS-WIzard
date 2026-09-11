@@ -8,8 +8,12 @@ describe('getAdaptiveCombatLayout', () => {
     { i: 'combat-analytics', x: 0, y: 21, w: 12, h: 8 },
   ]
 
-  it('keeps the bounded Stage geometry stable while stacking lower panels', () => {
-    expect(getAdaptiveCombatLayout(base, 800)).toEqual(base)
+  it('expands the stage and pushes the following stack down without shrinking', () => {
+    expect(getAdaptiveCombatLayout(base, 800)).toEqual([
+      { i: 'combat-stage', x: 0, y: 0, w: 12, h: 19 },
+      { i: 'combat-spell-deck', x: 0, y: 19, w: 12, h: 7 },
+      { i: 'combat-analytics', x: 0, y: 26, w: 12, h: 8 },
+    ])
   })
 
   it('preserves the stack when the stage already has enough height', () => {
@@ -27,4 +31,10 @@ describe('getAdaptiveCombatLayout', () => {
     expect(getAdaptiveCombatLayout(custom, {})).toEqual(custom.map((item) => item.i === 'combat-analytics' ? { ...item, y: 21 } : item))
   })
 
+  it('uses a stage high-water mark so the bottom row does not jump between encounters', () => {
+    const expanded = getAdaptiveCombatLayout(base, { requiredStageContentHeight: 800 })
+    const stabilized = getAdaptiveCombatLayout(base, { requiredStageContentHeight: 800 })
+    expect(expanded.find((item) => item.i === 'combat-analytics')?.y).toBe(26)
+    expect(stabilized.find((item) => item.i === 'combat-analytics')?.y).toBe(26)
+  })
 })

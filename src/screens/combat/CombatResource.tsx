@@ -15,13 +15,11 @@ interface CombatResourceProps {
   maxValue?: number
   previousValue?: number
   feedback?: CombatResourceFeedback
-  /** Live Mana regeneration should stay quiet; authored combat gains may opt in with `feedback`. */
-  animatePassiveGain?: boolean
 }
 
 const feedbackDurationMs = 360
 
-export function CombatResource({ icon, label, value, percent, tone, currentValue, maxValue, previousValue, feedback, animatePassiveGain = true }: CombatResourceProps) {
+export function CombatResource({ icon, label, value, percent, tone, currentValue, maxValue, previousValue, feedback }: CombatResourceProps) {
   const measuredValue = currentValue ?? percent
   const previousMeasuredValue = previousValue ?? measuredValue
   const previousRef = useRef(previousMeasuredValue)
@@ -32,7 +30,7 @@ export function CombatResource({ icon, label, value, percent, tone, currentValue
   const normalizedMax = Math.max(1, maxValue ?? 100)
   useEffect(() => {
     const previous = previousValue ?? previousRef.current
-    const nextFeedback = feedback ?? (tone === 'mana' && !animatePassiveGain ? null : inferFeedback(tone, previous, measuredValue))
+    const nextFeedback = feedback ?? inferFeedback(tone, previous, measuredValue)
     if (previous !== measuredValue && nextFeedback) {
       setActiveFeedback(nextFeedback)
       const previousPercent = Math.max(0, Math.min(100, previous / normalizedMax * 100))
@@ -45,7 +43,7 @@ export function CombatResource({ icon, label, value, percent, tone, currentValue
       return () => window.clearTimeout(timer)
     }
     previousRef.current = measuredValue
-  }, [animatePassiveGain, feedback, measuredValue, normalizedMax, previousValue, tone])
+  }, [feedback, measuredValue, normalizedMax, previousValue, tone])
   const description = tone === 'health' ? 'Current Health. Reaching zero defeats the Wizard.' : tone === 'mana' ? 'Mana is spent to cast Spells.' : 'Barrier absorbs incoming damage before Health.'
   return <GameTooltip block accent={tone === 'health' ? 'danger' : tone === 'mana' ? 'mana' : 'success'} content={<TooltipContent title={label} description={description} />}><div className={`combat-resource combat-resource-${tone}${normalizedPercent <= 0 ? ' is-empty' : ''}${activeFeedback ? ` is-feedback-${activeFeedback}` : ''}`} aria-label={`${label} ${value}`}><div className="combat-resource-label"><span>{icon}{label}</span><strong>{value}</strong></div><div className="combat-resource-track"><i className="combat-resource-fill" style={{ width: `${normalizedPercent}%` }} />{trailPercent !== null && <b className="combat-resource-trail" style={{ width: `${trailPercent}%` }} aria-hidden="true" />}{gainRegion && <b className="combat-resource-gain" style={{ left: `${gainRegion.start}%`, width: `${gainRegion.end - gainRegion.start}%` }} aria-hidden="true" />}</div></div></GameTooltip>
 }

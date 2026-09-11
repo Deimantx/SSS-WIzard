@@ -20,21 +20,22 @@ import { useNavigationIntent } from '../../ui/navigation/navigationIntent'
 
 export function CombatScreenV2() {
   const combatDungeonId = useGameStore((state) => state.combat.dungeonId)
-  const combatActive = useGameStore((state) => state.combat.active)
-  const combatEnemyId = useGameStore((state) => state.combat.enemyId)
-  const firstUnlockedDungeon = useGameStore((state) => getFirstUnlockedDungeon(state.progress))
-  const [selectedDungeonId, setSelectedDungeonId] = useState<DungeonId>(() => combatDungeonId ?? firstUnlockedDungeon)
+  const progress = useGameStore((state) => state.progress)
+  const combat = useGameStore((state) => state.combat)
+  const [selectedDungeonId, setSelectedDungeonId] = useState<DungeonId>(() => combatDungeonId ?? getFirstUnlockedDungeon(progress))
   const navigationIntent = useNavigationIntent()
   const [campaignOpen, setCampaignOpen] = useState(false)
   const [leaveOpen, setLeaveOpen] = useState(false)
   const [enemyContextMode, setEnemyContextMode] = useState<EnemyContextMode | null>(null)
   const enemyCardRef = useRef<HTMLElement>(null)
   const enemyContextTriggerRef = useRef<HTMLElement>(null)
-  const [deckRequiredRows, setDeckRequiredRows] = useState(0)
+  const [stageContentHeight, setStageContentHeight] = useState(0)
+  const [deckContentHeight, setDeckContentHeight] = useState(0)
+  const [analyticsContentHeight, setAnalyticsContentHeight] = useState(0)
   const defeatSnapshot = useCombatDefeatStore((state) => state.snapshot)
   const previousDungeonId = useRef<DungeonId | null>(combatDungeonId)
   useEffect(() => { if (combatDungeonId) setSelectedDungeonId(combatDungeonId) }, [combatDungeonId])
-  useEffect(() => { if (!combatActive && navigationIntent.combatDungeonId) setSelectedDungeonId(navigationIntent.combatDungeonId) }, [combatActive, navigationIntent.combatDungeonId])
+  useEffect(() => { if (!combat.active && navigationIntent.combatDungeonId) setSelectedDungeonId(navigationIntent.combatDungeonId) }, [combat.active, navigationIntent.combatDungeonId])
   const openCampaign = useCallback(() => { dismissGameTooltips(); setCampaignOpen(true) }, [])
   const closeCampaign = useCallback(() => setCampaignOpen(false), [])
   const closeLeave = useCallback(() => setLeaveOpen(false), [])
@@ -47,28 +48,24 @@ export function CombatScreenV2() {
     enemyContextTriggerRef.current = trigger
     setEnemyContextMode(mode)
   }, [enemyContextMode])
-  useEffect(() => { if (!combatActive) setEnemyContextMode(null) }, [combatActive])
-  const previousEnemyId = useRef(combatEnemyId)
+  const openEnemyLootContext = useCallback(() => { if (combat.active && combat.enemyId) setEnemyContextMode('loot') }, [combat.active, combat.enemyId])
+  useEffect(() => { if (!combat.active) setEnemyContextMode(null) }, [combat.active])
+  const previousEnemyId = useRef(combat.enemyId)
   useEffect(() => {
-    if (enemyContextMode && combatEnemyId !== previousEnemyId.current) setEnemyContextMode(combatActive && combatEnemyId ? 'intel' : null)
-    previousEnemyId.current = combatEnemyId
-  }, [combatActive, combatEnemyId, enemyContextMode])
+    if (enemyContextMode && combat.enemyId !== previousEnemyId.current) setEnemyContextMode(combat.active && combat.enemyId ? 'intel' : null)
+    previousEnemyId.current = combat.enemyId
+  }, [combat.active, combat.enemyId, enemyContextMode])
   useEffect(() => {
     const dungeonChanged = previousDungeonId.current !== combatDungeonId
-    if (!combatActive || dungeonChanged) {
-      setDeckRequiredRows(0)
-    }
+    if (!combat.active || dungeonChanged) setStageContentHeight(0)
     previousDungeonId.current = combatDungeonId
-  }, [combatActive, combatDungeonId])
-  const requestLeave = useCallback(() => {
-    dismissGameTooltips()
-    const currentCombat = useGameStore.getState().combat
-    if (dungeonHasMeaningfulProgress(currentCombat)) setLeaveOpen(true)
-    else useGameStore.getState().leaveDungeon()
-  }, [])
-  const reportDeckRequiredRows = useCallback((rows: number) => setDeckRequiredRows((current) => current === rows ? current : rows), [])
-  const layoutTransform = useCallback((layout: Parameters<typeof getAdaptiveCombatLayout>[0]) => getAdaptiveCombatLayout(layout, { requiredDeckRows: deckRequiredRows }), [deckRequiredRows])
+  }, [combat.active, combatDungeonId])
+  const requestLeave = useCallback(() => { dismissGameTooltips(); if (dungeonHasMeaningfulProgress(combat)) setLeaveOpen(true); else useGameStore.getState().leaveDungeon() }, [combat])
+  const reportStageContentHeight = useCallback((height: number) => setStageContentHeight((current) => combat.active ? Math.max(current, height) : 0), [combat.active])
+  const reportDeckContentHeight = useCallback((height: number) => setDeckContentHeight((current) => current === height ? current : height), [])
+  const reportAnalyticsContentHeight = useCallback((height: number) => setAnalyticsContentHeight((current) => current === height ? current : height), [])
+  const layoutTransform = useCallback((layout: Parameters<typeof getAdaptiveCombatLayout>[0]) => getAdaptiveCombatLayout(layout, { requiredStageContentHeight: stageContentHeight, requiredDeckContentHeight: deckContentHeight, requiredAnalyticsContentHeight: analyticsContentHeight }), [analyticsContentHeight, deckContentHeight, stageContentHeight])
   useEffect(() => { if (defeatSnapshot) { setEnemyContextMode(null); setCampaignOpen(false); setLeaveOpen(false) } }, [defeatSnapshot])
-  const bossActive = Boolean(combatActive && combatEnemyId && isBossMonster(MONSTERS[combatEnemyId]))
-  return <div className={`screen-content combat-screen combat-ambient-screen${bossActive ? ' is-boss-active' : ''}`}><CombatAmbientBackdrop combatActive={combatActive} bossActive={bossActive} /><div className="screen-header"><div><div className="eyebrow">ARCANE COMBAT</div><h1>Combat</h1><p>Read enemy intent, manage Mana, and control your Spell automation.</p></div></div><CombatRunBar selectedDungeonId={selectedDungeonId} onOpenCampaign={openCampaign} onRequestLeave={requestLeave} /><EditableGrid screen="combat" layoutTransform={layoutTransform} panels={[{ id: 'combat-stage', content: <CombatStage selectedDungeonId={selectedDungeonId} enemyCardRef={enemyCardRef} onOpenEnemyContext={openEnemyContext} /> }, { id: 'combat-spell-deck', content: <CombatSpellDeck onRequiredRowsChange={reportDeckRequiredRows} /> }, { id: 'combat-analytics', content: <CombatAnalyticsPanel /> }]} />{enemyContextMode && <EnemyContextWindow mode={enemyContextMode} anchorRef={enemyCardRef} triggerRef={enemyContextTriggerRef} selectedDungeonId={selectedDungeonId} onModeChange={setEnemyContextMode} onClose={closeEnemyContext} />}{campaignOpen && <CombatActNavigationDialog selectedDungeonId={selectedDungeonId} onSelect={setSelectedDungeonId} onClose={closeCampaign} />}{leaveOpen && <LeaveDungeonDialog onClose={closeLeave} />}</div>
+  const bossActive = Boolean(combat.active && combat.enemyId && isBossMonster(MONSTERS[combat.enemyId]))
+  return <div className={`screen-content combat-screen combat-ambient-screen${bossActive ? ' is-boss-active' : ''}`}><CombatAmbientBackdrop combatActive={combat.active} bossActive={bossActive} /><div className="screen-header"><div><div className="eyebrow">ARCANE COMBAT</div><h1>Combat</h1><p>Read enemy intent, manage Mana, and control your Spell automation.</p></div></div><CombatRunBar selectedDungeonId={selectedDungeonId} onOpenCampaign={openCampaign} onRequestLeave={requestLeave} /><EditableGrid screen="combat" layoutTransform={layoutTransform} panels={[{ id: 'combat-stage', content: <CombatStage selectedDungeonId={selectedDungeonId} onContentHeightChange={reportStageContentHeight} enemyCardRef={enemyCardRef} onOpenEnemyContext={openEnemyContext} /> }, { id: 'combat-spell-deck', content: <CombatSpellDeck onRequiredHeightChange={reportDeckContentHeight} /> }, { id: 'combat-analytics', content: <CombatAnalyticsPanel onRequiredHeightChange={reportAnalyticsContentHeight} /> }]} />{enemyContextMode && <EnemyContextWindow mode={enemyContextMode} anchorRef={enemyCardRef} triggerRef={enemyContextTriggerRef} selectedDungeonId={selectedDungeonId} onModeChange={setEnemyContextMode} onClose={closeEnemyContext} />}{campaignOpen && <CombatActNavigationDialog selectedDungeonId={selectedDungeonId} onSelect={setSelectedDungeonId} onClose={closeCampaign} />}{leaveOpen && <LeaveDungeonDialog onClose={closeLeave} />}</div>
 }

@@ -5,7 +5,7 @@ import { SPELLS } from '../../game/content/spells/spells'
 import { actorCannotAct } from '../../game/systems/combat/statusRuntime'
 import { doesCurrentAutoCastMatchPreset, getSpellPresetFocusBreakdown, getSpellPresetFocusProjection, getAllSpellsInOrder, getSpellRank } from '../../game/systems/spells'
 import type { SpellPresetProjectionState } from '../../game/systems/spells'
-import type { GameState, SchoolId, SpellId } from '../../game/types'
+import type { SchoolId, SpellId } from '../../game/types'
 import { useGameStore } from '../../store/gameStore'
 import { Button, Card, GameTooltip, SearchInput, SelectMenu, Status, type SelectMenuOption } from '../../components/ui'
 import { dismissGameTooltips } from '../../components/ui/tooltip/Tooltip'
@@ -13,52 +13,10 @@ import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { SpellPresetDialog } from '../schools/SpellPresetDialog'
 import { CombatSpellTile } from './CombatSpellTile'
 import { useSmartScrollState } from '../../ui/game-feel/useSmartScrollState'
-import { pixelsToGridRows } from '../../ui/layout-editor/runtimePanelLayout'
-import { getCombatStatusStructureKey } from '../../game/systems/combat/statusSelectors'
-import type { SpellPresentationState } from '../../game/presentation/spells/spellDetailPresentation'
-import { useShallow } from 'zustand/react/shallow'
 
 type SchoolFilter = 'all' | SchoolId
 
-const spellPreviewHealthDependencies = Object.values(SPELLS).reduce((dependencies, spell) => {
-  spell.effects.forEach((effect) => {
-    const magnitudes = effect.type === 'deal-damage' ? effect.components.map((component) => component.magnitude) : 'magnitude' in effect ? [effect.magnitude] : []
-    magnitudes.forEach((magnitude) => {
-      if (magnitude.type !== 'target-missing-health-percent' && magnitude.type !== 'target-max-health-percent') return
-      if (effect.target === 'self' && magnitude.type === 'target-missing-health-percent') dependencies.player = true
-      else dependencies.enemy = true
-    })
-  })
-  return dependencies
-}, { player: false, enemy: false })
-
-const recordKey = (record: Record<string, unknown>) => Object.entries(record)
-  .sort(([left], [right]) => left.localeCompare(right))
-  .map(([key, value]) => `${key}:${String(value)}`)
-  .join('|')
-
-const focusReservationKey = (state: GameState) => {
-  const research = state.activities.research.slots
-    ? Object.entries(state.activities.research.slots).map(([slotId, job]) => `${slotId}:${job?.itemId ?? ''}:${job?.targetSchoolId ?? ''}:${job?.echoesAssigned ?? 0}`).join('|')
-    : `${state.activities.research.running ?? false}:${state.activities.research.itemId ?? ''}:${state.activities.research.targetSchoolId ?? ''}`
-  const transmutation = Object.entries(state.activities.transmutation.jobs).map(([recipeId, job]) => `${recipeId}:${job.echoesAssigned}`).join('|')
-  return [
-    `channeling:${state.activities.channeling.echoesAssigned}`,
-    `research:${research}`,
-    `transmutation:${transmutation}`,
-    `autocast:${recordKey(state.activities.autoCast)}`,
-    `ranks:${recordKey(state.progress.spellRanks)}`,
-  ].join('||')
-}
-
-const structuralStatuses = (statuses: GameState['combat']['playerStatuses']) => statuses.map((status) => ({
-  ...status,
-  remainingMs: status.initialDurationMs ?? status.remainingMs,
-  nextTickMs: undefined,
-  appliedAt: undefined,
-}))
-
-export function CombatSpellDeck({ onRequiredRowsChange }: { onRequiredRowsChange?: (rows: number) => void }) {
+export function CombatSpellDeck({ onRequiredHeightChange }: { onRequiredHeightChange?: (height: number) => void }) {
   const [school, setSchool] = useState<SchoolFilter>('all')
   const [autoOnly, setAutoOnly] = useState(false)
   const [search, setSearch] = useState('')
@@ -70,77 +28,40 @@ export function CombatSpellDeck({ onRequiredRowsChange }: { onRequiredRowsChange
   const gridRegionRef = useRef<HTMLDivElement>(null)
   const gridRef = useRef<HTMLDivElement>(null)
   const deckFootRef = useRef<HTMLDivElement>(null)
-  const structuralState = useGameStore(useShallow((state) => ({
-    spellRanks: state.progress.spellRanks,
-    schools: state.schools,
-    equipment: state.equipment,
-    artifactProgress: state.artifactProgress,
-    autoCast: state.activities.autoCast,
-    focusReservations: focusReservationKey(state),
-    maxFocus: state.player.maxFocus,
-    allowFocusOverCap: state.debug.allowFocusOverCap,
-    playerMaxHealth: state.player.maxHealth,
-    playerMaxMana: state.player.maxMana,
-    enemyMaxHp: spellPreviewHealthDependencies.enemy ? state.combat.enemyMaxHp : 0,
-    playerHealth: spellPreviewHealthDependencies.player ? state.player.health : 0,
-    enemyHp: spellPreviewHealthDependencies.enemy ? state.combat.enemyHp : 0,
-    playerStatusShape: getCombatStatusStructureKey(state.combat.playerStatuses),
-    enemyStatusShape: getCombatStatusStructureKey(state.combat.enemyStatuses),
-  })))
+  const progress = useGameStore((state) => state.progress)
+  const schools = useGameStore((state) => state.schools)
+  const equipment = useGameStore((state) => state.equipment)
+  const artifactProgress = useGameStore((state) => state.artifactProgress)
+  const activities = useGameStore((state) => state.activities)
+  const player = useGameStore((state) => state.player)
+  const combat = useGameStore((state) => state.combat)
+  const maxFocus = useGameStore((state) => state.player.maxFocus)
   const presets = useGameStore((state) => state.spellPresets.presets)
+  const debugAllowFocusOverCap = useGameStore((state) => state.debug.allowFocusOverCap)
   const combatActive = useGameStore((state) => state.combat.active)
   const enemyId = useGameStore((state) => state.combat.enemyId)
   const playerStunned = useGameStore((state) => actorCannotAct(state, 'player'))
   const applySpellPreset = useGameStore((state) => state.applySpellPreset)
   const clearAutoCast = useGameStore((state) => state.clearAutoCast)
   const saveSpellPreset = useGameStore((state) => state.saveSpellPreset)
-  const presentationState = useMemo<SpellPresentationState>(() => {
-    const current = useGameStore.getState()
-    return {
-      schools: structuralState.schools,
-      equipment: structuralState.equipment,
-      artifactProgress: structuralState.artifactProgress,
-      progress: { spellRanks: structuralState.spellRanks },
-      activities: { autoCast: structuralState.autoCast },
-      player: {
-        health: structuralState.playerHealth || current.player.health,
-        maxHealth: structuralState.playerMaxHealth,
-        mana: current.player.mana,
-        maxMana: structuralState.playerMaxMana,
-      },
-      combat: {
-        enemyId: current.combat.enemyId,
-        enemyHp: structuralState.enemyHp || current.combat.enemyHp,
-        enemyMaxHp: structuralState.enemyMaxHp || current.combat.enemyMaxHp,
-        enemyBarrier: current.combat.enemyBarrier,
-        playerBarrier: current.combat.playerBarrier,
-        enemyInstanceKey: current.combat.enemyInstanceKey,
-        playerStatuses: structuralStatuses(current.combat.playerStatuses),
-        enemyStatuses: structuralStatuses(current.combat.enemyStatuses),
-      },
-      debug: { allowFocusOverCap: structuralState.allowFocusOverCap },
-    }
-  }, [structuralState])
-  const focusState = useMemo<SpellPresetProjectionState>(() => {
-    const current = useGameStore.getState()
-    return { activities: current.activities, progress: current.progress, equipment: structuralState.equipment, artifactProgress: structuralState.artifactProgress, player: { maxFocus: structuralState.maxFocus }, debug: { allowFocusOverCap: structuralState.allowFocusOverCap } }
-  }, [structuralState])
+  const state = useMemo(() => ({ schools, equipment, artifactProgress, progress, activities, player, combat, debug: { allowFocusOverCap: debugAllowFocusOverCap } }), [schools, equipment, artifactProgress, progress, activities, player, combat, debugAllowFocusOverCap])
+  const focusState = useMemo<SpellPresetProjectionState>(() => ({ activities, progress, equipment, artifactProgress, player: { maxFocus }, debug: { allowFocusOverCap: debugAllowFocusOverCap } }), [activities, progress, equipment, artifactProgress, maxFocus, debugAllowFocusOverCap])
   const focus = useMemo(() => getSpellPresetFocusBreakdown(focusState), [focusState])
   const activePreset = useMemo(() => presets.find((preset) => doesCurrentAutoCastMatchPreset(focusState, preset)), [focusState, presets])
   const presetOptions = useMemo<SelectMenuOption<string>[]>(() => [{ value: 'custom', label: 'CUSTOM' }, ...presets.map((preset) => ({ value: preset.id, label: preset.name }))], [presets])
   const schoolOptions = useMemo<SelectMenuOption<SchoolFilter>[]>(() => [{ value: 'all', label: 'All Schools' }, ...FRAGMENT_ORDER.map((schoolId) => ({ value: schoolId, label: <span className="combat-school-option"><span style={{ color: SCHOOLS[schoolId].color }}>{SCHOOLS[schoolId].glyph}</span>{SCHOOLS[schoolId].name}</span> }))], [])
   const query = search.trim().toLocaleLowerCase()
-  const unlockedSpells = useMemo(() => getAllSpellsInOrder().map((spell) => spell.id as SpellId).filter((spellId) => getSpellRank({ progress: { spellRanks: structuralState.spellRanks } }, spellId) !== null), [structuralState.spellRanks])
+  const unlockedSpells = useMemo(() => getAllSpellsInOrder().map((spell) => spell.id as SpellId).filter((spellId) => getSpellRank({ progress }, spellId) !== null), [progress])
   const visibleSpells = useMemo(() => unlockedSpells.filter((spellId) => {
     const spell = SPELLS[spellId]
-    return (!autoOnly || structuralState.autoCast[spellId]) && (school === 'all' || spell.school === school) && (!query || spell.name.toLocaleLowerCase().includes(query))
-  }), [structuralState.autoCast, autoOnly, query, school, unlockedSpells])
+    return (!autoOnly || activities.autoCast[spellId]) && (school === 'all' || spell.school === school) && (!query || spell.name.toLocaleLowerCase().includes(query))
+  }), [activities, autoOnly, query, school, unlockedSpells])
   const globalBlocker = playerStunned ? 'stunned' : !combatActive ? 'inactive' : !enemyId ? 'no-target' : null
   const banner = globalBlocker === 'stunned' ? 'PLAYER STUNNED · MANUAL SPELLS TEMPORARILY DISABLED' : globalBlocker === 'inactive' ? 'MANUAL CASTING DISABLED · ENTER A DUNGEON' : globalBlocker === 'no-target' ? 'WAITING FOR NEXT TARGET' : null
   useSmartScrollState(gridRef, { dependencies: [visibleSpells.join('|'), school, autoOnly, query] })
 
   const measureRequiredHeight = useCallback(() => {
-    if (!onRequiredRowsChange || !deckHeadRef.current || !deckBodyRef.current || !gridRegionRef.current || !deckFootRef.current) return
+    if (!onRequiredHeightChange || !deckHeadRef.current || !deckBodyRef.current || !gridRegionRef.current || !deckFootRef.current) return
     const grid = gridRef.current
     const region = gridRegionRef.current
     const rowTops = grid ? [...new Set([...grid.children].map((child) => Math.round((child as HTMLElement).getBoundingClientRect().top)))] : []
@@ -153,22 +74,15 @@ export function CombatSpellDeck({ onRequiredRowsChange }: { onRequiredRowsChange
     const outerHeight = (element: HTMLElement) => { const style = getComputedStyle(element); return element.getBoundingClientRect().height + (Number.parseFloat(style.marginTop) || 0) + (Number.parseFloat(style.marginBottom) || 0) }
     const bodyStaticHeight = [...deckBodyRef.current.children].filter((child) => child !== region).reduce((total, child) => total + outerHeight(child as HTMLElement), 0)
     const cardFrameHeight = outerHeight(deckHeadRef.current) + outerHeight(deckFootRef.current) + 32
-    onRequiredRowsChange(pixelsToGridRows(Math.ceil(cardFrameHeight + bodyStaticHeight + desiredGridHeight)))
-  }, [onRequiredRowsChange])
+    onRequiredHeightChange(Math.ceil(cardFrameHeight + bodyStaticHeight + desiredGridHeight))
+  }, [onRequiredHeightChange])
 
   useLayoutEffect(() => {
     measureRequiredHeight()
     if (typeof ResizeObserver === 'undefined') return
-    const region = gridRegionRef.current
-    if (!region) return
-    let previousWidth = Math.round(region.getBoundingClientRect().width)
-    const observer = new ResizeObserver(([entry]) => {
-      const width = Math.round(entry.contentRect.width)
-      if (width === previousWidth) return
-      previousWidth = width
-      measureRequiredHeight()
-    })
-    observer.observe(region)
+    const observer = new ResizeObserver(measureRequiredHeight)
+    if (deckBodyRef.current) observer.observe(deckBodyRef.current)
+    if (gridRef.current) observer.observe(gridRef.current)
     return () => observer.disconnect()
   }, [measureRequiredHeight, visibleSpells.length, banner, presetNotice])
 
@@ -187,15 +101,15 @@ export function CombatSpellDeck({ onRequiredRowsChange }: { onRequiredRowsChange
     if (result.ok) { setPresetNotice(null); return }
     if (result.reason === 'focus') {
       const projection = getSpellPresetFocusProjection(focusState, preset)
-      showPresetNotice(`Preset requires ${projection.totalAfterApply} Focus. Only ${structuralState.maxFocus} Focus is available.`)
+      showPresetNotice(`Preset requires ${projection.totalAfterApply} Focus. Only ${maxFocus} Focus is available.`)
     } else if (result.reason === 'empty') showPresetNotice('This preset has no available Spells to apply.')
     else showPresetNotice('This preset is no longer available.')
   }
-  const openPresetManager = useCallback(() => { dismissGameTooltips(); setPresetOpen(true) }, [])
-  const removeFromCurrentPreset = useCallback((spellId: SpellId) => {
+  const openPresetManager = () => { dismissGameTooltips(); setPresetOpen(true) }
+  const removeFromCurrentPreset = (spellId: SpellId) => {
     const preset = presets.find((entry) => entry.id === useGameStore.getState().spellPresets.lastAppliedPresetId)
     if (preset) saveSpellPreset({ ...preset, spellIds: preset.spellIds.filter((id) => id !== spellId) })
-  }, [presets, saveSpellPreset])
+  }
 
   return <Card className="combat-spell-deck">
     <div ref={deckHeadRef} className="combat-spell-deck-head">
@@ -207,9 +121,9 @@ export function CombatSpellDeck({ onRequiredRowsChange }: { onRequiredRowsChange
       {banner && <div className="combat-spell-banner" role="status"><CircleDot size={13} aria-hidden="true" />{banner}</div>}
       {presetNotice && <div className="combat-spell-preset-notice" role="alert"><AlertTriangle size={13} aria-hidden="true" />{presetNotice}</div>}
       <div className="combat-spell-filter-toolbar" role="group" aria-label="Spell Deck filters"><SearchInput value={search} onChange={setSearch} placeholder="Search Spells…" ariaLabel="Search Spells" /><SelectMenu options={schoolOptions} value={school} onChange={setSchool} ariaLabel="Spell school filter" /><FilterButton active={autoOnly} onClick={() => setAutoOnly((current) => !current)}><CircleDot size={12} /> AUTO ONLY</FilterButton></div>
-      <div ref={gridRegionRef} className="combat-spell-grid-region">{visibleSpells.length ? <div ref={gridRef} className="combat-spell-grid smart-scroll-region">{visibleSpells.map((spellId) => <CombatSpellTile key={spellId} spellId={spellId} presentationState={presentationState} globalBlocker={globalBlocker} onOpenPresetManager={openPresetManager} onRemoveFromPreset={removeFromCurrentPreset} />)}</div> : <div className="combat-spell-empty"><CircleDot size={20} aria-hidden="true" /><strong>{autoOnly ? 'No Auto-Cast Spells enabled.' : query ? 'No Spells match the current filters.' : school !== 'all' ? `No unlocked ${SCHOOLS[school].name} Spells.` : 'No unlocked Spells.'}</strong></div>}</div>
+      <div ref={gridRegionRef} className="combat-spell-grid-region">{visibleSpells.length ? <div ref={gridRef} className="combat-spell-grid smart-scroll-region">{visibleSpells.map((spellId) => <CombatSpellTile key={spellId} spellId={spellId} presentationState={state} globalBlocker={globalBlocker} onOpenPresetManager={openPresetManager} onRemoveFromPreset={removeFromCurrentPreset} />)}</div> : <div className="combat-spell-empty"><CircleDot size={20} aria-hidden="true" /><strong>{autoOnly ? 'No Auto-Cast Spells enabled.' : query ? 'No Spells match the current filters.' : school !== 'all' ? `No unlocked ${SCHOOLS[school].name} Spells.` : 'No unlocked Spells.'}</strong></div>}</div>
     </div>
-    <div ref={deckFootRef} className="combat-spell-deck-foot"><Status tone={focus.freeFocus < 0 ? 'warning' : 'success'}>{focus.autoCastFocus} Focus reserved · {focus.freeFocus} free</Status><small>{structuralState.allowFocusOverCap ? 'Developer Focus override active.' : `${visibleSpells.length} Spell${visibleSpells.length === 1 ? '' : 's'} shown`}</small></div>
+    <div ref={deckFootRef} className="combat-spell-deck-foot"><Status tone={focus.freeFocus < 0 ? 'warning' : 'success'}>{focus.autoCastFocus} Focus reserved · {focus.freeFocus} free</Status><small>{debugAllowFocusOverCap ? 'Developer Focus override active.' : `${visibleSpells.length} Spell${visibleSpells.length === 1 ? '' : 's'} shown`}</small></div>
     <GameTooltip accent="focus" content={<TooltipContent title="Remove all Echoes" description="Disable Auto-Cast on every active spell and release the reserved Focus." />}><Button className="combat-clear-autocast" variant="ghost" disabled={focus.autoCastFocus <= 0} onClick={clearAutoCast}><CircleDot size={12} /> REMOVE ALL ECHOES</Button></GameTooltip>
     <SpellPresetDialog open={presetOpen} onClose={() => setPresetOpen(false)} />
   </Card>

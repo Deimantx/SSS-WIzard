@@ -3,7 +3,7 @@ import { useMemo } from 'react'
 import { DUNGEONS } from '../../game/content/dungeons/dungeons'
 import { MONSTERS } from '../../game/content/monsters'
 import { type CombatEffectPresentation } from '../../game/presentation/combat'
-import { getCombatFlowPresentation, type CombatFlowTimeline } from '../../game/presentation/combat/combatFlowPresentation'
+import { getCombatFlowPresentation } from '../../game/presentation/combat/combatFlowPresentation'
 import { getCurrentEnemyActionStep, getEnemyAction, getEnemyActionPattern, getNextEnemyActionStep } from '../../game/systems/combat/actionRuntime'
 import { getCurrentEnemyActionTiming, getPlayerBasicTiming } from '../../game/systems/combat/actionTiming'
 import type { DungeonId } from '../../game/types'
@@ -65,19 +65,9 @@ export function CombatFlowPanel({ selectedDungeonId }: { selectedDungeonId: Dung
 
   return <section className={`combat-flow-panel${combat.inBossFight ? ' is-boss-fight' : ''}`} style={{ '--enemy-accent': presentation.enemy?.color } as React.CSSProperties}>
     <header className="combat-flow-head"><span className="combat-flow-kicker">COMBAT FLOW</span></header>
-    <div className="combat-flow-timelines"><TimelineRow timeline={presentation.playerTimeline} /><TimelineRow timeline={presentation.enemyTimeline} /></div>
     {presentation.enemyCurrentAction && <CurrentEnemyAction currentAction={presentation.enemyCurrentAction} basicDamage={presentation.enemy?.basicAttackDamage ?? 0} actionTimeMs={presentation.enemyTimeline?.baseWorkMs ?? presentation.currentActionDurationMs} progress={presentation.enemyTimeline?.progress ?? 0} remainingMs={presentation.enemyTimeline?.etaMs ?? null} />}
     <div className="combat-flow-pattern"><div className="combat-subsection-label">ENEMY PATTERN</div><EnemyPatternRail pattern={presentation.pattern} enemy={presentation.enemy} currentStepIndex={presentation.currentStepIndex} currentStepId={presentation.currentStepId} currentActionId={presentation.currentActionId} currentPatternOriginId={presentation.currentPatternOriginId} currentProgress={presentation.enemyTimeline?.progress} currentActionDurationMs={presentation.enemyTimeline?.baseWorkMs ?? presentation.currentActionDurationMs} /></div>
   </section>
-}
-
-function TimelineRow({ timeline }: { timeline: CombatFlowTimeline | null }) {
-  if (!timeline) return null
-  const label = timeline.actor === 'player' ? 'PLAYER' : 'ENEMY'
-  const progress = timeline.progress ?? 0
-  const stateClass = timeline.state === 'stunned' ? ' is-stunned' : timeline.state === 'paused' ? ' is-paused' : timeline.state === 'disabled' ? ' is-disabled' : ''
-  const blockLabel = timeline.state === 'stunned' ? 'STUNNED · PAUSED' : timeline.state === 'paused' ? 'DEBUG PAUSED' : timeline.state === 'disabled' ? 'DISABLED' : null
-  return <div className={`combat-flow-timeline combat-flow-timeline-${timeline.actor}${stateClass}${progress >= 90 ? ' is-near-complete' : ''}`}><div className="combat-flow-timeline-head"><span className="combat-subsection-label">{label}</span><strong>{timeline.label}</strong><span className="combat-flow-timeline-time ui-time">{timeline.state === 'disabled' ? 'DISABLED' : timeline.etaMs === null ? 'PAUSED' : formatTime(timeline.etaMs)}</span></div><CombatActionProgress value={progress} />{blockLabel && <div className="combat-flow-paused">{blockLabel}</div>}</div>
 }
 
 function CombatEffectRow({ effect }: { effect: CombatEffectPresentation }) {
@@ -96,6 +86,5 @@ function IntentEffectIcon({ kind }: { kind: CombatEffectPresentation['kind'] }) 
 
 function CurrentEnemyAction({ currentAction, basicDamage, actionTimeMs, progress, remainingMs }: { currentAction: NonNullable<ReturnType<typeof getCombatFlowPresentation>['enemyCurrentAction']>; basicDamage: number; actionTimeMs: number; progress: number; remainingMs: number | null }) {
   const action = currentAction.action ?? (currentAction.basic ? buildBasicAttackPresentation(basicDamage, actionTimeMs) : null)
-  const style = { '--current-action-progress': `${Math.max(0, Math.min(100, progress))}%` } as React.CSSProperties
-  return <GameTooltip block wide placement="bottom" accent={currentAction.special ? 'warning' : 'neutral'} content={action ? <EnemyActionTooltip action={action} /> : undefined}><div className={`combat-flow-current-action${currentAction.special ? ' is-special' : ''} combat-current-action-${currentAction.iconKind}`}><div className="combat-flow-current-action-head"><div className="combat-flow-subhead"><span style={style} className={`combat-flow-current-action-icon combat-pattern-icon-${currentAction.iconKind}`}><EnemyPatternIcon kind={currentAction.iconKind} /></span><span className="combat-subsection-label">CURRENT ACTION</span><strong>{currentAction.label}</strong></div><span className="combat-flow-current-action-eta ui-time">{remainingMs === null ? 'PAUSED' : formatTime(remainingMs)}</span></div>{currentAction.action ? <div className="combat-flow-effects">{currentAction.action.effects.map((effect, index) => <CombatEffectRow key={`${effect.label}-${index}`} effect={effect} />)}</div> : currentAction.basic ? <div className="combat-flow-effects"><CombatEffectRow effect={currentAction.basic} /></div> : null}</div></GameTooltip>
+  return <GameTooltip block wide placement="bottom" accent={currentAction.special ? 'warning' : 'neutral'} content={action ? <EnemyActionTooltip action={action} /> : undefined}><div className={`combat-flow-current-action${currentAction.special ? ' is-special' : ''} combat-current-action-${currentAction.iconKind}`}><div className="combat-flow-current-action-head"><div className="combat-flow-subhead"><span className={`combat-flow-current-action-icon combat-pattern-icon-${currentAction.iconKind}`}><EnemyPatternIcon kind={currentAction.iconKind} /></span><span className="combat-subsection-label">CURRENT ACTION</span><strong>{currentAction.label}</strong></div><span className="combat-flow-current-action-eta ui-time">{remainingMs === null ? 'PAUSED' : formatTime(remainingMs)}</span></div><CombatActionProgress value={progress} />{currentAction.action ? <div className="combat-flow-effects">{currentAction.action.effects.map((effect, index) => <CombatEffectRow key={`${effect.label}-${index}`} effect={effect} />)}</div> : currentAction.basic ? <div className="combat-flow-effects"><CombatEffectRow effect={currentAction.basic} /></div> : null}</div></GameTooltip>
 }

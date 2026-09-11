@@ -1793,7 +1793,6 @@
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--flow-accent) 9%, transparent);
 }
 .combat-flow-head,
-.combat-flow-timeline-head,
 .combat-flow-subhead {
   display: flex;
   min-width: 0;
@@ -1802,20 +1801,6 @@
 }
 .combat-flow-head { justify-content: space-between; }
 .combat-flow-kicker { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .12em; text-transform: uppercase; }
-.combat-flow-timelines { display: grid; gap: 8px; }
-.combat-flow-timeline { display: grid; gap: 4px; min-width: 0; }
-.combat-flow-timeline-head { align-items: baseline; }
-.combat-flow-timeline-head .combat-subsection-label { flex: 0 0 45px; }
-.combat-flow-timeline-head strong { min-width: 0; flex: 1; overflow: hidden; color: var(--ui-text-soft); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
-.combat-flow-timeline-time { flex: 0 0 auto; color: var(--semantic-time); font-size: 11px; }
-.combat-flow-timeline .progress-wrap { margin-top: 0; }
-.combat-flow-timeline .progress { height: 6px; }
-.combat-flow-timeline-player .progress i { background: var(--semantic-time); }
-.combat-flow-timeline-enemy .progress i { background: var(--flow-accent); }
-.combat-flow-timeline.is-stunned { opacity: .72; }
-.combat-flow-timeline.is-stunned .progress i,
-.combat-flow-timeline.is-stunned .progress i::after { animation: none; }
-.combat-flow-paused { padding: 5px 7px; border: 1px dashed var(--ui-border); border-radius: 5px; color: var(--ui-text-disabled); font: var(--text-micro) var(--font-mono); }
 .combat-flow-current-action.game-tooltip-trigger { display: block; width: 100%; }
 .combat-flow-current-action {
   display: grid;
@@ -2077,7 +2062,6 @@
     order: 3;
     min-height: 300px;
   }
-  .combat-flow-timeline-head .combat-subsection-label { flex-basis: 40px; }
   .full-combat-log-head-actions { gap: 5px; }
   .combat-log-count { font-size: 9px; }
 }
@@ -2239,8 +2223,6 @@
 .combat-flow-current-action-icon { display: grid; width: 25px; height: 25px; flex: 0 0 auto; place-items: center; border: 1px solid color-mix(in srgb, var(--combat-current-action-warning) 52%, var(--ui-border)); border-radius: 6px; color: var(--combat-current-action-warning); background: color-mix(in srgb, var(--combat-current-action-warning) 12%, transparent); }
 .combat-flow-current-action.is-special .combat-flow-effect strong { color: var(--ui-text); font-size: 11px; }
 .combat-flow-current-action.is-special .combat-flow-effect-icon { color: var(--combat-current-action-warning); }
-.combat-flow-timeline.is-near-complete .progress i::after { width: 4px; background: rgb(255 255 255 / 92%); box-shadow: 0 0 8px currentColor; }
-
 .combat-flow-panel.is-encounter-delay { gap: 9px; }
 .combat-flow-delay-label { color: var(--ui-text-soft); font: var(--text-micro) var(--font-mono); letter-spacing: .12em; }
 .combat-flow-delay-context { display: flex; align-items: baseline; justify-content: center; flex-wrap: wrap; gap: 4px 9px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
@@ -2338,11 +2320,6 @@
 .spell-combat-tile.is-cooldown .spell-combat-footer { opacity: .92; }
 
 /* V3.7.1 action progress and universal pattern nodes */
-.combat-flow-timeline .progress { position: relative; height: 7px; border: 1px solid color-mix(in srgb, var(--ui-text) 15%, transparent); background: color-mix(in srgb, var(--ui-bg) 72%, var(--ui-text) 8%); box-shadow: inset 0 1px 2px rgb(0 0 0 / 30%); }
-.combat-flow-timeline .progress i { position: relative; overflow: visible; box-shadow: none; }
-.combat-flow-timeline .progress i::after { position: absolute; top: -1px; right: -1px; bottom: -1px; width: 3px; border-radius: 99px; background: rgb(255 255 255 / 68%); box-shadow: 0 0 5px currentColor; content: ''; }
-.combat-flow-timeline-player .progress i { background: linear-gradient(90deg, color-mix(in srgb, var(--ui-accent) 62%, var(--ui-text)), var(--ui-accent)); }
-.combat-flow-timeline-enemy .progress i { background: linear-gradient(90deg, color-mix(in srgb, var(--flow-accent) 58%, var(--ui-warning)), var(--flow-accent)); }
 .combat-flow-current-action-icon { display: grid; width: 27px; height: 27px; flex: 0 0 auto; place-items: center; border: 1px solid var(--ui-border); border-radius: 6px; background: color-mix(in srgb, var(--ui-text) 4%, transparent); }
 .combat-flow-current-action.is-special .combat-flow-current-action-icon { width: 34px; height: 34px; border-color: color-mix(in srgb, var(--combat-current-action-warning) 58%, var(--ui-border)); background: color-mix(in srgb, var(--combat-current-action-warning) 10%, transparent); }
 .combat-flow-current-action.is-special .combat-flow-current-action-icon svg { width: 19px; height: 19px; }
@@ -2350,10 +2327,6 @@
 .combat-flow-pattern-node.is-current { box-shadow: 0 0 0 1px color-mix(in srgb, var(--enemy-accent, var(--ui-warning)) 32%, transparent); }
 .combat-flow-pattern-node.is-next { border-color: color-mix(in srgb, var(--ui-gold) 56%, var(--ui-border)); color: var(--ui-gold); }
 .combat-flow-pattern-node.is-complete { opacity: .58; }
-@media (prefers-reduced-motion: reduce) {
-  .combat-flow-timeline .progress i::after { display: none; }
-}
-
 /* V3.8 browser-native combat feedback and dungeon atmosphere */
 .combat-ambient-screen {
   position: relative;
@@ -2410,12 +2383,8 @@
 @keyframes spell-auto-brighten { 50% { filter: brightness(1.35); } }
 
 .combat-flow-pattern-node.is-current { position: relative; border-color: transparent; background: linear-gradient(var(--ui-panel-strong), var(--ui-panel-strong)) padding-box, conic-gradient(from -90deg, var(--enemy-accent, var(--ui-warning)) 0 var(--pattern-progress, 0%), var(--ui-border) var(--pattern-progress, 0%) 100%) border-box; }
-.combat-flow-pattern-node.is-current::after,
-.combat-flow-current-action.is-special .combat-flow-current-action-icon::after { position: absolute; inset: -3px; border: 1px solid transparent; border-radius: inherit; content: ''; mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0); mask-composite: exclude; pointer-events: none; }
+.combat-flow-pattern-node.is-current::after { position: absolute; inset: -3px; border: 1px solid transparent; border-radius: inherit; content: ''; mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0); mask-composite: exclude; pointer-events: none; }
 .combat-flow-pattern-node.is-current::after { background: conic-gradient(from -90deg, var(--enemy-accent, var(--combat-current-action-warning)) 0 var(--pattern-progress, 0%), transparent var(--pattern-progress, 0%) 100%) border-box; }
-.combat-flow-current-action.is-special .combat-flow-current-action-icon::after { background: conic-gradient(from -90deg, var(--enemy-accent, var(--combat-current-action-warning)) 0 var(--current-action-progress, 0%), transparent var(--current-action-progress, 0%) 100%) border-box; }
-.combat-flow-current-action.is-special .combat-flow-current-action-icon { position: relative; border-color: transparent; background: linear-gradient(color-mix(in srgb, var(--ui-panel-strong) 88%, transparent), color-mix(in srgb, var(--ui-panel-strong) 88%, transparent)) padding-box, conic-gradient(from -90deg, var(--combat-current-action-warning) 0 var(--current-action-progress, 0%), var(--ui-border) var(--current-action-progress, 0%) 100%) border-box; }
-.combat-flow-current-action.is-special .combat-flow-current-action-icon::after { inset: -3px; }
 .combat-flow-current-action.is-special.combat-current-action-barrier { --combat-current-action-warning: var(--semantic-barrier); }
 .combat-flow-current-action.is-special.combat-current-action-heal { --combat-current-action-warning: var(--semantic-health); }
 .combat-flow-current-action.is-special.combat-current-action-control { --combat-current-action-warning: var(--semantic-control); }
@@ -2458,8 +2427,6 @@
 }
 
 /* V3.9 responsive readability tokens for high-frequency Combat surfaces */
-.combat-flow-timeline-head strong,
-.combat-flow-timeline-time,
 .combat-flow-effect strong,
 .spell-combat-name strong,
 .dungeon-statistics-context strong,
@@ -2474,7 +2441,7 @@
 .dungeon-statistics-stat > strong,
 .dungeon-statistics-drop-row > span:not(.dungeon-statistics-drop-icon),
 .dungeon-statistics-uptime strong,
-.combat-flow-timeline-time { font-variant-numeric: tabular-nums; }
+.dungeon-statistics-uptime strong { font-variant-numeric: tabular-nums; }
 
 /* V3.9.1 visual completion */
 .combat-screen .combat-run-bar,
@@ -2568,18 +2535,9 @@
 .combat-resource-mana .combat-resource-trail { background: color-mix(in srgb, var(--semantic-mana) 68%, var(--ui-text-muted)); }
 .combat-resource-barrier .combat-resource-trail { background: color-mix(in srgb, var(--semantic-barrier) 68%, var(--ui-text-muted)); }
 
-/* Two timelines use distinct accents and a readable leading edge. */
-.combat-flow-timeline .progress {
-  height: 7px;
-  border-radius: 999px;
-  box-shadow: inset 0 1px 2px rgb(0 0 0 / 38%), 0 0 0 1px rgb(255 255 255 / 3%);
-}
-.combat-flow-timeline .progress i { border-radius: inherit; box-shadow: 0 0 8px color-mix(in srgb, currentColor 42%, transparent); }
+/* Action progress uses a shared visual primitive with an instant cycle reset. */
 .combat-action-progress .progress i { transition: width 100ms linear; }
 .combat-action-progress .progress i.is-reset { transition: none !important; }
-.combat-flow-timeline-player .progress i { color: var(--ui-accent); }
-.combat-flow-timeline-enemy .progress i { color: var(--flow-accent); }
-.combat-flow-timeline.is-near-complete .progress i::after { width: 5px; box-shadow: 0 0 10px currentColor; }
 @media (prefers-reduced-motion: reduce) {
   .combat-action-progress .progress i { transition: none; }
 }
@@ -2655,95 +2613,6 @@
   letter-spacing: .1em;
 }
 
-.combat-flow-timelines {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 9px;
-}
-.combat-flow-timeline {
-  position: relative;
-  gap: 7px;
-  min-width: 0;
-  padding: 9px 10px 10px;
-  border: 1px solid var(--ui-border);
-  border-radius: 7px;
-  background: color-mix(in srgb, var(--ui-panel) 62%, transparent);
-}
-.combat-flow-timeline::before {
-  position: absolute;
-  top: 8px;
-  bottom: 8px;
-  width: 2px;
-  border-radius: 2px;
-  content: '';
-  pointer-events: none;
-}
-.combat-flow-timeline-player {
-  --timeline-accent: var(--ui-accent);
-  border-color: color-mix(in srgb, var(--timeline-accent) 28%, var(--ui-border));
-  background: linear-gradient(270deg, color-mix(in srgb, var(--timeline-accent) 9%, transparent), transparent 72%), color-mix(in srgb, var(--ui-panel) 62%, transparent);
-  text-align: right;
-}
-.combat-flow-timeline-player::before {
-  right: 8px;
-  background: var(--timeline-accent);
-}
-.combat-flow-timeline-enemy {
-  --timeline-accent: var(--flow-accent);
-  border-color: color-mix(in srgb, var(--timeline-accent) 34%, var(--ui-border));
-  background: linear-gradient(90deg, color-mix(in srgb, var(--timeline-accent) 10%, transparent), transparent 72%), color-mix(in srgb, var(--ui-panel) 62%, transparent);
-}
-.combat-flow-timeline-enemy::before {
-  left: 8px;
-  background: var(--timeline-accent);
-}
-.combat-flow-timeline-head {
-  position: relative;
-  z-index: 1;
-  gap: 7px;
-}
-.combat-flow-timeline-player .combat-flow-timeline-head {
-  justify-content: flex-end;
-}
-.combat-flow-timeline-head .combat-subsection-label {
-  flex: 0 0 auto;
-  color: var(--timeline-accent);
-  font-size: var(--ui-font-micro);
-}
-.combat-flow-timeline-head strong {
-  color: var(--ui-text);
-  font-size: var(--ui-font-small);
-  font-weight: 600;
-}
-.combat-flow-timeline-time {
-  color: var(--timeline-accent);
-  font-size: var(--ui-font-small);
-  font-weight: 600;
-}
-.combat-flow-timeline .progress-wrap {
-  position: relative;
-  z-index: 1;
-}
-.combat-flow-timeline .progress {
-  height: 6px;
-  border-color: color-mix(in srgb, var(--timeline-accent) 22%, var(--ui-border));
-}
-.combat-flow-timeline-player .progress i {
-  background: linear-gradient(90deg, color-mix(in srgb, var(--timeline-accent) 54%, var(--ui-text)), var(--timeline-accent));
-}
-.combat-flow-timeline-enemy .progress i {
-  background: linear-gradient(90deg, color-mix(in srgb, var(--timeline-accent) 54%, var(--ui-warning)), var(--timeline-accent));
-}
-.combat-flow-timeline.is-near-complete {
-  border-color: color-mix(in srgb, var(--timeline-accent) 58%, var(--ui-border));
-}
-.combat-flow-timeline.is-near-complete .progress i::after {
-  width: 4px;
-  box-shadow: none;
-}
-.combat-flow-paused {
-  text-align: left;
-}
-
 .combat-flow-current-action.game-tooltip-trigger {
   align-self: stretch;
 }
@@ -2798,21 +2667,6 @@
   height: 34px;
   border-color: color-mix(in srgb, var(--current-action-accent) 62%, var(--ui-border));
   background: color-mix(in srgb, var(--current-action-accent) 12%, transparent);
-}
-.combat-flow-current-action-icon::after,
-.combat-flow-current-action.is-special .combat-flow-current-action-icon::after {
-  position: absolute;
-  right: 4px;
-  bottom: 3px;
-  left: 4px;
-  display: block;
-  height: 2px;
-  border: 0;
-  border-radius: 2px;
-  background: linear-gradient(90deg, var(--current-action-accent) 0 var(--current-action-progress, 0%), color-mix(in srgb, var(--current-action-accent) 18%, transparent) var(--current-action-progress, 0%) 100%);
-  content: '';
-  mask: none;
-  -webkit-mask: none;
 }
 .combat-flow-subhead .combat-subsection-label {
   grid-column: 2;
@@ -3003,19 +2857,6 @@
 }
 
 @container (max-width: 620px) {
-  .combat-flow-timelines {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .combat-flow-timeline-player {
-    text-align: left;
-  }
-  .combat-flow-timeline-player .combat-flow-timeline-head {
-    justify-content: flex-start;
-  }
-  .combat-flow-timeline-player::before {
-    right: auto;
-    left: 8px;
-  }
   .combat-flow-current-action {
     margin-inline: 0;
   }
@@ -4177,21 +4018,6 @@
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-.combat-flow-timeline.is-near-complete {
-  border-color: color-mix(in srgb, var(--timeline-accent, var(--ui-accent)) 68%, var(--ui-border));
-}
-.combat-flow-timeline.is-near-complete .progress {
-  border-color: color-mix(in srgb, var(--timeline-accent, var(--ui-accent)) 42%, var(--ui-border));
-}
-.combat-flow-timeline.is-near-complete .combat-flow-timeline-time {
-  color: var(--ui-text);
-  font-weight: 750;
-}
-.combat-flow-timeline.is-near-complete .progress i::after {
-  background: color-mix(in srgb, var(--timeline-accent, var(--ui-accent)) 76%, white);
-  box-shadow: 0 0 7px color-mix(in srgb, var(--timeline-accent, var(--ui-accent)) 52%, transparent);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .combat-resource.is-feedback-damage .combat-resource-track,
   .combat-resource.is-feedback-damage .combat-resource-label,
@@ -4617,49 +4443,6 @@
   }
 }
 
-/* Pass 7: calm Combat Flow seam and enemy-intel presentation polish. Static only. */
-.combat-flow-timelines {
-  position: relative;
-  gap: 12px;
-}
-.combat-flow-timelines::before {
-  position: absolute;
-  top: 10px;
-  bottom: 10px;
-  left: 50%;
-  width: 1px;
-  background: linear-gradient(
-    180deg,
-    transparent,
-    color-mix(in srgb, var(--flow-accent) 24%, var(--ui-border)) 24%,
-    color-mix(in srgb, var(--flow-accent) 24%, var(--ui-border)) 76%,
-    transparent
-  );
-  content: '';
-  pointer-events: none;
-}
-.combat-flow-timeline {
-  z-index: 1;
-  border-radius: 8px;
-}
-.combat-flow-timeline::before {
-  display: none;
-}
-.combat-flow-timeline .progress {
-  height: 7px;
-  overflow: hidden;
-  border-radius: 4px;
-}
-.combat-flow-timeline .progress i {
-  overflow: hidden;
-  border-radius: inherit;
-  box-shadow: none;
-}
-.combat-flow-timeline .progress i::after {
-  display: none;
-  content: none;
-}
-
 .combat-status-strip {
   padding-top: 9px;
   border-top-color: color-mix(in srgb, var(--actor-accent, var(--ui-accent)) 20%, var(--ui-border));
@@ -4819,15 +4602,6 @@
   border-color: color-mix(in srgb, var(--ui-border-strong) 88%, var(--ui-accent));
   background: linear-gradient(145deg, color-mix(in srgb, var(--ui-panel-gradient-start) 96%, var(--ui-accent)), var(--ui-panel-gradient-end));
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 4%);
-}
-
-@container (max-width: 620px) {
-  .combat-flow-timelines {
-    gap: 8px;
-  }
-  .combat-flow-timelines::before {
-    display: none;
-  }
 }
 
 /* Pass 11: current-action ETA and local directional impact cues. */

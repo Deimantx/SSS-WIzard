@@ -4742,3 +4742,83 @@
 :root[data-reduced-motion='true'] .combat-enemy-card .combat-resource-barrier.is-feedback-barrier-break::after {
   animation: combat-pass11-impact-static 150ms cubic-bezier(.22, .72, .24, 1) both;
 }
+
+/* Pass 13: dedicated action clocks and final Combat Stage composition polish. */
+.combat-flow-panel:not(.is-tower):not(.is-boss-ready):not(.is-encounter-delay) {
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 12px;
+}
+
+.combat-flow-current-action-head {
+  display: block;
+}
+
+.combat-flow-current-action-clock {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.combat-flow-current-action-eta {
+  display: block;
+  min-width: 0;
+  color: var(--current-action-accent, var(--flow-accent));
+  font: 700 16px/1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.combat-flow-current-action-clock .combat-action-progress,
+.combat-basic-timing .combat-action-progress {
+  width: 100%;
+}
+
+.combat-flow-current-action-clock .progress,
+.combat-basic-timing .progress {
+  height: 7px;
+  border-color: color-mix(in srgb, var(--current-action-accent, var(--ui-accent)) 30%, var(--ui-border));
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 38%), 0 0 0 1px rgb(255 255 255 / 3%);
+}
+
+.combat-flow-current-action-clock .progress i {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--current-action-accent, var(--flow-accent)) 54%, var(--ui-text)), var(--current-action-accent, var(--flow-accent)));
+  box-shadow: 0 0 8px color-mix(in srgb, var(--current-action-accent, var(--flow-accent)) 30%, transparent);
+}
+
+.combat-basic-timing {
+  display: grid;
+  gap: 5px;
+  margin-top: 1px;
+  padding-top: 3px;
+}
+
+.combat-basic-timing-label {
+  color: color-mix(in srgb, var(--actor-accent, var(--ui-accent)) 64%, var(--ui-text-muted));
+  font: var(--text-micro) var(--font-mono);
+  letter-spacing: .11em;
+  text-transform: uppercase;
+}
+
+.combat-basic-timing-value {
+  display: block;
+  color: var(--actor-accent, var(--ui-accent));
+  font: 700 15px/1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.combat-basic-timing .progress {
+  border-color: color-mix(in srgb, var(--actor-accent, var(--ui-accent)) 28%, var(--ui-border));
+}
+
+.combat-basic-timing .progress i {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--actor-accent, var(--ui-accent)) 54%, var(--ui-text)), var(--actor-accent, var(--ui-accent)));
+  box-shadow: 0 0 7px color-mix(in srgb, var(--actor-accent, var(--ui-accent)) 24%, transparent);
+}
+
+.combat-flow-pattern {
+  align-self: end;
+  padding-top: 12px;
+}

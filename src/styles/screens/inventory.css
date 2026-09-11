@@ -1271,12 +1271,20 @@
 .inventory-item {
   isolation: isolate;
   overflow: visible;
-  transition: border-color .18s cubic-bezier(.22, .61, .36, 1), background .18s cubic-bezier(.22, .61, .36, 1), box-shadow .18s cubic-bezier(.22, .61, .36, 1), transform .18s cubic-bezier(.22, .61, .36, 1);
+  transform: none;
+  transition: border-color .18s cubic-bezier(.22, .61, .36, 1), background .18s cubic-bezier(.22, .61, .36, 1), box-shadow .18s cubic-bezier(.22, .61, .36, 1);
 }
 
 .inventory-item:hover {
-  transform: translateY(-2px);
+  transform: none;
   box-shadow: 0 9px 22px color-mix(in srgb, var(--inventory-accent, var(--ui-accent)) 14%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--inventory-accent, var(--ui-accent)) 18%, transparent);
+}
+
+.inventory-item-art,
+.inventory-item-art .item-icon,
+.inventory-item > strong,
+.inventory-item-quantity {
+  transform: none;
 }
 
 .inventory-item-art {

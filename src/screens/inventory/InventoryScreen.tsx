@@ -80,17 +80,19 @@ export function InventoryScreenV2() {
   useEffect(() => {
     const itemId = navigationIntent.inventoryItemId
     if (!itemId) return
-    if (!ITEMS[itemId]) { setNavigationIntent({ inventoryItemId: null }); return }
-    if (!visibleIds.includes(itemId)) return
+    if (!ITEMS[itemId]) {
+      setNavigationIntent({ inventoryItemId: null })
+      return
+    }
     setSearch('')
     setFilter('All')
     setMaterialSubcategory('All Materials')
     setSelected(itemId)
-  }, [navigationIntent.inventoryItemId, visibleIds.join('|')])
+    setNavigationIntent({ inventoryItemId: null })
+  }, [navigationIntent.inventoryItemId])
 
   const selectItem = (itemId: ItemId) => {
     setSelected(itemId)
-    setNavigationIntent({ inventoryItemId: itemId })
     clearRecentNew(itemId)
     clearAttention(getActiveProfileId(), 'item', itemId)
     setClearedNew((current) => new Set(current).add(itemId))

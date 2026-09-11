@@ -4765,7 +4765,7 @@
   color: var(--current-action-accent, var(--flow-accent));
   font: 700 16px/1 var(--font-mono);
   font-variant-numeric: tabular-nums;
-  text-align: center;
+  text-align: right;
   white-space: nowrap;
 }
 
@@ -4805,7 +4805,7 @@
   color: var(--actor-accent, var(--ui-accent));
   font: 700 15px/1 var(--font-mono);
   font-variant-numeric: tabular-nums;
-  text-align: center;
+  text-align: right;
   white-space: nowrap;
 }
 

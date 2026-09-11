@@ -3407,20 +3407,6 @@
   border-radius: 6px;
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--spell-school-color) 18%, transparent);
 }
-.spell-combat-rank {
-  align-self: start;
-  overflow: hidden;
-  min-width: 0;
-  max-width: 5ch;
-  padding: 2px 4px;
-  border: 1px solid color-mix(in srgb, var(--spell-school-color) 26%, var(--ui-border));
-  border-radius: 3px;
-  color: var(--ui-text-muted);
-  font: var(--ui-font-micro) var(--font-mono);
-  letter-spacing: .03em;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 .spell-combat-name { gap: 2px; }
 .spell-combat-name strong {
   color: var(--ui-text);
@@ -3436,24 +3422,6 @@
   font-size: var(--ui-font-micro);
 }
 .spell-combat-footer .ui-mana { flex: 0 1 auto; min-width: 0; }
-.spell-combat-state {
-  flex: 0 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  color: var(--ui-text-muted);
-  font: 600 var(--ui-font-micro) var(--font-mono);
-  letter-spacing: .035em;
-  text-align: right;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.spell-combat-state.is-ready { color: var(--ui-success); }
-.spell-combat-state.is-cooldown { color: var(--semantic-time); }
-.spell-combat-state.is-mana { color: var(--semantic-mana); }
-.spell-combat-state.is-no-target,
-.spell-combat-state.is-stunned { color: var(--ui-warning); }
-.spell-combat-state.is-inactive,
-.spell-combat-state.is-locked { color: var(--ui-text-disabled); }
 .spell-combat-tile.is-unavailable:not(.is-mana-starved) { opacity: .82; }
 .spell-combat-tile.is-mana-starved { border-color: color-mix(in srgb, var(--semantic-mana) 62%, var(--ui-border)); }
 
@@ -3566,9 +3534,247 @@
 @container (max-width: 620px) {
   .combat-spell-deck-heading::before { font-size: 8px; }
   .combat-preset-control { width: 100%; }
-  .spell-combat-rank { max-width: 4ch; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .spell-combat-tile { transition: none; }
+}
+
+/* Pass 4: Analytics readout hierarchy. Static presentation only. */
+.combat-spell-deck-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.combat-spell-deck-foot-left {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+}
+.combat-spell-deck-foot-left .game-tooltip-trigger { display: block; flex: 0 0 auto; }
+.combat-spell-deck-foot-left .status { white-space: nowrap; }
+.combat-spell-deck-foot > small {
+  min-width: 0;
+  margin-left: auto;
+  color: var(--ui-text-muted);
+  font: var(--ui-font-micro) var(--font-mono);
+  text-align: right;
+}
+.combat-spell-deck-foot .combat-clear-autocast {
+  position: static;
+  right: auto;
+  bottom: auto;
+  left: auto;
+  transform: none;
+  min-height: 27px;
+  padding: 5px 8px;
+  border-color: color-mix(in srgb, var(--semantic-focus) 34%, var(--ui-border));
+  color: color-mix(in srgb, var(--semantic-focus) 76%, var(--ui-text-muted));
+  background: color-mix(in srgb, var(--semantic-focus) 5%, transparent);
+}
+.combat-spell-deck-foot .combat-clear-autocast:hover:not(:disabled),
+.combat-spell-deck-foot .combat-clear-autocast:focus-visible {
+  border-color: var(--semantic-focus);
+  color: var(--semantic-focus);
+  background: color-mix(in srgb, var(--semantic-focus) 11%, transparent);
+}
+.combat-spell-deck-foot .combat-clear-autocast:disabled { opacity: .48; }
+
+/* Analytics is a quieter readout layer below the live arena and Spell Deck. */
+.combat-analytics-panel {
+  gap: 9px;
+  padding: 11px;
+  border-color: color-mix(in srgb, var(--ui-border-strong) 62%, var(--ui-border));
+  background: linear-gradient(145deg, color-mix(in srgb, var(--ui-panel) 88%, transparent), color-mix(in srgb, var(--ui-bg) 22%, var(--ui-panel)));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 3%), 0 9px 22px rgb(0 0 0 / 16%);
+}
+.combat-analytics-head {
+  align-items: center;
+  gap: 12px;
+  min-height: 24px;
+  padding-bottom: 7px;
+  border-bottom-color: color-mix(in srgb, var(--ui-border-strong) 58%, var(--ui-border));
+}
+.combat-analytics-head .combat-subsection-label {
+  color: color-mix(in srgb, var(--ui-text-soft) 84%, var(--ui-text-muted));
+  font-size: var(--ui-font-micro);
+  letter-spacing: .11em;
+}
+.combat-analytics-head small {
+  color: var(--ui-text-muted);
+  font-size: var(--ui-font-micro);
+  letter-spacing: .015em;
+}
+.combat-analytics-grid { gap: 9px; }
+.combat-analytics-grid > .card {
+  border-color: color-mix(in srgb, var(--ui-border-strong) 70%, var(--ui-border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ui-panel-strong) 91%, var(--ui-bg));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 3%);
+}
+.combat-details-panel,
+.dungeon-statistics-panel {
+  gap: 8px;
+  padding: 11px;
+}
+.combat-details-panel { border-color: color-mix(in srgb, var(--details-mode-color, var(--ui-accent)) 25%, var(--ui-border-strong)); }
+.dungeon-statistics-panel { border-color: color-mix(in srgb, var(--ui-gold) 25%, var(--ui-border-strong)); }
+
+.combat-details-head,
+.dungeon-statistics-head {
+  align-items: center;
+  padding-bottom: 7px;
+  border-bottom: 1px solid color-mix(in srgb, var(--ui-border-strong) 58%, var(--ui-border));
+}
+.combat-details-mode-nav,
+.dungeon-statistics-mode-nav {
+  gap: 4px;
+}
+.combat-details-mode-button,
+.combat-details-log-button,
+.combat-details-reset-button,
+.dungeon-statistics-mode-button,
+.dungeon-statistics-reset-button {
+  width: 26px;
+  height: 26px;
+  border-color: color-mix(in srgb, var(--ui-border-strong) 74%, var(--ui-border));
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--ui-bg) 20%, transparent);
+}
+.combat-details-mode-button,
+.combat-details-mode-title { color: color-mix(in srgb, var(--details-mode-color, var(--ui-accent)) 76%, var(--ui-text-muted)); }
+.dungeon-statistics-mode-button,
+.dungeon-statistics-mode-title { color: color-mix(in srgb, var(--ui-gold) 76%, var(--ui-text-muted)); }
+.combat-details-mode-title,
+.dungeon-statistics-mode-title {
+  padding-inline: 3px;
+  font-weight: 700;
+  letter-spacing: .09em;
+}
+.combat-details-log-button,
+.combat-details-reset-button { color: var(--ui-text-muted); }
+.combat-details-log-button:hover,
+.combat-details-log-button:focus-visible,
+.combat-details-reset-button:hover,
+.combat-details-reset-button:focus-visible,
+.dungeon-statistics-mode-button:hover,
+.dungeon-statistics-mode-button:focus-visible,
+.dungeon-statistics-reset-button:hover,
+.dungeon-statistics-reset-button:focus-visible {
+  border-color: color-mix(in srgb, currentColor 68%, var(--ui-border));
+  color: var(--ui-text);
+  background: color-mix(in srgb, currentColor 9%, transparent);
+}
+
+.combat-details-summary {
+  padding-bottom: 9px;
+  border-bottom-color: color-mix(in srgb, var(--ui-border-strong) 58%, var(--ui-border));
+}
+.combat-details-summary > .game-tooltip-trigger { border-left-color: color-mix(in srgb, var(--ui-border-strong) 56%, var(--ui-border)); }
+.combat-details-summary-stat { gap: 3px; }
+.combat-details-summary-total > span,
+.combat-details-summary-rate > span,
+.combat-details-summary-engaged > span {
+  color: var(--ui-text-muted);
+  font-size: var(--ui-font-micro);
+  font-weight: 600;
+  letter-spacing: .09em;
+}
+.combat-details-summary-total > strong {
+  color: var(--details-mode-color, var(--ui-text));
+  font-size: clamp(1.25rem, 1.7vw, 1.55rem);
+  line-height: 1;
+}
+.combat-details-summary-rate > strong,
+.combat-details-summary-engaged > strong {
+  color: var(--ui-text);
+  font-size: clamp(1rem, 1.25vw, 1.2rem);
+  line-height: 1.05;
+}
+.combat-details-summary-rate > strong small { color: var(--ui-text-muted); }
+.combat-details-rows { gap: 3px; padding-right: 3px; }
+.combat-details-row {
+  min-height: 32px;
+  padding: 4px 5px 4px 3px;
+  border-left: 2px solid color-mix(in srgb, var(--details-mode-color, var(--ui-accent)) 26%, transparent);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--ui-bg) 16%, transparent);
+}
+.combat-details-row:hover,
+.combat-details-row:focus-visible {
+  border-color: color-mix(in srgb, var(--details-mode-color, var(--ui-accent)) 55%, var(--ui-border));
+  background: color-mix(in srgb, var(--details-mode-color, var(--ui-accent)) 7%, transparent);
+}
+.combat-details-bar { background: color-mix(in srgb, var(--details-mode-color, var(--ui-accent)) 12%, transparent); }
+.combat-details-rank { color: var(--ui-text-muted); font-size: var(--ui-font-micro); font-weight: 600; }
+.combat-details-source-icon { width: 23px; height: 23px; }
+.combat-details-source-icon .spell-icon-shell { transform: scale(.84); }
+.combat-details-source { gap: 2px; }
+.combat-details-source strong { color: var(--ui-text-soft); font-size: var(--ui-font-small); font-weight: 650; }
+.combat-details-source small { color: var(--ui-text-muted); font-size: var(--ui-font-micro); }
+.combat-details-row-total { color: var(--ui-text); font-size: var(--ui-font-small); font-weight: 650; }
+.combat-details-row-percent { color: var(--ui-text-muted); font-size: var(--ui-font-micro); }
+.combat-details-empty { min-height: 92px; gap: 6px; }
+.combat-details-empty strong,
+.dungeon-statistics-empty strong { font-weight: 700; letter-spacing: .1em; }
+.combat-details-empty span,
+.dungeon-statistics-empty span { color: var(--ui-text-muted); font-size: var(--ui-font-micro); }
+
+.dungeon-statistics-context {
+  padding-bottom: 8px;
+  border-bottom-color: color-mix(in srgb, var(--ui-gold) 20%, var(--ui-border));
+}
+.dungeon-statistics-context span { color: var(--ui-text-muted); font-size: var(--ui-font-micro); font-weight: 600; letter-spacing: .09em; }
+.dungeon-statistics-context span.is-active { color: var(--ui-gold); }
+.dungeon-statistics-context strong { color: var(--ui-text); font-size: var(--ui-font-small); font-weight: 650; }
+.dungeon-statistics-summary-grid { gap: 8px 12px; }
+.dungeon-statistics-stat { gap: 4px; }
+.dungeon-statistics-stat > span { color: var(--ui-text-muted); font-size: var(--ui-font-micro); font-weight: 600; letter-spacing: .08em; }
+.dungeon-statistics-stat > strong { color: var(--ui-text); font-size: clamp(1rem, 1.3vw, 1.25rem); font-weight: 650; }
+.dungeon-statistics-drops-summary > .game-tooltip-trigger:last-child .dungeon-statistics-stat > strong { color: var(--ui-gold); }
+.dungeon-statistics-list-label { margin-top: 9px; color: color-mix(in srgb, var(--ui-gold) 68%, var(--ui-text-muted)); font-weight: 700; letter-spacing: .1em; }
+.dungeon-statistics-drops-list { gap: 2px; margin-top: 4px; padding-right: 3px; }
+.dungeon-statistics-drop-row {
+  min-height: 28px;
+  padding: 2px 5px;
+  border-left: 2px solid transparent;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--ui-bg) 13%, transparent);
+}
+.dungeon-statistics-drop-row:hover,
+.dungeon-statistics-drop-row:focus-visible {
+  border-color: color-mix(in srgb, var(--ui-gold) 56%, var(--ui-border));
+  background: color-mix(in srgb, var(--ui-gold) 7%, transparent);
+}
+.dungeon-statistics-drop-icon { width: 20px; height: 20px; }
+.dungeon-statistics-drop-row > strong { color: var(--ui-text-soft); font-size: var(--ui-font-small); font-weight: 650; }
+.dungeon-statistics-drop-row > span:not(.dungeon-statistics-drop-icon) { color: var(--ui-text); font-size: var(--ui-font-micro); }
+.dungeon-statistics-drop-rate { color: var(--ui-text-muted); }
+.dungeon-statistics-feature-kpi { padding-bottom: 9px; border-bottom-color: color-mix(in srgb, var(--ui-gold) 20%, var(--ui-border)); }
+.dungeon-statistics-feature-kpi span,
+.dungeon-statistics-current-run span { color: var(--ui-text-muted); font-size: var(--ui-font-micro); font-weight: 600; letter-spacing: .09em; }
+.dungeon-statistics-feature-kpi strong { color: var(--ui-gold); font-size: clamp(1.3rem, 1.8vw, 1.55rem); }
+.dungeon-statistics-current-run { padding: 8px 9px; border-color: color-mix(in srgb, var(--ui-gold) 24%, var(--ui-border)); background: color-mix(in srgb, var(--ui-gold) 4%, transparent); }
+.dungeon-statistics-current-run strong { color: var(--ui-text); font-size: var(--ui-font-small); font-weight: 650; }
+.dungeon-statistics-empty { min-height: 92px; }
+
+@container (max-width: 720px) {
+  .combat-analytics-head { align-items: flex-start; }
+  .combat-analytics-head small { text-align: right; }
+}
+@container (max-width: 520px) {
+  .combat-details-head,
+  .dungeon-statistics-head { gap: 6px; }
+  .combat-details-mode-nav,
+  .dungeon-statistics-mode-nav { width: 100%; }
+}
+@container (max-width: 380px) {
+  .combat-spell-deck-foot { align-items: flex-start; }
+  .combat-spell-deck-foot > small { width: 100%; margin-left: 0; text-align: left; }
 }

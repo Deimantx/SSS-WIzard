@@ -20,7 +20,7 @@ export const DEFAULT_LAYOUTS: Record<ScreenId, ScreenLayouts> = {
     'combat-stage': layout(0, 0, 12, 14), 'combat-spell-deck': layout(0, 14, 12, 7), 'combat-analytics': layout(0, 21, 12, 8),
   },
   inventory: { 'inventory-catalog': layout(0, 0, 7, 24), 'inventory-detail': layout(7, 0, 5, 24) },
-  equipment: { 'equipment-loadout': layout(0, 0, 7, 13), 'equipment-stats': layout(7, 0, 5, 13), 'equipment-owned': layout(0, 13, 7, 13), 'equipment-inspector': layout(8, 13, 5, 13) },
+  equipment: { 'equipment-loadout': layout(0, 0, 7, 13), 'equipment-stats': layout(7, 0, 5, 13), 'equipment-owned': layout(0, 13, 7, 20), 'equipment-inspector': layout(8, 13, 5, 13) },
   guild: { 'guild-banner': layout(0, 0, 12, 5), 'guild-request-1': layout(0, 5, 4, 11), 'guild-request-2': layout(4, 5, 4, 11), 'guild-request-3': layout(8, 5, 4, 11), 'guild-rank': layout(0, 16, 12, 6) },
   collection: { 'collection-summary': layout(0, 0, 12, 5), 'collection-content': layout(0, 5, 7, 17), 'collection-inspector': layout(7, 5, 5, 17) },
   bestiary: { 'bestiary-summary': layout(0, 0, 12, 5), 'bestiary-index': layout(0, 5, 5, 19), 'bestiary-inspector': layout(5, 5, 7, 19) },

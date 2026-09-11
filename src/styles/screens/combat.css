@@ -3252,3 +3252,323 @@
 @media (max-width: 520px) {
   .enemy-stats-grid { grid-template-columns: 1fr; }
 }
+
+/* Pass 3: Spell Deck active-loadout hierarchy. Static presentation only. */
+.combat-spell-deck-head {
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom-color: color-mix(in srgb, var(--ui-accent) 24%, var(--ui-border));
+}
+.combat-spell-deck-heading {
+  position: relative;
+  display: grid !important;
+  align-content: center;
+  gap: 2px !important;
+}
+.combat-spell-deck-heading::before {
+  color: color-mix(in srgb, var(--ui-accent) 70%, var(--ui-text-muted));
+  content: 'ACTIVE ARCANE LOADOUT';
+  font: var(--text-micro) var(--font-mono);
+  letter-spacing: .1em;
+}
+.combat-spell-deck-heading strong {
+  color: var(--ui-text);
+  font-size: var(--ui-font-title);
+  font-weight: 700;
+  letter-spacing: .045em;
+  text-transform: uppercase;
+}
+.combat-preset-control {
+  width: 52%;
+  padding: 5px 7px;
+  border: 1px solid color-mix(in srgb, var(--ui-border) 86%, var(--ui-accent));
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--ui-bg) 36%, transparent);
+}
+.combat-preset-control > .combat-subsection-label { color: var(--ui-text-muted); }
+.combat-preset-control-row { gap: 5px; }
+.combat-preset-control-row .select-menu-trigger {
+  border-color: color-mix(in srgb, var(--ui-border) 92%, var(--ui-accent));
+  background: color-mix(in srgb, var(--ui-panel-strong) 74%, transparent);
+}
+.combat-preset-manage {
+  border-color: color-mix(in srgb, var(--ui-border) 92%, var(--ui-accent));
+  color: var(--ui-text-muted);
+  background: transparent;
+}
+.combat-preset-manage:hover,
+.combat-preset-manage:focus-visible {
+  border-color: var(--ui-accent);
+  color: var(--ui-text);
+  background: var(--ui-accent-soft);
+}
+.combat-focus-summary {
+  gap: 3px !important;
+  padding-left: 12px;
+  border-left-color: color-mix(in srgb, var(--semantic-focus) 35%, var(--ui-border));
+}
+.combat-focus-summary span {
+  color: color-mix(in srgb, var(--semantic-focus) 68%, var(--ui-text-muted));
+  font-size: var(--ui-font-micro);
+  font-weight: 700;
+}
+.combat-focus-summary strong {
+  color: var(--semantic-focus);
+  font-size: var(--ui-font-small);
+  font-weight: 700;
+}
+
+.combat-spell-banner,
+.combat-spell-preset-notice {
+  min-height: 27px;
+  padding: 5px 8px;
+  border-radius: 5px;
+  font-size: var(--ui-font-micro);
+  letter-spacing: .045em;
+}
+.combat-spell-banner {
+  border-color: color-mix(in srgb, var(--ui-warning) 40%, var(--ui-border));
+  background: color-mix(in srgb, var(--ui-warning) 7%, transparent);
+}
+.combat-spell-preset-notice {
+  border-color: color-mix(in srgb, var(--ui-danger) 44%, var(--ui-border));
+  background: color-mix(in srgb, var(--ui-danger) 7%, transparent);
+}
+
+/* Utility controls stay useful, but the spell grid owns the visual weight. */
+.combat-spell-filter-toolbar {
+  gap: 6px;
+  margin-top: 2px;
+  padding: 6px 7px;
+  border: 1px solid color-mix(in srgb, var(--ui-border) 82%, transparent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--ui-bg) 28%, transparent);
+}
+.combat-spell-filter-toolbar .search-input,
+.combat-spell-filter-toolbar .select-menu-trigger,
+.combat-filter-button {
+  min-height: 29px;
+  border-color: color-mix(in srgb, var(--ui-border) 88%, transparent);
+  color: var(--ui-text-muted);
+  background: color-mix(in srgb, var(--ui-panel) 48%, transparent);
+}
+.combat-spell-filter-toolbar .search-input:focus,
+.combat-spell-filter-toolbar .select-menu-trigger:hover,
+.combat-filter-button:hover,
+.combat-filter-button:focus-visible,
+.combat-filter-button.is-active {
+  border-color: color-mix(in srgb, var(--ui-accent) 66%, var(--ui-border));
+  color: var(--ui-text);
+  background: color-mix(in srgb, var(--ui-accent) 7%, var(--ui-panel));
+}
+.combat-filter-button.is-active { color: var(--semantic-focus); }
+
+.combat-spell-grid {
+  gap: 7px;
+  padding: 3px 2px 4px 0;
+}
+.spell-combat-tile {
+  min-height: 74px;
+  overflow: hidden;
+  border-color: color-mix(in srgb, var(--spell-school-color) 28%, var(--ui-border));
+  border-radius: 6px;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--spell-school-color) 7%, transparent), transparent 58%), color-mix(in srgb, var(--ui-panel-strong) 90%, transparent);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 4%);
+  transition: border-color 120ms ease, background 120ms ease, transform 120ms ease, box-shadow 120ms ease;
+}
+.spell-combat-tile::before {
+  right: 0;
+  left: 0;
+  height: 2px;
+  border-radius: 0;
+  opacity: .78;
+}
+.spell-combat-tile:hover {
+  border-color: color-mix(in srgb, var(--spell-school-color) 72%, var(--ui-border));
+  background: linear-gradient(160deg, color-mix(in srgb, var(--spell-school-color) 12%, transparent), transparent 62%), color-mix(in srgb, var(--ui-panel-strong) 94%, transparent);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 6%), 0 5px 12px rgb(0 0 0 / 18%);
+  transform: translateY(-1px);
+}
+.spell-combat-tile.is-auto {
+  border-color: color-mix(in srgb, var(--semantic-focus) 62%, var(--ui-border));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--semantic-focus) 12%, transparent), 0 0 0 1px color-mix(in srgb, var(--semantic-focus) 9%, transparent);
+}
+.spell-combat-tile.is-auto:hover { border-color: var(--semantic-focus); }
+.spell-combat-cast {
+  grid-template-rows: 29px minmax(0, 1fr) auto;
+  min-height: 72px;
+  gap: 3px;
+  padding: 8px 32px 6px 9px;
+}
+.spell-combat-tile-top { align-items: center; gap: 5px; }
+.spell-combat-icon .spell-icon-shell {
+  width: 29px;
+  height: 29px;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--spell-school-color) 18%, transparent);
+}
+.spell-combat-rank {
+  align-self: start;
+  overflow: hidden;
+  min-width: 0;
+  max-width: 5ch;
+  padding: 2px 4px;
+  border: 1px solid color-mix(in srgb, var(--spell-school-color) 26%, var(--ui-border));
+  border-radius: 3px;
+  color: var(--ui-text-muted);
+  font: var(--ui-font-micro) var(--font-mono);
+  letter-spacing: .03em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.spell-combat-name { gap: 2px; }
+.spell-combat-name strong {
+  color: var(--ui-text);
+  font-size: var(--ui-font-small);
+  font-weight: 650;
+  letter-spacing: -.01em;
+}
+.spell-combat-footer {
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  min-width: 0;
+  font-size: var(--ui-font-micro);
+}
+.spell-combat-footer .ui-mana { flex: 0 1 auto; min-width: 0; }
+.spell-combat-state {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ui-text-muted);
+  font: 600 var(--ui-font-micro) var(--font-mono);
+  letter-spacing: .035em;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.spell-combat-state.is-ready { color: var(--ui-success); }
+.spell-combat-state.is-cooldown { color: var(--semantic-time); }
+.spell-combat-state.is-mana { color: var(--semantic-mana); }
+.spell-combat-state.is-no-target,
+.spell-combat-state.is-stunned { color: var(--ui-warning); }
+.spell-combat-state.is-inactive,
+.spell-combat-state.is-locked { color: var(--ui-text-disabled); }
+.spell-combat-tile.is-unavailable:not(.is-mana-starved) { opacity: .82; }
+.spell-combat-tile.is-mana-starved { border-color: color-mix(in srgb, var(--semantic-mana) 62%, var(--ui-border)); }
+
+/* The active badge is static; its existing button remains the only toggle. */
+.spell-combat-auto-slot {
+  top: 5px;
+  right: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+  width: 48px;
+  height: 22px;
+}
+.spell-combat-auto-slot > .game-tooltip-trigger {
+  display: block;
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+}
+.spell-combat-auto-slot::before {
+  display: none;
+  color: var(--semantic-focus);
+  content: 'AUTO';
+  font: 700 8px var(--font-mono);
+  letter-spacing: .07em;
+}
+.spell-combat-tile.is-auto .spell-combat-auto-slot::before { display: block; }
+.spell-combat-auto {
+  width: 22px;
+  height: 22px;
+  border-color: color-mix(in srgb, var(--semantic-focus) 48%, var(--ui-border));
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--ui-panel-strong) 94%, transparent);
+}
+.spell-combat-auto.is-active {
+  border-color: var(--semantic-focus);
+  color: var(--semantic-focus);
+  background: color-mix(in srgb, var(--semantic-focus) 13%, var(--ui-panel));
+  box-shadow: none;
+}
+.spell-combat-tile.is-auto .spell-combat-auto { opacity: 1; pointer-events: auto; }
+
+/* A flat cooldown veil and bar keep the existing countdown readable. */
+.spell-combat-tile.is-cooldown {
+  border-color: color-mix(in srgb, var(--semantic-time) 48%, var(--ui-border));
+}
+.spell-combat-tile.is-cooldown .spell-combat-cast { filter: none; }
+.spell-combat-tile.is-cooldown .spell-combat-icon { filter: saturate(.76) brightness(.86); }
+.spell-combat-tile.is-cooldown .spell-combat-name strong { color: var(--ui-text-soft); }
+.spell-combat-cooldown-overlay {
+  background: rgb(5 8 15 / 72%);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 16%);
+}
+.spell-combat-cooldown-overlay::before {
+  inset: 1px;
+  border-color: rgb(255 255 255 / 20%);
+}
+.spell-combat-cooldown-overlay::after {
+  top: auto;
+  right: 3px;
+  bottom: 3px;
+  left: 3px;
+  height: 3px;
+  border: 0;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--semantic-time) 0 var(--cooldown-percent), color-mix(in srgb, var(--semantic-time) 22%, transparent) var(--cooldown-percent) 100%);
+}
+.spell-combat-cooldown-number {
+  color: var(--ui-text);
+  font-size: var(--ui-font-small);
+  text-shadow: 0 1px 3px rgb(0 0 0 / 95%);
+}
+
+/* Existing transient classes remain state-compatible but do not add new motion. */
+.combat-spell-deck .spell-combat-tile.is-ready,
+.combat-spell-deck .spell-combat-tile.is-casting,
+.combat-spell-deck .spell-combat-tile.is-mana-starved { animation: none; }
+.spell-combat-cast:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--spell-school-color) 82%, white);
+  outline-offset: -2px;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--spell-school-color) 42%, transparent);
+}
+
+.combat-spell-deck-foot {
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+}
+.combat-spell-deck-foot .status { flex: 0 1 auto; }
+.combat-spell-deck-foot small { font-size: var(--ui-font-micro); }
+.combat-clear-autocast {
+  right: 12px;
+  bottom: 9px;
+  left: auto;
+  transform: none;
+  min-height: 27px;
+  padding: 5px 8px;
+  border-color: color-mix(in srgb, var(--ui-border) 88%, var(--semantic-focus));
+  color: color-mix(in srgb, var(--semantic-focus) 70%, var(--ui-text-muted));
+  background: color-mix(in srgb, var(--semantic-focus) 4%, transparent);
+}
+.combat-clear-autocast:hover:not(:disabled),
+.combat-clear-autocast:focus-visible {
+  border-color: var(--semantic-focus);
+  color: var(--semantic-focus);
+  background: color-mix(in srgb, var(--semantic-focus) 10%, transparent);
+}
+
+@container (max-width: 620px) {
+  .combat-spell-deck-heading::before { font-size: 8px; }
+  .combat-preset-control { width: 100%; }
+  .spell-combat-rank { max-width: 4ch; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spell-combat-tile { transition: none; }
+}

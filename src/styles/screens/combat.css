@@ -1453,8 +1453,7 @@
 }
 .enemy-intel-trait,
 .enemy-intel-defence,
-.enemy-intel-action,
-.enemy-loot-row {
+.enemy-intel-action {
   min-width: 0;
   border: 1px solid var(--ui-border);
   border-radius: 6px;
@@ -1503,7 +1502,6 @@
 .enemy-intel-defence.is-immunity strong { color: var(--ui-warning); }
 .enemy-intel-trait:focus-visible,
 .enemy-intel-action:focus-visible,
-.enemy-loot-row:focus-visible,
 .combat-log-action-identity:focus-visible {
   outline: 2px solid var(--ui-accent);
   outline-offset: 2px;
@@ -1630,20 +1628,6 @@
   margin-top: 11px;
   border-top: 1px solid var(--ui-border);
 }
-.enemy-loot-row {
-  display: grid;
-  grid-template-columns: 25px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 7px;
-  padding: 7px;
-}
-.enemy-loot-row > div { min-width: 0; }
-.enemy-loot-row strong,
-.enemy-loot-row small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.enemy-loot-row strong { color: var(--ui-text-soft); font-size: 10px; }
-.enemy-loot-row small { margin-top: 3px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
-.enemy-loot-row .status { padding: 3px 5px; font-size: 8px; }
-
 .full-combat-log-drawer {
   container-type: inline-size;
   display: grid;
@@ -4243,6 +4227,108 @@
 :root[data-reduced-motion='true'] .combat-spell-deck .spell-combat-tile.is-ready .spell-combat-icon,
 :root[data-reduced-motion='true'] .combat-status-chip.is-new { animation: none; transform: none; }
 
+/* Pass 8: shared compact loot tiles for combat reward surfaces. */
+.enemy-loot-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.enemy-loot-grid > .game-tooltip-trigger {
+  display: block;
+  min-width: 0;
+}
+.combat-loot-reward-tile {
+  --loot-accent: var(--ui-accent);
+  display: grid;
+  grid-template-rows: auto minmax(2.5em, auto) auto;
+  gap: 7px;
+  min-width: 0;
+  min-height: 128px;
+  height: 100%;
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--loot-accent) 28%, var(--ui-border));
+  border-radius: 8px;
+  color: var(--ui-text-muted);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--loot-accent) 7%, var(--ui-panel-strong)), color-mix(in srgb, var(--ui-panel) 84%, transparent));
+  cursor: help;
+  transition: border-color 150ms cubic-bezier(.22, .8, .28, 1), background 150ms cubic-bezier(.22, .8, .28, 1), box-shadow 150ms cubic-bezier(.22, .8, .28, 1), transform 150ms cubic-bezier(.22, .8, .28, 1);
+}
+.combat-loot-reward-tile.is-guaranteed {
+  --loot-accent: var(--ui-gold);
+}
+.combat-loot-reward-tile:hover,
+.combat-loot-reward-tile:focus-visible {
+  border-color: color-mix(in srgb, var(--loot-accent) 64%, var(--ui-border));
+  background: linear-gradient(145deg, color-mix(in srgb, var(--loot-accent) 11%, var(--ui-panel-strong)), color-mix(in srgb, var(--ui-panel) 84%, transparent));
+  box-shadow: 0 6px 14px color-mix(in srgb, var(--loot-accent) 10%, transparent), inset 0 1px 0 rgb(255 255 255 / 5%);
+  outline: none;
+  transform: translateY(-1px);
+}
+.combat-loot-reward-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+}
+.combat-loot-reward-icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--loot-accent) 42%, var(--ui-border));
+  border-radius: 7px;
+  color: var(--loot-accent);
+  background: color-mix(in srgb, var(--loot-accent) 9%, transparent);
+}
+.combat-loot-reward-icon .item-icon {
+  width: 31px;
+  height: 31px;
+  font-size: 18px;
+}
+.combat-loot-reward-head .status {
+  max-width: 100%;
+  padding: 3px 4px;
+  overflow: hidden;
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.combat-loot-reward-name {
+  display: -webkit-box;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ui-text-soft);
+  font-size: var(--ui-font-small);
+  font-weight: 600;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.combat-loot-reward-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+  padding-top: 6px;
+  border-top: 1px solid color-mix(in srgb, var(--loot-accent) 20%, var(--ui-border));
+  font: var(--text-micro) var(--font-mono);
+}
+.combat-loot-reward-meta span {
+  overflow: hidden;
+  color: var(--loot-accent);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.combat-loot-reward-meta b {
+  flex: 0 0 auto;
+  color: var(--ui-text);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 /* Pass 7: calm Combat Flow seam and enemy-intel presentation polish. Static only. */
 .combat-flow-timelines {
   position: relative;
@@ -4267,6 +4353,9 @@
 .combat-flow-timeline {
   z-index: 1;
   border-radius: 8px;
+}
+.combat-flow-timeline::before {
+  display: none;
 }
 .combat-flow-timeline .progress {
   height: 7px;

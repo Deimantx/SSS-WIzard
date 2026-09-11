@@ -2,22 +2,21 @@ import { Clock3, X, Sparkles } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react'
 import { DUNGEONS } from '../../game/content/dungeons/dungeons'
-import { ITEMS } from '../../game/content/items/items'
 import { isBossMonster, MONSTERS } from '../../game/content/monsters'
 import { getTraitDefinitions } from '../../game/content/traits'
 import { buildCombatActionPresentation, buildEnemyCombatStatRows, formatResistanceEffect } from '../../game/presentation/combat'
-import type { DungeonId, MonsterId } from '../../game/types'
+import type { DungeonId, ItemId, MonsterId } from '../../game/types'
 import { formatNumber, formatTime } from '../../game/utils'
 import { useGameStore } from '../../store/gameStore'
-import { Button, GameTooltip, Status } from '../../components/ui'
+import { Button, GameTooltip } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
-import { ItemIcon, ItemTooltip } from '../../components/ui/item'
 import { MonsterPortrait } from './MonsterPortrait'
 import { getEnemyCombatStats } from '../../game/systems/combat/combatStats'
 import { CombatEffectChip } from '../../components/combat/CombatEffectChip'
 import { EnemyCombatStatList } from '../../components/combat/EnemyCombatStatList'
 import { EnemyResistanceStatList } from '../../components/combat/EnemyResistanceStatList'
 import { EnemyActionTooltip } from '../../components/combat/EnemyActionTooltip'
+import { LootRewardTile } from '../../components/combat/LootRewardTile'
 
 export type EnemyContextMode = 'intel' | 'stats' | 'loot'
 
@@ -162,11 +161,11 @@ export function EnemyLootContent({ selectedDungeonId }: { selectedDungeonId: Dun
   const inventory = useGameStore((state) => state.inventory)
   const dungeon = DUNGEONS[combat.dungeonId ?? selectedDungeonId]
   const current = combat.enemyId ? MONSTERS[combat.enemyId] : null
-  return <div className="enemy-loot-content"><div className="enemy-context-loot-group"><div className="combat-subsection-label">{current ? 'CURRENT ENEMY DROPS' : 'DUNGEON DROPS'}</div>{current ? <LootRows monster={current} inventory={inventory} /> : <p className="muted">No active enemy. Boss and normal enemy drops are shown when an encounter is active.</p>}</div><div className="enemy-context-loot-group"><div className="combat-subsection-label">BOSS DROPS · {MONSTERS[dungeon.boss].name.toUpperCase()}</div><LootRows monster={MONSTERS[dungeon.boss]} inventory={inventory} /></div></div>
+  return <div className="enemy-loot-content"><div className="enemy-context-loot-group"><div className="combat-subsection-label">{current ? 'CURRENT ENEMY DROPS' : 'DUNGEON DROPS'}</div>{current ? <LootTiles monster={current} inventory={inventory} /> : <p className="muted">No active enemy. Boss and normal enemy drops are shown when an encounter is active.</p>}</div><div className="enemy-context-loot-group"><div className="combat-subsection-label">BOSS DROPS · {MONSTERS[dungeon.boss].name.toUpperCase()}</div><LootTiles monster={MONSTERS[dungeon.boss]} inventory={inventory} /></div></div>
 }
 
-function LootRows({ monster, inventory }: { monster: typeof MONSTERS[MonsterId]; inventory: Partial<Record<keyof typeof ITEMS, number>> }) {
-  return <div className="enemy-loot-grid">{monster.loot.map((drop) => { const item = ITEMS[drop.itemId]; return <ItemTooltip key={drop.itemId} itemId={drop.itemId} owned={inventory[drop.itemId] ?? 0}><div tabIndex={0} className="enemy-loot-row"><ItemIcon itemId={drop.itemId} size="tiny" /><div><strong>{item.name}</strong><small>{drop.chance === 1 ? 'Guaranteed' : `${Math.round(drop.chance * 100)}%`} · {drop.min}–{drop.max}</small></div><Status tone={drop.chance === 1 ? 'success' : 'neutral'}>{drop.chance === 1 ? 'GUARANTEED' : `${Math.round(drop.chance * 100)}%`}</Status></div></ItemTooltip>})}</div>
+function LootTiles({ monster, inventory }: { monster: typeof MONSTERS[MonsterId]; inventory: Partial<Record<ItemId, number>> }) {
+  return <div className="enemy-loot-grid">{monster.loot.map((drop) => <LootRewardTile key={drop.itemId} drop={drop} sourceName={monster.name} inventory={inventory} />)}</div>
 }
 
 function pretty(value: string) { return value.replace(/-/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()) }

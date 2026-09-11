@@ -1228,64 +1228,17 @@
 
 .combat-area-loot-drop-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 78px);
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
   gap: 8px;
   justify-content: start;
 }
 
-.combat-area-loot-tile {
-  display: grid;
-  grid-template-rows: 1fr auto;
-  width: 78px;
-  height: 86px;
-  padding: 7px 6px 6px;
-  border: 1px solid var(--ui-border);
-  border-radius: 8px;
-  background: linear-gradient(145deg, color-mix(in srgb, var(--ui-panel-strong) 94%, transparent), color-mix(in srgb, var(--ui-panel) 82%, transparent));
-  cursor: help;
-  transition: border-color 160ms cubic-bezier(.22, .8, .28, 1), background 160ms cubic-bezier(.22, .8, .28, 1), transform 160ms cubic-bezier(.22, .8, .28, 1), box-shadow 160ms cubic-bezier(.22, .8, .28, 1);
-}
-
-.combat-area-loot-tile:hover {
-  border-color: color-mix(in srgb, var(--ui-accent) 60%, var(--ui-border));
-  background: color-mix(in srgb, var(--ui-accent) 8%, var(--ui-panel-strong));
-  box-shadow: 0 7px 16px color-mix(in srgb, var(--ui-accent) 10%, transparent);
-  transform: translateY(-2px);
-}
-
-.combat-area-loot-icon {
-  display: grid;
-  place-items: center;
-  min-height: 0;
-}
-
-.combat-area-loot-icon .item-icon {
-  width: 40px;
-  height: 40px;
-  font-size: 23px;
-}
-
-.combat-area-loot-values {
-  display: grid;
-  gap: 2px;
+.combat-area-loot-drop-grid > .game-tooltip-trigger {
+  display: block;
   min-width: 0;
-  padding-top: 5px;
-  border-top: 1px solid color-mix(in srgb, var(--ui-border) 70%, transparent);
-  text-align: center;
 }
-
-.combat-area-loot-values b,
-.combat-area-loot-values small {
-  overflow: hidden;
-  color: var(--ui-accent);
-  font: 9px var(--font-mono);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.combat-area-loot-values small {
-  color: var(--ui-text-muted);
-  font-size: 8px;
+.combat-area-loot-drop-grid .combat-loot-reward-tile {
+  min-height: 132px;
 }
 
 .combat-area-loot-empty {

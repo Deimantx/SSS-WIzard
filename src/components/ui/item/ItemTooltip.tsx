@@ -38,7 +38,7 @@ interface ItemTooltipContentProps {
   extraContent?: ReactNode
 }
 
-export function ItemTooltip({ itemId, owned, protectedItem = false, equipped = false, recentlyGained, flow, recipeContext, effectiveStats, artifactTier, artifactLevel, artifactMaxLevel, children }: ItemTooltipContentProps & { children: ReactNode }) {
+export function ItemTooltip({ itemId, owned, protectedItem = false, equipped = false, recentlyGained, flow, recipeContext, effectiveStats, artifactTier, artifactLevel, artifactMaxLevel, extraContent, children }: ItemTooltipContentProps & { children: ReactNode }) {
   const item = ITEMS[itemId]
   const artifactProgress = useGameStore((state) => state.artifactProgress)
   const artifact = item.kind === 'equipment' && isArtifactItem(itemId)
@@ -48,7 +48,7 @@ export function ItemTooltip({ itemId, owned, protectedItem = false, equipped = f
   const resolvedArtifactLevel = artifactLevel ?? (artifact ? getArtifactLevel({ artifactProgress }, itemId) : undefined)
   const resolvedArtifactMaxLevel = artifactMaxLevel ?? artifactDefinition?.maxLevel
   const accent = item.inventoryCategory === 'equipment' ? 'success' : item.inventoryCategory === 'loot' ? 'warning' : item.materialSubtype === 'elemental' ? 'elemental' : 'neutral'
-  return <GameTooltip block accent={accent} content={<ItemTooltipContent itemId={itemId} owned={owned} protectedItem={protectedItem} equipped={equipped} recentlyGained={recentlyGained} flow={flow} recipeContext={recipeContext} effectiveStats={resolvedStats} artifactTier={resolvedArtifactTier} artifactLevel={resolvedArtifactLevel} artifactMaxLevel={resolvedArtifactMaxLevel} />}>{children}</GameTooltip>
+  return <GameTooltip block accent={accent} content={<ItemTooltipContent itemId={itemId} owned={owned} protectedItem={protectedItem} equipped={equipped} recentlyGained={recentlyGained} flow={flow} recipeContext={recipeContext} effectiveStats={resolvedStats} artifactTier={resolvedArtifactTier} artifactLevel={resolvedArtifactLevel} artifactMaxLevel={resolvedArtifactMaxLevel} extraContent={extraContent} />}>{children}</GameTooltip>
 }
 
 export function ItemTooltipContent({ itemId, owned, protectedItem = false, equipped = false, recentlyGained, flow, recipeContext, effectiveStats, artifactTier, artifactLevel, artifactMaxLevel, extraContent }: ItemTooltipContentProps) {

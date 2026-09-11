@@ -4014,3 +4014,231 @@
     flex: 1 1 auto;
   }
 }
+
+/* Pass 6: Lightweight combat feedback FX. Existing state hooks only. */
+.combat-resource.is-feedback-damage .combat-resource-track {
+  animation: combat-pass6-resource-damage 180ms ease-out;
+}
+.combat-resource.is-feedback-damage .combat-resource-label {
+  animation: combat-pass6-resource-damage-label 180ms ease-out;
+}
+.combat-resource.is-feedback-heal .combat-resource-track {
+  animation: combat-pass6-resource-heal 190ms ease-out;
+}
+.combat-resource.is-feedback-heal .combat-resource-gain {
+  background: color-mix(in srgb, var(--combat-heal-feedback) 84%, white);
+  box-shadow: 0 0 9px color-mix(in srgb, var(--combat-heal-feedback) 58%, transparent);
+}
+.combat-resource.is-feedback-mana-spend .combat-resource-track {
+  animation: combat-pass6-resource-mana-spend 150ms ease-out;
+}
+.combat-resource.is-feedback-mana-spend .combat-resource-label strong {
+  animation: combat-pass6-resource-mana-label 150ms ease-out;
+}
+.combat-resource.is-feedback-mana-gain .combat-resource-track {
+  animation: combat-pass6-resource-mana-gain 170ms ease-out;
+}
+.combat-resource.is-feedback-mana-gain .combat-resource-gain {
+  opacity: .28;
+  box-shadow: none;
+}
+.combat-resource.is-feedback-barrier-gain .combat-resource-track {
+  animation: combat-pass6-resource-barrier-gain 180ms ease-out;
+}
+.combat-resource.is-feedback-barrier-absorb .combat-resource-track {
+  animation: combat-pass6-resource-barrier-absorb 160ms ease-out;
+}
+.combat-resource.is-feedback-barrier-break .combat-resource-track {
+  animation: combat-pass6-resource-barrier-break 230ms ease-out;
+}
+.combat-resource.is-feedback-barrier-break .combat-resource-label strong {
+  animation: combat-pass6-barrier-break-label 230ms ease-out;
+}
+.combat-resource.is-feedback-barrier-break .combat-resource-gain {
+  background: color-mix(in srgb, var(--combat-barrier-feedback) 88%, white);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--combat-barrier-feedback) 72%, transparent);
+}
+
+@keyframes combat-pass6-resource-damage {
+  0%, 100% { border-color: color-mix(in srgb, var(--ui-text) 12%, transparent); box-shadow: inset 0 1px 2px rgb(0 0 0 / 38%); }
+  42% { border-color: color-mix(in srgb, var(--combat-damage-feedback) 72%, var(--ui-border)); box-shadow: inset 0 1px 2px rgb(0 0 0 / 38%), 0 0 0 2px color-mix(in srgb, var(--combat-damage-feedback) 24%, transparent); }
+}
+@keyframes combat-pass6-resource-damage-label {
+  0%, 100% { transform: translateY(0); }
+  38% { color: var(--combat-damage-feedback); transform: translateY(-1px); }
+}
+@keyframes combat-pass6-resource-heal {
+  0%, 100% { box-shadow: inset 0 1px 2px rgb(0 0 0 / 38%); }
+  42% { box-shadow: inset 0 1px 2px rgb(0 0 0 / 38%), 0 0 0 2px color-mix(in srgb, var(--combat-heal-feedback) 28%, transparent); }
+}
+@keyframes combat-pass6-resource-mana-spend {
+  0%, 100% { box-shadow: inset 0 1px 2px rgb(0 0 0 / 38%); }
+  42% { border-color: color-mix(in srgb, var(--combat-mana-feedback) 64%, var(--ui-border)); box-shadow: inset 0 1px 2px rgb(0 0 0 / 38%), 0 0 0 2px color-mix(in srgb, var(--combat-mana-feedback) 22%, transparent); }
+}
+@keyframes combat-pass6-resource-mana-label {
+  0%, 100% { transform: translateY(0); }
+  42% { color: var(--combat-mana-feedback); transform: translateY(-1px); }
+}
+@keyframes combat-pass6-resource-mana-gain {
+  0%, 100% { box-shadow: inset 0 1px 2px rgb(0 0 0 / 38%); }
+  42% { box-shadow: inset 0 1px 2px rgb(0 0 0 / 38%), 0 0 0 1px color-mix(in srgb, var(--combat-mana-feedback) 15%, transparent); }
+}
+@keyframes combat-pass6-resource-barrier-gain {
+  0%, 100% { box-shadow: inset 0 1px 2px rgb(0 0 0 / 38%); }
+  42% { border-color: color-mix(in srgb, var(--combat-barrier-feedback) 68%, var(--ui-border)); box-shadow: inset 0 1px 2px rgb(0 0 0 / 38%), 0 0 0 2px color-mix(in srgb, var(--combat-barrier-feedback) 24%, transparent); }
+}
+@keyframes combat-pass6-resource-barrier-absorb {
+  0%, 100% { box-shadow: inset 0 1px 2px rgb(0 0 0 / 38%); }
+  38% { border-color: color-mix(in srgb, var(--combat-barrier-feedback) 80%, white); box-shadow: inset 0 1px 2px rgb(0 0 0 / 38%), 0 0 0 2px color-mix(in srgb, var(--combat-barrier-feedback) 30%, transparent); }
+}
+@keyframes combat-pass6-resource-barrier-break {
+  0%, 100% { box-shadow: inset 0 1px 2px rgb(0 0 0 / 38%); }
+  32% { border-color: color-mix(in srgb, var(--combat-barrier-feedback) 90%, white); box-shadow: inset 0 1px 2px rgb(0 0 0 / 38%), 0 0 0 2px color-mix(in srgb, var(--combat-barrier-feedback) 48%, transparent), 0 0 10px color-mix(in srgb, var(--combat-barrier-feedback) 26%, transparent); }
+}
+@keyframes combat-pass6-barrier-break-label {
+  0%, 100% { color: var(--ui-text); transform: translateY(0); }
+  30% { color: color-mix(in srgb, var(--combat-barrier-feedback) 80%, white); transform: translateY(-1px); }
+}
+
+.combat-floating-feedback {
+  min-width: 84px;
+  gap: 3px;
+  isolation: isolate;
+}
+.combat-floating-feedback-item {
+  animation: combat-pass6-floating-feedback 620ms cubic-bezier(.22, .72, .24, 1) both;
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: -.02em;
+  text-shadow: 0 1px 3px rgb(0 0 0 / 96%), 0 0 7px color-mix(in srgb, currentColor 24%, transparent);
+}
+.combat-floating-feedback-item.is-damage {
+  color: var(--combat-damage-feedback);
+}
+.combat-floating-feedback-item.is-heal {
+  color: var(--combat-heal-feedback);
+  font-size: 11px;
+}
+.combat-floating-feedback-item.is-barrier {
+  color: var(--combat-barrier-feedback);
+  font-size: 10px;
+  letter-spacing: .02em;
+}
+.combat-floating-feedback-item.is-break {
+  animation-name: combat-pass6-floating-break;
+  color: color-mix(in srgb, var(--combat-barrier-feedback) 82%, white);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-shadow: 0 1px 3px rgb(0 0 0 / 98%), 0 0 8px color-mix(in srgb, var(--combat-barrier-feedback) 38%, transparent);
+}
+@keyframes combat-pass6-floating-feedback {
+  0% { opacity: 0; transform: translateY(3px) scale(.96); }
+  14% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-10px) scale(1); }
+}
+@keyframes combat-pass6-floating-break {
+  0% { opacity: 0; transform: translateY(3px) scale(.97); }
+  16% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-9px) scale(1); }
+}
+
+/* Existing one-shot tile states get a short local response only. */
+.combat-spell-deck .spell-combat-tile.is-casting {
+  animation: combat-pass6-spell-casting 180ms ease-out both;
+}
+.combat-spell-deck .spell-combat-tile.is-casting .spell-combat-icon {
+  animation: combat-pass6-spell-icon-casting 180ms ease-out both;
+}
+.combat-spell-deck .spell-combat-tile.is-auto.is-casting {
+  animation-name: combat-pass6-spell-casting-auto;
+}
+.combat-spell-deck .spell-combat-tile.is-ready {
+  animation: combat-pass6-spell-ready 190ms ease-out both;
+}
+.combat-spell-deck .spell-combat-tile.is-ready .spell-combat-icon {
+  animation: combat-pass6-spell-icon-ready 190ms ease-out both;
+}
+@keyframes combat-pass6-spell-casting {
+  0%, 100% { border-color: color-mix(in srgb, var(--spell-school-color) 28%, var(--ui-border)); box-shadow: inset 0 1px 0 rgb(255 255 255 / 4%); }
+  42% { border-color: color-mix(in srgb, var(--spell-school-color) 88%, white); box-shadow: inset 0 1px 0 rgb(255 255 255 / 6%), 0 0 0 2px color-mix(in srgb, var(--spell-school-color) 25%, transparent); }
+}
+@keyframes combat-pass6-spell-casting-auto {
+  0%, 100% { border-color: color-mix(in srgb, var(--semantic-focus) 62%, var(--ui-border)); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--semantic-focus) 12%, transparent), 0 0 0 1px color-mix(in srgb, var(--semantic-focus) 9%, transparent); }
+  42% { border-color: color-mix(in srgb, var(--spell-school-color) 88%, white); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--semantic-focus) 22%, transparent), 0 0 0 2px color-mix(in srgb, var(--spell-school-color) 28%, transparent); }
+}
+@keyframes combat-pass6-spell-icon-casting {
+  0%, 100% { transform: scale(1); box-shadow: none; }
+  42% { transform: scale(1.05); box-shadow: 0 0 0 2px color-mix(in srgb, var(--spell-school-color) 35%, transparent); }
+}
+@keyframes combat-pass6-spell-ready {
+  0%, 100% { border-color: color-mix(in srgb, var(--spell-school-color) 28%, var(--ui-border)); box-shadow: inset 0 1px 0 rgb(255 255 255 / 4%); }
+  46% { border-color: color-mix(in srgb, var(--spell-school-color) 78%, white); box-shadow: inset 0 1px 0 rgb(255 255 255 / 6%), 0 0 0 2px color-mix(in srgb, var(--spell-school-color) 20%, transparent); }
+}
+@keyframes combat-pass6-spell-icon-ready {
+  0%, 100% { transform: scale(1); box-shadow: none; }
+  46% { transform: scale(1.03); box-shadow: 0 0 0 2px color-mix(in srgb, var(--spell-school-color) 28%, transparent); }
+}
+
+.combat-status-chip.is-new {
+  transform-origin: left center;
+  animation: combat-pass6-status-in 180ms cubic-bezier(.22, .72, .24, 1) both;
+}
+.combat-status-chip.is-new.status-category-buff { box-shadow: inset 2px 0 color-mix(in srgb, var(--semantic-buff) 76%, transparent); }
+.combat-status-chip.is-new.status-category-debuff { box-shadow: inset 2px 0 color-mix(in srgb, var(--semantic-debuff) 76%, transparent); }
+.combat-status-chip.is-new.status-category-dot { box-shadow: inset 2px 0 color-mix(in srgb, var(--semantic-dot) 76%, transparent); }
+.combat-status-chip.is-new.status-category-control { box-shadow: inset 2px 0 color-mix(in srgb, var(--semantic-control) 76%, transparent); }
+@keyframes combat-pass6-status-in {
+  0% { opacity: 0; transform: translateY(2px) scale(.94); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.combat-flow-timeline.is-near-complete {
+  border-color: color-mix(in srgb, var(--timeline-accent, var(--ui-accent)) 68%, var(--ui-border));
+}
+.combat-flow-timeline.is-near-complete .progress {
+  border-color: color-mix(in srgb, var(--timeline-accent, var(--ui-accent)) 42%, var(--ui-border));
+}
+.combat-flow-timeline.is-near-complete .combat-flow-timeline-time {
+  color: var(--ui-text);
+  font-weight: 750;
+}
+.combat-flow-timeline.is-near-complete .progress i::after {
+  background: color-mix(in srgb, var(--timeline-accent, var(--ui-accent)) 76%, white);
+  box-shadow: 0 0 7px color-mix(in srgb, var(--timeline-accent, var(--ui-accent)) 52%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .combat-resource.is-feedback-damage .combat-resource-track,
+  .combat-resource.is-feedback-damage .combat-resource-label,
+  .combat-resource.is-feedback-heal .combat-resource-track,
+  .combat-resource.is-feedback-mana-spend .combat-resource-track,
+  .combat-resource.is-feedback-mana-spend .combat-resource-label strong,
+  .combat-resource.is-feedback-mana-gain .combat-resource-track,
+  .combat-resource.is-feedback-barrier-gain .combat-resource-track,
+  .combat-resource.is-feedback-barrier-absorb .combat-resource-track,
+  .combat-resource.is-feedback-barrier-break .combat-resource-track,
+  .combat-resource.is-feedback-barrier-break .combat-resource-label strong,
+  .combat-floating-feedback-item,
+  .combat-spell-deck .spell-combat-tile.is-casting,
+  .combat-spell-deck .spell-combat-tile.is-casting .spell-combat-icon,
+  .combat-spell-deck .spell-combat-tile.is-ready,
+  .combat-spell-deck .spell-combat-tile.is-ready .spell-combat-icon,
+  .combat-status-chip.is-new { animation: none; transform: none; }
+}
+:root[data-reduced-motion='true'] .combat-resource.is-feedback-damage .combat-resource-track,
+:root[data-reduced-motion='true'] .combat-resource.is-feedback-damage .combat-resource-label,
+:root[data-reduced-motion='true'] .combat-resource.is-feedback-heal .combat-resource-track,
+:root[data-reduced-motion='true'] .combat-resource.is-feedback-mana-spend .combat-resource-track,
+:root[data-reduced-motion='true'] .combat-resource.is-feedback-mana-spend .combat-resource-label strong,
+:root[data-reduced-motion='true'] .combat-resource.is-feedback-mana-gain .combat-resource-track,
+:root[data-reduced-motion='true'] .combat-resource.is-feedback-barrier-gain .combat-resource-track,
+:root[data-reduced-motion='true'] .combat-resource.is-feedback-barrier-absorb .combat-resource-track,
+:root[data-reduced-motion='true'] .combat-resource.is-feedback-barrier-break .combat-resource-track,
+:root[data-reduced-motion='true'] .combat-resource.is-feedback-barrier-break .combat-resource-label strong,
+:root[data-reduced-motion='true'] .combat-floating-feedback-item,
+:root[data-reduced-motion='true'] .combat-spell-deck .spell-combat-tile.is-casting,
+:root[data-reduced-motion='true'] .combat-spell-deck .spell-combat-tile.is-casting .spell-combat-icon,
+:root[data-reduced-motion='true'] .combat-spell-deck .spell-combat-tile.is-ready,
+:root[data-reduced-motion='true'] .combat-spell-deck .spell-combat-tile.is-ready .spell-combat-icon,
+:root[data-reduced-motion='true'] .combat-status-chip.is-new { animation: none; transform: none; }

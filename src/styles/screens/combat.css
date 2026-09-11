@@ -2653,6 +2653,186 @@
   .spell-combat-cooldown-overlay { transition: none; }
 }
 
+/* Pass 1: opposing actor rails. Static presentation only; live behavior stays untouched. */
+.combat-actor-card {
+  --actor-accent: var(--ui-accent);
+  position: relative;
+  overflow: hidden;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--actor-accent) 5%, transparent), transparent 42%),
+    color-mix(in srgb, var(--ui-panel-strong) 72%, transparent);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 4%), 0 10px 24px rgb(0 0 0 / 18%);
+}
+.combat-actor-card::before {
+  position: absolute;
+  top: 0;
+  right: 14px;
+  left: 14px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--actor-accent) 70%, transparent), transparent);
+  content: '';
+  pointer-events: none;
+}
+.combat-player-card {
+  --actor-accent: var(--ui-accent);
+  border-color: color-mix(in srgb, var(--ui-accent) 38%, var(--ui-border));
+}
+.combat-enemy-card {
+  --actor-accent: var(--enemy-accent, var(--ui-accent));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--enemy-accent) 7%, transparent), transparent 42%),
+    color-mix(in srgb, var(--ui-panel-strong) 72%, transparent);
+}
+.combat-actor-head {
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom-color: color-mix(in srgb, var(--actor-accent) 18%, var(--ui-border));
+}
+.combat-actor-head-copy {
+  display: grid;
+  gap: 3px;
+}
+.combat-actor-head h2 {
+  margin-top: 0;
+  font-size: var(--ui-font-title);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+.combat-actor-head .status {
+  flex: 0 0 auto;
+}
+
+.combat-resource-stack {
+  gap: 8px;
+  padding-top: 2px;
+}
+.combat-resource {
+  gap: 5px;
+}
+.combat-resource-label {
+  min-height: 17px;
+  letter-spacing: .025em;
+}
+.combat-resource-label span {
+  font-weight: 600;
+}
+.combat-resource-label strong {
+  font-size: var(--ui-font-small);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.combat-resource-track {
+  height: 8px;
+  border: 1px solid color-mix(in srgb, var(--ui-text) 14%, transparent);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--ui-bg) 86%, white);
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 38%);
+}
+
+.combat-basic-attack {
+  display: grid;
+  gap: 8px;
+  padding-top: 11px;
+  border-top-color: color-mix(in srgb, var(--actor-accent) 24%, var(--ui-border));
+}
+.combat-basic-head {
+  align-items: center;
+}
+.combat-basic-weapon {
+  max-width: 68%;
+  min-width: 0;
+  padding: 5px 7px;
+  border: 1px solid color-mix(in srgb, var(--ui-gold) 30%, var(--ui-border));
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--ui-gold) 5%, transparent);
+  font-size: var(--ui-font-small);
+}
+.combat-basic-stats {
+  margin-top: 0;
+  padding: 8px 9px;
+  border: 1px solid color-mix(in srgb, var(--ui-border) 82%, transparent);
+  border-left: 2px solid color-mix(in srgb, var(--ui-gold) 70%, var(--ui-border));
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--ui-panel) 76%, transparent);
+}
+.combat-basic-stats > span {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  width: 100%;
+  gap: 8px;
+}
+.combat-basic-stat-label {
+  display: inline;
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-mono);
+}
+.combat-basic-stats strong {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.combat-enemy-card .combat-monster-portrait {
+  width: min(164px, 78%);
+  aspect-ratio: 1;
+  margin-top: 2px;
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--enemy-accent) 23%, transparent), transparent 64%),
+    linear-gradient(145deg, color-mix(in srgb, var(--enemy-accent) 8%, var(--ui-panel)), var(--ui-bg));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 7%), inset 0 0 0 1px color-mix(in srgb, var(--enemy-accent) 11%, transparent), 0 12px 24px color-mix(in srgb, var(--enemy-accent) 12%, transparent);
+}
+.combat-enemy-card .combat-monster-portrait::before {
+  position: absolute;
+  inset: 8px;
+  border: 1px solid color-mix(in srgb, var(--enemy-accent) 20%, transparent);
+  border-radius: 7px;
+  content: '';
+  pointer-events: none;
+}
+.combat-enemy-card .combat-monster-portrait.is-boss {
+  width: min(174px, 82%);
+}
+.combat-enemy-subtitle {
+  width: 100%;
+  margin-top: -1px;
+  color: color-mix(in srgb, var(--enemy-accent) 34%, var(--ui-text-muted));
+  line-height: 1.35;
+  text-align: center;
+}
+.combat-trait-strip {
+  gap: 5px;
+  padding-top: 1px;
+}
+.combat-trait-strip span {
+  padding: 5px 7px;
+  border-radius: 6px;
+}
+.enemy-utility-footer {
+  padding-top: 10px;
+  border-top-color: color-mix(in srgb, var(--actor-accent) 20%, var(--ui-border));
+}
+.enemy-utility-button {
+  min-height: 30px;
+  border-color: color-mix(in srgb, var(--actor-accent) 28%, var(--ui-border));
+  background: color-mix(in srgb, var(--actor-accent) 5%, var(--ui-panel));
+}
+.enemy-utility-button:hover,
+.enemy-utility-button:focus-visible {
+  border-color: var(--actor-accent);
+  background: color-mix(in srgb, var(--actor-accent) 12%, var(--ui-panel));
+}
+
+@container (max-width: 620px) {
+  .combat-actor-card { padding: 12px; }
+  .combat-enemy-card .combat-monster-portrait { width: min(154px, 70%); }
+  .combat-enemy-card .combat-monster-portrait.is-boss { width: min(164px, 76%); }
+}
+
 /* Shared enemy context readability and stat presentation. */
 .enemy-context-body {
   min-height: 0;

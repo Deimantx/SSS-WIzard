@@ -1228,8 +1228,8 @@
 
 .combat-area-loot-drop-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+  gap: 5px;
   justify-content: start;
 }
 
@@ -1238,7 +1238,7 @@
   min-width: 0;
 }
 .combat-area-loot-drop-grid .combat-loot-reward-tile {
-  min-height: 132px;
+  min-height: 72px;
 }
 
 .combat-area-loot-empty {

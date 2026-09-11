@@ -121,8 +121,8 @@ export function EnemyStatsContent() {
   const defenseRows = rows.filter((row) => row.group === 'defense')
   const resistanceRows = rows.filter((row) => row.group === 'resistance')
   return <section className="enemy-stats-content">
-    <div className="enemy-stats-group enemy-stats-group-combat"><div className="combat-subsection-label">COMBAT STATS</div><EnemyCombatStatList rows={combatRows} className="enemy-stats-grid" rowClassName="enemy-stat-row" /></div>
-    <div className="enemy-stats-group enemy-stats-group-defences"><div className="combat-subsection-label">DEFENCES</div><EnemyCombatStatList rows={defenseRows} className="enemy-stats-grid enemy-defence-grid" rowClassName="enemy-stat-row enemy-defence-row" /><EnemyResistanceStatList rows={resistanceRows} stats={stats} className="enemy-stats-grid enemy-resistance-grid" rowClassName="enemy-stat-row enemy-resistance-row" /></div>
+    <div className="enemy-stats-group enemy-stats-group-combat"><div className="combat-subsection-label">COMBAT MATRIX</div><EnemyCombatStatList rows={combatRows} className="enemy-stats-grid" rowClassName="enemy-stat-row" /></div>
+    <div className="enemy-stats-group enemy-stats-group-defences"><div className="combat-subsection-label">DEFENCES</div><div className="enemy-stats-subgroup"><div className="enemy-stats-sub-label">MITIGATION</div><EnemyCombatStatList rows={defenseRows} className="enemy-stats-grid enemy-defence-grid" rowClassName="enemy-stat-row enemy-defence-row" /></div><div className="enemy-stats-subgroup"><div className="enemy-stats-sub-label">RESISTANCES</div><EnemyResistanceStatList rows={resistanceRows} stats={stats} className="enemy-stats-grid enemy-resistance-grid" rowClassName="enemy-stat-row enemy-resistance-row" /></div></div>
   </section>
 }
 
@@ -136,7 +136,7 @@ export function EnemyIntelContent({ selectedDungeonId }: { selectedDungeonId: Du
 
 function IntelTraits({ monsterId }: { monsterId: MonsterId }) {
   const traits = getTraitDefinitions(MONSTERS[monsterId].traitIds)
-  return <section className="enemy-context-section"><div className="combat-subsection-label">TRAITS</div>{traits.length ? <div className="enemy-intel-traits">{traits.map((trait) => <GameTooltip key={trait.id} block content={<TooltipContent title={trait.name} description={trait.description} />} accent="warning"><div tabIndex={0} className="enemy-intel-trait"><Sparkles size={13} aria-hidden="true" /><div><strong>{trait.name}</strong><p>{trait.ui?.shortDescription ?? trait.description}</p></div></div></GameTooltip>)}</div> : <p className="muted">No authored traits.</p>}</section>
+  return <section className="enemy-context-section"><div className="combat-subsection-label">TRAITS / FORM</div>{traits.length ? <div className="enemy-intel-traits">{traits.map((trait) => <GameTooltip key={trait.id} block content={<TooltipContent title={trait.name} description={trait.description} />} accent="warning"><div tabIndex={0} className="enemy-intel-trait"><Sparkles size={13} aria-hidden="true" /><div><strong>{trait.name}</strong><p>{trait.ui?.shortDescription ?? trait.description}</p></div></div></GameTooltip>)}</div> : <p className="muted">No authored traits.</p>}</section>
 }
 
 function ResistanceIntel({ monsterId }: { monsterId: MonsterId }) {
@@ -153,7 +153,7 @@ function ResistanceIntel({ monsterId }: { monsterId: MonsterId }) {
 
 function ActionIntel({ monsterId }: { monsterId: MonsterId }) {
   const monster = MONSTERS[monsterId]
-  return <section className="enemy-context-section"><div className="combat-subsection-label">ACTIONS</div><div className="enemy-intel-actions">{Object.values(monster.actions).map((action) => { const presentation = buildCombatActionPresentation(action, { actor: 'enemy', kind: 'action', sourceMonsterId: monster.id }, { monster }); return <GameTooltip key={action.id} block wide content={<EnemyActionTooltip action={presentation} />}><div tabIndex={0} className={`enemy-intel-action${presentation.effects[0] ? ` effect-tone-${presentation.effects[0].tone}` : ''}`}><div><strong>{presentation.name}</strong><span><Clock3 size={11} aria-hidden="true" />{formatTime(presentation.actionTimeMs)}</span></div><p>{presentation.description}</p><div className="enemy-intel-action-effects">{presentation.effects.map((effect, index) => <CombatEffectChip key={`${effect.label}-${index}`} effect={effect} />)}</div></div></GameTooltip>})}</div></section>
+  return <section className="enemy-context-section"><div className="combat-subsection-label">COMBAT PATTERN · ACTIONS</div><div className="enemy-intel-actions">{Object.values(monster.actions).map((action) => { const presentation = buildCombatActionPresentation(action, { actor: 'enemy', kind: 'action', sourceMonsterId: monster.id }, { monster }); return <GameTooltip key={action.id} block wide content={<EnemyActionTooltip action={presentation} />}><div tabIndex={0} className={`enemy-intel-action${presentation.effects[0] ? ` effect-tone-${presentation.effects[0].tone}` : ''}`}><div><strong>{presentation.name}</strong><span><Clock3 size={11} aria-hidden="true" />{formatTime(presentation.actionTimeMs)}</span></div><p>{presentation.description}</p><div className="enemy-intel-action-effects">{presentation.effects.map((effect, index) => <CombatEffectChip key={`${effect.label}-${index}`} effect={effect} />)}</div></div></GameTooltip>})}</div></section>
 }
 
 export function EnemyLootContent({ selectedDungeonId }: { selectedDungeonId: DungeonId }) {

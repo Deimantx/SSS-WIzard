@@ -193,3 +193,217 @@
   .equipment-armory-controls .select-menu { width: 100%; }
   .equipment-availability-toggle { justify-content: center; }
 }
+
+/* Equipment Pass 1: wizard-board Loadout and readable Stats hierarchy. */
+.equipment-loadout-board {
+  position: relative;
+  grid-template-areas:
+    ". . helmet helmet . ."
+    "cape cape amulet amulet earring earring"
+    ". . weapon weapon . ."
+    ". . armor armor . ."
+    ". ring1 ring1 ring2 ring2 .";
+  gap: 9px;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--ui-accent) 18%, var(--ui-border));
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 50% 8%, color-mix(in srgb, var(--ui-accent) 8%, transparent), transparent 48%),
+    color-mix(in srgb, var(--ui-bg) 30%, transparent);
+}
+
+.equipment-loadout-board::before {
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  left: 50%;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--ui-accent) 15%, transparent) 22%, color-mix(in srgb, var(--ui-accent) 15%, transparent) 78%, transparent);
+  content: '';
+  pointer-events: none;
+}
+
+.equipment-slot-card {
+  position: relative;
+  z-index: 1;
+  height: 92px;
+  min-height: 92px;
+  gap: 6px;
+  padding: 9px;
+  border-radius: 8px;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--ui-panel-strong) 86%, transparent), color-mix(in srgb, var(--ui-panel) 94%, transparent));
+}
+
+.equipment-slot-card-head {
+  min-height: 16px;
+  gap: 5px;
+  color: color-mix(in srgb, var(--ui-text-muted) 84%, var(--ui-text-soft));
+  letter-spacing: .11em;
+}
+
+.equipment-slot-card-meta {
+  gap: 4px;
+}
+
+.equipment-slot-card-item {
+  grid-template-columns: 42px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  margin: auto 0;
+}
+
+.equipment-slot-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 5%);
+  font-size: 22px;
+}
+
+.equipment-slot-card-copy {
+  gap: 0;
+}
+
+.equipment-slot-card-item strong {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--ui-text);
+  font-size: var(--ui-font-small);
+  font-weight: 650;
+  line-height: 1.18;
+  text-overflow: ellipsis;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.equipment-slot-card.is-empty {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--ui-border) 86%, var(--ui-accent));
+  background: color-mix(in srgb, var(--ui-panel) 72%, transparent);
+}
+
+.equipment-slot-card.is-empty:hover,
+.equipment-slot-card.is-empty:focus-visible {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--ui-accent) 56%, var(--ui-border));
+}
+
+.equipment-slot-card.selected {
+  border-color: color-mix(in srgb, var(--item-color, var(--ui-accent)) 72%, var(--ui-border));
+  background: linear-gradient(145deg, color-mix(in srgb, var(--item-color, var(--ui-accent)) 11%, var(--ui-panel-strong)), var(--ui-panel));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--item-color, var(--ui-accent)) 24%, transparent), 0 5px 15px color-mix(in srgb, var(--item-color, var(--ui-accent)) 10%, transparent);
+}
+
+.equipment-slot-empty {
+  gap: 5px;
+  color: color-mix(in srgb, var(--ui-text-muted) 88%, var(--ui-accent));
+}
+
+.equipment-slot-empty strong {
+  color: var(--ui-text-soft);
+  font: var(--text-micro) var(--font-mono);
+  letter-spacing: .1em;
+}
+
+.equipment-slot-empty small {
+  color: var(--ui-text-muted);
+  letter-spacing: .04em;
+}
+
+.equipment-loadout-note {
+  margin-top: 10px;
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-mono);
+  letter-spacing: .02em;
+}
+
+.equipment-stat-groups {
+  gap: 15px;
+}
+
+.equipment-stat-group {
+  gap: 5px;
+}
+
+.equipment-stat-group > span {
+  display: flex;
+  align-items: center;
+  min-height: 18px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid color-mix(in srgb, var(--ui-accent) 22%, var(--ui-border));
+  color: color-mix(in srgb, var(--ui-accent) 78%, var(--ui-text-muted));
+  font: var(--text-micro) var(--font-mono);
+  letter-spacing: .13em;
+}
+
+.equipment-stat-group:first-child {
+  padding: 8px 10px 9px;
+  border-left: 2px solid color-mix(in srgb, var(--ui-accent) 64%, var(--ui-border));
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--ui-accent) 5%, transparent);
+}
+
+.equipment-stat-group:first-child > span {
+  border-bottom-color: color-mix(in srgb, var(--ui-accent) 30%, var(--ui-border));
+  color: var(--ui-accent);
+}
+
+.equipment-stat-group:last-child > span {
+  color: color-mix(in srgb, var(--ui-text-muted) 86%, var(--ui-accent));
+}
+
+.equipment-stat-row {
+  min-height: 28px;
+  padding: 5px 2px 6px;
+  border-bottom-color: color-mix(in srgb, var(--ui-border) 84%, transparent);
+}
+
+.equipment-stat-label {
+  font-size: var(--ui-font-small);
+}
+
+.equipment-stat-value {
+  color: var(--ui-text-soft);
+  font-size: var(--ui-font-small);
+  font-weight: 700;
+}
+
+.equipment-screen .equipment-note {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 12px;
+  padding-top: 7px;
+  border-top: 1px solid color-mix(in srgb, var(--ui-border) 76%, transparent);
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-mono);
+  letter-spacing: .02em;
+}
+
+.equipment-screen .equipment-note svg {
+  width: 14px;
+  height: 14px;
+  color: color-mix(in srgb, var(--ui-success) 72%, var(--ui-text-muted));
+  opacity: .82;
+}
+
+@media (max-width: 760px) {
+  .equipment-loadout-board {
+    grid-template-areas:
+      "cape helmet"
+      "earring amulet"
+      "weapon armor"
+      "ring1 ring2";
+  }
+
+  .equipment-loadout-board::before {
+    display: none;
+  }
+
+  .equipment-slot-card {
+    height: 108px;
+    min-height: 108px;
+  }
+}

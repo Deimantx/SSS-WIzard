@@ -10,7 +10,7 @@ import { EQUIPMENT_ITEM_SLOT_LABELS, EQUIPMENT_POSITION_LABELS, EQUIPMENT_POSITI
 import type { ArtifactId, EquipmentItemSlot, EquipmentPosition, ItemId } from '../../game/types'
 import { useGameStore } from '../../store/gameStore'
 import { EditableGrid } from '../../ui/layout-editor/EditableGrid'
-import { getEquipmentCopyAvailability, getEquipmentKeyChanges, getEquipmentLoadoutIdentity, getEquipmentPreview, getEquipmentPrimarySummary, getEquipmentSearchText, getEquipmentStatSnapshot } from '../../game/presentation/equipment/equipmentReadModel'
+import { getEquipmentCopyAvailability, getEquipmentKeyChanges, getEquipmentPreview, getEquipmentPrimarySummary, getEquipmentSearchText, getEquipmentStatSnapshot } from '../../game/presentation/equipment/equipmentReadModel'
 import { formatEquipmentStat, getEquipmentStatDescription, getEquipmentStatLabel } from '../../game/presentation/equipment/equipmentStatPresentation'
 import { getAdaptiveEquipmentLayout } from './equipmentLayout'
 import { InspectorTransition } from '../../ui/game-feel/InspectorTransition'
@@ -208,15 +208,15 @@ export function EquipmentScreenV2() {
         const SlotGhostIcon = EMPTY_SLOT_ICONS[position]
         return <div className="equipment-slot-grid-item" data-position={position} key={position}>
           <EquipmentSlotTooltip itemId={itemId} owned={itemId ? inventory[itemId] ?? 0 : 0} tooltip={tooltip}>
-            <div className={`equipment-slot-card ${selectedPosition === position ? 'selected' : ''}`} data-position={position} role="button" tabIndex={0} style={item ? { '--item-color': item.color } as CSSProperties : undefined} onClick={() => selectSlot(position)} onContextMenu={(event) => { if (!itemId) return; event.preventDefault(); event.stopPropagation(); openEquipmentMenu(itemId, [position], event.clientX, event.clientY) }} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); selectSlot(position) } }}>
+            <div className={`equipment-slot-card ${item ? 'is-equipped' : 'is-empty'} ${selectedPosition === position ? 'selected' : ''}`} data-position={position} role="button" tabIndex={0} style={item ? { '--item-color': item.color } as CSSProperties : undefined} onClick={() => selectSlot(position)} onContextMenu={(event) => { if (!itemId) return; event.preventDefault(); event.stopPropagation(); openEquipmentMenu(itemId, [position], event.clientX, event.clientY) }} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); selectSlot(position) } }}>
               <div className="equipment-slot-card-head"><span>{EQUIPMENT_POSITION_LABELS[position]}</span><span className="equipment-slot-card-meta">{item && <span className="equipment-tier-badge">{formatPlayerEquipmentTier(item.equipmentTier ?? 1)}</span>}{item && isArtifactItem(item.id) && <span className="equipment-level-chip">L{getArtifactLevel({ artifactProgress }, item.id)}/{getArtifactDefinition(item.id)?.maxLevel ?? 10}</span>}</span></div>
-              {item ? <div className="equipment-slot-card-item"><span className="equipment-slot-icon" style={{ color: item.color }}>{item.icon}</span><span className="equipment-slot-card-copy"><strong>{item.name}</strong><small className="equipment-slot-identity">{getEquipmentLoadoutIdentity(item.id).join(' · ')}</small></span></div> : <div className="equipment-slot-empty"><SlotGhostIcon size={23} strokeWidth={1.4} aria-hidden="true" /><small>{emptyCopy}</small></div>}
+              {item ? <div className="equipment-slot-card-item"><span className="equipment-slot-icon" style={{ color: item.color }}>{item.icon}</span><span className="equipment-slot-card-copy"><strong>{item.name}</strong></span></div> : <div className="equipment-slot-empty"><SlotGhostIcon size={27} strokeWidth={1.35} aria-hidden="true" /><strong>EMPTY SLOT</strong><small>{emptyCopy}</small></div>}
             </div>
           </EquipmentSlotTooltip>
         </div>
       })}
     </div>
-    <p className="equipment-loadout-note">Select an empty slot to filter compatible gear. More slots may be added later.</p>
+    <p className="equipment-loadout-note">Select a slot to filter compatible equipment.</p>
   </MeasuredEquipmentCard>
 
   const statsPanel = <MeasuredEquipmentCard title="WIZARD STATS" action={<Sparkles size={16} color="var(--gold)" />} onHeightChange={reportStatsContentHeight}>

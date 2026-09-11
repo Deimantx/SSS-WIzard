@@ -54,25 +54,41 @@ export function ItemTooltip({ itemId, owned, protectedItem = false, equipped = f
 export function ItemTooltipContent({ itemId, owned, protectedItem = false, equipped = false, recentlyGained, flow, recipeContext, effectiveStats, artifactTier, artifactLevel, artifactMaxLevel, extraContent }: ItemTooltipContentProps) {
   const item = ITEMS[itemId]
   const stats = effectiveStats ?? item.stats
-  const category = getInventorySubcategoryLabel(itemId) ? `${getInventorySubcategoryLabel(itemId)} Material` : getInventoryCategoryLabel(itemId)
-  return <TooltipContent title={item.name.toUpperCase()} description={category}>
-    <div className="item-tooltip-heading"><ItemIcon itemId={itemId} size="tiny" /><span>{item.description}</span></div>
-    {item.kind === 'equipment' && <EquipmentMetadata item={item} />}
-    {artifactLevel !== undefined && artifactMaxLevel !== undefined && <TooltipRow label="Artifact" value={`T${artifactTier ?? 1} ARTIFACT · LEVEL ${artifactLevel} / ${artifactMaxLevel}`} />}
-    <TooltipRow label="Owned" value={owned.toLocaleString()} />
-    {recentlyGained !== undefined && <TooltipRow label="Recently gained" value={`+${recentlyGained.toLocaleString()}`} />}
-    {equipped ? <TooltipRow label="State" value="Equipped" /> : <TooltipRow label="Protected" value={protectedItem ? 'Yes' : 'No'} />}
-    {item.materialTier !== undefined && <TooltipRow label="Material tier" value={`T${item.materialTier}`} />}
-    {item.researchSchool && <div className="tooltip-section"><small>RESEARCH</small>{(Object.keys(SCHOOLS) as Array<keyof typeof SCHOOLS>).map((schoolId) => <TooltipRow key={schoolId} label={SCHOOLS[schoolId].name} value={`${getResearchXp(itemId, schoolId)} XP`} />)}</div>}
-    {stats && Object.keys(stats).length > 0 && <div className="tooltip-section"><small>STATS</small>{flattenItemStats(stats).filter(([, value]) => value !== 0).map(([key, value]) => <TooltipRow key={key} label={friendlyStatLabel(key)} value={formatStat(key, value)} />)}</div>}
-    {item.kind === 'equipment' && <EquipmentCombatDetails item={item} />}
-    {recipeContext && <div className="tooltip-section"><small>RECIPE</small><TooltipRow label="Status" value={recipeContext.status} />{recipeContext.baseDurationMs !== undefined && <TooltipRow label="Base time" value={formatDuration(recipeContext.baseDurationMs)} />}{recipeContext.manaCost !== undefined && <TooltipRow label="Mana" value={recipeContext.manaCost.toLocaleString()} />}<TooltipRow label="Output" value={`×${recipeContext.outputQuantity}`} /><p>{recipeContext.ingredients.length ? recipeContext.ingredients.map((ingredient) => `${ITEMS[ingredient.itemId].name} ×${ingredient.quantity}`).join(' · ') : 'Mana only'}</p>{recipeContext.unlockReason && <p>{recipeContext.unlockReason}</p>}</div>}
-    {extraContent}
-    {flow && <div className="tooltip-section"><small>CURRENT FLOW</small>{flow.production.map((source) => <TooltipRow key={`production-${source.label}`} label={source.label} value={formatItemFlowRate(source.ratePerHour)} />)}{flow.consumption.map((source) => <TooltipRow key={`consumption-${source.label}`} label={source.label} value={formatItemFlowRate(-source.ratePerHour)} />)}<TooltipRow label="Net" value={formatItemFlowRate(flow.netPerHour)} />{flow.depletionEtaMs !== null && <TooltipRow label="Depletes in" value={formatFlowEta(flow.depletionEtaMs) ?? '-'} />}</div>}
-    <div className="tooltip-section"><small>SOURCE</small><p>{getItemSourceLabel(itemId)}</p></div>
+  const category = getInventorySubcategoryLabel(itemId) ? getInventorySubcategoryLabel(itemId) + ' Material' : getInventoryCategoryLabel(itemId)
+  const state = equipped ? 'EQUIPPED' : protectedItem ? 'PROTECTED' : 'NORMAL'
+  const production = flow?.production.map((source) => source.label + ' ' + formatItemFlowRate(source.ratePerHour)).join(' · ')
+  const consumption = flow?.consumption.map((source) => source.label + ' ' + formatItemFlowRate(-source.ratePerHour)).join(' · ')
+
+  return <TooltipContent>
+    <div className="item-tooltip-layout">
+      <div className="item-tooltip-header">
+        <span className="item-tooltip-icon"><ItemIcon itemId={itemId} size="tiny" /></span>
+        <div className="item-tooltip-identity">
+          <strong>{item.name}</strong>
+          <span>{category}{item.materialTier !== undefined ? ' · T' + item.materialTier : ''}</span>
+          {artifactLevel !== undefined && artifactMaxLevel !== undefined && <span className="item-tooltip-artifact-meta">{'T' + (artifactTier ?? 1) + ' ARTIFACT · LEVEL ' + artifactLevel + ' / ' + artifactMaxLevel}</span>}
+          <p>{item.description}</p>
+        </div>
+      </div>
+
+      {item.kind === 'equipment' && <EquipmentMetadata item={item} className="item-tooltip-equipment-meta" />}
+      <div className="item-tooltip-quick-facts" aria-label="Item facts">
+        <span><small>OWNED</small><b>{owned.toLocaleString()}</b></span>
+        {recentlyGained !== undefined && <span className="item-tooltip-recent"><small>RECENT</small><b>{'+' + recentlyGained.toLocaleString()}</b></span>}
+        <span className={'item-tooltip-state item-tooltip-state-' + state.toLowerCase()}><small>STATE</small><b>{state}</b></span>
+        {item.materialTier !== undefined && <span><small>TIER</small><b>{'T' + item.materialTier}</b></span>}
+      </div>
+
+      {item.researchSchool && <div className="tooltip-section item-tooltip-research"><small>RESEARCH</small><div className="item-tooltip-research-grid">{(Object.keys(SCHOOLS) as Array<keyof typeof SCHOOLS>).map((schoolId) => <TooltipRow key={schoolId} label={SCHOOLS[schoolId].name} value={getResearchXp(itemId, schoolId) + ' XP'} />)}</div></div>}
+      {stats && Object.keys(stats).length > 0 && <div className="tooltip-section item-tooltip-stats"><small>STATS</small><div className="item-tooltip-stat-list">{flattenItemStats(stats).filter(([, value]) => value !== 0).map(([key, value]) => <TooltipRow key={key} label={friendlyStatLabel(key)} value={formatStat(key, value)} />)}</div></div>}
+      {item.kind === 'equipment' && <EquipmentCombatDetails item={item} compact />}
+      {recipeContext && <div className="tooltip-section item-tooltip-recipe"><small>RECIPE</small><TooltipRow label="Status" value={recipeContext.status} />{recipeContext.baseDurationMs !== undefined && <TooltipRow label="Base time" value={formatDuration(recipeContext.baseDurationMs)} />}{recipeContext.manaCost !== undefined && <TooltipRow label="Mana" value={recipeContext.manaCost.toLocaleString()} />}<TooltipRow label="Output" value={'×' + recipeContext.outputQuantity} /><p>{recipeContext.ingredients.length ? recipeContext.ingredients.map((ingredient) => ITEMS[ingredient.itemId].name + ' ×' + ingredient.quantity).join(' · ') : 'Mana only'}</p>{recipeContext.unlockReason && <p>{recipeContext.unlockReason}</p>}</div>}
+      {extraContent}
+      {flow && <div className="tooltip-section item-tooltip-flow"><small>CURRENT FLOW</small>{production && <TooltipRow label="Production" value={production} />}{consumption && <TooltipRow label="Consumption" value={consumption} />}<TooltipRow label="Net" value={formatItemFlowRate(flow.netPerHour)} />{flow.depletionEtaMs !== null && <TooltipRow label="Depletes in" value={formatFlowEta(flow.depletionEtaMs) ?? '-'} />}</div>}
+      <div className="tooltip-section item-tooltip-source"><small>SOURCE</small><p>{getItemSourceLabel(itemId)}</p></div>
+    </div>
   </TooltipContent>
 }
-
 function formatDuration(ms: number) {
   if (ms < 1000) return `${Math.round(ms)}ms`
   const seconds = ms / 1000

@@ -4,7 +4,7 @@ import { Card, SearchInput } from '../../components/ui'
 import { EditableGrid } from '../../ui/layout-editor/EditableGrid'
 import { useGameStore } from '../../store/gameStore'
 import type { ArtifactId, ItemId } from '../../game/types'
-import { CATEGORY_LABELS, INVENTORY_CATEGORIES, MATERIAL_SUBCATEGORIES, type MaterialSubcategoryFilter } from '../../game/content/items/inventoryMetadata'
+import { CATEGORY_LABELS, getInventoryCategory, INVENTORY_CATEGORIES, MATERIAL_SUBCATEGORIES, type MaterialSubcategoryFilter } from '../../game/content/items/inventoryMetadata'
 import { groupOwnedItemIds, inventorySummary, materialSubcategoryCount, selectOwnedItemIds, selectVisibleItemIds, type InventoryFilter, type InventorySort, INVENTORY_SORTS } from './inventorySelectors'
 import { InventoryDetail } from './InventoryDetail'
 import { InventoryItemTile } from './InventoryItemTile'
@@ -59,6 +59,16 @@ export function InventoryScreenV2() {
   const flowById = useMemo(() => new Map(ownedIds.map((id) => [id, getItemFlow(id, economyState)])), [ownedIds, economyState])
   const visibleIds = useMemo(() => selectVisibleItemIds(inventory, protectedItems, equipment, search, filter, sort, materialSubcategory, recentOrder, neededIds), [inventory, protectedItems, equipment, search, filter, sort, materialSubcategory, recentOrder, neededIds])
   const summary = useMemo(() => inventorySummary(ownedIds, inventory), [ownedIds, inventory])
+  const categoryCounts = useMemo(() => {
+    const counts = { All: ownedIds.length, Materials: 0, Equipment: 0, Special: 0 }
+    ownedIds.forEach((itemId) => {
+      const category = getInventoryCategory(itemId)
+      if (category === 'material') counts.Materials += 1
+      if (category === 'equipment') counts.Equipment += 1
+      if (category === 'special') counts.Special += 1
+    })
+    return counts
+  }, [ownedIds])
   const newItems = useMemo(() => new Set(attention.unseenItems.filter((itemId) => !clearedNew.has(itemId))), [attention.unseenItems, clearedNew])
   const catalogScrollRef = useRef<HTMLDivElement>(null)
   useSmartScrollState(catalogScrollRef, { dependencies: [visibleIds.join('|'), search, filter, materialSubcategory, sort] })
@@ -107,8 +117,8 @@ export function InventoryScreenV2() {
   }
 
   const catalog = <Card title="ITEM VAULT" className="inventory-catalog-card" action={<span className="inventory-vault-header-meta"><span className="inventory-summary">{summary.types} ITEM TYPES <i>·</i> {summary.total.toLocaleString()} TOTAL ITEMS</span><span className="inventory-gold"><Coins size={14} /> GOLD {Math.max(0, Math.floor(currencies.gold)).toLocaleString()}</span></span>}>
-    <div className="inventory-toolbar"><div className="inventory-search"><Search size={16} aria-hidden="true" /><SearchInput value={search} onChange={setSearch} placeholder="Search inventory..." /></div><label className="inventory-sort">Sort<select aria-label="Sort inventory" value={sort} onChange={(event) => setSort(event.target.value as InventorySort)}>{INVENTORY_SORTS.map((value) => <option key={value}>{value}</option>)}</select></label><div className="inventory-utility-filters"><button type="button" className={`inventory-protected-toggle ${filter === 'Protected' ? 'active' : ''}`} aria-pressed={filter === 'Protected'} onClick={() => setCategory(filter === 'Protected' ? 'All' : 'Protected')}><LockKeyhole size={14} /> Protected {filter === 'Protected' && <Check size={13} />}</button><button type="button" className={`inventory-protected-toggle ${filter === 'Needed' ? 'active' : ''}`} aria-pressed={filter === 'Needed'} onClick={() => setCategory(filter === 'Needed' ? 'All' : 'Needed')}>Needed {filter === 'Needed' && <Check size={13} />}</button></div></div>
-    <div className="inventory-category-bar" role="tablist" aria-label="Inventory categories">{INVENTORY_CATEGORIES.map((value) => <button type="button" role="tab" aria-selected={filter === value} className={filter === value ? 'active' : ''} key={value} onClick={() => setCategory(value)}>{value.toUpperCase()}</button>)}</div>
+    <div className="inventory-toolbar"><div className="inventory-search"><Search size={16} aria-hidden="true" /><SearchInput value={search} onChange={setSearch} placeholder="Search inventory..." /></div><label className="inventory-sort"><span>SORT</span><select aria-label="Sort inventory" value={sort} onChange={(event) => setSort(event.target.value as InventorySort)}>{INVENTORY_SORTS.map((value) => <option key={value}>{value}</option>)}</select></label><div className="inventory-utility-filters"><button type="button" className={`inventory-protected-toggle ${filter === 'Protected' ? 'active' : ''}`} aria-pressed={filter === 'Protected'} onClick={() => setCategory(filter === 'Protected' ? 'All' : 'Protected')}><LockKeyhole size={14} /> Protected {filter === 'Protected' && <Check size={13} />}</button><button type="button" className={`inventory-protected-toggle ${filter === 'Needed' ? 'active' : ''}`} aria-pressed={filter === 'Needed'} onClick={() => setCategory(filter === 'Needed' ? 'All' : 'Needed')}>Needed {filter === 'Needed' && <Check size={13} />}</button></div></div>
+    <div className="inventory-category-bar" role="tablist" aria-label="Inventory categories">{INVENTORY_CATEGORIES.map((value) => <button type="button" role="tab" aria-selected={filter === value} className={filter === value ? 'active' : ''} key={value} onClick={() => setCategory(value)}><span>{value.toUpperCase()}</span><small>{categoryCounts[value]}</small></button>)}</div>
     {filter === 'Materials' && <div className="inventory-material-bar" role="tablist" aria-label="Material subcategories">{MATERIAL_SUBCATEGORIES.map((value) => <button type="button" role="tab" aria-selected={materialSubcategory === value} className={materialSubcategory === value ? 'active' : ''} key={value} disabled={value !== 'All Materials' && materialSubcategoryCount(ownedIds, value) === 0} onClick={() => setMaterialSubcategory(value)}>{value}</button>)}</div>}
     <InventoryRecent entries={recentAcquisitions} inventory={inventory} protectedItems={protectedItems} equipment={equipment} flows={flowById} onSelect={selectRecent} />
     <div ref={catalogScrollRef} className="inventory-vault-content smart-scroll-region">{renderGrid()}</div>

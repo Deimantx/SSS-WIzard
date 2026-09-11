@@ -83,3 +83,185 @@
 .game-tooltip-danger { --tooltip-accent: var(--ui-danger); }
 .game-tooltip-elemental { --tooltip-accent: var(--ui-secondary); }
 @media (prefers-reduced-motion: reduce) { .game-tooltip { transform: none; transition: opacity 100ms ease; } }
+
+
+/* Inventory ItemTooltip: compact identity, facts, and dense reference sections. */
+.item-tooltip-layout {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.item-tooltip-header {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
+  min-width: 0;
+  padding-bottom: 7px;
+  border-bottom: 1px solid color-mix(in srgb, var(--ui-border) 86%, transparent);
+}
+
+.item-tooltip-icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid color-mix(in srgb, var(--tooltip-accent, var(--ui-accent)) 44%, var(--ui-border));
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--tooltip-accent, var(--ui-accent)) 9%, var(--ui-panel));
+}
+
+.item-tooltip-identity {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.item-tooltip-identity > strong {
+  overflow-wrap: anywhere;
+  color: var(--ui-text);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.item-tooltip-identity > span {
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-mono);
+  letter-spacing: .06em;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.item-tooltip-identity > .item-tooltip-artifact-meta {
+  color: var(--tooltip-accent, var(--ui-accent));
+}
+
+.item-tooltip-identity > p {
+  display: -webkit-box;
+  margin: 2px 0 0;
+  overflow: hidden;
+  color: var(--ui-text-muted);
+  font-family: var(--font-sans);
+  font-size: var(--text-micro);
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.item-tooltip-equipment-meta {
+  margin-top: -1px !important;
+}
+
+.item-tooltip-quick-facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  padding: 5px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--ui-border) 78%, transparent);
+}
+
+.item-tooltip-quick-facts > span {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+}
+
+.item-tooltip-quick-facts small {
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-mono);
+  letter-spacing: .06em;
+}
+
+.item-tooltip-quick-facts b {
+  color: var(--ui-text-soft);
+  font: 650 var(--text-micro) var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.item-tooltip-quick-facts .item-tooltip-recent b {
+  color: var(--ui-success);
+}
+
+.item-tooltip-quick-facts .item-tooltip-state-protected b {
+  color: var(--ui-secondary);
+}
+
+.item-tooltip-quick-facts .item-tooltip-state-equipped b {
+  color: var(--ui-success);
+}
+
+.item-tooltip-quick-facts .item-tooltip-state-normal b {
+  color: var(--ui-text-muted);
+}
+
+.item-tooltip-research-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 3px 12px;
+}
+
+.item-tooltip-research-grid .tooltip-row {
+  min-width: 0;
+  gap: 6px;
+}
+
+.item-tooltip-stat-list {
+  display: grid;
+  gap: 2px;
+}
+
+.item-tooltip-stat-list .tooltip-row {
+  gap: 10px;
+}
+
+.item-tooltip-flow .tooltip-row b,
+.item-tooltip-recipe .tooltip-row b {
+  max-width: 230px;
+}
+
+.item-tooltip-flow .tooltip-row b {
+  overflow-wrap: anywhere;
+}
+
+.item-tooltip-source p {
+  overflow-wrap: anywhere;
+}
+
+.item-tooltip-layout .tooltip-section {
+  gap: 4px;
+  margin-top: 3px;
+  padding-top: 6px;
+  border-top-color: color-mix(in srgb, var(--ui-border) 84%, transparent);
+}
+
+.item-tooltip-layout .tooltip-section > small {
+  color: var(--tooltip-accent, var(--ui-accent));
+  font-size: var(--text-micro);
+  letter-spacing: .12em;
+}
+
+.item-tooltip-layout .equipment-combat-details {
+  gap: 6px;
+  margin-top: 0;
+}
+
+.item-tooltip-layout .equipment-combat-detail-section {
+  gap: 3px;
+  padding-top: 6px;
+}
+
+.item-tooltip-layout .equipment-combat-rule {
+  gap: 2px;
+  padding: 6px 7px;
+}
+
+@media (max-width: 420px) {
+  .item-tooltip-research-grid {
+    gap: 3px 8px;
+  }
+}

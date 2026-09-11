@@ -2653,6 +2653,390 @@
   .spell-combat-cooldown-overlay { transition: none; }
 }
 
+/* Pass 2: Combat Flow duel-console hierarchy. Static presentation only. */
+.combat-flow-panel:not(.is-tower):not(.is-boss-ready):not(.is-encounter-delay) {
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+  align-content: start;
+  gap: 10px;
+}
+.combat-flow-panel:not(.is-tower):not(.is-boss-ready):not(.is-encounter-delay) .combat-flow-head {
+  padding-bottom: 7px;
+  border-bottom: 1px solid color-mix(in srgb, var(--flow-accent) 24%, var(--ui-border));
+}
+.combat-flow-panel:not(.is-tower):not(.is-boss-ready):not(.is-encounter-delay) .combat-flow-head::after {
+  content: 'LIVE DUEL';
+  color: color-mix(in srgb, var(--flow-accent) 58%, var(--ui-text-muted));
+  font: var(--text-micro) var(--font-mono);
+  letter-spacing: .1em;
+}
+
+.combat-flow-timelines {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+.combat-flow-timeline {
+  position: relative;
+  gap: 7px;
+  min-width: 0;
+  padding: 9px 10px 10px;
+  border: 1px solid var(--ui-border);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--ui-panel) 62%, transparent);
+}
+.combat-flow-timeline::before {
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  border-radius: 2px;
+  content: '';
+  pointer-events: none;
+}
+.combat-flow-timeline-player {
+  --timeline-accent: var(--ui-accent);
+  border-color: color-mix(in srgb, var(--timeline-accent) 28%, var(--ui-border));
+  background: linear-gradient(270deg, color-mix(in srgb, var(--timeline-accent) 9%, transparent), transparent 72%), color-mix(in srgb, var(--ui-panel) 62%, transparent);
+  text-align: right;
+}
+.combat-flow-timeline-player::before {
+  right: 8px;
+  background: var(--timeline-accent);
+}
+.combat-flow-timeline-enemy {
+  --timeline-accent: var(--flow-accent);
+  border-color: color-mix(in srgb, var(--timeline-accent) 34%, var(--ui-border));
+  background: linear-gradient(90deg, color-mix(in srgb, var(--timeline-accent) 10%, transparent), transparent 72%), color-mix(in srgb, var(--ui-panel) 62%, transparent);
+}
+.combat-flow-timeline-enemy::before {
+  left: 8px;
+  background: var(--timeline-accent);
+}
+.combat-flow-timeline-head {
+  position: relative;
+  z-index: 1;
+  gap: 7px;
+}
+.combat-flow-timeline-player .combat-flow-timeline-head {
+  justify-content: flex-end;
+}
+.combat-flow-timeline-head .combat-subsection-label {
+  flex: 0 0 auto;
+  color: var(--timeline-accent);
+  font-size: var(--ui-font-micro);
+}
+.combat-flow-timeline-head strong {
+  color: var(--ui-text);
+  font-size: var(--ui-font-small);
+  font-weight: 600;
+}
+.combat-flow-timeline-time {
+  color: var(--timeline-accent);
+  font-size: var(--ui-font-small);
+  font-weight: 600;
+}
+.combat-flow-timeline .progress-wrap {
+  position: relative;
+  z-index: 1;
+}
+.combat-flow-timeline .progress {
+  height: 6px;
+  border-color: color-mix(in srgb, var(--timeline-accent) 22%, var(--ui-border));
+}
+.combat-flow-timeline-player .progress i {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--timeline-accent) 54%, var(--ui-text)), var(--timeline-accent));
+}
+.combat-flow-timeline-enemy .progress i {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--timeline-accent) 54%, var(--ui-warning)), var(--timeline-accent));
+}
+.combat-flow-timeline.is-near-complete {
+  border-color: color-mix(in srgb, var(--timeline-accent) 58%, var(--ui-border));
+}
+.combat-flow-timeline.is-near-complete .progress i::after {
+  width: 4px;
+  box-shadow: none;
+}
+.combat-flow-paused {
+  text-align: left;
+}
+
+.combat-flow-current-action.game-tooltip-trigger {
+  align-self: stretch;
+}
+.combat-flow-current-action {
+  --current-action-accent: var(--flow-accent);
+  position: relative;
+  gap: 10px;
+  min-width: 0;
+  margin-inline: 2px;
+  padding: 12px 14px 11px;
+  border-color: color-mix(in srgb, var(--current-action-accent) 42%, var(--ui-border));
+  border-left-width: 2px;
+  background: linear-gradient(100deg, color-mix(in srgb, var(--current-action-accent) 12%, transparent), transparent 74%), color-mix(in srgb, var(--ui-panel) 72%, transparent);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 5%), 0 8px 18px rgb(0 0 0 / 12%);
+}
+.combat-flow-current-action::before {
+  position: absolute;
+  top: 0;
+  right: 14px;
+  left: 14px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--current-action-accent) 68%, transparent), transparent);
+  content: '';
+  pointer-events: none;
+}
+.combat-flow-current-action.is-special {
+  --current-action-accent: var(--combat-current-action-warning, var(--flow-accent));
+  border-color: color-mix(in srgb, var(--current-action-accent) 62%, var(--ui-border));
+  background: linear-gradient(100deg, color-mix(in srgb, var(--current-action-accent) 14%, transparent), color-mix(in srgb, var(--flow-accent) 6%, transparent) 74%), color-mix(in srgb, var(--ui-panel) 72%, transparent);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 6%), 0 8px 20px color-mix(in srgb, var(--current-action-accent) 10%, transparent);
+  transition: none;
+}
+.combat-flow-subhead {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  gap: 3px 10px;
+  align-items: center;
+}
+.combat-flow-current-action-icon {
+  position: relative;
+  grid-row: 1 / span 2;
+  width: 34px;
+  height: 34px;
+  border-color: color-mix(in srgb, var(--current-action-accent) 54%, var(--ui-border));
+  border-radius: 7px;
+  color: var(--current-action-accent);
+  background: color-mix(in srgb, var(--current-action-accent) 10%, transparent);
+}
+.combat-flow-current-action.is-special .combat-flow-current-action-icon {
+  width: 34px;
+  height: 34px;
+  border-color: color-mix(in srgb, var(--current-action-accent) 62%, var(--ui-border));
+  background: color-mix(in srgb, var(--current-action-accent) 12%, transparent);
+}
+.combat-flow-current-action-icon::after,
+.combat-flow-current-action.is-special .combat-flow-current-action-icon::after {
+  position: absolute;
+  right: 4px;
+  bottom: 3px;
+  left: 4px;
+  display: block;
+  height: 2px;
+  border: 0;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--current-action-accent) 0 var(--current-action-progress, 0%), color-mix(in srgb, var(--current-action-accent) 18%, transparent) var(--current-action-progress, 0%) 100%);
+  content: '';
+  mask: none;
+  -webkit-mask: none;
+}
+.combat-flow-subhead .combat-subsection-label {
+  grid-column: 2;
+  color: color-mix(in srgb, var(--current-action-accent) 70%, var(--ui-text-muted));
+}
+.combat-flow-subhead > strong {
+  grid-column: 2;
+  min-width: 0;
+  color: var(--ui-text);
+  font-size: 16px;
+  font-weight: 650;
+  letter-spacing: -.02em;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+}
+.combat-flow-current-action.is-special .combat-flow-subhead > strong {
+  color: var(--current-action-accent);
+  font-size: 16px;
+}
+.combat-flow-effects {
+  gap: 4px;
+  padding-top: 9px;
+  border-top: 1px solid color-mix(in srgb, var(--current-action-accent) 20%, var(--ui-border));
+}
+.combat-flow-effect {
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 4px 7px;
+  padding: 4px 6px;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--ui-text) 3%, transparent);
+}
+.combat-flow-effect-icon {
+  align-self: start;
+  padding-top: 1px;
+}
+.combat-flow-effect strong {
+  min-width: 0;
+  color: var(--ui-text-soft);
+  font-size: var(--ui-font-small);
+  line-height: 1.35;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.combat-flow-effect small {
+  min-width: 0;
+  line-height: 1.3;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.combat-flow-pattern {
+  align-self: end;
+  min-width: 0;
+  margin-top: 0;
+  padding-top: 10px;
+  border-top-color: color-mix(in srgb, var(--flow-accent) 22%, var(--ui-border));
+}
+.combat-flow-pattern > .combat-subsection-label {
+  color: color-mix(in srgb, var(--flow-accent) 58%, var(--ui-text-muted));
+}
+.combat-flow-pattern-rail {
+  padding: 8px 2px 1px;
+}
+.combat-flow-pattern .combat-pattern-rail {
+  justify-content: center;
+  padding-inline: 0;
+}
+.combat-flow-pattern .combat-pattern-sequence {
+  width: 100%;
+  min-width: 0;
+  justify-content: center;
+  margin-inline: 0;
+}
+.combat-flow-pattern .combat-pattern-node-wrap > .game-tooltip-trigger {
+  width: 32px;
+  min-width: 32px;
+  flex-basis: 32px;
+}
+.combat-flow-pattern .combat-pattern-node {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  flex-basis: 32px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--ui-panel-strong) 82%, transparent);
+}
+.combat-flow-pattern .combat-pattern-node.is-complete {
+  opacity: .48;
+}
+.combat-flow-pattern .combat-pattern-node.is-future {
+  opacity: .74;
+}
+.combat-flow-pattern .combat-flow-pattern-node.is-current {
+  position: relative;
+  border-color: color-mix(in srgb, var(--enemy-accent, var(--ui-warning)) 62%, var(--ui-border));
+  color: var(--ui-text);
+  background: color-mix(in srgb, var(--enemy-accent, var(--ui-warning)) 10%, var(--ui-panel-strong));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--enemy-accent, var(--ui-warning)) 22%, transparent);
+}
+.combat-flow-pattern .combat-flow-pattern-node.is-current::after {
+  position: absolute;
+  right: 4px;
+  bottom: 3px;
+  left: 4px;
+  display: block;
+  height: 2px;
+  border: 0;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--enemy-accent, var(--ui-warning)) 0 var(--pattern-progress, 0%), color-mix(in srgb, var(--enemy-accent, var(--ui-warning)) 18%, transparent) var(--pattern-progress, 0%) 100%);
+  content: '';
+  mask: none;
+  -webkit-mask: none;
+}
+.combat-flow-pattern .combat-flow-pattern-node.is-current i {
+  color: var(--ui-text);
+  filter: none;
+}
+.combat-flow-pattern .combat-flow-pattern-node.is-next {
+  border-color: color-mix(in srgb, var(--ui-gold) 52%, var(--ui-border));
+  color: var(--ui-gold);
+  box-shadow: none;
+}
+.combat-flow-pattern .combat-pattern-arrow {
+  width: 19px;
+  margin-inline: 2px;
+  color: color-mix(in srgb, var(--flow-accent) 35%, var(--ui-text-disabled));
+  font-size: 12px;
+  text-align: center;
+}
+.combat-flow-pattern .combat-pattern-repeat {
+  margin-left: 5px;
+  color: color-mix(in srgb, var(--flow-accent) 64%, var(--ui-accent));
+}
+
+/* Static polish for the three non-live modes; mode selection stays in presentation. */
+.combat-flow-panel.is-tower,
+.combat-flow-panel.is-boss-ready,
+.combat-flow-panel.is-encounter-delay {
+  gap: 9px;
+  padding: 16px;
+}
+.combat-flow-panel.is-tower > svg,
+.combat-flow-panel.is-boss-ready > svg {
+  width: 38px;
+  height: 38px;
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--ui-accent) 36%, var(--ui-border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ui-accent) 8%, transparent);
+}
+.combat-flow-panel.is-tower > strong {
+  max-width: 240px;
+  font-size: var(--ui-font-label);
+  line-height: 1.35;
+}
+.combat-flow-panel.is-boss-ready {
+  border-color: color-mix(in srgb, var(--ui-gold) 48%, var(--ui-border));
+  background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--ui-gold) 12%, transparent), transparent 58%), color-mix(in srgb, var(--ui-panel-strong) 72%, transparent);
+}
+.combat-flow-panel.is-boss-ready > svg {
+  border-color: color-mix(in srgb, var(--ui-gold) 48%, var(--ui-border));
+  color: var(--ui-gold);
+  background: color-mix(in srgb, var(--ui-gold) 10%, transparent);
+}
+.combat-flow-panel.is-boss-ready > strong {
+  max-width: 250px;
+  color: var(--ui-text);
+  font-size: var(--ui-font-label);
+  letter-spacing: -.01em;
+  line-height: 1.3;
+  text-transform: none;
+}
+.combat-flow-panel.is-boss-ready > p {
+  margin: 0;
+  max-width: 260px;
+  line-height: 1.45;
+}
+.combat-flow-panel.is-encounter-delay {
+  border-color: color-mix(in srgb, var(--semantic-time) 34%, var(--ui-border));
+  background: radial-gradient(circle at 50% 24%, color-mix(in srgb, var(--semantic-time) 9%, transparent), transparent 60%), color-mix(in srgb, var(--ui-panel-strong) 72%, transparent);
+}
+.combat-flow-panel.is-encounter-delay .combat-flow-delay-label {
+  color: var(--semantic-time);
+}
+.combat-flow-panel.is-encounter-delay .combat-flow-delay-context {
+  max-width: 290px;
+  line-height: 1.4;
+}
+
+@container (max-width: 620px) {
+  .combat-flow-timelines {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .combat-flow-timeline-player {
+    text-align: left;
+  }
+  .combat-flow-timeline-player .combat-flow-timeline-head {
+    justify-content: flex-start;
+  }
+  .combat-flow-timeline-player::before {
+    right: auto;
+    left: 8px;
+  }
+  .combat-flow-current-action {
+    margin-inline: 0;
+  }
+}
+
 /* Pass 1: opposing actor rails. Static presentation only; live behavior stays untouched. */
 .combat-actor-card {
   --actor-accent: var(--ui-accent);

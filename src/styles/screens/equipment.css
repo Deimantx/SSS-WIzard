@@ -320,38 +320,32 @@
 }
 
 .equipment-stat-groups {
-  gap: 15px;
+  gap: 0;
 }
 
 .equipment-stat-group {
   gap: 5px;
 }
 
-.equipment-stat-group > span {
+.equipment-stat-group + .equipment-stat-group {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid color-mix(in srgb, var(--ui-border) 84%, transparent);
+}
+
+.equipment-stat-group > span:first-child {
   display: flex;
   align-items: center;
   min-height: 18px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid color-mix(in srgb, var(--ui-accent) 22%, var(--ui-border));
+  padding: 0;
+  border: 0;
   color: color-mix(in srgb, var(--ui-accent) 78%, var(--ui-text-muted));
   font: var(--text-micro) var(--font-mono);
   letter-spacing: .13em;
 }
 
-.equipment-stat-group:first-child {
-  padding: 8px 10px 9px;
-  border-left: 2px solid color-mix(in srgb, var(--ui-accent) 64%, var(--ui-border));
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--ui-accent) 5%, transparent);
-}
-
-.equipment-stat-group:first-child > span {
-  border-bottom-color: color-mix(in srgb, var(--ui-accent) 30%, var(--ui-border));
-  color: var(--ui-accent);
-}
-
-.equipment-stat-group:last-child > span {
-  color: color-mix(in srgb, var(--ui-text-muted) 86%, var(--ui-accent));
+.equipment-stat-group .equipment-stat-row-shell:last-child .equipment-stat-row {
+  border-bottom-color: transparent;
 }
 
 .equipment-stat-row {

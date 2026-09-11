@@ -2,7 +2,9 @@ import { BookOpen, Crown, Gem, LockKeyhole, Package, Swords } from 'lucide-react
 import { Button, GameTooltip, Status } from '../../../components/ui'
 import { TooltipContent } from '../../../components/ui/tooltip/Tooltip'
 import { MonsterPortrait } from '../MonsterPortrait'
-import { MONSTERS } from '../../../game/content/monsters'
+import { MONSTERS, type MonsterDefinition } from '../../../game/content/monsters'
+import { getMonsterDossierCombatStats } from '../../../game/presentation/combat'
+import { formatNumber, formatTime } from '../../../game/utils'
 import type { CombatActNodeViewModel } from './combatActNavigationTypes'
 
 const getAreaGlyph = (node: CombatActNodeViewModel) => node.state === 'prototype' ? '✦' : node.kind === 'final' ? '♛' : node.dungeonId === 'whispering-woods' ? '✧' : node.dungeonId === 'howling-den' ? '◖' : '◇'
@@ -21,5 +23,22 @@ export function CombatAreaInspector({ node, combatActive, activeDungeonId, onLoo
 function EncounterTile({ encounter }: { encounter: CombatActNodeViewModel['encounters'][number] | NonNullable<CombatActNodeViewModel['boss']> }) {
   const monster = encounter.monsterId ? MONSTERS[encounter.monsterId] : null
   const isBoss = encounter.role === 'boss'
-  return <GameTooltip block accent={encounter.known ? isBoss ? 'warning' : 'mana' : 'neutral'} content={<TooltipContent title={encounter.known ? encounter.name : isBoss ? 'UNKNOWN BOSS' : 'UNKNOWN CREATURE'} description={encounter.known ? monster?.subtitle : 'Encounter this creature in combat to reveal its Bestiary information.'} />}><div className={`combat-area-encounter-tile${isBoss ? ' is-boss' : ''}${encounter.known ? ' is-known' : ' is-unknown'}`}>{encounter.known && monster ? <MonsterPortrait monster={monster} boss={isBoss} /> : <span className="combat-area-unknown-glyph">?</span>}<strong>{encounter.name}</strong><small>{encounter.known ? isBoss ? 'BOSS DISCOVERED' : 'DISCOVERED' : isBoss ? 'UNKNOWN BOSS' : 'UNSEEN'}</small></div></GameTooltip>
+  const knownMonster = encounter.known && monster ? monster : null
+  const tooltip = knownMonster
+    ? <EncounterMonsterTooltip monster={knownMonster} />
+    : <TooltipContent title={isBoss ? 'UNKNOWN BOSS' : 'UNKNOWN CREATURE'} description="Encounter this creature in combat to reveal its Bestiary information." />
+  return <GameTooltip block accent={knownMonster ? isBoss ? 'warning' : 'mana' : 'neutral'} content={tooltip}><div className={`combat-area-encounter-tile${isBoss ? ' is-boss' : ''}${encounter.known ? ' is-known' : ' is-unknown'}`}>{knownMonster ? <MonsterPortrait monster={knownMonster} boss={isBoss} /> : <span className="combat-area-unknown-glyph">?</span>}<strong>{encounter.name}</strong><small>{encounter.known ? isBoss ? 'BOSS DISCOVERED' : 'DISCOVERED' : isBoss ? 'UNKNOWN BOSS' : 'UNSEEN'}</small></div></GameTooltip>
+}
+
+function EncounterMonsterTooltip({ monster }: { monster: MonsterDefinition }) {
+  const stats = getMonsterDossierCombatStats(monster)
+  return <TooltipContent title={monster.name} description={monster.subtitle}>
+    <div className="tooltip-section">
+      <small>COMBAT STATS</small>
+      <span className="tooltip-row"><span>HP</span><b>{formatNumber(stats.maxHealth)}</b></span>
+      <span className="tooltip-row"><span>BASIC DAMAGE</span><b>{formatNumber(stats.basicAttackDamage)}</b></span>
+      <span className="tooltip-row"><span>ATTACK TIME</span><b>{formatTime(stats.basicAttackIntervalMs)}</b></span>
+      <span className="tooltip-row"><span>DEFENSE</span><b>{formatNumber(stats.defense)}</b></span>
+    </div>
+  </TooltipContent>
 }

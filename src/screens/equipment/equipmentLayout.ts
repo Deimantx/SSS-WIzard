@@ -18,9 +18,8 @@ function requiredPanelHeight(currentHeight: number, contentHeight = 0) {
 }
 
 /**
- * Keeps the two lower Equipment panels below whichever top panel has the most
- * content. The measured height is only used for the rendered layout and does
- * not overwrite the user's saved editor geometry.
+ * Stacks each Equipment column independently. The measured height is only used
+ * for the rendered layout and does not overwrite the user's saved editor geometry.
  */
 export function getAdaptiveEquipmentLayout(layout: Layout, options: AdaptiveEquipmentLayoutOptions = {}): Layout {
   const loadout = layout.find((item) => item.i === LOADOUT_ID)
@@ -31,9 +30,8 @@ export function getAdaptiveEquipmentLayout(layout: Layout, options: AdaptiveEqui
 
   const loadoutHeight = requiredPanelHeight(loadout.h, options.requiredLoadoutContentHeight)
   const statsHeight = requiredPanelHeight(stats.h, options.requiredStatsContentHeight)
-  const topPanelBottom = Math.max(loadout.y + loadoutHeight, stats.y + statsHeight)
-  const armoryY = Math.max(armory.y, topPanelBottom)
-  const inspectorY = Math.max(inspector.y, topPanelBottom)
+  const armoryY = loadout.y + loadoutHeight
+  const inspectorY = stats.y + statsHeight
   const next = layout.map((item) => {
     if (item.i === LOADOUT_ID) return { ...item, h: loadoutHeight, x: Math.max(0, Math.min(GRID_COLUMNS - item.w, item.x)) }
     if (item.i === STATS_ID) return { ...item, h: statsHeight, x: Math.max(0, Math.min(GRID_COLUMNS - item.w, item.x)) }

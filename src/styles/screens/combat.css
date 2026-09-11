@@ -4242,3 +4242,213 @@
 :root[data-reduced-motion='true'] .combat-spell-deck .spell-combat-tile.is-ready,
 :root[data-reduced-motion='true'] .combat-spell-deck .spell-combat-tile.is-ready .spell-combat-icon,
 :root[data-reduced-motion='true'] .combat-status-chip.is-new { animation: none; transform: none; }
+
+/* Pass 7: calm Combat Flow seam and enemy-intel presentation polish. Static only. */
+.combat-flow-timelines {
+  position: relative;
+  gap: 12px;
+}
+.combat-flow-timelines::before {
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 50%;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    color-mix(in srgb, var(--flow-accent) 24%, var(--ui-border)) 24%,
+    color-mix(in srgb, var(--flow-accent) 24%, var(--ui-border)) 76%,
+    transparent
+  );
+  content: '';
+  pointer-events: none;
+}
+.combat-flow-timeline {
+  z-index: 1;
+  border-radius: 8px;
+}
+.combat-flow-timeline .progress {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 4px;
+}
+.combat-flow-timeline .progress i {
+  overflow: hidden;
+  border-radius: inherit;
+  box-shadow: none;
+}
+.combat-flow-timeline .progress i::after {
+  display: none;
+  content: none;
+}
+
+.combat-status-strip {
+  padding-top: 9px;
+  border-top-color: color-mix(in srgb, var(--actor-accent, var(--ui-accent)) 20%, var(--ui-border));
+}
+.combat-status-strip.is-empty {
+  padding-top: 7px;
+}
+.combat-status-list {
+  gap: 6px;
+  margin-top: 8px;
+}
+.combat-status-empty {
+  margin-top: 5px;
+  font: var(--text-micro) var(--font-mono);
+  letter-spacing: .03em;
+}
+.combat-status-chip {
+  min-height: 26px;
+  gap: 6px;
+  padding: 4px 7px;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--ui-panel) 76%, transparent);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 4%);
+}
+.combat-status-chip strong {
+  color: var(--ui-text-soft);
+  font-size: var(--ui-font-micro);
+  font-weight: 650;
+}
+.combat-status-chip b,
+.combat-status-chip small {
+  font-size: var(--ui-font-micro);
+  font-variant-numeric: tabular-nums;
+}
+.combat-status-icon {
+  display: grid;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, currentColor 32%, var(--ui-border));
+  border-radius: 5px;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+.combat-status-chip.status-category-buff {
+  box-shadow: inset 2px 0 color-mix(in srgb, var(--semantic-buff) 78%, transparent), 0 0 0 1px color-mix(in srgb, var(--semantic-buff) 10%, transparent);
+}
+.combat-status-chip.status-category-debuff {
+  box-shadow: inset 2px 0 color-mix(in srgb, var(--semantic-debuff) 78%, transparent), 0 0 0 1px color-mix(in srgb, var(--semantic-debuff) 10%, transparent);
+}
+.combat-status-chip.status-category-dot {
+  box-shadow: inset 2px 0 color-mix(in srgb, var(--semantic-dot) 78%, transparent), 0 0 0 1px color-mix(in srgb, var(--semantic-dot) 10%, transparent);
+}
+.combat-status-chip.status-category-control {
+  box-shadow: inset 2px 0 color-mix(in srgb, var(--semantic-control) 78%, transparent), 0 0 0 1px color-mix(in srgb, var(--semantic-control) 10%, transparent);
+}
+
+.enemy-utility-footer {
+  gap: 7px;
+  padding-top: 9px;
+}
+.enemy-utility-button {
+  min-height: 29px;
+  justify-content: flex-start;
+  padding: 6px 9px;
+  border-radius: 6px;
+  color: color-mix(in srgb, var(--actor-accent, var(--ui-accent)) 72%, var(--ui-text-muted));
+  letter-spacing: .07em;
+}
+.enemy-utility-button svg {
+  flex: 0 0 auto;
+  color: var(--actor-accent, var(--ui-accent));
+}
+
+.combat-flow-current-action {
+  gap: 9px;
+  padding: 11px 13px 10px;
+  border-radius: 8px;
+}
+.combat-flow-subhead {
+  column-gap: 9px;
+}
+.combat-flow-current-action-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 5%);
+}
+.combat-flow-subhead > strong {
+  letter-spacing: -.015em;
+}
+.combat-flow-effects {
+  gap: 5px;
+  padding-top: 8px;
+}
+.combat-flow-effect {
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 4px 8px;
+  min-height: 26px;
+  padding: 5px 7px;
+  border: 1px solid color-mix(in srgb, var(--current-action-accent, var(--flow-accent)) 12%, var(--ui-border));
+  background: color-mix(in srgb, var(--ui-text) 3.5%, transparent);
+}
+.combat-flow-effect-icon {
+  width: 20px;
+  height: 20px;
+  padding-top: 0;
+  border: 1px solid color-mix(in srgb, currentColor 28%, var(--ui-border));
+  border-radius: 5px;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+}
+.combat-flow-effect small {
+  color: color-mix(in srgb, var(--current-action-accent, var(--flow-accent)) 30%, var(--ui-text-muted));
+  letter-spacing: .01em;
+}
+
+.combat-flow-pattern {
+  padding-top: 9px;
+}
+.combat-flow-pattern-rail {
+  padding: 8px 0 2px;
+}
+.combat-flow-pattern .combat-pattern-sequence {
+  justify-content: center;
+}
+.combat-flow-pattern .combat-pattern-node {
+  border-radius: 7px;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 4%);
+}
+.combat-flow-pattern .combat-pattern-node i {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, currentColor 26%, transparent);
+  border-radius: 5px;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+}
+.combat-flow-pattern .combat-pattern-node.is-current i {
+  border-color: color-mix(in srgb, var(--enemy-accent, var(--ui-warning)) 48%, var(--ui-border));
+  background: color-mix(in srgb, var(--enemy-accent, var(--ui-warning)) 12%, transparent);
+}
+.combat-flow-pattern .combat-pattern-node.is-next i {
+  border-color: color-mix(in srgb, var(--ui-gold) 40%, var(--ui-border));
+  background: color-mix(in srgb, var(--ui-gold) 8%, transparent);
+}
+.combat-flow-pattern .combat-pattern-arrow {
+  display: grid;
+  width: 19px;
+  height: 22px;
+  place-items: center;
+  margin-inline: 2px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--flow-accent) 26%, var(--ui-border)), transparent) center / 100% 1px no-repeat;
+}
+
+.combat-stage-panel {
+  border-color: color-mix(in srgb, var(--ui-border-strong) 88%, var(--ui-accent));
+  background: linear-gradient(145deg, color-mix(in srgb, var(--ui-panel-gradient-start) 96%, var(--ui-accent)), var(--ui-panel-gradient-end));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 4%);
+}
+
+@container (max-width: 620px) {
+  .combat-flow-timelines {
+    gap: 8px;
+  }
+  .combat-flow-timelines::before {
+    display: none;
+  }
+}

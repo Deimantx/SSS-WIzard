@@ -98,9 +98,6 @@
 .equipment-ring-replace input { margin-right: 7px; accent-color: var(--ui-accent); }
 .equipment-inspector-stats { display: grid; gap: 0; margin-top: 13px; }
 .equipment-inspector-stats > span { padding-bottom: 5px; color: var(--ui-accent); font: var(--text-micro) var(--font-mono); letter-spacing: .14em; }
-.equipment-inspector-stat-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 5px 0; border-bottom: 1px solid var(--ui-border); }
-.equipment-inspector-stat-row span { color: var(--ui-text-muted); font-size: var(--text-xs); }
-.equipment-inspector-stat-row strong { color: var(--ui-text); font: 650 var(--text-xs) var(--font-mono); }
 .equipment-preview-impact { display: grid; gap: 0; margin-top: 13px; }
 .equipment-preview-label { padding-bottom: 5px; }
 .equipment-comparison-visual { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; margin: 1px 0 7px; padding: 7px 9px; border: 1px solid var(--ui-border); border-radius: 7px; background: color-mix(in srgb, var(--ui-panel-strong) 58%, transparent); }
@@ -113,8 +110,8 @@
 .equipment-impact-row .equipment-stat-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .equipment-impact-row .equipment-stat-current { color: var(--ui-text-muted); }
 .equipment-impact-row .equipment-stat-value { white-space: nowrap; }
-.equipment-impact-row .equipment-stat-delta { font: var(--text-xs) var(--font-mono); white-space: nowrap; }
-.equipment-impact-row em { font-style: normal; font-family: var(--font-mono); }
+.equipment-impact-row .equipment-stat-delta { white-space: nowrap; }
+.equipment-impact-row em { font-style: normal; }
 .equipment-impact-row em.negative { color: var(--ui-danger); }
 .equipment-impact-row em.positive { color: var(--ui-success); }
 .equipment-impact-row em:not(.positive):not(.negative) { color: var(--ui-text-muted); }
@@ -690,7 +687,6 @@
 .equipment-inspector .equipment-copy-availability-values small {
   color: var(--ui-text-muted);
   font: var(--text-micro) var(--font-mono);
-  font-size: .56rem;
   letter-spacing: .06em;
   line-height: 1.1;
 }
@@ -711,21 +707,6 @@
 .equipment-inspector .equipment-inspector-stats > span {
   display: block;
   padding-bottom: 4px;
-}
-
-.equipment-inspector .equipment-inspector-stat-row {
-  min-height: 29px;
-  padding: 5px 1px;
-  border-bottom-color: color-mix(in srgb, var(--ui-border) 82%, transparent);
-}
-
-.equipment-inspector .equipment-inspector-stat-row span {
-  color: var(--ui-text-muted);
-}
-
-.equipment-inspector .equipment-inspector-stat-row strong {
-  color: var(--ui-text-soft);
-  font-variant-numeric: tabular-nums;
 }
 
 .equipment-inspector .equipment-combat-details {
@@ -845,7 +826,7 @@
 }
 
 .equipment-inspector .equipment-key-change i {
-  font-size: .6rem;
+  font-size: var(--text-micro);
 }
 
 .equipment-inspector .equipment-key-change > strong {
@@ -967,5 +948,293 @@
 
   .equipment-inspector .equipment-impact-header {
     display: none;
+  }
+}
+/* Equipment Final Cleanup: shared Inspector typography, rhythm, and containment. */
+.equipment-inspector {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.equipment-inspector > .inspector-transition.fill-bounded,
+.equipment-inspector .equipment-inspector-content,
+.equipment-inspector .equipment-inspector-hero,
+.equipment-inspector .equipment-inspector-hero-copy,
+.equipment-inspector .equipment-preview-impact,
+.equipment-inspector .equipment-impact-row {
+  min-width: 0;
+}
+
+.equipment-inspector .eyebrow,
+.equipment-inspector .equipment-inspector-stats > span,
+.equipment-inspector .equipment-combat-detail-section > span,
+.equipment-inspector .equipment-preview-label,
+.equipment-inspector .equipment-key-changes-label,
+.equipment-inspector .equipment-ring-replace > strong {
+  color: color-mix(in srgb, var(--ui-accent) 84%, var(--ui-text-muted));
+  font: var(--text-micro) var(--font-mono);
+  letter-spacing: .14em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.equipment-inspector .equipment-inspector-hero h3 {
+  color: var(--ui-text);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.equipment-inspector .equipment-inspector-hero p,
+.equipment-inspector .equipment-combat-detail-section p,
+.equipment-inspector .equipment-combat-rule strong,
+.equipment-inspector .equipment-comparison-name,
+.equipment-inspector .equipment-ring-replace-item {
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  line-height: 1.35;
+}
+
+.equipment-inspector .equipment-inspector-metadata,
+.equipment-inspector .equipment-inspector-meta,
+.equipment-inspector .equipment-preview-context,
+.equipment-inspector .equipment-comparison-visual small,
+.equipment-inspector .equipment-comparison-empty,
+.equipment-inspector .equipment-ring-replace-position,
+.equipment-inspector .equipment-combat-rule small {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: 1.2;
+}
+
+.equipment-inspector .equipment-inspector-meta {
+  border-color: color-mix(in srgb, var(--ui-border) 88%, transparent);
+}
+
+.equipment-inspector .equipment-artifact-summary,
+.equipment-inspector .equipment-copy-availability {
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--ui-border) 84%, transparent);
+  border-radius: 0;
+  background: transparent;
+}
+
+.equipment-inspector .equipment-artifact-identity strong,
+.equipment-inspector .equipment-copy-availability-values strong {
+  color: var(--ui-text-soft);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.equipment-inspector .equipment-artifact-identity strong {
+  font-size: var(--text-micro);
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.equipment-inspector .equipment-artifact-points,
+.equipment-inspector .equipment-copy-availability-values small {
+  color: var(--ui-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: 1.2;
+}
+
+.equipment-inspector .equipment-copy-availability {
+  margin-top: 8px;
+  padding-right: 0;
+  padding-left: 0;
+}
+
+.equipment-inspector .equipment-copy-availability-slot {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: 1.2;
+}
+
+.equipment-inspector .equipment-copy-availability-values > span {
+  color: inherit;
+  text-transform: none;
+}
+
+.equipment-inspector .equipment-inspector-stats {
+  margin-top: 12px;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.equipment-inspector .equipment-impact-row {
+  border-bottom-color: color-mix(in srgb, var(--ui-border) 84%, transparent);
+}
+
+.equipment-inspector .equipment-preview-impact > .game-tooltip-trigger:last-child .equipment-impact-row {
+  border-bottom-color: transparent;
+}
+
+.equipment-inspector .equipment-key-change > span {
+  color: var(--ui-text-muted);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+.equipment-inspector .equipment-key-change > strong {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.equipment-inspector .equipment-combat-details {
+  margin-top: 12px;
+}
+
+.equipment-inspector .equipment-combat-detail-section {
+  padding-top: 10px;
+}
+
+.equipment-inspector .equipment-combat-detail-section p,
+.equipment-inspector .equipment-combat-rule strong {
+  color: var(--ui-text-soft);
+}
+
+.equipment-inspector .equipment-combat-rule small {
+  color: var(--ui-text-muted);
+}
+
+.equipment-inspector .equipment-ring-replace {
+  margin-top: 12px;
+  padding: 8px;
+}
+
+.equipment-inspector .equipment-ring-replace label {
+  min-width: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  line-height: 1.35;
+}
+
+.equipment-inspector .equipment-ring-replace-option {
+  min-width: 0;
+}
+
+.equipment-inspector .equipment-ring-replace-position {
+  color: var(--ui-accent);
+  font-weight: 500;
+  letter-spacing: .1em;
+}
+
+.equipment-inspector .equipment-ring-replace-item {
+  color: var(--ui-text-soft);
+  font-weight: 400;
+}
+
+.equipment-inspector .equipment-incompatible {
+  margin-top: 12px;
+  border-color: color-mix(in srgb, var(--ui-warning) 52%, var(--ui-border));
+  background: color-mix(in srgb, var(--ui-warning) 6%, transparent);
+}
+
+.equipment-inspector .equipment-preview-impact {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top-color: color-mix(in srgb, var(--ui-border) 84%, transparent);
+}
+
+.equipment-inspector .equipment-preview-heading {
+  padding-bottom: 6px;
+}
+
+.equipment-inspector .equipment-preview-context {
+  color: var(--ui-text-muted);
+  letter-spacing: .08em;
+}
+
+.equipment-inspector .equipment-key-changes {
+  margin-bottom: 8px;
+  border-left-width: 2px;
+  background: color-mix(in srgb, var(--ui-accent) 5%, var(--ui-panel-strong));
+}
+
+.equipment-inspector .equipment-key-change {
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  line-height: 1.35;
+}
+
+.equipment-inspector .equipment-key-change > strong {
+  color: inherit;
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+.equipment-inspector .equipment-key-change > span {
+  font-size: var(--text-xs);
+}
+
+.equipment-inspector .equipment-comparison-visual {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+.equipment-inspector .equipment-comparison-visual b {
+  color: var(--ui-accent);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.equipment-inspector .equipment-comparison-name {
+  color: var(--ui-text-soft);
+  font-weight: 650;
+}
+
+.equipment-inspector .equipment-impact-header {
+  color: var(--ui-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .08em;
+  line-height: 1.2;
+}
+
+.equipment-inspector .equipment-impact-header span:not(:first-child) {
+  text-align: right;
+}
+
+.equipment-inspector .equipment-inspector-action-footer {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top-color: color-mix(in srgb, var(--ui-border) 84%, transparent);
+}
+
+@media (max-width: 760px) {
+  .equipment-inspector .equipment-copy-availability {
+    padding-right: 0;
+    padding-left: 0;
+  }
+
+  .equipment-inspector .equipment-copy-availability-values {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .equipment-inspector .equipment-artifact-summary {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .equipment-inspector .equipment-artifact-summary .button {
+    margin-left: 0;
+  }
+
+  .equipment-inspector .equipment-copy-availability-values {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+
+  .equipment-inspector .equipment-copy-availability-values > span {
+    padding-left: 0;
+    border-left: 0;
   }
 }

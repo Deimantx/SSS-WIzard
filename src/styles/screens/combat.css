@@ -4829,3 +4829,142 @@
     display: none;
   }
 }
+
+/* Pass 11: current-action ETA and local directional impact cues. */
+.combat-flow-current-action-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+}
+
+.combat-flow-current-action-head .combat-flow-subhead {
+  min-width: 0;
+}
+
+.combat-flow-current-action-eta {
+  align-self: start;
+  min-width: 42px;
+  color: var(--current-action-accent, var(--flow-accent));
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.combat-resource {
+  position: relative;
+  overflow: visible;
+}
+
+.combat-resource.is-feedback-damage {
+  --combat-impact-accent: var(--combat-damage-feedback);
+}
+
+.combat-resource.is-feedback-barrier-absorb,
+.combat-resource.is-feedback-barrier-break {
+  --combat-impact-accent: var(--combat-barrier-feedback);
+}
+
+.combat-player-card .combat-resource-health.is-feedback-damage::after,
+.combat-player-card .combat-resource-barrier.is-feedback-barrier-absorb::after,
+.combat-player-card .combat-resource-barrier.is-feedback-barrier-break::after,
+.combat-enemy-card .combat-resource-health.is-feedback-damage::after,
+.combat-enemy-card .combat-resource-barrier.is-feedback-barrier-absorb::after,
+.combat-enemy-card .combat-resource-barrier.is-feedback-barrier-break::after {
+  position: absolute;
+  top: 16px;
+  bottom: -1px;
+  z-index: 3;
+  width: 24px;
+  content: '';
+  opacity: 0;
+  pointer-events: none;
+}
+
+.combat-player-card .combat-resource-health.is-feedback-damage::after,
+.combat-player-card .combat-resource-barrier.is-feedback-barrier-absorb::after,
+.combat-player-card .combat-resource-barrier.is-feedback-barrier-break::after {
+  right: -2px;
+  background: linear-gradient(270deg, color-mix(in srgb, var(--combat-impact-accent) 76%, transparent), transparent);
+  animation: combat-pass11-impact-from-right 150ms cubic-bezier(.22, .72, .24, 1) both;
+}
+
+.combat-enemy-card .combat-resource-health.is-feedback-damage::after,
+.combat-enemy-card .combat-resource-barrier.is-feedback-barrier-absorb::after,
+.combat-enemy-card .combat-resource-barrier.is-feedback-barrier-break::after {
+  left: -2px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--combat-impact-accent) 76%, transparent), transparent);
+  animation: combat-pass11-impact-from-left 150ms cubic-bezier(.22, .72, .24, 1) both;
+}
+
+@keyframes combat-pass11-impact-from-right {
+  0% {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+
+  30% {
+    opacity: .9;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(0);
+  }
+}
+
+@keyframes combat-pass11-impact-from-left {
+  0% {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+
+  30% {
+    opacity: .9;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(0);
+  }
+}
+
+@keyframes combat-pass11-impact-static {
+  0% {
+    opacity: .15;
+    transform: none;
+  }
+
+  40% {
+    opacity: .75;
+  }
+
+  100% {
+    opacity: 0;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .combat-player-card .combat-resource-health.is-feedback-damage::after,
+  .combat-player-card .combat-resource-barrier.is-feedback-barrier-absorb::after,
+  .combat-player-card .combat-resource-barrier.is-feedback-barrier-break::after,
+  .combat-enemy-card .combat-resource-health.is-feedback-damage::after,
+  .combat-enemy-card .combat-resource-barrier.is-feedback-barrier-absorb::after,
+  .combat-enemy-card .combat-resource-barrier.is-feedback-barrier-break::after {
+    animation: combat-pass11-impact-static 150ms cubic-bezier(.22, .72, .24, 1) both;
+  }
+}
+
+:root[data-reduced-motion='true'] .combat-player-card .combat-resource-health.is-feedback-damage::after,
+:root[data-reduced-motion='true'] .combat-player-card .combat-resource-barrier.is-feedback-barrier-absorb::after,
+:root[data-reduced-motion='true'] .combat-player-card .combat-resource-barrier.is-feedback-barrier-break::after,
+:root[data-reduced-motion='true'] .combat-enemy-card .combat-resource-health.is-feedback-damage::after,
+:root[data-reduced-motion='true'] .combat-enemy-card .combat-resource-barrier.is-feedback-barrier-absorb::after,
+:root[data-reduced-motion='true'] .combat-enemy-card .combat-resource-barrier.is-feedback-barrier-break::after {
+  animation: combat-pass11-impact-static 150ms cubic-bezier(.22, .72, .24, 1) both;
+}

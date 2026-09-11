@@ -1,3 +1,5 @@
+import type { PortalShardId } from './content/darkPortal/portalShards'
+
 export type SchoolId = 'fire' | 'water' | 'earth' | 'air'
 export type ElementId = SchoolId
 export type ScreenId = 'home' | 'combat' | 'schools' | 'inventory' | 'equipment' | 'collection' | 'bestiary' | 'tower-channeling' | 'tower-focus' | 'tower-research' | 'tower-transmutation' | 'tower-artificing' | 'tower-dark-portal' | 'guild' | 'settings'
@@ -328,6 +330,10 @@ export interface StoryProgressState {
   completedEventIds: StoryEventId[]
 }
 
+export interface DarkPortalProgressState {
+  recoveredShards: PortalShardId[]
+}
+
 export interface FocusImprovementState {
   rank: number
   level: number
@@ -359,6 +365,7 @@ export interface GameState {
   combat: CombatState
   progress: ProgressState
   storyProgress: StoryProgressState
+  darkPortal: DarkPortalProgressState
   spellPresets: SpellPresetState
   ui: UiState
   offlineBankMs: number

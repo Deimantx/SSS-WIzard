@@ -12,7 +12,8 @@ describe('story progression', () => {
 
     expect(state.storyProgress.pendingEventIds).toEqual(['edrin-dark-portal-discovery'])
     expect(state.storyProgress.completedEventIds).toEqual([])
-    expect(state.inventory['black-portal-shard']).toBe(1)
+    expect(state.darkPortal.recoveredShards).toEqual(['black-portal-shard'])
+    expect(state.inventory['black-portal-shard']).toBeUndefined()
     expect(state.progress.discoveredItems.filter((id) => id === 'black-portal-shard')).toHaveLength(1)
     expect(getActiveStoryEvent(state)?.id).toBe('edrin-dark-portal-discovery')
     expect(isScreenUnlocked(state, 'tower-dark-portal')).toBe(true)
@@ -28,7 +29,8 @@ describe('story progression', () => {
 
     expect(state.storyProgress.pendingEventIds).toEqual([])
     expect(state.storyProgress.completedEventIds).toEqual(['edrin-dark-portal-discovery'])
-    expect(state.inventory['black-portal-shard']).toBe(1)
+    expect(state.darkPortal.recoveredShards).toEqual(['black-portal-shard'])
+    expect(state.inventory['black-portal-shard']).toBeUndefined()
   })
 })
 

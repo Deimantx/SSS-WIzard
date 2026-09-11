@@ -10,9 +10,9 @@ import { useGameStore } from '../../../store/gameStore'
 import { TowerFrame } from '../TowerFrame'
 
 export function DarkPortalScreen() {
-  const inventory = useGameStore((state) => state.inventory)
-  const shards = getPortalShardViewModels({ inventory })
-  const ownedCount = getOwnedPortalShardCount({ inventory })
+  const darkPortal = useGameStore((state) => state.darkPortal)
+  const shards = getPortalShardViewModels({ darkPortal })
+  const ownedCount = getOwnedPortalShardCount({ darkPortal })
   const totalSlots = getPortalShardSlotCount()
   const percent = ownedCount / Math.max(1, totalSlots) * 100
   const topShards = shards.slice(0, 3)

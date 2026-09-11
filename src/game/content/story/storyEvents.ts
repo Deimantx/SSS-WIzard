@@ -1,9 +1,9 @@
-import type { ItemId, MonsterId, ScreenId, StoryEventId } from '../../types'
+import type { MonsterId, ScreenId, StoryEventId } from '../../types'
+import type { PortalShardId } from '../darkPortal/portalShards'
 
 export interface StoryEventReward {
-  type: 'unique-item'
-  itemId: ItemId
-  quantity: 1
+  type: 'portal-shard'
+  shardId: PortalShardId
 }
 
 export interface StoryEventDefinition {
@@ -29,7 +29,7 @@ export const STORY_EVENTS: Record<StoryEventId, StoryEventDefinition> = {
   'edrin-dark-portal-discovery': {
     id: 'edrin-dark-portal-discovery',
     trigger: { type: 'boss-kill', bossId: 'archmage-edrin-shade', requiredKills: 1 },
-    rewards: [{ type: 'unique-item', itemId: 'black-portal-shard', quantity: 1 }],
+    rewards: [{ type: 'portal-shard', shardId: 'black-portal-shard' }],
     unlocks: { screens: ['tower-dark-portal'] },
     continueTo: 'tower-dark-portal',
     presentation: {

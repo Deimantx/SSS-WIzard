@@ -11,17 +11,18 @@ describe('V27 story progression migration', () => {
     const initial = createInitialState()
     const migrated = migrateSave({ ...initial, saveVersion: 27, storyProgress: undefined, ui: { screen: 'home' } })
 
-    expect(migrated.saveVersion).toBe(29)
+    expect(migrated.saveVersion).toBe(SAVE_VERSION)
     expect(migrated.storyProgress).toEqual({ pendingEventIds: [], completedEventIds: [] })
     expect(migrated.inventory['black-portal-shard']).toBeUndefined()
   })
 
   it('queues the new event and restores one shard for an old save with Edrin killed', () => {
     const initial = createInitialState()
-    const migrated = migrateSave({ ...initial, saveVersion: 27, storyProgress: undefined, progress: { ...initial.progress, bossKillsByBoss: { 'archmage-edrin-shade': 1 } } })
+    const migrated = migrateSave({ ...initial, saveVersion: 27, storyProgress: undefined, inventory: { 'black-portal-shard': 1 }, progress: { ...initial.progress, bossKillsByBoss: { 'archmage-edrin-shade': 1 } } })
 
-    expect(migrated.saveVersion).toBe(29)
-    expect(migrated.inventory['black-portal-shard']).toBe(1)
+    expect(migrated.saveVersion).toBe(SAVE_VERSION)
+    expect(migrated.inventory['black-portal-shard']).toBeUndefined()
+    expect(migrated.darkPortal.recoveredShards).toEqual(['black-portal-shard'])
     expect(migrated.storyProgress.pendingEventIds).toEqual(['edrin-dark-portal-discovery'])
     expect(migrated.storyProgress.completedEventIds).toEqual([])
   })
@@ -31,7 +32,7 @@ describe('save navigation migration', () => {
   it('migrates V28 saves with clean Rank I Transmutation Arrays', () => {
     const initial = createInitialState()
     const migrated = migrateSave({ ...initial, saveVersion: 28, progress: { ...initial.progress, transmutation: { arrays: { 'temporal-array': { rank: 9, level: 999 }, 'unknown-array': { rank: 7, level: 7 } } } } } as any)
-    expect(migrated.saveVersion).toBe(29)
+    expect(migrated.saveVersion).toBe(SAVE_VERSION)
     expect(Object.keys(migrated.progress.transmutation.arrays)).toEqual(['temporal-array', 'conservation-array', 'replication-array', 'mana-refinement-array', 'echo-stabilization-array'])
     expect(migrated.progress.transmutation.arrays['temporal-array']).toEqual({ rank: 1, level: 10 })
     expect(Object.values(migrated.progress.transmutation.arrays).filter((array) => array.level === 0)).toHaveLength(4)
@@ -524,7 +525,7 @@ describe('save navigation migration', () => {
       progress: { ...initial.progress, discoveredItems: ['prismatic-focus'] },
       activities: { ...initial.activities, artificing: { activeJob: { kind: 'recipe', recipeId: 'prismatic-focus' }, activeRecipeId: 'prismatic-focus', progressMs: 12_000 } },
     } as any)
-    expect(migrated.saveVersion).toBe(29)
+    expect(migrated.saveVersion).toBe(SAVE_VERSION)
     expect(migrated.inventory).not.toHaveProperty('prismatic-focus')
     expect(migrated.protectedItems).not.toHaveProperty('prismatic-focus')
     expect(migrated.artifactProgress).not.toHaveProperty('prismatic-focus')

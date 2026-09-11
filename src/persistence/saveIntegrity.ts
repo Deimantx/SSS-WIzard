@@ -16,6 +16,7 @@ export interface CriticalSaveSnapshot {
     autoCast: GameState['activities']['autoCast']
   }
   progress: GameState['progress']
+  darkPortal: GameState['darkPortal']
   spellPresets: GameState['spellPresets']
   offlineBankMs: number
   combatRngState: number
@@ -41,7 +42,7 @@ const canonicalize = (value: unknown): unknown => {
   return value
 }
 
-export const getCriticalSaveSnapshot = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment' | 'schools' | 'currencies' | 'activities' | 'progress' | 'spellPresets' | 'offlineBankMs' | 'combat'>): CriticalSaveSnapshot => cloneJson({
+export const getCriticalSaveSnapshot = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment' | 'schools' | 'currencies' | 'activities' | 'progress' | 'darkPortal' | 'spellPresets' | 'offlineBankMs' | 'combat'>): CriticalSaveSnapshot => cloneJson({
   inventory: state.inventory,
   protectedItems: state.protectedItems,
   equipment: state.equipment,
@@ -59,6 +60,7 @@ export const getCriticalSaveSnapshot = (state: Pick<GameState, 'inventory' | 'pr
     normalizeLegacyProgressEvidence(progress)
     return progress
   })(),
+  darkPortal: state.darkPortal,
   spellPresets: state.spellPresets,
   offlineBankMs: state.offlineBankMs,
   combatRngState: state.combat.combatRngState,
@@ -86,7 +88,7 @@ const decodeSave = (encoded: string): Record<string, unknown> => {
 }
 
 const hasCurrentSaveShape = (value: Record<string, unknown>) => {
-  const requiredKeys = ['player', 'schools', 'currencies', 'inventory', 'protectedItems', 'equipment', 'activities', 'progress', 'offlineBankMs', 'lastSavedAt']
+  const requiredKeys = ['player', 'schools', 'currencies', 'inventory', 'protectedItems', 'equipment', 'activities', 'progress', 'darkPortal', 'offlineBankMs', 'lastSavedAt']
   return requiredKeys.every((key) => Object.prototype.hasOwnProperty.call(value, key))
     && typeof value.lastSavedAt === 'number'
     && Number.isFinite(value.lastSavedAt)

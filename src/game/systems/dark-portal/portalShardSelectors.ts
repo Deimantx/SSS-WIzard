@@ -3,19 +3,20 @@ import type { GameState } from '../../types'
 
 export interface PortalShardViewModel extends PortalShardDefinition {
   owned: boolean
-  quantity: number
 }
 
-export const isPortalShardOwned = (state: Pick<GameState, 'inventory'>, shardId: PortalShardId) => {
-  const definition = getPortalShardDefinitions().find((shard) => shard.id === shardId)
-  return Boolean(definition?.itemId && (state.inventory[definition.itemId] ?? 0) > 0)
+const recoveredShards = (state: Pick<GameState, 'darkPortal'>) => new Set(state.darkPortal?.recoveredShards ?? [])
+
+export const isPortalShardOwned = (state: Pick<GameState, 'darkPortal'>, shardId: PortalShardId) => recoveredShards(state).has(shardId)
+
+export const getOwnedPortalShardCount = (state: Pick<GameState, 'darkPortal'>) => {
+  const recovered = recoveredShards(state)
+  return getPortalShardDefinitions().filter((shard) => recovered.has(shard.id)).length
 }
 
-export const getOwnedPortalShardCount = (state: Pick<GameState, 'inventory'>) => getPortalShardDefinitions().filter((shard) => shard.itemId && (state.inventory[shard.itemId] ?? 0) > 0).length
-
-export const getPortalShardViewModels = (state: Pick<GameState, 'inventory'>): PortalShardViewModel[] => getPortalShardDefinitions().map((shard) => {
-  const quantity = shard.itemId ? Math.min(1, Math.max(0, Math.floor(state.inventory[shard.itemId] ?? 0))) : 0
-  return { ...shard, owned: quantity > 0, quantity }
-})
+export const getPortalShardViewModels = (state: Pick<GameState, 'darkPortal'>): PortalShardViewModel[] => {
+  const recovered = recoveredShards(state)
+  return getPortalShardDefinitions().map((shard) => ({ ...shard, owned: recovered.has(shard.id) }))
+}
 
 export const getPortalShardSlotCount = () => PORTAL_SHARD_SLOT_COUNT

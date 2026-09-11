@@ -1,6 +1,5 @@
-import { STORY_EVENTS, STORY_EVENT_ORDER, type StoryEventDefinition, type StoryEventReward } from '../../content/story/storyEvents'
-import { discoverItem } from '../collection/discovery'
-import { grantItem } from '../inventory/itemAcquisition'
+import { STORY_EVENTS, STORY_EVENT_ORDER, type StoryEventDefinition } from '../../content/story/storyEvents'
+import { recoverPortalShard } from '../dark-portal/portalShardProgression'
 import type { GameState, ScreenId, StoryEventId, StoryProgressState } from '../../types'
 
 const storyEventIds = new Set<StoryEventId>(STORY_EVENT_ORDER)
@@ -37,34 +36,9 @@ export const getActiveStoryEvent = (state: Pick<GameState, 'storyProgress'>) => 
   return eventId ? STORY_EVENTS[eventId] : null
 }
 
-const ensureDiscoveredExactlyOnce = (state: GameState, itemId: StoryEventReward['itemId']) => {
-  let retained = false
-  state.progress.discoveredItems = state.progress.discoveredItems.filter((id) => {
-    if (id !== itemId) return true
-    if (retained) return false
-    retained = true
-    return true
-  })
-  if (!retained) discoverItem(state, itemId)
-}
-
-/** Ensures a progression relic is permanently present without creating duplicates. */
-export const ensureUniqueStoryItem = (state: GameState, itemId: StoryEventReward['itemId']) => {
-  const raw = state.inventory[itemId]
-  const current = typeof raw === 'number' && Number.isFinite(raw) ? Math.max(0, Math.floor(raw)) : 0
-  if (current < 1) {
-    state.inventory[itemId] = 0
-    grantItem(state, itemId, 1)
-  } else if (current !== 1) {
-    state.inventory[itemId] = 1
-  }
-  ensureDiscoveredExactlyOnce(state, itemId)
-  return 1
-}
-
 const ensureStoryRewards = (state: GameState, definition: StoryEventDefinition) => {
   definition.rewards.forEach((reward) => {
-    if (reward.type === 'unique-item') ensureUniqueStoryItem(state, reward.itemId)
+    if (reward.type === 'portal-shard') recoverPortalShard(state, reward.shardId)
   })
 }
 

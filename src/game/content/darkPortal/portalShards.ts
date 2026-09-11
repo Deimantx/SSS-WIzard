@@ -58,3 +58,7 @@ export const PORTAL_SHARDS: readonly PortalShardDefinition[] = [
 ]
 
 export const getPortalShardDefinitions = () => PORTAL_SHARDS
+export const getPortalShardDefinition = (shardId: PortalShardId) => PORTAL_SHARDS.find((shard) => shard.id === shardId)
+
+const PORTAL_SHARD_ITEM_IDS = new Set<ItemId>(PORTAL_SHARDS.flatMap((shard) => shard.itemId ? [shard.itemId] : []))
+export const isPortalShardItemId = (itemId: ItemId) => PORTAL_SHARD_ITEM_IDS.has(itemId)

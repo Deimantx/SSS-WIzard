@@ -3,6 +3,7 @@ import { ITEMS } from '../game/content/items/items'
 import { isBossMonster, MONSTERS } from '../game/content/monsters'
 import { SCHOOLS } from '../game/content/schools/schools'
 import { SPELLS } from '../game/content/spells/spells'
+import { getPortalShardDefinitions } from '../game/content/darkPortal/portalShards'
 import type { GameState, ItemId, MonsterId, SchoolId, SpellId } from '../game/types'
 
 /**
@@ -29,19 +30,21 @@ export interface ProgressionEvidence {
   focusImprovementLevel: number
   channelingManaGenerated: number
   channelingSustainMs: number
+  recoveredPortalShards: Record<string, boolean>
 }
 
 const finite = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : 0
 const booleanRecord = (keys: readonly string[], values: readonly string[]) => Object.fromEntries(keys.map((key) => [key, values.includes(key)])) as Record<string, boolean>
 const guildRanks = { outsider: 0, initiate: 1, apprentice: 2 } as const
 
-export const getProgressionEvidence = (state: Pick<GameState, 'schools' | 'progress'>): ProgressionEvidence => {
+export const getProgressionEvidence = (state: Pick<GameState, 'schools' | 'progress' | 'darkPortal'>): ProgressionEvidence => {
   const schoolIds = Object.keys(SCHOOLS) as SchoolId[]
   const monsterIds = Object.keys(MONSTERS) as MonsterId[]
   const spellIds = Object.keys(SPELLS) as SpellId[]
   const itemIds = Object.keys(ITEMS) as ItemId[]
   const discoveredItems = state.progress.discoveredItems ?? []
   const discoveredMonsters = state.progress.discoveredMonsters ?? []
+  const recoveredPortalShards = Object.fromEntries(getPortalShardDefinitions().map(({ id }) => [id, Boolean(state.darkPortal?.recoveredShards?.includes(id))]))
   const discoveryFlags = Object.fromEntries(CHANNELING_DISCOVERIES.map(({ id }) => [id, Boolean(state.progress.channeling?.discoveries?.[id])]))
   const permanentFlags = {
     firstBossKill: Boolean(state.progress.firstBossKill),
@@ -72,6 +75,7 @@ export const getProgressionEvidence = (state: Pick<GameState, 'schools' | 'progr
     focusImprovementLevel: finite(state.progress.focusImprovement?.level),
     channelingManaGenerated: finite(state.progress.channeling?.totalManaGenerated),
     channelingSustainMs: finite(state.progress.channeling?.fiveEchoSustainMs),
+    recoveredPortalShards,
   }
 }
 
@@ -108,6 +112,7 @@ export const detectCatastrophicProgressRegression = (previous: GameState, candid
   compareBooleanRecord('permanentFlags', before.permanentFlags, after.permanentFlags, reasons)
   compareBooleanRecord('discoveredItems', before.discoveredItems, after.discoveredItems, reasons)
   compareBooleanRecord('discoveredMonsters', before.discoveredMonsters, after.discoveredMonsters, reasons)
+  compareBooleanRecord('recoveredPortalShards', before.recoveredPortalShards, after.recoveredPortalShards, reasons)
   compareNumberRecord('permanentFocusBonuses', before.permanentFocusBonuses, after.permanentFocusBonuses, reasons)
   compareNumbers('focusImprovementRank', before.focusImprovementRank, after.focusImprovementRank, reasons)
   compareNumbers('focusImprovementLevel', before.focusImprovementLevel, after.focusImprovementLevel, reasons)

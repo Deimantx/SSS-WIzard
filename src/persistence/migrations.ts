@@ -27,6 +27,7 @@ import { MAX_ACTION_WORK_MS, MIN_ACTION_TIME_MS } from '../game/core/balance/com
 import { normalizeCombatRngState } from '../game/systems/combat/combatRng'
 import { clampOfflineBankMs } from '../game/systems/offline-bank/offlineBankDuration'
 import { ARTIFACTS } from '../game/content/artifacts/artifacts'
+import { normalizeDarkPortalProgress } from '../game/systems/dark-portal/portalShardProgression'
 import { isScreenUnlocked, reconcileStoryProgression } from '../game/systems/story/storyProgression'
 import { getTransmutationArrayBonuses } from '../game/systems/transmutation/transmutationArrays'
 
@@ -658,6 +659,7 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   migrated.progress.transmutation = migrateTransmutationArrays(raw.progress, createInitialState().progress)
   migrated.ui.screen = normalizeScreen(isRecord(raw.ui) ? raw.ui.screen : undefined, migrated.ui.screen)
   normalizeDynamicRecords(migrated, raw)
+  normalizeDarkPortalProgress(migrated)
   normalizeLegacyProgressEvidence(migrated.progress)
   normalizeSchoolCap(migrated, raw)
   normalizeSchoolXpCurveV25(migrated, raw, sourceVersion)

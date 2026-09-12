@@ -4,7 +4,7 @@ import type { ItemId } from '../../../game/types'
 import { setUiPreferences, useUiPreferences } from '../../../ui/preferences/uiPreferencesStore'
 import { useGameStore } from '../../../store/gameStore'
 import { RESEARCH_SLOT_ORDER } from '../../../game/systems/research/researchReservations'
-import { EditableGrid } from '../../../ui/layout-editor/EditableGrid'
+import { ScreenGrid } from '../../../components/layout/ScreenGrid'
 import { TowerFrame } from '../TowerFrame'
 import { PreparedResearch } from './PreparedResearch'
 import { ResearchInspector } from './ResearchInspector'
@@ -38,5 +38,5 @@ export function ResearchScreen() {
   }, [intentItemId, navigationIntent.researchSchoolId, selectedItemId, storedItemId])
 
   const selectItem = (itemId: ItemId) => setUiPreferences({ screenState: { research: { selectedItemId: itemId, targetSchoolId: ITEMS[itemId].researchSchool ?? 'fire' } } })
-  return <TowerFrame eyebrow="WIZARD TOWER · ARCANE CRUCIBLE" title="Research turns fragments into understanding." description="Prepare materials, direct their essence into a Magic School, and assign Arcane Echoes to accelerate the Crucible."><EditableGrid screen="tower-research" panels={[{ id: 'research-school-mastery', content: <SchoolMasteryPanel className="research-school-mastery" compact /> }, { id: 'research-library', content: <ResearchLibrary selectedItemId={selectedItemId} onSelect={selectItem} /> }, { id: 'research-inspector', content: <ResearchInspector itemId={selectedItemId} /> }, { id: 'research-prepared', content: <PreparedResearch /> }]} /></TowerFrame>
+  return <TowerFrame eyebrow="WIZARD TOWER · ARCANE CRUCIBLE" title="Research turns fragments into understanding." description="Prepare materials, direct their essence into a Magic School, and assign Arcane Echoes to accelerate the Crucible."><ScreenGrid screen="tower-research" panels={[{ id: 'research-school-mastery', content: <SchoolMasteryPanel className="research-school-mastery" compact /> }, { id: 'research-library', content: <ResearchLibrary selectedItemId={selectedItemId} onSelect={selectItem} /> }, { id: 'research-inspector', content: <ResearchInspector itemId={selectedItemId} /> }, { id: 'research-prepared', content: <PreparedResearch /> }]} /></TowerFrame>
 }

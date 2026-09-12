@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { EditableGrid } from '../../../ui/layout-editor/EditableGrid'
+import { ScreenGrid } from '../../../components/layout/ScreenGrid'
 import { useGameStore } from '../../../store/gameStore'
 import { CHANNELING_DISCOVERIES } from '../../../game/data/channelingDiscoveries'
 import { ManaCorePanel } from './ManaCorePanel'
@@ -16,7 +16,7 @@ export function ChannelingScreen() {
   return <div className="screen-content channeling-screen">
     <div className="screen-header"><div><div className="eyebrow">WIZARD TOWER · CHANNELING</div><h1>Channeling Chamber</h1><p>The tower draws from the leyline. Reserve Focus for Echoes and build a stronger Mana engine.</p></div></div>
     <ArcaneDiscoveriesStrip completed={completed} total={CHANNELING_DISCOVERIES.length} onOpen={() => setDiscoveriesOpen(true)} />
-    <EditableGrid screen="tower-channeling" panels={[
+    <ScreenGrid screen="tower-channeling" panels={[
       { id: 'channeling-mana-core', content: <ManaCorePanel /> },
       { id: 'channeling-echoes', content: <ArcaneEchoPanel /> },
       { id: 'channeling-breakdown', content: <ChannelingBreakdownPanel /> },

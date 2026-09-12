@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { EditableGrid } from '../../ui/layout-editor/EditableGrid'
+import { ScreenGrid } from '../../components/layout/ScreenGrid'
 import { useGameStore } from '../../store/gameStore'
 import type { ItemId } from '../../game/types'
 import { CollectionLibrary } from './CollectionLibrary'
@@ -41,5 +41,5 @@ export function CollectionScreen() {
 
   const library = <CollectionLibrary progress={progress} inventory={inventory} search={search} category={category} status={status} onSearch={setSearch} onCategory={setCategory} onStatus={setStatus} selected={selected} newItems={new Set(attention.unseenItems)} onSelect={(itemId) => { clearAttention(getActiveProfileId(), 'item', itemId); setSelected(itemId) }} />
   const inspector = <InspectorTransition identity={selected} accent={selected ? ITEMS[selected]?.color : undefined} fill><CollectionInspector itemId={selected} inventory={inventory} progress={progress} navigate={navigate} /></InspectorTransition>
-  return <div className="screen-content collection-screen"><div className="screen-header"><div><div className="eyebrow">TOWER ARCHIVE · COLLECTION</div><h1>Every relic leaves a record.</h1><p>Discover materials, loot and equipment once, then keep their details permanently in the tower archive.</p></div></div><EditableGrid screen="collection" panels={[{ id: 'collection-summary', content: <CollectionSummary progress={progress} /> }, { id: 'collection-content', content: library }, { id: 'collection-inspector', content: inspector }]} /></div>
+  return <div className="screen-content collection-screen"><div className="screen-header"><div><div className="eyebrow">TOWER ARCHIVE · COLLECTION</div><h1>Every relic leaves a record.</h1><p>Discover materials, loot and equipment once, then keep their details permanently in the tower archive.</p></div></div><ScreenGrid screen="collection" panels={[{ id: 'collection-summary', content: <CollectionSummary progress={progress} /> }, { id: 'collection-content', content: library }, { id: 'collection-inspector', content: inspector }]} /></div>
 }

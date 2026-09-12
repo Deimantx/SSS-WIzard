@@ -5,7 +5,7 @@ import { isRecipeUnlocked } from '../../../game/systems/transmutation/transmutat
 import type { TransmutationRecipeId } from '../../../game/types'
 import { useGameStore } from '../../../store/gameStore'
 import { setUiPreferences, useUiPreferences } from '../../../ui/preferences/uiPreferencesStore'
-import { EditableGrid, type EditableGridPanel } from '../../../ui/layout-editor/EditableGrid'
+import { ScreenGrid, type ScreenGridPanel } from '../../../components/layout/ScreenGrid'
 import { TowerFrame } from '../TowerFrame'
 import { FocusAssignment } from './FocusAssignment'
 import { RecipeDetail } from './RecipeDetail'
@@ -38,11 +38,11 @@ export function TransmutationScreen() {
 
   const setSelectedRecipeId = (recipeId: TransmutationRecipeId) => { clearAttention(getActiveProfileId(), 'recipe', recipeId); setUiPreferences({ screenState: { transmutation: { selectedRecipeId: recipeId } } }) }
   const recipe = RECIPES[selectedRecipeId]
-  const panels: EditableGridPanel[] = [
+  const panels: ScreenGridPanel[] = [
     { id: 'transmutation-recipes', content: <RecipeLibrary selectedRecipeId={selectedRecipeId} onSelect={setSelectedRecipeId} /> },
     { id: 'transmutation-focus', content: <FocusAssignment selectedRecipeId={selectedRecipeId} onSelect={setSelectedRecipeId} /> },
     { id: 'transmutation-detail', content: <InspectorTransition identity={selectedRecipeId} accent={ITEMS[recipe.output.itemId].color}><RecipeDetail recipe={recipe} onSelectRecipe={setSelectedRecipeId} /></InspectorTransition> },
     { id: 'transmutation-arrays', content: <TransmutationArraysPanel /> },
   ]
-  return <TowerFrame eyebrow="WIZARD TOWER · TRANSMUTATION" title="Shape Mana into elemental matter." description="Assign Arcane Echoes to continuously create elemental fragments, prismatic matter, and future elemental tiers."><EditableGrid screen="tower-transmutation" panels={panels} /></TowerFrame>
+  return <TowerFrame eyebrow="WIZARD TOWER · TRANSMUTATION" title="Shape Mana into elemental matter." description="Assign Arcane Echoes to continuously create elemental fragments, prismatic matter, and future elemental tiers."><ScreenGrid screen="tower-transmutation" panels={panels} /></TowerFrame>
 }

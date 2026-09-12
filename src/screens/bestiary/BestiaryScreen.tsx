@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { MapPin, X } from 'lucide-react'
-import { EditableGrid } from '../../ui/layout-editor/EditableGrid'
+import { ScreenGrid } from '../../components/layout/ScreenGrid'
 import { useGameStore } from '../../store/gameStore'
 import type { DungeonId, MonsterId } from '../../game/types'
 import { DUNGEONS } from '../../game/content/dungeons/dungeons'
@@ -50,5 +50,5 @@ export function BestiaryScreen() {
 
   const index = <BestiaryIndex progress={progress} scopeIds={scopeIds ?? undefined} search={search} category={category} onSearch={setSearch} onCategory={setCategory} selected={selected} newEntries={new Set(attention.unseenMonsters)} onSelect={(monsterId) => { clearAttention(getActiveProfileId(), 'monster', monsterId); setSelected(monsterId) }} />
   const inspector = <InspectorTransition identity={selected} accent={selected ? MONSTERS[selected]?.color : undefined} fill><BestiaryInspector monsterId={selected} progress={progress} /></InspectorTransition>
-  return <div className="screen-content bestiary-screen"><div className="screen-header"><div><div className="eyebrow">FIELD ARCHIVE · BESTIARY</div><h1>Know what waits beyond the tower.</h1><p>Encounter a creature once to record its statistics, traits, attack patterns and loot table permanently.</p>{scopedDungeonId && DUNGEONS[scopedDungeonId] && <div className="bestiary-area-scope"><MapPin size={13} aria-hidden="true" /><strong>AREA: {DUNGEONS[scopedDungeonId].name.toUpperCase()}</strong><button type="button" aria-label="Clear Bestiary area scope" onClick={() => setScopedDungeonId(null)}><X size={13} aria-hidden="true" /> CLEAR</button></div>}</div></div><EditableGrid screen="bestiary" panels={[{ id: 'bestiary-summary', content: <BestiarySummary progress={progress} /> }, { id: 'bestiary-index', content: index }, { id: 'bestiary-inspector', content: inspector }]} /></div>
+  return <div className="screen-content bestiary-screen"><div className="screen-header"><div><div className="eyebrow">FIELD ARCHIVE · BESTIARY</div><h1>Know what waits beyond the tower.</h1><p>Encounter a creature once to record its statistics, traits, attack patterns and loot table permanently.</p>{scopedDungeonId && DUNGEONS[scopedDungeonId] && <div className="bestiary-area-scope"><MapPin size={13} aria-hidden="true" /><strong>AREA: {DUNGEONS[scopedDungeonId].name.toUpperCase()}</strong><button type="button" aria-label="Clear Bestiary area scope" onClick={() => setScopedDungeonId(null)}><X size={13} aria-hidden="true" /> CLEAR</button></div>}</div></div><ScreenGrid screen="bestiary" panels={[{ id: 'bestiary-summary', content: <BestiarySummary progress={progress} /> }, { id: 'bestiary-index', content: index }, { id: 'bestiary-inspector', content: inspector }]} /></div>
 }

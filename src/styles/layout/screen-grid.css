@@ -1,0 +1,118 @@
+.screen-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 14px;
+  min-width: 0;
+  align-items: stretch;
+}
+
+.screen-grid-panel {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.screen-grid-panel-content {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.screen-grid-panel-content > * {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  flex: 1 1 auto;
+}
+
+.screen-grid-panel-content > .card,
+.screen-grid-panel-content > .objective-card,
+.screen-grid-panel-content > .guild-banner,
+.screen-grid-panel-content > .locked-screen {
+  margin: 0;
+}
+
+.screen-grid-home-panel-home-objective,
+.screen-grid-home-panel-home-school-mastery,
+.screen-grid-home-panel-home-arcane-work,
+.screen-grid-tower-channeling-panel-channeling-mana-core,
+.screen-grid-tower-channeling-panel-channeling-echoes,
+.screen-grid-tower-channeling-panel-channeling-breakdown,
+.screen-grid-tower-channeling-panel-channeling-pillars,
+.screen-grid-tower-focus-panel-focus-summary,
+.screen-grid-tower-research-panel-research-school-mastery,
+.screen-grid-tower-research-panel-research-prepared,
+.screen-grid-schools-panel-schools-presets,
+.screen-grid-combat-panel-combat-stage,
+.screen-grid-combat-panel-combat-spell-deck,
+.screen-grid-combat-panel-combat-analytics,
+.screen-grid-guild-panel-guild-banner,
+.screen-grid-guild-panel-guild-rank,
+.screen-grid-collection-panel-collection-summary,
+.screen-grid-bestiary-panel-bestiary-summary,
+.screen-grid-settings-panel-settings-profile {
+  grid-column: 1 / -1;
+}
+
+.screen-grid-home-panel-home-checklist,
+.screen-grid-tower-focus-panel-focus-reservations,
+.screen-grid-tower-research-panel-research-library,
+.screen-grid-tower-research-panel-research-inspector,
+.screen-grid-tower-transmutation-panel-transmutation-recipes,
+.screen-grid-tower-transmutation-panel-transmutation-focus,
+.screen-grid-tower-artificing-panel-artificing-catalog,
+.screen-grid-schools-panel-schools-browser,
+.screen-grid-inventory-panel-inventory-catalog,
+.screen-grid-equipment-panel-equipment-loadout,
+.screen-grid-equipment-panel-equipment-owned,
+.screen-grid-collection-panel-collection-content,
+.screen-grid-bestiary-panel-bestiary-inspector {
+  grid-column: span 7;
+}
+
+.screen-grid-home-panel-home-wizard,
+.screen-grid-tower-focus-panel-focus-improvement,
+.screen-grid-tower-artificing-panel-artificing-detail,
+.screen-grid-schools-panel-schools-inspector,
+.screen-grid-inventory-panel-inventory-detail,
+.screen-grid-equipment-panel-equipment-stats,
+.screen-grid-equipment-panel-equipment-inspector,
+.screen-grid-collection-panel-collection-inspector,
+.screen-grid-bestiary-panel-bestiary-index {
+  grid-column: span 5;
+}
+
+.screen-grid-tower-transmutation-panel-transmutation-detail,
+.screen-grid-tower-transmutation-panel-transmutation-arrays {
+  grid-column: 8 / span 5;
+}
+
+.screen-grid-guild-panel-guild-request-1,
+.screen-grid-guild-panel-guild-request-2,
+.screen-grid-guild-panel-guild-request-3 {
+  grid-column: span 4;
+}
+
+.screen-grid-settings-panel-settings-appearance {
+  grid-column: span 8;
+}
+
+.screen-grid-settings-panel-settings-theme-preview {
+  grid-column: span 4;
+}
+
+.screen-grid-settings-panel-settings-save,
+.screen-grid-settings-panel-settings-developer,
+.screen-grid-settings-panel-settings-info {
+  grid-column: span 6;
+}
+
+@media (max-width: 760px) {
+  .screen-grid > * {
+    grid-column: 1 / -1;
+  }
+}

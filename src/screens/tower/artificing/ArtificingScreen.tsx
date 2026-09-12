@@ -8,7 +8,7 @@ import { useGameStore } from '../../../store/gameStore'
 import { setUiPreferences, useUiPreferences } from '../../../ui/preferences/uiPreferencesStore'
 import { clearAttention } from '../../../ui/attention/attentionStore'
 import { getActiveProfileId } from '../../../profiles/profileSessionStore'
-import { EditableGrid } from '../../../ui/layout-editor/EditableGrid'
+import { ScreenGrid } from '../../../components/layout/ScreenGrid'
 import { InspectorTransition } from '../../../ui/game-feel/InspectorTransition'
 import { EquipmentCatalog } from './EquipmentCatalog'
 import { ArtificingDetail } from './ArtificingDetail'
@@ -45,5 +45,5 @@ export function ArtificingScreen() {
     { id: 'artificing-catalog', content: <EquipmentCatalog selected={recipe?.id ?? null} onSelect={select} query={query} onQueryChange={setQuery} /> },
     { id: 'artificing-detail', content: <InspectorTransition identity={recipe?.id ?? 'none'} accent={recipe ? ITEMS[recipe.output.itemId].color : undefined}><ArtificingDetail recipe={recipe} /></InspectorTransition> },
   ]
-  return <TowerFrame className="artificing-screen" eyebrow="WIZARD TOWER · ARTIFICING" title="Arcane Forge" description="Forge magical equipment from elemental and dungeon materials. Each craft creates exactly one item."><EditableGrid screen="tower-artificing" panels={panels} /></TowerFrame>
+  return <TowerFrame className="artificing-screen" eyebrow="WIZARD TOWER · ARTIFICING" title="Arcane Forge" description="Forge magical equipment from elemental and dungeon materials. Each craft creates exactly one item."><ScreenGrid screen="tower-artificing" panels={panels} /></TowerFrame>
 }

@@ -12,5 +12,20 @@ export interface ScreenGridPanel {
  * runtime layout state.
  */
 export function ScreenGrid({ screen, panels }: { screen: ScreenId; panels: ScreenGridPanel[] }) {
-  return <div className={`screen-grid screen-grid-${screen}`}>{panels.map(({ id, content }) => <div className={`screen-grid-panel screen-grid-panel-${id}`} key={id}><div className="screen-grid-panel-content">{content}</div></div>)}</div>
+  return (
+    <div className={`screen-grid screen-grid-${screen}`}>
+      {panels.map(({ id, content }) => (
+        <div
+          className={[
+            'screen-grid-panel',
+            `screen-grid-${screen}-panel-${id}`,
+            `screen-grid-panel-${id}`,
+          ].join(' ')}
+          key={id}
+        >
+          <div className="screen-grid-panel-content">{content}</div>
+        </div>
+      ))}
+    </div>
+  )
 }

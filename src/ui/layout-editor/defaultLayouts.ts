@@ -14,7 +14,7 @@ export const DEFAULT_LAYOUTS: Record<ScreenId, ScreenLayouts> = {
   'tower-transmutation': { 'transmutation-recipes': layout(0, 0, 7, 15), 'transmutation-focus': layout(0, 15, 7, 15), 'transmutation-detail': layout(7, 0, 5, 12), 'transmutation-arrays': layout(7, 12, 5, 18) },
   'tower-artificing': { 'artificing-catalog': layout(0, 0, 7, 30), 'artificing-detail': layout(7, 0, 5, 30) },
   schools: {
-    'schools-browser': layout(0, 0, 7, 18), 'schools-inspector': layout(7, 0, 5, 18), 'schools-presets': layout(0, 18, 12, 6),
+    'schools-browser': layout(0, 0, 7, 18), 'schools-inspector': layout(7, 0, 5, 18), 'schools-presets': layout(0, 18, 12, 8),
   },
   combat: {
     'combat-stage': layout(0, 0, 12, 16), 'combat-spell-deck': layout(0, 14, 12, 7), 'combat-analytics': layout(0, 21, 12, 10),

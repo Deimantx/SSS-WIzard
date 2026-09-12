@@ -106,7 +106,6 @@
 }
 
 .transmutation-recipe-tile:active,
-.inventory-item:active,
 .equipment-armory-card:active,
 .research-item-tile:active,
 .spell-browser-tile:active,
@@ -473,7 +472,6 @@
 
 /* The current selection is a stable focus cue; hover remains a transient lift. */
 .game-shell .screen-scroll .transmutation-recipe-tile.selected,
-.game-shell .screen-scroll .inventory-item.selected,
 .game-shell .screen-scroll .equipment-armory-card.selected,
 .game-shell .screen-scroll .equipment-slot-card.selected,
 .game-shell .screen-scroll .research-item-tile.selected,
@@ -486,7 +484,6 @@
 }
 
 .game-shell .screen-scroll .transmutation-recipe-tile.selected:hover,
-.game-shell .screen-scroll .inventory-item.selected:hover,
 .game-shell .screen-scroll .equipment-armory-card.selected:hover,
 .game-shell .screen-scroll .equipment-slot-card.selected:hover,
 .game-shell .screen-scroll .research-item-tile.selected:hover,
@@ -520,7 +517,6 @@
 }
 
 .game-shell .screen-scroll .transmutation-recipe-tile.selected .transmutation-tile-icon,
-.game-shell .screen-scroll .inventory-item.selected .inventory-item-art,
 .game-shell .screen-scroll .equipment-armory-card.selected .equipment-armory-icon,
 .game-shell .screen-scroll .equipment-slot-card.selected .equipment-slot-icon,
 .game-shell .screen-scroll .spell-browser-tile.is-selected .spell-browser-icon-frame {
@@ -650,7 +646,6 @@
 }
 
 .transmutation-recipe-tile:active,
-.inventory-item:active,
 .equipment-armory-card:active,
 .equipment-slot-card:active,
 .research-item-tile:active,
@@ -693,7 +688,6 @@
 }
 
 .transmutation-recipe-tile.selected,
-.inventory-item.selected,
 .equipment-armory-card.selected,
 .equipment-slot-card.selected,
 .research-item-tile.selected,
@@ -704,8 +698,7 @@
   animation: game-selected-ring 220ms ease-out both;
 }
 
-.equipment-armory-card.equipped,
-.inventory-item.equipped { border-color: color-mix(in srgb, var(--ui-success) 62%, var(--ui-border)); box-shadow: 0 0 16px color-mix(in srgb, var(--ui-success) 13%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--ui-success) 18%, transparent); }
+.equipment-armory-card.equipped { border-color: color-mix(in srgb, var(--ui-success) 62%, var(--ui-border)); box-shadow: 0 0 16px color-mix(in srgb, var(--ui-success) 13%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--ui-success) 18%, transparent); }
 
 .transmutation-recipe-tile.locked,
 .research-item-tile.unavailable,
@@ -812,10 +805,4 @@
 
 .game-shell.reduced-motion .combat-progression-node:not(:disabled):active {
   transform: translate(-50%, -50%);
-}
-
-/* Inventory vault tiles keep a stable footprint while hovered. */
-.game-shell .screen-scroll .inventory-item:hover,
-.game-shell .screen-scroll .inventory-item:hover .inventory-item-art {
-  transform: none;
 }

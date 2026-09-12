@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { isUiAudioAvailable, unlockUiAudio, playUiSound } from './audio/uiAudioEngine'
 
 const INTERACTIVE_SELECTOR = [
-  '.button', '.nav-item', '.nav-group-header', '.quick-card', '.transmutation-recipe-tile', '.inventory-item', '.equipment-armory-card', '.equipment-slot-card',
+  '.button', '.nav-item', '.nav-group-header', '.quick-card', '.transmutation-recipe-tile', '.equipment-armory-card', '.equipment-slot-card',
   '.research-item-tile', '.spell-browser-tile', '.spell-preset-card', '.spell-preset-available-tile', '.transmutation-assignment-row', '.transmutation-ring-choice',
   '.activity-card', '.activity-mini-summary', '.combat-act-selector-item', '.combat-act-selector-arrow', '.combat-progression-node', '.combat-area-inspector .button', '.combat-area-loot-tile', '.inventory-recent-item', '.inventory-use-row', '.inventory-need-row', '.theme-choice', '.preference-choice',
 ].join(',')

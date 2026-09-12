@@ -1,5 +1,28 @@
 # Screen Panel Layout Editing
 
+## File map
+
+Use the file that owns the kind of change you want to make:
+
+| File | Responsibility |
+| --- | --- |
+| `src/ui/layout/screenPanelLayouts.ts` | Persistent source-controlled panel geometry: position, grid span, order, and base height. |
+| `src/ui/config/uiTuning.ts` | Source-controlled visual defaults for panels, item cards, spell cards, stat rows, tooltips, and typography. |
+| `src/ui/config/uiTuningSchema.ts` | The fields exposed by UI Tuning and their safe min/max/step limits. |
+| `src/ui/config/uiTuningDraftStore.ts` | Temporary Developer Tools overrides, reset, import, and export. These values are in-memory only and never enter a player save. |
+| `src/ui/config/uiTuningResolver.ts` | Combines base defaults, screen overrides, and the active tuning draft; also resolves panel geometry and CSS variables. |
+| `src/components/layout/ScreenGrid.tsx` | Renders the resolved screen layout. Do not put screen-specific geometry constants here. |
+| `src/app/GameShell.tsx` | Applies resolved tuning variables to the active screen shell and portaled tooltip root. |
+| `src/styles/ui-tuning.css` | CSS-variable bridge for panel surfaces, cards, typography, stats, and tooltips. |
+| `src/devtools/tabs/DeveloperUITuning.tsx` | Developer Tools → UI Tuning controls with immediate preview, reset, import, and export. |
+| `src/devtools/developerToolsStore.ts` / `src/devtools/DeveloperToolTabs.tsx` | Registers and routes the UI Tuning Developer Tools tab. |
+| `src/styles/developer-tools.css` | Styling for the UI Tuning controls themselves. |
+
+For a permanent panel position or size change, edit
+`screenPanelLayouts.ts`. For a quick visual experiment, use Developer Tools →
+UI Tuning; its draft can later be exported or copied into the appropriate
+source-controlled configuration.
+
 The production geometry for screens that use `ScreenGrid` lives in one source
 file:
 

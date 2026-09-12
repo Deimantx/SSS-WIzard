@@ -1,13 +1,13 @@
 import type { CSSProperties, ReactNode } from 'react'
 import type { ScreenId } from '../../game/types'
 import {
-  getPanelLayout,
-  getScreenLayout,
   type ResponsiveScreenLayout,
   type ScreenLayoutDefinition,
   type ScreenLayoutSize,
   type ScreenPanelLayout,
 } from '../../ui/layout/screenPanelLayouts'
+import { getResolvedPanelLayout, getResolvedScreenLayout, getUITuningStyle } from '../../ui/config/uiTuningResolver'
+import { useUITuningDraft, type UITuningDraft } from '../../ui/config/uiTuningDraftStore'
 
 export interface ScreenGridPanel {
   id: string
@@ -100,7 +100,7 @@ function responsivePanelDeclarations(layout: ScreenPanelLayout): string {
   ].join('')
 }
 
-function getResponsiveCss(screen: ScreenId, layout: ScreenLayoutDefinition, panels: ScreenGridPanel[]): string {
+function getResponsiveCss(screen: ScreenId, layout: ScreenLayoutDefinition, panels: ScreenGridPanel[], draft: UITuningDraft): string {
   if (!layout.responsive) return ''
 
   return Object.values(layout.responsive).filter(Boolean).map((responsive) => {
@@ -110,7 +110,7 @@ function getResponsiveCss(screen: ScreenId, layout: ScreenLayoutDefinition, pane
     const screenDeclarations = responsiveScreenDeclarations(responsive)
     const rules = screenDeclarations ? `${screenSelector}{${screenDeclarations}}` : ''
     const panelRules = panels.map(({ id }, index) => {
-      const basePanel = getPanelLayout(screen, id, index + 1)
+      const basePanel = getResolvedPanelLayout(screen, id, index + 1, draft)
       const responsivePanel = responsive.panels[id]
       const mergedPanel = responsivePanel ? { ...basePanel, ...responsivePanel } : basePanel
       return `.screen-grid-${screen}-panel-${id}{${responsivePanelDeclarations(mergedPanel)}}`
@@ -126,15 +126,16 @@ function getResponsiveCss(screen: ScreenId, layout: ScreenLayoutDefinition, pane
  * persistence, measurement, or runtime layout state.
  */
 export function ScreenGrid({ screen, panels }: { screen: ScreenId; panels: ScreenGridPanel[] }) {
-  const screenLayout = getScreenLayout(screen)
-  const responsiveCss = getResponsiveCss(screen, screenLayout, panels)
+  const draft = useUITuningDraft()
+  const screenLayout = getResolvedScreenLayout(screen, draft)
+  const responsiveCss = getResponsiveCss(screen, screenLayout, panels, draft)
 
   return (
     <>
-      <div className={`screen-grid screen-grid-${screen}`} style={getScreenStyle(screenLayout)}>
+      <div className={`screen-grid screen-grid-${screen}`} style={{ ...getScreenStyle(screenLayout), ...getUITuningStyle(screen, draft) }}>
         {panels.map(({ id, content }, index) => {
           if (!screenLayout.panels[id]) warnMissingLayout(screen, id)
-          const panelLayout = getPanelLayout(screen, id, index + 1)
+          const panelLayout = getResolvedPanelLayout(screen, id, index + 1, draft)
 
           return (
             <div

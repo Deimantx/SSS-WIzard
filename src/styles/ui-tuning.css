@@ -1,0 +1,190 @@
+/* Central UI tuning bridge. The values are supplied by uiTuningResolver.ts. */
+.screen-grid-panel-content > .card {
+  border-width: var(--ui-tuning-panel-border-width, 1px);
+  border-radius: var(--ui-tuning-panel-radius, 10px);
+  padding: var(--ui-tuning-panel-padding, 20px);
+}
+
+.screen-grid-panel-content > .card > .card-head {
+  gap: var(--ui-tuning-panel-header-gap, 15px);
+  margin-bottom: var(--ui-tuning-panel-header-margin, 18px);
+}
+
+.screen-content .screen-header h1 {
+  font-size: var(--ui-tuning-screen-title-size, clamp(27px, 3vw, 40px));
+  font-weight: var(--ui-tuning-screen-title-weight, 700);
+}
+
+.screen-content .screen-header p {
+  font-size: var(--ui-tuning-body-size, 13px);
+}
+
+.screen-grid-panel-content > .card > .card-head h2 {
+  font-size: var(--ui-tuning-panel-title-size, 14px);
+  font-weight: var(--ui-tuning-panel-title-weight, 700);
+}
+
+.game-tooltip:not(.game-tooltip-wide) {
+  max-width: min(var(--ui-tuning-tooltip-max-width, 360px), calc(100vw - 16px));
+  padding: var(--ui-tuning-tooltip-padding-y, 8px) var(--ui-tuning-tooltip-padding-x, 10px);
+  font-size: var(--ui-tuning-tooltip-font-size, 12px);
+  line-height: var(--ui-tuning-tooltip-line-height, 1.4);
+}
+
+.inventory-screen .inventory-grid {
+  grid-template-columns: repeat(auto-fill, minmax(var(--ui-tuning-inventory-min-width, 102px), var(--ui-tuning-inventory-max-width, 126px)));
+  gap: var(--ui-tuning-inventory-grid-gap, 7px);
+}
+
+.inventory-screen .inventory-item {
+  height: var(--ui-tuning-inventory-height, 126px);
+  min-height: var(--ui-tuning-inventory-height, 126px);
+  padding: var(--ui-tuning-inventory-padding-y, 3px) var(--ui-tuning-inventory-padding-x, 3px) var(--ui-tuning-inventory-padding-bottom, 20px);
+  gap: var(--ui-tuning-inventory-card-gap, 4px);
+  border-width: var(--ui-tuning-inventory-border-width, 1px);
+  border-radius: var(--ui-tuning-inventory-radius, 8px);
+}
+
+.inventory-screen .inventory-item-art {
+  min-height: calc(var(--ui-tuning-inventory-icon-size, 54px) + 7px);
+}
+
+.inventory-screen .inventory-item .item-icon-tile {
+  width: var(--ui-tuning-inventory-icon-size, 54px);
+  height: var(--ui-tuning-inventory-icon-size, 54px);
+  font-size: calc(var(--ui-tuning-inventory-icon-size, 54px) * .59);
+}
+
+.inventory-screen .inventory-item-name {
+  font-size: var(--ui-tuning-inventory-name-size, 10px) !important;
+  font-weight: var(--ui-tuning-item-name-weight, 650);
+  line-height: var(--ui-tuning-inventory-name-line-height, 1.15);
+  -webkit-line-clamp: var(--ui-tuning-inventory-name-lines, 2);
+}
+
+.inventory-screen .inventory-item > .item-quantity {
+  font-size: var(--ui-tuning-inventory-quantity-size, 12px) !important;
+}
+
+.inventory-screen .inventory-item.is-new::after {
+  width: var(--ui-tuning-inventory-new-dot-size, 7px);
+  height: var(--ui-tuning-inventory-new-dot-size, 7px);
+}
+
+.equipment-screen .equipment-armory-grid {
+  grid-template-columns: repeat(auto-fit, minmax(var(--ui-tuning-equipment-min-width, 120px), 1fr));
+  grid-auto-rows: var(--ui-tuning-equipment-height, 90px);
+  gap: var(--ui-tuning-equipment-grid-gap, 7px);
+}
+
+.equipment-screen .equipment-armory-card {
+  gap: var(--ui-tuning-equipment-gap, 7px);
+  padding: var(--ui-tuning-equipment-padding, 7px);
+}
+
+.equipment-screen .equipment-armory-icon {
+  width: var(--ui-tuning-equipment-icon-size, 38px);
+  height: var(--ui-tuning-equipment-icon-size, 38px);
+  font-size: calc(var(--ui-tuning-equipment-icon-size, 38px) * .55);
+}
+
+.equipment-screen .equipment-armory-copy {
+  gap: var(--ui-tuning-equipment-gap, 7px);
+}
+
+.equipment-screen .equipment-armory-name-line strong {
+  font-size: var(--ui-tuning-equipment-title-size, 12px);
+}
+
+.equipment-screen .equipment-armory-card .status,
+.equipment-screen .equipment-armory-marker,
+.equipment-screen .equipment-tier-badge,
+.equipment-screen .equipment-armory-artifact-meta {
+  font-size: var(--ui-tuning-equipment-metadata-size, 8px);
+}
+
+.screen-content .equipment-stat-label {
+  font-size: var(--ui-tuning-stat-row-label-size, 11px);
+}
+
+.screen-content .equipment-stat-value {
+  font-size: var(--ui-tuning-stat-row-value-size, 11px);
+  font-weight: var(--ui-tuning-stat-row-value-weight, 700);
+}
+
+.screen-content .inventory-comparison-name,
+.screen-content .equipment-comparison-name,
+.screen-content .equipment-inspector-hero-copy h3 {
+  font-size: var(--ui-tuning-item-name-size, 12px);
+  font-weight: var(--ui-tuning-item-name-weight, 600);
+}
+
+.screen-content .equipment-inspector-metadata {
+  font-size: var(--ui-tuning-metadata-size, 9px);
+  letter-spacing: calc(var(--ui-tuning-metadata-spacing, .08) * 1em);
+}
+
+.schools-screen .spell-browser-grid {
+  grid-auto-rows: minmax(var(--ui-tuning-schools-height, 174px), auto);
+  gap: var(--ui-tuning-schools-grid-gap, 9px);
+}
+
+.schools-screen .spell-browser-tile {
+  min-width: min(var(--ui-tuning-schools-min-width, 160px), 100%);
+  min-height: var(--ui-tuning-schools-height, 174px);
+  gap: var(--ui-tuning-schools-gap, 8px);
+  padding: var(--ui-tuning-schools-padding, 12px);
+}
+
+.schools-screen .spell-browser-icon-frame {
+  width: var(--ui-tuning-schools-icon-size, 58px);
+  height: var(--ui-tuning-schools-icon-size, 58px);
+}
+
+.schools-screen .spell-browser-icon-frame .spell-icon-large {
+  width: calc(var(--ui-tuning-schools-icon-size, 58px) - 2px);
+  height: calc(var(--ui-tuning-schools-icon-size, 58px) - 2px);
+}
+
+.schools-screen .spell-browser-name {
+  font-size: var(--ui-tuning-schools-name-size, 13px);
+}
+
+.schools-screen .spell-browser-footer {
+  font-size: var(--ui-tuning-schools-mana-size, 11px);
+}
+
+.schools-screen .spell-browser-footer .ui-time {
+  font-size: var(--ui-tuning-schools-cooldown-size, 11px);
+}
+
+.combat-screen .combat-spell-grid {
+  gap: var(--ui-tuning-combat-grid-gap, 7px);
+}
+
+.combat-screen .spell-combat-tile {
+  min-width: min(var(--ui-tuning-combat-min-width, 110px), 100%);
+  min-height: var(--ui-tuning-combat-height, 74px);
+}
+
+.combat-screen .spell-combat-cast {
+  gap: var(--ui-tuning-combat-gap, 3px);
+  padding: var(--ui-tuning-combat-padding-top, 8px) var(--ui-tuning-combat-padding-right, 32px) var(--ui-tuning-combat-padding-bottom, 6px) var(--ui-tuning-combat-padding-left, 9px);
+}
+
+.combat-screen .spell-combat-icon .spell-icon-shell {
+  width: var(--ui-tuning-combat-icon-size, 29px);
+  height: var(--ui-tuning-combat-icon-size, 29px);
+}
+
+.combat-screen .spell-combat-name strong {
+  font-size: var(--ui-tuning-combat-name-size, 11px);
+}
+
+.combat-screen .spell-combat-footer {
+  font-size: var(--ui-tuning-combat-mana-size, 11px);
+}
+
+.combat-screen .spell-combat-cooldown-number {
+  font-size: var(--ui-tuning-combat-cooldown-size, 11px);
+}

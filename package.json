@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:run": "vitest run",
+    "ui:validate": "npx vite-node scripts/validate-ui-preset.ts",
     "balancing:export": "npx vite-node scripts/export-balancing-docs.ts",
     "balancing:coverage": "npx vite-node scripts/check-balancing-doc-coverage.ts"
   },

@@ -4,13 +4,16 @@ import type { TopbarRegionId } from './layoutEditorTypes'
 import { beginTopbarReorder, beginTopbarResize, cancelTopbarInteraction, commitTopbarInteraction, getTopbarLayout, previewTopbarOrder, previewTopbarResize, selectShellRegion, useLayoutEditorStore } from './layoutEditorStore'
 import { TOPBAR_RESOURCE_IDS } from './shellLayout'
 import { dismissGameTooltips } from '../../components/ui/tooltip/Tooltip'
+import { registerUiElement } from './uiEditorRegistry'
 
 export function EditableTopbarRegion({ regionId, label, editing, width, children }: { regionId: TopbarRegionId; label: string; editing: boolean; width?: number; children: ReactNode }) {
   const editor = useLayoutEditorStore()
   const pointerId = useRef<number | null>(null)
   const captureTarget = useRef<HTMLElement | null>(null)
+  const uiElementRef = useRef<HTMLDivElement>(null)
   const interactive = editing && editor.layoutTarget === 'shell'
   const isResource = TOPBAR_RESOURCE_IDS.includes(regionId)
+  useEffect(() => { if (!uiElementRef.current) return; return registerUiElement({ id: `shell.topbar.${regionId.replace('topbar-', '')}`, type: 'container', componentType: `topbar.${regionId.replace('topbar-', '')}`, screen: 'shell', parentId: 'shell.topbar', label, capabilities: ['layout', 'position', 'appearance', 'effects'] }, uiElementRef.current) }, [label, regionId])
 
   const previewOrderAt = (clientX: number) => {
     if (pointerId.current === null || editor.shellInteraction !== 'dragging') return
@@ -59,7 +62,7 @@ export function EditableTopbarRegion({ regionId, label, editing, width, children
     else beginTopbarReorder(regionId, event.clientX)
   }
 
-  return <div className={`topbar-shell-region topbar-region-${regionId.replace('topbar-', '')} ${interactive ? 'shell-region-editing' : ''} ${editor.selectedShellRegion === regionId ? 'selected' : ''}`} style={{ width: width === undefined ? undefined : `${width}px` } as CSSProperties} data-shell-region={regionId} onClick={() => interactive && selectShellRegion(regionId)} onPointerMove={(event) => { previewResizeAt(event.clientX); previewOrderAt(event.clientX) }} onPointerUp={(event) => finish(false, event.pointerId)} onPointerCancel={(event) => finish(true, event.pointerId)}>
+  return <div ref={uiElementRef} className={`topbar-shell-region topbar-region-${regionId.replace('topbar-', '')} ${interactive ? 'shell-region-editing' : ''} ${editor.selectedShellRegion === regionId ? 'selected' : ''}`} style={{ width: width === undefined ? undefined : `${width}px` } as CSSProperties} data-shell-region={regionId} data-ui-id={`shell.topbar.${regionId.replace('topbar-', '')}`} data-ui-type="container" data-ui-component={`topbar.${regionId.replace('topbar-', '')}`} data-ui-editable="true" onClick={() => interactive && selectShellRegion(regionId)} onPointerMove={(event) => { previewResizeAt(event.clientX); previewOrderAt(event.clientX) }} onPointerUp={(event) => finish(false, event.pointerId)} onPointerCancel={(event) => finish(true, event.pointerId)}>
     {children}
     {interactive && <div className="topbar-region-overlay" aria-label={`${label} header controls`}>
       <span className="topbar-region-label">{label}</span>

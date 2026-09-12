@@ -1,4 +1,4 @@
-import { Children, isValidElement, useCallback, useMemo, useState } from 'react'
+import { Children, isValidElement, useCallback, useEffect, useMemo, useState } from 'react'
 import { GridLayout, noCompactor, useContainerWidth, type EventCallback, type Layout } from 'react-grid-layout'
 import type { ReactNode } from 'react'
 import type { ScreenId } from '../../game/types'
@@ -9,6 +9,7 @@ import { GRID_COLUMNS, GRID_MARGIN, GRID_ROW_HEIGHT } from './layoutEditorTypes'
 import { EditableGridItem } from './EditableGridItem'
 import { GridOverlay } from './GridOverlay'
 import { getRequiredGridRows, resolvePanelAutoFlowLayout, stackPanelLayout } from './runtimePanelLayout'
+import { registerUiElement } from './uiEditorRegistry'
 
 export interface EditableGridPanel { id: string; content: ReactNode }
 export type EditableGridLayoutTransform = (layout: Layout) => Layout
@@ -16,6 +17,7 @@ export type EditableGridLayoutTransform = (layout: Layout) => Layout
 export function EditableGrid({ screen, panels, children, layoutTransform }: { screen: ScreenId; panels?: EditableGridPanel[]; children?: ReactNode; layoutTransform?: EditableGridLayoutTransform }) {
   const editor = useLayoutEditorStore()
   const { width, containerRef, mounted } = useContainerWidth({ measureBeforeMount: false, initialWidth: 1100 })
+  useEffect(() => { if (!containerRef.current) return; return registerUiElement({ id: `screen.${screen}`, type: 'container', screen, label: 'Current screen', capabilities: ['layout', 'position', 'appearance', 'effects'] }, containerRef.current) }, [containerRef, screen])
   const saved = useMemo(() => getSavedScreenLayouts(screen), [editor.document, screen])
   const grid = useMemo(() => toGridLayout(screen, saved, editor.isEditing), [editor.document, editor.isEditing, saved, screen])
   const transformedGrid = useMemo(() => editor.isEditing || !layoutTransform ? grid : layoutTransform(grid), [editor.isEditing, grid, layoutTransform])
@@ -38,7 +40,7 @@ export function EditableGrid({ screen, panels, children, layoutTransform }: { sc
   const renderedChildren = availableDefinitions.filter((definition) => autoFlowGrid.some((item) => item.i === definition.id)).map((definition, sequenceIndex) => <div key={definition.id}><EditableGridItem screen={screen} panelId={definition.id} sequenceIndex={sequenceIndex} onNaturalHeightChange={handleNaturalHeightChange}>{available.get(definition.id)}</EditableGridItem></div>)
 
   const handleLayoutStop: EventCallback = (layout, _oldItem, newItem) => { if (editor.isEditing && newItem) commitGridLayout(screen, layout, newItem.i) }
-  return <div className={`ui-editor-grid ${editor.isEditing ? 'editing' : ''}`} ref={containerRef}>
+  return <div className={`ui-editor-grid ${editor.isEditing ? 'editing' : ''}`} ref={containerRef} data-ui-id={`screen.${screen}`} data-ui-type="container" data-ui-editable="true">
     <GridOverlay visible={editor.isEditing && editor.showGrid} />
     {mounted && <GridLayout width={width} layout={displayGrid} compactor={noCompactor} gridConfig={{ cols: GRID_COLUMNS, rowHeight: GRID_ROW_HEIGHT, margin: GRID_MARGIN, containerPadding: [0, 0] }} dragConfig={{ enabled: editor.isEditing, bounded: true, handle: '.ui-editor-drag-handle', cancel: '.ui-editor-no-drag,button,input,select,textarea,a' }} resizeConfig={{ enabled: editor.isEditing, handles: ['e', 's', 'se'] }} className="ui-editor-grid-layout" onDragStop={handleLayoutStop} onResizeStop={handleLayoutStop}>{renderedChildren}</GridLayout>}
   </div>

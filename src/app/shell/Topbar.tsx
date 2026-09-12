@@ -13,6 +13,7 @@ import { TOPBAR_RESOURCE_IDS } from '../../ui/layout-editor/shellLayout'
 import type { TopbarRegionId } from '../../ui/layout-editor/layoutEditorTypes'
 import { GameValue } from '../../ui/game-feel/GameValue'
 import { FpsCounter } from '../../ui/performance/FpsCounter'
+import { isUiEditorEnabled } from '../../ui/layout-editor/uiEditorAccess'
 
 interface TopbarProps {
   screen: ScreenId
@@ -46,6 +47,7 @@ export function Topbar({ screen, editor, offlineBankOpen, onOfflineBankToggle, o
   const flowDetail = isManaOverCap && flow.state === 'surplus' ? 'OVER CAP' : flow.etaKind === 'full' ? (flow.etaMs === null ? 'FULL' : `FULL IN ${formatDuration(flow.etaMs)}`) : flow.etaKind === 'empty' ? `EMPTY IN ${formatDuration(flow.etaMs ?? 0)}` : flow.etaKind === 'starved' ? 'STARVED' : ''
   const shellEditing = editor.isEditing && layoutEditor.layoutTarget === 'shell'
   const shellDragging = layoutEditor.shellInteraction !== 'idle'
+  const uiEditorEnabled = isUiEditorEnabled()
 
   const resource = (id: TopbarRegionId, children: ReactNode, tooltip: ReactNode, accent: 'neutral' | 'mana' | 'health' | 'focus' = 'neutral') => {
     const content = <EditableTopbarRegion regionId={id} label={id === 'topbar-health' ? 'Health' : id === 'topbar-mana' ? 'Mana' : 'Focus'} editing={editor.isEditing} width={layout.widths[id]}>{children}</EditableTopbarRegion>
@@ -73,9 +75,9 @@ export function Topbar({ screen, editor, offlineBankOpen, onOfflineBankToggle, o
     <GameTooltip disabled={shellEditing} content="Developer Tools">
       <button className="topbar-tool-button" onClick={onDeveloperTools} disabled={shellDragging} aria-label="Dev Tools"><Wrench size={15} /><span>Dev Tools</span></button>
     </GameTooltip>
-    <GameTooltip disabled={shellEditing} content={<TooltipContent title={editor.isEditing ? 'Exit UI Editor' : 'Edit UI'} description="Customize screen and header layouts." />}>
+    {uiEditorEnabled && <GameTooltip disabled={shellEditing} content={<TooltipContent title={editor.isEditing ? 'Exit UI Editor' : 'Edit UI'} description="Customize screen and header layouts." />}>
       <button className="topbar-tool-button topbar-editor-button" onClick={onEditUi} aria-label={editor.isEditing ? 'Exit UI' : 'Edit UI'}><Edit3 size={15} /><span>{editor.isEditing ? 'Exit UI' : 'Edit UI'}</span></button>
-    </GameTooltip>
+    </GameTooltip>}
     <GameTooltip disabled={shellEditing} content="Settings">
       <button className="icon-button topbar-settings-button" onClick={onSettings} disabled={shellDragging} aria-label="Settings"><Settings size={17} /></button>
     </GameTooltip>

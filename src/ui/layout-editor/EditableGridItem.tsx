@@ -1,22 +1,25 @@
 import { Lock, Unlock, EyeOff } from 'lucide-react'
-import { useCallback, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 import type { ScreenId } from '../../game/types'
 import { GameTooltip } from '../../components/ui/tooltip/Tooltip'
 import { getPanelDefinition } from './panelRegistry'
 import { getSavedScreenLayouts, selectLayoutPanel, togglePanelHidden, togglePanelLocked, useLayoutEditorStore } from './layoutEditorStore'
 import { usePanelNaturalHeight } from './usePanelNaturalHeight'
+import { registerUiElement } from './uiEditorRegistry'
 
 export function EditableGridItem({ screen, panelId, sequenceIndex = 0, children, onNaturalHeightChange }: { screen: ScreenId; panelId: string; sequenceIndex?: number; children: ReactNode; onNaturalHeightChange?: (panelId: string, height: number) => void }) {
   const editor = useLayoutEditorStore()
   const layout = getSavedScreenLayouts(screen)[panelId]
   const panel = getPanelDefinition(screen, panelId)
+  const uiElementRef = useRef<HTMLDivElement>(null)
   const naturalContentRef = useRef<HTMLDivElement>(null)
   const reportNaturalHeight = useCallback((height: number) => onNaturalHeightChange?.(panelId, height), [onNaturalHeightChange, panelId])
   usePanelNaturalHeight(naturalContentRef, panel?.heightMode !== 'bounded-scroll', onNaturalHeightChange ? reportNaturalHeight : undefined)
+  useEffect(() => { if (!uiElementRef.current || !panel) return; return registerUiElement({ id: `screen.${screen}.${panelId}`, type: 'panel', componentType: `panel.${panelId}`, screen, parentId: `screen.${screen}`, label: panel.label, capabilities: ['layout', 'position', 'appearance', 'effects'] }, uiElementRef.current) }, [panel, panelId, screen])
   if (!panel || layout?.hidden && !editor.isEditing) return null
   const selected = editor.selectedPanelId === panelId
-  return <div className={`ui-editor-panel ${selected ? 'selected' : ''} ${layout?.hidden ? 'hidden-panel' : ''}`} data-panel-id={panelId} onClick={() => editor.isEditing && selectLayoutPanel(panelId)}>
+  return <div ref={uiElementRef} className={`ui-editor-panel ${selected ? 'selected' : ''} ${layout?.hidden ? 'hidden-panel' : ''}`} data-panel-id={panelId} data-ui-id={`screen.${screen}.${panelId}`} data-ui-type="panel" data-ui-component={`panel.${panelId}`} data-ui-editable="true" onClick={() => editor.isEditing && selectLayoutPanel(panelId)}>
     {editor.isEditing && <div className="ui-editor-overlay" aria-label={`${panel.label} layout controls`}>
       <GameTooltip content="Drag panel"><button type="button" className="ui-editor-drag-handle" onClick={(event) => { event.stopPropagation(); selectLayoutPanel(panelId) }} aria-label={`Drag ${panel.label}`}><span className="ui-editor-grip">⠿</span><span>{panel.label}</span></button></GameTooltip>
       <span className="ui-editor-panel-actions">{layout?.locked ? <Lock size={12} /> : <Unlock size={12} />}{layout?.hidden && <EyeOff size={12} />}</span>

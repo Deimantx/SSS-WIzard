@@ -39,6 +39,8 @@ import { getLiveVisibilityTransition } from './liveVisibility'
 import { isAllowedNativeDragTarget, isNativeInteractionTarget } from '../ui/game-feel/gameClientInteraction'
 import { GameContextMenuProvider } from '../ui/context-menu/GameContextMenuProvider'
 import { StoryEventModal } from '../components/story/StoryEventModal'
+import { UiEditorInteractionLayer } from '../ui/layout-editor/UiEditorInteractionLayer'
+import { UiEditorRuntime } from '../ui/layout-editor/UiEditorRuntime'
 
 export function GameShell() {
   const screen = useGameStore((state) => state.ui.screen)
@@ -99,7 +101,7 @@ export function GameShell() {
     setUiPreferences({ navigationGroups: { ...preferences.navigationGroups, [groupId]: !preferences.navigationGroups[groupId] } })
   }
   const openDevTools = () => { dismissGameTooltips(); setOfflineBankOpen(false); setOfflineResultsOpen(false); openDeveloperTools() }
-  const toggleEditor = () => { dismissGameTooltips(); if (editor.isEditing) closeLayoutEditor(); else openLayoutEditor(screen, 'shell') }
+  const toggleEditor = () => { dismissGameTooltips(); if (editor.isEditing) closeLayoutEditor(); else openLayoutEditor(screen, 'screen') }
   const switchProfile = () => { const result = leaveToProfiles(); if (!result.ok) setProfileSwitchError(result.error) }
 
   const ambient = getAmbientProfile(screen, appearance)
@@ -122,6 +124,8 @@ export function GameShell() {
     <GameFeelAudioObserver />
     <GameFeelInteractionLayer />
     <GameFeelLayer />
+    <UiEditorRuntime />
+    <UiEditorInteractionLayer />
     <LayoutEditorDrawer screen={screen} />
     <DeveloperToolsWindow />
     <OfflineBankResultsDialog report={lastOfflineBankReport} open={offlineResultsOpen} onClose={() => setOfflineResultsOpen(false)} onOpenInventory={() => { setOfflineResultsOpen(false); setScreen('inventory') }} />

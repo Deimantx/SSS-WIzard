@@ -7,6 +7,7 @@ import { clampPanelLayout, getScreenLayouts, isDesktopLayout } from './layoutUti
 import { getRequiredGridRows } from './runtimePanelLayout'
 import { clampTopbarLayout, DEFAULT_TOPBAR_LAYOUT, moveTopbarResource, TOPBAR_PRESETS } from './shellLayout'
 import { LAYOUT_VERSION, type LayoutEditorState, SavedPanelLayout, ScreenLayouts, TopbarLayout, TopbarRegionId, UiLayoutDocument } from './layoutEditorTypes'
+import { isUiEditorEnabled } from './uiEditorAccess'
 
 type Snapshot = LayoutEditorState & { document: UiLayoutDocument }
 const listeners = new Set<() => void>()
@@ -32,6 +33,7 @@ export function useLayoutEditorStore<T = Snapshot>(selector?: (state: Snapshot) 
 
 export function getSavedScreenLayouts(screen: ScreenId) { return getScreenLayouts(screen, documentState.screens[screen]) }
 export function openLayoutEditor(screen: ScreenId, target: LayoutEditorState['layoutTarget'] = 'screen') {
+  if (!isUiEditorEnabled()) { publish({ notice: 'UI Editor is available only in developer mode.' }); return false }
   if (!isDesktopLayout()) { publish({ notice: 'UI Editor is available on desktop-sized layouts.' }); return false }
   const first = getPanelDefinitions(screen).find((panel) => !getSavedScreenLayouts(screen)[panel.id]?.hidden)?.id ?? getPanelDefinitions(screen)[0]?.id ?? null
   publish({ isEditing: true, layoutTarget: target, selectedPanelId: target === 'shell' ? null : first, selectedShellRegion: target === 'shell' ? 'topbar-mana' : null, notice: null, showGrid: true })

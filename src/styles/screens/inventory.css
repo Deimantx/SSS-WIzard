@@ -61,7 +61,6 @@
 .inventory-item-art::before { position: absolute; z-index: 0; pointer-events: none; inset: 6px 12px 2px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--inventory-accent, var(--ui-accent)) 13%, transparent), transparent 67%); content: ''; }
 .inventory-item-art .item-icon { position: relative; z-index: 1; }
 .inventory-item-quantity { position: static; justify-self: end; align-self: end; margin-right: 2px; min-width: max-content; white-space: nowrap; font-variant-numeric: tabular-nums; padding: 2px 4px; border: 1px solid color-mix(in srgb, var(--inventory-accent, var(--ui-accent)) 38%, var(--ui-border)); border-radius: 4px; color: var(--ui-text); background: color-mix(in srgb, var(--ui-panel-strong) 88%, transparent); font: var(--text-micro) var(--font-mono); }
-.inventory-item-name { display: block; width: 100%; min-width: 0; overflow: hidden; color: var(--ui-text); font-size: var(--text-xs); font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .inventory-item-state { position: absolute; z-index: 4; top: 7px; right: 7px; display: grid; place-items: center; width: 18px; height: 18px; color: var(--ui-secondary); }
 .inventory-item.equipped .inventory-item-state { color: var(--ui-success); }
 .inventory-item.is-new::after { position: absolute; top: 6px; left: 6px; z-index: 10; width: 7px; height: 7px; border: 0; border-radius: 50%; background: #f2c94c; box-shadow: none; content: ''; pointer-events: none; }
@@ -402,6 +401,8 @@
   height: 126px;
   padding: 3px 3px 20px;
   gap: 4px;
+  --inventory-name-size: 10px;
+  --inventory-quantity-size: 12px;
   /* Position offsets are unitless pixels: 0, 3, -2, etc. */
   --inventory-name-x: 0;
   --inventory-name-y: 0;
@@ -453,7 +454,7 @@
   min-width: 0;
   overflow: hidden;
   font-family: var(--font-sans);
-  font-size: var(--text-xs);
+  font-size: var(--inventory-name-size, var(--text-xs)) !important;
   font-weight: 650;
   line-height: 1.15;
   text-overflow: ellipsis;
@@ -467,6 +468,7 @@
 
 .inventory-item > .item-quantity {
   position: relative;
+  font-size: var(--inventory-quantity-size, var(--text-xs)) !important;
   left: calc(var(--inventory-quantity-x, 0) * 1px);
   top: calc(var(--inventory-quantity-y, 0) * 1px);
 }

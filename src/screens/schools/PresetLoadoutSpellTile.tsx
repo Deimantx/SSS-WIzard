@@ -11,7 +11,7 @@ export function PresetLoadoutSpellTile({ spell, spellId, rank, focusCost, index,
   const school = spell?.school ?? 'fire'
   return <article className={`spell-preset-loadout-tile${available ? '' : ' is-unavailable'}`}>
     <span className="spell-preset-slot-number">{String(index + 1).padStart(2, '0')}</span>
-    <SpellIcon school={school} locked={!available} size="medium" />
+    <SpellIcon school={school} spellId={available ? spellId : undefined} locked={!available} size="medium" />
     <strong>{name}</strong>
     {spell && rank ? <><small>{formatSpellRank(rank as SpellRank)}</small>{focusCost !== null && <span className="spell-preset-tile-focus"><CircleDot size={12} aria-hidden="true" />{focusCost} Focus</span>}</> : <small>Unavailable · saved slot retained</small>}
     <div className="spell-preset-tile-actions">

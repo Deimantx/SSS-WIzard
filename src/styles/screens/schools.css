@@ -67,6 +67,7 @@
 .spell-browser-footer > svg { color: var(--ui-text-muted); flex: 0 0 auto; }
 .spell-browser-tile.is-locked .spell-browser-footer svg { color: var(--ui-text-muted); }
 .spell-icon-shell { display: inline-grid; flex: 0 0 auto; place-items: center; width: 31px; height: 31px; border: 1px solid color-mix(in srgb, var(--spell-school-color) 65%, var(--ui-border)); border-radius: 8px; color: var(--spell-school-color); background: color-mix(in srgb, var(--spell-school-color) 12%, transparent); font-weight: 900; }
+.spell-icon-shell img { display: block; width: 80%; height: 80%; object-fit: contain; image-rendering: pixelated; }
 .spell-icon-small { width: 24px; height: 24px; border-radius: 6px; font-size: .72rem; }
 .spell-icon-medium { width: 38px; height: 38px; border-radius: 9px; font-size: 1.05rem; }
 .spell-icon-large { width: 56px; height: 56px; border-radius: 12px; font-size: 1.65rem; }

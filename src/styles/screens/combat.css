@@ -409,6 +409,7 @@
   display: grid;
   place-items: center;
 }
+.combat-status-icon-image { display: block; width: 14px; height: 14px; object-fit: contain; image-rendering: pixelated; }
 .status-category-buff {
   border-color: color-mix(in srgb, var(--semantic-buff) 48%, var(--ui-border));
   color: var(--semantic-buff);

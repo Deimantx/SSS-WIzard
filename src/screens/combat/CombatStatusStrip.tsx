@@ -9,6 +9,7 @@ import { formatTime } from '../../game/utils'
 import { GameTooltip } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { useGameStore } from '../../store/gameStore'
+import { resolveGameAssetIcon } from '../../ui/icons/gameAssetIcons'
 
 export function CombatStatusStrip({ statuses, label }: { statuses: ActiveStatus[]; label: string }) {
   const state = useGameStore()
@@ -47,6 +48,8 @@ export function CombatStatusChip({ group }: { group: CombatStatusGroupPresentati
 function StatusIcon({ status }: { status: ActiveStatus }) {
   const definition = STATUS_DEFINITIONS[status.statusId]
   if (!definition) return null
+  const asset = resolveGameAssetIcon({ kind: 'status', id: status.statusId })
+  if (asset) return <img className="combat-status-icon-image" src={asset} alt="" draggable={false} />
   if (definition.tags.includes('dot')) return <Flame size={13} aria-hidden="true" />
   if (definition.tags.includes('control')) return <Snowflake size={13} aria-hidden="true" />
   if (definition.tags.includes('barrier')) return <Shield size={13} aria-hidden="true" />

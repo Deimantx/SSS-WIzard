@@ -20,7 +20,7 @@ export function LegacyCombatLogRow({ message, latest = false }: { message: strin
 }
 
 function LogActionIcon({ entry }: { entry: CombatLogEntry }) {
-  if (entry.category === 'spell' && entry.spellId && SPELLS[entry.spellId]) return <SpellIcon school={SPELLS[entry.spellId].school} size="small" />
+  if (entry.category === 'spell' && entry.spellId && SPELLS[entry.spellId]) return <SpellIcon school={SPELLS[entry.spellId].school} spellId={entry.spellId} size="small" />
   const { category } = entry
   if (category === 'basic-attack' || category === 'enemy-action') return <Swords size={14} aria-hidden="true" />
   if (category === 'heal') return <Heart size={14} aria-hidden="true" />

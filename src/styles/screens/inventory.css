@@ -64,7 +64,7 @@
 .inventory-item.equipped .inventory-item-state { color: var(--ui-success); }
 .inventory-item.is-new::after { position: absolute; top: 6px; left: 6px; z-index: 10; width: 7px; height: 7px; border: 0; border-radius: 50%; background: #f2c94c; box-shadow: none; content: ''; pointer-events: none; }
 .item-icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 8px; background: rgba(255,255,255,.045); font-family: var(--font-display); font-size: 18px; line-height: 1; }
-.item-icon img { display: block; width: 82%; height: 82%; object-fit: contain; }
+.item-icon img { display: block; width: 82%; height: 82%; object-fit: contain; image-rendering: pixelated; }
 .item-icon-tiny { width: 25px; height: 25px; font-size: 17px; }.item-icon-tile { width: 61px; height: 61px; font-size: 37px; filter: drop-shadow(0 0 10px color-mix(in srgb, currentColor 30%, transparent)); }.item-icon-large { width: 91px; height: 91px; font-size: 59px; filter: drop-shadow(0 0 15px color-mix(in srgb, currentColor 34%, transparent)); }
 .inventory-empty-state, .inventory-detail-empty { display: grid; gap: 7px; min-height: 190px; place-content: center; padding: 22px; border: 1px dashed var(--ui-border-strong); border-radius: 9px; color: var(--ui-text-muted); text-align: center; }
 .inventory-empty-state strong, .inventory-detail-empty strong { color: var(--ui-text-soft); font: var(--text-sm) var(--font-mono); letter-spacing: .1em; }.inventory-empty-state span, .inventory-detail-empty span { font-size: var(--text-xs); line-height: 1.45; }.inventory-empty-mark { color: var(--ui-accent); font-size: 1.6rem; opacity: .75; }

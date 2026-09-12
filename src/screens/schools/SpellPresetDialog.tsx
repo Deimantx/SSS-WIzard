@@ -180,7 +180,7 @@ function FocusBudget({ projection, maxFocus }: { projection: ReturnType<typeof g
 function PresetMiniIcons({ spellIds }: { spellIds: readonly SpellId[] }) {
   const shown = spellIds.slice(0, 4)
   const remaining = Math.max(0, spellIds.length - shown.length)
-  return <span className="spell-preset-mini-icons">{shown.map((spellId) => { const spell = SPELLS[spellId]; return <GameTooltip key={spellId} content={<TooltipContent title={spell?.name ?? 'Unavailable Spell'} description={spell ? 'Spell saved in this preset.' : 'This saved slot is currently unavailable.'} />}><span>{spell ? <SpellIcon school={spell.school} size="small" /> : <SpellIcon school="fire" locked size="small" />}</span></GameTooltip> })}{remaining > 0 && <span className="spell-preset-mini-more">+{remaining}</span>}</span>
+  return <span className="spell-preset-mini-icons">{shown.map((spellId) => { const spell = SPELLS[spellId]; return <GameTooltip key={spellId} content={<TooltipContent title={spell?.name ?? 'Unavailable Spell'} description={spell ? 'Spell saved in this preset.' : 'This saved slot is currently unavailable.'} />}><span>{spell ? <SpellIcon school={spell.school} spellId={spellId} size="small" /> : <SpellIcon school="fire" locked size="small" />}</span></GameTooltip> })}{remaining > 0 && <span className="spell-preset-mini-more">+{remaining}</span>}</span>
 }
 
 function ConfirmationDialog({ confirmation, draftName, onCancel, onDiscard, onSave }: { confirmation: PendingAction; draftName: string; onCancel: () => void; onDiscard: () => void; onSave: () => void }) {

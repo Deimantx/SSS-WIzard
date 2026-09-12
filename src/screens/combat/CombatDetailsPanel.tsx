@@ -35,7 +35,7 @@ function CombatDetailsRow({ mode, row }: { mode: CombatDetailsMode; row: CombatD
 }
 
 function SourceIcon({ row }: { row: CombatDetailsRowPresentation }): ReactNode {
-  if (row.contribution.spellId && SPELLS[row.contribution.spellId]) return <SpellIcon school={SPELLS[row.contribution.spellId].school} size="small" />
+  if (row.contribution.spellId && SPELLS[row.contribution.spellId]) return <SpellIcon school={SPELLS[row.contribution.spellId].school} spellId={row.contribution.spellId} size="small" />
   if (row.source.icon === 'swords') return <Swords size={14} aria-hidden="true" />
   if (row.source.icon === 'flame') return <Flame size={14} aria-hidden="true" />
   if (row.source.icon === 'heart') return <HeartPulse size={14} aria-hidden="true" />

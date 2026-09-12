@@ -42,7 +42,9 @@
 .transmutation-tile-status .status { display: block; max-width: 100%; overflow: hidden; padding: 2px 4px; font-size: var(--text-micro); text-overflow: ellipsis; white-space: nowrap; }
 .transmutation-recipe-tile > .progress-wrap { position: absolute; right: 5px; bottom: 3px; left: 5px; }
 .transmutation-recipe-tile > .progress-wrap .progress { height: 2px; }
-.transmutation-detail-content { display: grid; flex: 1 1 auto; align-content: start; gap: 12px; min-width: 0; min-height: 0; overflow: clip; padding-right: 3px; }
+.transmutation-detail-content { display: grid; flex: 1 1 auto; align-content: start; gap: 12px; min-width: 0; min-height: 0; overflow-x: hidden; overflow-y: auto; padding-right: 3px; padding-bottom: 20px; scrollbar-color: var(--ui-scrollbar-thumb) transparent; scrollbar-gutter: stable; scrollbar-width: thin; }
+.transmutation-detail-content::-webkit-scrollbar { width: 6px; }
+.transmutation-detail-content::-webkit-scrollbar-thumb { border-radius: 99px; background: var(--ui-scrollbar-thumb); }
 .transmutation-detail-hero { display: grid; grid-template-columns: 58px minmax(0, 1fr) auto; gap: 10px; align-items: center; min-width: 0; }
 .transmutation-detail-icon { display: grid; place-items: center; width: 58px; height: 58px; border: 1px solid color-mix(in srgb, var(--ui-accent) 38%, var(--ui-border)); border-radius: 10px; background: var(--ui-accent-soft); }
 .transmutation-detail-icon .item-icon-large { width: 50px; height: 50px; font-size: 34px; }

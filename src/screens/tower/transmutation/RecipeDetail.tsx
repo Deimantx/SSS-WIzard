@@ -1,7 +1,7 @@
 import { isTransmutationRecipeId } from '../../../game/content/recipes/recipes'
 import { setUiPreferences } from '../../../ui/preferences/uiPreferencesStore'
 import { LockKeyhole } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import { Card, Status } from '../../../components/ui'
 import { ItemIcon, ItemRequirementTile, ItemUsesDialog } from '../../../components/ui/item'
 import { ITEMS } from '../../../game/content/items/items'
@@ -12,6 +12,7 @@ import { getEffectiveTransmutationManaCost, getEffectiveTransmutationWorkMultipl
 import type { TransmutationRecipeId } from '../../../game/types'
 import { formatNumber, formatSignedRate, formatTime } from '../../../game/utils'
 import { useGameStore } from '../../../store/gameStore'
+import { useSmartScrollState } from '../../../ui/game-feel/useSmartScrollState'
 
 export function RecipeDetail({ recipe, onSelectRecipe }: { recipe: RecipeDefinition; onSelectRecipe?: (recipeId: TransmutationRecipeId) => void }) {
   const state = useGameStore()
@@ -27,9 +28,11 @@ export function RecipeDetail({ recipe, onSelectRecipe }: { recipe: RecipeDefinit
   const currentOutput = getRecipeCurrentOutputPerHour(recipe, echoes, state)
   const arrayBonuses = getTransmutationArrayBonuses(state)
   const materialCapacity = recipe.category === 'elemental' || recipe.category === 'material' ? getRecipeMaterialCapacity(requirements) : null
+  const detailScrollRef = useRef<HTMLDivElement>(null)
+  useSmartScrollState(detailScrollRef, { resetKey: recipe.id })
 
   return <Card className="transmutation-detail" title="RECIPE DETAIL">
-    <div className="transmutation-detail-content">
+    <div ref={detailScrollRef} className="transmutation-detail-content smart-scroll-region">
       <div className="transmutation-detail-hero"><div className="transmutation-detail-icon"><ItemIcon itemId={recipe.output.itemId} size="large" /></div><div className="transmutation-detail-title"><span className="eyebrow">{recipe.category.toUpperCase()}</span><h2>{recipe.name}</h2><span className="transmutation-owned">OWNED ×{formatNumber(state.inventory[recipe.output.itemId] ?? 0)}</span></div><Status tone={statusTone(status)}>{statusLabel(status)}</Status></div>
       <p className="transmutation-detail-description">{recipe.description}</p>
 

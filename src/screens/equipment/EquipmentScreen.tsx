@@ -88,6 +88,7 @@ export function EquipmentScreenV2() {
   const selectedItem = selectedItemId ? ITEMS[selectedItemId] : null
   const selectedStats = selectedItemId && selectedItem && isArtifactItem(selectedItemId) ? getArtifactEffectiveStats(stateForPreview, selectedItemId) : selectedItem?.stats
   const armoryScrollRef = useRef<HTMLDivElement>(null)
+  const statsScrollRef = useRef<HTMLDivElement>(null)
   const inspectorScrollRef = useRef<HTMLDivElement>(null)
   const targetPosition = selectedItem?.equipmentSlot === 'ring'
     ? ringReplacement ?? (selectedPosition === 'ring1' || selectedPosition === 'ring2' ? selectedPosition : equipment.ring1 ? equipment.ring2 ? undefined : 'ring2' : 'ring1')
@@ -101,6 +102,7 @@ export function EquipmentScreenV2() {
   const equippedPositions = selectedItemId ? getItemPositions(selectedItemId).filter((position) => equipment[position] === selectedItemId) : []
   const ringNeedsChoice = selectedItem?.equipmentSlot === 'ring' && !ringReplacement && Boolean(equipment.ring1 && equipment.ring2) && selectedPosition !== 'ring1' && selectedPosition !== 'ring2'
   useSmartScrollState(armoryScrollRef, { dependencies: [visibleEquipment.join('|'), filter, search, availableOnly, sortMode] })
+  useSmartScrollState(statsScrollRef)
   useSmartScrollState(inspectorScrollRef, { resetKey: selectedItemId })
 
   useEffect(() => {
@@ -213,8 +215,8 @@ export function EquipmentScreenV2() {
     <p className="equipment-loadout-note">Select a slot to filter compatible equipment.</p>
   </Card>
 
-  const statsPanel = <Card title="WIZARD STATS" action={<Sparkles size={16} color="var(--gold)" />}>
-    <div className="equipment-stat-groups">
+  const statsPanel = <Card title="WIZARD STATS" className="equipment-stats-panel" action={<Sparkles size={16} color="var(--gold)" />}>
+    <div ref={statsScrollRef} className="equipment-stat-groups smart-scroll-region">
       <StatGroup title="CORE" rows={[{ key: 'maxHealth', value: statSnapshot.maxHealth }, { key: 'healthRegen', value: statSnapshot.healthRegen }, { key: 'maxMana', value: statSnapshot.maxMana }, { key: 'maxFocus', value: statSnapshot.maxFocus }, { key: 'manaRegen', value: statSnapshot.manaRegen }]} />
       <StatGroup title="OFFENSE" basicAttackIntervalMs={statSnapshot.basicAttackIntervalMs} rows={[{ key: 'spellPower', value: statSnapshot.spellPower }, { key: 'basicDamage', value: statSnapshot.basicDamage }, { key: 'basicAttackSpeedMultiplier', value: statSnapshot.basicAttackSpeedMultiplier }, { key: 'critChance', value: statSnapshot.critChance }, { key: 'critDamageMultiplier', value: statSnapshot.critDamageMultiplier }, ...(statSnapshot.fireSpellDamage ? [{ key: 'fireSpellDamage', value: statSnapshot.fireSpellDamage }] : []), ...(statSnapshot.airSpellDamage ? [{ key: 'airSpellDamage', value: statSnapshot.airSpellDamage }] : [])]} />
       <StatGroup title="DEFENSE" rows={[{ key: 'defense', value: statSnapshot.defense }, { key: 'damageReduction', value: statSnapshot.damageReduction }, ...(statSnapshot.blockChance ? [{ key: 'blockChance', value: statSnapshot.blockChance }] : []), ...(statSnapshot.barrierReceivedFlat ? [{ key: 'barrierReceivedFlat', value: statSnapshot.barrierReceivedFlat }] : []), ...Object.entries(statSnapshot.resistances).filter(([, value]) => Math.abs(value ?? 0) > 0.0001).map(([type, value]) => ({ key: `resistance-${type}`, value: value ?? 0 }))]} />

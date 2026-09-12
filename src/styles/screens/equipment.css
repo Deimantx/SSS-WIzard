@@ -54,6 +54,11 @@
 .equipment-empty-armory strong, .equipment-inspector-empty strong { color: var(--ui-text-soft); font: var(--text-micro) var(--font-mono); letter-spacing: .12em; }
 .equipment-empty-armory small, .equipment-inspector-empty small { max-width: 240px; font-size: var(--text-xs); line-height: 1.45; }
 .equipment-stat-groups { display: grid; gap: 13px; }
+.equipment-stats-panel { display: flex; min-height: 0; flex-direction: column; }
+.equipment-stats-panel > .card-head { flex: 0 0 auto; }
+.equipment-stats-panel > .equipment-stat-groups { flex: 1 1 auto; min-height: 0; overflow-x: hidden; overflow-y: auto; padding-right: 3px; padding-bottom: 20px; scrollbar-color: var(--ui-scrollbar-thumb) transparent; scrollbar-width: thin; }
+.equipment-stats-panel > .equipment-stat-groups::-webkit-scrollbar { width: 6px; }
+.equipment-stats-panel > .equipment-stat-groups::-webkit-scrollbar-thumb { border-radius: 99px; background: var(--ui-scrollbar-thumb); }
 .equipment-stat-group { display: grid; gap: 6px; }
 .equipment-stat-group > span, .equipment-preview-label { color: var(--ui-accent); font: var(--text-micro) var(--font-mono); letter-spacing: .14em; }
 .equipment-stat-group > .game-tooltip-trigger { display: block; width: 100%; }

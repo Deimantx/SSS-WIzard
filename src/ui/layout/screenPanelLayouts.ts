@@ -148,7 +148,7 @@ export const SCREEN_PANEL_LAYOUTS: Record<ScreenId, ScreenLayoutDefinition> = {
   // HOME / OVERVIEW
   // ============================================================
   home: screen({
-    'home-objective': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 0, preferredHeight: 138, label: 'Main objective' }),
+    'home-objective': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 0, preferredHeight: 100, label: 'Main objective' }),
     'home-school-mastery': panel({ order: 2, columnStart: 1, columnSpan: 12, rowStart: 2, minHeight: 0, preferredHeight: 210, label: 'Magic School Mastery' }),
     'home-checklist': panel({ order: 3, columnStart: 1, columnSpan: 7, rowStart: 3, minHeight: 0, preferredHeight: 354, label: 'Chapter checklist' }),
     'home-wizard': panel({ order: 4, columnStart: 8, columnSpan: 5, rowStart: 3, minHeight: 0, preferredHeight: 354, label: 'The wizard' }),
@@ -160,8 +160,8 @@ export const SCREEN_PANEL_LAYOUTS: Record<ScreenId, ScreenLayoutDefinition> = {
   // ============================================================
   combat: screen({
     'combat-stage': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 462, preferredHeight: 570, label: 'Combat Stage' }),
-    'combat-spell-deck': panel({ order: 2, columnStart: 1, columnSpan: 12, rowStart: 2, minHeight: 174, preferredHeight: 246, label: 'Spell Deck' }),
-    'combat-analytics': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 282, preferredHeight: 354, label: 'Combat Analytics' }),
+    'combat-spell-deck': panel({ order: 2, columnStart: 1, columnSpan: 12, rowStart: 2, minHeight: 174, preferredHeight: 320, label: 'Spell Deck' }),
+    'combat-analytics': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 282, preferredHeight: 440, label: 'Combat Analytics' }),
   }, ['combat-stage', 'combat-spell-deck', 'combat-analytics']),
 
   // ============================================================
@@ -185,28 +185,28 @@ export const SCREEN_PANEL_LAYOUTS: Record<ScreenId, ScreenLayoutDefinition> = {
   // EQUIPMENT
   // ============================================================
   equipment: screen({
-    'equipment-loadout': panel({ order: 1, columnStart: 1, columnSpan: 7, rowStart: 1, minHeight: 462, preferredHeight: 462, label: 'Equipment loadout' }),
-    'equipment-stats': panel({ order: 2, columnStart: 8, columnSpan: 5, rowStart: 1, minHeight: 462, preferredHeight: 462, label: 'Equipment stats' }),
-    'equipment-owned': panel({ order: 3, columnStart: 1, columnSpan: 7, rowStart: 2, minHeight: 462, preferredHeight: 714, label: 'Armory' }),
-    'equipment-inspector': panel({ order: 4, columnStart: 8, columnSpan: 5, rowStart: 2, minHeight: 462, preferredHeight: 462, label: 'Gear inspector' }),
+    'equipment-loadout': panel({ order: 1, columnStart: 1, columnSpan: 7, rowStart: 1, minHeight: 462, preferredHeight: 620, label: 'Equipment loadout' }),
+    'equipment-stats': panel({ order: 2, columnStart: 8, columnSpan: 5, rowStart: 1, minHeight: 462, preferredHeight: 620, label: 'Equipment stats' }),
+    'equipment-owned': panel({ order: 3, columnStart: 1, columnSpan: 7, rowStart: 2, minHeight: 462, preferredHeight: 710, label: 'Armory' }),
+    'equipment-inspector': panel({ order: 4, columnStart: 8, columnSpan: 5, rowStart: 2, minHeight: 462, preferredHeight: 710, label: 'Gear inspector' }),
   }, ['equipment-loadout', 'equipment-stats', 'equipment-owned', 'equipment-inspector']),
 
   // ============================================================
   // COLLECTION
   // ============================================================
   collection: screen({
-    'collection-summary': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 0, preferredHeight: 174, label: 'Collection summary' }),
-    'collection-content': panel({ order: 2, columnStart: 1, columnSpan: 7, rowStart: 2, minHeight: 0, preferredHeight: 606, label: 'Item collection' }),
-    'collection-inspector': panel({ order: 3, columnStart: 8, columnSpan: 5, rowStart: 2, minHeight: 0, preferredHeight: 606, label: 'Item inspection' }),
+    'collection-summary': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 0, preferredHeight: 200, label: 'Collection summary' }),
+    'collection-content': panel({ order: 2, columnStart: 1, columnSpan: 7, rowStart: 2, minHeight: 0, preferredHeight: 800, label: 'Item collection' }),
+    'collection-inspector': panel({ order: 3, columnStart: 8, columnSpan: 5, rowStart: 2, minHeight: 0, preferredHeight: 800, label: 'Item inspection' }),
   }, ['collection-summary', 'collection-content', 'collection-inspector']),
 
   // ============================================================
   // BESTIARY
   // ============================================================
   bestiary: screen({
-    'bestiary-summary': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 0, preferredHeight: 174, label: 'Bestiary summary' }),
-    'bestiary-index': panel({ order: 2, columnStart: 1, columnSpan: 5, rowStart: 2, minHeight: 0, preferredHeight: 678, label: 'Bestiary index' }),
-    'bestiary-inspector': panel({ order: 3, columnStart: 6, columnSpan: 7, rowStart: 2, minHeight: 0, preferredHeight: 678, label: 'Creature dossier' }),
+    'bestiary-summary': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 0, preferredHeight: 200, label: 'Bestiary summary' }),
+    'bestiary-index': panel({ order: 2, columnStart: 1, columnSpan: 5, rowStart: 2, minHeight: 0, preferredHeight: 800, label: 'Bestiary index' }),
+    'bestiary-inspector': panel({ order: 3, columnStart: 6, columnSpan: 7, rowStart: 2, minHeight: 0, preferredHeight: 800, label: 'Creature dossier' }),
   }, ['bestiary-summary', 'bestiary-index', 'bestiary-inspector']),
 
   // ============================================================
@@ -215,8 +215,8 @@ export const SCREEN_PANEL_LAYOUTS: Record<ScreenId, ScreenLayoutDefinition> = {
   'tower-channeling': screen({
     'channeling-mana-core': panel({ order: 1, columnStart: 1, columnSpan: 6, rowStart: 1, minHeight: 0, preferredHeight: 354, label: 'Mana Core' }),
     'channeling-echoes': panel({ order: 2, columnStart: 7, columnSpan: 6, rowStart: 1, minHeight: 354, preferredHeight: 354, label: 'Arcane Echoes' }),
-    'channeling-breakdown': panel({ order: 3, columnStart: 1, columnSpan: 6, rowStart: 2, minHeight: 354, preferredHeight: 534, label: 'Channeling Breakdown' }),
-    'channeling-pillars': panel({ order: 4, columnStart: 7, columnSpan: 6, rowStart: 2, minHeight: 354, preferredHeight: 534, label: 'Pillars of Mana' }),
+    'channeling-breakdown': panel({ order: 3, columnStart: 1, columnSpan: 6, rowStart: 2, minHeight: 354, preferredHeight: 750, label: 'Channeling Breakdown' }),
+    'channeling-pillars': panel({ order: 4, columnStart: 7, columnSpan: 6, rowStart: 2, minHeight: 354, preferredHeight: 750, label: 'Pillars of Mana' }),
   }, ['channeling-mana-core', 'channeling-echoes', 'channeling-breakdown', 'channeling-pillars']),
 
   // ============================================================
@@ -232,20 +232,20 @@ export const SCREEN_PANEL_LAYOUTS: Record<ScreenId, ScreenLayoutDefinition> = {
   // RESEARCH
   // ============================================================
   'tower-research': screen({
-    'research-school-mastery': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 138, preferredHeight: 138, label: 'Magic School Mastery' }),
-    'research-library': panel({ order: 2, columnStart: 1, columnSpan: 6, rowStart: 2, minHeight: 282, preferredHeight: 426, label: 'Researchable items' }),
-    'research-inspector': panel({ order: 3, columnStart: 7, columnSpan: 6, rowStart: 2, minHeight: 426, preferredHeight: 426, label: 'Item inspection' }),
-    'research-prepared': panel({ order: 4, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 246, preferredHeight: 354, label: 'Prepared Research' }),
+    'research-school-mastery': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 138, preferredHeight: 150, label: 'Magic School Mastery' }),
+    'research-library': panel({ order: 2, columnStart: 1, columnSpan: 6, rowStart: 2, minHeight: 282, preferredHeight: 700, label: 'Researchable items' }),
+    'research-inspector': panel({ order: 3, columnStart: 7, columnSpan: 6, rowStart: 2, minHeight: 426, preferredHeight: 700, label: 'Item inspection' }),
+    'research-prepared': panel({ order: 4, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 246, preferredHeight: 500, label: 'Prepared Research' }),
   }, ['research-school-mastery', 'research-library', 'research-inspector', 'research-prepared']),
 
   // ============================================================
   // TRANSMUTATION
   // ============================================================
   'tower-transmutation': screen({
-    'transmutation-recipes': panel({ order: 1, columnStart: 1, columnSpan: 7, rowStart: 1, minHeight: 354, preferredHeight: 534, label: 'Recipe library' }),
-    'transmutation-focus': panel({ order: 2, columnStart: 1, columnSpan: 7, rowStart: 2, minHeight: 282, preferredHeight: 534, label: 'Focus assignment' }),
-    'transmutation-detail': panel({ order: 3, columnStart: 8, columnSpan: 5, rowStart: 1, minHeight: 282, preferredHeight: 426, label: 'Recipe detail' }),
-    'transmutation-arrays': panel({ order: 4, columnStart: 8, columnSpan: 5, rowStart: 2, minHeight: 426, preferredHeight: 642, label: 'Transmutation Arrays' }),
+    'transmutation-recipes': panel({ order: 1, columnStart: 1, columnSpan: 7, rowStart: 1, minHeight: 354, preferredHeight: 600, label: 'Recipe library' }),
+    'transmutation-focus': panel({ order: 2, columnStart: 1, columnSpan: 7, rowStart: 2, minHeight: 282, preferredHeight: 600, label: 'Focus assignment' }),
+    'transmutation-detail': panel({ order: 3, columnStart: 8, columnSpan: 5, rowStart: 1, minHeight: 282, preferredHeight: 600, label: 'Recipe detail' }),
+    'transmutation-arrays': panel({ order: 4, columnStart: 8, columnSpan: 5, rowStart: 2, minHeight: 426, preferredHeight: 600, label: 'Transmutation Arrays' }),
   }, ['transmutation-recipes', 'transmutation-focus', 'transmutation-detail', 'transmutation-arrays']),
 
   // ============================================================

@@ -44,5 +44,5 @@ export function TransmutationScreen() {
     { id: 'transmutation-detail', content: <InspectorTransition identity={selectedRecipeId} accent={ITEMS[recipe.output.itemId].color}><RecipeDetail recipe={recipe} onSelectRecipe={setSelectedRecipeId} /></InspectorTransition> },
     { id: 'transmutation-arrays', content: <TransmutationArraysPanel /> },
   ]
-  return <TowerFrame eyebrow="WIZARD TOWER · TRANSMUTATION" title="Shape Mana into elemental matter." description="Assign Arcane Echoes to continuously create elemental fragments, prismatic matter, and future elemental tiers."><ScreenGrid screen="tower-transmutation" panels={panels} /></TowerFrame>
+  return <TowerFrame className="transmutation-screen" eyebrow="WIZARD TOWER · TRANSMUTATION" title="Shape Mana into elemental matter." description="Assign Arcane Echoes to continuously create elemental fragments, prismatic matter, and future elemental tiers."><ScreenGrid screen="tower-transmutation" panels={panels} /></TowerFrame>
 }

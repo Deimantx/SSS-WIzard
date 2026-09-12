@@ -6,9 +6,6 @@
 .combat-screen .screen-header {
   margin-bottom: 16px;
 }
-.combat-screen .screen-grid {
-  min-height: 0;
-}
 .combat-screen .screen-grid-panel-content {
   min-width: 0;
   height: 100%;

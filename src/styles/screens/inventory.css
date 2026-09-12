@@ -1,5 +1,4 @@
-.inventory-screen .screen-grid { min-height: 0; }
-.inventory-screen .screen-grid-panel-content > .card { height: 100%; min-height: 420px; }
+.inventory-screen .screen-grid-panel-content > .card { height: 100%; }
 .inventory-toolbar { display: grid; grid-template-columns: minmax(180px, 1fr) auto auto; align-items: center; gap: 10px; margin-bottom: 12px; }
 .inventory-search { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 0 11px; border: 1px solid var(--ui-border); border-radius: 8px; color: var(--ui-text-muted); background: color-mix(in srgb, var(--ui-panel-strong) 82%, transparent); }
 .inventory-search:focus-within { border-color: color-mix(in srgb, var(--ui-accent) 65%, var(--ui-border)); box-shadow: 0 0 0 3px var(--ui-accent-soft); }

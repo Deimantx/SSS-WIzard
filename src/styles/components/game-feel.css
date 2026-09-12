@@ -68,7 +68,6 @@
 }
 
 .transmutation-recipe-tile,
-.inventory-item,
 .equipment-armory-card,
 .research-item-tile,
 .spell-browser-tile,
@@ -88,7 +87,6 @@
 }
 
 .transmutation-recipe-tile:hover,
-.inventory-item:hover,
 .equipment-armory-card:hover,
 .research-item-tile:hover,
 .spell-browser-tile:hover,
@@ -321,7 +319,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .game-shell button:not(:disabled):active { transform: none; }
-  .transmutation-recipe-tile:hover, .inventory-item:hover, .equipment-armory-card:hover, .research-item-tile:hover, .spell-browser-tile:hover, .spell-preset-card:hover, .spell-preset-available-tile:hover, .transmutation-assignment-row:hover, .transmutation-ring-choice:hover, .activity-card:hover, .activity-mini-summary:hover, .combat-act-selector-item:hover, .inventory-recent-item:hover, .inventory-use-row:hover, .inventory-need-row:hover, .theme-choice:hover, .preference-choice:hover { transform: none; }
+  .transmutation-recipe-tile:hover, .equipment-armory-card:hover, .research-item-tile:hover, .spell-browser-tile:hover, .spell-preset-card:hover, .spell-preset-available-tile:hover, .transmutation-assignment-row:hover, .transmutation-ring-choice:hover, .activity-card:hover, .activity-mini-summary:hover, .combat-act-selector-item:hover, .inventory-recent-item:hover, .inventory-use-row:hover, .inventory-need-row:hover, .theme-choice:hover, .preference-choice:hover { transform: none; }
   .game-screen-transition { animation: game-screen-reduced-enter 80ms ease-out both; }
   .main-area::before { animation: none; }
   .game-value.value-increased, .game-value.value-decreased { animation: game-value-static 240ms ease-out both; }
@@ -347,7 +345,7 @@
 }
 
 .game-shell.reduced-motion button:not(:disabled):active { transform: none; }
-.game-shell.reduced-motion .transmutation-recipe-tile:hover, .game-shell.reduced-motion .inventory-item:hover, .game-shell.reduced-motion .equipment-armory-card:hover, .game-shell.reduced-motion .research-item-tile:hover, .game-shell.reduced-motion .spell-browser-tile:hover, .game-shell.reduced-motion .spell-preset-card:hover, .game-shell.reduced-motion .spell-preset-available-tile:hover, .game-shell.reduced-motion .transmutation-assignment-row:hover, .game-shell.reduced-motion .transmutation-ring-choice:hover, .game-shell.reduced-motion .activity-card:hover, .game-shell.reduced-motion .activity-mini-summary:hover, .game-shell.reduced-motion .combat-act-selector-item:hover, .game-shell.reduced-motion .inventory-recent-item:hover, .game-shell.reduced-motion .inventory-use-row:hover, .game-shell.reduced-motion .inventory-need-row:hover, .game-shell.reduced-motion .theme-choice:hover, .game-shell.reduced-motion .preference-choice:hover { transform: none; }
+.game-shell.reduced-motion .transmutation-recipe-tile:hover, .game-shell.reduced-motion .equipment-armory-card:hover, .game-shell.reduced-motion .research-item-tile:hover, .game-shell.reduced-motion .spell-browser-tile:hover, .game-shell.reduced-motion .spell-preset-card:hover, .game-shell.reduced-motion .spell-preset-available-tile:hover, .game-shell.reduced-motion .transmutation-assignment-row:hover, .game-shell.reduced-motion .transmutation-ring-choice:hover, .game-shell.reduced-motion .activity-card:hover, .game-shell.reduced-motion .activity-mini-summary:hover, .game-shell.reduced-motion .combat-act-selector-item:hover, .game-shell.reduced-motion .inventory-recent-item:hover, .game-shell.reduced-motion .inventory-use-row:hover, .game-shell.reduced-motion .inventory-need-row:hover, .game-shell.reduced-motion .theme-choice:hover, .game-shell.reduced-motion .preference-choice:hover { transform: none; }
 .game-shell.reduced-motion .game-screen-transition { animation: game-screen-reduced-enter 80ms ease-out both; }
 .game-shell.reduced-motion .main-area::before { animation: none; }
 .game-shell.reduced-motion .game-value.value-increased,
@@ -591,7 +589,6 @@
 
 /* Stronger feedback for real clickable surfaces. Static cards and editor surfaces are intentionally absent. */
 .transmutation-recipe-tile,
-.inventory-item,
 .equipment-armory-card,
 .equipment-slot-card,
 .research-item-tile,
@@ -631,7 +628,6 @@
 [data-pointer-lit='true'] > * { position: relative; z-index: 1; }
 
 .transmutation-recipe-tile:hover,
-.inventory-item:hover,
 .equipment-armory-card:hover,
 .equipment-slot-card:hover,
 .research-item-tile:hover,
@@ -678,7 +674,6 @@
 }
 
 .transmutation-tile-icon,
-.inventory-item-art,
 .equipment-armory-icon,
 .equipment-slot-icon,
 .research-item-icon,
@@ -688,7 +683,6 @@
 }
 
 .transmutation-recipe-tile:hover .transmutation-tile-icon,
-.inventory-item:hover .inventory-item-art,
 .equipment-armory-card:hover .equipment-armory-icon,
 .equipment-slot-card:hover .equipment-slot-icon,
 .research-item-tile:hover .research-item-icon,
@@ -778,7 +772,6 @@
   .item-uses-dialog-backdrop,
   .item-uses-dialog { animation: none; }
   .transmutation-recipe-tile:hover .transmutation-tile-icon,
-  .inventory-item:hover .inventory-item-art,
   .equipment-armory-card:hover .equipment-armory-icon,
   .equipment-slot-card:hover .equipment-slot-icon,
   .research-item-tile:hover .research-item-icon,

@@ -813,3 +813,9 @@
 .game-shell.reduced-motion .combat-progression-node:not(:disabled):active {
   transform: translate(-50%, -50%);
 }
+
+/* Inventory vault tiles keep a stable footprint while hovered. */
+.game-shell .screen-scroll .inventory-item:hover,
+.game-shell .screen-scroll .inventory-item:hover .inventory-item-art {
+  transform: none;
+}

@@ -85,6 +85,10 @@ export type UiStyleKey = keyof UiStyleOverride
 export type UiStyleValue = Exclude<UiStyleOverride[UiStyleKey], undefined>
 export type UiOverrideScope = 'element' | 'component' | 'screen'
 
+export type UiEditorPane = 'canvas' | 'inspector' | 'hierarchy' | 'design-system' | 'presets'
+export type UiEditorPreviewZoom = 'fit' | 1 | 0.9 | 0.8 | 0.75 | 0.67 | 0.5
+export const UI_EDITOR_PREVIEW_ZOOMS: UiEditorPreviewZoom[] = ['fit', 1, 0.9, 0.8, 0.75, 0.67, 0.5]
+
 export interface UiDesignTokens {
   typography?: {
     fontFamilyBody?: string

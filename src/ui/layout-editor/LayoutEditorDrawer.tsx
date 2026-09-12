@@ -3,7 +3,7 @@ import { useEffect } from 'react'
 import type { ScreenId } from '../../game/types'
 import { Button } from '../../components/ui'
 import { getPanelDefinitions } from './panelRegistry'
-import { applyTopbarPreset, fitSelectedPanel, getSavedScreenLayouts, getTopbarLayout, moveSelectedPanel, moveTopbarResourceBy, redoLayout, resetAllScreenLayouts, resetHeaderLayout, resetSelectedPanel, resetScreenLayout, selectLayoutPanel, selectShellRegion, setLayoutTarget, setPanelInteraction, setShowEditorGrid, togglePanelHidden, togglePanelLocked, undoLayout, updateSelectedPanel, updateTopbarWidth, useLayoutEditorStore, closeLayoutEditor } from './layoutEditorStore'
+import { applyTopbarPreset, fitSelectedPanel, getSavedScreenLayouts, getTopbarLayout, moveSelectedPanel, moveTopbarResourceBy, redoLayout, resetAllScreenLayouts, resetHeaderLayout, resetSelectedPanel, resetScreenLayout, selectLayoutPanel, selectShellRegion, setPanelInteraction, setShowEditorGrid, togglePanelHidden, togglePanelLocked, undoLayout, updateSelectedPanel, updateTopbarWidth, useLayoutEditorStore, closeLayoutEditor } from './layoutEditorStore'
 import { panelName } from './layoutUtils'
 import { TOPBAR_RESOURCE_IDS, TOPBAR_WIDTH_LIMITS, topbarLayoutPresetName } from './shellLayout'
 import type { LayoutEditorState, TopbarRegionId } from './layoutEditorTypes'
@@ -50,10 +50,9 @@ export function LayoutEditorDrawer({ screen }: { screen: ScreenId }) {
     <div className="layout-editor-drawer-head"><div><span className="layout-editor-kicker">UI EDITOR</span><strong>{editor.layoutTarget === 'shell' ? 'Header' : SCREEN_LABELS[screen]}</strong></div><button type="button" className="layout-editor-close ui-editor-no-drag" onClick={() => closeLayoutEditor()} aria-label="Exit UI editor"><X size={17} /></button></div>
     <div className="layout-editor-drawer-scroll">
       {editor.notice && <div className="layout-editor-notice">{editor.notice}</div>}
-      <section className="layout-editor-section layout-target-selector"><div className="layout-editor-section-title">EDITING TARGET</div><div className="layout-target-buttons"><button type="button" className={editor.layoutTarget === 'screen' ? 'active' : ''} onClick={() => setLayoutTarget('screen')}>Current Screen</button><button type="button" className={editor.layoutTarget === 'shell' ? 'active' : ''} onClick={() => setLayoutTarget('shell')}>Header</button></div></section>
       <UiEditorWorkspace screen={screen} />
       {editor.layoutTarget === 'shell' ? <ShellLayoutControls editor={editor} /> : <>
-        <details className="layout-editor-legacy-geometry" open>
+        <details className="layout-editor-legacy-geometry">
           <summary>Panel geometry & layout grid</summary>
           <div className="layout-editor-legacy-geometry-body">
         <section className="layout-editor-section"><div className="layout-editor-section-title">CURRENT SCREEN <span>{panels.length} panels</span></div><div className="layout-editor-history"><Button variant="ghost" disabled={!editor.undoDepth} onClick={undoLayout}><Undo2 size={13} /> Undo</Button><Button variant="ghost" disabled={!editor.redoDepth} onClick={redoLayout}><Redo2 size={13} /> Redo</Button></div></section>
@@ -66,7 +65,6 @@ export function LayoutEditorDrawer({ screen }: { screen: ScreenId }) {
       </>}
       <div className="layout-editor-saved">Saved locally · UI layout key v3</div>
     </div>
-    <div className="layout-editor-drawer-foot"><Button variant="success" onClick={() => closeLayoutEditor()}><Check size={14} /> Done</Button><Button variant="ghost" onClick={() => closeLayoutEditor()}>Exit UI Editor</Button></div>
   </aside>
 }
 

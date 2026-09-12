@@ -2,14 +2,15 @@ import { useSyncExternalStore } from 'react'
 import type { ScreenId } from '../../game/types'
 import { getRegisteredUiElement } from './uiEditorRegistry'
 import { getUiPropertyDefinitions } from './uiEditorProperties'
-import { getDefaultUiPreset, loadUiEditorState, saveUiEditorRecovery, saveUiEditorState, validateUiPreset, normalizeUiPreset, type StoredUiEditorState } from './uiEditorStorage'
+import { getDefaultUiPreset, loadUiEditorState, loadUiEditorWorkspace, saveUiEditorRecovery, saveUiEditorState, saveUiEditorWorkspace, validateUiPreset, normalizeUiPreset, type StoredUiEditorState } from './uiEditorStorage'
 import { migrateUiPreset } from './uiEditorMigrations'
-import { type UiOverrideScope, type UiPreset, type UiStyleKey, type UiStyleOverride, type UiStyleValue } from './uiEditorTypes'
+import { type UiEditorPane, type UiEditorPreviewZoom, type UiOverrideScope, type UiPreset, type UiStyleKey, type UiStyleOverride, type UiStyleValue } from './uiEditorTypes'
 
 interface UiHistoryEntry { preset: UiPreset; label: string }
-interface UiEditorState { activePresetId: string; presets: Record<string, UiPreset>; selectedUiId: string | null; hoveredUiId: string | null; tool: 'select' | 'move' | 'resize'; previewMode: boolean; showBounds: boolean; showIds: boolean; inspectorSection: 'inspector' | 'design-system' | 'components'; scope: UiOverrideScope; notice: string | null; undoDepth: number; redoDepth: number; clipboard: UiStyleOverride | null }
+interface UiEditorState { activePresetId: string; presets: Record<string, UiPreset>; selectedUiId: string | null; hoveredUiId: string | null; tool: 'select' | 'move' | 'resize'; previewMode: boolean; showBounds: boolean; showIds: boolean; inspectorSection: 'inspector' | 'design-system' | 'components'; scope: UiOverrideScope; notice: string | null; undoDepth: number; redoDepth: number; clipboard: UiStyleOverride | null; activePane: UiEditorPane; hierarchyVisible: boolean; inspectorVisible: boolean; inspectorWidth: number; hierarchyWidth: number; previewZoom: UiEditorPreviewZoom }
 const initial = loadUiEditorState()
-let current: UiEditorState = { ...initial, selectedUiId: null, hoveredUiId: null, tool: 'select', previewMode: false, showBounds: true, showIds: false, inspectorSection: 'inspector', scope: 'element', notice: null, undoDepth: 0, redoDepth: 0, clipboard: null }
+const workspace = loadUiEditorWorkspace()
+let current: UiEditorState = { ...initial, ...workspace, selectedUiId: null, hoveredUiId: null, tool: 'select', previewMode: false, showBounds: true, showIds: false, inspectorSection: 'inspector', scope: 'element', notice: null, undoDepth: 0, redoDepth: 0, clipboard: null }
 let undoStack: UiHistoryEntry[] = []; let redoStack: UiHistoryEntry[] = []
 const listeners = new Set<() => void>(); const emit = () => listeners.forEach((listener) => listener())
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T
@@ -30,6 +31,8 @@ export const setUiEditorOption = (key: 'showBounds' | 'showIds', value: boolean)
 export const setUiEditorSection = (inspectorSection: UiEditorState['inspectorSection']) => publish({ inspectorSection })
 export const setUiEditorScope = (scope: UiOverrideScope) => publish({ scope })
 export const setUiEditorNotice = (notice: string | null) => publish({ notice })
+export const setUiEditorPane = (activePane: UiEditorPane) => { saveUiEditorWorkspace({ activePane, hierarchyVisible: current.hierarchyVisible, inspectorVisible: current.inspectorVisible, inspectorWidth: current.inspectorWidth, hierarchyWidth: current.hierarchyWidth, previewZoom: current.previewZoom }); publish({ activePane }) }
+export function setUiEditorWorkspacePreference<K extends 'hierarchyVisible' | 'inspectorVisible' | 'inspectorWidth' | 'hierarchyWidth' | 'previewZoom'>(key: K, value: UiEditorState[K]) { const next = { activePane: current.activePane, hierarchyVisible: current.hierarchyVisible, inspectorVisible: current.inspectorVisible, inspectorWidth: current.inspectorWidth, hierarchyWidth: current.hierarchyWidth, previewZoom: current.previewZoom, [key]: value }; saveUiEditorWorkspace(next); publish({ [key]: value } as Partial<UiEditorState>) }
 
 export function setUiStyleProperty(uiId: string, key: UiStyleKey, value: UiStyleValue | undefined, scope: UiOverrideScope = current.scope) {
   const entry = getRegisteredUiElement(uiId); const preset = clone(activePreset()); if (!entry) return

@@ -3,10 +3,13 @@ import type { ScreenId } from '../../game/types'
 import { getUiPropertyDefinition, isUiStyleKey } from './uiEditorProperties'
 import { getRegisteredUiElements, getUiRegistryDuplicates } from './uiEditorRegistry'
 import { migrateUiPreset } from './uiEditorMigrations'
-import { UI_EDITOR_GAME_VERSION, UI_EDITOR_SCHEMA_VERSION, type UiLength, type UiPreset, type UiStyleOverride, type UiValidationIssue, type UiValidationReport } from './uiEditorTypes'
+import { UI_EDITOR_GAME_VERSION, UI_EDITOR_PREVIEW_ZOOMS, UI_EDITOR_SCHEMA_VERSION, type UiLength, type UiPreset, type UiStyleOverride, type UiValidationIssue, type UiValidationReport } from './uiEditorTypes'
+import { DEFAULT_UI_EDITOR_WORKSPACE } from './uiEditorWorkspaceMode'
+import type { UiEditorPane, UiEditorPreviewZoom } from './uiEditorTypes'
 
 export const UI_EDITOR_STORAGE_KEY = 'sss-wizard.dev.ui-editor-v1'
 export const UI_EDITOR_RECOVERY_KEY = 'sss-wizard.dev.ui-editor-recovery-v1'
+export const UI_EDITOR_WORKSPACE_KEY = 'sss-wizard.dev.ui-editor-workspace-v1'
 
 const isRecord = (value: unknown): value is Record<string, unknown> => Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T
@@ -19,7 +22,21 @@ export function getDefaultUiPreset(): UiPreset {
 }
 
 export interface StoredUiEditorState { activePresetId: string; presets: Record<string, UiPreset> }
+export interface StoredUiEditorWorkspace { activePane: UiEditorPane; hierarchyVisible: boolean; inspectorVisible: boolean; inspectorWidth: number; hierarchyWidth: number; previewZoom: UiEditorPreviewZoom }
 const blankState = (): StoredUiEditorState => { const preset = getDefaultUiPreset(); return { activePresetId: preset.meta.id, presets: { [preset.meta.id]: preset } } }
+
+export function loadUiEditorWorkspace(): StoredUiEditorWorkspace {
+  if (!isDevelopment() || typeof localStorage === 'undefined') return { ...DEFAULT_UI_EDITOR_WORKSPACE }
+  try {
+    const value = JSON.parse(localStorage.getItem(UI_EDITOR_WORKSPACE_KEY) ?? 'null') as Partial<StoredUiEditorWorkspace> | null
+    const activePane = ['canvas', 'inspector', 'hierarchy', 'design-system', 'presets'].includes(String(value?.activePane)) ? value?.activePane as UiEditorPane : DEFAULT_UI_EDITOR_WORKSPACE.activePane
+    const previewZoom = UI_EDITOR_PREVIEW_ZOOMS.includes(value?.previewZoom as UiEditorPreviewZoom) ? value?.previewZoom as UiEditorPreviewZoom : DEFAULT_UI_EDITOR_WORKSPACE.previewZoom
+    return { activePane, hierarchyVisible: value?.hierarchyVisible !== false, inspectorVisible: value?.inspectorVisible !== false, inspectorWidth: clampWorkspaceWidth(value?.inspectorWidth, 390, 520, DEFAULT_UI_EDITOR_WORKSPACE.inspectorWidth), hierarchyWidth: clampWorkspaceWidth(value?.hierarchyWidth, 220, 320, DEFAULT_UI_EDITOR_WORKSPACE.hierarchyWidth), previewZoom }
+  } catch { return { ...DEFAULT_UI_EDITOR_WORKSPACE } }
+}
+
+export function saveUiEditorWorkspace(value: StoredUiEditorWorkspace) { if (isDevelopment() && typeof localStorage !== 'undefined') localStorage.setItem(UI_EDITOR_WORKSPACE_KEY, JSON.stringify(value)) }
+function clampWorkspaceWidth(value: unknown, min: number, max: number, fallback: number) { const number = typeof value === 'number' && Number.isFinite(value) ? value : fallback; return Math.max(min, Math.min(max, Math.round(number))) }
 
 export function loadUiEditorState(): StoredUiEditorState {
   if (!isDevelopment() || typeof localStorage === 'undefined') return blankState()
@@ -36,7 +53,7 @@ export function loadUiEditorState(): StoredUiEditorState {
 
 export function saveUiEditorState(state: StoredUiEditorState) { if (isDevelopment() && typeof localStorage !== 'undefined') localStorage.setItem(UI_EDITOR_STORAGE_KEY, JSON.stringify(state)) }
 export function saveUiEditorRecovery(preset: UiPreset) { if (isDevelopment() && typeof localStorage !== 'undefined') localStorage.setItem(UI_EDITOR_RECOVERY_KEY, JSON.stringify(preset)) }
-export function clearUiEditorStorage() { if (isDevelopment() && typeof localStorage !== 'undefined') { localStorage.removeItem(UI_EDITOR_STORAGE_KEY); localStorage.removeItem(UI_EDITOR_RECOVERY_KEY) } }
+export function clearUiEditorStorage() { if (isDevelopment() && typeof localStorage !== 'undefined') { localStorage.removeItem(UI_EDITOR_STORAGE_KEY); localStorage.removeItem(UI_EDITOR_RECOVERY_KEY); localStorage.removeItem(UI_EDITOR_WORKSPACE_KEY) } }
 
 function validLength(value: unknown): value is UiLength {
   if (!isRecord(value)) return false

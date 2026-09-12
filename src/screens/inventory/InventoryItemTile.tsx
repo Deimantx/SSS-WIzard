@@ -1,5 +1,5 @@
 import { Check, Lock } from 'lucide-react'
-import { ItemIcon, ItemQuantity, ItemTooltip } from '../../components/ui/item'
+import { ItemIcon, ItemQuantity } from '../../components/ui/item'
 import { ITEMS } from '../../game/content/items/items'
 import { getItemDropSources, getItemSources } from '../../game/content/contentRelations'
 import { getItemUses } from '../../game/content/items/inventoryMetadata'
@@ -79,14 +79,11 @@ export function InventoryItemTile({ itemId, inventory, protectedItems, equipment
     }) })
   }
 
-  return <ItemTooltip itemId={itemId} owned={quantity} protectedItem={protectedItem} equipped={equipped} flow={flow}>
-    <button type="button" data-item-id={itemId} className={`inventory-item ${getInventoryAccentClass(itemId)} ${selected ? 'selected' : ''} ${protectedItem ? 'protected' : ''} ${equipped ? 'equipped' : ''} ${newItem ? 'is-new' : ''}`} onClick={onSelect} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); openMenu(event.clientX, event.clientY) }} onKeyDown={(event) => { if (event.shiftKey && event.key === 'F10') { event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); openMenu(rect.left, rect.bottom, event.currentTarget) } }} aria-label={`${item.name}, quantity ${quantity}${selected ? ', selected' : ''}${equipped ? ', equipped' : ''}${protectedItem && !equipped ? ', protected' : ''}${newItem ? ', new' : ''}`} aria-pressed={selected}>
-      {newItem && <span className="inventory-new-marker" aria-hidden="true" />}
+  return <button type="button" data-item-id={itemId} className={`inventory-item ${getInventoryAccentClass(itemId)} ${selected ? 'selected' : ''} ${protectedItem ? 'protected' : ''} ${equipped ? 'equipped' : ''} ${newItem ? 'is-new' : ''}`} onClick={onSelect} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); openMenu(event.clientX, event.clientY) }} onKeyDown={(event) => { if (event.shiftKey && event.key === 'F10') { event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); openMenu(rect.left, rect.bottom, event.currentTarget) } }} aria-label={`${item.name}, quantity ${quantity}${selected ? ', selected' : ''}${equipped ? ', equipped' : ''}${protectedItem && !equipped ? ', protected' : ''}${newItem ? ', new' : ''}`} aria-pressed={selected}>
       {flowGlyph && <span className={`inventory-flow-indicator inventory-flow-${flowDirection}`} aria-label={flowDirection === 'production' ? 'Actively produced' : flowDirection === 'consumption' ? 'Actively consumed' : 'Actively produced and consumed'}>{flowGlyph}</span>}
       <span className="inventory-item-state" aria-hidden="true">{equipped ? <Check size={13} /> : protectedItem ? <Lock size={12} /> : null}</span>
       <span className="inventory-item-art"><ItemIcon itemId={itemId} size="tile" /></span>
-      <strong>{item.name}</strong>
+      <strong className="inventory-item-name">{item.name}</strong>
       <ItemQuantity value={quantity} compact />
     </button>
-  </ItemTooltip>
 }

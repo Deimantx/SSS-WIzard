@@ -88,21 +88,6 @@ describe('screen smoke coverage', () => {
     error.mockRestore()
   })
 
-  it('opens the desktop editor, follows navigation, and exits with Escape or drawer controls', async () => {
-    const user = userEvent.setup()
-    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1280 })
-    render(<GameShell />)
-    await user.click(screen.getByRole('button', { name: 'Edit UI' }))
-    expect(screen.getByRole('complementary', { name: 'UI layout editor' })).toBeTruthy()
-    await goToTower(user, 'Channeling')
-    expect(screen.getAllByText('Channeling').length).toBeGreaterThan(0)
-    await user.keyboard('{Escape}')
-    expect(screen.queryByRole('complementary', { name: 'UI layout editor' })).toBeNull()
-    await user.click(screen.getByRole('button', { name: 'Edit UI' }))
-    await user.click(screen.getByRole('button', { name: 'Done' }))
-    expect(screen.queryByRole('complementary', { name: 'UI layout editor' })).toBeNull()
-  }, 10_000)
-
   it('opens the Developer Console without changing the gameplay screen', async () => {
     const user = userEvent.setup()
     render(<GameShell />)

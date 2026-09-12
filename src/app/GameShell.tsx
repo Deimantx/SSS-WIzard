@@ -5,10 +5,8 @@ import { ScreenRouter } from '../screens/ScreenRouter'
 import { getNavigationContext } from './navigation'
 import { setUiPreferences, useUiPreferences } from '../ui/preferences/uiPreferencesStore'
 import { themeColors } from '../ui/theme/themePresets'
-import { cancelTopbarInteraction, closeLayoutEditor, openLayoutEditor, useLayoutEditorStore } from '../ui/layout-editor/layoutEditorStore'
 import { openDeveloperTools } from '../devtools/developerToolsStore'
 import { DeveloperToolsWindow } from '../devtools/DeveloperToolsWindow'
-import { LayoutEditorDrawer } from '../ui/layout-editor/LayoutEditorDrawer'
 import { AUTOSAVE_INTERVAL_MS } from '../persistence/saveConstants'
 import { useProfileSession } from '../profiles/profileSessionStore'
 import { leaveToProfiles } from '../profiles/profileController'
@@ -39,17 +37,12 @@ import { getLiveVisibilityTransition } from './liveVisibility'
 import { isAllowedNativeDragTarget, isNativeInteractionTarget } from '../ui/game-feel/gameClientInteraction'
 import { GameContextMenuProvider } from '../ui/context-menu/GameContextMenuProvider'
 import { StoryEventModal } from '../components/story/StoryEventModal'
-import { UiEditorInteractionLayer } from '../ui/layout-editor/UiEditorInteractionLayer'
-import { UiEditorRuntime } from '../ui/layout-editor/UiEditorRuntime'
-import { useUiEditorStore } from '../ui/layout-editor/uiEditorStore'
 
 export function GameShell() {
   const screen = useGameStore((state) => state.ui.screen)
   const setScreen = useGameStore((state) => state.setScreen)
   const tick = useGameStore((state) => state.tick)
   const saveGame = useGameStore((state) => state.saveGame)
-  const editor = useLayoutEditorStore()
-  const previewZoom = useUiEditorStore((state) => state.previewZoom)
   const preferences = useUiPreferences()
   const appearance = themeColors(preferences.theme, preferences.customTheme)
   const navigation = getNavigationContext(screen)
@@ -61,13 +54,6 @@ export function GameShell() {
   const lastOfflineBankReport = useGameStore((state) => state.lastOfflineBankReport)
   const lastFrame = useRef(performance.now())
   const hiddenRef = useRef(false)
-
-  useEffect(() => {
-    if (!editor.isEditing) return
-    const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape' && !(event.target as HTMLElement | null)?.matches('input,select,textarea')) { event.preventDefault(); if (editor.shellInteraction !== 'idle') cancelTopbarInteraction(); else closeLayoutEditor() } }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [editor.isEditing, editor.shellInteraction])
 
   useEffect(() => {
     const group = navigation.group.id
@@ -101,17 +87,16 @@ export function GameShell() {
     setUiPreferences({ navigationGroups: { ...preferences.navigationGroups, [groupId]: !preferences.navigationGroups[groupId] } })
   }
   const openDevTools = () => { dismissGameTooltips(); setOfflineBankOpen(false); setOfflineResultsOpen(false); openDeveloperTools() }
-  const toggleEditor = () => { dismissGameTooltips(); if (editor.isEditing) closeLayoutEditor(); else openLayoutEditor(screen, 'screen') }
   const switchProfile = () => { const result = leaveToProfiles(); if (!result.ok) setProfileSwitchError(result.error) }
 
   const ambient = getAmbientProfile(screen, appearance)
   const atmosphereOpacity = preferences.theme === 'light' ? 0.22 : 0.72
-  const shellStyle = { '--game-cursor-default': createCursorValue({ accent: appearance.accent, secondary: appearance.secondary, variant: 'default' }), '--game-cursor-action': createCursorValue({ accent: appearance.accent, secondary: appearance.secondary, variant: 'action' }), '--game-cursor-disabled': createCursorValue({ accent: appearance.accent, secondary: appearance.secondary, variant: 'disabled' }), '--ambient-strength': ambient.intensity, '--ambient-drift': preferences.reducedMotion ? '0s' : `${ambient.driftDuration}s`, '--ambient-accent': ambient.accentColor, '--ambient-secondary': ambient.secondaryColor, '--ambient-fog-opacity': ambient.fogOpacity, '--ambient-vignette-opacity': ambient.vignetteOpacity, '--ambient-particle-speed': ambient.particleSpeed, '--ambient-bias-x': ambient.biasX, '--ambient-bias-y': ambient.biasY, '--ui-editor-preview-zoom': previewZoom === 'fit' ? 1 : previewZoom } as CSSProperties
-  return <TooltipProvider><GameContextMenuProvider><div className={`game-shell ${editor.isEditing ? 'editor-active' : ''} ${preferences.reducedMotion ? 'reduced-motion' : 'motion-enabled'} ${preferences.customCursor ? 'cursor-enabled' : ''} ${preferences.backgroundEffects ? 'effects-enabled' : 'effects-disabled'}`} data-nav-group={navigation.group.id} data-ambient-profile={ambient.id} data-background-effects={preferences.backgroundEffects ? 'on' : 'off'} style={shellStyle} onContextMenu={(event) => { if (!isNativeInteractionTarget(event.target)) event.preventDefault() }} onDragStart={(event) => { if (!isAllowedNativeDragTarget(event.target)) event.preventDefault() }}>
+  const shellStyle = { '--game-cursor-default': createCursorValue({ accent: appearance.accent, secondary: appearance.secondary, variant: 'default' }), '--game-cursor-action': createCursorValue({ accent: appearance.accent, secondary: appearance.secondary, variant: 'action' }), '--game-cursor-disabled': createCursorValue({ accent: appearance.accent, secondary: appearance.secondary, variant: 'disabled' }), '--ambient-strength': ambient.intensity, '--ambient-drift': preferences.reducedMotion ? '0s' : `${ambient.driftDuration}s`, '--ambient-accent': ambient.accentColor, '--ambient-secondary': ambient.secondaryColor, '--ambient-fog-opacity': ambient.fogOpacity, '--ambient-vignette-opacity': ambient.vignetteOpacity, '--ambient-particle-speed': ambient.particleSpeed, '--ambient-bias-x': ambient.biasX, '--ambient-bias-y': ambient.biasY } as CSSProperties
+  return <TooltipProvider><GameContextMenuProvider><div className={`game-shell ${preferences.reducedMotion ? 'reduced-motion' : 'motion-enabled'} ${preferences.customCursor ? 'cursor-enabled' : ''} ${preferences.backgroundEffects ? 'effects-enabled' : 'effects-disabled'}`} data-nav-group={navigation.group.id} data-ambient-profile={ambient.id} data-background-effects={preferences.backgroundEffects ? 'on' : 'off'} style={shellStyle} onContextMenu={(event) => { if (!isNativeInteractionTarget(event.target)) event.preventDefault() }} onDragStart={(event) => { if (!isAllowedNativeDragTarget(event.target)) event.preventDefault() }}>
     {preferences.backgroundEffects && <ArcaneAtmosphere accentColor={ambient.accentColor} secondaryColor={ambient.secondaryColor} opacity={atmosphereOpacity} intensity={ambient.intensity} particleSpeed={ambient.particleSpeed} reducedMotion={preferences.reducedMotion} />}
     <Sidebar screen={screen} setScreen={setScreen} preferences={preferences} toggleGroup={toggleGroup} activeProfile={activeProfile} profileKey={profileSession.activeProfileId} profileSwitchError={profileSwitchError} switchProfile={switchProfile} />
-    <main className={`main-area ${editor.isEditing ? 'editor-open' : ''}`}>
-      <Topbar screen={screen} editor={editor} offlineBankOpen={offlineBankOpen} onOfflineBankToggle={() => { dismissGameTooltips(); setOfflineResultsOpen(false); setOfflineBankOpen((open) => !open) }} onDeveloperTools={openDevTools} onEditUi={toggleEditor} onSettings={() => { dismissGameTooltips(); setOfflineBankOpen(false); setOfflineResultsOpen(false); setScreen('settings') }} onMobileMenu={() => setScreen('home')} />
+    <main className="main-area">
+      <Topbar screen={screen} offlineBankOpen={offlineBankOpen} onOfflineBankToggle={() => { dismissGameTooltips(); setOfflineResultsOpen(false); setOfflineBankOpen((open) => !open) }} onDeveloperTools={openDevTools} onSettings={() => { dismissGameTooltips(); setOfflineBankOpen(false); setOfflineResultsOpen(false); setScreen('settings') }} onMobileMenu={() => setScreen('home')} />
       <OfflineBankPopover open={offlineBankOpen} onClose={() => setOfflineBankOpen(false)} onViewLastResults={() => { setOfflineBankOpen(false); setOfflineResultsOpen(true) }} />
       <div className="screen-scroll"><ScreenRouter /></div>
       <RecipePinsDock />
@@ -124,14 +109,10 @@ export function GameShell() {
     <GameFeelAudioObserver />
     <GameFeelInteractionLayer />
     <GameFeelLayer />
-    <UiEditorRuntime />
-    <UiEditorInteractionLayer />
-    <LayoutEditorDrawer screen={screen} />
     <DeveloperToolsWindow />
     <OfflineBankResultsDialog report={lastOfflineBankReport} open={offlineResultsOpen} onClose={() => setOfflineResultsOpen(false)} onOpenInventory={() => { setOfflineResultsOpen(false); setScreen('inventory') }} />
     <div className="global-feedback-stack">
       <SaveProtectionNotice />
-      {!editor.isEditing && editor.notice && <div className="layout-editor-notice-toast" role="status">{editor.notice}</div>}
       <ToastStack />
       <MilestoneBannerLayer />
       <LootRevealLayer />

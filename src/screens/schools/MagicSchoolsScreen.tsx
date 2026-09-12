@@ -1,13 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useGameStore } from '../../store/gameStore'
 import { dismissGameTooltips } from '../../components/ui/tooltip/Tooltip'
-import { EditableGrid } from '../../ui/layout-editor/EditableGrid'
+import { ScreenGrid } from '../../components/layout/ScreenGrid'
 import { SpellBrowser } from './SpellBrowser'
 import { SpellInspector } from './SpellInspector'
 import { SpellPresetDialog } from './SpellPresetDialog'
 import { SpellPresetSummary } from './SpellPresetSummary'
 import { getSpellBrowserEntries, type SpellBrowserFilters } from './spellBrowserSelectors'
-import { getAdaptiveSchoolsLayout } from './schoolsLayout'
 import { clearAttention, useProfileAttention } from '../../ui/attention/attentionStore'
 import { getActiveProfileId } from '../../profiles/profileSessionStore'
 import { InspectorTransition } from '../../ui/game-feel/InspectorTransition'
@@ -35,13 +34,10 @@ export function MagicSchoolsScreenV2() {
   const inspectorState = browserState
   const [filters, setFilters] = useState<SpellBrowserFilters>(() => ({ ...DEFAULT_FILTERS, school: navigationIntent.schoolId ?? 'all' }))
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(() => navigationIntent.schoolSpellId)
-  const [inspectorContentHeight, setInspectorContentHeight] = useState(0)
   const [rankPathOpen, setRankPathOpen] = useState(false)
   const [presetsOpen, setPresetsOpen] = useState(false)
   const visibleEntries = useMemo(() => getSpellBrowserEntries(browserState, filters), [browserState, filters])
   const selectedEntry = visibleEntries.find((entry) => entry.id === selectedEntryId) ?? null
-  const reportInspectorContentHeight = useCallback((height: number) => setInspectorContentHeight((current) => current === height ? current : height), [])
-  const layoutTransform = useCallback((layout: Parameters<typeof getAdaptiveSchoolsLayout>[0]) => getAdaptiveSchoolsLayout(layout, inspectorContentHeight), [inspectorContentHeight])
 
   useEffect(() => {
     const nextId = selectedEntryId && visibleEntries.some((entry) => entry.id === selectedEntryId) ? selectedEntryId : visibleEntries[0]?.id ?? null
@@ -64,9 +60,9 @@ export function MagicSchoolsScreenV2() {
 
   return <div className="screen-content schools-screen">
     <div className="screen-header schools-screen-header"><div><div className="eyebrow">MAGIC SCHOOL ARCHIVE</div><h1>Magic Schools</h1><p>Browse your known Spells, inspect their effects and configure reusable Auto-Cast presets.</p></div></div>
-    <EditableGrid screen="schools" layoutTransform={layoutTransform} panels={[
+    <ScreenGrid screen="schools" panels={[
       { id: 'schools-browser', content: <SpellBrowser state={browserState} filters={filters} onFiltersChange={setFilters} selectedEntryId={selectedEntryId} newSpells={new Set(attention.unseenSpells)} onSelect={(id) => { dismissGameTooltips(); clearAttention(getActiveProfileId(), 'spell', id); setNavigationIntent({ schoolSpellId: id as SpellId }); setSelectedEntryId(id); setRankPathOpen(false) }} onToggleAutoCast={toggleAutoCast} onTogglePresetSpell={activePreset ? togglePresetSpell : undefined} presetContainsSpell={(spellId) => Boolean(activePreset?.spellIds.includes(spellId))} onOpenPresetManager={() => { dismissGameTooltips(); setRankPathOpen(false); setPresetsOpen(true) }} /> },
-      { id: 'schools-inspector', content: <InspectorTransition identity={selectedEntry?.id} accent={selectedEntry ? SCHOOLS[selectedEntry.school].color : undefined} fill><SpellInspector entry={selectedEntry} state={inspectorState} onContentHeightChange={reportInspectorContentHeight} rankPathOpen={rankPathOpen} onToggleRankPath={() => { dismissGameTooltips(); setRankPathOpen((open) => !open) }} onToggleAutoCast={toggleAutoCast} /></InspectorTransition> },
+      { id: 'schools-inspector', content: <InspectorTransition identity={selectedEntry?.id} accent={selectedEntry ? SCHOOLS[selectedEntry.school].color : undefined} fill><SpellInspector entry={selectedEntry} state={inspectorState} rankPathOpen={rankPathOpen} onToggleRankPath={() => { dismissGameTooltips(); setRankPathOpen((open) => !open) }} onToggleAutoCast={toggleAutoCast} /></InspectorTransition> },
       { id: 'schools-presets', content: <SpellPresetSummary onManage={() => { dismissGameTooltips(); setRankPathOpen(false); setPresetsOpen(true) }} /> },
     ]} />
     <SpellPresetDialog open={presetsOpen} onClose={() => setPresetsOpen(false)} />

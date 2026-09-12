@@ -1,6 +1,5 @@
-.inventory-screen .ui-editor-grid { min-height: 0; }
-.inventory-screen .ui-editor-grid-layout { min-height: 420px; }
-.inventory-screen .ui-editor-panel-content > .card { height: 100%; min-height: 420px; }
+.inventory-screen .screen-grid { min-height: 0; }
+.inventory-screen .screen-grid-panel-content > .card { height: 100%; min-height: 420px; }
 .inventory-toolbar { display: grid; grid-template-columns: minmax(180px, 1fr) auto auto; align-items: center; gap: 10px; margin-bottom: 12px; }
 .inventory-search { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 0 11px; border: 1px solid var(--ui-border); border-radius: 8px; color: var(--ui-text-muted); background: color-mix(in srgb, var(--ui-panel-strong) 82%, transparent); }
 .inventory-search:focus-within { border-color: color-mix(in srgb, var(--ui-accent) 65%, var(--ui-border)); box-shadow: 0 0 0 3px var(--ui-accent-soft); }
@@ -86,10 +85,10 @@
 .inventory-stat-list > .inventory-detail-row { min-width: 0; padding: 5px 0; border-bottom: 1px solid var(--ui-border); }
 .inventory-stat-list > .inventory-detail-row strong { color: var(--ui-text); font: var(--text-micro) var(--font-mono); }
 @media (max-width: 1100px) { .inventory-toolbar { grid-template-columns: minmax(150px, 1fr) auto; }.inventory-protected-toggle { grid-column: 1 / -1; justify-self: start; }.inventory-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); } }
-@media (max-width: 760px) { .inventory-screen .ui-editor-grid-layout, .inventory-screen .ui-editor-panel-content > .card { min-height: 0; }.inventory-toolbar { grid-template-columns: 1fr; }.inventory-protected-toggle { grid-column: auto; width: fit-content; }.inventory-sort { grid-template-columns: auto 1fr; }.inventory-category-bar button { flex: 1 1 auto; }.inventory-grid { grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); gap: 8px; }.inventory-item { min-height: 130px; }.inventory-detail-content { max-height: none; }.inventory-detail-icon { width: 80px; height: 80px; }.item-icon-large { width: 68px; height: 68px; font-size: 45px; } }
+@media (max-width: 760px) { .inventory-screen .screen-grid-panel-content > .card { min-height: 0; }.inventory-toolbar { grid-template-columns: 1fr; }.inventory-protected-toggle { grid-column: auto; width: fit-content; }.inventory-sort { grid-template-columns: auto 1fr; }.inventory-category-bar button { flex: 1 1 auto; }.inventory-grid { grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); gap: 8px; }.inventory-item { min-height: 130px; }.inventory-detail-content { max-height: none; }.inventory-detail-icon { width: 80px; height: 80px; }.item-icon-large { width: 68px; height: 68px; font-size: 45px; } }
 
 /* The editable grid owns the panel height; only the detail body is scrollable. */
-.inventory-screen .ui-editor-panel-content > .inventory-detail-card { height: 100%; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
+.inventory-screen .screen-grid-panel-content > .inventory-detail-card { height: 100%; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
 .inventory-detail-card > .card-head { flex: 0 0 auto; }
 .inventory-detail-card > .inventory-detail-content,
 .inventory-detail-card > .inspector-transition.fill-bounded > .inventory-detail-content { flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; padding-bottom: 26px; scrollbar-color: var(--ui-scrollbar-thumb) transparent; scrollbar-width: thin; }
@@ -175,7 +174,7 @@
   min-width: 0;
 }
 
-.inventory-screen .ui-editor-panel-content > .card {
+.inventory-screen .screen-grid-panel-content > .card {
   min-width: 0;
   overflow: hidden;
 }

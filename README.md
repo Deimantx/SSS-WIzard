@@ -38,7 +38,7 @@ Open `Settings / Info` and use `Developer Tools`. Presets provide Fresh, Researc
 
 SSS Wizard opens with three local profile slots. Each profile has an independent gameplay save with Default mode and Normal difficulty. Profiles are stored in this browser only; there is no cloud account or backend.
 
-Appearance preferences and UI layouts are global to this browser, while gameplay progression is saved per profile. Existing development saves under the legacy `sss-wizard-save-v1` key are migrated into Profile 1 with a recovery backup during first boot. Clearing browser storage removes local profiles and preferences.
+Appearance preferences are global to this browser, while gameplay progression is saved per profile. Existing development saves under the legacy `sss-wizard-save-v1` key are migrated into Profile 1 with a recovery backup during first boot. Clearing browser storage removes local profiles and preferences.
 
 ## Project Structure
 

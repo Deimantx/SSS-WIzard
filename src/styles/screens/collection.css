@@ -1,5 +1,5 @@
-.collection-screen .ui-editor-grid { min-height: 0; }
-.collection-screen .ui-editor-panel-content > .card { height: 100%; min-height: 0; overflow: hidden; }
+.collection-screen .screen-grid { min-height: 0; }
+.collection-screen .screen-grid-panel-content > .card { height: 100%; min-height: 0; overflow: hidden; }
 .collection-summary .card-head { margin-bottom: 10px; }
 .collection-library, .collection-inspector { display: flex; flex-direction: column; }
 .collection-library > .card-head, .collection-inspector > .card-head { flex: 0 0 auto; }

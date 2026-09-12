@@ -80,7 +80,7 @@ Svarbu:
 | Offline progresas | Offline Bank ir pasirenkama simuliacija |
 | Prestige / Retirement | **Nėra** |
 | Pagrindinis UI modelis | Persistent shell + atskiri ekranai + Activity Monitor |
-| UI pritaikymas | Edit UI |
+| UI pritaikymas | Source-controlled responsive layout |
 | Developer testing | Platus Dev Tools |
 
 ---
@@ -179,7 +179,6 @@ Tai yra pirmas dabartinis spell content rinkinys, o ne galutinis spell tree.
 - Offline Bank
 - Activity Monitor
 - Dev Tools
-- Edit UI
 - custom tooltip system
 
 ---
@@ -2207,7 +2206,6 @@ Svarbiausias resource widget.
 
 - Offline Bank;
 - Dev Tools;
-- Edit UI;
 - Settings / utility.
 
 ---
@@ -2288,28 +2286,7 @@ Tooltip naudojamas:
 
 ---
 
-# 45. Edit UI
-
-## [PATVIRTINTA / IMPLEMENTUOTA KRYPTIS]
-
-Desktop Edit UI leidžia:
-
-- drag major panels;
-- resize major panels;
-- saugoti geometry per screen;
-- Reset Current Layout;
-- Reset All;
-- redaguoti header resource widget proportions / positions ten, kur tai palaikoma.
-
-Svarbiausia taisyklė:
-
-> default layout turi atrodyti gerai ir be rankinio Edit UI.
-
-Edit UI nėra pasiteisinimas blogiems defaultams.
-
----
-
-# 46. UI consistency
+# 45. UI consistency
 
 Visi pagrindiniai screenai turi naudoti bendrą:
 
@@ -2787,7 +2764,6 @@ Prieš projektuojant naują sistemą:
 - [x] Offline Bank yra manual selectable simulation.
 - [x] Offline spend turi results summary.
 - [x] Persistent custom tooltip system.
-- [x] Edit UI.
 - [x] Developer Tools.
 - [x] Nėra Prestige / Retirement.
 - [ ] Pilnas Combat status/buff/debuff/resistance modelis — kitas didelis design etapas.

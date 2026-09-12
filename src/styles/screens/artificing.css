@@ -1,5 +1,5 @@
 .artificing-screen .card { min-width: 0; overflow: hidden; }
-.artificing-screen .height-mode-bounded-scroll .ui-editor-panel-content > .card { height: 100%; min-height: 100%; }
+.artificing-screen .screen-grid-panel-content > .card { height: 100%; min-height: 100%; }
 .artificing-catalog { display: flex; flex-direction: column; min-height: 0; }
 .artificing-catalog > .card-head { flex: 0 0 auto; }
 .artificing-controls { flex: 0 0 auto; min-width: 0; }

@@ -18,16 +18,14 @@ import type { SpellEffectTooltipCategoryKey } from './spellEffectTooltipModel'
 import { buildSpellDetailPresentation, type SpellPresentationState } from './spellDetailPresentation'
 import { useSmartScrollState } from '../../ui/game-feel/useSmartScrollState'
 
-export function SpellInspector({ entry, state, onContentHeightChange, rankPathOpen, onToggleRankPath, onToggleAutoCast }: {
+export function SpellInspector({ entry, state, rankPathOpen, onToggleRankPath, onToggleAutoCast }: {
   entry: SpellBrowserEntry | null
   state: SpellPresentationState
-  onContentHeightChange?: (height: number) => void
   rankPathOpen: boolean
   onToggleRankPath: () => void
   onToggleAutoCast: (spellId: SpellId) => void
 }) {
   const rankDrawerRef = useRef<HTMLElement>(null)
-  const inspectorMainRef = useRef<HTMLDivElement>(null)
   const inspectorScrollRef = useRef<HTMLElement>(null)
   useSmartScrollState(inspectorScrollRef, { resetKey: entry?.id, dependencies: [entry?.kind, entry?.rank, rankPathOpen] })
   useEffect(() => {
@@ -38,21 +36,6 @@ export function SpellInspector({ entry, state, onContentHeightChange, rankPathOp
     document.addEventListener('keydown', onKeyDown)
     return () => { document.removeEventListener('pointerdown', onPointerDown); document.removeEventListener('keydown', onKeyDown) }
   }, [rankPathOpen, onToggleRankPath])
-  useEffect(() => {
-    if (!onContentHeightChange) return
-    const node = inspectorMainRef.current
-    if (!node) {
-      onContentHeightChange(0)
-      return
-    }
-    const measure = () => onContentHeightChange(Math.ceil(node.scrollHeight + 34))
-    measure()
-    if (typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver(measure)
-    observer.observe(node)
-    return () => observer.disconnect()
-  }, [entry?.id, entry?.kind, entry?.rank, onContentHeightChange])
-
   if (!entry) return <Card ref={inspectorScrollRef} className="schools-inspector-panel smart-scroll-region"><div className="spell-inspector-empty"><InspectorEyebrow>SELECT A SPELL</InspectorEyebrow><h2>SELECT A SPELL</h2><p>Known Spells will appear here when learned. Choose a known Spell from the Spellbook to inspect its mechanics.</p></div></Card>
   const school = SCHOOLS[entry.school]
   if (entry.kind === 'placeholder') return <Card ref={inspectorScrollRef} className="schools-inspector-panel smart-scroll-region" style={{ '--spell-school-color': school.color, borderTopColor: school.color } as React.CSSProperties}><InspectorEyebrow>UNKNOWN SPELL</InspectorEyebrow><div className="spell-inspector-unknown"><SpellIcon school={entry.school} locked size="large" /><h2>?</h2><Status tone="locked">UNDISCOVERED</Status><p>{school.name.toUpperCase()} SCHOOL · Requires Level {entry.unlockLevel}</p><p className="muted">This future catalog slot has no authored mechanics yet.</p></div></Card>
@@ -73,7 +56,7 @@ export function SpellInspector({ entry, state, onContentHeightChange, rankPathOp
       : `Insufficient free Focus. Need ${focusCost} Focus.`
   return <Card ref={inspectorScrollRef} className="schools-inspector-panel smart-scroll-region" style={{ '--spell-school-color': school.color, borderTopColor: school.color } as React.CSSProperties}>
     <div className="spell-inspector-layout">
-      <div ref={inspectorMainRef} className="spell-inspector-main">
+      <div className="spell-inspector-main">
         <div className="spell-inspector-title"><span className="spell-inspector-icon-frame"><SpellIcon school={spell.school} size="large" /></span><div><div className="spell-inspector-meta">{school.name.toUpperCase()} · {formatSpellRank(rank).toUpperCase()}</div><h2>{spell.name}</h2><p>Learned at Lv{spell.unlockLevel}</p></div></div>
         <p className="spell-inspector-description">{spell.description}</p>
         <div className="spell-inspector-section"><div className="section-label">CORE CASTING</div><div className="spell-core-grid"><Metric semantic="mana" icon={<Droplet size={14} />} label="Mana" value={`${detail.manaCost}`} description="Mana spent when this Spell is cast after current Mana Cost Reduction." /><Metric semantic="time" icon={<Clock3 size={14} />} label="Cooldown" value={detail.cooldownLabel} description="Current cooldown after active Cooldown Recovery." /><Metric semantic="focus" icon={<CircleDot size={14} />} label="Auto-Cast Focus" value={`${focusCost}`} description="Focus reserved while this Spell is enabled for Auto-Cast." /><Metric semantic="spell-power" icon={<Sparkles size={14} />} label="Spell Power" value={`${detail.spellPower}`} description={`Current Spell Power. Base ${detail.spellPowerBreakdown.base}; equipped build ${detail.spellPowerBreakdown.equipment}.`} /></div></div>

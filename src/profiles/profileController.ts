@@ -1,7 +1,6 @@
 import { createInitialState } from '../store/initialState'
 import { useGameStore } from '../store/gameStore'
 import { closeDeveloperTools } from '../devtools/developerToolsStore'
-import { closeLayoutEditor } from '../ui/layout-editor/layoutEditorStore'
 import { clearProfileGame, loadProfileGame, resetProfileGame } from '../persistence/profileSaveManager'
 import { setSaveDiagnosticsProfile } from '../persistence/saveDiagnosticsStore'
 import { createProfileMetadata, loadProfileRegistry, saveProfileRegistry } from './profileStorage'
@@ -45,7 +44,6 @@ export const leaveToProfiles = (): ProfileOperationResult => {
     if (!saved.ok) return failure(saved.error ?? 'The current profile could not be saved.')
   }
   closeDeveloperTools()
-  closeLayoutEditor()
   setActiveProfileId(null)
   setSaveDiagnosticsProfile(null)
   refreshProfiles()

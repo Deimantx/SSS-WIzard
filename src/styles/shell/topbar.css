@@ -6,8 +6,10 @@
 .topbar-right-hud { display: flex; align-items: stretch; justify-content: flex-end; gap: 12px; min-width: 0; flex: 0 0 auto; height: 62px; }
 .topbar-resource-cluster { display: flex; align-items: stretch; gap: 8px; min-width: 0; height: 62px; }
 .topbar-resource-slot { position: relative; flex: 0 0 auto; min-width: 0; height: 62px; }
+.topbar-resource-slot-health { width: 160px; }
+.topbar-resource-slot-mana { width: 480px; }
+.topbar-resource-slot-focus { width: 180px; }
 .topbar-resource-slot > .game-tooltip-trigger { display: block; width: 100%; height: 100%; }
-.topbar-shell-region { position: relative; z-index: 1; width: 100%; height: 100%; min-width: 0; overflow: visible; }
 .topbar-resource, .mana-hero { position: relative; width: 100%; height: 100%; min-width: 0; border: 1px solid var(--ui-border); border-radius: 9px; background: color-mix(in srgb, var(--ui-panel) 88%, transparent); color: var(--ui-text-soft); overflow: visible; }
 .topbar-resource { display: flex; align-items: center; gap: 8px; padding: 8px 10px; }
 .topbar-resource > svg { flex: 0 0 auto; color: var(--resource-health); }
@@ -65,17 +67,6 @@
 .fps-counter.fps-danger { border-color: color-mix(in srgb, var(--ui-danger) 65%, var(--ui-border)); }
 .fps-counter.fps-danger svg, .fps-counter.fps-danger strong { color: var(--ui-danger); }
 .topbar-settings-button { flex: 0 0 auto; }
-body.shell-layout-interacting, body.shell-layout-interacting * { user-select: none !important; }
-.topbar-region-overlay { position: absolute; z-index: 30; inset: 2px; display: flex; align-items: flex-start; justify-content: space-between; padding: 3px 4px; border: 1px dashed var(--ui-accent); border-radius: 6px; color: var(--ui-accent); background: color-mix(in srgb, var(--ui-accent-soft) 18%, transparent); pointer-events: none; font: var(--text-micro) var(--font-mono); letter-spacing: .04em; user-select: none; }
-.topbar-region-label { pointer-events: none; }
-.topbar-region-grip { z-index: 2; display: inline-flex; align-items: center; justify-content: center; min-width: 28px; min-height: 24px; padding: 0 4px; border: 1px solid color-mix(in srgb, var(--ui-accent) 48%, transparent); border-radius: 4px; color: var(--ui-accent); background: color-mix(in srgb, var(--ui-panel-strong) 86%, transparent); cursor: grab; font: inherit; line-height: 1; pointer-events: auto; }
-.topbar-region-grip:active { cursor: grabbing; }
-.topbar-region-resize { position: absolute; z-index: 3; top: 12%; bottom: 12%; width: 10px; padding: 0; border: 0; border-radius: 3px; background: transparent; cursor: ew-resize; pointer-events: auto; }
-.topbar-region-resize::after { position: absolute; inset: 0 3px; border-radius: 3px; background: var(--ui-accent); content: ''; opacity: .86; }
-.topbar-region-resize:hover::after { box-shadow: 0 0 10px var(--ui-accent); opacity: 1; }
-.topbar-region-resize.left { left: -5px; }.topbar-region-resize.right { right: -5px; }
-.topbar-region-overlay:has(.topbar-region-grip) { cursor: default; }
-.shell-region-editing.selected .topbar-region-overlay { border-style: solid; box-shadow: 0 0 0 2px color-mix(in srgb, var(--ui-accent) 20%, transparent); }
 @media (max-width: 1380px) {
   .topbar-v3 { padding-inline: 18px; gap: 10px; }
   .topbar-tool-button span:not(.offline-bank-label) { display: none; }
@@ -88,7 +79,7 @@ body.shell-layout-interacting, body.shell-layout-interacting * { user-select: no
   .topbar-resource-slot-health { width: 145px !important; }
   .topbar-resource-slot-mana { width: min(480px, 31vw) !important; }
   .topbar-resource-slot-focus { width: 160px !important; }
-  .topbar-resource-slot > .game-tooltip-trigger, .topbar-resource-slot .topbar-shell-region { width: 100% !important; }
+  .topbar-resource-slot > .game-tooltip-trigger { width: 100% !important; }
   .topbar-tool-button { padding-inline: 7px; }
 }
 @media (max-width: 980px) {
@@ -98,7 +89,7 @@ body.shell-layout-interacting, body.shell-layout-interacting * { user-select: no
   .topbar-right-hud { order: 3; width: 100%; height: 58px; justify-content: flex-end; }
   .topbar-resource-cluster { flex: 1 1 auto; height: 58px; }
   .topbar-resource-slot { flex: 1 1 0; width: auto !important; height: 58px; }
-  .topbar-resource-slot > .game-tooltip-trigger, .topbar-resource-slot .topbar-shell-region { width: 100% !important; }
+  .topbar-resource-slot > .game-tooltip-trigger { width: 100% !important; }
   .topbar-utility-cluster { height: 58px; }
 }
 @media (max-width: 620px) {
@@ -109,8 +100,6 @@ body.shell-layout-interacting, body.shell-layout-interacting * { user-select: no
   .topbar-resource strong, .mana-hero-head strong { font-size: var(--text-micro); }
   .mana-flow-popover { left: auto; right: -30px; }
   .topbar-tool-button { padding-inline: 7px; }
-  .topbar-editor-button { display: none; }
-  .topbar-region-overlay { font-size: 8px; }
 }
 @media (prefers-reduced-motion: reduce) { .shell-meter i { transition: none; } }
 

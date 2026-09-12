@@ -1,5 +1,5 @@
 import { Circle, Crown, Gem, Shield, Shirt, Sparkles, WandSparkles, type LucideIcon } from 'lucide-react'
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { Button, Card, EquipmentCombatDetails, GameTooltip, GameValue, SearchInput, SelectMenu, Status } from '../../components/ui'
 import { EquipmentMetadata, ItemTooltip } from '../../components/ui/item'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
@@ -9,10 +9,9 @@ import { getArtifactDefinition } from '../../game/content/artifacts/artifacts'
 import { EQUIPMENT_ITEM_SLOT_LABELS, EQUIPMENT_POSITION_LABELS, EQUIPMENT_POSITIONS, getEquippedCount, getItemPositions } from '../../game/core/equipment'
 import type { ArtifactId, EquipmentItemSlot, EquipmentPosition, ItemId } from '../../game/types'
 import { useGameStore } from '../../store/gameStore'
-import { EditableGrid } from '../../ui/layout-editor/EditableGrid'
+import { ScreenGrid } from '../../components/layout/ScreenGrid'
 import { getEquipmentCopyAvailability, getEquipmentKeyChanges, getEquipmentPreview, getEquipmentPrimarySummary, getEquipmentSearchText, getEquipmentStatSnapshot } from '../../game/presentation/equipment/equipmentReadModel'
 import { formatEquipmentStat, getEquipmentStatDescription, getEquipmentStatLabel } from '../../game/presentation/equipment/equipmentStatPresentation'
-import { getAdaptiveEquipmentLayout } from './equipmentLayout'
 import { InspectorTransition } from '../../ui/game-feel/InspectorTransition'
 import { useSmartScrollState } from '../../ui/game-feel/useSmartScrollState'
 import { useGameContextMenu } from '../../ui/context-menu/GameContextMenuProvider'
@@ -69,8 +68,6 @@ export function EquipmentScreenV2() {
   const [sortMode, setSortMode] = useState<ArmorySort>('tier')
   const [availableOnly, setAvailableOnly] = useState(false)
   const [filterPulseKey, setFilterPulseKey] = useState(0)
-  const [loadoutContentHeight, setLoadoutContentHeight] = useState(0)
-  const [statsContentHeight, setStatsContentHeight] = useState(0)
   const stateForPreview = { player, progress, activities, debug, equipment, inventory, artifactProgress }
   const ownedEquipment = useMemo(() => (Object.keys(ITEMS) as ItemId[]).filter((id) => ITEMS[id].kind === 'equipment' && (inventory[id] ?? 0) > 0), [inventory])
   const equipmentCounts = useMemo(() => Object.fromEntries(ARMORY_FILTERS.map((entry) => [entry.id, entry.id === 'all' ? ownedEquipment.length : ownedEquipment.filter((id) => ITEMS[id].equipmentSlot === entry.id).length])) as Record<ArmoryFilter, number>, [ownedEquipment])
@@ -103,9 +100,6 @@ export function EquipmentScreenV2() {
   const [artifactPath, setArtifactPath] = useState<ArtifactId | null>(null)
   const equippedPositions = selectedItemId ? getItemPositions(selectedItemId).filter((position) => equipment[position] === selectedItemId) : []
   const ringNeedsChoice = selectedItem?.equipmentSlot === 'ring' && !ringReplacement && Boolean(equipment.ring1 && equipment.ring2) && selectedPosition !== 'ring1' && selectedPosition !== 'ring2'
-  const reportLoadoutContentHeight = useCallback((height: number) => setLoadoutContentHeight((current) => current === height ? current : height), [])
-  const reportStatsContentHeight = useCallback((height: number) => setStatsContentHeight((current) => current === height ? current : height), [])
-  const layoutTransform = useCallback((layout: Parameters<typeof getAdaptiveEquipmentLayout>[0]) => getAdaptiveEquipmentLayout(layout, { requiredLoadoutContentHeight: loadoutContentHeight, requiredStatsContentHeight: statsContentHeight }), [loadoutContentHeight, statsContentHeight])
   useSmartScrollState(armoryScrollRef, { dependencies: [visibleEquipment.join('|'), filter, search, availableOnly, sortMode] })
   useSmartScrollState(inspectorScrollRef, { resetKey: selectedItemId })
 
@@ -198,7 +192,7 @@ export function EquipmentScreenV2() {
   const equipDisabledReason = !preview ? 'Select equipment to preview.' : preview.reason ?? (ringNeedsChoice ? 'Choose Ring 1 or Ring 2.' : equippedPositions.length > 0 ? 'Already equipped.' : null)
   const keyChanges = preview?.preview ? getEquipmentKeyChanges(preview.impact) : []
 
-  const loadout = <MeasuredEquipmentCard title="WIZARD LOADOUT" action={<Status tone="success">{equippedCount} / {EQUIPMENT_POSITIONS.length} EQUIPPED</Status>} onHeightChange={reportLoadoutContentHeight}>
+  const loadout = <Card title="WIZARD LOADOUT" action={<Status tone="success">{equippedCount} / {EQUIPMENT_POSITIONS.length} EQUIPPED</Status>}>
     <div className="equipment-loadout-board">
       {LOADOUT_VISUAL_ORDER.map((position) => {
         const itemId = equipment[position]
@@ -217,9 +211,9 @@ export function EquipmentScreenV2() {
       })}
     </div>
     <p className="equipment-loadout-note">Select a slot to filter compatible equipment.</p>
-  </MeasuredEquipmentCard>
+  </Card>
 
-  const statsPanel = <MeasuredEquipmentCard title="WIZARD STATS" action={<Sparkles size={16} color="var(--gold)" />} onHeightChange={reportStatsContentHeight}>
+  const statsPanel = <Card title="WIZARD STATS" action={<Sparkles size={16} color="var(--gold)" />}>
     <div className="equipment-stat-groups">
       <StatGroup title="CORE" rows={[{ key: 'maxHealth', value: statSnapshot.maxHealth }, { key: 'healthRegen', value: statSnapshot.healthRegen }, { key: 'maxMana', value: statSnapshot.maxMana }, { key: 'maxFocus', value: statSnapshot.maxFocus }, { key: 'manaRegen', value: statSnapshot.manaRegen }]} />
       <StatGroup title="OFFENSE" basicAttackIntervalMs={statSnapshot.basicAttackIntervalMs} rows={[{ key: 'spellPower', value: statSnapshot.spellPower }, { key: 'basicDamage', value: statSnapshot.basicDamage }, { key: 'basicAttackSpeedMultiplier', value: statSnapshot.basicAttackSpeedMultiplier }, { key: 'critChance', value: statSnapshot.critChance }, { key: 'critDamageMultiplier', value: statSnapshot.critDamageMultiplier }, ...(statSnapshot.fireSpellDamage ? [{ key: 'fireSpellDamage', value: statSnapshot.fireSpellDamage }] : []), ...(statSnapshot.airSpellDamage ? [{ key: 'airSpellDamage', value: statSnapshot.airSpellDamage }] : [])]} />
@@ -228,7 +222,7 @@ export function EquipmentScreenV2() {
       <StatGroup title="PERIODIC / STATUS" rows={[...(statSnapshot.damageOverTimeBonus ? [{ key: 'damageOverTimeBonus', value: statSnapshot.damageOverTimeBonus }] : []), ...(statSnapshot.statusDurationBonus ? [{ key: 'statusDurationBonus', value: statSnapshot.statusDurationBonus }] : []), ...(statSnapshot.negativeStatusDurationReceived ? [{ key: 'negativeStatusDurationReceived', value: statSnapshot.negativeStatusDurationReceived }] : [])]} />
     </div>
     <GameTooltip block content={<TooltipContent title="Reserved equipment" description="Equipped copies stay reserved and cannot be spent by Research, Transmutation, Guild donation, Sell, or Destroy." />}><div className="equipment-note"><Shield size={15} /><span>Equipped copies reserved from other actions.</span></div></GameTooltip>
-  </MeasuredEquipmentCard>
+  </Card>
 
   const armory = <Card title="ARMORY" className="equipment-armory-panel" action={<span className="equipment-armory-count">{ownedEquipment.length} OWNED TYPES</span>}>
     <label className="equipment-search"><SearchInput value={search} onChange={setSearch} placeholder="Search name, stat, or build tag..." ariaLabel="Search equipment" /></label>
@@ -254,40 +248,13 @@ export function EquipmentScreenV2() {
     </>}
   </div></InspectorTransition></Card>
 
-  return <div className="screen-content equipment-screen"><div className="screen-header"><div><div className="eyebrow">WIZARD LOADOUT · EQUIPMENT</div><h1>Build the tower’s answer.</h1><p>Build your loadout from Artifacts and swappable accessories.</p></div></div><EditableGrid screen="equipment" layoutTransform={layoutTransform} panels={[{ id: 'equipment-loadout', content: loadout }, { id: 'equipment-stats', content: statsPanel }, { id: 'equipment-owned', content: armory }, { id: 'equipment-inspector', content: inspector }]} />{artifactPath && <ArtifactPathModal artifactId={artifactPath} onClose={() => setArtifactPath(null)} />}</div>
+  return <div className="screen-content equipment-screen"><div className="screen-header"><div><div className="eyebrow">WIZARD LOADOUT · EQUIPMENT</div><h1>Build the tower’s answer.</h1><p>Build your loadout from Artifacts and swappable accessories.</p></div></div><ScreenGrid screen="equipment" panels={[{ id: 'equipment-loadout', content: loadout }, { id: 'equipment-stats', content: statsPanel }, { id: 'equipment-owned', content: armory }, { id: 'equipment-inspector', content: inspector }]} />{artifactPath && <ArtifactPathModal artifactId={artifactPath} onClose={() => setArtifactPath(null)} />}</div>
 }
 
 export const EquipmentScreen = EquipmentScreenV2
 
 function EquipmentSlotTooltip({ itemId, owned, tooltip, children }: { itemId: ItemId | null; owned: number; tooltip: { title: string; description: ReactNode }; children: ReactNode }) {
   return itemId ? <ItemTooltip itemId={itemId} owned={owned} equipped>{children}</ItemTooltip> : <GameTooltip block content={<TooltipContent title={tooltip.title} description={tooltip.description} />}>{children}</GameTooltip>
-}
-
-function MeasuredEquipmentCard({ children, onHeightChange, ...props }: { children: ReactNode; onHeightChange: (height: number) => void; className?: string; title?: string; action?: ReactNode; style?: CSSProperties }) {
-  const cardRef = useRef<HTMLElement>(null)
-  const contentRef = useRef<HTMLDivElement>(null)
-  const measure = useCallback(() => {
-    const card = cardRef.current
-    const content = contentRef.current
-    if (!card || !content) return
-    const cardRect = card.getBoundingClientRect()
-    const contentRect = content.getBoundingClientRect()
-    const cardStyle = getComputedStyle(card)
-    const bottomFrame = (Number.parseFloat(cardStyle.paddingBottom) || 0) + (Number.parseFloat(cardStyle.borderBottomWidth) || 0)
-    const contentHeight = contentRect.height || content.scrollHeight
-    onHeightChange(Math.ceil((contentRect.top - cardRect.top) + contentHeight + bottomFrame))
-  }, [onHeightChange])
-
-  useLayoutEffect(() => {
-    measure()
-    if (typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver(measure)
-    if (cardRef.current) observer.observe(cardRef.current)
-    if (contentRef.current) observer.observe(contentRef.current)
-    return () => observer.disconnect()
-  }, [measure])
-
-  return <Card ref={cardRef} {...props}><div ref={contentRef}>{children}</div></Card>
 }
 
 function EquipmentStatTooltip({ statKey, basicAttackIntervalMs, children }: { statKey: string; basicAttackIntervalMs?: number; children: ReactNode }) {

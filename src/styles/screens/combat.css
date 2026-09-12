@@ -6,14 +6,14 @@
 .combat-screen .screen-header {
   margin-bottom: 16px;
 }
-.combat-screen .ui-editor-grid {
+.combat-screen .screen-grid {
   min-height: 0;
 }
-.combat-screen .ui-editor-panel-content {
+.combat-screen .screen-grid-panel-content {
   min-width: 0;
   height: 100%;
 }
-.combat-screen .ui-editor-panel-content > .card {
+.combat-screen .screen-grid-panel-content > .card {
   min-height: 100%;
 }
 

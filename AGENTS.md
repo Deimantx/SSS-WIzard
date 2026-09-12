@@ -156,17 +156,9 @@ When replacing a system, remove the obsolete implementation after migration rath
 
 ## Screen panel non-overlap contract
 
-- Every visible normal screen panel rendered through `EditableGrid` must have a rectangle with zero intersection area against every sibling panel. Intentional portal/overlay layers such as tooltips, modals, popovers, Developer Tools, Layout Editor controls, and toasts are excluded.
+- Every visible normal screen panel rendered through `ScreenGrid` must have a rectangle with zero intersection area against every sibling panel. Intentional portal/overlay layers such as tooltips, modals, popovers, Developer Tools, and toasts are excluded.
 - Normal panel content must not bleed outside its own panel into a sibling panel. Panel roots own clipping and narrow-width containment.
-- A locked panel cannot be moved or resized by the user, but runtime auto-flow may shift its effective position to avoid overlap. Its saved position remains unchanged.
-- Hidden panels do not reserve runtime space; they remain available only when the Layout Editor is showing hidden content.
-- `bounded-scroll` panels must own an explicit internal scroll viewport; clipping overflow without a reachable themed scrollbar is invalid.
-- `PanelDefinition.heightMode` is either `content` or `bounded-scroll`; content panels grow from measured natural content, while bounded-scroll panels keep their saved/minimum outer height and scroll internally.
-- Saved `x`, `y`, `w`, and `h` are the user's base geometry and are the only geometry persisted. Runtime measurement, auto-flow, responsive stacking, and layout transforms must never write sibling shifts back to saved layouts.
-- Natural content is measured through the shared `ResizeObserver` wrapper. Do not add polling or a global `MutationObserver` for panel sizing.
-- Runtime panel placement must use the shared pure auto-flow solver and stable saved-order placement. Screen-specific transforms may prepare a layout but must not bypass the solver.
-- Responsive narrow layouts must stack every visible panel at `x=0`, `w=12`, using effective heights, and must remain collision-free after width/reflow changes.
-- Shared row/pixel conversion helpers own grid sizing math; do not duplicate magic row heights, margins, or pixel formulas in screens.
+- Static screen panel geometry is source-controlled in `ScreenGrid` and its screen CSS. Responsive rules must reflow panels without overlap and keep all content reachable.
 - Large relationship/reference lists such as `Used In` must stay compact in normal panels and move into a dedicated scrollable modal/dialog or bounded inspector.
 - Transmutation recipe cards must prioritize readable identity and classification over maximum density. Use shared typography tokens; do not add one-off micro-font sizes for card metadata.
 - Tier filtering for Elemental/Material Transmutation content is shared and metadata-driven; do not maintain per-category item-ID tier lists.

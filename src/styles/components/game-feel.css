@@ -354,17 +354,6 @@
 .game-shell.reduced-motion .game-feel-spark { display: none; }
 .game-shell.reduced-motion .game-feel-ring { animation: game-feel-static 220ms ease-out both; }
 
-.game-shell.editor-open .game-screen-transition,
-.game-shell.editor-open .game-screen-transition .react-grid-item {
-  animation: none;
-  transform: none;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .game-shell.editor-open .game-screen-transition,
-  .game-shell.editor-open .game-screen-transition .react-grid-item { animation: none; transform: none; }
-}
-
 @media (max-width: 700px) {
   .game-shell.effects-enabled .main-area::before { opacity: calc(var(--ambient-strength, .8) * .22); }
 }
@@ -450,24 +439,23 @@
   display: none;
 }
 
-/* Large panels wake only under a fine pointer. Edit UI keeps its own selection language. */
+/* Large panels wake only under a fine pointer. */
 @media (hover: hover) and (pointer: fine) {
-  .game-shell:not(.editor-open) .screen-scroll [data-game-panel='true']:hover {
+  .game-shell .screen-scroll [data-game-panel='true']:hover {
     border-color: color-mix(in srgb, var(--ui-accent) 18%, var(--ui-border));
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ui-accent) 8%, transparent), 0 10px 30px color-mix(in srgb, var(--ui-accent) 6%, transparent);
   }
 
-  .game-shell:not(.editor-open) .screen-scroll [data-game-panel='true']:hover::before { opacity: .86; }
+  .game-shell .screen-scroll [data-game-panel='true']:hover::before { opacity: .86; }
 }
 
 .game-shell .screen-scroll .game-screen-transition [data-game-panel='true'] {
   animation: game-panel-wake 360ms ease-out both;
 }
-.game-shell .screen-scroll .game-screen-transition[data-screen-entry='true'] .ui-editor-panel-content {
+.game-shell .screen-scroll .game-screen-transition[data-screen-entry='true'] .screen-grid-panel-content {
   animation: game-panel-sequence 260ms ease-out var(--panel-sequence-delay, 30ms) both;
 }
-.game-shell.editor-open .screen-scroll .game-screen-transition[data-screen-entry='true'] .ui-editor-panel-content,
-.game-shell.reduced-motion .screen-scroll .game-screen-transition[data-screen-entry='true'] .ui-editor-panel-content { animation: none; }
+.game-shell.reduced-motion .screen-scroll .game-screen-transition[data-screen-entry='true'] .screen-grid-panel-content { animation: none; }
 @keyframes game-panel-sequence { from { opacity: .38; filter: brightness(1.2); } 55% { opacity: 1; filter: brightness(1.04); } to { opacity: 1; filter: none; } }
 
 /* The current selection is a stable focus cue; hover remains a transient lift. */
@@ -549,8 +537,6 @@
 @media (hover: hover) and (pointer: fine) {
   .smart-scroll-region:hover { --scroll-indicator-strength: 38%; }
 }
-
-.game-shell.editor-open .smart-scroll-region { --scroll-indicator-strength: 7%; }
 
 .game-shell .screen-scroll .game-value {
   font-variant-numeric: tabular-nums;

@@ -2,12 +2,7 @@
 .channeling-discoveries-strip-icon { display: grid; place-items: center; width: 34px; height: 34px; flex: 0 0 auto; border-radius: 8px; color: var(--ui-accent); background: var(--ui-accent-soft); }
 .channeling-discoveries-strip > div:nth-child(2) { display: grid; gap: 3px; flex: 1; min-width: 0; }.channeling-discoveries-strip strong { color: var(--ui-text); font-size: var(--text-sm); }.channeling-discoveries-strip p { margin: 0; color: var(--ui-text-muted); font-size: var(--text-xs); }
 .channeling-mana-hero > div { display: flex; align-items: center; flex-wrap: wrap; gap: 7px 10px; }.channeling-mana-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 13px; }.channeling-mana-summary span, .echo-core-stats span { display: grid; gap: 5px; padding: 9px 10px; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text-muted); font-size: var(--text-micro); letter-spacing: .08em; }.channeling-mana-summary strong, .echo-core-stats strong { color: var(--ui-text); font: var(--text-sm) var(--font-mono); letter-spacing: 0; }
-.channeling-screen [data-panel-id="channeling-mana-core"] .ui-editor-panel-viewport,
-.channeling-screen [data-panel-id="channeling-mana-core"] .ui-editor-panel-content,
-.channeling-screen [data-panel-id="channeling-mana-core"] .ui-editor-panel-content > .card,
-.channeling-screen [data-panel-id="channeling-echoes"] .ui-editor-panel-viewport,
-.channeling-screen [data-panel-id="channeling-echoes"] .ui-editor-panel-content,
-.channeling-screen [data-panel-id="channeling-echoes"] .ui-editor-panel-content > .card { height: 100%; }
+.channeling-screen .screen-grid-panel-content > .card { height: 100%; }
 .echo-slots { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 7px; margin: 13px 0; }.echo-slots span { display: grid; justify-items: center; gap: 4px; padding: 9px 3px 7px; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text-muted); background: var(--ui-panel); }.echo-slots span.active { border-color: color-mix(in srgb, var(--ui-accent) 65%, var(--ui-border)); color: var(--ui-accent); background: color-mix(in srgb, var(--ui-accent) 11%, var(--ui-panel)); box-shadow: 0 0 15px color-mix(in srgb, var(--ui-accent) 12%, transparent); }.echo-slots i { font-size: var(--text-md); font-style: normal; }.echo-slots small { font-size: var(--text-micro); }.echo-core-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 @media (max-width: 760px) { .channeling-discoveries-strip { align-items: flex-start; flex-wrap: wrap; }.channeling-discoveries-strip > div:nth-child(2) { flex-basis: calc(100% - 49px); }.channeling-discoveries-strip > .button { width: 100%; justify-content: center; }.channeling-mana-summary, .echo-core-stats { grid-template-columns: 1fr; } }
 .mana-pillar-requirements { display: flex; flex-wrap: wrap; gap: 9px; }
@@ -37,8 +32,8 @@
 .mana-pillar-bonus-summary { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 9px; padding: 7px 9px; border: 1px solid var(--ui-border); border-radius: 6px; color: var(--ui-text-muted); background: var(--ui-panel); font: var(--text-micro) / 1.4 var(--font-mono); }
 .mana-pillar-bonus-summary strong { color: var(--ui-text-soft); font-weight: 500; overflow-wrap: anywhere; }
 .mana-pillar-selector-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; min-width: 0; }
-.channeling-screen [data-panel-id="channeling-pillars"] .mana-pillar-selector-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.channeling-screen [data-panel-id="channeling-pillars"] .mana-pillar-selector-grid > :last-child { grid-column: 1 / -1; }
+.channeling-screen .screen-grid-panel-channeling-pillars .mana-pillar-selector-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.channeling-screen .screen-grid-panel-channeling-pillars .mana-pillar-selector-grid > :last-child { grid-column: 1 / -1; }
 .mana-pillar-selector-grid > .game-tooltip-trigger { display: block; min-width: 0; }
 .mana-pillar-selector { --pillar-accent: var(--ui-accent); display: flex; align-items: center; gap: 7px; width: 100%; min-width: 0; min-height: 52px; padding: 7px; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text-soft); background: var(--ui-panel); cursor: pointer; text-align: left; }
 .mana-pillar-selector:hover, .mana-pillar-selector:focus-visible { border-color: color-mix(in srgb, var(--pillar-accent) 70%, var(--ui-border)); outline: none; background: color-mix(in srgb, var(--pillar-accent) 8%, var(--ui-panel)); }
@@ -79,7 +74,7 @@
 
 @media (max-width: 980px) { .mana-pillar-selector-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 760px) { .mana-pillar-selector-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.mana-pillar-selected-effect.is-mastered { grid-template-columns: 1fr; }.mana-pillar-selected-effect.is-mastered > p { text-align: left; }.mana-pillar-selected-costs .mana-pillar-requirements > .game-tooltip-trigger { flex-basis: 68px; } }
-@media (max-width: 480px) { .channeling-screen [data-panel-id="channeling-pillars"] .mana-pillar-selector-grid { grid-template-columns: 1fr; }.channeling-screen [data-panel-id="channeling-pillars"] .mana-pillar-selector-grid > :last-child { grid-column: auto; } }
+@media (max-width: 480px) { .channeling-screen .screen-grid-panel-channeling-pillars .mana-pillar-selector-grid { grid-template-columns: 1fr; }.channeling-screen .screen-grid-panel-channeling-pillars .mana-pillar-selector-grid > :last-child { grid-column: auto; } }
 
 .channeling-breakdown-panel { display: flex; min-width: 0; min-height: 0; flex-direction: column; gap: 10px; }
 .channeling-breakdown-panel > .card-head { flex: 0 0 auto; }

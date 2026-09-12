@@ -1,5 +1,5 @@
-.ui-editor-panel-content > .school-mastery-panel,
-.ui-editor-panel-content > .current-arcane-work { height: 100%; min-height: 0; margin: 0; overflow: hidden; }
+.screen-grid-panel-content > .school-mastery-panel,
+.screen-grid-panel-content > .current-arcane-work { height: 100%; min-height: 0; margin: 0; overflow: hidden; }
 .school-mastery-panel { display: flex; flex-direction: column; }
 .school-mastery-panel > .card-head { flex: 0 0 auto; }
 .school-mastery-total, .current-arcane-work-summary { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); white-space: nowrap; }

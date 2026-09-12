@@ -1,5 +1,4 @@
-.equipment-screen .ui-editor-grid-layout { min-height: 590px; }
-.equipment-screen .ui-editor-panel-content > .card { height: 100%; min-height: 100%; }
+.equipment-screen .screen-grid-panel-content > .card { height: 100%; min-height: 100%; }
 .equipment-screen .card { overflow: hidden; }
 .equipment-armory-panel, .equipment-inspector { display: flex; flex-direction: column; }
 .equipment-armory-panel > .card-head, .equipment-inspector > .card-head { flex: 0 0 auto; }
@@ -125,7 +124,6 @@
 }
 
 @media (max-width: 760px) {
-  .equipment-screen .ui-editor-grid-layout { min-height: 0; }
   .equipment-loadout-board { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "cape helmet" "earring amulet" "weapon armor" "ring1 ring2"; gap: 8px; }
   .equipment-slot-card { height: 116px; min-height: 116px; }
   .equipment-armory-grid { grid-template-columns: 1fr; }

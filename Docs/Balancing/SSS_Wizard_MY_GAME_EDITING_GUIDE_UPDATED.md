@@ -2753,7 +2753,7 @@ For larger UI reworks:
 use Codex
 ```
 
-because layout-editor ownership and responsive behavior can make a "small" UI change affect multiple files.
+because static screen layout ownership and responsive behavior can make a "small" UI change affect multiple files.
 
 ---
 

@@ -11,4 +11,4 @@
 *::-webkit-scrollbar-thumb { background: var(--ui-scrollbar-thumb); border: 2px solid var(--ui-scrollbar-track); border-radius: 999px; }
 *::-webkit-scrollbar-thumb:hover { background: var(--ui-scrollbar-thumb-hover); }
 *::-webkit-scrollbar-thumb:active { background: var(--ui-scrollbar-thumb-active); }
-.screen-scroll, .nav-list, .developer-tools-content, .layout-editor-drawer-scroll, .sandbox-scroll-sample { scrollbar-gutter: stable; }
+.screen-scroll, .nav-list, .developer-tools-content, .sandbox-scroll-sample { scrollbar-gutter: stable; }

@@ -32,7 +32,6 @@ export function EquipmentCatalog({ selected, onSelect, query, onQueryChange }: P
   const scroll = useRef<HTMLDivElement>(null)
   useSmartScrollState(scroll, { dependencies: [visible.map(recipe => recipe.id).join('|'), query] })
   const artifactRecipes = visible.filter(isArtifactArtificingRecipe)
-  const equipmentRecipes = visible.filter(recipe => !isArtifactArtificingRecipe(recipe))
 
   const renderRecipeCard = (recipe: (typeof visible)[number]) => {
     const item = ITEMS[recipe.output.itemId]
@@ -77,18 +76,14 @@ export function EquipmentCatalog({ selected, onSelect, query, onQueryChange }: P
     {recipes.length > 0 ? <div className="artificing-item-grid">{recipes.map(renderRecipeCard)}</div> : <div className="artificing-group-empty">No {title === 'ARTIFACTS' ? 'Artifact' : 'Equipment'} recipes match the current filters.</div>}
   </section>
 
-  const groupedCatalog = filters.kindFilter === 'artifact'
-    ? renderRecipeGroup('ARTIFACTS', 'Permanent items that grow through Artifact Path progression.', artifactRecipes)
-    : filters.kindFilter === 'equipment'
-      ? renderRecipeGroup('EQUIPMENT', 'Swappable crafted equipment.', equipmentRecipes)
-      : <div className="artificing-recipe-groups">{renderRecipeGroup('ARTIFACTS', 'Permanent items that grow through Artifact Path progression.', artifactRecipes)}{renderRecipeGroup('EQUIPMENT', 'Swappable crafted equipment.', equipmentRecipes)}</div>
-  const emptyMessage = filters.kindFilter === 'artifact' ? 'No Artifact recipes match the current filters.' : filters.kindFilter === 'equipment' ? 'No Equipment recipes match the current filters.' : 'No Artificing recipes match the current filters.'
+  const groupedCatalog = renderRecipeGroup('ARTIFACTS', 'Permanent items that grow through Artifact Path progression.', artifactRecipes)
+  const emptyMessage = 'No Artifact recipes match the current filters.'
 
   return <Card className="artificing-catalog" title="ARTIFICING CATALOG" action={<span className="artificing-count">{counts.visible} SHOWN</span>}>
     <div className="artificing-controls">
       <label className="artificing-search"><Search size={14} aria-hidden="true" /><SearchInput value={query} onChange={onQueryChange} placeholder="Search equipment..." /></label>
       <div className="artificing-filter-stack">
-        <div className="artificing-kind-filter"><FilterRow label="CRAFT TYPE" options={(['all', 'artifact', 'equipment'] as const).map(value => ({ value, label: value === 'all' ? 'ALL' : value === 'artifact' ? 'ARTIFACTS' : 'EQUIPMENT' }))} value={filters.kindFilter} onChange={value => update({ kindFilter: value })} /></div>
+        <div className="artificing-kind-filter"><FilterRow label="CRAFT TYPE" options={(['all', 'artifact'] as const).map(value => ({ value, label: value === 'all' ? 'ALL' : 'ARTIFACTS' }))} value={filters.kindFilter} onChange={value => update({ kindFilter: value })} /></div>
         <FilterRow label="SLOT" options={slots.map(value => ({ value, label: value === 'all' ? 'ALL' : EQUIPMENT_ITEM_SLOT_LABELS[value].toUpperCase() }))} value={filters.slotFilter} onChange={value => update({ slotFilter: value })} />
         <FilterRow label="TIER" options={(['all', 1, 2, 3] as const).map(value => ({ value, label: value === 'all' ? 'ALL' : `T${value}` }))} value={filters.tierFilter} onChange={value => update({ tierFilter: value })} />
         <FilterRow label="OWNERSHIP" options={(['all', 'unowned', 'owned'] as const).map(value => ({ value, label: value.toUpperCase() }))} value={filters.ownershipFilter} onChange={value => update({ ownershipFilter: value })} />

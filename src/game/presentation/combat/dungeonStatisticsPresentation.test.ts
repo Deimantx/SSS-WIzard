@@ -23,9 +23,9 @@ const session = (lootByItemId: DungeonStatisticsSession['lootByItemId']): Dungeo
 
 describe('dungeon statistics presentation', () => {
   it('exposes every recorded drop, sorted by quantity then name, with an hourly rate', () => {
-    const presentation = getDungeonStatisticsPresentation(session({ 'life-essence': 3, 'wisp-essence': 12, 'grove-bark': 12, heartseed: 0 }))
+    const presentation = getDungeonStatisticsPresentation(session({ 'life-essence': 3, 'artifact-essence': 12, 'prismatic-fragment': 12 }))
 
-    expect(presentation.dropRows.map((row) => row.itemId)).toEqual(['grove-bark', 'wisp-essence', 'life-essence'])
+    expect(presentation.dropRows.map((row) => row.itemId)).toEqual(['artifact-essence', 'prismatic-fragment', 'life-essence'])
     expect(presentation.dropRows[0].perHour).toBe(12)
     expect(presentation.totalDrops).toBe(27)
     expect(presentation.dropsPerHour).toBe(27)
@@ -42,17 +42,17 @@ describe('dungeon statistics presentation', () => {
   })
 
   it('uses the canonical session denominator for total and item rates', () => {
-    const tenMinuteSession = { ...session({ 'wisp-essence': 25, 'life-essence': 75 }), elapsedMs: 600_000 }
+    const tenMinuteSession = { ...session({ 'artifact-essence': 25, 'life-essence': 75 }), elapsedMs: 600_000 }
     const presentation = getDungeonStatisticsPresentation(tenMinuteSession)
 
     expect(presentation.totalDrops).toBe(100)
     expect(presentation.dropsPerHour).toBe(600)
-    expect(presentation.dropRows.find((row) => row.itemId === 'wisp-essence')?.perHour).toBe(150)
+    expect(presentation.dropRows.find((row) => row.itemId === 'artifact-essence')?.perHour).toBe(150)
     expect(presentation.dropsPerHourLabel).toBe('600 /h')
   })
 
   it('shows a projected hourly label immediately without a separate sample warning', () => {
-    const shortSession = { ...session({ 'wisp-essence': 1 }), elapsedMs: 30_000 }
+    const shortSession = { ...session({ 'artifact-essence': 1 }), elapsedMs: 30_000 }
     const presentation = getDungeonStatisticsPresentation(shortSession)
 
     expect(presentation.dropsPerHour).toBe(120)
@@ -63,7 +63,7 @@ describe('dungeon statistics presentation', () => {
   })
 
   it('derives visible total items from the per-item quantities', () => {
-    const presentation = getDungeonStatisticsPresentation({ ...session({ 'wisp-essence': 25, 'life-essence': 40, 'grove-bark': 10, heartseed: 2 }), totalLootQuantity: 999 })
+    const presentation = getDungeonStatisticsPresentation({ ...session({ 'artifact-essence': 25, 'life-essence': 40, 'prismatic-fragment': 10 }), totalLootQuantity: 999 })
 
     expect(presentation.totalDrops).toBe(77)
     expect(presentation.totalDropsLabel).toBe('77')

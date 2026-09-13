@@ -344,7 +344,7 @@ describe('Life Essence combat material', () => {
     Object.entries(expected).forEach(([monsterId, [min, max, chance]]) => {
       expect(MONSTERS[monsterId as keyof typeof MONSTERS].loot).toContainEqual({ itemId: 'life-essence', min, max, chance })
     })
-    expect(MONSTERS['forest-heart'].loot.some((drop) => drop.itemId === 'heartseed')).toBe(true)
+    expect(MONSTERS['forest-heart'].loot.some((drop) => drop.itemId === 'artifact-essence')).toBe(true)
   })
 })
 

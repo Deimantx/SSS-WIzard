@@ -7,7 +7,12 @@ import { RESEARCH_SLOT_ORDER } from '../research/researchReservations'
 import { getSpellAutoCastFocusCost } from '../spells/spellProgression'
 import type { FocusReservation, GameState, SpellId } from '../../types'
 
-export type FocusReservationState = Pick<GameState, 'activities' | 'progress' | 'equipment' | 'artifactProgress'>
+export type FocusReservationState = {
+  activities: Pick<GameState['activities'], 'channeling' | 'research' | 'transmutation' | 'autoCast'>
+  progress: Pick<GameState['progress'], 'spellRanks'>
+  equipment: GameState['equipment']
+  artifactProgress: GameState['artifactProgress']
+}
 export type FocusUsageState = FocusReservationState & Pick<GameState, 'player'>
 
 export const deriveFocusReservations = (state: FocusReservationState): FocusReservation[] => {

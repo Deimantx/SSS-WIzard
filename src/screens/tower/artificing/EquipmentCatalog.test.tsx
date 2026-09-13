@@ -33,52 +33,44 @@ describe('Artificing equipment catalog filters', () => {
 
     const tierFilter = screen.getByRole('group', { name: 'TIER' })
     expect(within(tierFilter).getByRole('button', { name: 'ALL' }).getAttribute('aria-pressed')).toBe('true')
-    expect(screen.getByText('21 SHOWN')).toBeTruthy()
+    expect(screen.getByText('6 SHOWN')).toBeTruthy()
 
     fireEvent.click(within(tierFilter).getByRole('button', { name: 'T2' }))
     expect(within(tierFilter).getByRole('button', { name: 'T2' }).getAttribute('aria-pressed')).toBe('true')
     expect(screen.getByText('0 SHOWN')).toBeTruthy()
-    expect(screen.getByText('No Artificing recipes match the current filters.')).toBeTruthy()
+    expect(screen.getByText('No Artifact recipes match the current filters.')).toBeTruthy()
 
     fireEvent.click(within(tierFilter).getByRole('button', { name: 'T1' }))
-    expect(screen.getByText('21 SHOWN')).toBeTruthy()
+    expect(screen.getByText('6 SHOWN')).toBeTruthy()
 
     const slotFilter = screen.getByRole('group', { name: 'SLOT' })
     expect(within(slotFilter).getByRole('button', { name: 'WEAPON' })).toBeTruthy()
     expect(within(slotFilter).queryByRole('button', { name: 'OFFHAND' })).toBeNull()
     expect(screen.queryByText('HANDS')).toBeNull()
     fireEvent.click(within(slotFilter).getByRole('button', { name: 'EARRING' }))
-    expect(screen.getByText('3 SHOWN')).toBeTruthy()
+    expect(screen.getByText('0 SHOWN')).toBeTruthy()
 
     fireEvent.click(within(tierFilter).getByRole('button', { name: 'T2' }))
     expect(screen.getByText('0 SHOWN')).toBeTruthy()
   })
 
-  it('separates Artifact and Equipment cards through the persisted Craft Type filter', () => {
+  it('keeps the Artificing catalog focused on Artifact cards', () => {
     render(<TooltipProvider><EquipmentCatalog selected={null} onSelect={vi.fn()} query="" onQueryChange={vi.fn()} /></TooltipProvider>)
 
     const craftType = screen.getByRole('group', { name: 'CRAFT TYPE' })
     expect(within(craftType).getByRole('button', { name: 'ALL' }).getAttribute('aria-pressed')).toBe('true')
     expect(screen.getByRole('region', { name: 'ARTIFACTS' })).toBeTruthy()
-    expect(screen.getByRole('region', { name: 'EQUIPMENT' })).toBeTruthy()
+    expect(screen.queryByRole('region', { name: 'EQUIPMENT' })).toBeNull()
 
     fireEvent.click(within(craftType).getByRole('button', { name: 'ARTIFACTS' }))
-    expect(screen.getByText('7 SHOWN')).toBeTruthy()
+    expect(screen.getByText('6 SHOWN')).toBeTruthy()
     expect(screen.getByText('Ember Staff')).toBeTruthy()
     expect(screen.queryByText('Windthread Charm')).toBeNull()
     expect(within(craftType).getByRole('button', { name: 'ARTIFACTS' }).getAttribute('aria-pressed')).toBe('true')
 
-    fireEvent.click(within(craftType).getByRole('button', { name: 'EQUIPMENT' }))
-    expect(screen.getByText('14 SHOWN')).toBeTruthy()
-    expect(screen.getByText('Windthread Charm')).toBeTruthy()
-    expect(screen.queryByText('Ember Staff')).toBeNull()
-    expect(within(craftType).getByRole('button', { name: 'EQUIPMENT' }).getAttribute('aria-pressed')).toBe('true')
-
     const slotFilter = screen.getByRole('group', { name: 'SLOT' })
     fireEvent.click(within(slotFilter).getByRole('button', { name: 'EARRING' }))
-    expect(screen.getByText('3 SHOWN')).toBeTruthy()
-    expect(screen.getByText('Fangwire Earring')).toBeTruthy()
-    expect(screen.queryByText('Ember Staff')).toBeNull()
+    expect(screen.getByText('0 SHOWN')).toBeTruthy()
   })
 
   it('shows owned Artifacts as FORGED with their current level', () => {
@@ -98,23 +90,23 @@ describe('Artificing equipment catalog filters', () => {
   it('keeps a materially-ready card READY while another recipe is crafting', () => {
     unlockWhisperingWoods()
     provideIngredients('ember-staff')
-    provideIngredients('windthread-charm')
+    provideIngredients('tideglass-wand')
     const current = useGameStore.getState()
-    useGameStore.setState({ activities: { ...current.activities, artificing: { activeJob: { kind: 'recipe', recipeId: 'windthread-charm' }, activeRecipeId: 'windthread-charm', progressMs: 1000 } } })
+    useGameStore.setState({ activities: { ...current.activities, artificing: { activeJob: { kind: 'recipe', recipeId: 'tideglass-wand' }, activeRecipeId: 'tideglass-wand', progressMs: 1000 } } })
     render(<TooltipProvider><EquipmentCatalog selected="ember-staff" onSelect={vi.fn()} query="" onQueryChange={vi.fn()} /></TooltipProvider>)
 
     const ember = document.querySelector('[data-recipe-id="ember-staff"]') as HTMLElement
-    const windthread = document.querySelector('[data-recipe-id="windthread-charm"]') as HTMLElement
+    const tideglass = document.querySelector('[data-recipe-id="tideglass-wand"]') as HTMLElement
     expect(within(ember).getByText('READY')).toBeTruthy()
-    expect(within(windthread).getByText('CRAFTING')).toBeTruthy()
+    expect(within(tideglass).getByText('CRAFTING')).toBeTruthy()
   })
 
   it('explains a busy Artificing slot in the catalog context menu', () => {
     unlockWhisperingWoods()
     provideIngredients('ember-staff')
-    provideIngredients('windthread-charm')
+    provideIngredients('tideglass-wand')
     const current = useGameStore.getState()
-    useGameStore.setState({ activities: { ...current.activities, artificing: { activeJob: { kind: 'recipe', recipeId: 'windthread-charm' }, activeRecipeId: 'windthread-charm', progressMs: 1000 } } })
+    useGameStore.setState({ activities: { ...current.activities, artificing: { activeJob: { kind: 'recipe', recipeId: 'tideglass-wand' }, activeRecipeId: 'tideglass-wand', progressMs: 1000 } } })
     render(<TooltipProvider><GameContextMenuProvider><EquipmentCatalog selected="ember-staff" onSelect={vi.fn()} query="ember-staff" onQueryChange={vi.fn()} /></GameContextMenuProvider></TooltipProvider>)
 
     fireEvent.contextMenu(document.querySelector('[data-recipe-id="ember-staff"]') as HTMLElement)

@@ -72,7 +72,7 @@ const spellSearchText = (spell: typeof SPELLS[SpellId], tags: readonly SpellCata
 
 const compareSchool = (left: SchoolId, right: SchoolId) => SCHOOL_ORDER.indexOf(left) - SCHOOL_ORDER.indexOf(right)
 
-export const getSpellBrowserEntries = (state: Pick<GameState, 'progress'>, filters: SpellBrowserFilters): SpellBrowserEntry[] => {
+export const getSpellBrowserEntries = (state: { progress: Pick<GameState['progress'], 'spellRanks'> }, filters: SpellBrowserFilters): SpellBrowserEntry[] => {
   const query = filters.search.trim().toLocaleLowerCase()
   const realEntries: Array<SpellBrowserSpellEntry & { authoredIndex: number }> = Object.values(SPELLS).map((spell, authoredIndex) => {
     const rank = getSpellRank(state, spell.id)

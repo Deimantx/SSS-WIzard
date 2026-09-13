@@ -33,7 +33,7 @@ export function RecipePinsDock() {
   useEffect(() => {
     const staleArtifactPins = preferences.pinnedRecipeIds.filter((recipeId) => {
       const recipe = ARTIFICING_RECIPES[recipeId]
-      return Boolean(recipe && ARTIFACTS[recipe.output.itemId] && state.inventory[recipe.output.itemId] > 0 && state.artifactProgress?.[recipe.output.itemId])
+      return Boolean(recipe && ARTIFACTS[recipe.output.itemId] && (state.inventory[recipe.output.itemId] ?? 0) > 0 && state.artifactProgress?.[recipe.output.itemId])
     })
     if (staleArtifactPins.length) setUiPreferences({ screenState: { artificing: { pinnedRecipeIds: preferences.pinnedRecipeIds.filter((recipeId) => !staleArtifactPins.includes(recipeId)) } } })
   }, [preferences.pinnedRecipeIds, state.inventory, state.artifactProgress])

@@ -3,13 +3,17 @@ import { createInitialState } from '../../../store/initialState'
 import { advanceArtificing, cancelArtificingCraft, craftArtificingRecipe } from './artificingEngine'
 import { migrateSave } from '../../../persistence/migrations'
 
+const provideForgeMaterials = (state: ReturnType<typeof createInitialState>, recipeId: 'ember-staff' | 'windthread-wand') => {
+  state.inventory[recipeId === 'ember-staff' ? 'fire-fragment' : 'air-fragment'] = 40
+  state.inventory['artifact-essence'] = 20
+}
+
 describe('Artificing', () => {
-  it('refunds a saved in-progress craft once and prevents later output', () => {
+  it('refunds a saved in-progress Artifact forge once and prevents later output', () => {
     let state = createInitialState()
-    state.progress.lifetimeKillsByMonster['forest-wisp'] = 1
-    state.inventory = { 'fire-fragment': 40, 'wisp-essence': 10, 'thorn-fiber': 10, 'grove-bark': 5, 'life-essence': 24 }
+    provideForgeMaterials(state, 'ember-staff')
     const before = { ...state.inventory }
-    craftArtificingRecipe(state, 'ember-staff')
+    expect(craftArtificingRecipe(state, 'ember-staff').ok).toBe(true)
     advanceArtificing(state, 2100)
     state = migrateSave(JSON.parse(JSON.stringify(state)))
     expect(cancelArtificingCraft(state)).toBe(true)
@@ -25,17 +29,14 @@ describe('Artificing', () => {
     expect(state.inventory).toEqual(completedInventory)
     expect(state.inventory['ember-staff']).toBe(1)
   })
-  it('starts once, consumes once, and completes exactly one output after five seconds', () => {
+
+  it('starts once, consumes once, and completes exactly one Artifact after five seconds', () => {
     const state = createInitialState()
-    state.progress.lifetimeKillsByMonster['forest-wisp'] = 1
-    state.inventory['fire-fragment'] = 20
-    state.inventory['wisp-essence'] = 10
-    state.inventory['thorn-fiber'] = 10
-    state.inventory['grove-bark'] = 5
-    state.inventory['life-essence'] = 24
+    provideForgeMaterials(state, 'ember-staff')
     expect(craftArtificingRecipe(state, 'ember-staff').ok).toBe(true)
     expect(state.inventory['ember-staff']).toBeUndefined()
-    expect(state.inventory['fire-fragment']).toBe(0)
+    expect(state.inventory['fire-fragment']).toBe(20)
+    expect(state.inventory['artifact-essence']).toBe(0)
     expect(state.activities.artificing.activeJob).toEqual({ kind: 'artifact-forge', artifactId: 'ember-staff' })
     expect(craftArtificingRecipe(state, 'ember-staff').ok).toBe(false)
     advanceArtificing(state, 4999)
@@ -49,32 +50,24 @@ describe('Artificing', () => {
     expect(completions).toEqual([{ kind: 'artifact-forge', recipeId: 'ember-staff', artifactId: 'ember-staff', itemId: 'ember-staff' }])
   })
 
-  it('identifies the originating recipe in normal Equipment completion payloads', () => {
-    const state = createInitialState()
-    state.progress.lifetimeKillsByMonster['forest-wisp'] = 1
-    state.inventory['air-fragment'] = 40
-    state.inventory['wisp-essence'] = 8
-    state.inventory['thorn-fiber'] = 12
-    state.inventory['grove-bark'] = 9
-    const completions: unknown[] = []
-
-    expect(craftArtificingRecipe(state, 'windthread-charm').ok).toBe(true)
-    advanceArtificing(state, 5_000, (completion) => completions.push(completion))
-
-    expect(completions).toEqual([{ kind: 'recipe', recipeId: 'windthread-charm', itemId: 'windthread-charm', quantity: 1 }])
-  })
-
-  it('does not partially consume on failure or bypass unlocks', () => {
+  it('does not partially consume on failure or bypass legal ingredient rules', () => {
     const state = createInitialState()
     state.inventory['fire-fragment'] = 20
-    state.inventory['wisp-essence'] = 20
-    state.inventory['thorn-fiber'] = 10
-    state.inventory['life-essence'] = 100
-    expect(craftArtificingRecipe(state, 'ember-staff').ok).toBe(false)
-    expect(state.inventory['fire-fragment']).toBe(20)
-    state.progress.lifetimeKillsByMonster['forest-wisp'] = 1
-    state.protectedItems['fire-fragment'] = true
-    expect(craftArtificingRecipe(state, 'ember-staff').ok).toBe(false)
-    expect(state.inventory['wisp-essence']).toBe(20)
+    state.inventory['artifact-essence'] = 20
+    expect(craftArtificingRecipe(state, 'ember-staff').ok).toBe(true)
+    expect(state.inventory['fire-fragment']).toBe(0)
+    expect(state.inventory['artifact-essence']).toBe(0)
+    const protectedState = createInitialState()
+    provideForgeMaterials(protectedState, 'ember-staff')
+    protectedState.protectedItems['fire-fragment'] = true
+    expect(craftArtificingRecipe(protectedState, 'ember-staff').ok).toBe(false)
+    expect(protectedState.inventory['fire-fragment']).toBe(40)
+    expect(protectedState.inventory['artifact-essence']).toBe(20)
+  })
+
+  it('rejects obsolete non-Artifact Artificing outputs', () => {
+    const state = createInitialState()
+    expect(craftArtificingRecipe(state, 'windthread-charm' as never).ok).toBe(false)
+    expect(craftArtificingRecipe(state, 'windthread-charm' as never)).toMatchObject({ ok: false, reason: 'Only Artifact recipes can be forged.' })
   })
 })

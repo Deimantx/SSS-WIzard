@@ -54,9 +54,9 @@ describe('inventory transactions', () => {
     expect(protectedState.inventory['fire-fragment']).toBe(17)
 
     const starterState = createInitialState()
-    starterState.inventory['heartseed'] = 1
-    expect(destroyItemAction(starterState, 'heartseed', 1)).toBe(0)
-    expect(starterState.inventory['heartseed']).toBe(1)
+    starterState.inventory['ember-staff'] = 1
+    expect(destroyItemAction(starterState, 'ember-staff', 1)).toBe(0)
+    expect(starterState.inventory['ember-staff']).toBe(1)
   })
 
   it('keeps the Black Portal Shard bound to story progression', () => {

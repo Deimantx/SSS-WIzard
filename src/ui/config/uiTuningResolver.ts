@@ -28,7 +28,7 @@ export function getUITuningComponent<K extends UITuningComponentKey>(component: 
   const screenSource = screen ? asNumbers(UI_TUNING.screens[screen]?.components?.[component]) : {}
   const screenDraft = screen ? asNumbers(draft.screens[screen]?.components?.[component]) : {}
   const draftValues = asNumbers(draft.components[component])
-  return { ...FALLBACKS[component], ...source, ...screenSource, ...screenDraft, ...draftValues } as typeof UI_TUNING.components[K]
+  return { ...FALLBACKS[component], ...source, ...screenSource, ...screenDraft, ...draftValues } as unknown as typeof UI_TUNING.components[K]
 }
 
 export function getUITuningPanel(screen?: ScreenId, draft: UITuningDraft = getUITuningDraft()): PanelTuning {

@@ -14,7 +14,7 @@ describe('item discovery save migration', () => {
 
     const migrated = migrateSave(legacy)
     expect(migrated.saveVersion).toBe(SAVE_VERSION)
-    expect(migrated.progress.discoveredItems).toEqual(expect.arrayContaining(['fire-fragment', 'grove-bark', 'wisp-essence', 'life-essence']))
+    expect(migrated.progress.discoveredItems).toEqual(expect.arrayContaining(['fire-fragment', 'artifact-essence', 'life-essence']))
     expect(migrated.progress.discoveredItems).not.toContain('apprentice-wand')
     expect(migrated.progress.discoveredItems).not.toContain('heartseed')
   })
@@ -26,5 +26,18 @@ describe('item discovery save migration', () => {
     const migrated = migrateSave(JSON.parse(JSON.stringify(serializeGameState(state))))
     expect(migrated.progress.discoveredItems).toEqual(['fire-fragment'])
     expect(migrated.inventory['water-fragment']).toBe(7)
+  })
+
+  it('drops retired item ids from old archives while retaining current item discoveries', () => {
+    const legacy = createInitialState() as any
+    legacy.saveVersion = 10
+    legacy.inventory = { 'wisp-essence': 8, 'grove-bark': 2, 'artifact-essence': 3 }
+    legacy.progress.discoveredItems = ['wisp-essence', 'grove-bark', 'artifact-essence']
+
+    const migrated = migrateSave(legacy)
+    expect(migrated.inventory).toEqual({ 'artifact-essence': 3 })
+    expect(migrated.progress.discoveredItems).toContain('artifact-essence')
+    expect(migrated.progress.discoveredItems).not.toContain('wisp-essence')
+    expect(migrated.progress.discoveredItems).not.toContain('grove-bark')
   })
 })

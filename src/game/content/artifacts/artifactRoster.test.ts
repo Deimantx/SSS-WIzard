@@ -5,14 +5,15 @@ import { ITEMS } from '../items/items'
 import { MONSTERS } from '../monsters'
 import { ARTIFICING_RECIPES, isRecipeUnlocked } from '../recipes/recipes'
 import { ARTIFACTS, validateArtifactDefinitions } from './artifacts'
-import { getArtifactEffectiveStats, getArtifactLevelCap } from '../../systems/artifacts/artifactProgression'
+import { getArtifactEffectiveStats, getArtifactLevelCap, getArtifactLevelCapRequirement, getArtifactUpgrade, isArtifactUpgradeUnlocked, canUpgradeArtifact } from '../../systems/artifacts/artifactProgression'
+import { upgradeArtifactInstant } from '../../systems/artificing/artificingEngine'
 import { getCombatModifiers, getResistance } from '../../systems/combat/modifiers'
 import { damagePlayer } from '../../systems/combat/effectResolver'
 import { normalizeEquipmentState } from '../../core/equipment/equipmentRules'
-import type { ArtificingRecipeId, CombatSource } from '../../types'
+import type { ArtifactId, CombatSource, ItemId } from '../../types'
 
-const artifactIds: ArtificingRecipeId[] = ['ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'wispweave-robe', 'wispveil-hood']
-const firstKillMonsters = ['forest-wisp', 'thornling', 'stone-root', 'grove-sentinel'] as const
+const artifactIds: readonly ArtifactId[] = ['ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'wispweave-robe', 'wispveil-hood']
+const elementalArtifacts: readonly [ArtifactId, ItemId][] = [['ember-staff', 'fire-fragment'], ['tideglass-wand', 'water-fragment'], ['stoneheart-scepter', 'earth-fragment'], ['windthread-wand', 'air-fragment']]
 const spellSource = (school: 'water' | 'earth' | 'air'): CombatSource => ({ actor: 'player', kind: 'spell', sourceId: `artifact-${school}`, school, tags: ['spell', school] })
 
 describe('Tier 1 Artifact roster', () => {
@@ -20,7 +21,7 @@ describe('Tier 1 Artifact roster', () => {
     expect(Object.keys(ARTIFACTS)).toEqual(artifactIds)
     expect(validateArtifactDefinitions(ITEMS, MONSTERS)).toEqual([])
     artifactIds.forEach((id) => {
-      expect(ITEMS[id]).toMatchObject({ kind: 'equipment', source: 'Artificing', equipmentTier: 1, sellValue: null, canDestroy: false })
+      expect(ITEMS[id]).toMatchObject({ kind: 'equipment', source: 'Artificing', sourceNavigation: 'tower-artificing', equipmentTier: 1, sellValue: null, canDestroy: false })
       expect(ITEMS[id].stats).toBeUndefined()
       expect(ITEMS[id].combat).toBeUndefined()
       expect(ARTIFACTS[id]?.maxLevel).toBe(10)
@@ -38,74 +39,87 @@ describe('Tier 1 Artifact roster', () => {
     expect(getArtifactEffectiveStats(state, 'wispveil-hood')).toMatchObject({ maxHealth: 49, defense: 14 })
   })
 
-  it('uses the reduced dungeon material costs for Wispweave Robe and Wispveil Hood upgrades', () => {
-    const amounts = (artifactId: ArtificingRecipeId, itemIds: readonly string[]) => ARTIFACTS[artifactId]!.upgrades.map(({ ingredients }) => (
-      Object.fromEntries(itemIds.map((itemId) => [itemId, ingredients.find((ingredient) => ingredient.itemId === itemId)?.quantity ?? 0]))
-    ))
-    const universalAmounts = (artifactId: ArtificingRecipeId, itemId: string) => ARTIFACTS[artifactId]!.upgrades.map(({ ingredients }) => ingredients.find((ingredient) => ingredient.itemId === itemId)?.quantity ?? 0)
-
-    expect(amounts('wispweave-robe', ['wisp-essence', 'thorn-fiber', 'rootstone-shard', 'grove-bark', 'predator-hide', 'predator-fang', 'corrupted-beast-essence', 'predator-sinew', 'ossuary-remnant', 'soul-residue', 'graveglass-shard', 'burial-cloth'])).toEqual([
-      { 'wisp-essence': 7, 'thorn-fiber': 7, 'rootstone-shard': 6, 'grove-bark': 6, 'predator-hide': 0, 'predator-fang': 0, 'corrupted-beast-essence': 0, 'predator-sinew': 0, 'ossuary-remnant': 0, 'soul-residue': 0, 'graveglass-shard': 0, 'burial-cloth': 0 },
-      { 'wisp-essence': 16, 'thorn-fiber': 16, 'rootstone-shard': 17, 'grove-bark': 17, 'predator-hide': 0, 'predator-fang': 0, 'corrupted-beast-essence': 0, 'predator-sinew': 0, 'ossuary-remnant': 0, 'soul-residue': 0, 'graveglass-shard': 0, 'burial-cloth': 0 },
-      { 'wisp-essence': 30, 'thorn-fiber': 30, 'rootstone-shard': 30, 'grove-bark': 30, 'predator-hide': 0, 'predator-fang': 0, 'corrupted-beast-essence': 0, 'predator-sinew': 0, 'ossuary-remnant': 0, 'soul-residue': 0, 'graveglass-shard': 0, 'burial-cloth': 0 },
-      { 'wisp-essence': 0, 'thorn-fiber': 0, 'rootstone-shard': 0, 'grove-bark': 0, 'predator-hide': 13, 'predator-fang': 13, 'corrupted-beast-essence': 13, 'predator-sinew': 13, 'ossuary-remnant': 0, 'soul-residue': 0, 'graveglass-shard': 0, 'burial-cloth': 0 },
-      { 'wisp-essence': 0, 'thorn-fiber': 0, 'rootstone-shard': 0, 'grove-bark': 0, 'predator-hide': 25, 'predator-fang': 25, 'corrupted-beast-essence': 25, 'predator-sinew': 25, 'ossuary-remnant': 0, 'soul-residue': 0, 'graveglass-shard': 0, 'burial-cloth': 0 },
-      { 'wisp-essence': 0, 'thorn-fiber': 0, 'rootstone-shard': 0, 'grove-bark': 0, 'predator-hide': 42, 'predator-fang': 42, 'corrupted-beast-essence': 41, 'predator-sinew': 41, 'ossuary-remnant': 0, 'soul-residue': 0, 'graveglass-shard': 0, 'burial-cloth': 0 },
-      { 'wisp-essence': 0, 'thorn-fiber': 0, 'rootstone-shard': 0, 'grove-bark': 0, 'predator-hide': 0, 'predator-fang': 0, 'corrupted-beast-essence': 0, 'predator-sinew': 0, 'ossuary-remnant': 15, 'soul-residue': 15, 'graveglass-shard': 15, 'burial-cloth': 15 },
-      { 'wisp-essence': 0, 'thorn-fiber': 0, 'rootstone-shard': 0, 'grove-bark': 0, 'predator-hide': 0, 'predator-fang': 0, 'corrupted-beast-essence': 0, 'predator-sinew': 0, 'ossuary-remnant': 35, 'soul-residue': 35, 'graveglass-shard': 35, 'burial-cloth': 35 },
-      { 'wisp-essence': 0, 'thorn-fiber': 0, 'rootstone-shard': 0, 'grove-bark': 0, 'predator-hide': 0, 'predator-fang': 0, 'corrupted-beast-essence': 0, 'predator-sinew': 0, 'ossuary-remnant': 68, 'soul-residue': 68, 'graveglass-shard': 68, 'burial-cloth': 68 },
-    ])
-    expect(amounts('wispveil-hood', ['wisp-essence', 'thorn-fiber', 'rootstone-shard', 'grove-bark', 'predator-hide', 'predator-fang', 'corrupted-beast-essence', 'predator-sinew', 'ossuary-remnant', 'soul-residue', 'graveglass-shard', 'burial-cloth'])).toEqual([
-      { 'wisp-essence': 7, 'thorn-fiber': 7, 'rootstone-shard': 6, 'grove-bark': 6, 'predator-hide': 0, 'predator-fang': 0, 'corrupted-beast-essence': 0, 'predator-sinew': 0, 'ossuary-remnant': 0, 'soul-residue': 0, 'graveglass-shard': 0, 'burial-cloth': 0 },
-      { 'wisp-essence': 13, 'thorn-fiber': 13, 'rootstone-shard': 13, 'grove-bark': 13, 'predator-hide': 0, 'predator-fang': 0, 'corrupted-beast-essence': 0, 'predator-sinew': 0, 'ossuary-remnant': 0, 'soul-residue': 0, 'graveglass-shard': 0, 'burial-cloth': 0 },
-      { 'wisp-essence': 26, 'thorn-fiber': 26, 'rootstone-shard': 27, 'grove-bark': 27, 'predator-hide': 0, 'predator-fang': 0, 'corrupted-beast-essence': 0, 'predator-sinew': 0, 'ossuary-remnant': 0, 'soul-residue': 0, 'graveglass-shard': 0, 'burial-cloth': 0 },
-      { 'wisp-essence': 0, 'thorn-fiber': 0, 'rootstone-shard': 0, 'grove-bark': 0, 'predator-hide': 10, 'predator-fang': 10, 'corrupted-beast-essence': 10, 'predator-sinew': 10, 'ossuary-remnant': 0, 'soul-residue': 0, 'graveglass-shard': 0, 'burial-cloth': 0 },
-      { 'wisp-essence': 0, 'thorn-fiber': 0, 'rootstone-shard': 0, 'grove-bark': 0, 'predator-hide': 16, 'predator-fang': 16, 'corrupted-beast-essence': 17, 'predator-sinew': 17, 'ossuary-remnant': 0, 'soul-residue': 0, 'graveglass-shard': 0, 'burial-cloth': 0 },
-      { 'wisp-essence': 0, 'thorn-fiber': 0, 'rootstone-shard': 0, 'grove-bark': 0, 'predator-hide': 28, 'predator-fang': 28, 'corrupted-beast-essence': 28, 'predator-sinew': 28, 'ossuary-remnant': 0, 'soul-residue': 0, 'graveglass-shard': 0, 'burial-cloth': 0 },
-      { 'wisp-essence': 0, 'thorn-fiber': 0, 'rootstone-shard': 0, 'grove-bark': 0, 'predator-hide': 0, 'predator-fang': 0, 'corrupted-beast-essence': 0, 'predator-sinew': 0, 'ossuary-remnant': 13, 'soul-residue': 13, 'graveglass-shard': 13, 'burial-cloth': 13 },
-      { 'wisp-essence': 0, 'thorn-fiber': 0, 'rootstone-shard': 0, 'grove-bark': 0, 'predator-hide': 0, 'predator-fang': 0, 'corrupted-beast-essence': 0, 'predator-sinew': 0, 'ossuary-remnant': 18, 'soul-residue': 18, 'graveglass-shard': 18, 'burial-cloth': 18 },
-      { 'wisp-essence': 0, 'thorn-fiber': 0, 'rootstone-shard': 0, 'grove-bark': 0, 'predator-hide': 0, 'predator-fang': 0, 'corrupted-beast-essence': 0, 'predator-sinew': 0, 'ossuary-remnant': 47, 'soul-residue': 47, 'graveglass-shard': 46, 'burial-cloth': 46 },
-    ])
-    expect(universalAmounts('wispweave-robe', 'life-essence')).toEqual([13, 25, 50, 75, 125, 188, 250, 338, 450])
-    expect(universalAmounts('wispveil-hood', 'life-essence')).toEqual([10, 20, 40, 63, 105, 163, 225, 300, 413])
-    expect(universalAmounts('wispweave-robe', 'prismatic-fragment')).toEqual([0, 0, 5, 8, 13, 20, 25, 38, 55])
-    expect(universalAmounts('wispveil-hood', 'prismatic-fragment')).toEqual([0, 5, 8, 10, 15, 23, 30, 43, 63])
-  })
-
-  it('unlocks every Tier 1 Artifact recipe after any one normal Whispering Woods kill', () => {
-    firstKillMonsters.forEach((monsterId) => {
-      const state = createInitialState()
-      state.progress.lifetimeKillsByMonster[monsterId] = 1
-      artifactIds.forEach((id) => expect(isRecipeUnlocked(state, ARTIFICING_RECIPES[id])).toBe(true))
-      expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['heartseed-necklace'])).toBe(false)
+  it('uses universal Artifact Essence plus the matching school fragment for elemental upgrades', () => {
+    const fragments = [50, 100, 200, 300, 500, 750, 1000, 1650, 2750]
+    const essence = [10, 20, 40, 60, 100, 150, 200, 300, 500]
+    elementalArtifacts.forEach(([artifactId, fragmentId]) => {
+      ARTIFACTS[artifactId]!.upgrades.forEach((upgrade, index) => {
+        expect(upgrade.ingredients).toHaveLength(2)
+        expect(upgrade.ingredients).toEqual(expect.arrayContaining([{ itemId: fragmentId, quantity: fragments[index] }, { itemId: 'artifact-essence', quantity: essence[index] }]))
+        expect(upgrade.ingredients.every(({ itemId }) => itemId === fragmentId || itemId === 'artifact-essence')).toBe(true)
+      })
     })
-
-    const bossState = createInitialState()
-    bossState.progress.bossKillsByBoss['forest-heart'] = 1
-    expect(isRecipeUnlocked(bossState, ARTIFICING_RECIPES['heartseed-necklace'])).toBe(true)
   })
 
-  it('keeps the 4/7/10 progression caps and Artifact Path catalyst requirements', () => {
+  it('uses only Prismatic Fragment and Artifact Essence for robe and hood upgrades', () => {
+    const fragments = [2, 4, 7, 10, 15, 20, 28, 38, 50]
+    const essence = [10, 20, 40, 60, 100, 150, 200, 300, 500]
+    ;(['wispweave-robe', 'wispveil-hood'] as const).forEach((artifactId) => {
+      ARTIFACTS[artifactId].upgrades.forEach((upgrade, index) => {
+        expect(upgrade.ingredients).toHaveLength(2)
+        expect(upgrade.ingredients).toEqual(expect.arrayContaining([{ itemId: 'prismatic-fragment', quantity: fragments[index] }, { itemId: 'artifact-essence', quantity: essence[index] }]))
+        expect(upgrade.ingredients.every(({ itemId }) => itemId === 'prismatic-fragment' || itemId === 'artifact-essence')).toBe(true)
+      })
+    })
+  })
+
+  it('unlocks all starter Artifact recipes on a fresh save', () => {
+    const state = createInitialState()
+    artifactIds.forEach((id) => {
+      expect(ARTIFICING_RECIPES[id]).toMatchObject({ kind: 'artificing', unlock: { type: 'always' } })
+      expect(ARTIFICING_RECIPES[id].sourceDungeonId).toBeUndefined()
+      expect(isRecipeUnlocked(state, ARTIFICING_RECIPES[id])).toBe(true)
+    })
+  })
+
+  it('uses Forest Heart and Corrupted Greatbear boss kills for Artifact level bands', () => {
     const state = createInitialState()
     expect(getArtifactLevelCap(state, 'ember-staff')).toBe(4)
+    expect(getArtifactLevelCapRequirement(state, 'ember-staff')).toContain('Forest Heart')
     state.progress.bossKillsByBoss['forest-heart'] = 1
     expect(getArtifactLevelCap(state, 'ember-staff')).toBe(7)
+    expect(getArtifactLevelCapRequirement(state, 'ember-staff')).toContain('Corrupted Greatbear')
     state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
     expect(getArtifactLevelCap(state, 'ember-staff')).toBe(10)
+    expect(getArtifactLevelCapRequirement(state, 'ember-staff')).toBeNull()
+  })
 
-    const expectedPath = [
-      '4:forest-heart:heartseed:1', '4:forest-heart:heartseed:1',
-      '7:corrupted-greatbear:greatbear-core:1', '7:corrupted-greatbear:greatbear-core:1',
-      '10:archmage-edrin-shade:edrin-remnant:1', '10:archmage-edrin-shade:edrin-remnant:1',
-    ]
-    artifactIds.forEach((id) => {
-      expect(ARTIFACTS[id]!.nodes.filter((node) => node.catalyst).map((node) => `${node.requiresLevel}:${node.requiresBossKill}:${node.catalyst?.itemId}:${node.catalyst?.quantity}`).sort()).toEqual(expectedPath.sort())
-    })
+  it('locks 4→5 and 7→8 until their boss is defeated without consuming ingredients', () => {
+    const state = createInitialState()
+    state.inventory['ember-staff'] = 1
+    state.artifactProgress['ember-staff'] = { level: 4, allocatedNodeIds: [], attunedNodeIds: [] }
+    const levelFive = getArtifactUpgrade('ember-staff', 4)!
+    levelFive.ingredients.forEach(({ itemId, quantity }) => { state.inventory[itemId] = quantity })
+    expect(isArtifactUpgradeUnlocked(state, levelFive)).toBe(false)
+    expect(canUpgradeArtifact(state, 'ember-staff')).toBe(false)
+    expect(upgradeArtifactInstant(state, 'ember-staff')).toMatchObject({ ok: false })
+    levelFive.ingredients.forEach(({ itemId, quantity }) => expect(state.inventory[itemId]).toBe(quantity))
+
+    state.progress.bossKillsByBoss['forest-heart'] = 1
+    expect(isArtifactUpgradeUnlocked(state, levelFive)).toBe(true)
+    expect(canUpgradeArtifact(state, 'ember-staff')).toBe(true)
+    expect(upgradeArtifactInstant(state, 'ember-staff')).toMatchObject({ ok: true })
+    state.artifactProgress['ember-staff'].level = 7
+    const levelEight = getArtifactUpgrade('ember-staff', 7)!
+    levelEight.ingredients.forEach(({ itemId, quantity }) => { state.inventory[itemId] = quantity })
+    state.progress.bossKillsByBoss['corrupted-greatbear'] = 0
+    expect(isArtifactUpgradeUnlocked(state, levelEight)).toBe(false)
+    expect(canUpgradeArtifact(state, 'ember-staff')).toBe(false)
+    expect(upgradeArtifactInstant(state, 'ember-staff')).toMatchObject({ ok: false })
+    levelEight.ingredients.forEach(({ itemId, quantity }) => expect(state.inventory[itemId]).toBe(quantity))
+    state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
+    expect(isArtifactUpgradeUnlocked(state, levelEight)).toBe(true)
+  })
+
+  it('uses boss kills for current Artifact Path gates without catalysts', () => {
+    const bossGatedNodes = Object.values(ARTIFACTS).flatMap((artifact) => artifact.nodes.filter((node) => node.requiresBossKill))
+    expect(Object.values(ARTIFACTS).flatMap((artifact) => artifact.nodes).every((node) => node.catalyst === undefined)).toBe(true)
+    expect(bossGatedNodes.every((node) => node.requiresBossKill && ['forest-heart', 'corrupted-greatbear', 'archmage-edrin-shade'].includes(node.requiresBossKill))).toBe(true)
   })
 
   it('treats every current Artifact as compatible with the single Weapon slot', () => {
     const inventory = { 'ember-staff': 1, 'tideglass-wand': 1, 'stoneheart-scepter': 1, 'windthread-wand': 1 }
-    artifactIds.slice(0, 4).forEach((id) => expect(normalizeEquipmentState({ weapon: id }, inventory).weapon).toBe(id))
+    elementalArtifacts.forEach(([id]) => expect(normalizeEquipmentState({ weapon: id }, inventory).weapon).toBe(id))
   })
 
   it('filters Tideglass Barrier power to Water-origin Spell Barriers', () => {

@@ -34,8 +34,8 @@ describe('Offline Bank event reports', () => {
     state.progress.firstBossKill = true
     state.progress.lifetimeKillsByMonster['grove-sentinel'] = 1
     state.inventory['fire-fragment'] = 4
-    state.inventory['wisp-essence'] = 4
-    state.inventory['grove-bark'] = 1
+    state.inventory['artifact-essence'] = 4
+    state.inventory['prismatic-fragment'] = 1
     ;(state.activities.transmutation.jobs as Record<string, { echoesAssigned: number; progressMs: number }>)['ember-staff'] = { echoesAssigned: 1, progressMs: 7_999 }
     const report = createOfflineBankReportCollector(state, 1, 1_000)
     const result = runTick(state, report)
@@ -44,8 +44,8 @@ describe('Offline Bank event reports', () => {
     expect(result.production.transmutation['ember-staff']).toBeUndefined()
     expect(result.consumption.transmutation).toEqual({})
     expect(state.inventory['fire-fragment']).toBe(4)
-    expect(state.inventory['wisp-essence']).toBe(4)
-    expect(state.inventory['grove-bark']).toBe(1)
+    expect(state.inventory['artifact-essence']).toBe(4)
+    expect(state.inventory['prismatic-fragment']).toBe(1)
   })
 
   it('reports real combat defeats and loot events', () => {
@@ -86,8 +86,8 @@ describe('Offline Bank event reports', () => {
     state.progress.firstBossKill = true
     state.progress.lifetimeKillsByMonster['grove-sentinel'] = 1
     state.inventory['fire-fragment'] = 4
-    state.inventory['wisp-essence'] = 4
-    state.inventory['grove-bark'] = 1
+    state.inventory['artifact-essence'] = 4
+    state.inventory['prismatic-fragment'] = 1
     state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 1, progressMs: 7999 }
     state.activities.research = { ...state.activities.research, running: true, itemId: 'fire-fragment', targetSchoolId: 'fire', remainingQuantity: 1, progressMs: BALANCE.research.durationPerItemMs - 1 }
     ;(state.activities.transmutation.jobs as Record<string, { echoesAssigned: number; progressMs: number }>)['ember-staff'] = { echoesAssigned: 1, progressMs: 7_999 }

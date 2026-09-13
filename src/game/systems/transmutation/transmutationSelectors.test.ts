@@ -22,10 +22,10 @@ describe('Transmutation recipe filter read model', () => {
   it('calculates finite material capacity, bottleneck, and missing quantities without Mana', () => {
     const requirements = [
       { itemId: 'fire-fragment' as const, required: 4, owned: 22, equipped: 0, available: 22, protected: false },
-      { itemId: 'wisp-essence' as const, required: 2, owned: 11, equipped: 0, available: 11, protected: false },
+      { itemId: 'artifact-essence' as const, required: 2, owned: 11, equipped: 0, available: 11, protected: false },
     ]
     expect(getRecipeMaterialCapacity(requirements)).toMatchObject({ cycles: 5, limitingItemId: 'fire-fragment', missing: [] })
-    expect(getRecipeMaterialCapacity([{ ...requirements[0], available: 1 }, { ...requirements[1], available: 0 }])).toMatchObject({ cycles: 0, missing: [{ itemId: 'fire-fragment', quantity: 3 }, { itemId: 'wisp-essence', quantity: 2 }] })
+    expect(getRecipeMaterialCapacity([{ ...requirements[0], available: 1 }, { ...requirements[1], available: 0 }])).toMatchObject({ cycles: 0, missing: [{ itemId: 'fire-fragment', quantity: 3 }, { itemId: 'artifact-essence', quantity: 2 }] })
     expect(getRecipeMaterialCapacity([])).toEqual({ cycles: null, limitingItemId: null, missing: [] })
   })
 

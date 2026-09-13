@@ -69,7 +69,7 @@ export const normalizeUiPreferences = (value: unknown): UiPreferences => {
     pinsCollapsed: a.pinsCollapsed === true,
     slotFilter: rawSlotFilter === 'offhand' ? 'weapon' : oneOf(rawSlotFilter, artificingSlotFilters, 'all'),
     tierFilter: oneOf(a.tierFilter, ['all', 1, 2, 3] as const, 'all'),
-    kindFilter: oneOf(a.kindFilter, ['all', 'artifact', 'equipment'] as const, 'all'),
+    kindFilter: oneOf(a.kindFilter, ['all', 'artifact'] as const, 'all'),
     craftableOnly: a.craftableOnly === true,
     ownershipFilter: oneOf(a.ownershipFilter, ['all', 'owned', 'unowned'] as const, 'all'),
   }

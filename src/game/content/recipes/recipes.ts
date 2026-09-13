@@ -1,4 +1,5 @@
 import { ITEMS } from '../items/items'
+import { isArtifactId } from '../artifacts/artifacts'
 import { DUNGEONS } from '../dungeons/dungeons'
 import { MONSTERS } from '../monsters'
 import type { RecipeId, TransmutationRecipeId } from '../../types'
@@ -14,6 +15,7 @@ export type CraftingRecipeDefinition = TransmutationRecipeDefinition | Artificin
 export const RECIPES = { ...TRANSMUTATION_RECIPES, ...ARTIFICING_RECIPES }
 export const RECIPE_ORDER: readonly RecipeId[] = [...TRANSMUTATION_RECIPE_ORDER, ...ARTIFICING_RECIPE_ORDER]
 export const isTransmutationRecipeId = (id: string): id is TransmutationRecipeId => Object.prototype.hasOwnProperty.call(TRANSMUTATION_RECIPES, id)
+export const isArtificingRecipe = (recipe: CraftingRecipeDefinition): recipe is ArtificingRecipeDefinition => recipe.kind === 'artificing'
 export const validateRecipeDefinitions = (recipes: Record<string, CraftingRecipeDefinition> = RECIPES, order: readonly string[] = RECIPE_ORDER) => {
   const errors: string[] = []
   const ids = Object.values(recipes).map((recipe) => recipe.id)
@@ -24,15 +26,15 @@ export const validateRecipeDefinitions = (recipes: Record<string, CraftingRecipe
     if (!Number.isInteger(recipe.output.quantity) || recipe.output.quantity < 1) errors.push(`${recipe.id}: output quantity must be positive`)
     if ('baseDurationMs' in recipe && (!Number.isFinite(recipe.baseDurationMs) || recipe.baseDurationMs <= 0)) errors.push(`${recipe.id}: invalid duration`)
     if ('manaCost' in recipe && (!Number.isFinite(recipe.manaCost) || recipe.manaCost < 0)) errors.push(`${recipe.id}: invalid Mana cost` )
-    if ('sourceDungeonId' in recipe) {
-      if (!DUNGEONS[recipe.sourceDungeonId]) errors.push(`${recipe.id}: unknown Artificing source dungeon`)
+    if (isArtificingRecipe(recipe)) {
+      if (recipe.sourceDungeonId && !Object.prototype.hasOwnProperty.call(DUNGEONS, recipe.sourceDungeonId)) errors.push(`${recipe.id}: unknown Artificing source dungeon`)
       if (ITEMS[recipe.output.itemId]?.kind !== 'equipment') errors.push(`${recipe.id}: Artificing output must be Equipment`)
-      const artifact = ARTIFACTS[recipe.output.itemId]
+      const artifact = isArtifactId(recipe.output.itemId) ? ARTIFACTS[recipe.output.itemId] : undefined
       if (!artifact) errors.push(`${recipe.id}: Artificing recipes may only output Artifacts`)
       if (artifact && (artifact.forge.ingredients.length !== recipe.ingredients.length || artifact.forge.ingredients.some((ingredient, index) => ingredient.itemId !== recipe.ingredients[index]?.itemId || ingredient.quantity !== recipe.ingredients[index]?.quantity))) {
         errors.push(`${recipe.id}: Artificing recipe and Artifact forge ingredients must match`)
       }
-    } else if (ITEMS[recipe.output.itemId]?.kind !== 'material') errors.push(`${recipe.id}: Transmutation output must be material`)
+    } else if (recipe.kind === 'transmutation' && ITEMS[recipe.output.itemId]?.kind !== 'material') errors.push(`${recipe.id}: Transmutation output must be material`)
     recipe.ingredients.forEach((ingredient) => { if (!ITEMS[ingredient.itemId]) errors.push(`${recipe.id}: unknown ingredient ${ingredient.itemId}`); if (!Number.isInteger(ingredient.quantity) || ingredient.quantity <= 0) errors.push(`${recipe.id}: invalid ingredient quantity`) })
     if (ITEMS[recipe.output.itemId]?.kind === 'equipment' && recipe.output.quantity !== 1) errors.push(`${recipe.id}: Equipment recipe output quantity must be 1`)
     if (recipe.unlock.type === 'boss-kill' && !MONSTERS[recipe.unlock.bossId]) errors.push(`${recipe.id}: unlock boss must be a known monster`)
@@ -42,9 +44,13 @@ export const validateRecipeDefinitions = (recipes: Record<string, CraftingRecipe
   })
   if (new Set(order).size !== order.length) errors.push('RECIPE_ORDER contains duplicates')
   if (order.length !== Object.keys(recipes).length || order.some((id) => !recipes[id as RecipeId])) errors.push('RECIPE_ORDER must contain every recipe exactly once')
-  Object.entries(ITEMS).filter(([, item]) => item.kind === 'equipment' && ARTIFACTS[item.id]).forEach(([itemId]) => {
-    const outputRecipes = Object.values(recipes).filter((recipe) => 'sourceDungeonId' in recipe && recipe.output.itemId === itemId)
+  Object.entries(ITEMS).filter(([, item]) => item.kind === 'equipment' && isArtifactId(item.id)).forEach(([itemId]) => {
+    const outputRecipes = Object.values(recipes).filter((recipe) => isArtificingRecipe(recipe) && recipe.output.itemId === itemId)
     if (outputRecipes.length !== 1) errors.push(`${itemId}: Artifact must have exactly one Artificing recipe (found ${outputRecipes.length})`)
+  })
+  Object.entries(ITEMS).filter(([, item]) => item.kind === 'equipment' && !isArtifactId(item.id)).forEach(([itemId]) => {
+    const outputRecipes = Object.values(recipes).filter((recipe) => isArtificingRecipe(recipe) && recipe.output.itemId === itemId)
+    if (outputRecipes.length !== 0) errors.push(`${itemId}: non-Artifact Equipment must not have an Artificing recipe (found ${outputRecipes.length})`)
   })
   if (errors.length && import.meta.env.DEV) console.error(`[recipes] ${errors.join('; ')}`)
   return errors

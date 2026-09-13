@@ -23,12 +23,13 @@ describe('Artificing detail ownership labels', () => {
     expect(screen.queryByText('OWNED 1')).toBeNull()
   })
 
-  it('keeps numeric ownership text for repeatable Equipment', () => {
+  it('keeps Artifact ownership text for every starter Artifact', () => {
     const current = useGameStore.getState()
-    useGameStore.setState({ inventory: { ...current.inventory, 'windthread-charm': 3 } })
-    render(<TooltipProvider><ArtificingDetail recipe={ARTIFICING_RECIPES['windthread-charm']} /></TooltipProvider>)
+    useGameStore.setState({ inventory: { ...current.inventory, 'tideglass-wand': 1 }, artifactProgress: { ...current.artifactProgress, 'tideglass-wand': { level: 1, allocatedNodeIds: [], attunedNodeIds: [] } } })
+    render(<TooltipProvider><ArtificingDetail recipe={ARTIFICING_RECIPES['tideglass-wand']} /></TooltipProvider>)
 
-    expect(screen.getByText('OWNED 3')).toBeTruthy()
+    expect(screen.getAllByText('OWNED').length).toBeGreaterThan(0)
+    expect(screen.queryByText('OWNED 1')).toBeNull()
   })
 
   it('pins and unpins a recipe from the action row', () => {
@@ -40,10 +41,8 @@ describe('Artificing detail ownership labels', () => {
     expect(getUiPreferences().screenState.artificing.pinnedRecipeIds).toEqual([])
   })
 
-  it('disables an unpinned action when the six-pin limit is full', () => {
-    setUiPreferences({ screenState: { artificing: { pinnedRecipeIds: ['ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'wispweave-robe', 'wispveil-hood'] } } })
-    render(<TooltipProvider><ArtificingDetail recipe={ARTIFICING_RECIPES['windthread-charm']} /></TooltipProvider>)
-
-    expect((screen.getByRole('button', { name: 'Pin Windthread Charm' }) as HTMLButtonElement).disabled).toBe(true)
+  it('contains only the six starter Artifact recipes', () => {
+    expect(Object.keys(ARTIFICING_RECIPES)).toEqual(['ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'wispweave-robe', 'wispveil-hood'])
+    expect((ARTIFICING_RECIPES as Record<string, unknown>)['windthread-charm']).toBeUndefined()
   })
 })

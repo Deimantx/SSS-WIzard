@@ -18,7 +18,7 @@ import { setUiPreferences, useUiPreferences } from '../../../ui/preferences/uiPr
 import { ArtificingRecipePinButton } from '../../../components/recipe-pins/ArtificingRecipePinButton'
 import { ActiveArtificingCraft } from './ActiveArtificingCraft'
 import { EquipmentInspection } from './EquipmentInspection'
-import { ARTIFACTS } from '../../../game/content/artifacts/artifacts'
+import { ARTIFACTS, isArtifactId } from '../../../game/content/artifacts/artifacts'
 import { ArtifactPathModal } from '../../../components/artifacts/ArtifactPathModal'
 
 export function ArtificingDetail({ recipe }: { recipe: ArtificingRecipeDefinition | null }) {
@@ -31,7 +31,7 @@ export function ArtificingDetail({ recipe }: { recipe: ArtificingRecipeDefinitio
   useEffect(() => { if (recipe && state.recentAcquisitions?.[0]?.itemId === recipe.output.itemId) setCrafted(ITEMS[recipe.output.itemId].name) }, [state.recentAcquisitions?.[0]?.timestamp, recipe?.output.itemId])
   if (!recipe) return <Card className="artificing-detail" title="ARCANE FORGE"><ActiveArtificingCraft /><div className="artificing-empty"><Hammer size={28} /><strong>SELECT EQUIPMENT</strong><p>Choose a blueprint from the catalog to inspect its requirements.</p></div></Card>
   const item = ITEMS[recipe.output.itemId]
-  const artifact = ARTIFACTS[item.id]
+  const artifact = isArtifactId(item.id) ? ARTIFACTS[item.id] : undefined
   if (artifact) return <ArtifactArtificingDetail recipe={recipe} />
   const unlocked = isRecipeUnlocked(state, recipe)
   const craftable = canCraftArtificingRecipe(state, recipe.id)
@@ -66,7 +66,7 @@ function ArtifactArtificingDetail({ recipe }: { recipe: ArtificingRecipeDefiniti
   const state = useGameStore()
   const [pathOpen, setPathOpen] = useState(false)
   const [sources, setSources] = useState<import('../../../game/types').ItemId | null>(null)
-  const item = ITEMS[recipe.output.itemId]
+  const item = { ...ITEMS[recipe.output.itemId], id: recipe.id }
   const artifactState = getArtifactArtificingState(state, recipe.id)
   if (!artifactState) return null
   const active = state.activities.artificing.activeJob

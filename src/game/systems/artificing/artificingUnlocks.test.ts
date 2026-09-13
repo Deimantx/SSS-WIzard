@@ -1,43 +1,24 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
-import { ARTIFICING_RECIPES } from '../../content/recipes/artificingRecipes'
+import { ARTIFICING_RECIPES, ARTIFICING_RECIPE_ORDER } from '../../content/recipes/artificingRecipes'
 import { isRecipeUnlocked } from '../../content/recipes/recipeUnlocks'
-describe('Artificing dungeon discovery', () => {
-  it('requires a normal kill in Howling Den and Catacombs, while boss gear stays boss-gated', () => {
+import { getArtifactLevelCap, getArtifactLevelCapRequirement } from '../artifacts/artifactProgression'
+
+describe('Artificing starter Artifact access', () => {
+  it('keeps all six current Artifact recipes unlocked on a fresh save', () => {
     const state = createInitialState()
-    state.progress.firstBossKill = true
-    expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['predator-hide-mantle'])).toBe(false)
-    expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['greatbear-heartstone'])).toBe(false)
-    state.progress.lifetimeKillsByMonster['cavefang-wolf'] = 1
-    expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['predator-hide-mantle'])).toBe(true)
-    expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['ossuary-mantle'])).toBe(false)
-    state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
-    expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['ossuary-mantle'])).toBe(false)
-    state.progress.lifetimeKillsByMonster['restless-skeleton'] = 1
-    expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['ossuary-mantle'])).toBe(true)
+    ARTIFICING_RECIPE_ORDER.forEach((recipeId) => expect(isRecipeUnlocked(state, ARTIFICING_RECIPES[recipeId])).toBe(true))
   })
 
-  it('keeps Soulglass Amulet locked to Edrin and its eight-remnant recipe', () => {
+  it('uses boss milestones for the Artifact level cap and its player-facing requirement', () => {
     const state = createInitialState()
-    expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['soulglass-amulet'])).toBe(false)
-    state.progress.lifetimeKillsByMonster['restless-skeleton'] = 1
-    expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['soulglass-amulet'])).toBe(false)
-    state.progress.bossKillsByBoss['archmage-edrin-shade'] = 1
-    expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['soulglass-amulet'])).toBe(true)
-    expect(ARTIFICING_RECIPES['soulglass-amulet'].ingredients).toEqual([
-      { itemId: 'edrin-remnant', quantity: 8 },
-      { itemId: 'graveglass-shard', quantity: 5 },
-      { itemId: 'soul-residue', quantity: 9 },
-      { itemId: 'ossuary-remnant', quantity: 4 },
-      { itemId: 'burial-cloth', quantity: 4 },
-      { itemId: 'prismatic-fragment', quantity: 2 },
-    ])
-    expect(ARTIFICING_RECIPES['edrins-signet'].ingredients).toEqual([
-      { itemId: 'edrin-remnant', quantity: 20 },
-      { itemId: 'burial-cloth', quantity: 8 },
-      { itemId: 'soul-residue', quantity: 6 },
-      { itemId: 'graveglass-shard', quantity: 5 },
-      { itemId: 'ossuary-remnant', quantity: 5 },
-    ])
+    expect(getArtifactLevelCap(state, 'ember-staff')).toBe(4)
+    expect(getArtifactLevelCapRequirement(state, 'ember-staff')).toContain('Forest Heart')
+    state.progress.bossKillsByBoss['forest-heart'] = 1
+    expect(getArtifactLevelCap(state, 'ember-staff')).toBe(7)
+    expect(getArtifactLevelCapRequirement(state, 'ember-staff')).toContain('Corrupted Greatbear')
+    state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
+    expect(getArtifactLevelCap(state, 'ember-staff')).toBe(10)
+    expect(getArtifactLevelCapRequirement(state, 'ember-staff')).toBeNull()
   })
 })

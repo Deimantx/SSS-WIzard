@@ -25,6 +25,7 @@ describe('Artifact progression foundation', () => {
     const state = createInitialState()
     state.inventory['ember-staff'] = 1
     state.inventory['fire-fragment'] = 50
+    state.inventory['artifact-essence'] = 10
     expect(upgradeArtifactInstant(state, 'ember-staff')).toMatchObject({ ok: false })
     expect(state.inventory['fire-fragment']).toBe(50)
     state.artifactProgress['ember-staff'] = { level: 1, allocatedNodeIds: [], attunedNodeIds: [] }
@@ -33,6 +34,7 @@ describe('Artifact progression foundation', () => {
     expect(upgradeArtifactInstant(state, 'ember-staff')).toMatchObject({ ok: true })
     expect(state.inventory['ember-staff']).toBe(1)
     expect(state.inventory['fire-fragment']).toBe(0)
+    expect(state.inventory['artifact-essence']).toBe(0)
     expect(state.artifactProgress['ember-staff'].level).toBe(2)
     expect(state.activities.artificing.activeJob).toEqual({ kind: 'recipe', recipeId: 'windthread-wand' })
   })
@@ -50,7 +52,7 @@ describe('Artifact progression foundation', () => {
     state.artifactProgress['ember-staff'].allocatedNodeIds.push('cinder-memory', 'lingering-flame')
     expect(getArtifactNodeEligibility(state, 'ember-staff', 'heartfed-embers').status).toBe('missingBoss')
     state.progress.bossKillsByBoss['forest-heart'] = 1
-    expect(getArtifactNodeEligibility(state, 'ember-staff', 'heartfed-embers').status).toBe('missingCatalyst')
+    expect(getArtifactNodeEligibility(state, 'ember-staff', 'heartfed-embers').status).toBe('missingPoints')
   })
 
   it('keeps authored caps and gates intact until artifact overrides are enabled', () => {
@@ -63,7 +65,6 @@ describe('Artifact progression foundation', () => {
 
     state.artifactProgress['ember-staff'].level = 4
     state.debug.artifactBonusPointsByArtifact['ember-staff'] = 1
-    state.inventory.heartseed = 1
     expect(getArtifactNodeEligibility(state, 'ember-staff', 'heartfed-embers').status).toBe('missingBoss')
     state.debug.artifactIgnoreDungeonGate = true
     expect(getArtifactNodeEligibility(state, 'ember-staff', 'heartfed-embers').status).toBe('available')

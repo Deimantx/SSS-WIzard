@@ -56,7 +56,7 @@ describe('Transmutation simulation', () => {
   it('does not let the developer completion action bypass a recipe unlock', () => {
     const state = createInitialState()
     state.inventory['fire-fragment'] = 10
-    state.inventory['wisp-essence'] = 10
+    state.inventory['artifact-essence'] = 10
 
     expect(forceCompleteTransmutationCycle(state, 'ember-staff' as import('../../types').TransmutationRecipeId, { mode: 'live' })).toBe(false)
     expect(state.inventory['ember-staff']).toBeUndefined()

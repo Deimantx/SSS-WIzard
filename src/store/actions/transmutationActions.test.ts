@@ -19,7 +19,7 @@ describe('transmutation developer ingredient grants', () => {
 
   it('uses the same missing calculation for a ten-cycle fixture', () => {
     const state = createInitialState()
-    state.inventory['wisp-essence'] = 4
+    state.inventory['artifact-essence'] = 4
 
     grantTransmutationMissingIngredientsAction(state, 'prismatic-fragment', 10)
 

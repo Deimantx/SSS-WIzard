@@ -42,7 +42,8 @@ export const getEquipmentCombatModifierTotal = (state: EquipmentStatsState, key:
   const sourceTags = context.sourceTags ?? []
   const originTags = context.originTags ?? []
   return Object.values(state.equipment).reduce((total, itemId) => {
-    const modifiers = itemId ? [...(ITEMS[itemId]?.combat?.modifiers ?? []), ...getAllocatedArtifactCombatProviders(state, itemId).flatMap(provider => provider.modifiers)] : []
+    const artifactProviders = itemId && isArtifactItem(itemId) ? getAllocatedArtifactCombatProviders(state, itemId) : []
+    const modifiers = itemId ? [...(ITEMS[itemId]?.combat?.modifiers ?? []), ...artifactProviders.flatMap(provider => provider.modifiers)] : []
     return total + modifiers.reduce((itemTotal, modifier) => {
       if (modifier.key !== key || modifier.condition) return itemTotal
       if (context.sourceKinds?.length && (!modifier.sourceKinds || !context.sourceKinds.some((kind) => modifier.sourceKinds?.includes(kind)))) return itemTotal

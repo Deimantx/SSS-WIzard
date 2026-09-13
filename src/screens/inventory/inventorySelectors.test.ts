@@ -9,11 +9,11 @@ describe('Inventory V3 selectors and display rules', () => {
   it('shows owned items only and summarizes visible quantity', () => {
     const state = makeInitialState()
     state.inventory['fire-fragment'] = 12
-    state.inventory['wisp-essence'] = 0
+    state.inventory['artifact-essence'] = 0
 
     const owned = selectOwnedItemIds(state.inventory)
     expect(owned).toContain('fire-fragment')
-    expect(owned).not.toContain('wisp-essence')
+    expect(owned).not.toContain('artifact-essence')
     expect(inventorySummary(owned, state.inventory)).toMatchObject({ types: 1, total: 12 })
   })
 
@@ -44,17 +44,17 @@ describe('Inventory V3 selectors and display rules', () => {
     expect(MATERIAL_SUBCATEGORIES).toEqual(['All Materials', 'Elemental', 'Creature', 'Ore', 'Refined', 'Arcane'])
     expect(getInventoryCategory('fire-fragment')).toBe('material')
     expect(getInventoryCategory('life-essence')).toBe('material')
-    expect(getInventoryCategory('heartseed')).toBe('material')
+    expect(getInventoryCategory('artifact-essence')).toBe('material')
     expect(getInventoryCategory('ember-staff')).toBe('equipment')
   })
 
   it('filters owned Materials by subtype and records transient latest gains', () => {
     const state = makeInitialState()
     state.inventory['fire-fragment'] = 5
-    state.inventory['wisp-essence'] = 2
-    state.inventory.heartseed = 1
+    state.inventory['artifact-essence'] = 2
+    state.inventory['life-essence'] = 1
     expect(selectVisibleItemIds(state.inventory, state.protectedItems, state.equipment, '', 'Materials', 'Category', 'Elemental')).toEqual(['fire-fragment'])
-    expect(selectVisibleItemIds(state.inventory, state.protectedItems, state.equipment, '', 'Materials', 'Category', 'Creature')).toEqual(['heartseed', 'wisp-essence'])
+    expect(selectVisibleItemIds(state.inventory, state.protectedItems, state.equipment, '', 'Materials', 'Category', 'Creature')).toEqual(['life-essence'])
     const runtime = state as typeof state & { recentAcquisitions?: RecentAcquisition[] }
     recordRecentAcquisition(runtime, 'fire-fragment', 5)
     expect(runtime.recentAcquisitions).toMatchObject([{ itemId: 'fire-fragment', amount: 5, isNew: true }])

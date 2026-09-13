@@ -44,7 +44,7 @@ export type BestiaryCategory = 'monster' | 'boss'
 export type DungeonId = 'whispering-woods' | 'howling-den' | 'abandoned-catacombs'
 export type EquipmentItemSlot = 'weapon' | 'armor' | 'helmet' | 'cape' | 'amulet' | 'earring' | 'ring'
 export type EquipmentPosition = 'weapon' | 'armor' | 'helmet' | 'cape' | 'amulet' | 'earring' | 'ring1' | 'ring2'
-export type ArtifactId = ItemId
+export type ArtifactId = 'ember-staff' | 'tideglass-wand' | 'stoneheart-scepter' | 'windthread-wand' | 'wispweave-robe' | 'wispveil-hood'
 export type EquipmentBuildTag = 'spell' | 'basic-attack' | 'hybrid' | 'crit' | 'status' | 'dot' | 'barrier' | 'defense' | 'sustain' | 'mana' | 'focus' | 'healing' | 'fire' | 'water' | 'earth' | 'air'
 export type EquipmentBudgetProfileId = 'standard' | 'signature' | 'boss'
 /** @deprecated Use EquipmentItemSlot for item metadata or EquipmentPosition for loadout state. */
@@ -61,13 +61,13 @@ export type TransmutationArrayId = 'temporal-array' | 'conservation-array' | 're
 export type ChannelingDiscoveryId = 'stable-leyline' | 'echo-resonance' | 'deep-reservoir'
 export type RecipeId = 'fire-fragment' | 'water-fragment' | 'earth-fragment' | 'air-fragment' | 'prismatic-fragment' | 'ember-staff' | 'tideglass-wand' | 'stoneheart-scepter' | 'windthread-wand' | 'wispweave-robe' | 'wispveil-hood'
 export type TransmutationRecipeId = 'fire-fragment' | 'water-fragment' | 'earth-fragment' | 'air-fragment' | 'prismatic-fragment'
-export type ArtificingRecipeId = Exclude<RecipeId, TransmutationRecipeId>
+export type ArtificingRecipeId = 'ember-staff' | 'tideglass-wand' | 'stoneheart-scepter' | 'windthread-wand' | 'wispweave-robe' | 'wispveil-hood'
 export type RecipeCategory = 'elemental' | 'material'
 export type TransmutationCategoryFilter = 'all' | RecipeCategory
 export type TransmutationTierFilter = 'all' | number
 export type EquipmentPlayerTier = 1 | 2 | 3
 export type ArtificingTierFilter = 'all' | EquipmentPlayerTier
-export type ArtificingKindFilter = 'all' | 'artifact' | 'equipment'
+export type ArtificingKindFilter = 'all' | 'artifact'
 /** @deprecated Use TransmutationTierFilter. */
 export type TransmutationMaterialTierFilter = TransmutationTierFilter
 export type RecipeUnlockCondition =

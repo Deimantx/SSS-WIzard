@@ -4,7 +4,7 @@ import type { GameState, TraitDefinition } from '../../types'
 import type { CombatActor } from './magnitude'
 
 /** The single ownership boundary for actor Traits. Equipment/passives can be added here later. */
-export const getActorTraitIds = (state: Pick<GameState, 'combat'>, actor: CombatActor) => {
+export const getActorTraitIds = (state: { combat: Pick<GameState['combat'], 'enemyId'> }, actor: CombatActor) => {
   if (actor !== 'enemy' || !state.combat.enemyId) return []
   return MONSTERS[state.combat.enemyId]?.traitIds ?? []
 }
@@ -13,6 +13,6 @@ export const getMonsterTraits = (monster: MonsterDefinition): TraitDefinition[] 
   return getTraitDefinitions(monster.traitIds)
 }
 
-export const getActorTraits = (state: Pick<GameState, 'combat'>, actor: CombatActor) => {
+export const getActorTraits = (state: { combat: Pick<GameState['combat'], 'enemyId'> }, actor: CombatActor) => {
   return getTraitDefinitions(getActorTraitIds(state, actor))
 }

@@ -293,7 +293,7 @@ export const advanceCombatTelemetryScope = (scope: CombatTelemetryScope, deltaMs
   if (engaged) scope.engagedMs += delta
 }
 
-export const getCombatMetricAggregate = (scope: CombatTelemetryScope, actor: 'player' | 'enemy', metric: CombatTelemetryMetric): CombatMetricAggregate => {
+export const getCombatMetricAggregate = (scope: Pick<CombatTelemetryScope, 'player' | 'enemy'>, actor: 'player' | 'enemy', metric: CombatTelemetryMetric): CombatMetricAggregate => {
   const metrics = scope[actor]
   if (metric === 'damage') return metrics.damageDone
   if (metric === 'healing') return metrics.healingDone

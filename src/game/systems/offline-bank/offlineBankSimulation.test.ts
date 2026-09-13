@@ -46,22 +46,20 @@ describe('Offline Bank analytics wiring', () => {
     expect(restore).toHaveBeenCalledWith(snapshot)
   })
 
-  it('reports and returns successful banked Artificing completions after the simulation commits', async () => {
+  it('reports and returns successful banked Artifact completions after the simulation commits', async () => {
     const state = createInitialState()
     state.offlineBankMs = 5_000
     state.progress.lifetimeKillsByMonster['forest-wisp'] = 1
-    state.inventory['air-fragment'] = 40
-    state.inventory['wisp-essence'] = 8
-    state.inventory['thorn-fiber'] = 12
-    state.inventory['grove-bark'] = 9
-    state.activities.artificing.activeJob = { kind: 'recipe', recipeId: 'windthread-charm' }
+    state.inventory['fire-fragment'] = 20
+    state.inventory['artifact-essence'] = 20
+    state.activities.artificing.activeJob = { kind: 'recipe', recipeId: 'ember-staff' }
 
     const result = await advanceWithOfflineBank(5_000, () => state, (recipe) => recipe(state), vi.fn(), undefined)
 
     expect(result.ok).toBe(true)
-    expect(result.completedArtificingRecipeIds).toEqual(['windthread-charm'])
-    expect(result.report?.production.craftsByRecipe['windthread-charm']).toBe(1)
-    expect(state.inventory['windthread-charm']).toBe(1)
+    expect(result.completedArtificingRecipeIds).toEqual(['ember-staff'])
+    expect(result.report?.production.craftsByRecipe['ember-staff']).toBe(1)
+    expect(state.inventory['ember-staff']).toBe(1)
     expect(state.activities.artificing.activeJob).toBeNull()
   })
 
@@ -69,11 +67,9 @@ describe('Offline Bank analytics wiring', () => {
     const state = createInitialState()
     state.offlineBankMs = 5_000
     state.progress.lifetimeKillsByMonster['forest-wisp'] = 1
-    state.inventory['air-fragment'] = 40
-    state.inventory['wisp-essence'] = 8
-    state.inventory['thorn-fiber'] = 12
-    state.inventory['grove-bark'] = 9
-    state.activities.artificing.activeJob = { kind: 'recipe', recipeId: 'windthread-charm' }
+    state.inventory['fire-fragment'] = 20
+    state.inventory['artifact-essence'] = 20
+    state.activities.artificing.activeJob = { kind: 'recipe', recipeId: 'ember-staff' }
     const before = JSON.stringify(state)
 
     const result = await advanceWithOfflineBank(5_000, () => state, (recipe) => recipe(state), () => { throw new Error('save failed') })

@@ -68,7 +68,7 @@ export function getItemNeeds(itemId: ItemId, state: ItemEconomyState): ItemNeed[
     if (!isRecipeUnlocked(state, recipe)) continue
     const ingredient = recipe.ingredients.find((candidate) => candidate.itemId === itemId)
     if (!ingredient) continue
-    needs.push(need(`recipe:${recipe.id}`, recipe.name, 'sourceDungeonId' in recipe ? 'Artificing recipe' : 'Transmutation recipe', 'sourceDungeonId' in recipe ? 'tower-artificing' : 'tower-transmutation', itemId, ingredient.quantity, state, flow))
+    needs.push(need(`recipe:${recipe.id}`, recipe.name, recipe.kind === 'artificing' ? 'Artificing recipe' : 'Transmutation recipe', recipe.kind === 'artificing' ? 'tower-artificing' : 'tower-transmutation', itemId, ingredient.quantity, state, flow))
   }
 
   const focusLevel = Math.max(0, Math.floor(state.progress.focusImprovement.level))

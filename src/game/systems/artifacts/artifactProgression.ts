@@ -1,5 +1,4 @@
-import { ARTIFACTS, type ArtifactNodeDefinition } from '../../content/artifacts/artifacts'
-import { DUNGEONS, isDungeonUnlocked as isDungeonDefinitionUnlocked } from '../../content/dungeons/dungeons'
+import { ARTIFACTS, isArtifactId } from '../../content/artifacts/artifacts'
 import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
 import { grantItem } from '../inventory/itemAcquisition'
 import { getRecipeUnlockRequirement, isRecipeUnlocked } from '../../content/recipes/recipeUnlocks'
@@ -7,15 +6,22 @@ import type { ArtifactId, ArtifactProgressState, GameState, ItemId } from '../..
 
 const EMPTY: ArtifactProgressState = { level: 1, allocatedNodeIds: [], attunedNodeIds: [] }
 export const getArtifactDefinition = (id: ArtifactId) => ARTIFACTS[id]
-export const isArtifactItem = (id: ItemId) => Boolean(ARTIFACTS[id])
+export const isArtifactItem = (id: ItemId): id is import('../../types').ArtifactId => isArtifactId(id)
 type ArtifactProgressionState = Pick<GameState, 'artifactProgress'> & Partial<Pick<GameState, 'debug'>>
 export const getArtifactProgress = (state: Pick<GameState, 'artifactProgress'>, id: ArtifactId) => state.artifactProgress?.[id] ?? EMPTY
 export const getArtifactLevel = (state: Pick<GameState, 'artifactProgress'>, id: ArtifactId) => getArtifactProgress(state, id).level
+const hasBossKill = (state: Pick<GameState, 'progress'>, bossId: import('../../types').MonsterId) => (state.progress.bossKillsByBoss[bossId] ?? 0) >= 1
+export const getArtifactLevelCapRequirement = (state: Pick<GameState, 'progress'> & Partial<Pick<GameState, 'debug'>>, _id: ArtifactId) => {
+  if (state.debug?.artifactIgnoreDungeonGate || state.debug?.artifactIgnoreLevelCap) return null
+  if (!hasBossKill(state, 'forest-heart')) return getRecipeUnlockRequirement({ unlock: { type: 'boss-kill', bossId: 'forest-heart' } })
+  if (!hasBossKill(state, 'corrupted-greatbear')) return getRecipeUnlockRequirement({ unlock: { type: 'boss-kill', bossId: 'corrupted-greatbear' } })
+  return null
+}
 export const getArtifactLevelCap = (state: Pick<GameState, 'artifactProgress' | 'progress'> & Partial<Pick<GameState, 'debug'>>, id: ArtifactId) => {
   if (!ARTIFACTS[id]) return 0
   if (state.debug?.artifactIgnoreLevelCap) return ARTIFACTS[id].maxLevel
-  if (isDungeonDefinitionUnlocked(DUNGEONS['abandoned-catacombs'], state.progress)) return 10
-  if (isDungeonDefinitionUnlocked(DUNGEONS['howling-den'], state.progress)) return 7
+  if (state.debug?.artifactIgnoreDungeonGate || hasBossKill(state, 'corrupted-greatbear')) return ARTIFACTS[id].maxLevel
+  if (hasBossKill(state, 'forest-heart')) return 7
   return 4
 }
 export const getArtifactTotalPoints = (state: ArtifactProgressionState, id: ArtifactId) => Math.max(0, getArtifactLevel(state, id) - 1) + Math.max(0, state.debug?.artifactBonusPointsByArtifact?.[id] ?? 0)

@@ -88,7 +88,7 @@ describe('equipment Item Tooltip presentation', () => {
   it('keeps normal Equipment on its authored static stats', () => {
     vi.useFakeTimers()
     const previous = useGameStore.getState().artifactProgress
-    useGameStore.setState({ artifactProgress: { 'wispbound-ring': { level: 10, allocatedNodeIds: [], attunedNodeIds: [] } } })
+    useGameStore.setState({ artifactProgress: {} })
     try {
       render(<TooltipProvider><ItemTooltip itemId="wispbound-ring" owned={1}><button>Wispbound Ring</button></ItemTooltip></TooltipProvider>)
       fireEvent.pointerEnter(screen.getByRole('button', { name: 'Wispbound Ring' }))

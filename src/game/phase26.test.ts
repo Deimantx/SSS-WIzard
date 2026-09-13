@@ -12,34 +12,23 @@ import { getTransmutationEchoesAssigned } from './systems/transmutation/transmut
 import { clampResourcePercent } from '../app/shell/Topbar'
 
 describe('Unified Transmutation', () => {
-  it('defines four fragment and four equipment recipes with the intended costs', () => {
-    expect(Object.keys(RECIPES)).toHaveLength(26)
+  it('defines five Transmutation and six Artifact recipes with the intended costs', () => {
+    expect(Object.keys(RECIPES)).toHaveLength(11)
     expect(['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'].map((id) => RECIPES[id as import('./types').TransmutationRecipeId].manaCost)).toEqual([25, 25, 25, 25])
     expect(['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'].map((id) => RECIPES[id as import('./types').TransmutationRecipeId].baseDurationMs)).toEqual([8000, 8000, 8000, 8000])
     expect(RECIPES['ember-staff'].ingredients).toEqual([
       { itemId: 'fire-fragment', quantity: 20 },
-      { itemId: 'wisp-essence', quantity: 10 },
-      { itemId: 'thorn-fiber', quantity: 10 },
-      { itemId: 'grove-bark', quantity: 5 },
-      { itemId: 'life-essence', quantity: 24 },
+      { itemId: 'artifact-essence', quantity: 20 },
     ])
     expect('manaCost' in RECIPES['ember-staff']).toBe(false)
-    expect(RECIPES['ember-staff'].unlock).toEqual({ type: 'dungeon-monster-kills', dungeonId: 'whispering-woods', count: 1 })
+    expect(RECIPES['ember-staff'].kind).toBe('artificing')
+    expect(RECIPES['ember-staff'].unlock).toEqual({ type: 'always' })
   })
 
-  it('unlocks Whispering Woods equipment after any one normal monster kill, but not its boss', () => {
-    const normalMonsters = ['forest-wisp', 'thornling', 'stone-root', 'grove-sentinel'] as const
-    normalMonsters.forEach((monsterId) => {
-      const state = makeInitialState()
-      state.progress.lifetimeKillsByMonster[monsterId] = 1
-      expect(isRecipeUnlocked(state, RECIPES['ember-staff'])).toBe(true)
-    })
-    const bossOnlyState = makeInitialState()
-    bossOnlyState.progress.lifetimeKillsByMonster['forest-heart'] = 1
-    expect(isRecipeUnlocked(bossOnlyState, RECIPES['ember-staff'])).toBe(false)
-    expect(isRecipeUnlocked(makeInitialState(), RECIPES['heartseed-necklace'])).toBe(false)
-    bossOnlyState.progress.bossKillsByBoss['forest-heart'] = 1
-    expect(isRecipeUnlocked(bossOnlyState, RECIPES['heartseed-necklace'])).toBe(true)
+  it('keeps all starter Artifacts available from a fresh save', () => {
+    const state = makeInitialState()
+    Object.values(RECIPES).filter((recipe) => recipe.kind === 'artificing').forEach((recipe) => expect(isRecipeUnlocked(state, recipe)).toBe(true))
+    expect((RECIPES as Record<string, unknown>)['heartseed-necklace']).toBeUndefined()
   })
 
   it('assigns Echoes across independent jobs and reserves ten Focus per Echo', () => {

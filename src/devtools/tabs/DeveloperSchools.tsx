@@ -2,14 +2,16 @@ import { Button, Card, Status } from '../../components/ui'
 import { SCHOOLS } from '../../game/content/schools/schools'
 import { formatDuration, formatNumber } from '../../game/content/presentation/balanceFormatters'
 import { getSchoolProgressInfo } from '../../game/systems/schools'
-import { formatSpellRank, getAllSpellsInOrder, getSpellAutoCastFocusCost, getAutoCastFocusCostForRank, getSpellRank } from '../../game/systems/spells'
-import type { SchoolId } from '../../game/types'
+import { formatSpellRank, getAllSpellsInOrder, getSpellAutoCastFocusCost as getFullSpellAutoCastFocusCost, getAutoCastFocusCostForRank, getSpellRank } from '../../game/systems/spells'
+import type { SchoolId, SpellId } from '../../game/types'
 import { useGameStore } from '../../store/gameStore'
 import { NumberField } from './DeveloperTabPrimitives'
 
 export function DeveloperSchools() {
   const schools = useGameStore((state) => state.schools)
   const progress = useGameStore((state) => state.progress)
+  const equipment = useGameStore((state) => state.equipment)
+  const artifactProgress = useGameStore((state) => state.artifactProgress)
   const setSchoolXpDebug = useGameStore((state) => state.setSchoolXpDebug)
   const setSchoolLevelDebug = useGameStore((state) => state.setSchoolLevelDebug)
   const setLevelCap = useGameStore((state) => state.setLevelCap)
@@ -19,6 +21,7 @@ export function DeveloperSchools() {
   const resetCooldowns = useGameStore((state) => state.resetSpellCooldowns)
   const schoolIds = Object.keys(SCHOOLS) as SchoolId[]
   const setAllLevels = (level: number) => { if (level > progress.magicLevelCap) setLevelCap(level); schoolIds.forEach((id) => setSchoolLevelDebug(id, level)) }
+  const getSpellAutoCastFocusCost = (_state: { progress: typeof progress }, spellId: SpellId) => getFullSpellAutoCastFocusCost({ progress, equipment, artifactProgress }, spellId)
 
   return <div className="developer-tab-grid">
     <Card title="Magic schools">

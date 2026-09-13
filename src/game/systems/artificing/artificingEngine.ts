@@ -4,7 +4,7 @@ import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption
 import { grantItem } from '../inventory/itemAcquisition'
 import { ARTIFACTS } from '../../content/artifacts/artifacts'
 import { isRecipeUnlocked, getRecipeUnlockRequirement } from '../../content/recipes/recipeUnlocks'
-import { canUpgradeArtifact, getArtifactUpgrade, getArtifactLevelCap, completeArtifactForge, getArtifactUpgradeUnlockRequirement, isArtifactUpgradeUnlocked } from '../artifacts/artifactProgression'
+import { canUpgradeArtifact, getArtifactUpgrade, getArtifactLevelCap, getArtifactLevelCapRequirement, completeArtifactForge, getArtifactUpgradeUnlockRequirement, isArtifactUpgradeUnlocked } from '../artifacts/artifactProgression'
 import type { ArtificingRecipeId, ArtifactId, GameState, ItemId } from '../../types'
 export type ArtificingCraftResult = { ok: true; itemId: ItemId } | { ok: false; reason: string }
 export type ArtificingCompletion =
@@ -34,7 +34,7 @@ export const upgradeArtifactInstant = (state: GameState, id: ArtifactId, options
   const upgrade = getArtifactUpgrade(id, progress.level); const cap = getArtifactLevelCap(state, id)
   const free = options?.free ?? Boolean(state.debug.artifactFreeUpgrade)
   if ((state.inventory[id] ?? 0) < 1) return { ok: false, reason: 'Artifact is not owned.' }
-  if (progress.level >= cap) return { ok: false, reason: `Artifact level is capped at ${cap}.` }
+  if (progress.level >= cap) return { ok: false, reason: getArtifactLevelCapRequirement(state, id) ?? `Artifact level is capped at ${cap}.` }
   if (!upgrade) return { ok: false, reason: 'Not enough legal upgrade materials.' }
   if (!isArtifactUpgradeUnlocked(state, upgrade)) return { ok: false, reason: getArtifactUpgradeUnlockRequirement(upgrade) ?? 'Artifact upgrade is locked.' }
   if (!canUpgradeArtifact({ ...state, debug: { ...state.debug, artifactFreeUpgrade: free } }, id)) return { ok: false, reason: 'Not enough legal upgrade materials.' }

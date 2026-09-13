@@ -2,11 +2,10 @@ import { Button, GameTooltip } from '../ui'
 import { TooltipContent } from '../ui/tooltip/Tooltip'
 import { ItemIcon, ItemTooltipContent, formatStat, friendlyStatLabel } from '../ui/item'
 import { ARTIFACTS } from '../../game/content/artifacts/artifacts'
-import { DUNGEONS, DUNGEON_ORDER, getDungeonUnlockRequirement, isDungeonUnlocked } from '../../game/content/dungeons/dungeons'
 import { ITEMS } from '../../game/content/items/items'
 import { getConsumableQuantity } from '../../game/core/inventory/inventoryConsumption'
 import { getArtifactArtificingState } from '../../game/systems/artificing/artificingSelectors'
-import { getArtifactUpgrade } from '../../game/systems/artifacts/artifactProgression'
+import { getArtifactLevelCapRequirement, getArtifactUpgrade } from '../../game/systems/artifacts/artifactProgression'
 import type { ArtifactId, ArtificingRecipeId, EquipmentStats, GameState, ItemId } from '../../game/types'
 import type { ArtifactArtificingState } from '../../game/systems/artificing/artificingSelectors'
 import type { GameStore } from '../../store/gameStore'
@@ -37,7 +36,7 @@ export function ArtifactLevelUpModule({ state, artifactId }: ArtifactLevelUpModu
   const costs = ingredients.map((ingredient) => toCost(state, ingredient.itemId, ingredient.quantity))
   const hasMissingMaterials = costs.some((cost) => cost.missing > 0)
   const statPreview = nextLevel === null ? [] : getStatPreview(definition.coreStatsByLevel[currentLevel] ?? {}, definition.coreStatsByLevel[nextLevel] ?? {})
-  const blockReason = getBlockReason(state, artifactState.mode, artifactState.reason, costs, artifactState.levelCap, definition.maxLevel)
+  const blockReason = getBlockReason(state, artifactId, artifactState.mode, artifactState.reason, costs, artifactState.levelCap, definition.maxLevel)
   const buttonLabel = isUpgrade ? artifactState.canStart ? 'LEVEL UP' : hasMissingMaterials ? 'MISSING MATERIALS' : 'LEVEL UP' : isCapped ? 'LEVEL CAP REACHED' : isMax ? 'MAX LEVEL' : 'FORGE ARTIFACT FIRST'
   const buttonDisabled = !isUpgrade || !artifactState.canStart
   const stateLabel = isUpgrade ? artifactState.canStart ? 'READY FOR LEVEL UP' : hasMissingMaterials ? 'MATERIALS REQUIRED' : 'LEVEL UP BLOCKED' : isCapped ? 'PROGRESSION CAP REACHED' : isMax ? 'ARTIFACT COMPLETE' : 'ARTIFACT NOT OWNED'
@@ -104,11 +103,10 @@ function flattenStats(stats: EquipmentStats): Array<[string, number]> {
     : [[key, Number(value)] as [string, number]])
 }
 
-function getBlockReason(state: GameState, mode: ArtifactArtificingState['mode'], selectorReason: string | undefined, costs: LevelUpCostData[], levelCap: number, maxLevel: number) {
+function getBlockReason(state: GameState, artifactId: ArtifactId, mode: ArtifactArtificingState['mode'], selectorReason: string | undefined, costs: LevelUpCostData[], levelCap: number, maxLevel: number) {
   if (mode === 'max-level') return 'This Artifact has reached its absolute maximum level.'
   if (mode === 'level-cap') {
-    const nextDungeon = DUNGEON_ORDER.slice(1).map((id) => DUNGEONS[id]).find((dungeon) => !isDungeonUnlocked(dungeon, state.progress))
-    const requirement = nextDungeon ? getDungeonUnlockRequirement(nextDungeon) : null
+    const requirement = getArtifactLevelCapRequirement(state, artifactId)
     return requirement ? `Current cap: ${levelCap}. ${requirement} to unlock the next Artifact level band.` : `Current cap: ${levelCap}. Continue progression to unlock the next Artifact level band.`
   }
   if (mode === 'forge') return 'Forge this Artifact before leveling it.'

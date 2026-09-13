@@ -2,7 +2,7 @@ import type { DamageType } from '../../systems/combat/combatTypes'
 import type { EquipmentBuildTag, EquipmentBudgetProfileId, EquipmentStats, InventoryCategory, InventoryMaterialSubtype, ItemDefinition, ItemId, SchoolId, ScreenId } from '../../types'
 import { BALANCE } from '../../core/balance/balance'
 import { MAX_BLOCK_CHANCE, MAX_RESISTANCE, MIN_RESISTANCE } from '../../core/balance/combatStats'
-import { ARTIFACTS, validateArtifactDefinitions } from '../artifacts/artifacts'
+import { isArtifactId, validateArtifactDefinitions } from '../artifacts/artifacts'
 import { createCombatValidationContext, validateCombatProvider } from '../../systems/combat/combatEffectValidation'
 import { STATUS_DEFINITIONS } from '../statuses/statuses'
 import { EQUIPMENT_BUILD_TAG_LABELS, EQUIPMENT_BUDGET_PROFILES, validateEquipmentBudgetProfiles } from './equipmentBalance'
@@ -34,7 +34,7 @@ const equipment = (definition: AuthoredEquipmentDefinition, source = directEquip
 const authoredItems: Record<ItemId, AuthoredItemDefinition> = {
   'black-portal-shard': { id: 'black-portal-shard', name: 'Black Portal Shard', description: 'A shard of impossible black crystal recovered from Archmage Edrin. Cold light shifts beneath its fractured surface, and the Wizard Tower itself seems to answer its presence.', icon: '◆', color: '#7760a8', kind: 'material', category: 'material', inventoryCategory: 'special', materialTier: 1, source: "Archmage Edrin's Shade — first defeat", sourceNavigation: 'combat', sellValue: null, canDestroy: false, actionRestrictionReason: 'The shard is bound to the Dark Portal and cannot be discarded.' },
   'artifact-essence': universalMaterial('artifact-essence', 'Artifact Essence', 'A concentrated echo released by dungeon enemies. It gives permanent Artifacts the force to take shape and grow.', '✦', '#d9b8ff', 'material', 'Combat → all dungeon enemies', 'arcane', 'combat'),
-  'prismatic-fragment': universalMaterial('prismatic-fragment', 'Prismatic Fragment', "A harmonized shard formed from all four elemental forces. Used to strengthen the tower's Focus capacity.", '*', '#c8a8ff', 'material', 'Transmutation', 'arcane', 'tower-transmutation'),
+  'prismatic-fragment': universalMaterial('prismatic-fragment', 'Prismatic Fragment', 'A harmonized shard formed from all four elemental forces. Used in advanced Transmutation and to forge or strengthen multi-element magical Artifacts.', '*', '#c8a8ff', 'material', 'Transmutation', 'arcane', 'tower-transmutation'),
   'life-essence': universalMaterial('life-essence', 'Life Essence', 'Vital residue released when living magic is defeated. A universal catalyst for permanent Tower upgrades.', '+', '#8fe0c0', 'monster-loot', 'All monsters', undefined, 'combat'),
   'fire-fragment': material('fire-fragment', 'Fire Fragment', 'A hot shard of transmuted elemental force.', '◆', '#ff745d', 'elemental', 'Transmutation', 'fire'),
   'water-fragment': material('water-fragment', 'Water Fragment', 'A cool fragment shaped by transmutation.', '◇', '#64b7ff', 'elemental', 'Transmutation', 'water'),
@@ -80,7 +80,7 @@ const actionRestrictionReasons: Partial<Record<ItemId, string>> = {}
 export const ITEMS: Record<ItemId, ItemDefinition> = Object.fromEntries(Object.entries(authoredItems).map(([id, item]) => {
   const itemId = id as ItemId
   const inventoryCategory = inventoryCategoryOverrides[itemId] ?? item.inventoryCategory ?? (item.kind === 'equipment' ? 'equipment' : 'material')
-  const isArtifact = Boolean(ARTIFACTS[itemId])
+  const isArtifact = isArtifactId(itemId)
   return [id, { ...item, inventoryCategory, ...(inventoryCategory === 'material' ? { materialSubtype: item.materialSubtype ?? (item.category === 'elemental' ? 'elemental' : 'creature') } : {}), sourceNavigation: item.sourceNavigation ?? sourceNavigationByItem[itemId], sellValue: isArtifact ? null : item.sellValue !== undefined ? item.sellValue : sellValues[itemId], canDestroy: isArtifact ? false : item.canDestroy ?? destroyability[itemId] ?? true, ...(isArtifact || item.actionRestrictionReason || actionRestrictionReasons[itemId] ? { actionRestrictionReason: isArtifact ? 'Artifact Equipment cannot be sold or destroyed.' : item.actionRestrictionReason ?? actionRestrictionReasons[itemId] } : {}) }]
 })) as Record<ItemId, ItemDefinition>
 
@@ -111,7 +111,7 @@ const requireEquipmentCoreStats = (itemId: string, stats: EquipmentStats | undef
 }
 const validateEquipmentChassis = (item: ItemDefinition, errors: string[]) => {
   if (item.kind !== 'equipment') return
-  if (ARTIFACTS[item.id]) return
+  if (isArtifactId(item.id)) return
   if (item.equipmentSlot === 'weapon') requireEquipmentStats(item.id, item.stats, ['basicDamage', 'spellPower'], errors)
   if (item.equipmentSlot === 'armor' || item.equipmentSlot === 'helmet' || item.equipmentSlot === 'cape') requireEquipmentStats(item.id, item.stats, ['maxHealth', 'defense'], errors)
   if (item.equipmentSlot === 'amulet') requireEquipmentCoreStats(item.id, item.stats, ['maxHealth', 'maxMana', 'spellPower', 'defense'], 'amulets', errors)
@@ -126,7 +126,7 @@ const validateEquipmentMetadata = (item: ItemDefinition, errors: string[]) => {
     if (item.equipmentBudgetProfile !== undefined) errors.push(`${item.id}: only equipment items may define equipmentBudgetProfile`)
     return
   }
-  if (ARTIFACTS[item.id]) return
+  if (isArtifactId(item.id)) return
   if (item.equipmentTier === undefined || !Number.isFinite(item.equipmentTier) || item.equipmentTier <= 0) errors.push(`${item.id}: equipmentTier must be finite and greater than 0`)
   const tags = item.buildTags
   if (!Array.isArray(tags) || tags.length < 1 || tags.length > 4) errors.push(`${item.id}: buildTags must contain 1 to 4 tags`)

@@ -46,7 +46,7 @@ const stateWithEnemy = () => {
 describe('authored equipment content', () => {
   it('contains exactly the planned equipment set and validates all content', () => {
     const equipment = Object.values(ITEMS).filter((item) => item.kind === 'equipment')
-    expect(equipment).toHaveLength(21)
+    expect(equipment).toHaveLength(20)
     expect(ITEMS['apprentice-wand' as keyof typeof ITEMS]).toBeUndefined()
     expect(validateItemDefinitions()).toEqual([])
     expect(validateRecipeDefinitions()).toEqual([])
@@ -75,31 +75,22 @@ describe('authored equipment content', () => {
     expect(getEffectiveManaCost(build, 10)).toBe(10)
   })
 
-  it('resolves Forest Heart material loot through central item acquisition', () => {
+  it('resolves Forest Heart Artifact Essence and signature Equipment through central item acquisition', () => {
     const state = createInitialState()
     const result = resolveMonsterLoot(state, 'forest-heart', undefined, () => 0)
 
-    expect(result).toContain('Heartseed')
-    expect(state.inventory.heartseed).toBe(1)
-    expect(state.inventory['heartseed-necklace']).toBeUndefined()
+    expect(result).toContain('Artifact Essence')
+    expect(state.inventory['artifact-essence']).toBe(10)
+    expect(state.inventory['heartseed-necklace']).toBe(1)
     expect(state.inventory['life-essence']).toBe(10)
-    expect(state.progress.discoveredItems).toEqual(expect.arrayContaining(['heartseed', 'life-essence']))
-    expect(state.progress.discoveredItems).not.toContain('heartseed-necklace')
+    expect(state.progress.discoveredItems).toEqual(expect.arrayContaining(['artifact-essence', 'heartseed-necklace', 'life-essence']))
   })
 
-  it('uses progression and dungeon unlock definitions for equipment recipes', () => {
+  it('keeps the Artificing catalog limited to starter Artifacts', () => {
     const state = createInitialState()
-    expect(isRecipeUnlocked(state, RECIPES['tideglass-wand'])).toBe(false)
-    expect(isRecipeUnlocked(state, RECIPES['predator-hide-mantle'])).toBe(false)
-
-    state.progress.lifetimeKillsByMonster['grove-sentinel'] = 1
     expect(isRecipeUnlocked(state, RECIPES['tideglass-wand'])).toBe(true)
-    expect(isRecipeUnlocked(state, RECIPES['predator-hide-mantle'])).toBe(false)
-
-    state.progress.lifetimeKillsByMonster['cavefang-wolf'] = 1
-    expect(isRecipeUnlocked(state, RECIPES['predator-hide-mantle'])).toBe(true)
-    state.progress.lifetimeKillsByMonster['restless-skeleton'] = 1
-    expect(isRecipeUnlocked(state, RECIPES['ossuary-mantle'])).toBe(true)
+    expect((RECIPES as Record<string, unknown>)['predator-hide-mantle']).toBeUndefined()
+    expect((RECIPES as Record<string, unknown>)['ossuary-mantle']).toBeUndefined()
   })
 })
 

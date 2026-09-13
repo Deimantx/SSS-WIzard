@@ -29,7 +29,7 @@ export const getRootCombatSourceProvenance = (source: CombatSource): CombatSourc
 })
 
 /** Enemy source ownership is instance-based; missing identity is conservatively detached. */
-export const isEnemySourceOwnerActive = (state: Pick<GameState, 'combat'>, source: CombatSource) => {
+export const isEnemySourceOwnerActive = (state: { combat: Pick<GameState['combat'], 'enemyInstanceKey'> }, source: CombatSource) => {
   if (source.actor !== 'enemy') return true
   const instanceKey = source.sourceInstanceKey ?? source.originInstanceKey
   return Boolean(instanceKey && state.combat.enemyInstanceKey && instanceKey === state.combat.enemyInstanceKey)

@@ -1,5 +1,5 @@
 import { DUNGEONS, DUNGEON_ORDER } from './dungeons/dungeons'
-import { EQUIPMENT_BY_DUNGEON, getEquipmentOrigin } from './equipment/equipmentSets'
+import { DUNGEON_EQUIPMENT_BY_DUNGEON, getEquipmentOrigin } from './equipment/equipmentSets'
 import { ITEMS } from './items/items'
 import { MONSTERS, MONSTER_IDS } from './monsters'
 import { RECIPES, RECIPE_ORDER } from './recipes/recipes'
@@ -67,7 +67,7 @@ const getItemRelations = (itemId: ItemId): ContentRelation[] => {
   RECIPE_ORDER.forEach((recipeId) => {
     const recipe = RECIPES[recipeId]
     if (recipe.output.itemId === itemId) {
-      relations.push({ kind: 'recipe', id: recipeId, label: recipe.name, detail: 'sourceDungeonId' in recipe ? 'Artificing output' : 'Transmutation output' })
+      relations.push({ kind: 'recipe', id: recipeId, label: recipe.name, detail: recipe.kind === 'artificing' ? 'Artificing output' : 'Transmutation output' })
     }
   })
   return relations
@@ -103,7 +103,7 @@ export const buildContentRelations = () => ({
   itemSources: (itemId: ItemId) => getItemSourceInfo(itemId),
   itemRecipeUses: (itemId: ItemId) => getItemRecipeUses(itemId),
   monsterDungeon: (monsterId: MonsterId) => getMonsterDungeon(monsterId),
-  equipmentOrigins: Object.fromEntries(Object.entries(EQUIPMENT_BY_DUNGEON).flatMap(([dungeonId, itemIds]) => itemIds.map((itemId) => [itemId, dungeonId]))),
+  equipmentOrigins: Object.fromEntries(Object.entries(DUNGEON_EQUIPMENT_BY_DUNGEON).flatMap(([dungeonId, itemIds]) => itemIds.map((itemId) => [itemId, dungeonId]))),
   itemIds: Object.keys(ITEMS) as ItemId[],
   monsterIds: MONSTER_IDS,
 })

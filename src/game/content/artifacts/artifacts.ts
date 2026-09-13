@@ -166,7 +166,7 @@ const wispveilNodes: ArtifactNodeDefinition[] = [
   { id: 'greatbear-focus', artifactId: 'wispveil-hood', name: 'Greatbear Focus', type: 'major', branch: 'arcane-precision', pointCost: 1, requiresLevel: 7, prerequisites: ['accelerated-casting'], requiresBossKill: 'corrupted-greatbear', stats: { critChance: 0.03 } },
   { id: 'edrins-perfect-moment', artifactId: 'wispveil-hood', name: "Edrin's Perfect Moment", type: 'capstone', branch: 'arcane-precision', pointCost: 2, requiresLevel: 10, prerequisites: ['greatbear-focus'], requiresBossKill: 'archmage-edrin-shade', stats: { critChance: 0.05, critDamage: 0.15 } },
 ]
-export const ARTIFACTS: Partial<Record<ArtifactId, ArtifactDefinition>> = {
+export const ARTIFACTS: Record<ArtifactId, ArtifactDefinition> = {
   'ember-staff': {
     id: 'ember-staff', itemId: 'ember-staff', tier: 1, maxLevel: 10, coreStatsByLevel: emberStats,
     forge: { ingredients: [material('fire-fragment', 20), material('artifact-essence', 20)] },
@@ -227,7 +227,8 @@ export const ARTIFACTS: Partial<Record<ArtifactId, ArtifactDefinition>> = {
     nodes: wispveilNodes,
   },
 }
-export const getArtifactDefinition = (itemId: ItemId) => ARTIFACTS[itemId]
+export const isArtifactId = (itemId: ItemId): itemId is ArtifactId => Object.prototype.hasOwnProperty.call(ARTIFACTS, itemId)
+export const getArtifactDefinition = (itemId: ItemId) => isArtifactId(itemId) ? ARTIFACTS[itemId] : undefined
 
 /** Structural checks for the shared Artifact foundation. Balance power is intentionally out of scope. */
 export const validateArtifactDefinitions = (items: Record<string, ItemDefinition>, monsters?: Record<string, { id: string; bestiaryCategory?: string }>) => {
@@ -299,5 +300,3 @@ export const validateArtifactDefinitions = (items: Record<string, ItemDefinition
   })
   return errors
 }
-
-

@@ -2,7 +2,7 @@ import type { GameState } from '../../types'
 import type { ActiveStatus, StatusId } from './combatTypes'
 import type { CombatActor } from './magnitude'
 
-type StatusState = Pick<GameState, 'combat'>
+type StatusState = { combat: Pick<GameState['combat'], 'playerStatuses' | 'enemyStatuses'> }
 const statusList = (state: StatusState, actor: CombatActor): ActiveStatus[] => actor === 'player' ? state.combat.playerStatuses : state.combat.enemyStatuses
 
 const modifierOverrideKey = (overrides: ActiveStatus['modifierOverrides']) => Object.entries(overrides ?? {})

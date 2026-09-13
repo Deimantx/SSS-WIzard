@@ -10,7 +10,7 @@ import { getActorTraits } from './traitRuntime'
 import type { CombatModifier, CombatSource, CombatTag, DamageType, ModifierKey } from './combatTypes'
 import { getStatusGroupStacks } from './statusSelectors'
 import { getRootCombatSourceProvenance, isEnemySourceOwnerActive } from './combatProvenance'
-import { getAllocatedArtifactCombatProviders } from '../artifacts/artifactProgression'
+import { getAllocatedArtifactCombatProviders, isArtifactItem } from '../artifacts/artifactProgression'
 
 export type CombatModifierState = {
   player: Pick<GameState['player'], 'health' | 'maxHealth' | 'mana' | 'maxMana'>
@@ -110,7 +110,7 @@ export const getCombatModifierContributions = (state: CombatModifierState, actor
       ITEMS[itemId]?.combat?.modifiers?.forEach((modifier) => {
         add(modifier, 'equipment', itemId, ITEMS[itemId]?.name)
       })
-      getAllocatedArtifactCombatProviders(state, itemId).forEach(provider => provider.modifiers.forEach(modifier => {
+      if (isArtifactItem(itemId)) getAllocatedArtifactCombatProviders(state, itemId).forEach(provider => provider.modifiers.forEach(modifier => {
         add(modifier, 'artifact', itemId, provider.node.name)
       }))
     })

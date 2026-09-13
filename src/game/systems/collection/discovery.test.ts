@@ -17,9 +17,9 @@ describe('archive discovery', () => {
     const state = createInitialState()
     vi.spyOn(Math, 'random').mockReturnValue(0)
     resolveMonsterLoot(state, 'forest-wisp')
-    expect(state.inventory['wisp-essence']).toBe(1)
+    expect(state.inventory['artifact-essence']).toBe(1)
     expect(state.inventory['life-essence']).toBe(1)
-    expect(state.progress.discoveredItems).toEqual(expect.arrayContaining(['wisp-essence', 'life-essence']))
+    expect(state.progress.discoveredItems).toEqual(expect.arrayContaining(['artifact-essence', 'life-essence']))
     vi.restoreAllMocks()
   })
 
@@ -34,7 +34,7 @@ describe('archive discovery', () => {
     const state = createInitialState()
     for (const itemId of ['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'] as const) state.inventory[itemId] = 2
     state.inventory['life-essence'] = 10
-    expect(completeTransmutationCycle(state, { id: 'prismatic-fragment', name: 'Prismatic Fragment', output: { itemId: 'prismatic-fragment', quantity: 1 }, category: 'material', baseDurationMs: 1, manaCost: 0, ingredients: [{ itemId: 'fire-fragment', quantity: 2 }, { itemId: 'water-fragment', quantity: 2 }, { itemId: 'earth-fragment', quantity: 2 }, { itemId: 'air-fragment', quantity: 2 }, { itemId: 'life-essence', quantity: 10 }], unlock: { type: 'always' } }, { mode: 'live' })).toBe(true)
+    expect(completeTransmutationCycle(state, { id: 'prismatic-fragment', kind: 'transmutation', name: 'Prismatic Fragment', output: { itemId: 'prismatic-fragment', quantity: 1 }, category: 'material', baseDurationMs: 1, manaCost: 0, ingredients: [{ itemId: 'fire-fragment', quantity: 2 }, { itemId: 'water-fragment', quantity: 2 }, { itemId: 'earth-fragment', quantity: 2 }, { itemId: 'air-fragment', quantity: 2 }, { itemId: 'life-essence', quantity: 10 }], unlock: { type: 'always' } }, { mode: 'live' })).toBe(true)
     expect(state.inventory['prismatic-fragment']).toBe(1)
     expect(state.progress.discoveredItems).toContain('prismatic-fragment')
   })

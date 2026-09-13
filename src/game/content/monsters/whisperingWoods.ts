@@ -21,7 +21,7 @@ export const WHISPERING_WOODS_MONSTERS = {
     maxHealth: 280, basicAttackDamage: 12, basicAttackTimeMs: 3200, defense: 12, color: '#b28f79', ui: { portraitIcon: 'stone' }, traitIds: ['stone-rooted-shell'],
     actions: { 'root-slam': { id: 'root-slam', name: 'Root Slam', actionTimeMs: 2500, description: "A crushing root strike disrupts the Player's Basic Attack rhythm.", effects: [scaledDirectDamage('physical', 1.65), delayBasicAttack(700)], tags: ['special', 'physical', 'control'] } },
     actionPatterns: { default: { id: 'default', steps: [basic('basic-1'), basic('basic-2'), basic('basic-3'), action('root-slam-step', 'root-slam')] } }, defaultActionPatternId: 'default',
-    loot: withDungeonLoot('whispering-woods', 'normal', { chance: 0.4 }),
+    loot: withDungeonLoot('whispering-woods', 'normal', { chance: 0.2 }),
   },
   'grove-sentinel': {
     id: 'grove-sentinel', bestiaryCategory: 'monster', name: 'Grove Sentinel', subtitle: 'An ancient guardian of the inner grove',

@@ -1,5 +1,6 @@
 import { SPELLS } from '../../content/spells/spells'
 import { deriveFocusReservations } from '../focus/focusReservations'
+import type { FocusReservationState } from '../focus/focusReservations'
 import { getSpellAutoCastFocusCost, isSpellUnlocked } from './spellProgression'
 import type { GameState, SpellId, SpellPreset, SpellPresetId, SpellPresetState } from '../../types'
 
@@ -73,7 +74,7 @@ export interface SpellPresetFocusBreakdown {
   freeFocus: number
 }
 
-export type SpellPresetFocusState = Pick<GameState, 'activities' | 'progress' | 'equipment' | 'artifactProgress'> & { player: Pick<GameState['player'], 'maxFocus'> }
+export type SpellPresetFocusState = FocusReservationState & { player: Pick<GameState['player'], 'maxFocus'> }
 
 export const getSpellPresetFocusBreakdown = (state: SpellPresetFocusState): SpellPresetFocusBreakdown => {
   const reservations = deriveFocusReservations(state)

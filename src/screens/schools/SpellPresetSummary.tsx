@@ -18,7 +18,7 @@ export function SpellPresetSummary({ onManage }: { onManage: () => void }) {
   const maxFocus = useGameStore((state) => state.player.maxFocus)
   const focusState: SpellPresetFocusState = { activities, progress, equipment, artifactProgress, player: { maxFocus } }
   const focus = getSpellPresetFocusBreakdown(focusState)
-  const applied = spellPresets.presets.find((preset) => doesCurrentAutoCastMatchPreset(focusState, preset))
+  const applied = spellPresets.presets.find((preset) => doesCurrentAutoCastMatchPreset({ activities, progress, equipment, artifactProgress }, preset))
   const activeSpellIds = Object.keys(SPELLS).filter((spellId) => activities.autoCast[spellId as SpellId]) as SpellId[]
   const shownSpellIds = activeSpellIds.slice(0, 4)
   const remainingCount = Math.max(0, activeSpellIds.length - shownSpellIds.length)

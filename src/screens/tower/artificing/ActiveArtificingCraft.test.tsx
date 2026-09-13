@@ -7,8 +7,7 @@ import { ActiveArtificingCraft } from './ActiveArtificingCraft'
 describe('Active Artificing craft', () => {
   it('cancels through the store, refunds materials, and hides its controls', () => {
     const initial = createInitialState()
-    initial.progress.lifetimeKillsByMonster['forest-wisp'] = 1
-    initial.inventory = { 'fire-fragment': 20, 'wisp-essence': 10, 'thorn-fiber': 10, 'grove-bark': 5, 'life-essence': 24 }
+    initial.inventory = { 'fire-fragment': 20, 'artifact-essence': 20 }
     useGameStore.setState(initial)
     useGameStore.getState().craftArtificingRecipe('ember-staff')
     render(<ActiveArtificingCraft />)

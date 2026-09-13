@@ -15,21 +15,19 @@ describe('Recipe Pins Dock', () => {
 
   it('renders only missing ingredient chips using legal consumable quantities', () => {
     const current = useGameStore.getState()
-    useGameStore.setState({ inventory: { ...current.inventory, 'fire-fragment': 20, 'wisp-essence': 6, 'thorn-fiber': 7, 'grove-bark': 5, 'life-essence': 24 } })
+    useGameStore.setState({ inventory: { ...current.inventory, 'fire-fragment': 20, 'artifact-essence': 6 } })
     setUiPreferences({ screenState: { artificing: { pinnedRecipeIds: ['ember-staff'] } } })
 
     render(<TooltipProvider><RecipePinsDock /></TooltipProvider>)
 
-    expect(screen.getByLabelText('Wisp Essence. Missing 4. 6 usable, 10 required.')).toBeTruthy()
-    expect(screen.getByLabelText('Thorn Fiber. Missing 3. 7 usable, 10 required.')).toBeTruthy()
+    expect(screen.getByLabelText('Artifact Essence. Missing 14. 6 usable, 20 required.')).toBeTruthy()
     expect(screen.queryByText('Fire Fragment')).toBeNull()
-    expect(screen.queryByText('Grove Bark')).toBeNull()
-    expect(screen.queryByText('Life Essence')).toBeNull()
+    expect(screen.queryByText('Artifact Essence')).toBeTruthy()
   })
 
   it('shows READY and removes a pin after an Artifact is acquired', () => {
     const current = useGameStore.getState()
-    useGameStore.setState({ inventory: { ...current.inventory, 'fire-fragment': 20, 'wisp-essence': 10, 'thorn-fiber': 10, 'grove-bark': 5, 'life-essence': 24 } })
+    useGameStore.setState({ inventory: { ...current.inventory, 'fire-fragment': 20, 'artifact-essence': 20 } })
     setUiPreferences({ screenState: { artificing: { pinnedRecipeIds: ['ember-staff'] } } })
     render(<TooltipProvider><RecipePinsDock /></TooltipProvider>)
     expect(screen.getByText('READY TO FORGE')).toBeTruthy()
@@ -41,7 +39,7 @@ describe('Recipe Pins Dock', () => {
 
   it('auto-unpins both Artifact Forge and repeatable Equipment on successful live completion', () => {
     const current = useGameStore.getState()
-    useGameStore.setState({ inventory: { ...current.inventory, 'fire-fragment': 20, 'wisp-essence': 10, 'thorn-fiber': 10, 'grove-bark': 5, 'life-essence': 24 } })
+    useGameStore.setState({ inventory: { ...current.inventory, 'fire-fragment': 20, 'artifact-essence': 20 } })
     setUiPreferences({ screenState: { artificing: { pinnedRecipeIds: ['ember-staff'] } } })
     expect(useGameStore.getState().craftArtificingRecipe('ember-staff')).toBe(true)
     expect(getUiPreferences().screenState.artificing.pinnedRecipeIds).toEqual(['ember-staff'])
@@ -50,9 +48,9 @@ describe('Recipe Pins Dock', () => {
     })
     expect(getUiPreferences().screenState.artificing.pinnedRecipeIds).toEqual([])
 
-    useGameStore.setState({ inventory: { ...useGameStore.getState().inventory, 'air-fragment': 40, 'wisp-essence': 8, 'thorn-fiber': 12, 'grove-bark': 9 } })
-    setUiPreferences({ screenState: { artificing: { pinnedRecipeIds: ['windthread-charm'] } } })
-    expect(useGameStore.getState().craftArtificingRecipe('windthread-charm')).toBe(true)
+    useGameStore.setState({ inventory: { ...useGameStore.getState().inventory, 'water-fragment': 20, 'artifact-essence': 20 } })
+    setUiPreferences({ screenState: { artificing: { pinnedRecipeIds: ['tideglass-wand'] } } })
+    expect(useGameStore.getState().craftArtificingRecipe('tideglass-wand')).toBe(true)
     act(() => {
       for (let index = 0; index < 5; index += 1) useGameStore.getState().tick(1_000)
     })

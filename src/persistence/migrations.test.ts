@@ -184,6 +184,23 @@ describe('save navigation migration', () => {
     expect(migrated.combat.pendingBossId).toBeNull()
   })
 
+  it('removes retired inventory and stale Artificing jobs without touching current content', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({
+      ...initial,
+      saveVersion: SAVE_VERSION,
+      inventory: { 'wisp-essence': 8, 'grove-bark': 2, 'artifact-essence': 4 },
+      protectedItems: { 'grove-bark': true, 'artifact-essence': true },
+      progress: { ...initial.progress, discoveredItems: ['wisp-essence', 'grove-bark', 'artifact-essence'] },
+      activities: { ...initial.activities, artificing: { activeJob: { kind: 'recipe', recipeId: 'windthread-charm' }, activeRecipeId: 'windthread-charm', progressMs: 3_000 } },
+    } as any)
+
+    expect(migrated.inventory).toEqual({ 'artifact-essence': 4 })
+    expect(migrated.protectedItems).toEqual({ 'artifact-essence': true })
+    expect(migrated.progress.discoveredItems).toEqual(['artifact-essence'])
+    expect(migrated.activities.artificing).toEqual({ activeJob: null, activeRecipeId: null, progressMs: 0 })
+  })
+
   it('migrates v6 Earrings state to an empty Cape without converting the item', () => {
     const initial = createInitialState()
     const migrated = migrateSave({
@@ -241,7 +258,7 @@ describe('save navigation migration', () => {
     const migrated = migrateSave({
       ...initial,
       saveVersion: 7,
-      inventory: { ...initial.inventory, 'ember-staff': 2, 'fire-fragment': 48, 'wisp-essence': 24 },
+      inventory: { ...initial.inventory, 'ember-staff': 2, 'fire-fragment': 48, 'artifact-essence': 24 },
       activities: {
         ...initial.activities,
         condense: { running: true, element: 'fire', progressMs: 1500 },
@@ -251,7 +268,7 @@ describe('save navigation migration', () => {
 
     expect(migrated.activities.transmutation.jobs['fire-fragment']).toEqual({ echoesAssigned: 1, progressMs: 2000 })
     expect(migrated.activities.transmutation.jobs).not.toHaveProperty('ember-staff')
-    expect(migrated.inventory).toMatchObject({ 'ember-staff': 2, 'fire-fragment': 48, 'wisp-essence': 24 })
+    expect(migrated.inventory).toMatchObject({ 'ember-staff': 2, 'fire-fragment': 48, 'artifact-essence': 24 })
     expect(migrated.saveVersion).toBe(8)
   })
 

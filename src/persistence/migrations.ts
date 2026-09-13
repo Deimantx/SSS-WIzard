@@ -126,10 +126,15 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
     const upgrade = artifactId && fromLevel !== undefined ? ARTIFACTS[artifactId]?.upgrades.find(candidate => candidate.fromLevel === fromLevel) : undefined
     if (progress && upgrade && toLevel !== undefined && upgrade.toLevel === toLevel && progress.level === fromLevel) progress.level = toLevel
   }
-  const rawJob = rawActiveJob && (rawActiveJob.kind === 'recipe' || rawActiveJob.kind === 'artifact-forge') ? rawActiveJob : null
+  const rawJob = rawActiveJob?.kind === 'recipe' && typeof rawActiveJob.recipeId === 'string' && Object.prototype.hasOwnProperty.call(ARTIFICING_RECIPES, rawActiveJob.recipeId)
+    ? { kind: 'recipe' as const, recipeId: rawActiveJob.recipeId as GameState['activities']['artificing']['activeRecipeId'] }
+    : rawActiveJob?.kind === 'artifact-forge' && typeof rawActiveJob.artifactId === 'string' && Boolean(ARTIFACTS[rawActiveJob.artifactId as ArtifactId])
+      ? { kind: 'artifact-forge' as const, artifactId: rawActiveJob.artifactId as ArtifactId }
+      : null
   const legacyUpgrade = rawActiveJob?.kind === 'artifact-upgrade'
   const normalizedJob = rawJob as GameState['activities']['artificing']['activeJob'] ?? (!legacyUpgrade && activeRecipeId ? { kind: 'recipe', recipeId: activeRecipeId } : null)
-  migrated.activities.artificing = { activeJob: normalizedJob, activeRecipeId: legacyUpgrade ? null : activeRecipeId, progressMs: normalizedJob ? Math.max(0, nonNegativeNumber(rawArtificing.progressMs) ?? 0) : 0 }
+  const normalizedRecipeId = normalizedJob?.kind === 'recipe' ? normalizedJob.recipeId : null
+  migrated.activities.artificing = { activeJob: normalizedJob, activeRecipeId: legacyUpgrade ? null : normalizedRecipeId, progressMs: normalizedJob ? Math.max(0, nonNegativeNumber(rawArtificing.progressMs) ?? 0) : 0 }
   migrated.activities.autoCast = normalizeDynamicRecord(fresh.activities.autoCast, rawActivities.autoCast, spellIds, booleanValue) as GameState['activities']['autoCast']
   migrated.combat.spellCooldowns = normalizeDynamicRecord(fresh.combat.spellCooldowns, rawCombat.spellCooldowns, spellIds, nonNegativeNumber) as GameState['combat']['spellCooldowns']
   migrated.progress.requestProgress = normalizeDynamicRecord(fresh.progress.requestProgress, rawProgress.requestProgress, requestIds, nonNegativeInteger)

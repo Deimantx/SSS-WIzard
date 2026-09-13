@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Button, Card, FilterBar, Status, type FilterOption } from '../../components/ui'
 import { ITEMS } from '../../game/content/items/items'
 import { getInventorySearchText } from '../../game/content/items/inventoryMetadata'
-import { EQUIPMENT_BOSS_RELIC_IDS, EQUIPMENT_BY_DUNGEON, isEquipmentBossRelic } from '../../game/content/equipment/equipmentSets'
+import { ARTIFACT_EQUIPMENT_IDS, BOSS_SIGNATURE_EQUIPMENT_IDS, DUNGEON_EQUIPMENT_BY_DUNGEON, isBossSignatureEquipment } from '../../game/content/equipment/equipmentSets'
 import { DUNGEONS, DUNGEON_ORDER } from '../../game/content/dungeons/dungeons'
 import { getItemDropSources, getItemRecipeUses, getItemSourceInfo, getMonsterDungeon } from '../../game/content/contentRelations'
 import { formatEquipmentEffectSummary, formatPercent, formatReadableId, formatStatLabel, formatStatValue } from '../../game/content/presentation/balanceFormatters'
@@ -15,14 +15,14 @@ import { DEVELOPER_LOADOUTS, type DeveloperEquipmentLoadout } from '../developer
 import { NumberField } from './DeveloperTabPrimitives'
 
 type InventoryCategoryFilter = 'all' | 'materials' | 'equipment'
-type InventorySourceFilter = 'all' | 'transmutation' | DungeonId | 'boss-relics' | 'monster-drops' | 'boss-drops'
+type InventorySourceFilter = 'all' | 'transmutation' | DungeonId | 'boss-signatures' | 'monster-drops' | 'boss-drops'
 type InventorySlotFilter = 'all' | EquipmentItemSlot
 const CATEGORY_FILTERS: readonly FilterOption<InventoryCategoryFilter>[] = [
   { value: 'all', label: 'ALL' },
   { value: 'materials', label: 'MATERIALS' },
   { value: 'equipment', label: 'EQUIPMENT' },
 ]
-const SOURCE_FILTERS: readonly FilterOption<InventorySourceFilter>[] = [{ value: 'all', label: 'ALL SOURCES' }, { value: 'transmutation', label: 'TRANSMUTATION' }, { value: 'monster-drops', label: 'MONSTER DROPS' }, { value: 'boss-drops', label: 'BOSS DROPS' }, ...DUNGEON_ORDER.map((id) => ({ value: id, label: DUNGEONS[id].name.toUpperCase() })), { value: 'boss-relics', label: 'BOSS RELICS' }]
+const SOURCE_FILTERS: readonly FilterOption<InventorySourceFilter>[] = [{ value: 'all', label: 'ALL SOURCES' }, { value: 'transmutation', label: 'TRANSMUTATION' }, { value: 'monster-drops', label: 'MONSTER DROPS' }, { value: 'boss-drops', label: 'BOSS DROPS' }, ...DUNGEON_ORDER.map((id) => ({ value: id, label: DUNGEONS[id].name.toUpperCase() })), { value: 'boss-signatures', label: 'BOSS SIGNATURES' }]
 const SLOT_FILTERS: readonly FilterOption<InventorySlotFilter>[] = [{ value: 'all', label: 'ALL SLOTS' }, ...EQUIPMENT_ITEM_SLOTS.map((id) => ({ value: id, label: EQUIPMENT_ITEM_SLOT_LABELS[id] }))]
 const ITEM_IDS = Object.keys(ITEMS) as ItemId[]
 const EQUIPMENT_IDS = ITEM_IDS.filter((id) => ITEMS[id].kind === 'equipment')
@@ -33,7 +33,7 @@ const sourceMatchesDungeon = (itemId: ItemId, dungeonId: DungeonId) => getItemSo
 const matchesSource = (itemId: ItemId, filter: InventorySourceFilter) => {
   if (filter === 'all') return true
   if (filter === 'transmutation') return getItemSourceInfo(itemId).relations.some((relation) => relation.kind === 'recipe')
-  if (filter === 'boss-relics') return isEquipmentBossRelic(itemId)
+  if (filter === 'boss-signatures') return isBossSignatureEquipment(itemId)
   if (filter === 'monster-drops') return getItemDropSources(itemId).some((drop) => drop.role === 'normal')
   if (filter === 'boss-drops') return getItemDropSources(itemId).some((drop) => drop.role === 'boss')
   return sourceMatchesDungeon(itemId, filter)
@@ -129,7 +129,7 @@ export function DeveloperInventory({ initialView = 'all' }: { initialView?: Inve
       />
     </Card>
     <div className="developer-tab-grid">
-      <Card title="Quick groups"><p className="muted">All grants use normal acquisition. Removal respects protected and equipped item rules.</p><div className="developer-button-grid"><Button variant="secondary" onClick={() => addGroup(MATERIAL_IDS.filter((id) => ITEMS[id].category === 'elemental'), 10)}>Add elemental fragments ×10</Button><Button variant="secondary" onClick={() => addGroup(DUNGEON_MATERIAL_IDS, 100)}>Add Artifact Essence ×100</Button><Button variant="secondary" onClick={() => addGroup(EQUIPMENT_IDS, 1)}>Add 1 of every equipment</Button>{Object.entries(EQUIPMENT_BY_DUNGEON).map(([id, ids]) => <Button key={id} variant="secondary" onClick={() => addGroup(ids, 1)}>Add {DUNGEONS[id as DungeonId].name} equipment</Button>)}<Button variant="secondary" onClick={() => addGroup(EQUIPMENT_BOSS_RELIC_IDS, 1)}>Add boss relics</Button><Button variant="ghost" onClick={() => DUNGEON_MATERIAL_IDS.forEach((id) => { const current = useGameStore.getState(); const amount = current.inventory[id] ?? 0; if (amount > 0) removeItem(id, amount) })}>Clear Artifact Essence</Button><Button variant="ghost" onClick={clearEquipmentInventory}>Clear unprotected equipment</Button></div><div className="developer-owned-list">{ITEM_IDS.filter((id) => (state.inventory[id] ?? 0) > 0).map((id) => <span key={id}>{ITEMS[id].name}<strong>{state.inventory[id]}</strong></span>)}</div></Card>
+      <Card title="Quick groups"><p className="muted">All grants use normal acquisition. Removal respects protected and equipped item rules.</p><div className="developer-button-grid"><Button variant="secondary" onClick={() => addGroup(MATERIAL_IDS.filter((id) => ITEMS[id].category === 'elemental'), 10)}>Add elemental fragments ×10</Button><Button variant="secondary" onClick={() => addGroup(DUNGEON_MATERIAL_IDS, 100)}>Add Artifact Essence ×100</Button><Button variant="secondary" onClick={() => addGroup(ARTIFACT_EQUIPMENT_IDS, 1)}>Add all Artifacts</Button><Button variant="secondary" onClick={() => addGroup(EQUIPMENT_IDS, 1)}>Add 1 of every equipment</Button>{Object.entries(DUNGEON_EQUIPMENT_BY_DUNGEON).map(([id, ids]) => <Button key={id} variant="secondary" onClick={() => addGroup(ids, 1)}>Add {DUNGEONS[id as DungeonId].name} equipment</Button>)}<Button variant="secondary" onClick={() => addGroup(BOSS_SIGNATURE_EQUIPMENT_IDS, 1)}>Add boss signature equipment</Button><Button variant="ghost" onClick={() => DUNGEON_MATERIAL_IDS.forEach((id) => { const current = useGameStore.getState(); const amount = current.inventory[id] ?? 0; if (amount > 0) removeItem(id, amount) })}>Clear Artifact Essence</Button><Button variant="ghost" onClick={clearEquipmentInventory}>Clear unprotected equipment</Button></div><div className="developer-owned-list">{ITEM_IDS.filter((id) => (state.inventory[id] ?? 0) > 0).map((id) => <span key={id}>{ITEMS[id].name}<strong>{state.inventory[id]}</strong></span>)}</div></Card>
       <Card title="Equipment loadout presets" className="developer-debug-card"><p className="muted">Six explicit slot-map fixtures. Missing copies are granted through normal acquisition, then each authored slot is equipped through normal equip rules.</p><div className="developer-button-grid">{DEVELOPER_LOADOUTS.map((loadout) => <Button key={loadout.id} variant="secondary" onClick={() => loadLoadout(loadout)}>{loadout.label}</Button>)}<Button variant="ghost" onClick={unequipAll}>Unequip all</Button></div><div className="developer-loadout-list">{DEVELOPER_LOADOUTS.map((loadout) => <div key={loadout.id}><strong>{loadout.label}</strong><small>{Object.entries(loadout.slots).map(([position, itemId]) => `${EQUIPMENT_POSITION_LABELS[position as EquipmentPosition]}: ${ITEMS[itemId].name}`).join(' · ')}</small></div>)}</div></Card>
     </div>
   </div>

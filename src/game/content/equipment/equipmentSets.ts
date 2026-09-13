@@ -8,7 +8,7 @@ export const EQUIPMENT_BY_DUNGEON: Record<DungeonId, readonly ItemId[]> = {
   'abandoned-catacombs': ['ossuary-mantle', 'mourning-glass-earring', 'gravebinder-ring', 'edrins-signet', 'soulglass-amulet'],
 }
 
-/** Boss-signature Equipment crafted through Transmutation from boss materials; never direct monster drops. */
+/** Boss-signature Equipment awarded directly by its assigned boss; never a normal drop. */
 export const EQUIPMENT_BOSS_RELIC_IDS: readonly ItemId[] = ['heartseed-necklace', 'greatbear-heartstone', 'edrins-signet']
 
 const equipmentOrigin = new Map<ItemId, DungeonId>(Object.entries(EQUIPMENT_BY_DUNGEON).flatMap(([dungeonId, itemIds]) => itemIds.map((itemId) => [itemId, dungeonId as DungeonId])))

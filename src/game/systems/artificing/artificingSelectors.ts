@@ -5,7 +5,7 @@ import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption
 import { isRecipeUnlocked, getRecipeUnlockRequirement } from '../../content/recipes/recipeUnlocks'
 import { canCraftArtificingRecipe, getArtificingCraftIngredients, hasArtificingRecipeRequirements } from './artificingEngine'
 import { ARTIFACTS } from '../../content/artifacts/artifacts'
-import { canUpgradeArtifact, getArtifactLevel, getArtifactLevelCap, getArtifactUpgrade } from '../artifacts/artifactProgression'
+import { canUpgradeArtifact, getArtifactLevel, getArtifactLevelCap, getArtifactUpgrade, getArtifactUpgradeUnlockRequirement, isArtifactUpgradeUnlocked } from '../artifacts/artifactProgression'
 import type { ArtificingKindFilter, ArtificingTierFilter, ArtificingRecipeId, GameState, EquipmentItemSlot } from '../../types'
 export { canCraftArtificingRecipe, getArtificingCraftIngredients, hasArtificingRecipeRequirements }
 export const getArtificingUnlockReason = getRecipeUnlockRequirement
@@ -97,7 +97,8 @@ export const getArtifactArtificingState = (state: GameState, recipeId: import('.
   const upgrade = getArtifactUpgrade(recipeId, level)
   if (level >= levelCap) return { ...base, mode: 'level-cap', reason: `Continue progression to unlock Artifact Level ${levelCap + 1}.` }
   if (!upgrade) return { ...base, mode: 'max-level', reason: 'MAX ARTIFACT LEVEL' }
-  return { ...base, mode: 'upgrade', ingredients: upgrade.ingredients, canStart: canUpgradeArtifact(state, recipeId), reason: canUpgradeArtifact(state, recipeId) ? undefined : 'Not enough legal upgrade materials.' }
+  const upgradeUnlocked = isArtifactUpgradeUnlocked(state, upgrade)
+  return { ...base, mode: 'upgrade', ingredients: upgrade.ingredients, canStart: upgradeUnlocked && canUpgradeArtifact(state, recipeId), reason: !upgradeUnlocked ? getArtifactUpgradeUnlockRequirement(upgrade) ?? 'Artifact upgrade is locked.' : canUpgradeArtifact(state, recipeId) ? undefined : 'Not enough legal upgrade materials.' }
 }
 export function getVisibleArtificingRecipes(state: GameState, filters: ArtificingFilters = DEFAULT_ARTIFICING_FILTERS, query = '', showLocked = state.debug.showLockedArtificingRecipes) {
   const search = query.trim().toLowerCase()

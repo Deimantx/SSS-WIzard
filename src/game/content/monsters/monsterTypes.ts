@@ -1,5 +1,7 @@
 import type { ActionPattern, ActionStep, BestiaryCategory, CombatActionDefinition, CombatEffect, CombatTag, DamageType, ItemId, Magnitude, MonsterId, StatusId, TraitId } from '../../types'
 import { periodicDamageStatus } from '../statuses/periodicDamageStatus'
+import { BOSS_REGULAR_EQUIPMENT_LOOT_CHANCE, BOSS_SIGNATURE_EQUIPMENT_LOOT_CHANCE, getDungeonArtifactEssenceRange, getDungeonBossSignature, getDungeonRegularEquipment, REGULAR_EQUIPMENT_LOOT_CHANCE } from '../dungeons/dungeonLoot'
+import type { DungeonId } from '../../types'
 
 export type MonsterPortraitIcon = 'wisp' | 'plant' | 'stone' | 'guardian' | 'wolf' | 'claw' | 'bear' | 'skeleton' | 'ghost' | 'mage' | 'boss'
 
@@ -35,6 +37,15 @@ export const basic = (id: string): ActionStep => ({ id, type: 'basic' })
 export const action = (id: string, actionId: string): ActionStep => ({ id, type: 'action', actionId })
 export const lifeEssenceDrop = { itemId: 'life-essence' as const, min: 1, max: 3, chance: 1 }
 export const withLifeEssence = (drops: MonsterDefinition['loot'], overrides: Partial<Pick<typeof lifeEssenceDrop, 'min' | 'max' | 'chance'>> = {}): MonsterDefinition['loot'] => [...drops, { ...lifeEssenceDrop, ...overrides }]
+export const withDungeonLoot = (dungeonId: DungeonId, role: 'normal' | 'boss', lifeEssence: Partial<Pick<typeof lifeEssenceDrop, 'min' | 'max' | 'chance'>> = {}): MonsterDefinition['loot'] => {
+  const essenceRange = getDungeonArtifactEssenceRange(dungeonId, role)
+  const regularChance = role === 'boss' ? BOSS_REGULAR_EQUIPMENT_LOOT_CHANCE : REGULAR_EQUIPMENT_LOOT_CHANCE
+  const drops: MonsterDefinition['loot'] = getDungeonRegularEquipment(dungeonId).map((itemId) => ({ itemId, min: 1, max: 1, chance: regularChance }))
+  drops.push({ itemId: 'artifact-essence', min: essenceRange[0], max: essenceRange[1], chance: 1 })
+  if (role === 'boss') drops.push({ itemId: getDungeonBossSignature(dungeonId), min: 1, max: 1, chance: BOSS_SIGNATURE_EQUIPMENT_LOOT_CHANCE })
+  drops.push({ ...lifeEssenceDrop, ...lifeEssence })
+  return drops
+}
 
 /** Default Monster authoring: damage scales from Basic Attack Damage. */
 export const scaledDirectDamage = (damageType: DamageType, coefficient: number, tags: CombatTag[] = ['direct']): CombatEffect => ({ type: 'deal-damage', target: 'opponent', components: [{ damageType, magnitude: { type: 'source-basic-damage-percent', value: coefficient } }], tags })

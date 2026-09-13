@@ -2,6 +2,7 @@ import { ARTIFACTS, type ArtifactNodeDefinition } from '../../content/artifacts/
 import { DUNGEONS, isDungeonUnlocked as isDungeonDefinitionUnlocked } from '../../content/dungeons/dungeons'
 import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
 import { grantItem } from '../inventory/itemAcquisition'
+import { getRecipeUnlockRequirement, isRecipeUnlocked } from '../../content/recipes/recipeUnlocks'
 import type { ArtifactId, ArtifactProgressState, GameState, ItemId } from '../../types'
 
 const EMPTY: ArtifactProgressState = { level: 1, allocatedNodeIds: [], attunedNodeIds: [] }
@@ -36,9 +37,11 @@ export const getAllocatedArtifactCombatProviders = (state: Pick<GameState, 'arti
   return (definition?.nodes.filter(node => allocated.has(node.id)) ?? []).map(node => ({ node, modifiers: node.combat?.modifiers ?? [], rules: node.combat?.rules ?? [] }))
 }
 export const getArtifactUpgrade = (id: ArtifactId, fromLevel: number) => ARTIFACTS[id]?.upgrades.find(upgrade => upgrade.fromLevel === fromLevel) ?? null
+export const isArtifactUpgradeUnlocked = (state: Pick<GameState, 'progress'> & Partial<Pick<GameState, 'debug'>>, upgrade: Pick<NonNullable<ReturnType<typeof getArtifactUpgrade>>, 'unlock'>) => !upgrade.unlock || Boolean(state.debug?.artifactIgnoreDungeonGate) || isRecipeUnlocked(state, { unlock: upgrade.unlock })
+export const getArtifactUpgradeUnlockRequirement = (upgrade: Pick<NonNullable<ReturnType<typeof getArtifactUpgrade>>, 'unlock'>) => upgrade.unlock ? getRecipeUnlockRequirement({ unlock: upgrade.unlock }) : null
 export const canUpgradeArtifact = (state: Pick<GameState, 'artifactProgress' | 'progress' | 'inventory' | 'protectedItems' | 'equipment' | 'activities'> & Partial<Pick<GameState, 'debug'>>, id: ArtifactId) => {
   const definition = ARTIFACTS[id]; const progress = state.artifactProgress?.[id]; const upgrade = progress ? getArtifactUpgrade(id, progress.level) : null
-  return Boolean(definition && progress && (state.inventory[id] ?? 0) > 0 && progress.level < getArtifactLevelCap(state, id) && upgrade && (state.debug?.artifactFreeUpgrade || upgrade.ingredients.every(item => getConsumableQuantity(state, item.itemId) >= item.quantity)))
+  return Boolean(definition && progress && (state.inventory[id] ?? 0) > 0 && progress.level < getArtifactLevelCap(state, id) && upgrade && isArtifactUpgradeUnlocked(state, upgrade) && (state.debug?.artifactFreeUpgrade || upgrade.ingredients.every(item => getConsumableQuantity(state, item.itemId) >= item.quantity)))
 }
 export const getArtifactNode = (id: ArtifactId, nodeId: string) => ARTIFACTS[id]?.nodes.find(node => node.id === nodeId) ?? null
 export type ArtifactNodeEligibilityStatus = 'allocated' | 'attuned' | 'available' | 'missingLevel' | 'missingPoints' | 'missingPrerequisites' | 'missingBoss' | 'missingCatalyst' | 'unowned'

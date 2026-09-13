@@ -1,5 +1,5 @@
 import type { MonsterId } from '../../types'
-import { action, applyStatus, basic, delayBasicAttack, scaledBarrier, scaledDirectDamage, scaledDot, scaledHeal, withLifeEssence, type MonsterDefinition } from './monsterTypes'
+import { action, applyStatus, basic, delayBasicAttack, scaledBarrier, scaledDirectDamage, scaledDot, scaledHeal, withDungeonLoot, type MonsterDefinition } from './monsterTypes'
 
 export const WHISPERING_WOODS_MONSTERS = {
   'forest-wisp': {
@@ -7,21 +7,21 @@ export const WHISPERING_WOODS_MONSTERS = {
     maxHealth: 200, basicAttackDamage: 10, basicAttackTimeMs: 2800, defense: 8, color: '#aa9aff', ui: { portraitIcon: 'wisp' }, traitIds: ['forest-wisp-flicker'],
     actions: { 'arc-spark': { id: 'arc-spark', name: 'Arc Spark', actionTimeMs: 2000, description: 'A bright Arcane spark lashes the target.', effects: [scaledDirectDamage('arcane', 2.4)], tags: ['special', 'magic', 'arcane', 'direct'] } },
     actionPatterns: { default: { id: 'default', steps: [basic('basic-1'), basic('basic-2'), action('arc-spark-step', 'arc-spark')] } }, defaultActionPatternId: 'default',
-    loot: withLifeEssence([{ itemId: 'wisp-essence', min: 1, max: 2, chance: 0.4 }]),
+    loot: withDungeonLoot('whispering-woods', 'normal'),
   },
   thornling: {
     id: 'thornling', bestiaryCategory: 'monster', name: 'Thornling', subtitle: 'A knot of spite and briars',
     maxHealth: 240, basicAttackDamage: 12, basicAttackTimeMs: 2500, defense: 12, color: '#cb7899', ui: { portraitIcon: 'plant' }, traitIds: ['thornling-barkskin'],
     actions: { 'thorn-lash': { id: 'thorn-lash', name: 'Thorn Lash', actionTimeMs: 1800, description: 'A thorned lash cuts the target and leaves a lingering Thorn Wound.', effects: [scaledDirectDamage('physical', 1.25), scaledDot('thorn-wound', 'physical', 1.125, 6000)], tags: ['special', 'physical', 'debuff'] } },
     actionPatterns: { default: { id: 'default', steps: [basic('basic-1'), basic('basic-2'), action('thorn-lash-step', 'thorn-lash')] } }, defaultActionPatternId: 'default',
-    loot: withLifeEssence([{ itemId: 'thorn-fiber', min: 1, max: 2, chance: 0.4}]),
+    loot: withDungeonLoot('whispering-woods', 'normal'),
   },
   'stone-root': {
     id: 'stone-root', bestiaryCategory: 'monster', name: 'Stone Root', subtitle: 'The forest floor given a heartbeat',
     maxHealth: 280, basicAttackDamage: 12, basicAttackTimeMs: 3200, defense: 12, color: '#b28f79', ui: { portraitIcon: 'stone' }, traitIds: ['stone-rooted-shell'],
     actions: { 'root-slam': { id: 'root-slam', name: 'Root Slam', actionTimeMs: 2500, description: "A crushing root strike disrupts the Player's Basic Attack rhythm.", effects: [scaledDirectDamage('physical', 1.65), delayBasicAttack(700)], tags: ['special', 'physical', 'control'] } },
     actionPatterns: { default: { id: 'default', steps: [basic('basic-1'), basic('basic-2'), basic('basic-3'), action('root-slam-step', 'root-slam')] } }, defaultActionPatternId: 'default',
-    loot: withLifeEssence([{ itemId: 'rootstone-shard', min: 1, max: 2, chance: 0.4 }], { chance: 0.4 }),
+    loot: withDungeonLoot('whispering-woods', 'normal', { chance: 0.4 }),
   },
   'grove-sentinel': {
     id: 'grove-sentinel', bestiaryCategory: 'monster', name: 'Grove Sentinel', subtitle: 'An ancient guardian of the inner grove',
@@ -31,7 +31,7 @@ export const WHISPERING_WOODS_MONSTERS = {
       'verdant-guard': { id: 'verdant-guard', name: 'Verdant Guard', actionTimeMs: 2500, description: 'The guardian gathers living energy into a protective Barrier.', effects: [scaledBarrier(1 / 6)], tags: ['special', 'barrier'] },
     },
     actionPatterns: { default: { id: 'default', steps: [basic('basic-1'), basic('basic-2'), action('root-crush-step', 'root-crush'), basic('basic-3'), action('verdant-guard-step', 'verdant-guard')] } }, defaultActionPatternId: 'default',
-    loot: withLifeEssence([{ itemId: 'grove-bark', min: 1, max: 2, chance: 0.4 }], { min: 2, max: 5 }),
+    loot: withDungeonLoot('whispering-woods', 'normal', { min: 2, max: 5 }),
   },
   'forest-heart': {
     id: 'forest-heart', bestiaryCategory: 'boss', name: 'Forest Heart', subtitle: 'The pulse beneath the roots',
@@ -42,13 +42,7 @@ export const WHISPERING_WOODS_MONSTERS = {
       'rejuvenating-sap': { id: 'rejuvenating-sap', name: 'Rejuvenating Sap', actionTimeMs: 3000, description: 'The Heart draws restorative sap inward to recover Health.', effects: [scaledHeal(0.1)], tags: ['special', 'heal', 'direct'] },
     },
     actionPatterns: { default: { id: 'default', steps: [basic('basic-1'), basic('basic-2'), action('heart-pulse-step', 'heart-pulse'), basic('basic-3'), basic('basic-4'), action('root-prison-step', 'root-prison'), basic('basic-5'), basic('basic-6'), basic('basic-7'), action('sap-step', 'rejuvenating-sap')] } }, defaultActionPatternId: 'default',
-    loot: withLifeEssence([
-      { itemId: 'wisp-essence', min: 1, max: 2, chance: 1 },
-      { itemId: 'thorn-fiber', min: 1, max: 2, chance: 1 },
-      { itemId: 'rootstone-shard', min: 1, max: 2, chance: 1 },
-      { itemId: 'grove-bark', min: 1, max: 2, chance: 1 },
-      { itemId: 'heartseed', min: 1, max: 1, chance: 1 },
-    ], { min: 10, max: 18 }),
+    loot: withDungeonLoot('whispering-woods', 'boss', { min: 10, max: 18 }),
   },
 } satisfies Partial<Record<MonsterId, MonsterDefinition>>
 

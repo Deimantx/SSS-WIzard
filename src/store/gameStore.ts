@@ -571,8 +571,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     }
     if (name === 'boss') {
       state.inventory['fire-fragment'] = 15
-      state.inventory['wisp-essence'] = 10
-      state.inventory['grove-bark'] = 2
+      state.inventory['artifact-essence'] = 20
       state.schools.fire = { xp: getSchoolLevelStartXp(4), level: 4 }
       syncSpellUnlocksForSchool(state, 'fire')
       state.progress.guildUnlocked = true
@@ -601,8 +600,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     }
     if (name === 'main-boss' || name === 'chapter-complete') {
       state.inventory['fire-fragment'] = 20
-      state.inventory['wisp-essence'] = 12
-      state.inventory['grove-bark'] = 4
+      state.inventory['artifact-essence'] = 20
       state.progress.guildUnlocked = true
       state.progress.guildRank = 'apprentice'
       state.progress.firstBossKill = true
@@ -615,7 +613,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
       state.schools.fire = { xp: getSchoolLevelStartXp(20), level: 20 }
       syncSpellUnlocksForSchool(state, 'fire')
       state.progress.firstMainBossKill = true
-      state.inventory.heartseed = 1
+      state.inventory['artifact-essence'] = 500
       recalculateDerivedStats(state)
       state.combat.active = true
       state.combat.dungeonId = 'whispering-woods'
@@ -668,7 +666,7 @@ const applyDeveloperFixture = (fixture: DeveloperFixtureId) => {
         state.progress.forestHeartUnlocked = true
         state.progress.autoHuntBossUnlocked = true
         state.inventory['fire-fragment'] = 20
-        state.inventory['wisp-essence'] = 12
+        state.inventory['artifact-essence'] = 20
       }
       if (completedDungeons >= 2) state.progress.magicLevelCap = Math.max(state.progress.magicLevelCap, BALANCE.schoolProgression.tutorialCompleteCap)
       const fixtureLevel = completedDungeons > 0 ? 4 : 2

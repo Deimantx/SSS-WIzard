@@ -9,6 +9,7 @@ import { STATUS_DEFINITIONS } from '../statuses/statuses'
 import { MAX_ACTION_WORK_MS, MIN_ACTION_TIME_MS } from '../../core/balance/combatTiming'
 import { MAX_BLOCK_CHANCE, MAX_CRIT_CHANCE, MAX_CRIT_DAMAGE_MULTIPLIER, MAX_RESISTANCE, MIN_RESISTANCE } from '../../core/balance/combatStats'
 import { ITEMS } from '../items/items'
+import { ARTIFACTS } from '../artifacts/artifacts'
 
 export type { MonsterDefinition } from './monsterTypes'
 export { WHISPERING_WOODS_MONSTERS, WHISPERING_WOODS_MONSTER_IDS } from './whisperingWoods'
@@ -42,7 +43,8 @@ export const validateMonsterDefinitions = (monsters: Record<string, MonsterDefin
     monster.loot.forEach((drop) => {
       const item = ITEMS[drop.itemId]
       if (!item) errors.push(`${monster.id}: unknown loot item ${drop.itemId}`)
-      else if (item.kind !== 'material') errors.push(`${monster.id}: monster loot may only contain materials; ${drop.itemId} is ${item.kind}`)
+      else if (item.kind === 'equipment' && ARTIFACTS[drop.itemId]) errors.push(`${monster.id}: monster loot may not contain Artifact Equipment; ${drop.itemId}`)
+      else if (item.kind !== 'material' && item.kind !== 'equipment') errors.push(`${monster.id}: monster loot may only contain materials or non-Artifact Equipment; ${drop.itemId} is ${item.kind}`)
       if (!Number.isFinite(drop.chance) || drop.chance < 0 || drop.chance > 1) errors.push(`${monster.id}: invalid loot chance`)
       if (!Number.isInteger(drop.min) || !Number.isInteger(drop.max) || drop.min < 1 || drop.max < drop.min) errors.push(`${monster.id}: invalid loot quantity`)
     })

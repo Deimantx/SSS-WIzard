@@ -123,6 +123,38 @@ export function getEquipmentPrimarySummary(itemId: ItemId, state?: Pick<GameStat
   return entries.length ? entries.map(([key, value]) => `${formatEquipmentStat(key, Number(value))} ${getEquipmentStatLabel(key)}`).join(' · ') : null
 }
 
+export interface EquipmentPreviewTargetOptions {
+  itemId: ItemId
+  selectedPosition: EquipmentPosition | null
+  ringReplacement: EquipmentPosition | null
+  equipment: GameState['equipment']
+}
+
+const isRingPosition = (position: EquipmentPosition | null): position is 'ring1' | 'ring2' => position === 'ring1' || position === 'ring2'
+
+/**
+ * Resolves the slot the Equipment UI should preview without allowing a stale
+ * browsing target to make a valid item look incompatible.
+ *
+ * `selectedPosition` is an explicit loadout target. When it does not fit the
+ * selected item, the item's authored natural slot wins. Rings retain an
+ * explicit replacement choice, otherwise they prefer an open ring position.
+ */
+export function resolveEquipmentPreviewTarget({ itemId, selectedPosition, ringReplacement, equipment }: EquipmentPreviewTargetOptions): EquipmentPosition | undefined {
+  const item = ITEMS[itemId]
+  if (!item?.equipmentSlot) return undefined
+
+  if (item.equipmentSlot === 'ring') {
+    if (isRingPosition(ringReplacement)) return ringReplacement
+    if (isRingPosition(selectedPosition)) return selectedPosition
+    if (!equipment.ring1) return 'ring1'
+    if (!equipment.ring2) return 'ring2'
+    return undefined
+  }
+
+  return selectedPosition === item.equipmentSlot ? selectedPosition : item.equipmentSlot as EquipmentPosition
+}
+
 /** Compatibility projections for the current Equipment sheet; filtered modifiers use the generic evaluator. */
 const getStableEquipmentModifiers = (state: EquipmentSheetState, equipment: GameState['equipment']) => ({
   fireSpellDamage: getEquipmentCombatModifierTotal({ ...state, equipment }, 'spell-damage-percent', { originSourceKinds: ['spell'], damageType: 'fire' }),

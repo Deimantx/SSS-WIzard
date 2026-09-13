@@ -3,11 +3,13 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { TooltipProvider } from '../../components/ui/tooltip/Tooltip'
 import { GameContextMenuProvider } from '../../ui/context-menu/GameContextMenuProvider'
 import { useGameStore } from '../../store/gameStore'
+import { setNavigationIntent } from '../../ui/navigation/navigationIntent'
 import { EquipmentScreen } from './EquipmentScreen'
 
 describe('EquipmentScreen stat typography structure', () => {
   beforeEach(() => {
     window.localStorage.clear()
+    setNavigationIntent({ equipmentItemId: null, equipmentPosition: null })
     useGameStore.getState().resetSave()
   })
 
@@ -52,9 +54,10 @@ describe('EquipmentScreen stat typography structure', () => {
     const gravebinderCard = Array.from(container.querySelectorAll('.equipment-armory-card')).find((card) => card.textContent?.includes('Gravebinder Ring')) as HTMLElement | undefined
     expect(gravebinderCard).toBeTruthy()
     fireEvent.click(gravebinderCard as HTMLElement)
-    expect(screen.getByText(/OWNED 1/)).toBeTruthy()
-    expect(screen.getByText(/EQUIPPED 1/)).toBeTruthy()
-    expect(screen.getByText(/AVAILABLE 0/)).toBeTruthy()
+    const availability = container.querySelector('.equipment-copy-availability')
+    expect(availability?.textContent?.replace(/\s+/g, '')).toContain('OWNED1')
+    expect(availability?.textContent?.replace(/\s+/g, '')).toContain('EQUIPPED1')
+    expect(availability?.textContent?.replace(/\s+/g, '')).toContain('AVAILABLE0')
   })
 
   it('renders one Weapon slot and no Offhand position', () => {
@@ -130,5 +133,71 @@ describe('EquipmentScreen stat typography structure', () => {
 
     expect(Array.from(container.querySelectorAll('.equipment-inspector-meta strong')).some((element) => element.textContent?.includes('T1 ARTIFACT'))).toBe(true)
     expect(screen.queryByText(/TIER 1 ARTIFACT/)).toBeNull()
+  })
+
+  it('opens without an implicit Weapon target', () => {
+    const state = useGameStore.getState()
+    useGameStore.setState({ inventory: { ...state.inventory, 'ember-staff': 1 } })
+    const { container } = render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
+
+    expect(container.querySelector('.equipment-slot-card.selected')).toBeNull()
+    expect(container.querySelector('.equipment-preview-slot-context')?.textContent).toContain('FITS')
+    expect(container.querySelector('.equipment-preview-slot-context')?.textContent).toContain('WEAPON')
+  })
+
+  it('makes an empty Cape slot an explicit target and keeps Cape gear compatible', () => {
+    const state = useGameStore.getState()
+    useGameStore.setState({ inventory: { ...state.inventory, 'grovekeeper-mantle': 1 } })
+    const { container } = render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
+
+    fireEvent.click(container.querySelector('.equipment-slot-card[data-position="cape"]') as HTMLElement)
+    expect(container.querySelector('.equipment-slot-card[data-position="cape"]')?.classList.contains('selected')).toBe(true)
+    expect(container.querySelector('.equipment-target-chip')?.textContent).toContain('TARGET SLOTCAPE')
+    expect(screen.getByRole('tab', { name: 'CAPE' }).getAttribute('aria-selected')).toBe('true')
+    fireEvent.click(container.querySelector('.equipment-armory-card[data-item-id="grovekeeper-mantle"]') as HTMLElement)
+
+    expect(container.querySelector('.equipment-preview-slot-context')?.textContent).toContain('TARGET SLOTCAPE')
+    expect(screen.queryByText('INCOMPATIBLE')).toBeNull()
+  })
+
+  it('derives a natural slot after ALL clears an explicit target', () => {
+    const state = useGameStore.getState()
+    useGameStore.setState({ inventory: { ...state.inventory, 'ember-staff': 1, 'grovekeeper-mantle': 1 } })
+    const { container } = render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
+
+    fireEvent.click(container.querySelector('.equipment-slot-card[data-position="weapon"]') as HTMLElement)
+    fireEvent.click(screen.getByRole('tab', { name: 'ALL' }))
+    fireEvent.click(container.querySelector('.equipment-armory-card[data-item-id="grovekeeper-mantle"]') as HTMLElement)
+
+    expect(container.querySelector('.equipment-target-chip')).toBeNull()
+    expect(container.querySelector('.equipment-preview-slot-context')?.textContent?.replace(/\s+/g, '')).toContain('FITSCAPE')
+    expect(screen.queryByText('INCOMPATIBLE')).toBeNull()
+  })
+
+  it('keeps category filters as browsing state instead of loadout targets', () => {
+    const state = useGameStore.getState()
+    useGameStore.setState({ inventory: { ...state.inventory, 'ember-staff': 1, 'grovekeeper-mantle': 1 } })
+    const { container } = render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
+
+    fireEvent.click(screen.getByRole('tab', { name: 'CAPE' }))
+    expect(container.querySelector('.equipment-target-chip')).toBeNull()
+    fireEvent.click(screen.getByRole('tab', { name: 'WEAPON' }))
+
+    expect(container.querySelector('.equipment-target-chip')).toBeNull()
+    expect(container.querySelector('.equipment-inspector-hero h3')?.textContent).toBe('Ember Staff')
+    expect(screen.queryByText('INCOMPATIBLE')).toBeNull()
+  })
+
+  it('keeps an explicit Weapon target visible in the Armory and Inspector', () => {
+    const state = useGameStore.getState()
+    useGameStore.setState({ inventory: { ...state.inventory, 'ember-staff': 1 } })
+    const { container } = render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
+
+    fireEvent.click(container.querySelector('.equipment-slot-card[data-position="weapon"]') as HTMLElement)
+    fireEvent.click(container.querySelector('.equipment-armory-card[data-item-id="ember-staff"]') as HTMLElement)
+
+    expect(container.querySelector('.equipment-target-chip')?.textContent).toContain('TARGET SLOTWEAPON')
+    expect(container.querySelector('.equipment-preview-slot-context')?.textContent).toContain('TARGET SLOTWEAPON')
+    expect(screen.getByRole('button', { name: 'EQUIP' }).hasAttribute('disabled')).toBe(false)
   })
 })

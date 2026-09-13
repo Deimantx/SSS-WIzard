@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
-import { getEquipmentKeyChanges, getEquipmentLoadoutIdentity, getEquipmentPreview, getEquipmentStatSnapshot } from './equipmentReadModel'
+import { getEquipmentKeyChanges, getEquipmentLoadoutIdentity, getEquipmentPreview, getEquipmentStatSnapshot, resolveEquipmentPreviewTarget } from './equipmentReadModel'
 
 describe('Equipment read model', () => {
   it('uses authored sheet inputs without borrowing transient encounter state', () => {
@@ -57,5 +57,25 @@ describe('Equipment read model', () => {
     const changes = getEquipmentKeyChanges({ maxHealth: 10, basicDamage: 7, spellPower: 17, maxMana: -42, maxFocus: -20, defense: 3, critChance: 0.04 })
     expect(changes.map(({ key }) => key)).toEqual(['maxHealth', 'basicDamage', 'spellPower', 'maxMana', 'maxFocus'])
     expect(changes[1]).toMatchObject({ label: 'Basic Attack Damage', formatted: '+7', direction: 'increase' })
+  })
+
+  it('uses the item natural slot when an explicit target is incompatible', () => {
+    const state = createInitialState()
+    state.inventory['grovekeeper-mantle'] = 1
+
+    expect(resolveEquipmentPreviewTarget({ itemId: 'grovekeeper-mantle', selectedPosition: 'weapon', ringReplacement: null, equipment: state.equipment })).toBe('cape')
+    expect(getEquipmentPreview(state, 'grovekeeper-mantle', 'cape')).toMatchObject({ compatible: true, position: 'cape' })
+  })
+
+  it('preserves ring targets and prefers an open ring when browsing neutrally', () => {
+    const state = createInitialState()
+    state.inventory['gravebinder-ring'] = 1
+
+    expect(resolveEquipmentPreviewTarget({ itemId: 'gravebinder-ring', selectedPosition: null, ringReplacement: null, equipment: state.equipment })).toBe('ring1')
+    state.equipment.ring1 = 'wispbound-ring'
+    expect(resolveEquipmentPreviewTarget({ itemId: 'gravebinder-ring', selectedPosition: null, ringReplacement: null, equipment: state.equipment })).toBe('ring2')
+    state.equipment.ring2 = 'tideglass-wand'
+    expect(resolveEquipmentPreviewTarget({ itemId: 'gravebinder-ring', selectedPosition: 'weapon', ringReplacement: null, equipment: state.equipment })).toBeUndefined()
+    expect(resolveEquipmentPreviewTarget({ itemId: 'gravebinder-ring', selectedPosition: 'weapon', ringReplacement: 'ring1', equipment: state.equipment })).toBe('ring1')
   })
 })

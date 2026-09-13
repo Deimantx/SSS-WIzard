@@ -1241,3 +1241,183 @@
     border-left: 0;
   }
 }
+
+/* Equipment UX / Layout Fix: keep browsing neutral and give the Armory enough room to speak. */
+.equipment-screen .equipment-target-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: 0 0 8px;
+  padding: 6px 8px;
+  border: 1px solid color-mix(in srgb, var(--ui-accent) 48%, var(--ui-border));
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--ui-accent) 8%, var(--ui-panel-strong));
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-mono);
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.equipment-screen .equipment-target-chip span {
+  color: var(--ui-accent);
+}
+
+.equipment-screen .equipment-target-chip strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ui-text);
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.equipment-screen .equipment-target-chip button {
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding: 2px 5px;
+  border: 1px solid color-mix(in srgb, var(--ui-accent) 44%, var(--ui-border));
+  border-radius: 4px;
+  color: var(--ui-accent);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  letter-spacing: .07em;
+}
+
+.equipment-screen .equipment-target-chip button:hover,
+.equipment-screen .equipment-target-chip button:focus-visible {
+  border-color: var(--ui-accent);
+  color: var(--ui-text);
+  background: var(--ui-accent-soft);
+  outline: none;
+}
+
+.equipment-screen .equipment-preview-slot-context {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  margin-top: 5px;
+  padding: 3px 5px;
+  border: 1px solid color-mix(in srgb, var(--ui-border) 92%, var(--ui-accent));
+  border-radius: 4px;
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-mono);
+  letter-spacing: .06em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.equipment-screen .equipment-preview-slot-context span {
+  color: var(--ui-text-muted);
+}
+
+.equipment-screen .equipment-preview-slot-context strong {
+  overflow: hidden;
+  color: var(--ui-text-soft);
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.equipment-screen .equipment-preview-slot-context.is-explicit {
+  border-color: color-mix(in srgb, var(--ui-accent) 52%, var(--ui-border));
+  background: color-mix(in srgb, var(--ui-accent) 7%, transparent);
+}
+
+/* The tuning bridge may supply a smaller legacy minimum; preserve its larger custom values while protecting readability. */
+.equipment-screen .equipment-armory-panel .equipment-armory-grid {
+  grid-template-columns: repeat(auto-fill, minmax(max(170px, var(--ui-tuning-equipment-min-width, 170px)), 1fr));
+  grid-auto-rows: max(96px, var(--ui-tuning-equipment-height, 96px));
+  align-content: start;
+}
+
+.equipment-screen .equipment-armory-panel .equipment-armory-card {
+  grid-template-columns: 38px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-height: 96px;
+  padding: 8px;
+}
+
+.equipment-screen .equipment-armory-panel .equipment-armory-icon {
+  grid-column: 1;
+  grid-row: 1 / -1;
+}
+
+.equipment-screen .equipment-armory-panel .equipment-armory-copy {
+  grid-column: 2;
+  grid-row: 1;
+  width: 100%;
+  min-width: 0;
+}
+
+.equipment-screen .equipment-armory-panel .equipment-armory-markers {
+  grid-column: 2;
+  grid-row: 2;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  max-height: 18px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  overflow: hidden;
+}
+
+.equipment-screen .equipment-armory-panel .equipment-armory-markers > * {
+  max-width: 100%;
+}
+
+.equipment-screen .equipment-armory-panel .equipment-armory-summary {
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.equipment-screen .equipment-armory-panel .equipment-slot-card,
+.equipment-screen .equipment-armory-panel .equipment-armory-card {
+  box-sizing: border-box;
+}
+
+.equipment-screen .equipment-slot-card.selected {
+  border-color: color-mix(in srgb, var(--item-color, var(--ui-accent)) 82%, var(--ui-text));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--item-color, var(--ui-accent)) 38%, transparent), 0 0 0 1px color-mix(in srgb, var(--item-color, var(--ui-accent)) 35%, transparent), 0 7px 22px color-mix(in srgb, var(--item-color, var(--ui-accent)) 16%, transparent);
+}
+
+.equipment-screen .equipment-slot-empty {
+  min-width: 0;
+  padding: 2px 0;
+  line-height: 1.2;
+}
+
+.equipment-screen .equipment-slot-empty small {
+  max-width: 100%;
+  overflow: hidden;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.equipment-screen .screen-grid-panel-content > .equipment-armory-panel {
+  align-self: start;
+  flex: 0 1 auto;
+  height: fit-content;
+  min-height: 0;
+  max-height: 100%;
+}
+
+.equipment-screen .equipment-armory-panel .equipment-armory-grid {
+  flex: 0 1 auto;
+  max-height: 100%;
+}
+
+@media (max-width: 760px) {
+  .equipment-screen .equipment-armory-panel .equipment-armory-grid {
+    grid-template-columns: 1fr;
+    grid-auto-rows: max(96px, var(--ui-tuning-equipment-height, 96px));
+  }
+
+  .equipment-screen .equipment-target-chip {
+    flex-wrap: wrap;
+  }
+}

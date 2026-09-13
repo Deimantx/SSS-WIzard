@@ -32,6 +32,12 @@ export interface ArtifactDefinition {
   nodes: ArtifactNodeDefinition[]
 }
 
+export const ARTIFACT_LEVEL_BANDS = [
+  { maxLevel: 4, unlock: { type: 'always' } },
+  { maxLevel: 7, unlock: { type: 'boss-kill', bossId: 'forest-heart' } },
+  { maxLevel: 10, unlock: { type: 'boss-kill', bossId: 'corrupted-greatbear' } },
+] as const satisfies readonly { maxLevel: number; unlock: RecipeUnlockCondition }[]
+
 const upgrade = (fromLevel: number, ingredients: ArtifactLevelUpgradeDefinition['ingredients'], unlock?: RecipeUnlockCondition) => ({ fromLevel, toLevel: fromLevel + 1, ingredients, ...(unlock ? { unlock } : {}) })
 const emberNodes: ArtifactNodeDefinition[] = [
   { id: 'arcane-kindling', artifactId: 'ember-staff', name: 'Arcane Kindling', type: 'minor', branch: 'shared', pointCost: 1, requiresLevel: 2, combat: { modifiers: [{ key: 'spell-damage-percent', value: 0.05, originSourceKinds: ['spell'], damageTypes: ['fire'] }] } },
@@ -61,10 +67,11 @@ const PRISMATIC_UPGRADE_COSTS = [
   [2, 10], [4, 20], [7, 40], [10, 60], [15, 100],
   [20, 150], [28, 200], [38, 300], [50, 500],
 ] as const
-const upgradeUnlock = (fromLevel: number): RecipeUnlockCondition | undefined =>
-  fromLevel === 4 ? { type: 'boss-kill', bossId: 'forest-heart' } :
-  fromLevel === 7 ? { type: 'boss-kill', bossId: 'corrupted-greatbear' } :
-  undefined
+const getArtifactLevelBand = (level: number) => ARTIFACT_LEVEL_BANDS.find((band, index) => level <= band.maxLevel && level > (ARTIFACT_LEVEL_BANDS[index - 1]?.maxLevel ?? 0))
+const upgradeUnlock = (fromLevel: number): RecipeUnlockCondition | undefined => {
+  const band = getArtifactLevelBand(fromLevel + 1)
+  return band?.unlock.type === 'always' ? undefined : band?.unlock
+}
 const createUpgradeCurve = (fragment: ItemId, costs: readonly (readonly [number, number])[]) =>
   costs.map(([fragmentQuantity, essenceQuantity], index) =>
     upgrade(index + 1, [material(fragment, fragmentQuantity), material('artifact-essence', essenceQuantity)], upgradeUnlock(index + 1)),

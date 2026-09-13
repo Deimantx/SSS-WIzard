@@ -144,7 +144,7 @@ If I know **what I want to change**, start here instead of searching the whole r
 | Allowed Equipment stat fields | `src/game/types.ts` | Check `EquipmentStats` before inventing a field |
 | Equipment internal tier / player-facing tier mapping / build tags / budget profiles | `src/game/content/items/equipmentBalance.ts` | Internal `1.0 / 1.3 / 1.6` currently all display as player-facing `T1` through `Math.floor()` |
 | Equipment slots / ring positions / Earring support | `src/game/types.ts` | Item slot uses `ring`; loadout uses `ring1` + `ring2`; `earring` is its own slot |
-| Normal Artificing Equipment recipe costs | `src/game/content/recipes/artificingRecipes.ts` | For non-Artifact Equipment this is the recipe cost source |
+| Starter Artifact forge ingredients / upgrade costs | `src/game/content/artifacts/artifacts.ts` | Authoritative Artifact forge and level-up cost source; keep the recipe mirror synchronized |
 | Artificing unlock conditions | `src/game/content/recipes/artificingRecipes.ts` + `src/game/content/recipes/recipeUnlocks.ts` | Existing unlock types are easier to tune than inventing new ones |
 | Artificing Artifact-vs-Equipment / tier catalog UI | `src/screens/tower/artificing/EquipmentCatalog.tsx` | UI/filter behavior, not balance data |
 | **Artifact base item identity / slot / build tags** | `src/game/content/items/items.ts` | Name, description, slot, color, tags; **not** Artifact level scaling |
@@ -166,10 +166,10 @@ If I know **what I want to change**, start here instead of searching the whole r
 | **Artifact Path small inline Dev panel** | `src/components/artifacts/ArtifactPathDevMiniPanel.tsx` | Only shown when enabled from DevTools |
 | **Artifact debug state/actions** | `src/store/gameStore.ts` + `src/game/systems/artifacts/artifactProgression.ts` | Dev bypasses ultimately affect runtime state/eligibility |
 | Transmutation costs / Mana / time / ingredients | `src/game/content/recipes/transmutationRecipes.ts` | Base fragments + Prismatic Fragment |
-| Whispering Woods monsters + loot | `src/game/content/monsters/whisperingWoods.ts` | Wisp / Thorn / Rootstone / Grove + Heartseed boss |
-| Howling Den monsters + loot | `src/game/content/monsters/howlingDen.ts` | Fang / Hide / Corrupted Essence / Sinew + Greatbear Core |
-| Abandoned Catacombs monsters + loot | `src/game/content/monsters/abandonedCatacombs.ts` | Ossuary / Soul / Graveglass / Burial Cloth + Edrin Remnant |
-| Monster helper/effect syntax | `src/game/content/monsters/monsterTypes.ts` | Includes `withLifeEssence()` |
+| Whispering Woods monsters + loot | `src/game/content/monsters/whisperingWoods.ts` | Shared regular Equipment pool + Artifact Essence + Life Essence; Heartseed Necklace is the boss signature |
+| Howling Den monsters + loot | `src/game/content/monsters/howlingDen.ts` | Shared regular Equipment pool + Artifact Essence + Life Essence; Greatbear Heartstone is the boss signature |
+| Abandoned Catacombs monsters + loot | `src/game/content/monsters/abandonedCatacombs.ts` | Shared regular Equipment pool + Artifact Essence + Life Essence; Edrin's Signet is the boss signature |
+| Monster helper/effect syntax | `src/game/content/monsters/monsterTypes.ts` | Includes `withDungeonLoot()` and Life Essence overrides |
 | Dungeon pools / bosses / Threat requirements / encounter delay / unlock chain | `src/game/content/dungeons/dungeons.ts` | Current T1 dungeons are 20 / 25 / 30 Threat |
 | Spell Mana / cooldown / unlock / effect numbers | `src/game/content/spells/spells.ts` | Main spell content |
 | Magic School definitions | `src/game/content/schools/schools.ts` | School-authored content |
@@ -677,7 +677,7 @@ src/game/content/recipes/artificingRecipes.ts
 This file contains the Artificing recipe catalog used for:
 
 ```text
-normal Equipment recipes
+starter Artifact forge recipes and upgrade costs
 Artifact recipe mirrors / presentation
 ingredients
 quantities
@@ -701,7 +701,7 @@ The Artifact recipe mirror is intentionally validated against the Artifact forge
 
 So for an Artifact Forge cost change I must update **both files**.
 
-Current recipe helper gives Equipment recipes:
+Current recipe helper gives Artifact recipes:
 
 ```ts
 baseDurationMs: 5000
@@ -716,16 +716,14 @@ unless later architecture changes it.
 Example:
 
 ```ts
-'heartseed-necklace': equipmentRecipe(
-  'heartseed-necklace',
-  'Heartseed Necklace',
-  [
-    { itemId: 'heartseed', quantity: 8 }
-  ],
-  'whispering-woods',
-  { type: 'boss-kill', bossId: 'forest-heart' },
-  'A living boss material shaped into a protective amulet.'
-),
+ARTIFACTS['ember-staff'] = {
+  forge: {
+    ingredients: [
+      material('fire-fragment', 20),
+      material('artifact-essence', 20),
+    ],
+  },
+}
 ```
 
 If I want:
@@ -748,10 +746,8 @@ That is 🟢.
 
 ```ts
 [
-  { itemId: 'fire-fragment', quantity: 24 },
-  { itemId: 'air-fragment', quantity: 24 },
-  { itemId: 'wisp-essence', quantity: 18 },
-  { itemId: 'grove-bark', quantity: 3 },
+  material('fire-fragment', 300),
+  material('artifact-essence', 60),
 ]
 ```
 
@@ -873,13 +869,13 @@ This split is now important enough that I should not treat an Artifact like ordi
 
 # 18. ARTIFACT FORGE COSTS — IMPORTANT DUPLICATION RULE
 
-For normal Equipment, changing a recipe quantity in:
+For an Artifact, changing a forge or upgrade quantity in:
 
 ```text
 src/game/content/recipes/artificingRecipes.ts
 ```
 
-is normally enough.
+is not enough by itself; keep the authoritative Artifact definition and its recipe mirror synchronized.
 
 For an **Artifact Forge**, it is different.
 
@@ -915,12 +911,12 @@ Artifact Forge cost change
 Example shape:
 
 ```ts
-'prismatic-focus': {
+'ember-staff': {
   ...
   forge: {
     ingredients: [
-      material('prismatic-fragment', 2),
-      material('wisp-essence', 5),
+      material('fire-fragment', 20),
+      material('artifact-essence', 20),
       ...
     ],
   },
@@ -930,7 +926,7 @@ Example shape:
 and the same ingredients must exist in:
 
 ```ts
-ARTIFICING_RECIPES['prismatic-focus']
+ARTIFICING_RECIPES['ember-staff']
 ```
 
 Changing only `artificingRecipes.ts` can make the UI/data mirror disagree with the actual Artifact cost.
@@ -980,9 +976,8 @@ The same file contains arrays like:
 
 ```ts
 upgrade(4, [
-  material('predator-hide', 15),
-  material('predator-fang', 15),
-  ...
+  material('fire-fragment', 300),
+  material('artifact-essence', 60),
 ])
 ```
 
@@ -1029,16 +1024,16 @@ src/game/content/recipes/artificingRecipes.ts
 src/game/systems/artifacts/artifactProgression.ts
 ```
 
-Current normal cap structure is:
+Current normal cap structure is authored in `ARTIFACT_LEVEL_BANDS` in `src/game/content/artifacts/artifacts.ts`:
 
 ```text
-before Howling Den unlock
+before Forest Heart
 → Level 4 cap
 
-Howling Den unlocked
+Forest Heart defeated
 → Level 7 cap
 
-Abandoned Catacombs unlocked
+Corrupted Greatbear defeated
 → Level 10 cap
 ```
 
@@ -1108,10 +1103,6 @@ Current node shape contains fields such as:
   pointCost: 1,
   requiresLevel: 4,
   prerequisites: ['previous-node'],
-  catalyst: {
-    itemId: 'heartseed',
-    quantity: 1,
-  },
   requiresBossKill: 'forest-heart',
   stats: { ... },
   combat: {
@@ -1128,7 +1119,6 @@ Changing an existing:
 ```text
 pointCost
 requiresLevel
-catalyst quantity
 existing stat number
 existing modifier number
 ```
@@ -1469,21 +1459,18 @@ Loot is authored in the monster definition.
 Example:
 
 ```ts
-loot: withLifeEssence([
-  {
-    itemId: 'wisp-essence',
-    min: 1,
-    max: 2,
-    chance: 0.2,
-  },
-]),
+loot: withDungeonLoot('whispering-woods', 'normal', {
+  min: 1,
+  max: 3,
+  chance: 1,
+}),
 ```
 
 Meaning:
 
 ```text
-20% chance
-1–2 Wisp Essence
+100% chance
+1–3 Life Essence, plus the dungeon regular pool and Artifact Essence
 ```
 
 Safe changes:
@@ -1499,40 +1486,27 @@ are 🟢.
 
 ## Current T1 dungeon material identity
 
-The current economy is deliberately structured around **four regular materials + one boss signature** per dungeon.
+The current economy is deliberately structured around a shared **regular Equipment pool + Artifact Essence + Life Essence**, with one exclusive boss signature per dungeon.
 
 ```text
 WHISPERING WOODS
-Wisp Essence
-Thorn Fiber
-Rootstone Shard
-Grove Bark
-Boss: Heartseed
+Regular Equipment: Windthread Charm, Wispglass Earring, Wispbound Ring, Grovekeeper Mantle
+Boss signature: Heartseed Necklace
 ```
 
 ```text
 HOWLING DEN
-Predator Fang
-Predator Hide
-Corrupted Beast Essence
-Predator Sinew
-Boss: Greatbear Core
+Regular Equipment: Predator-Hide Mantle, Fangwire Earring, Howling Signet
+Boss signature: Greatbear Heartstone
 ```
 
 ```text
 ABANDONED CATACOMBS
-Ossuary Remnant
-Soul Residue
-Graveglass Shard
-Burial Cloth
-Boss: Edrin Remnant
+Regular Equipment: Ossuary Mantle, Mourning Glass Earring, Gravebinder Ring, Soulglass Amulet
+Boss signature: Edrin's Signet
 ```
 
-The four regular materials were recently rebalanced toward approximately equal long-term demand.
-
-Therefore changing only one material's drop rate can now disturb a deliberately balanced 1:1-ish dungeon economy.
-
-Simple drop-number edits are still technically 🟢, but broad loot/economy changes should be treated as 🟡.
+Normal monsters share their dungeon's regular Equipment pool and also drop Artifact Essence and Life Essence. Bosses use the same regular pool at a higher chance, add a larger Artifact Essence range, and can drop their exclusive signature Equipment.
 
 
 Percent reminder:
@@ -1550,7 +1524,7 @@ Percent reminder:
 The game uses:
 
 ```ts
-withLifeEssence(...)
+withDungeonLoot(...)
 ```
 
 around dungeon loot.
@@ -1558,15 +1532,10 @@ around dungeon loot.
 Example:
 
 ```ts
-withLifeEssence(
-  [
-    { itemId: 'grove-bark', min: 1, max: 2, chance: 0.2 },
-  ],
-  { min: 2, max: 5 }
-)
+withDungeonLoot('whispering-woods', 'normal', { min: 2, max: 5 })
 ```
 
-The second argument is related to the Life Essence helper behavior.
+The optional overrides control that monster's Life Essence range and chance. The dungeon's regular Equipment and Artifact Essence values come from `src/game/content/dungeons/dungeonLootConfig.ts`.
 
 Before changing the helper itself, open:
 
@@ -1576,7 +1545,7 @@ src/game/content/monsters/monsterTypes.ts
 
 Changing the already-authored `min/max/chance` on one monster is 🟢/🟡.
 
-Changing how `withLifeEssence()` globally works is 🔴/system-wide.
+Changing how `withDungeonLoot()` globally works is 🔴/system-wide.
 
 ---
 

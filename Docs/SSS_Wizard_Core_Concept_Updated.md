@@ -808,7 +808,7 @@ Svarbu:
 
 Transmutation yra nuolatinė elementinių fragmentų ir materialų gamyba: Fire, Water, Earth, Air ir Prismatic Fragment. Jai naudojami Mana, Arcane Echoes ir funded progress; ji veikia Offline Bank metu.
 
-Equipment gamyba priklauso **Artificing / Arcane Forge**: vienas paspaudimas sunaudoja vieną recipe kainą ir paleidžia 5 sekundžių craft laikmatį, kurio pabaigoje sukuriamas vienas daiktas. Nėra Mana kainos, Echo, queue, repeat ar offline gamybos. Visos 27 Equipment recipes turi autoriaus nurodytą dungeon šaltinį ir išsaugo esamus unlock reikalavimus. Equipment ekranas lieka loadout valdymui.
+Artifact gamyba priklauso **Artificing / Arcane Forge**: vienas paspaudimas sunaudoja vieną forge kainą ir paleidžia 5 sekundžių craft laikmatį, kurio pabaigoje sukuriamas vienas Artifactas. Nėra Mana kainos, Echo, queue, repeat ar offline gamybos. Šeši starter Artifacts gali būti forginami ir vėliau stiprinami per Artifact Path progresiją. Equipment ekranas lieka loadout valdymui.
 
 ---
 
@@ -2622,7 +2622,7 @@ Naujame pokalbyje šių klausimų nereikia iš naujo atidarinėti be aiškios pr
 ### Transmutation
 
 - Condensation atskiro screen nėra;
-- Transmutation gamina materialus; Artificing gamina Equipment;
+- Transmutation gamina materialus; Artificing forges and strengthens Artifacts;
 - iki 5 Echo;
 - daugiau Echo = greitesnis recipe processing;
 - Echo galima skirstyti per kelis recipes.
@@ -2713,7 +2713,7 @@ Svarbiausia:
 
 # 59. Dabartinis Core Loop vienu sakiniu
 
-> **SSS Wizard** yra mage-only incremental RPG apie vieną magą, kuris per Channeling kuria Mana infrastruktūrą, per Transmutation paverčia Maną ir lootą materialais, per Artificing rankiniu būdu gamina Equipment, per Research sunaikina pasirinktus materialus dėl Fire, Water, Earth arba Air XP, o ribotą Focus paskirsto Arcane Echoes ir auto-cast automatizacijai. Combat vyksta semi-automatic dungeon ciklais: monsteriai turi authored traits, special attacks ir kartojamas sekas, o normal kills didina `Threat Cleared` iki Dungeon Boss. Main Boss progresija kelia Magic School level cap, Guild suteikia antrą permanent progression ašį, Collection archyvuoja items, Bestiary archyvuoja creatures, o offline laikas kaupiamas pasirinktinai naudojamame Offline Bank. Viso progreso prestige reset nėra.
+> **SSS Wizard** yra mage-only incremental RPG apie vieną magą, kuris per Channeling kuria Mana infrastruktūrą, per Transmutation paverčia Maną ir lootą materialais, per Artificing forges ir stiprina Artifacts, per Research sunaikina pasirinktus materialus dėl Fire, Water, Earth arba Air XP, o ribotą Focus paskirsto Arcane Echoes ir auto-cast automatizacijai. Combat vyksta semi-automatic dungeon ciklais: monsteriai turi authored traits, special attacks ir kartojamas sekas, o normal kills didina `Threat Cleared` iki Dungeon Boss. Main Boss progresija kelia Magic School level cap, Guild suteikia antrą permanent progression ašį, Collection archyvuoja items, Bestiary archyvuoja creatures, o offline laikas kaupiamas pasirinktinai naudojamame Offline Bank. Viso progreso prestige reset nėra.
 
 ---
 
@@ -2742,7 +2742,7 @@ Prieš projektuojant naują sistemą:
 - [x] Arcane Echoes atlieka paralelinį darbą.
 - [x] Channeling daugiausia valdo Mana infrastruktūrą.
 - [x] Condensation nebėra atskira sistema.
-- [x] Transmutation gamina materialus; Artificing gamina Equipment.
+- [x] Transmutation gamina materialus; Artificing forges and strengthens Artifacts.
 - [x] Research sunaikina items dėl pasirinktos Magic School XP.
 - [x] Research turi 4 prepared slots ir 5 Echo pool.
 - [x] Transmutation turi 5 Echo pool.

@@ -1,6 +1,7 @@
 import { ARTIFACTS, isArtifactId } from '../artifacts/artifacts'
 import { ITEMS } from '../items/items'
 import type { DungeonId, ItemDefinition, ItemId } from '../../types'
+import { DUNGEON_LOOT } from '../dungeons/dungeonLootConfig'
 
 /** Starter Artifacts are crafted progression items, not dungeon-origin Equipment. */
 export const ARTIFACT_EQUIPMENT_IDS = [
@@ -12,20 +13,25 @@ export const ARTIFACT_EQUIPMENT_IDS = [
   'wispveil-hood',
 ] as const satisfies readonly ItemId[]
 
-/** Equipment that can be awarded directly by normal dungeon combat. */
-export const DUNGEON_EQUIPMENT_BY_DUNGEON: Record<DungeonId, readonly ItemId[]> = {
-  'whispering-woods': ['windthread-charm', 'grovekeeper-mantle', 'wispglass-earring', 'wispbound-ring', 'heartseed-necklace'],
-  'howling-den': ['predator-hide-mantle', 'fangwire-earring', 'howling-signet', 'greatbear-heartstone'],
-  'abandoned-catacombs': ['ossuary-mantle', 'mourning-glass-earring', 'gravebinder-ring', 'soulglass-amulet', 'edrins-signet'],
-}
+const DUNGEON_IDS = Object.keys(DUNGEON_LOOT) as DungeonId[]
 
-/** Boss-signature Equipment awarded directly by its assigned boss. */
-export const BOSS_SIGNATURE_EQUIPMENT_IDS: readonly ItemId[] = ['heartseed-necklace', 'greatbear-heartstone', 'edrins-signet']
+/** Equipment that can be awarded directly by dungeon combat, derived from area loot. */
+export const DUNGEON_EQUIPMENT_BY_DUNGEON = Object.fromEntries(DUNGEON_IDS.map((dungeonId) => [
+  dungeonId,
+  [...DUNGEON_LOOT[dungeonId].regularEquipment, DUNGEON_LOOT[dungeonId].bossSignature] as ItemId[],
+])) as unknown as Record<DungeonId, readonly ItemId[]>
+
+export const getDungeonRegularEquipment = (dungeonId: DungeonId) => DUNGEON_LOOT[dungeonId].regularEquipment
+export const getDungeonBossSignature = (dungeonId: DungeonId) => DUNGEON_LOOT[dungeonId].bossSignature
+export const getAllDungeonEquipment = (dungeonId: DungeonId) => DUNGEON_EQUIPMENT_BY_DUNGEON[dungeonId]
+
+/** Boss-signature Equipment awarded directly by its assigned boss, derived from area loot. */
+export const BOSS_SIGNATURE_EQUIPMENT_IDS: readonly ItemId[] = DUNGEON_IDS.map((dungeonId) => DUNGEON_LOOT[dungeonId].bossSignature)
 
 const equipmentOrigin = new Map<ItemId, DungeonId>(Object.entries(DUNGEON_EQUIPMENT_BY_DUNGEON).flatMap(([dungeonId, itemIds]) => itemIds.map((itemId): [ItemId, DungeonId] => [itemId, dungeonId as DungeonId])))
 const artifactIds = new Set<ItemId>(ARTIFACT_EQUIPMENT_IDS)
 
-export const getEquipmentIdsForDungeon = (dungeonId: DungeonId) => DUNGEON_EQUIPMENT_BY_DUNGEON[dungeonId]
+export const getEquipmentIdsForDungeon = (dungeonId: DungeonId) => getAllDungeonEquipment(dungeonId)
 export const getEquipmentOrigin = (itemId: ItemId) => equipmentOrigin.get(itemId) ?? null
 export const isBossSignatureEquipment = (itemId: ItemId) => BOSS_SIGNATURE_EQUIPMENT_IDS.includes(itemId)
 

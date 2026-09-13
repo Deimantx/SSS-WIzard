@@ -17,22 +17,25 @@ interface LootRewardTileProps {
   sourceName?: string
   stateLabel?: string
   stateTone?: 'neutral' | 'success' | 'warning' | 'active' | 'locked'
+  chanceLabel?: string
+  quantityLabel?: string
+  tooltipNote?: string
 }
 
 /** Shared compact loot presentation for encounter and area reward surfaces. */
-export function LootRewardTile({ drop, inventory, sourceName, stateLabel, stateTone = 'neutral' }: LootRewardTileProps) {
+export function LootRewardTile({ drop, inventory, sourceName, stateLabel, stateTone = 'neutral', chanceLabel, quantityLabel, tooltipNote }: LootRewardTileProps) {
   const item = ITEMS[drop.itemId]
-  const chance = formatDropChance(drop.chance)
-  const quantity = formatDropQuantity(drop.min, drop.max)
-  const isGuaranteed = drop.chance >= 1
+  const chance = chanceLabel ?? formatDropChance(drop.chance)
+  const quantity = quantityLabel ?? formatDropQuantity(drop.min, drop.max)
+  const isGuaranteed = chanceLabel ? chanceLabel === 'Guaranteed' : drop.chance >= 1
   const stateDescription = stateLabel ?? (isGuaranteed ? 'Guaranteed' : undefined)
   const stateMarker = isGuaranteed ? '✓' : stateLabel ? stateLabel.slice(0, 1) : undefined
-  const tooltipDetails = <div className="tooltip-section"><small>DROP</small><span className="tooltip-row"><span>Chance</span><b>{chance}</b></span><span className="tooltip-row"><span>Quantity</span><b>{quantity}</b></span>{sourceName && <span className="tooltip-row"><span>Source</span><b>{sourceName}</b></span>}</div>
+  const tooltipDetails = <div className="tooltip-section"><small>DROP</small><span className="tooltip-row"><span>Chance</span><b>{chance}</b></span><span className="tooltip-row"><span>Quantity</span><b>{quantity}</b></span>{sourceName && <span className="tooltip-row"><span>Source</span><b>{sourceName}</b></span>}{tooltipNote && <p>{tooltipNote}</p>}</div>
 
   return <GameTooltip block wide content={<ItemTooltipContent itemId={drop.itemId} owned={inventory[drop.itemId] ?? 0} extraContent={tooltipDetails} />}>
-    <div className={`combat-loot-reward-tile${stateMarker ? ' has-state' : ''}${isGuaranteed ? ' is-guaranteed' : ''}`} tabIndex={0} role="img" aria-label={[item.name, chance, `quantity ${quantity}`, stateDescription].filter(Boolean).join(': ')}>
+    <div className={`combat-loot-reward-tile state-tone-${stateTone}${stateMarker ? ' has-state' : ''}${isGuaranteed ? ' is-guaranteed' : ''}`} tabIndex={0} role="img" aria-label={[item.name, chance, `quantity ${quantity}`, stateDescription].filter(Boolean).join(': ')}>
       <div className="combat-loot-reward-head"><span className="combat-loot-reward-icon"><ItemIcon itemId={drop.itemId} size="tile" /></span>{stateMarker && <span className="combat-loot-reward-state" aria-label={stateDescription}>{stateMarker}</span>}</div>
-      <div className="combat-loot-reward-meta"><span>{chance}</span><b>{quantity}</b></div>
+      <div className="combat-loot-reward-meta">{stateLabel && <small>{stateLabel}</small>}<span>{chance}</span><b>{quantity}</b></div>
     </div>
   </GameTooltip>
 }

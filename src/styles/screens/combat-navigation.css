@@ -1228,8 +1228,8 @@
 
 .combat-area-loot-drop-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
-  gap: 5px;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 7px;
   justify-content: start;
 }
 
@@ -1238,7 +1238,90 @@
   min-width: 0;
 }
 .combat-area-loot-drop-grid .combat-loot-reward-tile {
-  min-height: 72px;
+  min-height: 82px;
+}
+
+.combat-area-loot-groups {
+  display: grid;
+  gap: 12px;
+}
+
+.combat-area-loot-group {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  padding: 11px;
+  border: 1px solid var(--ui-border);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--ui-panel) 76%, transparent);
+}
+
+.combat-area-loot-group.is-boss {
+  border-color: color-mix(in srgb, var(--ui-gold) 38%, var(--ui-border));
+  background: color-mix(in srgb, var(--ui-gold) 5%, var(--ui-panel));
+}
+
+.combat-area-loot-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+  min-width: 0;
+}
+
+.combat-area-loot-group-head .combat-area-loot-eyebrow {
+  margin: 0;
+}
+
+.combat-area-loot-group-head .status {
+  flex: 0 0 auto;
+  font-size: 8px;
+}
+
+.combat-area-loot-group-description,
+.combat-area-loot-boss-name {
+  margin: 0;
+  color: var(--ui-text-muted);
+  font-size: 10px;
+}
+
+.combat-area-loot-boss-name {
+  color: var(--ui-text-soft);
+  font-weight: 600;
+}
+
+.combat-area-loot-hidden {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  min-height: 58px;
+  padding: 9px;
+  border: 1px dashed var(--ui-border);
+  border-radius: 7px;
+  color: var(--ui-text-muted);
+}
+
+.combat-area-loot-hidden > span {
+  display: grid;
+  width: 23px;
+  height: 23px;
+  place-items: center;
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+  color: var(--ui-secondary);
+  font: 13px var(--font-mono);
+}
+
+.combat-area-loot-hidden small {
+  color: var(--ui-text-soft);
+  font: var(--text-micro) var(--font-mono);
+  letter-spacing: .08em;
+}
+
+.combat-area-loot-hidden p {
+  margin: 0;
+  font-size: 10px;
 }
 
 .combat-area-loot-empty {
@@ -1463,8 +1546,22 @@
   }
 
   .combat-area-encounter-grid,
-  .combat-area-loot-sources {
+  .combat-area-loot-sources,
+  .combat-area-loot-drop-grid {
     grid-template-columns: 1fr;
+  }
+
+  .combat-area-loot-group-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .combat-area-loot-hidden {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .combat-area-loot-hidden p {
+    grid-column: 1 / -1;
   }
 
   .combat-area-encounter-tile.is-boss,

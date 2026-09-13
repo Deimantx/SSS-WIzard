@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ITEMS } from '../items/items'
-import { ARTIFACT_EQUIPMENT_IDS, BOSS_SIGNATURE_EQUIPMENT_IDS, DUNGEON_EQUIPMENT_BY_DUNGEON, validateEquipmentSetDefinitions } from './equipmentSets'
+import { ARTIFACT_EQUIPMENT_IDS, BOSS_SIGNATURE_EQUIPMENT_IDS, DUNGEON_EQUIPMENT_BY_DUNGEON, getAllDungeonEquipment, getDungeonBossSignature, getDungeonRegularEquipment, validateEquipmentSetDefinitions } from './equipmentSets'
 
 describe('Equipment origin groups', () => {
   it('separates starter Artifacts from direct dungeon Equipment', () => {
@@ -12,5 +12,8 @@ describe('Equipment origin groups', () => {
     expect(new Set(Object.values(DUNGEON_EQUIPMENT_BY_DUNGEON).flat()).size).toBe(14)
     expect(DUNGEON_EQUIPMENT_BY_DUNGEON['abandoned-catacombs']).toEqual(expect.arrayContaining(['ossuary-mantle', 'mourning-glass-earring', 'edrins-signet', 'soulglass-amulet']))
     expect(BOSS_SIGNATURE_EQUIPMENT_IDS.every((itemId) => ITEMS[itemId]?.kind === 'equipment')).toBe(true)
+    expect(getDungeonRegularEquipment('whispering-woods')).not.toContain('heartseed-necklace')
+    expect(getDungeonBossSignature('whispering-woods')).toBe('heartseed-necklace')
+    expect(getAllDungeonEquipment('whispering-woods')).toEqual([...getDungeonRegularEquipment('whispering-woods'), 'heartseed-necklace'])
   })
 })

@@ -4,7 +4,7 @@ import { recalculateDerivedStats } from '../../engine'
 import { ITEMS } from '../items/items'
 import { MONSTERS } from '../monsters'
 import { ARTIFICING_RECIPES, isRecipeUnlocked } from '../recipes/recipes'
-import { ARTIFACTS, validateArtifactDefinitions } from './artifacts'
+import { ARTIFACTS, ARTIFACT_LEVEL_BANDS, validateArtifactDefinitions } from './artifacts'
 import { getArtifactEffectiveStats, getArtifactLevelCap, getArtifactLevelCapRequirement, getArtifactUpgrade, isArtifactUpgradeUnlocked, canUpgradeArtifact } from '../../systems/artifacts/artifactProgression'
 import { upgradeArtifactInstant } from '../../systems/artificing/artificingEngine'
 import { getCombatModifiers, getResistance } from '../../systems/combat/modifiers'
@@ -73,6 +73,11 @@ describe('Tier 1 Artifact roster', () => {
   })
 
   it('uses Forest Heart and Corrupted Greatbear boss kills for Artifact level bands', () => {
+    expect(ARTIFACT_LEVEL_BANDS).toEqual([
+      { maxLevel: 4, unlock: { type: 'always' } },
+      { maxLevel: 7, unlock: { type: 'boss-kill', bossId: 'forest-heart' } },
+      { maxLevel: 10, unlock: { type: 'boss-kill', bossId: 'corrupted-greatbear' } },
+    ])
     const state = createInitialState()
     expect(getArtifactLevelCap(state, 'ember-staff')).toBe(4)
     expect(getArtifactLevelCapRequirement(state, 'ember-staff')).toContain('Forest Heart')

@@ -1,4 +1,4 @@
-import { ARTIFACTS, isArtifactId } from '../../content/artifacts/artifacts'
+import { ARTIFACTS, ARTIFACT_LEVEL_BANDS, isArtifactId } from '../../content/artifacts/artifacts'
 import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
 import { grantItem } from '../inventory/itemAcquisition'
 import { getRecipeUnlockRequirement, isRecipeUnlocked } from '../../content/recipes/recipeUnlocks'
@@ -13,16 +13,20 @@ export const getArtifactLevel = (state: Pick<GameState, 'artifactProgress'>, id:
 const hasBossKill = (state: Pick<GameState, 'progress'>, bossId: import('../../types').MonsterId) => (state.progress.bossKillsByBoss[bossId] ?? 0) >= 1
 export const getArtifactLevelCapRequirement = (state: Pick<GameState, 'progress'> & Partial<Pick<GameState, 'debug'>>, _id: ArtifactId) => {
   if (state.debug?.artifactIgnoreDungeonGate || state.debug?.artifactIgnoreLevelCap) return null
-  if (!hasBossKill(state, 'forest-heart')) return getRecipeUnlockRequirement({ unlock: { type: 'boss-kill', bossId: 'forest-heart' } })
-  if (!hasBossKill(state, 'corrupted-greatbear')) return getRecipeUnlockRequirement({ unlock: { type: 'boss-kill', bossId: 'corrupted-greatbear' } })
+  const lockedBand = ARTIFACT_LEVEL_BANDS.find((band) => band.unlock.type !== 'always' && !hasBossKill(state, band.unlock.bossId))
+  if (lockedBand) return getRecipeUnlockRequirement({ unlock: lockedBand.unlock })
   return null
 }
 export const getArtifactLevelCap = (state: Pick<GameState, 'artifactProgress' | 'progress'> & Partial<Pick<GameState, 'debug'>>, id: ArtifactId) => {
   if (!ARTIFACTS[id]) return 0
   if (state.debug?.artifactIgnoreLevelCap) return ARTIFACTS[id].maxLevel
-  if (state.debug?.artifactIgnoreDungeonGate || hasBossKill(state, 'corrupted-greatbear')) return ARTIFACTS[id].maxLevel
-  if (hasBossKill(state, 'forest-heart')) return 7
-  return 4
+  if (state.debug?.artifactIgnoreDungeonGate) return ARTIFACTS[id].maxLevel
+  let cap: number = ARTIFACT_LEVEL_BANDS[0]?.maxLevel ?? 0
+  for (const band of ARTIFACT_LEVEL_BANDS.slice(1)) {
+    if (band.unlock.type !== 'always' && !hasBossKill(state, band.unlock.bossId)) break
+    cap = band.maxLevel
+  }
+  return Math.min(cap, ARTIFACTS[id].maxLevel)
 }
 export const getArtifactTotalPoints = (state: ArtifactProgressionState, id: ArtifactId) => Math.max(0, getArtifactLevel(state, id) - 1) + Math.max(0, state.debug?.artifactBonusPointsByArtifact?.[id] ?? 0)
 export const getArtifactSpentPoints = (state: Pick<GameState, 'artifactProgress'>, id: ArtifactId) => getArtifactProgress(state, id).allocatedNodeIds.reduce((total, nodeId) => total + (ARTIFACTS[id]?.nodes.find(node => node.id === nodeId)?.pointCost ?? 0), 0)

@@ -4333,6 +4333,24 @@
   white-space: nowrap;
 }
 
+.combat-loot-reward-meta small {
+  overflow: hidden;
+  color: var(--ui-text-muted);
+  font: 8px var(--font-mono);
+  letter-spacing: .06em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.combat-loot-reward-tile.state-tone-warning {
+  --loot-accent: var(--ui-gold);
+}
+
+.combat-loot-reward-tile.state-tone-warning .combat-loot-reward-state {
+  border-color: color-mix(in srgb, var(--ui-gold) 58%, var(--ui-border));
+  color: var(--ui-gold);
+}
+
 /* Pass 9: compact Enemy Intel matrices and loot density. */
 .enemy-context-window {
   container-type: inline-size;

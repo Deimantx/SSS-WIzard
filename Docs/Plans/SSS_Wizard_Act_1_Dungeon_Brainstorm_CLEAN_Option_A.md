@@ -390,7 +390,7 @@ Possible mechanics:
 - Barrier;
 - elemental resistance shifts;
 - mixed physical + magical attacks;
-- one telegraphed high-damage special.
+- one high-damage special.
 
 ## Combat Identity
 
@@ -408,9 +408,10 @@ Potential mechanics:
 
 T2 should provide:
 
-- **Summoning Elemental Guardians feature unlocked**
-- **first new Armor Artifact**
-- **first new Helmet Artifact**
+- Summoning Elemental Guardians feature unlocked
+- New wind  weapon artifact
+- Materiasl for new wind artifact
+- Wind Jewelry
 - basic upgrade materials for the new Artifacts
 - general Act 1 progression materials
 
@@ -454,14 +455,8 @@ An old magical reliquary partially flooded after its protective systems failed.
 - Rune Leech
 
 ## Boss
+The Drowned Keeper
 
-**The Sunken Curator**
-
-Alternatives:
-
-- Reliquary Warden
-- The Drowned Keeper
-- Keeper Beneath the Water
 
 ## Combat Gimmicks
 
@@ -475,18 +470,12 @@ Possible:
 
 ## Reward Identity
 
-Focus on:
+- New Water Artifact
+- Materials to upgrade New Water Artifact
+- Water Jewelry
+- general Act 1 progression materials
 
-- Water;
-- Mana sustain;
-- Mana regeneration;
-- defensive magic;
-- healing/recovery;
-- utility.
-
----
-
-# 8. T2.3 — ASHEN WATCH
+# . T2.3 — ASHEN WATCH
 
 ## Theme
 
@@ -505,18 +494,12 @@ A frontier watchtower and surrounding outpost destroyed by uncontrolled magical 
 
 - Cinder Hound
 - Ash Cultist
-- Soot Revenant
-- Flamebound Crow
+- Fire Element
+- Huge Lava eel
 
 ## Boss
 
-**The Ember Sentinel**
-
-Alternatives:
-
-- Ashen Watchmaster
-- Cinderbound Captain
-- The Last Watchfire
+- Flamebound Revenant
 
 ## Combat Gimmicks
 
@@ -532,11 +515,10 @@ Possible:
 
 Focus on:
 
-- Fire;
-- direct spell damage;
-- Burn;
-- offensive Artifact materials;
-- aggressive equipment.
+- New Fire Artifact
+- materials for new Fire Artifact
+- Fire Jewelry
+- general Act 1 progression materials
 
 ---
 
@@ -564,13 +546,8 @@ A corrupted grove and underground root network warped by unstable magic.
 
 ## Boss
 
-**The Hollow Treant**
-
-Alternatives:
-
 - Rootscar Ancient
-- Thornheart
-- The Buried Elder
+
 
 ## Combat Gimmicks
 
@@ -586,12 +563,10 @@ Possible:
 
 Focus on:
 
-- Earth;
-- defense;
-- Health;
-- Barrier;
-- sustain;
-- damage reduction.
+- New Earth artifact
+- Materiasl for New earth artifact
+- Earth Jewelry
+- general Act 1 progression materials
 
 ---
 
@@ -637,12 +612,6 @@ A ruined magical crossroads where multiple frontier routes meet.
 
 **The Crossroads Keeper**
 
-Alternatives:
-
-- The Lost Waywarden
-- The Roadless Knight
-- Crossroad Sentinel
-
 ## Combat Identity
 
 Mixed threats from the previous branches.
@@ -658,12 +627,12 @@ This can test:
 
 Possible:
 
-- universal Artifact component;
-- strong all-purpose equipment;
-- progression materials;
-- **possible Crystal or Alchemy system unlock**.
-
-Exact feature unlock here is TBD.
+- Crystal system unlock.
+- Crystals box
+- New Armor & Helmet Aartifacts
+- universal Artifacts component to upgrade Armor and Helmet earlier obtained.
+- universal Artifacts component to upgrade 4 artifact weapons obtained earlier past their 5lvl 
+- universal act1 progression materials;
 
 ---
 
@@ -686,17 +655,12 @@ A burial complex where magical crystal growth has fused with the dead.
 - Graveglass Shade
 - Bone Shardling
 - Silent Mourner
-- Crypt Mite
+- Crypt Guardian
 
 ## Boss
 
-**The Glass Mourner**
+- Graveglass Behemoth
 
-Alternatives:
-
-- Graveglass Matron
-- The Shattered Dead
-- Crystal Ossuary Lord
 
 ## Combat Gimmicks
 
@@ -704,25 +668,21 @@ Possible:
 
 - Curse;
 - vulnerability/fragility effects;
-- crit-oriented enemy attacks;
+- slow-strong enemy attacks;
 - shard bursts;
-- delayed explosions.
+- Regeneration
 
 ## Reward Identity
 
-Focus on:
-
-- Critical Chance;
-- Critical Damage;
-- Spell Power;
-- risky offensive builds;
-- crystal/shard materials.
+- Crystals box
+- universal Artifacts component to upgrade Armor and Helmet earlier obtained.
+- universal Artifacts component to upgrade 4 artifact weapons obtained earlier
+- universal act1 progression materials;
+- Defence oriented jewelry
 
 ### System Connection Possibility
 
 This dungeon is a natural candidate for introducing or expanding the **Crystal** system.
-
-Not locked.
 
 ---
 
@@ -750,13 +710,8 @@ A magical gallery/research facility destabilized by Air and lightning magic.
 
 ## Boss
 
-**The Vault Conductor**
-
-Alternatives:
-
 - Storm Archivist
-- The Living Conduit
-- Gale Engine
+
 
 ## Combat Gimmicks
 
@@ -767,17 +722,15 @@ Possible:
 - haste;
 - repeated smaller hits;
 - action-speed pressure;
-- interrupt windows.
 
 ## Reward Identity
 
-Focus on:
-
-- Air;
-- cooldown recovery;
-- action speed;
-- cast tempo;
-- faster spell rotations.
+- Crystals box
+- universal Artifacts component to upgrade Armor and Helmet earlier obtained.
+- universal Artifacts component to upgrade 4 artifact weapons obtained earlier
+- universal act1 progression materials;
+- speed + offence oriented jewelry
+ 
 
 ---
 
@@ -807,11 +760,6 @@ An ancient observatory damaged by astral or Arcane energy.
 
 **The Fallen Astromancer**
 
-Alternatives:
-
-- The Broken Stargazer
-- Astral Lensmaster
-- Starless Scholar
 
 ## Combat Gimmicks
 
@@ -825,13 +773,13 @@ Possible:
 
 ## Reward Identity
 
-Focus on:
+- Crystals box
+- universal Artifacts component to upgrade Armor and Helmet earlier obtained.
+- universal Artifacts component to upgrade 4 artifact weapons obtained earlier
+- universal act1 progression materials;
+- hybrid oriented jewelry
+ 
 
-- Arcane;
-- Focus;
-- Spell Power;
-- hybrid spell builds;
-- general spell efficiency.
 
 ---
 
@@ -888,19 +836,18 @@ Possible:
 
 - multi-school damage;
 - strong Barrier interaction;
-- spell interruption;
-- alternating elemental phases;
 - defensive checks.
+- all spell school damage conversion 50/50 to Arcane spell damage 
 
 ## Reward Identity
 
-Could provide:
-
-- stronger equipment;
-- universal upgrade material;
-- final preparation components;
-- access to both T2.11 dungeons;
-- possible remaining Act 1 system unlock if Crystals or Alchemy has not been unlocked earlier.
+- Alchemy system Unlock
+- Crystals box
+- universal Artifacts component to upgrade Armor and Helmet earlier obtained.
+- universal Artifacts component to upgrade 4 artifact weapons obtained earlier
+- universal act1 progression materials;
+- hybrid jewelry
+ 
 
 ---
 
@@ -940,11 +887,6 @@ A ritual archive where names, identities, and souls have become detached.
 
 **The Unspoken Prelate**
 
-Alternatives:
-
-- The Nameless Archivist
-- Voice Without Form
-- The Erased Saint
 
 ## Combat Gimmicks
 
@@ -958,14 +900,11 @@ Possible:
 
 ## Reward Identity
 
-Focus on:
-
-- control;
-- debuff resistance;
-- status duration;
-- utility;
-- Focus management;
-- silence/curse interactions.
+- Crystals box
+- universal Artifacts component to upgrade Armor and Helmet earlier obtained.
+- universal Artifacts component to upgrade 4 artifact weapons obtained earlier
+- universal act1 progression materials;
+- offence status jewelry
 
 ---
 
@@ -1005,11 +944,6 @@ A sealed magical vault containing forbidden sigils, Dark Portal research, or cor
 
 **The Sigil Warden**
 
-Alternatives:
-
-- Keeper of the Black Seal
-- The Bound Custodian
-- Black Vault Sentinel
 
 ## Combat Gimmicks
 
@@ -1024,13 +958,12 @@ Possible:
 
 ## Reward Identity
 
-Focus on:
+- Crystals box
+- universal Artifacts component to upgrade Armor and Helmet earlier obtained.
+- universal Artifacts component to upgrade 4 artifact weapons obtained earlier
+- universal act1 progression materials;
+- offence jewelry
 
-- Dark Portal lore/progression;
-- defensive magic;
-- corruption mechanics;
-- Barrier;
-- late-Act special materials.
 
 ## Dark Portal Rule
 
@@ -1066,26 +999,6 @@ The final identity should be decided after the Act story direction is clearer.
 
 # 18. T2.12 FINAL DUNGEON DIRECTION OPTIONS
 
-These are still brainstorm options.
-
-## Option A — The Rift Crown
-
-Theme:
-
-A central rupture where the magical instability of the entire Act converges.
-
-Possible Boss:
-
-**The Rift Regent**
-
-Identity:
-
-- multi-element combat;
-- final mastery check;
-- magical instability.
-
----
-
 ## Option B — The Black Gate
 
 Theme:
@@ -1103,43 +1016,16 @@ Identity:
 - portal phases;
 - strong link into later Acts.
 
----
 
-## Option C — The Fallen Chapter
+## Final dungeon Loot: 
 
-Theme:
+- New Armor & helmet Artifacts
+- Crystals box
+- universal Artifacts component to upgrade Armor and Helmet earlier obtained, so they reach final ranks.
+- universal Artifacts component to upgrade 4 artifact weapons obtained earlier,so they reach final ranks.
+- universal act1 progression materials;
+- offence jewelry
 
-A destroyed mage order/chapterhouse that reveals what happened to this region.
-
-Possible Boss:
-
-**The Unbound Magister**
-
-Identity:
-
-- spell-heavy duel;
-- multiple schools;
-- lore-heavy Act ending.
-
----
-
-## Option D — The Hollow Star
-
-Theme:
-
-A fragment of astral corruption has become the center of regional instability.
-
-Possible Boss:
-
-**The Hollow Star**
-
-Identity:
-
-- Arcane/cosmic;
-- Focus mechanics;
-- phase-based combat.
-
----
 
 # 19. T2.12 DESIGN PRINCIPLES
 

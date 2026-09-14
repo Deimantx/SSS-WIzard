@@ -48,14 +48,10 @@ export function CombatActNavigationDialog({ selectedDungeonId, onSelect, onClose
       emitNavigationFeedback('error', 'var(--ui-warning)')
       return false
     }
-    if (combat.active) {
-      if (combat.dungeonId === node.dungeonId) {
-        emitNavigationFeedback('success', 'var(--ui-accent)')
-        onClose()
-        return true
-      }
-      emitNavigationFeedback('error', 'var(--ui-warning)')
-      return false
+    if (combat.active && combat.dungeonId === node.dungeonId) {
+      emitNavigationFeedback('success', 'var(--ui-accent)')
+      onClose()
+      return true
     }
     onSelect(node.dungeonId)
     enter(node.dungeonId)
@@ -99,7 +95,7 @@ export function CombatActNavigationDialog({ selectedDungeonId, onSelect, onClose
         <CombatAreaInspector node={selectedNode} combatActive={combat.active} activeDungeonId={combat.dungeonId} onLoot={() => setLootNodeId(selectedNode.id)} onBestiary={handleBestiary} onEnter={() => handleEnter(selectedNode.id)} />
       </div>
       <footer className="combat-act-navigation-footer">
-        <span>{combat.active ? 'The current run remains active while you browse the campaign.' : 'Act progress is derived from your existing dungeon and boss records.'}</span>
+        <span>{combat.active ? 'Your current run continues while browsing. Entering another area abandons it and starts the new run immediately.' : 'Act progress is derived from your existing dungeon and boss records.'}</span>
         <Button variant="ghost" onClick={onClose}>CLOSE CAMPAIGN</Button>
       </footer>
       {lootNode && <CombatAreaLootModal node={lootNode} onClose={() => setLootNodeId(null)} />}

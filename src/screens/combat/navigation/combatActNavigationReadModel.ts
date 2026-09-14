@@ -78,5 +78,3 @@ export const buildCombatActNavigationViewModel = ({ progress, combat, selectedDu
 export const getDungeonNode = (node: CombatActNodeViewModel) => node.dungeonId ? DUNGEONS[node.dungeonId] : null
 
 export const getFirstUnlockedDungeon = (progress: CombatActNavigationProgress): DungeonId => DUNGEON_ORDER.find((dungeonId) => isDungeonUnlocked(DUNGEONS[dungeonId], progress)) ?? DUNGEON_ORDER[0]
-
-export const dungeonHasMeaningfulProgress = (combat: CombatState) => Boolean(combat.threatCleared > 0 || combat.inBossFight || combat.pendingBossId || combat.enemyId)

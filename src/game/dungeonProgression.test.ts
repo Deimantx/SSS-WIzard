@@ -74,6 +74,88 @@ describe('dungeon progression helpers', () => {
     expect(nextEnemy).toBe('corrupted-greatbear')
     expect(useGameStore.getState().combat.inBossFight).toBe(true)
   })
+
+  it('switches an active run directly into another unlocked dungeon without resolving the old encounter', () => {
+    const game = useGameStore.getState()
+    game.resetSave()
+    game.setBossKills('forest-heart', 1)
+    game.enterDungeon('whispering-woods')
+    game.setThreat(18)
+    game.spawnDebugEnemy('grove-sentinel')
+    const before = useGameStore.getState()
+    const beforeInventory = { ...before.inventory }
+    const beforeKills = before.progress.lifetimeKills
+    const beforeMonsterKills = before.progress.lifetimeKillsByMonster['grove-sentinel'] ?? 0
+
+    game.enterDungeon('howling-den')
+
+    const after = useGameStore.getState()
+    expect(after.combat.active).toBe(true)
+    expect(after.combat.dungeonId).toBe('howling-den')
+    expect(after.combat.threatCleared).toBe(0)
+    expect(after.combat.pendingBossId).toBeNull()
+    expect(after.combat.inBossFight).toBe(false)
+    expect(after.combat.enemyId).toBeTruthy()
+    expect(DUNGEONS['howling-den'].monsterPool).toContain(after.combat.enemyId)
+    expect(after.inventory).toEqual(beforeInventory)
+    expect(after.progress.lifetimeKills).toBe(beforeKills)
+    expect(after.progress.lifetimeKillsByMonster['grove-sentinel'] ?? 0).toBe(beforeMonsterKills)
+  })
+
+  it('abandons a queued or active boss attempt when switching dungeons', () => {
+    const game = useGameStore.getState()
+    game.resetSave()
+    game.setBossKills('forest-heart', 1)
+    game.enterDungeon('whispering-woods')
+    game.jumpDebugToBoss('whispering-woods')
+    expect(useGameStore.getState().combat.inBossFight).toBe(true)
+
+    game.enterDungeon('howling-den')
+
+    const after = useGameStore.getState()
+    expect(after.combat.dungeonId).toBe('howling-den')
+    expect(after.combat.threatCleared).toBe(0)
+    expect(after.combat.inBossFight).toBe(false)
+    expect(after.combat.enemyId).not.toBe('forest-heart')
+    expect(after.progress.bossKillsByBoss['forest-heart']).toBe(1)
+  })
+
+  it('returns to the same active dungeon without restarting its run', () => {
+    const game = useGameStore.getState()
+    game.resetSave()
+    game.enterDungeon('whispering-woods')
+    game.setThreat(17)
+    game.setEnemyHealthPercent(37)
+    const before = useGameStore.getState()
+    const beforeEnemy = before.combat.enemyId
+    const beforeEnemyHp = before.combat.enemyHp
+    const beforeEnemySerial = before.combat.enemyInstanceSerial
+
+    game.enterDungeon('whispering-woods')
+
+    const after = useGameStore.getState()
+    expect(after.combat.dungeonId).toBe('whispering-woods')
+    expect(after.combat.threatCleared).toBe(17)
+    expect(after.combat.enemyId).toBe(beforeEnemy)
+    expect(after.combat.enemyHp).toBe(beforeEnemyHp)
+    expect(after.combat.enemyInstanceSerial).toBe(beforeEnemySerial)
+  })
+
+  it('keeps the active run when a locked dungeon is requested', () => {
+    const game = useGameStore.getState()
+    game.resetSave()
+    game.enterDungeon('whispering-woods')
+    game.setThreat(12)
+    const before = useGameStore.getState()
+
+    game.enterDungeon('howling-den')
+
+    const after = useGameStore.getState()
+    expect(after.combat.active).toBe(true)
+    expect(after.combat.dungeonId).toBe('whispering-woods')
+    expect(after.combat.threatCleared).toBe(12)
+    expect(after.combat.enemyId).toBe(before.combat.enemyId)
+  })
 })
 
 describe('dungeon-specific Guild request progression', () => {

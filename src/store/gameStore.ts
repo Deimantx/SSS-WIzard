@@ -90,6 +90,31 @@ const emitActionFeel = (type: GameFeelEventType, selector: string, color = 'var(
   emitGameFeelEvent({ type, x: rect && rect.width > 0 ? rect.left + rect.width / 2 : (typeof window === 'undefined' ? 0 : window.innerWidth * 0.62), y: rect && rect.height > 0 ? rect.top + rect.height / 2 : 128, color, intensity })
 }
 
+const endActiveDungeonRun = () => {
+  combatAlertsObserver.clear()
+  combatTelemetryObserver.endRun('leave')
+  dungeonStatisticsObserver.endSession('leave')
+  clearCombatDefeat()
+}
+
+const initializeDungeonRun = (state: GameState, dungeonId: DungeonId, resetCombatState: boolean) => {
+  const dungeon = DUNGEONS[dungeonId]
+  if (resetCombatState) state.combat = createInitialState().combat
+  clearCombatLogUi()
+  clearCombatDefeat()
+  beginCombatRecapRun()
+  combatAlertsObserver.beginRun(dungeonId)
+  combatTelemetryObserver.beginRun(dungeonId)
+  dungeonStatisticsObserver.beginSession(dungeonId)
+  resetAllCombatRuleRuntime(state)
+  state.combat.active = true
+  state.combat.dungeonId = dungeonId
+  state.combat.encounterTimerMs = 0
+  state.player.health = Math.max(1, state.player.health)
+  spawnNextEnemy(state, combatEventSink)
+  pushNotification(state, `${dungeon.name} entered`, 'info')
+}
+
 export interface RecentAcquisition { itemId: ItemId; amount: number; timestamp: number; isNew: boolean }
 export type DeveloperFixtureId = 'fresh' | 'whispering-woods-ready' | 'howling-den-ready' | 'catacombs-ready' | 'edrin-ready'
 
@@ -428,8 +453,20 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   deleteSpellPreset: (id) => { let result = false; set((state) => { result = deleteSpellPresetAction(state, id); return state }); return result },
   saveSpellPreset: (preset) => { let result = false; set((state) => { result = saveSpellPresetAction(state, preset); return state }); return result },
   applySpellPreset: (id) => { let result: ApplySpellPresetResult = { ok: false, reason: 'missing-preset', unavailableSpellIds: [] }; set((state) => { result = applySpellPresetAction(state, id); return state }); return result },
-  enterDungeon: (dungeonId = 'whispering-woods') => set((state) => { const dungeon = DUNGEONS[dungeonId]; if (state.combat.active || !dungeon) return state; if (!isDungeonUnlocked(dungeon, state.progress)) { pushNotification(state, `${getDungeonUnlockRequirement(dungeon) ?? 'Requirement'} to unlock ${dungeon.name}.`, 'warning'); return state } clearCombatLogUi(); clearCombatDefeat(); beginCombatRecapRun(); combatAlertsObserver.beginRun(dungeonId); combatTelemetryObserver.beginRun(dungeonId); dungeonStatisticsObserver.beginSession(dungeonId); resetAllCombatRuleRuntime(state); state.combat.active = true; state.combat.dungeonId = dungeonId; state.combat.encounterTimerMs = 0; state.player.health = Math.max(1, state.player.health); spawnNextEnemy(state, combatEventSink); pushNotification(state, `${dungeon.name} entered`, 'info'); return state }),
-  leaveDungeon: () => { combatAlertsObserver.clear(); combatTelemetryObserver.endRun('leave'); dungeonStatisticsObserver.endSession('leave'); clearCombatDefeat(); return set((state) => { state.combat = { ...createInitialState().combat, log: ['Left the dungeon. Threat Cleared resets.'] }; return state }) },
+  enterDungeon: (dungeonId = 'whispering-woods') => {
+    const dungeon = DUNGEONS[dungeonId]
+    const currentState = get()
+    if (!dungeon) return
+    if (!isDungeonUnlocked(dungeon, currentState.progress)) {
+      set((state) => { pushNotification(state, `${getDungeonUnlockRequirement(dungeon) ?? 'Requirement'} to unlock ${dungeon.name}.`, 'warning'); return state })
+      return
+    }
+    if (currentState.combat.active && currentState.combat.dungeonId === dungeonId) return
+    const switching = currentState.combat.active
+    if (switching) endActiveDungeonRun()
+    set((state) => { initializeDungeonRun(state, dungeonId, switching); return state })
+  },
+  leaveDungeon: () => { endActiveDungeonRun(); return set((state) => { state.combat = { ...createInitialState().combat, log: ['Left the dungeon. Threat Cleared resets.'] }; return state }) },
   engageBoss: (bossId) => set((state) => {
     const dungeon = state.combat.dungeonId ? DUNGEONS[state.combat.dungeonId] : null
     const boss = MONSTERS[bossId]

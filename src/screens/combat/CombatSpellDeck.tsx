@@ -87,8 +87,7 @@ export function CombatSpellDeck() {
       <div className="combat-focus-summary"><span>AUTO</span><strong className="ui-focus">{focus.autoCastFocus} Focus</strong></div>
     </header>
     <div className="combat-spell-preset-bar">
-      <span className="combat-subsection-label">PRESET / LOADOUT</span>
-      <div className="combat-preset-control"><div className="combat-preset-control-row"><SelectMenu options={presetOptions} value={activePreset?.id ?? 'custom'} onChange={choosePreset} ariaLabel="Combat Auto-Cast preset" /><GameTooltip content={<TooltipContent title="Manage Presets" description="Build, edit, and apply reusable Auto-Cast configurations." />}><Button className="combat-preset-manage" variant="secondary" onClick={openPresetManager}><Settings2 size={13} /> MANAGE</Button></GameTooltip></div><small>{activePreset ? 'Live configuration matches this preset.' : 'CUSTOM · live configuration'}</small></div>
+      <div className="combat-preset-control"><span className="combat-subsection-label">PRESET / LOADOUT</span><div className="combat-preset-control-row"><SelectMenu options={presetOptions} value={activePreset?.id ?? 'custom'} onChange={choosePreset} ariaLabel="Combat Auto-Cast preset" /><GameTooltip content={<TooltipContent title="Manage Presets" description="Build, edit, and apply reusable Auto-Cast configurations." />}><Button className="combat-preset-manage" variant="secondary" onClick={openPresetManager}><Settings2 size={13} /> MANAGE</Button></GameTooltip></div><small>{activePreset ? 'Live configuration matches this preset.' : 'CUSTOM · live configuration'}</small></div>
     </div>
     {(banner || presetNotice) && <div className="combat-spell-status-region">
       {banner && <div className="combat-spell-banner" role="status"><CircleDot size={13} aria-hidden="true" />{banner}</div>}

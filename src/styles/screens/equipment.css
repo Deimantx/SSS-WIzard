@@ -226,7 +226,7 @@
 .equipment-slot-card {
   position: relative;
   z-index: 1;
-  height: 92px;
+  height: 102px;
   min-height: 92px;
   gap: 6px;
   padding: 9px;
@@ -245,11 +245,21 @@
   gap: 4px;
 }
 
+.equipment-slot-card-body {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  align-items: center;
+  justify-content: center;
+}
+
 .equipment-slot-card-item {
   grid-template-columns: 42px minmax(0, 1fr);
   align-items: center;
   gap: 9px;
-  margin: auto 0;
+  width: 100%;
+  margin: 0;
 }
 
 .equipment-slot-icon {
@@ -297,19 +307,31 @@
 }
 
 .equipment-slot-empty {
+  display: flex;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 5px;
   color: color-mix(in srgb, var(--ui-text-muted) 88%, var(--ui-accent));
+  text-align: center;
 }
 
 .equipment-slot-empty strong {
   color: var(--ui-text-soft);
   font: var(--text-micro) var(--font-mono);
+  line-height: 1.2;
   letter-spacing: .1em;
 }
 
 .equipment-slot-empty small {
   color: var(--ui-text-muted);
+  line-height: 1.2;
   letter-spacing: .04em;
+  white-space: nowrap;
 }
 
 .equipment-loadout-note {

@@ -66,6 +66,33 @@ describe('EquipmentScreen stat typography structure', () => {
     expect(container.querySelector('[data-position="offhand"]')).toBeNull()
   })
 
+  it('keeps empty loadout content grouped with its helper label', () => {
+    const { container } = render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
+    const emptyCards = [...container.querySelectorAll('.equipment-slot-card.is-empty')]
+
+    expect(emptyCards).toHaveLength(8)
+    emptyCards.forEach((card) => {
+      const body = card.querySelector('.equipment-slot-card-body')
+      expect(body?.querySelector('.equipment-slot-empty strong')?.textContent).toBe('EMPTY SLOT')
+      expect(body?.querySelector('.equipment-slot-empty small')?.textContent).toMatch(/^Select /)
+    })
+    expect(screen.getAllByText('Select Ring')).toHaveLength(2)
+    expect(screen.getByText('Select Helmet')).toBeTruthy()
+    expect(screen.getByText('Select Cape')).toBeTruthy()
+  })
+
+  it('keeps equipped loadout cards readable inside the shared body', () => {
+    const state = useGameStore.getState()
+    useGameStore.setState({
+      equipment: { ...state.equipment, weapon: 'ember-staff', armor: 'wispweave-robe' },
+      inventory: { ...state.inventory, 'ember-staff': 1, 'wispweave-robe': 1 },
+    })
+    const { container } = render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
+
+    expect(container.querySelector('.equipment-slot-card[data-position="weapon"] .equipment-slot-card-body')?.textContent).toContain('Ember Staff')
+    expect(container.querySelector('.equipment-slot-card[data-position="armor"] .equipment-slot-card-body')?.textContent).toContain('Wispweave Robe')
+  })
+
   it('does not expose a stale Weapon unequip action when selecting a Ring from Armory', () => {
     const state = useGameStore.getState()
     useGameStore.setState({ equipment: { ...state.equipment, weapon: 'tideglass-wand' }, inventory: { ...state.inventory, 'tideglass-wand': 1, 'gravebinder-ring': 1 } })

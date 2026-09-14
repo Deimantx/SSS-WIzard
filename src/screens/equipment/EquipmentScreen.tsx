@@ -225,7 +225,9 @@ export function EquipmentScreenV2() {
           <EquipmentSlotTooltip itemId={itemId} owned={itemId ? inventory[itemId] ?? 0 : 0} tooltip={tooltip}>
             <div className={`equipment-slot-card ${item ? 'is-equipped' : 'is-empty'} ${selectedPosition === position ? 'selected' : ''}`} data-position={position} role="button" tabIndex={0} style={item ? { '--item-color': item.color } as CSSProperties : undefined} onClick={() => selectSlot(position)} onContextMenu={(event) => { if (!itemId) return; event.preventDefault(); event.stopPropagation(); openEquipmentMenu(itemId, [position], event.clientX, event.clientY) }} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); selectSlot(position) } }}>
               <div className="equipment-slot-card-head"><span>{EQUIPMENT_POSITION_LABELS[position]}</span><span className="equipment-slot-card-meta">{item && <span className="equipment-tier-badge">{formatPlayerEquipmentTier(item.equipmentTier ?? 1)}</span>}{item && isArtifactItem(item.id) && <span className="equipment-level-chip">L{getArtifactLevel({ artifactProgress }, item.id)}/{getArtifactDefinition(item.id)?.maxLevel ?? 10}</span>}</span></div>
-              {item ? <div className="equipment-slot-card-item"><span className="equipment-slot-icon" style={{ color: item.color }}>{item.icon}</span><span className="equipment-slot-card-copy"><strong>{item.name}</strong></span></div> : <div className="equipment-slot-empty"><SlotGhostIcon size={27} strokeWidth={1.35} aria-hidden="true" /><strong>EMPTY SLOT</strong><small>{emptyCopy}</small></div>}
+              <div className="equipment-slot-card-body">
+                {item ? <div className="equipment-slot-card-item"><span className="equipment-slot-icon" style={{ color: item.color }}>{item.icon}</span><span className="equipment-slot-card-copy"><strong>{item.name}</strong></span></div> : <div className="equipment-slot-empty"><SlotGhostIcon size={27} strokeWidth={1.35} aria-hidden="true" /><strong>EMPTY SLOT</strong><small>{emptyCopy}</small></div>}
+              </div>
             </div>
           </EquipmentSlotTooltip>
         </div>

@@ -2,18 +2,9 @@
 .equipment-screen .card { overflow: hidden; }
 .equipment-armory-panel, .equipment-inspector { display: flex; flex-direction: column; }
 .equipment-armory-panel > .card-head, .equipment-inspector > .card-head { flex: 0 0 auto; }
-.equipment-loadout-board { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); grid-template-areas: "cape cape helmet helmet earring earring" "amulet amulet weapon weapon armor armor" ". ring1 ring1 ring2 ring2 ."; gap: 12px; }
 .equipment-slot-card { display: flex; min-width: 0; height: 116px; min-height: 116px; flex-direction: column; gap: 7px; padding: 10px; border: 1px solid var(--ui-border); border-radius: 9px; color: var(--ui-text-soft); background: linear-gradient(145deg, color-mix(in srgb, var(--ui-panel-strong) 80%, transparent), color-mix(in srgb, var(--ui-panel) 92%, transparent)); cursor: pointer; transition: border-color .15s ease, transform .15s ease, background .15s ease; }
 .equipment-slot-grid-item { min-width: 0; }
 .equipment-slot-grid-item > .game-tooltip-trigger { height: 100%; }
-.equipment-loadout-board > .equipment-slot-grid-item[data-position="cape"] { grid-area: cape; }
-.equipment-loadout-board > .equipment-slot-grid-item[data-position="helmet"] { grid-area: helmet; }
-.equipment-loadout-board > .equipment-slot-grid-item[data-position="earring"] { grid-area: earring; }
-.equipment-loadout-board > .equipment-slot-grid-item[data-position="weapon"] { grid-area: weapon; }
-.equipment-loadout-board > .equipment-slot-grid-item[data-position="armor"] { grid-area: armor; }
-.equipment-loadout-board > .equipment-slot-grid-item[data-position="ring1"] { grid-area: ring1; }
-.equipment-loadout-board > .equipment-slot-grid-item[data-position="amulet"] { grid-area: amulet; }
-.equipment-loadout-board > .equipment-slot-grid-item[data-position="ring2"] { grid-area: ring2; }
 .equipment-slot-card:hover, .equipment-slot-card:focus-visible, .equipment-slot-card.selected { border-color: color-mix(in srgb, var(--ui-accent) 68%, var(--ui-border)); background: linear-gradient(145deg, color-mix(in srgb, var(--ui-accent) 13%, var(--ui-panel-strong)), var(--ui-panel)); outline: none; }
 .equipment-slot-card:hover { transform: translateY(-1px); }
 .equipment-slot-card-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; text-transform: uppercase; }
@@ -124,12 +115,10 @@
 .equipment-inspector-content { height: 100%; min-height: 0; overflow-x: hidden; overflow-y: auto; padding-right: 3px; padding-bottom: 20px; scrollbar-color: var(--ui-scrollbar-thumb) transparent; scrollbar-width: thin; }
 
 @media (max-width: 900px) and (min-width: 761px) {
-  .equipment-loadout-board { gap: 8px; }
   .equipment-slot-card { padding: 8px; }
 }
 
 @media (max-width: 760px) {
-  .equipment-loadout-board { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "cape helmet" "earring amulet" "weapon armor" "ring1 ring2"; gap: 8px; }
   .equipment-slot-card { height: 116px; min-height: 116px; }
   .equipment-armory-grid { grid-template-columns: 1fr; }
   .equipment-impact-row { grid-template-columns: minmax(0, 1fr) auto; }
@@ -192,35 +181,6 @@
   .equipment-armory-controls { align-items: stretch; flex-direction: column; }
   .equipment-armory-controls .select-menu { width: 100%; }
   .equipment-availability-toggle { justify-content: center; }
-}
-
-/* Equipment Pass 1: wizard-board Loadout and readable Stats hierarchy. */
-.equipment-loadout-board {
-  position: relative;
-  grid-template-areas:
-    ". . helmet helmet . ."
-    "cape cape amulet amulet earring earring"
-    ". . weapon weapon . ."
-    ". . armor armor . ."
-    ". ring1 ring1 ring2 ring2 .";
-  gap: 9px;
-  padding: 10px;
-  border: 1px solid color-mix(in srgb, var(--ui-accent) 18%, var(--ui-border));
-  border-radius: 10px;
-  background:
-    radial-gradient(circle at 50% 8%, color-mix(in srgb, var(--ui-accent) 8%, transparent), transparent 48%),
-    color-mix(in srgb, var(--ui-bg) 30%, transparent);
-}
-
-.equipment-loadout-board::before {
-  position: absolute;
-  top: 12px;
-  bottom: 12px;
-  left: 50%;
-  width: 1px;
-  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--ui-accent) 15%, transparent) 22%, color-mix(in srgb, var(--ui-accent) 15%, transparent) 78%, transparent);
-  content: '';
-  pointer-events: none;
 }
 
 .equipment-slot-card {
@@ -405,24 +365,6 @@
   opacity: .82;
 }
 
-@media (max-width: 760px) {
-  .equipment-loadout-board {
-    grid-template-areas:
-      "cape helmet"
-      "earring amulet"
-      "weapon armor"
-      "ring1 ring2";
-  }
-
-  .equipment-loadout-board::before {
-    display: none;
-  }
-
-  .equipment-slot-card {
-    height: 108px;
-    min-height: 108px;
-  }
-}
 /* Equipment Pass 2: compact Armory hierarchy and state-forward cards. */
 .equipment-armory-panel .equipment-search {
   margin-bottom: 6px;
@@ -1625,6 +1567,173 @@
   }
 
   .equipment-screen .equipment-crystal-module .button {
+    justify-self: start;
+  }
+}
+
+/* Equipment overlap cleanup: three normal-flow groups, with the crystal
+   action kept in its own footer row instead of competing with slot cards. */
+.equipment-screen .equipment-loadout-panel {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.equipment-screen .equipment-loadout-panel > .card-head {
+  flex: 0 0 auto;
+}
+
+.equipment-screen .equipment-loadout-panel > .equipment-loadout-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(112px, 1fr);
+  align-content: stretch;
+  gap: 18px;
+  min-height: 0;
+  flex: 1 1 auto;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--ui-accent) 18%, var(--ui-border));
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--ui-accent) 8%, transparent), transparent 42%),
+    color-mix(in srgb, var(--ui-bg) 30%, transparent);
+}
+
+.equipment-screen .equipment-loadout-group {
+  display: grid;
+  grid-template-rows: auto auto;
+  gap: 10px;
+  min-width: 0;
+}
+
+.equipment-screen .equipment-loadout-group + .equipment-loadout-group {
+  padding-top: 16px;
+  border-top: 1px solid color-mix(in srgb, var(--ui-border) 88%, var(--ui-accent));
+}
+
+.equipment-screen .equipment-loadout-group-header {
+  display: block;
+  min-width: 0;
+}
+
+.equipment-screen .equipment-loadout-group-header strong {
+  display: block;
+  color: var(--ui-text);
+  font-size: var(--text-sm);
+  font-weight: 750;
+  letter-spacing: .1em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.equipment-screen .equipment-loadout-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: minmax(128px, auto);
+  gap: 12px;
+  min-width: 0;
+}
+
+.equipment-screen .equipment-slot-grid-item {
+  display: block;
+  min-width: 0;
+}
+
+.equipment-screen .equipment-slot-card {
+  box-sizing: border-box;
+  height: 128px;
+  min-height: 128px;
+  padding: 12px;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.equipment-screen .equipment-slot-card-head {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.equipment-screen .equipment-slot-card-head > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.equipment-screen .equipment-slot-card-body {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.equipment-screen .equipment-slot-card-item {
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.equipment-screen .equipment-slot-icon,
+.equipment-screen .equipment-slot-icon .item-icon {
+  width: 46px;
+  height: 46px;
+}
+
+.equipment-screen .equipment-slot-card-copy {
+  min-width: 0;
+}
+
+.equipment-screen .equipment-slot-card-item strong {
+  overflow-wrap: anywhere;
+}
+
+.equipment-screen .equipment-loadout-group-crystals {
+  align-self: end;
+  width: 100%;
+}
+
+.equipment-screen .equipment-loadout-group-crystals .equipment-loadout-group-header {
+  padding-bottom: 0;
+}
+
+.equipment-screen .equipment-loadout-group-crystals .equipment-crystal-module {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px 0 0;
+  border-top: 0;
+}
+
+.equipment-screen .equipment-loadout-group-crystals .equipment-crystal-copy {
+  min-width: 0;
+}
+
+.equipment-screen .equipment-loadout-group-crystals .equipment-crystal-copy small {
+  display: block;
+  max-width: 48ch;
+  line-height: 1.35;
+}
+
+.equipment-screen .equipment-loadout-group-crystals .equipment-crystal-notice {
+  display: block;
+  margin-top: 8px;
+}
+
+@media (max-width: 560px) {
+  .equipment-screen .equipment-loadout-panel > .equipment-loadout-shell {
+    grid-template-rows: auto auto auto;
+    gap: 14px;
+    padding: 12px;
+  }
+
+  .equipment-screen .equipment-loadout-grid {
+    gap: 9px;
+  }
+
+  .equipment-screen .equipment-loadout-group-crystals .equipment-crystal-module {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .equipment-screen .equipment-loadout-group-crystals .equipment-crystal-module .button {
     justify-self: start;
   }
 }

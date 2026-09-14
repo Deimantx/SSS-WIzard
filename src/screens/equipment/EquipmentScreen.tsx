@@ -242,17 +242,20 @@ export function EquipmentScreenV2() {
     </div>
   }
 
-  const loadout = <Card title="WIZARD LOADOUT" action={<Status tone="success">{equippedCount} / {EQUIPMENT_POSITIONS.length} EQUIPPED</Status>}>
-    <div className="equipment-loadout-board">
-      {LOADOUT_SECTIONS.map((section) => <section className={`equipment-loadout-section equipment-loadout-section-${section.id}`} key={section.id}>
-        <div className="equipment-loadout-section-head"><div><span className="equipment-section-kicker">LOADOUT</span><strong>{section.label}</strong></div><small>{section.id === 'artifacts' ? 'Core power' : 'Flexible slots'}</small></div>
-        <div className="equipment-loadout-section-grid">{section.positions.map(renderLoadoutSlot)}</div>
+  const loadout = <Card title="WIZARD LOADOUT" className="equipment-loadout-panel" action={<Status tone="success">{equippedCount} / {EQUIPMENT_POSITIONS.length} EQUIPPED</Status>}>
+    <div className="equipment-loadout-board equipment-loadout-shell">
+      {LOADOUT_SECTIONS.map((section) => <section className={`equipment-loadout-section equipment-loadout-group equipment-loadout-section-${section.id} equipment-loadout-group-${section.id}`} key={section.id}>
+        <div className="equipment-loadout-section-head equipment-loadout-group-header"><strong>{section.label}</strong></div>
+        <div className={`equipment-loadout-section-grid equipment-loadout-grid equipment-loadout-grid-${section.id}`}>{section.positions.map(renderLoadoutSlot)}</div>
       </section>)}
-      <div className="equipment-crystal-module">
-        <div className="equipment-crystal-copy"><span className="equipment-section-kicker">EXTENSION SOCKET</span><strong>CRYSTALS</strong><small>Crystal loadout support is ready for a future progression pass.</small></div>
-        <Button variant="secondary" onClick={() => setCrystalNotice(true)}><Gem size={14} aria-hidden="true" /> OPEN CRYSTALS</Button>
+      <section className="equipment-loadout-section equipment-loadout-group equipment-loadout-section-crystals equipment-loadout-group-crystals">
+        <div className="equipment-loadout-section-head equipment-loadout-group-header"><strong>CRYSTALS</strong></div>
+        <div className="equipment-crystal-module equipment-loadout-crystal-row">
+          <div className="equipment-crystal-copy"><small>Crystal loadout support is ready for a future progression pass.</small></div>
+          <Button variant="secondary" onClick={() => setCrystalNotice(true)}><Gem size={14} aria-hidden="true" /> OPEN CRYSTALS</Button>
+        </div>
         {crystalNotice && <span className="equipment-crystal-notice" role="status">Crystal management is coming soon.</span>}
-      </div>
+      </section>
     </div>
     <p className="equipment-loadout-note">Select a slot to filter compatible equipment.</p>
   </Card>

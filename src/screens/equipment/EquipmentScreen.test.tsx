@@ -62,6 +62,9 @@ describe('EquipmentScreen stat typography structure', () => {
 
   it('renders one Weapon slot and no Offhand position', () => {
     const { container } = render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
+    expect(screen.getByText('ARTIFACTS')).toBeTruthy()
+    expect(screen.getByText('ACCESSORIES')).toBeTruthy()
+    expect(screen.getByText('CRYSTALS')).toBeTruthy()
     expect([...container.querySelectorAll('.equipment-slot-card')].map((card) => card.getAttribute('data-position'))).toEqual(['weapon', 'armor', 'head', 'earring1', 'necklace', 'ring1', 'earring2', 'cape', 'ring2'])
     expect(container.querySelector('[data-position="offhand"]')).toBeNull()
     expect([...container.querySelectorAll('.equipment-loadout-section-artifacts .equipment-slot-card')].map((card) => card.getAttribute('data-position'))).toEqual(['weapon', 'armor', 'head'])

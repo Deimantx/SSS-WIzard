@@ -26,7 +26,7 @@ export function SpellInspector({ entry, state, rankPathOpen, onToggleRankPath, o
   onToggleAutoCast: (spellId: SpellId) => void
 }) {
   const rankDrawerRef = useRef<HTMLElement>(null)
-  const inspectorScrollRef = useRef<HTMLElement>(null)
+  const inspectorScrollRef = useRef<HTMLDivElement>(null)
   useSmartScrollState(inspectorScrollRef, { resetKey: entry?.id, dependencies: [entry?.kind, entry?.rank, rankPathOpen] })
   useEffect(() => {
     if (!rankPathOpen) return
@@ -36,10 +36,10 @@ export function SpellInspector({ entry, state, rankPathOpen, onToggleRankPath, o
     document.addEventListener('keydown', onKeyDown)
     return () => { document.removeEventListener('pointerdown', onPointerDown); document.removeEventListener('keydown', onKeyDown) }
   }, [rankPathOpen, onToggleRankPath])
-  if (!entry) return <Card ref={inspectorScrollRef} className="schools-inspector-panel smart-scroll-region"><div className="spell-inspector-empty"><InspectorEyebrow>SELECT A SPELL</InspectorEyebrow><h2>SELECT A SPELL</h2><p>Known Spells will appear here when learned. Choose a known Spell from the Spellbook to inspect its mechanics.</p></div></Card>
+  if (!entry) return <Card className="schools-inspector-panel"><div ref={inspectorScrollRef} className="spell-inspector-scroll smart-scroll-region"><div className="spell-inspector-empty"><InspectorEyebrow>SELECT A SPELL</InspectorEyebrow><h2>SELECT A SPELL</h2><p>Known Spells will appear here when learned. Choose a known Spell from the Spellbook to inspect its mechanics.</p></div></div></Card>
   const school = SCHOOLS[entry.school]
-  if (entry.kind === 'placeholder') return <Card ref={inspectorScrollRef} className="schools-inspector-panel smart-scroll-region" style={{ '--spell-school-color': school.color, borderTopColor: school.color } as React.CSSProperties}><InspectorEyebrow>UNKNOWN SPELL</InspectorEyebrow><div className="spell-inspector-unknown"><SpellIcon school={entry.school} locked size="large" /><h2>?</h2><Status tone="locked">UNDISCOVERED</Status><p>{school.name.toUpperCase()} SCHOOL · Requires Level {entry.unlockLevel}</p><p className="muted">This future catalog slot has no authored mechanics yet.</p></div></Card>
-  if (!entry.unlocked) return <Card ref={inspectorScrollRef} className="schools-inspector-panel smart-scroll-region" style={{ '--spell-school-color': school.color, borderTopColor: school.color } as React.CSSProperties}><InspectorEyebrow>UNKNOWN SPELL</InspectorEyebrow><div className="spell-inspector-unknown"><SpellIcon school={entry.school} locked size="large" /><h2>?</h2><Status tone="locked">LOCKED</Status><p>{school.name.toUpperCase()} SCHOOL · Requires Level {entry.unlockLevel}</p><p className="muted">Research this school to reveal the spell.</p></div></Card>
+  if (entry.kind === 'placeholder') return <Card className="schools-inspector-panel" style={{ '--spell-school-color': school.color, borderTopColor: school.color } as React.CSSProperties}><div ref={inspectorScrollRef} className="spell-inspector-scroll smart-scroll-region"><InspectorEyebrow>UNKNOWN SPELL</InspectorEyebrow><div className="spell-inspector-unknown"><SpellIcon school={entry.school} locked size="large" /><h2>?</h2><Status tone="locked">UNDISCOVERED</Status><p>{school.name.toUpperCase()} SCHOOL · Requires Level {entry.unlockLevel}</p><p className="muted">This future catalog slot has no authored mechanics yet.</p></div></div></Card>
+  if (!entry.unlocked) return <Card className="schools-inspector-panel" style={{ '--spell-school-color': school.color, borderTopColor: school.color } as React.CSSProperties}><div ref={inspectorScrollRef} className="spell-inspector-scroll smart-scroll-region"><InspectorEyebrow>UNKNOWN SPELL</InspectorEyebrow><div className="spell-inspector-unknown"><SpellIcon school={entry.school} locked size="large" /><h2>?</h2><Status tone="locked">LOCKED</Status><p>{school.name.toUpperCase()} SCHOOL · Requires Level {entry.unlockLevel}</p><p className="muted">Research this school to reveal the spell.</p></div></div></Card>
 
   const spell = SPELLS[entry.spellId]
   const rank = entry.rank as SpellRank
@@ -54,8 +54,9 @@ export function SpellInspector({ entry, state, rankPathOpen, onToggleRankPath, o
     : canEnable
       ? `Enable this Spell's live Auto-Cast reservation. ${focusCost} Focus will be reserved.`
       : `Insufficient free Focus. Need ${focusCost} Focus.`
-  return <Card ref={inspectorScrollRef} className="schools-inspector-panel smart-scroll-region" style={{ '--spell-school-color': school.color, borderTopColor: school.color } as React.CSSProperties}>
-    <div className="spell-inspector-layout">
+  return <Card className="schools-inspector-panel" style={{ '--spell-school-color': school.color, borderTopColor: school.color } as React.CSSProperties}>
+    <div ref={inspectorScrollRef} className="spell-inspector-scroll smart-scroll-region">
+      <div className="spell-inspector-layout">
       <div className="spell-inspector-main">
         <div className="spell-inspector-title"><span className="spell-inspector-icon-frame"><SpellIcon school={spell.school} spellId={spell.id} size="large" /></span><div><div className="spell-inspector-meta">{school.name.toUpperCase()} · {formatSpellRank(rank).toUpperCase()}</div><h2>{spell.name}</h2><p>Learned at Lv{spell.unlockLevel}</p></div></div>
         <p className="spell-inspector-description">{spell.description}</p>
@@ -66,6 +67,7 @@ export function SpellInspector({ entry, state, rankPathOpen, onToggleRankPath, o
         <div className="spell-rank-path-action"><span><small>RANK PROGRESSION</small><strong>{formatSpellRank(rank)} path</strong></span><GameTooltip content={<TooltipContent title="View Rank Path" description="Review the Rank I path and future Focus costs." />}><Button variant="ghost" onClick={onToggleRankPath}>VIEW RANK PATH <span aria-hidden="true">→</span></Button></GameTooltip></div>
       </div>
       {rankPathOpen && <SpellRankPath drawerRef={rankDrawerRef} currentRank={rank} onClose={onToggleRankPath} />}
+      </div>
     </div>
   </Card>
 }

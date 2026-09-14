@@ -160,7 +160,7 @@ export const SCREEN_PANEL_LAYOUTS: Record<ScreenId, ScreenLayoutDefinition> = {
   // ============================================================
   combat: screen({
     'combat-stage': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 462, preferredHeight: 570, label: 'Combat Stage' }),
-    'combat-spell-deck': panel({ order: 2, columnStart: 1, columnSpan: 12, rowStart: 2, minHeight: 174, preferredHeight: 320, label: 'Spell Deck' }),
+    'combat-spell-deck': panel({ order: 2, columnStart: 1, columnSpan: 12, rowStart: 2, minHeight: 174, preferredHeight: 420, label: 'Spell Deck' }),
     'combat-analytics': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 282, preferredHeight: 440, label: 'Combat Analytics' }),
   }, ['combat-stage', 'combat-spell-deck', 'combat-analytics']),
 
@@ -185,8 +185,8 @@ export const SCREEN_PANEL_LAYOUTS: Record<ScreenId, ScreenLayoutDefinition> = {
   // EQUIPMENT
   // ============================================================
   equipment: screen({
-    'equipment-loadout': panel({ order: 1, columnStart: 1, columnSpan: 7, rowStart: 1, minHeight: 462, preferredHeight: 680, label: 'Equipment loadout' }),
-    'equipment-stats': panel({ order: 2, columnStart: 8, columnSpan: 5, rowStart: 1, minHeight: 462, preferredHeight: 680, label: 'Equipment stats' }),
+    'equipment-loadout': panel({ order: 1, columnStart: 1, columnSpan: 7, rowStart: 1, minHeight: 462, preferredHeight: 740, label: 'Equipment loadout' }),
+    'equipment-stats': panel({ order: 2, columnStart: 8, columnSpan: 5, rowStart: 1, minHeight: 462, preferredHeight: 740, label: 'Equipment stats' }),
     'equipment-owned': panel({ order: 3, columnStart: 1, columnSpan: 7, rowStart: 2, minHeight: 462, preferredHeight: 710, label: 'Armory' }),
     'equipment-inspector': panel({ order: 4, columnStart: 8, columnSpan: 5, rowStart: 2, minHeight: 462, preferredHeight: 710, label: 'Gear inspector' }),
   }, ['equipment-loadout', 'equipment-stats', 'equipment-owned', 'equipment-inspector']),

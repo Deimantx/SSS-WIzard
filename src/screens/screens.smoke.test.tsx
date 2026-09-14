@@ -172,6 +172,8 @@ describe('screen smoke coverage', () => {
     expect(fireBoltTile.querySelector('.spell-browser-rank-badge')).toBeNull()
     expect(fireBoltTile.querySelector('.spell-tile-status')).toBeNull()
     await user.click(fireBoltTile)
+    const spellInspectorScroll = document.querySelector('.schools-inspector-panel .spell-inspector-scroll')
+    expect(spellInspectorScroll?.classList.contains('smart-scroll-region')).toBe(true)
     expect(screen.getByText(/Auto-Cast Focus/)).toBeTruthy()
     expect(screen.queryByText('Current Rank')).toBeNull()
     expect(screen.getByRole('button', { name: 'Auto-Cast OFF' })).toBeTruthy()

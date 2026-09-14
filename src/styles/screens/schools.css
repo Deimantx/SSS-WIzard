@@ -77,7 +77,10 @@
 .schools-empty-state small { font: var(--text-micro) var(--font-mono); }
 
 /* Inspector dossier */
-.schools-inspector-panel { position: relative; container-type: inline-size; overflow: auto; padding: 16px; border-top: 2px solid var(--spell-school-color, var(--ui-accent)); scrollbar-color: var(--ui-scrollbar-thumb) transparent; scrollbar-width: thin; }
+.schools-inspector-panel { position: relative; container-type: inline-size; display: flex; min-height: 0; flex-direction: column; overflow: hidden; padding: 16px; border-top: 2px solid var(--spell-school-color, var(--ui-accent)); }
+.spell-inspector-scroll { display: block; flex: 1 1 auto; width: 100%; min-width: 0; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 1px 3px 22px 0; overscroll-behavior: contain; scrollbar-color: var(--ui-scrollbar-thumb) transparent; scrollbar-gutter: stable; scrollbar-width: thin; }
+.spell-inspector-scroll::-webkit-scrollbar { width: 6px; }
+.spell-inspector-scroll::-webkit-scrollbar-thumb { border-radius: 99px; background: var(--ui-scrollbar-thumb); }
 .spell-inspector-layout { position: relative; min-height: 100%; }
 .spell-inspector-main { min-width: 0; }
 .spell-inspector-title { display: grid; grid-template-columns: 68px minmax(0, 1fr); align-items: center; gap: 11px; margin: 1px 0 12px; }

@@ -82,20 +82,20 @@ export function CombatSpellDeck() {
   }
 
   return <Card className="combat-spell-deck">
-    <header className="combat-spell-deck-header">
+    <header className="combat-spell-deck-toprow">
       <div className="combat-spell-deck-heading"><strong>SPELL DECK</strong></div>
+      <div className="combat-preset-control"><div className="combat-preset-control-label"><span className="combat-subsection-label">PRESET / LOADOUT</span><small>{activePreset ? 'Live configuration matches this preset.' : 'CUSTOM · live configuration'}</small></div><div className="combat-preset-control-row"><SelectMenu options={presetOptions} value={activePreset?.id ?? 'custom'} onChange={choosePreset} ariaLabel="Combat Auto-Cast preset" /><GameTooltip content={<TooltipContent title="Manage Presets" description="Build, edit, and apply reusable Auto-Cast configurations." />}><Button className="combat-preset-manage" variant="secondary" onClick={openPresetManager}><Settings2 size={13} /> MANAGE</Button></GameTooltip></div></div>
       <div className="combat-focus-summary"><span>AUTO</span><strong className="ui-focus">{focus.autoCastFocus} Focus</strong></div>
     </header>
-    <div className="combat-spell-preset-bar">
-      <div className="combat-preset-control"><span className="combat-subsection-label">PRESET / LOADOUT</span><div className="combat-preset-control-row"><SelectMenu options={presetOptions} value={activePreset?.id ?? 'custom'} onChange={choosePreset} ariaLabel="Combat Auto-Cast preset" /><GameTooltip content={<TooltipContent title="Manage Presets" description="Build, edit, and apply reusable Auto-Cast configurations." />}><Button className="combat-preset-manage" variant="secondary" onClick={openPresetManager}><Settings2 size={13} /> MANAGE</Button></GameTooltip></div><small>{activePreset ? 'Live configuration matches this preset.' : 'CUSTOM · live configuration'}</small></div>
-    </div>
-    {(banner || presetNotice) && <div className="combat-spell-status-region">
-      {banner && <div className="combat-spell-banner" role="status"><CircleDot size={13} aria-hidden="true" />{banner}</div>}
-      {presetNotice && <div className="combat-spell-preset-notice" role="alert"><AlertTriangle size={13} aria-hidden="true" />{presetNotice}</div>}
-    </div>}
     <div className="combat-spell-filter-toolbar" role="group" aria-label="Spell Deck filters"><SearchInput value={search} onChange={setSearch} placeholder="Search Spells…" ariaLabel="Search Spells" /><SelectMenu options={schoolOptions} value={school} onChange={setSchool} ariaLabel="Spell school filter" /><FilterButton active={autoOnly} onClick={() => setAutoOnly((current) => !current)}><CircleDot size={12} /> AUTO ONLY</FilterButton></div>
-    <div className="combat-spell-grid-region">{visibleSpells.length ? <div ref={gridRef} className="combat-spell-grid smart-scroll-region">{visibleSpells.map((spellId) => <CombatSpellTile key={spellId} spellId={spellId} presentationState={state} globalBlocker={globalBlocker} onOpenPresetManager={openPresetManager} onRemoveFromPreset={removeFromCurrentPreset} />)}</div> : <div className="combat-spell-empty"><CircleDot size={20} aria-hidden="true" /><strong>{autoOnly ? 'No Auto-Cast Spells enabled.' : query ? 'No Spells match the current filters.' : school !== 'all' ? `No unlocked ${SCHOOLS[school].name} Spells.` : 'No unlocked Spells.'}</strong></div>}</div>
-    <footer className="combat-spell-deck-foot"><div className="combat-spell-deck-foot-left"><Status tone={focus.freeFocus < 0 ? 'warning' : 'success'}>{focus.autoCastFocus} Focus reserved · {focus.freeFocus} free</Status><GameTooltip accent="focus" content={<TooltipContent title="Remove all Echoes" description="Disable Auto-Cast on every active spell and release the reserved Focus." />}><Button className="combat-clear-autocast" variant="ghost" disabled={focus.autoCastFocus <= 0} onClick={clearAutoCast}><CircleDot size={12} /> REMOVE ALL ECHOES</Button></GameTooltip></div><small>{debugAllowFocusOverCap ? 'Developer Focus override active.' : `${visibleSpells.length} Spell${visibleSpells.length === 1 ? '' : 's'} shown`}</small></footer>
+    <div className="combat-spell-content-row">
+      {(banner || presetNotice) && <div className="combat-spell-status-region">
+        {banner && <div className="combat-spell-banner" role="status"><CircleDot size={13} aria-hidden="true" />{banner}</div>}
+        {presetNotice && <div className="combat-spell-preset-notice" role="alert"><AlertTriangle size={13} aria-hidden="true" />{presetNotice}</div>}
+      </div>}
+      <div className="combat-spell-grid-region">{visibleSpells.length ? <div ref={gridRef} className="combat-spell-grid smart-scroll-region">{visibleSpells.map((spellId) => <CombatSpellTile key={spellId} spellId={spellId} presentationState={state} globalBlocker={globalBlocker} onOpenPresetManager={openPresetManager} onRemoveFromPreset={removeFromCurrentPreset} />)}</div> : <div className="combat-spell-empty"><CircleDot size={20} aria-hidden="true" /><strong>{autoOnly ? 'No Auto-Cast Spells enabled.' : query ? 'No Spells match the current filters.' : school !== 'all' ? `No unlocked ${SCHOOLS[school].name} Spells.` : 'No unlocked Spells.'}</strong></div>}</div>
+      <footer className="combat-spell-deck-foot"><div className="combat-spell-deck-foot-left"><Status tone={focus.freeFocus < 0 ? 'warning' : 'success'}>{focus.autoCastFocus} Focus reserved · {focus.freeFocus} free</Status><GameTooltip accent="focus" content={<TooltipContent title="Remove all Echoes" description="Disable Auto-Cast on every active spell and release the reserved Focus." />}><Button className="combat-clear-autocast" variant="ghost" disabled={focus.autoCastFocus <= 0} onClick={clearAutoCast}><CircleDot size={12} /> REMOVE ALL ECHOES</Button></GameTooltip></div><small>{debugAllowFocusOverCap ? 'Developer Focus override active.' : `${visibleSpells.length} Spell${visibleSpells.length === 1 ? '' : 's'} shown`}</small></footer>
+    </div>
     <SpellPresetDialog open={presetOpen} onClose={() => setPresetOpen(false)} />
   </Card>
 }

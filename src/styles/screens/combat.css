@@ -666,8 +666,8 @@
 /* Spell Deck */
 .combat-spell-deck {
   position: relative;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
   container-type: inline-size;
   min-width: 0;
   min-height: 0;
@@ -681,11 +681,11 @@
     var(--ui-panel-gradient-end)
   );
 }
-.combat-spell-deck-header {
+.combat-spell-deck-toprow {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(180px, 1fr) minmax(300px, min(520px, 42%)) auto;
   align-items: center;
-  gap: 12px;
+  gap: clamp(12px, 1.4vw, 18px);
   min-width: 0;
   padding-bottom: 9px;
   border-bottom: 1px solid color-mix(in srgb, var(--ui-accent) 24%, var(--ui-border));
@@ -733,26 +733,34 @@
   font-weight: 700;
   white-space: nowrap;
 }
-.combat-spell-preset-bar {
-  display: flex;
-  align-items: flex-start;
-  min-width: 0;
-  padding: 8px 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--ui-border) 72%, transparent);
-}
 .combat-preset-control {
   display: grid;
   gap: 3px;
-  width: min(520px, 42%);
-  min-width: 300px;
-  max-width: 520px;
-  justify-self: start;
-  margin-left: 0;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
   box-sizing: border-box;
   padding: 5px 7px;
   border: 1px solid color-mix(in srgb, var(--ui-border) 86%, var(--ui-accent));
   border-radius: 6px;
   background: color-mix(in srgb, var(--ui-bg) 36%, transparent);
+}
+.combat-preset-control-label {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+.combat-preset-control-label .combat-subsection-label {
+  flex: 0 0 auto;
+}
+.combat-preset-control-label small {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .combat-preset-control-row {
   display: grid;
@@ -766,18 +774,22 @@
 .combat-preset-control-row .select-menu-trigger {
   min-height: 31px;
   padding: 6px 8px;
+  border-color: color-mix(in srgb, var(--ui-border) 92%, var(--ui-accent));
+  background: color-mix(in srgb, var(--ui-panel-strong) 74%, transparent);
 }
 .combat-preset-manage {
   min-height: 31px;
   padding: 7px 9px;
+  border-color: color-mix(in srgb, var(--ui-border) 92%, var(--ui-accent));
+  color: var(--ui-text-muted);
+  background: transparent;
   font-size: 9px;
 }
-.combat-preset-control > small {
-  overflow: hidden;
-  color: var(--ui-text-muted);
-  font: var(--text-micro) var(--font-mono);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.combat-preset-manage:hover,
+.combat-preset-manage:focus-visible {
+  border-color: var(--ui-accent);
+  color: var(--ui-text);
+  background: var(--ui-accent-soft);
 }
 .combat-school-option {
   display: inline-flex;
@@ -828,6 +840,13 @@
   border-color: var(--ui-accent);
   color: var(--ui-text);
   background: var(--ui-accent-soft);
+}
+.combat-spell-content-row {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
 }
 .combat-spell-status-region {
   display: grid;
@@ -924,37 +943,23 @@
   color: var(--semantic-focus);
   background: color-mix(in srgb, var(--semantic-focus) 11%, transparent);
 }
-.combat-spell-preset-bar .combat-preset-control-row .select-menu-trigger {
-  border-color: color-mix(in srgb, var(--ui-border) 92%, var(--ui-accent));
-  background: color-mix(in srgb, var(--ui-panel-strong) 74%, transparent);
-}
-.combat-spell-preset-bar .combat-preset-manage {
-  border-color: color-mix(in srgb, var(--ui-border) 92%, var(--ui-accent));
-  color: var(--ui-text-muted);
-  background: transparent;
-}
-.combat-spell-preset-bar .combat-preset-manage:hover,
-.combat-spell-preset-bar .combat-preset-manage:focus-visible {
-  border-color: var(--ui-accent);
-  color: var(--ui-text);
-  background: var(--ui-accent-soft);
-}
 @container (max-width: 1080px) {
   .combat-spell-grid { grid-template-columns: repeat(5, minmax(145px, 1fr)); }
-  .combat-preset-control { width: min(520px, 60%); }
+  .combat-spell-deck-toprow { grid-template-columns: minmax(160px, 1fr) minmax(280px, 44%) auto; }
 }
 @container (max-width: 820px) {
   .combat-spell-grid { grid-template-columns: repeat(4, minmax(145px, 1fr)); }
-  .combat-preset-control { width: 72%; }
+  .combat-spell-deck-toprow { grid-template-columns: minmax(0, 1fr) minmax(260px, 44%) auto; gap: 10px; }
 }
 @container (max-width: 620px) {
-  .combat-spell-preset-bar {
-    align-items: stretch;
+  .combat-spell-deck-toprow {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
   }
   .combat-preset-control {
+    grid-column: 1 / -1;
+    grid-row: 2;
     width: 100%;
-    min-width: 0;
-    max-width: none;
   }
   .combat-spell-filter-toolbar {
     grid-template-columns: minmax(0, 1fr) minmax(110px, .8fr);
@@ -966,7 +971,8 @@
   .combat-spell-grid { grid-template-columns: repeat(3, minmax(145px, 1fr)); }
 }
 @container (max-width: 440px) {
-  .combat-spell-deck-header { grid-template-columns: 1fr; align-items: start; }
+  .combat-spell-deck-toprow { grid-template-columns: 1fr; align-items: start; }
+  .combat-preset-control { grid-column: auto; grid-row: auto; }
   .combat-focus-summary {
     width: max-content;
     padding: 6px 0 0;

@@ -7,7 +7,7 @@ import { validateFocusForEquipment, type FocusLoadoutValidation } from '../../sy
 import { getArtifactEffectiveStats, isArtifactItem } from '../../systems/artifacts/artifactProgression'
 import { getEquipmentPrimaryCombatSummary } from './equipmentCombatPresentation'
 import { formatEquipmentStat, getEquipmentStatLabel } from './equipmentStatPresentation'
-import { EQUIPMENT_ITEM_SLOT_LABELS } from '../../core/equipment/equipmentRules'
+import { EQUIPMENT_ITEM_SLOT_LABELS, getDefaultEquipmentPosition, getItemPositions } from '../../core/equipment/equipmentRules'
 import type { DamageType, EquipmentBuildTag, EquipmentStats, EquipmentPosition, GameState, ItemId } from '../../types'
 
 export type EquipmentSheetState = Pick<GameState, 'player' | 'progress' | 'activities' | 'equipment' | 'inventory' | 'artifactProgress'> & Partial<Pick<GameState, 'debug'>>
@@ -126,33 +126,34 @@ export function getEquipmentPrimarySummary(itemId: ItemId, state?: Pick<GameStat
 export interface EquipmentPreviewTargetOptions {
   itemId: ItemId
   selectedPosition: EquipmentPosition | null
-  ringReplacement: EquipmentPosition | null
+  accessoryReplacement: EquipmentPosition | null
   equipment: GameState['equipment']
 }
-
-const isRingPosition = (position: EquipmentPosition | null): position is 'ring1' | 'ring2' => position === 'ring1' || position === 'ring2'
 
 /**
  * Resolves the slot the Equipment UI should preview without allowing a stale
  * browsing target to make a valid item look incompatible.
  *
  * `selectedPosition` is an explicit loadout target. When it does not fit the
- * selected item, the item's authored natural slot wins. Rings retain an
- * explicit replacement choice, otherwise they prefer an open ring position.
+ * selected item, the item's authored natural slot wins. Rings and Earrings
+ * retain an explicit replacement choice, otherwise they prefer an open slot.
  */
-export function resolveEquipmentPreviewTarget({ itemId, selectedPosition, ringReplacement, equipment }: EquipmentPreviewTargetOptions): EquipmentPosition | undefined {
+export function resolveEquipmentPreviewTarget({ itemId, selectedPosition, accessoryReplacement, equipment }: EquipmentPreviewTargetOptions): EquipmentPosition | undefined {
   const item = ITEMS[itemId]
   if (!item?.equipmentSlot) return undefined
 
-  if (item.equipmentSlot === 'ring') {
-    if (isRingPosition(ringReplacement)) return ringReplacement
-    if (isRingPosition(selectedPosition)) return selectedPosition
-    if (!equipment.ring1) return 'ring1'
-    if (!equipment.ring2) return 'ring2'
+  if (item.equipmentSlot === 'ring' || item.equipmentSlot === 'earring') {
+    const positions = getItemPositions(itemId)
+    const replacementFits = positions.includes(accessoryReplacement as EquipmentPosition)
+    if (replacementFits) return accessoryReplacement as EquipmentPosition
+    if (positions.includes(selectedPosition as EquipmentPosition)) return selectedPosition as EquipmentPosition
+    const openPosition = positions.find((position) => !equipment[position])
+    if (openPosition) return openPosition
     return undefined
   }
 
-  return selectedPosition === item.equipmentSlot ? selectedPosition : item.equipmentSlot as EquipmentPosition
+  const defaultPosition = getDefaultEquipmentPosition(item.equipmentSlot)
+  return defaultPosition && selectedPosition === defaultPosition ? selectedPosition : defaultPosition
 }
 
 /** Compatibility projections for the current Equipment sheet; filtered modifiers use the generic evaluator. */
@@ -230,8 +231,10 @@ const failureMessage: Record<EquipmentChangeFailureReason, string> = {
   'not-equipment': 'That item cannot be equipped.',
   incompatible: 'This item cannot be equipped in that slot.',
   'ring-target-required': 'Choose Ring 1 or Ring 2 to replace.',
+  'earring-target-required': 'Choose Earring 1 or Earring 2 to replace.',
   'insufficient-copies': 'A second copy is required for this Ring position.',
   'duplicate-ring': 'The same Ring cannot be equipped twice.',
+  'duplicate-earring': 'The same Earring cannot be equipped twice.',
 }
 
 const getFailureMessage = (_state: EquipmentSheetState, _itemId: ItemId, reason: EquipmentChangeFailureReason) => failureMessage[reason]

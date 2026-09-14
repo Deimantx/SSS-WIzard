@@ -16,14 +16,14 @@ describe('Focus Capacity', () => {
     const state = createInitialState()
     state.progress.focusImprovement.level = 3
     state.progress.permanentFocusBonuses = { forestHeart: 20 }
-    state.equipment.amulet = 'windthread-charm'
+    state.equipment.necklace = 'windthread-charm'
 
     expect(getFocusCapacityBreakdown(state)).toEqual({ base: 100, improvement: 15, permanentRewards: 20, equipment: 10, debug: 0, total: 145 })
   })
 
   it('uses authored Windthread Charm stats for equipment Max Focus', () => {
     const state = createInitialState()
-    state.equipment.amulet = 'windthread-charm'
+    state.equipment.necklace = 'windthread-charm'
     expect(getFocusCapacityBreakdown(state).equipment).toBe(10)
   })
 

@@ -6,7 +6,7 @@ import { createInitialTransmutationArrays } from '../game/content/transmutation/
 
 // Combat Action System V3 stores authored base work plus remaining work for
 // dynamic-rate action progression.
-export const SAVE_VERSION = 30
+export const SAVE_VERSION = 31
 
 export const createInitialState = (): GameState => ({
   saveVersion: SAVE_VERSION,
@@ -15,7 +15,7 @@ export const createInitialState = (): GameState => ({
   currencies: { gold: 0 },
   inventory: {},
   protectedItems: {},
-  equipment: { weapon: null, armor: null, helmet: null, cape: null, amulet: null, earring: null, ring1: null, ring2: null },
+  equipment: { weapon: null, armor: null, head: null, cape: null, necklace: null, earring1: null, earring2: null, ring1: null, ring2: null },
   artifactProgress: {},
   activities: {
     channeling: { echoesAssigned: 0 },

@@ -1,6 +1,6 @@
 import { ITEMS } from '../../content/items/items'
 import type { EquipmentPosition, GameState, ItemId } from '../../types'
-import { EQUIPMENT_POSITIONS, isPositionCompatible } from './equipmentRules'
+import { EQUIPMENT_POSITIONS, getDefaultEquipmentPosition, isPositionCompatible } from './equipmentRules'
 
 export type EquipmentChangeFailureReason =
   | 'missing-item'
@@ -8,8 +8,10 @@ export type EquipmentChangeFailureReason =
   | 'not-equipment'
   | 'incompatible'
   | 'ring-target-required'
+  | 'earring-target-required'
   | 'insufficient-copies'
   | 'duplicate-ring'
+  | 'duplicate-earring'
 
 export interface EquipmentChangeSuccess {
   ok: true
@@ -26,10 +28,10 @@ export type EquipmentChangeResult = EquipmentChangeSuccess | EquipmentChangeFail
 
 const isEquipmentPosition = (position: EquipmentPosition | undefined): position is EquipmentPosition => Boolean(position && EQUIPMENT_POSITIONS.includes(position))
 
-const getRingTarget = (equipment: GameState['equipment'], targetPosition?: EquipmentPosition): EquipmentPosition | null => {
+const getAccessoryTarget = (equipment: GameState['equipment'], targetPosition: EquipmentPosition | undefined, positions: readonly ['ring1', 'ring2'] | readonly ['earring1', 'earring2']): EquipmentPosition | null => {
   if (targetPosition !== undefined) return targetPosition
-  if (!equipment.ring1) return 'ring1'
-  if (!equipment.ring2) return 'ring2'
+  if (!equipment[positions[0]]) return positions[0]
+  if (!equipment[positions[1]]) return positions[1]
   return null
 }
 
@@ -49,14 +51,20 @@ export const evaluateEquipmentChange = (
   if (item.kind !== 'equipment' || !item.equipmentSlot) return { ok: false, reason: 'not-equipment' }
   if (Math.max(0, Math.floor(state.inventory[itemId] ?? 0)) < 1) return { ok: false, reason: 'not-owned' }
 
-  const position = item.equipmentSlot === 'ring'
-    ? getRingTarget(state.equipment, targetPosition)
-    : targetPosition ?? item.equipmentSlot as EquipmentPosition
-  if (!position) return { ok: false, reason: 'ring-target-required' }
+  const isRing = item.equipmentSlot === 'ring'
+  const isEarring = item.equipmentSlot === 'earring'
+  const position = isRing
+    ? getAccessoryTarget(state.equipment, targetPosition, ['ring1', 'ring2'])
+    : isEarring
+      ? getAccessoryTarget(state.equipment, targetPosition, ['earring1', 'earring2'])
+      : targetPosition ?? getDefaultEquipmentPosition(item.equipmentSlot)
+  if (!position) return { ok: false, reason: isRing ? 'ring-target-required' : 'earring-target-required' }
   if (!isEquipmentPosition(position) || !isPositionCompatible(itemId, position)) return { ok: false, reason: 'incompatible' }
-  if (item.equipmentSlot === 'ring' && (position === 'ring1' || position === 'ring2')) {
-    const other = position === 'ring1' ? 'ring2' : 'ring1'
-    if (state.equipment[other] === itemId) return { ok: false, reason: 'duplicate-ring' }
+  if (isRing || isEarring) {
+    const other = isRing
+      ? position === 'ring1' ? 'ring2' : 'ring1'
+      : position === 'earring1' ? 'earring2' : 'earring1'
+    if (state.equipment[other] === itemId) return { ok: false, reason: isRing ? 'duplicate-ring' : 'duplicate-earring' }
   }
 
   const replacedSameCopy = state.equipment[position] === itemId ? 1 : 0

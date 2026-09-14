@@ -1,16 +1,17 @@
 import { ITEMS } from '../../content/items/items'
 import type { EquipmentItemSlot, EquipmentPosition, GameState, ItemId, ItemDefinition } from '../../types'
 
-export const EQUIPMENT_POSITIONS: readonly EquipmentPosition[] = ['weapon', 'armor', 'helmet', 'cape', 'amulet', 'earring', 'ring1', 'ring2']
+export const EQUIPMENT_POSITIONS: readonly EquipmentPosition[] = ['weapon', 'armor', 'head', 'cape', 'necklace', 'earring1', 'earring2', 'ring1', 'ring2']
 export const EQUIPMENT_ITEM_SLOTS: readonly EquipmentItemSlot[] = ['weapon', 'armor', 'helmet', 'cape', 'amulet', 'earring', 'ring']
 
 export const EQUIPMENT_POSITION_LABELS: Record<EquipmentPosition, string> = {
   weapon: 'Weapon',
   armor: 'Armor',
-  helmet: 'Helmet',
+  head: 'Head',
   cape: 'Cape',
-  amulet: 'Amulet',
-  earring: 'Earring',
+  necklace: 'Necklace',
+  earring1: 'Earring 1',
+  earring2: 'Earring 2',
   ring1: 'Ring 1',
   ring2: 'Ring 2',
 }
@@ -18,20 +19,21 @@ export const EQUIPMENT_POSITION_LABELS: Record<EquipmentPosition, string> = {
 export const EQUIPMENT_ITEM_SLOT_LABELS: Record<EquipmentItemSlot, string> = {
   weapon: 'Weapon',
   armor: 'Armor',
-  helmet: 'Helmet',
+  helmet: 'Head',
   cape: 'Cape',
-  amulet: 'Amulet',
-  earring: 'Earring',
+  amulet: 'Necklace',
+  earring: 'Earrings',
   ring: 'Rings',
 }
 
 export const EMPTY_EQUIPMENT: Record<EquipmentPosition, null> = {
   weapon: null,
   armor: null,
-  helmet: null,
+  head: null,
   cape: null,
-  amulet: null,
-  earring: null,
+  necklace: null,
+  earring1: null,
+  earring2: null,
   ring1: null,
   ring2: null,
 }
@@ -44,16 +46,30 @@ export function isWeapon(itemOrId: ItemId | ItemDefinition | null | undefined) {
   return getItemDefinition(itemOrId)?.equipmentSlot === 'weapon'
 }
 
+export function getDefaultEquipmentPosition(slot: EquipmentItemSlot | undefined): EquipmentPosition | undefined {
+  if (!slot) return undefined
+  if (slot === 'helmet') return 'head'
+  if (slot === 'amulet') return 'necklace'
+  if (slot === 'earring') return 'earring1'
+  if (slot === 'ring') return 'ring1'
+  return slot
+}
+
 export function getItemPositions(itemOrId: ItemId | ItemDefinition | null | undefined): EquipmentPosition[] {
   const item = getItemDefinition(itemOrId)
   if (!item?.equipmentSlot) return []
-  return item.equipmentSlot === 'ring' ? ['ring1', 'ring2'] : [item.equipmentSlot]
+  if (item.equipmentSlot === 'ring') return ['ring1', 'ring2']
+  if (item.equipmentSlot === 'earring') return ['earring1', 'earring2']
+  const position = getDefaultEquipmentPosition(item.equipmentSlot)
+  return position ? [position] : []
 }
 
 export function isPositionCompatible(itemOrId: ItemId | ItemDefinition | null | undefined, position: EquipmentPosition) {
   const item = getItemDefinition(itemOrId)
   if (!item || item.kind !== 'equipment' || !item.equipmentSlot) return false
-  return item.equipmentSlot === 'ring' ? position === 'ring1' || position === 'ring2' : item.equipmentSlot === position
+  if (item.equipmentSlot === 'ring') return position === 'ring1' || position === 'ring2'
+  if (item.equipmentSlot === 'earring') return position === 'earring1' || position === 'earring2'
+  return getDefaultEquipmentPosition(item.equipmentSlot) === position
 }
 
 export function getEquippedReservedQuantity(state: Pick<GameState, 'equipment'>, itemId: ItemId) {
@@ -91,5 +107,6 @@ export function normalizeEquipmentState(
   }
 
   if (normalized.ring1 && normalized.ring1 === normalized.ring2) normalized.ring2 = null
+  if (normalized.earring1 && normalized.earring1 === normalized.earring2) normalized.earring2 = null
   return normalized
 }

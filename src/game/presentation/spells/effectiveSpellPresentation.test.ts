@@ -65,11 +65,11 @@ describe('effective Spell presentation', () => {
   it('uses canonical cooldown recovery and returns to base after unequipping', () => {
     const state = createInitialState()
     const base = getEffectiveSpellCooldown(state, 'fire-bolt')
-    state.equipment.earring = 'wispglass-earring'
+    state.equipment.earring1 = 'wispglass-earring'
     const equipped = getEffectiveSpellCooldown(state, 'fire-bolt')
     expect(base.effective).toBe(5_000)
     expect(equipped.effective).toBeCloseTo(5_000 / 1.03)
-    state.equipment.earring = null
+    state.equipment.earring1 = null
     expect(getEffectiveSpellCooldown(state, 'fire-bolt').effective).toBe(base.effective)
   })
 

@@ -59,8 +59,8 @@ export function DeveloperCombatStatus() {
     <Card title="Equipment effect fixtures" className="developer-debug-card">
       <p className="developer-debug-note">These setups grant and equip authored gear, then use the real status, Barrier, damage, and encounter runtime.</p>
       <div className="developer-button-grid">
-        <Button variant="secondary" onClick={() => prepareThresholdFixture('heartseed-necklace', 'amulet', 0.25)}>Living Seed threshold</Button>
-        <Button variant="secondary" onClick={() => prepareThresholdFixture('greatbear-heartstone', 'amulet', 0.3)}>Unyielding threshold</Button>
+        <Button variant="secondary" onClick={() => prepareThresholdFixture('heartseed-necklace', 'necklace', 0.25)}>Living Seed threshold</Button>
+        <Button variant="secondary" onClick={() => prepareThresholdFixture('greatbear-heartstone', 'necklace', 0.3)}>Unyielding threshold</Button>
         <Button variant="secondary" onClick={() => prepareEquipmentFixture('howling-signet', 'ring1')}>Predator's Feast setup</Button>
         <Button variant="secondary" onClick={() => { prepareEquipmentFixture('howling-signet', 'ring1'); killEnemy() }}>Predator's Feast kill</Button>
         <Button variant="secondary" onClick={() => { prepareEquipmentFixture('gravebinder-ring', 'ring1'); applyEnemy('chilled'); advanceCombat(2200) }}>Gravebinder debuffed hit</Button>

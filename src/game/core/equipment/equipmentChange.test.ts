@@ -33,17 +33,22 @@ describe('evaluateEquipmentChange', () => {
   it('rejects missing ownership and incompatible target positions', () => {
     expect(evaluateEquipmentChange(createInitialState(), 'ember-staff')).toEqual({ ok: false, reason: 'not-owned' })
     const state = withOwned('tideglass-wand')
-    expect(evaluateEquipmentChange(state, 'tideglass-wand', 'helmet')).toEqual({ ok: false, reason: 'incompatible' })
+    expect(evaluateEquipmentChange(state, 'tideglass-wand', 'head')).toEqual({ ok: false, reason: 'incompatible' })
     state.inventory['gravebinder-ring'] = 1
-    expect(evaluateEquipmentChange(state, 'gravebinder-ring', 'helmet')).toEqual({ ok: false, reason: 'incompatible' })
+    expect(evaluateEquipmentChange(state, 'gravebinder-ring', 'head')).toEqual({ ok: false, reason: 'incompatible' })
+    state.inventory['windthread-charm'] = 1
+    expect(evaluateEquipmentChange(state, 'windthread-charm', 'ring1')).toEqual({ ok: false, reason: 'incompatible' })
+    state.inventory['wispglass-earring'] = 1
+    expect(evaluateEquipmentChange(state, 'wispglass-earring', 'ring1')).toEqual({ ok: false, reason: 'incompatible' })
   })
 
-  it('equips one Earring and replaces it through the shared Equipment path', () => {
+  it('equips Earrings into separate positions through the shared Equipment path', () => {
     const state = withOwned('wispglass-earring')
-    expect(equipItemAction(state, 'wispglass-earring')).toMatchObject({ ok: true, position: 'earring' })
+    expect(equipItemAction(state, 'wispglass-earring')).toMatchObject({ ok: true, position: 'earring1' })
     state.inventory['fangwire-earring'] = 1
-    expect(equipItemAction(state, 'fangwire-earring')).toMatchObject({ ok: true, position: 'earring' })
-    expect(state.equipment.earring).toBe('fangwire-earring')
+    expect(equipItemAction(state, 'fangwire-earring')).toMatchObject({ ok: true, position: 'earring2' })
+    expect(state.equipment.earring1).toBe('wispglass-earring')
+    expect(state.equipment.earring2).toBe('fangwire-earring')
     expect(state.inventory['wispglass-earring']).toBe(1)
     expect(state.inventory['fangwire-earring']).toBe(1)
   })
@@ -65,6 +70,16 @@ describe('evaluateEquipmentChange', () => {
     const two = withOwned('gravebinder-ring', 2)
     two.equipment.ring1 = 'gravebinder-ring'
     expect(evaluateEquipmentChange(two, 'gravebinder-ring', 'ring2')).toEqual({ ok: false, reason: 'duplicate-ring' })
+  })
+
+  it('requires an Earring target when both Earring positions are occupied', () => {
+    const state = withOwned('wispglass-earring', 1)
+    state.equipment.earring1 = 'fangwire-earring'
+    state.equipment.earring2 = 'mourning-glass-earring'
+    expect(evaluateEquipmentChange(state, 'wispglass-earring')).toEqual({ ok: false, reason: 'earring-target-required' })
+    expect(evaluateEquipmentChange(state, 'wispglass-earring', 'earring1')).toMatchObject({ ok: true, position: 'earring1' })
+    state.equipment.earring1 = 'wispglass-earring'
+    expect(evaluateEquipmentChange(state, 'wispglass-earring', 'earring2')).toEqual({ ok: false, reason: 'duplicate-earring' })
   })
 
   it('permits replacing one Ring copy while preserving the other reserved copy', () => {

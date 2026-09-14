@@ -427,13 +427,28 @@ const seedLegacyItemDiscoveries = (migrated: GameState, raw: Record<string, any>
 const normalizeDirectContentReferences = (migrated: GameState, raw: Record<string, any>, sourceVersion: number) => {
   const fresh = createInitialState()
   const rawEquipment = isRecord(raw.equipment) ? raw.equipment : {}
-  const legacyToNew: Partial<Record<EquipmentPosition, keyof typeof rawEquipment>> = { armor: 'robe', amulet: 'charm' }
+  const legacyToNew: Partial<Record<EquipmentPosition, string>> = {
+    armor: 'robe',
+    head: 'helmet',
+    necklace: 'charm',
+  }
+  const legacyAliases: Partial<Record<EquipmentPosition, readonly string[]>> = {
+    necklace: ['amulet'],
+    earring1: ['earring'],
+  }
   const candidate: Partial<Record<EquipmentPosition, ItemId | null>> = {}
   EQUIPMENT_POSITIONS.forEach((position) => {
     const hasNewValue = Object.prototype.hasOwnProperty.call(rawEquipment, position)
     const legacyPosition = legacyToNew[position]
     const hasLegacyValue = legacyPosition ? Object.prototype.hasOwnProperty.call(rawEquipment, legacyPosition) : false
-    candidate[position] = hasNewValue ? rawEquipment[position] as ItemId | null : legacyPosition && hasLegacyValue ? rawEquipment[legacyPosition] as ItemId | null : migrated.equipment[position]
+    const legacyAlias = legacyAliases[position]?.find((key) => Object.prototype.hasOwnProperty.call(rawEquipment, key))
+    candidate[position] = hasNewValue
+      ? rawEquipment[position] as ItemId | null
+      : legacyPosition && hasLegacyValue
+        ? rawEquipment[legacyPosition] as ItemId | null
+        : legacyAlias
+          ? rawEquipment[legacyAlias] as ItemId | null
+          : migrated.equipment[position]
   })
   if (sourceVersion < SAVE_VERSION && (Object.prototype.hasOwnProperty.call(rawEquipment, 'offhand') || Object.prototype.hasOwnProperty.call(rawEquipment, 'focus'))) {
     const oldWeapon = Object.prototype.hasOwnProperty.call(rawEquipment, 'weapon') ? rawEquipment.weapon : null

@@ -16,8 +16,10 @@ const failureMessage: Record<EquipmentChangeFailureReason, string> = {
   'not-equipment': 'That item cannot be equipped.',
   incompatible: 'This item cannot be equipped in that slot.',
   'ring-target-required': 'Choose Ring 1 or Ring 2 to replace.',
+  'earring-target-required': 'Choose Earring 1 or Earring 2 to replace.',
   'insufficient-copies': 'You do not own enough copies of this item.',
   'duplicate-ring': 'The same Ring cannot be equipped twice.',
+  'duplicate-earring': 'The same Earring cannot be equipped twice.',
 }
 
 const focusFailure = (validation: FocusLoadoutValidation): EquipmentFocusFailure => ({ ok: false, reason: 'insufficient-focus-capacity', deficit: validation.deficit, maxFocus: validation.maxFocus, usedFocus: validation.usedFocus })

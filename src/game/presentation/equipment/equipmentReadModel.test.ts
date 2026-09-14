@@ -43,7 +43,7 @@ describe('Equipment read model', () => {
 
     const windState = createInitialState()
     windState.inventory['windthread-charm'] = 1
-    windState.equipment.amulet = 'windthread-charm'
+    windState.equipment.necklace = 'windthread-charm'
     expect(getEquipmentStatSnapshot(windState, windState.equipment).airSpellDamage).toBeCloseTo(0.1)
   })
 
@@ -63,7 +63,7 @@ describe('Equipment read model', () => {
     const state = createInitialState()
     state.inventory['grovekeeper-mantle'] = 1
 
-    expect(resolveEquipmentPreviewTarget({ itemId: 'grovekeeper-mantle', selectedPosition: 'weapon', ringReplacement: null, equipment: state.equipment })).toBe('cape')
+    expect(resolveEquipmentPreviewTarget({ itemId: 'grovekeeper-mantle', selectedPosition: 'weapon', accessoryReplacement: null, equipment: state.equipment })).toBe('cape')
     expect(getEquipmentPreview(state, 'grovekeeper-mantle', 'cape')).toMatchObject({ compatible: true, position: 'cape' })
   })
 
@@ -71,11 +71,11 @@ describe('Equipment read model', () => {
     const state = createInitialState()
     state.inventory['gravebinder-ring'] = 1
 
-    expect(resolveEquipmentPreviewTarget({ itemId: 'gravebinder-ring', selectedPosition: null, ringReplacement: null, equipment: state.equipment })).toBe('ring1')
+    expect(resolveEquipmentPreviewTarget({ itemId: 'gravebinder-ring', selectedPosition: null, accessoryReplacement: null, equipment: state.equipment })).toBe('ring1')
     state.equipment.ring1 = 'wispbound-ring'
-    expect(resolveEquipmentPreviewTarget({ itemId: 'gravebinder-ring', selectedPosition: null, ringReplacement: null, equipment: state.equipment })).toBe('ring2')
+    expect(resolveEquipmentPreviewTarget({ itemId: 'gravebinder-ring', selectedPosition: null, accessoryReplacement: null, equipment: state.equipment })).toBe('ring2')
     state.equipment.ring2 = 'tideglass-wand'
-    expect(resolveEquipmentPreviewTarget({ itemId: 'gravebinder-ring', selectedPosition: 'weapon', ringReplacement: null, equipment: state.equipment })).toBeUndefined()
-    expect(resolveEquipmentPreviewTarget({ itemId: 'gravebinder-ring', selectedPosition: 'weapon', ringReplacement: 'ring1', equipment: state.equipment })).toBe('ring1')
+    expect(resolveEquipmentPreviewTarget({ itemId: 'gravebinder-ring', selectedPosition: 'weapon', accessoryReplacement: null, equipment: state.equipment })).toBeUndefined()
+    expect(resolveEquipmentPreviewTarget({ itemId: 'gravebinder-ring', selectedPosition: 'weapon', accessoryReplacement: 'ring1', equipment: state.equipment })).toBe('ring1')
   })
 })

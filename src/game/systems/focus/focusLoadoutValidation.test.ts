@@ -15,7 +15,7 @@ const overcommittedState = () => {
   const state = createInitialState()
   state.inventory['windthread-charm'] = 1
   state.inventory['heartseed-necklace'] = 1
-  state.equipment.amulet = 'windthread-charm'
+  state.equipment.necklace = 'windthread-charm'
   state.progress.spellRanks = { fireball: 7 }
   state.activities.autoCast.fireball = true
   state.activities.channeling.echoesAssigned = 5
@@ -29,10 +29,10 @@ describe('Focus candidate loadout validation', () => {
     expect(state.player.maxFocus).toBe(110)
     expect(selectUsedFocus(state)).toBe(120)
 
-    const result = equipItemAction(state, 'heartseed-necklace', 'amulet')
+    const result = equipItemAction(state, 'heartseed-necklace', 'necklace')
 
     expect(result).toMatchObject({ ok: false, reason: 'insufficient-focus-capacity', maxFocus: 100, usedFocus: 120, deficit: 20 })
-    expect(state.equipment.amulet).toBe('windthread-charm')
+    expect(state.equipment.necklace).toBe('windthread-charm')
     expect(state.activities.channeling.echoesAssigned).toBe(5)
     expect(state.activities.autoCast.fireball).toBe(true)
     expect(state.notifications[state.notifications.length - 1]?.text).toContain('Free 20 Focus')
@@ -41,10 +41,10 @@ describe('Focus candidate loadout validation', () => {
   it('blocks unequipping Focus-capacity equipment while reservations exceed the candidate capacity', () => {
     const state = overcommittedState()
 
-    const result = unequipItemAction(state, 'amulet')
+    const result = unequipItemAction(state, 'necklace')
 
     expect(result).toMatchObject({ ok: false, reason: 'insufficient-focus-capacity', maxFocus: 100, usedFocus: 120, deficit: 20 })
-    expect(state.equipment.amulet).toBe('windthread-charm')
+    expect(state.equipment.necklace).toBe('windthread-charm')
   })
 
   it('allows the swap after the player frees enough Focus', () => {
@@ -52,10 +52,10 @@ describe('Focus candidate loadout validation', () => {
     state.activities.channeling.echoesAssigned = 3
     expect(selectUsedFocus(state)).toBe(100)
 
-    const result = equipItemAction(state, 'heartseed-necklace', 'amulet')
+    const result = equipItemAction(state, 'heartseed-necklace', 'necklace')
 
-    expect(result).toMatchObject({ ok: true, position: 'amulet' })
-    expect(state.equipment.amulet).toBe('heartseed-necklace')
+    expect(result).toMatchObject({ ok: true, position: 'necklace' })
+    expect(state.equipment.necklace).toBe('heartseed-necklace')
   })
 
   it('uses candidate Focus Efficiency when recalculating Auto-Cast reservations', () => {

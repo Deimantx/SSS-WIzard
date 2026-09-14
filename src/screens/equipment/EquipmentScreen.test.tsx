@@ -40,7 +40,7 @@ describe('EquipmentScreen stat typography structure', () => {
 
   it('shows data-driven combat mechanics in the Gear Inspector', () => {
     const state = useGameStore.getState()
-    useGameStore.setState({ equipment: { ...state.equipment, amulet: 'windthread-charm' }, inventory: { ...state.inventory, 'windthread-charm': 1 } })
+    useGameStore.setState({ equipment: { ...state.equipment, necklace: 'windthread-charm' }, inventory: { ...state.inventory, 'windthread-charm': 1 } })
     const { container } = render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
     fireEvent.click(container.querySelector('.equipment-armory-card[data-item-id="windthread-charm"]') as HTMLElement)
     expect(screen.getByText('COMBAT EFFECTS')).toBeTruthy()
@@ -62,22 +62,31 @@ describe('EquipmentScreen stat typography structure', () => {
 
   it('renders one Weapon slot and no Offhand position', () => {
     const { container } = render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
-    expect([...container.querySelectorAll('.equipment-slot-card')].map((card) => card.getAttribute('data-position'))).toEqual(['cape', 'helmet', 'earring', 'amulet', 'weapon', 'armor', 'ring1', 'ring2'])
+    expect([...container.querySelectorAll('.equipment-slot-card')].map((card) => card.getAttribute('data-position'))).toEqual(['weapon', 'armor', 'head', 'earring1', 'necklace', 'ring1', 'earring2', 'cape', 'ring2'])
     expect(container.querySelector('[data-position="offhand"]')).toBeNull()
+    expect([...container.querySelectorAll('.equipment-loadout-section-artifacts .equipment-slot-card')].map((card) => card.getAttribute('data-position'))).toEqual(['weapon', 'armor', 'head'])
+    expect([...container.querySelectorAll('.equipment-loadout-section-accessories .equipment-slot-card')].map((card) => card.getAttribute('data-position'))).toEqual(['earring1', 'necklace', 'ring1', 'earring2', 'cape', 'ring2'])
+  })
+
+  it('keeps the crystal button as a bounded loadout placeholder', () => {
+    render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
+    fireEvent.click(screen.getByRole('button', { name: 'OPEN CRYSTALS' }))
+    expect(screen.getByRole('status').textContent).toContain('Crystal management is coming soon.')
   })
 
   it('keeps empty loadout content grouped with its helper label', () => {
     const { container } = render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
     const emptyCards = [...container.querySelectorAll('.equipment-slot-card.is-empty')]
 
-    expect(emptyCards).toHaveLength(8)
+    expect(emptyCards).toHaveLength(9)
     emptyCards.forEach((card) => {
       const body = card.querySelector('.equipment-slot-card-body')
       expect(body?.querySelector('.equipment-slot-empty strong')?.textContent).toBe('EMPTY SLOT')
       expect(body?.querySelector('.equipment-slot-empty small')?.textContent).toMatch(/^Select /)
     })
-    expect(screen.getAllByText('Select Ring')).toHaveLength(2)
-    expect(screen.getByText('Select Helmet')).toBeTruthy()
+    expect(screen.getAllByText(/Select Ring/)).toHaveLength(2)
+    expect(screen.getAllByText(/Select Earring/)).toHaveLength(2)
+    expect(screen.getByText('Select Head')).toBeTruthy()
     expect(screen.getByText('Select Cape')).toBeTruthy()
   })
 
@@ -185,6 +194,19 @@ describe('EquipmentScreen stat typography structure', () => {
 
     expect(container.querySelector('.equipment-preview-slot-context')?.textContent).toContain('TARGET SLOTCAPE')
     expect(screen.queryByText('INCOMPATIBLE')).toBeNull()
+  })
+
+  it('maps the second Earring slot to the shared Earring filter', () => {
+    const state = useGameStore.getState()
+    useGameStore.setState({ inventory: { ...state.inventory, 'wispglass-earring': 1 } })
+    const { container } = render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
+
+    fireEvent.click(container.querySelector('.equipment-slot-card[data-position="earring2"]') as HTMLElement)
+
+    expect(container.querySelector('.equipment-slot-card[data-position="earring2"]')?.classList.contains('selected')).toBe(true)
+    expect(screen.getByRole('tab', { name: 'EARRINGS' }).getAttribute('aria-selected')).toBe('true')
+    expect(container.querySelector('.equipment-target-chip')?.textContent).toContain('TARGET SLOTEARRING 2')
+    expect(container.querySelector('.equipment-armory-card[data-item-id="wispglass-earring"]')).toBeTruthy()
   })
 
   it('derives a natural slot after ALL clears an explicit target', () => {

@@ -56,7 +56,7 @@ describe('authored equipment content', () => {
   it('uses authored Artifact and accessory stats for derived combat values', () => {
     const state = createInitialState()
     state.equipment.weapon = 'ember-staff'
-    state.equipment.helmet = 'wispveil-hood'
+    state.equipment.head = 'wispveil-hood'
     recalculateDerivedStats(state)
 
     expect(getEquipmentStats(state)).toMatchObject({ spellPower: 16, maxHealth: 10, basicDamage: 5 })
@@ -67,7 +67,7 @@ describe('authored equipment content', () => {
     const build = createInitialState()
     build.equipment.weapon = 'ember-staff'
     build.equipment.armor = 'wispweave-robe'
-    build.equipment.amulet = 'windthread-charm'
+    build.equipment.necklace = 'windthread-charm'
     recalculateDerivedStats(build)
     expect(getEquipmentStats(build)).toMatchObject({ spellPower: expect.any(Number), maxMana: expect.any(Number), basicDamage: expect.any(Number) })
     expect(getPlayerCombatStats(build).maxMana).toBeGreaterThan(100)
@@ -97,7 +97,7 @@ describe('authored equipment content', () => {
 describe('equipment combat effects', () => {
   it('activates each threshold relic once per encounter and resets on spawn', () => {
     const heartseedState = stateWithEnemy()
-    heartseedState.equipment.amulet = 'heartseed-necklace'
+    heartseedState.equipment.necklace = 'heartseed-necklace'
     recalculateDerivedStats(heartseedState)
     heartseedState.player.health = 100
     damagePlayer(heartseedState, 80, enemyAction)
@@ -114,7 +114,7 @@ describe('equipment combat effects', () => {
     expect(heartseedState.combat.playerBarrier).toBe(20)
 
     const heartstoneState = stateWithEnemy()
-    heartstoneState.equipment.amulet = 'greatbear-heartstone'
+    heartstoneState.equipment.necklace = 'greatbear-heartstone'
     recalculateDerivedStats(heartstoneState)
     heartstoneState.player.health = 100
     damagePlayer(heartstoneState, 80, enemyAction)
@@ -230,7 +230,7 @@ describe('equipment combat effects', () => {
     const plainDamage = 1_000 - plain.combat.enemyHp
 
     const soulglass = stateWithEnemy()
-    soulglass.equipment.amulet = 'soulglass-amulet'
+    soulglass.equipment.necklace = 'soulglass-amulet'
     recalculateDerivedStats(soulglass)
     applyStatus(soulglass, 'enemy', 'burning', playerSpell)
     tickStatuses(soulglass, 1_000, executeCombatEffects)

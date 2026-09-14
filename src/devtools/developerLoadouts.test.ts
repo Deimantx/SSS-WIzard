@@ -12,8 +12,7 @@ describe('developer equipment loadouts', () => {
       expect(isPositionCompatible(itemId, position as EquipmentPosition)).toBe(true)
     }))
 
-    expect(DEVELOPER_LOADOUTS.map((loadout) => loadout.slots.earring)).toEqual([
-      'wispglass-earring',
+    expect(DEVELOPER_LOADOUTS.map((loadout) => loadout.slots.earring1)).toEqual([
       'wispglass-earring',
       'fangwire-earring',
       'fangwire-earring',

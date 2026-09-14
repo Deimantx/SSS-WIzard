@@ -1,8 +1,8 @@
 import type { CombatCondition, CombatEffect, CombatModifier, CombatSource, CombatTag, CombatTriggerRule, DamageType, ModifierKey, StatusDefinition, StatusId } from './combatTypes'
 
 export const DAMAGE_TYPES: readonly DamageType[] = ['physical', 'arcane', 'fire', 'water', 'earth', 'air']
-export const COMBAT_TAGS: readonly CombatTag[] = ['basic-attack', 'spell', 'weapon', 'equipment', 'melee', 'ranged', 'magic', 'direct', 'heal', 'dot', 'hot', 'status', 'special', 'trait', 'buff', 'debuff', 'control', 'barrier', ...DAMAGE_TYPES]
-export const COMBAT_SOURCE_KINDS: readonly CombatSource['kind'][] = ['basic-attack', 'spell', 'weapon', 'status', 'trait', 'action', 'equipment', 'system']
+export const COMBAT_TAGS: readonly CombatTag[] = ['basic-attack', 'spell', 'weapon', 'equipment', 'guardian', 'summon', 'melee', 'ranged', 'magic', 'direct', 'heal', 'dot', 'hot', 'status', 'special', 'trait', 'buff', 'debuff', 'control', 'barrier', ...DAMAGE_TYPES]
+export const COMBAT_SOURCE_KINDS: readonly CombatSource['kind'][] = ['basic-attack', 'spell', 'weapon', 'status', 'trait', 'action', 'equipment', 'guardian', 'system']
 export const COMBAT_TRIGGERS: readonly CombatTriggerRule['event'][] = ['on-combat-start', 'on-basic-attack-hit', 'on-spell-hit', 'on-damage-dealt', 'on-damage-taken', 'on-barrier-broken', 'on-status-applied', 'on-hp-threshold', 'on-action-start', 'on-action-resolve', 'on-heal', 'on-heal-received', 'on-barrier-gained', 'on-status-removed', 'on-status-expired', 'on-kill']
 export const COMBAT_MODIFIER_KEYS: readonly ModifierKey[] = ['damage-dealt-percent', 'damage-taken-percent', 'basic-attack-damage-percent', 'basic-attack-speed-percent', 'action-speed-percent', 'spell-damage-percent', 'melee-damage-percent', 'ranged-damage-percent', 'healing-done-percent', 'healing-received-percent', 'barrier-power-percent', 'barrier-received-flat', 'barrier-received-percent', 'mana-regen-percent', 'cooldown-recovery-percent', 'control-duration-received-percent', 'status-duration-dealt-percent', 'status-duration-received-percent', 'defense-flat', 'crit-chance', 'crit-damage', 'block-chance', 'damage-over-time-percent', 'resistance-percent']
 

@@ -15,6 +15,8 @@ import type { SimulationReportCollector } from '../offline-bank/offlineBankRepor
 import { MAX_ACTION_WORK_MS, MIN_ACTION_TIME_MS } from '../../core/balance/combatTiming'
 import { nextCombatRandom } from './combatRng'
 import { reconcileStoryProgression } from '../story/storyProgression'
+import { SUMMONING_UNLOCK_BOSS_ID } from '../../content/guardians/guardians'
+import { beginGuardianEncounter, clearGuardianRuntime, suppressGuardianIfOutOfMana } from '../summoning/summoningRuntime'
 
 export { applyStatus, clearStatuses, damageEnemy, damagePlayer, executeCombatEffects, gainBarrier }
 
@@ -51,6 +53,7 @@ export const spawnEnemy = (state: GameState, enemyId: MonsterId, uiEvents?: Comb
   runCombatTriggers(state, 'player', 'on-combat-start', { source: { actor: 'player', kind: 'system', sourceId: 'combat-start' }, eventTarget: 'enemy' }, executeCombatEffects, 0, [], uiEvents, combatStartResolution)
   state.combat.playerAttackDurationMs = Math.min(MAX_ACTION_WORK_MS, Math.max(MIN_ACTION_TIME_MS, BALANCE.player.basicAttackIntervalMs))
   state.combat.playerAttackTimerMs = state.combat.playerAttackDurationMs
+  beginGuardianEncounter(state)
   if (state.combat.enemyHp > 0 && state.player.health > 0) startNextEnemyAction(state, executeCombatEffects, 0, uiEvents)
   appendLog(state, `${monster.name} enters the dungeon.`)
 }
@@ -81,6 +84,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   const drops = resolveMonsterLoot(state, enemyId, (itemId, quantity) => { onItemAcquired?.(itemId, quantity); report?.recordLoot(itemId, quantity); resolvedDrops.push({ itemId, quantity, isNewDiscovery: !undiscoveredItems.has(itemId) }); uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'loot', sourceId: 'loot-drop', itemId, amount: quantity }) })
   if (resolvedDrops.length) onLootResolved?.(state, enemyId, resolvedDrops)
   report?.recordKill(enemyId)
+  clearGuardianRuntime(state)
   state.combat.enemyId = null
   state.combat.enemyInstanceKey = null
   state.combat.enemyHp = 0
@@ -97,6 +101,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
     state.combat.inBossFight = false
     const bossId = enemyId
     state.progress.bossKillsByBoss[bossId] = (state.progress.bossKillsByBoss[bossId] ?? 0) + 1
+    if (bossId === SUMMONING_UNLOCK_BOSS_ID && state.progress.bossKillsByBoss[bossId] === 1) pushNotification(state, 'Wizard Tower: Summoning unlocked.', 'success')
     if (state.combat.pendingBossId === enemyId) state.combat.pendingBossId = null
     state.progress.autoHuntBossUnlocked = true
     if (bossId === 'forest-heart' && !state.progress.firstBossKill) {
@@ -146,6 +151,7 @@ export const resolveCombatDeaths = (state: GameState, report?: SimulationReportC
   if (state.player.health <= 0 && !state.debug.playerImmortal && !state.player.godMode) {
     uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'player', targetMonsterId: state.combat.enemyId ?? undefined, category: 'death', sourceId: 'player-defeated' })
     report?.recordPlayerDeath()
+    clearGuardianRuntime(state)
     state.combat.active = false
     state.combat.enemyId = null
     state.combat.enemyInstanceKey = null
@@ -168,6 +174,7 @@ export const resolveCombatDeaths = (state: GameState, report?: SimulationReportC
     return true
   }
   if (state.debug.playerImmortal && state.player.health <= 0) state.player.health = 1
+  suppressGuardianIfOutOfMana(state)
   if (state.debug.enemyImmortal && !options.forceEnemyDeath && state.combat.enemyId && state.combat.enemyHp <= 0) {
     state.combat.enemyHp = 1
     return false

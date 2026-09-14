@@ -27,6 +27,7 @@ import type { CombatTelemetryObserver } from '../../telemetry/combat/combatTelem
 import type { DungeonStatisticsObserver } from '../../telemetry/dungeon/dungeonStatisticsTypes'
 import { sanitizeCombatTimeScale } from '../../../store/actions/debugActions'
 import { MAX_ACTION_WORK_MS, MIN_ACTION_TIME_MS } from '../../core/balance/combatTiming'
+import { advanceGuardianUpkeep, ensureGuardianForCurrentEncounter, getGuardianAttackBoundary, resolveGuardianAttack, suppressGuardianIfOutOfMana } from '../summoning/summoningRuntime'
 
 export interface AdvanceContext {
   mode: 'live' | 'banked'
@@ -76,6 +77,7 @@ const autoCastReadySpells = (state: GameState, context: AdvanceContext) => {
       if (resolveDeaths(state, context)) return
     }
   }
+  suppressGuardianIfOutOfMana(state)
 }
 
 const hasReadyAutoCast = (state: GameState) => {
@@ -124,6 +126,7 @@ const hasImmediateCombatTimelineEvent = (state: GameState) => {
   if (getNextCombatStatusEventMs(state) === 0 || getNextCombatBarrierEventMs(state) === 0) return true
   if (!actorCannotAct(state, 'player') && !state.debug.freezePlayerActions && !state.debug.disablePlayerBasicAttack && state.combat.playerAttackTimerMs <= 0) return true
   if (!actorCannotAct(state, 'enemy') && !state.debug.freezeEnemyActions && state.combat.enemyCurrentStepId && state.combat.enemyActionTimerMs <= 0) return true
+  if (state.combat.guardian.activeGuardianId && state.combat.guardian.attackTimerMs <= 0) return true
   return false
 }
 
@@ -175,6 +178,7 @@ const advanceCombatTimeline = (state: GameState, delta: number, context: Advance
       if (resolveDeaths(state, context)) break
     }
     ensurePlayerBasicRuntime(state)
+    ensureGuardianForCurrentEncounter(state)
     if (!state.combat.enemyId) break
 
     // A spell that is already ready when an encounter starts should be
@@ -206,16 +210,19 @@ const advanceCombatTimeline = (state: GameState, delta: number, context: Advance
       getNextCombatBarrierEventMs(state),
       getNextHealthRegenEventMs(state),
       getNextAutoCastCooldownEventMs(state, cooldownRecovery),
+      getGuardianAttackBoundary(state),
     ].filter((value): value is number => value !== null && Number.isFinite(value))
     const untilEvent = boundaries.length ? Math.min(...boundaries) : remaining
     const elapsed = Math.min(remaining, Math.max(0, untilEvent))
 
     if (!playerBlockedAtSegmentStart && playerRate > 0) state.combat.playerAttackTimerMs = Math.max(0, state.combat.playerAttackTimerMs - elapsed * playerRate)
     if (!enemyBlockedAtSegmentStart && state.combat.enemyCurrentStepId && enemyRate > 0) state.combat.enemyActionTimerMs = Math.max(0, state.combat.enemyActionTimerMs - elapsed * enemyRate)
+    if (state.combat.guardian.activeGuardianId) state.combat.guardian.attackTimerMs = Math.max(0, state.combat.guardian.attackTimerMs - elapsed)
     tickRuleCooldowns(state, elapsed)
     const pendingStatusExpirations = tickStatuses(state, elapsed, executeCombatEffects, context.uiEvents, ['player', 'enemy'], { deferExpiry: true })
     tickBarriers(state, elapsed)
     tickSpellCooldowns(state, elapsed, cooldownRecovery)
+    advanceGuardianUpkeep(state, elapsed)
     advanceHealthRegenTimer(state, elapsed, true, context)
     remaining = Math.max(0, remaining - elapsed)
 
@@ -238,12 +245,19 @@ const advanceCombatTimeline = (state: GameState, delta: number, context: Advance
       if (resolveDeaths(state, context)) break
     }
 
+    suppressGuardianIfOutOfMana(state)
+    if (state.combat.enemyId && state.combat.guardian.activeGuardianId && state.combat.guardian.attackTimerMs <= 0) {
+      resolveGuardianAttack(state, context.uiEvents)
+      if (resolveDeaths(state, context)) break
+    }
+
     const reachedMeaningfulBoundary = elapsed <= 0 || boundaries.some((value) => value <= elapsed)
     if (playerBasicResolved || reachedMeaningfulBoundary) autoCastReadySpells(state, context)
     if (!state.combat.enemyId) break
     if (!actorCannotAct(state, 'enemy') && !state.debug.freezeEnemyActions && state.combat.enemyCurrentStepId && state.combat.enemyActionTimerMs <= 0) {
       resolveCurrentEnemyAction(state, executeCombatEffects, 0, context.uiEvents)
       if (resolveDeaths(state, context)) break
+      suppressGuardianIfOutOfMana(state)
       // An enemy action can make a conditional spell ready at this exact
       // timestamp (for example, Flow Mend after taking damage).
       autoCastReadySpells(state, context)

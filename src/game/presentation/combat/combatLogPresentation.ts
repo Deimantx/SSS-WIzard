@@ -2,6 +2,8 @@ import { ITEMS } from '../../content/items/items'
 import { MONSTERS } from '../../content/monsters'
 import { SPELLS } from '../../content/spells/spells'
 import { STATUS_DEFINITIONS } from '../../content/statuses'
+import { GUARDIANS } from '../../content/guardians/guardians'
+import type { GuardianId } from '../../types'
 import { getTraitDefinitions } from '../../content/traits'
 import type { CombatLogEntry, DamageType } from '../../systems/combat/combatTypes'
 import { resolveCombatEventOriginLabel } from './combatSourcePresentation'
@@ -38,9 +40,10 @@ export function presentCombatLogEntry(entry: CombatLogEntry, newestTimestampMs =
   const action = entry.actionId && monster ? monster.actions[entry.actionId] : undefined
   const status = entry.statusId ? STATUS_DEFINITIONS[entry.statusId] : undefined
   const trait = entry.traitId ? getTraitDefinitions([entry.traitId])[0] : undefined
+  const guardian = entry.sourceKind === 'guardian' && entry.sourceId ? GUARDIANS[entry.sourceId as GuardianId] : undefined
   const item = entry.itemId ? ITEMS[entry.itemId] : undefined
   const originLabel = entry.sourceKind === 'status' ? resolveCombatEventOriginLabel(entry) : undefined
-  const actionLabel = spell?.name ?? action?.name ?? trait?.name ?? (status ? `${status.name}${originLabel ? ` (${originLabel})` : ''}` : undefined) ?? item?.name ?? categoryLabel(entry.category)
+  const actionLabel = guardian?.name ?? spell?.name ?? action?.name ?? trait?.name ?? (status ? `${status.name}${originLabel ? ` (${originLabel})` : ''}` : undefined) ?? item?.name ?? categoryLabel(entry.category)
   const direction = target ? ` → ${target}` : ''
   let message = `${actionLabel}${direction}`
   let result: string | undefined

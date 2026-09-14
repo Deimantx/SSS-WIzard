@@ -38,6 +38,8 @@ export type CombatTag =
   | 'debuff'
   | 'control'
   | 'barrier'
+  | 'guardian'
+  | 'summon'
   | DamageType
 
 export interface DamageComponent {
@@ -176,7 +178,7 @@ export type CombatUiEventSink = CombatEventSink
 
 export interface CombatSource {
   actor: 'player' | 'enemy'
-  kind: 'basic-attack' | 'spell' | 'weapon' | 'status' | 'trait' | 'action' | 'equipment' | 'system'
+  kind: 'basic-attack' | 'spell' | 'weapon' | 'status' | 'trait' | 'action' | 'equipment' | 'guardian' | 'system'
   sourceId?: string
   /** Authored Monster that owns an Enemy source. */
   sourceMonsterId?: MonsterId

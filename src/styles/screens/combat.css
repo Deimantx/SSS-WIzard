@@ -1798,6 +1798,14 @@
   gap: 8px;
 }
 .combat-flow-head { justify-content: space-between; }
+.combat-guardian-indicator.game-tooltip-trigger { display: block; min-width: 0; max-width: 220px; margin-left: auto; }
+.combat-guardian-indicator { display: flex; align-items: center; gap: 7px; min-width: 0; padding: 5px 7px; border: 1px solid color-mix(in srgb, var(--guardian-color, var(--ui-accent)) 38%, var(--ui-border)); border-radius: 6px; background: color-mix(in srgb, var(--guardian-color, var(--ui-accent)) 7%, transparent); text-align: left; }
+.combat-guardian-indicator-icon { display: grid; flex: 0 0 22px; place-items: center; width: 22px; height: 22px; border: 1px solid color-mix(in srgb, var(--guardian-color, var(--ui-accent)) 58%, var(--ui-border)); border-radius: 5px; color: var(--guardian-color, var(--ui-accent)); font-size: 12px; }
+.combat-guardian-indicator-copy { display: grid; min-width: 0; gap: 1px; }
+.combat-guardian-indicator-copy strong { overflow: hidden; color: color-mix(in srgb, var(--guardian-color, var(--ui-accent)) 82%, var(--ui-text)); font: var(--text-micro) var(--font-mono); letter-spacing: .06em; text-overflow: ellipsis; white-space: nowrap; }
+.combat-guardian-indicator-copy small { overflow: hidden; color: var(--ui-text-muted); font: 9px var(--font-mono); text-overflow: ellipsis; white-space: nowrap; }
+.combat-guardian-indicator.is-suppressed { border-color: color-mix(in srgb, var(--ui-warning) 45%, var(--ui-border)); }
+.combat-flow-panel.is-encounter-delay .combat-guardian-indicator.game-tooltip-trigger { width: min(220px, 100%); margin: 0 auto 2px; }
 .combat-flow-kicker { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .12em; text-transform: uppercase; }
 .combat-flow-current-action.game-tooltip-trigger { display: block; width: 100%; }
 .combat-flow-current-action {
@@ -1949,6 +1957,7 @@
 .metric-source-accent-status { color: var(--semantic-debuff) !important; }
 .metric-source-accent-trait { color: var(--ui-accent) !important; }
 .metric-source-accent-equipment { color: var(--ui-secondary) !important; }
+.metric-source-accent-guardian { color: var(--ui-accent) !important; }
 .combat-metric-tooltip-source-head span small,
 .combat-metric-tooltip-source-head > b,
 .combat-metric-tooltip-rate { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
@@ -2043,6 +2052,7 @@
 .combat-metric-tooltip-bar .metric-accent-status { background: var(--semantic-debuff); }
 .combat-metric-tooltip-bar .metric-accent-trait { background: var(--ui-accent); }
 .combat-metric-tooltip-bar .metric-accent-equipment { background: var(--ui-secondary); }
+.combat-metric-tooltip-bar .metric-accent-guardian { background: var(--ui-accent); }
 .combat-metric-tooltip-damage .combat-metric-tooltip-bar i { background: var(--ui-warning); }
 .combat-metric-tooltip-healing .combat-metric-tooltip-bar i { background: var(--semantic-health); }
 .combat-metric-tooltip-taken .combat-metric-tooltip-bar i { background: var(--ui-danger); }

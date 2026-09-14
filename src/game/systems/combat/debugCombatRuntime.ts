@@ -7,6 +7,7 @@ import { finishEnemy, resolveCombatDeaths, spawnEnemy, type CombatLootObserver }
 import { resetEnemyActionRuntime } from './actionRuntime'
 import { clearEnemyRuleCooldowns } from './triggerRuntime'
 import { nextCombatRandom } from './combatRng'
+import { clearGuardianRuntime } from '../summoning/summoningRuntime'
 
 export interface DebugCombatRuntimeContext {
   uiEvents?: CombatEventSink
@@ -15,6 +16,7 @@ export interface DebugCombatRuntimeContext {
 }
 
 const resetEncounterWithoutRewards = (state: GameState) => {
+  clearGuardianRuntime(state)
   state.combat.enemyId = null
   state.combat.enemyInstanceKey = null
   state.combat.enemyHp = 0

@@ -23,7 +23,7 @@ import { type SaveReason } from '../persistence/saveConstants'
 import { getActiveProfileId } from '../profiles/profileSessionStore'
 import { updateProfileMetadata } from '../profiles/profileStorage'
 import { createInitialState } from './initialState'
-import type { ArtifactId, ChannelingDiscoveryId, DungeonId, EquipmentPosition, GameState, ItemId, ManaPillarId, MonsterId, TransmutationArrayId, TransmutationRecipeId, ResearchSlotId, SchoolId, ScreenId, SpellId, SpellPreset, SpellPresetId, StatusId, StoryEventId } from '../game/types'
+import type { ArtifactId, ChannelingDiscoveryId, DungeonId, EquipmentPosition, GameState, GuardianId, ItemId, ManaPillarId, MonsterId, TransmutationArrayId, TransmutationRecipeId, ResearchSlotId, SchoolId, ScreenId, SpellId, SpellPreset, SpellPresetId, StatusId, StoryEventId } from '../game/types'
 import { clamp } from '../game/utils'
 import { createDefaultDebugOverrides, resetCombatDebugState, resetDebugState, sanitizeCombatTimeScale, sanitizeDebugNumber } from './actions/debugActions'
 import { addItemAction, destroyItemAction, removeItemAction, sellItemAction, toggleItemProtectionAction } from './actions/inventoryActions'
@@ -60,6 +60,9 @@ import { emitGameFeelEvent } from '../ui/game-feel/gameFeelStore'
 import type { GameFeelEventType } from '../ui/game-feel/gameFeelTypes'
 import { unpinArtificingRecipe } from '../ui/preferences/uiPreferencesStore'
 import { completeStoryEvent as completeStoryEventAction, isScreenUnlocked } from '../game/systems/story/storyProgression'
+import { GUARDIANS } from '../game/content/guardians/guardians'
+import { suppressGuardianIfOutOfMana } from '../game/systems/summoning/summoningRuntime'
+import { isSummoningUnlocked } from '../game/systems/summoning/summoningSelectors'
 
 const combatEventSink = createCombatEventSink(combatLogSink, combatRecapSink, combatDefeatSink, combatAlertsSink, dungeonStatisticsSink, combatTelemetrySink)
 const offlineBankCombatAnalyticsSink = createCombatEventSink(dungeonStatisticsSink, combatTelemetrySink)
@@ -121,6 +124,7 @@ export type DeveloperFixtureId = 'fresh' | 'whispering-woods-ready' | 'howling-d
 export interface GameActions {
   tick: (deltaMs: number) => void
   setScreen: (screen: ScreenId) => void
+  selectGuardian: (guardianId: GuardianId) => void
   completeStoryEvent: (eventId: StoryEventId) => void
   addArcaneEcho: () => void
   removeArcaneEcho: () => void
@@ -339,8 +343,9 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     if (isOfflineBankSimulationActive()) return state
     return advanceGameState(state, deltaMs, { mode: 'live', onItemAcquired: (itemId, amount) => recordRecentAcquisition(state, itemId, amount), onCombatLoot: combatLootObserver, uiEvents: combatEventSink, telemetry: combatTelemetryObserver, alerts: combatAlertsObserver, statistics: dungeonStatisticsObserver, onArtificingComplete: (completion) => { emitActionFeel('craft-complete', '.artificing-craft-button'); unpinArtificingRecipe(completion.recipeId) } })
   }),
-  setScreen: (screen) => set((state) => { state.ui.screen = isScreenUnlocked(state, screen) ? screen : 'home'; return state }),
+  setScreen: (screen) => set((state) => { state.ui.screen = screen === 'tower-summoning' ? (isSummoningUnlocked(state) ? screen : 'home') : isScreenUnlocked(state, screen) ? screen : 'home'; return state }),
   completeStoryEvent: (eventId) => set((state) => { const destination = completeStoryEventAction(state, eventId); if (destination) state.ui.screen = isScreenUnlocked(state, destination) ? destination : 'home'; return state }),
+  selectGuardian: (guardianId: GuardianId) => set((state) => { if (!isSummoningUnlocked(state) || !GUARDIANS[guardianId]) return state; state.guardians.selectedGuardianId = guardianId; return state }),
   addArcaneEcho: () => {
     const before = get().activities.channeling.echoesAssigned
     set((state) => {
@@ -444,7 +449,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   debugResetAllArtifactPaths: () => set((state) => { Object.keys(ARTIFACTS).forEach((artifactId) => { respecArtifact(state, artifactId as ArtifactId); delete state.debug.artifactBonusPointsByArtifact[artifactId as ArtifactId] }); recalculateDerivedStats(state); return state }),
   debugGrantArtifactMaterials: () => set((state) => { grantDebugArtifactMaterialsInState(state); return state }),
   setDebugTransmutationEchoCapacity: (amount) => set((state) => { setTransmutationEchoCapacityOverrideAction(state, amount); return state }),
-  castSpell: (spellId) => set((state) => { castSpellAction(state, spellId, combatEventSink); return state }),
+  castSpell: (spellId) => set((state) => { castSpellAction(state, spellId, combatEventSink); suppressGuardianIfOutOfMana(state); return state }),
   clearAutoCast: () => { let cleared = false; set((state) => { cleared = clearAutoCastAction(state); return state }); if (cleared) emitActionFeel('autocast-off', '.combat-spell-deck-foot', 'var(--ui-secondary)'); return cleared },
   toggleAutoCast: (spellId) => { const before = Boolean(get().activities.autoCast[spellId]); set((state) => { const cost = getSpellAutoCastFocusCost(state, spellId); if (!spellUnlocked(state, spellId) || cost === null) return state; const latchIndex = state.combat.autoCastManaStarvedSpells.indexOf(spellId); if (latchIndex >= 0) state.combat.autoCastManaStarvedSpells.splice(latchIndex, 1); if (state.activities.autoCast[spellId]) { state.activities.autoCast[spellId] = false; state.spellPresets.lastAppliedPresetId = null } else if (canReserveFocus(state, cost)) { state.activities.autoCast[spellId] = true; state.spellPresets.lastAppliedPresetId = null; pushNotification(state, `${SPELLS[spellId].name} Auto-Cast enabled`, 'success') } else pushNotification(state, `Cannot enable Auto-Cast · Requires ${cost} Focus · Free Focus: ${selectFreeFocus(state)}`, 'warning'); return state }); const after = Boolean(get().activities.autoCast[spellId]); if (after !== before) emitActionFeel(after ? 'autocast-on' : 'autocast-off', `[data-spell-id="${spellId}"]`, 'var(--ui-secondary)'); else emitActionFeel('error', `[data-spell-id="${spellId}"]`, 'var(--ui-warning)', 0.75); return after !== before },
   createSpellPreset: (name) => { let result!: SpellPresetId; set((state) => { result = createSpellPresetAction(state, name); return state }); return result },

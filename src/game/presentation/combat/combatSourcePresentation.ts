@@ -2,10 +2,12 @@ import { ITEMS } from '../../content/items/items'
 import { MONSTERS } from '../../content/monsters'
 import { SPELLS } from '../../content/spells/spells'
 import { STATUS_DEFINITIONS } from '../../content/statuses'
+import { GUARDIANS } from '../../content/guardians/guardians'
+import type { GuardianId } from '../../types'
 import { getTraitDefinitions } from '../../content/traits'
 import type { CombatLogEntry, CombatSource } from '../../systems/combat/combatTypes'
 
-const unknownSource = (kind?: CombatSource['kind']) => kind === 'equipment' || kind === 'weapon' ? 'Equipment Effect' : kind === 'action' ? 'Enemy Action' : kind === 'status' ? 'Status Effect' : 'Unknown Source'
+const unknownSource = (kind?: CombatSource['kind']) => kind === 'equipment' || kind === 'weapon' ? 'Equipment Effect' : kind === 'action' ? 'Enemy Action' : kind === 'status' ? 'Status Effect' : kind === 'guardian' ? 'Elemental Guardian' : 'Unknown Source'
 
 /** Resolves authored source metadata without exposing internal IDs to players. */
 export const resolveCombatSourceLabel = (source: Pick<CombatSource, 'kind' | 'sourceId' | 'originSourceId' | 'originSourceKind' | 'sourceMonsterId' | 'originMonsterId'>): string => {
@@ -27,6 +29,7 @@ export const resolveCombatSourceLabel = (source: Pick<CombatSource, 'kind' | 'so
   }
   if (source.kind === 'status' && id) return STATUS_DEFINITIONS[id as keyof typeof STATUS_DEFINITIONS]?.name ?? 'Status Effect'
   if (source.kind === 'basic-attack') return 'Basic Attack'
+  if (source.kind === 'guardian' && id) return GUARDIANS[id as GuardianId]?.name ?? 'Elemental Guardian'
   return unknownSource(source.kind)
 }
 

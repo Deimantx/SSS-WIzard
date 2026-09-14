@@ -2,11 +2,13 @@ import { MONSTERS } from '../../content/monsters'
 import { ITEMS } from '../../content/items/items'
 import { SPELLS } from '../../content/spells/spells'
 import { STATUS_DEFINITIONS } from '../../content/statuses'
+import { GUARDIANS } from '../../content/guardians/guardians'
+import type { GuardianId } from '../../types'
 import type { CombatMetricSourceContribution } from './combatTelemetryTypes'
 import { resolveCombatSourceLabel } from '../../presentation/combat/combatSourcePresentation'
 
 export type CombatMetricSourceIcon = 'swords' | 'sparkles' | 'flame' | 'shield' | 'heart' | 'activity'
-export type CombatMetricSourceAccent = 'damage' | 'healing' | 'taken' | 'fire' | 'water' | 'earth' | 'air' | 'enemy' | 'status' | 'trait' | 'equipment' | 'neutral'
+export type CombatMetricSourceAccent = 'damage' | 'healing' | 'taken' | 'fire' | 'water' | 'earth' | 'air' | 'enemy' | 'status' | 'trait' | 'equipment' | 'guardian' | 'neutral'
 
 export interface CombatMetricSourcePresentation {
   name: string
@@ -45,6 +47,10 @@ export const presentCombatMetricSource = (source: CombatMetricSourceContribution
   if (source.kind === 'trait') {
     const name = resolveCombatSourceLabel({ kind: 'trait', sourceId: source.traitId ?? source.sourceId })
     return name !== 'Trait Effect' ? { name, subtitle: source.monsterId ? MONSTERS[source.monsterId]?.name ?? 'Trait' : 'Trait', icon: 'activity', accent: 'trait' } : { name: 'Trait Effect', subtitle: 'Trait', icon: 'activity', accent: 'trait' }
+  }
+  if (source.kind === 'guardian') {
+    const guardian = source.sourceId ? GUARDIANS[source.sourceId as GuardianId] : undefined
+    return { name: guardian?.name ?? 'Elemental Guardian', subtitle: 'Guardian attack', icon: 'sparkles', accent: 'guardian' }
   }
   return { name: 'Unknown Effect', subtitle: 'Combat effect', icon: 'activity', accent: 'neutral' }
 }

@@ -27,6 +27,8 @@ import { MAX_ACTION_WORK_MS, MIN_ACTION_TIME_MS } from '../game/core/balance/com
 import { normalizeCombatRngState } from '../game/systems/combat/combatRng'
 import { clampOfflineBankMs } from '../game/systems/offline-bank/offlineBankDuration'
 import { ARTIFACTS } from '../game/content/artifacts/artifacts'
+import { GUARDIAN_IDS, GUARDIANS, SUMMONING_UNLOCK_BOSS_ID } from '../game/content/guardians/guardians'
+import { isSummoningUnlocked } from '../game/systems/summoning/summoningSelectors'
 import { normalizeDarkPortalProgress } from '../game/systems/dark-portal/portalShardProgression'
 import { isScreenUnlocked, reconcileStoryProgression } from '../game/systems/story/storyProgression'
 import { getTransmutationArrayBonuses } from '../game/systems/transmutation/transmutationArrays'
@@ -35,7 +37,7 @@ const statusValidationContext = createCombatValidationContext(STATUS_DEFINITIONS
 
 const normalizeScreen = (value: unknown, fallback: GameState['ui']['screen']): GameState['ui']['screen'] => {
   if (value === 'tower') return 'tower-channeling'
-  const valid = ['home', 'combat', 'schools', 'inventory', 'equipment', 'collection', 'bestiary', 'tower-channeling', 'tower-focus', 'tower-research', 'tower-transmutation', 'tower-artificing', 'tower-dark-portal', 'guild', 'settings']
+  const valid = ['home', 'combat', 'schools', 'inventory', 'equipment', 'collection', 'bestiary', 'tower-channeling', 'tower-focus', 'tower-research', 'tower-transmutation', 'tower-artificing', 'tower-summoning', 'tower-dark-portal', 'guild', 'settings']
   if (value === 'tower-condensation') return 'tower-transmutation'
   return typeof value === 'string' && valid.includes(value) ? value as GameState['ui']['screen'] : fallback
 }
@@ -56,6 +58,7 @@ const safeLevel = (value: unknown) => typeof value === 'number' && Number.isFini
 
 const itemIds = Object.keys(ITEMS)
 const monsterIds = Object.keys(MONSTERS)
+const bossIds = [...monsterIds, SUMMONING_UNLOCK_BOSS_ID]
 const dungeonIds = Object.keys(DUNGEONS)
 const requestIds = Object.keys(GUILD_REQUESTS)
 const spellIds = Object.keys(SPELLS)
@@ -146,7 +149,7 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
   // Keep historical boss counters for monsters that were later demoted to a
   // normal encounter (notably Grove Sentinel). They remain useful migration
   // evidence even when current combat treats the monster as non-boss.
-  migrated.progress.bossKillsByBoss = normalizeDynamicRecord(fresh.progress.bossKillsByBoss, rawProgress.bossKillsByBoss, monsterIds, nonNegativeInteger)
+  migrated.progress.bossKillsByBoss = normalizeDynamicRecord(fresh.progress.bossKillsByBoss, rawProgress.bossKillsByBoss, bossIds, nonNegativeInteger)
   migrated.progress.autoHuntBossByDungeon = normalizeDynamicRecord(fresh.progress.autoHuntBossByDungeon, rawProgress.autoHuntBossByDungeon, dungeonIds, booleanValue) as GameState['progress']['autoHuntBossByDungeon']
   const rawCurrencies = isRecord(raw.currencies) ? raw.currencies : {}
   migrated.currencies = { gold: nonNegativeGold(rawCurrencies.gold) ?? fresh.currencies.gold }
@@ -155,6 +158,17 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
   migrated.progress.discoveredMonsters = [...new Set(rawDiscoveredMonsters.filter((id): id is GameState['progress']['discoveredMonsters'][number] => typeof id === 'string' && monsterIds.includes(id)))]
   const rawDiscoveredItems = Array.isArray(rawProgress.discoveredItems) ? rawProgress.discoveredItems : []
   migrated.progress.discoveredItems = [...new Set(rawDiscoveredItems.filter((id): id is ItemId => typeof id === 'string' && itemIds.includes(id)))]
+
+  const rawGuardians = isRecord(raw.guardians) ? raw.guardians : {}
+  const rawGuardianProgress = isRecord(rawGuardians.progress) ? rawGuardians.progress : {}
+  const selectedGuardianId = typeof rawGuardians.selectedGuardianId === 'string' && GUARDIAN_IDS.includes(rawGuardians.selectedGuardianId as typeof GUARDIAN_IDS[number]) ? rawGuardians.selectedGuardianId as typeof GUARDIAN_IDS[number] : null
+  migrated.guardians = {
+    selectedGuardianId,
+    progress: Object.fromEntries(GUARDIAN_IDS.map((guardianId) => {
+      const rawProgress = isRecord(rawGuardianProgress[guardianId]) ? rawGuardianProgress[guardianId] : {}
+      return [guardianId, { level: Math.max(1, safeLevel(rawProgress.level) || 1), rank: Math.max(1, safeLevel(rawProgress.rank) || 1) }]
+    })) as GameState['guardians']['progress'],
+  }
 }
 
 const isSpellRankValue = (value: unknown): value is SpellRank => typeof value === 'number' && Number.isInteger(value) && value >= MIN_SPELL_RANK && value <= MAX_SPELL_RANK
@@ -231,10 +245,10 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
     if (!isRecord(value)) return { actor: fallbackActor, kind: 'system', sourceId: 'save-migration' }
     const actor = value.actor === 'player' || value.actor === 'enemy' ? value.actor : fallbackActor
     const rawKind = String(value.kind)
-    const kind = rawKind === 'special-attack' ? 'action' : ['basic-attack', 'spell', 'weapon', 'status', 'trait', 'action', 'equipment', 'system'].includes(rawKind) ? rawKind as CombatSource['kind'] : 'system'
+    const kind = rawKind === 'special-attack' ? 'action' : ['basic-attack', 'spell', 'weapon', 'status', 'trait', 'action', 'equipment', 'guardian', 'system'].includes(rawKind) ? rawKind as CombatSource['kind'] : 'system'
     const school = ['fire', 'water', 'earth', 'air'].includes(String(value.school)) ? value.school as CombatSource['school'] : undefined
     const rawOriginKind = String(value.originSourceKind)
-    const originSourceKind = ['basic-attack', 'spell', 'weapon', 'status', 'trait', 'action', 'equipment', 'system'].includes(rawOriginKind) ? rawOriginKind as CombatSource['kind'] : undefined
+    const originSourceKind = ['basic-attack', 'spell', 'weapon', 'status', 'trait', 'action', 'equipment', 'guardian', 'system'].includes(rawOriginKind) ? rawOriginKind as CombatSource['kind'] : undefined
     const originTags = Array.isArray(value.originTags) ? value.originTags.filter((tag): tag is NonNullable<CombatSource['originTags']>[number] => typeof tag === 'string') : undefined
     const originSchool = ['fire', 'water', 'earth', 'air'].includes(String(value.originSchool)) ? value.originSchool as CombatSource['originSchool'] : undefined
     const sourceMonsterId = typeof value.sourceMonsterId === 'string' && MONSTERS[value.sourceMonsterId as MonsterId] ? value.sourceMonsterId as MonsterId : sourceVersion === 21 && actor === 'enemy' ? legacyActiveEnemyId ?? undefined : undefined
@@ -466,6 +480,21 @@ const normalizeDirectContentReferences = (migrated: GameState, raw: Record<strin
   migrated.combat.pendingBossId = pendingBossId === null ? null : validContentId(pendingBossId, monsterIds) ? pendingBossId as GameState['combat']['pendingBossId'] : fresh.combat.pendingBossId
 }
 
+const normalizeGuardianRuntime = (migrated: GameState, raw: Record<string, any>) => {
+  const rawCombat = isRecord(raw.combat) ? raw.combat : {}
+  const rawGuardian = isRecord(rawCombat.guardian) ? rawCombat.guardian : {}
+  const rawActiveId = rawGuardian.activeGuardianId
+  const activeGuardianId = migrated.combat.enemyId && isSummoningUnlocked(migrated) && typeof rawActiveId === 'string' && GUARDIAN_IDS.includes(rawActiveId as typeof GUARDIAN_IDS[number])
+    ? rawActiveId as typeof GUARDIAN_IDS[number]
+    : null
+  const hasEncounter = Boolean(migrated.combat.enemyId)
+  const suppressedForEncounter = hasEncounter && isSummoningUnlocked(migrated) && rawGuardian.suppressedForEncounter === true && !activeGuardianId
+  const attackTimerMs = activeGuardianId
+    ? Math.min(GUARDIANS[activeGuardianId].attack.intervalMs, Math.max(0, nonNegativeNumber(rawGuardian.attackTimerMs) ?? GUARDIANS[activeGuardianId].attack.intervalMs))
+    : 0
+  migrated.combat.guardian = { activeGuardianId, attackTimerMs, suppressedForEncounter }
+}
+
 /** Explicit V26→V27 cleanup for the removed Prismatic Focus content. */
 const removeDeletedPrismaticFocus = (migrated: GameState, raw: Record<string, any>, sourceVersion: number) => {
   if (sourceVersion >= 27) return
@@ -687,10 +716,14 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   normalizeSpellPresets(migrated, raw)
   normalizeCombatState(migrated, raw, sourceVersion)
   normalizeDirectContentReferences(migrated, raw, sourceVersion)
+  normalizeGuardianRuntime(migrated, raw)
   removeDeletedPrismaticFocus(migrated, raw, sourceVersion)
   seedLegacyItemDiscoveries(migrated, raw, sourceVersion)
   reconcileStoryProgression(migrated)
-  if (!isScreenUnlocked(migrated, migrated.ui.screen)) migrated.ui.screen = 'home'
+  const screenUnlocked = migrated.ui.screen === 'tower-summoning'
+    ? isSummoningUnlocked(migrated)
+    : isScreenUnlocked(migrated, migrated.ui.screen)
+  if (!screenUnlocked) migrated.ui.screen = 'home'
   normalizeResearch(migrated, raw, sourceVersion)
   recalculateDerivedStats(migrated)
   normalizeTransmutationJobs(migrated, raw)

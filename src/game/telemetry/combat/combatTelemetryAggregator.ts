@@ -49,7 +49,7 @@ const cloneActorMetrics = (metrics: CombatActorMetrics): CombatActorMetrics => (
 const eventKind = (event: CombatEvent): CombatMetricSourceContribution['kind'] => {
   if (event.sourceKind === 'weapon') return 'basic-attack'
   if (event.sourceKind === 'equipment') return 'equipment'
-  if (event.sourceKind === 'basic-attack' || event.sourceKind === 'spell' || event.sourceKind === 'action' || event.sourceKind === 'status' || event.sourceKind === 'trait' || event.sourceKind === 'system') return event.sourceKind
+  if (event.sourceKind === 'basic-attack' || event.sourceKind === 'spell' || event.sourceKind === 'action' || event.sourceKind === 'status' || event.sourceKind === 'trait' || event.sourceKind === 'guardian' || event.sourceKind === 'system') return event.sourceKind
   if (event.category === 'spell') return 'spell'
   if (event.category === 'enemy-action') return 'action'
   if (event.category === 'basic-attack') return 'basic-attack'
@@ -98,6 +98,7 @@ export const getCombatMetricSourceKey = (event: CombatEvent): string => {
     return `status:${metadata.statusId ?? metadata.sourceId ?? 'unknown'}${origin}${provider}${rule}`
   }
   if (metadata.kind === 'trait') return `${actorPrefix}:trait:${metadata.traitId ?? metadata.sourceId ?? 'unknown'}`
+  if (metadata.kind === 'guardian') return `${actorPrefix}:guardian:${metadata.sourceId ?? 'unknown'}`
   if (metadata.kind === 'equipment') {
     const provider = metadata.providerInstanceKey ? `:provider:${metadata.providerInstanceKey}` : ''
     const rule = metadata.ruleId ? `:rule:${metadata.ruleId}` : ''

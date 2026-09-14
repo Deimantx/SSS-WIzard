@@ -11,10 +11,11 @@ import type { CombatModifier, CombatSource, CombatTag, DamageType, ModifierKey }
 import { getStatusGroupStacks } from './statusSelectors'
 import { getRootCombatSourceProvenance, isEnemySourceOwnerActive } from './combatProvenance'
 import { getAllocatedArtifactCombatProviders, isArtifactItem } from '../artifacts/artifactProgression'
+import { getGuardianPassiveProviders } from '../summoning/summoningSelectors'
 
 export type CombatModifierState = {
   player: Pick<GameState['player'], 'health' | 'maxHealth' | 'mana' | 'maxMana'>
-  combat: Pick<GameState['combat'], 'enemyId' | 'enemyInstanceKey' | 'enemyHp' | 'enemyMaxHp' | 'playerBarrier' | 'enemyBarrier' | 'playerStatuses' | 'enemyStatuses'>
+  combat: Pick<GameState['combat'], 'enemyId' | 'enemyInstanceKey' | 'enemyHp' | 'enemyMaxHp' | 'playerBarrier' | 'enemyBarrier' | 'playerStatuses' | 'enemyStatuses'> & Partial<Pick<GameState['combat'], 'guardian'>>
   equipment: GameState['equipment']
   artifactProgress: GameState['artifactProgress']
 }
@@ -34,7 +35,7 @@ export interface ModifierContext {
 export interface CombatModifierContribution {
   modifier: CombatModifier
   value: number
-  sourceType: 'status' | 'trait' | 'equipment' | 'equipment-stats' | 'artifact'
+  sourceType: 'status' | 'trait' | 'equipment' | 'equipment-stats' | 'artifact' | 'guardian'
   sourceId?: string
   sourceName?: string
 }
@@ -120,6 +121,7 @@ export const getCombatModifierContributions = (state: CombatModifierState, actor
       const value = Number(getEffectiveEquipmentItemStats(state, itemId)[equipmentField] ?? 0)
       if (value !== 0) add({ key, value }, 'equipment-stats', itemId, ITEMS[itemId]?.name, value)
     })
+    getGuardianPassiveProviders(state).forEach(({ modifier, sourceId, sourceName }) => add(modifier, 'guardian', sourceId, sourceName))
   }
   return contributions
 }

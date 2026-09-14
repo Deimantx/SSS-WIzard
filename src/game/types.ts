@@ -2,7 +2,7 @@ import type { PortalShardId } from './content/darkPortal/portalShards'
 
 export type SchoolId = 'fire' | 'water' | 'earth' | 'air'
 export type ElementId = SchoolId
-export type ScreenId = 'home' | 'combat' | 'schools' | 'inventory' | 'equipment' | 'collection' | 'bestiary' | 'tower-channeling' | 'tower-focus' | 'tower-research' | 'tower-transmutation' | 'tower-artificing' | 'tower-dark-portal' | 'guild' | 'settings'
+export type ScreenId = 'home' | 'combat' | 'schools' | 'inventory' | 'equipment' | 'collection' | 'bestiary' | 'tower-channeling' | 'tower-focus' | 'tower-research' | 'tower-transmutation' | 'tower-artificing' | 'tower-summoning' | 'tower-dark-portal' | 'guild' | 'settings'
 export type ActivityStatus = 'running' | 'mana-limited' | 'paused' | 'waiting-mana' | 'waiting-focus' | 'completed' | 'locked' | 'recovering'
 
 export type ItemId =
@@ -40,6 +40,7 @@ export type StoryEventId = 'edrin-dark-portal-discovery'
 export type SpellId = 'fire-bolt' | 'ignite' | 'fireball' | 'water-ward' | 'flow-mend' | 'frostbite' | 'earth-spike' | 'stoneguard' | 'fortify' | 'air-lance' | 'quickening' | 'shock-spark'
 export type SpellPresetId = string
 export type MonsterId = 'forest-wisp' | 'thornling' | 'stone-root' | 'grove-sentinel' | 'forest-heart' | 'cavefang-wolf' | 'razorclaw-lynx' | 'corrupted-dire-wolf' | 'corrupted-greatbear' | 'restless-skeleton' | 'grave-wraith' | 'fallen-acolyte' | 'archmage-edrin-shade'
+export type GuardianId = 'fire-guardian' | 'water-guardian' | 'earth-guardian' | 'air-guardian'
 export type BestiaryCategory = 'monster' | 'boss'
 export type DungeonId = 'whispering-woods' | 'howling-den' | 'abandoned-catacombs'
 export type EquipmentItemSlot = 'weapon' | 'armor' | 'helmet' | 'cape' | 'amulet' | 'earring' | 'ring'
@@ -275,6 +276,16 @@ export interface CombatState {
   lastDamageTaken: number
   /** Persisted deterministic PRNG state used by Combat Crit, Block and encounters. */
   combatRngState: number
+  guardian: {
+    activeGuardianId: GuardianId | null
+    attackTimerMs: number
+    suppressedForEncounter: boolean
+  }
+}
+export interface GuardianProgressState { level: number; rank: number }
+export interface GuardiansState {
+  selectedGuardianId: GuardianId | null
+  progress: Record<GuardianId, GuardianProgressState>
 }
 export interface ProgressState {
   magicLevelCap: number
@@ -347,6 +358,7 @@ export interface GameState {
   protectedItems: Partial<Record<ItemId, boolean>>
   equipment: Record<EquipmentPosition, ItemId | null>
   artifactProgress: Partial<Record<ArtifactId, ArtifactProgressState>>
+  guardians: GuardiansState
   activities: ActivitiesState
   combat: CombatState
   progress: ProgressState

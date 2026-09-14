@@ -34,7 +34,7 @@ export const resolveMagnitude = (state: MagnitudeState, magnitude: Magnitude, so
     case 'target-max-health-percent': return Math.max(0, targetMax * magnitude.value)
     case 'source-basic-damage-percent': return Math.max(0, getActorBasicDamage(state, source.actor) * magnitude.value)
     case 'school-level': return Math.max(0, magnitude.base + (state.schools[magnitude.school]?.level ?? 0) * magnitude.perLevel)
-    case 'spell-power': return (source.kind === 'spell' || getRootCombatSourceProvenance(source).sourceKind === 'spell') ? Math.max(0, getSpellPower(state) * magnitude.coefficient) : 0
+    case 'spell-power': return (source.kind === 'spell' || source.kind === 'guardian' || getRootCombatSourceProvenance(source).sourceKind === 'spell') ? Math.max(0, getSpellPower(state) * magnitude.coefficient) : 0
     case 'target-missing-health-percent': return Math.max(0, (targetMax - getActorHealth(state, target)) * magnitude.value)
   }
 }

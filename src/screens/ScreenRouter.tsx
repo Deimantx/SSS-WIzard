@@ -10,10 +10,11 @@ import { HomeScreenV2 } from './home/HomeScreen'
 import { InventoryScreenV2 } from './inventory/InventoryScreen'
 import { MagicSchoolsScreenV2 } from './schools/MagicSchoolsScreen'
 import { SettingsScreenV2 } from './settings/SettingsScreen'
-import { TowerChannelingScreen, TowerFocusScreen, TowerResearchScreen, TowerTransmutationScreen, TowerArtificingScreen } from './tower/TowerScreens'
+import { TowerChannelingScreen, TowerFocusScreen, TowerResearchScreen, TowerTransmutationScreen, TowerArtificingScreen, TowerSummoningScreen } from './tower/TowerScreens'
 import { ScreenTransitionFrame } from '../ui/game-feel/ScreenTransitionFrame'
 import { isScreenUnlocked } from '../game/systems/story/storyProgression'
 import { DarkPortalScreen } from './tower/dark-portal/DarkPortalScreen'
+import { isSummoningUnlocked } from '../game/systems/summoning/summoningSelectors'
 
 function CurrentScreen({ screen }: { screen: ScreenId }) {
   if (screen === 'home') return <HomeScreenV2 />
@@ -22,6 +23,7 @@ function CurrentScreen({ screen }: { screen: ScreenId }) {
   if (screen === 'tower-research') return <TowerResearchScreen />
   if (screen === 'tower-transmutation') return <TowerTransmutationScreen />
   if (screen === 'tower-artificing') return <TowerArtificingScreen />
+  if (screen === 'tower-summoning') return <TowerSummoningScreen />
   if (screen === 'tower-dark-portal') return <DarkPortalScreen />
   if (screen === 'schools') return <MagicSchoolsScreenV2 />
   if (screen === 'combat') return <CombatScreenV2 />
@@ -36,6 +38,9 @@ function CurrentScreen({ screen }: { screen: ScreenId }) {
 export function ScreenRouter() {
   const requestedScreen = useGameStore((state) => state.ui.screen)
   const storyProgress = useGameStore((state) => state.storyProgress)
-  const screen = isScreenUnlocked({ storyProgress }, requestedScreen) ? requestedScreen : 'home'
+  const progress = useGameStore((state) => state.progress)
+  const screen = requestedScreen === 'tower-summoning'
+    ? isSummoningUnlocked({ progress }) ? requestedScreen : 'home'
+    : isScreenUnlocked({ storyProgress }, requestedScreen) ? requestedScreen : 'home'
   return <ScreenErrorBoundary key={screen} screen={screen}><ScreenTransitionFrame key={screen} screen={screen}><CurrentScreen screen={screen} /></ScreenTransitionFrame></ScreenErrorBoundary>
 }

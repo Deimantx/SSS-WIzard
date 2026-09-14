@@ -5,6 +5,7 @@ import { createInitialState, SAVE_VERSION } from '../store/initialState'
 import { DUNGEONS, isDungeonUnlocked, isTutorialCompleted } from '../game/content/dungeons/dungeons'
 import { MAX_ACTION_WORK_MS } from '../game/core/balance/combatTiming'
 import { getSchoolTotalXpForLevel } from '../game/core/balance/schoolXpCurve'
+import { SUMMONING_UNLOCK_BOSS_ID } from '../game/content/guardians/guardians'
 
 describe('V27 story progression migration', () => {
   it('keeps the Dark Portal hidden when an old save has no Edrin kill', () => {
@@ -29,6 +30,22 @@ describe('V27 story progression migration', () => {
 })
 
 describe('save navigation migration', () => {
+  it('preserves the hidden-until-unlocked Summoning route and normalizes Guardian state', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({
+      ...initial,
+      saveVersion: 31,
+      ui: { screen: 'tower-summoning' },
+      progress: { ...initial.progress, bossKillsByBoss: { [SUMMONING_UNLOCK_BOSS_ID]: 1 } },
+      guardians: { selectedGuardianId: 'fire-guardian', progress: { 'fire-guardian': { level: 7, rank: 4 } } },
+    } as any)
+
+    expect(migrated.ui.screen).toBe('tower-summoning')
+    expect(migrated.progress.bossKillsByBoss[SUMMONING_UNLOCK_BOSS_ID]).toBe(1)
+    expect(migrated.guardians.selectedGuardianId).toBe('fire-guardian')
+    expect(migrated.guardians.progress['fire-guardian']).toEqual({ level: 7, rank: 4 })
+  })
+
   it('migrates V28 saves with clean Rank I Transmutation Arrays', () => {
     const initial = createInitialState()
     const migrated = migrateSave({ ...initial, saveVersion: 28, progress: { ...initial.progress, transmutation: { arrays: { 'temporal-array': { rank: 9, level: 999 }, 'unknown-array': { rank: 7, level: 7 } } } } } as any)

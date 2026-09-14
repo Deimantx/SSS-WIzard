@@ -35,7 +35,7 @@ export const WHISPERING_WOODS_MONSTERS = {
   },
   'forest-heart': {
     id: 'forest-heart', bestiaryCategory: 'boss', name: 'Forest Heart', subtitle: 'The pulse beneath the roots',
-    maxHealth: 900, basicAttackDamage: 35, basicAttackTimeMs: 2400, defense: 30, color: '#e06c8b', ui: { portraitIcon: 'boss' }, traitIds: ['forest-heart-living-core'],
+    maxHealth: 900, basicAttackDamage: 30, basicAttackTimeMs: 2400, defense: 30, color: '#e06c8b', ui: { portraitIcon: 'boss' }, traitIds: ['forest-heart-living-core'],
     actions: {
       'heart-pulse': { id: 'heart-pulse', name: 'Heart Pulse', actionTimeMs: 2000, description: 'The Forest Heart releases a crushing pulse through the roots.', effects: [scaledDirectDamage('physical', 1.2)], tags: ['special', 'physical', 'direct'] },
       'root-prison': { id: 'root-prison', name: 'Root Prison', actionTimeMs: 2000, description: "Roots crush the target and delay the Player's next Basic Attack.", effects: [scaledDirectDamage('physical', 0.8), delayBasicAttack(1000)], tags: ['special', 'physical', 'control'] },

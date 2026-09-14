@@ -1,5 +1,5 @@
 import type { MonsterDefinition } from '../../content/monsters'
-import { BLOCK_DAMAGE_REDUCTION, DEFAULT_COMBAT_SPEED_MULTIPLIER, DEFAULT_ENEMY_CRIT_CHANCE, DEFAULT_ENEMY_CRIT_DAMAGE_MULTIPLIER, DEFAULT_ENEMY_DEFENSE, MAX_BLOCK_CHANCE, MAX_CRIT_CHANCE, MAX_CRIT_DAMAGE_MULTIPLIER, MAX_RESISTANCE, MIN_CRIT_DAMAGE_MULTIPLIER, MIN_RESISTANCE } from '../../core/balance/combatStats'
+import { BLOCK_DAMAGE_REDUCTION, DEFAULT_COMBAT_SPEED_MULTIPLIER, DEFAULT_ENEMY_CRIT_CHANCE, DEFAULT_ENEMY_CRIT_DAMAGE_MULTIPLIER, DEFAULT_ENEMY_DEFENSE, MAX_BLOCK_CHANCE, MAX_CRIT_CHANCE, MAX_CRIT_DAMAGE_MULTIPLIER, MAX_DEFENSE_REDUCTION, MAX_RESISTANCE, MIN_CRIT_DAMAGE_MULTIPLIER, MIN_RESISTANCE } from '../../core/balance/combatStats'
 import type { DamageType } from '../../types'
 import { formatNumber } from '../../utils'
 import type { CombatStats } from '../../systems/combat/combatStats'
@@ -65,7 +65,7 @@ export const buildEnemyCombatStatRows = (stats: EnemyCombatStatValues, options: 
     { id: 'crit-chance', label: 'Crit Chance', value: percentage(stats.critChance), description: 'Chance for a direct enemy hit to critically strike.', group: 'offense' },
     { id: 'crit-damage', label: 'Crit Damage', value: percentage(stats.critDamageMultiplier), description: 'Multiplier applied to a critical direct hit.', group: 'offense' },
     { id: 'defense', label: 'Defense', value: formatNumber(stats.defense), description: 'A rating that reduces Direct Hit damage with diminishing returns. Damage over Time ignores Defense.', group: 'defense' },
-    { id: 'damage-reduction', label: 'Damage Reduction', value: `${(stats.defenseReduction * 100).toFixed(1)}%`, description: 'Current Direct Hit reduction produced by Defense. Capped at 80%. Damage over Time ignores Defense.', group: 'defense' },
+    { id: 'damage-reduction', label: 'Damage Reduction', value: `${(stats.defenseReduction * 100).toFixed(1)}%`, description: `Current Direct Hit reduction produced by Defense. Capped at ${Math.round(MAX_DEFENSE_REDUCTION * 100)}%. Damage over Time ignores Defense.`, group: 'defense' },
   ]
   if (stats.blockChance > 0) rows.push({ id: 'block-chance', label: 'Block Chance', value: percentage(stats.blockChance), description: `Chance for a Direct Hit to be Blocked. A successful Block reduces that hit by ${Math.round(BLOCK_DAMAGE_REDUCTION * 100)}%. Damage over Time cannot be Blocked.`, group: 'defense' })
   if (stats.healingDoneBonus !== 0) rows.push({ id: 'healing-done', label: 'Healing Done', value: percentage(stats.healingDoneBonus), description: "Bonus applied to this enemy's healing effects.", group: 'utility' })

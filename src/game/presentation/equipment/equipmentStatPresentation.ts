@@ -107,7 +107,8 @@ export function getEquipmentStatDescription(key: string, context: EquipmentStatD
 
 export function formatEquipmentStat(key: string, value: number, signed = true): string {
   const sign = signed && value > 0 ? '+' : ''
-  if (key === 'healthRegen' || key === 'manaRegen') return `${sign}${value}/s`
+  if (key === 'healthRegen') return `${sign}${value}/s`
+  if (key === 'manaRegen') return `${sign}${Math.ceil(value)}/s`
   if (key === 'basicAttackSpeedMultiplier' || key === 'cooldownRecovery') return `${sign}${value.toFixed(2)}x`
   if (key === 'damageReduction') return `${sign}${(value * 100).toFixed(1)}%`
   if (PERCENT_KEYS.has(key) || key.endsWith('Pct') || key.startsWith('resistance-')) return `${sign}${Math.round(value * 100)}%`

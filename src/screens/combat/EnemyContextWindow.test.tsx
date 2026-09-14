@@ -4,6 +4,7 @@ import { useRef, useState } from 'react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { TooltipProvider } from '../../components/ui/tooltip/Tooltip'
 import { useGameStore } from '../../store/gameStore'
+import { getDefenseReductionFromRating } from '../../game/systems/combat/combatStats'
 import type { EnemyContextMode } from './EnemyContextWindow'
 import { EnemyContextWindow, EnemyStatsContent, getEnemyContextPosition } from './EnemyContextWindow'
 
@@ -34,7 +35,7 @@ describe('EnemyContextWindow', () => {
     expect(screen.getByText('Defense')).toBeTruthy()
     expect(screen.getByText('Damage Reduction')).toBeTruthy()
     expect(screen.getByText('0.36/s')).toBeTruthy()
-    expect(screen.getByText('9.1%')).toBeTruthy()
+    expect(screen.getByText(`${(getDefenseReductionFromRating(8) * 100).toFixed(1)}%`)).toBeTruthy()
     screen.getByText('Basic Attack Speed').parentElement!.focus()
     expect((await screen.findByRole('tooltip')).textContent).toContain('Current Basic Attack Time: 2.80s.')
   })

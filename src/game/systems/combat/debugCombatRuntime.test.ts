@@ -9,7 +9,7 @@ import { forceKillEnemyForDebug, fastResolveNormalEnemiesForDebug } from './debu
 import { castSpellAction } from '../../engine/spellEngine'
 import { advanceGameState } from '../simulation/advanceGameState'
 import { applyStatus } from './statusRuntime'
-import { BALANCE } from '../../core/balance/balance'
+import { getDefense, getDefenseReductionFromRating } from './combatStats'
 
 const source = { actor: 'player' as const, kind: 'spell' as const, sourceId: 'debug-spell', tags: ['spell' as const, 'direct' as const] }
 const enemySource = (state: GameState) => ({ actor: 'enemy' as const, kind: 'basic-attack' as const, sourceId: 'debug-enemy-hit', sourceMonsterId: state.combat.enemyId ?? undefined, sourceInstanceKey: state.combat.enemyInstanceKey ?? undefined, tags: ['basic-attack' as const, 'direct' as const] })
@@ -39,7 +39,8 @@ describe('Combat Lab immortality and forced-resolution runtime', () => {
     expect(state.combat.enemyHp).toBe(1)
     expect(resolveCombatDeaths(state, undefined, undefined, sink)).toBe(false)
     expect(events.filter((event) => event.sourceId === 'debug-spell')).toHaveLength(2)
-    expect(useCombatTelemetryStore.getState().run?.player.damageDone.total).toBeCloseTo(500 * 1.5 * (1 - 10 / 110) + 250 * (1 - 10 / 110))
+    const enemyDefenseReduction = getDefenseReductionFromRating(getDefense(state, 'enemy'))
+    expect(useCombatTelemetryStore.getState().run?.player.damageDone.total).toBeCloseTo(500 * 1.5 * (1 - enemyDefenseReduction) + 250 * (1 - enemyDefenseReduction))
     expect(events.some((event) => event.sourceId === 'enemy-defeated')).toBe(false)
   })
 
@@ -55,7 +56,7 @@ describe('Combat Lab immortality and forced-resolution runtime', () => {
     executeCombatEffects(state, [damage(500, 'enemy')], enemySource(state), 0, sink)
     expect(state.player.health).toBe(1)
     expect(resolveCombatDeaths(state, undefined, undefined, sink)).toBe(false)
-    const playerDefenseReduction = BALANCE.player.baseDefense / (BALANCE.player.baseDefense + 100)
+    const playerDefenseReduction = getDefenseReductionFromRating(getDefense(state, 'player'))
     expect(useCombatTelemetryStore.getState().run?.player.damageTaken.total).toBeCloseTo(500 * 1.5 * (1 - playerDefenseReduction))
     expect(events.some((event) => event.sourceId === 'player-defeated')).toBe(false)
   })
@@ -72,7 +73,7 @@ describe('Combat Lab immortality and forced-resolution runtime', () => {
     const event = events.find((candidate) => candidate.sourceId === 'debug-spell')
     expect(state.combat.enemyBarrier).toBe(0)
     expect(state.combat.enemyHp).toBe(1)
-    expect(event?.amount).toBeCloseTo(250 * 1.5 * (1 - 10 / 110))
+    expect(event?.amount).toBeCloseTo(250 * 1.5 * (1 - getDefenseReductionFromRating(getDefense(state, 'enemy'))))
     expect(event?.healthDamage).toBe(0)
     expect(event).toMatchObject({ barrierAbsorbed: 100 })
   })

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { BALANCE } from '../../core/balance/balance'
 import { calculateCombatDamage, damageEnemy } from './effectResolver'
-import { getBlockChance, getCritChance, getCritDamageMultiplier, getDefense, getDefenseReduction, getEnemyCombatStats, getPlayerCombatStats } from './combatStats'
+import { getBlockChance, getCritChance, getCritDamageMultiplier, getDefense, getDefenseReduction, getDefenseReductionFromRating, getEnemyCombatStats, getPlayerCombatStats } from './combatStats'
 import { getResistance } from './modifiers'
 import { nextCombatRandom } from './combatRng'
 import type { CombatSource } from './combatTypes'
@@ -17,7 +17,7 @@ describe('universal combat stats foundation', () => {
     state.combat.enemyId = 'forest-wisp'
     state.combat.enemyMaxHp = 1_000
 
-    const playerDefenseReduction = BALANCE.player.baseDefense / (BALANCE.player.baseDefense + 100)
+    const playerDefenseReduction = getDefenseReductionFromRating(BALANCE.player.baseDefense)
     expect(getDefense(state, 'player')).toBe(BALANCE.player.baseDefense)
     expect(getDefenseReduction(state, 'player')).toBeCloseTo(playerDefenseReduction)
     const direct = calculateCombatDamage(state, 100, 'physical', { actor: 'enemy', kind: 'basic-attack', sourceId: 'test', tags: ['basic-attack', 'direct'] }, 'player')
@@ -26,6 +26,16 @@ describe('universal combat stats foundation', () => {
     expect(direct.resolvedBeforeBarrier).toBeCloseTo(100 * (1 - playerDefenseReduction))
     expect(dot.defenseReduction).toBe(0)
     expect(dot.resolvedBeforeBarrier).toBe(100)
+  })
+
+  it('uses the slower shared Defense curve and preserves its cap', () => {
+    expect(getDefenseReductionFromRating(0)).toBe(0)
+    expect(getDefenseReductionFromRating(47)).toBeCloseTo(0.1354, 4)
+    expect(getDefenseReductionFromRating(100)).toBe(0.25)
+    expect(getDefenseReductionFromRating(300)).toBe(0.5)
+    expect(getDefenseReductionFromRating(700)).toBe(0.7)
+    expect(getDefenseReductionFromRating(1_000)).toBe(0.7)
+    expect(getDefenseReductionFromRating(-10)).toBe(0)
   })
 
   it('exposes the locked default player and enemy stat sheet', () => {

@@ -32,10 +32,10 @@ export const ABANDONED_CATACOMBS_MONSTERS = {
   },
   'archmage-edrin-shade': {
     id: 'archmage-edrin-shade', bestiaryCategory: 'boss', name: "Archmage Edrin's Shade", subtitle: 'The last spell of a wizard who would not rest',
-    maxHealth: 6000, basicAttackDamage: 70, basicAttackTimeMs: 2500, defense: 45, color: '#70619b', ui: { portraitIcon: 'mage' }, traitIds: ['archmage-edrin-arcane-remnant', 'archmage-edrin-unbound-spirit'], resistances: { fire: 0.15, water: 0.15, earth: 0.15, air: 0.15 },
+    maxHealth: 6000, basicAttackDamage: 60, basicAttackTimeMs: 2500, defense: 45, color: '#70619b', ui: { portraitIcon: 'mage' }, traitIds: ['archmage-edrin-arcane-remnant', 'archmage-edrin-unbound-spirit'], resistances: { fire: 0.15, water: 0.15, earth: 0.15, air: 0.15 },
     actions: {
-      gravefire: { id: 'gravefire', name: 'Gravefire', actionTimeMs: 1800, description: 'Flame erupts across the target and leaves it Burning.', effects: [scaledDirectDamage('fire', 1.2), scaledDot('burning', 'fire', 1.0, 5000)], tags: ['special', 'fire', 'magic', 'debuff'] },
-      frostbind: { id: 'frostbind', name: 'Frostbind', actionTimeMs: 2000, description: 'A freezing surge damages the target and leaves it Chilled.', effects: [scaledDirectDamage('water', 1.1), applyStatus('chilled', 'opponent')], tags: ['special', 'water', 'magic', 'debuff'] },
+      gravefire: { id: 'gravefire', name: 'Gravefire', actionTimeMs: 1800, description: 'Flame erupts across the target and leaves it Burning.', effects: [scaledDirectDamage('fire', 1.1), scaledDot('burning', 'fire', 1.0, 5000)], tags: ['special', 'fire', 'magic', 'debuff'] },
+      frostbind: { id: 'frostbind', name: 'Frostbind', actionTimeMs: 2000, description: 'A freezing surge damages the target and leaves it Chilled.', effects: [scaledDirectDamage('water', 1.05), applyStatus('chilled', 'opponent')], tags: ['special', 'water', 'magic', 'debuff'] },
       'arcane-ward': { id: 'arcane-ward', name: 'Arcane Ward', actionTimeMs: 2500, description: 'Edrin shapes an Arcane ward into a protective Barrier.', effects: [scaledBarrier(0.020)], tags: ['special', 'arcane', 'barrier'] },
       'soul-drain': { id: 'soul-drain', name: 'Soul Drain', actionTimeMs: 2400, description: 'Arcane force tears at the target and restores the caster\'s Health.', effects: [scaledDirectDamage('arcane', 1.2), scaledHeal(0.012)], tags: ['special', 'arcane', 'magic', 'heal', 'direct'] },
       'final-incantation': { id: 'final-incantation', name: 'Final Incantation', actionTimeMs: 3500, description: 'Edrin unleashes a devastating Arcane incantation.', effects: [scaledDirectDamage('arcane', 2.0)], tags: ['special', 'arcane', 'magic', 'direct'] },

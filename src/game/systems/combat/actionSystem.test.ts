@@ -12,6 +12,7 @@ import { getCurrentEnemyActionTiming, getTimedActionState } from './actionTiming
 import type { CombatEvent, CombatEventSink } from './combatTypes'
 import { migrateSave } from '../../../persistence/migrations'
 import { BALANCE } from '../../core/balance/balance'
+import { getDefenseReductionFromRating } from './combatStats'
 
 const stateWithEnemy = (enemyId: Parameters<typeof spawnEnemy>[1] = 'forest-wisp') => {
   const state = createInitialState()
@@ -37,7 +38,7 @@ const startAt = (state: ReturnType<typeof createInitialState>, index: number, si
   state.combat.enemyNextActionIndex = index
   expect(startNextEnemyAction(state, executeCombatEffects, 0, sink)).toBe(true)
 }
-const playerDefenseReduction = BALANCE.player.baseDefense / (BALANCE.player.baseDefense + 100)
+const playerDefenseReduction = getDefenseReductionFromRating(BALANCE.player.baseDefense)
 
 describe('classic real-time combat action timing', () => {
   it('starts with a timed Basic Attack and waits until expiry before damage', () => {

@@ -28,7 +28,7 @@ export const HOWLING_DEN_MONSTERS = {
   },
   'corrupted-greatbear': {
     id: 'corrupted-greatbear', bestiaryCategory: 'boss', name: 'Corrupted Greatbear', subtitle: 'A mountain of fur warped by hungry magic',
-    maxHealth: 2400, basicAttackDamage: 55, basicAttackTimeMs: 2800, defense: 30, color: '#554240', ui: { portraitIcon: 'bear' }, traitIds: ['corrupted-greatbear-thick-hide', 'corrupted-greatbear-unstable-corruption'],
+    maxHealth: 2400, basicAttackDamage: 50, basicAttackTimeMs: 2800, defense: 30, color: '#554240', ui: { portraitIcon: 'bear' }, traitIds: ['corrupted-greatbear-thick-hide', 'corrupted-greatbear-unstable-corruption'],
     actions: {
       'crushing-maul': { id: 'crushing-maul', name: 'Crushing Maul', actionTimeMs: 1800, description: 'A brutal maul strike crashes into the target.', effects: [scaledDirectDamage('physical', 1.55)], tags: ['special', 'physical', 'melee', 'direct'] },
       groundbreaker: { id: 'groundbreaker', name: 'Groundbreaker', actionTimeMs: 2500, description: "The Greatbear shakes the ground and delays the Player's Basic Attack.", effects: [scaledDirectDamage('physical', 1.2), delayBasicAttack(1200)], tags: ['special', 'physical', 'control'] },

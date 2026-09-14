@@ -17,9 +17,10 @@ import { SPELLS } from '../../content/spells/spells'
 import { getEnemySkillActionRate, getPlayerBasicAttackRate } from './actionRuntime'
 import { getTimedActionState } from './actionTiming'
 import { BALANCE } from '../../core/balance/balance'
+import { getDefenseReductionFromRating } from './combatStats'
 
 const playerSpell: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'test-spell', school: 'fire', tags: ['spell', 'magic'] }
-const playerDefenseReduction = BALANCE.player.baseDefense / (BALANCE.player.baseDefense + 100)
+const playerDefenseReduction = getDefenseReductionFromRating(BALANCE.player.baseDefense)
 const enemyAttack = (state: GameState): CombatSource => ({ actor: 'enemy', kind: 'basic-attack', sourceId: 'test-attack', sourceMonsterId: state.combat.enemyId ?? undefined, sourceInstanceKey: state.combat.enemyInstanceKey ?? undefined, tags: ['basic-attack', 'direct'] })
 const stateWithEnemy = (enemyId: Parameters<typeof spawnEnemy>[1] = 'forest-wisp') => {
   const state = createInitialState()
@@ -63,7 +64,7 @@ describe('universal combat effects', () => {
     const state = stateWithEnemy('thornling')
     state.combat.enemyBarrier = 5
     const dealt = damageEnemy(state, 10, 'basic')
-    expect(dealt).toBeCloseTo(10 * 1.5 * 0.85 * (1 - 12 / 112) - 5)
+    expect(dealt).toBeCloseTo(10 * 1.5 * 0.85 * (1 - getDefenseReductionFromRating(12)) - 5)
     expect(state.combat.enemyBarrier).toBe(0)
     expect(state.combat.enemyHp).toBeCloseTo(240 - dealt)
     expect(state.combat.log).toContain('Barrier breaks.')
@@ -181,7 +182,7 @@ describe('data-driven monster mechanics', () => {
     damageEnemy(sentinel, 220, 'spell')
     expect(sentinel.combat.enemyBarrier).toBe(71)
     damageEnemy(sentinel, 10, 'spell')
-    expect(sentinel.combat.enemyBarrier).toBeCloseTo(71 - 10 * (1 - 20 / 120))
+    expect(sentinel.combat.enemyBarrier).toBeCloseTo(71 - 10 * (1 - getDefenseReductionFromRating(20)))
     expect(sentinel.combat.triggeredRuleIds).toEqual(['enemy:trait:grove-sentinel-ancient-growth:grove-sentinel-ancient-growth-threshold'])
     const heart = stateWithEnemy('forest-heart')
     damageEnemy(heart, 410, 'spell')
@@ -382,8 +383,8 @@ describe('post-implementation combat audit regressions', () => {
       const ranged = stateWithEnemy()
       applyStatus(ranged, 'player', 'quickening', playerSpell)
       executeCombatEffects(ranged, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 10 } }], tags: ['direct'] }], { actor: 'player', kind: 'weapon', sourceId: 'ranged', tags: ['weapon', 'ranged'] })
-      expect(melee.combat.enemyHp).toBeCloseTo(200 - 10 * 1.5 * 1.5 * (1 - 8 / 108))
-      expect(ranged.combat.enemyHp).toBeCloseTo(200 - 10 * 1.5 * (1 - 8 / 108))
+      expect(melee.combat.enemyHp).toBeCloseTo(200 - 10 * 1.5 * 1.5 * (1 - getDefenseReductionFromRating(8)))
+      expect(ranged.combat.enemyHp).toBeCloseTo(200 - 10 * 1.5 * (1 - getDefenseReductionFromRating(8)))
     } finally {
       STATUS_DEFINITIONS.quickening.modifiers = original
     }
@@ -416,7 +417,7 @@ describe('post-implementation combat audit regressions', () => {
       damageEnemy(state, 105, 'spell')
       expect(state.combat.enemyBarrier).toBe(5)
       damageEnemy(state, 1, 'spell')
-      expect(state.combat.enemyBarrier).toBeCloseTo(5 - 1 * (1 - 8 / 108))
+      expect(state.combat.enemyBarrier).toBeCloseTo(5 - 1 * (1 - getDefenseReductionFromRating(8)))
     })
   })
 

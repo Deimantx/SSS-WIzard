@@ -6,6 +6,7 @@ import type { ItemDefinition, ItemId } from '../../game/types'
 import { getEquippedReservedQuantity } from './inventoryActions'
 import { equipItemAction } from './equipmentActions'
 import { BALANCE } from '../../game/core/balance/balance'
+import { getDefenseReductionFromRating } from '../../game/systems/combat/combatStats'
 
 const testRingId = 'test-arcane-ring' as ItemId
 const testDefenseId = 'test-defense-robe' as ItemId
@@ -51,8 +52,8 @@ describe('equipment actions', () => {
     const state = createInitialState()
     state.inventory[testDefenseId] = 1
     const preview = getEquipmentPreview(state, testDefenseId)
-    const currentDefenseReduction = BALANCE.player.baseDefense / (BALANCE.player.baseDefense + 100)
-    const previewDefenseReduction = (BALANCE.player.baseDefense + 100) / (BALANCE.player.baseDefense + 100 + 100)
+    const currentDefenseReduction = getDefenseReductionFromRating(BALANCE.player.baseDefense)
+    const previewDefenseReduction = getDefenseReductionFromRating(BALANCE.player.baseDefense + 100)
     expect(preview.current.damageReduction).toBeCloseTo(currentDefenseReduction)
     expect(preview.preview?.damageReduction).toBeCloseTo(previewDefenseReduction)
     expect(preview.impact.damageReduction).toBeCloseTo(previewDefenseReduction - currentDefenseReduction)

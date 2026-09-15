@@ -6,7 +6,7 @@ import { ITEMS } from '../../game/content/items/items'
 import { getConsumableQuantity } from '../../game/core/inventory/inventoryConsumption'
 import { getArtifactArtificingState } from '../../game/systems/artificing/artificingSelectors'
 import { getArtifactLevelCapRequirement, getArtifactUpgrade } from '../../game/systems/artifacts/artifactProgression'
-import type { ArtifactId, ArtificingRecipeId, EquipmentStats, GameState, ItemId } from '../../game/types'
+import type { ArtifactId, EquipmentStats, GameState, ItemId } from '../../game/types'
 import type { ArtifactArtificingState } from '../../game/systems/artificing/artificingSelectors'
 import type { GameStore } from '../../store/gameStore'
 
@@ -23,7 +23,7 @@ interface StatPreview {
 
 export function ArtifactLevelUpModule({ state, artifactId }: ArtifactLevelUpModuleProps) {
   const definition = ARTIFACTS[artifactId]
-  const artifactState = getArtifactArtificingState(state, artifactId as ArtificingRecipeId)
+  const artifactState = getArtifactArtificingState(state, artifactId)
   if (!definition || !artifactState) return null
 
   const isUpgrade = artifactState.mode === 'upgrade'

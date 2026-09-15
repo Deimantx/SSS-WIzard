@@ -4,7 +4,7 @@ import { GameTooltip } from '../ui/tooltip/Tooltip'
 import { ItemIcon, ItemTooltip } from '../ui/item'
 import { Status } from '../ui'
 import { ITEMS } from '../../game/content/items/items'
-import { ARTIFACTS } from '../../game/content/artifacts/artifacts'
+import { ARTIFACTS, isArtifactId } from '../../game/content/artifacts/artifacts'
 import { ARTIFICING_RECIPES, type ArtificingRecipeDefinition } from '../../game/content/recipes/artificingRecipes'
 import { isRecipeUnlocked } from '../../game/content/recipes/recipeUnlocks'
 import { getActiveArtificingJob, getArtificingMissingIngredients, getArtificingProfile, getArtificingRecipePlayerTier } from '../../game/systems/artificing/artificingSelectors'
@@ -33,7 +33,7 @@ export function RecipePinsDock() {
   useEffect(() => {
     const staleArtifactPins = preferences.pinnedRecipeIds.filter((recipeId) => {
       const recipe = ARTIFICING_RECIPES[recipeId]
-      return Boolean(recipe && ARTIFACTS[recipe.output.itemId] && (state.inventory[recipe.output.itemId] ?? 0) > 0 && state.artifactProgress?.[recipe.output.itemId])
+      return Boolean(recipe && isArtifactId(recipe.output.itemId) && ARTIFACTS[recipe.output.itemId] && (state.inventory[recipe.output.itemId] ?? 0) > 0 && state.artifactProgress?.[recipe.output.itemId])
     })
     if (staleArtifactPins.length) setUiPreferences({ screenState: { artificing: { pinnedRecipeIds: preferences.pinnedRecipeIds.filter((recipeId) => !staleArtifactPins.includes(recipeId)) } } })
   }, [preferences.pinnedRecipeIds, state.inventory, state.artifactProgress])
@@ -68,8 +68,9 @@ export function RecipePinsDock() {
 
 function ArtificingRecipePinCard({ recipe, state, onOpen, onUnpin }: { recipe: ArtificingRecipeDefinition; state: GameState; onOpen: () => void; onUnpin: () => void }) {
   const item = ITEMS[recipe.output.itemId]
-  const artifact = ARTIFACTS[recipe.output.itemId]
-  const forged = Boolean(artifact && state.artifactProgress?.[recipe.id] && (state.inventory[recipe.output.itemId] ?? 0) > 0)
+  const artifactId = isArtifactId(recipe.output.itemId) ? recipe.output.itemId : null
+  const artifact = artifactId ? ARTIFACTS[artifactId] : undefined
+  const forged = Boolean(artifactId && state.artifactProgress?.[artifactId] && (state.inventory[recipe.output.itemId] ?? 0) > 0)
   const locked = !isRecipeUnlocked(state, recipe)
   const active = getActiveArtificingJob(state)
   const activeForThis = Boolean(active && (active.kind === 'recipe' ? active.recipeId === recipe.id : active.artifactId === recipe.id))

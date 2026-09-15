@@ -1,17 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
-import { ARTIFICING_RECIPES, ARTIFICING_RECIPE_ORDER } from '../../content/recipes/artificingRecipes'
+import { ARTIFICING_RECIPES } from '../../content/recipes/artificingRecipes'
 import { canCraftArtificingRecipe, DEFAULT_ARTIFICING_FILTERS as defaults, getArtificingCatalogRecipeState, getArtificingCraftIngredients, getArtificingFilterCounts, getVisibleArtificingRecipes } from './artificingSelectors'
 import { startArtificingCraft } from './artificingEngine'
 
 const provideIngredients = (state: ReturnType<typeof createInitialState>, recipeId: keyof typeof ARTIFICING_RECIPES) => getArtificingCraftIngredients(recipeId)?.forEach(({ itemId, quantity }) => { state.inventory[itemId] = (state.inventory[itemId] ?? 0) + quantity })
 
-describe('Artificing Artifact catalog', () => {
-  it('shows the six starter Artifact recipes on a fresh save', () => {
+describe('Artificing catalog', () => {
+  it('shows unlocked starter Artifacts and Whispering Woods Equipment on a fresh save', () => {
     const state = createInitialState()
-    expect(getVisibleArtificingRecipes(state).map((recipe) => recipe.id)).toEqual([...ARTIFICING_RECIPE_ORDER].filter((id) => id !== 'galeshard-staff'))
+    expect(getVisibleArtificingRecipes(state).map((recipe) => recipe.id)).toEqual(['ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'wispweave-robe', 'wispveil-hood', 'windthread-charm', 'wispglass-earring', 'wispbound-ring', 'grovekeeper-mantle', 'heartseed-necklace'])
     expect(getVisibleArtificingRecipes(state, { ...defaults, kindFilter: 'artifact' })).toHaveLength(6)
-    expect(getVisibleArtificingRecipes(state, { ...defaults, kindFilter: 'artifact' })).toHaveLength(6)
+    expect(getVisibleArtificingRecipes(state, { ...defaults, kindFilter: 'artifact' }).map((recipe) => recipe.id)).not.toContain('reliquary-scepter')
   })
 
   it('filters by tier, slot, ownership, search, and legal craftability', () => {
@@ -27,7 +27,7 @@ describe('Artificing Artifact catalog', () => {
     state.artifactProgress['ember-staff'] = { level: 1, allocatedNodeIds: [], attunedNodeIds: [] }
     expect(getVisibleArtificingRecipes(state, { ...filters, ownershipFilter: 'owned' }).map((recipe) => recipe.id)).toEqual(['ember-staff'])
     expect(getVisibleArtificingRecipes(state, { ...filters, ownershipFilter: 'unowned' }, 'ember-staff')).toHaveLength(0)
-    expect(getVisibleArtificingRecipes(state, { ...defaults, tierFilter: 1 })).toHaveLength(6)
+    expect(getVisibleArtificingRecipes(state, { ...defaults, tierFilter: 1 })).toHaveLength(11)
     expect(getVisibleArtificingRecipes(state, { ...defaults, tierFilter: 2 })).toHaveLength(0)
   })
 

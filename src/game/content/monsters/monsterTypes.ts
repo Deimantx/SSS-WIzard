@@ -49,6 +49,7 @@ export const withDungeonLoot = (dungeonId: DungeonId, role: 'normal' | 'boss', l
 
 /** Default Monster authoring: damage scales from Basic Attack Damage. */
 export const scaledDirectDamage = (damageType: DamageType, coefficient: number, tags: CombatTag[] = ['direct']): CombatEffect => ({ type: 'deal-damage', target: 'opponent', components: [{ damageType, magnitude: { type: 'source-basic-damage-percent', value: coefficient } }], tags })
+export const scaledMultiDamage = (components: Array<{ damageType: DamageType; coefficient: number }>, tags: CombatTag[] = ['direct']): CombatEffect => ({ type: 'deal-damage', target: 'opponent', components: components.map(({ damageType, coefficient }) => ({ damageType, magnitude: { type: 'source-basic-damage-percent' as const, value: coefficient } })), tags })
 /** Explicit escape hatch for intentionally fixed Monster damage. */
 export const flatDirectDamage = (damageType: DamageType, value: number, tags: CombatTag[] = ['direct']): CombatEffect => ({ type: 'deal-damage', target: 'opponent', components: [{ damageType, magnitude: { type: 'flat', value } }], tags })
 export const gainBarrier = (magnitude: Magnitude): CombatEffect => ({ type: 'gain-barrier', target: 'self', magnitude, mode: 'add', durationMs: null, tags: ['barrier'] })
@@ -56,7 +57,8 @@ export const gainBarrier = (magnitude: Magnitude): CombatEffect => ({ type: 'gai
 export const scaledHeal = (maxHealthCoefficient: number): CombatEffect => ({ type: 'heal', target: 'self', magnitude: { type: 'source-max-health-percent', value: maxHealthCoefficient }, tags: ['heal', 'direct'] })
 /** Default Monster authoring: Barrier scales from the source Monster's Max Health. */
 export const scaledBarrier = (maxHealthCoefficient: number): CombatEffect => gainBarrier({ type: 'source-max-health-percent', value: maxHealthCoefficient })
-export const applyStatus = (statusId: StatusId, target: 'self' | 'opponent', durationMs?: number | null): CombatEffect => ({ type: 'apply-status', target, statusId, durationMs, tags: [target === 'self' ? 'buff' : 'debuff'] })
+export const applyStatus = (statusId: StatusId, target: 'self' | 'opponent', durationMs?: number | null, stacks?: number): CombatEffect => ({ type: 'apply-status', target, statusId, durationMs, ...(stacks === undefined ? {} : { stacks }), tags: [target === 'self' ? 'buff' : 'debuff'] })
+export const drainMana = (value: number): CombatEffect => ({ type: 'drain-resource', target: 'opponent', resource: 'mana', magnitude: { type: 'flat', value }, tags: ['special'] })
 export const delayBasicAttack = (amountMs: number): CombatEffect => ({ type: 'modify-action-timer', target: 'opponent', action: 'basic-attack', amountMs })
 /** Explicit escape hatch for intentionally fixed Monster healing. */
 export const flatHeal = (value: number): CombatEffect => ({ type: 'heal', target: 'self', magnitude: { type: 'flat', value }, tags: ['heal', 'direct'] })

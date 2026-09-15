@@ -4,6 +4,7 @@ import { MANA_PILLARS } from '../content/channeling/manaPillars'
 import { getEquipmentStats } from '../core/equipment/equipmentStats'
 import type { ChannelingDiscoveryId, GameState, ManaPillarId } from '../types'
 import { clamp } from '../utils'
+import { getCombatModifiers } from '../systems/combat/modifiers'
 
 export interface ManaRegenBreakdown {
   baseNatural: number
@@ -38,7 +39,7 @@ const pillarLevel = (state: Pick<GameState, 'progress'>, id: ManaPillarId) => Ma
 export const getManaPillarLevel = (state: Pick<GameState, 'progress'>, id: ManaPillarId) => pillarLevel(state, id)
 
 export type ChannelingCapacityState = Pick<GameState, 'player' | 'progress' | 'equipment' | 'artifactProgress'> & Partial<Pick<GameState, 'debug'>>
-export type ChannelingRegenState = Pick<GameState, 'activities' | 'progress' | 'equipment' | 'artifactProgress'> & Partial<Pick<GameState, 'debug'>>
+export type ChannelingRegenState = Pick<GameState, 'activities' | 'progress' | 'equipment' | 'artifactProgress'> & Partial<Pick<GameState, 'debug' | 'player' | 'combat'>>
 
 export const getManaCapacityBreakdown = (state: ChannelingCapacityState): ManaCapacityBreakdown => {
   const stats = getEquipmentStats(state)
@@ -77,7 +78,8 @@ export const getManaRegenBreakdown = (state: ChannelingRegenState): ManaRegenBre
   const echoAttunementMultiplier = 1 + pillarLevel(state, 'echo-attunement') * 0.05
   const echoDiscoveryMultiplier = state.progress.channeling.discoveries['echo-resonance'] ? BALANCE.channeling.discoveryEchoMultiplier : 1
   const echoTotal = echoBase * echoAttunementMultiplier * echoDiscoveryMultiplier
-  return { baseNatural, leylineConduitBonus, stableLeylineBonus, equipmentPassiveBonus, developerBonus, passiveBeforeResonance, manaResonanceMultiplier, passiveAfterResonance, echoBase, echoAttunementMultiplier, echoDiscoveryMultiplier, echoTotal, total: passiveAfterResonance + echoTotal }
+  const disruptionMultiplier = state.player && state.combat ? Math.max(0, 1 + getCombatModifiers(state as never, 'player', 'mana-regen-percent')) : 1
+  return { baseNatural, leylineConduitBonus, stableLeylineBonus, equipmentPassiveBonus, developerBonus, passiveBeforeResonance, manaResonanceMultiplier, passiveAfterResonance, echoBase, echoAttunementMultiplier, echoDiscoveryMultiplier, echoTotal, total: (passiveAfterResonance + echoTotal) * disruptionMultiplier }
 }
 
 export const manaRegenPerSecond = (state: ChannelingRegenState) => getManaRegenBreakdown(state).total

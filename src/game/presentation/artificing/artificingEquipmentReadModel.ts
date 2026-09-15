@@ -27,7 +27,7 @@ const getForgeArtifactProgress = (state: Pick<GameState, 'inventory' | 'artifact
 
 export function getArtificingOutputInspection(state: Pick<GameState, 'inventory' | 'equipment' | 'player' | 'progress' | 'activities' | 'artifactProgress'>, recipe: ArtificingRecipeDefinition): ArtificingOutputInspection {
   const item = ITEMS[recipe.output.itemId]
-  const artifact = isArtifactItem(recipe.output.itemId)
+  const artifactId = isArtifactItem(recipe.output.itemId) ? recipe.output.itemId : null
   const owned = Math.max(0, Math.floor(state.inventory[recipe.output.itemId] ?? 0))
   const artifactProgress = getForgeArtifactProgress(state, recipe.output.itemId, owned)
   const effectiveState = { ...state, artifactProgress }
@@ -36,8 +36,8 @@ export function getArtificingOutputInspection(state: Pick<GameState, 'inventory'
     owned,
     equipment: item.kind === 'equipment' && item.equipmentSlot ? { slot: item.equipmentSlot } : null,
     stats: item.kind === 'equipment' ? getEffectiveEquipmentItemStats(effectiveState, recipe.output.itemId) : {},
-    artifactLevel: artifact ? getArtifactLevel(effectiveState, recipe.output.itemId) : null,
-    artifactMaxLevel: artifact ? getArtifactDefinition(recipe.output.itemId)?.maxLevel ?? null : null,
+    artifactLevel: artifactId ? getArtifactLevel(effectiveState, artifactId) : null,
+    artifactMaxLevel: artifactId ? getArtifactDefinition(artifactId)?.maxLevel ?? null : null,
   }
 }
 

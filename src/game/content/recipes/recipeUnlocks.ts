@@ -1,4 +1,4 @@
-import { DUNGEONS } from '../dungeons/dungeons'
+import { DUNGEONS, isDungeonUnlocked } from '../dungeons/dungeons'
 import { MONSTERS } from '../monsters'
 import type { GameState, RecipeUnlockCondition } from '../../types'
 const hasProgress = (progress: GameState['progress'], monsterId: string, count: number) => Math.max(progress.lifetimeKillsByMonster[monsterId as keyof typeof progress.lifetimeKillsByMonster] ?? 0, progress.bossKillsByBoss[monsterId as keyof typeof progress.bossKillsByBoss] ?? 0) >= count
@@ -17,7 +17,7 @@ export const isRecipeUnlocked = (state: Pick<GameState, 'progress'>, recipe: { u
     }
     case 'dungeon-unlocked': {
       const dungeon = DUNGEONS[recipe.unlock.dungeonId]
-      return Boolean(dungeon) && (dungeon.unlock?.type !== 'boss-kill' || hasProgress(state.progress, dungeon.unlock.bossId, 1))
+      return Boolean(dungeon) && isDungeonUnlocked(dungeon, state.progress)
     }
   }
 }

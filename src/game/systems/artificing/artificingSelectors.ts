@@ -4,7 +4,7 @@ import { EQUIPMENT_BUILD_TAG_LABELS, getPlayerEquipmentTier } from '../../conten
 import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
 import { isRecipeUnlocked, getRecipeUnlockRequirement } from '../../content/recipes/recipeUnlocks'
 import { canCraftArtificingRecipe, getArtificingCraftIngredients, hasArtificingRecipeRequirements } from './artificingEngine'
-import { ARTIFACTS } from '../../content/artifacts/artifacts'
+import { ARTIFACTS, isArtifactId } from '../../content/artifacts/artifacts'
 import { canUpgradeArtifact, getArtifactLevel, getArtifactLevelCap, getArtifactLevelCapRequirement, getArtifactUpgrade, getArtifactUpgradeUnlockRequirement, isArtifactUpgradeUnlocked } from '../artifacts/artifactProgression'
 import type { ArtificingKindFilter, ArtificingTierFilter, ArtificingRecipeId, GameState, EquipmentItemSlot } from '../../types'
 export { canCraftArtificingRecipe, getArtificingCraftIngredients, hasArtificingRecipeRequirements }
@@ -29,11 +29,11 @@ export const getArtificingProfile = (recipe: ArtificingRecipeDefinition) => {
 
 export const getArtificingRecipePlayerTier = (recipe: ArtificingRecipeDefinition): number | undefined => {
   const item = ITEMS[recipe.output.itemId]
-  const artifact = ARTIFACTS[recipe.output.itemId]
+  const artifact = isArtifactId(recipe.output.itemId) ? ARTIFACTS[recipe.output.itemId] : undefined
   return artifact?.tier ?? (item.equipmentTier === undefined ? undefined : getPlayerEquipmentTier(item.equipmentTier))
 }
 
-export const isArtifactArtificingRecipe = (recipe: ArtificingRecipeDefinition) => Boolean(ARTIFACTS[recipe.output.itemId])
+export const isArtifactArtificingRecipe = (recipe: ArtificingRecipeDefinition) => isArtifactId(recipe.output.itemId)
 
 export interface ArtifactArtificingState {
   owned: boolean
@@ -63,16 +63,17 @@ export interface ArtificingCatalogRecipeState {
 
 export const getActiveArtificingJob = (state: Pick<GameState, 'activities'>) => state.activities.artificing.activeJob ?? (state.activities.artificing.activeRecipeId ? { kind: 'recipe' as const, recipeId: state.activities.artificing.activeRecipeId } : null)
 
-const isOwnedArtifact = (state: Pick<GameState, 'inventory' | 'artifactProgress'>, recipeId: ArtificingRecipeId) => (state.inventory[recipeId] ?? 0) > 0 && Boolean(state.artifactProgress?.[recipeId])
+const isOwnedArtifact = (state: Pick<GameState, 'inventory' | 'artifactProgress'>, recipeId: import('../../types').ArtifactId) => (state.inventory[recipeId] ?? 0) > 0 && Boolean(state.artifactProgress?.[recipeId])
 
 export const getArtificingCatalogRecipeState = (state: GameState, recipeId: ArtificingRecipeId): ArtificingCatalogRecipeState | null => {
   const recipe = ARTIFICING_RECIPES[recipeId]
   if (!recipe) return null
-  const artifact = ARTIFACTS[recipeId]
+  const artifactId = isArtifactId(recipe.output.itemId) ? recipe.output.itemId : null
+  const artifact = artifactId ? ARTIFACTS[artifactId] : undefined
   const activeJob = getActiveArtificingJob(state)
   const activeForThis = Boolean(activeJob && (activeJob.kind === 'recipe' ? activeJob.recipeId === recipeId : activeJob.artifactId === recipeId))
   const locked = !isRecipeUnlocked(state, recipe)
-  const ownedArtifact = Boolean(artifact && isOwnedArtifact(state, recipeId))
+  const ownedArtifact = Boolean(artifactId && isOwnedArtifact(state, artifactId))
   const materialReady = hasArtificingRecipeRequirements(state, recipeId)
   let status: ArtificingCatalogRecipeStatus
   if (locked) status = 'LOCKED'
@@ -80,10 +81,10 @@ export const getArtificingCatalogRecipeState = (state: GameState, recipeId: Arti
   else if (ownedArtifact) status = 'FORGED'
   else if (materialReady) status = 'READY'
   else status = 'MISSING'
-  return { kind: artifact ? 'artifact' : 'equipment', locked, ownedArtifact, active: Boolean(activeJob), activeForThis, materialReady, canStartNow: materialReady && !activeJob, status, ...(artifact ? { artifactLevel: state.artifactProgress?.[recipeId]?.level ?? 0, artifactMaxLevel: artifact.maxLevel } : {}) }
+  return { kind: artifact ? 'artifact' : 'equipment', locked, ownedArtifact, active: Boolean(activeJob), activeForThis, materialReady, canStartNow: materialReady && !activeJob, status, ...(artifact && artifactId ? { artifactLevel: state.artifactProgress?.[artifactId]?.level ?? 0, artifactMaxLevel: artifact.maxLevel } : {}) }
 }
 
-export const getArtifactArtificingState = (state: GameState, recipeId: import('../../types').ArtificingRecipeId): ArtifactArtificingState | null => {
+export const getArtifactArtificingState = (state: GameState, recipeId: import('../../types').ArtifactId): ArtifactArtificingState | null => {
   const artifact = ARTIFACTS[recipeId]
   const recipe = ARTIFICING_RECIPES[recipeId]
   if (!artifact || !recipe) return null
@@ -119,7 +120,7 @@ export function getArtificingFilterCounts(state: GameState, filters: ArtificingF
   return {
     visible: visible.length,
     artifacts: visible.filter(isArtifactArtificingRecipe).length,
-    equipment: 0,
+    equipment: visible.filter((recipe) => !isArtifactArtificingRecipe(recipe)).length,
     craftable: getVisibleArtificingRecipes(state, { ...filters, craftableOnly: true }, query).length,
     unlocked: getArtificingRecipeEntries().filter(recipe => isRecipeUnlocked(state, recipe)).length,
   }

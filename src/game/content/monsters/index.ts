@@ -1,9 +1,7 @@
 import { getTraitDefinition, getTraitDefinitions } from '../traits'
 import type { CombatEffect, DamageType, MonsterId } from '../../types'
-import { ABANDONED_CATACOMBS_MONSTERS } from './abandonedCatacombs'
-import { FRACTURED_APPROACH_MONSTERS } from './fracturedApproach'
-import { HOWLING_DEN_MONSTERS } from './howlingDen'
-import { WHISPERING_WOODS_MONSTERS, WHISPERING_WOODS_MONSTER_IDS } from './whisperingWoods'
+import { ABANDONED_CATACOMBS_MONSTERS, HOWLING_DEN_MONSTERS, WHISPERING_WOODS_MONSTERS, WHISPERING_WOODS_MONSTER_IDS } from './act0'
+import { ACT1_MONSTERS, FRACTURED_APPROACH_MONSTERS } from './act1'
 import type { MonsterDefinition } from './monsterTypes'
 import { COMBAT_TAGS, DAMAGE_TYPES, createCombatValidationContext, validateCombatEffect } from '../../systems/combat/combatEffectValidation'
 import { STATUS_DEFINITIONS } from '../statuses/statuses'
@@ -13,12 +11,11 @@ import { ITEMS } from '../items/items'
 import { isArtifactId } from '../artifacts/artifacts'
 
 export type { MonsterDefinition } from './monsterTypes'
-export { WHISPERING_WOODS_MONSTERS, WHISPERING_WOODS_MONSTER_IDS } from './whisperingWoods'
-export { HOWLING_DEN_MONSTERS } from './howlingDen'
-export { ABANDONED_CATACOMBS_MONSTERS } from './abandonedCatacombs'
-export { FRACTURED_APPROACH_MONSTERS } from './fracturedApproach'
+export { WHISPERING_WOODS_MONSTERS, WHISPERING_WOODS_MONSTER_IDS } from './act0'
+export { HOWLING_DEN_MONSTERS, ABANDONED_CATACOMBS_MONSTERS } from './act0'
+export { FRACTURED_APPROACH_MONSTERS, ACT1_MONSTERS } from './act1'
 
-const MONSTER_REGISTRIES = [WHISPERING_WOODS_MONSTERS, HOWLING_DEN_MONSTERS, ABANDONED_CATACOMBS_MONSTERS, FRACTURED_APPROACH_MONSTERS] as const
+const MONSTER_REGISTRIES = [WHISPERING_WOODS_MONSTERS, HOWLING_DEN_MONSTERS, ABANDONED_CATACOMBS_MONSTERS, FRACTURED_APPROACH_MONSTERS, ACT1_MONSTERS] as const
 const registryIdCounts = MONSTER_REGISTRIES.flatMap((registry) => Object.keys(registry)).reduce<Record<string, number>>((counts, id) => { counts[id] = (counts[id] ?? 0) + 1; return counts }, {})
 const duplicateMonsterIds = Object.entries(registryIdCounts).filter(([, count]) => count > 1).map(([id]) => id)
 

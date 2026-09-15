@@ -1,5 +1,5 @@
-import type { MonsterId } from '../../types'
-import { action, basic, delayBasicAttack, scaledDirectDamage, scaledDot, withDungeonLoot, applyStatus, type MonsterDefinition } from './monsterTypes'
+import type { MonsterId } from '../../../types'
+import { action, basic, delayBasicAttack, scaledDirectDamage, scaledDot, withDungeonLoot, applyStatus, type MonsterDefinition } from '../monsterTypes'
 
 export const HOWLING_DEN_MONSTERS = {
   'cavefang-wolf': {

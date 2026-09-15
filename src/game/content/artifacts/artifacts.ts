@@ -191,7 +191,27 @@ const wispveilNodes: ArtifactNodeDefinition[] = [
   { id: 'greatbear-focus', artifactId: 'wispveil-hood', name: 'Greatbear Focus', type: 'major', branch: 'arcane-precision', pointCost: 1, requiresLevel: 7, prerequisites: ['accelerated-casting'], requiresBossKill: 'corrupted-greatbear', stats: { critChance: 0.03 } },
   { id: 'edrins-perfect-moment', artifactId: 'wispveil-hood', name: "Edrin's Perfect Moment", type: 'capstone', branch: 'arcane-precision', pointCost: 2, requiresLevel: 10, prerequisites: ['greatbear-focus'], requiresBossKill: 'archmage-edrin-shade', stats: { critChance: 0.05, critDamage: 0.15 } },
 ]
+const createAct1WeaponArtifact = (id: ArtifactId, name: string, fragment: ItemId, tier: number): ArtifactDefinition => {
+  const coreStatsByLevel = Object.fromEntries(Array.from({ length: 10 }, (_, index) => [index + 1, { basicDamage: 10 + index * 2, spellPower: 26 + index * 8 }])) as Record<number, EquipmentStats>
+  const nodes: ArtifactNodeDefinition[] = [
+    { id: `${id}-conduit`, artifactId: id, name: 'Resonant Conduit', type: 'minor', branch: 'resonance', pointCost: 1, requiresLevel: 2, stats: { spellPower: 5 } },
+    { id: `${id}-tempo`, artifactId: id, name: 'Measured Current', type: 'minor', branch: 'resonance', pointCost: 1, requiresLevel: 3, prerequisites: [`${id}-conduit`], combat: { modifiers: [{ key: 'cooldown-recovery-percent', value: 0.05 }] } },
+    { id: `${id}-reserve`, artifactId: id, name: 'Deep Reserve', type: 'minor', branch: 'resonance', pointCost: 1, requiresLevel: 4, prerequisites: [`${id}-tempo`], stats: { maxMana: 10 } },
+    { id: `${id}-awakening`, artifactId: id, name: 'Dungeon Awakening', type: 'major', branch: 'resonance', pointCost: 1, requiresLevel: 4, prerequisites: [`${id}-reserve`], stats: { spellPower: 8 } },
+    { id: `${id}-focus`, artifactId: id, name: 'Focused Current', type: 'minor', branch: 'resonance', pointCost: 1, requiresLevel: 6, prerequisites: [`${id}-awakening`], combat: { modifiers: [{ key: 'spell-damage-percent', value: 0.05 }] } },
+    { id: `${id}-mastery`, artifactId: id, name: 'Mastery', type: 'major', branch: 'resonance', pointCost: 1, requiresLevel: 7, prerequisites: [`${id}-focus`], stats: { spellPower: 10 } },
+    { id: `${id}-capstone`, artifactId: id, name: 'Perfect Resonance', type: 'capstone', branch: 'resonance', pointCost: 2, requiresLevel: 10, prerequisites: [`${id}-mastery`], stats: { spellPower: 15 } },
+  ]
+  return { id, itemId: id, tier, maxLevel: 10, coreStatsByLevel, forge: { ingredients: [material(fragment, 40), material('artifact-essence', 80)] }, upgrades: createUpgradeCurve(fragment, ELEMENTAL_UPGRADE_COSTS), branches: [{ id: 'resonance', name: 'Resonance', description: `${name} mastery.` }], nodes }
+}
+const ACT1_ARTIFACTS: Record<'reliquary-scepter' | 'pyrebound-staff' | 'rootheart-scepter', ArtifactDefinition> = {
+  'reliquary-scepter': createAct1WeaponArtifact('reliquary-scepter', 'Reliquary Scepter', 'water-fragment', 1.8),
+  'pyrebound-staff': createAct1WeaponArtifact('pyrebound-staff', 'Pyrebound Staff', 'fire-fragment', 1.8),
+  'rootheart-scepter': createAct1WeaponArtifact('rootheart-scepter', 'Rootheart Scepter', 'earth-fragment', 1.8),
+}
+
 export const ARTIFACTS: Record<ArtifactId, ArtifactDefinition> = {
+  ...ACT1_ARTIFACTS,
   'ember-staff': {
     id: 'ember-staff', itemId: 'ember-staff', tier: 1, maxLevel: 10, coreStatsByLevel: emberStats,
     forge: { ingredients: [material('fire-fragment', 20), material('artifact-essence', 20)] },

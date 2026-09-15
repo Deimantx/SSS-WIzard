@@ -8,15 +8,17 @@ const act0Nodes = [
 
 const act1Nodes = [
   { id: 'fractured-approach', actId: 'act-1', x: 180, y: 430, kind: 'main', dungeonId: 'fractured-approach', tierLabel: 'TIER II', chapterId: 'chapter-i' },
-  { id: 'flooded-reliquary', actId: 'act-1', name: 'Flooded Reliquary', description: 'The first branch beyond Fractured Approach. Its dungeon content is not authored yet.', x: 450, y: 170, kind: 'branch', dungeonId: null, tierLabel: 'TIER II / BRANCH', chapterId: 'chapter-i', prototype: true, requiresDungeonCompletion: 'fractured-approach' },
-  { id: 'ashen-watch', actId: 'act-1', name: 'Ashen Watch', description: 'The second branch beyond Fractured Approach. Its dungeon content is not authored yet.', x: 450, y: 430, kind: 'branch', dungeonId: null, tierLabel: 'TIER II / BRANCH', chapterId: 'chapter-i', prototype: true, requiresDungeonCompletion: 'fractured-approach' },
-  { id: 'rootscar-hollow', actId: 'act-1', name: 'Rootscar Hollow', description: 'The third branch beyond Fractured Approach. Its dungeon content is not authored yet.', x: 450, y: 690, kind: 'branch', dungeonId: null, tierLabel: 'TIER II / BRANCH', chapterId: 'chapter-i', prototype: true, requiresDungeonCompletion: 'fractured-approach' },
-  { id: 'prototype-area-05', actId: 'act-1', name: 'Prototype Area 05', description: 'A future Act 1 convergence route. Its dungeon content is not authored yet.', x: 850, y: 430, kind: 'main', dungeonId: null, tierLabel: 'TIER II / PROTOTYPE', chapterId: 'chapter-ii', prototype: true },
-  { id: 'prototype-area-06', actId: 'act-1', name: 'Prototype Area 06', description: 'A future Act 1 branch route. Its dungeon content is not authored yet.', x: 900, y: 170, kind: 'branch', dungeonId: null, tierLabel: 'TIER II / PROTOTYPE', chapterId: 'chapter-ii', prototype: true },
-  { id: 'prototype-area-07', actId: 'act-1', name: 'Prototype Area 07', description: 'A future Act 1 branch route. Its dungeon content is not authored yet.', x: 950, y: 700, kind: 'branch', dungeonId: null, tierLabel: 'TIER II / PROTOTYPE', chapterId: 'chapter-ii', prototype: true },
-  { id: 'prototype-area-08', actId: 'act-1', name: 'Prototype Area 08', description: 'A future Act 1 route. Its dungeon content is not authored yet.', x: 1260, y: 430, kind: 'main', dungeonId: null, tierLabel: 'TIER II / PROTOTYPE', chapterId: 'chapter-iii', prototype: true },
-  { id: 'prototype-area-09', actId: 'act-1', name: 'Prototype Area 09', description: 'A future Act 1 branch route. Its dungeon content is not authored yet.', x: 1370, y: 180, kind: 'branch', dungeonId: null, tierLabel: 'TIER II / PROTOTYPE', chapterId: 'chapter-iii', prototype: true },
-  { id: 'prototype-finale-10', actId: 'act-1', name: 'Prototype Finale 10', description: 'The future Act 1 finale. Its dungeon content is not authored yet.', x: 1710, y: 430, kind: 'final', dungeonId: null, tierLabel: 'TIER II / PROTOTYPE', chapterId: 'chapter-iii', prototype: true },
+  { id: 'flooded-reliquary', actId: 'act-1', x: 450, y: 170, kind: 'branch', dungeonId: 'flooded-reliquary', tierLabel: 'TIER II.2', chapterId: 'chapter-i' },
+  { id: 'ashen-watch', actId: 'act-1', x: 450, y: 430, kind: 'branch', dungeonId: 'ashen-watch', tierLabel: 'TIER II.3', chapterId: 'chapter-i' },
+  { id: 'rootscar-hollow', actId: 'act-1', x: 450, y: 690, kind: 'branch', dungeonId: 'rootscar-hollow', tierLabel: 'TIER II.4', chapterId: 'chapter-i' },
+  { id: 'crossroads-of-ruin', actId: 'act-1', x: 820, y: 430, kind: 'main', dungeonId: 'crossroads-of-ruin', tierLabel: 'TIER II.5', chapterId: 'chapter-ii' },
+  { id: 'graveglass-hollow', actId: 'act-1', x: 1090, y: 170, kind: 'branch', dungeonId: 'graveglass-hollow', tierLabel: 'TIER II.6', chapterId: 'chapter-ii' },
+  { id: 'stormvault-gallery', actId: 'act-1', x: 1090, y: 430, kind: 'branch', dungeonId: 'stormvault-gallery', tierLabel: 'TIER II.7', chapterId: 'chapter-ii' },
+  { id: 'starfallen-observatory', actId: 'act-1', x: 1090, y: 690, kind: 'branch', dungeonId: 'starfallen-observatory', tierLabel: 'TIER II.8', chapterId: 'chapter-ii' },
+  { id: 'broken-meridian', actId: 'act-1', x: 1460, y: 430, kind: 'main', dungeonId: 'broken-meridian', tierLabel: 'TIER II.10', chapterId: 'chapter-iii' },
+  { id: 'hall-of-unbound-names', actId: 'act-1', x: 1720, y: 250, kind: 'branch', dungeonId: 'hall-of-unbound-names', tierLabel: 'TIER II.11', chapterId: 'chapter-iii' },
+  { id: 'vault-of-the-black-sigil', actId: 'act-1', x: 1720, y: 610, kind: 'branch', dungeonId: 'vault-of-the-black-sigil', tierLabel: 'TIER II.11', chapterId: 'chapter-iii' },
+  { id: 'black-gate', actId: 'act-1', x: 2010, y: 430, kind: 'final', dungeonId: 'black-gate', tierLabel: 'TIER II.12', chapterId: 'chapter-iii' },
 ] as const
 
 export const COMBAT_ACT_DEFINITIONS: readonly CombatActDefinition[] = [
@@ -26,16 +28,17 @@ export const COMBAT_ACT_DEFINITIONS: readonly CombatActDefinition[] = [
     connections: [{ from: 'whispering-woods', to: 'howling-den', kind: 'main' }, { from: 'howling-den', to: 'abandoned-catacombs', kind: 'main' }],
   },
   {
-    id: 'act-1', label: 'ACT 1', title: 'THE SHATTERED FRONTIER', subtitle: 'FRACTURED APPROACH', description: 'Cross the Fractured Approach. Its first boss-clear opens the three next branch routes for the following Act 1 phase.',
-    unlock: { type: 'boss-kill', bossId: 'archmage-edrin-shade', kills: 1 }, stage: { width: 2000, height: 860 }, nodes: [...act1Nodes],
+    id: 'act-1', label: 'ACT 1', title: 'THE SHATTERED FRONTIER', subtitle: 'FRACTURED APPROACH', description: 'Cross the broken meridian and restore the path to the Black Gate.',
+    unlock: { type: 'boss-kill', bossId: 'archmage-edrin-shade', kills: 1 }, stage: { width: 2200, height: 860 }, nodes: [...act1Nodes],
     connections: [
-      { from: 'fractured-approach', to: 'prototype-area-05', kind: 'main' },
-      { from: 'prototype-area-05', to: 'prototype-area-08', kind: 'main' }, { from: 'prototype-area-08', to: 'prototype-finale-10', kind: 'main' },
+      { from: 'fractured-approach', to: 'crossroads-of-ruin', kind: 'main' }, { from: 'crossroads-of-ruin', to: 'broken-meridian', kind: 'main' }, { from: 'broken-meridian', to: 'black-gate', kind: 'main' },
       { from: 'fractured-approach', to: 'flooded-reliquary', kind: 'branch' }, { from: 'fractured-approach', to: 'ashen-watch', kind: 'branch' }, { from: 'fractured-approach', to: 'rootscar-hollow', kind: 'branch' },
-      { from: 'prototype-area-05', to: 'prototype-area-06', kind: 'branch' }, { from: 'prototype-area-05', to: 'prototype-area-07', kind: 'branch' },
-      { from: 'prototype-area-08', to: 'prototype-area-09', kind: 'branch' },
+      { from: 'flooded-reliquary', to: 'crossroads-of-ruin', kind: 'branch' }, { from: 'ashen-watch', to: 'crossroads-of-ruin', kind: 'branch' }, { from: 'rootscar-hollow', to: 'crossroads-of-ruin', kind: 'branch' },
+      { from: 'crossroads-of-ruin', to: 'graveglass-hollow', kind: 'branch' }, { from: 'crossroads-of-ruin', to: 'stormvault-gallery', kind: 'branch' }, { from: 'crossroads-of-ruin', to: 'starfallen-observatory', kind: 'branch' },
+      { from: 'graveglass-hollow', to: 'broken-meridian', kind: 'branch' }, { from: 'stormvault-gallery', to: 'broken-meridian', kind: 'branch' }, { from: 'starfallen-observatory', to: 'broken-meridian', kind: 'branch' },
+      { from: 'broken-meridian', to: 'hall-of-unbound-names', kind: 'branch' }, { from: 'broken-meridian', to: 'vault-of-the-black-sigil', kind: 'branch' }, { from: 'hall-of-unbound-names', to: 'black-gate', kind: 'branch' }, { from: 'vault-of-the-black-sigil', to: 'black-gate', kind: 'branch' },
     ],
-    chapters: [{ id: 'chapter-i', label: 'CHAPTER I', startX: 100, endX: 620 }, { id: 'chapter-ii', label: 'CHAPTER II', startX: 700, endX: 1190 }, { id: 'chapter-iii', label: 'CHAPTER III', startX: 1270, endX: 1900 }],
+    chapters: [{ id: 'chapter-i', label: 'CHAPTER I', startX: 100, endX: 620 }, { id: 'chapter-ii', label: 'CHAPTER II', startX: 700, endX: 1190 }, { id: 'chapter-iii', label: 'CHAPTER III', startX: 1270, endX: 2120 }],
   },
 ]
 

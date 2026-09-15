@@ -64,6 +64,34 @@ export const STATUS_DEFINITIONS: Record<StatusId, StatusDefinition> = {
     id: 'stunned', name: 'Stunned', description: 'Cannot start or resolve normal actions.', classification: 'debuff', tags: ['debuff', 'control'], defaultDurationMs: 3000,
     stacking: { mode: 'refresh' }, preventsAction: true, cleanseable: true, dispellable: false, ui: { alert: 'critical', icon: 'control' },
   },
+  entangled: {
+    id: 'entangled', name: 'Entangled', description: 'Basic Attacks and actions resolve 20% slower.', classification: 'debuff', tags: ['debuff', 'control', 'earth'], defaultDurationMs: 5000,
+    stacking: { mode: 'strongest' }, potencyKey: 'action-speed-percent', potencyDirection: 'lower', modifiers: [modifier('basic-attack-speed-percent', -0.2), modifier('action-speed-percent', -0.2)], cleanseable: true, dispellable: false, ui: { alert: 'important', icon: 'control' },
+  },
+  poisoned: {
+    id: 'poisoned', name: 'Poisoned', description: 'Takes Physical damage over time.', classification: 'debuff', tags: ['debuff', 'dot', 'physical'], defaultDurationMs: 8000,
+    applicationPolicy: 'per-source', stacking: { mode: 'refresh' }, periodic: { intervalMs: 2000, effects: [damage('physical', 5)] }, cleanseable: true, dispellable: false,
+  },
+  cursed: {
+    id: 'cursed', name: 'Cursed', description: 'Deals 10% less damage and receives 15% less healing.', classification: 'debuff', tags: ['debuff'], defaultDurationMs: 8000,
+    stacking: { mode: 'strongest' }, potencyKey: 'damage-dealt-percent', potencyDirection: 'lower', modifiers: [modifier('damage-dealt-percent', -0.1), modifier('healing-received-percent', -0.15)], cleanseable: true, dispellable: false,
+  },
+  fragile: {
+    id: 'fragile', name: 'Fragile', description: 'Defense is reduced and damage taken is increased.', classification: 'debuff', tags: ['debuff'], defaultDurationMs: 6000,
+    stacking: { mode: 'strongest' }, potencyKey: 'damage-taken-percent', potencyDirection: 'higher', modifiers: [modifier('damage-taken-percent', 0.08), modifier('defense-flat', -12)], cleanseable: true, dispellable: false,
+  },
+  silenced: {
+    id: 'silenced', name: 'Silenced', description: 'Cannot cast Spells.', classification: 'debuff', tags: ['debuff', 'control'], defaultDurationMs: 3000,
+    stacking: { mode: 'refresh' }, preventsSpellCast: true, cleanseable: true, dispellable: false, ui: { alert: 'critical', icon: 'control' },
+  },
+  corruption: {
+    id: 'corruption', name: 'Corruption', description: 'Each stack increases damage taken by 3%.', classification: 'debuff', tags: ['debuff', 'arcane'], defaultDurationMs: 10000,
+    stacking: { mode: 'stacks', maxStacks: 5 }, modifiers: [modifier('damage-taken-percent', 0.03, { perStack: true })], cleanseable: true, dispellable: false,
+  },
+  'arcane-disruption': {
+    id: 'arcane-disruption', name: 'Arcane Disruption', description: 'Mana regeneration is reduced by 20% and cooldown recovery by 15%.', classification: 'debuff', tags: ['debuff', 'arcane'], defaultDurationMs: 6000,
+    stacking: { mode: 'refresh' }, modifiers: [modifier('mana-regen-percent', -0.2), modifier('cooldown-recovery-percent', -0.15)], cleanseable: true, dispellable: false,
+  },
 }
 
 export const getStatusDefinition = (statusId: StatusId) => STATUS_DEFINITIONS[statusId]

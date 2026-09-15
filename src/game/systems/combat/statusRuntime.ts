@@ -62,6 +62,7 @@ export const getNextCombatStatusEventMs = (state: GameState): number | null => g
 export const getNextPlayerStatusEventMs = (state: GameState): number | null => getNextStatusEventMs(state, ['player'])
 
 export const actorCannotAct = (state: GameState, actor: CombatActor) => statusList(state, actor).some((status) => STATUS_DEFINITIONS[status.statusId]?.preventsAction === true)
+export const actorCannotCastSpells = (state: GameState, actor: CombatActor) => statusList(state, actor).some((status) => STATUS_DEFINITIONS[status.statusId]?.preventsSpellCast === true)
 
 export const resolveStatusDuration = (state: CombatModifierState, actor: CombatActor, statusId: StatusId, durationMs: number | null, source: CombatSource, options: StatusDurationResolutionOptions = {}) => {
   if (durationMs === null) return null

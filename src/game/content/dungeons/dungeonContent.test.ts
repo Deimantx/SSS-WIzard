@@ -14,7 +14,7 @@ const playerSpell: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'c
 
 describe('Act 0 and Act 1 dungeon content', () => {
   it('authors the stable dungeon order, pools, bosses, unlocks, and delay', () => {
-    expect(DUNGEON_ORDER).toEqual(['whispering-woods', 'howling-den', 'abandoned-catacombs', 'fractured-approach'])
+    expect(DUNGEON_ORDER).toEqual(['whispering-woods', 'howling-den', 'abandoned-catacombs', 'fractured-approach', 'flooded-reliquary', 'ashen-watch', 'rootscar-hollow', 'crossroads-of-ruin', 'graveglass-hollow', 'stormvault-gallery', 'starfallen-observatory', 'broken-meridian', 'hall-of-unbound-names', 'vault-of-the-black-sigil', 'black-gate'])
     expect(DUNGEONS['whispering-woods'].monsterPool).toEqual(['forest-wisp', 'thornling', 'stone-root', 'grove-sentinel'])
     expect(DUNGEONS['whispering-woods'].boss).toBe('forest-heart')
     expect(DUNGEONS['howling-den'].boss).toBe('corrupted-greatbear')
@@ -35,8 +35,59 @@ describe('Act 0 and Act 1 dungeon content', () => {
     expect(DUNGEONS['fractured-approach'].monsterPool).toEqual(['warded-husk', 'rift-wolf', 'arcane-scavenger', 'withered-watcher'])
   })
 
+  it('requires every upstream boss for Act 1 convergence dungeons', () => {
+    const state = createInitialState()
+    const clear = (...bossIds: Array<keyof typeof state.progress.bossKillsByBoss>) => bossIds.forEach((bossId) => { state.progress.bossKillsByBoss[bossId] = 1 })
+
+    clear('corrupted-elemental-gatekeeper')
+    expect(isDungeonUnlocked(DUNGEONS['flooded-reliquary'], state.progress)).toBe(true)
+    expect(isDungeonUnlocked(DUNGEONS['ashen-watch'], state.progress)).toBe(true)
+    expect(isDungeonUnlocked(DUNGEONS['rootscar-hollow'], state.progress)).toBe(true)
+    expect(isDungeonUnlocked(DUNGEONS['crossroads-of-ruin'], state.progress)).toBe(false)
+    clear('drowned-keeper', 'flamebound-revenant')
+    expect(isDungeonUnlocked(DUNGEONS['crossroads-of-ruin'], state.progress)).toBe(false)
+    clear('rootscar-ancient')
+    expect(isDungeonUnlocked(DUNGEONS['crossroads-of-ruin'], state.progress)).toBe(true)
+
+    expect(isDungeonUnlocked(DUNGEONS['broken-meridian'], state.progress)).toBe(false)
+    clear('graveglass-behemoth', 'storm-archivist')
+    expect(isDungeonUnlocked(DUNGEONS['broken-meridian'], state.progress)).toBe(false)
+    clear('fallen-astromancer')
+    expect(isDungeonUnlocked(DUNGEONS['broken-meridian'], state.progress)).toBe(true)
+    expect(isDungeonUnlocked(DUNGEONS['hall-of-unbound-names'], state.progress)).toBe(false)
+    expect(isDungeonUnlocked(DUNGEONS['vault-of-the-black-sigil'], state.progress)).toBe(false)
+    clear('meridian-splitter')
+    expect(isDungeonUnlocked(DUNGEONS['hall-of-unbound-names'], state.progress)).toBe(true)
+    expect(isDungeonUnlocked(DUNGEONS['vault-of-the-black-sigil'], state.progress)).toBe(true)
+    expect(isDungeonUnlocked(DUNGEONS['black-gate'], state.progress)).toBe(false)
+    clear('unspoken-prelate')
+    expect(isDungeonUnlocked(DUNGEONS['black-gate'], state.progress)).toBe(false)
+    clear('sigil-warden')
+    expect(isDungeonUnlocked(DUNGEONS['black-gate'], state.progress)).toBe(true)
+  })
+
+  it('keeps Act 0 and boss health unchanged while applying the authored Tier 2 normal HP values', () => {
+    const expectedNormalHealth: Record<string, number> = {
+      'warded-husk': 1250, 'rift-wolf': 975, 'arcane-scavenger': 1050, 'withered-watcher': 1150,
+      'drowned-acolyte': 1875, 'reliquary-slime': 1813, 'mist-wraith': 1375, 'rune-leech': 1563,
+      'graveglass-shade': 3125, 'static-armor': 3750, 'arc-surge-horror': 5000, 'portalbound-acolyte': 5625,
+    }
+    Object.entries(expectedNormalHealth).forEach(([monsterId, maxHealth]) => expect(MONSTERS[monsterId as keyof typeof MONSTERS].maxHealth).toBe(maxHealth))
+    expect(MONSTERS['forest-wisp'].maxHealth).toBe(200)
+    expect(MONSTERS['forest-heart'].maxHealth).toBe(900)
+    // The locally authored Gatekeeper value is preserved; it is a boss and is
+    // intentionally excluded from the Tier 2 normal-monster HP pass.
+    expect(MONSTERS['corrupted-elemental-gatekeeper'].maxHealth).toBe(10500)
+    expect(MONSTERS['black-gatekeeper'].maxHealth).toBe(65000)
+  })
+
+  it('keeps the two pre-final dungeon labels at T2.11', () => {
+    expect(DUNGEONS['hall-of-unbound-names'].name).toBe('Hall of Unbound Names')
+    expect(DUNGEONS['vault-of-the-black-sigil'].name).toBe('Vault of the Black Sigil')
+  })
+
   it('keeps all authored monster records and exact action sequences', () => {
-    expect(Object.keys(MONSTERS)).toHaveLength(18)
+    expect(Object.keys(MONSTERS)).toHaveLength(73)
     expect(validateMonsterDefinitions()).toEqual([])
     expect(labels('cavefang-wolf')).toEqual(['Basic', 'Basic', 'Pounce'])
     expect(labels('razorclaw-lynx')).toEqual(['Basic', 'Rending Claws', 'Basic'])
@@ -85,8 +136,8 @@ describe('Act 0 and Act 1 dungeon content', () => {
       ['archmage-edrin-shade', 'soul-drain', 1, 72], ['archmage-edrin-shade', 'final-incantation', 0, 120],
       ['warded-husk', 'ward-slam', 0, 89.9], ['rift-wolf', 'rift-lunge', 0, 91.35], ['rift-wolf', 'arc-flash', 0, 72.45],
       ['arcane-scavenger', 'salvaged-bolt', 0, 85.4], ['arcane-scavenger', 'unstable-charge', 0, 109.8], ['withered-watcher', 'elemental-pulse', 0, 78],
-      ['withered-watcher', 'watchers-lance', 0, 99], ['corrupted-elemental-gatekeeper', 'flame-surge', 0, 93.75], ['corrupted-elemental-gatekeeper', 'tidal-break', 0, 90],
-      ['corrupted-elemental-gatekeeper', 'stone-crush', 0, 108.75], ['corrupted-elemental-gatekeeper', 'gale-lance', 0, 86.25], ['corrupted-elemental-gatekeeper', 'elemental-rupture', 0, 150],
+      ['withered-watcher', 'watchers-lance', 0, 99], ['corrupted-elemental-gatekeeper', 'flame-surge', 0, 106.25], ['corrupted-elemental-gatekeeper', 'tidal-break', 0, 102],
+      ['corrupted-elemental-gatekeeper', 'stone-crush', 0, 123.25], ['corrupted-elemental-gatekeeper', 'gale-lance', 0, 97.75], ['corrupted-elemental-gatekeeper', 'elemental-rupture', 0, 170],
     ]
     expected.forEach(([monsterId, actionId, effectIndex, amount]) => {
       const effect = MONSTERS[monsterId].actions[actionId].effects[effectIndex]

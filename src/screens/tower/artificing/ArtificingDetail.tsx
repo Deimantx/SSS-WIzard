@@ -31,8 +31,8 @@ export function ArtificingDetail({ recipe }: { recipe: ArtificingRecipeDefinitio
   useEffect(() => { if (recipe && state.recentAcquisitions?.[0]?.itemId === recipe.output.itemId) setCrafted(ITEMS[recipe.output.itemId].name) }, [state.recentAcquisitions?.[0]?.timestamp, recipe?.output.itemId])
   if (!recipe) return <Card className="artificing-detail" title="ARCANE FORGE"><ActiveArtificingCraft /><div className="artificing-empty"><Hammer size={28} /><strong>SELECT EQUIPMENT</strong><p>Choose a blueprint from the catalog to inspect its requirements.</p></div></Card>
   const item = ITEMS[recipe.output.itemId]
-  const artifact = isArtifactId(item.id) ? ARTIFACTS[item.id] : undefined
-  if (artifact) return <ArtifactArtificingDetail recipe={recipe} />
+  const artifactId = isArtifactId(item.id) ? item.id : null
+  if (artifactId) return <ArtifactArtificingDetail recipe={recipe as ArtificingRecipeDefinition & { id: import('../../../game/types').ArtifactId }} artifactId={artifactId} />
   const unlocked = isRecipeUnlocked(state, recipe)
   const craftable = canCraftArtificingRecipe(state, recipe.id)
   const capacity = getArtificingCraftCapacity(state, recipe.id)
@@ -62,12 +62,12 @@ export function ArtificingDetail({ recipe }: { recipe: ArtificingRecipeDefinitio
   </Card></>
 }
 
-function ArtifactArtificingDetail({ recipe }: { recipe: ArtificingRecipeDefinition }) {
+function ArtifactArtificingDetail({ recipe, artifactId }: { recipe: ArtificingRecipeDefinition & { id: import('../../../game/types').ArtifactId }; artifactId: import('../../../game/types').ArtifactId }) {
   const state = useGameStore()
   const [pathOpen, setPathOpen] = useState(false)
   const [sources, setSources] = useState<import('../../../game/types').ItemId | null>(null)
-  const item = { ...ITEMS[recipe.output.itemId], id: recipe.id }
-  const artifactState = getArtifactArtificingState(state, recipe.id)
+  const item = { ...ITEMS[recipe.output.itemId], id: artifactId }
+  const artifactState = getArtifactArtificingState(state, artifactId)
   if (!artifactState) return null
   const active = state.activities.artificing.activeJob
   const activeForThis = Boolean(active && ((active.kind === 'recipe' && active.recipeId === recipe.id) || (active.kind === 'artifact-forge' && active.artifactId === recipe.id)))

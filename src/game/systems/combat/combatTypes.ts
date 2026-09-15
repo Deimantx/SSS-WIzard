@@ -18,6 +18,17 @@ export type TraitId =
   | 'fallen-acolyte-grave-channeling'
   | 'archmage-edrin-arcane-remnant'
   | 'archmage-edrin-unbound-spirit'
+  | 'drowned-acolyte-devotion' | 'reliquary-slime-engulf' | 'mist-wraith-fade' | 'rune-leech-siphon'
+  | 'cinder-hound-flameblood' | 'ash-cultist-fan' | 'fire-elemental-emberheart' | 'lava-eel-molten-hide'
+  | 'thorn-maw-venom' | 'rootbound-stalker-ambush' | 'briar-sprite-bloom' | 'moss-carapace-regrowth'
+  | 'remnant-marauder-pressure' | 'arcane-binder-binding' | 'broken-construct-ward' | 'rift-archer-precision'
+  | 'graveglass-shade-cursed' | 'bone-shardling-brittle' | 'silent-mourner-fade' | 'crypt-guardian-ward'
+  | 'volt-wisp-static' | 'static-armor-ward' | 'gale-scribe-acceleration' | 'charged-seeker-twin-arc'
+  | 'starbound-eye-gaze' | 'astral-husk-weight' | 'orbiting-fragment-ward' | 'lenskeeper-disruption'
+  | 'meridian-warden-ward' | 'fractured-channeler-split' | 'arc-surge-vulnerability' | 'linebreaker-disruption'
+  | 'name-eater-silence' | 'bound-echo-repetition' | 'hollow-liturgist-curse' | 'whisper-archivist-erasure'
+  | 'sigil-guardian-ward' | 'black-seal-parasite-corruption' | 'vault-devourer-regrowth' | 'inkbound-specter-curse'
+  | 'gatebound-remnant-cleave' | 'black-rift-stalker-corruption' | 'portalbound-acolyte-mute' | 'sealbreaker-construct-ward'
 
 export type CombatTag =
   | 'basic-attack'
@@ -248,6 +259,13 @@ export type StatusId =
   | 'bleeding'
   | 'spectral-fade'
   | 'stunned'
+  | 'entangled'
+  | 'poisoned'
+  | 'cursed'
+  | 'fragile'
+  | 'silenced'
+  | 'corruption'
+  | 'arcane-disruption'
 
 export type CombatEffect =
   | { type: 'deal-damage'; target: EffectTarget; components: DamageComponent[]; tags?: CombatTag[]; school?: SchoolId }
@@ -444,6 +462,7 @@ export interface StatusDefinition {
   periodic?: { intervalMs: number; effects: CombatEffect[] }
   triggers?: CombatTriggerRule[]
   preventsAction?: boolean
+  preventsSpellCast?: boolean
   cleanseable: boolean
   dispellable: boolean
   ui?: { shortDescription?: string; icon?: string; alert?: CombatAlertPriority }

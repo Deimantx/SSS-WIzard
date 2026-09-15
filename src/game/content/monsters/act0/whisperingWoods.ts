@@ -1,5 +1,5 @@
-import type { MonsterId } from '../../types'
-import { action, applyStatus, basic, delayBasicAttack, scaledBarrier, scaledDirectDamage, scaledDot, scaledHeal, withDungeonLoot, type MonsterDefinition } from './monsterTypes'
+import type { MonsterId } from '../../../types'
+import { action, applyStatus, basic, delayBasicAttack, scaledBarrier, scaledDirectDamage, scaledDot, scaledHeal, withDungeonLoot, type MonsterDefinition } from '../monsterTypes'
 
 export const WHISPERING_WOODS_MONSTERS = {
   'forest-wisp': {

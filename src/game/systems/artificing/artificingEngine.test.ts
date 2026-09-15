@@ -65,9 +65,11 @@ describe('Artificing', () => {
     expect(protectedState.inventory['artifact-essence']).toBe(20)
   })
 
-  it('rejects obsolete non-Artifact Artificing outputs', () => {
+  it('supports normal Equipment Artificing outputs', () => {
     const state = createInitialState()
-    expect(craftArtificingRecipe(state, 'windthread-charm' as never).ok).toBe(false)
-    expect(craftArtificingRecipe(state, 'windthread-charm' as never)).toMatchObject({ ok: false, reason: 'Only Artifact recipes can be forged.' })
+    state.inventory['artifact-essence'] = 20
+    state.inventory['life-essence'] = 30
+    expect(craftArtificingRecipe(state, 'windthread-charm').ok).toBe(true)
+    expect(state.activities.artificing.activeJob).toEqual({ kind: 'recipe', recipeId: 'windthread-charm' })
   })
 })

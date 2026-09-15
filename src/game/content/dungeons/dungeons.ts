@@ -1,7 +1,12 @@
 import { MONSTERS, isBossMonster } from '../monsters'
+import { ABANDONED_CATACOMBS_DUNGEON, HOWLING_DEN_DUNGEON, WHISPERING_WOODS_DUNGEON } from './act0'
+import { ACT1_DUNGEONS } from './act1'
 import type { DungeonId, GameState, MonsterId } from '../../types'
 
-export type DungeonUnlockCondition = { type: 'always' } | { type: 'boss-kill'; bossId: MonsterId }
+export type DungeonUnlockCondition =
+  | { type: 'always' }
+  | { type: 'boss-kill'; bossId: MonsterId }
+  | { type: 'all-boss-kills'; bossIds: MonsterId[] }
 
 export interface DungeonDefinition {
   id: DungeonId
@@ -15,18 +20,15 @@ export interface DungeonDefinition {
   ui?: { description: string }
 }
 
-export const DUNGEON_ORDER: DungeonId[] = ['whispering-woods', 'howling-den', 'abandoned-catacombs', 'fractured-approach']
-
-export const DUNGEONS: Record<DungeonId, DungeonDefinition> = {
-  'whispering-woods': { id: 'whispering-woods', name: 'Whispering Woods', monsterPool: ['forest-wisp', 'thornling', 'stone-root', 'grove-sentinel'], threatRequired: 20, boss: 'forest-heart', encounterDelayMs: 5000, unlock: { type: 'always' }, ui: { description: 'A restless grove where living roots and arcane wisps guard the Forest Heart.' } },
-  'howling-den': { id: 'howling-den', name: 'Howling Den', monsterPool: ['cavefang-wolf', 'razorclaw-lynx', 'corrupted-dire-wolf'], threatRequired: 25, boss: 'corrupted-greatbear', encounterDelayMs: 5000, unlock: { type: 'boss-kill', bossId: 'forest-heart' }, ui: { description: 'A predator-haunted den twisted by unstable magic.' } },
-  'abandoned-catacombs': { id: 'abandoned-catacombs', name: 'Abandoned Catacombs', monsterPool: ['restless-skeleton', 'grave-wraith', 'fallen-acolyte'], threatRequired: 30, boss: 'archmage-edrin-shade', encounterDelayMs: 5000, unlock: { type: 'boss-kill', bossId: 'corrupted-greatbear' }, completesTutorial: true, ui: { description: 'A dead mage’s tomb-complex where spirits and forgotten magic still linger.' } },
-  'fractured-approach': { id: 'fractured-approach', name: 'Fractured Approach', monsterPool: ['warded-husk', 'rift-wolf', 'arcane-scavenger', 'withered-watcher'], threatRequired: 35, boss: 'corrupted-elemental-gatekeeper', encounterDelayMs: 5000, unlock: { type: 'boss-kill', bossId: 'archmage-edrin-shade' }, ui: { description: 'A shattered frontier road where broken wards and unstable elemental magic guard the path into the Shattered Frontier.' } },
-}
+const ACT0_DUNGEONS = [WHISPERING_WOODS_DUNGEON, HOWLING_DEN_DUNGEON, ABANDONED_CATACOMBS_DUNGEON] as const
+export const DUNGEON_ORDER: DungeonId[] = [...ACT0_DUNGEONS, ...ACT1_DUNGEONS].map((dungeon) => dungeon.id)
+export const DUNGEONS: Record<DungeonId, DungeonDefinition> = Object.fromEntries([...ACT0_DUNGEONS, ...ACT1_DUNGEONS].map((dungeon) => [dungeon.id, dungeon])) as Record<DungeonId, DungeonDefinition>
 
 export const isDungeonUnlocked = (dungeon: DungeonDefinition, progress: Pick<GameState, 'progress'>['progress']) => {
   const unlock = dungeon.unlock ?? { type: 'always' as const }
-  return unlock.type === 'always' || (progress.bossKillsByBoss[unlock.bossId] ?? 0) >= 1
+  if (unlock.type === 'always') return true
+  if (unlock.type === 'boss-kill') return (progress.bossKillsByBoss[unlock.bossId] ?? 0) >= 1
+  return unlock.bossIds.every((bossId) => (progress.bossKillsByBoss[bossId] ?? 0) >= 1)
 }
 
 export const isDungeonCompleted = (dungeonId: DungeonId, progress: GameState['progress']) => (progress.bossKillsByBoss[DUNGEONS[dungeonId].boss] ?? 0) >= 1
@@ -38,7 +40,10 @@ export const isTutorialCompleted = (progress: GameState['progress']) => {
 
 export const getDungeonUnlockRequirement = (dungeon: DungeonDefinition) => {
   const unlock = dungeon.unlock ?? { type: 'always' as const }
-  return unlock.type === 'always' ? null : `Defeat ${MONSTERS[unlock.bossId]?.name ?? unlock.bossId}`
+  if (unlock.type === 'always') return null
+  if (unlock.type === 'boss-kill') return `Defeat ${MONSTERS[unlock.bossId]?.name ?? unlock.bossId}`
+  const names = unlock.bossIds.map((bossId) => MONSTERS[bossId]?.name ?? bossId)
+  return `Defeat ${names.slice(0, -1).join(', ')}${names.length > 1 ? `, and ${names[names.length - 1]}` : names[0]}`
 }
 
 export const validateDungeonDefinitions = () => {
@@ -48,10 +53,11 @@ export const validateDungeonDefinitions = () => {
     if (!dungeon) { errors.push(`${dungeonId}: missing dungeon definition`); return }
     if (!Number.isInteger(dungeon.threatRequired) || dungeon.threatRequired <= 0) errors.push(`${dungeon.id}: threatRequired must be a positive integer`)
     if (!Number.isFinite(dungeon.encounterDelayMs) || dungeon.encounterDelayMs <= 0) errors.push(`${dungeon.id}: encounterDelayMs must be positive`)
-    dungeon.monsterPool.forEach((monsterId) => { if (!MONSTERS[monsterId]) errors.push(`${dungeon.id}: unknown monster ${monsterId}`) })
+    dungeon.monsterPool.forEach((monsterId) => { if (!MONSTERS[monsterId]) errors.push(`${dungeon.id}: unknown monster ${monsterId}`); else if (isBossMonster(MONSTERS[monsterId])) errors.push(`${dungeon.id}: normal pool may not contain boss ${monsterId}`) })
     if (!MONSTERS[dungeon.boss]) errors.push(`${dungeon.id}: unknown boss ${dungeon.boss}`)
     if (dungeon.monsterPool.includes(dungeon.boss)) errors.push(`${dungeon.id}: boss must not be in the normal monster pool`)
     if (dungeon.unlock?.type === 'boss-kill' && (!MONSTERS[dungeon.unlock.bossId] || !isBossMonster(MONSTERS[dungeon.unlock.bossId]))) errors.push(`${dungeon.id}: unlock boss must be a known boss monster`)
+    if (dungeon.unlock?.type === 'all-boss-kills') dungeon.unlock.bossIds.forEach((bossId) => { if (!MONSTERS[bossId] || !isBossMonster(MONSTERS[bossId])) errors.push(`${dungeon.id}: unlock boss must be a known boss monster: ${bossId}`) })
   })
   const extraIds = Object.keys(DUNGEONS).filter((id) => !DUNGEON_ORDER.includes(id as DungeonId))
   extraIds.forEach((id) => errors.push(`${id}: dungeon is missing from DUNGEON_ORDER`))

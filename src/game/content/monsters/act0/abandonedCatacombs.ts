@@ -1,5 +1,5 @@
-import type { MonsterId } from '../../types'
-import { action, basic, scaledBarrier, scaledDirectDamage, scaledDot, scaledHeal, withDungeonLoot, applyStatus, type MonsterDefinition } from './monsterTypes'
+import type { MonsterId } from '../../../types'
+import { action, basic, scaledBarrier, scaledDirectDamage, scaledDot, scaledHeal, withDungeonLoot, applyStatus, type MonsterDefinition } from '../monsterTypes'
 
 export const ABANDONED_CATACOMBS_MONSTERS = {
   'restless-skeleton': {

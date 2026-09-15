@@ -71,7 +71,7 @@ describe('Direct Equipment loot', () => {
   })
 
   it('keeps dungeon Equipment grouping separate from starter Artifacts', () => {
-    expect(ARTIFACT_EQUIPMENT_IDS).toHaveLength(7)
+    expect(ARTIFACT_EQUIPMENT_IDS).toHaveLength(10)
     expect(Object.values(DUNGEON_EQUIPMENT_BY_DUNGEON).flat()).not.toEqual(expect.arrayContaining([...ARTIFACT_EQUIPMENT_IDS]))
     expect(getEquipmentOrigin('ember-staff')).toBeNull()
     expect(getEquipmentOrigin('wispglass-earring')).toBe('whispering-woods')
@@ -80,19 +80,15 @@ describe('Direct Equipment loot', () => {
 })
 
 describe('Boss-signature Equipment', () => {
-  it('maps each signature to exactly one assigned boss and no recipe', () => {
-    const expected = {
-      'heartseed-necklace': 'forest-heart',
-      'greatbear-heartstone': 'corrupted-greatbear',
-      'edrins-signet': 'archmage-edrin-shade',
-      'gatekeeper-sigil': 'corrupted-elemental-gatekeeper',
-    } as const
-    expect(BOSS_SIGNATURE_EQUIPMENT_IDS).toEqual(Object.keys(expected))
-    Object.entries(expected).forEach(([itemId, bossId]) => {
+  it('maps each signature to exactly one assigned boss', () => {
+    expect(BOSS_SIGNATURE_EQUIPMENT_IDS).toHaveLength(15)
+    BOSS_SIGNATURE_EQUIPMENT_IDS.forEach((itemId) => {
+      const dungeonId = DUNGEON_ORDER.find((id) => DUNGEON_LOOT[id].bossSignature === itemId)!
+      const bossId = DUNGEONS[dungeonId].boss
       const sources = getItemDropSources(itemId as ItemId)
       expect(sources).toHaveLength(1)
       expect(sources[0]).toMatchObject({ monsterId: bossId, role: 'boss', chance: BOSS_SIGNATURE_EQUIPMENT_LOOT_CHANCE })
-      expect(ARTIFICING_RECIPES[itemId as keyof typeof ARTIFICING_RECIPES]).toBeUndefined()
+      expect(ARTIFICING_RECIPES[itemId as keyof typeof ARTIFICING_RECIPES]).toBeDefined()
       expect(ITEMS[itemId as ItemId]).toMatchObject({ source: expect.stringContaining('Combat →'), sourceNavigation: 'combat' })
       expect(Object.values(MONSTERS).filter((monster) => monster.bestiaryCategory === 'monster' && monster.loot.some((drop) => drop.itemId === itemId))).toHaveLength(0)
     })
@@ -100,13 +96,13 @@ describe('Boss-signature Equipment', () => {
 })
 
 describe('Artifact-only Artificing', () => {
-  it('contains the six starter Artifact recipes plus the Gatekeeper Artifact', () => {
+  it('keeps one Artificing recipe for every Equipment item', () => {
     const state = createInitialState()
-    expect(ARTIFICING_RECIPE_ORDER).toEqual([...ARTIFACT_EQUIPMENT_IDS])
-    expect(Object.values(ARTIFICING_RECIPES).filter((recipe) => recipe.unlock.type === 'always')).toHaveLength(6)
+    expect(ARTIFICING_RECIPE_ORDER).toHaveLength(Object.values(ARTIFICING_RECIPES).length)
+    expect(ARTIFICING_RECIPE_ORDER.filter((id) => ARTIFACT_EQUIPMENT_IDS.includes(id as typeof ARTIFACT_EQUIPMENT_IDS[number]))).toEqual([...ARTIFACT_EQUIPMENT_IDS])
     expect(ARTIFICING_RECIPES['galeshard-staff']).toMatchObject({ unlock: { type: 'boss-kill', bossId: 'corrupted-elemental-gatekeeper' }, sourceDungeonId: 'fractured-approach' })
-    expect(Object.values(ARTIFICING_RECIPES).every((recipe) => Boolean(ARTIFACTS[recipe.output.itemId]))).toBe(true)
-    ARTIFICING_RECIPE_ORDER.filter((id) => id !== 'galeshard-staff').forEach((id) => expect(isRecipeUnlocked(state, ARTIFICING_RECIPES[id])).toBe(true))
+    expect(Object.values(ARTIFICING_RECIPES).every((recipe) => ITEMS[recipe.output.itemId]?.kind === 'equipment')).toBe(true)
+    expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['windthread-charm'])).toBe(true)
     expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['galeshard-staff'])).toBe(false)
     state.progress.bossKillsByBoss['corrupted-elemental-gatekeeper'] = 1
     expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['galeshard-staff'])).toBe(true)
@@ -116,7 +112,7 @@ describe('Artifact-only Artificing', () => {
     expect(validateRecipeDefinitions()).toEqual([])
     Object.values(ARTIFACTS).forEach((artifact) => expect(artifact.forge.ingredients).toEqual(ARTIFICING_RECIPES[artifact.id].ingredients))
     const invalid = { ...RECIPES, 'invalid-equipment': { ...ARTIFICING_RECIPES['ember-staff'], id: 'invalid-equipment' as RecipeId, output: { itemId: 'windthread-charm' as never, quantity: 1 } } } as unknown as Record<string, CraftingRecipeDefinition>
-    expect(validateRecipeDefinitions(invalid, [...RECIPE_ORDER, 'invalid-equipment'])).toEqual(expect.arrayContaining(['invalid-equipment: Artificing recipes may only output Artifacts', 'windthread-charm: non-Artifact Equipment must not have an Artificing recipe (found 1)']))
+    expect(validateRecipeDefinitions(invalid, [...RECIPE_ORDER, 'invalid-equipment'])).toEqual(expect.arrayContaining(['windthread-charm: Equipment must have exactly one Artificing recipe (found 2)']))
   })
 })
 

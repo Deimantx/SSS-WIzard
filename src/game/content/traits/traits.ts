@@ -1,6 +1,7 @@
 import type { CombatEffect, CombatModifier, Magnitude, TraitDefinition, TraitId } from '../../systems/combat/combatTypes'
 import { STATUS_DEFINITIONS } from '../statuses/statuses'
 import { createCombatValidationContext, validateCombatModifier, validateCombatTriggerRule } from '../../systems/combat/combatEffectValidation'
+import { ACT1_TRAIT_DEFINITIONS } from './act1Traits'
 
 const gainBarrier = (magnitude: Magnitude): CombatEffect => ({
   type: 'gain-barrier',
@@ -18,7 +19,7 @@ const applyStatus = (statusId: Extract<CombatEffect, { type: 'apply-status' }>['
   durationMs,
 })
 
-export const TRAIT_DEFINITIONS: Record<TraitId, TraitDefinition> = {
+const ACT0_TRAIT_DEFINITIONS: Record<string, TraitDefinition> = {
   'forest-wisp-flicker': {
     id: 'forest-wisp-flicker',
     name: 'Flicker',
@@ -103,6 +104,8 @@ export const TRAIT_DEFINITIONS: Record<TraitId, TraitDefinition> = {
     rules: [{ id: 'archmage-edrin-unbound-spirit-threshold', event: 'on-hp-threshold', condition: { type: 'self-hp-below-percent', percent: 50 }, effects: [{ type: 'apply-status', target: 'self', statusId: 'haste' }, { type: 'set-action-pattern', target: 'self', patternId: 'unbound' }], oncePerEncounter: true }],
   },
 }
+
+export const TRAIT_DEFINITIONS: Record<TraitId, TraitDefinition> = { ...ACT0_TRAIT_DEFINITIONS, ...ACT1_TRAIT_DEFINITIONS } as Record<TraitId, TraitDefinition>
 
 const isTraitId = (traitId: string): traitId is TraitId => Object.prototype.hasOwnProperty.call(TRAIT_DEFINITIONS, traitId)
 export const getTraitDefinition = (traitId: string) => isTraitId(traitId) ? TRAIT_DEFINITIONS[traitId] : undefined

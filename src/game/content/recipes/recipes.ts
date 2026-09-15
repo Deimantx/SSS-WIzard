@@ -30,7 +30,6 @@ export const validateRecipeDefinitions = (recipes: Record<string, CraftingRecipe
       if (recipe.sourceDungeonId && !Object.prototype.hasOwnProperty.call(DUNGEONS, recipe.sourceDungeonId)) errors.push(`${recipe.id}: unknown Artificing source dungeon`)
       if (ITEMS[recipe.output.itemId]?.kind !== 'equipment') errors.push(`${recipe.id}: Artificing output must be Equipment`)
       const artifact = isArtifactId(recipe.output.itemId) ? ARTIFACTS[recipe.output.itemId] : undefined
-      if (!artifact) errors.push(`${recipe.id}: Artificing recipes may only output Artifacts`)
       if (artifact && (artifact.forge.ingredients.length !== recipe.ingredients.length || artifact.forge.ingredients.some((ingredient, index) => ingredient.itemId !== recipe.ingredients[index]?.itemId || ingredient.quantity !== recipe.ingredients[index]?.quantity))) {
         errors.push(`${recipe.id}: Artificing recipe and Artifact forge ingredients must match`)
       }
@@ -50,7 +49,7 @@ export const validateRecipeDefinitions = (recipes: Record<string, CraftingRecipe
   })
   Object.entries(ITEMS).filter(([, item]) => item.kind === 'equipment' && !isArtifactId(item.id)).forEach(([itemId]) => {
     const outputRecipes = Object.values(recipes).filter((recipe) => isArtificingRecipe(recipe) && recipe.output.itemId === itemId)
-    if (outputRecipes.length !== 0) errors.push(`${itemId}: non-Artifact Equipment must not have an Artificing recipe (found ${outputRecipes.length})`)
+    if (outputRecipes.length !== 1) errors.push(`${itemId}: Equipment must have exactly one Artificing recipe (found ${outputRecipes.length})`)
   })
   if (errors.length && import.meta.env.DEV) console.error(`[recipes] ${errors.join('; ')}`)
   return errors

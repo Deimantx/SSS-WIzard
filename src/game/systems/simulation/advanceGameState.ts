@@ -9,7 +9,7 @@ import { castSpellInternal, getSpellCastFailure } from '../../engine/spellEngine
 import { executeCombatEffects, getBasicAttackTags } from '../combat/effectResolver'
 import { resolveCombatDeaths, spawnNextEnemy, type CombatLootObserver } from '../combat/combatRuntime'
 import { getCurrentEnemyActionRate, getPlayerBasicAttackRate, resolveCurrentEnemyAction, startNextEnemyAction } from '../combat/actionRuntime'
-import { actorCannotAct, expirePendingStatuses, getNextCombatStatusEventMs, getNextPlayerStatusEventMs, tickStatuses } from '../combat/statusRuntime'
+import { actorCannotAct, actorCannotCastSpells, expirePendingStatuses, getNextCombatStatusEventMs, getNextPlayerStatusEventMs, tickStatuses } from '../combat/statusRuntime'
 import { getNextCombatBarrierEventMs, getNextPlayerBarrierEventMs, tickBarriers } from '../combat/barrierRuntime'
 import { getCooldownRecoveryMultiplier, getEffectiveManaCost, getPlayerCombatStats } from '../combat/combatStats'
 import { tickRuleCooldowns } from '../combat/triggerRuntime'
@@ -58,7 +58,7 @@ const playerBasicAttack = (state: GameState, uiEvents?: CombatEventSink) => {
   return state.combat.lastDamageDealt
 }
 
-const isAutoCastEligible = (state: GameState, spellId: SpellId) => Boolean(state.activities.autoCast[spellId]) && spellUnlocked(state, spellId) && Boolean(state.combat.enemyId) && (state.debug.ignoreSpellCooldowns || (state.combat.spellCooldowns[spellId] ?? 0) <= 0) && meetsAutoCondition(state, spellId)
+const isAutoCastEligible = (state: GameState, spellId: SpellId) => Boolean(state.activities.autoCast[spellId]) && spellUnlocked(state, spellId) && !actorCannotAct(state, 'player') && !actorCannotCastSpells(state, 'player') && Boolean(state.combat.enemyId) && (state.debug.ignoreSpellCooldowns || (state.combat.spellCooldowns[spellId] ?? 0) <= 0) && meetsAutoCondition(state, spellId)
 
 const autoCastReadySpells = (state: GameState, context: AdvanceContext) => {
   const latches = state.combat.autoCastManaStarvedSpells ?? (state.combat.autoCastManaStarvedSpells = [])
@@ -82,10 +82,7 @@ const autoCastReadySpells = (state: GameState, context: AdvanceContext) => {
 
 const hasReadyAutoCast = (state: GameState) => {
   if (actorCannotAct(state, 'player') || !state.combat.enemyId || state.debug.freezePlayerActions || state.debug.disableAutoCast) return false
-  return Object.keys(state.activities.autoCast).some((id) => {
-    const spellId = id as SpellId
-    return Boolean(state.activities.autoCast[spellId]) && spellUnlocked(state, spellId) && (state.debug.ignoreSpellCooldowns || (state.combat.spellCooldowns[spellId] ?? 0) <= 0) && meetsAutoCondition(state, spellId)
-  })
+  return Object.keys(state.activities.autoCast).some((id) => isAutoCastEligible(state, id as SpellId))
 }
 
 const ensurePlayerBasicRuntime = (state: GameState) => {

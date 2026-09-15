@@ -12,8 +12,8 @@ import { damagePlayer } from '../../systems/combat/effectResolver'
 import { normalizeEquipmentState } from '../../core/equipment/equipmentRules'
 import type { ArtifactId, CombatSource, ItemId } from '../../types'
 
-const artifactIds: readonly ArtifactId[] = ['ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'wispweave-robe', 'wispveil-hood', 'galeshard-staff']
-const elementalArtifacts: readonly [ArtifactId, ItemId][] = [['ember-staff', 'fire-fragment'], ['tideglass-wand', 'water-fragment'], ['stoneheart-scepter', 'earth-fragment'], ['windthread-wand', 'air-fragment']]
+const artifactIds: readonly ArtifactId[] = ['reliquary-scepter', 'pyrebound-staff', 'rootheart-scepter', 'ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'wispweave-robe', 'wispveil-hood', 'galeshard-staff']
+const elementalArtifacts: readonly [ArtifactId, ItemId][] = [['ember-staff', 'fire-fragment'], ['tideglass-wand', 'water-fragment'], ['stoneheart-scepter', 'earth-fragment'], ['windthread-wand', 'air-fragment'], ['reliquary-scepter', 'water-fragment'], ['pyrebound-staff', 'fire-fragment'], ['rootheart-scepter', 'earth-fragment']]
 const spellSource = (school: 'water' | 'earth' | 'air'): CombatSource => ({ actor: 'player', kind: 'spell', sourceId: `artifact-${school}`, school, tags: ['spell', school] })
 
 describe('Artifact roster', () => {
@@ -22,7 +22,8 @@ describe('Artifact roster', () => {
     expect(validateArtifactDefinitions(ITEMS, MONSTERS)).toEqual([])
     artifactIds.forEach((id) => {
       expect(ITEMS[id]).toMatchObject({ kind: 'equipment', source: 'Artificing', sourceNavigation: 'tower-artificing', sellValue: null, canDestroy: false })
-      expect(ITEMS[id].equipmentTier).toBe(id === 'galeshard-staff' ? 1.7 : 1)
+      expect(ITEMS[id].equipmentTier).toBe(id === 'galeshard-staff' ? 1.7 : ['reliquary-scepter', 'pyrebound-staff', 'rootheart-scepter'].includes(id) ? 1.8 : 1)
+      expect(ARTIFACTS[id]?.tier).toBe(id === 'galeshard-staff' ? 1.7 : ['reliquary-scepter', 'pyrebound-staff', 'rootheart-scepter'].includes(id) ? 1.8 : 1)
       expect(ITEMS[id].stats).toBeUndefined()
       expect(ITEMS[id].combat).toBeUndefined()
       expect(ARTIFACTS[id]?.maxLevel).toBe(10)
@@ -76,13 +77,14 @@ describe('Artifact roster', () => {
 
   it('unlocks starter Artifact recipes on a fresh save and gates Galeshard behind the Gatekeeper', () => {
     const state = createInitialState()
-    artifactIds.filter((id) => id !== 'galeshard-staff').forEach((id) => {
+    artifactIds.filter((id) => !['galeshard-staff', 'reliquary-scepter', 'pyrebound-staff', 'rootheart-scepter'].includes(id)).forEach((id) => {
       expect(ARTIFICING_RECIPES[id]).toMatchObject({ kind: 'artificing', unlock: { type: 'always' } })
       expect(ARTIFICING_RECIPES[id].sourceDungeonId).toBeUndefined()
       expect(isRecipeUnlocked(state, ARTIFICING_RECIPES[id])).toBe(true)
     })
     expect(ARTIFICING_RECIPES['galeshard-staff']).toMatchObject({ unlock: { type: 'boss-kill', bossId: 'corrupted-elemental-gatekeeper' }, sourceDungeonId: 'fractured-approach' })
     expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['galeshard-staff'])).toBe(false)
+    ;(['reliquary-scepter', 'pyrebound-staff', 'rootheart-scepter'] as const).forEach((id) => expect(isRecipeUnlocked(state, ARTIFICING_RECIPES[id])).toBe(false))
     state.progress.bossKillsByBoss['corrupted-elemental-gatekeeper'] = 1
     expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['galeshard-staff'])).toBe(true)
   })
@@ -138,7 +140,7 @@ describe('Artifact roster', () => {
   })
 
   it('treats every current Artifact as compatible with the single Weapon slot', () => {
-    const inventory = { 'ember-staff': 1, 'tideglass-wand': 1, 'stoneheart-scepter': 1, 'windthread-wand': 1 }
+    const inventory = { 'ember-staff': 1, 'tideglass-wand': 1, 'stoneheart-scepter': 1, 'windthread-wand': 1, 'reliquary-scepter': 1, 'pyrebound-staff': 1, 'rootheart-scepter': 1 }
     elementalArtifacts.forEach(([id]) => expect(normalizeEquipmentState({ weapon: id }, inventory).weapon).toBe(id))
   })
 

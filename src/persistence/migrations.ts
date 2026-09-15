@@ -1,7 +1,7 @@
 import { createInitialState, SAVE_VERSION } from '../store/initialState'
 import { COMBAT_RNG_DEFAULT_SEED } from '../game/core/balance/combatRng'
 import { MANA_PILLAR_IDS } from '../game/data/manaPillars'
-import { DUNGEONS } from '../game/content/dungeons/dungeons'
+import { DUNGEONS, DUNGEON_ORDER } from '../game/content/dungeons/dungeons'
 import { GUILD_REQUESTS } from '../game/content/guild/guildRequests'
 import { ITEMS } from '../game/content/items/items'
 import { isBossMonster, MONSTERS } from '../game/content/monsters'
@@ -14,7 +14,7 @@ import { SCHOOL_MAX_LEVEL, getSchoolTotalXpForLevel } from '../game/core/balance
 import { SPELLS } from '../game/content/spells/spells'
 import { SCHOOLS } from '../game/content/schools/schools'
 import { EQUIPMENT_POSITIONS, normalizeEquipmentState } from '../game/core/equipment'
-import type { ArtifactId, EquipmentPosition, GameState, ItemId, MonsterId, TransmutationRecipeId, ResearchActivity, ResearchJobState, SchoolId, SpellId, TransmutationJobState } from '../game/types'
+import type { ArtifactId, DungeonId, EquipmentPosition, GameState, ItemId, MonsterId, TransmutationRecipeId, ResearchActivity, ResearchJobState, SchoolId, SpellId, TransmutationJobState } from '../game/types'
 import { RESEARCH_SLOT_ORDER } from '../game/systems/research/researchReservations'
 import { isRecord, SaveMigrationError } from './saveSchema'
 import { recalculateDerivedStats } from '../game/engine'
@@ -40,6 +40,10 @@ const normalizeScreen = (value: unknown, fallback: GameState['ui']['screen']): G
   const valid = ['home', 'combat', 'schools', 'inventory', 'equipment', 'collection', 'bestiary', 'tower-channeling', 'tower-focus', 'tower-research', 'tower-transmutation', 'tower-artificing', 'tower-summoning', 'tower-dark-portal', 'guild', 'settings']
   if (value === 'tower-condensation') return 'tower-transmutation'
   return typeof value === 'string' && valid.includes(value) ? value as GameState['ui']['screen'] : fallback
+}
+
+const normalizeLastEnteredCombatDungeonId = (value: unknown): DungeonId | undefined => {
+  return typeof value === 'string' && DUNGEON_ORDER.includes(value as DungeonId) ? value as DungeonId : undefined
 }
 
 const merge = <T extends Record<string, any>>(base: T, value: unknown): T => {
@@ -706,7 +710,9 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   migrated.player.healthRegenTimerMs = normalizeHealthRegenTimer(isRecord(raw.player) ? raw.player.healthRegenTimerMs : undefined)
   migrated.progress.channeling = migrateChanneling(raw.progress, createInitialState().progress)
   migrated.progress.transmutation = migrateTransmutationArrays(raw.progress, createInitialState().progress)
-  migrated.ui.screen = normalizeScreen(isRecord(raw.ui) ? raw.ui.screen : undefined, migrated.ui.screen)
+  const rawUi = isRecord(raw.ui) ? raw.ui : {}
+  migrated.ui.screen = normalizeScreen(rawUi.screen, migrated.ui.screen)
+  migrated.ui.lastEnteredCombatDungeonId = normalizeLastEnteredCombatDungeonId(rawUi.lastEnteredCombatDungeonId ?? migrated.ui.lastEnteredCombatDungeonId)
   normalizeDynamicRecords(migrated, raw)
   normalizeDarkPortalProgress(migrated)
   normalizeLegacyProgressEvidence(migrated.progress)
@@ -756,7 +762,10 @@ const migrateV1 = (raw: Record<string, any>): GameState => {
     activities: { ...fresh.activities, channeling: { echoesAssigned: oldActivities.autoChannel === true ? 1 : 0 }, research, autoCast: { ...fresh.activities.autoCast, ...(isRecord(oldActivities.autoCast) ? oldActivities.autoCast : {}) } },
     progress: { ...fresh.progress, ...(oldProgress as Partial<GameState['progress']>) },
     combat: { ...fresh.combat, ...(isRecord(raw.combat) ? raw.combat : {}) },
-    ui: { screen: fresh.ui.screen },
+    ui: {
+      screen: fresh.ui.screen,
+      lastEnteredCombatDungeonId: normalizeLastEnteredCombatDungeonId(isRecord(raw.ui) ? raw.ui.lastEnteredCombatDungeonId : undefined),
+    },
     offlineBankMs: typeof raw.offlineBankMs === 'number' ? raw.offlineBankMs : 0,
   }
   return finalize(migrated, raw)

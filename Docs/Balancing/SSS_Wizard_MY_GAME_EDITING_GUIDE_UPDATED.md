@@ -140,6 +140,7 @@ If I know **what I want to change**, start here instead of searching the whole r
 | I want to edit | Go here first | Important |
 | --- | --- | --- |
 | Item / normal Equipment stats | `src/game/content/items/items.ts` | Main authored item registry |
+| **Act 1 direct-drop Equipment stats / build identities** | `src/game/content/items/act1/*.ts` | Each dungeon owns explicit ring, earring, amulet/cape, and boss-signature stats; `artifacts.ts` in this folder is separate |
 | Item descriptions / source metadata / sell behavior | `src/game/content/items/items.ts` | Main item identity file |
 | Allowed Equipment stat fields | `src/game/types.ts` | Check `EquipmentStats` before inventing a field |
 | Equipment internal tier / player-facing tier mapping / build tags / budget profiles | `src/game/content/items/equipmentBalance.ts` | Internal `1.0 / 1.3 / 1.6` currently all display as player-facing `T1` through `Math.floor()` |
@@ -251,6 +252,24 @@ sell behavior after normalization
 ```
 
 For normal Equipment stat balancing, this is usually the first place to go.
+
+Act 1 direct-drop Equipment is authored by dungeon in these files:
+
+| Dungeon | Runtime authoring file | Intended identity |
+| --- | --- | --- |
+| Flooded Reliquary | `src/game/content/items/act1/floodedReliquary.ts` | Water, Mana, Barrier, Sustain |
+| Ashen Watch | `src/game/content/items/act1/ashenWatch.ts` | Fire, Burn, Direct Damage, Crit |
+| Rootscar Hollow | `src/game/content/items/act1/rootscarHollow.ts` | Earth, Defense, Health, Control |
+| Crossroads of Ruin | `src/game/content/items/act1/crossroadsOfRuin.ts` | Hybrid, Prismatic, General |
+| Graveglass Hollow | `src/game/content/items/act1/graveglassHollow.ts` | Crit, DoT, Debuff payoff |
+| Stormvault Gallery | `src/game/content/items/act1/stormvaultGallery.ts` | Air, Cooldown, Speed, Multi-hit |
+| Starfallen Observatory | `src/game/content/items/act1/starfallenObservatory.ts` | Mana, Focus, Arcane casting |
+| Broken Meridian | `src/game/content/items/act1/brokenMeridian.ts` | Multi-element Generalist |
+| Hall of Unbound Names | `src/game/content/items/act1/hallOfUnboundNames.ts` | Status, Debuff, Control |
+| Vault of the Black Sigil | `src/game/content/items/act1/vaultOfTheBlackSigil.ts` | Barrier, Defense, Sustain |
+| Black Gate | `src/game/content/items/act1/blackGate.ts` | Final Hybrid |
+
+`src/game/content/items/act1/fracturedApproach.ts` is the early Act 1 reference set. Do not put Artifact level scaling in these direct-drop files; Act 1 Artifact identity and progression remain in `src/game/content/items/act1/artifacts.ts` and `src/game/content/artifacts/artifacts.ts`.
 
 
 ## Important recent Equipment tier rule

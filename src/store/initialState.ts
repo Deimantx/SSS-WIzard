@@ -32,7 +32,7 @@ export const createInitialState = (): GameState => ({
   storyProgress: { pendingEventIds: [], completedEventIds: [] },
   darkPortal: { recoveredShards: [] },
   spellPresets: { presets: [], lastAppliedPresetId: null },
-  ui: { screen: 'home' },
+  ui: { screen: 'home', lastEnteredCombatDungeonId: undefined },
   offlineBankMs: 0,
   lastSavedAt: Date.now(),
   notifications: [],

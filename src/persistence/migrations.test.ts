@@ -30,6 +30,21 @@ describe('V27 story progression migration', () => {
 })
 
 describe('save navigation migration', () => {
+  it('round-trips the last successfully entered combat dungeon and tolerates old saves without it', () => {
+    const initial = createInitialState()
+    const oldSave = migrateSave({ ...initial, saveVersion: 31, ui: { screen: 'combat' } } as any)
+    expect(oldSave.ui.lastEnteredCombatDungeonId).toBeUndefined()
+
+    const state = createInitialState()
+    state.progress.bossKillsByBoss['forest-heart'] = 1
+    state.ui.lastEnteredCombatDungeonId = 'howling-den'
+    const loaded = migrateSave(JSON.parse(JSON.stringify(serializeGameState(state))))
+    expect(loaded.ui.lastEnteredCombatDungeonId).toBe('howling-den')
+
+    const malformed = migrateSave({ ...state, saveVersion: 31, ui: { screen: 'combat', lastEnteredCombatDungeonId: 'not-a-dungeon' } } as any)
+    expect(malformed.ui.lastEnteredCombatDungeonId).toBeUndefined()
+  })
+
   it('preserves the hidden-until-unlocked Summoning route and normalizes Guardian state', () => {
     const initial = createInitialState()
     const migrated = migrateSave({

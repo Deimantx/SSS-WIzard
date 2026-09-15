@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
-import { buildCombatActNavigationViewModel, getCombatActRouteState, getDefaultCombatActId, getDefaultCombatActNodeId, getVisibleCombatActs } from './combatActNavigationReadModel'
+import { buildCombatActNavigationViewModel, getCombatActRouteState, getDefaultCombatActId, getDefaultCombatActNodeId, getInitialCombatDungeon, getLatestUnlockedDungeon, getVisibleCombatActs } from './combatActNavigationReadModel'
 import { COMBAT_ACT_DEFINITIONS } from './combatActDefinitions'
 
 describe('Act 1 campaign navigation', () => {
@@ -39,6 +39,20 @@ describe('Act 1 campaign navigation', () => {
     state.combat.dungeonId = 'fractured-approach'
     expect(getDefaultCombatActId(state.progress, state.combat)).toBe('act-1')
     expect(getDefaultCombatActNodeId('act-1', state.progress, state.combat, 'whispering-woods')).toBe('fractured-approach')
+  })
+
+  it('prefers the last successfully entered dungeon and falls back to the latest unlocked dungeon', () => {
+    const state = createInitialState()
+    state.progress.bossKillsByBoss['archmage-edrin-shade'] = 1
+    state.progress.bossKillsByBoss['corrupted-elemental-gatekeeper'] = 1
+    expect(getLatestUnlockedDungeon(state.progress)).toBe('rootscar-hollow')
+    expect(getInitialCombatDungeon({ combat: state.combat, progress: state.progress })).toBe('rootscar-hollow')
+    expect(getInitialCombatDungeon({ combat: state.combat, lastEnteredDungeonId: 'flooded-reliquary', progress: state.progress })).toBe('flooded-reliquary')
+    expect(getInitialCombatDungeon({ combat: state.combat, lastEnteredDungeonId: 'black-gate', progress: state.progress })).toBe('rootscar-hollow')
+
+    state.combat.active = true
+    state.combat.dungeonId = 'fractured-approach'
+    expect(getInitialCombatDungeon({ combat: state.combat, lastEnteredDungeonId: 'flooded-reliquary', progress: state.progress })).toBe('fractured-approach')
   })
 
   it('keeps the Paint campaign columns and presentation route segments', () => {

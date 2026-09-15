@@ -96,6 +96,7 @@ describe('dungeon progression helpers', () => {
     expect(after.combat.pendingBossId).toBeNull()
     expect(after.combat.inBossFight).toBe(false)
     expect(after.combat.enemyId).toBeTruthy()
+    expect(after.ui.lastEnteredCombatDungeonId).toBe('howling-den')
     expect(DUNGEONS['howling-den'].monsterPool).toContain(after.combat.enemyId)
     expect(after.inventory).toEqual(beforeInventory)
     expect(after.progress.lifetimeKills).toBe(beforeKills)

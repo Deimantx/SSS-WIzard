@@ -469,7 +469,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     if (currentState.combat.active && currentState.combat.dungeonId === dungeonId) return
     const switching = currentState.combat.active
     if (switching) endActiveDungeonRun()
-    set((state) => { initializeDungeonRun(state, dungeonId, switching); return state })
+    set((state) => { initializeDungeonRun(state, dungeonId, switching); state.ui.lastEnteredCombatDungeonId = dungeonId; return state })
   },
   leaveDungeon: () => { endActiveDungeonRun(); return set((state) => { state.combat = { ...createInitialState().combat, log: ['Left the dungeon. Threat Cleared resets.'] }; return state }) },
   engageBoss: (bossId) => set((state) => {

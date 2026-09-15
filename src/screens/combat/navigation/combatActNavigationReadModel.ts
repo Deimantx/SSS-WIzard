@@ -89,3 +89,22 @@ export const buildCombatActNavigationViewModel = ({ progress, combat, selectedDu
 export const getDungeonNode = (node: CombatActNodeViewModel) => node.dungeonId ? DUNGEONS[node.dungeonId] : null
 
 export const getFirstUnlockedDungeon = (progress: CombatActNavigationProgress): DungeonId => DUNGEON_ORDER.find((dungeonId) => isDungeonUnlocked(DUNGEONS[dungeonId], progress)) ?? DUNGEON_ORDER[0]
+
+export const getLatestUnlockedDungeon = (progress: CombatActNavigationProgress): DungeonId => {
+  const unlocked = DUNGEON_ORDER.filter((dungeonId) => isDungeonUnlocked(DUNGEONS[dungeonId], progress))
+  return unlocked[unlocked.length - 1] ?? getFirstUnlockedDungeon(progress)
+}
+
+export const getInitialCombatDungeon = ({
+  combat,
+  lastEnteredDungeonId,
+  progress,
+}: {
+  combat: Pick<CombatState, 'active' | 'dungeonId'>
+  lastEnteredDungeonId?: DungeonId
+  progress: CombatActNavigationProgress
+}): DungeonId => {
+  if (combat.active && combat.dungeonId) return combat.dungeonId
+  if (lastEnteredDungeonId && DUNGEONS[lastEnteredDungeonId] && isDungeonUnlocked(DUNGEONS[lastEnteredDungeonId], progress)) return lastEnteredDungeonId
+  return getLatestUnlockedDungeon(progress)
+}

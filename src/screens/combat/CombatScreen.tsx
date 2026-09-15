@@ -5,7 +5,7 @@ import type { DungeonId } from '../../game/types'
 import { MONSTERS } from '../../game/content/monsters'
 import { useGameStore } from '../../store/gameStore'
 import { CombatActNavigationDialog } from './navigation/CombatActNavigationDialog'
-import { getFirstUnlockedDungeon } from './navigation/combatActNavigationReadModel'
+import { getInitialCombatDungeon } from './navigation/combatActNavigationReadModel'
 import { CombatRunBar } from './CombatRunBar'
 import { CombatSpellDeck } from './CombatSpellDeck'
 import { CombatStage } from './CombatStage'
@@ -19,14 +19,15 @@ export function CombatScreenV2() {
   const combatDungeonId = useGameStore((state) => state.combat.dungeonId)
   const progress = useGameStore((state) => state.progress)
   const combat = useGameStore((state) => state.combat)
-  const [selectedDungeonId, setSelectedDungeonId] = useState<DungeonId>(() => combatDungeonId ?? getFirstUnlockedDungeon(progress))
+  const lastEnteredDungeonId = useGameStore((state) => state.ui.lastEnteredCombatDungeonId)
+  const [selectedDungeonId, setSelectedDungeonId] = useState<DungeonId>(() => getInitialCombatDungeon({ combat, lastEnteredDungeonId, progress }))
   const navigationIntent = useNavigationIntent()
   const [campaignOpen, setCampaignOpen] = useState(false)
   const [enemyContextMode, setEnemyContextMode] = useState<EnemyContextMode | null>(null)
   const enemyCardRef = useRef<HTMLElement>(null)
   const enemyContextTriggerRef = useRef<HTMLElement>(null)
   const defeatSnapshot = useCombatDefeatStore((state) => state.snapshot)
-  useEffect(() => { if (combatDungeonId) setSelectedDungeonId(combatDungeonId) }, [combatDungeonId])
+  useEffect(() => { if (combat.active && combatDungeonId) setSelectedDungeonId(combatDungeonId) }, [combat.active, combatDungeonId])
   useEffect(() => { if (!combat.active && navigationIntent.combatDungeonId) setSelectedDungeonId(navigationIntent.combatDungeonId) }, [combat.active, navigationIntent.combatDungeonId])
   const openCampaign = useCallback(() => { dismissGameTooltips(); setCampaignOpen(true) }, [])
   const closeCampaign = useCallback(() => setCampaignOpen(false), [])

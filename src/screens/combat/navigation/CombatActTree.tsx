@@ -33,23 +33,11 @@ const getNodeAnchor = (node: CombatActNodeViewModel, side: NodeAnchorSide) => {
 }
 
 const getConnectionPath = (from: CombatActNodeViewModel, to: CombatActNodeViewModel) => {
-  const deltaX = to.x - from.x
-  const deltaY = to.y - from.y
-  const vertical = Math.abs(deltaY) > Math.abs(deltaX) * .8
-  const fromSide: NodeAnchorSide = vertical ? (deltaY >= 0 ? 'bottom' : 'top') : (deltaX >= 0 ? 'right' : 'left')
-  const toSide: NodeAnchorSide = vertical ? (deltaY >= 0 ? 'top' : 'bottom') : (deltaX >= 0 ? 'left' : 'right')
+  const fromSide: NodeAnchorSide = Math.abs(to.x - from.x) >= Math.abs(to.y - from.y) ? (to.x >= from.x ? 'right' : 'left') : (to.y >= from.y ? 'bottom' : 'top')
+  const toSide: NodeAnchorSide = fromSide === 'right' ? 'left' : fromSide === 'left' ? 'right' : fromSide === 'bottom' ? 'top' : 'bottom'
   const start = getNodeAnchor(from, fromSide)
   const end = getNodeAnchor(to, toSide)
-
-  if (vertical) {
-    const direction = end.y >= start.y ? 1 : -1
-    const bend = Math.max(34, Math.abs(end.y - start.y) * .34)
-    return `M ${start.x} ${start.y} C ${start.x} ${start.y + direction * bend}, ${end.x} ${end.y - direction * bend}, ${end.x} ${end.y}`
-  }
-
-  const direction = end.x >= start.x ? 1 : -1
-  const bend = Math.max(34, Math.abs(end.x - start.x) * .42)
-  return `M ${start.x} ${start.y} C ${start.x + direction * bend} ${start.y}, ${end.x - direction * bend} ${end.y}, ${end.x} ${end.y}`
+  return `M ${start.x} ${start.y} L ${end.x} ${end.y}`
 }
 
 interface ConnectionGeometry {
@@ -58,10 +46,18 @@ interface ConnectionGeometry {
   toId: string
   kind: 'main' | 'branch'
   path: string
-  fromAnchor: { x: number; y: number }
   locked: boolean
   completed: boolean
   finalApproach: boolean
+}
+
+interface BranchRailGeometry {
+  id: string
+  path: string
+  nodeIds: string[]
+  junctions: Array<{ x: number; y: number }>
+  locked: boolean
+  completed: boolean
 }
 
 export function CombatActTree({ act, selectedNodeId, onSelect, onEnter }: { act: CombatActViewModel; selectedNodeId: string; onSelect: (id: string) => void; onEnter: (id: string) => boolean }) {
@@ -71,20 +67,39 @@ export function CombatActTree({ act, selectedNodeId, onSelect, onEnter }: { act:
     const to = nodeById.get(connection.to)
     if (!from || !to) return []
     const kind = connection.kind ?? 'main'
-    const vertical = Math.abs(to.y - from.y) > Math.abs(to.x - from.x) * .8
-    const fromSide: NodeAnchorSide = vertical ? (to.y >= from.y ? 'bottom' : 'top') : (to.x >= from.x ? 'right' : 'left')
     return [{
       id: `${connection.from}-${connection.to}`,
       fromId: connection.from,
       toId: connection.to,
       kind,
       path: getConnectionPath(from, to),
-      fromAnchor: getNodeAnchor(from, fromSide),
       locked: from.state === 'locked' || to.state === 'locked',
       completed: from.state === 'completed' && to.state === 'completed',
       finalApproach: to.kind === 'final',
     }]
   }), [act.connections, nodeById])
+  const branchRailGeometry = useMemo<BranchRailGeometry[]>(() => (act.definition.branchRails ?? []).map((rail) => {
+    const paths = [`M ${rail.x} ${rail.y1} L ${rail.x} ${rail.y2}`]
+    const junctions: Array<{ x: number; y: number }> = []
+    const nodeIds = [...(rail.anchor ? [rail.anchor.nodeId] : []), ...rail.stubs.map((stub) => stub.nodeId)]
+    const branchNodes = rail.stubs.map((stub) => nodeById.get(stub.nodeId)).filter((node): node is CombatActNodeViewModel => Boolean(node))
+    if (rail.anchor) {
+      const anchorNode = nodeById.get(rail.anchor.nodeId)
+      if (anchorNode) {
+        const start = getNodeAnchor(anchorNode, 'right')
+        paths.push(`M ${start.x} ${rail.anchor.y} L ${rail.x} ${rail.anchor.y}`)
+        junctions.push({ x: rail.x, y: rail.anchor.y })
+      }
+    }
+    rail.stubs.forEach((stub) => {
+      const node = nodeById.get(stub.nodeId)
+      if (!node) return
+      const end = getNodeAnchor(node, 'left')
+      paths.push(`M ${rail.x} ${stub.y} L ${end.x} ${stub.y}`)
+      junctions.push({ x: rail.x, y: stub.y })
+    })
+    return { id: rail.id, path: paths.join(' '), nodeIds, junctions, locked: branchNodes.length > 0 && branchNodes.every((node) => node.state === 'locked'), completed: branchNodes.length > 0 && branchNodes.every((node) => node.state === 'completed') }
+  }), [act.definition.branchRails, nodeById])
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null)
 
   return <CombatProgressionViewport stage={act.definition.stage} contentBounds={getContentBounds(act)} resetKey={act.id} ariaLabel={`${act.label} ${act.title} progression tree`}>
@@ -99,8 +114,18 @@ export function CombatActTree({ act, selectedNodeId, onSelect, onEnter }: { act:
           {selectedPath && <path key={`${connection.id}-${selectedNodeId}`} className={`combat-progression-connection-sweep is-${connection.kind}`} pathLength={1} d={connection.path} />}
         </g>
       })}
+      {branchRailGeometry.map((rail) => {
+        const selectedRail = rail.nodeIds.includes(selectedNodeId)
+        const hoveredRail = hoveredNodeId !== null && rail.nodeIds.includes(hoveredNodeId)
+        const stateClass = `${selectedRail ? ' is-selected' : ''}${hoveredRail ? ' is-hovered' : ''}`
+        return <g key={rail.id}>
+          <path className={`combat-progression-connection-underlay is-branch${rail.locked ? ' is-locked' : ''}${rail.completed ? ' is-completed' : ''}${stateClass}`} d={rail.path} />
+          <path className={`combat-progression-connection is-branch${rail.locked ? ' is-locked' : ''}${rail.completed ? ' is-completed' : ''}${stateClass}`} d={rail.path} />
+          {selectedRail && <path className="combat-progression-connection-sweep is-branch" pathLength={1} d={rail.path} />}
+        </g>
+      })}
     </svg>
-    {connectionGeometry.filter((connection) => connection.kind === 'branch').map((connection) => <span key={`${connection.id}-junction`} className="combat-progression-junction" style={{ left: `${connection.fromAnchor.x}px`, top: `${connection.fromAnchor.y}px` }} aria-hidden="true" />)}
+    {branchRailGeometry.flatMap((rail) => rail.junctions.map((junction, index) => <span key={`${rail.id}-junction-${index}`} className="combat-progression-junction" style={{ left: `${junction.x}px`, top: `${junction.y}px` }} aria-hidden="true" />))}
     {act.chapters.map((chapter) => <div key={chapter.id} className="combat-progression-chapter" style={{ left: `${chapter.startX}px`, width: `${chapter.endX - chapter.startX}px` }}><span>{chapter.label}</span><i aria-hidden="true" /></div>)}
     {act.nodes.map((node) => <CombatActNode key={node.id} node={node} selected={node.id === selectedNodeId} onSelect={onSelect} onEnter={onEnter} onHover={setHoveredNodeId} />)}
   </CombatProgressionViewport>

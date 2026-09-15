@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { DUNGEONS, DUNGEON_ORDER, isDungeonUnlocked } from './dungeons'
+import { ACT1_DUNGEONS } from './act1'
 import { MONSTERS, validateMonsterDefinitions } from '../monsters'
+import { ACT1_MONSTERS } from '../monsters/act1'
 import { STATUS_DEFINITIONS } from '../statuses'
 import { TRAIT_DEFINITIONS } from '../traits'
 import type { CombatSource } from '../../types'
@@ -33,6 +35,18 @@ describe('Act 0 and Act 1 dungeon content', () => {
     expect(isDungeonUnlocked(DUNGEONS['fractured-approach'], state.progress)).toBe(true)
     expect(DUNGEONS['fractured-approach']).toMatchObject({ threatRequired: 35, boss: 'corrupted-elemental-gatekeeper', encounterDelayMs: 5000 })
     expect(DUNGEONS['fractured-approach'].monsterPool).toEqual(['warded-husk', 'rift-wolf', 'arcane-scavenger', 'withered-watcher'])
+  })
+
+  it('keeps Act 1 monster ownership aligned with every authored dungeon', () => {
+    expect(ACT1_DUNGEONS).toHaveLength(12)
+    expect(Object.keys(ACT1_MONSTERS)).toHaveLength(60)
+    for (const dungeon of ACT1_DUNGEONS) {
+      expect(dungeon.monsterPool).toHaveLength(4)
+      expect(dungeon.boss).toBeTruthy()
+      dungeon.monsterPool.forEach((monsterId) => expect(ACT1_MONSTERS[monsterId]).toBeDefined())
+      expect(ACT1_MONSTERS[dungeon.boss]).toBeDefined()
+      expect(dungeon.monsterPool).not.toContain(dungeon.boss)
+    }
   })
 
   it('requires every upstream boss for Act 1 convergence dungeons', () => {

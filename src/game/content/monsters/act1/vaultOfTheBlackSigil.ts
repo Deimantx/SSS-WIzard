@@ -1,2 +1,13 @@
-import { ACT1_MONSTERS } from './act1Monsters'
-export const VAULT_OF_THE_BLACK_SIGIL_MONSTERS = Object.fromEntries(['sigil-guardian', 'black-seal-parasite', 'vault-devourer', 'inkbound-specter', 'sigil-warden'].map((id) => [id, ACT1_MONSTERS[id as keyof typeof ACT1_MONSTERS]]))
+import type { MonsterId } from '../../../types'
+import { makeAct1Monster, type Act1MonsterSpec } from './act1MonsterFactory'
+import type { MonsterDefinition } from '../monsterTypes'
+
+const specs: Act1MonsterSpec[] = [
+  { dungeonId: 'vault-of-the-black-sigil', id: 'sigil-guardian', name: 'Sigil Guardian', subtitle: 'A vault sentinel covered in self-renewing wards', hp: 3500, damage: 120, defense: 78, trait: 'sigil-guardian-ward', specials: [{ id: 'sigil-ward', name: 'Sigil Ward', barrier: .1 }, { id: 'guardian-crush', name: 'Guardian Crush', damage: [{ type: 'physical', coefficient: 1.5 }] }] },
+  { dungeonId: 'vault-of-the-black-sigil', id: 'black-seal-parasite', name: 'Black Seal Parasite', subtitle: 'A crawling mark that feeds on every protective seal', hp: 3375, damage: 130, defense: 44, trait: 'black-seal-parasite-corruption', specials: [{ id: 'corrupting-bite', name: 'Corrupting Bite', damage: [{ type: 'physical', coefficient: 1.2 }], status: { id: 'corruption' } }, { id: 'black-pulse', name: 'Black Pulse', status: { id: 'cursed' } }] },
+  { dungeonId: 'vault-of-the-black-sigil', id: 'vault-devourer', name: 'Vault Devourer', subtitle: 'A keeper-beast that consumes stored magic', hp: 4000, damage: 128, defense: 65, trait: 'vault-devourer-regrowth', specials: [{ id: 'devour-ward', name: 'Devour Ward', damage: [{ type: 'arcane', coefficient: 1.45 }] }, { id: 'dark-regrowth', name: 'Dark Regrowth', status: { id: 'regeneration', target: 'self' } }] },
+  { dungeonId: 'vault-of-the-black-sigil', id: 'inkbound-specter', name: 'Inkbound Specter', subtitle: 'A ghost trapped inside an unfinished black contract', hp: 3875, damage: 124, defense: 50, resistances: { physical: .25 }, trait: 'inkbound-specter-curse', icon: { portraitIcon: 'ghost' }, specials: [{ id: 'black-ink', name: 'Black Ink', damage: [{ type: 'arcane', coefficient: 1.2 }], status: { id: 'cursed' } }, { id: 'ink-slip', name: 'Ink Slip', status: { id: 'spectral-fade', target: 'self' } }] },
+  { dungeonId: 'vault-of-the-black-sigil', id: 'sigil-warden', name: 'Sigil Warden', subtitle: 'The vault’s lock given a body and a hunger', hp: 44000, damage: 150, defense: 95, resistances: { arcane: .2 }, trait: 'sigil-guardian-ward', boss: true, lifeEssence: { min: 25, max: 55 }, specials: [{ id: 'black-sigil', name: 'Black Sigil', status: { id: 'corruption' } }, { id: 'containment-ward', name: 'Containment Ward', barrier: .1 }, { id: 'vault-crush', name: 'Vault Crush', damage: [{ type: 'physical', coefficient: 1.65 }] }, { id: 'forbidden-seal', name: 'Forbidden Seal', status: { id: 'cursed' } }, { id: 'sigil-rupture', name: 'Sigil Rupture', damage: [{ type: 'arcane', coefficient: 2.3 }] }] }
+]
+
+export const VAULT_OF_THE_BLACK_SIGIL_MONSTERS = Object.fromEntries(specs.map((spec) => [spec.id, makeAct1Monster(spec)])) as Record<MonsterId, MonsterDefinition>

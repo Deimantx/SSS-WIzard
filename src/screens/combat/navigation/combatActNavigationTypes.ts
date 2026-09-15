@@ -28,6 +28,16 @@ export interface CombatActConnection {
   kind?: 'main' | 'branch'
 }
 
+/** Presentation-only rail geometry. It never determines dungeon unlocks. */
+export interface CombatActBranchRail {
+  id: string
+  x: number
+  y1: number
+  y2: number
+  anchor?: { nodeId: string; y: number }
+  stubs: Array<{ nodeId: string; y: number }>
+}
+
 export interface CombatChapterDefinition {
   id: string
   label: string
@@ -45,6 +55,7 @@ export interface CombatActDefinition {
   stage: { width: number; height: number }
   nodes: CombatActNodeDefinition[]
   connections: CombatActConnection[]
+  branchRails?: CombatActBranchRail[]
   chapters?: CombatChapterDefinition[]
 }
 

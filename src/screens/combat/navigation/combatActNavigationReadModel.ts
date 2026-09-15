@@ -50,6 +50,11 @@ const getDungeonNodeState = (dungeonId: DungeonId, progress: CombatActNavigation
 
 const getStateLabel = (state: CombatActNodeState) => state === 'locked' ? 'LOCKED' : state === 'available' ? 'AVAILABLE' : state === 'active' ? 'ACTIVE' : state === 'boss-ready' ? 'BOSS READY' : state === 'completed' ? 'CLEARED' : 'PROTOTYPE'
 
+export const getCombatActRouteState = (nodeStates: readonly CombatActNodeState[]) => ({
+  locked: nodeStates.length > 0 && nodeStates.some((state) => state === 'locked'),
+  completed: nodeStates.length > 0 && nodeStates.every((state) => state === 'completed'),
+})
+
 const buildEncounter = (monsterId: import('../../../game/types').MonsterId, role: 'normal' | 'boss', progress: CombatActNavigationProgress): CombatActNodeViewModel['encounters'][number] => {
   const known = progress.discoveredMonsters.includes(monsterId)
   return { id: monsterId, monsterId, role, name: known ? MONSTERS[monsterId].name : role === 'boss' ? 'UNKNOWN BOSS' : 'UNKNOWN CREATURE', known }

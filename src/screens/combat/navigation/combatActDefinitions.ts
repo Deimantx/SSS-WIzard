@@ -23,7 +23,9 @@ const act1Nodes = [
 
 const MAIN_Y = 430
 const act1RouteSegments: CombatActRouteSegment[] = [
-  { id: 'main-spine', x1: 315, y1: MAIN_Y, x2: 1930, y2: MAIN_Y, kind: 'main', nodeIds: ['fractured-approach', 'crossroads-of-ruin', 'broken-meridian', 'black-gate'] },
+  { id: 'main-t2-to-t25', x1: 315, y1: MAIN_Y, x2: 605, y2: MAIN_Y, kind: 'main', nodeIds: ['fractured-approach', 'crossroads-of-ruin'] },
+  { id: 'main-t25-to-t210', x1: 795, y1: MAIN_Y, x2: 1085, y2: MAIN_Y, kind: 'main', nodeIds: ['crossroads-of-ruin', 'broken-meridian'] },
+  { id: 'main-t210-to-t212', x1: 1275, y1: MAIN_Y, x2: 1930, y2: MAIN_Y, kind: 'main', nodeIds: ['broken-meridian', 'black-gate'], finalApproach: true },
   { id: 'first-upper-vertical', x1: 500, y1: 150, x2: 500, y2: MAIN_Y, kind: 'branch', nodeIds: ['ashen-watch', 'flooded-reliquary'] },
   { id: 'first-t23-stub', x1: 500, y1: 150, x2: 605, y2: 150, kind: 'branch', nodeIds: ['ashen-watch'] },
   { id: 'first-t22-stub', x1: 500, y1: 290, x2: 605, y2: 290, kind: 'branch', nodeIds: ['flooded-reliquary'] },
@@ -52,7 +54,7 @@ export const COMBAT_ACT_DEFINITIONS: readonly CombatActDefinition[] = [
       { from: 'fractured-approach', to: 'crossroads-of-ruin', kind: 'main' }, { from: 'crossroads-of-ruin', to: 'broken-meridian', kind: 'main' }, { from: 'broken-meridian', to: 'black-gate', kind: 'main' },
     ],
     routeSegments: act1RouteSegments,
-    chapters: [{ id: 'chapter-i', label: 'CHAPTER I', startX: 100, endX: 620 }, { id: 'chapter-ii', label: 'CHAPTER II', startX: 700, endX: 1190 }, { id: 'chapter-iii', label: 'CHAPTER III', startX: 1270, endX: 2120 }],
+    chapters: [],
   },
 ]
 

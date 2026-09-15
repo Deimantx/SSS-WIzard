@@ -5,7 +5,12 @@ export type ElementId = SchoolId
 export type ScreenId = 'home' | 'combat' | 'schools' | 'inventory' | 'equipment' | 'collection' | 'bestiary' | 'tower-channeling' | 'tower-focus' | 'tower-research' | 'tower-transmutation' | 'tower-artificing' | 'tower-summoning' | 'tower-dark-portal' | 'guild' | 'settings'
 export type ActivityStatus = 'running' | 'mana-limited' | 'paused' | 'waiting-mana' | 'waiting-focus' | 'completed' | 'locked' | 'recovering'
 
+/**
+ * Canonical item IDs grouped by authored ownership. Keep this list aligned
+ * with src/game/content/items/shared, act0, and act1.
+ */
 export type ItemId =
+  // Shared / global materials
   | 'fire-fragment'
   | 'water-fragment'
   | 'earth-fragment'
@@ -13,45 +18,99 @@ export type ItemId =
   | 'prismatic-fragment'
   | 'artifact-essence'
   | 'life-essence'
+  // Act 0 — Artifacts
   | 'ember-staff'
   | 'tideglass-wand'
   | 'stoneheart-scepter'
   | 'windthread-wand'
   | 'wispweave-robe'
-  | 'windthread-charm'
-  | 'heartseed-necklace'
   | 'wispveil-hood'
+  // Act 0 — Whispering Woods
+  | 'windthread-charm'
   | 'grovekeeper-mantle'
-  | 'wispbound-ring'
   | 'wispglass-earring'
+  | 'wispbound-ring'
+  | 'heartseed-necklace'
+  // Act 0 — Howling Den
   | 'predator-hide-mantle'
   | 'fangwire-earring'
   | 'howling-signet'
   | 'greatbear-heartstone'
-  | 'black-portal-shard'
+  // Act 0 — Abandoned Catacombs
   | 'ossuary-mantle'
   | 'mourning-glass-earring'
-  | 'soulglass-amulet'
   | 'gravebinder-ring'
+  | 'soulglass-amulet'
   | 'edrins-signet'
+  | 'black-portal-shard'
+  // Act 1 — Artifacts
+  | 'galeshard-staff'
+  | 'reliquary-scepter'
+  | 'pyrebound-staff'
+  | 'rootheart-scepter'
+  // Act 1 — Fractured Approach
   | 'galeglass-earring'
   | 'riftwind-ring'
   | 'waystone-pendant'
   | 'fractured-ward-mantle'
   | 'gatekeeper-sigil'
-  | 'galeshard-staff'
-  | 'reliquary-scepter' | 'pyrebound-staff' | 'rootheart-scepter'
-  | 'mistglass-earring' | 'reliquary-ring' | 'drowned-chain-pendant' | 'keepers-tide-seal'
-  | 'cinderwire-earring' | 'ashbrand-ring' | 'emberwatch-mantle' | 'revenant-emberstone'
-  | 'briar-earring' | 'rootbound-ring' | 'mossguard-mantle' | 'ancient-heart-knot'
-  | 'wayfarer-earring' | 'crossroads-signet' | 'confluence-pendant' | 'keepers-roadseal'
-  | 'graveglass-earring' | 'shardbone-ring' | 'mourner-veil-mantle' | 'behemoth-heartshard'
-  | 'voltglass-earring' | 'stormcoil-ring' | 'gale-scribe-pendant' | 'archivists-conductor'
-  | 'starfall-ring' | 'lenskeeper-earring' | 'astral-pendant' | 'fallen-astromancer-lens'
-  | 'meridian-ring' | 'linebreaker-earring' | 'fractured-conduit-pendant' | 'leyline-mantle' | 'splitters-meridian-core'
-  | 'nameless-ring' | 'whisper-earring' | 'unbound-seal-pendant' | 'prelates-unspoken-seal'
-  | 'black-sigil-ring' | 'inkbound-earring' | 'vaultseal-mantle' | 'wardens-black-sigil'
-  | 'gatebound-ring' | 'portal-echo-earring' | 'blackgate-pendant' | 'voidward-mantle' | 'black-gatekeepers-seal'
+  // Act 1 — Flooded Reliquary
+  | 'mistglass-earring'
+  | 'reliquary-ring'
+  | 'drowned-chain-pendant'
+  | 'keepers-tide-seal'
+  // Act 1 — Ashen Watch
+  | 'cinderwire-earring'
+  | 'ashbrand-ring'
+  | 'emberwatch-mantle'
+  | 'revenant-emberstone'
+  // Act 1 — Rootscar Hollow
+  | 'briar-earring'
+  | 'rootbound-ring'
+  | 'mossguard-mantle'
+  | 'ancient-heart-knot'
+  // Act 1 — Crossroads of Ruin
+  | 'wayfarer-earring'
+  | 'crossroads-signet'
+  | 'confluence-pendant'
+  | 'keepers-roadseal'
+  // Act 1 — Graveglass Hollow
+  | 'graveglass-earring'
+  | 'shardbone-ring'
+  | 'mourner-veil-mantle'
+  | 'behemoth-heartshard'
+  // Act 1 — Stormvault Gallery
+  | 'voltglass-earring'
+  | 'stormcoil-ring'
+  | 'gale-scribe-pendant'
+  | 'archivists-conductor'
+  // Act 1 — Starfallen Observatory
+  | 'starfall-ring'
+  | 'lenskeeper-earring'
+  | 'astral-pendant'
+  | 'fallen-astromancer-lens'
+  // Act 1 — Broken Meridian
+  | 'meridian-ring'
+  | 'linebreaker-earring'
+  | 'fractured-conduit-pendant'
+  | 'leyline-mantle'
+  | 'splitters-meridian-core'
+  // Act 1 — Hall of Unbound Names
+  | 'nameless-ring'
+  | 'whisper-earring'
+  | 'unbound-seal-pendant'
+  | 'prelates-unspoken-seal'
+  // Act 1 — Vault of the Black Sigil
+  | 'black-sigil-ring'
+  | 'inkbound-earring'
+  | 'vaultseal-mantle'
+  | 'wardens-black-sigil'
+  // Act 1 — Black Gate
+  | 'gatebound-ring'
+  | 'portal-echo-earring'
+  | 'blackgate-pendant'
+  | 'voidward-mantle'
+  | 'black-gatekeepers-seal'
 
 export type StoryEventId = 'edrin-dark-portal-discovery'
 
@@ -74,7 +133,20 @@ export type BestiaryCategory = 'monster' | 'boss'
 export type DungeonId = 'whispering-woods' | 'howling-den' | 'abandoned-catacombs' | 'fractured-approach' | 'flooded-reliquary' | 'ashen-watch' | 'rootscar-hollow' | 'crossroads-of-ruin' | 'graveglass-hollow' | 'stormvault-gallery' | 'starfallen-observatory' | 'broken-meridian' | 'hall-of-unbound-names' | 'vault-of-the-black-sigil' | 'black-gate'
 export type EquipmentItemSlot = 'weapon' | 'armor' | 'helmet' | 'cape' | 'amulet' | 'earring' | 'ring'
 export type EquipmentPosition = 'weapon' | 'armor' | 'head' | 'cape' | 'necklace' | 'earring1' | 'earring2' | 'ring1' | 'ring2'
-export type ArtifactId = 'ember-staff' | 'tideglass-wand' | 'stoneheart-scepter' | 'windthread-wand' | 'wispweave-robe' | 'wispveil-hood' | 'galeshard-staff' | 'reliquary-scepter' | 'pyrebound-staff' | 'rootheart-scepter'
+/** Permanent Artifacts grouped by authored Act ownership. */
+export type ArtifactId =
+  // Act 0 Artifacts
+  | 'ember-staff'
+  | 'tideglass-wand'
+  | 'stoneheart-scepter'
+  | 'windthread-wand'
+  | 'wispweave-robe'
+  | 'wispveil-hood'
+  // Act 1 Artifacts
+  | 'galeshard-staff'
+  | 'reliquary-scepter'
+  | 'pyrebound-staff'
+  | 'rootheart-scepter'
 export type EquipmentBuildTag = 'spell' | 'basic-attack' | 'hybrid' | 'crit' | 'status' | 'dot' | 'barrier' | 'defense' | 'sustain' | 'mana' | 'focus' | 'healing' | 'fire' | 'water' | 'earth' | 'air'
 export type EquipmentBudgetProfileId = 'standard' | 'signature' | 'boss'
 /** @deprecated Use EquipmentItemSlot for item metadata or EquipmentPosition for loadout state. */

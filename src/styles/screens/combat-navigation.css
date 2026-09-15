@@ -515,18 +515,6 @@
   opacity: 0;
 }
 
-.combat-progression-junction {
-  position: absolute;
-  z-index: 1;
-  width: 7px;
-  height: 7px;
-  border: 1px solid color-mix(in srgb, var(--ui-gold) 76%, var(--ui-border));
-  background: var(--ui-panel-strong);
-  box-shadow: 0 0 8px color-mix(in srgb, var(--ui-gold) 28%, transparent);
-  pointer-events: none;
-  transform: translate(-50%, -50%) rotate(45deg);
-}
-
 .combat-progression-chapter {
   position: absolute;
   z-index: 1;

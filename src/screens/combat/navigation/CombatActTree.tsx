@@ -4,6 +4,7 @@ import { GameTooltip } from '../../../components/ui'
 import { TooltipContent } from '../../../components/ui/tooltip/Tooltip'
 import { emitGameFeelEvent } from '../../../ui/game-feel/gameFeelStore'
 import { CombatProgressionViewport, type ProgressionBounds } from './CombatProgressionViewport'
+import { getCombatActRouteState } from './combatActNavigationReadModel'
 import type { CombatActNodeViewModel, CombatActRouteSegment, CombatActViewModel } from './combatActNavigationTypes'
 
 const nodeBounds = { width: 190, height: 170 }
@@ -58,40 +59,15 @@ interface RouteGeometry {
   finalApproach: boolean
 }
 
-const getRouteJunctions = (routes: RouteGeometry[]) => {
-  const junctions = new Map<string, { x: number; y: number }>()
-  const addJunction = (x: number, y: number) => junctions.set(`${x}:${y}`, { x, y })
-  const mainHorizontalY = routes.find((route) => route.kind === 'main' && route.y1 === route.y2 && route.x1 !== route.x2)?.y1
-
-  routes.forEach((route) => {
-    if (route.kind !== 'branch') return
-    if (route.x1 === route.x2) {
-      addJunction(route.x1, route.y1)
-      addJunction(route.x2, route.y2)
-      if (mainHorizontalY !== undefined && Math.min(route.y1, route.y2) <= mainHorizontalY && mainHorizontalY <= Math.max(route.y1, route.y2)) addJunction(route.x1, mainHorizontalY)
-    } else if (route.y1 === route.y2) {
-      addJunction(route.x1, route.y1)
-    }
-  })
-
-  return [...junctions.values()]
-}
-
 export function CombatActTree({ act, selectedNodeId, onSelect, onEnter }: { act: CombatActViewModel; selectedNodeId: string; onSelect: (id: string) => void; onEnter: (id: string) => boolean }) {
   const nodeById = useMemo(() => new Map(act.nodes.map((node) => [node.id, node])), [act.nodes])
   const routeGeometry = useMemo<RouteGeometry[]>(() => {
-    const getState = (nodeIds: string[]) => {
-      const relatedNodes = nodeIds.map((nodeId) => nodeById.get(nodeId)).filter((node): node is CombatActNodeViewModel => Boolean(node))
-      return {
-        locked: relatedNodes.length > 0 && relatedNodes.every((node) => node.state === 'locked'),
-        completed: relatedNodes.length > 0 && relatedNodes.every((node) => node.state === 'completed'),
-      }
-    }
+    const getState = (nodeIds: string[]) => getCombatActRouteState(nodeIds.map((nodeId) => nodeById.get(nodeId)?.state).filter((state): state is CombatActNodeViewModel['state'] => Boolean(state)))
 
     if (act.definition.routeSegments?.length) return act.definition.routeSegments.map((segment) => {
       const nodeIds = [...(segment.nodeIds ?? [])]
       const state = getState(nodeIds)
-      return { id: segment.id, x1: segment.x1, y1: segment.y1, x2: segment.x2, y2: segment.y2, nodeIds, kind: segment.kind, path: getRouteSegmentPath(segment), ...state, finalApproach: false }
+      return { id: segment.id, x1: segment.x1, y1: segment.y1, x2: segment.x2, y2: segment.y2, nodeIds, kind: segment.kind, path: getRouteSegmentPath(segment), ...state, finalApproach: segment.finalApproach ?? false }
     })
 
     return act.connections.flatMap((connection) => {
@@ -104,7 +80,6 @@ export function CombatActTree({ act, selectedNodeId, onSelect, onEnter }: { act:
       return [{ id: `${connection.from}-${connection.to}`, x1: start.x, y1: start.y, x2: end.x, y2: end.y, nodeIds, kind: connection.kind ?? 'main', path: getConnectionPath(from, to), ...state, finalApproach: to.kind === 'final' }]
     })
   }, [act.connections, act.definition.routeSegments, nodeById])
-  const routeJunctions = useMemo(() => getRouteJunctions(routeGeometry), [routeGeometry])
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null)
 
   return <CombatProgressionViewport stage={act.definition.stage} contentBounds={getContentBounds(act)} resetKey={act.id} ariaLabel={`${act.label} ${act.title} progression tree`}>
@@ -120,7 +95,6 @@ export function CombatActTree({ act, selectedNodeId, onSelect, onEnter }: { act:
         </g>
       })}
     </svg>
-    {routeJunctions.map((junction) => <span key={`${junction.x}:${junction.y}`} className="combat-progression-junction" style={{ left: `${junction.x}px`, top: `${junction.y}px` }} aria-hidden="true" />)}
     {act.chapters.map((chapter) => <div key={chapter.id} className="combat-progression-chapter" style={{ left: `${chapter.startX}px`, width: `${chapter.endX - chapter.startX}px` }}><span>{chapter.label}</span><i aria-hidden="true" /></div>)}
     {act.nodes.map((node) => <CombatActNode key={node.id} node={node} selected={node.id === selectedNodeId} onSelect={onSelect} onEnter={onEnter} onHover={setHoveredNodeId} />)}
   </CombatProgressionViewport>

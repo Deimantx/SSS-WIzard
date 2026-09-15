@@ -37,6 +37,7 @@ export interface CombatActRouteSegment {
   y2: number
   kind: 'main' | 'branch'
   nodeIds?: string[]
+  finalApproach?: boolean
 }
 
 export interface CombatChapterDefinition {

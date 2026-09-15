@@ -33,7 +33,7 @@ describe('Artificing equipment catalog filters', () => {
 
     const tierFilter = screen.getByRole('group', { name: 'TIER' })
     expect(within(tierFilter).getByRole('button', { name: 'ALL' }).getAttribute('aria-pressed')).toBe('true')
-    expect(screen.getByText('6 SHOWN')).toBeTruthy()
+    expect(screen.getByText('7 SHOWN')).toBeTruthy()
 
     fireEvent.click(within(tierFilter).getByRole('button', { name: 'T2' }))
     expect(within(tierFilter).getByRole('button', { name: 'T2' }).getAttribute('aria-pressed')).toBe('true')
@@ -63,7 +63,7 @@ describe('Artificing equipment catalog filters', () => {
     expect(screen.queryByRole('region', { name: 'EQUIPMENT' })).toBeNull()
 
     fireEvent.click(within(craftType).getByRole('button', { name: 'ARTIFACTS' }))
-    expect(screen.getByText('6 SHOWN')).toBeTruthy()
+    expect(screen.getByText('7 SHOWN')).toBeTruthy()
     expect(screen.getByText('Ember Staff')).toBeTruthy()
     expect(screen.queryByText('Windthread Charm')).toBeNull()
     expect(within(craftType).getByRole('button', { name: 'ARTIFACTS' }).getAttribute('aria-pressed')).toBe('true')

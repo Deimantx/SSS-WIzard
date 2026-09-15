@@ -60,7 +60,7 @@ const buildPrototypeEncounters = (nodeId: string): CombatActNodeViewModel['encou
 const buildNode = (definition: CombatActNodeDefinition, progress: CombatActNavigationProgress, combat: CombatState): CombatActNodeViewModel => {
   if (definition.dungeonId === null || definition.prototype) {
     const prerequisiteDungeon = definition.requiresDungeonCompletion ? DUNGEONS[definition.requiresDungeonCompletion] : null
-    const prerequisiteMet = !prerequisiteDungeon || isDungeonCompleted(prerequisiteDungeon.id, progress)
+    const prerequisiteMet = Boolean(prerequisiteDungeon && isDungeonCompleted(prerequisiteDungeon.id, progress))
     return { ...definition, name: definition.name ?? 'Prototype Area', description: definition.description ?? 'Temporary navigation prototype used to validate future Act structure.', state: prerequisiteMet ? 'available' : 'prototype', statusLabel: prerequisiteMet ? 'AVAILABLE' : 'PROTOTYPE', unlockText: prerequisiteMet ? null : `Complete ${prerequisiteDungeon?.name ?? 'the previous dungeon'} to reveal this route.`, encounters: buildPrototypeEncounters(definition.id), boss: { id: `${definition.id}-boss`, monsterId: null, role: 'boss', name: 'UNKNOWN BOSS', known: false }, threatRequired: null, threatCleared: 0, normalKills: 0, bossClears: 0 }
   }
   const dungeon = DUNGEONS[definition.dungeonId]

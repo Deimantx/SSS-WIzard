@@ -39,6 +39,7 @@ export type ItemId =
   | 'waystone-pendant'
   | 'fractured-ward-mantle'
   | 'gatekeeper-sigil'
+  | 'galeshard-staff'
 
 export type StoryEventId = 'edrin-dark-portal-discovery'
 

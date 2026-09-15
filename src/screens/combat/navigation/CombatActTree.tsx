@@ -4,12 +4,11 @@ import { GameTooltip } from '../../../components/ui'
 import { TooltipContent } from '../../../components/ui/tooltip/Tooltip'
 import { emitGameFeelEvent } from '../../../ui/game-feel/gameFeelStore'
 import { CombatProgressionViewport, type ProgressionBounds } from './CombatProgressionViewport'
-import type { CombatActNodeViewModel, CombatActViewModel } from './combatActNavigationTypes'
+import type { CombatActNodeViewModel, CombatActRouteSegment, CombatActViewModel } from './combatActNavigationTypes'
 
 const nodeBounds = { width: 190, height: 170 }
 
 const getNodeDimensions = (node: CombatActNodeViewModel) => node.kind === 'final' ? { width: 240, height: 198 } : node.kind === 'branch' ? { width: 190, height: 158 } : nodeBounds
-const getNodeSquareSize = (node: CombatActNodeViewModel) => node.kind === 'final' ? 72 : node.kind === 'branch' ? 48 : 58
 
 const getContentBounds = (act: CombatActViewModel): ProgressionBounds => {
   const left = Math.min(...act.nodes.map((node) => node.x - getNodeDimensions(node).width / 2 - 24))
@@ -24,26 +23,34 @@ const getNodeIcon = (node: CombatActNodeViewModel) => node.prototype ? Sparkles 
 
 type NodeAnchorSide = 'left' | 'right' | 'top' | 'bottom'
 
-const getNodeAnchor = (node: CombatActNodeViewModel, side: NodeAnchorSide) => {
-  const half = getNodeSquareSize(node) / 2
-  if (side === 'left') return { x: node.x - half, y: node.y }
-  if (side === 'right') return { x: node.x + half, y: node.y }
-  if (side === 'top') return { x: node.x, y: node.y - half }
-  return { x: node.x, y: node.y + half }
+const getNodeCardAnchor = (node: CombatActNodeViewModel, side: NodeAnchorSide) => {
+  const { width, height } = getNodeDimensions(node)
+  if (side === 'left') return { x: node.x - width / 2, y: node.y }
+  if (side === 'right') return { x: node.x + width / 2, y: node.y }
+  if (side === 'top') return { x: node.x, y: node.y - height / 2 }
+  return { x: node.x, y: node.y + height / 2 }
+}
+
+const getConnectionEndpoints = (from: CombatActNodeViewModel, to: CombatActNodeViewModel) => {
+  const fromSide: NodeAnchorSide = Math.abs(to.x - from.x) >= Math.abs(to.y - from.y) ? (to.x >= from.x ? 'right' : 'left') : (to.y >= from.y ? 'bottom' : 'top')
+  const toSide: NodeAnchorSide = fromSide === 'right' ? 'left' : fromSide === 'left' ? 'right' : fromSide === 'bottom' ? 'top' : 'bottom'
+  return { start: getNodeCardAnchor(from, fromSide), end: getNodeCardAnchor(to, toSide) }
 }
 
 const getConnectionPath = (from: CombatActNodeViewModel, to: CombatActNodeViewModel) => {
-  const fromSide: NodeAnchorSide = Math.abs(to.x - from.x) >= Math.abs(to.y - from.y) ? (to.x >= from.x ? 'right' : 'left') : (to.y >= from.y ? 'bottom' : 'top')
-  const toSide: NodeAnchorSide = fromSide === 'right' ? 'left' : fromSide === 'left' ? 'right' : fromSide === 'bottom' ? 'top' : 'bottom'
-  const start = getNodeAnchor(from, fromSide)
-  const end = getNodeAnchor(to, toSide)
+  const { start, end } = getConnectionEndpoints(from, to)
   return `M ${start.x} ${start.y} L ${end.x} ${end.y}`
 }
 
-interface ConnectionGeometry {
+const getRouteSegmentPath = (segment: CombatActRouteSegment) => `M ${segment.x1} ${segment.y1} L ${segment.x2} ${segment.y2}`
+
+interface RouteGeometry {
   id: string
-  fromId: string
-  toId: string
+  x1: number
+  y1: number
+  x2: number
+  y2: number
+  nodeIds: string[]
   kind: 'main' | 'branch'
   path: string
   locked: boolean
@@ -51,81 +58,69 @@ interface ConnectionGeometry {
   finalApproach: boolean
 }
 
-interface BranchRailGeometry {
-  id: string
-  path: string
-  nodeIds: string[]
-  junctions: Array<{ x: number; y: number }>
-  locked: boolean
-  completed: boolean
+const getRouteJunctions = (routes: RouteGeometry[]) => {
+  const junctions = new Map<string, { x: number; y: number }>()
+  const addJunction = (x: number, y: number) => junctions.set(`${x}:${y}`, { x, y })
+  const mainHorizontalY = routes.find((route) => route.kind === 'main' && route.y1 === route.y2 && route.x1 !== route.x2)?.y1
+
+  routes.forEach((route) => {
+    if (route.kind !== 'branch') return
+    if (route.x1 === route.x2) {
+      addJunction(route.x1, route.y1)
+      addJunction(route.x2, route.y2)
+      if (mainHorizontalY !== undefined && Math.min(route.y1, route.y2) <= mainHorizontalY && mainHorizontalY <= Math.max(route.y1, route.y2)) addJunction(route.x1, mainHorizontalY)
+    } else if (route.y1 === route.y2) {
+      addJunction(route.x1, route.y1)
+    }
+  })
+
+  return [...junctions.values()]
 }
 
 export function CombatActTree({ act, selectedNodeId, onSelect, onEnter }: { act: CombatActViewModel; selectedNodeId: string; onSelect: (id: string) => void; onEnter: (id: string) => boolean }) {
   const nodeById = useMemo(() => new Map(act.nodes.map((node) => [node.id, node])), [act.nodes])
-  const connectionGeometry = useMemo<ConnectionGeometry[]>(() => act.connections.flatMap((connection) => {
-    const from = nodeById.get(connection.from)
-    const to = nodeById.get(connection.to)
-    if (!from || !to) return []
-    const kind = connection.kind ?? 'main'
-    return [{
-      id: `${connection.from}-${connection.to}`,
-      fromId: connection.from,
-      toId: connection.to,
-      kind,
-      path: getConnectionPath(from, to),
-      locked: from.state === 'locked' || to.state === 'locked',
-      completed: from.state === 'completed' && to.state === 'completed',
-      finalApproach: to.kind === 'final',
-    }]
-  }), [act.connections, nodeById])
-  const branchRailGeometry = useMemo<BranchRailGeometry[]>(() => (act.definition.branchRails ?? []).map((rail) => {
-    const paths = [`M ${rail.x} ${rail.y1} L ${rail.x} ${rail.y2}`]
-    const junctions: Array<{ x: number; y: number }> = []
-    const nodeIds = [...(rail.anchor ? [rail.anchor.nodeId] : []), ...rail.stubs.map((stub) => stub.nodeId)]
-    const branchNodes = rail.stubs.map((stub) => nodeById.get(stub.nodeId)).filter((node): node is CombatActNodeViewModel => Boolean(node))
-    if (rail.anchor) {
-      const anchorNode = nodeById.get(rail.anchor.nodeId)
-      if (anchorNode) {
-        const start = getNodeAnchor(anchorNode, 'right')
-        paths.push(`M ${start.x} ${rail.anchor.y} L ${rail.x} ${rail.anchor.y}`)
-        junctions.push({ x: rail.x, y: rail.anchor.y })
+  const routeGeometry = useMemo<RouteGeometry[]>(() => {
+    const getState = (nodeIds: string[]) => {
+      const relatedNodes = nodeIds.map((nodeId) => nodeById.get(nodeId)).filter((node): node is CombatActNodeViewModel => Boolean(node))
+      return {
+        locked: relatedNodes.length > 0 && relatedNodes.every((node) => node.state === 'locked'),
+        completed: relatedNodes.length > 0 && relatedNodes.every((node) => node.state === 'completed'),
       }
     }
-    rail.stubs.forEach((stub) => {
-      const node = nodeById.get(stub.nodeId)
-      if (!node) return
-      const end = getNodeAnchor(node, 'left')
-      paths.push(`M ${rail.x} ${stub.y} L ${end.x} ${stub.y}`)
-      junctions.push({ x: rail.x, y: stub.y })
+
+    if (act.definition.routeSegments?.length) return act.definition.routeSegments.map((segment) => {
+      const nodeIds = [...(segment.nodeIds ?? [])]
+      const state = getState(nodeIds)
+      return { id: segment.id, x1: segment.x1, y1: segment.y1, x2: segment.x2, y2: segment.y2, nodeIds, kind: segment.kind, path: getRouteSegmentPath(segment), ...state, finalApproach: false }
     })
-    return { id: rail.id, path: paths.join(' '), nodeIds, junctions, locked: branchNodes.length > 0 && branchNodes.every((node) => node.state === 'locked'), completed: branchNodes.length > 0 && branchNodes.every((node) => node.state === 'completed') }
-  }), [act.definition.branchRails, nodeById])
+
+    return act.connections.flatMap((connection) => {
+      const from = nodeById.get(connection.from)
+      const to = nodeById.get(connection.to)
+      if (!from || !to) return []
+      const nodeIds = [connection.from, connection.to]
+      const state = getState(nodeIds)
+      const { start, end } = getConnectionEndpoints(from, to)
+      return [{ id: `${connection.from}-${connection.to}`, x1: start.x, y1: start.y, x2: end.x, y2: end.y, nodeIds, kind: connection.kind ?? 'main', path: getConnectionPath(from, to), ...state, finalApproach: to.kind === 'final' }]
+    })
+  }, [act.connections, act.definition.routeSegments, nodeById])
+  const routeJunctions = useMemo(() => getRouteJunctions(routeGeometry), [routeGeometry])
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null)
 
   return <CombatProgressionViewport stage={act.definition.stage} contentBounds={getContentBounds(act)} resetKey={act.id} ariaLabel={`${act.label} ${act.title} progression tree`}>
     <svg className="combat-progression-connections" viewBox={`0 0 ${act.definition.stage.width} ${act.definition.stage.height}`} aria-hidden="true" focusable="false">
-      {connectionGeometry.map((connection) => {
-        const selectedPath = selectedNodeId === connection.fromId || selectedNodeId === connection.toId
-        const hoveredPath = hoveredNodeId === connection.fromId || hoveredNodeId === connection.toId
+      {routeGeometry.map((route) => {
+        const selectedPath = route.nodeIds.includes(selectedNodeId)
+        const hoveredPath = hoveredNodeId !== null && route.nodeIds.includes(hoveredNodeId)
         const stateClass = `${selectedPath ? ' is-selected' : ''}${hoveredPath ? ' is-hovered' : ''}`
-        return <g key={connection.id}>
-          <path className={`combat-progression-connection-underlay is-${connection.kind}${connection.locked ? ' is-locked' : ''}${connection.completed ? ' is-completed' : ''}${connection.finalApproach ? ' is-final-approach' : ''}${stateClass}`} d={connection.path} />
-          <path className={`combat-progression-connection is-${connection.kind}${connection.locked ? ' is-locked' : ''}${connection.completed ? ' is-completed' : ''}${connection.finalApproach ? ' is-final-approach' : ''}${stateClass}`} d={connection.path} />
-          {selectedPath && <path key={`${connection.id}-${selectedNodeId}`} className={`combat-progression-connection-sweep is-${connection.kind}`} pathLength={1} d={connection.path} />}
-        </g>
-      })}
-      {branchRailGeometry.map((rail) => {
-        const selectedRail = rail.nodeIds.includes(selectedNodeId)
-        const hoveredRail = hoveredNodeId !== null && rail.nodeIds.includes(hoveredNodeId)
-        const stateClass = `${selectedRail ? ' is-selected' : ''}${hoveredRail ? ' is-hovered' : ''}`
-        return <g key={rail.id}>
-          <path className={`combat-progression-connection-underlay is-branch${rail.locked ? ' is-locked' : ''}${rail.completed ? ' is-completed' : ''}${stateClass}`} d={rail.path} />
-          <path className={`combat-progression-connection is-branch${rail.locked ? ' is-locked' : ''}${rail.completed ? ' is-completed' : ''}${stateClass}`} d={rail.path} />
-          {selectedRail && <path className="combat-progression-connection-sweep is-branch" pathLength={1} d={rail.path} />}
+        return <g key={route.id}>
+          <path className={`combat-progression-connection-underlay is-${route.kind}${route.locked ? ' is-locked' : ''}${route.completed ? ' is-completed' : ''}${route.finalApproach ? ' is-final-approach' : ''}${stateClass}`} d={route.path} />
+          <path className={`combat-progression-connection is-${route.kind}${route.locked ? ' is-locked' : ''}${route.completed ? ' is-completed' : ''}${route.finalApproach ? ' is-final-approach' : ''}${stateClass}`} d={route.path} />
+          {selectedPath && <path key={`${route.id}-${selectedNodeId}`} className={`combat-progression-connection-sweep is-${route.kind}`} pathLength={1} d={route.path} />}
         </g>
       })}
     </svg>
-    {branchRailGeometry.flatMap((rail) => rail.junctions.map((junction, index) => <span key={`${rail.id}-junction-${index}`} className="combat-progression-junction" style={{ left: `${junction.x}px`, top: `${junction.y}px` }} aria-hidden="true" />))}
+    {routeJunctions.map((junction) => <span key={`${junction.x}:${junction.y}`} className="combat-progression-junction" style={{ left: `${junction.x}px`, top: `${junction.y}px` }} aria-hidden="true" />)}
     {act.chapters.map((chapter) => <div key={chapter.id} className="combat-progression-chapter" style={{ left: `${chapter.startX}px`, width: `${chapter.endX - chapter.startX}px` }}><span>{chapter.label}</span><i aria-hidden="true" /></div>)}
     {act.nodes.map((node) => <CombatActNode key={node.id} node={node} selected={node.id === selectedNodeId} onSelect={onSelect} onEnter={onEnter} onHover={setHoveredNodeId} />)}
   </CombatProgressionViewport>

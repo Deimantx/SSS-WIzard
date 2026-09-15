@@ -41,7 +41,7 @@ describe('Act 1 campaign navigation', () => {
     expect(getDefaultCombatActNodeId('act-1', state.progress, state.combat, 'whispering-woods')).toBe('fractured-approach')
   })
 
-  it('keeps the Paint campaign branch order and presentation rails', () => {
+  it('keeps the Paint campaign columns and presentation route segments', () => {
     const act = COMBAT_ACT_DEFINITIONS.find((definition) => definition.id === 'act-1')!
     const node = (id: string) => act.nodes.find((entry) => entry.id === id)!
     expect(Object.fromEntries(act.nodes.map((entry) => [entry.id, entry.tierLabel]))).toMatchObject({
@@ -61,12 +61,43 @@ describe('Act 1 campaign navigation', () => {
     expect(node('flooded-reliquary').y).toBeLessThan(node('rootscar-hollow').y)
     expect(node('starfallen-observatory').y).toBeLessThan(node('stormvault-gallery').y)
     expect(node('stormvault-gallery').y).toBeLessThan(node('graveglass-hollow').y)
+    expect(node('ashen-watch').x).toBe(node('flooded-reliquary').x)
+    expect(node('flooded-reliquary').x).toBe(node('crossroads-of-ruin').x)
+    expect(node('crossroads-of-ruin').x).toBe(node('rootscar-hollow').x)
+    expect(node('starfallen-observatory').x).toBe(node('stormvault-gallery').x)
+    expect(node('stormvault-gallery').x).toBe(node('broken-meridian').x)
+    expect(node('broken-meridian').x).toBe(node('graveglass-hollow').x)
+    expect(node('hall-of-unbound-names').x).toBe(node('vault-of-the-black-sigil').x)
+    expect(node('fractured-approach').y).toBe(430)
+    expect(node('crossroads-of-ruin').y).toBe(430)
+    expect(node('broken-meridian').y).toBe(430)
+    expect(node('black-gate').y).toBe(430)
     expect(act.connections).toEqual([
       { from: 'fractured-approach', to: 'crossroads-of-ruin', kind: 'main' },
       { from: 'crossroads-of-ruin', to: 'broken-meridian', kind: 'main' },
       { from: 'broken-meridian', to: 'black-gate', kind: 'main' },
     ])
-    expect(act.branchRails).toHaveLength(3)
-    expect(act.branchRails?.every((rail) => rail.stubs.length === 3 || rail.stubs.length === 2)).toBe(true)
+    expect(act.routeSegments?.map((segment) => segment.id)).toEqual([
+      'main-spine',
+      'first-upper-vertical', 'first-t23-stub', 'first-t22-stub',
+      'first-lower-vertical', 'first-t24-stub',
+      'second-upper-vertical', 'second-t28-stub', 'second-t27-stub',
+      'second-lower-vertical', 'second-t26-stub',
+      'final-vertical', 'final-upper-t211-stub', 'final-lower-t211-stub',
+    ])
+    expect(act.routeSegments).toHaveLength(14)
+    expect(act.routeSegments?.every(({ x1, y1, x2, y2 }) => x1 === x2 || y1 === y2)).toBe(true)
+    expect(act.routeSegments?.find((segment) => segment.id === 'main-spine')).toMatchObject({ x1: 315, y1: 430, x2: 1930, y2: 430, kind: 'main' })
+    expect(act.routeSegments?.filter((segment) => segment.kind === 'branch' && segment.x1 === segment.x2).map((segment) => segment.id)).toEqual([
+      'first-upper-vertical', 'first-lower-vertical', 'second-upper-vertical', 'second-lower-vertical', 'final-vertical',
+    ])
+    expect(act.routeSegments?.find((segment) => segment.id === 'first-t23-stub')).toMatchObject({ x1: 500, y1: 150, x2: 605, y2: 150 })
+    expect(act.routeSegments?.find((segment) => segment.id === 'first-t22-stub')).toMatchObject({ x1: 500, y1: 290, x2: 605, y2: 290 })
+    expect(act.routeSegments?.find((segment) => segment.id === 'first-t24-stub')).toMatchObject({ x1: 545, y1: 690, x2: 605, y2: 690 })
+    expect(act.routeSegments?.find((segment) => segment.id === 'second-t28-stub')).toMatchObject({ x1: 980, y1: 150, x2: 1085, y2: 150 })
+    expect(act.routeSegments?.find((segment) => segment.id === 'second-t27-stub')).toMatchObject({ x1: 980, y1: 300, x2: 1085, y2: 300 })
+    expect(act.routeSegments?.find((segment) => segment.id === 'second-t26-stub')).toMatchObject({ x1: 1025, y1: 690, x2: 1085, y2: 690 })
+    expect(act.routeSegments?.find((segment) => segment.id === 'final-upper-t211-stub')).toMatchObject({ x1: 1490, y1: 250, x2: 1565, y2: 250 })
+    expect(act.routeSegments?.find((segment) => segment.id === 'final-lower-t211-stub')).toMatchObject({ x1: 1490, y1: 650, x2: 1565, y2: 650 })
   })
 })

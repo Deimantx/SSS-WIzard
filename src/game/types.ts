@@ -34,18 +34,23 @@ export type ItemId =
   | 'soulglass-amulet'
   | 'gravebinder-ring'
   | 'edrins-signet'
+  | 'galeglass-earring'
+  | 'riftwind-ring'
+  | 'waystone-pendant'
+  | 'fractured-ward-mantle'
+  | 'gatekeeper-sigil'
 
 export type StoryEventId = 'edrin-dark-portal-discovery'
 
 export type SpellId = 'fire-bolt' | 'ignite' | 'fireball' | 'water-ward' | 'flow-mend' | 'frostbite' | 'earth-spike' | 'stoneguard' | 'fortify' | 'air-lance' | 'quickening' | 'shock-spark'
 export type SpellPresetId = string
-export type MonsterId = 'forest-wisp' | 'thornling' | 'stone-root' | 'grove-sentinel' | 'forest-heart' | 'cavefang-wolf' | 'razorclaw-lynx' | 'corrupted-dire-wolf' | 'corrupted-greatbear' | 'restless-skeleton' | 'grave-wraith' | 'fallen-acolyte' | 'archmage-edrin-shade'
+export type MonsterId = 'forest-wisp' | 'thornling' | 'stone-root' | 'grove-sentinel' | 'forest-heart' | 'cavefang-wolf' | 'razorclaw-lynx' | 'corrupted-dire-wolf' | 'corrupted-greatbear' | 'restless-skeleton' | 'grave-wraith' | 'fallen-acolyte' | 'archmage-edrin-shade' | 'warded-husk' | 'rift-wolf' | 'arcane-scavenger' | 'withered-watcher' | 'corrupted-elemental-gatekeeper'
 export type GuardianId = 'fire-guardian' | 'water-guardian' | 'earth-guardian' | 'air-guardian'
 export type BestiaryCategory = 'monster' | 'boss'
-export type DungeonId = 'whispering-woods' | 'howling-den' | 'abandoned-catacombs'
+export type DungeonId = 'whispering-woods' | 'howling-den' | 'abandoned-catacombs' | 'fractured-approach'
 export type EquipmentItemSlot = 'weapon' | 'armor' | 'helmet' | 'cape' | 'amulet' | 'earring' | 'ring'
 export type EquipmentPosition = 'weapon' | 'armor' | 'head' | 'cape' | 'necklace' | 'earring1' | 'earring2' | 'ring1' | 'ring2'
-export type ArtifactId = 'ember-staff' | 'tideglass-wand' | 'stoneheart-scepter' | 'windthread-wand' | 'wispweave-robe' | 'wispveil-hood'
+export type ArtifactId = 'ember-staff' | 'tideglass-wand' | 'stoneheart-scepter' | 'windthread-wand' | 'wispweave-robe' | 'wispveil-hood' | 'galeshard-staff'
 export type EquipmentBuildTag = 'spell' | 'basic-attack' | 'hybrid' | 'crit' | 'status' | 'dot' | 'barrier' | 'defense' | 'sustain' | 'mana' | 'focus' | 'healing' | 'fire' | 'water' | 'earth' | 'air'
 export type EquipmentBudgetProfileId = 'standard' | 'signature' | 'boss'
 /** @deprecated Use EquipmentItemSlot for item metadata or EquipmentPosition for loadout state. */
@@ -60,9 +65,9 @@ export type { ActionPattern, ActionStep, ActiveStatus, CombatActionDefinition, C
 export type ManaPillarId = 'leyline-conduit' | 'arcane-reservoir' | 'mana-resonance' | 'astral-expansion' | 'echo-attunement'
 export type TransmutationArrayId = 'temporal-array' | 'conservation-array' | 'replication-array' | 'mana-refinement-array' | 'echo-stabilization-array'
 export type ChannelingDiscoveryId = 'stable-leyline' | 'echo-resonance' | 'deep-reservoir'
-export type RecipeId = 'fire-fragment' | 'water-fragment' | 'earth-fragment' | 'air-fragment' | 'prismatic-fragment' | 'ember-staff' | 'tideglass-wand' | 'stoneheart-scepter' | 'windthread-wand' | 'wispweave-robe' | 'wispveil-hood'
+export type RecipeId = 'fire-fragment' | 'water-fragment' | 'earth-fragment' | 'air-fragment' | 'prismatic-fragment' | 'ember-staff' | 'tideglass-wand' | 'stoneheart-scepter' | 'windthread-wand' | 'wispweave-robe' | 'wispveil-hood' | 'galeshard-staff'
 export type TransmutationRecipeId = 'fire-fragment' | 'water-fragment' | 'earth-fragment' | 'air-fragment' | 'prismatic-fragment'
-export type ArtificingRecipeId = 'ember-staff' | 'tideglass-wand' | 'stoneheart-scepter' | 'windthread-wand' | 'wispweave-robe' | 'wispveil-hood'
+export type ArtificingRecipeId = 'ember-staff' | 'tideglass-wand' | 'stoneheart-scepter' | 'windthread-wand' | 'wispweave-robe' | 'wispveil-hood' | 'galeshard-staff'
 export type RecipeCategory = 'elemental' | 'material'
 export type TransmutationCategoryFilter = 'all' | RecipeCategory
 export type TransmutationTierFilter = 'all' | number

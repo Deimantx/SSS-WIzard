@@ -3,9 +3,7 @@ import type { GuardianId, GuardiansState, MonsterId, SchoolId } from '../../type
 import { SCHOOLS } from '../schools/schools'
 
 /** Canonical progression record used by every Summoning visibility/runtime guard. */
-// The T2 Gatekeeper is not authored in the current content roster yet. Keep
-// its stable progression key here so future T2 combat can record the kill
-// without making the absent monster selectable in current content.
+// The first legitimate Corrupted Elemental Gatekeeper clear unlocks Summoning.
 export const SUMMONING_UNLOCK_BOSS_ID: MonsterId = 'corrupted-elemental-gatekeeper' as MonsterId
 
 export interface GuardianDefinition {

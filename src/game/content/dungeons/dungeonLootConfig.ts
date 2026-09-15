@@ -28,6 +28,11 @@ export const DUNGEON_LOOT = {
     bossSignature: 'edrins-signet',
     artifactEssence: { normal: [3, 4] as const, boss: [20, 30] as const },
   },
+  'fractured-approach': {
+    regularEquipment: ['galeglass-earring', 'riftwind-ring', 'waystone-pendant', 'fractured-ward-mantle'] as const,
+    bossSignature: 'gatekeeper-sigil',
+    artifactEssence: { normal: [4, 6] as const, boss: [30, 40] as const },
+  },
 } satisfies Record<DungeonId, DungeonLootDefinition>
 
 export const REGULAR_EQUIPMENT_LOOT_CHANCE = 0.01

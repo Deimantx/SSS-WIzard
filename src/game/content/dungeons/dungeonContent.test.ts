@@ -12,9 +12,9 @@ import { resolveMonsterBaseMagnitudePreview } from '../../presentation/combat'
 const labels = (monsterId: keyof typeof MONSTERS, patternId = 'default') => MONSTERS[monsterId].actionPatterns[patternId].steps.map((step) => step.type === 'basic' ? 'Basic' : MONSTERS[monsterId].actions[step.actionId].name)
 const playerSpell: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'content-test', tags: ['spell', 'magic'] }
 
-describe('first three dungeon content', () => {
+describe('Act 0 and Act 1 dungeon content', () => {
   it('authors the stable dungeon order, pools, bosses, unlocks, and delay', () => {
-    expect(DUNGEON_ORDER).toEqual(['whispering-woods', 'howling-den', 'abandoned-catacombs'])
+    expect(DUNGEON_ORDER).toEqual(['whispering-woods', 'howling-den', 'abandoned-catacombs', 'fractured-approach'])
     expect(DUNGEONS['whispering-woods'].monsterPool).toEqual(['forest-wisp', 'thornling', 'stone-root', 'grove-sentinel'])
     expect(DUNGEONS['whispering-woods'].boss).toBe('forest-heart')
     expect(DUNGEONS['howling-den'].boss).toBe('corrupted-greatbear')
@@ -28,10 +28,15 @@ describe('first three dungeon content', () => {
     expect(isDungeonUnlocked(DUNGEONS['abandoned-catacombs'], state.progress)).toBe(false)
     state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
     expect(isDungeonUnlocked(DUNGEONS['abandoned-catacombs'], state.progress)).toBe(true)
+    expect(isDungeonUnlocked(DUNGEONS['fractured-approach'], state.progress)).toBe(false)
+    state.progress.bossKillsByBoss['archmage-edrin-shade'] = 1
+    expect(isDungeonUnlocked(DUNGEONS['fractured-approach'], state.progress)).toBe(true)
+    expect(DUNGEONS['fractured-approach']).toMatchObject({ threatRequired: 35, boss: 'corrupted-elemental-gatekeeper', encounterDelayMs: 5000 })
+    expect(DUNGEONS['fractured-approach'].monsterPool).toEqual(['warded-husk', 'rift-wolf', 'arcane-scavenger', 'withered-watcher'])
   })
 
   it('keeps all authored monster records and exact action sequences', () => {
-    expect(Object.keys(MONSTERS)).toHaveLength(13)
+    expect(Object.keys(MONSTERS)).toHaveLength(18)
     expect(validateMonsterDefinitions()).toEqual([])
     expect(labels('cavefang-wolf')).toEqual(['Basic', 'Basic', 'Pounce'])
     expect(labels('razorclaw-lynx')).toEqual(['Basic', 'Rending Claws', 'Basic'])
@@ -43,6 +48,11 @@ describe('first three dungeon content', () => {
     expect(labels('fallen-acolyte')).toEqual(['Grave Bolt', 'Basic', 'Soul Drain', 'Basic', 'Basic', 'Death Ward', 'Basic'])
     expect(labels('archmage-edrin-shade')).toEqual(['Gravefire', 'Basic', 'Frostbind', 'Arcane Ward', 'Basic', 'Soul Drain'])
     expect(labels('archmage-edrin-shade', 'unbound')).toEqual(['Basic', 'Gravefire', 'Frostbind', 'Soul Drain', 'Basic', 'Final Incantation'])
+    expect(labels('warded-husk')).toEqual(['Basic', 'Fractured Ward', 'Basic', 'Ward Slam', 'Basic'])
+    expect(labels('rift-wolf')).toEqual(['Basic', 'Rift Lunge', 'Basic', 'Arc Flash', 'Basic'])
+    expect(labels('arcane-scavenger')).toEqual(['Salvaged Bolt', 'Basic', 'Basic', 'Unstable Charge', 'Basic'])
+    expect(labels('withered-watcher')).toEqual(['Basic', 'Elemental Pulse', 'Broken Aegis', 'Basic', "Watcher's Lance"])
+    expect(labels('corrupted-elemental-gatekeeper')).toEqual(['Flame Surge', 'Basic', 'Tidal Break', 'Fractured Aegis', 'Basic', 'Stone Crush', 'Gale Lance', 'Basic', 'Elemental Rupture'])
     expect(MONSTERS['corrupted-dire-wolf'].actions['arcane-bite'].effects.map((effect) => effect.type === 'deal-damage' ? effect.components : effect.type)).toEqual([
       [{ damageType: 'physical', magnitude: { type: 'source-basic-damage-percent', value: 0.7 } }, { damageType: 'arcane', magnitude: { type: 'source-basic-damage-percent', value: 0.7 } }],
     ])
@@ -73,6 +83,10 @@ describe('first three dungeon content', () => {
       ['fallen-acolyte', 'soul-drain', 1, 49.5], ['fallen-acolyte', 'death-ward', 0, 112.75], ['archmage-edrin-shade', 'gravefire', 0, 91],
       ['archmage-edrin-shade', 'frostbind', 0, 78], ['archmage-edrin-shade', 'arcane-ward', 0, 313.2], ['archmage-edrin-shade', 'soul-drain', 0, 78],
       ['archmage-edrin-shade', 'soul-drain', 1, 133.4], ['archmage-edrin-shade', 'final-incantation', 0, 227.5],
+      ['warded-husk', 'ward-slam', 0, 89.9], ['rift-wolf', 'rift-lunge', 0, 91.35], ['rift-wolf', 'arc-flash', 0, 72.45],
+      ['arcane-scavenger', 'salvaged-bolt', 0, 85.4], ['arcane-scavenger', 'unstable-charge', 0, 109.8], ['withered-watcher', 'elemental-pulse', 0, 78],
+      ['withered-watcher', 'watchers-lance', 0, 99], ['corrupted-elemental-gatekeeper', 'flame-surge', 0, 93.75], ['corrupted-elemental-gatekeeper', 'tidal-break', 0, 90],
+      ['corrupted-elemental-gatekeeper', 'stone-crush', 0, 108.75], ['corrupted-elemental-gatekeeper', 'gale-lance', 0, 86.25], ['corrupted-elemental-gatekeeper', 'elemental-rupture', 0, 150],
     ]
     expected.forEach(([monsterId, actionId, effectIndex, amount]) => {
       const effect = MONSTERS[monsterId].actions[actionId].effects[effectIndex]

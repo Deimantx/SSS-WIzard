@@ -12,16 +12,17 @@ import { damagePlayer } from '../../systems/combat/effectResolver'
 import { normalizeEquipmentState } from '../../core/equipment/equipmentRules'
 import type { ArtifactId, CombatSource, ItemId } from '../../types'
 
-const artifactIds: readonly ArtifactId[] = ['ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'wispweave-robe', 'wispveil-hood']
+const artifactIds: readonly ArtifactId[] = ['ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'wispweave-robe', 'wispveil-hood', 'galeshard-staff']
 const elementalArtifacts: readonly [ArtifactId, ItemId][] = [['ember-staff', 'fire-fragment'], ['tideglass-wand', 'water-fragment'], ['stoneheart-scepter', 'earth-fragment'], ['windthread-wand', 'air-fragment']]
 const spellSource = (school: 'water' | 'earth' | 'air'): CombatSource => ({ actor: 'player', kind: 'spell', sourceId: `artifact-${school}`, school, tags: ['spell', school] })
 
-describe('Tier 1 Artifact roster', () => {
-  it('contains exactly six validated Artifact bases without item-level stat/combat duplicates', () => {
+describe('Artifact roster', () => {
+  it('contains the validated Artifact bases without item-level stat/combat duplicates', () => {
     expect(Object.keys(ARTIFACTS)).toEqual(artifactIds)
     expect(validateArtifactDefinitions(ITEMS, MONSTERS)).toEqual([])
     artifactIds.forEach((id) => {
-      expect(ITEMS[id]).toMatchObject({ kind: 'equipment', source: 'Artificing', sourceNavigation: 'tower-artificing', equipmentTier: 1, sellValue: null, canDestroy: false })
+      expect(ITEMS[id]).toMatchObject({ kind: 'equipment', source: 'Artificing', sourceNavigation: 'tower-artificing', sellValue: null, canDestroy: false })
+      expect(ITEMS[id].equipmentTier).toBe(id === 'galeshard-staff' ? 1.7 : 1)
       expect(ITEMS[id].stats).toBeUndefined()
       expect(ITEMS[id].combat).toBeUndefined()
       expect(ARTIFACTS[id]?.maxLevel).toBe(10)
@@ -37,6 +38,7 @@ describe('Tier 1 Artifact roster', () => {
     expect(getArtifactEffectiveStats(state, 'windthread-wand')).toMatchObject({ basicDamage: 14, spellPower: 73 })
     expect(getArtifactEffectiveStats(state, 'wispweave-robe')).toMatchObject({ maxHealth: 92, defense: 19 })
     expect(getArtifactEffectiveStats(state, 'wispveil-hood')).toMatchObject({ maxHealth: 49, defense: 14 })
+    expect(getArtifactEffectiveStats(state, 'galeshard-staff')).toMatchObject({ basicDamage: 20, spellPower: 85 })
   })
 
   it('uses universal Artifact Essence plus the matching school fragment for elemental upgrades', () => {
@@ -48,6 +50,15 @@ describe('Tier 1 Artifact roster', () => {
         expect(upgrade.ingredients).toEqual(expect.arrayContaining([{ itemId: fragmentId, quantity: fragments[index] }, { itemId: 'artifact-essence', quantity: essence[index] }]))
         expect(upgrade.ingredients.every(({ itemId }) => itemId === fragmentId || itemId === 'artifact-essence')).toBe(true)
       })
+    })
+  })
+
+  it('uses only Air Fragment and Artifact Essence for Galeshard Staff upgrades', () => {
+    const fragments = [50, 100, 200, 300, 500, 750, 1000, 1650, 2750]
+    const essence = [10, 20, 40, 60, 100, 150, 200, 300, 500]
+    ARTIFACTS['galeshard-staff'].upgrades.forEach((upgrade, index) => {
+      expect(upgrade.ingredients).toEqual(expect.arrayContaining([{ itemId: 'air-fragment', quantity: fragments[index] }, { itemId: 'artifact-essence', quantity: essence[index] }]))
+      expect(upgrade.ingredients.every(({ itemId }) => itemId === 'air-fragment' || itemId === 'artifact-essence')).toBe(true)
     })
   })
 
@@ -63,13 +74,17 @@ describe('Tier 1 Artifact roster', () => {
     })
   })
 
-  it('unlocks all starter Artifact recipes on a fresh save', () => {
+  it('unlocks starter Artifact recipes on a fresh save and gates Galeshard behind the Gatekeeper', () => {
     const state = createInitialState()
-    artifactIds.forEach((id) => {
+    artifactIds.filter((id) => id !== 'galeshard-staff').forEach((id) => {
       expect(ARTIFICING_RECIPES[id]).toMatchObject({ kind: 'artificing', unlock: { type: 'always' } })
       expect(ARTIFICING_RECIPES[id].sourceDungeonId).toBeUndefined()
       expect(isRecipeUnlocked(state, ARTIFICING_RECIPES[id])).toBe(true)
     })
+    expect(ARTIFICING_RECIPES['galeshard-staff']).toMatchObject({ unlock: { type: 'boss-kill', bossId: 'corrupted-elemental-gatekeeper' }, sourceDungeonId: 'fractured-approach' })
+    expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['galeshard-staff'])).toBe(false)
+    state.progress.bossKillsByBoss['corrupted-elemental-gatekeeper'] = 1
+    expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['galeshard-staff'])).toBe(true)
   })
 
   it('uses Forest Heart and Corrupted Greatbear boss kills for Artifact level bands', () => {
@@ -119,7 +134,7 @@ describe('Tier 1 Artifact roster', () => {
   it('uses boss kills for current Artifact Path gates without catalysts', () => {
     const bossGatedNodes = Object.values(ARTIFACTS).flatMap((artifact) => artifact.nodes.filter((node) => node.requiresBossKill))
     expect(Object.values(ARTIFACTS).flatMap((artifact) => artifact.nodes).every((node) => node.catalyst === undefined)).toBe(true)
-    expect(bossGatedNodes.every((node) => node.requiresBossKill && ['forest-heart', 'corrupted-greatbear', 'archmage-edrin-shade'].includes(node.requiresBossKill))).toBe(true)
+    expect(bossGatedNodes.every((node) => node.requiresBossKill && ['forest-heart', 'corrupted-greatbear', 'archmage-edrin-shade', 'corrupted-elemental-gatekeeper'].includes(node.requiresBossKill))).toBe(true)
   })
 
   it('treats every current Artifact as compatible with the single Weapon slot', () => {

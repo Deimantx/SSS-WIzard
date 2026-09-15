@@ -55,6 +55,7 @@ describe('Act 0 universal dungeon loot', () => {
       'forest-wisp': [1, 3, 1], 'thornling': [1, 3, 1], 'stone-root': [1, 3, 0.2], 'grove-sentinel': [2, 5, 1], 'forest-heart': [10, 18, 1],
       'cavefang-wolf': [3, 5, 1], 'razorclaw-lynx': [3, 5, 1], 'corrupted-dire-wolf': [3, 5, 1], 'corrupted-greatbear': [12, 30, 1],
       'restless-skeleton': [4, 8, 1], 'grave-wraith': [4, 8, 1], 'fallen-acolyte': [5, 10, 1], 'archmage-edrin-shade': [21, 48, 1],
+      'warded-husk': [5, 10, 1], 'rift-wolf': [5, 10, 1], 'arcane-scavenger': [5, 10, 1], 'withered-watcher': [5, 10, 1], 'corrupted-elemental-gatekeeper': [25, 55, 1],
     } as const
     Object.entries(expectedLifeDrops).forEach(([monsterId, [min, max, chance]]) => expect(MONSTERS[monsterId as keyof typeof MONSTERS].loot).toContainEqual({ itemId: 'life-essence', min, max, chance }))
   })
@@ -70,7 +71,7 @@ describe('Direct Equipment loot', () => {
   })
 
   it('keeps dungeon Equipment grouping separate from starter Artifacts', () => {
-    expect(ARTIFACT_EQUIPMENT_IDS).toHaveLength(6)
+    expect(ARTIFACT_EQUIPMENT_IDS).toHaveLength(7)
     expect(Object.values(DUNGEON_EQUIPMENT_BY_DUNGEON).flat()).not.toEqual(expect.arrayContaining([...ARTIFACT_EQUIPMENT_IDS]))
     expect(getEquipmentOrigin('ember-staff')).toBeNull()
     expect(getEquipmentOrigin('wispglass-earring')).toBe('whispering-woods')
@@ -84,6 +85,7 @@ describe('Boss-signature Equipment', () => {
       'heartseed-necklace': 'forest-heart',
       'greatbear-heartstone': 'corrupted-greatbear',
       'edrins-signet': 'archmage-edrin-shade',
+      'gatekeeper-sigil': 'corrupted-elemental-gatekeeper',
     } as const
     expect(BOSS_SIGNATURE_EQUIPMENT_IDS).toEqual(Object.keys(expected))
     Object.entries(expected).forEach(([itemId, bossId]) => {
@@ -98,12 +100,16 @@ describe('Boss-signature Equipment', () => {
 })
 
 describe('Artifact-only Artificing', () => {
-  it('contains only the six starter Artifact recipes, all unlocked from the start', () => {
+  it('contains the six starter Artifact recipes plus the Gatekeeper Artifact', () => {
     const state = createInitialState()
     expect(ARTIFICING_RECIPE_ORDER).toEqual([...ARTIFACT_EQUIPMENT_IDS])
-    expect(Object.values(ARTIFICING_RECIPES).every((recipe) => recipe.kind === 'artificing' && recipe.unlock.type === 'always' && recipe.sourceDungeonId === undefined)).toBe(true)
+    expect(Object.values(ARTIFICING_RECIPES).filter((recipe) => recipe.unlock.type === 'always')).toHaveLength(6)
+    expect(ARTIFICING_RECIPES['galeshard-staff']).toMatchObject({ unlock: { type: 'boss-kill', bossId: 'corrupted-elemental-gatekeeper' }, sourceDungeonId: 'fractured-approach' })
     expect(Object.values(ARTIFICING_RECIPES).every((recipe) => Boolean(ARTIFACTS[recipe.output.itemId]))).toBe(true)
-    ARTIFICING_RECIPE_ORDER.forEach((id) => expect(isRecipeUnlocked(state, ARTIFICING_RECIPES[id])).toBe(true))
+    ARTIFICING_RECIPE_ORDER.filter((id) => id !== 'galeshard-staff').forEach((id) => expect(isRecipeUnlocked(state, ARTIFICING_RECIPES[id])).toBe(true))
+    expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['galeshard-staff'])).toBe(false)
+    state.progress.bossKillsByBoss['corrupted-elemental-gatekeeper'] = 1
+    expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['galeshard-staff'])).toBe(true)
   })
 
   it('keeps Forge and Artificing recipe ingredients synchronized and rejects non-Artifact outputs', () => {

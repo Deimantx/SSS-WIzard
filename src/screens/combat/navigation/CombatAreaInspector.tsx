@@ -7,12 +7,12 @@ import { getMonsterDossierCombatStats } from '../../../game/presentation/combat'
 import { formatNumber, formatTime } from '../../../game/utils'
 import type { CombatActNodeViewModel } from './combatActNavigationTypes'
 
-const getAreaGlyph = (node: CombatActNodeViewModel) => node.state === 'prototype' ? '✦' : node.kind === 'final' ? '♛' : node.dungeonId === 'whispering-woods' ? '✧' : node.dungeonId === 'howling-den' ? '◖' : '◇'
+const getAreaGlyph = (node: CombatActNodeViewModel) => node.prototype ? '✦' : node.kind === 'final' ? '♛' : node.dungeonId === 'whispering-woods' ? '✧' : node.dungeonId === 'howling-den' ? '◖' : '◇'
 
 export function CombatAreaInspector({ node, combatActive, activeDungeonId, onLoot, onBestiary, onEnter }: { node: CombatActNodeViewModel; combatActive: boolean; activeDungeonId: string | null; onLoot: () => void; onBestiary: () => void; onEnter: () => void }) {
   const isActive = Boolean(node.dungeonId && combatActive && activeDungeonId === node.dungeonId)
   const locked = node.state === 'locked'
-  const isPrototype = node.state === 'prototype'
+  const isPrototype = Boolean(node.prototype)
   const displayTierLabel = node.tierLabel.split(' · ')[0] ?? node.tierLabel
   const enterLabel = isPrototype ? 'CONTENT NOT AUTHORED' : isActive ? 'RETURN TO COMBAT' : locked ? 'ROUTE LOCKED' : 'ENTER COMBAT'
   const enterTooltip = isPrototype ? <TooltipContent title="Prototype area" description="This navigation node has no authored combat content yet." /> : locked ? <TooltipContent title="Route locked" description={node.unlockText ?? 'This route is not available yet.'} /> : undefined

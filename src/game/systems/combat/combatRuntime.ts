@@ -102,6 +102,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
     const bossId = enemyId
     state.progress.bossKillsByBoss[bossId] = (state.progress.bossKillsByBoss[bossId] ?? 0) + 1
     if (bossId === SUMMONING_UNLOCK_BOSS_ID && state.progress.bossKillsByBoss[bossId] === 1) pushNotification(state, 'Wizard Tower: Summoning unlocked.', 'success')
+    if (bossId === 'corrupted-elemental-gatekeeper' && state.progress.bossKillsByBoss[bossId] === 1) pushNotification(state, 'FRACTURED APPROACH COMPLETE / Branch routes unlocked.', 'success')
     if (state.combat.pendingBossId === enemyId) state.combat.pendingBossId = null
     state.progress.autoHuntBossUnlocked = true
     if (bossId === 'forest-heart' && !state.progress.firstBossKill) {

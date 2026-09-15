@@ -7,9 +7,9 @@ import { startArtificingCraft } from './artificingEngine'
 const provideIngredients = (state: ReturnType<typeof createInitialState>, recipeId: keyof typeof ARTIFICING_RECIPES) => getArtificingCraftIngredients(recipeId)?.forEach(({ itemId, quantity }) => { state.inventory[itemId] = (state.inventory[itemId] ?? 0) + quantity })
 
 describe('Artificing Artifact catalog', () => {
-  it('shows only the six current Artifact recipes on a fresh save', () => {
+  it('shows the six starter Artifact recipes on a fresh save', () => {
     const state = createInitialState()
-    expect(getVisibleArtificingRecipes(state).map((recipe) => recipe.id)).toEqual([...ARTIFICING_RECIPE_ORDER])
+    expect(getVisibleArtificingRecipes(state).map((recipe) => recipe.id)).toEqual([...ARTIFICING_RECIPE_ORDER].filter((id) => id !== 'galeshard-staff'))
     expect(getVisibleArtificingRecipes(state, { ...defaults, kindFilter: 'artifact' })).toHaveLength(6)
     expect(getVisibleArtificingRecipes(state, { ...defaults, kindFilter: 'artifact' })).toHaveLength(6)
   })

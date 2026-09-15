@@ -4,9 +4,9 @@ import { useGameStore } from '../../store/gameStore'
 import { DeveloperArtificing } from './DeveloperArtificing'
 describe('Developer Artificing', () => {
   beforeEach(() => useGameStore.getState().resetSave())
-  it('lists only the six current starter Artifact recipes', () => {
+  it('lists all authored Artifact recipes for tester inspection', () => {
     render(<DeveloperArtificing />)
-    expect(screen.getByText('6 / 6 Artifact recipes')).toBeTruthy()
+    expect(screen.getByText('7 / 7 Artifact recipes')).toBeTruthy()
     expect(screen.queryByText('Assign one Echo')).toBeNull()
     const browser = document.querySelector('.developer-browser-list') as HTMLElement
     expect(browser.textContent).toContain('Ember Staff')

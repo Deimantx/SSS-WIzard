@@ -7,16 +7,16 @@ const act0Nodes = [
 ] as const
 
 const act1Nodes = [
-  { id: 'prototype-area-01', actId: 'act-1', name: 'Prototype Area 01', description: 'Temporary navigation prototype used to validate future Act structure.', x: 180, y: 430, kind: 'main', dungeonId: null, tierLabel: 'TIER II · PROTOTYPE', chapterId: 'chapter-i', prototype: true },
-  { id: 'prototype-area-02', actId: 'act-1', name: 'Prototype Area 02', description: 'Temporary navigation prototype used to validate future Act structure.', x: 390, y: 190, kind: 'branch', dungeonId: null, tierLabel: 'TIER II · PROTOTYPE', chapterId: 'chapter-i', prototype: true },
-  { id: 'prototype-area-03', actId: 'act-1', name: 'Prototype Area 03', description: 'Temporary navigation prototype used to validate future Act structure.', x: 500, y: 430, kind: 'main', dungeonId: null, tierLabel: 'TIER II · PROTOTYPE', chapterId: 'chapter-i', prototype: true },
-  { id: 'prototype-area-04', actId: 'act-1', name: 'Prototype Area 04', description: 'Temporary navigation prototype used to validate future Act structure.', x: 560, y: 690, kind: 'branch', dungeonId: null, tierLabel: 'TIER II · PROTOTYPE', chapterId: 'chapter-i', prototype: true },
-  { id: 'prototype-area-05', actId: 'act-1', name: 'Prototype Area 05', description: 'Temporary navigation prototype used to validate future Act structure.', x: 850, y: 430, kind: 'main', dungeonId: null, tierLabel: 'TIER II · PROTOTYPE', chapterId: 'chapter-ii', prototype: true },
-  { id: 'prototype-area-06', actId: 'act-1', name: 'Prototype Area 06', description: 'Temporary navigation prototype used to validate future Act structure.', x: 900, y: 170, kind: 'branch', dungeonId: null, tierLabel: 'TIER II · PROTOTYPE', chapterId: 'chapter-ii', prototype: true },
-  { id: 'prototype-area-07', actId: 'act-1', name: 'Prototype Area 07', description: 'Temporary navigation prototype used to validate future Act structure.', x: 950, y: 700, kind: 'branch', dungeonId: null, tierLabel: 'TIER II · PROTOTYPE', chapterId: 'chapter-ii', prototype: true },
-  { id: 'prototype-area-08', actId: 'act-1', name: 'Prototype Area 08', description: 'Temporary navigation prototype used to validate future Act structure.', x: 1260, y: 430, kind: 'main', dungeonId: null, tierLabel: 'TIER II · PROTOTYPE', chapterId: 'chapter-iii', prototype: true },
-  { id: 'prototype-area-09', actId: 'act-1', name: 'Prototype Area 09', description: 'Temporary navigation prototype used to validate future Act structure.', x: 1370, y: 180, kind: 'branch', dungeonId: null, tierLabel: 'TIER II · PROTOTYPE', chapterId: 'chapter-iii', prototype: true },
-  { id: 'prototype-finale-10', actId: 'act-1', name: 'Prototype Finale 10', description: 'Temporary navigation prototype used to validate future Act structure.', x: 1710, y: 430, kind: 'final', dungeonId: null, tierLabel: 'TIER II · PROTOTYPE', chapterId: 'chapter-iii', prototype: true },
+  { id: 'fractured-approach', actId: 'act-1', x: 180, y: 430, kind: 'main', dungeonId: 'fractured-approach', tierLabel: 'TIER II', chapterId: 'chapter-i' },
+  { id: 'flooded-reliquary', actId: 'act-1', name: 'Flooded Reliquary', description: 'The first branch beyond Fractured Approach. Its dungeon content is not authored yet.', x: 450, y: 170, kind: 'branch', dungeonId: null, tierLabel: 'TIER II / BRANCH', chapterId: 'chapter-i', prototype: true, requiresDungeonCompletion: 'fractured-approach' },
+  { id: 'ashen-watch', actId: 'act-1', name: 'Ashen Watch', description: 'The second branch beyond Fractured Approach. Its dungeon content is not authored yet.', x: 450, y: 430, kind: 'branch', dungeonId: null, tierLabel: 'TIER II / BRANCH', chapterId: 'chapter-i', prototype: true, requiresDungeonCompletion: 'fractured-approach' },
+  { id: 'rootscar-hollow', actId: 'act-1', name: 'Rootscar Hollow', description: 'The third branch beyond Fractured Approach. Its dungeon content is not authored yet.', x: 450, y: 690, kind: 'branch', dungeonId: null, tierLabel: 'TIER II / BRANCH', chapterId: 'chapter-i', prototype: true, requiresDungeonCompletion: 'fractured-approach' },
+  { id: 'prototype-area-05', actId: 'act-1', name: 'Prototype Area 05', description: 'A future Act 1 convergence route. Its dungeon content is not authored yet.', x: 850, y: 430, kind: 'main', dungeonId: null, tierLabel: 'TIER II / PROTOTYPE', chapterId: 'chapter-ii', prototype: true },
+  { id: 'prototype-area-06', actId: 'act-1', name: 'Prototype Area 06', description: 'A future Act 1 branch route. Its dungeon content is not authored yet.', x: 900, y: 170, kind: 'branch', dungeonId: null, tierLabel: 'TIER II / PROTOTYPE', chapterId: 'chapter-ii', prototype: true },
+  { id: 'prototype-area-07', actId: 'act-1', name: 'Prototype Area 07', description: 'A future Act 1 branch route. Its dungeon content is not authored yet.', x: 950, y: 700, kind: 'branch', dungeonId: null, tierLabel: 'TIER II / PROTOTYPE', chapterId: 'chapter-ii', prototype: true },
+  { id: 'prototype-area-08', actId: 'act-1', name: 'Prototype Area 08', description: 'A future Act 1 route. Its dungeon content is not authored yet.', x: 1260, y: 430, kind: 'main', dungeonId: null, tierLabel: 'TIER II / PROTOTYPE', chapterId: 'chapter-iii', prototype: true },
+  { id: 'prototype-area-09', actId: 'act-1', name: 'Prototype Area 09', description: 'A future Act 1 branch route. Its dungeon content is not authored yet.', x: 1370, y: 180, kind: 'branch', dungeonId: null, tierLabel: 'TIER II / PROTOTYPE', chapterId: 'chapter-iii', prototype: true },
+  { id: 'prototype-finale-10', actId: 'act-1', name: 'Prototype Finale 10', description: 'The future Act 1 finale. Its dungeon content is not authored yet.', x: 1710, y: 430, kind: 'final', dungeonId: null, tierLabel: 'TIER II / PROTOTYPE', chapterId: 'chapter-iii', prototype: true },
 ] as const
 
 export const COMBAT_ACT_DEFINITIONS: readonly CombatActDefinition[] = [
@@ -26,12 +26,12 @@ export const COMBAT_ACT_DEFINITIONS: readonly CombatActDefinition[] = [
     connections: [{ from: 'whispering-woods', to: 'howling-den', kind: 'main' }, { from: 'howling-den', to: 'abandoned-catacombs', kind: 'main' }],
   },
   {
-    id: 'act-1', label: 'ACT 1', title: 'THE NEXT FRONTIER', subtitle: 'PROGRESSION PROTOTYPE', description: 'A blueprint for the next campaign arc. The route is visible, but its content has not been authored.',
+    id: 'act-1', label: 'ACT 1', title: 'THE SHATTERED FRONTIER', subtitle: 'FRACTURED APPROACH', description: 'Cross the Fractured Approach. Its first boss-clear opens the three next branch routes for the following Act 1 phase.',
     unlock: { type: 'boss-kill', bossId: 'archmage-edrin-shade', kills: 1 }, stage: { width: 2000, height: 860 }, nodes: [...act1Nodes],
     connections: [
-      { from: 'prototype-area-01', to: 'prototype-area-03', kind: 'main' }, { from: 'prototype-area-03', to: 'prototype-area-05', kind: 'main' },
+      { from: 'fractured-approach', to: 'prototype-area-05', kind: 'main' },
       { from: 'prototype-area-05', to: 'prototype-area-08', kind: 'main' }, { from: 'prototype-area-08', to: 'prototype-finale-10', kind: 'main' },
-      { from: 'prototype-area-01', to: 'prototype-area-02', kind: 'branch' }, { from: 'prototype-area-03', to: 'prototype-area-04', kind: 'branch' },
+      { from: 'fractured-approach', to: 'flooded-reliquary', kind: 'branch' }, { from: 'fractured-approach', to: 'ashen-watch', kind: 'branch' }, { from: 'fractured-approach', to: 'rootscar-hollow', kind: 'branch' },
       { from: 'prototype-area-05', to: 'prototype-area-06', kind: 'branch' }, { from: 'prototype-area-05', to: 'prototype-area-07', kind: 'branch' },
       { from: 'prototype-area-08', to: 'prototype-area-09', kind: 'branch' },
     ],

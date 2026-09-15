@@ -17,6 +17,7 @@ export interface CombatActNodeDefinition {
   recommendedLevel?: number | null
   chapterId?: string | null
   prototype?: boolean
+  requiresDungeonCompletion?: DungeonId
   name?: string
   description?: string
 }

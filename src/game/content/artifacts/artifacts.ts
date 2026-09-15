@@ -82,17 +82,35 @@ const stoneheartUpgrades = createUpgradeCurve('earth-fragment', ELEMENTAL_UPGRAD
 const windthreadUpgrades = createUpgradeCurve('air-fragment', ELEMENTAL_UPGRADE_COSTS)
 const wispweaveUpgrades = createUpgradeCurve('prismatic-fragment', PRISMATIC_UPGRADE_COSTS)
 const wispveilUpgrades = createUpgradeCurve('prismatic-fragment', PRISMATIC_UPGRADE_COSTS)
+const galeshardUpgrades = createUpgradeCurve('air-fragment', ELEMENTAL_UPGRADE_COSTS)
 
 const tideglassStats: Record<number, EquipmentStats> = { 1: { basicDamage: 5, spellPower: 15 }, 2: { basicDamage: 6, spellPower: 19 }, 3: { basicDamage: 7, spellPower: 23 }, 4: { basicDamage: 8, spellPower: 28 }, 5: { basicDamage: 9, spellPower: 34 }, 6: { basicDamage: 10, spellPower: 40 }, 7: { basicDamage: 11, spellPower: 47 }, 8: { basicDamage: 12, spellPower: 55 }, 9: { basicDamage: 14, spellPower: 63 }, 10: { basicDamage: 16, spellPower: 72 } }
 const stoneheartStats: Record<number, EquipmentStats> = { 1: { basicDamage: 6, spellPower: 14 }, 2: { basicDamage: 7, spellPower: 18 }, 3: { basicDamage: 8, spellPower: 22 }, 4: { basicDamage: 9, spellPower: 27 }, 5: { basicDamage: 10, spellPower: 32 }, 6: { basicDamage: 11, spellPower: 38 }, 7: { basicDamage: 13, spellPower: 44 }, 8: { basicDamage: 15, spellPower: 51 }, 9: { basicDamage: 17, spellPower: 59 }, 10: { basicDamage: 19, spellPower: 67 } }
 const windthreadStats: Record<number, EquipmentStats> = { 1: { basicDamage: 4, spellPower: 15 }, 2: { basicDamage: 5, spellPower: 19 }, 3: { basicDamage: 6, spellPower: 23 }, 4: { basicDamage: 7, spellPower: 28 }, 5: { basicDamage: 8, spellPower: 34 }, 6: { basicDamage: 9, spellPower: 41 }, 7: { basicDamage: 10, spellPower: 48 }, 8: { basicDamage: 11, spellPower: 56 }, 9: { basicDamage: 12, spellPower: 64 }, 10: { basicDamage: 14, spellPower: 73 } }
 const wispweaveStats: Record<number, EquipmentStats> = { 1: { maxHealth: 20, defense: 4 }, 2: { maxHealth: 24, defense: 5 }, 3: { maxHealth: 29, defense: 6 }, 4: { maxHealth: 35, defense: 7 }, 5: { maxHealth: 42, defense: 8 }, 6: { maxHealth: 50, defense: 10 }, 7: { maxHealth: 59, defense: 12 }, 8: { maxHealth: 69, defense: 14 }, 9: { maxHealth: 80, defense: 16 }, 10: { maxHealth: 92, defense: 19 } }
 const wispveilStats: Record<number, EquipmentStats> = { 1: { maxHealth: 10, defense: 2 }, 2: { maxHealth: 12, defense: 3 }, 3: { maxHealth: 15, defense: 4 }, 4: { maxHealth: 18, defense: 5 }, 5: { maxHealth: 22, defense: 6 }, 6: { maxHealth: 26, defense: 7 }, 7: { maxHealth: 31, defense: 8 }, 8: { maxHealth: 36, defense: 10 }, 9: { maxHealth: 42, defense: 12 }, 10: { maxHealth: 49, defense: 14 } }
+const galeshardStats: Record<number, EquipmentStats> = { 1: { basicDamage: 7, spellPower: 20 }, 2: { basicDamage: 8, spellPower: 25 }, 3: { basicDamage: 9, spellPower: 30 }, 4: { basicDamage: 10, spellPower: 36 }, 5: { basicDamage: 11, spellPower: 42 }, 6: { basicDamage: 12, spellPower: 49 }, 7: { basicDamage: 14, spellPower: 57 }, 8: { basicDamage: 16, spellPower: 66 }, 9: { basicDamage: 18, spellPower: 75 }, 10: { basicDamage: 20, spellPower: 85 } }
 
 const spellDamage = (value: number, school: 'water' | 'earth' | 'air', sourceTags?: CombatModifier['sourceTags']): CombatModifier => ({ key: 'spell-damage-percent', value, originSourceKinds: ['spell'], damageTypes: [school], ...(sourceTags ? { sourceTags } : {}) })
 const directSpellDamage = (value: number, school: 'water' | 'earth' | 'air', condition?: CombatModifier['condition']): CombatModifier => ({ ...spellDamage(value, school, ['direct']), ...(condition ? { condition } : {}) })
 const barrierPower = (value: number, school: 'water' | 'earth' | 'air') => ({ key: 'barrier-power-percent' as const, value, originSourceKinds: ['spell' as const], damageTypes: [school] })
 const bossRule = (id: string, condition: NonNullable<CombatTriggerRule['condition']>, value: number, cooldownMs?: number): CombatTriggerRule => ({ id, event: 'on-hp-threshold', condition, oncePerEncounter: true, ...(cooldownMs ? { cooldownMs } : {}), effects: [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value } }] })
+
+const galeshardNodes: ArtifactNodeDefinition[] = [
+  { id: 'fractured-current', artifactId: 'galeshard-staff', name: 'Fractured Current', type: 'minor', branch: 'shared', pointCost: 1, requiresLevel: 2, combat: { modifiers: [spellDamage(0.05, 'air')] } },
+  { id: 'swift-gale', artifactId: 'galeshard-staff', name: 'Swift Gale', type: 'minor', branch: 'gale-tempo', pointCost: 1, requiresLevel: 3, prerequisites: ['fractured-current'], combat: { modifiers: [{ key: 'cooldown-recovery-percent', value: 0.05 }] } },
+  { id: 'wind-reserve', artifactId: 'galeshard-staff', name: 'Wind Reserve', type: 'minor', branch: 'gale-tempo', pointCost: 1, requiresLevel: 4, prerequisites: ['swift-gale'], stats: { maxMana: 10 } },
+  { id: 'gatekeeper-current', artifactId: 'galeshard-staff', name: 'Gatekeeper Current', type: 'major', branch: 'gale-tempo', pointCost: 1, requiresLevel: 4, prerequisites: ['wind-reserve'], requiresBossKill: 'corrupted-elemental-gatekeeper', combat: { modifiers: [spellDamage(0.1, 'air')] } },
+  { id: 'airborne-tempo', artifactId: 'galeshard-staff', name: 'Airborne Tempo', type: 'minor', branch: 'gale-tempo', pointCost: 1, requiresLevel: 6, prerequisites: ['gatekeeper-current'], combat: { modifiers: [{ key: 'cooldown-recovery-percent', value: 0.05 }] } },
+  { id: 'fractured-velocity', artifactId: 'galeshard-staff', name: 'Fractured Velocity', type: 'major', branch: 'gale-tempo', pointCost: 1, requiresLevel: 7, prerequisites: ['airborne-tempo'], requiresBossKill: 'corrupted-elemental-gatekeeper', combat: { modifiers: [directSpellDamage(0.15, 'air')] } },
+  { id: 'eye-of-the-gale', artifactId: 'galeshard-staff', name: 'Eye of the Gale', type: 'capstone', branch: 'gale-tempo', pointCost: 2, requiresLevel: 10, prerequisites: ['fractured-velocity'], requiresBossKill: 'corrupted-elemental-gatekeeper', combat: { modifiers: [spellDamage(0.2, 'air')] } },
+  { id: 'razorwind', artifactId: 'galeshard-staff', name: 'Razorwind', type: 'minor', branch: 'storm-precision', pointCost: 1, requiresLevel: 3, prerequisites: ['fractured-current'], combat: { modifiers: [{ key: 'crit-chance', value: 0.03, originSourceKinds: ['spell'], damageTypes: ['air'], sourceTags: ['direct'] }] } },
+  { id: 'storm-edge', artifactId: 'galeshard-staff', name: 'Storm Edge', type: 'minor', branch: 'storm-precision', pointCost: 1, requiresLevel: 4, prerequisites: ['razorwind'], combat: { modifiers: [{ key: 'crit-damage', value: 0.15, originSourceKinds: ['spell'], damageTypes: ['air'], sourceTags: ['direct'] }] } },
+  { id: 'fractured-eye', artifactId: 'galeshard-staff', name: 'Fractured Eye', type: 'major', branch: 'storm-precision', pointCost: 1, requiresLevel: 4, prerequisites: ['storm-edge'], requiresBossKill: 'corrupted-elemental-gatekeeper', combat: { modifiers: [directSpellDamage(0.1, 'air')] } },
+  { id: 'swift-edge', artifactId: 'galeshard-staff', name: 'Swift Edge', type: 'minor', branch: 'storm-precision', pointCost: 1, requiresLevel: 6, prerequisites: ['fractured-eye'], combat: { modifiers: [{ key: 'crit-chance', value: 0.03, originSourceKinds: ['spell'], damageTypes: ['air'], sourceTags: ['direct'] }] } },
+  { id: 'gatekeeper-focus', artifactId: 'galeshard-staff', name: 'Gatekeeper Focus', type: 'major', branch: 'storm-precision', pointCost: 1, requiresLevel: 7, prerequisites: ['swift-edge'], requiresBossKill: 'corrupted-elemental-gatekeeper', combat: { modifiers: [{ key: 'cooldown-recovery-percent', value: 0.1 }] } },
+  { id: 'stormbreak', artifactId: 'galeshard-staff', name: 'Stormbreak', type: 'capstone', branch: 'storm-precision', pointCost: 2, requiresLevel: 10, prerequisites: ['gatekeeper-focus'], requiresBossKill: 'corrupted-elemental-gatekeeper', combat: { modifiers: [directSpellDamage(0.2, 'air')] } },
+]
 
 const tideglassNodes: ArtifactNodeDefinition[] = [
   { id: 'flowing-conduit', artifactId: 'tideglass-wand', name: 'Flowing Conduit', type: 'minor', branch: 'shared', pointCost: 1, requiresLevel: 2, combat: { modifiers: [spellDamage(0.05, 'water')] } },
@@ -232,6 +250,16 @@ export const ARTIFACTS: Record<ArtifactId, ArtifactDefinition> = {
       { id: 'arcane-precision', name: 'Arcane Precision', description: 'Critical chance, Critical damage, Spell Power, and casting speed.' },
     ],
     nodes: wispveilNodes,
+  },
+  'galeshard-staff': {
+    id: 'galeshard-staff', itemId: 'galeshard-staff', tier: 1.7, maxLevel: 10, coreStatsByLevel: galeshardStats,
+    forge: { ingredients: [material('air-fragment', 40), material('artifact-essence', 80)] },
+    upgrades: galeshardUpgrades,
+    branches: [
+      { id: 'gale-tempo', name: 'Gale Tempo', description: 'Air spell damage, cooldown recovery, and Mana.' },
+      { id: 'storm-precision', name: 'Storm Precision', description: 'Direct Air critical chance, critical damage, and casting speed.' },
+    ],
+    nodes: galeshardNodes,
   },
 }
 export const isArtifactId = (itemId: ItemId): itemId is ArtifactId => Object.prototype.hasOwnProperty.call(ARTIFACTS, itemId)

@@ -44,7 +44,7 @@ export function CombatActNavigationDialog({ selectedDungeonId, onSelect, onClose
 
   const handleEnter = (nodeId: string): boolean => {
     const node = viewModel.selectedAct.nodes.find((entry) => entry.id === nodeId)
-    if (!node || node.dungeonId === null || node.state === 'prototype' || node.state === 'locked') {
+    if (!node || node.dungeonId === null || node.prototype || node.state === 'locked') {
       emitNavigationFeedback('error', 'var(--ui-warning)')
       return false
     }

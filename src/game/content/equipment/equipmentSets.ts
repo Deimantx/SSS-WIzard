@@ -11,6 +11,7 @@ export const ARTIFACT_EQUIPMENT_IDS = [
   'windthread-wand',
   'wispweave-robe',
   'wispveil-hood',
+  'galeshard-staff',
 ] as const satisfies readonly ItemId[]
 
 const DUNGEON_IDS = Object.keys(DUNGEON_LOOT) as DungeonId[]

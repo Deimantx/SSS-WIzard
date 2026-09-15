@@ -20,7 +20,10 @@ const getActStatusLabel = (status: CombatActStatus) => status === 'completed' ? 
 export const getVisibleCombatActs = (progress: CombatActNavigationProgress): CombatActSummaryViewModel[] => COMBAT_ACT_DEFINITIONS.filter((act) => isCombatActUnlocked(act, progress)).map((act) => ({ id: act.id, label: act.label, title: act.title, subtitle: act.subtitle ?? '', status: getActStatus(act, progress), statusLabel: getActStatusLabel(getActStatus(act, progress)) }))
 
 export const getDefaultCombatActId = (progress: CombatActNavigationProgress, combat: CombatState): CombatActId => {
-  if (combat.active && combat.dungeonId) return 'act-0'
+  if (combat.active && combat.dungeonId) {
+    const activeAct = COMBAT_ACT_DEFINITIONS.find((act) => act.nodes.some((node) => node.dungeonId === combat.dungeonId))
+    if (activeAct) return activeAct.id
+  }
   const visible = getVisibleCombatActs(progress)
   return visible[visible.length - 1]?.id ?? 'act-0'
 }
@@ -28,6 +31,7 @@ export const getDefaultCombatActId = (progress: CombatActNavigationProgress, com
 export const getDefaultCombatActNodeId = (actId: CombatActId, progress: CombatActNavigationProgress, combat: CombatState, selectedDungeonId: DungeonId): string => {
   const definition = getCombatActDefinition(actId)
   if (!definition) return ''
+  if (combat.active && combat.dungeonId && definition.nodes.some((node) => node.dungeonId === combat.dungeonId)) return combat.dungeonId
   if (actId === 'act-1') return definition.nodes[0]?.id ?? ''
   if (combat.active && combat.dungeonId && definition.nodes.some((node) => node.dungeonId === combat.dungeonId)) return combat.dungeonId
   if (DUNGEONS[selectedDungeonId] && isDungeonUnlocked(DUNGEONS[selectedDungeonId], progress)) return selectedDungeonId
@@ -55,7 +59,9 @@ const buildPrototypeEncounters = (nodeId: string): CombatActNodeViewModel['encou
 
 const buildNode = (definition: CombatActNodeDefinition, progress: CombatActNavigationProgress, combat: CombatState): CombatActNodeViewModel => {
   if (definition.dungeonId === null || definition.prototype) {
-    return { ...definition, name: definition.name ?? 'Prototype Area', description: definition.description ?? 'Temporary navigation prototype used to validate future Act structure.', state: 'prototype', statusLabel: 'PROTOTYPE', unlockText: null, encounters: buildPrototypeEncounters(definition.id), boss: { id: `${definition.id}-boss`, monsterId: null, role: 'boss', name: 'UNKNOWN BOSS', known: false }, threatRequired: null, threatCleared: 0, normalKills: 0, bossClears: 0 }
+    const prerequisiteDungeon = definition.requiresDungeonCompletion ? DUNGEONS[definition.requiresDungeonCompletion] : null
+    const prerequisiteMet = !prerequisiteDungeon || isDungeonCompleted(prerequisiteDungeon.id, progress)
+    return { ...definition, name: definition.name ?? 'Prototype Area', description: definition.description ?? 'Temporary navigation prototype used to validate future Act structure.', state: prerequisiteMet ? 'available' : 'prototype', statusLabel: prerequisiteMet ? 'AVAILABLE' : 'PROTOTYPE', unlockText: prerequisiteMet ? null : `Complete ${prerequisiteDungeon?.name ?? 'the previous dungeon'} to reveal this route.`, encounters: buildPrototypeEncounters(definition.id), boss: { id: `${definition.id}-boss`, monsterId: null, role: 'boss', name: 'UNKNOWN BOSS', known: false }, threatRequired: null, threatCleared: 0, normalKills: 0, bossClears: 0 }
   }
   const dungeon = DUNGEONS[definition.dungeonId]
   const state = getDungeonNodeState(definition.dungeonId, progress, combat)

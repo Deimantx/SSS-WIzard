@@ -4,10 +4,13 @@ import { ARTIFICING_RECIPES, ARTIFICING_RECIPE_ORDER } from '../../content/recip
 import { isRecipeUnlocked } from '../../content/recipes/recipeUnlocks'
 import { getArtifactLevelCap, getArtifactLevelCapRequirement } from '../artifacts/artifactProgression'
 
-describe('Artificing starter Artifact access', () => {
-  it('keeps all six current Artifact recipes unlocked on a fresh save', () => {
+describe('Artificing Artifact access', () => {
+  it('keeps starter Artifacts unlocked and gates Galeshard Staff on the Gatekeeper', () => {
     const state = createInitialState()
-    ARTIFICING_RECIPE_ORDER.forEach((recipeId) => expect(isRecipeUnlocked(state, ARTIFICING_RECIPES[recipeId])).toBe(true))
+    ARTIFICING_RECIPE_ORDER.filter((recipeId) => recipeId !== 'galeshard-staff').forEach((recipeId) => expect(isRecipeUnlocked(state, ARTIFICING_RECIPES[recipeId])).toBe(true))
+    expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['galeshard-staff'])).toBe(false)
+    state.progress.bossKillsByBoss['corrupted-elemental-gatekeeper'] = 1
+    expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['galeshard-staff'])).toBe(true)
   })
 
   it('uses boss milestones for the Artifact level cap and its player-facing requirement', () => {

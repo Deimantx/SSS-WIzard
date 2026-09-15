@@ -7,8 +7,13 @@ import { getArtifactLevelCap, getArtifactLevelCapRequirement } from '../artifact
 describe('Artificing Artifact access', () => {
   it('keeps starter Artifacts unlocked and gates Galeshard Staff on the Gatekeeper', () => {
     const state = createInitialState()
-    ARTIFICING_RECIPE_ORDER.filter((recipeId) => recipeId !== 'galeshard-staff').forEach((recipeId) => expect(isRecipeUnlocked(state, ARTIFICING_RECIPES[recipeId])).toBe(true))
+    ARTIFICING_RECIPE_ORDER.filter((recipeId) => !['galeshard-staff', 'reliquary-scepter', 'pyrebound-staff', 'rootheart-scepter', 'convergence-robe', 'waystone-circlet'].includes(recipeId)).forEach((recipeId) => expect(isRecipeUnlocked(state, ARTIFICING_RECIPES[recipeId])).toBe(true))
     expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['galeshard-staff'])).toBe(false)
+    expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['reliquary-scepter'])).toBe(false)
+    expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['pyrebound-staff'])).toBe(false)
+    expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['rootheart-scepter'])).toBe(false)
+    expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['convergence-robe'])).toBe(false)
+    expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['waystone-circlet'])).toBe(false)
     state.progress.bossKillsByBoss['corrupted-elemental-gatekeeper'] = 1
     expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['galeshard-staff'])).toBe(true)
   })

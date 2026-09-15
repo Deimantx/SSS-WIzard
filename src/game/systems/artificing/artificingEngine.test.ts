@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { advanceArtificing, cancelArtificingCraft, craftArtificingRecipe } from './artificingEngine'
 import { migrateSave } from '../../../persistence/migrations'
+import { RECIPES } from '../../content/recipes/recipes'
 
 const provideForgeMaterials = (state: ReturnType<typeof createInitialState>, recipeId: 'ember-staff' | 'windthread-wand') => {
   state.inventory[recipeId === 'ember-staff' ? 'fire-fragment' : 'air-fragment'] = 40
@@ -65,11 +66,7 @@ describe('Artificing', () => {
     expect(protectedState.inventory['artifact-essence']).toBe(20)
   })
 
-  it('supports normal Equipment Artificing outputs', () => {
-    const state = createInitialState()
-    state.inventory['artifact-essence'] = 20
-    state.inventory['life-essence'] = 30
-    expect(craftArtificingRecipe(state, 'windthread-charm').ok).toBe(true)
-    expect(state.activities.artificing.activeJob).toEqual({ kind: 'recipe', recipeId: 'windthread-charm' })
+  it('keeps direct dungeon Equipment out of Artificing', () => {
+    expect((RECIPES as Record<string, unknown>)['windthread-charm']).toBeUndefined()
   })
 })

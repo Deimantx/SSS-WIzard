@@ -15,7 +15,7 @@ const ITEM_IDS: readonly ItemId[] = [
   'predator-hide-mantle', 'fangwire-earring', 'howling-signet', 'greatbear-heartstone',
   'ossuary-mantle', 'mourning-glass-earring', 'gravebinder-ring', 'soulglass-amulet', 'edrins-signet', 'black-portal-shard',
   // Act 1 — Artifacts and dungeons
-  'galeshard-staff', 'reliquary-scepter', 'pyrebound-staff', 'rootheart-scepter',
+  'galeshard-staff', 'reliquary-scepter', 'pyrebound-staff', 'rootheart-scepter', 'convergence-robe', 'waystone-circlet',
   'galeglass-earring', 'riftwind-ring', 'waystone-pendant', 'fractured-ward-mantle', 'gatekeeper-sigil',
   'mistglass-earring', 'reliquary-ring', 'drowned-chain-pendant', 'keepers-tide-seal',
   'cinderwire-earring', 'ashbrand-ring', 'emberwatch-mantle', 'revenant-emberstone',

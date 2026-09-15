@@ -7,9 +7,9 @@ import { startArtificingCraft } from './artificingEngine'
 const provideIngredients = (state: ReturnType<typeof createInitialState>, recipeId: keyof typeof ARTIFICING_RECIPES) => getArtificingCraftIngredients(recipeId)?.forEach(({ itemId, quantity }) => { state.inventory[itemId] = (state.inventory[itemId] ?? 0) + quantity })
 
 describe('Artificing catalog', () => {
-  it('shows unlocked starter Artifacts and Whispering Woods Equipment on a fresh save', () => {
+  it('shows only unlocked starter Artifacts on a fresh save', () => {
     const state = createInitialState()
-    expect(getVisibleArtificingRecipes(state).map((recipe) => recipe.id)).toEqual(['ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'wispweave-robe', 'wispveil-hood', 'windthread-charm', 'wispglass-earring', 'wispbound-ring', 'grovekeeper-mantle', 'heartseed-necklace'])
+    expect(getVisibleArtificingRecipes(state).map((recipe) => recipe.id)).toEqual(['ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'wispweave-robe', 'wispveil-hood'])
     expect(getVisibleArtificingRecipes(state, { ...defaults, kindFilter: 'artifact' })).toHaveLength(6)
     expect(getVisibleArtificingRecipes(state, { ...defaults, kindFilter: 'artifact' }).map((recipe) => recipe.id)).not.toContain('reliquary-scepter')
   })
@@ -27,7 +27,7 @@ describe('Artificing catalog', () => {
     state.artifactProgress['ember-staff'] = { level: 1, allocatedNodeIds: [], attunedNodeIds: [] }
     expect(getVisibleArtificingRecipes(state, { ...filters, ownershipFilter: 'owned' }).map((recipe) => recipe.id)).toEqual(['ember-staff'])
     expect(getVisibleArtificingRecipes(state, { ...filters, ownershipFilter: 'unowned' }, 'ember-staff')).toHaveLength(0)
-    expect(getVisibleArtificingRecipes(state, { ...defaults, tierFilter: 1 })).toHaveLength(11)
+    expect(getVisibleArtificingRecipes(state, { ...defaults, tierFilter: 1 })).toHaveLength(6)
     expect(getVisibleArtificingRecipes(state, { ...defaults, tierFilter: 2 })).toHaveLength(0)
   })
 

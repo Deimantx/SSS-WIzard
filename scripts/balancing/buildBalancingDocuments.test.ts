@@ -20,7 +20,7 @@ describe('canonical balancing workbook', () => {
 
   it('keeps acquisition invariants and stable IDs represented', () => {
     const balancing = buildBalancingDocuments()
-    expect(balancing.invariants).toEqual({ recipes: 32, equipment: 27, equipmentRecipeCoverage: 27, directEquipmentLoot: 0 })
+    expect(balancing.invariants).toEqual({ recipes: 17, equipment: 77, equipmentRecipeCoverage: 12, directEquipmentLoot: 258 })
     for (const registry of Object.values(balancing.registries)) {
       const text = registry.documents.map((path) => balancing.docs.get(path) ?? '').join('\n')
       for (const id of registry.ids) expect(text).toContain(id)

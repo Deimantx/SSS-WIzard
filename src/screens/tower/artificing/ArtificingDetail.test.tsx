@@ -41,8 +41,11 @@ describe('Artificing detail ownership labels', () => {
     expect(getUiPreferences().screenState.artificing.pinnedRecipeIds).toEqual([])
   })
 
-  it('contains only the six starter Artifact recipes', () => {
-    expect(Object.keys(ARTIFICING_RECIPES)).toEqual(['ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'wispweave-robe', 'wispveil-hood'])
+  it('contains the complete Artifact recipe catalog', () => {
+    expect(Object.keys(ARTIFICING_RECIPES)).toEqual([
+      'ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'wispweave-robe', 'wispveil-hood',
+      'galeshard-staff', 'reliquary-scepter', 'pyrebound-staff', 'rootheart-scepter', 'convergence-robe', 'waystone-circlet',
+    ])
     expect((ARTIFICING_RECIPES as Record<string, unknown>)['windthread-charm']).toBeUndefined()
   })
 })

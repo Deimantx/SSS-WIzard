@@ -12,8 +12,8 @@ import { getTransmutationEchoesAssigned } from './systems/transmutation/transmut
 import { clampResourcePercent } from '../app/shell/Topbar'
 
 describe('Unified Transmutation', () => {
-  it('defines five Transmutation and six Artifact recipes with the intended costs', () => {
-    expect(Object.keys(RECIPES)).toHaveLength(11)
+  it('defines five Transmutation and twelve Artifact recipes with the intended costs', () => {
+    expect(Object.keys(RECIPES)).toHaveLength(17)
     expect(['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'].map((id) => RECIPES[id as import('./types').TransmutationRecipeId].manaCost)).toEqual([25, 25, 25, 25])
     expect(['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'].map((id) => RECIPES[id as import('./types').TransmutationRecipeId].baseDurationMs)).toEqual([8000, 8000, 8000, 8000])
     expect(RECIPES['ember-staff'].ingredients).toEqual([
@@ -25,9 +25,12 @@ describe('Unified Transmutation', () => {
     expect(RECIPES['ember-staff'].unlock).toEqual({ type: 'always' })
   })
 
-  it('keeps all starter Artifacts available from a fresh save', () => {
+  it('keeps starter Artifacts available while gating Act 1 Artifacts from a fresh save', () => {
     const state = makeInitialState()
-    Object.values(RECIPES).filter((recipe) => recipe.kind === 'artificing').forEach((recipe) => expect(isRecipeUnlocked(state, recipe)).toBe(true))
+    const starterArtifacts = ['ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'wispweave-robe', 'wispveil-hood'] as const
+    const act1Artifacts = ['galeshard-staff', 'reliquary-scepter', 'pyrebound-staff', 'rootheart-scepter', 'convergence-robe', 'waystone-circlet'] as const
+    starterArtifacts.forEach((id) => expect(isRecipeUnlocked(state, RECIPES[id])).toBe(true))
+    act1Artifacts.forEach((id) => expect(isRecipeUnlocked(state, RECIPES[id])).toBe(false))
     expect((RECIPES as Record<string, unknown>)['heartseed-necklace']).toBeUndefined()
   })
 

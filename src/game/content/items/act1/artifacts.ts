@@ -62,4 +62,34 @@ export const ACT1_ARTIFACTS: AuthoredItemRegistry = {
     sellValue: null,
     canDestroy: false,
   }),
+
+  /** Artifact — Crossroads of Ruin / T2.5 Armor path. */
+  'convergence-robe': equipment({
+    id: 'convergence-robe',
+    name: 'Convergence Robe',
+    description: 'A layered robe where the roads of Act 1 meet, turning pressure from every direction into a steadier ward.',
+    icon: '◇',
+    color: '#c8b1ff',
+    equipmentTier: 2,
+    buildTags: ['defense', 'barrier', 'mana', 'sustain'],
+    equipmentBudgetProfile: 'signature',
+    equipmentSlot: 'armor',
+    sellValue: null,
+    canDestroy: false,
+  }),
+
+  /** Artifact — Crossroads of Ruin / T2.5 Helmet path. */
+  'waystone-circlet': equipment({
+    id: 'waystone-circlet',
+    name: 'Waystone Circlet',
+    description: 'A circlet cut from a stable waystone, keeping the wizard anchored while every school pulls at the same spell.',
+    icon: '◇',
+    color: '#b9a7ff',
+    equipmentTier: 2,
+    buildTags: ['spell', 'mana', 'focus', 'status'],
+    equipmentBudgetProfile: 'signature',
+    equipmentSlot: 'helmet',
+    sellValue: null,
+    canDestroy: false,
+  }),
 }

@@ -48,6 +48,8 @@ export type ItemId =
   | 'reliquary-scepter'
   | 'pyrebound-staff'
   | 'rootheart-scepter'
+  | 'convergence-robe'
+  | 'waystone-circlet'
   // Act 1 — Fractured Approach
   | 'galeglass-earring'
   | 'riftwind-ring'
@@ -147,6 +149,8 @@ export type ArtifactId =
   | 'reliquary-scepter'
   | 'pyrebound-staff'
   | 'rootheart-scepter'
+  | 'convergence-robe'
+  | 'waystone-circlet'
 export type EquipmentBuildTag = 'spell' | 'basic-attack' | 'hybrid' | 'crit' | 'status' | 'dot' | 'barrier' | 'defense' | 'sustain' | 'mana' | 'focus' | 'healing' | 'fire' | 'water' | 'earth' | 'air'
 export type EquipmentBudgetProfileId = 'standard' | 'signature' | 'boss'
 /** @deprecated Use EquipmentItemSlot for item metadata or EquipmentPosition for loadout state. */
@@ -163,7 +167,8 @@ export type TransmutationArrayId = 'temporal-array' | 'conservation-array' | 're
 export type ChannelingDiscoveryId = 'stable-leyline' | 'echo-resonance' | 'deep-reservoir'
 export type RecipeId = TransmutationRecipeId | ArtificingRecipeId
 export type TransmutationRecipeId = 'fire-fragment' | 'water-fragment' | 'earth-fragment' | 'air-fragment' | 'prismatic-fragment'
-export type ArtificingRecipeId = 'ember-staff' | 'tideglass-wand' | 'stoneheart-scepter' | 'windthread-wand' | 'wispweave-robe' | 'wispveil-hood' | 'galeshard-staff' | 'windthread-charm' | 'grovekeeper-mantle' | 'wispglass-earring' | 'wispbound-ring' | 'heartseed-necklace' | 'predator-hide-mantle' | 'fangwire-earring' | 'howling-signet' | 'greatbear-heartstone' | 'ossuary-mantle' | 'mourning-glass-earring' | 'gravebinder-ring' | 'soulglass-amulet' | 'edrins-signet' | 'galeglass-earring' | 'riftwind-ring' | 'waystone-pendant' | 'fractured-ward-mantle' | 'gatekeeper-sigil' | 'reliquary-scepter' | 'pyrebound-staff' | 'rootheart-scepter' | 'mistglass-earring' | 'reliquary-ring' | 'drowned-chain-pendant' | 'keepers-tide-seal' | 'cinderwire-earring' | 'ashbrand-ring' | 'emberwatch-mantle' | 'revenant-emberstone' | 'briar-earring' | 'rootbound-ring' | 'mossguard-mantle' | 'ancient-heart-knot' | 'wayfarer-earring' | 'crossroads-signet' | 'confluence-pendant' | 'keepers-roadseal' | 'graveglass-earring' | 'shardbone-ring' | 'mourner-veil-mantle' | 'behemoth-heartshard' | 'voltglass-earring' | 'stormcoil-ring' | 'gale-scribe-pendant' | 'archivists-conductor' | 'starfall-ring' | 'lenskeeper-earring' | 'astral-pendant' | 'fallen-astromancer-lens' | 'meridian-ring' | 'linebreaker-earring' | 'fractured-conduit-pendant' | 'leyline-mantle' | 'splitters-meridian-core' | 'nameless-ring' | 'whisper-earring' | 'unbound-seal-pendant' | 'prelates-unspoken-seal' | 'black-sigil-ring' | 'inkbound-earring' | 'vaultseal-mantle' | 'wardens-black-sigil' | 'gatebound-ring' | 'portal-echo-earring' | 'blackgate-pendant' | 'voidward-mantle' | 'black-gatekeepers-seal'
+/** Artificing is reserved for permanent Artifact Equipment. Dungeon gear is combat loot. */
+export type ArtificingRecipeId = ArtifactId
 export type RecipeCategory = 'elemental' | 'material'
 export type TransmutationCategoryFilter = 'all' | RecipeCategory
 export type TransmutationTierFilter = 'all' | number

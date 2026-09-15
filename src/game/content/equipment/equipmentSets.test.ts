@@ -5,7 +5,7 @@ import { ARTIFACT_EQUIPMENT_IDS, BOSS_SIGNATURE_EQUIPMENT_IDS, DUNGEON_EQUIPMENT
 describe('Equipment origin groups', () => {
   it('separates starter Artifacts from direct dungeon Equipment', () => {
     expect(validateEquipmentSetDefinitions()).toEqual([])
-    expect(ARTIFACT_EQUIPMENT_IDS).toHaveLength(10)
+    expect(ARTIFACT_EQUIPMENT_IDS).toHaveLength(12)
     expect(DUNGEON_EQUIPMENT_BY_DUNGEON['whispering-woods']).toHaveLength(5)
     expect(DUNGEON_EQUIPMENT_BY_DUNGEON['howling-den']).toHaveLength(4)
     expect(DUNGEON_EQUIPMENT_BY_DUNGEON['abandoned-catacombs']).toHaveLength(5)

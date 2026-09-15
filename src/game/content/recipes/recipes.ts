@@ -49,7 +49,7 @@ export const validateRecipeDefinitions = (recipes: Record<string, CraftingRecipe
   })
   Object.entries(ITEMS).filter(([, item]) => item.kind === 'equipment' && !isArtifactId(item.id)).forEach(([itemId]) => {
     const outputRecipes = Object.values(recipes).filter((recipe) => isArtificingRecipe(recipe) && recipe.output.itemId === itemId)
-    if (outputRecipes.length !== 1) errors.push(`${itemId}: Equipment must have exactly one Artificing recipe (found ${outputRecipes.length})`)
+    if (outputRecipes.length !== 0) errors.push(`${itemId}: dungeon Equipment must not have an Artificing recipe (found ${outputRecipes.length})`)
   })
   if (errors.length && import.meta.env.DEV) console.error(`[recipes] ${errors.join('; ')}`)
   return errors

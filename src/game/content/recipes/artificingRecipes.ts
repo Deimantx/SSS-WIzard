@@ -18,27 +18,33 @@ interface ArtifactRecipeOptions {
   unlock?: RecipeUnlockCondition
   artifactEssenceQuantity?: number
 }
-const artifactRecipe = (id: ArtifactId, name: string, fragment: ItemId, fragmentQuantity: number, description: string, options: ArtifactRecipeOptions = {}): ArtificingRecipeDefinition => ({
+
+const artifactRecipe = (
+  id: ArtifactId,
+  name: string,
+  fragment: ItemId,
+  fragmentQuantity: number,
+  description: string,
+  options: ArtifactRecipeOptions = {},
+): ArtificingRecipeDefinition => ({
   id,
   kind: 'artificing',
   name,
   output: { itemId: id, quantity: 1 },
-  ingredients: [{ itemId: fragment, quantity: fragmentQuantity }, { itemId: 'artifact-essence', quantity: options.artifactEssenceQuantity ?? 20 }],
+  ingredients: [
+    { itemId: fragment, quantity: fragmentQuantity },
+    { itemId: 'artifact-essence', quantity: options.artifactEssenceQuantity ?? 20 },
+  ],
   ...(options.sourceDungeonId ? { sourceDungeonId: options.sourceDungeonId } : {}),
   unlock: options.unlock ?? always,
   baseDurationMs: 5000,
   description,
 })
 
-const normalRecipe = (id: ArtificingRecipeDefinition['id'], name: string, dungeonId: DungeonId): ArtificingRecipeDefinition => ({
-  id, kind: 'artificing', name, output: { itemId: id, quantity: 1 }, ingredients: [{ itemId: 'artifact-essence', quantity: 20 }, { itemId: 'life-essence', quantity: 30 }], unlock: { type: 'dungeon-unlocked', dungeonId }, sourceDungeonId: dungeonId, baseDurationMs: 5000, description: `Craft ${name} from materials recovered in ${dungeonId}.`,
-})
-
-const act1Recipes = (ids: readonly ArtificingRecipeDefinition['id'][], dungeonId: DungeonId): Record<string, ArtificingRecipeDefinition> => Object.fromEntries(ids.map((id) => [id, normalRecipe(id, id.split('-').map((part) => part[0].toUpperCase() + part.slice(1)).join(' '), dungeonId)]))
-const ACT0_RECIPE_IDS: Array<ArtificingRecipeDefinition['id']> = ['windthread-charm', 'wispglass-earring', 'wispbound-ring', 'grovekeeper-mantle', 'heartseed-necklace', 'predator-hide-mantle', 'fangwire-earring', 'howling-signet', 'greatbear-heartstone', 'ossuary-mantle', 'mourning-glass-earring', 'soulglass-amulet', 'gravebinder-ring', 'edrins-signet', 'galeglass-earring', 'riftwind-ring', 'waystone-pendant', 'fractured-ward-mantle', 'gatekeeper-sigil']
-
-const ACT1_RECIPE_IDS: ArtificingRecipeDefinition['id'][] = ['mistglass-earring', 'reliquary-ring', 'drowned-chain-pendant', 'keepers-tide-seal', 'cinderwire-earring', 'ashbrand-ring', 'emberwatch-mantle', 'revenant-emberstone', 'briar-earring', 'rootbound-ring', 'mossguard-mantle', 'ancient-heart-knot', 'wayfarer-earring', 'crossroads-signet', 'confluence-pendant', 'keepers-roadseal', 'graveglass-earring', 'shardbone-ring', 'mourner-veil-mantle', 'behemoth-heartshard', 'voltglass-earring', 'stormcoil-ring', 'gale-scribe-pendant', 'archivists-conductor', 'starfall-ring', 'lenskeeper-earring', 'astral-pendant', 'fallen-astromancer-lens', 'meridian-ring', 'linebreaker-earring', 'fractured-conduit-pendant', 'leyline-mantle', 'splitters-meridian-core', 'nameless-ring', 'whisper-earring', 'unbound-seal-pendant', 'prelates-unspoken-seal', 'black-sigil-ring', 'inkbound-earring', 'vaultseal-mantle', 'wardens-black-sigil', 'gatebound-ring', 'portal-echo-earring', 'blackgate-pendant', 'voidward-mantle', 'black-gatekeepers-seal']
-
+/**
+ * Artificing creates permanent Artifacts only. Normal and boss Equipment are
+ * combat loot and intentionally do not have craft bypass recipes.
+ */
 export const ARTIFICING_RECIPES: Record<ArtificingRecipeId, ArtificingRecipeDefinition> = {
   'ember-staff': artifactRecipe('ember-staff', 'Ember Staff', 'fire-fragment', 20, 'A blackened staff veined with embers that never cool; each reforging wakes a deeper furnace sealed within its core.'),
   'tideglass-wand': artifactRecipe('tideglass-wand', 'Tideglass Wand', 'water-fragment', 20, 'Sea-blue glass beads with cold water even in dry air, bending every incantation into a steadier and more deliberate current.'),
@@ -50,21 +56,12 @@ export const ARTIFICING_RECIPES: Record<ArtificingRecipeId, ArtificingRecipeDefi
   'reliquary-scepter': artifactRecipe('reliquary-scepter', 'Reliquary Scepter', 'water-fragment', 40, 'A drowned scepter that turns cold currents into deliberate spellcraft.', { sourceDungeonId: 'flooded-reliquary', unlock: { type: 'boss-kill', bossId: 'drowned-keeper' }, artifactEssenceQuantity: 80 }),
   'pyrebound-staff': artifactRecipe('pyrebound-staff', 'Pyrebound Staff', 'fire-fragment', 40, 'A staff that keeps a watchfire burning through every incantation.', { sourceDungeonId: 'ashen-watch', unlock: { type: 'boss-kill', bossId: 'flamebound-revenant' }, artifactEssenceQuantity: 80 }),
   'rootheart-scepter': artifactRecipe('rootheart-scepter', 'Rootheart Scepter', 'earth-fragment', 40, 'A living scepter that answers each spell with a patient pulse.', { sourceDungeonId: 'rootscar-hollow', unlock: { type: 'boss-kill', bossId: 'rootscar-ancient' }, artifactEssenceQuantity: 80 }),
-  ...act1Recipes(ACT0_RECIPE_IDS.slice(0, 5), 'whispering-woods'),
-  ...act1Recipes(ACT0_RECIPE_IDS.slice(5, 9), 'howling-den'),
-  ...act1Recipes(ACT0_RECIPE_IDS.slice(9, 14), 'abandoned-catacombs'),
-  ...act1Recipes(ACT0_RECIPE_IDS.slice(14, 19), 'fractured-approach'),
-  ...act1Recipes(ACT1_RECIPE_IDS.slice(0, 4), 'flooded-reliquary'),
-  ...act1Recipes(ACT1_RECIPE_IDS.slice(4, 8), 'ashen-watch'),
-  ...act1Recipes(ACT1_RECIPE_IDS.slice(8, 12), 'rootscar-hollow'),
-  ...act1Recipes(ACT1_RECIPE_IDS.slice(12, 16), 'crossroads-of-ruin'),
-  ...act1Recipes(ACT1_RECIPE_IDS.slice(16, 20), 'graveglass-hollow'),
-  ...act1Recipes(ACT1_RECIPE_IDS.slice(20, 24), 'stormvault-gallery'),
-  ...act1Recipes(ACT1_RECIPE_IDS.slice(24, 28), 'starfallen-observatory'),
-  ...act1Recipes(ACT1_RECIPE_IDS.slice(28, 33), 'broken-meridian'),
-  ...act1Recipes(ACT1_RECIPE_IDS.slice(33, 37), 'hall-of-unbound-names'),
-  ...act1Recipes(ACT1_RECIPE_IDS.slice(37, 41), 'vault-of-the-black-sigil'),
-  ...act1Recipes(ACT1_RECIPE_IDS.slice(41, 46), 'black-gate'),
-} as Record<ArtificingRecipeId, ArtificingRecipeDefinition>
+  'convergence-robe': artifactRecipe('convergence-robe', 'Convergence Robe', 'prismatic-fragment', 40, 'A convergence-woven robe that turns the pressure of every Act 1 road into a steadier ward.', { sourceDungeonId: 'crossroads-of-ruin', unlock: { type: 'boss-kill', bossId: 'crossroads-keeper' }, artifactEssenceQuantity: 80 }),
+  'waystone-circlet': artifactRecipe('waystone-circlet', 'Waystone Circlet', 'prismatic-fragment', 40, 'A waystone circlet that anchors spellcraft at the point where every road meets.', { sourceDungeonId: 'crossroads-of-ruin', unlock: { type: 'boss-kill', bossId: 'crossroads-keeper' }, artifactEssenceQuantity: 80 }),
+}
 
-export const ARTIFICING_RECIPE_ORDER: readonly ArtificingRecipeId[] = ['ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'wispweave-robe', 'wispveil-hood', 'galeshard-staff', 'reliquary-scepter', 'pyrebound-staff', 'rootheart-scepter', ...ACT0_RECIPE_IDS, ...ACT1_RECIPE_IDS]
+export const ARTIFICING_RECIPE_ORDER: readonly ArtificingRecipeId[] = [
+  'ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand',
+  'wispweave-robe', 'wispveil-hood', 'galeshard-staff', 'reliquary-scepter',
+  'pyrebound-staff', 'rootheart-scepter', 'convergence-robe', 'waystone-circlet',
+]

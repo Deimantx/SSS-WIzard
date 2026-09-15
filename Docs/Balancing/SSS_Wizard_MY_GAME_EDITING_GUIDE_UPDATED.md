@@ -146,6 +146,7 @@ If I know **what I want to change**, start here instead of searching the whole r
 | Equipment slots / ring positions / Earring support | `src/game/types.ts` | Item slot uses `ring`; loadout uses `ring1` + `ring2`; `earring` is its own slot |
 | Starter Artifact forge ingredients / upgrade costs | `src/game/content/artifacts/artifacts.ts` | Authoritative Artifact forge and level-up cost source; keep the recipe mirror synchronized |
 | Artificing unlock conditions | `src/game/content/recipes/artificingRecipes.ts` + `src/game/content/recipes/recipeUnlocks.ts` | Existing unlock types are easier to tune than inventing new ones |
+| Artificing recipe catalog | `src/game/content/recipes/artificingRecipes.ts` | Permanent Artifacts only; normal and boss Equipment are combat loot |
 | Artificing Artifact-vs-Equipment / tier catalog UI | `src/screens/tower/artificing/EquipmentCatalog.tsx` | UI/filter behavior, not balance data |
 | **Artifact base item identity / slot / build tags** | `src/game/content/items/items.ts` | Name, description, slot, color, tags; **not** Artifact level scaling |
 | **Artifact forge ingredients — actual consumed cost** | `src/game/content/artifacts/artifacts.ts` | `ARTIFACTS[id].forge.ingredients` is the runtime source used by the Artificing engine |
@@ -1024,7 +1025,7 @@ src/game/content/recipes/artificingRecipes.ts
 src/game/systems/artifacts/artifactProgression.ts
 ```
 
-Current normal cap structure is authored in `ARTIFACT_LEVEL_BANDS` in `src/game/content/artifacts/artifacts.ts`:
+Act 0 uses `ARTIFACT_LEVEL_BANDS`; Act 1 uses `ACT1_ARTIFACT_LEVEL_BANDS` in `src/game/content/artifacts/artifacts.ts`:
 
 ```text
 before Forest Heart
@@ -1034,6 +1035,19 @@ Forest Heart defeated
 → Level 7 cap
 
 Corrupted Greatbear defeated
+→ Level 10 cap
+```
+
+Act 1 second-generation Artifacts use:
+
+```text
+before Crossroads Keeper
+→ Level 4 cap
+
+Crossroads Keeper defeated
+→ Level 7 cap
+
+Meridian Splitter defeated
 → Level 10 cap
 ```
 
@@ -1506,7 +1520,7 @@ Regular Equipment: Ossuary Mantle, Mourning Glass Earring, Gravebinder Ring, Sou
 Boss signature: Edrin's Signet
 ```
 
-Normal monsters share their dungeon's regular Equipment pool and also drop Artifact Essence and Life Essence. Bosses use the same regular pool at a higher chance, add a larger Artifact Essence range, and can drop their exclusive signature Equipment.
+Normal monsters share their dungeon's regular Equipment pool and also drop Artifact Essence and Life Essence. Bosses use the same regular pool at a higher chance, add a larger Artifact Essence range, and award their exclusive signature Equipment on the first clear; repeat clears retain the 10% signature chance. Dungeon Equipment is not craftable in Artificing.
 
 
 Percent reminder:
@@ -2941,8 +2955,10 @@ src/game/content/items/equipmentBalance.ts
 WHAT STATS / SLOTS / IDS EXIST?
 src/game/types.ts
 
-NORMAL ARTIFICING EQUIPMENT COSTS
-src/game/content/recipes/artificingRecipes.ts
+DIRECT DUNGEON EQUIPMENT ACQUISITION
+src/game/content/dungeons/dungeonLootConfig.ts + src/game/content/monsters/monsterTypes.ts
+
+Normal and boss dungeon Equipment is combat loot only. It has no Artificing recipe; Artificing is reserved for permanent Artifacts.
 
 ARTIFACT ITEM IDENTITY
 src/game/content/items/items.ts

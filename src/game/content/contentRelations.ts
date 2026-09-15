@@ -1,5 +1,5 @@
 import { DUNGEONS, DUNGEON_ORDER } from './dungeons/dungeons'
-import { DUNGEON_EQUIPMENT_BY_DUNGEON, getEquipmentOrigin } from './equipment/equipmentSets'
+import { getEquipmentOrigin } from './equipment/equipmentSets'
 import { ITEMS } from './items/items'
 import { MONSTERS, MONSTER_IDS } from './monsters'
 import { RECIPES, RECIPE_ORDER } from './recipes/recipes'
@@ -103,7 +103,7 @@ export const buildContentRelations = () => ({
   itemSources: (itemId: ItemId) => getItemSourceInfo(itemId),
   itemRecipeUses: (itemId: ItemId) => getItemRecipeUses(itemId),
   monsterDungeon: (monsterId: MonsterId) => getMonsterDungeon(monsterId),
-  equipmentOrigins: Object.fromEntries(Object.entries(DUNGEON_EQUIPMENT_BY_DUNGEON).flatMap(([dungeonId, itemIds]) => itemIds.map((itemId) => [itemId, dungeonId]))),
+  equipmentOrigins: {},
   itemIds: Object.keys(ITEMS) as ItemId[],
   monsterIds: MONSTER_IDS,
 })

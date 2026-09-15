@@ -30,6 +30,8 @@ export const createDefaultDebugOverrides = (): DebugOverrides => ({
   artifactIgnoreNodePrerequisites: false,
   artifactAllowBeyondLimit: false,
   artifactFreeUpgrade: false,
+  arcaneCoreFreeCosts: false,
+  arcaneCoreIgnorePrerequisites: false,
 })
 export const sanitizeDebugNumber = (value: number) => Number.isFinite(value) ? clamp(value, 0, 1_000_000_000) : 0
 export const sanitizeCombatTimeScale = (value: number): CombatTimeScale => COMBAT_TIME_SCALES.includes(value as CombatTimeScale) ? value as CombatTimeScale : 1

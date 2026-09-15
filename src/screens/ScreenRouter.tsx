@@ -15,6 +15,7 @@ import { ScreenTransitionFrame } from '../ui/game-feel/ScreenTransitionFrame'
 import { isScreenUnlocked } from '../game/systems/story/storyProgression'
 import { DarkPortalScreen } from './tower/dark-portal/DarkPortalScreen'
 import { isSummoningUnlocked } from '../game/systems/summoning/summoningSelectors'
+import { ArcaneCoreScreen } from './arcane-core/ArcaneCoreScreen'
 
 function CurrentScreen({ screen }: { screen: ScreenId }) {
   if (screen === 'home') return <HomeScreenV2 />
@@ -29,6 +30,7 @@ function CurrentScreen({ screen }: { screen: ScreenId }) {
   if (screen === 'combat') return <CombatScreenV2 />
   if (screen === 'inventory') return <InventoryScreenV2 />
   if (screen === 'equipment') return <EquipmentScreenV2 />
+  if (screen === 'arcane-core') return <ArcaneCoreScreen />
   if (screen === 'guild') return <GuildScreenV2 />
   if (screen === 'collection') return <CollectionScreen />
   if (screen === 'bestiary') return <BestiaryScreen />

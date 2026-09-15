@@ -15,11 +15,13 @@
 @import './components/combat-pattern.css';
 @import './developer-tools.css';
 @import './tools/developer-tools-v2.css';
+@import './tools/developer-arcane-core.css';
 @import './settings-preview.css';
 @import './tower-screens.css';
 @import './screens/channeling.css';
 @import './screens/inventory.css';
 @import './screens/equipment.css';
+@import './screens/arcane-core.css';
 @import './screens/transmutation.css';
 @import './screens/artificing.css';
 @import './components/context-menu.css';

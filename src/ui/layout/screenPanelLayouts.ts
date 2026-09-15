@@ -192,6 +192,13 @@ export const SCREEN_PANEL_LAYOUTS: Record<ScreenId, ScreenLayoutDefinition> = {
   }, ['equipment-loadout', 'equipment-stats', 'equipment-owned', 'equipment-inspector']),
 
   // ============================================================
+  // ARCANE CORE
+  // ============================================================
+  'arcane-core': screen({
+    'arcane-core-overview': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 600, preferredHeight: 'auto', label: 'Arcane Core overview' }),
+  }, ['arcane-core-overview']),
+
+  // ============================================================
   // COLLECTION
   // ============================================================
   collection: screen({

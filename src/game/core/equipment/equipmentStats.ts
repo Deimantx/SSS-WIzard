@@ -1,6 +1,7 @@
 import { ITEMS } from '../../content/items/items'
 import type { CombatModifier, CombatTag, DamageType, EquipmentStats, GameState, ModifierKey } from '../../types'
 import { getArtifactEffectiveStats, getAllocatedArtifactCombatProviders, isArtifactItem } from '../../systems/artifacts/artifactProgression'
+import { getArcaneCoreModifierTotals } from '../../systems/arcaneCore/arcaneCoreProgression'
 
 export interface EquipmentModifierContext {
   sourceKinds?: CombatModifier['sourceKinds']
@@ -11,7 +12,7 @@ export interface EquipmentModifierContext {
   statusTags?: CombatTag[]
 }
 
-export type EquipmentStatsState = Pick<GameState, 'equipment' | 'artifactProgress'>
+export type EquipmentStatsState = Pick<GameState, 'equipment' | 'artifactProgress'> & Partial<Pick<GameState, 'arcaneCore'>>
 
 /** Aggregates authored equipped-item stats for every derived combat/system selector. */
 export const getEffectiveEquipmentItemStats = (state: EquipmentStatsState, itemId: import('../../types').ItemId): EquipmentStats =>
@@ -33,6 +34,9 @@ export const getEquipmentStats = (state: EquipmentStatsState): EquipmentStats =>
       }
       total[key as keyof EquipmentStats] = ((total[key as keyof EquipmentStats] ?? 0) as number + (value ?? 0)) as never
     })
+  })
+  if (state.arcaneCore) Object.entries(getArcaneCoreModifierTotals(state.arcaneCore)).forEach(([key, value]) => {
+    total[key as keyof EquipmentStats] = ((total[key as keyof EquipmentStats] ?? 0) as number + (value ?? 0)) as never
   })
   return total
 }

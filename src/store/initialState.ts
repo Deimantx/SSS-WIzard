@@ -17,7 +17,8 @@ export const createInitialState = (): GameState => ({
   currencies: { gold: 0 },
   inventory: {},
   protectedItems: {},
-  equipment: { weapon: null, armor: null, head: null, cape: null, necklace: null, earring1: null, earring2: null, ring1: null, ring2: null },
+  equipment: { weapon: null, armor: null, head: null },
+  arcaneCore: { corePoints: 0, arcaneEssence: 0, nodes: {} },
   artifactProgress: {},
   guardians: createInitialGuardiansState(),
   activities: {
@@ -36,5 +37,5 @@ export const createInitialState = (): GameState => ({
   offlineBankMs: 0,
   lastSavedAt: Date.now(),
   notifications: [],
-  debug: { bonusManaRegenFlat: 0, bonusMaxManaFlat: 0, bonusMaxFocusFlat: 0, allowManaOverCap: false, allowFocusOverCap: false, ignoreEchoLimit: false, transmutationEchoCapacityOverride: null, showLockedTransmutationRecipes: false, showLockedArtificingRecipes: false, playerImmortal: false, enemyImmortal: false, infiniteMana: false, ignoreSpellCooldowns: false, disablePlayerBasicAttack: false, disableAutoCast: false, freezePlayerActions: false, freezeEnemyActions: false, combatPaused: false, combatTimeScale: 1, artifactBonusPointsByArtifact: {}, artifactIgnoreDungeonGate: false, artifactIgnoreLevelCap: false, artifactIgnoreNodePrerequisites: false, artifactAllowBeyondLimit: false, artifactFreeUpgrade: false },
+  debug: { bonusManaRegenFlat: 0, bonusMaxManaFlat: 0, bonusMaxFocusFlat: 0, allowManaOverCap: false, allowFocusOverCap: false, ignoreEchoLimit: false, transmutationEchoCapacityOverride: null, showLockedTransmutationRecipes: false, showLockedArtificingRecipes: false, playerImmortal: false, enemyImmortal: false, infiniteMana: false, ignoreSpellCooldowns: false, disablePlayerBasicAttack: false, disableAutoCast: false, freezePlayerActions: false, freezeEnemyActions: false, combatPaused: false, combatTimeScale: 1, artifactBonusPointsByArtifact: {}, artifactIgnoreDungeonGate: false, artifactIgnoreLevelCap: false, artifactIgnoreNodePrerequisites: false, artifactAllowBeyondLimit: false, artifactFreeUpgrade: false, arcaneCoreFreeCosts: false, arcaneCoreIgnorePrerequisites: false },
 })

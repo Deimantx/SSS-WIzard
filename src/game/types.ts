@@ -2,7 +2,7 @@ import type { PortalShardId } from './content/darkPortal/portalShards'
 
 export type SchoolId = 'fire' | 'water' | 'earth' | 'air'
 export type ElementId = SchoolId
-export type ScreenId = 'home' | 'combat' | 'schools' | 'inventory' | 'equipment' | 'collection' | 'bestiary' | 'tower-channeling' | 'tower-focus' | 'tower-research' | 'tower-transmutation' | 'tower-artificing' | 'tower-summoning' | 'tower-dark-portal' | 'guild' | 'settings'
+export type ScreenId = 'home' | 'combat' | 'schools' | 'inventory' | 'equipment' | 'arcane-core' | 'collection' | 'bestiary' | 'tower-channeling' | 'tower-focus' | 'tower-research' | 'tower-transmutation' | 'tower-artificing' | 'tower-summoning' | 'tower-dark-portal' | 'guild' | 'settings'
 export type ActivityStatus = 'running' | 'mana-limited' | 'paused' | 'waiting-mana' | 'waiting-focus' | 'completed' | 'locked' | 'recovering'
 
 /**
@@ -26,22 +26,8 @@ export type ItemId =
   | 'wispweave-robe'
   | 'wispveil-hood'
   // Act 0 — Whispering Woods
-  | 'windthread-charm'
-  | 'grovekeeper-mantle'
-  | 'wispglass-earring'
-  | 'wispbound-ring'
-  | 'heartseed-necklace'
   // Act 0 — Howling Den
-  | 'predator-hide-mantle'
-  | 'fangwire-earring'
-  | 'howling-signet'
-  | 'greatbear-heartstone'
   // Act 0 — Abandoned Catacombs
-  | 'ossuary-mantle'
-  | 'mourning-glass-earring'
-  | 'gravebinder-ring'
-  | 'soulglass-amulet'
-  | 'edrins-signet'
   | 'black-portal-shard'
   // Act 1 — Artifacts
   | 'galeshard-staff'
@@ -51,68 +37,17 @@ export type ItemId =
   | 'convergence-robe'
   | 'waystone-circlet'
   // Act 1 — Fractured Approach
-  | 'galeglass-earring'
-  | 'riftwind-ring'
-  | 'waystone-pendant'
-  | 'fractured-ward-mantle'
-  | 'gatekeeper-sigil'
   // Act 1 — Flooded Reliquary
-  | 'mistglass-earring'
-  | 'reliquary-ring'
-  | 'drowned-chain-pendant'
-  | 'keepers-tide-seal'
   // Act 1 — Ashen Watch
-  | 'cinderwire-earring'
-  | 'ashbrand-ring'
-  | 'emberwatch-mantle'
-  | 'revenant-emberstone'
   // Act 1 — Rootscar Hollow
-  | 'briar-earring'
-  | 'rootbound-ring'
-  | 'mossguard-mantle'
-  | 'ancient-heart-knot'
   // Act 1 — Crossroads of Ruin
-  | 'wayfarer-earring'
-  | 'crossroads-signet'
-  | 'confluence-pendant'
-  | 'keepers-roadseal'
   // Act 1 — Graveglass Hollow
-  | 'graveglass-earring'
-  | 'shardbone-ring'
-  | 'mourner-veil-mantle'
-  | 'behemoth-heartshard'
   // Act 1 — Stormvault Gallery
-  | 'voltglass-earring'
-  | 'stormcoil-ring'
-  | 'gale-scribe-pendant'
-  | 'archivists-conductor'
   // Act 1 — Starfallen Observatory
-  | 'starfall-ring'
-  | 'lenskeeper-earring'
-  | 'astral-pendant'
-  | 'fallen-astromancer-lens'
   // Act 1 — Broken Meridian
-  | 'meridian-ring'
-  | 'linebreaker-earring'
-  | 'fractured-conduit-pendant'
-  | 'leyline-mantle'
-  | 'splitters-meridian-core'
   // Act 1 — Hall of Unbound Names
-  | 'nameless-ring'
-  | 'whisper-earring'
-  | 'unbound-seal-pendant'
-  | 'prelates-unspoken-seal'
   // Act 1 — Vault of the Black Sigil
-  | 'black-sigil-ring'
-  | 'inkbound-earring'
-  | 'vaultseal-mantle'
-  | 'wardens-black-sigil'
   // Act 1 — Black Gate
-  | 'gatebound-ring'
-  | 'portal-echo-earring'
-  | 'blackgate-pendant'
-  | 'voidward-mantle'
-  | 'black-gatekeepers-seal'
 
 export type StoryEventId = 'edrin-dark-portal-discovery'
 
@@ -133,8 +68,8 @@ export type MonsterId = 'forest-wisp' | 'thornling' | 'stone-root' | 'grove-sent
 export type GuardianId = 'fire-guardian' | 'water-guardian' | 'earth-guardian' | 'air-guardian'
 export type BestiaryCategory = 'monster' | 'boss'
 export type DungeonId = 'whispering-woods' | 'howling-den' | 'abandoned-catacombs' | 'fractured-approach' | 'flooded-reliquary' | 'ashen-watch' | 'rootscar-hollow' | 'crossroads-of-ruin' | 'graveglass-hollow' | 'stormvault-gallery' | 'starfallen-observatory' | 'broken-meridian' | 'hall-of-unbound-names' | 'vault-of-the-black-sigil' | 'black-gate'
-export type EquipmentItemSlot = 'weapon' | 'armor' | 'helmet' | 'cape' | 'amulet' | 'earring' | 'ring'
-export type EquipmentPosition = 'weapon' | 'armor' | 'head' | 'cape' | 'necklace' | 'earring1' | 'earring2' | 'ring1' | 'ring2'
+export type EquipmentItemSlot = 'weapon' | 'armor' | 'helmet'
+export type EquipmentPosition = 'weapon' | 'armor' | 'head'
 /** Permanent Artifacts grouped by authored Act ownership. */
 export type ArtifactId =
   // Act 0 Artifacts
@@ -208,6 +143,46 @@ export interface EquipmentStats {
   manaCostReductionPct?: number
   focusEfficiencyPct?: number
   resistances?: Partial<Record<import('./systems/combat/combatTypes').DamageType, number>>
+}
+
+export type ArcaneCoreBranchId = 'power' | 'vitality' | 'focus' | 'control'
+export type ArcaneCoreModifierKey = Exclude<keyof EquipmentStats, 'resistances'>
+export type ArcaneCorePrerequisiteMode = 'any' | 'all'
+export interface ArcaneCoreNodeEffect {
+  key: ArcaneCoreModifierKey
+  perRank: number
+  label: string
+}
+export interface ArcaneCoreNodeDefinition {
+  id: string
+  branchId: ArcaneCoreBranchId
+  name: string
+  description: string
+  x: number
+  y: number
+  maxRank: 5
+  prerequisites: string[]
+  prerequisiteMode: ArcaneCorePrerequisiteMode
+  effect: ArcaneCoreNodeEffect
+}
+export interface ArcaneCoreBranchDefinition {
+  id: ArcaneCoreBranchId
+  name: string
+  description: string
+  accent: string
+  rootId: string
+  nodes: ArcaneCoreNodeDefinition[]
+}
+export interface ArcaneCoreNodeProgress {
+  unlocked: boolean
+  rank: number
+  coreSpent: number
+  essenceSpent: number
+}
+export interface ArcaneCoreState {
+  corePoints: number
+  arcaneEssence: number
+  nodes: Partial<Record<string, ArcaneCoreNodeProgress>>
 }
 
 export interface ItemDefinition {
@@ -467,6 +442,7 @@ export interface GameState {
   inventory: Partial<Record<ItemId, number>>
   protectedItems: Partial<Record<ItemId, boolean>>
   equipment: Record<EquipmentPosition, ItemId | null>
+  arcaneCore: ArcaneCoreState
   artifactProgress: Partial<Record<ArtifactId, ArtifactProgressState>>
   guardians: GuardiansState
   activities: ActivitiesState
@@ -508,6 +484,8 @@ export interface DebugOverrides {
   artifactIgnoreNodePrerequisites: boolean
   artifactAllowBeyondLimit: boolean
   artifactFreeUpgrade: boolean
+  arcaneCoreFreeCosts: boolean
+  arcaneCoreIgnorePrerequisites: boolean
 }
 export interface NotificationItem { id: string; text: string; tone: 'info' | 'success' | 'warning'; key?: string; createdAt?: number }
 export interface FocusReservation {

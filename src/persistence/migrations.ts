@@ -32,12 +32,13 @@ import { isSummoningUnlocked } from '../game/systems/summoning/summoningSelector
 import { normalizeDarkPortalProgress } from '../game/systems/dark-portal/portalShardProgression'
 import { isScreenUnlocked, reconcileStoryProgression } from '../game/systems/story/storyProgression'
 import { getTransmutationArrayBonuses } from '../game/systems/transmutation/transmutationArrays'
+import { getArcaneCoreNode } from '../game/content/arcaneCore/arcaneCoreBranches'
 
 const statusValidationContext = createCombatValidationContext(STATUS_DEFINITIONS)
 
 const normalizeScreen = (value: unknown, fallback: GameState['ui']['screen']): GameState['ui']['screen'] => {
   if (value === 'tower') return 'tower-channeling'
-  const valid = ['home', 'combat', 'schools', 'inventory', 'equipment', 'collection', 'bestiary', 'tower-channeling', 'tower-focus', 'tower-research', 'tower-transmutation', 'tower-artificing', 'tower-summoning', 'tower-dark-portal', 'guild', 'settings']
+  const valid = ['home', 'combat', 'schools', 'inventory', 'equipment', 'arcane-core', 'collection', 'bestiary', 'tower-channeling', 'tower-focus', 'tower-research', 'tower-transmutation', 'tower-artificing', 'tower-summoning', 'tower-dark-portal', 'guild', 'settings']
   if (value === 'tower-condensation') return 'tower-transmutation'
   return typeof value === 'string' && valid.includes(value) ? value as GameState['ui']['screen'] : fallback
 }
@@ -68,6 +69,26 @@ const requestIds = Object.keys(GUILD_REQUESTS)
 const spellIds = Object.keys(SPELLS)
 const recipeIds = Object.keys(RECIPES)
 const permanentFocusIds = ['forest-heart', 'guild-apprentice']
+
+const normalizeArcaneCore = (migrated: GameState, raw: Record<string, any>) => {
+  const fresh = createInitialState().arcaneCore
+  const source = isRecord(raw.arcaneCore) ? raw.arcaneCore : {}
+  const rawNodes = isRecord(source.nodes) ? source.nodes : {}
+  const nodes: GameState['arcaneCore']['nodes'] = {}
+  Object.entries(rawNodes).forEach(([nodeId, value]) => {
+    const node = getArcaneCoreNode(nodeId)
+    if (!node || !isRecord(value) || value.unlocked !== true) return
+    const rank = Math.max(0, Math.min(node.maxRank, Math.floor(typeof value.rank === 'number' && Number.isFinite(value.rank) ? value.rank : 0)))
+    const coreSpent = Math.max(0, Math.floor(typeof value.coreSpent === 'number' && Number.isFinite(value.coreSpent) ? value.coreSpent : 0))
+    const essenceSpent = Math.max(0, Math.floor(typeof value.essenceSpent === 'number' && Number.isFinite(value.essenceSpent) ? value.essenceSpent : 0))
+    nodes[nodeId] = { unlocked: true, rank, coreSpent, essenceSpent }
+  })
+  migrated.arcaneCore = {
+    corePoints: Math.max(0, Math.floor(typeof source.corePoints === 'number' && Number.isFinite(source.corePoints) ? source.corePoints : fresh.corePoints)),
+    arcaneEssence: Math.max(0, Math.floor(typeof source.arcaneEssence === 'number' && Number.isFinite(source.arcaneEssence) ? source.arcaneEssence : fresh.arcaneEssence)),
+    nodes,
+  }
+}
 const REMOVED_PRISMATIC_FOCUS_ID = 'prismatic-focus'
 
 const nonNegativeInteger = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.floor(value)) : undefined
@@ -442,37 +463,15 @@ const seedLegacyItemDiscoveries = (migrated: GameState, raw: Record<string, any>
   migrated.progress.discoveredItems = itemIds.filter((itemId) => discovered.has(itemId as ItemId)) as ItemId[]
 }
 
-const normalizeDirectContentReferences = (migrated: GameState, raw: Record<string, any>, sourceVersion: number) => {
+const normalizeDirectContentReferences = (migrated: GameState, raw: Record<string, any>) => {
   const fresh = createInitialState()
   const rawEquipment = isRecord(raw.equipment) ? raw.equipment : {}
-  const legacyToNew: Partial<Record<EquipmentPosition, string>> = {
-    armor: 'robe',
-    head: 'helmet',
-    necklace: 'charm',
-  }
-  const legacyAliases: Partial<Record<EquipmentPosition, readonly string[]>> = {
-    necklace: ['amulet'],
-    earring1: ['earring'],
-  }
   const candidate: Partial<Record<EquipmentPosition, ItemId | null>> = {}
   EQUIPMENT_POSITIONS.forEach((position) => {
-    const hasNewValue = Object.prototype.hasOwnProperty.call(rawEquipment, position)
-    const legacyPosition = legacyToNew[position]
-    const hasLegacyValue = legacyPosition ? Object.prototype.hasOwnProperty.call(rawEquipment, legacyPosition) : false
-    const legacyAlias = legacyAliases[position]?.find((key) => Object.prototype.hasOwnProperty.call(rawEquipment, key))
-    candidate[position] = hasNewValue
+    candidate[position] = Object.prototype.hasOwnProperty.call(rawEquipment, position)
       ? rawEquipment[position] as ItemId | null
-      : legacyPosition && hasLegacyValue
-        ? rawEquipment[legacyPosition] as ItemId | null
-        : legacyAlias
-          ? rawEquipment[legacyAlias] as ItemId | null
-          : migrated.equipment[position]
+      : migrated.equipment[position]
   })
-  if (sourceVersion < SAVE_VERSION && (Object.prototype.hasOwnProperty.call(rawEquipment, 'offhand') || Object.prototype.hasOwnProperty.call(rawEquipment, 'focus'))) {
-    const oldWeapon = Object.prototype.hasOwnProperty.call(rawEquipment, 'weapon') ? rawEquipment.weapon : null
-    const oldSecondary = Object.prototype.hasOwnProperty.call(rawEquipment, 'offhand') ? rawEquipment.offhand : rawEquipment.focus
-    if (!oldWeapon && typeof oldSecondary === 'string') candidate.weapon = oldSecondary as ItemId
-  }
   migrated.equipment = normalizeEquipmentState(candidate, migrated.inventory)
 
   const rawCombat = isRecord(raw.combat) ? raw.combat : {}
@@ -706,6 +705,7 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   // Debug overrides are runtime-only. Legacy godMode is retained on the type
   // solely for old object compatibility, but must never survive hydration.
   migrated.debug = createInitialState().debug
+  normalizeArcaneCore(migrated, raw)
   migrated.player.godMode = false
   migrated.player.healthRegenTimerMs = normalizeHealthRegenTimer(isRecord(raw.player) ? raw.player.healthRegenTimerMs : undefined)
   migrated.progress.channeling = migrateChanneling(raw.progress, createInitialState().progress)
@@ -721,7 +721,7 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   normalizeSpellProgression(migrated, raw)
   normalizeSpellPresets(migrated, raw)
   normalizeCombatState(migrated, raw, sourceVersion)
-  normalizeDirectContentReferences(migrated, raw, sourceVersion)
+  normalizeDirectContentReferences(migrated, raw)
   normalizeGuardianRuntime(migrated, raw)
   removeDeletedPrismaticFocus(migrated, raw, sourceVersion)
   seedLegacyItemDiscoveries(migrated, raw, sourceVersion)

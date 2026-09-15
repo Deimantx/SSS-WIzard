@@ -6,6 +6,7 @@ export interface CriticalSaveSnapshot {
   inventory: GameState['inventory']
   protectedItems: GameState['protectedItems']
   equipment: GameState['equipment']
+  arcaneCore: GameState['arcaneCore']
   schools: GameState['schools']
   currencies: GameState['currencies']
   activities: {
@@ -42,10 +43,11 @@ const canonicalize = (value: unknown): unknown => {
   return value
 }
 
-export const getCriticalSaveSnapshot = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment' | 'schools' | 'currencies' | 'activities' | 'progress' | 'darkPortal' | 'spellPresets' | 'offlineBankMs' | 'combat'>): CriticalSaveSnapshot => cloneJson({
+export const getCriticalSaveSnapshot = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment' | 'arcaneCore' | 'schools' | 'currencies' | 'activities' | 'progress' | 'darkPortal' | 'spellPresets' | 'offlineBankMs' | 'combat'>): CriticalSaveSnapshot => cloneJson({
   inventory: state.inventory,
   protectedItems: state.protectedItems,
   equipment: state.equipment,
+  arcaneCore: state.arcaneCore,
   schools: state.schools,
   currencies: state.currencies,
   activities: {

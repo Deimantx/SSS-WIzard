@@ -126,7 +126,6 @@ export function getEquipmentPrimarySummary(itemId: ItemId, state?: Pick<GameStat
 export interface EquipmentPreviewTargetOptions {
   itemId: ItemId
   selectedPosition: EquipmentPosition | null
-  accessoryReplacement: EquipmentPosition | null
   equipment: GameState['equipment']
 }
 
@@ -135,23 +134,11 @@ export interface EquipmentPreviewTargetOptions {
  * browsing target to make a valid item look incompatible.
  *
  * `selectedPosition` is an explicit loadout target. When it does not fit the
- * selected item, the item's authored natural slot wins. Rings and Earrings
- * retain an explicit replacement choice, otherwise they prefer an open slot.
+ * selected item, the item's authored natural slot wins.
  */
-export function resolveEquipmentPreviewTarget({ itemId, selectedPosition, accessoryReplacement, equipment }: EquipmentPreviewTargetOptions): EquipmentPosition | undefined {
+export function resolveEquipmentPreviewTarget({ itemId, selectedPosition }: EquipmentPreviewTargetOptions): EquipmentPosition | undefined {
   const item = ITEMS[itemId]
   if (!item?.equipmentSlot) return undefined
-
-  if (item.equipmentSlot === 'ring' || item.equipmentSlot === 'earring') {
-    const positions = getItemPositions(itemId)
-    const replacementFits = positions.includes(accessoryReplacement as EquipmentPosition)
-    if (replacementFits) return accessoryReplacement as EquipmentPosition
-    if (positions.includes(selectedPosition as EquipmentPosition)) return selectedPosition as EquipmentPosition
-    const openPosition = positions.find((position) => !equipment[position])
-    if (openPosition) return openPosition
-    return undefined
-  }
-
   const defaultPosition = getDefaultEquipmentPosition(item.equipmentSlot)
   return defaultPosition && selectedPosition === defaultPosition ? selectedPosition : defaultPosition
 }
@@ -230,11 +217,7 @@ const failureMessage: Record<EquipmentChangeFailureReason, string> = {
   'not-owned': 'You do not own this item.',
   'not-equipment': 'That item cannot be equipped.',
   incompatible: 'This item cannot be equipped in that slot.',
-  'ring-target-required': 'Choose Ring 1 or Ring 2 to replace.',
-  'earring-target-required': 'Choose Earring 1 or Earring 2 to replace.',
-  'insufficient-copies': 'A second copy is required for this Ring position.',
-  'duplicate-ring': 'The same Ring cannot be equipped twice.',
-  'duplicate-earring': 'The same Earring cannot be equipped twice.',
+  'insufficient-copies': 'You need another copy of this item to equip it.',
 }
 
 const getFailureMessage = (_state: EquipmentSheetState, _itemId: ItemId, reason: EquipmentChangeFailureReason) => failureMessage[reason]

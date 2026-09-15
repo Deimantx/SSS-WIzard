@@ -16,6 +16,7 @@ import { DeveloperMonsters } from './tabs/DeveloperMonsters'
 import { DeveloperStatuses } from './tabs/DeveloperStatuses'
 import { DeveloperArtifacts } from './tabs/DeveloperArtifacts'
 import { DeveloperUITuning } from './tabs/DeveloperUITuning'
+import { DeveloperArcaneCore } from './tabs/DeveloperArcaneCore'
 
 export function DeveloperTab({ tab, copy }: { tab: DeveloperToolsTab; copy: (label: string, value: unknown) => Promise<void> }) {
   if (tab === 'quick') return <DeveloperQuickSetup />
@@ -33,6 +34,7 @@ export function DeveloperTab({ tab, copy }: { tab: DeveloperToolsTab; copy: (lab
   if (tab === 'monsters') return <DeveloperMonsters />
   if (tab === 'statuses') return <DeveloperStatuses />
   if (tab === 'progression') return <DeveloperProgression />
+  if (tab === 'arcane-core') return <DeveloperArcaneCore />
   if (tab === 'diagnostics') return <DeveloperDiagnostics copy={copy} />
   if (tab === 'ui-tuning') return <DeveloperUITuning copy={copy} />
   return <DeveloperSaveState copy={copy} />

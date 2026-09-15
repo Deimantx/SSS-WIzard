@@ -1,5 +1,4 @@
 import { DUNGEONS } from '../../content/dungeons/dungeons'
-import { DUNGEON_LOOT } from '../../content/dungeons/dungeonLootConfig'
 import { MONSTERS } from '../../content/monsters'
 import { formatDropChance, formatDropQuantity } from '../../systems/bestiary/bestiarySelectors'
 import type { DungeonId, GameState, ItemId, MonsterId } from '../../types'
@@ -71,7 +70,7 @@ export function buildCampaignLootPresentation(dungeonId: DungeonId, progress: Pi
   const discoveredBoss = discovered.has(dungeon.boss)
   return {
     monsters: aggregateLoot(discoveredNormalIds),
-    boss: discoveredBoss ? aggregateLoot([dungeon.boss], DUNGEON_LOOT[dungeonId].bossSignature) : [],
+    boss: discoveredBoss ? aggregateLoot([dungeon.boss]) : [],
     bossId: dungeon.boss,
     normalEncounterCount: dungeon.monsterPool.length,
     discoveredNormalEncounterCount: discoveredNormalIds.length,

@@ -40,10 +40,12 @@ describe('Artifact roster', () => {
     expect(getArtifactEffectiveStats(state, 'windthread-wand')).toMatchObject({ basicDamage: 14, spellPower: 73 })
     expect(getArtifactEffectiveStats(state, 'wispweave-robe')).toMatchObject({ maxHealth: 92, defense: 19 })
     expect(getArtifactEffectiveStats(state, 'wispveil-hood')).toMatchObject({ maxHealth: 49, defense: 14 })
-    expect(getArtifactEffectiveStats(state, 'galeshard-staff')).toMatchObject({ basicDamage: 22, spellPower: 98 })
-    expect(getArtifactEffectiveStats(state, 'reliquary-scepter')).toMatchObject({ basicDamage: 22, spellPower: 98 })
-    expect(getArtifactEffectiveStats(state, 'convergence-robe')).toMatchObject({ maxHealth: 142, defense: 27 })
-    expect(getArtifactEffectiveStats(state, 'waystone-circlet')).toMatchObject({ maxHealth: 82, defense: 19 })
+    expect(getArtifactEffectiveStats(state, 'galeshard-staff')).toMatchObject({ basicDamage: 24, spellPower: 118 })
+    expect(getArtifactEffectiveStats(state, 'reliquary-scepter')).toMatchObject({ basicDamage: 26, spellPower: 117 })
+    expect(getArtifactEffectiveStats(state, 'pyrebound-staff')).toMatchObject({ basicDamage: 27, spellPower: 122 })
+    expect(getArtifactEffectiveStats(state, 'rootheart-scepter')).toMatchObject({ basicDamage: 31, spellPower: 109 })
+    expect(getArtifactEffectiveStats(state, 'convergence-robe')).toMatchObject({ maxHealth: 145, defense: 27 })
+    expect(getArtifactEffectiveStats(state, 'waystone-circlet')).toMatchObject({ maxHealth: 80, defense: 20 })
   })
 
   it('uses universal Artifact Essence plus the matching school fragment for starter elemental upgrades', () => {

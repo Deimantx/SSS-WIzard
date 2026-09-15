@@ -53,21 +53,20 @@ const hasPositiveEquipmentStat = (stats: EquipmentStats | undefined, field: keyo
   const value = stats?.[field]
   return typeof value === 'number' && Number.isFinite(value) && value > 0
 }
-const requireEquipmentStats = (itemId: string, stats: EquipmentStats | undefined, fields: readonly (keyof EquipmentStats)[], errors: string[]) => {
-  const missing = fields.filter((field) => !hasPositiveEquipmentStat(stats, field))
-  if (missing.length) errors.push(`${itemId}: equipment requires positive ${missing.join(' and ')}`)
+const ACCESSORY_SLOTS = new Set(['ring', 'earring', 'amulet', 'cape'])
+const hasPositiveEquipmentValue = (stats: EquipmentStats | undefined) => {
+  if (!stats) return false
+  return Object.entries(stats).some(([field, value]) => field === 'resistances'
+    ? Object.values(value ?? {}).some((resistance) => typeof resistance === 'number' && Number.isFinite(resistance) && resistance > 0)
+    : typeof value === 'number' && Number.isFinite(value) && value > 0)
 }
-const requireEquipmentCoreStats = (itemId: string, stats: EquipmentStats | undefined, fields: readonly (keyof EquipmentStats)[], label: string, errors: string[]) => {
-  if (fields.filter((field) => hasPositiveEquipmentStat(stats, field)).length < 2) errors.push(`${itemId}: ${label} requires at least two positive core/resource stats`)
-}
+const hasCombatEffect = (item: ItemDefinition) => Boolean(item.combat?.modifiers?.length || item.combat?.rules?.length)
 const validateEquipmentChassis = (item: ItemDefinition, errors: string[]) => {
   if (item.kind !== 'equipment') return
   if (isArtifactId(item.id)) return
-  if (item.equipmentSlot === 'weapon') requireEquipmentStats(item.id, item.stats, ['basicDamage', 'spellPower'], errors)
-  if (item.equipmentSlot === 'armor' || item.equipmentSlot === 'helmet' || item.equipmentSlot === 'cape') requireEquipmentStats(item.id, item.stats, ['maxHealth', 'defense'], errors)
-  if (item.equipmentSlot === 'amulet') requireEquipmentCoreStats(item.id, item.stats, ['maxHealth', 'maxMana', 'spellPower', 'defense'], 'amulets', errors)
-  if (item.equipmentSlot === 'ring') requireEquipmentCoreStats(item.id, item.stats, ['maxHealth', 'maxMana', 'spellPower', 'manaRegen'], 'rings', errors)
-  if (item.equipmentSlot === 'earring') requireEquipmentCoreStats(item.id, item.stats, ['maxHealth', 'maxMana', 'spellPower', 'manaRegen'], 'earrings', errors)
+  if (item.equipmentSlot && ACCESSORY_SLOTS.has(item.equipmentSlot) && !hasPositiveEquipmentValue(item.stats) && !hasCombatEffect(item)) {
+    errors.push(`${item.id}: accessory equipment requires at least one positive stat or combat effect`)
+  }
 }
 
 const validateEquipmentMetadata = (item: ItemDefinition, errors: string[]) => {
@@ -94,8 +93,7 @@ const validateEquipmentMetadata = (item: ItemDefinition, errors: string[]) => {
   else {
     const profile = EQUIPMENT_BUDGET_PROFILES[profileId as EquipmentBudgetProfileId]
     const hasSignatureEffect = Boolean(item.combat?.modifiers?.length || item.combat?.rules?.length)
-    if (profileId === 'standard' && hasSignatureEffect) errors.push(`${item.id}: standard equipment must not define combat modifiers or rules`)
-    if ((profileId === 'signature' || profileId === 'boss') && !hasSignatureEffect) errors.push(`${item.id}: ${profileId} equipment requires a combat modifier or rule`)
+    if (profileId === 'boss' && !hasSignatureEffect) errors.push(`${item.id}: boss equipment requires a combat modifier or rule`)
     if (!profile) errors.push(`${item.id}: invalid equipment budget profile`) // Defensive runtime check for casted authored data.
   }
 }

@@ -261,7 +261,7 @@ export const SCREEN_PANEL_LAYOUTS: Record<ScreenId, ScreenLayoutDefinition> = {
   // ============================================================
   'tower-summoning': screen({
     'summoning-binding': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 0, preferredHeight: 250, label: 'Active Guardian Binding' }),
-    'summoning-roster': panel({ order: 2, columnStart: 1, columnSpan: 12, rowStart: 2, minHeight: 0, preferredHeight: 620, label: 'Elemental Guardians' }),
+    'summoning-roster': panel({ order: 2, columnStart: 1, columnSpan: 12, rowStart: 2, minHeight: 0, preferredHeight: 720, label: 'Elemental Guardians' }),
   }, ['summoning-binding', 'summoning-roster']),
 
   // ============================================================

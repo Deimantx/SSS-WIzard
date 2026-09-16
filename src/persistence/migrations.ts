@@ -81,7 +81,7 @@ const normalizeArcaneCore = (migrated: GameState, raw: Record<string, any>) => {
   }
   const rawNodes = isRecord(source.nodes) ? source.nodes : {}
   const unspentPoints = typeof source.corePoints === 'number' && Number.isFinite(source.corePoints) ? Math.max(0, Math.floor(source.corePoints)) : 0
-  const spentPoints = Object.values(rawNodes).reduce((total, value) => total + (isRecord(value) && typeof value.coreSpent === 'number' && Number.isFinite(value.coreSpent) ? Math.max(0, Math.floor(value.coreSpent)) : 0), 0)
+  const spentPoints = Object.values(rawNodes).reduce<number>((total, value) => total + (isRecord(value) && typeof value.coreSpent === 'number' && Number.isFinite(value.coreSpent) ? Math.max(0, Math.floor(value.coreSpent)) : 0), 0)
   const level = Math.min(ARCANE_CORE_MAX_LEVEL, 1 + unspentPoints + spentPoints)
   migrated.arcaneCore = { totalXp: getArcaneCoreTotalXpForLevel(level), nodes: {} }
 }

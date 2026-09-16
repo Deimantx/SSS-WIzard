@@ -90,6 +90,7 @@ const conditionLabel = (condition: NonNullable<CombatModifierContribution['modif
     case 'target-hp-below-percent': return `against targets below ${condition.percent}% Health`
     case 'self-hp-above-percent': return `while above ${condition.percent}% Health`
     case 'self-mana-above-percent': return `while above ${condition.percent}% Mana`
+    case 'self-mana-below-percent': return `while below ${condition.percent}% Mana`
     case 'target-hp-above-percent': return `against targets above ${condition.percent}% Health`
     case 'self-has-status': return `while affected by ${statusName(condition.statusId)}`
     case 'target-has-status': return `against ${statusName(condition.statusId)} targets`
@@ -108,6 +109,12 @@ const conditionLabel = (condition: NonNullable<CombatModifierContribution['modif
     case 'event-action-has-tag': return `when a ${condition.tag} action resolves`
     case 'event-damage-type-is': return `when ${condition.damageType} damage is involved`
     case 'target-has-status-tag': return `against targets with ${condition.tag} statuses`
+    case 'target-negative-status-count-at-least': return `against targets with ${condition.count}+ different negative statuses`
+    case 'self-negative-status-count-at-least': return `with ${condition.count}+ different negative statuses`
+    case 'event-is-critical': return 'when the event is Critical'
+    case 'event-was-blocked': return 'when the event was Blocked'
+    case 'event-health-damage-positive': return 'when the event deals Health damage'
+    case 'event-amount-positive': return 'when the event amount is positive'
     case 'event-target-is-self': return 'when the event affects you'
     case 'source-is-self': return 'when you are the source'
     case 'source-is-opponent': return 'when the opponent is the source'

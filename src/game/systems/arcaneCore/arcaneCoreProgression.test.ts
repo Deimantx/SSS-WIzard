@@ -1,125 +1,113 @@
 import { describe, expect, it } from 'vitest'
-import { ARCANE_CORE_RANK_COSTS } from '../../content/arcaneCore/arcaneCoreBalance'
-import { createInitialArcaneCoreState, getArcaneCoreBranchResetPreview, getArcaneCoreNodeProgress, getArcaneCoreModifierTotals, getArcaneCoreRefundPreview, isArcaneCoreNodeReachable, rankUpArcaneCoreNode, refundArcaneCoreNode, resetArcaneCore, unlockArcaneCoreNode } from './arcaneCoreProgression'
+import { ARCANE_CORE_MAX_LEVEL, ARCANE_CORE_MAX_TOTAL_XP, getArcaneCoreTotalXpForLevel, getArcaneCoreXpForLevel } from '../../content/arcaneCore/arcaneCoreBalance'
+import {
+  createInitialArcaneCoreState,
+  getArcaneCoreAvailablePoints,
+  getArcaneCoreBranchResetPreview,
+  getArcaneCoreLevel,
+  getArcaneCoreLevelInfo,
+  getArcaneCoreNodeProgress,
+  getArcaneCorePointsSpent,
+  getArcaneCoreStaticStats,
+  grantArcaneCoreXp,
+  isArcaneCoreNodeReachable,
+  purchaseAllArcaneCoreNodes,
+  purchaseArcaneCoreNode,
+  refundArcaneCoreNode,
+  resetArcaneCore,
+  setArcaneCoreLevel,
+} from './arcaneCoreProgression'
+import type { ArcaneCoreState } from '../../types'
 
-describe('Arcane Core progression', () => {
-  it('starts empty and keeps unlock cost separate from rank costs', () => {
+const stateAtLevel = (level: number, nodes: ArcaneCoreState['nodes'] = {}): ArcaneCoreState => ({ totalXp: getArcaneCoreTotalXpForLevel(level), nodes })
+const purchased = (id: string): ArcaneCoreState['nodes'] => ({ [id]: { purchased: true } })
+
+describe('Arcane Core V2 progression', () => {
+  it('starts empty and derives level, XP, and points', () => {
     const initial = createInitialArcaneCoreState()
-    expect(initial).toEqual({ corePoints: 0, arcaneEssence: 0, nodes: {} })
+    expect(initial).toEqual({ totalXp: 0, nodes: {} })
+    expect(getArcaneCoreLevelInfo(initial)).toMatchObject({ level: 1, totalXp: 0, pointsEarned: 0, pointsSpent: 0, pointsAvailable: 0 })
 
-    const unlocked = unlockArcaneCoreNode({ ...initial, corePoints: 1 }, 'power-01')
-    expect(unlocked).toMatchObject({ ok: true })
-    if (!unlocked.ok) return
-    expect(unlocked.state.corePoints).toBe(0)
-    expect(getArcaneCoreNodeProgress(unlocked.state, 'power-01')).toMatchObject({ unlocked: true, rank: 0, coreSpent: 1, essenceSpent: 0 })
-    expect(rankUpArcaneCoreNode(unlocked.state, 'power-01')).toEqual({ ok: false, reason: 'not-enough-essence' })
-
-    const ranked = rankUpArcaneCoreNode({ ...unlocked.state, arcaneEssence: ARCANE_CORE_RANK_COSTS[0] }, 'power-01')
-    expect(ranked).toMatchObject({ ok: true })
-    if (ranked.ok) expect(getArcaneCoreNodeProgress(ranked.state, 'power-01')).toMatchObject({ rank: 1, essenceSpent: 25 })
+    const granted = grantArcaneCoreXp(initial, getArcaneCoreXpForLevel(1))
+    expect(granted).toMatchObject({ granted: 100, levelBefore: 1, levelAfter: 2, levelsGained: 1 })
+    expect(getArcaneCoreLevel(granted.state)).toBe(2)
+    expect(getArcaneCoreAvailablePoints(granted.state)).toBe(1)
   })
 
-  it('requires completed prerequisites and supports any/all fork rules', () => {
-    const starter = { ...createInitialArcaneCoreState(), corePoints: 1 }
-    expect(unlockArcaneCoreNode(starter, 'power-09')).toEqual({ ok: false, reason: 'not-reachable' })
-    expect(isArcaneCoreNodeReachable({ nodes: { 'power-01': { unlocked: true, rank: 5, coreSpent: 1, essenceSpent: 280 } } }, 'power-09')).toBe(false)
+  it('clamps XP at the derived level cap', () => {
+    const granted = grantArcaneCoreXp(createInitialArcaneCoreState(), ARCANE_CORE_MAX_TOTAL_XP + 999)
+    expect(granted.state.totalXp).toBe(ARCANE_CORE_MAX_TOTAL_XP)
+    expect(getArcaneCoreLevel(granted.state)).toBe(ARCANE_CORE_MAX_LEVEL)
+    expect(granted.levelsGained).toBe(ARCANE_CORE_MAX_LEVEL - 1)
+  })
 
-    const allReady = {
-      ...starter,
-      corePoints: 1,
-      nodes: {
-        'power-01': { unlocked: true, rank: 5, coreSpent: 1, essenceSpent: 280 },
-        'power-02': { unlocked: true, rank: 5, coreSpent: 1, essenceSpent: 280 },
-      },
-    }
-    expect(isArcaneCoreNodeReachable(allReady, 'power-09')).toBe(true)
-    expect(unlockArcaneCoreNode(allReady, 'power-09')).toMatchObject({ ok: true })
+  it('requires a lane predecessor and purchases one point per node', () => {
+    const levelTwo = stateAtLevel(2)
+    expect(isArcaneCoreNodeReachable(levelTwo, 'power-a2')).toBe(false)
+    expect(purchaseArcaneCoreNode(levelTwo, 'power-a2')).toEqual({ ok: false, reason: 'not-reachable' })
 
-    const anyReady = { ...allReady, nodes: { 'power-04': { unlocked: true, rank: 5, coreSpent: 1, essenceSpent: 280 } } }
-    expect(isArcaneCoreNodeReachable(anyReady, 'power-12')).toBe(true)
+    const first = purchaseArcaneCoreNode(levelTwo, 'power-a1')
+    expect(first).toMatchObject({ ok: true })
+    if (!first.ok) return
+    expect(getArcaneCoreNodeProgress(first.state, 'power-a1')).toEqual({ purchased: true })
+    expect(getArcaneCorePointsSpent(first.state)).toBe(1)
+    expect(getArcaneCoreAvailablePoints(first.state)).toBe(0)
+    expect(purchaseArcaneCoreNode(first.state, 'power-a1')).toEqual({ ok: false, reason: 'already-purchased' })
   })
 
   it('refunds a node and all dependent nodes atomically', () => {
-    const state = {
-      corePoints: 2,
-      arcaneEssence: 0,
-      nodes: {
-        'power-01': { unlocked: true, rank: 5, coreSpent: 1, essenceSpent: 280 },
-        'power-02': { unlocked: true, rank: 5, coreSpent: 1, essenceSpent: 280 },
-        'power-09': { unlocked: true, rank: 1, coreSpent: 1, essenceSpent: 25 },
-      },
+    let state = stateAtLevel(4)
+    for (const nodeId of ['power-a1', 'power-a2', 'power-a3']) {
+      const result = purchaseArcaneCoreNode(state, nodeId)
+      expect(result).toMatchObject({ ok: true })
+      if (!result.ok) return
+      state = result.state
     }
-    const refunded = refundArcaneCoreNode(state, 'power-01')
+
+    const preview = getArcaneCoreBranchResetPreview(state, 'power')
+    expect(preview).toMatchObject({ ok: true, nodesAffected: 3, corePointsReturned: 3 })
+    const refunded = refundArcaneCoreNode(state, 'power-a1')
     expect(refunded).toMatchObject({ ok: true })
     if (!refunded.ok) return
-    expect(refunded.state.nodes['power-01']).toBeUndefined()
-    expect(refunded.state.nodes['power-09']).toBeUndefined()
-    expect(refunded.state.nodes['power-02']).toBeDefined()
-    expect(refunded.state.corePoints).toBe(4)
-    expect(refunded.state.arcaneEssence).toBe(305)
+    expect(refunded.state.nodes).toEqual({})
+    expect(getArcaneCorePointsSpent(refunded.state)).toBe(0)
+    expect(getArcaneCoreAvailablePoints(refunded.state)).toBe(3)
   })
 
-  it('preserves an any-prerequisite child when another completed route remains', () => {
-    const state = {
-      corePoints: 0,
-      arcaneEssence: 0,
-      nodes: {
-        'power-04': { unlocked: true, rank: 5, coreSpent: 1, essenceSpent: 280 },
-        'power-05': { unlocked: true, rank: 5, coreSpent: 1, essenceSpent: 280 },
-        'power-12': { unlocked: true, rank: 1, coreSpent: 1, essenceSpent: 25 },
-      },
+  it('resets only the selected branch and keeps XP', () => {
+    let state = stateAtLevel(4)
+    for (const nodeId of ['power-a1', 'power-a2']) {
+      const result = purchaseArcaneCoreNode(state, nodeId)
+      expect(result).toMatchObject({ ok: true })
+      if (!result.ok) return
+      state = result.state
     }
-    const preview = getArcaneCoreRefundPreview(state, 'power-04')
-    expect(preview).toMatchObject({ ok: true, nodesAffected: 1, ranksAffected: 5, corePointsRefunded: 1, essenceRefunded: 280 })
-    if (!preview.ok) return
-    expect(preview.state.nodes['power-05']).toBeDefined()
-    expect(preview.state.nodes['power-12']).toBeDefined()
+    const vitality = purchaseArcaneCoreNode(state, 'vitality-a1')
+    expect(vitality).toMatchObject({ ok: true })
+    if (!vitality.ok) return
+
+    const reset = getArcaneCoreBranchResetPreview(vitality.state, 'power')
+    expect(reset).toMatchObject({ ok: true, nodesAffected: 2, corePointsReturned: 2 })
+    if (!reset.ok) return
+    expect(reset.state.totalXp).toBe(vitality.state.totalXp)
+    expect(reset.state.nodes).toEqual(purchased('vitality-a1'))
   })
 
-  it('cascades an all-prerequisite child and deeper descendants only when invalid', () => {
-    const state = {
-      corePoints: 0,
-      arcaneEssence: 0,
-      nodes: {
-        'power-01': { unlocked: true, rank: 5, coreSpent: 1, essenceSpent: 280 },
-        'power-02': { unlocked: true, rank: 5, coreSpent: 1, essenceSpent: 280 },
-        'power-09': { unlocked: true, rank: 1, coreSpent: 1, essenceSpent: 25 },
-        'power-10': { unlocked: true, rank: 5, coreSpent: 1, essenceSpent: 280 },
-        'power-17': { unlocked: true, rank: 1, coreSpent: 1, essenceSpent: 25 },
-      },
-    }
-    const preview = getArcaneCoreRefundPreview(state, 'power-01')
-    expect(preview).toMatchObject({ ok: true, nodesAffected: 3, ranksAffected: 7, corePointsRefunded: 3, essenceRefunded: 330 })
-    if (!preview.ok) return
-    expect(preview.state.nodes['power-01']).toBeUndefined()
-    expect(preview.state.nodes['power-09']).toBeUndefined()
-    expect(preview.state.nodes['power-17']).toBeUndefined()
-    expect(preview.state.nodes['power-02']).toBeDefined()
+  it('supports developer completion without changing the node cost model', () => {
+    const maxed = setArcaneCoreLevel(createInitialArcaneCoreState(), ARCANE_CORE_MAX_LEVEL)
+    const completed = purchaseAllArcaneCoreNodes(maxed)
+    expect(Object.keys(completed.nodes)).toHaveLength(160)
+    expect(getArcaneCorePointsSpent(completed)).toBe(160)
+    expect(getArcaneCoreAvailablePoints(completed)).toBe(0)
   })
 
-  it('does not refund fake currency for developer-free allocations', () => {
-    const state = { corePoints: 3, arcaneEssence: 4, nodes: { 'power-01': { unlocked: true, rank: 2, coreSpent: 0, essenceSpent: 0 } } }
-    const preview = getArcaneCoreRefundPreview(state, 'power-01')
-    expect(preview).toMatchObject({ ok: true, nodesAffected: 1, ranksAffected: 2, corePointsRefunded: 0, essenceRefunded: 0 })
-    if (!preview.ok) return
-    expect(preview.state).toMatchObject({ corePoints: 3, arcaneEssence: 4, nodes: {} })
+  it('feeds purchased V2 node stats into the shared Equipment model', () => {
+    const stats = getArcaneCoreStaticStats({ nodes: { 'vitality-a1': { purchased: true }, 'focus-d1': { purchased: true } } })
+    expect(stats).toMatchObject({ maxHealth: 10, maxFocus: 1 })
   })
 
-  it('previews branch resets with exact paid totals', () => {
-    const state = { corePoints: 2, arcaneEssence: 3, nodes: { 'focus-01': { unlocked: true, rank: 1, coreSpent: 1, essenceSpent: 25 } } }
-    const preview = getArcaneCoreBranchResetPreview(state, 'focus')
-    expect(preview).toMatchObject({ ok: true, branchId: 'focus', nodesAffected: 1, ranksAffected: 1, corePointsRefunded: 1, essenceRefunded: 25 })
-    if (!preview.ok) return
-    expect(preview.state).toEqual({ corePoints: 3, arcaneEssence: 28, nodes: {} })
-  })
-
-  it('feeds unlocked ranks into the existing equipment stat model', () => {
-    const totals = getArcaneCoreModifierTotals({ nodes: { 'vitality-01': { unlocked: true, rank: 3, coreSpent: 1, essenceSpent: 110 } } })
-    expect(totals.maxHealth).toBe(6)
-  })
-
-  it('resets all allocations and refunds recorded costs', () => {
-    const state = { corePoints: 0, arcaneEssence: 10, nodes: { 'focus-01': { unlocked: true, rank: 1, coreSpent: 1, essenceSpent: 25 } } }
-    expect(resetArcaneCore(state)).toEqual({ ok: true, state: { corePoints: 1, arcaneEssence: 35, nodes: {} } })
+  it('resets allocations while preserving earned XP', () => {
+    const state = stateAtLevel(2, purchased('power-a1'))
+    expect(resetArcaneCore(state)).toEqual({ ok: true, state: { totalXp: state.totalXp, nodes: {} } })
   })
 })

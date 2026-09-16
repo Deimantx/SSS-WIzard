@@ -4,23 +4,23 @@ import { finishEnemy, spawnEnemy } from '../../systems/combat/combatRuntime'
 import { getArcaneCoreReward } from './arcaneCoreRewards'
 
 describe('Arcane Core rewards', () => {
-  it('awards small Essence from normal kills and repeatable boss rewards', () => {
-    expect(getArcaneCoreReward('whispering-woods')).toEqual({ corePoints: 1, normalEssence: 1, bossEssence: 10 })
+  it('defines dungeon-scaled XP for normal and boss kills', () => {
+    expect(getArcaneCoreReward('whispering-woods')).toEqual({ normalKillXp: 5, bossKillXp: 40 })
   })
 
-  it('awards normal Essence and boss Core Points through combat resolution', () => {
+  it('awards Arcane Core XP through normal and boss combat resolution', () => {
     const normal = createInitialState()
     normal.combat.active = true
     normal.combat.dungeonId = 'whispering-woods'
     spawnEnemy(normal, 'forest-wisp')
     finishEnemy(normal)
-    expect(normal.arcaneCore).toMatchObject({ corePoints: 0, arcaneEssence: 1 })
+    expect(normal.arcaneCore.totalXp).toBe(5)
 
     const boss = createInitialState()
     boss.combat.active = true
     boss.combat.dungeonId = 'whispering-woods'
     spawnEnemy(boss, 'forest-heart')
     finishEnemy(boss)
-    expect(boss.arcaneCore).toMatchObject({ corePoints: 1, arcaneEssence: 10 })
+    expect(boss.arcaneCore.totalXp).toBe(40)
   })
 })

@@ -10,6 +10,6 @@
 | Spells | 12 | Magic/Magic.md |
 | Statuses | 21 | Combat/Combat.md |
 | Traits | 59 | Combat/Combat.md |
-| Arcane Core | 256 | Progression/Arcane_Core.md |
+| Arcane Core | 160 | Progression/Arcane_Core.md |
 
 Canonical pages contain each authored value once. Cross-page references are not numeric mirrors.

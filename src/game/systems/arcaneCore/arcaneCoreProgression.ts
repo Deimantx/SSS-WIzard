@@ -25,7 +25,7 @@ const copyState = (state: ArcaneCoreState): ArcaneCoreState => ({
 })
 
 export const getArcaneCoreNodeProgress = (state: Pick<ArcaneCoreState, 'nodes'>, nodeId: string): { purchased: boolean } => ({ purchased: Boolean(state.nodes?.[nodeId]?.purchased) })
-export const isArcaneCoreNodePurchased = (state: Pick<ArcaneCoreState, 'nodes'>, nodeId: string) => Boolean(state.nodes?.[nodeId]?.purchased)
+export const isArcaneCoreNodePurchased = (state: Pick<ArcaneCoreState, 'nodes'> | undefined, nodeId: string) => Boolean(state?.nodes?.[nodeId]?.purchased)
 export const getArcaneCoreLevel = (state: Pick<ArcaneCoreState, 'totalXp'>) => getArcaneCoreLevelForXp(safeXp(state.totalXp))
 export const getArcaneCoreTotalPointsEarned = (state: Pick<ArcaneCoreState, 'totalXp'>) => getArcaneCoreLevel(state) - 1
 export const getArcaneCorePointsSpent = (state: Pick<ArcaneCoreState, 'nodes'>) => Object.values(state.nodes ?? {}).reduce((sum, progress) => sum + (progress?.purchased ? 1 : 0), 0)
@@ -47,7 +47,21 @@ export const grantArcaneCoreXp = (state: ArcaneCoreState, amount: number) => {
   const next = copyState(state)
   next.totalXp = Math.min(ARCANE_CORE_MAX_TOTAL_XP, beforeXp + granted)
   const afterLevel = getArcaneCoreLevel(next)
-  return { state: next, requested: granted, granted: next.totalXp - beforeXp, levelBefore: beforeLevel, levelAfter: afterLevel, levelsGained: afterLevel - beforeLevel }
+  const xpGranted = next.totalXp - beforeXp
+  const levelsGained = afterLevel - beforeLevel
+  return {
+    state: next,
+    requested: granted,
+    granted: xpGranted,
+    xpGranted,
+    levelBefore: beforeLevel,
+    previousLevel: beforeLevel,
+    levelAfter: afterLevel,
+    newLevel: afterLevel,
+    levelsGained,
+    pointsGained: levelsGained,
+    reachedMaxLevel: afterLevel === ARCANE_CORE_MAX_LEVEL,
+  }
 }
 
 export const setArcaneCoreXp = (state: ArcaneCoreState, amount: number) => ({ ...copyState(state), totalXp: safeXp(amount) })
@@ -125,9 +139,9 @@ export const getArcaneCoreStaticStats = (state: Pick<ArcaneCoreState, 'nodes'>):
   Object.entries(node.stats).forEach(([key, value]) => { const numeric = typeof value === 'number' ? value : 0; if (key === 'resistances' && value) total.resistances = { ...(total.resistances ?? {}), ...Object.fromEntries(Object.entries(value).map(([damageType, resistance]) => [damageType, (total.resistances?.[damageType as keyof NonNullable<EquipmentStats['resistances']>] ?? 0) + (typeof resistance === 'number' ? resistance : 0)])) } as never; else total[key as keyof EquipmentStats] = ((total[key as keyof EquipmentStats] ?? 0) as number + numeric) as never })
   return total
 }, {})
-export const getArcaneCoreCombatModifiers = (state: Pick<ArcaneCoreState, 'nodes'>) => ARCANE_CORE_NODES.flatMap((node) => isArcaneCoreNodePurchased(state, node.id) ? node.modifiers ?? [] : [])
-export const getArcaneCoreCombatRules = (state: Pick<ArcaneCoreState, 'nodes'>): Array<{ node: ArcaneCoreNodeDefinition; rule: CombatTriggerRule }> => ARCANE_CORE_NODES.flatMap((node) => isArcaneCoreNodePurchased(state, node.id) ? (node.rules ?? []).map((rule) => ({ node, rule })) : [])
-export const getArcaneCoreSpecialEffects = (state: Pick<ArcaneCoreState, 'nodes'>): ArcaneCoreSpecialEffect[] => ARCANE_CORE_NODES.flatMap((node) => isArcaneCoreNodePurchased(state, node.id) ? node.special ?? [] : [])
+export const getArcaneCoreCombatModifiers = (state: Pick<ArcaneCoreState, 'nodes'> | undefined) => ARCANE_CORE_NODES.flatMap((node) => isArcaneCoreNodePurchased(state, node.id) ? node.modifiers ?? [] : [])
+export const getArcaneCoreCombatRules = (state: Pick<ArcaneCoreState, 'nodes'> | undefined): Array<{ node: ArcaneCoreNodeDefinition; rule: CombatTriggerRule }> => ARCANE_CORE_NODES.flatMap((node) => isArcaneCoreNodePurchased(state, node.id) ? (node.rules ?? []).map((rule) => ({ node, rule })) : [])
+export const getArcaneCoreSpecialEffects = (state: Pick<ArcaneCoreState, 'nodes'> | undefined): ArcaneCoreSpecialEffect[] => ARCANE_CORE_NODES.flatMap((node) => isArcaneCoreNodePurchased(state, node.id) ? node.special ?? [] : [])
 
 /** Compatibility alias for consumers still reading the old stat aggregation name. */
 export const getArcaneCoreModifierTotals = getArcaneCoreStaticStats

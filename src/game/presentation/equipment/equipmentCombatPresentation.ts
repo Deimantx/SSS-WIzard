@@ -28,7 +28,7 @@ type EquipmentCombat = NonNullable<ItemDefinition['combat']>
 
 const DAMAGE_TYPE_NAMES: Record<DamageType, string> = { physical: 'Physical', arcane: 'Arcane', fire: 'Fire', water: 'Water', earth: 'Earth', air: 'Air' }
 const SOURCE_KIND_NAMES: Record<CombatSource['kind'], string> = {
-  'basic-attack': 'Basic Attacks', spell: 'Spells', weapon: 'Weapons', status: 'Status Effects', trait: 'Traits', action: 'Actions', equipment: 'Equipment', guardian: 'Guardians', system: 'System',
+  'basic-attack': 'Basic Attacks', spell: 'Spells', weapon: 'Weapons', status: 'Status Effects', trait: 'Traits', action: 'Actions', 'arcane-core': 'Arcane Core', equipment: 'Equipment', guardian: 'Guardians', system: 'System',
 }
 const TAG_NAMES: Record<CombatTag, string> = {
   'basic-attack': 'Basic Attack', spell: 'Spell', weapon: 'Weapon', equipment: 'Equipment', guardian: 'Guardian', summon: 'Summon', melee: 'Melee', ranged: 'Ranged', magic: 'Magic', direct: 'Direct', heal: 'Heal', dot: 'Damage over Time', hot: 'Heal over Time', status: 'Status', special: 'Special', trait: 'Trait', buff: 'Buff', debuff: 'Debuff', control: 'Control', barrier: 'Barrier', physical: 'Physical', arcane: 'Arcane', fire: 'Fire', water: 'Water', earth: 'Earth', air: 'Air',
@@ -117,6 +117,7 @@ const conditionMeaning = (condition: CombatCondition): string => {
     case 'target-hp-below-percent': return `While target is below ${condition.percent}% Health`
     case 'self-hp-above-percent': return `While above ${condition.percent}% Health`
     case 'self-mana-above-percent': return `While above ${condition.percent}% Mana`
+    case 'self-mana-below-percent': return `While below ${condition.percent}% Mana`
     case 'target-hp-above-percent': return `While target is above ${condition.percent}% Health`
     case 'self-has-status': return `While affected by ${statusName(condition.statusId)}`
     case 'target-has-status': return `Against targets affected by ${statusName(condition.statusId)}`
@@ -137,6 +138,12 @@ const conditionMeaning = (condition: CombatCondition): string => {
     case 'source-is-self': return 'When you are the source'
     case 'source-is-opponent': return 'When the opponent is the source'
     case 'target-has-status-tag': return `Against targets affected by ${TAG_NAMES[condition.tag]} statuses`
+    case 'target-negative-status-count-at-least': return `Against targets with at least ${condition.count} different negative statuses`
+    case 'self-negative-status-count-at-least': return `With at least ${condition.count} different negative statuses`
+    case 'event-is-critical': return 'When the event is Critical'
+    case 'event-was-blocked': return 'When the event was Blocked'
+    case 'event-health-damage-positive': return 'When the event deals Health damage'
+    case 'event-amount-positive': return 'When the event amount is positive'
     case 'event-target-is-self': return 'When the event affects you'
     case 'all': return condition.conditions.map(conditionMeaning).join(' and ')
     case 'any': return condition.conditions.map(conditionMeaning).join(' or ')
@@ -207,7 +214,7 @@ const effectDetails = (effect: CombatEffect) => effect.type === 'apply-status' ?
 
 const triggerMeaning = (rule: CombatTriggerRule) => {
   const labels: Record<CombatTriggerRule['event'], string> = {
-    'on-combat-start': 'Combat Start', 'on-basic-attack-hit': 'Basic Attack Hit', 'on-spell-hit': 'Spell Hit', 'on-damage-dealt': 'Damage Dealt', 'on-damage-taken': 'Damage Taken', 'on-barrier-broken': 'Barrier Broken', 'on-status-applied': 'Status Applied', 'on-hp-threshold': 'Health Threshold', 'on-action-start': 'Action Start', 'on-action-resolve': 'Action Resolve', 'on-heal': 'Healing', 'on-heal-received': 'Healing Received', 'on-barrier-gained': 'Barrier Gained', 'on-status-removed': 'Status Removed', 'on-status-expired': 'Status Expired', 'on-kill': 'Kill',
+    'on-combat-start': 'Combat Start', 'on-spell-cast': 'Spell Cast', 'on-basic-attack-hit': 'Basic Attack Hit', 'on-spell-hit': 'Spell Hit', 'on-damage-dealt': 'Damage Dealt', 'on-damage-taken': 'Damage Taken', 'on-barrier-broken': 'Barrier Broken', 'on-status-applied': 'Status Applied', 'on-hp-threshold': 'Health Threshold', 'on-action-start': 'Action Start', 'on-action-resolve': 'Action Resolve', 'on-heal': 'Healing', 'on-heal-received': 'Healing Received', 'on-barrier-gained': 'Barrier Gained', 'on-status-removed': 'Status Removed', 'on-status-expired': 'Status Expired', 'on-kill': 'Kill',
   }
   return rule.chance === undefined ? `On ${labels[rule.event]}` : `${formattedPercent(rule.chance)}% chance on ${labels[rule.event]}`
 }

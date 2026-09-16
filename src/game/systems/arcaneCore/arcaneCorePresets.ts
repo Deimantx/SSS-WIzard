@@ -3,7 +3,7 @@ import { getArcaneCorePointsSpent, getArcaneCoreTotalPointsEarned, isArcaneCoreN
 import type { ArcaneCoreState } from '../../types'
 
 export interface ArcaneCorePreset { id: string; name: string; state: ArcaneCoreState; createdAt: number; updatedAt: number }
-export interface ArcaneCorePresetSummary { nodes: number; points: number; unlockedNodes: number; totalRanks: number; coreSpent: number }
+export interface ArcaneCorePresetSummary { nodes: number; points: number }
 export type CreateArcaneCorePresetResult = { ok: true; presetId: string } | { ok: false; reason: 'invalid-name' | 'limit-reached' }
 export type RenameArcaneCorePresetResult = { ok: true } | { ok: false; reason: 'not-found' | 'invalid-name' }
 export type ArcaneCorePresetMutationResult = { ok: true } | { ok: false; reason: 'not-found' }
@@ -14,7 +14,7 @@ export const cloneArcaneCoreState = (state: ArcaneCoreState): ArcaneCoreState =>
 
 export const getArcaneCorePresetSummary = (state: Pick<ArcaneCoreState, 'nodes'>): ArcaneCorePresetSummary => {
   const nodes = Object.values(state.nodes ?? {}).filter((progress) => progress?.purchased).length
-  return { nodes, points: nodes, unlockedNodes: nodes, totalRanks: nodes, coreSpent: nodes }
+  return { nodes, points: nodes }
 }
 
 const normalizePresetNodes = (state: Pick<ArcaneCoreState, 'nodes'>) => {

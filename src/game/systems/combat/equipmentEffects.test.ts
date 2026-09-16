@@ -16,13 +16,13 @@ describe('current Equipment content', () => {
     expect(validateRecipeDefinitions()).toEqual([])
   })
 
-  it('feeds Arcane Core ranks into the shared equipment stat aggregation', () => {
+  it('feeds purchased Arcane Core nodes into the shared equipment stat aggregation', () => {
     const state = createInitialState()
     state.equipment.weapon = 'ember-staff'
-    state.arcaneCore.nodes['power-01'] = { unlocked: true, rank: 5, coreSpent: 1, essenceSpent: 280 }
-    state.arcaneCore.nodes['control-01'] = { unlocked: true, rank: 5, coreSpent: 1, essenceSpent: 280 }
+    state.arcaneCore.nodes['power-a1'] = { purchased: true }
+    state.arcaneCore.nodes['control-a1'] = { purchased: true }
 
-    expect(getEquipmentStats(state)).toMatchObject({ spellPower: 21 })
+    expect(getEquipmentStats(state)).toMatchObject({ spellPower: 19 })
     expect(getCooldownRecoveryMultiplier(state, 'player')).toBeCloseTo(1.01)
   })
 

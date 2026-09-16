@@ -25,8 +25,8 @@ describe('effective Equipment stats', () => {
 
   it('includes Arcane Core modifiers in the shared equipment stat model', () => {
     const state = createInitialState()
-    state.arcaneCore.nodes['focus-03'] = { unlocked: true, rank: 5, coreSpent: 1, essenceSpent: 280 }
+    state.arcaneCore.nodes['focus-d1'] = { purchased: true }
 
-    expect(getEquipmentStats(state)).toMatchObject({ maxFocus: 5 })
+    expect(getEquipmentStats(state)).toMatchObject({ maxFocus: 1 })
   })
 })

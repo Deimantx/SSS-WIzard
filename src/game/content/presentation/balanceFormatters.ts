@@ -95,6 +95,7 @@ export const formatCombatCondition = (condition: CombatCondition | undefined): s
     case 'target-hp-below-percent': return `${conditionSubject('target')} Health is below ${formatPercent(condition.percent / 100)}`
     case 'self-hp-above-percent': return `${conditionSubject('self')} Health is above ${formatPercent(condition.percent / 100)}`
     case 'self-mana-above-percent': return `${conditionSubject('self')} Mana is above ${formatPercent(condition.percent / 100)}`
+    case 'self-mana-below-percent': return `${conditionSubject('self')} Mana is below ${formatPercent(condition.percent / 100)}`
     case 'target-hp-above-percent': return `${conditionSubject('target')} Health is above ${formatPercent(condition.percent / 100)}`
     case 'self-has-status': return `the caster has ${statusName(condition.statusId)}`
     case 'target-has-status': return `the opponent has ${statusName(condition.statusId)}`
@@ -113,6 +114,12 @@ export const formatCombatCondition = (condition: CombatCondition | undefined): s
     case 'event-action-has-tag': return `the current action has the ${readableId(condition.tag)} tag`
     case 'event-damage-type-is': return `the current damage type is ${readableId(condition.damageType)}`
     case 'target-has-status-tag': return `the opponent has a ${readableId(condition.tag)} status`
+    case 'target-negative-status-count-at-least': return `the opponent has at least ${condition.count} different negative statuses`
+    case 'self-negative-status-count-at-least': return `the caster has at least ${condition.count} different negative statuses`
+    case 'event-is-critical': return 'the event is Critical'
+    case 'event-was-blocked': return 'the event was Blocked'
+    case 'event-health-damage-positive': return 'the event dealt Health damage'
+    case 'event-amount-positive': return 'the event amount is positive'
     case 'event-target-is-self': return 'the affected actor is the caster'
     case 'source-is-self': return 'the source is the caster'
     case 'source-is-opponent': return 'the source is the opponent'

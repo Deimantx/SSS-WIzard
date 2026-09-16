@@ -37,7 +37,7 @@ describe('Arcane Core presentation', () => {
     expect(formatArcaneCoreModifierValue('spellPower', 1)).toBe('+1')
     expect(formatArcaneCoreModifierValue('defense', 0.5)).toBe('+0.5')
 
-    const percentNode = ARCANE_CORE_NODES.find((node) => node.effect.key === 'critChance')!
-    expect(formatArcaneCoreNodeEffect(percentNode, 1)).toContain('+0.20%')
+    const percentNode = ARCANE_CORE_NODES.find((node) => node.stats?.critChance !== undefined)!
+    expect(formatArcaneCoreNodeEffect(percentNode, 1)).toContain('+1.00%')
   })
 })

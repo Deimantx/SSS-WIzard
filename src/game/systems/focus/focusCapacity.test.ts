@@ -29,10 +29,10 @@ describe('Focus Capacity', () => {
 
   it('includes Arcane Core Max Focus modifiers in the shared capacity calculation', () => {
     const state = createInitialState()
-    state.arcaneCore.nodes['focus-03'] = { unlocked: true, rank: 3, coreSpent: 1, essenceSpent: 110 }
+    state.arcaneCore.nodes['focus-d1'] = { purchased: true }
 
-    expect(getFocusCapacityBreakdown(state).equipment).toBe(3)
-    expect(getFocusCapacityBreakdown(state).total).toBe(103)
+    expect(getFocusCapacityBreakdown(state).equipment).toBe(1)
+    expect(getFocusCapacityBreakdown(state).total).toBe(101)
   })
 
   it('consumes the exact Prismatic-only Level 1 cost and updates derived Max Focus', () => {

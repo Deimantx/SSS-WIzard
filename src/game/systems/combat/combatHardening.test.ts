@@ -266,10 +266,10 @@ describe('equipment combat providers', () => {
     runCombatTriggers(state, 'player', 'on-combat-start', context, executeCombatEffects, 0, [], { push: (event) => events.push(event) })
     const key = getRuleRuntimeKey('player', 'equipment', testItemId, 'cooldown-rule', 'weapon')
     expect(state.combat.ruleCooldowns[key]).toBe(1_000)
-    expect(events.filter((event) => (event as { sourceKind?: stweapon; category?: stweapon }).sourceKind === 'equipment' && (event as { category?: stweapon }).category === 'system')).toHaveLength(1)
+    expect(events.filter((event) => (event as { sourceKind?: string; category?: string }).sourceKind === 'equipment' && (event as { category?: string }).category === 'system')).toHaveLength(1)
     tickRuleCooldowns(state, 1_000)
     runCombatTriggers(state, 'player', 'on-combat-start', context, executeCombatEffects, 0, [], { push: (event) => events.push(event) })
-    expect(events.filter((event) => (event as { sourceKind?: stweapon; category?: stweapon }).sourceKind === 'equipment' && (event as { category?: stweapon }).category === 'system')).toHaveLength(2)
+    expect(events.filter((event) => (event as { sourceKind?: string; category?: string }).sourceKind === 'equipment' && (event as { category?: string }).category === 'system')).toHaveLength(2)
   })
 
   it('blocks self-procs within one cascade and resets for the next root Hit', () => {

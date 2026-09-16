@@ -3,7 +3,7 @@ import { MONSTERS } from '../../content/monsters'
 import { getEffectiveEquipmentItemStats, getEquipmentStats } from '../../core/equipment/equipmentStats'
 import { MAX_RESISTANCE, MIN_RESISTANCE } from '../../core/balance/combatStats'
 import { ITEMS } from '../../content/items/items'
-import type { EquipmentStats, GameState, StatusId } from '../../types'
+import type { ArcaneCoreModifierKey, GameState, StatusId } from '../../types'
 import type { CombatActor } from './magnitude'
 import { evaluateCombatCondition } from './conditionRuntime'
 import { getActorTraits } from './traitRuntime'
@@ -41,7 +41,7 @@ export interface CombatModifierContribution {
   sourceName?: string
 }
 
-const EQUIPMENT_MODIFIER_STATS: Partial<Record<ModifierKey, keyof EquipmentStats>> = {
+const EQUIPMENT_MODIFIER_STATS: Partial<Record<ModifierKey, ArcaneCoreModifierKey>> = {
   'defense-flat': 'defense',
   'crit-chance': 'critChance',
   'crit-damage': 'critDamage',

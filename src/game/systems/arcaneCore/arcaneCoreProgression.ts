@@ -10,7 +10,7 @@ export const EMPTY_ARCANE_CORE_NODE_PROGRESS: ArcaneCoreNodeProgress = { unlocke
 export const createInitialArcaneCoreState = (): ArcaneCoreState => ({ corePoints: 0, arcaneEssence: 0, nodes: {} })
 export const getArcaneCoreNodeProgress = (state: Pick<ArcaneCoreState, 'nodes'>, nodeId: string): ArcaneCoreNodeProgress => state.nodes[nodeId] ?? EMPTY_ARCANE_CORE_NODE_PROGRESS
 
-const copyState = (state: ArcaneCoreState): ArcaneCoreState => ({ corePoints: Math.max(0, Number.isFinite(state.corePoints) ? state.corePoints : 0), arcaneEssence: Math.max(0, Number.isFinite(state.arcaneEssence) ? state.arcaneEssence : 0), nodes: Object.fromEntries(Object.entries(state.nodes).map(([id, progress]) => [id, { ...progress }])) })
+const copyState = (state: ArcaneCoreState): ArcaneCoreState => ({ corePoints: Math.max(0, Number.isFinite(state.corePoints) ? state.corePoints : 0), arcaneEssence: Math.max(0, Number.isFinite(state.arcaneEssence) ? state.arcaneEssence : 0), nodes: Object.fromEntries(Object.entries(state.nodes).flatMap(([id, progress]) => progress ? [[id, { ...progress }]] : [])) as ArcaneCoreState['nodes'] })
 const isComplete = (state: Pick<ArcaneCoreState, 'nodes'>, nodeId: string) => { const node = getArcaneCoreNode(nodeId); const progress = getArcaneCoreNodeProgress(state, nodeId); return Boolean(node && progress.unlocked && progress.rank >= node.maxRank) }
 
 export const isArcaneCoreNodeReachable = (state: Pick<ArcaneCoreState, 'nodes'>, nodeId: string, ignorePrerequisites = false) => {
@@ -46,6 +46,7 @@ export const rankUpArcaneCoreNode = (state: ArcaneCoreState, nodeId: string, opt
   const next = copyState(state)
   next.arcaneEssence -= cost
   const progress = next.nodes[nodeId]
+  if (!progress) return { ok: false, reason: 'not-unlocked' }
   progress.rank += 1
   progress.essenceSpent += cost
   return { ok: true, state: next }
@@ -133,7 +134,7 @@ export const resetArcaneCoreBranch = (state: ArcaneCoreState, branchId: typeof A
 
 export const resetArcaneCore = (state: ArcaneCoreState): ArcaneCoreActionResult => {
   const next = copyState(state)
-  Object.values(next.nodes).forEach((progress) => { next.corePoints += Math.max(0, progress.coreSpent); next.arcaneEssence += Math.max(0, progress.essenceSpent) })
+  Object.values(next.nodes).forEach((progress) => { if (!progress) return; next.corePoints += Math.max(0, progress.coreSpent); next.arcaneEssence += Math.max(0, progress.essenceSpent) })
   next.nodes = {}
   return { ok: true, state: next }
 }

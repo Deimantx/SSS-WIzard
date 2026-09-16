@@ -46,13 +46,12 @@
 .arcane-core-preset-main { display: grid; gap: 3px; min-width: 0; }
 .arcane-core-preset-main > strong { overflow: hidden; color: var(--ui-text); text-overflow: ellipsis; white-space: nowrap; }
 .arcane-core-preset-main > span { color: var(--ui-text-soft); font: var(--text-micro) var(--font-mono); }
-.arcane-core-preset-main > small, .arcane-core-preset-runtime-note { color: var(--ui-text-muted); font-size: var(--text-xs); }
+.arcane-core-preset-main > small { color: var(--ui-text-muted); font-size: var(--text-xs); }
 .arcane-core-preset-actions, .arcane-core-preset-rename { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 5px; }
 .arcane-core-preset-actions .button, .arcane-core-preset-rename .button { min-width: 0; padding: 6px 8px; }
 .arcane-core-preset-rename { justify-content: flex-start; }
 .arcane-core-preset-rename input { width: min(220px, 100%); }
 .arcane-core-preset-delete-copy { color: var(--ui-warning); font: var(--text-micro) var(--font-mono); }
-.arcane-core-preset-runtime-note { display: block; margin-top: 10px; }
 
 .arcane-core-modal-backdrop { align-items: center; justify-content: center; padding: 3vh 2vw; }
 .arcane-core-modal { position: relative; display: grid; grid-template-rows: auto auto minmax(0, 1fr); width: min(1420px, 96vw); height: min(880px, 94vh); min-width: 0; min-height: 0; box-sizing: border-box; overflow: hidden; padding: 20px; border: 1px solid color-mix(in srgb, var(--ui-accent) 50%, var(--ui-border)); border-radius: 12px; background: linear-gradient(145deg, color-mix(in srgb, var(--ui-panel-strong) 96%, var(--ui-accent)), var(--ui-panel)); box-shadow: 0 25px 90px rgba(0,0,0,.55); }

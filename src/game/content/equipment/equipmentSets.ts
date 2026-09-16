@@ -19,7 +19,7 @@ export const ARTIFACT_EQUIPMENT_IDS = [
 ] as const satisfies readonly ItemId[]
 
 /** Dungeon origin is intentionally empty: combat awards materials, not gear. */
-export const getEquipmentOrigin = (_itemId: ItemId) => null
+export const getEquipmentOrigin = (_itemId: ItemId): DungeonId | null => null
 export const getEquipmentIdsForDungeon = (_dungeonId: DungeonId): readonly ItemId[] => []
 
 export const validateEquipmentSetDefinitions = (items: Record<string, ItemDefinition> = ITEMS) => {

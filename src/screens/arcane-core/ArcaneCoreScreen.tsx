@@ -13,8 +13,8 @@ import { useGameStore } from '../../store/gameStore'
 
 function Wallet({ points, essence }: { points: number; essence: number }) {
   return <div className="arcane-core-wallet" aria-label="Arcane Core wallet">
-    <div><span>CORE POINTS</span><strong>{points.toLocaleString()}</strong><small>Boss defeats grant points.</small></div>
-    <div><span>ARCANE ESSENCE</span><strong>{essence.toLocaleString()}</strong><small>Monsters and bosses feed the Core.</small></div>
+    <div><span>CORE POINTS</span><strong>{points.toLocaleString()}</strong><small>Used to unlock Arcane Core nodes.</small></div>
+    <div><span>ARCANE ESSENCE</span><strong>{essence.toLocaleString()}</strong><small>Used to rank unlocked Arcane Core nodes.</small></div>
   </div>
 }
 
@@ -115,14 +115,13 @@ function BranchModal({ branch, onClose }: { branch: ArcaneCoreBranchDefinition; 
 export function ArcaneCoreScreen() {
   const core = useGameStore((state) => state.arcaneCore)
   const [branchId, setBranchId] = useState<ArcaneCoreBranchId | null>(null)
-  const [presetVersion, setPresetVersion] = useState(0)
   const activeBranch = branchId ? ARCANE_CORE_BRANCHES.find((branch) => branch.id === branchId) : null
   const modifiers = getArcaneCoreModifierTotals(core)
-  const totalNodes = Object.values(core.nodes).filter((node) => node.unlocked).length
-  const totalRanks = Object.values(core.nodes).reduce((sum, node) => sum + node.rank, 0)
+  const totalNodes = Object.values(core.nodes).filter((node) => Boolean(node?.unlocked)).length
+  const totalRanks = Object.values(core.nodes).reduce((sum, node) => sum + (node?.rank ?? 0), 0)
   return <div className="screen-content arcane-core-screen">
-    <div className="screen-header"><div><div className="eyebrow">HERO · PERMANENT PROGRESSION</div><h1>Arcane Core</h1><p>Shape the permanent engine beneath the wizard. Every boss defeat opens another route through the Core.</p></div><Status tone="active">{totalNodes} nodes online</Status></div>
-    <ScreenGrid screen="arcane-core" panels={[{ id: 'arcane-core-overview', content: <div className="arcane-core-overview-stack"><Card title="Core reserves" action={<span className="arcane-core-total-rank">{totalRanks} ranks active</span>}><Wallet points={core.corePoints} essence={core.arcaneEssence} /></Card><div className="arcane-core-branch-grid">{ARCANE_CORE_BRANCHES.map((branch) => <BranchCard key={branch.id} branch={branch} state={core} onOpen={() => setBranchId(branch.id)} />)}</div><Card title="Active resonance" action={<Status tone="success">Permanent Core modifiers</Status>}><div className="arcane-core-resonance">{Object.entries(modifiers).length ? Object.entries(modifiers).map(([key, value]) => <span key={key}><small>{getArcaneCoreModifierLabel(key as ArcaneCoreModifierKey)}</small><strong>{formatArcaneCoreModifierValue(key as ArcaneCoreModifierKey, Number(value))}</strong></span>) : <p className="muted">Unlock and rank nodes to bring permanent modifiers online.</p>}</div></Card><ArcaneCorePresetPanel version={presetVersion} onChange={() => setPresetVersion((version) => version + 1)} /></div> }]} />
+    <div className="screen-header"><div><div className="eyebrow">HERO · PERMANENT PROGRESSION</div><h1>Arcane Core</h1><p>Shape the permanent engine beneath the wizard. Unlock routes and invest in long-term specialization.</p></div><Status tone="active">{totalNodes} nodes online</Status></div>
+    <ScreenGrid screen="arcane-core" panels={[{ id: 'arcane-core-overview', content: <div className="arcane-core-overview-stack"><Card title="Core reserves" action={<span className="arcane-core-total-rank">{totalRanks} ranks active</span>}><Wallet points={core.corePoints} essence={core.arcaneEssence} /></Card><div className="arcane-core-branch-grid">{ARCANE_CORE_BRANCHES.map((branch) => <BranchCard key={branch.id} branch={branch} state={core} onOpen={() => setBranchId(branch.id)} />)}</div><Card title="Active resonance" action={<Status tone="success">Permanent Core modifiers</Status>}><div className="arcane-core-resonance">{Object.entries(modifiers).length ? Object.entries(modifiers).map(([key, value]) => <span key={key}><small>{getArcaneCoreModifierLabel(key as ArcaneCoreModifierKey)}</small><strong>{formatArcaneCoreModifierValue(key as ArcaneCoreModifierKey, Number(value))}</strong></span>) : <p className="muted">Unlock and rank nodes to bring permanent modifiers online.</p>}</div></Card><ArcaneCorePresetPanel /></div> }]} />
     {activeBranch && <BranchModal branch={activeBranch} onClose={() => setBranchId(null)} />}
   </div>
 }

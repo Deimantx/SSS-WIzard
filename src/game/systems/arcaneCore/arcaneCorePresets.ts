@@ -17,73 +17,45 @@ export interface ArcaneCorePresetSummary {
   essenceSpent: number
 }
 
+export type CreateArcaneCorePresetResult =
+  | { ok: true; presetId: string }
+  | { ok: false; reason: 'invalid-name' | 'limit-reached' }
+
+export type RenameArcaneCorePresetResult =
+  | { ok: true }
+  | { ok: false; reason: 'not-found' | 'invalid-name' }
+
+export type ArcaneCorePresetMutationResult =
+  | { ok: true }
+  | { ok: false; reason: 'not-found' }
+
 export type ArcaneCorePresetResult =
   | { ok: true; state: ArcaneCoreState }
   | { ok: false; reason: 'invalid-preset' | 'not-enough-core-points' | 'not-enough-essence' }
 
-const MAX_RUNTIME_PRESETS = 20
-let presets: ArcaneCorePreset[] = []
-let nextPresetSequence = 1
+export const MAX_RUNTIME_PRESETS = 20
 
-const cloneState = (state: ArcaneCoreState): ArcaneCoreState => ({
+export const normalizeArcaneCorePresetName = (name: string) => name.trim().slice(0, 32)
+
+export const cloneArcaneCoreState = (state: ArcaneCoreState): ArcaneCoreState => ({
   corePoints: state.corePoints,
   arcaneEssence: state.arcaneEssence,
-  nodes: Object.fromEntries(Object.entries(state.nodes).map(([id, progress]) => [id, { ...progress }])),
+  nodes: Object.fromEntries(Object.entries(state.nodes).flatMap(([id, progress]) => progress ? [[id, { ...progress }]] : [])) as ArcaneCoreState['nodes'],
 })
 
-const clonePreset = (preset: ArcaneCorePreset): ArcaneCorePreset => ({ ...preset, state: cloneState(preset.state) })
-const normalizeName = (name: string) => name.trim().slice(0, 32)
-const findPreset = (presetId: string) => presets.find((preset) => preset.id === presetId)
-
-export const getArcaneCorePresets = () => presets.map(clonePreset)
-
-export const resetArcaneCorePresets = () => {
-  presets = []
-  nextPresetSequence = 1
-}
-
-export const createArcaneCorePreset = (name: string, state: ArcaneCoreState): string | false => {
-  const trimmedName = normalizeName(name)
-  if (!trimmedName || presets.length >= MAX_RUNTIME_PRESETS) return false
-  const now = Date.now()
-  const id = `arcane-core-preset-${nextPresetSequence++}`
-  presets.push({ id, name: trimmedName, state: cloneState(state), createdAt: now, updatedAt: now })
-  return id
-}
-
-export const updateArcaneCorePreset = (presetId: string, state: ArcaneCoreState) => {
-  const preset = findPreset(presetId)
-  if (!preset) return false
-  preset.state = cloneState(state)
-  preset.updatedAt = Date.now()
-  return true
-}
-
-export const renameArcaneCorePreset = (presetId: string, name: string) => {
-  const preset = findPreset(presetId)
-  const trimmedName = normalizeName(name)
-  if (!preset || !trimmedName) return false
-  preset.name = trimmedName
-  preset.updatedAt = Date.now()
-  return true
-}
-
-export const deleteArcaneCorePreset = (presetId: string) => {
-  const index = presets.findIndex((preset) => preset.id === presetId)
-  if (index < 0) return false
-  presets.splice(index, 1)
-  return true
-}
-
-export const getArcaneCorePresetSummary = (state: Pick<ArcaneCoreState, 'nodes'>): ArcaneCorePresetSummary => Object.values(state.nodes).reduce<ArcaneCorePresetSummary>((summary, progress) => {
-  if (progress.unlocked) summary.unlockedNodes += 1
-  summary.totalRanks += Math.max(0, progress.rank)
-  summary.coreSpent += Math.max(0, progress.coreSpent)
-  summary.essenceSpent += Math.max(0, progress.essenceSpent)
+export const getArcaneCorePresetSummary = (state: Pick<ArcaneCoreState, 'nodes'>): ArcaneCorePresetSummary => {
+  const summary: ArcaneCorePresetSummary = { unlockedNodes: 0, totalRanks: 0, coreSpent: 0, essenceSpent: 0 }
+  for (const progress of Object.values(state.nodes)) {
+    if (!progress) continue
+    if (progress.unlocked) summary.unlockedNodes += 1
+    summary.totalRanks += Math.max(0, progress.rank)
+    summary.coreSpent += Math.max(0, progress.coreSpent)
+    summary.essenceSpent += Math.max(0, progress.essenceSpent)
+  }
   return summary
-}, { unlockedNodes: 0, totalRanks: 0, coreSpent: 0, essenceSpent: 0 })
+}
 
-const normalizePresetNodes = (state: ArcaneCoreState): Record<string, ArcaneCoreNodeProgress> | null => {
+const normalizePresetNodes = (state: Pick<ArcaneCoreState, 'nodes'>): ArcaneCoreState['nodes'] | null => {
   const nodes: Record<string, ArcaneCoreNodeProgress> = {}
   for (const [nodeId, progress] of Object.entries(state.nodes)) {
     const node = getArcaneCoreNode(nodeId)
@@ -100,15 +72,15 @@ const normalizePresetNodes = (state: ArcaneCoreState): Record<string, ArcaneCore
   return nodes
 }
 
-export const applyArcaneCorePreset = (current: ArcaneCoreState, presetId: string): ArcaneCorePresetResult => {
-  const preset = findPreset(presetId)
-  if (!preset) return { ok: false, reason: 'invalid-preset' }
-  const nodes = normalizePresetNodes(preset.state)
+export const validateArcaneCorePreset = (state: Pick<ArcaneCoreState, 'nodes'>) => normalizePresetNodes(state) !== null
+
+export const applyArcaneCorePreset = (current: ArcaneCoreState, presetState: Pick<ArcaneCoreState, 'nodes'>): ArcaneCorePresetResult => {
+  const nodes = normalizePresetNodes(presetState)
   if (!nodes) return { ok: false, reason: 'invalid-preset' }
-  const currentRefundedCore = current.corePoints + Object.values(current.nodes).reduce((sum, progress) => sum + Math.max(0, progress.coreSpent), 0)
-  const currentRefundedEssence = current.arcaneEssence + Object.values(current.nodes).reduce((sum, progress) => sum + Math.max(0, progress.essenceSpent), 0)
-  const requiredCore = Object.values(nodes).reduce((sum, progress) => sum + progress.coreSpent, 0)
-  const requiredEssence = Object.values(nodes).reduce((sum, progress) => sum + progress.essenceSpent, 0)
+  const currentRefundedCore = current.corePoints + Object.values(current.nodes).reduce((sum, progress) => sum + (progress ? Math.max(0, progress.coreSpent) : 0), 0)
+  const currentRefundedEssence = current.arcaneEssence + Object.values(current.nodes).reduce((sum, progress) => sum + (progress ? Math.max(0, progress.essenceSpent) : 0), 0)
+  const requiredCore = Object.values(nodes).reduce((sum, progress) => sum + (progress ? progress.coreSpent : 0), 0)
+  const requiredEssence = Object.values(nodes).reduce((sum, progress) => sum + (progress ? progress.essenceSpent : 0), 0)
   if (currentRefundedCore < requiredCore) return { ok: false, reason: 'not-enough-core-points' }
   if (currentRefundedEssence < requiredEssence) return { ok: false, reason: 'not-enough-essence' }
   return {

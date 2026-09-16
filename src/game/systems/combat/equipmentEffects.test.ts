@@ -36,7 +36,7 @@ describe('current Equipment content', () => {
     resolveMonsterLoot(state, 'forest-heart', (itemId) => drops.push(itemId))
 
     expect(drops).toEqual(expect.arrayContaining(['artifact-essence', 'life-essence']))
-    expect(drops.some((itemId) => ITEMS[itemId].kind === 'equipment')).toBe(false)
+    expect(drops.some((itemId) => ITEMS[itemId as keyof typeof ITEMS]?.kind === 'equipment')).toBe(false)
     expect(state.inventory['artifact-essence']).toBeGreaterThan(0)
   })
 

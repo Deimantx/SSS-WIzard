@@ -22,8 +22,8 @@ describe('CurrentArcaneWork', () => {
     useGameStore.getState().hydrateState(state)
     render(<CurrentArcaneWork />)
 
-    expect(screen.getByText('3 Echoes · +20 Mana/s total.')).toBeTruthy()
-    expect(screen.getByText('2 prepared batches · 4 Echoes · 34.6K XP/h.')).toBeTruthy()
+    expect(screen.getByText('3 Echoes · +15 Mana/s total.')).toBeTruthy()
+    expect(screen.getByText('2 prepared batches · 4 Echoes · 17.3K XP/h.')).toBeTruthy()
     expect(screen.getByText('2 active recipes · 3 Echoes · Focus 30.')).toBeTruthy()
     fireEvent.click(screen.getAllByRole('button', { name: /OPEN/ })[1])
     expect(useGameStore.getState().ui.screen).toBe('tower-research')

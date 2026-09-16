@@ -37,7 +37,7 @@ describe('dungeon loot and equipment ownership', () => {
     expect(ARTIFACT_EQUIPMENT_IDS).toHaveLength(12)
     expect(DUNGEON_ORDER.every((dungeonId) => getEquipmentIdsForDungeon(dungeonId).length === 0)).toBe(true)
     expect(getEquipmentOrigin('ember-staff')).toBeNull()
-    expect(Object.keys(ARTIFICING_RECIPES)).toEqual(expect.arrayContaining(ARTIFACT_EQUIPMENT_IDS))
+    expect(Object.keys(ARTIFICING_RECIPES)).toEqual(expect.arrayContaining([...ARTIFACT_EQUIPMENT_IDS]))
     expect(Object.values(ARTIFACTS).every((artifact) => ARTIFICING_RECIPES[artifact.id].output.itemId === artifact.id)).toBe(true)
     expect(validateRecipeDefinitions()).toEqual([])
     expect(RECIPES['windthread-wand']).toBeDefined()

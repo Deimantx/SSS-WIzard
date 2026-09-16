@@ -2,7 +2,7 @@ import { DUNGEONS, DUNGEON_ORDER } from './dungeons/dungeons'
 import { getEquipmentOrigin } from './equipment/equipmentSets'
 import { ITEMS } from './items/items'
 import { MONSTERS, MONSTER_IDS } from './monsters'
-import { RECIPES, RECIPE_ORDER } from './recipes/recipes'
+import { isArtificingRecipe, RECIPES, RECIPE_ORDER } from './recipes/recipes'
 import type { DungeonId, ItemId, MonsterId, RecipeId } from '../types'
 
 /**
@@ -67,7 +67,7 @@ const getItemRelations = (itemId: ItemId): ContentRelation[] => {
   RECIPE_ORDER.forEach((recipeId) => {
     const recipe = RECIPES[recipeId]
     if (recipe.output.itemId === itemId) {
-      relations.push({ kind: 'recipe', id: recipeId, label: recipe.name, detail: recipe.kind === 'artificing' ? 'Artificing output' : 'Transmutation output' })
+      relations.push({ kind: 'recipe', id: recipeId, label: recipe.name, detail: isArtificingRecipe(recipe) ? 'Artificing output' : 'Transmutation output' })
     }
   })
   return relations

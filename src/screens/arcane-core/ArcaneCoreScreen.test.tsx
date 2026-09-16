@@ -1,7 +1,8 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { TooltipProvider } from '../../components/ui/tooltip/Tooltip'
+import { useArcaneCorePresetStore } from '../../store/arcaneCorePresetStore'
 import { useGameStore } from '../../store/gameStore'
 import { ArcaneCoreScreen } from './ArcaneCoreScreen'
 
@@ -9,7 +10,7 @@ describe('Arcane Core screen', () => {
   beforeEach(() => {
     window.localStorage.clear()
     useGameStore.getState().resetSave()
-    useGameStore.getState().resetArcaneCorePresets()
+    useArcaneCorePresetStore.getState().reset()
   })
 
   it('mounts without an unstable Zustand snapshot loop', () => {
@@ -64,12 +65,14 @@ describe('Arcane Core screen', () => {
     expect(screen.getByRole('heading', { name: 'Presets' })).toBeTruthy()
     expect(screen.queryByText('Session presets')).toBeNull()
     expect(screen.queryByText(/3 slots/)).toBeNull()
+    expect(screen.queryByText(/available for this session|runtime only/i)).toBeNull()
     expect(screen.getByText('No presets saved yet.')).toBeTruthy()
-    await user.click(screen.getAllByRole('button', { name: 'Save current' })[0])
+    expect(screen.getAllByRole('button', { name: 'Save current' })).toHaveLength(1)
+    await user.click(screen.getByRole('button', { name: 'Save current' }))
     await user.type(screen.getByRole('textbox', { name: 'Preset name' }), 'Power route')
     await user.click(screen.getByRole('button', { name: 'Save preset' }))
     expect(screen.getByText('Power route')).toBeTruthy()
-    expect(screen.getByText('0 nodes · 0 ranks')).toBeTruthy()
+    expect(screen.getByText(/0 nodes.*0 ranks/)).toBeTruthy()
 
     await user.click(screen.getByRole('button', { name: 'Save current' }))
     await user.type(screen.getByRole('textbox', { name: 'Preset name' }), 'Second route')
@@ -81,5 +84,22 @@ describe('Arcane Core screen', () => {
     await user.click(screen.getByRole('button', { name: 'Delete' }))
     expect(screen.queryByText('Power route')).toBeNull()
     expect(useGameStore.getState().arcaneCore).toEqual({ corePoints: 0, arcaneEssence: 0, nodes: {} })
+  })
+
+  it('shows accurate preset validation errors and reacts to external runtime reset', async () => {
+    const user = userEvent.setup()
+    render(<TooltipProvider><ArcaneCoreScreen /></TooltipProvider>)
+    await user.click(screen.getByRole('button', { name: 'Save current' }))
+    await user.click(screen.getByRole('button', { name: 'Save preset' }))
+    expect(screen.getByText('Enter a preset name.')).toBeTruthy()
+    await user.type(screen.getByRole('textbox', { name: 'Preset name' }), 'Power route')
+    await user.click(screen.getByRole('button', { name: 'Save preset' }))
+    await user.click(screen.getByRole('button', { name: 'Rename' }))
+    const renameInput = screen.getByRole('textbox', { name: 'Rename Power route' })
+    await user.clear(renameInput)
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+    expect(screen.getByText('Enter a preset name.')).toBeTruthy()
+    useArcaneCorePresetStore.getState().reset()
+    await waitFor(() => expect(screen.getByText('No presets saved yet.')).toBeTruthy())
   })
 })

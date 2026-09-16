@@ -64,7 +64,8 @@ import { GUARDIANS } from '../game/content/guardians/guardians'
 import { suppressGuardianIfOutOfMana } from '../game/systems/summoning/summoningRuntime'
 import { isSummoningUnlocked } from '../game/systems/summoning/summoningSelectors'
 import { ARCANE_CORE_BRANCHES } from '../game/content/arcaneCore/arcaneCoreBranches'
-import { applyArcaneCorePreset, createArcaneCorePreset, deleteArcaneCorePreset, getArcaneCorePresets, renameArcaneCorePreset, resetArcaneCorePresets, updateArcaneCorePreset, maxArcaneCoreBranch as maxArcaneCoreBranchProgression, maxArcaneCoreNode as maxArcaneCoreNodeProgression, rankUpArcaneCoreNode, refundArcaneCoreNode, resetArcaneCore, resetArcaneCoreBranch as resetArcaneCoreBranchProgression, unlockArcaneCoreNode } from '../game/systems/arcaneCore'
+import { applyArcaneCorePreset, maxArcaneCoreBranch as maxArcaneCoreBranchProgression, maxArcaneCoreNode as maxArcaneCoreNodeProgression, rankUpArcaneCoreNode, refundArcaneCoreNode, resetArcaneCore, resetArcaneCoreBranch as resetArcaneCoreBranchProgression, unlockArcaneCoreNode } from '../game/systems/arcaneCore'
+import { getArcaneCorePresetSnapshot, useArcaneCorePresetStore } from './arcaneCorePresetStore'
 
 const combatEventSink = createCombatEventSink(combatLogSink, combatRecapSink, combatDefeatSink, combatAlertsSink, dungeonStatisticsSink, combatTelemetrySink)
 const offlineBankCombatAnalyticsSink = createCombatEventSink(dungeonStatisticsSink, combatTelemetrySink)
@@ -203,13 +204,7 @@ export interface GameActions {
   maxArcaneCoreNode: (nodeId: string) => boolean
   maxArcaneCoreBranch: (branchId: ArcaneCoreBranchId) => void
   maxAllArcaneCore: () => void
-  createArcaneCorePreset: (name: string) => string | false
-  updateArcaneCorePreset: (presetId: string) => boolean
   loadArcaneCorePreset: (presetId: string) => boolean
-  renameArcaneCorePreset: (presetId: string, name: string) => boolean
-  deleteArcaneCorePreset: (presetId: string) => boolean
-  getArcaneCorePresets: () => ReturnType<typeof getArcaneCorePresets>
-  resetArcaneCorePresets: () => void
   setDebugArcaneCoreFreeCosts: (enabled: boolean) => void
   setDebugArcaneCoreIgnorePrerequisites: (enabled: boolean) => void
   debugSetArtifactLevel: (artifactId: ArtifactId, level: number) => void
@@ -490,13 +485,22 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   maxArcaneCoreNode: (nodeId) => { let ok = false; set((state) => { ok = commitArcaneCoreResult(state, maxArcaneCoreNodeProgression(state.arcaneCore, nodeId, { freeCosts: state.debug.arcaneCoreFreeCosts, ignorePrerequisites: state.debug.arcaneCoreIgnorePrerequisites })); if (ok) recalculateDerivedStats(state); return state }); return ok },
   maxArcaneCoreBranch: (branchId) => set((state) => { commitArcaneCoreResult(state, maxArcaneCoreBranchProgression(state.arcaneCore, branchId, { freeCosts: state.debug.arcaneCoreFreeCosts, ignorePrerequisites: state.debug.arcaneCoreIgnorePrerequisites })); recalculateDerivedStats(state); return state }),
   maxAllArcaneCore: () => set((state) => { let current = state.arcaneCore; ARCANE_CORE_BRANCHES.forEach((branch) => { const result = maxArcaneCoreBranchProgression(current, branch.id, { freeCosts: state.debug.arcaneCoreFreeCosts, ignorePrerequisites: state.debug.arcaneCoreIgnorePrerequisites }); if (result.ok) current = result.state }); state.arcaneCore = current; recalculateDerivedStats(state); return state }),
-  createArcaneCorePreset: (name) => createArcaneCorePreset(name, get().arcaneCore),
-  updateArcaneCorePreset: (presetId) => updateArcaneCorePreset(presetId, get().arcaneCore),
-  loadArcaneCorePreset: (presetId) => { let ok = false; set((state) => { const result = applyArcaneCorePreset(state.arcaneCore, presetId); if (result.ok) { state.arcaneCore = result.state; ok = true; recalculateDerivedStats(state) } else pushNotification(state, result.reason === 'not-enough-core-points' ? 'Not enough Core Points for this preset.' : result.reason === 'not-enough-essence' ? 'Not enough Arcane Essence for this preset.' : 'That Arcane Core preset is invalid.', 'warning', { key: 'arcane-core-preset-failed', cooldownMs: 1000 }); return state }); return ok },
-  renameArcaneCorePreset: (presetId, name) => renameArcaneCorePreset(presetId, name),
-  deleteArcaneCorePreset: (presetId) => deleteArcaneCorePreset(presetId),
-  getArcaneCorePresets: () => getArcaneCorePresets(),
-  resetArcaneCorePresets: () => resetArcaneCorePresets(),
+  loadArcaneCorePreset: (presetId) => {
+    const presetState = getArcaneCorePresetSnapshot(presetId)
+    let ok = false
+    set((state) => {
+      const result = presetState ? applyArcaneCorePreset(state.arcaneCore, presetState) : { ok: false as const, reason: 'invalid-preset' as const }
+      if (result.ok) {
+        state.arcaneCore = result.state
+        ok = true
+        recalculateDerivedStats(state)
+      } else {
+        pushNotification(state, result.reason === 'not-enough-core-points' ? 'Not enough Core Points for this preset.' : result.reason === 'not-enough-essence' ? 'Not enough Arcane Essence for this preset.' : 'That Arcane Core preset is invalid.', 'warning', { key: 'arcane-core-preset-failed', cooldownMs: 1000 })
+      }
+      return state
+    })
+    return ok
+  },
   debugSetArtifactLevel: (artifactId, level) => set((state) => { setDebugArtifactLevelInState(state, artifactId, level); recalculateDerivedStats(state); return state }),
   debugDecreaseArtifactLevel: (artifactId) => set((state) => { const progress = ensureDebugArtifact(state, artifactId); if (progress) setDebugArtifactLevelInState(state, artifactId, progress.level - 1); recalculateDerivedStats(state); return state }),
   debugIncreaseArtifactLevel: (artifactId) => set((state) => { const progress = ensureDebugArtifact(state, artifactId); if (progress) setDebugArtifactLevelInState(state, artifactId, progress.level + 1); recalculateDerivedStats(state); return state }),
@@ -599,7 +603,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     if (!activeProfileId) return
     const loaded = loadProfileGame(activeProfileId)
     if (!loaded.state) return
-    resetArcaneCorePresets()
+    useArcaneCorePresetStore.getState().reset()
     clearCombatLogUi()
     clearCombatAlerts()
     clearCombatRecap()
@@ -610,7 +614,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   },
   resetSave: () => {
     const fresh = createInitialState()
-    resetArcaneCorePresets()
+    useArcaneCorePresetStore.getState().reset()
     const activeProfileId = getActiveProfileId()
     resetProfileAttention(activeProfileId)
     if (activeProfileId) {
@@ -629,7 +633,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     set((state) => { Object.assign(state, fresh); state.recentAcquisitions = []; state.lastOfflineBankReport = null; return state })
     if (activeProfileId) updateProfileMetadata(activeProfileId, { lastSavedAt: fresh.lastSavedAt })
   },
-  hydrateState: (nextState) => { resetArcaneCorePresets(); clearCombatLogUi(); clearCombatAlerts(); clearCombatRecap(); clearCombatDefeat(); clearDungeonStatistics(); combatTelemetryObserver.clear(); return set((state) => { Object.assign(state, nextState); state.player.godMode = false; state.debug = createDefaultDebugOverrides(); state.recentAcquisitions = []; state.lastOfflineBankReport = null; if (!isScreenUnlocked(state, state.ui.screen)) state.ui.screen = 'home'; recalculateDerivedStats(state); return state }) },
+  hydrateState: (nextState) => { useArcaneCorePresetStore.getState().reset(); clearCombatLogUi(); clearCombatAlerts(); clearCombatRecap(); clearCombatDefeat(); clearDungeonStatistics(); combatTelemetryObserver.clear(); return set((state) => { Object.assign(state, nextState); state.player.godMode = false; state.debug = createDefaultDebugOverrides(); state.recentAcquisitions = []; state.lastOfflineBankReport = null; if (!isScreenUnlocked(state, state.ui.screen)) state.ui.screen = 'home'; recalculateDerivedStats(state); return state }) },
   dismissNotification: (id) => set((state) => { state.notifications = state.notifications.filter((note) => note.id !== id); return state }),
   setPlayer: (changes) => set((state) => { state.player = { ...state.player, ...changes }; recalculateDerivedStats(state); return state }),
   addMana: (amount) => set((state) => { state.player.mana = Math.max(0, state.player.mana + sanitizeDebugNumber(amount)); recalculateDerivedStats(state); return state }),

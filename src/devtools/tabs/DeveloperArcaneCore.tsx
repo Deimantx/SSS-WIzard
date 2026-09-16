@@ -15,13 +15,13 @@ export function DeveloperArcaneCore() {
   const selectedNode = nodes.find((node) => node.id === selectedNodeId) ?? nodes[0]
   const selectedProgress = selectedNode ? getArcaneCoreNodeProgress(state.arcaneCore, selectedNode.id) : null
   const diagnostics = validateArcaneCoreCatalog()
-  const unlocked = Object.values(state.arcaneCore.nodes).filter((node) => node.unlocked).length
+  const unlocked = Object.values(state.arcaneCore.nodes).filter((node) => Boolean(node?.unlocked)).length
   const setPoints = state.setArcaneCorePoints
   const setEssence = state.setArcaneEssence
 
   return <div className="developer-tab-stack developer-arcane-core-tab">
     <Card title="Arcane Core · tester controls" action={<Status tone="warning">DEV SESSION ONLY</Status>}>
-      <div className="developer-summary-grid"><Summary label="Core Points" value={state.arcaneCore.corePoints} /><Summary label="Arcane Essence" value={state.arcaneCore.arcaneEssence} /><Summary label="Nodes online" value={`${unlocked} / 256`} /><Summary label="Rank costs" value={ARCANE_CORE_RANK_COSTS.join(' · ')} /></div>
+      <div className="developer-summary-grid"><Summary label="Core Points" value={state.arcaneCore.corePoints} /><Summary label="Arcane Essence" value={state.arcaneCore.arcaneEssence} /><Summary label="Nodes online" value={`${unlocked} / ${nodes.length}`} /><Summary label="Rank costs" value={ARCANE_CORE_RANK_COSTS.join(' · ')} /></div>
       <div className="developer-form-grid"><NumberField label="Set Core Points" value={state.arcaneCore.corePoints} onChange={setPoints} min={0} /><NumberField label="Set Arcane Essence" value={state.arcaneCore.arcaneEssence} onChange={setEssence} min={0} /></div>
       <div className="button-row"><Button onClick={() => state.grantArcaneCorePoints(1)}>+1 Core Point</Button><Button onClick={() => state.grantArcaneCorePoints(10)}>+10 Core Points</Button><Button variant="secondary" onClick={() => state.grantArcaneEssence(1)}>+1 Essence</Button><Button variant="secondary" onClick={() => state.grantArcaneEssence(100)}>+100 Essence</Button><Button variant="ghost" onClick={() => { setPoints(0); setEssence(0) }}>Clear wallet</Button></div>
     </Card>

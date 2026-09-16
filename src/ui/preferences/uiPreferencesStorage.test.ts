@@ -57,7 +57,7 @@ describe('screen UI preferences', () => {
 
   it('normalizes removed accessory filters to the current catalog default', () => {
     expect(normalizeUiPreferences({ screenState: { artificing: { slotFilter: 'earring' } } }).screenState.artificing.slotFilter).toBe('all')
-    setUiPreferences({ screenState: { artificing: { slotFilter: 'earring' } } })
+    setUiPreferences({ screenState: { artificing: { slotFilter: 'earring' } } } as unknown as Parameters<typeof setUiPreferences>[0])
     expect(loadUiPreferences().screenState.artificing.slotFilter).toBe('all')
   })
 

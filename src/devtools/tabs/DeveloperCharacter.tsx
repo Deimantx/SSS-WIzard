@@ -5,6 +5,7 @@ import { getSpellPowerBreakdown } from '../../game/systems/spells/spellPower'
 import { getPlayerCombatStats } from '../../game/systems/combat/combatStats'
 import { getEquipmentStatSnapshot } from '../../game/presentation/equipment/equipmentReadModel'
 import { NumberField, Summary } from './DeveloperTabPrimitives'
+import { formatResourceAmount } from '../../game/presentation/resources/resourcePresentation'
 
 export function DeveloperCharacter() {
   const player = useGameStore((state) => state.player)
@@ -30,12 +31,12 @@ export function DeveloperCharacter() {
   return <div className="developer-tab-grid">
     <Card title="Player values">
       <div className="developer-summary-grid">
-        <Summary label="Current Mana" value={player.mana} />
-        <Summary label="Base Max Mana" value={player.baseMaxMana} />
-        <Summary label="Final Max Mana" value={player.maxMana} />
-        <Summary label="Developer Max Mana Bonus" value={debug.bonusMaxManaFlat} />
-        <Summary label="Current Mana Regen" value={`+${regen.total}/s`} />
-        <Summary label="Developer Mana Regen Bonus" value={`+${debug.bonusManaRegenFlat}/s`} />
+        <Summary label="Current Mana" value={formatResourceAmount(player.mana)} />
+        <Summary label="Base Max Mana" value={formatResourceAmount(player.baseMaxMana)} />
+        <Summary label="Final Max Mana" value={formatResourceAmount(player.maxMana)} />
+        <Summary label="Developer Max Mana Bonus" value={formatResourceAmount(debug.bonusMaxManaFlat)} />
+        <Summary label="Current Mana Regen" value={`+${formatResourceAmount(regen.total)}/s`} />
+        <Summary label="Developer Mana Regen Bonus" value={`+${formatResourceAmount(debug.bonusManaRegenFlat)}/s`} />
         <Summary label="Final Max Focus" value={player.maxFocus} />
         <Summary label="Spell Power Base" value={spellPower.base} />
         <Summary label="Spell Power Equipment" value={spellPower.equipment} />
@@ -52,9 +53,9 @@ export function DeveloperCharacter() {
       <div className="developer-summary-grid">
         <Summary label="Spell Power" value={effectiveEquipment.spellPower} />
         <Summary label="Max HP" value={effectiveEquipment.maxHealth} />
-        <Summary label="Max Mana" value={effectiveEquipment.maxMana} />
+        <Summary label="Max Mana" value={formatResourceAmount(effectiveEquipment.maxMana)} />
         <Summary label="Max Focus" value={effectiveEquipment.maxFocus} />
-        <Summary label="Mana Regen" value={`${effectiveEquipment.manaRegen}/s`} />
+        <Summary label="Mana Regen" value={`${formatResourceAmount(effectiveEquipment.manaRegen)}/s`} />
         <Summary label="Basic Damage" value={effectiveEquipment.basicDamage} />
         <Summary label="Basic Speed" value={`${effectiveEquipment.basicAttackSpeedMultiplier.toFixed(2)}x`} />
         <Summary label="Crit Chance" value={`${Math.round(effectiveEquipment.critChance * 100)}%`} />
@@ -81,9 +82,9 @@ export function DeveloperCharacter() {
       <div className="developer-summary-grid">
         <Summary label="Spell Power" value={resolvedCombat.spellPower} />
         <Summary label="Max HP" value={resolvedCombat.maxHealth} />
-        <Summary label="Max Mana" value={resolvedCombat.maxMana} />
+        <Summary label="Max Mana" value={formatResourceAmount(resolvedCombat.maxMana)} />
         <Summary label="Max Focus" value={resolvedCombat.maxFocus} />
-        <Summary label="Mana Regen" value={`${resolvedCombat.manaRegen}/s`} />
+        <Summary label="Mana Regen" value={`${formatResourceAmount(resolvedCombat.manaRegen)}/s`} />
         <Summary label="Basic Damage" value={resolvedCombat.basicAttackDamage} />
         <Summary label="Basic Speed" value={`${resolvedCombat.basicAttackSpeedMultiplier.toFixed(2)}x`} />
         <Summary label="Crit Chance" value={`${Math.round(resolvedCombat.critChance * 100)}%`} />

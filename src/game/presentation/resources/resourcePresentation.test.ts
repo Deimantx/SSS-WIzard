@@ -7,6 +7,8 @@ describe('resource presentation policy', () => {
     expect(stabilizeResourceValue(0.00000000001)).toBe(0)
     expect(formatResourceAmount(29.50000000000004)).toBe('29.5')
     expect(formatResourceAmount(12.98699999988075)).toBe('12.99')
+    expect(formatResourceAmount(32.01300000011925)).toBe('32.01')
+    expect(formatResourceAmount(15.013000000119252)).toBe('15.01')
   })
 
   it('uses the same epsilon-aware affordability boundary', () => {

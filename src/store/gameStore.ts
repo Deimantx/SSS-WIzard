@@ -49,7 +49,7 @@ import { applySpellPresetAction, clearAutoCastAction, createSpellPresetAction, d
 import { clearCombatLogUi, combatLogUiSink as combatLogSink } from '../game/ui/combatLogStore'
 import { combatAlertsObserver, combatAlertsSink, clearCombatAlerts } from '../game/ui/combatAlertsStore'
 import { beginCombatRecapRun, clearCombatRecap, combatRecapSink } from '../game/ui/combatRecapStore'
-import { clearCombatDefeat, combatDefeatSink } from '../game/ui/combatDefeatStore'
+import { clearCombatDefeat, combatDefeatSink, publishOfflineCombatDefeat } from '../game/ui/combatDefeatStore'
 import { createCombatEventSink } from '../game/systems/combat/combatEventSink'
 import { combatTelemetryObserver, combatTelemetrySink, useCombatTelemetryStore } from '../game/telemetry/combat/combatTelemetryStore'
 import { clearDungeonStatistics, dungeonStatisticsObserver, dungeonStatisticsSink, useDungeonStatisticsStore } from '../game/telemetry/dungeon/dungeonStatisticsStore'
@@ -75,6 +75,7 @@ const offlineBankAnalyticsObservers: OfflineBankSimulationObservers = {
   uiEvents: offlineBankCombatAnalyticsSink,
   telemetry: combatTelemetryObserver,
   statistics: dungeonStatisticsObserver,
+  getEncounterTelemetry: () => cloneAnalyticsState(useCombatTelemetryStore.getState().encounter),
   snapshot: () => ({
     combat: cloneAnalyticsState(useCombatTelemetryStore.getState()),
     dungeon: cloneAnalyticsState(useDungeonStatisticsStore.getState()),
@@ -746,9 +747,10 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   debugClearOfflineBank: () => set((state) => { state.offlineBankMs = 0; return state }),
   advanceWithOfflineBank: async (durationMs) => {
     const result = await runOfflineBankAdvance(durationMs, get, (recipe) => set((state) => { recipe(state); return state }), () => { get().saveGame('autosave') }, (state, itemId, amount) => recordRecentAcquisition(state as GameStore, itemId, amount), offlineBankAnalyticsObservers)
-    if (result.ok) {
-      result.completedArtificingRecipeIds?.forEach((recipeId) => unpinArtificingRecipe(recipeId))
-      set((state) => { state.lastOfflineBankReport = result.report ?? null; return state })
+      if (result.ok) {
+        result.completedArtificingRecipeIds?.forEach((recipeId) => unpinArtificingRecipe(recipeId))
+        if (result.combatDefeat) publishOfflineCombatDefeat(result.combatDefeat)
+        set((state) => { state.lastOfflineBankReport = result.report ?? null; return state })
     }
     return result
   },

@@ -7,7 +7,7 @@ import { executeCombatEffects, damageEnemy, damagePlayer, gainBarrier } from './
 import { gainBarrier as gainBarrierRuntime } from './barrierRuntime'
 import { applyStatus, clearStatuses } from './statusRuntime'
 import { clearEnemyRuleCooldowns, resetAllCombatRuleRuntime, resetEncounterRuleFlags, runCombatTriggers } from './triggerRuntime'
-import { createCombatResolutionContext, type CombatEventSink, type StatusId } from './combatTypes'
+import { createCombatResolutionContext, type CombatEvent, type CombatEventSink, type StatusId } from './combatTypes'
 import { initializeEnemyActionRuntime, resetEnemyActionRuntime, startNextEnemyAction } from './actionRuntime'
 import { resolveMonsterLoot } from '../loot'
 import { getArcaneCoreReward } from '../../content/arcaneCore/arcaneCoreRewards'
@@ -151,13 +151,15 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   }
 }
 
-export interface ResolveCombatDeathsOptions { forceEnemyDeath?: boolean; onLootResolved?: CombatLootObserver }
+export interface ResolveCombatDeathsOptions { forceEnemyDeath?: boolean; onLootResolved?: CombatLootObserver; onPlayerDefeated?: (event: CombatEvent, state: GameState) => void }
 
 export const resolveCombatDeaths = (state: GameState, report?: SimulationReportCollector, onItemAcquired?: (itemId: ItemId, quantity: number) => void, uiEvents?: CombatEventSink, options: ResolveCombatDeathsOptions = {}) => {
   // The legacy field is only honored for direct in-memory compatibility with
   // old callers. Hydrated profile state always normalizes it to false.
   if (state.player.health <= 0 && !state.debug.playerImmortal && !state.player.godMode) {
-    uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'player', targetMonsterId: state.combat.enemyId ?? undefined, category: 'death', sourceId: 'player-defeated' })
+    const deathEvent: CombatEvent = { source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'player', targetMonsterId: state.combat.enemyId ?? undefined, category: 'death', sourceId: 'player-defeated' }
+    options.onPlayerDefeated?.(deathEvent, state)
+    uiEvents?.push(deathEvent)
     report?.recordPlayerDeath()
     clearGuardianRuntime(state)
     state.combat.active = false

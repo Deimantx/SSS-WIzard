@@ -100,4 +100,16 @@ describe('CombatSpellDeck V2', () => {
     expect(container.querySelector('.spell-combat-footer .ui-time')).toBeNull()
     expect(container.querySelector('.spell-combat-cooldown-mask')).toBeNull()
   })
+
+  it('formats mana deficits without exposing floating-point tails', () => {
+    const current = useGameStore.getState()
+    useGameStore.setState({
+      player: { ...current.player, mana: -2.01300000011925 },
+      combat: { ...current.combat, active: true, enemyId: 'forest-wisp' },
+    })
+    render(<TooltipProvider><CombatSpellDeck /></TooltipProvider>)
+
+    expect(screen.getByText('Need 32.01')).toBeTruthy()
+    expect(screen.queryByText(/0000000119/)).toBeNull()
+  })
 })

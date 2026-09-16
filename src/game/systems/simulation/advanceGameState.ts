@@ -36,6 +36,7 @@ export interface AdvanceContext {
   onItemAcquired?: (itemId: ItemId, quantity: number) => void
   onArtificingComplete?: (completion: ArtificingCompletion) => void
   onCombatLoot?: CombatLootObserver
+  onPlayerDefeated?: (event: import('../combat/combatTypes').CombatEvent, state: GameState) => void
   uiEvents?: CombatEventSink
   telemetry?: CombatTelemetryObserver
   alerts?: CombatAlertObserver
@@ -43,7 +44,7 @@ export interface AdvanceContext {
 }
 
 const spellUnlocked = isSpellUnlocked
-const resolveDeaths = (state: GameState, context: AdvanceContext) => resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents, { onLootResolved: context.onCombatLoot })
+const resolveDeaths = (state: GameState, context: AdvanceContext) => resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents, { onLootResolved: context.onCombatLoot, onPlayerDefeated: context.onPlayerDefeated })
 
 const meetsAutoCondition = (state: GameState, spellId: SpellId) => {
   const condition = SPELLS[spellId].autoCondition

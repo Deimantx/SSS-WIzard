@@ -10,6 +10,7 @@ import { getVisibleItemUsesForTransmutation } from '../../../game/presentation/t
 import { getRecipeConsumableRequirements, getRecipeCurrentEffectiveDuration, getRecipeCurrentOutputPerHour, getRecipeManaDemandPerSecond, getRecipeMaterialCapacity, getRecipeStatus, getRecipeUnlockReason, getTransmutationFocusReserved, getTransmutationJob, type RecipeConsumableRequirement, type RecipeMaterialCapacity, type TransmutationStatus } from '../../../game/systems/transmutation/transmutationSelectors'
 import { getEffectiveTransmutationManaCost, getEffectiveTransmutationWorkMultiplier, getTransmutationArrayBonuses } from '../../../game/systems/transmutation/transmutationArrays'
 import type { TransmutationRecipeId } from '../../../game/types'
+import { formatResourceAmount } from '../../../game/presentation/resources/resourcePresentation'
 import { formatNumber, formatSignedRate, formatTime } from '../../../game/utils'
 import { useGameStore } from '../../../store/gameStore'
 import { useSmartScrollState } from '../../../ui/game-feel/useSmartScrollState'
@@ -38,7 +39,7 @@ export function RecipeDetail({ recipe, onSelectRecipe }: { recipe: RecipeDefinit
 
       {status === 'locked' && <div className="transmutation-lock-reason"><LockKeyhole size={15} aria-hidden="true" /><span>{getRecipeUnlockReason(recipe)}</span></div>}
 
-      <DetailSection title="BASE RECIPE"><div className="transmutation-stat-grid"><DetailStat label="TIME" value={formatTime(recipe.baseDurationMs)} /><DetailStat label="MANA" value={formatNumber(recipe.manaCost)} /><DetailStat label="OUTPUT" value={`×${recipe.output.quantity} ${item.name}`} /></div></DetailSection>
+      <DetailSection title="BASE RECIPE"><div className="transmutation-stat-grid"><DetailStat label="TIME" value={formatTime(recipe.baseDurationMs)} /><DetailStat label="MANA" value={formatResourceAmount(recipe.manaCost)} /><DetailStat label="OUTPUT" value={`×${recipe.output.quantity} ${item.name}`} /></div></DetailSection>
 
       {status !== 'locked' && <DetailSection title="CURRENT PRODUCTION"><CurrentProduction echoes={echoes} currentCycle={currentCycle} currentSpeed={currentSpeed} currentOutput={currentOutput} /></DetailSection>}
 
@@ -48,7 +49,7 @@ export function RecipeDetail({ recipe, onSelectRecipe }: { recipe: RecipeDefinit
 
       {materialCapacity && (materialCapacity.cycles !== null || materialCapacity.missing.length > 0) && <MaterialCapacity capacity={materialCapacity} outputQuantity={recipe.output.quantity} />}
 
-      {recipe.manaCost > 0 && <section className="transmutation-detail-section transmutation-mana-requirement"><span className="eyebrow">MANA / CYCLE</span><strong>{formatNumber(getEffectiveTransmutationManaCost(state, recipe))} effective · {formatSignedRate(-getRecipeManaDemandPerSecond(recipe, echoes, state))} demand</strong><small className="transmutation-base-note">BASE {formatNumber(recipe.manaCost)}</small><Status tone={status === 'waiting-mana' ? 'warning' : status === 'mana-limited' ? 'warning' : 'success'}>{status === 'waiting-mana' ? 'WAITING' : status === 'mana-limited' ? 'LIMITED' : 'FUNDED'}</Status></section>}
+      {recipe.manaCost > 0 && <section className="transmutation-detail-section transmutation-mana-requirement"><span className="eyebrow">MANA / CYCLE</span><strong>{formatResourceAmount(getEffectiveTransmutationManaCost(state, recipe))} effective · {formatSignedRate(-getRecipeManaDemandPerSecond(recipe, echoes, state))} demand</strong><small className="transmutation-base-note">BASE {formatResourceAmount(recipe.manaCost)}</small><Status tone={status === 'waiting-mana' ? 'warning' : status === 'mana-limited' ? 'warning' : 'success'}>{status === 'waiting-mana' ? 'WAITING' : status === 'mana-limited' ? 'LIMITED' : 'FUNDED'}</Status></section>}
 
       <UsedInSummary uses={uses} onOpen={() => setUsesDialogOpen(true)} />
     </div>

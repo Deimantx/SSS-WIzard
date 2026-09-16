@@ -11,7 +11,7 @@ import {
 } from '../profiles/profileKeys'
 import type { ProfileSlotId } from '../profiles/profileTypes'
 import { attemptLegacySaveRecovery, validateSerializedSave, validateStoredSave } from './saveIntegrity'
-import { detectCatastrophicProgressRegression, getProgressionEvidence, summarizeProgressionEvidence, type ProgressionEvidenceSummary } from './progressionEvidence'
+import { detectCatastrophicProgressRegression, getProgressionEvidence, summarizeProgressionEvidence, type ProgressionEvidenceSummary, type ProgressionRegressionResult } from './progressionEvidence'
 import { recordRecoveredProfile, recordSaveFailure, recordSuccessfulSave } from './saveDiagnosticsStore'
 
 export interface ProfileSaveResult { ok: boolean; error: string | null }
@@ -168,7 +168,11 @@ const selectSafestCandidate = (slotId: ProfileSlotId, candidates: Candidate[]) =
   const suspicious = new Set<CandidateSource>()
   valid.forEach((candidate) => valid.forEach((other) => {
     if (candidate === other) return
-    if (detectCatastrophicProgressRegression(other.state, candidate.state).catastrophic) suspicious.add(candidate.source)
+    const regression = detectCatastrophicProgressRegression(other.state, candidate.state)
+    if (regression.catastrophic) {
+      suspicious.add(candidate.source)
+      logProgressionRegression(slotId, other.source, regression)
+    }
   }))
   valid.filter((candidate) => suspicious.has(candidate.source)).forEach((candidate) => preserveSuspectSnapshot(slotId, candidate.raw))
   return { selected: valid.find((candidate) => !suspicious.has(candidate.source)) ?? valid[0] ?? null, suspicious }
@@ -227,7 +231,20 @@ const formatFailure = (diagnostics: ProfileSaveDiagnostics) => {
   return 'Profile save could not be loaded.'
 }
 
-const saveFailure = (slotId: ProfileSlotId, detail: string, regression = false): ProfileSaveResult => {
+const logProgressionRegression = (slotId: ProfileSlotId, source: CandidateSource, regression: ProgressionRegressionResult) => {
+  if (!import.meta.env.DEV) return
+  regression.details.forEach((detail) => console.error('[save-protection]', {
+    profile: slotId,
+    source,
+    field: detail.field,
+    key: detail.key,
+    previous: detail.previous,
+    candidate: detail.candidate,
+  }))
+}
+
+const saveFailure = (slotId: ProfileSlotId, detail: string, regression = false, source?: CandidateSource, regressionResult?: ProgressionRegressionResult): ProfileSaveResult => {
+  if (regression && source && regressionResult) logProgressionRegression(slotId, source, regressionResult)
   console.error(`[profile-save] ${detail}`)
   const message = regression
     ? 'SAVE PROTECTION ACTIVE · Impossible progression regression detected. Previous save was not overwritten.'
@@ -261,7 +278,7 @@ export const saveProfileGame = (slotId: ProfileSlotId, state: GameState, options
         const regression = detectCatastrophicProgressRegression(prior.state, state)
         if (regression.catastrophic) {
           preserveSuspectSnapshot(slotId, encoded)
-          return saveFailure(slotId, regression.reasons.join('; '), true)
+          return saveFailure(slotId, regression.reasons.join('; '), true, prior.source, regression)
         }
       }
     }

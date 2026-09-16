@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { advanceWithOfflineBank } from './offlineBankSimulation'
+import { executeCombatEffects } from '../combat/effectResolver'
+import { spawnEnemy } from '../combat/combatRuntime'
+import { startNextEnemyAction } from '../combat/actionRuntime'
 
 const activeCombatState = () => {
   const state = createInitialState()
@@ -46,6 +49,22 @@ describe('Offline Bank analytics wiring', () => {
     expect(restore).toHaveBeenCalledWith(snapshot)
   })
 
+  it('returns one useful defeat payload when the banked fight loses deterministically', async () => {
+    const state = activeCombatState()
+    state.player.health = 1
+    state.debug.freezeEnemyActions = false
+    spawnEnemy(state, 'forest-wisp')
+    startNextEnemyAction(state, executeCombatEffects)
+    state.combat.enemyActionTimerMs = 1
+
+    const result = await advanceWithOfflineBank(1_000, () => state, (recipe) => recipe(state), vi.fn())
+
+    expect(result.ok).toBe(true)
+    expect(result.combatDefeat?.event.sourceId).toBe('player-defeated')
+    expect(result.combatDefeat?.recentEvents.some((event) => (event.healthDamage ?? 0) > 0)).toBe(true)
+    expect(result.combatDefeat?.recentEvents.some((event) => event.sourceId === 'player-defeated')).toBe(true)
+  })
+
   it('reports and returns successful banked Artifact completions after the simulation commits', async () => {
     const state = createInitialState()
     state.offlineBankMs = 5_000
@@ -76,6 +95,7 @@ describe('Offline Bank analytics wiring', () => {
 
     expect(result.ok).toBe(false)
     expect(result.completedArtificingRecipeIds).toBeUndefined()
+    expect(result.combatDefeat).toBeUndefined()
     expect(JSON.stringify(state)).toBe(before)
   })
 })

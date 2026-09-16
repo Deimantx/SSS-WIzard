@@ -6,8 +6,11 @@ import type { CombatTelemetryObserver } from '../../telemetry/combat/combatTelem
 import type { DungeonStatisticsObserver } from '../../telemetry/dungeon/dungeonStatisticsTypes'
 import { formatOfflineBank } from '../../utils'
 import { createOfflineBankReportCollector, type OfflineBankReport } from './offlineBankReport'
+import { createOfflineCombatTrace, type OfflineCombatDefeatResult } from './offlineCombatTrace'
+import type { CombatTelemetryScope } from '../../telemetry/combat/combatTelemetryTypes'
+import { createCombatEventSink } from '../combat/combatEventSink'
 
-export interface OfflineBankResult { ok: boolean; error?: string; report?: OfflineBankReport; completedArtificingRecipeIds?: ArtificingRecipeId[] }
+export interface OfflineBankResult { ok: boolean; error?: string; report?: OfflineBankReport; completedArtificingRecipeIds?: ArtificingRecipeId[]; combatDefeat?: OfflineCombatDefeatResult }
 type StateSetter = (recipe: (state: GameState) => void) => void
 type SilentSave = () => void
 type ItemAcquired = (state: GameState, itemId: ItemId, quantity: number) => void
@@ -15,6 +18,7 @@ export interface OfflineBankSimulationObservers {
   uiEvents?: CombatEventSink
   telemetry?: CombatTelemetryObserver
   statistics?: DungeonStatisticsObserver
+  getEncounterTelemetry?: () => CombatTelemetryScope | null
   snapshot?: () => unknown
   restore?: (snapshot: unknown) => void
 }
@@ -40,6 +44,8 @@ export const advanceWithOfflineBank = async (durationMs: number, getState: () =>
   const previousNotifications = before.notifications
   const previousIds = new Set(previousNotifications.map((note) => note.id))
   const collector = createOfflineBankReportCollector(before, duration, available)
+  const combatTrace = createOfflineCombatTrace()
+  const simulationEvents = createCombatEventSink(combatTrace.sink, observers?.uiEvents)
   const completedArtificingRecipeIds = new Set<ArtificingRecipeId>()
   try {
     const steps = Math.ceil(duration / 1000)
@@ -49,7 +55,7 @@ export const advanceWithOfflineBank = async (durationMs: number, getState: () =>
       remaining -= step
       setState((state) => {
         state.offlineBankMs = Math.max(0, state.offlineBankMs - step)
-        advanceGameState(state, step, { mode: 'banked', report: collector, onItemAcquired: (itemId, quantity) => onItemAcquired?.(state, itemId, quantity), onArtificingComplete: (completion) => completedArtificingRecipeIds.add(completion.recipeId), uiEvents: observers?.uiEvents, telemetry: observers?.telemetry, statistics: observers?.statistics })
+        advanceGameState(state, step, { mode: 'banked', report: collector, onItemAcquired: (itemId, quantity) => onItemAcquired?.(state, itemId, quantity), onArtificingComplete: (completion) => completedArtificingRecipeIds.add(completion.recipeId), uiEvents: simulationEvents, onPlayerDefeated: (event) => combatTrace.captureDefeat(event, observers?.getEncounterTelemetry?.()), telemetry: observers?.telemetry, statistics: observers?.statistics })
       })
       if (index > 0 && index % 50 === 0) await yieldToBrowser()
     }
@@ -61,7 +67,7 @@ export const advanceWithOfflineBank = async (durationMs: number, getState: () =>
       pushNotification(state, `Advanced ${formatOfflineBank(duration)} using Offline Bank.`, 'info')
     })
     silentSave()
-    return { ok: true, report, completedArtificingRecipeIds: [...completedArtificingRecipeIds] }
+    return { ok: true, report, completedArtificingRecipeIds: [...completedArtificingRecipeIds], combatDefeat: combatTrace.getDefeat() }
   } catch (error) {
     try { setState((state) => { Object.assign(state, snapshot); return state }) } catch { /* preserve the original failure result */ }
     try { if (analyticsSnapshot !== undefined) observers?.restore?.(analyticsSnapshot) } catch { /* preserve the original failure result */ }

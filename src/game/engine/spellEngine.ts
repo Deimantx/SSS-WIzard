@@ -59,7 +59,7 @@ export const castSpellInternal = (state: GameState, spellId: SpellId, quiet = fa
     if (failure === 'mana') reportManaStarvation(state, spellId, uiEvents)
     return false
   }
-  if (!state.debug.infiniteMana) state.player.mana = stabilizeResourceValue(state.player.mana - getEffectiveManaCost(state, spell.manaCost))
+  if (!state.debug.infiniteMana) state.player.mana = stabilizeResourceValue(Math.max(0, state.player.mana - getEffectiveManaCost(state, spell.manaCost)))
   state.combat.spellCooldowns[spellId] = state.debug.ignoreSpellCooldowns ? 0 : spell.cooldownMs
   const source = getSpellCombatSource(spellId)
   executeCombatEffects(state, spell.effects, source, undefined, uiEvents)

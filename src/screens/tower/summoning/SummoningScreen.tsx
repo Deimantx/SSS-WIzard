@@ -6,6 +6,7 @@ import { GUARDIAN_IDS, GUARDIANS, type GuardianDefinition } from '../../../game/
 import { getActiveGuardian, getSelectedGuardianId, isSummoningUnlocked } from '../../../game/systems/summoning/summoningSelectors'
 import { useGameStore } from '../../../store/gameStore'
 import { TowerFrame } from '../TowerFrame'
+import { formatResourceAmount } from '../../../game/presentation/resources/resourcePresentation'
 
 function formatInterval(intervalMs: number) {
   const seconds = intervalMs / 1000
@@ -35,7 +36,7 @@ function BindingSummary({ selected, active }: { selected?: GuardianDefinition; a
     {binding && <div className="summoning-binding-stats">
       <Stat label="LEVEL" value="1" description="Guardian level. The MVP begins every Guardian at Level 1." />
       <Stat label="RANK" value="I" description="Guardian rank. No Guardian upgrade economy is active in this MVP." />
-      <Stat label="UPKEEP" value={`${binding.manaPerSecond} Mana / s`} description="Mana is consumed only while this Guardian is active in an encounter." accent="warning" />
+      <Stat label="UPKEEP" value={`${formatResourceAmount(binding.manaPerSecond)} Mana / s`} description="Mana is consumed only while this Guardian is active in an encounter." accent="warning" />
       <Stat label="ATTACK" value={formatInterval(binding.attack.intervalMs)} description={`The Guardian attacks once every ${formatInterval(binding.attack.intervalMs)} through the combat effect resolver.`} accent="elemental" />
       <Stat label="PASSIVE" value={binding.passive.label} description={binding.passive.description} accent="success" />
     </div>}
@@ -50,7 +51,7 @@ function GuardianCard({ guardian, selected, onSelect }: { guardian: GuardianDefi
       <span className="summoning-stat-grid">
         <Stat label="LEVEL" value="1 / 1" description="Guardian level. Higher Guardian levels are not available in this MVP." />
         <Stat label="ATTACK" value={`${formatInterval(guardian.attack.intervalMs)} · ${Math.round(guardian.attack.spellPowerCoefficient * 100)}% SP`} description={`Deals ${Math.round(guardian.attack.spellPowerCoefficient * 100)}% of Wizard Spell Power as ${guardian.element} damage every ${formatInterval(guardian.attack.intervalMs)}.`} accent="elemental" />
-        <Stat label="UPKEEP" value={`${guardian.manaPerSecond} Mana / s`} description="The active Guardian drains this amount of Mana per second. It fades when Mana reaches zero." accent="warning" />
+        <Stat label="UPKEEP" value={`${formatResourceAmount(guardian.manaPerSecond)} Mana / s`} description="The active Guardian drains this amount of Mana per second. It fades when Mana reaches zero." accent="warning" />
         <Stat label="PASSIVE" value={guardian.passive.label} description={guardian.passive.description} accent="success" />
       </span>
       <span className="summoning-guardian-footer"><span>SNAPSHOT AT ENCOUNTER START</span><span>{selected ? 'BOUND' : 'SELECT GUARDIAN'}</span></span>

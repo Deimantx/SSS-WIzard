@@ -82,6 +82,55 @@ describe('progression-aware profile save protection', () => {
     expect(JSON.parse(localStorage.getItem(profileSaveKey('slot-1'))!).currencies.gold).toBe(100)
   })
 
+  it('allows a temporary five-Echo sustain reset while preserving permanent discoveries', () => {
+    const previous = createInitialState()
+    previous.progress.channeling.fiveEchoSustainMs = 20_000
+    expect(saveProfileGame('slot-1', previous, { savedAt: 100 }).ok).toBe(true)
+
+    const candidate = clone(previous)
+    candidate.progress.channeling.fiveEchoSustainMs = 0
+
+    expect(detectCatastrophicProgressRegression(previous, candidate).catastrophic).toBe(false)
+    expect(saveProfileGame('slot-1', candidate, { savedAt: 200 }).ok).toBe(true)
+  })
+
+  it('rejects permanent Channeling discovery rollback with structured details', () => {
+    const previous = createInitialState()
+    previous.progress.channeling.discoveries['echo-resonance'] = true
+    const candidate = clone(previous)
+    candidate.progress.channeling.discoveries['echo-resonance'] = false
+
+    const regression = detectCatastrophicProgressRegression(previous, candidate)
+
+    expect(regression.catastrophic).toBe(true)
+    expect(regression.details).toEqual(expect.arrayContaining([
+      { field: 'discoveryFlags', key: 'echo-resonance', previous: true, candidate: false },
+    ]))
+  })
+
+  it('logs the prior candidate source and exact regression values in DEV diagnostics', () => {
+    const previous = createInitialState()
+    previous.schools.fire.xp = 240
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    try {
+      expect(saveProfileGame('slot-1', previous, { savedAt: 100 }).ok).toBe(true)
+      const candidate = clone(previous)
+      candidate.schools.fire.xp = 0
+
+      expect(saveProfileGame('slot-1', candidate, { savedAt: 200 }).ok).toBe(false)
+      expect(error).toHaveBeenCalledWith('[save-protection]', expect.objectContaining({
+        profile: 'slot-1',
+        source: 'primary',
+        field: 'schoolXp',
+        key: 'fire',
+        previous: 240,
+        candidate: 0,
+      }))
+    } finally {
+      error.mockRestore()
+    }
+  })
+
   it('chooses a progressed valid backup over a fresh valid primary', () => {
     const progressed = createInitialState()
     progressed.schools.fire.xp = 200

@@ -6,6 +6,7 @@ import { formatSpellRank, getAllSpellsInOrder, getSpellAutoCastFocusCost as getF
 import type { SchoolId, SpellId } from '../../game/types'
 import { useGameStore } from '../../store/gameStore'
 import { NumberField } from './DeveloperTabPrimitives'
+import { formatResourceAmount } from '../../game/presentation/resources/resourcePresentation'
 
 export function DeveloperSchools() {
   const schools = useGameStore((state) => state.schools)
@@ -32,7 +33,7 @@ export function DeveloperSchools() {
       <div className="developer-button-grid"><Button variant="secondary" onClick={() => setLevelCap(20)}>Set cap to 20</Button><Button variant="secondary" onClick={() => setLevelCap(40)}>Set cap to 40</Button></div><NumberField label="Magic School level cap" value={progress.magicLevelCap} onChange={setLevelCap} />
     </Card>
     <Card title="Spell access">
-      <div className="developer-spell-list">{getAllSpellsInOrder().map((spell) => { const rank = getSpellRank({ progress }, spell.id); const focusCost = getSpellAutoCastFocusCost({ progress }, spell.id); return <div className="developer-spell-row" key={spell.id}><div><strong>{spell.name}</strong><small>{SCHOOLS[spell.school].name} · unlocks at Level {spell.unlockLevel} · {rank ? formatSpellRank(rank) : 'Locked'} · {spell.manaCost} Mana · {formatDuration(spell.cooldownMs)} cooldown · Auto-Cast: {focusCost === null ? 'unavailable' : `${focusCost} Focus`}</small></div><Status tone={rank ? 'success' : 'locked'}>{rank ? 'UNLOCKED' : 'LOCKED'}</Status><Button variant="ghost" onClick={() => debugUnlock(spell.id)}>Unlock Rank I</Button><Button variant="danger" onClick={() => debugLock(spell.id)} disabled={!rank}>Lock spell</Button></div> })}</div>
+      <div className="developer-spell-list">{getAllSpellsInOrder().map((spell) => { const rank = getSpellRank({ progress }, spell.id); const focusCost = getSpellAutoCastFocusCost({ progress }, spell.id); return <div className="developer-spell-row" key={spell.id}><div><strong>{spell.name}</strong><small>{SCHOOLS[spell.school].name} · unlocks at Level {spell.unlockLevel} · {rank ? formatSpellRank(rank) : 'Locked'} · {formatResourceAmount(spell.manaCost)} Mana · {formatDuration(spell.cooldownMs)} cooldown · Auto-Cast: {focusCost === null ? 'unavailable' : `${focusCost} Focus`}</small></div><Status tone={rank ? 'success' : 'locked'}>{rank ? 'UNLOCKED' : 'LOCKED'}</Status><Button variant="ghost" onClick={() => debugUnlock(spell.id)}>Unlock Rank I</Button><Button variant="danger" onClick={() => debugLock(spell.id)} disabled={!rank}>Lock spell</Button></div> })}</div>
     </Card>
     <Card title="Auto-Cast Focus costs"><div className="developer-rank-table">{([1, 2, 3, 4, 5, 6, 7, 8] as const).map((rank) => <span key={rank}><strong>{formatSpellRank(rank)}</strong><small>{getAutoCastFocusCostForRank(rank)} Focus</small></span>)}</div><p className="muted">Higher-rank mechanics and player-facing advancement are deferred to a future Tower system.</p></Card>
   </div>

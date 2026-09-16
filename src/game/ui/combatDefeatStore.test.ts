@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { combatDefeatSink, useCombatDefeatStore } from './combatDefeatStore'
+import { combatDefeatSink, publishOfflineCombatDefeat, useCombatDefeatStore } from './combatDefeatStore'
 import { combatLogUiSink } from './combatLogStore'
 import { combatTelemetryObserver, useCombatTelemetryStore } from '../telemetry/combat/combatTelemetryStore'
 
@@ -31,5 +31,22 @@ describe('combat defeat snapshot', () => {
     expect(useCombatDefeatStore.getState().snapshot).not.toBeNull()
     useCombatDefeatStore.getState().clear()
     expect(useCombatDefeatStore.getState().snapshot).toBeNull()
+  })
+
+  it('publishes one offline defeat snapshot with the bounded event context', () => {
+    let updates = 0
+    const unsubscribe = useCombatDefeatStore.subscribe(() => { updates += 1 })
+    try {
+      publishOfflineCombatDefeat({
+        event: { source: { kind: 'system' }, target: 'player', targetMonsterId: 'forest-wisp', dungeonId: 'whispering-woods', category: 'death', sourceId: 'player-defeated' },
+        recentEvents: [{ source: { kind: 'system' }, target: 'player', targetMonsterId: 'forest-wisp', dungeonId: 'whispering-woods', category: 'death', sourceId: 'player-defeated' }, damageEvent(0)],
+        dungeonId: 'whispering-woods',
+        enemyId: 'forest-wisp',
+      })
+      expect(updates).toBe(1)
+      expect(useCombatDefeatStore.getState().snapshot?.events.map((event) => event.sourceId)).toEqual(['fire-bolt', 'player-defeated'])
+    } finally {
+      unsubscribe()
+    }
   })
 })

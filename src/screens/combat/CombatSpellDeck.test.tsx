@@ -109,7 +109,7 @@ describe('CombatSpellDeck V2', () => {
     })
     render(<TooltipProvider><CombatSpellDeck /></TooltipProvider>)
 
-    expect(screen.getByText('Need 32.01')).toBeTruthy()
+    expect(screen.getByText('Need 32')).toBeTruthy()
     expect(screen.queryByText(/0000000119/)).toBeNull()
   })
 })

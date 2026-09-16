@@ -6,7 +6,12 @@ export const stabilizeResourceValue = (value: number, precision = 1_000_000) => 
   return Math.abs(rounded) < RESOURCE_EPSILON ? 0 : rounded
 }
 
-export const formatResourceAmount = (value: number, maxDecimals = 2) => new Intl.NumberFormat('en-US', {
+export const formatResourceAmount = (value: number) => new Intl.NumberFormat('en-US', {
+  maximumFractionDigits: 0,
+  minimumFractionDigits: 0,
+}).format(stabilizeResourceValue(value))
+
+export const formatResourceRate = (value: number, maxDecimals = 2) => new Intl.NumberFormat('en-US', {
   maximumFractionDigits: maxDecimals,
   minimumFractionDigits: 0,
 }).format(stabilizeResourceValue(value))

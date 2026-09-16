@@ -14,7 +14,7 @@ import { selectFreeFocus } from '../../../store/selectors'
 import { useGameContextMenu } from '../../../ui/context-menu/GameContextMenuProvider'
 import { setNavigationIntent } from '../../../ui/navigation/navigationIntent'
 import { setUiPreferences } from '../../../ui/preferences/uiPreferencesStore'
-import { formatResourceAmount } from '../../../game/presentation/resources/resourcePresentation'
+import { formatResourceRate } from '../../../game/presentation/resources/resourcePresentation'
 
 const statusHelp: Record<ResearchJobStatus, string> = {
   prepared: 'Prepared and waiting for a Research Echo.',
@@ -55,7 +55,7 @@ export function PreparedResearchRow({ slotId }: { slotId: ResearchSlotId }) {
     <div className="prepared-research-progress-heading"><span>CURRENT ITEM</span><strong>{Math.round(Math.min(100, Math.max(0, job.progressMs / BALANCE.research.durationPerItemMs * 100)))}%</strong></div>
     <Progress value={getResearchJobProgressPercent(state, slotId)} tone="violet" />
     <div className="prepared-research-school-progress"><div className="prepared-research-progress-heading"><span>SCHOOL PROGRESS · {SCHOOLS[job.targetSchoolId]?.name ?? job.targetSchoolId}</span><strong>LV {schoolProgress.level} / {schoolProgress.cap}</strong></div><Progress value={schoolProgress.progress * 100} tone={job.targetSchoolId} /><div className="prepared-research-school-meta"><span>{schoolProgress.atCap ? 'AT CAP' : `${formatNumber(schoolProgress.xpIntoLevel)} / ${formatNumber(schoolProgress.xpRequiredForLevel ?? 0)} XP`}</span><GameTooltip content={<TooltipContent title="Estimated next school level" description="Estimate from this Research batch only. Other batches may reach the next level sooner." />} accent="elemental"><span>EST. NEXT LEVEL {nextLevelText}</span></GameTooltip></div></div>
-    <div className="prepared-research-metrics"><ResearchMetric label="ITEMS / H" value={formatNumber(getResearchItemsPerHour(job))} /><ResearchMetric label="MANA / S" value={`-${formatResourceAmount(getResearchManaPerSecond(job))}/s`} className="mana" /><ResearchMetric label="XP / H" value={formatNumber(getResearchXpPerHour(job))} className="xp" /><ResearchMetric label="XP REMAINING" value={formatNumber(job.remainingQuantity * getResearchJobXpPerItem(job))} /></div>
+    <div className="prepared-research-metrics"><ResearchMetric label="ITEMS / H" value={formatNumber(getResearchItemsPerHour(job))} /><ResearchMetric label="MANA / S" value={`-${formatResourceRate(getResearchManaPerSecond(job))}/s`} className="mana" /><ResearchMetric label="XP / H" value={formatNumber(getResearchXpPerHour(job))} className="xp" /><ResearchMetric label="XP REMAINING" value={formatNumber(job.remainingQuantity * getResearchJobXpPerItem(job))} /></div>
   </div>
 }
 

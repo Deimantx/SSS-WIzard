@@ -1,40 +1,32 @@
 import { ARCANE_CORE_BRANCHES, ARCANE_CORE_NODES } from '../../content/arcaneCore/arcaneCoreBranches'
-import { ARCANE_CORE_RANK_COSTS } from '../../content/arcaneCore/arcaneCoreBalance'
+import { ARCANE_CORE_MAX_LEVEL, ARCANE_CORE_NODE_COUNT, ARCANE_CORE_NODE_COUNT_PER_BRANCH } from '../../content/arcaneCore/arcaneCoreBalance'
 
 export const validateArcaneCoreCatalog = () => {
   const errors: string[] = []
-  const expected = new Set(['power', 'vitality', 'focus', 'control'])
-  if (ARCANE_CORE_BRANCHES.length !== expected.size || new Set(ARCANE_CORE_BRANCHES.map((branch) => branch.id)).size !== expected.size || ARCANE_CORE_BRANCHES.some((branch) => !expected.has(branch.id))) errors.push('Arcane Core must contain exactly Power, Vitality, Focus, and Control branches')
+  const branchIds = new Set(['power', 'vitality', 'focus', 'control'])
+  if (ARCANE_CORE_BRANCHES.length !== 4 || new Set(ARCANE_CORE_BRANCHES.map((branch) => branch.id)).size !== 4 || ARCANE_CORE_BRANCHES.some((branch) => !branchIds.has(branch.id))) errors.push('Arcane Core must contain exactly four authored branches')
+  if (ARCANE_CORE_NODES.length !== ARCANE_CORE_NODE_COUNT) errors.push(`Arcane Core must contain ${ARCANE_CORE_NODE_COUNT} nodes`)
   const ids = new Set<string>()
   ARCANE_CORE_BRANCHES.forEach((branch) => {
-    if (branch.nodes.length < 60) errors.push(`${branch.id}: fewer than 60 purchasable nodes`)
-    const coords = new Set<string>()
+    if (branch.nodes.length !== ARCANE_CORE_NODE_COUNT_PER_BRANCH) errors.push(`${branch.id}: must contain exactly ${ARCANE_CORE_NODE_COUNT_PER_BRANCH} nodes`)
+    const lanes = new Map<string, typeof branch.nodes>()
     branch.nodes.forEach((node) => {
       if (ids.has(node.id)) errors.push(`${node.id}: duplicate node id`)
       ids.add(node.id)
-      const coordinate = `${node.x}:${node.y}`
-      if (coords.has(coordinate)) errors.push(`${branch.id}: duplicate node coordinate ${coordinate}`)
-      coords.add(coordinate)
-      if (node.branchId !== branch.id || !Number.isFinite(node.x) || !Number.isFinite(node.y)) errors.push(`${node.id}: invalid branch or coordinates`)
-      if (node.maxRank !== 5 || node.prerequisites.includes(node.id)) errors.push(`${node.id}: invalid max rank or self prerequisite`)
+      if (node.branchId !== branch.id || node.cost !== 1 || !['minor', 'perk', 'major'].includes(node.nodeType)) errors.push(`${node.id}: invalid authored node shape`)
+      const laneNodes = lanes.get(node.laneId) ?? []
+      laneNodes.push(node)
+      lanes.set(node.laneId, laneNodes)
       node.prerequisites.forEach((prerequisite) => { if (!branch.nodes.some((candidate) => candidate.id === prerequisite)) errors.push(`${node.id}: missing prerequisite ${prerequisite}`) })
-      if (!Number.isFinite(node.effect.perRank) || node.effect.perRank <= 0) errors.push(`${node.id}: invalid effect value`)
     })
-    const nodeIds = new Set(branch.nodes.map((node) => node.id))
-    const visiting = new Set<string>()
-    const visited = new Set<string>()
-    const visit = (id: string) => {
-      if (visiting.has(id)) { errors.push(`${branch.id}: prerequisite cycle`); return }
-      if (visited.has(id)) return
-      visiting.add(id)
-      branch.nodes.find((node) => node.id === id)?.prerequisites.forEach(visit)
-      visiting.delete(id)
-      visited.add(id)
-    }
-    nodeIds.forEach(visit)
-    if (!branch.nodes.some((node) => node.prerequisites.length === 0)) errors.push(`${branch.id}: no root-connected starter node`)
-    if (branch.nodes.filter((node) => node.prerequisites.length === 0).length < 2) errors.push(`${branch.id}: must expose multiple starter paths`)
+    if (lanes.size !== 4 || [...lanes.values()].some((lane) => lane.length !== 10)) errors.push(`${branch.id}: must contain four lanes of ten nodes`)
+    lanes.forEach((nodes, laneId) => {
+      nodes.sort((left, right) => left.order - right.order).forEach((node, index) => {
+        const expectedPrerequisite = index === 0 ? [] : [nodes[index - 1].id]
+        if (node.order !== index + 1 || JSON.stringify(node.prerequisites) !== JSON.stringify(expectedPrerequisite) || node.prerequisiteMode !== 'all') errors.push(`${branch.id}/${laneId}: lane must be a sequential chain`)
+      })
+    })
   })
-  if (ARCANE_CORE_RANK_COSTS.some((cost) => !Number.isFinite(cost) || cost <= 0) || ARCANE_CORE_RANK_COSTS.length !== 5) errors.push('invalid Arcane Essence rank costs')
+  if (ARCANE_CORE_MAX_LEVEL !== ARCANE_CORE_NODE_COUNT + 1) errors.push('Arcane Core level cap must derive from node count')
   return errors
 }

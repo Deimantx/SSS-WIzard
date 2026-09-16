@@ -10,6 +10,7 @@ import { createCombatResolutionContext, type CombatConditionContext, type Combat
 import { isEnemySourceOwnerActive } from './combatProvenance'
 import { nextCombatRandom } from './combatRng'
 import { getAllocatedArtifactCombatProviders, isArtifactItem } from '../artifacts/artifactProgression'
+import { getArcaneCoreCombatRules } from '../arcaneCore/arcaneCoreProgression'
 
 export type CombatEventContext = CombatConditionContext
 export type TriggerEffectExecutor = (state: GameState, effects: CombatEffect[], source: CombatSource, depth?: number, uiEvents?: CombatEventSink, resolution?: CombatResolutionContext) => void
@@ -19,7 +20,7 @@ const statusesFor = (state: GameState, actor: CombatActor) => actor === 'player'
 
 export interface OwnedRule {
   rule: CombatTriggerRule
-  ownerKind: 'trait' | 'status' | 'equipment'
+  ownerKind: 'trait' | 'status' | 'equipment' | 'arcane-core'
   ownerId: string
   ownerName: string
   actor: CombatActor
@@ -62,6 +63,10 @@ export const collectOwnedRules = (state: GameState, actor: CombatActor, transien
       owned.push({ rule, ownerKind: 'equipment', ownerId: providerInstanceKey, ownerName: provider.node.name, actor, sourceTags: ['equipment'], providerInstanceKey, stableOrder })
       stableOrder += 1
     }))
+  })
+  if (actor === 'player') getArcaneCoreCombatRules(state.arcaneCore).forEach(({ node, rule }) => {
+    owned.push({ rule, ownerKind: 'arcane-core', ownerId: node.id, ownerName: node.name, actor, sourceTags: ['special'], providerInstanceKey: `arcane-core:${node.id}`, stableOrder })
+    stableOrder += 1
   })
   return owned
 }
@@ -161,7 +166,7 @@ export const runCombatTriggers = (
     const isArtifactProvider = providerInstanceKey?.startsWith('artifact-node:') ?? false
     const providerKey = ownerKind === 'equipment' ? isArtifactProvider ? providerInstanceKey : equipmentPosition : undefined
     const source: CombatSource = { actor, kind: ownerKind === 'equipment' ? 'equipment' : ownerKind, sourceId: ownerId, sourceMonsterId: actor === 'enemy' ? state.combat.enemyId ?? undefined : undefined, sourceInstanceKey: actor === 'enemy' ? state.combat.enemyInstanceKey ?? undefined : undefined, providerInstanceKey: providerKey, ruleId: rule.id, tags: sourceTags }
-    uiEvents?.push({ source: actor === 'enemy' && state.combat.enemyId ? { kind: 'enemy', monsterId: state.combat.enemyId } : actor === 'player' ? { kind: 'player' } : { kind: 'system' }, sourceKind: ownerKind === 'equipment' ? 'equipment' : 'system', sourceMonsterId: source.sourceMonsterId, sourceInstanceKey: source.sourceInstanceKey, target: context.eventTarget, targetMonsterId: context.eventTarget === 'enemy' ? state.combat.enemyId ?? undefined : undefined, category: ownerKind === 'trait' ? 'trait' : 'system', sourceId: ownerId, providerInstanceKey: providerKey, itemId: ownerKind === 'equipment' && !isArtifactProvider ? ownerId as ItemId : undefined, traitId: ownerKind === 'trait' ? ownerId as TraitId : undefined, statusId: ownerKind === 'status' ? ownerId as StatusId : undefined, amount: context.amount, damageType: context.damageType, healthDamage: context.healthDamage, barrierAbsorbed: context.barrierDamage })
+    uiEvents?.push({ source: actor === 'enemy' && state.combat.enemyId ? { kind: 'enemy', monsterId: state.combat.enemyId } : actor === 'player' ? { kind: 'player' } : { kind: 'system' }, sourceKind: ownerKind === 'equipment' ? 'equipment' : ownerKind, sourceMonsterId: source.sourceMonsterId, sourceInstanceKey: source.sourceInstanceKey, target: context.eventTarget, targetMonsterId: context.eventTarget === 'enemy' ? state.combat.enemyId ?? undefined : undefined, category: ownerKind === 'trait' ? 'trait' : 'system', sourceId: ownerId, providerInstanceKey: providerKey, itemId: ownerKind === 'equipment' && !isArtifactProvider ? ownerId as ItemId : undefined, traitId: ownerKind === 'trait' ? ownerId as TraitId : undefined, statusId: ownerKind === 'status' ? ownerId as StatusId : undefined, amount: context.amount, damageType: context.damageType, healthDamage: context.healthDamage, barrierAbsorbed: context.barrierDamage })
     executeEffects(state, rule.effects, source, depth + 1, uiEvents, cascade)
     appendLog(state, `${rule.ui?.name ?? ownerName} triggers.`)
   })

@@ -15,6 +15,7 @@ import { getCurrentEnemyActionStep, MAX_ACTION_WORK_MS, setEnemyActionPattern } 
 import { getRootCombatSourceProvenance } from './combatProvenance'
 import { createCombatResolutionContext, type CombatDamageComponentEvent, type CombatEffect, type CombatEventSink, type CombatLogCategory, type CombatResolutionContext, type CombatSource, type CombatTag, type DamageComponent, type DamageType, type EffectTarget } from './combatTypes'
 import { stabilizeResourceValue } from '../../presentation/resources/resourcePresentation'
+import { tryConsumeArcaneCoreSurvival } from '../arcaneCore/arcaneCoreRuntime'
 
 const MAX_EFFECT_DEPTH = 20
 
@@ -157,7 +158,8 @@ const applyDamage = (state: GameState, components: Array<{ raw: number; damageTy
     rolls.critical = nextCombatRandom(state) < getCritChance(state, source.actor, source)
     rolls.blocked = nextCombatRandom(state) < getBlockChance(state, target, source)
   }
-  const breakdowns = components.map((component) => calculateCombatDamageWithRolls(state, component.raw, component.damageType, source, target, tags, rolls, false))
+  const castMultiplier = source.kind === 'spell' ? resolution?.arcaneCoreDamageMultiplier ?? 1 : 1
+  const breakdowns = components.map((component) => calculateCombatDamageWithRolls(state, component.raw * castMultiplier, component.damageType, source, target, tags, rolls, false))
   const resolvedBeforeBarrier = breakdowns.reduce((sum, breakdown) => sum + breakdown.resolvedBeforeBarrier, 0)
   if (resolvedBeforeBarrier <= 0) return 0
   const previousHp = getActorHealth(state, target)
@@ -174,7 +176,15 @@ const applyDamage = (state: GameState, components: Array<{ raw: number; damageTy
   const attemptedHealthDamage = preClampComponentEvents.reduce((sum, component) => sum + component.healthDamage, 0)
   const immortal = target === 'player' ? state.debug.playerImmortal : state.debug.enemyImmortal
   const nextHealth = Math.max(0, previousHp - attemptedHealthDamage)
-  if (target === 'player') state.player.health = immortal && previousHp > 0 ? Math.max(1, nextHealth) : nextHealth
+  let survivedLethal = false
+  if (target === 'player') {
+    survivedLethal = !immortal && previousHp > 0 && nextHealth <= 0 && tryConsumeArcaneCoreSurvival(state)
+    state.player.health = immortal && previousHp > 0 ? Math.max(1, nextHealth) : survivedLethal ? 1 : nextHealth
+    if (survivedLethal) {
+      appendLog(state, 'Survival Instinct prevents defeat.')
+      uiEvents?.push({ ...eventFields(state, source, target), category: 'system', sourceId: 'arcane-core-survival-instinct', amount: 1, effectiveAmount: 1 })
+    }
+  }
   else state.combat.enemyHp = immortal && previousHp > 0 ? Math.max(1, nextHealth) : nextHealth
   const currentHp = getActorHealth(state, target)
   // Health damage is effective damage: never report overkill or damage
@@ -196,7 +206,7 @@ const applyDamage = (state: GameState, components: Array<{ raw: number; damageTy
   uiEvents?.push({ ...eventFields(state, source, target), category: logCategory(source, tags, 'damage'), damageType: damageTypes.length === 1 ? damageTypes[0] : undefined, damageTypes, damageComponents: componentEvents, hitId: `${cascade.cascadeId}:hit:${cascade.hitSequence}`, amount: resolvedBeforeBarrier, healthDamage: dealt, barrierAbsorbed: totalBarrierAbsorbed, barrierBefore, barrierAfter: getActiveBarrier(state, target), critical: first?.critical ?? false, critChance: first?.critChance ?? 0, critMultiplier: first?.critMultiplier ?? 1, blocked: first?.blocked ?? false, blockChance: first?.blockChance ?? 0, blockReduction: first?.blockReduction ?? 0, blockedAmount })
   const context: CombatEventContext = {
     source, eventTarget: target, changedActor: target, sourceTags: tags, amount: resolvedBeforeBarrier, healthDamage: dealt, barrierDamage: totalBarrierAbsorbed, damageType: damageTypes.length === 1 ? damageTypes[0] : undefined, damageTypes, previousBarrier: barrierBefore, currentBarrier: getActiveBarrier(state, target),
-    previousHp, currentHp, previousHpPercent: previousHp / Math.max(1, maxHp) * 100, currentHpPercent: currentHp / Math.max(1, maxHp) * 100,
+    previousHp, currentHp, previousHpPercent: previousHp / Math.max(1, maxHp) * 100, currentHpPercent: currentHp / Math.max(1, maxHp) * 100, critical: first?.critical ?? false, blocked: first?.blocked ?? false,
   }
   if (totalBarrierAbsorbed > 0 && barrierBefore > 0 && getActiveBarrier(state, target) === 0) {
     appendLog(state, 'Barrier breaks.')
@@ -346,7 +356,8 @@ export const executeCombatEffect = (state: GameState, effect: CombatEffect, sour
     }
     case 'modify-cooldown': {
       if (target === 'player' && Number.isFinite(effect.amountMs)) {
-        const ids = effect.spellId ? [effect.spellId] : Object.keys(state.combat.spellCooldowns)
+        const resolvedSpellId = effect.spellId === 'source' ? source.sourceId : effect.spellId
+        const ids = resolvedSpellId ? [resolvedSpellId] : Object.keys(state.combat.spellCooldowns)
         ids.forEach((id) => { if (id in state.combat.spellCooldowns) state.combat.spellCooldowns[id as keyof typeof state.combat.spellCooldowns] = Math.max(0, Math.min(MAX_ACTION_WORK_MS, state.combat.spellCooldowns[id as keyof typeof state.combat.spellCooldowns] + effect.amountMs)) })
       }
       break

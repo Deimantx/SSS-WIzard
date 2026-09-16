@@ -11,6 +11,7 @@ import { createCombatResolutionContext, type CombatEvent, type CombatEventSink, 
 import { initializeEnemyActionRuntime, resetEnemyActionRuntime, startNextEnemyAction } from './actionRuntime'
 import { resolveMonsterLoot } from '../loot'
 import { getArcaneCoreReward } from '../../content/arcaneCore/arcaneCoreRewards'
+import { grantArcaneCoreXp } from '../arcaneCore/arcaneCoreProgression'
 import { discoverMonster } from '../collection/discovery'
 import type { SimulationReportCollector } from '../offline-bank/offlineBankReport'
 import { MAX_ACTION_WORK_MS, MIN_ACTION_TIME_MS } from '../../core/balance/combatTiming'
@@ -97,16 +98,20 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   clearEnemyRuleCooldowns(state)
   const dungeon = DUNGEONS[state.combat.dungeonId ?? 'whispering-woods']
   const arcaneReward = getArcaneCoreReward(state.combat.dungeonId)
+  const bossDefeated = isBossMonster(monster)
+  const arcaneCoreXp = arcaneReward ? (bossDefeated ? arcaneReward.bossKillXp : arcaneReward.normalKillXp) : 0
+  if (arcaneCoreXp > 0) {
+    const xpResult = grantArcaneCoreXp(state.arcaneCore, arcaneCoreXp)
+    state.arcaneCore = xpResult.state
+    report?.recordArcaneCoreXp(xpResult.granted)
+    if (!report && xpResult.levelsGained > 0) pushNotification(state, `Arcane Core ${xpResult.levelsGained === 1 ? `reached Level ${xpResult.levelAfter}` : `gained ${xpResult.levelsGained} Levels`} · +${xpResult.levelsGained} Core Point${xpResult.levelsGained === 1 ? '' : 's'}`, 'success', { key: 'arcane-core-level-up', cooldownMs: 1000 })
+  }
   state.combat.encounterTimerMs = dungeon.encounterDelayMs
-  if (isBossMonster(monster)) {
+  if (bossDefeated) {
     state.combat.threatCleared = 0
     state.combat.inBossFight = false
     const bossId = enemyId
     state.progress.bossKillsByBoss[bossId] = (state.progress.bossKillsByBoss[bossId] ?? 0) + 1
-    if (arcaneReward) {
-      state.arcaneCore.corePoints += arcaneReward.corePoints
-      state.arcaneCore.arcaneEssence += arcaneReward.bossEssence
-    }
     if (bossId === SUMMONING_UNLOCK_BOSS_ID && state.progress.bossKillsByBoss[bossId] === 1) pushNotification(state, 'Wizard Tower: Summoning unlocked.', 'success')
     if (bossId === 'corrupted-elemental-gatekeeper' && state.progress.bossKillsByBoss[bossId] === 1) pushNotification(state, 'FRACTURED APPROACH COMPLETE / Branch routes unlocked.', 'success')
     if (state.combat.pendingBossId === enemyId) state.combat.pendingBossId = null
@@ -138,7 +143,6 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   } else {
     state.progress.lifetimeKills += 1
     state.progress.lifetimeKillsByMonster[enemyId] = (state.progress.lifetimeKillsByMonster[enemyId] ?? 0) + 1
-    if (arcaneReward) state.arcaneCore.arcaneEssence += arcaneReward.normalEssence
     state.combat.threatCleared += 1
     if (enemyId === 'grove-sentinel') state.progress.requestProgress['sentinel-breaker'] = Math.max(state.progress.requestProgress['sentinel-breaker'] ?? 0, state.progress.lifetimeKillsByMonster[enemyId])
     if (state.combat.dungeonId === 'whispering-woods') state.progress.requestProgress['clear-the-woods'] = (state.progress.requestProgress['clear-the-woods'] ?? 0) + 1

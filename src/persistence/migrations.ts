@@ -32,6 +32,7 @@ import { isSummoningUnlocked } from '../game/systems/summoning/summoningSelector
 import { normalizeDarkPortalProgress } from '../game/systems/dark-portal/portalShardProgression'
 import { isScreenUnlocked, reconcileStoryProgression } from '../game/systems/story/storyProgression'
 import { getTransmutationArrayBonuses } from '../game/systems/transmutation/transmutationArrays'
+import { ARCANE_CORE_MAX_TOTAL_XP, ARCANE_CORE_MAX_LEVEL, getArcaneCoreTotalXpForLevel } from '../game/content/arcaneCore/arcaneCoreBalance'
 import { getArcaneCoreNode } from '../game/content/arcaneCore/arcaneCoreBranches'
 
 const statusValidationContext = createCombatValidationContext(STATUS_DEFINITIONS)
@@ -71,23 +72,18 @@ const recipeIds = Object.keys(RECIPES)
 const permanentFocusIds = ['forest-heart', 'guild-apprentice']
 
 const normalizeArcaneCore = (migrated: GameState, raw: Record<string, any>) => {
-  const fresh = createInitialState().arcaneCore
   const source = isRecord(raw.arcaneCore) ? raw.arcaneCore : {}
-  const rawNodes = isRecord(source.nodes) ? source.nodes : {}
-  const nodes: GameState['arcaneCore']['nodes'] = {}
-  Object.entries(rawNodes).forEach(([nodeId, value]) => {
-    const node = getArcaneCoreNode(nodeId)
-    if (!node || !isRecord(value) || value.unlocked !== true) return
-    const rank = Math.max(0, Math.min(node.maxRank, Math.floor(typeof value.rank === 'number' && Number.isFinite(value.rank) ? value.rank : 0)))
-    const coreSpent = Math.max(0, Math.floor(typeof value.coreSpent === 'number' && Number.isFinite(value.coreSpent) ? value.coreSpent : 0))
-    const essenceSpent = Math.max(0, Math.floor(typeof value.essenceSpent === 'number' && Number.isFinite(value.essenceSpent) ? value.essenceSpent : 0))
-    nodes[nodeId] = { unlocked: true, rank, coreSpent, essenceSpent }
-  })
-  migrated.arcaneCore = {
-    corePoints: Math.max(0, Math.floor(typeof source.corePoints === 'number' && Number.isFinite(source.corePoints) ? source.corePoints : fresh.corePoints)),
-    arcaneEssence: Math.max(0, Math.floor(typeof source.arcaneEssence === 'number' && Number.isFinite(source.arcaneEssence) ? source.arcaneEssence : fresh.arcaneEssence)),
-    nodes,
+  if (typeof source.totalXp === 'number' && Number.isFinite(source.totalXp)) {
+    const nodes: GameState['arcaneCore']['nodes'] = {}
+    if (isRecord(source.nodes)) Object.entries(source.nodes).forEach(([nodeId, value]) => { if (getArcaneCoreNode(nodeId) && isRecord(value) && value.purchased === true) nodes[nodeId] = { purchased: true } })
+    migrated.arcaneCore = { totalXp: Math.max(0, Math.min(ARCANE_CORE_MAX_TOTAL_XP, Math.floor(source.totalXp))), nodes }
+    return
   }
+  const rawNodes = isRecord(source.nodes) ? source.nodes : {}
+  const unspentPoints = typeof source.corePoints === 'number' && Number.isFinite(source.corePoints) ? Math.max(0, Math.floor(source.corePoints)) : 0
+  const spentPoints = Object.values(rawNodes).reduce((total, value) => total + (isRecord(value) && typeof value.coreSpent === 'number' && Number.isFinite(value.coreSpent) ? Math.max(0, Math.floor(value.coreSpent)) : 0), 0)
+  const level = Math.min(ARCANE_CORE_MAX_LEVEL, 1 + unspentPoints + spentPoints)
+  migrated.arcaneCore = { totalXp: getArcaneCoreTotalXpForLevel(level), nodes: {} }
 }
 const REMOVED_PRISMATIC_FOCUS_ID = 'prismatic-focus'
 
@@ -270,10 +266,10 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
     if (!isRecord(value)) return { actor: fallbackActor, kind: 'system', sourceId: 'save-migration' }
     const actor = value.actor === 'player' || value.actor === 'enemy' ? value.actor : fallbackActor
     const rawKind = String(value.kind)
-    const kind = rawKind === 'special-attack' ? 'action' : ['basic-attack', 'spell', 'weapon', 'status', 'trait', 'action', 'equipment', 'guardian', 'system'].includes(rawKind) ? rawKind as CombatSource['kind'] : 'system'
+    const kind = rawKind === 'special-attack' ? 'action' : ['basic-attack', 'spell', 'weapon', 'status', 'trait', 'action', 'arcane-core', 'equipment', 'guardian', 'system'].includes(rawKind) ? rawKind as CombatSource['kind'] : 'system'
     const school = ['fire', 'water', 'earth', 'air'].includes(String(value.school)) ? value.school as CombatSource['school'] : undefined
     const rawOriginKind = String(value.originSourceKind)
-    const originSourceKind = ['basic-attack', 'spell', 'weapon', 'status', 'trait', 'action', 'equipment', 'guardian', 'system'].includes(rawOriginKind) ? rawOriginKind as CombatSource['kind'] : undefined
+    const originSourceKind = ['basic-attack', 'spell', 'weapon', 'status', 'trait', 'action', 'arcane-core', 'equipment', 'guardian', 'system'].includes(rawOriginKind) ? rawOriginKind as CombatSource['kind'] : undefined
     const originTags = Array.isArray(value.originTags) ? value.originTags.filter((tag): tag is NonNullable<CombatSource['originTags']>[number] => typeof tag === 'string') : undefined
     const originSchool = ['fire', 'water', 'earth', 'air'].includes(String(value.originSchool)) ? value.originSchool as CombatSource['originSchool'] : undefined
     const sourceMonsterId = typeof value.sourceMonsterId === 'string' && MONSTERS[value.sourceMonsterId as MonsterId] ? value.sourceMonsterId as MonsterId : sourceVersion === 21 && actor === 'enemy' ? legacyActiveEnemyId ?? undefined : undefined
@@ -439,6 +435,13 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
     if (typeof value === 'number' && Number.isFinite(value) && value >= 0) ruleCooldowns[key] = Math.min(Number.MAX_SAFE_INTEGER, value)
   })
   migrated.combat.ruleCooldowns = ruleCooldowns
+  const rawArcaneRuntime = isRecord(rawCombat.arcaneCoreRuntime) ? rawCombat.arcaneCoreRuntime : {}
+  migrated.combat.arcaneCoreRuntime = {
+    damagingSpellCount: nonNegativeInteger(rawArcaneRuntime.damagingSpellCount) ?? 0,
+    spellCastCount: nonNegativeInteger(rawArcaneRuntime.spellCastCount) ?? 0,
+    cooldownPulseSpellCount: nonNegativeInteger(rawArcaneRuntime.cooldownPulseSpellCount) ?? 0,
+    survivalInstinctUsed: rawArcaneRuntime.survivalInstinctUsed === true,
+  }
 }
 
 /** Seeds the historical item archive only for saves that predate the V12 archive shape. */

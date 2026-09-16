@@ -74,6 +74,8 @@ export interface CombatResolutionContext {
   attemptedRuleKeys: Set<string>
   executedRuleKeys: Set<string>
   hitSequence?: number
+  /** Applies only to the immediate damage cascade of one spell cast. */
+  arcaneCoreDamageMultiplier?: number
 }
 
 let nextCascadeId = 0
@@ -189,7 +191,7 @@ export type CombatUiEventSink = CombatEventSink
 
 export interface CombatSource {
   actor: 'player' | 'enemy'
-  kind: 'basic-attack' | 'spell' | 'weapon' | 'status' | 'trait' | 'action' | 'equipment' | 'guardian' | 'system'
+  kind: 'basic-attack' | 'spell' | 'weapon' | 'status' | 'trait' | 'action' | 'arcane-core' | 'equipment' | 'guardian' | 'system'
   sourceId?: string
   /** Authored Monster that owns an Enemy source. */
   sourceMonsterId?: MonsterId
@@ -278,7 +280,7 @@ export type CombatEffect =
   | { type: 'cleanse'; target: EffectTarget; mode: 'one' | 'all' | 'tag'; tag?: CombatTag }
   | { type: 'dispel'; target: EffectTarget; mode: 'one' | 'all' | 'tag'; tag?: CombatTag }
   | { type: 'modify-action-timer'; target: EffectTarget; amountMs: number; action: 'basic-attack' | 'current' }
-  | { type: 'modify-cooldown'; target: EffectTarget; amountMs: number; spellId?: string }
+  | { type: 'modify-cooldown'; target: EffectTarget; amountMs: number; spellId?: string | 'source' }
   | { type: 'set-action-pattern'; target: EffectTarget; patternId: string }
 
 export type ModifierKey =
@@ -310,6 +312,8 @@ export type ModifierKey =
 export interface CombatModifier {
   key: ModifierKey
   value: number
+  /** Optional actor scope for cross-actor effects authored by systems such as Arcane Core. */
+  actor?: 'player' | 'enemy'
   sourceKinds?: Array<CombatSource['kind']>
   sourceTags?: CombatTag[]
   originSourceKinds?: Array<CombatSource['kind']>
@@ -323,6 +327,7 @@ export interface CombatModifier {
 
 export type CombatTrigger =
   | 'on-combat-start'
+  | 'on-spell-cast'
   | 'on-basic-attack-hit'
   | 'on-spell-hit'
   | 'on-damage-dealt'
@@ -349,6 +354,7 @@ export type CombatCondition =
   | { type: 'target-has-barrier' }
   | { type: 'self-hp-above-percent'; percent: number }
   | { type: 'self-mana-above-percent'; percent: number }
+  | { type: 'self-mana-below-percent'; percent: number }
   | { type: 'target-hp-above-percent'; percent: number }
   | { type: 'self-status-stacks-at-least'; statusId: StatusId; stacks: number }
   | { type: 'target-status-stacks-at-least'; statusId: StatusId; stacks: number }
@@ -363,6 +369,12 @@ export type CombatCondition =
   | { type: 'event-action-has-tag'; tag: CombatTag }
   | { type: 'event-damage-type-is'; damageType: DamageType }
   | { type: 'target-has-status-tag'; tag: CombatTag }
+  | { type: 'target-negative-status-count-at-least'; count: number }
+  | { type: 'self-negative-status-count-at-least'; count: number }
+  | { type: 'event-is-critical' }
+  | { type: 'event-was-blocked' }
+  | { type: 'event-health-damage-positive' }
+  | { type: 'event-amount-positive' }
   | { type: 'event-target-is-self' }
   | { type: 'source-is-self' }
   | { type: 'source-is-opponent' }
@@ -420,6 +432,8 @@ export interface CombatConditionContext {
   actionStepId?: string
   actionPatternId?: string
   eventActionTags?: CombatTag[]
+  critical?: boolean
+  blocked?: boolean
 }
 
 export interface ActiveStatus {

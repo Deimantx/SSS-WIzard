@@ -147,22 +147,32 @@ export interface EquipmentStats {
 export type ArcaneCoreBranchId = 'power' | 'vitality' | 'focus' | 'control'
 export type ArcaneCoreModifierKey = Exclude<keyof EquipmentStats, 'resistances'>
 export type ArcaneCorePrerequisiteMode = 'any' | 'all'
-export interface ArcaneCoreNodeEffect {
-  key: ArcaneCoreModifierKey
-  perRank: number
-  label: string
-}
+export type ArcaneCoreNodeType = 'minor' | 'perk' | 'major'
+export type ArcaneCoreSpecialEffect =
+  | { type: 'nth-damaging-spell-bonus'; every: number; damageMultiplier: number }
+  | { type: 'lethal-survival'; leaveAtHealth: number; oncePerDungeonRun: boolean }
+  | { type: 'mana-overflow-to-barrier'; conversion: number; maxHealthPercentPerSecondCap: number }
+  | { type: 'nth-spell-free'; every: number }
+  | { type: 'reserved-focus-spell-power'; spellPowerPerReservedFocus: number }
+  | { type: 'free-focus-mana-regen'; manaRegenPerFreeFocus: number }
+  | { type: 'nth-spell-cooldown-pulse'; every: number; cooldownReductionMs: number }
 export interface ArcaneCoreNodeDefinition {
   id: string
   branchId: ArcaneCoreBranchId
+  laneId: string
+  order: number
   name: string
   description: string
-  x: number
-  y: number
-  maxRank: 5
+  nodeType: ArcaneCoreNodeType
+  cost: number
   prerequisites: string[]
   prerequisiteMode: ArcaneCorePrerequisiteMode
-  effect: ArcaneCoreNodeEffect
+  x: number
+  y: number
+  stats?: EquipmentStats
+  modifiers?: import('./systems/combat/combatTypes').CombatModifier[]
+  rules?: import('./systems/combat/combatTypes').CombatTriggerRule[]
+  special?: ArcaneCoreSpecialEffect[]
 }
 export interface ArcaneCoreBranchDefinition {
   id: ArcaneCoreBranchId
@@ -173,14 +183,10 @@ export interface ArcaneCoreBranchDefinition {
   nodes: ArcaneCoreNodeDefinition[]
 }
 export interface ArcaneCoreNodeProgress {
-  unlocked: boolean
-  rank: number
-  coreSpent: number
-  essenceSpent: number
+  purchased: true
 }
 export interface ArcaneCoreState {
-  corePoints: number
-  arcaneEssence: number
+  totalXp: number
   nodes: Partial<Record<string, ArcaneCoreNodeProgress>>
 }
 
@@ -347,6 +353,13 @@ export interface CombatState {
   spellCooldowns: Record<SpellId, number>
   /** Runtime Auto-Cast starvation latch; persisted harmlessly with combat state. */
   autoCastManaStarvedSpells: SpellId[]
+  /** Deterministic transient counters for Arcane Core combat specials. */
+  arcaneCoreRuntime: {
+    damagingSpellCount: number
+    spellCastCount: number
+    cooldownPulseSpellCount: number
+    survivalInstinctUsed: boolean
+  }
   playerStatuses: ActiveStatus[]
   enemyStatuses: ActiveStatus[]
   threatCleared: number

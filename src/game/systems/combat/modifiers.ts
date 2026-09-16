@@ -12,7 +12,7 @@ import { getStatusGroupStacks } from './statusSelectors'
 import { getRootCombatSourceProvenance, isEnemySourceOwnerActive } from './combatProvenance'
 import { getAllocatedArtifactCombatProviders, isArtifactItem } from '../artifacts/artifactProgression'
 import { getGuardianPassiveProviders } from '../summoning/summoningSelectors'
-import { getArcaneCoreModifierTotals } from '../arcaneCore/arcaneCoreProgression'
+import { getArcaneCoreCombatModifiers, getArcaneCoreStaticStats } from '../arcaneCore/arcaneCoreProgression'
 
 export type CombatModifierState = {
   player: Pick<GameState['player'], 'health' | 'maxHealth' | 'mana' | 'maxMana'>
@@ -36,7 +36,7 @@ export interface ModifierContext {
 export interface CombatModifierContribution {
   modifier: CombatModifier
   value: number
-  sourceType: 'status' | 'trait' | 'equipment' | 'equipment-stats' | 'artifact' | 'guardian'
+  sourceType: 'status' | 'trait' | 'equipment' | 'equipment-stats' | 'artifact' | 'guardian' | 'arcane-core'
   sourceId?: string
   sourceName?: string
 }
@@ -94,6 +94,7 @@ export const getCombatModifierContributions = (state: CombatModifierState, actor
   if (actor === 'enemy' && context.source?.actor === 'enemy' && !isEnemySourceOwnerActive(state, context.source)) return []
   const contributions: CombatModifierContribution[] = []
   const add = (modifier: CombatModifier, sourceType: CombatModifierContribution['sourceType'], sourceId?: string, sourceName?: string, value = modifier.value) => {
+    if (modifier.actor && modifier.actor !== actor) return
     if (modifier.key !== key || !matchesModifier(modifier, context) || !conditionMatches(state, actor, modifier, context, evaluation)) return
     contributions.push({ modifier, value, sourceType, sourceId, sourceName })
   }
@@ -106,6 +107,7 @@ export const getCombatModifierContributions = (state: CombatModifierState, actor
   getActorTraits(state, actor).forEach((trait) => trait.modifiers?.forEach((modifier) => {
     add(modifier, 'trait', trait.id, trait.name)
   }))
+  if (state.arcaneCore) getArcaneCoreCombatModifiers(state.arcaneCore).forEach((modifier) => add(modifier, 'arcane-core', 'arcane-core', 'Arcane Core'))
   if (actor === 'player') {
     Object.values(state.equipment).forEach((itemId) => {
       if (!itemId) return
@@ -123,7 +125,7 @@ export const getCombatModifierContributions = (state: CombatModifierState, actor
       if (value !== 0) add({ key, value }, 'equipment-stats', itemId, ITEMS[itemId]?.name, value)
     })
     if (equipmentField && state.arcaneCore) {
-      const value = Number(getArcaneCoreModifierTotals(state.arcaneCore)[equipmentField] ?? 0)
+      const value = Number(getArcaneCoreStaticStats(state.arcaneCore)[equipmentField] ?? 0)
       if (value !== 0) add({ key, value }, 'equipment-stats', 'arcane-core', 'Arcane Core', value)
     }
     getGuardianPassiveProviders(state).forEach(({ modifier, sourceId, sourceName }) => add(modifier, 'guardian', sourceId, sourceName))

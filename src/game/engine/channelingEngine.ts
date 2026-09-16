@@ -6,6 +6,9 @@ import type { ChannelingDiscoveryId, GameState, ManaPillarId } from '../types'
 import { clamp } from '../utils'
 import { getCombatModifiers } from '../systems/combat/modifiers'
 import { stabilizeResourceValue } from '../presentation/resources/resourcePresentation'
+import { getArcaneCoreDynamicManaRegen } from '../systems/arcaneCore/arcaneCoreRuntime'
+import { getArcaneCoreSpecialEffects } from '../systems/arcaneCore/arcaneCoreProgression'
+import { gainBarrier } from '../systems/combat/barrierRuntime'
 
 export interface ManaRegenBreakdown {
   baseNatural: number
@@ -72,7 +75,8 @@ export const getManaRegenBreakdown = (state: ChannelingRegenState): ManaRegenBre
   const stableLeylineBonus = state.progress.channeling.discoveries['stable-leyline'] ? BALANCE.channeling.stableLeylineRegenBonus : 0
   const equipmentPassiveBonus = stats.manaRegen ?? 0
   const developerBonus = state.debug?.bonusManaRegenFlat ?? 0
-  const passiveBeforeResonance = baseNatural + leylineConduitBonus + stableLeylineBonus + equipmentPassiveBonus + developerBonus
+  const arcaneCoreDynamicBonus = state.player ? getArcaneCoreDynamicManaRegen(state as never) : 0
+  const passiveBeforeResonance = baseNatural + leylineConduitBonus + stableLeylineBonus + equipmentPassiveBonus + developerBonus + arcaneCoreDynamicBonus
   const manaResonanceMultiplier = 1 + pillarLevel(state, 'mana-resonance') * 0.05
   const passiveAfterResonance = passiveBeforeResonance * manaResonanceMultiplier
   const echoBase = echoes * BALANCE.channeling.echoManaPerSecond
@@ -108,9 +112,19 @@ export const advanceChanneling = (state: GameState, deltaMs: number) => {
   const delta = Math.max(0, deltaMs)
   const before = state.player.mana
   const generated = manaRegenPerSecond(state) * delta / 1000
+  const maxMana = state.player.maxMana
+  const overflow = !state.debug.allowManaOverCap ? Math.max(0, before + generated - maxMana) : 0
   state.player.mana = stabilizeResourceValue(state.debug.allowManaOverCap
     ? Math.max(0, before + generated)
-    : clamp(before + generated, 0, state.player.maxMana))
+    : clamp(before + generated, 0, maxMana))
+  if (overflow > 0 && state.combat.active) {
+    const effect = getArcaneCoreSpecialEffects(state.arcaneCore).find((candidate) => candidate.type === 'mana-overflow-to-barrier')
+    if (effect?.type === 'mana-overflow-to-barrier') {
+      const barrierCap = state.player.maxHealth * effect.maxHealthPercentPerSecondCap * delta / 1000
+      const barrierGain = Math.min(barrierCap, overflow * effect.conversion)
+      if (barrierGain > 0) gainBarrier(state, barrierGain, { actor: 'player', kind: 'arcane-core', sourceId: 'focus-mana-overflow', tags: ['special', 'barrier'] }, 'player', ['special', 'barrier'], { mode: 'add', durationMs: null })
+    }
+  }
   const gained = state.player.mana - before
   state.progress.channeling.totalManaGenerated += gained
   if (!state.progress.channeling.discoveries['echo-resonance']) {

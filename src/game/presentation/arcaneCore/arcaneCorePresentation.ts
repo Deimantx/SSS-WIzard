@@ -1,4 +1,5 @@
 import type { ArcaneCoreBranchDefinition, ArcaneCoreModifierKey, ArcaneCoreNodeDefinition } from '../../types'
+import type { CombatModifier } from '../../systems/combat/combatTypes'
 
 export const ARCANE_CORE_NODE_WIDTH = 86
 export const ARCANE_CORE_NODE_HEIGHT = 54
@@ -47,6 +48,33 @@ const MODIFIER_LABELS: Record<ArcaneCoreModifierKey, string> = {
   basicAttackSpeedPct: 'Basic Attack Speed',
 }
 
+const COMBAT_MODIFIER_LABELS: Record<CombatModifier['key'], string> = {
+  'damage-dealt-percent': 'Damage Dealt',
+  'damage-taken-percent': 'Damage Taken',
+  'basic-attack-damage-percent': 'Basic Attack Damage',
+  'basic-attack-speed-percent': 'Basic Attack Speed',
+  'action-speed-percent': 'Action Speed',
+  'spell-damage-percent': 'Spell Damage',
+  'melee-damage-percent': 'Melee Damage',
+  'ranged-damage-percent': 'Ranged Damage',
+  'healing-done-percent': 'Healing Done',
+  'healing-received-percent': 'Healing Received',
+  'barrier-power-percent': 'Barrier Power',
+  'barrier-received-flat': 'Barrier Received',
+  'barrier-received-percent': 'Barrier Received',
+  'mana-regen-percent': 'Mana Regeneration',
+  'cooldown-recovery-percent': 'Cooldown Recovery',
+  'control-duration-received-percent': 'Control Duration Received',
+  'status-duration-dealt-percent': 'Status Duration',
+  'status-duration-received-percent': 'Status Duration Received',
+  'defense-flat': 'Defense',
+  'crit-chance': 'Critical Chance',
+  'crit-damage': 'Critical Damage',
+  'block-chance': 'Block Chance',
+  'damage-over-time-percent': 'Damage over Time',
+  'resistance-percent': 'Resistance',
+}
+
 const trimNumber = (value: number, digits: number) => {
   const rounded = Number(value.toFixed(digits))
   return rounded.toLocaleString(undefined, { maximumFractionDigits: digits })
@@ -59,7 +87,31 @@ export const formatArcaneCoreModifierValue = (key: ArcaneCoreModifierKey, value:
   return PERCENT_MODIFIERS.has(key) ? `${sign}${(value * 100).toFixed(2)}%` : `${sign}${trimNumber(value, 2)}`
 }
 
-export const formatArcaneCoreNodeEffect = (node: ArcaneCoreNodeDefinition, rank: number) => `${getArcaneCoreModifierLabel(node.effect.key)} ${formatArcaneCoreModifierValue(node.effect.key, node.effect.perRank * rank)}`
+const formatCombatModifierValue = (key: CombatModifier['key'], value: number) => {
+  const percent = key.endsWith('percent') || key === 'crit-chance' || key === 'crit-damage' || key === 'block-chance'
+  const sign = value >= 0 ? '+' : ''
+  return percent ? `${sign}${(value * 100).toFixed(2)}%` : `${sign}${trimNumber(value, 2)}`
+}
+
+const formatSpecialEffect = (node: ArcaneCoreNodeDefinition) => (node.special ?? []).map((special) => {
+  switch (special.type) {
+    case 'nth-damaging-spell-bonus': return `Every ${special.every}th damaging Spell +${trimNumber((special.damageMultiplier - 1) * 100, 0)}% Damage`
+    case 'lethal-survival': return 'Survive lethal damage once per dungeon run'
+    case 'mana-overflow-to-barrier': return `Convert ${trimNumber(special.conversion * 100, 0)}% Mana overflow to Barrier`
+    case 'nth-spell-free': return `Every ${special.every}th Spell costs 0 Mana`
+    case 'reserved-focus-spell-power': return `+${trimNumber(special.spellPowerPerReservedFocus, 2)} Spell Power per reserved Focus`
+    case 'free-focus-mana-regen': return `+${trimNumber(special.manaRegenPerFreeFocus, 2)} Mana/s per free Focus`
+    case 'nth-spell-cooldown-pulse': return `Every ${special.every}th Spell reduces cooldowns by ${special.cooldownReductionMs} ms`
+  }
+})
+
+export const getArcaneCoreNodeEffectTexts = (node: ArcaneCoreNodeDefinition) => [
+  ...Object.entries(node.stats ?? {}).map(([key, value]) => `${getArcaneCoreModifierLabel(key as ArcaneCoreModifierKey)} ${formatArcaneCoreModifierValue(key as ArcaneCoreModifierKey, Number(value))}`),
+  ...(node.modifiers ?? []).map((modifier) => `${COMBAT_MODIFIER_LABELS[modifier.key] ?? modifier.key} ${formatCombatModifierValue(modifier.key, modifier.value)}`),
+  ...formatSpecialEffect(node),
+]
+
+export const formatArcaneCoreNodeEffect = (node: ArcaneCoreNodeDefinition, _legacyRank = 1) => getArcaneCoreNodeEffectTexts(node).join(' · ') || node.description
 
 export interface ArcaneCoreGraphGeometry {
   width: number

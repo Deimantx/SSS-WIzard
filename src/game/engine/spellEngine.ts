@@ -8,6 +8,9 @@ import type { CombatEventSink } from '../systems/combat/combatTypes'
 import { getEffectiveManaCost } from '../systems/combat/combatStats'
 import { getSpellCombatSource } from '../systems/spells/spellSource'
 import { hasEnoughResource, stabilizeResourceValue } from '../presentation/resources/resourcePresentation'
+import { beginArcaneCoreSpellCast, getArcaneCoreCooldownPulseReduction, isArcaneCoreSpellFree } from '../systems/arcaneCore/arcaneCoreRuntime'
+import { runCombatTriggers } from '../systems/combat/triggerRuntime'
+import { createCombatResolutionContext, type CombatSource } from '../systems/combat/combatTypes'
 
 const hasEnemyTarget = (spellId: SpellId) => SPELLS[spellId].effects.some((effect) => effect.target === 'opponent')
 
@@ -22,7 +25,7 @@ export const getSpellCastFailure = (state: GameState, spellId: SpellId): SpellCa
   if (!state.combat.active) return 'inactive'
   if (hasEnemyTarget(spellId) && !state.combat.enemyId) return 'no-target'
   if (!state.debug.ignoreSpellCooldowns && state.combat.spellCooldowns[spellId] > 0) return 'cooldown'
-  if (!state.debug.infiniteMana && !hasEnoughResource(state.player.mana, getEffectiveManaCost(state, spell.manaCost))) return 'mana'
+  if (!state.debug.infiniteMana && !isArcaneCoreSpellFree(state) && !hasEnoughResource(state.player.mana, getEffectiveManaCost(state, spell.manaCost))) return 'mana'
   return null
 }
 
@@ -59,11 +62,22 @@ export const castSpellInternal = (state: GameState, spellId: SpellId, quiet = fa
     if (failure === 'mana') reportManaStarvation(state, spellId, uiEvents)
     return false
   }
-  if (!state.debug.infiniteMana) state.player.mana = stabilizeResourceValue(Math.max(0, state.player.mana - getEffectiveManaCost(state, spell.manaCost)))
+  const manaCost = getEffectiveManaCost(state, spell.manaCost)
+  const damaging = spell.effects.some((effect) => effect.type === 'deal-damage')
+  const arcaneCoreCast = beginArcaneCoreSpellCast(state, damaging)
+  const paidMana = arcaneCoreCast.free ? 0 : manaCost
+  if (!state.debug.infiniteMana) state.player.mana = stabilizeResourceValue(Math.max(0, state.player.mana - paidMana))
   state.combat.spellCooldowns[spellId] = state.debug.ignoreSpellCooldowns ? 0 : spell.cooldownMs
   const source = getSpellCombatSource(spellId)
-  executeCombatEffects(state, spell.effects, source, undefined, uiEvents)
-  const damageEffect = spell.effects.some((effect) => effect.type === 'deal-damage')
+  const resolution = createCombatResolutionContext()
+  resolution.arcaneCoreDamageMultiplier = arcaneCoreCast.damageMultiplier
+  executeCombatEffects(state, spell.effects, source, undefined, uiEvents, resolution)
+  if (arcaneCoreCast.cooldownPulse) {
+    const pulse = getArcaneCoreCooldownPulseReduction(state)
+    if (pulse > 0) executeCombatEffects(state, [{ type: 'modify-cooldown', target: 'self', amountMs: -pulse }], { actor: 'player', kind: 'arcane-core', sourceId: 'control-rapid-cycle-10', tags: ['special'] }, undefined, uiEvents, resolution)
+  }
+  runCombatTriggers(state, 'player', 'on-spell-cast', { source, eventTarget: state.combat.enemyId ? 'enemy' : 'player', sourceTags: source.tags ?? ['spell', 'magic'], amount: paidMana }, executeCombatEffects, 0, [], uiEvents, resolution)
+  const damageEffect = damaging
   appendLog(state, `${spell.name} cast${damageEffect ? ` for ${state.combat.lastDamageDealt}` : ''}.`)
   if (!quiet) pushNotification(state, `${spell.name} cast`, 'info')
   return true

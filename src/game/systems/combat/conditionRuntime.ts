@@ -20,6 +20,7 @@ const changedActorFor = (context: CombatConditionContext) => context.changedActo
 const contextualHpPercent = (state: CombatConditionState, actor: CombatActor, context: CombatConditionContext) => changedActorFor(context) === actor && context.currentHpPercent !== undefined ? context.currentHpPercent : hpPercent(state, actor)
 const sourceTagsFor = (context: CombatConditionContext) => [...new Set([...(context.source?.tags ?? []), ...(context.sourceTags ?? [])])]
 const hasStatusTag = (state: CombatConditionState, actor: CombatActor, tag: import('./combatTypes').CombatTag) => (actor === 'player' ? state.combat.playerStatuses : state.combat.enemyStatuses).some((active) => STATUS_DEFINITIONS[active.statusId]?.tags.includes(tag))
+const negativeStatusCount = (state: CombatConditionState, actor: CombatActor) => new Set((actor === 'player' ? state.combat.playerStatuses : state.combat.enemyStatuses).filter((active) => STATUS_DEFINITIONS[active.statusId]?.tags.includes('debuff')).map((active) => active.statusId)).size
 
 /** Evaluates a condition against the actor that owns the condition. */
 export const evaluateCombatCondition = (state: CombatConditionState, actor: CombatActor, condition: CombatCondition | undefined, context: CombatConditionContext = {}): boolean => {
@@ -30,6 +31,7 @@ export const evaluateCombatCondition = (state: CombatConditionState, actor: Comb
     case 'target-hp-below-percent': return contextualHpPercent(state, target, context) <= condition.percent
     case 'self-hp-above-percent': return contextualHpPercent(state, actor, context) >= condition.percent
     case 'self-mana-above-percent': return actor === 'player' && state.player.mana / Math.max(1, state.player.maxMana) * 100 >= condition.percent
+    case 'self-mana-below-percent': return actor === 'player' && state.player.mana / Math.max(1, state.player.maxMana) * 100 <= condition.percent
     case 'target-hp-above-percent': return contextualHpPercent(state, target, context) >= condition.percent
     case 'self-has-status': return hasStatus(state, actor, condition.statusId)
     case 'target-has-status': return hasStatus(state, target, condition.statusId)
@@ -48,6 +50,12 @@ export const evaluateCombatCondition = (state: CombatConditionState, actor: Comb
     case 'event-action-has-tag': return context.eventActionTags?.includes(condition.tag) ?? false
     case 'event-damage-type-is': return (context.damageTypes ?? (context.damageType ? [context.damageType] : [])).includes(condition.damageType)
     case 'target-has-status-tag': return hasStatusTag(state, target, condition.tag)
+    case 'target-negative-status-count-at-least': return negativeStatusCount(state, target) >= condition.count
+    case 'self-negative-status-count-at-least': return negativeStatusCount(state, actor) >= condition.count
+    case 'event-is-critical': return context.critical === true
+    case 'event-was-blocked': return context.blocked === true
+    case 'event-health-damage-positive': return (context.healthDamage ?? 0) > 0
+    case 'event-amount-positive': return (context.amount ?? 0) > 0
     case 'event-target-is-self': return context.eventTarget === actor
     case 'source-is-self': return context.source?.actor === actor
     case 'source-is-opponent': return context.source?.actor === opponentOf(actor)

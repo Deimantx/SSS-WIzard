@@ -1,181 +1,133 @@
 import { ARCANE_CORE_BRANCHES, ARCANE_CORE_NODES, getArcaneCoreNode } from '../../content/arcaneCore/arcaneCoreBranches'
-import { ARCANE_CORE_NODE_MAX_RANK, ARCANE_CORE_NODE_UNLOCK_COST, ARCANE_CORE_RANK_COSTS } from '../../content/arcaneCore/arcaneCoreBalance'
-import type { ArcaneCoreNodeProgress, ArcaneCoreState } from '../../types'
+import { ARCANE_CORE_MAX_LEVEL, ARCANE_CORE_MAX_TOTAL_XP, getArcaneCoreLevelForXp, getArcaneCoreTotalXpForLevel, getArcaneCoreXpForLevel } from '../../content/arcaneCore/arcaneCoreBalance'
+import type { ArcaneCoreNodeDefinition, ArcaneCoreNodeProgress, ArcaneCoreSpecialEffect, ArcaneCoreState, EquipmentStats } from '../../types'
+import type { CombatModifier, CombatTriggerRule } from '../combat/combatTypes'
 
-export type ArcaneCoreFailureReason = 'unknown-node' | 'already-unlocked' | 'not-reachable' | 'not-enough-core-points' | 'not-enough-essence' | 'max-rank' | 'not-unlocked'
+export type ArcaneCoreFailureReason = 'unknown-node' | 'already-purchased' | 'not-reachable' | 'not-enough-core-points' | 'not-purchased' | 'invalid-preset'
 export type ArcaneCoreActionResult = { ok: true; state: ArcaneCoreState } | { ok: false; reason: ArcaneCoreFailureReason }
 export interface ArcaneCoreActionOptions { freeCosts?: boolean; ignorePrerequisites?: boolean }
 
-export const EMPTY_ARCANE_CORE_NODE_PROGRESS: ArcaneCoreNodeProgress = { unlocked: false, rank: 0, coreSpent: 0, essenceSpent: 0 }
-export const createInitialArcaneCoreState = (): ArcaneCoreState => ({ corePoints: 0, arcaneEssence: 0, nodes: {} })
-export const getArcaneCoreNodeProgress = (state: Pick<ArcaneCoreState, 'nodes'>, nodeId: string): ArcaneCoreNodeProgress => state.nodes[nodeId] ?? EMPTY_ARCANE_CORE_NODE_PROGRESS
+export interface ArcaneCoreLevelInfo {
+  level: number
+  totalXp: number
+  xpIntoLevel: number
+  xpToNextLevel: number
+  pointsEarned: number
+  pointsSpent: number
+  pointsAvailable: number
+}
 
-const copyState = (state: ArcaneCoreState): ArcaneCoreState => ({ corePoints: Math.max(0, Number.isFinite(state.corePoints) ? state.corePoints : 0), arcaneEssence: Math.max(0, Number.isFinite(state.arcaneEssence) ? state.arcaneEssence : 0), nodes: Object.fromEntries(Object.entries(state.nodes).flatMap(([id, progress]) => progress ? [[id, { ...progress }]] : [])) as ArcaneCoreState['nodes'] })
-const isComplete = (state: Pick<ArcaneCoreState, 'nodes'>, nodeId: string) => { const node = getArcaneCoreNode(nodeId); const progress = getArcaneCoreNodeProgress(state, nodeId); return Boolean(node && progress.unlocked && progress.rank >= node.maxRank) }
+export const createInitialArcaneCoreState = (): ArcaneCoreState => ({ totalXp: 0, nodes: {} })
+const safeXp = (value: number) => Math.max(0, Math.min(ARCANE_CORE_MAX_TOTAL_XP, Math.floor(Number.isFinite(value) ? value : 0)))
+const copyState = (state: ArcaneCoreState): ArcaneCoreState => ({
+  totalXp: safeXp(state.totalXp),
+  nodes: Object.fromEntries(Object.entries(state.nodes ?? {}).flatMap(([id, progress]) => progress?.purchased ? [[id, { purchased: true as const }]] : [])) as ArcaneCoreState['nodes'],
+})
 
+export const getArcaneCoreNodeProgress = (state: Pick<ArcaneCoreState, 'nodes'>, nodeId: string): { purchased: boolean } => ({ purchased: Boolean(state.nodes?.[nodeId]?.purchased) })
+export const isArcaneCoreNodePurchased = (state: Pick<ArcaneCoreState, 'nodes'>, nodeId: string) => Boolean(state.nodes?.[nodeId]?.purchased)
+export const getArcaneCoreLevel = (state: Pick<ArcaneCoreState, 'totalXp'>) => getArcaneCoreLevelForXp(safeXp(state.totalXp))
+export const getArcaneCoreTotalPointsEarned = (state: Pick<ArcaneCoreState, 'totalXp'>) => getArcaneCoreLevel(state) - 1
+export const getArcaneCorePointsSpent = (state: Pick<ArcaneCoreState, 'nodes'>) => Object.values(state.nodes ?? {}).reduce((sum, progress) => sum + (progress?.purchased ? 1 : 0), 0)
+export const getArcaneCoreAvailablePoints = (state: ArcaneCoreState) => Math.max(0, getArcaneCoreTotalPointsEarned(state) - getArcaneCorePointsSpent(state))
+export const getArcaneCoreXpIntoCurrentLevel = (state: Pick<ArcaneCoreState, 'totalXp'>) => safeXp(state.totalXp) - getArcaneCoreTotalXpForLevel(getArcaneCoreLevel(state))
+export const getArcaneCoreXpToNextLevel = (state: Pick<ArcaneCoreState, 'totalXp'>) => getArcaneCoreLevel(state) >= ARCANE_CORE_MAX_LEVEL ? 0 : Math.max(0, getArcaneCoreTotalXpForLevel(getArcaneCoreLevel(state) + 1) - safeXp(state.totalXp))
+export const getArcaneCoreLevelInfo = (state: ArcaneCoreState): ArcaneCoreLevelInfo => ({ level: getArcaneCoreLevel(state), totalXp: safeXp(state.totalXp), xpIntoLevel: getArcaneCoreXpIntoCurrentLevel(state), xpToNextLevel: getArcaneCoreXpToNextLevel(state), pointsEarned: getArcaneCoreTotalPointsEarned(state), pointsSpent: getArcaneCorePointsSpent(state), pointsAvailable: getArcaneCoreAvailablePoints(state) })
+
+const isReachable = (state: Pick<ArcaneCoreState, 'nodes'>, node: ArcaneCoreNodeDefinition, ignorePrerequisites = false) => ignorePrerequisites || node.prerequisites.length === 0 || (node.prerequisiteMode === 'all' ? node.prerequisites.every((id) => isArcaneCoreNodePurchased(state, id)) : node.prerequisites.some((id) => isArcaneCoreNodePurchased(state, id)))
 export const isArcaneCoreNodeReachable = (state: Pick<ArcaneCoreState, 'nodes'>, nodeId: string, ignorePrerequisites = false) => {
   const node = getArcaneCoreNode(nodeId)
-  if (!node) return false
-  if (ignorePrerequisites || node.prerequisites.length === 0) return true
-  const checks = node.prerequisites.map((prerequisite) => isComplete(state, prerequisite))
-  return node.prerequisiteMode === 'all' ? checks.every(Boolean) : checks.some(Boolean)
+  return Boolean(node && isReachable(state, node, ignorePrerequisites))
 }
 
-export const unlockArcaneCoreNode = (state: ArcaneCoreState, nodeId: string, options: ArcaneCoreActionOptions = {}): ArcaneCoreActionResult => {
+export const grantArcaneCoreXp = (state: ArcaneCoreState, amount: number) => {
+  const beforeLevel = getArcaneCoreLevel(state)
+  const beforeXp = safeXp(state.totalXp)
+  const granted = Math.max(0, Math.floor(Number.isFinite(amount) ? amount : 0))
+  const next = copyState(state)
+  next.totalXp = Math.min(ARCANE_CORE_MAX_TOTAL_XP, beforeXp + granted)
+  const afterLevel = getArcaneCoreLevel(next)
+  return { state: next, requested: granted, granted: next.totalXp - beforeXp, levelBefore: beforeLevel, levelAfter: afterLevel, levelsGained: afterLevel - beforeLevel }
+}
+
+export const setArcaneCoreXp = (state: ArcaneCoreState, amount: number) => ({ ...copyState(state), totalXp: safeXp(amount) })
+export const setArcaneCoreLevel = (state: ArcaneCoreState, level: number) => ({ ...copyState(state), totalXp: getArcaneCoreTotalXpForLevel(Math.max(1, Math.min(ARCANE_CORE_MAX_LEVEL, Math.floor(Number.isFinite(level) ? level : 1)))) })
+
+export const purchaseArcaneCoreNode = (state: ArcaneCoreState, nodeId: string, options: ArcaneCoreActionOptions = {}): ArcaneCoreActionResult => {
   const node = getArcaneCoreNode(nodeId)
   if (!node) return { ok: false, reason: 'unknown-node' }
-  const current = getArcaneCoreNodeProgress(state, nodeId)
-  if (current.unlocked) return { ok: false, reason: 'already-unlocked' }
-  if (!isArcaneCoreNodeReachable(state, nodeId, options.ignorePrerequisites)) return { ok: false, reason: 'not-reachable' }
-  const cost = options.freeCosts ? 0 : ARCANE_CORE_NODE_UNLOCK_COST
-  if (state.corePoints < cost) return { ok: false, reason: 'not-enough-core-points' }
+  if (isArcaneCoreNodePurchased(state, nodeId)) return { ok: false, reason: 'already-purchased' }
+  if (!isReachable(state, node, options.ignorePrerequisites)) return { ok: false, reason: 'not-reachable' }
+  if (!options.freeCosts && getArcaneCoreAvailablePoints(state) < node.cost) return { ok: false, reason: 'not-enough-core-points' }
   const next = copyState(state)
-  next.corePoints -= cost
-  next.nodes[nodeId] = { unlocked: true, rank: 0, coreSpent: cost, essenceSpent: 0 }
+  next.nodes[nodeId] = { purchased: true }
   return { ok: true, state: next }
 }
 
-export const rankUpArcaneCoreNode = (state: ArcaneCoreState, nodeId: string, options: ArcaneCoreActionOptions = {}): ArcaneCoreActionResult => {
-  const node = getArcaneCoreNode(nodeId)
-  if (!node) return { ok: false, reason: 'unknown-node' }
-  const current = getArcaneCoreNodeProgress(state, nodeId)
-  if (!current.unlocked) return { ok: false, reason: 'not-unlocked' }
-  if (current.rank >= node.maxRank) return { ok: false, reason: 'max-rank' }
-  const cost = options.freeCosts ? 0 : ARCANE_CORE_RANK_COSTS[current.rank]
-  if (state.arcaneEssence < cost) return { ok: false, reason: 'not-enough-essence' }
+const cascadeAfterRemoval = (state: ArcaneCoreState, removedId: string) => {
   const next = copyState(state)
-  next.arcaneEssence -= cost
-  const progress = next.nodes[nodeId]
-  if (!progress) return { ok: false, reason: 'not-unlocked' }
-  progress.rank += 1
-  progress.essenceSpent += cost
-  return { ok: true, state: next }
-}
-
-export interface ArcaneCoreRefundPreview {
-  ok: true
-  state: ArcaneCoreState
-  nodeIds: string[]
-  nodesAffected: number
-  ranksAffected: number
-  corePointsRefunded: number
-  essenceRefunded: number
-}
-
-export type ArcaneCoreRefundPreviewResult = ArcaneCoreRefundPreview | { ok: false; reason: ArcaneCoreFailureReason }
-
-const summarizeRefund = (state: ArcaneCoreState, nodeIds: Iterable<string>, next: ArcaneCoreState): ArcaneCoreRefundPreview => {
-  const ids = [...nodeIds]
-  const totals = ids.reduce((summary, id) => {
-    const progress = state.nodes[id]
-    if (!progress) return summary
-    summary.ranksAffected += Math.max(0, progress.rank)
-    summary.corePointsRefunded += Math.max(0, progress.coreSpent)
-    summary.essenceRefunded += Math.max(0, progress.essenceSpent)
-    return summary
-  }, { ranksAffected: 0, corePointsRefunded: 0, essenceRefunded: 0 })
-  return { ok: true, state: next, nodeIds: ids, nodesAffected: ids.length, ...totals }
-}
-
-/**
- * Calculates the smallest valid refund cascade after removing one allocated node.
- * A node with `any` prerequisites survives when another completed route remains.
- */
-export const getArcaneCoreRefundPreview = (state: ArcaneCoreState, nodeId: string): ArcaneCoreRefundPreviewResult => {
-  if (!getArcaneCoreNode(nodeId)) return { ok: false, reason: 'unknown-node' }
-  if (!getArcaneCoreNodeProgress(state, nodeId).unlocked) return { ok: false, reason: 'not-unlocked' }
-
-  const next = copyState(state)
-  const removed = new Set<string>([nodeId])
-  delete next.nodes[nodeId]
-
+  const removed = new Set([removedId])
+  delete next.nodes[removedId]
   let changed = true
   while (changed) {
     changed = false
-    for (const candidateId of Object.keys(next.nodes)) {
-      if (isArcaneCoreNodeReachable(next, candidateId)) continue
-      removed.add(candidateId)
-      delete next.nodes[candidateId]
+    Object.keys(next.nodes).forEach((id) => {
+      const node = getArcaneCoreNode(id)
+      if (node && isReachable(next, node)) return
+      removed.add(id)
+      delete next.nodes[id]
       changed = true
-    }
+    })
   }
-
-  next.corePoints += [...removed].reduce((sum, id) => sum + Math.max(0, state.nodes[id]?.coreSpent ?? 0), 0)
-  next.arcaneEssence += [...removed].reduce((sum, id) => sum + Math.max(0, state.nodes[id]?.essenceSpent ?? 0), 0)
-  return summarizeRefund(state, removed, next)
+  return { next, removed: [...removed] }
 }
 
+export interface ArcaneCoreRefundPreview { ok: true; state: ArcaneCoreState; nodeIds: string[]; nodesAffected: number; corePointsReturned: number } 
+export type ArcaneCoreRefundPreviewResult = ArcaneCoreRefundPreview | { ok: false; reason: ArcaneCoreFailureReason }
+export const getArcaneCoreRefundPreview = (state: ArcaneCoreState, nodeId: string): ArcaneCoreRefundPreviewResult => {
+  if (!getArcaneCoreNode(nodeId)) return { ok: false, reason: 'unknown-node' }
+  if (!isArcaneCoreNodePurchased(state, nodeId)) return { ok: false, reason: 'not-purchased' as ArcaneCoreFailureReason }
+  const { next, removed } = cascadeAfterRemoval(state, nodeId)
+  return { ok: true, state: next, nodeIds: removed, nodesAffected: removed.length, corePointsReturned: removed.length }
+}
 export const refundArcaneCoreNode = (state: ArcaneCoreState, nodeId: string): ArcaneCoreActionResult => {
   const preview = getArcaneCoreRefundPreview(state, nodeId)
   return preview.ok ? { ok: true, state: preview.state } : preview
 }
 
-export interface ArcaneCoreBranchResetPreview extends ArcaneCoreRefundPreview {
-  branchId: typeof ARCANE_CORE_BRANCHES[number]['id']
-}
-
-export type ArcaneCoreBranchResetPreviewResult = ArcaneCoreBranchResetPreview | { ok: false; reason: ArcaneCoreFailureReason }
-
-export const getArcaneCoreBranchResetPreview = (state: ArcaneCoreState, branchId: typeof ARCANE_CORE_BRANCHES[number]['id']): ArcaneCoreBranchResetPreviewResult => {
+export interface ArcaneCoreBranchResetPreview extends ArcaneCoreRefundPreview { branchId: ArcaneCoreNodeDefinition['branchId'] }
+export const getArcaneCoreBranchResetPreview = (state: ArcaneCoreState, branchId: ArcaneCoreNodeDefinition['branchId']): ArcaneCoreBranchResetPreview | { ok: false; reason: ArcaneCoreFailureReason } => {
   const branch = ARCANE_CORE_BRANCHES.find((candidate) => candidate.id === branchId)
   if (!branch) return { ok: false, reason: 'unknown-node' }
-  const nodeIds = branch.nodes.filter((node) => state.nodes[node.id]).map((node) => node.id)
+  const nodeIds = branch.nodes.filter((node) => isArcaneCoreNodePurchased(state, node.id)).map((node) => node.id)
   const next = copyState(state)
   nodeIds.forEach((id) => delete next.nodes[id])
-  next.corePoints += nodeIds.reduce((sum, id) => sum + Math.max(0, state.nodes[id]?.coreSpent ?? 0), 0)
-  next.arcaneEssence += nodeIds.reduce((sum, id) => sum + Math.max(0, state.nodes[id]?.essenceSpent ?? 0), 0)
-  return { ...summarizeRefund(state, nodeIds, next), branchId }
+  return { ok: true, state: next, branchId, nodeIds, nodesAffected: nodeIds.length, corePointsReturned: nodeIds.length }
 }
-
-export const resetArcaneCoreBranch = (state: ArcaneCoreState, branchId: typeof ARCANE_CORE_BRANCHES[number]['id']): ArcaneCoreActionResult => {
+export const resetArcaneCoreBranch = (state: ArcaneCoreState, branchId: ArcaneCoreNodeDefinition['branchId']): ArcaneCoreActionResult => {
   const preview = getArcaneCoreBranchResetPreview(state, branchId)
   return preview.ok ? { ok: true, state: preview.state } : preview
 }
+export const resetArcaneCore = (state: ArcaneCoreState): ArcaneCoreActionResult => ({ ok: true, state: { totalXp: safeXp(state.totalXp), nodes: {} } })
 
-export const resetArcaneCore = (state: ArcaneCoreState): ArcaneCoreActionResult => {
-  const next = copyState(state)
-  Object.values(next.nodes).forEach((progress) => { if (!progress) return; next.corePoints += Math.max(0, progress.coreSpent); next.arcaneEssence += Math.max(0, progress.essenceSpent) })
-  next.nodes = {}
-  return { ok: true, state: next }
+export const purchaseAllArcaneCoreNodes = (state: ArcaneCoreState, branchId?: ArcaneCoreNodeDefinition['branchId'], options: ArcaneCoreActionOptions = {}) => {
+  let current = copyState(state)
+  const nodes = ARCANE_CORE_NODES.filter((node) => !branchId || node.branchId === branchId)
+  nodes.forEach((node) => {
+    const result = purchaseArcaneCoreNode(current, node.id, options)
+    if (result.ok) current = result.state
+  })
+  return current
 }
 
-export const maxArcaneCoreNode = (state: ArcaneCoreState, nodeId: string, options: ArcaneCoreActionOptions = {}): ArcaneCoreActionResult => {
-  let current = state
-  let result = unlockArcaneCoreNode(current, nodeId, options)
-  if (!result.ok && result.reason !== 'already-unlocked') return result
-  if (result.ok) current = result.state
-  while (getArcaneCoreNodeProgress(current, nodeId).rank < ARCANE_CORE_NODE_MAX_RANK) {
-    result = rankUpArcaneCoreNode(current, nodeId, options)
-    if (!result.ok) return result
-    current = result.state
-  }
-  return { ok: true, state: current }
-}
-
-export const maxArcaneCoreBranch = (state: ArcaneCoreState, branchId: typeof ARCANE_CORE_BRANCHES[number]['id'], options: ArcaneCoreActionOptions = {}): ArcaneCoreActionResult => {
-  const branch = ARCANE_CORE_BRANCHES.find((candidate) => candidate.id === branchId)
-  if (!branch) return { ok: false, reason: 'unknown-node' }
-  let current = state
-  let changed = true
-  while (changed) {
-    changed = false
-    for (const node of branch.nodes) {
-      const before = getArcaneCoreNodeProgress(current, node.id)
-      const result = maxArcaneCoreNode(current, node.id, options)
-      if (!result.ok) continue
-      const after = getArcaneCoreNodeProgress(result.state, node.id)
-      if (!before.unlocked || after.rank !== before.rank) changed = true
-      current = result.state
-    }
-  }
-  return { ok: true, state: current }
-}
-
-export const grantArcaneCoreRewards = (state: ArcaneCoreState, corePoints: number, arcaneEssence: number) => ({ ...copyState(state), corePoints: state.corePoints + Math.max(0, Number.isFinite(corePoints) ? corePoints : 0), arcaneEssence: state.arcaneEssence + Math.max(0, Number.isFinite(arcaneEssence) ? arcaneEssence : 0) })
-
-export const getArcaneCoreModifierTotals = (state: Pick<ArcaneCoreState, 'nodes'>) => ARCANE_CORE_NODES.reduce<Partial<Record<import('../../types').ArcaneCoreModifierKey, number>>>((totals, node) => {
-  const progress = getArcaneCoreNodeProgress(state, node.id)
-  if (!progress.unlocked || progress.rank < 1) return totals
-  totals[node.effect.key] = (totals[node.effect.key] ?? 0) + progress.rank * node.effect.perRank
-  return totals
+export const getArcaneCoreStaticStats = (state: Pick<ArcaneCoreState, 'nodes'>): EquipmentStats => ARCANE_CORE_NODES.reduce<EquipmentStats>((total, node) => {
+  if (!isArcaneCoreNodePurchased(state, node.id) || !node.stats) return total
+  Object.entries(node.stats).forEach(([key, value]) => { const numeric = typeof value === 'number' ? value : 0; if (key === 'resistances' && value) total.resistances = { ...(total.resistances ?? {}), ...Object.fromEntries(Object.entries(value).map(([damageType, resistance]) => [damageType, (total.resistances?.[damageType as keyof NonNullable<EquipmentStats['resistances']>] ?? 0) + (typeof resistance === 'number' ? resistance : 0)])) } as never; else total[key as keyof EquipmentStats] = ((total[key as keyof EquipmentStats] ?? 0) as number + numeric) as never })
+  return total
 }, {})
+export const getArcaneCoreCombatModifiers = (state: Pick<ArcaneCoreState, 'nodes'>) => ARCANE_CORE_NODES.flatMap((node) => isArcaneCoreNodePurchased(state, node.id) ? node.modifiers ?? [] : [])
+export const getArcaneCoreCombatRules = (state: Pick<ArcaneCoreState, 'nodes'>): Array<{ node: ArcaneCoreNodeDefinition; rule: CombatTriggerRule }> => ARCANE_CORE_NODES.flatMap((node) => isArcaneCoreNodePurchased(state, node.id) ? (node.rules ?? []).map((rule) => ({ node, rule })) : [])
+export const getArcaneCoreSpecialEffects = (state: Pick<ArcaneCoreState, 'nodes'>): ArcaneCoreSpecialEffect[] => ARCANE_CORE_NODES.flatMap((node) => isArcaneCoreNodePurchased(state, node.id) ? node.special ?? [] : [])
+
+/** Compatibility alias for consumers still reading the old stat aggregation name. */
+export const getArcaneCoreModifierTotals = getArcaneCoreStaticStats

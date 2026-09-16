@@ -51,46 +51,84 @@ export const rankUpArcaneCoreNode = (state: ArcaneCoreState, nodeId: string, opt
   return { ok: true, state: next }
 }
 
-const getDescendantIds = (nodeId: string) => {
-  const affected = new Set([nodeId])
+export interface ArcaneCoreRefundPreview {
+  ok: true
+  state: ArcaneCoreState
+  nodeIds: string[]
+  nodesAffected: number
+  ranksAffected: number
+  corePointsRefunded: number
+  essenceRefunded: number
+}
+
+export type ArcaneCoreRefundPreviewResult = ArcaneCoreRefundPreview | { ok: false; reason: ArcaneCoreFailureReason }
+
+const summarizeRefund = (state: ArcaneCoreState, nodeIds: Iterable<string>, next: ArcaneCoreState): ArcaneCoreRefundPreview => {
+  const ids = [...nodeIds]
+  const totals = ids.reduce((summary, id) => {
+    const progress = state.nodes[id]
+    if (!progress) return summary
+    summary.ranksAffected += Math.max(0, progress.rank)
+    summary.corePointsRefunded += Math.max(0, progress.coreSpent)
+    summary.essenceRefunded += Math.max(0, progress.essenceSpent)
+    return summary
+  }, { ranksAffected: 0, corePointsRefunded: 0, essenceRefunded: 0 })
+  return { ok: true, state: next, nodeIds: ids, nodesAffected: ids.length, ...totals }
+}
+
+/**
+ * Calculates the smallest valid refund cascade after removing one allocated node.
+ * A node with `any` prerequisites survives when another completed route remains.
+ */
+export const getArcaneCoreRefundPreview = (state: ArcaneCoreState, nodeId: string): ArcaneCoreRefundPreviewResult => {
+  if (!getArcaneCoreNode(nodeId)) return { ok: false, reason: 'unknown-node' }
+  if (!getArcaneCoreNodeProgress(state, nodeId).unlocked) return { ok: false, reason: 'not-unlocked' }
+
+  const next = copyState(state)
+  const removed = new Set<string>([nodeId])
+  delete next.nodes[nodeId]
+
   let changed = true
   while (changed) {
     changed = false
-    ARCANE_CORE_NODES.forEach((node) => {
-      if (node.prerequisites.some((prerequisite) => affected.has(prerequisite)) && !affected.has(node.id)) { affected.add(node.id); changed = true }
-    })
+    for (const candidateId of Object.keys(next.nodes)) {
+      if (isArcaneCoreNodeReachable(next, candidateId)) continue
+      removed.add(candidateId)
+      delete next.nodes[candidateId]
+      changed = true
+    }
   }
-  return affected
+
+  next.corePoints += [...removed].reduce((sum, id) => sum + Math.max(0, state.nodes[id]?.coreSpent ?? 0), 0)
+  next.arcaneEssence += [...removed].reduce((sum, id) => sum + Math.max(0, state.nodes[id]?.essenceSpent ?? 0), 0)
+  return summarizeRefund(state, removed, next)
 }
 
 export const refundArcaneCoreNode = (state: ArcaneCoreState, nodeId: string): ArcaneCoreActionResult => {
-  const node = getArcaneCoreNode(nodeId)
-  if (!node) return { ok: false, reason: 'unknown-node' }
-  const current = getArcaneCoreNodeProgress(state, nodeId)
-  if (!current.unlocked) return { ok: false, reason: 'not-unlocked' }
+  const preview = getArcaneCoreRefundPreview(state, nodeId)
+  return preview.ok ? { ok: true, state: preview.state } : preview
+}
+
+export interface ArcaneCoreBranchResetPreview extends ArcaneCoreRefundPreview {
+  branchId: typeof ARCANE_CORE_BRANCHES[number]['id']
+}
+
+export type ArcaneCoreBranchResetPreviewResult = ArcaneCoreBranchResetPreview | { ok: false; reason: ArcaneCoreFailureReason }
+
+export const getArcaneCoreBranchResetPreview = (state: ArcaneCoreState, branchId: typeof ARCANE_CORE_BRANCHES[number]['id']): ArcaneCoreBranchResetPreviewResult => {
+  const branch = ARCANE_CORE_BRANCHES.find((candidate) => candidate.id === branchId)
+  if (!branch) return { ok: false, reason: 'unknown-node' }
+  const nodeIds = branch.nodes.filter((node) => state.nodes[node.id]).map((node) => node.id)
   const next = copyState(state)
-  getDescendantIds(nodeId).forEach((id) => {
-    const progress = next.nodes[id]
-    if (!progress) return
-    next.corePoints += Math.max(0, progress.coreSpent)
-    next.arcaneEssence += Math.max(0, progress.essenceSpent)
-    delete next.nodes[id]
-  })
-  return { ok: true, state: next }
+  nodeIds.forEach((id) => delete next.nodes[id])
+  next.corePoints += nodeIds.reduce((sum, id) => sum + Math.max(0, state.nodes[id]?.coreSpent ?? 0), 0)
+  next.arcaneEssence += nodeIds.reduce((sum, id) => sum + Math.max(0, state.nodes[id]?.essenceSpent ?? 0), 0)
+  return { ...summarizeRefund(state, nodeIds, next), branchId }
 }
 
 export const resetArcaneCoreBranch = (state: ArcaneCoreState, branchId: typeof ARCANE_CORE_BRANCHES[number]['id']): ArcaneCoreActionResult => {
-  const branch = ARCANE_CORE_BRANCHES.find((candidate) => candidate.id === branchId)
-  if (!branch) return { ok: false, reason: 'unknown-node' }
-  const next = copyState(state)
-  branch.nodes.forEach((node) => {
-    const progress = next.nodes[node.id]
-    if (!progress) return
-    next.corePoints += Math.max(0, progress.coreSpent)
-    next.arcaneEssence += Math.max(0, progress.essenceSpent)
-    delete next.nodes[node.id]
-  })
-  return { ok: true, state: next }
+  const preview = getArcaneCoreBranchResetPreview(state, branchId)
+  return preview.ok ? { ok: true, state: preview.state } : preview
 }
 
 export const resetArcaneCore = (state: ArcaneCoreState): ArcaneCoreActionResult => {

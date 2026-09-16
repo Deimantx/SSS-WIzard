@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ARCANE_CORE_RANK_COSTS } from '../../content/arcaneCore/arcaneCoreBalance'
-import { createInitialArcaneCoreState, getArcaneCoreNodeProgress, getArcaneCoreModifierTotals, isArcaneCoreNodeReachable, rankUpArcaneCoreNode, refundArcaneCoreNode, resetArcaneCore, unlockArcaneCoreNode } from './arcaneCoreProgression'
+import { createInitialArcaneCoreState, getArcaneCoreBranchResetPreview, getArcaneCoreNodeProgress, getArcaneCoreModifierTotals, getArcaneCoreRefundPreview, isArcaneCoreNodeReachable, rankUpArcaneCoreNode, refundArcaneCoreNode, resetArcaneCore, unlockArcaneCoreNode } from './arcaneCoreProgression'
 
 describe('Arcane Core progression', () => {
   it('starts empty and keeps unlock cost separate from rank costs', () => {
@@ -57,6 +57,60 @@ describe('Arcane Core progression', () => {
     expect(refunded.state.nodes['power-02']).toBeDefined()
     expect(refunded.state.corePoints).toBe(4)
     expect(refunded.state.arcaneEssence).toBe(305)
+  })
+
+  it('preserves an any-prerequisite child when another completed route remains', () => {
+    const state = {
+      corePoints: 0,
+      arcaneEssence: 0,
+      nodes: {
+        'power-04': { unlocked: true, rank: 5, coreSpent: 1, essenceSpent: 280 },
+        'power-05': { unlocked: true, rank: 5, coreSpent: 1, essenceSpent: 280 },
+        'power-12': { unlocked: true, rank: 1, coreSpent: 1, essenceSpent: 25 },
+      },
+    }
+    const preview = getArcaneCoreRefundPreview(state, 'power-04')
+    expect(preview).toMatchObject({ ok: true, nodesAffected: 1, ranksAffected: 5, corePointsRefunded: 1, essenceRefunded: 280 })
+    if (!preview.ok) return
+    expect(preview.state.nodes['power-05']).toBeDefined()
+    expect(preview.state.nodes['power-12']).toBeDefined()
+  })
+
+  it('cascades an all-prerequisite child and deeper descendants only when invalid', () => {
+    const state = {
+      corePoints: 0,
+      arcaneEssence: 0,
+      nodes: {
+        'power-01': { unlocked: true, rank: 5, coreSpent: 1, essenceSpent: 280 },
+        'power-02': { unlocked: true, rank: 5, coreSpent: 1, essenceSpent: 280 },
+        'power-09': { unlocked: true, rank: 1, coreSpent: 1, essenceSpent: 25 },
+        'power-10': { unlocked: true, rank: 5, coreSpent: 1, essenceSpent: 280 },
+        'power-17': { unlocked: true, rank: 1, coreSpent: 1, essenceSpent: 25 },
+      },
+    }
+    const preview = getArcaneCoreRefundPreview(state, 'power-01')
+    expect(preview).toMatchObject({ ok: true, nodesAffected: 3, ranksAffected: 7, corePointsRefunded: 3, essenceRefunded: 330 })
+    if (!preview.ok) return
+    expect(preview.state.nodes['power-01']).toBeUndefined()
+    expect(preview.state.nodes['power-09']).toBeUndefined()
+    expect(preview.state.nodes['power-17']).toBeUndefined()
+    expect(preview.state.nodes['power-02']).toBeDefined()
+  })
+
+  it('does not refund fake currency for developer-free allocations', () => {
+    const state = { corePoints: 3, arcaneEssence: 4, nodes: { 'power-01': { unlocked: true, rank: 2, coreSpent: 0, essenceSpent: 0 } } }
+    const preview = getArcaneCoreRefundPreview(state, 'power-01')
+    expect(preview).toMatchObject({ ok: true, nodesAffected: 1, ranksAffected: 2, corePointsRefunded: 0, essenceRefunded: 0 })
+    if (!preview.ok) return
+    expect(preview.state).toMatchObject({ corePoints: 3, arcaneEssence: 4, nodes: {} })
+  })
+
+  it('previews branch resets with exact paid totals', () => {
+    const state = { corePoints: 2, arcaneEssence: 3, nodes: { 'focus-01': { unlocked: true, rank: 1, coreSpent: 1, essenceSpent: 25 } } }
+    const preview = getArcaneCoreBranchResetPreview(state, 'focus')
+    expect(preview).toMatchObject({ ok: true, branchId: 'focus', nodesAffected: 1, ranksAffected: 1, corePointsRefunded: 1, essenceRefunded: 25 })
+    if (!preview.ok) return
+    expect(preview.state).toEqual({ corePoints: 3, arcaneEssence: 28, nodes: {} })
   })
 
   it('feeds unlocked ranks into the existing equipment stat model', () => {

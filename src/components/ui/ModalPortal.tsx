@@ -1,5 +1,5 @@
 import { createPortal } from 'react-dom'
-import { useEffect, useRef, type MouseEvent, type ReactNode } from 'react'
+import { useEffect, useRef, type CSSProperties, type MouseEvent, type ReactNode } from 'react'
 import '../../styles/components/modal-portal.css'
 
 interface ModalPortalProps {
@@ -11,6 +11,7 @@ interface ModalPortalProps {
   ariaLabel?: string
   ariaLabelledBy?: string
   ariaDescribedBy?: string
+  surfaceStyle?: CSSProperties
   onBackdropClick?: () => void
   onEscape?: () => void
 }
@@ -20,7 +21,7 @@ let activeModalCount = 0
 const focusableSelector = 'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
 
 /** Shared top-level layer for dialogs that must sit above the game shell. */
-export function ModalPortal({ open, onClose, children, backdropClassName, surfaceClassName, ariaLabel, ariaLabelledBy, ariaDescribedBy, onBackdropClick, onEscape }: ModalPortalProps) {
+export function ModalPortal({ open, onClose, children, backdropClassName, surfaceClassName, ariaLabel, ariaLabelledBy, ariaDescribedBy, surfaceStyle, onBackdropClick, onEscape }: ModalPortalProps) {
   const surfaceRef = useRef<HTMLDivElement>(null)
   const closeRef = useRef(onEscape ?? onClose)
   closeRef.current = onEscape ?? onClose
@@ -76,7 +77,7 @@ export function ModalPortal({ open, onClose, children, backdropClassName, surfac
   }
   return createPortal(
     <div className={`modal-portal-backdrop ${backdropClassName}`.trim()} role="presentation" onMouseDown={handleBackdropMouseDown}>
-      <div ref={surfaceRef} className={`modal-portal-surface ${surfaceClassName}`.trim()} role="dialog" aria-modal="true" aria-label={ariaLabel} aria-labelledby={ariaLabelledBy} aria-describedby={ariaDescribedBy}>
+      <div ref={surfaceRef} className={`modal-portal-surface ${surfaceClassName}`.trim()} style={surfaceStyle} role="dialog" aria-modal="true" aria-label={ariaLabel} aria-labelledby={ariaLabelledBy} aria-describedby={ariaDescribedBy}>
         {children}
       </div>
     </div>,

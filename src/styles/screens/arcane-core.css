@@ -41,7 +41,7 @@
 .arcane-core-preset .button { min-width: 0; padding: 7px 9px; }
 
 .arcane-core-modal-backdrop { align-items: center; justify-content: center; padding: 24px; }
-.arcane-core-modal { display: grid; grid-template-rows: auto auto minmax(0, 1fr); width: min(1260px, 100%); height: min(850px, calc(100vh - 48px)); overflow: hidden; padding: 20px; border: 1px solid color-mix(in srgb, var(--ui-accent) 50%, var(--ui-border)); border-radius: 12px; background: linear-gradient(145deg, color-mix(in srgb, var(--ui-panel-strong) 96%, var(--ui-accent)), var(--ui-panel)); box-shadow: 0 25px 90px rgba(0,0,0,.55); }
+.arcane-core-modal { position: relative; display: grid; grid-template-rows: auto auto minmax(0, 1fr); width: min(1260px, 100%); height: min(850px, calc(100vh - 48px)); overflow: hidden; padding: 20px; border: 1px solid color-mix(in srgb, var(--ui-accent) 50%, var(--ui-border)); border-radius: 12px; background: linear-gradient(145deg, color-mix(in srgb, var(--ui-panel-strong) 96%, var(--ui-accent)), var(--ui-panel)); box-shadow: 0 25px 90px rgba(0,0,0,.55); }
 .arcane-core-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding-bottom: 15px; }
 .arcane-core-modal-head h2 { margin-top: 5px; font-size: 23px; letter-spacing: -.04em; }
 .arcane-core-modal-head p { max-width: 600px; margin-top: 5px; color: var(--ui-text-muted); font-size: var(--text-xs); }
@@ -49,14 +49,14 @@
 .arcane-core-modal-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 10px 0; border-top: 1px solid var(--ui-border); border-bottom: 1px solid var(--ui-border); color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
 .arcane-core-modal-toolbar > span:first-child { display: inline-flex; align-items: center; gap: 5px; margin-right: auto; }
 .arcane-core-modal-toolbar .button { padding: 6px 9px; }
-.arcane-core-modal-body { display: grid; grid-template-columns: minmax(0, 1fr) 285px; gap: 14px; min-height: 0; padding-top: 14px; }
+.arcane-core-modal-body { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 285px; gap: 14px; min-height: 0; padding-top: 14px; }
 .arcane-core-graph-viewport { position: relative; min-width: 0; min-height: 0; overflow: hidden; border: 1px solid var(--ui-border); border-radius: 9px; background: radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--branch-accent) 10%, transparent), transparent 42%), var(--ui-bg); cursor: grab; touch-action: none; }
 .arcane-core-graph-viewport:active { cursor: grabbing; }
-.arcane-core-graph { position: absolute; left: 50%; top: 50%; transform-origin: center; margin-left: calc(-1 * 430px); margin-top: calc(-1 * 320px); transition: transform .12s ease-out; }
+.arcane-core-graph { position: absolute; left: 50%; top: 50%; transform-origin: center; transition: transform .12s ease-out; }
 .arcane-core-graph-viewport:active .arcane-core-graph { transition: none; }
 .arcane-core-connectors { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
 .arcane-core-connectors line { stroke: color-mix(in srgb, var(--branch-accent) 26%, var(--ui-border-strong)); stroke-width: 1.5; }
-.arcane-core-hub { position: absolute; left: 390px; top: 570px; display: grid; justify-items: center; gap: 2px; width: 80px; color: var(--branch-accent); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; }
+.arcane-core-hub { position: absolute; display: grid; justify-items: center; gap: 2px; color: var(--branch-accent); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; }
 .arcane-core-hub small { color: var(--ui-text-muted); font: 8px var(--font-mono); letter-spacing: 0; white-space: nowrap; }
 .arcane-core-node { position: absolute; display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; align-items: center; gap: 2px 5px; width: 86px; height: 54px; padding: 7px; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text-muted); background: color-mix(in srgb, var(--ui-panel-strong) 93%, var(--ui-bg)); cursor: pointer; text-align: left; }
 .arcane-core-node:hover, .arcane-core-node:focus-visible { z-index: 2; border-color: color-mix(in srgb, var(--branch-accent) 72%, var(--ui-border)); outline: none; }
@@ -83,6 +83,14 @@
 .arcane-core-rank-costs i.is-paid { border-color: color-mix(in srgb, var(--branch-accent) 54%, var(--ui-border)); color: var(--branch-accent); background: color-mix(in srgb, var(--branch-accent) 12%, transparent); }
 .arcane-core-inspector-actions { display: grid; gap: 7px; }
 .arcane-core-inspector-actions .button { justify-content: flex-start; white-space: normal; text-align: left; }
+.arcane-core-confirm-layer { position: absolute; z-index: 10; inset: 0; display: grid; place-items: center; padding: 24px; background: color-mix(in srgb, var(--ui-bg) 72%, transparent); }
+.arcane-core-confirmation { display: grid; gap: 12px; width: min(460px, 100%); padding: 20px; border: 1px solid color-mix(in srgb, var(--branch-accent) 55%, var(--ui-border)); border-radius: 10px; background: var(--ui-panel-strong); box-shadow: 0 20px 70px rgba(0,0,0,.55); }
+.arcane-core-confirmation h3 { font-size: var(--text-lg); }
+.arcane-core-confirmation p { margin: 0; }
+.arcane-core-confirm-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.arcane-core-confirm-summary span { display: grid; gap: 4px; padding: 9px 10px; border: 1px solid var(--ui-border); border-radius: 7px; background: var(--ui-panel); }
+.arcane-core-confirm-summary small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .08em; }
+.arcane-core-confirm-summary strong { color: var(--branch-accent); font: var(--text-sm) var(--font-mono); }
 
 @media (max-width: 900px) { .arcane-core-branch-grid, .arcane-core-presets { grid-template-columns: 1fr; }.arcane-core-modal-body { grid-template-columns: 1fr; grid-template-rows: minmax(280px, 1fr) auto; }.arcane-core-node-inspector { max-height: 260px; } }
 @media (max-width: 560px) { .arcane-core-wallet { grid-template-columns: 1fr; }.arcane-core-branch-card { grid-template-columns: auto minmax(0, 1fr) auto; }.arcane-core-branch-progress { grid-column: 2 / -1; justify-items: start; }.arcane-core-modal-backdrop { padding: 8px; }.arcane-core-modal { height: calc(100vh - 16px); padding: 13px; }.arcane-core-modal-head { gap: 8px; }.arcane-core-modal-head h2 { font-size: 19px; }.arcane-core-modal-actions .status { display: none; } }

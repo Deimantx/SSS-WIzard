@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from 'react'
-import { ChevronRight, Crosshair, RotateCcw, Save, Sparkles, X } from 'lucide-react'
+import { ChevronRight, Crosshair, RotateCcw, Sparkles, X } from 'lucide-react'
 import { Button, Card, GameTooltip, ModalPortal, Status } from '../../components/ui'
+import { ArcaneCorePresetPanel } from '../../components/arcane-core/ArcaneCorePresetPanel'
 import { ScreenGrid } from '../../components/layout/ScreenGrid'
 import { ARCANE_CORE_BRANCHES } from '../../game/content/arcaneCore/arcaneCoreBranches'
 import { ARCANE_CORE_NODE_UNLOCK_COST, ARCANE_CORE_RANK_COSTS } from '../../game/content/arcaneCore/arcaneCoreBalance'
@@ -27,23 +28,6 @@ function BranchCard({ branch, onOpen, state }: { branch: ArcaneCoreBranchDefinit
     <span className="arcane-core-branch-progress"><b>{unlocked} / {branch.nodes.length}</b><small>{rank} / {branch.nodes.length * 5} ranks</small><i><em style={{ width: `${(unlocked / branch.nodes.length) * 100}%` }} /></i>{active && <small className="arcane-core-branch-active">{formatArcaneCoreNodeEffect(active, getArcaneCoreNodeProgress(state, active.id).rank)} active</small>}</span>
     <ChevronRight size={17} />
   </button>
-}
-
-function PresetPanel({ version, onChange }: { version: number; onChange: () => void }) {
-  const getPresets = useGameStore((state) => state.getArcaneCorePresets)
-  const save = useGameStore((state) => state.saveArcaneCorePreset)
-  const load = useGameStore((state) => state.loadArcaneCorePreset)
-  const rename = useGameStore((state) => state.renameArcaneCorePreset)
-  const clear = useGameStore((state) => state.clearArcaneCorePreset)
-  const presets = useMemo(() => getPresets(), [getPresets, version])
-  const [names, setNames] = useState(['Power route', 'Vitality route', 'Control route'])
-  return <Card title="Session presets" action={<Status tone="neutral">3 slots · runtime only</Status>}>
-    <p className="muted">Save experimental Core layouts for this session. Presets never enter the gameplay save.</p>
-    <div className="arcane-core-presets">{presets.map((preset, slot) => <div className="arcane-core-preset" key={slot}>
-      <div><span>PRESET {slot + 1}</span><input aria-label={`Arcane Core preset ${slot + 1} name`} value={preset?.name ?? names[slot]} onChange={(event) => setNames((current) => current.map((name, index) => index === slot ? event.target.value : name))} onBlur={() => { if (preset) rename(slot, names[slot] || preset.name); onChange() }} /></div>
-      <div className="button-row"><Button variant="secondary" onClick={() => { save(slot, names[slot]); onChange() }}><Save size={13} />{preset ? 'Overwrite' : 'Save'}</Button>{preset && <Button variant="ghost" onClick={() => { load(slot); onChange() }}>Load</Button>}{preset && <Button variant="ghost" onClick={() => { clear(slot); onChange() }} ariaLabel={`Clear preset ${slot + 1}`}><X size={13} /></Button>}</div>
-    </div>)}</div>
-  </Card>
 }
 
 type PendingArcaneCoreConfirmation =
@@ -138,7 +122,7 @@ export function ArcaneCoreScreen() {
   const totalRanks = Object.values(core.nodes).reduce((sum, node) => sum + node.rank, 0)
   return <div className="screen-content arcane-core-screen">
     <div className="screen-header"><div><div className="eyebrow">HERO · PERMANENT PROGRESSION</div><h1>Arcane Core</h1><p>Shape the permanent engine beneath the wizard. Every boss defeat opens another route through the Core.</p></div><Status tone="active">{totalNodes} nodes online</Status></div>
-    <ScreenGrid screen="arcane-core" panels={[{ id: 'arcane-core-overview', content: <div className="arcane-core-overview-stack"><Card title="Core reserves" action={<span className="arcane-core-total-rank">{totalRanks} ranks active</span>}><Wallet points={core.corePoints} essence={core.arcaneEssence} /></Card><div className="arcane-core-branch-grid">{ARCANE_CORE_BRANCHES.map((branch) => <BranchCard key={branch.id} branch={branch} state={core} onOpen={() => setBranchId(branch.id)} />)}</div><Card title="Active resonance" action={<Status tone="success">Permanent Core modifiers</Status>}><div className="arcane-core-resonance">{Object.entries(modifiers).length ? Object.entries(modifiers).map(([key, value]) => <span key={key}><small>{getArcaneCoreModifierLabel(key as ArcaneCoreModifierKey)}</small><strong>{formatArcaneCoreModifierValue(key as ArcaneCoreModifierKey, Number(value))}</strong></span>) : <p className="muted">Unlock and rank nodes to bring permanent modifiers online.</p>}</div></Card><PresetPanel version={presetVersion} onChange={() => setPresetVersion((version) => version + 1)} /></div> }]} />
+    <ScreenGrid screen="arcane-core" panels={[{ id: 'arcane-core-overview', content: <div className="arcane-core-overview-stack"><Card title="Core reserves" action={<span className="arcane-core-total-rank">{totalRanks} ranks active</span>}><Wallet points={core.corePoints} essence={core.arcaneEssence} /></Card><div className="arcane-core-branch-grid">{ARCANE_CORE_BRANCHES.map((branch) => <BranchCard key={branch.id} branch={branch} state={core} onOpen={() => setBranchId(branch.id)} />)}</div><Card title="Active resonance" action={<Status tone="success">Permanent Core modifiers</Status>}><div className="arcane-core-resonance">{Object.entries(modifiers).length ? Object.entries(modifiers).map(([key, value]) => <span key={key}><small>{getArcaneCoreModifierLabel(key as ArcaneCoreModifierKey)}</small><strong>{formatArcaneCoreModifierValue(key as ArcaneCoreModifierKey, Number(value))}</strong></span>) : <p className="muted">Unlock and rank nodes to bring permanent modifiers online.</p>}</div></Card><ArcaneCorePresetPanel version={presetVersion} onChange={() => setPresetVersion((version) => version + 1)} /></div> }]} />
     {activeBranch && <BranchModal branch={activeBranch} onClose={() => setBranchId(null)} />}
   </div>
 }

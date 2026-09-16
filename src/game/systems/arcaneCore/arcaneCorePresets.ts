@@ -1,18 +1,29 @@
 import { getArcaneCoreNode } from '../../content/arcaneCore/arcaneCoreBranches'
-import { getArcaneCoreNodeProgress, isArcaneCoreNodeReachable } from './arcaneCoreProgression'
+import { isArcaneCoreNodeReachable } from './arcaneCoreProgression'
 import type { ArcaneCoreNodeProgress, ArcaneCoreState } from '../../types'
 
 export interface ArcaneCorePreset {
+  id: string
   name: string
   state: ArcaneCoreState
+  createdAt: number
+  updatedAt: number
+}
+
+export interface ArcaneCorePresetSummary {
+  unlockedNodes: number
+  totalRanks: number
+  coreSpent: number
+  essenceSpent: number
 }
 
 export type ArcaneCorePresetResult =
   | { ok: true; state: ArcaneCoreState }
   | { ok: false; reason: 'invalid-preset' | 'not-enough-core-points' | 'not-enough-essence' }
 
-const PRESET_COUNT = 3
-let presets: Array<ArcaneCorePreset | null> = Array.from({ length: PRESET_COUNT }, () => null)
+const MAX_RUNTIME_PRESETS = 20
+let presets: ArcaneCorePreset[] = []
+let nextPresetSequence = 1
 
 const cloneState = (state: ArcaneCoreState): ArcaneCoreState => ({
   corePoints: state.corePoints,
@@ -20,36 +31,57 @@ const cloneState = (state: ArcaneCoreState): ArcaneCoreState => ({
   nodes: Object.fromEntries(Object.entries(state.nodes).map(([id, progress]) => [id, { ...progress }])),
 })
 
-const validSlot = (slot: number) => Number.isInteger(slot) && slot >= 0 && slot < PRESET_COUNT
+const clonePreset = (preset: ArcaneCorePreset): ArcaneCorePreset => ({ ...preset, state: cloneState(preset.state) })
+const normalizeName = (name: string) => name.trim().slice(0, 32)
+const findPreset = (presetId: string) => presets.find((preset) => preset.id === presetId)
 
-export const getArcaneCorePresetCount = () => PRESET_COUNT
-
-export const getArcaneCorePresets = () => presets.map((preset) => preset ? { name: preset.name, state: cloneState(preset.state) } : null)
+export const getArcaneCorePresets = () => presets.map(clonePreset)
 
 export const resetArcaneCorePresets = () => {
-  presets = Array.from({ length: PRESET_COUNT }, () => null)
+  presets = []
+  nextPresetSequence = 1
 }
 
-export const saveArcaneCorePreset = (slot: number, name: string, state: ArcaneCoreState) => {
-  if (!validSlot(slot)) return false
-  const trimmedName = name.trim().slice(0, 32)
-  presets[slot] = { name: trimmedName || `Preset ${slot + 1}`, state: cloneState(state) }
+export const createArcaneCorePreset = (name: string, state: ArcaneCoreState): string | false => {
+  const trimmedName = normalizeName(name)
+  if (!trimmedName || presets.length >= MAX_RUNTIME_PRESETS) return false
+  const now = Date.now()
+  const id = `arcane-core-preset-${nextPresetSequence++}`
+  presets.push({ id, name: trimmedName, state: cloneState(state), createdAt: now, updatedAt: now })
+  return id
+}
+
+export const updateArcaneCorePreset = (presetId: string, state: ArcaneCoreState) => {
+  const preset = findPreset(presetId)
+  if (!preset) return false
+  preset.state = cloneState(state)
+  preset.updatedAt = Date.now()
   return true
 }
 
-export const renameArcaneCorePreset = (slot: number, name: string) => {
-  if (!validSlot(slot) || !presets[slot]) return false
-  const trimmedName = name.trim().slice(0, 32)
-  if (!trimmedName) return false
-  presets[slot]!.name = trimmedName
+export const renameArcaneCorePreset = (presetId: string, name: string) => {
+  const preset = findPreset(presetId)
+  const trimmedName = normalizeName(name)
+  if (!preset || !trimmedName) return false
+  preset.name = trimmedName
+  preset.updatedAt = Date.now()
   return true
 }
 
-export const clearArcaneCorePreset = (slot: number) => {
-  if (!validSlot(slot)) return false
-  presets[slot] = null
+export const deleteArcaneCorePreset = (presetId: string) => {
+  const index = presets.findIndex((preset) => preset.id === presetId)
+  if (index < 0) return false
+  presets.splice(index, 1)
   return true
 }
+
+export const getArcaneCorePresetSummary = (state: Pick<ArcaneCoreState, 'nodes'>): ArcaneCorePresetSummary => Object.values(state.nodes).reduce<ArcaneCorePresetSummary>((summary, progress) => {
+  if (progress.unlocked) summary.unlockedNodes += 1
+  summary.totalRanks += Math.max(0, progress.rank)
+  summary.coreSpent += Math.max(0, progress.coreSpent)
+  summary.essenceSpent += Math.max(0, progress.essenceSpent)
+  return summary
+}, { unlockedNodes: 0, totalRanks: 0, coreSpent: 0, essenceSpent: 0 })
 
 const normalizePresetNodes = (state: ArcaneCoreState): Record<string, ArcaneCoreNodeProgress> | null => {
   const nodes: Record<string, ArcaneCoreNodeProgress> = {}
@@ -68,9 +100,9 @@ const normalizePresetNodes = (state: ArcaneCoreState): Record<string, ArcaneCore
   return nodes
 }
 
-export const applyArcaneCorePreset = (current: ArcaneCoreState, slot: number): ArcaneCorePresetResult => {
-  if (!validSlot(slot) || !presets[slot]) return { ok: false, reason: 'invalid-preset' }
-  const preset = presets[slot]!
+export const applyArcaneCorePreset = (current: ArcaneCoreState, presetId: string): ArcaneCorePresetResult => {
+  const preset = findPreset(presetId)
+  if (!preset) return { ok: false, reason: 'invalid-preset' }
   const nodes = normalizePresetNodes(preset.state)
   if (!nodes) return { ok: false, reason: 'invalid-preset' }
   const currentRefundedCore = current.corePoints + Object.values(current.nodes).reduce((sum, progress) => sum + Math.max(0, progress.coreSpent), 0)

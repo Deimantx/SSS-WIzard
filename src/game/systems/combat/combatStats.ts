@@ -39,7 +39,7 @@ export interface CombatStats {
   focusEfficiency: number
 }
 
-export type PlayerSheetState = Pick<GameState, 'player' | 'progress' | 'activities' | 'equipment' | 'artifactProgress'> & Partial<Pick<GameState, 'debug'>>
+export type PlayerSheetState = Pick<GameState, 'player' | 'progress' | 'activities' | 'equipment' | 'artifactProgress'> & Partial<Pick<GameState, 'debug' | 'arcaneCore'>>
 
 const finite = (value: number | undefined, fallback = 0) => Number.isFinite(value) ? value as number : fallback
 const clampPercent = (value: number, min: number, max: number) => Math.min(max, Math.max(min, finite(value)))

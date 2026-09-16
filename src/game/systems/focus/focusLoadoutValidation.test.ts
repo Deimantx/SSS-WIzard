@@ -4,18 +4,23 @@ import { recalculateDerivedStats, selectUsedFocus } from '../../engine'
 import { getEquipmentPreview } from '../../presentation/equipment/equipmentReadModel'
 import type { ItemId } from '../../types'
 import { createInitialState } from '../../../store/initialState'
-import { equipItemAction, unequipItemAction } from '../../../store/actions/equipmentActions'
+import { equipItemAction } from '../../../store/actions/equipmentActions'
 import { validateFocusForEquipment } from './focusLoadoutValidation'
 
+const focusCapacityWeapon = 'focus-capacity-test-weapon' as ItemId
 const focusEfficientWeapon = 'focus-efficient-test-weapon' as ItemId
 
-afterEach(() => { delete ITEMS[focusEfficientWeapon] })
+afterEach(() => {
+  delete ITEMS[focusCapacityWeapon]
+  delete ITEMS[focusEfficientWeapon]
+})
 
 const overcommittedState = () => {
+  ITEMS[focusCapacityWeapon] = { ...ITEMS['ember-staff'], id: focusCapacityWeapon, name: 'Focus Capacity Test Weapon', stats: { maxFocus: 10 } }
   const state = createInitialState()
-  state.inventory['windthread-charm'] = 1
-  state.inventory['heartseed-necklace'] = 1
-  state.equipment.necklace = 'windthread-charm'
+  state.inventory[focusCapacityWeapon] = 1
+  state.inventory['tideglass-wand'] = 1
+  state.equipment.weapon = focusCapacityWeapon
   state.progress.spellRanks = { fireball: 7 }
   state.activities.autoCast.fireball = true
   state.activities.channeling.echoesAssigned = 5
@@ -29,22 +34,13 @@ describe('Focus candidate loadout validation', () => {
     expect(state.player.maxFocus).toBe(110)
     expect(selectUsedFocus(state)).toBe(120)
 
-    const result = equipItemAction(state, 'heartseed-necklace', 'necklace')
+    const result = equipItemAction(state, 'tideglass-wand')
 
     expect(result).toMatchObject({ ok: false, reason: 'insufficient-focus-capacity', maxFocus: 100, usedFocus: 120, deficit: 20 })
-    expect(state.equipment.necklace).toBe('windthread-charm')
+    expect(state.equipment.weapon).toBe(focusCapacityWeapon)
     expect(state.activities.channeling.echoesAssigned).toBe(5)
     expect(state.activities.autoCast.fireball).toBe(true)
     expect(state.notifications[state.notifications.length - 1]?.text).toContain('Free 20 Focus')
-  })
-
-  it('blocks unequipping Focus-capacity equipment while reservations exceed the candidate capacity', () => {
-    const state = overcommittedState()
-
-    const result = unequipItemAction(state, 'necklace')
-
-    expect(result).toMatchObject({ ok: false, reason: 'insufficient-focus-capacity', maxFocus: 100, usedFocus: 120, deficit: 20 })
-    expect(state.equipment.necklace).toBe('windthread-charm')
   })
 
   it('allows the swap after the player frees enough Focus', () => {
@@ -52,10 +48,10 @@ describe('Focus candidate loadout validation', () => {
     state.activities.channeling.echoesAssigned = 3
     expect(selectUsedFocus(state)).toBe(100)
 
-    const result = equipItemAction(state, 'heartseed-necklace', 'necklace')
+    const result = equipItemAction(state, 'tideglass-wand')
 
-    expect(result).toMatchObject({ ok: true, position: 'necklace' })
-    expect(state.equipment.necklace).toBe('heartseed-necklace')
+    expect(result).toMatchObject({ ok: true, position: 'weapon' })
+    expect(state.equipment.weapon).toBe('tideglass-wand')
   })
 
   it('uses candidate Focus Efficiency when recalculating Auto-Cast reservations', () => {

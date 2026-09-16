@@ -1,10 +1,15 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { RECIPES } from '../../content/recipes/recipes'
 import { FOCUS_IMPROVEMENT } from '../../content/focus/focusImprovement'
+import { ITEMS } from '../../content/items/items'
 import { createInitialState } from '../../../store/initialState'
 import { upgradeFocusCapacityAction, setFocusImprovementLevelAction } from '../../../store/actions/focusActions'
 import { getFocusCapacityBreakdown } from './focusCapacity'
 import { getRecipeCurrentEffectiveDuration } from '../transmutation/transmutationSelectors'
+import type { ItemId } from '../../types'
+
+const focusCapacityItem = 'focus-capacity-test-item' as ItemId
+afterEach(() => { delete ITEMS[focusCapacityItem] })
 
 describe('Focus Capacity', () => {
   it('uses the Rank I +5 Focus balance', () => {
@@ -13,18 +18,21 @@ describe('Focus Capacity', () => {
   })
 
   it('breaks Max Focus into base, improvement, rewards, equipment, and debug sources', () => {
+    ITEMS[focusCapacityItem] = { ...ITEMS['ember-staff'], id: focusCapacityItem, name: 'Focus Capacity Test Item', stats: { maxFocus: 10 } }
     const state = createInitialState()
     state.progress.focusImprovement.level = 3
     state.progress.permanentFocusBonuses = { forestHeart: 20 }
-    state.equipment.necklace = 'windthread-charm'
+    state.equipment.weapon = focusCapacityItem
 
     expect(getFocusCapacityBreakdown(state)).toEqual({ base: 100, improvement: 15, permanentRewards: 20, equipment: 10, debug: 0, total: 145 })
   })
 
-  it('uses authored Windthread Charm stats for equipment Max Focus', () => {
+  it('includes Arcane Core Max Focus modifiers in the shared capacity calculation', () => {
     const state = createInitialState()
-    state.equipment.necklace = 'windthread-charm'
-    expect(getFocusCapacityBreakdown(state).equipment).toBe(10)
+    state.arcaneCore.nodes['focus-03'] = { unlocked: true, rank: 3, coreSpent: 1, essenceSpent: 110 }
+
+    expect(getFocusCapacityBreakdown(state).equipment).toBe(3)
+    expect(getFocusCapacityBreakdown(state).total).toBe(103)
   })
 
   it('consumes the exact Prismatic-only Level 1 cost and updates derived Max Focus', () => {
@@ -58,7 +66,7 @@ describe('Focus Capacity', () => {
     expect(state.inventory['prismatic-fragment']).toBe(999)
   })
 
-  it('defines the Prismatic Fragment recipe and normal Echo acceleration', () => {
+  it('keeps the authored Prismatic Fragment recipe and Echo acceleration', () => {
     const recipe = RECIPES['prismatic-fragment']
     expect(recipe).toMatchObject({ baseDurationMs: 24_000, manaCost: 50, output: { itemId: 'prismatic-fragment', quantity: 1 } })
     expect(recipe.ingredients).toEqual([

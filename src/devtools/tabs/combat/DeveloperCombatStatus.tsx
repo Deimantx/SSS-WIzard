@@ -59,12 +59,11 @@ export function DeveloperCombatStatus() {
     <Card title="Equipment effect fixtures" className="developer-debug-card">
       <p className="developer-debug-note">These setups grant and equip authored gear, then use the real status, Barrier, damage, and encounter runtime.</p>
       <div className="developer-button-grid">
-        <Button variant="secondary" onClick={() => prepareThresholdFixture('heartseed-necklace', 'necklace', 0.25)}>Living Seed threshold</Button>
-        <Button variant="secondary" onClick={() => prepareThresholdFixture('greatbear-heartstone', 'necklace', 0.3)}>Unyielding threshold</Button>
-        <Button variant="secondary" onClick={() => prepareEquipmentFixture('howling-signet', 'ring1')}>Predator's Feast setup</Button>
-        <Button variant="secondary" onClick={() => { prepareEquipmentFixture('howling-signet', 'ring1'); killEnemy() }}>Predator's Feast kill</Button>
-        <Button variant="secondary" onClick={() => { prepareEquipmentFixture('gravebinder-ring', 'ring1'); applyEnemy('chilled'); advanceCombat(2200) }}>Gravebinder debuffed hit</Button>
-        <Button variant="secondary" onClick={() => { prepareEquipmentFixture('edrins-signet', 'ring1'); applyPlayer('chilled') }}>Edrin Signet hostile debuff</Button>
+        <Button variant="secondary" onClick={() => prepareThresholdFixture('wispweave-robe', 'armor', 0.25)}>Wispweave threshold</Button>
+        <Button variant="secondary" onClick={() => prepareEquipmentFixture('stoneheart-scepter', 'weapon')}>Stoneheart setup</Button>
+        <Button variant="secondary" onClick={() => { prepareEquipmentFixture('stoneheart-scepter', 'weapon'); killEnemy() }}>Stoneheart kill</Button>
+        <Button variant="secondary" onClick={() => { prepareEquipmentFixture('wispveil-hood', 'head'); applyEnemy('chilled'); advanceCombat(2200) }}>Wispveil debuffed hit</Button>
+        <Button variant="secondary" onClick={() => { prepareEquipmentFixture('tideglass-wand', 'weapon'); applyPlayer('chilled') }}>Tideglass status setup</Button>
       </div>
     </Card>
     <Card title="Active status instances"><DeveloperAdvancedSection title="Inspect active instances"><StatusInstances statuses={[...combat.playerStatuses.map((status) => ({ actor: 'player' as const, status })), ...combat.enemyStatuses.map((status) => ({ actor: 'enemy' as const, status }))]} /></DeveloperAdvancedSection></Card>

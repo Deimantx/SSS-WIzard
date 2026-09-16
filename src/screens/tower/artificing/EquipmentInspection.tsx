@@ -1,29 +1,26 @@
 import { LockKeyhole } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import { type ReactNode } from 'react'
 import { EquipmentCombatDetails } from '../../../components/ui/item/EquipmentCombatDetails'
 import { ItemIcon, ItemTooltip, flattenItemStats, formatStat, friendlyStatLabel } from '../../../components/ui/item'
 import { ITEMS } from '../../../game/content/items/items'
 import type { ArtificingRecipeDefinition } from '../../../game/content/recipes/artificingRecipes'
 import { getArtificingEquipmentPreview, getArtificingOutputInspection } from '../../../game/presentation/artificing/artificingEquipmentReadModel'
-import { EQUIPMENT_POSITION_LABELS, getDefaultEquipmentPosition } from '../../../game/core/equipment'
-import type { EquipmentItemSlot, EquipmentPosition, GameState } from '../../../game/types'
+import { getDefaultEquipmentPosition } from '../../../game/core/equipment'
+import type { EquipmentPosition, GameState, ItemId } from '../../../game/types'
 import { useGameStore } from '../../../store/gameStore'
 
 export function EquipmentInspection({ recipe }: { recipe: ArtificingRecipeDefinition }) {
   const state = useGameStore()
   const item = ITEMS[recipe.output.itemId]
   const inspection = getArtificingOutputInspection(state, recipe)
-  const [accessoryTarget, setAccessoryTarget] = useState<EquipmentPosition | null>(null)
   if (item.kind !== 'equipment' || !inspection.equipment) return null
-  const accessoryPositions = inspection.equipment.slot === 'ring' ? ['ring1', 'ring2'] as const : inspection.equipment.slot === 'earring' ? ['earring1', 'earring2'] as const : []
-  const accessoryNeedsChoice = accessoryPositions.length > 0 && accessoryPositions.every((position) => Boolean(state.equipment[position]))
-  const targetPosition = accessoryNeedsChoice ? accessoryTarget ?? undefined : getDefaultTargetPosition(state, inspection.equipment.slot)
-  const preview = accessoryNeedsChoice && !accessoryTarget ? null : getArtificingEquipmentPreview(state, recipe.output.itemId, targetPosition)
+  const targetPosition = getDefaultEquipmentPosition(inspection.equipment.slot)
+  const preview = getArtificingEquipmentPreview(state, recipe.output.itemId, targetPosition)
 
-  return <div className="artificing-output-preview"><EquipmentOutput inspection={inspection} preview={preview} accessoryNeedsChoice={accessoryNeedsChoice} accessoryPositions={accessoryPositions} accessoryTarget={accessoryTarget} onAccessoryTargetChange={setAccessoryTarget} /></div>
+  return <div className="artificing-output-preview"><EquipmentOutput inspection={inspection} preview={preview} /></div>
 }
 
-function EquipmentOutput({ inspection, preview, accessoryNeedsChoice, accessoryPositions, accessoryTarget, onAccessoryTargetChange }: { inspection: ReturnType<typeof getArtificingOutputInspection>; preview: ReturnType<typeof getArtificingEquipmentPreview> | null; accessoryNeedsChoice: boolean; accessoryPositions: readonly EquipmentPosition[]; accessoryTarget: EquipmentPosition | null; onAccessoryTargetChange: (position: EquipmentPosition) => void }) {
+function EquipmentOutput({ inspection, preview }: { inspection: ReturnType<typeof getArtificingOutputInspection>; preview: ReturnType<typeof getArtificingEquipmentPreview> | null }) {
   const item = ITEMS[inspection.itemId]
   if (!inspection.equipment) return null
   const authoredStats = flattenItemStats(inspection.stats).filter(([, value]) => Math.abs(value) > 0)
@@ -31,25 +28,12 @@ function EquipmentOutput({ inspection, preview, accessoryNeedsChoice, accessoryP
   return <>
     {authoredStats.length > 0 && <DetailSection title="STATS"><div className="artificing-output-stat-list">{authoredStats.map(([key, value]) => <div key={key}><span>{friendlyStatLabel(key)}</span><strong>{formatStat(key, value)}</strong></div>)}</div></DetailSection>}
     <EquipmentCombatDetails item={item} />
-    {accessoryNeedsChoice && <DetailSection title={`${inspection.equipment.slot === 'earring' ? 'EARRING' : 'RING'} POSITION`}><p className="artificing-output-note">Both {inspection.equipment.slot === 'earring' ? 'Earring' : 'Ring'} positions are occupied. Choose which existing item this output would replace.</p><div className="artificing-ring-choices">{accessoryPositions.map((position) => <RingChoice key={position} position={position} itemId={useGameStore.getState().equipment[position]} selected={accessoryTarget === position} onClick={() => onAccessoryTargetChange(position)} />)}</div></DetailSection>}
     {preview && !preview.compatible && <div className="artificing-output-warning"><LockKeyhole size={14} aria-hidden="true" /><span>{preview.reason}</span></div>}
     {preview?.preview && <DetailSection title="LOADOUT COMPARISON"><div className="artificing-output-current"><span>CURRENT</span><ComparisonItem itemId={getCurrentItemId(useGameStore.getState(), preview, inspection.equipment.slot)} /><span>→</span><span>CRAFTED PREVIEW</span><ItemTooltip itemId={inspection.itemId} owned={inspection.owned} effectiveStats={inspection.stats} artifactLevel={inspection.artifactLevel ?? undefined} artifactMaxLevel={inspection.artifactMaxLevel ?? undefined}><span className="artificing-comparison-icon"><ItemIcon itemId={inspection.itemId} size="tiny" /></span></ItemTooltip></div><div className="artificing-output-stat-list comparison">{impactRows.map(([key, value]) => <div key={key}><span>{friendlyStatLabel(key)}</span><small>{formatSnapshotValue(key, preview.current)} → {formatSnapshotValue(key, preview.preview!)}</small><strong className={value > 0 ? 'positive' : 'negative'}>{formatSignedImpact(key, value)}</strong></div>)}</div>{impactRows.length === 0 && <p className="artificing-output-note">No authored loadout stat change for this replacement.</p>}</DetailSection>}
-    {!preview && accessoryNeedsChoice && <div className="artificing-output-note">Select {inspection.equipment.slot === 'earring' ? 'Earring 1 or Earring 2' : 'Ring 1 or Ring 2'} to calculate the real loadout impact.</div>}
   </>
 }
 
-function RingChoice({ position, itemId, selected, onClick }: { position: EquipmentPosition; itemId: GameState['equipment']['ring1']; selected: boolean; onClick: () => void }) {
-  return <button type="button" className={`artificing-ring-choice ${selected ? 'selected' : ''}`} aria-pressed={selected} onClick={onClick}><span>{EQUIPMENT_POSITION_LABELS[position].toUpperCase()}</span><strong>{itemId ? ITEMS[itemId].name : 'Empty'}</strong></button>
-}
-
 function DetailSection({ title, children }: { title: string; children: ReactNode }) { return <section className="artificing-output-section"><span className="eyebrow">{title}</span>{children}</section> }
-
-function getDefaultTargetPosition(state: Pick<GameState, 'equipment'>, slot?: EquipmentItemSlot): EquipmentPosition | undefined {
-  if (!slot) return undefined
-  if (slot === 'ring') return state.equipment.ring1 ? 'ring2' : 'ring1'
-  if (slot === 'earring') return state.equipment.earring1 ? 'earring2' : 'earring1'
-  return getDefaultEquipmentPosition(slot)
-}
 
 function getCurrentItemId(state: Pick<GameState, 'equipment'>, preview: NonNullable<ReturnType<typeof getArtificingEquipmentPreview>>, slot: NonNullable<ReturnType<typeof getArtificingOutputInspection>['equipment']>['slot']) {
   const position = preview.position ?? getDefaultEquipmentPosition(slot)
@@ -57,7 +41,7 @@ function getCurrentItemId(state: Pick<GameState, 'equipment'>, preview: NonNulla
   return current
 }
 
-function ComparisonItem({ itemId }: { itemId: GameState['equipment']['ring1'] }) { if (!itemId) return <span className="artificing-empty-slot">EMPTY</span>; return <ItemTooltip itemId={itemId} owned={useGameStore.getState().inventory[itemId] ?? 0}><span className="artificing-comparison-icon"><ItemIcon itemId={itemId} size="tiny" /></span></ItemTooltip> }
+function ComparisonItem({ itemId }: { itemId: ItemId | null }) { if (!itemId) return <span className="artificing-empty-slot">EMPTY</span>; return <ItemTooltip itemId={itemId} owned={useGameStore.getState().inventory[itemId] ?? 0}><span className="artificing-comparison-icon"><ItemIcon itemId={itemId} size="tiny" /></span></ItemTooltip> }
 
 function getImpactEntries(impact: ReturnType<typeof getArtificingEquipmentPreview>['impact']): Array<[string, number]> {
   return Object.entries(impact).flatMap(([key, value]) => key === 'resistances' && value && typeof value === 'object' ? Object.entries(value).map(([damageType, resistance]) => [`resistance-${damageType}`, Number(resistance)]) : [[key, Number(value)]])

@@ -38,8 +38,8 @@ const pillarLevel = (state: Pick<GameState, 'progress'>, id: ManaPillarId) => Ma
 
 export const getManaPillarLevel = (state: Pick<GameState, 'progress'>, id: ManaPillarId) => pillarLevel(state, id)
 
-export type ChannelingCapacityState = Pick<GameState, 'player' | 'progress' | 'equipment' | 'artifactProgress'> & Partial<Pick<GameState, 'debug'>>
-export type ChannelingRegenState = Pick<GameState, 'activities' | 'progress' | 'equipment' | 'artifactProgress'> & Partial<Pick<GameState, 'debug' | 'player' | 'combat'>>
+export type ChannelingCapacityState = Pick<GameState, 'player' | 'progress' | 'equipment' | 'artifactProgress'> & Partial<Pick<GameState, 'debug' | 'arcaneCore'>>
+export type ChannelingRegenState = Pick<GameState, 'activities' | 'progress' | 'equipment' | 'artifactProgress'> & Partial<Pick<GameState, 'debug' | 'player' | 'combat' | 'arcaneCore'>>
 
 export const getManaCapacityBreakdown = (state: ChannelingCapacityState): ManaCapacityBreakdown => {
   const stats = getEquipmentStats(state)

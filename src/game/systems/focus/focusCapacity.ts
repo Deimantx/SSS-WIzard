@@ -1,5 +1,5 @@
 import { FOCUS_IMPROVEMENT, getFocusImprovementBonus } from '../../content/focus/focusImprovement'
-import { getEffectiveEquipmentItemStats } from '../../core/equipment/equipmentStats'
+import { getEquipmentStats } from '../../core/equipment/equipmentStats'
 import type { GameState } from '../../types'
 
 export interface FocusCapacityBreakdown {
@@ -11,9 +11,9 @@ export interface FocusCapacityBreakdown {
   total: number
 }
 
-export type FocusCapacityState = Pick<GameState, 'player' | 'progress' | 'equipment' | 'artifactProgress'> & Partial<Pick<GameState, 'debug'>>
+export type FocusCapacityState = Pick<GameState, 'player' | 'progress' | 'equipment' | 'artifactProgress'> & Partial<Pick<GameState, 'debug' | 'arcaneCore'>>
 
-const getEquipmentFocus = (state: Pick<GameState, 'equipment' | 'artifactProgress'>) => Object.values(state.equipment).reduce((total, itemId) => total + (itemId ? getEffectiveEquipmentItemStats(state, itemId).maxFocus ?? 0 : 0), 0)
+const getEquipmentFocus = (state: Pick<GameState, 'equipment' | 'artifactProgress'> & Partial<Pick<GameState, 'arcaneCore'>>) => getEquipmentStats(state).maxFocus ?? 0
 
 /** The single authoritative breakdown used by derived stats and Focus UI. */
 export const getFocusCapacityBreakdown = (state: FocusCapacityState, options: { improvementLevel?: number } = {}): FocusCapacityBreakdown => {

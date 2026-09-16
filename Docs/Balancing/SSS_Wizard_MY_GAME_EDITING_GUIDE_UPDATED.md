@@ -25,7 +25,7 @@ https://github.com/Deimantx/SSS-WIzard
 Guide checked against committed HEAD:
 
 ```text
-f5c4a9d1f150f14be3e2a2dd69e7b65299e873eb
+899c48f401d000544fb5252d653838e295268ee7
 ```
 
 ---
@@ -140,14 +140,16 @@ If I know **what I want to change**, start here instead of searching the whole r
 | I want to edit | Go here first | Important |
 | --- | --- | --- |
 | Item / normal Equipment stats | `src/game/content/items/items.ts` | Main authored item registry |
-| **Act 1 direct-drop Equipment stats / build identities** | `src/game/content/items/act1/*.ts` | Each dungeon owns explicit ring, earring, amulet/cape, and boss-signature stats; `artifacts.ts` in this folder is separate |
+| **Act 1 Artifact item identity** | `src/game/content/items/act1/artifacts.ts` | Act 1 dungeon gear is no longer authored as finished Equipment; `artifacts.ts` remains separate from Artifact progression data |
 | Item descriptions / source metadata / sell behavior | `src/game/content/items/items.ts` | Main item identity file |
 | Allowed Equipment stat fields | `src/game/types.ts` | Check `EquipmentStats` before inventing a field |
 | Equipment internal tier / player-facing tier mapping / build tags / budget profiles | `src/game/content/items/equipmentBalance.ts` | Internal `1.0 / 1.3 / 1.6` currently all display as player-facing `T1` through `Math.floor()` |
-| Equipment slots / ring positions / Earring support | `src/game/types.ts` | Item slot uses `ring`; loadout uses `ring1` + `ring2`; `earring` is its own slot |
+| Equipment slots / loadout positions | `src/game/types.ts` + `src/game/core/equipment/equipmentRules.ts` | Equipment uses only `weapon`, `armor`, and `helmet`; runtime positions are `weapon`, `armor`, and `head` |
 | Starter Artifact forge ingredients / upgrade costs | `src/game/content/artifacts/artifacts.ts` | Authoritative Artifact forge and level-up cost source; keep the recipe mirror synchronized |
 | Artificing unlock conditions | `src/game/content/recipes/artificingRecipes.ts` + `src/game/content/recipes/recipeUnlocks.ts` | Existing unlock types are easier to tune than inventing new ones |
-| Artificing recipe catalog | `src/game/content/recipes/artificingRecipes.ts` | Permanent Artifacts only; normal and boss Equipment are combat loot |
+| Artificing recipe catalog | `src/game/content/recipes/artificingRecipes.ts` | Permanent Artifacts only; dungeon combat no longer drops finished Equipment |
+| Arcane Core authored branches / costs / rewards | `src/game/content/arcaneCore/` | Four permanent branches, 64 nodes each, shared Core Point and Arcane Essence economy |
+| Arcane Core progression / refunds / modifiers | `src/game/systems/arcaneCore/` | Unlock, five-rank progression, cascade refunds, presets, and derived-stat aggregation |
 | Artificing Artifact-vs-Equipment / tier catalog UI | `src/screens/tower/artificing/EquipmentCatalog.tsx` | UI/filter behavior, not balance data |
 | **Artifact base item identity / slot / build tags** | `src/game/content/items/items.ts` | Name, description, slot, color, tags; **not** Artifact level scaling |
 | **Artifact forge ingredients — actual consumed cost** | `src/game/content/artifacts/artifacts.ts` | `ARTIFACTS[id].forge.ingredients` is the runtime source used by the Artificing engine |
@@ -168,10 +170,10 @@ If I know **what I want to change**, start here instead of searching the whole r
 | **Artifact Path small inline Dev panel** | `src/components/artifacts/ArtifactPathDevMiniPanel.tsx` | Only shown when enabled from DevTools |
 | **Artifact debug state/actions** | `src/store/gameStore.ts` + `src/game/systems/artifacts/artifactProgression.ts` | Dev bypasses ultimately affect runtime state/eligibility |
 | Transmutation costs / Mana / time / ingredients | `src/game/content/recipes/transmutationRecipes.ts` | Base fragments + Prismatic Fragment |
-| Whispering Woods monsters + loot | `src/game/content/monsters/whisperingWoods.ts` | Shared regular Equipment pool + Artifact Essence + Life Essence; Heartseed Necklace is the boss signature |
-| Howling Den monsters + loot | `src/game/content/monsters/howlingDen.ts` | Shared regular Equipment pool + Artifact Essence + Life Essence; Greatbear Heartstone is the boss signature |
-| Abandoned Catacombs monsters + loot | `src/game/content/monsters/abandonedCatacombs.ts` | Shared regular Equipment pool + Artifact Essence + Life Essence; Edrin's Signet is the boss signature |
-| Monster helper/effect syntax | `src/game/content/monsters/monsterTypes.ts` | Includes `withDungeonLoot()` and Life Essence overrides |
+| Whispering Woods monsters + loot | `src/game/content/monsters/act0/whisperingWoods.ts` | Material loot, Artifact Essence, Life Essence, and centralized Arcane Core rewards; no finished Equipment drops |
+| Howling Den monsters + loot | `src/game/content/monsters/act0/howlingDen.ts` | Material loot, Artifact Essence, Life Essence, and centralized Arcane Core rewards; no finished Equipment drops |
+| Abandoned Catacombs monsters + loot | `src/game/content/monsters/act0/abandonedCatacombs.ts` | Material loot, Artifact Essence, Life Essence, and centralized Arcane Core rewards; no finished Equipment drops |
+| Monster helper/effect syntax | `src/game/content/monsters/monsterTypes.ts` | `withDungeonLoot()` adds Artifact Essence and Life Essence only; Arcane Core rewards are resolved by combat from `arcaneCoreRewards.ts` |
 | Dungeon pools / bosses / Threat requirements / encounter delay / unlock chain | `src/game/content/dungeons/dungeons.ts` | Current T1 dungeons are 20 / 25 / 30 Threat |
 | Spell Mana / cooldown / unlock / effect numbers | `src/game/content/spells/spells.ts` | Main spell content |
 | Magic School definitions | `src/game/content/schools/schools.ts` | School-authored content |
@@ -253,23 +255,17 @@ sell behavior after normalization
 
 For normal Equipment stat balancing, this is usually the first place to go.
 
-Act 1 direct-drop Equipment is authored by dungeon in these files:
+Act 1 dungeon combat no longer directly drops finished Equipment. Act 1
+Artifact identity is authored centrally:
 
-| Dungeon | Runtime authoring file | Intended identity |
+| Content | Runtime authoring file | Intended identity |
 | --- | --- | --- |
-| Flooded Reliquary | `src/game/content/items/act1/floodedReliquary.ts` | Water, Mana, Barrier, Sustain |
-| Ashen Watch | `src/game/content/items/act1/ashenWatch.ts` | Fire, Burn, Direct Damage, Crit |
-| Rootscar Hollow | `src/game/content/items/act1/rootscarHollow.ts` | Earth, Defense, Health, Control |
-| Crossroads of Ruin | `src/game/content/items/act1/crossroadsOfRuin.ts` | Hybrid, Prismatic, General |
-| Graveglass Hollow | `src/game/content/items/act1/graveglassHollow.ts` | Crit, DoT, Debuff payoff |
-| Stormvault Gallery | `src/game/content/items/act1/stormvaultGallery.ts` | Air, Cooldown, Speed, Multi-hit |
-| Starfallen Observatory | `src/game/content/items/act1/starfallenObservatory.ts` | Mana, Focus, Arcane casting |
-| Broken Meridian | `src/game/content/items/act1/brokenMeridian.ts` | Multi-element Generalist |
-| Hall of Unbound Names | `src/game/content/items/act1/hallOfUnboundNames.ts` | Status, Debuff, Control |
-| Vault of the Black Sigil | `src/game/content/items/act1/vaultOfTheBlackSigil.ts` | Barrier, Defense, Sustain |
-| Black Gate | `src/game/content/items/act1/blackGate.ts` | Final Hybrid |
+| Act 1 Artifact item identity | `src/game/content/items/act1/artifacts.ts` | Artifact names, slots, descriptions, stats metadata |
+| Act 1 Artifact progression | `src/game/content/artifacts/artifacts.ts` | Forge costs, level-up costs, level stats, and Artifact paths |
 
-`src/game/content/items/act1/fracturedApproach.ts` is the early Act 1 reference set. Do not put Artifact level scaling in these direct-drop files; Act 1 Artifact identity and progression remain in `src/game/content/items/act1/artifacts.ts` and `src/game/content/artifacts/artifacts.ts`.
+Do not create replacement dungeon Equipment files for the removed jewelry/accessory
+layer. Material and Artifact Essence loot remains authored by dungeon monsters;
+finished Equipment is created through Artificing.
 
 
 ## Important recent Equipment tier rule
@@ -364,16 +360,16 @@ If I want a stat that is **not** in this list, that is 🔴 until the system sup
 
 # 6. SIMPLE EQUIPMENT EDIT EXAMPLE
 
-Example shape:
+Example shape for a supported non-Artifact Equipment definition:
 
 ```ts
-'greatbear-heartstone': equipment({
-  id: 'greatbear-heartstone',
-  name: 'Greatbear Heartstone',
-  description: 'A corrupted heartstone that refuses to yield.',
+'test-weapon': equipment({
+  id: 'test-weapon',
+  name: 'Test Weapon',
+  description: 'A supported weapon definition.',
   icon: 'O',
   color: '#806b69',
-  equipmentSlot: 'amulet',
+  equipmentSlot: 'weapon',
   stats: {
     maxHealth: 25,
     healthRegen: 1,
@@ -501,10 +497,6 @@ Current **item metadata slots** are:
 weapon
 armor
 helmet
-cape
-amulet
-earring
-ring
 ```
 
 Current **loadout positions** are:
@@ -512,27 +504,11 @@ Current **loadout positions** are:
 ```text
 weapon
 armor
-helmet
-cape
-amulet
-earring
-ring1
-ring2
+head
 ```
 
-Important:
-
-```text
-Equipment item:
-equipmentSlot: 'ring'
-
-Player loadout:
-ring1 / ring2
-```
-
-So a Ring item does not author itself as `ring1` or `ring2`.
-
-`earring` is now a real dedicated Equipment slot.
+The `helmet` item slot maps to the runtime `head` position. There are no
+accessory, jewelry, duplicate-ring, or accessory-replacement positions.
 
 Changing an existing item's slot is 🟡 because it can affect loadout behavior and balance.
 
@@ -1415,9 +1391,9 @@ Remember:
 Monster content is split by dungeon:
 
 ```text
-src/game/content/monsters/whisperingWoods.ts
-src/game/content/monsters/howlingDen.ts
-src/game/content/monsters/abandonedCatacombs.ts
+src/game/content/monsters/act0/whisperingWoods.ts
+src/game/content/monsters/act0/howlingDen.ts
+src/game/content/monsters/act0/abandonedCatacombs.ts
 ```
 
 This is excellent for manual balancing.
@@ -1503,7 +1479,7 @@ Meaning:
 
 ```text
 100% chance
-1–3 Life Essence, plus the dungeon regular pool and Artifact Essence
+1–3 Life Essence, plus the dungeon Artifact Essence range
 ```
 
 Safe changes:
@@ -1519,27 +1495,45 @@ are 🟢.
 
 ## Current T1 dungeon material identity
 
-The current economy is deliberately structured around a shared **regular Equipment pool + Artifact Essence + Life Essence**, with one exclusive boss signature per dungeon.
+Dungeon combat awards materials, Artifact Essence, Life Essence, and Arcane Core
+progression. Finished Equipment is not direct monster loot; permanent Equipment
+is authored as an Artifact and created through Artificing.
 
 ```text
 WHISPERING WOODS
-Regular Equipment: Windthread Charm, Wispglass Earring, Wispbound Ring, Grovekeeper Mantle
-Boss signature: Heartseed Necklace
+Normal kill: +1 Arcane Essence
+Boss kill: +1 Core Point and +10 Arcane Essence
 ```
 
 ```text
 HOWLING DEN
-Regular Equipment: Predator-Hide Mantle, Fangwire Earring, Howling Signet
-Boss signature: Greatbear Heartstone
+Normal kill: +1 Arcane Essence
+Boss kill: +1 Core Point and +10 Arcane Essence
 ```
 
 ```text
 ABANDONED CATACOMBS
-Regular Equipment: Ossuary Mantle, Mourning Glass Earring, Gravebinder Ring, Soulglass Amulet
-Boss signature: Edrin's Signet
+Normal kill: +1 Arcane Essence
+Boss kill: +1 Core Point and +10 Arcane Essence
 ```
 
-Normal monsters share their dungeon's regular Equipment pool and also drop Artifact Essence and Life Essence. Bosses use the same regular pool at a higher chance, add a larger Artifact Essence range, and award their exclusive signature Equipment on the first clear; repeat clears retain the 10% signature chance. Dungeon Equipment is not craftable in Artificing.
+Normal and boss rewards use centralized dungeon data. Boss Core Points are
+repeatable; Arcane Essence is a scalar progression wallet rather than an
+inventory item. Artifact Essence remains reserved for Artifact progression.
+
+Arcane Core spending is deterministic and shared by every branch:
+
+```text
+Unlock one reachable node: 1 Core Point
+Rank 1: 25 Arcane Essence
+Rank 2: 35 Arcane Essence
+Rank 3: 50 Arcane Essence
+Rank 4: 70 Arcane Essence
+Rank 5: 100 Arcane Essence
+```
+
+Each branch currently contains 64 purchasable five-rank nodes. The four active
+branch IDs are `power`, `vitality`, `focus`, and `control`.
 
 
 Percent reminder:
@@ -1568,7 +1562,10 @@ Example:
 withDungeonLoot('whispering-woods', 'normal', { min: 2, max: 5 })
 ```
 
-The optional overrides control that monster's Life Essence range and chance. The dungeon's regular Equipment and Artifact Essence values come from `src/game/content/dungeons/dungeonLootConfig.ts`.
+The optional overrides control that monster's Life Essence range and chance.
+The dungeon's Artifact Essence values come from
+`src/game/content/dungeons/dungeonLootConfig.ts`; Arcane Core rewards come from
+`src/game/content/arcaneCore/arcaneCoreRewards.ts`.
 
 Before changing the helper itself, open:
 
@@ -2944,9 +2941,9 @@ src/game/content/recipes/transmutationRecipes.ts
 src/game/content/artifacts/artifacts.ts
 src/game/systems/artifacts/artifactProgression.ts
 
-src/game/content/monsters/whisperingWoods.ts
-src/game/content/monsters/howlingDen.ts
-src/game/content/monsters/abandonedCatacombs.ts
+src/game/content/monsters/act0/whisperingWoods.ts
+src/game/content/monsters/act0/howlingDen.ts
+src/game/content/monsters/act0/abandonedCatacombs.ts
 
 src/game/content/spells/spells.ts
 
@@ -2965,8 +2962,8 @@ These files cover a very large portion of day-to-day balance editing.
 # 73. ULTRA-SHORT CHEAT SHEET
 
 ```text
-ITEM / NORMAL EQUIPMENT STATS
-src/game/content/items/items.ts
+ARTIFACT ITEM IDENTITY / SUPPORTED EQUIPMENT SLOTS
+src/game/content/items/act0/artifacts.ts + src/game/content/items/act1/artifacts.ts
 
 EQUIPMENT TIER MAPPING / BUILD TAGS / BUDGET PROFILES
 src/game/content/items/equipmentBalance.ts
@@ -2974,10 +2971,10 @@ src/game/content/items/equipmentBalance.ts
 WHAT STATS / SLOTS / IDS EXIST?
 src/game/types.ts
 
-DIRECT DUNGEON EQUIPMENT ACQUISITION
-src/game/content/dungeons/dungeonLootConfig.ts + src/game/content/monsters/monsterTypes.ts
+ARCANE CORE CONTENT / REWARDS
+src/game/content/arcaneCore/arcaneCoreBranches.ts + src/game/content/arcaneCore/arcaneCoreRewards.ts
 
-Normal and boss dungeon Equipment is combat loot only. It has no Artificing recipe; Artificing is reserved for permanent Artifacts.
+Normal and boss dungeon combat does not drop finished Equipment. Artificing is reserved for permanent Artifacts.
 
 ARTIFACT ITEM IDENTITY
 src/game/content/items/items.ts
@@ -3007,9 +3004,9 @@ TRANSMUTATION
 src/game/content/recipes/transmutationRecipes.ts
 
 MONSTERS + LOOT
-src/game/content/monsters/whisperingWoods.ts
-src/game/content/monsters/howlingDen.ts
-src/game/content/monsters/abandonedCatacombs.ts
+src/game/content/monsters/act0/whisperingWoods.ts
+src/game/content/monsters/act0/howlingDen.ts
+src/game/content/monsters/act0/abandonedCatacombs.ts
 
 DUNGEON POOLS / THREAT / BOSS
 src/game/content/dungeons/dungeons.ts

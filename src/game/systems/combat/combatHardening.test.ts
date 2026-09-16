@@ -143,11 +143,11 @@ describe('combat foundation hardening', () => {
 })
 
 describe('equipment combat providers', () => {
-  const testItemId = 'hardening-test-ring' as ItemId
-  const secondItemId = 'hardening-test-ring-two' as ItemId
+  const testItemId = 'hardening-test-weapon' as ItemId
+  const secondItemId = 'hardening-test-weapon-two' as ItemId
   const testItem: ItemDefinition = {
     id: testItemId,
-    name: 'Hardening Test Ring',
+    name: 'Hardening Test Weapon',
     description: 'Test provider',
     icon: '◌',
     color: '#fff',
@@ -157,20 +157,20 @@ describe('equipment combat providers', () => {
     source: 'Test',
     sellValue: 1,
     canDestroy: true,
-    equipmentSlot: 'ring',
+    equipmentSlot: 'weapon',
     combat: { modifiers: [{ key: 'damage-dealt-percent', value: 0.2, sourceKinds: ['spell'] }] },
   }
 
   afterEach(() => { delete ITEMS[testItemId]; delete ITEMS[secondItemId] })
 
-  it('counts only equipped combat modifiers, including both ring positions', () => {
+  it('counts only equipped combat modifiers, including both weapon positions', () => {
     ITEMS[testItemId] = testItem
     const state = stateWithEnemy()
     const spell = { actor: 'player' as const, kind: 'spell' as const, sourceId: 'test-spell', tags: ['spell' as const] }
     expect(getCombatModifiers(state, 'player', 'damage-dealt-percent', { source: spell })).toBe(0)
-    state.equipment.ring1 = testItemId
+    state.equipment.weapon = testItemId
     expect(getCombatModifiers(state, 'player', 'damage-dealt-percent', { source: spell })).toBeCloseTo(0.2)
-    state.equipment.ring2 = testItemId
+    state.equipment.head = testItemId
     expect(getCombatModifiers(state, 'player', 'damage-dealt-percent', { source: spell })).toBeCloseTo(0.4)
   })
 
@@ -179,13 +179,13 @@ describe('equipment combat providers', () => {
     const state = createInitialState()
     state.combat.active = true
     state.combat.dungeonId = 'whispering-woods'
-    state.equipment.ring1 = testItemId
-    state.equipment.ring2 = testItemId
+    state.equipment.weapon = testItemId
+    state.equipment.head = testItemId
     spawnEnemy(state, 'forest-wisp')
-    const ring1Key = getRuleRuntimeKey('player', 'equipment', testItemId, 'combat-start-buff', 'ring1')
-    const ring2Key = getRuleRuntimeKey('player', 'equipment', testItemId, 'combat-start-buff', 'ring2')
-    expect(ring1Key).not.toBe(ring2Key)
-    expect(state.combat.triggeredRuleIds).toEqual(expect.arrayContaining([ring1Key, ring2Key]))
+    const weaponKey = getRuleRuntimeKey('player', 'equipment', testItemId, 'combat-start-buff', 'weapon')
+    const headKey = getRuleRuntimeKey('player', 'equipment', testItemId, 'combat-start-buff', 'head')
+    expect(weaponKey).not.toBe(headKey)
+    expect(state.combat.triggeredRuleIds).toEqual(expect.arrayContaining([weaponKey, headKey]))
     expect(state.combat.playerStatuses).toHaveLength(1)
     expect(state.combat.playerStatuses[0].source).toMatchObject({ kind: 'equipment', sourceId: testItemId })
   })
@@ -195,8 +195,8 @@ describe('equipment combat providers', () => {
     const state = createInitialState()
     state.combat.active = true
     state.combat.dungeonId = 'whispering-woods'
-    state.equipment.ring1 = testItemId
-    state.equipment.ring2 = testItemId
+    state.equipment.weapon = testItemId
+    state.equipment.head = testItemId
     const events: Array<{ sourceKind?: string; statusInstanceKey?: string; providerInstanceKey?: string }> = []
     spawnEnemy(state, 'forest-wisp', { push: (event) => events.push(event) })
     state.combat.enemyMaxHp = 1_000
@@ -204,16 +204,16 @@ describe('equipment combat providers', () => {
     const statuses = state.combat.enemyStatuses.filter((status) => status.statusId === 'burning')
     expect(statuses).toHaveLength(2)
     expect(statuses.map((status) => status.source)).toEqual(expect.arrayContaining([
-      expect.objectContaining({ sourceId: testItemId, providerInstanceKey: 'ring1' }),
-      expect.objectContaining({ sourceId: testItemId, providerInstanceKey: 'ring2' }),
+      expect.objectContaining({ sourceId: testItemId, providerInstanceKey: 'weapon' }),
+      expect.objectContaining({ sourceId: testItemId, providerInstanceKey: 'head' }),
     ]))
     expect(statuses[0].instanceKey).not.toBe(statuses[1].instanceKey)
 
     tickStatuses(state, 1_000, executeCombatEffects, { push: (event) => events.push(event) })
     const ticks = events.filter((event) => event.sourceKind === 'status' && event.statusInstanceKey)
     expect(ticks).toEqual(expect.arrayContaining([
-      expect.objectContaining({ providerInstanceKey: 'ring1' }),
-      expect.objectContaining({ providerInstanceKey: 'ring2' }),
+      expect.objectContaining({ providerInstanceKey: 'weapon' }),
+      expect.objectContaining({ providerInstanceKey: 'head' }),
     ]))
   })
 
@@ -234,15 +234,15 @@ describe('equipment combat providers', () => {
     }
   })
 
-  it('preserves player rule cooldowns through enemy death and downtime while clearing enemy cooldowns', () => {
+  it('preserves player rule cooldowns through enemy death and downtime while cleaweapon enemy cooldowns', () => {
     ITEMS[testItemId] = { ...testItem, combat: { rules: [{ id: 'cooldown-start', event: 'on-combat-start', cooldownMs: 12_000, effects: [] }] } }
     const state = stateWithEnemy()
-    state.equipment.ring1 = testItemId
+    state.equipment.weapon = testItemId
     const events: Array<{ sourceKind?: string; providerInstanceKey?: string }> = []
     state.combat.triggeredRuleIds = []
     state.combat.ruleCooldowns = {}
     spawnEnemy(state, 'forest-wisp', { push: (event) => events.push(event) })
-    const playerKey = getRuleRuntimeKey('player', 'equipment', testItemId, 'cooldown-start', 'ring1')
+    const playerKey = getRuleRuntimeKey('player', 'equipment', testItemId, 'cooldown-start', 'weapon')
     state.combat.ruleCooldowns['enemy:trait:temporary:rule'] = 4_000
     expect(state.combat.ruleCooldowns[playerKey]).toBe(12_000)
     state.combat.enemyHp = 0
@@ -257,25 +257,25 @@ describe('equipment combat providers', () => {
   it('respects equipment rule cooldowns', () => {
     ITEMS[testItemId] = { ...testItem, combat: { rules: [{ id: 'cooldown-rule', event: 'on-combat-start', cooldownMs: 1_000, effects: [{ type: 'apply-status', target: 'self', statusId: 'quickening' }] }] } }
     const state = stateWithEnemy()
-    state.equipment.ring1 = testItemId
+    state.equipment.weapon = testItemId
     state.combat.triggeredRuleIds = []
     state.combat.ruleCooldowns = {}
     const events: unknown[] = []
     const context = { source: { actor: 'player' as const, kind: 'system' as const, sourceId: 'test' } }
     runCombatTriggers(state, 'player', 'on-combat-start', context, executeCombatEffects, 0, [], { push: (event) => events.push(event) })
     runCombatTriggers(state, 'player', 'on-combat-start', context, executeCombatEffects, 0, [], { push: (event) => events.push(event) })
-    const key = getRuleRuntimeKey('player', 'equipment', testItemId, 'cooldown-rule', 'ring1')
+    const key = getRuleRuntimeKey('player', 'equipment', testItemId, 'cooldown-rule', 'weapon')
     expect(state.combat.ruleCooldowns[key]).toBe(1_000)
-    expect(events.filter((event) => (event as { sourceKind?: string; category?: string }).sourceKind === 'equipment' && (event as { category?: string }).category === 'system')).toHaveLength(1)
+    expect(events.filter((event) => (event as { sourceKind?: stweapon; category?: stweapon }).sourceKind === 'equipment' && (event as { category?: stweapon }).category === 'system')).toHaveLength(1)
     tickRuleCooldowns(state, 1_000)
     runCombatTriggers(state, 'player', 'on-combat-start', context, executeCombatEffects, 0, [], { push: (event) => events.push(event) })
-    expect(events.filter((event) => (event as { sourceKind?: string; category?: string }).sourceKind === 'equipment' && (event as { category?: string }).category === 'system')).toHaveLength(2)
+    expect(events.filter((event) => (event as { sourceKind?: stweapon; category?: stweapon }).sourceKind === 'equipment' && (event as { category?: stweapon }).category === 'system')).toHaveLength(2)
   })
 
   it('blocks self-procs within one cascade and resets for the next root Hit', () => {
     ITEMS[testItemId] = { ...testItem, combat: { rules: [{ id: 'self-proc', event: 'on-damage-dealt', effects: [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 2 } }] }] }] } }
     const state = stateWithEnemy()
-    state.equipment.ring1 = testItemId
+    state.equipment.weapon = testItemId
     const events: CombatEvent[] = []
     const sink = { push: (event: CombatEvent) => events.push(event) }
     const root: CombatEffect = { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 1 } }] }
@@ -285,18 +285,18 @@ describe('equipment combat providers', () => {
     expect(events.filter((event) => event.category === 'damage')).toHaveLength(4)
   })
 
-  it('bounds a mutual equipment proc chain while preserving distinct ring providers', () => {
+  it('bounds a mutual equipment proc chain while preserving distinct weapon providers', () => {
     ITEMS[testItemId] = { ...testItem, combat: { rules: [{ id: 'proc-a', event: 'on-damage-dealt', effects: [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 1 } }] }] }] } }
-    ITEMS[secondItemId] = { ...testItem, id: secondItemId, name: 'Hardening Test Ring Two', combat: { rules: [{ id: 'proc-b', event: 'on-damage-dealt', effects: [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'air', magnitude: { type: 'flat', value: 1 } }] }] }] } }
+    ITEMS[secondItemId] = { ...testItem, id: secondItemId, name: 'Hardening Test Weapon Two', combat: { rules: [{ id: 'proc-b', event: 'on-damage-dealt', effects: [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'air', magnitude: { type: 'flat', value: 1 } }] }] }] } }
     const state = stateWithEnemy()
-    state.equipment.ring1 = testItemId
-    state.equipment.ring2 = secondItemId
+    state.equipment.weapon = testItemId
+    state.equipment.head = secondItemId
     const events: CombatEvent[] = []
     const root: CombatEffect = { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 1 } }] }
     executeCombatEffects(state, [root], { actor: 'player', kind: 'system', sourceId: 'root' }, undefined, { push: (event) => events.push(event) })
     const damageEvents = events.filter((event) => event.category === 'damage')
     expect(damageEvents).toHaveLength(3)
-    expect(damageEvents.filter((event) => event.sourceKind === 'equipment').map((event) => event.providerInstanceKey)).toEqual(expect.arrayContaining(['ring1', 'ring2']))
+    expect(damageEvents.filter((event) => event.sourceKind === 'equipment').map((event) => event.providerInstanceKey)).toEqual(expect.arrayContaining(['weapon', 'head']))
   })
 
   it('allows a chance rule one attempt per cascade, including when the first roll fails', () => {
@@ -310,8 +310,8 @@ describe('equipment combat providers', () => {
     ITEMS[testItemId] = { ...testItem, combat: { rules: [{ id: 'failed-proc', event: 'on-damage-dealt', chance: 0.2, effects: [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 0 } }] }] } }
     ITEMS[secondItemId] = { ...testItem, id: secondItemId, combat: { rules: [{ id: 'nested-damage', event: 'on-damage-dealt', effects: [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 1 } }] }] }] } }
     const state = stateWithEnemy()
-    state.equipment.ring1 = testItemId
-    state.equipment.ring2 = secondItemId
+    state.equipment.weapon = testItemId
+    state.equipment.head = secondItemId
     state.combat.combatRngState = failedSeed
     const events: CombatEvent[] = []
     const resolution = createCombatResolutionContext()
@@ -320,7 +320,7 @@ describe('equipment combat providers', () => {
     nextCombatRandom(expectedRng)
     executeCombatEffects(state, [root], { actor: 'player', kind: 'system', sourceId: 'chance-root' }, undefined, { push: (event) => events.push(event) }, resolution)
 
-    const failedKey = getRuleRuntimeKey('player', 'equipment', testItemId, 'failed-proc', 'ring1')
+    const failedKey = getRuleRuntimeKey('player', 'equipment', testItemId, 'failed-proc', 'weapon')
     expect(resolution.attemptedRuleKeys.has(failedKey)).toBe(true)
     expect(state.combat.combatRngState).toBe(expectedRng.combatRngState)
     expect(events.filter((event) => event.category === 'damage')).toHaveLength(2)
@@ -330,16 +330,16 @@ describe('equipment combat providers', () => {
     expect(nextResolution.attemptedRuleKeys.has(failedKey)).toBe(true)
   })
 
-  it('keeps chance attempts independent for Ring 1 and Ring 2', () => {
-    ITEMS[testItemId] = { ...testItem, combat: { rules: [{ id: 'ring-attempt', event: 'on-damage-dealt', chance: 0, effects: [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 0 } }] }] } }
+  it('keeps chance attempts independent for Weapon 1 and Weapon 2', () => {
+    ITEMS[testItemId] = { ...testItem, combat: { rules: [{ id: 'weapon-attempt', event: 'on-damage-dealt', chance: 0, effects: [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 0 } }] }] } }
     const state = stateWithEnemy()
-    state.equipment.ring1 = testItemId
-    state.equipment.ring2 = testItemId
+    state.equipment.weapon = testItemId
+    state.equipment.head = testItemId
     const resolution = createCombatResolutionContext()
-    executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 1 } }] }], { actor: 'player', kind: 'system', sourceId: 'ring-root' }, undefined, undefined, resolution)
+    executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 1 } }] }], { actor: 'player', kind: 'system', sourceId: 'weapon-root' }, undefined, undefined, resolution)
     expect(resolution.attemptedRuleKeys).toEqual(new Set([
-      getRuleRuntimeKey('player', 'equipment', testItemId, 'ring-attempt', 'ring1'),
-      getRuleRuntimeKey('player', 'equipment', testItemId, 'ring-attempt', 'ring2'),
+      getRuleRuntimeKey('player', 'equipment', testItemId, 'weapon-attempt', 'weapon'),
+      getRuleRuntimeKey('player', 'equipment', testItemId, 'weapon-attempt', 'head'),
     ]))
   })
 
@@ -351,7 +351,7 @@ describe('equipment combat providers', () => {
     MONSTERS['forest-wisp'].resistances = { physical: 0.2, arcane: 0.5 }
     try {
       const state = stateWithEnemy()
-      state.equipment.ring1 = testItemId
+      state.equipment.weapon = testItemId
       const events: CombatEvent[] = []
       const effect: CombatEffect = { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 10 } }, { damageType: 'arcane', magnitude: { type: 'flat', value: 10 } }], tags: ['direct'] }
       const initialRng = state.combat.combatRngState
@@ -378,7 +378,7 @@ describe('equipment combat providers', () => {
     MONSTERS['forest-wisp'].blockChance = 0
     try {
       const state = stateWithEnemy()
-      state.equipment.ring1 = testItemId
+      state.equipment.weapon = testItemId
       state.combat.combatRngState = 0
       const events: CombatEvent[] = []
       const hit: CombatEffect = { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 10 } }, { damageType: 'arcane', magnitude: { type: 'flat', value: 10 } }], tags: ['direct'] }
@@ -387,7 +387,7 @@ describe('equipment combat providers', () => {
       expect(events.find((event) => event.healthDamage !== undefined)).toMatchObject({ critical: true, blocked: false, healthDamage: 30 })
 
       const multiState = stateWithEnemy()
-      multiState.equipment.ring1 = testItemId
+      multiState.equipment.weapon = testItemId
       multiState.combat.combatRngState = 0
       const multiEvents: CombatEvent[] = []
       executeCombatEffects(multiState, [
@@ -413,7 +413,7 @@ describe('equipment combat providers', () => {
     MONSTERS['forest-wisp'].blockChance = 1
     try {
       const state = stateWithEnemy()
-      state.equipment.ring1 = testItemId
+      state.equipment.weapon = testItemId
       const events: CombatEvent[] = []
       executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 10 } }, { damageType: 'arcane', magnitude: { type: 'flat', value: 10 } }], tags: ['direct'] }], { actor: 'player', kind: 'spell', sourceId: 'blocked-split', tags: ['spell', 'direct'] }, undefined, { push: (event) => events.push(event) })
       const damageEvents = events.filter((event) => event.healthDamage !== undefined)
@@ -433,7 +433,7 @@ describe('equipment combat providers', () => {
   it('clamps effective Health damage and fires on-kill only on alive-to-dead crossing', () => {
     ITEMS[testItemId] = { ...testItem, combat: { rules: [{ id: 'kill-barrier', event: 'on-kill', effects: [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 40 } }] }] } }
     const state = stateWithEnemy()
-    state.equipment.ring1 = testItemId
+    state.equipment.weapon = testItemId
     state.combat.enemyMaxHp = 5
     state.combat.enemyHp = 5
     const events: CombatEvent[] = []
@@ -451,7 +451,7 @@ describe('equipment combat providers', () => {
     expect(events.filter((event) => event.sourceKind === 'equipment' && event.category === 'system')).toHaveLength(1)
 
     const multiHitState = stateWithEnemy()
-    multiHitState.equipment.ring1 = testItemId
+    multiHitState.equipment.weapon = testItemId
     multiHitState.combat.enemyMaxHp = 5
     multiHitState.combat.enemyHp = 5
     const multiEvents: CombatEvent[] = []
@@ -467,7 +467,7 @@ describe('equipment combat providers', () => {
       { id: 'basic-hit-proc', event: 'on-basic-attack-hit', effects: [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 10 } }] },
     ] } }
     const state = stateWithEnemy()
-    state.equipment.ring1 = testItemId
+    state.equipment.weapon = testItemId
     state.combat.enemyHp = 0
     state.combat.enemyBarrier = 25
     const beforeRng = state.combat.combatRngState
@@ -532,14 +532,14 @@ describe('equipment combat providers', () => {
     ITEMS[testItemId] = { ...testItem, combat: { rules: [{ id: 'reactive-heal', event: 'on-damage-taken', effects: [{ type: 'heal', target: 'self', magnitude: { type: 'flat', value: 20 } }] }] } }
     const incoming = { actor: 'enemy' as const, kind: 'action' as const, sourceId: 'reactive-hit', tags: ['physical' as const] }
     const lethal = stateWithEnemy()
-    lethal.equipment.ring1 = testItemId
+    lethal.equipment.weapon = testItemId
     lethal.player.maxHealth = 100
     lethal.player.health = 20
     executeCombatEffects(lethal, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 30 } }] }], incoming)
     expect(lethal.player.health).toBe(0)
 
     const nonlethal = stateWithEnemy()
-    nonlethal.equipment.ring1 = testItemId
+    nonlethal.equipment.weapon = testItemId
     nonlethal.player.maxHealth = 100
     nonlethal.player.health = 100
     executeCombatEffects(nonlethal, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 30 } }] }], incoming)
@@ -550,7 +550,7 @@ describe('equipment combat providers', () => {
     ITEMS[testItemId] = { ...testItem, combat: { rules: [{ id: 'retaliation', event: 'on-damage-taken', effects: [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 50 } }] }] }] } }
     const incoming = { actor: 'enemy' as const, kind: 'action' as const, sourceId: 'retaliation-test', tags: ['physical' as const] }
     const lethal = stateWithEnemy()
-    lethal.equipment.ring1 = testItemId
+    lethal.equipment.weapon = testItemId
     lethal.player.maxHealth = 100
     lethal.player.health = 20
     lethal.combat.enemyMaxHp = 100
@@ -560,7 +560,7 @@ describe('equipment combat providers', () => {
     expect(lethal.combat.enemyHp).toBe(100)
 
     const nonlethal = stateWithEnemy()
-    nonlethal.equipment.ring1 = testItemId
+    nonlethal.equipment.weapon = testItemId
     nonlethal.player.maxHealth = 100
     nonlethal.player.health = 100
     nonlethal.combat.enemyMaxHp = 100
@@ -612,10 +612,10 @@ describe('equipment combat providers', () => {
     useCombatTelemetryStore.getState().clear()
     try {
       const state = stateWithEnemy()
-      state.equipment.ring1 = testItemId
+      state.equipment.weapon = testItemId
       state.combat.enemyHp = 5
       state.combat.enemyMaxHp = 5
-      useCombatTelemetryStore.getState().beginRun('whispering-woods')
+    useCombatTelemetryStore.getState().beginRun('whispering-woods')
       useCombatTelemetryStore.getState().beginEncounter('forest-wisp')
       const expectedRng = { combatRngState: state.combat.combatRngState }
       nextCombatRandom(expectedRng)

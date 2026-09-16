@@ -12,13 +12,14 @@ import { getStatusGroupStacks } from './statusSelectors'
 import { getRootCombatSourceProvenance, isEnemySourceOwnerActive } from './combatProvenance'
 import { getAllocatedArtifactCombatProviders, isArtifactItem } from '../artifacts/artifactProgression'
 import { getGuardianPassiveProviders } from '../summoning/summoningSelectors'
+import { getArcaneCoreModifierTotals } from '../arcaneCore/arcaneCoreProgression'
 
 export type CombatModifierState = {
   player: Pick<GameState['player'], 'health' | 'maxHealth' | 'mana' | 'maxMana'>
   combat: Pick<GameState['combat'], 'enemyId' | 'enemyInstanceKey' | 'enemyHp' | 'enemyMaxHp' | 'playerBarrier' | 'enemyBarrier' | 'playerStatuses' | 'enemyStatuses'> & Partial<Pick<GameState['combat'], 'guardian'>>
   equipment: GameState['equipment']
   artifactProgress: GameState['artifactProgress']
-}
+} & Partial<Pick<GameState, 'arcaneCore'>>
 export type CombatModifierEvaluation = 'active' | 'unconditional' | 'all'
 
 export interface ModifierContext {
@@ -121,6 +122,10 @@ export const getCombatModifierContributions = (state: CombatModifierState, actor
       const value = Number(getEffectiveEquipmentItemStats(state, itemId)[equipmentField] ?? 0)
       if (value !== 0) add({ key, value }, 'equipment-stats', itemId, ITEMS[itemId]?.name, value)
     })
+    if (equipmentField && state.arcaneCore) {
+      const value = Number(getArcaneCoreModifierTotals(state.arcaneCore)[equipmentField] ?? 0)
+      if (value !== 0) add({ key, value }, 'equipment-stats', 'arcane-core', 'Arcane Core', value)
+    }
     getGuardianPassiveProviders(state).forEach(({ modifier, sourceId, sourceName }) => add(modifier, 'guardian', sourceId, sourceName))
   }
   return contributions

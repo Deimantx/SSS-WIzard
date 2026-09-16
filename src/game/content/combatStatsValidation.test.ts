@@ -36,10 +36,10 @@ describe('authored combat stat validation', () => {
     ]))
   })
 
-  it('allows specialized accessory stat pairs without legacy core-stat assumptions', () => {
-    const itemId = 'specialized-earring-chassis' as ItemId
-    const item = { ...ITEMS['wispglass-earring'], id: itemId, stats: { critChance: 0.03, critDamage: 0.1 } } as ItemDefinition
-    expect(validateItemDefinitions({ [itemId]: item })).toEqual([])
+  it('allows specialized Artifact stat pairs without legacy core-stat assumptions', () => {
+    const itemId = 'specialized-artifact-chassis' as ItemId
+    const item = { ...ITEMS['wispveil-hood'], id: itemId, stats: { critChance: 0.03, critDamage: 0.1 } } as ItemDefinition
+    expect(validateItemDefinitions({ ...ITEMS, [itemId]: item })).toEqual([])
   })
 
   it('rejects invalid optional monster combat stats and resistance keys', () => {

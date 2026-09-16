@@ -23,9 +23,10 @@ describe('effective Equipment stats', () => {
     expect(playerBasicDamage(state)).toBe(19 + 5)
   })
 
-  it('keeps normal Equipment on its authored static stats', () => {
+  it('includes Arcane Core modifiers in the shared equipment stat model', () => {
     const state = createInitialState()
+    state.arcaneCore.nodes['focus-03'] = { unlocked: true, rank: 5, coreSpent: 1, essenceSpent: 280 }
 
-    expect(getEffectiveEquipmentItemStats(state, 'wispbound-ring')).toEqual({ maxMana: 10, manaRegen: 1, spellPower: 5 })
+    expect(getEquipmentStats(state)).toMatchObject({ maxFocus: 5 })
   })
 })

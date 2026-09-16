@@ -31,7 +31,7 @@ describe('Unified Transmutation', () => {
     const act1Artifacts = ['galeshard-staff', 'reliquary-scepter', 'pyrebound-staff', 'rootheart-scepter', 'convergence-robe', 'waystone-circlet'] as const
     starterArtifacts.forEach((id) => expect(isRecipeUnlocked(state, RECIPES[id])).toBe(true))
     act1Artifacts.forEach((id) => expect(isRecipeUnlocked(state, RECIPES[id])).toBe(false))
-    expect((RECIPES as Record<string, unknown>)['heartseed-necklace']).toBeUndefined()
+    expect((RECIPES as Record<string, unknown>)['obsolete-accessory-recipe']).toBeUndefined()
   })
 
   it('assigns Echoes across independent jobs and reserves ten Focus per Echo', () => {

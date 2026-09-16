@@ -5,7 +5,7 @@ import { GameContextMenuProvider } from '../../ui/context-menu/GameContextMenuPr
 import { useGameStore } from '../../store/gameStore'
 import { InventoryScreenV2 } from './InventoryScreen'
 
-function renderInventoryWith(itemId: 'ember-staff' | 'wispglass-earring') {
+function renderInventoryWith(itemId: 'ember-staff' | 'life-essence') {
   const state = useGameStore.getState()
   useGameStore.setState({
     ui: { screen: 'inventory' },
@@ -31,9 +31,9 @@ describe('Inventory Artifact context actions', () => {
     expect(useGameStore.getState().ui.screen).toBe('inventory')
   })
 
-  it('does not offer Artifact Path for a normal Earring', () => {
-    const { container } = renderInventoryWith('wispglass-earring')
-    const tile = container.querySelector('[data-item-id="wispglass-earring"]') as HTMLElement
+  it('does not offer Artifact Path for a normal material', () => {
+    const { container } = renderInventoryWith('life-essence')
+    const tile = container.querySelector('[data-item-id="life-essence"]') as HTMLElement
 
     fireEvent.contextMenu(tile, { clientX: 20, clientY: 20 })
 

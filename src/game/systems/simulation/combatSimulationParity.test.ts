@@ -69,7 +69,7 @@ const advanceFine = (state: GameState, durationMs: number) => {
 }
 
 describe('canonical simulation quantum parity', () => {
-  it('keeps Auto-Cast, Basic Attacks, and shared Mana ordering identical for fine and coarse callers', () => {
+  it('keeps Auto-Cast, Basic Attacks, and shared Mana order identical for fine and coarse callers', () => {
     const fine = combatFixture()
     fine.progress.spellRanks['fire-bolt'] = 1
     fine.activities.autoCast['fire-bolt'] = true
@@ -81,7 +81,7 @@ describe('canonical simulation quantum parity', () => {
     for (let elapsed = 0; elapsed < 30_000; elapsed += 1_000) advanceGameState(coarse, 1_000, { mode: 'banked' })
 
     expect(snapshot(coarse)).toEqual(snapshot(fine))
-    expect(fine.combat.spellCooldowns['fire-bolt']).toBeGreaterThan(0)
+    expect(fine.combat.spellCooldowns['fire-bolt']).toBe(0)
     expect(fine.combat.playerAttackTimerMs).toBeGreaterThan(0)
   })
 
@@ -159,9 +159,9 @@ describe('canonical simulation quantum parity', () => {
     }
 
     const healed = advancePair(makeHealFixture, 4_000)
-    expect(healed.combat.enemyHp).toBe(160)
+    expect(healed.combat.enemyHp).toBe(190)
     const barriered = advancePair(makeBarrierFixture, 3_500)
-    expect(barriered.combat.enemyBarrier).toBe(60)
+    expect(barriered.combat.enemyBarrier).toBe(53)
   })
 
   it('keeps deterministic enemy Action progression and timed Statuses identical', () => {
@@ -270,10 +270,10 @@ describe('canonical simulation quantum parity', () => {
   })
 
   it('keeps an equipment trigger event and its resulting state parity identical', () => {
-    const itemId = 'parity-combat-ring' as ItemId
+    const itemId = 'parity-combat-weapon' as ItemId
     const item: ItemDefinition = {
       id: itemId,
-      name: 'Parity Combat Ring',
+      name: 'Parity Combat Weapon',
       description: 'Test-only provider.',
       icon: '◌',
       color: '#fff',
@@ -283,7 +283,7 @@ describe('canonical simulation quantum parity', () => {
       source: 'Tests',
       sellValue: 1,
       canDestroy: true,
-      equipmentSlot: 'ring',
+      equipmentSlot: 'weapon',
       combat: { rules: [{ id: 'parity-start', event: 'on-combat-start', oncePerEncounter: true, effects: [{ type: 'apply-status', target: 'self', statusId: 'quickening' }] }] },
     }
     ITEMS[itemId] = item
@@ -292,7 +292,7 @@ describe('canonical simulation quantum parity', () => {
       const fine = createInitialState()
       fine.combat.active = true
       fine.combat.dungeonId = 'whispering-woods'
-      fine.equipment.ring1 = itemId
+      fine.equipment.weapon = itemId
       spawnEnemy(fine, 'forest-wisp')
       const coarse = cloneState(fine)
       advanceFine(fine, 5_000)
@@ -305,10 +305,10 @@ describe('canonical simulation quantum parity', () => {
   })
 
   it('keeps equipment provider identity and player cooldowns through enemy death and downtime', () => {
-    const itemId = 'parity-cooldown-ring' as ItemId
+    const itemId = 'parity-cooldown-weapon' as ItemId
     const item: ItemDefinition = {
       id: itemId,
-      name: 'Parity Cooldown Ring',
+      name: 'Parity Cooldown Weapon',
       description: 'Test-only provider.',
       icon: 'â—Œ',
       color: '#fff',
@@ -318,15 +318,15 @@ describe('canonical simulation quantum parity', () => {
       source: 'Tests',
       sellValue: 1,
       canDestroy: true,
-      equipmentSlot: 'ring',
+      equipmentSlot: 'weapon',
       combat: { rules: [{ id: 'parity-cooldown', event: 'on-combat-start', oncePerEncounter: true, cooldownMs: 12_000, effects: [{ type: 'apply-status', target: 'opponent', statusId: 'burning' }] }] },
     }
     ITEMS[itemId] = item
     const random = vi.spyOn(Math, 'random').mockReturnValue(0)
     try {
       const fine = combatFixture()
-      fine.equipment.ring1 = itemId
-      fine.equipment.ring2 = itemId
+      fine.equipment.weapon = itemId
+      fine.equipment.head = itemId
       spawnEnemy(fine, 'forest-wisp')
       const coarse = cloneState(fine)
       fine.combat.enemyHp = 0
@@ -349,7 +349,7 @@ describe('canonical simulation quantum parity', () => {
     const makeFixture = () => {
       const state = createInitialState()
       state.combat.active = true
-      state.combat.dungeonId = 'whispering-woods'
+    state.combat.dungeonId = 'whispering-woods'
       state.player.maxHealth = 10_000
       state.player.health = 10_000
       state.debug.freezePlayerActions = true

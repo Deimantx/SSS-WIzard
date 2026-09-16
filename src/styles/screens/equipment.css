@@ -1386,7 +1386,7 @@
   }
 }
 
-/* Equipment Full Rework: keep core Artifacts and the two-row accessory matrix legible. */
+/* Equipment Full Rework: keep the three-slot Artifact loadout legible. */
 .equipment-screen .equipment-loadout-board {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

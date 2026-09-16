@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { ITEMS } from '../items/items'
 import { formatCombatCondition, formatCombatEffect, formatCombatRule, formatDuration, formatEquipmentEffectSummary, formatPercent } from './balanceFormatters'
 
 describe('balance presentation formatters', () => {
@@ -15,9 +14,9 @@ describe('balance presentation formatters', () => {
   })
 
   it('formats triggered equipment rules without serialized data', () => {
-    const rule = ITEMS['heartseed-necklace'].combat?.rules?.[0]
-    expect(rule).toBeDefined()
-    expect(formatCombatRule(rule!)).toContain('Living Seed')
-    expect(formatEquipmentEffectSummary(ITEMS['heartseed-necklace']).join('\\n')).not.toContain('\"target\"')
+    const item = { combat: { rules: [{ id: 'barrier-proc', event: 'on-hp-threshold' as const, condition: { type: 'self-hp-below-percent' as const, percent: 30 }, effects: [{ type: 'gain-barrier' as const, target: 'self' as const, magnitude: { type: 'flat' as const, value: 20 } }] }] } }
+    const rule = item.combat.rules[0]
+    expect(formatCombatRule(rule)).toContain('Barrier Proc')
+    expect(formatEquipmentEffectSummary(item).join('\\n')).not.toContain('"target"')
   })
 })

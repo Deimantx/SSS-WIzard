@@ -1,13 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { ITEMS } from '../../content/items/items'
 import type { ItemDefinition } from '../../types'
 import { getEquipmentCombatPresentation } from './equipmentCombatPresentation'
 
 describe('equipment combat presentation', () => {
   it('translates authored filtered modifiers into readable player language', () => {
-    expect(getEquipmentCombatPresentation(ITEMS['windthread-charm']).modifiers).toContain('+10% Air Spell Damage')
-    expect(getEquipmentCombatPresentation(ITEMS['windthread-charm']).modifiers.join(' ')).not.toContain('from Spells')
-    expect(getEquipmentCombatPresentation(ITEMS['predator-hide-mantle']).modifiers).toContain('-10% Status Duration Received (for Debuff statuses)')
+    const presentation = getEquipmentCombatPresentation({ combat: { modifiers: [
+      { key: 'spell-damage-percent', value: 0.1, originSourceKinds: ['spell'], damageTypes: ['air'] },
+      { key: 'status-duration-received-percent', value: -0.1, statusTags: ['debuff'] },
+    ] } })
+    expect(presentation.modifiers).toContain('+10% Air Spell Damage')
+    expect(presentation.modifiers).toContain('-10% Status Duration Received (for Debuff statuses)')
   })
 
   it('keeps provenance wording when it adds information beyond the base label', () => {

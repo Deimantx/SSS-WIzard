@@ -49,26 +49,6 @@ const validateEquipmentStats = (itemId: string, stats: EquipmentStats | undefine
   }
 }
 
-const hasPositiveEquipmentStat = (stats: EquipmentStats | undefined, field: keyof EquipmentStats) => {
-  const value = stats?.[field]
-  return typeof value === 'number' && Number.isFinite(value) && value > 0
-}
-const ACCESSORY_SLOTS = new Set(['ring', 'earring', 'amulet', 'cape'])
-const hasPositiveEquipmentValue = (stats: EquipmentStats | undefined) => {
-  if (!stats) return false
-  return Object.entries(stats).some(([field, value]) => field === 'resistances'
-    ? Object.values(value ?? {}).some((resistance) => typeof resistance === 'number' && Number.isFinite(resistance) && resistance > 0)
-    : typeof value === 'number' && Number.isFinite(value) && value > 0)
-}
-const hasCombatEffect = (item: ItemDefinition) => Boolean(item.combat?.modifiers?.length || item.combat?.rules?.length)
-const validateEquipmentChassis = (item: ItemDefinition, errors: string[]) => {
-  if (item.kind !== 'equipment') return
-  if (isArtifactId(item.id)) return
-  if (item.equipmentSlot && ACCESSORY_SLOTS.has(item.equipmentSlot) && !hasPositiveEquipmentValue(item.stats) && !hasCombatEffect(item)) {
-    errors.push(`${item.id}: accessory equipment requires at least one positive stat or combat effect`)
-  }
-}
-
 const validateEquipmentMetadata = (item: ItemDefinition, errors: string[]) => {
   if (item.kind !== 'equipment') {
     if (item.equipmentTier !== undefined) errors.push(`${item.id}: only equipment items may define equipmentTier`)
@@ -108,7 +88,6 @@ export const validateItemDefinitions = (items: Record<string, ItemDefinition> = 
     const materialTier = item.materialTier
     if (item.kind === 'material' && (materialTier === undefined || !Number.isInteger(materialTier) || materialTier < 1)) errors.push(`${item.id}: materialTier must be a positive integer`)
     validateEquipmentStats(item.id, item.stats, errors)
-    validateEquipmentChassis(item, errors)
     validateEquipmentMetadata(item, errors)
     if (item.combat && item.kind !== 'equipment') errors.push(`${item.id}: only equipment items may define combat metadata`)
     errors.push(...validateCombatProvider(item.combat, `${item.id}.combat`, createCombatValidationContext(STATUS_DEFINITIONS)))

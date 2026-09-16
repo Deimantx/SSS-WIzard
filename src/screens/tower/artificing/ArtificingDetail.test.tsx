@@ -46,6 +46,6 @@ describe('Artificing detail ownership labels', () => {
       'ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'wispweave-robe', 'wispveil-hood',
       'galeshard-staff', 'reliquary-scepter', 'pyrebound-staff', 'rootheart-scepter', 'convergence-robe', 'waystone-circlet',
     ])
-    expect((ARTIFICING_RECIPES as Record<string, unknown>)['windthread-charm']).toBeUndefined()
+    expect((ARTIFICING_RECIPES as Record<string, unknown>)['obsolete-accessory-recipe']).toBeUndefined()
   })
 })

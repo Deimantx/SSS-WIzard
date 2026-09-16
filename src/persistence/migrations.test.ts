@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { migrateSave } from './migrations'
 import { serializeGameState } from './profileSaveManager'
 import { createInitialState, SAVE_VERSION } from '../store/initialState'
-import { DUNGEONS, isDungeonUnlocked, isTutorialCompleted } from '../game/content/dungeons/dungeons'
+import { DUNGEONS, DUNGEON_ORDER, isDungeonUnlocked, isTutorialCompleted } from '../game/content/dungeons/dungeons'
 import { MAX_ACTION_WORK_MS } from '../game/core/balance/combatTiming'
 import { getSchoolTotalXpForLevel } from '../game/core/balance/schoolXpCurve'
 import { SUMMONING_UNLOCK_BOSS_ID } from '../game/content/guardians/guardians'
@@ -137,7 +137,7 @@ describe('save navigation migration', () => {
     expect(migrated.progress.permanentFocusBonuses).toEqual({ 'forest-heart': 10, 'guild-apprentice': 10 })
     expect(migrated.progress.lifetimeKillsByMonster).toEqual({ 'forest-wisp': 12, thornling: 3 })
     expect(migrated.progress.bossKillsByBoss).toEqual({ 'grove-sentinel': 2, 'forest-heart': 1 })
-    expect(migrated.progress.autoHuntBossByDungeon).toEqual({ 'whispering-woods': true, 'howling-den': false, 'abandoned-catacombs': false, 'fractured-approach': false })
+    expect(migrated.progress.autoHuntBossByDungeon).toEqual(Object.fromEntries(DUNGEON_ORDER.map((dungeonId) => [dungeonId, dungeonId === 'whispering-woods'])))
     expect(migrated.combat.triggeredRuleIds).toContain('enemy:trait:grove-sentinel-ancient-growth:grove-sentinel-ancient-growth-threshold')
     expect(migrated.combat).not.toHaveProperty('enemySpecialUsed')
     expect(migrated.inventory).not.toHaveProperty('removed-item')
@@ -224,7 +224,7 @@ describe('save navigation migration', () => {
       inventory: { 'wisp-essence': 8, 'grove-bark': 2, 'artifact-essence': 4 },
       protectedItems: { 'grove-bark': true, 'artifact-essence': true },
       progress: { ...initial.progress, discoveredItems: ['wisp-essence', 'grove-bark', 'artifact-essence'] },
-      activities: { ...initial.activities, artificing: { activeJob: { kind: 'recipe', recipeId: 'windthread-charm' }, activeRecipeId: 'windthread-charm', progressMs: 3_000 } },
+      activities: { ...initial.activities, artificing: { activeJob: { kind: 'recipe', recipeId: 'obsolete-recipe' }, activeRecipeId: 'obsolete-recipe', progressMs: 3_000 } },
     } as any)
 
     expect(migrated.inventory).toEqual({ 'artifact-essence': 4 })
@@ -233,29 +233,27 @@ describe('save navigation migration', () => {
     expect(migrated.activities.artificing).toEqual({ activeJob: null, activeRecipeId: null, progressMs: 0 })
   })
 
-  it('migrates v6 Earrings state to an empty Cape without converting the item', () => {
+  it('drops obsolete equipment positions from a historical save without converting items', () => {
     const initial = createInitialState()
     const migrated = migrateSave({
       ...initial,
       saveVersion: 6,
       inventory: { ...initial.inventory, 'ember-staff': 1 },
       equipment: { weapon: 'apprentice-wand', offhand: null, armor: null, helmet: null, amulet: null, earrings: 'ember-staff', ring1: null, ring2: null },
-    })
+    } as any)
     expect(migrated.saveVersion).toBe(8)
-    expect(migrated.equipment.cape).toBeNull()
-    expect('earrings' in migrated.equipment).toBe(false)
+    expect(migrated.equipment).toEqual({ weapon: null, armor: null, head: null })
     expect(migrated.inventory['ember-staff']).toBe(1)
   })
 
-  it('ignores an invalid v6 Earrings value without creating a Cape item', () => {
+  it('ignores an invalid historical equipment value without creating a stale slot', () => {
     const initial = createInitialState()
     const migrated = migrateSave({
       ...initial,
       saveVersion: 6,
       equipment: { ...initial.equipment, earrings: 'not-an-item' },
     })
-    expect(migrated.equipment.cape).toBeNull()
-    expect('earrings' in migrated.equipment).toBe(false)
+    expect(migrated.equipment).toEqual({ weapon: null, armor: null, head: null })
   })
 
   it('sanitizes dynamic values without wiping valid item keys', () => {
@@ -472,9 +470,9 @@ describe('save navigation migration', () => {
       enemyId: 'forest-wisp',
       enemyHp: 44,
       enemyMaxHp: 44,
-      enemyStatuses: [{ statusId: 'burning', holder: 'enemy', instanceKey: 'player:equipment:test-ring:provider:ring1', source: { actor: 'player', kind: 'equipment', sourceId: 'test-ring', providerInstanceKey: 'ring1' }, remainingMs: 4_000, initialDurationMs: 5_000, stacks: 1, nextTickMs: 1_000, appliedAt: 0 }],
+      enemyStatuses: [{ statusId: 'burning', holder: 'enemy', instanceKey: 'player:equipment:test-weapon:provider:weapon', source: { actor: 'player', kind: 'equipment', sourceId: 'test-weapon', providerInstanceKey: 'weapon' }, remainingMs: 4_000, initialDurationMs: 5_000, stacks: 1, nextTickMs: 1_000, appliedAt: 0 }],
     } } as any)
-    expect(migrated.combat.enemyStatuses[0].source).toMatchObject({ kind: 'equipment', sourceId: 'test-ring', providerInstanceKey: 'ring1' })
+    expect(migrated.combat.enemyStatuses[0].source).toMatchObject({ kind: 'equipment', sourceId: 'test-weapon', providerInstanceKey: 'weapon' })
   })
 
   it('keeps V20 equipment sources compatible without a provider identity', () => {
@@ -486,9 +484,9 @@ describe('save navigation migration', () => {
       enemyId: 'forest-wisp',
       enemyHp: 44,
       enemyMaxHp: 44,
-      enemyStatuses: [{ statusId: 'burning', holder: 'enemy', instanceKey: 'player:equipment:test-ring', source: { actor: 'player', kind: 'equipment', sourceId: 'test-ring', providerInstanceKey: 'ring1' }, remainingMs: 4_000, initialDurationMs: 5_000, stacks: 1, nextTickMs: 1_000, appliedAt: 0 }],
+      enemyStatuses: [{ statusId: 'burning', holder: 'enemy', instanceKey: 'player:equipment:test-weapon', source: { actor: 'player', kind: 'equipment', sourceId: 'test-weapon', providerInstanceKey: 'weapon' }, remainingMs: 4_000, initialDurationMs: 5_000, stacks: 1, nextTickMs: 1_000, appliedAt: 0 }],
     } } as any)
-    expect(migrated.combat.enemyStatuses[0].source).toMatchObject({ kind: 'equipment', sourceId: 'test-ring' })
+    expect(migrated.combat.enemyStatuses[0].source).toMatchObject({ kind: 'equipment', sourceId: 'test-weapon' })
     expect(migrated.combat.enemyStatuses[0].source.providerInstanceKey).toBeUndefined()
     expect(migrated.combat.enemyId).toBe('forest-wisp')
   })
@@ -532,7 +530,7 @@ describe('save navigation migration', () => {
     expect(rerun.activities).toEqual(migrated.activities)
   })
 
-  it('converts legacy secondary equipment into the single Weapon slot without changing ownership', () => {
+  it('drops legacy secondary equipment without creating an obsolete loadout slot', () => {
     const initial = createInitialState()
     const migrateLegacyEquipment = (weapon: unknown, offhand: unknown) => migrateSave({
       ...initial,
@@ -547,7 +545,7 @@ describe('save navigation migration', () => {
     expect(existingWeapon.inventory['ember-staff']).toBe(1)
 
     const secondaryOnly = migrateLegacyEquipment(null, 'ember-staff')
-    expect(secondaryOnly.equipment.weapon).toBe('ember-staff')
+    expect(secondaryOnly.equipment.weapon).toBeNull()
     expect(secondaryOnly.equipment).not.toHaveProperty('offhand')
 
     const empty = migrateLegacyEquipment(null, null)

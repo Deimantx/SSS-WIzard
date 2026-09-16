@@ -51,14 +51,14 @@ describe('screen UI preferences', () => {
   it('migrates, deduplicates, validates, and caps Artificing recipe pins', () => {
     expect(normalizeUiPreferences({ screenState: { artificing: { pinnedRecipeId: 'ember-staff' } } }).screenState.artificing.pinnedRecipeIds).toEqual(['ember-staff'])
     expect(normalizeUiPreferences({ screenState: { artificing: { pinnedRecipeIds: ['ember-staff', 'fake-item', 'ember-staff'] } } }).screenState.artificing.pinnedRecipeIds).toEqual(['ember-staff'])
-    expect(normalizeUiPreferences({ screenState: { artificing: { pinnedRecipeIds: ['ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'wispweave-robe', 'wispveil-hood', 'windthread-charm'] } } }).screenState.artificing.pinnedRecipeIds).toEqual(['ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'wispweave-robe', 'wispveil-hood'])
+    expect(normalizeUiPreferences({ screenState: { artificing: { pinnedRecipeIds: ['ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'wispweave-robe', 'wispveil-hood', 'galeshard-staff'] } } }).screenState.artificing.pinnedRecipeIds).toEqual(['ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'wispweave-robe', 'wispveil-hood'])
     expect(normalizeUiPreferences({ screenState: { artificing: { pinsCollapsed: true } } }).screenState.artificing.pinsCollapsed).toBe(true)
   })
 
-  it('preserves the canonical Artificing Earring slot filter through normalization and reload', () => {
-    expect(normalizeUiPreferences({ screenState: { artificing: { slotFilter: 'earring' } } }).screenState.artificing.slotFilter).toBe('earring')
+  it('normalizes removed accessory filters to the current catalog default', () => {
+    expect(normalizeUiPreferences({ screenState: { artificing: { slotFilter: 'earring' } } }).screenState.artificing.slotFilter).toBe('all')
     setUiPreferences({ screenState: { artificing: { slotFilter: 'earring' } } })
-    expect(loadUiPreferences().screenState.artificing.slotFilter).toBe('earring')
+    expect(loadUiPreferences().screenState.artificing.slotFilter).toBe('all')
   })
 
   it('moves the removed legacy Offhand filter to the Weapon slot', () => {

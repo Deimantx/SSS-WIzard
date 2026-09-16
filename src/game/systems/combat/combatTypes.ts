@@ -120,7 +120,7 @@ export interface CombatEvent {
   originSourceKind?: CombatSource['kind']
   originTags?: CombatTag[]
   originSchool?: SchoolId
-  /** Equipment/provider instance identity, such as ring1 or ring2. */
+  /** Equipment/provider instance identity, such as weapon, armor, or head. */
   providerInstanceKey?: string
   sourceMonsterId?: MonsterId
   sourceInstanceKey?: string
@@ -205,7 +205,7 @@ export interface CombatSource {
   originTags?: CombatTag[]
   /** School from the authored source that caused a derived event. */
   originSchool?: SchoolId
-  /** Equipment/provider instance identity, such as ring1 or ring2. */
+  /** Equipment/provider instance identity, such as weapon, armor, or head. */
   providerInstanceKey?: string
   /** Stable identity of the status instance that produced a periodic event. */
   statusInstanceKey?: string

@@ -23,6 +23,8 @@ const makeState = (enemyId: GameState['combat']['enemyId']) => {
 describe('Enemy source ownership', () => {
   it('keeps a lingering Enemy DoT attributed and isolated across downtime and a new encounter', () => {
     const state = makeState('razorclaw-lynx')
+    state.player.maxHealth = 1_000
+    state.player.health = 1_000
     const oldInstanceKey = state.combat.enemyInstanceKey
     const applicationEvents: CombatEvent[] = []
     clearCurrentEnemyAction(state)
@@ -44,7 +46,7 @@ describe('Enemy source ownership', () => {
     const downtimeHealth = state.player.health
     tickStatuses(state, 2_000, executeCombatEffects, { push: (event) => downtimeEvents.push(event) })
     const downtimeTick = downtimeEvents.find((event) => event.category === 'damage' && event.statusId === 'bleeding')
-    expect(state.player.health).toBeCloseTo(downtimeHealth - 3.9875, 6)
+    expect(state.player.health).toBeCloseTo(downtimeHealth - 7.6125, 6)
     expect(downtimeTick).toMatchObject({
       source: { kind: 'enemy', monsterId: 'razorclaw-lynx' },
       sourceMonsterId: 'razorclaw-lynx',
@@ -76,7 +78,7 @@ describe('Enemy source ownership', () => {
       const nextHealth = state.player.health
       tickStatuses(state, 2_000, executeCombatEffects, { push: (event) => nextEvents.push(event) })
       const nextTick = nextEvents.find((event) => event.category === 'damage' && event.statusInstanceKey === oldStatus.instanceKey)
-      expect(state.player.health).toBeCloseTo(nextHealth - 3.9875, 6)
+      expect(state.player.health).toBeCloseTo(nextHealth - 7.6125, 6)
       expect(state.combat.enemyBarrier).toBe(0)
       expect(nextTick).toMatchObject({ source: { kind: 'enemy', monsterId: 'razorclaw-lynx' }, sourceInstanceKey: 'enemy:1' })
 
@@ -112,10 +114,10 @@ describe('Enemy source ownership', () => {
   })
 
   it('lets a living Player react to a detached Enemy DoT while dead Enemy rules stay inactive', () => {
-    const itemId = 'detached-reactive-ring' as ItemId
+    const itemId = 'detached-reactive-weapon' as ItemId
     const item: ItemDefinition = {
       id: itemId,
-      name: 'Detached Reactive Ring',
+      name: 'Detached Reactive Weapon',
       description: 'Test-only equipment.',
       icon: '◆',
       color: '#fff',
@@ -125,7 +127,7 @@ describe('Enemy source ownership', () => {
       source: 'Tests',
       sellValue: 1,
       canDestroy: true,
-      equipmentSlot: 'ring',
+      equipmentSlot: 'weapon',
       combat: { rules: [{ id: 'react-to-detached-dot', event: 'on-damage-taken', effects: [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 100 } }] }] },
     }
     ITEMS[itemId] = item
@@ -136,7 +138,7 @@ describe('Enemy source ownership', () => {
       const oldStatus = state.combat.playerStatuses.find((status) => status.statusId === 'bleeding')
       if (!oldStatus) throw new Error('Expected Rending Claws to apply Bleeding')
       finishEnemy(state)
-      state.equipment.ring1 = itemId
+      state.equipment.weapon = itemId
       const beforeBarrier = state.combat.playerBarrier
       tickStatuses(state, 2_000, executeCombatEffects)
       expect(state.player.health).toBeLessThan(100)

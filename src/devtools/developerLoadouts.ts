@@ -6,11 +6,11 @@ export interface DeveloperEquipmentLoadout {
   slots: Partial<Record<EquipmentPosition, ItemId>>
 }
 
-/** Explicit tester fixtures. Ring 1 and Ring 2 remain separate authored slots. */
+/** Explicit tester fixtures using the current three-slot Artifact loadout. */
 export const DEVELOPER_LOADOUTS: readonly DeveloperEquipmentLoadout[] = [
-  { id: 'woods-fire', label: 'Woods Fire', slots: { weapon: 'ember-staff', head: 'wispveil-hood', necklace: 'windthread-charm', earring1: 'wispglass-earring', ring1: 'wispbound-ring' } },
-  { id: 'howling-basic', label: 'Howling Basic', slots: { weapon: 'ember-staff', head: 'wispveil-hood', earring1: 'fangwire-earring', ring1: 'howling-signet' } },
-  { id: 'howling-tank', label: 'Howling Tank', slots: { weapon: 'stoneheart-scepter', armor: 'wispweave-robe', cape: 'predator-hide-mantle', necklace: 'greatbear-heartstone', earring1: 'fangwire-earring' } },
-  { id: 'catacombs-status', label: 'Catacombs Status Caster', slots: { weapon: 'windthread-wand', head: 'wispveil-hood', necklace: 'soulglass-amulet', earring1: 'mourning-glass-earring', ring1: 'gravebinder-ring' } },
-  { id: 'catacombs-battle-mage', label: 'Catacombs Battle Mage', slots: { weapon: 'windthread-wand', armor: 'wispweave-robe', earring1: 'mourning-glass-earring', ring1: 'edrins-signet' } },
+  { id: 'woods-fire', label: 'Woods Fire', slots: { weapon: 'ember-staff', armor: 'wispweave-robe', head: 'wispveil-hood' } },
+  { id: 'woods-water', label: 'Woods Water', slots: { weapon: 'tideglass-wand', armor: 'wispweave-robe', head: 'wispveil-hood' } },
+  { id: 'woods-earth', label: 'Woods Earth', slots: { weapon: 'stoneheart-scepter', armor: 'wispweave-robe', head: 'wispveil-hood' } },
+  { id: 'woods-air', label: 'Woods Air', slots: { weapon: 'windthread-wand', armor: 'wispweave-robe', head: 'wispveil-hood' } },
+  { id: 'act1-frontier', label: 'Act 1 Frontier', slots: { weapon: 'galeshard-staff', armor: 'convergence-robe', head: 'waystone-circlet' } },
 ]

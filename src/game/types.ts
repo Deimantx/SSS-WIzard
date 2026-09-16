@@ -89,7 +89,6 @@ export type ArtifactId =
 export type EquipmentBuildTag = 'spell' | 'basic-attack' | 'hybrid' | 'crit' | 'status' | 'dot' | 'barrier' | 'defense' | 'sustain' | 'mana' | 'focus' | 'healing' | 'fire' | 'water' | 'earth' | 'air'
 export type EquipmentBudgetProfileId = 'standard' | 'signature' | 'boss'
 /** @deprecated Use EquipmentItemSlot for item metadata or EquipmentPosition for loadout state. */
-export type EquipmentSlot = EquipmentItemSlot
 /** Legacy authored category kept for save/content compatibility. */
 export type ItemCategory = 'elemental' | 'material' | 'monster-loot' | 'equipment' | 'boss-loot'
 export type InventoryCategory = 'material' | 'loot' | 'equipment' | 'special'

@@ -8,74 +8,31 @@ describe('Equipment read model', () => {
     state.inventory['ember-staff'] = 1
     state.equipment.weapon = 'ember-staff'
     const sheet = getEquipmentStatSnapshot(state, state.equipment)
-
-    const combatState = {
-      ...state,
-      combat: {
-        ...state.combat,
-        active: true,
-        dungeonId: 'whispering-woods' as const,
-        enemyId: 'forest-wisp' as const,
-        enemyHp: 1,
-        enemyMaxHp: 44,
-        playerStatuses: [{ statusId: 'chilled' as const, holder: 'player' as const, instanceKey: 'test:chilled', source: { actor: 'enemy' as const, kind: 'action' as const, sourceId: 'test' }, remainingMs: 5000, initialDurationMs: 5000, stacks: 1 }],
-      },
-    }
+    const combatState = { ...state, combat: { ...state.combat, active: true, dungeonId: 'whispering-woods' as const, enemyId: 'forest-wisp' as const, enemyHp: 1, enemyMaxHp: 44 } }
     expect(getEquipmentStatSnapshot(combatState, combatState.equipment)).toEqual(sheet)
   })
 
-  it('reports the central evaluator failure reason in the preview', () => {
+  it('reports central evaluator failures and keeps incompatible explicit targets out', () => {
     const state = createInitialState()
-    state.inventory['gravebinder-ring'] = 1
-    state.equipment.ring1 = 'gravebinder-ring'
-    const preview = getEquipmentPreview(state, 'gravebinder-ring', 'ring2')
-    expect(preview).toMatchObject({ compatible: false, failureReason: 'duplicate-ring' })
-    expect(preview.reason).toContain('same Ring')
+    expect(getEquipmentPreview(state, 'ember-staff')).toMatchObject({ compatible: false, failureReason: 'not-owned' })
+    state.inventory['wispweave-robe'] = 1
+    expect(resolveEquipmentPreviewTarget({ itemId: 'wispweave-robe', selectedPosition: 'weapon', equipment: state.equipment })).toBe('armor')
+    expect(getEquipmentPreview(state, 'wispweave-robe', 'armor')).toMatchObject({ compatible: true, position: 'armor' })
   })
 
-  it('projects Spell-origin Equipment modifiers into stable comparisons', () => {
+  it('projects Artifact mechanics and returns compact build identity', () => {
     const state = createInitialState()
     state.inventory['ember-staff'] = 1
     state.equipment.weapon = 'ember-staff'
     state.artifactProgress['ember-staff'] = { level: 2, allocatedNodeIds: ['arcane-kindling'], attunedNodeIds: [] }
-    const ember = getEquipmentStatSnapshot(state, state.equipment)
-    expect(ember.fireSpellDamage).toBeCloseTo(0.05)
-
-    const windState = createInitialState()
-    windState.inventory['windthread-charm'] = 1
-    windState.equipment.necklace = 'windthread-charm'
-    expect(getEquipmentStatSnapshot(windState, windState.equipment).airSpellDamage).toBeCloseTo(0.1)
-  })
-
-  it('returns a compact prioritized build identity for filled loadout cards', () => {
+    expect(getEquipmentStatSnapshot(state, state.equipment).fireSpellDamage).toBeCloseTo(0.05)
     expect(getEquipmentLoadoutIdentity('ember-staff')).toEqual(['FIRE', 'DOT'])
     expect(getEquipmentLoadoutIdentity('tideglass-wand')).toEqual(['WATER', 'BARRIER'])
-    expect(getEquipmentLoadoutIdentity('grovekeeper-mantle')).toEqual(['DEFENSE'])
   })
 
-  it('ranks compact key changes from the preview impact', () => {
+  it('ranks compact key changes from preview impact', () => {
     const changes = getEquipmentKeyChanges({ maxHealth: 10, basicDamage: 7, spellPower: 17, maxMana: -42, maxFocus: -20, defense: 3, critChance: 0.04 })
     expect(changes.map(({ key }) => key)).toEqual(['maxHealth', 'basicDamage', 'spellPower', 'maxMana', 'maxFocus'])
     expect(changes[1]).toMatchObject({ label: 'Basic Attack Damage', formatted: '+7', direction: 'increase' })
-  })
-
-  it('uses the item natural slot when an explicit target is incompatible', () => {
-    const state = createInitialState()
-    state.inventory['grovekeeper-mantle'] = 1
-
-    expect(resolveEquipmentPreviewTarget({ itemId: 'grovekeeper-mantle', selectedPosition: 'weapon', accessoryReplacement: null, equipment: state.equipment })).toBe('cape')
-    expect(getEquipmentPreview(state, 'grovekeeper-mantle', 'cape')).toMatchObject({ compatible: true, position: 'cape' })
-  })
-
-  it('preserves ring targets and prefers an open ring when browsing neutrally', () => {
-    const state = createInitialState()
-    state.inventory['gravebinder-ring'] = 1
-
-    expect(resolveEquipmentPreviewTarget({ itemId: 'gravebinder-ring', selectedPosition: null, accessoryReplacement: null, equipment: state.equipment })).toBe('ring1')
-    state.equipment.ring1 = 'wispbound-ring'
-    expect(resolveEquipmentPreviewTarget({ itemId: 'gravebinder-ring', selectedPosition: null, accessoryReplacement: null, equipment: state.equipment })).toBe('ring2')
-    state.equipment.ring2 = 'tideglass-wand'
-    expect(resolveEquipmentPreviewTarget({ itemId: 'gravebinder-ring', selectedPosition: 'weapon', accessoryReplacement: null, equipment: state.equipment })).toBeUndefined()
-    expect(resolveEquipmentPreviewTarget({ itemId: 'gravebinder-ring', selectedPosition: 'weapon', accessoryReplacement: 'ring1', equipment: state.equipment })).toBe('ring1')
   })
 })

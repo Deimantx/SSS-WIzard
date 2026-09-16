@@ -44,14 +44,9 @@ export function InventoryItemTile({ itemId, inventory, protectedItems, equipment
     const artificingOutput = outputRelations.find((relation) => relation.detail === 'Artificing output')
     const transmutationOutput = outputRelations.find((relation) => relation.detail === 'Transmutation output')
     const recipeUses = getItemUses(itemId).filter((use) => Boolean(use.recipeId))
-    const equipTargets = item.kind === 'equipment' && !equipped
-      ? item.equipmentSlot === 'ring'
-        ? (['ring1', 'ring2'] as const).map((position) => ({ position, result: evaluateEquipmentChange({ inventory, equipment }, itemId, position) })).filter((entry) => entry.result.ok)
-        : [evaluateEquipmentChange({ inventory, equipment }, itemId)].filter((entry): entry is { ok: true; position: EquipmentPosition; nextEquipment: GameState['equipment'] } => entry.ok).map((result) => ({ position: result.position, result }))
-      : []
-    const quickEquipOptions = equipTargets.length > 1 ? equipTargets.map(({ position }) => ({ label: `Equip to ${position === 'ring1' ? 'Ring 1' : 'Ring 2'}`, onSelect: () => onEquip(itemId, position) })) : undefined
-    const quickEquip = equipTargets.length === 1 ? () => onEquip(itemId, equipTargets[0].position) : undefined
-    const quickUnequipOptions = equippedPositions.map((position) => ({ label: `Unequip ${position === 'ring1' ? 'Ring 1' : position === 'ring2' ? 'Ring 2' : position[0].toUpperCase() + position.slice(1)}`, onSelect: () => onUnequip(position) }))
+    const equipResult = item.kind === 'equipment' && !equipped ? evaluateEquipmentChange({ inventory, equipment }, itemId) : null
+    const quickEquip = equipResult?.ok ? () => onEquip(itemId, equipResult.position) : undefined
+    const quickUnequipOptions = equippedPositions.map((position) => ({ label: `Unequip ${position[0].toUpperCase() + position.slice(1)}`, onSelect: () => onUnequip(position) }))
     const navigateWithItem = (screen: ScreenId) => { setNavigationIntent({ inventoryItemId: itemId }); onNavigate(screen) }
     const firstDrop = getItemDropSources(itemId)[0]
     openContextMenu({ x, y, anchor, header: { title: item.name, meta: `${item.kind.toUpperCase()} · OWNED ${quantity}` }, sections: buildItemContextSections({
@@ -62,7 +57,6 @@ export function InventoryItemTile({ itemId, inventory, protectedItems, equipment
       tracked,
       source: 'inventory',
       onQuickEquip: quickEquip,
-      quickEquipOptions,
       quickUnequipOptions: quickUnequipOptions.length > 1 ? quickUnequipOptions : undefined,
       onQuickUnequip: quickUnequipOptions.length === 1 ? quickUnequipOptions[0].onSelect : undefined,
       onCompare: item.kind === 'equipment' ? () => { setNavigationIntent({ equipmentItemId: itemId, equipmentPosition: equippedPositions[0] ?? null }); onNavigate('equipment') } : undefined,

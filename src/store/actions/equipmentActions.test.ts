@@ -8,9 +8,9 @@ import { equipItemAction } from './equipmentActions'
 import { BALANCE } from '../../game/core/balance/balance'
 import { getDefenseReductionFromRating } from '../../game/systems/combat/combatStats'
 
-const testRingId = 'test-arcane-ring' as ItemId
+const testWeaponId = 'test-arcane-weapon' as ItemId
 const testDefenseId = 'test-defense-robe' as ItemId
-afterEach(() => { delete ITEMS[testRingId]; delete ITEMS[testDefenseId] })
+afterEach(() => { delete ITEMS[testWeaponId]; delete ITEMS[testDefenseId] })
 
 describe('equipment actions', () => {
   it('equips a Weapon into the single Weapon slot and keeps the owned copies', () => {
@@ -48,7 +48,7 @@ describe('equipment actions', () => {
   })
 
   it('previews the derived Defense damage reduction change', () => {
-    ITEMS[testDefenseId] = { id: testDefenseId, name: 'Test Defense Robe', description: 'Test armor', icon: '▤', color: '#fff', kind: 'equipment', category: 'equipment', inventoryCategory: 'equipment', source: 'Test', sellValue: 1, canDestroy: true, equipmentSlot: 'armor', stats: { defense: 100 } } satisfies ItemDefinition
+    ITEMS[testDefenseId] = { id: testDefenseId, name: 'Test Defense Robe', description: 'Test armor', icon: 'â–¤', color: '#fff', kind: 'equipment', category: 'equipment', inventoryCategory: 'equipment', source: 'Test', sellValue: 1, canDestroy: true, equipmentSlot: 'armor', stats: { defense: 100 } } satisfies ItemDefinition
     const state = createInitialState()
     state.inventory[testDefenseId] = 1
     const preview = getEquipmentPreview(state, testDefenseId)
@@ -59,15 +59,15 @@ describe('equipment actions', () => {
     expect(preview.impact.damageReduction).toBeCloseTo(previewDefenseReduction - currentDefenseReduction)
   })
 
-  it('uses Ring 1 then Ring 2 and reserves each equipped Ring safely', () => {
-    ITEMS[testRingId] = { id: testRingId, name: 'Test Arcane Ring', description: 'Test ring', icon: '◌', color: '#fff', kind: 'equipment', category: 'equipment', inventoryCategory: 'equipment', source: 'Test', sellValue: 1, canDestroy: true, equipmentSlot: 'ring', stats: {} } satisfies ItemDefinition
+  it('keeps the single Weapon slot and its reservation safe', () => {
+    ITEMS[testWeaponId] = { id: testWeaponId, name: 'Test Arcane Weapon', description: 'Test weapon', icon: 'â—Œ', color: '#fff', kind: 'equipment', category: 'equipment', inventoryCategory: 'equipment', source: 'Test', sellValue: 1, canDestroy: true, equipmentSlot: 'weapon', stats: {} } satisfies ItemDefinition
     const state = createInitialState()
-    state.inventory[testRingId] = 1
-    state.inventory['wispbound-ring'] = 1
-    expect(equipItemAction(state, testRingId)).toMatchObject({ ok: true, position: 'ring1' })
-    expect(equipItemAction(state, 'wispbound-ring', 'ring2')).toMatchObject({ ok: true, position: 'ring2' })
-    expect(getEquippedReservedQuantity(state, testRingId)).toBe(1)
-    expect(getEquippedReservedQuantity(state, 'wispbound-ring')).toBe(1)
-    expect(equipItemAction(state, testRingId, 'ring2')).toMatchObject({ ok: false, reason: 'duplicate-ring' })
+    state.inventory[testWeaponId] = 1
+    state.inventory['tideglass-wand'] = 1
+    expect(equipItemAction(state, testWeaponId)).toMatchObject({ ok: true, position: 'weapon' })
+    expect(getEquippedReservedQuantity(state, testWeaponId)).toBe(1)
+    expect(equipItemAction(state, 'tideglass-wand')).toMatchObject({ ok: true, position: 'weapon' })
+    expect(getEquippedReservedQuantity(state, 'tideglass-wand')).toBe(1)
+    expect(Object.keys(state.equipment)).toEqual(['weapon', 'armor', 'head'])
   })
 })

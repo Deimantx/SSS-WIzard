@@ -66,7 +66,7 @@ describe('Artificing', () => {
     expect(protectedState.inventory['artifact-essence']).toBe(20)
   })
 
-  it('keeps direct dungeon Equipment out of Artificing', () => {
-    expect((RECIPES as Record<string, unknown>)['windthread-charm']).toBeUndefined()
+  it('keeps finished dungeon Equipment out of Artificing', () => {
+    expect(Object.values(RECIPES).every((recipe) => recipe.output.itemId !== 'black-portal-shard')).toBe(true)
   })
 })

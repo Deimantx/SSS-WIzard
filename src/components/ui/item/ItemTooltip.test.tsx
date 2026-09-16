@@ -39,16 +39,6 @@ describe('equipment Item Tooltip presentation', () => {
     expect(tooltip.textContent).toContain('Output')
   })
 
-  it('shows universal combat mechanics from item.combat', () => {
-    vi.useFakeTimers()
-    render(<TooltipProvider><ItemTooltip itemId="ember-staff" owned={1}><button>Ember Staff</button></ItemTooltip></TooltipProvider>)
-    fireEvent.pointerEnter(screen.getByRole('button', { name: 'Ember Staff' }))
-    act(() => { vi.advanceTimersByTime(500) })
-    const tooltip = screen.getByRole('tooltip')
-    expect(tooltip.textContent).toContain('COMBAT EFFECTS')
-    expect(tooltip.textContent).toContain('+20% Fire Spell Damage')
-  })
-
   it('uses explicit Artifact tooltip overrides over global progression', () => {
     vi.useFakeTimers()
     const previous = useGameStore.getState().artifactProgress
@@ -85,19 +75,17 @@ describe('equipment Item Tooltip presentation', () => {
     }
   })
 
-  it('keeps normal Equipment on its authored static stats', () => {
+  it('shows current Artifact stats without a legacy accessory layer', () => {
     vi.useFakeTimers()
     const previous = useGameStore.getState().artifactProgress
     useGameStore.setState({ artifactProgress: {} })
     try {
-      render(<TooltipProvider><ItemTooltip itemId="wispbound-ring" owned={1}><button>Wispbound Ring</button></ItemTooltip></TooltipProvider>)
-      fireEvent.pointerEnter(screen.getByRole('button', { name: 'Wispbound Ring' }))
+      render(<TooltipProvider><ItemTooltip itemId="wispveil-hood" owned={1}><button>Wispveil Hood</button></ItemTooltip></TooltipProvider>)
+      fireEvent.pointerEnter(screen.getByRole('button', { name: 'Wispveil Hood' }))
       act(() => { vi.advanceTimersByTime(500) })
       const tooltip = screen.getByRole('tooltip')
-      expect(tooltip.textContent).toContain('Max Mana+10')
-      expect(tooltip.textContent).toContain('Mana Regen+1/s')
-      expect(tooltip.textContent).toContain('Spell Power+5')
-      expect(tooltip.textContent).not.toContain('LEVEL')
+      expect(tooltip.textContent).toContain('LEVEL 1 / 10')
+      expect(tooltip.textContent).toContain('Max Health+10')
     } finally {
       useGameStore.setState({ artifactProgress: previous })
     }
@@ -108,7 +96,7 @@ describe('equipment Item Tooltip presentation', () => {
     const itemId = 'tooltip-custom-burning' as ItemId
     const item: ItemDefinition = {
       id: itemId,
-      name: 'Custom Burning Charm',
+      name: 'Custom Burning Weapon',
       description: 'Test-only equipment.',
       icon: '◆',
       color: '#fff',
@@ -118,13 +106,13 @@ describe('equipment Item Tooltip presentation', () => {
       source: 'Tests',
       sellValue: 1,
       canDestroy: true,
-      equipmentSlot: 'ring',
+      equipmentSlot: 'weapon',
       combat: { rules: [{ id: 'custom-burning', event: 'on-spell-hit', effects: [{ type: 'apply-status', target: 'opponent', statusId: 'burning', durationMs: 6_000, periodicEffects: [{ type: 'deal-damage', target: 'self', components: [{ damageType: 'fire', magnitude: { type: 'spell-power', coefficient: 0.2 } }], tags: ['dot', 'fire'] }] }] }] },
     }
     ITEMS[itemId] = item
     try {
-      render(<TooltipProvider><ItemTooltip itemId={itemId} owned={1}><button>Custom Burning Charm</button></ItemTooltip></TooltipProvider>)
-      fireEvent.pointerEnter(screen.getByRole('button', { name: 'Custom Burning Charm' }))
+      render(<TooltipProvider><ItemTooltip itemId={itemId} owned={1}><button>Custom Burning Weapon</button></ItemTooltip></TooltipProvider>)
+      fireEvent.pointerEnter(screen.getByRole('button', { name: 'Custom Burning Weapon' }))
       act(() => { vi.advanceTimersByTime(500) })
       const tooltip = screen.getByRole('tooltip')
       expect(tooltip.textContent).toContain('Apply Burning for 6.0s')

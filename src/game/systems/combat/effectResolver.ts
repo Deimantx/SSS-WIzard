@@ -14,6 +14,7 @@ import { runCombatTriggers, type CombatEventContext } from './triggerRuntime'
 import { getCurrentEnemyActionStep, MAX_ACTION_WORK_MS, setEnemyActionPattern } from './actionRuntime'
 import { getRootCombatSourceProvenance } from './combatProvenance'
 import { createCombatResolutionContext, type CombatDamageComponentEvent, type CombatEffect, type CombatEventSink, type CombatLogCategory, type CombatResolutionContext, type CombatSource, type CombatTag, type DamageComponent, type DamageType, type EffectTarget } from './combatTypes'
+import { stabilizeResourceValue } from '../../presentation/resources/resourcePresentation'
 
 const MAX_EFFECT_DEPTH = 20
 
@@ -255,7 +256,7 @@ const executeResource = (state: GameState, effect: Extract<CombatEffect, { type:
   if (actor !== 'player' || !isCombatActorAlive(state, actor)) return 0
   const amount = Math.round(resolveMagnitude(state, effect.magnitude, source, actor))
   const before = state.player.mana
-  state.player.mana = effect.type === 'restore-resource' ? Math.min(state.player.maxMana, state.player.mana + amount) : Math.max(0, state.player.mana - amount)
+  state.player.mana = stabilizeResourceValue(effect.type === 'restore-resource' ? Math.min(state.player.maxMana, state.player.mana + amount) : Math.max(0, state.player.mana - amount))
   const changed = Math.abs(state.player.mana - before)
   if (changed > 0) {
     const itemName = source.kind === 'equipment' ? ITEMS[source.sourceId as import('../../types').ItemId]?.name : undefined

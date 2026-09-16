@@ -5,6 +5,7 @@ import { getEquipmentStats } from '../core/equipment/equipmentStats'
 import type { ChannelingDiscoveryId, GameState, ManaPillarId } from '../types'
 import { clamp } from '../utils'
 import { getCombatModifiers } from '../systems/combat/modifiers'
+import { stabilizeResourceValue } from '../presentation/resources/resourcePresentation'
 
 export interface ManaRegenBreakdown {
   baseNatural: number
@@ -107,9 +108,9 @@ export const advanceChanneling = (state: GameState, deltaMs: number) => {
   const delta = Math.max(0, deltaMs)
   const before = state.player.mana
   const generated = manaRegenPerSecond(state) * delta / 1000
-  state.player.mana = state.debug.allowManaOverCap
+  state.player.mana = stabilizeResourceValue(state.debug.allowManaOverCap
     ? Math.max(0, before + generated)
-    : clamp(before + generated, 0, state.player.maxMana)
+    : clamp(before + generated, 0, state.player.maxMana))
   const gained = state.player.mana - before
   state.progress.channeling.totalManaGenerated += gained
   if (!state.progress.channeling.discoveries['echo-resonance']) {

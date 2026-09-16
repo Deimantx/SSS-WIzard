@@ -66,6 +66,7 @@ import { isSummoningUnlocked } from '../game/systems/summoning/summoningSelector
 import { ARCANE_CORE_BRANCHES } from '../game/content/arcaneCore/arcaneCoreBranches'
 import { applyArcaneCorePreset, maxArcaneCoreBranch as maxArcaneCoreBranchProgression, maxArcaneCoreNode as maxArcaneCoreNodeProgression, rankUpArcaneCoreNode, refundArcaneCoreNode, resetArcaneCore, resetArcaneCoreBranch as resetArcaneCoreBranchProgression, unlockArcaneCoreNode } from '../game/systems/arcaneCore'
 import { getArcaneCorePresetSnapshot, useArcaneCorePresetStore } from './arcaneCorePresetStore'
+import { stabilizeResourceValue } from '../game/presentation/resources/resourcePresentation'
 
 const combatEventSink = createCombatEventSink(combatLogSink, combatRecapSink, combatDefeatSink, combatAlertsSink, dungeonStatisticsSink, combatTelemetrySink)
 const offlineBankCombatAnalyticsSink = createCombatEventSink(dungeonStatisticsSink, combatTelemetrySink)
@@ -636,7 +637,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   hydrateState: (nextState) => { useArcaneCorePresetStore.getState().reset(); clearCombatLogUi(); clearCombatAlerts(); clearCombatRecap(); clearCombatDefeat(); clearDungeonStatistics(); combatTelemetryObserver.clear(); return set((state) => { Object.assign(state, nextState); state.player.godMode = false; state.debug = createDefaultDebugOverrides(); state.recentAcquisitions = []; state.lastOfflineBankReport = null; if (!isScreenUnlocked(state, state.ui.screen)) state.ui.screen = 'home'; recalculateDerivedStats(state); return state }) },
   dismissNotification: (id) => set((state) => { state.notifications = state.notifications.filter((note) => note.id !== id); return state }),
   setPlayer: (changes) => set((state) => { state.player = { ...state.player, ...changes }; recalculateDerivedStats(state); return state }),
-  addMana: (amount) => set((state) => { state.player.mana = Math.max(0, state.player.mana + sanitizeDebugNumber(amount)); recalculateDerivedStats(state); return state }),
+  addMana: (amount) => set((state) => { state.player.mana = stabilizeResourceValue(Math.max(0, state.player.mana + sanitizeDebugNumber(amount))); recalculateDerivedStats(state); return state }),
   setSchoolXpDebug: (school, xp) => set((state) => { setSchoolXpDebugAction(state, school, xp); return state }),
   setSchoolLevelDebug: (school, level) => set((state) => { setSchoolLevelDebugAction(state, school, level); return state }),
   setLevelCap: (cap) => set((state) => { setLevelCapAction(state, cap); return state }),

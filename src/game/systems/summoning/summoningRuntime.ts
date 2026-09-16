@@ -4,6 +4,7 @@ import type { GameState, GuardianId } from '../../types'
 import type { CombatEventSink, CombatTag } from '../combat/combatTypes'
 import { executeCombatEffects } from '../combat/effectResolver'
 import { isSummoningUnlocked } from './summoningSelectors'
+import { stabilizeResourceValue } from '../../presentation/resources/resourcePresentation'
 
 const clearGuardian = (state: GameState['combat']['guardian']) => {
   state.activeGuardianId = null
@@ -52,7 +53,7 @@ export const advanceGuardianUpkeep = (state: GameState, deltaMs: number) => {
   const guardianId = state.combat.guardian.activeGuardianId
   if (!guardianId || !state.combat.enemyId || deltaMs <= 0) return
   const upkeep = GUARDIANS[guardianId].manaPerSecond * deltaMs / 1000
-  state.player.mana = Math.max(0, state.player.mana - upkeep)
+  state.player.mana = stabilizeResourceValue(Math.max(0, state.player.mana - upkeep))
   suppressGuardian(state)
 }
 

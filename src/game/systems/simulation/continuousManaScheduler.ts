@@ -6,6 +6,7 @@ import { BALANCE } from '../../core/balance/balance'
 import { getEquippedReservedQuantity } from '../../core/equipment/equipmentRules'
 import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
 import { getEffectiveTransmutationManaCost, getEffectiveTransmutationWorkMultiplier } from '../transmutation/transmutationArrays'
+import { stabilizeResourceValue } from '../../presentation/resources/resourcePresentation'
 
 export type ContinuousManaConsumerSystem = 'research' | 'transmutation'
 
@@ -71,7 +72,7 @@ export const allocateContinuousMana = (state: GameState, requests: readonly Cont
   // fractional Mana internally and only repair floating-point underflow.
   // Do not normalize the upper bound here: a debug over-cap reserve must be
   // spendable, and ordinary state hydration/recalculation owns max-Mana repair.
-  state.player.mana = Math.max(0, availableMana - spentMana)
+  state.player.mana = stabilizeResourceValue(Math.max(0, availableMana - spentMana))
 
   return { requestedMana, spentMana, fundingRatio, allocations }
 }

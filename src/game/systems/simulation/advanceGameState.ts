@@ -28,6 +28,7 @@ import type { DungeonStatisticsObserver } from '../../telemetry/dungeon/dungeonS
 import { sanitizeCombatTimeScale } from '../../../store/actions/debugActions'
 import { MAX_ACTION_WORK_MS, MIN_ACTION_TIME_MS } from '../../core/balance/combatTiming'
 import { advanceGuardianUpkeep, ensureGuardianForCurrentEncounter, getGuardianAttackBoundary, resolveGuardianAttack, suppressGuardianIfOutOfMana } from '../summoning/summoningRuntime'
+import { hasEnoughResource } from '../../presentation/resources/resourcePresentation'
 
 export interface AdvanceContext {
   mode: 'live' | 'banked'
@@ -69,7 +70,7 @@ const autoCastReadySpells = (state: GameState, context: AdvanceContext) => {
     if (actorCannotAct(state, 'player')) break
     if (isAutoCastEligible(state, spellId)) {
       const spell = SPELLS[spellId]
-      if (latches.includes(spellId) && !state.debug.infiniteMana && state.player.mana < getEffectiveManaCost(state, spell.manaCost)) continue
+      if (latches.includes(spellId) && !state.debug.infiniteMana && !hasEnoughResource(state.player.mana, getEffectiveManaCost(state, spell.manaCost))) continue
       const latchIndex = latches.indexOf(spellId)
       if (latchIndex >= 0) latches.splice(latchIndex, 1)
       castSpellInternal(state, spellId, true, context.uiEvents)

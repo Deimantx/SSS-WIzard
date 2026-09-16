@@ -8,7 +8,8 @@ import type { GameState, ItemId, MonsterId, SchoolId, SpellId } from '../game/ty
 
 /**
  * Save-safety evidence only. These values describe permanent or cumulative
- * progression and intentionally exclude consumable resources.
+ * progression and intentionally exclude consumable resources and temporary
+ * runtime streaks.
  */
 export interface ProgressionEvidence {
   schoolXp: Record<SchoolId, number>
@@ -21,7 +22,6 @@ export interface ProgressionEvidence {
   discoveryFlags: Record<string, boolean>
   levelCap: number
   guildRank: number
-  guildReputationLifetime: number
   permanentFlags: Record<string, boolean>
   discoveredItems: Record<ItemId, boolean>
   discoveredMonsters: Record<MonsterId, boolean>
@@ -29,7 +29,6 @@ export interface ProgressionEvidence {
   focusImprovementRank: number
   focusImprovementLevel: number
   channelingManaGenerated: number
-  channelingSustainMs: number
   recoveredPortalShards: Record<string, boolean>
 }
 
@@ -66,7 +65,6 @@ export const getProgressionEvidence = (state: Pick<GameState, 'schools' | 'progr
     discoveryFlags,
     levelCap: finite(state.progress.magicLevelCap),
     guildRank: guildRanks[state.progress.guildRank] ?? 0,
-    guildReputationLifetime: finite(state.progress.guildReputation),
     permanentFlags,
     discoveredItems: Object.fromEntries(itemIds.map((id) => [id, discoveredItems.includes(id)])) as Record<ItemId, boolean>,
     discoveredMonsters: Object.fromEntries(monsterIds.map((id) => [id, discoveredMonsters.includes(id)])) as Record<MonsterId, boolean>,
@@ -74,51 +72,69 @@ export const getProgressionEvidence = (state: Pick<GameState, 'schools' | 'progr
     focusImprovementRank: finite(state.progress.focusImprovement?.rank),
     focusImprovementLevel: finite(state.progress.focusImprovement?.level),
     channelingManaGenerated: finite(state.progress.channeling?.totalManaGenerated),
-    channelingSustainMs: finite(state.progress.channeling?.fiveEchoSustainMs),
     recoveredPortalShards,
   }
 }
 
-const compareNumbers = (label: string, previous: number, candidate: number, reasons: string[]) => {
-  if (candidate < previous) reasons.push(`${label} decreased (${previous} → ${candidate})`)
+export interface ProgressionRegressionDetail {
+  field: string
+  key?: string
+  previous: number | boolean
+  candidate: number | boolean
 }
 
-const compareNumberRecord = (label: string, previous: Record<string, number>, candidate: Record<string, number>, reasons: string[]) => {
-  for (const key of new Set([...Object.keys(previous), ...Object.keys(candidate)])) compareNumbers(`${label}.${key}`, finite(previous[key]), finite(candidate[key]), reasons)
+export interface ProgressionRegressionResult {
+  catastrophic: boolean
+  details: ProgressionRegressionDetail[]
+  /** Readable compatibility output retained for existing save diagnostics. */
+  reasons: string[]
 }
 
-const compareBooleanRecord = (label: string, previous: Record<string, boolean>, candidate: Record<string, boolean>, reasons: string[]) => {
+const compareNumbers = (field: string, previous: number, candidate: number, details: ProgressionRegressionDetail[], reasons: string[], key?: string) => {
+  if (candidate < previous) {
+    details.push({ field, ...(key ? { key } : {}), previous, candidate })
+    reasons.push(`${key ? `${field}.${key}` : field} decreased (${previous} \u2192 ${candidate})`)
+  }
+}
+
+const compareNumberRecord = (field: string, previous: Record<string, number>, candidate: Record<string, number>, details: ProgressionRegressionDetail[], reasons: string[]) => {
+  for (const key of new Set([...Object.keys(previous), ...Object.keys(candidate)])) compareNumbers(field, finite(previous[key]), finite(candidate[key]), details, reasons, key)
+}
+
+const compareBooleanRecord = (field: string, previous: Record<string, boolean>, candidate: Record<string, boolean>, details: ProgressionRegressionDetail[], reasons: string[]) => {
   for (const key of new Set([...Object.keys(previous), ...Object.keys(candidate)])) {
-    if (previous[key] && !candidate[key]) reasons.push(`${label}.${key} was completed, but is now incomplete`)
+    if (previous[key] && !candidate[key]) {
+      details.push({ field, key, previous: true, candidate: false })
+      reasons.push(`${field}.${key} was completed, but is now incomplete`)
+    }
   }
 }
 
 /** Detects an impossible permanent progression regression between two states. */
-export const detectCatastrophicProgressRegression = (previous: GameState, candidate: GameState) => {
+export const detectCatastrophicProgressRegression = (previous: GameState, candidate: GameState): ProgressionRegressionResult => {
   const before = getProgressionEvidence(previous)
   const after = getProgressionEvidence(candidate)
+  const details: ProgressionRegressionDetail[] = []
   const reasons: string[] = []
-  compareNumberRecord('schoolXp', before.schoolXp, after.schoolXp, reasons)
-  compareNumberRecord('schoolLevels', before.schoolLevels, after.schoolLevels, reasons)
-  compareNumberRecord('bossKills', before.bossKills, after.bossKills, reasons)
-  compareNumberRecord('lifetimeKills', before.lifetimeKills, after.lifetimeKills, reasons)
-  compareNumberRecord('spellRanks', before.spellRanks, after.spellRanks, reasons)
-  compareNumbers('unlockedSpellCount', before.unlockedSpellCount, after.unlockedSpellCount, reasons)
-  compareNumbers('completedDiscoveries', before.completedDiscoveries, after.completedDiscoveries, reasons)
-  compareBooleanRecord('discoveryFlags', before.discoveryFlags, after.discoveryFlags, reasons)
-  compareNumbers('levelCap', before.levelCap, after.levelCap, reasons)
-  compareNumbers('guildRank', before.guildRank, after.guildRank, reasons)
-  compareNumbers('guildReputationLifetime', before.guildReputationLifetime, after.guildReputationLifetime, reasons)
-  compareBooleanRecord('permanentFlags', before.permanentFlags, after.permanentFlags, reasons)
-  compareBooleanRecord('discoveredItems', before.discoveredItems, after.discoveredItems, reasons)
-  compareBooleanRecord('discoveredMonsters', before.discoveredMonsters, after.discoveredMonsters, reasons)
-  compareBooleanRecord('recoveredPortalShards', before.recoveredPortalShards, after.recoveredPortalShards, reasons)
-  compareNumberRecord('permanentFocusBonuses', before.permanentFocusBonuses, after.permanentFocusBonuses, reasons)
-  compareNumbers('focusImprovementRank', before.focusImprovementRank, after.focusImprovementRank, reasons)
-  compareNumbers('focusImprovementLevel', before.focusImprovementLevel, after.focusImprovementLevel, reasons)
-  compareNumbers('channelingManaGenerated', before.channelingManaGenerated, after.channelingManaGenerated, reasons)
-  compareNumbers('channelingSustainMs', before.channelingSustainMs, after.channelingSustainMs, reasons)
-  return { catastrophic: reasons.length > 0, reasons }
+  compareNumberRecord('schoolXp', before.schoolXp, after.schoolXp, details, reasons)
+  compareNumberRecord('schoolLevels', before.schoolLevels, after.schoolLevels, details, reasons)
+  compareNumberRecord('bossKills', before.bossKills, after.bossKills, details, reasons)
+  compareNumberRecord('lifetimeKills', before.lifetimeKills, after.lifetimeKills, details, reasons)
+  compareNumberRecord('spellRanks', before.spellRanks, after.spellRanks, details, reasons)
+  compareNumbers('unlockedSpellCount', before.unlockedSpellCount, after.unlockedSpellCount, details, reasons)
+  compareNumbers('completedDiscoveries', before.completedDiscoveries, after.completedDiscoveries, details, reasons)
+  compareBooleanRecord('discoveryFlags', before.discoveryFlags, after.discoveryFlags, details, reasons)
+  compareNumbers('levelCap', before.levelCap, after.levelCap, details, reasons)
+  compareNumbers('guildRank', before.guildRank, after.guildRank, details, reasons)
+  compareBooleanRecord('permanentFlags', before.permanentFlags, after.permanentFlags, details, reasons)
+  compareBooleanRecord('discoveredItems', before.discoveredItems, after.discoveredItems, details, reasons)
+  compareBooleanRecord('discoveredMonsters', before.discoveredMonsters, after.discoveredMonsters, details, reasons)
+  compareBooleanRecord('recoveredPortalShards', before.recoveredPortalShards, after.recoveredPortalShards, details, reasons)
+  compareNumberRecord('permanentFocusBonuses', before.permanentFocusBonuses, after.permanentFocusBonuses, details, reasons)
+  compareNumbers('focusImprovementRank', before.focusImprovementRank, after.focusImprovementRank, details, reasons)
+  compareNumbers('focusImprovementLevel', before.focusImprovementLevel, after.focusImprovementLevel, details, reasons)
+  compareNumbers('channelingManaGenerated', before.channelingManaGenerated, after.channelingManaGenerated, details, reasons)
+  return { catastrophic: details.length > 0, details, reasons }
 }
 
 export interface ProgressionEvidenceSummary {
@@ -131,7 +147,6 @@ export interface ProgressionEvidenceSummary {
   completedDiscoveries: number
   levelCap: number
   guildRank: number
-  guildReputationLifetime: number
 }
 
 export const summarizeProgressionEvidence = (evidence: ProgressionEvidence): ProgressionEvidenceSummary => ({
@@ -144,5 +159,4 @@ export const summarizeProgressionEvidence = (evidence: ProgressionEvidence): Pro
   completedDiscoveries: evidence.completedDiscoveries,
   levelCap: evidence.levelCap,
   guildRank: evidence.guildRank,
-  guildReputationLifetime: evidence.guildReputationLifetime,
 })

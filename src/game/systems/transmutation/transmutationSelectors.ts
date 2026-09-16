@@ -8,6 +8,7 @@ import { manaRegenPerSecond } from '../../engine/channelingEngine'
 import { continuousManaPerSecond, estimateContinuousFundingRatio, CONTINUOUS_MANA_EPSILON, getContinuousManaDemandPerSecond } from '../simulation/continuousManaScheduler'
 import type { EquipmentItemSlot, GameState, ItemId, RecipeCategory, TransmutationRecipeId, TransmutationCategoryFilter, TransmutationJobState, TransmutationTierFilter } from '../../types'
 import { getEffectiveTransmutationCraftsPerHour, getEffectiveTransmutationDuration, getEffectiveTransmutationManaCost, getEffectiveTransmutationOutputPerHour, getEffectiveTransmutationWorkMultiplier, getTransmutationArrayBonuses } from './transmutationArrays'
+import { hasEnoughResource } from '../../presentation/resources/resourcePresentation'
 
 export interface TransmutationRecipeFilters {
   categoryFilter: TransmutationCategoryFilter
@@ -84,7 +85,7 @@ export function getRecipeMaterialCapacity(requirements: RecipeConsumableRequirem
 }
 
 export const hasRecipeMaterials = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment'>, recipe: RecipeDefinition) => getRecipeConsumableRequirements(state, recipe).every((requirement) => requirement.available >= requirement.required)
-export const isRecipeCraftable = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment' | 'player' | 'progress'>, recipe: RecipeDefinition) => isRecipeUnlocked(state, recipe) && state.player.mana >= getEffectiveTransmutationManaCost(state, recipe) && hasRecipeMaterials(state, recipe)
+export const isRecipeCraftable = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment' | 'player' | 'progress'>, recipe: RecipeDefinition) => isRecipeUnlocked(state, recipe) && hasEnoughResource(state.player.mana, getEffectiveTransmutationManaCost(state, recipe)) && hasRecipeMaterials(state, recipe)
 
 export function getRecipeStatus(state: Pick<GameState, 'activities' | 'inventory' | 'protectedItems' | 'equipment' | 'artifactProgress' | 'player' | 'progress' | 'schools'> & Partial<Pick<GameState, 'debug'>>, recipe: RecipeDefinition): TransmutationStatus {
   if (!isRecipeUnlocked(state, recipe)) return 'locked'

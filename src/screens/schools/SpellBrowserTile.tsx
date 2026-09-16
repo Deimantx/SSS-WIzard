@@ -12,6 +12,7 @@ import { SpellCardTooltip } from './SpellCardTooltip'
 import { buildSpellDetailPresentation, type SpellPresentationState } from './spellDetailPresentation'
 import { useGameContextMenu } from '../../ui/context-menu/GameContextMenuProvider'
 import { useGameStore } from '../../store/gameStore'
+import { formatResourceAmount } from '../../game/presentation/resources/resourcePresentation'
 
 export function SpellBrowserTile({ entry, state, selected, newSpell = false, onSelect, onToggleAutoCast, onTogglePresetSpell, presetContainsSpell = false, onOpenPresetManager }: { entry: SpellBrowserEntry; state: SpellPresentationState; selected: boolean; newSpell?: boolean; onSelect: (id: SpellId | string) => void; onToggleAutoCast: (spellId: SpellId) => void; onTogglePresetSpell?: (spellId: SpellId) => void; presetContainsSpell?: boolean; onOpenPresetManager: () => void }) {
   const { openContextMenu } = useGameContextMenu()
@@ -43,7 +44,7 @@ export function SpellBrowserTile({ entry, state, selected, newSpell = false, onS
       </span>
       {unlocked && newSpell && <span className="archive-new-badge spell-new-badge">NEW</span>}
       <span className="spell-browser-effect-slot" aria-hidden="true" />
-      {unlocked && entry.kind === 'spell' && presentation ? <span className="spell-browser-footer"><span className="ui-mana" aria-label="Mana cost"><Droplet size={12} aria-hidden="true" />{presentation.manaCost}</span><span className="ui-time" aria-label="Cooldown"><Clock3 size={12} aria-hidden="true" />{presentation.cooldownLabel}</span></span> : <span className="spell-browser-footer"><CircleDot size={11} aria-hidden="true" />Requires Lv {entry.unlockLevel}</span>}
+      {unlocked && entry.kind === 'spell' && presentation ? <span className="spell-browser-footer"><span className="ui-mana" aria-label={`Mana cost ${formatResourceAmount(presentation.manaCost)}`}><Droplet size={12} aria-hidden="true" />{formatResourceAmount(presentation.manaCost)}</span><span className="ui-time" aria-label="Cooldown"><Clock3 size={12} aria-hidden="true" />{presentation.cooldownLabel}</span></span> : <span className="spell-browser-footer"><CircleDot size={11} aria-hidden="true" />Requires Lv {entry.unlockLevel}</span>}
       </button>
     </GameTooltip>
     <span className="spell-browser-effect-icons" aria-label={effectTags.length ? `Effect types: ${effectTags.map(effectTagLabel).join(', ')}` : undefined} aria-hidden={!effectTags.length}>{effectTags.map((tag) => <GameTooltip key={tag} content={<TooltipContent title={effectTagLabel(tag)} description={`${effectTagLabel(tag)} effect.`} />}><span className={`spell-browser-effect-icon effect-micro-${tag.toLocaleLowerCase()}`} aria-label={effectTagLabel(tag)}><EffectMicroIcon tag={tag} /></span></GameTooltip>)}</span>

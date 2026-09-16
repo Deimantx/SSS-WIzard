@@ -7,6 +7,7 @@ import type { GameState, SpellId } from '../types'
 import type { CombatEventSink } from '../systems/combat/combatTypes'
 import { getEffectiveManaCost } from '../systems/combat/combatStats'
 import { getSpellCombatSource } from '../systems/spells/spellSource'
+import { hasEnoughResource, stabilizeResourceValue } from '../presentation/resources/resourcePresentation'
 
 const hasEnemyTarget = (spellId: SpellId) => SPELLS[spellId].effects.some((effect) => effect.target === 'opponent')
 
@@ -21,7 +22,7 @@ export const getSpellCastFailure = (state: GameState, spellId: SpellId): SpellCa
   if (!state.combat.active) return 'inactive'
   if (hasEnemyTarget(spellId) && !state.combat.enemyId) return 'no-target'
   if (!state.debug.ignoreSpellCooldowns && state.combat.spellCooldowns[spellId] > 0) return 'cooldown'
-  if (!state.debug.infiniteMana && state.player.mana < getEffectiveManaCost(state, spell.manaCost)) return 'mana'
+  if (!state.debug.infiniteMana && !hasEnoughResource(state.player.mana, getEffectiveManaCost(state, spell.manaCost))) return 'mana'
   return null
 }
 
@@ -58,7 +59,7 @@ export const castSpellInternal = (state: GameState, spellId: SpellId, quiet = fa
     if (failure === 'mana') reportManaStarvation(state, spellId, uiEvents)
     return false
   }
-  if (!state.debug.infiniteMana) state.player.mana -= getEffectiveManaCost(state, spell.manaCost)
+  if (!state.debug.infiniteMana) state.player.mana = stabilizeResourceValue(state.player.mana - getEffectiveManaCost(state, spell.manaCost))
   state.combat.spellCooldowns[spellId] = state.debug.ignoreSpellCooldowns ? 0 : spell.cooldownMs
   const source = getSpellCombatSource(spellId)
   executeCombatEffects(state, spell.effects, source, undefined, uiEvents)

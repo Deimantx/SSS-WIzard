@@ -55,7 +55,7 @@ const ring5 = createRing('vitality', 5, [
   minor('vitality-r5-resilient-healing', 'Resilient Healing', '+3% Healing Received per rank.', rankedModifier('healing-received-percent', 0.03)),
   perk('vitality-r5-fortified-ward', 'Fortified Ward', 'While Barrier exists: -1% Damage Taken per rank.', rankedModifier('damage-taken-percent', -0.01, { type: 'self-has-barrier' })),
   perk('vitality-r5-bastion-recovery', 'Bastion Recovery', 'A kill heals 0.75% Max Health per rank.', (rank) => ({ rules: [rule('vitality-bastion-recovery', 'on-kill', [{ type: 'heal', target: 'self', magnitude: { type: 'source-max-health-percent', value: 0.0075 * rank } }])] })),
-  major('vitality-r5-living-fortress', 'Living Fortress', 'While Barrier exists: -8% Damage Taken and +5 Defense.', fixedEffects({ modifiers: [modifier('damage-taken-percent', -0.08, { type: 'self-has-barrier' }), modifier('defense-flat', 5)] })),
+  major('vitality-r5-living-fortress', 'Living Fortress', 'While Barrier exists: -8% Damage Taken and +5 Defense.', fixedEffects({ modifiers: [modifier('damage-taken-percent', -0.08, { type: 'self-has-barrier' }), modifier('defense-flat', 5, { type: 'self-has-barrier' })] })),
 ])
 const ring6 = createRing('vitality', 6, [
   minor('vitality-r6-greater-vitality', 'Greater Vitality', '+40 Max Health per rank.', linearStat('maxHealth', 40)),

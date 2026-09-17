@@ -38,7 +38,7 @@ interface ArcaneCoreOrbitNodeProps {
   highestRing: ArcaneCoreRingIndex
   selected: boolean
   selectedRing: boolean
-  feedback?: 'purchase' | 'max' | 'major'
+  feedback?: 'purchase' | 'max'
   onSelect: (nodeId: string) => void
 }
 
@@ -51,7 +51,7 @@ interface ArcaneCoreNodeLayerProps {
   core: ReturnType<typeof useGameStore.getState>['arcaneCore']
   highestRing: ArcaneCoreRingIndex
   selectedId: string
-  feedback: { nodeId: string; kind: 'purchase' | 'max' | 'major' } | null
+  feedback: { nodeId: string; kind: 'purchase' | 'max' } | null
   onSelect: (nodeId: string) => void
 }
 
@@ -81,7 +81,7 @@ function CoreModal({ branch, onClose }: { branch: ArcaneCoreBranchDefinition; on
   const refund = useGameStore((state) => state.refundArcaneCoreNode)
   const resetBranch = useGameStore((state) => state.resetArcaneCoreBranch)
   const [selectedId, setSelectedId] = useState(branch.nodes[0]?.id ?? '')
-  const [feedback, setFeedback] = useState<{ nodeId: string; kind: 'purchase' | 'max' | 'major' } | null>(null)
+  const [feedback, setFeedback] = useState<{ nodeId: string; kind: 'purchase' | 'max' } | null>(null)
   const [ringPulse, setRingPulse] = useState<ArcaneCoreRingIndex | null>(null)
   const [confirmation, setConfirmation] = useState<PendingConfirmation | null>(null)
   const viewportRef = useRef<HTMLDivElement>(null)
@@ -144,7 +144,7 @@ function CoreModal({ branch, onClose }: { branch: ArcaneCoreBranchDefinition; on
   }, [cameraMode, fitCamera, fitProgressionRing, viewportSize.width, viewportSize.height])
   useEffect(() => () => { if (feedbackTimer.current !== null) window.clearTimeout(feedbackTimer.current) }, [])
 
-  const flashFeedback = (nodeId: string, kind: 'purchase' | 'max' | 'major', unlockedRing?: ArcaneCoreRingIndex) => {
+  const flashFeedback = (nodeId: string, kind: 'purchase' | 'max', unlockedRing?: ArcaneCoreRingIndex) => {
     if (feedbackTimer.current !== null) window.clearTimeout(feedbackTimer.current)
     setFeedback({ nodeId, kind })
     setRingPulse(unlockedRing ?? null)
@@ -156,7 +156,7 @@ function CoreModal({ branch, onClose }: { branch: ArcaneCoreBranchDefinition; on
     if (!purchase(selected.id)) return
     const nextCore = useGameStore.getState().arcaneCore
     const nextHighest = getArcaneCoreHighestUnlockedRing(nextCore, branch.id)
-    flashFeedback(selected.id, selected.nodeType === 'major' ? 'major' : selectedRank + 1 >= selected.maxRank ? 'max' : 'purchase', nextHighest > previousHighest ? nextHighest : undefined)
+    flashFeedback(selected.id, selectedRank + 1 >= selected.maxRank ? 'max' : 'purchase', nextHighest > previousHighest ? nextHighest : undefined)
   }
   const requestRefund = () => {
     if (!selected || selectedRank <= 0) return

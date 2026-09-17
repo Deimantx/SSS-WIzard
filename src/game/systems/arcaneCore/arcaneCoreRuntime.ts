@@ -10,13 +10,13 @@ export const isArcaneCoreSpellFree = (state: Pick<GameState, 'arcaneCore' | 'com
 }
 
 export const getArcaneCoreDynamicSpellPower = (state: Pick<GameState, 'arcaneCore' | 'activities' | 'progress' | 'equipment' | 'artifactProgress' | 'player'>) => {
-  const effect = special(state.arcaneCore, 'reserved-focus-spell-power')[0]
-  return effect?.type === 'reserved-focus-spell-power' ? selectUsedFocus(state) * effect.spellPowerPerReservedFocus : 0
+  const perReservedFocus = special(state.arcaneCore, 'reserved-focus-spell-power').reduce((sum, effect) => effect.type === 'reserved-focus-spell-power' ? sum + effect.spellPowerPerReservedFocus : sum, 0)
+  return selectUsedFocus(state) * perReservedFocus
 }
 
 export const getArcaneCoreDynamicManaRegen = (state: Pick<GameState, 'arcaneCore' | 'activities' | 'progress' | 'equipment' | 'artifactProgress' | 'player'>) => {
-  const effect = special(state.arcaneCore, 'free-focus-mana-regen')[0]
-  return effect?.type === 'free-focus-mana-regen' ? selectFreeFocus(state) * effect.manaRegenPerFreeFocus : 0
+  const perFreeFocus = special(state.arcaneCore, 'free-focus-mana-regen').reduce((sum, effect) => effect.type === 'free-focus-mana-regen' ? sum + effect.manaRegenPerFreeFocus : sum, 0)
+  return selectFreeFocus(state) * perFreeFocus
 }
 
 export const beginArcaneCoreSpellCast = (state: GameState, damaging: boolean) => {

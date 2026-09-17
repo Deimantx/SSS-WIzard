@@ -88,8 +88,6 @@
 .arcane-core-ring-node.is-selected-ring-node:not(.is-selected) { border-color: color-mix(in srgb, var(--branch-accent) 45%, var(--ui-border)); }
 .arcane-core-ring-node.is-ring-locked { opacity: .54; filter: saturate(.45); }
 .arcane-core-ring-node.is-deep-locked { opacity: .24; filter: saturate(.28); }
-.arcane-core-ring-node.node-major { width: 148px; height: 148px; min-height: 148px; border-width: 2px; border-color: color-mix(in srgb, var(--ui-warning) 72%, var(--branch-accent)); background: radial-gradient(circle at 50% 28%, color-mix(in srgb, var(--ui-warning) 18%, var(--ui-panel-strong)), var(--ui-panel-strong) 70%); box-shadow: 0 0 30px color-mix(in srgb, var(--ui-warning) 18%, transparent), inset 0 0 20px color-mix(in srgb, var(--ui-warning) 8%, transparent); }
-.arcane-core-ring-node.node-major.is-active { border-color: var(--ui-warning); box-shadow: 0 0 38px color-mix(in srgb, var(--ui-warning) 30%, transparent), inset 0 0 22px color-mix(in srgb, var(--ui-warning) 12%, transparent); }
 .arcane-core-node-dot { display: grid; place-items: center; width: 29px; height: 29px; border: 1px solid color-mix(in srgb, var(--branch-accent) 58%, var(--ui-border)); border-radius: 50%; color: var(--branch-accent); background: color-mix(in srgb, var(--branch-accent) 13%, var(--ui-panel)); font-size: 13px; line-height: 1; }
 .arcane-core-ring-node strong { display: -webkit-box; min-width: 0; max-width: 92px; overflow: hidden; color: inherit; font-size: 10px; line-height: 1.12; text-overflow: ellipsis; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .arcane-core-ring-node small { color: var(--ui-text-muted); font: 8px var(--font-mono); letter-spacing: .06em; }
@@ -135,17 +133,13 @@
 .arcane-core-ring-viewport.is-panning .arcane-core-orbit { transition: none; }
 .arcane-core-world.is-zoom-far .arcane-core-ring-node strong, .arcane-core-world.is-zoom-far .arcane-core-ring-node small, .arcane-core-world.is-zoom-far .arcane-core-rank-pips { opacity: 0; }
 .arcane-core-world.is-zoom-far .arcane-core-ring-node { width: 70px; height: 70px; min-height: 70px; padding: 7px; gap: 0; }
-.arcane-core-world.is-zoom-far .arcane-core-ring-node.node-major { width: 86px; height: 86px; min-height: 86px; }
 .arcane-core-world.is-zoom-medium .arcane-core-ring-node strong { font-size: 9px; }
 .arcane-core-world.is-zoom-medium .arcane-core-ring-node { width: 104px; height: 104px; min-height: 104px; }
-.arcane-core-world.is-zoom-medium .arcane-core-ring-node.node-major { width: 132px; height: 132px; min-height: 132px; }
 .arcane-core-ring-node.is-purchase-pulse { animation: arcane-core-node-purchase .72s ease-out; }
 .arcane-core-ring-node.is-max-pulse { animation: arcane-core-node-max .72s ease-out; }
-.arcane-core-ring-node.is-major-pulse { animation: arcane-core-node-major .72s ease-out; }
 .arcane-core-orbit.is-unlock-pulse { animation: arcane-core-orbit-unlock .76s ease-out; }
 @keyframes arcane-core-node-purchase { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--branch-accent) 68%, transparent); } 45% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--branch-accent) 18%, transparent), 0 0 30px color-mix(in srgb, var(--branch-accent) 34%, transparent); } 100% { box-shadow: 0 0 0 0 transparent; } }
 @keyframes arcane-core-node-max { 0%, 100% { filter: saturate(1); } 40% { filter: saturate(1.7) brightness(1.3); box-shadow: 0 0 0 8px color-mix(in srgb, var(--branch-accent) 22%, transparent), 0 0 38px color-mix(in srgb, var(--branch-accent) 42%, transparent); } }
-@keyframes arcane-core-node-major { 0%, 100% { filter: saturate(1); } 45% { filter: saturate(1.8) brightness(1.25); box-shadow: 0 0 0 10px color-mix(in srgb, var(--ui-warning) 20%, transparent), 0 0 48px color-mix(in srgb, var(--ui-warning) 44%, transparent); } }
 @keyframes arcane-core-orbit-unlock { 0% { stroke-opacity: .2; } 45% { stroke-opacity: .95; } 100% { stroke-opacity: .66; } }
 
 .arcane-core-world, .arcane-core-node-layer, .arcane-core-orbit-layer, .arcane-core-hub, .arcane-core-ring-node { user-select: none; -webkit-user-select: none; -webkit-user-drag: none; }
@@ -155,4 +149,4 @@
 @media (prefers-reduced-motion: reduce) { .arcane-core-world, .arcane-core-ring-node, .arcane-core-orbit { transition: none; animation: none !important; } }
 @media (max-width: 900px) { .arcane-core-branch-grid { grid-template-columns: 1fr; }.arcane-core-modal-body { grid-template-columns: 1fr; grid-template-rows: minmax(420px, 1fr) auto; }.arcane-core-node-inspector { max-height: 330px; } }
 @media (max-width: 620px) { .arcane-core-preset-create { grid-template-columns: 1fr; }.arcane-core-preset-error { grid-column: auto; }.arcane-core-preset-row { grid-template-columns: 1fr; }.arcane-core-preset-actions { justify-content: flex-start; } }
-@media (max-width: 560px) { .arcane-core-wallet { grid-template-columns: 1fr; }.arcane-core-branch-card { grid-template-columns: auto minmax(0, 1fr); }.arcane-core-branch-progress { grid-column: 2; justify-items: start; }.arcane-core-branch-open { grid-column: 2; }.arcane-core-modal-backdrop { padding: 8px; }.arcane-core-modal { height: calc(100vh - 16px); padding: 13px; }.arcane-core-modal-head { gap: 8px; }.arcane-core-modal-head h2 { font-size: 19px; }.arcane-core-modal-actions .status { display: none; }.arcane-core-ring-node { width: 96px; height: 96px; min-height: 96px; padding: 9px; }.arcane-core-ring-node.node-major { width: 122px; height: 122px; min-height: 122px; }.arcane-core-ring-node strong { max-width: 78px; font-size: 9px; }.arcane-core-rank-pips { gap: 2px; }.arcane-core-rank-pips b { width: 8px; }.arcane-core-hub { width: 192px; height: 192px; padding: 22px; }.arcane-core-hub strong { font-size: 20px; } }
+@media (max-width: 560px) { .arcane-core-wallet { grid-template-columns: 1fr; }.arcane-core-branch-card { grid-template-columns: auto minmax(0, 1fr); }.arcane-core-branch-progress { grid-column: 2; justify-items: start; }.arcane-core-branch-open { grid-column: 2; }.arcane-core-modal-backdrop { padding: 8px; }.arcane-core-modal { height: calc(100vh - 16px); padding: 13px; }.arcane-core-modal-head { gap: 8px; }.arcane-core-modal-head h2 { font-size: 19px; }.arcane-core-modal-actions .status { display: none; }.arcane-core-ring-node { width: 96px; height: 96px; min-height: 96px; padding: 9px; }.arcane-core-ring-node strong { max-width: 78px; font-size: 9px; }.arcane-core-rank-pips { gap: 2px; }.arcane-core-rank-pips b { width: 8px; }.arcane-core-hub { width: 192px; height: 192px; padding: 22px; }.arcane-core-hub strong { font-size: 20px; } }

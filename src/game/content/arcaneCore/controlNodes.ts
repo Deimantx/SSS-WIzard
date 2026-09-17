@@ -22,7 +22,7 @@ const ring2 = createRing('control', 2, [
   perk('control-r2-vulnerability-exploit', 'Vulnerability Exploit', 'Against Vulnerable enemies: +1.6% Damage per rank.', rankedModifier('damage-dealt-percent', 0.016, { type: 'target-has-status', statusId: 'vulnerable' })),
   perk('control-r2-spell-feedback', 'Spell Feedback', 'Negative Statuses reduce the applying Spell cooldown by 40–200 ms.', (rank) => ({ rules: [rule('control-spell-feedback', 'on-status-applied', [{ type: 'modify-cooldown', target: 'self', spellId: 'source', amountMs: -rankValues(rank, [40, 80, 120, 160, 200]) }], eventStatusTag('debuff'))] })),
   perk('control-r2-controlled-assault', 'Controlled Assault', 'Against control-status enemies: +1% Damage per rank.', rankedModifier('damage-dealt-percent', 0.01, controlledEnemy)),
-  perk('control-r2-precision-timing', 'Precision Timing', '+0.5% Player Action Speed per rank.', linearStat('basicAttackSpeedPct', 0.005)),
+  perk('control-r2-precision-timing', 'Precision Timing', '+0.5% Player Action Speed per rank.', rankedModifier('action-speed-percent', 0.005)),
   major('control-r2-perfect-timing', 'Perfect Timing', '+5% Player Action Speed.', fixedEffects({ modifiers: [modifier('action-speed-percent', 0.05)] })),
 ])
 const ring3 = createRing('control', 3, [

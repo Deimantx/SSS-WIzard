@@ -23,10 +23,10 @@ export const major = (id: string, name: string, description: string, resolver?: 
 
 export const createRing = (branchId: ArcaneCoreBranchId, ring: ArcaneCoreRingIndex, drafts: ArcaneCoreNodeDraft[]): ArcaneCoreNodeDefinition[] => {
   const offsetDeg = ARCANE_CORE_RING_OFFSETS[ring]
-  const standardNodes = drafts.filter((draft) => draft.nodeType !== 'major')
-  const majorNodes = drafts.filter((draft) => draft.nodeType === 'major')
-  return [
-    ...majorNodes.map((draft) => ({ ...draft, branchId, ring, angleDeg: normalizeAngle(offsetDeg) })),
-    ...standardNodes.map((draft, index) => ({ ...draft, branchId, ring, angleDeg: normalizeAngle(offsetDeg + (index + 1) * ARCANE_CORE_NODE_ANGLE_STEP) })),
-  ]
+  let standardIndex = 0
+  return drafts.map((draft) => {
+    if (draft.nodeType === 'major') return { ...draft, branchId, ring, angleDeg: normalizeAngle(offsetDeg) }
+    standardIndex += 1
+    return { ...draft, branchId, ring, angleDeg: normalizeAngle(offsetDeg + standardIndex * ARCANE_CORE_NODE_ANGLE_STEP) }
+  })
 }

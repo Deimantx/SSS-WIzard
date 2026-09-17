@@ -1,5 +1,6 @@
 import type { ArcaneCoreBranchId, ArcaneCoreNodeDefinition, ArcaneCoreNodeType, ArcaneCoreResolvedEffects, ArcaneCoreRingIndex, EquipmentStats } from '../../types'
 import type { CombatCondition, CombatEffect, CombatModifier, CombatTrigger, CombatTriggerRule } from '../../systems/combat/combatTypes'
+import { ARCANE_CORE_RING_OFFSETS } from './arcaneCoreRings'
 
 export type ArcaneCoreEffectResolver = (rank: number) => ArcaneCoreResolvedEffects
 export type ArcaneCoreNodeDraft = Omit<ArcaneCoreNodeDefinition, 'branchId' | 'ring' | 'angleDeg'>
@@ -26,7 +27,7 @@ export interface ArcaneCoreRingLayoutOptions {
 }
 
 export const createRing = (branchId: ArcaneCoreBranchId, ring: ArcaneCoreRingIndex, drafts: ArcaneCoreNodeDraft[], options: ArcaneCoreRingLayoutOptions = {}): ArcaneCoreNodeDefinition[] => {
-  const offsetDeg = options.offsetDeg ?? (ring % 2 === 0 ? 20 : 0)
+  const offsetDeg = options.offsetDeg ?? ARCANE_CORE_RING_OFFSETS[ring]
   const majorAngleDeg = options.majorAngleDeg ?? 0
   const standard = drafts.filter((draft) => draft.nodeType !== 'major')
   const major = drafts.filter((draft) => draft.nodeType === 'major')

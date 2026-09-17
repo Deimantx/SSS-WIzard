@@ -9,16 +9,16 @@ describe('Developer Arcane Core tab', () => {
 
   it('exposes rank, Ring, Core, and diagnostics controls that update the real state', () => {
     render(<DeveloperArcaneCore />)
-    expect(screen.getByText('Arcane Core · V3 tester controls')).toBeTruthy()
+    expect(screen.getByText('Arcane Core · V4 tester controls')).toBeTruthy()
     expect(screen.getByRole('combobox', { name: 'Set selected Arcane Core node rank' })).toBeTruthy()
-    expect(screen.getAllByRole('button', { name: 'MAX RING 1' })).toHaveLength(4)
+    expect(screen.getByRole('button', { name: 'MAX RING 1' })).toBeTruthy()
     expect(screen.getByText('Ring diagnostics')).toBeTruthy()
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'MAX RING 1' })[0])
+    fireEvent.click(screen.getByRole('button', { name: 'MAX RING 1' }))
     expect(getArcaneCoreRingPointsSpent(useGameStore.getState().arcaneCore, 'power', 1)).toBe(43)
 
     fireEvent.click(screen.getAllByRole('button', { name: 'MAX CORE' })[0])
-    expect(getArcaneCorePointsSpent(useGameStore.getState().arcaneCore)).toBe(172)
+    expect(getArcaneCorePointsSpent(useGameStore.getState().arcaneCore)).toBe(344)
 
     fireEvent.click(screen.getAllByRole('button', { name: 'RESET CORE' })[0])
     expect(getArcaneCoreRingPointsSpent(useGameStore.getState().arcaneCore, 'power', 1)).toBe(0)

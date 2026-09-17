@@ -46,4 +46,49 @@ const ring4 = createRing('vitality', 4, [
   major('vitality-r4-survival-instinct', 'Survival Instinct', 'Once per dungeon run, lethal damage leaves the Wizard at 1 Health.', fixedEffects({ special: [{ type: 'lethal-survival', leaveAtHealth: 1, oncePerDungeonRun: true }] })),
 ])
 
-export const vitalityNodes = [ring1, ring2, ring3, ring4]
+const ring5 = createRing('vitality', 5, [
+  minor('vitality-r5-bastion-heart', 'Bastion Heart', '+30 Max Health per rank.', linearStat('maxHealth', 30)),
+  minor('vitality-r5-iron-recovery', 'Iron Recovery', '+0.5 Health Regen per rank.', linearStat('healthRegen', 0.5)),
+  minor('vitality-r5-fortress-defense', 'Fortress Defense', '+3 Defense per rank.', linearStat('defense', 3)),
+  minor('vitality-r5-bastion-guard', 'Bastion Guard', '+1% Block Chance per rank.', linearStat('blockChance', 0.01)),
+  minor('vitality-r5-greater-barrier', 'Greater Barrier', '+4% Barrier Power per rank.', linearStat('barrierPowerPct', 0.04)),
+  minor('vitality-r5-resilient-healing', 'Resilient Healing', '+3% Healing Received per rank.', rankedModifier('healing-received-percent', 0.03)),
+  perk('vitality-r5-fortified-ward', 'Fortified Ward', 'While Barrier exists: -1% Damage Taken per rank.', rankedModifier('damage-taken-percent', -0.01, { type: 'self-has-barrier' })),
+  perk('vitality-r5-bastion-recovery', 'Bastion Recovery', 'A kill heals 0.75% Max Health per rank.', (rank) => ({ rules: [rule('vitality-bastion-recovery', 'on-kill', [{ type: 'heal', target: 'self', magnitude: { type: 'source-max-health-percent', value: 0.0075 * rank } }])] })),
+  major('vitality-r5-living-fortress', 'Living Fortress', 'While Barrier exists: -8% Damage Taken and +5 Defense.', fixedEffects({ modifiers: [modifier('damage-taken-percent', -0.08, { type: 'self-has-barrier' }), modifier('defense-flat', 5)] })),
+])
+const ring6 = createRing('vitality', 6, [
+  minor('vitality-r6-greater-vitality', 'Greater Vitality', '+40 Max Health per rank.', linearStat('maxHealth', 40)),
+  minor('vitality-r6-greater-recovery', 'Greater Recovery', '+0.6 Health Regen per rank.', linearStat('healthRegen', 0.6)),
+  minor('vitality-r6-restoration-mastery', 'Restoration Mastery', '+4% Healing Done per rank.', linearStat('healingDonePct', 0.04)),
+  minor('vitality-r6-rejuvenation', 'Rejuvenation', '+4% Healing Received per rank.', rankedModifier('healing-received-percent', 0.04)),
+  perk('vitality-r6-ward-life', 'Ward Life', 'Whenever Barrier is gained, heal 0.4% Max Health per rank.', (rank) => ({ rules: [rule('vitality-ward-life', 'on-barrier-gained', [{ type: 'heal', target: 'self', magnitude: { type: 'source-max-health-percent', value: 0.004 * rank } }], undefined, { cooldownMs: 2000 })] })),
+  perk('vitality-r6-barrier-renewal', 'Barrier Renewal', 'When Barrier breaks, heal 1% Max Health per rank.', (rank) => ({ rules: [rule('vitality-barrier-renewal', 'on-barrier-broken', [{ type: 'heal', target: 'self', magnitude: { type: 'source-max-health-percent', value: 0.01 * rank } }])] })),
+  perk('vitality-r6-desperate-regeneration', 'Desperate Regeneration', 'Below 50% Health: +0.5 Health Regen per rank.', rankedModifier('health-regen-flat', 0.5, belowHp(50))),
+  perk('vitality-r6-renewed-guard', 'Renewed Guard', 'A successful Block heals 0.4–2% Max Health.', (rank) => ({ rules: [rule('vitality-renewed-guard', 'on-damage-taken', [{ type: 'heal', target: 'self', magnitude: { type: 'source-max-health-percent', value: rankValues(rank, [0.004, 0.008, 0.012, 0.016, 0.02]) } }], { type: 'event-was-blocked' }, { cooldownMs: 2000 })] })),
+  major('vitality-r6-phoenix-ward', 'Phoenix Ward', 'Crossing below 20% Health grants Barrier and heals for 10% Max Health.', fixedEffects({ rules: [rule('vitality-phoenix-ward', 'on-hp-threshold', [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'source-max-health-percent', value: 0.15 } }, { type: 'heal', target: 'self', magnitude: { type: 'source-max-health-percent', value: 0.1 } }], belowHp(20), { cooldownMs: 30000 })] })),
+])
+const ring7 = createRing('vitality', 7, [
+  minor('vitality-r7-undying-vitality', 'Undying Vitality', '+50 Max Health per rank.', linearStat('maxHealth', 50)),
+  minor('vitality-r7-undying-defense', 'Undying Defense', '+4 Defense per rank.', linearStat('defense', 4)),
+  minor('vitality-r7-undying-guard', 'Undying Guard', '+1.25% Block Chance per rank.', linearStat('blockChance', 0.0125)),
+  minor('vitality-r7-undying-ward', 'Undying Ward', '+5% Barrier Power per rank.', linearStat('barrierPowerPct', 0.05)),
+  perk('vitality-r7-refuse-death', 'Refuse Death', 'Below 35% Health: -1.25% Damage Taken per rank.', rankedModifier('damage-taken-percent', -0.0125, belowHp(35))),
+  perk('vitality-r7-barrier-armor', 'Barrier Armor', 'While Barrier exists: +2 Defense per rank.', rankedModifier('defense-flat', 2, { type: 'self-has-barrier' })),
+  perk('vitality-r7-pain-to-mana', 'Pain to Mana', 'Taking positive Health damage restores 1–5 Mana.', (rank) => ({ rules: [rule('vitality-pain-to-mana', 'on-damage-taken', [{ type: 'restore-resource', target: 'self', resource: 'mana', magnitude: { type: 'flat', value: rank } }], { type: 'event-health-damage-positive' }, { cooldownMs: 2000 })] })),
+  perk('vitality-r7-undying-recovery', 'Undying Recovery', 'A kill heals 1% Max Health per rank.', (rank) => ({ rules: [rule('vitality-undying-recovery', 'on-kill', [{ type: 'heal', target: 'self', magnitude: { type: 'source-max-health-percent', value: 0.01 * rank } }])] })),
+  major('vitality-r7-undying-will', 'Undying Will', 'Below 35% Health: -10% Damage Taken and +20% Healing Received.', fixedEffects({ modifiers: [modifier('damage-taken-percent', -0.1, belowHp(35)), modifier('healing-received-percent', 0.2, belowHp(35))] })),
+])
+const ring8 = createRing('vitality', 8, [
+  minor('vitality-r8-eternal-vitality', 'Eternal Vitality', '+75 Max Health per rank.', linearStat('maxHealth', 75)),
+  minor('vitality-r8-eternal-recovery', 'Eternal Recovery', '+1 Health Regen per rank.', linearStat('healthRegen', 1)),
+  minor('vitality-r8-eternal-defense', 'Eternal Defense', '+5 Defense per rank.', linearStat('defense', 5)),
+  minor('vitality-r8-eternal-guard', 'Eternal Guard', '+1.5% Block Chance per rank.', linearStat('blockChance', 0.015)),
+  minor('vitality-r8-eternal-barrier', 'Eternal Barrier', '+6% Barrier Power per rank.', linearStat('barrierPowerPct', 0.06)),
+  minor('vitality-r8-eternal-restoration', 'Eternal Restoration', '+5% Healing Done per rank.', linearStat('healingDonePct', 0.05)),
+  perk('vitality-r8-eternal-ward', 'Eternal Ward', 'While Barrier exists: -1.5% Damage Taken per rank.', rankedModifier('damage-taken-percent', -0.015, { type: 'self-has-barrier' })),
+  perk('vitality-r8-final-recovery', 'Final Recovery', 'Below 25% Health: +5% Healing Received per rank.', rankedModifier('healing-received-percent', 0.05, belowHp(25))),
+  major('vitality-r8-eternal-aegis', 'Eternal Aegis', '+150 Max Health, +10 Defense, +10% Barrier Power, and +10% Healing Received.', fixedEffects({ stats: { maxHealth: 150, defense: 10, barrierPowerPct: 0.1 }, modifiers: [modifier('healing-received-percent', 0.1)] })),
+])
+
+export const vitalityNodes = [ring1, ring2, ring3, ring4, ring5, ring6, ring7, ring8]

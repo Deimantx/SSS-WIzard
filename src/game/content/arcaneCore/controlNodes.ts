@@ -1,5 +1,5 @@
 import { createRing, fixedEffects, linearStat, modifier, perk, minor, major, rankedModifier, rankValues, rule } from './arcaneCoreNodeFactory'
-import { all, debuffed, eventStatusTag, negativeStatuses, selfControlled, selfDebuffed, selfNegativeStatuses, targetBelowHp } from './arcaneCoreContentHelpers'
+import { all, debuffed, eventStatusTag, negativeStatuses, selfControlled, selfDebuffed, selfNegativeStatuses, spell, targetBelowHp } from './arcaneCoreContentHelpers'
 
 const controlStatus = eventStatusTag('control')
 const controlledEnemy = { type: 'target-has-status-tag', tag: 'control' } as const
@@ -48,4 +48,49 @@ const ring4 = createRing('control', 4, [
   major('control-r4-arcane-lock', 'Arcane Lock', 'Control Statuses delay enemy actions by 250 ms and increase damage taken by 10%.', fixedEffects({ modifiers: [modifier('damage-taken-percent', 0.1, selfControlled, 'enemy')], rules: [rule('control-arcane-lock', 'on-status-applied', [{ type: 'modify-action-timer', target: 'opponent', amountMs: 250, action: 'current' }], controlStatus, { cooldownMs: 5000 })] })),
 ])
 
-export const controlNodes = [ring1, ring2, ring3, ring4]
+const ring5 = createRing('control', 5, [
+  minor('control-r5-interference-recovery', 'Interference Recovery', '+2% Cooldown Recovery per rank.', linearStat('cooldownRecoveryPct', 0.02)),
+  minor('control-r5-interference-duration', 'Interference Duration', '+6% Status Duration per rank.', linearStat('statusDurationPct', 0.06)),
+  minor('control-r5-interference-tempo', 'Interference Tempo', '+1.5% Action Speed per rank.', rankedModifier('action-speed-percent', 0.015)),
+  perk('control-r5-debuff-pressure', 'Debuff Pressure', 'Against debuffed enemies: +2% Damage per rank.', rankedModifier('damage-dealt-percent', 0.02, debuffed)),
+  perk('control-r5-enemy-interference', 'Enemy Interference', 'Debuffed enemies deal -1% Damage per rank.', rankedModifier('damage-dealt-percent', -0.01, selfDebuffed, 'enemy')),
+  perk('control-r5-kill-interference', 'Kill Interference', 'A kill reduces Spell cooldowns by 200–1000 ms.', (rank) => ({ rules: [rule('control-kill-interference', 'on-kill', [{ type: 'modify-cooldown', target: 'self', amountMs: -rankValues(rank, [200, 400, 600, 800, 1000]) }])] })),
+  perk('control-r5-action-interference', 'Action Interference', 'Control-tagged Statuses delay enemy actions by 50–250 ms.', (rank) => ({ rules: [rule('control-action-interference', 'on-status-applied', [{ type: 'modify-action-timer', target: 'opponent', amountMs: rankValues(rank, [50, 100, 150, 200, 250]), action: 'current' }], controlStatus, { cooldownMs: 1000 })] })),
+  perk('control-r5-vulnerability-pressure', 'Vulnerability Pressure', 'Against Vulnerable enemies: +3% Damage per rank.', rankedModifier('damage-dealt-percent', 0.03, { type: 'target-has-status', statusId: 'vulnerable' })),
+  major('control-r5-temporal-fracture', 'Temporal Fracture', 'Applying a control-tagged Status delays the enemy by 400 ms and grants +5% Cooldown Recovery.', fixedEffects({ stats: { cooldownRecoveryPct: 0.05 }, rules: [rule('control-temporal-fracture', 'on-status-applied', [{ type: 'modify-action-timer', target: 'opponent', amountMs: 400, action: 'current' }], controlStatus, { cooldownMs: 4000 })] })),
+])
+const ring6 = createRing('control', 6, [
+  minor('control-r6-temporal-recovery', 'Temporal Recovery', '+2.5% Cooldown Recovery per rank.', linearStat('cooldownRecoveryPct', 0.025)),
+  minor('control-r6-temporal-status', 'Temporal Status', '+7% Status Duration per rank.', linearStat('statusDurationPct', 0.07)),
+  minor('control-r6-temporal-speed', 'Temporal Speed', '+2% Action Speed per rank.', rankedModifier('action-speed-percent', 0.02)),
+  perk('control-r6-temporal-hands', 'Temporal Hands', 'Basic Attack hit reduces Spell cooldowns by 50–250 ms.', (rank) => ({ rules: [rule('control-temporal-hands', 'on-basic-attack-hit', [{ type: 'modify-cooldown', target: 'self', amountMs: -rankValues(rank, [50, 100, 150, 200, 250]) }])] })),
+  perk('control-r6-temporal-momentum', 'Temporal Momentum', 'Damaging Spell hit advances the next Basic Attack by 50–250 ms.', (rank) => ({ rules: [rule('control-temporal-momentum', 'on-spell-hit', [{ type: 'modify-action-timer', target: 'self', amountMs: -rankValues(rank, [50, 100, 150, 200, 250]), action: 'basic-attack' }], spell)] })),
+  perk('control-r6-temporal-feedback', 'Temporal Feedback', 'When a Spell applies a negative Status, reduce that Spell cooldown by 100–500 ms.', (rank) => ({ rules: [rule('control-temporal-feedback', 'on-status-applied', [{ type: 'modify-cooldown', target: 'self', spellId: 'source', amountMs: -rankValues(rank, [100, 200, 300, 400, 500]) }], all(spell, eventStatusTag('debuff')))] })),
+  perk('control-r6-layered-interference', 'Layered Interference', 'Against enemies with 2+ negative Statuses: +2.5% Damage per rank.', rankedModifier('damage-dealt-percent', 0.025, negativeStatuses(2))),
+  perk('control-r6-temporal-suppression', 'Temporal Suppression', 'Enemies with 2+ negative Statuses deal -1% Damage per rank.', rankedModifier('damage-dealt-percent', -0.01, selfNegativeStatuses(2), 'enemy')),
+  major('control-r6-time-compression', 'Time Compression', '+10% Action Speed and +8% Cooldown Recovery.', fixedEffects({ modifiers: [modifier('action-speed-percent', 0.1), modifier('cooldown-recovery-percent', 0.08)] })),
+])
+const ring7 = createRing('control', 7, [
+  minor('control-r7-lockdown-recovery', 'Lockdown Recovery', '+3% Cooldown Recovery per rank.', linearStat('cooldownRecoveryPct', 0.03)),
+  minor('control-r7-lockdown-duration', 'Lockdown Duration', '+8% Status Duration per rank.', linearStat('statusDurationPct', 0.08)),
+  perk('control-r7-lockdown-delay', 'Lockdown Delay', 'Applying a control-tagged Status delays the enemy by 75–375 ms.', (rank) => ({ rules: [rule('control-lockdown-delay', 'on-status-applied', [{ type: 'modify-action-timer', target: 'opponent', amountMs: rankValues(rank, [75, 150, 225, 300, 375]), action: 'current' }], controlStatus, { cooldownMs: 1000 })] })),
+  perk('control-r7-controlled-target', 'Controlled Target', 'Against enemies with a control-tagged Status: +3% Damage per rank.', rankedModifier('damage-dealt-percent', 0.03, controlledEnemy)),
+  perk('control-r7-controlled-suppression', 'Controlled Suppression', 'Enemies with a control-tagged Status deal -1.5% Damage per rank.', rankedModifier('damage-dealt-percent', -0.015, selfControlled, 'enemy')),
+  perk('control-r7-vulnerability-mastery', 'Vulnerability Mastery II', 'Against Vulnerable enemies: +3% Damage per rank.', rankedModifier('damage-dealt-percent', 0.03, { type: 'target-has-status', statusId: 'vulnerable' })),
+  perk('control-r7-barrier-control', 'Barrier Control', 'Against enemies with Barrier: +3% Damage per rank.', rankedModifier('damage-dealt-percent', 0.03, { type: 'target-has-barrier' })),
+  perk('control-r7-layered-lockdown', 'Layered Lockdown', 'Against enemies with 3+ negative Statuses: +3% Damage per rank.', rankedModifier('damage-dealt-percent', 0.03, negativeStatuses(3))),
+  major('control-r7-total-lockdown', 'Total Lockdown', 'Control-tagged enemies take +12% Damage and deal -10% Damage.', fixedEffects({ modifiers: [modifier('damage-taken-percent', 0.12, selfControlled, 'enemy'), modifier('damage-dealt-percent', -0.1, selfControlled, 'enemy')] })),
+])
+const ring8 = createRing('control', 8, [
+  minor('control-r8-stasis-recovery', 'Stasis Recovery', '+4% Cooldown Recovery per rank.', linearStat('cooldownRecoveryPct', 0.04)),
+  minor('control-r8-stasis-duration', 'Stasis Duration', '+10% Status Duration per rank.', linearStat('statusDurationPct', 0.1)),
+  minor('control-r8-stasis-tempo', 'Stasis Tempo', '+2.5% Action Speed per rank.', rankedModifier('action-speed-percent', 0.025)),
+  perk('control-r8-stasis-delay', 'Stasis Delay', 'Applying a control-tagged Status delays the enemy by 100–500 ms.', (rank) => ({ rules: [rule('control-stasis-delay', 'on-status-applied', [{ type: 'modify-action-timer', target: 'opponent', amountMs: rankValues(rank, [100, 200, 300, 400, 500]), action: 'current' }], controlStatus, { cooldownMs: 1000 })] })),
+  perk('control-r8-stasis-suppression', 'Stasis Suppression', 'Enemies with a control Status deal -2% Damage per rank.', rankedModifier('damage-dealt-percent', -0.02, selfControlled, 'enemy')),
+  perk('control-r8-absolute-pressure', 'Absolute Pressure', 'Against enemies with 3+ negative Statuses: +4% Damage per rank.', rankedModifier('damage-dealt-percent', 0.04, negativeStatuses(3))),
+  perk('control-r8-absolute-vulnerability', 'Absolute Vulnerability', 'Against Vulnerable enemies: +4% Damage per rank.', rankedModifier('damage-dealt-percent', 0.04, { type: 'target-has-status', statusId: 'vulnerable' })),
+  perk('control-r8-stasis-recovery-pulse', 'Stasis Recovery Pulse', 'A kill reduces Spell cooldowns by 300–1500 ms.', (rank) => ({ rules: [rule('control-stasis-recovery-pulse', 'on-kill', [{ type: 'modify-cooldown', target: 'self', amountMs: -rankValues(rank, [300, 600, 900, 1200, 1500]) }])] })),
+  major('control-r8-absolute-stasis', 'Absolute Stasis', 'Applying a control-tagged Status delays the enemy by 750 ms and grants +10% Cooldown Recovery.', fixedEffects({ stats: { cooldownRecoveryPct: 0.1 }, rules: [rule('control-absolute-stasis', 'on-status-applied', [{ type: 'modify-action-timer', target: 'opponent', amountMs: 750, action: 'current' }], controlStatus, { cooldownMs: 4000 })] })),
+])
+
+export const controlNodes = [ring1, ring2, ring3, ring4, ring5, ring6, ring7, ring8]

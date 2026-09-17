@@ -39,7 +39,7 @@ const applyEnemyStatuses = (state: ReturnType<typeof combatState>, statuses: Arr
 
 const enemyDamageModifier = (state: ReturnType<typeof combatState>, key: 'damage-dealt-percent' | 'damage-taken-percent') => getCombatModifiers(state, 'enemy', key, { source: enemySource })
 
-describe('Arcane Core V3 runtime semantics', () => {
+describe('Arcane Core V4 runtime semantics', () => {
   it('evaluates Control self-status modifiers on the enemy, not the player', () => {
     const suppression = withNodes('control-r1-suppression', 5)
     expect(enemyDamageModifier(suppression, 'damage-dealt-percent')).toBe(0)

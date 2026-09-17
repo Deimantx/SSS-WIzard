@@ -1,5 +1,5 @@
 import { ARCANE_CORE_BRANCHES, ARCANE_CORE_NODES, getArcaneCoreNode } from '../../content/arcaneCore/arcaneCoreBranches'
-import { ARCANE_CORE_MAX_LEVEL, ARCANE_CORE_MAX_TOTAL_XP, getArcaneCoreLevelForXp, getArcaneCoreTotalXpForLevel } from '../../content/arcaneCore/arcaneCoreBalance'
+import { ARCANE_CORE_RING_INDICES, ARCANE_CORE_MAX_LEVEL, ARCANE_CORE_MAX_TOTAL_XP, getArcaneCoreLevelForXp, getArcaneCoreTotalXpForLevel } from '../../content/arcaneCore/arcaneCoreBalance'
 import { ARCANE_CORE_MAJOR_GATES, ARCANE_CORE_RING_GATES } from '../../content/arcaneCore/arcaneCoreRings'
 import type { ArcaneCoreBranchId, ArcaneCoreNodeDefinition, ArcaneCoreNodeProgress, ArcaneCoreResolvedEffects, ArcaneCoreRingIndex, ArcaneCoreSpecialEffect, ArcaneCoreState, EquipmentStats } from '../../types'
 import type { CombatModifier, CombatTriggerRule } from '../combat/combatTypes'
@@ -40,7 +40,7 @@ export const getArcaneCoreLevelInfo = (state: ArcaneCoreState): ArcaneCoreLevelI
 export const getArcaneCoreRingPointsSpent = (state: Pick<ArcaneCoreState, 'nodes'>, branchId: ArcaneCoreBranchId, ring: ArcaneCoreRingIndex) => ARCANE_CORE_NODES.filter((node) => node.branchId === branchId && node.ring === ring).reduce((sum, node) => sum + getArcaneCoreNodeRank(state, node.id) * node.rankCost, 0)
 export const isArcaneCoreRingUnlocked = (state: Pick<ArcaneCoreState, 'nodes'>, branchId: ArcaneCoreBranchId, ring: ArcaneCoreRingIndex, ignorePrerequisites = false) => ring === 1 || ignorePrerequisites || getArcaneCoreRingPointsSpent(state, branchId, (ring - 1) as ArcaneCoreRingIndex) >= ARCANE_CORE_RING_GATES[ring]
 export const isArcaneCoreMajorUnlocked = (state: Pick<ArcaneCoreState, 'nodes'>, node: ArcaneCoreNodeDefinition, ignorePrerequisites = false) => node.nodeType !== 'major' || ignorePrerequisites || getArcaneCoreRingPointsSpent(state, node.branchId, node.ring) >= ARCANE_CORE_MAJOR_GATES[node.ring]
-export const getArcaneCoreHighestUnlockedRing = (state: Pick<ArcaneCoreState, 'nodes'>, branchId: ArcaneCoreBranchId) => ([4, 3, 2, 1] as const).find((ring) => isArcaneCoreRingUnlocked(state, branchId, ring)) ?? 1
+export const getArcaneCoreHighestUnlockedRing = (state: Pick<ArcaneCoreState, 'nodes'>, branchId: ArcaneCoreBranchId) => [...ARCANE_CORE_RING_INDICES].reverse().find((ring) => isArcaneCoreRingUnlocked(state, branchId, ring)) ?? 1
 
 export const isArcaneCoreNodeReachable = (state: Pick<ArcaneCoreState, 'nodes'>, nodeId: string, ignorePrerequisites = false) => {
   const node = getArcaneCoreNode(nodeId)
@@ -161,7 +161,7 @@ export const maxArcaneCoreRing = (state: ArcaneCoreState, branchId: ArcaneCoreBr
 
 export const maxArcaneCoreBranch = (state: ArcaneCoreState, branchId: ArcaneCoreBranchId) => {
   let current = copyState(state)
-  ;([1, 2, 3, 4] as ArcaneCoreRingIndex[]).forEach((ring) => { current = maxArcaneCoreRing(current, branchId, ring) })
+  ARCANE_CORE_RING_INDICES.forEach((ring) => { current = maxArcaneCoreRing(current, branchId, ring) })
   return current
 }
 
@@ -176,9 +176,13 @@ export const purchaseAllArcaneCoreNodes = (state: ArcaneCoreState, branchId?: Ar
   let changed = true
   while (changed) {
     changed = false
+    let availablePoints = options.freeCosts ? Number.POSITIVE_INFINITY : getArcaneCoreAvailablePoints(current)
     ARCANE_CORE_NODES.filter((node) => !branchId || node.branchId === branchId).forEach((node) => {
-      const result = purchaseArcaneCoreNode(current, node.id, options)
-      if (result.ok) { current = result.state; changed = true }
+      const currentRank = getArcaneCoreNodeRank(current, node.id)
+      if (currentRank >= node.maxRank || !isArcaneCoreRingUnlocked(current, node.branchId, node.ring, options.ignorePrerequisites) || !isArcaneCoreMajorUnlocked(current, node, options.ignorePrerequisites) || availablePoints < node.rankCost) return
+      current.nodes[node.id] = { rank: currentRank + 1 }
+      availablePoints -= node.rankCost
+      changed = true
     })
   }
   return current

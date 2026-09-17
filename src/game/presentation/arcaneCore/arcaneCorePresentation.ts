@@ -1,4 +1,5 @@
-import type { ArcaneCoreBranchDefinition, ArcaneCoreModifierKey, ArcaneCoreNodeDefinition } from '../../types'
+import type { ArcaneCoreBranchDefinition, ArcaneCoreModifierKey, ArcaneCoreNodeDefinition, ArcaneCoreRingIndex } from '../../types'
+import { ARCANE_CORE_RING_OFFSETS } from '../../content/arcaneCore/arcaneCoreRings'
 import type { CombatEffect, CombatModifier, CombatTriggerRule, Magnitude } from '../../systems/combat/combatTypes'
 
 const PERCENT_STATS = new Set<ArcaneCoreModifierKey>(['critChance', 'critDamage', 'damageOverTimePct', 'blockChance', 'barrierPowerPct', 'healingDonePct', 'focusEfficiencyPct', 'manaCostReductionPct', 'cooldownRecoveryPct', 'statusDurationPct', 'basicAttackSpeedPct'])
@@ -60,9 +61,25 @@ export const getArcaneCoreNodeEffectTexts = (node: ArcaneCoreNodeDefinition, ran
 }
 export const formatArcaneCoreNodeEffect = (node: ArcaneCoreNodeDefinition, rank = 1) => getArcaneCoreNodeEffectTexts(node, rank).join(' · ') || node.description
 
-export const ARCANE_CORE_CANVAS_SIZE = 1480
-export const ARCANE_CORE_RING_RADII: Record<1 | 2 | 3 | 4, number> = { 1: 220, 2: 360, 3: 510, 4: 660 }
-export const getArcaneCoreRingRadius = (ring: 1 | 2 | 3 | 4) => ARCANE_CORE_RING_RADII[ring]
+export interface ArcaneCoreRingLayout {
+  radius: number
+  offsetDeg: number
+  opacityWhenDeepLocked: number
+}
+
+export const ARCANE_CORE_CANVAS_SIZE = 4200
+export const ARCANE_CORE_RING_LAYOUT: Record<ArcaneCoreRingIndex, ArcaneCoreRingLayout> = {
+  1: { radius: 300, offsetDeg: ARCANE_CORE_RING_OFFSETS[1], opacityWhenDeepLocked: 0.45 },
+  2: { radius: 500, offsetDeg: ARCANE_CORE_RING_OFFSETS[2], opacityWhenDeepLocked: 0.36 },
+  3: { radius: 710, offsetDeg: ARCANE_CORE_RING_OFFSETS[3], opacityWhenDeepLocked: 0.3 },
+  4: { radius: 930, offsetDeg: ARCANE_CORE_RING_OFFSETS[4], opacityWhenDeepLocked: 0.25 },
+  5: { radius: 1160, offsetDeg: ARCANE_CORE_RING_OFFSETS[5], opacityWhenDeepLocked: 0.21 },
+  6: { radius: 1400, offsetDeg: ARCANE_CORE_RING_OFFSETS[6], opacityWhenDeepLocked: 0.18 },
+  7: { radius: 1650, offsetDeg: ARCANE_CORE_RING_OFFSETS[7], opacityWhenDeepLocked: 0.15 },
+  8: { radius: 1910, offsetDeg: ARCANE_CORE_RING_OFFSETS[8], opacityWhenDeepLocked: 0.12 },
+}
+export const ARCANE_CORE_RING_RADII: Record<ArcaneCoreRingIndex, number> = Object.fromEntries(Object.entries(ARCANE_CORE_RING_LAYOUT).map(([ring, layout]) => [Number(ring), layout.radius])) as Record<ArcaneCoreRingIndex, number>
+export const getArcaneCoreRingRadius = (ring: ArcaneCoreRingIndex) => ARCANE_CORE_RING_LAYOUT[ring].radius
 export const getArcaneCoreNodePosition = (node: ArcaneCoreNodeDefinition) => {
   const radius = getArcaneCoreRingRadius(node.ring)
   const radians = (node.angleDeg - 90) * Math.PI / 180

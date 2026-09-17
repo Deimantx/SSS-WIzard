@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { ARCANE_CORE_NODES } from '../../content/arcaneCore/arcaneCoreBranches'
 import { formatArcaneCoreModifierValue, formatArcaneCoreNodeEffect, getArcaneCoreNodeEffectTexts, getArcaneCoreNodePosition } from './arcaneCorePresentation'
 
-describe('Arcane Core V3 presentation', () => {
+describe('Arcane Core V4 presentation', () => {
   it('positions every node on its authored Ring angle', () => {
     for (const node of ARCANE_CORE_NODES) { const position = getArcaneCoreNodePosition(node); expect(position.left).toBeGreaterThan(0); expect(position.top).toBeGreaterThan(0) }
   })

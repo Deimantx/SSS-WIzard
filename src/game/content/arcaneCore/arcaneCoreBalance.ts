@@ -1,4 +1,4 @@
-/** Central tuning for Arcane Core V3. XP is intentionally integer-only. */
+/** Central tuning for Arcane Core V4. XP is intentionally integer-only. */
 export const ARCANE_CORE_XP_BASE = 100
 export const ARCANE_CORE_XP_EXPONENT = 1.15
 
@@ -25,15 +25,17 @@ export const ARCANE_CORE_DUNGEON_XP_REWARDS = {
   'black-gate': { normalKillXp: 35, bossKillXp: 300 },
 } as const
 
+export const ARCANE_CORE_RING_INDICES = [1, 2, 3, 4, 5, 6, 7, 8] as const
 export const ARCANE_CORE_STANDARD_NODES_PER_RING = 8 as const
-export const ARCANE_CORE_RINGS_PER_CORE = 4 as const
+export const ARCANE_CORE_CORE_COUNT = 4 as const
+export const ARCANE_CORE_RINGS_PER_CORE = ARCANE_CORE_RING_INDICES.length
 export const ARCANE_CORE_POINTS_PER_STANDARD_NODE = 5 as const
 export const ARCANE_CORE_MAJOR_COST = 3 as const
 export const ARCANE_CORE_POINTS_PER_RING = ARCANE_CORE_STANDARD_NODES_PER_RING * ARCANE_CORE_POINTS_PER_STANDARD_NODE + ARCANE_CORE_MAJOR_COST
 export const ARCANE_CORE_POINTS_PER_CORE = ARCANE_CORE_RINGS_PER_CORE * ARCANE_CORE_POINTS_PER_RING
-export const ARCANE_CORE_TOTAL_POINTS = ARCANE_CORE_POINTS_PER_CORE * 4
+export const ARCANE_CORE_TOTAL_POINTS = ARCANE_CORE_POINTS_PER_CORE * ARCANE_CORE_CORE_COUNT
 export const ARCANE_CORE_NODE_COUNT_PER_BRANCH = ARCANE_CORE_RINGS_PER_CORE * (ARCANE_CORE_STANDARD_NODES_PER_RING + 1)
-export const ARCANE_CORE_NODE_COUNT = ARCANE_CORE_NODE_COUNT_PER_BRANCH * 4
+export const ARCANE_CORE_NODE_COUNT = ARCANE_CORE_NODE_COUNT_PER_BRANCH * ARCANE_CORE_CORE_COUNT
 export const ARCANE_CORE_MAX_LEVEL = 1 + ARCANE_CORE_TOTAL_POINTS
 
 export const getArcaneCoreTotalXpForLevel = (level: number) => {

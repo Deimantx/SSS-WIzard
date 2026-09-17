@@ -205,8 +205,8 @@ export interface GameActions {
   maxArcaneCoreNode: (nodeId: string) => void
   maxArcaneCoreBranch: (branchId: ArcaneCoreBranchId) => void
   resetArcaneCoreNode: (nodeId: string) => void
-  maxArcaneCoreRing: (branchId: ArcaneCoreBranchId, ring: 1 | 2 | 3 | 4) => void
-  resetArcaneCoreRing: (branchId: ArcaneCoreBranchId, ring: 1 | 2 | 3 | 4) => void
+  maxArcaneCoreRing: (branchId: ArcaneCoreBranchId, ring: import('../game/types').ArcaneCoreRingIndex) => void
+  resetArcaneCoreRing: (branchId: ArcaneCoreBranchId, ring: import('../game/types').ArcaneCoreRingIndex) => void
   resetArcaneCoreBranch: (branchId: ArcaneCoreBranchId) => void
   resetArcaneCore: () => void
   purchaseAllArcaneCoreBranch: (branchId: ArcaneCoreBranchId) => void

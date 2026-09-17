@@ -4,7 +4,7 @@ import { recalculateDerivedStats } from '../../engine'
 import { getEquipmentStats } from '../../core/equipment/equipmentStats'
 import { getArcaneCoreCombatModifierProviders, getArcaneCoreCombatRules, getArcaneCoreSpecialEffects } from './arcaneCoreProgression'
 
-describe('Arcane Core V3 integration', () => {
+describe('Arcane Core V4 integration', () => {
   it('resolves ranked providers once at the current rank', () => {
     const state = createInitialState()
     state.arcaneCore.totalXp = 1000

@@ -146,7 +146,7 @@ export interface EquipmentStats {
 
 export type ArcaneCoreBranchId = 'power' | 'vitality' | 'focus' | 'control'
 export type ArcaneCoreModifierKey = Exclude<keyof EquipmentStats, 'resistances'>
-export type ArcaneCoreRingIndex = 1 | 2 | 3 | 4
+export type ArcaneCoreRingIndex = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
 export type ArcaneCoreNodeType = 'minor' | 'perk' | 'major'
 export type ArcaneCoreSpecialEffect =
   | { type: 'nth-damaging-spell-bonus'; every: number; damageMultiplier: number }

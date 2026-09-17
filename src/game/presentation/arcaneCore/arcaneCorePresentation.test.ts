@@ -1,10 +1,25 @@
 import { describe, expect, it } from 'vitest'
 import { ARCANE_CORE_NODES } from '../../content/arcaneCore/arcaneCoreBranches'
-import { formatArcaneCoreModifierValue, formatArcaneCoreNodeEffect, getArcaneCoreNodeEffectTexts, getArcaneCoreNodePosition } from './arcaneCorePresentation'
+import { ARCANE_CORE_CANVAS_SIZE, formatArcaneCoreModifierValue, formatArcaneCoreNodeEffect, getArcaneCoreNodeEffectTexts, getArcaneCoreNodePosition, getArcaneCoreRingRadius } from './arcaneCorePresentation'
 
 describe('Arcane Core V4 presentation', () => {
   it('positions every node on its authored Ring angle', () => {
     for (const node of ARCANE_CORE_NODES) { const position = getArcaneCoreNodePosition(node); expect(position.left).toBeGreaterThan(0); expect(position.top).toBeGreaterThan(0) }
+  })
+  it('keeps all authored nodes on the canonical Ring radii with safe spacing', () => {
+    for (const node of ARCANE_CORE_NODES) {
+      const position = getArcaneCoreNodePosition(node)
+      expect(Math.hypot(position.left - ARCANE_CORE_CANVAS_SIZE / 2, position.top - ARCANE_CORE_CANVAS_SIZE / 2)).toBeCloseTo(getArcaneCoreRingRadius(node.ring), 6)
+    }
+    for (const branchNodes of ['power', 'vitality', 'focus', 'control'].map((branchId) => ARCANE_CORE_NODES.filter((node) => node.branchId === branchId))) {
+      for (const ring of [1, 2, 3, 4, 5, 6, 7, 8] as const) {
+        const nodes = branchNodes.filter((node) => node.ring === ring)
+        expect(new Set(nodes.map((node) => node.angleDeg)).size).toBe(nodes.length)
+        const positions = nodes.map(getArcaneCoreNodePosition)
+        const distances = positions.flatMap((position, index) => positions.slice(index + 1).map((other) => Math.hypot(position.left - other.left, position.top - other.top)))
+        expect(Math.min(...distances)).toBeGreaterThan(130)
+      }
+    }
   })
   it('formats modifiers and ranked effects in player-readable units', () => {
     expect(formatArcaneCoreModifierValue('critChance', 0.002)).toBe('+0.20%')

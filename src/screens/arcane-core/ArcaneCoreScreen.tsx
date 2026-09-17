@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from 'react'
+import { memo, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from 'react'
 import { Crosshair, LockKeyhole, RotateCcw, Sparkles, X } from 'lucide-react'
 import { Button, Card, GameTooltip, ModalPortal, Status } from '../../components/ui'
 import { ArcaneCorePresetPanel } from '../../components/arcane-core/ArcaneCorePresetPanel'
@@ -6,10 +6,11 @@ import { ScreenGrid } from '../../components/layout/ScreenGrid'
 import { ARCANE_CORE_BRANCHES } from '../../game/content/arcaneCore/arcaneCoreBranches'
 import { ARCANE_CORE_POINTS_PER_CORE, ARCANE_CORE_TOTAL_POINTS } from '../../game/content/arcaneCore/arcaneCoreBalance'
 import { ARCANE_CORE_MAJOR_GATES, ARCANE_CORE_RING_GATES, ARCANE_CORE_RING_INDICES, getArcaneCoreRingName } from '../../game/content/arcaneCore/arcaneCoreRings'
-import { formatArcaneCoreModifierValue, getArcaneCoreModifierLabel, getArcaneCoreNodeEffectTexts, getArcaneCoreNodePosition, getArcaneCoreRingRadius } from '../../game/presentation/arcaneCore/arcaneCorePresentation'
+import { ARCANE_CORE_CANVAS_SIZE, formatArcaneCoreModifierValue, getArcaneCoreModifierLabel, getArcaneCoreNodeEffectTexts, getArcaneCoreNodePosition, getArcaneCoreRingRadius } from '../../game/presentation/arcaneCore/arcaneCorePresentation'
 import { getArcaneCoreBranchResetPreview, getArcaneCoreHighestUnlockedRing, getArcaneCoreLevelInfo, getArcaneCoreNodeRank, getArcaneCorePointsSpent, getArcaneCoreRefundPreview, getArcaneCoreRingPointsSpent, getArcaneCoreStaticStats, isArcaneCoreMajorUnlocked, isArcaneCoreNodeReachable } from '../../game/systems/arcaneCore'
 import type { ArcaneCoreBranchDefinition, ArcaneCoreBranchId, ArcaneCoreModifierKey, ArcaneCoreNodeDefinition, ArcaneCoreRingIndex } from '../../game/types'
 import { useGameStore } from '../../store/gameStore'
+import { ARCANE_CORE_DRAG_THRESHOLD, ARCANE_CORE_MAX_ZOOM, ARCANE_CORE_MIN_ZOOM, clampCameraOffset, useArcaneCoreCamera } from './useArcaneCoreCamera'
 
 function CoreProgress({ core }: { core: ReturnType<typeof useGameStore.getState>['arcaneCore'] }) {
   const info = getArcaneCoreLevelInfo(core)
@@ -24,30 +25,55 @@ function BranchCard({ branch, onOpen, state }: { branch: ArcaneCoreBranchDefinit
 }
 
 type PendingConfirmation = { label: string; points: number; ranks: number; majors: number; rings: number; confirm: () => void }
-type CoreCameraMode = 'progression' | 'all' | 'manual'
-type CoreViewportSize = { width: number; height: number }
 type CoreDragState = { x: number; y: number; offsetX: number; offsetY: number; moved: boolean }
 
 const nodeEffect = (node: ArcaneCoreNodeDefinition, rank: number) => getArcaneCoreNodeEffectTexts(node, rank).join(' · ')
-const ARCANE_CORE_MIN_ZOOM = .14
-const ARCANE_CORE_MAX_ZOOM = 1.2
-const ARCANE_CORE_DRAG_THRESHOLD = 6
-const ARCANE_CORE_NODE_MARGIN = 150
-const clampCameraOffset = (offset: { x: number; y: number }, zoom: number, viewport: CoreViewportSize) => {
-  const viewportWidth = viewport.width || 720
-  const viewportHeight = viewport.height || 520
-  const extent = (getArcaneCoreRingRadius(8) + ARCANE_CORE_NODE_MARGIN) * zoom
-  const maxX = Math.max(0, extent - viewportWidth / 2 + 24)
-  const maxY = Math.max(0, extent - viewportHeight / 2 + 24)
-  return { x: Math.max(-maxX, Math.min(maxX, offset.x)), y: Math.max(-maxY, Math.min(maxY, offset.y)) }
+
+interface ArcaneCoreOrbitNodeProps {
+  node: ArcaneCoreNodeDefinition
+  position: { left: number; top: number }
+  rank: number
+  nodeAvailable: boolean
+  ringLocked: boolean
+  highestRing: ArcaneCoreRingIndex
+  selected: boolean
+  selectedRing: boolean
+  feedback?: 'purchase' | 'max' | 'major'
+  onSelect: (nodeId: string) => void
 }
 
-const getArcaneCoreFitZoom = (viewport: CoreViewportSize, targetRing: ArcaneCoreRingIndex) => {
-  const viewportWidth = viewport.width || 720
-  const viewportHeight = viewport.height || 520
-  const usableSize = Math.max(260, Math.min(viewportWidth, viewportHeight) - 56)
-  return Math.max(ARCANE_CORE_MIN_ZOOM, Math.min(.78, usableSize / ((getArcaneCoreRingRadius(targetRing) + ARCANE_CORE_NODE_MARGIN) * 2)))
+const ArcaneCoreOrbitNode = memo(function ArcaneCoreOrbitNode({ node, position, rank, nodeAvailable, ringLocked, highestRing, selected, selectedRing, feedback, onSelect }: ArcaneCoreOrbitNodeProps) {
+  return <GameTooltip content={`${node.name} · Rank ${rank}/${node.maxRank} · ${nodeEffect(node, rank)}`}><button type="button" data-no-pan className={`arcane-core-ring-node node-${node.nodeType} ${rank > 0 ? 'is-active' : ''} ${nodeAvailable ? 'is-available' : 'is-locked'} ${ringLocked ? 'is-ring-locked' : ''} ${ringLocked && node.ring === highestRing + 1 ? 'is-next-locked' : ''} ${ringLocked && node.ring > highestRing + 1 ? 'is-deep-locked' : ''} ${selectedRing ? 'is-selected-ring-node' : ''} ${selected ? 'is-selected' : ''} ${feedback ? `is-${feedback}-pulse` : ''}`} style={{ left: position.left, top: position.top }} onClick={() => onSelect(node.id)} aria-label={`${node.name}, rank ${rank} of ${node.maxRank}`}><span className="arcane-core-node-dot" aria-hidden="true">{node.nodeType === 'major' ? '✦' : '◆'}</span><strong>{node.name}</strong><small>{node.nodeType === 'major' ? 'MAJOR' : `RANK ${rank}/${node.maxRank}`}</small>{node.nodeType !== 'major' && <i className="arcane-core-rank-pips" aria-hidden="true">{[1, 2, 3, 4, 5].map((pip) => <b key={pip} className={pip <= rank ? 'is-paid' : undefined} />)}</i>}</button></GameTooltip>
+})
+
+interface ArcaneCoreNodeLayerProps {
+  branch: ArcaneCoreBranchDefinition
+  core: ReturnType<typeof useGameStore.getState>['arcaneCore']
+  highestRing: ArcaneCoreRingIndex
+  selectedId: string
+  feedback: { nodeId: string; kind: 'purchase' | 'max' | 'major' } | null
+  onSelect: (nodeId: string) => void
 }
+
+const ArcaneCoreNodeLayer = memo(function ArcaneCoreNodeLayer({ branch, core, highestRing, selectedId, feedback, onSelect }: ArcaneCoreNodeLayerProps) {
+  const positions = useMemo(() => new Map(branch.nodes.map((node) => [node.id, getArcaneCoreNodePosition(node)])), [branch.nodes])
+  const selectedNode = branch.nodes.find((item) => item.id === selectedId)
+  return <div className="arcane-core-node-layer">{branch.nodes.map((node) => {
+    const rank = getArcaneCoreNodeRank(core, node.id)
+    const nodeAvailable = isArcaneCoreNodeReachable(core, node.id) && isArcaneCoreMajorUnlocked(core, node)
+    return <ArcaneCoreOrbitNode key={node.id} node={node} position={positions.get(node.id)!} rank={rank} nodeAvailable={nodeAvailable} ringLocked={node.ring > highestRing} highestRing={highestRing} selected={selectedId === node.id} selectedRing={node.ring === (selectedNode?.ring ?? 0)} feedback={feedback?.nodeId === node.id ? feedback.kind : undefined} onSelect={onSelect} />
+  })}</div>
+})
+
+interface ArcaneCoreOrbitLayerProps {
+  highestRing: ArcaneCoreRingIndex
+  selectedRing?: ArcaneCoreRingIndex
+  ringPulse: ArcaneCoreRingIndex | null
+}
+
+const ArcaneCoreOrbitLayer = memo(function ArcaneCoreOrbitLayer({ highestRing, selectedRing, ringPulse }: ArcaneCoreOrbitLayerProps) {
+  return <svg className="arcane-core-orbit-layer" viewBox={`0 0 ${ARCANE_CORE_CANVAS_SIZE} ${ARCANE_CORE_CANVAS_SIZE}`} aria-hidden="true">{ARCANE_CORE_RING_INDICES.map((ring) => <g key={ring}><circle data-ring={ring} className={`arcane-core-orbit ${ring <= highestRing ? 'is-unlocked' : ring === highestRing + 1 ? 'is-next-locked' : 'is-deep-locked'} ${ringPulse === ring ? 'is-unlock-pulse' : ''}`} cx={ARCANE_CORE_CANVAS_SIZE / 2} cy={ARCANE_CORE_CANVAS_SIZE / 2} r={getArcaneCoreRingRadius(ring)} vectorEffect="non-scaling-stroke" />{selectedRing === ring && <circle data-ring={ring} className="arcane-core-orbit is-selected" cx={ARCANE_CORE_CANVAS_SIZE / 2} cy={ARCANE_CORE_CANVAS_SIZE / 2} r={getArcaneCoreRingRadius(ring)} vectorEffect="non-scaling-stroke" />}</g>)}</svg>
+})
 
 function CoreModal({ branch, onClose }: { branch: ArcaneCoreBranchDefinition; onClose: () => void }) {
   const core = useGameStore((state) => state.arcaneCore)
@@ -55,28 +81,26 @@ function CoreModal({ branch, onClose }: { branch: ArcaneCoreBranchDefinition; on
   const refund = useGameStore((state) => state.refundArcaneCoreNode)
   const resetBranch = useGameStore((state) => state.resetArcaneCoreBranch)
   const [selectedId, setSelectedId] = useState(branch.nodes[0]?.id ?? '')
-  const [zoom, setZoom] = useState(.2)
-  const [offset, setOffset] = useState({ x: 0, y: 0 })
-  const [viewportSize, setViewportSize] = useState<CoreViewportSize>({ width: 0, height: 0 })
-  const [cameraMode, setCameraMode] = useState<CoreCameraMode>('progression')
   const [feedback, setFeedback] = useState<{ nodeId: string; kind: 'purchase' | 'max' | 'major' } | null>(null)
   const [ringPulse, setRingPulse] = useState<ArcaneCoreRingIndex | null>(null)
   const [confirmation, setConfirmation] = useState<PendingConfirmation | null>(null)
   const viewportRef = useRef<HTMLDivElement>(null)
+  const worldRef = useRef<HTMLDivElement>(null)
   const drag = useRef<CoreDragState | null>(null)
   const feedbackTimer = useRef<number | null>(null)
+  const { cameraRef, viewportSizeRef, viewportSize, zoomForHud, cameraMode, setCameraMode, scheduleCameraApply, fitCamera, zoomAtPointer } = useArcaneCoreCamera({ viewportRef, worldRef })
   const selected = branch.nodes.find((node) => node.id === selectedId) ?? branch.nodes[0]
   const selectedRank = selected ? getArcaneCoreNodeRank(core, selected.id) : 0
   const selectedAvailable = selected ? isArcaneCoreNodeReachable(core, selected.id) && (selected.nodeType !== 'major' || isArcaneCoreMajorUnlocked(core, selected)) : false
   const highestRing = getArcaneCoreHighestUnlockedRing(core, branch.id)
   const spent = getArcaneCorePointsSpent({ nodes: Object.fromEntries(branch.nodes.map((node) => [node.id, core.nodes[node.id]]).filter(([, value]) => value)) })
   const fitProgressionRing = Math.min(8, highestRing + 1) as ArcaneCoreRingIndex
-  const zoomClass = zoom < .3 ? 'is-zoom-far' : zoom < .65 ? 'is-zoom-medium' : 'is-zoom-close'
+  const zoomClass = zoomForHud < .3 ? 'is-zoom-far' : zoomForHud < .65 ? 'is-zoom-medium' : 'is-zoom-close'
 
   const startDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.button !== 0 || (event.target as Element | null)?.closest('button, [data-no-pan]')) return
     event.preventDefault()
-    drag.current = { x: event.clientX, y: event.clientY, offsetX: offset.x, offsetY: offset.y, moved: false }
+    drag.current = { x: event.clientX, y: event.clientY, offsetX: cameraRef.current.x, offsetY: cameraRef.current.y, moved: false }
     event.currentTarget.setPointerCapture?.(event.pointerId)
   }
   const moveDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -84,50 +108,40 @@ function CoreModal({ branch, onClose }: { branch: ArcaneCoreBranchDefinition; on
     const nextX = event.clientX - drag.current.x
     const nextY = event.clientY - drag.current.y
     if (!drag.current.moved && Math.hypot(nextX, nextY) < ARCANE_CORE_DRAG_THRESHOLD) return
-    drag.current.moved = true
-    setCameraMode('manual')
-    setOffset(clampCameraOffset({ x: drag.current.offsetX + nextX, y: drag.current.offsetY + nextY }, zoom, viewportSize))
+    if (!drag.current.moved) {
+      drag.current.moved = true
+      setCameraMode('manual')
+      event.currentTarget.classList.add('is-panning')
+    }
+    const nextOffset = clampCameraOffset({ x: drag.current.offsetX + nextX, y: drag.current.offsetY + nextY }, cameraRef.current.zoom, viewportSizeRef.current)
+    cameraRef.current.x = nextOffset.x
+    cameraRef.current.y = nextOffset.y
+    scheduleCameraApply()
   }
   const endDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
     drag.current = null
+    event.currentTarget.classList.remove('is-panning')
     if (event.currentTarget.hasPointerCapture?.(event.pointerId)) event.currentTarget.releasePointerCapture?.(event.pointerId)
   }
   const handleWheel = (event: ReactWheelEvent<HTMLDivElement>) => {
     event.preventDefault()
     const rect = viewportRef.current?.getBoundingClientRect()
     if (!rect) return
-    const nextZoom = Math.max(ARCANE_CORE_MIN_ZOOM, Math.min(ARCANE_CORE_MAX_ZOOM, zoom * (event.deltaY > 0 ? .9 : 1.1)))
+    const nextZoom = Math.max(ARCANE_CORE_MIN_ZOOM, Math.min(ARCANE_CORE_MAX_ZOOM, cameraRef.current.zoom * (event.deltaY > 0 ? .9 : 1.1)))
     const pointerX = event.clientX - rect.left - rect.width / 2
     const pointerY = event.clientY - rect.top - rect.height / 2
-    const worldX = (pointerX - offset.x) / zoom
-    const worldY = (pointerY - offset.y) / zoom
-    setOffset(clampCameraOffset({ x: pointerX - worldX * nextZoom, y: pointerY - worldY * nextZoom }, nextZoom, viewportSize))
-    setZoom(nextZoom)
-    setCameraMode('manual')
+    zoomAtPointer(nextZoom, { x: pointerX, y: pointerY })
   }
-  const applyFit = (mode: Exclude<CoreCameraMode, 'manual'>) => {
+  const applyFit = (mode: 'progression' | 'all') => {
     const target = mode === 'all' ? 8 as ArcaneCoreRingIndex : fitProgressionRing
-    setCameraMode(mode)
-    setZoom(getArcaneCoreFitZoom(viewportSize, target))
-    setOffset({ x: 0, y: 0 })
+    fitCamera(mode, target)
   }
 
   useEffect(() => {
-    const viewport = viewportRef.current
-    if (!viewport) return
-    const updateSize = () => setViewportSize({ width: viewport.clientWidth, height: viewport.clientHeight })
-    updateSize()
-    if (typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver(updateSize)
-    observer.observe(viewport)
-    return () => observer.disconnect()
-  }, [])
-  useEffect(() => {
     if (cameraMode === 'manual' || !viewportSize.width || !viewportSize.height) return
     const target = cameraMode === 'all' ? 8 as ArcaneCoreRingIndex : fitProgressionRing
-    setZoom(getArcaneCoreFitZoom(viewportSize, target))
-    setOffset({ x: 0, y: 0 })
-  }, [cameraMode, fitProgressionRing, viewportSize.width, viewportSize.height])
+    fitCamera(cameraMode, target)
+  }, [cameraMode, fitCamera, fitProgressionRing, viewportSize.width, viewportSize.height])
   useEffect(() => () => { if (feedbackTimer.current !== null) window.clearTimeout(feedbackTimer.current) }, [])
 
   const flashFeedback = (nodeId: string, kind: 'purchase' | 'max' | 'major', unlockedRing?: ArcaneCoreRingIndex) => {
@@ -161,14 +175,14 @@ function CoreModal({ branch, onClose }: { branch: ArcaneCoreBranchDefinition; on
 
   return <ModalPortal open onClose={onClose} onEscape={() => confirmation ? setConfirmation(null) : onClose()} surfaceStyle={{ '--branch-accent': branch.accent } as CSSProperties} backdropClassName="arcane-core-modal-backdrop" surfaceClassName="arcane-core-modal" ariaLabel={`${branch.name} Core`}>
     <div className="arcane-core-modal-head"><div><span className="eyebrow" style={{ color: branch.accent }}>{branch.name.toUpperCase()} CORE · CONCENTRIC PATH</span><h2>{branch.name} Core</h2><p>Invest Core Points from the center outward. Each Ring unlocks by investment; every rank is permanent until refunded.</p></div><div className="arcane-core-modal-actions"><Status tone="active">{spent} / {ARCANE_CORE_POINTS_PER_CORE} invested</Status><Button variant="ghost" onClick={onClose} ariaLabel="Close Arcane Core"><X size={17} /></Button></div></div>
-    <div className="arcane-core-modal-toolbar"><span><Crosshair size={14} /> Drag to pan · wheel to zoom</span><span>UNLOCKED {highestRing} / 8 · {spent} / {ARCANE_CORE_POINTS_PER_CORE} POINTS · {Math.round(zoom * 100)}%</span><Button variant="ghost" onClick={() => applyFit('progression')}><Crosshair size={13} /> Fit Progression</Button><Button variant="ghost" onClick={() => applyFit('all')}><Crosshair size={13} /> Fit All</Button><Button variant="ghost" onClick={() => applyFit('progression')}><RotateCcw size={13} /> Reset View</Button><Button variant="danger" onClick={requestReset} disabled={spent === 0}>Reset Core</Button></div>
+    <div className="arcane-core-modal-toolbar"><span><Crosshair size={14} /> Drag to pan · wheel to zoom</span><span>UNLOCKED {highestRing} / 8 · {spent} / {ARCANE_CORE_POINTS_PER_CORE} POINTS · {Math.round(zoomForHud * 100)}%</span><Button variant="ghost" onClick={() => applyFit('progression')}><Crosshair size={13} /> Fit Progression</Button><Button variant="ghost" onClick={() => applyFit('all')}><Crosshair size={13} /> Fit All</Button><Button variant="ghost" onClick={() => applyFit('progression')}><RotateCcw size={13} /> Reset View</Button><Button variant="danger" onClick={requestReset} disabled={spent === 0}>Reset Core</Button></div>
     <div className="arcane-core-modal-body">
       <div ref={viewportRef} className="arcane-core-ring-viewport" onPointerDown={startDrag} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag} onWheel={handleWheel} onDragStart={(event) => event.preventDefault()}>
         <div className={`arcane-core-depth-hud ${zoomClass}`} aria-label="Arcane Core ring progression"><span>CORE DEPTH</span><strong>RING {highestRing} / 8 REACHED</strong><div>{ARCANE_CORE_RING_INDICES.map((ring) => <i key={ring} className={`${ring <= highestRing ? 'is-unlocked' : ring === highestRing + 1 ? 'is-next' : 'is-locked'}`}><b>{ring}</b>{ring > highestRing && <LockKeyhole size={9} aria-hidden="true" />}</i>)}</div></div>
-        <div className={`arcane-core-ring-canvas ${zoomClass}`} style={{ transform: `translate(calc(-50% + ${offset.x}px), calc(-50% + ${offset.y}px)) scale(${zoom})` }} onDragStart={(event) => event.preventDefault()}>
+        <div ref={worldRef} className="arcane-core-world" onDragStart={(event) => event.preventDefault()}>
           <div className="arcane-core-hub"><Sparkles size={28} /><span className="arcane-core-hub-kicker">{branch.name.toUpperCase()} CORE</span><strong>{spent} / {ARCANE_CORE_POINTS_PER_CORE}</strong><small>POINTS INVESTED</small><em>RING {highestRing} REACHED</em></div>
-          <div className="arcane-core-ring-layer">{ARCANE_CORE_RING_INDICES.map((ring) => <div key={ring} className={`arcane-core-ring ring-${ring} ${ring <= highestRing ? 'is-unlocked' : ring === highestRing + 1 ? 'is-next-locked' : 'is-deep-locked'} ${ringPulse === ring ? 'is-unlock-pulse' : ''} ${selected?.ring === ring ? 'is-selected-ring' : ''}`} />)}</div>
-          <div className="arcane-core-node-layer">{branch.nodes.map((node) => { const position = getArcaneCoreNodePosition(node); const rank = getArcaneCoreNodeRank(core, node.id); const reachable = isArcaneCoreNodeReachable(core, node.id); const majorAvailable = isArcaneCoreMajorUnlocked(core, node); const ringLocked = node.ring > highestRing; const nodeAvailable = reachable && majorAvailable; const nodeFeedback = feedback?.nodeId === node.id ? feedback.kind : undefined; return <GameTooltip key={`${node.id}-${nodeFeedback ?? 'idle'}`} content={`${node.name} · Rank ${rank}/${node.maxRank} · ${nodeEffect(node, rank)}`}><button type="button" data-no-pan className={`arcane-core-ring-node node-${node.nodeType} ${rank > 0 ? 'is-active' : ''} ${nodeAvailable ? 'is-available' : 'is-locked'} ${ringLocked ? 'is-ring-locked' : ''} ${ringLocked && node.ring === highestRing + 1 ? 'is-next-locked' : ''} ${ringLocked && node.ring > highestRing + 1 ? 'is-deep-locked' : ''} ${selected?.ring === node.ring ? 'is-selected-ring-node' : ''} ${selected?.id === node.id ? 'is-selected' : ''} ${nodeFeedback ? `is-${nodeFeedback}-pulse` : ''}`} style={{ left: position.left, top: position.top }} onClick={() => setSelectedId(node.id)} aria-label={`${node.name}, rank ${rank} of ${node.maxRank}`}><span className="arcane-core-node-dot" aria-hidden="true">{node.nodeType === 'major' ? '✦' : '◆'}</span><strong>{node.name}</strong><small>{node.nodeType === 'major' ? 'MAJOR' : `RANK ${rank}/${node.maxRank}`}</small>{node.nodeType !== 'major' && <i className="arcane-core-rank-pips" aria-hidden="true">{[1, 2, 3, 4, 5].map((pip) => <b key={pip} className={pip <= rank ? 'is-paid' : undefined} />)}</i>}</button></GameTooltip> })}</div>
+          <ArcaneCoreOrbitLayer highestRing={highestRing} selectedRing={selected?.ring} ringPulse={ringPulse} />
+          <ArcaneCoreNodeLayer branch={branch} core={core} highestRing={highestRing} selectedId={selectedId} feedback={feedback} onSelect={setSelectedId} />
         </div>
       </div>
       <aside className="arcane-core-node-inspector">{selected && <><div className="arcane-core-inspector-identity"><div className="arcane-core-inspector-title"><span className="arcane-core-inspector-glyph" style={{ background: branch.accent }}><Sparkles size={17} /></span><div><span className="eyebrow">RING {selected.ring} · {selected.nodeType.toUpperCase()}</span><h3>{selected.name}</h3></div></div><p className="muted">{selected.description}</p></div><section className="arcane-core-inspector-section"><span className="arcane-core-inspector-section-label">EFFECT SUMMARY</span><div className="arcane-core-inspector-effect"><span>CURRENT EFFECT · RANK {selectedRank}/{selected.maxRank}</span><strong>{selectedCurrent}</strong><small>NEXT · {selectedNext}</small><small>MAX · {selectedMax}</small></div></section><section className="arcane-core-inspector-section"><span className="arcane-core-inspector-section-label">NODE STATUS</span><div className="arcane-core-inspector-meta"><span>RING<strong>{getArcaneCoreRingName(branch.id, selected.ring)}</strong></span><span>STATUS<strong>{statusText}</strong></span><span>COST<strong>{selected.rankCost} CORE POINT{selected.rankCost > 1 ? 'S' : ''}</strong></span><span>RANK<strong>{selectedRank} / {selected.maxRank}</strong></span></div></section><div className="arcane-core-inspector-actions"><Button variant="primary" onClick={handlePurchase} disabled={selectedRank >= selected.maxRank || !selectedAvailable}>Purchase Rank · {selected.rankCost} Point{selected.rankCost > 1 ? 's' : ''}</Button><Button variant="ghost" onClick={requestRefund} disabled={selectedRank === 0}>Refund One Rank</Button></div></>}</aside>

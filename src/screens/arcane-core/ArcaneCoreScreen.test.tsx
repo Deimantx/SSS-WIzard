@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { TooltipProvider } from '../../components/ui/tooltip/Tooltip'
@@ -16,7 +16,7 @@ describe('Arcane Core screen', () => {
     render(<TooltipProvider><ArcaneCoreScreen /></TooltipProvider>)
     await user.click(screen.getByRole('button', { name: /Power Core/i }))
     const dialog = screen.getByRole('dialog', { name: 'Power Core' })
-    expect(dialog.querySelector('.arcane-core-ring.ring-2.is-next-locked')).toBeTruthy()
+    expect(dialog.querySelector('.arcane-core-orbit.is-next-locked[data-ring]')).toBeTruthy()
     await user.click(dialog.querySelector('[aria-label^="Opening Blast"]') as HTMLElement)
     expect(within(dialog).getByText('RING LOCKED · 0 / 20 PREVIOUS-RING POINTS')).toBeTruthy()
     expect((within(dialog).getByRole('button', { name: /Purchase Rank/ }) as HTMLButtonElement).disabled).toBe(true)
@@ -53,13 +53,13 @@ describe('Arcane Core screen', () => {
     await user.click(screen.getByRole('button', { name: /Power Core/i }))
     const dialog = screen.getByRole('dialog', { name: 'Power Core' })
     const viewport = dialog.querySelector('.arcane-core-ring-viewport') as HTMLElement
-    const canvas = dialog.querySelector('.arcane-core-ring-canvas') as HTMLElement
+    const canvas = dialog.querySelector('.arcane-core-world') as HTMLElement
     fireEvent.pointerDown(viewport, { clientX: 100, clientY: 100, pointerId: 1 })
     fireEvent.pointerMove(viewport, { clientX: 180, clientY: 140, pointerId: 1 })
     fireEvent.pointerUp(viewport, { clientX: 180, clientY: 140, pointerId: 1 })
-    expect(canvas.style.transform).not.toContain('+ 0px')
+    await waitFor(() => expect(canvas.style.transform).toContain('translate3d('))
     await user.click(within(dialog).getByRole('button', { name: /Fit Progression/ }))
-    expect(canvas.style.transform).toContain('0px')
+    await waitFor(() => expect(canvas.style.transform).toContain('translate3d(0px, 0px'))
     expect(canvas.style.transform).toContain('scale(')
   })
 })

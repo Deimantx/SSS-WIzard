@@ -12,6 +12,17 @@ export const ARCANE_CORE_RING_NAMES: Record<ArcaneCoreBranchId, Record<ArcaneCor
   control: { 1: 'Timing', 2: 'Suppression', 3: 'Dominion', 4: 'Absolute Control', 5: 'Interference', 6: 'Temporal Mastery', 7: 'Lockdown', 8: 'Absolute Stasis' },
 }
 
-export const ARCANE_CORE_RING_OFFSETS: Record<ArcaneCoreRingIndex, number> = { 1: 0, 2: 20, 3: 0, 4: 20, 5: 8, 6: 28, 7: 8, 8: 28 }
+export const ARCANE_CORE_NODE_ANGLE_STEP = 40
+export const ARCANE_CORE_RING_OFFSETS = {
+  1: 0,
+  2: 20,
+  3: 0,
+  4: 20,
+  5: 0,
+  6: 20,
+  7: 0,
+  8: 20,
+} satisfies Record<ArcaneCoreRingIndex, number>
+export const normalizeAngle = (angle: number) => ((angle % 360) + 360) % 360
 
 export const getArcaneCoreRingName = (branchId: ArcaneCoreBranchId, ring: ArcaneCoreRingIndex) => ARCANE_CORE_RING_NAMES[branchId][ring]

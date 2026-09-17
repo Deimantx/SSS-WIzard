@@ -1,6 +1,6 @@
 import type { ArcaneCoreBranchId, ArcaneCoreNodeDefinition, ArcaneCoreNodeType, ArcaneCoreResolvedEffects, ArcaneCoreRingIndex, EquipmentStats } from '../../types'
 import type { CombatCondition, CombatEffect, CombatModifier, CombatTrigger, CombatTriggerRule } from '../../systems/combat/combatTypes'
-import { ARCANE_CORE_RING_OFFSETS } from './arcaneCoreRings'
+import { ARCANE_CORE_NODE_ANGLE_STEP, ARCANE_CORE_RING_OFFSETS, normalizeAngle } from './arcaneCoreRings'
 
 export type ArcaneCoreEffectResolver = (rank: number) => ArcaneCoreResolvedEffects
 export type ArcaneCoreNodeDraft = Omit<ArcaneCoreNodeDefinition, 'branchId' | 'ring' | 'angleDeg'>
@@ -21,17 +21,12 @@ export const minor = (id: string, name: string, description: string, resolver?: 
 export const perk = (id: string, name: string, description: string, resolver?: ArcaneCoreEffectResolver) => node('perk', id, name, description, 5, 1, resolver)
 export const major = (id: string, name: string, description: string, resolver?: ArcaneCoreEffectResolver) => node('major', id, name, description, 1, 3, resolver)
 
-export interface ArcaneCoreRingLayoutOptions {
-  offsetDeg?: number
-  majorAngleDeg?: number
-}
-
-export const createRing = (branchId: ArcaneCoreBranchId, ring: ArcaneCoreRingIndex, drafts: ArcaneCoreNodeDraft[], options: ArcaneCoreRingLayoutOptions = {}): ArcaneCoreNodeDefinition[] => {
-  const offsetDeg = options.offsetDeg ?? ARCANE_CORE_RING_OFFSETS[ring]
-  const majorAngleDeg = options.majorAngleDeg ?? 0
-  const standard = drafts.filter((draft) => draft.nodeType !== 'major')
-  const major = drafts.filter((draft) => draft.nodeType === 'major')
-  // Leave a deliberate crown gap at 12 o'clock for the Major. The remaining
-  // sockets are evenly spaced around the rest of the orbital band.
-  return [...standard.map((draft, index) => ({ ...draft, branchId, ring, angleDeg: offsetDeg + 35 + index * 40 })), ...major.map((draft) => ({ ...draft, branchId, ring, angleDeg: majorAngleDeg }))]
+export const createRing = (branchId: ArcaneCoreBranchId, ring: ArcaneCoreRingIndex, drafts: ArcaneCoreNodeDraft[]): ArcaneCoreNodeDefinition[] => {
+  const offsetDeg = ARCANE_CORE_RING_OFFSETS[ring]
+  const standardNodes = drafts.filter((draft) => draft.nodeType !== 'major')
+  const majorNodes = drafts.filter((draft) => draft.nodeType === 'major')
+  return [
+    ...majorNodes.map((draft) => ({ ...draft, branchId, ring, angleDeg: normalizeAngle(offsetDeg) })),
+    ...standardNodes.map((draft, index) => ({ ...draft, branchId, ring, angleDeg: normalizeAngle(offsetDeg + (index + 1) * ARCANE_CORE_NODE_ANGLE_STEP) })),
+  ]
 }

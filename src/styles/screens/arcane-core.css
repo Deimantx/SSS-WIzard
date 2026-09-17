@@ -2,7 +2,7 @@
   --arcane-core-power: #f08a74;
   --arcane-core-vitality: #6fd0a7;
   --arcane-core-focus: #8e9dff;
-  --arcane-core-control: #d9ae73;
+  --arcane-core-control: #b89cff;
 }
 
 .arcane-core-screen .screen-header { align-items: flex-end; margin-bottom: 22px; }
@@ -134,3 +134,53 @@
 .arcane-core-inspector-effect small { display: block; margin-top: 5px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
 @media (max-width: 900px) { .arcane-core-modal-body { grid-template-columns: 1fr; grid-template-rows: minmax(340px, 1fr) auto; }.arcane-core-node-inspector { max-height: 310px; } }
 @media (max-width: 560px) { .arcane-core-branch-card { grid-template-columns: auto minmax(0, 1fr); }.arcane-core-branch-open { grid-column: 2; }.arcane-core-modal { height: calc(100vh - 16px); padding: 13px; }.arcane-core-modal-body { gap: 9px; }.arcane-core-ring-viewport { min-height: 330px; }.arcane-core-ring-node { width: 104px; }.arcane-core-ring-node.node-major { width: 116px; } }
+
+/* V3 visual polish: the board owns one coordinate system, while rings and
+   sockets render in separate layers so orbital positions stay exact. */
+.arcane-core-modal { border-color: color-mix(in srgb, var(--branch-accent) 58%, var(--ui-border)); background: radial-gradient(circle at 28% 42%, color-mix(in srgb, var(--branch-accent) 9%, transparent), transparent 42%), linear-gradient(145deg, color-mix(in srgb, var(--ui-panel-strong) 96%, var(--branch-accent)), var(--ui-panel)); }
+.arcane-core-modal-body { grid-template-columns: minmax(0, 1.95fr) minmax(330px, .78fr); gap: 16px; }
+.arcane-core-ring-viewport { border-color: color-mix(in srgb, var(--branch-accent) 34%, var(--ui-border)); background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--branch-accent) 13%, transparent), transparent 34%), radial-gradient(circle at 50% 50%, transparent 35%, color-mix(in srgb, var(--branch-accent) 4%, var(--ui-bg)) 100%), var(--ui-bg); }
+.arcane-core-ring-canvas { width: 1480px; height: 1480px; }
+.arcane-core-ring-layer, .arcane-core-node-layer { position: absolute; inset: 0; }
+.arcane-core-ring-layer { pointer-events: none; }
+.arcane-core-hub { left: 740px; top: 740px; width: 224px; height: 224px; padding: 30px; border-width: 2px; color: var(--branch-accent); background: radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--branch-accent) 24%, var(--ui-panel-strong)), var(--ui-panel-strong) 66%); box-shadow: 0 0 55px color-mix(in srgb, var(--branch-accent) 25%, transparent), inset 0 0 32px color-mix(in srgb, var(--branch-accent) 16%, transparent); }
+.arcane-core-hub-kicker { color: var(--ui-text-soft); font: 700 11px var(--font-mono); letter-spacing: .18em; }
+.arcane-core-hub strong { color: var(--ui-text); font: 700 24px var(--font-mono); letter-spacing: -.04em; }
+.arcane-core-hub small { color: var(--ui-text-muted); font-size: 9px; letter-spacing: .13em; }
+.arcane-core-hub em { margin-top: 3px; padding: 4px 8px; border: 1px solid color-mix(in srgb, var(--branch-accent) 44%, var(--ui-border)); border-radius: 999px; color: var(--branch-accent); background: color-mix(in srgb, var(--branch-accent) 9%, transparent); font: 700 9px var(--font-mono); font-style: normal; letter-spacing: .08em; }
+.arcane-core-ring { left: 740px; top: 740px; border-color: color-mix(in srgb, var(--branch-accent) 27%, var(--ui-border)); background: radial-gradient(circle, transparent 70%, color-mix(in srgb, var(--branch-accent) 2%, transparent)); }
+.arcane-core-ring.ring-1 { width: 440px; height: 440px; }.arcane-core-ring.ring-2 { width: 720px; height: 720px; }.arcane-core-ring.ring-3 { width: 1020px; height: 1020px; }.arcane-core-ring.ring-4 { width: 1320px; height: 1320px; }
+.arcane-core-ring.is-unlocked { border-width: 2px; border-color: color-mix(in srgb, var(--branch-accent) 45%, var(--ui-border)); box-shadow: 0 0 26px color-mix(in srgb, var(--branch-accent) 9%, transparent), inset 0 0 18px color-mix(in srgb, var(--branch-accent) 3%, transparent); }
+.arcane-core-ring.is-locked { opacity: .38; filter: saturate(.35); border-style: dashed; }
+.arcane-core-ring-label, .arcane-core-ring-gate { left: 100%; right: auto; width: max-content; max-width: 160px; box-sizing: border-box; transform: translateX(-100%); text-align: right; }
+.arcane-core-ring-label { top: calc(50% - 17px); display: inline-flex; align-items: center; justify-content: flex-end; gap: 5px; padding: 4px 7px; border: 1px solid color-mix(in srgb, var(--branch-accent) 24%, var(--ui-border)); border-radius: 5px; color: color-mix(in srgb, var(--branch-accent) 72%, var(--ui-text-muted)); background: color-mix(in srgb, var(--ui-panel-strong) 84%, transparent); font-size: 9px; letter-spacing: .1em; }
+.arcane-core-ring-gate { top: calc(50% + 6px); margin: 0; padding: 2px 7px; color: var(--ui-text-muted); font-size: 8px; letter-spacing: .05em; }
+.arcane-core-node-layer { pointer-events: none; }
+.arcane-core-ring-node { z-index: 4; display: grid; grid-template-columns: 1fr; grid-template-rows: auto minmax(25px, auto) auto auto; justify-items: center; align-content: center; gap: 5px; width: 116px; height: 116px; min-height: 116px; padding: 12px; border: 1px solid color-mix(in srgb, var(--branch-accent) 34%, var(--ui-border)); border-radius: 50%; color: var(--ui-text-muted); background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--branch-accent) 11%, var(--ui-panel-strong)), var(--ui-panel-strong) 70%); box-shadow: 0 8px 20px rgba(0,0,0,.22), inset 0 0 15px color-mix(in srgb, var(--branch-accent) 4%, transparent); cursor: pointer; pointer-events: auto; text-align: center; transition: border-color .15s ease, box-shadow .15s ease, background .15s ease, transform .15s ease, opacity .15s ease, filter .15s ease; }
+.arcane-core-ring-node:hover, .arcane-core-ring-node:focus-visible { z-index: 9; border-color: var(--branch-accent); outline: none; transform: translate(-50%, -50%) scale(1.06); box-shadow: 0 0 0 4px color-mix(in srgb, var(--branch-accent) 14%, transparent), 0 0 26px color-mix(in srgb, var(--branch-accent) 22%, transparent); }
+.arcane-core-ring-node.is-available { color: var(--ui-text); border-color: color-mix(in srgb, var(--branch-accent) 58%, var(--ui-border)); }
+.arcane-core-ring-node.is-active { background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--branch-accent) 22%, var(--ui-panel-strong)), var(--ui-panel-strong) 72%); box-shadow: 0 0 22px color-mix(in srgb, var(--branch-accent) 18%, transparent), inset 0 0 16px color-mix(in srgb, var(--branch-accent) 8%, transparent); }
+.arcane-core-ring-node.is-selected { outline: 2px solid var(--branch-accent); outline-offset: 3px; }
+.arcane-core-ring-node.is-locked:not(.is-ring-locked) { border-color: color-mix(in srgb, var(--ui-warning) 30%, var(--ui-border)); }
+.arcane-core-ring-node.is-ring-locked { opacity: .54; filter: saturate(.45); }
+.arcane-core-ring-node.node-major { width: 148px; height: 148px; min-height: 148px; border-width: 2px; border-color: color-mix(in srgb, var(--ui-warning) 72%, var(--branch-accent)); background: radial-gradient(circle at 50% 28%, color-mix(in srgb, var(--ui-warning) 18%, var(--ui-panel-strong)), var(--ui-panel-strong) 70%); box-shadow: 0 0 30px color-mix(in srgb, var(--ui-warning) 18%, transparent), inset 0 0 20px color-mix(in srgb, var(--ui-warning) 8%, transparent); }
+.arcane-core-ring-node.node-major.is-active { border-color: var(--ui-warning); box-shadow: 0 0 38px color-mix(in srgb, var(--ui-warning) 30%, transparent), inset 0 0 22px color-mix(in srgb, var(--ui-warning) 12%, transparent); }
+.arcane-core-node-dot { display: grid; place-items: center; width: 29px; height: 29px; border: 1px solid color-mix(in srgb, var(--branch-accent) 58%, var(--ui-border)); border-radius: 50%; color: var(--branch-accent); background: color-mix(in srgb, var(--branch-accent) 13%, var(--ui-panel)); font-size: 13px; line-height: 1; }
+.node-major .arcane-core-node-dot { width: 38px; height: 38px; border-color: color-mix(in srgb, var(--ui-warning) 72%, var(--branch-accent)); color: var(--ui-warning); background: color-mix(in srgb, var(--ui-warning) 13%, var(--ui-panel)); font-size: 18px; }
+.arcane-core-ring-node strong { display: -webkit-box; min-width: 0; max-width: 92px; overflow: hidden; color: inherit; font-size: 10px; line-height: 1.12; text-overflow: ellipsis; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.arcane-core-ring-node small { grid-column: auto; color: var(--ui-text-muted); font: 8px var(--font-mono); letter-spacing: .06em; }
+.arcane-core-rank-pips { grid-column: auto; display: flex; gap: 3px; padding-top: 1px; }
+.arcane-core-rank-pips b { width: 10px; height: 4px; border: 1px solid var(--ui-border-strong); border-radius: 999px; background: transparent; }
+.arcane-core-rank-pips b.is-paid { border-color: var(--branch-accent); background: var(--branch-accent); box-shadow: 0 0 7px color-mix(in srgb, var(--branch-accent) 62%, transparent); }
+.arcane-core-inspector-identity { display: grid; gap: 10px; padding-bottom: 2px; }
+.arcane-core-inspector-section { display: grid; gap: 7px; }
+.arcane-core-inspector-section-label { color: var(--branch-accent); font: 700 var(--text-micro) var(--font-mono); letter-spacing: .15em; }
+.arcane-core-node-inspector { gap: 16px; padding: 17px; border-color: color-mix(in srgb, var(--branch-accent) 42%, var(--ui-border)); background: linear-gradient(160deg, color-mix(in srgb, var(--branch-accent) 8%, var(--ui-panel)), var(--ui-panel)); }
+.arcane-core-inspector-effect { gap: 8px; padding: 13px; border-radius: 9px; background: color-mix(in srgb, var(--branch-accent) 9%, var(--ui-panel-strong)); }
+.arcane-core-inspector-effect strong { line-height: 1.35; }
+.arcane-core-inspector-meta { gap: 8px; }
+.arcane-core-inspector-meta span { padding: 9px; border: 1px solid var(--ui-border); border-radius: 7px; background: color-mix(in srgb, var(--ui-panel-strong) 68%, transparent); }
+.arcane-core-inspector-actions { padding-top: 2px; }
+.arcane-core-inspector-actions .button { min-height: 37px; }
+@media (max-width: 900px) { .arcane-core-modal-body { grid-template-columns: 1fr; grid-template-rows: minmax(420px, 1fr) auto; }.arcane-core-node-inspector { max-height: 330px; } }
+@media (max-width: 560px) { .arcane-core-ring-node { width: 96px; height: 96px; min-height: 96px; padding: 9px; }.arcane-core-ring-node.node-major { width: 122px; height: 122px; min-height: 122px; }.arcane-core-ring-node strong { max-width: 78px; font-size: 9px; }.arcane-core-rank-pips { gap: 2px; }.arcane-core-rank-pips b { width: 8px; }.arcane-core-ring-label { max-width: 130px; font-size: 8px; }.arcane-core-hub { width: 192px; height: 192px; padding: 22px; }.arcane-core-hub strong { font-size: 20px; } }

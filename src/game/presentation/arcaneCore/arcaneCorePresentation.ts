@@ -60,8 +60,8 @@ export const getArcaneCoreNodeEffectTexts = (node: ArcaneCoreNodeDefinition, ran
 }
 export const formatArcaneCoreNodeEffect = (node: ArcaneCoreNodeDefinition, rank = 1) => getArcaneCoreNodeEffectTexts(node, rank).join(' · ') || node.description
 
-export const ARCANE_CORE_CANVAS_SIZE = 1600
-export const ARCANE_CORE_RING_RADII: Record<1 | 2 | 3 | 4, number> = { 1: 240, 2: 400, 3: 570, 4: 750 }
+export const ARCANE_CORE_CANVAS_SIZE = 1480
+export const ARCANE_CORE_RING_RADII: Record<1 | 2 | 3 | 4, number> = { 1: 220, 2: 360, 3: 510, 4: 660 }
 export const getArcaneCoreRingRadius = (ring: 1 | 2 | 3 | 4) => ARCANE_CORE_RING_RADII[ring]
 export const getArcaneCoreNodePosition = (node: ArcaneCoreNodeDefinition) => {
   const radius = getArcaneCoreRingRadius(node.ring)

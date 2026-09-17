@@ -30,5 +30,7 @@ export const createRing = (branchId: ArcaneCoreBranchId, ring: ArcaneCoreRingInd
   const majorAngleDeg = options.majorAngleDeg ?? 0
   const standard = drafts.filter((draft) => draft.nodeType !== 'major')
   const major = drafts.filter((draft) => draft.nodeType === 'major')
-  return [...standard.map((draft, index) => ({ ...draft, branchId, ring, angleDeg: offsetDeg + 22.5 + index * 45 })), ...major.map((draft) => ({ ...draft, branchId, ring, angleDeg: majorAngleDeg }))]
+  // Leave a deliberate crown gap at 12 o'clock for the Major. The remaining
+  // sockets are evenly spaced around the rest of the orbital band.
+  return [...standard.map((draft, index) => ({ ...draft, branchId, ring, angleDeg: offsetDeg + 35 + index * 40 })), ...major.map((draft) => ({ ...draft, branchId, ring, angleDeg: majorAngleDeg }))]
 }

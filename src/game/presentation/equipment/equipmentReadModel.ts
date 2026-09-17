@@ -10,7 +10,7 @@ import { formatEquipmentStat, getEquipmentStatLabel } from './equipmentStatPrese
 import { EQUIPMENT_ITEM_SLOT_LABELS, getDefaultEquipmentPosition, getItemPositions } from '../../core/equipment/equipmentRules'
 import type { DamageType, EquipmentBuildTag, EquipmentStats, EquipmentPosition, GameState, ItemId } from '../../types'
 
-export type EquipmentSheetState = Pick<GameState, 'player' | 'progress' | 'activities' | 'equipment' | 'inventory' | 'artifactProgress'> & Partial<Pick<GameState, 'debug'>>
+export type EquipmentSheetState = Pick<GameState, 'player' | 'progress' | 'activities' | 'equipment' | 'inventory' | 'artifactProgress' | 'arcaneCore'> & Partial<Pick<GameState, 'debug'>>
 
 export interface EquipmentStatSnapshot {
   maxHealth: number

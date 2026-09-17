@@ -2,7 +2,8 @@ import { ARTIFACTS, getArtifactLevelBands, isArtifactId } from '../../content/ar
 import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
 import { grantItem } from '../inventory/itemAcquisition'
 import { getRecipeUnlockRequirement, isRecipeUnlocked } from '../../content/recipes/recipeUnlocks'
-import type { ArtifactId, ArtifactProgressState, GameState, ItemId } from '../../types'
+import type { ArtifactId, ArtifactProgressState, EquipmentStats, GameState, ItemId } from '../../types'
+import { addEquipmentStats } from '../../core/equipment/equipmentStatAggregation'
 
 const EMPTY: ArtifactProgressState = { level: 1, allocatedNodeIds: [], attunedNodeIds: [] }
 export const getArtifactDefinition = (id: ArtifactId) => ARTIFACTS[id]
@@ -33,14 +34,9 @@ export const getArtifactTotalPoints = (state: ArtifactProgressionState, id: Arti
 export const getArtifactSpentPoints = (state: Pick<GameState, 'artifactProgress'>, id: ArtifactId) => getArtifactProgress(state, id).allocatedNodeIds.reduce((total, nodeId) => total + (ARTIFACTS[id]?.nodes.find(node => node.id === nodeId)?.pointCost ?? 0), 0)
 export const getArtifactAvailablePoints = (state: ArtifactProgressionState, id: ArtifactId) => Math.max(0, getArtifactTotalPoints(state, id) - getArtifactSpentPoints(state, id))
 export const getArtifactEffectiveStats = (state: Pick<GameState, 'artifactProgress'>, id: ArtifactId) => {
-  const definition = ARTIFACTS[id]; const progress = getArtifactProgress(state, id); const total = { ...(definition?.coreStatsByLevel[progress.level] ?? {}) }
-  progress.allocatedNodeIds.forEach(nodeId => Object.entries(definition?.nodes.find(node => node.id === nodeId)?.stats ?? {}).forEach(([key, value]) => {
-    if (key === 'resistances' && value && typeof value === 'object') {
-      total.resistances = { ...(total.resistances ?? {}), ...Object.fromEntries(Object.entries(value as Record<string, number>).map(([damageType, resistance]) => [damageType, (total.resistances?.[damageType as keyof NonNullable<typeof total.resistances>] ?? 0) + resistance])) }
-      return
-    }
-    total[key as keyof typeof total] = ((total[key as keyof typeof total] ?? 0) as number + (value ?? 0)) as never
-  }))
+  const definition = ARTIFACTS[id]; const progress = getArtifactProgress(state, id); const total: EquipmentStats = {}
+  addEquipmentStats(total, definition?.coreStatsByLevel[progress.level])
+  progress.allocatedNodeIds.forEach(nodeId => addEquipmentStats(total, definition?.nodes.find(node => node.id === nodeId)?.stats))
   return total
 }
 export const getAllocatedArtifactCombatProviders = (state: Pick<GameState, 'artifactProgress'>, id: ArtifactId) => {

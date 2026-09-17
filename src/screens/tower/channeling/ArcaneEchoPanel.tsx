@@ -12,10 +12,11 @@ export function ArcaneEchoPanel() {
   const progress = useGameStore((state) => state.progress)
   const equipment = useGameStore((state) => state.equipment)
   const artifactProgress = useGameStore((state) => state.artifactProgress)
+  const arcaneCore = useGameStore((state) => state.arcaneCore)
   const freeFocus = useGameStore(selectFreeFocus)
   const add = useGameStore((state) => state.addArcaneEcho)
   const remove = useGameStore((state) => state.removeArcaneEcho)
-  const regen = getManaRegenBreakdown({ activities, progress, equipment, artifactProgress })
+  const regen = getManaRegenBreakdown({ activities, progress, equipment, artifactProgress, arcaneCore })
   const manaPerEcho = echoes > 0 ? regen.echoTotal / echoes : BALANCE.channeling.echoManaPerSecond * regen.echoAttunementMultiplier * regen.echoDiscoveryMultiplier
   const status = echoes > BALANCE.channeling.maxEchoes ? 'OVERRIDE' : echoes === 0 ? 'IDLE' : echoes === BALANCE.channeling.maxEchoes ? 'MAX ECHOES' : 'ACTIVE'
   return <Card title="Arcane Echo Channeling" action={<Status tone={echoes > BALANCE.channeling.maxEchoes ? 'warning' : echoes === 0 ? 'neutral' : 'active'}>{status}</Status>}>

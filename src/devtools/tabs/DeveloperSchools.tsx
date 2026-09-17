@@ -13,6 +13,7 @@ export function DeveloperSchools() {
   const progress = useGameStore((state) => state.progress)
   const equipment = useGameStore((state) => state.equipment)
   const artifactProgress = useGameStore((state) => state.artifactProgress)
+  const arcaneCore = useGameStore((state) => state.arcaneCore)
   const setSchoolXpDebug = useGameStore((state) => state.setSchoolXpDebug)
   const setSchoolLevelDebug = useGameStore((state) => state.setSchoolLevelDebug)
   const setLevelCap = useGameStore((state) => state.setLevelCap)
@@ -22,7 +23,7 @@ export function DeveloperSchools() {
   const resetCooldowns = useGameStore((state) => state.resetSpellCooldowns)
   const schoolIds = Object.keys(SCHOOLS) as SchoolId[]
   const setAllLevels = (level: number) => { if (level > progress.magicLevelCap) setLevelCap(level); schoolIds.forEach((id) => setSchoolLevelDebug(id, level)) }
-  const getSpellAutoCastFocusCost = (_state: { progress: typeof progress }, spellId: SpellId) => getFullSpellAutoCastFocusCost({ progress, equipment, artifactProgress }, spellId)
+  const getSpellAutoCastFocusCost = (_state: { progress: typeof progress }, spellId: SpellId) => getFullSpellAutoCastFocusCost({ progress, equipment, artifactProgress, arcaneCore }, spellId)
 
   return <div className="developer-tab-grid">
     <Card title="Magic schools">

@@ -33,6 +33,7 @@ export function SpellPresetDialog({ open, onClose }: { open: boolean; onClose: (
   const activities = useGameStore((state) => state.activities)
   const equipment = useGameStore((state) => state.equipment)
   const artifactProgress = useGameStore((state) => state.artifactProgress)
+  const arcaneCore = useGameStore((state) => state.arcaneCore)
   const debugAllowFocusOverCap = useGameStore((state) => state.debug.allowFocusOverCap)
   const maxFocus = useGameStore((state) => state.player.maxFocus)
   const createSpellPreset = useGameStore((state) => state.createSpellPreset)
@@ -51,7 +52,7 @@ export function SpellPresetDialog({ open, onClose }: { open: boolean; onClose: (
   const [editingName, setEditingName] = useState(false)
   const [savedFeedback, setSavedFeedback] = useState(false)
   const nameBeforeEditRef = useRef('')
-  const state = useMemo<SpellPresetProjectionState>(() => ({ progress, activities, equipment, artifactProgress, player: { maxFocus }, debug: { allowFocusOverCap: debugAllowFocusOverCap } }), [progress, activities, equipment, artifactProgress, maxFocus, debugAllowFocusOverCap])
+  const state = useMemo<SpellPresetProjectionState>(() => ({ progress, activities, equipment, artifactProgress, arcaneCore, player: { maxFocus }, debug: { allowFocusOverCap: debugAllowFocusOverCap } }), [progress, activities, equipment, artifactProgress, arcaneCore, maxFocus, debugAllowFocusOverCap])
 
   useEffect(() => {
     if (!open) return
@@ -163,7 +164,7 @@ export function SpellPresetDialog({ open, onClose }: { open: boolean; onClose: (
   </ModalPortal>
 }
 
-function AvailableSpells({ state, selectedIds, school, search, onAdd }: { state: Pick<GameState, 'progress' | 'equipment' | 'artifactProgress'>; selectedIds: SpellId[]; school: 'all' | SchoolId; search: string; onAdd: (spellId: SpellId) => void }) {
+function AvailableSpells({ state, selectedIds, school, search, onAdd }: { state: Pick<GameState, 'progress' | 'equipment' | 'artifactProgress' | 'arcaneCore'>; selectedIds: SpellId[]; school: 'all' | SchoolId; search: string; onAdd: (spellId: SpellId) => void }) {
   const query = search.trim().toLocaleLowerCase()
   const spells = useMemo(() => getAllSpellsInOrder().filter((spell) => {
     if (school !== 'all' && spell.school !== school) return false

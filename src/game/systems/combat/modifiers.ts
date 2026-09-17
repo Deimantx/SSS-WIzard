@@ -12,7 +12,7 @@ import { getStatusGroupStacks } from './statusSelectors'
 import { getRootCombatSourceProvenance, isEnemySourceOwnerActive } from './combatProvenance'
 import { getAllocatedArtifactCombatProviders, isArtifactItem } from '../artifacts/artifactProgression'
 import { getGuardianPassiveProviders } from '../summoning/summoningSelectors'
-import { getArcaneCoreCombatModifiers, getArcaneCoreStaticStats } from '../arcaneCore/arcaneCoreProgression'
+import { getArcaneCoreCombatModifierProviders, getArcaneCoreStaticStats } from '../arcaneCore/arcaneCoreProgression'
 
 export type CombatModifierState = {
   player: Pick<GameState['player'], 'health' | 'maxHealth' | 'mana' | 'maxMana'>
@@ -107,7 +107,7 @@ export const getCombatModifierContributions = (state: CombatModifierState, actor
   getActorTraits(state, actor).forEach((trait) => trait.modifiers?.forEach((modifier) => {
     add(modifier, 'trait', trait.id, trait.name)
   }))
-  if (state.arcaneCore) getArcaneCoreCombatModifiers(state.arcaneCore).forEach((modifier) => add(modifier, 'arcane-core', 'arcane-core', 'Arcane Core'))
+  getArcaneCoreCombatModifierProviders(state.arcaneCore).forEach(({ node, modifier }) => add(modifier, 'arcane-core', node.id, node.name))
   if (actor === 'player') {
     Object.values(state.equipment).forEach((itemId) => {
       if (!itemId) return

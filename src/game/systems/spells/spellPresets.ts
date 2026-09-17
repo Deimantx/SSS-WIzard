@@ -18,7 +18,7 @@ export interface SpellPresetFocusProjection {
   canApply: boolean
 }
 
-export type SpellPresetProjectionState = Pick<GameState, 'activities' | 'progress' | 'equipment' | 'artifactProgress'> & {
+export type SpellPresetProjectionState = Pick<GameState, 'activities' | 'progress' | 'equipment' | 'artifactProgress' | 'arcaneCore'> & {
   player: Pick<GameState['player'], 'maxFocus'>
   debug: Pick<GameState['debug'], 'allowFocusOverCap'>
 }
@@ -84,7 +84,7 @@ export const getSpellPresetFocusBreakdown = (state: SpellPresetFocusState): Spel
   return { autoCastFocus, otherFocus, totalFocus, maxFocus: state.player.maxFocus, freeFocus: state.player.maxFocus - totalFocus }
 }
 
-export const doesCurrentAutoCastMatchPreset = (state: Pick<GameState, 'activities' | 'progress' | 'equipment' | 'artifactProgress'>, preset: Pick<SpellPreset, 'spellIds'>) => {
+export const doesCurrentAutoCastMatchPreset = (state: Pick<GameState, 'activities' | 'progress' | 'equipment' | 'artifactProgress' | 'arcaneCore'>, preset: Pick<SpellPreset, 'spellIds'>) => {
   const projection = getSpellPresetFocusProjection({ ...state, player: { maxFocus: 0 }, debug: { allowFocusOverCap: true } }, preset)
   if (!projection.validSpellIds.length || projection.unavailableSpellIds.length || projection.invalidSpellIds.length) return false
   const presetIds = new Set(projection.validSpellIds)
@@ -107,7 +107,7 @@ export const getSpellPresetFocusProjection = (
     else unavailableSpellIds.push(rawId)
   }
   const presetAutoCastFocus = validSpellIds.reduce((sum, spellId) => sum + (getSpellAutoCastFocusCost(state, spellId) ?? 0), 0)
-  const nonAutoCastFocus = getSpellPresetFocusBreakdown({ activities: state.activities, progress: state.progress, equipment: state.equipment, artifactProgress: state.artifactProgress, player: state.player }).otherFocus
+  const nonAutoCastFocus = getSpellPresetFocusBreakdown({ activities: state.activities, progress: state.progress, equipment: state.equipment, artifactProgress: state.artifactProgress, arcaneCore: state.arcaneCore, player: state.player }).otherFocus
   const totalAfterApply = nonAutoCastFocus + presetAutoCastFocus
   const freeAfterApply = state.player.maxFocus - totalAfterApply
   return {

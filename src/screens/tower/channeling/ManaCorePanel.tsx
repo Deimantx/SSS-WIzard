@@ -10,8 +10,9 @@ export function ManaCorePanel() {
   const progress = useGameStore((state) => state.progress)
   const equipment = useGameStore((state) => state.equipment)
   const artifactProgress = useGameStore((state) => state.artifactProgress)
-  const regen = getManaRegenBreakdown({ activities, progress, equipment, artifactProgress })
-  const capacity = getManaCapacityBreakdown({ player, progress, equipment, artifactProgress })
+  const arcaneCore = useGameStore((state) => state.arcaneCore)
+  const regen = getManaRegenBreakdown({ activities, progress, equipment, artifactProgress, arcaneCore })
+  const capacity = getManaCapacityBreakdown({ player, progress, equipment, artifactProgress, arcaneCore })
   const overCap = player.mana > player.maxMana
   const manaLabel = formatResourceAmount(player.mana)
   const maxManaLabel = formatResourceAmount(player.maxMana)

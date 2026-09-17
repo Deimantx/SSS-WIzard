@@ -2,6 +2,9 @@ import { ITEMS } from '../../content/items/items'
 import type { CombatModifier, CombatTag, DamageType, EquipmentStats, GameState, ModifierKey } from '../../types'
 import { getArtifactEffectiveStats, getAllocatedArtifactCombatProviders, isArtifactItem } from '../../systems/artifacts/artifactProgression'
 import { getArcaneCoreStaticStats } from '../../systems/arcaneCore/arcaneCoreProgression'
+import { addEquipmentStats } from './equipmentStatAggregation'
+
+export { addEquipmentStats } from './equipmentStatAggregation'
 
 export interface EquipmentModifierContext {
   sourceKinds?: CombatModifier['sourceKinds']
@@ -22,22 +25,9 @@ export const getEquipmentStats = (state: EquipmentStatsState): EquipmentStats =>
   const total: EquipmentStats = {}
   Object.values(state.equipment).forEach((itemId) => {
     if (!itemId || !ITEMS[itemId]) return
-    const stats = getEffectiveEquipmentItemStats(state, itemId)
-    Object.entries(stats).forEach(([key, value]) => {
-      if (key === 'resistances' && value && typeof value === 'object') {
-        const resistances = (total.resistances ?? {}) as NonNullable<EquipmentStats['resistances']>
-        Object.entries(value as Record<string, number>).forEach(([damageType, resistance]) => {
-          resistances[damageType as keyof typeof resistances] = (resistances[damageType as keyof typeof resistances] ?? 0) + (resistance ?? 0)
-        })
-        total.resistances = resistances
-        return
-      }
-      total[key as keyof EquipmentStats] = ((total[key as keyof EquipmentStats] ?? 0) as number + (value ?? 0)) as never
-    })
+    addEquipmentStats(total, getEffectiveEquipmentItemStats(state, itemId))
   })
-  if (state.arcaneCore) Object.entries(getArcaneCoreStaticStats(state.arcaneCore)).forEach(([key, value]) => {
-    total[key as keyof EquipmentStats] = ((total[key as keyof EquipmentStats] ?? 0) as number + (value ?? 0)) as never
-  })
+  if (state.arcaneCore) addEquipmentStats(total, getArcaneCoreStaticStats(state.arcaneCore))
   return total
 }
 

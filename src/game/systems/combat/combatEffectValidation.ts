@@ -2,8 +2,8 @@ import type { CombatCondition, CombatEffect, CombatModifier, CombatSource, Comba
 
 export const DAMAGE_TYPES: readonly DamageType[] = ['physical', 'arcane', 'fire', 'water', 'earth', 'air']
 export const COMBAT_TAGS: readonly CombatTag[] = ['basic-attack', 'spell', 'weapon', 'equipment', 'guardian', 'summon', 'melee', 'ranged', 'magic', 'direct', 'heal', 'dot', 'hot', 'status', 'special', 'trait', 'buff', 'debuff', 'control', 'barrier', ...DAMAGE_TYPES]
-export const COMBAT_SOURCE_KINDS: readonly CombatSource['kind'][] = ['basic-attack', 'spell', 'weapon', 'status', 'trait', 'action', 'equipment', 'guardian', 'system']
-export const COMBAT_TRIGGERS: readonly CombatTriggerRule['event'][] = ['on-combat-start', 'on-basic-attack-hit', 'on-spell-hit', 'on-damage-dealt', 'on-damage-taken', 'on-barrier-broken', 'on-status-applied', 'on-hp-threshold', 'on-action-start', 'on-action-resolve', 'on-heal', 'on-heal-received', 'on-barrier-gained', 'on-status-removed', 'on-status-expired', 'on-kill']
+export const COMBAT_SOURCE_KINDS: readonly CombatSource['kind'][] = ['basic-attack', 'spell', 'weapon', 'status', 'trait', 'action', 'arcane-core', 'equipment', 'guardian', 'system']
+export const COMBAT_TRIGGERS: readonly CombatTriggerRule['event'][] = ['on-combat-start', 'on-spell-cast', 'on-basic-attack-hit', 'on-spell-hit', 'on-damage-dealt', 'on-damage-taken', 'on-barrier-broken', 'on-status-applied', 'on-hp-threshold', 'on-action-start', 'on-action-resolve', 'on-heal', 'on-heal-received', 'on-barrier-gained', 'on-status-removed', 'on-status-expired', 'on-kill']
 export const COMBAT_MODIFIER_KEYS: readonly ModifierKey[] = ['damage-dealt-percent', 'damage-taken-percent', 'basic-attack-damage-percent', 'basic-attack-speed-percent', 'action-speed-percent', 'spell-damage-percent', 'melee-damage-percent', 'ranged-damage-percent', 'healing-done-percent', 'healing-received-percent', 'barrier-power-percent', 'barrier-received-flat', 'barrier-received-percent', 'mana-regen-percent', 'cooldown-recovery-percent', 'control-duration-received-percent', 'status-duration-dealt-percent', 'status-duration-received-percent', 'defense-flat', 'crit-chance', 'crit-damage', 'block-chance', 'damage-over-time-percent', 'resistance-percent']
 
 /** Optional semantic lookups keep generic structural validation independent of content registries. */
@@ -52,11 +52,14 @@ export const validateMagnitude = (value: unknown, owner = 'magnitude'): string[]
 export const validateCombatCondition = (value: unknown, owner = 'condition', context: CombatValidationContext = {}): string[] => {
   if (!isRecord(value) || typeof value.type !== 'string') return [`${owner}: invalid condition`]
   const errors: string[] = []
-  const threshold = value.type === 'self-hp-below-percent' || value.type === 'target-hp-below-percent' || value.type === 'self-hp-above-percent' || value.type === 'target-hp-above-percent' || value.type === 'self-mana-above-percent'
+  const threshold = value.type === 'self-hp-below-percent' || value.type === 'target-hp-below-percent' || value.type === 'self-hp-above-percent' || value.type === 'target-hp-above-percent' || value.type === 'self-mana-above-percent' || value.type === 'self-mana-below-percent'
   if (threshold && (!isFiniteNumber(value.percent) || value.percent < 0 || value.percent > 100)) errors.push(`${owner}: invalid percent threshold`)
   if (value.type === 'self-status-stacks-at-least' || value.type === 'target-status-stacks-at-least') {
     if (typeof value.statusId !== 'string' || !isStatusId(value.statusId, context)) errors.push(`${owner}: invalid status reference`)
     if (!Number.isInteger(value.stacks) || Number(value.stacks) < 1) errors.push(`${owner}: invalid status stack threshold`)
+  }
+  if (value.type === 'target-negative-status-count-at-least' || value.type === 'self-negative-status-count-at-least') {
+    if (!Number.isInteger(value.count) || Number(value.count) < 1) errors.push(`${owner}: invalid negative status count threshold`)
   }
   if (value.type === 'self-has-status' || value.type === 'target-has-status' || value.type === 'event-status-is') {
     if (!isStatusId(value.statusId, context)) errors.push(`${owner}: invalid status reference`)
@@ -75,7 +78,7 @@ export const validateCombatCondition = (value: unknown, owner = 'condition', con
   } else if (value.type === 'not') {
     errors.push(...validateCombatCondition(value.condition, `${owner}.not`, context))
   }
-  const known = ['always', 'self-hp-below-percent', 'target-hp-below-percent', 'self-has-status', 'target-has-status', 'self-has-barrier', 'target-has-barrier', 'self-hp-above-percent', 'self-mana-above-percent', 'target-hp-above-percent', 'self-status-stacks-at-least', 'target-status-stacks-at-least', 'self-barrier-at-least', 'self-barrier-at-most', 'target-barrier-at-least', 'target-barrier-at-most', 'source-has-tag', 'event-status-is', 'event-status-has-tag', 'event-action-is', 'event-action-has-tag', 'event-damage-type-is', 'target-has-status-tag', 'event-target-is-self', 'source-is-self', 'source-is-opponent', 'all', 'any', 'not']
+  const known = ['always', 'self-hp-below-percent', 'target-hp-below-percent', 'self-has-status', 'target-has-status', 'self-has-barrier', 'target-has-barrier', 'self-hp-above-percent', 'self-mana-above-percent', 'self-mana-below-percent', 'target-hp-above-percent', 'self-status-stacks-at-least', 'target-status-stacks-at-least', 'self-barrier-at-least', 'self-barrier-at-most', 'target-barrier-at-least', 'target-barrier-at-most', 'source-has-tag', 'event-status-is', 'event-status-has-tag', 'event-action-is', 'event-action-has-tag', 'event-damage-type-is', 'target-has-status-tag', 'target-negative-status-count-at-least', 'self-negative-status-count-at-least', 'event-is-critical', 'event-was-blocked', 'event-health-damage-positive', 'event-amount-positive', 'event-target-is-self', 'source-is-self', 'source-is-opponent', 'all', 'any', 'not']
   if (!known.includes(value.type)) errors.push(`${owner}: unsupported condition operator ${value.type}`)
   return errors
 }

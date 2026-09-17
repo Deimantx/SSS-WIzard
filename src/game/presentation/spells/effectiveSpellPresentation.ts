@@ -18,6 +18,7 @@ export type SpellPresentationState = {
   schools: GameState['schools']
   equipment: GameState['equipment']
   artifactProgress: GameState['artifactProgress']
+  arcaneCore: GameState['arcaneCore']
   progress: Pick<GameState['progress'], 'spellRanks'>
   activities: Pick<GameState['activities'], 'channeling' | 'research' | 'transmutation' | 'autoCast'>
   player: Pick<GameState['player'], 'health' | 'maxHealth' | 'mana' | 'maxMana' | 'maxFocus'>

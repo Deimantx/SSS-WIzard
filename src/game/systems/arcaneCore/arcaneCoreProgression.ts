@@ -2,6 +2,7 @@ import { ARCANE_CORE_BRANCHES, ARCANE_CORE_NODES, getArcaneCoreNode } from '../.
 import { ARCANE_CORE_MAX_LEVEL, ARCANE_CORE_MAX_TOTAL_XP, getArcaneCoreLevelForXp, getArcaneCoreTotalXpForLevel, getArcaneCoreXpForLevel } from '../../content/arcaneCore/arcaneCoreBalance'
 import type { ArcaneCoreNodeDefinition, ArcaneCoreNodeProgress, ArcaneCoreSpecialEffect, ArcaneCoreState, EquipmentStats } from '../../types'
 import type { CombatModifier, CombatTriggerRule } from '../combat/combatTypes'
+import { addEquipmentStats } from '../../core/equipment/equipmentStatAggregation'
 
 export type ArcaneCoreFailureReason = 'unknown-node' | 'already-purchased' | 'not-reachable' | 'not-enough-core-points' | 'not-purchased' | 'invalid-preset'
 export type ArcaneCoreActionResult = { ok: true; state: ArcaneCoreState } | { ok: false; reason: ArcaneCoreFailureReason }
@@ -135,11 +136,11 @@ export const purchaseAllArcaneCoreNodes = (state: ArcaneCoreState, branchId?: Ar
 }
 
 export const getArcaneCoreStaticStats = (state: Pick<ArcaneCoreState, 'nodes'>): EquipmentStats => ARCANE_CORE_NODES.reduce<EquipmentStats>((total, node) => {
-  if (!isArcaneCoreNodePurchased(state, node.id) || !node.stats) return total
-  Object.entries(node.stats).forEach(([key, value]) => { const numeric = typeof value === 'number' ? value : 0; if (key === 'resistances' && value) total.resistances = { ...(total.resistances ?? {}), ...Object.fromEntries(Object.entries(value).map(([damageType, resistance]) => [damageType, (total.resistances?.[damageType as keyof NonNullable<EquipmentStats['resistances']>] ?? 0) + (typeof resistance === 'number' ? resistance : 0)])) } as never; else total[key as keyof EquipmentStats] = ((total[key as keyof EquipmentStats] ?? 0) as number + numeric) as never })
+  if (isArcaneCoreNodePurchased(state, node.id)) addEquipmentStats(total, node.stats)
   return total
 }, {})
 export const getArcaneCoreCombatModifiers = (state: Pick<ArcaneCoreState, 'nodes'> | undefined) => ARCANE_CORE_NODES.flatMap((node) => isArcaneCoreNodePurchased(state, node.id) ? node.modifiers ?? [] : [])
+export const getArcaneCoreCombatModifierProviders = (state: Pick<ArcaneCoreState, 'nodes'> | undefined) => ARCANE_CORE_NODES.flatMap((node) => isArcaneCoreNodePurchased(state, node.id) ? (node.modifiers ?? []).map((modifier) => ({ node, modifier })) : [])
 export const getArcaneCoreCombatRules = (state: Pick<ArcaneCoreState, 'nodes'> | undefined): Array<{ node: ArcaneCoreNodeDefinition; rule: CombatTriggerRule }> => ARCANE_CORE_NODES.flatMap((node) => isArcaneCoreNodePurchased(state, node.id) ? (node.rules ?? []).map((rule) => ({ node, rule })) : [])
 export const getArcaneCoreSpecialEffects = (state: Pick<ArcaneCoreState, 'nodes'> | undefined): ArcaneCoreSpecialEffect[] => ARCANE_CORE_NODES.flatMap((node) => isArcaneCoreNodePurchased(state, node.id) ? node.special ?? [] : [])
 

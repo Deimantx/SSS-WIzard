@@ -27,7 +27,7 @@ export function getAutoCastFocusCostForRank(rank: SpellRank): number {
   return rank * 10
 }
 
-export function getSpellAutoCastFocusCost(state: { progress: SpellRankState; equipment: GameState['equipment']; artifactProgress: GameState['artifactProgress'] }, spellId: SpellId): number | null {
+export function getSpellAutoCastFocusCost(state: { progress: SpellRankState; equipment: GameState['equipment']; artifactProgress: GameState['artifactProgress']; arcaneCore: GameState['arcaneCore'] }, spellId: SpellId): number | null {
   const rank = getSpellRank(state, spellId)
   if (rank === null) return null
   const base = getAutoCastFocusCostForRank(rank)

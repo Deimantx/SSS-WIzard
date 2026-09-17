@@ -12,6 +12,7 @@ export type FocusReservationState = {
   progress: Pick<GameState['progress'], 'spellRanks'>
   equipment: GameState['equipment']
   artifactProgress: GameState['artifactProgress']
+  arcaneCore: GameState['arcaneCore']
 }
 export type FocusUsageState = FocusReservationState & Pick<GameState, 'player'>
 

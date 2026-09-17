@@ -12,8 +12,9 @@ export function ChannelingBreakdownPanel() {
   const progress = useGameStore((state) => state.progress)
   const equipment = useGameStore((state) => state.equipment)
   const artifactProgress = useGameStore((state) => state.artifactProgress)
-  const regen = getManaRegenBreakdown({ activities, progress, equipment, artifactProgress })
-  const capacity = getManaCapacityBreakdown({ player, progress, equipment, artifactProgress })
+  const arcaneCore = useGameStore((state) => state.arcaneCore)
+  const regen = getManaRegenBreakdown({ activities, progress, equipment, artifactProgress, arcaneCore })
+  const capacity = getManaCapacityBreakdown({ player, progress, equipment, artifactProgress, arcaneCore })
   const echoResonanceUnlocked = progress.channeling.discoveries['echo-resonance']
 
   return <Card className="channeling-breakdown-panel" title="Channeling Breakdown" action={<div className="channeling-breakdown-total"><span>TOTAL FLOW</span><strong>+{formatChannelingRate(regen.total)}/s</strong></div>}>

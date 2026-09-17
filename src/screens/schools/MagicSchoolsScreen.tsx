@@ -21,6 +21,7 @@ export function MagicSchoolsScreenV2() {
   const progress = useGameStore((state) => state.progress)
   const equipment = useGameStore((state) => state.equipment)
   const artifactProgress = useGameStore((state) => state.artifactProgress)
+  const arcaneCore = useGameStore((state) => state.arcaneCore)
   const activities = useGameStore((state) => state.activities)
   const player = useGameStore((state) => state.player)
   const combat = useGameStore((state) => state.combat)
@@ -30,7 +31,7 @@ export function MagicSchoolsScreenV2() {
   const presets = useGameStore((state) => state.spellPresets)
   const saveSpellPreset = useGameStore((state) => state.saveSpellPreset)
   const navigationIntent = useNavigationIntent()
-  const browserState = useMemo(() => ({ schools, progress, equipment, artifactProgress, activities, player, combat, debug: { allowFocusOverCap } }), [schools, progress, equipment, artifactProgress, activities, player, combat, allowFocusOverCap])
+  const browserState = useMemo(() => ({ schools, progress, equipment, artifactProgress, arcaneCore, activities, player, combat, debug: { allowFocusOverCap } }), [schools, progress, equipment, artifactProgress, arcaneCore, activities, player, combat, allowFocusOverCap])
   const inspectorState = browserState
   const [filters, setFilters] = useState<SpellBrowserFilters>(() => ({ ...DEFAULT_FILTERS, school: navigationIntent.schoolId ?? 'all' }))
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(() => navigationIntent.schoolSpellId)

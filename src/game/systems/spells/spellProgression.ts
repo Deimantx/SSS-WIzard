@@ -1,6 +1,6 @@
 import { SPELLS } from '../../content/spells/spells'
 import type { GameState, SchoolId, SpellId } from '../../types'
-import { getEffectiveFocusCost } from '../combat/combatStats'
+import { getCombatSpellAutoCastFocusCost } from '../combat/combatStats'
 
 export const MIN_SPELL_RANK = 1
 export const MAX_SPELL_RANK = 8
@@ -31,7 +31,7 @@ export function getSpellAutoCastFocusCost(state: { progress: SpellRankState; equ
   const rank = getSpellRank(state, spellId)
   if (rank === null) return null
   const base = getAutoCastFocusCostForRank(rank)
-  return getEffectiveFocusCost(state, base)
+  return getCombatSpellAutoCastFocusCost(state, base)
 }
 
 export function formatSpellRank(rank: SpellRank): string {

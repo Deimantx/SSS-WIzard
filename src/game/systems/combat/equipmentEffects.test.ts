@@ -19,10 +19,10 @@ describe('current Equipment content', () => {
   it('feeds purchased Arcane Core nodes into the shared equipment stat aggregation', () => {
     const state = createInitialState()
     state.equipment.weapon = 'ember-staff'
-    state.arcaneCore.nodes['power-a1'] = { purchased: true }
-    state.arcaneCore.nodes['control-a1'] = { purchased: true }
+state.arcaneCore.nodes['power-r1-arcane-force'] = { rank: 1 }
+state.arcaneCore.nodes['control-r1-cooldown-control'] = { rank: 1 }
 
-    expect(getEquipmentStats(state)).toMatchObject({ spellPower: 19 })
+    expect(getEquipmentStats(state)).toMatchObject({ spellPower: 18 })
     expect(getCooldownRecoveryMultiplier(state, 'player')).toBeCloseTo(1.01)
   })
 

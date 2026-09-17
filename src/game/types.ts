@@ -146,7 +146,7 @@ export interface EquipmentStats {
 
 export type ArcaneCoreBranchId = 'power' | 'vitality' | 'focus' | 'control'
 export type ArcaneCoreModifierKey = Exclude<keyof EquipmentStats, 'resistances'>
-export type ArcaneCorePrerequisiteMode = 'any' | 'all'
+export type ArcaneCoreRingIndex = 1 | 2 | 3 | 4
 export type ArcaneCoreNodeType = 'minor' | 'perk' | 'major'
 export type ArcaneCoreSpecialEffect =
   | { type: 'nth-damaging-spell-bonus'; every: number; damageMultiplier: number }
@@ -156,34 +156,33 @@ export type ArcaneCoreSpecialEffect =
   | { type: 'reserved-focus-spell-power'; spellPowerPerReservedFocus: number }
   | { type: 'free-focus-mana-regen'; manaRegenPerFreeFocus: number }
   | { type: 'nth-spell-cooldown-pulse'; every: number; cooldownReductionMs: number }
-export interface ArcaneCoreNodeDefinition {
-  id: string
-  branchId: ArcaneCoreBranchId
-  laneId: string
-  order: number
-  name: string
-  description: string
-  nodeType: ArcaneCoreNodeType
-  cost: number
-  prerequisites: string[]
-  prerequisiteMode: ArcaneCorePrerequisiteMode
-  x: number
-  y: number
+export interface ArcaneCoreResolvedEffects {
   stats?: EquipmentStats
   modifiers?: import('./systems/combat/combatTypes').CombatModifier[]
   rules?: import('./systems/combat/combatTypes').CombatTriggerRule[]
   special?: ArcaneCoreSpecialEffect[]
+}
+export interface ArcaneCoreNodeDefinition {
+  id: string
+  branchId: ArcaneCoreBranchId
+  ring: ArcaneCoreRingIndex
+  angleDeg: number
+  name: string
+  description: string
+  nodeType: ArcaneCoreNodeType
+  maxRank: number
+  rankCost: number
+  resolveEffects: (rank: number) => ArcaneCoreResolvedEffects
 }
 export interface ArcaneCoreBranchDefinition {
   id: ArcaneCoreBranchId
   name: string
   description: string
   accent: string
-  rootId: string
   nodes: ArcaneCoreNodeDefinition[]
 }
 export interface ArcaneCoreNodeProgress {
-  purchased: true
+  rank: number
 }
 export interface ArcaneCoreState {
   totalXp: number

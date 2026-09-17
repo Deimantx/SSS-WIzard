@@ -1,6 +1,6 @@
 import { STATUS_DEFINITIONS } from '../../content/statuses/statuses'
 import { SPELLS } from '../../content/spells/spells'
-import { getCooldownRecoveryMultiplier, getEffectiveFocusCost, getEffectiveManaCost } from '../../systems/combat/combatStats'
+import { getCooldownRecoveryMultiplier, getCombatSpellAutoCastFocusCost, getEffectiveManaCost } from '../../systems/combat/combatStats'
 import { getCombatModifierContributions, getCombatModifiers, type CombatModifierContribution } from '../../systems/combat/modifiers'
 import { getPeriodicTiming, resolveStatusDuration } from '../../systems/combat/statusRuntime'
 import { resolveMagnitude } from '../../systems/combat/magnitude'
@@ -232,7 +232,7 @@ export const getEffectiveSpellManaCost = (state: SpellPresentationState, spellId
 }
 
 export const getEffectiveSpellFocusCost = (state: SpellPresentationState, base: number): EffectiveSpellValue => {
-  const effective = getEffectiveFocusCost(state, base)
+  const effective = getCombatSpellAutoCastFocusCost(state, base)
   return { base, effective, changed: effective !== base }
 }
 

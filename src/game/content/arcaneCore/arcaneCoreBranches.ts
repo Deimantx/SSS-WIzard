@@ -1,13 +1,11 @@
-import type { ArcaneCoreBranchDefinition, ArcaneCoreBranchId } from '../../types'
-import { lane } from './arcaneCoreNodeFactory'
+import type { ArcaneCoreBranchDefinition, ArcaneCoreBranchId, ArcaneCoreNodeDefinition } from '../../types'
 import { powerNodes } from './powerNodes'
 import { vitalityNodes } from './vitalityNodes'
 import { focusNodes } from './focusNodes'
 import { controlNodes } from './controlNodes'
 
-const createBranch = (id: ArcaneCoreBranchId, name: string, description: string, accent: string, nodes: ReturnType<typeof lane>[]): ArcaneCoreBranchDefinition => {
-  const flatNodes = nodes.flat()
-  return { id, name, description, accent, rootId: flatNodes[0]?.id ?? `${id}-a1`, nodes: flatNodes }
+const createBranch = (id: ArcaneCoreBranchId, name: string, description: string, accent: string, nodes: ArcaneCoreNodeDefinition[][]): ArcaneCoreBranchDefinition => {
+  return { id, name, description, accent, nodes: nodes.flat() }
 }
 
 export const ARCANE_CORE_BRANCHES: ArcaneCoreBranchDefinition[] = [

@@ -29,7 +29,7 @@ describe('Focus Capacity', () => {
 
   it('includes Arcane Core Max Focus modifiers in the shared capacity calculation', () => {
     const state = createInitialState()
-    state.arcaneCore.nodes['focus-d1'] = { purchased: true }
+state.arcaneCore.nodes['focus-r1-focus-capacity'] = { rank: 1 }
 
     expect(getFocusCapacityBreakdown(state).equipment).toBe(1)
     expect(getFocusCapacityBreakdown(state).total).toBe(101)

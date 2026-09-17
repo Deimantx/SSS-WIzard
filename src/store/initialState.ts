@@ -8,7 +8,7 @@ import { DUNGEON_ORDER } from '../game/content/dungeons/dungeons'
 
 // Combat Action System V3 stores authored base work plus remaining work for
 // dynamic-rate action progression.
-export const SAVE_VERSION = 33
+export const SAVE_VERSION = 34
 
 export const createInitialState = (): GameState => ({
   saveVersion: SAVE_VERSION,

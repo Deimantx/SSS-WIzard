@@ -357,8 +357,9 @@ const canReserveFocus = canReserveFocusAction
 
 const arcaneCoreFailureMessages = {
   'unknown-node': 'That Arcane Core node does not exist.',
-  'already-purchased': 'That Arcane Core node is already purchased.',
-  'not-reachable': 'Complete a prerequisite route before unlocking this node.',
+  'already-max-rank': 'That Arcane Core node is already at maximum rank.',
+  'ring-locked': 'Invest more Core Points in the previous Ring first.',
+  'major-locked': 'Invest more Core Points in this Ring to unlock its Major.',
   'not-enough-core-points': 'Not enough Core Points.',
   'not-purchased': 'That Arcane Core node is not purchased.',
   'invalid-preset': 'That Arcane Core preset is invalid.',

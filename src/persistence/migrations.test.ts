@@ -732,3 +732,18 @@ describe('legacy Artifact level-up migration', () => {
     expect(migrated.activities.artificing.progressMs).toBe(0)
   })
 })
+
+describe('Arcane Core V2 to V3 migration', () => {
+  it('preserves XP but clears incompatible V2 allocations', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({ ...initial, saveVersion: SAVE_VERSION - 1, arcaneCore: { totalXp: 123.5, nodes: { 'power-a1': { purchased: true } } } } as any)
+    expect(migrated.arcaneCore.totalXp).toBe(123.5)
+    expect(migrated.arcaneCore.nodes).toEqual({})
+  })
+
+  it('keeps valid V3 rank allocations in current saves', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({ ...initial, saveVersion: SAVE_VERSION, arcaneCore: { totalXp: 500, nodes: { 'power-r1-arcane-force': { rank: 3 } } } } as any)
+    expect(migrated.arcaneCore).toEqual({ totalXp: 500, nodes: { 'power-r1-arcane-force': { rank: 3 } } })
+  })
+})

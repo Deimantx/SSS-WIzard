@@ -180,4 +180,7 @@ export const getBarrierPowerBonus = (state: GameState, actor: CombatActor, sourc
 export const getCooldownRecoveryMultiplier = (state: CombatModifierState, actor: CombatActor = 'player') => Math.max(0, Math.min(10, 1 + getCombatModifiers(state, actor, 'cooldown-recovery-percent')))
 
 export const getEffectiveManaCost = (state: EquipmentStatsState, baseManaCost: number) => Math.max(1, Math.ceil(Math.max(0, baseManaCost) * (1 - clampPercent(playerEquipmentStat(state, 'manaCostReductionPct'), 0, 0.8))))
-export const getEffectiveFocusCost = (state: EquipmentStatsState, baseFocusCost: number) => Math.max(1, Math.ceil(Math.max(0, baseFocusCost) * (1 - clampPercent(playerEquipmentStat(state, 'focusEfficiencyPct'), 0, 0.8))))
+/** Focus Efficiency is intentionally scoped to combat Spell Auto-Cast reservation. */
+export const getCombatSpellAutoCastFocusCost = (state: EquipmentStatsState, baseFocusCost: number) => Math.max(1, Math.ceil(Math.max(0, baseFocusCost) * (1 - clampPercent(playerEquipmentStat(state, 'focusEfficiencyPct'), 0, 0.8))))
+/** Compatibility alias for existing combat presentation callers. */
+export const getEffectiveFocusCost = getCombatSpellAutoCastFocusCost

@@ -1,5 +1,7 @@
 import { ARCANE_CORE_BRANCHES, ARCANE_CORE_NODES } from '../../content/arcaneCore/arcaneCoreBranches'
-import { ARCANE_CORE_MAX_LEVEL, ARCANE_CORE_NODE_COUNT, ARCANE_CORE_NODE_COUNT_PER_BRANCH } from '../../content/arcaneCore/arcaneCoreBalance'
+import { ARCANE_CORE_MAX_LEVEL, ARCANE_CORE_NODE_COUNT, ARCANE_CORE_NODE_COUNT_PER_BRANCH, ARCANE_CORE_POINTS_PER_CORE, ARCANE_CORE_POINTS_PER_RING, ARCANE_CORE_TOTAL_POINTS } from '../../content/arcaneCore/arcaneCoreBalance'
+import { ARCANE_CORE_RINGS_PER_CORE } from '../../content/arcaneCore/arcaneCoreBalance'
+import { ARCANE_CORE_MAJOR_GATES, ARCANE_CORE_RING_GATES } from '../../content/arcaneCore/arcaneCoreRings'
 
 export const validateArcaneCoreCatalog = () => {
   const errors: string[] = []
@@ -9,24 +11,19 @@ export const validateArcaneCoreCatalog = () => {
   const ids = new Set<string>()
   ARCANE_CORE_BRANCHES.forEach((branch) => {
     if (branch.nodes.length !== ARCANE_CORE_NODE_COUNT_PER_BRANCH) errors.push(`${branch.id}: must contain exactly ${ARCANE_CORE_NODE_COUNT_PER_BRANCH} nodes`)
-    const lanes = new Map<string, typeof branch.nodes>()
-    branch.nodes.forEach((node) => {
-      if (ids.has(node.id)) errors.push(`${node.id}: duplicate node id`)
-      ids.add(node.id)
-      if (node.branchId !== branch.id || node.cost !== 1 || !['minor', 'perk', 'major'].includes(node.nodeType)) errors.push(`${node.id}: invalid authored node shape`)
-      const laneNodes = lanes.get(node.laneId) ?? []
-      laneNodes.push(node)
-      lanes.set(node.laneId, laneNodes)
-      node.prerequisites.forEach((prerequisite) => { if (!branch.nodes.some((candidate) => candidate.id === prerequisite)) errors.push(`${node.id}: missing prerequisite ${prerequisite}`) })
-    })
-    if (lanes.size !== 4 || [...lanes.values()].some((lane) => lane.length !== 10)) errors.push(`${branch.id}: must contain four lanes of ten nodes`)
-    lanes.forEach((nodes, laneId) => {
-      nodes.sort((left, right) => left.order - right.order).forEach((node, index) => {
-        const expectedPrerequisite = index === 0 ? [] : [nodes[index - 1].id]
-        if (node.order !== index + 1 || JSON.stringify(node.prerequisites) !== JSON.stringify(expectedPrerequisite) || node.prerequisiteMode !== 'all') errors.push(`${branch.id}/${laneId}: lane must be a sequential chain`)
+    for (let ring = 1; ring <= ARCANE_CORE_RINGS_PER_CORE; ring += 1) {
+      const ringNodes = branch.nodes.filter((node) => node.ring === ring)
+      if (ringNodes.length !== 9 || ringNodes.filter((node) => node.nodeType === 'major').length !== 1 || ringNodes.filter((node) => node.nodeType !== 'major').length !== 8) errors.push(`${branch.id}/ring-${ring}: must contain eight standard nodes and one major`)
+      if (ringNodes.some((node) => node.nodeType === 'major' ? node.maxRank !== 1 || node.rankCost !== 3 : node.maxRank !== 5 || node.rankCost !== 1)) errors.push(`${branch.id}/ring-${ring}: invalid rank cost or cap`)
+      ringNodes.forEach((node) => {
+        if (ids.has(node.id)) errors.push(`${node.id}: duplicate node id`)
+        ids.add(node.id)
+        if (node.branchId !== branch.id || node.ring !== ring || typeof node.angleDeg !== 'number' || typeof node.resolveEffects !== 'function') errors.push(`${node.id}: invalid V3 node shape`)
       })
-    })
+    }
   })
-  if (ARCANE_CORE_MAX_LEVEL !== ARCANE_CORE_NODE_COUNT + 1) errors.push('Arcane Core level cap must derive from node count')
+  if (ARCANE_CORE_POINTS_PER_RING !== 43 || ARCANE_CORE_POINTS_PER_CORE !== 172 || ARCANE_CORE_TOTAL_POINTS !== 688 || ARCANE_CORE_MAX_LEVEL !== 689) errors.push('Arcane Core point and level capacities must equal the V3 authored topology')
+  if (ARCANE_CORE_RING_GATES[1] !== 0 || ARCANE_CORE_RING_GATES[2] !== 20 || ARCANE_CORE_RING_GATES[3] !== 25 || ARCANE_CORE_RING_GATES[4] !== 30) errors.push('Arcane Core ring gates are invalid')
+  if (ARCANE_CORE_MAJOR_GATES[1] !== 30 || ARCANE_CORE_MAJOR_GATES[2] !== 35 || ARCANE_CORE_MAJOR_GATES[3] !== 35 || ARCANE_CORE_MAJOR_GATES[4] !== 40) errors.push('Arcane Core major gates are invalid')
   return errors
 }

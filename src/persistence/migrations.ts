@@ -75,8 +75,15 @@ const normalizeArcaneCore = (migrated: GameState, raw: Record<string, any>) => {
   const source = isRecord(raw.arcaneCore) ? raw.arcaneCore : {}
   if (typeof source.totalXp === 'number' && Number.isFinite(source.totalXp)) {
     const nodes: GameState['arcaneCore']['nodes'] = {}
-    if (isRecord(source.nodes)) Object.entries(source.nodes).forEach(([nodeId, value]) => { if (getArcaneCoreNode(nodeId) && isRecord(value) && value.purchased === true) nodes[nodeId] = { purchased: true } })
-    migrated.arcaneCore = { totalXp: Math.max(0, Math.min(ARCANE_CORE_MAX_TOTAL_XP, Math.floor(source.totalXp))), nodes }
+    const sourceVersion = typeof raw.saveVersion === 'number' ? raw.saveVersion : 0
+    // V2 allocations are intentionally not mapped to V3's different topology.
+    // Current V3 saves keep their rank map; older saves keep XP only.
+    if (sourceVersion >= SAVE_VERSION && isRecord(source.nodes)) Object.entries(source.nodes).forEach(([nodeId, value]) => {
+      const node = getArcaneCoreNode(nodeId)
+      const rank = node && isRecord(value) && typeof value.rank === 'number' && Number.isFinite(value.rank) ? Math.max(0, Math.min(node.maxRank, Math.floor(value.rank))) : 0
+      if (node && rank > 0) nodes[nodeId] = { rank }
+    })
+    migrated.arcaneCore = { totalXp: Math.max(0, Math.min(ARCANE_CORE_MAX_TOTAL_XP, source.totalXp)), nodes }
     return
   }
   const rawNodes = isRecord(source.nodes) ? source.nodes : {}

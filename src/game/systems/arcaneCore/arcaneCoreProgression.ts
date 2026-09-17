@@ -75,13 +75,12 @@ export const purchaseArcaneCoreNode = (state: ArcaneCoreState, nodeId: string, o
 
 const cascadeAfterRemoval = (state: ArcaneCoreState, nodeId: string) => {
   const next = copyState(state)
-  const beforeSpent = getArcaneCorePointsSpent(next)
   const node = getArcaneCoreNode(nodeId)
   if (!node) return { next, removed: [], ringsRelocked: [], corePointsReturned: 0, ranksAffected: 0, majorsAffected: 0 }
   const currentRank = getArcaneCoreNodeRank(next, nodeId)
   if (currentRank <= 1) delete next.nodes[nodeId]
   else next.nodes[nodeId] = { rank: currentRank - 1 }
-  const removed = new Set<string>()
+  const removed = new Set<string>([nodeId])
   const ringsRelocked = new Set<string>()
   let changed = true
   while (changed) {
@@ -102,10 +101,16 @@ const cascadeAfterRemoval = (state: ArcaneCoreState, nodeId: string) => {
       changed = true
     })
   }
-  const afterSpent = getArcaneCorePointsSpent(next)
-  const ranksAffected = Math.max(0, beforeSpent - afterSpent)
-  const majorsAffected = [...removed].filter((id) => getArcaneCoreNode(id)?.nodeType === 'major').length
-  return { next, removed: [...removed], ringsRelocked: [...ringsRelocked], corePointsReturned: ranksAffected, ranksAffected, majorsAffected }
+  const removedIds = [...removed]
+  const directRankRemoved = 1
+  const cascadeRanksRemoved = removedIds.reduce((sum, id) => sum + (id === nodeId ? 0 : getArcaneCoreNodeRank(state, id)), 0)
+  const ranksAffected = directRankRemoved + cascadeRanksRemoved
+  const corePointsReturned = removedIds.reduce((sum, id) => {
+    const removedRank = id === nodeId ? 1 : getArcaneCoreNodeRank(state, id)
+    return sum + removedRank * (getArcaneCoreNode(id)?.rankCost ?? 0)
+  }, 0)
+  const majorsAffected = removedIds.filter((id) => getArcaneCoreNode(id)?.nodeType === 'major').length
+  return { next, removed: removedIds, ringsRelocked: [...ringsRelocked], corePointsReturned, ranksAffected, majorsAffected }
 }
 
 export interface ArcaneCoreRefundPreview { ok: true; state: ArcaneCoreState; nodeIds: string[]; nodesAffected: number; corePointsReturned: number; ranksAffected: number; majorsAffected: number; ringsRelocked: string[] }
@@ -125,11 +130,46 @@ export const getArcaneCoreBranchResetPreview = (state: ArcaneCoreState, branchId
   const nodeIds = branch.nodes.filter((node) => isArcaneCoreNodePurchased(state, node.id)).map((node) => node.id)
   const next = copyState(state)
   nodeIds.forEach((id) => delete next.nodes[id])
-  const spent = getArcaneCorePointsSpent(state) - getArcaneCorePointsSpent(next)
-  return { ok: true, state: next, branchId, nodeIds, nodesAffected: nodeIds.length, corePointsReturned: spent, ranksAffected: spent, majorsAffected: nodeIds.filter((id) => getArcaneCoreNode(id)?.nodeType === 'major').length, ringsRelocked: [...new Set(branch.nodes.filter((node) => nodeIds.includes(node.id)).map((node) => `${branchId}-${node.ring}`))] }
+  const ranksAffected = nodeIds.reduce((sum, id) => sum + getArcaneCoreNodeRank(state, id), 0)
+  const corePointsReturned = nodeIds.reduce((sum, id) => sum + getArcaneCoreNodeRank(state, id) * (getArcaneCoreNode(id)?.rankCost ?? 0), 0)
+  return { ok: true, state: next, branchId, nodeIds, nodesAffected: nodeIds.length, corePointsReturned, ranksAffected, majorsAffected: nodeIds.filter((id) => getArcaneCoreNode(id)?.nodeType === 'major').length, ringsRelocked: [...new Set(branch.nodes.filter((node) => nodeIds.includes(node.id)).map((node) => `${branchId}-${node.ring}`))] }
 }
 export const resetArcaneCoreBranch = (state: ArcaneCoreState, branchId: ArcaneCoreBranchId): ArcaneCoreActionResult => { const preview = getArcaneCoreBranchResetPreview(state, branchId); return preview.ok ? { ok: true, state: preview.state } : preview }
 export const resetArcaneCore = (state: ArcaneCoreState): ArcaneCoreActionResult => ({ ok: true, state: { totalXp: safeXp(state.totalXp), nodes: {} } })
+
+export const setArcaneCoreNodeRank = (state: ArcaneCoreState, nodeId: string, rank: number): ArcaneCoreActionResult => {
+  const node = getArcaneCoreNode(nodeId)
+  if (!node) return { ok: false, reason: 'unknown-node' }
+  const next = copyState(state)
+  const safe = safeRank(node, rank)
+  if (safe > 0) next.nodes[nodeId] = { rank: safe }
+  else delete next.nodes[nodeId]
+  return { ok: true, state: next }
+}
+
+export const maxArcaneCoreNode = (state: ArcaneCoreState, nodeId: string): ArcaneCoreActionResult => setArcaneCoreNodeRank(state, nodeId, getArcaneCoreNode(nodeId)?.maxRank ?? 0)
+export const resetArcaneCoreNode = (state: ArcaneCoreState, nodeId: string): ArcaneCoreActionResult => setArcaneCoreNodeRank(state, nodeId, 0)
+
+export const maxArcaneCoreRing = (state: ArcaneCoreState, branchId: ArcaneCoreBranchId, ring: ArcaneCoreRingIndex) => {
+  let current = copyState(state)
+  ARCANE_CORE_NODES.filter((node) => node.branchId === branchId && node.ring === ring).forEach((node) => {
+    const result = setArcaneCoreNodeRank(current, node.id, node.maxRank)
+    if (result.ok) current = result.state
+  })
+  return current
+}
+
+export const maxArcaneCoreBranch = (state: ArcaneCoreState, branchId: ArcaneCoreBranchId) => {
+  let current = copyState(state)
+  ;([1, 2, 3, 4] as ArcaneCoreRingIndex[]).forEach((ring) => { current = maxArcaneCoreRing(current, branchId, ring) })
+  return current
+}
+
+export const resetArcaneCoreRing = (state: ArcaneCoreState, branchId: ArcaneCoreBranchId, ring: ArcaneCoreRingIndex): ArcaneCoreActionResult => {
+  const next = copyState(state)
+  ARCANE_CORE_NODES.filter((node) => node.branchId === branchId && node.ring >= ring).forEach((node) => delete next.nodes[node.id])
+  return { ok: true, state: next }
+}
 
 export const purchaseAllArcaneCoreNodes = (state: ArcaneCoreState, branchId?: ArcaneCoreBranchId, options: ArcaneCoreActionOptions = {}) => {
   let current = copyState(state)

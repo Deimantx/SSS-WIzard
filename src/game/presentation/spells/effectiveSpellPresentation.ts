@@ -94,6 +94,7 @@ const conditionLabel = (condition: NonNullable<CombatModifierContribution['modif
     case 'self-mana-below-percent': return `while below ${condition.percent}% Mana`
     case 'target-hp-above-percent': return `against targets above ${condition.percent}% Health`
     case 'self-has-status': return `while affected by ${statusName(condition.statusId)}`
+    case 'self-has-status-tag': return `while affected by a ${condition.tag} status`
     case 'target-has-status': return `against ${statusName(condition.statusId)} targets`
     case 'self-status-stacks-at-least': return `with ${condition.stacks}+ ${statusName(condition.statusId)} stacks`
     case 'target-status-stacks-at-least': return `against targets with ${condition.stacks}+ ${statusName(condition.statusId)} stacks`

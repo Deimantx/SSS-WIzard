@@ -48,6 +48,7 @@ const MODIFIER_LABELS: Record<ModifierKey, string> = {
   'barrier-received-flat': 'Barrier Received',
   'barrier-received-percent': 'Barrier Received',
   'mana-regen-percent': 'Mana Regeneration',
+  'health-regen-flat': 'Health Regeneration',
   'cooldown-recovery-percent': 'Cooldown Recovery',
   'control-duration-received-percent': 'Control Duration Received',
   'status-duration-dealt-percent': 'Status Duration Dealt',
@@ -120,6 +121,7 @@ const conditionMeaning = (condition: CombatCondition): string => {
     case 'self-mana-below-percent': return `While below ${condition.percent}% Mana`
     case 'target-hp-above-percent': return `While target is above ${condition.percent}% Health`
     case 'self-has-status': return `While affected by ${statusName(condition.statusId)}`
+    case 'self-has-status-tag': return `While affected by ${TAG_NAMES[condition.tag]} statuses`
     case 'target-has-status': return `Against targets affected by ${statusName(condition.statusId)}`
     case 'self-status-stacks-at-least': return `With at least ${condition.stacks} ${statusName(condition.statusId)} stacks`
     case 'target-status-stacks-at-least': return `Against targets with at least ${condition.stacks} ${statusName(condition.statusId)} stacks`

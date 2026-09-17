@@ -20,9 +20,15 @@ export const minor = (id: string, name: string, description: string, resolver?: 
 export const perk = (id: string, name: string, description: string, resolver?: ArcaneCoreEffectResolver) => node('perk', id, name, description, 5, 1, resolver)
 export const major = (id: string, name: string, description: string, resolver?: ArcaneCoreEffectResolver) => node('major', id, name, description, 1, 3, resolver)
 
-export const createRing = (branchId: ArcaneCoreBranchId, ring: ArcaneCoreRingIndex, drafts: ArcaneCoreNodeDraft[]): ArcaneCoreNodeDefinition[] => drafts.map((draft, index) => ({
-  ...draft,
-  branchId,
-  ring,
-  angleDeg: index * 40,
-}))
+export interface ArcaneCoreRingLayoutOptions {
+  offsetDeg?: number
+  majorAngleDeg?: number
+}
+
+export const createRing = (branchId: ArcaneCoreBranchId, ring: ArcaneCoreRingIndex, drafts: ArcaneCoreNodeDraft[], options: ArcaneCoreRingLayoutOptions = {}): ArcaneCoreNodeDefinition[] => {
+  const offsetDeg = options.offsetDeg ?? (ring % 2 === 0 ? 20 : 0)
+  const majorAngleDeg = options.majorAngleDeg ?? 0
+  const standard = drafts.filter((draft) => draft.nodeType !== 'major')
+  const major = drafts.filter((draft) => draft.nodeType === 'major')
+  return [...standard.map((draft, index) => ({ ...draft, branchId, ring, angleDeg: offsetDeg + 22.5 + index * 45 })), ...major.map((draft) => ({ ...draft, branchId, ring, angleDeg: majorAngleDeg }))]
+}

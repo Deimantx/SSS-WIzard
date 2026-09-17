@@ -91,6 +91,7 @@ const getPlayerRuntimeStats = (state: GameState): CombatStats => {
     maxHealth: sheet.maxHealth,
     maxMana: state.player.maxMana,
     maxFocus: state.player.maxFocus,
+    healthRegen: sheet.healthRegen + getCombatModifiers(state, 'player', 'health-regen-flat'),
     basicAttackSpeedMultiplier,
     basicAttackIntervalMs: BALANCE.player.basicAttackIntervalMs / basicAttackSpeedMultiplier,
     critChance: getCritChance(state, 'player'),

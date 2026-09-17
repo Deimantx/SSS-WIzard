@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ARCANE_CORE_MAX_LEVEL, ARCANE_CORE_MAX_TOTAL_XP, ARCANE_CORE_TOTAL_POINTS, getArcaneCoreTotalXpForLevel } from '../../content/arcaneCore/arcaneCoreBalance'
-import { createInitialArcaneCoreState, getArcaneCoreAvailablePoints, getArcaneCoreBranchResetPreview, getArcaneCoreLevelInfo, getArcaneCoreNodeProgress, getArcaneCorePointsSpent, getArcaneCoreStaticStats, getArcaneCoreRingPointsSpent, grantArcaneCoreXp, isArcaneCoreNodeReachable, purchaseAllArcaneCoreNodes, purchaseArcaneCoreNode, refundArcaneCoreNode, resetArcaneCore, setArcaneCoreLevel } from './arcaneCoreProgression'
+import { createInitialArcaneCoreState, getArcaneCoreAvailablePoints, getArcaneCoreBranchResetPreview, getArcaneCoreLevelInfo, getArcaneCoreNodeProgress, getArcaneCorePointsSpent, getArcaneCoreStaticStats, getArcaneCoreRingPointsSpent, getArcaneCoreRefundPreview, grantArcaneCoreXp, isArcaneCoreNodeReachable, purchaseAllArcaneCoreNodes, purchaseArcaneCoreNode, refundArcaneCoreNode, resetArcaneCore, setArcaneCoreLevel } from './arcaneCoreProgression'
 import type { ArcaneCoreState } from '../../types'
 
 const stateAtLevel = (level: number, nodes: ArcaneCoreState['nodes'] = {}): ArcaneCoreState => ({ totalXp: getArcaneCoreTotalXpForLevel(level), nodes })
@@ -57,6 +57,21 @@ describe('Arcane Core V3 progression', () => {
     const refunded = refundArcaneCoreNode(state, 'power-r1-arcane-force')
     expect(refunded).toMatchObject({ ok: true })
     if (refunded.ok) expect(refunded.state.nodes['power-r2-opening-blast']).toBeUndefined()
+  })
+
+  it('counts a Major refund as one rank and three returned Core Points', () => {
+    const state = stateAtLevel(35, { 'power-r1-overwhelming-force': { rank: 1 } })
+    const preview = getArcaneCoreRefundPreview(state, 'power-r1-overwhelming-force')
+    expect(preview).toMatchObject({ ok: true, ranksAffected: 1, corePointsReturned: 3, majorsAffected: 1, nodesAffected: 1, nodeIds: ['power-r1-overwhelming-force'] })
+  })
+
+  it('counts branch reset ranks separately from weighted Core Points', () => {
+    const state = stateAtLevel(35, {
+      'power-r1-arcane-force': { rank: 5 },
+      'power-r1-overwhelming-force': { rank: 1 },
+    })
+    const preview = getArcaneCoreBranchResetPreview(state, 'power')
+    expect(preview).toMatchObject({ ok: true, ranksAffected: 6, corePointsReturned: 8, majorsAffected: 1, nodesAffected: 2 })
   })
 
   it('supports full developer completion and shared stat aggregation', () => {

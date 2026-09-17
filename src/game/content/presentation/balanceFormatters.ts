@@ -98,6 +98,7 @@ export const formatCombatCondition = (condition: CombatCondition | undefined): s
     case 'self-mana-below-percent': return `${conditionSubject('self')} Mana is below ${formatPercent(condition.percent / 100)}`
     case 'target-hp-above-percent': return `${conditionSubject('target')} Health is above ${formatPercent(condition.percent / 100)}`
     case 'self-has-status': return `the caster has ${statusName(condition.statusId)}`
+    case 'self-has-status-tag': return `the caster has a ${readableId(condition.tag)} status`
     case 'target-has-status': return `the opponent has ${statusName(condition.statusId)}`
     case 'self-has-barrier': return 'the caster has a Barrier'
     case 'target-has-barrier': return 'the opponent has a Barrier'
@@ -144,6 +145,7 @@ const modifierLabels: Record<ModifierKey, string> = {
   'barrier-received-flat': 'Barrier received',
   'barrier-received-percent': 'Barrier received',
   'mana-regen-percent': 'Mana regeneration',
+  'health-regen-flat': 'Health regeneration',
   'cooldown-recovery-percent': 'Cooldown recovery',
   'control-duration-received-percent': 'Control duration received',
   'status-duration-dealt-percent': 'Status duration dealt',

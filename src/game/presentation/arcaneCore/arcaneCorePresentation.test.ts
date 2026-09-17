@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ARCANE_CORE_NODES } from '../../content/arcaneCore/arcaneCoreBranches'
-import { formatArcaneCoreModifierValue, formatArcaneCoreNodeEffect, getArcaneCoreNodePosition } from './arcaneCorePresentation'
+import { formatArcaneCoreModifierValue, formatArcaneCoreNodeEffect, getArcaneCoreNodeEffectTexts, getArcaneCoreNodePosition } from './arcaneCorePresentation'
 
 describe('Arcane Core V3 presentation', () => {
   it('positions every node on its authored Ring angle', () => {
@@ -12,5 +12,16 @@ describe('Arcane Core V3 presentation', () => {
     const node = ARCANE_CORE_NODES.find((candidate) => candidate.id === 'power-r1-critical-insight')!
     expect(formatArcaneCoreNodeEffect(node, 1)).toContain('+0.50%')
     expect(formatArcaneCoreNodeEffect(node, 5)).toContain('+2.50%')
+  })
+  it('formats exact ranked rules and Major inactive state', () => {
+    const feedback = ARCANE_CORE_NODES.find((candidate) => candidate.id === 'power-r2-critical-feedback')!
+    expect(getArcaneCoreNodeEffectTexts(feedback, 3)).toContain('Reduce Spell cooldowns by 100 ms · Internal Cooldown: 500 ms')
+
+    const pressure = ARCANE_CORE_NODES.find((candidate) => candidate.id === 'control-r1-control-pressure')!
+    expect(getArcaneCoreNodeEffectTexts(pressure, 5)).toContain('Delay enemy current action by 100 ms · Internal Cooldown: 1 sec')
+
+    const lock = ARCANE_CORE_NODES.find((candidate) => candidate.id === 'control-r4-arcane-lock')!
+    expect(getArcaneCoreNodeEffectTexts(lock, 0)).toEqual(['Inactive'])
+    expect(getArcaneCoreNodeEffectTexts(lock, 1)).toEqual(expect.arrayContaining(['Damage Taken +10.00%', 'Delay enemy current action by 250 ms · Internal Cooldown: 5 sec']))
   })
 })

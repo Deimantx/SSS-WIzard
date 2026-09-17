@@ -34,6 +34,7 @@ export const evaluateCombatCondition = (state: CombatConditionState, actor: Comb
     case 'self-mana-below-percent': return actor === 'player' && state.player.mana / Math.max(1, state.player.maxMana) * 100 <= condition.percent
     case 'target-hp-above-percent': return contextualHpPercent(state, target, context) >= condition.percent
     case 'self-has-status': return hasStatus(state, actor, condition.statusId)
+    case 'self-has-status-tag': return hasStatusTag(state, actor, condition.tag)
     case 'target-has-status': return hasStatus(state, target, condition.statusId)
     case 'self-status-stacks-at-least': return getStatusGroupStacks(state, actor, condition.statusId) >= condition.stacks
     case 'target-status-stacks-at-least': return getStatusGroupStacks(state, target, condition.statusId) >= condition.stacks

@@ -746,4 +746,24 @@ describe('Arcane Core V2 to V3 migration', () => {
     const migrated = migrateSave({ ...initial, saveVersion: SAVE_VERSION, arcaneCore: { totalXp: 500, nodes: { 'power-r1-arcane-force': { rank: 3 } } } } as any)
     expect(migrated.arcaneCore).toEqual({ totalXp: 500, nodes: { 'power-r1-arcane-force': { rank: 3 } } })
   })
+
+  it('sanitizes malformed V3 ranks without changing unrelated save content', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({
+      ...initial,
+      saveVersion: SAVE_VERSION,
+      inventory: { 'fire-fragment': 17 },
+      arcaneCore: {
+        totalXp: 321,
+        nodes: {
+          'power-r1-arcane-force': { rank: 99 },
+          'power-r1-forceful-strikes': { rank: -2 },
+          'obsolete-node': { rank: 5 },
+          'power-r1-critical-insight': { rank: 'five' },
+        },
+      },
+    } as any)
+    expect(migrated.arcaneCore).toEqual({ totalXp: 321, nodes: { 'power-r1-arcane-force': { rank: 5 } } })
+    expect(migrated.inventory).toEqual({ 'fire-fragment': 17 })
+  })
 })

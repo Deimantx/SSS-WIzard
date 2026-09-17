@@ -215,6 +215,8 @@ export interface CombatSource {
   ruleId?: string
   /** Authored status identity when this source is status-owned. */
   statusId?: StatusId
+  /** Event source retained for rule effects that target the source spell. */
+  eventSource?: CombatSource
   school?: SchoolId
   tags?: CombatTag[]
 }
@@ -308,6 +310,7 @@ export type ModifierKey =
   | 'block-chance'
   | 'damage-over-time-percent'
   | 'resistance-percent'
+  | 'health-regen-flat'
 
 export interface CombatModifier {
   key: ModifierKey
@@ -349,6 +352,7 @@ export type CombatCondition =
   | { type: 'self-hp-below-percent'; percent: number }
   | { type: 'target-hp-below-percent'; percent: number }
   | { type: 'self-has-status'; statusId: StatusId }
+  | { type: 'self-has-status-tag'; tag: CombatTag }
   | { type: 'target-has-status'; statusId: StatusId }
   | { type: 'self-has-barrier' }
   | { type: 'target-has-barrier' }

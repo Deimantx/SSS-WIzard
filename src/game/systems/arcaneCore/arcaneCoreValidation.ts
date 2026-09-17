@@ -15,10 +15,17 @@ export const validateArcaneCoreCatalog = () => {
       const ringNodes = branch.nodes.filter((node) => node.ring === ring)
       if (ringNodes.length !== 9 || ringNodes.filter((node) => node.nodeType === 'major').length !== 1 || ringNodes.filter((node) => node.nodeType !== 'major').length !== 8) errors.push(`${branch.id}/ring-${ring}: must contain eight standard nodes and one major`)
       if (ringNodes.some((node) => node.nodeType === 'major' ? node.maxRank !== 1 || node.rankCost !== 3 : node.maxRank !== 5 || node.rankCost !== 1)) errors.push(`${branch.id}/ring-${ring}: invalid rank cost or cap`)
+      const angles = new Set<number>()
       ringNodes.forEach((node) => {
         if (ids.has(node.id)) errors.push(`${node.id}: duplicate node id`)
         ids.add(node.id)
-        if (node.branchId !== branch.id || node.ring !== ring || typeof node.angleDeg !== 'number' || typeof node.resolveEffects !== 'function') errors.push(`${node.id}: invalid V3 node shape`)
+        if (node.branchId !== branch.id || node.ring !== ring || !Number.isFinite(node.angleDeg) || typeof node.resolveEffects !== 'function') errors.push(`${node.id}: invalid V3 node shape`)
+        if (angles.has(node.angleDeg)) errors.push(`${branch.id}/ring-${ring}: duplicate node angle ${node.angleDeg}`)
+        angles.add(node.angleDeg)
+        const effects = node.resolveEffects(node.maxRank)
+        if (!Object.values(effects).some((value) => Array.isArray(value) ? value.length > 0 : value && Object.keys(value).length > 0)) errors.push(`${node.id}: resolver has no authored effect`)
+        const ruleIds = (effects.rules ?? []).map((rule) => rule.id)
+        if (new Set(ruleIds).size !== ruleIds.length) errors.push(`${node.id}: duplicate rule id`)
       })
     }
   })

@@ -356,7 +356,7 @@ export const executeCombatEffect = (state: GameState, effect: CombatEffect, sour
     }
     case 'modify-cooldown': {
       if (target === 'player' && Number.isFinite(effect.amountMs)) {
-        const resolvedSpellId = effect.spellId === 'source' ? source.sourceId : effect.spellId
+        const resolvedSpellId = effect.spellId === 'source' ? source.eventSource?.sourceId ?? source.sourceId : effect.spellId
         const ids = resolvedSpellId ? [resolvedSpellId] : Object.keys(state.combat.spellCooldowns)
         ids.forEach((id) => { if (id in state.combat.spellCooldowns) state.combat.spellCooldowns[id as keyof typeof state.combat.spellCooldowns] = Math.max(0, Math.min(MAX_ACTION_WORK_MS, state.combat.spellCooldowns[id as keyof typeof state.combat.spellCooldowns] + effect.amountMs)) })
       }

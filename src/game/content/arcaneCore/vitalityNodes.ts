@@ -1,5 +1,5 @@
 import { createRing, fixedEffects, linearStat, modifier, perk, minor, major, rankedModifier, rankValues, rule } from './arcaneCoreNodeFactory'
-import { belowHp, negativeStatuses } from './arcaneCoreContentHelpers'
+import { all, belowHp, negativeStatuses } from './arcaneCoreContentHelpers'
 
 const ring1 = createRing('vitality', 1, [
   minor('vitality-r1-vitality', 'Vitality', '+10 Max Health per rank.', linearStat('maxHealth', 10)),
@@ -24,10 +24,10 @@ const ring2 = createRing('vitality', 2, [
   major('vitality-r2-unyielding', 'Unyielding', 'Below 50% Health: -6% Damage Taken.', fixedEffects({ modifiers: [modifier('damage-taken-percent', -0.06, belowHp(50))] })),
 ])
 const ring3 = createRing('vitality', 3, [
-  perk('vitality-r3-reactive-ward', 'Reactive Ward', 'Taking Health damage without Barrier grants 0.6–3% Max Health Barrier.', (rank) => ({ rules: [rule('vitality-reactive-ward', 'on-damage-taken', [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'source-max-health-percent', value: rankValues(rank, [0.006, 0.012, 0.018, 0.024, 0.03]) } }], { type: 'event-health-damage-positive' }, { cooldownMs: 10000 })] })),
+  perk('vitality-r3-reactive-ward', 'Reactive Ward', 'Taking Health damage without Barrier grants 0.6–3% Max Health Barrier.', (rank) => ({ rules: [rule('vitality-reactive-ward', 'on-damage-taken', [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'source-max-health-percent', value: rankValues(rank, [0.006, 0.012, 0.018, 0.024, 0.03]) } }], all({ type: 'event-health-damage-positive' }, { type: 'self-barrier-at-most', value: 0 }), { cooldownMs: 10000 })] })),
   perk('vitality-r3-guarded-soul', 'Guarded Soul', 'While Barrier exists: +0.5% Block Chance per rank.', rankedModifier('block-chance', 0.005, { type: 'self-has-barrier' })),
   minor('vitality-r3-aegis-strength', 'Aegis Strength', '+3% Barrier Power per rank.', linearStat('barrierPowerPct', 0.03)),
-  perk('vitality-r3-recovery-under-fire', 'Recovery Under Fire', 'Below 50% Health: +0.2 Health Regen per rank.', linearStat('healthRegen', 0.2)),
+  perk('vitality-r3-recovery-under-fire', 'Recovery Under Fire', 'Below 50% Health: +0.2 Health Regen per rank.', rankedModifier('health-regen-flat', 0.2, belowHp(50))),
   perk('vitality-r3-defensive-flow', 'Defensive Flow', 'Successful Block reduces Spell cooldowns by 20–100 ms.', (rank) => ({ rules: [rule('vitality-defensive-flow', 'on-damage-taken', [{ type: 'modify-cooldown', target: 'self', amountMs: -rankValues(rank, [20, 40, 60, 80, 100]) }], { type: 'event-was-blocked' })] })),
   perk('vitality-r3-ward-renewal', 'Ward Renewal', 'Whenever Barrier is gained, heal 0.25% Max Health per rank.', (rank) => ({ rules: [rule('vitality-ward-renewal', 'on-barrier-gained', [{ type: 'heal', target: 'self', magnitude: { type: 'source-max-health-percent', value: 0.0025 * rank } }], undefined, { cooldownMs: 3000 })] })),
   perk('vitality-r3-lasting-guard', 'Lasting Guard', 'Below 40% Health: +1 Defense per rank.', rankedModifier('defense-flat', 1, belowHp(40))),

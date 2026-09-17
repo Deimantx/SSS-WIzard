@@ -63,7 +63,7 @@ import { completeStoryEvent as completeStoryEventAction, isScreenUnlocked } from
 import { GUARDIANS } from '../game/content/guardians/guardians'
 import { suppressGuardianIfOutOfMana } from '../game/systems/summoning/summoningRuntime'
 import { isSummoningUnlocked } from '../game/systems/summoning/summoningSelectors'
-import { applyArcaneCorePreset, purchaseAllArcaneCoreNodes, purchaseArcaneCoreNode, refundArcaneCoreNode, resetArcaneCore, resetArcaneCoreBranch as resetArcaneCoreBranchProgression, grantArcaneCoreXp, setArcaneCoreLevel, setArcaneCoreXp } from '../game/systems/arcaneCore'
+import { applyArcaneCorePreset, maxArcaneCoreBranch, maxArcaneCoreNode, maxArcaneCoreRing, purchaseAllArcaneCoreNodes, purchaseArcaneCoreNode, refundArcaneCoreNode, resetArcaneCore, resetArcaneCoreBranch as resetArcaneCoreBranchProgression, resetArcaneCoreNode, resetArcaneCoreRing, grantArcaneCoreXp, setArcaneCoreLevel, setArcaneCoreNodeRank, setArcaneCoreXp } from '../game/systems/arcaneCore'
 import { ARCANE_CORE_MAX_LEVEL } from '../game/content/arcaneCore/arcaneCoreBalance'
 import { resetArcaneCoreCombatRuntime } from '../game/systems/arcaneCore/arcaneCoreRuntime'
 import { getArcaneCorePresetSnapshot, useArcaneCorePresetStore } from './arcaneCorePresetStore'
@@ -201,6 +201,12 @@ export interface GameActions {
   setArcaneCoreLevel: (level: number) => void
   purchaseArcaneCoreNode: (nodeId: string) => boolean
   refundArcaneCoreNode: (nodeId: string) => boolean
+  setArcaneCoreNodeRank: (nodeId: string, rank: number) => void
+  maxArcaneCoreNode: (nodeId: string) => void
+  maxArcaneCoreBranch: (branchId: ArcaneCoreBranchId) => void
+  resetArcaneCoreNode: (nodeId: string) => void
+  maxArcaneCoreRing: (branchId: ArcaneCoreBranchId, ring: 1 | 2 | 3 | 4) => void
+  resetArcaneCoreRing: (branchId: ArcaneCoreBranchId, ring: 1 | 2 | 3 | 4) => void
   resetArcaneCoreBranch: (branchId: ArcaneCoreBranchId) => void
   resetArcaneCore: () => void
   purchaseAllArcaneCoreBranch: (branchId: ArcaneCoreBranchId) => void
@@ -480,6 +486,12 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   setArcaneCoreLevel: (level) => set((state) => { state.arcaneCore = setArcaneCoreLevel(state.arcaneCore, sanitizeDebugNumber(level)); recalculateDerivedStats(state); return state }),
   purchaseArcaneCoreNode: (nodeId) => { let ok = false; set((state) => { ok = commitArcaneCoreResult(state, purchaseArcaneCoreNode(state.arcaneCore, nodeId, { freeCosts: state.debug.arcaneCoreFreeCosts, ignorePrerequisites: state.debug.arcaneCoreIgnorePrerequisites })); if (ok) recalculateDerivedStats(state); return state }); return ok },
   refundArcaneCoreNode: (nodeId) => { let ok = false; set((state) => { ok = commitArcaneCoreResult(state, refundArcaneCoreNode(state.arcaneCore, nodeId)); if (ok) recalculateDerivedStats(state); return state }); return ok },
+  setArcaneCoreNodeRank: (nodeId, rank) => set((state) => { const result = setArcaneCoreNodeRank(state.arcaneCore, nodeId, rank); if (result.ok) { state.arcaneCore = result.state; recalculateDerivedStats(state) }; return state }),
+  maxArcaneCoreNode: (nodeId) => set((state) => { const result = maxArcaneCoreNode(state.arcaneCore, nodeId); if (result.ok) { state.arcaneCore = result.state; recalculateDerivedStats(state) }; return state }),
+  maxArcaneCoreBranch: (branchId) => set((state) => { state.arcaneCore = maxArcaneCoreBranch(state.arcaneCore, branchId); recalculateDerivedStats(state); return state }),
+  resetArcaneCoreNode: (nodeId) => set((state) => { const result = resetArcaneCoreNode(state.arcaneCore, nodeId); if (result.ok) { state.arcaneCore = result.state; recalculateDerivedStats(state) }; return state }),
+  maxArcaneCoreRing: (branchId, ring) => set((state) => { state.arcaneCore = maxArcaneCoreRing(state.arcaneCore, branchId, ring); recalculateDerivedStats(state); return state }),
+  resetArcaneCoreRing: (branchId, ring) => set((state) => { const result = resetArcaneCoreRing(state.arcaneCore, branchId, ring); if (result.ok) { state.arcaneCore = result.state; recalculateDerivedStats(state) }; return state }),
   resetArcaneCoreBranch: (branchId) => set((state) => { commitArcaneCoreResult(state, resetArcaneCoreBranchProgression(state.arcaneCore, branchId)); recalculateDerivedStats(state); return state }),
   resetArcaneCore: () => set((state) => { commitArcaneCoreResult(state, resetArcaneCore(state.arcaneCore)); recalculateDerivedStats(state); return state }),
   purchaseAllArcaneCoreBranch: (branchId) => set((state) => { state.arcaneCore = purchaseAllArcaneCoreNodes(state.arcaneCore, branchId, { freeCosts: state.debug.arcaneCoreFreeCosts, ignorePrerequisites: state.debug.arcaneCoreIgnorePrerequisites }); recalculateDerivedStats(state); return state }),

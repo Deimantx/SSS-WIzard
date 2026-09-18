@@ -120,7 +120,7 @@ describe('Combat Lab immortality and forced-resolution runtime', () => {
     state.debug.infiniteMana = true
     state.debug.ignoreSpellCooldowns = true
     expect(castSpellAction(state, 'fire-bolt')).toBe(true)
-    expect(castSpellAction(state, 'fire-bolt')).toBe(false)
+    expect(castSpellAction(state, 'fire-bolt')).toBe(true)
     advanceGameState(state, 1_000, { mode: 'live' })
     expect(state.player.mana).toBe(0)
     expect(state.combat.spellCooldowns['fire-bolt']).toBe(0)

@@ -617,7 +617,7 @@ describe('save navigation migration', () => {
     expect(migrated.currencies.gold).toBe(321)
     expect(migrated.inventory['fire-fragment']).toBe(37)
     expect(migrated.equipment.weapon).toBe('tideglass-wand')
-    expect(migrated.progress.spellRanks['fire-bolt']).toBeUndefined()
+    expect(migrated.progress.spellRanks['fire-bolt']).toBe(1)
     expect(migrated.progress.bossKillsByBoss['forest-heart']).toBe(2)
     expect(migrated.combat.playerAttackTimerMs).toBe(migrated.combat.playerAttackDurationMs)
   })
@@ -745,6 +745,12 @@ describe('Arcane Core V2 to V3 migration', () => {
     const initial = createInitialState()
     const migrated = migrateSave({ ...initial, saveVersion: 34, arcaneCore: { totalXp: 500, nodes: { 'power-r1-arcane-force': { rank: 3 } } } } as any)
     expect(migrated.arcaneCore).toEqual({ totalXp: 500, nodes: { 'power-r1-arcane-force': { rank: 3 } } })
+  })
+
+  it('does not restore transient manual Spell queue intent', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({ ...initial, saveVersion: SAVE_VERSION, combat: { ...initial.combat, queuedPlayerSpellId: 'wind-blade' } } as any)
+    expect(migrated.combat.queuedPlayerSpellId).toBeNull()
   })
 
   it('keeps valid V3 rank allocations in current saves', () => {

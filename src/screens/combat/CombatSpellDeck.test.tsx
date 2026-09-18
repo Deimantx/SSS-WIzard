@@ -112,4 +112,35 @@ describe('CombatSpellDeck V2', () => {
     expect(screen.getByText('Need 32')).toBeTruthy()
     expect(screen.queryByText(/0000000119/)).toBeNull()
   })
+
+  it('shows the current cast and one-slot manual queue without disabling queued tiles', async () => {
+    const user = userEvent.setup()
+    const current = useGameStore.getState()
+    useGameStore.setState({
+      player: { ...current.player, mana: 100 },
+      progress: { ...current.progress, spellRanks: { ...current.progress.spellRanks, 'fire-bolt': 1, 'wind-blade': 1 } },
+      activities: { ...current.activities, autoCast: { ...current.activities.autoCast, 'fire-bolt': true }, autoCastPriority: ['fire-bolt'] },
+      combat: { ...current.combat, active: true, dungeonId: 'whispering-woods', enemyId: 'forest-wisp', enemyInstanceKey: 'enemy:1', enemyHp: 100_000, enemyMaxHp: 100_000, spellCooldowns: { ...current.combat.spellCooldowns, 'wind-blade': 2400 } },
+    })
+    expect(useGameStore.getState().requestManualSpell('fire-bolt')).toMatchObject({ ok: true, action: 'started' })
+
+    const { container } = render(<TooltipProvider><CombatSpellDeck /></TooltipProvider>)
+    const fireTile = container.querySelector('[data-spell-id="fire-bolt"]') as HTMLElement
+    const windTile = container.querySelector('[data-spell-id="wind-blade"]') as HTMLElement
+    expect(fireTile.classList.contains('is-current-cast')).toBe(true)
+    expect(fireTile.textContent).toContain('CASTING')
+    expect(fireTile.textContent).toContain('P1')
+
+    const windCastButton = windTile.querySelector('.spell-combat-cast') as HTMLButtonElement
+    expect(windCastButton.disabled).toBe(false)
+    await user.click(windCastButton)
+    expect(windTile.classList.contains('is-manual-queued')).toBe(true)
+    expect(windTile.textContent).toContain('NEXT')
+    expect(windTile.textContent).toContain('2.4s')
+    expect(useGameStore.getState().combat.queuedPlayerSpellId).toBe('wind-blade')
+
+    await user.click(windCastButton)
+    expect(windTile.classList.contains('is-manual-queued')).toBe(false)
+    expect(useGameStore.getState().combat.queuedPlayerSpellId).toBeNull()
+  })
 })

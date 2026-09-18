@@ -366,6 +366,8 @@ export interface CombatState {
   playerAttackTimerMs: number
   playerAttackDurationMs: number
   pendingPlayerSpellCast: PendingPlayerSpellCast | null
+  /** One-slot manual intent. This is transient and is never restored from saves. */
+  queuedPlayerSpellId: CanonicalSpellId | null
   encounterTimerMs: number
   spellCooldowns: Record<SpellId, number>
   /** Runtime Auto-Cast starvation latch; persisted harmlessly with combat state. */

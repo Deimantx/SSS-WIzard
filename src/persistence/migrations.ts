@@ -382,6 +382,7 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
     ? rawCombat.autoCastManaStarvedSpells.map(normalizeSpellId).filter((spellId): spellId is CanonicalSpellId => Boolean(spellId))
     : []
   migrated.combat.pendingPlayerSpellCast = null
+  migrated.combat.queuedPlayerSpellId = null
   if (sourceVersion >= SAVE_VERSION && isRecord(rawCombat.pendingPlayerSpellCast)) {
     const pendingId = normalizeSpellId(rawCombat.pendingPlayerSpellCast.spellId)
     const targetInstanceKey = typeof rawCombat.pendingPlayerSpellCast.targetInstanceKey === 'string' ? rawCombat.pendingPlayerSpellCast.targetInstanceKey : null

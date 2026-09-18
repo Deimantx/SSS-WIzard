@@ -68,7 +68,7 @@ export const normalizeSpellPresetState = (raw: unknown, autoCast?: Partial<Recor
   const presetIds = preset?.spellIds ?? []
   if (!autoCastPriority) return { presets, lastAppliedPresetId: null }
   const current = autoCastPriority.filter((id) => Boolean(autoCast[id]))
-  const matches = current.length === presetIds.length && current.every((id) => presetIds.includes(id))
+  const matches = current.length === presetIds.length && current.every((id, index) => id === presetIds[index])
   return { presets, lastAppliedPresetId: matches ? applied : null }
 }
 

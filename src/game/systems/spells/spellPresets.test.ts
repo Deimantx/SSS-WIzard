@@ -83,6 +83,21 @@ describe('spell preset foundation', () => {
     expect(normalized.lastAppliedPresetId).toBe('one')
   })
 
+  it('clears the applied marker when the live Auto-Cast order differs from the preset order', () => {
+    const state = createInitialState()
+    state.activities.autoCast['fire-bolt'] = true
+    state.activities.autoCast['searing-touch'] = true
+    const normalized = normalizeSpellPresetState({ lastAppliedPresetId: 'one', presets: [
+      { id: 'one', name: 'Ordered', spellIds: ['fire-bolt', 'searing-touch'] },
+    ] }, state.activities.autoCast, ['fire-bolt', 'searing-touch'])
+    expect(normalized.lastAppliedPresetId).toBe('one')
+
+    const reordered = normalizeSpellPresetState({ lastAppliedPresetId: 'one', presets: [
+      { id: 'one', name: 'Ordered', spellIds: ['fire-bolt', 'searing-touch'] },
+    ] }, state.activities.autoCast, ['searing-touch', 'fire-bolt'])
+    expect(reordered.lastAppliedPresetId).toBeNull()
+  })
+
   it('reads only effect-relevant current equipment modifiers from authored item stats', () => {
     const state = createInitialState()
     state.equipment.weapon = 'ember-staff'

@@ -2498,6 +2498,42 @@
 }
 .spell-combat-cooldown-number { font-size: clamp(11px, .75vw, 13px); }
 .spell-combat-tile.is-mana-starved { border-color: color-mix(in srgb, var(--semantic-mana) 62%, var(--ui-border)); }
+
+.spell-combat-tile.is-current-cast {
+  border-color: color-mix(in srgb, var(--spell-school-color) 82%, white);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--spell-school-color) 18%, transparent), 0 0 0 1px color-mix(in srgb, var(--spell-school-color) 22%, transparent);
+}
+.spell-combat-tile.is-manual-queued {
+  border-color: color-mix(in srgb, var(--semantic-focus) 78%, var(--ui-border));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--semantic-focus) 16%, transparent), 0 0 0 1px color-mix(in srgb, var(--semantic-focus) 18%, transparent);
+}
+.spell-combat-intent-badge {
+  position: absolute;
+  right: 6px;
+  bottom: 5px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 4px;
+  border: 1px solid color-mix(in srgb, var(--spell-school-color) 62%, var(--ui-border));
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--ui-panel-strong) 94%, transparent);
+  color: var(--spell-school-color);
+  font: 750 8px var(--font-mono);
+  letter-spacing: .08em;
+  line-height: 1;
+  pointer-events: none;
+}
+.spell-combat-intent-badge.is-next {
+  border-color: color-mix(in srgb, var(--semantic-focus) 70%, var(--ui-border));
+  color: var(--semantic-focus);
+}
+.spell-combat-intent-badge small {
+  color: var(--ui-text-soft);
+  font-size: 7px;
+  letter-spacing: .03em;
+}
 .spell-combat-tile.is-mana-starved .spell-combat-icon { filter: saturate(.68) brightness(.9); }
 .spell-combat-tile.is-ready { animation: spell-tile-ready-v391 150ms ease-out; }
 .spell-combat-tile.is-casting { animation: spell-tile-cast-v391 150ms ease-out; }
@@ -4682,6 +4718,38 @@
   font: var(--text-micro) var(--font-mono);
   font-variant-numeric: tabular-nums;
   letter-spacing: .02em;
+}
+
+.combat-spell-queue {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 7px 9px;
+  border: 1px solid color-mix(in srgb, var(--semantic-focus) 45%, var(--ui-border));
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--semantic-focus) 7%, var(--ui-panel-strong));
+}
+.combat-spell-queue > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.combat-spell-queue strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ui-text);
+  font-size: var(--ui-font-small);
+}
+.combat-spell-queue strong svg { color: var(--semantic-focus); flex: 0 0 auto; }
+.combat-spell-queue-state {
+  flex: 0 0 auto;
+  color: var(--semantic-focus);
+  font: 700 var(--text-micro) var(--font-mono);
+  letter-spacing: .06em;
+  text-align: right;
 }
 
 .spell-combat-auto-slot {

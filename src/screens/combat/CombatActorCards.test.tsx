@@ -15,7 +15,7 @@ describe('Combat actor card symmetry', () => {
     expect(document.querySelector('.player-placeholder')).toBeNull()
     expect(document.querySelector('.combat-player-identity')).toBeNull()
     expect(screen.queryByText('Apprentice Wizard')).toBeNull()
-    expect(screen.getByText('BASIC ATTACK')).toBeTruthy()
+    expect(screen.queryByText('BASIC ATTACK')).toBeNull()
     expect(screen.queryByText('Next Attack')).toBeNull()
     expect(screen.queryByText('Attack progress')).toBeNull()
   })

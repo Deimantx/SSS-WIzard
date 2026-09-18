@@ -9,7 +9,8 @@ import { DUNGEONS, DUNGEON_ORDER, getDungeonUnlockRequirement, isDungeonUnlocked
 import { MONSTERS } from '../game/content/monsters'
 import { ITEMS } from '../game/content/items/items'
 import { LEGACY_SPELL_ID_MAP, SPELLS } from '../game/content/spells/spells'
-import { castSpellAction } from './actions/combatActions'
+import { castSpellAction, requestManualSpellAction } from './actions/combatActions'
+import type { ManualSpellRequestResult } from '../game/engine/spellEngine'
 import { manaRegenPerSecond, pushNotification, recalculateDerivedStats, selectFreeFocus, selectUsedFocus } from '../game/engine'
 import { debugApplyStatus, spawnEnemy, spawnNextEnemy, type CombatLootObserver } from '../game/systems/combat/combatRuntime'
 import { canManuallyEngageDungeonBoss, isAutoHuntEnabledForDungeon, isBossCurrentlyActive } from '../game/systems/combat/combatBossSelectors'
@@ -232,6 +233,7 @@ export interface GameActions {
   cancelArtificingCraft: () => void
   setDebugTransmutationEchoCapacity: (amount: number | null) => void
   castSpell: (spellId: SpellId) => void
+  requestManualSpell: (spellId: SpellId) => ManualSpellRequestResult
   toggleAutoCast: (spellId: SpellId) => void
   moveAutoCastPriority: (spellId: SpellId, direction: -1 | 1) => boolean
   clearAutoCast: () => boolean
@@ -553,6 +555,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   debugGrantArtifactMaterials: () => set((state) => { grantDebugArtifactMaterialsInState(state); return state }),
   setDebugTransmutationEchoCapacity: (amount) => set((state) => { setTransmutationEchoCapacityOverrideAction(state, amount); return state }),
   castSpell: (spellId) => set((state) => { castSpellAction(state, spellId, combatEventSink); suppressGuardianIfOutOfMana(state); return state }),
+  requestManualSpell: (spellId) => { let result!: ManualSpellRequestResult; set((state) => { result = requestManualSpellAction(state, spellId, combatEventSink); suppressGuardianIfOutOfMana(state); return state }); return result },
   clearAutoCast: () => { let cleared = false; set((state) => { cleared = clearAutoCastAction(state); return state }); if (cleared) emitActionFeel('autocast-off', '.combat-spell-deck-foot', 'var(--ui-secondary)'); return cleared },
   toggleAutoCast: (spellId) => { const before = Boolean(get().activities.autoCast[spellId]); let changed = false; set((state) => { changed = toggleAutoCastState(state, spellId); return state }); const after = Boolean(get().activities.autoCast[spellId]); if (after !== before) emitActionFeel(after ? 'autocast-on' : 'autocast-off', `[data-spell-id="${spellId}"]`, 'var(--ui-secondary)'); else emitActionFeel('error', `[data-spell-id="${spellId}"]`, 'var(--ui-warning)', 0.75); return changed && after !== before },
   moveAutoCastPriority: (spellId, direction) => { let moved = false; set((state) => { moved = moveAutoCastPriorityAction(state, spellId, direction); return state }); return moved },

@@ -19,11 +19,16 @@ const hasEnemyTarget = (spellId: SpellId) => SPELLS[spellId].effects.some((effec
 
 export type SpellCastFailure = 'unknown' | 'locked' | 'stunned' | 'silenced' | 'inactive' | 'no-target' | 'cooldown' | 'mana' | 'casting'
 
-export const getSpellCastFailure = (state: GameState, spellId: SpellId): SpellCastFailure | null => {
+export type SpellStartFailure = Exclude<SpellCastFailure, 'casting'>
+
+export type ManualSpellRequestResult =
+  | { ok: true; action: 'started' | 'interrupted-and-started' | 'queued' | 'queue-cancelled' | 'already-casting' }
+  | { ok: false; reason: SpellCastFailure }
+
+export const getSpellStartFailure = (state: GameState, spellId: SpellId): SpellStartFailure | null => {
   const spell = SPELLS[spellId]
   if (!spell) return 'unknown'
   if (!isSpellUnlocked(state, spellId)) return 'locked'
-  if (state.combat.pendingPlayerSpellCast) return 'casting'
   if (actorCannotAct(state, 'player')) return 'stunned'
   if (actorCannotCastSpells(state, 'player')) return 'silenced'
   if (!state.combat.active) return 'inactive'
@@ -32,6 +37,13 @@ export const getSpellCastFailure = (state: GameState, spellId: SpellId): SpellCa
   const manaCost = getEffectiveManaCost(state, spell.manaCost)
   if (!state.debug.infiniteMana && !isArcaneCoreSpellFree(state) && !hasEnoughResource(state.player.mana, manaCost)) return 'mana'
   return null
+}
+
+/** Start eligibility intentionally includes the active-cast blocker for callers
+ * that only want to know whether a Spell can begin without an interrupt. */
+export const getSpellCastFailure = (state: GameState, spellId: SpellId): SpellCastFailure | null => {
+  if (state.combat.pendingPlayerSpellCast) return 'casting'
+  return getSpellStartFailure(state, spellId)
 }
 
 export const notifySpellCastFailure = (state: GameState, spellId: SpellId, failure: SpellCastFailure) => {
@@ -83,10 +95,61 @@ const startSpellCast = (state: GameState, spellId: SpellId, quiet: boolean, uiEv
   return true
 }
 
-const buildCompletionSource = (state: GameState, pending: PendingPlayerSpellCast): CombatSource => {
+export type PendingSpellCancelReason = 'manual-interrupt' | 'target-lost' | 'combat-ended' | 'player-defeated'
+
+/**
+ * Cancels committed cast work without invoking any successful-cast pathway.
+ * Mana, cooldowns, statuses, Arcane Core counters, Gust and Static are all
+ * committed only by resolvePlayerSpellCast, so cancellation is deliberately
+ * just a pending-work clear.
+ */
+export const cancelPendingPlayerSpellCast = (state: GameState, _reason: PendingSpellCancelReason) => {
+  if (!state.combat.pendingPlayerSpellCast) return false
+  state.combat.pendingPlayerSpellCast = null
+  return true
+}
+
+const canRemainQueued = (failure: SpellStartFailure) => failure === 'cooldown' || failure === 'mana' || failure === 'stunned' || failure === 'silenced' || failure === 'no-target'
+
+/**
+ * Handles player intent at the game boundary. A manual click either starts,
+ * interrupts into, or replaces/cancels the one-slot manual queue; Auto-Cast
+ * never writes this field.
+ */
+export const requestManualSpell = (state: GameState, spellId: SpellId, uiEvents?: CombatEventSink): ManualSpellRequestResult => {
+  const spell = SPELLS[spellId]
+  if (!spell) return { ok: false, reason: 'unknown' }
+  const canonicalId = spell.id
+  const current = state.combat.pendingPlayerSpellCast
+  if (current?.spellId === canonicalId) return { ok: true, action: 'already-casting' }
+  if (state.combat.queuedPlayerSpellId === canonicalId) {
+    state.combat.queuedPlayerSpellId = null
+    return { ok: true, action: 'queue-cancelled' }
+  }
+
+  const failure = getSpellStartFailure(state, canonicalId)
+  if (!failure) {
+    const wasInterrupted = Boolean(current)
+    if (wasInterrupted) cancelPendingPlayerSpellCast(state, 'manual-interrupt')
+    const started = startSpellCast(state, canonicalId, false, uiEvents)
+    if (started) {
+      state.combat.queuedPlayerSpellId = null
+      return { ok: true, action: wasInterrupted ? 'interrupted-and-started' : 'started' }
+    }
+    return { ok: false, reason: getSpellStartFailure(state, canonicalId) ?? 'unknown' }
+  }
+
+  if (canRemainQueued(failure) && state.combat.active) {
+    state.combat.queuedPlayerSpellId = canonicalId
+    return { ok: true, action: 'queued' }
+  }
+  notifySpellCastFailure(state, canonicalId, failure)
+  return { ok: false, reason: failure }
+}
+
+const buildCompletionSource = (state: GameState, pending: PendingPlayerSpellCast, staticDamageBonus = 0): CombatSource => {
   const spell = SPELLS[pending.spellId]
   const targetHas = (statusId: string) => state.combat.enemyStatuses.some((status) => status.statusId === statusId)
-  const playerHas = (statusId: string) => state.combat.playerStatuses.some((status) => status.statusId === statusId)
   let spellDamageMultiplier = 1
   if (pending.spellId === 'flame-burst' && targetHas('burning')) spellDamageMultiplier += 0.5
   if (pending.spellId === 'execution-flame') {
@@ -94,7 +157,7 @@ const buildCompletionSource = (state: GameState, pending: PendingPlayerSpellCast
     if (targetHas('burning')) spellDamageMultiplier += 0.25
   }
   if (pending.spellId === 'frozen-current' && targetHas('chilled')) spellDamageMultiplier += 0.25
-  if (pending.spellId === 'thunderstrike' && playerHas('static')) spellDamageMultiplier += 0.25
+  spellDamageMultiplier += staticDamageBonus
   return { ...getSpellCombatSource(pending.spellId), spellDamageMultiplier, spellCritChanceBonus: pending.spellId === 'lightning-spark' ? 0.25 : 0, spellCritDamageBonus: pending.spellId === 'thunderstrike' ? 0.5 : 0 }
 }
 
@@ -114,9 +177,14 @@ export const resolvePlayerSpellCast = (state: GameState, uiEvents?: CombatEventS
   const paidMana = arcaneCoreCast.free ? 0 : pending.manaCostSnapshot
   if (!state.debug.infiniteMana) state.player.mana = stabilizeResourceValue(Math.max(0, state.player.mana - paidMana))
   state.combat.spellCooldowns[pending.spellId] = state.debug.ignoreSpellCooldowns ? 0 : spell.cooldownMs
-  const source = buildCompletionSource(state, pending)
   const hadGust = pending.castWorkMultiplier < 1
   const hadStatic = spell.school === 'air' && spell.effects.some((effect) => effect.type === 'deal-damage') && state.combat.playerStatuses.some((status) => status.statusId === 'static')
+  // Snapshot and consume the old Static before resolving effects. Static Charge
+  // itself may apply a replacement Static, which must not be removed as part of
+  // the old charge's cleanup.
+  const staticDamageBonus = hadStatic ? 0.75 + (pending.spellId === 'thunderstrike' ? 0.25 : 0) : 0
+  if (hadStatic) removeStatus(state, 'player', 'static')
+  const source = buildCompletionSource(state, pending, staticDamageBonus)
   const resolution = createCombatResolutionContext()
   resolution.arcaneCoreDamageMultiplier = arcaneCoreCast.damageMultiplier
   const wasChilled = state.combat.enemyStatuses.some((status) => status.statusId === 'chilled')
@@ -129,7 +197,6 @@ export const resolvePlayerSpellCast = (state: GameState, uiEvents?: CombatEventS
   })
   executeCombatEffects(state, effects, source, undefined, uiEvents, resolution)
   if (hadGust) removeStatus(state, 'player', 'gust')
-  if (hadStatic) removeStatus(state, 'player', 'static')
   if (arcaneCoreCast.cooldownPulse) {
     const pulse = getArcaneCoreCooldownPulseReduction(state)
     if (pulse > 0) executeCombatEffects(state, [{ type: 'modify-cooldown', target: 'self', amountMs: -pulse }], { actor: 'player', kind: 'arcane-core', sourceId: 'control-rapid-cycle-10', tags: ['special'] }, undefined, uiEvents, resolution)
@@ -142,11 +209,5 @@ export const resolvePlayerSpellCast = (state: GameState, uiEvents?: CombatEventS
 export const castSpellInternal = (state: GameState, spellId: SpellId, quiet = false, uiEvents?: CombatEventSink) => startSpellCast(state, spellId, quiet, uiEvents)
 
 export const castSpellAction = (state: GameState, spellId: SpellId, uiEvents?: CombatEventSink) => {
-  const failure = getSpellCastFailure(state, spellId)
-  if (failure) {
-    if (failure === 'mana' || failure === 'no-target') reportSpellFailure(state, SPELLS[spellId]?.id ?? spellId as CanonicalSpellId, failure, uiEvents)
-    notifySpellCastFailure(state, spellId, failure)
-    return false
-  }
-  return startSpellCast(state, spellId, false, uiEvents)
+  return requestManualSpell(state, spellId, uiEvents).ok
 }

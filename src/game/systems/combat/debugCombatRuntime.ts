@@ -21,6 +21,7 @@ const resetEncounterWithoutRewards = (state: GameState) => {
   state.combat.enemyInstanceKey = null
   state.combat.enemyHp = 0
   state.combat.enemyMaxHp = 0
+  state.combat.pendingPlayerSpellCast = null
   state.combat.enemyBarrier = 0
   state.combat.enemyBarrierRemainingMs = null
   state.combat.encounterTimerMs = 0

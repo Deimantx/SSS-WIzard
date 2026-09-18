@@ -169,6 +169,7 @@ export const resolveCombatDeaths = (state: GameState, report?: SimulationReportC
     state.combat.enemyId = null
     state.combat.enemyInstanceKey = null
     state.combat.pendingPlayerSpellCast = null
+    state.combat.queuedPlayerSpellId = null
     state.combat.enemyHp = 0
     state.combat.enemyBarrier = 0
     state.combat.enemyBarrierRemainingMs = null

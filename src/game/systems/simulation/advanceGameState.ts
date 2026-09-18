@@ -5,7 +5,7 @@ import { SPELLS } from '../../content/spells/spells'
 import { STATUS_DEFINITIONS } from '../../content/statuses'
 import { advanceChanneling } from '../../engine/channelingEngine'
 import { pushNotification, recalculateDerivedStats } from '../../engine'
-import { castSpellInternal, getPlayerSpellCastRate, resolvePlayerSpellCast } from '../../engine/spellEngine'
+import { castSpellInternal, getPlayerSpellCastRate, getSpellStartFailure, resolvePlayerSpellCast } from '../../engine/spellEngine'
 import { executeCombatEffects } from '../combat/effectResolver'
 import { resolveCombatDeaths, spawnNextEnemy, type CombatLootObserver } from '../combat/combatRuntime'
 import { getCurrentEnemyActionRate, resolveCurrentEnemyAction, startNextEnemyAction } from '../combat/actionRuntime'
@@ -77,8 +77,26 @@ const isAutoCastEligible = (state: GameState, spellId: SpellId) => {
 const autoCastReadySpells = (state: GameState, context: AdvanceContext) => {
   const latches = state.combat.autoCastManaStarvedSpells ?? (state.combat.autoCastManaStarvedSpells = [])
   latches.slice().forEach((spellId) => { if (!isAutoCastEligible(state, spellId)) latches.splice(latches.indexOf(spellId), 1) })
+  if (state.combat.pendingPlayerSpellCast) return
+  if (state.combat.queuedPlayerSpellId) {
+    const queuedId = state.combat.queuedPlayerSpellId
+    const queuedSpell = SPELLS[queuedId]
+    if (!queuedSpell || !spellUnlocked(state, queuedId)) {
+      state.combat.queuedPlayerSpellId = null
+      return
+    }
+    const failure = getSpellStartFailure(state, queuedId)
+    if (!failure) {
+      if (castSpellInternal(state, queuedId, true, context.uiEvents)) state.combat.queuedPlayerSpellId = null
+    } else if (failure === 'unknown' || failure === 'locked' || failure === 'inactive') {
+      state.combat.queuedPlayerSpellId = null
+    }
+    // A manual queue is a hard priority gate, including while it waits for a
+    // target, cooldown, Mana, or temporary status recovery.
+    return
+  }
   if (actorCannotAct(state, 'player') || !state.combat.enemyId || state.debug.freezePlayerActions || state.debug.disableAutoCast) return
-  if (!state.combat.pendingPlayerSpellCast) {
+  {
     const spellId = getAutoCastPriority(state).find((id) => isAutoCastEligible(state, id))
     if (spellId) castSpellInternal(state, spellId, true, context.uiEvents)
   }
@@ -100,7 +118,7 @@ const tickSpellCooldowns = (state: GameState, deltaMs: number, cooldownRecovery:
 
 /** Auto-Cast readiness is a combat-clock boundary, not an outer-quantum side effect. */
 const getNextAutoCastCooldownEventMs = (state: GameState, cooldownRecovery: number): number | null => {
-  if (!state.combat.enemyId || cooldownRecovery <= 0 || state.debug.freezePlayerActions || state.debug.disableAutoCast || state.debug.ignoreSpellCooldowns) return null
+  if (!state.combat.enemyId || state.combat.queuedPlayerSpellId || cooldownRecovery <= 0 || state.debug.freezePlayerActions || state.debug.disableAutoCast || state.debug.ignoreSpellCooldowns) return null
   let next: number | null = null
   getAutoCastPriority(state).forEach((spellId) => {
     if (!state.activities.autoCast[spellId] || !spellUnlocked(state, spellId) || state.debug.ignoreSpellCooldowns) return
@@ -110,6 +128,14 @@ const getNextAutoCastCooldownEventMs = (state: GameState, cooldownRecovery: numb
     if (next === null || boundary < next) next = boundary
   })
   return next
+}
+
+export const getNextQueuedSpellCooldownEventMs = (state: GameState, cooldownRecovery: number): number | null => {
+  const queuedId = state.combat.queuedPlayerSpellId
+  if (!queuedId || state.combat.pendingPlayerSpellCast || cooldownRecovery <= 0 || state.debug.ignoreSpellCooldowns) return null
+  const cooldown = state.combat.spellCooldowns[queuedId] ?? 0
+  if (cooldown <= 0 || !Number.isFinite(cooldown)) return null
+  return cooldown / cooldownRecovery
 }
 
 const hasImmediateCombatTimelineEvent = (state: GameState) => {
@@ -172,7 +198,7 @@ const advanceCombatTimeline = (state: GameState, delta: number, context: Advance
 
     // A ready Auto-Cast spell is attempted once at encounter start. Casts are
     // committed work; effects and payment happen only at completion.
-    if (!attemptedImmediateAutoCast && hasReadyAutoCast(state)
+    if (!attemptedImmediateAutoCast && (state.combat.queuedPlayerSpellId !== null || hasReadyAutoCast(state))
       && !actorCannotAct(state, 'player')
       && getNextCombatStatusEventMs(state) !== 0
       && getNextCombatBarrierEventMs(state) !== 0) {
@@ -196,6 +222,7 @@ const advanceCombatTimeline = (state: GameState, delta: number, context: Advance
       getNextCombatStatusEventMs(state),
       getNextCombatBarrierEventMs(state),
       getNextHealthRegenEventMs(state),
+      getNextQueuedSpellCooldownEventMs(state, cooldownRecovery),
       getNextAutoCastCooldownEventMs(state, cooldownRecovery),
       getGuardianAttackBoundary(state),
     ].filter((value): value is number => value !== null && Number.isFinite(value))
@@ -227,6 +254,10 @@ const advanceCombatTimeline = (state: GameState, delta: number, context: Advance
       playerSpellResolved = resolvePlayerSpellCast(state, context.uiEvents)
       if (resolveDeaths(state, context)) break
     }
+
+    // The manual queue gets the first chance at the exact completion
+    // timestamp. Auto-Cast is considered only after the queue is empty.
+    if (playerSpellResolved && state.combat.enemyId) autoCastReadySpells(state, context)
 
     suppressGuardianIfOutOfMana(state)
     // Exact boundary order: player Spell completion, then guardian, then enemy.
@@ -270,6 +301,7 @@ const advanceCombatDowntimeTimeline = (state: GameState, delta: number, context:
       getNextPlayerStatusEventMs(state),
       getNextPlayerBarrierEventMs(state),
       getNextHealthRegenEventMs(state),
+      getNextQueuedSpellCooldownEventMs(state, cooldownRecovery),
     ].filter((value): value is number => value !== null && Number.isFinite(value))
     const untilEvent = boundaries.length ? Math.min(...boundaries) : remaining
     const elapsed = Math.min(remaining, Math.max(0, untilEvent))

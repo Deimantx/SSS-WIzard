@@ -5,7 +5,7 @@ import { isCombatActorAlive, type CombatActor } from './magnitude'
 import { getCombatModifiers } from './modifiers'
 
 export interface BarrierOptions {
-  mode?: 'add' | 'replace'
+  mode?: 'add' | 'replace' | 'replace-if-stronger'
   durationMs?: number | null
 }
 
@@ -55,10 +55,13 @@ export const gainBarrierResult = (state: GameState, raw: number, source: CombatS
   const amount = Math.max(0, Math.round(raw * sourcePower * targetPower + barrierReceivedFlat))
   const mode = options.mode ?? 'add'
   const previous = getBarrier(state, target)
-  const next = mode === 'replace' ? amount : Math.max(0, previous + amount)
+  const replace = mode === 'replace' || (mode === 'replace-if-stronger' && amount > previous)
+  const next = replace ? amount : mode === 'replace-if-stronger' ? previous : Math.max(0, previous + amount)
   setBarrier(state, target, next)
-  if (options.durationMs !== undefined) setRemaining(state, target, next > 0 && options.durationMs !== null ? Math.max(0, options.durationMs) : null)
-  else if (mode === 'replace' && next <= 0) setRemaining(state, target, null)
+  if (replace || mode === 'add') {
+    if (options.durationMs !== undefined) setRemaining(state, target, next > 0 && options.durationMs !== null ? Math.max(0, options.durationMs) : null)
+    else if (replace && next <= 0) setRemaining(state, target, null)
+  }
   return { previous, current: next, gained: Math.max(0, next - previous), calculatedAmount: amount }
 }
 

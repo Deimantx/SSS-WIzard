@@ -141,7 +141,7 @@ const validateCombatEffectInternal = (value: unknown, owner: string, context: Co
   if (value.type === 'gain-barrier') {
     if (!isTarget(value.target)) errors.push(`${owner}: invalid target`)
     errors.push(...validateMagnitude(value.magnitude, `${owner}.magnitude`))
-    if (value.mode !== undefined && value.mode !== 'add' && value.mode !== 'replace') errors.push(`${owner}: invalid Barrier mode`)
+    if (value.mode !== undefined && value.mode !== 'add' && value.mode !== 'replace' && value.mode !== 'replace-if-stronger') errors.push(`${owner}: invalid Barrier mode`)
     if (value.durationMs !== undefined && value.durationMs !== null && (!isFiniteNumber(value.durationMs) || value.durationMs < 0)) errors.push(`${owner}: invalid Barrier duration`)
     if (value.tags !== undefined && (!Array.isArray(value.tags) || !value.tags.every(isTag))) errors.push(`${owner}: invalid tags`)
     return errors

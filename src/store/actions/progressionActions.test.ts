@@ -43,14 +43,14 @@ describe('school progression debug controls', () => {
     state.progress.magicLevelCap = 40
     grantSchoolXp(state, 'fire', 2100)
     expect(state.schools.fire).toEqual({ xp: 2100, level: 8 })
-    expect(state.progress.spellRanks).toMatchObject({ 'fire-bolt': 1, ignite: 1 })
-    expect(state.progress.spellRanks.fireball).toBeUndefined()
+    expect(state.progress.spellRanks).toMatchObject({ 'fire-bolt': 1, 'searing-touch': 1 })
+    expect(state.progress.spellRanks['flame-burst']).toBeUndefined()
 
     grantSchoolXp(state, 'fire', 15120 - 2100 - 1)
     expect(state.schools.fire.level).toBe(15)
-    expect(state.progress.spellRanks.fireball).toBeUndefined()
+    expect(state.progress.spellRanks['flame-burst']).toBe(1)
     grantSchoolXp(state, 'fire', 1)
     expect(state.schools.fire).toMatchObject({ xp: 15120, level: 16 })
-    expect(state.progress.spellRanks.fireball).toBe(1)
+    expect(state.progress.spellRanks.kindling).toBeUndefined()
   })
 })

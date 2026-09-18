@@ -139,7 +139,14 @@ export const applyStatus = (state: GameState, actor: CombatActor, statusId: Stat
     const monster = MONSTERS[state.combat.enemyId]
     if (monster.statusImmunities?.includes(statusId) || monster.statusTagImmunities?.some((tag) => definition.tags.includes(tag))) return null
   }
-  const statuses = statusList(state, actor)
+  let statuses = statusList(state, actor)
+  if (actor === 'enemy' && statusId === 'frozen') {
+    setStatusList(state, actor, statuses.filter((status) => status.statusId !== 'chilled'))
+    statuses = statusList(state, actor)
+  }
+  if (actor === 'enemy' && statusId === 'chilled' && statuses.some((status) => status.statusId === 'frozen')) {
+    return statuses.find((status) => status.statusId === 'frozen') ?? null
+  }
   const applicationPolicy = definition.applicationPolicy ?? 'single'
   const instanceKey = applicationPolicy === 'per-source'
     ? options.statusSourceKey?.trim() || getStatusApplicationSourceKey(source)

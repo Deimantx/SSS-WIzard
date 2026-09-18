@@ -120,9 +120,11 @@ describe('Combat Lab immortality and forced-resolution runtime', () => {
     state.debug.infiniteMana = true
     state.debug.ignoreSpellCooldowns = true
     expect(castSpellAction(state, 'fire-bolt')).toBe(true)
-    expect(castSpellAction(state, 'fire-bolt')).toBe(true)
+    expect(castSpellAction(state, 'fire-bolt')).toBe(false)
+    advanceGameState(state, 1_000, { mode: 'live' })
     expect(state.player.mana).toBe(0)
     expect(state.combat.spellCooldowns['fire-bolt']).toBe(0)
+    expect(castSpellAction(state, 'fire-bolt')).toBe(true)
     expect(castSpellAction(state, 'fireball')).toBe(false)
   })
 
@@ -136,7 +138,7 @@ describe('Combat Lab immortality and forced-resolution runtime', () => {
     advanceGameState(paused, 1000, { mode: 'live' })
     expect(paused.combat.playerAttackTimerMs).toBe(pausedPlayerTimer)
     expect(paused.combat.enemyActionTimerMs).toBe(pausedEnemyTimer)
-    expect(paused.player.mana).toBeGreaterThan(pausedMana)
+    expect(paused.player.mana).toBe(pausedMana)
 
     const normal = activeState()
     const fast = activeState()
@@ -149,8 +151,9 @@ describe('Combat Lab immortality and forced-resolution runtime', () => {
     const fastEvents: CombatEvent[] = []
     advanceGameState(normal, 1000, { mode: 'live', uiEvents: { push: (event) => normalEvents.push(event) } })
     advanceGameState(fast, 1000, { mode: 'live', uiEvents: { push: (event) => fastEvents.push(event) } })
-    expect(normal.combat.playerAttackTimerMs).toBe(normalTimer - 1000)
-    expect(fastEvents.filter((event) => event.source.kind === 'player' && event.category === 'basic-attack').length).toBeGreaterThan(normalEvents.filter((event) => event.source.kind === 'player' && event.category === 'basic-attack').length)
+    expect(normal.combat.playerAttackTimerMs).toBe(normalTimer)
+    expect(fastEvents.filter((event) => event.source.kind === 'player' && event.category === 'basic-attack')).toHaveLength(0)
+    expect(normalEvents.filter((event) => event.source.kind === 'player' && event.category === 'basic-attack')).toHaveLength(0)
     expect(fastTimer).toBe(normalTimer)
     expect(normal.player.mana).toBe(fast.player.mana)
   })
@@ -179,6 +182,6 @@ describe('Combat Lab immortality and forced-resolution runtime', () => {
     const frozenEnemyTimer = enemyFrozen.combat.enemyActionTimerMs
     advanceGameState(enemyFrozen, 1_000, { mode: 'live', uiEvents: { push: (event) => enemyEvents.push(event) } })
     expect(enemyFrozen.combat.enemyActionTimerMs).toBe(frozenEnemyTimer)
-    expect(enemyEvents.some((event) => event.category === 'basic-attack' && event.source.kind === 'player')).toBe(true)
+    expect(enemyEvents.some((event) => event.category === 'basic-attack' && event.source.kind === 'player')).toBe(false)
   })
 })

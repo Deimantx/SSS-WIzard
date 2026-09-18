@@ -97,7 +97,7 @@ describe('CombatSpellDeck V2', () => {
     const { container } = render(<TooltipProvider><CombatSpellDeck /></TooltipProvider>)
     expect(container.querySelector('.spell-combat-cooldown-overlay')).toBeTruthy()
     expect(screen.getByText('3.4')).toBeTruthy()
-    expect(container.querySelector('.spell-combat-footer .ui-time')).toBeNull()
+    expect(container.querySelector('.spell-combat-footer .ui-time')?.textContent).toBe('1.0s')
     expect(container.querySelector('.spell-combat-cooldown-mask')).toBeNull()
   })
 

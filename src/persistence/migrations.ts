@@ -68,9 +68,16 @@ const bossIds = [...monsterIds, SUMMONING_UNLOCK_BOSS_ID]
 const dungeonIds = Object.keys(DUNGEONS)
 const requestIds = Object.keys(GUILD_REQUESTS)
 const spellIds = Object.keys(SPELLS) as CanonicalSpellId[]
-const normalizeSpellId = (value: unknown) => typeof value === 'string' && Object.prototype.hasOwnProperty.call(SPELLS, value) ? (LEGACY_SPELL_ID_MAP[value] ?? value) : undefined
+const normalizeSpellId = (value: unknown): CanonicalSpellId | undefined => {
+  if (typeof value !== 'string') return undefined
+  const mapped = LEGACY_SPELL_ID_MAP[value]
+  if (mapped) return mapped
+  return spellIds.includes(value as CanonicalSpellId) ? value as CanonicalSpellId : undefined
+}
 const recipeIds = Object.keys(RECIPES)
 const permanentFocusIds = ['forest-heart', 'guild-apprentice']
+/** V34 is the first save topology that stores Arcane Core ranked nodes. */
+const ARCANE_CORE_RANKED_NODE_SAVE_VERSION = 34
 
 const normalizeArcaneCore = (migrated: GameState, raw: Record<string, any>) => {
   const source = isRecord(raw.arcaneCore) ? raw.arcaneCore : {}
@@ -79,7 +86,7 @@ const normalizeArcaneCore = (migrated: GameState, raw: Record<string, any>) => {
     const sourceVersion = typeof raw.saveVersion === 'number' ? raw.saveVersion : 0
     // V2 allocations are intentionally not mapped to V3's different topology.
     // Current V3 saves keep their rank map; older saves keep XP only.
-    if (sourceVersion >= SAVE_VERSION && isRecord(source.nodes)) Object.entries(source.nodes).forEach(([nodeId, value]) => {
+    if (sourceVersion >= ARCANE_CORE_RANKED_NODE_SAVE_VERSION && isRecord(source.nodes)) Object.entries(source.nodes).forEach(([nodeId, value]) => {
       const node = getArcaneCoreNode(nodeId)
       const rank = node && isRecord(value) && typeof value.rank === 'number' && Number.isFinite(value.rank) ? Math.max(0, Math.min(node.maxRank, Math.floor(value.rank))) : 0
       if (node && rank > 0) nodes[nodeId] = { rank }
@@ -170,6 +177,7 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
   const rawAutoCast = isRecord(rawActivities.autoCast) ? rawActivities.autoCast : {}
   const normalizedAutoCast = normalizeDynamicRecord(fresh.activities.autoCast, rawAutoCast, spellIds, booleanValue) as GameState['activities']['autoCast']
   Object.entries(LEGACY_SPELL_ID_MAP).forEach(([legacyId, canonicalId]) => {
+    if (!canonicalId) return
     if (rawAutoCast[legacyId] === true) normalizedAutoCast[canonicalId] = true
   })
   migrated.activities.autoCast = normalizedAutoCast
@@ -181,6 +189,7 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
   const rawSpellCooldowns = isRecord(rawCombat.spellCooldowns) ? rawCombat.spellCooldowns : {}
   migrated.combat.spellCooldowns = normalizeDynamicRecord(fresh.combat.spellCooldowns, rawSpellCooldowns, spellIds, nonNegativeNumber) as GameState['combat']['spellCooldowns']
   Object.entries(LEGACY_SPELL_ID_MAP).forEach(([legacyId, canonicalId]) => {
+    if (!canonicalId) return
     const value = nonNegativeNumber(rawSpellCooldowns[legacyId])
     if (value !== undefined) migrated.combat.spellCooldowns[canonicalId] = value
   })
@@ -218,12 +227,37 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
 const isSpellRankValue = (value: unknown): value is SpellRank => typeof value === 'number' && Number.isInteger(value) && value >= MIN_SPELL_RANK && value <= MAX_SPELL_RANK
 
 /** Converts legacy unlock arrays and current rank evidence into one canonical map. */
-const normalizeSpellProgression = (migrated: GameState, raw: Record<string, any>) => {
-  // Spell unlocks are derived from the preserved School levels. Do not carry
-  // stale V1 spell-rank entries into the new 32-spell catalog.
+const normalizeSpellProgression = (migrated: GameState, raw: Record<string, any>, sourceVersion: number) => {
   const ranks: Partial<Record<SpellId, SpellRank>> = {}
+  const rawProgress = isRecord(raw.progress) ? raw.progress : {}
+  const rawRanks = isRecord(rawProgress.spellRanks) ? rawProgress.spellRanks : {}
+
+  // Current saves already use the canonical 32-spell roster. Preserve those
+  // ranks (and normalize any remaining legacy aliases) instead of rebuilding
+  // progression from school levels on every save/load round-trip.
+  if (sourceVersion >= SAVE_VERSION) {
+    Object.entries(rawRanks).forEach(([id, value]) => {
+      const spellId = normalizeSpellId(id)
+      if (spellId && isSpellRankValue(value)) ranks[spellId] = value
+    })
+  } else {
+    // Older saves may only have the former unlocked-spell list. Carry valid
+    // evidence forward, then fill in authored unlocks from preserved school
+    // levels. Unknown/removed ids (including water-ward) are intentionally
+    // dropped by normalizeSpellId.
+    const unlocked = Array.isArray(rawProgress.unlockedSpells) ? rawProgress.unlockedSpells : []
+    unlocked.forEach((id) => {
+      const spellId = normalizeSpellId(id)
+      if (spellId) ranks[spellId] = 1
+    })
+    Object.entries(rawRanks).forEach(([id, value]) => {
+      const spellId = normalizeSpellId(id)
+      if (spellId && isSpellRankValue(value)) ranks[spellId] = value
+    })
+  }
+
   migrated.progress.spellRanks = ranks
-  syncAllSpellUnlocks(migrated)
+  if (sourceVersion < SAVE_VERSION) syncAllSpellUnlocks(migrated)
   Object.keys(migrated.activities.autoCast).forEach((id) => {
     if (!isSpellRankValue(ranks[id as SpellId])) migrated.activities.autoCast[id as SpellId] = false
   })
@@ -231,7 +265,9 @@ const normalizeSpellProgression = (migrated: GameState, raw: Record<string, any>
 }
 
 const normalizeSpellPresets = (migrated: GameState, raw: Record<string, any>) => {
-  migrated.spellPresets = normalizeSpellPresetState(raw.spellPresets, migrated.activities.autoCast)
+  const rawActivities = isRecord(raw.activities) ? raw.activities : {}
+  const rawPriority = Array.isArray(rawActivities.autoCastPriority) ? migrated.activities.autoCastPriority : undefined
+  migrated.spellPresets = normalizeSpellPresetState(raw.spellPresets, migrated.activities.autoCast, rawPriority)
 }
 
 const normalizeSchoolCap = (migrated: GameState, raw: Record<string, any>) => {
@@ -754,7 +790,7 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   normalizeLegacyProgressEvidence(migrated.progress)
   normalizeSchoolCap(migrated, raw)
   normalizeSchoolXpCurveV25(migrated, raw, sourceVersion)
-  normalizeSpellProgression(migrated, raw)
+  normalizeSpellProgression(migrated, raw, sourceVersion)
   normalizeSpellPresets(migrated, raw)
   normalizeCombatState(migrated, raw, sourceVersion)
   normalizeDirectContentReferences(migrated, raw)

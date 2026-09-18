@@ -91,7 +91,7 @@ describe('combat foundation hardening', () => {
     expect(state.combat.enemyActionTimerMs).toBeCloseTo(partialWork - 900)
   })
 
-  it('accelerates an in-progress Player Basic with Quickening', () => {
+  it('keeps the retired Player Basic timer inert while Quickening remains status-compatible', () => {
     const state = stateWithEnemy()
     const base = state.combat.playerAttackDurationMs
     advanceGameState(state, base / 2, { mode: 'live' })
@@ -99,10 +99,10 @@ describe('combat foundation hardening', () => {
     applyStatus(state, 'player', 'quickening', { actor: 'player', kind: 'spell', sourceId: 'quickening', tags: ['spell', 'buff'] })
     expect(state.combat.playerAttackTimerMs).toBeCloseTo(partialWork)
     advanceGameState(state, 400, { mode: 'live' })
-    expect(state.combat.playerAttackTimerMs).toBeCloseTo(partialWork - 500)
+    expect(state.combat.playerAttackTimerMs).toBe(0)
   })
 
-  it('pauses and resumes Player Basic and Enemy Skill without resetting progress', () => {
+  it('keeps the retired Player Basic timer inert and preserves Enemy Skill progress', () => {
     const player = stateWithEnemy()
     advanceGameState(player, 500, { mode: 'live' })
     const playerPartial = player.combat.playerAttackTimerMs
@@ -110,7 +110,7 @@ describe('combat foundation hardening', () => {
     advanceGameState(player, 500, { mode: 'live' })
     expect(player.combat.playerAttackTimerMs).toBeCloseTo(playerPartial)
     advanceGameState(player, 500, { mode: 'live' })
-    expect(player.combat.playerAttackTimerMs).toBeCloseTo(playerPartial - 500)
+    expect(player.combat.playerAttackTimerMs).toBe(0)
 
     const enemy = stateWithEnemy()
     clearCurrentEnemyAction(enemy)
@@ -227,8 +227,7 @@ describe('equipment combat providers', () => {
       const events: CombatEvent[] = []
       advanceGameState(state, 1, { mode: 'live', uiEvents: { push: (event) => events.push(event) } })
       const attack = events.find((event) => event.source.kind === 'player' && event.sourceKind === 'weapon' && event.category === 'basic-attack')
-      expect(attack).toMatchObject({ sourceKind: 'weapon', sourceId: weaponId, itemId: weaponId })
-      expect(getCombatMetricSourceKey(attack!)).toBe('player:basic')
+      expect(attack).toBeUndefined()
     } finally {
       delete ITEMS[weaponId]
     }

@@ -14,11 +14,11 @@ describe('V16 spell progression migration', () => {
     }
     const migrated = migrateSave(old)
     expect(migrated.saveVersion).toBe(SAVE_VERSION)
-    expect(migrated.progress.spellRanks).toMatchObject({ 'fire-bolt': 1, ignite: 1, 'flow-mend': 1 })
+    expect(migrated.progress.spellRanks).toMatchObject({ 'fire-bolt': 1, 'searing-touch': 1, 'mending-waters': 1 })
     expect(migrated.progress.magicLevelCap).toBe(20)
     const serialized = serializeGameState(migrated)
     expect(serialized.progress).not.toHaveProperty('unlockedSpells')
-    expect(serialized.progress.spellRanks).toMatchObject({ 'flow-mend': 1 })
+    expect(serialized.progress.spellRanks).toMatchObject({ 'mending-waters': 1 })
   })
 
   it('seeds newly authored Lv16 spells for qualifying old schools and preserves a higher cap', () => {
@@ -29,7 +29,7 @@ describe('V16 spell progression migration', () => {
       progress: { ...initial.progress, magicLevelCap: 60, spellRanks: {}, bossKillsByBoss: {} },
       schools: { ...initial.schools, air: { level: 16, xp: 320 } },
     })
-    expect(migrated.progress.spellRanks['shock-spark']).toBe(1)
+    expect(migrated.progress.spellRanks['lightning-spark']).toBe(1)
     expect(migrated.progress.magicLevelCap).toBe(40)
   })
 

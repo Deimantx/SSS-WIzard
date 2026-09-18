@@ -190,7 +190,7 @@ describe('Universal Trait System V1', () => {
       const state = stateWithEnemy()
       state.combat.enemyHp = 20
       executeCombatEffects(state, [{ type: 'heal', target: 'opponent', magnitude: { type: 'flat', value: 100 } }], playerSource)
-      expect(state.combat.enemyHp).toBe(44)
+      expect(state.combat.enemyHp).toBe(120)
       expect(state.combat.enemyBarrier).toBe(4)
       expect(state.combat.enemyStatuses.some((status) => status.statusId === 'fortified')).toBe(true)
       executeCombatEffects(state, [{ type: 'gain-barrier', target: 'opponent', magnitude: { type: 'flat', value: 2 }, mode: 'replace', durationMs: null }], playerSource)

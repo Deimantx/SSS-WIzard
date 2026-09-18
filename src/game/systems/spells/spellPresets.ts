@@ -1,4 +1,4 @@
-import { LEGACY_SPELL_ID_MAP, SPELLS } from '../../content/spells/spells'
+import { CANONICAL_SPELL_IDS, LEGACY_SPELL_ID_MAP, SPELLS } from '../../content/spells/spells'
 import { deriveFocusReservations } from '../focus/focusReservations'
 import type { FocusReservationState } from '../focus/focusReservations'
 import { getSpellAutoCastFocusCost, isSpellUnlocked } from './spellProgression'
@@ -28,14 +28,15 @@ export const normalizeSpellPresetName = (value: unknown, fallback = DEFAULT_SPEL
   return name || fallback
 }
 
-const isSpellId = (value: unknown): value is SpellId => typeof value === 'string' && Object.prototype.hasOwnProperty.call(SPELLS, value)
-const canonicalSpellId = (value: SpellId): SpellId => LEGACY_SPELL_ID_MAP[value] ?? value
+const isSpellId = (value: unknown): value is SpellId => typeof value === 'string' && (CANONICAL_SPELL_IDS.includes(value as typeof CANONICAL_SPELL_IDS[number]) || Boolean(LEGACY_SPELL_ID_MAP[value]))
+const canonicalSpellId = (value: SpellId): SpellId | undefined => LEGACY_SPELL_ID_MAP[value] ?? (CANONICAL_SPELL_IDS.includes(value as typeof CANONICAL_SPELL_IDS[number]) ? value : undefined)
 
 const dedupeSpellIds = (values: unknown[]): SpellId[] => {
   const seen = new Set<SpellId>()
   return values.flatMap((value) => {
     if (!isSpellId(value)) return []
     const canonical = canonicalSpellId(value)
+    if (!canonical) return []
     if (seen.has(canonical)) return []
     seen.add(canonical)
     return [canonical]
@@ -43,7 +44,7 @@ const dedupeSpellIds = (values: unknown[]): SpellId[] => {
 }
 
 /** Sanitizes persisted preset data without changing live Auto-Cast state. */
-export const normalizeSpellPresetState = (raw: unknown, autoCast?: Partial<Record<SpellId, boolean>>): SpellPresetState => {
+export const normalizeSpellPresetState = (raw: unknown, autoCast?: Partial<Record<SpellId, boolean>>, autoCastPriority?: readonly SpellId[]): SpellPresetState => {
   const source = raw && typeof raw === 'object' ? raw as { presets?: unknown; lastAppliedPresetId?: unknown } : {}
   const rawPresets = Array.isArray(source.presets) ? source.presets : []
   const usedIds = new Set<string>()
@@ -65,7 +66,8 @@ export const normalizeSpellPresetState = (raw: unknown, autoCast?: Partial<Recor
   if (!applied || !autoCast) return { presets, lastAppliedPresetId: applied }
   const preset = presets.find((entry) => entry.id === applied)
   const presetIds = preset?.spellIds ?? []
-  const current = Object.keys(SPELLS).filter((id) => Boolean(autoCast[id as SpellId])) as SpellId[]
+  if (!autoCastPriority) return { presets, lastAppliedPresetId: null }
+  const current = autoCastPriority.filter((id) => Boolean(autoCast[id]))
   const matches = current.length === presetIds.length && current.every((id) => presetIds.includes(id))
   return { presets, lastAppliedPresetId: matches ? applied : null }
 }
@@ -91,7 +93,8 @@ export const getSpellPresetFocusBreakdown = (state: SpellPresetFocusState): Spel
 export const doesCurrentAutoCastMatchPreset = (state: Pick<GameState, 'activities' | 'progress' | 'equipment' | 'artifactProgress' | 'arcaneCore'>, preset: Pick<SpellPreset, 'spellIds'>) => {
   const projection = getSpellPresetFocusProjection({ ...state, player: { maxFocus: 0 }, debug: { allowFocusOverCap: true } }, preset)
   if (!projection.validSpellIds.length || projection.unavailableSpellIds.length || projection.invalidSpellIds.length) return false
-  const current = state.activities.autoCastPriority?.filter((spellId) => state.activities.autoCast[spellId]) ?? (Object.keys(SPELLS).filter((id) => state.activities.autoCast[id as SpellId]) as SpellId[])
+  const prioritized = state.activities.autoCastPriority?.filter((spellId) => state.activities.autoCast[spellId]) ?? []
+  const current = prioritized.length ? prioritized : Object.keys(state.activities.autoCast).filter((id) => state.activities.autoCast[id as SpellId]) as SpellId[]
   return current.length === projection.validSpellIds.length && current.every((id, index) => id === projection.validSpellIds[index])
 }
 
@@ -108,6 +111,7 @@ export const getSpellPresetFocusProjection = (
     seen.add(rawId)
     if (!isSpellId(rawId)) { invalidSpellIds.push(String(rawId)); continue }
     const canonical = canonicalSpellId(rawId)
+    if (!canonical) { invalidSpellIds.push(String(rawId)); continue }
     if (isSpellUnlocked(state, canonical)) validSpellIds.push(canonical)
     else unavailableSpellIds.push(canonical)
   }

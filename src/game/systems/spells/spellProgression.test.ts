@@ -14,17 +14,17 @@ describe('Spell progression foundation', () => {
     state.schools.fire.level = 2
     expect(syncSpellUnlocksForSchool(state, 'fire')).toEqual(['fire-bolt'])
     state.schools.fire.level = 9
-    expect(syncSpellUnlocksForSchool(state, 'fire')).toEqual(['ignite'])
+    expect(syncSpellUnlocksForSchool(state, 'fire')).toEqual(['searing-touch'])
     state.schools.fire.level = 16
-    expect(syncSpellUnlocksForSchool(state, 'fire')).toEqual(['fireball'])
-    expect(state.progress.spellRanks).toEqual({ 'fire-bolt': 1, ignite: 1, fireball: 1 })
+    expect(syncSpellUnlocksForSchool(state, 'fire')).toEqual(['flame-burst'])
+    expect(state.progress.spellRanks).toEqual({ 'fire-bolt': 1, 'searing-touch': 1, 'flame-burst': 1 })
   })
 
   it('unlocks all crossed thresholds for a School in one sync', () => {
     const state = createInitialState()
     state.schools.water.level = 9
-    expect(syncSpellUnlocksForSchool(state, 'water')).toEqual(['water-ward', 'flow-mend'])
-    expect(getSpellRank(state, 'flow-mend')).toBe(1)
+    expect(syncSpellUnlocksForSchool(state, 'water')).toEqual(['water-bolt', 'mending-waters'])
+    expect(getSpellRank(state, 'mending-waters')).toBe(1)
   })
 
   it('does not overwrite a future rank when syncing current content', () => {
@@ -32,17 +32,16 @@ describe('Spell progression foundation', () => {
     state.schools.fire.level = 16
     state.progress.spellRanks['fire-bolt'] = 3
     syncSpellUnlocksForSchool(state, 'fire')
-    expect(state.progress.spellRanks).toEqual({ 'fire-bolt': 3, ignite: 1, fireball: 1 })
+    expect(state.progress.spellRanks).toEqual({ 'fire-bolt': 3, 'searing-touch': 1, 'flame-burst': 1 })
     expect(getSpellAutoCastFocusCost(state, 'fire-bolt')).toBe(30)
   })
 
-  it('defines exactly the current 12-spell tutorial roster with validated content', () => {
-    expect(Object.keys(SPELLS)).toHaveLength(12)
+  it('defines exactly the current 32-spell roster with validated content', () => {
+    expect(Object.keys(SPELLS)).toHaveLength(32)
     expect(validateSpellDefinitions()).toEqual([])
-    expect(['fire', 'water', 'earth', 'air'].map((school) => getSpellsForSchool(school as 'fire' | 'water' | 'earth' | 'air').map((spell) => spell.unlockLevel))).toEqual([[2, 8, 16], [2, 8, 16], [2, 8, 16], [2, 8, 16]])
-    expect(SPELLS['air-lance'].description).toContain('strikes the enemy')
-    expect(Object.values(SPELLS).map((spell) => spell.manaCost)).toEqual([30, 25, 60, 25, 35, 45, 28, 35, 60, 24, 38, 48])
-    expect(SPELLS['water-ward']).toMatchObject({ cooldownMs: 12000, manaCost: 25, effects: [expect.objectContaining({ type: 'gain-barrier', magnitude: { type: 'spell-power', coefficient: 0.7 } })] })
-    expect(SPELLS.stoneguard).toMatchObject({ cooldownMs: 22000, manaCost: 35, effects: [expect.objectContaining({ type: 'gain-barrier', magnitude: { type: 'spell-power', coefficient: 1.3 } })] })
+    expect(['fire', 'water', 'earth', 'air'].map((school) => getSpellsForSchool(school as 'fire' | 'water' | 'earth' | 'air').map((spell) => spell.unlockLevel))).toEqual([[2, 7, 12, 17, 22, 28, 34, 40], [2, 7, 12, 17, 22, 28, 34, 40], [2, 7, 12, 17, 22, 28, 34, 40], [2, 7, 12, 17, 22, 28, 34, 40]])
+    expect(SPELLS['wind-blade'].description).toContain('swift')
+    expect(Object.values(SPELLS).map((spell) => spell.manaCost)).toEqual([30, 45, 55, 55, 105, 75, 125, 150, 20, 50, 45, 60, 75, 50, 80, 75, 25, 50, 60, 100, 65, 75, 100, 100, 25, 50, 65, 75, 100, 75, 90, 100])
+    expect(SPELLS['earthen-barrier']).toMatchObject({ cooldownMs: 14000, manaCost: 60, effects: [expect.objectContaining({ type: 'gain-barrier', mode: 'replace-if-stronger', durationMs: 10000, magnitude: { type: 'spell-power', coefficient: 1.2 } })] })
   })
 })

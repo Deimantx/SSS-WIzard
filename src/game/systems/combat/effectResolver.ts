@@ -196,12 +196,13 @@ const applyDamage = (state: GameState, components: Array<{ raw: number; damageTy
     return { ...component, healthDamage }
   })
   const dealt = Math.max(0, previousHp - currentHp)
-  if (source.actor === 'player') state.combat.lastDamageDealt = dealt
+  const cascade = resolution ?? createCombatResolutionContext()
+  if (source.actor === 'player' && source.kind === 'spell') cascade.spellHealthDamageTotal = (cascade.spellHealthDamageTotal ?? 0) + dealt
+  if (source.actor === 'player') state.combat.lastDamageDealt = source.kind === 'spell' ? cascade.spellHealthDamageTotal ?? dealt : dealt
   else state.combat.lastDamageTaken = dealt
   const damageTypes = [...new Set(components.map((component) => component.damageType))]
   const first = breakdowns[0]
   const blockedAmount = breakdowns.reduce((sum, breakdown) => sum + breakdown.blockedAmount, 0)
-  const cascade = resolution ?? createCombatResolutionContext()
   cascade.hitSequence = (cascade.hitSequence ?? 0) + 1
   uiEvents?.push({ ...eventFields(state, source, target), category: logCategory(source, tags, 'damage'), damageType: damageTypes.length === 1 ? damageTypes[0] : undefined, damageTypes, damageComponents: componentEvents, hitId: `${cascade.cascadeId}:hit:${cascade.hitSequence}`, amount: resolvedBeforeBarrier, healthDamage: dealt, barrierAbsorbed: totalBarrierAbsorbed, barrierBefore, barrierAfter: getActiveBarrier(state, target), critical: first?.critical ?? false, critChance: first?.critChance ?? 0, critMultiplier: first?.critMultiplier ?? 1, blocked: first?.blocked ?? false, blockChance: first?.blockChance ?? 0, blockReduction: first?.blockReduction ?? 0, blockedAmount })
   const context: CombatEventContext = {
@@ -302,7 +303,7 @@ export const executeCombatEffect = (state: GameState, effect: CombatEffect, sour
       const mode = effect.mode ?? 'add'
       const result = gainBarrierResult(state, resolveMagnitude(state, effect.magnitude, source, target), source, target, tags, { mode, durationMs: effect.durationMs === undefined ? null : effect.durationMs })
       if (result.current > 0 && (result.gained > 0 || mode === 'replace')) {
-        const granted = mode === 'replace' ? result.current : result.gained
+        const granted = mode === 'replace' || mode === 'replace-if-stronger' ? result.current : result.gained
         uiEvents?.push({ ...eventFields(state, source, target), category: 'barrier', amount: granted, barrierGranted: granted, barrierMode: mode, barrierBefore: result.previous, barrierAfter: result.current, durationMs: effect.durationMs })
         if (result.gained > 0) runCombatTriggers(state, target, 'on-barrier-gained', { source, eventTarget: target, changedActor: target, sourceTags: tags, previousBarrier: result.previous, currentBarrier: result.current, barrierGained: result.gained, amount: result.gained }, execute, depth, [], uiEvents, cascade)
       }
@@ -311,6 +312,11 @@ export const executeCombatEffect = (state: GameState, effect: CombatEffect, sour
     case 'restore-resource':
     case 'drain-resource': executeResource(state, effect, source, uiEvents); break
     case 'apply-status': {
+      const targetStatuses = target === 'player' ? state.combat.playerStatuses : state.combat.enemyStatuses
+      if (target === 'enemy' && effect.statusId === 'frozen') {
+        removeStatus(state, target, 'chilled', { executeEffects: execute, source, depth, uiEvents, resolution: cascade })
+      }
+      if (target === 'enemy' && effect.statusId === 'chilled' && targetStatuses.some((status) => status.statusId === 'frozen')) break
       const statusSource = { ...source, tags }
       const active = applyStatus(state, target, effect.statusId, statusSource, { durationMs: effect.durationMs, stacks: effect.stacks, periodicEffects: effect.periodicEffects, statusSourceKey: effect.statusSourceKey, modifierOverrides: effect.modifierOverrides })
       if (active) {
@@ -347,14 +353,14 @@ export const executeCombatEffect = (state: GameState, effect: CombatEffect, sour
     case 'cleanse': cleanseStatuses(state, target, effect.mode, effect.tag, { executeEffects: execute, source, depth, uiEvents, resolution: cascade }); break
     case 'dispel': dispelStatuses(state, target, effect.mode, effect.tag, { executeEffects: execute, source, depth, uiEvents, resolution: cascade }); break
     case 'modify-action-timer': {
-      // Player V1 has one explicit timed normal-action lane: Basic Attack.
-      // `current` therefore maps to that same lane until a player action queue exists.
       if (!Number.isFinite(effect.amountMs)) break
       const adjustWork = (value: number) => Math.max(0, Math.min(MAX_ACTION_WORK_MS, (Number.isFinite(value) ? value : 0) + effect.amountMs))
       let applied = false
       if (target === 'player') {
-        state.combat.playerAttackTimerMs = adjustWork(state.combat.playerAttackTimerMs)
-        applied = true
+        if (effect.action === 'current' && state.combat.pendingPlayerSpellCast) {
+          state.combat.pendingPlayerSpellCast.remainingWorkMs = adjustWork(state.combat.pendingPlayerSpellCast.remainingWorkMs)
+          applied = true
+        }
       } else if (effect.action === 'current') {
         // Current means the committed action, whether Basic or Skill.
         if (state.combat.enemyCurrentStepId) {

@@ -13,7 +13,7 @@ const normalizedSpellIds = (spellIds: readonly SpellId[]) => [...new Set(spellId
 
 export const clearAutoCastAction = (state: GameState) => {
   const hadActiveAutoCast = Object.values(state.activities.autoCast).some(Boolean)
-  Object.keys(SPELLS).forEach((spellId) => { state.activities.autoCast[spellId as SpellId] = false })
+  Object.keys(state.activities.autoCast).forEach((spellId) => { state.activities.autoCast[spellId as SpellId] = false })
   state.combat.autoCastManaStarvedSpells = []
   state.activities.autoCastPriority = []
   state.spellPresets.lastAppliedPresetId = null

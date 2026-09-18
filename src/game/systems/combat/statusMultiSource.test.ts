@@ -11,7 +11,7 @@ import { removeStatus } from './statusRuntime'
 import { spawnEnemy } from './combatRuntime'
 
 const source = (sourceId: string): CombatSource => ({ actor: 'player', kind: 'spell', sourceId, school: 'fire', tags: ['spell', 'magic', 'fire'] })
-const burnEffect = (spellId: 'ignite' | 'fireball') => SPELLS[spellId].effects.find((effect): effect is Extract<CombatEffect, { type: 'apply-status' }> => effect.type === 'apply-status')!
+const burnEffect = (spellId: 'searing-touch' | 'inferno') => SPELLS[spellId].effects.find((effect): effect is Extract<CombatEffect, { type: 'apply-status' }> => effect.type === 'apply-status')!
 const stateWithEnemy = () => {
   const state = createInitialState()
   state.combat.active = true
@@ -25,19 +25,19 @@ const stateWithEnemy = () => {
 describe('multi-source periodic statuses', () => {
   it('keeps Ignite and Fireball Burning instances independent while grouping their UI', () => {
     const state = stateWithEnemy()
-    executeCombatEffects(state, [burnEffect('ignite')], source('ignite'))
-    executeCombatEffects(state, [burnEffect('fireball')], source('fireball'))
+    executeCombatEffects(state, [burnEffect('searing-touch')], source('searing-touch'))
+    executeCombatEffects(state, [burnEffect('inferno')], source('inferno'))
 
     expect(state.combat.enemyStatuses).toHaveLength(2)
-    expect(state.combat.enemyStatuses.map((status) => status.instanceKey)).toEqual(['player:spell:ignite', 'player:spell:fireball'])
-    expect(getCombatStatusGroups(state.combat.enemyStatuses)).toMatchObject([{ statusId: 'burning', displayRemainingMs: 10_000, instances: expect.any(Array), sourceBreakdown: [{ sourceLabel: 'Ignite' }, { sourceLabel: 'Fireball' }], totalCurrentRate: expect.closeTo(9.3333333, 6) }])
+    expect(state.combat.enemyStatuses.map((status) => status.instanceKey)).toEqual(['player:spell:searing-touch', 'player:spell:inferno'])
+    expect(getCombatStatusGroups(state.combat.enemyStatuses)).toMatchObject([{ statusId: 'burning', displayRemainingMs: 12_000, instances: expect.any(Array), sourceBreakdown: [{ sourceLabel: 'Searing Touch' }, { sourceLabel: 'Inferno' }], totalCurrentRate: expect.closeTo(7.2916667, 6) }])
 
     const events: CombatEvent[] = []
     tickStatuses(state, 10_000, executeCombatEffects, { push: (event) => events.push(event) })
-    expect(state.combat.enemyHp).toBeCloseTo(9_940, 8)
+    expect(state.combat.enemyHp).toBeCloseTo(9_943.75, 8)
     expect(events.filter((event) => event.sourceKind === 'status' && event.statusId === 'burning' && event.category === 'damage')).toHaveLength(16)
-    expect(events.filter((event) => event.originSourceId === 'ignite' && event.statusInstanceKey === 'player:spell:ignite')).not.toHaveLength(0)
-    expect(events.filter((event) => event.originSourceId === 'fireball' && event.statusInstanceKey === 'player:spell:fireball')).not.toHaveLength(0)
+    expect(events.filter((event) => event.originSourceId === 'searing-touch' && event.statusInstanceKey === 'player:spell:searing-touch')).not.toHaveLength(0)
+    expect(events.filter((event) => event.originSourceId === 'inferno' && event.statusInstanceKey === 'player:spell:inferno')).not.toHaveLength(0)
   })
 
   it('refreshes the same source without resetting its next tick or losing its payload snapshot', () => {
@@ -56,13 +56,13 @@ describe('multi-source periodic statuses', () => {
   it('allows the exact final tick and only emits grouped expiry when the last source ends', () => {
     const state = stateWithEnemy()
     const events: CombatEvent[] = []
-    applyStatus(state, 'enemy', 'burning', source('ignite'), { durationMs: 6_000, periodicEffects: [{ type: 'deal-damage', target: 'self', components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 1 } }] }] })
+    applyStatus(state, 'enemy', 'burning', source('searing-touch'), { durationMs: 6_000, periodicEffects: [{ type: 'deal-damage', target: 'self', components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 1 } }] }] })
     tickStatuses(state, 6_000, executeCombatEffects, { push: (event) => events.push(event) })
     expect(events.filter((event) => event.category === 'damage')).toHaveLength(6)
     expect(state.combat.enemyStatuses).toHaveLength(0)
 
-    applyStatus(state, 'enemy', 'burning', source('ignite'), { durationMs: 1_000 })
-    applyStatus(state, 'enemy', 'burning', source('fireball'), { durationMs: 5_000 })
+    applyStatus(state, 'enemy', 'burning', source('searing-touch'), { durationMs: 1_000 })
+    applyStatus(state, 'enemy', 'burning', source('inferno'), { durationMs: 5_000 })
     events.length = 0
     tickStatuses(state, 1_000, executeCombatEffects, { push: (event) => events.push(event) })
     expect(state.combat.enemyStatuses).toHaveLength(1)
@@ -75,7 +75,7 @@ describe('multi-source periodic statuses', () => {
   it('resolves a proportional final periodic tick without double-ticking exact boundaries', () => {
     const damageForDuration = (durationMs: number) => {
       const state = stateWithEnemy()
-      applyStatus(state, 'enemy', 'burning', source('ignite'), { durationMs, periodicEffects: [{ type: 'deal-damage', target: 'self', components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 10 } }] }] })
+      applyStatus(state, 'enemy', 'burning', source('searing-touch'), { durationMs, periodicEffects: [{ type: 'deal-damage', target: 'self', components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 10 } }] }] })
       tickStatuses(state, durationMs, executeCombatEffects)
       return { damage: 10_000 - state.combat.enemyHp, remainingStatuses: state.combat.enemyStatuses.length }
     }
@@ -88,7 +88,7 @@ describe('multi-source periodic statuses', () => {
     const healingForDuration = (durationMs: number) => {
       const state = stateWithEnemy()
       state.player.health = 20
-      applyStatus(state, 'player', 'regeneration', source('regeneration'), { durationMs })
+      applyStatus(state, 'player', 'regeneration', source('mending-waters'), { durationMs })
       tickStatuses(state, durationMs, executeCombatEffects)
       return { healed: state.player.health - 20, remainingStatuses: state.combat.playerStatuses.length }
     }
@@ -99,8 +99,8 @@ describe('multi-source periodic statuses', () => {
 
   it('removes a whole visible status group with one removal event', () => {
     const state = stateWithEnemy()
-    applyStatus(state, 'enemy', 'burning', source('ignite'))
-    applyStatus(state, 'enemy', 'burning', source('fireball'))
+    applyStatus(state, 'enemy', 'burning', source('searing-touch'))
+    applyStatus(state, 'enemy', 'burning', source('inferno'))
     const events: CombatEvent[] = []
     expect(removeStatus(state, 'enemy', 'burning', { uiEvents: { push: (event) => events.push(event) } })).toBe(true)
     expect(state.combat.enemyStatuses).toHaveLength(0)
@@ -108,9 +108,9 @@ describe('multi-source periodic statuses', () => {
   })
 
   it('presents periodic ticks with their authored status origin', () => {
-    const presentation = presentCombatLogEntry({ id: 1, sequence: 1, timestampMs: 1_000, source: { kind: 'player' }, sourceKind: 'status', target: 'enemy', targetMonsterId: 'forest-wisp', category: 'damage', sourceId: 'burning', statusId: 'burning', originSourceId: 'ignite', originSourceKind: 'spell', statusInstanceKey: 'player:spell:ignite', damageType: 'fire', amount: 16.6666667, healthDamage: 16.6666667 })
-    expect(presentation.actionLabel).toBe('Burning (Ignite)')
-    expect(presentation.message).toContain('Burning (Ignite)')
+    const presentation = presentCombatLogEntry({ id: 1, sequence: 1, timestampMs: 1_000, source: { kind: 'player' }, sourceKind: 'status', target: 'enemy', targetMonsterId: 'forest-wisp', category: 'damage', sourceId: 'burning', statusId: 'burning', originSourceId: 'searing-touch', originSourceKind: 'spell', statusInstanceKey: 'player:spell:searing-touch', damageType: 'fire', amount: 16.6666667, healthDamage: 16.6666667 })
+    expect(presentation.actionLabel).toBe('Burning (Searing Touch)')
+    expect(presentation.message).toContain('Burning (Searing Touch)')
   })
 
   it('adds deterministic instance keys and V20 metadata when migrating V18 active statuses', () => {

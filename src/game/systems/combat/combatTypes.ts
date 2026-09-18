@@ -76,6 +76,8 @@ export interface CombatResolutionContext {
   hitSequence?: number
   /** Applies only to the immediate damage cascade of one spell cast. */
   arcaneCoreDamageMultiplier?: number
+  /** Total effective Health damage dealt by the complete resolution. */
+  spellHealthDamageTotal?: number
 }
 
 let nextCascadeId = 0
@@ -158,7 +160,7 @@ export interface CombatEvent {
   blockedAmount?: number
   /** Actual barrier capacity granted by this event. Replacements report the new capacity. */
   barrierGranted?: number
-  barrierMode?: 'add' | 'replace'
+  barrierMode?: 'add' | 'replace' | 'replace-if-stronger'
   barrierBefore?: number
   barrierAfter?: number
   durationMs?: number | null
@@ -291,7 +293,7 @@ export type StatusId =
 export type CombatEffect =
   | { type: 'deal-damage'; target: EffectTarget; components: DamageComponent[]; tags?: CombatTag[]; school?: SchoolId; hitCount?: number }
   | { type: 'heal'; target: EffectTarget; magnitude: Magnitude; tags?: CombatTag[] }
-  | { type: 'gain-barrier'; target: EffectTarget; magnitude: Magnitude; mode?: 'add' | 'replace'; durationMs?: number | null; tags?: CombatTag[] }
+  | { type: 'gain-barrier'; target: EffectTarget; magnitude: Magnitude; mode?: 'add' | 'replace' | 'replace-if-stronger'; durationMs?: number | null; tags?: CombatTag[] }
   | { type: 'restore-resource'; target: EffectTarget; resource: ResourceId; magnitude: Magnitude; tags?: CombatTag[] }
   | { type: 'drain-resource'; target: EffectTarget; resource: ResourceId; magnitude: Magnitude; tags?: CombatTag[] }
   | { type: 'apply-status'; target: EffectTarget; statusId: StatusId; durationMs?: number | null; stacks?: number; periodicEffects?: CombatEffect[]; statusSourceKey?: string; modifierOverrides?: Partial<Record<ModifierKey, number>>; tags?: CombatTag[] }

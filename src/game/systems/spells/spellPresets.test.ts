@@ -6,12 +6,12 @@ import { doesCurrentAutoCastMatchPreset, getSpellEquipmentBonusPreview, getSpell
 describe('spell preset foundation', () => {
   it('projects available and unavailable spells against non-Auto-Cast Focus', () => {
     const state = createInitialState()
-    state.progress.spellRanks = { 'fire-bolt': 1, fireball: 3 }
+    state.progress.spellRanks = { 'fire-bolt': 1, 'flame-burst': 3 }
     state.activities.autoCast['fire-bolt'] = true
     state.activities.autoCast.ignite = false
-    const projection = getSpellPresetFocusProjection(state, { spellIds: ['fireball', 'ignite'] })
-    expect(projection.validSpellIds).toEqual(['fireball'])
-    expect(projection.unavailableSpellIds).toEqual(['ignite'])
+    const projection = getSpellPresetFocusProjection(state, { spellIds: ['flame-burst', 'searing-touch'] })
+    expect(projection.validSpellIds).toEqual(['flame-burst'])
+    expect(projection.unavailableSpellIds).toEqual(['searing-touch'])
     expect(projection.presetAutoCastFocus).toBe(30)
     expect(projection.nonAutoCastFocus).toBe(0)
     expect(projection.totalAfterApply).toBe(30)
@@ -20,24 +20,24 @@ describe('spell preset foundation', () => {
 
   it('applies atomically and replaces the live Auto-Cast selection', () => {
     const state = createInitialState()
-    state.progress.spellRanks = { 'fire-bolt': 1, fireball: 3 }
+    state.progress.spellRanks = { 'fire-bolt': 1, 'flame-burst': 3 }
     state.activities.autoCast['fire-bolt'] = true
-    state.spellPresets.presets = [{ id: 'spell-preset-1', name: 'Burst', spellIds: ['fireball'] }]
+    state.spellPresets.presets = [{ id: 'spell-preset-1', name: 'Burst', spellIds: ['flame-burst'] }]
     expect(applySpellPresetAction(state, 'spell-preset-1')).toMatchObject({ ok: true })
     expect(state.activities.autoCast['fire-bolt']).toBe(false)
-    expect(state.activities.autoCast.fireball).toBe(true)
+    expect(state.activities.autoCast['flame-burst']).toBe(true)
     expect(state.spellPresets.lastAppliedPresetId).toBe('spell-preset-1')
   })
 
   it('rejects Focus overflow without changing Auto-Cast state', () => {
     const state = createInitialState()
     state.player.maxFocus = 20
-    state.progress.spellRanks = { 'fire-bolt': 1, fireball: 3 }
+    state.progress.spellRanks = { 'fire-bolt': 1, 'flame-burst': 3 }
     state.activities.autoCast['fire-bolt'] = true
-    state.spellPresets.presets = [{ id: 'spell-preset-1', name: 'Too much', spellIds: ['fireball'] }]
+    state.spellPresets.presets = [{ id: 'spell-preset-1', name: 'Too much', spellIds: ['flame-burst'] }]
     expect(applySpellPresetAction(state, 'spell-preset-1')).toMatchObject({ ok: false, reason: 'focus', requiredExtraFocus: 10 })
     expect(state.activities.autoCast['fire-bolt']).toBe(true)
-    expect(state.activities.autoCast.fireball).toBe(false)
+    expect(state.activities.autoCast['flame-burst']).toBe(false)
     expect(state.spellPresets.lastAppliedPresetId).toBeNull()
   })
 
@@ -53,8 +53,8 @@ describe('spell preset foundation', () => {
   it('keeps partial preset loads CUSTOM and reports unavailable spells', () => {
     const state = createInitialState()
     state.progress.spellRanks = { 'fire-bolt': 1 }
-    state.spellPresets.presets = [{ id: 'spell-preset-1', name: 'Partial', spellIds: ['fire-bolt', 'fireball'] }]
-    expect(applySpellPresetAction(state, 'spell-preset-1')).toMatchObject({ ok: true, unavailableSpellIds: ['fireball'] })
+    state.spellPresets.presets = [{ id: 'spell-preset-1', name: 'Partial', spellIds: ['fire-bolt', 'flame-burst'] }]
+    expect(applySpellPresetAction(state, 'spell-preset-1')).toMatchObject({ ok: true, unavailableSpellIds: ['flame-burst'] })
     expect(state.activities.autoCast['fire-bolt']).toBe(true)
     expect(state.spellPresets.lastAppliedPresetId).toBeNull()
   })
@@ -74,11 +74,11 @@ describe('spell preset foundation', () => {
     state.activities.autoCast['fire-bolt'] = true
     const normalized = normalizeSpellPresetState({ lastAppliedPresetId: 'one', presets: [
       { id: 'one', name: '  Burst  ', spellIds: ['fire-bolt', 'fire-bolt', 'not-a-spell'] },
-      { id: 'one', name: '', spellIds: ['ignite'] },
-    ] }, state.activities.autoCast)
+      { id: 'one', name: '', spellIds: ['searing-touch'] },
+    ] }, state.activities.autoCast, ['fire-bolt'])
     expect(normalized.presets).toEqual([
       { id: 'one', name: 'Burst', spellIds: ['fire-bolt'] },
-      { id: 'spell-preset-1', name: 'New Preset', spellIds: ['ignite'] },
+      { id: 'spell-preset-1', name: 'New Preset', spellIds: ['searing-touch'] },
     ])
     expect(normalized.lastAppliedPresetId).toBe('one')
   })
@@ -86,11 +86,11 @@ describe('spell preset foundation', () => {
   it('reads only effect-relevant current equipment modifiers from authored item stats', () => {
     const state = createInitialState()
     state.equipment.weapon = 'ember-staff'
-    expect(getSpellEquipmentBonusPreview(state, 'fireball').current).toEqual([])
-    expect(getSpellEquipmentBonusPreview(state, 'water-ward').current).toEqual([])
-    expect(getSpellEquipmentBonusPreview(state, 'frostbite').current).toEqual([])
-    expect(getSpellEquipmentBonusPreview(state, 'flow-mend').current).toEqual([])
-    expect(getSpellEquipmentBonusPreview(state, 'air-lance').current).toEqual([])
-    expect(getSpellEquipmentBonusPreview(state, 'quickening').current).toEqual([])
+    expect(getSpellEquipmentBonusPreview(state, 'flame-burst').current).toEqual([])
+    expect(getSpellEquipmentBonusPreview(state, 'water-bolt').current).toEqual([])
+    expect(getSpellEquipmentBonusPreview(state, 'frost-touch').current).toEqual([])
+    expect(getSpellEquipmentBonusPreview(state, 'mending-waters').current).toEqual([])
+    expect(getSpellEquipmentBonusPreview(state, 'wind-blade').current).toEqual([])
+    expect(getSpellEquipmentBonusPreview(state, 'tailwind').current).toEqual([])
   })
 })

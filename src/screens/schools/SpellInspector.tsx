@@ -75,10 +75,14 @@ export function SpellInspector({ entry, state, rankPathOpen, onToggleRankPath, o
 
 function InspectorEyebrow({ children }: { children: React.ReactNode }) { return <div className="panel-kicker">{children}</div> }
 function Metric({ icon, label, value, description, semantic }: { icon: React.ReactNode; label: string; value: string; description: string; semantic: 'mana' | 'time' | 'focus' | 'spell-power' }) { return <GameTooltip block accent={semantic === 'mana' ? 'mana' : semantic === 'focus' ? 'focus' : semantic === 'spell-power' ? 'elemental' : 'neutral'} content={<TooltipContent title={label} description={description} />}><div className="spell-core-metric"><span className={`spell-core-metric-icon ui-${semantic}`} aria-hidden="true">{icon}</span><small>{label}</small><strong className={`ui-${semantic}`}>{value}</strong></div></GameTooltip> }
-function conditionLabel(condition: typeof SPELLS[SpellId]['autoCondition']) {
+function conditionLabel(condition: typeof SPELLS[SpellId]['autoCondition']): string {
   if (!condition || condition.type === 'always') return 'Always'
   if (condition.type === 'health-below') return `Health below ${condition.percent}%`
-  return `Barrier below ${condition.value}`
+  if (condition.type === 'barrier-below') return `Barrier below ${condition.value}`
+  if (condition.type === 'self-status-missing') return `Self lacks ${condition.statusId}`
+  if (condition.type === 'target-status-missing') return `Target lacks ${condition.statusId}`
+  if (condition.type === 'self-has-cleanseable-debuff') return 'Self has a cleanseable debuff'
+  return condition.conditions.map(conditionLabel).join(' and ')
 }
 function EffectRow({ model, effect }: { model: ReturnType<typeof buildSpellDetailPresentation>['effects'][number]; effect: CombatEffect }) {
   return <GameTooltip block wide delay={120} placement="right" accent={model.categoryKey === 'heal' ? 'success' : model.categoryKey === 'barrier' ? 'mana' : model.categoryKey === 'debuff' ? 'warning' : 'elemental'} content={<SpellEffectTooltip model={model} />}>

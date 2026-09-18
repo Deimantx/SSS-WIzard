@@ -2,7 +2,7 @@ import { AlertTriangle, ArrowDown, ArrowUp, BookOpen, CircleDot, Clock3, Droplet
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { SPELLS } from '../../game/content/spells/spells'
 import { SCHOOLS } from '../../game/content/schools/schools'
-import { actorCannotAct } from '../../game/systems/combat/statusRuntime'
+import { getSpellCastFailure } from '../../game/engine/spellEngine'
 import { getSpellRank } from '../../game/systems/spells'
 import { formatSpellRank } from '../../game/systems/spells/spellProgression'
 import type { SpellId } from '../../game/types'
@@ -13,7 +13,7 @@ import { SpellCardTooltip } from '../../components/spells/SpellCardTooltip'
 import { SpellIcon } from '../../components/spells/SpellIcon'
 import { buildSpellDetailPresentation, type SpellPresentationState } from '../../game/presentation/spells/spellDetailPresentation'
 import { formatCooldownNumber, getCooldownFraction } from '../../game/presentation/combat/combatCooldownPresentation'
-import { formatResourceAmount, hasEnoughResource } from '../../game/presentation/resources/resourcePresentation'
+import { formatResourceAmount } from '../../game/presentation/resources/resourcePresentation'
 import { useGameStore } from '../../store/gameStore'
 import { useGameContextMenu } from '../../ui/context-menu/GameContextMenuProvider'
 import { setNavigationIntent } from '../../ui/navigation/navigationIntent'
@@ -34,9 +34,7 @@ export function CombatSpellTile({ spellId, presentationState, globalBlocker, onO
   const castFeedbackTimer = useRef<number | null>(null)
   const [justResolved, setJustResolved] = useState(false)
   const [justReady, setJustReady] = useState(false)
-  const combatActive = useGameStore((state) => state.combat.active)
-  const enemyId = useGameStore((state) => state.combat.enemyId)
-  const playerStunned = useGameStore((state) => actorCannotAct(state, 'player'))
+  const failure = useGameStore((state) => getSpellCastFailure(state, spellId))
   const manaCost = presentation.manaCost
   useEffect(() => {
     const previous = previousCooldown.current
@@ -53,11 +51,10 @@ export function CombatSpellTile({ spellId, presentationState, globalBlocker, onO
     previousCooldown.current = cooldown
   }, [cooldown])
   useEffect(() => () => { if (castFeedbackTimer.current !== null) window.clearTimeout(castFeedbackTimer.current) }, [])
-  const failure = rank === null ? 'locked' : playerStunned || globalBlocker === 'stunned' ? 'stunned' : globalBlocker === 'inactive' || !combatActive ? 'inactive' : globalBlocker === 'no-target' || spell.effects.some((effect) => effect.target === 'opponent') && !enemyId ? 'no-target' : cooldown > 0 ? 'cooldown' : !hasEnoughResource(playerMana, manaCost) ? 'mana' : null
   const manaLabel = formatResourceAmount(manaCost)
   const localFailure = failure === 'mana' ? `Need ${formatResourceAmount(Math.max(0, manaCost - playerMana))}` : undefined
-  const manualDisabled = Boolean(globalBlocker || failure)
-  const stateLabel = cooldown > 0 ? `${formatTime(cooldown)} remaining` : localFailure ?? (manualDisabled ? 'Unavailable' : 'READY')
+  const manualDisabled = Boolean(failure)
+  const stateLabel = failure === 'cooldown' ? `${formatTime(cooldown)} remaining` : localFailure ?? (failure ? failure.replace('-', ' ') : 'READY')
   const label = `${spell.name}, ${formatSpellRank(rank ?? 1)}, ${manaLabel} Mana, ${stateLabel}`
   const cooldownFraction = getCooldownFraction(cooldown, presentation.cooldownMs)
   const openSpellMenu = (x: number, y: number, anchor?: HTMLElement) => openContextMenu({ x, y, anchor, header: { title: spell.name, meta: `${SCHOOLS[spell.school].name} · ${formatSpellRank(rank ?? 1)}` }, sections: [{ id: 'spell', actions: [{ id: 'autocast', label: active ? 'Disable Auto-Cast' : 'Enable Auto-Cast', icon: CircleDot, onSelect: () => toggle(spellId) }, ...(onRemoveFromPreset ? [{ id: 'remove-preset', label: 'Remove from Preset', icon: UserMinus, onSelect: () => onRemoveFromPreset(spellId) }] : []), { id: 'school', label: 'Open Magic School', icon: BookOpen, onSelect: () => { setNavigationIntent({ schoolSpellId: spellId, schoolId: spell.school }); useGameStore.getState().setScreen('schools') } }, { id: 'manager', label: 'Preset Manager', icon: Settings2, onSelect: onOpenPresetManager }] }] })
@@ -69,4 +66,12 @@ export function CombatSpellTile({ spellId, presentationState, globalBlocker, onO
   </div>
 }
 
-function autoConditionLabel(condition: typeof SPELLS[SpellId]['autoCondition']) { if (!condition || condition.type === 'always') return 'Always'; if (condition.type === 'health-below') return `Health below ${condition.percent}%`; return `Barrier below ${condition.value}` }
+function autoConditionLabel(condition: typeof SPELLS[SpellId]['autoCondition']): string {
+  if (!condition || condition.type === 'always') return 'Always'
+  if (condition.type === 'health-below') return `Health below ${condition.percent}%`
+  if (condition.type === 'barrier-below') return `Barrier below ${condition.value}`
+  if (condition.type === 'self-status-missing') return `Self lacks ${condition.statusId}`
+  if (condition.type === 'target-status-missing') return `Target lacks ${condition.statusId}`
+  if (condition.type === 'self-has-cleanseable-debuff') return 'Self has a cleanseable debuff'
+  return condition.conditions.map(autoConditionLabel).join(' and ')
+}

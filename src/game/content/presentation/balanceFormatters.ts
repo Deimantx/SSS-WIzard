@@ -67,7 +67,7 @@ export const formatCombatEffect = (effect: CombatEffect, context: { statusHolder
   switch (effect.type) {
     case 'deal-damage': return effect.components.map((component) => `${formatMagnitude(component.magnitude)} ${readableId(component.damageType)} damage to ${targetName(effect.target, context.statusHolder)}`).join(' and ')
     case 'heal': return `Restore ${formatMagnitude(effect.magnitude)} Health to ${targetName(effect.target, context.statusHolder)}`
-    case 'gain-barrier': return `Grant ${formatMagnitude(effect.magnitude)} Barrier to ${targetName(effect.target, context.statusHolder)}${effect.mode === 'replace' ? ' (replacing the current Barrier)' : ''}${effect.durationMs === null || effect.durationMs === undefined ? '' : ` for ${formatDuration(effect.durationMs)}`}`
+    case 'gain-barrier': return `Grant ${formatMagnitude(effect.magnitude)} Barrier to ${targetName(effect.target, context.statusHolder)}${effect.mode === 'replace' || effect.mode === 'replace-if-stronger' ? ' (replacing the current Barrier when stronger)' : ''}${effect.durationMs === null || effect.durationMs === undefined ? '' : ` for ${formatDuration(effect.durationMs)}`}`
     case 'restore-resource': return `Restore ${formatMagnitude(effect.magnitude)} ${readableId(effect.resource)} to ${targetName(effect.target, context.statusHolder)}`
     case 'drain-resource': return `Drain ${formatMagnitude(effect.magnitude)} ${readableId(effect.resource)} from ${targetName(effect.target, context.statusHolder)}`
     case 'apply-status': {
@@ -233,10 +233,14 @@ export const formatRecipeUnlock = (unlock: RecipeUnlockCondition) => {
   }
 }
 
-export const formatAutoCastCondition = (condition: AutoCastCondition | undefined) => {
+export const formatAutoCastCondition = (condition: AutoCastCondition | undefined): string => {
   if (!condition || condition.type === 'always') return 'Always'
   if (condition.type === 'health-below') return `when the caster's Health is below ${formatPercent(condition.percent / 100)}`
-  return `when the caster's Barrier is below ${formatNumber(condition.value)}`
+  if (condition.type === 'barrier-below') return `when the caster's Barrier is below ${formatNumber(condition.value)}`
+  if (condition.type === 'self-status-missing') return `when the caster lacks ${condition.statusId}`
+  if (condition.type === 'target-status-missing') return `when the target lacks ${condition.statusId}`
+  if (condition.type === 'self-has-cleanseable-debuff') return 'when the caster has a cleanseable debuff'
+  return condition.conditions.map(formatAutoCastCondition).join(' and ')
 }
 
 export const formatActionPattern = (pattern: ActionPattern, actions: Record<string, { name: string }>) => pattern.steps.map((step) => step.type === 'basic' ? 'Basic Attack' : actions[step.actionId]?.name ?? readableId(step.actionId)).join(' -> ')

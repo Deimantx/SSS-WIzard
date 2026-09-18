@@ -86,6 +86,7 @@ const startSpellCast = (state: GameState, spellId: SpellId, quiet: boolean, uiEv
 const buildCompletionSource = (state: GameState, pending: PendingPlayerSpellCast): CombatSource => {
   const spell = SPELLS[pending.spellId]
   const targetHas = (statusId: string) => state.combat.enemyStatuses.some((status) => status.statusId === statusId)
+  const playerHas = (statusId: string) => state.combat.playerStatuses.some((status) => status.statusId === statusId)
   let spellDamageMultiplier = 1
   if (pending.spellId === 'flame-burst' && targetHas('burning')) spellDamageMultiplier += 0.5
   if (pending.spellId === 'execution-flame') {
@@ -93,6 +94,7 @@ const buildCompletionSource = (state: GameState, pending: PendingPlayerSpellCast
     if (targetHas('burning')) spellDamageMultiplier += 0.25
   }
   if (pending.spellId === 'frozen-current' && targetHas('chilled')) spellDamageMultiplier += 0.25
+  if (pending.spellId === 'thunderstrike' && playerHas('static')) spellDamageMultiplier += 0.25
   return { ...getSpellCombatSource(pending.spellId), spellDamageMultiplier, spellCritChanceBonus: pending.spellId === 'lightning-spark' ? 0.25 : 0, spellCritDamageBonus: pending.spellId === 'thunderstrike' ? 0.5 : 0 }
 }
 
@@ -103,28 +105,37 @@ export const resolvePlayerSpellCast = (state: GameState, uiEvents?: CombatEventS
   state.combat.pendingPlayerSpellCast = null
   const spell = SPELLS[pending.spellId]
   if (!spell || !state.combat.enemyId || pending.targetInstanceKey !== state.combat.enemyInstanceKey) return false
-  if (!state.debug.infiniteMana && !pending.arcaneCoreFree && !hasEnoughResource(state.player.mana, pending.manaCostSnapshot)) {
+  const freeAtCompletion = isArcaneCoreSpellFree(state)
+  if (!state.debug.infiniteMana && !freeAtCompletion && !hasEnoughResource(state.player.mana, pending.manaCostSnapshot)) {
     reportSpellFailure(state, pending.spellId, 'mana', uiEvents)
     return false
   }
   const arcaneCoreCast = beginArcaneCoreSpellCast(state, spell.effects.some((effect) => effect.type === 'deal-damage'))
-  const paidMana = arcaneCoreCast.free || pending.arcaneCoreFree ? 0 : pending.manaCostSnapshot
+  const paidMana = arcaneCoreCast.free ? 0 : pending.manaCostSnapshot
   if (!state.debug.infiniteMana) state.player.mana = stabilizeResourceValue(Math.max(0, state.player.mana - paidMana))
   state.combat.spellCooldowns[pending.spellId] = state.debug.ignoreSpellCooldowns ? 0 : spell.cooldownMs
   const source = buildCompletionSource(state, pending)
   const hadGust = pending.castWorkMultiplier < 1
   const hadStatic = spell.school === 'air' && spell.effects.some((effect) => effect.type === 'deal-damage') && state.combat.playerStatuses.some((status) => status.statusId === 'static')
-  if (hadGust) removeStatus(state, 'player', 'gust')
-  if (hadStatic) removeStatus(state, 'player', 'static')
   const resolution = createCombatResolutionContext()
   resolution.arcaneCoreDamageMultiplier = arcaneCoreCast.damageMultiplier
-  executeCombatEffects(state, spell.effects, source, undefined, uiEvents, resolution)
+  const wasChilled = state.combat.enemyStatuses.some((status) => status.statusId === 'chilled')
+  const healingTideEmpowered = pending.spellId === 'healing-tide' && state.player.health / Math.max(1, state.player.maxHealth) < 0.25
+  const effects = spell.effects.map((effect) => {
+    if (pending.spellId === 'frozen-current' && wasChilled && effect.type === 'apply-status' && effect.statusId === 'chilled') return { ...effect, statusId: 'frozen' as const, durationMs: 4000 }
+    if (healingTideEmpowered && effect.type === 'heal') return { ...effect, magnitude: effect.magnitude.type === 'spell-power' ? { ...effect.magnitude, coefficient: effect.magnitude.coefficient * 1.25 } : effect.magnitude }
+    if (healingTideEmpowered && effect.type === 'apply-status' && effect.periodicEffects) return { ...effect, periodicEffects: effect.periodicEffects.map((periodicEffect) => periodicEffect.type === 'heal' && periodicEffect.magnitude.type === 'spell-power' ? { ...periodicEffect, magnitude: { ...periodicEffect.magnitude, coefficient: periodicEffect.magnitude.coefficient * 1.25 } } : periodicEffect) }
+    return effect
+  })
+  executeCombatEffects(state, effects, source, undefined, uiEvents, resolution)
+  if (hadGust) removeStatus(state, 'player', 'gust')
+  if (hadStatic) removeStatus(state, 'player', 'static')
   if (arcaneCoreCast.cooldownPulse) {
     const pulse = getArcaneCoreCooldownPulseReduction(state)
     if (pulse > 0) executeCombatEffects(state, [{ type: 'modify-cooldown', target: 'self', amountMs: -pulse }], { actor: 'player', kind: 'arcane-core', sourceId: 'control-rapid-cycle-10', tags: ['special'] }, undefined, uiEvents, resolution)
   }
   runCombatTriggers(state, 'player', 'on-spell-cast', { source, eventTarget: state.combat.enemyId ? 'enemy' : 'player', sourceTags: source.tags ?? ['spell', 'magic'], amount: paidMana }, executeCombatEffects, 0, [], uiEvents, resolution)
-  appendLog(state, `${spell.name} cast${spell.effects.some((effect) => effect.type === 'deal-damage') ? ` for ${state.combat.lastDamageDealt}` : ''}.`)
+  appendLog(state, `${spell.name} cast${spell.effects.some((effect) => effect.type === 'deal-damage') ? ` for ${resolution.spellHealthDamageTotal ?? state.combat.lastDamageDealt}` : ''}.`)
   return true
 }
 

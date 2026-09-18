@@ -10,6 +10,7 @@ import { startEnemyAction, clearCurrentEnemyAction } from '../combat/actionRunti
 import type { CombatEvent, CombatSource, GameState } from '../../types'
 import { combatTelemetryObserver, useCombatTelemetryStore } from '../../telemetry/combat/combatTelemetryStore'
 import { dungeonStatisticsObserver, useDungeonStatisticsStore } from '../../telemetry/dungeon/dungeonStatisticsStore'
+import { castSpellAction } from '../../engine/spellEngine'
 
 const playerSource: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'downtime-test', school: 'fire', tags: ['spell', 'magic', 'fire'] }
 
@@ -82,8 +83,9 @@ describe('active dungeon downtime timeline', () => {
 
     advanceGameState(state, 50, { mode: 'live' })
 
-    expect(state.player.mana).toBe(mana - 12)
-    expect(state.combat.spellCooldowns['fire-bolt']).toBe(3_500)
+    expect(state.player.mana).toBe(mana)
+    expect(state.combat.spellCooldowns['fire-bolt']).toBe(0)
+    expect(state.combat.pendingPlayerSpellCast?.spellId).toBe('fire-bolt')
   })
 
   it('expires player statuses and barriers during downtime', () => {
@@ -107,7 +109,7 @@ describe('active dungeon downtime timeline', () => {
 
     advance(healingState, 5_000)
 
-    expect(healingState.player.health).toBe(75)
+    expect(healingState.player.health).toBe(80)
     expect(healingState.combat.enemyId).toBeNull()
 
     const lethalState = stateInDowntime(1_000)
@@ -143,7 +145,7 @@ describe('active dungeon downtime timeline', () => {
     advanceGameState(state, 100, { mode: 'banked' })
 
     expect(state.combat.enemyId).not.toBeNull()
-    expect(state.combat.playerAttackTimerMs).toBe(state.combat.playerAttackDurationMs - 50)
+    expect(state.combat.playerAttackTimerMs).toBe(0)
     expect(state.combat.enemyActionTimerMs).toBe(state.combat.enemyActionDurationMs - 50)
   })
 
@@ -159,8 +161,9 @@ describe('active dungeon downtime timeline', () => {
 
     advance(state, 1, { mode: 'live' })
 
-    expect(state.player.mana).toBe(mana - 12)
-    expect(state.combat.spellCooldowns['fire-bolt']).toBe(3_499)
+    expect(state.player.mana).toBe(mana)
+    expect(state.combat.spellCooldowns['fire-bolt']).toBe(0)
+    expect(state.combat.pendingPlayerSpellCast?.spellId).toBe('fire-bolt')
   })
 
   it('reacts to a conditional Auto-Cast at the enemy action timestamp', () => {
@@ -170,8 +173,8 @@ describe('active dungeon downtime timeline', () => {
     state.player.maxHealth = 100
     state.player.health = 75
     state.player.mana = state.player.maxMana
-    unlock(state, 'flow-mend')
-    state.activities.autoCast['flow-mend'] = true
+    unlock(state, 'mending-waters')
+    state.activities.autoCast['mending-waters'] = true
     spawnEnemy(state, 'thornling')
     clearCurrentEnemyAction(state)
     expect(startEnemyAction(state, 'thorn-lash', executeCombatEffects)).toBe(true)
@@ -180,9 +183,10 @@ describe('active dungeon downtime timeline', () => {
 
     advance(state, 100, { mode: 'live', uiEvents: { push: (event) => events.push(event) } })
 
-    expect(state.player.health).toBe(100)
-    expect(state.combat.spellCooldowns['flow-mend']).toBe(9_920)
-    expect(events.find((event) => event.sourceId === 'flow-mend' && event.sourceKind === 'spell')).toBeDefined()
+    expect(state.player.health).toBeLessThan(75)
+    expect(state.combat.spellCooldowns['mending-waters']).toBe(0)
+    expect(state.combat.pendingPlayerSpellCast?.spellId).toBe('mending-waters')
+    expect(events.find((event) => event.sourceId === 'mending-waters' && event.sourceKind === 'spell')).toBeUndefined()
   })
 
   it('advances time without looping or spamming mana failures for a starved Auto-Cast', () => {
@@ -197,13 +201,13 @@ describe('active dungeon downtime timeline', () => {
 
     advance(state, 1_000, { mode: 'live', uiEvents: { push: (event) => events.push(event) } })
 
-    expect(state.combat.playerAttackTimerMs).toBe(1_200)
-    expect(events.filter((event) => event.sourceId === 'spell-cast-failed')).toHaveLength(1)
+    expect(state.combat.playerAttackTimerMs).toBe(0)
+    expect(events.filter((event) => event.sourceId === 'spell-cast-failed')).toHaveLength(0)
 
-    state.player.mana = 12
+    state.player.mana = 30
     advance(state, 1_200)
     expect(state.combat.spellCooldowns['fire-bolt']).toBeGreaterThan(0)
-    expect(events.filter((event) => event.sourceId === 'spell-cast-failed')).toHaveLength(1)
+    expect(events.filter((event) => event.sourceId === 'spell-cast-failed')).toHaveLength(0)
   })
 
   it('splits telemetry and Dungeon Statistics at exact death and spawn boundaries', () => {
@@ -216,7 +220,11 @@ describe('active dungeon downtime timeline', () => {
     dungeonStatisticsObserver.beginSession('whispering-woods')
     spawnEnemy(deathState, 'forest-wisp', deathSink)
     deathState.combat.enemyHp = 1
-    deathState.combat.playerAttackTimerMs = 20
+    deathState.player.mana = deathState.player.maxMana
+    unlock(deathState, 'fire-bolt')
+    expect(castSpellAction(deathState, 'fire-bolt')).toBe(true)
+    deathState.combat.pendingPlayerSpellCast!.remainingWorkMs = 20
+    deathState.combat.pendingPlayerSpellCast!.castWorkMs = 20
 
     advance(deathState, 100, { mode: 'live', uiEvents: deathSink, telemetry: combatTelemetryObserver, statistics: dungeonStatisticsObserver })
 

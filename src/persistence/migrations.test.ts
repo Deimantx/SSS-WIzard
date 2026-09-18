@@ -617,7 +617,7 @@ describe('save navigation migration', () => {
     expect(migrated.currencies.gold).toBe(321)
     expect(migrated.inventory['fire-fragment']).toBe(37)
     expect(migrated.equipment.weapon).toBe('tideglass-wand')
-    expect(migrated.progress.spellRanks['fire-bolt']).toBe(1)
+    expect(migrated.progress.spellRanks['fire-bolt']).toBeUndefined()
     expect(migrated.progress.bossKillsByBoss['forest-heart']).toBe(2)
     expect(migrated.combat.playerAttackTimerMs).toBe(migrated.combat.playerAttackDurationMs)
   })
@@ -675,7 +675,7 @@ describe('V25 Magic School XP semantic migration', () => {
       earth: { level: 20, xp: 29870 },
       air: { level: 1, xp: 0 },
     })
-    expect(migrated.progress.spellRanks).toMatchObject({ 'water-ward': 1, 'flow-mend': 1 })
+    expect(migrated.progress.spellRanks).toMatchObject({ 'water-bolt': 1, 'mending-waters': 1 })
   })
 
   it('clamps a migrated level to the current cap and authored maximum', () => {
@@ -736,9 +736,15 @@ describe('legacy Artifact level-up migration', () => {
 describe('Arcane Core V2 to V3 migration', () => {
   it('preserves XP but clears incompatible V2 allocations', () => {
     const initial = createInitialState()
-    const migrated = migrateSave({ ...initial, saveVersion: SAVE_VERSION - 1, arcaneCore: { totalXp: 123.5, nodes: { 'power-a1': { purchased: true } } } } as any)
+    const migrated = migrateSave({ ...initial, saveVersion: 33, arcaneCore: { totalXp: 123.5, nodes: { 'power-a1': { purchased: true } } } } as any)
     expect(migrated.arcaneCore.totalXp).toBe(123.5)
     expect(migrated.arcaneCore.nodes).toEqual({})
+  })
+
+  it('preserves valid ranked nodes from the V34 topology boundary', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({ ...initial, saveVersion: 34, arcaneCore: { totalXp: 500, nodes: { 'power-r1-arcane-force': { rank: 3 } } } } as any)
+    expect(migrated.arcaneCore).toEqual({ totalXp: 500, nodes: { 'power-r1-arcane-force': { rank: 3 } } })
   })
 
   it('keeps valid V3 rank allocations in current saves', () => {

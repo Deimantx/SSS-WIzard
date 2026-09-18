@@ -1,9 +1,9 @@
-import type { CombatEffect, CombatModifier, ModifierKey, StatusDefinition, StatusId } from '../../systems/combat/combatTypes'
+import type { CombatEffect, CombatModifier, DamageType, ModifierKey, StatusDefinition, StatusId } from '../../systems/combat/combatTypes'
 import { COMBAT_MODIFIER_KEYS, createCombatValidationContext, validateCombatModifier, validateCombatTriggerRule, validatePeriodicEffectList } from '../../systems/combat/combatEffectValidation'
 
 // Periodic effects are authored relative to the status holder. The runtime
 // maps the holder to self/opponent while retaining the original source.
-const damage = (damageType: 'physical' | 'fire', value: number): CombatEffect => ({ type: 'deal-damage', target: 'self', components: [{ damageType, magnitude: { type: 'flat', value } }], tags: ['dot', damageType] })
+const damage = (damageType: DamageType, value: number): CombatEffect => ({ type: 'deal-damage', target: 'self', components: [{ damageType, magnitude: { type: 'flat', value } }], tags: ['dot', damageType] })
 const heal = (value: number): CombatEffect => ({ type: 'heal', target: 'self', magnitude: { type: 'flat', value }, tags: ['heal', 'hot'] })
 const modifier = (key: CombatModifier['key'], value: number, extra: Omit<CombatModifier, 'key' | 'value'> = {}): CombatModifier => ({ key, value, ...extra })
 
@@ -26,7 +26,7 @@ export const STATUS_DEFINITIONS: Record<StatusId, StatusDefinition> = {
   },
   'earth-fracture': {
     id: 'earth-fracture', name: 'Earth Fracture', description: 'Takes Earth damage over time.', classification: 'debuff', tags: ['debuff', 'dot', 'earth'], defaultDurationMs: 3000,
-    applicationPolicy: 'per-source', stacking: { mode: 'refresh' }, periodic: { intervalMs: 1000, effects: [damage('physical', 1)] }, cleanseable: true, dispellable: false,
+    applicationPolicy: 'per-source', stacking: { mode: 'refresh' }, periodic: { intervalMs: 1000, effects: [damage('earth', 1)] }, cleanseable: true, dispellable: false,
   },
   'stone-skin': {
     id: 'stone-skin', name: 'Stone Skin', description: 'Defense increased by 20%.', classification: 'buff', tags: ['buff', 'earth'], defaultDurationMs: 10000,
@@ -42,7 +42,7 @@ export const STATUS_DEFINITIONS: Record<StatusId, StatusDefinition> = {
   },
   tremored: {
     id: 'tremored', name: 'Tremored', description: 'All enemy action speed is reduced by 25%.', classification: 'debuff', tags: ['debuff', 'control', 'earth'], defaultDurationMs: 5000,
-    stacking: { mode: 'strongest' }, potencyKey: 'action-speed-percent', potencyDirection: 'lower', modifiers: [modifier('action-speed-percent', -0.25)], cleanseable: true, dispellable: false,
+    stacking: { mode: 'strongest' }, potencyKey: 'action-speed-percent', potencyDirection: 'lower', modifiers: [modifier('action-speed-percent', -0.25), modifier('basic-attack-speed-percent', -0.25)], cleanseable: true, dispellable: false,
   },
   gust: {
     id: 'gust', name: 'Gust', description: 'The next Spell cast resolves 30% faster.', classification: 'buff', tags: ['buff', 'air'], defaultDurationMs: 6000,

@@ -54,7 +54,7 @@ describe('shared combat timeline', () => {
 
     advanceGameState(state, 100, { mode: 'live' })
 
-    expect(state.player.health).toBe(10_000)
+    expect(state.player.health).toBeCloseTo(10_000 - (10 * 1.5 * (1 - getDefenseReductionFromRating(BALANCE.player.baseDefense)) - 10))
     expect(state.combat.playerBarrier).toBe(0)
     expect(state.combat.playerBarrierRemainingMs).toBeNull()
   })
@@ -74,8 +74,7 @@ describe('shared combat timeline', () => {
     const statusDamage = events.findIndex((event) => event.sourceKind === 'status' && event.category === 'damage')
     expect(actionDamage).toBeGreaterThanOrEqual(0)
     expect(statusDamage).toBeGreaterThan(actionDamage)
-    const playerDefenseReduction = getDefenseReductionFromRating(BALANCE.player.baseDefense)
-    expect(state.player.health).toBeCloseTo(10_000 - 5 * 1.5 * (1 - playerDefenseReduction))
+    expect(state.player.health).toBeCloseTo(10_000 - 10 * 1.5 * (1 - getDefenseReductionFromRating(BALANCE.player.baseDefense)))
   })
 
   it('keeps a Stunned action frozen until the exact mid-quantum expiry boundary', () => {
@@ -120,15 +119,16 @@ describe('shared combat timeline', () => {
 
   it('does not make Auto-Cast ready before its internal cooldown boundary', () => {
     const state = stateWithEnemy()
-    state.progress.spellRanks.ignite = 1
-    state.activities.autoCast.ignite = true
+    state.progress.spellRanks['searing-touch'] = 1
+    state.activities.autoCast['searing-touch'] = true
     state.player.mana = state.player.maxMana
-    state.combat.spellCooldowns.ignite = 80
+    state.combat.spellCooldowns['searing-touch'] = 80
     state.combat.enemyActionTimerMs = 20
 
     advanceGameState(state, 100, { mode: 'live' })
 
-    expect(state.combat.enemyStatuses.find((status) => status.statusId === 'burning')).toMatchObject({ remainingMs: 5_980 })
+    expect(state.combat.pendingPlayerSpellCast).toMatchObject({ spellId: 'searing-touch', remainingWorkMs: 730 })
+    expect(state.combat.enemyStatuses.find((status) => status.statusId === 'burning')).toBeUndefined()
   })
 
   it('preserves non-100ms Action timing across fine and coarse callers', () => {

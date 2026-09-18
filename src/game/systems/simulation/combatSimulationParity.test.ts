@@ -82,7 +82,7 @@ describe('canonical simulation quantum parity', () => {
 
     expect(snapshot(coarse)).toEqual(snapshot(fine))
     expect(fine.combat.spellCooldowns['fire-bolt']).toBe(0)
-    expect(fine.combat.playerAttackTimerMs).toBeGreaterThan(0)
+    expect(fine.combat.playerAttackTimerMs).toBe(0)
   })
 
   it('keeps a source-scaled Enemy DoT identical for live and banked callers', () => {

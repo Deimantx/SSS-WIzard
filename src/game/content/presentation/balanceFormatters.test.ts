@@ -17,7 +17,7 @@ describe('balance presentation formatters', () => {
   it('formats triggered equipment rules without serialized data', () => {
     const item = { combat: { rules: [{ id: 'barrier-proc', event: 'on-hp-threshold' as const, condition: { type: 'self-hp-below-percent' as const, percent: 30 }, effects: [{ type: 'gain-barrier' as const, target: 'self' as const, magnitude: { type: 'flat' as const, value: 20 } }] }] } }
     const rule = item.combat.rules[0]!
-    expect(formatCombatRule(rule)).toContain('Barrier Proc')
+    expect(formatCombatRule(rule)).toContain('Grant 20 Barrier')
     expect(formatEquipmentEffectSummary(item as unknown as ItemDefinition).join('\\n')).not.toContain('"target"')
   })
 })

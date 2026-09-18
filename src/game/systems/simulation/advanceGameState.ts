@@ -2,6 +2,7 @@ import { BALANCE } from '../../core/balance/balance'
 import { CHANNELING_DISCOVERIES } from '../../content/channeling/channelingDiscoveries'
 import { MONSTERS } from '../../content/monsters'
 import { SPELLS } from '../../content/spells/spells'
+import { STATUS_DEFINITIONS } from '../../content/statuses'
 import { advanceChanneling } from '../../engine/channelingEngine'
 import { pushNotification, recalculateDerivedStats } from '../../engine'
 import { castSpellInternal, getPlayerSpellCastRate, resolvePlayerSpellCast } from '../../engine/spellEngine'
@@ -45,15 +46,23 @@ export interface AdvanceContext {
 const spellUnlocked = isSpellUnlocked
 const resolveDeaths = (state: GameState, context: AdvanceContext) => resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents, { onLootResolved: context.onCombatLoot, onPlayerDefeated: context.onPlayerDefeated })
 
-const meetsAutoCondition = (state: GameState, spellId: SpellId) => {
-  const condition = SPELLS[spellId].autoCondition
+const evaluateAutoCondition = (state: GameState, condition: import('../../types').AutoCastCondition | undefined): boolean => {
   if (!condition || condition.type === 'always') return true
   if (condition.type === 'health-below') return state.player.health / Math.max(1, state.player.maxHealth) * 100 < condition.percent
-  return state.combat.playerBarrier < condition.value
+  if (condition.type === 'barrier-below') return state.combat.playerBarrier < condition.value
+  if (condition.type === 'self-status-missing') return !state.combat.playerStatuses.some((status) => status.statusId === condition.statusId)
+  if (condition.type === 'target-status-missing') return !state.combat.enemyStatuses.some((status) => status.statusId === condition.statusId)
+  if (condition.type === 'self-has-cleanseable-debuff') return state.combat.playerStatuses.some((status) => {
+    const definition = STATUS_DEFINITIONS[status.statusId]
+    return definition?.classification === 'debuff' && definition.cleanseable
+  })
+  return condition.conditions.every((entry) => evaluateAutoCondition(state, entry))
 }
 
+const meetsAutoCondition = (state: GameState, spellId: SpellId) => evaluateAutoCondition(state, SPELLS[spellId].autoCondition)
+
 const getAutoCastPriority = (state: GameState): SpellId[] => {
-  const canonical = state.activities.autoCastPriority?.filter((spellId) => Boolean(SPELLS[spellId])) ?? []
+  const canonical = state.activities.autoCastPriority?.filter((spellId) => Boolean(SPELLS[spellId]) && state.activities.autoCast[spellId]) ?? []
   if (canonical.length) return canonical
   return Object.keys(state.activities.autoCast).filter((spellId) => state.activities.autoCast[spellId as SpellId]) as SpellId[]
 }

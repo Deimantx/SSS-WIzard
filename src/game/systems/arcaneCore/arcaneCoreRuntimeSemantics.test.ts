@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { castSpellInternal } from '../../engine/spellEngine'
+import { castSpellInternal, resolvePlayerSpellCast } from '../../engine/spellEngine'
 import { createInitialState } from '../../../store/initialState'
 import { getArcaneCoreDynamicManaRegen, beginArcaneCoreSpellCast } from './arcaneCoreRuntime'
 import { getCombatSpellAutoCastFocusCost, getPlayerCombatStats, getPlayerSheetCombatStats } from '../combat/combatStats'
@@ -122,6 +122,7 @@ describe('Arcane Core V4 runtime semantics', () => {
     paid.progress.spellRanks['fire-bolt'] = 1
     paid.player.mana = 100
     expect(castSpellInternal(paid, 'fire-bolt', true)).toBe(true)
+    expect(resolvePlayerSpellCast(paid)).toBe(true)
     expect(paid.player.mana).toBe(73)
 
     const free = withNodes('focus-r2-controlled-expenditure', 5)
@@ -130,6 +131,7 @@ describe('Arcane Core V4 runtime semantics', () => {
     free.combat.arcaneCoreRuntime.spellCastCount = 4
     free.player.mana = 100
     expect(castSpellInternal(free, 'fire-bolt', true)).toBe(true)
+    expect(resolvePlayerSpellCast(free)).toBe(true)
     expect(free.player.mana).toBe(100)
   })
 
@@ -154,14 +156,16 @@ describe('Arcane Core V4 runtime semantics', () => {
 
   it('keeps direct damaging spell filters and damaging-spell counters precise', () => {
     const recoil = withNodes('power-r2-arcane-recoil', 5)
-    recoil.progress.spellRanks['flow-mend'] = 1
+    recoil.progress.spellRanks['mending-waters'] = 1
     recoil.progress.spellRanks['fire-bolt'] = 1
     recoil.player.health = 1
     recoil.combat.playerAttackTimerMs = 1000
-    expect(castSpellInternal(recoil, 'flow-mend', true)).toBe(true)
+    expect(castSpellInternal(recoil, 'mending-waters', true)).toBe(true)
+    expect(resolvePlayerSpellCast(recoil)).toBe(true)
     expect(recoil.combat.playerAttackTimerMs).toBe(1000)
     expect(castSpellInternal(recoil, 'fire-bolt', true)).toBe(true)
-    expect(recoil.combat.playerAttackTimerMs).toBe(880)
+    expect(resolvePlayerSpellCast(recoil)).toBe(true)
+    expect(recoil.combat.playerAttackTimerMs).toBe(1000)
 
     const crit = withNodes('power-r2-critical-feedback', 5)
     crit.combat.spellCooldowns['fire-bolt'] = 5000

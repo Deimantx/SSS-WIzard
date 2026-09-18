@@ -100,7 +100,7 @@ export type EquipmentBudgetProfileId = 'standard' | 'signature' | 'boss'
 export type ItemCategory = 'elemental' | 'material' | 'monster-loot' | 'equipment' | 'boss-loot'
 export type InventoryCategory = 'material' | 'loot' | 'equipment' | 'special'
 export type InventoryMaterialSubtype = 'elemental' | 'creature' | 'ore' | 'refined' | 'arcane'
-export type SpellType = 'damage' | 'heal' | 'barrier' | 'dot' | 'buff'
+export type SpellType = 'damage' | 'heal' | 'barrier' | 'dot' | 'buff' | 'debuff' | 'hybrid'
 import type { ActiveStatus, CombatEffect, StatusId, TraitDefinition } from './systems/combat/combatTypes'
 export type { ActionPattern, ActionStep, ActiveStatus, CombatActionDefinition, CombatCondition, CombatConditionContext, CombatDamageComponentEvent, CombatEffect, CombatEvent, CombatEventSink, CombatModifier, CombatResolutionContext, CombatSource, CombatTag, DamageComponent, DamageType, EffectTarget, Magnitude, ModifierKey, StatusId, StatusDefinition, TraitDefinition, TraitId } from './systems/combat/combatTypes'
 export type ManaPillarId = 'leyline-conduit' | 'arcane-reservoir' | 'mana-resonance' | 'astral-expansion' | 'echo-attunement'
@@ -127,7 +127,14 @@ export type RecipeUnlockCondition =
   /** @deprecated V1-V23 compatibility for external callers and old authored data. */
   | { type: 'first-dungeon-boss-kill' }
 
-export type AutoCastCondition = { type: 'always' } | { type: 'health-below'; percent: number } | { type: 'barrier-below'; value: number }
+export type AutoCastCondition =
+  | { type: 'always' }
+  | { type: 'health-below'; percent: number }
+  | { type: 'barrier-below'; value: number }
+  | { type: 'self-status-missing'; statusId: StatusId }
+  | { type: 'target-status-missing'; statusId: StatusId }
+  | { type: 'self-has-cleanseable-debuff' }
+  | { type: 'all'; conditions: AutoCastCondition[] }
 export interface EquipmentStats {
   basicDamage?: number
   spellPower?: number

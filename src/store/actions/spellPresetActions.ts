@@ -1,6 +1,6 @@
-import { SPELLS } from '../../game/content/spells/spells'
+import { LEGACY_SPELL_ID_MAP, SPELLS } from '../../game/content/spells/spells'
 import { getNextSpellPresetId, getSpellPresetFocusProjection, normalizeSpellPresetName } from '../../game/systems/spells'
-import type { GameState, SpellId, SpellPreset, SpellPresetId } from '../../game/types'
+import type { CanonicalSpellId, GameState, SpellId, SpellPreset, SpellPresetId } from '../../game/types'
 
 export interface ApplySpellPresetResult {
   ok: boolean
@@ -9,14 +9,25 @@ export interface ApplySpellPresetResult {
   unavailableSpellIds?: SpellId[]
 }
 
-const normalizedSpellIds = (spellIds: readonly SpellId[]) => [...new Set(spellIds.filter((spellId) => Boolean(SPELLS[spellId])))]
+const normalizedSpellIds = (spellIds: readonly SpellId[]) => [...new Set(spellIds.filter((spellId) => Boolean(SPELLS[spellId])).map((spellId) => LEGACY_SPELL_ID_MAP[spellId] ?? spellId))]
 
 export const clearAutoCastAction = (state: GameState) => {
   const hadActiveAutoCast = Object.values(state.activities.autoCast).some(Boolean)
   Object.keys(SPELLS).forEach((spellId) => { state.activities.autoCast[spellId as SpellId] = false })
   state.combat.autoCastManaStarvedSpells = []
+  state.activities.autoCastPriority = []
   state.spellPresets.lastAppliedPresetId = null
   return hadActiveAutoCast
+}
+
+export const moveAutoCastPriorityAction = (state: GameState, spellId: SpellId, direction: -1 | 1) => {
+  const index = state.activities.autoCastPriority.indexOf(spellId as typeof state.activities.autoCastPriority[number])
+  const nextIndex = index + direction
+  if (index < 0 || nextIndex < 0 || nextIndex >= state.activities.autoCastPriority.length) return false
+  const [entry] = state.activities.autoCastPriority.splice(index, 1)
+  state.activities.autoCastPriority.splice(nextIndex, 0, entry)
+  state.spellPresets.lastAppliedPresetId = null
+  return true
 }
 
 export const createSpellPresetAction = (state: GameState, name: string): SpellPresetId => {
@@ -71,6 +82,7 @@ export const applySpellPresetAction = (state: GameState, id: SpellPresetId): App
   }
   clearAutoCastAction(state)
   projection.validSpellIds.forEach((spellId) => { state.activities.autoCast[spellId] = true })
+  state.activities.autoCastPriority = [...projection.validSpellIds] as CanonicalSpellId[]
   state.spellPresets.lastAppliedPresetId = projection.unavailableSpellIds.length ? null : id
   if (projection.unavailableSpellIds.length) {
     pushPresetNotification(state, `${preset.name} partially applied · ${projection.unavailableSpellIds.length} unavailable spell${projection.unavailableSpellIds.length === 1 ? '' : 's'} skipped.`, 'warning')

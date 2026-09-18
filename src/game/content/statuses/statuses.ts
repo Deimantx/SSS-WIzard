@@ -12,6 +12,58 @@ export const STATUS_DEFINITIONS: Record<StatusId, StatusDefinition> = {
     id: 'burning', name: 'Burning', description: 'Takes Fire damage over time.', classification: 'debuff', tags: ['debuff', 'dot', 'fire'], defaultDurationMs: 5000,
     applicationPolicy: 'per-source', stacking: { mode: 'refresh' }, periodic: { intervalMs: 1000, effects: [damage('fire', 5)] }, cleanseable: true, dispellable: false,
   },
+  kindled: {
+    id: 'kindled', name: 'Kindled', description: 'Takes 25% more Fire damage.', classification: 'debuff', tags: ['debuff', 'fire'], defaultDurationMs: 18000,
+    stacking: { mode: 'refresh' }, modifiers: [modifier('damage-taken-percent', 0.25, { damageTypes: ['fire'] })], cleanseable: true, dispellable: false,
+  },
+  frozen: {
+    id: 'frozen', name: 'Frozen', description: 'All action speed is reduced by 50%.', classification: 'debuff', tags: ['debuff', 'control', 'water'], defaultDurationMs: 4000,
+    stacking: { mode: 'strongest' }, potencyKey: 'action-speed-percent', potencyDirection: 'lower', modifiers: [modifier('action-speed-percent', -0.5), modifier('basic-attack-speed-percent', -0.5)], cleanseable: true, dispellable: false,
+  },
+  'healing-tide': {
+    id: 'healing-tide', name: 'Healing Tide', description: 'Restores Health over time.', classification: 'buff', tags: ['buff', 'hot', 'water'], defaultDurationMs: 6000,
+    stacking: { mode: 'refresh' }, periodic: { intervalMs: 1000, effects: [heal(5)] }, cleanseable: false, dispellable: true,
+  },
+  'earth-fracture': {
+    id: 'earth-fracture', name: 'Earth Fracture', description: 'Takes Earth damage over time.', classification: 'debuff', tags: ['debuff', 'dot', 'earth'], defaultDurationMs: 3000,
+    applicationPolicy: 'per-source', stacking: { mode: 'refresh' }, periodic: { intervalMs: 1000, effects: [damage('physical', 1)] }, cleanseable: true, dispellable: false,
+  },
+  'stone-skin': {
+    id: 'stone-skin', name: 'Stone Skin', description: 'Defense increased by 20%.', classification: 'buff', tags: ['buff', 'earth'], defaultDurationMs: 10000,
+    stacking: { mode: 'strongest' }, potencyKey: 'defense-percent', potencyDirection: 'higher', modifiers: [modifier('defense-percent', 0.2)], cleanseable: false, dispellable: true,
+  },
+  hardened: {
+    id: 'hardened', name: 'Hardened', description: 'Damage taken is reduced by 25%.', classification: 'buff', tags: ['buff', 'earth'], defaultDurationMs: 5000,
+    stacking: { mode: 'strongest' }, potencyKey: 'damage-taken-percent', potencyDirection: 'lower', modifiers: [modifier('damage-taken-percent', -0.25)], cleanseable: false, dispellable: true,
+  },
+  'rend-armor': {
+    id: 'rend-armor', name: 'Rend Armor', description: 'Defense reduced by 20%.', classification: 'debuff', tags: ['debuff', 'earth'], defaultDurationMs: 10000,
+    stacking: { mode: 'strongest' }, potencyKey: 'defense-percent', potencyDirection: 'lower', modifiers: [modifier('defense-percent', -0.2)], cleanseable: true, dispellable: false,
+  },
+  tremored: {
+    id: 'tremored', name: 'Tremored', description: 'All enemy action speed is reduced by 25%.', classification: 'debuff', tags: ['debuff', 'control', 'earth'], defaultDurationMs: 5000,
+    stacking: { mode: 'strongest' }, potencyKey: 'action-speed-percent', potencyDirection: 'lower', modifiers: [modifier('action-speed-percent', -0.25)], cleanseable: true, dispellable: false,
+  },
+  gust: {
+    id: 'gust', name: 'Gust', description: 'The next Spell cast resolves 30% faster.', classification: 'buff', tags: ['buff', 'air'], defaultDurationMs: 6000,
+    stacking: { mode: 'refresh' }, cleanseable: false, dispellable: true,
+  },
+  tailwind: {
+    id: 'tailwind', name: 'Tailwind', description: 'Action speed increased by 25%.', classification: 'buff', tags: ['buff', 'air'], defaultDurationMs: 10000,
+    stacking: { mode: 'strongest' }, potencyKey: 'action-speed-percent', potencyDirection: 'higher', modifiers: [modifier('action-speed-percent', 0.25)], cleanseable: false, dispellable: true,
+  },
+  static: {
+    id: 'static', name: 'Static Charge', description: 'The next damaging Air Spell deals 75% more damage.', classification: 'buff', tags: ['buff', 'air'], defaultDurationMs: 10000,
+    stacking: { mode: 'refresh' }, modifiers: [modifier('spell-damage-percent', 0.75, { damageTypes: ['air'] })], cleanseable: false, dispellable: true,
+  },
+  'eye-of-the-storm': {
+    id: 'eye-of-the-storm', name: 'Eye of the Storm', description: 'Cooldown recovery, critical chance, and action speed increased by 10%.', classification: 'buff', tags: ['buff', 'air'], defaultDurationMs: 10000,
+    stacking: { mode: 'refresh' }, modifiers: [modifier('cooldown-recovery-percent', 0.1), modifier('crit-chance', 0.1), modifier('action-speed-percent', 0.1)], cleanseable: false, dispellable: true,
+  },
+  'living-mountain': {
+    id: 'living-mountain', name: 'Living Mountain', description: 'Defense increased by 25% and damage taken reduced by 30%.', classification: 'buff', tags: ['buff', 'earth'], defaultDurationMs: 14000,
+    stacking: { mode: 'strongest' }, potencyKey: 'damage-taken-percent', potencyDirection: 'lower', modifiers: [modifier('defense-percent', 0.25), modifier('damage-taken-percent', -0.3)], cleanseable: false, dispellable: true,
+  },
   quickening: {
     id: 'quickening', name: 'Quickening', description: 'Basic Attacks resolve 25% faster.', classification: 'buff', tags: ['buff', 'air'], defaultDurationMs: 6000,
     stacking: { mode: 'refresh' }, modifiers: [modifier('basic-attack-speed-percent', 0.25)], cleanseable: false, dispellable: true,

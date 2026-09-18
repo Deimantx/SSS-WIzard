@@ -1,19 +1,18 @@
 import { BALANCE } from '../../core/balance/balance'
 import { CHANNELING_DISCOVERIES } from '../../content/channeling/channelingDiscoveries'
-import { ITEMS } from '../../content/items/items'
 import { MONSTERS } from '../../content/monsters'
 import { SPELLS } from '../../content/spells/spells'
 import { advanceChanneling } from '../../engine/channelingEngine'
-import { appendLog, playerBasicDamage, pushNotification, recalculateDerivedStats } from '../../engine'
-import { castSpellInternal, getSpellCastFailure } from '../../engine/spellEngine'
-import { executeCombatEffects, getBasicAttackTags } from '../combat/effectResolver'
+import { pushNotification, recalculateDerivedStats } from '../../engine'
+import { castSpellInternal, getPlayerSpellCastRate, resolvePlayerSpellCast } from '../../engine/spellEngine'
+import { executeCombatEffects } from '../combat/effectResolver'
 import { resolveCombatDeaths, spawnNextEnemy, type CombatLootObserver } from '../combat/combatRuntime'
-import { getCurrentEnemyActionRate, getPlayerBasicAttackRate, resolveCurrentEnemyAction, startNextEnemyAction } from '../combat/actionRuntime'
+import { getCurrentEnemyActionRate, resolveCurrentEnemyAction, startNextEnemyAction } from '../combat/actionRuntime'
 import { actorCannotAct, actorCannotCastSpells, expirePendingStatuses, getNextCombatStatusEventMs, getNextPlayerStatusEventMs, tickStatuses } from '../combat/statusRuntime'
 import { getNextCombatBarrierEventMs, getNextPlayerBarrierEventMs, tickBarriers } from '../combat/barrierRuntime'
 import { getCooldownRecoveryMultiplier, getEffectiveManaCost, getPlayerCombatStats } from '../combat/combatStats'
 import { tickRuleCooldowns } from '../combat/triggerRuntime'
-import type { GameState, ItemId, SpellId, CombatSource } from '../../types'
+import type { GameState, ItemId, SpellId } from '../../types'
 import type { CombatAlertObserver, CombatEventSink } from '../combat/combatTypes'
 import { clamp } from '../../utils'
 import type { SimulationReportCollector } from '../offline-bank/offlineBankReport'
@@ -26,9 +25,9 @@ import { MAX_SIMULATION_DELTA_MS, SIMULATION_QUANTUM_MS } from './simulationCons
 import type { CombatTelemetryObserver } from '../../telemetry/combat/combatTelemetryTypes'
 import type { DungeonStatisticsObserver } from '../../telemetry/dungeon/dungeonStatisticsTypes'
 import { sanitizeCombatTimeScale } from '../../../store/actions/debugActions'
-import { MAX_ACTION_WORK_MS, MIN_ACTION_TIME_MS } from '../../core/balance/combatTiming'
 import { advanceGuardianUpkeep, ensureGuardianForCurrentEncounter, getGuardianAttackBoundary, resolveGuardianAttack, suppressGuardianIfOutOfMana } from '../summoning/summoningRuntime'
 import { hasEnoughResource } from '../../presentation/resources/resourcePresentation'
+import { isArcaneCoreSpellFree } from '../arcaneCore/arcaneCoreRuntime'
 
 export interface AdvanceContext {
   mode: 'live' | 'banked'
@@ -53,49 +52,33 @@ const meetsAutoCondition = (state: GameState, spellId: SpellId) => {
   return state.combat.playerBarrier < condition.value
 }
 
-const playerBasicAttack = (state: GameState, uiEvents?: CombatEventSink) => {
-  const weapon = state.equipment.weapon ? ITEMS[state.equipment.weapon] : undefined
-  const source: CombatSource = { actor: 'player', kind: weapon?.attackTags?.length ? 'weapon' : 'basic-attack', sourceId: weapon?.attackTags?.length && state.equipment.weapon ? state.equipment.weapon : 'player-basic-attack', tags: getBasicAttackTags(state) }
-  executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: weapon?.damageType ?? 'physical', magnitude: { type: 'flat', value: playerBasicDamage(state) } }], tags: ['basic-attack', 'direct'] }], source, undefined, uiEvents)
-  return state.combat.lastDamageDealt
+const getAutoCastPriority = (state: GameState): SpellId[] => {
+  const canonical = state.activities.autoCastPriority?.filter((spellId) => Boolean(SPELLS[spellId])) ?? []
+  if (canonical.length) return canonical
+  return Object.keys(state.activities.autoCast).filter((spellId) => state.activities.autoCast[spellId as SpellId]) as SpellId[]
 }
 
-const isAutoCastEligible = (state: GameState, spellId: SpellId) => Boolean(state.activities.autoCast[spellId]) && spellUnlocked(state, spellId) && !actorCannotAct(state, 'player') && !actorCannotCastSpells(state, 'player') && Boolean(state.combat.enemyId) && (state.debug.ignoreSpellCooldowns || (state.combat.spellCooldowns[spellId] ?? 0) <= 0) && meetsAutoCondition(state, spellId)
+const isAutoCastEligible = (state: GameState, spellId: SpellId) => {
+  const spell = SPELLS[spellId]
+  if (!spell || !state.activities.autoCast[spellId] || !spellUnlocked(state, spellId) || !state.combat.enemyId || actorCannotAct(state, 'player') || actorCannotCastSpells(state, 'player') || !meetsAutoCondition(state, spellId)) return false
+  if (!state.debug.ignoreSpellCooldowns && (state.combat.spellCooldowns[spell.id] ?? 0) > 0) return false
+  return state.debug.infiniteMana || isArcaneCoreSpellFree(state) || hasEnoughResource(state.player.mana, getEffectiveManaCost(state, spell.manaCost))
+}
 
 const autoCastReadySpells = (state: GameState, context: AdvanceContext) => {
   const latches = state.combat.autoCastManaStarvedSpells ?? (state.combat.autoCastManaStarvedSpells = [])
   latches.slice().forEach((spellId) => { if (!isAutoCastEligible(state, spellId)) latches.splice(latches.indexOf(spellId), 1) })
   if (actorCannotAct(state, 'player') || !state.combat.enemyId || state.debug.freezePlayerActions || state.debug.disableAutoCast) return
-  for (const id of Object.keys(state.activities.autoCast)) {
-    const spellId = id as SpellId
-    if (actorCannotAct(state, 'player')) break
-    if (isAutoCastEligible(state, spellId)) {
-      const spell = SPELLS[spellId]
-      if (latches.includes(spellId) && !state.debug.infiniteMana && !hasEnoughResource(state.player.mana, getEffectiveManaCost(state, spell.manaCost))) continue
-      const latchIndex = latches.indexOf(spellId)
-      if (latchIndex >= 0) latches.splice(latchIndex, 1)
-      castSpellInternal(state, spellId, true, context.uiEvents)
-      if (getSpellCastFailure(state, spellId) === 'mana' && !latches.includes(spellId)) latches.push(spellId)
-      if (resolveDeaths(state, context)) return
-    }
+  if (!state.combat.pendingPlayerSpellCast) {
+    const spellId = getAutoCastPriority(state).find((id) => isAutoCastEligible(state, id))
+    if (spellId) castSpellInternal(state, spellId, true, context.uiEvents)
   }
   suppressGuardianIfOutOfMana(state)
 }
 
 const hasReadyAutoCast = (state: GameState) => {
   if (actorCannotAct(state, 'player') || !state.combat.enemyId || state.debug.freezePlayerActions || state.debug.disableAutoCast) return false
-  return Object.keys(state.activities.autoCast).some((id) => isAutoCastEligible(state, id as SpellId))
-}
-
-const ensurePlayerBasicRuntime = (state: GameState) => {
-  if (state.combat.playerAttackDurationMs > 0) {
-    state.combat.playerAttackDurationMs = Math.min(MAX_ACTION_WORK_MS, Math.max(MIN_ACTION_TIME_MS, state.combat.playerAttackDurationMs))
-    state.combat.playerAttackTimerMs = Math.min(MAX_ACTION_WORK_MS, Math.max(0, Number.isFinite(state.combat.playerAttackTimerMs) ? state.combat.playerAttackTimerMs : state.combat.playerAttackDurationMs))
-    return
-  }
-  // Player Basic uses the same work model as enemy actions. The duration is
-  // authored base work; the live rate is consumed by the timeline below.
-  state.combat.playerAttackDurationMs = Math.min(MAX_ACTION_WORK_MS, Math.max(MIN_ACTION_TIME_MS, BALANCE.player.basicAttackIntervalMs))
+  return !state.combat.pendingPlayerSpellCast && getAutoCastPriority(state).some((id) => isAutoCastEligible(state, id))
 }
 
 const tickSpellCooldowns = (state: GameState, deltaMs: number, cooldownRecovery: number) => {
@@ -110,8 +93,7 @@ const tickSpellCooldowns = (state: GameState, deltaMs: number, cooldownRecovery:
 const getNextAutoCastCooldownEventMs = (state: GameState, cooldownRecovery: number): number | null => {
   if (!state.combat.enemyId || cooldownRecovery <= 0 || state.debug.freezePlayerActions || state.debug.disableAutoCast || state.debug.ignoreSpellCooldowns) return null
   let next: number | null = null
-  Object.keys(state.activities.autoCast).forEach((id) => {
-    const spellId = id as SpellId
+  getAutoCastPriority(state).forEach((spellId) => {
     if (!state.activities.autoCast[spellId] || !spellUnlocked(state, spellId) || state.debug.ignoreSpellCooldowns) return
     const cooldown = state.combat.spellCooldowns[spellId] ?? 0
     if (cooldown <= 0 || !Number.isFinite(cooldown)) return
@@ -123,7 +105,7 @@ const getNextAutoCastCooldownEventMs = (state: GameState, cooldownRecovery: numb
 
 const hasImmediateCombatTimelineEvent = (state: GameState) => {
   if (getNextCombatStatusEventMs(state) === 0 || getNextCombatBarrierEventMs(state) === 0) return true
-  if (!actorCannotAct(state, 'player') && !state.debug.freezePlayerActions && !state.debug.disablePlayerBasicAttack && state.combat.playerAttackTimerMs <= 0) return true
+  if (!actorCannotAct(state, 'player') && !state.debug.freezePlayerActions && state.combat.pendingPlayerSpellCast && state.combat.pendingPlayerSpellCast.remainingWorkMs <= 0) return true
   if (!actorCannotAct(state, 'enemy') && !state.debug.freezeEnemyActions && state.combat.enemyCurrentStepId && state.combat.enemyActionTimerMs <= 0) return true
   if (state.combat.guardian.activeGuardianId && state.combat.guardian.attackTimerMs <= 0) return true
   return false
@@ -176,16 +158,13 @@ const advanceCombatTimeline = (state: GameState, delta: number, context: Advance
       startNextEnemyAction(state, executeCombatEffects, 0, context.uiEvents)
       if (resolveDeaths(state, context)) break
     }
-    ensurePlayerBasicRuntime(state)
     ensureGuardianForCurrentEncounter(state)
     if (!state.combat.enemyId) break
 
-    // A spell that is already ready when an encounter starts should be
-    // attempted at t=0. Keep Player Basic's exact-boundary priority and let
-    // status/barrier callbacks settle first when they are also due at t=0.
+    // A ready Auto-Cast spell is attempted once at encounter start. Casts are
+    // committed work; effects and payment happen only at completion.
     if (!attemptedImmediateAutoCast && hasReadyAutoCast(state)
       && !actorCannotAct(state, 'player')
-      && state.combat.playerAttackTimerMs > 0
       && getNextCombatStatusEventMs(state) !== 0
       && getNextCombatBarrierEventMs(state) !== 0) {
       attemptedImmediateAutoCast = true
@@ -193,13 +172,13 @@ const advanceCombatTimeline = (state: GameState, delta: number, context: Advance
       if (!state.combat.enemyId) break
     }
 
-    const playerBlockedAtSegmentStart = actorCannotAct(state, 'player') || state.debug.freezePlayerActions || state.debug.disablePlayerBasicAttack
+    const playerBlockedAtSegmentStart = actorCannotAct(state, 'player') || state.debug.freezePlayerActions
     const enemyBlockedAtSegmentStart = actorCannotAct(state, 'enemy') || state.debug.freezeEnemyActions
-    const playerRate = getPlayerBasicAttackRate(state)
+    const playerRate = getPlayerSpellCastRate(state)
     const enemyRate = state.combat.enemyCurrentStepId ? getCurrentEnemyActionRate(state) : 0
     // Timers hold remaining work. Convert only the next boundary to real
     // simulation milliseconds; completed work is never recomputed.
-    const playerRemaining = playerBlockedAtSegmentStart || playerRate <= 0 ? Number.POSITIVE_INFINITY : Math.max(0, state.combat.playerAttackTimerMs) / playerRate
+    const playerRemaining = playerBlockedAtSegmentStart || playerRate <= 0 || !state.combat.pendingPlayerSpellCast ? Number.POSITIVE_INFINITY : Math.max(0, state.combat.pendingPlayerSpellCast.remainingWorkMs) / playerRate
     const enemyRemaining = enemyBlockedAtSegmentStart || !state.combat.enemyCurrentStepId || enemyRate <= 0 ? Number.POSITIVE_INFINITY : Math.max(0, state.combat.enemyActionTimerMs) / enemyRate
     const cooldownRecovery = getCooldownRecoveryMultiplier(state)
     const boundaries = [
@@ -214,7 +193,7 @@ const advanceCombatTimeline = (state: GameState, delta: number, context: Advance
     const untilEvent = boundaries.length ? Math.min(...boundaries) : remaining
     const elapsed = Math.min(remaining, Math.max(0, untilEvent))
 
-    if (!playerBlockedAtSegmentStart && playerRate > 0) state.combat.playerAttackTimerMs = Math.max(0, state.combat.playerAttackTimerMs - elapsed * playerRate)
+    if (!playerBlockedAtSegmentStart && playerRate > 0 && state.combat.pendingPlayerSpellCast) state.combat.pendingPlayerSpellCast.remainingWorkMs = Math.max(0, state.combat.pendingPlayerSpellCast.remainingWorkMs - elapsed * playerRate)
     if (!enemyBlockedAtSegmentStart && state.combat.enemyCurrentStepId && enemyRate > 0) state.combat.enemyActionTimerMs = Math.max(0, state.combat.enemyActionTimerMs - elapsed * enemyRate)
     if (state.combat.guardian.activeGuardianId) state.combat.guardian.attackTimerMs = Math.max(0, state.combat.guardian.attackTimerMs - elapsed)
     tickRuleCooldowns(state, elapsed)
@@ -234,24 +213,21 @@ const advanceCombatTimeline = (state: GameState, delta: number, context: Advance
     expirePendingStatuses(state, pendingStatusExpirations, executeCombatEffects, context.uiEvents)
     if (combatEnded) break
 
-    let playerBasicResolved = false
-    if (!actorCannotAct(state, 'player') && !state.debug.freezePlayerActions && !state.debug.disablePlayerBasicAttack && state.combat.playerAttackTimerMs <= 0 && state.combat.enemyId) {
-      const damage = playerBasicAttack(state, context.uiEvents)
-      appendLog(state, `Basic Attack hits for ${damage}.`)
-      state.combat.playerAttackDurationMs = Math.min(MAX_ACTION_WORK_MS, Math.max(MIN_ACTION_TIME_MS, BALANCE.player.basicAttackIntervalMs))
-      state.combat.playerAttackTimerMs = state.combat.playerAttackDurationMs
-      playerBasicResolved = true
+    let playerSpellResolved = false
+    if (!actorCannotAct(state, 'player') && !state.debug.freezePlayerActions && state.combat.pendingPlayerSpellCast?.remainingWorkMs === 0 && state.combat.enemyId) {
+      playerSpellResolved = resolvePlayerSpellCast(state, context.uiEvents)
       if (resolveDeaths(state, context)) break
     }
 
     suppressGuardianIfOutOfMana(state)
+    // Exact boundary order: player Spell completion, then guardian, then enemy.
     if (state.combat.enemyId && state.combat.guardian.activeGuardianId && state.combat.guardian.attackTimerMs <= 0) {
       resolveGuardianAttack(state, context.uiEvents)
       if (resolveDeaths(state, context)) break
     }
 
     const reachedMeaningfulBoundary = elapsed <= 0 || boundaries.some((value) => value <= elapsed)
-    if (playerBasicResolved || reachedMeaningfulBoundary) autoCastReadySpells(state, context)
+    if (playerSpellResolved || reachedMeaningfulBoundary) autoCastReadySpells(state, context)
     if (!state.combat.enemyId) break
     if (!actorCannotAct(state, 'enemy') && !state.debug.freezeEnemyActions && state.combat.enemyCurrentStepId && state.combat.enemyActionTimerMs <= 0) {
       resolveCurrentEnemyAction(state, executeCombatEffects, 0, context.uiEvents)

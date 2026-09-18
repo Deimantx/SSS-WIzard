@@ -54,6 +54,7 @@ const MODIFIER_LABELS: Record<ModifierKey, string> = {
   'status-duration-dealt-percent': 'Status Duration Dealt',
   'status-duration-received-percent': 'Status Duration Received',
   'defense-flat': 'Defense',
+  'defense-percent': 'Defense',
   'crit-chance': 'Crit Chance',
   'crit-damage': 'Crit Damage',
   'block-chance': 'Block Chance',
@@ -179,6 +180,7 @@ const effectMeaning = (effect: CombatEffect): string => {
       const stackText = effect.stacks === undefined ? '' : ` (${effect.stacks} ${effect.stacks === 1 ? 'stack' : 'stacks'})`
       return `Apply ${statusName(effect.statusId)}${duration(statusDuration) ? ` for ${duration(statusDuration)}` : ''}${stackText}`
     }
+    case 'detonate-status': return `Detonate ${statusName(effect.statusId)}`
     case 'remove-status': return `Remove ${statusName(effect.statusId)}`
     case 'cleanse': return `Cleanse ${effect.mode === 'tag' ? `${TAG_NAMES[effect.tag as CombatTag]} statuses` : effect.mode === 'one' ? 'one debuff' : 'all debuffs'}`
     case 'dispel': return `Dispel ${effect.mode === 'tag' ? `${TAG_NAMES[effect.tag as CombatTag]} statuses` : effect.mode === 'one' ? 'one buff' : 'all buffs'}`

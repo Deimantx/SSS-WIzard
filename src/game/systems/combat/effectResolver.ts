@@ -13,7 +13,7 @@ import { nextCombatRandom } from './combatRng'
 import { runCombatTriggers, type CombatEventContext } from './triggerRuntime'
 import { getCurrentEnemyActionStep, MAX_ACTION_WORK_MS, setEnemyActionPattern } from './actionRuntime'
 import { getRootCombatSourceProvenance } from './combatProvenance'
-import { createCombatResolutionContext, type CombatDamageComponentEvent, type CombatEffect, type CombatEventSink, type CombatLogCategory, type CombatResolutionContext, type CombatSource, type CombatTag, type DamageComponent, type DamageType, type EffectTarget } from './combatTypes'
+import { createCombatResolutionContext, scaleMagnitude, type CombatDamageComponentEvent, type CombatEffect, type CombatEventSink, type CombatLogCategory, type CombatResolutionContext, type CombatSource, type CombatTag, type DamageComponent, type DamageType, type EffectTarget } from './combatTypes'
 import { stabilizeResourceValue } from '../../presentation/resources/resourcePresentation'
 import { tryConsumeArcaneCoreSurvival } from '../arcaneCore/arcaneCoreRuntime'
 
@@ -158,7 +158,7 @@ const applyDamage = (state: GameState, components: Array<{ raw: number; damageTy
     rolls.critical = nextCombatRandom(state) < getCritChance(state, source.actor, source)
     rolls.blocked = nextCombatRandom(state) < getBlockChance(state, target, source)
   }
-  const castMultiplier = source.kind === 'spell' ? resolution?.arcaneCoreDamageMultiplier ?? 1 : 1
+  const castMultiplier = source.kind === 'spell' ? (resolution?.arcaneCoreDamageMultiplier ?? 1) * (source.spellDamageMultiplier ?? 1) : 1
   const breakdowns = components.map((component) => calculateCombatDamageWithRolls(state, component.raw * castMultiplier, component.damageType, source, target, tags, rolls, false))
   const resolvedBeforeBarrier = breakdowns.reduce((sum, breakdown) => sum + breakdown.resolvedBeforeBarrier, 0)
   if (resolvedBeforeBarrier <= 0) return 0
@@ -290,7 +290,11 @@ export const executeCombatEffect = (state: GameState, effect: CombatEffect, sour
   switch (effect.type) {
     case 'deal-damage': {
       const effectSource = effect.school ? { ...source, school: effect.school } : source
-      applyDamage(state, effect.components.map((component) => ({ raw: resolveMagnitude(state, component.magnitude, effectSource, target), damageType: component.damageType })), effectSource, target, tags, execute, depth, uiEvents, cascade)
+      const components = effect.components.map((component) => ({ raw: resolveMagnitude(state, component.magnitude, effectSource, target), damageType: component.damageType }))
+      const hitCount = Math.max(1, Math.floor(effect.hitCount ?? 1))
+      for (let hit = 0; hit < hitCount && isCombatActorAlive(state, target); hit += 1) {
+        applyDamage(state, components, effectSource, target, tags, execute, depth, uiEvents, cascade)
+      }
       break
     }
     case 'heal': applyHealing(state, resolveMagnitude(state, effect.magnitude, source, target), source, target, tags, execute, depth, uiEvents, cascade); break
@@ -324,6 +328,22 @@ export const executeCombatEffect = (state: GameState, effect: CombatEffect, sour
       break
     }
     case 'remove-status': if (removeStatus(state, target, effect.statusId, { executeEffects: execute, source, depth, uiEvents, resolution: cascade })) appendLog(state, `${STATUS_DEFINITIONS[effect.statusId]?.name ?? effect.statusId} removed.`); break
+    case 'detonate-status': {
+      const statuses = target === 'player' ? state.combat.playerStatuses : state.combat.enemyStatuses
+      const definition = STATUS_DEFINITIONS[effect.statusId]
+      statuses.filter((active) => active.statusId === effect.statusId && active.source.actor === source.actor).slice().forEach((active) => {
+        const interval = definition?.periodic?.intervalMs ?? 1000
+        const ticks = Math.max(0, Math.ceil((active.remainingMs ?? 0) / interval))
+        const periodic = active.periodicEffects ?? definition?.periodic?.effects ?? []
+        periodic.forEach((periodicEffect) => {
+          if (periodicEffect.type !== 'deal-damage') return
+          const scaled = periodicEffect.components.map((component) => ({ ...component, magnitude: scaleMagnitude(component.magnitude, ticks * Math.max(0, effect.multiplier)) }))
+          execute(state, [{ ...periodicEffect, components: scaled, target: 'opponent', tags: [...(periodicEffect.tags ?? []), 'direct'] }], { ...source, tags: [...(source.tags ?? []), 'direct'] }, depth + 1, uiEvents, cascade)
+        })
+        if (effect.consume !== false) removeStatus(state, target, effect.statusId, { executeEffects: execute, source, depth, uiEvents, resolution: cascade })
+      })
+      break
+    }
     case 'cleanse': cleanseStatuses(state, target, effect.mode, effect.tag, { executeEffects: execute, source, depth, uiEvents, resolution: cascade }); break
     case 'dispel': dispelStatuses(state, target, effect.mode, effect.tag, { executeEffects: execute, source, depth, uiEvents, resolution: cascade }); break
     case 'modify-action-timer': {

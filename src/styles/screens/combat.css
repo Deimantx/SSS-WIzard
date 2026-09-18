@@ -4632,3 +4632,89 @@
   align-self: end;
   padding-top: 12px;
 }
+
+/* Player combat is Spell-driven; keep the card quiet while idle and give a
+   committed cast a single, readable work bar. */
+.combat-spell-cast.game-tooltip-trigger { display: block; }
+.combat-spell-cast {
+  display: grid;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 11px;
+  border-top: 1px solid color-mix(in srgb, var(--actor-accent) 24%, var(--ui-border));
+}
+.combat-spell-cast-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 10px;
+}
+.combat-spell-cast-head > div { display: grid; gap: 4px; min-width: 0; }
+.combat-spell-cast-head strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ui-text);
+  font-size: var(--ui-font-small);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.combat-spell-cast-head strong svg { color: var(--actor-accent); flex: 0 0 auto; }
+.combat-spell-cast-eta {
+  color: var(--actor-accent);
+  font: 700 15px/1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.combat-spell-cast .progress {
+  height: 5px;
+  border-color: color-mix(in srgb, var(--actor-accent) 28%, var(--ui-border));
+}
+.combat-spell-cast .progress i {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--actor-accent) 54%, var(--ui-text)), var(--actor-accent));
+  box-shadow: 0 0 7px color-mix(in srgb, var(--actor-accent) 24%, transparent);
+}
+.combat-spell-cast-meta {
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .02em;
+}
+
+.spell-combat-auto-slot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  width: auto;
+  min-width: 22px;
+  height: 22px;
+}
+.spell-combat-priority {
+  color: var(--semantic-focus);
+  font: 700 8px/1 var(--font-mono);
+  letter-spacing: .03em;
+  white-space: nowrap;
+}
+.spell-combat-priority-controls {
+  display: inline-flex;
+  gap: 1px;
+}
+.spell-combat-priority-controls .game-tooltip-trigger { display: block; }
+.spell-combat-priority-controls button {
+  display: grid;
+  width: 12px;
+  height: 10px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  color: var(--ui-text-muted);
+  background: transparent;
+  cursor: pointer;
+}
+.spell-combat-priority-controls button:hover:not(:disabled),
+.spell-combat-priority-controls button:focus-visible { color: var(--semantic-focus); outline: none; }
+.spell-combat-priority-controls button:disabled { color: var(--ui-text-disabled); cursor: not-allowed; }

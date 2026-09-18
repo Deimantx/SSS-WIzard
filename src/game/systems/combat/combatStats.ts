@@ -147,19 +147,21 @@ export const getCombatStats = (state: GameState, actor: CombatActor) => actor ==
 
 export const getDefense = (state: GameState, actor: CombatActor) => {
   const base = actor === 'player' ? BALANCE.player.baseDefense : (getEnemyBase(state)?.defense ?? DEFAULT_ENEMY_DEFENSE)
-  return Math.max(0, base + getCombatModifiers(state, actor, 'defense-flat'))
+  const flat = getCombatModifiers(state, actor, 'defense-flat')
+  const percent = getCombatModifiers(state, actor, 'defense-percent')
+  return Math.max(0, (base + flat) * (1 + percent))
 }
 
 export const getDefenseReduction = (state: GameState, actor: CombatActor) => getDefenseReductionFromRating(getDefense(state, actor))
 
 export const getCritChance = (state: GameState, actor: CombatActor, source?: CombatSource) => {
   const base = actor === 'player' ? BALANCE.player.baseCritChance : (getEnemyBase(state)?.critChance ?? DEFAULT_ENEMY_CRIT_CHANCE)
-  return clampPercent(base + getCombatModifiers(state, actor, 'crit-chance', { source, sourceTags: source?.tags }), 0, MAX_CRIT_CHANCE)
+  return clampPercent(base + getCombatModifiers(state, actor, 'crit-chance', { source, sourceTags: source?.tags }) + (source?.spellCritChanceBonus ?? 0), 0, MAX_CRIT_CHANCE)
 }
 
 export const getCritDamageMultiplier = (state: GameState, actor: CombatActor, source?: CombatSource) => {
   const base = actor === 'player' ? BALANCE.player.baseCritDamage : (getEnemyBase(state)?.critDamage ?? DEFAULT_ENEMY_CRIT_DAMAGE_MULTIPLIER)
-  return clampPercent(base + getCombatModifiers(state, actor, 'crit-damage', { source, sourceTags: source?.tags }), MIN_CRIT_DAMAGE_MULTIPLIER, MAX_CRIT_DAMAGE_MULTIPLIER)
+  return clampPercent(base + getCombatModifiers(state, actor, 'crit-damage', { source, sourceTags: source?.tags }) + (source?.spellCritDamageBonus ?? 0), MIN_CRIT_DAMAGE_MULTIPLIER, MAX_CRIT_DAMAGE_MULTIPLIER)
 }
 
 export const getBlockChance = (state: GameState, actor: CombatActor, source?: CombatSource) => {

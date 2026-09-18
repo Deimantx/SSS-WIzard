@@ -219,6 +219,10 @@ export interface CombatSource {
   eventSource?: CombatSource
   school?: SchoolId
   tags?: CombatTag[]
+  /** Spell-only metadata resolved at cast completion. */
+  spellDamageMultiplier?: number
+  spellCritChanceBonus?: number
+  spellCritDamageBonus?: number
 }
 
 export type EffectTarget = 'self' | 'opponent'
@@ -250,6 +254,19 @@ export type ResourceId = 'mana'
 
 export type StatusId =
   | 'burning'
+  | 'kindled'
+  | 'frozen'
+  | 'healing-tide'
+  | 'earth-fracture'
+  | 'stone-skin'
+  | 'hardened'
+  | 'rend-armor'
+  | 'tremored'
+  | 'gust'
+  | 'tailwind'
+  | 'static'
+  | 'eye-of-the-storm'
+  | 'living-mountain'
   | 'quickening'
   | 'thorn-wound'
   | 'chilled'
@@ -272,13 +289,14 @@ export type StatusId =
   | 'arcane-disruption'
 
 export type CombatEffect =
-  | { type: 'deal-damage'; target: EffectTarget; components: DamageComponent[]; tags?: CombatTag[]; school?: SchoolId }
+  | { type: 'deal-damage'; target: EffectTarget; components: DamageComponent[]; tags?: CombatTag[]; school?: SchoolId; hitCount?: number }
   | { type: 'heal'; target: EffectTarget; magnitude: Magnitude; tags?: CombatTag[] }
   | { type: 'gain-barrier'; target: EffectTarget; magnitude: Magnitude; mode?: 'add' | 'replace'; durationMs?: number | null; tags?: CombatTag[] }
   | { type: 'restore-resource'; target: EffectTarget; resource: ResourceId; magnitude: Magnitude; tags?: CombatTag[] }
   | { type: 'drain-resource'; target: EffectTarget; resource: ResourceId; magnitude: Magnitude; tags?: CombatTag[] }
   | { type: 'apply-status'; target: EffectTarget; statusId: StatusId; durationMs?: number | null; stacks?: number; periodicEffects?: CombatEffect[]; statusSourceKey?: string; modifierOverrides?: Partial<Record<ModifierKey, number>>; tags?: CombatTag[] }
   | { type: 'remove-status'; target: EffectTarget; statusId: StatusId }
+  | { type: 'detonate-status'; target: EffectTarget; statusId: StatusId; multiplier: number; consume?: boolean }
   | { type: 'cleanse'; target: EffectTarget; mode: 'one' | 'all' | 'tag'; tag?: CombatTag }
   | { type: 'dispel'; target: EffectTarget; mode: 'one' | 'all' | 'tag'; tag?: CombatTag }
   | { type: 'modify-action-timer'; target: EffectTarget; amountMs: number; action: 'basic-attack' | 'current' }
@@ -305,6 +323,7 @@ export type ModifierKey =
   | 'status-duration-dealt-percent'
   | 'status-duration-received-percent'
   | 'defense-flat'
+  | 'defense-percent'
   | 'crit-chance'
   | 'crit-damage'
   | 'block-chance'

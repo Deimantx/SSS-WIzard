@@ -14,6 +14,8 @@ export interface SpellDetailPresentation {
   rankLabel: string
   description: string
   manaCost: number
+  castTimeMs: number
+  castTimeLabel: string
   cooldownMs: number
   cooldownLabel: string
   autoCastFocus: number
@@ -60,5 +62,5 @@ export function buildSpellDetailPresentation(state: SpellPresentationState, spel
   const mana = getEffectiveSpellManaCost(state, spellId)
   const cooldown = getEffectiveSpellCooldown(state, spellId)
   const spellPowerBreakdown = getEffectiveSpellPower(state)
-  return { spellId, spellName: spell.name, school: spell.school, rankLabel: formatSpellRank(rank), description: spell.description, manaCost: mana.effective, cooldownMs: cooldown.effective, cooldownLabel: formatTime(cooldown.effective), autoCastFocus: getSpellAutoCastFocusCost(state, spellId) ?? 0, autoCastActive: Boolean(state.activities.autoCast[spellId]), spellPower: spellPowerBreakdown.total, spellPowerBreakdown, effects: spell.effects.map((_, index) => buildSpellEffectTooltipModel(state, spellId, index)) }
+  return { spellId, spellName: spell.name, school: spell.school, rankLabel: formatSpellRank(rank), description: spell.description, manaCost: mana.effective, castTimeMs: spell.castTimeMs, castTimeLabel: formatTime(spell.castTimeMs), cooldownMs: cooldown.effective, cooldownLabel: formatTime(cooldown.effective), autoCastFocus: getSpellAutoCastFocusCost(state, spellId) ?? 0, autoCastActive: Boolean(state.activities.autoCast[spellId]), spellPower: spellPowerBreakdown.total, spellPowerBreakdown, effects: spell.effects.map((_, index) => buildSpellEffectTooltipModel(state, spellId, index)) }
 }

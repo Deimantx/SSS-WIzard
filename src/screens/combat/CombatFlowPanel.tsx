@@ -5,10 +5,10 @@ import { MONSTERS } from '../../game/content/monsters'
 import { type CombatEffectPresentation } from '../../game/presentation/combat'
 import { getCombatFlowPresentation } from '../../game/presentation/combat/combatFlowPresentation'
 import { getCurrentEnemyActionStep, getEnemyAction, getEnemyActionPattern, getNextEnemyActionStep } from '../../game/systems/combat/actionRuntime'
-import { getCurrentEnemyActionTiming, getPlayerBasicTiming } from '../../game/systems/combat/actionTiming'
+import { getCurrentEnemyActionTiming } from '../../game/systems/combat/actionTiming'
+import { getPlayerSpellCastRate } from '../../game/engine/spellEngine'
 import type { DungeonId } from '../../game/types'
 import { useGameStore } from '../../store/gameStore'
-import { selectPlayerBasicDamage } from '../../store/selectors'
 import { formatTime } from '../../game/utils'
 import { GameTooltip, Progress } from '../../components/ui'
 import { EnemyPatternRail } from './EnemyPatternRail'
@@ -21,13 +21,12 @@ export function CombatFlowPanel({ selectedDungeonId }: { selectedDungeonId: Dung
   const combat = useGameStore((state) => state.combat)
   const enemy = useGameStore((state) => state.combat.enemyId ? MONSTERS[state.combat.enemyId] ?? null : null)
   const dungeon = DUNGEONS[combat.active ? combat.dungeonId ?? selectedDungeonId : selectedDungeonId]
-  const playerBasicDamage = useGameStore(selectPlayerBasicDamage)
   // Timing selectors return structured values, so compute them from the
   // stable store snapshot rather than subscribing with a fresh object on
   // every getSnapshot call.
   const timingState = useGameStore()
-  const playerTiming = useMemo(() => getPlayerBasicTiming(timingState), [timingState])
   const enemyTiming = useMemo(() => getCurrentEnemyActionTiming(timingState), [timingState])
+  const playerCastRate = useGameStore(getPlayerSpellCastRate)
   const pattern = useGameStore((state) => state.combat.enemyId ? getEnemyActionPattern(state) : undefined)
   const nextStep = useGameStore((state) => state.combat.enemyId ? getNextEnemyActionStep(state) : undefined)
   const currentStep = useGameStore((state) => state.combat.enemyId ? getCurrentEnemyActionStep(state) : undefined)
@@ -42,8 +41,6 @@ export function CombatFlowPanel({ selectedDungeonId }: { selectedDungeonId: Dung
     threatCleared: combat.threatCleared,
     inBossFight: combat.inBossFight,
     encounterTimerMs: combat.encounterTimerMs,
-    playerAttackTimerMs: combat.playerAttackTimerMs,
-    playerAttackDurationMs: combat.playerAttackDurationMs || playerTiming.baseWorkMs,
     enemyActionTimerMs: combat.enemyActionTimerMs,
     enemyActionDurationMs: combat.enemyActionDurationMs,
     enemyNextActionIndex: combat.enemyNextActionIndex,
@@ -51,14 +48,14 @@ export function CombatFlowPanel({ selectedDungeonId }: { selectedDungeonId: Dung
     enemyCurrentStepId: combat.enemyCurrentStepId,
     enemyCurrentActionPatternId: combat.enemyCurrentActionPatternId,
     enemyActionPatternId: combat.enemyActionPatternId,
-    playerBasicDamage,
-    playerTiming,
+    playerSpellCast: combat.pendingPlayerSpellCast,
+    playerSpellCastRate: playerCastRate,
     enemyTiming,
     pattern,
     nextStep,
     currentStep,
     currentAction,
-  }), [combat, currentAction, currentStep, dungeon, enemy, enemyTiming, nextStep, pattern, playerBasicDamage, playerTiming, selectedDungeonId])
+  }), [combat, currentAction, currentStep, dungeon, enemy, enemyTiming, nextStep, pattern, playerCastRate, selectedDungeonId])
 
   if (presentation.mode === 'tower') return <section className="combat-flow-panel is-tower"><div className="combat-flow-state-kicker"><span className="combat-flow-kicker">AT THE TOWER</span><span className="combat-flow-state-mark">STANDBY</span></div><div className="combat-flow-state-sigil"><ShieldAlert size={26} aria-hidden="true" /></div><strong>NO ACTIVE HUNT</strong><p>Enter a Dungeon from Campaign to begin Combat.</p></section>
   if (presentation.mode === 'boss-ready') return <section className="combat-flow-panel is-boss-ready"><div className="combat-flow-state-kicker"><span className="combat-flow-kicker">BOSS READY</span><span className="combat-flow-state-mark">ROUTE CLEAR</span></div><div className="combat-flow-state-sigil"><Crown size={26} aria-hidden="true" /></div><strong>{MONSTERS[presentation.dungeon.boss].name}</strong><p>The route is clear. Engage the Boss from the Run Bar when ready.</p><span className="combat-flow-state-action">USE RUN BAR TO ENGAGE</span></section>

@@ -1,4 +1,4 @@
-import { SPELLS } from '../../content/spells/spells'
+import { LEGACY_SPELL_ID_MAP, SPELLS } from '../../content/spells/spells'
 import { deriveFocusReservations } from '../focus/focusReservations'
 import type { FocusReservationState } from '../focus/focusReservations'
 import { getSpellAutoCastFocusCost, isSpellUnlocked } from './spellProgression'
@@ -29,13 +29,16 @@ export const normalizeSpellPresetName = (value: unknown, fallback = DEFAULT_SPEL
 }
 
 const isSpellId = (value: unknown): value is SpellId => typeof value === 'string' && Object.prototype.hasOwnProperty.call(SPELLS, value)
+const canonicalSpellId = (value: SpellId): SpellId => LEGACY_SPELL_ID_MAP[value] ?? value
 
 const dedupeSpellIds = (values: unknown[]): SpellId[] => {
   const seen = new Set<SpellId>()
   return values.flatMap((value) => {
-    if (!isSpellId(value) || seen.has(value)) return []
-    seen.add(value)
-    return [value]
+    if (!isSpellId(value)) return []
+    const canonical = canonicalSpellId(value)
+    if (seen.has(canonical)) return []
+    seen.add(canonical)
+    return [canonical]
   })
 }
 
@@ -61,8 +64,9 @@ export const normalizeSpellPresetState = (raw: unknown, autoCast?: Partial<Recor
   const applied = requestedAppliedId && presets.some((preset) => preset.id === requestedAppliedId) ? requestedAppliedId : null
   if (!applied || !autoCast) return { presets, lastAppliedPresetId: applied }
   const preset = presets.find((entry) => entry.id === applied)
-  const presetIds = new Set(preset?.spellIds ?? [])
-  const matches = Object.keys(SPELLS).every((id) => Boolean(autoCast[id as SpellId]) === presetIds.has(id as SpellId))
+  const presetIds = preset?.spellIds ?? []
+  const current = Object.keys(SPELLS).filter((id) => Boolean(autoCast[id as SpellId])) as SpellId[]
+  const matches = current.length === presetIds.length && current.every((id) => presetIds.includes(id))
   return { presets, lastAppliedPresetId: matches ? applied : null }
 }
 
@@ -87,8 +91,8 @@ export const getSpellPresetFocusBreakdown = (state: SpellPresetFocusState): Spel
 export const doesCurrentAutoCastMatchPreset = (state: Pick<GameState, 'activities' | 'progress' | 'equipment' | 'artifactProgress' | 'arcaneCore'>, preset: Pick<SpellPreset, 'spellIds'>) => {
   const projection = getSpellPresetFocusProjection({ ...state, player: { maxFocus: 0 }, debug: { allowFocusOverCap: true } }, preset)
   if (!projection.validSpellIds.length || projection.unavailableSpellIds.length || projection.invalidSpellIds.length) return false
-  const presetIds = new Set(projection.validSpellIds)
-  return Object.keys(SPELLS).every((id) => Boolean(state.activities.autoCast[id as SpellId]) === presetIds.has(id as SpellId))
+  const current = state.activities.autoCastPriority?.filter((spellId) => state.activities.autoCast[spellId]) ?? (Object.keys(SPELLS).filter((id) => state.activities.autoCast[id as SpellId]) as SpellId[])
+  return current.length === projection.validSpellIds.length && current.every((id, index) => id === projection.validSpellIds[index])
 }
 
 export const getSpellPresetFocusProjection = (
@@ -103,8 +107,9 @@ export const getSpellPresetFocusProjection = (
     if (seen.has(rawId)) continue
     seen.add(rawId)
     if (!isSpellId(rawId)) { invalidSpellIds.push(String(rawId)); continue }
-    if (isSpellUnlocked(state, rawId)) validSpellIds.push(rawId)
-    else unavailableSpellIds.push(rawId)
+    const canonical = canonicalSpellId(rawId)
+    if (isSpellUnlocked(state, canonical)) validSpellIds.push(canonical)
+    else unavailableSpellIds.push(canonical)
   }
   const presetAutoCastFocus = validSpellIds.reduce((sum, spellId) => sum + (getSpellAutoCastFocusCost(state, spellId) ?? 0), 0)
   const nonAutoCastFocus = getSpellPresetFocusBreakdown({ activities: state.activities, progress: state.progress, equipment: state.equipment, artifactProgress: state.artifactProgress, arcaneCore: state.arcaneCore, player: state.player }).otherFocus

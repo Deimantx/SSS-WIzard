@@ -1,54 +1,79 @@
-import type { CombatEffect, SpellDefinition, SpellId } from '../../types'
+import type { CanonicalSpellId, CombatEffect, SpellDefinition, SpellId } from '../../types'
+import type { CombatTag } from '../../systems/combat/combatTypes'
 import { SCHOOLS } from '../schools/schools'
 import { periodicDamageStatus } from '../statuses/periodicDamageStatus'
 import { STATUS_DEFINITIONS } from '../statuses/statuses'
 import { createCombatValidationContext, validateCombatEffect } from '../../systems/combat/combatEffectValidation'
 
-const damage = (school: 'fire' | 'water' | 'earth' | 'air', coefficient: number): CombatEffect => ({
-  type: 'deal-damage', target: 'opponent', components: [{ damageType: school, magnitude: { type: 'spell-power', coefficient } }], school, tags: ['direct'],
+const damage = (school: 'fire' | 'water' | 'earth' | 'air', coefficient: number, extra: Partial<Extract<CombatEffect, { type: 'deal-damage' }>> = {}): CombatEffect => ({
+  type: 'deal-damage', target: 'opponent', components: [{ damageType: school, magnitude: { type: 'spell-power', coefficient } }], school, tags: ['direct', school], ...extra,
 })
-const barrier = (coefficient: number): CombatEffect => ({ type: 'gain-barrier', target: 'self', magnitude: { type: 'spell-power', coefficient }, mode: 'replace', durationMs: 9000, tags: ['barrier'] })
+const barrier = (coefficient: number): CombatEffect => ({ type: 'gain-barrier', target: 'self', magnitude: { type: 'spell-power', coefficient }, mode: 'replace', durationMs: 9000, tags: ['barrier', 'earth'] })
 const heal = (coefficient: number): CombatEffect => ({ type: 'heal', target: 'self', magnitude: { type: 'spell-power', coefficient }, tags: ['heal', 'direct', 'water'] })
+const status = (target: 'self' | 'opponent', statusId: Extract<keyof typeof STATUS_DEFINITIONS, string>, durationMs?: number, tags: CombatTag[] = ['status']) => ({ type: 'apply-status' as const, target, statusId, durationMs, tags })
+const spell = (definition: Omit<SpellDefinition, 'id'> & { id: CanonicalSpellId }): SpellDefinition => definition
 
-export const SPELLS: Record<SpellId, SpellDefinition> = {
-  'fire-bolt': { id: 'fire-bolt', name: 'Fire Bolt', school: 'fire', description: 'A fast, reliable bolt of flame.', unlockLevel: 2, manaCost: 30, cooldownMs: 5000, type: 'damage', effects: [damage('fire', 0.5)], autoCondition: { type: 'always' } },
-  ignite: { id: 'ignite', name: 'Ignite', school: 'fire', description: 'A spark that burns after it lands.', unlockLevel: 8, manaCost: 25, cooldownMs: 9000, type: 'dot', effects: [damage('fire', 0.1), periodicDamageStatus({ statusId: 'burning', durationMs: 6000, totalMagnitude: { type: 'spell-power', coefficient: 0.65 }, damageType: 'fire' })], autoCondition: { type: 'always' } },
-  fireball: { id: 'fireball', name: 'Fireball', school: 'fire', description: 'A heavy sphere of flame that erupts on impact and leaves a lasting burn.', unlockLevel: 16, manaCost: 60, cooldownMs: 12000, type: 'damage', effects: [damage('fire', 0.9), periodicDamageStatus({ statusId: 'burning', durationMs: 10000, totalMagnitude: { type: 'spell-power', coefficient: 0.2 }, damageType: 'fire' })], autoCondition: { type: 'always' } },
-  'water-ward': { id: 'water-ward', name: 'Water Ward', school: 'water', description: 'Wraps the wizard in a frequent, flexible barrier.', unlockLevel: 2, manaCost: 25, cooldownMs: 12000, type: 'barrier', effects: [barrier(0.7)], autoCondition: { type: 'barrier-below', value: 10 } },
-  'flow-mend': { id: 'flow-mend', name: 'Flow Mend', school: 'water', description: 'A restorative current for a wounded wizard.', unlockLevel: 8, manaCost: 35, cooldownMs: 12000, type: 'heal', effects: [heal(0.8)], autoCondition: { type: 'health-below', percent: 70 } },
-  frostbite: { id: 'frostbite', name: 'Frostbite', school: 'water', description: 'Bites into the enemy with cold and slows its combat tempo.', unlockLevel: 16, manaCost: 45, cooldownMs: 15000, type: 'damage', effects: [damage('water', 0.45), { type: 'apply-status', target: 'opponent', statusId: 'chilled', tags: ['debuff', 'control'] }], autoCondition: { type: 'always' } },
-  'earth-spike': { id: 'earth-spike', name: 'Earth Spike', school: 'earth', description: 'A heavy spike that strikes with earthen force.', unlockLevel: 2, manaCost: 28, cooldownMs: 7000, type: 'damage', effects: [damage('earth', 0.45)], autoCondition: { type: 'always' } },
-  stoneguard: { id: 'stoneguard', name: 'Stoneguard', school: 'earth', description: 'A large shell of living stone prepared for danger.', unlockLevel: 8, manaCost: 35, cooldownMs: 22000, type: 'barrier', effects: [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'spell-power', coefficient: 1 }, mode: 'replace', durationMs: 9000, tags: ['barrier'] }], autoCondition: { type: 'barrier-below', value: 10 } },
-  fortify: { id: 'fortify', name: 'Fortify', school: 'earth', description: 'Reduces all incoming damage for a short duration.', unlockLevel: 16, manaCost: 60, cooldownMs: 30000, type: 'buff', effects: [{ type: 'apply-status', target: 'self', statusId: 'fortified', tags: ['buff'] }], autoCondition: { type: 'always' } },
-  'air-lance': { id: 'air-lance', name: 'Air Lance', school: 'air', description: 'A focused lance of compressed air that strikes the enemy.', unlockLevel: 2, manaCost: 24, cooldownMs: 8000, type: 'damage', effects: [damage('air', 0.45)], autoCondition: { type: 'always' } },
-  quickening: { id: 'quickening', name: 'Quickening', school: 'air', description: 'A gust that accelerates every Basic Attack.', unlockLevel: 8, manaCost: 38, cooldownMs: 14000, type: 'buff', effects: [{ type: 'apply-status', target: 'self', statusId: 'quickening', tags: ['buff'] }], autoCondition: { type: 'always' } },
-  'shock-spark': { id: 'shock-spark', name: 'Shock Spark', school: 'air', description: 'A spark that leaves the enemy vulnerable to subsequent Air damage.', unlockLevel: 16, manaCost: 48, cooldownMs: 10000, type: 'damage', effects: [damage('air', 0.45), { type: 'apply-status', target: 'opponent', statusId: 'shock', stacks: 1, tags: ['debuff'] }], autoCondition: { type: 'always' } },
+export const SPELLS = {
+  'fire-bolt': spell({ id: 'fire-bolt', name: 'Fire Bolt', school: 'fire', description: 'A quick bolt of flame. It does not burn.', unlockLevel: 2, manaCost: 30, castTimeMs: 1000, cooldownMs: 6000, type: 'damage', effects: [damage('fire', 0.75)], autoCondition: { type: 'always' } }),
+  'searing-touch': spell({ id: 'searing-touch', name: 'Searing Touch', school: 'fire', description: 'Scorches the enemy and leaves a six-second Burning wound.', unlockLevel: 7, manaCost: 45, castTimeMs: 750, cooldownMs: 10000, type: 'dot', effects: [damage('fire', 0.25), periodicDamageStatus({ statusId: 'burning', durationMs: 6000, totalMagnitude: { type: 'spell-power', coefficient: 0.5 }, damageType: 'fire' })], autoCondition: { type: 'always' } }),
+  'flame-burst': spell({ id: 'flame-burst', name: 'Flame Burst', school: 'fire', description: 'A heavy burst that deals 50% more damage to Burning enemies.', unlockLevel: 12, manaCost: 55, castTimeMs: 1500, cooldownMs: 14000, type: 'damage', effects: [damage('fire', 0.6)], autoCondition: { type: 'always' } }),
+  kindling: spell({ id: 'kindling', name: 'Kindling', school: 'fire', description: 'Kindles the enemy, making it take 25% more Fire damage.', unlockLevel: 17, manaCost: 55, castTimeMs: 1000, cooldownMs: 18000, type: 'buff', effects: [status('opponent', 'kindled', 18000, ['debuff', 'fire'])], autoCondition: { type: 'always' } }),
+  firestorm: spell({ id: 'firestorm', name: 'Firestorm', school: 'fire', description: 'Six independent hits of flame.', unlockLevel: 22, manaCost: 105, castTimeMs: 2500, cooldownMs: 25000, type: 'damage', effects: [damage('fire', 0.2, { hitCount: 6 })], autoCondition: { type: 'always' } }),
+  combustion: spell({ id: 'combustion', name: 'Combustion', school: 'fire', description: 'Deals damage and detonates your Burning effect.', unlockLevel: 28, manaCost: 75, castTimeMs: 1600, cooldownMs: 25000, type: 'damage', effects: [damage('fire', 0.5), { type: 'detonate-status', target: 'opponent', statusId: 'burning', multiplier: 1, consume: true }], autoCondition: { type: 'always' } }),
+  inferno: spell({ id: 'inferno', name: 'Inferno', school: 'fire', description: 'A powerful hit followed by a twelve-second burn.', unlockLevel: 34, manaCost: 125, castTimeMs: 3000, cooldownMs: 30000, type: 'dot', effects: [damage('fire', 0.5), periodicDamageStatus({ statusId: 'burning', durationMs: 12000, totalMagnitude: { type: 'spell-power', coefficient: 0.75 }, damageType: 'fire' })], autoCondition: { type: 'always' } }),
+  'execution-flame': spell({ id: 'execution-flame', name: 'Execution Flame', school: 'fire', description: 'A lethal flame empowered against wounded or Burning enemies.', unlockLevel: 40, manaCost: 150, castTimeMs: 1500, cooldownMs: 45000, type: 'damage', effects: [damage('fire', 1)], autoCondition: { type: 'always' } }),
+
+  'water-bolt': spell({ id: 'water-bolt', name: 'Water Bolt', school: 'water', description: 'A bolt of water that Chills its target.', unlockLevel: 2, manaCost: 20, castTimeMs: 1000, cooldownMs: 5000, type: 'damage', effects: [damage('water', 0.4), status('opponent', 'chilled', 5000, ['debuff', 'control', 'water'])], autoCondition: { type: 'always' } }),
+  'mending-waters': spell({ id: 'mending-waters', name: 'Mending Waters', school: 'water', description: 'Restores a portion of the wizard’s health.', unlockLevel: 7, manaCost: 50, castTimeMs: 1600, cooldownMs: 10000, type: 'heal', effects: [heal(0.5)], autoCondition: { type: 'health-below', percent: 70 } }),
+  'frost-touch': spell({ id: 'frost-touch', name: 'Frost Touch', school: 'water', description: 'Deals Water damage and applies a stronger Chill.', unlockLevel: 12, manaCost: 45, castTimeMs: 1100, cooldownMs: 12000, type: 'damage', effects: [damage('water', 0.7), { ...status('opponent', 'chilled', 5000, ['debuff', 'control', 'water']), modifierOverrides: { 'action-speed-percent': -0.25, 'basic-attack-speed-percent': -0.25 } }], autoCondition: { type: 'always' } }),
+  regeneration: spell({ id: 'regeneration', name: 'Regeneration', school: 'water', description: 'Restores health every second for ten seconds.', unlockLevel: 17, manaCost: 60, castTimeMs: 1000, cooldownMs: 10000, type: 'heal', effects: [{ type: 'apply-status', target: 'self', statusId: 'regeneration', durationMs: 10000, periodicEffects: [{ type: 'heal', target: 'self', magnitude: { type: 'spell-power', coefficient: 0.1 }, tags: ['heal', 'hot', 'water'] }], tags: ['buff', 'hot', 'water'] }], autoCondition: { type: 'health-below', percent: 90 } }),
+  'frozen-current': spell({ id: 'frozen-current', name: 'Frozen Current', school: 'water', description: 'A current that intensifies against Chilled enemies.', unlockLevel: 22, manaCost: 75, castTimeMs: 1500, cooldownMs: 16000, type: 'damage', effects: [damage('water', 1), status('opponent', 'chilled', 5000, ['debuff', 'control', 'water'])], autoCondition: { type: 'always' } }),
+  'cleansing-tide': spell({ id: 'cleansing-tide', name: 'Cleansing Tide', school: 'water', description: 'Heals and cleanses all cleanseable negative effects.', unlockLevel: 28, manaCost: 50, castTimeMs: 500, cooldownMs: 18000, type: 'heal', effects: [heal(0.5), { type: 'cleanse', target: 'self', mode: 'all' }], autoCondition: { type: 'health-below', percent: 75 } }),
+  'deep-freeze': spell({ id: 'deep-freeze', name: 'Deep Freeze', school: 'water', description: 'Deals Water damage and heavily slows the enemy.', unlockLevel: 34, manaCost: 80, castTimeMs: 2000, cooldownMs: 20000, type: 'damage', effects: [damage('water', 0.75), status('opponent', 'frozen', 4000, ['debuff', 'control', 'water'])], autoCondition: { type: 'always' } }),
+  'healing-tide': spell({ id: 'healing-tide', name: 'Healing Tide', school: 'water', description: 'Heals immediately and continues restoring health for six seconds.', unlockLevel: 40, manaCost: 75, castTimeMs: 2000, cooldownMs: 23000, type: 'heal', effects: [heal(1), { type: 'apply-status', target: 'self', statusId: 'healing-tide', durationMs: 6000, periodicEffects: [{ type: 'heal', target: 'self', magnitude: { type: 'spell-power', coefficient: 0.15 }, tags: ['heal', 'hot', 'water'] }], tags: ['buff', 'hot', 'water'] }], autoCondition: { type: 'health-below', percent: 90 } }),
+
+  'stone-shard': spell({ id: 'stone-shard', name: 'Stone Shard', school: 'earth', description: 'Strikes the enemy and fractures it over three seconds.', unlockLevel: 2, manaCost: 25, castTimeMs: 1700, cooldownMs: 5000, type: 'dot', effects: [damage('earth', 0.25), periodicDamageStatus({ statusId: 'earth-fracture', durationMs: 3000, totalMagnitude: { type: 'spell-power', coefficient: 0.25 }, damageType: 'earth' })], autoCondition: { type: 'always' } }),
+  'stone-skin': spell({ id: 'stone-skin', name: 'Stone Skin', school: 'earth', description: 'Raises Defense by 20% for ten seconds.', unlockLevel: 7, manaCost: 50, castTimeMs: 1500, cooldownMs: 16000, type: 'buff', effects: [status('self', 'stone-skin', 10000, ['buff', 'earth'])], autoCondition: { type: 'always' } }),
+  'earthen-barrier': spell({ id: 'earthen-barrier', name: 'Earthen Barrier', school: 'earth', description: 'Creates a strong barrier, replacing it only when stronger.', unlockLevel: 12, manaCost: 60, castTimeMs: 1800, cooldownMs: 14000, type: 'barrier', effects: [barrier(1.2)], autoCondition: { type: 'barrier-below', value: 10 } }),
+  harden: spell({ id: 'harden', name: 'Harden', school: 'earth', description: 'Reduces damage taken by 25% for five seconds.', unlockLevel: 17, manaCost: 100, castTimeMs: 500, cooldownMs: 22000, type: 'buff', effects: [status('self', 'hardened', 5000, ['buff', 'earth'])], autoCondition: { type: 'always' } }),
+  rockfall: spell({ id: 'rockfall', name: 'Rockfall', school: 'earth', description: 'A heavy Earth strike.', unlockLevel: 22, manaCost: 65, castTimeMs: 2500, cooldownMs: 16000, type: 'damage', effects: [damage('earth', 1.4)], autoCondition: { type: 'always' } }),
+  'rend-armor': spell({ id: 'rend-armor', name: 'Rend Armor', school: 'earth', description: 'Deals damage and reduces enemy Defense by 20%.', unlockLevel: 28, manaCost: 75, castTimeMs: 1700, cooldownMs: 16000, type: 'damage', effects: [damage('earth', 0.75), status('opponent', 'rend-armor', 10000, ['debuff', 'earth'])], autoCondition: { type: 'always' } }),
+  tremors: spell({ id: 'tremors', name: 'Tremors', school: 'earth', description: 'Seven independent Earth hits that slow enemy actions.', unlockLevel: 34, manaCost: 100, castTimeMs: 2500, cooldownMs: 25000, type: 'damage', effects: [damage('earth', 0.25, { hitCount: 7 }), status('opponent', 'tremored', 5000, ['debuff', 'control', 'earth'])], autoCondition: { type: 'always' } }),
+  'living-mountain': spell({ id: 'living-mountain', name: 'Living Mountain', school: 'earth', description: 'Massively strengthens Defense and reduces damage taken.', unlockLevel: 40, manaCost: 100, castTimeMs: 3000, cooldownMs: 25000, type: 'buff', effects: [status('self', 'living-mountain', 14000, ['buff', 'earth'])], autoCondition: { type: 'always' } }),
+
+  'wind-blade': spell({ id: 'wind-blade', name: 'Wind Blade', school: 'air', description: 'A swift blade of compressed air.', unlockLevel: 2, manaCost: 25, castTimeMs: 650, cooldownMs: 5000, type: 'damage', effects: [damage('air', 0.4)], autoCondition: { type: 'always' } }),
+  'lightning-spark': spell({ id: 'lightning-spark', name: 'Lightning Spark', school: 'air', description: 'A Spark with a spell-specific critical chance bonus.', unlockLevel: 7, manaCost: 50, castTimeMs: 750, cooldownMs: 8000, type: 'damage', effects: [damage('air', 0.5)], autoCondition: { type: 'always' } }),
+  gust: spell({ id: 'gust', name: 'Gust', school: 'air', description: 'The next Spell cast resolves with 30% less work.', unlockLevel: 12, manaCost: 65, castTimeMs: 600, cooldownMs: 12000, type: 'damage', effects: [damage('air', 0.5), status('self', 'gust', 6000, ['buff', 'air'])], autoCondition: { type: 'always' } }),
+  'chain-lightning': spell({ id: 'chain-lightning', name: 'Chain Lightning', school: 'air', description: 'Five independent lightning hits.', unlockLevel: 17, manaCost: 75, castTimeMs: 1100, cooldownMs: 12000, type: 'damage', effects: [damage('air', 0.2, { hitCount: 5 })], autoCondition: { type: 'always' } }),
+  tailwind: spell({ id: 'tailwind', name: 'Tailwind', school: 'air', description: 'Increases action speed by 25% for ten seconds.', unlockLevel: 22, manaCost: 100, castTimeMs: 750, cooldownMs: 20000, type: 'buff', effects: [status('self', 'tailwind', 10000, ['buff', 'air'])], autoCondition: { type: 'always' } }),
+  'static-charge': spell({ id: 'static-charge', name: 'Static Charge', school: 'air', description: 'Charges the next damaging Air Spell with extra damage.', unlockLevel: 28, manaCost: 75, castTimeMs: 900, cooldownMs: 10000, type: 'damage', effects: [damage('air', 0.5), status('self', 'static', 10000, ['buff', 'air'])], autoCondition: { type: 'always' } }),
+  thunderstrike: spell({ id: 'thunderstrike', name: 'Thunderstrike', school: 'air', description: 'A devastating Air strike with bonus critical damage.', unlockLevel: 34, manaCost: 90, castTimeMs: 1450, cooldownMs: 16000, type: 'damage', effects: [damage('air', 1)], autoCondition: { type: 'always' } }),
+  'eye-of-the-storm': spell({ id: 'eye-of-the-storm', name: 'Eye of the Storm', school: 'air', description: 'Improves cooldown recovery, critical chance, and action speed.', unlockLevel: 40, manaCost: 100, castTimeMs: 1700, cooldownMs: 25000, type: 'buff', effects: [status('self', 'eye-of-the-storm', 10000, ['buff', 'air'])], autoCondition: { type: 'always' } }),
+} as unknown as Record<SpellId, SpellDefinition>
+
+export const LEGACY_SPELL_ID_MAP: Record<string, CanonicalSpellId> = {
+  ignite: 'searing-touch', fireball: 'flame-burst', 'water-ward': 'water-bolt', 'flow-mend': 'mending-waters', frostbite: 'frost-touch',
+  'earth-spike': 'stone-shard', stoneguard: 'earthen-barrier', fortify: 'harden', 'air-lance': 'wind-blade', quickening: 'tailwind', 'shock-spark': 'static-charge',
 }
+Object.entries(LEGACY_SPELL_ID_MAP).forEach(([legacyId, canonicalId]) => Object.defineProperty(SPELLS, legacyId, { value: SPELLS[canonicalId], enumerable: false, configurable: false }))
+
+export const CANONICAL_SPELL_IDS = Object.keys(SPELLS) as CanonicalSpellId[]
 
 export const validateSpellDefinitions = () => {
   const errors: string[] = []
   const validationContext = createCombatValidationContext(STATUS_DEFINITIONS)
   const ids = Object.values(SPELLS).map((spell) => spell.id)
+  if (ids.length !== 32) errors.push(`expected 32 spells, received ${ids.length}`)
   if (new Set(ids).size !== ids.length) errors.push('duplicate spell id')
   Object.entries(SPELLS).forEach(([key, spell]) => {
     if (key !== spell.id) errors.push(`${key}: key/id mismatch`)
     if (!SCHOOLS[spell.school]) errors.push(`${spell.id}: unknown school`)
     if (!Number.isInteger(spell.unlockLevel) || spell.unlockLevel < 1) errors.push(`${spell.id}: invalid unlock level`)
     if (!Number.isFinite(spell.manaCost) || spell.manaCost < 0) errors.push(`${spell.id}: invalid mana cost`)
+    if (!Number.isFinite(spell.castTimeMs) || spell.castTimeMs <= 0) errors.push(`${spell.id}: invalid cast time`)
     if (!Number.isFinite(spell.cooldownMs) || spell.cooldownMs < 0) errors.push(`${spell.id}: invalid cooldown`)
     if (!spell.effects.length) errors.push(`${spell.id}: effects must not be empty`)
-    const validateEffect = (effect: CombatEffect) => {
-      errors.push(...validateCombatEffect(effect, `${spell.id}.effect`, validationContext))
-      if (effect.type === 'apply-status') {
-        effect.periodicEffects?.forEach((periodicEffect) => {
-          if (periodicEffect.type === 'deal-damage' && periodicEffect.components.some((component) => component.damageType !== spell.school)) errors.push(`${spell.id}: periodic damage school mismatch`)
-        })
-      }
-    }
-    spell.effects.forEach((effect) => {
-      validateEffect(effect)
-      if (effect.type === 'deal-damage' && (effect.components.some((component) => component.damageType !== spell.school) || (effect.school !== undefined && effect.school !== spell.school))) errors.push(`${spell.id}: damage school mismatch`)
-    })
+    spell.effects.forEach((effect) => errors.push(...validateCombatEffect(effect, `${spell.id}.effect`, validationContext)))
   })
   if (errors.length && import.meta.env.DEV) console.error(`[spells] ${errors.join('; ')}`)
   return errors

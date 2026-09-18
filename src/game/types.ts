@@ -51,7 +51,14 @@ export type ItemId =
 
 export type StoryEventId = 'edrin-dark-portal-discovery'
 
-export type SpellId = 'fire-bolt' | 'ignite' | 'fireball' | 'water-ward' | 'flow-mend' | 'frostbite' | 'earth-spike' | 'stoneguard' | 'fortify' | 'air-lance' | 'quickening' | 'shock-spark'
+export type CanonicalSpellId =
+  | 'fire-bolt' | 'searing-touch' | 'flame-burst' | 'kindling' | 'firestorm' | 'combustion' | 'inferno' | 'execution-flame'
+  | 'water-bolt' | 'mending-waters' | 'frost-touch' | 'regeneration' | 'frozen-current' | 'cleansing-tide' | 'deep-freeze' | 'healing-tide'
+  | 'stone-shard' | 'stone-skin' | 'earthen-barrier' | 'harden' | 'rockfall' | 'rend-armor' | 'tremors' | 'living-mountain'
+  | 'wind-blade' | 'lightning-spark' | 'gust' | 'chain-lightning' | 'tailwind' | 'static-charge' | 'thunderstrike' | 'eye-of-the-storm'
+/** Legacy IDs remain type-compatible only so old persisted callers can be normalized. */
+export type LegacySpellId = 'ignite' | 'fireball' | 'water-ward' | 'flow-mend' | 'frostbite' | 'earth-spike' | 'stoneguard' | 'fortify' | 'air-lance' | 'quickening' | 'shock-spark'
+export type SpellId = CanonicalSpellId | LegacySpellId
 export type SpellPresetId = string
 export type MonsterId = 'forest-wisp' | 'thornling' | 'stone-root' | 'grove-sentinel' | 'forest-heart' | 'cavefang-wolf' | 'razorclaw-lynx' | 'corrupted-dire-wolf' | 'corrupted-greatbear' | 'restless-skeleton' | 'grave-wraith' | 'fallen-acolyte' | 'archmage-edrin-shade' | 'warded-husk' | 'rift-wolf' | 'arcane-scavenger' | 'withered-watcher' | 'corrupted-elemental-gatekeeper'
   | 'drowned-acolyte' | 'reliquary-slime' | 'mist-wraith' | 'rune-leech' | 'drowned-keeper'
@@ -230,12 +237,13 @@ export interface ItemDefinition {
 }
 
 export interface SpellDefinition {
-  id: SpellId
+  id: CanonicalSpellId
   name: string
   school: SchoolId
   description: string
   unlockLevel: number
   manaCost: number
+  castTimeMs: number
   cooldownMs: number
   type: SpellType
   effects: CombatEffect[]
@@ -312,6 +320,8 @@ export interface ActivitiesState {
   transmutation: TransmutationActivity
   artificing: ArtificingActivity
   autoCast: Record<SpellId, boolean>
+  /** Ordered Auto-Cast source of truth. The boolean record is compatibility/UI projection. */
+  autoCastPriority: CanonicalSpellId[]
 }
 export interface SpellPreset {
   id: SpellPresetId
@@ -348,6 +358,7 @@ export interface CombatState {
   pendingBossId: MonsterId | null
   playerAttackTimerMs: number
   playerAttackDurationMs: number
+  pendingPlayerSpellCast: PendingPlayerSpellCast | null
   encounterTimerMs: number
   spellCooldowns: Record<SpellId, number>
   /** Runtime Auto-Cast starvation latch; persisted harmlessly with combat state. */
@@ -373,6 +384,15 @@ export interface CombatState {
     attackTimerMs: number
     suppressedForEncounter: boolean
   }
+}
+export interface PendingPlayerSpellCast {
+  spellId: CanonicalSpellId
+  targetInstanceKey: string | null
+  remainingWorkMs: number
+  castWorkMs: number
+  manaCostSnapshot: number
+  arcaneCoreFree: boolean
+  castWorkMultiplier: number
 }
 export interface GuardianProgressState { level: number; rank: number }
 export interface GuardiansState {

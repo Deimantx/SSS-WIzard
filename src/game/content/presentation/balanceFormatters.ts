@@ -77,11 +77,13 @@ export const formatCombatEffect = (effect: CombatEffect, context: { statusHolder
       return `Apply ${statusName(effect.statusId)} to ${targetName(effect.target, context.statusHolder)}${duration}${stacks}${periodic}`
     }
     case 'remove-status': return `Remove ${statusName(effect.statusId)} from ${targetName(effect.target, context.statusHolder)}`
+    case 'detonate-status': return `Detonate ${statusName(effect.statusId)} on ${targetName(effect.target, context.statusHolder)}`
     case 'cleanse': return `Cleanse ${effect.mode === 'tag' ? `${readableId(effect.tag ?? 'status')} statuses` : effect.mode === 'all' ? 'all removable statuses' : 'one removable status'} from ${targetName(effect.target, context.statusHolder)}`
     case 'dispel': return `Dispel ${effect.mode === 'tag' ? `${readableId(effect.tag ?? 'status')} effects` : effect.mode === 'all' ? 'all dispellable statuses' : 'one dispellable status'} from ${targetName(effect.target, context.statusHolder)}`
     case 'modify-action-timer': return `${effect.amountMs >= 0 ? 'Delay' : 'Advance'} ${targetName(effect.target, context.statusHolder)}'s ${effect.action === 'basic-attack' ? 'Basic Attack' : 'current action'} by ${formatDuration(Math.abs(effect.amountMs))}`
     case 'modify-cooldown': return `${effect.amountMs >= 0 ? 'Delay' : 'Advance'} ${effect.spellId ? readableId(effect.spellId) : 'the current spell'} cooldown by ${formatDuration(Math.abs(effect.amountMs))}`
     case 'set-action-pattern': return `Switch ${targetName(effect.target, context.statusHolder)} to the ${readableId(effect.patternId)} action pattern`
+    default: return 'Combat effect'
   }
 }
 
@@ -151,6 +153,7 @@ const modifierLabels: Record<ModifierKey, string> = {
   'status-duration-dealt-percent': 'Status duration dealt',
   'status-duration-received-percent': 'Status duration received',
   'defense-flat': 'Defense',
+  'defense-percent': 'Defense',
   'crit-chance': 'Critical Strike chance',
   'crit-damage': 'Critical Strike damage',
   'block-chance': 'Block chance',
@@ -269,11 +272,13 @@ export const formatCompactCombatEffect = (effect: CombatEffect, context: { statu
       return `${statusName(effect.statusId)}${stacks}${duration}${periodic}`
     }
     case 'remove-status': return `Remove ${statusName(effect.statusId)}`
+    case 'detonate-status': return `Detonate ${statusName(effect.statusId)}`
     case 'cleanse': return `Cleanse ${effect.mode === 'tag' ? readableId(effect.tag ?? 'status') : effect.mode === 'all' ? 'all' : 'one'} status${effect.mode === 'all' ? 'es' : ''}`
     case 'dispel': return `Dispel ${effect.mode === 'tag' ? readableId(effect.tag ?? 'status') : effect.mode === 'all' ? 'all' : 'one'} effect${effect.mode === 'all' ? 's' : ''}`
     case 'modify-action-timer': return `${effect.amountMs >= 0 ? '+' : '-'}${formatDuration(Math.abs(effect.amountMs))} action time`
     case 'modify-cooldown': return `${effect.amountMs >= 0 ? '+' : '-'}${formatDuration(Math.abs(effect.amountMs))} cooldown`
     case 'set-action-pattern': return `Pattern: ${readableId(effect.patternId)}`
+    default: return 'Combat effect'
   }
 }
 

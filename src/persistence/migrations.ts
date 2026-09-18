@@ -11,10 +11,10 @@ import { ARTIFICING_RECIPES } from '../game/content/recipes/artificingRecipes'
 import { TRANSMUTATION_ARRAY_IDS } from '../game/content/transmutation/transmutationArrays'
 import { BALANCE } from '../game/core/balance/balance'
 import { SCHOOL_MAX_LEVEL, getSchoolTotalXpForLevel } from '../game/core/balance/schoolXpCurve'
-import { SPELLS } from '../game/content/spells/spells'
+import { LEGACY_SPELL_ID_MAP, SPELLS } from '../game/content/spells/spells'
 import { SCHOOLS } from '../game/content/schools/schools'
 import { EQUIPMENT_POSITIONS, normalizeEquipmentState } from '../game/core/equipment'
-import type { ArtifactId, DungeonId, EquipmentPosition, GameState, ItemId, MonsterId, TransmutationRecipeId, ResearchActivity, ResearchJobState, SchoolId, SpellId, TransmutationJobState } from '../game/types'
+import type { ArtifactId, CanonicalSpellId, DungeonId, EquipmentPosition, GameState, ItemId, MonsterId, TransmutationRecipeId, ResearchActivity, ResearchJobState, SchoolId, SpellId, TransmutationJobState } from '../game/types'
 import { RESEARCH_SLOT_ORDER } from '../game/systems/research/researchReservations'
 import { isRecord, SaveMigrationError } from './saveSchema'
 import { recalculateDerivedStats } from '../game/engine'
@@ -67,7 +67,8 @@ const monsterIds = Object.keys(MONSTERS)
 const bossIds = [...monsterIds, SUMMONING_UNLOCK_BOSS_ID]
 const dungeonIds = Object.keys(DUNGEONS)
 const requestIds = Object.keys(GUILD_REQUESTS)
-const spellIds = Object.keys(SPELLS)
+const spellIds = Object.keys(SPELLS) as CanonicalSpellId[]
+const normalizeSpellId = (value: unknown) => typeof value === 'string' && Object.prototype.hasOwnProperty.call(SPELLS, value) ? (LEGACY_SPELL_ID_MAP[value] ?? value) : undefined
 const recipeIds = Object.keys(RECIPES)
 const permanentFocusIds = ['forest-heart', 'guild-apprentice']
 
@@ -166,8 +167,23 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
   const normalizedJob = rawJob as GameState['activities']['artificing']['activeJob'] ?? (!legacyUpgrade && activeRecipeId ? { kind: 'recipe', recipeId: activeRecipeId } : null)
   const normalizedRecipeId = normalizedJob?.kind === 'recipe' ? normalizedJob.recipeId : null
   migrated.activities.artificing = { activeJob: normalizedJob, activeRecipeId: legacyUpgrade ? null : normalizedRecipeId, progressMs: normalizedJob ? Math.max(0, nonNegativeNumber(rawArtificing.progressMs) ?? 0) : 0 }
-  migrated.activities.autoCast = normalizeDynamicRecord(fresh.activities.autoCast, rawActivities.autoCast, spellIds, booleanValue) as GameState['activities']['autoCast']
-  migrated.combat.spellCooldowns = normalizeDynamicRecord(fresh.combat.spellCooldowns, rawCombat.spellCooldowns, spellIds, nonNegativeNumber) as GameState['combat']['spellCooldowns']
+  const rawAutoCast = isRecord(rawActivities.autoCast) ? rawActivities.autoCast : {}
+  const normalizedAutoCast = normalizeDynamicRecord(fresh.activities.autoCast, rawAutoCast, spellIds, booleanValue) as GameState['activities']['autoCast']
+  Object.entries(LEGACY_SPELL_ID_MAP).forEach(([legacyId, canonicalId]) => {
+    if (rawAutoCast[legacyId] === true) normalizedAutoCast[canonicalId] = true
+  })
+  migrated.activities.autoCast = normalizedAutoCast
+  const rawPriority = Array.isArray(rawActivities.autoCastPriority) ? rawActivities.autoCastPriority : []
+  const migratedPriority = rawPriority.map(normalizeSpellId).filter((id): id is CanonicalSpellId => Boolean(id))
+  migrated.activities.autoCastPriority = migratedPriority.length
+    ? [...new Set(migratedPriority)]
+    : spellIds.filter((id) => normalizedAutoCast[id] === true) as CanonicalSpellId[]
+  const rawSpellCooldowns = isRecord(rawCombat.spellCooldowns) ? rawCombat.spellCooldowns : {}
+  migrated.combat.spellCooldowns = normalizeDynamicRecord(fresh.combat.spellCooldowns, rawSpellCooldowns, spellIds, nonNegativeNumber) as GameState['combat']['spellCooldowns']
+  Object.entries(LEGACY_SPELL_ID_MAP).forEach(([legacyId, canonicalId]) => {
+    const value = nonNegativeNumber(rawSpellCooldowns[legacyId])
+    if (value !== undefined) migrated.combat.spellCooldowns[canonicalId] = value
+  })
   migrated.progress.requestProgress = normalizeDynamicRecord(fresh.progress.requestProgress, rawProgress.requestProgress, requestIds, nonNegativeInteger)
   migrated.progress.requestClaims = normalizeDynamicRecord(fresh.progress.requestClaims, rawProgress.requestClaims, requestIds, booleanValue)
   migrated.progress.permanentFocusBonuses = normalizeDynamicRecord(fresh.progress.permanentFocusBonuses, rawProgress.permanentFocusBonuses, permanentFocusIds, nonNegativeNumber)
@@ -203,22 +219,15 @@ const isSpellRankValue = (value: unknown): value is SpellRank => typeof value ==
 
 /** Converts legacy unlock arrays and current rank evidence into one canonical map. */
 const normalizeSpellProgression = (migrated: GameState, raw: Record<string, any>) => {
-  const rawProgress = isRecord(raw.progress) ? raw.progress : {}
+  // Spell unlocks are derived from the preserved School levels. Do not carry
+  // stale V1 spell-rank entries into the new 32-spell catalog.
   const ranks: Partial<Record<SpellId, SpellRank>> = {}
-  const rawRanks = isRecord(rawProgress.spellRanks) ? rawProgress.spellRanks : {}
-  spellIds.forEach((id) => {
-    const rank = rawRanks[id]
-    if (isSpellRankValue(rank)) ranks[id as SpellId] = rank
-  })
-  const rawUnlockedSpells = Array.isArray(rawProgress.unlockedSpells) ? rawProgress.unlockedSpells : []
-  rawUnlockedSpells.forEach((id) => {
-    if (typeof id === 'string' && spellIds.includes(id)) ranks[id as SpellId] = Math.max(ranks[id as SpellId] ?? MIN_SPELL_RANK, MIN_SPELL_RANK) as SpellRank
-  })
   migrated.progress.spellRanks = ranks
   syncAllSpellUnlocks(migrated)
   Object.keys(migrated.activities.autoCast).forEach((id) => {
     if (!isSpellRankValue(ranks[id as SpellId])) migrated.activities.autoCast[id as SpellId] = false
   })
+  migrated.activities.autoCastPriority = migrated.activities.autoCastPriority.filter((id) => migrated.activities.autoCast[id])
 }
 
 const normalizeSpellPresets = (migrated: GameState, raw: Record<string, any>) => {
@@ -334,8 +343,25 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
   migrated.combat.playerStatuses = normalizeStatuses(rawPlayerStatuses, 'player')
   migrated.combat.enemyStatuses = normalizeStatuses(rawCombat.enemyStatuses, 'enemy')
   migrated.combat.autoCastManaStarvedSpells = Array.isArray(rawCombat.autoCastManaStarvedSpells)
-    ? rawCombat.autoCastManaStarvedSpells.filter((spellId): spellId is SpellId => typeof spellId === 'string' && Object.prototype.hasOwnProperty.call(SPELLS, spellId))
+    ? rawCombat.autoCastManaStarvedSpells.map(normalizeSpellId).filter((spellId): spellId is CanonicalSpellId => Boolean(spellId))
     : []
+  migrated.combat.pendingPlayerSpellCast = null
+  if (sourceVersion >= SAVE_VERSION && isRecord(rawCombat.pendingPlayerSpellCast)) {
+    const pendingId = normalizeSpellId(rawCombat.pendingPlayerSpellCast.spellId)
+    const targetInstanceKey = typeof rawCombat.pendingPlayerSpellCast.targetInstanceKey === 'string' ? rawCombat.pendingPlayerSpellCast.targetInstanceKey : null
+    const remainingWorkMs = nonNegativeNumber(rawCombat.pendingPlayerSpellCast.remainingWorkMs)
+    const castWorkMs = nonNegativeNumber(rawCombat.pendingPlayerSpellCast.castWorkMs)
+    const manaCostSnapshot = nonNegativeNumber(rawCombat.pendingPlayerSpellCast.manaCostSnapshot)
+    if (pendingId && castWorkMs !== undefined && remainingWorkMs !== undefined && manaCostSnapshot !== undefined) migrated.combat.pendingPlayerSpellCast = {
+      spellId: pendingId as CanonicalSpellId,
+      targetInstanceKey,
+      remainingWorkMs: Math.min(castWorkMs, remainingWorkMs),
+      castWorkMs,
+      manaCostSnapshot,
+      arcaneCoreFree: rawCombat.pendingPlayerSpellCast.arcaneCoreFree === true,
+      castWorkMultiplier: typeof rawCombat.pendingPlayerSpellCast.castWorkMultiplier === 'number' && Number.isFinite(rawCombat.pendingPlayerSpellCast.castWorkMultiplier) ? rawCombat.pendingPlayerSpellCast.castWorkMultiplier : 1,
+    }
+  }
   const rawPlayerTimer = nonNegativeNumber(rawCombat.playerAttackTimerMs)
 
   const activeEnemyId = typeof migrated.combat.enemyId === 'string' && MONSTERS[migrated.combat.enemyId] ? migrated.combat.enemyId : null

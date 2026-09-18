@@ -4,6 +4,8 @@ import { buildCombatActionPresentation, formatCombatEffect, type CombatActionPre
 import { classifyEnemyActionPatternIcon, type EnemyPatternIconKind } from './enemyPatternIconPresentation'
 import type { ActionPattern, ActionStep, CombatActionDefinition } from '../../systems/combat/combatTypes'
 import type { DungeonId, MonsterId } from '../../types'
+import { SPELLS } from '../../content/spells'
+import type { PendingPlayerSpellCast } from '../../types'
 import { getFallbackTimedActionState, type TimedActionState } from '../../systems/combat/actionTiming'
 
 export type CombatFlowMode = 'tower' | 'boss-ready' | 'encounter-delay' | 'combat'
@@ -50,8 +52,9 @@ export interface CombatFlowRuntimeInput {
   threatCleared: number
   inBossFight: boolean
   encounterTimerMs: number
-  playerAttackTimerMs: number
-  playerAttackDurationMs: number
+  /** Legacy player-timer fields are accepted for migration-only callers and no longer drive presentation. */
+  playerAttackTimerMs?: number
+  playerAttackDurationMs?: number
   enemyActionTimerMs: number
   enemyActionDurationMs: number
   enemyNextActionIndex: number
@@ -59,7 +62,7 @@ export interface CombatFlowRuntimeInput {
   enemyCurrentStepId: string | null
   enemyCurrentActionPatternId: string | null
   enemyActionPatternId: string | null
-  playerBasicDamage: number
+  playerBasicDamage?: number
   /** Legacy/pure-presentation hint; live UI supplies canonical timing state. */
   playerStunned?: boolean
   enemyStunned?: boolean
@@ -68,6 +71,8 @@ export interface CombatFlowRuntimeInput {
   currentStep?: ActionStep
   currentAction?: CombatActionDefinition
   playerTiming?: TimedActionState
+  playerSpellCast?: PendingPlayerSpellCast | null
+  playerSpellCastRate?: number
   enemyTiming?: TimedActionState | null
 }
 
@@ -89,7 +94,7 @@ export function getCombatFlowPresentation(input: CombatFlowRuntimeInput): Combat
     ? formatCombatEffect({ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: input.enemy.basicAttackDamage } }] }, { actor: 'enemy', kind: 'basic-attack' })
     : null
   const enemyTotalMs = input.enemyActionDurationMs || input.enemy.basicAttackTimeMs
-  const playerTiming = input.playerTiming ?? getFallbackTimedActionState(input.playerAttackDurationMs, input.playerAttackTimerMs, Boolean(input.playerStunned))
+  const playerSpell = input.playerSpellCast ? SPELLS[input.playerSpellCast.spellId] : null
   // `undefined` means a legacy caller omitted canonical timing; `null` is a
   // deliberate live-runtime statement that no enemy action is committed.
   const enemyTiming = input.enemyTiming === undefined
@@ -102,7 +107,10 @@ export function getCombatFlowPresentation(input: CombatFlowRuntimeInput): Combat
     if (timing.blockReason === 'debug-freeze') return 'paused'
     return 'acting'
   }
-  const playerTimeline: CombatFlowTimeline = { actor: 'player', label: 'Basic Attack', remainingMs: playerTiming.etaMs, remainingWorkMs: playerTiming.remainingWorkMs, baseWorkMs: playerTiming.baseWorkMs, rate: playerTiming.rate, etaMs: playerTiming.etaMs, blocked: playerTiming.blocked, blockReason: playerTiming.blockReason, progress: playerTiming.progress, state: timelineState(playerTiming, input.playerStunned) }
+  const playerRate = input.playerSpellCastRate ?? 0
+  const playerTimeline: CombatFlowTimeline | null = input.playerSpellCast && playerSpell
+    ? { actor: 'player', label: playerSpell.name, remainingMs: playerRate > 0 ? input.playerSpellCast.remainingWorkMs / playerRate : null, remainingWorkMs: input.playerSpellCast.remainingWorkMs, baseWorkMs: input.playerSpellCast.castWorkMs, rate: playerRate, etaMs: playerRate > 0 ? input.playerSpellCast.remainingWorkMs / playerRate : null, blocked: playerRate <= 0, blockReason: input.playerStunned ? 'status-control' : playerRate <= 0 ? 'status-control' : null, progress: Math.max(0, Math.min(100, (1 - input.playerSpellCast.remainingWorkMs / Math.max(0.0001, input.playerSpellCast.castWorkMs)) * 100)), state: input.playerStunned ? 'stunned' : playerRate <= 0 ? 'paused' : 'acting' }
+    : null
   const enemyTimeline: CombatFlowTimeline | null = hasCommittedEnemyAction && enemyTiming
     ? { actor: 'enemy', label: enemyAction?.name ?? (input.currentStep?.type === 'basic' ? 'Basic Attack' : 'Enemy Action'), remainingMs: enemyTiming.etaMs, remainingWorkMs: enemyTiming.remainingWorkMs, baseWorkMs: enemyTiming.baseWorkMs, rate: enemyTiming.rate, etaMs: enemyTiming.etaMs, blocked: enemyTiming.blocked, blockReason: enemyTiming.blockReason, progress: enemyTiming.progress, state: timelineState(enemyTiming, input.enemyStunned) }
     : null

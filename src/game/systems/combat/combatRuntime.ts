@@ -14,7 +14,6 @@ import { getArcaneCoreReward } from '../../content/arcaneCore/arcaneCoreRewards'
 import { grantArcaneCoreXp } from '../arcaneCore/arcaneCoreProgression'
 import { discoverMonster } from '../collection/discovery'
 import type { SimulationReportCollector } from '../offline-bank/offlineBankReport'
-import { MAX_ACTION_WORK_MS, MIN_ACTION_TIME_MS } from '../../core/balance/combatTiming'
 import { nextCombatRandom } from './combatRng'
 import { reconcileStoryProgression } from '../story/storyProgression'
 import { SUMMONING_UNLOCK_BOSS_ID } from '../../content/guardians/guardians'
@@ -46,6 +45,7 @@ export const spawnEnemy = (state: GameState, enemyId: MonsterId, uiEvents?: Comb
   state.combat.inBossFight = isBossMonster(monster)
   state.combat.playerAttackTimerMs = 0
   state.combat.playerAttackDurationMs = 0
+  state.combat.pendingPlayerSpellCast = null
   state.combat.enemyStatuses = []
   state.combat.autoCastManaStarvedSpells = []
   discoverMonster(state, enemyId)
@@ -53,8 +53,6 @@ export const spawnEnemy = (state: GameState, enemyId: MonsterId, uiEvents?: Comb
   const combatStartResolution = createCombatResolutionContext()
   runCombatTriggers(state, 'enemy', 'on-combat-start', { source: { actor: 'enemy', kind: 'system', sourceId: 'combat-start' } }, executeCombatEffects, 0, [], uiEvents, combatStartResolution)
   runCombatTriggers(state, 'player', 'on-combat-start', { source: { actor: 'player', kind: 'system', sourceId: 'combat-start' }, eventTarget: 'enemy' }, executeCombatEffects, 0, [], uiEvents, combatStartResolution)
-  state.combat.playerAttackDurationMs = Math.min(MAX_ACTION_WORK_MS, Math.max(MIN_ACTION_TIME_MS, BALANCE.player.basicAttackIntervalMs))
-  state.combat.playerAttackTimerMs = state.combat.playerAttackDurationMs
   beginGuardianEncounter(state)
   if (state.combat.enemyHp > 0 && state.player.health > 0) startNextEnemyAction(state, executeCombatEffects, 0, uiEvents)
   appendLog(state, `${monster.name} enters the dungeon.`)
@@ -89,6 +87,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   clearGuardianRuntime(state)
   state.combat.enemyId = null
   state.combat.enemyInstanceKey = null
+  state.combat.pendingPlayerSpellCast = null
   state.combat.enemyHp = 0
   state.combat.enemyBarrier = 0
   state.combat.enemyBarrierRemainingMs = null
@@ -169,6 +168,7 @@ export const resolveCombatDeaths = (state: GameState, report?: SimulationReportC
     state.combat.active = false
     state.combat.enemyId = null
     state.combat.enemyInstanceKey = null
+    state.combat.pendingPlayerSpellCast = null
     state.combat.enemyHp = 0
     state.combat.enemyBarrier = 0
     state.combat.enemyBarrierRemainingMs = null

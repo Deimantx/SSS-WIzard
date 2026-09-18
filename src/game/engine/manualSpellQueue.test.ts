@@ -121,4 +121,51 @@ describe('manual Spell queue and interrupt control', () => {
     expect(resolveCombatDeaths(state)).toBe(true)
     expect(state.combat.queuedPlayerSpellId).toBeNull()
   })
+
+  it('completes a self-only Mending Waters cast during encounter downtime', () => {
+    const state = stateWithSpells('mending-waters')
+    state.combat.enemyHp = 0
+    expect(resolveCombatDeaths(state)).toBe(true)
+    state.player.health = 25
+
+    expect(requestManualSpell(state, 'mending-waters')).toEqual({ ok: true, action: 'started' })
+    expect(state.combat.pendingPlayerSpellCast?.targetInstanceKey).toBeNull()
+
+    advanceGameState(state, 1_000, { mode: 'live' })
+    advanceGameState(state, 600, { mode: 'live' })
+
+    expect(state.combat.pendingPlayerSpellCast).toBeNull()
+    expect(state.player.health).toBeGreaterThan(25)
+    expect(state.player.mana).toBe(950)
+    expect(state.combat.spellCooldowns['mending-waters']).toBe(10_000)
+  })
+
+  it('completes a self-only Stone Skin cast during encounter downtime', () => {
+    const state = stateWithSpells('stone-skin')
+    state.combat.enemyHp = 0
+    expect(resolveCombatDeaths(state)).toBe(true)
+
+    expect(requestManualSpell(state, 'stone-skin')).toEqual({ ok: true, action: 'started' })
+    advanceGameState(state, 1_000, { mode: 'live' })
+    advanceGameState(state, 500, { mode: 'live' })
+
+    expect(state.combat.pendingPlayerSpellCast).toBeNull()
+    expect(state.combat.playerStatuses.some((status) => status.statusId === 'stone-skin')).toBe(true)
+  })
+
+  it('keeps an enemy-target queue parked during downtime and starts it after spawn', () => {
+    const state = stateWithSpells('fire-bolt')
+    state.combat.enemyHp = 0
+    expect(resolveCombatDeaths(state)).toBe(true)
+
+    expect(requestManualSpell(state, 'fire-bolt')).toEqual({ ok: true, action: 'queued' })
+    advanceGameState(state, 1_000, { mode: 'live' })
+    expect(state.combat.enemyId).toBeNull()
+    expect(state.combat.pendingPlayerSpellCast).toBeNull()
+    expect(state.combat.queuedPlayerSpellId).toBe('fire-bolt')
+
+    spawnEnemy(state, 'thornling')
+    advanceGameState(state, 1, { mode: 'live' })
+    expect(state.combat.pendingPlayerSpellCast?.spellId).toBe('fire-bolt')
+  })
 })

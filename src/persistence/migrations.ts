@@ -383,22 +383,6 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
     : []
   migrated.combat.pendingPlayerSpellCast = null
   migrated.combat.queuedPlayerSpellId = null
-  if (sourceVersion >= SAVE_VERSION && isRecord(rawCombat.pendingPlayerSpellCast)) {
-    const pendingId = normalizeSpellId(rawCombat.pendingPlayerSpellCast.spellId)
-    const targetInstanceKey = typeof rawCombat.pendingPlayerSpellCast.targetInstanceKey === 'string' ? rawCombat.pendingPlayerSpellCast.targetInstanceKey : null
-    const remainingWorkMs = nonNegativeNumber(rawCombat.pendingPlayerSpellCast.remainingWorkMs)
-    const castWorkMs = nonNegativeNumber(rawCombat.pendingPlayerSpellCast.castWorkMs)
-    const manaCostSnapshot = nonNegativeNumber(rawCombat.pendingPlayerSpellCast.manaCostSnapshot)
-    if (pendingId && castWorkMs !== undefined && remainingWorkMs !== undefined && manaCostSnapshot !== undefined) migrated.combat.pendingPlayerSpellCast = {
-      spellId: pendingId as CanonicalSpellId,
-      targetInstanceKey,
-      remainingWorkMs: Math.min(castWorkMs, remainingWorkMs),
-      castWorkMs,
-      manaCostSnapshot,
-      arcaneCoreFree: rawCombat.pendingPlayerSpellCast.arcaneCoreFree === true,
-      castWorkMultiplier: typeof rawCombat.pendingPlayerSpellCast.castWorkMultiplier === 'number' && Number.isFinite(rawCombat.pendingPlayerSpellCast.castWorkMultiplier) ? rawCombat.pendingPlayerSpellCast.castWorkMultiplier : 1,
-    }
-  }
   const rawPlayerTimer = nonNegativeNumber(rawCombat.playerAttackTimerMs)
 
   const activeEnemyId = typeof migrated.combat.enemyId === 'string' && MONSTERS[migrated.combat.enemyId] ? migrated.combat.enemyId : null

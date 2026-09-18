@@ -5,7 +5,7 @@ import { SPELLS } from '../../content/spells/spells'
 import { STATUS_DEFINITIONS } from '../../content/statuses'
 import { advanceChanneling } from '../../engine/channelingEngine'
 import { pushNotification, recalculateDerivedStats } from '../../engine'
-import { castSpellInternal, getPlayerSpellCastRate, getSpellStartFailure, resolvePlayerSpellCast } from '../../engine/spellEngine'
+import { castSpellInternal, getPlayerSpellCastRate, getSpellStartFailure, resolvePlayerSpellCast, spellRequiresEnemyTarget } from '../../engine/spellEngine'
 import { executeCombatEffects } from '../combat/effectResolver'
 import { resolveCombatDeaths, spawnNextEnemy, type CombatLootObserver } from '../combat/combatRuntime'
 import { getCurrentEnemyActionRate, resolveCurrentEnemyAction, startNextEnemyAction } from '../combat/actionRuntime'
@@ -250,7 +250,8 @@ const advanceCombatTimeline = (state: GameState, delta: number, context: Advance
     if (combatEnded) break
 
     let playerSpellResolved = false
-    if (!actorCannotAct(state, 'player') && !state.debug.freezePlayerActions && state.combat.pendingPlayerSpellCast?.remainingWorkMs === 0 && state.combat.enemyId) {
+    if (!actorCannotAct(state, 'player') && !state.debug.freezePlayerActions && state.combat.pendingPlayerSpellCast?.remainingWorkMs === 0
+      && (!spellRequiresEnemyTarget(SPELLS[state.combat.pendingPlayerSpellCast.spellId]) || Boolean(state.combat.enemyId))) {
       playerSpellResolved = resolvePlayerSpellCast(state, context.uiEvents)
       if (resolveDeaths(state, context)) break
     }
@@ -286,6 +287,9 @@ const advanceCombatDowntimeTimeline = (state: GameState, delta: number, context:
   let guard = 0
   while (guard < 10_000 && state.combat.active && !state.combat.enemyId && remaining > 0) {
     guard += 1
+    // Manual self-only casts are allowed during active encounter downtime.
+    // A queued enemy-target spell remains parked until spawn provides a target.
+    autoCastReadySpells(state, context)
     if (state.combat.encounterTimerMs <= 0) {
       spawnNextEnemy(state, context.uiEvents)
       if (resolveDeaths(state, context)) break
@@ -296,7 +300,12 @@ const advanceCombatDowntimeTimeline = (state: GameState, delta: number, context:
     }
 
     const cooldownRecovery = getCooldownRecoveryMultiplier(state)
+    const playerBlockedAtSegmentStart = actorCannotAct(state, 'player') || state.debug.freezePlayerActions
+    const playerRate = getPlayerSpellCastRate(state)
+    const pendingPlayerCast = state.combat.pendingPlayerSpellCast
+    const playerRemaining = playerBlockedAtSegmentStart || playerRate <= 0 || !pendingPlayerCast ? Number.POSITIVE_INFINITY : Math.max(0, pendingPlayerCast.remainingWorkMs) / playerRate
     const boundaries = [
+      playerRemaining,
       Math.max(0, state.combat.encounterTimerMs),
       getNextPlayerStatusEventMs(state),
       getNextPlayerBarrierEventMs(state),
@@ -312,6 +321,9 @@ const advanceCombatDowntimeTimeline = (state: GameState, delta: number, context:
     // downtime; enemy-owned cooldowns were cleared when the enemy died.
     tickRuleCooldowns(state, elapsed, 'player')
     tickSpellCooldowns(state, elapsed, cooldownRecovery)
+    if (!playerBlockedAtSegmentStart && playerRate > 0 && state.combat.pendingPlayerSpellCast) {
+      state.combat.pendingPlayerSpellCast.remainingWorkMs = Math.max(0, state.combat.pendingPlayerSpellCast.remainingWorkMs - elapsed * playerRate)
+    }
     advanceHealthRegenTimer(state, elapsed, true, context)
     state.combat.encounterTimerMs = Math.max(0, state.combat.encounterTimerMs - elapsed)
     remaining = Math.max(0, remaining - elapsed)
@@ -320,6 +332,13 @@ const advanceCombatDowntimeTimeline = (state: GameState, delta: number, context:
     const combatEnded = resolveDeaths(state, context)
     expirePendingStatuses(state, pendingStatusExpirations, executeCombatEffects, context.uiEvents)
     if (combatEnded) break
+    if (!actorCannotAct(state, 'player') && !state.debug.freezePlayerActions && state.combat.pendingPlayerSpellCast?.remainingWorkMs === 0) {
+      const pendingSpell = SPELLS[state.combat.pendingPlayerSpellCast.spellId]
+      if (pendingSpell && !spellRequiresEnemyTarget(pendingSpell)) {
+        resolvePlayerSpellCast(state, context.uiEvents)
+        autoCastReadySpells(state, context)
+      }
+    }
     if (state.combat.encounterTimerMs <= 0) {
       spawnNextEnemy(state, context.uiEvents)
       if (resolveDeaths(state, context)) break

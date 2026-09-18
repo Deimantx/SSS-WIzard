@@ -753,6 +753,18 @@ describe('Arcane Core V2 to V3 migration', () => {
     expect(migrated.combat.queuedPlayerSpellId).toBeNull()
   })
 
+  it('does not restore transient pending Spell cast work', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({ ...initial, saveVersion: SAVE_VERSION, combat: {
+      ...initial.combat,
+      pendingPlayerSpellCast: {
+        spellId: 'fire-bolt', targetInstanceKey: 'enemy:1', remainingWorkMs: 200,
+        castWorkMs: 1_000, manaCostSnapshot: 30, arcaneCoreFree: false, castWorkMultiplier: 1,
+      },
+    } } as any)
+    expect(migrated.combat.pendingPlayerSpellCast).toBeNull()
+  })
+
   it('keeps valid V3 rank allocations in current saves', () => {
     const initial = createInitialState()
     const migrated = migrateSave({ ...initial, saveVersion: SAVE_VERSION, arcaneCore: { totalXp: 500, nodes: { 'power-r1-arcane-force': { rank: 3 } } } } as any)

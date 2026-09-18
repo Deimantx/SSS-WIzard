@@ -209,8 +209,8 @@ describe('post-implementation combat audit regressions', () => {
 
   it('resets Spell cooldowns on genuine defeat and starts re-entry ready', () => {
     const state = stateWithEnemy()
-    state.progress.spellRanks.stoneguard = 1
-    state.combat.spellCooldowns.stoneguard = 16_000
+    state.progress.spellRanks['earthen-barrier'] = 1
+    state.combat.spellCooldowns['earthen-barrier'] = 16_000
     state.player.health = 0
 
     expect(resolveCombatDeaths(state)).toBe(true)
@@ -222,18 +222,18 @@ describe('post-implementation combat audit regressions', () => {
     state.player.health = 1
     state.player.mana = state.player.maxMana
     spawnEnemy(state, 'forest-wisp')
-    expect(castSpellAction(state, 'stoneguard')).toBe(true)
+    expect(castSpellAction(state, 'earthen-barrier')).toBe(true)
   })
 
   it('does not reset Spell cooldowns when God Mode prevents defeat', () => {
     const state = stateWithEnemy()
-    state.combat.spellCooldowns.stoneguard = 16_000
+    state.combat.spellCooldowns['earthen-barrier'] = 16_000
     state.player.health = 0
     state.player.godMode = true
 
     expect(resolveCombatDeaths(state)).toBe(false)
     expect(state.combat.active).toBe(true)
-    expect(state.combat.spellCooldowns.stoneguard).toBe(16_000)
+    expect(state.combat.spellCooldowns['earthen-barrier']).toBe(16_000)
   })
 
   it('blocks manual and automatic spell casts while Stunned without spending resources', () => {
@@ -241,10 +241,11 @@ describe('post-implementation combat audit regressions', () => {
     state.progress.spellRanks = { 'fire-bolt': 1 }
     state.player.mana = 50
       applyStatus(state, 'player', 'stunned', enemyAttack(state))
-    expect(castSpellAction(state, 'fire-bolt')).toBe(false)
+    expect(castSpellAction(state, 'fire-bolt')).toBe(true)
+    expect(state.combat.queuedPlayerSpellId).toBe('fire-bolt')
     expect(state.player.mana).toBe(50)
     expect(state.combat.spellCooldowns['fire-bolt']).toBe(0)
-    expect(state.notifications.some((notification) => notification.text === 'Cannot cast while Stunned.')).toBe(true)
+    expect(state.notifications.some((notification) => notification.text === 'Cannot cast while Stunned.')).toBe(false)
 
     state.notifications = []
     state.debug.bonusManaRegenFlat = -5
@@ -254,6 +255,7 @@ describe('post-implementation combat audit regressions', () => {
     advanceGameState(state, 1000, { mode: 'live' })
     expect(state.player.mana).toBe(45)
     expect(state.combat.spellCooldowns['fire-bolt']).toBe(0)
+    expect(state.combat.queuedPlayerSpellId).toBe('fire-bolt')
     expect(state.combat.playerAttackTimerMs).toBe(500)
   })
 

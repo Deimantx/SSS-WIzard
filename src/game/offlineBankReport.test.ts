@@ -7,9 +7,11 @@ import { createOfflineBankReportCollector } from './systems/offline-bank/offline
 import { makeInitialState } from '../store/gameStore'
 import { serializeGameState } from '../persistence/profileSaveManager'
 import { prepareResearchAction, setResearchEchoesAction } from '../store/actions/researchActions'
+import { castSpellAction } from '../store/actions/combatActions'
+import { spawnEnemy } from './systems/combat/combatRuntime'
 
-const runTick = (state: ReturnType<typeof makeInitialState>, report: ReturnType<typeof createOfflineBankReportCollector>) => {
-  advanceGameState(state, 1, { mode: 'banked', report })
+const runTick = (state: ReturnType<typeof makeInitialState>, report: ReturnType<typeof createOfflineBankReportCollector>, durationMs = 1) => {
+  advanceGameState(state, durationMs, { mode: 'banked', report })
   return report.finalize(state)
 }
 
@@ -52,10 +54,16 @@ describe('Offline Bank event reports', () => {
     const state = makeInitialState()
     state.combat.active = true
     state.combat.dungeonId = 'whispering-woods'
-    state.combat.enemyId = 'forest-wisp'
+    state.player.mana = state.player.maxMana
+    state.progress.spellRanks['fire-bolt'] = 1
+    state.activities.autoCast['fire-bolt'] = true
+    state.activities.autoCastPriority = ['fire-bolt']
+    spawnEnemy(state, 'forest-wisp')
     state.combat.enemyHp = 1
     state.combat.enemyMaxHp = 1
-    state.combat.playerAttackTimerMs = 0
+    expect(castSpellAction(state, 'fire-bolt')).toBe(true)
+    state.combat.pendingPlayerSpellCast!.remainingWorkMs = 1
+    state.combat.pendingPlayerSpellCast!.castWorkMs = 1
     const random = vi.spyOn(Math, 'random').mockReturnValue(0)
     const report = createOfflineBankReportCollector(state, 1, 1_000)
     const result = runTick(state, report)
@@ -93,10 +101,16 @@ describe('Offline Bank event reports', () => {
     ;(state.activities.transmutation.jobs as Record<string, { echoesAssigned: number; progressMs: number }>)['ember-staff'] = { echoesAssigned: 1, progressMs: 7_999 }
     state.combat.active = true
     state.combat.dungeonId = 'whispering-woods'
-    state.combat.enemyId = 'forest-wisp'
+    state.player.mana = state.player.maxMana
+    state.progress.spellRanks['fire-bolt'] = 1
+    state.activities.autoCast['fire-bolt'] = true
+    state.activities.autoCastPriority = ['fire-bolt']
+    spawnEnemy(state, 'forest-wisp')
     state.combat.enemyHp = 1
     state.combat.enemyMaxHp = 1
-    state.combat.playerAttackTimerMs = 0
+    expect(castSpellAction(state, 'fire-bolt')).toBe(true)
+    state.combat.pendingPlayerSpellCast!.remainingWorkMs = 1
+    state.combat.pendingPlayerSpellCast!.castWorkMs = 1
     const random = vi.spyOn(Math, 'random').mockReturnValue(0)
     const report = createOfflineBankReportCollector(state, 1, 1_000)
     const result = runTick(state, report)

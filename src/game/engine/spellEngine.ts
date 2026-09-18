@@ -3,7 +3,7 @@ import { appendLog, pushNotification } from '../engine'
 import { executeCombatEffects } from '../systems/combat/effectResolver'
 import { actorCannotAct, actorCannotCastSpells, removeStatus } from '../systems/combat/statusRuntime'
 import { isSpellUnlocked } from '../systems/spells'
-import type { CanonicalSpellId, GameState, PendingPlayerSpellCast, SpellId } from '../types'
+import type { CanonicalSpellId, GameState, PendingPlayerSpellCast, SpellDefinition, SpellId } from '../types'
 import type { CombatEventSink, CombatSource } from '../systems/combat/combatTypes'
 import { getEffectiveManaCost } from '../systems/combat/combatStats'
 import { getCombatModifiers } from '../systems/combat/modifiers'
@@ -15,7 +15,12 @@ import { runCombatTriggers } from '../systems/combat/triggerRuntime'
 import { createCombatResolutionContext } from '../systems/combat/combatTypes'
 
 const canonicalSpellId = (spellId: SpellId): CanonicalSpellId => SPELLS[spellId].id
-const hasEnemyTarget = (spellId: SpellId) => SPELLS[spellId].effects.some((effect) => effect.target === 'opponent')
+
+/** Offensive/target-bound spells require the currently spawned enemy. */
+export const spellRequiresEnemyTarget = (spell: SpellDefinition | SpellId) => {
+  const definition = typeof spell === 'string' ? SPELLS[spell] : spell
+  return Boolean(definition?.effects.some((effect) => effect.target === 'opponent'))
+}
 
 export type SpellCastFailure = 'unknown' | 'locked' | 'stunned' | 'silenced' | 'inactive' | 'no-target' | 'cooldown' | 'mana' | 'casting'
 
@@ -32,7 +37,7 @@ export const getSpellStartFailure = (state: GameState, spellId: SpellId): SpellS
   if (actorCannotAct(state, 'player')) return 'stunned'
   if (actorCannotCastSpells(state, 'player')) return 'silenced'
   if (!state.combat.active) return 'inactive'
-  if (hasEnemyTarget(spellId) && !state.combat.enemyId) return 'no-target'
+  if (spellRequiresEnemyTarget(spell) && !state.combat.enemyId) return 'no-target'
   if (!state.debug.ignoreSpellCooldowns && (state.combat.spellCooldowns[spell.id] ?? 0) > 0) return 'cooldown'
   const manaCost = getEffectiveManaCost(state, spell.manaCost)
   if (!state.debug.infiniteMana && !isArcaneCoreSpellFree(state) && !hasEnoughResource(state.player.mana, manaCost)) return 'mana'
@@ -84,7 +89,7 @@ const startSpellCast = (state: GameState, spellId: SpellId, quiet: boolean, uiEv
   const castWorkMs = Math.max(0.0001, spell.castTimeMs * multiplier)
   state.combat.pendingPlayerSpellCast = {
     spellId: canonicalId,
-    targetInstanceKey: state.combat.enemyInstanceKey,
+    targetInstanceKey: spellRequiresEnemyTarget(spell) ? state.combat.enemyInstanceKey : null,
     remainingWorkMs: castWorkMs,
     castWorkMs,
     manaCostSnapshot: manaCost,
@@ -167,7 +172,8 @@ export const resolvePlayerSpellCast = (state: GameState, uiEvents?: CombatEventS
   if (!pending) return false
   state.combat.pendingPlayerSpellCast = null
   const spell = SPELLS[pending.spellId]
-  if (!spell || !state.combat.enemyId || pending.targetInstanceKey !== state.combat.enemyInstanceKey) return false
+  if (!spell) return false
+  if (spellRequiresEnemyTarget(spell) && (!state.combat.enemyId || pending.targetInstanceKey !== state.combat.enemyInstanceKey)) return false
   const freeAtCompletion = isArcaneCoreSpellFree(state)
   if (!state.debug.infiniteMana && !freeAtCompletion && !hasEnoughResource(state.player.mana, pending.manaCostSnapshot)) {
     reportSpellFailure(state, pending.spellId, 'mana', uiEvents)

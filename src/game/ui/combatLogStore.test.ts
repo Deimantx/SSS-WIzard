@@ -45,10 +45,13 @@ describe('combatLogStore', () => {
     const liveState = createInitialState()
     liveState.combat.active = true
     liveState.combat.dungeonId = 'whispering-woods'
+    liveState.player.mana = liveState.player.maxMana
+    liveState.progress.spellRanks['fire-bolt'] = 1
+    liveState.activities.autoCast['fire-bolt'] = true
+    liveState.activities.autoCastPriority = ['fire-bolt']
     const liveSink: CombatUiEventSink = { push: vi.fn() }
     spawnEnemy(liveState, 'forest-wisp', liveSink)
-    liveState.combat.playerAttackTimerMs = 0
-    advanceGameState(liveState, 1, { mode: 'live', uiEvents: liveSink })
+    advanceGameState(liveState, 1_000, { mode: 'live', uiEvents: liveSink })
 
     const bankedState = createInitialState()
     bankedState.combat.active = true
@@ -57,7 +60,7 @@ describe('combatLogStore', () => {
     const bankedSink: CombatUiEventSink = { push: vi.fn() }
     advanceGameState(bankedState, 1_000, { mode: 'banked', uiEvents: bankedSink })
 
-    expect(liveSink.push).toHaveBeenCalledWith(expect.objectContaining({ category: 'basic-attack', target: 'enemy', targetMonsterId: 'forest-wisp' }))
+    expect(liveSink.push).toHaveBeenCalledWith(expect.objectContaining({ category: 'spell', sourceKind: 'spell', sourceId: 'fire-bolt', target: 'enemy', targetMonsterId: 'forest-wisp' }))
     expect(bankedSink.push).not.toHaveBeenCalled()
   })
 })

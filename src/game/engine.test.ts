@@ -143,14 +143,15 @@ describe('Pillars of Mana economy', () => {
     expect(Object.keys(MANA_PILLARS)).toHaveLength(5)
   })
 
-  it('regenerates fresh Mana at +5/s and tracks only actual Mana gained', () => {
+  it('does not regenerate fresh Mana without Echoes and tracks only actual Mana gained', () => {
     const game = useGameStore.getState()
     game.resetSave()
     game.setPlayer({ mana: 0 })
     game.tick(1000)
     expect(useGameStore.getState().player.mana).toBe(0)
     expect(useGameStore.getState().progress.channeling.totalManaGenerated).toBe(0)
-    game.setPlayer({ mana: 100 })
+    game.addArcaneEcho()
+    game.setPlayer({ mana: 0 })
     game.tick(1000)
     expect(useGameStore.getState().progress.channeling.totalManaGenerated).toBe(5)
   })
@@ -453,10 +454,10 @@ describe('Developer channeling overrides', () => {
 describe('Phase 2 progression', () => {
   it('uses the Rank-based Auto-Cast Focus formula', () => {
     const state = makeInitialState()
-    state.progress.spellRanks = { 'water-ward': 1 }
-    state.activities.autoCast['water-ward'] = true
+    state.progress.spellRanks = { 'water-bolt': 1 }
+    state.activities.autoCast['water-bolt'] = true
     expect(selectUsedFocus(state)).toBe(10)
-    state.activities.autoCast['water-ward'] = false
+    state.activities.autoCast['water-bolt'] = false
     state.progress.spellRanks = { 'fire-bolt': 1 }
     state.activities.autoCast['fire-bolt'] = true
     expect(selectUsedFocus(state)).toBe(10)

@@ -5,13 +5,13 @@ import { destroyItemAction, getActionableQuantity, removeItemAction, sellItemAct
 import { prepareResearchAction } from './researchActions'
 
 describe('inventory transactions', () => {
-  it('sells a safe quantity atomically for Gold', () => {
+  it('rejects selling a non-sellable material', () => {
     const state = createInitialState()
     state.inventory['fire-fragment'] = 17
 
-    expect(sellItemAction(state, 'fire-fragment', 5)).toBe(5)
-    expect(state.inventory['fire-fragment']).toBe(12)
-    expect(state.currencies.gold).toBe(5)
+    expect(sellItemAction(state, 'fire-fragment', 5)).toBe(0)
+    expect(state.inventory['fire-fragment']).toBe(17)
+    expect(state.currencies.gold).toBe(0)
     expect(state.notifications).toHaveLength(1)
   })
 
@@ -25,16 +25,16 @@ describe('inventory transactions', () => {
     expect(state.currencies.gold).toBe(0)
   })
 
-  it('reserves only the equipped copy when selling duplicates', () => {
+  it('keeps the equipped copy reserved even when equipment is not sellable', () => {
     const state = createInitialState()
     state.inventory['ember-staff'] = 3
     equipItemAction(state, 'ember-staff')
 
     expect(getActionableQuantity(state, 'ember-staff')).toBe(2)
-    expect(sellItemAction(state, 'ember-staff', 3)).toBe(2)
-    expect(state.inventory['ember-staff']).toBe(1)
+    expect(sellItemAction(state, 'ember-staff', 3)).toBe(0)
+    expect(state.inventory['ember-staff']).toBe(3)
     expect(state.equipment.weapon).toBe('ember-staff')
-    expect(state.currencies.gold).toBe(80)
+    expect(state.currencies.gold).toBe(0)
   })
 
   it('destroys without affecting Gold', () => {
@@ -75,8 +75,9 @@ describe('inventory transactions', () => {
     expect(prepareResearchAction(state, 'fire-fragment', 'fire', 80)).toBe(true)
 
     expect(getActionableQuantity(state, 'fire-fragment')).toBe(20)
-    expect(sellItemAction(state, 'fire-fragment', 100)).toBe(20)
+    expect(sellItemAction(state, 'fire-fragment', 100)).toBe(0)
+    expect(state.inventory['fire-fragment']).toBe(100)
+    expect(destroyItemAction(state, 'fire-fragment', 100)).toBe(20)
     expect(state.inventory['fire-fragment']).toBe(80)
-    expect(destroyItemAction(state, 'fire-fragment', 100)).toBe(0)
   })
 })

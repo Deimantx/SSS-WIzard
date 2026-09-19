@@ -33,12 +33,12 @@ describe('Artificing equipment catalog filters', () => {
 
     const tierFilter = screen.getByRole('group', { name: 'TIER' })
     expect(within(tierFilter).getByRole('button', { name: 'ALL' }).getAttribute('aria-pressed')).toBe('true')
-    expect(screen.getByText('7 SHOWN')).toBeTruthy()
+    expect(screen.getByText('12 SHOWN')).toBeTruthy()
 
     fireEvent.click(within(tierFilter).getByRole('button', { name: 'T2' }))
     expect(within(tierFilter).getByRole('button', { name: 'T2' }).getAttribute('aria-pressed')).toBe('true')
-    expect(screen.getByText('0 SHOWN')).toBeTruthy()
-    expect(screen.getByText('No Artifact recipes match the current filters.')).toBeTruthy()
+    expect(screen.getByText('2 SHOWN')).toBeTruthy()
+    expect(screen.queryByText('No Artifact recipes match the current filters.')).toBeNull()
 
     fireEvent.click(within(tierFilter).getByRole('button', { name: 'T1' }))
     expect(screen.getByText('6 SHOWN')).toBeTruthy()
@@ -47,11 +47,11 @@ describe('Artificing equipment catalog filters', () => {
     expect(within(slotFilter).getByRole('button', { name: 'WEAPON' })).toBeTruthy()
     expect(within(slotFilter).queryByRole('button', { name: 'OFFHAND' })).toBeNull()
     expect(screen.queryByText('HANDS')).toBeNull()
-    fireEvent.click(within(slotFilter).getByRole('button', { name: 'EARRING' }))
-    expect(screen.getByText('0 SHOWN')).toBeTruthy()
+    fireEvent.click(within(slotFilter).getByRole('button', { name: 'HEAD' }))
+    expect(screen.getByText('1 SHOWN')).toBeTruthy()
 
     fireEvent.click(within(tierFilter).getByRole('button', { name: 'T2' }))
-    expect(screen.getByText('0 SHOWN')).toBeTruthy()
+    expect(screen.getByText('1 SHOWN')).toBeTruthy()
   })
 
   it('keeps the Artificing catalog focused on Artifact cards', () => {
@@ -63,14 +63,14 @@ describe('Artificing equipment catalog filters', () => {
     expect(screen.queryByRole('region', { name: 'EQUIPMENT' })).toBeNull()
 
     fireEvent.click(within(craftType).getByRole('button', { name: 'ARTIFACTS' }))
-    expect(screen.getByText('7 SHOWN')).toBeTruthy()
+    expect(screen.getByText('12 SHOWN')).toBeTruthy()
     expect(screen.getByText('Ember Staff')).toBeTruthy()
     expect(screen.queryByText('Windthread Charm')).toBeNull()
     expect(within(craftType).getByRole('button', { name: 'ARTIFACTS' }).getAttribute('aria-pressed')).toBe('true')
 
     const slotFilter = screen.getByRole('group', { name: 'SLOT' })
-    fireEvent.click(within(slotFilter).getByRole('button', { name: 'EARRING' }))
-    expect(screen.getByText('0 SHOWN')).toBeTruthy()
+    fireEvent.click(within(slotFilter).getByRole('button', { name: 'HEAD' }))
+    expect(screen.getByText('2 SHOWN')).toBeTruthy()
   })
 
   it('shows owned Artifacts as FORGED with their current level', () => {
@@ -98,7 +98,7 @@ describe('Artificing equipment catalog filters', () => {
     const ember = document.querySelector('[data-recipe-id="ember-staff"]') as HTMLElement
     const tideglass = document.querySelector('[data-recipe-id="tideglass-wand"]') as HTMLElement
     expect(within(ember).getByText('READY')).toBeTruthy()
-    expect(within(tideglass).getByText('CRAFTING')).toBeTruthy()
+    expect(within(tideglass).getByText('FORGING')).toBeTruthy()
   })
 
   it('explains a busy Artificing slot in the catalog context menu', () => {

@@ -6,7 +6,7 @@ import { ARTIFACT_EQUIPMENT_IDS } from '../../game/content/equipment/equipmentSe
 import { DUNGEONS, DUNGEON_ORDER } from '../../game/content/dungeons/dungeons'
 import { getItemDropSources, getItemRecipeUses, getItemSourceInfo, getMonsterDungeon } from '../../game/content/contentRelations'
 import { formatEquipmentEffectSummary, formatPercent, formatReadableId, formatStatLabel, formatStatValue } from '../../game/content/presentation/balanceFormatters'
-import { RECIPES, getRecipeUnlockRequirement, isRecipeUnlocked } from '../../game/content/recipes/recipes'
+import { RECIPES, getRecipeUnlockRequirement, isRecipeUnlocked, isTransmutationRecipeId } from '../../game/content/recipes/recipes'
 import { EQUIPMENT_ITEM_SLOT_LABELS, EQUIPMENT_ITEM_SLOTS, EQUIPMENT_POSITIONS, EQUIPMENT_POSITION_LABELS, getDefaultEquipmentPosition } from '../../game/core/equipment'
 import type { DungeonId, EquipmentItemSlot, EquipmentPosition, ItemId, MonsterId, RecipeId } from '../../game/types'
 import { useGameStore } from '../../store/gameStore'
@@ -32,7 +32,7 @@ const DUNGEON_MATERIAL_IDS: readonly ItemId[] = ['artifact-essence']
 const sourceMatchesDungeon = (itemId: ItemId, dungeonId: DungeonId) => getItemSourceInfo(itemId).relations.some((relation) => (relation.kind === 'dungeon' && relation.id === dungeonId) || (relation.kind === 'monster' && getMonsterDungeon(relation.id as MonsterId)?.dungeonId === dungeonId))
 const matchesSource = (itemId: ItemId, filter: InventorySourceFilter) => {
   if (filter === 'all') return true
-  if (filter === 'transmutation') return getItemSourceInfo(itemId).relations.some((relation) => relation.kind === 'recipe')
+  if (filter === 'transmutation') return getItemSourceInfo(itemId).relations.some((relation) => relation.kind === 'recipe' && isTransmutationRecipeId(relation.id))
   if (filter === 'monster-drops') return getItemDropSources(itemId).some((drop) => drop.role === 'normal')
   if (filter === 'boss-drops') return getItemDropSources(itemId).some((drop) => drop.role === 'boss')
   return sourceMatchesDungeon(itemId, filter)

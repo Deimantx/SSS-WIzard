@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { RECIPES } from '../../../game/content/recipes/recipes'
 import { useGameStore } from '../../../store/gameStore'
@@ -11,7 +11,7 @@ describe('RecipeDetail Used In summary', () => {
 
   it('keeps Used In compact and opens the full list in a dialog', () => {
     const view = render(<RecipeDetail recipe={RECIPES['fire-fragment']} />)
-    expect(screen.getByText(/USED IN.*4 uses/)).toBeTruthy()
+    expect(screen.getByText(/USED IN.*5 uses/)).toBeTruthy()
     expect(screen.queryByText('Prismatic Fragment')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'VIEW' }))
     expect(screen.getByRole('dialog', { name: /FIRE FRAGMENT/ })).toBeTruthy()
@@ -69,7 +69,9 @@ describe('RecipeDetail Used In summary', () => {
     expect(screen.getByText('PRODUCTION CAPACITY')).toBeTruthy()
     expect(screen.getByText('CAN CRAFT')).toBeTruthy()
     expect(screen.getByText('LIMITING MATERIAL')).toBeTruthy()
-    expect(screen.getByText(/Fire Fragment/)).toBeTruthy()
+    const capacitySummary = document.querySelector('.transmutation-capacity-grid')
+    expect(capacitySummary).toBeTruthy()
+    expect(within(capacitySummary as HTMLElement).getByText('Fire Fragment')).toBeTruthy()
 
     view.unmount()
   })

@@ -5,7 +5,7 @@ import { SpellEffectTooltip } from './SpellEffectTooltip'
 import { buildSpellDetailPresentation } from '../../game/presentation/spells/spellDetailPresentation'
 import { buildSpellEffectTooltipModel, getCompactSpellEffectRows } from '../../game/presentation/spells/spellEffectTooltipModel'
 import { createInitialState } from '../../store/initialState'
-import { TooltipProvider } from '../ui/tooltip/Tooltip'
+import { GameTooltip, TooltipProvider } from '../ui/tooltip/Tooltip'
 
 function igniteModel() {
   const state = createInitialState()
@@ -15,7 +15,7 @@ function igniteModel() {
 }
 
 describe('progressive Spell effect tooltip details', () => {
-  it('keeps Ignite gameplay rows compact and reveals technical rows while Alt is held', () => {
+  it('keeps Ignite gameplay rows compact and reveals technical rows while Alt is held', async () => {
     const model = igniteModel()
     const compactLabels = getCompactSpellEffectRows(model).map((row) => row.label)
     expect(compactLabels).toEqual(expect.arrayContaining(['Damage Per Tick', 'Total Damage', 'Duration', 'Tick Interval']))
@@ -25,8 +25,9 @@ describe('progressive Spell effect tooltip details', () => {
     expect(model.rows.find((row) => row.label === 'Base Duration')?.detailLevel).toBe('advanced')
     expect(model.rows.filter((row) => row.label.startsWith('Conditional:')).every((row) => row.detailLevel === 'advanced')).toBe(true)
 
-    render(<TooltipProvider><SpellEffectTooltip model={model} /></TooltipProvider>)
-    expect(screen.getByText('Damage Per Tick')).toBeTruthy()
+    render(<TooltipProvider><GameTooltip delay={0} content={<SpellEffectTooltip model={model} />}><button>Inspect Ignite</button></GameTooltip></TooltipProvider>)
+    fireEvent.pointerEnter(screen.getByRole('button', { name: 'Inspect Ignite' }))
+    expect(await screen.findByText('Damage Per Tick')).toBeTruthy()
     expect(screen.getByText('Hold Alt for more details')).toBeTruthy()
     expect(screen.queryByText('Scaling')).toBeNull()
     expect(screen.queryByText('Base Damage Per Tick')).toBeNull()
@@ -46,12 +47,13 @@ describe('progressive Spell effect tooltip details', () => {
     expect(screen.getByText('Hold Alt for more details')).toBeTruthy()
   })
 
-  it('keeps card casting essentials visible and uses one shared detail hint', () => {
+  it('keeps card casting essentials visible and uses one shared detail hint', async () => {
     const state = createInitialState()
     const presentation = buildSpellDetailPresentation(state, 'ignite', 1)
-    render(<TooltipProvider><SpellCardTooltip presentation={presentation} /></TooltipProvider>)
+    render(<TooltipProvider><GameTooltip delay={0} content={<SpellCardTooltip presentation={presentation} />}><button>Inspect Ignite</button></GameTooltip></TooltipProvider>)
 
-    expect(screen.getByText('MANA')).toBeTruthy()
+    fireEvent.pointerEnter(screen.getByRole('button', { name: 'Inspect Ignite' }))
+    expect(await screen.findByText('MANA')).toBeTruthy()
     expect(screen.getByText('COOLDOWN')).toBeTruthy()
     expect(screen.getByText('AUTO-CAST FOCUS')).toBeTruthy()
     expect(screen.getByText('Damage Per Tick')).toBeTruthy()

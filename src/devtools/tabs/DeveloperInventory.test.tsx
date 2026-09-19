@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { useGameStore } from '../../store/gameStore'
 import { DeveloperInventory } from './DeveloperInventory'
@@ -28,18 +28,19 @@ describe('DeveloperInventory selection safety', () => {
     expect(screen.getByRole('button', { name: /^Add$/ })).toBeTruthy()
   })
 
-  it('keeps transmutation and boss-drop source filters distinct for signature equipment', async () => {
+  it('keeps Transmutation material and boss-drop source filters distinct', async () => {
     render(<DeveloperInventory />)
 
     fireEvent.click(screen.getByRole('tab', { name: 'TRANSMUTATION' }))
-    expect(await screen.findByText('Heartseed Necklace')).toBeTruthy()
-    expect(screen.getByText('Greatbear Heartstone')).toBeTruthy()
-    expect(screen.getByText("Edrin's Signet")).toBeTruthy()
+    expect((await screen.findAllByText('Fire Fragment')).length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Prismatic Fragment').length).toBeGreaterThan(0)
+    const browser = screen.getByRole('listbox', { name: 'Developer content browser' })
+    expect(within(browser).queryByText('Ember Staff')).toBeNull()
 
     fireEvent.click(screen.getByRole('tab', { name: 'BOSS DROPS' }))
-    expect(await screen.findByText('Heartseed')).toBeTruthy()
-    expect(screen.queryByText('Heartseed Necklace')).toBeNull()
-    expect(screen.queryByText('Greatbear Heartstone')).toBeNull()
-    expect(screen.queryByText("Edrin's Signet")).toBeNull()
+    expect((await screen.findAllByText('Artifact Essence')).length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Life Essence').length).toBeGreaterThan(0)
+    expect(within(browser).queryByText('Fire Fragment')).toBeNull()
+    expect(within(browser).queryByText('Prismatic Fragment')).toBeNull()
   })
 })

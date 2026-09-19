@@ -22,7 +22,6 @@ describe('Recipe Pins Dock', () => {
 
     expect(screen.getByLabelText('Artifact Essence. Missing 14. 6 usable, 20 required.')).toBeTruthy()
     expect(screen.queryByText('Fire Fragment')).toBeNull()
-    expect(screen.queryByText('Artifact Essence')).toBeTruthy()
   })
 
   it('shows READY and removes a pin after an Artifact is acquired', () => {

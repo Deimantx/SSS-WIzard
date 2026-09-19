@@ -41,7 +41,7 @@ describe('profile save recovery and historical compatibility', () => {
     expect(loaded.state?.offlineBankMs).toBeGreaterThan(0)
 
     if (label === 'V4') {
-      expect(loaded.state?.equipment).toEqual({ weapon: null, armor: 'wispweave-robe', head: null })
+      expect(loaded.state?.equipment).toEqual({ weapon: null, armor: null, head: null })
       expect(loaded.state?.equipment).not.toHaveProperty('offhand')
       expect(loaded.state?.currencies.gold).toBe(0)
       expect(loaded.state?.activities.research.slots['research-1']).toMatchObject({ itemId: 'fire-fragment', remainingQuantity: 9 })

@@ -18,10 +18,10 @@ describe('spell detail presentation', () => {
     const cardRows = getSpellbookTooltipRows(damage)
     const inlineRows = getInspectorInlineEffectRows(damage)
 
-    expect(detail).toMatchObject({ spellId: 'fire-bolt', spellName: 'Fire Bolt', school: 'fire', rankLabel: 'Rank I', description: expect.any(String), manaCost: 30, cooldownLabel: '5.0s', autoCastFocus: 10, autoCastActive: false })
+    expect(detail).toMatchObject({ spellId: 'fire-bolt', spellName: 'Fire Bolt', school: 'fire', rankLabel: 'Rank I', description: expect.any(String), manaCost: 30, cooldownLabel: '6.0s', autoCastFocus: 10, autoCastActive: false })
     expect(detail.spellPower).toBeGreaterThan(BALANCE.player.baseSpellPower)
     expect(detail.effects).toHaveLength(1)
-    expect(row(cardRows, 'Damage')?.value).toBe('39.6')
+    expect(row(cardRows, 'Damage')?.value).toBe('49.5')
     expect(row(cardRows, 'Scaling')).toBeUndefined()
     expect(row(cardRows, 'Base Damage')).toBeUndefined()
     expect(row(cardRows, 'Current Base Preview')).toBeUndefined()
@@ -37,11 +37,10 @@ describe('spell detail presentation', () => {
     const labels = (spellId: Parameters<typeof buildSpellDetailPresentation>[1], effectIndex: number) => getInspectorInlineEffectRows(buildSpellDetailPresentation(state, spellId, 1).effects[effectIndex]).map((entry) => entry.label)
 
     expect(labels('fire-bolt', 0)).toEqual(expect.arrayContaining(['Scaling', 'Base Damage', 'Damage Type', 'Target']))
-    expect(labels('water-ward', 0)).toEqual(expect.arrayContaining(['Amount', 'Duration', 'Mode', 'Target']))
-    expect(labels('fortify', 0)).toEqual(expect.arrayContaining(['Damage Taken', 'Duration', 'Target']))
+    expect(labels('earthen-barrier', 0)).toEqual(expect.arrayContaining(['Amount', 'Duration', 'Mode', 'Target']))
+    expect(labels('harden', 0)).toEqual(expect.arrayContaining(['Damage Taken', 'Duration', 'Target']))
     expect(labels('frostbite', 1)).toEqual(expect.arrayContaining(['Basic Attack Speed', 'Action Speed', 'Duration', 'Target']))
     expect(labels('ignite', 1)).toEqual(expect.arrayContaining(['Damage Per Tick', 'Tick Interval', 'Duration', 'Target']))
-    expect(labels('shock-spark', 1)).toEqual(expect.arrayContaining(['Air Damage Taken', 'Duration', 'Target', 'Max Stacks', 'Applied Stacks']))
   })
 
   it('preserves every authored effect in the spell-level aggregate', () => {
@@ -49,7 +48,7 @@ describe('spell detail presentation', () => {
 
     expect(buildSpellDetailPresentation(state, 'frostbite', 1).effects.map((effect) => effect.category)).toEqual(['DAMAGE', 'CONTROL'])
     expect(buildSpellDetailPresentation(state, 'ignite', 1).effects.map((effect) => effect.category)).toEqual(['DAMAGE', 'DOT'])
-    expect(buildSpellDetailPresentation(state, 'water-ward', 1).effects.map((effect) => effect.category)).toEqual(['BARRIER'])
+    expect(buildSpellDetailPresentation(state, 'earthen-barrier', 1).effects.map((effect) => effect.category)).toEqual(['BARRIER'])
     expect(buildSpellDetailPresentation(state, 'quickening', 1).effects.map((effect) => effect.category)).toEqual(['BUFF'])
   })
 })

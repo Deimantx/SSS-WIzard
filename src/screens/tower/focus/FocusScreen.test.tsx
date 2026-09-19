@@ -31,7 +31,7 @@ describe('Focus screen', () => {
     expect(screen.getByText('LEVEL 4 / 10')).toBeTruthy()
     expect(document.body.textContent).toContain('+20 Max Focus')
     expect(document.body.textContent).toContain('+25 Max Focus')
-    expect(screen.getByRole('img', { name: /Prismatic Fragment, 32 available, 40 required/ })).toBeTruthy()
+    expect(screen.getByRole('img', { name: /Prismatic Fragment, 32 available, 160 required/ })).toBeTruthy()
     expect(screen.queryByRole('img', { name: /Life Essence/ })).toBeNull()
   })
 

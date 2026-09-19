@@ -119,14 +119,14 @@ describe('spell preset foundation', () => {
     expect(getSpellEquipmentBonusPreview(state, 'tailwind').current).toEqual([])
   })
 
-  it('revalidates Focus at the next battle boundary and keeps the current snapshot on failure', () => {
+  it('falls back to the frozen current snapshot, keeps the pending selection, and retries later', () => {
     const state = createInitialState()
     state.combat.active = true
     state.combat.dungeonId = 'whispering-woods'
     state.player.maxFocus = 40
     state.progress.spellRanks = { 'fire-bolt': 1, 'flame-burst': 3 }
     state.spellPresets.presets = [
-      { id: 'spell-preset-a', name: 'A', slots: [{ spellId: 'fire-bolt', autoCast: false }] },
+      { id: 'spell-preset-a', name: 'A', slots: [{ spellId: 'fire-bolt', autoCast: true }] },
       { id: 'spell-preset-b', name: 'B', slots: [{ spellId: 'flame-burst', autoCast: true }] },
     ]
     state.spellPresets.selectedPresetId = 'spell-preset-a'
@@ -134,12 +134,23 @@ describe('spell preset foundation', () => {
     expect(applySpellPresetAction(state, 'spell-preset-b')).toMatchObject({ ok: true })
     state.player.maxFocus = 20
     state.combat.enemyId = null
+    state.combat.queuedPlayerSpellId = 'fire-bolt'
 
-    expect(spawnEnemy(state, 'thornling')).toBe(false)
+    expect(spawnEnemy(state, 'thornling')).toBe(true)
     expect(state.combat.activeSpellLoadout?.presetId).toBe('spell-preset-a')
-    expect(state.combat.activeSpellLoadout?.signature).toBe('fire-bolt:0')
-    expect(state.activities.autoCastPriority).toEqual([])
-    expect(state.combat.enemyId).toBeNull()
+    expect(state.combat.activeSpellLoadout?.signature).toBe('fire-bolt:1')
+    expect(state.activities.autoCastPriority).toEqual(['fire-bolt'])
+    expect(state.combat.queuedPlayerSpellId).toBe('fire-bolt')
+    expect(state.spellPresets.selectedPresetId).toBe('spell-preset-b')
+    expect(state.notifications[state.notifications.length - 1]?.text).toBe('B could not activate — requires 10 more Focus. Continuing with A.')
+
+    state.player.maxFocus = 40
+    state.combat.enemyId = null
+    expect(spawnEnemy(state, 'thornling')).toBe(true)
+    expect(state.combat.activeSpellLoadout?.presetId).toBe('spell-preset-b')
+    expect(state.combat.activeSpellLoadout?.signature).toBe('flame-burst:1')
+    expect(state.activities.autoCastPriority).toEqual(['flame-burst'])
+    expect(state.combat.queuedPlayerSpellId).toBeNull()
   })
 
   it('does not start the first encounter when the selected preset is over Focus', () => {

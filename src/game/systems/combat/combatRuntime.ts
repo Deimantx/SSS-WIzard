@@ -2,7 +2,7 @@ import { BALANCE } from '../../core/balance/balance'
 import { DUNGEONS, chooseMonster } from '../../content/dungeons/dungeons'
 import { isBossMonster, MONSTERS } from '../../content/monsters'
 import { recalculateDerivedStats, appendLog, pushNotification } from '../../engine'
-import type { GameState, ItemId, MonsterId } from '../../types'
+import type { ActiveCombatSpellLoadout, GameState, ItemId, MonsterId } from '../../types'
 import { executeCombatEffects, damageEnemy, damagePlayer, gainBarrier } from './effectResolver'
 import { gainBarrier as gainBarrierRuntime } from './barrierRuntime'
 import { applyStatus, clearStatuses } from './statusRuntime'
@@ -30,20 +30,52 @@ export const debugApplyStatus = (state: GameState, actor: 'player' | 'enemy', st
   executeCombatEffects(state, [{ type: 'apply-status', target: 'opponent', statusId, durationMs, stacks, tags: ['status'] }], { actor: sourceActor, kind: 'system', sourceId: 'developer-tools', tags: ['status'] })
 }
 
+type CombatLoadoutFailure = Extract<ReturnType<typeof activateSelectedSpellPresetForBattle>, { ok: false }>
+
+export type BattleLoadoutResolution =
+  | { ok: true; activatedSelected: true; loadout: ActiveCombatSpellLoadout }
+  | { ok: true; activatedSelected: false; fallback: true; loadout: ActiveCombatSpellLoadout; failure: CombatLoadoutFailure }
+  | { ok: false; failure: CombatLoadoutFailure }
+
+/** Attempts the selected next-battle preset, falling back only to a frozen valid encounter snapshot. */
+export const resolveSpellLoadoutForNextBattle = (state: GameState): BattleLoadoutResolution => {
+  const activation = activateSelectedSpellPresetForBattle(state)
+  if (activation.ok) return { ok: true, activatedSelected: true, loadout: activation.loadout }
+  const frozenLoadout = state.combat.activeSpellLoadout
+  if (frozenLoadout && frozenLoadout.slots.length > 0) return { ok: true, activatedSelected: false, fallback: true, loadout: frozenLoadout, failure: activation }
+  return { ok: false, failure: activation }
+}
+
+const getLoadoutFailureMessage = (failure: CombatLoadoutFailure, selectedPreset: ReturnType<typeof getSelectedSpellPreset>, continuingWith?: string) => {
+  if (!continuingWith) {
+    return failure.reason === 'missing-preset'
+      ? 'Select a Spell Preset before entering combat.'
+      : failure.reason === 'empty'
+        ? `${selectedPreset?.name ?? 'Selected Preset'} has no Spells. Add at least one Spell in Manage Presets.`
+        : failure.reason === 'unavailable'
+          ? `${selectedPreset?.name ?? 'Selected Preset'} has no currently unlocked Spells.`
+          : `${selectedPreset?.name ?? 'Selected Preset'} could not activate — requires ${failure.requiredExtraFocus ?? 0} more Focus.`
+  }
+  return failure.reason === 'missing-preset'
+    ? `Selected Preset is unavailable. Continuing with ${continuingWith}.`
+    : failure.reason === 'empty'
+      ? `${selectedPreset?.name ?? 'Selected Preset'} has no Spells. Continuing with ${continuingWith}.`
+      : failure.reason === 'unavailable'
+        ? `${selectedPreset?.name ?? 'Selected Preset'} has no currently unlocked Spells. Continuing with ${continuingWith}.`
+        : `${selectedPreset?.name ?? 'Selected Preset'} could not activate — requires ${failure.requiredExtraFocus ?? 0} more Focus. Continuing with ${continuingWith}.`
+}
+
 export const spawnEnemy = (state: GameState, enemyId: MonsterId, uiEvents?: CombatEventSink) => {
   const monster = MONSTERS[enemyId]
-  const activation = activateSelectedSpellPresetForBattle(state)
-  if (!activation.ok) {
+  const resolution = resolveSpellLoadoutForNextBattle(state)
+  if (!resolution.ok) {
     const selectedPreset = getSelectedSpellPreset(state)
-    const message = activation.reason === 'missing-preset'
-      ? 'Select a Spell Preset before entering combat.'
-      : activation.reason === 'empty'
-        ? `${selectedPreset?.name ?? 'Selected Preset'} has no Spells. Add at least one Spell in Manage Presets.`
-        : activation.reason === 'unavailable'
-          ? `${selectedPreset?.name ?? 'Selected Preset'} has no currently unlocked Spells.`
-          : `${selectedPreset?.name ?? 'Selected Preset'} could not activate — requires ${activation.requiredExtraFocus ?? 0} more Focus.`
-    pushNotification(state, message, 'warning', { key: 'combat-loadout-activation', cooldownMs: 1000 })
+    pushNotification(state, getLoadoutFailureMessage(resolution.failure, selectedPreset), 'warning', { key: `combat-loadout-activation:${state.spellPresets.selectedPresetId ?? 'missing'}:${resolution.failure.reason}`, cooldownMs: 1000 })
     return false
+  }
+  if (resolution.activatedSelected === false) {
+    const selectedPreset = getSelectedSpellPreset(state)
+    pushNotification(state, getLoadoutFailureMessage(resolution.failure, selectedPreset, resolution.loadout.presetName), 'warning', { key: `combat-loadout-fallback:${state.spellPresets.selectedPresetId ?? 'missing'}:${resolution.failure.reason}`, cooldownMs: 15_000 })
   }
   const previousSerial = Number.isSafeInteger(state.combat.enemyInstanceSerial) ? state.combat.enemyInstanceSerial : 0
   state.combat.enemyInstanceSerial = Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, previousSerial) + 1)

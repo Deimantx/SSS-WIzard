@@ -7,9 +7,9 @@
 | Monsters | 73 | Dungeons/<Dungeon>.md |
 | Dungeons | 15 | Dungeons/<Dungeon>.md |
 | Recipes | 17 | Crafting/Crafting.md |
-| Spells | 12 | Magic/Magic.md |
-| Statuses | 21 | Combat/Combat.md |
+| Spells | 32 | Magic/Magic.md |
+| Statuses | 34 | Combat/Combat.md |
 | Traits | 59 | Combat/Combat.md |
-| Arcane Core | 160 | Progression/Arcane_Core.md |
+| Arcane Core | 288 | Progression/Arcane_Core.md |
 
 Canonical pages contain each authored value once. Cross-page references are not numeric mirrors.

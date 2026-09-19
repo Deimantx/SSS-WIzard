@@ -4,12 +4,14 @@ import { executeCombatEffects } from '../systems/combat/effectResolver'
 import { actorCannotAct, actorCannotCastSpells, removeStatus } from '../systems/combat/statusRuntime'
 import { isSpellUnlocked } from '../systems/spells'
 import type { CanonicalSpellId, GameState, PendingPlayerSpellCast, SpellDefinition, SpellId } from '../types'
-import type { CombatEventSink, CombatSource } from '../systems/combat/combatTypes'
+import type { CombatEffect, CombatEventSink, CombatSource } from '../systems/combat/combatTypes'
+import { scaleMagnitude } from '../systems/combat/combatTypes'
 import { getEffectiveManaCost } from '../systems/combat/combatStats'
 import { getCombatModifiers } from '../systems/combat/modifiers'
 import { getSpellCombatSource } from '../systems/spells/spellSource'
 import { hasEnoughResource, stabilizeResourceValue } from '../presentation/resources/resourcePresentation'
 import { beginArcaneCoreSpellCast, isArcaneCoreSpellFree } from '../systems/arcaneCore/arcaneCoreRuntime'
+import { getArcaneCoreV6CastModifiers, type ArcaneCoreCastOrigin, type ArcaneCoreV6CastModifiers } from '../systems/arcaneCore/arcaneCoreV6Runtime'
 import { getArcaneCoreCooldownPulseReduction } from '../systems/arcaneCore/arcaneCoreRuntime'
 import { runCombatTriggers } from '../systems/combat/triggerRuntime'
 import { createCombatResolutionContext } from '../systems/combat/combatTypes'
@@ -30,7 +32,7 @@ export type ManualSpellRequestResult =
   | { ok: true; action: 'started' | 'interrupted-and-started' | 'queued' | 'queue-cancelled' | 'already-casting' }
   | { ok: false; reason: SpellCastFailure }
 
-export interface SpellRequestOptions { ignoreCombatLoadout?: boolean }
+export interface SpellRequestOptions { ignoreCombatLoadout?: boolean; castOrigin?: ArcaneCoreCastOrigin }
 
 export const isSpellInActiveCombatLoadout = (state: Pick<GameState, 'combat'>, spellId: SpellId) => {
   const canonicalId = SPELLS[spellId]?.id
@@ -48,7 +50,10 @@ export const getSpellStartFailure = (state: GameState, spellId: SpellId, options
   if (spellRequiresEnemyTarget(spell) && !state.combat.enemyId) return 'no-target'
   if (!state.debug.ignoreSpellCooldowns && (state.combat.spellCooldowns[spell.id] ?? 0) > 0) return 'cooldown'
   const manaCost = getEffectiveManaCost(state, spell.manaCost)
-  if (!state.debug.infiniteMana && !isArcaneCoreSpellFree(state) && !hasEnoughResource(state.player.mana, manaCost)) return 'mana'
+  const castOrigin = options.castOrigin ?? (state.combat.queuedPlayerSpellId === spell.id ? 'manual-queued' : 'auto')
+  const v6Preview = getArcaneCoreV6CastModifiers(state, { origin: castOrigin, spellId: spell.id, loadoutSlotIndex: state.combat.activeSpellLoadout?.slots.findIndex((slot) => slot.spellId === spell.id) ?? null, damaging: spell.effects.some((effect) => effect.type === 'deal-damage'), manaCost, maxMana: state.player.maxMana, playerMana: state.player.mana, enemyHealthPercent: state.combat.enemyHp / Math.max(1, state.combat.enemyMaxHp) * 100 }, true)
+  const requiredMana = Math.max(1, Math.ceil(manaCost * v6Preview.manaCostMultiplier))
+  if (!state.debug.infiniteMana && !isArcaneCoreSpellFree(state) && !v6Preview.free && !hasEnoughResource(state.player.mana, requiredMana)) return 'mana'
   return null
 }
 
@@ -93,9 +98,14 @@ const startSpellCast = (state: GameState, spellId: SpellId, quiet: boolean, uiEv
     return false
   }
   const canonicalId = spell.id
-  const manaCost = getEffectiveManaCost(state, spell.manaCost)
-  const free = isArcaneCoreSpellFree(state)
-  const multiplier = getCastWorkMultiplier(state)
+  const baseManaCost = getEffectiveManaCost(state, spell.manaCost)
+  const castOrigin = options.castOrigin ?? 'auto'
+  const loadoutSlotIndex = state.combat.activeSpellLoadout?.slots.findIndex((slot) => slot.spellId === spell.id) ?? -1
+  const v6Preview = getArcaneCoreV6CastModifiers(state, { origin: castOrigin, spellId: spell.id, loadoutSlotIndex: loadoutSlotIndex >= 0 ? loadoutSlotIndex : null, damaging: spell.effects.some((effect) => effect.type === 'deal-damage'), manaCost: baseManaCost, maxMana: state.player.maxMana, playerMana: state.player.mana, enemyHealthPercent: state.combat.enemyHp / Math.max(1, state.combat.enemyMaxHp) * 100 }, true)
+  const free = isArcaneCoreSpellFree(state) || v6Preview.free
+  const manaCost = Math.max(1, Math.ceil(baseManaCost * v6Preview.manaCostMultiplier))
+  const gustMultiplier = getCastWorkMultiplier(state)
+  const multiplier = gustMultiplier / Math.max(0.1, v6Preview.actionSpeedMultiplier)
   const castWorkMs = spell.castTimeMs * multiplier
   state.combat.pendingPlayerSpellCast = {
     spellId: canonicalId,
@@ -105,6 +115,15 @@ const startSpellCast = (state: GameState, spellId: SpellId, quiet: boolean, uiEv
     manaCostSnapshot: manaCost,
     arcaneCoreFree: free,
     castWorkMultiplier: multiplier,
+    castOrigin,
+    loadoutSlotIndex: loadoutSlotIndex >= 0 ? loadoutSlotIndex : null,
+    arcaneCoreActionSpeedMultiplier: v6Preview.actionSpeedMultiplier,
+    arcaneCoreManaCostMultiplier: v6Preview.manaCostMultiplier,
+    arcaneCoreEffectivenessMultiplier: v6Preview.effectivenessMultiplier,
+    arcaneCoreCritChanceBonus: v6Preview.critChanceBonus,
+    arcaneCoreCritDamageBonus: v6Preview.critDamageBonus,
+    arcaneCoreGuaranteedCrit: v6Preview.guaranteedCrit,
+    castWasGust: gustMultiplier < 1,
   }
   if (!quiet) pushNotification(state, `${spell.name} casting`, 'info')
   return true
@@ -142,11 +161,11 @@ export const requestManualSpell = (state: GameState, spellId: SpellId, uiEvents?
     return { ok: true, action: 'queue-cancelled' }
   }
 
-  const failure = getSpellStartFailure(state, canonicalId, options)
+  const failure = getSpellStartFailure(state, canonicalId, { ...options, castOrigin: 'manual-direct' })
   if (!failure) {
     const wasInterrupted = Boolean(current)
     if (wasInterrupted) cancelPendingPlayerSpellCast(state, 'manual-interrupt')
-    const started = startSpellCast(state, canonicalId, false, uiEvents, options)
+    const started = startSpellCast(state, canonicalId, false, uiEvents, { ...options, castOrigin: 'manual-direct' })
     if (started) {
       state.combat.queuedPlayerSpellId = null
       return { ok: true, action: wasInterrupted ? 'interrupted-and-started' : 'started' }
@@ -162,7 +181,7 @@ export const requestManualSpell = (state: GameState, spellId: SpellId, uiEvents?
   return { ok: false, reason: failure }
 }
 
-const buildCompletionSource = (state: GameState, pending: PendingPlayerSpellCast, staticDamageBonus = 0): CombatSource => {
+const buildCompletionSource = (state: GameState, pending: PendingPlayerSpellCast, staticDamageBonus = 0, arcaneCoreCast?: Pick<ArcaneCoreV6CastModifiers, 'critChanceBonus' | 'critDamageBonus' | 'guaranteedCrit'>): CombatSource => {
   const spell = SPELLS[pending.spellId]
   const targetHas = (statusId: string) => state.combat.enemyStatuses.some((status) => status.statusId === statusId)
   let spellDamageMultiplier = 1
@@ -173,7 +192,17 @@ const buildCompletionSource = (state: GameState, pending: PendingPlayerSpellCast
   }
   if (pending.spellId === 'frozen-current' && targetHas('chilled')) spellDamageMultiplier += 0.25
   spellDamageMultiplier += staticDamageBonus
-  return { ...getSpellCombatSource(pending.spellId), spellDamageMultiplier, spellCritChanceBonus: pending.spellId === 'lightning-spark' ? 0.25 : 0, spellCritDamageBonus: pending.spellId === 'thunderstrike' ? 0.5 : 0 }
+  return { ...getSpellCombatSource(pending.spellId), spellDamageMultiplier, spellCritChanceBonus: (pending.spellId === 'lightning-spark' ? 0.25 : 0) + (arcaneCoreCast?.critChanceBonus ?? pending.arcaneCoreCritChanceBonus ?? 0) + (arcaneCoreCast?.guaranteedCrit || pending.arcaneCoreGuaranteedCrit ? 1 : 0), spellCritDamageBonus: (pending.spellId === 'thunderstrike' ? 0.5 : 0) + (arcaneCoreCast?.critDamageBonus ?? pending.arcaneCoreCritDamageBonus ?? 0), castOrigin: pending.castOrigin ?? 'auto', loadoutSlotIndex: pending.loadoutSlotIndex ?? null }
+}
+
+const scaleSpellEffect = (effect: CombatEffect, factor: number, statusDurationMultiplier = 1): CombatEffect => {
+  switch (effect.type) {
+    case 'deal-damage': return { ...effect, components: effect.components.map((component) => ({ ...component, magnitude: scaleMagnitude(component.magnitude, factor) })) }
+    case 'heal': return { ...effect, magnitude: scaleMagnitude(effect.magnitude, factor) }
+    case 'gain-barrier': return { ...effect, magnitude: scaleMagnitude(effect.magnitude, factor) }
+    case 'apply-status': return { ...effect, durationMs: effect.durationMs === undefined || effect.durationMs === null ? effect.durationMs : effect.durationMs * statusDurationMultiplier, periodicEffects: effect.periodicEffects?.map((periodicEffect) => scaleSpellEffect(periodicEffect, factor, statusDurationMultiplier)) }
+    default: return effect
+  }
 }
 
 /** Resolves a committed cast at its exact timeline boundary. */
@@ -184,34 +213,39 @@ export const resolvePlayerSpellCast = (state: GameState, uiEvents?: CombatEventS
   const spell = SPELLS[pending.spellId]
   if (!spell) return false
   if (spellRequiresEnemyTarget(spell) && (!state.combat.enemyId || pending.targetInstanceKey !== state.combat.enemyInstanceKey)) return false
-  const freeAtCompletion = isArcaneCoreSpellFree(state)
+  const freeAtCompletion = isArcaneCoreSpellFree(state) || Boolean(pending.arcaneCoreFree)
   if (!state.debug.infiniteMana && !freeAtCompletion && !hasEnoughResource(state.player.mana, pending.manaCostSnapshot)) {
     reportSpellFailure(state, pending.spellId, 'mana', uiEvents)
     return false
   }
-  const arcaneCoreCast = beginArcaneCoreSpellCast(state, spell.effects.some((effect) => effect.type === 'deal-damage'))
-  const paidMana = arcaneCoreCast.free ? 0 : pending.manaCostSnapshot
+  const arcaneCoreCast = beginArcaneCoreSpellCast(state, spell.effects.some((effect) => effect.type === 'deal-damage'), { origin: pending.castOrigin ?? 'auto', spellId: pending.spellId, loadoutSlotIndex: pending.loadoutSlotIndex ?? null, damaging: spell.effects.some((effect) => effect.type === 'deal-damage'), manaCost: pending.manaCostSnapshot, maxMana: state.player.maxMana, playerMana: state.player.mana, enemyHealthPercent: state.combat.enemyHp / Math.max(1, state.combat.enemyMaxHp) * 100 })
+  const castIsFree = freeAtCompletion || arcaneCoreCast.free
+  const paidMana = castIsFree ? 0 : pending.manaCostSnapshot
   if (!state.debug.infiniteMana) state.player.mana = stabilizeResourceValue(Math.max(0, state.player.mana - paidMana))
   state.combat.spellCooldowns[pending.spellId] = state.debug.ignoreSpellCooldowns ? 0 : spell.cooldownMs
-  const hadGust = pending.castWorkMultiplier < 1
+  const hadGust = pending.castWasGust ?? pending.castWorkMultiplier < 1
   const hadStatic = spell.school === 'air' && spell.effects.some((effect) => effect.type === 'deal-damage') && state.combat.playerStatuses.some((status) => status.statusId === 'static')
   // Snapshot and consume the old Static before resolving effects. Static Charge
   // itself may apply a replacement Static, which must not be removed as part of
   // the old charge's cleanup.
   const staticDamageBonus = hadStatic ? 0.75 + (pending.spellId === 'thunderstrike' ? 0.25 : 0) : 0
   if (hadStatic) removeStatus(state, 'player', 'static')
-  const source = buildCompletionSource(state, pending, staticDamageBonus)
+  const effectivenessMultiplier = arcaneCoreCast.effectivenessMultiplier ?? pending.arcaneCoreEffectivenessMultiplier ?? 1
+  const source = buildCompletionSource(state, pending, staticDamageBonus, arcaneCoreCast)
   const resolution = createCombatResolutionContext()
   resolution.arcaneCoreDamageMultiplier = arcaneCoreCast.damageMultiplier
   const wasChilled = state.combat.enemyStatuses.some((status) => status.statusId === 'chilled')
   const healingTideEmpowered = pending.spellId === 'healing-tide' && state.player.health / Math.max(1, state.player.maxHealth) < 0.25
   const effects = spell.effects.map((effect) => {
-    if (pending.spellId === 'frozen-current' && wasChilled && effect.type === 'apply-status' && effect.statusId === 'chilled') return { ...effect, statusId: 'frozen' as const, durationMs: 4000 }
-    if (healingTideEmpowered && effect.type === 'heal') return { ...effect, magnitude: effect.magnitude.type === 'spell-power' ? { ...effect.magnitude, coefficient: effect.magnitude.coefficient * 1.25 } : effect.magnitude }
-    if (healingTideEmpowered && effect.type === 'apply-status' && effect.periodicEffects) return { ...effect, periodicEffects: effect.periodicEffects.map((periodicEffect) => periodicEffect.type === 'heal' && periodicEffect.magnitude.type === 'spell-power' ? { ...periodicEffect, magnitude: { ...periodicEffect.magnitude, coefficient: periodicEffect.magnitude.coefficient * 1.25 } } : periodicEffect) }
-    return effect
+    let adjusted: CombatEffect = effect
+    if (pending.spellId === 'frozen-current' && wasChilled && effect.type === 'apply-status' && effect.statusId === 'chilled') adjusted = { ...effect, statusId: 'frozen' as const, durationMs: 4000 }
+    if (healingTideEmpowered && adjusted.type === 'heal') adjusted = { ...adjusted, magnitude: adjusted.magnitude.type === 'spell-power' ? { ...adjusted.magnitude, coefficient: adjusted.magnitude.coefficient * 1.25 } : adjusted.magnitude }
+    if (healingTideEmpowered && adjusted.type === 'apply-status' && adjusted.periodicEffects) adjusted = { ...adjusted, periodicEffects: adjusted.periodicEffects.map((periodicEffect) => periodicEffect.type === 'heal' && periodicEffect.magnitude.type === 'spell-power' ? { ...periodicEffect, magnitude: { ...periodicEffect.magnitude, coefficient: periodicEffect.magnitude.coefficient * 1.25 } } : periodicEffect) }
+    return scaleSpellEffect(adjusted, effectivenessMultiplier, arcaneCoreCast.statusDurationMultiplier ?? 1)
   })
   executeCombatEffects(state, effects, source, undefined, uiEvents, resolution)
+  if (!state.debug.infiniteMana && arcaneCoreCast.manaRestoreFlat > 0) state.player.mana = stabilizeResourceValue(Math.min(state.player.maxMana, state.player.mana + arcaneCoreCast.manaRestoreFlat))
+  if (!state.debug.infiniteMana && arcaneCoreCast.manaRefundPercent > 0 && paidMana > 0) state.player.mana = stabilizeResourceValue(Math.min(state.player.maxMana, state.player.mana + paidMana * arcaneCoreCast.manaRefundPercent))
   if (hadGust) removeStatus(state, 'player', 'gust')
   if (arcaneCoreCast.cooldownPulse) {
     const pulse = getArcaneCoreCooldownPulseReduction(state)
@@ -222,7 +256,7 @@ export const resolvePlayerSpellCast = (state: GameState, uiEvents?: CombatEventS
   return true
 }
 
-export const castSpellInternal = (state: GameState, spellId: SpellId, quiet = false, uiEvents?: CombatEventSink) => startSpellCast(state, spellId, quiet, uiEvents)
+export const castSpellInternal = (state: GameState, spellId: SpellId, quiet = false, uiEvents?: CombatEventSink, castOrigin: ArcaneCoreCastOrigin = 'auto') => startSpellCast(state, spellId, quiet, uiEvents, { castOrigin })
 
 export const castSpellAction = (state: GameState, spellId: SpellId, uiEvents?: CombatEventSink) => {
   return requestManualSpell(state, spellId, uiEvents).ok

@@ -69,6 +69,19 @@ Shared combat rules and authored combat values live here. Monster-specific value
 | Status | Class | Duration | Max stacks | Effects | Description |
 | --- | --- | --- | --- | --- | --- |
 | Burning (burning) | Debuff | 5 s | — | 5 Fire damage | Takes Fire damage over time. |
+| Kindled (kindled) | Debuff | 18 s | — | — | Takes 25% more Fire damage. |
+| Frozen (frozen) | Debuff | 4 s | — | — | All action speed is reduced by 50%. |
+| Healing Tide (healing-tide) | Buff | 6 s | — | +5 Health | Restores Health over time. |
+| Earth Fracture (earth-fracture) | Debuff | 3 s | — | 1 Earth damage | Takes Earth damage over time. |
+| Stone Skin (stone-skin) | Buff | 10 s | — | — | Defense increased by 20%. |
+| Hardened (hardened) | Buff | 5 s | — | — | Damage taken is reduced by 25%. |
+| Rend Armor (rend-armor) | Debuff | 10 s | — | — | Defense reduced by 20%. |
+| Tremored (tremored) | Debuff | 5 s | — | — | All enemy action speed is reduced by 25%. |
+| Gust (gust) | Buff | 6 s | — | — | The next Spell cast resolves 30% faster. |
+| Tailwind (tailwind) | Buff | 10 s | — | — | Action speed increased by 25%. |
+| Static Charge (static) | Buff | 10 s | — | — | The next damaging Air Spell deals 75% more damage. |
+| Eye of the Storm (eye-of-the-storm) | Buff | 10 s | — | — | Cooldown recovery, critical chance, and action speed increased by 10%. |
+| Living Mountain (living-mountain) | Buff | 14 s | — | — | Defense increased by 25% and damage taken reduced by 30%. |
 | Quickening (quickening) | Buff | 6 s | — | — | Basic Attacks resolve 25% faster. |
 | Haste (haste) | Buff | Indefinite | — | — | Action speed increased by 15%. |
 | Spectral Fade (spectral-fade) | Buff | 5 s | — | — | Damage taken is reduced by 25%. |

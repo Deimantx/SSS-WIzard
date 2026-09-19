@@ -82,9 +82,9 @@ const autoCastReadySpells = (state: GameState, context: AdvanceContext) => {
       state.combat.queuedPlayerSpellId = null
       return
     }
-    const failure = getSpellStartFailure(state, queuedId)
+    const failure = getSpellStartFailure(state, queuedId, { castOrigin: 'manual-queued' })
     if (!failure) {
-      if (castSpellInternal(state, queuedId, true, context.uiEvents)) state.combat.queuedPlayerSpellId = null
+      if (castSpellInternal(state, queuedId, true, context.uiEvents, 'manual-queued')) state.combat.queuedPlayerSpellId = null
     } else if (failure === 'unknown' || failure === 'locked' || failure === 'inactive' || failure === 'not-in-loadout') {
       state.combat.queuedPlayerSpellId = null
     }

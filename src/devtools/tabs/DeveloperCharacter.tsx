@@ -57,12 +57,9 @@ export function DeveloperCharacter() {
         <Summary label="Max Mana" value={formatResourceAmount(effectiveEquipment.maxMana)} />
         <Summary label="Max Focus" value={effectiveEquipment.maxFocus} />
         <Summary label="Mana Regen" value={`${formatResourceRate(effectiveEquipment.manaRegen)}/s`} />
-        <Summary label="Basic Damage" value={effectiveEquipment.basicDamage} />
-        <Summary label="Basic Speed" value={`${effectiveEquipment.basicAttackSpeedMultiplier.toFixed(2)}x`} />
         <Summary label="Crit Chance" value={`${Math.round(effectiveEquipment.critChance * 100)}%`} />
         <Summary label="Crit Damage" value={`${Math.round(effectiveEquipment.critDamageMultiplier * 100)}%`} />
         <Summary label="Defense" value={effectiveEquipment.defense} />
-        <Summary label="Block Chance" value={`${Math.round(effectiveEquipment.blockChance * 100)}%`} />
         <Summary label="DoT Bonus" value={`${Math.round(effectiveEquipment.damageOverTimeBonus * 100)}%`} />
         <Summary label="Status Duration" value={`${Math.round(effectiveEquipment.statusDurationBonus * 100)}%`} />
         <Summary label="Cooldown Recovery" value={`${effectiveEquipment.cooldownRecovery.toFixed(2)}x`} />
@@ -86,12 +83,9 @@ export function DeveloperCharacter() {
         <Summary label="Max Mana" value={formatResourceAmount(resolvedCombat.maxMana)} />
         <Summary label="Max Focus" value={resolvedCombat.maxFocus} />
         <Summary label="Mana Regen" value={`${formatResourceRate(resolvedCombat.manaRegen)}/s`} />
-        <Summary label="Basic Damage" value={resolvedCombat.basicAttackDamage} />
-        <Summary label="Basic Speed" value={`${resolvedCombat.basicAttackSpeedMultiplier.toFixed(2)}x`} />
         <Summary label="Crit Chance" value={`${Math.round(resolvedCombat.critChance * 100)}%`} />
         <Summary label="Crit Damage" value={`${Math.round(resolvedCombat.critDamageMultiplier * 100)}%`} />
         <Summary label="Defense" value={resolvedCombat.defense} />
-        <Summary label="Block Chance" value={`${Math.round(resolvedCombat.blockChance * 100)}%`} />
         <Summary label="DoT Bonus" value={`${Math.round(resolvedCombat.damageOverTimeBonus * 100)}%`} />
         <Summary label="Status Duration" value={`${Math.round(resolvedCombat.statusDurationBonus * 100)}%`} />
         <Summary label="Cooldown Recovery" value={`${resolvedCombat.cooldownRecovery.toFixed(2)}x`} />

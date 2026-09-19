@@ -3,7 +3,7 @@ import { ARCANE_CORE_BRANCHES, ARCANE_CORE_NODES } from '../../content/arcaneCor
 import { ARCANE_CORE_NODE_ANGLE_STEP, ARCANE_CORE_RING_INDICES, ARCANE_CORE_RING_OFFSETS, normalizeAngle } from '../../content/arcaneCore/arcaneCoreRings'
 import { ARCANE_CORE_CANVAS_SIZE, formatArcaneCoreModifierValue, formatArcaneCoreNodeEffect, getArcaneCoreNodeEffectTexts, getArcaneCoreNodePosition, getArcaneCoreRingRadius } from './arcaneCorePresentation'
 
-describe('Arcane Core V4 presentation', () => {
+describe('Arcane Core V6 presentation', () => {
   it('uses exact alternating 40-degree socket sets in every Core', () => {
     expect(ARCANE_CORE_NODE_ANGLE_STEP).toBe(40)
     expect(ARCANE_CORE_RING_OFFSETS).toEqual({ 1: 0, 2: 20, 3: 0, 4: 20, 5: 0, 6: 20, 7: 0, 8: 20 })
@@ -16,6 +16,7 @@ describe('Arcane Core V4 presentation', () => {
       expect(angles.map((angle, index) => normalizeAngle(angles[(index + 1) % angles.length] - angle))).toEqual(Array(9).fill(40))
     }
   })
+
   it('interleaves each even Ring exactly halfway between its odd neighbor', () => {
     for (const branch of ARCANE_CORE_BRANCHES) for (const oddRing of [1, 3, 5, 7] as const) {
       const odd = branch.nodes.filter((node) => node.ring === oddRing).map((node) => normalizeAngle(node.angleDeg)).sort((a, b) => a - b)
@@ -23,6 +24,7 @@ describe('Arcane Core V4 presentation', () => {
       expect(even).toEqual(odd.map((angle) => normalizeAngle(angle + 20)).sort((a, b) => a - b))
     }
   })
+
   it('positions every node on its authored Ring angle and canonical radius', () => {
     for (const node of ARCANE_CORE_NODES) {
       const position = getArcaneCoreNodePosition(node)
@@ -31,6 +33,7 @@ describe('Arcane Core V4 presentation', () => {
       expect(Math.hypot(position.left - ARCANE_CORE_CANVAS_SIZE / 2, position.top - ARCANE_CORE_CANVAS_SIZE / 2)).toBeCloseTo(getArcaneCoreRingRadius(node.ring), 6)
     }
   })
+
   it('keeps all authored nodes on the canonical Ring radii with safe spacing', () => {
     for (const branchNodes of ['power', 'vitality', 'focus', 'control'].map((branchId) => ARCANE_CORE_NODES.filter((node) => node.branchId === branchId))) {
       for (const ring of [1, 2, 3, 4, 5, 6, 7, 8] as const) {
@@ -42,22 +45,20 @@ describe('Arcane Core V4 presentation', () => {
       }
     }
   })
-  it('formats modifiers and ranked effects in player-readable units', () => {
-    expect(formatArcaneCoreModifierValue('critChance', 0.002)).toBe('+0.20%')
+
+  it('formats V6 percentage stats and authored ranked effects in player-readable units', () => {
+    expect(formatArcaneCoreModifierValue('spellPowerPct', 0.005)).toBe('+0.50%')
     expect(formatArcaneCoreModifierValue('spellPower', 1)).toBe('+1')
-    const node = ARCANE_CORE_NODES.find((candidate) => candidate.id === 'power-r1-critical-insight')!
-    expect(formatArcaneCoreNodeEffect(node, 1)).toContain('+0.50%')
-    expect(formatArcaneCoreNodeEffect(node, 5)).toContain('+2.50%')
+    const node = ARCANE_CORE_NODES.find((candidate) => candidate.name === 'Arcane Scaling')!
+    expect(formatArcaneCoreNodeEffect(node, 1)).toContain('+0.10%')
+    expect(formatArcaneCoreNodeEffect(node, 5)).toContain('+0.50%')
   })
-  it('formats exact ranked rules and Major inactive state', () => {
-    const feedback = ARCANE_CORE_NODES.find((candidate) => candidate.id === 'power-r2-critical-feedback')!
-    expect(getArcaneCoreNodeEffectTexts(feedback, 3)).toContain('Reduce Spell cooldowns by 100 ms · Internal Cooldown: 500 ms')
 
-    const pressure = ARCANE_CORE_NODES.find((candidate) => candidate.id === 'control-r1-control-pressure')!
-    expect(getArcaneCoreNodeEffectTexts(pressure, 5)).toContain('Delay enemy current action by 100 ms · Internal Cooldown: 1 sec')
-
-    const lock = ARCANE_CORE_NODES.find((candidate) => candidate.id === 'control-r4-arcane-lock')!
-    expect(getArcaneCoreNodeEffectTexts(lock, 0)).toEqual(['Inactive'])
-    expect(getArcaneCoreNodeEffectTexts(lock, 1)).toEqual(expect.arrayContaining(['Damage Taken +10.00%', 'Delay enemy current action by 250 ms · Internal Cooldown: 5 sec']))
+  it('formats exact V6 descriptions and inactive Major state', () => {
+    const cycle = ARCANE_CORE_NODES.find((candidate) => candidate.name === 'Arcane Spark')!
+    expect(getArcaneCoreNodeEffectTexts(cycle, 5).join(' ')).toContain('Every 4th successful damaging Spell')
+    const major = ARCANE_CORE_NODES.find((candidate) => candidate.branchId === 'control' && candidate.ring === 4 && candidate.nodeType === 'major')!
+    expect(getArcaneCoreNodeEffectTexts(major, 0)).toEqual(['Inactive'])
+    expect(getArcaneCoreNodeEffectTexts(major, 1).join(' ')).toContain(major.description.split('.')[0]!)
   })
 })

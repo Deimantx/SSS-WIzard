@@ -1,6 +1,7 @@
 import type { ArcaneCoreBranchId, ArcaneCoreNodeDefinition, ArcaneCoreNodeType, ArcaneCoreResolvedEffects, ArcaneCoreRingIndex, EquipmentStats } from '../../types'
 import type { CombatCondition, CombatEffect, CombatModifier, CombatTrigger, CombatTriggerRule } from '../../systems/combat/combatTypes'
 import { ARCANE_CORE_NODE_ANGLE_STEP, ARCANE_CORE_RING_OFFSETS, normalizeAngle } from './arcaneCoreRings'
+import { ARCANE_CORE_MAJOR_COST_BY_RING, ARCANE_CORE_STANDARD_RANK_COST_BY_RING } from './arcaneCoreBalance'
 
 export type ArcaneCoreEffectResolver = (rank: number) => ArcaneCoreResolvedEffects
 export type ArcaneCoreNodeDraft = Omit<ArcaneCoreNodeDefinition, 'branchId' | 'ring' | 'angleDeg'>
@@ -25,8 +26,8 @@ export const createRing = (branchId: ArcaneCoreBranchId, ring: ArcaneCoreRingInd
   const offsetDeg = ARCANE_CORE_RING_OFFSETS[ring]
   let standardIndex = 0
   return drafts.map((draft) => {
-    if (draft.nodeType === 'major') return { ...draft, branchId, ring, angleDeg: normalizeAngle(offsetDeg) }
+    if (draft.nodeType === 'major') return { ...draft, branchId, ring, angleDeg: normalizeAngle(offsetDeg), rankCost: ARCANE_CORE_MAJOR_COST_BY_RING[ring] }
     standardIndex += 1
-    return { ...draft, branchId, ring, angleDeg: normalizeAngle(offsetDeg + standardIndex * ARCANE_CORE_NODE_ANGLE_STEP) }
+    return { ...draft, branchId, ring, angleDeg: normalizeAngle(offsetDeg + standardIndex * ARCANE_CORE_NODE_ANGLE_STEP), rankCost: ARCANE_CORE_STANDARD_RANK_COST_BY_RING[ring] }
   })
 }

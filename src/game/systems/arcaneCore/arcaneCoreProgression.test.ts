@@ -1,112 +1,89 @@
 import { describe, expect, it } from 'vitest'
-import { ARCANE_CORE_MAX_LEVEL, ARCANE_CORE_MAX_TOTAL_XP, ARCANE_CORE_TOTAL_POINTS, getArcaneCoreTotalXpForLevel } from '../../content/arcaneCore/arcaneCoreBalance'
-import { ARCANE_CORE_BRANCHES } from '../../content/arcaneCore/arcaneCoreBranches'
-import { createInitialArcaneCoreState, getArcaneCoreAvailablePoints, getArcaneCoreBranchResetPreview, getArcaneCoreLevelInfo, getArcaneCoreNodeProgress, getArcaneCorePointsSpent, getArcaneCoreStaticStats, getArcaneCoreRingPointsSpent, getArcaneCoreRefundPreview, grantArcaneCoreXp, isArcaneCoreMajorUnlocked, isArcaneCoreNodeReachable, isArcaneCoreRingUnlocked, purchaseAllArcaneCoreNodes, purchaseArcaneCoreNode, refundArcaneCoreNode, resetArcaneCore, setArcaneCoreLevel } from './arcaneCoreProgression'
-import type { ArcaneCoreState } from '../../types'
+import { ARCANE_CORE_BRANCHES, ARCANE_CORE_NODES } from '../../content/arcaneCore/arcaneCoreBranches'
+import { ARCANE_CORE_MAJOR_COST_BY_RING, ARCANE_CORE_STANDARD_RANK_COST_BY_RING, ARCANE_CORE_TOTAL_TREE_COST } from '../../content/arcaneCore/arcaneCoreBalance'
+import { ARCANE_CORE_MAJOR_GATES, ARCANE_CORE_RING_GATES } from '../../content/arcaneCore/arcaneCoreRings'
+import { createInitialArcaneCoreState, getArcaneCoreAvailablePoints, getArcaneCoreBranchResetPreview, getArcaneCoreNodeRank, getArcaneCorePointsSpent, getArcaneCoreRingStandardRanksInvested, getArcaneCoreStaticStats, getArcaneCoreWalletInfo, grantArcanePoints, isArcaneCoreMajorUnlocked, isArcaneCoreRingUnlocked, purchaseAllArcaneCoreNodes, purchaseArcaneCoreNode, refundArcaneCoreNode, resetArcaneCore, setArcaneCoreNodeRank } from './arcaneCoreProgression'
 
-const stateAtLevel = (level: number, nodes: ArcaneCoreState['nodes'] = {}): ArcaneCoreState => ({ totalXp: getArcaneCoreTotalXpForLevel(level), nodes })
-const buy = (state: ArcaneCoreState, nodeId: string, count: number) => { let next = state; for (let i = 0; i < count; i += 1) { const result = purchaseArcaneCoreNode(next, nodeId); expect(result.ok).toBe(true); if (!result.ok) return next; next = result.state } return next }
+const power = ARCANE_CORE_BRANCHES.find((branch) => branch.id === 'power')!
+const standards = (ring: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8) => power.nodes.filter((node) => node.ring === ring && node.nodeType !== 'major')
+const major = (ring: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8) => power.nodes.find((node) => node.ring === ring && node.nodeType === 'major')!
+const setRank = (state: ReturnType<typeof createInitialArcaneCoreState>, nodeId: string, rank: number) => {
+  const result = setArcaneCoreNodeRank(state, nodeId, rank)
+  if (!result.ok) throw new Error(result.reason)
+  return result.state
+}
+const withPoints = (amount: number) => grantArcanePoints(createInitialArcaneCoreState(), amount).state
 
-describe('Arcane Core V4 progression', () => {
-  it('starts empty and derives level, XP, and points', () => {
-    const initial = createInitialArcaneCoreState()
-    expect(getArcaneCoreLevelInfo(initial)).toMatchObject({ level: 1, totalXp: 0, pointsEarned: 0, pointsSpent: 0, pointsAvailable: 0 })
-    const granted = grantArcaneCoreXp(initial, 100)
-    expect(granted).toMatchObject({ levelAfter: 2, levelsGained: 1 })
-    expect(getArcaneCoreAvailablePoints(granted.state)).toBe(1)
+describe('Arcane Core V6 progression', () => {
+  it('starts with a direct lifetime Arcane Points wallet', () => {
+    expect(getArcaneCoreWalletInfo(createInitialArcaneCoreState())).toEqual({ totalPointsEarned: 0, pointsSpent: 0, pointsAvailable: 0, treeCost: ARCANE_CORE_TOTAL_TREE_COST })
   })
 
-  it('derives the V4 1376 point capacity and max level', () => {
-    expect(ARCANE_CORE_TOTAL_POINTS).toBe(1376)
-    expect(ARCANE_CORE_MAX_LEVEL).toBe(1377)
-    expect(grantArcaneCoreXp(createInitialArcaneCoreState(), ARCANE_CORE_MAX_TOTAL_XP + 1).state.totalXp).toBe(ARCANE_CORE_MAX_TOTAL_XP)
+  it('floors grants, ignores negative values, and caps at the exact tree cost', () => {
+    const state = createInitialArcaneCoreState()
+    expect(grantArcanePoints(state, 4.9)).toMatchObject({ requested: 4, granted: 4, pointsAfter: 4, reachedCap: false })
+    const capped = grantArcanePoints(grantArcanePoints(state, ARCANE_CORE_TOTAL_TREE_COST - 1).state, 99)
+    expect(capped).toMatchObject({ granted: 1, pointsAfter: ARCANE_CORE_TOTAL_TREE_COST, reachedCap: true })
+    expect(grantArcanePoints(state, -10)).toMatchObject({ requested: 0, granted: 0, pointsAfter: 0 })
   })
 
-  it('purchases five ranks on standard nodes and three points on Majors', () => {
-    let state = buy(stateAtLevel(6), 'power-r1-arcane-force', 5)
-    expect(getArcaneCoreNodeProgress(state, 'power-r1-arcane-force')).toEqual({ rank: 5 })
-    expect(getArcaneCorePointsSpent(state)).toBe(5)
-    expect(purchaseArcaneCoreNode(state, 'power-r1-arcane-force')).toEqual({ ok: false, reason: 'already-max-rank' })
-    state = buy(stateAtLevel(34), 'power-r1-arcane-force', 5)
-    state = buy(state, 'power-r1-forceful-strikes', 5)
-    state = buy(state, 'power-r1-critical-insight', 5)
-    state = buy(state, 'power-r1-critical-force', 5)
-    state = buy(state, 'power-r1-spell-impact', 5)
-    state = buy(state, 'power-r1-battle-rhythm', 5)
-    expect(getArcaneCoreRingPointsSpent(state, 'power', 1)).toBe(30)
-    const major = purchaseArcaneCoreNode(state, 'power-r1-overwhelming-force')
-    expect(major.ok).toBe(true)
-    if (major.ok) expect(getArcaneCorePointsSpent(major.state)).toBe(33)
-  })
-
-  it('unlocks outer Rings by investment, not node chains', () => {
-    const state = purchaseAllArcaneCoreNodes(stateAtLevel(21), 'power')
-    expect(getArcaneCoreRingPointsSpent(state, 'power', 1)).toBe(20)
-    expect(isArcaneCoreNodeReachable(state, 'power-r2-opening-blast')).toBe(true)
-    expect(isArcaneCoreNodeReachable(state, 'power-r3-arcane-momentum')).toBe(false)
-  })
-
-  it('uses the V4 outer Ring gates and full-Ring Major gates', () => {
-    const branch = ARCANE_CORE_BRANCHES.find((candidate) => candidate.id === 'power')!
-    const stateWithRingPoints = (ring: number, points: number) => {
-      let remaining = points
-      const nodes: ArcaneCoreState['nodes'] = {}
-      branch.nodes.filter((node) => node.ring === ring && node.nodeType !== 'major').forEach((node) => {
-        const rank = Math.min(node.maxRank, remaining)
-        remaining -= rank * node.rankCost
-        if (rank > 0) nodes[node.id] = { rank }
-      })
-      return stateAtLevel(100, nodes)
+  it('assigns depth-based standard and Major costs', () => {
+    for (const ring of [1, 2, 3, 4, 5, 6, 7, 8] as const) {
+      expect(standards(ring)[0]!.rankCost).toBe(ARCANE_CORE_STANDARD_RANK_COST_BY_RING[ring])
+      expect(major(ring).rankCost).toBe(ARCANE_CORE_MAJOR_COST_BY_RING[ring])
     }
-    const gates = [{ previousRing: 4, targetRing: 5, required: 32 }, { previousRing: 5, targetRing: 6, required: 34 }, { previousRing: 6, targetRing: 7, required: 36 }, { previousRing: 7, targetRing: 8, required: 38 }] as const
-    for (const gate of gates) {
-      expect(isArcaneCoreRingUnlocked(stateWithRingPoints(gate.previousRing, gate.required - 1), 'power', gate.targetRing)).toBe(false)
-      expect(isArcaneCoreRingUnlocked(stateWithRingPoints(gate.previousRing, gate.required), 'power', gate.targetRing)).toBe(true)
-    }
-    const major = branch.nodes.find((node) => node.ring === 8 && node.nodeType === 'major')!
-    expect(isArcaneCoreMajorUnlocked(stateWithRingPoints(8, 39), major)).toBe(false)
-    expect(isArcaneCoreMajorUnlocked(stateWithRingPoints(8, 40), major)).toBe(true)
   })
 
-  it('refunds one rank and cascades allocations that lose a Ring gate', () => {
-    let state = stateAtLevel(22)
-    state = buy(state, 'power-r1-arcane-force', 5)
-    state = buy(state, 'power-r1-forceful-strikes', 5)
-    state = buy(state, 'power-r1-critical-insight', 5)
-    state = buy(state, 'power-r1-critical-force', 5)
-    state = buy(state, 'power-r2-opening-blast', 1)
-    const preview = getArcaneCoreBranchResetPreview(state, 'power')
-    expect(preview).toMatchObject({ ok: true, corePointsReturned: 21 })
-    const refunded = refundArcaneCoreNode(state, 'power-r1-arcane-force')
-    expect(refunded).toMatchObject({ ok: true })
-    if (refunded.ok) expect(refunded.state.nodes['power-r2-opening-blast']).toBeUndefined()
+  it('opens Rings and Majors by standard rank counts', () => {
+    let state = withPoints(1000)
+    for (const node of standards(1).slice(0, 4)) state = setRank(state, node.id, 5)
+    expect(getArcaneCoreRingStandardRanksInvested(state, 'power', 1)).toBe(20)
+    expect(isArcaneCoreRingUnlocked(state, 'power', 2)).toBe(true)
+    expect(isArcaneCoreRingUnlocked({ nodes: Object.fromEntries(standards(1).slice(0, 3).map((node) => [node.id, { rank: 5 }])) }, 'power', 2)).toBe(false)
+
+    let ringFour = withPoints(1000)
+    for (const node of standards(4)) ringFour = setRank(ringFour, node.id, 5)
+    expect(getArcaneCoreRingStandardRanksInvested(ringFour, 'power', 4)).toBe(40)
+    expect(isArcaneCoreMajorUnlocked(ringFour, major(4))).toBe(true)
+    expect(isArcaneCoreMajorUnlocked(setRank(ringFour, standards(4)[0]!.id, 4), major(4))).toBe(false)
+    expect(ARCANE_CORE_RING_GATES[8]).toBe(38)
+    expect(ARCANE_CORE_MAJOR_GATES[8]).toBe(40)
   })
 
-  it('counts a Major refund as one rank and three returned Core Points', () => {
-    const state = stateAtLevel(35, { 'power-r1-overwhelming-force': { rank: 1 } })
-    const preview = getArcaneCoreRefundPreview(state, 'power-r1-overwhelming-force')
-    expect(preview).toMatchObject({ ok: true, ranksAffected: 1, corePointsReturned: 3, majorsAffected: 1, nodesAffected: 1, nodeIds: ['power-r1-overwhelming-force'] })
+  it('purchases variable-cost ranks, refunds their exact cost, and preserves earned points on reset', () => {
+    let state = withPoints(100)
+    const node = standards(8)[0]!
+    const purchased = purchaseArcaneCoreNode(state, node.id)
+    expect(purchased.ok).toBe(false) // Ring VIII remains gated until preceding standard ranks are invested.
+    for (const ring of [1, 2, 3, 4, 5, 6, 7] as const) for (const standard of standards(ring)) state = setRank(state, standard.id, 5)
+    state = setRank(state, node.id, 1)
+    expect(getArcaneCoreNodeRank(state, node.id)).toBe(1)
+    expect(getArcaneCorePointsSpent(state)).toBeGreaterThanOrEqual(10)
+    const refunded = refundArcaneCoreNode(state, node.id)
+    expect(refunded.ok).toBe(true)
+    expect(getArcaneCoreAvailablePoints(state)).toBe(0)
+    const reset = resetArcaneCore(state)
+    expect(reset).toEqual({ ok: true, state: { totalPointsEarned: 100, nodes: {} } })
   })
 
-  it('counts branch reset ranks separately from weighted Core Points', () => {
-    const state = stateAtLevel(35, {
-      'power-r1-arcane-force': { rank: 5 },
-      'power-r1-overwhelming-force': { rank: 1 },
-    })
-    const preview = getArcaneCoreBranchResetPreview(state, 'power')
-    expect(preview).toMatchObject({ ok: true, ranksAffected: 6, corePointsReturned: 8, majorsAffected: 1, nodesAffected: 2 })
+  it('cascades nodes when a refund relocks a dependent Ring', () => {
+    let state = withPoints(100)
+    for (const node of standards(1).slice(0, 4)) state = setRank(state, node.id, 5)
+    state = setRank(state, standards(2)[0]!.id, 1)
+    const refunded = refundArcaneCoreNode(state, standards(1)[0]!.id)
+    expect(refunded.ok).toBe(true)
+    if (refunded.ok) expect(refunded.state.nodes[standards(2)[0]!.id]).toBeUndefined()
+    const branchPreview = getArcaneCoreBranchResetPreview(state, 'power')
+    expect(branchPreview).toMatchObject({ ok: true, ranksAffected: 21 })
   })
 
-  it('supports full developer completion and shared stat aggregation', () => {
-    const completed = purchaseAllArcaneCoreNodes(setArcaneCoreLevel(createInitialArcaneCoreState(), ARCANE_CORE_MAX_LEVEL))
+  it('completes the exact 288-node tree and exposes percentage stat inputs', () => {
+    const completed = purchaseAllArcaneCoreNodes(withPoints(ARCANE_CORE_TOTAL_TREE_COST))
     expect(Object.keys(completed.nodes)).toHaveLength(288)
-    expect(getArcaneCorePointsSpent(completed)).toBe(1376)
-    const stats = getArcaneCoreStaticStats({ nodes: { 'vitality-r1-vitality': { rank: 1 }, 'focus-r1-focus-capacity': { rank: 1 } } })
-    expect(stats).toMatchObject({ maxHealth: 10, maxFocus: 1 })
-  })
-
-  it('resets allocations while preserving earned XP', () => {
-    const state = stateAtLevel(2, { 'power-r1-arcane-force': { rank: 1 } })
-    expect(resetArcaneCore(state)).toEqual({ ok: true, state: { totalXp: state.totalXp, nodes: {} } })
+    expect(getArcaneCorePointsSpent(completed)).toBe(ARCANE_CORE_TOTAL_TREE_COST)
+    const vitality = ARCANE_CORE_BRANCHES.find((branch) => branch.id === 'vitality')!.nodes.find((node) => node.ring === 1 && node.nodeType !== 'major')!
+    const focus = ARCANE_CORE_BRANCHES.find((branch) => branch.id === 'focus')!.nodes.find((node) => node.ring === 1 && node.nodeType !== 'major')!
+    const stats = getArcaneCoreStaticStats({ nodes: { [vitality.id]: { rank: 5 }, [focus.id]: { rank: 5 } } })
+    expect(stats).toMatchObject({ maxHealthPct: 0.025, maxManaPct: 0.025 })
   })
 })

@@ -1,5 +1,5 @@
 import { isBossMonster, MONSTERS } from '../../content/monsters'
-import { getArcaneCoreLevel } from '../arcaneCore/arcaneCoreProgression'
+import { getArcaneCoreTotalPointsEarned } from '../arcaneCore/arcaneCoreProgression'
 import { ITEMS } from '../../content/items/items'
 import type { ArtificingRecipeId, ChannelingDiscoveryId, GameState, ItemId, MonsterId, RecipeId, SchoolId, SpellId } from '../../types'
 
@@ -12,7 +12,7 @@ export interface OfflineBankReport {
   research: { researchedItems: Partial<Record<ItemId, number>>; xpBySchool: Partial<Record<SchoolId, number>>; levelBefore: Partial<Record<SchoolId, number>>; levelAfter: Partial<Record<SchoolId, number>>; stoppedAtCap?: boolean }
   consumption: { research: Partial<Record<ItemId, number>>; transmutation: Partial<Record<ItemId, number>> }
   netInventory: Partial<Record<ItemId, number>>
-  progression: { spellsUnlocked: SpellId[]; discoveriesUnlocked: ChannelingDiscoveryId[]; guildUnlocked: boolean; guildRankBefore?: GameState['progress']['guildRank']; guildRankAfter?: GameState['progress']['guildRank']; levelCapBefore?: number; levelCapAfter?: number; arcaneCore: { xpGained: number; levelBefore: number; levelAfter: number; levelsGained: number; pointsGained: number }; notableEvents: string[] }
+  progression: { spellsUnlocked: SpellId[]; discoveriesUnlocked: ChannelingDiscoveryId[]; guildUnlocked: boolean; guildRankBefore?: GameState['progress']['guildRank']; guildRankAfter?: GameState['progress']['guildRank']; levelCapBefore?: number; levelCapAfter?: number; arcaneCore: { pointsGained: number; pointsBefore: number; pointsAfter: number }; notableEvents: string[] }
   endingState: { health: number; maxHealth: number; mana: number; maxMana: number }
 }
 
@@ -21,7 +21,7 @@ export interface SimulationReportCollector {
   recordKill: (monsterId: MonsterId) => void
   recordLoot: (itemId: ItemId, quantity: number) => void
   recordPlayerDeath: () => void
-  recordArcaneCoreXp: (amount: number) => void
+  recordArcanePoints: (amount: number, pointsBefore?: number, pointsAfter?: number) => void
   recordTransmutation: (recipeId: RecipeId, output: ItemId, quantity: number, ingredients: { itemId: ItemId; quantity: number }[]) => void
   recordArtificing: (recipeId: ArtificingRecipeId, output: ItemId) => void
   recordResearch: (itemId: ItemId, schoolId: SchoolId, xp: number) => void
@@ -37,7 +37,7 @@ const cloneInventory = (state: GameState) => ({ ...state.inventory })
 export function createOfflineBankReportCollector(state: GameState, durationMs: number, bankBeforeMs: number): SimulationReportCollector {
   const inventoryBefore = cloneInventory(state)
   const touchedItems = new Set<ItemId>()
-  const progressionBefore = { spells: new Set(Object.keys(state.progress.spellRanks) as SpellId[]), discoveries: Object.entries(state.progress.channeling.discoveries).filter(([, value]) => value).map(([id]) => id as ChannelingDiscoveryId), guildUnlocked: state.progress.guildUnlocked, guildRank: state.progress.guildRank, levelCap: state.progress.magicLevelCap, arcaneCoreXp: state.arcaneCore.totalXp, arcaneCoreLevel: getArcaneCoreLevel(state.arcaneCore) }
+  const progressionBefore = { spells: new Set(Object.keys(state.progress.spellRanks) as SpellId[]), discoveries: Object.entries(state.progress.channeling.discoveries).filter(([, value]) => value).map(([id]) => id as ChannelingDiscoveryId), guildUnlocked: state.progress.guildUnlocked, guildRank: state.progress.guildRank, levelCap: state.progress.magicLevelCap, arcaneCorePoints: getArcaneCoreTotalPointsEarned(state.arcaneCore) }
   const levelBefore = Object.fromEntries((Object.keys(state.schools) as SchoolId[]).map((id) => [id, state.schools[id].level])) as Partial<Record<SchoolId, number>>
   const report: OfflineBankReport = {
     durationMs, bankBeforeMs, bankAfterMs: bankBeforeMs,
@@ -45,7 +45,7 @@ export function createOfflineBankReportCollector(state: GameState, durationMs: n
     production: { transmutation: {}, craftsByRecipe: {} },
     research: { researchedItems: {}, xpBySchool: {}, levelBefore, levelAfter: {}, stoppedAtCap: false },
     consumption: { research: {}, transmutation: {} }, netInventory: {},
-    progression: { spellsUnlocked: [], discoveriesUnlocked: [], guildUnlocked: false, arcaneCore: { xpGained: 0, levelBefore: progressionBefore.arcaneCoreLevel, levelAfter: progressionBefore.arcaneCoreLevel, levelsGained: 0, pointsGained: 0 }, notableEvents: [] },
+    progression: { spellsUnlocked: [], discoveriesUnlocked: [], guildUnlocked: false, arcaneCore: { pointsGained: 0, pointsBefore: progressionBefore.arcaneCorePoints, pointsAfter: progressionBefore.arcaneCorePoints }, notableEvents: [] },
     endingState: { health: state.player.health, maxHealth: state.player.maxHealth, mana: state.player.mana, maxMana: state.player.maxMana },
   }
   const touch = (itemId: ItemId) => { touchedItems.add(itemId) }
@@ -55,7 +55,7 @@ export function createOfflineBankReportCollector(state: GameState, durationMs: n
     recordKill: (monsterId) => { report.combat.killsTotal += 1; add(report.combat.killsByMonster, monsterId, 1); if (isBossMonster(MONSTERS[monsterId])) add(report.combat.bossKills, monsterId, 1) },
     recordLoot: (itemId, quantity) => { touch(itemId); add(report.combat.loot, itemId, quantity) },
     recordPlayerDeath: () => { report.combat.playerDeaths += 1 },
-    recordArcaneCoreXp: (amount) => { report.progression.arcaneCore.xpGained += Math.max(0, Math.floor(amount)) },
+    recordArcanePoints: (amount, pointsBefore, pointsAfter) => { report.progression.arcaneCore.pointsGained += Math.max(0, Math.floor(amount)); if (pointsBefore !== undefined) report.progression.arcaneCore.pointsBefore = pointsBefore; if (pointsAfter !== undefined) report.progression.arcaneCore.pointsAfter = pointsAfter },
     recordTransmutation: (recipeId, output, quantity, ingredients) => { touch(output); add(report.production.craftsByRecipe, recipeId, quantity); add(report.production.transmutation, output, quantity); ingredients.forEach((ingredient) => { touch(ingredient.itemId); add(report.consumption.transmutation, ingredient.itemId, ingredient.quantity) }) },
     recordArtificing: (recipeId, output) => { touch(output); add(report.production.craftsByRecipe, recipeId, 1) },
     recordResearch: (itemId, schoolId, xp) => { touch(itemId); add(report.research.researchedItems, itemId, 1); add(report.research.xpBySchool, schoolId, xp); add(report.consumption.research, itemId, 1) },
@@ -71,8 +71,8 @@ export function createOfflineBankReportCollector(state: GameState, durationMs: n
       report.progression.guildUnlocked = !progressionBefore.guildUnlocked && current.progress.guildUnlocked
       if (progressionBefore.guildRank !== current.progress.guildRank) { report.progression.guildRankBefore = progressionBefore.guildRank; report.progression.guildRankAfter = current.progress.guildRank }
       if (progressionBefore.levelCap !== current.progress.magicLevelCap) { report.progression.levelCapBefore = progressionBefore.levelCap; report.progression.levelCapAfter = current.progress.magicLevelCap }
-      const arcaneCoreLevelAfter = getArcaneCoreLevel(current.arcaneCore)
-      report.progression.arcaneCore = { xpGained: Math.max(0, current.arcaneCore.totalXp - progressionBefore.arcaneCoreXp), levelBefore: progressionBefore.arcaneCoreLevel, levelAfter: arcaneCoreLevelAfter, levelsGained: Math.max(0, arcaneCoreLevelAfter - progressionBefore.arcaneCoreLevel), pointsGained: Math.max(0, arcaneCoreLevelAfter - progressionBefore.arcaneCoreLevel) }
+      const arcanePointsAfter = getArcaneCoreTotalPointsEarned(current.arcaneCore)
+      report.progression.arcaneCore = { pointsGained: Math.max(0, arcanePointsAfter - progressionBefore.arcaneCorePoints), pointsBefore: progressionBefore.arcaneCorePoints, pointsAfter: arcanePointsAfter }
       if (report.progression.guildUnlocked) recordNotable('Guild unlocked')
       if (report.progression.levelCapAfter) recordNotable(`Magic School cap increased to ${report.progression.levelCapAfter}`)
       report.research.levelAfter = Object.fromEntries((Object.keys(current.schools) as SchoolId[]).map((id) => [id, current.schools[id].level])) as Partial<Record<SchoolId, number>>

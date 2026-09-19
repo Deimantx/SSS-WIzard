@@ -1,6 +1,4 @@
 import { MONSTERS } from '../../content/monsters'
-import { BALANCE } from '../../core/balance/balance'
-import { getEquipmentStats } from '../../core/equipment/equipmentStats'
 import { getSpellPower } from '../spells/spellPower'
 import type { GameState } from '../../types'
 import type { CombatSource, Magnitude } from './combatTypes'
@@ -22,7 +20,7 @@ export const getActorHealth = (state: MagnitudeState, actor: CombatActor) => act
 export const isCombatActorAlive = (state: MagnitudeState, actor: CombatActor) => actor === 'player'
   ? state.player.health > 0
   : Boolean(state.combat.enemyId) && state.combat.enemyHp > 0
-export const getActorBasicDamage = (state: MagnitudeState, actor: CombatActor) => actor === 'player' ? BALANCE.player.basicAttackDamage + (getEquipmentStats(state).basicDamage ?? 0) : state.combat.enemyId ? MONSTERS[state.combat.enemyId].basicAttackDamage : 0
+export const getActorBasicDamage = (state: MagnitudeState, actor: CombatActor) => actor === 'player' ? 0 : state.combat.enemyId ? MONSTERS[state.combat.enemyId].basicAttackDamage : 0
 
 
 export const resolveMagnitude = (state: MagnitudeState, magnitude: Magnitude, source: CombatSource, target: CombatActor) => {

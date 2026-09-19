@@ -136,6 +136,10 @@ export type AutoCastCondition =
   | { type: 'self-has-cleanseable-debuff' }
   | { type: 'all'; conditions: AutoCastCondition[] }
 export interface EquipmentStats {
+  spellPowerPct?: number
+  maxHealthPct?: number
+  maxManaPct?: number
+  /** @deprecated Player basic attacks are no longer part of Spell combat. */
   basicDamage?: number
   spellPower?: number
   maxHealth?: number
@@ -147,6 +151,7 @@ export interface EquipmentStats {
   critChance?: number
   critDamage?: number
   basicAttackSpeedPct?: number
+  /** @deprecated Player Block Chance was removed in Arcane Core V6. */
   blockChance?: number
   cooldownRecoveryPct?: number
   healingDonePct?: number
@@ -170,6 +175,7 @@ export type ArcaneCoreSpecialEffect =
   | { type: 'reserved-focus-spell-power'; spellPowerPerReservedFocus: number }
   | { type: 'free-focus-mana-regen'; manaRegenPerFreeFocus: number }
   | { type: 'nth-spell-cooldown-pulse'; every: number; cooldownReductionMs: number }
+  | { type: 'v6-generic'; key: string; value: number; scope?: string }
 export interface ArcaneCoreResolvedEffects {
   stats?: EquipmentStats
   modifiers?: import('./systems/combat/combatTypes').CombatModifier[]
@@ -199,7 +205,10 @@ export interface ArcaneCoreNodeProgress {
   rank: number
 }
 export interface ArcaneCoreState {
-  totalXp: number
+  /** Optional only for compile-time compatibility with pre-V37 test fixtures; fresh and migrated saves always define it. */
+  totalPointsEarned?: number
+  /** @deprecated Read only by legacy migration/test compatibility; never authored in fresh saves. */
+  totalXp?: number
   nodes: Partial<Record<string, ArcaneCoreNodeProgress>>
 }
 
@@ -390,6 +399,46 @@ export interface CombatState {
     spellCastCount: number
     cooldownPulseSpellCount: number
     survivalInstinctUsed: boolean
+    /** Runtime metadata used by V6 AUTO/MANUAL and sequence primitives. */
+    lastCastOrigin?: 'auto' | 'manual-direct' | 'manual-queued'
+    lastSpellId?: CanonicalSpellId | null
+    lastLoadoutSlotIndex?: number | null
+    differentSpellStreak?: number
+    alternatingCastStreak?: number
+    enemyDamagingSpellCount?: number
+    nextDamageMultiplier?: number
+    nextEffectivenessMultiplier?: number
+    nextActionSpeedMultiplier?: number
+    nextManaRefundPercent?: number
+    nextCritChanceBonus?: number
+    nextCritDamageBonus?: number
+    nextGuaranteedCrit?: boolean
+    failedCritStreak?: number
+    lastSuccessfulCastAtMs?: number
+    nextLowCostDamageMultiplier?: number
+    costBandHistory?: Array<'low' | 'high' | 'overcharged' | 'extreme'>
+    lastWordUsed?: boolean
+    sovereigntyCharges?: number
+    nextNonCritDamageMultiplier?: number
+    victoryMomentumReady?: boolean
+    apotheosisUntilMs?: number
+    overchannelUntilMs?: number
+    manaRegenDisabledUntilMs?: number
+    nextHealingActionSpeedMultiplier?: number
+    nextSelfTargetActionSpeedMultiplier?: number
+    castLoadoutSlots?: number[]
+    echoCharges?: number
+    manualCharges?: number
+    manualCastCount?: number
+    differentLoadoutSlotStreak?: number
+    consecutiveAutoCasts?: number
+    consecutiveManualCasts?: number
+    lastCastAtFullMana?: boolean
+    nextAutoRefundPercent?: number
+    lastManaBand?: number
+    nextControlStatusDurationMultiplier?: number
+    controlStatusApplications?: number
+    lastDamageTakenAtMs?: number
   }
   playerStatuses: ActiveStatus[]
   enemyStatuses: ActiveStatus[]
@@ -414,6 +463,15 @@ export interface PendingPlayerSpellCast {
   manaCostSnapshot: number
   arcaneCoreFree: boolean
   castWorkMultiplier: number
+  castOrigin?: 'auto' | 'manual-direct' | 'manual-queued'
+  loadoutSlotIndex?: number | null
+  arcaneCoreActionSpeedMultiplier?: number
+  arcaneCoreManaCostMultiplier?: number
+  arcaneCoreEffectivenessMultiplier?: number
+  arcaneCoreCritChanceBonus?: number
+  arcaneCoreCritDamageBonus?: number
+  arcaneCoreGuaranteedCrit?: boolean
+  castWasGust?: boolean
 }
 export interface GuardianProgressState { level: number; rank: number }
 export interface GuardiansState {

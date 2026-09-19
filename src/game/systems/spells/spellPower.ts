@@ -19,9 +19,12 @@ export type SpellPowerState = EquipmentStatsState & {
 
 export const getSpellPowerBreakdown = (state: SpellPowerState): SpellPowerBreakdown => {
   const base = BALANCE.player.baseSpellPower
-  const equipment = getEquipmentStats(state).spellPower ?? 0
+  const stats = getEquipmentStats(state)
+  const equipment = stats.spellPower ?? 0
   const dynamic = state.arcaneCore && state.activities && state.progress && state.player ? getArcaneCoreDynamicSpellPower(state as never) : 0
-  return { base, equipment: equipment + dynamic, total: Math.max(0, base + equipment + dynamic) }
+  const raw = Math.max(0, base + equipment + dynamic)
+  const spellPowerPct = stats.spellPowerPct ?? 0
+  return { base, equipment: equipment + dynamic, total: Math.max(0, raw * (1 + spellPowerPct)) }
 }
 
 export const getSpellPower = (state: EquipmentStatsState) => getSpellPowerBreakdown(state).total

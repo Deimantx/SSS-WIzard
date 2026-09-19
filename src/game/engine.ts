@@ -20,7 +20,8 @@ export const equipmentStats = getEquipmentStats
 
 export const recalculateDerivedStats = (state: GameState) => {
   const stats = equipmentStats(state)
-  state.player.maxHealth = state.player.baseMaxHealth + (stats.maxHealth ?? 0)
+  const rawMaxHealth = state.player.baseMaxHealth + (stats.maxHealth ?? 0)
+  state.player.maxHealth = rawMaxHealth * (1 + (stats.maxHealthPct ?? 0))
   state.player.maxMana = getManaCapacityBreakdown(state).total
   state.player.maxFocus = getFocusCapacityBreakdown(state).total
   state.player.health = clamp(state.player.health, 0, state.player.maxHealth)
@@ -31,7 +32,8 @@ export const manaRegenPerSecond = getChannelingManaRegen
 export const schoolProgress = (state: GameState, school: SchoolId) => {
   return getSchoolProgressInfo(state, school).progress
 }
-export const playerBasicDamage = (state: Pick<GameState, 'equipment' | 'artifactProgress'>) => BALANCE.player.basicAttackDamage + (equipmentStats(state).basicDamage ?? 0)
+/** Player combat is Spell-only in V6; enemy Basic Attacks retain their own path. */
+export const playerBasicDamage = (_state: Pick<GameState, 'equipment' | 'artifactProgress'>) => 0
 
 export const grantSchoolXp = (state: GameState, school: SchoolId, amount: number) => {
   const before = state.schools[school].level

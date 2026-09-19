@@ -32,7 +32,7 @@ import { isSummoningUnlocked } from '../game/systems/summoning/summoningSelector
 import { normalizeDarkPortalProgress } from '../game/systems/dark-portal/portalShardProgression'
 import { isScreenUnlocked, reconcileStoryProgression } from '../game/systems/story/storyProgression'
 import { getTransmutationArrayBonuses } from '../game/systems/transmutation/transmutationArrays'
-import { ARCANE_CORE_MAX_TOTAL_XP, ARCANE_CORE_MAX_LEVEL, getArcaneCoreTotalXpForLevel } from '../game/content/arcaneCore/arcaneCoreBalance'
+import { ARCANE_CORE_MAX_LEVEL, ARCANE_CORE_MAX_TOTAL_XP, ARCANE_CORE_TOTAL_TREE_COST, getArcaneCoreLevelForXp } from '../game/content/arcaneCore/arcaneCoreBalance'
 import { getArcaneCoreNode } from '../game/content/arcaneCore/arcaneCoreBranches'
 
 const statusValidationContext = createCombatValidationContext(STATUS_DEFINITIONS)
@@ -79,26 +79,36 @@ const permanentFocusIds = ['forest-heart', 'guild-apprentice']
 /** V34 is the first save topology that stores Arcane Core ranked nodes. */
 const ARCANE_CORE_RANKED_NODE_SAVE_VERSION = 34
 
+const LEGACY_ARCANE_CORE_MAX_SPEND = 1376
 const normalizeArcaneCore = (migrated: GameState, raw: Record<string, any>) => {
   const source = isRecord(raw.arcaneCore) ? raw.arcaneCore : {}
-  if (typeof source.totalXp === 'number' && Number.isFinite(source.totalXp)) {
+  const sourceVersion = typeof raw.saveVersion === 'number' ? raw.saveVersion : 0
+  if (sourceVersion >= SAVE_VERSION && typeof source.totalPointsEarned === 'number' && Number.isFinite(source.totalPointsEarned)) {
     const nodes: GameState['arcaneCore']['nodes'] = {}
-    const sourceVersion = typeof raw.saveVersion === 'number' ? raw.saveVersion : 0
-    // V2 allocations are intentionally not mapped to V3's different topology.
-    // Current V3 saves keep their rank map; older saves keep XP only.
-    if (sourceVersion >= ARCANE_CORE_RANKED_NODE_SAVE_VERSION && isRecord(source.nodes)) Object.entries(source.nodes).forEach(([nodeId, value]) => {
+    if (isRecord(source.nodes)) Object.entries(source.nodes).forEach(([nodeId, value]) => {
       const node = getArcaneCoreNode(nodeId)
       const rank = node && isRecord(value) && typeof value.rank === 'number' && Number.isFinite(value.rank) ? Math.max(0, Math.min(node.maxRank, Math.floor(value.rank))) : 0
       if (node && rank > 0) nodes[nodeId] = { rank }
     })
-    migrated.arcaneCore = { totalXp: Math.max(0, Math.min(ARCANE_CORE_MAX_TOTAL_XP, source.totalXp)), nodes }
+    migrated.arcaneCore = { totalPointsEarned: Math.max(0, Math.min(ARCANE_CORE_TOTAL_TREE_COST, Math.floor(source.totalPointsEarned))), nodes }
     return
   }
+  const oldTotalXp = typeof source.totalXp === 'number' && Number.isFinite(source.totalXp) ? Math.max(0, Math.min(ARCANE_CORE_MAX_TOTAL_XP, source.totalXp)) : 0
   const rawNodes = isRecord(source.nodes) ? source.nodes : {}
+  const oldEarnedPoints = source.totalXp !== undefined ? Math.max(0, Math.min(LEGACY_ARCANE_CORE_MAX_SPEND, getArcaneCoreLevelForXp(oldTotalXp) - 1)) : 0
+  const rankedSpentPoints = sourceVersion >= ARCANE_CORE_RANKED_NODE_SAVE_VERSION
+    ? Object.entries(rawNodes).reduce<number>((total, [nodeId, value]) => {
+      const node = getArcaneCoreNode(nodeId)
+      const rank = node && isRecord(value) && typeof value.rank === 'number' && Number.isFinite(value.rank) ? Math.max(0, Math.min(node.maxRank, Math.floor(value.rank))) : 0
+      return total + rank * (node?.nodeType === 'major' ? 3 : 1)
+    }, 0)
+    : 0
+  const legacyNodeSpentPoints = Object.values(rawNodes).reduce<number>((total, value) => total + (isRecord(value) && typeof value.coreSpent === 'number' && Number.isFinite(value.coreSpent) ? Math.max(0, Math.floor(value.coreSpent)) : 0), 0)
   const unspentPoints = typeof source.corePoints === 'number' && Number.isFinite(source.corePoints) ? Math.max(0, Math.floor(source.corePoints)) : 0
-  const spentPoints = Object.values(rawNodes).reduce<number>((total, value) => total + (isRecord(value) && typeof value.coreSpent === 'number' && Number.isFinite(value.coreSpent) ? Math.max(0, Math.floor(value.coreSpent)) : 0), 0)
-  const level = Math.min(ARCANE_CORE_MAX_LEVEL, 1 + unspentPoints + spentPoints)
-  migrated.arcaneCore = { totalXp: getArcaneCoreTotalXpForLevel(level), nodes: {} }
+  const oldSpentPoints = Math.max(rankedSpentPoints, legacyNodeSpentPoints + unspentPoints)
+  const legacyProgressPoints = Math.min(LEGACY_ARCANE_CORE_MAX_SPEND, Math.max(oldEarnedPoints, oldSpentPoints))
+  const convertedPoints = Math.max(0, Math.min(ARCANE_CORE_TOTAL_TREE_COST, Math.round(legacyProgressPoints / LEGACY_ARCANE_CORE_MAX_SPEND * ARCANE_CORE_TOTAL_TREE_COST)))
+  migrated.arcaneCore = { totalPointsEarned: convertedPoints, nodes: {} }
 }
 const REMOVED_PRISMATIC_FOCUS_ID = 'prismatic-focus'
 

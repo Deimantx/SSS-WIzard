@@ -10,7 +10,7 @@ export type ArcaneCorePresetMutationResult = { ok: true } | { ok: false; reason:
 export type ArcaneCorePresetResult = { ok: true; state: ArcaneCoreState } | { ok: false; reason: 'invalid-preset' | 'not-enough-core-points' }
 export const MAX_RUNTIME_PRESETS = 20
 export const normalizeArcaneCorePresetName = (name: string) => name.trim().slice(0, 32)
-export const cloneArcaneCoreState = (state: ArcaneCoreState): ArcaneCoreState => ({ totalXp: Math.max(0, Number.isFinite(state.totalXp) ? state.totalXp : 0), nodes: Object.fromEntries(Object.entries(state.nodes ?? {}).flatMap(([id, progress]) => { const node = getArcaneCoreNode(id); const rank = node && typeof progress?.rank === 'number' ? Math.max(0, Math.min(node.maxRank, Math.floor(progress.rank))) : 0; return node && rank > 0 ? [[id, { rank }]] : [] })) as ArcaneCoreState['nodes'] })
+export const cloneArcaneCoreState = (state: ArcaneCoreState): ArcaneCoreState => ({ totalPointsEarned: Math.max(0, Number.isFinite(state.totalPointsEarned ?? 0) ? state.totalPointsEarned ?? 0 : 0), nodes: Object.fromEntries(Object.entries(state.nodes ?? {}).flatMap(([id, progress]) => { const node = getArcaneCoreNode(id); const rank = node && typeof progress?.rank === 'number' ? Math.max(0, Math.min(node.maxRank, Math.floor(progress.rank))) : 0; return node && rank > 0 ? [[id, { rank }]] : [] })) as ArcaneCoreState['nodes'] })
 
 export const getArcaneCorePresetSummary = (state: Pick<ArcaneCoreState, 'nodes'>): ArcaneCorePresetSummary => {
   const nodes = Object.keys(state.nodes ?? {}).filter((id) => getArcaneCoreNodeRank(state, id) > 0)
@@ -35,6 +35,6 @@ export const applyArcaneCorePreset = (current: ArcaneCoreState, presetState: Pic
   const nodes = normalizePresetNodes(presetState)
   if (!nodes) return { ok: false, reason: 'invalid-preset' }
   if (getArcaneCoreTotalPointsEarned(current) < getArcaneCorePointsSpent({ nodes })) return { ok: false, reason: 'not-enough-core-points' }
-  return { ok: true, state: { totalXp: current.totalXp, nodes } }
+  return { ok: true, state: { totalPointsEarned: current.totalPointsEarned, nodes } }
 }
 export const getArcaneCorePresetRequiredPoints = (state: Pick<ArcaneCoreState, 'nodes'>) => getArcaneCorePointsSpent(state)

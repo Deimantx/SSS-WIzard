@@ -11,7 +11,7 @@ import { createCombatResolutionContext, type CombatEvent, type CombatEventSink, 
 import { initializeEnemyActionRuntime, resetEnemyActionRuntime, startNextEnemyAction } from './actionRuntime'
 import { resolveMonsterLoot } from '../loot'
 import { getArcaneCoreReward } from '../../content/arcaneCore/arcaneCoreRewards'
-import { grantArcaneCoreXp } from '../arcaneCore/arcaneCoreProgression'
+import { grantArcanePoints } from '../arcaneCore/arcaneCoreProgression'
 import { discoverMonster } from '../collection/discovery'
 import type { SimulationReportCollector } from '../offline-bank/offlineBankReport'
 import { nextCombatRandom } from './combatRng'
@@ -19,6 +19,7 @@ import { reconcileStoryProgression } from '../story/storyProgression'
 import { SUMMONING_UNLOCK_BOSS_ID } from '../../content/guardians/guardians'
 import { beginGuardianEncounter, clearGuardianRuntime, suppressGuardianIfOutOfMana } from '../summoning/summoningRuntime'
 import { activateSelectedSpellPresetForBattle, getSelectedSpellPreset } from '../spells'
+import { resetArcaneCoreEncounterRuntime } from '../arcaneCore/arcaneCoreRuntime'
 
 export { applyStatus, clearStatuses, damageEnemy, damagePlayer, executeCombatEffects, gainBarrier }
 
@@ -81,6 +82,7 @@ export const spawnEnemy = (state: GameState, enemyId: MonsterId, uiEvents?: Comb
   state.combat.enemyInstanceSerial = Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, previousSerial) + 1)
   state.combat.enemyInstanceKey = `enemy:${state.combat.enemyInstanceSerial}`
   state.combat.enemyId = enemyId
+  resetArcaneCoreEncounterRuntime(state)
   state.combat.enemyHp = monster.maxHealth
   state.combat.enemyMaxHp = monster.maxHealth
   state.combat.enemyBarrier = 0
@@ -149,12 +151,12 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   const dungeon = DUNGEONS[state.combat.dungeonId ?? 'whispering-woods']
   const arcaneReward = getArcaneCoreReward(state.combat.dungeonId)
   const bossDefeated = isBossMonster(monster)
-  const arcaneCoreXp = arcaneReward ? (bossDefeated ? arcaneReward.bossKillXp : arcaneReward.normalKillXp) : 0
-  if (arcaneCoreXp > 0) {
-    const xpResult = grantArcaneCoreXp(state.arcaneCore, arcaneCoreXp)
-    state.arcaneCore = xpResult.state
-    report?.recordArcaneCoreXp(xpResult.granted)
-    if (!report && xpResult.levelsGained > 0) pushNotification(state, `Arcane Core ${xpResult.levelsGained === 1 ? `reached Level ${xpResult.levelAfter}` : `gained ${xpResult.levelsGained} Levels`} · +${xpResult.levelsGained} Core Point${xpResult.levelsGained === 1 ? '' : 's'}`, 'success', { key: 'arcane-core-level-up', cooldownMs: 1000 })
+  const arcanePoints = arcaneReward ? (bossDefeated ? arcaneReward.bossKillPoints : arcaneReward.normalKillPoints) : 0
+  if (arcanePoints > 0) {
+    const pointsResult = grantArcanePoints(state.arcaneCore, arcanePoints)
+    state.arcaneCore = pointsResult.state
+    report?.recordArcanePoints(pointsResult.granted, pointsResult.pointsBefore, pointsResult.pointsAfter)
+    if (!report && bossDefeated) pushNotification(state, `+${pointsResult.granted} Arcane Points`, 'success', { key: 'arcane-core-points-boss-reward', cooldownMs: 1000 })
   }
   state.combat.encounterTimerMs = dungeon.encounterDelayMs
   if (bossDefeated) {

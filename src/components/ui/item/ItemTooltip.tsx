@@ -55,6 +55,7 @@ export function ItemTooltip({ itemId, owned, protectedItem = false, equipped = f
 export function ItemTooltipContent({ itemId, owned, protectedItem = false, equipped = false, recentlyGained, flow, recipeContext, effectiveStats, artifactTier, artifactLevel, artifactMaxLevel, extraContent }: ItemTooltipContentProps) {
   const item = ITEMS[itemId]
   const stats = effectiveStats ?? item.stats
+  const visibleStats = stats && item.kind === 'equipment' ? flattenItemStats(stats).filter(([key]) => !['basicDamage', 'basicAttackSpeedPct', 'blockChance'].includes(key)) : stats ? flattenItemStats(stats) : []
   const category = getInventorySubcategoryLabel(itemId) ? getInventorySubcategoryLabel(itemId) + ' Material' : getInventoryCategoryLabel(itemId)
   const state = equipped ? 'EQUIPPED' : protectedItem ? 'PROTECTED' : 'NORMAL'
   const production = flow?.production.map((source) => source.label + ' ' + formatItemFlowRate(source.ratePerHour)).join(' · ')
@@ -81,7 +82,7 @@ export function ItemTooltipContent({ itemId, owned, protectedItem = false, equip
       </div>
 
       {item.researchSchool && <div className="tooltip-section item-tooltip-research"><small>RESEARCH</small><div className="item-tooltip-research-grid">{(Object.keys(SCHOOLS) as Array<keyof typeof SCHOOLS>).map((schoolId) => <TooltipRow key={schoolId} label={SCHOOLS[schoolId].name} value={getResearchXp(itemId, schoolId) + ' XP'} />)}</div></div>}
-      {stats && Object.keys(stats).length > 0 && <div className="tooltip-section item-tooltip-stats"><small>STATS</small><div className="item-tooltip-stat-list">{flattenItemStats(stats).filter(([, value]) => value !== 0).map(([key, value]) => <TooltipRow key={key} label={friendlyStatLabel(key)} value={formatStat(key, value)} />)}</div></div>}
+      {visibleStats.length > 0 && <div className="tooltip-section item-tooltip-stats"><small>STATS</small><div className="item-tooltip-stat-list">{visibleStats.filter(([, value]) => value !== 0).map(([key, value]) => <TooltipRow key={key} label={friendlyStatLabel(key)} value={formatStat(key, value)} />)}</div></div>}
       {item.kind === 'equipment' && <EquipmentCombatDetails item={item} compact />}
       {recipeContext && <div className="tooltip-section item-tooltip-recipe"><small>RECIPE</small><TooltipRow label="Status" value={recipeContext.status} />{recipeContext.baseDurationMs !== undefined && <TooltipRow label="Base time" value={formatDuration(recipeContext.baseDurationMs)} />}{recipeContext.manaCost !== undefined && <TooltipRow label="Mana" value={formatResourceAmount(recipeContext.manaCost)} />}<TooltipRow label="Output" value={'×' + recipeContext.outputQuantity} /><p>{recipeContext.ingredients.length ? recipeContext.ingredients.map((ingredient) => ITEMS[ingredient.itemId].name + ' ×' + ingredient.quantity).join(' · ') : 'Mana only'}</p>{recipeContext.unlockReason && <p>{recipeContext.unlockReason}</p>}</div>}
       {extraContent}

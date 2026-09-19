@@ -52,7 +52,8 @@ export const getManaCapacityBreakdown = (state: ChannelingCapacityState): ManaCa
   const equipmentBonus = stats.maxMana ?? 0
   const futureFlatBonus = 0
   const developerCapacityBonus = state.debug?.bonusMaxManaFlat ?? 0
-  const preAmplification = state.player.baseMaxMana + arcaneReservoirBonus + deepReservoirBonus + equipmentBonus + futureFlatBonus + developerCapacityBonus
+  const rawCapacity = state.player.baseMaxMana + arcaneReservoirBonus + deepReservoirBonus + equipmentBonus + futureFlatBonus + developerCapacityBonus
+  const preAmplification = rawCapacity * (1 + (stats.maxManaPct ?? 0))
   const astralExpansionMultiplier = 1 + pillarLevel(state, 'astral-expansion') * 0.01
   return {
     base: state.player.baseMaxMana,
@@ -84,7 +85,8 @@ export const getManaRegenBreakdown = (state: ChannelingRegenState): ManaRegenBre
   const echoDiscoveryMultiplier = state.progress.channeling.discoveries['echo-resonance'] ? BALANCE.channeling.discoveryEchoMultiplier : 1
   const echoTotal = echoBase * echoAttunementMultiplier * echoDiscoveryMultiplier
   const disruptionMultiplier = state.player && state.combat ? Math.max(0, 1 + getCombatModifiers(state as never, 'player', 'mana-regen-percent')) : 1
-  return { baseNatural, leylineConduitBonus, stableLeylineBonus, equipmentPassiveBonus, developerBonus, passiveBeforeResonance, manaResonanceMultiplier, passiveAfterResonance, echoBase, echoAttunementMultiplier, echoDiscoveryMultiplier, echoTotal, total: stabilizeResourceValue((passiveAfterResonance + echoTotal) * disruptionMultiplier) }
+  const arcaneCoreRegenDisabled = Boolean(state.combat?.arcaneCoreRuntime.manaRegenDisabledUntilMs && state.combat.arcaneCoreRuntime.manaRegenDisabledUntilMs > state.combat.encounterTimerMs)
+  return { baseNatural, leylineConduitBonus, stableLeylineBonus, equipmentPassiveBonus, developerBonus, passiveBeforeResonance, manaResonanceMultiplier, passiveAfterResonance, echoBase, echoAttunementMultiplier, echoDiscoveryMultiplier, echoTotal, total: stabilizeResourceValue((passiveAfterResonance + echoTotal) * disruptionMultiplier * (arcaneCoreRegenDisabled ? 0 : 1)) }
 }
 
 export const manaRegenPerSecond = (state: ChannelingRegenState) => getManaRegenBreakdown(state).total

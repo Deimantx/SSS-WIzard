@@ -2,9 +2,9 @@ import type { ArcaneCoreBranchDefinition, ArcaneCoreModifierKey, ArcaneCoreNodeD
 import { ARCANE_CORE_RING_OFFSETS } from '../../content/arcaneCore/arcaneCoreRings'
 import type { CombatEffect, CombatModifier, CombatTriggerRule, Magnitude } from '../../systems/combat/combatTypes'
 
-const PERCENT_STATS = new Set<ArcaneCoreModifierKey>(['critChance', 'critDamage', 'damageOverTimePct', 'blockChance', 'barrierPowerPct', 'healingDonePct', 'focusEfficiencyPct', 'manaCostReductionPct', 'cooldownRecoveryPct', 'statusDurationPct', 'basicAttackSpeedPct'])
-const STAT_LABELS: Record<ArcaneCoreModifierKey, string> = {
-  spellPower: 'Spell Power', critChance: 'Critical Chance', critDamage: 'Critical Damage', basicDamage: 'Basic Damage', damageOverTimePct: 'Damage over Time', maxHealth: 'Maximum Health', healthRegen: 'Health Regeneration', defense: 'Defense', blockChance: 'Block Chance', barrierPowerPct: 'Barrier Power', healingDonePct: 'Healing Done', maxMana: 'Maximum Mana', manaRegen: 'Mana Regeneration', maxFocus: 'Maximum Focus', focusEfficiencyPct: 'Combat Auto-Cast Efficiency', manaCostReductionPct: 'Spell Mana Cost', cooldownRecoveryPct: 'Cooldown Recovery', statusDurationPct: 'Status Duration', basicAttackSpeedPct: 'Basic Attack Speed',
+const PERCENT_STATS = new Set<ArcaneCoreModifierKey>(['spellPowerPct', 'maxHealthPct', 'maxManaPct', 'critChance', 'critDamage', 'damageOverTimePct', 'barrierPowerPct', 'healingDonePct', 'focusEfficiencyPct', 'manaCostReductionPct', 'cooldownRecoveryPct', 'statusDurationPct'])
+const STAT_LABELS: Partial<Record<ArcaneCoreModifierKey, string>> = {
+  spellPowerPct: 'Spell Power', maxHealthPct: 'Maximum Health', maxManaPct: 'Maximum Mana', spellPower: 'Spell Power', critChance: 'Critical Chance', critDamage: 'Critical Damage', damageOverTimePct: 'Damage over Time', maxHealth: 'Maximum Health', healthRegen: 'Health Regeneration', defense: 'Defense', barrierPowerPct: 'Barrier Power', healingDonePct: 'Healing Done', maxMana: 'Maximum Mana', manaRegen: 'Mana Regeneration', maxFocus: 'Maximum Focus', focusEfficiencyPct: 'Combat Auto-Cast Efficiency', manaCostReductionPct: 'Spell Mana Cost', cooldownRecoveryPct: 'Cooldown Recovery', statusDurationPct: 'Status Duration',
 }
 const COMBAT_LABELS: Record<CombatModifier['key'], string> = {
   'health-regen-flat': 'Health Regeneration',
@@ -57,7 +57,8 @@ export const getArcaneCoreNodeEffectTexts = (node: ArcaneCoreNodeDefinition, ran
       case 'nth-spell-cooldown-pulse': return `Every ${value.every}th Spell reduces cooldowns by ${value.cooldownReductionMs} ms`
     }
   })
-  return [...stats, ...modifiers, ...rules, ...special]
+  const texts = [...stats, ...modifiers, ...rules, ...special].filter((text): text is string => Boolean(text))
+  return texts.length > 0 ? texts : [node.description]
 }
 export const formatArcaneCoreNodeEffect = (node: ArcaneCoreNodeDefinition, rank = 1) => getArcaneCoreNodeEffectTexts(node, rank).join(' · ') || node.description
 

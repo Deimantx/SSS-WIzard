@@ -8,47 +8,40 @@ import { ArcaneCoreScreen } from './ArcaneCoreScreen'
 
 describe('Arcane Core screen', () => {
   beforeEach(() => { window.localStorage.clear(); useGameStore.getState().resetSave(); useArcaneCorePresetStore.getState().reset() })
-  it('mounts the V4 wallet and four independent Cores', () => { render(<TooltipProvider><ArcaneCoreScreen /></TooltipProvider>); expect(screen.getByRole('heading', { name: 'Arcane Core' })).toBeTruthy(); expect(screen.getByText('0 / 1376 points invested')).toBeTruthy(); for (const name of ['Power Core', 'Vitality Core', 'Focus Core', 'Control Core']) expect(screen.getByText(name)).toBeTruthy() })
-  it('opens a Core modal with eight circular board layers and rank purchase', async () => { const user = userEvent.setup(); useGameStore.getState().setArcaneCoreLevel(2); render(<TooltipProvider><ArcaneCoreScreen /></TooltipProvider>); await user.click(screen.getByRole('button', { name: /Power Core/i })); const dialog = screen.getByRole('dialog', { name: 'Power Core' }); expect(dialog.querySelector('.arcane-core-node-layer')).toBeTruthy(); expect(dialog.querySelector('.arcane-core-ring-node.node-major')).toBeTruthy(); expect(dialog.querySelectorAll('.arcane-core-ring-node')).toHaveLength(72); expect(dialog.querySelector('[aria-label^="Arcane Force"]')).toBeTruthy(); await user.click(dialog.querySelector('[aria-label^="Arcane Force"]') as HTMLElement); await user.click(within(dialog).getByRole('button', { name: /Purchase Rank/ })); expect(useGameStore.getState().arcaneCore.nodes['power-r1-arcane-force']).toEqual({ rank: 1 }) })
-  it('exposes normalized Major angles for alternating Rings', async () => { const user = userEvent.setup(); render(<TooltipProvider><ArcaneCoreScreen /></TooltipProvider>); await user.click(screen.getByRole('button', { name: /Power Core/i })); const dialog = screen.getByRole('dialog', { name: 'Power Core' }); expect(dialog.querySelector('.arcane-core-ring-node.node-major[data-ring="1"][data-angle="0"]')).toBeTruthy(); expect(dialog.querySelector('.arcane-core-ring-node.node-major[data-ring="2"][data-angle="20"]')).toBeTruthy() })
-  it('renders ranked node effects in the inspector', async () => { const user = userEvent.setup(); useGameStore.setState((state) => ({ arcaneCore: { ...state.arcaneCore, nodes: { 'power-r1-critical-insight': { rank: 1 } } } })); render(<TooltipProvider><ArcaneCoreScreen /></TooltipProvider>); await user.click(screen.getByRole('button', { name: /Power Core/i })); expect(screen.getByText(/Critical Chance/)).toBeTruthy() })
-  it('keeps locked nodes selectable and reports the exact Ring gate', async () => {
+
+  it('mounts the V6 wallet and four independent Cores', () => {
+    render(<TooltipProvider><ArcaneCoreScreen /></TooltipProvider>)
+    expect(screen.getByRole('heading', { name: 'Arcane Core' })).toBeTruthy()
+    expect(screen.getByText('0 / 6864 Arcane Points invested')).toBeTruthy()
+    for (const name of ['Power Core', 'Vitality Core', 'Focus Core', 'Control Core']) expect(screen.getByText(name)).toBeTruthy()
+  })
+
+  it('opens a Core modal with eight circular board layers and purchases a rank', async () => {
+    const user = userEvent.setup()
+    useGameStore.getState().setArcanePoints(10)
+    render(<TooltipProvider><ArcaneCoreScreen /></TooltipProvider>)
+    await user.click(screen.getByRole('button', { name: /Power Core/i }))
+    const dialog = screen.getByRole('dialog', { name: 'Power Core' })
+    expect(dialog.querySelector('.arcane-core-node-layer')).toBeTruthy()
+    expect(dialog.querySelector('.arcane-core-ring-node.node-major')).toBeTruthy()
+    expect(dialog.querySelectorAll('.arcane-core-ring-node')).toHaveLength(72)
+    await user.click(dialog.querySelector('[aria-label^="Arcane Scaling"]') as HTMLElement)
+    await user.click(within(dialog).getByRole('button', { name: /PURCHASE RANK/ }))
+    expect(useGameStore.getState().arcaneCore.nodes['power-r1-arcane-force']).toEqual({ rank: 1 })
+  })
+
+  it('keeps locked nodes selectable and reports the exact rank gate', async () => {
     const user = userEvent.setup()
     render(<TooltipProvider><ArcaneCoreScreen /></TooltipProvider>)
     await user.click(screen.getByRole('button', { name: /Power Core/i }))
     const dialog = screen.getByRole('dialog', { name: 'Power Core' })
     expect(dialog.querySelector('.arcane-core-orbit.is-next-locked[data-ring]')).toBeTruthy()
-    await user.click(dialog.querySelector('[aria-label^="Opening Blast"]') as HTMLElement)
-    expect(within(dialog).getByText('RING LOCKED · 0 / 20 PREVIOUS-RING POINTS')).toBeTruthy()
-    expect((within(dialog).getByRole('button', { name: /Purchase Rank/ }) as HTMLButtonElement).disabled).toBe(true)
+    await user.click(dialog.querySelector('[aria-label^="Critical Insight"]') as HTMLElement)
+    expect(within(dialog).getByText(/RING LOCKED .*0 \/ 20 PREVIOUS-RING RANKS/)).toBeTruthy()
+    expect((within(dialog).getByRole('button', { name: /PURCHASE RANK/ }) as HTMLButtonElement).disabled).toBe(true)
   })
-  it('updates rank pips, shows Major gates, and confirms refund cascades', async () => {
-    const user = userEvent.setup()
-    useGameStore.getState().setArcaneCoreLevel(2)
-    render(<TooltipProvider><ArcaneCoreScreen /></TooltipProvider>)
-    await user.click(screen.getByRole('button', { name: /Power Core/i }))
-    const dialog = screen.getByRole('dialog', { name: 'Power Core' })
-    const arcaneForce = dialog.querySelector('[aria-label^="Arcane Force"]') as HTMLElement
-    await user.click(arcaneForce)
-    expect(within(dialog).getAllByText('Inactive').length).toBeGreaterThan(0)
-    await user.click(within(dialog).getByRole('button', { name: /Purchase Rank/ }))
-    expect(useGameStore.getState().arcaneCore.nodes['power-r1-arcane-force']).toEqual({ rank: 1 })
-    expect(dialog.querySelector('[aria-label^="Arcane Force, rank 1"]')).toBeTruthy()
 
-    await user.click(dialog.querySelector('[aria-label^="Overwhelming Force"]') as HTMLElement)
-    expect(within(dialog).getByText(/MAJOR LOCKED/)).toBeTruthy()
-    expect((within(dialog).getByRole('button', { name: /Purchase Rank/ }) as HTMLButtonElement).disabled).toBe(true)
-
-    useGameStore.setState((state) => ({ arcaneCore: { ...state.arcaneCore, nodes: { 'power-r1-arcane-force': { rank: 1 }, 'power-r2-opening-blast': { rank: 1 } } } }))
-    await user.click(dialog.querySelector('[aria-label^="Arcane Force"]') as HTMLElement)
-    await user.click(within(dialog).getByRole('button', { name: 'Refund One Rank' }))
-    const confirmation = screen.getByRole('alertdialog')
-    expect(within(confirmation).getAllByText('2').length).toBeGreaterThan(0)
-    expect(within(confirmation).getByText('RINGS RELOCKED')).toBeTruthy()
-    await user.click(within(confirmation).getByRole('button', { name: 'Confirm Refund' }))
-    expect(useGameStore.getState().arcaneCore.nodes['power-r2-opening-blast']).toBeUndefined()
-  })
-  it('Fit Progression resets both zoom and pan', async () => {
+  it('resets pan and zoom with Fit Progression', async () => {
     const user = userEvent.setup()
     render(<TooltipProvider><ArcaneCoreScreen /></TooltipProvider>)
     await user.click(screen.getByRole('button', { name: /Power Core/i }))

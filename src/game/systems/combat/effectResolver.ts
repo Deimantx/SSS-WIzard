@@ -16,6 +16,7 @@ import { getRootCombatSourceProvenance } from './combatProvenance'
 import { createCombatResolutionContext, scaleMagnitude, type CombatDamageComponentEvent, type CombatEffect, type CombatEventSink, type CombatLogCategory, type CombatResolutionContext, type CombatSource, type CombatTag, type DamageComponent, type DamageType, type EffectTarget } from './combatTypes'
 import { stabilizeResourceValue } from '../../presentation/resources/resourcePresentation'
 import { tryConsumeArcaneCoreSurvival } from '../arcaneCore/arcaneCoreRuntime'
+import { recordArcaneCoreV6CriticalResult } from '../arcaneCore/arcaneCoreV6Runtime'
 
 const MAX_EFFECT_DEPTH = 20
 
@@ -160,6 +161,7 @@ const applyDamage = (state: GameState, components: Array<{ raw: number; damageTy
   }
   const castMultiplier = source.kind === 'spell' ? (resolution?.arcaneCoreDamageMultiplier ?? 1) * (source.spellDamageMultiplier ?? 1) : 1
   const breakdowns = components.map((component) => calculateCombatDamageWithRolls(state, component.raw * castMultiplier, component.damageType, source, target, tags, rolls, false))
+  if (source.actor === 'player' && source.kind === 'spell' && isDirectHit(tags)) recordArcaneCoreV6CriticalResult(state, rolls.critical === true)
   const resolvedBeforeBarrier = breakdowns.reduce((sum, breakdown) => sum + breakdown.resolvedBeforeBarrier, 0)
   if (resolvedBeforeBarrier <= 0) return 0
   const previousHp = getActorHealth(state, target)

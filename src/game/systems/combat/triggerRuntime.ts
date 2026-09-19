@@ -11,6 +11,7 @@ import { isEnemySourceOwnerActive } from './combatProvenance'
 import { nextCombatRandom } from './combatRng'
 import { getAllocatedArtifactCombatProviders, isArtifactItem } from '../artifacts/artifactProgression'
 import { getArcaneCoreCombatRules } from '../arcaneCore/arcaneCoreProgression'
+import { processArcaneCoreV6CombatEvent } from '../arcaneCore/arcaneCoreV6Runtime'
 
 export type CombatEventContext = CombatConditionContext
 export type TriggerEffectExecutor = (state: GameState, effects: CombatEffect[], source: CombatSource, depth?: number, uiEvents?: CombatEventSink, resolution?: CombatResolutionContext) => void
@@ -170,6 +171,8 @@ export const runCombatTriggers = (
     executeEffects(state, rule.effects, source, depth + 1, uiEvents, cascade)
     appendLog(state, `${rule.ui?.name ?? ownerName} triggers.`)
   })
+  const v6OwnedEvent = actor === 'player' || ((event === 'on-status-expired' || event === 'on-status-removed') && context.eventTarget === 'enemy' && (context.source?.kind === 'spell' || context.source?.originSourceKind === 'spell'))
+  if (v6OwnedEvent) processArcaneCoreV6CombatEvent(state, actor, event, context, executeEffects, depth, uiEvents, cascade)
 }
 
 export { evaluateCombatCondition }

@@ -51,10 +51,13 @@ export const getDefenseReductionFromRating = (defense: number) => {
 }
 
 const playerEquipmentStat = (state: EquipmentStatsState, key: keyof EquipmentStats) => finite(getEquipmentStats(state)[key] as number | undefined)
-const playerBaseMaxHealth = (state: PlayerSheetState) => finite(state.player.baseMaxHealth, BALANCE.player.maxHealth) + playerEquipmentStat(state, 'maxHealth')
+const playerBaseMaxHealth = (state: PlayerSheetState) => {
+  const equipment = getEquipmentStats(state)
+  return (finite(state.player.baseMaxHealth, BALANCE.player.maxHealth) + finite(equipment.maxHealth)) * (1 + finite(equipment.maxHealthPct))
+}
 const getPlayerSheetStats = (state: PlayerSheetState): CombatStats => {
   const equipment = getEquipmentStats(state)
-  const basicAttackSpeedMultiplier = clampSpeed(1 + finite(equipment.basicAttackSpeedPct))
+  const basicAttackSpeedMultiplier = 1
   const defense = Math.max(0, BALANCE.player.baseDefense + finite(equipment.defense))
   return {
     maxHealth: playerBaseMaxHealth(state),
@@ -63,7 +66,7 @@ const getPlayerSheetStats = (state: PlayerSheetState): CombatStats => {
     manaRegen: getManaRegenBreakdown(state).total,
     maxFocus: getFocusCapacityBreakdown(state).total,
     spellPower: getSpellPower(state),
-    basicAttackDamage: BALANCE.player.basicAttackDamage + finite(equipment.basicDamage),
+    basicAttackDamage: 0,
     basicAttackSpeedMultiplier,
     basicAttackIntervalMs: BALANCE.player.basicAttackIntervalMs / basicAttackSpeedMultiplier,
     critChance: clampPercent(BALANCE.player.baseCritChance + finite(equipment.critChance), 0, MAX_CRIT_CHANCE),
@@ -72,7 +75,7 @@ const getPlayerSheetStats = (state: PlayerSheetState): CombatStats => {
     statusDurationBonus: finite(equipment.statusDurationPct),
     defense,
     defenseReduction: getDefenseReductionFromRating(defense),
-    blockChance: clampPercent(finite(equipment.blockChance), 0, MAX_BLOCK_CHANCE),
+    blockChance: 0,
     resistances: Object.fromEntries(DAMAGE_TYPES.map((type) => [type, clampPercent(finite(equipment.resistances?.[type]), MIN_RESISTANCE, MAX_RESISTANCE)])) as Partial<Record<DamageType, number>>,
     cooldownRecovery: Math.max(0, 1 + finite(equipment.cooldownRecoveryPct)),
     healingDoneBonus: finite(equipment.healingDonePct),
@@ -84,7 +87,7 @@ const getPlayerSheetStats = (state: PlayerSheetState): CombatStats => {
 
 const getPlayerRuntimeStats = (state: GameState): CombatStats => {
   const sheet = getPlayerSheetStats(state)
-  const basicAttackSpeedMultiplier = getBasicAttackSpeedMultiplier(state, 'player')
+  const basicAttackSpeedMultiplier = 1
   const defense = getDefense(state, 'player')
   return {
     ...sheet,
@@ -100,7 +103,7 @@ const getPlayerRuntimeStats = (state: GameState): CombatStats => {
     statusDurationBonus: getStatusDurationBonus(state, 'player'),
     defense,
     defenseReduction: getDefenseReduction(state, 'player'),
-    blockChance: getBlockChance(state, 'player'),
+    blockChance: 0,
     resistances: Object.fromEntries(DAMAGE_TYPES.map((type) => [type, getResistance(state, 'player', type)])) as Partial<Record<DamageType, number>>,
     cooldownRecovery: getCooldownRecoveryMultiplier(state, 'player'),
     healingDoneBonus: getHealingDoneBonus(state, 'player'),
@@ -165,11 +168,12 @@ export const getCritDamageMultiplier = (state: GameState, actor: CombatActor, so
 }
 
 export const getBlockChance = (state: GameState, actor: CombatActor, source?: CombatSource) => {
-  const base = actor === 'player' ? 0 : (getEnemyBase(state)?.blockChance ?? 0)
+  if (actor === 'player') return 0
+  const base = getEnemyBase(state)?.blockChance ?? 0
   return clampPercent(base + getCombatModifiers(state, actor, 'block-chance', { source, sourceTags: source?.tags }), 0, MAX_BLOCK_CHANCE)
 }
 
-export const getBasicAttackSpeedMultiplier = (state: GameState, actor: CombatActor) => clampSpeed(1 + getCombatModifiers(state, actor, 'basic-attack-speed-percent', { sourceTags: ['basic-attack'] }))
+export const getBasicAttackSpeedMultiplier = (state: GameState, actor: CombatActor) => actor === 'enemy' ? clampSpeed(1 + getCombatModifiers(state, actor, 'basic-attack-speed-percent', { sourceTags: ['basic-attack'] })) : 1
 
 export const getBasicAttackIntervalMs = (state: GameState, actor: CombatActor) => {
   const base = actor === 'player' ? BALANCE.player.basicAttackIntervalMs : getEnemyBase(state)?.basicAttackTimeMs ?? BALANCE.player.basicAttackIntervalMs

@@ -24,7 +24,7 @@ function EquipmentOutput({ inspection, preview }: { inspection: ReturnType<typeo
   const item = ITEMS[inspection.itemId]
   if (!inspection.equipment) return null
   const authoredStats = flattenItemStats(inspection.stats).filter(([, value]) => Math.abs(value) > 0)
-  const impactRows = preview ? getImpactEntries(preview.impact).filter(([, value]) => Math.abs(value) > 0.0001) : []
+  const impactRows = preview ? getImpactEntries(preview.impact).filter(([key, value]) => !['basicDamage', 'basicAttackSpeedPct', 'blockChance'].includes(key) && Math.abs(value) > 0.0001) : []
   return <>
     {authoredStats.length > 0 && <DetailSection title="STATS"><div className="artificing-output-stat-list">{authoredStats.map(([key, value]) => <div key={key}><span>{friendlyStatLabel(key)}</span><strong>{formatStat(key, value)}</strong></div>)}</div></DetailSection>}
     <EquipmentCombatDetails item={item} />

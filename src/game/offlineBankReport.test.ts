@@ -59,6 +59,8 @@ describe('Offline Bank event reports', () => {
     state.activities.autoCast['fire-bolt'] = true
     state.activities.autoCastPriority = ['fire-bolt']
     spawnEnemy(state, 'forest-wisp')
+    state.combat.activeSpellLoadout!.slots = [{ spellId: 'fire-bolt', autoCast: true }]
+    state.combat.activeSpellLoadout!.signature = 'fire-bolt:1'
     state.combat.enemyHp = 1
     state.combat.enemyMaxHp = 1
     expect(castSpellAction(state, 'fire-bolt')).toBe(true)
@@ -106,6 +108,8 @@ describe('Offline Bank event reports', () => {
     state.activities.autoCast['fire-bolt'] = true
     state.activities.autoCastPriority = ['fire-bolt']
     spawnEnemy(state, 'forest-wisp')
+    state.combat.activeSpellLoadout!.slots = [{ spellId: 'fire-bolt', autoCast: true }]
+    state.combat.activeSpellLoadout!.signature = 'fire-bolt:1'
     state.combat.enemyHp = 1
     state.combat.enemyMaxHp = 1
     expect(castSpellAction(state, 'fire-bolt')).toBe(true)

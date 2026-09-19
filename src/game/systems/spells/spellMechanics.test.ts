@@ -15,7 +15,11 @@ const spellState = (spellId: 'searing-touch' | 'frost-touch' | 'harden' | 'stati
   state.combat.dungeonId = 'whispering-woods'
   state.schools[school].level = 16
   state.progress.spellRanks[spellId] = 1
+  const loadoutIds = [...new Set([spellId, 'static-charge', 'wind-blade', 'thunderstrike'])]
+  state.spellPresets.presets = [{ id: 'test-loadout', name: 'Test Loadout', slots: loadoutIds.map((id) => ({ spellId: id as typeof spellId, autoCast: false })) }]
+  state.spellPresets.selectedPresetId = 'test-loadout'
   spawnEnemy(state, 'forest-wisp')
+  state.combat.activeSpellLoadout!.slots = loadoutIds.map((id) => ({ spellId: id as typeof spellId, autoCast: false }))
   state.combat.enemyMaxHp = 1000
   state.combat.enemyHp = 1000
   state.player.mana = 300

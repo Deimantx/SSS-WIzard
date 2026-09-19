@@ -27,6 +27,8 @@ const stateWithEnemy = (enemyId: Parameters<typeof spawnEnemy>[1] = 'forest-wisp
   state.combat.active = true
   state.combat.dungeonId = 'whispering-woods'
   spawnEnemy(state, enemyId)
+  state.combat.activeSpellLoadout!.slots = [{ spellId: 'fire-bolt', autoCast: false }, { spellId: 'earthen-barrier', autoCast: false }]
+  state.combat.activeSpellLoadout!.signature = 'fire-bolt:0|earthen-barrier:0'
   return state
 }
 
@@ -222,6 +224,8 @@ describe('post-implementation combat audit regressions', () => {
     state.player.health = 1
     state.player.mana = state.player.maxMana
     spawnEnemy(state, 'forest-wisp')
+    state.combat.activeSpellLoadout!.slots = [{ spellId: 'earthen-barrier', autoCast: false }]
+    state.combat.activeSpellLoadout!.signature = 'earthen-barrier:0'
     expect(castSpellAction(state, 'earthen-barrier')).toBe(true)
   })
 

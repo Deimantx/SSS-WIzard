@@ -116,6 +116,8 @@ describe('Combat Lab immortality and forced-resolution runtime', () => {
     const state = activeState()
     state.progress.spellRanks['fire-bolt'] = 1
     spawnEnemy(state, 'forest-wisp')
+    state.combat.activeSpellLoadout!.slots = [{ spellId: 'fire-bolt', autoCast: false }]
+    state.combat.activeSpellLoadout!.signature = 'fire-bolt:0'
     state.player.mana = 0
     state.debug.infiniteMana = true
     state.debug.ignoreSpellCooldowns = true

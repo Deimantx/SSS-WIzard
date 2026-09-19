@@ -20,6 +20,8 @@ const stateInDowntime = (encounterTimerMs = 5_000) => {
   state.combat.dungeonId = 'whispering-woods'
   state.combat.encounterTimerMs = encounterTimerMs
   state.player.mana = state.player.maxMana
+  state.spellPresets.presets = [{ id: 'test-loadout', name: 'Test Loadout', slots: [{ spellId: 'fire-bolt', autoCast: true }, { spellId: 'mending-waters', autoCast: true }] }]
+  state.spellPresets.selectedPresetId = 'test-loadout'
   return state
 }
 
@@ -64,6 +66,7 @@ describe('active dungeon downtime timeline', () => {
     const state = stateInDowntime(5_000)
     unlock(state, 'fire-bolt')
     state.activities.autoCast['fire-bolt'] = true
+    state.activities.autoCastPriority = ['fire-bolt']
     state.combat.spellCooldowns['fire-bolt'] = 1_000
     const mana = state.player.mana
 
@@ -78,6 +81,7 @@ describe('active dungeon downtime timeline', () => {
     const state = stateInDowntime(50)
     unlock(state, 'fire-bolt')
     state.activities.autoCast['fire-bolt'] = true
+    state.activities.autoCastPriority = ['fire-bolt']
     state.combat.spellCooldowns['fire-bolt'] = 0
     const mana = state.player.mana
 
@@ -156,6 +160,9 @@ describe('active dungeon downtime timeline', () => {
     state.player.mana = state.player.maxMana
     unlock(state, 'fire-bolt')
     state.activities.autoCast['fire-bolt'] = true
+    state.activities.autoCastPriority = ['fire-bolt']
+    state.spellPresets.presets = [{ id: 'test-loadout', name: 'Test Loadout', slots: [{ spellId: 'fire-bolt', autoCast: true }] }]
+    state.spellPresets.selectedPresetId = 'test-loadout'
     spawnEnemy(state, 'forest-wisp')
     const mana = state.player.mana
 
@@ -175,6 +182,9 @@ describe('active dungeon downtime timeline', () => {
     state.player.mana = state.player.maxMana
     unlock(state, 'mending-waters')
     state.activities.autoCast['mending-waters'] = true
+    state.activities.autoCastPriority = ['mending-waters']
+    state.spellPresets.presets = [{ id: 'test-loadout', name: 'Test Loadout', slots: [{ spellId: 'mending-waters', autoCast: true }] }]
+    state.spellPresets.selectedPresetId = 'test-loadout'
     spawnEnemy(state, 'thornling')
     clearCurrentEnemyAction(state)
     expect(startEnemyAction(state, 'thorn-lash', executeCombatEffects)).toBe(true)
@@ -195,7 +205,10 @@ describe('active dungeon downtime timeline', () => {
     state.combat.dungeonId = 'whispering-woods'
     unlock(state, 'fire-bolt')
     state.activities.autoCast['fire-bolt'] = true
+    state.activities.autoCastPriority = ['fire-bolt']
     state.player.mana = 0
+    state.spellPresets.presets = [{ id: 'test-loadout', name: 'Test Loadout', slots: [{ spellId: 'fire-bolt', autoCast: true }] }]
+    state.spellPresets.selectedPresetId = 'test-loadout'
     spawnEnemy(state, 'forest-wisp')
     const events: CombatEvent[] = []
 
@@ -219,6 +232,8 @@ describe('active dungeon downtime timeline', () => {
     combatTelemetryObserver.beginRun('whispering-woods')
     dungeonStatisticsObserver.beginSession('whispering-woods')
     spawnEnemy(deathState, 'forest-wisp', deathSink)
+    deathState.combat.activeSpellLoadout!.slots = [{ spellId: 'fire-bolt', autoCast: false }]
+    deathState.combat.activeSpellLoadout!.signature = 'fire-bolt:0'
     deathState.combat.enemyHp = 1
     deathState.player.mana = deathState.player.maxMana
     unlock(deathState, 'fire-bolt')

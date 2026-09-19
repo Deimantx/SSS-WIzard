@@ -22,6 +22,7 @@ const combatState = () => {
   state.combat.enemyMaxHp = 1000
   state.combat.enemyCurrentStepId = 'test-action'
   state.combat.enemyActionTimerMs = 1000
+  state.combat.activeSpellLoadout = { presetId: null, presetName: 'Test Loadout', slots: [{ spellId: 'fire-bolt', autoCast: false }, { spellId: 'mending-waters', autoCast: false }], signature: 'fire-bolt:0|mending-waters:0' }
   state.player.health = state.player.maxHealth
   state.player.mana = state.player.maxMana
   return state

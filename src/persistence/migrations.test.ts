@@ -733,20 +733,7 @@ describe('legacy Artifact level-up migration', () => {
   })
 })
 
-describe('Arcane Core V2 to V3 migration', () => {
-  it('preserves XP but clears incompatible V2 allocations', () => {
-    const initial = createInitialState()
-    const migrated = migrateSave({ ...initial, saveVersion: 33, arcaneCore: { totalXp: 123.5, nodes: { 'power-a1': { purchased: true } } } } as any)
-    expect(migrated.arcaneCore.totalXp).toBe(123.5)
-    expect(migrated.arcaneCore.nodes).toEqual({})
-  })
-
-  it('preserves valid ranked nodes from the V34 topology boundary', () => {
-    const initial = createInitialState()
-    const migrated = migrateSave({ ...initial, saveVersion: 34, arcaneCore: { totalXp: 500, nodes: { 'power-r1-arcane-force': { rank: 3 } } } } as any)
-    expect(migrated.arcaneCore).toEqual({ totalXp: 500, nodes: { 'power-r1-arcane-force': { rank: 3 } } })
-  })
-
+describe('Arcane Core V6 migration', () => {
   it('does not restore transient manual Spell queue intent', () => {
     const initial = createInitialState()
     const migrated = migrateSave({ ...initial, saveVersion: SAVE_VERSION, combat: { ...initial.combat, queuedPlayerSpellId: 'wind-blade' } } as any)
@@ -765,10 +752,10 @@ describe('Arcane Core V2 to V3 migration', () => {
     expect(migrated.combat.pendingPlayerSpellCast).toBeNull()
   })
 
-  it('keeps valid V3 rank allocations in current saves', () => {
+  it('keeps valid ranked allocations and the direct wallet in current saves', () => {
     const initial = createInitialState()
-    const migrated = migrateSave({ ...initial, saveVersion: SAVE_VERSION, arcaneCore: { totalXp: 500, nodes: { 'power-r1-arcane-force': { rank: 3 } } } } as any)
-    expect(migrated.arcaneCore).toEqual({ totalXp: 500, nodes: { 'power-r1-arcane-force': { rank: 3 } } })
+    const migrated = migrateSave({ ...initial, saveVersion: SAVE_VERSION, arcaneCore: { totalPointsEarned: 500, nodes: { 'power-r1-arcane-force': { rank: 3 } } } } as any)
+    expect(migrated.arcaneCore).toEqual({ totalPointsEarned: 500, nodes: { 'power-r1-arcane-force': { rank: 3 } } })
   })
 
   it('sanitizes malformed V3 ranks without changing unrelated save content', () => {
@@ -778,7 +765,7 @@ describe('Arcane Core V2 to V3 migration', () => {
       saveVersion: SAVE_VERSION,
       inventory: { 'fire-fragment': 17 },
       arcaneCore: {
-        totalXp: 321,
+        totalPointsEarned: 321,
         nodes: {
           'power-r1-arcane-force': { rank: 99 },
           'power-r1-forceful-strikes': { rank: -2 },
@@ -787,7 +774,7 @@ describe('Arcane Core V2 to V3 migration', () => {
         },
       },
     } as any)
-    expect(migrated.arcaneCore).toEqual({ totalXp: 321, nodes: { 'power-r1-arcane-force': { rank: 5 } } })
+    expect(migrated.arcaneCore).toEqual({ totalPointsEarned: 321, nodes: { 'power-r1-arcane-force': { rank: 5 } } })
     expect(migrated.inventory).toEqual({ 'fire-fragment': 17 })
   })
 })

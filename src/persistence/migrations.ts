@@ -274,10 +274,12 @@ const normalizeSpellProgression = (migrated: GameState, raw: Record<string, any>
   migrated.activities.autoCastPriority = migrated.activities.autoCastPriority.filter((id) => migrated.activities.autoCast[id])
 }
 
-const normalizeSpellPresets = (migrated: GameState, raw: Record<string, any>) => {
+const normalizeSpellPresets = (migrated: GameState, raw: Record<string, any>, sourceVersion: number) => {
   const rawActivities = isRecord(raw.activities) ? raw.activities : {}
   const normalized = normalizeSpellPresetState(raw.spellPresets)
-  if (normalized.presets.length === 0) {
+  // Fresh/current profiles are allowed to have no presets yet. Only older
+  // saves that predate the preset schema need a synthesized first loadout.
+  if (normalized.presets.length === 0 && sourceVersion < SAVE_VERSION) {
     const savedPriority = Array.isArray(rawActivities.autoCastPriority) ? rawActivities.autoCastPriority : migrated.activities.autoCastPriority
     const priority = savedPriority
       .map(normalizeSpellId)
@@ -817,7 +819,7 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   normalizeSchoolCap(migrated, raw)
   normalizeSchoolXpCurveV25(migrated, raw, sourceVersion)
   normalizeSpellProgression(migrated, raw, sourceVersion)
-  normalizeSpellPresets(migrated, raw)
+  normalizeSpellPresets(migrated, raw, sourceVersion)
   normalizeCombatState(migrated, raw, sourceVersion)
   normalizeDirectContentReferences(migrated, raw)
   normalizeGuardianRuntime(migrated, raw)

@@ -102,11 +102,11 @@ describe('profile save recovery and historical compatibility', () => {
   })
 
   it('returns a clear unsupported-version error without touching the raw save', () => {
-    const raw = JSON.stringify({ saveVersion: 37 })
+    const raw = JSON.stringify({ saveVersion: 38 })
     localStorage.setItem(profileSaveKey('slot-1'), raw)
     const loaded = loadProfileGame('slot-1')
-    expect(loaded.error).toBe('Profile save uses unsupported version 37.')
-    expect(loaded.diagnostics?.primary).toMatchObject({ present: true, ok: false, saveVersion: 37 })
+    expect(loaded.error).toBe('Profile save uses unsupported version 38.')
+    expect(loaded.diagnostics?.primary).toMatchObject({ present: true, ok: false, saveVersion: 38 })
     expect(localStorage.getItem(profileSaveKey('slot-1'))).toBe(raw)
   })
 

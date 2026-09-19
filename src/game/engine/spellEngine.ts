@@ -96,7 +96,7 @@ const startSpellCast = (state: GameState, spellId: SpellId, quiet: boolean, uiEv
   const manaCost = getEffectiveManaCost(state, spell.manaCost)
   const free = isArcaneCoreSpellFree(state)
   const multiplier = getCastWorkMultiplier(state)
-  const castWorkMs = Math.max(0.0001, spell.castTimeMs * multiplier)
+  const castWorkMs = spell.castTimeMs * multiplier
   state.combat.pendingPlayerSpellCast = {
     spellId: canonicalId,
     targetInstanceKey: spellRequiresEnemyTarget(spell) ? state.combat.enemyInstanceKey : null,

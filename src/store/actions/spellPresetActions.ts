@@ -22,7 +22,13 @@ const getSelectedProjection = (state: GameState) => {
 
 export const syncSelectedSpellPresetRuntime = (state: GameState) => {
   const projection = getSelectedProjection(state)
-  syncAutoCastRuntimeForLoadout(state, projection?.validSlots ?? [])
+  if (!projection || !projection.validSlots.length) {
+    syncAutoCastRuntimeForLoadout(state, [])
+    return true
+  }
+  if (!projection.canApply) return false
+  syncAutoCastRuntimeForLoadout(state, projection.validSlots)
+  return true
 }
 
 /** Compatibility action retained for internal/debug callers. Build editing is owned by the Preset Manager. */
@@ -55,8 +61,20 @@ export const duplicateSpellPresetAction = (state: GameState, id: SpellPresetId):
 export const saveSpellPresetAction = (state: GameState, preset: Pick<SpellPreset, 'id' | 'name' | 'slots'>) => {
   const stored = state.spellPresets.presets.find((entry) => entry.id === preset.id)
   if (!stored) return false
+  const isSelectedOutsideCombat = !state.combat.active && state.spellPresets.selectedPresetId === preset.id
   stored.name = normalizeSpellPresetName(preset.name, stored.name)
   stored.slots = normalizeSpellPresetSlots(preset.slots)
+  if (isSelectedOutsideCombat) {
+    const projection = getSpellPresetFocusProjection(state, stored)
+    if (!projection.validSlots.length) {
+      syncAutoCastRuntimeForLoadout(state, [])
+      pushPresetNotification(state, `Saved ${stored.name}, but it has no available Spells to activate.`, 'warning')
+    } else if (projection.canApply) {
+      syncAutoCastRuntimeForLoadout(state, projection.validSlots)
+    } else {
+      pushPresetNotification(state, `Saved ${stored.name}, but it requires ${Math.max(0, projection.totalAfterApply - state.player.maxFocus)} more Focus to activate.`, 'warning')
+    }
+  }
   return true
 }
 

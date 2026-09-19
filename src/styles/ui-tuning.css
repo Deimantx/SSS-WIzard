@@ -164,12 +164,12 @@
 
 .combat-screen .spell-combat-tile {
   min-width: min(var(--ui-tuning-combat-min-width, 110px), 100%);
-  min-height: var(--ui-tuning-combat-height, 74px);
+  min-height: var(--ui-tuning-combat-height, 90px);
 }
 
 .combat-screen .spell-combat-cast {
   gap: var(--ui-tuning-combat-gap, 3px);
-  padding: var(--ui-tuning-combat-padding-top, 8px) var(--ui-tuning-combat-padding-right, 32px) var(--ui-tuning-combat-padding-bottom, 6px) var(--ui-tuning-combat-padding-left, 9px);
+  padding: var(--ui-tuning-combat-padding-top, 7px) var(--ui-tuning-combat-padding-right, 32px) var(--ui-tuning-combat-padding-bottom, 7px) var(--ui-tuning-combat-padding-left, 8px);
 }
 
 .combat-screen .spell-combat-icon .spell-icon-shell {

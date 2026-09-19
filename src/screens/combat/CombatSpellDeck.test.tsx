@@ -59,4 +59,30 @@ describe('CombatSpellDeck', () => {
     expect(screen.queryByText('Wind Blade', { selector: 'strong' })).toBeNull()
     expect(screen.getByText(/Will activate next battle/)).toBeTruthy()
   })
+
+  it('compares the active snapshot with the usable projection, not unavailable stored slots', () => {
+    const store = useGameStore.getState()
+    const preset = store.createSpellPreset('Partial loadout')
+    store.saveSpellPreset({ id: preset, name: 'Partial loadout', slots: [{ spellId: 'fire-bolt', autoCast: false }, { spellId: 'flame-burst', autoCast: false }] })
+    expect(store.selectSpellPreset(preset).ok).toBe(true)
+    store.spawnDebugEnemy('forest-wisp')
+    render(<TooltipProvider><CombatSpellDeck /></TooltipProvider>)
+
+    expect(screen.queryByText(/Will activate next battle/)).toBeNull()
+    expect(screen.getByText(/Frozen for this enemy encounter/)).toBeTruthy()
+  })
+
+  it('keeps self-only manual Spells available during encounter downtime', () => {
+    const store = useGameStore.getState()
+    useGameStore.setState({ progress: { ...useGameStore.getState().progress, spellRanks: { ...useGameStore.getState().progress.spellRanks, 'mending-waters': 1 } } })
+    const preset = store.createSpellPreset('Downtime healing')
+    store.saveSpellPreset({ id: preset, name: 'Downtime healing', slots: [{ spellId: 'mending-waters', autoCast: false }] })
+    expect(store.selectSpellPreset(preset).ok).toBe(true)
+    store.spawnDebugEnemy('forest-wisp')
+    useGameStore.setState({ combat: { ...useGameStore.getState().combat, enemyId: null } })
+    render(<TooltipProvider><CombatSpellDeck /></TooltipProvider>)
+
+    expect(screen.getByText(/ENCOUNTER DOWNTIME · SELF-CAST SPELLS REMAIN AVAILABLE/)).toBeTruthy()
+    expect((screen.getByRole('button', { name: /Mending Waters/ }) as HTMLButtonElement).disabled).toBe(false)
+  })
 })

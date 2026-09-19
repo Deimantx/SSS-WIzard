@@ -36,17 +36,17 @@ export function CombatSpellDeck() {
   const selectedProjection = selectedPreset ? getSpellPresetFocusProjection(focusState, selectedPreset) : null
   const activeLoadout = combat.activeSpellLoadout
   const activeSignature = activeLoadout?.signature ?? ''
-  const selectedSignature = selectedPreset ? getSpellPresetSignature(selectedPreset.slots) : ''
-  const nextBattle = Boolean(combat.active && activeLoadout && selectedPreset && (activeLoadout.presetId !== selectedPreset.id || activeSignature !== selectedSignature))
+  const selectedSignature = selectedProjection ? getSpellPresetSignature(selectedProjection.validSlots) : ''
+  const nextBattle = Boolean(combat.active && activeLoadout && selectedPreset && selectedProjection?.canApply && (activeLoadout.presetId !== selectedPreset.id || activeSignature !== selectedSignature))
   const displaySlots = combat.active && activeLoadout ? activeLoadout.slots : selectedProjection?.validSlots ?? []
   const focus = getSpellPresetFocusBreakdown(focusState)
   const presetOptions = useMemo<SelectMenuOption<string>[]>(() => presets.map((preset) => ({ value: preset.id, label: preset.name })), [presets])
-  const globalBlocker = playerStunned ? 'stunned' : !combat.active ? 'inactive' : !combat.enemyId ? 'no-target' : null
+  const globalBlocker = playerStunned ? 'stunned' : !combat.active ? 'inactive' : null
   const banner = globalBlocker === 'stunned'
     ? 'PLAYER STUNNED · MANUAL SPELLS TEMPORARILY DISABLED'
     : globalBlocker === 'inactive'
       ? 'MANUAL CASTING DISABLED · ENTER A DUNGEON'
-      : globalBlocker === 'no-target' ? 'WAITING FOR NEXT TARGET' : null
+      : combat.active && !combat.enemyId ? 'ENCOUNTER DOWNTIME · SELF-CAST SPELLS REMAIN AVAILABLE' : null
   const autoPriority = useMemo(() => displaySlots.filter((slot) => slot.autoCast).map((slot) => slot.spellId), [displaySlots])
   useSmartScrollState(gridRef, { dependencies: [displaySlots.map((slot) => `${slot.spellId}:${slot.autoCast ? 1 : 0}`).join('|')] })
 
@@ -74,7 +74,7 @@ export function CombatSpellDeck() {
     </header>
     <div className="combat-spell-content-row">
       {(banner || presetNotice) && <div className="combat-spell-status-region">
-        {banner && <div className="combat-spell-banner" role="status"><CircleDot size={13} aria-hidden="true" />{banner}</div>}
+        {banner && <div className={`combat-spell-banner${combat.active && !combat.enemyId ? ' is-neutral' : ''}`} role="status"><CircleDot size={13} aria-hidden="true" />{banner}</div>}
         {presetNotice && <div className="combat-spell-preset-notice" role="alert"><AlertTriangle size={13} aria-hidden="true" />{presetNotice}</div>}
       </div>}
       <div className="combat-spell-grid-region">{displaySlots.length ? <div ref={gridRef} className="combat-spell-grid smart-scroll-region">{displaySlots.map((slot) => <CombatSpellTile key={slot.spellId} spellId={slot.spellId} autoCast={slot.autoCast} autoCastPriority={slot.autoCast ? autoPriority.indexOf(slot.spellId) + 1 : null} presentationState={state} globalBlocker={globalBlocker} onOpenPresetManager={openPresetManager} />)}</div> : <div className="combat-spell-empty"><CircleDot size={20} aria-hidden="true" /><strong>{selectedPreset ? 'No available Spells in this preset.' : 'Create a combat preset to fill the deck.'}</strong><span>Choose up to eight slots in Preset Manager.</span></div>}</div>

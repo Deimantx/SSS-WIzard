@@ -13,8 +13,9 @@ const stateWithSpells = (...spellIds: string[]) => {
   state.player.maxMana = 1_000
   state.player.mana = 1_000
   spellIds.forEach((spellId) => { state.progress.spellRanks[spellId as keyof typeof state.progress.spellRanks] = 1 })
-  state.spellPresets.presets[0].slots = spellIds.map((spellId) => ({ spellId: spellId as any, autoCast: false }))
-  state.spellPresets.selectedPresetId = state.spellPresets.presets[0].id
+  const preset = { id: 'spell-preset-test' as const, name: 'Test Loadout', slots: spellIds.map((spellId) => ({ spellId: spellId as any, autoCast: false })) }
+  state.spellPresets.presets = [preset]
+  state.spellPresets.selectedPresetId = preset.id
   spawnEnemy(state, 'forest-wisp')
   state.combat.enemyMaxHp = 100_000
   state.combat.enemyHp = 100_000
@@ -128,6 +129,20 @@ describe('manual Spell queue and interrupt control', () => {
     expect(requestManualSpell(state, 'wind-blade')).toEqual({ ok: true, action: 'queued' })
     state.player.health = 0
     expect(resolveCombatDeaths(state)).toBe(true)
+    expect(state.combat.queuedPlayerSpellId).toBeNull()
+    expect(state.combat.pendingPlayerSpellCast).toBeNull()
+    expect(state.combat.activeSpellLoadout).toBeNull()
+  })
+
+  it('clears a queued Spell when its active loadout slot is removed', () => {
+    const state = stateWithSpells('fire-bolt', 'wind-blade')
+    state.combat.spellCooldowns['wind-blade'] = 1_000
+    expect(requestManualSpell(state, 'wind-blade')).toEqual({ ok: true, action: 'queued' })
+    state.combat.activeSpellLoadout!.slots = [{ spellId: 'fire-bolt', autoCast: false }]
+    state.combat.activeSpellLoadout!.signature = 'fire-bolt:0'
+
+    advanceGameState(state, 1, { mode: 'live' })
+
     expect(state.combat.queuedPlayerSpellId).toBeNull()
   })
 

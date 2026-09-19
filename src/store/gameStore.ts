@@ -122,7 +122,12 @@ const initializeDungeonRun = (state: GameState, dungeonId: DungeonId, resetComba
   state.combat.dungeonId = dungeonId
   state.combat.encounterTimerMs = 0
   state.player.health = Math.max(1, state.player.health)
-  spawnNextEnemy(state, combatEventSink)
+  if (!spawnNextEnemy(state, combatEventSink)) {
+    state.combat.active = false
+    state.combat.dungeonId = null
+    state.combat.encounterTimerMs = 0
+    return
+  }
   pushNotification(state, `${dungeon.name} entered`, 'info')
 }
 
@@ -595,8 +600,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     if (!canManuallyEngageDungeonBoss(state, dungeon)) return state
     state.combat.pendingBossId = null
     state.combat.encounterTimerMs = 0
-    spawnEnemy(state, bossId, combatLogUiSink)
-    pushNotification(state, `${boss.name} engaged`, 'warning')
+    if (spawnEnemy(state, bossId, combatLogUiSink)) pushNotification(state, `${boss.name} engaged`, 'warning')
     return state
   }),
   toggleAutoHunt: (dungeonId = 'whispering-woods') => set((state) => { const dungeon = DUNGEONS[dungeonId]; if (!dungeon || !isDungeonUnlocked(dungeon, state.progress)) return state; const unlocked = state.progress.autoHuntBossUnlocked || Object.values(state.progress.bossKillsByBoss).some((kills) => kills > 0) || state.progress.firstBossKill; if (!unlocked) { pushNotification(state, 'Auto Hunt unlocks after the first dungeon boss kill', 'warning'); return state } state.progress.autoHuntBossUnlocked = true; state.progress.autoHuntBossByDungeon[dungeonId] = !state.progress.autoHuntBossByDungeon[dungeonId]; return state }),

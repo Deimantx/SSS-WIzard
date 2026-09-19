@@ -18,7 +18,7 @@ import { nextCombatRandom } from './combatRng'
 import { reconcileStoryProgression } from '../story/storyProgression'
 import { SUMMONING_UNLOCK_BOSS_ID } from '../../content/guardians/guardians'
 import { beginGuardianEncounter, clearGuardianRuntime, suppressGuardianIfOutOfMana } from '../summoning/summoningRuntime'
-import { activateSelectedSpellPresetForBattle } from '../spells'
+import { activateSelectedSpellPresetForBattle, getSelectedSpellPreset } from '../spells'
 
 export { applyStatus, clearStatuses, damageEnemy, damagePlayer, executeCombatEffects, gainBarrier }
 
@@ -32,7 +32,16 @@ export const debugApplyStatus = (state: GameState, actor: 'player' | 'enemy', st
 
 export const spawnEnemy = (state: GameState, enemyId: MonsterId, uiEvents?: CombatEventSink) => {
   const monster = MONSTERS[enemyId]
-  activateSelectedSpellPresetForBattle(state)
+  const activation = activateSelectedSpellPresetForBattle(state)
+  if (!activation.ok) {
+    const selectedPreset = getSelectedSpellPreset(state)
+    if (activation.reason === 'focus' && selectedPreset) {
+      pushNotification(state, `${selectedPreset.name} could not activate - requires ${activation.requiredExtraFocus ?? 0} more Focus.`, 'warning', { key: 'combat-loadout-activation', cooldownMs: 1000 })
+    } else {
+      pushNotification(state, 'Configure at least one available Spell before entering combat.', 'warning', { key: 'combat-loadout-activation', cooldownMs: 1000 })
+    }
+    return false
+  }
   const previousSerial = Number.isSafeInteger(state.combat.enemyInstanceSerial) ? state.combat.enemyInstanceSerial : 0
   state.combat.enemyInstanceSerial = Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, previousSerial) + 1)
   state.combat.enemyInstanceKey = `enemy:${state.combat.enemyInstanceSerial}`
@@ -58,6 +67,7 @@ export const spawnEnemy = (state: GameState, enemyId: MonsterId, uiEvents?: Comb
   beginGuardianEncounter(state)
   if (state.combat.enemyHp > 0 && state.player.health > 0) startNextEnemyAction(state, executeCombatEffects, 0, uiEvents)
   appendLog(state, `${monster.name} enters the dungeon.`)
+  return true
 }
 
 export const spawnNextEnemy = (state: GameState, uiEvents?: CombatEventSink) => {
@@ -66,12 +76,16 @@ export const spawnNextEnemy = (state: GameState, uiEvents?: CombatEventSink) => 
     const boss = state.combat.pendingBossId
     state.combat.pendingBossId = null
     if (MONSTERS[boss]) {
-      spawnEnemy(state, boss, uiEvents)
-      pushNotification(state, `${MONSTERS[boss].name} arrives via Auto Hunt`, 'warning')
-      return
+      const spawned = spawnEnemy(state, boss, uiEvents)
+      if (!spawned) state.combat.pendingBossId = boss
+      else pushNotification(state, `${MONSTERS[boss].name} arrives via Auto Hunt`, 'warning')
+      if (!spawned && state.combat.active) state.combat.encounterTimerMs = dungeon.encounterDelayMs
+      return spawned
     }
   }
-  spawnEnemy(state, chooseMonster(dungeon.monsterPool, () => nextCombatRandom(state)), uiEvents)
+  const spawned = spawnEnemy(state, chooseMonster(dungeon.monsterPool, () => nextCombatRandom(state)), uiEvents)
+  if (!spawned && state.combat.active) state.combat.encounterTimerMs = dungeon.encounterDelayMs
+  return spawned
 }
 
 export interface CombatLootDrop { itemId: ItemId; quantity: number; isNewDiscovery: boolean }
@@ -172,6 +186,7 @@ export const resolveCombatDeaths = (state: GameState, report?: SimulationReportC
     state.combat.enemyInstanceKey = null
     state.combat.pendingPlayerSpellCast = null
     state.combat.queuedPlayerSpellId = null
+    state.combat.activeSpellLoadout = null
     state.combat.enemyHp = 0
     state.combat.enemyBarrier = 0
     state.combat.enemyBarrierRemainingMs = null

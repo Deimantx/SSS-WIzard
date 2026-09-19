@@ -61,15 +61,12 @@ const evaluateAutoCondition = (state: GameState, condition: import('../../types'
 
 const meetsAutoCondition = (state: GameState, spellId: SpellId) => evaluateAutoCondition(state, SPELLS[spellId].autoCondition)
 
-const getAutoCastPriority = (state: GameState): SpellId[] => {
-  const canonical = state.activities.autoCastPriority?.filter((spellId) => Boolean(SPELLS[spellId]) && state.activities.autoCast[spellId]) ?? []
-  if (canonical.length) return canonical
-  return Object.keys(state.activities.autoCast).filter((spellId) => state.activities.autoCast[spellId as SpellId]) as SpellId[]
-}
+const getAutoCastPriority = (state: GameState): SpellId[] => state.combat.activeSpellLoadout?.slots.filter((slot) => slot.autoCast).map((slot) => slot.spellId) ?? []
 
 const isAutoCastEligible = (state: GameState, spellId: SpellId) => {
   const spell = SPELLS[spellId]
-  if (!spell || !state.activities.autoCast[spellId] || !spellUnlocked(state, spellId) || !state.combat.enemyId || actorCannotAct(state, 'player') || actorCannotCastSpells(state, 'player') || !meetsAutoCondition(state, spellId)) return false
+  const activeSlot = state.combat.activeSpellLoadout?.slots.find((slot) => slot.spellId === spell?.id)
+  if (!spell || !activeSlot?.autoCast || !spellUnlocked(state, spellId) || !state.combat.enemyId || actorCannotAct(state, 'player') || actorCannotCastSpells(state, 'player') || !meetsAutoCondition(state, spellId)) return false
   if (!state.debug.ignoreSpellCooldowns && (state.combat.spellCooldowns[spell.id] ?? 0) > 0) return false
   return state.debug.infiniteMana || isArcaneCoreSpellFree(state) || hasEnoughResource(state.player.mana, getEffectiveManaCost(state, spell.manaCost))
 }
@@ -88,7 +85,7 @@ const autoCastReadySpells = (state: GameState, context: AdvanceContext) => {
     const failure = getSpellStartFailure(state, queuedId)
     if (!failure) {
       if (castSpellInternal(state, queuedId, true, context.uiEvents)) state.combat.queuedPlayerSpellId = null
-    } else if (failure === 'unknown' || failure === 'locked' || failure === 'inactive') {
+    } else if (failure === 'unknown' || failure === 'locked' || failure === 'inactive' || failure === 'not-in-loadout') {
       state.combat.queuedPlayerSpellId = null
     }
     // A manual queue is a hard priority gate, including while it waits for a
@@ -121,7 +118,7 @@ const getNextAutoCastCooldownEventMs = (state: GameState, cooldownRecovery: numb
   if (!state.combat.enemyId || state.combat.queuedPlayerSpellId || cooldownRecovery <= 0 || state.debug.freezePlayerActions || state.debug.disableAutoCast || state.debug.ignoreSpellCooldowns) return null
   let next: number | null = null
   getAutoCastPriority(state).forEach((spellId) => {
-    if (!state.activities.autoCast[spellId] || !spellUnlocked(state, spellId) || state.debug.ignoreSpellCooldowns) return
+    if (!spellUnlocked(state, spellId) || state.debug.ignoreSpellCooldowns) return
     const cooldown = state.combat.spellCooldowns[spellId] ?? 0
     if (cooldown <= 0 || !Number.isFinite(cooldown)) return
     const boundary = cooldown / cooldownRecovery

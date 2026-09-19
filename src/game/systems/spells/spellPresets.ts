@@ -166,13 +166,24 @@ export const buildActiveCombatSpellLoadout = (state: SpellPresetProjectionState 
   return { presetId: preset?.id ?? null, presetName: preset?.name ?? 'No Preset Selected', slots, signature: getSpellPresetSignature(slots) }
 }
 
+export type ActivateCombatLoadoutResult =
+  | { ok: true; loadout: ActiveCombatSpellLoadout; changed: boolean }
+  | { ok: false; reason: 'focus' | 'empty' | 'missing-preset'; requiredExtraFocus?: number }
+
 /** The only battle-boundary transition from persisted build configuration to combat runtime. */
-export const activateSelectedSpellPresetForBattle = (state: GameState) => {
-  const next = buildActiveCombatSpellLoadout({ ...state, player: { maxFocus: state.player.maxFocus }, debug: { allowFocusOverCap: state.debug.allowFocusOverCap } })
+export const activateSelectedSpellPresetForBattle = (state: GameState): ActivateCombatLoadoutResult => {
+  const preset = getSelectedSpellPreset(state)
+  if (!preset) return { ok: false, reason: 'missing-preset' }
+  const projection = getSpellPresetFocusProjection(state, preset)
+  if (!projection.validSlots.length) return { ok: false, reason: 'empty' }
+  if (!projection.canApply) return { ok: false, reason: 'focus', requiredExtraFocus: Math.max(0, projection.totalAfterApply - state.player.maxFocus) }
+
+  const slots = projection.validSlots
+  const next: ActiveCombatSpellLoadout = { presetId: preset.id, presetName: preset.name, slots, signature: getSpellPresetSignature(slots) }
   const previous = state.combat.activeSpellLoadout
   const changed = !previous || previous.presetId !== next.presetId || previous.signature !== next.signature
   if (changed) state.combat.queuedPlayerSpellId = null
   state.combat.activeSpellLoadout = next
   syncAutoCastRuntimeForLoadout(state, next.slots)
-  return { loadout: next, changed }
+  return { ok: true, loadout: next, changed }
 }

@@ -10,16 +10,18 @@ describe('Transmutation Used In read model', () => {
     const visibleUses = getVisibleItemUsesForTransmutation(state, 'fire-fragment')
 
     expect(allUses.find((use) => use.label === 'Ember Staff')?.recipeId).toBe('ember-staff')
-    expect(visibleUses.some((use) => use.label === 'Ember Staff')).toBe(false)
+    expect(visibleUses.some((use) => use.label === 'Ember Staff')).toBe(true)
+    expect(visibleUses.some((use) => use.recipeId === 'pyrebound-staff')).toBe(false)
     expect(visibleUses.some((use) => use.label === 'Prismatic Fragment')).toBe(true)
   })
 
   it('reveals locked recipe uses only with the Developer Tools override and marks them locked', () => {
     const state = createInitialState()
-    state.debug.showLockedTransmutationRecipes = true
+    state.debug.showLockedArtificingRecipes = true
     const visibleUses = getVisibleItemUsesForTransmutation(state, 'fire-fragment')
 
-    expect(visibleUses.find((use) => use.label === 'Ember Staff')).toMatchObject({ locked: true, recipeId: 'ember-staff', detail: 'Transmutation recipe · Equipment' })
+    expect(visibleUses.find((use) => use.label === 'Ember Staff')).toMatchObject({ recipeId: 'ember-staff', detail: 'Artificing recipe' })
+    expect(visibleUses.find((use) => use.recipeId === 'pyrebound-staff')).toMatchObject({ locked: true, detail: 'Artificing recipe' })
     expect(visibleUses.some((use) => use.label === 'Pillars of Mana')).toBe(true)
   })
 })

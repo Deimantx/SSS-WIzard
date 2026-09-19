@@ -40,7 +40,7 @@ describe('inventory economy selectors', () => {
     const needs = getItemNeeds('fire-fragment', state)
 
     expect(needs.some((entry) => entry.label === 'Mana Resonance Lv.1' && entry.owned === 12 && entry.required === 20 && entry.status === 'MISSING')).toBe(true)
-    expect(needs.some((entry) => entry.label === 'Ember Staff' && entry.owned === 12 && entry.required === 48 && entry.status === 'MISSING')).toBe(true)
+    expect(needs.some((entry) => entry.label === 'Ember Staff' && entry.owned === 12 && entry.required === 20 && entry.status === 'MISSING')).toBe(true)
     expect(needs.some((entry) => entry.label === 'Arcane Supply' && entry.required === 12 && entry.missing === 0 && entry.status === 'READY')).toBe(true)
 
     state.protectedItems['fire-fragment'] = true

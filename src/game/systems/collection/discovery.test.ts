@@ -4,6 +4,7 @@ import { resolveMonsterLoot } from '../loot/lootResolution'
 import { completeTransmutationCycle } from '../transmutation/transmutationEngine'
 import { discoverMonster } from './discovery'
 import { grantItem } from '../inventory/itemAcquisition'
+import { TRANSMUTATION_RECIPES } from '../../content/recipes/transmutationRecipes'
 
 describe('archive discovery', () => {
   it('records a monster on encounter and remains idempotent', () => {
@@ -32,9 +33,9 @@ describe('archive discovery', () => {
 
   it('discovers successful Transmutation output', () => {
     const state = createInitialState()
-    for (const itemId of ['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'] as const) state.inventory[itemId] = 2
-    state.inventory['life-essence'] = 10
-    expect(completeTransmutationCycle(state, { id: 'prismatic-fragment', kind: 'transmutation', name: 'Prismatic Fragment', output: { itemId: 'prismatic-fragment', quantity: 1 }, category: 'material', baseDurationMs: 1, manaCost: 0, ingredients: [{ itemId: 'fire-fragment', quantity: 2 }, { itemId: 'water-fragment', quantity: 2 }, { itemId: 'earth-fragment', quantity: 2 }, { itemId: 'air-fragment', quantity: 2 }, { itemId: 'life-essence', quantity: 10 }], unlock: { type: 'always' } }, { mode: 'live' })).toBe(true)
+    const recipe = TRANSMUTATION_RECIPES['prismatic-fragment']
+    recipe.ingredients.forEach(({ itemId, quantity }) => { state.inventory[itemId] = quantity })
+    expect(completeTransmutationCycle(state, recipe, { mode: 'live', random: () => 0.99 })).toBe(true)
     expect(state.inventory['prismatic-fragment']).toBe(1)
     expect(state.progress.discoveredItems).toContain('prismatic-fragment')
   })

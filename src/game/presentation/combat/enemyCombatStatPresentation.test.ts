@@ -44,7 +44,7 @@ describe('enemy combat stat presentation', () => {
 
   it('preserves authored weaknesses and resistances without live state or trait effects', () => {
     const stats = getMonsterDossierCombatStats(MONSTERS['grave-wraith'])
-    expect(stats.defense).toBe(10)
+    expect(stats.defense).toBe(20)
     expect(stats.resistances).toMatchObject({ physical: 0.5, fire: -0.25 })
     expect(buildMonsterDossierCombatStatRows(MONSTERS['grave-wraith']).filter((row) => row.group === 'resistance').map((row) => [row.label, row.value])).toEqual([
       ['Physical Resistance', '50%'],

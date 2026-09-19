@@ -68,7 +68,7 @@ describe('effective Spell presentation', () => {
     const base = getEffectiveSpellCooldown(state, 'fire-bolt')
     state.equipment.head = 'wispveil-hood'
     const equipped = getEffectiveSpellCooldown(state, 'fire-bolt')
-    expect(base.effective).toBe(5_000)
+    expect(base.effective).toBe(6_000)
     expect(equipped.effective).toBe(base.effective)
     state.equipment.head = null
     expect(getEffectiveSpellCooldown(state, 'fire-bolt').effective).toBe(base.effective)

@@ -5,6 +5,7 @@ import { getResearchNextLevelEtaMs } from './researchSelectors'
 
 const withResearchJob = (quantity: number, progressMs = 0, echoesAssigned = 1) => {
   const state = createInitialState()
+  state.player.mana = 100
   state.inventory['fire-fragment'] = 10
   state.activities.research.slots['research-1'] = { itemId: 'fire-fragment', targetSchoolId: 'fire', requestedQuantity: quantity, remainingQuantity: quantity, progressMs, echoesAssigned, status: 'running' }
   return state
@@ -15,7 +16,7 @@ describe('research next-level ETA', () => {
     const state = withResearchJob(8, 2_000)
     state.schools.fire.xp = 10
     state.schools.fire.level = 1
-    expect(getResearchNextLevelEtaMs(state, 'research-1')).toEqual({ etaMs: 38_000, beyondBatch: false })
+    expect(getResearchNextLevelEtaMs(state, 'research-1')).toEqual({ etaMs: 78_000, beyondBatch: false })
   })
 
   it('reports beyond batch when remaining items cannot reach the threshold', () => {
@@ -26,12 +27,12 @@ describe('research next-level ETA', () => {
   it('uses all assigned Echoes for the effective cycle time', () => {
     const state = withResearchJob(8, 0, 5)
     state.schools.fire.xp = 8
-    expect(getResearchNextLevelEtaMs(state, 'research-1')).toEqual({ etaMs: 8_000, beyondBatch: false })
+    expect(getResearchNextLevelEtaMs(state, 'research-1')).toEqual({ etaMs: 16_000, beyondBatch: false })
   })
 
   it('requires nine matching items to cross Level 1 to Level 2', () => {
     const state = withResearchJob(9)
-    expect(getResearchNextLevelEtaMs(state, 'research-1')).toEqual({ etaMs: 45_000, beyondBatch: false })
+    expect(getResearchNextLevelEtaMs(state, 'research-1')).toEqual({ etaMs: 90_000, beyondBatch: false })
   })
 
   it('returns no ETA for a capped school or an unassigned batch', () => {

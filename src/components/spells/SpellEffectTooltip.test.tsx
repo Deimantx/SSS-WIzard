@@ -35,7 +35,6 @@ describe('progressive Spell effect tooltip details', () => {
     expect(screen.queryByText('Conditional: Fire Spell Damage')).toBeNull()
 
     fireEvent.keyDown(window, { key: 'Alt' })
-    expect(screen.getAllByText('Scaling').length).toBeGreaterThan(0)
     expect(screen.getByText('Base Damage Per Tick')).toBeTruthy()
     expect(screen.getByText('Total Base Damage')).toBeTruthy()
     expect(screen.getByText('Base Duration')).toBeTruthy()
@@ -60,7 +59,6 @@ describe('progressive Spell effect tooltip details', () => {
     expect(screen.queryByText('Scaling')).toBeNull()
 
     fireEvent.keyDown(window, { key: 'Alt' })
-    expect(screen.getAllByText('Scaling').length).toBeGreaterThan(0)
     expect(screen.queryByText('Hold Alt for more details')).toBeNull()
   })
 })

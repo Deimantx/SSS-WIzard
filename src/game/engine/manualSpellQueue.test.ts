@@ -124,6 +124,9 @@ describe('manual Spell queue and interrupt control', () => {
 
   it('completes a self-only Mending Waters cast during encounter downtime', () => {
     const state = stateWithSpells('mending-waters')
+    // Keep capacity below discovery thresholds so this isolates cast payment.
+    state.player.maxMana = 100
+    state.player.mana = 100
     state.combat.enemyHp = 0
     expect(resolveCombatDeaths(state)).toBe(true)
     state.player.health = 25
@@ -136,7 +139,7 @@ describe('manual Spell queue and interrupt control', () => {
 
     expect(state.combat.pendingPlayerSpellCast).toBeNull()
     expect(state.player.health).toBeGreaterThan(25)
-    expect(state.player.mana).toBe(950)
+    expect(state.player.mana).toBe(50)
     expect(state.combat.spellCooldowns['mending-waters']).toBe(10_000)
   })
 

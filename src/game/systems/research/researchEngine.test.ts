@@ -46,7 +46,7 @@ describe('Arcane Crucible V2', () => {
       prepareResearchAction(state, `${school}-fragment` as never, school, 10)
       for (let echo = 0; echo < (index === 0 ? 2 : 1); echo += 1) assignResearchEchoAction(state, `research-${index + 1}` as ResearchSlotId)
     })
-    state.player.mana = 100
+    state.player.mana = 5 * BALANCE.research.manaCostPerItem
     advanceResearch(state, BALANCE.research.durationPerItemMs)
     expect(state.schools.fire.xp).toBe(24)
     expect(state.schools.water.xp).toBe(12)
@@ -92,7 +92,8 @@ describe('Arcane Crucible V2', () => {
     prepareResearchAction(state, 'fire-fragment', 'fire', 1)
     assignResearchEchoAction(state, 'research-1')
     state.player.mana = 0
-    state.debug.bonusManaRegenFlat = -4.5
+    state.activities.channeling.echoesAssigned = 1
+    state.debug.bonusManaRegenFlat = -3.5
 
     for (let elapsed = 0; elapsed < 2_500; elapsed += 100) advanceGameState(state, 100, { mode: 'banked' })
     expect(state.activities.research.slots['research-1']).toMatchObject({ remainingQuantity: 1, progressMs: 1_250, status: 'mana-limited' })
@@ -101,7 +102,7 @@ describe('Arcane Crucible V2', () => {
 
     state.debug.bonusManaRegenFlat = 0
     state.player.mana = 100
-    for (let elapsed = 0; elapsed < 3_750; elapsed += 100) advanceGameState(state, 100, { mode: 'banked' })
+    for (let elapsed = 0; elapsed < 8_750; elapsed += 100) advanceGameState(state, Math.min(100, 8_750 - elapsed), { mode: 'banked' })
     expect(state.activities.research.slots['research-1']).toBeNull()
     expect(state.inventory['fire-fragment']).toBe(9)
     expect(state.schools.fire.xp).toBe(12)

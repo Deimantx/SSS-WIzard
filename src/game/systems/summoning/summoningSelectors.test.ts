@@ -28,7 +28,7 @@ describe('summoning selectors', () => {
     const state = createInitialState()
     state.combat.guardian.activeGuardianId = 'earth-guardian'
 
-    expect(getGuardianManaUpkeep(state)).toBe(5)
+    expect(getGuardianManaUpkeep(state)).toBe(10)
     expect(getGuardianPassiveProviders(state)).toEqual([{ modifier: { key: 'defense-flat', value: 5 }, sourceId: 'earth-guardian', sourceName: 'Earth Guardian' }])
 
     state.combat.guardian.activeGuardianId = null

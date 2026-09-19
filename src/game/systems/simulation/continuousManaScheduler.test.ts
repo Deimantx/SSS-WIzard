@@ -24,6 +24,7 @@ describe('continuous Mana scheduler', () => {
 
   it('does not pre-complete one Echo work before the new eight-second cycle ends', () => {
     const state = createInitialState()
+    state.activities.channeling.echoesAssigned = 1
     state.player.mana = 0
     state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 1, progressMs: 0 }
     advance(state, 7_900)
@@ -38,6 +39,7 @@ describe('continuous Mana scheduler', () => {
 
   it('throttles five Echoes to one Fire Fragment in six seconds at 5 Mana/s', () => {
     const state = createInitialState()
+    state.activities.channeling.echoesAssigned = 1
     state.player.mana = 0
     state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 5, progressMs: 0 }
     advance(state, 6_000)
@@ -69,6 +71,7 @@ describe('continuous Mana scheduler', () => {
 
   it('shares scarce Mana fairly across four elemental recipes', () => {
     const state = createInitialState()
+    state.activities.channeling.echoesAssigned = 1
     state.player.mana = 0
     ;(['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'] as const).forEach((recipeId) => {
       state.activities.transmutation.jobs[recipeId] = { echoesAssigned: 1, progressMs: 0 }
@@ -82,6 +85,7 @@ describe('continuous Mana scheduler', () => {
 
   it('funds Research and Transmutation together instead of privileging Research', () => {
     const state = createInitialState()
+    state.activities.channeling.echoesAssigned = 1
     state.player.mana = 0
     state.inventory['fire-fragment'] = 10
     prepareResearchAction(state, 'fire-fragment', 'fire', 1)

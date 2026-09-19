@@ -65,7 +65,7 @@ describe('dungeon statistics presentation', () => {
   it('derives visible total items from the per-item quantities', () => {
     const presentation = getDungeonStatisticsPresentation({ ...session({ 'artifact-essence': 25, 'life-essence': 40, 'prismatic-fragment': 10 }), totalLootQuantity: 999 })
 
-    expect(presentation.totalDrops).toBe(77)
-    expect(presentation.totalDropsLabel).toBe('77')
+    expect(presentation.totalDrops).toBe(75)
+    expect(presentation.totalDropsLabel).toBe('75')
   })
 })

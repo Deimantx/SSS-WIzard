@@ -13,6 +13,8 @@ const stateWithSpells = (...spellIds: string[]) => {
   state.player.maxMana = 1_000
   state.player.mana = 1_000
   spellIds.forEach((spellId) => { state.progress.spellRanks[spellId as keyof typeof state.progress.spellRanks] = 1 })
+  state.spellPresets.presets[0].slots = spellIds.map((spellId) => ({ spellId: spellId as any, autoCast: false }))
+  state.spellPresets.selectedPresetId = state.spellPresets.presets[0].id
   spawnEnemy(state, 'forest-wisp')
   state.combat.enemyMaxHp = 100_000
   state.combat.enemyHp = 100_000
@@ -20,6 +22,13 @@ const stateWithSpells = (...spellIds: string[]) => {
 }
 
 describe('manual Spell queue and interrupt control', () => {
+  it('rejects a manual Spell that is absent from the active encounter loadout', () => {
+    const state = stateWithSpells('fire-bolt', 'wind-blade')
+    state.combat.activeSpellLoadout!.slots = [{ spellId: 'fire-bolt', autoCast: false }]
+    expect(requestManualSpell(state, 'wind-blade')).toEqual({ ok: false, reason: 'not-in-loadout' })
+    expect(state.combat.queuedPlayerSpellId).toBeNull()
+  })
+
   it('starts a ready manual Spell immediately', () => {
     const state = stateWithSpells('fire-bolt')
     expect(requestManualSpell(state, 'fire-bolt')).toEqual({ ok: true, action: 'started' })

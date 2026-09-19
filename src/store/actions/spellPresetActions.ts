@@ -1,38 +1,39 @@
-import { LEGACY_SPELL_ID_MAP, SPELLS } from '../../game/content/spells/spells'
-import { getNextSpellPresetId, getSpellPresetFocusProjection, normalizeSpellPresetName } from '../../game/systems/spells'
+import { getNextSpellPresetId, getSelectedSpellPreset, getSpellPresetFocusProjection, normalizeSpellPresetName, normalizeSpellPresetSlots, syncAutoCastRuntimeForLoadout } from '../../game/systems/spells'
 import type { CanonicalSpellId, GameState, SpellId, SpellPreset, SpellPresetId } from '../../game/types'
 
 export interface ApplySpellPresetResult {
   ok: boolean
   reason?: 'focus' | 'missing-preset' | 'empty'
   requiredExtraFocus?: number
-  unavailableSpellIds?: SpellId[]
+  unavailableSpellIds?: CanonicalSpellId[]
 }
 
-const normalizedSpellIds = (spellIds: readonly SpellId[]) => [...new Set(spellIds.filter((spellId) => Boolean(SPELLS[spellId])).map((spellId) => LEGACY_SPELL_ID_MAP[spellId] ?? spellId))]
-
-export const clearAutoCastAction = (state: GameState) => {
+const clearAutoCastRuntime = (state: GameState) => {
   const hadActiveAutoCast = Object.values(state.activities.autoCast).some(Boolean)
-  Object.keys(state.activities.autoCast).forEach((spellId) => { state.activities.autoCast[spellId as SpellId] = false })
+  syncAutoCastRuntimeForLoadout(state, [])
   state.combat.autoCastManaStarvedSpells = []
-  state.activities.autoCastPriority = []
-  state.spellPresets.lastAppliedPresetId = null
   return hadActiveAutoCast
 }
 
-export const moveAutoCastPriorityAction = (state: GameState, spellId: SpellId, direction: -1 | 1) => {
-  const index = state.activities.autoCastPriority.indexOf(spellId as typeof state.activities.autoCastPriority[number])
-  const nextIndex = index + direction
-  if (index < 0 || nextIndex < 0 || nextIndex >= state.activities.autoCastPriority.length) return false
-  const [entry] = state.activities.autoCastPriority.splice(index, 1)
-  state.activities.autoCastPriority.splice(nextIndex, 0, entry)
-  state.spellPresets.lastAppliedPresetId = null
-  return true
+const getSelectedProjection = (state: GameState) => {
+  const preset = getSelectedSpellPreset(state)
+  return preset ? getSpellPresetFocusProjection(state, preset) : null
 }
+
+export const syncSelectedSpellPresetRuntime = (state: GameState) => {
+  const projection = getSelectedProjection(state)
+  syncAutoCastRuntimeForLoadout(state, projection?.validSlots ?? [])
+}
+
+/** Compatibility action retained for internal/debug callers. Build editing is owned by the Preset Manager. */
+export const clearAutoCastAction = (state: GameState) => clearAutoCastRuntime(state)
+
+/** @deprecated Auto priority is now the order of AUTO slots in the selected loadout. */
+export const moveAutoCastPriorityAction = (_state: GameState, _spellId: SpellId, _direction: -1 | 1) => false
 
 export const createSpellPresetAction = (state: GameState, name: string): SpellPresetId => {
   const id = getNextSpellPresetId(state.spellPresets.presets)
-  state.spellPresets.presets.push({ id, name: normalizeSpellPresetName(name), spellIds: [] })
+  state.spellPresets.presets.push({ id, name: normalizeSpellPresetName(name), slots: [] })
   return id
 }
 
@@ -47,15 +48,23 @@ export const duplicateSpellPresetAction = (state: GameState, id: SpellPresetId):
   const source = state.spellPresets.presets.find((entry) => entry.id === id)
   if (!source) return null
   const nextId = getNextSpellPresetId(state.spellPresets.presets)
-  state.spellPresets.presets.push({ id: nextId, name: normalizeSpellPresetName(`${source.name} Copy`), spellIds: [...source.spellIds] })
+  state.spellPresets.presets.push({ id: nextId, name: normalizeSpellPresetName(`${source.name} Copy`), slots: source.slots.map((slot) => ({ ...slot })) })
   return nextId
 }
 
-export const saveSpellPresetAction = (state: GameState, preset: Pick<SpellPreset, 'id' | 'name' | 'spellIds'>) => {
+export const saveSpellPresetAction = (state: GameState, preset: Pick<SpellPreset, 'id' | 'name' | 'slots'>) => {
   const stored = state.spellPresets.presets.find((entry) => entry.id === preset.id)
   if (!stored) return false
   stored.name = normalizeSpellPresetName(preset.name, stored.name)
-  stored.spellIds = normalizedSpellIds(preset.spellIds)
+  stored.slots = normalizeSpellPresetSlots(preset.slots)
+  return true
+}
+
+export const setPresetSlotAutoCastAction = (state: GameState, id: SpellPresetId, spellId: CanonicalSpellId, autoCast: boolean) => {
+  const preset = state.spellPresets.presets.find((entry) => entry.id === id)
+  const slot = preset?.slots.find((entry) => entry.spellId === spellId)
+  if (!slot) return false
+  slot.autoCast = Boolean(autoCast)
   return true
 }
 
@@ -63,32 +72,34 @@ export const deleteSpellPresetAction = (state: GameState, id: SpellPresetId) => 
   const index = state.spellPresets.presets.findIndex((entry) => entry.id === id)
   if (index < 0) return false
   state.spellPresets.presets.splice(index, 1)
-  if (state.spellPresets.lastAppliedPresetId === id) state.spellPresets.lastAppliedPresetId = null
+  if (state.spellPresets.selectedPresetId === id) {
+    const replacement = state.spellPresets.presets[index] ?? state.spellPresets.presets[index - 1] ?? null
+    state.spellPresets.selectedPresetId = replacement?.id ?? null
+    if (!state.combat.active) syncSelectedSpellPresetRuntime(state)
+  }
   return true
 }
 
-export const applySpellPresetAction = (state: GameState, id: SpellPresetId): ApplySpellPresetResult => {
+export const selectSpellPresetAction = (state: GameState, id: SpellPresetId): ApplySpellPresetResult => {
   const preset = state.spellPresets.presets.find((entry) => entry.id === id)
   if (!preset) return { ok: false, reason: 'missing-preset', unavailableSpellIds: [] }
   const projection = getSpellPresetFocusProjection(state, preset)
-  if (!projection.validSpellIds.length) {
-    pushPresetNotification(state, `Cannot apply ${preset.name} · Add at least one available spell.`, 'warning')
+  if (!projection.validSlots.length) {
+    pushPresetNotification(state, `Cannot select ${preset.name} · Add at least one available Spell.`, 'warning')
     return { ok: false, reason: 'empty', unavailableSpellIds: projection.unavailableSpellIds }
   }
   if (!projection.canApply) {
     const required = Math.max(0, projection.totalAfterApply - state.player.maxFocus)
-    pushPresetNotification(state, `Cannot apply ${preset.name} · Requires ${required} more Focus.`, 'warning')
+    pushPresetNotification(state, `Cannot select ${preset.name} · Requires ${required} more Focus.`, 'warning')
     return { ok: false, reason: 'focus', requiredExtraFocus: required, unavailableSpellIds: projection.unavailableSpellIds }
   }
-  clearAutoCastAction(state)
-  projection.validSpellIds.forEach((spellId) => { state.activities.autoCast[spellId] = true })
-  state.activities.autoCastPriority = [...projection.validSpellIds] as CanonicalSpellId[]
-  state.spellPresets.lastAppliedPresetId = projection.unavailableSpellIds.length ? null : id
-  if (projection.unavailableSpellIds.length) {
-    pushPresetNotification(state, `${preset.name} partially applied · ${projection.unavailableSpellIds.length} unavailable spell${projection.unavailableSpellIds.length === 1 ? '' : 's'} skipped.`, 'warning')
-  }
+  state.spellPresets.selectedPresetId = id
+  if (!state.combat.active) syncAutoCastRuntimeForLoadout(state, projection.validSlots)
+  if (projection.unavailableSpellIds.length) pushPresetNotification(state, `${preset.name} selected · ${projection.unavailableSpellIds.length} unavailable slot${projection.unavailableSpellIds.length === 1 ? '' : 's'} excluded until available.`, 'warning')
   return { ok: true, unavailableSpellIds: projection.unavailableSpellIds }
 }
+
+export const applySpellPresetAction = selectSpellPresetAction
 
 const pushPresetNotification = (state: GameState, text: string, tone: 'info' | 'success' | 'warning') => {
   state.notifications.push({ id: `spell-preset-${Date.now()}-${Math.random().toString(36).slice(2)}`, text, tone, createdAt: Date.now() })

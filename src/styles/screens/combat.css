@@ -3243,6 +3243,48 @@
   .spell-combat-tile { transition: none; }
 }
 
+/* Combat Spell Loadout V2: the deck is an ordered, single-row encounter view. */
+.combat-spell-deck .combat-spell-grid {
+  grid-template-columns: repeat(8, minmax(116px, 1fr));
+  grid-template-rows: minmax(0, 1fr);
+  align-content: stretch;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.combat-spell-deck .spell-combat-auto-slot {
+  width: auto;
+  min-width: 22px;
+}
+.combat-spell-deck .spell-combat-auto-slot > .game-tooltip-trigger {
+  width: auto;
+  flex: 0 0 auto;
+}
+.combat-spell-deck .spell-combat-auto.read-only {
+  display: inline-flex;
+  width: auto;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  border-radius: 4px;
+  color: var(--ui-text-muted);
+  cursor: default;
+  font: 700 8px/1 var(--font-mono);
+  letter-spacing: .04em;
+  white-space: nowrap;
+}
+.combat-spell-deck .spell-combat-auto.read-only.is-active {
+  color: var(--semantic-focus);
+  border-color: var(--semantic-focus);
+}
+@container (max-width: 900px) {
+  .combat-spell-deck .combat-spell-grid {
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(116px, 1fr);
+    grid-template-columns: none;
+    grid-template-rows: minmax(0, 1fr);
+  }
+}
+
 /* Pass 4: Analytics readout hierarchy. Static presentation only. */
 /* Analytics is a quieter readout layer below the live arena and Spell Deck. */
 .combat-analytics-panel {

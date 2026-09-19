@@ -22,7 +22,7 @@ export const spellRequiresEnemyTarget = (spell: SpellDefinition | SpellId) => {
   return Boolean(definition?.effects.some((effect) => effect.target === 'opponent'))
 }
 
-export type SpellCastFailure = 'unknown' | 'locked' | 'stunned' | 'silenced' | 'inactive' | 'no-target' | 'cooldown' | 'mana' | 'casting'
+export type SpellCastFailure = 'unknown' | 'locked' | 'stunned' | 'silenced' | 'inactive' | 'not-in-loadout' | 'no-target' | 'cooldown' | 'mana' | 'casting'
 
 export type SpellStartFailure = Exclude<SpellCastFailure, 'casting'>
 
@@ -30,13 +30,21 @@ export type ManualSpellRequestResult =
   | { ok: true; action: 'started' | 'interrupted-and-started' | 'queued' | 'queue-cancelled' | 'already-casting' }
   | { ok: false; reason: SpellCastFailure }
 
-export const getSpellStartFailure = (state: GameState, spellId: SpellId): SpellStartFailure | null => {
+export interface SpellRequestOptions { ignoreCombatLoadout?: boolean }
+
+export const isSpellInActiveCombatLoadout = (state: Pick<GameState, 'combat'>, spellId: SpellId) => {
+  const canonicalId = SPELLS[spellId]?.id
+  return Boolean(canonicalId && state.combat.activeSpellLoadout?.slots.some((slot) => slot.spellId === canonicalId))
+}
+
+export const getSpellStartFailure = (state: GameState, spellId: SpellId, options: SpellRequestOptions = {}): SpellStartFailure | null => {
   const spell = SPELLS[spellId]
   if (!spell) return 'unknown'
   if (!isSpellUnlocked(state, spellId)) return 'locked'
   if (actorCannotAct(state, 'player')) return 'stunned'
   if (actorCannotCastSpells(state, 'player')) return 'silenced'
   if (!state.combat.active) return 'inactive'
+  if (!options.ignoreCombatLoadout && !isSpellInActiveCombatLoadout(state, spell.id)) return 'not-in-loadout'
   if (spellRequiresEnemyTarget(spell) && !state.combat.enemyId) return 'no-target'
   if (!state.debug.ignoreSpellCooldowns && (state.combat.spellCooldowns[spell.id] ?? 0) > 0) return 'cooldown'
   const manaCost = getEffectiveManaCost(state, spell.manaCost)
@@ -46,9 +54,9 @@ export const getSpellStartFailure = (state: GameState, spellId: SpellId): SpellS
 
 /** Start eligibility intentionally includes the active-cast blocker for callers
  * that only want to know whether a Spell can begin without an interrupt. */
-export const getSpellCastFailure = (state: GameState, spellId: SpellId): SpellCastFailure | null => {
+export const getSpellCastFailure = (state: GameState, spellId: SpellId, options: SpellRequestOptions = {}): SpellCastFailure | null => {
   if (state.combat.pendingPlayerSpellCast) return 'casting'
-  return getSpellStartFailure(state, spellId)
+  return getSpellStartFailure(state, spellId, options)
 }
 
 export const notifySpellCastFailure = (state: GameState, spellId: SpellId, failure: SpellCastFailure) => {
@@ -58,7 +66,9 @@ export const notifySpellCastFailure = (state: GameState, spellId: SpellId, failu
   else if (failure === 'casting') pushNotification(state, 'A Spell is already being cast.', 'warning')
   else if (failure === 'cooldown' && spell) pushNotification(state, `${spell.name} is cooling down`, 'warning')
   else if (failure === 'mana' && spell) pushNotification(state, 'Not enough Mana', 'warning')
-  else if (failure === 'inactive' || failure === 'no-target') pushNotification(state, 'Enter combat before using that spell', 'warning')
+  else if (failure === 'inactive') pushNotification(state, 'Enter combat before using that spell', 'warning')
+  else if (failure === 'not-in-loadout') pushNotification(state, 'That Spell is not in the active Combat Loadout.', 'warning')
+  else if (failure === 'no-target') pushNotification(state, 'Enter combat before using that spell', 'warning')
 }
 
 const reportSpellFailure = (state: GameState, spellId: CanonicalSpellId, failure: 'mana' | 'no-target', uiEvents?: CombatEventSink) => {
@@ -75,9 +85,9 @@ export const getPlayerSpellCastRate = getSpellCastRate
 
 const getCastWorkMultiplier = (state: GameState) => state.combat.playerStatuses.some((status) => status.statusId === 'gust') ? 0.7 : 1
 
-const startSpellCast = (state: GameState, spellId: SpellId, quiet: boolean, uiEvents?: CombatEventSink) => {
+const startSpellCast = (state: GameState, spellId: SpellId, quiet: boolean, uiEvents?: CombatEventSink, options: SpellRequestOptions = {}) => {
   const spell = SPELLS[spellId]
-  const failure = getSpellCastFailure(state, spellId)
+  const failure = getSpellCastFailure(state, spellId, options)
   if (!spell || failure) {
     if (failure === 'mana' || failure === 'no-target') reportSpellFailure(state, spell.id, failure, uiEvents)
     return false
@@ -121,7 +131,7 @@ const canRemainQueued = (failure: SpellStartFailure) => failure === 'cooldown' |
  * interrupts into, or replaces/cancels the one-slot manual queue; Auto-Cast
  * never writes this field.
  */
-export const requestManualSpell = (state: GameState, spellId: SpellId, uiEvents?: CombatEventSink): ManualSpellRequestResult => {
+export const requestManualSpell = (state: GameState, spellId: SpellId, uiEvents?: CombatEventSink, options: SpellRequestOptions = {}): ManualSpellRequestResult => {
   const spell = SPELLS[spellId]
   if (!spell) return { ok: false, reason: 'unknown' }
   const canonicalId = spell.id
@@ -132,16 +142,16 @@ export const requestManualSpell = (state: GameState, spellId: SpellId, uiEvents?
     return { ok: true, action: 'queue-cancelled' }
   }
 
-  const failure = getSpellStartFailure(state, canonicalId)
+  const failure = getSpellStartFailure(state, canonicalId, options)
   if (!failure) {
     const wasInterrupted = Boolean(current)
     if (wasInterrupted) cancelPendingPlayerSpellCast(state, 'manual-interrupt')
-    const started = startSpellCast(state, canonicalId, false, uiEvents)
+    const started = startSpellCast(state, canonicalId, false, uiEvents, options)
     if (started) {
       state.combat.queuedPlayerSpellId = null
       return { ok: true, action: wasInterrupted ? 'interrupted-and-started' : 'started' }
     }
-    return { ok: false, reason: getSpellStartFailure(state, canonicalId) ?? 'unknown' }
+    return { ok: false, reason: getSpellStartFailure(state, canonicalId, options) ?? 'unknown' }
   }
 
   if (canRemainQueued(failure) && state.combat.active) {

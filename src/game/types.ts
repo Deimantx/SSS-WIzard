@@ -330,14 +330,24 @@ export interface ActivitiesState {
   /** Ordered Auto-Cast source of truth. The boolean record is compatibility/UI projection. */
   autoCastPriority: CanonicalSpellId[]
 }
+export interface SpellPresetSlot {
+  spellId: CanonicalSpellId
+  autoCast: boolean
+}
 export interface SpellPreset {
   id: SpellPresetId
   name: string
-  spellIds: SpellId[]
+  slots: SpellPresetSlot[]
 }
 export interface SpellPresetState {
   presets: SpellPreset[]
-  lastAppliedPresetId: SpellPresetId | null
+  selectedPresetId: SpellPresetId | null
+}
+export interface ActiveCombatSpellLoadout {
+  presetId: SpellPresetId | null
+  presetName: string
+  slots: SpellPresetSlot[]
+  signature: string
 }
 export interface CombatState {
   active: boolean
@@ -368,6 +378,8 @@ export interface CombatState {
   pendingPlayerSpellCast: PendingPlayerSpellCast | null
   /** One-slot manual intent. This is transient and is never restored from saves. */
   queuedPlayerSpellId: CanonicalSpellId | null
+  /** Frozen combat deck for the current enemy encounter. */
+  activeSpellLoadout: ActiveCombatSpellLoadout | null
   encounterTimerMs: number
   spellCooldowns: Record<SpellId, number>
   /** Runtime Auto-Cast starvation latch; persisted harmlessly with combat state. */

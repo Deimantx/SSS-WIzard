@@ -1,11 +1,11 @@
-import { AlertTriangle, ArrowDown, ArrowUp, BookOpen, CircleDot, Clock3, Droplet, Settings2, UserMinus } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { AlertTriangle, BookOpen, Clock3, Droplet, Settings2 } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { SPELLS } from '../../game/content/spells/spells'
 import { SCHOOLS } from '../../game/content/schools/schools'
 import { getSpellStartFailure } from '../../game/engine/spellEngine'
 import { getSpellRank } from '../../game/systems/spells'
 import { formatSpellRank } from '../../game/systems/spells/spellProgression'
-import type { SpellId } from '../../game/types'
+import type { CanonicalSpellId } from '../../game/types'
 import { formatTime } from '../../game/utils'
 import { GameTooltip } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
@@ -18,14 +18,10 @@ import { useGameStore } from '../../store/gameStore'
 import { useGameContextMenu } from '../../ui/context-menu/GameContextMenuProvider'
 import { setNavigationIntent } from '../../ui/navigation/navigationIntent'
 
-export function CombatSpellTile({ spellId, presentationState, globalBlocker, onOpenPresetManager, onRemoveFromPreset }: { spellId: SpellId; presentationState: SpellPresentationState; globalBlocker?: 'inactive' | 'no-target' | 'stunned' | null; onOpenPresetManager: () => void; onRemoveFromPreset?: (spellId: SpellId) => void }) {
+export function CombatSpellTile({ spellId, autoCast, autoCastPriority, presentationState, globalBlocker, onOpenPresetManager }: { spellId: CanonicalSpellId; autoCast: boolean; autoCastPriority: number | null; presentationState: SpellPresentationState; globalBlocker?: 'inactive' | 'no-target' | 'stunned' | null; onOpenPresetManager: () => void }) {
   const { openContextMenu } = useGameContextMenu()
   const playerMana = useGameStore((state) => state.player.mana)
-  const active = useGameStore((state) => state.activities.autoCast[spellId])
   const requestManualSpell = useGameStore((state) => state.requestManualSpell)
-  const toggle = useGameStore((state) => state.toggleAutoCast)
-  const movePriority = useGameStore((state) => state.moveAutoCastPriority)
-  const priorityIndex = useGameStore((state) => state.activities.autoCastPriority.indexOf(spellId as typeof state.activities.autoCastPriority[number]))
   const rank = getSpellRank({ progress: presentationState.progress }, spellId)
   const spell = SPELLS[spellId]
   const presentation = useMemo(() => buildSpellDetailPresentation(presentationState, spellId, rank ?? 1), [presentationState, spellId, rank])
@@ -59,25 +55,15 @@ export function CombatSpellTile({ spellId, presentationState, globalBlocker, onO
     ? cooldown > 0 ? `NEXT, ${formatTime(cooldown)} cooldown` : startFailure === 'mana' ? 'NEXT, WAITING MANA' : startFailure === 'no-target' ? 'NEXT, WAITING TARGET' : startFailure === 'stunned' || startFailure === 'silenced' ? 'NEXT, WAITING STATUS' : 'NEXT, READY'
     : null
   const stateLabel = currentCast ? 'CASTING' : queuedState ?? (startFailure === 'cooldown' ? `${formatTime(cooldown)} remaining` : localFailure ?? (startFailure ? startFailure.replace('-', ' ') : 'READY'))
-  const label = `${spell.name}, ${formatSpellRank(rank ?? 1)}, ${manaLabel} Mana, ${stateLabel}`
+  const label = `${spell.name}, ${autoCast ? `AUTO priority ${autoCastPriority}` : 'manual'}, ${formatSpellRank(rank ?? 1)}, ${manaLabel} Mana, ${stateLabel}`
   const cooldownFraction = getCooldownFraction(cooldown, presentation.cooldownMs)
-  const openSpellMenu = (x: number, y: number, anchor?: HTMLElement) => openContextMenu({ x, y, anchor, header: { title: spell.name, meta: `${SCHOOLS[spell.school].name} · ${formatSpellRank(rank ?? 1)}` }, sections: [{ id: 'spell', actions: [{ id: 'autocast', label: active ? 'Disable Auto-Cast' : 'Enable Auto-Cast', icon: CircleDot, onSelect: () => toggle(spellId) }, ...(onRemoveFromPreset ? [{ id: 'remove-preset', label: 'Remove from Preset', icon: UserMinus, onSelect: () => onRemoveFromPreset(spellId) }] : []), { id: 'school', label: 'Open Magic School', icon: BookOpen, onSelect: () => { setNavigationIntent({ schoolSpellId: spellId, schoolId: spell.school }); useGameStore.getState().setScreen('schools') } }, { id: 'manager', label: 'Preset Manager', icon: Settings2, onSelect: onOpenPresetManager }] }] })
-  return <div data-spell-id={spellId} data-spell-state={currentCast ? 'casting' : manuallyQueued ? 'queued' : startFailure ?? 'ready'} className={`spell-combat-tile${active ? ' is-auto' : ''}${startFailure && startFailure !== 'cooldown' && !manuallyQueued && !currentCast ? ' is-unavailable' : ''}${cooldown > 0 ? ' is-cooldown' : ''}${currentCast ? ' is-current-cast' : ''}${manuallyQueued ? ' is-manual-queued' : ''}${justResolved ? ' is-casting' : ''}${justReady ? ' is-ready' : ''}${startFailure === 'mana' && !manuallyQueued ? ' is-mana-starved' : ''}`} style={{ '--spell-school-color': SCHOOLS[spell.school].color, '--cooldown-percent': `${cooldownFraction * 100}%` } as React.CSSProperties} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); openSpellMenu(event.clientX, event.clientY, event.currentTarget) }}>
+  const openSpellMenu = (x: number, y: number, anchor?: HTMLElement) => openContextMenu({ x, y, anchor, header: { title: spell.name, meta: `${SCHOOLS[spell.school].name} · ${formatSpellRank(rank ?? 1)}` }, sections: [{ id: 'spell', actions: [{ id: 'school', label: 'Open Magic School', icon: BookOpen, onSelect: () => { setNavigationIntent({ schoolSpellId: spellId, schoolId: spell.school }); useGameStore.getState().setScreen('schools') } }, { id: 'manager', label: 'Preset Manager', icon: Settings2, onSelect: onOpenPresetManager }] }] })
+  return <div data-spell-id={spellId} data-spell-state={currentCast ? 'casting' : manuallyQueued ? 'queued' : startFailure ?? 'ready'} className={`spell-combat-tile${autoCast ? ' is-auto' : ''}${startFailure && startFailure !== 'cooldown' && !manuallyQueued && !currentCast ? ' is-unavailable' : ''}${cooldown > 0 ? ' is-cooldown' : ''}${currentCast ? ' is-current-cast' : ''}${manuallyQueued ? ' is-manual-queued' : ''}${justResolved ? ' is-casting' : ''}${justReady ? ' is-ready' : ''}${startFailure === 'mana' && !manuallyQueued ? ' is-mana-starved' : ''}`} style={{ '--spell-school-color': SCHOOLS[spell.school].color, '--cooldown-percent': `${cooldownFraction * 100}%` } as CSSProperties} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); openSpellMenu(event.clientX, event.clientY, event.currentTarget) }}>
     <GameTooltip block wide placement="top" accent="elemental" content={<SpellCardTooltip presentation={presentation} />}>
-      <button type="button" className="spell-combat-cast" aria-label={label} disabled={startFailure === 'unknown' || startFailure === 'locked'} onClick={() => requestManualSpell(spellId)}><span className="spell-combat-tile-top"><span className="spell-combat-icon"><SpellIcon school={spell.school} spellId={spellId} size="medium" />{cooldownFraction > 0 && <span className="spell-combat-cooldown-overlay" aria-hidden="true"><span className="spell-combat-cooldown-number">{formatCooldownNumber(cooldown)}</span></span>}</span></span><span className="spell-combat-name"><strong>{spell.name}</strong></span><span className="spell-combat-footer"><span className={`ui-mana${localFailure && !manuallyQueued ? ' has-warning' : ''}`}><Droplet size={12} aria-hidden="true" />{manaLabel}{localFailure && !manuallyQueued && <em><AlertTriangle size={10} aria-hidden="true" />{localFailure}</em>}</span><span className="ui-time"><Clock3 size={11} aria-hidden="true" />{presentation.castTimeLabel}</span></span></button>
+      <button type="button" className="spell-combat-cast" aria-label={label} disabled={startFailure === 'unknown' || startFailure === 'locked' || startFailure === 'not-in-loadout'} onClick={() => requestManualSpell(spellId)}><span className="spell-combat-tile-top"><span className="spell-combat-icon"><SpellIcon school={spell.school} spellId={spellId} size="medium" />{cooldownFraction > 0 && <span className="spell-combat-cooldown-overlay" aria-hidden="true"><span className="spell-combat-cooldown-number">{formatCooldownNumber(cooldown)}</span></span>}</span></span><span className="spell-combat-name"><strong>{spell.name}</strong></span><span className="spell-combat-footer"><span className={`ui-mana${localFailure && !manuallyQueued ? ' has-warning' : ''}`}><Droplet size={12} aria-hidden="true" />{manaLabel}{localFailure && !manuallyQueued && <em><AlertTriangle size={10} aria-hidden="true" />{localFailure}</em>}</span><span className="ui-time"><Clock3 size={11} aria-hidden="true" />{presentation.castTimeLabel}</span></span></button>
     </GameTooltip>
     {currentCast && <span className="spell-combat-intent-badge is-casting" aria-hidden="true">CASTING</span>}
     {manuallyQueued && <span className="spell-combat-intent-badge is-next" aria-hidden="true"><strong>NEXT</strong><small>{queuedState?.replace(/^NEXT,?\s*/, '')}</small></span>}
-    <div className="spell-combat-auto-slot">{active && <span className="spell-combat-priority" aria-label={`Auto-Cast priority ${priorityIndex + 1}`}>P{priorityIndex + 1}</span>}<GameTooltip accent="focus" content={<TooltipContent title={active ? 'AUTO-CAST ACTIVE' : 'AUTO-CAST'} description={active ? `${presentation.autoCastFocus} Focus reserved. Condition: ${autoConditionLabel(spell.autoCondition)}.` : `${presentation.autoCastFocus} Focus will be reserved. Condition: ${autoConditionLabel(spell.autoCondition)}.`} />}><button type="button" className={`spell-combat-auto${active ? ' is-active' : ''}`} aria-label={`${active ? 'Disable' : 'Enable'} Auto-Cast for ${spell.name}`} aria-pressed={active} onClick={() => toggle(spellId)}><CircleDot size={14} aria-hidden="true" /></button></GameTooltip>{active && <span className="spell-combat-priority-controls"><GameTooltip accent="focus" content={<TooltipContent title="Move Auto-Cast up" description="Raise this Spell one position in the Auto-Cast priority list." />}><button type="button" aria-label={`Move ${spell.name} Auto-Cast priority up`} disabled={priorityIndex <= 0} onClick={(event) => { event.stopPropagation(); movePriority(spellId, -1) }}><ArrowUp size={9} aria-hidden="true" /></button></GameTooltip><GameTooltip accent="focus" content={<TooltipContent title="Move Auto-Cast down" description="Lower this Spell one position in the Auto-Cast priority list." />}><button type="button" aria-label={`Move ${spell.name} Auto-Cast priority down`} disabled={priorityIndex < 0 || priorityIndex >= useGameStore.getState().activities.autoCastPriority.length - 1} onClick={(event) => { event.stopPropagation(); movePriority(spellId, 1) }}><ArrowDown size={9} aria-hidden="true" /></button></GameTooltip></span>}</div>
+    <div className="spell-combat-auto-slot"><GameTooltip accent="focus" content={<TooltipContent title={autoCast ? 'AUTO' : 'MANUAL'} description={autoCast ? `${presentation.autoCastFocus} Focus reserved. Auto-Cast follows this deck slot order.` : 'Manual slot. It reserves 0 Auto-Cast Focus.'} />}><span className={`spell-combat-auto read-only${autoCast ? ' is-active' : ''}`} aria-label={autoCast ? `AUTO, priority ${autoCastPriority}` : 'MANUAL, no Auto-Cast focus'}>{autoCast ? `AUTO · P${autoCastPriority}` : 'MANUAL'}</span></GameTooltip></div>
   </div>
-}
-
-function autoConditionLabel(condition: typeof SPELLS[SpellId]['autoCondition']): string {
-  if (!condition || condition.type === 'always') return 'Always'
-  if (condition.type === 'health-below') return `Health below ${condition.percent}%`
-  if (condition.type === 'barrier-below') return `Barrier below ${condition.value}`
-  if (condition.type === 'self-status-missing') return `Self lacks ${condition.statusId}`
-  if (condition.type === 'target-status-missing') return `Target lacks ${condition.statusId}`
-  if (condition.type === 'self-has-cleanseable-debuff') return 'Self has a cleanseable debuff'
-  return condition.conditions.map(autoConditionLabel).join(' and ')
 }

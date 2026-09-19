@@ -15,6 +15,12 @@ function igniteModel() {
 }
 
 describe('progressive Spell effect tooltip details', () => {
+  it('uses the explicit stronger-only Barrier wording', () => {
+    const model = buildSpellEffectTooltipModel(createInitialState(), 'earthen-barrier', 0)
+    expect(model.rows.find((row) => row.label === 'Mode')?.value).toBe('Replace if Stronger')
+    expect(model.description).toBe('Replaces the current Barrier only when the new Barrier is stronger.')
+  })
+
   it('keeps Ignite gameplay rows compact and reveals technical rows while Alt is held', async () => {
     const model = igniteModel()
     const compactLabels = getCompactSpellEffectRows(model).map((row) => row.label)

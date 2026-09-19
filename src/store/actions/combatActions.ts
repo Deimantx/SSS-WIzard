@@ -6,4 +6,9 @@ export const castSpellAction = (state: GameState, spellId: SpellId, uiEvents?: C
   return requestManualSpell(state, spellId, uiEvents).ok
 }
 
+/** Explicit Developer Tools bypass; normal player requests remain loadout-bound. */
+export const debugCastSpellAction = (state: GameState, spellId: SpellId, uiEvents?: CombatEventSink) => {
+  return requestManualSpell(state, spellId, uiEvents, { ignoreCombatLoadout: true }).ok
+}
+
 export const requestManualSpellAction = requestManualSpell

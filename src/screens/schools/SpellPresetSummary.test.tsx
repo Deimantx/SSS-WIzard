@@ -10,20 +10,20 @@ describe('SpellPresetSummary', () => {
     useGameStore.getState().resetSave()
   })
 
-  it('renders the equipment-aware Auto-Cast Focus summary without crashing', () => {
+  it('renders the selected ordered combat loadout and equipment-aware Focus summary', () => {
     const current = useGameStore.getState()
     useGameStore.setState({
       progress: { ...current.progress, spellRanks: { ...current.progress.spellRanks, 'fire-bolt': 1 } },
-      activities: { ...current.activities, autoCast: { ...current.activities.autoCast, 'fire-bolt': true } },
       equipment: current.equipment,
       artifactProgress: current.artifactProgress,
     })
     const id = useGameStore.getState().createSpellPreset('Fire focus')
-    useGameStore.getState().saveSpellPreset({ id, name: 'Fire focus', spellIds: ['fire-bolt'] })
+    useGameStore.getState().saveSpellPreset({ id, name: 'Fire focus', slots: [{ spellId: 'fire-bolt', autoCast: true }] })
+    useGameStore.getState().selectSpellPreset(id)
 
     render(<TooltipProvider><SpellPresetSummary onManage={() => {}} /></TooltipProvider>)
 
     expect(screen.getByText('Fire focus')).toBeTruthy()
-    expect(screen.getByText('1 Spells · 10 Focus', { selector: '.ui-focus' })).toBeTruthy()
+    expect(screen.getByText('1 AUTO · 0 MANUAL · 10 Focus', { selector: '.ui-focus' })).toBeTruthy()
   })
 })

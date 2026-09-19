@@ -18,6 +18,7 @@ import { nextCombatRandom } from './combatRng'
 import { reconcileStoryProgression } from '../story/storyProgression'
 import { SUMMONING_UNLOCK_BOSS_ID } from '../../content/guardians/guardians'
 import { beginGuardianEncounter, clearGuardianRuntime, suppressGuardianIfOutOfMana } from '../summoning/summoningRuntime'
+import { activateSelectedSpellPresetForBattle } from '../spells'
 
 export { applyStatus, clearStatuses, damageEnemy, damagePlayer, executeCombatEffects, gainBarrier }
 
@@ -31,6 +32,7 @@ export const debugApplyStatus = (state: GameState, actor: 'player' | 'enemy', st
 
 export const spawnEnemy = (state: GameState, enemyId: MonsterId, uiEvents?: CombatEventSink) => {
   const monster = MONSTERS[enemyId]
+  activateSelectedSpellPresetForBattle(state)
   const previousSerial = Number.isSafeInteger(state.combat.enemyInstanceSerial) ? state.combat.enemyInstanceSerial : 0
   state.combat.enemyInstanceSerial = Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, previousSerial) + 1)
   state.combat.enemyInstanceKey = `enemy:${state.combat.enemyInstanceSerial}`

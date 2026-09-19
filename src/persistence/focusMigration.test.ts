@@ -26,12 +26,12 @@ describe('Focus and Prismatic save migration', () => {
     expect(loaded.player.maxFocus).toBe(120)
   })
 
-  it('migrates a V16 save without presets to an empty V17 preset state', () => {
+  it('migrates a V16 save without presets to a safe empty combat preset', () => {
     const state = createInitialState() as any
     delete state.spellPresets
     state.saveVersion = 16
     const migrated = migrateSave(state)
     expect(migrated.saveVersion).toBe(SAVE_VERSION)
-    expect(migrated.spellPresets).toEqual({ presets: [], lastAppliedPresetId: null })
+    expect(migrated.spellPresets).toEqual({ presets: [{ id: 'spell-preset-1', name: 'Combat Loadout', slots: [] }], selectedPresetId: 'spell-preset-1' })
   })
 })

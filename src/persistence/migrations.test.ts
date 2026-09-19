@@ -791,3 +791,44 @@ describe('Arcane Core V2 to V3 migration', () => {
     expect(migrated.inventory).toEqual({ 'fire-fragment': 17 })
   })
 })
+
+describe('Combat Spell Loadout V35 to V36 migration', () => {
+  it('converts legacy spellIds to AUTO slots and lastAppliedPresetId to selectedPresetId exactly once', () => {
+    const initial = createInitialState()
+    const legacy = {
+      ...initial,
+      saveVersion: 35,
+      progress: { ...initial.progress, spellRanks: { 'fire-bolt': 1, 'wind-blade': 1 } },
+      spellPresets: { presets: [{ id: 'spell-preset-1', name: 'Legacy', spellIds: ['fire-bolt', 'wind-blade'] }], lastAppliedPresetId: 'spell-preset-1' },
+    }
+    const migrated = migrateSave(legacy as any)
+    expect(migrated.saveVersion).toBe(SAVE_VERSION)
+    expect(migrated.spellPresets).toEqual({ presets: [{ id: 'spell-preset-1', name: 'Legacy', slots: [{ spellId: 'fire-bolt', autoCast: true }, { spellId: 'wind-blade', autoCast: true }] }], selectedPresetId: 'spell-preset-1' })
+    expect(migrateSave(JSON.parse(JSON.stringify(migrated))).spellPresets).toEqual(migrated.spellPresets)
+  })
+
+  it('falls back from legacy runtime Auto-Cast priority to ordered AUTO then MANUAL slots', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({
+      ...initial,
+      saveVersion: 35,
+      spellPresets: undefined,
+      progress: { ...initial.progress, spellRanks: { 'fire-bolt': 1, 'wind-blade': 1, 'water-bolt': 1 } },
+      activities: { ...initial.activities, autoCast: { ...initial.activities.autoCast, 'wind-blade': true }, autoCastPriority: ['wind-blade'] },
+    } as any)
+    expect(migrated.spellPresets.presets[0]).toEqual({ id: 'spell-preset-1', name: 'Combat Loadout', slots: [{ spellId: 'wind-blade', autoCast: true }, { spellId: 'fire-bolt', autoCast: false }, { spellId: 'water-bolt', autoCast: false }] })
+  })
+
+  it('restores a persisted active encounter snapshot without replacing it from the selected preset', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({
+      ...initial,
+      saveVersion: SAVE_VERSION,
+      progress: { ...initial.progress, spellRanks: { 'fire-bolt': 1, 'wind-blade': 1 } },
+      spellPresets: { presets: [{ id: 'spell-preset-1', name: 'Selected', slots: [{ spellId: 'wind-blade', autoCast: false }] }], selectedPresetId: 'spell-preset-1' },
+      combat: { ...initial.combat, active: true, enemyId: 'forest-wisp', activeSpellLoadout: { presetId: 'spell-preset-old', presetName: 'Encounter Deck', slots: [{ spellId: 'fire-bolt', autoCast: true }], signature: 'stale' } },
+    } as any)
+    expect(migrated.combat.activeSpellLoadout).toEqual({ presetId: 'spell-preset-old', presetName: 'Encounter Deck', slots: [{ spellId: 'fire-bolt', autoCast: true }], signature: 'fire-bolt:1' })
+    expect(migrated.activities.autoCastPriority).toEqual(['fire-bolt'])
+  })
+})

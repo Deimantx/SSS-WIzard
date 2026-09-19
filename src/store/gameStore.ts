@@ -9,7 +9,7 @@ import { DUNGEONS, DUNGEON_ORDER, getDungeonUnlockRequirement, isDungeonUnlocked
 import { MONSTERS } from '../game/content/monsters'
 import { ITEMS } from '../game/content/items/items'
 import { LEGACY_SPELL_ID_MAP, SPELLS } from '../game/content/spells/spells'
-import { castSpellAction, requestManualSpellAction } from './actions/combatActions'
+import { castSpellAction, debugCastSpellAction, requestManualSpellAction } from './actions/combatActions'
 import type { ManualSpellRequestResult } from '../game/engine/spellEngine'
 import { manaRegenPerSecond, pushNotification, recalculateDerivedStats, selectFreeFocus, selectUsedFocus } from '../game/engine'
 import { debugApplyStatus, spawnEnemy, spawnNextEnemy, type CombatLootObserver } from '../game/systems/combat/combatRuntime'
@@ -24,7 +24,7 @@ import { type SaveReason } from '../persistence/saveConstants'
 import { getActiveProfileId } from '../profiles/profileSessionStore'
 import { updateProfileMetadata } from '../profiles/profileStorage'
 import { createInitialState } from './initialState'
-import type { ArcaneCoreBranchId, ArtifactId, ChannelingDiscoveryId, DungeonId, EquipmentPosition, GameState, GuardianId, ItemId, ManaPillarId, MonsterId, TransmutationArrayId, TransmutationRecipeId, ResearchSlotId, SchoolId, ScreenId, SpellId, SpellPreset, SpellPresetId, StatusId, StoryEventId } from '../game/types'
+import type { ArcaneCoreBranchId, ArtifactId, CanonicalSpellId, ChannelingDiscoveryId, DungeonId, EquipmentPosition, GameState, GuardianId, ItemId, ManaPillarId, MonsterId, TransmutationArrayId, TransmutationRecipeId, ResearchSlotId, SchoolId, ScreenId, SpellId, SpellPreset, SpellPresetId, StatusId, StoryEventId } from '../game/types'
 import { clamp } from '../game/utils'
 import { createDefaultDebugOverrides, resetCombatDebugState, resetDebugState, sanitizeCombatTimeScale, sanitizeDebugNumber } from './actions/debugActions'
 import { addItemAction, destroyItemAction, removeItemAction, sellItemAction, toggleItemProtectionAction } from './actions/inventoryActions'
@@ -44,9 +44,9 @@ import { allocateArtifactNode, getArtifactLevelCap, respecArtifact } from '../ga
 import { advanceWithOfflineBank as runOfflineBankAdvance, isOfflineBankSimulationActive, type OfflineBankResult, type OfflineBankSimulationObservers } from '../game/systems/offline-bank/offlineBankSimulation'
 import { addOfflineBankMs, clampOfflineBankMs } from '../game/systems/offline-bank/offlineBankDuration'
 import type { OfflineBankReport } from '../game/systems/offline-bank/offlineBankReport'
-import { getSpellAutoCastFocusCost, isSpellUnlocked, syncSpellUnlocksForSchool } from '../game/systems/spells'
+import { DEFAULT_COMBAT_LOADOUT_NAME, getNextSpellPresetId, getSelectedSpellPreset, getSpellAutoCastFocusCost, getSpellPresetFocusProjection, isSpellUnlocked, MAX_COMBAT_SPELLS, syncSpellUnlocksForSchool, syncAutoCastRuntimeForLoadout } from '../game/systems/spells'
 import { getSchoolLevelStartXp } from '../game/systems/schools'
-import { applySpellPresetAction, clearAutoCastAction, createSpellPresetAction, deleteSpellPresetAction, duplicateSpellPresetAction, moveAutoCastPriorityAction, renameSpellPresetAction, saveSpellPresetAction, type ApplySpellPresetResult } from './actions/spellPresetActions'
+import { applySpellPresetAction, clearAutoCastAction, createSpellPresetAction, deleteSpellPresetAction, duplicateSpellPresetAction, moveAutoCastPriorityAction, renameSpellPresetAction, saveSpellPresetAction, selectSpellPresetAction, setPresetSlotAutoCastAction, syncSelectedSpellPresetRuntime, type ApplySpellPresetResult } from './actions/spellPresetActions'
 import { clearCombatLogUi, combatLogUiSink as combatLogSink } from '../game/ui/combatLogStore'
 import { combatAlertsObserver, combatAlertsSink, clearCombatAlerts } from '../game/ui/combatAlertsStore'
 import { beginCombatRecapRun, clearCombatRecap, combatRecapSink } from '../game/ui/combatRecapStore'
@@ -233,8 +233,9 @@ export interface GameActions {
   cancelArtificingCraft: () => void
   setDebugTransmutationEchoCapacity: (amount: number | null) => void
   castSpell: (spellId: SpellId) => void
+  debugCastSpell: (spellId: SpellId) => void
   requestManualSpell: (spellId: SpellId) => ManualSpellRequestResult
-  toggleAutoCast: (spellId: SpellId) => void
+  toggleAutoCast: (spellId: SpellId) => boolean
   moveAutoCastPriority: (spellId: SpellId, direction: -1 | 1) => boolean
   clearAutoCast: () => boolean
   createSpellPreset: (name: string) => SpellPresetId
@@ -242,6 +243,8 @@ export interface GameActions {
   duplicateSpellPreset: (id: SpellPresetId) => SpellPresetId | null
   deleteSpellPreset: (id: SpellPresetId) => boolean
   saveSpellPreset: (preset: SpellPreset) => boolean
+  selectSpellPreset: (id: SpellPresetId) => ApplySpellPresetResult
+  setPresetSlotAutoCast: (id: SpellPresetId, spellId: CanonicalSpellId, autoCast: boolean) => boolean
   applySpellPreset: (id: SpellPresetId) => ApplySpellPresetResult
   enterDungeon: (dungeonId?: DungeonId) => void
   leaveDungeon: () => void
@@ -365,25 +368,24 @@ const spellUnlocked = isSpellUnlocked
 const canReserveFocus = canReserveFocusAction
 
 const toggleAutoCastState = (state: GameState, requestedSpellId: SpellId) => {
-  const spellId = (LEGACY_SPELL_ID_MAP[requestedSpellId] ?? requestedSpellId) as SpellId
-  const cost = getSpellAutoCastFocusCost(state, spellId)
-  if (!spellUnlocked(state, spellId) || cost === null) return false
-  const latchIndex = state.combat.autoCastManaStarvedSpells.indexOf(spellId)
-  if (latchIndex >= 0) state.combat.autoCastManaStarvedSpells.splice(latchIndex, 1)
-  if (state.activities.autoCast[spellId]) {
-    state.activities.autoCast[spellId] = false
-    state.activities.autoCastPriority = state.activities.autoCastPriority.filter((id) => id !== spellId)
-    state.spellPresets.lastAppliedPresetId = null
-    return true
+  const spellId = (LEGACY_SPELL_ID_MAP[requestedSpellId] ?? requestedSpellId) as CanonicalSpellId
+  if (!spellUnlocked(state, spellId)) return false
+  let preset = getSelectedSpellPreset(state)
+  if (!preset) {
+    const id = getNextSpellPresetId(state.spellPresets.presets)
+    preset = { id, name: DEFAULT_COMBAT_LOADOUT_NAME, slots: [] }
+    state.spellPresets.presets.push(preset)
+    state.spellPresets.selectedPresetId = id
   }
-  if (!canReserveFocus(state, cost)) {
-    pushNotification(state, `Cannot enable Auto-Cast · Requires ${cost} Focus · Free Focus: ${selectFreeFocus(state)}`, 'warning')
-    return false
+  const slot = preset.slots.find((entry) => entry.spellId === spellId)
+  if (slot) {
+    if (!slot.autoCast && !state.debug.allowFocusOverCap && !canReserveFocus(state, getSpellAutoCastFocusCost(state, spellId) ?? 0)) return false
+    slot.autoCast = !slot.autoCast
+  } else {
+    if (preset.slots.length >= MAX_COMBAT_SPELLS || (!state.debug.allowFocusOverCap && !canReserveFocus(state, getSpellAutoCastFocusCost(state, spellId) ?? 0))) return false
+    preset.slots.push({ spellId, autoCast: true })
   }
-  state.activities.autoCast[spellId] = true
-  if (!state.activities.autoCastPriority.includes(spellId as typeof state.activities.autoCastPriority[number])) state.activities.autoCastPriority.push(spellId as typeof state.activities.autoCastPriority[number])
-  state.spellPresets.lastAppliedPresetId = null
-  pushNotification(state, `${SPELLS[spellId].name} Auto-Cast enabled`, 'success')
+  if (!state.combat.active) syncSelectedSpellPresetRuntime(state)
   return true
 }
 
@@ -555,15 +557,18 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   debugGrantArtifactMaterials: () => set((state) => { grantDebugArtifactMaterialsInState(state); return state }),
   setDebugTransmutationEchoCapacity: (amount) => set((state) => { setTransmutationEchoCapacityOverrideAction(state, amount); return state }),
   castSpell: (spellId) => set((state) => { castSpellAction(state, spellId, combatEventSink); suppressGuardianIfOutOfMana(state); return state }),
+  debugCastSpell: (spellId) => set((state) => { debugCastSpellAction(state, spellId, combatEventSink); suppressGuardianIfOutOfMana(state); return state }),
   requestManualSpell: (spellId) => { let result!: ManualSpellRequestResult; set((state) => { result = requestManualSpellAction(state, spellId, combatEventSink); suppressGuardianIfOutOfMana(state); return state }); return result },
   clearAutoCast: () => { let cleared = false; set((state) => { cleared = clearAutoCastAction(state); return state }); if (cleared) emitActionFeel('autocast-off', '.combat-spell-deck-foot', 'var(--ui-secondary)'); return cleared },
-  toggleAutoCast: (spellId) => { const before = Boolean(get().activities.autoCast[spellId]); let changed = false; set((state) => { changed = toggleAutoCastState(state, spellId); return state }); const after = Boolean(get().activities.autoCast[spellId]); if (after !== before) emitActionFeel(after ? 'autocast-on' : 'autocast-off', `[data-spell-id="${spellId}"]`, 'var(--ui-secondary)'); else emitActionFeel('error', `[data-spell-id="${spellId}"]`, 'var(--ui-warning)', 0.75); return changed && after !== before },
+  toggleAutoCast: (spellId) => { let changed = false; set((state) => { changed = toggleAutoCastState(state, spellId); return state }); if (changed) emitActionFeel('autocast-on', `[data-spell-id="${spellId}"]`, 'var(--ui-secondary)'); else emitActionFeel('error', `[data-spell-id="${spellId}"]`, 'var(--ui-warning)', 0.75); return changed },
   moveAutoCastPriority: (spellId, direction) => { let moved = false; set((state) => { moved = moveAutoCastPriorityAction(state, spellId, direction); return state }); return moved },
   createSpellPreset: (name) => { let result!: SpellPresetId; set((state) => { result = createSpellPresetAction(state, name); return state }); return result },
   renameSpellPreset: (id, name) => { let result = false; set((state) => { result = renameSpellPresetAction(state, id, name); return state }); return result },
   duplicateSpellPreset: (id) => { let result: SpellPresetId | null = null; set((state) => { result = duplicateSpellPresetAction(state, id); return state }); return result },
   deleteSpellPreset: (id) => { let result = false; set((state) => { result = deleteSpellPresetAction(state, id); return state }); return result },
   saveSpellPreset: (preset) => { let result = false; set((state) => { result = saveSpellPresetAction(state, preset); return state }); return result },
+  selectSpellPreset: (id) => { let result: ApplySpellPresetResult = { ok: false, reason: 'missing-preset', unavailableSpellIds: [] }; set((state) => { result = selectSpellPresetAction(state, id); return state }); return result },
+  setPresetSlotAutoCast: (id, spellId, autoCast) => { let result = false; set((state) => { result = setPresetSlotAutoCastAction(state, id, spellId, autoCast); if (result && !state.combat.active && state.spellPresets.selectedPresetId === id) syncSelectedSpellPresetRuntime(state); return state }); return result },
   applySpellPreset: (id) => { let result: ApplySpellPresetResult = { ok: false, reason: 'missing-preset', unavailableSpellIds: [] }; set((state) => { result = applySpellPresetAction(state, id); return state }); return result },
   enterDungeon: (dungeonId = 'whispering-woods') => {
     const dungeon = DUNGEONS[dungeonId]

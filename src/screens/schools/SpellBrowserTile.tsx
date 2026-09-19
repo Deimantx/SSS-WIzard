@@ -1,4 +1,4 @@
-import { CircleDot, Clock3, Droplet, Flame, HeartPulse, Plus, Settings2, Shield, Snowflake, Sparkles, Zap } from 'lucide-react'
+import { CircleDot, Clock3, Droplet, Flame, HeartPulse, Settings2, Shield, Snowflake, Sparkles, Zap } from 'lucide-react'
 import { SCHOOLS } from '../../game/content/schools/schools'
 import { SPELLS } from '../../game/content/spells/spells'
 import { STATUS_DEFINITIONS } from '../../game/content/statuses'
@@ -14,7 +14,7 @@ import { useGameContextMenu } from '../../ui/context-menu/GameContextMenuProvide
 import { useGameStore } from '../../store/gameStore'
 import { formatResourceAmount } from '../../game/presentation/resources/resourcePresentation'
 
-export function SpellBrowserTile({ entry, state, selected, newSpell = false, onSelect, onToggleAutoCast, onTogglePresetSpell, presetContainsSpell = false, onOpenPresetManager }: { entry: SpellBrowserEntry; state: SpellPresentationState; selected: boolean; newSpell?: boolean; onSelect: (id: SpellId | string) => void; onToggleAutoCast: (spellId: SpellId) => void; onTogglePresetSpell?: (spellId: SpellId) => void; presetContainsSpell?: boolean; onOpenPresetManager: () => void }) {
+export function SpellBrowserTile({ entry, state, selected, newSpell = false, onSelect, onToggleAutoCast, onOpenPresetManager }: { entry: SpellBrowserEntry; state: SpellPresentationState; selected: boolean; newSpell?: boolean; onSelect: (id: SpellId | string) => void; onToggleAutoCast: (spellId: SpellId) => void; onOpenPresetManager: () => void }) {
   const { openContextMenu } = useGameContextMenu()
   const setScreen = useGameStore((current) => current.setScreen)
   const school = SCHOOLS[entry.school]
@@ -30,7 +30,7 @@ export function SpellBrowserTile({ entry, state, selected, newSpell = false, onS
     : <TooltipContent title={entry.kind === 'placeholder' ? 'Undiscovered spell' : 'Locked spell'} description={`${school.name} School Level ${entry.unlockLevel} is required. Continue researching to reveal this entry.`} />
   const openSpellMenu = (x: number, y: number, anchor?: HTMLElement) => {
     if (!presentation || entry.kind !== 'spell') return
-    openContextMenu({ x, y, anchor, header: { title: SPELLS[entry.spellId].name, meta: `${school.name} · ${formatSpellRank(entry.rank ?? 1)}` }, sections: [{ id: 'spell', actions: [ ...(onTogglePresetSpell ? [{ id: 'preset', label: presetContainsSpell ? 'Remove from Current Preset' : 'Add to Current Preset', icon: Plus, onSelect: () => onTogglePresetSpell(entry.spellId) }] : []), { id: 'autocast', label: autoCast ? 'Disable Auto-Cast' : 'Enable Auto-Cast', icon: CircleDot, onSelect: () => onToggleAutoCast(entry.spellId) }, { id: 'manager', label: 'Preset Manager', icon: Settings2, onSelect: onOpenPresetManager } ] }] })
+    openContextMenu({ x, y, anchor, header: { title: SPELLS[entry.spellId].name, meta: `${school.name} · ${formatSpellRank(entry.rank ?? 1)}` }, sections: [{ id: 'spell', actions: [{ id: 'autocast', label: autoCast ? 'Disable Auto-Cast' : 'Enable Auto-Cast', icon: CircleDot, onSelect: () => onToggleAutoCast(entry.spellId) }, { id: 'manager', label: 'Preset Manager', icon: Settings2, onSelect: onOpenPresetManager } ] }] })
   }
   const iconFrame = presentation
     ? <GameTooltip block wide delay={120} placement="right" accent="elemental" content={content}><span className="spell-browser-icon-frame"><SpellIcon school={entry.school} spellId={unlocked && entry.kind === 'spell' ? entry.spellId : undefined} locked={!unlocked} size="large" /></span></GameTooltip>

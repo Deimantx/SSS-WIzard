@@ -20,7 +20,7 @@ import { isRecord, SaveMigrationError } from './saveSchema'
 import { recalculateDerivedStats } from '../game/engine'
 import { STATUS_DEFINITIONS } from '../game/content/statuses'
 import type { ActiveStatus, CombatSource, StatusId } from '../game/types'
-import { getSpellAutoCastFocusCost, MAX_SPELL_RANK, MIN_SPELL_RANK, normalizeSpellPresetState, syncAllSpellUnlocks, type SpellRank } from '../game/systems/spells'
+import { buildActiveCombatSpellLoadout, DEFAULT_COMBAT_LOADOUT_NAME, getSpellAutoCastFocusCost, MAX_COMBAT_SPELLS, MAX_SPELL_RANK, MIN_SPELL_RANK, normalizeSpellPresetName, normalizeSpellPresetSlots, normalizeSpellPresetState, getSpellPresetSignature, syncAllSpellUnlocks, syncAutoCastRuntimeForLoadout, type SpellRank } from '../game/systems/spells'
 import { getStatusApplicationSourceKey } from '../game/systems/combat/statusRuntime'
 import { createCombatValidationContext, normalizePersistedPeriodicEffects, hasValidStatusModifierOverrides } from '../game/systems/combat/combatEffectValidation'
 import { MAX_ACTION_WORK_MS, MIN_ACTION_TIME_MS } from '../game/core/balance/combatTiming'
@@ -266,8 +266,24 @@ const normalizeSpellProgression = (migrated: GameState, raw: Record<string, any>
 
 const normalizeSpellPresets = (migrated: GameState, raw: Record<string, any>) => {
   const rawActivities = isRecord(raw.activities) ? raw.activities : {}
-  const rawPriority = Array.isArray(rawActivities.autoCastPriority) ? migrated.activities.autoCastPriority : undefined
-  migrated.spellPresets = normalizeSpellPresetState(raw.spellPresets, migrated.activities.autoCast, rawPriority)
+  const normalized = normalizeSpellPresetState(raw.spellPresets)
+  if (normalized.presets.length === 0) {
+    const savedPriority = Array.isArray(rawActivities.autoCastPriority) ? rawActivities.autoCastPriority : migrated.activities.autoCastPriority
+    const priority = savedPriority
+      .map(normalizeSpellId)
+      .filter((spellId): spellId is CanonicalSpellId => Boolean(spellId))
+      .filter((spellId, index, ids) => ids.indexOf(spellId) === index)
+    const unlocked = spellIds.filter((spellId) => isSpellRankValue(migrated.progress.spellRanks[spellId]))
+    const ordered = [...priority, ...unlocked.filter((spellId) => !priority.includes(spellId))].slice(0, MAX_COMBAT_SPELLS)
+    const autoIds = new Set(priority)
+    normalized.presets = [{
+      id: 'spell-preset-1',
+      name: DEFAULT_COMBAT_LOADOUT_NAME,
+      slots: ordered.map((spellId) => ({ spellId, autoCast: autoIds.has(spellId) })),
+    }]
+    normalized.selectedPresetId = 'spell-preset-1'
+  }
+  migrated.spellPresets = normalized
 }
 
 const normalizeSchoolCap = (migrated: GameState, raw: Record<string, any>) => {
@@ -383,6 +399,21 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
     : []
   migrated.combat.pendingPlayerSpellCast = null
   migrated.combat.queuedPlayerSpellId = null
+  const rawActiveLoadout = isRecord(rawCombat.activeSpellLoadout) ? rawCombat.activeSpellLoadout : null
+  const encounterExists = Boolean(migrated.combat.enemyId)
+  if (encounterExists) {
+    const slots = normalizeSpellPresetSlots(rawActiveLoadout?.slots)
+    if (rawActiveLoadout && slots.length > 0) {
+      const presetId = typeof rawActiveLoadout.presetId === 'string' ? rawActiveLoadout.presetId : null
+      const presetName = normalizeSpellPresetName(rawActiveLoadout.presetName, DEFAULT_COMBAT_LOADOUT_NAME)
+      migrated.combat.activeSpellLoadout = { presetId, presetName, slots, signature: getSpellPresetSignature(slots) }
+    } else {
+      migrated.combat.activeSpellLoadout = buildActiveCombatSpellLoadout(migrated)
+    }
+    syncAutoCastRuntimeForLoadout(migrated, migrated.combat.activeSpellLoadout.slots)
+  } else {
+    migrated.combat.activeSpellLoadout = null
+  }
   const rawPlayerTimer = nonNegativeNumber(rawCombat.playerAttackTimerMs)
 
   const activeEnemyId = typeof migrated.combat.enemyId === 'string' && MONSTERS[migrated.combat.enemyId] ? migrated.combat.enemyId : null

@@ -174,9 +174,19 @@ export function buildSpellEffectTooltipModel(state: SpellPresentationState, spel
     }
     appendConditionalModifiers(rows, preview.conditionalModifiers ?? [])
     if (effect.durationMs !== undefined && effect.durationMs !== null) rows.push({ label: 'Duration', value: formatTime(effect.durationMs), semantic: 'time' })
-    rows.push({ label: 'Mode', value: effect.mode === 'replace' ? 'Replace' : 'Add' })
+    const modeLabel = effect.mode === 'replace'
+      ? 'Replace'
+      : effect.mode === 'replace-if-stronger'
+        ? 'Replace if Stronger'
+        : 'Add'
+    const modeDescription = effect.mode === 'replace'
+      ? 'Replaces the current Barrier on the target.'
+      : effect.mode === 'replace-if-stronger'
+        ? 'Replaces the current Barrier only when the new Barrier is stronger.'
+        : 'Adds to the current Barrier on the target.'
+    rows.push({ label: 'Mode', value: modeLabel })
     appendTargetAndSource(rows, effect, spell.name)
-    return { school: spell.school, ...category, title: 'Barrier', description: effect.mode === 'replace' ? 'Replaces the current Barrier on the target.' : 'Adds to the current Barrier on the target.', rows }
+    return { school: spell.school, ...category, title: 'Barrier', description: modeDescription, rows }
   }
 
   if (effect.type === 'apply-status') {

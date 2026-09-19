@@ -7,6 +7,7 @@ import { clamp, uid } from './utils'
 import { getSchoolLevel as getCentralSchoolLevel, getSchoolProgressInfo } from './systems/schools'
 import { getFocusCapacityBreakdown } from './systems/focus/focusCapacity'
 import { syncSpellUnlocksForSchool } from './systems/spells/spellProgression'
+import { syncSelectedSpellPresetRuntime } from './systems/spells/spellPresets'
 import { getEquipmentStats } from './core/equipment/equipmentStats'
 import { deriveFocusReservations } from './systems/focus/focusReservations'
 import { stabilizeResourceValue } from './presentation/resources/resourcePresentation'
@@ -40,6 +41,7 @@ export const grantSchoolXp = (state: GameState, school: SchoolId, amount: number
   state.schools[school].xp = Math.min(getSchoolTotalXpForLevel(cap), currentXp + safeAmount)
   state.schools[school].level = getSchoolLevel(state.schools[school].xp, cap)
   const unlockedSpellIds = syncSpellUnlocksForSchool(state, school)
+  if (!state.combat.active) syncSelectedSpellPresetRuntime(state)
   return { before, after: state.schools[school].level, unlockedSpellIds }
 }
 

@@ -35,11 +35,14 @@ export const spawnEnemy = (state: GameState, enemyId: MonsterId, uiEvents?: Comb
   const activation = activateSelectedSpellPresetForBattle(state)
   if (!activation.ok) {
     const selectedPreset = getSelectedSpellPreset(state)
-    if (activation.reason === 'focus' && selectedPreset) {
-      pushNotification(state, `${selectedPreset.name} could not activate - requires ${activation.requiredExtraFocus ?? 0} more Focus.`, 'warning', { key: 'combat-loadout-activation', cooldownMs: 1000 })
-    } else {
-      pushNotification(state, 'Configure at least one available Spell before entering combat.', 'warning', { key: 'combat-loadout-activation', cooldownMs: 1000 })
-    }
+    const message = activation.reason === 'missing-preset'
+      ? 'Select a Spell Preset before entering combat.'
+      : activation.reason === 'empty'
+        ? `${selectedPreset?.name ?? 'Selected Preset'} has no Spells. Add at least one Spell in Manage Presets.`
+        : activation.reason === 'unavailable'
+          ? `${selectedPreset?.name ?? 'Selected Preset'} has no currently unlocked Spells.`
+          : `${selectedPreset?.name ?? 'Selected Preset'} could not activate — requires ${activation.requiredExtraFocus ?? 0} more Focus.`
+    pushNotification(state, message, 'warning', { key: 'combat-loadout-activation', cooldownMs: 1000 })
     return false
   }
   const previousSerial = Number.isSafeInteger(state.combat.enemyInstanceSerial) ? state.combat.enemyInstanceSerial : 0

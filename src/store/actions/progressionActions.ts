@@ -1,6 +1,6 @@
 import { SPELLS } from '../../game/content/spells/spells'
 import { SCHOOL_MAX_LEVEL, getSchoolLevelFromXp, getSchoolTotalXpForLevel } from '../../game/core/balance/schoolXpCurve'
-import { syncAllSpellUnlocks, syncSpellUnlocksForSchool } from '../../game/systems/spells'
+import { syncAllSpellUnlocks, syncSelectedSpellPresetRuntime, syncSpellUnlocksForSchool } from '../../game/systems/spells'
 import type { GameState, MonsterId, SchoolId, SpellId } from '../../game/types'
 
 export const unlockAllSpellsAction = (state: GameState) => {
@@ -15,9 +15,11 @@ export const unlockAllSpellsAction = (state: GameState) => {
     state.schools[school].level = getSchoolLevelFromXp(nextXp, cap)
   })
   syncAllSpellUnlocks(state)
+  reconcileSelectedPresetRuntime(state)
 }
 const getCurrentSchoolCap = (state: GameState) => Math.min(SCHOOL_MAX_LEVEL, Math.max(1, Number.isFinite(state.progress.magicLevelCap) ? Math.floor(state.progress.magicLevelCap) : 1))
 const finiteXp = (xp: number) => Number.isFinite(xp) ? Math.max(0, Math.floor(xp)) : 0
+const reconcileSelectedPresetRuntime = (state: GameState) => { if (!state.combat.active) syncSelectedSpellPresetRuntime(state) }
 
 /** Explicit debug operation: set total XP and derive the matching level. */
 export const setSchoolXpDebugAction = (state: GameState, school: SchoolId, xp: number) => {
@@ -26,6 +28,7 @@ export const setSchoolXpDebugAction = (state: GameState, school: SchoolId, xp: n
   state.schools[school].xp = nextXp
   state.schools[school].level = getSchoolLevelFromXp(nextXp, cap)
   syncSpellUnlocksForSchool(state, school)
+  reconcileSelectedPresetRuntime(state)
 }
 
 /** Explicit debug operation: set a level and place XP at that level's start. */
@@ -35,11 +38,13 @@ export const setSchoolLevelDebugAction = (state: GameState, school: SchoolId, le
   state.schools[school].level = nextLevel
   state.schools[school].xp = getSchoolTotalXpForLevel(nextLevel)
   syncSpellUnlocksForSchool(state, school)
+  reconcileSelectedPresetRuntime(state)
 }
 
 export const debugUnlockSpellRankOneAction = (state: GameState, spellId: SpellId) => {
   if (!SPELLS[spellId]) return false
   state.progress.spellRanks[spellId] = 1
+  reconcileSelectedPresetRuntime(state)
   return true
 }
 export const debugLockSpellAction = (state: GameState, spellId: SpellId) => {
@@ -49,6 +54,7 @@ export const debugLockSpellAction = (state: GameState, spellId: SpellId) => {
   state.activities.autoCastPriority = state.activities.autoCastPriority.filter((id) => id !== spellId)
   state.combat.autoCastManaStarvedSpells = state.combat.autoCastManaStarvedSpells.filter((id) => id !== spellId)
   state.combat.spellCooldowns[spellId] = 0
+  reconcileSelectedPresetRuntime(state)
   return true
 }
 export const resetSpellCooldownsAction = (state: GameState) => {
@@ -63,6 +69,7 @@ export const setLevelCapAction = (state: GameState, cap: number) => {
     state.schools[school].level = getSchoolLevelFromXp(state.schools[school].xp, nextCap)
   })
   syncAllSpellUnlocks(state)
+  reconcileSelectedPresetRuntime(state)
 }
 export const setThreatAction = (state: GameState, amount: number) => { state.combat.threatCleared = Math.max(0, amount) }
 export const setBossKillsAction = (state: GameState, bossId: MonsterId, amount: number) => {

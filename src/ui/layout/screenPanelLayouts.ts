@@ -160,7 +160,7 @@ export const SCREEN_PANEL_LAYOUTS: Record<ScreenId, ScreenLayoutDefinition> = {
   // ============================================================
   combat: screen({
     'combat-stage': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 462, preferredHeight: 570, label: 'Combat Stage' }),
-    'combat-spell-deck': panel({ order: 2, columnStart: 1, columnSpan: 12, rowStart: 2, minHeight: 174, preferredHeight: 520, label: 'Spell Deck' }),
+    'combat-spell-deck': panel({ order: 2, columnStart: 1, columnSpan: 12, rowStart: 2, minHeight: 174, preferredHeight: 320, label: 'Spell Deck' }),
     'combat-analytics': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 282, preferredHeight: 440, label: 'Combat Analytics' }),
   }, ['combat-stage', 'combat-spell-deck', 'combat-analytics']),
 

@@ -1,10 +1,24 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
-import { applySpellPresetAction, saveSpellPresetAction } from '../../../store/actions/spellPresetActions'
+import { applySpellPresetAction, createSpellPresetAction, saveSpellPresetAction } from '../../../store/actions/spellPresetActions'
 import { spawnEnemy } from '../combat/combatRuntime'
 import { doesCurrentAutoCastMatchPreset, getSpellEquipmentBonusPreview, getSpellPresetFocusBreakdown, getSpellPresetFocusProjection, normalizeSpellPresetState } from './index'
 
 describe('spell preset foundation', () => {
+  it('auto-selects the first saved usable preset and does not switch an existing selection', () => {
+    const state = createInitialState()
+    state.progress.spellRanks = { 'fire-bolt': 1, 'wind-blade': 1 }
+    const firstId = createSpellPresetAction(state, 'First')
+    expect(saveSpellPresetAction(state, { id: firstId, name: 'First', slots: [{ spellId: 'fire-bolt', autoCast: true }] })).toBe(true)
+    expect(state.spellPresets.selectedPresetId).toBe(firstId)
+    expect(state.activities.autoCastPriority).toEqual(['fire-bolt'])
+
+    const secondId = createSpellPresetAction(state, 'Second')
+    expect(saveSpellPresetAction(state, { id: secondId, name: 'Second', slots: [{ spellId: 'wind-blade', autoCast: true }] })).toBe(true)
+    expect(state.spellPresets.selectedPresetId).toBe(firstId)
+    expect(state.activities.autoCastPriority).toEqual(['fire-bolt'])
+  })
+
   it('projects available and unavailable slots and reserves Focus only for AUTO slots', () => {
     const state = createInitialState()
     state.progress.spellRanks = { 'fire-bolt': 1, 'flame-burst': 3 }

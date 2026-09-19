@@ -14,6 +14,42 @@ describe('school progression debug controls', () => {
     expect(state.schools.fire.xp).toBe(15120)
   })
 
+  it('reconciles all authored level-based spells at Level 20 without removing ranks when lowered', () => {
+    const state = createInitialState()
+    const expected = {
+      fire: ['fire-bolt', 'searing-touch', 'flame-burst', 'kindling'],
+      water: ['water-bolt', 'mending-waters', 'frost-touch', 'regeneration'],
+      earth: ['stone-shard', 'stone-skin', 'earthen-barrier', 'harden'],
+      air: ['wind-blade', 'lightning-spark', 'gust', 'chain-lightning'],
+    } as const
+    Object.entries(expected).forEach(([school, spellIds]) => {
+      setSchoolLevelDebugAction(state, school as keyof typeof expected, 20)
+      spellIds.forEach((spellId) => expect(state.progress.spellRanks[spellId]).toBe(1))
+    })
+    expect(state.progress.spellRanks.firestorm).toBeUndefined()
+    expect(state.progress.spellRanks['frozen-current']).toBeUndefined()
+    expect(state.progress.spellRanks.rockfall).toBeUndefined()
+    expect(state.progress.spellRanks.tailwind).toBeUndefined()
+
+    setSchoolLevelDebugAction(state, 'fire', 5)
+    expect(state.progress.spellRanks).toMatchObject({ 'fire-bolt': 1, 'searing-touch': 1, 'flame-burst': 1, kindling: 1 })
+  })
+
+  it('reconciles a selected preset runtime after a DevTools unlock outside combat', () => {
+    const state = createInitialState()
+    state.spellPresets.presets = [{ id: 'spell-preset-1', name: 'Fire', slots: [{ spellId: 'kindling', autoCast: true }] }]
+    state.spellPresets.selectedPresetId = 'spell-preset-1'
+    setSchoolLevelDebugAction(state, 'fire', 20)
+    expect(state.activities.autoCast.kindling).toBe(true)
+    expect(state.activities.autoCastPriority).toEqual(['kindling'])
+
+    state.combat.active = true
+    state.combat.activeSpellLoadout = { presetId: 'spell-preset-1', presetName: 'Fire', slots: [{ spellId: 'kindling', autoCast: true }], signature: 'kindling:1' }
+    state.progress.spellRanks = {}
+    setSchoolLevelDebugAction(state, 'fire', 20)
+    expect(state.combat.activeSpellLoadout?.signature).toBe('kindling:1')
+  })
+
   it('does not jump a level from a small Research XP gain', () => {
     const state = createInitialState()
     grantSchoolXp(state, 'fire', 1)

@@ -1,4 +1,4 @@
-import { getNextSpellPresetId, getSelectedSpellPreset, getSpellPresetFocusProjection, normalizeSpellPresetName, normalizeSpellPresetSlots, syncAutoCastRuntimeForLoadout } from '../../game/systems/spells'
+import { getNextSpellPresetId, getSelectedSpellPreset, getSpellPresetFocusProjection, normalizeSpellPresetName, normalizeSpellPresetSlots, syncAutoCastRuntimeForLoadout, syncSelectedSpellPresetRuntime as syncSelectedSpellPresetRuntimeForState } from '../../game/systems/spells'
 import type { CanonicalSpellId, GameState, SpellId, SpellPreset, SpellPresetId } from '../../game/types'
 
 export interface ApplySpellPresetResult {
@@ -15,21 +15,7 @@ const clearAutoCastRuntime = (state: GameState) => {
   return hadActiveAutoCast
 }
 
-const getSelectedProjection = (state: GameState) => {
-  const preset = getSelectedSpellPreset(state)
-  return preset ? getSpellPresetFocusProjection(state, preset) : null
-}
-
-export const syncSelectedSpellPresetRuntime = (state: GameState) => {
-  const projection = getSelectedProjection(state)
-  if (!projection || !projection.validSlots.length) {
-    syncAutoCastRuntimeForLoadout(state, [])
-    return true
-  }
-  if (!projection.canApply) return false
-  syncAutoCastRuntimeForLoadout(state, projection.validSlots)
-  return true
-}
+export const syncSelectedSpellPresetRuntime = (state: GameState) => syncSelectedSpellPresetRuntimeForState(state)
 
 /** Compatibility action retained for internal/debug callers. Build editing is owned by the Preset Manager. */
 export const clearAutoCastAction = (state: GameState) => clearAutoCastRuntime(state)
@@ -61,11 +47,13 @@ export const duplicateSpellPresetAction = (state: GameState, id: SpellPresetId):
 export const saveSpellPresetAction = (state: GameState, preset: Pick<SpellPreset, 'id' | 'name' | 'slots'>) => {
   const stored = state.spellPresets.presets.find((entry) => entry.id === preset.id)
   if (!stored) return false
-  const isSelectedOutsideCombat = !state.combat.active && state.spellPresets.selectedPresetId === preset.id
+  const shouldAutoSelect = state.spellPresets.selectedPresetId === null
   stored.name = normalizeSpellPresetName(preset.name, stored.name)
   stored.slots = normalizeSpellPresetSlots(preset.slots)
+  const projection = getSpellPresetFocusProjection(state, stored)
+  if (shouldAutoSelect && projection.validSlots.length) state.spellPresets.selectedPresetId = stored.id
+  const isSelectedOutsideCombat = !state.combat.active && state.spellPresets.selectedPresetId === stored.id
   if (isSelectedOutsideCombat) {
-    const projection = getSpellPresetFocusProjection(state, stored)
     if (!projection.validSlots.length) {
       syncAutoCastRuntimeForLoadout(state, [])
       pushPresetNotification(state, `Saved ${stored.name}, but it has no available Spells to activate.`, 'warning')

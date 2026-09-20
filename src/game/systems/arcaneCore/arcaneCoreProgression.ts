@@ -39,8 +39,6 @@ export const getArcaneCoreWalletInfo = (state: ArcaneCoreState): ArcaneCoreWalle
 
 export const getArcaneCoreRingPointsSpent = (state: Pick<ArcaneCoreState, 'nodes'>, branchId: ArcaneCoreBranchId, ring: ArcaneCoreRingIndex) => ARCANE_CORE_NODES.filter((node) => node.branchId === branchId && node.ring === ring).reduce((sum, node) => sum + getArcaneCoreNodeRank(state, node.id) * node.rankCost, 0)
 export const getArcaneCoreRingStandardRanksInvested = (state: Pick<ArcaneCoreState, 'nodes'>, branchId: ArcaneCoreBranchId, ring: ArcaneCoreRingIndex) => ARCANE_CORE_NODES.filter((node) => node.branchId === branchId && node.ring === ring && node.nodeType !== 'major').reduce((sum, node) => sum + getArcaneCoreNodeRank(state, node.id), 0)
-/** @deprecated Use getArcaneCoreRingStandardRanksInvested. */
-export const getArcaneCoreRingStandardPointsSpent = getArcaneCoreRingStandardRanksInvested
 export const isArcaneCoreRingUnlocked = (state: Pick<ArcaneCoreState, 'nodes'>, branchId: ArcaneCoreBranchId, ring: ArcaneCoreRingIndex, ignorePrerequisites = false) => ring === 1 || ignorePrerequisites || getArcaneCoreRingStandardRanksInvested(state, branchId, (ring - 1) as ArcaneCoreRingIndex) >= ARCANE_CORE_RING_GATES[ring]
 export const isArcaneCoreMajorUnlocked = (state: Pick<ArcaneCoreState, 'nodes'>, node: ArcaneCoreNodeDefinition, ignorePrerequisites = false) => node.nodeType !== 'major' || ignorePrerequisites || getArcaneCoreRingStandardRanksInvested(state, node.branchId, node.ring) >= ARCANE_CORE_MAJOR_GATES[node.ring]
 export const getArcaneCoreHighestUnlockedRing = (state: Pick<ArcaneCoreState, 'nodes'>, branchId: ArcaneCoreBranchId) => [...ARCANE_CORE_RING_INDICES].reverse().find((ring) => isArcaneCoreRingUnlocked(state, branchId, ring)) ?? 1

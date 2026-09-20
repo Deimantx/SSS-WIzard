@@ -4,6 +4,7 @@ import {
   applyStatus,
   basic,
   delayCurrentAction,
+  opponentStatusStackScaled,
   scaledDirectDamage,
   scaledDot,
   scaledMultiDamage,
@@ -39,7 +40,7 @@ export const HOWLING_DEN_MONSTERS = {
         name: "Predator's Howl",
         actionTimeMs: 1600,
         description: "A hunting howl accelerates the Wolf's assault.",
-        effects: [applyStatus("haste", "self", 6000)],
+        effects: [applyStatus("haste", "self", 16000)],
         tags: ["special", "buff"],
       },
     },
@@ -231,8 +232,11 @@ export const HOWLING_DEN_MONSTERS = {
         id: "corrupted-roar",
         name: "Corrupted Roar",
         actionTimeMs: 2200,
-        description: "Makes the target Vulnerable.",
-        effects: [applyStatus("vulnerable", "opponent", 6000)],
+        description: "Makes the target Vulnerable and adds 1 Corruption.",
+        effects: [
+          applyStatus("vulnerable", "opponent", 6000),
+          applyStatus("corruption", "opponent", undefined, 1),
+        ],
         tags: ["special", "debuff"],
       },
       "arcane-rampage": {
@@ -241,7 +245,15 @@ export const HOWLING_DEN_MONSTERS = {
         actionTimeMs: 3500,
         description: "A heavy Arcane strike empowered by unstable corruption.",
         effects: [
-          scaledDirectDamage("arcane", 2),
+          {
+            type: "deal-damage",
+            target: "opponent",
+            components: [{
+              damageType: "arcane",
+              magnitude: opponentStatusStackScaled("corruption", { type: "source-basic-damage-percent", value: 2 }, 0.12, 5),
+            }],
+            tags: ["direct"],
+          },
           applyStatus("corruption", "opponent", undefined, 1),
         ],
         tags: ["special", "magic", "arcane", "debuff", "direct"],

@@ -52,7 +52,20 @@ const sourcePeriodicPresentation = (status: ActiveStatus, definition: StatusDefi
   }
 }
 
-export const getCombatStatusGroups = (statuses: ActiveStatus[], state?: GameState): CombatStatusGroupPresentation[] => {
+const buildBasicGroup = (statusId: StatusId, instances: ActiveStatus[]): CombatStatusGroupPresentation | null => {
+  const definition = STATUS_DEFINITIONS[statusId]
+  if (!definition) return null
+  const hasInfinite = instances.some((status) => status.remainingMs === null)
+  const displayRemainingMs = hasInfinite ? null : Math.max(...instances.map((status) => status.remainingMs ?? 0))
+  const displayInstance = instances.reduce((best, status) => (status.remainingMs === null || (best.remainingMs !== null && (status.remainingMs ?? 0) > (best.remainingMs ?? 0))) ? status : best, instances[0])
+  const displayInitialDurationMs = displayInstance.initialDurationMs ?? definition.defaultDurationMs
+  const totalStacks = instances.reduce((total, status) => total + Math.max(0, status.stacks), 0)
+  const categoryKey = definition.tags.includes('dot') ? 'dot' : definition.tags.includes('control') ? 'control' : definition.classification === 'buff' ? 'buff' : definition.classification === 'debuff' ? 'debuff' : 'neutral'
+  const categoryLabel = categoryKey === 'dot' ? 'Damage over time' : categoryKey === 'control' ? 'Control' : categoryKey === 'buff' ? 'Buff' : categoryKey === 'debuff' ? 'Debuff' : 'Status'
+  return { statusId, definition, instances, displayRemainingMs, displayInitialDurationMs, totalStacks, categoryKey, categoryLabel, sourceBreakdown: [], }
+}
+
+export const getCombatStatusGroupsBasic = (statuses: ActiveStatus[]): CombatStatusGroupPresentation[] => {
   const groups = new Map<StatusId, ActiveStatus[]>()
   statuses.forEach((status) => {
     const group = groups.get(status.statusId) ?? []
@@ -60,19 +73,19 @@ export const getCombatStatusGroups = (statuses: ActiveStatus[], state?: GameStat
     groups.set(status.statusId, group)
   })
   return [...groups.entries()].flatMap(([statusId, instances]) => {
-    const definition = STATUS_DEFINITIONS[statusId]
-    if (!definition) return []
-    const hasInfinite = instances.some((status) => status.remainingMs === null)
-    const displayRemainingMs = hasInfinite ? null : Math.max(...instances.map((status) => status.remainingMs ?? 0))
-    const displayInstance = instances.reduce((best, status) => (status.remainingMs === null || (best.remainingMs !== null && (status.remainingMs ?? 0) > (best.remainingMs ?? 0))) ? status : best, instances[0])
-    const displayInitialDurationMs = displayInstance.initialDurationMs ?? definition.defaultDurationMs
-    const totalStacks = instances.reduce((total, status) => total + Math.max(0, status.stacks), 0)
-    const categoryKey = definition.tags.includes('dot') ? 'dot' : definition.tags.includes('control') ? 'control' : definition.classification === 'buff' ? 'buff' : definition.classification === 'debuff' ? 'debuff' : 'neutral'
-    const categoryLabel = categoryKey === 'dot' ? 'Damage over time' : categoryKey === 'control' ? 'Control' : categoryKey === 'buff' ? 'Buff' : categoryKey === 'debuff' ? 'Debuff' : 'Status'
-    const sourceBreakdown = definition.tags.includes('dot')
-      ? instances.map((status) => sourcePeriodicPresentation(status, definition, state)).sort((left, right) => (right.damagePerSecond ?? 0) - (left.damagePerSecond ?? 0) || left.sourceLabel.localeCompare(right.sourceLabel))
-      : []
-    const totalCurrentRate = sourceBreakdown.reduce((total, source) => total + (source.damagePerSecond ?? 0), 0)
-    return [{ statusId, definition, instances, displayRemainingMs, displayInitialDurationMs, totalStacks, categoryKey, categoryLabel, sourceBreakdown, ...(sourceBreakdown.some((source) => source.damagePerSecond !== undefined) ? { totalCurrentRate } : {}) }]
+    const group = buildBasicGroup(statusId, instances)
+    return group ? [group] : []
   })
+}
+
+export const getCombatStatusGroupDetails = (group: CombatStatusGroupPresentation, state: GameState): CombatStatusGroupPresentation => {
+  if (!group.definition.tags.includes('dot')) return group
+  const sourceBreakdown = group.instances.map((status) => sourcePeriodicPresentation(status, group.definition, state)).sort((left, right) => (right.damagePerSecond ?? 0) - (left.damagePerSecond ?? 0) || left.sourceLabel.localeCompare(right.sourceLabel))
+  const totalCurrentRate = sourceBreakdown.reduce((total, source) => total + (source.damagePerSecond ?? 0), 0)
+  return { ...group, sourceBreakdown, ...(sourceBreakdown.some((source) => source.damagePerSecond !== undefined) ? { totalCurrentRate } : {}) }
+}
+
+export const getCombatStatusGroups = (statuses: ActiveStatus[], state?: GameState): CombatStatusGroupPresentation[] => {
+  const groups = getCombatStatusGroupsBasic(statuses)
+  return state ? groups.map((group) => getCombatStatusGroupDetails(group, state)) : groups
 }

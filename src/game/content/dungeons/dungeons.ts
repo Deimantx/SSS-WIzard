@@ -24,7 +24,7 @@ const ACT0_DUNGEONS = [WHISPERING_WOODS_DUNGEON, HOWLING_DEN_DUNGEON, ABANDONED_
 export const DUNGEON_ORDER: DungeonId[] = [...ACT0_DUNGEONS, ...ACT1_DUNGEONS].map((dungeon) => dungeon.id)
 export const DUNGEONS: Record<DungeonId, DungeonDefinition> = Object.fromEntries([...ACT0_DUNGEONS, ...ACT1_DUNGEONS].map((dungeon) => [dungeon.id, dungeon])) as Record<DungeonId, DungeonDefinition>
 
-export const isDungeonUnlocked = (dungeon: DungeonDefinition, progress: Pick<GameState, 'progress'>['progress']) => {
+export const isDungeonUnlocked = (dungeon: DungeonDefinition, progress: Pick<GameState['progress'], 'bossKillsByBoss'>) => {
   const unlock = dungeon.unlock ?? { type: 'always' as const }
   if (unlock.type === 'always') return true
   if (unlock.type === 'boss-kill') return (progress.bossKillsByBoss[unlock.bossId] ?? 0) >= 1

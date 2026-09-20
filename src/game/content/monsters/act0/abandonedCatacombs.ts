@@ -6,6 +6,7 @@ import {
   scaledDirectDamage,
   scaledDot,
   scaledHeal,
+  opponentStatusStackScaled,
   withDungeonLoot,
   applyStatus,
   type MonsterDefinition,
@@ -87,9 +88,28 @@ export const ABANDONED_CATACOMBS_MONSTERS = {
         description: "A cold touch damages the target and leaves it Chilled.",
         effects: [
           scaledDirectDamage("water", 1.3),
-          applyStatus("chilled", "opponent"),
+          applyStatus("chilled", "opponent", 10000),
         ],
         tags: ["special", "water", "magic", "debuff"],
+      },
+      "frost-reap": {
+        id: "frost-reap",
+        name: "Frost Reap",
+        actionTimeMs: 2100,
+        description:
+          "Reaps the target with spectral frost. Deals 50% more damage while the target is Chilled.",
+        effects: [
+          {
+            type: "deal-damage",
+            target: "opponent",
+            components: [{
+              damageType: "water",
+              magnitude: opponentStatusStackScaled("chilled", { type: "source-basic-damage-percent", value: 1.25 }, 0.5, 1),
+            }],
+            tags: ["direct"],
+          },
+        ],
+        tags: ["special", "water", "magic", "direct"],
       },
       fade: {
         id: "fade",
@@ -109,7 +129,8 @@ export const ABANDONED_CATACOMBS_MONSTERS = {
           basic("basic-2"),
           action("fade-step", "fade"),
           basic("basic-3"),
-          action("chilling-touch-step-2", "chilling-touch"),
+          action("frost-reap-step", "frost-reap"),
+          basic("basic-4"),
         ],
       },
     },
@@ -143,7 +164,7 @@ export const ABANDONED_CATACOMBS_MONSTERS = {
         actionTimeMs: 1700,
         description:
           "A funerary curse weakens the Wizard's damage and recovery.",
-        effects: [applyStatus("cursed", "opponent", 8000)],
+        effects: [applyStatus("cursed", "opponent", 12000)],
         tags: ["special", "debuff"],
       },
       "soul-drain": {
@@ -151,8 +172,25 @@ export const ABANDONED_CATACOMBS_MONSTERS = {
         name: "Soul Drain",
         actionTimeMs: 2200,
         description:
-          "Arcane force tears at the target and restores the caster's Health.",
-        effects: [scaledDirectDamage("arcane", 1.1), scaledHeal(0.07)],
+          "Drains Arcane energy and restores Health. Both effects are 40% stronger while the target is Cursed.",
+        effects: [
+          {
+            type: "deal-damage",
+            target: "opponent",
+            components: [{
+              damageType: "arcane",
+              magnitude: opponentStatusStackScaled("cursed", { type: "source-basic-damage-percent", value: 1.1 }, 0.4, 1),
+            }],
+            tags: ["direct"],
+          },
+          {
+            type: "heal",
+            target: "self",
+            magnitude: opponentStatusStackScaled("cursed", { type: "source-max-health-percent", value: 0.07 }, 0.4, 1),
+            tags: ["heal", "direct"],
+          },
+        ],
+
         tags: ["special", "arcane", "magic", "heal", "direct"],
       },
       "death-ward": {
@@ -173,8 +211,8 @@ export const ABANDONED_CATACOMBS_MONSTERS = {
           basic("basic-1"),
           action("grave-curse-step", "grave-curse"),
           basic("basic-2"),
-          action("soul-drain-step", "soul-drain"),
           basic("basic-3"),
+          action("soul-drain-step", "soul-drain"),
           action("death-ward-step", "death-ward"),
           basic("basic-4"),
         ],

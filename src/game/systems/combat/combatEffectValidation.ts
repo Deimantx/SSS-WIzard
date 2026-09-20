@@ -26,7 +26,7 @@ const isStatusId = (value: unknown, context: CombatValidationContext = {}): valu
 const isDamageType = (value: unknown): value is DamageType => typeof value === 'string' && DAMAGE_TYPES.includes(value as DamageType)
 const isTag = (value: unknown): value is CombatTag => typeof value === 'string' && COMBAT_TAGS.includes(value as CombatTag)
 
-export const validateMagnitude = (value: unknown, owner = 'magnitude'): string[] => {
+export const validateMagnitude = (value: unknown, owner = 'magnitude', context: CombatValidationContext = {}): string[] => {
   const errors: string[] = []
   if (!isRecord(value) || typeof value.type !== 'string') return [`${owner}: invalid magnitude`]
   switch (value.type) {
@@ -35,7 +35,15 @@ export const validateMagnitude = (value: unknown, owner = 'magnitude'): string[]
     case 'target-max-health-percent':
     case 'source-basic-damage-percent':
     case 'target-missing-health-percent':
+    case 'source-current-barrier-percent':
       if (!isFiniteNumber(value.value) || value.value < 0) errors.push(`${owner}: ${value.type} value must be finite and non-negative`)
+      break
+    case 'opponent-status-stack-scaled':
+      if (!isStatusId(value.statusId, {})) errors.push(`${owner}: invalid status reference`)
+      else if (context.hasStatus && !context.hasStatus(value.statusId)) errors.push(`${owner}: invalid status reference`)
+      if (!isFiniteNumber(value.perStack)) errors.push(`${owner}: perStack must be finite`)
+      if (value.maxStacks !== undefined && (!isFiniteNumber(value.maxStacks) || !Number.isInteger(value.maxStacks) || value.maxStacks < 1)) errors.push(`${owner}: maxStacks must be a finite integer >= 1`)
+      errors.push(...validateMagnitude(value.base, `${owner}.base`, context))
       break
     case 'spell-power':
       if (!isFiniteNumber(value.coefficient) || value.coefficient < 0) errors.push(`${owner}: Spell Power coefficient must be finite and non-negative`)
@@ -126,7 +134,7 @@ const validateCombatEffectInternal = (value: unknown, owner: string, context: Co
     if (!Array.isArray(value.components) || value.components.length === 0) errors.push(`${owner}: damage Hit requires at least one component`)
     else value.components.forEach((component, index) => {
       if (!isRecord(component) || typeof component.damageType !== 'string' || !isDamageType(component.damageType)) errors.push(`${owner}.components[${index}]: invalid damage type`)
-      errors.push(...validateMagnitude(isRecord(component) ? component.magnitude : undefined, `${owner}.components[${index}].magnitude`))
+      errors.push(...validateMagnitude(isRecord(component) ? component.magnitude : undefined, `${owner}.components[${index}].magnitude`, context))
     })
     if (value.school !== undefined && !['fire', 'water', 'earth', 'air'].includes(String(value.school))) errors.push(`${owner}: invalid school`)
     if (value.tags !== undefined && (!Array.isArray(value.tags) || !value.tags.every(isTag))) errors.push(`${owner}: invalid tags`)
@@ -134,21 +142,26 @@ const validateCombatEffectInternal = (value: unknown, owner: string, context: Co
   }
   if (value.type === 'heal') {
     if (!isTarget(value.target)) errors.push(`${owner}: invalid target`)
-    errors.push(...validateMagnitude(value.magnitude, `${owner}.magnitude`))
+    errors.push(...validateMagnitude(value.magnitude, `${owner}.magnitude`, context))
     if (value.tags !== undefined && (!Array.isArray(value.tags) || !value.tags.every(isTag))) errors.push(`${owner}: invalid tags`)
     return errors
   }
   if (value.type === 'gain-barrier') {
     if (!isTarget(value.target)) errors.push(`${owner}: invalid target`)
-    errors.push(...validateMagnitude(value.magnitude, `${owner}.magnitude`))
+    errors.push(...validateMagnitude(value.magnitude, `${owner}.magnitude`, context))
     if (value.mode !== undefined && value.mode !== 'add' && value.mode !== 'replace' && value.mode !== 'replace-if-stronger') errors.push(`${owner}: invalid Barrier mode`)
     if (value.durationMs !== undefined && value.durationMs !== null && (!isFiniteNumber(value.durationMs) || value.durationMs < 0)) errors.push(`${owner}: invalid Barrier duration`)
     if (value.tags !== undefined && (!Array.isArray(value.tags) || !value.tags.every(isTag))) errors.push(`${owner}: invalid tags`)
     return errors
   }
+  if (value.type === 'consume-barrier') {
+    if (!isTarget(value.target)) errors.push(`${owner}: invalid target`)
+    if (value.mode !== undefined && value.mode !== 'all') errors.push(`${owner}: consume Barrier mode must be all`)
+    return errors
+  }
   if (value.type === 'restore-resource' || value.type === 'drain-resource') {
     if (!isTarget(value.target) || value.resource !== 'mana') errors.push(`${owner}: invalid resource target`)
-    errors.push(...validateMagnitude(value.magnitude, `${owner}.magnitude`))
+    errors.push(...validateMagnitude(value.magnitude, `${owner}.magnitude`, context))
     if (value.tags !== undefined && (!Array.isArray(value.tags) || !value.tags.every(isTag))) errors.push(`${owner}: invalid tags`)
     return errors
   }

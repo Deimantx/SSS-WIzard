@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { dismissGameTooltips } from '../../components/ui/tooltip/Tooltip'
 import { ScreenGrid } from '../../components/layout/ScreenGrid'
 import type { DungeonId } from '../../game/types'
@@ -16,11 +17,16 @@ import { CombatAmbientBackdrop } from './CombatAmbientBackdrop'
 import { useNavigationIntent } from '../../ui/navigation/navigationIntent'
 
 export function CombatScreenV2() {
-  const combatDungeonId = useGameStore((state) => state.combat.dungeonId)
-  const progress = useGameStore((state) => state.progress)
-  const combat = useGameStore((state) => state.combat)
+  const combat = useGameStore(useShallow((state) => ({
+    active: state.combat.active,
+    dungeonId: state.combat.dungeonId,
+    enemyId: state.combat.enemyId,
+    inBossFight: state.combat.inBossFight,
+  })))
+  const combatDungeonId = combat.dungeonId
+  const bossKillsByBoss = useGameStore((state) => state.progress.bossKillsByBoss)
   const lastEnteredDungeonId = useGameStore((state) => state.ui.lastEnteredCombatDungeonId)
-  const [selectedDungeonId, setSelectedDungeonId] = useState<DungeonId>(() => getInitialCombatDungeon({ combat, lastEnteredDungeonId, progress }))
+  const [selectedDungeonId, setSelectedDungeonId] = useState<DungeonId>(() => getInitialCombatDungeon({ combat, lastEnteredDungeonId, progress: { bossKillsByBoss } }))
   const navigationIntent = useNavigationIntent()
   const [campaignOpen, setCampaignOpen] = useState(false)
   const [enemyContextMode, setEnemyContextMode] = useState<EnemyContextMode | null>(null)

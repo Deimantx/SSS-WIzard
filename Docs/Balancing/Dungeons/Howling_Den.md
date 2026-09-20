@@ -40,7 +40,7 @@
 | Monster | Action | Cast time | Effects | Damage type |
 | --- | --- | --- | --- | --- |
 | Cavefang Wolf (cavefang-wolf) | Pounce (pounce) | 1.4 s | 150% of Basic Attack damage Physical damage; +400 ms action time | Physical |
-| Cavefang Wolf (cavefang-wolf) | Predator's Howl (predator-howl) | 1.6 s | Haste (6 s) | — |
+| Cavefang Wolf (cavefang-wolf) | Predator's Howl (predator-howl) | 1.6 s | Haste (16 s) | — |
 | Razorclaw Lynx (razorclaw-lynx) | Rending Claws (rending-claws) | 1.3 s | 125% of Basic Attack damage Physical damage; Bleeding (8 s); 36.25% of Basic Attack damage Physical damage | Physical |
 | Razorclaw Lynx (razorclaw-lynx) | Blood Scent (blood-scent) | 1.2 s | Haste (5 s) | — |
 | Corrupted Dire Wolf (corrupted-dire-wolf) | Arcane Bite (arcane-bite) | 1.6 s | 65% of Basic Attack damage Physical damage + 65% of Basic Attack damage Arcane damage | Physical + Arcane |
@@ -48,8 +48,8 @@
 | Corrupted Dire Wolf (corrupted-dire-wolf) | Corrupting Fang (corrupting-fang) | 1.9 s | 90% of Basic Attack damage Physical damage + 60% of Basic Attack damage Arcane damage; Corruption | Physical + Arcane |
 | Corrupted Greatbear (corrupted-greatbear) | Crushing Maul (crushing-maul) | 1.8 s | 155% of Basic Attack damage Physical damage | Physical |
 | Corrupted Greatbear (corrupted-greatbear) | Groundbreaker (groundbreaker) | 2.5 s | 120% of Basic Attack damage Physical damage; +700 ms action time | Physical |
-| Corrupted Greatbear (corrupted-greatbear) | Corrupted Roar (corrupted-roar) | 2.2 s | Vulnerable (6 s) | — |
-| Corrupted Greatbear (corrupted-greatbear) | Arcane Rampage (arcane-rampage) | 3.5 s | 200% of Basic Attack damage Arcane damage; Corruption | Arcane |
+| Corrupted Greatbear (corrupted-greatbear) | Corrupted Roar (corrupted-roar) | 2.2 s | Vulnerable (6 s); Corruption | — |
+| Corrupted Greatbear (corrupted-greatbear) | Arcane Rampage (arcane-rampage) | 3.5 s | 200% of Basic Attack damage; +12% per Corruption stack, up to 5 Arcane damage; Corruption | Arcane |
 
 ## Loot
 

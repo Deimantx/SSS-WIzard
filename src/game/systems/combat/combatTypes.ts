@@ -160,7 +160,7 @@ export interface CombatEvent {
   blockedAmount?: number
   /** Actual barrier capacity granted by this event. Replacements report the new capacity. */
   barrierGranted?: number
-  barrierMode?: 'add' | 'replace' | 'replace-if-stronger'
+  barrierMode?: 'add' | 'replace' | 'replace-if-stronger' | 'consume'
   barrierBefore?: number
   barrierAfter?: number
   durationMs?: number | null
@@ -240,6 +240,8 @@ export type Magnitude =
   | { type: 'school-level'; base: number; perLevel: number; school: SchoolId }
   | { type: 'spell-power'; coefficient: number }
   | { type: 'target-missing-health-percent'; value: number }
+  | { type: 'source-current-barrier-percent'; value: number }
+  | { type: 'opponent-status-stack-scaled'; statusId: StatusId; base: Magnitude; perStack: number; maxStacks?: number }
 
 /** Pure linear scaling for authored total magnitudes such as periodic payloads. */
 export const scaleMagnitude = (magnitude: Magnitude, factor: number): Magnitude => {
@@ -252,6 +254,8 @@ export const scaleMagnitude = (magnitude: Magnitude, factor: number): Magnitude 
     case 'spell-power': return { type: 'spell-power', coefficient: magnitude.coefficient * scale }
     case 'school-level': return { type: 'school-level', base: magnitude.base * scale, perLevel: magnitude.perLevel * scale, school: magnitude.school }
     case 'target-missing-health-percent': return { type: 'target-missing-health-percent', value: magnitude.value * scale }
+    case 'source-current-barrier-percent': return { type: 'source-current-barrier-percent', value: magnitude.value * scale }
+    case 'opponent-status-stack-scaled': return { ...magnitude, base: scaleMagnitude(magnitude.base, scale) }
   }
 }
 
@@ -297,6 +301,7 @@ export type CombatEffect =
   | { type: 'deal-damage'; target: EffectTarget; components: DamageComponent[]; tags?: CombatTag[]; school?: SchoolId; hitCount?: number }
   | { type: 'heal'; target: EffectTarget; magnitude: Magnitude; tags?: CombatTag[] }
   | { type: 'gain-barrier'; target: EffectTarget; magnitude: Magnitude; mode?: 'add' | 'replace' | 'replace-if-stronger'; durationMs?: number | null; tags?: CombatTag[] }
+  | { type: 'consume-barrier'; target: EffectTarget; mode?: 'all' }
   | { type: 'restore-resource'; target: EffectTarget; resource: ResourceId; magnitude: Magnitude; tags?: CombatTag[] }
   | { type: 'drain-resource'; target: EffectTarget; resource: ResourceId; magnitude: Magnitude; tags?: CombatTag[] }
   | { type: 'apply-status'; target: EffectTarget; statusId: StatusId; durationMs?: number | null; stacks?: number; periodicEffects?: CombatEffect[]; statusSourceKey?: string; modifierOverrides?: Partial<Record<ModifierKey, number>>; tags?: CombatTag[] }

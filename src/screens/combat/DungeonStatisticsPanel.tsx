@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight, Gauge, Package, RotateCcw, Timer } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { Card, GameTooltip, Progress } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { ItemIcon, ItemUsesDialog } from '../../components/ui/item'
@@ -21,9 +22,30 @@ import { setNavigationIntent } from '../../ui/navigation/navigationIntent'
 const modeLabels: Record<DungeonStatisticsMode, string> = { runs: 'RUNS', drops: 'DROPS', efficiency: 'EFFICIENCY' }
 
 export function DungeonStatisticsPanel() {
-  const session = useDungeonStatisticsStore((state) => state.session)
-  const active = useDungeonStatisticsStore((state) => state.active)
-  const reset = useDungeonStatisticsStore((state) => state.reset)
+  const statisticsSignal = useDungeonStatisticsStore(useShallow((state) => {
+    const session = state.session
+    return {
+      active: state.active,
+      dungeonId: session?.dungeonId ?? null,
+      elapsedBucket: Math.floor((session?.elapsedMs ?? 0) / 250),
+      engagedBucket: Math.floor((session?.engagedMs ?? 0) / 250),
+      currentRunBucket: Math.floor((session?.currentRunElapsedMs ?? 0) / 250),
+      completedRuns: session?.completedRuns ?? 0,
+      completedRunDurationTotalMs: session?.completedRunDurationTotalMs ?? 0,
+      bestRunMs: session?.bestRunMs ?? null,
+      normalEncounterCount: session?.normalEncounterCount ?? 0,
+      normalEncounterDurationTotalMs: session?.normalEncounterDurationTotalMs ?? 0,
+      fastestEncounterMs: session?.fastestEncounterMs ?? null,
+      bossEncounterCount: session?.bossEncounterCount ?? 0,
+      bossDurationTotalMs: session?.bossDurationTotalMs ?? 0,
+      fastestBossMs: session?.fastestBossMs ?? null,
+      totalLootQuantity: session?.totalLootQuantity ?? 0,
+      lootByItemId: session?.lootByItemId,
+      reset: state.reset,
+    }
+  }))
+  const session = useDungeonStatisticsStore.getState().session
+  const active = statisticsSignal.active
   const mode = useUiPreferences().screenState.combat.dungeonStatisticsMode
   const presentation = getDungeonStatisticsPresentation(session)
   const previousBestRun = useRef(presentation.bestRunTime)
@@ -46,7 +68,7 @@ export function DungeonStatisticsPanel() {
   }
 
   return <Card className={`dungeon-statistics-panel dungeon-statistics-mode-${mode}${bestRunFlash ? ' is-best-run-flash' : ''}`}>
-    <header className="dungeon-statistics-head"><span className="combat-subsection-label">DUNGEON STATISTICS</span><div className="dungeon-statistics-mode-nav"><GameTooltip content={<TooltipContent title="Previous Dungeon Statistics mode" description="Show the previous farming metric." />}><button type="button" className="dungeon-statistics-mode-button" aria-label="Previous Dungeon Statistics mode" onClick={() => moveMode(-1)}><ChevronLeft size={15} aria-hidden="true" /></button></GameTooltip><strong className="dungeon-statistics-mode-title">{modeLabels[mode]}</strong><GameTooltip content={<TooltipContent title="Next Dungeon Statistics mode" description="Show the next farming metric." />}><button type="button" className="dungeon-statistics-mode-button" aria-label="Next Dungeon Statistics mode" onClick={() => moveMode(1)}><ChevronRight size={15} aria-hidden="true" /></button></GameTooltip><GameTooltip content={<TooltipContent title="Reset Dungeon Statistics" description="Clear farming statistics and begin a new measurement session. Combat continues." />}><button type="button" className="dungeon-statistics-reset-button" aria-label="Reset Dungeon Statistics" onClick={reset}><RotateCcw size={14} aria-hidden="true" /></button></GameTooltip></div></header>
+    <header className="dungeon-statistics-head"><span className="combat-subsection-label">DUNGEON STATISTICS</span><div className="dungeon-statistics-mode-nav"><GameTooltip content={<TooltipContent title="Previous Dungeon Statistics mode" description="Show the previous farming metric." />}><button type="button" className="dungeon-statistics-mode-button" aria-label="Previous Dungeon Statistics mode" onClick={() => moveMode(-1)}><ChevronLeft size={15} aria-hidden="true" /></button></GameTooltip><strong className="dungeon-statistics-mode-title">{modeLabels[mode]}</strong><GameTooltip content={<TooltipContent title="Next Dungeon Statistics mode" description="Show the next farming metric." />}><button type="button" className="dungeon-statistics-mode-button" aria-label="Next Dungeon Statistics mode" onClick={() => moveMode(1)}><ChevronRight size={15} aria-hidden="true" /></button></GameTooltip><GameTooltip content={<TooltipContent title="Reset Dungeon Statistics" description="Clear farming statistics and begin a new measurement session. Combat continues." />}><button type="button" className="dungeon-statistics-reset-button" aria-label="Reset Dungeon Statistics" onClick={statisticsSignal.reset}><RotateCcw size={14} aria-hidden="true" /></button></GameTooltip></div></header>
     {!session ? <div className="dungeon-statistics-empty"><strong>NO DUNGEON DATA</strong><span>Enter a Dungeon to begin measuring.</span></div> : <div className="dungeon-statistics-body"><div className="dungeon-statistics-context"><span className={active ? 'is-active' : ''}>{active ? 'CURRENT SESSION' : 'LAST SESSION'}</span><strong>{presentation.dungeonName}</strong></div>{mode === 'runs' && <RunsMode presentation={presentation} />}{mode === 'drops' && <DropsMode presentation={presentation} dropsListRef={dropsListRef} />}{mode === 'efficiency' && <EfficiencyMode presentation={presentation} />}</div>}
   </Card>
 }
@@ -61,7 +83,6 @@ function DropsMode({ presentation, dropsListRef }: { presentation: ReturnType<ty
 }
 
 function DropRow({ row, sessionTime }: { row: ReturnType<typeof getDungeonStatisticsPresentation>['dropRows'][number]; sessionTime: string }) {
-  const state = useGameStore()
   const { openContextMenu } = useGameContextMenu()
   const preferences = useUiPreferences()
   const [isNew, setIsNew] = useState(true)
@@ -75,9 +96,9 @@ function DropRow({ row, sessionTime }: { row: ReturnType<typeof getDungeonStatis
   const output = getItemSources(row.itemId).find((relation) => relation.kind === 'recipe' && relation.detail.endsWith('output'))
   const uses = getItemUses(row.itemId)
   const firstDrop = getItemDropSources(row.itemId)[0]
-  const openItem = () => { setNavigationIntent({ inventoryItemId: row.itemId }); state.setScreen('inventory') }
-  const openRecipe = () => { if (!output) return; if (output.detail === 'Artificing output') setUiPreferences({ screenState: { artificing: { selectedRecipeId: output.id as never } } }); else setUiPreferences({ screenState: { transmutation: { selectedRecipeId: output.id as never } } }); state.setScreen(output.detail === 'Artificing output' ? 'tower-artificing' : 'tower-transmutation') }
-  return <><GameTooltip block content={<TooltipContent title={item.name.toUpperCase()} description={`${item.description} ${quantityLabel} collected over ${sessionTime}.`}><div className="tooltip-row"><span>EXACT QUANTITY</span><b>{quantityLabel}</b></div><div className="tooltip-row"><span>RATE</span><b>{row.perHourLabel}</b></div></TooltipContent>}><div className={`dungeon-statistics-drop-row${isNew ? ' is-new' : ''}`} tabIndex={0} aria-label={`${row.name}, ${row.perHourLabel}`} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); openContextMenu({ x: event.clientX, y: event.clientY, anchor: event.currentTarget, header: { title: item.name, meta: `DUNGEON DROP · ${quantityLabel}` }, sections: [{ id: 'item', actions: [{ id: 'inventory', label: 'Open in Inventory', onSelect: openItem }, { id: 'collection', label: 'Open Collection', onSelect: () => { setNavigationIntent({ inventoryItemId: row.itemId }); state.setScreen('collection') } }, ...(uses.length > 0 ? [{ id: 'uses', label: 'Used In...', onSelect: () => setUsesOpen(true) }] : []), ...(output ? [{ id: 'output', label: 'Open Output Recipe', onSelect: openRecipe }] : []), ...(firstDrop ? [{ id: 'source', label: 'Where to Get', onSelect: () => { setNavigationIntent({ combatDungeonId: firstDrop.dungeonId, combatMonsterId: firstDrop.monsterId }); state.setScreen('combat') } }] : []), { id: 'track', label: preferences.trackedItemId === row.itemId ? 'Untrack Item' : 'Track Item', onSelect: () => setUiPreferences({ trackedItemId: preferences.trackedItemId === row.itemId ? null : row.itemId }) }] }] }) }}><span className="dungeon-statistics-drop-icon"><ItemIcon itemId={row.itemId} size="tiny" /></span><strong>{row.name}</strong><span className="dungeon-statistics-drop-rate">{row.perHourLabel}</span></div></GameTooltip><ItemUsesDialog itemId={row.itemId} uses={uses} open={usesOpen} onClose={() => setUsesOpen(false)} onSelectRecipe={(recipeId) => { setUsesOpen(false); if (isTransmutationRecipeId(recipeId)) { setNavigationIntent({ transmutationRecipeId: recipeId }); state.setScreen('tower-transmutation') } else { setNavigationIntent({ artificingRecipeId: recipeId as never }); state.setScreen('tower-artificing') } }} /></>
+  const openItem = () => { setNavigationIntent({ inventoryItemId: row.itemId }); useGameStore.getState().setScreen('inventory') }
+  const openRecipe = () => { if (!output) return; if (output.detail === 'Artificing output') setUiPreferences({ screenState: { artificing: { selectedRecipeId: output.id as never } } }); else setUiPreferences({ screenState: { transmutation: { selectedRecipeId: output.id as never } } }); useGameStore.getState().setScreen(output.detail === 'Artificing output' ? 'tower-artificing' : 'tower-transmutation') }
+  return <><GameTooltip block content={<TooltipContent title={item.name.toUpperCase()} description={`${item.description} ${quantityLabel} collected over ${sessionTime}.`}><div className="tooltip-row"><span>EXACT QUANTITY</span><b>{quantityLabel}</b></div><div className="tooltip-row"><span>RATE</span><b>{row.perHourLabel}</b></div></TooltipContent>}><div className={`dungeon-statistics-drop-row${isNew ? ' is-new' : ''}`} tabIndex={0} aria-label={`${row.name}, ${row.perHourLabel}`} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); openContextMenu({ x: event.clientX, y: event.clientY, anchor: event.currentTarget, header: { title: item.name, meta: `DUNGEON DROP · ${quantityLabel}` }, sections: [{ id: 'item', actions: [{ id: 'inventory', label: 'Open in Inventory', onSelect: openItem }, { id: 'collection', label: 'Open Collection', onSelect: () => { setNavigationIntent({ inventoryItemId: row.itemId }); useGameStore.getState().setScreen('collection') } }, ...(uses.length > 0 ? [{ id: 'uses', label: 'Used In...', onSelect: () => setUsesOpen(true) }] : []), ...(output ? [{ id: 'output', label: 'Open Output Recipe', onSelect: openRecipe }] : []), ...(firstDrop ? [{ id: 'source', label: 'Where to Get', onSelect: () => { setNavigationIntent({ combatDungeonId: firstDrop.dungeonId, combatMonsterId: firstDrop.monsterId }); useGameStore.getState().setScreen('combat') } }] : []), { id: 'track', label: preferences.trackedItemId === row.itemId ? 'Untrack Item' : 'Track Item', onSelect: () => setUiPreferences({ trackedItemId: preferences.trackedItemId === row.itemId ? null : row.itemId }) }] }] }) }}><span className="dungeon-statistics-drop-icon"><ItemIcon itemId={row.itemId} size="tiny" /></span><strong>{row.name}</strong><span className="dungeon-statistics-drop-rate">{row.perHourLabel}</span></div></GameTooltip><ItemUsesDialog itemId={row.itemId} uses={uses} open={usesOpen} onClose={() => setUsesOpen(false)} onSelectRecipe={(recipeId) => { setUsesOpen(false); if (isTransmutationRecipeId(recipeId)) { setNavigationIntent({ transmutationRecipeId: recipeId }); useGameStore.getState().setScreen('tower-transmutation') } else { setNavigationIntent({ artificingRecipeId: recipeId as never }); useGameStore.getState().setScreen('tower-artificing') } }} /></>
 }
 
 function EfficiencyMode({ presentation }: { presentation: ReturnType<typeof getDungeonStatisticsPresentation> }) {

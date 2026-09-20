@@ -161,8 +161,10 @@ const formatMagnitude = (magnitude: Magnitude, noun: string) => {
     case 'source-max-health-percent': return `${formatSpellMagnitude(magnitude)} as ${noun}`
     case 'target-max-health-percent': return `${formatSpellMagnitude(magnitude)} as ${noun}`
     case 'source-basic-damage-percent': return `${formatSpellMagnitude(magnitude)} as ${noun}`
+    case 'source-current-barrier-percent': return `${formatSpellMagnitude(magnitude)} as ${noun}`
     case 'target-missing-health-percent': return `${formatSpellMagnitude(magnitude)} as ${noun}`
     case 'school-level': return `${amount(magnitude.base)} + ${amount(magnitude.perLevel)} per ${titleCase(magnitude.school)} level ${noun}`
+    case 'opponent-status-stack-scaled': return `${formatSpellMagnitude(magnitude)} as ${noun}`
   }
 }
 
@@ -173,6 +175,7 @@ const effectMeaning = (effect: CombatEffect): string => {
     case 'deal-damage': return effect.components.map((component) => `Deal ${formatMagnitude(component.magnitude, `${DAMAGE_TYPE_NAMES[component.damageType]} damage`)}`).join(' and ')
     case 'heal': return `Restore ${formatMagnitude(effect.magnitude, 'Health')}`
     case 'gain-barrier': return `${effect.mode === 'replace' ? 'Set' : 'Gain'} ${formatMagnitude(effect.magnitude, 'Barrier')}`
+    case 'consume-barrier': return `Consume all Barrier${effect.target === 'opponent' ? ' from the opponent' : ''}`
     case 'restore-resource': return `Restore ${formatMagnitude(effect.magnitude, 'Mana')}`
     case 'drain-resource': return `Drain ${formatMagnitude(effect.magnitude, 'Mana')}`
     case 'apply-status': {

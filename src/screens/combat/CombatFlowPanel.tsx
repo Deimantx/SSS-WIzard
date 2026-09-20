@@ -1,5 +1,6 @@
 import { Crown, Heart, Shield, ShieldAlert, Sparkles, Swords, TimerReset } from 'lucide-react'
 import { useMemo } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { DUNGEONS } from '../../game/content/dungeons/dungeons'
 import { MONSTERS } from '../../game/content/monsters'
 import { type CombatEffectPresentation } from '../../game/presentation/combat'
@@ -18,14 +19,28 @@ import { EnemyPatternIcon } from './EnemyPatternIcon'
 import { CombatGuardianIndicator } from './CombatGuardianIndicator'
 
 export function CombatFlowPanel({ selectedDungeonId }: { selectedDungeonId: DungeonId }) {
-  const combat = useGameStore((state) => state.combat)
+  const combat = useGameStore(useShallow((state) => ({
+    active: state.combat.active,
+    dungeonId: state.combat.dungeonId,
+    enemyId: state.combat.enemyId,
+    threatCleared: state.combat.threatCleared,
+    inBossFight: state.combat.inBossFight,
+    encounterTimerMs: state.combat.encounterTimerMs,
+    enemyActionTimerMs: state.combat.enemyActionTimerMs,
+    enemyActionDurationMs: state.combat.enemyActionDurationMs,
+    enemyNextActionIndex: state.combat.enemyNextActionIndex,
+    enemyCurrentActionId: state.combat.enemyCurrentActionId,
+    enemyCurrentStepId: state.combat.enemyCurrentStepId,
+    enemyCurrentActionPatternId: state.combat.enemyCurrentActionPatternId,
+    enemyActionPatternId: state.combat.enemyActionPatternId,
+    pendingPlayerSpellCast: state.combat.pendingPlayerSpellCast,
+  })))
   const enemy = useGameStore((state) => state.combat.enemyId ? MONSTERS[state.combat.enemyId] ?? null : null)
   const dungeon = DUNGEONS[combat.active ? combat.dungeonId ?? selectedDungeonId : selectedDungeonId]
-  // Timing selectors return structured values, so compute them from the
-  // stable store snapshot rather than subscribing with a fresh object on
-  // every getSnapshot call.
-  const timingState = useGameStore()
-  const enemyTiming = useMemo(() => getCurrentEnemyActionTiming(timingState), [timingState])
+  const enemyTiming = useGameStore(useShallow((state) => {
+    const timing = getCurrentEnemyActionTiming(state)
+    return timing ? { ...timing } : null
+  }))
   const playerCastRate = useGameStore(getPlayerSpellCastRate)
   const pattern = useGameStore((state) => state.combat.enemyId ? getEnemyActionPattern(state) : undefined)
   const nextStep = useGameStore((state) => state.combat.enemyId ? getNextEnemyActionStep(state) : undefined)

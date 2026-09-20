@@ -52,12 +52,18 @@ export const resolveMonsterBaseMagnitudePreview = (monster: MonsterDefinition, m
   if (magnitude.type === 'flat') return magnitude.value
   if (magnitude.type === 'source-basic-damage-percent') return monster.basicAttackDamage * magnitude.value
   if (magnitude.type === 'source-max-health-percent') return monster.maxHealth * magnitude.value
+  if (magnitude.type === 'opponent-status-stack-scaled') return resolveMonsterBaseMagnitudePreview(monster, magnitude.base)
   return null
 }
 
-export const formatMonsterScalingLabel = (magnitude: Magnitude) => {
+export const formatMonsterScalingLabel = (magnitude: Magnitude): string | undefined => {
   if (magnitude.type === 'source-basic-damage-percent') return `${formatCoefficient(magnitude.value)}% Basic Attack Damage`
   if (magnitude.type === 'source-max-health-percent') return `${formatCoefficient(magnitude.value)}% Max Health`
+  if (magnitude.type === 'opponent-status-stack-scaled') {
+    const base: string | undefined = formatMonsterScalingLabel(magnitude.base)
+    const status = STATUS_DEFINITIONS[magnitude.statusId]?.name ?? capitalize(magnitude.statusId)
+    return `${base ?? 'Base magnitude'} · +${formatCoefficient(magnitude.perStack)}% per ${status} stack${magnitude.maxStacks === undefined ? '' : ` (max ${magnitude.maxStacks})`}`
+  }
   return undefined
 }
 
@@ -66,6 +72,7 @@ export const getCombatEffectPresentationTone = (effect: CombatEffect): CombatEff
   if (effect.type === 'deal-damage') return effect.tags?.includes('dot') ? 'dot' : 'damage'
   if (effect.type === 'heal') return 'heal'
   if (effect.type === 'gain-barrier') return 'barrier'
+  if (effect.type === 'consume-barrier') return 'barrier'
   if (effect.type === 'modify-action-timer') return 'control'
   if (effect.type === 'apply-status') {
     const tags = [...(effect.tags ?? []), ...(STATUS_DEFINITIONS[effect.statusId]?.tags ?? [])]
@@ -103,6 +110,7 @@ export const formatCombatEffect = (effect: CombatEffect, source: CombatSource, o
     const preview = options.monster ? resolveMonsterBaseMagnitudePreview(options.monster, effect.magnitude) : null
     return { kind: 'barrier', tone, label: 'Barrier', value: preview === null ? formatSpellMagnitude(effect.magnitude) : formatPreviewValue(Math.round(preview)), basePreview: preview === null ? undefined : formatPreviewValue(Math.round(preview)), scalingLabel: options.monster ? formatMonsterScalingLabel(effect.magnitude) : undefined, detail: `${effect.mode === 'replace' ? 'Replaces' : 'Adds to'} ${target}`, targetLabel: target, timeLabel: effect.durationMs ? formatTime(effect.durationMs) : undefined }
   }
+  if (effect.type === 'consume-barrier') return { kind: 'barrier', tone, label: 'Consume Barrier', detail: `Consumes all Barrier on ${target}`, targetLabel: target }
   if (effect.type === 'apply-status') {
     const status = STATUS_DEFINITIONS[effect.statusId]
     const duration = effect.durationMs === undefined ? status?.defaultDurationMs : effect.durationMs

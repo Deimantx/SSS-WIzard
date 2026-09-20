@@ -48,13 +48,19 @@ const formatValue = (value: number) => {
 }
 const formatSignedPercent = (value: number) => `${value >= 0 ? '+' : ''}${formatValue(value * 100)}%`
 
-export const formatSpellMagnitude = (magnitude: Magnitude) => {
+export const formatSpellMagnitude = (magnitude: Magnitude): string => {
   if (magnitude.type === 'flat') return formatValue(magnitude.value)
   if (magnitude.type === 'spell-power') return `${formatValue(magnitude.coefficient * 100)}% Spell Power`
   if (magnitude.type === 'school-level') return `${formatValue(magnitude.base)} + ${formatValue(magnitude.perLevel)} per ${capitalize(magnitude.school)} School Level`
   if (magnitude.type === 'source-max-health-percent') return `${formatValue(magnitude.value * 100)}% of Max Health`
   if (magnitude.type === 'target-max-health-percent') return `${formatValue(magnitude.value * 100)}% of target Max Health`
   if (magnitude.type === 'source-basic-damage-percent') return `${formatValue(magnitude.value * 100)}% of Basic Damage`
+  if (magnitude.type === 'source-current-barrier-percent') return `${formatValue(magnitude.value * 100)}% of current Barrier`
+  if (magnitude.type === 'opponent-status-stack-scaled') {
+    const statusName = STATUS_DEFINITIONS[magnitude.statusId]?.name ?? capitalize(magnitude.statusId)
+    const cap = magnitude.maxStacks === undefined ? '' : `, up to ${magnitude.maxStacks}`
+    return `${formatSpellMagnitude(magnitude.base)} · +${formatValue(magnitude.perStack * 100)}% per ${statusName} stack${cap}`
+  }
   return `${formatValue(magnitude.value * 100)}% of missing Health`
 }
 

@@ -31,8 +31,8 @@
 | Monster | Traits | Default pattern | Other patterns |
 | --- | --- | --- | --- |
 | Restless Skeleton (restless-skeleton) | Restless Skeleton Brittle Bones | Basic Attack -> Basic Attack -> Bone Cleaver -> Basic Attack -> Bone Rattle -> Basic Attack | — |
-| Grave Wraith (grave-wraith) | Grave Wraith Ethereal Form | Basic Attack -> Chilling Touch -> Basic Attack -> Fade -> Basic Attack -> Chilling Touch | — |
-| Fallen Acolyte (fallen-acolyte) | Fallen Acolyte Grave Channeling | Grave Bolt -> Basic Attack -> Grave Curse -> Basic Attack -> Soul Drain -> Basic Attack -> Death Ward -> Basic Attack | — |
+| Grave Wraith (grave-wraith) | Grave Wraith Ethereal Form | Basic Attack -> Chilling Touch -> Basic Attack -> Fade -> Basic Attack -> Frost Reap -> Basic Attack | — |
+| Fallen Acolyte (fallen-acolyte) | Fallen Acolyte Grave Channeling | Grave Bolt -> Basic Attack -> Grave Curse -> Basic Attack -> Basic Attack -> Soul Drain -> Death Ward -> Basic Attack | — |
 | Archmage Edrin's Shade (archmage-edrin-shade) | Archmage Edrin Arcane Remnant, Archmage Edrin Unbound Spirit | Gravefire -> Basic Attack -> Frostbind -> Basic Attack -> Arcane Ward -> Soul Drain -> Basic Attack | Unbound |
 
 ## Special actions
@@ -41,11 +41,12 @@
 | --- | --- | --- | --- | --- |
 | Restless Skeleton (restless-skeleton) | Bone Cleaver (bone-cleaver) | 2.2 s | 185% of Basic Attack damage Physical damage | Physical |
 | Restless Skeleton (restless-skeleton) | Bone Rattle (bone-rattle) | 1.9 s | Fragile (6 s) | — |
-| Grave Wraith (grave-wraith) | Chilling Touch (chilling-touch) | 1.8 s | 130% of Basic Attack damage Water damage; Chilled | Water |
+| Grave Wraith (grave-wraith) | Chilling Touch (chilling-touch) | 1.8 s | 130% of Basic Attack damage Water damage; Chilled (10 s) | Water |
+| Grave Wraith (grave-wraith) | Frost Reap (frost-reap) | 2.1 s | 125% of Basic Attack damage; +50% per Chilled stack, up to 1 Water damage | Water |
 | Grave Wraith (grave-wraith) | Fade (fade) | 1.7 s | Spectral Fade (5 s) | — |
 | Fallen Acolyte (fallen-acolyte) | Grave Bolt (grave-bolt) | 1.5 s | 145% of Basic Attack damage Arcane damage | Arcane |
-| Fallen Acolyte (fallen-acolyte) | Grave Curse (grave-curse) | 1.7 s | Cursed (8 s) | — |
-| Fallen Acolyte (fallen-acolyte) | Soul Drain (soul-drain) | 2.2 s | 110% of Basic Attack damage Arcane damage; +7% of the caster's Max Health Health | Arcane |
+| Fallen Acolyte (fallen-acolyte) | Grave Curse (grave-curse) | 1.7 s | Cursed (12 s) | — |
+| Fallen Acolyte (fallen-acolyte) | Soul Drain (soul-drain) | 2.2 s | 110% of Basic Attack damage; +40% per Cursed stack, up to 1 Arcane damage; +7% of the caster's Max Health; +40% per Cursed stack, up to 1 Health | Arcane |
 | Fallen Acolyte (fallen-acolyte) | Death Ward (death-ward) | 2 s | +18% of the caster's Max Health Barrier | — |
 | Archmage Edrin's Shade (archmage-edrin-shade) | Gravefire (gravefire) | 1.8 s | 110% of Basic Attack damage Fire damage; Burning (5 s); 20% of Basic Attack damage Fire damage | Fire |
 | Archmage Edrin's Shade (archmage-edrin-shade) | Frostbind (frostbind) | 2 s | 105% of Basic Attack damage Water damage; Chilled | Water |

@@ -269,6 +269,12 @@ export const consumeCombatEvent = (scope: CombatTelemetryScope, event: CombatEve
   if (event.category === 'barrier') {
     const amount = finite(event.barrierGranted ?? event.amount)
     const owner = event.target === 'player' || event.target === 'enemy' ? event.target : sourceActor
+    if (event.barrierMode === 'consume') {
+      if (event.barrierBefore !== undefined) reconcileBarrierOwner(scope, owner, finite(event.barrierBefore))
+      removeUncreditedBarrierCapacity(scope, owner, amount)
+      if (amount > 0) bumpAggregateRevision(scope)
+      return
+    }
     if (event.barrierMode === 'replace') clearBarrierLayers(scope, owner)
     else if (event.barrierBefore !== undefined) reconcileBarrierOwner(scope, owner, finite(event.barrierBefore))
     const metadata = metadataForEvent(event)

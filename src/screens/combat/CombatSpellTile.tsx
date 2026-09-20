@@ -1,5 +1,6 @@
 import { AlertTriangle, BookOpen, Clock3, Droplet, Settings2 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { SPELLS } from '../../game/content/spells/spells'
 import { SCHOOLS } from '../../game/content/schools/schools'
 import { getSpellStartFailure } from '../../game/engine/spellEngine'
@@ -24,7 +25,27 @@ export function CombatSpellTile({ spellId, autoCast, autoCastPriority, presentat
   const requestManualSpell = useGameStore((state) => state.requestManualSpell)
   const rank = getSpellRank({ progress: presentationState.progress }, spellId)
   const spell = SPELLS[spellId]
-  const presentation = useMemo(() => buildSpellDetailPresentation(presentationState, spellId, rank ?? 1), [presentationState, spellId, rank])
+  const livePresentationState = useGameStore(useShallow((state) => ({
+    health: state.player.health,
+    maxHealth: state.player.maxHealth,
+    mana: state.player.mana,
+    maxMana: state.player.maxMana,
+    maxFocus: state.player.maxFocus,
+    enemyId: state.combat.enemyId,
+    enemyHp: state.combat.enemyHp,
+    enemyMaxHp: state.combat.enemyMaxHp,
+    enemyBarrier: state.combat.enemyBarrier,
+    playerBarrier: state.combat.playerBarrier,
+    enemyInstanceKey: state.combat.enemyInstanceKey,
+    playerStatuses: state.combat.playerStatuses,
+    enemyStatuses: state.combat.enemyStatuses,
+  })))
+  const liveState = useMemo(() => ({
+    ...presentationState,
+    player: { health: livePresentationState.health, maxHealth: livePresentationState.maxHealth, mana: livePresentationState.mana, maxMana: livePresentationState.maxMana, maxFocus: livePresentationState.maxFocus },
+    combat: { enemyId: livePresentationState.enemyId, enemyHp: livePresentationState.enemyHp, enemyMaxHp: livePresentationState.enemyMaxHp, enemyBarrier: livePresentationState.enemyBarrier, playerBarrier: livePresentationState.playerBarrier, enemyInstanceKey: livePresentationState.enemyInstanceKey, playerStatuses: livePresentationState.playerStatuses, enemyStatuses: livePresentationState.enemyStatuses },
+  }), [presentationState, livePresentationState])
+  const presentation = useMemo(() => buildSpellDetailPresentation(liveState, spellId, rank ?? 1), [liveState, spellId, rank])
   const cooldown = useGameStore((state) => state.combat.spellCooldowns[spellId] ?? 0)
   const previousCooldown = useRef(cooldown)
   const castFeedbackTimer = useRef<number | null>(null)

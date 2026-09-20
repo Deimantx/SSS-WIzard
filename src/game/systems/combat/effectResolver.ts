@@ -909,6 +909,24 @@ export const executeCombatEffect = (
       }
       break;
     }
+    case "consume-barrier": {
+      if ((effect.mode ?? "all") !== "all") break;
+      const before = getActiveBarrier(state, target);
+      if (before <= 0) break;
+      const consumed = consumeBarrier(state, target, before);
+      if (consumed <= 0) break;
+      appendLog(state, `${target === "player" ? "Player" : "Enemy"} Barrier consumed.`);
+      uiEvents?.push({
+        ...eventFields(state, source, target),
+        category: "barrier",
+        sourceId: "barrier-consumed",
+        amount: consumed,
+        barrierBefore: before,
+        barrierAfter: getActiveBarrier(state, target),
+        barrierMode: "consume",
+      });
+      break;
+    }
     case "restore-resource":
     case "drain-resource":
       executeResource(state, effect, source, uiEvents);

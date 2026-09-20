@@ -57,9 +57,11 @@ export const formatMagnitude = (magnitude: Magnitude): string => {
     case 'source-max-health-percent': return `${formatPercent(magnitude.value)} of the caster's Max Health`
     case 'target-max-health-percent': return `${formatPercent(magnitude.value)} of the opponent's Max Health`
     case 'source-basic-damage-percent': return `${formatPercent(magnitude.value)} of Basic Attack damage`
+    case 'source-current-barrier-percent': return `${formatPercent(magnitude.value)} of current Barrier`
     case 'spell-power': return `${formatPercent(magnitude.coefficient)} of Spell Power`
     case 'target-missing-health-percent': return `${formatPercent(magnitude.value)} of the opponent's missing Health`
     case 'school-level': return `${formatNumber(magnitude.base)} + ${formatNumber(magnitude.perLevel)} per ${readableId(magnitude.school)} School level`
+    case 'opponent-status-stack-scaled': return `${formatMagnitude(magnitude.base)}; +${formatPercent(magnitude.perStack)} per ${statusName(magnitude.statusId)} stack${magnitude.maxStacks === undefined ? '' : `, up to ${magnitude.maxStacks}`}`
   }
 }
 
@@ -68,6 +70,7 @@ export const formatCombatEffect = (effect: CombatEffect, context: { statusHolder
     case 'deal-damage': return effect.components.map((component) => `${formatMagnitude(component.magnitude)} ${readableId(component.damageType)} damage to ${targetName(effect.target, context.statusHolder)}`).join(' and ')
     case 'heal': return `Restore ${formatMagnitude(effect.magnitude)} Health to ${targetName(effect.target, context.statusHolder)}`
     case 'gain-barrier': return `Grant ${formatMagnitude(effect.magnitude)} Barrier to ${targetName(effect.target, context.statusHolder)}${effect.mode === 'replace' || effect.mode === 'replace-if-stronger' ? ' (replacing the current Barrier when stronger)' : ''}${effect.durationMs === null || effect.durationMs === undefined ? '' : ` for ${formatDuration(effect.durationMs)}`}`
+    case 'consume-barrier': return `Consume all Barrier from ${targetName(effect.target, context.statusHolder)}`
     case 'restore-resource': return `Restore ${formatMagnitude(effect.magnitude)} ${readableId(effect.resource)} to ${targetName(effect.target, context.statusHolder)}`
     case 'drain-resource': return `Drain ${formatMagnitude(effect.magnitude)} ${readableId(effect.resource)} from ${targetName(effect.target, context.statusHolder)}`
     case 'apply-status': {
@@ -267,6 +270,7 @@ export const formatCompactCombatEffect = (effect: CombatEffect, context: { statu
     case 'deal-damage': return effect.components.map((component) => `${formatMagnitude(component.magnitude)} ${readableId(component.damageType)} damage`).join(' + ')
     case 'heal': return `+${formatMagnitude(effect.magnitude)} Health`
     case 'gain-barrier': return `+${formatMagnitude(effect.magnitude)} Barrier${effect.durationMs === null || effect.durationMs === undefined ? '' : ` (${formatDuration(effect.durationMs)})`}`
+    case 'consume-barrier': return `Consume all Barrier from ${targetName(effect.target, context.statusHolder)}`
     case 'restore-resource': return `+${formatMagnitude(effect.magnitude)} ${readableId(effect.resource)}`
     case 'drain-resource': return `-${formatMagnitude(effect.magnitude)} ${readableId(effect.resource)}`
     case 'apply-status': {

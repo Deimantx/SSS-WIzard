@@ -161,6 +161,27 @@ export const scaledBarrier = (maxHealthCoefficient: number): CombatEffect =>
     type: "source-max-health-percent",
     value: maxHealthCoefficient,
   });
+export const opponentStatusStackScaled = (
+  statusId: StatusId,
+  base: Magnitude,
+  perStack: number,
+  maxStacks?: number,
+): Magnitude => ({
+  type: "opponent-status-stack-scaled",
+  statusId,
+  base,
+  perStack,
+  ...(maxStacks === undefined ? {} : { maxStacks }),
+});
+export const sourceCurrentBarrierPercent = (value: number): Magnitude => ({
+  type: "source-current-barrier-percent",
+  value,
+});
+export const consumeBarrier = (): CombatEffect => ({
+  type: "consume-barrier",
+  target: "self",
+  mode: "all",
+});
 export const applyStatus = (
   statusId: StatusId,
   target: "self" | "opponent",

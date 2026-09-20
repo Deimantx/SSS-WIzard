@@ -1,5 +1,6 @@
 import { Crown, LogOut, Route, Swords } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { DUNGEONS, isDungeonUnlocked } from '../../game/content/dungeons/dungeons'
 import { MONSTERS } from '../../game/content/monsters'
 import { canManuallyEngageDungeonBoss, isAutoHuntEnabledForDungeon, isBossCurrentlyActive } from '../../game/systems/combat/combatBossSelectors'
@@ -12,8 +13,20 @@ import type { DungeonId } from '../../game/types'
 type CombatRunMode = 'tower' | 'normal-hunt' | 'boss-ready' | 'boss-queued' | 'boss-fight' | 'encounter-delay'
 
 export function CombatRunBar({ selectedDungeonId, onOpenCampaign, onRequestLeave }: { selectedDungeonId: DungeonId; onOpenCampaign: () => void; onRequestLeave: () => void }) {
-  const combat = useGameStore((state) => state.combat)
-  const progress = useGameStore((state) => state.progress)
+  const combat = useGameStore(useShallow((state) => ({
+    active: state.combat.active,
+    dungeonId: state.combat.dungeonId,
+    enemyId: state.combat.enemyId,
+    inBossFight: state.combat.inBossFight,
+    threatCleared: state.combat.threatCleared,
+    pendingBossId: state.combat.pendingBossId,
+  })))
+  const progress = useGameStore(useShallow((state) => ({
+    bossKillsByBoss: state.progress.bossKillsByBoss,
+    autoHuntBossByDungeon: state.progress.autoHuntBossByDungeon,
+    autoHuntBossUnlocked: state.progress.autoHuntBossUnlocked,
+    firstBossKill: state.progress.firstBossKill,
+  })))
   const toggleAutoHunt = useGameStore((state) => state.toggleAutoHunt)
   const engageBoss = useGameStore((state) => state.engageBoss)
   const enter = useGameStore((state) => state.enterDungeon)

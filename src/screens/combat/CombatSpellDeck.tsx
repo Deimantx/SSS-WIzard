@@ -1,5 +1,6 @@
 import { AlertTriangle, CircleDot, Settings2 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { actorCannotAct } from '../../game/systems/combat/statusRuntime'
 import { getSpellPresetFocusBreakdown, getSpellPresetFocusProjection, getSpellPresetSignature } from '../../game/systems/spells'
 import type { SpellPresetProjectionState } from '../../game/systems/spells'
@@ -22,15 +23,27 @@ export function CombatSpellDeck() {
   const artifactProgress = useGameStore((state) => state.artifactProgress)
   const arcaneCore = useGameStore((state) => state.arcaneCore)
   const activities = useGameStore((state) => state.activities)
-  const player = useGameStore((state) => state.player)
-  const combat = useGameStore((state) => state.combat)
-  const maxFocus = player.maxFocus
+  const maxFocus = useGameStore((state) => state.player.maxFocus)
+  const combat = useGameStore(useShallow((state) => ({ active: state.combat.active, enemyId: state.combat.enemyId, activeSpellLoadout: state.combat.activeSpellLoadout })))
   const presets = useGameStore((state) => state.spellPresets.presets)
   const selectedPresetId = useGameStore((state) => state.spellPresets.selectedPresetId)
   const debugAllowFocusOverCap = useGameStore((state) => state.debug.allowFocusOverCap)
   const selectSpellPreset = useGameStore((state) => state.selectSpellPreset)
   const playerStunned = useGameStore((state) => actorCannotAct(state, 'player'))
-  const state = useMemo(() => ({ schools, equipment, artifactProgress, arcaneCore, progress, activities, player, combat, debug: { allowFocusOverCap: debugAllowFocusOverCap } }), [schools, equipment, artifactProgress, arcaneCore, progress, activities, player, combat, debugAllowFocusOverCap])
+  const state = useMemo(() => {
+    const live = useGameStore.getState()
+    return {
+      schools,
+      equipment,
+      artifactProgress,
+      arcaneCore,
+      progress,
+      activities,
+      player: { health: live.player.health, maxHealth: live.player.maxHealth, mana: live.player.mana, maxMana: live.player.maxMana, maxFocus: live.player.maxFocus },
+      combat: { enemyId: live.combat.enemyId, enemyHp: live.combat.enemyHp, enemyMaxHp: live.combat.enemyMaxHp, enemyBarrier: live.combat.enemyBarrier, playerBarrier: live.combat.playerBarrier, enemyInstanceKey: live.combat.enemyInstanceKey, playerStatuses: live.combat.playerStatuses, enemyStatuses: live.combat.enemyStatuses },
+      debug: { allowFocusOverCap: debugAllowFocusOverCap },
+    }
+  }, [schools, equipment, artifactProgress, arcaneCore, progress, activities, debugAllowFocusOverCap])
   const focusState = useMemo<SpellPresetProjectionState>(() => ({ activities, progress, equipment, artifactProgress, arcaneCore, player: { maxFocus }, debug: { allowFocusOverCap: debugAllowFocusOverCap } }), [activities, progress, equipment, artifactProgress, arcaneCore, maxFocus, debugAllowFocusOverCap])
   const selectedPreset = presets.find((preset) => preset.id === selectedPresetId) ?? null
   const selectedProjection = selectedPreset ? getSpellPresetFocusProjection(focusState, selectedPreset) : null

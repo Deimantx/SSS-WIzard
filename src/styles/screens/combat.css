@@ -2256,12 +2256,12 @@
   opacity: .62;
   pointer-events: none;
   background: radial-gradient(circle at 12% 8%, rgb(52 152 132 / 5%), transparent 43%), radial-gradient(circle at 82% 72%, rgb(25 98 90 / 4%), transparent 48%);
-  transition: opacity 350ms ease, filter 350ms ease;
+  transition: opacity 350ms ease, background 350ms ease;
 }
 .combat-ambient-layer.is-combat-active { opacity: .72; }
-.combat-ambient-layer.is-boss-active { opacity: .9; filter: saturate(1.14); }
-.combat-ambient-particles { position: absolute; inset: 0; }
-.combat-ambient-particles i { position: absolute; top: var(--particle-top); left: var(--particle-left); width: 3px; height: 3px; border-radius: 50%; opacity: .24; color: var(--ui-accent); background: currentColor; box-shadow: 0 0 8px currentColor; animation: combat-ambient-mote var(--particle-duration) ease-in-out var(--particle-delay) infinite alternate; }
+.combat-ambient-layer.is-boss-active { opacity: .9; }
+.combat-ambient-particles { position: absolute; inset: 0; contain: paint; }
+.combat-ambient-particles i { position: absolute; top: var(--particle-top); left: var(--particle-left); width: 3px; height: 3px; border-radius: 50%; opacity: .24; color: var(--ui-accent); background: currentColor; box-shadow: 0 0 8px currentColor; will-change: transform, opacity; contain: paint; animation: combat-ambient-mote var(--particle-duration) ease-in-out var(--particle-delay) infinite alternate; }
 @keyframes combat-ambient-mote { from { opacity: .1; transform: translate3d(-4px, 5px, 0); } to { opacity: .36; transform: translate3d(6px, -9px, 0); } }
 
 .combat-actor-card { position: relative; }
@@ -2514,7 +2514,6 @@
 /* Generic boss state atmosphere and run-bar emphasis. */
 .combat-ambient-layer.is-boss-active {
   opacity: .98;
-  filter: saturate(1.2) brightness(1.04);
   background: radial-gradient(circle at 50% 12%, color-mix(in srgb, var(--ui-gold) 11%, transparent), transparent 38%), radial-gradient(circle at 12% 8%, rgb(52 152 132 / 6%), transparent 43%), radial-gradient(circle at 82% 72%, rgb(98 56 25 / 7%), transparent 48%);
 }
 .combat-ambient-layer.is-boss-active .combat-ambient-particles i { opacity: .38; color: var(--ui-gold); }

@@ -263,9 +263,9 @@ describe("Act 0 and Act 1 dungeon content", () => {
       "Basic",
       "Root Crush",
       "Basic",
-      "Rejuvenate",
+      "Shield Burst",
       "Basic",
-      "Root Crush",
+      "Rejuvenate",
     ]);
     expect(labels("forest-heart")).toEqual([
       "Basic",
@@ -345,15 +345,16 @@ describe("Act 0 and Act 1 dungeon content", () => {
       "Basic",
       "Fade",
       "Basic",
-      "Chilling Touch",
+      "Frost Reap",
+      "Basic",
     ]);
     expect(labels("fallen-acolyte")).toEqual([
       "Grave Bolt",
       "Basic",
       "Grave Curse",
       "Basic",
-      "Soul Drain",
       "Basic",
+      "Soul Drain",
       "Death Ward",
       "Basic",
     ]);
@@ -470,12 +471,10 @@ describe("Act 0 and Act 1 dungeon content", () => {
         action.effects.forEach((effect) => {
           if (effect.type === "deal-damage" && !effect.tags?.includes("dot"))
             effect.components.forEach((component) =>
-              expect(component.magnitude.type).toBe(
-                "source-basic-damage-percent",
-              ),
+              expect(["source-basic-damage-percent", "opponent-status-stack-scaled", "source-current-barrier-percent"]).toContain(component.magnitude.type),
             );
           if (effect.type === "heal")
-            expect(effect.magnitude.type).toBe("source-max-health-percent");
+            expect(["source-max-health-percent", "opponent-status-stack-scaled"]).toContain(effect.magnitude.type);
           if (effect.type === "gain-barrier")
             expect(effect.magnitude.type).toBe("source-max-health-percent");
           if (effect.type === "apply-status" && effect.periodicEffects)

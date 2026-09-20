@@ -81,7 +81,7 @@ Shared combat rules and authored combat values live here. Monster-specific value
 | Eye of the Storm (eye-of-the-storm) | Buff | 10 s | — | — | Cooldown recovery, critical chance, and action speed increased by 10%. |
 | Living Mountain (living-mountain) | Buff | 14 s | — | — | Defense increased by 25% and damage taken reduced by 30%. |
 | Quickening (quickening) | Buff | 6 s | — | — | Basic Attacks resolve 25% faster. |
-| Haste (haste) | Buff | Indefinite | — | — | Action speed increased by 15%. |
+| Haste (haste) | Buff | Indefinite | — | — | All action cadence is increased by 15%. |
 | Spectral Fade (spectral-fade) | Buff | 5 s | — | — | Damage taken is reduced by 25%. |
 | Thorn Wound (thorn-wound) | Debuff | 6 s | — | 3 Physical damage | Thorns deal physical damage over time. |
 | Bleeding (bleeding) | Debuff | 8 s | — | 4 Physical damage | Takes Physical damage over time. |

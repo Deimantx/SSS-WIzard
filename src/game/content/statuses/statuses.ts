@@ -1,180 +1,641 @@
-import type { CombatEffect, CombatModifier, DamageType, ModifierKey, StatusDefinition, StatusId } from '../../systems/combat/combatTypes'
-import { COMBAT_MODIFIER_KEYS, createCombatValidationContext, validateCombatModifier, validateCombatTriggerRule, validatePeriodicEffectList } from '../../systems/combat/combatEffectValidation'
+import type {
+  CombatEffect,
+  CombatModifier,
+  DamageType,
+  ModifierKey,
+  StatusDefinition,
+  StatusId,
+} from "../../systems/combat/combatTypes";
+import {
+  COMBAT_MODIFIER_KEYS,
+  createCombatValidationContext,
+  validateCombatModifier,
+  validateCombatTriggerRule,
+  validatePeriodicEffectList,
+} from "../../systems/combat/combatEffectValidation";
 
 // Periodic effects are authored relative to the status holder. The runtime
 // maps the holder to self/opponent while retaining the original source.
-const damage = (damageType: DamageType, value: number): CombatEffect => ({ type: 'deal-damage', target: 'self', components: [{ damageType, magnitude: { type: 'flat', value } }], tags: ['dot', damageType] })
-const heal = (value: number): CombatEffect => ({ type: 'heal', target: 'self', magnitude: { type: 'flat', value }, tags: ['heal', 'hot'] })
-const modifier = (key: CombatModifier['key'], value: number, extra: Omit<CombatModifier, 'key' | 'value'> = {}): CombatModifier => ({ key, value, ...extra })
+const damage = (damageType: DamageType, value: number): CombatEffect => ({
+  type: "deal-damage",
+  target: "self",
+  components: [{ damageType, magnitude: { type: "flat", value } }],
+  tags: ["dot", damageType],
+});
+const heal = (value: number): CombatEffect => ({
+  type: "heal",
+  target: "self",
+  magnitude: { type: "flat", value },
+  tags: ["heal", "hot"],
+});
+const modifier = (
+  key: CombatModifier["key"],
+  value: number,
+  extra: Omit<CombatModifier, "key" | "value"> = {},
+): CombatModifier => ({ key, value, ...extra });
 
 export const STATUS_DEFINITIONS: Record<StatusId, StatusDefinition> = {
   burning: {
-    id: 'burning', name: 'Burning', description: 'Takes Fire damage over time.', classification: 'debuff', tags: ['debuff', 'dot', 'fire'], defaultDurationMs: 5000,
-    applicationPolicy: 'per-source', stacking: { mode: 'refresh' }, periodic: { intervalMs: 1000, effects: [damage('fire', 5)] }, cleanseable: true, dispellable: false,
+    id: "burning",
+    name: "Burning",
+    description: "Takes Fire damage over time.",
+    classification: "debuff",
+    tags: ["debuff", "dot", "fire"],
+    defaultDurationMs: 5000,
+    applicationPolicy: "per-source",
+    stacking: { mode: "refresh" },
+    periodic: { intervalMs: 1000, effects: [damage("fire", 5)] },
+    cleanseable: true,
+    dispellable: false,
   },
   kindled: {
-    id: 'kindled', name: 'Kindled', description: 'Takes 25% more Fire damage.', classification: 'debuff', tags: ['debuff', 'fire'], defaultDurationMs: 18000,
-    stacking: { mode: 'refresh' }, modifiers: [modifier('damage-taken-percent', 0.25, { damageTypes: ['fire'] })], cleanseable: true, dispellable: false,
+    id: "kindled",
+    name: "Kindled",
+    description: "Takes 25% more Fire damage.",
+    classification: "debuff",
+    tags: ["debuff", "fire"],
+    defaultDurationMs: 18000,
+    stacking: { mode: "refresh" },
+    modifiers: [
+      modifier("damage-taken-percent", 0.25, { damageTypes: ["fire"] }),
+    ],
+    cleanseable: true,
+    dispellable: false,
   },
   frozen: {
-    id: 'frozen', name: 'Frozen', description: 'All action speed is reduced by 50%.', classification: 'debuff', tags: ['debuff', 'control', 'water'], defaultDurationMs: 4000,
-    stacking: { mode: 'strongest' }, potencyKey: 'action-speed-percent', potencyDirection: 'lower', modifiers: [modifier('action-speed-percent', -0.5), modifier('basic-attack-speed-percent', -0.5)], cleanseable: true, dispellable: false,
+    id: "frozen",
+    name: "Frozen",
+    description: "All action speed is reduced by 50%.",
+    classification: "debuff",
+    tags: ["debuff", "control", "water"],
+    defaultDurationMs: 4000,
+    stacking: { mode: "strongest" },
+    potencyKey: "action-speed-percent",
+    potencyDirection: "lower",
+    modifiers: [
+      modifier("action-speed-percent", -0.5),
+      modifier("basic-attack-speed-percent", -0.5),
+    ],
+    cleanseable: true,
+    dispellable: false,
   },
-  'healing-tide': {
-    id: 'healing-tide', name: 'Healing Tide', description: 'Restores Health over time.', classification: 'buff', tags: ['buff', 'hot', 'water'], defaultDurationMs: 6000,
-    stacking: { mode: 'refresh' }, periodic: { intervalMs: 1000, effects: [heal(5)] }, cleanseable: false, dispellable: true,
+  "healing-tide": {
+    id: "healing-tide",
+    name: "Healing Tide",
+    description: "Restores Health over time.",
+    classification: "buff",
+    tags: ["buff", "hot", "water"],
+    defaultDurationMs: 6000,
+    stacking: { mode: "refresh" },
+    periodic: { intervalMs: 1000, effects: [heal(5)] },
+    cleanseable: false,
+    dispellable: true,
   },
-  'earth-fracture': {
-    id: 'earth-fracture', name: 'Earth Fracture', description: 'Takes Earth damage over time.', classification: 'debuff', tags: ['debuff', 'dot', 'earth'], defaultDurationMs: 3000,
-    applicationPolicy: 'per-source', stacking: { mode: 'refresh' }, periodic: { intervalMs: 1000, effects: [damage('earth', 1)] }, cleanseable: true, dispellable: false,
+  "earth-fracture": {
+    id: "earth-fracture",
+    name: "Earth Fracture",
+    description: "Takes Earth damage over time.",
+    classification: "debuff",
+    tags: ["debuff", "dot", "earth"],
+    defaultDurationMs: 3000,
+    applicationPolicy: "per-source",
+    stacking: { mode: "refresh" },
+    periodic: { intervalMs: 1000, effects: [damage("earth", 1)] },
+    cleanseable: true,
+    dispellable: false,
   },
-  'stone-skin': {
-    id: 'stone-skin', name: 'Stone Skin', description: 'Defense increased by 20%.', classification: 'buff', tags: ['buff', 'earth'], defaultDurationMs: 10000,
-    stacking: { mode: 'strongest' }, potencyKey: 'defense-percent', potencyDirection: 'higher', modifiers: [modifier('defense-percent', 0.2)], cleanseable: false, dispellable: true,
+  "stone-skin": {
+    id: "stone-skin",
+    name: "Stone Skin",
+    description: "Defense increased by 20%.",
+    classification: "buff",
+    tags: ["buff", "earth"],
+    defaultDurationMs: 10000,
+    stacking: { mode: "strongest" },
+    potencyKey: "defense-percent",
+    potencyDirection: "higher",
+    modifiers: [modifier("defense-percent", 0.2)],
+    cleanseable: false,
+    dispellable: true,
   },
   hardened: {
-    id: 'hardened', name: 'Hardened', description: 'Damage taken is reduced by 25%.', classification: 'buff', tags: ['buff', 'earth'], defaultDurationMs: 5000,
-    stacking: { mode: 'strongest' }, potencyKey: 'damage-taken-percent', potencyDirection: 'lower', modifiers: [modifier('damage-taken-percent', -0.25)], cleanseable: false, dispellable: true,
+    id: "hardened",
+    name: "Hardened",
+    description: "Damage taken is reduced by 25%.",
+    classification: "buff",
+    tags: ["buff", "earth"],
+    defaultDurationMs: 5000,
+    stacking: { mode: "strongest" },
+    potencyKey: "damage-taken-percent",
+    potencyDirection: "lower",
+    modifiers: [modifier("damage-taken-percent", -0.25)],
+    cleanseable: false,
+    dispellable: true,
   },
-  'rend-armor': {
-    id: 'rend-armor', name: 'Rend Armor', description: 'Defense reduced by 20%.', classification: 'debuff', tags: ['debuff', 'earth'], defaultDurationMs: 10000,
-    stacking: { mode: 'strongest' }, potencyKey: 'defense-percent', potencyDirection: 'lower', modifiers: [modifier('defense-percent', -0.2)], cleanseable: true, dispellable: false,
+  "rend-armor": {
+    id: "rend-armor",
+    name: "Rend Armor",
+    description: "Defense reduced by 20%.",
+    classification: "debuff",
+    tags: ["debuff", "earth"],
+    defaultDurationMs: 10000,
+    stacking: { mode: "strongest" },
+    potencyKey: "defense-percent",
+    potencyDirection: "lower",
+    modifiers: [modifier("defense-percent", -0.2)],
+    cleanseable: true,
+    dispellable: false,
   },
   tremored: {
-    id: 'tremored', name: 'Tremored', description: 'All enemy action speed is reduced by 25%.', classification: 'debuff', tags: ['debuff', 'control', 'earth'], defaultDurationMs: 5000,
-    stacking: { mode: 'strongest' }, potencyKey: 'action-speed-percent', potencyDirection: 'lower', modifiers: [modifier('action-speed-percent', -0.25), modifier('basic-attack-speed-percent', -0.25)], cleanseable: true, dispellable: false,
+    id: "tremored",
+    name: "Tremored",
+    description: "All enemy action speed is reduced by 25%.",
+    classification: "debuff",
+    tags: ["debuff", "control", "earth"],
+    defaultDurationMs: 5000,
+    stacking: { mode: "strongest" },
+    potencyKey: "action-speed-percent",
+    potencyDirection: "lower",
+    modifiers: [
+      modifier("action-speed-percent", -0.25),
+      modifier("basic-attack-speed-percent", -0.25),
+    ],
+    cleanseable: true,
+    dispellable: false,
   },
   gust: {
-    id: 'gust', name: 'Gust', description: 'The next Spell cast resolves 30% faster.', classification: 'buff', tags: ['buff', 'air'], defaultDurationMs: 6000,
-    stacking: { mode: 'refresh' }, cleanseable: false, dispellable: true,
+    id: "gust",
+    name: "Gust",
+    description: "The next Spell cast resolves 30% faster.",
+    classification: "buff",
+    tags: ["buff", "air"],
+    defaultDurationMs: 6000,
+    stacking: { mode: "refresh" },
+    cleanseable: false,
+    dispellable: true,
   },
   tailwind: {
-    id: 'tailwind', name: 'Tailwind', description: 'Action speed increased by 25%.', classification: 'buff', tags: ['buff', 'air'], defaultDurationMs: 10000,
-    stacking: { mode: 'strongest' }, potencyKey: 'action-speed-percent', potencyDirection: 'higher', modifiers: [modifier('action-speed-percent', 0.25)], cleanseable: false, dispellable: true,
+    id: "tailwind",
+    name: "Tailwind",
+    description: "Action speed increased by 25%.",
+    classification: "buff",
+    tags: ["buff", "air"],
+    defaultDurationMs: 10000,
+    stacking: { mode: "strongest" },
+    potencyKey: "action-speed-percent",
+    potencyDirection: "higher",
+    modifiers: [modifier("action-speed-percent", 0.25)],
+    cleanseable: false,
+    dispellable: true,
   },
   static: {
-    id: 'static', name: 'Static Charge', description: 'The next damaging Air Spell deals 75% more damage.', classification: 'buff', tags: ['buff', 'air'], defaultDurationMs: 10000,
-    stacking: { mode: 'refresh' }, modifiers: [modifier('spell-damage-percent', 0.75, { damageTypes: ['air'] })], cleanseable: false, dispellable: true,
+    id: "static",
+    name: "Static Charge",
+    description: "The next damaging Air Spell deals 75% more damage.",
+    classification: "buff",
+    tags: ["buff", "air"],
+    defaultDurationMs: 10000,
+    stacking: { mode: "refresh" },
+    modifiers: [
+      modifier("spell-damage-percent", 0.75, { damageTypes: ["air"] }),
+    ],
+    cleanseable: false,
+    dispellable: true,
   },
-  'eye-of-the-storm': {
-    id: 'eye-of-the-storm', name: 'Eye of the Storm', description: 'Cooldown recovery, critical chance, and action speed increased by 10%.', classification: 'buff', tags: ['buff', 'air'], defaultDurationMs: 10000,
-    stacking: { mode: 'refresh' }, modifiers: [modifier('cooldown-recovery-percent', 0.1), modifier('crit-chance', 0.1), modifier('action-speed-percent', 0.1)], cleanseable: false, dispellable: true,
+  "eye-of-the-storm": {
+    id: "eye-of-the-storm",
+    name: "Eye of the Storm",
+    description:
+      "Cooldown recovery, critical chance, and action speed increased by 10%.",
+    classification: "buff",
+    tags: ["buff", "air"],
+    defaultDurationMs: 10000,
+    stacking: { mode: "refresh" },
+    modifiers: [
+      modifier("cooldown-recovery-percent", 0.1),
+      modifier("crit-chance", 0.1),
+      modifier("action-speed-percent", 0.1),
+    ],
+    cleanseable: false,
+    dispellable: true,
   },
-  'living-mountain': {
-    id: 'living-mountain', name: 'Living Mountain', description: 'Defense increased by 25% and damage taken reduced by 30%.', classification: 'buff', tags: ['buff', 'earth'], defaultDurationMs: 14000,
-    stacking: { mode: 'strongest' }, potencyKey: 'damage-taken-percent', potencyDirection: 'lower', modifiers: [modifier('defense-percent', 0.25), modifier('damage-taken-percent', -0.3)], cleanseable: false, dispellable: true,
+  "living-mountain": {
+    id: "living-mountain",
+    name: "Living Mountain",
+    description: "Defense increased by 25% and damage taken reduced by 30%.",
+    classification: "buff",
+    tags: ["buff", "earth"],
+    defaultDurationMs: 14000,
+    stacking: { mode: "strongest" },
+    potencyKey: "damage-taken-percent",
+    potencyDirection: "lower",
+    modifiers: [
+      modifier("defense-percent", 0.25),
+      modifier("damage-taken-percent", -0.3),
+    ],
+    cleanseable: false,
+    dispellable: true,
   },
   quickening: {
-    id: 'quickening', name: 'Quickening', description: 'Basic Attacks resolve 25% faster.', classification: 'buff', tags: ['buff', 'air'], defaultDurationMs: 6000,
-    stacking: { mode: 'refresh' }, modifiers: [modifier('basic-attack-speed-percent', 0.25)], cleanseable: false, dispellable: true,
+    id: "quickening",
+    name: "Quickening",
+    description: "Basic Attacks resolve 25% faster.",
+    classification: "buff",
+    tags: ["buff", "air"],
+    defaultDurationMs: 6000,
+    stacking: { mode: "refresh" },
+    modifiers: [modifier("basic-attack-speed-percent", 0.25)],
+    cleanseable: false,
+    dispellable: true,
   },
   haste: {
-    id: 'haste', name: 'Haste', description: 'Action speed increased by 15%.', classification: 'buff', tags: ['buff'], defaultDurationMs: null,
-    stacking: { mode: 'refresh' }, modifiers: [modifier('action-speed-percent', 0.15)], cleanseable: false, dispellable: true,
+    id: "haste",
+    name: "Haste",
+    description: "Action speed increased by 15%.",
+    classification: "buff",
+    tags: ["buff"],
+    defaultDurationMs: null,
+    stacking: { mode: "refresh" },
+    modifiers: [modifier("action-speed-percent", 0.15)],
+    cleanseable: false,
+    dispellable: true,
   },
-  'spectral-fade': {
-    id: 'spectral-fade', name: 'Spectral Fade', description: 'Damage taken is reduced by 25%.', classification: 'buff', tags: ['buff'], defaultDurationMs: 5000,
-    stacking: { mode: 'strongest' }, potencyKey: 'damage-taken-percent', potencyDirection: 'lower', modifiers: [modifier('damage-taken-percent', -0.25)], cleanseable: false, dispellable: true,
+  "spectral-fade": {
+    id: "spectral-fade",
+    name: "Spectral Fade",
+    description: "Damage taken is reduced by 25%.",
+    classification: "buff",
+    tags: ["buff"],
+    defaultDurationMs: 5000,
+    stacking: { mode: "strongest" },
+    potencyKey: "damage-taken-percent",
+    potencyDirection: "lower",
+    modifiers: [modifier("damage-taken-percent", -0.25)],
+    cleanseable: false,
+    dispellable: true,
   },
-  'thorn-wound': {
-    id: 'thorn-wound', name: 'Thorn Wound', description: 'Thorns deal physical damage over time.', classification: 'debuff', tags: ['debuff', 'dot'], defaultDurationMs: 6000,
-    applicationPolicy: 'per-source', stacking: { mode: 'refresh' }, periodic: { intervalMs: 2000, effects: [damage('physical', 3)] }, cleanseable: true, dispellable: false,
+  "thorn-wound": {
+    id: "thorn-wound",
+    name: "Thorn Wound",
+    description: "Thorns deal physical damage over time.",
+    classification: "debuff",
+    tags: ["debuff", "dot"],
+    defaultDurationMs: 6000,
+    applicationPolicy: "per-source",
+    stacking: { mode: "refresh" },
+    periodic: { intervalMs: 2000, effects: [damage("physical", 3)] },
+    cleanseable: true,
+    dispellable: false,
   },
   bleeding: {
-    id: 'bleeding', name: 'Bleeding', description: 'Takes Physical damage over time.', classification: 'debuff', tags: ['debuff', 'dot', 'physical'], defaultDurationMs: 8000,
-    applicationPolicy: 'per-source', stacking: { mode: 'refresh' }, periodic: { intervalMs: 2000, effects: [damage('physical', 4)] }, cleanseable: true, dispellable: false,
+    id: "bleeding",
+    name: "Bleeding",
+    description: "Takes Physical damage over time.",
+    classification: "debuff",
+    tags: ["debuff", "dot", "physical"],
+    defaultDurationMs: 8000,
+    applicationPolicy: "per-source",
+    stacking: { mode: "refresh" },
+    periodic: { intervalMs: 2000, effects: [damage("physical", 4)] },
+    cleanseable: true,
+    dispellable: false,
   },
   chilled: {
-    id: 'chilled', name: 'Chilled', description: 'Basic Attacks and Action cadence are 20% slower.', classification: 'debuff', tags: ['debuff', 'control', 'water'], defaultDurationMs: 5000,
-    stacking: { mode: 'strongest' }, potencyKey: 'action-speed-percent', potencyDirection: 'lower', modifiers: [modifier('basic-attack-speed-percent', -0.2), modifier('action-speed-percent', -0.2)], cleanseable: true, dispellable: false, ui: { alert: 'important', icon: 'control' },
+    id: "chilled",
+    name: "Chilled",
+    description: "Action cadence is reduced by 20%.",
+    classification: "debuff",
+    tags: ["debuff", "control", "water"],
+    defaultDurationMs: 5000,
+    stacking: { mode: "strongest" },
+    potencyKey: "action-speed-percent",
+    potencyDirection: "lower",
+    modifiers: [
+      modifier("basic-attack-speed-percent", -0.2),
+      modifier("action-speed-percent", -0.2),
+    ],
+    cleanseable: true,
+    dispellable: false,
+    ui: { alert: "important", icon: "control" },
   },
   regeneration: {
-    id: 'regeneration', name: 'Regeneration', description: 'Restores Health over time.', classification: 'buff', tags: ['buff', 'hot', 'water'], defaultDurationMs: 6000,
-    stacking: { mode: 'refresh' }, periodic: { intervalMs: 1000, effects: [heal(5)] }, cleanseable: false, dispellable: true,
+    id: "regeneration",
+    name: "Regeneration",
+    description: "Restores Health over time.",
+    classification: "buff",
+    tags: ["buff", "hot", "water"],
+    defaultDurationMs: 6000,
+    stacking: { mode: "refresh" },
+    periodic: { intervalMs: 1000, effects: [heal(5)] },
+    cleanseable: false,
+    dispellable: true,
   },
   fortified: {
-    id: 'fortified', name: 'Fortified', description: 'Damage taken is reduced by 15%.', classification: 'buff', tags: ['buff', 'earth'], defaultDurationMs: 8000,
-    stacking: { mode: 'strongest' }, potencyKey: 'damage-taken-percent', potencyDirection: 'lower', modifiers: [modifier('damage-taken-percent', -0.15)], cleanseable: false, dispellable: true,
+    id: "fortified",
+    name: "Fortified",
+    description: "Damage taken is reduced by 15%.",
+    classification: "buff",
+    tags: ["buff", "earth"],
+    defaultDurationMs: 8000,
+    stacking: { mode: "strongest" },
+    potencyKey: "damage-taken-percent",
+    potencyDirection: "lower",
+    modifiers: [modifier("damage-taken-percent", -0.15)],
+    cleanseable: false,
+    dispellable: true,
   },
   shock: {
-    id: 'shock', name: 'Shock', description: 'Each stack increases Air damage taken by 4%.', classification: 'debuff', tags: ['debuff', 'air'], defaultDurationMs: 8000,
-    stacking: { mode: 'stacks', maxStacks: 5 }, modifiers: [modifier('damage-taken-percent', 0.04, { damageTypes: ['air'], perStack: true })], cleanseable: true, dispellable: false,
+    id: "shock",
+    name: "Shock",
+    description: "Each stack increases Air damage taken by 4%.",
+    classification: "debuff",
+    tags: ["debuff", "air"],
+    defaultDurationMs: 8000,
+    stacking: { mode: "stacks", maxStacks: 5 },
+    modifiers: [
+      modifier("damage-taken-percent", 0.04, {
+        damageTypes: ["air"],
+        perStack: true,
+      }),
+    ],
+    cleanseable: true,
+    dispellable: false,
   },
   staggered: {
-    id: 'staggered', name: 'Staggered', description: 'Recently suffered a stagger.', classification: 'debuff', tags: ['debuff', 'control', 'earth'], defaultDurationMs: 1000,
-    stacking: { mode: 'refresh' }, cleanseable: true, dispellable: false, ui: { alert: 'important', icon: 'control' },
+    id: "staggered",
+    name: "Staggered",
+    description: "Recently suffered a stagger.",
+    classification: "debuff",
+    tags: ["debuff", "control", "earth"],
+    defaultDurationMs: 1000,
+    stacking: { mode: "refresh" },
+    cleanseable: true,
+    dispellable: false,
+    ui: { alert: "important", icon: "control" },
   },
   vulnerable: {
-    id: 'vulnerable', name: 'Vulnerable', description: 'Damage taken is increased by 15%.', classification: 'debuff', tags: ['debuff'], defaultDurationMs: 6000,
-    stacking: { mode: 'strongest' }, potencyKey: 'damage-taken-percent', potencyDirection: 'higher', modifiers: [modifier('damage-taken-percent', 0.15)], cleanseable: true, dispellable: false, ui: { alert: 'important', icon: 'status' },
+    id: "vulnerable",
+    name: "Vulnerable",
+    description: "Damage taken is increased by 15%.",
+    classification: "debuff",
+    tags: ["debuff"],
+    defaultDurationMs: 6000,
+    stacking: { mode: "strongest" },
+    potencyKey: "damage-taken-percent",
+    potencyDirection: "higher",
+    modifiers: [modifier("damage-taken-percent", 0.15)],
+    cleanseable: true,
+    dispellable: false,
+    ui: { alert: "important", icon: "status" },
   },
   purified: {
-    id: 'purified', name: 'Purified', description: 'Incoming control and debuff durations are reduced by 50%.', classification: 'buff', tags: ['buff', 'water'], defaultDurationMs: 4000,
-    stacking: { mode: 'refresh' }, modifiers: [modifier('status-duration-received-percent', -0.5, { statusTags: ['debuff'] })], cleanseable: false, dispellable: true,
+    id: "purified",
+    name: "Purified",
+    description: "Incoming control and debuff durations are reduced by 50%.",
+    classification: "buff",
+    tags: ["buff", "water"],
+    defaultDurationMs: 4000,
+    stacking: { mode: "refresh" },
+    modifiers: [
+      modifier("status-duration-received-percent", -0.5, {
+        statusTags: ["debuff"],
+      }),
+    ],
+    cleanseable: false,
+    dispellable: true,
   },
   stunned: {
-    id: 'stunned', name: 'Stunned', description: 'Cannot start or resolve normal actions.', classification: 'debuff', tags: ['debuff', 'control'], defaultDurationMs: 3000,
-    stacking: { mode: 'refresh' }, preventsAction: true, cleanseable: true, dispellable: false, ui: { alert: 'critical', icon: 'control' },
+    id: "stunned",
+    name: "Stunned",
+    description: "Cannot start or resolve normal actions.",
+    classification: "debuff",
+    tags: ["debuff", "control"],
+    defaultDurationMs: 3000,
+    stacking: { mode: "refresh" },
+    preventsAction: true,
+    cleanseable: true,
+    dispellable: false,
+    ui: { alert: "critical", icon: "control" },
   },
   entangled: {
-    id: 'entangled', name: 'Entangled', description: 'Basic Attacks and actions resolve 20% slower.', classification: 'debuff', tags: ['debuff', 'control', 'earth'], defaultDurationMs: 5000,
-    stacking: { mode: 'strongest' }, potencyKey: 'action-speed-percent', potencyDirection: 'lower', modifiers: [modifier('basic-attack-speed-percent', -0.2), modifier('action-speed-percent', -0.2)], cleanseable: true, dispellable: false, ui: { alert: 'important', icon: 'control' },
+    id: "entangled",
+    name: "Entangled",
+    description: "Action cadence is reduced by 20%.",
+    classification: "debuff",
+    tags: ["debuff", "control", "earth"],
+    defaultDurationMs: 5000,
+    stacking: { mode: "strongest" },
+    potencyKey: "action-speed-percent",
+    potencyDirection: "lower",
+    modifiers: [
+      modifier("basic-attack-speed-percent", -0.2),
+      modifier("action-speed-percent", -0.2),
+    ],
+    cleanseable: true,
+    dispellable: false,
+    ui: { alert: "important", icon: "control" },
   },
   poisoned: {
-    id: 'poisoned', name: 'Poisoned', description: 'Takes Physical damage over time.', classification: 'debuff', tags: ['debuff', 'dot', 'physical'], defaultDurationMs: 8000,
-    applicationPolicy: 'per-source', stacking: { mode: 'refresh' }, periodic: { intervalMs: 2000, effects: [damage('physical', 5)] }, cleanseable: true, dispellable: false,
+    id: "poisoned",
+    name: "Poisoned",
+    description: "Takes Physical damage over time.",
+    classification: "debuff",
+    tags: ["debuff", "dot", "physical"],
+    defaultDurationMs: 8000,
+    applicationPolicy: "per-source",
+    stacking: { mode: "refresh" },
+    periodic: { intervalMs: 2000, effects: [damage("physical", 5)] },
+    cleanseable: true,
+    dispellable: false,
   },
   cursed: {
-    id: 'cursed', name: 'Cursed', description: 'Deals 10% less damage and receives 15% less healing.', classification: 'debuff', tags: ['debuff'], defaultDurationMs: 8000,
-    stacking: { mode: 'strongest' }, potencyKey: 'damage-dealt-percent', potencyDirection: 'lower', modifiers: [modifier('damage-dealt-percent', -0.1), modifier('healing-received-percent', -0.15)], cleanseable: true, dispellable: false,
+    id: "cursed",
+    name: "Cursed",
+    description: "Deals 10% less damage and receives 15% less healing.",
+    classification: "debuff",
+    tags: ["debuff"],
+    defaultDurationMs: 8000,
+    stacking: { mode: "strongest" },
+    potencyKey: "damage-dealt-percent",
+    potencyDirection: "lower",
+    modifiers: [
+      modifier("damage-dealt-percent", -0.1),
+      modifier("healing-received-percent", -0.15),
+    ],
+    cleanseable: true,
+    dispellable: false,
   },
   fragile: {
-    id: 'fragile', name: 'Fragile', description: 'Defense is reduced and damage taken is increased.', classification: 'debuff', tags: ['debuff'], defaultDurationMs: 6000,
-    stacking: { mode: 'strongest' }, potencyKey: 'damage-taken-percent', potencyDirection: 'higher', modifiers: [modifier('damage-taken-percent', 0.08), modifier('defense-flat', -12)], cleanseable: true, dispellable: false,
+    id: "fragile",
+    name: "Fragile",
+    description: "Defense is reduced and damage taken is increased.",
+    classification: "debuff",
+    tags: ["debuff"],
+    defaultDurationMs: 6000,
+    stacking: { mode: "strongest" },
+    potencyKey: "damage-taken-percent",
+    potencyDirection: "higher",
+    modifiers: [
+      modifier("damage-taken-percent", 0.08),
+      modifier("defense-flat", -12),
+    ],
+    cleanseable: true,
+    dispellable: false,
   },
   silenced: {
-    id: 'silenced', name: 'Silenced', description: 'Cannot cast Spells.', classification: 'debuff', tags: ['debuff', 'control'], defaultDurationMs: 3000,
-    stacking: { mode: 'refresh' }, preventsSpellCast: true, cleanseable: true, dispellable: false, ui: { alert: 'critical', icon: 'control' },
+    id: "silenced",
+    name: "Silenced",
+    description: "Cannot cast Spells.",
+    classification: "debuff",
+    tags: ["debuff", "control"],
+    defaultDurationMs: 3000,
+    stacking: { mode: "refresh" },
+    preventsSpellCast: true,
+    cleanseable: true,
+    dispellable: false,
+    ui: { alert: "critical", icon: "control" },
   },
   corruption: {
-    id: 'corruption', name: 'Corruption', description: 'Each stack increases damage taken by 3%.', classification: 'debuff', tags: ['debuff', 'arcane'], defaultDurationMs: 10000,
-    stacking: { mode: 'stacks', maxStacks: 5 }, modifiers: [modifier('damage-taken-percent', 0.03, { perStack: true })], cleanseable: true, dispellable: false,
+    id: "corruption",
+    name: "Corruption",
+    description: "Each stack increases damage taken by 3%.",
+    classification: "debuff",
+    tags: ["debuff", "arcane"],
+    defaultDurationMs: 10000,
+    stacking: { mode: "stacks", maxStacks: 5 },
+    modifiers: [modifier("damage-taken-percent", 0.03, { perStack: true })],
+    cleanseable: true,
+    dispellable: false,
   },
-  'arcane-disruption': {
-    id: 'arcane-disruption', name: 'Arcane Disruption', description: 'Mana regeneration is reduced by 20% and cooldown recovery by 15%.', classification: 'debuff', tags: ['debuff', 'arcane'], defaultDurationMs: 6000,
-    stacking: { mode: 'refresh' }, modifiers: [modifier('mana-regen-percent', -0.2), modifier('cooldown-recovery-percent', -0.15)], cleanseable: true, dispellable: false,
+  "arcane-disruption": {
+    id: "arcane-disruption",
+    name: "Arcane Disruption",
+    description:
+      "Mana regeneration is reduced by 20% and cooldown recovery by 15%.",
+    classification: "debuff",
+    tags: ["debuff", "arcane"],
+    defaultDurationMs: 6000,
+    stacking: { mode: "refresh" },
+    modifiers: [
+      modifier("mana-regen-percent", -0.2),
+      modifier("cooldown-recovery-percent", -0.15),
+    ],
+    cleanseable: true,
+    dispellable: false,
   },
-}
+};
 
-export const getStatusDefinition = (statusId: StatusId) => STATUS_DEFINITIONS[statusId]
-export const STATUS_ORDER = Object.keys(STATUS_DEFINITIONS) as StatusId[]
+export const getStatusDefinition = (statusId: StatusId) =>
+  STATUS_DEFINITIONS[statusId];
+export const STATUS_ORDER = Object.keys(STATUS_DEFINITIONS) as StatusId[];
 
 export const validateStatusDefinitions = () => {
-  const errors: string[] = []
-  const validationContext = createCombatValidationContext(STATUS_DEFINITIONS)
-  const modifierKeys = COMBAT_MODIFIER_KEYS
-  const ids = Object.values(STATUS_DEFINITIONS).map((definition) => definition.id)
-  if (new Set(ids).size !== ids.length) errors.push('duplicate status id')
+  const errors: string[] = [];
+  const validationContext = createCombatValidationContext(STATUS_DEFINITIONS);
+  const modifierKeys = COMBAT_MODIFIER_KEYS;
+  const ids = Object.values(STATUS_DEFINITIONS).map(
+    (definition) => definition.id,
+  );
+  if (new Set(ids).size !== ids.length) errors.push("duplicate status id");
   Object.entries(STATUS_DEFINITIONS).forEach(([key, definition]) => {
-    if (key !== definition.id) errors.push(`${key}: key/id mismatch`)
-    if (definition.defaultDurationMs !== null && definition.defaultDurationMs < 0) errors.push(`${definition.id}: negative duration`)
-    if (definition.defaultDurationMs !== null && !Number.isFinite(definition.defaultDurationMs)) errors.push(`${definition.id}: non-finite duration`)
-    if (definition.periodic && definition.periodic.intervalMs <= 0) errors.push(`${definition.id}: periodic interval must be positive`)
-    if (definition.periodic && !Number.isFinite(definition.periodic.intervalMs)) errors.push(`${definition.id}: periodic interval must be finite`)
-    if (definition.applicationPolicy !== undefined && definition.applicationPolicy !== 'single' && definition.applicationPolicy !== 'per-source') errors.push(`${definition.id}: invalid application policy`)
-    if (definition.applicationPolicy === 'per-source' && (definition.modifiers?.length || definition.preventsAction)) errors.push(`${definition.id}: per-source status cannot define modifiers or preventsAction without aggregation`)
-    if (definition.applicationPolicy === 'per-source' && (definition.triggers?.length ?? 0) > 0) errors.push(`${definition.id}: Per-source statuses may not define shared status triggers in V1. Use periodicEffects or design explicit instance-trigger semantics first.`)
-    if (definition.stacking.mode === 'strongest') {
-      if (!definition.potencyKey || !modifierKeys.includes(definition.potencyKey)) errors.push(`${definition.id}: strongest policy requires a valid potencyKey`)
-      if (definition.potencyDirection !== 'higher' && definition.potencyDirection !== 'lower') errors.push(`${definition.id}: strongest policy requires potencyDirection`)
-      if (definition.potencyKey && !definition.modifiers?.some((entry) => entry.key === definition.potencyKey)) errors.push(`${definition.id}: potencyKey must match a Status modifier`)
+    if (key !== definition.id) errors.push(`${key}: key/id mismatch`);
+    if (
+      definition.defaultDurationMs !== null &&
+      definition.defaultDurationMs < 0
+    )
+      errors.push(`${definition.id}: negative duration`);
+    if (
+      definition.defaultDurationMs !== null &&
+      !Number.isFinite(definition.defaultDurationMs)
+    )
+      errors.push(`${definition.id}: non-finite duration`);
+    if (definition.periodic && definition.periodic.intervalMs <= 0)
+      errors.push(`${definition.id}: periodic interval must be positive`);
+    if (definition.periodic && !Number.isFinite(definition.periodic.intervalMs))
+      errors.push(`${definition.id}: periodic interval must be finite`);
+    if (
+      definition.applicationPolicy !== undefined &&
+      definition.applicationPolicy !== "single" &&
+      definition.applicationPolicy !== "per-source"
+    )
+      errors.push(`${definition.id}: invalid application policy`);
+    if (
+      definition.applicationPolicy === "per-source" &&
+      (definition.modifiers?.length || definition.preventsAction)
+    )
+      errors.push(
+        `${definition.id}: per-source status cannot define modifiers or preventsAction without aggregation`,
+      );
+    if (
+      definition.applicationPolicy === "per-source" &&
+      (definition.triggers?.length ?? 0) > 0
+    )
+      errors.push(
+        `${definition.id}: Per-source statuses may not define shared status triggers in V1. Use periodicEffects or design explicit instance-trigger semantics first.`,
+      );
+    if (definition.stacking.mode === "strongest") {
+      if (
+        !definition.potencyKey ||
+        !modifierKeys.includes(definition.potencyKey)
+      )
+        errors.push(
+          `${definition.id}: strongest policy requires a valid potencyKey`,
+        );
+      if (
+        definition.potencyDirection !== "higher" &&
+        definition.potencyDirection !== "lower"
+      )
+        errors.push(
+          `${definition.id}: strongest policy requires potencyDirection`,
+        );
+      if (
+        definition.potencyKey &&
+        !definition.modifiers?.some(
+          (entry) => entry.key === definition.potencyKey,
+        )
+      )
+        errors.push(
+          `${definition.id}: potencyKey must match a Status modifier`,
+        );
     }
-    if (definition.stacking.maxStacks !== undefined && definition.stacking.maxStacks < 1) errors.push(`${definition.id}: maxStacks must be at least one`)
-    if (definition.stacking.maxDurationMs !== undefined && (!Number.isFinite(definition.stacking.maxDurationMs) || definition.stacking.maxDurationMs < 0)) errors.push(`${definition.id}: invalid max duration`)
-    definition.modifiers?.forEach((entry) => { errors.push(...validateCombatModifier(entry, `${definition.id}:modifier`, validationContext)) })
-    errors.push(...validatePeriodicEffectList(definition.periodic?.effects ?? [], `${definition.id}: periodic`, validationContext))
-    definition.triggers?.forEach((rule) => { errors.push(...validateCombatTriggerRule(rule, `${definition.id}:${rule.id}`, validationContext)) })
-  })
-  if (errors.length && import.meta.env.DEV) console.error(`[combat-statuses] ${errors.join('; ')}`)
-  return errors
-}
+    if (
+      definition.stacking.maxStacks !== undefined &&
+      definition.stacking.maxStacks < 1
+    )
+      errors.push(`${definition.id}: maxStacks must be at least one`);
+    if (
+      definition.stacking.maxDurationMs !== undefined &&
+      (!Number.isFinite(definition.stacking.maxDurationMs) ||
+        definition.stacking.maxDurationMs < 0)
+    )
+      errors.push(`${definition.id}: invalid max duration`);
+    definition.modifiers?.forEach((entry) => {
+      errors.push(
+        ...validateCombatModifier(
+          entry,
+          `${definition.id}:modifier`,
+          validationContext,
+        ),
+      );
+    });
+    errors.push(
+      ...validatePeriodicEffectList(
+        definition.periodic?.effects ?? [],
+        `${definition.id}: periodic`,
+        validationContext,
+      ),
+    );
+    definition.triggers?.forEach((rule) => {
+      errors.push(
+        ...validateCombatTriggerRule(
+          rule,
+          `${definition.id}:${rule.id}`,
+          validationContext,
+        ),
+      );
+    });
+  });
+  if (errors.length && import.meta.env.DEV)
+    console.error(`[combat-statuses] ${errors.join("; ")}`);
+  return errors;
+};

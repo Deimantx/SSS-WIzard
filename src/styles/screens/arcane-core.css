@@ -57,8 +57,13 @@
 .arcane-core-modal-head p { max-width: 600px; margin-top: 5px; color: var(--ui-text-muted); font-size: var(--text-xs); }
 .arcane-core-modal-actions { display: flex; align-items: center; gap: 10px; }
 .arcane-core-modal-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 10px 0; border-top: 1px solid var(--ui-border); border-bottom: 1px solid var(--ui-border); color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
-.arcane-core-modal-toolbar > span:first-child { display: inline-flex; align-items: center; gap: 5px; margin-right: auto; }
+.arcane-core-modal-toolbar > .arcane-core-modal-hint { display: inline-flex; align-items: center; gap: 5px; margin-right: auto; order: 1; }
+.arcane-core-modal-toolbar > .game-tooltip-trigger { order: 2; }
+.arcane-core-modal-toolbar > span:not(.arcane-core-modal-hint):not(.game-tooltip-trigger) { order: 3; }
+.arcane-core-modal-toolbar > .button { order: 4; }
 .arcane-core-modal-toolbar .button { padding: 6px 9px; }
+.arcane-core-modal-available-points { display: inline-flex; align-items: baseline; gap: 5px; padding: 5px 8px; border: 1px solid color-mix(in srgb, var(--branch-accent) 35%, var(--ui-border)); border-radius: 6px; color: var(--ui-text-muted); background: color-mix(in srgb, var(--branch-accent) 6%, transparent); font: var(--text-micro) var(--font-mono); white-space: nowrap; }
+.arcane-core-modal-available-points strong { color: var(--branch-accent); }
 .arcane-core-modal-body { position: relative; display: grid; grid-template-columns: minmax(0, 1.95fr) minmax(330px, .78fr); gap: 16px; min-height: 0; padding-top: 14px; }
 
 .arcane-core-ring-viewport { position: relative; min-width: 0; min-height: 0; overflow: hidden; border: 1px solid color-mix(in srgb, var(--branch-accent) 34%, var(--ui-border)); border-radius: 10px; background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--branch-accent) 13%, transparent), transparent 34%), radial-gradient(circle at 50% 50%, transparent 35%, color-mix(in srgb, var(--branch-accent) 4%, var(--ui-bg)) 100%), var(--ui-bg); cursor: grab; touch-action: none; overscroll-behavior: contain; }

@@ -10,8 +10,6 @@ Shared combat rules and authored combat values live here. Monster-specific value
 | Player: Health Regen Per Second | 1 |
 | Player: Health Regen Interval Ms | 1000 |
 | Player: Out Of Combat Regen Multiplier | 2 |
-| Player: Basic Attack Damage | 5 |
-| Player: Basic Attack Interval Ms | 2200 |
 | Player: Base Spell Power | 50 |
 | Player: Base Defense | 5 |
 | Player: Base Crit Chance | 0.05 |
@@ -87,7 +85,7 @@ Shared combat rules and authored combat values live here. Monster-specific value
 | Spectral Fade (spectral-fade) | Buff | 5 s | — | — | Damage taken is reduced by 25%. |
 | Thorn Wound (thorn-wound) | Debuff | 6 s | — | 3 Physical damage | Thorns deal physical damage over time. |
 | Bleeding (bleeding) | Debuff | 8 s | — | 4 Physical damage | Takes Physical damage over time. |
-| Chilled (chilled) | Debuff | 5 s | — | — | Basic Attacks and Action cadence are 20% slower. |
+| Chilled (chilled) | Debuff | 5 s | — | — | Action cadence is reduced by 20%. |
 | Regeneration (regeneration) | Buff | 6 s | — | +5 Health | Restores Health over time. |
 | Fortified (fortified) | Buff | 8 s | — | — | Damage taken is reduced by 15%. |
 | Shock (shock) | Debuff | 8 s | 5 | — | Each stack increases Air damage taken by 4%. |
@@ -95,7 +93,7 @@ Shared combat rules and authored combat values live here. Monster-specific value
 | Vulnerable (vulnerable) | Debuff | 6 s | — | — | Damage taken is increased by 15%. |
 | Purified (purified) | Buff | 4 s | — | — | Incoming control and debuff durations are reduced by 50%. |
 | Stunned (stunned) | Debuff | 3 s | — | — | Cannot start or resolve normal actions. |
-| Entangled (entangled) | Debuff | 5 s | — | — | Basic Attacks and actions resolve 20% slower. |
+| Entangled (entangled) | Debuff | 5 s | — | — | Action cadence is reduced by 20%. |
 | Poisoned (poisoned) | Debuff | 8 s | — | 5 Physical damage | Takes Physical damage over time. |
 | Cursed (cursed) | Debuff | 8 s | — | — | Deals 10% less damage and receives 15% less healing. |
 | Fragile (fragile) | Debuff | 6 s | — | — | Defense is reduced and damage taken is increased. |
@@ -107,21 +105,21 @@ Shared combat rules and authored combat values live here. Monster-specific value
 
 | Trait | Description | Rules |
 | --- | --- | --- |
-| Flicker (forest-wisp-flicker) | After Arc Spark resolves, gains Haste for 10 seconds. | Action resolves when the current action is Arc Spark -> Haste (10 s) |
-| Barkskin (thornling-barkskin) | Basic Attack damage received is reduced by 15%. | — |
-| Rooted Shell (stone-rooted-shell) | Starts with Barrier equal to 15% max HP. | Combat start -> +15% of the caster's Max Health Barrier (once/encounter) |
+| Flickering Current (forest-wisp-flicker) | While Haste is active, deals 15% more Arcane damage. | — |
+| Barkskin (thornling-barkskin) | Starts combat Fortified for 8 seconds. | Combat start -> Fortified (8 s) (once/encounter) |
+| Rooted Shell (stone-rooted-shell) | Starts combat with Barrier equal to 15% max HP. | Combat start -> +15% of the caster's Max Health Barrier (once/encounter) |
 | Ancient Growth (grove-sentinel-ancient-growth) | At 40% HP, gains a large Barrier once. | HP threshold when the caster's Health is below 40% -> +22.22% of the caster's Max Health Barrier (once/encounter) |
-| Living Core (forest-heart-living-core) | At 50% HP, gains 15% Action speed once. | HP threshold when the caster's Health is below 50% -> Haste (once/encounter) |
+| Living Core (forest-heart-living-core) | At 50% Health, gains Haste and changes to the Overgrown Pattern. | HP threshold when the caster's Health is below 50% -> Haste; Pattern: Overgrown (once/encounter) |
 | Predator Instinct (cavefang-wolf-predator-instinct) | Deals 25% more damage while the target is at or below 35% HP. | — |
 | Relentless Hunter (razorclaw-lynx-relentless-hunter) | Deals 20% more damage to Bleeding targets. | — |
 | Arcane Corruption (corrupted-dire-wolf-arcane-corruption) | Corruption grants 10% resistance to Fire, Water, Earth, and Air. | — |
-| Thick Hide (corrupted-greatbear-thick-hide) | Basic Attack damage received is reduced by 20%. | — |
-| Unstable Corruption (corrupted-greatbear-unstable-corruption) | At 50% HP, gains Haste and shifts to the Corrupted Pattern once. | HP threshold when the caster's Health is below 50% -> Haste; Pattern: Corrupted (once/encounter) |
+| Thick Hide (corrupted-greatbear-thick-hide) | Takes 12% less damage while above 50% Health. | — |
+| Unstable Corruption (corrupted-greatbear-unstable-corruption) | At 50% Health, gains Haste and switches to the Corrupted Pattern. | HP threshold when the caster's Health is below 50% -> Haste; Pattern: Corrupted (once/encounter) |
 | Brittle Bones (restless-skeleton-brittle-bones) | Physical damage is reduced by 25%. | — |
 | Ethereal Form (grave-wraith-ethereal-form) | Physical damage is reduced by 50%; Fire, Water, Earth, and Air damage are increased by 25%. | — |
 | Grave Channeling (fallen-acolyte-grave-channeling) | Below 50% HP, healing done is increased by 50%. | — |
 | Arcane Remnant (archmage-edrin-arcane-remnant) | Resists Fire, Water, Earth, and Air damage by 15%. | — |
-| Unbound Spirit (archmage-edrin-unbound-spirit) | At 50% HP, gains Haste and shifts to the Unbound Pattern once. | HP threshold when the caster's Health is below 50% -> Haste; Pattern: Unbound (once/encounter) |
+| Unbound Spirit (archmage-edrin-unbound-spirit) | At 50% Health, gains Haste and shifts to the Unbound Pattern. | HP threshold when the caster's Health is below 50% -> Haste; Pattern: Unbound (once/encounter) |
 | Drowned Devotion (drowned-acolyte-devotion) | Receives 10% more Barrier. | — |
 | Reliquary Slime Engulf (reliquary-slime-engulf) | A distinct Act 1 combat trait shaping this creature’s behavior. | — |
 | Mist Wraith Fade (mist-wraith-fade) | A distinct Act 1 combat trait shaping this creature’s behavior. | — |

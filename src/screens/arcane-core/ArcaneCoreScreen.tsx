@@ -197,6 +197,7 @@ interface ArcaneCoreOrbitNodeProps {
   selectedRing: boolean;
   feedback?: "purchase" | "max";
   onSelect: (nodeId: string) => void;
+  onDoublePurchase: (nodeId: string) => void;
 }
 
 const ArcaneCoreOrbitNode = memo(function ArcaneCoreOrbitNode({
@@ -210,6 +211,7 @@ const ArcaneCoreOrbitNode = memo(function ArcaneCoreOrbitNode({
   selectedRing,
   feedback,
   onSelect,
+  onDoublePurchase,
 }: ArcaneCoreOrbitNodeProps) {
   return (
     <GameTooltip
@@ -223,6 +225,9 @@ const ArcaneCoreOrbitNode = memo(function ArcaneCoreOrbitNode({
         className={`arcane-core-ring-node node-${node.nodeType} ${rank > 0 ? "is-active" : ""} ${nodeAvailable ? "is-available" : "is-locked"} ${ringLocked ? "is-ring-locked" : ""} ${ringLocked && node.ring === highestRing + 1 ? "is-next-locked" : ""} ${ringLocked && node.ring > highestRing + 1 ? "is-deep-locked" : ""} ${selectedRing ? "is-selected-ring-node" : ""} ${selected ? "is-selected" : ""} ${feedback ? `is-${feedback}-pulse` : ""}`}
         style={{ left: position.left, top: position.top }}
         onClick={() => onSelect(node.id)}
+        onDoubleClick={(event) => {
+          if (event.button === 0) onDoublePurchase(node.id);
+        }}
         aria-label={`${node.name}, rank ${rank} of ${node.maxRank}`}
       >
         <span className="arcane-core-node-dot" aria-hidden="true">
@@ -251,6 +256,7 @@ interface ArcaneCoreNodeLayerProps {
   selectedId: string;
   feedback: { nodeId: string; kind: "purchase" | "max" } | null;
   onSelect: (nodeId: string) => void;
+  onDoublePurchase: (nodeId: string) => void;
 }
 
 const ArcaneCoreNodeLayer = memo(function ArcaneCoreNodeLayer({
@@ -260,6 +266,7 @@ const ArcaneCoreNodeLayer = memo(function ArcaneCoreNodeLayer({
   selectedId,
   feedback,
   onSelect,
+  onDoublePurchase,
 }: ArcaneCoreNodeLayerProps) {
   const positions = useMemo(
     () =>
@@ -287,6 +294,7 @@ const ArcaneCoreNodeLayer = memo(function ArcaneCoreNodeLayer({
             selectedRing={node.ring === (selectedNode?.ring ?? 0)}
             feedback={feedback?.nodeId === node.id ? feedback.kind : undefined}
             onSelect={onSelect}
+            onDoublePurchase={onDoublePurchase}
           />
         );
       })}
@@ -378,6 +386,7 @@ function CoreModal({
     ? isArcaneCoreNodeReachable(core, selected.id)
     : false;
   const highestRing = getArcaneCoreHighestUnlockedRing(core, branch.id);
+  const wallet = getArcaneCoreWalletInfo(core);
   const spent = getArcaneCorePointsSpent({
     nodes: Object.fromEntries(
       branch.nodes
@@ -500,18 +509,34 @@ function CoreModal({
       feedbackTimer.current = null;
     }, 760);
   };
-  const handlePurchase = () => {
-    if (!selected || selectedRank >= selected.maxRank || !selectedAvailable)
-      return;
-    const previousHighest = highestRing;
-    if (!purchase(selected.id)) return;
-    const nextCore = useGameStore.getState().arcaneCore;
-    const nextHighest = getArcaneCoreHighestUnlockedRing(nextCore, branch.id);
-    flashFeedback(
-      selected.id,
-      selectedRank + 1 >= selected.maxRank ? "max" : "purchase",
-      nextHighest > previousHighest ? nextHighest : undefined,
+  const purchaseNode = (nodeId: string) => {
+    const node = branch.nodes.find((candidate) => candidate.id === nodeId);
+    if (!node) return false;
+    const beforeCore = useGameStore.getState().arcaneCore;
+    const beforeHighestRing = getArcaneCoreHighestUnlockedRing(
+      beforeCore,
+      branch.id,
     );
+    if (!purchase(nodeId)) return false;
+    const afterCore = useGameStore.getState().arcaneCore;
+    const afterRank = getArcaneCoreNodeRank(afterCore, nodeId);
+    const afterHighestRing = getArcaneCoreHighestUnlockedRing(
+      afterCore,
+      branch.id,
+    );
+    flashFeedback(
+      nodeId,
+      afterRank >= node.maxRank ? "max" : "purchase",
+      afterHighestRing > beforeHighestRing ? afterHighestRing : undefined,
+    );
+    return true;
+  };
+  const handlePurchase = () => {
+    if (selected) purchaseNode(selected.id);
+  };
+  const handleDoublePurchase = (nodeId: string) => {
+    setSelectedId(nodeId);
+    purchaseNode(nodeId);
   };
   const requestRefund = () => {
     if (!selected || selectedRank <= 0) return;
@@ -612,7 +637,18 @@ function CoreModal({
         </div>
       </div>
       <div className="arcane-core-modal-toolbar">
-        <span>
+        <GameTooltip content="Spendable across all four Arcane Cores.">
+          <span
+            className="arcane-core-modal-available-points"
+            tabIndex={0}
+            aria-label={`${wallet.pointsAvailable.toLocaleString()} Arcane Points available across all four Arcane Cores`}
+          >
+            <small>AVAILABLE</small>
+            <strong>{wallet.pointsAvailable.toLocaleString()}</strong>
+            <small>ARCANE POINTS</small>
+          </span>
+        </GameTooltip>
+        <span className="arcane-core-modal-hint">
           <Crosshair size={14} /> Drag to pan · wheel to zoom
         </span>
         <span>
@@ -692,6 +728,7 @@ function CoreModal({
               selectedId={selectedId}
               feedback={feedback}
               onSelect={setSelectedId}
+              onDoublePurchase={handleDoublePurchase}
             />
           </div>
         </div>

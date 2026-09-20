@@ -32,24 +32,29 @@
 
 | Monster | Traits | Default pattern | Other patterns |
 | --- | --- | --- | --- |
-| Forest Wisp (forest-wisp) | Forest Wisp Flicker | Basic Attack -> Basic Attack -> Arc Spark | — |
-| Thornling (thornling) | Thornling Barkskin | Basic Attack -> Basic Attack -> Thorn Lash | — |
-| Stone Root (stone-root) | Stone Rooted Shell | Basic Attack -> Basic Attack -> Basic Attack -> Root Slam | — |
-| Grove Sentinel (grove-sentinel) | Grove Sentinel Ancient Growth | Basic Attack -> Basic Attack -> Root Crush -> Basic Attack -> Verdant Guard | — |
-| Forest Heart (forest-heart) | Forest Heart Living Core | Basic Attack -> Basic Attack -> Heart Pulse -> Basic Attack -> Basic Attack -> Root Prison -> Basic Attack -> Basic Attack -> Basic Attack -> Rejuvenating Sap | — |
+| Forest Wisp (forest-wisp) | Forest Wisp Flicker | Basic Attack -> Basic Attack -> Arc Spark -> Basic Attack -> Flicker -> Basic Attack | — |
+| Thornling (thornling) | Thornling Barkskin | Basic Attack -> Thorn Lash -> Basic Attack -> Basic Attack -> Spore Burst -> Basic Attack -> Thorn Lash | — |
+| Stone Root (stone-root) | Stone Rooted Shell | Basic Attack -> Basic Attack -> Root Slam -> Basic Attack -> Stone Shell -> Basic Attack | — |
+| Grove Sentinel (grove-sentinel) | Grove Sentinel Ancient Growth | Basic Attack -> Verdant Guard -> Basic Attack -> Root Crush -> Basic Attack -> Rejuvenate -> Basic Attack -> Root Crush | — |
+| Forest Heart (forest-heart) | Forest Heart Living Core | Basic Attack -> Basic Attack -> Heart Pulse -> Basic Attack -> Root Prison -> Basic Attack -> Rejuvenating Sap -> Basic Attack | Overgrown |
 
 ## Special actions
 
 | Monster | Action | Cast time | Effects | Damage type |
 | --- | --- | --- | --- | --- |
-| Forest Wisp (forest-wisp) | Arc Spark (arc-spark) | 2 s | 240% of Basic Attack damage Arcane damage | Arcane |
-| Thornling (thornling) | Thorn Lash (thorn-lash) | 1.8 s | 125% of Basic Attack damage Physical damage; Thorn Wound (6 s); 37.5% of Basic Attack damage Physical damage | Physical |
-| Stone Root (stone-root) | Root Slam (root-slam) | 2.5 s | 165% of Basic Attack damage Physical damage; +700 ms action time | Physical |
+| Forest Wisp (forest-wisp) | Arc Spark (arc-spark) | 2 s | 220% of Basic Attack damage Arcane damage | Arcane |
+| Forest Wisp (forest-wisp) | Flicker (flicker) | 1.2 s | Haste (6 s) | — |
+| Thornling (thornling) | Thorn Lash (thorn-lash) | 1.8 s | 120% of Basic Attack damage Physical damage; Thorn Wound (6 s); 40% of Basic Attack damage Physical damage | Physical |
+| Thornling (thornling) | Spore Burst (spore-burst) | 2.2 s | 65% of Basic Attack damage Physical damage; Detonate Thorn Wound | Physical |
+| Stone Root (stone-root) | Root Slam (root-slam) | 2.5 s | 150% of Basic Attack damage Physical damage; +600 ms action time | Physical |
+| Stone Root (stone-root) | Stone Shell (stone-shell) | 2.4 s | +12% of the caster's Max Health Barrier | — |
 | Grove Sentinel (grove-sentinel) | Root Crush (root-crush) | 2 s | 135% of Basic Attack damage Physical damage | Physical |
 | Grove Sentinel (grove-sentinel) | Verdant Guard (verdant-guard) | 2.5 s | +16.67% of the caster's Max Health Barrier | — |
+| Grove Sentinel (grove-sentinel) | Rejuvenate (rejuvenate) | 2.6 s | +8% of the caster's Max Health Health | — |
 | Forest Heart (forest-heart) | Heart Pulse (heart-pulse) | 2 s | 120% of Basic Attack damage Physical damage | Physical |
-| Forest Heart (forest-heart) | Root Prison (root-prison) | 2 s | 80% of Basic Attack damage Physical damage; +1 s action time | Physical |
+| Forest Heart (forest-heart) | Root Prison (root-prison) | 2 s | 80% of Basic Attack damage Physical damage; +900 ms action time | Physical |
 | Forest Heart (forest-heart) | Rejuvenating Sap (rejuvenating-sap) | 3 s | +10% of the caster's Max Health Health | — |
+| Forest Heart (forest-heart) | Overgrowth (overgrowth) | 2.8 s | +12% of the caster's Max Health Barrier; +4% of the caster's Max Health Health | — |
 
 ## Loot
 

@@ -2360,10 +2360,10 @@ If I want a monster DoT:
 scaledDot(
 ```
 
-If I want a delayed Basic Attack:
+If I want to delay the target's current action:
 
 ```text
-delayBasicAttack(
+delayCurrentAction(
 ```
 
 The project already contains many good examples.

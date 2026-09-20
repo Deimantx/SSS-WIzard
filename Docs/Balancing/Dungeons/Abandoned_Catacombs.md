@@ -30,25 +30,28 @@
 
 | Monster | Traits | Default pattern | Other patterns |
 | --- | --- | --- | --- |
-| Restless Skeleton (restless-skeleton) | Restless Skeleton Brittle Bones | Basic Attack -> Basic Attack -> Bone Cleaver | — |
-| Grave Wraith (grave-wraith) | Grave Wraith Ethereal Form | Basic Attack -> Chilling Touch -> Basic Attack -> Basic Attack -> Fade | — |
-| Fallen Acolyte (fallen-acolyte) | Fallen Acolyte Grave Channeling | Grave Bolt -> Basic Attack -> Soul Drain -> Basic Attack -> Basic Attack -> Death Ward -> Basic Attack | — |
-| Archmage Edrin's Shade (archmage-edrin-shade) | Archmage Edrin Arcane Remnant, Archmage Edrin Unbound Spirit | Gravefire -> Basic Attack -> Frostbind -> Arcane Ward -> Basic Attack -> Soul Drain | Unbound |
+| Restless Skeleton (restless-skeleton) | Restless Skeleton Brittle Bones | Basic Attack -> Basic Attack -> Bone Cleaver -> Basic Attack -> Bone Rattle -> Basic Attack | — |
+| Grave Wraith (grave-wraith) | Grave Wraith Ethereal Form | Basic Attack -> Chilling Touch -> Basic Attack -> Fade -> Basic Attack -> Chilling Touch | — |
+| Fallen Acolyte (fallen-acolyte) | Fallen Acolyte Grave Channeling | Grave Bolt -> Basic Attack -> Grave Curse -> Basic Attack -> Soul Drain -> Basic Attack -> Death Ward -> Basic Attack | — |
+| Archmage Edrin's Shade (archmage-edrin-shade) | Archmage Edrin Arcane Remnant, Archmage Edrin Unbound Spirit | Gravefire -> Basic Attack -> Frostbind -> Basic Attack -> Arcane Ward -> Soul Drain -> Basic Attack | Unbound |
 
 ## Special actions
 
 | Monster | Action | Cast time | Effects | Damage type |
 | --- | --- | --- | --- | --- |
 | Restless Skeleton (restless-skeleton) | Bone Cleaver (bone-cleaver) | 2.2 s | 185% of Basic Attack damage Physical damage | Physical |
+| Restless Skeleton (restless-skeleton) | Bone Rattle (bone-rattle) | 1.9 s | Fragile (6 s) | — |
 | Grave Wraith (grave-wraith) | Chilling Touch (chilling-touch) | 1.8 s | 130% of Basic Attack damage Water damage; Chilled | Water |
 | Grave Wraith (grave-wraith) | Fade (fade) | 1.7 s | Spectral Fade (5 s) | — |
-| Fallen Acolyte (fallen-acolyte) | Grave Bolt (grave-bolt) | 1.5 s | 150% of Basic Attack damage Arcane damage | Arcane |
-| Fallen Acolyte (fallen-acolyte) | Soul Drain (soul-drain) | 2.2 s | 112.5% of Basic Attack damage Arcane damage; +9% of the caster's Max Health Health | Arcane |
-| Fallen Acolyte (fallen-acolyte) | Death Ward (death-ward) | 2 s | +20.5% of the caster's Max Health Barrier | — |
+| Fallen Acolyte (fallen-acolyte) | Grave Bolt (grave-bolt) | 1.5 s | 145% of Basic Attack damage Arcane damage | Arcane |
+| Fallen Acolyte (fallen-acolyte) | Grave Curse (grave-curse) | 1.7 s | Cursed (8 s) | — |
+| Fallen Acolyte (fallen-acolyte) | Soul Drain (soul-drain) | 2.2 s | 110% of Basic Attack damage Arcane damage; +7% of the caster's Max Health Health | Arcane |
+| Fallen Acolyte (fallen-acolyte) | Death Ward (death-ward) | 2 s | +18% of the caster's Max Health Barrier | — |
 | Archmage Edrin's Shade (archmage-edrin-shade) | Gravefire (gravefire) | 1.8 s | 110% of Basic Attack damage Fire damage; Burning (5 s); 20% of Basic Attack damage Fire damage | Fire |
 | Archmage Edrin's Shade (archmage-edrin-shade) | Frostbind (frostbind) | 2 s | 105% of Basic Attack damage Water damage; Chilled | Water |
-| Archmage Edrin's Shade (archmage-edrin-shade) | Arcane Ward (arcane-ward) | 2.5 s | +2% of the caster's Max Health Barrier | — |
-| Archmage Edrin's Shade (archmage-edrin-shade) | Soul Drain (soul-drain) | 2.4 s | 120% of Basic Attack damage Arcane damage; +1.2% of the caster's Max Health Health | Arcane |
+| Archmage Edrin's Shade (archmage-edrin-shade) | Arcane Ward (arcane-ward) | 2.5 s | +8% of the caster's Max Health Barrier | — |
+| Archmage Edrin's Shade (archmage-edrin-shade) | Soul Drain (soul-drain) | 2.4 s | 120% of Basic Attack damage Arcane damage; +5% of the caster's Max Health Health | Arcane |
+| Archmage Edrin's Shade (archmage-edrin-shade) | Arcane Disruption (arcane-disruption) | 2 s | 80% of Basic Attack damage Arcane damage; Arcane Disruption (6 s) | Arcane |
 | Archmage Edrin's Shade (archmage-edrin-shade) | Final Incantation (final-incantation) | 3.5 s | 200% of Basic Attack damage Arcane damage | Arcane |
 
 ## Loot

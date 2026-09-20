@@ -1,9 +1,9 @@
 {
   "schemaVersion": 2,
   "snapshot": {
-    "commit": "58a70c563cb258d639c1c38b144f585ba5f7a820",
+    "commit": "f127c5329f1cfb80edd5a92e78cf971fc7d6f3f5",
     "workingTreeDirty": true,
-    "generatedAtUtc": "2026-09-20T07:27:22.276Z"
+    "generatedAtUtc": "2026-09-20T13:02:39.316Z"
   },
   "runtimePolicy": {
     "sourceOfTruth": "TypeScript runtime content and systems",
@@ -738,8 +738,6 @@
         "Player: Health Regen Per Second",
         "Player: Health Regen Interval Ms",
         "Player: Out Of Combat Regen Multiplier",
-        "Player: Basic Attack Damage",
-        "Player: Basic Attack Interval Ms",
         "Player: Base Spell Power",
         "Player: Base Defense",
         "Player: Base Crit Chance",

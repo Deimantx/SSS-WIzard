@@ -88,6 +88,103 @@ describe("Arcane Core screen", () => {
     expect(screen.queryByText("Enemy Damage Dealt")).toBeNull();
   });
 
+  it("keeps a single node click selection-only", async () => {
+    const user = userEvent.setup();
+    useGameStore.getState().setArcanePoints(10);
+    render(
+      <TooltipProvider>
+        <ArcaneCoreScreen />
+      </TooltipProvider>,
+    );
+    await user.click(screen.getByRole("button", { name: /Power Core/i }));
+    const dialog = screen.getByRole("dialog", { name: "Power Core" });
+    const node = dialog.querySelector(
+      '[aria-label^="Arcane Scaling"]',
+    ) as HTMLElement;
+    await user.click(node);
+
+    expect(
+      useGameStore.getState().arcaneCore.nodes["power-r1-arcane-force"],
+    ).toBeUndefined();
+    expect(
+      within(dialog).getByRole("heading", { name: "Arcane Scaling" }),
+    ).toBeTruthy();
+    expect(
+      dialog.querySelector(".arcane-core-modal-available-points strong")
+        ?.textContent,
+    ).toBe("10");
+  });
+
+  it("double-clicks the exact target for exactly one rank and updates the global wallet", async () => {
+    const user = userEvent.setup();
+    useGameStore.getState().setArcanePoints(10);
+    const power = ARCANE_CORE_BRANCHES.find((branch) => branch.id === "power")!;
+    const arcaneScaling = power.nodes.find(
+      (node) => node.name === "Arcane Scaling",
+    )!;
+    const spellImpact = power.nodes.find(
+      (node) => node.name === "Spell Impact",
+    )!;
+    render(
+      <TooltipProvider>
+        <ArcaneCoreScreen />
+      </TooltipProvider>,
+    );
+    await user.click(screen.getByRole("button", { name: /Power Core/i }));
+    const dialog = screen.getByRole("dialog", { name: "Power Core" });
+    await user.click(
+      dialog.querySelector(
+        `[aria-label^="${arcaneScaling.name}"]`,
+      ) as HTMLElement,
+    );
+    await user.dblClick(
+      dialog.querySelector(
+        `[aria-label^="${spellImpact.name}"]`,
+      ) as HTMLElement,
+    );
+
+    const state = useGameStore.getState().arcaneCore;
+    expect(state.nodes[arcaneScaling.id]).toBeUndefined();
+    expect(state.nodes[spellImpact.id]).toEqual({ rank: 1 });
+    expect(
+      within(dialog).getByRole("heading", { name: spellImpact.name }),
+    ).toBeTruthy();
+    expect(
+      dialog.querySelector(".arcane-core-modal-available-points strong")
+        ?.textContent,
+    ).toBe("5");
+  });
+
+  it("selects but rejects a double-click on a locked Ring node", async () => {
+    const user = userEvent.setup();
+    useGameStore.getState().setArcanePoints(100);
+    const lockedNode = ARCANE_CORE_BRANCHES.find(
+      (branch) => branch.id === "power",
+    )!.nodes.find((node) => node.name === "Critical Insight")!;
+    render(
+      <TooltipProvider>
+        <ArcaneCoreScreen />
+      </TooltipProvider>,
+    );
+    await user.click(screen.getByRole("button", { name: /Power Core/i }));
+    const dialog = screen.getByRole("dialog", { name: "Power Core" });
+    const node = dialog.querySelector(
+      '[aria-label^="Critical Insight"]',
+    ) as HTMLElement;
+    await user.dblClick(node);
+
+    expect(
+      useGameStore.getState().arcaneCore.nodes[lockedNode.id],
+    ).toBeUndefined();
+    expect(
+      within(dialog).getByText(/RING LOCKED .*0 \/ 20 PREVIOUS-RING RANKS/),
+    ).toBeTruthy();
+    expect(
+      dialog.querySelector(".arcane-core-modal-available-points strong")
+        ?.textContent,
+    ).toBe("100");
+  });
+
   it("opens a branch-scoped summary without unmounting the Core modal", async () => {
     const user = userEvent.setup();
     render(

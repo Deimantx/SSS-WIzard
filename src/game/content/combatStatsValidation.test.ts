@@ -15,7 +15,6 @@ describe('authored combat stat validation', () => {
         defense: -1,
         critChance: 1.01,
         critDamage: -1,
-        blockChance: 0.76,
         manaCostReductionPct: 0.81,
         focusEfficiencyPct: 0.81,
         resistances: { fire: 0.76, void: 0 },

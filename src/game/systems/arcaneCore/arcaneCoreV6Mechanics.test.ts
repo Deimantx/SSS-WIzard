@@ -7,7 +7,8 @@ import { getCombatSpellAutoCastFocusCost } from '../combat/combatStats'
 import { executeCombatEffects } from '../combat/effectResolver'
 import { getEquipmentStats } from '../../core/equipment/equipmentStats'
 import type { CombatSource } from '../combat/combatTypes'
-import { processArcaneCoreV6CombatEvent, recordArcaneCoreV6CriticalResult, getArcaneCoreV6CastModifiers } from './arcaneCoreV6Runtime'
+import { processArcaneCoreV6CombatEvent, recordArcaneCoreV6CriticalResult, getArcaneCoreV6CastModifiers, tryConsumeArcaneCoreV6Survival } from './arcaneCoreV6Runtime'
+import { resetArcaneCoreCombatRuntime, resetArcaneCoreEncounterRuntime } from './arcaneCoreRuntime'
 
 const node = (branch: 'power' | 'vitality' | 'focus' | 'control', name: string, major = false) => ARCANE_CORE_BRANCHES.find((entry) => entry.id === branch)!.nodes.find((candidate) => candidate.name === name && (candidate.nodeType === 'major') === major)!
 const playerSpell: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'test-spell', school: 'fire', tags: ['spell', 'magic', 'fire'] }
@@ -75,5 +76,49 @@ describe('Arcane Core V6 structured mechanics', () => {
     executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: state.player.maxHealth * 2 } }], tags: ['direct'] }], enemyAction)
     expect(state.player.health).toBe(1)
     expect(state.combat.playerBarrier).toBeCloseTo(state.player.maxHealth * 0.1)
+  })
+
+  it('keeps next-enemy tokens through encounter reset and consumes them once', () => {
+    const state = createInitialState()
+    state.arcaneCore.nodes[node('power', 'Chain Reaction', true).id] = { rank: 1 }
+    processArcaneCoreV6CombatEvent(state, 'player', 'on-damage-dealt', { eventTarget: 'enemy', changedActor: 'enemy', sourceTags: ['dot'], healthDamage: 10, currentHp: 0 })
+    state.combat.arcaneCoreRuntime.elapsedMs = 1_000
+    resetArcaneCoreEncounterRuntime(state)
+    expect(state.combat.arcaneCoreRuntime.chainReactionReady).toBe(true)
+    const context = { origin: 'auto' as const, spellId: 'fire-bolt' as const, loadoutSlotIndex: 0, damaging: true, manaCost: 30, maxMana: 100, playerMana: 100, enemyHealthPercent: 100 }
+    expect(getArcaneCoreV6CastModifiers(state, context, false).damageMultiplier).toBeCloseTo(1.4)
+    expect(state.combat.arcaneCoreRuntime.chainReactionReady).toBe(false)
+    expect(getArcaneCoreV6CastModifiers(state, context, false).damageMultiplier).toBe(1)
+  })
+
+  it('preserves a second next-enemy representative, Victory Momentum', () => {
+    const state = createInitialState()
+    state.arcaneCore.nodes[node('power', 'Victory Momentum').id] = { rank: 1 }
+    processArcaneCoreV6CombatEvent(state, 'player', 'on-kill', { eventTarget: 'enemy', changedActor: 'enemy' })
+    resetArcaneCoreEncounterRuntime(state)
+    const modifiers = getArcaneCoreV6CastModifiers(state, { origin: 'auto', spellId: 'fire-bolt', loadoutSlotIndex: 0, damaging: true, manaCost: 30, maxMana: 100, playerMana: 100, enemyHealthPercent: 100 }, false)
+    expect(modifiers.actionSpeedMultiplier).toBeCloseTo(1.01)
+    expect(state.combat.arcaneCoreRuntime.victoryMomentumReady).toBe(false)
+  })
+
+  it('keeps dungeon survival used flags across enemies but resets them for a new run', () => {
+    const state = createInitialState()
+    state.arcaneCore.nodes[node('vitality', 'Immortal Guard', true).id] = { rank: 1 }
+    expect(tryConsumeArcaneCoreV6Survival(state)).toBe('immortal-guard')
+    resetArcaneCoreEncounterRuntime(state)
+    expect(tryConsumeArcaneCoreV6Survival(state)).toBeNull()
+    resetArcaneCoreCombatRuntime(state)
+    expect(tryConsumeArcaneCoreV6Survival(state)).toBe('immortal-guard')
+  })
+
+  it('resets encounter survival while keeping the V6 clock run-global', () => {
+    const state = createInitialState()
+    state.arcaneCore.nodes[node('vitality', 'Refuse Death', true).id] = { rank: 1 }
+    state.combat.arcaneCoreRuntime.elapsedMs = 4_000
+    expect(tryConsumeArcaneCoreV6Survival(state)).toBe('refuse-death')
+    resetArcaneCoreEncounterRuntime(state)
+    expect(state.combat.arcaneCoreRuntime.elapsedMs).toBe(4_000)
+    expect(state.combat.arcaneCoreRuntime.encounterStartedAtMs).toBe(4_000)
+    expect(tryConsumeArcaneCoreV6Survival(state)).toBe('refuse-death')
   })
 })

@@ -1,19 +1,138 @@
-import type { ArcaneCoreBranchDefinition, ArcaneCoreModifierKey, ArcaneCoreNodeDefinition, ArcaneCoreRingIndex } from '../../types'
+import type { ArcaneCoreBranchDefinition, ArcaneCoreModifierKey, ArcaneCoreNodeDefinition, ArcaneCoreRingIndex, ArcaneCoreResolvedEffects, ArcaneCoreState } from '../../types'
 import { ARCANE_CORE_RING_OFFSETS } from '../../content/arcaneCore/arcaneCoreRings'
 import type { CombatEffect, CombatModifier, CombatTriggerRule, Magnitude } from '../../systems/combat/combatTypes'
+import { ARCANE_CORE_NODES } from '../../content/arcaneCore/arcaneCoreBranches'
+import { getArcaneCoreNodeRank, getArcaneCoreResolvedEffects } from '../../systems/arcaneCore/arcaneCoreProgression'
 
 const PERCENT_STATS = new Set<ArcaneCoreModifierKey>(['spellPowerPct', 'maxHealthPct', 'maxManaPct', 'critChance', 'critDamage', 'damageOverTimePct', 'barrierPowerPct', 'healingDonePct', 'focusEfficiencyPct', 'manaCostReductionPct', 'cooldownRecoveryPct', 'statusDurationPct'])
 const STAT_LABELS: Partial<Record<ArcaneCoreModifierKey, string>> = {
   spellPowerPct: 'Spell Power', maxHealthPct: 'Maximum Health', maxManaPct: 'Maximum Mana', spellPower: 'Spell Power', critChance: 'Critical Chance', critDamage: 'Critical Damage', damageOverTimePct: 'Damage over Time', maxHealth: 'Maximum Health', healthRegen: 'Health Regeneration', defense: 'Defense', barrierPowerPct: 'Barrier Power', healingDonePct: 'Healing Done', maxMana: 'Maximum Mana', manaRegen: 'Mana Regeneration', maxFocus: 'Maximum Focus', focusEfficiencyPct: 'Combat Auto-Cast Efficiency', manaCostReductionPct: 'Spell Mana Cost', cooldownRecoveryPct: 'Cooldown Recovery', statusDurationPct: 'Status Duration',
 }
-const COMBAT_LABELS: Record<CombatModifier['key'], string> = {
+const COMBAT_LABELS: Partial<Record<CombatModifier['key'], string>> = {
   'health-regen-flat': 'Health Regeneration',
-  'damage-dealt-percent': 'Damage Dealt', 'damage-taken-percent': 'Damage Taken', 'basic-attack-damage-percent': 'Basic Attack Damage', 'basic-attack-speed-percent': 'Basic Attack Speed', 'action-speed-percent': 'Action Speed', 'spell-damage-percent': 'Spell Damage', 'melee-damage-percent': 'Melee Damage', 'ranged-damage-percent': 'Ranged Damage', 'healing-done-percent': 'Healing Done', 'healing-received-percent': 'Healing Received', 'barrier-power-percent': 'Barrier Power', 'barrier-received-flat': 'Barrier Received', 'barrier-received-percent': 'Barrier Received', 'mana-regen-percent': 'Mana Regeneration', 'cooldown-recovery-percent': 'Cooldown Recovery', 'control-duration-received-percent': 'Control Duration Received', 'status-duration-dealt-percent': 'Status Duration', 'status-duration-received-percent': 'Status Duration Received', 'defense-flat': 'Defense', 'defense-percent': 'Defense', 'crit-chance': 'Critical Chance', 'crit-damage': 'Critical Damage', 'block-chance': 'Block Chance', 'damage-over-time-percent': 'Damage over Time', 'resistance-percent': 'Resistance',
+  'damage-dealt-percent': 'Damage Dealt', 'damage-taken-percent': 'Damage Taken', 'action-speed-percent': 'Action Speed', 'spell-damage-percent': 'Spell Damage', 'melee-damage-percent': 'Melee Damage', 'ranged-damage-percent': 'Ranged Damage', 'healing-done-percent': 'Healing Done', 'healing-received-percent': 'Healing Received', 'barrier-power-percent': 'Barrier Power', 'barrier-received-flat': 'Barrier Received', 'barrier-received-percent': 'Barrier Received', 'mana-regen-percent': 'Mana Regeneration', 'cooldown-recovery-percent': 'Cooldown Recovery', 'control-duration-received-percent': 'Control Duration Received', 'status-duration-dealt-percent': 'Status Duration', 'status-duration-received-percent': 'Status Duration Received', 'defense-flat': 'Defense', 'defense-percent': 'Defense', 'crit-chance': 'Critical Chance', 'crit-damage': 'Critical Damage', 'damage-over-time-percent': 'Damage over Time', 'resistance-percent': 'Resistance',
 }
 const trimNumber = (value: number, digits = 2) => Number(value.toFixed(digits)).toLocaleString(undefined, { maximumFractionDigits: digits })
 export const getArcaneCoreModifierLabel = (key: ArcaneCoreModifierKey) => STAT_LABELS[key] ?? key
 export const formatArcaneCoreModifierValue = (key: ArcaneCoreModifierKey, value: number) => `${value >= 0 ? '+' : ''}${PERCENT_STATS.has(key) ? `${(value * 100).toFixed(2)}%` : trimNumber(value)}`
-const formatCombatModifierValue = (key: CombatModifier['key'], value: number) => `${value >= 0 ? '+' : ''}${key.includes('percent') || ['crit-chance', 'crit-damage', 'block-chance'].includes(key) ? `${(value * 100).toFixed(2)}%` : trimNumber(value)}`
+export const getArcaneCoreCombatModifierLabel = (key: CombatModifier['key'], actor: CombatModifier['actor'] = 'player') => `${actor === 'enemy' ? 'Enemy ' : ''}${COMBAT_LABELS[key] ?? key}`
+export const formatArcaneCoreCombatModifierValue = (key: CombatModifier['key'], value: number) => `${value >= 0 ? '+' : ''}${key.includes('percent') || ['crit-chance', 'crit-damage'].includes(key) ? `${(value * 100).toFixed(2)}%` : trimNumber(value)}`
+
+export const formatArcaneCoreCondition = (condition: NonNullable<CombatModifier['condition']>, actor: CombatModifier['actor'] = 'player'): string => {
+  const subject = actor === 'enemy' ? 'the enemy' : 'you'
+  switch (condition.type) {
+    case 'always': return 'Always'
+    case 'self-hp-below-percent': return `While ${subject} is below ${condition.percent}% Health`
+    case 'self-hp-above-percent': return `While ${subject} is above ${condition.percent}% Health`
+    case 'target-hp-below-percent': return `Against targets below ${condition.percent}% Health`
+    case 'target-hp-above-percent': return `Against targets above ${condition.percent}% Health`
+    case 'self-mana-above-percent': return `While ${subject} has more than ${condition.percent}% Mana`
+    case 'self-mana-below-percent': return `While ${subject} has less than ${condition.percent}% Mana`
+    case 'self-has-barrier': return `While ${subject} has Barrier`
+    case 'target-has-barrier': return 'Against targets with Barrier'
+    case 'target-negative-status-count-at-least': return `Against targets with at least ${condition.count} negative Statuses`
+    case 'self-negative-status-count-at-least': return `${actor === 'enemy' ? 'While the enemy has' : 'While you have'} at least ${condition.count} negative Statuses`
+    case 'target-has-status-tag': return `Against targets with ${condition.tag} Status`
+    case 'target-has-status': return `Against targets with ${condition.statusId} Status`
+    case 'self-has-status': return `While ${subject} has ${condition.statusId} Status`
+    case 'source-has-tag': return `When the source has ${condition.tag} tag`
+    case 'event-status-has-tag': return `When the event Status has ${condition.tag} tag`
+    case 'event-status-is': return `When the event Status is ${condition.statusId}`
+    case 'event-is-critical': return 'On a Critical hit'
+    case 'event-health-damage-positive': return 'When Health damage is dealt'
+    case 'event-amount-positive': return 'When the event amount is positive'
+    case 'event-target-is-self': return 'When you are the target'
+    case 'all': return condition.conditions.map((entry) => formatArcaneCoreCondition(entry, actor)).join(' and ')
+    case 'any': return condition.conditions.map((entry) => formatArcaneCoreCondition(entry, actor)).join(' or ')
+    case 'not': return `Except when ${formatArcaneCoreCondition(condition.condition, actor).toLowerCase()}`
+    default: return 'When its condition is met'
+  }
+}
+
+interface ArcaneCoreResonanceSource {
+  nodeId: string
+  nodeName: string
+  value: number
+  formattedValue?: string
+}
+
+export interface ArcaneCoreResonanceEntry {
+  id: string
+  label: string
+  formattedValue: string
+  numericValue?: number
+  kind: 'stat' | 'modifier' | 'conditional' | 'mechanic'
+  conditionText?: string
+  sourceNodeIds: string[]
+  sourceNodeNames: string[]
+  sources?: ArcaneCoreResonanceSource[]
+}
+
+export interface ArcaneCoreResonanceSummary {
+  alwaysOn: ArcaneCoreResonanceEntry[]
+  conditional: ArcaneCoreResonanceEntry[]
+  mechanics: ArcaneCoreResonanceEntry[]
+}
+
+const isMeaningful = (value: number) => Number.isFinite(value) && Math.abs(value) > 0.0000001
+const conditionKey = (condition: NonNullable<CombatModifier['condition']>) => JSON.stringify(condition)
+const isAlwaysOn = (condition: CombatModifier['condition']) => !condition || condition.type === 'always'
+const isV6Mechanic = (effect: NonNullable<ArcaneCoreResolvedEffects['special']>[number]): effect is Extract<NonNullable<ArcaneCoreResolvedEffects['special']>[number], { type: 'v6-mechanic' }> => effect.type === 'v6-mechanic'
+
+/**
+ * Arcane Core's player-facing summary deliberately aggregates both EquipmentStats
+ * and combat modifiers. Combat modifiers remain the gameplay source of truth;
+ * this read model only adds labels, provenance, and conditional grouping.
+ */
+export const getArcaneCoreResonanceSummary = (core: Pick<ArcaneCoreState, 'nodes'>): ArcaneCoreResonanceSummary => {
+  const alwaysOn = new Map<string, { label: string; value: number; sources: ArcaneCoreResonanceSource[]; kind: 'stat' | 'modifier' }>()
+  const conditional = new Map<string, { label: string; key: CombatModifier['key']; value: number; actor: CombatModifier['actor']; condition: NonNullable<CombatModifier['condition']>; sources: ArcaneCoreResonanceSource[] }>()
+  const mechanics: ArcaneCoreResonanceEntry[] = []
+
+  ARCANE_CORE_NODES.forEach((node) => {
+    const rank = getArcaneCoreNodeRank(core, node.id)
+    if (rank <= 0) return
+    const effects = getArcaneCoreResolvedEffects(core, node)
+    Object.entries(effects.stats ?? {}).forEach(([key, rawValue]) => {
+      const value = Number(rawValue)
+      if (!isMeaningful(value)) return
+      const id = `stat:${key}`
+      const current = alwaysOn.get(id) ?? { label: getArcaneCoreModifierLabel(key as ArcaneCoreModifierKey), value: 0, sources: [], kind: 'stat' as const }
+      current.value += value
+      current.sources.push({ nodeId: node.id, nodeName: node.name, value, formattedValue: formatArcaneCoreModifierValue(key as ArcaneCoreModifierKey, value) })
+      alwaysOn.set(id, current)
+    })
+    ;(effects.modifiers ?? []).forEach((modifier) => {
+      if (!isMeaningful(modifier.value)) return
+      const actor = modifier.actor ?? 'player'
+      if (isAlwaysOn(modifier.condition)) {
+        const id = `modifier:${actor}:${modifier.key}`
+        const current = alwaysOn.get(id) ?? { label: getArcaneCoreCombatModifierLabel(modifier.key, actor), value: 0, sources: [], kind: 'modifier' as const }
+        current.value += modifier.value
+        current.sources.push({ nodeId: node.id, nodeName: node.name, value: modifier.value, formattedValue: formatArcaneCoreCombatModifierValue(modifier.key, modifier.value) })
+        alwaysOn.set(id, current)
+      } else {
+        const condition = modifier.condition!
+        const id = `conditional:${actor}:${modifier.key}:${conditionKey(condition)}`
+        const current = conditional.get(id) ?? { label: getArcaneCoreCombatModifierLabel(modifier.key, actor), key: modifier.key, value: 0, actor, condition, sources: [] }
+        current.value += modifier.value
+        current.sources.push({ nodeId: node.id, nodeName: node.name, value: modifier.value, formattedValue: formatArcaneCoreCombatModifierValue(modifier.key, modifier.value) })
+        conditional.set(id, current)
+      }
+    })
+    ;(effects.special ?? []).filter(isV6Mechanic).forEach((effect) => {
+      if (effect.category === 'STATIC_STAT' || effect.category === 'STATIC_MODIFIER') return
+      mechanics.push({ id: node.id, label: node.name, formattedValue: getArcaneCoreNodeEffectTexts(node, rank).filter((text) => text !== 'Inactive').join(' · '), kind: 'mechanic', sourceNodeIds: [node.id], sourceNodeNames: [node.name] })
+    })
+  })
+
+  const toEntry = (id: string, value: { label: string; value: number; sources: ArcaneCoreResonanceSource[]; kind: 'stat' | 'modifier' }) => ({ id, label: value.label, formattedValue: value.kind === 'stat' ? formatArcaneCoreModifierValue(id.slice(5) as ArcaneCoreModifierKey, value.value) : formatArcaneCoreCombatModifierValue(id.split(':')[2] as CombatModifier['key'], value.value), numericValue: value.value, kind: value.kind, sourceNodeIds: value.sources.map((source) => source.nodeId), sourceNodeNames: value.sources.map((source) => source.nodeName), sources: value.sources })
+  return {
+    alwaysOn: [...alwaysOn.entries()].filter(([, value]) => isMeaningful(value.value)).map(([id, value]) => toEntry(id, value)),
+    conditional: [...conditional.entries()].filter(([, value]) => isMeaningful(value.value)).map(([id, value]) => ({ id, label: value.label, formattedValue: formatArcaneCoreCombatModifierValue(value.key, value.value), numericValue: value.value, kind: 'conditional' as const, conditionText: formatArcaneCoreCondition(value.condition, value.actor), sourceNodeIds: value.sources.map((source) => source.nodeId), sourceNodeNames: value.sources.map((source) => source.nodeName), sources: value.sources })),
+    mechanics,
+  }
+}
 
 const formatRuleDuration = (milliseconds: number) => milliseconds >= 1000 ? `${trimNumber(milliseconds / 1000, 2)} sec` : `${trimNumber(milliseconds, 0)} ms`
 const formatMagnitude = (magnitude: Magnitude, verb: string) => {
@@ -44,7 +163,7 @@ export const getArcaneCoreNodeEffectTexts = (node: ArcaneCoreNodeDefinition, ran
   if (rank <= 0) return ['Inactive']
   const effects = node.resolveEffects(Math.max(1, Math.min(node.maxRank, rank)))
   const stats = Object.entries(effects.stats ?? {}).map(([key, value]) => `${getArcaneCoreModifierLabel(key as ArcaneCoreModifierKey)} ${formatArcaneCoreModifierValue(key as ArcaneCoreModifierKey, Number(value))}`)
-  const modifiers = (effects.modifiers ?? []).map((value) => `${COMBAT_LABELS[value.key] ?? value.key} ${formatCombatModifierValue(value.key, value.value)}`)
+  const modifiers = (effects.modifiers ?? []).map((value) => `${getArcaneCoreCombatModifierLabel(value.key, value.actor)} ${formatArcaneCoreCombatModifierValue(value.key, value.value)}${value.condition && value.condition.type !== 'always' ? ` · ${formatArcaneCoreCondition(value.condition, value.actor)}` : ''}`)
   const rules = (effects.rules ?? []).map(formatRule).filter((text): text is string => Boolean(text))
   const special = (effects.special ?? []).map((value) => {
     switch (value.type) {

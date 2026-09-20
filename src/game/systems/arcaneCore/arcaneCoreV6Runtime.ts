@@ -1,10 +1,12 @@
 import type { CanonicalSpellId, GameState } from '../../types'
 import { SPELLS } from '../../content/spells/spells'
 import { STATUS_DEFINITIONS } from '../../content/statuses/statuses'
+import { BALANCE } from '../../core/balance/balance'
 import { selectFreeFocus, selectUsedFocus } from '../focus/focusReservations'
 import { getActiveBarrier } from '../combat/barrierRuntime'
 import type { CombatConditionContext, CombatEffect, CombatEventSink, CombatResolutionContext, CombatSource, CombatTrigger } from '../combat/combatTypes'
 import { getArcaneCoreSpecialEffects } from './arcaneCoreProgression'
+import { ARCANE_CORE_V6_IMPLEMENTATION_REGISTRY } from '../../content/arcaneCore/arcaneCoreV6Runtime'
 
 export type ArcaneCoreCastOrigin = 'auto' | 'manual-direct' | 'manual-queued'
 
@@ -34,34 +36,70 @@ export interface ArcaneCoreV6CastModifiers {
 }
 
 const rankValue = (rank: number, values: readonly number[]) => values[Math.max(1, Math.min(values.length, Math.floor(rank))) - 1] ?? values[values.length - 1] ?? 0
-type V6Entry = Extract<ReturnType<typeof getArcaneCoreSpecialEffects>[number], { type: 'v6-mechanic' }>
-const entries = (state: Pick<GameState, 'arcaneCore'>): V6Entry[] => getArcaneCoreSpecialEffects(state.arcaneCore).filter((effect): effect is V6Entry => effect.type === 'v6-mechanic')
+type V6Entry = Extract<ReturnType<typeof getArcaneCoreSpecialEffects>[number], { type: 'v6-mechanic' }> & { behavior: NonNullable<(typeof ARCANE_CORE_V6_IMPLEMENTATION_REGISTRY)[string]['behavior']> }
+const entries = (state: Pick<GameState, 'arcaneCore'>): V6Entry[] => getArcaneCoreSpecialEffects(state.arcaneCore).flatMap((effect) => {
+  if (effect.type !== 'v6-mechanic') return []
+  const behavior = ARCANE_CORE_V6_IMPLEMENTATION_REGISTRY[effect.mechanicId]?.behavior
+  return behavior ? [{ ...effect, behavior }] : []
+})
 
 type V6EffectExecutor = (state: GameState, effects: CombatEffect[], source: CombatSource, depth?: number, uiEvents?: CombatEventSink, resolution?: CombatResolutionContext) => void
 const controlStatusIds = new Set(['chilled', 'frozen', 'tremored', 'stunned', 'entangled', 'silenced'])
 const rankPercent = (rank: number, values: readonly number[]) => rankValue(rank, values)
-const matchesScope = (entry: V6Entry, scope?: string) => !scope || entry.mechanicId === scope || entry.mechanicId.replace(/:r(\d+):/, ':$1:') === scope
-const hasEntry = (state: GameState, displayName: string, scope?: string) => entries(state).some((entry) => entry.displayName === displayName && matchesScope(entry, scope))
-const nodeRank = (state: GameState, displayName: string, scope?: string) => entries(state).filter((entry) => entry.displayName === displayName && matchesScope(entry, scope)).reduce((rank, entry) => Math.max(rank, entry.rank), 0)
 const V6_MECHANICS = {
-  criticalFeedback: 'power:r2:S3',
-  secondChance: 'power:r2:S7',
-  burningMomentum: 'power:r5:S3',
-  chainReaction: 'power:r5:M',
-  overhealWard: 'vitality:r1:S7',
-  refuseDeath: 'vitality:r1:M',
-  barrierMemory: 'vitality:r3:S5',
-  immortalGuard: 'vitality:r4:M',
-  echoHarmony: 'focus:r2:S3',
-  eventHorizon: 'focus:r8:S4',
-  arcaneSingularity: 'focus:r8:M',
-  perfectTiming: 'control:r2:M',
-  temporalFracture: 'control:r5:M',
-  timelineTheft: 'control:r8:S5',
-  absoluteStasis: 'control:r8:M',
+  opportunist: 'power:r1:S5', arcaneSpark: 'power:r1:S3', overcharge: 'power:r1:S4', finisher: 'power:r1:S6', openingVolley: 'power:r1:S7', manaEdge: 'power:r1:S8', unstablePower: 'power:r1:M',
+  criticalFeedback: 'power:r2:S3', criticalRecovery: 'power:r2:S4',
+  perfectWindow: 'power:r2:S5', markedPrecision: 'power:r2:S6', criticalFinish: 'power:r2:S8', perfectPrecision: 'power:r2:M',
+  spellSequence: 'power:r3:S3', arcaneMomentum: 'power:r3:S4', rapidEscalation: 'power:r3:S5', heavyFollowUp: 'power:r3:S6', debuffAssault: 'power:r3:S7', executionChain: 'power:r3:S8', arcaneOverload: 'power:r3:M',
+  criticalCascade: 'power:r4:S3', killSurge: 'power:r4:S4', burstWindow: 'power:r4:S5', aggressiveRotation: 'power:r4:S6', risingViolence: 'power:r4:S7', cooldownPunisher: 'power:r4:S8', perfectExecution: 'power:r4:M',
+  burningMomentum: 'power:r5:S3', detonationTheory: 'power:r5:S4', lingeringExecution: 'power:r5:S5', ruinTransfer: 'power:r5:S6', corrodedDefense: 'power:r5:S7', deepWounds: 'power:r5:S8', chainReaction: 'power:r5:M',
+  overcast: 'power:r6:S3', manaBurn: 'power:r6:S4', cataclysmicReserve: 'power:r6:S5', criticalCataclysm: 'power:r6:S6', unstableRotation: 'power:r6:S7', desperatePower: 'power:r6:S8', cataclysm: 'power:r6:M',
+  sovereignSequence: 'power:r7:S3', firstBlood: 'power:r7:S4', lastWord: 'power:r7:S5', dominatingWeakness: 'power:r7:S6', sovereignCrit: 'power:r7:S7', victoryMomentum: 'power:r7:S8', sovereignCasting: 'power:r7:M',
+  perfectCycle: 'power:r8:S3', arcaneEcho: 'power:r8:S4', apotheosisExecution: 'power:r8:S5', apotheosisRuin: 'power:r8:S6', limitBreak: 'power:r8:S7', absoluteMomentum: 'power:r8:S8', arcaneApotheosis: 'power:r8:M',
+  secondSkin: 'vitality:r1:S3', emergencyPulse: 'vitality:r1:S4', protectiveCasting: 'vitality:r1:S5', recoveryWindowVitality: 'vitality:r1:S6', overhealWard: 'vitality:r1:S7', victoryRecovery: 'vitality:r1:S8', refuseDeath: 'vitality:r1:M',
+  stonewall: 'vitality:r2:S3', reinforcedWard: 'vitality:r2:S4', painToMana: 'vitality:r2:S5', barrierRecovery: 'vitality:r2:S6', guardedRecovery: 'vitality:r2:S7', lowHealthGuard: 'vitality:r2:S8', unyielding: 'vitality:r2:M',
+  reactiveWard: 'vitality:r3:S3', wardRenewal: 'vitality:r3:S4', barrierMemory: 'vitality:r3:S5', aegisMomentum: 'vitality:r3:S6', stableProtection: 'vitality:r3:S7', barrierPulse: 'vitality:r3:S8', arcaneAegis: 'vitality:r3:M',
+  lastBreath: 'vitality:r4:S3', emergencyAegis: 'vitality:r4:S4', crisisConversion: 'vitality:r4:S5', ironWill: 'vitality:r4:S6', recoverySurge: 'vitality:r4:S7', survivalInstinct: 'vitality:r4:S8', immortalGuard: 'vitality:r4:M',
+  fortress: 'vitality:r5:S3', layeredWard: 'vitality:r5:S4', wardBattery: 'vitality:r5:S5', bastionCast: 'vitality:r5:S6', reinforcedRecovery: 'vitality:r5:S7', safeOffensive: 'vitality:r5:S8', livingBastion: 'vitality:r5:M',
+  regenerativeCasting: 'vitality:r6:S3', healingMomentum: 'vitality:r6:S4', overflowingLife: 'vitality:r6:S5', barrierBreakRecovery: 'vitality:r6:S6', renewalCycle: 'vitality:r6:S7', victoryRenewal: 'vitality:r6:S8', renewal: 'vitality:r6:M',
+  lastRefuge: 'vitality:r7:S3', defiantCasting: 'vitality:r7:S4', painConversion: 'vitality:r7:S5', undyingWill: 'vitality:r7:S6', comeback: 'vitality:r7:S7', victoryRestoration: 'vitality:r7:S8', undying: 'vitality:r7:M',
+  perfectRestoration: 'vitality:r8:S3', eternalFortress: 'vitality:r8:S4', phoenixPulse: 'vitality:r8:S5', lifeBattery: 'vitality:r8:S6', unbrokenCycle: 'vitality:r8:S7', eternalRecovery: 'vitality:r8:S8', eternalAegis: 'vitality:r8:M',
+  conservation: 'focus:r1:S3', emergencyFlow: 'focus:r1:S4', fullReservoir: 'focus:r1:S5', overflowSpark: 'focus:r1:S6', focusedRecovery: 'focus:r1:S7', quietMind: 'focus:r1:S8', deepReservoir: 'focus:r1:M',
+  manualReservoir: 'focus:r2:S4', alternatingMind: 'focus:r2:S5', efficientQueue: 'focus:r2:S6', openFocus: 'focus:r2:S7', echoDiscipline: 'focus:r2:S8', dualMind: 'focus:r2:M',
+  reservedPower: 'focus:r3:S3', freeMind: 'focus:r3:S4', resonantCast: 'focus:r3:S5', echoBattery: 'focus:r3:S6', manualCharge: 'focus:r3:S7', preparedSlot: 'focus:r3:S8', resonance: 'focus:r3:M',
+  overflowWard: 'focus:r4:S3', manaToTempo: 'focus:r4:S4', stableReserve: 'focus:r4:S5', emptyMind: 'focus:r4:S6', emergencyConversion: 'focus:r4:S7', focusRelease: 'focus:r4:S8', transcendence: 'focus:r4:M',
+  balancedMind: 'focus:r5:S3', echoBatteryII: 'focus:r5:S4', manualBattery: 'focus:r5:S5', convergentQueue: 'focus:r5:S6', reservedConversion: 'focus:r5:S7', freeFocusSurge: 'focus:r5:S8', convergence: 'focus:r5:M',
+  deepDraw: 'focus:r6:S4', arcaneReturn: 'focus:r6:S5', reservoirBreak: 'focus:r6:S6', overchannelCycle: 'focus:r6:S7', emergencyFreeCast: 'focus:r6:S8', overchannelCondition: 'focus:r6:S3', overchannel: 'focus:r6:M',
+  astralReservedPower: 'focus:r7:S3', astralOpenMind: 'focus:r7:S4', astralRotation: 'focus:r7:S5', echoCascade: 'focus:r7:S6', manualCascade: 'focus:r7:S7', astralRecovery: 'focus:r7:S8', astralMind: 'focus:r7:M',
+  zeroPoint: 'focus:r8:S3', eventHorizon: 'focus:r8:S4', singularityEcho: 'focus:r8:S5', singularityManual: 'focus:r8:S6', focusCollapse: 'focus:r8:S7', perfectConservation: 'focus:r8:S8', arcaneSingularity: 'focus:r8:M',
+  delayedFate: 'control:r1:S3', openingControl: 'control:r1:S4', controlledStrike: 'control:r1:S5', recoveryWindowControl: 'control:r1:S6', manualTiming: 'control:r1:S7', tempoTheft: 'control:r1:S8', temporalFlow: 'control:r1:M',
+  layeredControl: 'control:r2:S3', controlledFlow: 'control:r2:S4', debuffPressure: 'control:r2:S5', slowBurn: 'control:r2:S6', suppressionWindow: 'control:r2:S7', controlRefresh: 'control:r2:S8', perfectTiming: 'control:r2:M',
+  chainControl: 'control:r3:S3', dominatingWeaknessControl: 'control:r3:S4', suppressedEnemy: 'control:r3:S5', statusEcho: 'control:r3:S6', queuedDominion: 'control:r3:S7', timelineBreak: 'control:r3:S8', dominion: 'control:r3:M',
+  aftershock: 'control:r4:S3', tremorLock: 'control:r4:S4', coldPrecision: 'control:r4:S5', controlConversion: 'control:r4:S6', absolutePressure: 'control:r4:S7', actionDenial: 'control:r4:S8', arcaneLock: 'control:r4:M',
+  spellInterference: 'control:r5:S3', statusFracture: 'control:r5:S4', interferencePulse: 'control:r5:S5', debuffTheft: 'control:r5:S6', manualDisruption: 'control:r5:S7', interferenceChain: 'control:r5:S8', temporalFracture: 'control:r5:M',
+  preparedCast: 'control:r6:S3', queuedPrecision: 'control:r6:S4', stolenTime: 'control:r6:S5', temporalRefund: 'control:r6:S6', precisionWindow: 'control:r6:S7', chronoCycle: 'control:r6:S8', timeCompression: 'control:r6:M',
+  lockdownDelay: 'control:r7:S3', controlCascade: 'control:r7:S4', tacticalQueue: 'control:r7:S5', controlledTarget: 'control:r7:S6', controlledSuppression: 'control:r7:S7', noEscape: 'control:r7:S8', totalLockdown: 'control:r7:M',
+  absoluteDelay: 'control:r8:S3', statusRecursion: 'control:r8:S4', timelineTheft: 'control:r8:S5', absoluteQueue: 'control:r8:S6', stasisCollapse: 'control:r8:S7', endlessPressure: 'control:r8:S8', absoluteStasis: 'control:r8:M',
+  secondChance: 'power:r2:S7', echoHarmony: 'focus:r2:S3',
 } as const
 const hasMechanic = (state: GameState, mechanicId: string) => entries(state).some((entry) => entry.mechanicId === mechanicId)
 const mechanicRank = (state: GameState, mechanicId: string) => entries(state).find((entry) => entry.mechanicId === mechanicId)?.rank ?? 0
+
+export const getArcaneCoreV6DynamicSpellPower = (state: GameState) => {
+  const rank = mechanicRank(state, V6_MECHANICS.astralReservedPower)
+  return rank > 0 ? Math.floor(selectUsedFocus(state) / 10) * rankValue(rank, [0.002, 0.004, 0.006, 0.008, 0.010]) * BALANCE.player.baseSpellPower : 0
+}
+
+export const getArcaneCoreV6DynamicManaRegen = (state: GameState) => {
+  const rank = mechanicRank(state, V6_MECHANICS.astralOpenMind)
+  return rank > 0 ? Math.floor(selectFreeFocus(state) / 10) * rankValue(rank, [0.2, 0.4, 0.6, 0.8, 1.0]) : 0
+}
+
+export const getArcaneCoreV6ManaRegenMultiplier = (state: GameState) => {
+  const rank = mechanicRank(state, V6_MECHANICS.emergencyFlow)
+  return rank > 0 && state.player.mana / Math.max(1, state.player.maxMana) < 0.25 ? 1 + rankValue(rank, [0.05, 0.10, 0.15, 0.20, 0.25]) : 1
+}
+
 const isControlEvent = (context: CombatConditionContext) => Boolean(context.eventStatusTags?.includes('control') || (context.statusId && controlStatusIds.has(context.statusId)))
 const isNegativeStatusEvent = (context: CombatConditionContext) => Boolean(context.statusId && STATUS_DEFINITIONS[context.statusId]?.classification === 'debuff')
 const delayEnemyAction = (state: GameState, amountMs: number) => {
@@ -108,21 +146,21 @@ export const processArcaneCoreV6CombatEvent = (state: GameState, actor: 'player'
   const pushMana = (amount: number) => effects.push({ type: 'restore-resource', target: 'self', resource: 'mana', magnitude: { type: 'flat', value: amount } })
 
   if (event === 'on-status-applied' && actor === 'player' && context.eventTarget === 'enemy') {
-    if (isNegativeStatusEvent(context) && hasEntry(state, 'Opportunist')) runtime.nextDamageMultiplier = Math.max(runtime.nextDamageMultiplier ?? 1, 1 + rankPercent(nodeRank(state, 'Opportunist'), [0.02, 0.04, 0.06, 0.08, 0.10]))
+    if (isNegativeStatusEvent(context) && hasMechanic(state, V6_MECHANICS.opportunist)) runtime.nextDamageMultiplier = Math.max(runtime.nextDamageMultiplier ?? 1, 1 + rankPercent(mechanicRank(state, V6_MECHANICS.opportunist), [0.02, 0.04, 0.06, 0.08, 0.10]))
     if (isControlEvent(context)) {
-      const controlRanks = nodeRank(state, 'Delayed Fate')
+      const controlRanks = mechanicRank(state, V6_MECHANICS.delayedFate)
       if (controlRanks) delayEnemyAction(state, rankPercent(controlRanks, [20, 40, 60, 80, 100]))
-      const temporalRanks = nodeRank(state, 'Temporal Flow')
+      const temporalRanks = mechanicRank(state, V6_MECHANICS.temporalFlow)
       if (temporalRanks && (runtime.controlStatusApplications ?? 0) === 0) { delayEnemyAction(state, 500); runtime.nextActionSpeedMultiplier = Math.max(runtime.nextActionSpeedMultiplier ?? 1, 1.1) }
-      const timelineRanks = nodeRank(state, 'Timeline Break')
+      const timelineRanks = mechanicRank(state, V6_MECHANICS.timelineBreak)
       if (timelineRanks && (runtime.controlStatusApplications ?? 0) % 4 === 3) delayEnemyAction(state, rankPercent(timelineRanks, [100, 200, 300, 400, 500]))
-      const fractureRanks = nodeRank(state, 'Status Fracture')
+      const fractureRanks = mechanicRank(state, V6_MECHANICS.statusFracture)
       if (fractureRanks && enemyStatusCount >= 3) delayEnemyAction(state, rankPercent(fractureRanks, [50, 100, 150, 200, 250]))
-      const lockRanks = nodeRank(state, 'Lockdown Delay')
+      const lockRanks = mechanicRank(state, V6_MECHANICS.lockdownDelay)
       if (lockRanks) delayEnemyAction(state, rankPercent(lockRanks, [75, 150, 225, 300, 375]))
-      const absoluteRanks = nodeRank(state, 'Absolute Delay')
+      const absoluteRanks = mechanicRank(state, V6_MECHANICS.absoluteDelay)
       if (absoluteRanks) delayEnemyAction(state, rankPercent(absoluteRanks, [100, 200, 300, 400, 500]))
-      const controlFlowRanks = nodeRank(state, 'Controlled Flow')
+      const controlFlowRanks = mechanicRank(state, V6_MECHANICS.controlledFlow)
       if (controlFlowRanks) pushMana(rankPercent(controlFlowRanks, [1, 2, 3, 4, 5]))
       if (hasMechanic(state, V6_MECHANICS.perfectTiming)
         && state.combat.enemyActionDurationMs > 0
@@ -142,33 +180,33 @@ export const processArcaneCoreV6CombatEvent = (state: GameState, actor: 'player'
 
   if ((event === 'on-status-expired' || event === 'on-status-removed') && context.eventTarget === 'enemy' && isControlEvent(context)) {
     if (event === 'on-status-expired') {
-      if (hasEntry(state, 'Status Echo')) runtime.nextControlStatusDurationMultiplier = 1 + rankPercent(nodeRank(state, 'Status Echo'), [0.02, 0.04, 0.06, 0.08, 0.10])
-      if (hasEntry(state, 'Status Recursion')) runtime.nextControlStatusDurationMultiplier = 1 + rankPercent(nodeRank(state, 'Status Recursion'), [0.03, 0.06, 0.09, 0.12, 0.15])
-      const recoveryRanks = nodeRank(state, 'Recovery Window', 'control:1:S6')
+      if (hasMechanic(state, V6_MECHANICS.statusEcho)) runtime.nextControlStatusDurationMultiplier = 1 + rankPercent(mechanicRank(state, V6_MECHANICS.statusEcho), [0.02, 0.04, 0.06, 0.08, 0.10])
+      if (hasMechanic(state, V6_MECHANICS.statusRecursion)) runtime.nextControlStatusDurationMultiplier = 1 + rankPercent(mechanicRank(state, V6_MECHANICS.statusRecursion), [0.03, 0.06, 0.09, 0.12, 0.15])
+      const recoveryRanks = mechanicRank(state, V6_MECHANICS.recoveryWindowControl)
       if (recoveryRanks) reduceLongestCooldown(state, rankPercent(recoveryRanks, [100, 200, 300, 400, 500]))
-      const noEscapeRanks = nodeRank(state, 'No Escape')
+      const noEscapeRanks = mechanicRank(state, V6_MECHANICS.noEscape)
       if (noEscapeRanks && state.combat.enemyHp / Math.max(1, state.combat.enemyMaxHp) < 0.25) delayEnemyAction(state, rankPercent(noEscapeRanks, [100, 200, 300, 400, 500]))
-      if (hasEntry(state, 'Aftershock')) effects.push({ type: 'apply-status', target: 'opponent', statusId: 'chilled', durationMs: rankPercent(nodeRank(state, 'Aftershock'), [1000, 2000, 3000, 4000, 5000]) })
+      if (hasMechanic(state, V6_MECHANICS.aftershock)) effects.push({ type: 'apply-status', target: 'opponent', statusId: 'chilled', durationMs: rankPercent(mechanicRank(state, V6_MECHANICS.aftershock), [1000, 2000, 3000, 4000, 5000]) })
     }
-    const conversionRanks = nodeRank(state, 'Control Conversion')
+    const conversionRanks = mechanicRank(state, V6_MECHANICS.controlConversion)
     if (event === 'on-status-removed' && conversionRanks) { pushMana(rankPercent(conversionRanks, [1, 2, 3, 4, 5])); reduceLongestCooldown(state, rankPercent(conversionRanks, [100, 200, 300, 400, 500])) }
   }
 
   if (event === 'on-barrier-broken' && actor === 'player') {
-    const secondSkinRanks = nodeRank(state, 'Second Skin')
+    const secondSkinRanks = mechanicRank(state, V6_MECHANICS.secondSkin)
     if (secondSkinRanks) pushHeal(rankPercent(secondSkinRanks, [0.0025, 0.005, 0.0075, 0.01, 0.0125]))
-    const breakRecoveryRanks = nodeRank(state, 'Barrier Break Recovery')
+    const breakRecoveryRanks = mechanicRank(state, V6_MECHANICS.barrierBreakRecovery)
     if (breakRecoveryRanks) pushHeal(rankPercent(breakRecoveryRanks, [0.0075, 0.015, 0.0225, 0.03, 0.0375]))
-    const aegisRanks = nodeRank(state, 'Arcane Aegis')
+    const aegisRanks = mechanicRank(state, V6_MECHANICS.arcaneAegis)
     if (aegisRanks && context.previousBarrier) effects.push({ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: context.previousBarrier * 0.25 }, mode: 'add', durationMs: null })
-    const pulseRanks = nodeRank(state, 'Barrier Pulse')
+    const pulseRanks = mechanicRank(state, V6_MECHANICS.barrierPulse)
     if (pulseRanks) reduceAllCooldowns(state, rankPercent(pulseRanks, [200, 400, 600, 800, 1000]))
   }
 
   if (event === 'on-barrier-gained' && actor === 'player') {
-    const renewalRanks = nodeRank(state, 'Ward Renewal')
+    const renewalRanks = mechanicRank(state, V6_MECHANICS.wardRenewal)
     if (renewalRanks) pushHeal(rankPercent(renewalRanks, [0.002, 0.004, 0.006, 0.008, 0.01]))
-    const momentumRanks = nodeRank(state, 'Aegis Momentum')
+    const momentumRanks = mechanicRank(state, V6_MECHANICS.aegisMomentum)
     if (momentumRanks) runtime.nextSelfTargetActionSpeedMultiplier = 1 + rankPercent(momentumRanks, [0.02, 0.04, 0.06, 0.08, 0.10])
   }
 
@@ -180,39 +218,42 @@ export const processArcaneCoreV6CombatEvent = (state: GameState, actor: 'player'
 
   if (event === 'on-damage-dealt' && actor === 'player' && (context.healthDamage ?? 0) > 0) {
     if (hasMechanic(state, V6_MECHANICS.burningMomentum) && context.sourceTags?.includes('dot')) runtime.ruinStacks = Math.min(5, (runtime.ruinStacks ?? 0) + 1)
-    if (hasMechanic(state, V6_MECHANICS.chainReaction) && context.sourceTags?.includes('dot') && context.eventTarget === 'enemy' && (context.currentHp ?? 1) <= 0) runtime.chainReactionReady = true
+    if (context.sourceTags?.includes('dot') && context.eventTarget === 'enemy' && (context.currentHp ?? 1) <= 0) {
+      if (hasMechanic(state, V6_MECHANICS.chainReaction)) runtime.chainReactionReady = true
+      if (hasMechanic(state, V6_MECHANICS.ruinTransfer)) { runtime.ruinTransferReady = true; runtime.ruinTransferMultiplier = 1 + rankPercent(mechanicRank(state, V6_MECHANICS.ruinTransfer), [0.03, 0.06, 0.09, 0.12, 0.15]) }
+    }
   }
 
   if (event === 'on-damage-taken' && actor === 'player') {
-    const painRanks = nodeRank(state, 'Pain to Mana')
+    const painRanks = mechanicRank(state, V6_MECHANICS.painToMana)
     if (painRanks && (runtime.lastDamageTakenAtMs ?? -Infinity) + 1000 <= runtime.elapsedMs) { pushMana((context.healthDamage ?? 0) * rankPercent(painRanks, [0.01, 0.02, 0.03, 0.04, 0.05])); runtime.lastDamageTakenAtMs = runtime.elapsedMs }
-    const reactiveRanks = nodeRank(state, 'Reactive Ward')
+    const reactiveRanks = mechanicRank(state, V6_MECHANICS.reactiveWard)
     if (reactiveRanks && (context.previousBarrier ?? 0) <= 0) pushBarrier(rankPercent(reactiveRanks, [0.005, 0.01, 0.015, 0.02, 0.025]))
-    const survivalRanks = nodeRank(state, 'Survival Instinct')
+    const survivalRanks = mechanicRank(state, V6_MECHANICS.survivalInstinct)
     if (survivalRanks && (context.currentHpPercent ?? 100) < 10) runtime.nextSelfTargetActionSpeedMultiplier = 1 + rankPercent(survivalRanks, [0.02, 0.04, 0.06, 0.08, 0.10])
   }
 
   if (event === 'on-heal' && actor === 'player') {
-    const momentumRanks = nodeRank(state, 'Healing Momentum')
+    const momentumRanks = mechanicRank(state, V6_MECHANICS.healingMomentum)
     if (momentumRanks) runtime.nextSelfTargetActionSpeedMultiplier = 1 + rankPercent(momentumRanks, [0.02, 0.04, 0.06, 0.08, 0.10])
-    const surgeRanks = nodeRank(state, 'Recovery Surge')
+    const surgeRanks = mechanicRank(state, V6_MECHANICS.recoverySurge)
     if (surgeRanks && (context.previousHpPercent ?? 100) < 25) pushHeal(rankPercent(surgeRanks, [0.005, 0.01, 0.015, 0.02, 0.025]))
   }
 
   if (event === 'on-kill' && actor === 'player' && context.eventTarget === 'enemy') {
-    const recoveryRanks = nodeRank(state, 'Victory Recovery')
+    const recoveryRanks = mechanicRank(state, V6_MECHANICS.victoryRecovery)
     if (recoveryRanks) pushHeal(rankPercent(recoveryRanks, [0.005, 0.01, 0.015, 0.02, 0.025]))
-    const restorationRanks = nodeRank(state, 'Victory Restoration')
+    const restorationRanks = mechanicRank(state, V6_MECHANICS.victoryRestoration)
     if (restorationRanks) pushHeal(rankPercent(restorationRanks, [0.02, 0.04, 0.06, 0.08, 0.10]))
-    const focusedRanks = nodeRank(state, 'Focused Recovery')
+    const focusedRanks = mechanicRank(state, V6_MECHANICS.focusedRecovery)
     if (focusedRanks) pushMana(rankPercent(focusedRanks, [2, 4, 6, 8, 10]))
-    const chainRanks = nodeRank(state, 'Execution Chain')
-    if (chainRanks) runtime.nextDamageMultiplier = Math.max(runtime.nextDamageMultiplier ?? 1, 1 + rankPercent(chainRanks, [0.03, 0.06, 0.09, 0.12, 0.15]))
-    runtime.victoryMomentumReady = true
+    const chainRanks = mechanicRank(state, V6_MECHANICS.executionChain)
+    if (chainRanks) runtime.nextEnemyDamageMultiplier = Math.max(runtime.nextEnemyDamageMultiplier ?? 1, 1 + rankPercent(chainRanks, [0.03, 0.06, 0.09, 0.12, 0.15]))
+    if (hasMechanic(state, V6_MECHANICS.victoryMomentum)) runtime.victoryMomentumReady = true
   }
 
   if (event === 'on-action-start' && actor === 'player' && context.source?.actor === 'enemy' && state.combat.enemyStatuses.some((status) => controlStatusIds.has(status.statusId))) {
-    const tempoRanks = nodeRank(state, 'Tempo Theft')
+    const tempoRanks = mechanicRank(state, V6_MECHANICS.tempoTheft)
     if (tempoRanks) pushMana(rankPercent(tempoRanks, [1, 2, 3, 4, 5]))
   }
 
@@ -309,111 +350,115 @@ export const getArcaneCoreV6CastModifiers = (state: GameState, context: ArcaneCo
     damageMultiplier += 0.40
     if (!preview) runtime.chainReactionReady = false
   }
+  if (context.damaging && hasDamageOverTime && runtime.ruinTransferReady && hasMechanic(state, V6_MECHANICS.ruinTransfer)) {
+    effectivenessMultiplier *= runtime.ruinTransferMultiplier ?? 1
+    if (!preview) { runtime.ruinTransferReady = false; runtime.ruinTransferMultiplier = 1 }
+  }
 
   for (const entry of entries(state)) {
     const rank = entry.rank
-    const name = entry.displayName
-    const scope = entry.mechanicId.replace(/:r(\d+):/, ':$1:')
-    if (!context.damaging && /damaging Spell|Damage|Crit|DoT|Ruin|Execution|Volley|Assault|Power|Precision|Echo|Momentum|Overload|Overcharge|First Blood|Last Word/i.test(name)) continue
-    if (name === 'Arcane Spark' && context.damaging && nextDamagingNumber % 4 === 0) damageMultiplier += rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
-    if (name === 'Arcane Momentum' && context.damaging && nextDamagingNumber % 4 === 0) damageMultiplier += rankValue(rank, [0.03, 0.06, 0.09, 0.12, 0.15])
-    if (name === 'Perfect Cycle' && context.damaging && nextDamagingNumber % 4 === 0) damageMultiplier += rankValue(rank, [0.06, 0.12, 0.18, 0.24, 0.30])
-    if (name === 'Arcane Echo' && context.damaging && nextDamagingNumber % 6 === 0) damageMultiplier += rankValue(rank, [0.05, 0.10, 0.15, 0.20, 0.25])
-    if (name === 'Arcane Overload' && context.damaging && nextDamagingNumber % 6 === 0) damageMultiplier += 0.25
-    if (name === 'Unstable Power' && context.damaging && nextDamagingNumber % 5 === 0) { damageMultiplier += 0.5; manaCostMultiplier *= 1.25 }
-    if (name === 'Overcharge' && costBand.ratio >= 0.10) damageMultiplier += rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
-    if (name === 'Overcast' && costBand.overcharged) damageMultiplier += rankValue(rank, [0.03, 0.06, 0.09, 0.12, 0.15])
-    if (name === 'Mana Burn' && context.playerMana / Math.max(1, context.maxMana) < 0.2) damageMultiplier += rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
-    if (name === 'Desperate Power' && context.playerMana / Math.max(1, context.maxMana) < 0.2) damageMultiplier += rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
-    if (name === 'Mana Edge' && context.playerMana / Math.max(1, context.maxMana) > 0.8) damageMultiplier += rankValue(rank, [0.005, 0.01, 0.015, 0.02, 0.025])
-    if (name === 'Finisher' && context.enemyHealthPercent < 25) damageMultiplier += rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
-    if ((name === 'Opening Volley' || name === 'First Blood') && context.damaging && damagingNumber <= 1) damageMultiplier += rankValue(rank, name === 'Opening Volley' ? [0.03, 0.06, 0.09, 0.12, 0.15] : [0.04, 0.08, 0.12, 0.16, 0.20])
-    if (name === 'Apotheosis Execution' && context.enemyHealthPercent < 20) damageMultiplier += rankValue(rank, [0.03, 0.06, 0.09, 0.12, 0.15])
-    if (name === 'Perfect Execution' && context.enemyHealthPercent < 20) damageMultiplier += 0.15
-    if (name === 'Convergence' && alternatingPreview >= (preview ? 3 : 4)) { free = true; actionSpeedMultiplier *= 1.2 }
-    if (name === 'Time Compression' && (runtime.alternatingCastStreak ?? 0) >= (preview ? 1 : 2)) actionSpeedMultiplier *= 1.2
-    if (name === 'Zero Point' && castNumber % 8 === 0) manaCostMultiplier *= 1 - rankValue(rank, [0.2, 0.4, 0.6, 0.8, 1])
-    if (name === 'Cataclysm' && costBand.overcharged && damagingNumber === 0) { damageMultiplier += 0.4; manaCostMultiplier *= 1.2 }
-    if (name === 'Overchannel' && scope === 'focus:6:M' && runtime.overchannelUntilMs && runtime.overchannelUntilMs > runtime.elapsedMs) { actionSpeedMultiplier *= 1.15; effectivenessMultiplier *= 1.1 }
-    if (name === 'Overchannel' && scope === 'focus:6:S3' && currentManaPercent > 80 && costBand.high) effectivenessMultiplier *= 1 + rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
-    if (name === 'Queued Precision' && context.origin === 'manual-queued') effectivenessMultiplier *= 1 + rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
-    if (name === 'Prepared Cast' && context.origin !== 'auto' && damagingNumber === 0) actionSpeedMultiplier *= 1 + rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
-    if (name === 'Manual Timing' && context.origin !== 'auto') actionSpeedMultiplier *= 1 + rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
-    if (name === 'Absolute Queue' && context.origin === 'manual-queued') effectivenessMultiplier *= 1 + rankValue(rank, [0.03, 0.06, 0.09, 0.12, 0.15])
+    const mechanicId = entry.mechanicId
+    if (mechanicId === V6_MECHANICS.conservation && castNumber % 6 === 0) manaRestoreFlat += rankValue(rank, [1, 2, 3, 4, 5])
+    if (mechanicId === V6_MECHANICS.arcaneSpark && context.damaging && nextDamagingNumber % 4 === 0) damageMultiplier += rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
+    if (mechanicId === V6_MECHANICS.arcaneMomentum && context.damaging && nextDamagingNumber % 4 === 0) damageMultiplier += rankValue(rank, [0.03, 0.06, 0.09, 0.12, 0.15])
+    if (mechanicId === V6_MECHANICS.perfectCycle && context.damaging && nextDamagingNumber % 4 === 0) damageMultiplier += rankValue(rank, [0.06, 0.12, 0.18, 0.24, 0.30])
+    if (mechanicId === V6_MECHANICS.arcaneEcho && context.damaging && nextDamagingNumber % 6 === 0) damageMultiplier += rankValue(rank, [0.05, 0.10, 0.15, 0.20, 0.25])
+    if (mechanicId === V6_MECHANICS.arcaneOverload && context.damaging && nextDamagingNumber % 6 === 0) damageMultiplier += 0.25
+    if (mechanicId === V6_MECHANICS.unstablePower && context.damaging && nextDamagingNumber % 5 === 0) { damageMultiplier += 0.5; manaCostMultiplier *= 1.25 }
+    if (mechanicId === V6_MECHANICS.overcharge && costBand.ratio >= 0.10) damageMultiplier += rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
+    if (mechanicId === V6_MECHANICS.overcast && costBand.overcharged) damageMultiplier += rankValue(rank, [0.03, 0.06, 0.09, 0.12, 0.15])
+    if (mechanicId === V6_MECHANICS.manaBurn && context.playerMana / Math.max(1, context.maxMana) < 0.2) damageMultiplier += rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
+    if (mechanicId === V6_MECHANICS.desperatePower && context.playerMana / Math.max(1, context.maxMana) < 0.2) damageMultiplier += rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
+    if (mechanicId === V6_MECHANICS.manaEdge && context.playerMana / Math.max(1, context.maxMana) > 0.8) damageMultiplier += rankValue(rank, [0.005, 0.01, 0.015, 0.02, 0.025])
+    if (mechanicId === V6_MECHANICS.finisher && context.enemyHealthPercent < 25) damageMultiplier += rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
+    if ((mechanicId === V6_MECHANICS.openingVolley || mechanicId === V6_MECHANICS.firstBlood) && context.damaging && damagingNumber <= 1) damageMultiplier += rankValue(rank, mechanicId === V6_MECHANICS.openingVolley ? [0.03, 0.06, 0.09, 0.12, 0.15] : [0.04, 0.08, 0.12, 0.16, 0.20])
+    if (mechanicId === V6_MECHANICS.apotheosisExecution && context.enemyHealthPercent < 20) damageMultiplier += rankValue(rank, [0.03, 0.06, 0.09, 0.12, 0.15])
+    if (mechanicId === V6_MECHANICS.perfectExecution && context.enemyHealthPercent < 20) damageMultiplier += 0.15
+    if (mechanicId === V6_MECHANICS.convergence && alternatingPreview >= (preview ? 3 : 4)) { free = true; actionSpeedMultiplier *= 1.2 }
+    if (mechanicId === V6_MECHANICS.timeCompression && (runtime.alternatingCastStreak ?? 0) >= (preview ? 1 : 2)) actionSpeedMultiplier *= 1.2
+    if (mechanicId === V6_MECHANICS.zeroPoint && castNumber % 8 === 0) manaCostMultiplier *= 1 - rankValue(rank, [0.2, 0.4, 0.6, 0.8, 1])
+    if (mechanicId === V6_MECHANICS.cataclysm && costBand.overcharged && damagingNumber === 0) { damageMultiplier += 0.4; manaCostMultiplier *= 1.2 }
+    if (mechanicId === V6_MECHANICS.overchannel && runtime.overchannelUntilMs && runtime.overchannelUntilMs > runtime.elapsedMs) { actionSpeedMultiplier *= 1.15; effectivenessMultiplier *= 1.1 }
+    if (mechanicId === V6_MECHANICS.overchannelCondition && currentManaPercent > 80 && costBand.high) effectivenessMultiplier *= 1 + rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
+    if (mechanicId === V6_MECHANICS.queuedPrecision && context.origin === 'manual-queued') effectivenessMultiplier *= 1 + rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
+    if (mechanicId === V6_MECHANICS.preparedCast && context.origin !== 'auto' && damagingNumber === 0) actionSpeedMultiplier *= 1 + rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
+    if (mechanicId === V6_MECHANICS.manualTiming && context.origin !== 'auto') actionSpeedMultiplier *= 1 + rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
+    if (mechanicId === V6_MECHANICS.absoluteQueue && context.origin === 'manual-queued') effectivenessMultiplier *= 1 + rankValue(rank, [0.03, 0.06, 0.09, 0.12, 0.15])
 
     // V6 condition and sequence primitives. These stay keyed to authored
     // mechanic names, while the counters and cost bands remain shared.
-    if (name === 'Perfect Window' && context.enemyHealthPercent > 90) critDamageBonus += rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
-    if (name === 'Marked Precision' && hasControl) critChanceBonus += rankValue(rank, [0.002, 0.004, 0.006, 0.008, 0.010])
-    if (name === 'Perfect Precision' && context.damaging && (runtime.failedCritStreak ?? 0) >= 2) guaranteedCrit = true
-    if (name === 'Spell Sequence' && context.damaging && differentSpellPreview >= 3) damageMultiplier += rankValue(rank, [0.03, 0.06, 0.09, 0.12, 0.15])
-    if (name === 'Rapid Escalation' && context.damaging && (runtime.lastSuccessfulCastAtMs ?? -Infinity) >= runtime.elapsedMs - 3000) damageMultiplier += rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
-    if (name === 'Heavy Follow-Up' && context.damaging && costBand.low && runtime.nextLowCostDamageMultiplier && runtime.nextLowCostDamageMultiplier > 1) damageMultiplier *= runtime.nextLowCostDamageMultiplier
-    if ((name === 'Debuff Assault' || name === 'Corroded Defense' || name === 'Debuff Pressure') && negativeStatusCount >= 2) damageMultiplier += rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
-    if ((name === 'Dominating Weakness' || name === 'Absolute Pressure') && negativeStatusCount >= 3) damageMultiplier += rankValue(rank, name === 'Absolute Pressure' ? [0.015, 0.03, 0.045, 0.06, 0.075] : [0.02, 0.04, 0.06, 0.08, 0.10])
-    if (name === 'Rising Violence') damageMultiplier += Math.floor(Math.max(0, 100 - context.enemyHealthPercent) / 25) * rankValue(rank, [0.005, 0.01, 0.015, 0.02, 0.025])
-    if (name === 'Cooldown Punisher' && (spell?.cooldownMs ?? 0) >= 20_000) damageMultiplier += rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
-    if ((name === 'Lingering Execution' || name === 'Ruin Transfer') && hasDamageOverTime && context.enemyHealthPercent < 35) damageMultiplier += rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
-    if (name === 'Unstable Rotation' && context.damaging && (runtime.costBandHistory ?? []).length >= 2 && (runtime.costBandHistory ?? [])[((runtime.costBandHistory ?? []).length) - 2] === 'high' && (runtime.costBandHistory ?? [])[(runtime.costBandHistory ?? []).length - 1] === 'low' && costBand.high) damageMultiplier += rankValue(rank, [0.04, 0.08, 0.12, 0.16, 0.20])
-    if (name === 'Sovereign Sequence' && context.damaging && differentSpellPreview >= 5) damageMultiplier += rankValue(rank, [0.04, 0.08, 0.12, 0.16, 0.20])
-    if (name === 'First Blood' && context.damaging && (runtime.enemyDamagingSpellCount ?? 0) <= 1) damageMultiplier += rankValue(rank, [0.04, 0.08, 0.12, 0.16, 0.20])
-    if (name === 'Last Word' && context.damaging && context.enemyHealthPercent < 20 && !runtime.lastWordUsed) damageMultiplier += rankValue(rank, [0.04, 0.08, 0.12, 0.16, 0.20])
-    if (name === 'Sovereign Crit' && context.damaging && runtime.nextNonCritDamageMultiplier && runtime.nextNonCritDamageMultiplier > 1) damageMultiplier *= runtime.nextNonCritDamageMultiplier
-    if (name === 'Victory Momentum' && context.damaging && runtime.victoryMomentumReady) actionSpeedMultiplier *= 1 + rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
-    if (name === 'Sovereign Casting' && context.damaging && (runtime.sovereigntyCharges ?? 0) > 0) damageMultiplier += 0.15
-    if (name === 'Absolute Momentum' && context.damaging && differentSpellPreview >= 3) actionSpeedMultiplier *= 1 + rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
-    if (name === 'Limit Break' && costBand.extreme) manaRefundPercent = Math.max(manaRefundPercent, 0)
-    if (name === 'Arcane Apotheosis' && runtime.apotheosisUntilMs && runtime.apotheosisUntilMs > runtime.elapsedMs) { damageMultiplier += 0.20; manaCostMultiplier *= 0.85; actionSpeedMultiplier *= 1.10 }
+    if (mechanicId === V6_MECHANICS.perfectWindow && context.enemyHealthPercent > 90) critDamageBonus += rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
+    if (mechanicId === V6_MECHANICS.criticalFinish && context.damaging && context.enemyHealthPercent < 25) critDamageBonus += rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
+    if (mechanicId === V6_MECHANICS.markedPrecision && hasControl) critChanceBonus += rankValue(rank, [0.002, 0.004, 0.006, 0.008, 0.010])
+    if (mechanicId === V6_MECHANICS.perfectPrecision && context.damaging && (runtime.failedCritStreak ?? 0) >= 2) guaranteedCrit = true
+    if (mechanicId === V6_MECHANICS.spellSequence && context.damaging && differentSpellPreview >= 3) damageMultiplier += rankValue(rank, [0.03, 0.06, 0.09, 0.12, 0.15])
+    if (mechanicId === V6_MECHANICS.rapidEscalation && context.damaging && (runtime.lastSuccessfulCastAtMs ?? -Infinity) >= runtime.elapsedMs - 3000) damageMultiplier += rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
+    if (mechanicId === V6_MECHANICS.heavyFollowUp && context.damaging && costBand.low && runtime.nextLowCostDamageMultiplier && runtime.nextLowCostDamageMultiplier > 1) damageMultiplier *= runtime.nextLowCostDamageMultiplier
+    if ((mechanicId === V6_MECHANICS.debuffAssault || mechanicId === V6_MECHANICS.corrodedDefense || mechanicId === V6_MECHANICS.debuffPressure) && negativeStatusCount >= 2) damageMultiplier += rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
+    if ((mechanicId === V6_MECHANICS.dominatingWeakness || mechanicId === V6_MECHANICS.absolutePressure) && negativeStatusCount >= 3) damageMultiplier += rankValue(rank, mechanicId === V6_MECHANICS.absolutePressure ? [0.015, 0.03, 0.045, 0.06, 0.075] : [0.02, 0.04, 0.06, 0.08, 0.10])
+    if (mechanicId === V6_MECHANICS.risingViolence) damageMultiplier += Math.floor(Math.max(0, 100 - context.enemyHealthPercent) / 25) * rankValue(rank, [0.005, 0.01, 0.015, 0.02, 0.025])
+    if (mechanicId === V6_MECHANICS.cooldownPunisher && (spell?.cooldownMs ?? 0) >= 20_000) damageMultiplier += rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
+    if (mechanicId === V6_MECHANICS.lingeringExecution && hasDamageOverTime && context.enemyHealthPercent < 35) damageMultiplier += rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
+    if (mechanicId === V6_MECHANICS.unstableRotation && context.damaging && (runtime.costBandHistory ?? []).length >= 2 && (runtime.costBandHistory ?? [])[((runtime.costBandHistory ?? []).length) - 2] === 'high' && (runtime.costBandHistory ?? [])[(runtime.costBandHistory ?? []).length - 1] === 'low' && costBand.high) damageMultiplier += rankValue(rank, [0.04, 0.08, 0.12, 0.16, 0.20])
+    if (mechanicId === V6_MECHANICS.sovereignSequence && context.damaging && differentSpellPreview >= 5) damageMultiplier += rankValue(rank, [0.04, 0.08, 0.12, 0.16, 0.20])
+    if (mechanicId === V6_MECHANICS.firstBlood && context.damaging && (runtime.enemyDamagingSpellCount ?? 0) <= 1) damageMultiplier += rankValue(rank, [0.04, 0.08, 0.12, 0.16, 0.20])
+    if (mechanicId === V6_MECHANICS.lastWord && context.damaging && context.enemyHealthPercent < 20 && !runtime.lastWordUsed) damageMultiplier += rankValue(rank, [0.04, 0.08, 0.12, 0.16, 0.20])
+    if (mechanicId === V6_MECHANICS.sovereignCrit && context.damaging && runtime.nextNonCritDamageMultiplier && runtime.nextNonCritDamageMultiplier > 1) damageMultiplier *= runtime.nextNonCritDamageMultiplier
+    if (mechanicId === V6_MECHANICS.victoryMomentum && context.damaging && runtime.victoryMomentumReady) actionSpeedMultiplier *= 1 + rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
+    if (mechanicId === V6_MECHANICS.sovereignCasting && context.damaging && (runtime.sovereigntyCharges ?? 0) > 0) damageMultiplier += 0.15
+    if (mechanicId === V6_MECHANICS.absoluteMomentum && context.damaging && differentSpellPreview >= 3) actionSpeedMultiplier *= 1 + rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
+    if (mechanicId === V6_MECHANICS.limitBreak && costBand.extreme) manaRefundPercent = Math.max(manaRefundPercent, 0)
+    if (mechanicId === V6_MECHANICS.arcaneApotheosis && runtime.apotheosisUntilMs && runtime.apotheosisUntilMs > runtime.elapsedMs) { damageMultiplier += 0.20; manaCostMultiplier *= 0.85; actionSpeedMultiplier *= 1.10 }
 
-    if (name === 'Protective Casting' && currentBarrier > 0 && !context.damaging) actionSpeedMultiplier *= 1 + rankValue(rank, [0.005, 0.01, 0.015, 0.02, 0.025])
-    if (name === 'Defiant Casting' && currentHealthPercent < 35 && (hasHealing || hasBarrier)) actionSpeedMultiplier *= 1 + rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
-    if (name === 'Safe Offensive' && currentBarrier >= state.player.maxHealth * 0.1 && context.damaging) damageMultiplier += rankValue(rank, [0.005, 0.01, 0.015, 0.02, 0.025])
-    if (name === 'Bastion Cast' && currentBarrier > 0 && !context.damaging) manaCostMultiplier *= 1 - rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
-    if (name === 'Last Breath' && runtime.nextHealingActionSpeedMultiplier && hasHealing) actionSpeedMultiplier *= runtime.nextHealingActionSpeedMultiplier
+    if (mechanicId === V6_MECHANICS.protectiveCasting && currentBarrier > 0 && !context.damaging) actionSpeedMultiplier *= 1 + rankValue(rank, [0.005, 0.01, 0.015, 0.02, 0.025])
+    if (mechanicId === V6_MECHANICS.defiantCasting && currentHealthPercent < 35 && (hasHealing || hasBarrier)) actionSpeedMultiplier *= 1 + rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
+    if (mechanicId === V6_MECHANICS.safeOffensive && currentBarrier >= state.player.maxHealth * 0.1 && context.damaging) damageMultiplier += rankValue(rank, [0.005, 0.01, 0.015, 0.02, 0.025])
+    if (mechanicId === V6_MECHANICS.bastionCast && currentBarrier > 0 && !context.damaging) manaCostMultiplier *= 1 - rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
+    if (mechanicId === V6_MECHANICS.lastBreath && runtime.nextHealingActionSpeedMultiplier && hasHealing) actionSpeedMultiplier *= runtime.nextHealingActionSpeedMultiplier
 
-    if (name === 'Full Reservoir' && currentManaPercent > 90 && runtime.lastSuccessfulCastAtMs !== undefined && runtime.elapsedMs - runtime.lastSuccessfulCastAtMs >= 3000) manaCostMultiplier *= 1 - rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
-    if (name === 'Deep Reservoir' && (runtime.spellCastCount + (preview ? 1 : 0)) === 1) free = true
-    if (name === 'Manual Reservoir' && context.origin !== 'auto' && runtime.lastCastOrigin === 'auto') manaRestoreFlat += rankValue(rank, [1, 2, 3, 4, 5])
-    if (name === 'Alternating Mind' && runtime.lastCastOrigin && runtime.lastCastOrigin !== context.origin) actionSpeedMultiplier *= 1 + rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
-    if (name === 'Efficient Queue' && context.origin === 'manual-queued') manaCostMultiplier *= 1 - rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
-    if (name === 'Echo Discipline' && autoSlots > 0 && manualSlots >= Math.ceil(deck.length / 2)) manaCostMultiplier *= 1 - rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
-    if (name === 'Dual Mind' && runtime.lastCastOrigin && runtime.lastCastOrigin !== context.origin) { manaCostMultiplier *= 0.85; actionSpeedMultiplier *= 1.10 }
-    if (name === 'Prepared Slot' && context.loadoutSlotIndex !== null && !runtime.castLoadoutSlots?.includes(context.loadoutSlotIndex)) manaCostMultiplier *= 1 - rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
-    if (name === 'Resonance' && (runtime.spellCastCount + (preview ? 1 : 0)) % 10 === 0) manaRefundPercent = 1
-    if (name === 'Echo Battery' && context.origin === 'manual-direct' && (runtime.echoCharges ?? 0) > 0) manaCostMultiplier *= 1 - rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05]) * (runtime.echoCharges ?? 0)
-    if (name === 'Manual Charge' && context.origin === 'auto' && (runtime.manualCharges ?? 0) > 0) actionSpeedMultiplier *= 1 + rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05]) * (runtime.manualCharges ?? 0)
-    if (name === 'Prepared Cast' && context.origin !== 'auto' && (runtime.manualCastCount ?? 0) <= 1) actionSpeedMultiplier *= 1 + rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
-    if (name === 'Queued Precision' && context.origin === 'manual-queued') effectivenessMultiplier *= 1 + rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
-    if (name === 'Balanced Mind' && autoSlots >= 2 && manualSlots >= 2) { actionSpeedMultiplier *= 1 + rankValue(rank, [0.005, 0.01, 0.015, 0.02, 0.025]) }
-    if (name === 'Convergent Queue' && context.origin === 'manual-queued') { /* cooldown reduction is applied by the queue boundary */ }
-    if (name === 'Reserved Conversion' && context.origin === 'auto' && (runtime.enemyDamagingSpellCount ?? 0) === 0) manaRestoreFlat += Math.floor(reservedFocus / 20) * rankValue(rank, [1, 2, 3, 4, 5])
-    if (name === 'Free Focus Surge' && context.origin !== 'auto' && (runtime.enemyDamagingSpellCount ?? 0) === 0) actionSpeedMultiplier *= 1 + Math.floor(freeFocus / 20) * rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
-    if (name === 'Deep Draw' && currentManaPercent < 20) manaCostMultiplier *= 1 - rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
-    if (name === 'Arcane Return') manaRestoreFlat += rankValue(rank, [1, 2, 3, 4, 5])
-    if (name === 'Empty Mind' && currentManaPercent < 20 && context.damaging) actionSpeedMultiplier *= 1 + rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
-    if (name === 'Astral Rotation' && context.loadoutSlotIndex !== null && runtime.differentLoadoutSlotStreak && runtime.differentLoadoutSlotStreak >= 2) manaRefundPercent = Math.max(manaRefundPercent, rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05]))
-    if (name === 'Echo Cascade' && context.origin !== 'auto' && (runtime.consecutiveAutoCasts ?? 0) >= 3) actionSpeedMultiplier *= 1 + rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10]);
-    if (name === 'Manual Cascade' && context.origin === 'auto' && (runtime.consecutiveManualCasts ?? 0) >= 3) effectivenessMultiplier *= 1 + rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
-    if (name === 'Singularity Echo' && context.origin !== 'auto' && runtime.lastCastOrigin === 'auto' && runtime.lastCastAtFullMana) effectivenessMultiplier *= 1 + rankValue(rank, [0.03, 0.06, 0.09, 0.12, 0.15])
-    if (name === 'Singularity Manual' && context.origin === 'auto' && runtime.nextAutoRefundPercent) manaRefundPercent = Math.max(manaRefundPercent, runtime.nextAutoRefundPercent)
-    if (name === 'Focus Collapse') {
+    if (mechanicId === V6_MECHANICS.fullReservoir && currentManaPercent > 90 && runtime.lastSuccessfulCastAtMs !== undefined && runtime.elapsedMs - runtime.lastSuccessfulCastAtMs >= 3000) manaCostMultiplier *= 1 - rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
+    if (mechanicId === V6_MECHANICS.deepReservoir && (runtime.spellCastCount + (preview ? 1 : 0)) === 1) free = true
+    if (mechanicId === V6_MECHANICS.manualReservoir && context.origin !== 'auto' && runtime.lastCastOrigin === 'auto') manaRestoreFlat += rankValue(rank, [1, 2, 3, 4, 5])
+    if (mechanicId === V6_MECHANICS.alternatingMind && runtime.lastCastOrigin && runtime.lastCastOrigin !== context.origin) actionSpeedMultiplier *= 1 + rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
+    if (mechanicId === V6_MECHANICS.efficientQueue && context.origin === 'manual-queued') manaCostMultiplier *= 1 - rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
+    if (mechanicId === V6_MECHANICS.echoDiscipline && autoSlots > 0 && manualSlots >= Math.ceil(deck.length / 2)) manaCostMultiplier *= 1 - rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
+    if (mechanicId === V6_MECHANICS.dualMind && runtime.lastCastOrigin && runtime.lastCastOrigin !== context.origin) { manaCostMultiplier *= 0.85; actionSpeedMultiplier *= 1.10 }
+    if (mechanicId === V6_MECHANICS.preparedSlot && context.loadoutSlotIndex !== null && !runtime.castLoadoutSlots?.includes(context.loadoutSlotIndex)) manaCostMultiplier *= 1 - rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
+    if (mechanicId === V6_MECHANICS.resonance && (runtime.spellCastCount + (preview ? 1 : 0)) % 10 === 0) manaRefundPercent = 1
+    if (mechanicId === V6_MECHANICS.echoBattery && context.origin === 'manual-direct' && (runtime.echoCharges ?? 0) > 0) manaCostMultiplier *= 1 - rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05]) * (runtime.echoCharges ?? 0)
+    if (mechanicId === V6_MECHANICS.manualCharge && context.origin === 'auto' && (runtime.manualCharges ?? 0) > 0) actionSpeedMultiplier *= 1 + rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05]) * (runtime.manualCharges ?? 0)
+    if (mechanicId === V6_MECHANICS.preparedCast && context.origin !== 'auto' && (runtime.manualCastCount ?? 0) <= 1) actionSpeedMultiplier *= 1 + rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
+    if (mechanicId === V6_MECHANICS.queuedPrecision && context.origin === 'manual-queued') effectivenessMultiplier *= 1 + rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
+    if (mechanicId === V6_MECHANICS.balancedMind && autoSlots >= 2 && manualSlots >= 2) { actionSpeedMultiplier *= 1 + rankValue(rank, [0.005, 0.01, 0.015, 0.02, 0.025]) }
+    if (mechanicId === V6_MECHANICS.reservedConversion && context.origin === 'auto' && (runtime.enemyDamagingSpellCount ?? 0) === 0) manaRestoreFlat += Math.floor(reservedFocus / 20) * rankValue(rank, [1, 2, 3, 4, 5])
+    if (mechanicId === V6_MECHANICS.freeFocusSurge && context.origin !== 'auto' && (runtime.enemyDamagingSpellCount ?? 0) === 0) actionSpeedMultiplier *= 1 + Math.floor(freeFocus / 20) * rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
+    if (mechanicId === V6_MECHANICS.deepDraw && currentManaPercent < 20) manaCostMultiplier *= 1 - rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
+    if (mechanicId === V6_MECHANICS.arcaneReturn) manaRestoreFlat += rankValue(rank, [1, 2, 3, 4, 5])
+    if (mechanicId === V6_MECHANICS.emptyMind && currentManaPercent < 20 && context.damaging) actionSpeedMultiplier *= 1 + rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
+    if (mechanicId === V6_MECHANICS.astralRotation && context.loadoutSlotIndex !== null && runtime.differentLoadoutSlotStreak && runtime.differentLoadoutSlotStreak >= 2) manaRefundPercent = Math.max(manaRefundPercent, rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05]))
+    if (mechanicId === V6_MECHANICS.echoCascade && context.origin !== 'auto' && (runtime.consecutiveAutoCasts ?? 0) >= 3) actionSpeedMultiplier *= 1 + rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
+    if (mechanicId === V6_MECHANICS.manualCascade && context.origin === 'auto' && (runtime.consecutiveManualCasts ?? 0) >= 3) effectivenessMultiplier *= 1 + rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
+    if (mechanicId === V6_MECHANICS.singularityEcho && context.origin !== 'auto' && runtime.lastCastOrigin === 'auto' && runtime.lastCastAtFullMana) effectivenessMultiplier *= 1 + rankValue(rank, [0.03, 0.06, 0.09, 0.12, 0.15])
+    if (mechanicId === V6_MECHANICS.singularityManual && context.origin === 'auto' && runtime.nextAutoRefundPercent) manaRefundPercent = Math.max(manaRefundPercent, runtime.nextAutoRefundPercent)
+    if (mechanicId === V6_MECHANICS.focusCollapse) {
       if (context.origin === 'auto' && reservedFocus > state.player.maxFocus * 0.75) actionSpeedMultiplier *= 1 + rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
       if (context.origin !== 'auto' && reservedFocus < state.player.maxFocus * 0.25) actionSpeedMultiplier *= 1 + rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
     }
-    if (name === 'Perfect Conservation' && runtime.lastManaBand !== undefined && runtime.lastManaBand === Math.floor(currentManaPercent / 25)) manaRefundPercent = Math.max(manaRefundPercent, 0)
+    if (mechanicId === V6_MECHANICS.perfectConservation && runtime.lastManaBand !== undefined && runtime.lastManaBand === Math.floor(currentManaPercent / 25)) manaRefundPercent = Math.max(manaRefundPercent, 0)
 
-    if (name === 'Manual Timing' && context.origin !== 'auto' && state.combat.enemyActionDurationMs > 0 && state.combat.enemyActionTimerMs / state.combat.enemyActionDurationMs < 0.25) actionSpeedMultiplier *= 1 + rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
-    if ((name === 'Controlled Strike' || name === 'Controlled Target') && hasControl && context.damaging) damageMultiplier += rankValue(rank, name === 'Controlled Target' ? [0.025, 0.05, 0.075, 0.10, 0.125] : [0.01, 0.02, 0.03, 0.04, 0.05])
-    if ((name === 'Debuff Pressure' || name === 'Endless Pressure') && negativeStatusCount >= (name === 'Endless Pressure' ? 4 : 2)) damageMultiplier += rankValue(rank, name === 'Endless Pressure' ? [0.03, 0.06, 0.09, 0.12, 0.15] : [0.01, 0.02, 0.03, 0.04, 0.05])
-    if (name === 'Queued Dominion' && context.origin === 'manual-queued' && hasNegativeStatus) statusDurationMultiplier *= 1 + rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
-    if (name === 'Suppression Window' && runtime.nextActionSpeedMultiplier && runtime.nextActionSpeedMultiplier > 1) actionSpeedMultiplier *= runtime.nextActionSpeedMultiplier
-    if (name === 'Status Echo' && hasControl && runtime.nextControlStatusDurationMultiplier) statusDurationMultiplier *= runtime.nextControlStatusDurationMultiplier
-    if (name === 'Status Recursion' && hasControl && runtime.nextControlStatusDurationMultiplier) statusDurationMultiplier *= runtime.nextControlStatusDurationMultiplier
+    if (mechanicId === V6_MECHANICS.manualTiming && context.origin !== 'auto' && state.combat.enemyActionDurationMs > 0 && state.combat.enemyActionTimerMs / state.combat.enemyActionDurationMs < 0.25) actionSpeedMultiplier *= 1 + rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
+    if ((mechanicId === V6_MECHANICS.controlledStrike || mechanicId === V6_MECHANICS.controlledTarget) && hasControl && context.damaging) damageMultiplier += rankValue(rank, mechanicId === V6_MECHANICS.controlledTarget ? [0.025, 0.05, 0.075, 0.10, 0.125] : [0.01, 0.02, 0.03, 0.04, 0.05])
+    if ((mechanicId === V6_MECHANICS.debuffPressure || mechanicId === V6_MECHANICS.endlessPressure) && negativeStatusCount >= (mechanicId === V6_MECHANICS.endlessPressure ? 4 : 2)) damageMultiplier += rankValue(rank, mechanicId === V6_MECHANICS.endlessPressure ? [0.03, 0.06, 0.09, 0.12, 0.15] : [0.01, 0.02, 0.03, 0.04, 0.05])
+    if (mechanicId === V6_MECHANICS.queuedDominion && context.origin === 'manual-queued' && hasNegativeStatus) statusDurationMultiplier *= 1 + rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
+    if (mechanicId === V6_MECHANICS.suppressionWindow && runtime.nextActionSpeedMultiplier && runtime.nextActionSpeedMultiplier > 1) actionSpeedMultiplier *= runtime.nextActionSpeedMultiplier
+    if (mechanicId === V6_MECHANICS.statusEcho && hasControl && runtime.nextControlStatusDurationMultiplier) statusDurationMultiplier *= runtime.nextControlStatusDurationMultiplier
+    if (mechanicId === V6_MECHANICS.statusRecursion && hasControl && runtime.nextControlStatusDurationMultiplier) statusDurationMultiplier *= runtime.nextControlStatusDurationMultiplier
   }
 
   if (!context.damaging && (hasHealing || hasBarrier) && runtime.nextSelfTargetActionSpeedMultiplier) actionSpeedMultiplier *= runtime.nextSelfTargetActionSpeedMultiplier
 
   const nextDamageMultiplier = runtime.nextDamageMultiplier ?? 1
+  const nextEnemyDamageMultiplier = runtime.nextEnemyDamageMultiplier ?? 1
   const nextEffectivenessMultiplier = runtime.nextEffectivenessMultiplier ?? 1
   const nextActionSpeedMultiplier = runtime.nextActionSpeedMultiplier ?? 1
   const nextManaRefundPercent = runtime.nextManaRefundPercent ?? 0
@@ -422,7 +467,10 @@ export const getArcaneCoreV6CastModifiers = (state: GameState, context: ArcaneCo
   guaranteedCrit = guaranteedCrit || runtime.nextGuaranteedCrit === true
   if (!preview) {
     if (context.origin === 'auto') runtime.autoCastCount = (runtime.autoCastCount ?? 0) + 1
-    if (context.damaging) runtime.nextDamageMultiplier = 1
+    if (context.damaging) {
+      runtime.nextDamageMultiplier = 1
+      if (nextEnemyDamageMultiplier > 1) runtime.nextEnemyDamageMultiplier = 1
+    }
     runtime.nextEffectivenessMultiplier = 1
     runtime.nextActionSpeedMultiplier = 1
     runtime.nextManaRefundPercent = 0
@@ -441,7 +489,7 @@ export const getArcaneCoreV6CastModifiers = (state: GameState, context: ArcaneCo
   }
   return {
     free: free || manaCostMultiplier <= 0,
-    damageMultiplier: damageMultiplier * nextDamageMultiplier,
+    damageMultiplier: damageMultiplier * nextDamageMultiplier * nextEnemyDamageMultiplier,
     effectivenessMultiplier: effectivenessMultiplier * nextEffectivenessMultiplier,
     actionSpeedMultiplier: actionSpeedMultiplier * nextActionSpeedMultiplier,
     manaCostMultiplier,
@@ -478,14 +526,15 @@ export const commitArcaneCoreV6SpellCast = (state: GameState, context: ArcaneCor
   if (hasMechanic(state, V6_MECHANICS.eventHorizon) && context.playerMana >= context.maxMana) {
     runtime.overflowCharges = Math.min(mechanicRank(state, V6_MECHANICS.eventHorizon), (runtime.overflowCharges ?? 0) + 1)
   }
-  if (runtime.spellCastCount === 1 && entries(state).some((entry) => entry.displayName === 'Sovereign Casting')) runtime.sovereigntyCharges = 3
+  if (runtime.spellCastCount === 1 && hasMechanic(state, V6_MECHANICS.sovereignCasting)) runtime.sovereigntyCharges = 3
   runtime.lastCastOrigin = context.origin
   runtime.lastSpellId = context.spellId
   runtime.lastLoadoutSlotIndex = context.loadoutSlotIndex
+  if (context.origin === 'manual-queued' && hasMechanic(state, V6_MECHANICS.tacticalQueue)) reduceAllCooldowns(state, rankValue(mechanicRank(state, V6_MECHANICS.tacticalQueue), [50, 100, 150, 200, 250]))
   const result = getArcaneCoreV6CastModifiers(state, context)
-  if (entries(state).some((entry) => entry.displayName === 'Last Word') && context.damaging && context.enemyHealthPercent < 20) runtime.lastWordUsed = true
-  if (entries(state).some((entry) => entry.displayName === 'Arcane Apotheosis') && context.damaging && runtime.damagingSpellCount >= 8 && !runtime.apotheosisUntilMs) runtime.apotheosisUntilMs = runtime.elapsedMs + 6000
-  if (entries(state).some((entry) => entry.displayName === 'Overchannel' && matchesScope(entry, 'focus:6:M')) && band.ratio >= 0.25) {
+  if (hasMechanic(state, V6_MECHANICS.lastWord) && context.damaging && context.enemyHealthPercent < 20) runtime.lastWordUsed = true
+  if (hasMechanic(state, V6_MECHANICS.arcaneApotheosis) && context.damaging && runtime.damagingSpellCount >= 8 && !runtime.apotheosisUntilMs) runtime.apotheosisUntilMs = runtime.elapsedMs + 6000
+  if (hasMechanic(state, V6_MECHANICS.overchannel) && band.ratio >= 0.25) {
     runtime.overchannelUntilMs = runtime.elapsedMs + 5000
     runtime.manaRegenDisabledUntilMs = runtime.elapsedMs + 5000
   }
@@ -518,9 +567,13 @@ export const recordArcaneCoreV6CriticalResult = (state: GameState, critical: boo
     reduceAllCooldowns(state, rankValue(mechanicRank(state, V6_MECHANICS.criticalFeedback), [30, 60, 90, 120, 150]))
     runtime.criticalFeedbackLastAtMs = runtime.elapsedMs
   }
+  if (critical && hasMechanic(state, V6_MECHANICS.criticalRecovery) && (runtime.criticalRecoveryLastAtMs ?? -Infinity) + 750 <= runtime.elapsedMs) {
+    state.player.mana = Math.min(state.player.maxMana, state.player.mana + rankValue(mechanicRank(state, V6_MECHANICS.criticalRecovery), [1, 2, 3, 4, 5]))
+    runtime.criticalRecoveryLastAtMs = runtime.elapsedMs
+  }
   if (!critical && hasMechanic(state, V6_MECHANICS.secondChance)) {
     runtime.nextCritChanceBonus = rankValue(mechanicRank(state, V6_MECHANICS.secondChance), [0.002, 0.004, 0.006, 0.008, 0.010])
   }
-  if (!critical && (runtime.sovereigntyCharges ?? 0) > 0 && entries(state).some((entry) => entry.displayName === 'Sovereign Casting')) runtime.sovereigntyCharges = Math.max(0, (runtime.sovereigntyCharges ?? 0) - 1)
-  if (critical && entries(state).some((entry) => entry.displayName === 'Sovereign Crit')) runtime.nextNonCritDamageMultiplier = 1
+  if (!critical && (runtime.sovereigntyCharges ?? 0) > 0 && hasMechanic(state, V6_MECHANICS.sovereignCasting)) runtime.sovereigntyCharges = Math.max(0, (runtime.sovereigntyCharges ?? 0) - 1)
+  if (critical && hasMechanic(state, V6_MECHANICS.sovereignCrit)) runtime.nextNonCritDamageMultiplier = 1
 }

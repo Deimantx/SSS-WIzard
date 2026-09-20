@@ -1,14 +1,15 @@
 import { memo, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from 'react'
 import { Crosshair, LockKeyhole, RotateCcw, Sparkles, X } from 'lucide-react'
 import { Button, Card, GameTooltip, ModalPortal, Status } from '../../components/ui'
+import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { ArcaneCorePresetPanel } from '../../components/arcane-core/ArcaneCorePresetPanel'
 import { ScreenGrid } from '../../components/layout/ScreenGrid'
 import { ARCANE_CORE_BRANCHES } from '../../game/content/arcaneCore/arcaneCoreBranches'
 import { ARCANE_CORE_TOTAL_COST_PER_CORE, ARCANE_CORE_TOTAL_TREE_COST } from '../../game/content/arcaneCore/arcaneCoreBalance'
 import { ARCANE_CORE_MAJOR_GATES, ARCANE_CORE_RING_GATES, ARCANE_CORE_RING_INDICES, getArcaneCoreRingName } from '../../game/content/arcaneCore/arcaneCoreRings'
-import { ARCANE_CORE_CANVAS_SIZE, formatArcaneCoreModifierValue, getArcaneCoreModifierLabel, getArcaneCoreNodeEffectTexts, getArcaneCoreNodePosition, getArcaneCoreRingRadius } from '../../game/presentation/arcaneCore/arcaneCorePresentation'
-import { getArcaneCoreBranchResetPreview, getArcaneCoreHighestUnlockedRing, getArcaneCoreNodeRank, getArcaneCorePointsSpent, getArcaneCoreRefundPreview, getArcaneCoreRingStandardRanksInvested, getArcaneCoreStaticStats, getArcaneCoreWalletInfo, isArcaneCoreMajorUnlocked, isArcaneCoreNodeReachable } from '../../game/systems/arcaneCore'
-import type { ArcaneCoreBranchDefinition, ArcaneCoreBranchId, ArcaneCoreModifierKey, ArcaneCoreNodeDefinition, ArcaneCoreRingIndex } from '../../game/types'
+import { ARCANE_CORE_CANVAS_SIZE, getArcaneCoreNodeEffectTexts, getArcaneCoreNodePosition, getArcaneCoreResonanceSummary, getArcaneCoreRingRadius } from '../../game/presentation/arcaneCore/arcaneCorePresentation'
+import { getArcaneCoreBranchResetPreview, getArcaneCoreHighestUnlockedRing, getArcaneCoreNodeRank, getArcaneCorePointsSpent, getArcaneCoreRefundPreview, getArcaneCoreRingStandardRanksInvested, getArcaneCoreWalletInfo, isArcaneCoreMajorUnlocked, isArcaneCoreNodeReachable } from '../../game/systems/arcaneCore'
+import type { ArcaneCoreBranchDefinition, ArcaneCoreBranchId, ArcaneCoreNodeDefinition, ArcaneCoreRingIndex } from '../../game/types'
 import { useGameStore } from '../../store/gameStore'
 import { ARCANE_CORE_DRAG_THRESHOLD, ARCANE_CORE_MAX_ZOOM, ARCANE_CORE_MIN_ZOOM, clampCameraOffset, useArcaneCoreCamera } from './useArcaneCoreCamera'
 
@@ -30,6 +31,20 @@ function BranchCard({ branch, onOpen, state }: { branch: ArcaneCoreBranchDefinit
     <span className="arcane-core-branch-mark"><Sparkles size={17} /></span><span className="arcane-core-branch-copy"><span className="eyebrow">{branch.name.toUpperCase()} CORE</span><strong>{branch.name} Core</strong><small>{branch.description}</small></span>
     <span className="arcane-core-branch-progress"><b>{spent} / {ARCANE_CORE_TOTAL_COST_PER_CORE}</b><small>Arcane Points invested</small><i><em style={{ width: `${spent / ARCANE_CORE_TOTAL_COST_PER_CORE * 100}%` }} /></i><small className="arcane-core-branch-active">Ring {highest} / 8 unlocked</small></span><span className="arcane-core-branch-open">OPEN CORE &gt;</span>
   </button>
+}
+
+function ResonanceEntry({ entry }: { entry: ReturnType<typeof getArcaneCoreResonanceSummary>['alwaysOn'][number] }) {
+  const sourceText = entry.sources?.map((source) => `${source.nodeName} ${source.formattedValue ?? source.value}`).join(' · ')
+  return <GameTooltip wide content={<TooltipContent title={entry.label} description={sourceText ? `Sources: ${sourceText}` : undefined} />}><span className="arcane-core-resonance-entry"><small>{entry.label}</small><strong>{entry.formattedValue}</strong></span></GameTooltip>
+}
+
+function ConditionalResonanceEntry({ entry }: { entry: ReturnType<typeof getArcaneCoreResonanceSummary>['conditional'][number] }) {
+  return <GameTooltip wide content={<TooltipContent title={entry.label} description={entry.conditionText} />}><span className="arcane-core-resonance-entry is-conditional"><small>{entry.label}</small><strong>{entry.formattedValue}</strong><em>{entry.conditionText}</em></span></GameTooltip>
+}
+
+function MechanicsOnline({ entries }: { entries: ReturnType<typeof getArcaneCoreResonanceSummary>['mechanics'] }) {
+  const visible = entries.slice(0, 8)
+  return <section className="arcane-core-resonance-group arcane-core-resonance-mechanics"><div className="arcane-core-resonance-group-head"><span>MECHANICS ONLINE</span><small>{entries.length} purchased</small></div><div className="arcane-core-mechanics-list">{visible.map((entry) => <GameTooltip key={entry.id} wide content={<TooltipContent title={entry.label} description={entry.formattedValue} />}><span><strong>{entry.label}</strong><small>{entry.formattedValue}</small></span></GameTooltip>)}</div>{entries.length > visible.length && <small className="arcane-core-resonance-more">+ {entries.length - visible.length} more mechanics online</small>}</section>
 }
 
 type PendingConfirmation = { label: string; points: number; ranks: number; majors: number; rings: number; confirm: () => void }
@@ -117,7 +132,8 @@ export function ArcaneCoreScreen() {
   const core = useGameStore((state) => state.arcaneCore)
   const [branchId, setBranchId] = useState<ArcaneCoreBranchId | null>(null)
   const activeBranch = branchId ? ARCANE_CORE_BRANCHES.find((branch) => branch.id === branchId) : undefined
-  const stats = getArcaneCoreStaticStats(core)
+  const resonance = getArcaneCoreResonanceSummary(core)
   const pointsSpent = getArcaneCorePointsSpent(core)
-  return <div className="screen-content arcane-core-screen"><div className="screen-header"><div><div className="eyebrow">HERO · PERMANENT PROGRESSION</div><h1>Arcane Core</h1><p>Defeat monsters and bosses to earn Arcane Points. Spend them across four permanent Cores; deeper Rings cost more.</p></div><Status tone="active">{pointsSpent} / {ARCANE_CORE_TOTAL_TREE_COST} Arcane Points invested</Status></div><ScreenGrid screen="arcane-core" panels={[{ id: 'arcane-core-overview', content: <div className="arcane-core-overview-stack"><Card title="Arcane Points"><CoreProgress core={core} /></Card><div className="arcane-core-branch-grid">{ARCANE_CORE_BRANCHES.map((branch) => <BranchCard key={branch.id} branch={branch} state={core} onOpen={() => setBranchId(branch.id)} />)}</div><Card title="Active resonance" action={<Status tone="success">Permanent Core modifiers</Status>}><div className="arcane-core-resonance">{Object.entries(stats).filter(([, value]) => typeof value === 'number' && value !== 0).map(([key, value]) => <span key={key}><small>{getArcaneCoreModifierLabel(key as ArcaneCoreModifierKey)}</small><strong>{formatArcaneCoreModifierValue(key as ArcaneCoreModifierKey, Number(value))}</strong></span>)}{!Object.values(stats).some((value) => typeof value === 'number' && value !== 0) && <p className="muted">Purchase ranks to bring permanent modifiers online.</p>}</div></Card><ArcaneCorePresetPanel /></div> }]} />{activeBranch && <CoreModal branch={activeBranch} onClose={() => setBranchId(null)} />}</div>
+  const hasResonance = resonance.alwaysOn.length > 0 || resonance.conditional.length > 0 || resonance.mechanics.length > 0
+  return <div className="screen-content arcane-core-screen"><div className="screen-header"><div><div className="eyebrow">HERO · PERMANENT PROGRESSION</div><h1>Arcane Core</h1><p>Defeat monsters and bosses to earn Arcane Points. Spend them across four permanent Cores; deeper Rings cost more.</p></div><Status tone="active">{pointsSpent} / {ARCANE_CORE_TOTAL_TREE_COST} Arcane Points invested</Status></div><ScreenGrid screen="arcane-core" panels={[{ id: 'arcane-core-overview', content: <div className="arcane-core-overview-stack"><Card title="Arcane Points"><CoreProgress core={core} /></Card><div className="arcane-core-branch-grid">{ARCANE_CORE_BRANCHES.map((branch) => <BranchCard key={branch.id} branch={branch} state={core} onOpen={() => setBranchId(branch.id)} />)}</div><Card title="Active resonance" action={<Status tone="success">{resonance.alwaysOn.length} always-on</Status>}><div className="arcane-core-resonance"><section className="arcane-core-resonance-group"><div className="arcane-core-resonance-group-head"><span>ALWAYS-ON TOTALS</span><small>Permanent bonuses</small></div><div className="arcane-core-resonance-grid">{resonance.alwaysOn.map((entry) => <ResonanceEntry key={entry.id} entry={entry} />)}</div></section>{resonance.conditional.length > 0 && <section className="arcane-core-resonance-group"><div className="arcane-core-resonance-group-head"><span>CONDITIONAL RESONANCE</span><small>{resonance.conditional.length} effects</small></div><div className="arcane-core-resonance-grid">{resonance.conditional.map((entry) => <ConditionalResonanceEntry key={entry.id} entry={entry} />)}</div></section>}{resonance.mechanics.length > 0 && <MechanicsOnline entries={resonance.mechanics} />}{!hasResonance && <p className="muted">Purchase ranks to bring permanent modifiers online.</p>}</div></Card><ArcaneCorePresetPanel /></div> }]} />{activeBranch && <CoreModal branch={activeBranch} onClose={() => setBranchId(null)} />}</div>
 }

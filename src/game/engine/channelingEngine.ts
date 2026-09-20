@@ -6,7 +6,7 @@ import type { ChannelingDiscoveryId, GameState, ManaPillarId } from '../types'
 import { clamp } from '../utils'
 import { getCombatModifiers } from '../systems/combat/modifiers'
 import { stabilizeResourceValue } from '../presentation/resources/resourcePresentation'
-import { getArcaneCoreDynamicManaRegen } from '../systems/arcaneCore/arcaneCoreRuntime'
+import { getArcaneCoreDynamicManaRegen, getArcaneCoreDynamicManaRegenMultiplier } from '../systems/arcaneCore/arcaneCoreRuntime'
 import { getArcaneCoreSpecialEffects } from '../systems/arcaneCore/arcaneCoreProgression'
 import { gainBarrier } from '../systems/combat/barrierRuntime'
 
@@ -85,8 +85,9 @@ export const getManaRegenBreakdown = (state: ChannelingRegenState): ManaRegenBre
   const echoDiscoveryMultiplier = state.progress.channeling.discoveries['echo-resonance'] ? BALANCE.channeling.discoveryEchoMultiplier : 1
   const echoTotal = echoBase * echoAttunementMultiplier * echoDiscoveryMultiplier
   const disruptionMultiplier = state.player && state.combat ? Math.max(0, 1 + getCombatModifiers(state as never, 'player', 'mana-regen-percent')) : 1
+  const arcaneCoreManaRegenMultiplier = state.player ? getArcaneCoreDynamicManaRegenMultiplier(state as never) : 1
   const arcaneCoreRegenDisabled = Boolean(state.combat?.arcaneCoreRuntime.manaRegenDisabledUntilMs && state.combat.arcaneCoreRuntime.manaRegenDisabledUntilMs > state.combat.arcaneCoreRuntime.elapsedMs)
-  return { baseNatural, leylineConduitBonus, stableLeylineBonus, equipmentPassiveBonus, developerBonus, passiveBeforeResonance, manaResonanceMultiplier, passiveAfterResonance, echoBase, echoAttunementMultiplier, echoDiscoveryMultiplier, echoTotal, total: stabilizeResourceValue((passiveAfterResonance + echoTotal) * disruptionMultiplier * (arcaneCoreRegenDisabled ? 0 : 1)) }
+  return { baseNatural, leylineConduitBonus, stableLeylineBonus, equipmentPassiveBonus, developerBonus, passiveBeforeResonance, manaResonanceMultiplier, passiveAfterResonance, echoBase, echoAttunementMultiplier, echoDiscoveryMultiplier, echoTotal, total: stabilizeResourceValue((passiveAfterResonance + echoTotal) * disruptionMultiplier * arcaneCoreManaRegenMultiplier * (arcaneCoreRegenDisabled ? 0 : 1)) }
 }
 
 export const manaRegenPerSecond = (state: ChannelingRegenState) => getManaRegenBreakdown(state).total

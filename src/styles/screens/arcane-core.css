@@ -30,10 +30,22 @@
 .arcane-core-branch-progress em { display: block; height: 100%; border-radius: inherit; background: var(--branch-accent); box-shadow: 0 0 8px color-mix(in srgb, var(--branch-accent) 60%, transparent); }
 .arcane-core-branch-active, .arcane-core-branch-open { color: var(--branch-accent); font-size: 9px; }
 .arcane-core-branch-open { font: var(--text-micro) var(--font-mono); letter-spacing: .08em; white-space: nowrap; }
-.arcane-core-resonance { display: flex; flex-wrap: wrap; gap: 8px; }
-.arcane-core-resonance > span { display: grid; gap: 4px; min-width: 128px; padding: 9px 10px; border: 1px solid var(--ui-border); border-radius: 7px; background: var(--ui-panel); }
-.arcane-core-resonance small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .07em; }
-.arcane-core-resonance strong { color: var(--ui-accent); font: var(--text-sm) var(--font-mono); }
+.arcane-core-resonance { display: grid; gap: 14px; }
+.arcane-core-resonance-group { display: grid; gap: 8px; min-width: 0; }
+.arcane-core-resonance-group-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; color: var(--ui-text-soft); font: 700 var(--text-micro) var(--font-mono); letter-spacing: .1em; }
+.arcane-core-resonance-group-head small { color: var(--ui-text-muted); font-weight: 400; letter-spacing: 0; }
+.arcane-core-resonance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
+.arcane-core-resonance-entry { display: grid; gap: 4px; min-width: 0; padding: 9px 10px; border: 1px solid var(--ui-border); border-radius: 7px; background: var(--ui-panel); }
+.arcane-core-resonance-entry:hover, .arcane-core-resonance-entry:focus-within { border-color: color-mix(in srgb, var(--ui-accent) 52%, var(--ui-border)); }
+.arcane-core-resonance-entry small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .07em; }
+.arcane-core-resonance-entry strong { color: var(--ui-accent); font: var(--text-sm) var(--font-mono); }
+.arcane-core-resonance-entry em { color: var(--ui-text-muted); font-size: var(--text-xs); font-style: normal; line-height: 1.35; }
+.arcane-core-resonance-entry.is-conditional { border-color: color-mix(in srgb, var(--ui-warning) 28%, var(--ui-border)); }
+.arcane-core-resonance-mechanics { padding-top: 2px; }
+.arcane-core-mechanics-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 7px; }
+.arcane-core-mechanics-list > span { display: grid; gap: 3px; min-width: 0; padding: 8px 9px; border-left: 2px solid var(--ui-accent); background: color-mix(in srgb, var(--ui-accent) 5%, var(--ui-panel)); }
+.arcane-core-mechanics-list strong { overflow: hidden; color: var(--ui-text); font-size: var(--text-xs); text-overflow: ellipsis; white-space: nowrap; }
+.arcane-core-mechanics-list small, .arcane-core-resonance-more { color: var(--ui-text-muted); font-size: var(--text-xs); line-height: 1.35; }
 .arcane-core-preset-create { display: grid; grid-template-columns: auto minmax(180px, 1fr) auto; align-items: center; gap: 8px; margin-top: 13px; padding: 10px; border: 1px solid color-mix(in srgb, var(--ui-accent) 34%, var(--ui-border)); border-radius: 8px; background: var(--ui-panel); }
 .arcane-core-preset-create label { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
 .arcane-core-preset-create input, .arcane-core-preset-rename input { min-width: 0; padding: 7px 8px; border: 1px solid var(--ui-border); border-radius: 6px; color: var(--ui-text); background: var(--ui-panel-strong); font: var(--text-xs) var(--font-mono); }

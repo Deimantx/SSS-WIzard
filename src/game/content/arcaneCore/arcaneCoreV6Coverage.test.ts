@@ -20,4 +20,21 @@ describe('Arcane Core V6 implementation coverage', () => {
       expect(new Set(ids).size).toBe(ids.length)
     })
   })
+
+  it('keeps executable behavior stable when a display name changes', () => {
+    const entry = getArcaneCoreV6CatalogEntries().find((candidate) => candidate.mechanicId === 'power:r2:S3')!
+    const renamed = { ...entry, name: 'Renamed presentation label' }
+    expect(getArcaneCoreV6ImplementationDefinition(renamed).behavior).toEqual(getArcaneCoreV6ImplementationDefinition(entry).behavior)
+    expect('handlerId' in getArcaneCoreV6ImplementationDefinition(entry)).toBe(false)
+  })
+
+  it('contains executable structured data for every non-static node', () => {
+    const entries = getArcaneCoreV6CatalogEntries()
+    entries.filter((entry) => !entry.type.includes('STAT')).forEach((entry) => {
+      const definition = getArcaneCoreV6ImplementationDefinition(entry)
+      expect(definition.behavior?.operation, entry.mechanicId).toBeTruthy()
+      expect(definition.behavior?.event, entry.mechanicId).toBeTruthy()
+      expect(definition.behavior?.rankValues, entry.mechanicId).toHaveLength(5)
+    })
+  })
 })

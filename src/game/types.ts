@@ -394,6 +394,8 @@ export interface CombatState {
   arcaneCoreRuntime: {
     /** Monotonic simulated milliseconds for V6 timestamps and windows. */
     elapsedMs: number
+    /** Run-global clock anchor for the current enemy; elapsedMs is never reset here. */
+    encounterStartedAtMs?: number
     damagingSpellCount: number
     spellCastCount: number
     cooldownPulseSpellCount: number
@@ -407,6 +409,8 @@ export interface CombatState {
     alternatingCastStreak?: number
     enemyDamagingSpellCount?: number
     nextDamageMultiplier?: number
+    /** Damage reserved for the first qualifying damaging Spell against the next enemy. */
+    nextEnemyDamageMultiplier?: number
     nextEffectivenessMultiplier?: number
     nextActionSpeedMultiplier?: number
     nextManaRefundPercent?: number
@@ -421,6 +425,7 @@ export interface CombatState {
     sovereigntyCharges?: number
     nextNonCritDamageMultiplier?: number
     criticalFeedbackLastAtMs?: number
+    criticalRecoveryLastAtMs?: number
     ruinStacks?: number
     chainReactionReady?: boolean
     refuseDeathUsed?: boolean
@@ -439,6 +444,8 @@ export interface CombatState {
     absoluteStasisUsed?: boolean
     absoluteStasisUntilMs?: number
     victoryMomentumReady?: boolean
+    ruinTransferReady?: boolean
+    ruinTransferMultiplier?: number
     apotheosisUntilMs?: number
     overchannelUntilMs?: number
     manaRegenDisabledUntilMs?: number

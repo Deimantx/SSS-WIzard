@@ -1,7 +1,7 @@
 import type { ArcaneCoreState, GameState } from '../../types'
 import { getArcaneCoreSpecialEffects } from './arcaneCoreProgression'
 import { selectFreeFocus, selectUsedFocus } from '../focus/focusReservations'
-import { commitArcaneCoreV6SpellCast, tryConsumeArcaneCoreV6Survival, type ArcaneCoreSpellCastContext } from './arcaneCoreV6Runtime'
+import { commitArcaneCoreV6SpellCast, getArcaneCoreV6DynamicManaRegen, getArcaneCoreV6DynamicSpellPower, getArcaneCoreV6ManaRegenMultiplier, tryConsumeArcaneCoreV6Survival, type ArcaneCoreSpellCastContext } from './arcaneCoreV6Runtime'
 
 const special = (state: Pick<ArcaneCoreState, 'nodes'>, type: import('../../types').ArcaneCoreSpecialEffect['type']) => getArcaneCoreSpecialEffects(state).filter((effect) => effect.type === type)
 
@@ -12,13 +12,15 @@ export const isArcaneCoreSpellFree = (state: Pick<GameState, 'arcaneCore' | 'com
 
 export const getArcaneCoreDynamicSpellPower = (state: Pick<GameState, 'arcaneCore' | 'activities' | 'progress' | 'equipment' | 'artifactProgress' | 'player'>) => {
   const perReservedFocus = special(state.arcaneCore, 'reserved-focus-spell-power').reduce((sum, effect) => effect.type === 'reserved-focus-spell-power' ? sum + effect.spellPowerPerReservedFocus : sum, 0)
-  return selectUsedFocus(state) * perReservedFocus
+  return selectUsedFocus(state) * perReservedFocus + getArcaneCoreV6DynamicSpellPower(state as never)
 }
 
 export const getArcaneCoreDynamicManaRegen = (state: Pick<GameState, 'arcaneCore' | 'activities' | 'progress' | 'equipment' | 'artifactProgress' | 'player'>) => {
   const perFreeFocus = special(state.arcaneCore, 'free-focus-mana-regen').reduce((sum, effect) => effect.type === 'free-focus-mana-regen' ? sum + effect.manaRegenPerFreeFocus : sum, 0)
-  return selectFreeFocus(state) * perFreeFocus
+  return selectFreeFocus(state) * perFreeFocus + getArcaneCoreV6DynamicManaRegen(state as never)
 }
+
+export const getArcaneCoreDynamicManaRegenMultiplier = (state: Pick<GameState, 'arcaneCore' | 'player'>) => getArcaneCoreV6ManaRegenMultiplier(state as never)
 
 export const beginArcaneCoreSpellCast = (state: GameState, damaging: boolean, context?: ArcaneCoreSpellCastContext) => {
   if (context) {
@@ -51,9 +53,56 @@ export const tryConsumeArcaneCoreSurvival = (state: GameState) => {
   return true
 }
 
-export const resetArcaneCoreCombatRuntime = (state: GameState) => {
-  state.combat.arcaneCoreRuntime = { elapsedMs: 0, autoCastCount: 0, damagingSpellCount: 0, spellCastCount: 0, cooldownPulseSpellCount: 0, survivalInstinctUsed: false, lastCastOrigin: 'auto', lastSpellId: null, lastLoadoutSlotIndex: null, differentSpellStreak: 0, alternatingCastStreak: 0, enemyDamagingSpellCount: 0, nextDamageMultiplier: 1, nextEffectivenessMultiplier: 1, nextActionSpeedMultiplier: 1, nextManaRefundPercent: 0, nextCritChanceBonus: 0, nextCritDamageBonus: 0, nextGuaranteedCrit: false, failedCritStreak: 0, costBandHistory: [], castLoadoutSlots: [], echoCharges: 0, manualCharges: 0, manualCastCount: 0, differentLoadoutSlotStreak: 0, consecutiveAutoCasts: 0, consecutiveManualCasts: 0, sovereigntyCharges: 0, lastWordUsed: false, victoryMomentumReady: false, ruinStacks: 0, chainReactionReady: false, refuseDeathUsed: false, lastSurvivalToken: undefined, immortalGuardUsed: false, overflowCharges: 0, singularityUsed: false, absoluteStasisUsed: false, stolenTimeStacks: 0 }
-}
+const createArcaneCoreRuntime = () => ({
+  elapsedMs: 0,
+  encounterStartedAtMs: 0,
+  autoCastCount: 0,
+  damagingSpellCount: 0,
+  spellCastCount: 0,
+  cooldownPulseSpellCount: 0,
+  survivalInstinctUsed: false,
+  lastCastOrigin: 'auto' as const,
+  lastSpellId: null,
+  lastLoadoutSlotIndex: null,
+  differentSpellStreak: 0,
+  alternatingCastStreak: 0,
+  enemyDamagingSpellCount: 0,
+  nextDamageMultiplier: 1,
+  nextEnemyDamageMultiplier: 1,
+  nextEffectivenessMultiplier: 1,
+  nextActionSpeedMultiplier: 1,
+  nextManaRefundPercent: 0,
+  nextCritChanceBonus: 0,
+  nextCritDamageBonus: 0,
+  nextGuaranteedCrit: false,
+  failedCritStreak: 0,
+  costBandHistory: [],
+  castLoadoutSlots: [],
+  echoCharges: 0,
+  manualCharges: 0,
+  manualCastCount: 0,
+  differentLoadoutSlotStreak: 0,
+  consecutiveAutoCasts: 0,
+  consecutiveManualCasts: 0,
+  sovereigntyCharges: 0,
+  lastWordUsed: false,
+  victoryMomentumReady: false,
+  ruinTransferReady: false,
+  ruinTransferMultiplier: 1,
+  ruinStacks: 0,
+  chainReactionReady: false,
+  refuseDeathUsed: false,
+  lastSurvivalToken: undefined,
+  immortalGuardUsed: false,
+  overflowCharges: 0,
+  singularityUsed: false,
+  absoluteStasisUsed: false,
+  stolenTimeStacks: 0,
+  totalEnemyDelayMs: 0,
+  timelineDelayCreditMs: 0,
+})
+
+export const resetArcaneCoreCombatRuntime = (state: GameState) => { state.combat.arcaneCoreRuntime = createArcaneCoreRuntime() }
 
 /** Advances the monotonic V6 clock exactly once for each simulated combat slice. */
 export const advanceArcaneCoreV6RuntimeTime = (state: GameState, deltaMs: number) => {
@@ -64,7 +113,7 @@ export const advanceArcaneCoreV6RuntimeTime = (state: GameState, deltaMs: number
 /** Encounter-scoped V6 counters reset between enemies without touching the saved profile. */
 export const resetArcaneCoreEncounterRuntime = (state: GameState) => {
   const runtime = state.combat.arcaneCoreRuntime
-  runtime.elapsedMs = 0
+  runtime.encounterStartedAtMs = runtime.elapsedMs
   runtime.autoCastCount = 0
   runtime.damagingSpellCount = 0
   runtime.spellCastCount = 0
@@ -91,14 +140,14 @@ export const resetArcaneCoreEncounterRuntime = (state: GameState) => {
   runtime.sovereigntyCharges = 0
   runtime.nextNonCritDamageMultiplier = undefined
   runtime.criticalFeedbackLastAtMs = undefined
+  runtime.criticalRecoveryLastAtMs = undefined
   runtime.nextCritChanceBonus = 0
   runtime.ruinStacks = 0
-  runtime.chainReactionReady = false
   runtime.refuseDeathUsed = false
   runtime.lastSurvivalToken = undefined
   runtime.barrierMemoryMultiplier = undefined
   runtime.barrierMemoryUntilMs = undefined
-  runtime.immortalGuardUsed = false
+  // Immortal Guard is explicitly once per dungeon run and survives enemy spawn.
   runtime.immortalGuardUntilMs = undefined
   runtime.overflowCharges = 0
   runtime.singularityUsed = false
@@ -107,7 +156,7 @@ export const resetArcaneCoreEncounterRuntime = (state: GameState) => {
   runtime.stolenTimeStacks = 0
   runtime.absoluteStasisUsed = false
   runtime.absoluteStasisUntilMs = undefined
-  runtime.victoryMomentumReady = false
+  // Victory Momentum and the next-enemy damage tokens intentionally survive.
   runtime.apotheosisUntilMs = undefined
   runtime.overchannelUntilMs = undefined
   runtime.manaRegenDisabledUntilMs = undefined

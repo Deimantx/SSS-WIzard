@@ -559,12 +559,24 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
   })
   migrated.combat.ruleCooldowns = ruleCooldowns
   const rawArcaneRuntime = isRecord(rawCombat.arcaneCoreRuntime) ? rawCombat.arcaneCoreRuntime : {}
+  const runtimeNumber = (key: string, fallback = 0) => typeof rawArcaneRuntime[key] === 'number' && Number.isFinite(rawArcaneRuntime[key]) ? Math.max(0, rawArcaneRuntime[key]) : fallback
+  const runtimeBoolean = (key: string, fallback = false) => typeof rawArcaneRuntime[key] === 'boolean' ? rawArcaneRuntime[key] : fallback
   migrated.combat.arcaneCoreRuntime = {
-    elapsedMs: 0,
+    elapsedMs: sourceVersion >= SAVE_VERSION && runtimeNumber('elapsedMs') >= 0 ? runtimeNumber('elapsedMs') : 0,
+    encounterStartedAtMs: sourceVersion >= SAVE_VERSION ? Math.min(runtimeNumber('elapsedMs'), runtimeNumber('encounterStartedAtMs', runtimeNumber('elapsedMs'))) : 0,
     damagingSpellCount: nonNegativeInteger(rawArcaneRuntime.damagingSpellCount) ?? 0,
     spellCastCount: nonNegativeInteger(rawArcaneRuntime.spellCastCount) ?? 0,
     cooldownPulseSpellCount: nonNegativeInteger(rawArcaneRuntime.cooldownPulseSpellCount) ?? 0,
     survivalInstinctUsed: rawArcaneRuntime.survivalInstinctUsed === true,
+    chainReactionReady: sourceVersion >= SAVE_VERSION && runtimeBoolean('chainReactionReady'),
+    victoryMomentumReady: sourceVersion >= SAVE_VERSION && runtimeBoolean('victoryMomentumReady'),
+    ruinTransferReady: sourceVersion >= SAVE_VERSION && runtimeBoolean('ruinTransferReady'),
+    ruinTransferMultiplier: sourceVersion >= SAVE_VERSION ? Math.max(1, runtimeNumber('ruinTransferMultiplier', 1)) : 1,
+    refuseDeathUsed: sourceVersion >= SAVE_VERSION && runtimeBoolean('refuseDeathUsed'),
+    immortalGuardUsed: sourceVersion >= SAVE_VERSION && runtimeBoolean('immortalGuardUsed'),
+    singularityUsed: sourceVersion >= SAVE_VERSION && runtimeBoolean('singularityUsed'),
+    absoluteStasisUsed: sourceVersion >= SAVE_VERSION && runtimeBoolean('absoluteStasisUsed'),
+    nextEnemyDamageMultiplier: sourceVersion >= SAVE_VERSION ? Math.max(1, runtimeNumber('nextEnemyDamageMultiplier', 1)) : 1,
   }
 }
 

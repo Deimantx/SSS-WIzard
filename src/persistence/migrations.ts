@@ -424,7 +424,6 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
   const oldBarrierEntries = rawPlayerStatuses.filter((entry) => isRecord(entry) && (entry.id === 'barrier' || entry.statusId === 'barrier'))
   const oldBarrier = oldBarrierEntries.reduce((sum, entry) => sum + (nonNegativeNumber(entry.value) ?? 0), 0)
   const oldBarrierRemaining = oldBarrierEntries.map((entry) => nonNegativeNumber(entry.remainingMs)).find((value) => value !== undefined)
-  const oldDelay = rawPlayerStatuses.filter((entry) => isRecord(entry) && (entry.id === 'attack-delay' || entry.statusId === 'attack-delay')).reduce((sum, entry) => sum + (nonNegativeNumber(entry.value) ?? 0), 0)
   migrated.combat.playerBarrier = Math.max(0, nonNegativeNumber(rawCombat.playerBarrier) ?? 0, oldBarrier)
   migrated.combat.enemyBarrier = Math.max(0, nonNegativeNumber(rawCombat.enemyBarrier) ?? fresh.combat.enemyBarrier)
   const rawPlayerBarrierRemaining = nonNegativeNumber(rawCombat.playerBarrierRemainingMs)
@@ -452,7 +451,13 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
   } else {
     migrated.combat.activeSpellLoadout = null
   }
-  const rawPlayerTimer = nonNegativeNumber(rawCombat.playerAttackTimerMs)
+  // Read and normalize legacy player Basic timing at the migration boundary,
+  // but do not copy it into current state: player combat is Spell-only.
+  const legacyPlayerBasicTiming = {
+    timerMs: nonNegativeNumber(rawCombat.playerAttackTimerMs) ?? 0,
+    durationMs: boundedAuthoredActionTime(nonNegativeNumber(rawCombat.playerAttackDurationMs) ?? 0),
+  }
+  void legacyPlayerBasicTiming
 
   const activeEnemyId = typeof migrated.combat.enemyId === 'string' && MONSTERS[migrated.combat.enemyId] ? migrated.combat.enemyId : null
   const rawSerial = sourceVersion >= 22 ? nonNegativeInteger(rawCombat.enemyInstanceSerial) ?? 0 : sourceVersion === 21 && activeEnemyId ? 1 : 0
@@ -530,21 +535,6 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
     }
   }
 
-  if (monster) {
-    const authoredPlayerDuration = boundedAuthoredActionTime(BALANCE.player.basicAttackIntervalMs)
-    const savedPlayerDuration = nonNegativeNumber(rawCombat.playerAttackDurationMs)
-    const savedPlayerTimer = rawPlayerTimer
-    const playerRemainingRatio = savedPlayerDuration && savedPlayerDuration > 0 && savedPlayerTimer !== undefined
-      ? Math.max(0, savedPlayerTimer / savedPlayerDuration)
-      : 1
-    migrated.combat.playerAttackDurationMs = authoredPlayerDuration
-    migrated.combat.playerAttackTimerMs = sourceVersion >= 20
-      ? boundedActionWork((savedPlayerTimer ?? authoredPlayerDuration) + oldDelay, authoredPlayerDuration)
-      : boundedActionWork(authoredPlayerDuration * playerRemainingRatio + oldDelay, authoredPlayerDuration)
-  } else {
-    migrated.combat.playerAttackDurationMs = 0
-    migrated.combat.playerAttackTimerMs = boundedActionWork((rawPlayerTimer ?? 0) + oldDelay, 0)
-  }
   const rawTriggered = Array.isArray(rawCombat.triggeredRuleIds) ? rawCombat.triggeredRuleIds.filter((id): id is string => typeof id === 'string') : []
   const legacySpecials = isRecord(rawCombat.enemySpecialUsed) ? rawCombat.enemySpecialUsed : {}
   const legacyTriggered = Object.entries(legacySpecials).flatMap(([id, used]) => used ? id === 'ancient-growth' ? ['enemy:trait:grove-sentinel-ancient-growth:grove-sentinel-ancient-growth-threshold'] : id === 'living-core' ? ['enemy:trait:forest-heart-living-core:forest-heart-living-core-threshold'] : [] : [])
@@ -841,11 +831,14 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   // the current save document.
   migrated.saveVersion = sourceVersion >= 8 ? SAVE_VERSION : 8
   migrated.offlineBankMs = clampOfflineBankMs(migrated.offlineBankMs)
-  // Debug overrides are runtime-only. Legacy godMode is retained on the type
-  // solely for old object compatibility, but must never survive hydration.
+  // Debug overrides are runtime-only. Legacy godMode is ignored at this
+  // boundary and must never survive hydration.
   migrated.debug = createInitialState().debug
+  delete (migrated.player as unknown as Record<string, unknown>).godMode
+  const migratedCombat = migrated.combat as unknown as Record<string, unknown>
+  delete migratedCombat.playerAttackTimerMs
+  delete migratedCombat.playerAttackDurationMs
   normalizeArcaneCore(migrated, raw)
-  migrated.player.godMode = false
   migrated.player.healthRegenTimerMs = normalizeHealthRegenTimer(isRecord(raw.player) ? raw.player.healthRegenTimerMs : undefined)
   migrated.progress.channeling = migrateChanneling(raw.progress, createInitialState().progress)
   migrated.progress.transmutation = migrateTransmutationArrays(raw.progress, createInitialState().progress)

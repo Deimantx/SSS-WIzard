@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { Button, Card, Status } from '../../components/ui'
 import { getMonsterDungeon } from '../../game/content/contentRelations'
 import { DUNGEONS } from '../../game/content/dungeons/dungeons'
-import { ITEMS } from '../../game/content/items/items'
 import { MONSTERS, MONSTER_IDS, isBossMonster } from '../../game/content/monsters'
 import { RECIPES, RECIPE_ORDER, isTransmutationRecipeId } from '../../game/content/recipes/recipes'
 import { formatReadableId } from '../../game/content/presentation/balanceFormatters'
@@ -11,23 +10,15 @@ import { getRecipeStatus } from '../../game/systems/transmutation/transmutationS
 import { SCHOOLS } from '../../game/content/schools/schools'
 import { getAllSpellsInOrder } from '../../game/systems/spells'
 import { OFFLINE_BANK_PRESETS, toOfflineDurationMs, type OfflineBankUnit } from '../../game/systems/offline-bank/offlineBankDuration'
-import type { ArtificingRecipeId, MonsterId, RecipeId } from '../../game/types'
+import type { ArtificingRecipeId, ItemId, MonsterId, RecipeId } from '../../game/types'
 import { formatOfflineBank } from '../../game/utils'
-import type { DeveloperFixtureId } from '../../store/gameStore'
 import { useGameStore } from '../../store/gameStore'
 import { DEVELOPER_LOADOUTS, type DeveloperEquipmentLoadout } from '../developerLoadouts'
 import { useProfileSession } from '../../profiles/profileSessionStore'
 import { PROFILE_RESET_CONFIRMATION } from '../developerProfileReset'
+import { getQuickTestingResourceGrants, QUICK_TESTING_RESOURCE_TARGETS } from '../developerQuickTesting'
 
-const materialIds = (Object.keys(ITEMS) as Array<keyof typeof ITEMS>).filter((itemId) => ITEMS[itemId].kind === 'material')
 const defaultRecipe = RECIPE_ORDER.find((id) => RECIPES[id].ingredients.length > 0) ?? RECIPE_ORDER[0]
-const fixtureButtons: readonly { id: DeveloperFixtureId; label: string; description: string }[] = [
-  { id: 'fresh', label: 'Fresh Game', description: 'Reset to the clean starting state.' },
-  { id: 'whispering-woods-ready', label: 'Whispering Woods Ready', description: 'Woods encounter ready at boss threshold.' },
-  { id: 'howling-den-ready', label: 'Howling Ready', description: 'Howling Den unlocked and ready at its threshold.' },
-  { id: 'catacombs-ready', label: 'Catacombs Ready', description: 'Abandoned Catacombs unlocked and ready.' },
-  { id: 'edrin-ready', label: 'Edrin Ready', description: 'Archmage Edrin Shade is spawned for testing.' },
-]
 
 const loadoutItemCounts = (loadout: DeveloperEquipmentLoadout) => Object.values(loadout.slots).reduce<Record<string, number>>((counts, itemId) => {
   if (itemId) counts[itemId] = (counts[itemId] ?? 0) + 1
@@ -60,21 +51,23 @@ export function DeveloperQuickSetup() {
     ? getRecipeStatus(state, selectedRecipeDefinition)
     : getArtificingCatalogRecipeState(state, selectedRecipe as ArtificingRecipeId)?.status ?? 'LOCKED'
 
-  const applyFixture = (fixture: DeveloperFixtureId) => {
-    if (fixture === 'fresh' && !window.confirm('Replace the current gameplay state with a Fresh Game fixture?')) return
-    state.applyDeveloperFixture(fixture)
-  }
   const loadLoadout = (loadout: DeveloperEquipmentLoadout) => {
     Object.keys(state.equipment).forEach((position) => state.unequipItem(position as keyof typeof state.equipment))
     Object.entries(loadoutItemCounts(loadout)).forEach(([itemId, count]) => {
-      const missing = Math.max(0, count - (useGameStore.getState().inventory[itemId as keyof typeof ITEMS] ?? 0))
-      if (missing > 0) state.addItem(itemId as keyof typeof ITEMS, missing)
+      const typedItemId = itemId as ItemId
+      const missing = Math.max(0, count - (useGameStore.getState().inventory[typedItemId] ?? 0))
+      if (missing > 0) state.addItem(typedItemId, missing)
     })
     Object.entries(loadout.slots).forEach(([position, itemId]) => { if (itemId) state.equipItem(itemId, position as keyof typeof state.equipment) })
   }
   const restoreHealth = () => state.setPlayer({ health: state.player.maxHealth })
   const restoreMana = () => state.setPlayer({ mana: state.player.maxMana })
-  const grantResources = () => materialIds.forEach((itemId) => state.addItem(itemId, 100))
+  const [quickTestingFeedback, setQuickTestingFeedback] = useState('')
+  const prepareQuickTesting = () => {
+    const grants = getQuickTestingResourceGrants(useGameStore.getState().inventory)
+    grants.forEach(([itemId, amount]) => state.addItem(itemId, amount))
+    setQuickTestingFeedback(grants.length > 0 ? 'Allowlisted testing resources prepared at 10,000 each.' : 'Allowlisted testing resources already meet the 10,000 target.')
+  }
   const grantMissingRecipeIngredients = () => {
     if (isTransmutationRecipeId(selectedRecipe)) state.grantTransmutationIngredients(selectedRecipe)
     else state.grantArtificingIngredients(selectedRecipe)
@@ -101,13 +94,13 @@ export function DeveloperQuickSetup() {
 
   return <div className="developer-tab-stack">
     <Card title="Quick Setup" className="developer-quick-setup">
-      <p className="muted">Tester fixtures compose the existing game actions and preserve authored dungeon unlock requirements.</p>
+      <p className="muted">Use focused tester actions against the current profile. Gameplay state changes stay explicit and canonical.</p>
       <div className="developer-quick-grid">
+        <section className="developer-quick-testing"><h3>QUICK TESTING READY</h3><p className="muted">Ensures only these resources reach at least 10,000. It does not change story, progression, equipment, spells, or Black Portal Shards.</p><div className="developer-owned-list">{Object.entries(QUICK_TESTING_RESOURCE_TARGETS).map(([itemId, target]) => <span key={itemId}>{formatReadableId(itemId)}<strong>≥ {target.toLocaleString()}</strong></span>)}</div><Button variant="primary" onClick={prepareQuickTesting}>QUICK TESTING READY</Button>{quickTestingFeedback && <Status tone="success">{quickTestingFeedback}</Status>}</section>
         <section><h3>Player</h3><div className="button-row"><Button onClick={restoreHealth}>Full Health</Button><Button onClick={restoreMana}>Full Mana</Button><Button variant="secondary" onClick={state.clearPlayerStatuses}>Clear Player Statuses</Button><Button variant="secondary" onClick={state.clearPlayerBarrier}>Clear Player Barrier</Button><Button variant={state.debug.playerImmortal ? 'success' : 'secondary'} onClick={() => state.setDebugPlayerImmortal(!state.debug.playerImmortal)}>God Mode: {state.debug.playerImmortal ? 'ON' : 'OFF'}</Button></div></section>
-        <section><h3>Fixtures</h3><div className="developer-fixture-list">{fixtureButtons.map((fixture) => <div key={fixture.id}><div><strong>{fixture.label}</strong><small>{fixture.description}</small></div><Button variant={fixture.id === 'fresh' ? 'danger' : 'secondary'} onClick={() => applyFixture(fixture.id)}>{fixture.id === 'fresh' ? 'Reset Fresh Game' : `Load ${fixture.label}`}</Button></div>)}</div></section>
         <section><h3>Fresh Start / Reset</h3><p className="muted">Reset the persisted gameplay state for the currently selected profile. UI appearance and custom layouts are preserved.</p><Button variant="danger" disabled={!hasActiveProfile} onClick={resetCurrentProfile}>Reset Current Profile Progress</Button></section>
         <section><h3>Loadouts</h3><p className="muted">Each loadout uses its explicit authored slot map.</p><div className="developer-button-grid">{DEVELOPER_LOADOUTS.map((loadout) => <Button key={loadout.id} variant="secondary" onClick={() => loadLoadout(loadout)}>{loadout.label}</Button>)}</div></section>
-        <section><h3>Resources &amp; Magic</h3><label>Recipe<select aria-label="Quick Setup recipe" value={selectedRecipe} onChange={(event) => { setSelectedRecipe(event.target.value as RecipeId); setRecipeFeedback('') }}>{RECIPE_ORDER.map((id) => { const recipe = RECIPES[id]; const category = 'category' in recipe ? recipe.category : 'artificing'; const status = 'category' in recipe ? getRecipeStatus(state, recipe) : getArtificingCatalogRecipeState(state, id as ArtificingRecipeId)?.status ?? 'LOCKED'; return <option value={id} key={id}>{recipe.name} · {formatReadableId(category)} · {formatReadableId(status)}</option> })}</select></label><div className="button-row"><Button onClick={grantResources}>+100 Relevant Materials</Button><Button variant="secondary" onClick={grantMissingRecipeIngredients} disabled={selectedRecipeDefinition.ingredients.length === 0}>Grant Missing Ingredients</Button><Button variant="secondary" onClick={unlockRankOneSpells}>Unlock Rank-I Spells</Button><Button variant="secondary" onClick={state.resetSpellCooldowns}>Reset Spell Cooldowns</Button><Button variant="ghost" onClick={state.resetDebugOverrides}>Clear Debug Overrides</Button></div><small className="muted">Selected recipe: {selectedRecipeDefinition.name} · {formatReadableId(recipeCategory)} · {formatReadableId(recipeStatus)}</small>{recipeFeedback && <Status tone="success">{recipeFeedback}</Status>}</section>
+        <section><h3>Resources &amp; Magic</h3><label>Recipe<select aria-label="Quick Setup recipe" value={selectedRecipe} onChange={(event) => { setSelectedRecipe(event.target.value as RecipeId); setRecipeFeedback('') }}>{RECIPE_ORDER.map((id) => { const recipe = RECIPES[id]; const category = 'category' in recipe ? recipe.category : 'artificing'; const status = 'category' in recipe ? getRecipeStatus(state, recipe) : getArtificingCatalogRecipeState(state, id as ArtificingRecipeId)?.status ?? 'LOCKED'; return <option value={id} key={id}>{recipe.name} · {formatReadableId(category)} · {formatReadableId(status)}</option> })}</select></label><div className="button-row"><Button variant="secondary" onClick={grantMissingRecipeIngredients} disabled={selectedRecipeDefinition.ingredients.length === 0}>Grant Missing Ingredients</Button><Button variant="secondary" onClick={unlockRankOneSpells}>Unlock Rank-I Spells</Button><Button variant="secondary" onClick={state.resetSpellCooldowns}>Reset Spell Cooldowns</Button><Button variant="ghost" onClick={state.resetDebugOverrides}>Clear Debug Overrides</Button></div><small className="muted">Selected recipe: {selectedRecipeDefinition.name} · {formatReadableId(recipeCategory)} · {formatReadableId(recipeStatus)}</small>{recipeFeedback && <Status tone="success">{recipeFeedback}</Status>}</section>
       </div>
     </Card>
 

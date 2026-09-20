@@ -91,8 +91,6 @@ export const spawnEnemy = (state: GameState, enemyId: MonsterId, uiEvents?: Comb
   resetEncounterRuleFlags(state)
   clearEnemyRuleCooldowns(state)
   state.combat.inBossFight = isBossMonster(monster)
-  state.combat.playerAttackTimerMs = 0
-  state.combat.playerAttackDurationMs = 0
   state.combat.pendingPlayerSpellCast = null
   state.combat.enemyStatuses = []
   state.combat.autoCastManaStarvedSpells = []
@@ -210,9 +208,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
 export interface ResolveCombatDeathsOptions { forceEnemyDeath?: boolean; onLootResolved?: CombatLootObserver; onPlayerDefeated?: (event: CombatEvent, state: GameState) => void }
 
 export const resolveCombatDeaths = (state: GameState, report?: SimulationReportCollector, onItemAcquired?: (itemId: ItemId, quantity: number) => void, uiEvents?: CombatEventSink, options: ResolveCombatDeathsOptions = {}) => {
-  // The legacy field is only honored for direct in-memory compatibility with
-  // old callers. Hydrated profile state always normalizes it to false.
-  if (state.player.health <= 0 && !state.debug.playerImmortal && !state.player.godMode) {
+  if (state.player.health <= 0 && !state.debug.playerImmortal) {
     const deathEvent: CombatEvent = { source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'player', targetMonsterId: state.combat.enemyId ?? undefined, category: 'death', sourceId: 'player-defeated' }
     options.onPlayerDefeated?.(deathEvent, state)
     uiEvents?.push(deathEvent)

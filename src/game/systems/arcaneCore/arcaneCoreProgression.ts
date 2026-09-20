@@ -59,15 +59,6 @@ export const grantArcanePoints = (state: ArcaneCoreState, amount: number): Arcan
   return { state: next, requested, granted: pointsAfter - pointsBefore, pointsBefore, pointsAfter, reachedCap: pointsAfter >= ARCANE_CORE_TOTAL_TREE_COST }
 }
 export const setArcaneCoreTotalPointsEarned = (state: ArcaneCoreState, amount: number) => ({ ...copyState(state), totalPointsEarned: safePoints(amount) })
-/** @deprecated Legacy action aliases. New gameplay grants/set total Arcane Points directly. */
-export const grantArcaneCoreXp = (state: ArcaneCoreState, amount: number) => grantArcanePoints(state, amount)
-export const setArcaneCoreXp = (state: ArcaneCoreState, amount: number) => setArcaneCoreTotalPointsEarned(state, amount)
-export const setArcaneCoreLevel = (state: ArcaneCoreState, level: number) => setArcaneCoreTotalPointsEarned(state, Math.max(0, Math.floor(Number.isFinite(level) ? level : 0) - 1))
-export const getArcaneCoreLevel = (state: Pick<ArcaneCoreState, 'totalPointsEarned'>) => getArcaneCoreTotalPointsEarned(state) + 1
-export interface ArcaneCoreLevelInfo { level: number; totalXp: number; xpIntoLevel: number; xpToNextLevel: number; pointsEarned: number; pointsSpent: number; pointsAvailable: number }
-/** @deprecated Compatibility read model for older callers; no live UI should use XP/Level. */
-export const getArcaneCoreLevelInfo = (state: ArcaneCoreState): ArcaneCoreLevelInfo => ({ level: getArcaneCoreLevel(state), totalXp: getArcaneCoreTotalPointsEarned(state), xpIntoLevel: 0, xpToNextLevel: 0, pointsEarned: getArcaneCoreTotalPointsEarned(state), pointsSpent: getArcaneCorePointsSpent(state), pointsAvailable: getArcaneCoreAvailablePoints(state) })
-
 export const purchaseArcaneCoreNode = (state: ArcaneCoreState, nodeId: string, options: ArcaneCoreActionOptions = {}): ArcaneCoreActionResult => {
   const node = getArcaneCoreNode(nodeId)
   if (!node) return { ok: false, reason: 'unknown-node' }

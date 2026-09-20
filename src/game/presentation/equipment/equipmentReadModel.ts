@@ -6,7 +6,7 @@ import { getPlayerSheetCombatStats } from '../../systems/combat/combatStats'
 import { validateFocusForEquipment, type FocusLoadoutValidation } from '../../systems/focus/focusLoadoutValidation'
 import { getArtifactEffectiveStats, isArtifactItem } from '../../systems/artifacts/artifactProgression'
 import { getEquipmentPrimaryCombatSummary } from './equipmentCombatPresentation'
-import { formatEquipmentStat, getEquipmentStatLabel } from './equipmentStatPresentation'
+import { formatEquipmentStat, getEquipmentStatLabel, isMeaningfulEquipmentStatValue } from './equipmentStatPresentation'
 import { EQUIPMENT_ITEM_SLOT_LABELS, getDefaultEquipmentPosition, getItemPositions } from '../../core/equipment/equipmentRules'
 import type { DamageType, EquipmentBuildTag, EquipmentStats, EquipmentPosition, GameState, ItemId } from '../../types'
 
@@ -78,7 +78,7 @@ const getImpactEntries = (impact: EquipmentImpactStats): Array<[string, number]>
 export function getEquipmentKeyChanges(impact: EquipmentImpactStats, limit = 5): EquipmentKeyChange[] {
   const priority = new Map(KEY_CHANGE_PRIORITY.map((key, index) => [key, index]))
   return getImpactEntries(impact)
-    .filter(([, value]) => Number.isFinite(value) && Math.abs(value) > 0.0001)
+    .filter(([, value]) => isMeaningfulEquipmentStatValue(value))
     .sort(([left], [right]) => (priority.get(left) ?? KEY_CHANGE_PRIORITY.length) - (priority.get(right) ?? KEY_CHANGE_PRIORITY.length) || left.localeCompare(right))
     .slice(0, limit)
     .map(([key, value]) => ({ key, label: getEquipmentStatLabel(key), value, direction: value > 0 ? 'increase' : 'decrease', formatted: formatEquipmentStat(key, value) }))
@@ -115,7 +115,7 @@ export function getEquipmentPrimarySummary(itemId: ItemId, state?: Pick<GameStat
   const combatSummary = getEquipmentPrimaryCombatSummary(item)
   if (combatSummary) return combatSummary
   const stats = getEquipmentSearchStats(itemId, state)
-  const entries = Object.entries(stats).filter(([, value]) => typeof value === 'number' && value !== 0).slice(0, 2)
+  const entries = Object.entries(stats).filter(([, value]) => typeof value === 'number' && isMeaningfulEquipmentStatValue(value)).slice(0, 2)
   return entries.length ? entries.map(([key, value]) => `${formatEquipmentStat(key, Number(value))} ${getEquipmentStatLabel(key)}`).join(' · ') : null
 }
 

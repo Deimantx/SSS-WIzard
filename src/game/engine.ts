@@ -32,9 +32,6 @@ export const manaRegenPerSecond = getChannelingManaRegen
 export const schoolProgress = (state: GameState, school: SchoolId) => {
   return getSchoolProgressInfo(state, school).progress
 }
-/** Player combat is Spell-only in V6; enemy Basic Attacks retain their own path. */
-export const playerBasicDamage = (_state: Pick<GameState, 'equipment' | 'artifactProgress'>) => 0
-
 export const grantSchoolXp = (state: GameState, school: SchoolId, amount: number) => {
   const before = state.schools[school].level
   const cap = Math.min(SCHOOL_MAX_LEVEL, Math.max(1, Number.isFinite(state.progress.magicLevelCap) ? Math.floor(state.progress.magicLevelCap) : 1))

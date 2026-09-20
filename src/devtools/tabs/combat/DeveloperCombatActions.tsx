@@ -5,7 +5,7 @@ import { ITEMS } from '../../../game/content/items/items'
 import { formatCombatModifier, formatCombatRule, formatDuration, formatReadableId } from '../../../game/content/presentation/balanceFormatters'
 import { EQUIPMENT_POSITIONS } from '../../../game/core/equipment'
 import { getCurrentEnemyActionStep, getEnemyAction, getNextEnemyActionStep } from '../../../game/systems/combat/actionRuntime'
-import { getCurrentEnemyActionTiming, getPlayerBasicTiming } from '../../../game/systems/combat/actionTiming'
+import { getCurrentEnemyActionTiming } from '../../../game/systems/combat/actionTiming'
 import { getMonsterTraits } from '../../../game/systems/combat/traitRuntime'
 import { getRuleRuntimeKey } from '../../../game/systems/combat/triggerRuntime'
 import { useGameStore } from '../../../store/gameStore'
@@ -21,7 +21,6 @@ export function DeveloperCombatActions() {
   const { combat, equipment, debug } = state
   const enemy = combat.enemyId ? MONSTERS[combat.enemyId] : null
   const { startEnemyAction: start, forceEnemyAction: force, resolveCurrentEnemyAction: resolve, advanceEnemyAction: advance, setEnemyActionPattern: setPattern, resetEnemyActionPattern: resetPattern, resetEnemyActionCursor: resetCursor, resetCombatRuleRuntime: resetRules } = state
-  const playerTiming = useMemo(() => getPlayerBasicTiming(state), [state])
   const enemyTiming = useMemo(() => getCurrentEnemyActionTiming(state), [state])
   const actionId = enemy ? selectedActionId && enemy.actions[selectedActionId] ? selectedActionId : Object.keys(enemy.actions)[0] ?? '' : ''
   const patternId = enemy ? selectedPatternId && enemy.actionPatterns[selectedPatternId] ? selectedPatternId : combat.enemyActionPatternId ?? enemy.defaultActionPatternId : ''
@@ -33,13 +32,6 @@ export function DeveloperCombatActions() {
   return <div className="developer-tab-grid">
     <Card title="Action inspector">
       <div className="developer-summary-grid">
-        <Summary label="Player Basic" value="Current timed lane" />
-        <Summary label="Player base work" value={formatDuration(playerTiming.baseWorkMs)} />
-        <Summary label="Player remaining work" value={formatDuration(playerTiming.remainingWorkMs)} />
-        <Summary label="Player rate" value={`${playerTiming.rate.toFixed(2)}×`} />
-        <Summary label="Player ETA" value={etaLabel(playerTiming.etaMs)} />
-        <Summary label="Player progress" value={`${Math.round(playerTiming.progress)}%`} />
-        <Summary label="Player blocked" value={playerTiming.blocked ? 'Yes' : 'No'} />
         <Summary label="Current enemy" value={enemy?.name ?? '-'} />
         <Summary label="Pattern" value={formatReadableId(combat.enemyActionPatternId ?? '-')} />
         <Summary label="Pattern position" value={combat.enemyNextActionIndex} />

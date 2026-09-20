@@ -203,8 +203,6 @@ export interface ArcaneCoreNodeProgress {
 export interface ArcaneCoreState {
   /** Optional only for compile-time compatibility with pre-V37 test fixtures; fresh and migrated saves always define it. */
   totalPointsEarned?: number
-  /** @deprecated Read only by legacy migration/test compatibility; never authored in fresh saves. */
-  totalXp?: number
   nodes: Partial<Record<string, ArcaneCoreNodeProgress>>
 }
 
@@ -272,8 +270,6 @@ export interface PlayerState {
   baseMaxHealth: number
   baseMaxMana: number
   baseMaxFocus: number
-  /** @deprecated Compatibility-only legacy field. Runtime immortality lives in GameState.debug. */
-  godMode: boolean
   healthRegenTimerMs: number
 }
 export interface ChannelingActivity { echoesAssigned: number }
@@ -378,8 +374,6 @@ export interface CombatState {
   triggeredRuleIds: string[]
   ruleCooldowns: Record<string, number>
   pendingBossId: MonsterId | null
-  playerAttackTimerMs: number
-  playerAttackDurationMs: number
   pendingPlayerSpellCast: PendingPlayerSpellCast | null
   /** One-slot manual intent. This is transient and is never restored from saves. */
   queuedPlayerSpellId: CanonicalSpellId | null
@@ -606,8 +600,6 @@ export interface DebugOverrides {
   enemyImmortal: boolean
   infiniteMana: boolean
   ignoreSpellCooldowns: boolean
-  /** @deprecated Legacy in-memory compatibility only; player combat is Spell-only. */
-  disablePlayerBasicAttack?: boolean
   disableAutoCast: boolean
   freezePlayerActions: boolean
   freezeEnemyActions: boolean

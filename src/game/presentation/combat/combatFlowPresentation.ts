@@ -52,9 +52,6 @@ export interface CombatFlowRuntimeInput {
   threatCleared: number
   inBossFight: boolean
   encounterTimerMs: number
-  /** Legacy player-timer fields are accepted for migration-only callers and no longer drive presentation. */
-  playerAttackTimerMs?: number
-  playerAttackDurationMs?: number
   enemyActionTimerMs: number
   enemyActionDurationMs: number
   enemyNextActionIndex: number
@@ -62,7 +59,6 @@ export interface CombatFlowRuntimeInput {
   enemyCurrentStepId: string | null
   enemyCurrentActionPatternId: string | null
   enemyActionPatternId: string | null
-  playerBasicDamage?: number
   /** Legacy/pure-presentation hint; live UI supplies canonical timing state. */
   playerStunned?: boolean
   enemyStunned?: boolean
@@ -70,7 +66,6 @@ export interface CombatFlowRuntimeInput {
   nextStep?: ActionStep
   currentStep?: ActionStep
   currentAction?: CombatActionDefinition
-  playerTiming?: TimedActionState
   playerSpellCast?: PendingPlayerSpellCast | null
   playerSpellCastRate?: number
   enemyTiming?: TimedActionState | null

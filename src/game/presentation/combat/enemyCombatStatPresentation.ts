@@ -2,7 +2,7 @@ import type { MonsterDefinition } from '../../content/monsters'
 import { BLOCK_DAMAGE_REDUCTION, DEFAULT_COMBAT_SPEED_MULTIPLIER, DEFAULT_ENEMY_CRIT_CHANCE, DEFAULT_ENEMY_CRIT_DAMAGE_MULTIPLIER, DEFAULT_ENEMY_DEFENSE, MAX_BLOCK_CHANCE, MAX_CRIT_CHANCE, MAX_CRIT_DAMAGE_MULTIPLIER, MAX_DEFENSE_REDUCTION, MAX_RESISTANCE, MIN_CRIT_DAMAGE_MULTIPLIER, MIN_RESISTANCE } from '../../core/balance/combatStats'
 import type { DamageType } from '../../types'
 import { formatNumber } from '../../utils'
-import type { CombatStats } from '../../systems/combat/combatStats'
+import type { EnemyCombatStats } from '../../systems/combat/combatStats'
 import { getDefenseReductionFromRating } from '../../systems/combat/combatStats'
 
 export type EnemyCombatStatGroup = 'core' | 'offense' | 'defense' | 'utility' | 'resistance'
@@ -15,7 +15,7 @@ export interface EnemyCombatStatRow {
   group: EnemyCombatStatGroup
 }
 
-export type EnemyCombatStatValues = Pick<CombatStats, 'maxHealth' | 'basicAttackDamage' | 'basicAttackSpeedMultiplier' | 'basicAttackIntervalMs' | 'critChance' | 'critDamageMultiplier' | 'defense' | 'defenseReduction' | 'blockChance' | 'resistances' | 'healingDoneBonus' | 'barrierPowerBonus' | 'damageOverTimeBonus' | 'statusDurationBonus'>
+export type EnemyCombatStatValues = Pick<EnemyCombatStats, 'maxHealth' | 'basicAttackDamage' | 'basicAttackSpeedMultiplier' | 'basicAttackIntervalMs' | 'critChance' | 'critDamageMultiplier' | 'defense' | 'defenseReduction' | 'blockChance' | 'resistances' | 'healingDoneBonus' | 'barrierPowerBonus' | 'damageOverTimeBonus' | 'statusDurationBonus'>
 
 const DAMAGE_TYPES: readonly DamageType[] = ['physical', 'arcane', 'fire', 'water', 'earth', 'air']
 const finite = (value: number | undefined, fallback = 0) => Number.isFinite(value) ? value as number : fallback

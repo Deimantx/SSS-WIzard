@@ -1,5 +1,8 @@
 import { MAX_RESISTANCE } from '../../core/balance/combatStats'
 
+export const EQUIPMENT_STAT_VISIBILITY_EPSILON = 0.00001
+export const isMeaningfulEquipmentStatValue = (value: number | null | undefined) => typeof value === 'number' && Number.isFinite(value) && Math.abs(value) >= EQUIPMENT_STAT_VISIBILITY_EPSILON
+
 export interface EquipmentStatPresentation {
   key: string
   label: string

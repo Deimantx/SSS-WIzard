@@ -7,6 +7,11 @@ import { PROFILE_RESET_CONFIRMATION } from '../developerProfileReset'
 import { refreshProfiles, setActiveProfileId } from '../../profiles/profileSessionStore'
 
 describe('Developer Quick Setup', () => {
+  const enableDebugCombatSpawn = () => {
+    const state = useGameStore.getState()
+    useGameStore.setState({ combat: { ...state.combat, activeSpellLoadout: { presetId: null, presetName: 'Developer Combat', slots: [{ spellId: 'fire-bolt', autoCast: false }], signature: 'fire-bolt:0' } } })
+  }
+
   beforeEach(() => {
     window.localStorage.clear()
     setActiveProfileId(null)
@@ -14,14 +19,16 @@ describe('Developer Quick Setup', () => {
     useGameStore.getState().resetSave()
   })
 
-  it('exposes the tester-first player, fixture, loadout, resource, and combat controls', () => {
+  it('exposes the tester-first player, quick testing, loadout, and combat controls', () => {
     render(<DeveloperQuickSetup />)
     expect(screen.getByRole('heading', { name: 'Quick Setup' })).toBeTruthy()
     expect(screen.getByRole('button', { name: /God Mode: OFF/ })).toBeTruthy()
-    expect(screen.getByText('Whispering Woods Ready')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'QUICK TESTING READY' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'QUICK TESTING READY' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Woods Fire' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: '+100 Relevant Materials' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: '+100 Relevant Materials' })).toBeNull()
     expect(screen.getByRole('button', { name: 'Jump to Boss' })).toBeTruthy()
+    expect(screen.queryByText('Whispering Woods Ready')).toBeNull()
   })
 
   it('uses existing actions for quick recovery, loadout, spawn, and reset controls', () => {
@@ -30,6 +37,7 @@ describe('Developer Quick Setup', () => {
     expect(useGameStore.getState().player.mana).toBe(useGameStore.getState().player.maxMana)
     fireEvent.click(screen.getByRole('button', { name: 'Woods Fire' }))
     expect(useGameStore.getState().equipment.weapon).toBe('ember-staff')
+    enableDebugCombatSpawn()
     fireEvent.click(screen.getByRole('button', { name: 'Spawn Enemy' }))
     expect(useGameStore.getState().combat.enemyId).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'God Mode: OFF' }))
@@ -38,21 +46,26 @@ describe('Developer Quick Setup', () => {
     expect(useGameStore.getState().debug.playerImmortal).toBe(false)
   })
 
-  it('uses the authored dungeon unlock chain for progression fixtures', () => {
-    useGameStore.getState().applyDeveloperFixture('catacombs-ready')
-    const state = useGameStore.getState()
-    expect(state.combat.dungeonId).toBe('abandoned-catacombs')
-    expect(state.progress.bossKillsByBoss['forest-heart']).toBe(1)
-    expect(state.progress.bossKillsByBoss['corrupted-greatbear']).toBe(1)
-    expect(state.progress.bossKillsByBoss['archmage-edrin-shade']).toBeUndefined()
-  })
-
-  it('requires confirmation before resetting to a fresh fixture', () => {
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+  it('prepares only the allowlisted resources and is idempotent', () => {
     render(<DeveloperQuickSetup />)
-    fireEvent.click(screen.getByRole('button', { name: 'Reset Fresh Game' }))
-    expect(confirm).toHaveBeenCalled()
-    confirm.mockRestore()
+    const before = useGameStore.getState().progress
+    fireEvent.click(screen.getByRole('button', { name: 'QUICK TESTING READY' }))
+    const first = useGameStore.getState()
+    expect(first.inventory).toEqual(expect.objectContaining({
+      'fire-fragment': 10_000,
+      'water-fragment': 10_000,
+      'earth-fragment': 10_000,
+      'air-fragment': 10_000,
+      'prismatic-fragment': 10_000,
+      'artifact-essence': 10_000,
+      'life-essence': 10_000,
+    }))
+    expect(Object.keys(first.inventory).every((id) => id.endsWith('-fragment') || id === 'artifact-essence' || id === 'life-essence')).toBe(true)
+    expect(first.inventory['black-portal-shard' as keyof typeof first.inventory] ?? 0).toBe(0)
+    expect(first.progress).toMatchObject({ ...before, discoveredItems: first.progress.discoveredItems })
+    fireEvent.click(screen.getByRole('button', { name: 'QUICK TESTING READY' }))
+    expect(useGameStore.getState().inventory).toEqual(first.inventory)
+    expect(screen.getByText(/already meet the 10,000 target/)).toBeTruthy()
   })
 
   it('exposes the persisted current-profile reset with the shared confirmation copy', () => {

@@ -64,7 +64,6 @@ export const getActionRate = (state: GameState, actor: CombatActor, lane: 'basic
   return boundedRate(1 + getCombatModifiers(state, actor, modifierForLane(lane), { sourceTags }))
 }
 
-export const getPlayerBasicAttackRate = (state: GameState) => getActionRate(state, 'player', 'basic-attack')
 export const getEnemyBasicAttackRate = (state: GameState) => getActionRate(state, 'enemy', 'basic-attack')
 export const getEnemySkillActionRate = (state: GameState) => getActionRate(state, 'enemy', 'action')
 export const getCurrentEnemyActionRate = (state: GameState) => getCurrentEnemyActionStep(state)?.type === 'action' ? getEnemySkillActionRate(state) : getEnemyBasicAttackRate(state)

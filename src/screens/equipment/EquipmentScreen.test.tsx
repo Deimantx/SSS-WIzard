@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { TooltipProvider } from '../../components/ui/tooltip/Tooltip'
 import { useGameStore } from '../../store/gameStore'
 import { setNavigationIntent } from '../../ui/navigation/navigationIntent'
+import { isMeaningfulEquipmentStatValue } from '../../game/presentation/equipment/equipmentStatPresentation'
 import { EquipmentScreen } from './EquipmentScreen'
 
 describe('EquipmentScreen', () => {
@@ -18,6 +19,22 @@ describe('EquipmentScreen', () => {
     expect(screen.getByText('EQUIPMENT')).toBeTruthy()
     expect(screen.queryByText('ACCESSORIES')).toBeNull()
     expect(screen.queryByText('OFFHAND')).toBeNull()
+  })
+
+  it('uses one epsilon for meaningful equipment values and hides empty optional groups', () => {
+    expect(isMeaningfulEquipmentStatValue(0)).toBe(false)
+    expect(isMeaningfulEquipmentStatValue(0.000001)).toBe(false)
+    expect(isMeaningfulEquipmentStatValue(0.000009)).toBe(false)
+    expect(isMeaningfulEquipmentStatValue(0.00001)).toBe(true)
+    expect(isMeaningfulEquipmentStatValue(-0.00001)).toBe(true)
+    expect(isMeaningfulEquipmentStatValue(0.01)).toBe(true)
+    expect(isMeaningfulEquipmentStatValue(Number.NaN)).toBe(false)
+    expect(isMeaningfulEquipmentStatValue(Number.POSITIVE_INFINITY)).toBe(false)
+
+    render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
+    expect(screen.queryByText('PERIODIC / STATUS')).toBeNull()
+    expect(screen.queryByText('Healing Done')).toBeNull()
+    expect(screen.queryByText('Damage over Time')).toBeNull()
   })
 
   it('shows owned Artifact Equipment and its comparison metadata', () => {

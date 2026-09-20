@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { BALANCE } from '../../core/balance/balance'
 import { calculateCombatDamage, damageEnemy } from './effectResolver'
+import { executeCombatEffects } from './effectResolver'
+import { resolveCurrentEnemyAction } from './actionRuntime'
+import { spawnEnemy } from './combatRuntime'
 import { getBlockChance, getCritChance, getCritDamageMultiplier, getDefense, getDefenseReduction, getDefenseReductionFromRating, getEnemyCombatStats, getPlayerCombatStats } from './combatStats'
 import { getResistance } from './modifiers'
 import { nextCombatRandom } from './combatRng'
@@ -44,11 +47,27 @@ describe('universal combat stats foundation', () => {
     state.combat.enemyMaxHp = 1_000
     const player = getPlayerCombatStats(state)
     const enemy = getEnemyCombatStats(state)
-    expect(player).toMatchObject({ spellPower: BALANCE.player.baseSpellPower, critChance: 0.05, critDamageMultiplier: 1.5, defense: BALANCE.player.baseDefense, blockChance: 0 })
+    expect(player).not.toHaveProperty('basicAttackDamage')
+    expect(player).not.toHaveProperty('basicAttackSpeedMultiplier')
+    expect(player).not.toHaveProperty('basicAttackIntervalMs')
+    expect(player).not.toHaveProperty('blockChance')
+    expect(player).toMatchObject({ spellPower: BALANCE.player.baseSpellPower, critChance: 0.05, critDamageMultiplier: 1.5, defense: BALANCE.player.baseDefense })
     expect(enemy).toMatchObject({ maxHealth: 1_000, defense: 8, critChance: 0.05, critDamageMultiplier: 1.5, blockChance: 0 })
     expect(getCritChance(state, 'player', playerSpell)).toBe(0.05)
     expect(getCritDamageMultiplier(state, 'player', playerSpell)).toBe(1.5)
     expect(getBlockChance(state, 'player', playerSpell)).toBe(0)
+  })
+
+  it('keeps the enemy Basic Attack path after removing player Basic fields', () => {
+    const state = createInitialState()
+    state.combat.active = true
+    state.combat.dungeonId = 'whispering-woods'
+    state.combat.activeSpellLoadout = { presetId: null, presetName: 'Combat test', slots: [{ spellId: 'fire-bolt', autoCast: false }], signature: 'fire-bolt:0' }
+    spawnEnemy(state, 'forest-wisp')
+    const before = state.player.health
+    expect(resolveCurrentEnemyAction(state, executeCombatEffects)).toBe(true)
+    expect(state.player.health).toBeLessThan(before)
+    expect(getEnemyCombatStats(state).basicAttackDamage).toBe(10)
   })
 
   it('consumes two RNG draws for a direct hit and none for a periodic hit', () => {

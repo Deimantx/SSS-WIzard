@@ -14,23 +14,19 @@ export { BLOCK_DAMAGE_REDUCTION, DEFAULT_COMBAT_SPEED_MULTIPLIER, DEFAULT_ENEMY_
 
 const DAMAGE_TYPES: readonly DamageType[] = ['physical', 'arcane', 'fire', 'water', 'earth', 'air']
 
-export interface CombatStats {
+export interface CommonCombatStats {
   maxHealth: number
   healthRegen: number
   maxMana: number
   manaRegen: number
   maxFocus: number
   spellPower: number
-  basicAttackDamage: number
-  basicAttackSpeedMultiplier: number
-  basicAttackIntervalMs: number
   critChance: number
   critDamageMultiplier: number
   damageOverTimeBonus: number
   statusDurationBonus: number
   defense: number
   defenseReduction: number
-  blockChance: number
   resistances: Partial<Record<DamageType, number>>
   cooldownRecovery: number
   healingDoneBonus: number
@@ -38,6 +34,15 @@ export interface CombatStats {
   manaCostReduction: number
   focusEfficiency: number
 }
+
+export interface PlayerCombatStats extends CommonCombatStats {}
+export interface EnemyCombatStats extends CommonCombatStats {
+  basicAttackDamage: number
+  basicAttackSpeedMultiplier: number
+  basicAttackIntervalMs: number
+  blockChance: number
+}
+export type CombatStats = PlayerCombatStats | EnemyCombatStats
 
 export type PlayerSheetState = Pick<GameState, 'player' | 'progress' | 'activities' | 'equipment' | 'artifactProgress'> & Partial<Pick<GameState, 'debug' | 'arcaneCore'>>
 
@@ -55,9 +60,8 @@ const playerBaseMaxHealth = (state: PlayerSheetState) => {
   const equipment = getEquipmentStats(state)
   return (finite(state.player.baseMaxHealth, BALANCE.player.maxHealth) + finite(equipment.maxHealth)) * (1 + finite(equipment.maxHealthPct))
 }
-const getPlayerSheetStats = (state: PlayerSheetState): CombatStats => {
+const getPlayerSheetStats = (state: PlayerSheetState): PlayerCombatStats => {
   const equipment = getEquipmentStats(state)
-  const basicAttackSpeedMultiplier = 1
   const defense = Math.max(0, BALANCE.player.baseDefense + finite(equipment.defense))
   return {
     maxHealth: playerBaseMaxHealth(state),
@@ -66,16 +70,12 @@ const getPlayerSheetStats = (state: PlayerSheetState): CombatStats => {
     manaRegen: getManaRegenBreakdown(state).total,
     maxFocus: getFocusCapacityBreakdown(state).total,
     spellPower: getSpellPower(state),
-    basicAttackDamage: 0,
-    basicAttackSpeedMultiplier,
-    basicAttackIntervalMs: BALANCE.player.basicAttackIntervalMs / basicAttackSpeedMultiplier,
     critChance: clampPercent(BALANCE.player.baseCritChance + finite(equipment.critChance), 0, MAX_CRIT_CHANCE),
     critDamageMultiplier: clampPercent(BALANCE.player.baseCritDamage + finite(equipment.critDamage), MIN_CRIT_DAMAGE_MULTIPLIER, MAX_CRIT_DAMAGE_MULTIPLIER),
     damageOverTimeBonus: finite(equipment.damageOverTimePct),
     statusDurationBonus: finite(equipment.statusDurationPct),
     defense,
     defenseReduction: getDefenseReductionFromRating(defense),
-    blockChance: 0,
     resistances: Object.fromEntries(DAMAGE_TYPES.map((type) => [type, clampPercent(finite(equipment.resistances?.[type]), MIN_RESISTANCE, MAX_RESISTANCE)])) as Partial<Record<DamageType, number>>,
     cooldownRecovery: Math.max(0, 1 + finite(equipment.cooldownRecoveryPct)),
     healingDoneBonus: finite(equipment.healingDonePct),
@@ -85,9 +85,8 @@ const getPlayerSheetStats = (state: PlayerSheetState): CombatStats => {
   }
 }
 
-const getPlayerRuntimeStats = (state: GameState): CombatStats => {
+const getPlayerRuntimeStats = (state: GameState): PlayerCombatStats => {
   const sheet = getPlayerSheetStats(state)
-  const basicAttackSpeedMultiplier = 1
   const defense = getDefense(state, 'player')
   return {
     ...sheet,
@@ -95,15 +94,12 @@ const getPlayerRuntimeStats = (state: GameState): CombatStats => {
     maxMana: state.player.maxMana,
     maxFocus: state.player.maxFocus,
     healthRegen: sheet.healthRegen + getCombatModifiers(state, 'player', 'health-regen-flat'),
-    basicAttackSpeedMultiplier,
-    basicAttackIntervalMs: BALANCE.player.basicAttackIntervalMs / basicAttackSpeedMultiplier,
     critChance: getCritChance(state, 'player'),
     critDamageMultiplier: getCritDamageMultiplier(state, 'player'),
     damageOverTimeBonus: getDamageOverTimeBonus(state, 'player'),
     statusDurationBonus: getStatusDurationBonus(state, 'player'),
     defense,
     defenseReduction: getDefenseReduction(state, 'player'),
-    blockChance: 0,
     resistances: Object.fromEntries(DAMAGE_TYPES.map((type) => [type, getResistance(state, 'player', type)])) as Partial<Record<DamageType, number>>,
     cooldownRecovery: getCooldownRecoveryMultiplier(state, 'player'),
     healingDoneBonus: getHealingDoneBonus(state, 'player'),
@@ -113,7 +109,9 @@ const getPlayerRuntimeStats = (state: GameState): CombatStats => {
 
 const getEnemyBase = (state: GameState) => state.combat.enemyId ? MONSTERS[state.combat.enemyId] : undefined
 
-const getEnemyStats = (state: GameState): CombatStats => {
+export const DEFAULT_ENEMY_BASIC_ATTACK_INTERVAL_MS = 2_200
+
+const getEnemyStats = (state: GameState): EnemyCombatStats => {
   const monster = getEnemyBase(state)
   const basicAttackSpeedMultiplier = getBasicAttackSpeedMultiplier(state, 'enemy')
   const defense = getDefense(state, 'enemy')
@@ -126,7 +124,7 @@ const getEnemyStats = (state: GameState): CombatStats => {
     spellPower: 0,
     basicAttackDamage: monster?.basicAttackDamage ?? 0,
     basicAttackSpeedMultiplier,
-    basicAttackIntervalMs: (monster?.basicAttackTimeMs ?? BALANCE.player.basicAttackIntervalMs) / basicAttackSpeedMultiplier,
+    basicAttackIntervalMs: (monster?.basicAttackTimeMs ?? DEFAULT_ENEMY_BASIC_ATTACK_INTERVAL_MS) / basicAttackSpeedMultiplier,
     critChance: getCritChance(state, 'enemy'),
     critDamageMultiplier: getCritDamageMultiplier(state, 'enemy'),
     damageOverTimeBonus: getDamageOverTimeBonus(state, 'enemy'),
@@ -174,11 +172,6 @@ export const getBlockChance = (state: GameState, actor: CombatActor, source?: Co
 }
 
 export const getBasicAttackSpeedMultiplier = (state: GameState, actor: CombatActor) => actor === 'enemy' ? clampSpeed(1 + getCombatModifiers(state, actor, 'basic-attack-speed-percent', { sourceTags: ['basic-attack'] })) : 1
-
-export const getBasicAttackIntervalMs = (state: GameState, actor: CombatActor) => {
-  const base = actor === 'player' ? BALANCE.player.basicAttackIntervalMs : getEnemyBase(state)?.basicAttackTimeMs ?? BALANCE.player.basicAttackIntervalMs
-  return base / getBasicAttackSpeedMultiplier(state, actor)
-}
 
 export const getDamageOverTimeBonus = (state: GameState, actor: CombatActor, source?: CombatSource) => getCombatModifiers(state, actor, 'damage-over-time-percent', { source, sourceTags: source?.tags })
 export const getStatusDurationBonus = (state: GameState, actor: CombatActor, source?: CombatSource) => getCombatModifiers(state, actor, 'status-duration-dealt-percent', { source, sourceTags: source?.tags })

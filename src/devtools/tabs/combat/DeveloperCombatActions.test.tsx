@@ -5,6 +5,11 @@ import { setDeveloperCombatTab } from '../../developerToolsStore'
 import { DeveloperCombat } from '../DeveloperCombat'
 
 describe('DeveloperCombat ACTIONS tab', () => {
+  const enableDebugCombatSpawn = () => {
+    const state = useGameStore.getState()
+    useGameStore.setState({ combat: { ...state.combat, activeSpellLoadout: { presetId: null, presetName: 'Developer Combat', slots: [{ spellId: 'fire-bolt', autoCast: false }], signature: 'fire-bolt:0' } } })
+  }
+
   beforeEach(() => {
     window.localStorage.clear()
     useGameStore.getState().resetSave()
@@ -20,15 +25,18 @@ describe('DeveloperCombat ACTIONS tab', () => {
   })
 
   it('renders timing and action controls for a normal enemy', () => {
+    enableDebugCombatSpawn()
     useGameStore.getState().spawnDebugEnemy('forest-wisp', 'whispering-woods')
     render(<DeveloperCombat copy={async () => undefined} />)
 
     expect(screen.getByText('Forest Wisp')).toBeTruthy()
-    expect(screen.getByText('Player Basic')).toBeTruthy()
+    expect(screen.queryByText('Player Basic')).toBeNull()
+    expect(screen.getByText('Enemy base work')).toBeTruthy()
     expect(screen.getByRole('combobox', { name: 'Action to inspect' })).toBeTruthy()
   })
 
   it('renders a boss action state safely', () => {
+    enableDebugCombatSpawn()
     useGameStore.getState().spawnDebugEnemy('forest-heart', 'whispering-woods')
     render(<DeveloperCombat copy={async () => undefined} />)
 

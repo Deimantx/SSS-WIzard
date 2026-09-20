@@ -44,8 +44,7 @@ import { allocateArtifactNode, getArtifactLevelCap, respecArtifact } from '../ga
 import { advanceWithOfflineBank as runOfflineBankAdvance, isOfflineBankSimulationActive, type OfflineBankResult, type OfflineBankSimulationObservers } from '../game/systems/offline-bank/offlineBankSimulation'
 import { addOfflineBankMs, clampOfflineBankMs } from '../game/systems/offline-bank/offlineBankDuration'
 import type { OfflineBankReport } from '../game/systems/offline-bank/offlineBankReport'
-import { DEFAULT_COMBAT_LOADOUT_NAME, getNextSpellPresetId, getSelectedSpellPreset, getSpellAutoCastFocusCost, getSpellPresetFocusProjection, isSpellUnlocked, MAX_COMBAT_SPELLS, syncSpellUnlocksForSchool, syncAutoCastRuntimeForLoadout } from '../game/systems/spells'
-import { getSchoolLevelStartXp } from '../game/systems/schools'
+import { DEFAULT_COMBAT_LOADOUT_NAME, getNextSpellPresetId, getSelectedSpellPreset, getSpellAutoCastFocusCost, getSpellPresetFocusProjection, isSpellUnlocked, MAX_COMBAT_SPELLS, syncAutoCastRuntimeForLoadout } from '../game/systems/spells'
 import { applySpellPresetAction, clearAutoCastAction, createSpellPresetAction, deleteSpellPresetAction, duplicateSpellPresetAction, moveAutoCastPriorityAction, renameSpellPresetAction, saveSpellPresetAction, selectSpellPresetAction, setPresetSlotAutoCastAction, syncSelectedSpellPresetRuntime, type ApplySpellPresetResult } from './actions/spellPresetActions'
 import { clearCombatLogUi, combatLogUiSink as combatLogSink } from '../game/ui/combatLogStore'
 import { combatAlertsObserver, combatAlertsSink, clearCombatAlerts } from '../game/ui/combatAlertsStore'
@@ -132,8 +131,6 @@ const initializeDungeonRun = (state: GameState, dungeonId: DungeonId, resetComba
 }
 
 export interface RecentAcquisition { itemId: ItemId; amount: number; timestamp: number; isNew: boolean }
-export type DeveloperFixtureId = 'fresh' | 'whispering-woods-ready' | 'howling-den-ready' | 'catacombs-ready' | 'edrin-ready'
-
 export interface GameActions {
   tick: (deltaMs: number) => void
   setScreen: (screen: ScreenId) => void
@@ -216,11 +213,6 @@ export interface GameActions {
   purchaseAllArcaneCoreBranch: (branchId: ArcaneCoreBranchId) => void
   purchaseAllArcaneCore: () => void
   maxArcanePointsAndPurchaseAll: () => void
-  /** @deprecated Compatibility aliases for older Developer Tools extensions. */
-  grantArcaneCoreXp: (amount: number) => void
-  setArcaneCoreXp: (amount: number) => void
-  setArcaneCoreLevel: (level: number) => void
-  maxArcaneCoreLevelAndPurchaseAll: () => void
   loadArcaneCorePreset: (presetId: string) => boolean
   setDebugArcaneCoreFreeCosts: (enabled: boolean) => void
   setDebugArcaneCoreIgnorePrerequisites: (enabled: boolean) => void
@@ -315,8 +307,6 @@ export interface GameActions {
   promoteGuild: () => void
   setGuildReputation: (amount: number) => void
   setBossKills: (bossId: MonsterId, amount: number) => void
-  applyDeveloperFixture: (fixture: DeveloperFixtureId) => void
-  preset: (name: 'fresh' | 'research' | 'combat' | 'boss' | 'guild' | 'main-boss' | 'chapter-complete') => void
   creditOfflineAbsence: (elapsedMs: number, notify?: boolean) => void
   debugAddOfflineBank: (durationMs: number) => void
   debugSetOfflineBank: (durationMs: number) => void
@@ -518,9 +508,6 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   respecArtifact: (artifactId) => { let ok = false; set((state) => { ok = respecArtifact(state, artifactId); recalculateDerivedStats(state); return state }); return ok },
   grantArcanePoints: (amount) => set((state) => { state.arcaneCore = grantArcanePoints(state.arcaneCore, sanitizeDebugNumber(amount)).state; return state }),
   setArcanePoints: (amount) => set((state) => { state.arcaneCore = setArcaneCoreTotalPointsEarned(state.arcaneCore, sanitizeDebugNumber(amount)); recalculateDerivedStats(state); return state }),
-  grantArcaneCoreXp: (amount) => set((state) => { state.arcaneCore = grantArcanePoints(state.arcaneCore, sanitizeDebugNumber(amount)).state; return state }),
-  setArcaneCoreXp: (amount) => set((state) => { state.arcaneCore = setArcaneCoreTotalPointsEarned(state.arcaneCore, sanitizeDebugNumber(amount)); recalculateDerivedStats(state); return state }),
-  setArcaneCoreLevel: (level) => set((state) => { state.arcaneCore = setArcaneCoreTotalPointsEarned(state.arcaneCore, Math.max(0, sanitizeDebugNumber(level) - 1)); recalculateDerivedStats(state); return state }),
   purchaseArcaneCoreNode: (nodeId) => { let ok = false; set((state) => { ok = commitArcaneCoreResult(state, purchaseArcaneCoreNode(state.arcaneCore, nodeId, { freeCosts: state.debug.arcaneCoreFreeCosts, ignorePrerequisites: state.debug.arcaneCoreIgnorePrerequisites })); if (ok) recalculateDerivedStats(state); return state }); return ok },
   refundArcaneCoreNode: (nodeId) => { let ok = false; set((state) => { ok = commitArcaneCoreResult(state, refundArcaneCoreNode(state.arcaneCore, nodeId)); if (ok) recalculateDerivedStats(state); return state }); return ok },
   setArcaneCoreNodeRank: (nodeId, rank) => set((state) => { const result = setArcaneCoreNodeRank(state.arcaneCore, nodeId, rank); if (result.ok) { state.arcaneCore = result.state; recalculateDerivedStats(state) }; return state }),
@@ -534,7 +521,6 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   purchaseAllArcaneCoreBranch: (branchId) => set((state) => { state.arcaneCore = purchaseAllArcaneCoreNodes(state.arcaneCore, branchId, { freeCosts: state.debug.arcaneCoreFreeCosts, ignorePrerequisites: state.debug.arcaneCoreIgnorePrerequisites }); recalculateDerivedStats(state); return state }),
   purchaseAllArcaneCore: () => set((state) => { state.arcaneCore = purchaseAllArcaneCoreNodes(state.arcaneCore, undefined, { freeCosts: state.debug.arcaneCoreFreeCosts, ignorePrerequisites: state.debug.arcaneCoreIgnorePrerequisites }); recalculateDerivedStats(state); return state }),
   maxArcanePointsAndPurchaseAll: () => set((state) => { state.arcaneCore = setArcaneCoreTotalPointsEarned(state.arcaneCore, ARCANE_CORE_TOTAL_TREE_COST); state.arcaneCore = purchaseAllArcaneCoreNodes(state.arcaneCore, undefined, { freeCosts: false, ignorePrerequisites: true }); recalculateDerivedStats(state); return state }),
-  maxArcaneCoreLevelAndPurchaseAll: () => set((state) => { state.arcaneCore = setArcaneCoreTotalPointsEarned(state.arcaneCore, ARCANE_CORE_TOTAL_TREE_COST); state.arcaneCore = purchaseAllArcaneCoreNodes(state.arcaneCore, undefined, { freeCosts: false, ignorePrerequisites: true }); recalculateDerivedStats(state); return state }),
   loadArcaneCorePreset: (presetId) => {
     const presetState = getArcaneCorePresetSnapshot(presetId)
     let ok = false
@@ -664,7 +650,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     clearCombatDefeat()
     clearDungeonStatistics()
     combatTelemetryObserver.clear()
-    set((state) => { Object.assign(state, loaded.state as GameState); state.player.godMode = false; state.debug = createDefaultDebugOverrides(); state.recentAcquisitions = []; state.lastOfflineBankReport = null; if (!isScreenUnlocked(state, state.ui.screen)) state.ui.screen = 'home'; recalculateDerivedStats(state); return state })
+    set((state) => { Object.assign(state, loaded.state as GameState); state.debug = createDefaultDebugOverrides(); state.recentAcquisitions = []; state.lastOfflineBankReport = null; if (!isScreenUnlocked(state, state.ui.screen)) state.ui.screen = 'home'; recalculateDerivedStats(state); return state })
   },
   resetSave: () => {
     const fresh = createInitialState()
@@ -687,7 +673,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     set((state) => { Object.assign(state, fresh); state.recentAcquisitions = []; state.lastOfflineBankReport = null; return state })
     if (activeProfileId) updateProfileMetadata(activeProfileId, { lastSavedAt: fresh.lastSavedAt })
   },
-  hydrateState: (nextState) => { useArcaneCorePresetStore.getState().reset(); clearCombatLogUi(); clearCombatAlerts(); clearCombatRecap(); clearCombatDefeat(); clearDungeonStatistics(); combatTelemetryObserver.clear(); return set((state) => { Object.assign(state, nextState); state.player.godMode = false; state.debug = createDefaultDebugOverrides(); state.recentAcquisitions = []; state.lastOfflineBankReport = null; if (!isScreenUnlocked(state, state.ui.screen)) state.ui.screen = 'home'; recalculateDerivedStats(state); return state }) },
+  hydrateState: (nextState) => { useArcaneCorePresetStore.getState().reset(); clearCombatLogUi(); clearCombatAlerts(); clearCombatRecap(); clearCombatDefeat(); clearDungeonStatistics(); combatTelemetryObserver.clear(); return set((state) => { Object.assign(state, nextState); state.debug = createDefaultDebugOverrides(); state.recentAcquisitions = []; state.lastOfflineBankReport = null; if (!isScreenUnlocked(state, state.ui.screen)) state.ui.screen = 'home'; recalculateDerivedStats(state); return state }) },
   dismissNotification: (id) => set((state) => { state.notifications = state.notifications.filter((note) => note.id !== id); return state }),
   setPlayer: (changes) => set((state) => { state.player = { ...state.player, ...changes }; recalculateDerivedStats(state); return state }),
   addMana: (amount) => set((state) => { state.player.mana = stabilizeResourceValue(Math.max(0, state.player.mana + sanitizeDebugNumber(amount))); recalculateDerivedStats(state); return state }),
@@ -712,80 +698,6 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   promoteGuild: () => set((state) => { promoteGuildAction(state); return state }),
   setGuildReputation: (amount) => set((state) => { state.progress.guildReputation = Math.max(0, amount); return state }),
   setBossKills: (bossId, amount) => set((state) => { setBossKillsAction(state, bossId, amount); return state }),
-  applyDeveloperFixture: (_fixture) => undefined,
-  preset: (name) => set((state) => {
-    clearCombatLogUi()
-    Object.assign(state, createInitialState())
-    state.lastOfflineBankReport = null
-    if (name === 'research') {
-      ;(['fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment'] as const).forEach((itemId) => { state.inventory[itemId] = 100 })
-      state.player.mana = 100
-      ;(['fire', 'water', 'earth', 'air'] as const).forEach((schoolId, index) => {
-        prepareResearchAction(state, `${schoolId}-fragment` as ItemId, schoolId, 50)
-        setResearchEchoesAction(state, `research-${index + 1}` as ResearchSlotId, index === 0 ? 2 : 1)
-      })
-    }
-    if (name === 'combat') {
-      state.inventory['fire-fragment'] = 10
-      state.schools.fire = { xp: getSchoolLevelStartXp(2), level: 2 }
-      syncSpellUnlocksForSchool(state, 'fire')
-      state.player.mana = 100
-      state.combat.active = true
-      state.combat.dungeonId = 'whispering-woods'
-      spawnNextEnemy(state, combatLogUiSink)
-    }
-    if (name === 'boss') {
-      state.inventory['fire-fragment'] = 15
-      state.inventory['artifact-essence'] = 20
-      state.schools.fire = { xp: getSchoolLevelStartXp(4), level: 4 }
-      syncSpellUnlocksForSchool(state, 'fire')
-      state.progress.guildUnlocked = true
-      state.progress.firstBossKill = true
-      state.progress.emberStaffUnlocked = true
-      state.progress.forestHeartUnlocked = true
-      state.progress.autoHuntBossUnlocked = true
-      state.combat.active = true
-      state.combat.dungeonId = 'whispering-woods'
-      state.combat.threatCleared = 20
-      spawnNextEnemy(state, combatLogUiSink)
-    }
-    if (name === 'guild') {
-      state.progress.guildUnlocked = true
-      state.progress.guildRank = 'initiate'
-      state.progress.firstBossKill = true
-      state.progress.emberStaffUnlocked = true
-      state.progress.forestHeartUnlocked = true
-      state.progress.autoHuntBossUnlocked = true
-      state.inventory['fire-fragment'] = 20
-      state.progress.lifetimeKills = 30
-      state.progress.requestProgress['clear-the-woods'] = 30
-      state.progress.bossKillsByBoss['grove-sentinel'] = 2
-      state.progress.requestProgress['sentinel-breaker'] = 2
-      state.progress.guildReputation = 100
-    }
-    if (name === 'main-boss' || name === 'chapter-complete') {
-      state.inventory['fire-fragment'] = 20
-      state.inventory['artifact-essence'] = 20
-      state.progress.guildUnlocked = true
-      state.progress.guildRank = 'apprentice'
-      state.progress.firstBossKill = true
-      state.progress.emberStaffUnlocked = true
-      state.progress.forestHeartUnlocked = true
-      state.progress.autoHuntBossUnlocked = true
-      state.progress.permanentFocusBonuses['forest-heart'] = 10
-      state.progress.permanentFocusBonuses['guild-apprentice'] = 10
-      state.progress.magicLevelCap = 20
-      state.schools.fire = { xp: getSchoolLevelStartXp(20), level: 20 }
-      syncSpellUnlocksForSchool(state, 'fire')
-      state.progress.firstMainBossKill = true
-      state.inventory['artifact-essence'] = 500
-      recalculateDerivedStats(state)
-      state.combat.active = true
-      state.combat.dungeonId = 'whispering-woods'
-      spawnEnemy(state, 'forest-heart', combatLogUiSink)
-    }
-    return state
-  }),
   creditOfflineAbsence: (elapsedMs, notify = true) => set((state) => {
     const safeElapsed = clampOfflineBankMs(elapsedMs)
     if (safeElapsed <= 1000) return state
@@ -807,71 +719,6 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     return result
   },
 })))
-
-// Presets replace gameplay state for developer testing; recent acquisition UI state is session-only too.
-const presetGameplayState = useGameStore.getState().preset
-const applyDeveloperFixture = (fixture: DeveloperFixtureId) => {
-  resetProfileAttention(getActiveProfileId())
-  combatAlertsObserver.clear()
-  clearCombatRecap()
-  clearCombatDefeat()
-  clearDungeonStatistics()
-  combatTelemetryObserver.clear()
-  presetGameplayState('fresh')
-  if (fixture !== 'fresh') {
-    useGameStore.setState((state) => {
-      const completedDungeons = fixture === 'whispering-woods-ready' ? 0 : fixture === 'howling-den-ready' ? 1 : 2
-      DUNGEON_ORDER.slice(0, completedDungeons).forEach((dungeonId) => {
-        state.progress.bossKillsByBoss[DUNGEONS[dungeonId].boss] = 1
-      })
-      if (completedDungeons > 0) {
-        state.progress.firstBossKill = true
-        state.progress.guildUnlocked = true
-        state.progress.guildRank = 'initiate'
-        state.progress.emberStaffUnlocked = true
-        state.progress.forestHeartUnlocked = true
-        state.progress.autoHuntBossUnlocked = true
-        state.inventory['fire-fragment'] = 20
-        state.inventory['artifact-essence'] = 20
-      }
-      if (completedDungeons >= 2) state.progress.magicLevelCap = Math.max(state.progress.magicLevelCap, BALANCE.schoolProgression.tutorialCompleteCap)
-      const fixtureLevel = completedDungeons > 0 ? 4 : 2
-      state.schools.fire = { xp: getSchoolLevelStartXp(fixtureLevel), level: fixtureLevel }
-      syncSpellUnlocksForSchool(state, 'fire')
-      const dungeonId = fixture === 'whispering-woods-ready' ? 'whispering-woods' : fixture === 'howling-den-ready' ? 'howling-den' : 'abandoned-catacombs'
-      const dungeon = DUNGEONS[dungeonId]
-      state.player.mana = state.player.maxMana
-      state.combat.active = true
-      state.combat.dungeonId = dungeonId
-      state.combat.threatCleared = dungeon.threatRequired
-      if (fixture === 'edrin-ready') spawnEnemy(state, dungeon.boss, combatLogUiSink)
-      else spawnNextEnemy(state, combatLogUiSink)
-      return state
-    })
-  }
-  const fixtureState = useGameStore.getState()
-  if (fixtureState.combat.active && fixtureState.combat.dungeonId) dungeonStatisticsObserver.beginSession(fixtureState.combat.dungeonId)
-  useGameStore.setState({ recentAcquisitions: [], applyDeveloperFixture })
-}
-
-const prepareForestHeartPreset = () => useGameStore.setState((state) => {
-  state.combat.active = true
-  state.combat.dungeonId = 'whispering-woods'
-  state.combat.threatCleared = DUNGEONS['whispering-woods'].threatRequired
-  state.combat.pendingBossId = null
-  spawnEnemy(state, DUNGEONS['whispering-woods'].boss, combatLogUiSink)
-})
-const completeDungeonPreset = () => useGameStore.setState((state) => {
-  DUNGEON_ORDER.forEach((dungeonId) => { state.progress.bossKillsByBoss[DUNGEONS[dungeonId].boss] = 1; state.progress.autoHuntBossByDungeon[dungeonId] = true })
-  state.progress.autoHuntBossUnlocked = true
-  state.progress.firstMainBossKill = true
-  state.progress.magicLevelCap = Math.max(state.progress.magicLevelCap, BALANCE.schoolProgression.tutorialCompleteCap)
-  state.combat.active = true
-  state.combat.dungeonId = 'abandoned-catacombs'
-  state.combat.threatCleared = DUNGEONS['abandoned-catacombs'].threatRequired
-  spawnEnemy(state, DUNGEONS['abandoned-catacombs'].boss, combatLogUiSink)
-})
-useGameStore.setState({ applyDeveloperFixture, preset: (name) => { resetProfileAttention(getActiveProfileId()); combatAlertsObserver.clear(); clearCombatRecap(); clearCombatDefeat(); clearDungeonStatistics(); combatTelemetryObserver.clear(); presetGameplayState(name); if (name === 'boss' || name === 'main-boss') prepareForestHeartPreset(); if (name === 'chapter-complete') completeDungeonPreset(); const presetState = useGameStore.getState(); if (presetState.combat.active && presetState.combat.dungeonId) dungeonStatisticsObserver.beginSession(presetState.combat.dungeonId); useGameStore.setState({ recentAcquisitions: [] }) } })
 
 export const useGameStoreSelectors = { selectUsedFocus, selectFreeFocus }
 export { selectUsedFocus, selectFreeFocus }

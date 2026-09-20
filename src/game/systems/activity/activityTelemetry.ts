@@ -12,7 +12,6 @@ import { clamp, formatCompactDuration, formatNumber, formatRatePerHour, formatSi
 
 const metric = (label: string, value: string, tone?: ActivityMetric['tone']): ActivityMetric => ({ label, value, tone })
 const percent = (value: number, max: number) => Math.round(clamp(value / Math.max(1, max) * 100, 0, 100))
-const attackLabel = (timerMs: number) => `Basic Attack · ${timerMs <= 0 ? 'READY' : formatCompactDuration(timerMs)}`
 
 export const getActivityTelemetry = (state: GameState): ActivityTelemetry[] => {
   const activities: ActivityTelemetry[] = []
@@ -45,7 +44,6 @@ export const getActivityTelemetry = (state: GameState): ActivityTelemetry[] => {
         collapsedSummary: boss ? `Boss ${enemy.name} · P${playerPercent}% / B${enemyPercent}%` : `Combat P${playerPercent}% / E${enemyPercent}% · Threat ${formatNumber(state.combat.threatCleared)} / ${formatNumber(dungeon.threatRequired)}`,
         metrics: [
           metric('Threat Cleared', `${formatNumber(state.combat.threatCleared)} / ${formatNumber(dungeon.threatRequired)}`),
-          metric('Player Attack', attackLabel(state.combat.playerAttackTimerMs)),
           metric(boss ? 'Boss Action' : 'Enemy Action', `${nextLabel} · ${formatCompactDuration(nextTime)}`),
           ...(boss ? [metric('Boss Encounter', enemy.name)] : []),
         ],

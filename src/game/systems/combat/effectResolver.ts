@@ -1,7 +1,7 @@
 import { ITEMS } from '../../content/items/items'
 import { MONSTERS } from '../../content/monsters'
 import { STATUS_DEFINITIONS } from '../../content/statuses'
-import { appendLog, playerBasicDamage } from '../../engine'
+import { appendLog } from '../../engine'
 import type { GameState, SpellId, StatusId, TraitId } from '../../types'
 import { applyStatus, cleanseStatuses, dispelStatuses, removeStatus } from './statusRuntime'
 import type { CombatActor } from './magnitude'
@@ -436,5 +436,4 @@ export const getCombatDamagePreview = (state: GameState, raw: number, source: Co
 }
 
 export const legacyPlayerDamageSource: CombatSource = { actor: 'enemy', kind: 'basic-attack', sourceId: 'enemy-basic-attack', tags: ['basic-attack', 'direct'] }
-export const legacyPlayerBasicSource: CombatSource = { actor: 'player', kind: 'basic-attack', sourceId: 'player-basic-attack', tags: ['basic-attack', 'direct'] }
-export { playerBasicDamage, MONSTERS }
+export { MONSTERS }

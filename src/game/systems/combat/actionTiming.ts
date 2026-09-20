@@ -1,9 +1,7 @@
-import { BALANCE } from '../../core/balance/balance'
 import type { GameState } from '../../types'
 import { actorCannotAct } from './statusRuntime'
 import {
   getCurrentEnemyActionRate,
-  getPlayerBasicAttackRate,
   MAX_ACTION_WORK_MS,
   MIN_ACTION_TIME_MS,
 } from './actionRuntime'
@@ -47,22 +45,6 @@ const buildTiming = (baseWorkMs: number, remainingWorkMs: number, rate: number, 
 }
 
 export const getTimedActionState = (baseWorkMs: number, remainingWorkMs: number, rate: number, blockReason: ActionBlockReason = null) => buildTiming(baseWorkMs, remainingWorkMs, rate, blockReason)
-
-export const getPlayerBasicTiming = (state: GameState): TimedActionState => {
-  const blockReason: ActionBlockReason = actorCannotAct(state, 'player')
-    ? 'status-control'
-    : state.debug.freezePlayerActions
-      ? 'debug-freeze'
-      : state.debug.disablePlayerBasicAttack
-        ? 'disabled'
-        : null
-  return buildTiming(
-    state.combat.playerAttackDurationMs || BALANCE.player.basicAttackIntervalMs,
-    state.combat.playerAttackTimerMs,
-    blockReason ? 0 : getPlayerBasicAttackRate(state),
-    blockReason,
-  )
-}
 
 export const getCurrentEnemyActionTiming = (state: GameState): TimedActionState | null => {
   if (!state.combat.enemyId || !state.combat.enemyCurrentStepId) return null

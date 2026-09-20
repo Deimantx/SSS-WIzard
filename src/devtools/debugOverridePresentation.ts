@@ -14,7 +14,6 @@ export const getActiveDebugOverrides = (debug: DebugOverrides): ActiveDebugOverr
   if (debug.enemyImmortal) add('enemy-immortal', 'ENEMY IMMORTAL', 'combat', 'danger')
   if (debug.infiniteMana) add('infinite-mana', 'INFINITE MANA', 'resource')
   if (debug.ignoreSpellCooldowns) add('ignore-cooldowns', 'IGNORE COOLDOWNS', 'combat')
-  if (debug.disablePlayerBasicAttack) add('basic-attack-off', 'BASIC ATTACK OFF', 'combat')
   if (debug.disableAutoCast) add('auto-cast-off', 'AUTO-CAST OFF', 'combat')
   if (debug.freezePlayerActions) add('player-frozen', 'PLAYER FROZEN', 'combat')
   if (debug.freezeEnemyActions) add('enemy-frozen', 'ENEMY FROZEN', 'combat')

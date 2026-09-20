@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ARCANE_CORE_BRANCHES } from '../../content/arcaneCore/arcaneCoreBranches'
-import { ARCANE_CORE_MAJOR_COST_BY_RING, ARCANE_CORE_STANDARD_RANK_COST_BY_RING, ARCANE_CORE_TOTAL_TREE_COST } from '../../content/arcaneCore/arcaneCoreBalance'
+import { ARCANE_CORE_FULL_RING_COST_BY_RING, ARCANE_CORE_MAJOR_COST_BY_RING, ARCANE_CORE_STANDARD_RANK_COST_BY_RING, ARCANE_CORE_TOTAL_COST_PER_CORE, ARCANE_CORE_TOTAL_TREE_COST } from '../../content/arcaneCore/arcaneCoreBalance'
 import { ARCANE_CORE_MAJOR_GATES, ARCANE_CORE_RING_GATES } from '../../content/arcaneCore/arcaneCoreRings'
 import { createInitialArcaneCoreState, getArcaneCoreAvailablePoints, getArcaneCoreNodeRank, getArcaneCorePointsSpent, getArcaneCoreRingStandardRanksInvested, getArcaneCoreStaticStats, getArcaneCoreWalletInfo, grantArcanePoints, isArcaneCoreMajorUnlocked, isArcaneCoreRingUnlocked, purchaseArcaneCoreNode, resetArcaneCore, setArcaneCoreNodeRank } from './arcaneCoreProgression'
 
@@ -33,6 +33,14 @@ describe('Arcane Core V6 Arcane Points economy', () => {
     }
   })
 
+  it('keeps the exact V6 rebalance table and wallet caps authoritative', () => {
+    expect(ARCANE_CORE_STANDARD_RANK_COST_BY_RING).toEqual({ 1: 5, 2: 30, 3: 45, 4: 60, 5: 75, 6: 90, 7: 120, 8: 150 })
+    expect(ARCANE_CORE_MAJOR_COST_BY_RING).toEqual({ 1: 12, 2: 144, 3: 216, 4: 288, 5: 360, 6: 432, 7: 576, 8: 720 })
+    expect(ARCANE_CORE_FULL_RING_COST_BY_RING).toEqual({ 1: 212, 2: 1344, 3: 2016, 4: 2688, 5: 3360, 6: 4032, 7: 5376, 8: 6720 })
+    expect(ARCANE_CORE_TOTAL_COST_PER_CORE).toBe(25_748)
+    expect(ARCANE_CORE_TOTAL_TREE_COST).toBe(102_992)
+  })
+
   it('unlocks Rings and Majors by standard ranks rather than weighted points', () => {
     let state = createInitialArcaneCoreState()
     for (const node of standardNodes(1).slice(0, 4)) state = setRank(state, node.id, 5)
@@ -55,8 +63,8 @@ describe('Arcane Core V6 Arcane Points economy', () => {
     const node = nodeAt(8)
     state = setRank(state, node.id, 1)
     expect(getArcaneCoreNodeRank(state, node.id)).toBe(1)
-    expect(getArcaneCorePointsSpent(state)).toBe(10)
-    expect(getArcaneCoreAvailablePoints(state)).toBe(90)
+    expect(getArcaneCorePointsSpent(state)).toBe(150)
+    expect(getArcaneCoreAvailablePoints(state)).toBe(0)
     const reset = resetArcaneCore(state)
     expect(reset).toEqual({ ok: true, state: { totalPointsEarned: 100, nodes: {} } })
   })
@@ -67,7 +75,7 @@ describe('Arcane Core V6 Arcane Points economy', () => {
     const vitality = ARCANE_CORE_BRANCHES.find((candidate) => candidate.id === 'vitality')!.nodes.find((node) => node.ring === 1 && node.nodeType !== 'major')!
     const result = purchaseArcaneCoreNode(state, vitality.id)
     expect(result.ok).toBe(true)
-    if (result.ok) expect(getArcaneCorePointsSpent(result.state) - getArcaneCorePointsSpent(state)).toBe(1)
+    if (result.ok) expect(getArcaneCorePointsSpent(result.state) - getArcaneCorePointsSpent(state)).toBe(5)
   })
 
   it('exposes V6 percentage stats as scalable derived-stat inputs', () => {

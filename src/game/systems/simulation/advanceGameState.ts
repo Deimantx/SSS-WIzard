@@ -28,7 +28,7 @@ import type { DungeonStatisticsObserver } from '../../telemetry/dungeon/dungeonS
 import { sanitizeCombatTimeScale } from '../../../store/actions/debugActions'
 import { advanceGuardianUpkeep, ensureGuardianForCurrentEncounter, getGuardianAttackBoundary, resolveGuardianAttack, suppressGuardianIfOutOfMana } from '../summoning/summoningRuntime'
 import { hasEnoughResource } from '../../presentation/resources/resourcePresentation'
-import { isArcaneCoreSpellFree } from '../arcaneCore/arcaneCoreRuntime'
+import { advanceArcaneCoreV6RuntimeTime, isArcaneCoreSpellFree } from '../arcaneCore/arcaneCoreRuntime'
 
 export interface AdvanceContext {
   mode: 'live' | 'banked'
@@ -207,7 +207,8 @@ const advanceCombatTimeline = (state: GameState, delta: number, context: Advance
     const playerBlockedAtSegmentStart = actorCannotAct(state, 'player') || state.debug.freezePlayerActions
     const enemyBlockedAtSegmentStart = actorCannotAct(state, 'enemy') || state.debug.freezeEnemyActions
     const playerRate = getPlayerSpellCastRate(state)
-    const enemyRate = state.combat.enemyCurrentStepId ? getCurrentEnemyActionRate(state) : 0
+    const arcaneStasisActive = (state.combat.arcaneCoreRuntime.absoluteStasisUntilMs ?? 0) > state.combat.arcaneCoreRuntime.elapsedMs
+    const enemyRate = arcaneStasisActive ? 0 : state.combat.enemyCurrentStepId ? getCurrentEnemyActionRate(state) : 0
     // Timers hold remaining work. Convert only the next boundary to real
     // simulation milliseconds; completed work is never recomputed.
     const playerRemaining = playerBlockedAtSegmentStart || playerRate <= 0 || !state.combat.pendingPlayerSpellCast ? Number.POSITIVE_INFINITY : Math.max(0, state.combat.pendingPlayerSpellCast.remainingWorkMs) / playerRate
@@ -222,9 +223,11 @@ const advanceCombatTimeline = (state: GameState, delta: number, context: Advance
       getNextQueuedSpellCooldownEventMs(state, cooldownRecovery),
       getNextAutoCastCooldownEventMs(state, cooldownRecovery),
       getGuardianAttackBoundary(state),
+      arcaneStasisActive ? Math.max(0, state.combat.arcaneCoreRuntime.absoluteStasisUntilMs! - state.combat.arcaneCoreRuntime.elapsedMs) : null,
     ].filter((value): value is number => value !== null && Number.isFinite(value))
     const untilEvent = boundaries.length ? Math.min(...boundaries) : remaining
     const elapsed = Math.min(remaining, Math.max(0, untilEvent))
+    advanceArcaneCoreV6RuntimeTime(state, elapsed)
 
     if (!playerBlockedAtSegmentStart && playerRate > 0 && state.combat.pendingPlayerSpellCast) state.combat.pendingPlayerSpellCast.remainingWorkMs = Math.max(0, state.combat.pendingPlayerSpellCast.remainingWorkMs - elapsed * playerRate)
     if (!enemyBlockedAtSegmentStart && state.combat.enemyCurrentStepId && enemyRate > 0) state.combat.enemyActionTimerMs = Math.max(0, state.combat.enemyActionTimerMs - elapsed * enemyRate)
@@ -311,6 +314,7 @@ const advanceCombatDowntimeTimeline = (state: GameState, delta: number, context:
     ].filter((value): value is number => value !== null && Number.isFinite(value))
     const untilEvent = boundaries.length ? Math.min(...boundaries) : remaining
     const elapsed = Math.min(remaining, Math.max(0, untilEvent))
+    advanceArcaneCoreV6RuntimeTime(state, elapsed)
 
     const pendingStatusExpirations = tickStatuses(state, elapsed, executeCombatEffects, context.uiEvents, ['player'], { deferExpiry: true })
     tickBarriers(state, elapsed, ['player'])

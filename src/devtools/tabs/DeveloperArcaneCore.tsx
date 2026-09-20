@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Button, Card, GameTooltip, Status } from '../../components/ui'
 import { ARCANE_CORE_BRANCHES } from '../../game/content/arcaneCore/arcaneCoreBranches'
-import { ARCANE_CORE_MAJOR_COST_BY_RING, ARCANE_CORE_STANDARD_RANK_COST_BY_RING, ARCANE_CORE_TOTAL_TREE_COST } from '../../game/content/arcaneCore/arcaneCoreBalance'
+import { ARCANE_CORE_FULL_RING_COST_BY_RING, ARCANE_CORE_MAJOR_COST_BY_RING, ARCANE_CORE_STANDARD_RANK_COST_BY_RING, ARCANE_CORE_TOTAL_TREE_COST } from '../../game/content/arcaneCore/arcaneCoreBalance'
 import { ARCANE_CORE_MAJOR_GATES, ARCANE_CORE_RING_GATES, ARCANE_CORE_RING_INDICES } from '../../game/content/arcaneCore/arcaneCoreRings'
 import { getArcaneCoreNodeEffectTexts } from '../../game/presentation/arcaneCore/arcaneCorePresentation'
 import { getArcaneCoreHighestUnlockedRing, getArcaneCoreNodeRank, getArcaneCoreRingPointsSpent, getArcaneCoreRingStandardRanksInvested, getArcaneCoreWalletInfo, isArcaneCoreMajorUnlocked, isArcaneCoreRingUnlocked } from '../../game/systems/arcaneCore'
@@ -10,7 +10,7 @@ import type { ArcaneCoreBranchId, ArcaneCoreRingIndex } from '../../game/types'
 import { useGameStore } from '../../store/gameStore'
 import { NumberField, Summary } from './DeveloperTabPrimitives'
 
-const ringCost = (ring: ArcaneCoreRingIndex) => ({ 1: 44, 2: 88, 3: 132, 4: 176, 5: 220, 6: 264, 7: 352, 8: 440 } as Record<ArcaneCoreRingIndex, number>)[ring]
+const ringCost = (ring: ArcaneCoreRingIndex) => ARCANE_CORE_FULL_RING_COST_BY_RING[ring]
 
 export function DeveloperArcaneCore() {
   const state = useGameStore()

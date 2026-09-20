@@ -16,14 +16,14 @@ describe('Arcane Core V6 integration', () => {
     expect(getArcaneCoreCombatModifierProviders(state.arcaneCore).length).toBeGreaterThanOrEqual(0)
   })
 
-  it('keeps authored V6 mechanics available as generic special metadata', () => {
+  it('keeps authored V6 mechanics addressable by stable mechanic metadata', () => {
     const state = createInitialState()
     state.arcaneCore.nodes[node('power', 'Arcane Spark').id] = { rank: 5 }
     state.arcaneCore.nodes[node('focus', 'Resonance').id] = { rank: 1 }
     const effects = getArcaneCoreSpecialEffects(state.arcaneCore)
     expect(effects).toEqual(expect.arrayContaining([
-      expect.objectContaining({ type: 'v6-generic', key: 'Arcane Spark', scope: 'power:1:S3', value: 5 }),
-      expect.objectContaining({ type: 'v6-generic', key: 'Resonance', scope: 'focus:3:M', value: 1 }),
+      expect.objectContaining({ type: 'v6-mechanic', mechanicId: 'power:r1:S3', displayName: 'Arcane Spark', rank: 5 }),
+      expect.objectContaining({ type: 'v6-mechanic', mechanicId: 'focus:r3:M', displayName: 'Resonance', rank: 1 }),
     ]))
   })
 })

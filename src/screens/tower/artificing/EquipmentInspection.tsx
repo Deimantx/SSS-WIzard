@@ -24,7 +24,7 @@ function EquipmentOutput({ inspection, preview }: { inspection: ReturnType<typeo
   const item = ITEMS[inspection.itemId]
   if (!inspection.equipment) return null
   const authoredStats = flattenItemStats(inspection.stats).filter(([, value]) => Math.abs(value) > 0)
-  const impactRows = preview ? getImpactEntries(preview.impact).filter(([key, value]) => !['basicDamage', 'basicAttackSpeedPct', 'blockChance'].includes(key) && Math.abs(value) > 0.0001) : []
+  const impactRows = preview ? getImpactEntries(preview.impact).filter(([, value]) => Math.abs(value) > 0.0001) : []
   return <>
     {authoredStats.length > 0 && <DetailSection title="STATS"><div className="artificing-output-stat-list">{authoredStats.map(([key, value]) => <div key={key}><span>{friendlyStatLabel(key)}</span><strong>{formatStat(key, value)}</strong></div>)}</div></DetailSection>}
     <EquipmentCombatDetails item={item} />
@@ -48,7 +48,7 @@ function getImpactEntries(impact: ReturnType<typeof getArtificingEquipmentPrevie
 }
 
 function getSnapshotValue(key: string, snapshot: NonNullable<ReturnType<typeof getArtificingEquipmentPreview>['preview']>) {
-  const mapping: Record<string, keyof typeof snapshot> = { healthRegen: 'healthRegen', basicAttackSpeedPct: 'basicAttackSpeedMultiplier', critDamage: 'critDamageMultiplier', damageOverTimePct: 'damageOverTimeBonus', statusDurationPct: 'statusDurationBonus', cooldownRecoveryPct: 'cooldownRecovery', healingDonePct: 'healingDoneBonus', barrierPowerPct: 'barrierPowerBonus', manaCostReductionPct: 'manaCostReduction', focusEfficiencyPct: 'focusEfficiency', fireSpellDamage: 'fireSpellDamage', airSpellDamage: 'airSpellDamage', waterBarrierPower: 'waterBarrierPower', barrierReceivedFlat: 'barrierReceivedFlat', negativeStatusDurationReceived: 'negativeStatusDurationReceived' }
+  const mapping: Record<string, keyof typeof snapshot> = { healthRegen: 'healthRegen', critDamage: 'critDamageMultiplier', damageOverTimePct: 'damageOverTimeBonus', statusDurationPct: 'statusDurationBonus', cooldownRecoveryPct: 'cooldownRecovery', healingDonePct: 'healingDoneBonus', barrierPowerPct: 'barrierPowerBonus', manaCostReductionPct: 'manaCostReduction', focusEfficiencyPct: 'focusEfficiency', fireSpellDamage: 'fireSpellDamage', airSpellDamage: 'airSpellDamage', waterBarrierPower: 'waterBarrierPower', barrierReceivedFlat: 'barrierReceivedFlat', negativeStatusDurationReceived: 'negativeStatusDurationReceived' }
   if (key.startsWith('resistance-')) return snapshot.resistances[key.replace('resistance-', '') as keyof typeof snapshot.resistances] ?? 0
   return snapshot[mapping[key] ?? key as keyof typeof snapshot] as number
 }
@@ -58,7 +58,7 @@ function formatSignedImpact(key: string, value: number) { return formatImpact(ke
 function formatImpact(key: string, value: number, signed = false) {
   const sign = signed && value > 0 ? '+' : ''
   if (key === 'damageReduction') return `${sign}${(value * 100).toFixed(1)}%`
-  if (key.endsWith('Pct') || ['critChance', 'critDamage', 'blockChance', 'fireSpellDamage', 'airSpellDamage', 'waterBarrierPower', 'negativeStatusDurationReceived'].includes(key) || key.startsWith('resistance-')) return `${sign}${Math.round(value * 100)}%`
+  if (key.endsWith('Pct') || ['critChance', 'critDamage', 'fireSpellDamage', 'airSpellDamage', 'waterBarrierPower', 'negativeStatusDurationReceived'].includes(key) || key.startsWith('resistance-')) return `${sign}${Math.round(value * 100)}%`
   if (key === 'healthRegen' || key === 'manaRegen') return `${sign}${value.toFixed(1)}/s`
   return `${sign}${Math.round(value * 100) / 100}`
 }

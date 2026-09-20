@@ -139,8 +139,6 @@ export interface EquipmentStats {
   spellPowerPct?: number
   maxHealthPct?: number
   maxManaPct?: number
-  /** @deprecated Player basic attacks are no longer part of Spell combat. */
-  basicDamage?: number
   spellPower?: number
   maxHealth?: number
   healthRegen?: number
@@ -150,9 +148,6 @@ export interface EquipmentStats {
   defense?: number
   critChance?: number
   critDamage?: number
-  basicAttackSpeedPct?: number
-  /** @deprecated Player Block Chance was removed in Arcane Core V6. */
-  blockChance?: number
   cooldownRecoveryPct?: number
   healingDonePct?: number
   barrierPowerPct?: number
@@ -167,6 +162,7 @@ export type ArcaneCoreBranchId = 'power' | 'vitality' | 'focus' | 'control'
 export type ArcaneCoreModifierKey = Exclude<keyof EquipmentStats, 'resistances'>
 export type ArcaneCoreRingIndex = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
 export type ArcaneCoreNodeType = 'minor' | 'perk' | 'major'
+export type ArcaneCoreV6ImplementationCategory = 'STATIC_STAT' | 'STATIC_MODIFIER' | 'CAST_MODIFIER' | 'CAST_COMMIT' | 'COMBAT_EVENT' | 'STATUS_EVENT' | 'BARRIER_EVENT' | 'HEAL_EVENT' | 'KILL_EVENT' | 'SURVIVAL' | 'RESOURCE_CONVERSION' | 'TIMELINE' | 'LOADOUT' | 'MANUAL_QUEUE' | 'ENCOUNTER_LIFECYCLE'
 export type ArcaneCoreSpecialEffect =
   | { type: 'nth-damaging-spell-bonus'; every: number; damageMultiplier: number }
   | { type: 'lethal-survival'; leaveAtHealth: number; oncePerDungeonRun: boolean }
@@ -175,7 +171,7 @@ export type ArcaneCoreSpecialEffect =
   | { type: 'reserved-focus-spell-power'; spellPowerPerReservedFocus: number }
   | { type: 'free-focus-mana-regen'; manaRegenPerFreeFocus: number }
   | { type: 'nth-spell-cooldown-pulse'; every: number; cooldownReductionMs: number }
-  | { type: 'v6-generic'; key: string; value: number; scope?: string }
+  | { type: 'v6-mechanic'; mechanicId: string; displayName: string; rank: number; category: ArcaneCoreV6ImplementationCategory }
 export interface ArcaneCoreResolvedEffects {
   stats?: EquipmentStats
   modifiers?: import('./systems/combat/combatTypes').CombatModifier[]
@@ -389,17 +385,21 @@ export interface CombatState {
   queuedPlayerSpellId: CanonicalSpellId | null
   /** Frozen combat deck for the current enemy encounter. */
   activeSpellLoadout: ActiveCombatSpellLoadout | null
+  /** Spawn downtime countdown only. Never use as a gameplay clock. */
   encounterTimerMs: number
   spellCooldowns: Record<SpellId, number>
   /** Runtime Auto-Cast starvation latch; persisted harmlessly with combat state. */
   autoCastManaStarvedSpells: SpellId[]
   /** Deterministic transient counters for Arcane Core combat specials. */
   arcaneCoreRuntime: {
+    /** Monotonic simulated milliseconds for V6 timestamps and windows. */
+    elapsedMs: number
     damagingSpellCount: number
     spellCastCount: number
     cooldownPulseSpellCount: number
     survivalInstinctUsed: boolean
     /** Runtime metadata used by V6 AUTO/MANUAL and sequence primitives. */
+    autoCastCount?: number
     lastCastOrigin?: 'auto' | 'manual-direct' | 'manual-queued'
     lastSpellId?: CanonicalSpellId | null
     lastLoadoutSlotIndex?: number | null
@@ -420,6 +420,24 @@ export interface CombatState {
     lastWordUsed?: boolean
     sovereigntyCharges?: number
     nextNonCritDamageMultiplier?: number
+    criticalFeedbackLastAtMs?: number
+    ruinStacks?: number
+    chainReactionReady?: boolean
+    refuseDeathUsed?: boolean
+    lastSurvivalToken?: 'refuse-death' | 'immortal-guard'
+    barrierMemoryMultiplier?: number
+    barrierMemoryUntilMs?: number
+    immortalGuardUsed?: boolean
+    immortalGuardUntilMs?: number
+    overflowCharges?: number
+    singularityUsed?: boolean
+    perfectTimingUntilMs?: number
+    temporalFractureCount?: number
+    stolenTimeStacks?: number
+    totalEnemyDelayMs?: number
+    timelineDelayCreditMs?: number
+    absoluteStasisUsed?: boolean
+    absoluteStasisUntilMs?: number
     victoryMomentumReady?: boolean
     apotheosisUntilMs?: number
     overchannelUntilMs?: number
@@ -581,7 +599,8 @@ export interface DebugOverrides {
   enemyImmortal: boolean
   infiniteMana: boolean
   ignoreSpellCooldowns: boolean
-  disablePlayerBasicAttack: boolean
+  /** @deprecated Legacy in-memory compatibility only; player combat is Spell-only. */
+  disablePlayerBasicAttack?: boolean
   disableAutoCast: boolean
   freezePlayerActions: boolean
   freezeEnemyActions: boolean

@@ -4,12 +4,14 @@ export interface ArcaneCoreV6CatalogEntry {
   branch: ArcaneCoreBranchId
   ring: ArcaneCoreRingIndex
   slot: 'S1' | 'S2' | 'S3' | 'S4' | 'S5' | 'S6' | 'S7' | 'S8' | 'M'
+  /** Stable runtime identity. Display names are presentation only. */
+  mechanicId: string
   name: string
   type: string
   description: string
 }
 
-export const ARCANE_CORE_V6_CATALOG: Record<ArcaneCoreBranchId, Record<ArcaneCoreRingIndex, ArcaneCoreV6CatalogEntry[]>> = {
+const ARCANE_CORE_V6_CATALOG_SOURCE = {
   "power": {
     "1": [
       {
@@ -2386,7 +2388,15 @@ export const ARCANE_CORE_V6_CATALOG: Record<ArcaneCoreBranchId, Record<ArcaneCor
       }
     ]
   }
-} as unknown as Record<ArcaneCoreBranchId, Record<ArcaneCoreRingIndex, ArcaneCoreV6CatalogEntry[]>>
+} as unknown as Record<ArcaneCoreBranchId, Record<ArcaneCoreRingIndex, Omit<ArcaneCoreV6CatalogEntry, 'mechanicId'>[]>>
+
+export const getArcaneCoreV6MechanicId = (entry: Pick<ArcaneCoreV6CatalogEntry, 'branch' | 'ring' | 'slot'>) => `${entry.branch}:r${entry.ring}:${entry.slot}`
+
+export const ARCANE_CORE_V6_CATALOG: Record<ArcaneCoreBranchId, Record<ArcaneCoreRingIndex, ArcaneCoreV6CatalogEntry[]>> = Object.fromEntries(
+  Object.entries(ARCANE_CORE_V6_CATALOG_SOURCE).map(([branch, rings]) => [branch, Object.fromEntries(
+    Object.entries(rings).map(([ring, entries]) => [ring, entries.map((entry) => ({ ...entry, mechanicId: getArcaneCoreV6MechanicId(entry) }))]),
+  )]),
+) as Record<ArcaneCoreBranchId, Record<ArcaneCoreRingIndex, ArcaneCoreV6CatalogEntry[]>>
 
 export const getArcaneCoreV6CatalogEntry = (branchId: ArcaneCoreBranchId, ring: ArcaneCoreRingIndex, slot: number): ArcaneCoreV6CatalogEntry | undefined => {
   const entries = ARCANE_CORE_V6_CATALOG[branchId][ring]

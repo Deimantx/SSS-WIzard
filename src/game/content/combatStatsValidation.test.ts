@@ -27,7 +27,6 @@ describe('authored combat stat validation', () => {
       `${itemId}: invalid equipment stat defense`,
       `${itemId}: invalid equipment stat critChance`,
       `${itemId}: invalid equipment stat critDamage`,
-      `${itemId}: invalid equipment stat blockChance`,
       `${itemId}: invalid equipment stat manaCostReductionPct`,
       `${itemId}: invalid equipment stat focusEfficiencyPct`,
       `${itemId}: invalid fire resistance`,

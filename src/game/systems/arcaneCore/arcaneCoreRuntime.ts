@@ -1,7 +1,7 @@
 import type { ArcaneCoreState, GameState } from '../../types'
 import { getArcaneCoreSpecialEffects } from './arcaneCoreProgression'
 import { selectFreeFocus, selectUsedFocus } from '../focus/focusReservations'
-import { commitArcaneCoreV6SpellCast, type ArcaneCoreSpellCastContext } from './arcaneCoreV6Runtime'
+import { commitArcaneCoreV6SpellCast, tryConsumeArcaneCoreV6Survival, type ArcaneCoreSpellCastContext } from './arcaneCoreV6Runtime'
 
 const special = (state: Pick<ArcaneCoreState, 'nodes'>, type: import('../../types').ArcaneCoreSpecialEffect['type']) => getArcaneCoreSpecialEffects(state).filter((effect) => effect.type === type)
 
@@ -44,6 +44,7 @@ export const getArcaneCoreCooldownPulseReduction = (state: Pick<GameState, 'arca
 }
 
 export const tryConsumeArcaneCoreSurvival = (state: GameState) => {
+  if (tryConsumeArcaneCoreV6Survival(state)) return true
   const effect = special(state.arcaneCore, 'lethal-survival')[0]
   if (!effect || effect.type !== 'lethal-survival' || !effect.oncePerDungeonRun || state.combat.arcaneCoreRuntime.survivalInstinctUsed) return false
   state.combat.arcaneCoreRuntime.survivalInstinctUsed = true
@@ -51,12 +52,20 @@ export const tryConsumeArcaneCoreSurvival = (state: GameState) => {
 }
 
 export const resetArcaneCoreCombatRuntime = (state: GameState) => {
-  state.combat.arcaneCoreRuntime = { damagingSpellCount: 0, spellCastCount: 0, cooldownPulseSpellCount: 0, survivalInstinctUsed: false, lastCastOrigin: 'auto', lastSpellId: null, lastLoadoutSlotIndex: null, differentSpellStreak: 0, alternatingCastStreak: 0, enemyDamagingSpellCount: 0, nextDamageMultiplier: 1, nextEffectivenessMultiplier: 1, nextActionSpeedMultiplier: 1, nextManaRefundPercent: 0, nextCritChanceBonus: 0, nextCritDamageBonus: 0, nextGuaranteedCrit: false, failedCritStreak: 0, costBandHistory: [], castLoadoutSlots: [], echoCharges: 0, manualCharges: 0, manualCastCount: 0, differentLoadoutSlotStreak: 0, consecutiveAutoCasts: 0, consecutiveManualCasts: 0, sovereigntyCharges: 0, lastWordUsed: false, victoryMomentumReady: false }
+  state.combat.arcaneCoreRuntime = { elapsedMs: 0, autoCastCount: 0, damagingSpellCount: 0, spellCastCount: 0, cooldownPulseSpellCount: 0, survivalInstinctUsed: false, lastCastOrigin: 'auto', lastSpellId: null, lastLoadoutSlotIndex: null, differentSpellStreak: 0, alternatingCastStreak: 0, enemyDamagingSpellCount: 0, nextDamageMultiplier: 1, nextEffectivenessMultiplier: 1, nextActionSpeedMultiplier: 1, nextManaRefundPercent: 0, nextCritChanceBonus: 0, nextCritDamageBonus: 0, nextGuaranteedCrit: false, failedCritStreak: 0, costBandHistory: [], castLoadoutSlots: [], echoCharges: 0, manualCharges: 0, manualCastCount: 0, differentLoadoutSlotStreak: 0, consecutiveAutoCasts: 0, consecutiveManualCasts: 0, sovereigntyCharges: 0, lastWordUsed: false, victoryMomentumReady: false, ruinStacks: 0, chainReactionReady: false, refuseDeathUsed: false, lastSurvivalToken: undefined, immortalGuardUsed: false, overflowCharges: 0, singularityUsed: false, absoluteStasisUsed: false, stolenTimeStacks: 0 }
+}
+
+/** Advances the monotonic V6 clock exactly once for each simulated combat slice. */
+export const advanceArcaneCoreV6RuntimeTime = (state: GameState, deltaMs: number) => {
+  const delta = Number.isFinite(deltaMs) ? Math.max(0, deltaMs) : 0
+  state.combat.arcaneCoreRuntime.elapsedMs = Math.max(0, state.combat.arcaneCoreRuntime.elapsedMs + delta)
 }
 
 /** Encounter-scoped V6 counters reset between enemies without touching the saved profile. */
 export const resetArcaneCoreEncounterRuntime = (state: GameState) => {
   const runtime = state.combat.arcaneCoreRuntime
+  runtime.elapsedMs = 0
+  runtime.autoCastCount = 0
   runtime.damagingSpellCount = 0
   runtime.spellCastCount = 0
   runtime.cooldownPulseSpellCount = 0
@@ -81,6 +90,23 @@ export const resetArcaneCoreEncounterRuntime = (state: GameState) => {
   runtime.lastWordUsed = false
   runtime.sovereigntyCharges = 0
   runtime.nextNonCritDamageMultiplier = undefined
+  runtime.criticalFeedbackLastAtMs = undefined
+  runtime.nextCritChanceBonus = 0
+  runtime.ruinStacks = 0
+  runtime.chainReactionReady = false
+  runtime.refuseDeathUsed = false
+  runtime.lastSurvivalToken = undefined
+  runtime.barrierMemoryMultiplier = undefined
+  runtime.barrierMemoryUntilMs = undefined
+  runtime.immortalGuardUsed = false
+  runtime.immortalGuardUntilMs = undefined
+  runtime.overflowCharges = 0
+  runtime.singularityUsed = false
+  runtime.perfectTimingUntilMs = undefined
+  runtime.temporalFractureCount = 0
+  runtime.stolenTimeStacks = 0
+  runtime.absoluteStasisUsed = false
+  runtime.absoluteStasisUntilMs = undefined
   runtime.victoryMomentumReady = false
   runtime.apotheosisUntilMs = undefined
   runtime.overchannelUntilMs = undefined

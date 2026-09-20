@@ -6,11 +6,11 @@ const cooldownPulse = (id: string, values: readonly number[], cooldownMs = 500) 
 
 const ring1 = createRing('power', 1, [
   minor('power-r1-arcane-force', 'Arcane Force', '+2 Spell Power per rank.', linearStat('spellPower', 2)),
-  minor('power-r1-forceful-strikes', 'Forceful Strikes', '+2 Basic Damage per rank.', linearStat('basicDamage', 2)),
+  minor('power-r1-forceful-strikes', 'Forceful Strikes', 'Legacy compatibility slot; V6 catalog owns this mechanic.', linearStat('spellPowerPct', 0)),
   minor('power-r1-critical-insight', 'Critical Insight', '+0.5% Critical Chance per rank.', linearStat('critChance', 0.005)),
   minor('power-r1-critical-force', 'Critical Force', '+3% Critical Damage per rank.', linearStat('critDamage', 0.03)),
   minor('power-r1-spell-impact', 'Spell Impact', '+1% Spell Damage per rank.', rankedModifier('spell-damage-percent', 0.01)),
-  minor('power-r1-battle-rhythm', 'Battle Rhythm', '+1.5% Basic Attack Speed per rank.', linearStat('basicAttackSpeedPct', 0.015)),
+  minor('power-r1-battle-rhythm', 'Battle Rhythm', 'Legacy compatibility slot; V6 catalog owns this mechanic.', linearStat('cooldownRecoveryPct', 0)),
   minor('power-r1-lingering-power', 'Lingering Power', '+1.5% Damage over Time per rank.', linearStat('damageOverTimePct', 0.015)),
   perk('power-r1-arcane-pressure', 'Arcane Pressure', 'Above 80% Health: +1% Damage Dealt per rank.', rankedModifier('damage-dealt-percent', 0.01, aboveHp(80))),
   major('power-r1-overwhelming-force', 'Overwhelming Force', '+5% Damage Dealt.', fixedEffects({ modifiers: [modifier('damage-dealt-percent', 0.05)] })),
@@ -56,7 +56,7 @@ const ring4 = createRing('power', 4, [
 
 const ring5 = createRing('power', 5, [
   minor('power-r5-ruinous-force', 'Ruinous Force', '+4 Spell Power per rank.', linearStat('spellPower', 4)),
-  minor('power-r5-brutal-strikes', 'Brutal Strikes', '+4 Basic Damage per rank.', linearStat('basicDamage', 4)),
+  minor('power-r5-brutal-strikes', 'Brutal Strikes', 'Legacy compatibility slot; V6 catalog owns this mechanic.', linearStat('spellPowerPct', 0)),
   minor('power-r5-keen-destruction', 'Keen Destruction', '+0.75% Critical Chance per rank.', linearStat('critChance', 0.0075)),
   minor('power-r5-violent-criticals', 'Violent Criticals', '+5% Critical Damage per rank.', linearStat('critDamage', 0.05)),
   minor('power-r5-ruinous-casting', 'Ruinous Casting', '+2% Spell Damage per rank.', rankedModifier('spell-damage-percent', 0.02)),

@@ -6,7 +6,7 @@ const controlledEnemy = { type: 'target-has-status-tag', tag: 'control' } as con
 const ring1 = createRing('control', 1, [
   minor('control-r1-cooldown-control', 'Cooldown Control', '+1% Cooldown Recovery per rank.', linearStat('cooldownRecoveryPct', 0.01)),
   minor('control-r1-status-mastery', 'Status Mastery', '+3% Status Duration per rank.', linearStat('statusDurationPct', 0.03)),
-  minor('control-r1-combat-speed', 'Combat Speed', '+1.5% Basic Attack Speed per rank.', linearStat('basicAttackSpeedPct', 0.015)),
+  minor('control-r1-combat-speed', 'Combat Speed', 'Legacy compatibility slot; V6 catalog owns this mechanic.', linearStat('cooldownRecoveryPct', 0)),
   perk('control-r1-status-pressure', 'Status Pressure', 'Against debuffed enemies: +1% Damage per rank.', rankedModifier('damage-dealt-percent', 0.01, debuffed)),
   perk('control-r1-suppression', 'Suppression', 'Debuffed enemies deal -0.5% Damage per rank.', rankedModifier('damage-dealt-percent', -0.005, selfDebuffed, 'enemy')),
   perk('control-r1-quick-recovery', 'Quick Recovery', 'A kill reduces Spell cooldowns by 50–250 ms.', (rank) => ({ rules: [rule('control-quick-recovery', 'on-kill', [{ type: 'modify-cooldown', target: 'self', amountMs: -rankValues(rank, [50, 100, 150, 200, 250]) }])] })),

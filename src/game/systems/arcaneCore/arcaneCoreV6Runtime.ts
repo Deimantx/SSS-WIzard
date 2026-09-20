@@ -34,20 +34,56 @@ export interface ArcaneCoreV6CastModifiers {
 }
 
 const rankValue = (rank: number, values: readonly number[]) => values[Math.max(1, Math.min(values.length, Math.floor(rank))) - 1] ?? values[values.length - 1] ?? 0
-const entries = (state: Pick<GameState, 'arcaneCore'>) => getArcaneCoreSpecialEffects(state.arcaneCore).filter((effect): effect is Extract<typeof effect, { type: 'v6-generic' }> => effect.type === 'v6-generic')
+type V6Entry = Extract<ReturnType<typeof getArcaneCoreSpecialEffects>[number], { type: 'v6-mechanic' }>
+const entries = (state: Pick<GameState, 'arcaneCore'>): V6Entry[] => getArcaneCoreSpecialEffects(state.arcaneCore).filter((effect): effect is V6Entry => effect.type === 'v6-mechanic')
 
 type V6EffectExecutor = (state: GameState, effects: CombatEffect[], source: CombatSource, depth?: number, uiEvents?: CombatEventSink, resolution?: CombatResolutionContext) => void
 const controlStatusIds = new Set(['chilled', 'frozen', 'tremored', 'stunned', 'entangled', 'silenced'])
 const rankPercent = (rank: number, values: readonly number[]) => rankValue(rank, values)
-const hasEntry = (state: GameState, key: string, scope?: string) => entries(state).some((entry) => entry.key === key && (!scope || entry.scope === scope))
-const nodeRank = (state: GameState, key: string, scope?: string) => entries(state).filter((entry) => entry.key === key && (!scope || entry.scope === scope)).reduce((rank, entry) => Math.max(rank, entry.value), 0)
+const matchesScope = (entry: V6Entry, scope?: string) => !scope || entry.mechanicId === scope || entry.mechanicId.replace(/:r(\d+):/, ':$1:') === scope
+const hasEntry = (state: GameState, displayName: string, scope?: string) => entries(state).some((entry) => entry.displayName === displayName && matchesScope(entry, scope))
+const nodeRank = (state: GameState, displayName: string, scope?: string) => entries(state).filter((entry) => entry.displayName === displayName && matchesScope(entry, scope)).reduce((rank, entry) => Math.max(rank, entry.rank), 0)
+const V6_MECHANICS = {
+  criticalFeedback: 'power:r2:S3',
+  secondChance: 'power:r2:S7',
+  burningMomentum: 'power:r5:S3',
+  chainReaction: 'power:r5:M',
+  overhealWard: 'vitality:r1:S7',
+  refuseDeath: 'vitality:r1:M',
+  barrierMemory: 'vitality:r3:S5',
+  immortalGuard: 'vitality:r4:M',
+  echoHarmony: 'focus:r2:S3',
+  eventHorizon: 'focus:r8:S4',
+  arcaneSingularity: 'focus:r8:M',
+  perfectTiming: 'control:r2:M',
+  temporalFracture: 'control:r5:M',
+  timelineTheft: 'control:r8:S5',
+  absoluteStasis: 'control:r8:M',
+} as const
+const hasMechanic = (state: GameState, mechanicId: string) => entries(state).some((entry) => entry.mechanicId === mechanicId)
+const mechanicRank = (state: GameState, mechanicId: string) => entries(state).find((entry) => entry.mechanicId === mechanicId)?.rank ?? 0
 const isControlEvent = (context: CombatConditionContext) => Boolean(context.eventStatusTags?.includes('control') || (context.statusId && controlStatusIds.has(context.statusId)))
 const isNegativeStatusEvent = (context: CombatConditionContext) => Boolean(context.statusId && STATUS_DEFINITIONS[context.statusId]?.classification === 'debuff')
 const delayEnemyAction = (state: GameState, amountMs: number) => {
   if (state.combat.enemyActionDurationMs <= 0 || state.combat.enemyActionTimerMs <= 0) return 0
   const before = state.combat.enemyActionTimerMs
   state.combat.enemyActionTimerMs = Math.min(state.combat.enemyActionDurationMs, before + Math.max(0, amountMs))
-  return state.combat.enemyActionTimerMs - before
+  const applied = state.combat.enemyActionTimerMs - before
+  if (applied <= 0) return 0
+  const runtime = state.combat.arcaneCoreRuntime
+  const previousDelay = runtime.totalEnemyDelayMs ?? 0
+  runtime.totalEnemyDelayMs = previousDelay + applied
+  const previousCredit = runtime.timelineDelayCreditMs ?? 0
+  const earnedStacks = Math.max(0, Math.floor(runtime.totalEnemyDelayMs / 1000) - Math.floor(previousCredit / 1000))
+  if (earnedStacks > 0) {
+    runtime.timelineDelayCreditMs = runtime.totalEnemyDelayMs
+    if (hasMechanic(state, V6_MECHANICS.timelineTheft)) runtime.stolenTimeStacks = Math.min(5, (runtime.stolenTimeStacks ?? 0) + earnedStacks)
+  }
+  if (hasMechanic(state, V6_MECHANICS.absoluteStasis) && !runtime.absoluteStasisUsed && runtime.totalEnemyDelayMs >= 3000) {
+    runtime.absoluteStasisUsed = true
+    runtime.absoluteStasisUntilMs = runtime.elapsedMs + 3000
+  }
+  return applied
 }
 const reduceLongestCooldown = (state: GameState, amountMs: number) => {
   const candidate = Object.entries(state.combat.spellCooldowns).sort((left, right) => right[1] - left[1])[0]
@@ -88,6 +124,18 @@ export const processArcaneCoreV6CombatEvent = (state: GameState, actor: 'player'
       if (absoluteRanks) delayEnemyAction(state, rankPercent(absoluteRanks, [100, 200, 300, 400, 500]))
       const controlFlowRanks = nodeRank(state, 'Controlled Flow')
       if (controlFlowRanks) pushMana(rankPercent(controlFlowRanks, [1, 2, 3, 4, 5]))
+      if (hasMechanic(state, V6_MECHANICS.perfectTiming)
+        && state.combat.enemyActionDurationMs > 0
+        && state.combat.enemyActionTimerMs / state.combat.enemyActionDurationMs <= 0.25
+        && (runtime.perfectTimingUntilMs ?? 0) <= runtime.elapsedMs) {
+        delayEnemyAction(state, 750)
+        runtime.perfectTimingUntilMs = runtime.elapsedMs + 5_000
+      }
+      if (hasMechanic(state, V6_MECHANICS.temporalFracture) && (runtime.controlStatusApplications ?? 0) % 4 === 3) {
+        delayEnemyAction(state, 750)
+        reduceAllCooldowns(state, 500)
+        runtime.temporalFractureCount = (runtime.temporalFractureCount ?? 0) + 1
+      }
       runtime.controlStatusApplications = (runtime.controlStatusApplications ?? 0) + 1
     }
   }
@@ -124,9 +172,20 @@ export const processArcaneCoreV6CombatEvent = (state: GameState, actor: 'player'
     if (momentumRanks) runtime.nextSelfTargetActionSpeedMultiplier = 1 + rankPercent(momentumRanks, [0.02, 0.04, 0.06, 0.08, 0.10])
   }
 
+  if (event === 'on-heal' && actor === 'player' && hasMechanic(state, V6_MECHANICS.overhealWard) && (context.overheal ?? 0) > 0) {
+    const conversion = rankPercent(mechanicRank(state, V6_MECHANICS.overhealWard), [0.10, 0.20, 0.30, 0.40, 0.50])
+    const barrierPercent = Math.min(0.05, conversion * (context.overheal ?? 0) / Math.max(1, state.player.maxHealth))
+    if (barrierPercent > 0) pushBarrier(barrierPercent)
+  }
+
+  if (event === 'on-damage-dealt' && actor === 'player' && (context.healthDamage ?? 0) > 0) {
+    if (hasMechanic(state, V6_MECHANICS.burningMomentum) && context.sourceTags?.includes('dot')) runtime.ruinStacks = Math.min(5, (runtime.ruinStacks ?? 0) + 1)
+    if (hasMechanic(state, V6_MECHANICS.chainReaction) && context.sourceTags?.includes('dot') && context.eventTarget === 'enemy' && (context.currentHp ?? 1) <= 0) runtime.chainReactionReady = true
+  }
+
   if (event === 'on-damage-taken' && actor === 'player') {
     const painRanks = nodeRank(state, 'Pain to Mana')
-    if (painRanks && (runtime.lastDamageTakenAtMs ?? -Infinity) + 1000 <= state.combat.encounterTimerMs) { pushMana((context.healthDamage ?? 0) * rankPercent(painRanks, [0.01, 0.02, 0.03, 0.04, 0.05])); runtime.lastDamageTakenAtMs = state.combat.encounterTimerMs }
+    if (painRanks && (runtime.lastDamageTakenAtMs ?? -Infinity) + 1000 <= runtime.elapsedMs) { pushMana((context.healthDamage ?? 0) * rankPercent(painRanks, [0.01, 0.02, 0.03, 0.04, 0.05])); runtime.lastDamageTakenAtMs = runtime.elapsedMs }
     const reactiveRanks = nodeRank(state, 'Reactive Ward')
     if (reactiveRanks && (context.previousBarrier ?? 0) <= 0) pushBarrier(rankPercent(reactiveRanks, [0.005, 0.01, 0.015, 0.02, 0.025]))
     const survivalRanks = nodeRank(state, 'Survival Instinct')
@@ -197,6 +256,7 @@ export const getArcaneCoreV6CastModifiers = (state: GameState, context: ArcaneCo
   const hasNegativeStatus = Boolean(spell?.effects.some((effect) => effect.type === 'apply-status' && effect.target === 'opponent'))
   const hasControlStatus = Boolean(spell?.effects.some((effect) => effect.type === 'apply-status' && effect.target === 'opponent' && ['chilled', 'frozen', 'tremored', 'stunned', 'entangled', 'silenced'].includes(effect.statusId)))
   const hasDamageOverTime = Boolean(spell?.effects.some((effect) => effect.type === 'apply-status' && effect.periodicEffects?.some((periodic) => periodic.type === 'deal-damage')))
+  const hasDirectDamage = Boolean(spell?.effects.some((effect) => effect.type === 'deal-damage' && (effect.tags ?? []).includes('direct')))
   const enemyStatuses = state.combat.enemyStatuses
   const negativeStatusCount = enemyStatuses.filter((status) => status.statusId !== 'haste' && status.statusId !== 'quickening' && status.statusId !== 'gust' && status.statusId !== 'tailwind' && status.statusId !== 'regeneration' && status.statusId !== 'fortified' && status.statusId !== 'purified').length
   const hasControl = enemyStatuses.some((status) => ['chilled', 'frozen', 'tremored', 'stunned', 'entangled', 'silenced'].includes(status.statusId))
@@ -212,10 +272,48 @@ export const getArcaneCoreV6CastModifiers = (state: GameState, context: ArcaneCo
   const alternatingPreview = preview && runtime.lastCastOrigin && runtime.lastCastOrigin !== context.origin ? (runtime.alternatingCastStreak ?? 0) + 1 : runtime.alternatingCastStreak ?? 0
   let free = false
 
+  if (hasMechanic(state, V6_MECHANICS.absoluteStasis) && (runtime.absoluteStasisUntilMs ?? 0) > runtime.elapsedMs) actionSpeedMultiplier *= 1.15
+
+  const autoCastNumber = (runtime.autoCastCount ?? 0) + (preview && context.origin === 'auto' ? 1 : 0)
+  if (context.origin === 'auto' && autoSlots > 0 && hasMechanic(state, V6_MECHANICS.echoHarmony) && autoCastNumber > 0 && autoCastNumber % 3 === 0) {
+    manaRestoreFlat += rankValue(mechanicRank(state, V6_MECHANICS.echoHarmony), [1, 2, 3, 4, 5])
+  }
+  if (context.origin !== 'auto' && hasMechanic(state, V6_MECHANICS.timelineTheft) && (runtime.stolenTimeStacks ?? 0) > 0) {
+    actionSpeedMultiplier *= 1 + (runtime.stolenTimeStacks ?? 0) * rankValue(mechanicRank(state, V6_MECHANICS.timelineTheft), [0.02, 0.04, 0.06, 0.08, 0.10])
+    if (!preview) runtime.stolenTimeStacks = 0
+  }
+  if (hasMechanic(state, V6_MECHANICS.eventHorizon) && currentManaPercent < 25 && (runtime.overflowCharges ?? 0) > 0) {
+    manaRestoreFlat += context.maxMana * 0.05
+    if (!preview) runtime.overflowCharges = Math.max(0, (runtime.overflowCharges ?? 0) - 1)
+  }
+  const singularityTrigger = hasMechanic(state, V6_MECHANICS.arcaneSingularity)
+    && !runtime.singularityUsed
+    && currentManaPercent < 10
+  if (singularityTrigger) {
+    manaCostMultiplier *= 0.5
+    manaRestoreFlat += Math.max(0, context.maxMana * 0.5 - context.playerMana)
+    if (!preview) {
+      runtime.singularityUsed = true
+      runtime.manaRegenDisabledUntilMs = runtime.elapsedMs + 5_000
+    }
+  }
+  if (hasMechanic(state, V6_MECHANICS.immortalGuard) && hasHealing && (runtime.immortalGuardUntilMs ?? 0) > runtime.elapsedMs) {
+    actionSpeedMultiplier *= 100
+    if (!preview) runtime.immortalGuardUntilMs = undefined
+  }
+  if (context.damaging && hasDirectDamage && (runtime.ruinStacks ?? 0) > 0 && hasMechanic(state, V6_MECHANICS.burningMomentum)) {
+    damageMultiplier += (runtime.ruinStacks ?? 0) * rankValue(mechanicRank(state, V6_MECHANICS.burningMomentum), [0.01, 0.02, 0.03, 0.04, 0.05])
+    if (!preview) runtime.ruinStacks = 0
+  }
+  if (context.damaging && hasDirectDamage && runtime.chainReactionReady && hasMechanic(state, V6_MECHANICS.chainReaction)) {
+    damageMultiplier += 0.40
+    if (!preview) runtime.chainReactionReady = false
+  }
+
   for (const entry of entries(state)) {
-    const rank = entry.value
-    const name = entry.key
-    const scope = entry.scope ?? ''
+    const rank = entry.rank
+    const name = entry.displayName
+    const scope = entry.mechanicId.replace(/:r(\d+):/, ':$1:')
     if (!context.damaging && /damaging Spell|Damage|Crit|DoT|Ruin|Execution|Volley|Assault|Power|Precision|Echo|Momentum|Overload|Overcharge|First Blood|Last Word/i.test(name)) continue
     if (name === 'Arcane Spark' && context.damaging && nextDamagingNumber % 4 === 0) damageMultiplier += rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
     if (name === 'Arcane Momentum' && context.damaging && nextDamagingNumber % 4 === 0) damageMultiplier += rankValue(rank, [0.03, 0.06, 0.09, 0.12, 0.15])
@@ -236,7 +334,7 @@ export const getArcaneCoreV6CastModifiers = (state: GameState, context: ArcaneCo
     if (name === 'Time Compression' && (runtime.alternatingCastStreak ?? 0) >= (preview ? 1 : 2)) actionSpeedMultiplier *= 1.2
     if (name === 'Zero Point' && castNumber % 8 === 0) manaCostMultiplier *= 1 - rankValue(rank, [0.2, 0.4, 0.6, 0.8, 1])
     if (name === 'Cataclysm' && costBand.overcharged && damagingNumber === 0) { damageMultiplier += 0.4; manaCostMultiplier *= 1.2 }
-    if (name === 'Overchannel' && scope === 'focus:6:M' && runtime.overchannelUntilMs && runtime.overchannelUntilMs > state.combat.encounterTimerMs) { actionSpeedMultiplier *= 1.15; effectivenessMultiplier *= 1.1 }
+    if (name === 'Overchannel' && scope === 'focus:6:M' && runtime.overchannelUntilMs && runtime.overchannelUntilMs > runtime.elapsedMs) { actionSpeedMultiplier *= 1.15; effectivenessMultiplier *= 1.1 }
     if (name === 'Overchannel' && scope === 'focus:6:S3' && currentManaPercent > 80 && costBand.high) effectivenessMultiplier *= 1 + rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
     if (name === 'Queued Precision' && context.origin === 'manual-queued') effectivenessMultiplier *= 1 + rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
     if (name === 'Prepared Cast' && context.origin !== 'auto' && damagingNumber === 0) actionSpeedMultiplier *= 1 + rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
@@ -249,7 +347,7 @@ export const getArcaneCoreV6CastModifiers = (state: GameState, context: ArcaneCo
     if (name === 'Marked Precision' && hasControl) critChanceBonus += rankValue(rank, [0.002, 0.004, 0.006, 0.008, 0.010])
     if (name === 'Perfect Precision' && context.damaging && (runtime.failedCritStreak ?? 0) >= 2) guaranteedCrit = true
     if (name === 'Spell Sequence' && context.damaging && differentSpellPreview >= 3) damageMultiplier += rankValue(rank, [0.03, 0.06, 0.09, 0.12, 0.15])
-    if (name === 'Rapid Escalation' && context.damaging && (runtime.lastSuccessfulCastAtMs ?? -Infinity) >= state.combat.encounterTimerMs - 3000) damageMultiplier += rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
+    if (name === 'Rapid Escalation' && context.damaging && (runtime.lastSuccessfulCastAtMs ?? -Infinity) >= runtime.elapsedMs - 3000) damageMultiplier += rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
     if (name === 'Heavy Follow-Up' && context.damaging && costBand.low && runtime.nextLowCostDamageMultiplier && runtime.nextLowCostDamageMultiplier > 1) damageMultiplier *= runtime.nextLowCostDamageMultiplier
     if ((name === 'Debuff Assault' || name === 'Corroded Defense' || name === 'Debuff Pressure') && negativeStatusCount >= 2) damageMultiplier += rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
     if ((name === 'Dominating Weakness' || name === 'Absolute Pressure') && negativeStatusCount >= 3) damageMultiplier += rankValue(rank, name === 'Absolute Pressure' ? [0.015, 0.03, 0.045, 0.06, 0.075] : [0.02, 0.04, 0.06, 0.08, 0.10])
@@ -265,7 +363,7 @@ export const getArcaneCoreV6CastModifiers = (state: GameState, context: ArcaneCo
     if (name === 'Sovereign Casting' && context.damaging && (runtime.sovereigntyCharges ?? 0) > 0) damageMultiplier += 0.15
     if (name === 'Absolute Momentum' && context.damaging && differentSpellPreview >= 3) actionSpeedMultiplier *= 1 + rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
     if (name === 'Limit Break' && costBand.extreme) manaRefundPercent = Math.max(manaRefundPercent, 0)
-    if (name === 'Arcane Apotheosis' && runtime.apotheosisUntilMs && runtime.apotheosisUntilMs > state.combat.encounterTimerMs) { damageMultiplier += 0.20; manaCostMultiplier *= 0.85; actionSpeedMultiplier *= 1.10 }
+    if (name === 'Arcane Apotheosis' && runtime.apotheosisUntilMs && runtime.apotheosisUntilMs > runtime.elapsedMs) { damageMultiplier += 0.20; manaCostMultiplier *= 0.85; actionSpeedMultiplier *= 1.10 }
 
     if (name === 'Protective Casting' && currentBarrier > 0 && !context.damaging) actionSpeedMultiplier *= 1 + rankValue(rank, [0.005, 0.01, 0.015, 0.02, 0.025])
     if (name === 'Defiant Casting' && currentHealthPercent < 35 && (hasHealing || hasBarrier)) actionSpeedMultiplier *= 1 + rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
@@ -273,7 +371,7 @@ export const getArcaneCoreV6CastModifiers = (state: GameState, context: ArcaneCo
     if (name === 'Bastion Cast' && currentBarrier > 0 && !context.damaging) manaCostMultiplier *= 1 - rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
     if (name === 'Last Breath' && runtime.nextHealingActionSpeedMultiplier && hasHealing) actionSpeedMultiplier *= runtime.nextHealingActionSpeedMultiplier
 
-    if (name === 'Full Reservoir' && currentManaPercent > 90 && runtime.lastSuccessfulCastAtMs !== undefined && state.combat.encounterTimerMs - runtime.lastSuccessfulCastAtMs >= 3000) manaCostMultiplier *= 1 - rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
+    if (name === 'Full Reservoir' && currentManaPercent > 90 && runtime.lastSuccessfulCastAtMs !== undefined && runtime.elapsedMs - runtime.lastSuccessfulCastAtMs >= 3000) manaCostMultiplier *= 1 - rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
     if (name === 'Deep Reservoir' && (runtime.spellCastCount + (preview ? 1 : 0)) === 1) free = true
     if (name === 'Manual Reservoir' && context.origin !== 'auto' && runtime.lastCastOrigin === 'auto') manaRestoreFlat += rankValue(rank, [1, 2, 3, 4, 5])
     if (name === 'Alternating Mind' && runtime.lastCastOrigin && runtime.lastCastOrigin !== context.origin) actionSpeedMultiplier *= 1 + rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
@@ -323,6 +421,7 @@ export const getArcaneCoreV6CastModifiers = (state: GameState, context: ArcaneCo
   critDamageBonus += runtime.nextCritDamageBonus ?? 0
   guaranteedCrit = guaranteedCrit || runtime.nextGuaranteedCrit === true
   if (!preview) {
+    if (context.origin === 'auto') runtime.autoCastCount = (runtime.autoCastCount ?? 0) + 1
     if (context.damaging) runtime.nextDamageMultiplier = 1
     runtime.nextEffectivenessMultiplier = 1
     runtime.nextActionSpeedMultiplier = 1
@@ -374,26 +473,54 @@ export const commitArcaneCoreV6SpellCast = (state: GameState, context: ArcaneCor
   const band = classifyArcaneCoreSpellCost(context)
   const bandName: 'low' | 'high' | 'overcharged' | 'extreme' = band.extreme ? 'extreme' : band.overcharged ? 'overcharged' : band.high ? 'high' : 'low'
   runtime.costBandHistory = [...(runtime.costBandHistory ?? []), bandName].slice(-3)
-  runtime.lastSuccessfulCastAtMs = state.combat.encounterTimerMs
+  runtime.lastSuccessfulCastAtMs = runtime.elapsedMs
   runtime.lastCastAtFullMana = context.playerMana >= context.maxMana
-  if (runtime.spellCastCount === 1 && entries(state).some((entry) => entry.key === 'Sovereign Casting')) runtime.sovereigntyCharges = 3
+  if (hasMechanic(state, V6_MECHANICS.eventHorizon) && context.playerMana >= context.maxMana) {
+    runtime.overflowCharges = Math.min(mechanicRank(state, V6_MECHANICS.eventHorizon), (runtime.overflowCharges ?? 0) + 1)
+  }
+  if (runtime.spellCastCount === 1 && entries(state).some((entry) => entry.displayName === 'Sovereign Casting')) runtime.sovereigntyCharges = 3
   runtime.lastCastOrigin = context.origin
   runtime.lastSpellId = context.spellId
   runtime.lastLoadoutSlotIndex = context.loadoutSlotIndex
   const result = getArcaneCoreV6CastModifiers(state, context)
-  if (entries(state).some((entry) => entry.key === 'Last Word') && context.damaging && context.enemyHealthPercent < 20) runtime.lastWordUsed = true
-  if (entries(state).some((entry) => entry.key === 'Arcane Apotheosis') && context.damaging && runtime.damagingSpellCount >= 8 && !runtime.apotheosisUntilMs) runtime.apotheosisUntilMs = state.combat.encounterTimerMs + 6000
-  if (entries(state).some((entry) => entry.key === 'Overchannel' && entry.scope === 'focus:6:M') && band.ratio >= 0.25) {
-    runtime.overchannelUntilMs = state.combat.encounterTimerMs + 5000
-    runtime.manaRegenDisabledUntilMs = state.combat.encounterTimerMs + 5000
+  if (entries(state).some((entry) => entry.displayName === 'Last Word') && context.damaging && context.enemyHealthPercent < 20) runtime.lastWordUsed = true
+  if (entries(state).some((entry) => entry.displayName === 'Arcane Apotheosis') && context.damaging && runtime.damagingSpellCount >= 8 && !runtime.apotheosisUntilMs) runtime.apotheosisUntilMs = runtime.elapsedMs + 6000
+  if (entries(state).some((entry) => entry.displayName === 'Overchannel' && matchesScope(entry, 'focus:6:M')) && band.ratio >= 0.25) {
+    runtime.overchannelUntilMs = runtime.elapsedMs + 5000
+    runtime.manaRegenDisabledUntilMs = runtime.elapsedMs + 5000
   }
   return result
+}
+
+/** Resolves the V6 lethal-survival tokens without coupling the generic combat
+ * resolver to catalog names. The caller owns the final HP assignment. */
+export const tryConsumeArcaneCoreV6Survival = (state: GameState) => {
+  const runtime = state.combat.arcaneCoreRuntime
+  if (hasMechanic(state, V6_MECHANICS.refuseDeath) && !runtime.refuseDeathUsed) {
+    runtime.refuseDeathUsed = true
+    runtime.lastSurvivalToken = 'refuse-death'
+    return 'refuse-death' as const
+  }
+  if (hasMechanic(state, V6_MECHANICS.immortalGuard) && !runtime.immortalGuardUsed) {
+    runtime.immortalGuardUsed = true
+    runtime.immortalGuardUntilMs = runtime.elapsedMs + 6_000
+    runtime.lastSurvivalToken = 'immortal-guard'
+    return 'immortal-guard' as const
+  }
+  return null
 }
 
 /** Commits direct-hit crit state after the combat resolver has rolled the hit. */
 export const recordArcaneCoreV6CriticalResult = (state: GameState, critical: boolean) => {
   const runtime = state.combat.arcaneCoreRuntime
   runtime.failedCritStreak = critical ? 0 : (runtime.failedCritStreak ?? 0) + 1
-  if (!critical && (runtime.sovereigntyCharges ?? 0) > 0 && entries(state).some((entry) => entry.key === 'Sovereign Casting')) runtime.sovereigntyCharges = Math.max(0, (runtime.sovereigntyCharges ?? 0) - 1)
-  if (critical && entries(state).some((entry) => entry.key === 'Sovereign Crit')) runtime.nextNonCritDamageMultiplier = 1
+  if (critical && hasMechanic(state, V6_MECHANICS.criticalFeedback) && (runtime.criticalFeedbackLastAtMs ?? -Infinity) + 750 <= runtime.elapsedMs) {
+    reduceAllCooldowns(state, rankValue(mechanicRank(state, V6_MECHANICS.criticalFeedback), [30, 60, 90, 120, 150]))
+    runtime.criticalFeedbackLastAtMs = runtime.elapsedMs
+  }
+  if (!critical && hasMechanic(state, V6_MECHANICS.secondChance)) {
+    runtime.nextCritChanceBonus = rankValue(mechanicRank(state, V6_MECHANICS.secondChance), [0.002, 0.004, 0.006, 0.008, 0.010])
+  }
+  if (!critical && (runtime.sovereigntyCharges ?? 0) > 0 && entries(state).some((entry) => entry.displayName === 'Sovereign Casting')) runtime.sovereigntyCharges = Math.max(0, (runtime.sovereigntyCharges ?? 0) - 1)
+  if (critical && entries(state).some((entry) => entry.displayName === 'Sovereign Crit')) runtime.nextNonCritDamageMultiplier = 1
 }

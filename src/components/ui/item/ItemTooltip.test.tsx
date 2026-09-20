@@ -44,14 +44,13 @@ describe('equipment Item Tooltip presentation', () => {
     const previous = useGameStore.getState().artifactProgress
     useGameStore.setState({ artifactProgress: { 'ember-staff': { level: 10, allocatedNodeIds: [], attunedNodeIds: [] } } })
     try {
-      render(<TooltipProvider><ItemTooltip itemId="ember-staff" owned={0} effectiveStats={{ basicDamage: 5, spellPower: 16 }} artifactLevel={1} artifactMaxLevel={10}><button>Ember Staff preview</button></ItemTooltip></TooltipProvider>)
+      render(<TooltipProvider><ItemTooltip itemId="ember-staff" owned={0} effectiveStats={{ spellPower: 16 }} artifactLevel={1} artifactMaxLevel={10}><button>Ember Staff preview</button></ItemTooltip></TooltipProvider>)
       fireEvent.pointerEnter(screen.getByRole('button', { name: 'Ember Staff preview' }))
       act(() => { vi.advanceTimersByTime(500) })
       const tooltip = screen.getByRole('tooltip')
       expect(tooltip.textContent).toContain('LEVEL 1 / 10')
-      expect(tooltip.textContent).toContain('Basic Attack Damage+5')
       expect(tooltip.textContent).toContain('Spell Power+16')
-      expect(tooltip.textContent).not.toContain('Basic Attack Damage+17')
+      expect(tooltip.textContent).not.toContain('Basic Attack')
       expect(tooltip.textContent).not.toContain('LEVEL 10 / 10')
     } finally {
       useGameStore.setState({ artifactProgress: previous })
@@ -68,7 +67,6 @@ describe('equipment Item Tooltip presentation', () => {
       act(() => { vi.advanceTimersByTime(500) })
       const tooltip = screen.getByRole('tooltip')
       expect(tooltip.textContent).toContain('LEVEL 10 / 10')
-      expect(tooltip.textContent).toContain('Basic Attack Damage+17')
       expect(tooltip.textContent).toContain('Spell Power+75')
     } finally {
       useGameStore.setState({ artifactProgress: previous })

@@ -183,6 +183,13 @@ const applyDamage = (state: GameState, components: Array<{ raw: number; damageTy
     survivedLethal = !immortal && previousHp > 0 && nextHealth <= 0 && tryConsumeArcaneCoreSurvival(state)
     state.player.health = immortal && previousHp > 0 ? Math.max(1, nextHealth) : survivedLethal ? 1 : nextHealth
     if (survivedLethal) {
+      if (state.combat.arcaneCoreRuntime.lastSurvivalToken === 'refuse-death') {
+        gainBarrierRuntime(state, state.player.maxHealth * 0.1, { actor: 'player', kind: 'arcane-core', sourceId: 'vitality:r1:M', tags: ['special', 'barrier'] }, 'player', ['special', 'barrier'], { mode: 'add', durationMs: null })
+      }
+      if (state.combat.arcaneCoreRuntime.immortalGuardUntilMs === state.combat.arcaneCoreRuntime.elapsedMs + 6_000) {
+        cleanseStatuses(state, 'player', 'all', undefined, { executeEffects: execute, source, depth, uiEvents, resolution })
+      }
+      state.combat.arcaneCoreRuntime.lastSurvivalToken = undefined
       appendLog(state, 'Survival Instinct prevents defeat.')
       uiEvents?.push({ ...eventFields(state, source, target), category: 'system', sourceId: 'arcane-core-survival-instinct', amount: 1, effectiveAmount: 1 })
     }
@@ -250,6 +257,8 @@ const applyHealing = (state: GameState, raw: number, source: CombatSource, targe
       changedActor: target,
       sourceTags: tags,
       amount: healed,
+      attemptedAmount,
+      overheal: Math.max(0, attemptedAmount - healed),
       previousHp: before,
       currentHp: before + healed,
       previousHpPercent: before / Math.max(1, max) * 100,

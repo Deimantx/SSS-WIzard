@@ -165,7 +165,6 @@ export interface GameActions {
   setDebugEnemyImmortal: (enabled: boolean) => void
   setDebugInfiniteMana: (enabled: boolean) => void
   setDebugIgnoreSpellCooldowns: (enabled: boolean) => void
-  setDebugDisablePlayerBasicAttack: (enabled: boolean) => void
   setDebugDisableAutoCast: (enabled: boolean) => void
   setDebugFreezePlayerActions: (enabled: boolean) => void
   setDebugFreezeEnemyActions: (enabled: boolean) => void
@@ -478,7 +477,6 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   setDebugEnemyImmortal: (enabled) => set((state) => { state.debug.enemyImmortal = enabled; return state }),
   setDebugInfiniteMana: (enabled) => set((state) => { state.debug.infiniteMana = enabled; return state }),
   setDebugIgnoreSpellCooldowns: (enabled) => set((state) => { state.debug.ignoreSpellCooldowns = enabled; return state }),
-  setDebugDisablePlayerBasicAttack: (enabled) => set((state) => { state.debug.disablePlayerBasicAttack = enabled; return state }),
   setDebugDisableAutoCast: (enabled) => set((state) => { state.debug.disableAutoCast = enabled; return state }),
   setDebugFreezePlayerActions: (enabled) => set((state) => { state.debug.freezePlayerActions = enabled; return state }),
   setDebugFreezeEnemyActions: (enabled) => set((state) => { state.debug.freezeEnemyActions = enabled; return state }),

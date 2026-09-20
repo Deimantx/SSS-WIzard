@@ -18,15 +18,11 @@ export interface EquipmentStatSnapshot {
   maxMana: number
   maxFocus: number
   manaRegen: number
-  basicDamage: number
   spellPower: number
-  basicAttackSpeedMultiplier: number
-  basicAttackIntervalMs: number
   critChance: number
   critDamageMultiplier: number
   defense: number
   damageReduction: number
-  blockChance: number
   damageOverTimeBonus: number
   statusDurationBonus: number
   cooldownRecovery: number
@@ -71,8 +67,8 @@ export interface EquipmentKeyChange {
   formatted: string
 }
 
-const KEY_CHANGE_PRIORITY = ['maxHealth', 'basicDamage', 'spellPower', 'maxMana', 'maxFocus', 'defense', 'critChance', 'critDamage', 'cooldownRecoveryPct', 'manaRegen', 'focusEfficiencyPct']
-const LOADOUT_IDENTITY_PRIORITY: readonly EquipmentBuildTag[] = ['fire', 'water', 'earth', 'air', 'dot', 'crit', 'barrier', 'defense', 'healing', 'sustain', 'status', 'basic-attack', 'mana', 'focus', 'hybrid', 'spell']
+const KEY_CHANGE_PRIORITY = ['maxHealth', 'spellPower', 'maxMana', 'maxFocus', 'defense', 'critChance', 'critDamage', 'cooldownRecoveryPct', 'manaRegen', 'focusEfficiencyPct']
+const LOADOUT_IDENTITY_PRIORITY: readonly EquipmentBuildTag[] = ['fire', 'water', 'earth', 'air', 'dot', 'crit', 'barrier', 'defense', 'healing', 'sustain', 'status', 'mana', 'focus', 'hybrid', 'spell']
 
 const getImpactEntries = (impact: EquipmentImpactStats): Array<[string, number]> => Object.entries(impact).flatMap(([key, value]) => key === 'resistances' && value && typeof value === 'object'
   ? Object.entries(value).map(([damageType, resistance]) => [`resistance-${damageType}`, Number(resistance)] as [string, number])
@@ -162,15 +158,11 @@ export const getEquipmentStatSnapshot = (state: EquipmentSheetState, equipment: 
     maxMana: sheet.maxMana,
     maxFocus: sheet.maxFocus,
     manaRegen: sheet.manaRegen,
-    basicDamage: sheet.basicAttackDamage,
     spellPower: sheet.spellPower,
-    basicAttackSpeedMultiplier: sheet.basicAttackSpeedMultiplier,
-    basicAttackIntervalMs: sheet.basicAttackIntervalMs,
     critChance: sheet.critChance,
     critDamageMultiplier: sheet.critDamageMultiplier,
     defense: sheet.defense,
     damageReduction: sheet.defenseReduction,
-    blockChance: sheet.blockChance,
     damageOverTimeBonus: sheet.damageOverTimeBonus,
     statusDurationBonus: sheet.statusDurationBonus,
     cooldownRecovery: sheet.cooldownRecovery,
@@ -189,14 +181,11 @@ const subtractSnapshots = (current: EquipmentStatSnapshot, preview: EquipmentSta
   maxMana: preview.maxMana - current.maxMana,
   maxFocus: preview.maxFocus - current.maxFocus,
   manaRegen: preview.manaRegen - current.manaRegen,
-  basicDamage: preview.basicDamage - current.basicDamage,
   spellPower: preview.spellPower - current.spellPower,
-  basicAttackSpeedPct: preview.basicAttackSpeedMultiplier - current.basicAttackSpeedMultiplier,
   critChance: preview.critChance - current.critChance,
   critDamage: preview.critDamageMultiplier - current.critDamageMultiplier,
   defense: preview.defense - current.defense,
   damageReduction: preview.damageReduction - current.damageReduction,
-  blockChance: preview.blockChance - current.blockChance,
   damageOverTimePct: preview.damageOverTimeBonus - current.damageOverTimeBonus,
   statusDurationPct: preview.statusDurationBonus - current.statusDurationBonus,
   cooldownRecoveryPct: preview.cooldownRecovery - current.cooldownRecovery,

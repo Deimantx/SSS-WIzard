@@ -28,11 +28,11 @@ describe('Artificing output read model', () => {
     expect(inspection).toMatchObject({
       itemId: 'ember-staff',
       owned: 0,
-      stats: { basicDamage: 5, spellPower: 16 },
+      stats: { spellPower: 16 },
       artifactLevel: 1,
       artifactMaxLevel: 10,
     })
     expect(preview.compatible).toBe(true)
-    expect(preview.impact).toMatchObject({ basicDamage: -3, spellPower: -12 })
+    expect(preview.impact).toMatchObject({ spellPower: -12 })
   })
 })

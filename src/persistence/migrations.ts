@@ -32,7 +32,7 @@ import { isSummoningUnlocked } from '../game/systems/summoning/summoningSelector
 import { normalizeDarkPortalProgress } from '../game/systems/dark-portal/portalShardProgression'
 import { isScreenUnlocked, reconcileStoryProgression } from '../game/systems/story/storyProgression'
 import { getTransmutationArrayBonuses } from '../game/systems/transmutation/transmutationArrays'
-import { ARCANE_CORE_MAX_LEVEL, ARCANE_CORE_MAX_TOTAL_XP, ARCANE_CORE_TOTAL_TREE_COST, getArcaneCoreLevelForXp } from '../game/content/arcaneCore/arcaneCoreBalance'
+import { ARCANE_CORE_MAJOR_COST_BY_RING, ARCANE_CORE_MAX_LEVEL, ARCANE_CORE_MAX_TOTAL_XP, ARCANE_CORE_STANDARD_RANK_COST_BY_RING, ARCANE_CORE_TOTAL_TREE_COST, getArcaneCoreLevelForXp } from '../game/content/arcaneCore/arcaneCoreBalance'
 import { getArcaneCoreNode } from '../game/content/arcaneCore/arcaneCoreBranches'
 
 const statusValidationContext = createCombatValidationContext(STATUS_DEFINITIONS)
@@ -78,19 +78,45 @@ const recipeIds = Object.keys(RECIPES)
 const permanentFocusIds = ['forest-heart', 'guild-apprentice']
 /** V34 is the first save topology that stores Arcane Core ranked nodes. */
 const ARCANE_CORE_RANKED_NODE_SAVE_VERSION = 34
+const ARCANE_CORE_V37_REPRICE_SAVE_VERSION = SAVE_VERSION - 1
+const ARCANE_CORE_V37_STANDARD_RANK_COST_BY_RING = { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 8, 8: 10 } as const
+const ARCANE_CORE_V37_MAJOR_COST_BY_RING = { 1: 4, 2: 8, 3: 12, 4: 16, 5: 20, 6: 24, 7: 32, 8: 40 } as const
+const ARCANE_CORE_V37_TOTAL_TREE_COST = 6864
 
 const LEGACY_ARCANE_CORE_MAX_SPEND = 1376
 const normalizeArcaneCore = (migrated: GameState, raw: Record<string, any>) => {
   const source = isRecord(raw.arcaneCore) ? raw.arcaneCore : {}
   const sourceVersion = typeof raw.saveVersion === 'number' ? raw.saveVersion : 0
-  if (sourceVersion >= SAVE_VERSION && typeof source.totalPointsEarned === 'number' && Number.isFinite(source.totalPointsEarned)) {
+  const normalizeNodes = () => {
     const nodes: GameState['arcaneCore']['nodes'] = {}
     if (isRecord(source.nodes)) Object.entries(source.nodes).forEach(([nodeId, value]) => {
       const node = getArcaneCoreNode(nodeId)
       const rank = node && isRecord(value) && typeof value.rank === 'number' && Number.isFinite(value.rank) ? Math.max(0, Math.min(node.maxRank, Math.floor(value.rank))) : 0
       if (node && rank > 0) nodes[nodeId] = { rank }
     })
-    migrated.arcaneCore = { totalPointsEarned: Math.max(0, Math.min(ARCANE_CORE_TOTAL_TREE_COST, Math.floor(source.totalPointsEarned))), nodes }
+    return nodes
+  }
+  if (sourceVersion >= SAVE_VERSION && typeof source.totalPointsEarned === 'number' && Number.isFinite(source.totalPointsEarned)) {
+    migrated.arcaneCore = { totalPointsEarned: Math.max(0, Math.min(ARCANE_CORE_TOTAL_TREE_COST, Math.floor(source.totalPointsEarned))), nodes: normalizeNodes() }
+    return
+  }
+  if (sourceVersion === ARCANE_CORE_V37_REPRICE_SAVE_VERSION && typeof source.totalPointsEarned === 'number' && Number.isFinite(source.totalPointsEarned)) {
+    const nodes = normalizeNodes()
+    const oldSpent = Object.entries(nodes).reduce((total, [nodeId, progress]) => {
+      const node = getArcaneCoreNode(nodeId)
+      if (!node) return total
+      const cost = node.nodeType === 'major' ? ARCANE_CORE_V37_MAJOR_COST_BY_RING[node.ring] : ARCANE_CORE_V37_STANDARD_RANK_COST_BY_RING[node.ring]
+      return total + (progress?.rank ?? 0) * cost
+    }, 0)
+    const oldTotal = Math.max(0, Math.min(ARCANE_CORE_V37_TOTAL_TREE_COST, Math.floor(source.totalPointsEarned)))
+    const oldAvailable = Math.max(0, oldTotal - oldSpent)
+    const newSpent = Object.entries(nodes).reduce((total, [nodeId, progress]) => {
+      const node = getArcaneCoreNode(nodeId)
+      if (!node) return total
+      const cost = node.nodeType === 'major' ? ARCANE_CORE_MAJOR_COST_BY_RING[node.ring] : ARCANE_CORE_STANDARD_RANK_COST_BY_RING[node.ring]
+      return total + (progress?.rank ?? 0) * cost
+    }, 0)
+    migrated.arcaneCore = { totalPointsEarned: Math.min(ARCANE_CORE_TOTAL_TREE_COST, newSpent + oldAvailable), nodes }
     return
   }
   const oldTotalXp = typeof source.totalXp === 'number' && Number.isFinite(source.totalXp) ? Math.max(0, Math.min(ARCANE_CORE_MAX_TOTAL_XP, source.totalXp)) : 0
@@ -534,6 +560,7 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
   migrated.combat.ruleCooldowns = ruleCooldowns
   const rawArcaneRuntime = isRecord(rawCombat.arcaneCoreRuntime) ? rawCombat.arcaneCoreRuntime : {}
   migrated.combat.arcaneCoreRuntime = {
+    elapsedMs: 0,
     damagingSpellCount: nonNegativeInteger(rawArcaneRuntime.damagingSpellCount) ?? 0,
     spellCastCount: nonNegativeInteger(rawArcaneRuntime.spellCastCount) ?? 0,
     cooldownPulseSpellCount: nonNegativeInteger(rawArcaneRuntime.cooldownPulseSpellCount) ?? 0,

@@ -1,5 +1,4 @@
 import { MAX_RESISTANCE } from '../../core/balance/combatStats'
-import { formatBasicAttackTime } from '../combat/enemyCombatStatPresentation'
 
 export interface EquipmentStatPresentation {
   key: string
@@ -8,9 +7,7 @@ export interface EquipmentStatPresentation {
   format: (value: number, signed?: boolean) => string
 }
 
-export interface EquipmentStatDescriptionContext {
-  basicAttackIntervalMs?: number
-}
+export interface EquipmentStatDescriptionContext {}
 
 const STAT_LABELS: Record<string, string> = {
   maxHealth: 'Max Health',
@@ -18,16 +15,12 @@ const STAT_LABELS: Record<string, string> = {
   maxMana: 'Max Mana',
   manaRegen: 'Mana Regen',
   maxFocus: 'Max Focus',
-  basicDamage: 'Basic Attack Damage',
   spellPower: 'Spell Power',
-  basicAttackSpeedPct: 'Basic Attack Speed',
-  basicAttackSpeedMultiplier: 'Basic Attack Speed',
   critChance: 'Crit Chance',
   critDamage: 'Crit Damage',
   critDamageMultiplier: 'Crit Damage',
   defense: 'Defense',
   damageReduction: 'Damage Reduction',
-  blockChance: 'Block Chance',
   cooldownRecoveryPct: 'Cooldown Recovery',
   cooldownRecovery: 'Cooldown Recovery',
   healingDonePct: 'Healing Done',
@@ -55,16 +48,12 @@ const STAT_DESCRIPTIONS: Record<string, string> = {
   maxMana: 'Increases the amount of Mana available for Spells.',
   manaRegen: 'Restores Mana over time.',
   maxFocus: 'Increases the Focus capacity available to supported activities.',
-  basicDamage: 'Increases damage dealt by your Basic Attack.',
   spellPower: 'Increases spell scaling for effects that use Spell Power.',
-  basicAttackSpeedPct: 'Controls how quickly Basic Attacks resolve.',
-  basicAttackSpeedMultiplier: 'Controls how quickly Basic Attacks resolve.',
   critChance: 'Chance for a Direct Hit to critically strike. Damage over Time, Healing and Barrier effects cannot Crit.',
   critDamage: 'Damage multiplier applied to a Critical Direct Hit.',
   critDamageMultiplier: 'Damage multiplier applied to a Critical Direct Hit.',
   defense: 'Reduces Direct Hit damage with diminishing returns. Damage over Time ignores Defense.',
   damageReduction: 'Current Direct Hit reduction produced by Defense. Damage over Time ignores Defense.',
-  blockChance: 'Chance for a Direct Hit to be Blocked. Damage over Time cannot be Blocked.',
   cooldownRecoveryPct: 'Reduces effective Spell cooldown duration.',
   cooldownRecovery: 'Reduces effective Spell cooldown duration.',
   healingDonePct: 'Increases healing produced by your effects.',
@@ -87,7 +76,7 @@ const STAT_DESCRIPTIONS: Record<string, string> = {
 }
 
 const PERCENT_KEYS = new Set([
-  'critChance', 'critDamage', 'critDamageMultiplier', 'blockChance', 'cooldownRecoveryPct', 'healingDonePct', 'healingDoneBonus',
+  'critChance', 'critDamage', 'critDamageMultiplier', 'cooldownRecoveryPct', 'healingDonePct', 'healingDoneBonus',
   'barrierPowerPct', 'barrierPowerBonus', 'damageOverTimePct', 'damageOverTimeBonus', 'statusDurationPct', 'statusDurationBonus',
   'manaCostReductionPct', 'manaCostReduction', 'focusEfficiencyPct', 'focusEfficiency', 'fireSpellDamage', 'airSpellDamage',
   'waterBarrierPower', 'negativeStatusDurationReceived',
@@ -101,7 +90,6 @@ export function getEquipmentStatLabel(key: string): string {
 
 export function getEquipmentStatDescription(key: string, context: EquipmentStatDescriptionContext = {}): string {
   if (key.startsWith('resistance-')) return `Reduces ${key.slice('resistance-'.length)} damage. Ordinary Resistance is capped at ${Math.round(MAX_RESISTANCE * 100)}%. Negative Resistance increases damage taken.`
-  if (key === 'basicAttackSpeedMultiplier' && context.basicAttackIntervalMs !== undefined) return `Current Basic Attack rate multiplier. Current Basic Attack Time: ${formatBasicAttackTime(context.basicAttackIntervalMs)}.`
   return STAT_DESCRIPTIONS[key] ?? 'A current Equipment stat that contributes to your loadout.'
 }
 
@@ -109,7 +97,7 @@ export function formatEquipmentStat(key: string, value: number, signed = true): 
   const sign = signed && value > 0 ? '+' : ''
   if (key === 'healthRegen') return `${sign}${value}/s`
   if (key === 'manaRegen') return `${sign}${Math.ceil(value)}/s`
-  if (key === 'basicAttackSpeedMultiplier' || key === 'cooldownRecovery') return `${sign}${value.toFixed(2)}x`
+  if (key === 'cooldownRecovery') return `${sign}${value.toFixed(2)}x`
   if (key === 'damageReduction') return `${sign}${(value * 100).toFixed(1)}%`
   if (PERCENT_KEYS.has(key) || key.endsWith('Pct') || key.startsWith('resistance-')) return `${sign}${Math.round(value * 100)}%`
   return `${sign}${Number.isInteger(value) ? value : Math.round(value * 100) / 100}`

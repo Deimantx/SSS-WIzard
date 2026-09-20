@@ -15,10 +15,10 @@ describe('Developer Arcane Core tab', () => {
     expect(screen.getByText('Ring diagnostics')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'MAX RING 1' }))
-    expect(getArcaneCoreRingPointsSpent(useGameStore.getState().arcaneCore, 'power', 1)).toBe(44)
+    expect(getArcaneCoreRingPointsSpent(useGameStore.getState().arcaneCore, 'power', 1)).toBe(212)
 
     fireEvent.click(screen.getAllByRole('button', { name: 'MAX CORE' })[0]!)
-    expect(getArcaneCorePointsSpent(useGameStore.getState().arcaneCore)).toBe(1716)
+    expect(getArcaneCorePointsSpent(useGameStore.getState().arcaneCore)).toBe(25748)
 
     fireEvent.click(screen.getAllByRole('button', { name: 'RESET CORE' })[0]!)
     expect(getArcaneCoreRingPointsSpent(useGameStore.getState().arcaneCore, 'power', 1)).toBe(0)

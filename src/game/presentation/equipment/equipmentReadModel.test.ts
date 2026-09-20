@@ -31,8 +31,8 @@ describe('Equipment read model', () => {
   })
 
   it('ranks compact key changes from preview impact', () => {
-    const changes = getEquipmentKeyChanges({ maxHealth: 10, basicDamage: 7, spellPower: 17, maxMana: -42, maxFocus: -20, defense: 3, critChance: 0.04 })
-    expect(changes.map(({ key }) => key)).toEqual(['maxHealth', 'basicDamage', 'spellPower', 'maxMana', 'maxFocus'])
-    expect(changes[1]).toMatchObject({ label: 'Basic Attack Damage', formatted: '+7', direction: 'increase' })
+    const changes = getEquipmentKeyChanges({ maxHealth: 10, spellPower: 17, maxMana: -42, maxFocus: -20, defense: 3, critChance: 0.04 })
+    expect(changes.map(({ key }) => key)).toEqual(['maxHealth', 'spellPower', 'maxMana', 'maxFocus', 'defense'])
+    expect(changes[1]).toMatchObject({ label: 'Spell Power', formatted: '+17', direction: 'increase' })
   })
 })

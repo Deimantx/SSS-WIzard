@@ -85,7 +85,7 @@ export const getManaRegenBreakdown = (state: ChannelingRegenState): ManaRegenBre
   const echoDiscoveryMultiplier = state.progress.channeling.discoveries['echo-resonance'] ? BALANCE.channeling.discoveryEchoMultiplier : 1
   const echoTotal = echoBase * echoAttunementMultiplier * echoDiscoveryMultiplier
   const disruptionMultiplier = state.player && state.combat ? Math.max(0, 1 + getCombatModifiers(state as never, 'player', 'mana-regen-percent')) : 1
-  const arcaneCoreRegenDisabled = Boolean(state.combat?.arcaneCoreRuntime.manaRegenDisabledUntilMs && state.combat.arcaneCoreRuntime.manaRegenDisabledUntilMs > state.combat.encounterTimerMs)
+  const arcaneCoreRegenDisabled = Boolean(state.combat?.arcaneCoreRuntime.manaRegenDisabledUntilMs && state.combat.arcaneCoreRuntime.manaRegenDisabledUntilMs > state.combat.arcaneCoreRuntime.elapsedMs)
   return { baseNatural, leylineConduitBonus, stableLeylineBonus, equipmentPassiveBonus, developerBonus, passiveBeforeResonance, manaResonanceMultiplier, passiveAfterResonance, echoBase, echoAttunementMultiplier, echoDiscoveryMultiplier, echoTotal, total: stabilizeResourceValue((passiveAfterResonance + echoTotal) * disruptionMultiplier * (arcaneCoreRegenDisabled ? 0 : 1)) }
 }
 

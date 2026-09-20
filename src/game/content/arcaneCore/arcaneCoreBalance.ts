@@ -2,11 +2,11 @@ export const ARCANE_CORE_RING_INDICES = [1, 2, 3, 4, 5, 6, 7, 8] as const
 export const ARCANE_CORE_STANDARD_NODES_PER_RING = 8 as const
 export const ARCANE_CORE_CORE_COUNT = 4 as const
 export const ARCANE_CORE_RINGS_PER_CORE = ARCANE_CORE_RING_INDICES.length
-export const ARCANE_CORE_STANDARD_RANK_COST_BY_RING = { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 8, 8: 10 } as const
-export const ARCANE_CORE_MAJOR_COST_BY_RING = { 1: 4, 2: 8, 3: 12, 4: 16, 5: 20, 6: 24, 7: 32, 8: 40 } as const
-export const ARCANE_CORE_FULL_RING_COST_BY_RING = { 1: 44, 2: 88, 3: 132, 4: 176, 5: 220, 6: 264, 7: 352, 8: 440 } as const
-export const ARCANE_CORE_TOTAL_COST_PER_CORE = 1716 as const
-export const ARCANE_CORE_TOTAL_TREE_COST = 6864 as const
+export const ARCANE_CORE_STANDARD_RANK_COST_BY_RING = { 1: 5, 2: 30, 3: 45, 4: 60, 5: 75, 6: 90, 7: 120, 8: 150 } as const
+export const ARCANE_CORE_MAJOR_COST_BY_RING = { 1: 12, 2: 144, 3: 216, 4: 288, 5: 360, 6: 432, 7: 576, 8: 720 } as const
+export const ARCANE_CORE_FULL_RING_COST_BY_RING = { 1: 212, 2: 1344, 3: 2016, 4: 2688, 5: 3360, 6: 4032, 7: 5376, 8: 6720 } as const
+export const ARCANE_CORE_TOTAL_COST_PER_CORE = 25748 as const
+export const ARCANE_CORE_TOTAL_TREE_COST = 102992 as const
 /** Compatibility aliases for selectors that describe a complete Ring/Core. */
 export const ARCANE_CORE_POINTS_PER_RING = ARCANE_CORE_FULL_RING_COST_BY_RING[1]
 export const ARCANE_CORE_POINTS_PER_CORE = ARCANE_CORE_TOTAL_COST_PER_CORE

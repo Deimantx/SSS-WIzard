@@ -18,7 +18,6 @@ export const createDefaultDebugOverrides = (): DebugOverrides => ({
   enemyImmortal: false,
   infiniteMana: false,
   ignoreSpellCooldowns: false,
-  disablePlayerBasicAttack: false,
   disableAutoCast: false,
   freezePlayerActions: false,
   freezeEnemyActions: false,
@@ -41,7 +40,6 @@ export const resetCombatDebugState = (state: GameState) => {
   state.debug.enemyImmortal = false
   state.debug.infiniteMana = false
   state.debug.ignoreSpellCooldowns = false
-  state.debug.disablePlayerBasicAttack = false
   state.debug.disableAutoCast = false
   state.debug.freezePlayerActions = false
   state.debug.freezeEnemyActions = false

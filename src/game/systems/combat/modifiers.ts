@@ -45,8 +45,6 @@ const EQUIPMENT_MODIFIER_STATS: Partial<Record<ModifierKey, ArcaneCoreModifierKe
   'defense-flat': 'defense',
   'crit-chance': 'critChance',
   'crit-damage': 'critDamage',
-  'basic-attack-speed-percent': 'basicAttackSpeedPct',
-  'block-chance': 'blockChance',
   'cooldown-recovery-percent': 'cooldownRecoveryPct',
   'healing-done-percent': 'healingDonePct',
   'barrier-power-percent': 'barrierPowerPct',

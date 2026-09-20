@@ -40,7 +40,7 @@ export const validateArcaneCoreCatalog = () => {
       if (major && /Basic Attack|Block Chance|Shield/i.test(`${major.name} ${major.description}`)) errors.push(`${major.id}: V6 node references removed player mechanics`)
     }
   })
-  if (JSON.stringify(ARCANE_CORE_RING_INDICES.map((ring) => ARCANE_CORE_FULL_RING_COST_BY_RING[ring])) !== JSON.stringify([44, 88, 132, 176, 220, 264, 352, 440]) || ARCANE_CORE_TOTAL_COST_PER_CORE !== 1716 || ARCANE_CORE_TOTAL_TREE_COST !== 6864) errors.push('Arcane Core V6 cost capacities are invalid')
+  if (JSON.stringify(ARCANE_CORE_RING_INDICES.map((ring) => ARCANE_CORE_FULL_RING_COST_BY_RING[ring])) !== JSON.stringify([212, 1344, 2016, 2688, 3360, 4032, 5376, 6720]) || ARCANE_CORE_TOTAL_COST_PER_CORE !== 25748 || ARCANE_CORE_TOTAL_TREE_COST !== 102992) errors.push('Arcane Core V6 cost capacities are invalid')
   if (JSON.stringify(ARCANE_CORE_RING_INDICES.map((ring) => ARCANE_CORE_RING_GATES[ring])) !== JSON.stringify([0, 20, 25, 30, 32, 34, 36, 38])) errors.push('Arcane Core ring gates are invalid')
   if (JSON.stringify(ARCANE_CORE_RING_INDICES.map((ring) => ARCANE_CORE_MAJOR_GATES[ring])) !== JSON.stringify([30, 35, 35, 40, 40, 40, 40, 40])) errors.push('Arcane Core major gates are invalid')
   return errors

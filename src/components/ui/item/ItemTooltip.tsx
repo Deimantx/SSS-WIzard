@@ -55,7 +55,7 @@ export function ItemTooltip({ itemId, owned, protectedItem = false, equipped = f
 export function ItemTooltipContent({ itemId, owned, protectedItem = false, equipped = false, recentlyGained, flow, recipeContext, effectiveStats, artifactTier, artifactLevel, artifactMaxLevel, extraContent }: ItemTooltipContentProps) {
   const item = ITEMS[itemId]
   const stats = effectiveStats ?? item.stats
-  const visibleStats = stats && item.kind === 'equipment' ? flattenItemStats(stats).filter(([key]) => !['basicDamage', 'basicAttackSpeedPct', 'blockChance'].includes(key)) : stats ? flattenItemStats(stats) : []
+  const visibleStats = stats ? flattenItemStats(stats) : []
   const category = getInventorySubcategoryLabel(itemId) ? getInventorySubcategoryLabel(itemId) + ' Material' : getInventoryCategoryLabel(itemId)
   const state = equipped ? 'EQUIPPED' : protectedItem ? 'PROTECTED' : 'NORMAL'
   const production = flow?.production.map((source) => source.label + ' ' + formatItemFlowRate(source.ratePerHour)).join(' · ')

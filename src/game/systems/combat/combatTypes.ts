@@ -440,6 +440,8 @@ export interface CombatConditionContext {
   /** The actor whose HP/barrier/status changed for this event. */
   changedActor?: 'player' | 'enemy'
   amount?: number
+  attemptedAmount?: number
+  overheal?: number
   healthDamage?: number
   barrierDamage?: number
   damageType?: DamageType

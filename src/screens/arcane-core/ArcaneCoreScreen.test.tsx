@@ -12,7 +12,7 @@ describe('Arcane Core screen', () => {
   it('mounts the V6 wallet and four independent Cores', () => {
     render(<TooltipProvider><ArcaneCoreScreen /></TooltipProvider>)
     expect(screen.getByRole('heading', { name: 'Arcane Core' })).toBeTruthy()
-    expect(screen.getByText('0 / 6864 Arcane Points invested')).toBeTruthy()
+    expect(screen.getByText('0 / 102992 Arcane Points invested')).toBeTruthy()
     for (const name of ['Power Core', 'Vitality Core', 'Focus Core', 'Control Core']) expect(screen.getByText(name)).toBeTruthy()
   })
 

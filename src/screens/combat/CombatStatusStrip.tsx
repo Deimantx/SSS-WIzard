@@ -9,9 +9,10 @@ import { formatTime } from '../../game/utils'
 import { GameTooltip } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { useGameStore } from '../../store/gameStore'
-import { getCombatTimelineProgress, getCombatVisualRate } from './performance/combatTimeline'
+import { getCombatVisualTimelineProgress, getCombatVisualRate } from './performance/combatTimeline'
 import { subscribeCombatVisualFrame } from './performance/combatVisualClock'
 import { useCombatPerformanceToggle } from './performance/combatPerformanceDiagnostics'
+import { useCombatVisualTimeline } from './CombatActionProgress'
 import { resolveGameAssetIcon } from '../../ui/icons/gameAssetIcons'
 
 type CombatStatusActor = 'player' | 'enemy'
@@ -42,6 +43,7 @@ export const CombatStatusChip = memo(function CombatStatusChip({ group, liveActo
 interface CombatStatusTimerProps {
   actor: CombatStatusActor
   statusId: string
+  instanceKey?: string
   fallbackRemainingMs: number | null
   fallbackInitialDurationMs: number | null
 }
@@ -70,25 +72,28 @@ function CombatStatusRing({ actor, statusId, fallbackRemainingMs, fallbackInitia
   return <CombatStatusRingLive actor={actor} statusId={statusId} fallbackRemainingMs={fallbackRemainingMs} fallbackInitialDurationMs={fallbackInitialDurationMs} />
 }
 
-function CombatStatusRingLive({ actor, statusId, fallbackRemainingMs, fallbackInitialDurationMs }: CombatStatusTimerProps) {
+function CombatStatusRingLive({ actor, statusId, instanceKey, fallbackRemainingMs, fallbackInitialDurationMs }: CombatStatusTimerProps) {
   const timer = useLiveStatusTimer({ actor, statusId, fallbackRemainingMs, fallbackInitialDurationMs })
   const ringRef = useRef<HTMLSpanElement>(null)
-  const anchorRef = useRef<{ remainingMs: number; initialDurationMs: number; rate: number; anchoredAtMs: number } | null>(null)
   const initialDurationMs = Math.max(1, timer.initialDurationMs ?? 1)
   const remainingMs = Math.max(0, timer.remainingMs ?? 0)
   const rate = getCombatVisualRate(1, timer.paused, timer.timeScale)
+  const liveStatuses = useGameStore.getState().combat[`${actor}Statuses`]
+  const resolvedInstanceKey = instanceKey ?? getCombatStatusGroupsBasic(liveStatuses).find((group) => group.statusId === statusId)?.instances[0]?.instanceKey ?? ''
+  const snapshot = { cycleId: `${statusId}:${resolvedInstanceKey}`, baseWorkMs: initialDurationMs, remainingWorkMs: remainingMs, rate, blocked: rate <= 0 }
+  const timelineRef = useCombatVisualTimeline(snapshot)
 
   useLayoutEffect(() => {
-    anchorRef.current = { remainingMs, initialDurationMs, rate, anchoredAtMs: performance.now() }
-    ringRef.current?.style.setProperty('--status-duration-percent', `${Math.max(0, Math.min(100, remainingMs / initialDurationMs * 100))}%`)
-  }, [remainingMs, initialDurationMs, rate])
+    if (!timelineRef.lastReconciliation?.requiresImmediatePaint || !timelineRef.current) return
+    const progress = getCombatVisualTimelineProgress(timelineRef.current, performance.now())
+    ringRef.current?.style.setProperty('--status-duration-percent', `${Math.max(0, Math.min(100, (1 - progress) * 100))}%`)
+  }, [remainingMs, initialDurationMs, rate, timelineRef, snapshot.blocked])
 
   useEffect(() => subscribeCombatVisualFrame((timestamp) => {
-    const anchor = anchorRef.current
-    if (!anchor || !ringRef.current) return
-    const progress = getCombatTimelineProgress({ baseWorkMs: anchor.initialDurationMs, remainingWorkMs: anchor.remainingMs, rate: anchor.rate, blocked: anchor.rate <= 0 }, timestamp, { snapshot: { baseWorkMs: anchor.initialDurationMs, remainingWorkMs: anchor.remainingMs, rate: anchor.rate, blocked: anchor.rate <= 0 }, anchoredAtMs: anchor.anchoredAtMs })
+    if (!timelineRef.current || !ringRef.current) return
+    const progress = getCombatVisualTimelineProgress(timelineRef.current, timestamp)
     ringRef.current.style.setProperty('--status-duration-percent', `${Math.max(0, Math.min(100, (1 - progress) * 100))}%`)
-  }), [])
+  }), [timelineRef])
 
   return <span ref={ringRef} className="combat-status-timer-ring" aria-hidden="true" />
 }

@@ -5,11 +5,11 @@ import { GameContextMenuProvider } from '../../ui/context-menu/GameContextMenuPr
 import { useGameStore } from '../../store/gameStore'
 import { InventoryScreenV2 } from './InventoryScreen'
 
-function renderInventoryWith(itemId: 'ember-staff' | 'life-essence') {
+function renderInventoryWith(itemId: 'ember-staff' | 'life-essence' | 'artifact-essence', additionalItemId?: 'life-essence' | 'artifact-essence') {
   const state = useGameStore.getState()
   useGameStore.setState({
     ui: { screen: 'inventory' },
-    inventory: { ...state.inventory, [itemId]: 1 },
+    inventory: { ...state.inventory, [itemId]: 1, ...(additionalItemId ? { [additionalItemId]: 1 } : {}) },
   })
   return render(<TooltipProvider><GameContextMenuProvider><InventoryScreenV2 /></GameContextMenuProvider></TooltipProvider>)
 }
@@ -38,5 +38,14 @@ describe('Inventory Artifact context actions', () => {
     fireEvent.contextMenu(tile, { clientX: 20, clientY: 20 })
 
     expect(screen.queryByRole('menuitem', { name: 'Artifact Path' })).toBeNull()
+  })
+
+  it('keeps Life Essence and Artifact Essence in the normal item catalog', () => {
+    renderInventoryWith('life-essence', 'artifact-essence')
+
+    expect(screen.getByText('Life Essence')).toBeTruthy()
+    expect(screen.getAllByText('Artifact Essence').length).toBeGreaterThan(0)
+    expect(document.querySelector('[data-item-id="life-essence"]')).toBeTruthy()
+    expect(document.querySelector('[data-item-id="artifact-essence"]')).toBeTruthy()
   })
 })

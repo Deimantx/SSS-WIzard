@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
-import { subscribeCombatVisualFrame } from './combatVisualClock'
+import { getCombatVisualSubscriberCount, getCombatVisualTimelineCount, subscribeCombatVisualFrame } from './combatVisualClock'
+import type { CombatTimelineReconciliation } from './combatTimeline'
 
 export const COMBAT_PERFORMANCE_TOGGLE_LABELS = {
   ambient: 'Combat Ambient',
@@ -61,15 +62,52 @@ export interface CombatPerformanceMetrics {
   framesOver16_7ms: number
   framesOver20ms: number
   framesOver33ms: number
+  activeVisualTimelines: number
+  rafSubscribers: number
+  timelineCorrections5s: number
+  timelineHardResets5s: number
+  timelineAverageDriftMs: number
+  timelineMaxDriftMs: number
+  timelineBackwardCorrections5s: number
 }
 
-const emptyMetrics: CombatPerformanceMetrics = { currentFps: null, averageFps1s: null, averageFps5s: null, worstFrameMs: null, approxOnePercentLow: null, framesOver16_7ms: 0, framesOver20ms: 0, framesOver33ms: 0 }
+const emptyMetrics: CombatPerformanceMetrics = { currentFps: null, averageFps1s: null, averageFps5s: null, worstFrameMs: null, approxOnePercentLow: null, framesOver16_7ms: 0, framesOver20ms: 0, framesOver33ms: 0, activeVisualTimelines: 0, rafSubscribers: 0, timelineCorrections5s: 0, timelineHardResets5s: 0, timelineAverageDriftMs: 0, timelineMaxDriftMs: 0, timelineBackwardCorrections5s: 0 }
 let metrics = emptyMetrics
 let frameSamples: Array<{ timestamp: number; durationMs: number }> = []
 let previousTimestamp: number | null = null
 let lastPublishedAt = 0
 let metricsStop: (() => void) | null = null
 const metricsListeners = new Set<() => void>()
+
+interface CombatTimelineDiagnosticEvent {
+  timestamp: number
+  driftMs: number
+  correction: boolean
+  hardReset: boolean
+  backwardCorrection: boolean
+}
+
+let timelineEvents: CombatTimelineDiagnosticEvent[] = []
+
+export const recordCombatTimelineReconciliation = (result: CombatTimelineReconciliation, timestamp = performance.now()) => {
+  if (!import.meta.env.DEV) return
+  timelineEvents.push({ timestamp, driftMs: Math.abs(result.driftMs), correction: result.softCorrection || result.hardReset, hardReset: result.hardReset, backwardCorrection: result.backwardCorrection })
+  timelineEvents = timelineEvents.filter((event) => event.timestamp >= timestamp - 5_000)
+}
+
+export const getCombatTimelineDiagnostics = (timestamp = performance.now()) => {
+  const recent = timelineEvents.filter((event) => event.timestamp >= timestamp - 5_000)
+  const driftValues = recent.map((event) => event.driftMs)
+  return {
+    activeVisualTimelines: getCombatVisualTimelineCount(),
+    rafSubscribers: getCombatVisualSubscriberCount(),
+    timelineCorrections5s: recent.filter((event) => event.correction).length,
+    timelineHardResets5s: recent.filter((event) => event.hardReset).length,
+    timelineAverageDriftMs: driftValues.length ? driftValues.reduce((total, drift) => total + drift, 0) / driftValues.length : 0,
+    timelineMaxDriftMs: driftValues.length ? Math.max(...driftValues) : 0,
+    timelineBackwardCorrections5s: recent.filter((event) => event.backwardCorrection).length,
+  }
+}
 
 const fpsForWindow = (samples: Array<{ timestamp: number; durationMs: number }>, durationMs: number, now: number) => {
   const recent = samples.filter((sample) => sample.timestamp >= now - durationMs)
@@ -93,6 +131,7 @@ const publishMetrics = (timestamp: number) => {
     framesOver16_7ms: fiveSeconds.filter((sample) => sample.durationMs > 16.7).length,
     framesOver20ms: fiveSeconds.filter((sample) => sample.durationMs > 20).length,
     framesOver33ms: fiveSeconds.filter((sample) => sample.durationMs > 33).length,
+    ...getCombatTimelineDiagnostics(timestamp),
   }
   metricsListeners.forEach((listener) => listener())
 }
@@ -123,6 +162,7 @@ const stopMetrics = () => {
   metricsStop = null
   previousTimestamp = null
   frameSamples = []
+  timelineEvents = []
   metrics = emptyMetrics
 }
 
@@ -147,4 +187,3 @@ export const getCombatRenderRates = () => {
   const now = performance.now()
   return Object.fromEntries([...renderCounts.entries()].map(([name, value]) => [name, value.count / Math.max(1, (now - value.startedAt) / 1000)])) as Record<string, number>
 }
-

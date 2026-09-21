@@ -10,7 +10,7 @@ import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { CombatStatusStrip } from './CombatStatusStrip'
 import { CombatResource } from './CombatResource'
 import { CombatFloatingFeedback } from './CombatFloatingFeedback'
-import { CombatActionProgress } from './CombatActionProgress'
+import { CombatActionProgress, CombatTimelineReadout, useCombatVisualTimeline } from './CombatActionProgress'
 import { getCombatVisualRate } from './performance/combatTimeline'
 import { formatResourceAmount } from '../../game/presentation/resources/resourcePresentation'
 
@@ -53,6 +53,7 @@ function PlayerCastTimeline({ pendingCast, pendingSpell }: { pendingCast: { spel
     return { remainingWorkMs: state.combat.pendingPlayerSpellCast?.remainingWorkMs ?? pendingCast.castWorkMs, baseRate, blocked, timeScale: state.debug.combatTimeScale }
   }))
   const rate = getCombatVisualRate(timing.baseRate, timing.blocked, timing.timeScale)
-  const etaMs = rate > 0 ? timing.remainingWorkMs / rate : null
-  return <GameTooltip block content={<TooltipContent title={`Casting ${pendingSpell}`} description="The spell resolves when its cast work completes. Mana and cooldown are committed on successful completion." />}><div className="combat-spell-cast"><div className="combat-spell-cast-head"><div><span className="combat-subsection-label">CASTING</span><strong><Sparkles size={13} aria-hidden="true" />{pendingSpell}</strong></div><span className="combat-spell-cast-eta ui-time">{etaMs === null ? 'PAUSED' : formatTime(etaMs)}</span></div><CombatActionProgress cycleId={pendingCast.cycleId} baseWorkMs={pendingCast.castWorkMs} remainingWorkMs={timing.remainingWorkMs} rate={rate} blocked={timing.blocked} /><span className="combat-spell-cast-meta">{formatTime(Math.max(0, pendingCast.castWorkMs - timing.remainingWorkMs))} / {formatTime(pendingCast.castWorkMs)} · {pendingCast.manaCostSnapshot} MANA</span></div></GameTooltip>
+  const snapshot = { cycleId: pendingCast.cycleId, baseWorkMs: pendingCast.castWorkMs, remainingWorkMs: timing.remainingWorkMs, rate, blocked: timing.blocked }
+  const timelineRef = useCombatVisualTimeline(snapshot)
+  return <GameTooltip block content={<TooltipContent title={`Casting ${pendingSpell}`} description="The spell resolves when its cast work completes. Mana and cooldown are committed on successful completion." />}><div className="combat-spell-cast"><div className="combat-spell-cast-head"><div><span className="combat-subsection-label">CASTING</span><strong><Sparkles size={13} aria-hidden="true" />{pendingSpell}</strong></div><CombatTimelineReadout timelineRef={timelineRef} mode="eta" className="combat-spell-cast-eta ui-time" fallback={timing.blocked ? 'PAUSED' : formatTime(Math.max(0, timing.remainingWorkMs) / Math.max(0.0001, rate))} /></div><CombatActionProgress {...snapshot} timelineRef={timelineRef} /><span className="combat-spell-cast-meta"><CombatTimelineReadout timelineRef={timelineRef} mode="elapsed" totalWorkMs={pendingCast.castWorkMs} fallback={formatTime(Math.max(0, pendingCast.castWorkMs - timing.remainingWorkMs))} /> / {formatTime(pendingCast.castWorkMs)} · {pendingCast.manaCostSnapshot} MANA</span></div></GameTooltip>
 }

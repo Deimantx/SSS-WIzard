@@ -16,9 +16,10 @@ import { buildSpellDetailPresentation, type SpellPresentationState } from '../..
 import { buildCombatSpellTilePresentation, getCombatSpellTileBlocker, type CombatSpellTileLiveState } from '../../game/presentation/spells/combatSpellTilePresentation'
 import { formatCooldownNumber } from '../../game/presentation/combat/combatCooldownPresentation'
 import { formatResourceAmount } from '../../game/presentation/resources/resourcePresentation'
-import { getCombatTimelineProgress, getCombatVisualRate } from './performance/combatTimeline'
+import { getCombatVisualTimelineProgress, getCombatVisualRate } from './performance/combatTimeline'
 import { subscribeCombatVisualFrame } from './performance/combatVisualClock'
 import { useCombatPerformanceToggle } from './performance/combatPerformanceDiagnostics'
+import { useCombatVisualTimeline } from './CombatActionProgress'
 import { useGameStore } from '../../store/gameStore'
 import { useGameContextMenu } from '../../ui/context-menu/GameContextMenuProvider'
 import { setNavigationIntent } from '../../ui/navigation/navigationIntent'
@@ -78,21 +79,25 @@ function CooldownOverlay({ spellId, cooldownMs }: { spellId: CanonicalSpellId; c
 
 function CooldownOverlayLive({ spellId, cooldownMs }: { spellId: CanonicalSpellId; cooldownMs: number }) {
   const signal = useGameStore(useShallow((state) => ({ cooldown: state.combat.spellCooldowns[spellId] ?? 0, recovery: getCooldownRecoveryMultiplier(state), paused: state.debug.combatPaused, timeScale: state.debug.combatTimeScale })))
-  const overlayRef = useRef<HTMLSpanElement>(null)
-  const anchorRef = useRef<{ remainingMs: number; baseWorkMs: number; rate: number; anchoredAtMs: number } | null>(null)
-  const rate = getCombatVisualRate(signal.recovery, signal.paused, signal.timeScale)
-  useLayoutEffect(() => {
-    const remainingMs = Math.max(0, signal.cooldown)
-    const baseWorkMs = Math.max(1, cooldownMs)
-    anchorRef.current = { remainingMs, baseWorkMs, rate, anchoredAtMs: performance.now() }
-    overlayRef.current?.style.setProperty('--cooldown-percent', `${Math.max(0, Math.min(100, remainingMs / baseWorkMs * 100))}%`)
-  }, [cooldownMs, rate, signal.cooldown])
-  useEffect(() => subscribeCombatVisualFrame((timestamp) => {
-    const anchor = anchorRef.current
-    if (!anchor || !overlayRef.current) return
-    const completed = getCombatTimelineProgress({ baseWorkMs: anchor.baseWorkMs, remainingWorkMs: anchor.remainingMs, rate: anchor.rate, blocked: anchor.rate <= 0 }, timestamp, { snapshot: { baseWorkMs: anchor.baseWorkMs, remainingWorkMs: anchor.remainingMs, rate: anchor.rate, blocked: anchor.rate <= 0 }, anchoredAtMs: anchor.anchoredAtMs })
-    overlayRef.current.style.setProperty('--cooldown-percent', `${Math.max(0, Math.min(100, (1 - completed) * 100))}%`)
-  }), [])
   if (signal.cooldown <= 0) return null
+  return <CooldownOverlayActive spellId={spellId} cooldownMs={cooldownMs} signal={signal} />
+}
+
+function CooldownOverlayActive({ spellId, cooldownMs, signal }: { spellId: CanonicalSpellId; cooldownMs: number; signal: { cooldown: number; recovery: number; paused: boolean; timeScale: number } }) {
+  const rate = getCombatVisualRate(signal.recovery, signal.paused, signal.timeScale)
+  const snapshot = { cycleId: spellId, baseWorkMs: Math.max(1, cooldownMs), remainingWorkMs: Math.max(0, signal.cooldown), rate, blocked: signal.paused }
+  const timelineRef = useCombatVisualTimeline(snapshot)
+  const overlayRef = useRef<HTMLSpanElement>(null)
+
+  useLayoutEffect(() => {
+    if (!timelineRef.lastReconciliation?.requiresImmediatePaint || !timelineRef.current) return
+    const progress = getCombatVisualTimelineProgress(timelineRef.current, performance.now())
+    overlayRef.current?.style.setProperty('--cooldown-percent', `${Math.max(0, Math.min(100, (1 - progress) * 100))}%`)
+  }, [cooldownMs, rate, signal.cooldown, signal.paused, timelineRef, snapshot.blocked])
+  useEffect(() => subscribeCombatVisualFrame((timestamp) => {
+    if (!timelineRef.current || !overlayRef.current) return
+    const progress = getCombatVisualTimelineProgress(timelineRef.current, timestamp)
+    overlayRef.current.style.setProperty('--cooldown-percent', `${Math.max(0, Math.min(100, (1 - progress) * 100))}%`)
+  }), [timelineRef])
   return <span ref={overlayRef} className="spell-combat-cooldown-overlay" aria-hidden="true"><span className="spell-combat-cooldown-number">{formatCooldownNumber(signal.cooldown)}</span></span>
 }

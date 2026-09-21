@@ -1,6 +1,7 @@
 export type CombatVisualFrameSubscriber = (timestamp: number) => void
 
 const subscribers = new Set<CombatVisualFrameSubscriber>()
+const activeTimelines = new Set<object>()
 let frameHandle: number | null = null
 let visibilityBound = false
 
@@ -69,3 +70,9 @@ export const subscribeCombatVisualFrame = (subscriber: CombatVisualFrameSubscrib
 
 export const getCombatVisualSubscriberCount = () => subscribers.size
 
+export const registerCombatVisualTimeline = (timeline: object) => {
+  activeTimelines.add(timeline)
+  return () => { activeTimelines.delete(timeline) }
+}
+
+export const getCombatVisualTimelineCount = () => activeTimelines.size

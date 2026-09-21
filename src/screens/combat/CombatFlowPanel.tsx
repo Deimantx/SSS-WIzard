@@ -13,7 +13,7 @@ import { formatTime } from '../../game/utils'
 import { GameTooltip } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { EnemyPatternRail } from './EnemyPatternRail'
-import { CombatActionProgress } from './CombatActionProgress'
+import { CombatActionProgress, CombatTimelineReadout, useCombatVisualTimeline } from './CombatActionProgress'
 import { EnemyActionTooltip, buildBasicAttackPresentation } from './EnemyActionTooltip'
 import { EnemyPatternIcon } from './EnemyPatternIcon'
 import { CombatGuardianIndicator } from './CombatGuardianIndicator'
@@ -84,7 +84,9 @@ export function CombatFlowPanel({ selectedDungeonId }: { selectedDungeonId: Dung
 function EncounterDelayTimeline({ dungeonId, dungeonName, encounterDelayMs, threatCleared, threatRequired, bossApproaching }: { dungeonId: DungeonId; dungeonName: string; encounterDelayMs: number; threatCleared: number; threatRequired: number; bossApproaching: boolean }) {
   const timing = useGameStore(useShallow((state) => ({ remainingWorkMs: state.combat.encounterTimerMs, paused: state.debug.combatPaused, timeScale: state.debug.combatTimeScale })))
   const rate = getCombatVisualRate(1, timing.paused, timing.timeScale)
-  return <section className={`combat-flow-panel is-encounter-delay${bossApproaching ? ' is-boss-approaching' : ''}`}><CombatGuardianIndicator /><div className="combat-flow-delay-head"><div className="combat-flow-delay-label"><TimerReset size={13} aria-hidden="true" /> NEXT ENCOUNTER</div><span className="combat-flow-state-mark">INCOMING</span></div><strong className="combat-flow-delay">{formatTime(timing.remainingWorkMs)}</strong><CombatActionProgress cycleId={dungeonId} baseWorkMs={encounterDelayMs} remainingWorkMs={timing.remainingWorkMs} rate={rate} blocked={timing.paused} /><div className="combat-flow-delay-context"><span>Searching the {dungeonName}...</span><span>THREAT {threatCleared} / {threatRequired}</span>{bossApproaching && <strong>BOSS APPROACHING</strong>}</div></section>
+  const snapshot = { cycleId: dungeonId, baseWorkMs: encounterDelayMs, remainingWorkMs: timing.remainingWorkMs, rate, blocked: timing.paused }
+  const timelineRef = useCombatVisualTimeline(snapshot)
+  return <section className={`combat-flow-panel is-encounter-delay${bossApproaching ? ' is-boss-approaching' : ''}`}><CombatGuardianIndicator /><div className="combat-flow-delay-head"><div className="combat-flow-delay-label"><TimerReset size={13} aria-hidden="true" /> NEXT ENCOUNTER</div><span className="combat-flow-state-mark">INCOMING</span></div><CombatTimelineReadout timelineRef={timelineRef} mode="remaining" className="combat-flow-delay" fallback={formatTime(timing.remainingWorkMs)} /><CombatActionProgress {...snapshot} timelineRef={timelineRef} /><div className="combat-flow-delay-context"><span>Searching the {dungeonName}...</span><span>THREAT {threatCleared} / {threatRequired}</span>{bossApproaching && <strong>BOSS APPROACHING</strong>}</div></section>
 }
 
 function CombatEffectRow({ effect }: { effect: CombatEffectPresentation }) {
@@ -113,6 +115,7 @@ function EnemyActionTimeline({ cycleId, actionTimeMs }: { cycleId: string; actio
     return { baseWorkMs: current?.baseWorkMs ?? actionTimeMs, remainingWorkMs: current?.remainingWorkMs ?? actionTimeMs, rate: current?.rate ?? 0, blocked, timeScale: state.debug.combatTimeScale }
   }))
   const rate = getCombatVisualRate(timing.rate, timing.blocked, timing.timeScale)
-  const etaMs = rate > 0 ? timing.remainingWorkMs / rate : null
-  return <div className="combat-flow-current-action-clock"><span className="combat-flow-current-action-eta ui-time">{etaMs === null ? 'PAUSED' : formatTime(etaMs)}</span><CombatActionProgress cycleId={cycleId} baseWorkMs={timing.baseWorkMs} remainingWorkMs={timing.remainingWorkMs} rate={rate} blocked={timing.blocked} /></div>
+  const snapshot = { cycleId, baseWorkMs: timing.baseWorkMs, remainingWorkMs: timing.remainingWorkMs, rate, blocked: timing.blocked }
+  const timelineRef = useCombatVisualTimeline(snapshot)
+  return <div className="combat-flow-current-action-clock"><CombatTimelineReadout timelineRef={timelineRef} mode="eta" className="combat-flow-current-action-eta ui-time" fallback={timing.blocked ? 'PAUSED' : formatTime(Math.max(0, timing.remainingWorkMs) / Math.max(0.0001, rate))} /><CombatActionProgress {...snapshot} timelineRef={timelineRef} /></div>
 }

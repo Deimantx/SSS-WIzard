@@ -1,4 +1,6 @@
 import type { PortalShardId } from './content/darkPortal/portalShards'
+import type { ResonanceState } from './content/resonance/resonance'
+export type { ResonanceState, ResonanceType, ResonanceYield } from './content/resonance/resonance'
 
 export type SchoolId = 'fire' | 'water' | 'earth' | 'air'
 export type ElementId = SchoolId
@@ -568,6 +570,7 @@ export interface GameState {
   player: PlayerState
   schools: Record<SchoolId, SchoolState>
   currencies: { gold: number }
+  resonance: ResonanceState
   inventory: Partial<Record<ItemId, number>>
   protectedItems: Partial<Record<ItemId, boolean>>
   equipment: Record<EquipmentPosition, ItemId | null>

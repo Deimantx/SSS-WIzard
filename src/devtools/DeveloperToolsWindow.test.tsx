@@ -66,6 +66,7 @@ describe('Developer Tools window presentation', () => {
     expect(screen.getByRole('button', { name: 'Inventory & Equipment' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Spells & Schools' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Artifacts' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Resonance' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Advanced Diagnostics' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: /^Equipment$/ })).toBeNull()
     expect(screen.queryByRole('button', { name: /^Magic Schools$/ })).toBeNull()

@@ -1,9 +1,9 @@
 {
   "schemaVersion": 2,
   "snapshot": {
-    "commit": "6d0dc7e071d15ea9d189da6a8630e32c315f9ab2",
+    "commit": "9ad89f9f936d4a499419ee6409110d0890a4bf18",
     "workingTreeDirty": true,
-    "generatedAtUtc": "2026-09-20T17:10:33.669Z"
+    "generatedAtUtc": "2026-09-21T05:52:41.344Z"
   },
   "runtimePolicy": {
     "sourceOfTruth": "TypeScript runtime content and systems",
@@ -870,6 +870,24 @@
         "src/game/content/traits"
       ]
     },
+    "Combat/Resonance.md": {
+      "stableIds": [
+        "fire",
+        "water",
+        "earth",
+        "air",
+        "forest-wisp",
+        "thornling",
+        "stone-root",
+        "grove-sentinel",
+        "forest-heart"
+      ],
+      "runtimeSources": [
+        "src/game/content/resonance",
+        "src/game/content/monsters/act0/whisperingWoods.ts",
+        "src/game/systems/resonance"
+      ]
+    },
     "Dungeons/Whispering_Woods.md": {
       "stableIds": [
         "whispering-woods",
@@ -1595,6 +1613,7 @@
   "managedPaths": [
     "BALANCE_OVERVIEW.md",
     "Combat/Combat.md",
+    "Combat/Resonance.md",
     "Crafting/Crafting.md",
     "Dungeons/Abandoned_Catacombs.md",
     "Dungeons/Ashen_Watch.md",

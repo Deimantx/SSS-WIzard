@@ -9,6 +9,7 @@ export interface CriticalSaveSnapshot {
   arcaneCore: GameState['arcaneCore']
   schools: GameState['schools']
   currencies: GameState['currencies']
+  resonance: GameState['resonance']
   activities: {
     channeling: GameState['activities']['channeling']
     research: GameState['activities']['research']
@@ -43,13 +44,14 @@ const canonicalize = (value: unknown): unknown => {
   return value
 }
 
-export const getCriticalSaveSnapshot = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment' | 'arcaneCore' | 'schools' | 'currencies' | 'activities' | 'progress' | 'darkPortal' | 'spellPresets' | 'offlineBankMs' | 'combat'>): CriticalSaveSnapshot => cloneJson({
+export const getCriticalSaveSnapshot = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment' | 'arcaneCore' | 'schools' | 'currencies' | 'resonance' | 'activities' | 'progress' | 'darkPortal' | 'spellPresets' | 'offlineBankMs' | 'combat'>): CriticalSaveSnapshot => cloneJson({
   inventory: state.inventory,
   protectedItems: state.protectedItems,
   equipment: state.equipment,
   arcaneCore: state.arcaneCore,
   schools: state.schools,
   currencies: state.currencies,
+  resonance: state.resonance,
   activities: {
     channeling: state.activities.channeling,
     research: state.activities.research,
@@ -90,7 +92,7 @@ const decodeSave = (encoded: string): Record<string, unknown> => {
 }
 
 const hasCurrentSaveShape = (value: Record<string, unknown>) => {
-  const requiredKeys = ['player', 'schools', 'currencies', 'inventory', 'protectedItems', 'equipment', 'activities', 'progress', 'darkPortal', 'offlineBankMs', 'lastSavedAt']
+  const requiredKeys = ['player', 'schools', 'currencies', 'resonance', 'inventory', 'protectedItems', 'equipment', 'activities', 'progress', 'darkPortal', 'offlineBankMs', 'lastSavedAt']
   return requiredKeys.every((key) => Object.prototype.hasOwnProperty.call(value, key))
     && typeof value.lastSavedAt === 'number'
     && Number.isFinite(value.lastSavedAt)

@@ -9,6 +9,7 @@ import { MAX_ACTION_WORK_MS, MIN_ACTION_TIME_MS } from '../../core/balance/comba
 import { MAX_BLOCK_CHANCE, MAX_CRIT_CHANCE, MAX_CRIT_DAMAGE_MULTIPLIER, MAX_RESISTANCE, MIN_RESISTANCE } from '../../core/balance/combatStats'
 import { ITEMS } from '../items/items'
 import { isArtifactId } from '../artifacts/artifacts'
+import { RESONANCE_TYPES } from '../resonance/resonance'
 
 export type { MonsterDefinition } from './monsterTypes'
 export { WHISPERING_WOODS_MONSTERS, WHISPERING_WOODS_MONSTER_IDS } from './act0'
@@ -50,6 +51,7 @@ export const validateMonsterDefinitions = (monsters: Record<string, MonsterDefin
     monster.traitIds.forEach((traitId) => { if (!getTraitDefinition(traitId)) errors.push(`${monster.id}: unknown trait ${traitId}`) })
     if (!monster.actionPatterns[monster.defaultActionPatternId]) errors.push(`${monster.id}: missing default action pattern`)
     Object.entries(monster.resistances ?? {}).forEach(([damageType, resistance]) => { if (!DAMAGE_TYPES.includes(damageType as DamageType) || !Number.isFinite(resistance) || resistance < MIN_RESISTANCE || resistance > MAX_RESISTANCE) errors.push(`${monster.id}: invalid ${damageType} resistance`) })
+    Object.entries(monster.resonanceYield ?? {}).forEach(([type, amount]) => { if (!RESONANCE_TYPES.includes(type as typeof RESONANCE_TYPES[number]) || !Number.isSafeInteger(amount) || amount <= 0) errors.push(`${monster.id}: invalid Resonance yield ${type}`) })
     Object.entries(monster.actions).forEach(([actionKey, action]) => {
       if (actionKey !== action.id) errors.push(`${monster.id}/${actionKey}: key/id mismatch`)
       if (!action.name.trim() || !action.description.trim()) errors.push(`${monster.id}/${action.id}: name and description are required`)

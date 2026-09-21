@@ -6,10 +6,11 @@ import { createInitialTransmutationArrays } from '../game/content/transmutation/
 import { createInitialGuardiansState } from '../game/content/guardians/guardians'
 import { DUNGEON_ORDER } from '../game/content/dungeons/dungeons'
 import { CANONICAL_SPELL_IDS } from '../game/content/spells/spells'
+import { createEmptyResonanceState } from '../game/systems/resonance/resonanceRuntime'
 
 // Combat Action System V3 stores authored base work plus remaining work for
 // dynamic-rate action progression.
-export const SAVE_VERSION = 38
+export const SAVE_VERSION = 39
 
 const emptySpellRecord = <T>(value: T) => Object.fromEntries(CANONICAL_SPELL_IDS.map((spellId) => [spellId, value])) as Record<import('../game/types').SpellId, T>
 
@@ -18,6 +19,7 @@ export const createInitialState = (): GameState => ({
   player: { health: BALANCE.player.maxHealth, maxHealth: BALANCE.player.maxHealth, mana: BALANCE.mana.startingMana, maxMana: BALANCE.mana.maxMana, maxFocus: BALANCE.focus.startingMax, baseMaxHealth: BALANCE.player.maxHealth, baseMaxMana: BALANCE.mana.maxMana, baseMaxFocus: BALANCE.focus.startingMax, healthRegenTimerMs: BALANCE.player.healthRegenIntervalMs },
   schools: { fire: { xp: 0, level: 1 }, water: { xp: 0, level: 1 }, earth: { xp: 0, level: 1 }, air: { xp: 0, level: 1 } },
   currencies: { gold: 0 },
+  resonance: createEmptyResonanceState(),
   inventory: {},
   protectedItems: {},
   equipment: { weapon: null, armor: null, head: null },

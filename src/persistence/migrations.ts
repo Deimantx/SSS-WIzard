@@ -34,6 +34,7 @@ import { isScreenUnlocked, reconcileStoryProgression } from '../game/systems/sto
 import { getTransmutationArrayBonuses } from '../game/systems/transmutation/transmutationArrays'
 import { ARCANE_CORE_MAJOR_COST_BY_RING, ARCANE_CORE_MAX_LEVEL, ARCANE_CORE_MAX_TOTAL_XP, ARCANE_CORE_STANDARD_RANK_COST_BY_RING, ARCANE_CORE_TOTAL_TREE_COST, getArcaneCoreLevelForXp } from '../game/content/arcaneCore/arcaneCoreBalance'
 import { getArcaneCoreNode } from '../game/content/arcaneCore/arcaneCoreBranches'
+import { normalizeResonanceState } from '../game/systems/resonance/resonanceRuntime'
 
 const statusValidationContext = createCombatValidationContext(STATUS_DEFINITIONS)
 
@@ -78,7 +79,8 @@ const recipeIds = Object.keys(RECIPES)
 const permanentFocusIds = ['forest-heart', 'guild-apprentice']
 /** V34 is the first save topology that stores Arcane Core ranked nodes. */
 const ARCANE_CORE_RANKED_NODE_SAVE_VERSION = 34
-const ARCANE_CORE_V37_REPRICE_SAVE_VERSION = SAVE_VERSION - 1
+const PRE_RESONANCE_SAVE_VERSION = SAVE_VERSION - 1
+const ARCANE_CORE_V37_REPRICE_SAVE_VERSION = 37
 const ARCANE_CORE_V37_STANDARD_RANK_COST_BY_RING = { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 8, 8: 10 } as const
 const ARCANE_CORE_V37_MAJOR_COST_BY_RING = { 1: 4, 2: 8, 3: 12, 4: 16, 5: 20, 6: 24, 7: 32, 8: 40 } as const
 const ARCANE_CORE_V37_TOTAL_TREE_COST = 6864
@@ -96,7 +98,7 @@ const normalizeArcaneCore = (migrated: GameState, raw: Record<string, any>) => {
     })
     return nodes
   }
-  if (sourceVersion >= SAVE_VERSION && typeof source.totalPointsEarned === 'number' && Number.isFinite(source.totalPointsEarned)) {
+  if (sourceVersion >= PRE_RESONANCE_SAVE_VERSION && typeof source.totalPointsEarned === 'number' && Number.isFinite(source.totalPointsEarned)) {
     migrated.arcaneCore = { totalPointsEarned: Math.max(0, Math.min(ARCANE_CORE_TOTAL_TREE_COST, Math.floor(source.totalPointsEarned))), nodes: normalizeNodes() }
     return
   }
@@ -271,7 +273,7 @@ const normalizeSpellProgression = (migrated: GameState, raw: Record<string, any>
   // Current saves already use the canonical 32-spell roster. Preserve those
   // ranks (and normalize any remaining legacy aliases) instead of rebuilding
   // progression from school levels on every save/load round-trip.
-  if (sourceVersion >= SAVE_VERSION) {
+  if (sourceVersion >= PRE_RESONANCE_SAVE_VERSION) {
     Object.entries(rawRanks).forEach(([id, value]) => {
       const spellId = normalizeSpellId(id)
       if (spellId && isSpellRankValue(value)) ranks[spellId] = value
@@ -293,7 +295,7 @@ const normalizeSpellProgression = (migrated: GameState, raw: Record<string, any>
   }
 
   migrated.progress.spellRanks = ranks
-  if (sourceVersion < SAVE_VERSION) syncAllSpellUnlocks(migrated)
+  if (sourceVersion < PRE_RESONANCE_SAVE_VERSION) syncAllSpellUnlocks(migrated)
   Object.keys(migrated.activities.autoCast).forEach((id) => {
     if (!isSpellRankValue(ranks[id as SpellId])) migrated.activities.autoCast[id as SpellId] = false
   })
@@ -305,7 +307,7 @@ const normalizeSpellPresets = (migrated: GameState, raw: Record<string, any>, so
   const normalized = normalizeSpellPresetState(raw.spellPresets)
   // Fresh/current profiles are allowed to have no presets yet. Only older
   // saves that predate the preset schema need a synthesized first loadout.
-  if (normalized.presets.length === 0 && sourceVersion < SAVE_VERSION) {
+  if (normalized.presets.length === 0 && sourceVersion < PRE_RESONANCE_SAVE_VERSION) {
     const savedPriority = Array.isArray(rawActivities.autoCastPriority) ? rawActivities.autoCastPriority : migrated.activities.autoCastPriority
     const priority = savedPriority
       .map(normalizeSpellId)
@@ -333,6 +335,11 @@ const normalizeSchoolCap = (migrated: GameState, raw: Record<string, any>) => {
     BALANCE.schoolProgression.startingCap,
     ...(edrinDefeated ? [BALANCE.schoolProgression.tutorialCompleteCap] : []),
   ))
+}
+
+/** Resonance is first-class saved progression; normalize it explicitly rather than trusting merge(). */
+const normalizeResonance = (migrated: GameState, raw: Record<string, any>) => {
+  migrated.resonance = normalizeResonanceState(raw.resonance)
 }
 
 /** V25 changes School XP meaning from the old curve to authored cumulative totals. */
@@ -552,21 +559,21 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
   const runtimeNumber = (key: string, fallback = 0) => typeof rawArcaneRuntime[key] === 'number' && Number.isFinite(rawArcaneRuntime[key]) ? Math.max(0, rawArcaneRuntime[key]) : fallback
   const runtimeBoolean = (key: string, fallback = false) => typeof rawArcaneRuntime[key] === 'boolean' ? rawArcaneRuntime[key] : fallback
   migrated.combat.arcaneCoreRuntime = {
-    elapsedMs: sourceVersion >= SAVE_VERSION && runtimeNumber('elapsedMs') >= 0 ? runtimeNumber('elapsedMs') : 0,
-    encounterStartedAtMs: sourceVersion >= SAVE_VERSION ? Math.min(runtimeNumber('elapsedMs'), runtimeNumber('encounterStartedAtMs', runtimeNumber('elapsedMs'))) : 0,
+    elapsedMs: sourceVersion >= PRE_RESONANCE_SAVE_VERSION && runtimeNumber('elapsedMs') >= 0 ? runtimeNumber('elapsedMs') : 0,
+    encounterStartedAtMs: sourceVersion >= PRE_RESONANCE_SAVE_VERSION ? Math.min(runtimeNumber('elapsedMs'), runtimeNumber('encounterStartedAtMs', runtimeNumber('elapsedMs'))) : 0,
     damagingSpellCount: nonNegativeInteger(rawArcaneRuntime.damagingSpellCount) ?? 0,
     spellCastCount: nonNegativeInteger(rawArcaneRuntime.spellCastCount) ?? 0,
     cooldownPulseSpellCount: nonNegativeInteger(rawArcaneRuntime.cooldownPulseSpellCount) ?? 0,
     survivalInstinctUsed: rawArcaneRuntime.survivalInstinctUsed === true,
-    chainReactionReady: sourceVersion >= SAVE_VERSION && runtimeBoolean('chainReactionReady'),
-    victoryMomentumReady: sourceVersion >= SAVE_VERSION && runtimeBoolean('victoryMomentumReady'),
-    ruinTransferReady: sourceVersion >= SAVE_VERSION && runtimeBoolean('ruinTransferReady'),
-    ruinTransferMultiplier: sourceVersion >= SAVE_VERSION ? Math.max(1, runtimeNumber('ruinTransferMultiplier', 1)) : 1,
-    refuseDeathUsed: sourceVersion >= SAVE_VERSION && runtimeBoolean('refuseDeathUsed'),
-    immortalGuardUsed: sourceVersion >= SAVE_VERSION && runtimeBoolean('immortalGuardUsed'),
-    singularityUsed: sourceVersion >= SAVE_VERSION && runtimeBoolean('singularityUsed'),
-    absoluteStasisUsed: sourceVersion >= SAVE_VERSION && runtimeBoolean('absoluteStasisUsed'),
-    nextEnemyDamageMultiplier: sourceVersion >= SAVE_VERSION ? Math.max(1, runtimeNumber('nextEnemyDamageMultiplier', 1)) : 1,
+    chainReactionReady: sourceVersion >= PRE_RESONANCE_SAVE_VERSION && runtimeBoolean('chainReactionReady'),
+    victoryMomentumReady: sourceVersion >= PRE_RESONANCE_SAVE_VERSION && runtimeBoolean('victoryMomentumReady'),
+    ruinTransferReady: sourceVersion >= PRE_RESONANCE_SAVE_VERSION && runtimeBoolean('ruinTransferReady'),
+    ruinTransferMultiplier: sourceVersion >= PRE_RESONANCE_SAVE_VERSION ? Math.max(1, runtimeNumber('ruinTransferMultiplier', 1)) : 1,
+    refuseDeathUsed: sourceVersion >= PRE_RESONANCE_SAVE_VERSION && runtimeBoolean('refuseDeathUsed'),
+    immortalGuardUsed: sourceVersion >= PRE_RESONANCE_SAVE_VERSION && runtimeBoolean('immortalGuardUsed'),
+    singularityUsed: sourceVersion >= PRE_RESONANCE_SAVE_VERSION && runtimeBoolean('singularityUsed'),
+    absoluteStasisUsed: sourceVersion >= PRE_RESONANCE_SAVE_VERSION && runtimeBoolean('absoluteStasisUsed'),
+    nextEnemyDamageMultiplier: sourceVersion >= PRE_RESONANCE_SAVE_VERSION ? Math.max(1, runtimeNumber('nextEnemyDamageMultiplier', 1)) : 1,
   }
 }
 
@@ -839,6 +846,7 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   delete migratedCombat.playerAttackTimerMs
   delete migratedCombat.playerAttackDurationMs
   normalizeArcaneCore(migrated, raw)
+  normalizeResonance(migrated, raw)
   migrated.player.healthRegenTimerMs = normalizeHealthRegenTimer(isRecord(raw.player) ? raw.player.healthRegenTimerMs : undefined)
   migrated.progress.channeling = migrateChanneling(raw.progress, createInitialState().progress)
   migrated.progress.transmutation = migrateTransmutationArrays(raw.progress, createInitialState().progress)

@@ -15,6 +15,7 @@ import type {
 import { periodicDamageStatus } from "../statuses/periodicDamageStatus";
 import { getDungeonArtifactEssenceRange } from "../dungeons/dungeonLoot";
 import type { DungeonId } from "../../types";
+import type { ResonanceYield } from "../resonance/resonance";
 
 export type MonsterPortraitIcon =
   | "wisp"
@@ -52,6 +53,8 @@ export interface MonsterDefinition {
   statusImmunities?: StatusId[];
   statusTagImmunities?: CombatTag[];
   loot: { itemId: ItemId; min: number; max: number; chance: number }[];
+  /** Optional during Phase 1 while the rest of the authored roster is converted. */
+  resonanceYield?: ResonanceYield;
   actions: Record<string, CombatActionDefinition>;
   actionPatterns: Record<string, ActionPattern>;
   defaultActionPatternId: string;

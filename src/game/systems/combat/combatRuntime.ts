@@ -20,6 +20,8 @@ import { SUMMONING_UNLOCK_BOSS_ID } from '../../content/guardians/guardians'
 import { beginGuardianEncounter, clearGuardianRuntime, suppressGuardianIfOutOfMana } from '../summoning/summoningRuntime'
 import { activateSelectedSpellPresetForBattle, getSelectedSpellPreset } from '../spells'
 import { resetArcaneCoreEncounterRuntime } from '../arcaneCore/arcaneCoreRuntime'
+import { grantEnemyResonanceReward } from '../resonance/resonanceRuntime'
+import { formatResonanceBundle } from '../../presentation/resonance/resonancePresentation'
 
 export { applyStatus, clearStatuses, damageEnemy, damagePlayer, executeCombatEffects, gainBarrier }
 
@@ -134,6 +136,10 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   const resolvedDrops: CombatLootDrop[] = []
   const drops = resolveMonsterLoot(state, enemyId, (itemId, quantity) => { onItemAcquired?.(itemId, quantity); report?.recordLoot(itemId, quantity); resolvedDrops.push({ itemId, quantity, isNewDiscovery: !undiscoveredItems.has(itemId) }); uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'loot', sourceId: 'loot-drop', itemId, amount: quantity }) })
   if (resolvedDrops.length) onLootResolved?.(state, enemyId, resolvedDrops)
+  const resonanceGained = grantEnemyResonanceReward(state.resonance, enemyId)
+  report?.recordResonance(resonanceGained)
+  const resonanceText = formatResonanceBundle(resonanceGained)
+  const rewardText = resonanceText === '0 Resonance' ? '' : ` · ${resonanceText}`
   report?.recordKill(enemyId)
   clearGuardianRuntime(state)
   state.combat.enemyId = null
@@ -189,14 +195,14 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
     }
     reconcileStoryProgression(state)
     report?.recordNotable(`${monster.name} defeated`)
-    appendLog(state, `${monster.name} defeated${drops ? ` - ${drops}` : ''}. Threat Cleared resets.`)
+    appendLog(state, `${monster.name} defeated${drops ? ` - ${drops}` : ''}${rewardText}. Threat Cleared resets.`)
   } else {
     state.progress.lifetimeKills += 1
     state.progress.lifetimeKillsByMonster[enemyId] = (state.progress.lifetimeKillsByMonster[enemyId] ?? 0) + 1
     state.combat.threatCleared += 1
     if (enemyId === 'grove-sentinel') state.progress.requestProgress['sentinel-breaker'] = Math.max(state.progress.requestProgress['sentinel-breaker'] ?? 0, state.progress.lifetimeKillsByMonster[enemyId])
     if (state.combat.dungeonId === 'whispering-woods') state.progress.requestProgress['clear-the-woods'] = (state.progress.requestProgress['clear-the-woods'] ?? 0) + 1
-    appendLog(state, `${monster.name} defeated${drops ? ` - ${drops}` : ''}`)
+    appendLog(state, `${monster.name} defeated${drops ? ` - ${drops}` : ''}${rewardText}`)
     if (state.combat.threatCleared === dungeon.threatRequired) pushNotification(state, `${MONSTERS[dungeon.boss].name} is ready`, 'success')
     if (state.progress.autoHuntBossByDungeon[dungeon.id] && state.combat.threatCleared >= dungeon.threatRequired && !state.combat.pendingBossId) {
       state.combat.pendingBossId = dungeon.boss

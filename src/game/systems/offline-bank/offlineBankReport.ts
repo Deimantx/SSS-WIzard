@@ -2,12 +2,13 @@ import { isBossMonster, MONSTERS } from '../../content/monsters'
 import { getArcaneCoreTotalPointsEarned } from '../arcaneCore/arcaneCoreProgression'
 import { ITEMS } from '../../content/items/items'
 import type { ArtificingRecipeId, ChannelingDiscoveryId, GameState, ItemId, MonsterId, RecipeId, SchoolId, SpellId } from '../../types'
+import { RESONANCE_TYPES, type ResonanceYield } from '../../content/resonance/resonance'
 
 export interface OfflineBankReport {
   durationMs: number
   bankBeforeMs: number
   bankAfterMs: number
-  combat: { killsTotal: number; killsByMonster: Partial<Record<MonsterId, number>>; bossKills: Partial<Record<MonsterId, number>>; playerDeaths: number; loot: Partial<Record<ItemId, number>> }
+  combat: { killsTotal: number; killsByMonster: Partial<Record<MonsterId, number>>; bossKills: Partial<Record<MonsterId, number>>; playerDeaths: number; loot: Partial<Record<ItemId, number>>; resonance: Record<typeof RESONANCE_TYPES[number], number> }
   production: { transmutation: Partial<Record<ItemId, number>>; craftsByRecipe: Partial<Record<RecipeId, number>> }
   research: { researchedItems: Partial<Record<ItemId, number>>; xpBySchool: Partial<Record<SchoolId, number>>; levelBefore: Partial<Record<SchoolId, number>>; levelAfter: Partial<Record<SchoolId, number>>; stoppedAtCap?: boolean }
   consumption: { research: Partial<Record<ItemId, number>>; transmutation: Partial<Record<ItemId, number>> }
@@ -22,6 +23,7 @@ export interface SimulationReportCollector {
   recordLoot: (itemId: ItemId, quantity: number) => void
   recordPlayerDeath: () => void
   recordArcanePoints: (amount: number, pointsBefore?: number, pointsAfter?: number) => void
+  recordResonance: (bundle: ResonanceYield) => void
   recordTransmutation: (recipeId: RecipeId, output: ItemId, quantity: number, ingredients: { itemId: ItemId; quantity: number }[]) => void
   recordArtificing: (recipeId: ArtificingRecipeId, output: ItemId) => void
   recordResearch: (itemId: ItemId, schoolId: SchoolId, xp: number) => void
@@ -41,7 +43,7 @@ export function createOfflineBankReportCollector(state: GameState, durationMs: n
   const levelBefore = Object.fromEntries((Object.keys(state.schools) as SchoolId[]).map((id) => [id, state.schools[id].level])) as Partial<Record<SchoolId, number>>
   const report: OfflineBankReport = {
     durationMs, bankBeforeMs, bankAfterMs: bankBeforeMs,
-    combat: { killsTotal: 0, killsByMonster: {}, bossKills: {}, playerDeaths: 0, loot: {} },
+    combat: { killsTotal: 0, killsByMonster: {}, bossKills: {}, playerDeaths: 0, loot: {}, resonance: Object.fromEntries(RESONANCE_TYPES.map((type) => [type, 0])) as OfflineBankReport['combat']['resonance'] },
     production: { transmutation: {}, craftsByRecipe: {} },
     research: { researchedItems: {}, xpBySchool: {}, levelBefore, levelAfter: {}, stoppedAtCap: false },
     consumption: { research: {}, transmutation: {} }, netInventory: {},
@@ -56,6 +58,7 @@ export function createOfflineBankReportCollector(state: GameState, durationMs: n
     recordLoot: (itemId, quantity) => { touch(itemId); add(report.combat.loot, itemId, quantity) },
     recordPlayerDeath: () => { report.combat.playerDeaths += 1 },
     recordArcanePoints: (amount, pointsBefore, pointsAfter) => { report.progression.arcaneCore.pointsGained += Math.max(0, Math.floor(amount)); if (pointsBefore !== undefined) report.progression.arcaneCore.pointsBefore = pointsBefore; if (pointsAfter !== undefined) report.progression.arcaneCore.pointsAfter = pointsAfter },
+    recordResonance: (bundle) => { RESONANCE_TYPES.forEach((type) => { add(report.combat.resonance, type, bundle[type] ?? 0) }) },
     recordTransmutation: (recipeId, output, quantity, ingredients) => { touch(output); add(report.production.craftsByRecipe, recipeId, quantity); add(report.production.transmutation, output, quantity); ingredients.forEach((ingredient) => { touch(ingredient.itemId); add(report.consumption.transmutation, ingredient.itemId, ingredient.quantity) }) },
     recordArtificing: (recipeId, output) => { touch(output); add(report.production.craftsByRecipe, recipeId, 1) },
     recordResearch: (itemId, schoolId, xp) => { touch(itemId); add(report.research.researchedItems, itemId, 1); add(report.research.xpBySchool, schoolId, xp); add(report.consumption.research, itemId, 1) },

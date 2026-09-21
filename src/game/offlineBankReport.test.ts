@@ -8,7 +8,7 @@ import { makeInitialState } from '../store/gameStore'
 import { serializeGameState } from '../persistence/profileSaveManager'
 import { prepareResearchAction, setResearchEchoesAction } from '../store/actions/researchActions'
 import { castSpellAction } from '../store/actions/combatActions'
-import { spawnEnemy } from './systems/combat/combatRuntime'
+import { resolveCombatDeaths, spawnEnemy } from './systems/combat/combatRuntime'
 
 const runTick = (state: ReturnType<typeof makeInitialState>, report: ReturnType<typeof createOfflineBankReportCollector>, durationMs = 1) => {
   advanceGameState(state, durationMs, { mode: 'banked', report })
@@ -58,6 +58,8 @@ describe('Offline Bank event reports', () => {
     state.progress.spellRanks['fire-bolt'] = 1
     state.activities.autoCast['fire-bolt'] = true
     state.activities.autoCastPriority = ['fire-bolt']
+    state.spellPresets.presets = [{ id: 'offline-report', name: 'Offline Report', slots: [{ spellId: 'fire-bolt', autoCast: true }] }]
+    state.spellPresets.selectedPresetId = 'offline-report'
     spawnEnemy(state, 'forest-wisp')
     state.combat.activeSpellLoadout!.slots = [{ spellId: 'fire-bolt', autoCast: true }]
     state.combat.activeSpellLoadout!.signature = 'fire-bolt:1'
@@ -73,7 +75,27 @@ describe('Offline Bank event reports', () => {
 
     expect(result.combat.killsTotal).toBe(1)
     expect(result.combat.killsByMonster['forest-wisp']).toBe(1)
+    expect(result.combat.resonance).toEqual({ fire: 0, water: 0, earth: 0, air: 10 })
     expect(Object.keys(result.combat.loot).length).toBeGreaterThan(0)
+  })
+
+  it('records actual Resonance granted by combat and fabricates none for non-combat advances', () => {
+    const state = makeInitialState()
+    state.combat.active = true
+    state.combat.dungeonId = 'whispering-woods'
+    state.progress.spellRanks['fire-bolt'] = 1
+    state.spellPresets.presets = [{ id: 'report-test', name: 'Report Test', slots: [{ spellId: 'fire-bolt', autoCast: false }] }]
+    state.spellPresets.selectedPresetId = 'report-test'
+    spawnEnemy(state, 'forest-wisp')
+    state.combat.enemyHp = 0
+    const collector = createOfflineBankReportCollector(state, 1, 1_000)
+    resolveCombatDeaths(state, collector)
+    const result = collector.finalize(state)
+    expect(state.resonance.air).toBe(10)
+    expect(result.combat.resonance.air).toBe(10)
+
+    const nonCombat = createOfflineBankReportCollector(makeInitialState(), 1_000, 1_000).finalize(makeInitialState())
+    expect(nonCombat.combat.resonance).toEqual({ fire: 0, water: 0, earth: 0, air: 0 })
   })
 
   it('reports research stopping at the current level cap without consuming an item', () => {
@@ -107,6 +129,8 @@ describe('Offline Bank event reports', () => {
     state.progress.spellRanks['fire-bolt'] = 1
     state.activities.autoCast['fire-bolt'] = true
     state.activities.autoCastPriority = ['fire-bolt']
+    state.spellPresets.presets = [{ id: 'offline-report', name: 'Offline Report', slots: [{ spellId: 'fire-bolt', autoCast: true }] }]
+    state.spellPresets.selectedPresetId = 'offline-report'
     spawnEnemy(state, 'forest-wisp')
     state.combat.activeSpellLoadout!.slots = [{ spellId: 'fire-bolt', autoCast: true }]
     state.combat.activeSpellLoadout!.signature = 'fire-bolt:1'

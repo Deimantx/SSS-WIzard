@@ -62,6 +62,7 @@ export const WHISPERING_WOODS_MONSTERS = {
     },
     defaultActionPatternId: "default",
     loot: withDungeonLoot("whispering-woods", "normal"),
+    resonanceYield: { air: 10 },
   },
   thornling: {
     id: "thornling",
@@ -117,6 +118,7 @@ export const WHISPERING_WOODS_MONSTERS = {
     },
     defaultActionPatternId: "default",
     loot: withDungeonLoot("whispering-woods", "normal"),
+    resonanceYield: { earth: 12 },
   },
   "stone-root": {
     id: "stone-root",
@@ -165,6 +167,7 @@ export const WHISPERING_WOODS_MONSTERS = {
     },
     defaultActionPatternId: "default",
     loot: withDungeonLoot("whispering-woods", "normal", { chance: 0.2 }),
+    resonanceYield: { earth: 20 },
   },
   "grove-sentinel": {
     id: "grove-sentinel",
@@ -241,6 +244,7 @@ export const WHISPERING_WOODS_MONSTERS = {
     },
     defaultActionPatternId: "default",
     loot: withDungeonLoot("whispering-woods", "normal", { min: 2, max: 5 }),
+    resonanceYield: { earth: 45 },
   },
   "forest-heart": {
     id: "forest-heart",
@@ -322,6 +326,7 @@ export const WHISPERING_WOODS_MONSTERS = {
     },
     defaultActionPatternId: "default",
     loot: withDungeonLoot("whispering-woods", "boss", { min: 10, max: 18 }),
+    resonanceYield: { earth: 80 },
   },
 } satisfies Partial<Record<MonsterId, MonsterDefinition>>;
 

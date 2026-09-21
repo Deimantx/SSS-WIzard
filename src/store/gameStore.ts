@@ -24,7 +24,7 @@ import { type SaveReason } from '../persistence/saveConstants'
 import { getActiveProfileId } from '../profiles/profileSessionStore'
 import { updateProfileMetadata } from '../profiles/profileStorage'
 import { createInitialState } from './initialState'
-import type { ArcaneCoreBranchId, ArtifactId, CanonicalSpellId, ChannelingDiscoveryId, DungeonId, EquipmentPosition, GameState, GuardianId, ItemId, ManaPillarId, MonsterId, TransmutationArrayId, TransmutationRecipeId, ResearchSlotId, SchoolId, ScreenId, SpellId, SpellPreset, SpellPresetId, StatusId, StoryEventId } from '../game/types'
+import type { ArcaneCoreBranchId, ArtifactId, CanonicalSpellId, ChannelingDiscoveryId, DungeonId, EquipmentPosition, GameState, GuardianId, ItemId, ManaPillarId, MonsterId, ResonanceType, TransmutationArrayId, TransmutationRecipeId, ResearchSlotId, SchoolId, ScreenId, SpellId, SpellPreset, SpellPresetId, StatusId, StoryEventId } from '../game/types'
 import { clamp } from '../game/utils'
 import { createDefaultDebugOverrides, resetCombatDebugState, resetDebugState, sanitizeCombatTimeScale, sanitizeDebugNumber } from './actions/debugActions'
 import { addItemAction, destroyItemAction, removeItemAction, sellItemAction, toggleItemProtectionAction } from './actions/inventoryActions'
@@ -68,6 +68,8 @@ import { ARCANE_CORE_TOTAL_TREE_COST } from '../game/content/arcaneCore/arcaneCo
 import { resetArcaneCoreCombatRuntime } from '../game/systems/arcaneCore/arcaneCoreRuntime'
 import { getArcaneCorePresetSnapshot, useArcaneCorePresetStore } from './arcaneCorePresetStore'
 import { stabilizeResourceValue } from '../game/presentation/resources/resourcePresentation'
+import { DEBUG_RESONANCE_TEST_BUNDLE } from '../game/content/resonance/resonance'
+import { clearAllResonance, clearResonance, grantResonance, setResonance } from '../game/systems/resonance/resonanceRuntime'
 
 const combatEventSink = createCombatEventSink(combatLogSink, combatRecapSink, combatDefeatSink, combatAlertsSink, dungeonStatisticsSink, combatTelemetrySink)
 const offlineBankCombatAnalyticsSink = createCombatEventSink(dungeonStatisticsSink, combatTelemetrySink)
@@ -200,6 +202,11 @@ export interface GameActions {
   respecArtifact: (artifactId: import('../game/types').ArtifactId) => boolean
   grantArcanePoints: (amount: number) => void
   setArcanePoints: (amount: number) => void
+  debugGrantResonance: (type: ResonanceType, amount: number) => void
+  debugSetResonance: (type: ResonanceType, amount: number) => void
+  debugClearResonance: (type: ResonanceType) => void
+  debugClearAllResonance: () => void
+  debugGrantResonanceTestBundle: () => void
   purchaseArcaneCoreNode: (nodeId: string) => boolean
   refundArcaneCoreNode: (nodeId: string) => boolean
   setArcaneCoreNodeRank: (nodeId: string, rank: number) => void
@@ -508,6 +515,11 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   respecArtifact: (artifactId) => { let ok = false; set((state) => { ok = respecArtifact(state, artifactId); recalculateDerivedStats(state); return state }); return ok },
   grantArcanePoints: (amount) => set((state) => { state.arcaneCore = grantArcanePoints(state.arcaneCore, sanitizeDebugNumber(amount)).state; return state }),
   setArcanePoints: (amount) => set((state) => { state.arcaneCore = setArcaneCoreTotalPointsEarned(state.arcaneCore, sanitizeDebugNumber(amount)); recalculateDerivedStats(state); return state }),
+  debugGrantResonance: (type, amount) => set((state) => { grantResonance(state.resonance, type, amount); return state }),
+  debugSetResonance: (type, amount) => set((state) => { setResonance(state.resonance, type, amount); return state }),
+  debugClearResonance: (type) => set((state) => { clearResonance(state.resonance, type); return state }),
+  debugClearAllResonance: () => set((state) => { clearAllResonance(state.resonance); return state }),
+  debugGrantResonanceTestBundle: () => set((state) => { Object.entries(DEBUG_RESONANCE_TEST_BUNDLE).forEach(([type, amount]) => { grantResonance(state.resonance, type as ResonanceType, amount) }); return state }),
   purchaseArcaneCoreNode: (nodeId) => { let ok = false; set((state) => { ok = commitArcaneCoreResult(state, purchaseArcaneCoreNode(state.arcaneCore, nodeId, { freeCosts: state.debug.arcaneCoreFreeCosts, ignorePrerequisites: state.debug.arcaneCoreIgnorePrerequisites })); if (ok) recalculateDerivedStats(state); return state }); return ok },
   refundArcaneCoreNode: (nodeId) => { let ok = false; set((state) => { ok = commitArcaneCoreResult(state, refundArcaneCoreNode(state.arcaneCore, nodeId)); if (ok) recalculateDerivedStats(state); return state }); return ok },
   setArcaneCoreNodeRank: (nodeId, rank) => set((state) => { const result = setArcaneCoreNodeRank(state.arcaneCore, nodeId, rank); if (result.ok) { state.arcaneCore = result.state; recalculateDerivedStats(state) }; return state }),

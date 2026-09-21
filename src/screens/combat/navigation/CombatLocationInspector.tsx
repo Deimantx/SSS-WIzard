@@ -1,37 +1,67 @@
-import { BookOpen, Crown, Gem, LockKeyhole, Package, Swords } from 'lucide-react'
+import { BookOpen, Gem, LockKeyhole, Package, Swords } from 'lucide-react'
 import { Button, GameTooltip, Status } from '../../../components/ui'
 import { TooltipContent } from '../../../components/ui/tooltip/Tooltip'
 import { MONSTERS, type MonsterDefinition } from '../../../game/content/monsters'
+import { getNonZeroResonanceEntries } from '../../../game/presentation/resonance/resonancePresentation'
+import type { CombatEncounterViewModel, CombatLocationViewModel, CombatTargetViewModel } from '../../../game/presentation/combat/combatWorldNavigationTypes'
 import { getMonsterDossierCombatStats } from '../../../game/presentation/combat'
-import type { CombatEncounterViewModel, CombatLocationViewModel } from '../../../game/presentation/combat/combatWorldNavigationTypes'
 import { formatNumber, formatTime } from '../../../game/utils'
+import type { MonsterId } from '../../../game/types'
 import { MonsterPortrait } from '../MonsterPortrait'
 
-export function CombatLocationInspector({ location, activeLocationId, combatActive, onLoot, onBestiary, onEnter }: { location: CombatLocationViewModel | null; activeLocationId: string | null; combatActive: boolean; onLoot: () => void; onBestiary: () => void; onEnter: () => void }) {
-  if (!location) return <aside className="combat-location-inspector" aria-label="Location details"><div className="combat-location-inspector-empty"><span aria-hidden="true">◇</span><strong>SELECT A LOCATION</strong><p>Choose a location to inspect its status, encounters, loot, and entry action.</p></div></aside>
+export function CombatLocationInspector({ location, activeLocationId, combatActive, selectedTargetEnemyId, onSelectTarget, onLoot, onBestiary, onEnter }: { location: CombatLocationViewModel | null; activeLocationId: string | null; combatActive: boolean; selectedTargetEnemyId: MonsterId | null; onSelectTarget: (enemyId: MonsterId) => void; onLoot: () => void; onBestiary: () => void; onEnter: () => void }) {
+  if (!location) return <aside className="combat-location-inspector" aria-label="Location details"><div className="combat-location-inspector-empty"><span aria-hidden="true">◇</span><strong>SELECT A LOCATION</strong><p>Choose a location to inspect its interaction and entry action.</p></div></aside>
 
   const isActive = Boolean(combatActive && activeLocationId === location.id)
   const locked = location.state === 'locked'
   const prototype = location.state === 'prototype'
-  const entryLabel = prototype ? 'CONTENT NOT AUTHORED' : isActive ? 'RETURN TO COMBAT' : locked ? 'LOCATION LOCKED' : `${location.type === 'combat-zone' ? 'ENTER ZONE' : location.type === 'dungeon' ? 'ENTER DUNGEON' : 'ENTER LOCATION'}`
-  const entryTooltip = prototype
+  const selectedTarget = location.targeting?.targets.find((target) => target.monsterId === selectedTargetEnemyId) ?? null
+  const activeTarget = location.targeting?.activeTargetEnemyId ?? null
+  const primaryLabel = prototype
+    ? 'CONTENT NOT AUTHORED'
+    : locked
+      ? 'LOCATION LOCKED'
+      : location.targeting
+        ? !selectedTarget ? 'SELECT A TARGET' : isActive && selectedTarget.monsterId === activeTarget ? 'RETURN TO COMBAT' : isActive ? 'SWITCH TARGET' : 'START FARMING'
+        : isActive ? 'RETURN TO COMBAT' : location.type === 'dungeon' ? 'ENTER DUNGEON' : 'ENTER LOCATION'
+  const primaryDisabled = locked || prototype || Boolean(location.targeting && !selectedTarget)
+  const primaryTooltip = prototype
     ? <TooltipContent title="Content not authored" description="This location is reserved for a future content type." />
     : locked
       ? <TooltipContent title="Location locked" description={location.unlockText ?? 'This location is not available yet.'} />
-      : undefined
+      : location.targeting && !selectedTarget
+        ? <TooltipContent title="Select a farming target" description="Choose a normal encounter before starting a targeted run." />
+        : undefined
+  const tone = location.state === 'locked' ? 'locked' : location.state === 'completed' ? 'success' : location.state === 'boss-ready' ? 'warning' : 'active'
 
   return <aside className={`combat-location-inspector is-${location.state}`} aria-label="Location details">
     <div className="combat-location-inspector-scroll">
-      <div className="combat-location-inspector-hero"><div className="combat-location-inspector-glyph" aria-hidden="true"><span>{location.type === 'dungeon' ? '◆' : location.type === 'combat-zone' ? '✧' : '◇'}</span><i /></div><div className="combat-location-inspector-heading"><span className="combat-subsection-label">LOCATION DETAILS</span><h3>{location.name}</h3><div className="combat-location-inspector-badges"><Status tone={location.state === 'locked' ? 'locked' : location.state === 'completed' ? 'success' : location.state === 'boss-ready' ? 'warning' : 'active'}>{location.statusLabel}</Status><span className="combat-location-type-badge">{location.typeLabel}</span></div></div></div>
+      <div className="combat-location-inspector-hero"><div className="combat-location-inspector-glyph" aria-hidden="true"><span>{location.type === 'dungeon' ? '◈' : location.type === 'combat-zone' ? '✧' : '◇'}</span><i /></div><div className="combat-location-inspector-heading"><span className="combat-subsection-label">LOCATION DETAILS</span><h3>{location.name}</h3><div className="combat-location-inspector-badges"><Status tone={tone}>{location.statusLabel}</Status><span className="combat-location-type-badge">{location.typeLabel}</span></div></div></div>
       <p className="combat-location-description">{location.description}</p>
-      <section className="combat-location-section"><span className="combat-location-section-label">LOCATION TYPE</span><div className="combat-location-type-note"><strong>{location.typeLabel}</strong><span>{location.type === 'combat-zone' ? 'Repeatable combat content. Encounter tiles are preview-only in Phase 3A.' : location.type === 'dungeon' ? 'Structured encounter and boss content.' : 'Future content type.'}</span></div></section>
-      {location.threatRequired !== null && <section className="combat-location-section"><span className="combat-location-section-label">LOCATION STATUS</span><div className="combat-location-metrics"><span><small>THREAT</small><strong>{location.threatCleared} / {location.threatRequired}</strong></span><span><small>NORMAL KILLS</small><strong>{location.normalKills.toLocaleString()}</strong></span><span><small>BOSS CLEARS</small><strong>{location.bossClears.toLocaleString()}</strong></span></div></section>}
-      <section className="combat-location-section"><div className="combat-location-section-head"><span className="combat-location-section-label">ENCOUNTERS</span><small>DISCOVERY STATUS</small></div><div className="combat-location-encounter-grid">{location.encounters.map((encounter) => <EncounterTile key={encounter.id} encounter={encounter} />)}{location.boss && <EncounterTile encounter={location.boss} />}</div></section>
+      {location.targeting ? <CombatZoneBody targeting={location.targeting} selectedTargetEnemyId={selectedTargetEnemyId} onSelectTarget={onSelectTarget} boss={location.boss} /> : <DungeonBody encounters={location.encounters} boss={location.boss} />}
       {locked && <div className="combat-location-lock-note"><LockKeyhole size={14} aria-hidden="true" /><span>{location.unlockText ?? 'This location is not available yet.'}</span></div>}
       {prototype && <div className="combat-location-lock-note is-prototype"><Gem size={14} aria-hidden="true" /><span>This location is presentation-only until gameplay content is authored.</span></div>}
-      <div className="combat-location-actions"><div className="combat-location-secondary-actions"><Button variant="secondary" onClick={onLoot}><Package size={14} aria-hidden="true" /> LOOT</Button><Button variant="secondary" disabled={prototype} tooltip={prototype ? <TooltipContent title="Bestiary unavailable" description="Prototype content has not been authored." /> : undefined} onClick={onBestiary}><BookOpen size={14} aria-hidden="true" /> BESTIARY</Button></div><Button variant={isActive ? 'primary' : 'success'} disabled={locked || prototype} tooltip={entryTooltip} onClick={onEnter}><Swords size={14} aria-hidden="true" /> {entryLabel}</Button></div>
+      <div className="combat-location-actions"><div className="combat-location-secondary-actions"><Button variant="secondary" onClick={onLoot}><Package size={14} aria-hidden="true" /> LOOT</Button><Button variant="secondary" disabled={prototype} tooltip={prototype ? <TooltipContent title="Bestiary unavailable" description="Prototype content has not been authored." /> : undefined} onClick={onBestiary}><BookOpen size={14} aria-hidden="true" /> BESTIARY</Button></div><Button variant={primaryDisabled ? 'secondary' : isActive ? 'primary' : 'success'} disabled={primaryDisabled} tooltip={primaryTooltip} onClick={onEnter}><Swords size={14} aria-hidden="true" /> {primaryLabel}</Button></div>
     </div>
   </aside>
+}
+
+function CombatZoneBody({ targeting, selectedTargetEnemyId, onSelectTarget, boss }: { targeting: NonNullable<CombatLocationViewModel['targeting']>; selectedTargetEnemyId: MonsterId | null; onSelectTarget: (enemyId: MonsterId) => void; boss: CombatEncounterViewModel | null }) {
+  return <>
+    <section className="combat-location-section"><div className="combat-location-section-head"><span className="combat-location-section-label">SELECT TARGET</span><small>RESONANCE REWARD</small></div><div className="combat-target-grid">{targeting.targets.map((target) => <TargetCard key={target.monsterId} target={target} selected={target.monsterId === selectedTargetEnemyId} onSelect={() => onSelectTarget(target.monsterId)} />)}</div></section>
+    {boss && <section className="combat-location-section combat-location-zone-boss"><span className="combat-location-section-label">ZONE BOSS</span><EncounterTile encounter={boss} /></section>}
+  </>
+}
+
+function DungeonBody({ encounters, boss }: { encounters: CombatEncounterViewModel[]; boss: CombatEncounterViewModel | null }) {
+  return <section className="combat-location-section"><div className="combat-location-section-head"><span className="combat-location-section-label">ENCOUNTERS</span><small>DISCOVERY STATUS</small></div><div className="combat-location-encounter-grid">{encounters.map((encounter) => <EncounterTile key={encounter.id} encounter={encounter} />)}{boss && <EncounterTile encounter={boss} />}</div></section>
+}
+
+function TargetCard({ target, selected, onSelect }: { target: CombatTargetViewModel; selected: boolean; onSelect: () => void }) {
+  const monster = MONSTERS[target.monsterId]
+  const tooltip = target.known && monster ? <EncounterMonsterTooltip monster={monster} /> : <TooltipContent title={target.name} description="Discover this creature in combat to reveal its full Bestiary dossier." />
+  const reward = getNonZeroResonanceEntries(target.resonanceYield)
+  return <GameTooltip block accent={selected ? 'warning' : 'mana'} content={tooltip}><button type="button" className={`combat-target-card${selected ? ' is-selected' : ''}`} aria-pressed={selected} onClick={onSelect}><span className="combat-target-card-portrait">{target.known && monster ? <MonsterPortrait monster={monster} /> : <span aria-hidden="true">?</span>}</span><span className="combat-target-card-copy"><strong>{target.name}</strong><small>{target.difficulty.toUpperCase()}</small><span>{reward.map((entry) => `+${entry.amount} ${entry.label}`).join(' · ')}</span></span>{selected && <b className="combat-target-card-marker">TARGET</b>}</button></GameTooltip>
 }
 
 function EncounterTile({ encounter }: { encounter: CombatEncounterViewModel }) {

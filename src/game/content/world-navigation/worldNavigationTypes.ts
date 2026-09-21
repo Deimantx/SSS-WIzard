@@ -11,6 +11,14 @@ export type CombatLocationType =
   | 'dungeon'
   | 'tower'
 
+export type CombatEncounterMode = 'random-pool' | 'targeted'
+export type CombatTargetDifficulty = 'easy' | 'standard' | 'hard' | 'apex'
+
+export interface CombatTargetMetadata {
+  difficulty: CombatTargetDifficulty
+  order: number
+}
+
 export type CombatNavigationUnlockCondition =
   | { type: 'always' }
   | { type: 'boss-kill'; bossId: MonsterId; count?: number }
@@ -44,23 +52,16 @@ export interface CombatLocationDefinition {
   type: CombatLocationType
   order: number
   dungeonId?: DungeonId
+  encounterMode?: CombatEncounterMode
+  targetMetadata?: Partial<Record<MonsterId, CombatTargetMetadata>>
   unlock?: CombatNavigationUnlockCondition
   prototype?: boolean
 }
 
-export const COMBAT_LOCATION_TYPE_METADATA: Record<CombatLocationType, { label: string; groupLabel: string; actionLabel: string }> = {
-  'combat-zone': { label: 'COMBAT ZONE', groupLabel: 'COMBAT ZONES', actionLabel: 'ENTER ZONE' },
-  'elite-zone': { label: 'ELITE ZONE', groupLabel: 'ELITE ZONES', actionLabel: 'ENTER ELITE ZONE' },
-  'special-zone': { label: 'SPECIAL ZONE', groupLabel: 'SPECIAL ZONES', actionLabel: 'ENTER SPECIAL ZONE' },
-  dungeon: { label: 'DUNGEON', groupLabel: 'DUNGEONS', actionLabel: 'ENTER DUNGEON' },
-  tower: { label: 'TOWER', groupLabel: 'TOWERS', actionLabel: 'ENTER TOWER' },
+export const COMBAT_LOCATION_TYPE_METADATA: Record<CombatLocationType, { label: string; actionLabel: string }> = {
+  'combat-zone': { label: 'COMBAT ZONE', actionLabel: 'ENTER ZONE' },
+  'elite-zone': { label: 'ELITE ZONE', actionLabel: 'ENTER ELITE ZONE' },
+  'special-zone': { label: 'SPECIAL ZONE', actionLabel: 'ENTER SPECIAL ZONE' },
+  dungeon: { label: 'DUNGEON', actionLabel: 'ENTER DUNGEON' },
+  tower: { label: 'TOWER', actionLabel: 'ENTER TOWER' },
 }
-
-export const COMBAT_LOCATION_TYPE_ORDER: readonly CombatLocationType[] = [
-  'combat-zone',
-  'elite-zone',
-  'special-zone',
-  'dungeon',
-  'tower',
-]
-

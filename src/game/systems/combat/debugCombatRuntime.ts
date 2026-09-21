@@ -1,12 +1,11 @@
-import { DUNGEONS, chooseMonster } from '../../content/dungeons/dungeons'
+import { DUNGEONS } from '../../content/dungeons/dungeons'
 import { isBossMonster, MONSTERS } from '../../content/monsters'
 import type { DungeonId, GameState, ItemId, MonsterId } from '../../types'
 import type { CombatEventSink } from './combatTypes'
 import { advanceCombatState, type AdvanceContext } from '../simulation/advanceGameState'
-import { finishEnemy, resolveCombatDeaths, spawnEnemy, type CombatLootObserver } from './combatRuntime'
+import { finishEnemy, resolveCombatDeaths, spawnEnemy, spawnNextEnemy, type CombatLootObserver } from './combatRuntime'
 import { resetEnemyActionRuntime } from './actionRuntime'
 import { clearEnemyRuleCooldowns } from './triggerRuntime'
-import { nextCombatRandom } from './combatRng'
 import { clearGuardianRuntime } from '../summoning/summoningRuntime'
 
 export interface DebugCombatRuntimeContext {
@@ -71,8 +70,7 @@ export const fastResolveNormalEnemiesForDebug = (
       if (isBossMonster(MONSTERS[state.combat.enemyId])) break
       resetEncounterWithoutRewards(state)
     }
-    const enemyId = chooseMonster(dungeon.monsterPool, () => nextCombatRandom(state))
-    spawnEnemy(state, enemyId, context.uiEvents)
+    spawnNextEnemy(state, context.uiEvents)
     state.combat.enemyHp = 0
     if (!resolveCombatDeaths(state, undefined, context.onItemAcquired, context.uiEvents, { forceEnemyDeath: true, onLootResolved: context.onCombatLoot })) break
     resolved += 1
@@ -117,4 +115,4 @@ export const advanceCombatOnlyForDebug = (state: GameState, durationMs: number, 
 
 // Kept as a named helper for callers that explicitly need the normal finish
 // implementation while bypassing the runtime immortality guard.
-export { finishEnemy }
+export { finishEnemy, spawnNextEnemy }

@@ -1,6 +1,7 @@
 import { DUNGEONS } from '../dungeons/dungeons'
+import { MONSTERS, isBossMonster } from '../monsters'
 import { COMBAT_CONTINENTS, COMBAT_LOCATIONS, COMBAT_REGIONS } from './worldNavigation'
-import type { CombatContinentDefinition, CombatLocationDefinition, CombatRegionDefinition } from './worldNavigationTypes'
+import type { CombatContinentDefinition, CombatLocationDefinition, CombatRegionDefinition, CombatTargetDifficulty } from './worldNavigationTypes'
 
 export interface CombatWorldNavigationContent {
   continents: Record<string, CombatContinentDefinition>
@@ -21,6 +22,8 @@ const validateOrders = (label: string, entries: readonly { id: string; order: nu
     if (unique(groupOrders.map(String)).length !== groupOrders.length) errors.push(`${label}: sibling orders must be unique`)
   })
 }
+
+const TARGET_DIFFICULTIES: readonly CombatTargetDifficulty[] = ['easy', 'standard', 'hard', 'apex']
 
 export function validateCombatWorldNavigation(content: CombatWorldNavigationContent = { continents: {}, regions: {}, locations: {} }): string[] {
   const errors: string[] = []
@@ -72,6 +75,29 @@ export function validateCombatWorldNavigation(content: CombatWorldNavigationCont
       if (existingLocation) errors.push(`${location.id}: dungeon ${location.dungeonId} is already mapped by ${existingLocation}`)
       mappedDungeons.set(location.dungeonId, location.id)
     }
+    const encounterMode = location.encounterMode ?? 'random-pool'
+    if (encounterMode !== 'random-pool' && encounterMode !== 'targeted') errors.push(`${location.id}: invalid encounter mode ${String(encounterMode)}`)
+    if (encounterMode !== 'targeted') return
+    const dungeon = location.dungeonId ? DUNGEONS[location.dungeonId] : undefined
+    const pool = dungeon?.monsterPool ?? []
+    if (pool.length === 0) errors.push(`${location.id}: targeted encounter pool must not be empty`)
+    if (!dungeon) return
+    if (pool.some((monsterId) => !MONSTERS[monsterId])) errors.push(`${location.id}: targeted pool references an unknown monster`)
+    if (pool.includes(dungeon.boss)) errors.push(`${location.id}: targeted pool may not contain its boss`)
+    const targetMetadata = location.targetMetadata ?? {}
+    pool.forEach((monsterId) => {
+      const metadata = targetMetadata[monsterId]
+      if (!metadata) {
+        errors.push(`${location.id}: targeted pool monster ${monsterId} is missing target metadata`)
+        return
+      }
+      if (!TARGET_DIFFICULTIES.includes(metadata.difficulty)) errors.push(`${location.id}: invalid target difficulty for ${monsterId}`)
+      if (!Number.isInteger(metadata.order) || metadata.order < 1) errors.push(`${location.id}: target order for ${monsterId} must be a positive integer`)
+    })
+    Object.keys(targetMetadata).forEach((monsterId) => { if (!pool.includes(monsterId as typeof pool[number])) errors.push(`${location.id}: target metadata references ${monsterId} outside the normal pool`) })
+    const orders = pool.flatMap((monsterId) => targetMetadata[monsterId]?.order ?? [])
+    if (new Set(orders).size !== orders.length) errors.push(`${location.id}: target orders must be unique`)
+    if (pool.some((monsterId) => MONSTERS[monsterId] && isBossMonster(MONSTERS[monsterId]))) errors.push(`${location.id}: targeted pool may not contain boss monsters`)
   })
   validateOrders('locations', locations, errors, (location) => content.locations[location.id]?.regionId ?? '')
 

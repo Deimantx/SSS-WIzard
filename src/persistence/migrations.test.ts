@@ -6,6 +6,7 @@ import { DUNGEONS, DUNGEON_ORDER, isDungeonUnlocked, isTutorialCompleted } from 
 import { MAX_ACTION_WORK_MS } from '../game/core/balance/combatTiming'
 import { getSchoolTotalXpForLevel } from '../game/core/balance/schoolXpCurve'
 import { SUMMONING_UNLOCK_BOSS_ID } from '../game/content/guardians/guardians'
+import { getCriticalSaveSnapshot, validateSerializedSave } from './saveIntegrity'
 
 describe('V27 story progression migration', () => {
   it('keeps the Dark Portal hidden when an old save has no Edrin kill', () => {
@@ -651,6 +652,45 @@ describe('save navigation migration', () => {
       },
     } as any)
     expect(migrated.activities.research.slots['research-1']).toMatchObject({ remainingQuantity: 3, echoesAssigned: 1, progressMs: 0, status: 'waiting-mana' })
+  })
+})
+
+describe('targeted combat migration', () => {
+  const migrateCombat = (combat: Partial<ReturnType<typeof createInitialState>['combat']>, saveVersion = 40) => {
+    const initial = createInitialState()
+    return migrateSave({
+      ...initial,
+      saveVersion,
+      combat: { ...initial.combat, ...combat },
+    } as any)
+  }
+
+  it('recovers a Whispering Woods target from the active normal enemy or the authored first target', () => {
+    expect(migrateCombat({ active: true, dungeonId: 'whispering-woods', enemyId: 'cinder-moth' }).combat.targetEnemyId).toBe('cinder-moth')
+    expect(migrateCombat({ active: true, dungeonId: 'whispering-woods', enemyId: null }).combat.targetEnemyId).toBe('forest-wisp')
+  })
+
+  it('never restores the Whispering Woods boss as a farming target', () => {
+    expect(migrateCombat({ active: true, dungeonId: 'whispering-woods', enemyId: 'forest-heart', targetEnemyId: 'forest-heart' }).combat.targetEnemyId).toBe('forest-wisp')
+  })
+
+  it('clears targeted farming state outside the targeted combat zone and repairs malformed IDs', () => {
+    expect(migrateCombat({ active: true, dungeonId: 'howling-den', enemyId: 'thornling', targetEnemyId: 'forest-wisp' }).combat.targetEnemyId).toBeNull()
+    expect(migrateCombat({ active: true, dungeonId: 'whispering-woods', enemyId: 'thornling', targetEnemyId: 'removed-monster' as any }).combat.targetEnemyId).toBe('thornling')
+  })
+
+  it('preserves the target in the critical save snapshot and serialized round trip', () => {
+    const state = createInitialState()
+    state.combat.active = true
+    state.combat.dungeonId = 'whispering-woods'
+    state.combat.enemyId = 'tempest-stag'
+    state.combat.targetEnemyId = 'tempest-stag'
+    const encoded = JSON.stringify(serializeGameState(state))
+    const validation = validateSerializedSave(encoded, state)
+
+    expect(validation.ok).toBe(true)
+    expect(validation.state?.combat.targetEnemyId).toBe('tempest-stag')
+    expect(getCriticalSaveSnapshot(validation.state!).targetEnemyId).toBe('tempest-stag')
   })
 })
 

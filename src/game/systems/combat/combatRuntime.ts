@@ -1,5 +1,6 @@
 import { BALANCE } from '../../core/balance/balance'
 import { DUNGEONS, chooseMonster } from '../../content/dungeons/dungeons'
+import { getCombatLocationByDungeonId, isCombatTargetForLocation } from '../../content/world-navigation'
 import { isBossMonster, MONSTERS } from '../../content/monsters'
 import { recalculateDerivedStats, appendLog, pushNotification } from '../../engine'
 import type { ActiveCombatSpellLoadout, GameState, ItemId, MonsterId } from '../../types'
@@ -123,7 +124,10 @@ export const spawnNextEnemy = (state: GameState, uiEvents?: CombatEventSink) => 
       return spawned
     }
   }
-  const spawned = spawnEnemy(state, chooseMonster(dungeon.monsterPool, () => nextCombatRandom(state)), uiEvents)
+  const location = getCombatLocationByDungeonId(dungeon.id)
+  const targetedEnemyId = isCombatTargetForLocation(location, dungeon.id, state.combat.targetEnemyId) ? state.combat.targetEnemyId : null
+  const nextEnemyId = targetedEnemyId ?? chooseMonster(dungeon.monsterPool, () => nextCombatRandom(state))
+  const spawned = spawnEnemy(state, nextEnemyId, uiEvents)
   if (!spawned && state.combat.active) state.combat.encounterTimerMs = dungeon.encounterDelayMs
   return spawned
 }

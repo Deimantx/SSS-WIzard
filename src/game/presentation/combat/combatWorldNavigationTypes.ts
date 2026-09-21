@@ -1,5 +1,5 @@
-import type { CombatContinentId, CombatLocationId, CombatLocationType, CombatRegionId } from '../../content/world-navigation'
-import type { DungeonId, MonsterId } from '../../types'
+import type { CombatContinentId, CombatEncounterMode, CombatLocationId, CombatLocationType, CombatRegionId, CombatTargetDifficulty } from '../../content/world-navigation'
+import type { DungeonId, MonsterId, ResonanceState, WorldTierId } from '../../types'
 
 export type CombatLocationState = 'locked' | 'available' | 'active' | 'boss-ready' | 'completed' | 'prototype'
 export type CombatNavigationNodeState = 'locked' | 'available'
@@ -12,6 +12,23 @@ export interface CombatEncounterViewModel {
   known: boolean
 }
 
+export interface CombatTargetViewModel {
+  monsterId: MonsterId
+  name: string
+  known: boolean
+  difficulty: CombatTargetDifficulty
+  order: number
+  worldTier: WorldTierId
+  resonanceYield: ResonanceState
+  maxHealth: number
+}
+
+export interface CombatTargetingViewModel {
+  mode: 'targeted'
+  targets: CombatTargetViewModel[]
+  activeTargetEnemyId: MonsterId | null
+}
+
 export interface CombatLocationViewModel {
   id: CombatLocationId
   name: string
@@ -22,18 +39,10 @@ export interface CombatLocationViewModel {
   unlockText: string | null
   dungeonId: DungeonId | null
   description: string
+  encounterMode: CombatEncounterMode
   encounters: CombatEncounterViewModel[]
   boss: CombatEncounterViewModel | null
-  threatRequired: number | null
-  threatCleared: number
-  normalKills: number
-  bossClears: number
-}
-
-export interface CombatLocationGroupViewModel {
-  type: CombatLocationType
-  label: string
-  locations: CombatLocationViewModel[]
+  targeting: CombatTargetingViewModel | null
 }
 
 export interface CombatContinentSummaryViewModel {
@@ -54,7 +63,7 @@ export interface CombatRegionSummaryViewModel {
 }
 
 export interface CombatRegionViewModel extends CombatRegionSummaryViewModel {
-  groups: CombatLocationGroupViewModel[]
+  locations: CombatLocationViewModel[]
 }
 
 export interface CombatWorldNavigationViewModel {
@@ -67,4 +76,3 @@ export interface CombatWorldNavigationViewModel {
   activeLocation: CombatLocationViewModel | null
   breadcrumb: string
 }
-

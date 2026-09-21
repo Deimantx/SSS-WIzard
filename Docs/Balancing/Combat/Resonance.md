@@ -21,8 +21,11 @@ The player stores one whole, finite, non-negative balance per category. Enemy pr
 | --- | --- |
 | Forest Wisp (forest-wisp) | 10 Air Resonance |
 | Thornling (thornling) | 12 Earth Resonance |
+| Dewbound Sprite (dewbound-sprite) | 18 Water Resonance |
+| Cinder Moth (cinder-moth) | 20 Fire Resonance |
 | Stone Root (stone-root) | 20 Earth Resonance |
 | Grove Sentinel (grove-sentinel) | 45 Earth Resonance |
+| Tempest Stag (tempest-stag) | 50 Air Resonance, 15 Earth Resonance |
 | Forest Heart (forest-heart) | 80 Earth Resonance |
 
 Unconverted enemies intentionally yield zero. These bootstrap values are not final balance. World Tier multipliers and unlock behavior are canonical in `Combat/World_Tiers.md`.

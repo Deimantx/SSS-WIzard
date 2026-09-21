@@ -15,16 +15,15 @@ describe('combat world navigation read model', () => {
     expect(getInitialCombatLocationId({ combat: state.combat, lastEnteredDungeonId: 'howling-den', progress: state.progress })).toBe('whispering-woods')
   })
 
-  it('presents First Frontier with Combat Zones and Dungeons only', () => {
+  it('presents First Frontier as one authored-order location list', () => {
     const state = createInitialState()
     const view = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedLocationId: 'whispering-woods' })
 
     expect(view.selectedContinent.name).toBe('Continent I')
     expect(view.selectedRegion.name).toBe('First Frontier')
-    expect(view.selectedRegion.groups.map((group) => group.label)).toEqual(['COMBAT ZONES', 'DUNGEONS'])
-    expect(view.selectedRegion.groups[0].locations.map((location) => location.name)).toEqual(['Whispering Woods'])
-    expect(view.selectedRegion.groups[1].locations.map((location) => location.name)).toEqual(['Howling Den', 'Abandoned Catacombs'])
-    expect(view.selectedRegion.groups.flatMap((group) => group.locations).find((location) => location.id === 'howling-den')).toMatchObject({ type: 'dungeon', state: 'locked', unlockText: 'Defeat Forest Heart' })
+    expect(view.selectedRegion.locations.map((location) => location.name)).toEqual(['Whispering Woods', 'Howling Den', 'Abandoned Catacombs'])
+    expect(view.selectedRegion.locations.find((location) => location.id === 'howling-den')).toMatchObject({ type: 'dungeon', state: 'locked', unlockText: 'Defeat Forest Heart' })
+    expect(view.selectedLocation?.targeting?.targets.map((target) => target.monsterId)).toEqual(['forest-wisp', 'thornling', 'dewbound-sprite', 'cinder-moth', 'stone-root', 'grove-sentinel', 'tempest-stag'])
   })
 
   it('keeps active combat separate from a browsed location', () => {
@@ -49,6 +48,6 @@ describe('combat world navigation read model', () => {
     state.progress.bossKillsByBoss['archmage-edrin-shade'] = 1
     const after = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedRegionId: 'shattered-frontier', selectedLocationId: 'fractured-approach' })
     expect(after.regions.find((region) => region.id === 'shattered-frontier')).toMatchObject({ state: 'available' })
-    expect(after.selectedRegion.groups.flatMap((group) => group.locations).map((location) => location.id)).toHaveLength(12)
+    expect(after.selectedRegion.locations.map((location) => location.id)).toHaveLength(12)
   })
 })

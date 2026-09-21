@@ -1,7 +1,7 @@
 import { ACT1_DUNGEONS } from '../dungeons/act1'
 import { DUNGEONS } from '../dungeons/dungeons'
 import type { DungeonId } from '../../types'
-import type { CombatContinentDefinition, CombatContinentId, CombatLocationDefinition, CombatLocationId, CombatRegionDefinition, CombatRegionId } from './worldNavigationTypes'
+import type { CombatContinentDefinition, CombatContinentId, CombatEncounterMode, CombatLocationDefinition, CombatLocationId, CombatRegionDefinition, CombatRegionId } from './worldNavigationTypes'
 
 const firstFrontierLocationIds: readonly CombatLocationId[] = ['whispering-woods', 'howling-den', 'abandoned-catacombs']
 const shatteredFrontierLocationIds: readonly CombatLocationId[] = ACT1_DUNGEONS.map((dungeon) => dungeon.id)
@@ -45,10 +45,23 @@ const dungeonLocation = (regionId: CombatRegionId, dungeonId: DungeonId, type: C
   type,
   order,
   dungeonId,
+  encounterMode: 'random-pool',
 })
 
 export const COMBAT_LOCATIONS: Record<CombatLocationId, CombatLocationDefinition> = {
-  'whispering-woods': dungeonLocation('first-frontier', 'whispering-woods', 'combat-zone', 1),
+  'whispering-woods': {
+    ...dungeonLocation('first-frontier', 'whispering-woods', 'combat-zone', 1),
+    encounterMode: 'targeted',
+    targetMetadata: {
+      'forest-wisp': { difficulty: 'easy', order: 1 },
+      thornling: { difficulty: 'easy', order: 2 },
+      'dewbound-sprite': { difficulty: 'standard', order: 3 },
+      'cinder-moth': { difficulty: 'standard', order: 4 },
+      'stone-root': { difficulty: 'standard', order: 5 },
+      'grove-sentinel': { difficulty: 'hard', order: 6 },
+      'tempest-stag': { difficulty: 'apex', order: 7 },
+    },
+  },
   'howling-den': dungeonLocation('first-frontier', 'howling-den', 'dungeon', 2),
   'abandoned-catacombs': dungeonLocation('first-frontier', 'abandoned-catacombs', 'dungeon', 3),
   ...Object.fromEntries(shatteredFrontierLocationIds.map((dungeonId, index) => [dungeonId, dungeonLocation('shattered-frontier', dungeonId as DungeonId, 'dungeon', index + 1)])),
@@ -59,4 +72,12 @@ export const getCombatLocation = (locationId: CombatLocationId | null | undefine
 export const getCombatLocationByDungeonId = (dungeonId: DungeonId | null | undefined) => {
   if (!dungeonId) return null
   return Object.values(COMBAT_LOCATIONS).find((location) => location.dungeonId === dungeonId) ?? null
+}
+
+export const getCombatEncounterMode = (location: CombatLocationDefinition | null | undefined): CombatEncounterMode => location?.encounterMode ?? 'random-pool'
+
+export const isCombatTargetForLocation = (location: CombatLocationDefinition | null | undefined, dungeonId: DungeonId | null | undefined, targetEnemyId: string | null | undefined) => {
+  if (!location || !dungeonId || getCombatEncounterMode(location) !== 'targeted' || !targetEnemyId || !location.targetMetadata?.[targetEnemyId as keyof typeof location.targetMetadata]) return false
+  const dungeon = DUNGEONS[dungeonId]
+  return Boolean(dungeon && dungeon.monsterPool.includes(targetEnemyId as typeof dungeon.monsterPool[number]) && dungeon.boss !== targetEnemyId)
 }

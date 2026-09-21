@@ -169,15 +169,6 @@
   font-size: 9px;
 }
 
-/* Global World Tier status sits outside the combat panel loop. */
-.combat-world-status-strip {
-  display: grid;
-  grid-template-columns: minmax(250px, 340px);
-  gap: 10px;
-  min-width: 0;
-  margin-bottom: 14px;
-}
-.combat-world-status-strip > .card { min-width: 0; margin: 0; }
 .combat-world-tier-control { min-width: 0; padding: 11px 13px; }
 .combat-world-tier-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
 .combat-world-tier-head > div { display: grid; min-width: 0; gap: 2px; }
@@ -196,6 +187,13 @@
 .combat-world-tier-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
 .combat-world-tier-options .button { min-width: 0; padding: 7px 8px; font-size: 9px; }
 .combat-world-tier-status { display: block; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
+.combat-world-tier-control.is-embedded { padding: 0; gap: 4px; min-width: 180px; }
+.combat-world-tier-control.is-embedded .combat-world-tier-head { margin-bottom: 3px; }
+.combat-world-tier-control.is-embedded .combat-world-tier-head small { display: none; }
+.combat-world-tier-control.is-embedded .combat-world-tier-head > strong { font-size: 12px; }
+.combat-world-tier-control.is-embedded .combat-world-tier-options { grid-template-columns: repeat(2, minmax(58px, 1fr)); }
+.combat-world-tier-control.is-embedded .combat-world-tier-options .button { min-height: 27px; padding: 4px 7px; }
+.combat-world-tier-control.is-embedded .combat-world-tier-status { font-size: 8px; text-align: right; }
 
 /* Stage */
 .combat-stage-panel {
@@ -1206,7 +1204,7 @@
   }
 }
 @container (max-width: 760px) {
-  .combat-world-status-strip { grid-template-columns: 1fr; }
+  .combat-world-navigation-header-actions { align-items: flex-start; flex-direction: column; }
 }
 @container (max-width: 760px) {
   .combat-run-bar {
@@ -3311,7 +3309,7 @@
 }
 
 .combat-run-bar {
-  grid-template-columns: minmax(155px, 1.05fr) minmax(205px, 1.35fr) minmax(170px, 1fr) minmax(110px, .8fr) minmax(205px, 1.25fr);
+  grid-template-columns: minmax(155px, 1.05fr) minmax(145px, .9fr) minmax(205px, 1.35fr) minmax(170px, 1fr) minmax(110px, .8fr) minmax(110px, .8fr);
   gap: 0;
   margin-bottom: 12px;
   padding: 10px 12px;
@@ -4016,6 +4014,12 @@
   font-weight: 600;
   white-space: nowrap;
 }
+.combat-run-target { display: grid; gap: 3px; padding-inline: 14px; border-inline-start: 1px solid color-mix(in srgb, var(--ui-border-strong) 66%, transparent); }
+.combat-run-target strong { color: var(--ui-secondary); font-size: var(--ui-font-small); }
+.combat-run-target small { color: var(--ui-text-muted); font-size: var(--ui-font-micro); letter-spacing: .06em; }
+.combat-run-bar.is-idle { display: flex; min-height: 58px; align-items: center; margin-bottom: 12px; padding: 10px 13px; border-color: color-mix(in srgb, var(--ui-border-strong) 72%, var(--ui-accent)); background: color-mix(in srgb, var(--ui-panel-strong) 92%, transparent); }
+.combat-run-bar.is-idle .combat-run-context { padding: 0; }
+.combat-run-bar.is-idle .combat-run-context .combat-subsection-label { color: var(--ui-accent); }
 
 .combat-loot-reward-meta small {
   overflow: hidden;

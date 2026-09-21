@@ -22,4 +22,24 @@ describe('CombatRunBar world terminology', () => {
     expect(screen.queryByText('CAMPAIGN')).toBeNull()
     expect(screen.queryByRole('button', { name: /ENTER/ })).toBeNull()
   })
+
+  it('uses an explicit idle state when no combat is active', () => {
+    useGameStore.setState(createInitialState())
+    render(<TooltipProvider><CombatRunBar selectedDungeonId="whispering-woods" onRequestLeave={vi.fn()} /></TooltipProvider>)
+    expect(screen.getByText('NO ACTIVE COMBAT')).toBeTruthy()
+    expect(screen.getByText('Select a Location and target to begin.')).toBeTruthy()
+    expect(screen.queryByText('AT THE TOWER')).toBeNull()
+    expect(screen.queryByText('THREAT ·')).toBeNull()
+  })
+
+  it('shows a target only for an active targeted Location', () => {
+    const state = createInitialState()
+    state.combat.active = true
+    state.combat.dungeonId = 'whispering-woods'
+    state.combat.targetEnemyId = 'cinder-moth'
+    useGameStore.setState(state)
+    render(<TooltipProvider><CombatRunBar selectedDungeonId="whispering-woods" onRequestLeave={vi.fn()} /></TooltipProvider>)
+    expect(screen.getByText('TARGET')).toBeTruthy()
+    expect(screen.getByText('Cinder Moth')).toBeTruthy()
+  })
 })

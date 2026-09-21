@@ -11,10 +11,10 @@ const tierDescription = (tier: WorldTierId) => {
   return `Enemy Health ${formatMultiplier(definition.enemyHealthMultiplier)} · Enemy Damage ${formatMultiplier(definition.enemyDamageMultiplier)} · Enemy Defense ${formatMultiplier(definition.enemyDefenseMultiplier)} · Resonance ${formatMultiplier(definition.resonanceRewardMultiplier)}`
 }
 
-export function CombatWorldTierControl() {
+export function CombatWorldTierControl({ variant = 'card' }: { variant?: 'card' | 'embedded' }) {
   const current = useGameStore(useShallow((state) => ({ tier: state.worldTier.current, highest: state.worldTier.highestUnlocked, active: state.combat.active })))
   const setWorldTier = useGameStore((state) => state.setWorldTier)
-  return <Card className="combat-world-tier-control">
+  const content = <>
     <div className="combat-world-tier-head"><div><span className="combat-subsection-label">WORLD TIER</span><small>Global combat difficulty</small></div><strong>WT{current.tier}</strong></div>
     <div className="combat-world-tier-options">{WORLD_TIER_IDS.map((tier) => {
       const unlocked = tier <= current.highest
@@ -23,7 +23,8 @@ export function CombatWorldTierControl() {
       return <GameTooltip key={tier} content={tooltip}><Button variant={current.tier === tier ? 'primary' : 'secondary'} disabled={disabled} ariaPressed={current.tier === tier} onClick={() => setWorldTier(tier)}>{!unlocked && <LockKeyhole size={13} aria-hidden="true" />} WT{tier}</Button></GameTooltip>
     })}</div>
     <small className="combat-world-tier-status">{current.active ? 'Leave the current Location to change World Tier.' : current.highest > 1 ? `WT1 and WT${current.highest} available.` : 'WT2 unlocks after Chapter 1.'}</small>
-  </Card>
+  </>
+  return variant === 'embedded' ? <div className="combat-world-tier-control is-embedded">{content}</div> : <Card className="combat-world-tier-control">{content}</Card>
 }
 
 export { tierDescription }

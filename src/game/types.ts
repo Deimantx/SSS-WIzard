@@ -64,7 +64,7 @@ export type CanonicalSpellId =
 export type LegacySpellId = 'ignite' | 'fireball' | 'water-ward' | 'flow-mend' | 'frostbite' | 'earth-spike' | 'stoneguard' | 'fortify' | 'air-lance' | 'quickening' | 'shock-spark'
 export type SpellId = CanonicalSpellId | LegacySpellId
 export type SpellPresetId = string
-export type MonsterId = 'forest-wisp' | 'thornling' | 'stone-root' | 'grove-sentinel' | 'forest-heart' | 'cavefang-wolf' | 'razorclaw-lynx' | 'corrupted-dire-wolf' | 'corrupted-greatbear' | 'restless-skeleton' | 'grave-wraith' | 'fallen-acolyte' | 'archmage-edrin-shade' | 'warded-husk' | 'rift-wolf' | 'arcane-scavenger' | 'withered-watcher' | 'corrupted-elemental-gatekeeper'
+export type MonsterId = 'forest-wisp' | 'thornling' | 'dewbound-sprite' | 'cinder-moth' | 'stone-root' | 'grove-sentinel' | 'tempest-stag' | 'forest-heart' | 'cavefang-wolf' | 'razorclaw-lynx' | 'corrupted-dire-wolf' | 'corrupted-greatbear' | 'restless-skeleton' | 'grave-wraith' | 'fallen-acolyte' | 'archmage-edrin-shade' | 'warded-husk' | 'rift-wolf' | 'arcane-scavenger' | 'withered-watcher' | 'corrupted-elemental-gatekeeper'
   | 'drowned-acolyte' | 'reliquary-slime' | 'mist-wraith' | 'rune-leech' | 'drowned-keeper'
   | 'cinder-hound' | 'ash-cultist' | 'fire-elemental' | 'lava-eel' | 'flamebound-revenant'
   | 'thorn-maw' | 'rootbound-stalker' | 'briar-sprite' | 'moss-carapace' | 'rootscar-ancient'
@@ -358,6 +358,8 @@ export interface CombatState {
   active: boolean
   dungeonId: DungeonId | null
   enemyId: MonsterId | null
+  /** Authored normal encounter target for targeted Locations; null for random-pool runs. */
+  targetEnemyId: MonsterId | null
   /** World Tier captured when the current enemy spawned. */
   enemyWorldTier: WorldTierId | null
   /** Monotonic deterministic identity for the currently spawned encounter. */

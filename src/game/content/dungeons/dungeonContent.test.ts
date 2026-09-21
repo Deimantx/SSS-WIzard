@@ -61,8 +61,11 @@ describe("Act 0 and Act 1 dungeon content", () => {
     expect(DUNGEONS["whispering-woods"].monsterPool).toEqual([
       "forest-wisp",
       "thornling",
+      "dewbound-sprite",
+      "cinder-moth",
       "stone-root",
       "grove-sentinel",
+      "tempest-stag",
     ]);
     expect(DUNGEONS["whispering-woods"].boss).toBe("forest-heart");
     expect(DUNGEONS["howling-den"].boss).toBe("corrupted-greatbear");
@@ -230,7 +233,7 @@ describe("Act 0 and Act 1 dungeon content", () => {
   });
 
   it("keeps all authored monster records and exact action sequences", () => {
-    expect(Object.keys(MONSTERS)).toHaveLength(73);
+    expect(Object.keys(MONSTERS)).toHaveLength(76);
     expect(validateMonsterDefinitions()).toEqual([]);
     expect(labels("forest-wisp")).toEqual([
       "Basic",
@@ -249,6 +252,23 @@ describe("Act 0 and Act 1 dungeon content", () => {
       "Basic",
       "Thorn Lash",
     ]);
+    expect(labels("dewbound-sprite")).toEqual([
+      "Basic",
+      "Mist Lance",
+      "Basic",
+      "Basic",
+      "Healing Dew",
+      "Basic",
+      "Mist Lance",
+    ]);
+    expect(labels("cinder-moth")).toEqual([
+      "Basic",
+      "Ember Dust",
+      "Basic",
+      "Flame Flutter",
+      "Cinder Dive",
+      "Basic",
+    ]);
     expect(labels("stone-root")).toEqual([
       "Basic",
       "Basic",
@@ -266,6 +286,15 @@ describe("Act 0 and Act 1 dungeon content", () => {
       "Shield Burst",
       "Basic",
       "Rejuvenate",
+    ]);
+    expect(labels("tempest-stag")).toEqual([
+      "Static Antlers",
+      "Basic",
+      "Gale Charge",
+      "Basic",
+      "Static Antlers",
+      "Storm Rush",
+      "Basic",
     ]);
     expect(labels("forest-heart")).toEqual([
       "Basic",

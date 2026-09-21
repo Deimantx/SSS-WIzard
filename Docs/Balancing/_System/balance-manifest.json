@@ -1,9 +1,9 @@
 {
   "schemaVersion": 2,
   "snapshot": {
-    "commit": "8428012ee76444711e5cb0b8587a09ea29d21e93",
+    "commit": "9369d964fd4f64d5c66fac2e7f3e2ce57a5c8a10",
     "workingTreeDirty": true,
-    "generatedAtUtc": "2026-09-21T07:02:21.492Z"
+    "generatedAtUtc": "2026-09-21T12:34:30.234Z"
   },
   "runtimePolicy": {
     "sourceOfTruth": "TypeScript runtime content and systems",
@@ -67,12 +67,15 @@
       ]
     },
     "monsters": {
-      "count": 73,
+      "count": 76,
       "ids": [
         "forest-wisp",
         "thornling",
+        "dewbound-sprite",
+        "cinder-moth",
         "stone-root",
         "grove-sentinel",
+        "tempest-stag",
         "forest-heart",
         "cavefang-wolf",
         "razorclaw-lynx",
@@ -878,8 +881,11 @@
         "air",
         "forest-wisp",
         "thornling",
+        "dewbound-sprite",
+        "cinder-moth",
         "stone-root",
         "grove-sentinel",
+        "tempest-stag",
         "forest-heart"
       ],
       "runtimeSources": [
@@ -893,8 +899,11 @@
         "whispering-woods",
         "forest-wisp",
         "thornling",
+        "dewbound-sprite",
+        "cinder-moth",
         "stone-root",
         "grove-sentinel",
+        "tempest-stag",
         "forest-heart"
       ],
       "runtimeSources": [

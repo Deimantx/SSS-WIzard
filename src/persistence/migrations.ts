@@ -2,6 +2,7 @@ import { createInitialState, SAVE_VERSION } from '../store/initialState'
 import { COMBAT_RNG_DEFAULT_SEED } from '../game/core/balance/combatRng'
 import { MANA_PILLAR_IDS } from '../game/data/manaPillars'
 import { DUNGEONS, DUNGEON_ORDER } from '../game/content/dungeons/dungeons'
+import { getCombatLocationByDungeonId, isCombatTargetForLocation } from '../game/content/world-navigation'
 import { GUILD_REQUESTS } from '../game/content/guild/guildRequests'
 import { ITEMS } from '../game/content/items/items'
 import { isBossMonster, MONSTERS } from '../game/content/monsters'
@@ -630,6 +631,21 @@ const normalizeDirectContentReferences = (migrated: GameState, raw: Record<strin
   migrated.combat.enemyId = enemyId === null ? null : validContentId(enemyId, monsterIds) ? enemyId as GameState['combat']['enemyId'] : fresh.combat.enemyId
   const pendingBossId = Object.prototype.hasOwnProperty.call(rawCombat, 'pendingBossId') ? rawCombat.pendingBossId : migrated.combat.pendingBossId
   migrated.combat.pendingBossId = pendingBossId === null ? null : validContentId(pendingBossId, monsterIds) ? pendingBossId as GameState['combat']['pendingBossId'] : fresh.combat.pendingBossId
+  const activeTargetedLocation = migrated.combat.active && migrated.combat.dungeonId === 'whispering-woods'
+    ? getCombatLocationByDungeonId(migrated.combat.dungeonId)
+    : null
+  if (activeTargetedLocation && migrated.combat.dungeonId) {
+    const rawTarget = typeof rawCombat.targetEnemyId === 'string' ? rawCombat.targetEnemyId as MonsterId : null
+    const rawEnemy = migrated.combat.enemyId
+    const candidate = isCombatTargetForLocation(activeTargetedLocation, migrated.combat.dungeonId, rawTarget)
+      ? rawTarget
+      : isCombatTargetForLocation(activeTargetedLocation, migrated.combat.dungeonId, rawEnemy)
+        ? rawEnemy
+        : 'forest-wisp'
+    migrated.combat.targetEnemyId = candidate
+  } else {
+    migrated.combat.targetEnemyId = null
+  }
 }
 
 const normalizeGuardianRuntime = (migrated: GameState, raw: Record<string, any>) => {

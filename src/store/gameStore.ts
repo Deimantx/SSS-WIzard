@@ -6,12 +6,13 @@ import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { BALANCE } from '../game/core/balance/balance'
 import { DUNGEONS, DUNGEON_ORDER, getDungeonUnlockRequirement, isDungeonUnlocked } from '../game/content/dungeons/dungeons'
+import { getCombatLocationByDungeonId, isCombatTargetForLocation } from '../game/content/world-navigation'
 import { MONSTERS } from '../game/content/monsters'
 import { ITEMS } from '../game/content/items/items'
 import { LEGACY_SPELL_ID_MAP, SPELLS } from '../game/content/spells/spells'
 import { castSpellAction, debugCastSpellAction, requestManualSpellAction } from './actions/combatActions'
 import type { ManualSpellRequestResult } from '../game/engine/spellEngine'
-import { manaRegenPerSecond, pushNotification, recalculateDerivedStats, selectFreeFocus, selectUsedFocus } from '../game/engine'
+import { appendLog, manaRegenPerSecond, pushNotification, recalculateDerivedStats, selectFreeFocus, selectUsedFocus } from '../game/engine'
 import { debugApplyStatus, spawnEnemy, spawnNextEnemy, type CombatLootObserver } from '../game/systems/combat/combatRuntime'
 import { canManuallyEngageDungeonBoss, isAutoHuntEnabledForDungeon, isBossCurrentlyActive } from '../game/systems/combat/combatBossSelectors'
 import { removeStatus as removeCombatStatus } from '../game/systems/combat/statusRuntime'
@@ -109,7 +110,7 @@ const endActiveDungeonRun = () => {
   clearCombatDefeat()
 }
 
-const initializeDungeonRun = (state: GameState, dungeonId: DungeonId, resetCombatState: boolean) => {
+const initializeDungeonRun = (state: GameState, dungeonId: DungeonId, resetCombatState: boolean, targetEnemyId: MonsterId | null = null) => {
   const dungeon = DUNGEONS[dungeonId]
   if (resetCombatState) state.combat = createInitialState().combat
   clearCombatLogUi()
@@ -122,6 +123,7 @@ const initializeDungeonRun = (state: GameState, dungeonId: DungeonId, resetComba
   resetArcaneCoreCombatRuntime(state)
   state.combat.active = true
   state.combat.dungeonId = dungeonId
+  state.combat.targetEnemyId = targetEnemyId
   state.combat.encounterTimerMs = 0
   state.player.health = Math.max(1, state.player.health)
   if (!spawnNextEnemy(state, combatEventSink)) {
@@ -259,6 +261,8 @@ export interface GameActions {
   setPresetSlotAutoCast: (id: SpellPresetId, spellId: CanonicalSpellId, autoCast: boolean) => boolean
   applySpellPreset: (id: SpellPresetId) => ApplySpellPresetResult
   enterDungeon: (dungeonId?: DungeonId) => void
+  enterTargetedCombat: (dungeonId: DungeonId, targetEnemyId: MonsterId) => boolean
+  setCombatTarget: (enemyId: MonsterId) => boolean
   leaveDungeon: () => void
   engageBoss: (bossId: MonsterId) => void
   toggleAutoHunt: (dungeonId?: DungeonId) => void
@@ -615,6 +619,52 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     const switching = currentState.combat.active
     if (switching) endActiveDungeonRun()
     set((state) => { initializeDungeonRun(state, dungeonId, switching); state.ui.lastEnteredCombatDungeonId = dungeonId; return state })
+  },
+  enterTargetedCombat: (dungeonId, targetEnemyId) => {
+    const dungeon = DUNGEONS[dungeonId]
+    const location = getCombatLocationByDungeonId(dungeonId)
+    const currentState = get()
+    if (!dungeon || !isCombatTargetForLocation(location, dungeonId, targetEnemyId)) {
+      set((state) => { pushNotification(state, `${MONSTERS[targetEnemyId]?.name ?? targetEnemyId} is not a valid target for this Location.`, 'warning'); return state })
+      return false
+    }
+    if (!isDungeonUnlocked(dungeon, currentState.progress)) {
+      set((state) => { pushNotification(state, `${getDungeonUnlockRequirement(dungeon) ?? 'Requirement'} to unlock ${dungeon.name}.`, 'warning'); return state })
+      return false
+    }
+    if (currentState.combat.active && currentState.combat.dungeonId === dungeonId) {
+      if (currentState.combat.targetEnemyId === targetEnemyId) return true
+      return get().setCombatTarget(targetEnemyId)
+    }
+    const switching = currentState.combat.active
+    if (switching) endActiveDungeonRun()
+    set((state) => {
+      initializeDungeonRun(state, dungeonId, switching, targetEnemyId)
+      if (state.combat.active) appendLog(state, `Farming target: ${MONSTERS[targetEnemyId].name}.`)
+      state.ui.lastEnteredCombatDungeonId = dungeonId
+      return state
+    })
+    const nextState = get()
+    return nextState.combat.active && nextState.combat.dungeonId === dungeonId && nextState.combat.targetEnemyId === targetEnemyId
+  },
+  setCombatTarget: (enemyId) => {
+    let changed = false
+    set((state) => {
+      const dungeonId = state.combat.dungeonId
+      const dungeon = dungeonId ? DUNGEONS[dungeonId] : null
+      const location = dungeonId ? getCombatLocationByDungeonId(dungeonId) : null
+      if (!state.combat.active || !dungeon || !isCombatTargetForLocation(location, dungeonId, enemyId)) {
+        pushNotification(state, `${MONSTERS[enemyId]?.name ?? enemyId} is not a valid active combat target.`, 'warning')
+        return state
+      }
+      if (state.combat.targetEnemyId === enemyId) { changed = true; return state }
+      const hadTarget = Boolean(state.combat.targetEnemyId)
+      state.combat.targetEnemyId = enemyId
+      appendLog(state, `${hadTarget ? 'Next farming target' : 'Farming target'}: ${MONSTERS[enemyId].name}.`)
+      changed = true
+      return state
+    })
+    return changed
   },
   leaveDungeon: () => { endActiveDungeonRun(); return set((state) => { state.combat = { ...createInitialState().combat, log: ['Left the dungeon. Threat Cleared resets.'] }; return state }) },
   engageBoss: (bossId) => set((state) => {

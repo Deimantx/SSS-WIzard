@@ -18,6 +18,7 @@ export function CombatRunBar({ selectedDungeonId, onRequestLeave }: { selectedDu
     active: state.combat.active,
     dungeonId: state.combat.dungeonId,
     enemyId: state.combat.enemyId,
+    targetEnemyId: state.combat.targetEnemyId,
     inBossFight: state.combat.inBossFight,
     threatCleared: state.combat.threatCleared,
     pendingBossId: state.combat.pendingBossId,
@@ -34,8 +35,8 @@ export function CombatRunBar({ selectedDungeonId, onRequestLeave }: { selectedDu
   const dungeonId = combat.active ? combat.dungeonId ?? selectedDungeonId : selectedDungeonId
   const dungeon = DUNGEONS[dungeonId]
   const location = getCombatLocationByDungeonId(dungeonId)
-  const boss = MONSTERS[dungeon.boss]
   const selectedUnlocked = isDungeonUnlocked(dungeon, progress)
+  const boss = MONSTERS[dungeon.boss]
   const bossCurrentlyActive = isBossCurrentlyActive({ combat })
   const threatThreshold = combat.threatCleared >= dungeon.threatRequired
   const nearBoss = combat.active && combat.threatCleared >= Math.max(0, dungeon.threatRequired - 2)
@@ -44,15 +45,16 @@ export function CombatRunBar({ selectedDungeonId, onRequestLeave }: { selectedDu
   const manualBossEngageAvailable = canManuallyEngageDungeonBoss({ combat, progress }, dungeon)
   const autoHuntEnabled = isAutoHuntEnabledForDungeon({ progress }, dungeonId)
   const mode: CombatRunMode = !combat.active ? 'tower' : bossCurrentlyActive ? 'boss-fight' : queued ? 'boss-queued' : !combat.enemyId && bossReady ? 'boss-ready' : combat.enemyId ? 'normal-hunt' : 'encounter-delay'
-  const bossKills = progress.bossKillsByBoss[dungeon.boss] ?? 0
-  const threatState = mode === 'boss-fight' ? 'FIGHT' : mode === 'boss-queued' ? 'QUEUED' : mode === 'boss-ready' ? 'READY' : mode === 'tower' ? 'STANDBY' : threatThreshold ? 'THRESHOLD' : 'BUILDING'
-  const modeLabel = mode === 'tower' ? 'AT THE TOWER' : mode === 'boss-fight' || mode === 'boss-ready' || mode === 'boss-queued' ? 'BOSS ENCOUNTER' : mode === 'encounter-delay' ? 'ENCOUNTER DELAY' : 'NORMAL HUNT'
-  const bossStatus = bossCurrentlyActive ? 'FIGHTING' : queued ? 'QUEUED' : bossReady ? 'READY' : mode === 'tower' ? bossKills ? `${bossKills} ${bossKills === 1 ? 'CLEAR' : 'CLEARS'}` : 'NOT CLEARED' : nearBoss ? 'BOSS APPROACHING' : 'INCOMING'
+  const threatState = mode === 'boss-fight' ? 'FIGHT' : mode === 'boss-queued' ? 'QUEUED' : mode === 'boss-ready' ? 'READY' : threatThreshold ? 'THRESHOLD' : 'BUILDING'
+  const modeLabel = mode === 'boss-fight' || mode === 'boss-ready' || mode === 'boss-queued' ? 'BOSS ENCOUNTER' : mode === 'encounter-delay' ? 'ENCOUNTER DELAY' : 'NORMAL HUNT'
+  const bossStatus = bossCurrentlyActive ? 'FIGHTING' : queued ? 'QUEUED' : bossReady ? 'READY' : nearBoss ? 'BOSS APPROACHING' : 'INCOMING'
   const autoHuntDisabled = !selectedUnlocked || !autoHuntUnlocked
   const autoHuntDescription = !selectedUnlocked ? 'This Location is locked. Unlock it before enabling Auto Hunt.' : !autoHuntUnlocked ? 'Auto Hunt unlocks after the first dungeon boss kill.' : `When enabled, ${boss.name} is queued after ${dungeon.threatRequired} Threat Cleared.`
-  const threatLabel = combat.active ? `${combat.threatCleared} / ${dungeon.threatRequired}` : '—'
+  const threatLabel = `${combat.threatCleared} / ${dungeon.threatRequired}`
   const bossDominant = bossReady || mode === 'boss-queued' || mode === 'boss-fight'
   const thresholdReached = Boolean(combat.active && threatThreshold)
+  const targeted = location?.encounterMode === 'targeted'
+  const activeTarget = targeted && combat.targetEnemyId ? MONSTERS[combat.targetEnemyId] : null
   const previousThreat = useRef(combat.threatCleared)
   const [thresholdFlash, setThresholdFlash] = useState(false)
   useEffect(() => {
@@ -65,5 +67,7 @@ export function CombatRunBar({ selectedDungeonId, onRequestLeave }: { selectedDu
     previousThreat.current = combat.threatCleared
   }, [combat.threatCleared, dungeon.threatRequired, thresholdReached])
 
-  return <section className={`combat-run-bar${combat.active ? ' is-active' : ''}${nearBoss ? ' is-near-boss' : ''}${thresholdFlash ? ' is-threshold-flash' : ''} is-mode-${mode}`}><div className="combat-run-context"><span className="combat-subsection-label">{combat.active ? 'CURRENT LOCATION' : 'AT THE TOWER'}</span><strong>{dungeon.name}</strong><small>{combat.active ? `${COMBAT_LOCATION_TYPE_METADATA[location?.type ?? 'dungeon'].label} · ${modeLabel}` : modeLabel}</small></div><div className="combat-run-threat"><div className="combat-run-metric-head"><span>THREAT · {threatState}</span><strong>{threatLabel}</strong></div><Progress value={combat.active ? combat.threatCleared / Math.max(1, dungeon.threatRequired) * 100 : 0} tone="warning" /><small>{combat.active ? threatThreshold ? `${dungeon.threatRequired} / ${dungeon.threatRequired} threshold reached` : nearBoss ? 'Boss encounter approaching' : 'Building toward Boss encounter' : 'Enter a Location to begin clearing Threat'}</small></div><div className={`combat-run-boss${bossDominant ? ' is-dominant' : ''}`}><span className="combat-subsection-label"><Crown size={12} aria-hidden="true" /> BOSS</span><strong>{boss.name}</strong><small>{bossStatus}</small></div><div className="combat-run-boss-controls">{manualBossEngageAvailable && <Button variant="danger" onClick={() => engageBoss(dungeon.boss)}><Swords size={14} /><span className="combat-run-engage-label-long">ENGAGE {boss.name.toUpperCase()}</span><span className="combat-run-engage-label-short">ENGAGE BOSS</span></Button>}<GameTooltip content={<TooltipContent title="Auto Hunt" description={autoHuntDescription} />}><button type="button" className={`combat-toggle combat-run-toggle${autoHuntEnabled ? ' is-on' : ''}`} disabled={autoHuntDisabled} onClick={() => toggleAutoHunt(dungeonId)}><span>AUTO HUNT</span><strong>{autoHuntDisabled ? 'LOCKED' : autoHuntEnabled ? 'ON' : 'OFF'}</strong></button></GameTooltip></div><div className="combat-run-actions">{combat.active && <Button variant="ghost" onClick={onRequestLeave}><LogOut size={14} /> LEAVE</Button>}</div></section>
+  if (!combat.active) return <section className="combat-run-bar is-idle is-mode-tower"><div className="combat-run-context"><span className="combat-subsection-label">NO ACTIVE COMBAT</span><strong>{location?.name ?? dungeon.name}</strong><small>Select a Location and target to begin.</small></div></section>
+
+  return <section className={`combat-run-bar is-active${nearBoss ? ' is-near-boss' : ''}${thresholdFlash ? ' is-threshold-flash' : ''} is-mode-${mode}`}><div className="combat-run-context"><span className="combat-subsection-label">CURRENT LOCATION</span><strong>{dungeon.name}</strong><small>{COMBAT_LOCATION_TYPE_METADATA[location?.type ?? 'dungeon'].label} · {modeLabel}</small></div>{targeted && activeTarget && <div className="combat-run-target"><span className="combat-subsection-label">TARGET</span><strong>{activeTarget.name}</strong><small>NEXT NORMAL ENCOUNTER</small></div>}<div className="combat-run-threat"><div className="combat-run-metric-head"><span>THREAT · {threatState}</span><strong>{threatLabel}</strong></div><Progress value={combat.threatCleared / Math.max(1, dungeon.threatRequired) * 100} tone="warning" /><small>{threatThreshold ? `${dungeon.threatRequired} / ${dungeon.threatRequired} threshold reached` : nearBoss ? 'Boss encounter approaching' : 'Building toward Boss encounter'}</small></div><div className={`combat-run-boss${bossDominant ? ' is-dominant' : ''}`}><span className="combat-subsection-label"><Crown size={12} aria-hidden="true" /> BOSS</span><strong>{boss.name}</strong><small>{bossStatus}</small></div><div className="combat-run-boss-controls">{manualBossEngageAvailable && <Button variant="danger" onClick={() => engageBoss(dungeon.boss)}><Swords size={14} /><span className="combat-run-engage-label-long">ENGAGE {boss.name.toUpperCase()}</span><span className="combat-run-engage-label-short">ENGAGE BOSS</span></Button>}<GameTooltip content={<TooltipContent title="Auto Hunt" description={autoHuntDescription} />}><button type="button" className={`combat-toggle combat-run-toggle${autoHuntEnabled ? ' is-on' : ''}`} disabled={autoHuntDisabled} onClick={() => toggleAutoHunt(dungeonId)}><span>AUTO HUNT</span><strong>{autoHuntDisabled ? 'LOCKED' : autoHuntEnabled ? 'ON' : 'OFF'}</strong></button></GameTooltip></div><div className="combat-run-actions"><Button variant="ghost" onClick={onRequestLeave}><LogOut size={14} /> LEAVE</Button></div></section>
 }

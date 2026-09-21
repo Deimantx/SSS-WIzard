@@ -5,18 +5,19 @@ import { DUNGEONS } from '../../game/content/dungeons/dungeons'
 import { MONSTERS } from '../../game/content/monsters'
 import { type CombatEffectPresentation } from '../../game/presentation/combat'
 import { getCombatFlowPresentation } from '../../game/presentation/combat/combatFlowPresentation'
-import { getCurrentEnemyActionStep, getEnemyAction, getEnemyActionPattern, getNextEnemyActionStep } from '../../game/systems/combat/actionRuntime'
+import { getCurrentEnemyActionStep, getEnemyAction, getEnemyActionPattern } from '../../game/systems/combat/actionRuntime'
 import { getCurrentEnemyActionTiming } from '../../game/systems/combat/actionTiming'
-import { getPlayerSpellCastRate } from '../../game/engine/spellEngine'
 import type { DungeonId } from '../../game/types'
 import { useGameStore } from '../../store/gameStore'
 import { formatTime } from '../../game/utils'
-import { GameTooltip, Progress } from '../../components/ui'
+import { GameTooltip } from '../../components/ui'
+import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { EnemyPatternRail } from './EnemyPatternRail'
 import { CombatActionProgress } from './CombatActionProgress'
 import { EnemyActionTooltip, buildBasicAttackPresentation } from './EnemyActionTooltip'
 import { EnemyPatternIcon } from './EnemyPatternIcon'
 import { CombatGuardianIndicator } from './CombatGuardianIndicator'
+import { getCombatVisualRate } from './performance/combatTimeline'
 
 export function CombatFlowPanel({ selectedDungeonId }: { selectedDungeonId: DungeonId }) {
   const combat = useGameStore(useShallow((state) => ({
@@ -25,27 +26,24 @@ export function CombatFlowPanel({ selectedDungeonId }: { selectedDungeonId: Dung
     enemyId: state.combat.enemyId,
     threatCleared: state.combat.threatCleared,
     inBossFight: state.combat.inBossFight,
-    encounterTimerMs: state.combat.encounterTimerMs,
-    enemyActionTimerMs: state.combat.enemyActionTimerMs,
-    enemyActionDurationMs: state.combat.enemyActionDurationMs,
+    enemyInstanceKey: state.combat.enemyInstanceKey,
     enemyNextActionIndex: state.combat.enemyNextActionIndex,
     enemyCurrentActionId: state.combat.enemyCurrentActionId,
     enemyCurrentStepId: state.combat.enemyCurrentStepId,
     enemyCurrentActionPatternId: state.combat.enemyCurrentActionPatternId,
     enemyActionPatternId: state.combat.enemyActionPatternId,
-    pendingPlayerSpellCast: state.combat.pendingPlayerSpellCast,
+    enemyActionDurationMs: state.combat.enemyActionDurationMs,
   })))
   const enemy = useGameStore((state) => state.combat.enemyId ? MONSTERS[state.combat.enemyId] ?? null : null)
   const dungeon = DUNGEONS[combat.active ? combat.dungeonId ?? selectedDungeonId : selectedDungeonId]
-  const enemyTiming = useGameStore(useShallow((state) => {
-    const timing = getCurrentEnemyActionTiming(state)
-    return timing ? { ...timing } : null
-  }))
-  const playerCastRate = useGameStore(getPlayerSpellCastRate)
   const pattern = useGameStore((state) => state.combat.enemyId ? getEnemyActionPattern(state) : undefined)
-  const nextStep = useGameStore((state) => state.combat.enemyId ? getNextEnemyActionStep(state) : undefined)
   const currentStep = useGameStore((state) => state.combat.enemyId ? getCurrentEnemyActionStep(state) : undefined)
-  const currentAction = useGameStore((state) => state.combat.enemyId ? getEnemyAction(state, state.combat.enemyCurrentActionId) : undefined)
+  const currentActionDefinition = useGameStore((state) => state.combat.enemyId ? getEnemyAction(state, state.combat.enemyCurrentActionId) : undefined)
+  const structuralTiming = useMemo(() => {
+    if (!enemy || !combat.enemyCurrentStepId) return null
+    const baseWorkMs = combat.enemyActionDurationMs || enemy.basicAttackTimeMs
+    return { baseWorkMs, remainingWorkMs: baseWorkMs, progress: 0, rate: 1, etaMs: baseWorkMs, blocked: false, blockReason: null }
+  }, [combat.enemyActionDurationMs, combat.enemyCurrentStepId, enemy])
   const presentation = useMemo(() => getCombatFlowPresentation({
     active: combat.active,
     dungeonId: combat.dungeonId,
@@ -55,32 +53,38 @@ export function CombatFlowPanel({ selectedDungeonId }: { selectedDungeonId: Dung
     enemy,
     threatCleared: combat.threatCleared,
     inBossFight: combat.inBossFight,
-    encounterTimerMs: combat.encounterTimerMs,
-    enemyActionTimerMs: combat.enemyActionTimerMs,
-    enemyActionDurationMs: combat.enemyActionDurationMs,
+    encounterTimerMs: 0,
+    enemyActionTimerMs: structuralTiming?.remainingWorkMs ?? 0,
+    enemyActionDurationMs: structuralTiming?.baseWorkMs ?? 0,
     enemyNextActionIndex: combat.enemyNextActionIndex,
     enemyCurrentActionId: combat.enemyCurrentActionId,
     enemyCurrentStepId: combat.enemyCurrentStepId,
     enemyCurrentActionPatternId: combat.enemyCurrentActionPatternId,
     enemyActionPatternId: combat.enemyActionPatternId,
-    playerSpellCast: combat.pendingPlayerSpellCast,
-    playerSpellCastRate: playerCastRate,
-    enemyTiming,
+    playerSpellCast: null,
+    enemyTiming: structuralTiming,
     pattern,
-    nextStep,
     currentStep,
-    currentAction,
-  }), [combat, currentAction, currentStep, dungeon, enemy, enemyTiming, nextStep, pattern, playerCastRate, selectedDungeonId])
+    currentAction: currentActionDefinition,
+  }), [combat, currentActionDefinition, currentStep, dungeon, enemy, pattern, selectedDungeonId, structuralTiming])
 
   if (presentation.mode === 'tower') return <section className="combat-flow-panel is-tower"><div className="combat-flow-state-kicker"><span className="combat-flow-kicker">AT THE TOWER</span><span className="combat-flow-state-mark">STANDBY</span></div><div className="combat-flow-state-sigil"><ShieldAlert size={26} aria-hidden="true" /></div><strong>NO ACTIVE HUNT</strong><p>Enter a Dungeon from Campaign to begin Combat.</p></section>
   if (presentation.mode === 'boss-ready') return <section className="combat-flow-panel is-boss-ready"><div className="combat-flow-state-kicker"><span className="combat-flow-kicker">BOSS READY</span><span className="combat-flow-state-mark">ROUTE CLEAR</span></div><div className="combat-flow-state-sigil"><Crown size={26} aria-hidden="true" /></div><strong>{MONSTERS[presentation.dungeon.boss].name}</strong><p>The route is clear. Engage the Boss from the Run Bar when ready.</p><span className="combat-flow-state-action">USE RUN BAR TO ENGAGE</span></section>
-  if (presentation.mode === 'encounter-delay') { const bossApproaching = presentation.dungeon.threatRequired <= combat.threatCleared; return <section className={`combat-flow-panel is-encounter-delay${bossApproaching ? ' is-boss-approaching' : ''}`}><CombatGuardianIndicator /><div className="combat-flow-delay-head"><div className="combat-flow-delay-label"><TimerReset size={13} aria-hidden="true" /> NEXT ENCOUNTER</div><span className="combat-flow-state-mark">INCOMING</span></div><strong className="combat-flow-delay">{formatTime(presentation.encounterTimerMs)}</strong><Progress value={Math.max(0, Math.min(100, (1 - presentation.encounterTimerMs / Math.max(1, presentation.dungeon.encounterDelayMs)) * 100))} tone="time" label="Encounter progress" /><div className="combat-flow-delay-context"><span>Searching the {presentation.dungeon.name}...</span><span>THREAT {combat.threatCleared} / {presentation.dungeon.threatRequired}</span>{bossApproaching && <strong>BOSS APPROACHING</strong>}</div></section> }
+  if (presentation.mode === 'encounter-delay') return <EncounterDelayTimeline dungeonId={presentation.dungeon.id} dungeonName={presentation.dungeon.name} encounterDelayMs={presentation.dungeon.encounterDelayMs} threatCleared={combat.threatCleared} threatRequired={presentation.dungeon.threatRequired} bossApproaching={presentation.dungeon.threatRequired <= combat.threatCleared} />
 
+  const currentAction = presentation.enemyCurrentAction
+  const cycleId = `${combat.enemyInstanceKey ?? 'enemy'}:${presentation.currentPatternOriginId ?? ''}:${presentation.currentStepId ?? ''}:${presentation.currentActionId ?? 'basic'}:${combat.enemyNextActionIndex}`
   return <section className={`combat-flow-panel${combat.inBossFight ? ' is-boss-fight' : ''}`} style={{ '--enemy-accent': presentation.enemy?.color } as React.CSSProperties}>
     <header className="combat-flow-head"><span className="combat-flow-kicker">COMBAT FLOW</span><CombatGuardianIndicator /></header>
-    {presentation.enemyCurrentAction && <CurrentEnemyAction currentAction={presentation.enemyCurrentAction} basicDamage={presentation.enemy?.basicAttackDamage ?? 0} actionTimeMs={presentation.enemyTimeline?.baseWorkMs ?? presentation.currentActionDurationMs} progress={presentation.enemyTimeline?.progress ?? 0} remainingMs={presentation.enemyTimeline?.etaMs ?? null} />}
-    <div className="combat-flow-pattern"><div className="combat-subsection-label">ENEMY PATTERN</div><EnemyPatternRail pattern={presentation.pattern} enemy={presentation.enemy} currentStepIndex={presentation.currentStepIndex} currentStepId={presentation.currentStepId} currentActionId={presentation.currentActionId} currentPatternOriginId={presentation.currentPatternOriginId} currentProgress={presentation.enemyTimeline?.progress} currentActionDurationMs={presentation.enemyTimeline?.baseWorkMs ?? presentation.currentActionDurationMs} /></div>
+    {currentAction && <CurrentEnemyAction currentAction={currentAction} basicDamage={presentation.enemy?.basicAttackDamage ?? 0} actionTimeMs={presentation.enemyTimeline?.baseWorkMs ?? presentation.currentActionDurationMs} cycleId={cycleId} />}
+    <div className="combat-flow-pattern"><div className="combat-subsection-label">ENEMY PATTERN</div><EnemyPatternRail pattern={presentation.pattern} enemy={presentation.enemy} currentStepIndex={presentation.currentStepIndex} currentStepId={presentation.currentStepId} currentActionId={presentation.currentActionId} currentPatternOriginId={presentation.currentPatternOriginId} /></div>
   </section>
+}
+
+function EncounterDelayTimeline({ dungeonId, dungeonName, encounterDelayMs, threatCleared, threatRequired, bossApproaching }: { dungeonId: DungeonId; dungeonName: string; encounterDelayMs: number; threatCleared: number; threatRequired: number; bossApproaching: boolean }) {
+  const timing = useGameStore(useShallow((state) => ({ remainingWorkMs: state.combat.encounterTimerMs, paused: state.debug.combatPaused, timeScale: state.debug.combatTimeScale })))
+  const rate = getCombatVisualRate(1, timing.paused, timing.timeScale)
+  return <section className={`combat-flow-panel is-encounter-delay${bossApproaching ? ' is-boss-approaching' : ''}`}><CombatGuardianIndicator /><div className="combat-flow-delay-head"><div className="combat-flow-delay-label"><TimerReset size={13} aria-hidden="true" /> NEXT ENCOUNTER</div><span className="combat-flow-state-mark">INCOMING</span></div><strong className="combat-flow-delay">{formatTime(timing.remainingWorkMs)}</strong><CombatActionProgress cycleId={dungeonId} baseWorkMs={encounterDelayMs} remainingWorkMs={timing.remainingWorkMs} rate={rate} blocked={timing.paused} /><div className="combat-flow-delay-context"><span>Searching the {dungeonName}...</span><span>THREAT {threatCleared} / {threatRequired}</span>{bossApproaching && <strong>BOSS APPROACHING</strong>}</div></section>
 }
 
 function CombatEffectRow({ effect }: { effect: CombatEffectPresentation }) {
@@ -97,7 +101,18 @@ function IntentEffectIcon({ kind }: { kind: CombatEffectPresentation['kind'] }) 
   return <Sparkles size={13} aria-hidden="true" />
 }
 
-function CurrentEnemyAction({ currentAction, basicDamage, actionTimeMs, progress, remainingMs }: { currentAction: NonNullable<ReturnType<typeof getCombatFlowPresentation>['enemyCurrentAction']>; basicDamage: number; actionTimeMs: number; progress: number; remainingMs: number | null }) {
+function CurrentEnemyAction({ currentAction, basicDamage, actionTimeMs, cycleId }: { currentAction: NonNullable<ReturnType<typeof getCombatFlowPresentation>['enemyCurrentAction']>; basicDamage: number; actionTimeMs: number; cycleId: string }) {
   const action = currentAction.action ?? (currentAction.basic ? buildBasicAttackPresentation(basicDamage, actionTimeMs) : null)
-  return <GameTooltip block wide placement="bottom" accent={currentAction.special ? 'warning' : 'neutral'} content={action ? <EnemyActionTooltip action={action} /> : undefined}><div className={`combat-flow-current-action${currentAction.special ? ' is-special' : ''} combat-current-action-${currentAction.iconKind}`}><div className="combat-flow-current-action-head"><div className="combat-flow-subhead"><span className={`combat-flow-current-action-icon combat-pattern-icon-${currentAction.iconKind}`}><EnemyPatternIcon kind={currentAction.iconKind} /></span><span className="combat-subsection-label">CURRENT ACTION</span><strong>{currentAction.label}</strong></div></div><div className="combat-flow-current-action-clock"><span className="combat-flow-current-action-eta ui-time">{remainingMs === null ? 'PAUSED' : formatTime(remainingMs)}</span><CombatActionProgress value={progress} /></div>{currentAction.action ? <div className="combat-flow-effects">{currentAction.action.effects.map((effect, index) => <CombatEffectRow key={`${effect.label}-${index}`} effect={effect} />)}</div> : currentAction.basic ? <div className="combat-flow-effects"><CombatEffectRow effect={currentAction.basic} /></div> : null}</div></GameTooltip>
+  return <GameTooltip block wide placement="bottom" accent={currentAction.special ? 'warning' : 'neutral'} content={action ? <EnemyActionTooltip action={action} /> : undefined}><div className={`combat-flow-current-action${currentAction.special ? ' is-special' : ''} combat-current-action-${currentAction.iconKind}`}><div className="combat-flow-current-action-head"><div className="combat-flow-subhead"><span className={`combat-flow-current-action-icon combat-pattern-icon-${currentAction.iconKind}`}><EnemyPatternIcon kind={currentAction.iconKind} /></span><span className="combat-subsection-label">CURRENT ACTION</span><strong>{currentAction.label}</strong></div></div><EnemyActionTimeline cycleId={cycleId} actionTimeMs={actionTimeMs} />{currentAction.action ? <div className="combat-flow-effects">{currentAction.action.effects.map((effect, index) => <CombatEffectRow key={`${effect.label}-${index}`} effect={effect} />)}</div> : currentAction.basic ? <div className="combat-flow-effects"><CombatEffectRow effect={currentAction.basic} /></div> : null}</div></GameTooltip>
+}
+
+function EnemyActionTimeline({ cycleId, actionTimeMs }: { cycleId: string; actionTimeMs: number }) {
+  const timing = useGameStore(useShallow((state) => {
+    const current = getCurrentEnemyActionTiming(state)
+    const blocked = Boolean(current?.blocked || state.debug.combatPaused || state.debug.freezeEnemyActions)
+    return { baseWorkMs: current?.baseWorkMs ?? actionTimeMs, remainingWorkMs: current?.remainingWorkMs ?? actionTimeMs, rate: current?.rate ?? 0, blocked, timeScale: state.debug.combatTimeScale }
+  }))
+  const rate = getCombatVisualRate(timing.rate, timing.blocked, timing.timeScale)
+  const etaMs = rate > 0 ? timing.remainingWorkMs / rate : null
+  return <div className="combat-flow-current-action-clock"><span className="combat-flow-current-action-eta ui-time">{etaMs === null ? 'PAUSED' : formatTime(etaMs)}</span><CombatActionProgress cycleId={cycleId} baseWorkMs={timing.baseWorkMs} remainingWorkMs={timing.remainingWorkMs} rate={rate} blocked={timing.blocked} /></div>
 }

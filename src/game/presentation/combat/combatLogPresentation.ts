@@ -7,6 +7,7 @@ import type { GuardianId } from '../../types'
 import { getTraitDefinitions } from '../../content/traits'
 import type { CombatLogEntry, DamageType } from '../../systems/combat/combatTypes'
 import { resolveCombatEventOriginLabel } from './combatSourcePresentation'
+import { formatResonanceBundle } from '../resonance/resonancePresentation'
 
 export interface CombatLogPresentation {
   sourceLabel: string
@@ -58,6 +59,12 @@ export function presentCombatLogEntry(entry: CombatLogEntry, newestTimestampMs =
     message = item ? `${item.name.toUpperCase()} ×${entry.amount ?? 0}` : 'LOOT ACQUIRED'
     semanticClass = 'log-loot'
     actionClass = 'log-action-loot'
+  } else if (entry.category === 'resonance' && entry.resonanceReward) {
+    const rewardEnemy = MONSTERS[entry.resonanceReward.enemyId]
+    message = `${rewardEnemy?.name ?? 'ENEMY'} RESONANCE HARVEST`
+    result = `${entry.resonanceReward.worldTier > 1 ? `WT${entry.resonanceReward.worldTier} · ` : ''}${formatResonanceBundle(entry.resonanceReward.grantedYield)}`
+    semanticClass = 'log-resonance'
+    actionClass = 'log-action-resonance'
   } else if (entry.category === 'pattern') {
     message = 'PATTERN SHIFT'
     result = entry.sourceId ? categoryLabel(entry.sourceId) : undefined

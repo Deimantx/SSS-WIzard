@@ -10,6 +10,7 @@ export interface CriticalSaveSnapshot {
   schools: GameState['schools']
   currencies: GameState['currencies']
   resonance: GameState['resonance']
+  worldTier: GameState['worldTier']
   activities: {
     channeling: GameState['activities']['channeling']
     research: GameState['activities']['research']
@@ -44,7 +45,7 @@ const canonicalize = (value: unknown): unknown => {
   return value
 }
 
-export const getCriticalSaveSnapshot = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment' | 'arcaneCore' | 'schools' | 'currencies' | 'resonance' | 'activities' | 'progress' | 'darkPortal' | 'spellPresets' | 'offlineBankMs' | 'combat'>): CriticalSaveSnapshot => cloneJson({
+export const getCriticalSaveSnapshot = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment' | 'arcaneCore' | 'schools' | 'currencies' | 'resonance' | 'worldTier' | 'activities' | 'progress' | 'darkPortal' | 'spellPresets' | 'offlineBankMs' | 'combat'>): CriticalSaveSnapshot => cloneJson({
   inventory: state.inventory,
   protectedItems: state.protectedItems,
   equipment: state.equipment,
@@ -52,6 +53,7 @@ export const getCriticalSaveSnapshot = (state: Pick<GameState, 'inventory' | 'pr
   schools: state.schools,
   currencies: state.currencies,
   resonance: state.resonance,
+  worldTier: state.worldTier,
   activities: {
     channeling: state.activities.channeling,
     research: state.activities.research,
@@ -92,7 +94,7 @@ const decodeSave = (encoded: string): Record<string, unknown> => {
 }
 
 const hasCurrentSaveShape = (value: Record<string, unknown>) => {
-  const requiredKeys = ['player', 'schools', 'currencies', 'resonance', 'inventory', 'protectedItems', 'equipment', 'activities', 'progress', 'darkPortal', 'offlineBankMs', 'lastSavedAt']
+  const requiredKeys = ['player', 'schools', 'currencies', 'resonance', 'worldTier', 'inventory', 'protectedItems', 'equipment', 'activities', 'progress', 'darkPortal', 'offlineBankMs', 'lastSavedAt']
   return requiredKeys.every((key) => Object.prototype.hasOwnProperty.call(value, key))
     && typeof value.lastSavedAt === 'number'
     && Number.isFinite(value.lastSavedAt)

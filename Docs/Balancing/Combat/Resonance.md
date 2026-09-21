@@ -1,6 +1,6 @@
 # Resonance Harvest
 
-Phase 1 prototype status: Combat defeats can harvest Resonance into a dedicated persisted player resource. Resonance is not an Item, Arcane Points, Fragment, or Transmutation output.
+Combat defeats can harvest Resonance into a dedicated persisted player resource. Resonance is not an Item, Arcane Points, Fragment, or Transmutation output.
 
 ## Categories
 
@@ -11,9 +11,9 @@ Phase 1 prototype status: Combat defeats can harvest Resonance into a dedicated 
 | Earth (earth) | Earth Resonance |
 | Air (air) | Air Resonance |
 
-## Storage and reward seam
+## Storage and reward resolution
 
-The player stores one whole, finite, non-negative balance per Phase 1 category. Enemy profiles are authored per enemy. The Phase 1 reward resolver exposes World Tier 1 and a 1× multiplier as a compatibility seam; World Tier state is intentionally not implemented.
+The player stores one whole, finite, non-negative balance per category. Enemy profiles are authored per enemy. Final reward is the authored base yield multiplied by the active encounter World Tier Resonance multiplier, then granted through the canonical combat finish path with saturation-safe deltas.
 
 ## Whispering Woods prototype profiles
 
@@ -25,4 +25,4 @@ The player stores one whole, finite, non-negative balance per Phase 1 category. 
 | Grove Sentinel (grove-sentinel) | 45 Earth Resonance |
 | Forest Heart (forest-heart) | 80 Earth Resonance |
 
-Unconverted enemies intentionally yield zero until a later content-conversion phase. These bootstrap values are not final balance. Phase 1 has no Resonance sinks, spending rules, Fragment conversion, or Arcane Resonance category.
+Unconverted enemies intentionally yield zero. These bootstrap values are not final balance. World Tier multipliers and unlock behavior are canonical in `Combat/World_Tiers.md`.

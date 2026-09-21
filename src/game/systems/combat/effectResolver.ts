@@ -59,6 +59,7 @@ import {
 import { stabilizeResourceValue } from "../../presentation/resources/resourcePresentation";
 import { tryConsumeArcaneCoreSurvival } from "../arcaneCore/arcaneCoreRuntime";
 import { recordArcaneCoreV6CriticalResult } from "../arcaneCore/arcaneCoreV6Runtime";
+import { getActiveEncounterWorldTierDefinition } from '../world-tier/worldTierRuntime'
 
 const MAX_EFFECT_DEPTH = 20;
 
@@ -212,7 +213,9 @@ const calculateCombatDamageWithRolls = (
   rolls: DamageRolls = {},
   includeBarrier = true,
 ): DamageBreakdown => {
-  const amount = Math.max(0, raw);
+  const enemyDamageMultiplier = source.actor === 'enemy' ? getActiveEncounterWorldTierDefinition(state).enemyDamageMultiplier : 1
+  const scaledRaw = raw * enemyDamageMultiplier
+  const amount = Number.isFinite(scaledRaw) ? Math.max(0, scaledRaw) : 0;
   const direct = isDirectHit(tags);
   const critChance = direct ? getCritChance(state, source.actor, source) : 0;
   const critMultiplier = direct

@@ -22,6 +22,7 @@ import { activateSelectedSpellPresetForBattle, getSelectedSpellPreset } from '..
 import { resetArcaneCoreEncounterRuntime } from '../arcaneCore/arcaneCoreRuntime'
 import { grantEnemyResonanceReward } from '../resonance/resonanceRuntime'
 import { formatResonanceBundle } from '../../presentation/resonance/resonancePresentation'
+import { getWorldTierDefinition, resolveWorldTierEnemyProfile, unlockWorldTier } from '../world-tier/worldTierRuntime'
 
 export { applyStatus, clearStatuses, damageEnemy, damagePlayer, executeCombatEffects, gainBarrier }
 
@@ -84,9 +85,11 @@ export const spawnEnemy = (state: GameState, enemyId: MonsterId, uiEvents?: Comb
   state.combat.enemyInstanceSerial = Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, previousSerial) + 1)
   state.combat.enemyInstanceKey = `enemy:${state.combat.enemyInstanceSerial}`
   state.combat.enemyId = enemyId
+  state.combat.enemyWorldTier = getWorldTierDefinition(state.worldTier.current).id
+  const enemyProfile = resolveWorldTierEnemyProfile(enemyId, state.combat.enemyWorldTier)
   resetArcaneCoreEncounterRuntime(state)
-  state.combat.enemyHp = monster.maxHealth
-  state.combat.enemyMaxHp = monster.maxHealth
+  state.combat.enemyHp = enemyProfile.maxHealth
+  state.combat.enemyMaxHp = enemyProfile.maxHealth
   state.combat.enemyBarrier = 0
   state.combat.enemyBarrierRemainingMs = null
   initializeEnemyActionRuntime(state)
@@ -97,7 +100,7 @@ export const spawnEnemy = (state: GameState, enemyId: MonsterId, uiEvents?: Comb
   state.combat.enemyStatuses = []
   state.combat.autoCastManaStarvedSpells = []
   discoverMonster(state, enemyId)
-  uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'system', sourceId: 'encounter-start' })
+  uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'system', sourceId: 'encounter-start', worldTier: state.combat.enemyWorldTier })
   const combatStartResolution = createCombatResolutionContext()
   runCombatTriggers(state, 'enemy', 'on-combat-start', { source: { actor: 'enemy', kind: 'system', sourceId: 'combat-start' } }, executeCombatEffects, 0, [], uiEvents, combatStartResolution)
   runCombatTriggers(state, 'player', 'on-combat-start', { source: { actor: 'player', kind: 'system', sourceId: 'combat-start' }, eventTarget: 'enemy' }, executeCombatEffects, 0, [], uiEvents, combatStartResolution)
@@ -136,13 +139,19 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   const resolvedDrops: CombatLootDrop[] = []
   const drops = resolveMonsterLoot(state, enemyId, (itemId, quantity) => { onItemAcquired?.(itemId, quantity); report?.recordLoot(itemId, quantity); resolvedDrops.push({ itemId, quantity, isNewDiscovery: !undiscoveredItems.has(itemId) }); uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'loot', sourceId: 'loot-drop', itemId, amount: quantity }) })
   if (resolvedDrops.length) onLootResolved?.(state, enemyId, resolvedDrops)
-  const resonanceGained = grantEnemyResonanceReward(state.resonance, enemyId)
+  const encounterWorldTier = state.combat.enemyWorldTier ?? getWorldTierDefinition(state.worldTier.current).id
+  const resonanceReward = grantEnemyResonanceReward(state.resonance, enemyId, encounterWorldTier)
+  const resonanceGained = resonanceReward.grantedYield
   report?.recordResonance(resonanceGained)
   const resonanceText = formatResonanceBundle(resonanceGained)
   const rewardText = resonanceText === '0 Resonance' ? '' : ` · ${resonanceText}`
+  if (resonanceText !== '0 Resonance') {
+    uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'resonance', sourceId: 'resonance-reward', worldTier: encounterWorldTier, resonanceReward })
+  }
   report?.recordKill(enemyId)
   clearGuardianRuntime(state)
   state.combat.enemyId = null
+  state.combat.enemyWorldTier = null
   state.combat.enemyInstanceKey = null
   state.combat.pendingPlayerSpellCast = null
   state.combat.enemyHp = 0
@@ -188,6 +197,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
     if (bossId === 'corrupted-greatbear' && state.progress.bossKillsByBoss[bossId] === 1) pushNotification(state, 'HOWLING DEN COMPLETE / Abandoned Catacombs unlocked.', 'success')
     if (bossId === 'archmage-edrin-shade' && state.progress.bossKillsByBoss[bossId] === 1) {
       pushNotification(state, 'FIRST CHAPTER COMPLETE', 'success')
+      if (unlockWorldTier(state, 2)) pushNotification(state, 'WORLD TIER 2 UNLOCKED', 'success')
       if (state.progress.magicLevelCap < BALANCE.schoolProgression.tutorialCompleteCap) {
         state.progress.magicLevelCap = Math.max(state.progress.magicLevelCap, BALANCE.schoolProgression.tutorialCompleteCap)
         pushNotification(state, `Magic School cap increased to ${state.progress.magicLevelCap}`, 'success')
@@ -222,6 +232,7 @@ export const resolveCombatDeaths = (state: GameState, report?: SimulationReportC
     clearGuardianRuntime(state)
     state.combat.active = false
     state.combat.enemyId = null
+    state.combat.enemyWorldTier = null
     state.combat.enemyInstanceKey = null
     state.combat.pendingPlayerSpellCast = null
     state.combat.queuedPlayerSpellId = null

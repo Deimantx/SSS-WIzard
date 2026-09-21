@@ -31,4 +31,13 @@ describe('presentCombatLogEntry', () => {
     expect(presentation.semanticClass).toBe('log-damage-fire')
     expect(presentation.timeLabel).toBe('1.0s')
   })
+
+  it('presents a structured Resonance reward as a compact human-readable row', () => {
+    const presentation = presentCombatLogEntry({ id: 2, sequence: 2, timestampMs: 2_000, source: { kind: 'system' }, target: 'enemy', targetMonsterId: 'forest-wisp', category: 'resonance', sourceId: 'resonance-reward', worldTier: 2, resonanceReward: { enemyId: 'forest-wisp', worldTier: 2, rewardMultiplier: 2, baseYield: { fire: 0, water: 0, earth: 0, air: 10 }, finalYield: { fire: 0, water: 0, earth: 0, air: 20 }, grantedYield: { fire: 0, water: 0, earth: 0, air: 20 } } }, 2_000)
+    expect(presentation.message).toBe('Forest Wisp RESONANCE HARVEST')
+    expect(presentation.result).toContain('WT2')
+    expect(presentation.result).toContain('+20 Air Resonance')
+    expect(presentation.semanticClass).toBe('log-resonance')
+    expect(presentation.accessibilityText).not.toContain('{')
+  })
 })

@@ -114,6 +114,15 @@
 .developer-resonance-row > span, .developer-resonance-row > strong { color: var(--ui-text); font-family: var(--font-mono); }
 .developer-resonance-row .button-row { margin: 0; }
 @media (max-width: 900px) { .developer-resonance-row { grid-template-columns: 1fr 1fr; }.developer-resonance-row .button-row, .developer-resonance-row .developer-number-field { grid-column: 1 / -1; } }
+.developer-world-tier-definitions, .developer-world-tier-preview-grid { display: grid; gap: 9px; }
+.developer-world-tier-definition, .developer-world-tier-preview { display: grid; gap: 8px; padding: 10px; border: 1px solid var(--ui-border); border-radius: 7px; background: var(--ui-panel); }
+.developer-world-tier-definition-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.developer-world-tier-definition-head strong { color: var(--ui-text); font: var(--text-sm) var(--font-mono); }
+.developer-world-tier-preview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 12px; }
+.developer-world-tier-preview.is-active { border-color: var(--semantic-focus); box-shadow: inset 2px 0 var(--semantic-focus); }
+.developer-world-tier-preview .developer-detail-grid strong { display: grid; gap: 2px; }
+.developer-world-tier-preview .developer-detail-grid small { color: var(--ui-text-muted); font: 9px var(--font-mono); }
+@media (max-width: 760px) { .developer-world-tier-preview-grid { grid-template-columns: 1fr; } }
 .developer-tools-header-status { display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-width: 0; overflow: hidden; }
 .developer-tools-header-status .game-tooltip-trigger { min-width: 0; }
 .developer-tools-header-status .status { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

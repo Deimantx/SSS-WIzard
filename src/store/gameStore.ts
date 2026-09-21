@@ -24,7 +24,7 @@ import { type SaveReason } from '../persistence/saveConstants'
 import { getActiveProfileId } from '../profiles/profileSessionStore'
 import { updateProfileMetadata } from '../profiles/profileStorage'
 import { createInitialState } from './initialState'
-import type { ArcaneCoreBranchId, ArtifactId, CanonicalSpellId, ChannelingDiscoveryId, DungeonId, EquipmentPosition, GameState, GuardianId, ItemId, ManaPillarId, MonsterId, ResonanceType, TransmutationArrayId, TransmutationRecipeId, ResearchSlotId, SchoolId, ScreenId, SpellId, SpellPreset, SpellPresetId, StatusId, StoryEventId } from '../game/types'
+import type { ArcaneCoreBranchId, ArtifactId, CanonicalSpellId, ChannelingDiscoveryId, DungeonId, EquipmentPosition, GameState, GuardianId, ItemId, ManaPillarId, MonsterId, ResonanceType, TransmutationArrayId, TransmutationRecipeId, ResearchSlotId, SchoolId, ScreenId, SpellId, SpellPreset, SpellPresetId, StatusId, StoryEventId, WorldTierId } from '../game/types'
 import { clamp } from '../game/utils'
 import { createDefaultDebugOverrides, resetCombatDebugState, resetDebugState, sanitizeCombatTimeScale, sanitizeDebugNumber } from './actions/debugActions'
 import { addItemAction, destroyItemAction, removeItemAction, sellItemAction, toggleItemProtectionAction } from './actions/inventoryActions'
@@ -70,6 +70,7 @@ import { getArcaneCorePresetSnapshot, useArcaneCorePresetStore } from './arcaneC
 import { stabilizeResourceValue } from '../game/presentation/resources/resourcePresentation'
 import { DEBUG_RESONANCE_TEST_BUNDLE } from '../game/content/resonance/resonance'
 import { clearAllResonance, clearResonance, grantResonance, setResonance } from '../game/systems/resonance/resonanceRuntime'
+import { createInitialWorldTierState, setCurrentWorldTier, unlockWorldTier } from '../game/systems/world-tier/worldTierRuntime'
 
 const combatEventSink = createCombatEventSink(combatLogSink, combatRecapSink, combatDefeatSink, combatAlertsSink, dungeonStatisticsSink, combatTelemetrySink)
 const offlineBankCombatAnalyticsSink = createCombatEventSink(dungeonStatisticsSink, combatTelemetrySink)
@@ -207,6 +208,10 @@ export interface GameActions {
   debugClearResonance: (type: ResonanceType) => void
   debugClearAllResonance: () => void
   debugGrantResonanceTestBundle: () => void
+  setWorldTier: (tier: WorldTierId) => boolean
+  debugSetWorldTier: (tier: WorldTierId) => void
+  debugUnlockWorldTier: (tier: WorldTierId) => void
+  debugResetWorldTier: () => void
   purchaseArcaneCoreNode: (nodeId: string) => boolean
   refundArcaneCoreNode: (nodeId: string) => boolean
   setArcaneCoreNodeRank: (nodeId: string, rank: number) => void
@@ -520,6 +525,26 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   debugClearResonance: (type) => set((state) => { clearResonance(state.resonance, type); return state }),
   debugClearAllResonance: () => set((state) => { clearAllResonance(state.resonance); return state }),
   debugGrantResonanceTestBundle: () => set((state) => { Object.entries(DEBUG_RESONANCE_TEST_BUNDLE).forEach(([type, amount]) => { grantResonance(state.resonance, type as ResonanceType, amount) }); return state }),
+  setWorldTier: (tier) => {
+    let changed = false
+    set((state) => {
+      if (state.combat.active) {
+        pushNotification(state, 'Leave the current dungeon to change World Tier.', 'warning', { key: 'world-tier-active-combat', cooldownMs: 1000 })
+        return state
+      }
+      changed = setCurrentWorldTier(state, tier)
+      if (!changed) pushNotification(state, `World Tier ${tier} is locked.`, 'warning', { key: `world-tier-locked-${tier}`, cooldownMs: 1000 })
+      return state
+    })
+    return changed
+  },
+  debugSetWorldTier: (tier) => set((state) => {
+    state.worldTier.highestUnlocked = tier
+    state.worldTier.current = tier
+    return state
+  }),
+  debugUnlockWorldTier: (tier) => set((state) => { unlockWorldTier(state, tier); return state }),
+  debugResetWorldTier: () => set((state) => { state.worldTier = createInitialWorldTierState(); return state }),
   purchaseArcaneCoreNode: (nodeId) => { let ok = false; set((state) => { ok = commitArcaneCoreResult(state, purchaseArcaneCoreNode(state.arcaneCore, nodeId, { freeCosts: state.debug.arcaneCoreFreeCosts, ignorePrerequisites: state.debug.arcaneCoreIgnorePrerequisites })); if (ok) recalculateDerivedStats(state); return state }); return ok },
   refundArcaneCoreNode: (nodeId) => { let ok = false; set((state) => { ok = commitArcaneCoreResult(state, refundArcaneCoreNode(state.arcaneCore, nodeId)); if (ok) recalculateDerivedStats(state); return state }); return ok },
   setArcaneCoreNodeRank: (nodeId, rank) => set((state) => { const result = setArcaneCoreNodeRank(state.arcaneCore, nodeId, rank); if (result.ok) { state.arcaneCore = result.state; recalculateDerivedStats(state) }; return state }),

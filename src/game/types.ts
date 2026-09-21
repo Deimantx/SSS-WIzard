@@ -1,6 +1,8 @@
 import type { PortalShardId } from './content/darkPortal/portalShards'
 import type { ResonanceState } from './content/resonance/resonance'
 export type { ResonanceState, ResonanceType, ResonanceYield } from './content/resonance/resonance'
+import type { WorldTierId, WorldTierState } from './content/world-tier/worldTiers'
+export type { WorldTierDefinition, WorldTierId, WorldTierState } from './content/world-tier/worldTiers'
 
 export type SchoolId = 'fire' | 'water' | 'earth' | 'air'
 export type ElementId = SchoolId
@@ -356,6 +358,8 @@ export interface CombatState {
   active: boolean
   dungeonId: DungeonId | null
   enemyId: MonsterId | null
+  /** World Tier captured when the current enemy spawned. */
+  enemyWorldTier: WorldTierId | null
   /** Monotonic deterministic identity for the currently spawned encounter. */
   enemyInstanceSerial: number
   /** `enemy:<serial>` while an enemy is alive; null during encounter downtime. */
@@ -571,6 +575,7 @@ export interface GameState {
   schools: Record<SchoolId, SchoolState>
   currencies: { gold: number }
   resonance: ResonanceState
+  worldTier: WorldTierState
   inventory: Partial<Record<ItemId, number>>
   protectedItems: Partial<Record<ItemId, boolean>>
   equipment: Record<EquipmentPosition, ItemId | null>

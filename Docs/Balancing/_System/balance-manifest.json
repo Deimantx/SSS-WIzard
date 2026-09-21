@@ -1,9 +1,9 @@
 {
   "schemaVersion": 2,
   "snapshot": {
-    "commit": "9ad89f9f936d4a499419ee6409110d0890a4bf18",
+    "commit": "8428012ee76444711e5cb0b8587a09ea29d21e93",
     "workingTreeDirty": true,
-    "generatedAtUtc": "2026-09-21T05:52:41.344Z"
+    "generatedAtUtc": "2026-09-21T07:02:21.492Z"
   },
   "runtimePolicy": {
     "sourceOfTruth": "TypeScript runtime content and systems",
@@ -1598,6 +1598,17 @@
         "src/game/content",
         "src/game/core/balance"
       ]
+    },
+    "Combat/World_Tiers.md": {
+      "stableIds": [
+        "world-tier-1",
+        "world-tier-2"
+      ],
+      "runtimeSources": [
+        "src/game/content/world-tier",
+        "src/game/systems/world-tier",
+        "src/game/systems/combat"
+      ]
     }
   },
   "canonicalLocations": {
@@ -1614,6 +1625,7 @@
     "BALANCE_OVERVIEW.md",
     "Combat/Combat.md",
     "Combat/Resonance.md",
+    "Combat/World_Tiers.md",
     "Crafting/Crafting.md",
     "Dungeons/Abandoned_Catacombs.md",
     "Dungeons/Ashen_Watch.md",

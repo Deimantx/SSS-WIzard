@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useCombatPerformanceToggle } from './performance/combatPerformanceDiagnostics'
 
 type FeedbackKind = 'damage' | 'heal' | 'barrier' | 'break'
 type FeedbackItem = { id: number; kind: FeedbackKind; label: string }
@@ -6,6 +7,12 @@ type FeedbackItem = { id: number; kind: FeedbackKind; label: string }
 let nextFeedbackId = 0
 
 export function CombatFloatingFeedback({ actor, health, barrier, resetKey }: { actor: 'player' | 'enemy'; health: number; barrier: number; resetKey: string }) {
+  const feedbackEnabled = useCombatPerformanceToggle('floatingFeedback')
+  if (!feedbackEnabled) return null
+  return <CombatFloatingFeedbackLive actor={actor} health={health} barrier={barrier} resetKey={resetKey} />
+}
+
+function CombatFloatingFeedbackLive({ actor, health, barrier, resetKey }: { actor: 'player' | 'enemy'; health: number; barrier: number; resetKey: string }) {
   const previous = useRef({ health, barrier, resetKey })
   const timers = useRef<number[]>([])
   const [items, setItems] = useState<FeedbackItem[]>([])

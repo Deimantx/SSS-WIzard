@@ -18,6 +18,7 @@ import { DeveloperArtifacts } from './tabs/DeveloperArtifacts'
 import { DeveloperUITuning } from './tabs/DeveloperUITuning'
 import { DeveloperArcaneCore } from './tabs/DeveloperArcaneCore'
 import { DeveloperResonance } from './tabs/DeveloperResonance'
+import { DeveloperWorldTier } from './tabs/DeveloperWorldTier'
 
 export function DeveloperTab({ tab, copy }: { tab: DeveloperToolsTab; copy: (label: string, value: unknown) => Promise<void> }) {
   if (tab === 'quick') return <DeveloperQuickSetup />
@@ -27,6 +28,7 @@ export function DeveloperTab({ tab, copy }: { tab: DeveloperToolsTab; copy: (lab
   if (tab === 'artificing') return <DeveloperArtificing />
   if (tab === 'artifacts') return <DeveloperArtifacts />
   if (tab === 'resonance') return <DeveloperResonance />
+  if (tab === 'world-tier') return <DeveloperWorldTier />
   if (tab === 'transmutation') return <DeveloperTransmutation />
   if (tab === 'research') return <DeveloperResearch />
   if (tab === 'inventory') return <DeveloperInventory initialView="all" />

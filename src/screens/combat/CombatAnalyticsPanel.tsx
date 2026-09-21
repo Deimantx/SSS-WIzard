@@ -1,8 +1,11 @@
 import { Card } from '../../components/ui'
 import { CombatDetailsPanel } from './CombatDetailsPanel'
 import { DungeonStatisticsPanel } from './DungeonStatisticsPanel'
+import { useCombatPerformanceToggle } from './performance/combatPerformanceDiagnostics'
 
 export function CombatAnalyticsPanel() {
+  const analyticsEnabled = useCombatPerformanceToggle('combatAnalytics')
+  if (!analyticsEnabled) return null
   return <Card className="combat-analytics-panel">
     <header className="combat-analytics-head">
       <span className="combat-subsection-label">COMBAT ANALYTICS</span>

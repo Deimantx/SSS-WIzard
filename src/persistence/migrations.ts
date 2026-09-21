@@ -35,6 +35,7 @@ import { getTransmutationArrayBonuses } from '../game/systems/transmutation/tran
 import { ARCANE_CORE_MAJOR_COST_BY_RING, ARCANE_CORE_MAX_LEVEL, ARCANE_CORE_MAX_TOTAL_XP, ARCANE_CORE_STANDARD_RANK_COST_BY_RING, ARCANE_CORE_TOTAL_TREE_COST, getArcaneCoreLevelForXp } from '../game/content/arcaneCore/arcaneCoreBalance'
 import { getArcaneCoreNode } from '../game/content/arcaneCore/arcaneCoreBranches'
 import { normalizeResonanceState } from '../game/systems/resonance/resonanceRuntime'
+import { isWorldTierId, sanitizeWorldTierState } from '../game/systems/world-tier/worldTierRuntime'
 
 const statusValidationContext = createCombatValidationContext(STATUS_DEFINITIONS)
 
@@ -79,7 +80,8 @@ const recipeIds = Object.keys(RECIPES)
 const permanentFocusIds = ['forest-heart', 'guild-apprentice']
 /** V34 is the first save topology that stores Arcane Core ranked nodes. */
 const ARCANE_CORE_RANKED_NODE_SAVE_VERSION = 34
-const PRE_RESONANCE_SAVE_VERSION = SAVE_VERSION - 1
+/** V38 is the first save topology that contains the Phase 1 Resonance runtime. */
+const PRE_RESONANCE_SAVE_VERSION = 38
 const ARCANE_CORE_V37_REPRICE_SAVE_VERSION = 37
 const ARCANE_CORE_V37_STANDARD_RANK_COST_BY_RING = { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 8, 8: 10 } as const
 const ARCANE_CORE_V37_MAJOR_COST_BY_RING = { 1: 4, 2: 8, 3: 12, 4: 16, 5: 20, 6: 24, 7: 32, 8: 40 } as const
@@ -342,6 +344,15 @@ const normalizeResonance = (migrated: GameState, raw: Record<string, any>) => {
   migrated.resonance = normalizeResonanceState(raw.resonance)
 }
 
+const normalizeWorldTier = (migrated: GameState, raw: Record<string, any>) => {
+  const normalized = sanitizeWorldTierState(raw.worldTier)
+  const rawProgress = isRecord(raw.progress) ? raw.progress : {}
+  const rawBossKills = isRecord(rawProgress.bossKillsByBoss) ? rawProgress.bossKillsByBoss : {}
+  const bossKills = Math.max(migrated.progress.bossKillsByBoss['archmage-edrin-shade'] ?? 0, typeof rawBossKills['archmage-edrin-shade'] === 'number' ? rawBossKills['archmage-edrin-shade'] : 0)
+  const highestUnlocked = bossKills >= 1 ? 2 : normalized.highestUnlocked
+  migrated.worldTier = { highestUnlocked, current: normalized.current <= highestUnlocked ? normalized.current : 1 }
+}
+
 /** V25 changes School XP meaning from the old curve to authored cumulative totals. */
 const normalizeSchoolXpCurveV25 = (migrated: GameState, raw: Record<string, any>, sourceVersion: number) => {
   if (sourceVersion > 24) return
@@ -467,6 +478,8 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
   void legacyPlayerBasicTiming
 
   const activeEnemyId = typeof migrated.combat.enemyId === 'string' && MONSTERS[migrated.combat.enemyId] ? migrated.combat.enemyId : null
+  const rawEnemyWorldTier = isWorldTierId(rawCombat.enemyWorldTier) ? rawCombat.enemyWorldTier : 1
+  migrated.combat.enemyWorldTier = activeEnemyId ? sanitizeWorldTierState({ current: rawEnemyWorldTier, highestUnlocked: migrated.worldTier.highestUnlocked }).current : null
   const rawSerial = sourceVersion >= 22 ? nonNegativeInteger(rawCombat.enemyInstanceSerial) ?? 0 : sourceVersion === 21 && activeEnemyId ? 1 : 0
   const rawInstanceKey = sourceVersion >= 22 && typeof rawCombat.enemyInstanceKey === 'string' && /^enemy:[1-9]\d*$/.test(rawCombat.enemyInstanceKey) ? rawCombat.enemyInstanceKey : null
   const keySerial = rawInstanceKey ? nonNegativeInteger(rawInstanceKey.slice('enemy:'.length)) ?? 0 : 0
@@ -847,6 +860,7 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   delete migratedCombat.playerAttackDurationMs
   normalizeArcaneCore(migrated, raw)
   normalizeResonance(migrated, raw)
+  normalizeWorldTier(migrated, raw)
   migrated.player.healthRegenTimerMs = normalizeHealthRegenTimer(isRecord(raw.player) ? raw.player.healthRegenTimerMs : undefined)
   migrated.progress.channeling = migrateChanneling(raw.progress, createInitialState().progress)
   migrated.progress.transmutation = migrateTransmutationArrays(raw.progress, createInitialState().progress)

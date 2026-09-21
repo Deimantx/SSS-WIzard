@@ -1,8 +1,10 @@
 import { useMemo } from 'react'
+import { useCombatPerformanceToggle } from './performance/combatPerformanceDiagnostics'
 
 const PARTICLE_COUNT = 8
 
 export function CombatAmbientBackdrop({ bossActive, combatActive }: { bossActive: boolean; combatActive: boolean }) {
+  const ambientEnabled = useCombatPerformanceToggle('ambient')
   const particles = useMemo(() => Array.from({ length: PARTICLE_COUNT }, (_, index) => ({
     id: `combat-mote-${index}`,
     left: `${12 + (index * 37) % 78}%`,
@@ -11,6 +13,7 @@ export function CombatAmbientBackdrop({ bossActive, combatActive }: { bossActive
     duration: `${12 + (index % 4) * 3}s`,
   })), [])
 
+  if (!ambientEnabled) return null
   return <div className={`combat-ambient-layer${combatActive ? ' is-combat-active' : ''}${bossActive ? ' is-boss-active' : ''}`} aria-hidden="true">
     <div className="combat-ambient-particles">{particles.map((particle) => <i key={particle.id} style={{ '--particle-left': particle.left, '--particle-top': particle.top, '--particle-delay': particle.delay, '--particle-duration': particle.duration } as React.CSSProperties} />)}</div>
   </div>

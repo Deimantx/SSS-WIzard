@@ -18,6 +18,7 @@ export interface DebugCombatRuntimeContext {
 const resetEncounterWithoutRewards = (state: GameState) => {
   clearGuardianRuntime(state)
   state.combat.enemyId = null
+  state.combat.enemyWorldTier = null
   state.combat.enemyInstanceKey = null
   state.combat.enemyHp = 0
   state.combat.enemyMaxHp = 0

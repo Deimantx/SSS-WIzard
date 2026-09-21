@@ -18,10 +18,17 @@ import { getItemUses } from '../../game/content/items/inventoryMetadata'
 import { isTransmutationRecipeId } from '../../game/content/recipes/recipes'
 import { useGameStore } from '../../store/gameStore'
 import { setNavigationIntent } from '../../ui/navigation/navigationIntent'
+import { useCombatPerformanceToggle } from './performance/combatPerformanceDiagnostics'
 
 const modeLabels: Record<DungeonStatisticsMode, string> = { runs: 'RUNS', drops: 'DROPS', efficiency: 'EFFICIENCY' }
 
 export function DungeonStatisticsPanel() {
+  const statisticsEnabled = useCombatPerformanceToggle('dungeonStatistics')
+  if (!statisticsEnabled) return null
+  return <DungeonStatisticsPanelLive />
+}
+
+function DungeonStatisticsPanelLive() {
   const statisticsSignal = useDungeonStatisticsStore(useShallow((state) => {
     const session = state.session
     return {

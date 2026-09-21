@@ -1,11 +1,17 @@
 import { RotateCw } from 'lucide-react'
 import { memo, useMemo, type CSSProperties } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import type { MonsterDefinition } from '../../game/content/monsters'
 import { buildCombatActionPresentation, classifyEnemyPatternStep } from '../../game/presentation/combat'
 import type { ActionStep } from '../../game/systems/combat/combatTypes'
 import { GameTooltip } from '../ui'
 import { EnemyActionTooltip, buildBasicAttackPresentation } from './EnemyActionTooltip'
 import { EnemyPatternIcon, getEnemyPatternIconLabel } from './EnemyPatternIcon'
+import { useGameStore } from '../../store/gameStore'
+import { getCurrentEnemyActionTiming } from '../../game/systems/combat/actionTiming'
+import { getCombatVisualRate } from '../../screens/combat/performance/combatTimeline'
+import { CombatTimelineFill } from '../../screens/combat/CombatActionProgress'
+import { useCombatPerformanceToggle } from '../../screens/combat/performance/combatPerformanceDiagnostics'
 
 interface EnemyPatternTrackProps {
   monster?: MonsterDefinition | null
@@ -69,11 +75,32 @@ export function EnemyPatternTrack({
 const EnemyPatternNode = memo(function EnemyPatternNode({ presentation, kind, state, current, next, showLiveState, currentProgress }: { presentation: ReturnType<typeof buildCombatActionPresentation> | ReturnType<typeof buildBasicAttackPresentation>; kind: Parameters<typeof getEnemyPatternIconLabel>[0]; state: 'current' | 'next' | 'complete' | 'future'; current: boolean; next: boolean; showLiveState: boolean; currentProgress?: number | null }) {
   const label = `${presentation.name}, ${getEnemyPatternIconLabel(kind)}${current ? ', current action' : next ? ', next action' : ''}`
   const nodeStyle = current && currentProgress !== null && currentProgress !== undefined
-    ? { '--pattern-progress': `${Math.max(0, Math.min(100, currentProgress))}%` } as CSSProperties
+      ? { '--pattern-progress': `${Math.max(0, Math.min(100, currentProgress))}%` } as CSSProperties
     : undefined
   return <GameTooltip block wide placement="bottom" accent={current ? 'warning' : 'neutral'} content={<EnemyActionTooltip action={presentation} />}>
     <button style={nodeStyle} type="button" className={`combat-pattern-node${showLiveState ? ' combat-flow-pattern-node' : ''} is-${state} combat-pattern-icon-${kind}`} aria-label={label} aria-current={current ? 'step' : undefined}>
-      <i><EnemyPatternIcon kind={kind} /></i>
+      <i><EnemyPatternIcon kind={kind} />{current && showLiveState && <PatternCurrentProgress />}</i>
     </button>
   </GameTooltip>
 })
+
+function PatternCurrentProgress() {
+  const progressEnabled = useCombatPerformanceToggle('patternProgress')
+  if (!progressEnabled) return null
+  return <PatternCurrentProgressLive />
+}
+
+function PatternCurrentProgressLive() {
+  const timing = useGameStore(useShallow((state) => {
+    const current = getCurrentEnemyActionTiming(state)
+    const blocked = Boolean(current?.blocked || state.debug.combatPaused || state.debug.freezeEnemyActions)
+    return {
+      baseWorkMs: current?.baseWorkMs ?? 1,
+      remainingWorkMs: current?.remainingWorkMs ?? 1,
+      rate: getCombatVisualRate(current?.rate ?? 0, blocked, state.debug.combatTimeScale),
+      blocked,
+      cycleId: `${state.combat.enemyInstanceKey ?? 'enemy'}:${state.combat.enemyCurrentActionPatternId ?? ''}:${state.combat.enemyCurrentStepId ?? ''}:${state.combat.enemyNextActionIndex}`,
+    }
+  }))
+  return <span className="combat-pattern-progress-track" aria-hidden="true"><CombatTimelineFill {...timing} className="combat-pattern-progress-fill" /></span>
+}

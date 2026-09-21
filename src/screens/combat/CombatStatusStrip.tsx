@@ -1,54 +1,111 @@
 import { Flame, HeartPulse, Shield, Snowflake, Sparkles, Zap } from 'lucide-react'
-import type { CSSProperties } from 'react'
-import { useEffect, useState } from 'react'
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import type { ActiveStatus } from '../../game/types'
 import { STATUS_DEFINITIONS } from '../../game/content/statuses'
 import { formatUiCombatRate } from '../../game/presentation/numbers'
-import { getCombatStatusGroupDetails, getCombatStatusGroupsBasic, type CombatStatusGroupPresentation } from '../../game/presentation/combat/combatStatusPresentation'
+import { getCombatStatusGroupDetails, getCombatStatusGroupsBasic, getCombatStatusStructureSignature, type CombatStatusGroupPresentation } from '../../game/presentation/combat/combatStatusPresentation'
 import { formatTime } from '../../game/utils'
 import { GameTooltip } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { useGameStore } from '../../store/gameStore'
+import { getCombatTimelineProgress, getCombatVisualRate } from './performance/combatTimeline'
+import { subscribeCombatVisualFrame } from './performance/combatVisualClock'
+import { useCombatPerformanceToggle } from './performance/combatPerformanceDiagnostics'
 import { resolveGameAssetIcon } from '../../ui/icons/gameAssetIcons'
 
-export function CombatStatusStrip({ statuses, label }: { statuses: ActiveStatus[]; label: string }) {
-  const groups = getCombatStatusGroupsBasic(statuses)
-  return <section className={`combat-status-strip${groups.length ? ' is-active' : ' is-empty'}`} aria-label={label}><div className="combat-subsection-label">{label}</div>{groups.length ? <div className="combat-status-list">{groups.map((group) => <CombatStatusChip key={group.statusId} group={group} />)}</div> : <span className="combat-status-empty">None active</span>}</section>
-}
+type CombatStatusActor = 'player' | 'enemy'
 
-export function CombatStatusChip({ group }: { group: CombatStatusGroupPresentation }) {
+/** Status structure is read independently from countdown data. */
+export const CombatStatusStrip = memo(function CombatStatusStrip({ statuses, actor, label }: { statuses?: ActiveStatus[]; actor?: CombatStatusActor; label: string }) {
+  const structureSignature = useGameStore((state) => actor ? getCombatStatusStructureSignature(state.combat[`${actor}Statuses`]) : '')
+  const stableStatuses = useMemo(() => actor ? useGameStore.getState().combat[`${actor}Statuses`] : statuses ?? [], [actor, statuses, structureSignature])
+  const groups = useMemo(() => getCombatStatusGroupsBasic(stableStatuses), [stableStatuses])
+  return <section className={`combat-status-strip${groups.length ? ' is-active' : ' is-empty'}`} aria-label={label}><div className="combat-subsection-label">{label}</div>{groups.length ? <div className="combat-status-list">{groups.map((group) => <CombatStatusChip key={group.statusId} group={group} liveActor={actor} />)}</div> : <span className="combat-status-empty">None active</span>}</section>
+})
+
+export const CombatStatusChip = memo(function CombatStatusChip({ group, liveActor }: { group: CombatStatusGroupPresentation; liveActor?: CombatStatusActor }) {
   const [isNew, setIsNew] = useState(true)
   useEffect(() => {
     const timer = window.setTimeout(() => setIsNew(false), 180)
     return () => window.clearTimeout(timer)
   }, [])
   const { definition } = group
-  const duration = group.displayRemainingMs === null ? '\u221e' : formatTime(group.displayRemainingMs)
   const timed = group.displayRemainingMs !== null && group.displayInitialDurationMs !== null
-  const durationPercent = timed ? Math.max(0, Math.min(100, group.displayRemainingMs! / Math.max(1, group.displayInitialDurationMs!) * 100)) : 0
-  const style = timed ? { '--status-duration-percent': `${durationPercent}%` } as CSSProperties : undefined
   const stacks = group.definition.stacking.mode === 'stacks' ? group.totalStacks : 0
   const sourceCount = group.instances.length
   const accent = group.categoryKey === 'dot' ? 'danger' : group.categoryKey === 'control' ? 'mana' : group.categoryKey === 'buff' ? 'elemental' : group.categoryKey === 'debuff' ? 'warning' : 'neutral'
   const accessibleSources = sourceCount > 1 ? `, ${sourceCount} active sources` : ''
-  return <GameTooltip block accent={accent} content={<CombatStatusTooltip group={group} />}><span style={style} className={`combat-status-chip status-category-${group.categoryKey}${timed ? ' is-timed' : ''}${isNew ? ' is-new' : ''}`} tabIndex={0} aria-label={`${definition.name}, ${group.categoryLabel}${accessibleSources}, up to ${duration} remaining`}><span className="combat-status-icon"><StatusIcon status={group.instances[0]} /></span><strong>{definition.name}</strong>{stacks > 1 && <b>\u00d7{stacks}</b>}<small>{duration}</small></span></GameTooltip>
+  return <GameTooltip block accent={accent} content={<CombatStatusTooltip group={group} />}><span className={`combat-status-chip status-category-${group.categoryKey}${timed ? ' is-timed' : ''}${isNew ? ' is-new' : ''}`} tabIndex={0} aria-label={`${definition.name}, ${group.categoryLabel}${accessibleSources}`}><span className="combat-status-icon"><StatusIcon status={group.instances[0]} />{timed && liveActor && <CombatStatusRing actor={liveActor} statusId={group.statusId} fallbackRemainingMs={group.displayRemainingMs} fallbackInitialDurationMs={group.displayInitialDurationMs} />}</span><strong>{definition.name}</strong>{stacks > 1 && <b>×{stacks}</b>}{timed && liveActor ? <CombatStatusTimer actor={liveActor} statusId={group.statusId} fallbackRemainingMs={group.displayRemainingMs} fallbackInitialDurationMs={group.displayInitialDurationMs} /> : <small>{group.displayRemainingMs === null ? '∞' : formatTime(group.displayRemainingMs)}</small>}</span></GameTooltip>
+})
+
+interface CombatStatusTimerProps {
+  actor: CombatStatusActor
+  statusId: string
+  fallbackRemainingMs: number | null
+  fallbackInitialDurationMs: number | null
+}
+
+function useLiveStatusTimer({ actor, statusId, fallbackRemainingMs, fallbackInitialDurationMs }: CombatStatusTimerProps) {
+  return useGameStore(useShallow((state) => {
+    const statuses = state.combat[`${actor}Statuses`]
+    const group = getCombatStatusGroupsBasic(statuses).find((entry) => entry.statusId === statusId)
+    return {
+      remainingMs: group?.displayRemainingMs ?? fallbackRemainingMs,
+      initialDurationMs: group?.displayInitialDurationMs ?? fallbackInitialDurationMs,
+      timeScale: state.debug.combatTimeScale,
+      paused: state.debug.combatPaused,
+    }
+  }))
+}
+
+function CombatStatusTimer({ actor, statusId, fallbackRemainingMs, fallbackInitialDurationMs }: CombatStatusTimerProps) {
+  const timer = useLiveStatusTimer({ actor, statusId, fallbackRemainingMs, fallbackInitialDurationMs })
+  return <small>{timer.remainingMs === null ? '∞' : formatTime(timer.remainingMs)}</small>
+}
+
+function CombatStatusRing({ actor, statusId, fallbackRemainingMs, fallbackInitialDurationMs }: CombatStatusTimerProps) {
+  const ringsEnabled = useCombatPerformanceToggle('statusTimerRings')
+  if (!ringsEnabled) return null
+  return <CombatStatusRingLive actor={actor} statusId={statusId} fallbackRemainingMs={fallbackRemainingMs} fallbackInitialDurationMs={fallbackInitialDurationMs} />
+}
+
+function CombatStatusRingLive({ actor, statusId, fallbackRemainingMs, fallbackInitialDurationMs }: CombatStatusTimerProps) {
+  const timer = useLiveStatusTimer({ actor, statusId, fallbackRemainingMs, fallbackInitialDurationMs })
+  const ringRef = useRef<HTMLSpanElement>(null)
+  const anchorRef = useRef<{ remainingMs: number; initialDurationMs: number; rate: number; anchoredAtMs: number } | null>(null)
+  const initialDurationMs = Math.max(1, timer.initialDurationMs ?? 1)
+  const remainingMs = Math.max(0, timer.remainingMs ?? 0)
+  const rate = getCombatVisualRate(1, timer.paused, timer.timeScale)
+
+  useLayoutEffect(() => {
+    anchorRef.current = { remainingMs, initialDurationMs, rate, anchoredAtMs: performance.now() }
+    ringRef.current?.style.setProperty('--status-duration-percent', `${Math.max(0, Math.min(100, remainingMs / initialDurationMs * 100))}%`)
+  }, [remainingMs, initialDurationMs, rate])
+
+  useEffect(() => subscribeCombatVisualFrame((timestamp) => {
+    const anchor = anchorRef.current
+    if (!anchor || !ringRef.current) return
+    const progress = getCombatTimelineProgress({ baseWorkMs: anchor.initialDurationMs, remainingWorkMs: anchor.remainingMs, rate: anchor.rate, blocked: anchor.rate <= 0 }, timestamp, { snapshot: { baseWorkMs: anchor.initialDurationMs, remainingWorkMs: anchor.remainingMs, rate: anchor.rate, blocked: anchor.rate <= 0 }, anchoredAtMs: anchor.anchoredAtMs })
+    ringRef.current.style.setProperty('--status-duration-percent', `${Math.max(0, Math.min(100, (1 - progress) * 100))}%`)
+  }), [])
+
+  return <span ref={ringRef} className="combat-status-timer-ring" aria-hidden="true" />
 }
 
 function CombatStatusTooltip({ group }: { group: CombatStatusGroupPresentation }) {
-  // Mounted only by the tooltip portal, so DoT calculations are absent from
-  // the closed-chip render path.
   const state = useGameStore.getState()
   const holderStatuses = group.instances[0]?.holder === 'player' ? state.combat.playerStatuses : state.combat.enemyStatuses
   const currentGroup = getCombatStatusGroupsBasic(holderStatuses).find((entry) => entry.statusId === group.statusId) ?? group
   const detailed = getCombatStatusGroupDetails(currentGroup, state)
-  const duration = detailed.displayRemainingMs === null ? '\u221e' : formatTime(detailed.displayRemainingMs)
+  const duration = detailed.displayRemainingMs === null ? '∞' : formatTime(detailed.displayRemainingMs)
   const stacks = detailed.definition.stacking.mode === 'stacks' ? detailed.totalStacks : 0
   const rate = detailed.totalCurrentRate
   return <TooltipContent title={detailed.definition.name} description={detailed.definition.description}>
     <div className="tooltip-section"><small>TYPE</small><p>{detailed.categoryLabel}</p></div>
     <div className="tooltip-section"><small>REMAINING</small><p>{duration}</p></div>
     {detailed.definition.stacking.mode === 'stacks' && <div className="tooltip-section"><small>STACKS</small><p>{stacks}</p></div>}
-    {detailed.sourceBreakdown.length > 0 && <div className="tooltip-section"><small>SOURCES</small><div className="combat-status-tooltip-sources">{detailed.sourceBreakdown.map((source) => <div className="combat-status-tooltip-source" key={source.instanceKey}><strong>{source.sourceLabel}</strong><span>{source.damagePerSecond !== undefined ? formatUiCombatRate(source.damagePerSecond, '/s') : 'Periodic effect'}</span><small>{source.remainingMs === null ? '\u221e' : formatTime(source.remainingMs)}</small></div>)}</div></div>}
+    {detailed.sourceBreakdown.length > 0 && <div className="tooltip-section"><small>SOURCES</small><div className="combat-status-tooltip-sources">{detailed.sourceBreakdown.map((source) => <div className="combat-status-tooltip-source" key={source.instanceKey}><strong>{source.sourceLabel}</strong><span>{source.damagePerSecond !== undefined ? formatUiCombatRate(source.damagePerSecond, '/s') : 'Periodic effect'}</span><small>{source.remainingMs === null ? '∞' : formatTime(source.remainingMs)}</small></div>)}</div></div>}
     {rate !== undefined && <div className="tooltip-section"><small>TOTAL</small><p>{formatUiCombatRate(rate, '/s')}</p></div>}
   </TooltipContent>
 }

@@ -29,6 +29,22 @@ export interface CombatStatusGroupPresentation {
   totalCurrentRate?: number
 }
 
+/** Stable UI identity for status rows; countdown fields are intentionally excluded. */
+export const getCombatStatusStructureSignature = (statuses: readonly ActiveStatus[]) => statuses.map((status) => [
+  status.statusId,
+  status.instanceKey,
+  status.holder,
+  status.initialDurationMs ?? 'infinite',
+  status.stacks,
+  status.source.actor,
+  status.source.kind,
+  status.source.sourceId ?? '',
+  status.source.sourceInstanceKey ?? '',
+  status.source.statusId ?? '',
+  (status.source.tags ?? []).join(','),
+  JSON.stringify(status.modifierOverrides ?? {}),
+].join(':')).join('|')
+
 const periodicPayload = (status: ActiveStatus): CombatEffect[] => status.periodicEffects ?? STATUS_DEFINITIONS[status.statusId]?.periodic?.effects ?? []
 
 const sourcePeriodicPresentation = (status: ActiveStatus, definition: StatusDefinition, state?: GameState): PeriodicStatusSourcePresentation => {

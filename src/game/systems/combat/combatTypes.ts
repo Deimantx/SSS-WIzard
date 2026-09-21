@@ -1,4 +1,6 @@
 import type { DungeonId, ItemId, MonsterId, SchoolId, SpellId } from '../../types'
+import type { ResonanceRewardEventPayload } from '../resonance/resonanceRuntime'
+import type { WorldTierId } from '../../types'
 
 export type DamageType = 'physical' | 'arcane' | 'fire' | 'water' | 'earth' | 'air'
 
@@ -99,6 +101,7 @@ export type CombatLogCategory =
   | 'trait'
   | 'death'
   | 'loot'
+  | 'resonance'
   | 'pattern'
   | 'system'
 
@@ -139,6 +142,8 @@ export interface CombatEvent {
   statusId?: StatusId
   statusPhase?: CombatStatusPhase
   itemId?: ItemId
+  resonanceReward?: ResonanceRewardEventPayload
+  worldTier?: WorldTierId
   damageType?: DamageType
   /** All damage types represented by one Hit. */
   damageTypes?: DamageType[]

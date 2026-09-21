@@ -1,31 +1,23 @@
 import { MONSTERS } from '../../content/monsters'
-import { RESONANCE_TYPES, type ResonanceState, type ResonanceType, type ResonanceYield } from '../../content/resonance/resonance'
-import type { MonsterId } from '../../types'
-
-export const PHASE_ONE_WORLD_TIER = 1
-export const PHASE_ONE_RESONANCE_MULTIPLIER = 1
+import { multiplyResonanceBundle, normalizeResonanceState, RESONANCE_TYPES, sanitizeResonanceAmount, type ResonanceState, type ResonanceType, type ResonanceYield } from '../../content/resonance/resonance'
+import type { MonsterId, WorldTierId } from '../../types'
+import { getWorldTierDefinition } from '../world-tier/worldTierRuntime'
 
 export interface ResonanceRewardResolution {
   enemyId: MonsterId
-  worldTier: number
+  worldTier: WorldTierId
   rewardMultiplier: number
   baseYield: ResonanceYield
   finalYield: ResonanceYield
 }
 
-export const sanitizeResonanceAmount = (value: unknown): number => {
-  if (typeof value !== 'number' || !Number.isFinite(value)) return 0
-  return Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, Math.floor(value)))
+export interface ResonanceRewardEventPayload extends ResonanceRewardResolution {
+  grantedYield: ResonanceYield
 }
 
 export const createEmptyResonanceState = (): ResonanceState => Object.fromEntries(RESONANCE_TYPES.map((type) => [type, 0])) as ResonanceState
 
 export const isResonanceType = (value: unknown): value is ResonanceType => typeof value === 'string' && (RESONANCE_TYPES as readonly string[]).includes(value)
-
-export const normalizeResonanceState = (value: unknown): ResonanceState => {
-  const source = value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {}
-  return Object.fromEntries(RESONANCE_TYPES.map((type) => [type, sanitizeResonanceAmount(source[type])])) as ResonanceState
-}
 
 const saturatingAdd = (current: unknown, amount: unknown) => {
   const left = sanitizeResonanceAmount(current)
@@ -66,28 +58,21 @@ export const grantResonanceBundleWithDelta = (state: ResonanceState, bundle: Res
   return granted
 }
 
-export const multiplyResonanceBundle = (bundle: ResonanceYield, multiplier: unknown): ResonanceYield => {
-  const safeMultiplier = typeof multiplier === 'number' && Number.isFinite(multiplier) ? Math.max(0, multiplier) : 0
-  return Object.fromEntries(RESONANCE_TYPES.flatMap((type) => {
-    const amount = sanitizeResonanceAmount(bundle[type])
-    if (amount <= 0 || safeMultiplier <= 0) return []
-    const product = amount > Number.MAX_SAFE_INTEGER / safeMultiplier ? Number.MAX_SAFE_INTEGER : amount * safeMultiplier
-    return [[type, sanitizeResonanceAmount(product)]]
-  })) as ResonanceYield
-}
-
 export const aggregateResonanceBundle = (bundle: ResonanceYield, count: unknown): ResonanceYield => {
   const safeCount = sanitizeResonanceAmount(count)
   return multiplyResonanceBundle(bundle, safeCount)
 }
 
-export const resolveEnemyResonanceReward = (enemyId: MonsterId): ResonanceRewardResolution => {
+export const resolveEnemyResonanceReward = (enemyId: MonsterId, worldTier: WorldTierId = 1): ResonanceRewardResolution => {
+  const tier = getWorldTierDefinition(worldTier)
   const baseYield = normalizeResonanceState(MONSTERS[enemyId]?.resonanceYield) as ResonanceYield
-  const finalYield = multiplyResonanceBundle(baseYield, PHASE_ONE_RESONANCE_MULTIPLIER)
-  return { enemyId, worldTier: PHASE_ONE_WORLD_TIER, rewardMultiplier: PHASE_ONE_RESONANCE_MULTIPLIER, baseYield, finalYield }
+  const finalYield = multiplyResonanceBundle(baseYield, tier.resonanceRewardMultiplier)
+  return { enemyId, worldTier: tier.id, rewardMultiplier: tier.resonanceRewardMultiplier, baseYield, finalYield }
 }
 
-export const grantEnemyResonanceReward = (state: ResonanceState, enemyId: MonsterId) => {
-  const resolution = resolveEnemyResonanceReward(enemyId)
-  return grantResonanceBundleWithDelta(state, resolution.finalYield)
+export const grantEnemyResonanceReward = (state: ResonanceState, enemyId: MonsterId, worldTier: WorldTierId = 1): ResonanceRewardEventPayload => {
+  const resolution = resolveEnemyResonanceReward(enemyId, worldTier)
+  return { ...resolution, grantedYield: grantResonanceBundleWithDelta(state, resolution.finalYield) }
 }
+
+export { multiplyResonanceBundle, normalizeResonanceState, sanitizeResonanceAmount }

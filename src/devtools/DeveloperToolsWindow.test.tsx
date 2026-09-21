@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { DeveloperToolsWindow } from './DeveloperToolsWindow'
-import { closeDeveloperTools, getDeveloperToolsState, normalizeDeveloperToolsTab, openDeveloperTools, resetDeveloperToolsWindow, setArtifactDevPanelVisible, setDeveloperToolsGeometry } from './developerToolsStore'
+import { closeDeveloperTools, getDeveloperToolsState, normalizeDeveloperToolsTab, openDeveloperTools, resetDeveloperToolsWindow, setArtifactDevPanelVisible, setDeveloperCombatTab, setDeveloperToolsGeometry } from './developerToolsStore'
 
 describe('Developer Tools window presentation', () => {
   beforeEach(() => {
@@ -70,5 +70,24 @@ describe('Developer Tools window presentation', () => {
     expect(screen.getByRole('button', { name: 'Advanced Diagnostics' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: /^Equipment$/ })).toBeNull()
     expect(screen.queryByRole('button', { name: /^Magic Schools$/ })).toBeNull()
+  })
+
+  it('persists the Combat Balance tab in developer-only session state', () => {
+    setDeveloperCombatTab('balance')
+    expect(getDeveloperToolsState().combatTab).toBe('balance')
+    expect(JSON.parse(window.localStorage.getItem('sss-wizard-devtools-session-v3') ?? '{}').combatTab).toBe('balance')
+  })
+
+  it('renders the Balance Lab measurement columns and neutral controls', () => {
+    setDeveloperCombatTab('balance')
+    openDeveloperTools('combat')
+    render(<DeveloperToolsWindow />)
+    expect(screen.getByText('Combat Balance Lab')).toBeTruthy()
+    expect(screen.getByText('TOTAL RES/H')).toBeTruthy()
+    expect(screen.getByText('INCOMING DPS')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'RUN BENCHMARK' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'CANCEL' })).toBeTruthy()
+    expect(screen.getByLabelText('Benchmark duration')).toBeTruthy()
+    expect(screen.getByLabelText('Benchmark target scope')).toBeTruthy()
   })
 })

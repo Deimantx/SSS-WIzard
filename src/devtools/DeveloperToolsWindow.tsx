@@ -33,7 +33,7 @@ export function DeveloperToolsWindow() {
   if (!session.open) return null
   const activeOverrides = getActiveDebugOverrides(debug)
   const copy = async (label: string, value: unknown) => {
-    try { await navigator.clipboard?.writeText(JSON.stringify(value, null, 2)); setCopied(label); window.setTimeout(() => setCopied(''), 1800) }
+    try { await navigator.clipboard?.writeText(typeof value === 'string' ? value : JSON.stringify(value, null, 2)); setCopied(label); window.setTimeout(() => setCopied(''), 1800) }
     catch { setCopied('Clipboard unavailable') }
   }
 

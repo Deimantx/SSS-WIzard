@@ -5,9 +5,10 @@ import { DeveloperCombatEncounter } from './combat/DeveloperCombatEncounter'
 import { DeveloperCombatLive } from './combat/DeveloperCombatLive'
 import { DeveloperCombatStatus } from './combat/DeveloperCombatStatus'
 import { DeveloperCombatTelemetry } from './combat/DeveloperCombatTelemetry'
+import { DeveloperCombatBalance } from './combat/DeveloperCombatBalance'
 
 export type DeveloperCopy = (label: string, value: unknown) => Promise<void>
-const tabs: Array<{ id: DeveloperCombatTab; label: string }> = [{ id: 'live', label: 'LIVE' }, { id: 'encounter', label: 'ENCOUNTER' }, { id: 'boss', label: 'BOSS' }, { id: 'actions', label: 'ACTIONS' }, { id: 'status', label: 'STATUS' }, { id: 'telemetry', label: 'TELEMETRY' }]
+const tabs: Array<{ id: DeveloperCombatTab; label: string }> = [{ id: 'live', label: 'LIVE' }, { id: 'encounter', label: 'ENCOUNTER' }, { id: 'boss', label: 'BOSS' }, { id: 'actions', label: 'ACTIONS' }, { id: 'status', label: 'STATUS' }, { id: 'telemetry', label: 'TELEMETRY' }, { id: 'balance', label: 'BALANCE' }]
 
 export function DeveloperCombat({ copy }: { copy: DeveloperCopy }) {
   const combatTab = useDeveloperToolsStore().combatTab
@@ -19,5 +20,6 @@ export function DeveloperCombat({ copy }: { copy: DeveloperCopy }) {
     {combatTab === 'actions' && <DeveloperCombatActions />}
     {combatTab === 'status' && <DeveloperCombatStatus />}
     {combatTab === 'telemetry' && <DeveloperCombatTelemetry copy={copy} />}
+    {combatTab === 'balance' && <DeveloperCombatBalance copy={copy} />}
   </div>
 }

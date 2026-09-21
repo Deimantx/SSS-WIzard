@@ -2,7 +2,7 @@ import { useSyncExternalStore } from 'react'
 import { clampDeveloperToolsGeometry, getDefaultDeveloperGeometry, loadDeveloperToolsGeometry, saveDeveloperToolsGeometry, type DeveloperToolsGeometry, type DeveloperToolsMode } from './developerToolsWindowGeometry'
 
 export type DeveloperToolsTab = 'quick' | 'character' | 'progression' | 'arcane-core' | 'inventory' | 'spells' | 'research' | 'channeling' | 'focus' | 'transmutation' | 'artificing' | 'artifacts' | 'resonance' | 'combat' | 'world-tier' | 'monsters' | 'statuses' | 'save' | 'diagnostics' | 'ui-tuning'
-export type DeveloperCombatTab = 'live' | 'encounter' | 'boss' | 'actions' | 'status' | 'telemetry'
+export type DeveloperCombatTab = 'live' | 'encounter' | 'boss' | 'actions' | 'status' | 'telemetry' | 'balance'
 export interface DeveloperToolsSessionState extends DeveloperToolsGeometry { open: boolean; activeTab: DeveloperToolsTab; combatTab: DeveloperCombatTab; showArtifactDevPanel: boolean }
 
 export function normalizeDeveloperToolsTab(tab: string): DeveloperToolsTab {
@@ -18,7 +18,7 @@ const loadSessionPreferences = (): Pick<DeveloperToolsSessionState, 'activeTab' 
   if (typeof localStorage === 'undefined') return { activeTab: 'quick', combatTab: 'live', showArtifactDevPanel: false }
   try {
     const saved = JSON.parse(localStorage.getItem(DEVELOPER_TOOLS_SESSION_KEY) ?? 'null') as { activeTab?: string; combatTab?: DeveloperCombatTab; showArtifactDevPanel?: boolean } | null
-    const combatTabs: DeveloperCombatTab[] = ['live', 'encounter', 'boss', 'actions', 'status', 'telemetry']
+    const combatTabs: DeveloperCombatTab[] = ['live', 'encounter', 'boss', 'actions', 'status', 'telemetry', 'balance']
     return { activeTab: normalizeDeveloperToolsTab(saved?.activeTab ?? 'quick'), combatTab: combatTabs.includes(saved?.combatTab as DeveloperCombatTab) ? saved!.combatTab! : 'live', showArtifactDevPanel: saved?.showArtifactDevPanel === true }
   } catch { return { activeTab: 'quick', combatTab: 'live', showArtifactDevPanel: false } }
 }

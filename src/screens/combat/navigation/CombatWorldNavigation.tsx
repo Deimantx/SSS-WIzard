@@ -1,5 +1,5 @@
-import { ChevronRight, LockKeyhole, Map, MapPinned } from 'lucide-react'
-import { useEffect, useState, type ReactNode } from 'react'
+import { ChevronRight, LockKeyhole, Map } from 'lucide-react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { Card, GameTooltip } from '../../../components/ui'
 import { TooltipContent } from '../../../components/ui/tooltip/Tooltip'
@@ -15,7 +15,7 @@ import { CombatWorldTierControl } from '../CombatWorldTierControl'
 
 type Selection = { continentId: CombatContinentId | null; regionId: CombatRegionId | null; locationId: CombatLocationId | null }
 
-export function CombatWorldNavigation({ onSelectLocation, onEnterLocation, onSetCombatTarget, onBestiary, onReturnToCombat }: { onSelectLocation: (locationId: CombatLocationId) => void; onEnterLocation: (locationId: CombatLocationId, targetEnemyId?: MonsterId) => void; onSetCombatTarget: (enemyId: MonsterId) => boolean; onBestiary: (location: CombatLocationViewModel) => void; onReturnToCombat: () => void }) {
+export function CombatWorldNavigation({ onSelectLocation, onEnterLocation, onHuntTarget, onBestiary, onReturnToCombat }: { onSelectLocation: (locationId: CombatLocationId) => void; onEnterLocation: (locationId: CombatLocationId, targetEnemyId?: MonsterId) => void; onHuntTarget: (locationId: CombatLocationId, targetEnemyId: MonsterId) => boolean; onBestiary: (location: CombatLocationViewModel) => void; onReturnToCombat: () => void }) {
   const { progress, combat, worldTier, lastEnteredDungeonId } = useGameStore(useShallow((state) => ({ progress: state.progress, combat: state.combat, worldTier: state.worldTier, lastEnteredDungeonId: state.ui.lastEnteredCombatDungeonId })))
   const [selection, setSelection] = useState<Selection>(() => {
     const initialLocationId = getInitialCombatLocationId({ combat, lastEnteredDungeonId, progress })
@@ -25,15 +25,17 @@ export function CombatWorldNavigation({ onSelectLocation, onEnterLocation, onSet
   const viewModel = buildCombatWorldNavigationViewModel({ progress, combat, worldTier, selectedContinentId: selection.continentId, selectedRegionId: selection.regionId, selectedLocationId: selection.locationId })
   const [lootLocation, setLootLocation] = useState<CombatLocationViewModel | null>(null)
   const [selectedTargetEnemyId, setSelectedTargetEnemyId] = useState<MonsterId | null>(null)
+  const targetContextRef = useRef<{ locationId: CombatLocationId | null; activeTargetEnemyId: MonsterId | null }>({ locationId: null, activeTargetEnemyId: null })
 
   useEffect(() => {
     const targeting = viewModel.selectedLocation?.targeting
-    if (!targeting) {
-      setSelectedTargetEnemyId(null)
-      return
-    }
-    if (targeting.activeTargetEnemyId && targeting.activeTargetEnemyId !== selectedTargetEnemyId) setSelectedTargetEnemyId(targeting.activeTargetEnemyId)
-    if (selectedTargetEnemyId && !targeting.targets.some((target) => target.monsterId === selectedTargetEnemyId)) setSelectedTargetEnemyId(null)
+    const locationId = viewModel.selectedLocation?.id ?? null
+    const activeTargetEnemyId = targeting?.activeTargetEnemyId ?? null
+    const previousContext = targetContextRef.current
+    if (previousContext.locationId !== locationId || previousContext.activeTargetEnemyId !== activeTargetEnemyId) setSelectedTargetEnemyId(activeTargetEnemyId)
+    else if (selectedTargetEnemyId && targeting && !targeting.targets.some((target) => target.monsterId === selectedTargetEnemyId)) setSelectedTargetEnemyId(null)
+    else if (!targeting) setSelectedTargetEnemyId(null)
+    targetContextRef.current = { locationId, activeTargetEnemyId }
   }, [selectedTargetEnemyId, viewModel.selectedLocation?.id, viewModel.selectedLocation?.targeting?.activeTargetEnemyId, viewModel.selectedLocation?.targeting?.targets])
 
   useEffect(() => {
@@ -72,18 +74,15 @@ export function CombatWorldNavigation({ onSelectLocation, onEnterLocation, onSet
     if (location.targeting) {
       const targetEnemyId = selectedTargetEnemyId
       if (!targetEnemyId) return
-      if (location.id === viewModel.activeLocationId && targetEnemyId === location.targeting.activeTargetEnemyId) onReturnToCombat()
-      else if (location.id === viewModel.activeLocationId) onSetCombatTarget(targetEnemyId)
-      else onEnterLocation(location.id, targetEnemyId)
+      onHuntTarget(location.id, targetEnemyId)
       return
     }
     if (location.id === viewModel.activeLocationId) onReturnToCombat()
     else onEnterLocation(location.id)
   }
 
-  const selectedTargeting = viewModel.selectedLocation?.targeting
-  return <Card title="WORLD NAVIGATION" className="combat-world-navigation" action={<div className="combat-world-navigation-header-actions"><span className="combat-world-navigation-meta">{viewModel.breadcrumb.toUpperCase()}</span><CombatWorldTierControl variant="embedded" /></div>}>
-    <div className="combat-world-navigation-intro"><div><p>Browse the world hierarchy, then inspect a Location before entering it.</p>{viewModel.activeLocation && <span className="combat-world-active-run"><MapPinned size={13} aria-hidden="true" /> ACTIVE RUN: <strong>{viewModel.activeLocation.name}</strong> · {viewModel.activeLocation.typeLabel}</span>}</div><span className="combat-world-navigation-path"><Map size={14} aria-hidden="true" /> {viewModel.selectedRegion.locationCount} LOCATIONS IN REGION</span></div>
+  return <Card title="WORLD NAVIGATION" className="combat-world-navigation" action={<div className="combat-world-navigation-header-actions"><CombatWorldTierControl variant="embedded" /></div>}>
+    <div className="combat-world-navigation-intro"><p>Choose a Location.</p></div>
     <nav className="combat-world-selector-stack" aria-label="World hierarchy">
       <SelectorRow label="CONTINENT" icon={<Map size={13} aria-hidden="true" />}>
         {viewModel.continents.map((continent) => <SelectorButton key={continent.id} selected={continent.id === viewModel.selectedContinent.id} disabled={continent.state === 'locked'} label={continent.name} locked={continent.state === 'locked'} unlockText={continent.unlockText} onClick={() => selectContinent(continent.id)} />)}

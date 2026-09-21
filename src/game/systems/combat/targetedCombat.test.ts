@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
+import { useGameStore } from '../../../store/gameStore'
 import { DUNGEONS } from '../../content/dungeons/dungeons'
 import { getCombatLocationByDungeonId, isCombatTargetForLocation } from '../../content/world-navigation'
 import { MONSTERS } from '../../content/monsters'
 import { resolveEnemyResonanceReward } from '../resonance/resonanceRuntime'
-import { finishEnemy, spawnNextEnemy, spawnEnemy } from './combatRuntime'
+import { abandonCurrentEncounter, finishEnemy, spawnNextEnemy, spawnEnemy } from './combatRuntime'
 import { fastResolveNormalEnemiesForDebug } from './debugCombatRuntime'
 
 const prepare = () => {
@@ -15,6 +16,10 @@ const prepare = () => {
   state.combat.active = true
   state.combat.dungeonId = 'whispering-woods'
   return state
+}
+
+const installStoreState = (state: ReturnType<typeof prepare>) => {
+  useGameStore.setState({ ...useGameStore.getState(), ...state })
 }
 
 describe('Whispering Woods targeted farming', () => {
@@ -112,5 +117,115 @@ describe('Whispering Woods targeted farming', () => {
     const result = await advanceWithOfflineBank(5_000, () => state, (recipe) => recipe(state), () => {}, undefined, {})
     expect(result.ok).toBe(true)
     expect(state.progress.lifetimeKillsByMonster['cinder-moth']).toBeGreaterThanOrEqual(1)
+  })
+
+  it('abandons a normal encounter immediately without granting its pending rewards', () => {
+    const state = prepare()
+    state.combat.targetEnemyId = 'cinder-moth'
+    spawnEnemy(state, 'cinder-moth')
+    state.combat.enemyHp = 1
+    state.combat.threatCleared = 7
+    state.player.health = 73
+    state.player.mana = 12
+    const killsBefore = state.progress.lifetimeKills
+    const resonanceBefore = { ...state.resonance }
+    const arcanePointsBefore = state.arcaneCore.totalPointsEarned
+
+    installStoreState(state)
+    expect(useGameStore.getState().huntCombatTarget('whispering-woods', 'forest-wisp')).toBe(true)
+    const next = useGameStore.getState()
+    expect(next.combat.enemyId).toBe('forest-wisp')
+    expect(next.combat.targetEnemyId).toBe('forest-wisp')
+    expect(next.combat.threatCleared).toBe(7)
+    expect(next.player.health).toBe(73)
+    expect(next.player.mana).toBe(12)
+    expect(next.progress.lifetimeKills).toBe(killsBefore)
+    expect(next.resonance).toEqual(resonanceBefore)
+    expect(next.arcaneCore.totalPointsEarned).toBe(arcanePointsBefore)
+  })
+
+  it('keeps the same active target instance intact when HUNT TARGET is repeated', () => {
+    const state = prepare()
+    state.combat.targetEnemyId = 'tempest-stag'
+    spawnEnemy(state, 'tempest-stag')
+    state.combat.enemyHp = 123
+    state.combat.encounterTimerMs = 456
+    state.combat.pendingBossId = 'forest-heart'
+    const instanceKey = state.combat.enemyInstanceKey
+
+    installStoreState(state)
+    expect(useGameStore.getState().huntCombatTarget('whispering-woods', 'tempest-stag')).toBe(true)
+    const next = useGameStore.getState()
+    expect(next.combat.enemyId).toBe('tempest-stag')
+    expect(next.combat.enemyInstanceKey).toBe(instanceKey)
+    expect(next.combat.enemyHp).toBe(123)
+    expect(next.combat.encounterTimerMs).toBe(456)
+    expect(next.combat.pendingBossId).toBeNull()
+  })
+
+  it('abandons a boss without boss progression and preserves Threat before spawning the target', () => {
+    const state = prepare()
+    state.combat.targetEnemyId = 'tempest-stag'
+    state.combat.threatCleared = DUNGEONS['whispering-woods'].threatRequired
+    spawnEnemy(state, 'forest-heart')
+    const bossKillsBefore = state.progress.bossKillsByBoss['forest-heart'] ?? 0
+    const firstBossKillBefore = state.progress.firstBossKill
+    const resonanceBefore = { ...state.resonance }
+
+    installStoreState(state)
+    expect(useGameStore.getState().huntCombatTarget('whispering-woods', 'stone-root')).toBe(true)
+    const next = useGameStore.getState()
+    expect(next.combat.enemyId).toBe('stone-root')
+    expect(next.combat.inBossFight).toBe(false)
+    expect(next.combat.threatCleared).toBe(DUNGEONS['whispering-woods'].threatRequired)
+    expect(next.progress.bossKillsByBoss['forest-heart'] ?? 0).toBe(bossKillsBefore)
+    expect(next.progress.firstBossKill).toBe(firstBossKillBefore)
+    expect(next.resonance).toEqual(resonanceBefore)
+  })
+
+  it('switches to a different Location through the same canonical Hunt action', () => {
+    const state = prepare()
+    state.combat.dungeonId = 'howling-den'
+    spawnEnemy(state, 'cavefang-wolf')
+    installStoreState(state)
+
+    expect(useGameStore.getState().huntCombatTarget('whispering-woods', 'forest-wisp')).toBe(true)
+    const next = useGameStore.getState()
+    expect(next.combat.active).toBe(true)
+    expect(next.combat.dungeonId).toBe('whispering-woods')
+    expect(next.combat.enemyId).toBe('forest-wisp')
+    expect(next.combat.targetEnemyId).toBe('forest-wisp')
+  })
+
+  it('lets an explicit Hunt cancel a pending Auto Hunt boss transition', () => {
+    const state = prepare()
+    state.combat.targetEnemyId = 'forest-wisp'
+    state.combat.pendingBossId = 'forest-heart'
+    state.progress.autoHuntBossByDungeon['whispering-woods'] = true
+    installStoreState(state)
+
+    expect(useGameStore.getState().huntCombatTarget('whispering-woods', 'forest-wisp')).toBe(true)
+    const next = useGameStore.getState()
+    expect(next.combat.enemyId).toBe('forest-wisp')
+    expect(next.combat.pendingBossId).toBeNull()
+    expect(next.combat.inBossFight).toBe(false)
+  })
+
+  it('clears only enemy runtime when the reusable abandonment helper is used', () => {
+    const state = prepare()
+    state.combat.targetEnemyId = 'forest-wisp'
+    state.combat.threatCleared = 9
+    state.combat.playerBarrier = 22
+    state.combat.playerStatuses = [{ statusId: 'burning', holder: 'player', instanceKey: 'test-player-burning', source: { actor: 'player', kind: 'system', sourceId: 'test' }, remainingMs: 1000, initialDurationMs: 1000, stacks: 1 }]
+    spawnEnemy(state, 'forest-wisp')
+    state.combat.enemyHp = 1
+    state.combat.enemyBarrier = 11
+    abandonCurrentEncounter(state)
+    expect(state.combat.enemyId).toBeNull()
+    expect(state.combat.enemyHp).toBe(0)
+    expect(state.combat.enemyBarrier).toBe(0)
+    expect(state.combat.threatCleared).toBe(9)
+    expect(state.combat.playerBarrier).toBe(22)
+    expect(state.combat.playerStatuses).toHaveLength(1)
   })
 })

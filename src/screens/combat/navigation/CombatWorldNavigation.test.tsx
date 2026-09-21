@@ -5,7 +5,7 @@ import { createInitialState } from '../../../store/initialState'
 import { useGameStore } from '../../../store/gameStore'
 import { CombatWorldNavigation } from './CombatWorldNavigation'
 
-const renderNavigation = (onEnterLocation = vi.fn()) => render(<TooltipProvider><CombatWorldNavigation onSelectLocation={vi.fn()} onEnterLocation={onEnterLocation} onSetCombatTarget={vi.fn(() => true)} onBestiary={vi.fn()} onReturnToCombat={vi.fn()} /></TooltipProvider>)
+const renderNavigation = (onEnterLocation = vi.fn(), onHuntTarget = vi.fn(() => true)) => render(<TooltipProvider><CombatWorldNavigation onSelectLocation={vi.fn()} onEnterLocation={onEnterLocation} onHuntTarget={onHuntTarget} onBestiary={vi.fn()} onReturnToCombat={vi.fn()} /></TooltipProvider>)
 
 describe('CombatWorldNavigation', () => {
   beforeEach(() => useGameStore.setState(createInitialState()))
@@ -21,6 +21,9 @@ describe('CombatWorldNavigation', () => {
     expect(screen.queryByText('COMBAT ZONES')).toBeNull()
     expect(screen.queryByText('DUNGEONS')).toBeNull()
     expect(screen.getByText('WORLD TIER')).toBeTruthy()
+    expect(screen.getByText('Choose a Location.')).toBeTruthy()
+    expect(screen.queryByText('CONTINENT I / FIRST FRONTIER / WHISPERING WOODS')).toBeNull()
+    expect(screen.queryByText(/LOCATIONS IN REGION/)).toBeNull()
     const tierControl = screen.getByText('WORLD TIER').closest('.combat-world-tier-control')
     expect(tierControl?.classList.contains('is-embedded')).toBe(true)
     expect(tierControl?.querySelector('.card')).toBeNull()
@@ -36,10 +39,11 @@ describe('CombatWorldNavigation', () => {
   })
 
   it('renders targeted Whispering Woods cards without legacy inspector metrics', () => {
-    const onEnterLocation = vi.fn()
-    renderNavigation(onEnterLocation)
+    const onHuntTarget = vi.fn(() => true)
+    renderNavigation(vi.fn(), onHuntTarget)
 
     expect(screen.getByText('SELECT TARGET')).toBeTruthy()
+    expect(screen.getByText('RESONANCE / KILL')).toBeTruthy()
     for (const name of ['Forest Wisp', 'Thornling', 'Dewbound Sprite', 'Cinder Moth', 'Stone Root', 'Grove Sentinel', 'Tempest Stag']) expect(screen.getByText(name)).toBeTruthy()
     expect(screen.getByText('ZONE BOSS')).toBeTruthy()
     expect(screen.getByText('Forest Heart')).toBeTruthy()
@@ -47,11 +51,28 @@ describe('CombatWorldNavigation', () => {
     expect(screen.queryByText('BOSS CLEARS')).toBeNull()
     expect(screen.queryByText('LOCATION STATUS')).toBeNull()
     expect(screen.queryByText('Repeatable combat content. Encounter tiles are preview-only in Phase 3A.')).toBeNull()
+    expect(screen.getByRole('button', { name: /HUNT TARGET/ })).toHaveProperty('disabled', true)
 
     fireEvent.click(screen.getByRole('button', { name: /Cinder MothSTANDARD/ }))
-    expect(screen.getByRole('button', { name: /START FARMING/ })).not.toHaveProperty('disabled', true)
-    fireEvent.click(screen.getByRole('button', { name: /START FARMING/ }))
-    expect(onEnterLocation).toHaveBeenCalledWith('whispering-woods', 'cinder-moth')
+    expect(screen.getByRole('button', { name: /HUNT TARGET/ })).not.toHaveProperty('disabled', true)
+    fireEvent.click(screen.getByRole('button', { name: /HUNT TARGET/ }))
+    expect(onHuntTarget).toHaveBeenCalledWith('whispering-woods', 'cinder-moth')
+    expect(screen.queryByRole('button', { name: /START FARMING|SWITCH TARGET|RETURN TO COMBAT/ })).toBeNull()
+  })
+
+  it('distinguishes the selected target from the target currently being hunted', () => {
+    const state = createInitialState()
+    state.combat.active = true
+    state.combat.dungeonId = 'whispering-woods'
+    state.combat.targetEnemyId = 'cinder-moth'
+    state.combat.enemyId = 'cinder-moth'
+    useGameStore.setState(state)
+    renderNavigation()
+
+    expect(screen.getByText('HUNTING')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /Stone RootSTANDARD/ }))
+    expect(screen.getByText('HUNTING')).toBeTruthy()
+    expect(screen.getByText('SELECTED')).toBeTruthy()
   })
 
   it('lets the player browse another location while the active run remains unchanged', () => {
@@ -60,7 +81,7 @@ describe('CombatWorldNavigation', () => {
     state.combat.dungeonId = 'whispering-woods'
     useGameStore.setState(state)
     const onSelectLocation = vi.fn()
-    render(<TooltipProvider><CombatWorldNavigation onSelectLocation={onSelectLocation} onEnterLocation={vi.fn()} onSetCombatTarget={vi.fn(() => true)} onBestiary={vi.fn()} onReturnToCombat={vi.fn()} /></TooltipProvider>)
+    render(<TooltipProvider><CombatWorldNavigation onSelectLocation={onSelectLocation} onEnterLocation={vi.fn()} onHuntTarget={vi.fn(() => true)} onBestiary={vi.fn()} onReturnToCombat={vi.fn()} /></TooltipProvider>)
 
     fireEvent.click(screen.getByRole('button', { name: /Howling Den, DUNGEON/ }))
 

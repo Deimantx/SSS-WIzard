@@ -26,7 +26,7 @@ describe('CombatWorldTierControl', () => {
 
     expect(screen.getByRole('button', { name: 'WT1' })).toHaveProperty('disabled', true)
     expect(screen.getByRole('button', { name: 'WT2' })).toHaveProperty('disabled', true)
-    expect(screen.getByText('Leave the current Location to change World Tier.')).toBeTruthy()
+    expect(screen.getByText('LOCKED DURING COMBAT')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'WT1' }))
     expect(useGameStore.getState().worldTier.current).toBe(2)
   })

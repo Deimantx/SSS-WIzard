@@ -111,6 +111,38 @@ export const spawnEnemy = (state: GameState, enemyId: MonsterId, uiEvents?: Comb
   return true
 }
 
+export interface AbandonCurrentEncounterOptions {
+  clearPendingBoss?: boolean
+  resetEncounterTimer?: boolean
+}
+
+/**
+ * Removes the current encounter without resolving it as a defeat or a kill.
+ *
+ * This is deliberately narrower than resetting a combat run: player-bound
+ * state, location state, Threat, Auto Hunt, and the active spell loadout stay
+ * intact while all enemy-bound runtime is discarded.
+ */
+export const abandonCurrentEncounter = (state: GameState, options: AbandonCurrentEncounterOptions = {}) => {
+  const { clearPendingBoss = true, resetEncounterTimer = true } = options
+  clearGuardianRuntime(state)
+  state.combat.enemyId = null
+  state.combat.enemyWorldTier = null
+  state.combat.enemyInstanceKey = null
+  state.combat.enemyHp = 0
+  state.combat.enemyMaxHp = 0
+  state.combat.enemyBarrier = 0
+  state.combat.enemyBarrierRemainingMs = null
+  state.combat.pendingPlayerSpellCast = null
+  state.combat.enemyStatuses = []
+  state.combat.autoCastManaStarvedSpells = []
+  state.combat.inBossFight = false
+  if (clearPendingBoss) state.combat.pendingBossId = null
+  if (resetEncounterTimer) state.combat.encounterTimerMs = 0
+  clearEnemyRuleCooldowns(state)
+  resetEnemyActionRuntime(state)
+}
+
 export const spawnNextEnemy = (state: GameState, uiEvents?: CombatEventSink) => {
   const dungeon = DUNGEONS[state.combat.dungeonId ?? 'whispering-woods']
   if (state.combat.pendingBossId) {

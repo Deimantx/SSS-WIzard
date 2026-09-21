@@ -74,5 +74,4 @@ export interface CombatWorldNavigationViewModel {
   selectedLocation: CombatLocationViewModel | null
   activeLocationId: CombatLocationId | null
   activeLocation: CombatLocationViewModel | null
-  breadcrumb: string
 }

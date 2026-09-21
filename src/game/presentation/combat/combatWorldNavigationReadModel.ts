@@ -157,5 +157,5 @@ export function buildCombatWorldNavigationViewModel({ progress, combat, worldTie
   const locations = sorted(regionLocationIds.map((locationId) => COMBAT_LOCATIONS[locationId]).filter((location): location is NonNullable<typeof location> => Boolean(location))).map((location) => buildLocation(location.id, progress, combat, worldTier))
   const activeLocationId = getCombatLocationByDungeonId(combat.active ? combat.dungeonId : null)?.id ?? null
   const activeLocation = activeLocationId ? buildLocation(activeLocationId, progress, combat, worldTier) : null
-  return { continents, regions, selectedContinent, selectedRegion: { ...selectedRegionSummary, locations }, selectedLocation, activeLocationId, activeLocation, breadcrumb: [selectedContinent.name, selectedRegionSummary.name, selectedLocation?.name].filter(Boolean).join(' / ') }
+  return { continents, regions, selectedContinent, selectedRegion: { ...selectedRegionSummary, locations }, selectedLocation, activeLocationId, activeLocation }
 }

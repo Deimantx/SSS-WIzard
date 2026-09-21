@@ -37,7 +37,9 @@ describe('combat world navigation read model', () => {
     expect(view.activeLocation?.state).toBe('active')
     expect(view.selectedLocation?.id).toBe('howling-den')
     expect(view.selectedLocation?.state).toBe('locked')
-    expect(view.breadcrumb).toBe('Continent I / First Frontier / Howling Den')
+    expect(view.selectedContinent.name).toBe('Continent I')
+    expect(view.selectedRegion.name).toBe('First Frontier')
+    expect(view.selectedLocation?.name).toBe('Howling Den')
   })
 
   it('keeps Shattered Frontier locked until the existing Edrin milestone', () => {

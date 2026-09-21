@@ -37,9 +37,12 @@ describe('CombatRunBar world terminology', () => {
     state.combat.active = true
     state.combat.dungeonId = 'whispering-woods'
     state.combat.targetEnemyId = 'cinder-moth'
+    state.combat.enemyId = 'cinder-moth'
     useGameStore.setState(state)
     render(<TooltipProvider><CombatRunBar selectedDungeonId="whispering-woods" onRequestLeave={vi.fn()} /></TooltipProvider>)
-    expect(screen.getByText('TARGET')).toBeTruthy()
+    expect(screen.getByText('HUNTING')).toBeTruthy()
     expect(screen.getByText('Cinder Moth')).toBeTruthy()
+    expect(screen.getByText('CURRENT TARGET')).toBeTruthy()
+    expect(screen.queryByText('NEXT NORMAL ENCOUNTER')).toBeNull()
   })
 })

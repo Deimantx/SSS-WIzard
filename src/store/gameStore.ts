@@ -6,14 +6,14 @@ import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { BALANCE } from '../game/core/balance/balance'
 import { DUNGEONS, DUNGEON_ORDER, getDungeonUnlockRequirement, isDungeonUnlocked } from '../game/content/dungeons/dungeons'
-import { getCombatLocationByDungeonId, isCombatTargetForLocation } from '../game/content/world-navigation'
+import { COMBAT_LOCATIONS, getCombatLocationByDungeonId, isCombatTargetForLocation, type CombatLocationId } from '../game/content/world-navigation'
 import { MONSTERS } from '../game/content/monsters'
 import { ITEMS } from '../game/content/items/items'
 import { LEGACY_SPELL_ID_MAP, SPELLS } from '../game/content/spells/spells'
 import { castSpellAction, debugCastSpellAction, requestManualSpellAction } from './actions/combatActions'
 import type { ManualSpellRequestResult } from '../game/engine/spellEngine'
 import { appendLog, manaRegenPerSecond, pushNotification, recalculateDerivedStats, selectFreeFocus, selectUsedFocus } from '../game/engine'
-import { debugApplyStatus, spawnEnemy, spawnNextEnemy, type CombatLootObserver } from '../game/systems/combat/combatRuntime'
+import { abandonCurrentEncounter, debugApplyStatus, spawnEnemy, spawnNextEnemy, type CombatLootObserver } from '../game/systems/combat/combatRuntime'
 import { canManuallyEngageDungeonBoss, isAutoHuntEnabledForDungeon, isBossCurrentlyActive } from '../game/systems/combat/combatBossSelectors'
 import { removeStatus as removeCombatStatus } from '../game/systems/combat/statusRuntime'
 import { damagePlayer, executeCombatEffects } from '../game/systems/combat/effectResolver'
@@ -262,6 +262,7 @@ export interface GameActions {
   applySpellPreset: (id: SpellPresetId) => ApplySpellPresetResult
   enterDungeon: (dungeonId?: DungeonId) => void
   enterTargetedCombat: (dungeonId: DungeonId, targetEnemyId: MonsterId) => boolean
+  huntCombatTarget: (locationId: CombatLocationId, targetEnemyId: MonsterId) => boolean
   setCombatTarget: (enemyId: MonsterId) => boolean
   leaveDungeon: () => void
   engageBoss: (bossId: MonsterId) => void
@@ -621,10 +622,15 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     set((state) => { initializeDungeonRun(state, dungeonId, switching); state.ui.lastEnteredCombatDungeonId = dungeonId; return state })
   },
   enterTargetedCombat: (dungeonId, targetEnemyId) => {
-    const dungeon = DUNGEONS[dungeonId]
-    const location = getCombatLocationByDungeonId(dungeonId)
+    const locationId = Object.values(COMBAT_LOCATIONS).find((location) => location.dungeonId === dungeonId)?.id
+    return locationId ? get().huntCombatTarget(locationId, targetEnemyId) : false
+  },
+  huntCombatTarget: (locationId, targetEnemyId) => {
+    const location = COMBAT_LOCATIONS[locationId]
+    const dungeonId = location?.dungeonId
+    const dungeon = dungeonId ? DUNGEONS[dungeonId] : null
     const currentState = get()
-    if (!dungeon || !isCombatTargetForLocation(location, dungeonId, targetEnemyId)) {
+    if (!location || !dungeonId || !dungeon || !isCombatTargetForLocation(location, dungeonId, targetEnemyId)) {
       set((state) => { pushNotification(state, `${MONSTERS[targetEnemyId]?.name ?? targetEnemyId} is not a valid target for this Location.`, 'warning'); return state })
       return false
     }
@@ -632,20 +638,35 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
       set((state) => { pushNotification(state, `${getDungeonUnlockRequirement(dungeon) ?? 'Requirement'} to unlock ${dungeon.name}.`, 'warning'); return state })
       return false
     }
-    if (currentState.combat.active && currentState.combat.dungeonId === dungeonId) {
-      if (currentState.combat.targetEnemyId === targetEnemyId) return true
-      return get().setCombatTarget(targetEnemyId)
+    const sameLocation = Boolean(currentState.combat.active && currentState.combat.dungeonId === dungeonId)
+    if (!sameLocation) {
+      if (currentState.combat.active) endActiveDungeonRun()
+      set((state) => {
+        initializeDungeonRun(state, dungeonId, currentState.combat.active, targetEnemyId)
+        if (state.combat.active) appendLog(state, `Hunting target: ${MONSTERS[targetEnemyId].name}.`)
+        state.ui.lastEnteredCombatDungeonId = dungeonId
+        return state
+      })
+      const nextState = get()
+      return nextState.combat.active && nextState.combat.dungeonId === dungeonId && nextState.combat.targetEnemyId === targetEnemyId
     }
-    const switching = currentState.combat.active
-    if (switching) endActiveDungeonRun()
+
+    let hunted = false
     set((state) => {
-      initializeDungeonRun(state, dungeonId, switching, targetEnemyId)
-      if (state.combat.active) appendLog(state, `Farming target: ${MONSTERS[targetEnemyId].name}.`)
-      state.ui.lastEnteredCombatDungeonId = dungeonId
+      const sameActiveTarget = state.combat.enemyId === targetEnemyId && !state.combat.inBossFight && state.combat.targetEnemyId === targetEnemyId
+      if (sameActiveTarget) {
+        state.combat.pendingBossId = null
+        hunted = true
+        return state
+      }
+      abandonCurrentEncounter(state)
+      state.combat.targetEnemyId = targetEnemyId
+      state.combat.encounterTimerMs = 0
+      hunted = spawnEnemy(state, targetEnemyId, combatLogUiSink)
+      if (hunted) appendLog(state, `Hunting target: ${MONSTERS[targetEnemyId].name}.`)
       return state
     })
-    const nextState = get()
-    return nextState.combat.active && nextState.combat.dungeonId === dungeonId && nextState.combat.targetEnemyId === targetEnemyId
+    return hunted
   },
   setCombatTarget: (enemyId) => {
     let changed = false
@@ -660,7 +681,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
       if (state.combat.targetEnemyId === enemyId) { changed = true; return state }
       const hadTarget = Boolean(state.combat.targetEnemyId)
       state.combat.targetEnemyId = enemyId
-      appendLog(state, `${hadTarget ? 'Next farming target' : 'Farming target'}: ${MONSTERS[enemyId].name}.`)
+      appendLog(state, `${hadTarget ? 'Target changed' : 'Hunting target'}: ${MONSTERS[enemyId].name}.`)
       changed = true
       return state
     })

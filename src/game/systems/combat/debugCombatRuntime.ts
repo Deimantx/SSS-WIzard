@@ -3,10 +3,7 @@ import { isBossMonster, MONSTERS } from '../../content/monsters'
 import type { DungeonId, GameState, ItemId, MonsterId } from '../../types'
 import type { CombatEventSink } from './combatTypes'
 import { advanceCombatState, type AdvanceContext } from '../simulation/advanceGameState'
-import { finishEnemy, resolveCombatDeaths, spawnEnemy, spawnNextEnemy, type CombatLootObserver } from './combatRuntime'
-import { resetEnemyActionRuntime } from './actionRuntime'
-import { clearEnemyRuleCooldowns } from './triggerRuntime'
-import { clearGuardianRuntime } from '../summoning/summoningRuntime'
+import { abandonCurrentEncounter, finishEnemy, resolveCombatDeaths, spawnEnemy, spawnNextEnemy, type CombatLootObserver } from './combatRuntime'
 
 export interface DebugCombatRuntimeContext {
   uiEvents?: CombatEventSink
@@ -15,21 +12,7 @@ export interface DebugCombatRuntimeContext {
 }
 
 const resetEncounterWithoutRewards = (state: GameState) => {
-  clearGuardianRuntime(state)
-  state.combat.enemyId = null
-  state.combat.enemyWorldTier = null
-  state.combat.enemyInstanceKey = null
-  state.combat.enemyHp = 0
-  state.combat.enemyMaxHp = 0
-  state.combat.pendingPlayerSpellCast = null
-  state.combat.enemyBarrier = 0
-  state.combat.enemyBarrierRemainingMs = null
-  state.combat.encounterTimerMs = 0
-  state.combat.enemyStatuses = []
-  state.combat.autoCastManaStarvedSpells = []
-  state.combat.inBossFight = false
-  clearEnemyRuleCooldowns(state)
-  resetEnemyActionRuntime(state)
+  abandonCurrentEncounter(state)
 }
 
 export const despawnEnemyForDebug = (state: GameState) => {

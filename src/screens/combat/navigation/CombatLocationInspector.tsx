@@ -22,7 +22,7 @@ export function CombatLocationInspector({ location, activeLocationId, combatActi
     : locked
       ? 'LOCATION LOCKED'
       : location.targeting
-        ? !selectedTarget ? 'SELECT A TARGET' : isActive && selectedTarget.monsterId === activeTarget ? 'RETURN TO COMBAT' : isActive ? 'SWITCH TARGET' : 'START FARMING'
+        ? 'HUNT TARGET'
         : isActive ? 'RETURN TO COMBAT' : location.type === 'dungeon' ? 'ENTER DUNGEON' : 'ENTER LOCATION'
   const primaryDisabled = locked || prototype || Boolean(location.targeting && !selectedTarget)
   const primaryTooltip = prototype
@@ -30,7 +30,7 @@ export function CombatLocationInspector({ location, activeLocationId, combatActi
     : locked
       ? <TooltipContent title="Location locked" description={location.unlockText ?? 'This location is not available yet.'} />
       : location.targeting && !selectedTarget
-        ? <TooltipContent title="Select a farming target" description="Choose a normal encounter before starting a targeted run." />
+        ? <TooltipContent title="Select a target first" description="Choose a normal encounter before hunting it." />
         : undefined
   const tone = location.state === 'locked' ? 'locked' : location.state === 'completed' ? 'success' : location.state === 'boss-ready' ? 'warning' : 'active'
 
@@ -38,7 +38,7 @@ export function CombatLocationInspector({ location, activeLocationId, combatActi
     <div className="combat-location-inspector-scroll">
       <div className="combat-location-inspector-hero"><div className="combat-location-inspector-glyph" aria-hidden="true"><span>{location.type === 'dungeon' ? '◈' : location.type === 'combat-zone' ? '✧' : '◇'}</span><i /></div><div className="combat-location-inspector-heading"><span className="combat-subsection-label">LOCATION DETAILS</span><h3>{location.name}</h3><div className="combat-location-inspector-badges"><Status tone={tone}>{location.statusLabel}</Status><span className="combat-location-type-badge">{location.typeLabel}</span></div></div></div>
       <p className="combat-location-description">{location.description}</p>
-      {location.targeting ? <CombatZoneBody targeting={location.targeting} selectedTargetEnemyId={selectedTargetEnemyId} onSelectTarget={onSelectTarget} boss={location.boss} /> : <DungeonBody encounters={location.encounters} boss={location.boss} />}
+      {location.targeting ? <CombatZoneBody targeting={location.targeting} selectedTargetEnemyId={selectedTargetEnemyId} activeTargetEnemyId={activeTarget} onSelectTarget={onSelectTarget} boss={location.boss} /> : <DungeonBody encounters={location.encounters} boss={location.boss} />}
       {locked && <div className="combat-location-lock-note"><LockKeyhole size={14} aria-hidden="true" /><span>{location.unlockText ?? 'This location is not available yet.'}</span></div>}
       {prototype && <div className="combat-location-lock-note is-prototype"><Gem size={14} aria-hidden="true" /><span>This location is presentation-only until gameplay content is authored.</span></div>}
       <div className="combat-location-actions"><div className="combat-location-secondary-actions"><Button variant="secondary" onClick={onLoot}><Package size={14} aria-hidden="true" /> LOOT</Button><Button variant="secondary" disabled={prototype} tooltip={prototype ? <TooltipContent title="Bestiary unavailable" description="Prototype content has not been authored." /> : undefined} onClick={onBestiary}><BookOpen size={14} aria-hidden="true" /> BESTIARY</Button></div><Button variant={primaryDisabled ? 'secondary' : isActive ? 'primary' : 'success'} disabled={primaryDisabled} tooltip={primaryTooltip} onClick={onEnter}><Swords size={14} aria-hidden="true" /> {primaryLabel}</Button></div>
@@ -46,9 +46,9 @@ export function CombatLocationInspector({ location, activeLocationId, combatActi
   </aside>
 }
 
-function CombatZoneBody({ targeting, selectedTargetEnemyId, onSelectTarget, boss }: { targeting: NonNullable<CombatLocationViewModel['targeting']>; selectedTargetEnemyId: MonsterId | null; onSelectTarget: (enemyId: MonsterId) => void; boss: CombatEncounterViewModel | null }) {
+function CombatZoneBody({ targeting, selectedTargetEnemyId, activeTargetEnemyId, onSelectTarget, boss }: { targeting: NonNullable<CombatLocationViewModel['targeting']>; selectedTargetEnemyId: MonsterId | null; activeTargetEnemyId: MonsterId | null; onSelectTarget: (enemyId: MonsterId) => void; boss: CombatEncounterViewModel | null }) {
   return <>
-    <section className="combat-location-section"><div className="combat-location-section-head"><span className="combat-location-section-label">SELECT TARGET</span><small>RESONANCE REWARD</small></div><div className="combat-target-grid">{targeting.targets.map((target) => <TargetCard key={target.monsterId} target={target} selected={target.monsterId === selectedTargetEnemyId} onSelect={() => onSelectTarget(target.monsterId)} />)}</div></section>
+    <section className="combat-location-section"><div className="combat-location-section-head"><span className="combat-location-section-label">SELECT TARGET</span><small>RESONANCE / KILL</small></div><div className="combat-target-grid">{targeting.targets.map((target) => <TargetCard key={target.monsterId} target={target} selected={target.monsterId === selectedTargetEnemyId} hunting={target.monsterId === activeTargetEnemyId} onSelect={() => onSelectTarget(target.monsterId)} />)}</div></section>
     {boss && <section className="combat-location-section combat-location-zone-boss"><span className="combat-location-section-label">ZONE BOSS</span><EncounterTile encounter={boss} /></section>}
   </>
 }
@@ -57,11 +57,12 @@ function DungeonBody({ encounters, boss }: { encounters: CombatEncounterViewMode
   return <section className="combat-location-section"><div className="combat-location-section-head"><span className="combat-location-section-label">ENCOUNTERS</span><small>DISCOVERY STATUS</small></div><div className="combat-location-encounter-grid">{encounters.map((encounter) => <EncounterTile key={encounter.id} encounter={encounter} />)}{boss && <EncounterTile encounter={boss} />}</div></section>
 }
 
-function TargetCard({ target, selected, onSelect }: { target: CombatTargetViewModel; selected: boolean; onSelect: () => void }) {
+function TargetCard({ target, selected, hunting, onSelect }: { target: CombatTargetViewModel; selected: boolean; hunting: boolean; onSelect: () => void }) {
   const monster = MONSTERS[target.monsterId]
   const tooltip = target.known && monster ? <EncounterMonsterTooltip monster={monster} /> : <TooltipContent title={target.name} description="Discover this creature in combat to reveal its full Bestiary dossier." />
   const reward = getNonZeroResonanceEntries(target.resonanceYield)
-  return <GameTooltip block accent={selected ? 'warning' : 'mana'} content={tooltip}><button type="button" className={`combat-target-card${selected ? ' is-selected' : ''}`} aria-pressed={selected} onClick={onSelect}><span className="combat-target-card-portrait">{target.known && monster ? <MonsterPortrait monster={monster} /> : <span aria-hidden="true">?</span>}</span><span className="combat-target-card-copy"><strong>{target.name}</strong><small>{target.difficulty.toUpperCase()}</small><span>{reward.map((entry) => `+${entry.amount} ${entry.label}`).join(' · ')}</span></span>{selected && <b className="combat-target-card-marker">TARGET</b>}</button></GameTooltip>
+  const marker = hunting ? 'HUNTING' : selected ? 'SELECTED' : null
+  return <GameTooltip block accent={hunting ? 'warning' : selected ? 'elemental' : 'mana'} content={tooltip}><button type="button" className={`combat-target-card${selected ? ' is-selected' : ''}${hunting ? ' is-hunting' : ''}`} aria-pressed={selected} onClick={onSelect}><span className="combat-target-card-portrait">{target.known && monster ? <MonsterPortrait monster={monster} /> : <span aria-hidden="true">?</span>}</span><span className="combat-target-card-copy"><strong>{target.name}</strong><small>{target.difficulty.toUpperCase()}</small><span>{reward.map((entry) => `+${entry.amount} ${entry.label}`).join(' · ')}</span></span>{marker && <b className="combat-target-card-marker">{marker}</b>}</button></GameTooltip>
 }
 
 function EncounterTile({ encounter }: { encounter: CombatEncounterViewModel }) {
@@ -76,4 +77,3 @@ function EncounterMonsterTooltip({ monster }: { monster: MonsterDefinition }) {
   const stats = getMonsterDossierCombatStats(monster)
   return <TooltipContent title={monster.name} description={monster.subtitle}><div className="tooltip-section"><small>COMBAT STATS</small><span className="tooltip-row"><span>HP</span><b>{formatNumber(stats.maxHealth)}</b></span><span className="tooltip-row"><span>BASIC DAMAGE</span><b>{formatNumber(stats.basicAttackDamage)}</b></span><span className="tooltip-row"><span>ATTACK TIME</span><b>{formatTime(stats.basicAttackIntervalMs)}</b></span><span className="tooltip-row"><span>DEFENSE</span><b>{formatNumber(stats.defense)}</b></span></div></TooltipContent>
 }
-

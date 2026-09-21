@@ -3,7 +3,7 @@ import { MONSTERS } from '../../content/monsters'
 import { formatDropChance, formatDropQuantity } from '../../systems/bestiary/bestiarySelectors'
 import type { DungeonId, GameState, ItemId, MonsterId } from '../../types'
 
-export interface CampaignLootEntry {
+export interface LocationLootEntry {
   itemId: ItemId
   min: number
   max: number
@@ -15,23 +15,23 @@ export interface CampaignLootEntry {
   signature: boolean
 }
 
-export interface CampaignAreaLootGroups {
-  monsters: CampaignLootEntry[]
-  boss: CampaignLootEntry[]
+export interface LocationLootGroups {
+  monsters: LocationLootEntry[]
+  boss: LocationLootEntry[]
   bossId: MonsterId
   normalEncounterCount: number
   discoveredNormalEncounterCount: number
   discoveredBoss: boolean
 }
 
-interface AggregateEntry extends CampaignLootEntry {
+interface AggregateEntry extends LocationLootEntry {
   sourceValues: Set<string>
   sourceMonsterIds: Set<MonsterId>
 }
 
 const percentage = (chance: number) => `${Number((Math.max(0, chance) * 100).toFixed(1))}%`
 
-const aggregateLoot = (monsterIds: readonly MonsterId[], signatureItemId?: ItemId): CampaignLootEntry[] => {
+const aggregateLoot = (monsterIds: readonly MonsterId[], signatureItemId?: ItemId): LocationLootEntry[] => {
   const entries = new Map<ItemId, AggregateEntry>()
   monsterIds.forEach((monsterId) => {
     MONSTERS[monsterId].loot.forEach((drop) => {
@@ -63,7 +63,7 @@ const aggregateLoot = (monsterIds: readonly MonsterId[], signatureItemId?: ItemI
   return [...entries.values()].map(({ sourceValues: _sourceValues, sourceMonsterIds: _sourceMonsterIds, ...entry }) => entry)
 }
 
-export function buildCampaignLootPresentation(dungeonId: DungeonId, progress: Pick<GameState, 'progress'>['progress']): CampaignAreaLootGroups {
+export function buildLocationLootPresentation(dungeonId: DungeonId, progress: Pick<GameState, 'progress'>['progress']): LocationLootGroups {
   const dungeon = DUNGEONS[dungeonId]
   const discovered = new Set(progress.discoveredMonsters)
   const discoveredNormalIds = dungeon.monsterPool.filter((monsterId) => discovered.has(monsterId))
@@ -78,15 +78,15 @@ export function buildCampaignLootPresentation(dungeonId: DungeonId, progress: Pi
   }
 }
 
-export const formatCampaignLootChance = (entry: Pick<CampaignLootEntry, 'chanceMin' | 'chanceMax'>) => {
+export const formatLocationLootChance = (entry: Pick<LocationLootEntry, 'chanceMin' | 'chanceMax'>) => {
   if (entry.chanceMin === 1 && entry.chanceMax === 1) return 'Guaranteed'
   if (entry.chanceMin === entry.chanceMax) return formatDropChance(entry.chanceMin)
   return `${percentage(entry.chanceMin)}–${percentage(entry.chanceMax)}`
 }
 
-export const formatCampaignLootQuantity = (entry: Pick<CampaignLootEntry, 'min' | 'max'>) => formatDropQuantity(entry.min, entry.max)
+export const formatLocationLootQuantity = (entry: Pick<LocationLootEntry, 'min' | 'max'>) => formatDropQuantity(entry.min, entry.max)
 
-export const getCampaignLootAvailabilityLabel = (entry: Pick<CampaignLootEntry, 'sourceCount' | 'encounterCount' | 'variesByEncounter'>) => {
+export const getLocationLootAvailabilityLabel = (entry: Pick<LocationLootEntry, 'sourceCount' | 'encounterCount' | 'variesByEncounter'>) => {
   if (entry.sourceCount < entry.encounterCount) return 'Some encounters'
   if (entry.variesByEncounter) return 'Varies'
   return null

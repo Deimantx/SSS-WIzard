@@ -16,7 +16,7 @@ describe('CombatDetailsPanel', () => {
     expect(screen.getByText('COMBAT DETAILS')).toBeTruthy()
     expect(screen.queryByText('CURRENT RUN')).toBeNull()
     expect(screen.getByText('NO COMBAT DATA')).toBeTruthy()
-    expect(screen.getByText('Enter a Dungeon to begin tracking.')).toBeTruthy()
+    expect(screen.getByText('Enter a Location to begin tracking.')).toBeTruthy()
   })
 
   it('cycles modes with icon navigation and remembers the local UI preference', async () => {

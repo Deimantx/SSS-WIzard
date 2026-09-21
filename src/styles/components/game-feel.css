@@ -77,7 +77,7 @@
 .transmutation-ring-choice,
 .activity-card,
 .activity-mini-summary,
-.combat-act-selector-item,
+.combat-location-card,
 .inventory-recent-item,
 .inventory-use-row,
 .inventory-need-row,
@@ -96,7 +96,7 @@
 .transmutation-ring-choice:hover,
 .activity-card:hover,
 .activity-mini-summary:hover,
-.combat-act-selector-item:hover,
+.combat-location-card:hover,
 .inventory-recent-item:hover,
 .inventory-use-row:hover,
 .inventory-need-row:hover,
@@ -115,7 +115,7 @@
 .transmutation-ring-choice:active,
 .activity-card:active,
 .activity-mini-summary:active,
-.combat-act-selector-item:active,
+.combat-location-card:active,
 .inventory-recent-item:active,
 .inventory-use-row:active,
 .inventory-need-row:active,
@@ -318,7 +318,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .game-shell button:not(:disabled):active { transform: none; }
-  .transmutation-recipe-tile:hover, .equipment-armory-card:hover, .research-item-tile:hover, .spell-browser-tile:hover, .spell-preset-card:hover, .spell-preset-available-tile:hover, .transmutation-assignment-row:hover, .transmutation-ring-choice:hover, .activity-card:hover, .activity-mini-summary:hover, .combat-act-selector-item:hover, .inventory-recent-item:hover, .inventory-use-row:hover, .inventory-need-row:hover, .theme-choice:hover, .preference-choice:hover { transform: none; }
+  .transmutation-recipe-tile:hover, .equipment-armory-card:hover, .research-item-tile:hover, .spell-browser-tile:hover, .spell-preset-card:hover, .spell-preset-available-tile:hover, .transmutation-assignment-row:hover, .transmutation-ring-choice:hover, .activity-card:hover, .activity-mini-summary:hover, .combat-location-card:hover, .inventory-recent-item:hover, .inventory-use-row:hover, .inventory-need-row:hover, .theme-choice:hover, .preference-choice:hover { transform: none; }
   .game-screen-transition { animation: game-screen-reduced-enter 80ms ease-out both; }
   .main-area::before { animation: none; }
   .game-value.value-increased, .game-value.value-decreased { animation: game-value-static 240ms ease-out both; }
@@ -344,7 +344,7 @@
 }
 
 .game-shell.reduced-motion button:not(:disabled):active { transform: none; }
-.game-shell.reduced-motion .transmutation-recipe-tile:hover, .game-shell.reduced-motion .equipment-armory-card:hover, .game-shell.reduced-motion .research-item-tile:hover, .game-shell.reduced-motion .spell-browser-tile:hover, .game-shell.reduced-motion .spell-preset-card:hover, .game-shell.reduced-motion .spell-preset-available-tile:hover, .game-shell.reduced-motion .transmutation-assignment-row:hover, .game-shell.reduced-motion .transmutation-ring-choice:hover, .game-shell.reduced-motion .activity-card:hover, .game-shell.reduced-motion .activity-mini-summary:hover, .game-shell.reduced-motion .combat-act-selector-item:hover, .game-shell.reduced-motion .inventory-recent-item:hover, .game-shell.reduced-motion .inventory-use-row:hover, .game-shell.reduced-motion .inventory-need-row:hover, .game-shell.reduced-motion .theme-choice:hover, .game-shell.reduced-motion .preference-choice:hover { transform: none; }
+.game-shell.reduced-motion .transmutation-recipe-tile:hover, .game-shell.reduced-motion .equipment-armory-card:hover, .game-shell.reduced-motion .research-item-tile:hover, .game-shell.reduced-motion .spell-browser-tile:hover, .game-shell.reduced-motion .spell-preset-card:hover, .game-shell.reduced-motion .spell-preset-available-tile:hover, .game-shell.reduced-motion .transmutation-assignment-row:hover, .game-shell.reduced-motion .transmutation-ring-choice:hover, .game-shell.reduced-motion .activity-card:hover, .game-shell.reduced-motion .activity-mini-summary:hover, .game-shell.reduced-motion .combat-location-card:hover, .game-shell.reduced-motion .inventory-recent-item:hover, .game-shell.reduced-motion .inventory-use-row:hover, .game-shell.reduced-motion .inventory-need-row:hover, .game-shell.reduced-motion .theme-choice:hover, .game-shell.reduced-motion .preference-choice:hover { transform: none; }
 .game-shell.reduced-motion .game-screen-transition { animation: game-screen-reduced-enter 80ms ease-out both; }
 .game-shell.reduced-motion .main-area::before { animation: none; }
 .game-shell.reduced-motion .game-value.value-increased,
@@ -779,16 +779,4 @@
 
 @media (max-width: 560px) {
   .ui-sound-volume { grid-template-columns: 1fr; gap: 6px; }
-}
-
-.game-shell .combat-progression-node:not(:disabled):active {
-  transform: translate(-50%, -50%) scale(.988);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .game-shell .combat-progression-node:not(:disabled):active { transform: translate(-50%, -50%); }
-}
-
-.game-shell.reduced-motion .combat-progression-node:not(:disabled):active {
-  transform: translate(-50%, -50%);
 }

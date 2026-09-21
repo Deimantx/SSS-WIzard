@@ -566,7 +566,7 @@ export interface ManaPillarState {
 /** Gameplay UI state. Layout editing and developer tools are transient UI chrome outside the save. */
 export interface UiState {
   screen: ScreenId
-  /** The last dungeon the player successfully entered, not a campaign browse selection. */
+  /** The last dungeon the player successfully entered, not a world browse selection. */
   lastEnteredCombatDungeonId?: DungeonId
 }
 export interface GameState {

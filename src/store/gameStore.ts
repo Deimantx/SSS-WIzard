@@ -529,7 +529,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     let changed = false
     set((state) => {
       if (state.combat.active) {
-        pushNotification(state, 'Leave the current dungeon to change World Tier.', 'warning', { key: 'world-tier-active-combat', cooldownMs: 1000 })
+        pushNotification(state, 'Leave the current Location to change World Tier.', 'warning', { key: 'world-tier-active-combat', cooldownMs: 1000 })
         return state
       }
       changed = setCurrentWorldTier(state, tier)
@@ -620,7 +620,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   engageBoss: (bossId) => set((state) => {
     const dungeon = state.combat.dungeonId ? DUNGEONS[state.combat.dungeonId] : null
     const boss = MONSTERS[bossId]
-    if (!state.combat.active || !dungeon) { pushNotification(state, 'Enter a Dungeon first', 'warning'); return state }
+    if (!state.combat.active || !dungeon) { pushNotification(state, 'Enter a Location first', 'warning'); return state }
     if (!isDungeonUnlocked(dungeon, state.progress)) { pushNotification(state, `${dungeon.name} is locked.`, 'warning'); return state }
     if (!boss || dungeon.boss !== bossId) { pushNotification(state, `${boss?.name ?? bossId} is not the boss of ${dungeon.name}.`, 'warning'); return state }
     if (state.combat.threatCleared < dungeon.threatRequired) { pushNotification(state, `${boss.name} requires ${dungeon.threatRequired} Threat Cleared`, 'warning'); return state }

@@ -58,7 +58,7 @@ export function CombatSpellDeck() {
   const banner = globalBlocker === 'stunned'
     ? 'PLAYER STUNNED · MANUAL SPELLS TEMPORARILY DISABLED'
     : globalBlocker === 'inactive'
-      ? 'MANUAL CASTING DISABLED · ENTER A DUNGEON'
+      ? 'MANUAL CASTING DISABLED · ENTER A LOCATION'
       : combat.active && !combat.enemyId ? 'ENCOUNTER DOWNTIME · SELF-CAST SPELLS REMAIN AVAILABLE' : null
   const autoPriority = useMemo(() => displaySlots.filter((slot) => slot.autoCast).map((slot) => slot.spellId), [displaySlots])
   useSmartScrollState(gridRef, { dependencies: [displaySlots.map((slot) => `${slot.spellId}:${slot.autoCast ? 1 : 0}`).join('|')] })

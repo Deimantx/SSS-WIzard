@@ -4,7 +4,7 @@ import { isUiAudioAvailable, unlockUiAudio, playUiSound } from './audio/uiAudioE
 const INTERACTIVE_SELECTOR = [
   '.button', '.nav-item', '.nav-group-header', '.quick-card', '.transmutation-recipe-tile', '.equipment-armory-card', '.equipment-slot-card',
   '.research-item-tile', '.spell-browser-tile', '.spell-preset-card', '.spell-preset-available-tile', '.transmutation-assignment-row', '.transmutation-ring-choice',
-  '.activity-card', '.activity-mini-summary', '.combat-act-selector-item', '.combat-act-selector-arrow', '.combat-progression-node', '.combat-area-inspector .button', '.combat-area-loot-tile', '.inventory-recent-item', '.inventory-use-row', '.inventory-need-row', '.theme-choice', '.preference-choice',
+  '.activity-card', '.activity-mini-summary', '.combat-world-selector-button', '.combat-location-card', '.combat-location-actions .button', '.inventory-recent-item', '.inventory-use-row', '.inventory-need-row', '.theme-choice', '.preference-choice',
 ].join(',')
 const EXCLUDED_SELECTOR = '.modal-portal-backdrop, .modal-portal-surface, .game-tooltip, .developer-tools-window, .toast-stack'
 const ACTION_FEEDBACK_SELECTOR = '.inventory-actions-card .inventory-action-header-button, .inventory-actions-card .inventory-action-sell, .inventory-actions-card [aria-label="Confirm destroy"], .equipment-inspector-actions .button, .spell-autocast-control, .spell-combat-auto:not(.read-only), .echo-counter .button, .transmutation-echo-control .button, .transmutation-assignment-row .button, .transmutation-active-heading .button'
@@ -13,7 +13,7 @@ const getInteractiveTarget = (target: EventTarget | null) => {
   if (!(target instanceof Element)) return null
   const element = target.closest<HTMLElement>(INTERACTIVE_SELECTOR)
   const excluded = element?.closest(EXCLUDED_SELECTOR)
-  const allowedModal = element?.closest('.combat-act-navigation-dialog, .combat-area-loot-modal')
+  const allowedModal = element?.closest('.combat-location-loot-modal')
   if (!element || (excluded && !allowedModal) || element.matches(':disabled,[aria-disabled="true"]')) return null
   return element
 }

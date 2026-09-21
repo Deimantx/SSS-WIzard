@@ -5,8 +5,6 @@ import { ScreenGrid } from '../../components/layout/ScreenGrid'
 import type { DungeonId } from '../../game/types'
 import { MONSTERS } from '../../game/content/monsters'
 import { useGameStore } from '../../store/gameStore'
-import { CombatActNavigationDialog } from './navigation/CombatActNavigationDialog'
-import { getInitialCombatDungeon } from './navigation/combatActNavigationReadModel'
 import { CombatRunBar } from './CombatRunBar'
 import { CombatSpellDeck } from './CombatSpellDeck'
 import { CombatStage } from './CombatStage'
@@ -14,8 +12,12 @@ import { CombatAnalyticsPanel } from './CombatAnalyticsPanel'
 import { EnemyContextWindow, type EnemyContextMode } from './EnemyContextWindow'
 import { useCombatDefeatStore } from '../../game/ui/combatDefeatStore'
 import { CombatAmbientBackdrop } from './CombatAmbientBackdrop'
-import { useNavigationIntent } from '../../ui/navigation/navigationIntent'
+import { setNavigationIntent, useNavigationIntent } from '../../ui/navigation/navigationIntent'
 import { CombatWorldTierControl } from './CombatWorldTierControl'
+import { CombatWorldNavigation } from './navigation/CombatWorldNavigation'
+import { COMBAT_LOCATIONS } from '../../game/content/world-navigation'
+import { getInitialCombatLocationId } from '../../game/presentation/combat/combatWorldNavigationReadModel'
+import type { CombatLocationViewModel } from '../../game/presentation/combat/combatWorldNavigationTypes'
 
 export function CombatScreenV2() {
   const combat = useGameStore(useShallow((state) => ({
@@ -24,20 +26,18 @@ export function CombatScreenV2() {
     enemyId: state.combat.enemyId,
     inBossFight: state.combat.inBossFight,
   })))
-  const combatDungeonId = combat.dungeonId
   const bossKillsByBoss = useGameStore((state) => state.progress.bossKillsByBoss)
   const lastEnteredDungeonId = useGameStore((state) => state.ui.lastEnteredCombatDungeonId)
-  const [selectedDungeonId, setSelectedDungeonId] = useState<DungeonId>(() => getInitialCombatDungeon({ combat, lastEnteredDungeonId, progress: { bossKillsByBoss } }))
+  const [selectedDungeonId, setSelectedDungeonId] = useState<DungeonId>(() => {
+    const locationId = getInitialCombatLocationId({ combat, lastEnteredDungeonId, progress: { bossKillsByBoss } })
+    return COMBAT_LOCATIONS[locationId]?.dungeonId ?? 'whispering-woods'
+  })
   const navigationIntent = useNavigationIntent()
-  const [campaignOpen, setCampaignOpen] = useState(false)
   const [enemyContextMode, setEnemyContextMode] = useState<EnemyContextMode | null>(null)
   const enemyCardRef = useRef<HTMLElement>(null)
   const enemyContextTriggerRef = useRef<HTMLElement>(null)
   const defeatSnapshot = useCombatDefeatStore((state) => state.snapshot)
-  useEffect(() => { if (combat.active && combatDungeonId) setSelectedDungeonId(combatDungeonId) }, [combat.active, combatDungeonId])
   useEffect(() => { if (!combat.active && navigationIntent.combatDungeonId) setSelectedDungeonId(navigationIntent.combatDungeonId) }, [combat.active, navigationIntent.combatDungeonId])
-  const openCampaign = useCallback(() => { dismissGameTooltips(); setCampaignOpen(true) }, [])
-  const closeCampaign = useCallback(() => setCampaignOpen(false), [])
   const closeEnemyContext = useCallback(() => setEnemyContextMode(null), [])
   const openEnemyContext = useCallback((trigger: HTMLElement, mode: EnemyContextMode = 'intel') => {
     dismissGameTooltips()
@@ -55,7 +55,11 @@ export function CombatScreenV2() {
     previousEnemyId.current = combat.enemyId
   }, [combat.active, combat.enemyId, enemyContextMode])
   const requestLeave = useCallback(() => { dismissGameTooltips(); useGameStore.getState().leaveDungeon() }, [])
-  useEffect(() => { if (defeatSnapshot) { setEnemyContextMode(null); setCampaignOpen(false) } }, [defeatSnapshot])
+  useEffect(() => { if (defeatSnapshot) setEnemyContextMode(null) }, [defeatSnapshot])
+  const selectLocation = useCallback((locationId: string) => { const dungeonId = COMBAT_LOCATIONS[locationId]?.dungeonId; if (dungeonId) setSelectedDungeonId(dungeonId) }, [])
+  const enterLocation = useCallback((locationId: string) => { const dungeonId = COMBAT_LOCATIONS[locationId]?.dungeonId; if (!dungeonId) return; setSelectedDungeonId(dungeonId); dismissGameTooltips(); useGameStore.getState().enterDungeon(dungeonId) }, [])
+  const openLocationBestiary = useCallback((location: CombatLocationViewModel) => { if (!location.dungeonId) return; const knownMonster = location.encounters.find((encounter) => encounter.known && encounter.monsterId)?.monsterId ?? location.boss?.monsterId ?? null; setNavigationIntent({ combatDungeonId: location.dungeonId, combatMonsterId: knownMonster }); useGameStore.getState().setScreen('bestiary') }, [])
+  const returnToCombat = useCallback(() => { const stage = document.querySelector('.combat-stage-panel'); if (stage instanceof HTMLElement && typeof stage.scrollIntoView === 'function') stage.scrollIntoView({ behavior: 'smooth', block: 'start' }) }, [])
   const bossActive = Boolean(combat.active && combat.inBossFight)
-  return <div className={`screen-content combat-screen combat-ambient-screen${bossActive ? ' is-boss-active' : ''}`}><CombatAmbientBackdrop combatActive={combat.active} bossActive={bossActive} /><div className="screen-header"><div><div className="eyebrow">ARCANE COMBAT</div><h1>Combat</h1><p>Read enemy intent, manage Mana, and control your Spell automation.</p></div></div><CombatRunBar selectedDungeonId={selectedDungeonId} onOpenCampaign={openCampaign} onRequestLeave={requestLeave} /><div className="combat-world-status-strip"><CombatWorldTierControl /></div><ScreenGrid screen="combat" panels={[{ id: 'combat-stage', content: <CombatStage selectedDungeonId={selectedDungeonId} bossActive={bossActive} enemyCardRef={enemyCardRef} onOpenEnemyContext={openEnemyContext} /> }, { id: 'combat-spell-deck', content: <CombatSpellDeck /> }, { id: 'combat-analytics', content: <CombatAnalyticsPanel /> }]} />{enemyContextMode && <EnemyContextWindow mode={enemyContextMode} anchorRef={enemyCardRef} triggerRef={enemyContextTriggerRef} selectedDungeonId={selectedDungeonId} onModeChange={setEnemyContextMode} onClose={closeEnemyContext} />}{campaignOpen && <CombatActNavigationDialog selectedDungeonId={selectedDungeonId} onSelect={setSelectedDungeonId} onClose={closeCampaign} />}</div>
+  return <div className={`screen-content combat-screen combat-ambient-screen${bossActive ? ' is-boss-active' : ''}`}><CombatAmbientBackdrop combatActive={combat.active} bossActive={bossActive} /><div className="screen-header"><div><div className="eyebrow">ARCANE COMBAT</div><h1>Combat</h1><p>Read enemy intent, manage Mana, and control your Spell automation.</p></div></div><CombatRunBar selectedDungeonId={selectedDungeonId} onRequestLeave={requestLeave} /><div className="combat-world-status-strip"><CombatWorldTierControl /></div><CombatWorldNavigation onSelectLocation={selectLocation} onEnterLocation={enterLocation} onBestiary={openLocationBestiary} onReturnToCombat={returnToCombat} /><ScreenGrid screen="combat" panels={[{ id: 'combat-stage', content: <CombatStage selectedDungeonId={selectedDungeonId} bossActive={bossActive} enemyCardRef={enemyCardRef} onOpenEnemyContext={openEnemyContext} /> }, { id: 'combat-spell-deck', content: <CombatSpellDeck /> }, { id: 'combat-analytics', content: <CombatAnalyticsPanel /> }]} />{enemyContextMode && <EnemyContextWindow mode={enemyContextMode} anchorRef={enemyCardRef} triggerRef={enemyContextTriggerRef} selectedDungeonId={selectedDungeonId} onModeChange={setEnemyContextMode} onClose={closeEnemyContext} />}</div>
 }

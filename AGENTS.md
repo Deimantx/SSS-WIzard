@@ -13,54 +13,15 @@
 - Rare boss/signature Equipment is represented through boss/signature crafting materials and an Artificing recipe, never a direct finished-Equipment drop.
 - Transmutation remains the elemental/material production system; do not add a parallel normal production path.
 
-## Balancing workflow
+## Balance / authored values
 
-`Docs/Balancing/` is the human-editable balancing workbook and must remain synchronized with authoritative runtime content. Classify balancing work before validating it.
-
-### Class A — Pure numeric balancing
-
-Use this fast path when only existing authored numeric values change and no content IDs, formulas, schemas, registry shapes, ingredient topology, unlock-condition types, or system behavior change. This includes values such as damage, HP, Defence, costs, cooldowns, durations, XP, research values, drop quantities/chances, item values, craft durations, resource quantities, status magnitudes, trait coefficients, and numeric unlock thresholds.
-
-- Apply only the intentionally edited values to authoritative runtime TypeScript.
-- Update or regenerate only the directly affected canonical balancing page; numeric mirrors are not maintained.
-- Run `npm run balancing:coverage` once at the end.
-- Run targeted Vitest only when an existing test directly asserts the changed value or a relevant formula boundary.
-- Do not run the full `npm run test:run`.
-- Do not run `npm run build`.
-- Do not audit unrelated systems, broaden the task, or regenerate unrelated balancing sections.
-
-This Class A fast path overrides the generic final full-test/build rule elsewhere in `AGENTS.md`. If the task reveals a formula, schema, new ID, enum, registry-shape, or system-behavior change, explicitly reclassify it as Class B or Class C and explain why.
-
-### Class B — Structural authored-content changes
-
-Use this class when authored content topology changes, including adding or removing items, monsters, spells, recipes, ingredients, loot entries, traits, statuses, or actions; changing Equipment slots/categories, unlock-condition structure, recipe output identity, dungeon rosters, or authored registry object shape.
-
-- Apply the requested content change and update the affected canonical balancing pages; do not create numeric mirrors.
-- Run relevant targeted tests during implementation.
-- Run `npm run balancing:coverage` once at the end.
-- Run `npm run build` when TypeScript or content-registry shape can be affected.
-- Run the full `npm run test:run` only for broad or cross-system consequences, multiple touched invariants, insufficient targeted coverage, or an explicit user request.
-
-Full-suite testing is not automatically mandatory merely because authored content changed.
-
-### Class C — System, formula, or architecture changes
-
-Use this class for changes to formulas, simulation or resource behavior, save schema, combat sequencing, loot resolution, progression logic, Transmutation behavior, or runtime architecture.
-
-- Run targeted tests while iterating.
-- Update balancing documentation when authored values are affected and run `npm run balancing:coverage` when applicable.
-- Run one full `npm run test:run` and one `npm run build` at final handoff.
-
-General balancing rules:
-
-- Runtime TypeScript remains executable source; Markdown is never runtime input.
-- Preserve human edits when exporting intentionally, but keep one canonical page per value domain and use cross-page references instead of numeric mirrors.
-- Update or regenerate the directly affected canonical page for authored changes to items, materials, Equipment, monsters, loot, recipes, spells, statuses, traits, dungeons, Research, Channeling, Focus, Guild, economy, or progression values.
-- Every authored item, material, Equipment, monster, recipe, spell, status, trait, and dungeon must appear in its canonical page.
-- Every Equipment item must have exactly one runtime Artificing recipe; Equipment stats belong in `Items/Items.md` and both recipe systems belong in `Crafting/Crafting.md`.
-- Class A requires one coverage run and no full suite/build; Class B/C validation follows the structural/system rules above.
-- Unrelated UI-only work does not require balancing coverage.
-- Every balancing handoff must report its Class A/B/C classification and state which validation commands were run or intentionally skipped.
+- Runtime TypeScript is the only authoritative source for gameplay and balance values.
+- Do not create or maintain generated balancing Markdown mirrors.
+- `Docs/Balancing/BalanceOverview.md` is only a source-location guide.
+- When balancing is requested, inspect the relevant runtime content/system files directly.
+- Numeric-only changes should receive focused validation appropriate to the touched system.
+- Structural/system/save changes follow the normal targeted tests + final `npm run test:run` / `npm run build` workflow.
+- Do not create Phase plan Markdown files unless the user explicitly asks for permanent repository documentation.
 
 ## Tooltips are mandatory UI infrastructure
 
@@ -108,7 +69,7 @@ When replacing a system, remove the obsolete implementation after migration rath
 
 - Add or update focused Vitest coverage for window modes and persistence, navigation normalization, Quick Setup fixtures/actions, and raw-vs-human presentation boundaries.
 - Run targeted tests while iterating. At final handoff, run exactly one full `npm run test:run` and one `npm run build` after implementation is complete.
-- UI-only Dev Tools changes do not require balancing workbook regeneration or `npm run balancing:coverage`; authored gameplay/content changes still do.
+- UI-only Dev Tools changes do not require balancing documentation changes; authored gameplay/content changes still require appropriate focused validation.
 
 ## UI and testing
 

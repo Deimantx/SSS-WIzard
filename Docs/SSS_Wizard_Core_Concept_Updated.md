@@ -25,7 +25,7 @@
 
 Šis dokumentas **nėra programavimo instrukcija**.
 
-Techniniai implementation planai Codex turi būti kuriami atskiruose `.md` failuose.
+Techniniai implementation planai Codex turi būti skaitomi ir įgyvendinami išorėje; jų nereikia kopijuoti į repository planų katalogus.
 
 ---
 
@@ -74,7 +74,7 @@ Svarbu:
 | Magic School XP | Research / Arcane Crucible sunaikinant daiktus |
 | Pagrindinis power gate | Main Boss keliami Magic School level cap |
 | Antra progreso ašis | Guild Requests / Guild Rank |
-| Combat progresas | Dungeon → Threat Cleared → Dungeon Boss → Main Boss |
+| World / Combat progresas | World → Continent → Region → Location → Zone/Elite Boss or Sequence Dungeon → Main Boss |
 | Item archyvas | Collection |
 | Monster archyvas | Bestiary |
 | Offline progresas | Offline Bank ir pasirenkama simuliacija |
@@ -120,9 +120,9 @@ Ji egzistuoja tam, kad naujame pokalbyje būtų iškart aišku, **kas jau realia
 
 Tai yra pirmas dabartinis spell content rinkinys, o ne galutinis spell tree.
 
-### Dabartinis dungeon
+### Dabartinė starter Location
 
-- **Whispering Woods**
+- **Whispering Woods** — Combat Zone
 
 ### Normal monsters
 
@@ -130,7 +130,7 @@ Tai yra pirmas dabartinis spell content rinkinys, o ne galutinis spell tree.
 - Thornling
 - Stone Root
 
-### Dungeon Boss
+### Zone Boss
 
 - Grove Sentinel
 
@@ -254,7 +254,7 @@ Research + Combat + Tower Upgrades + Guild
     ↓
 Magic School progression / stronger build
     ↓
-Dungeon + Bosses
+Targeted Zones / Sequence Dungeons + Bosses
     ↓
 new loot / cap / progression
 ```
@@ -346,10 +346,10 @@ Channeling
 → Magic School XP
 → Spells / Recipes / Power
 → Equipment & Combat preparation
-→ Dungeon
-→ Dungeon Boss
-→ Main Boss
-→ higher Magic School cap / new content
+→ World → Continent → Region → Location
+→ targeted Zone farming or fixed-sequence Dungeon
+→ Zone/Elite Boss or Dungeon final Boss
+→ Main Boss / higher World Tier / new content
 ```
 
 Lygiagrečiai:
@@ -364,7 +364,38 @@ Combat / Crafting / Donations / Boss kills
 
 ---
 
-## 6.1. Svarbus pakeitimas — Condensation nebėra atskira sistema
+## 6.1. World content hierarchy and Location modes
+
+The canonical world taxonomy is:
+
+```text
+WORLD → CONTINENT → REGION → LOCATION
+```
+
+Current meaningful Location types are:
+
+- `COMBAT ZONE` — one exact player-selected target, repeatable farming, Power-based Threat, a Zone Boss, manual Boss engagement, and optional Auto Hunt after the first manual clear. After a Boss clear, Threat resets and the selected target remains selected.
+- `ELITE ZONE` — the same targeted foundation with stronger targets, Power-based Threat, and an Elite Boss. One global Zone Affix belongs to the Zone, never to an individual monster.
+- `DUNGEON` — a fixed authored encounter sequence with no target selection, no Threat, no Auto Hunt, a continuous run, a final Boss, and a run that ends after the Boss. Dungeons are progression content rather than targeted farming loops.
+
+Reserved future Location types are `SPECIAL ZONE` and `TOWER`; they are not current gameplay systems.
+
+### 6.1.1. Threat and recovery rules
+
+For current targeted Combat Zones and Elite Zones:
+
+- a normal kill grants Threat equal to the defeated enemy Power at the encounter World Tier;
+- the Boss requirement is the authored WT1 base requirement multiplied by the canonical World Tier multiplier;
+- Threat is capped at that resolved Boss requirement;
+- death or leaving the Location resets Threat, while the selected target remains available when the player returns.
+
+Sequence Dungeons do not generate Threat. A death or leave fails and resets the active run, including its authored step progress.
+
+Historical save migration may preserve a legacy `+1 Threat` rule for converted random-pool content; that compatibility rule is not the current gameplay model.
+
+---
+
+## 6.2. Svarbus pakeitimas — Condensation nebėra atskira sistema
 
 ## [PATVIRTINTA / IMPLEMENTUOTA]
 
@@ -1775,115 +1806,87 @@ Bestiary ir Combat turi naudoti tą pačią data.
 
 ---
 
-# 32. Dungeon struktūra
+# 32. Current Location encounter model
 
-## [PATVIRTINTA]
+## [PATVIRTINTA / IMPLEMENTUOTA KRYPTIS]
 
-Kiekvienas dungeon turi:
+The Location mode is authoritative for encounter behavior:
 
-- normal monster pool;
-- current `Threat`;
-- Threat requirement;
-- Dungeon Boss;
-- optional future special content.
+### Combat Zone
 
----
+- The player selects one exact normal target from the authored Location pool.
+- The target is repeatable farming content.
+- Each normal kill grants Threat equal to the target's resolved Power at the current encounter World Tier.
+- Threat advances to the authored Zone Boss requirement.
+- The Boss can be started manually; Auto Hunt is available after the first manual Boss clear.
+- A Boss clear resets Threat, and the selected target resumes afterward.
 
-## 32.1. Normal encounter selection
+### Elite Zone
 
-Normal encounter selection follows the authored Location mode:
+- Elite Zones use the same exact-target, repeatable-farming foundation.
+- Targets are stronger and normal kills generate Power-based Threat.
+- The Location owns exactly one global Zone Affix, which applies to the Zone and is not monster-owned metadata.
+- The Zone ends in an Elite Boss with the same manual/Auto Hunt access pattern.
 
-- Combat Zone and Elite Zone use a player-selected normal target from the Location pool;
-- Dungeon uses its authored normal encounter sequence and then its Dungeon Boss.
+### Dungeon
 
-Legacy random-pool Locations may remain only until their content is converted; they are not the canonical model for new regions.
+- A Dungeon is a fixed authored normal encounter sequence followed by its final Boss.
+- It has no normal target selection, no Threat, and no Auto Hunt.
+- The run is continuous and ends after the final Boss.
+- Death or leaving fails and resets the run and its sequence step.
+- Dungeons are progression content, not repeatable target-farming Threat loops.
 
-<!-- superseded legacy wording retained only in the historical document body
-
-- žaidėjas pats nepasirenka;
-- atsitiktinai parenkamas iš dungeon pool.
-
--->
-
-Kiekvienas normal kill:
-
-```text
-Threat gain = defeated enemy Power at the encounter World Tier
-```
-
-Legacy random-pool Locations retain +1 Threat until converted. Sequence Dungeons grant no Threat.
-
----
-
-## 32.2. Threat
-
-Pavyzdys:
+### Threat resolution
 
 ```text
-Threat: 2430 / 5000
+targeted normal kill Threat = enemy Power at encounter World Tier
+Boss requirement = authored WT1 base requirement × canonical World Tier multiplier
 ```
 
-Dabartiniame Whispering Woods:
+Threat is capped at the resolved requirement. Sequence Dungeons grant no Threat. A legacy `+1 Threat` rule may exist only for historical migration compatibility.
 
-```text
-WT1 base requirement = 5000 Threat
-WT2-WT5 requirement = 10000 / 15000 / 20000 / 25000 Threat
-```
+### Activity and death readouts
+
+- Combat Zones and Elite Zones show current Threat and Boss readiness in the Activity Monitor.
+- Sequence Dungeons show `Dungeon Run` and authored step progress instead of Threat.
+- Targeted Zone/Elite death uses the current Threat reset rule; Sequence Dungeon death fails and resets the run.
 
 ---
 
-## 32.3. Threat is capped at the resolved requirement
-
-Threat is capped at the active dungeon's resolved World-Tier requirement. Auto Hunt Boss may queue the boss when the cap is reached; manual engagement remains available at the same threshold.
-
-```text
-Whispering Woods: 5000 / 5000 at WT1
-Whispering Woods: 10000 / 10000 at WT2
-Howling Den: 50000 / 50000 at WT5
-```
-
-Normal farming stops at the resolved requirement, so readiness is deterministic and cannot overshoot the boss threshold.
-
----
-
-## 32.4. Threat reset
-
-Reset, kai:
-
-- Dungeon Boss nužudomas;
-- player miršta;
-- Leave Dungeon;
-- įeinama į kitą dungeon.
-
-Nereset, kai:
-
-- Inventory;
-- Equipment;
-- Research;
-- Transmutation;
-- Focus;
-- Collection;
-- Bestiary;
-- kitas UI screen.
-
-Combat gali tęstis fone.
-
----
-
-# 32.5. Shattered Meridian and World Tier progression
+# 32.1. Shattered Meridian and World Tier progression
 
 Shattered Meridian is the first fully targeted late-act region:
 
-- Graveglass Hollow - targeted Elite Zone with the Warded affix;
-- Stormvault Gallery - targeted Combat Zone;
-- Starfallen Observatory - targeted Elite Zone with the Relentless affix;
-- The Broken Meridian - a four-normal sequence Dungeon followed by Meridian Splitter.
+- Graveglass Hollow — targeted Elite Zone with the Warded affix;
+- Stormvault Gallery — targeted Combat Zone;
+- Starfallen Observatory — targeted Elite Zone with the Relentless affix;
+- The Broken Meridian — a four-normal fixed sequence Dungeon followed by Meridian Splitter.
 
-Each targeted Shattered Meridian location has seven authored Hunt Targets and uses the canonical Power Threat resolver. Its WT1 base requirement is 30,000 Threat and World Tier multipliers resolve WT1 through WT5 as 30,000 / 60,000 / 90,000 / 120,000 / 150,000. Broken Meridian grants no Threat or Resonance and never uses Auto Hunt.
+Each targeted Shattered Meridian Zone has seven authored Hunt Targets and uses the canonical Power Threat resolver. Its WT1 base requirement is 30,000 Threat and World Tier multipliers resolve WT1 through WT5 as 30,000 / 60,000 / 90,000 / 120,000 / 150,000. The Broken Meridian grants no Threat or Resonance and never uses Auto Hunt.
 
-The World Tier unlock evidence map is centralized: Archmage Edrin's Shade unlocks WT2, Crossroads Keeper unlocks WT3, Meridian Splitter unlocks WT4, and Black Gatekeeper unlocks WT5. Runtime boss kills may unlock a tier once and show one notification; save migration silently reconciles durable boss-kill evidence without lowering valid access.
+The current World Tier unlock map is:
 
-First-clear previews connect Crossroads of Ruin to Shattered Meridian and WT3, and The Broken Meridian to Black Sigil Reach, WT4, and Act 1 Artifact Levels 8-10.
+| Unlock evidence | World Tier / content |
+| --- | --- |
+| Start | WT1 |
+| Archmage Edrin's Shade | WT2 / Elemental Scar |
+| Crossroads Keeper | WT3 / Shattered Meridian |
+| Meridian Splitter | WT4 / Black Sigil Reach |
+| Black Gatekeeper | WT5 |
+
+Boss kills may unlock a tier once and show one notification; save migration silently reconciles durable boss-kill evidence without lowering valid access.
+
+### Current and reserved progression milestones
+
+| Milestone | Current progression | Reserved future unlock |
+| --- | --- | --- |
+| Archmage Edrin's Shade | WT2, Elemental Scar, existing chapter | — |
+| Corrupted Elemental Gatekeeper | Summoning / Elemental Guardians | — |
+| Crossroads Keeper | WT3, Shattered Meridian | — |
+| Meridian Splitter | WT4, Black Sigil Reach, Act 1 Artifact Levels 8–10 | `[RESERVED FUTURE UNLOCK]` Crystal System / Crystal Upgrading |
+| Black Gatekeeper | WT5 | `[RESERVED FUTURE UNLOCK]` Alchemy |
+
+Crystal System / Crystal Upgrading and Alchemy are reserved design milestones only. They have no current items, currencies, recipes, UI, save fields, runtime booleans, or first-clear UI rows.
 
 ---
 
@@ -1903,44 +1906,33 @@ Out-of-combat HP regeneration:
 5× normal Health regeneration
 ```
 
-Mirtis:
+Death is resolved by Location mode:
 
-- HP → 0;
-- Threat reset;
-- nėra Gold penalty;
-- nėra item loss;
-- nėra Magic School level loss.
+- in a targeted Combat Zone or Elite Zone, HP reaches 0, the current Threat resets, and the selected target remains available;
+- in a sequence Dungeon, HP reaches 0, the active run fails, and its step progress resets;
+- neither mode applies a Gold penalty, item loss, or Magic School level loss.
 
 ---
 
-# 34. Dungeon Boss
+# 34. Zone and Dungeon Bosses
 
-Dungeon Boss:
+Zone Bosses are reached through the authored Power-based Threat requirement in Combat Zones and Elite Zones. They can have repeatable loot, be Guild Request targets, and reset Zone Threat after a clear.
 
-- atrakinamas per Threat;
-- turi repeatable loot;
-- gali būti farmamas;
-- gali būti Guild Request target;
-- po kill resetina Threat.
+A sequence Dungeon's final Boss is reached only after the fixed authored sequence. It is not unlocked through Threat, does not use Auto Hunt, and ends the run after the clear.
 
 ---
 
-# 35. Auto Hunt Boss
+# 35. Auto Hunt
 
 ## [PATVIRTINTA]
 
-Kiekvienas dungeon gali turėti:
+Auto Hunt is a targeted Combat Zone / Elite Zone convenience:
 
-```text
-Auto Hunt Boss
-```
-
-Taisyklė:
-
-- pirmą kartą boss turi būti nugalėtas manual;
-- po to galima įjungti Auto Hunt;
-- pasiekus Threat requirement, kitas tinkamas encounter tampa Boss;
-- live normal enemy neturi būti vidury kovos pakeistas boss.
+- the first Zone or Elite Boss clear must be manual;
+- after that clear, Auto Hunt may be enabled for the same Location;
+- when the resolved Threat requirement is reached, the next eligible encounter becomes the Boss;
+- a live normal enemy is never replaced mid-fight;
+- sequence Dungeons never use Auto Hunt.
 
 ---
 
@@ -2025,7 +2017,7 @@ Reward turi būti claiminamas vieną kartą.
 
 Žaidime gali egzistuoti:
 
-1. current dungeon Threat;
+1. current targeted Location Threat;
 2. Guild Request kill progress;
 3. lifetime defeats / Bestiary count.
 
@@ -2257,13 +2249,23 @@ Pageidaujama forma:
 
 Jis turi rodyti realiai naudingą informaciją.
 
-### Combat
+### Combat / Elite Zone
 
 - player HP;
 - enemy HP;
-- Threat;
+- current Threat and Boss readiness;
 - current / next enemy action;
 - encounter status.
+
+### Sequence Dungeon
+
+- player HP;
+- enemy HP;
+- `Dungeon Run` status;
+- current authored step / total steps;
+- current / next enemy action.
+
+Sequence Dungeons do not display Threat because they do not generate it.
 
 ### Transmutation
 
@@ -2740,7 +2742,7 @@ Svarbiausia:
 
 # 59. Dabartinis Core Loop vienu sakiniu
 
-> **SSS Wizard** yra mage-only incremental RPG apie vieną magą, kuris per Channeling kuria Mana infrastruktūrą, per Transmutation paverčia Maną ir lootą materialais, per Artificing forges ir stiprina Artifacts, per Research sunaikina pasirinktus materialus dėl Fire, Water, Earth arba Air XP, o ribotą Focus paskirsto Arcane Echoes ir auto-cast automatizacijai. Combat vyksta semi-automatic dungeon ciklais: monsteriai turi authored traits, special attacks ir kartojamas sekas, o normal kills didina `Threat Cleared` iki Dungeon Boss. Main Boss progresija kelia Magic School level cap, Guild suteikia antrą permanent progression ašį, Collection archyvuoja items, Bestiary archyvuoja creatures, o offline laikas kaupiamas pasirinktinai naudojamame Offline Bank. Viso progreso prestige reset nėra.
+> **SSS Wizard** yra mage-only incremental RPG apie vieną magą, kuris per Channeling kuria Mana infrastruktūrą, per Transmutation paverčia Maną ir lootą materialais, per Artificing forges ir stiprina Artifacts, per Research sunaikina pasirinktus materialus dėl Fire, Water, Earth arba Air XP, o ribotą Focus paskirsto Arcane Echoes ir auto-cast automatizacijai. Combat vyksta per `World → Continent → Region → Location` struktūrą: Combat Zones ir Elite Zones leidžia pasirinkti konkretų farming targetą, kurio killai generuoja Power-based Threat iki Zone/Elite Boss, o Dungeons yra fixed-sequence progression runs be Threat ir Auto Hunt. Main Boss progresija kelia Magic School level cap, Guild suteikia antrą permanent progression ašį, Collection archyvuoja items, Bestiary archyvuoja creatures, o offline laikas kaupiamas pasirinktinai naudojamame Offline Bank. Viso progreso prestige reset nėra.
 
 ---
 
@@ -2779,15 +2781,13 @@ Prieš projektuojant naują sistemą:
 - [x] Combat gali vykti kartu su Tower veiklomis.
 - [x] Monsteriai turi traits ir action sequences.
 - [x] Special Attacks turi telegraphs.
-<!-- superseded legacy encounter-selection checklist wording
-- [x] Dungeon normal monster parenkamas iš pool.
-- [x] Targeted normal kill = resolved enemy Power Threat; legacy random-pool kill = +1 Threat until conversion.
-- [x] Location encounter mode determines normal selection: targeted Zones or sequence Dungeons.
--->
-- [x] Location encounter mode determines normal selection: targeted Zones or sequence Dungeons.
-- [x] Targeted normal kill = resolved enemy Power Threat; legacy random-pool kill = +1 Threat until conversion.
+- [x] World taxonomy is World → Continent → Region → Location.
+- [x] Combat Zone and Elite Zone use an exact selected target and Power-based Threat.
+- [x] Sequence Dungeon uses a fixed authored sequence with no target, Threat, or Auto Hunt.
+- [x] Targeted normal kill = resolved enemy Power at encounter World Tier.
+- [x] Legacy random-pool `+1 Threat` exists only for historical migration compatibility.
 - [x] Threat is capped at the resolved World-Tier boss requirement.
-- [x] Auto Hunt Boss atrakinamas po pirmo manual boss kill.
+- [x] Auto Hunt Boss is available after the first manual Zone/Elite Boss clear.
 - [x] Main Boss kelia Magic School cap.
 - [x] Collection yra item archive.
 - [x] Bestiary yra creature archive.

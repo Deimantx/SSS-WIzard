@@ -16,10 +16,18 @@ describe('combat world navigation content', () => {
   })
 
   it('keeps continent, region, and location relationships explicit', () => {
-    expect(COMBAT_CONTINENTS['continent-1'].regionIds).toEqual(['first-frontier', 'shattered-frontier'])
+    expect(COMBAT_CONTINENTS['continent-1'].regionIds).toEqual(['first-frontier', 'elemental-scar', 'shattered-meridian', 'black-sigil-reach'])
     expect(COMBAT_REGIONS['first-frontier'].continentId).toBe('continent-1')
     expect(COMBAT_REGIONS['first-frontier'].locationIds).toEqual(['whispering-woods', 'howling-den', 'abandoned-catacombs'])
     expect(COMBAT_LOCATIONS['whispering-woods']).toMatchObject({ regionId: 'first-frontier', type: 'combat-zone', dungeonId: 'whispering-woods' })
+    expect(COMBAT_REGIONS['elemental-scar'].locationIds).toEqual(['fractured-approach', 'flooded-reliquary', 'ashen-watch', 'rootscar-hollow', 'crossroads-of-ruin'])
+    expect(COMBAT_REGIONS['shattered-meridian'].locationIds).toEqual(['graveglass-hollow', 'stormvault-gallery', 'starfallen-observatory', 'broken-meridian'])
+    expect(COMBAT_REGIONS['black-sigil-reach'].locationIds).toEqual(['hall-of-unbound-names', 'vault-of-the-black-sigil', 'black-gate'])
+    expect(Object.values(COMBAT_LOCATIONS)).toHaveLength(15)
+    expect(Object.values(COMBAT_LOCATIONS).filter((location) => location.type === 'combat-zone')).toHaveLength(5)
+    expect(Object.values(COMBAT_LOCATIONS).filter((location) => location.type === 'elite-zone')).toHaveLength(5)
+    expect(Object.values(COMBAT_LOCATIONS).filter((location) => location.type === 'dungeon')).toHaveLength(5)
+    expect(Object.values(COMBAT_LOCATIONS).filter((location) => location.type === 'special-zone' || location.type === 'tower')).toHaveLength(0)
   })
 
   it('reports broken parent links, duplicate mappings, and invalid orders', () => {

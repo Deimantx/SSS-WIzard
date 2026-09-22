@@ -1,17 +1,18 @@
-import { ACT1_DUNGEONS } from '../dungeons/act1'
 import { DUNGEONS } from '../dungeons/dungeons'
 import type { DungeonId } from '../../types'
 import type { CombatContinentDefinition, CombatContinentId, CombatEncounterMode, CombatLocationDefinition, CombatLocationId, CombatRegionDefinition, CombatRegionId } from './worldNavigationTypes'
 
 const firstFrontierLocationIds: readonly CombatLocationId[] = ['whispering-woods', 'howling-den', 'abandoned-catacombs']
-const shatteredFrontierLocationIds: readonly CombatLocationId[] = ACT1_DUNGEONS.map((dungeon) => dungeon.id)
+const elementalScarLocationIds: readonly CombatLocationId[] = ['fractured-approach', 'flooded-reliquary', 'ashen-watch', 'rootscar-hollow', 'crossroads-of-ruin']
+const shatteredMeridianLocationIds: readonly CombatLocationId[] = ['graveglass-hollow', 'stormvault-gallery', 'starfallen-observatory', 'broken-meridian']
+const blackSigilReachLocationIds: readonly CombatLocationId[] = ['hall-of-unbound-names', 'vault-of-the-black-sigil', 'black-gate']
 
 export const COMBAT_CONTINENTS: Record<CombatContinentId, CombatContinentDefinition> = {
   'continent-1': {
     id: 'continent-1',
     name: 'Continent I',
     description: 'The first mapped frontier beyond the tower.',
-    regionIds: ['first-frontier', 'shattered-frontier'],
+    regionIds: ['first-frontier', 'elemental-scar', 'shattered-meridian', 'black-sigil-reach'],
     order: 1,
     unlock: { type: 'always' },
   },
@@ -27,14 +28,32 @@ export const COMBAT_REGIONS: Record<CombatRegionId, CombatRegionDefinition> = {
     order: 1,
     unlock: { type: 'always' },
   },
-  'shattered-frontier': {
-    id: 'shattered-frontier',
+  'elemental-scar': {
+    id: 'elemental-scar',
     continentId: 'continent-1',
-    name: 'The Shattered Frontier',
-    description: 'A broken meridian of increasingly dangerous routes.',
-    locationIds: [...shatteredFrontierLocationIds],
+    name: 'Elemental Scar',
+    description: 'A wounded elemental corridor where the old frontier gives way to unstable crossings.',
+    locationIds: [...elementalScarLocationIds],
     order: 2,
     unlock: { type: 'boss-kill', bossId: 'archmage-edrin-shade', count: 1 },
+  },
+  'shattered-meridian': {
+    id: 'shattered-meridian',
+    continentId: 'continent-1',
+    name: 'Shattered Meridian',
+    description: 'A fractured leyline where roads, ruins, and starlight pull against one another.',
+    locationIds: [...shatteredMeridianLocationIds],
+    order: 3,
+    unlock: { type: 'boss-kill', bossId: 'crossroads-keeper', count: 1 },
+  },
+  'black-sigil-reach': {
+    id: 'black-sigil-reach',
+    continentId: 'continent-1',
+    name: 'Black Sigil Reach',
+    description: 'The sealed approach to the dark gate, marked by names and wards that should not endure.',
+    locationIds: [...blackSigilReachLocationIds],
+    order: 4,
+    unlock: { type: 'boss-kill', bossId: 'meridian-splitter', count: 1 },
   },
 }
 
@@ -62,9 +81,20 @@ export const COMBAT_LOCATIONS: Record<CombatLocationId, CombatLocationDefinition
       'tempest-stag': { difficulty: 'apex', order: 7 },
     },
   },
-  'howling-den': dungeonLocation('first-frontier', 'howling-den', 'dungeon', 2),
+  'howling-den': dungeonLocation('first-frontier', 'howling-den', 'elite-zone', 2),
   'abandoned-catacombs': dungeonLocation('first-frontier', 'abandoned-catacombs', 'dungeon', 3),
-  ...Object.fromEntries(shatteredFrontierLocationIds.map((dungeonId, index) => [dungeonId, dungeonLocation('shattered-frontier', dungeonId as DungeonId, 'dungeon', index + 1)])),
+  'fractured-approach': dungeonLocation('elemental-scar', 'fractured-approach', 'dungeon', 1),
+  'flooded-reliquary': dungeonLocation('elemental-scar', 'flooded-reliquary', 'combat-zone', 2),
+  'ashen-watch': dungeonLocation('elemental-scar', 'ashen-watch', 'combat-zone', 3),
+  'rootscar-hollow': dungeonLocation('elemental-scar', 'rootscar-hollow', 'combat-zone', 4),
+  'crossroads-of-ruin': dungeonLocation('elemental-scar', 'crossroads-of-ruin', 'dungeon', 5),
+  'graveglass-hollow': dungeonLocation('shattered-meridian', 'graveglass-hollow', 'elite-zone', 1),
+  'stormvault-gallery': dungeonLocation('shattered-meridian', 'stormvault-gallery', 'combat-zone', 2),
+  'starfallen-observatory': dungeonLocation('shattered-meridian', 'starfallen-observatory', 'elite-zone', 3),
+  'broken-meridian': dungeonLocation('shattered-meridian', 'broken-meridian', 'dungeon', 4),
+  'hall-of-unbound-names': dungeonLocation('black-sigil-reach', 'hall-of-unbound-names', 'elite-zone', 1),
+  'vault-of-the-black-sigil': dungeonLocation('black-sigil-reach', 'vault-of-the-black-sigil', 'elite-zone', 2),
+  'black-gate': dungeonLocation('black-sigil-reach', 'black-gate', 'dungeon', 3),
 }
 
 export const getCombatLocation = (locationId: CombatLocationId | null | undefined) => locationId ? COMBAT_LOCATIONS[locationId] ?? null : null

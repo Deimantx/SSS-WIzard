@@ -17,7 +17,7 @@ describe('CombatWorldNavigation', () => {
     expect(screen.getByRole('button', { name: 'Continent I' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'First Frontier' })).toBeTruthy()
     expect(screen.getByRole('button', { name: /Whispering Woods, COMBAT ZONE/ })).toBeTruthy()
-    expect(screen.getByRole('button', { name: /Howling Den, DUNGEON/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Howling Den, ELITE ZONE/ })).toBeTruthy()
     expect(screen.queryByText('COMBAT ZONES')).toBeNull()
     expect(screen.queryByText('DUNGEONS')).toBeNull()
     expect(screen.getByText('WORLD TIER')).toBeTruthy()
@@ -33,9 +33,9 @@ describe('CombatWorldNavigation', () => {
   it('keeps locked Regions disabled and exposes the existing unlock milestone', () => {
     renderNavigation()
 
-    const region = screen.getByRole('button', { name: 'The Shattered Frontier' })
+    const region = screen.getByRole('button', { name: 'Elemental Scar' })
     expect(region.hasAttribute('disabled')).toBe(true)
-    expect(screen.getByRole('button', { name: /Howling Den, DUNGEON, LOCKED/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Howling Den, ELITE ZONE, LOCKED/ })).toBeTruthy()
   })
 
   it('renders targeted Whispering Woods cards without legacy inspector metrics', () => {
@@ -43,7 +43,9 @@ describe('CombatWorldNavigation', () => {
     renderNavigation(vi.fn(), onHuntTarget)
 
     expect(screen.getByText('SELECT TARGET')).toBeTruthy()
-    expect(screen.getByText('RESONANCE / KILL')).toBeTruthy()
+    expect(screen.getByText('CHOOSE A MONSTER TO HUNT')).toBeTruthy()
+    expect(screen.getAllByText(/POWER/)).toHaveLength(8)
+    expect(screen.queryByText('RESONANCE / KILL')).toBeNull()
     for (const name of ['Forest Wisp', 'Thornling', 'Dewbound Sprite', 'Cinder Moth', 'Stone Root', 'Grove Sentinel', 'Tempest Stag']) expect(screen.getByText(name)).toBeTruthy()
     expect(screen.getByText('ZONE BOSS')).toBeTruthy()
     expect(screen.getByText('Forest Heart')).toBeTruthy()
@@ -83,7 +85,7 @@ describe('CombatWorldNavigation', () => {
     const onSelectLocation = vi.fn()
     render(<TooltipProvider><CombatWorldNavigation onSelectLocation={onSelectLocation} onEnterLocation={vi.fn()} onHuntTarget={vi.fn(() => true)} onBestiary={vi.fn()} onReturnToCombat={vi.fn()} /></TooltipProvider>)
 
-    fireEvent.click(screen.getByRole('button', { name: /Howling Den, DUNGEON/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Howling Den, ELITE ZONE/ }))
 
     expect(onSelectLocation).toHaveBeenCalledWith('howling-den')
     expect(useGameStore.getState().combat.active).toBe(true)
@@ -97,10 +99,37 @@ describe('CombatWorldNavigation', () => {
     useGameStore.setState(state)
     const onEnterLocation = vi.fn()
     renderNavigation(onEnterLocation)
-    fireEvent.click(screen.getByRole('button', { name: /Howling Den, DUNGEON/ }))
-    fireEvent.click(screen.getByRole('button', { name: 'ENTER DUNGEON' }))
+    fireEvent.click(screen.getByRole('button', { name: /Howling Den, ELITE ZONE/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'ENTER ELITE ZONE' }))
 
     expect(onEnterLocation).toHaveBeenCalledWith('howling-den')
     expect(useGameStore.getState().combat.active).toBe(false)
+  })
+
+  it('disables targeted Loot without a target and opens the selected target reward view', () => {
+    renderNavigation()
+
+    const loot = screen.getByRole('button', { name: 'LOOT' })
+    expect(loot).toHaveProperty('disabled', true)
+
+    fireEvent.click(screen.getByRole('button', { name: /Cinder MothSTANDARD/ }))
+    const enabledLoot = screen.getByRole('button', { name: 'LOOT' })
+    expect(enabledLoot).not.toHaveProperty('disabled', true)
+    fireEvent.click(enabledLoot)
+
+    expect(screen.getByText('CINDER MOTH — LOOT')).toBeTruthy()
+    expect(screen.getByText('ITEM DROPS')).toBeTruthy()
+    expect(screen.getByText('RESONANCE')).toBeTruthy()
+    expect(screen.getByText('+20')).toBeTruthy()
+    expect(screen.queryByText('Shared loot pool from normal encounters.')).toBeNull()
+  })
+
+  it('keeps location-level Loot for non-targeted locations', () => {
+    renderNavigation()
+    fireEvent.click(screen.getByRole('button', { name: /Howling Den, ELITE ZONE/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'LOOT' }))
+
+    expect(screen.getByText('LOCATION LOOT')).toBeTruthy()
+    expect(screen.getByText('MONSTER LOOT')).toBeTruthy()
   })
 })

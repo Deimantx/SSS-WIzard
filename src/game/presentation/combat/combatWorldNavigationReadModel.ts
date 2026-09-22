@@ -3,7 +3,7 @@ import { MONSTERS } from '../../content/monsters'
 import { COMBAT_CONTINENTS, COMBAT_LOCATIONS, COMBAT_LOCATION_TYPE_METADATA, COMBAT_REGIONS, getCombatEncounterMode, getCombatLocationByDungeonId } from '../../content/world-navigation'
 import type { CombatNavigationUnlockCondition, CombatContinentId, CombatLocationId, CombatRegionId, CombatTargetDifficulty } from '../../content/world-navigation'
 import { isBossCurrentlyActive } from '../../systems/combat/combatBossSelectors'
-import { resolveWorldTierEnemyProfile } from '../../systems/world-tier/worldTierRuntime'
+import { resolveEnemyPowerRating } from './enemyPowerRating'
 import type { CombatState, DungeonId, GameState, MonsterId, WorldTierState } from '../../types'
 import type { CombatContinentSummaryViewModel, CombatEncounterViewModel, CombatLocationState, CombatLocationViewModel, CombatRegionSummaryViewModel, CombatRegionViewModel, CombatTargetViewModel, CombatWorldNavigationViewModel } from './combatWorldNavigationTypes'
 
@@ -49,14 +49,13 @@ const getLocationState = (locationId: CombatLocationId, progress: GameState['pro
 
 const getStateLabel = (state: CombatLocationState) => state === 'locked' ? 'LOCKED' : state === 'available' ? 'AVAILABLE' : state === 'active' ? 'ACTIVE' : state === 'boss-ready' ? 'BOSS READY' : state === 'completed' ? 'CLEARED' : 'PROTOTYPE'
 
-const buildEncounter = (monsterId: MonsterId, role: 'normal' | 'boss', progress: GameState['progress']): CombatEncounterViewModel => {
+const buildEncounter = (monsterId: MonsterId, role: 'normal' | 'boss', progress: GameState['progress'], worldTier: GameState['worldTier']['current']): CombatEncounterViewModel => {
   const known = progress.discoveredMonsters.includes(monsterId)
-  return { id: monsterId, monsterId, role, name: role === 'boss' || known ? MONSTERS[monsterId].name : 'UNKNOWN CREATURE', known }
+  return { id: monsterId, monsterId, role, name: role === 'boss' || known ? MONSTERS[monsterId].name : 'UNKNOWN CREATURE', known, powerRating: role === 'boss' || known ? resolveEnemyPowerRating(monsterId, worldTier) : null }
 }
 
 const buildTarget = (monsterId: MonsterId, difficulty: CombatTargetDifficulty, order: number, progress: GameState['progress'], worldTier: GameState['worldTier']['current']): CombatTargetViewModel => {
-  const profile = resolveWorldTierEnemyProfile(monsterId, worldTier)
-  return { monsterId, name: MONSTERS[monsterId]?.name ?? monsterId, known: progress.discoveredMonsters.includes(monsterId), difficulty, order, worldTier: profile.worldTier, resonanceYield: profile.resonanceYield, maxHealth: profile.maxHealth }
+  return { monsterId, name: MONSTERS[monsterId]?.name ?? monsterId, known: progress.discoveredMonsters.includes(monsterId), difficulty, order, powerRating: resolveEnemyPowerRating(monsterId, worldTier), worldTier }
 }
 
 const buildLocation = (locationId: CombatLocationId, progress: GameState['progress'], combat: CombatState, worldTier: WorldTierState = { current: 1, highestUnlocked: 1 }): CombatLocationViewModel => {
@@ -101,8 +100,8 @@ const buildLocation = (locationId: CombatLocationId, progress: GameState['progre
     dungeonId: dungeon.id,
     description: definition.description ?? dungeon.ui?.description ?? 'A dangerous location beyond the tower gate.',
     encounterMode,
-    encounters: dungeon.monsterPool.map((monsterId) => buildEncounter(monsterId, 'normal', progress)),
-    boss: buildEncounter(dungeon.boss, 'boss', progress),
+    encounters: dungeon.monsterPool.map((monsterId) => buildEncounter(monsterId, 'normal', progress, currentWorldTier)),
+    boss: buildEncounter(dungeon.boss, 'boss', progress, currentWorldTier),
     targeting: encounterMode === 'targeted' ? { mode: 'targeted', targets, activeTargetEnemyId } : null,
   }
 }

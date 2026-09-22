@@ -1,4 +1,4 @@
-import { DUNGEONS } from '../dungeons/dungeons'
+import { DUNGEON_ORDER, DUNGEONS } from '../dungeons/dungeons'
 import { MONSTERS, isBossMonster } from '../monsters'
 import { COMBAT_CONTINENTS, COMBAT_LOCATIONS, COMBAT_REGIONS } from './worldNavigation'
 import type { CombatContinentDefinition, CombatLocationDefinition, CombatRegionDefinition, CombatTargetDifficulty } from './worldNavigationTypes'
@@ -100,6 +100,10 @@ export function validateCombatWorldNavigation(content: CombatWorldNavigationCont
     if (pool.some((monsterId) => MONSTERS[monsterId] && isBossMonster(MONSTERS[monsterId]))) errors.push(`${location.id}: targeted pool may not contain boss monsters`)
   })
   validateOrders('locations', locations, errors, (location) => content.locations[location.id]?.regionId ?? '')
+
+  DUNGEON_ORDER.forEach((dungeonId) => {
+    if (!mappedDungeons.has(dungeonId)) errors.push(`dungeons: missing world-navigation location for ${dungeonId}`)
+  })
 
   return errors
 }

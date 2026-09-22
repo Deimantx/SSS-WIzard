@@ -1,5 +1,5 @@
 import type { CombatContinentId, CombatEncounterMode, CombatLocationId, CombatLocationType, CombatRegionId, CombatTargetDifficulty } from '../../content/world-navigation'
-import type { DungeonId, MonsterId, ResonanceState, WorldTierId } from '../../types'
+import type { DungeonId, MonsterId, WorldTierId } from '../../types'
 
 export type CombatLocationState = 'locked' | 'available' | 'active' | 'boss-ready' | 'completed' | 'prototype'
 export type CombatNavigationNodeState = 'locked' | 'available'
@@ -10,6 +10,7 @@ export interface CombatEncounterViewModel {
   role: 'normal' | 'boss'
   name: string
   known: boolean
+  powerRating: number | null
 }
 
 export interface CombatTargetViewModel {
@@ -18,9 +19,8 @@ export interface CombatTargetViewModel {
   known: boolean
   difficulty: CombatTargetDifficulty
   order: number
+  powerRating: number
   worldTier: WorldTierId
-  resonanceYield: ResonanceState
-  maxHealth: number
 }
 
 export interface CombatTargetingViewModel {

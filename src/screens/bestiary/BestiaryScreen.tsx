@@ -34,19 +34,25 @@ export function BestiaryScreen() {
 
   useEffect(() => {
     const dungeonId = navigationIntent.combatDungeonId
-    if (!dungeonId || !DUNGEONS[dungeonId]) return
-    setScopedDungeonId(dungeonId)
-    setNavigationIntent({ combatDungeonId: null, combatMonsterId: null })
-  }, [navigationIntent.combatDungeonId])
+    const requestedMonsterId = navigationIntent.combatMonsterId
+    if (dungeonId && DUNGEONS[dungeonId]) {
+      const dungeon = DUNGEONS[dungeonId]
+      const validMonsterIds = new Set<MonsterId>([...dungeon.monsterPool, dungeon.boss])
+      setScopedDungeonId(dungeonId)
+      setSelected(requestedMonsterId && validMonsterIds.has(requestedMonsterId) ? requestedMonsterId : null)
+      setNavigationIntent({ combatDungeonId: null, combatMonsterId: null })
+      return
+    }
+    if (requestedMonsterId && visibleIds.includes(requestedMonsterId)) {
+      setSelected(requestedMonsterId)
+      setNavigationIntent({ combatMonsterId: null })
+    }
+  }, [navigationIntent.combatDungeonId, navigationIntent.combatMonsterId, visibleIds.join('|')])
 
   useEffect(() => {
     const discoveredVisibleId = visibleIds.find((monsterId) => progress.discoveredMonsters.includes(monsterId)) ?? null
     setSelected((current) => current && visibleIds.includes(current) ? current : discoveredVisibleId)
   }, [visibleIds.join('|'), progress.discoveredMonsters.join('|')])
-
-  useEffect(() => {
-    if (navigationIntent.combatMonsterId && visibleIds.includes(navigationIntent.combatMonsterId)) setSelected(navigationIntent.combatMonsterId)
-  }, [navigationIntent.combatMonsterId, visibleIds.join('|')])
 
   const index = <BestiaryIndex progress={progress} scopeIds={scopeIds ?? undefined} search={search} category={category} onSearch={setSearch} onCategory={setCategory} selected={selected} newEntries={new Set(attention.unseenMonsters)} onSelect={(monsterId) => { clearAttention(getActiveProfileId(), 'monster', monsterId); setSelected(monsterId) }} />
   const inspector = <InspectorTransition identity={selected} accent={selected ? MONSTERS[selected]?.color : undefined} fill><BestiaryInspector monsterId={selected} progress={progress} /></InspectorTransition>

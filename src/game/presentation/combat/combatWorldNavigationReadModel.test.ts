@@ -22,7 +22,7 @@ describe('combat world navigation read model', () => {
     expect(view.selectedContinent.name).toBe('Continent I')
     expect(view.selectedRegion.name).toBe('First Frontier')
     expect(view.selectedRegion.locations.map((location) => location.name)).toEqual(['Whispering Woods', 'Howling Den', 'Abandoned Catacombs'])
-    expect(view.selectedRegion.locations.find((location) => location.id === 'howling-den')).toMatchObject({ type: 'dungeon', state: 'locked', unlockText: 'Defeat Forest Heart' })
+    expect(view.selectedRegion.locations.find((location) => location.id === 'howling-den')).toMatchObject({ type: 'elite-zone', state: 'locked', unlockText: 'Defeat Forest Heart' })
     expect(view.selectedLocation?.targeting?.targets.map((target) => target.monsterId)).toEqual(['forest-wisp', 'thornling', 'dewbound-sprite', 'cinder-moth', 'stone-root', 'grove-sentinel', 'tempest-stag'])
   })
 
@@ -42,14 +42,23 @@ describe('combat world navigation read model', () => {
     expect(view.selectedLocation?.name).toBe('Howling Den')
   })
 
-  it('keeps Shattered Frontier locked until the existing Edrin milestone', () => {
+  it('unlocks the four authored Regions on their existing boss milestones', () => {
     const state = createInitialState()
-    const before = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedRegionId: 'shattered-frontier', selectedLocationId: 'fractured-approach' })
-    expect(before.regions.find((region) => region.id === 'shattered-frontier')).toMatchObject({ state: 'locked', unlockText: "Defeat Archmage Edrin's Shade" })
+    const before = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedRegionId: 'elemental-scar', selectedLocationId: 'fractured-approach' })
+    expect(before.regions.map((region) => [region.id, region.state])).toEqual([['first-frontier', 'available'], ['elemental-scar', 'locked'], ['shattered-meridian', 'locked'], ['black-sigil-reach', 'locked']])
+    expect(before.regions.find((region) => region.id === 'elemental-scar')).toMatchObject({ state: 'locked', unlockText: "Defeat Archmage Edrin's Shade" })
 
     state.progress.bossKillsByBoss['archmage-edrin-shade'] = 1
-    const after = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedRegionId: 'shattered-frontier', selectedLocationId: 'fractured-approach' })
-    expect(after.regions.find((region) => region.id === 'shattered-frontier')).toMatchObject({ state: 'available' })
-    expect(after.selectedRegion.locations.map((location) => location.id)).toHaveLength(12)
+    const afterEdrin = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedRegionId: 'elemental-scar', selectedLocationId: 'fractured-approach' })
+    expect(afterEdrin.regions.find((region) => region.id === 'elemental-scar')).toMatchObject({ state: 'available' })
+    expect(afterEdrin.selectedRegion.locations.map((location) => location.id)).toEqual(['fractured-approach', 'flooded-reliquary', 'ashen-watch', 'rootscar-hollow', 'crossroads-of-ruin'])
+
+    state.progress.bossKillsByBoss['crossroads-keeper'] = 1
+    const afterKeeper = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedRegionId: 'shattered-meridian', selectedLocationId: 'graveglass-hollow' })
+    expect(afterKeeper.regions.find((region) => region.id === 'shattered-meridian')).toMatchObject({ state: 'available' })
+
+    state.progress.bossKillsByBoss['meridian-splitter'] = 1
+    const afterSplitter = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedRegionId: 'black-sigil-reach', selectedLocationId: 'hall-of-unbound-names' })
+    expect(afterSplitter.regions.find((region) => region.id === 'black-sigil-reach')).toMatchObject({ state: 'available' })
   })
 })

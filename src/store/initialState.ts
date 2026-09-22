@@ -11,7 +11,7 @@ import { createInitialWorldTierState } from '../game/systems/world-tier/worldTie
 
 // Combat Action System V3 stores authored base work plus remaining work for
 // dynamic-rate action progression.
-export const SAVE_VERSION = 45
+export const SAVE_VERSION = 46
 
 const emptySpellRecord = <T>(value: T) => Object.fromEntries(CANONICAL_SPELL_IDS.map((spellId) => [spellId, value])) as Record<import('../game/types').SpellId, T>
 

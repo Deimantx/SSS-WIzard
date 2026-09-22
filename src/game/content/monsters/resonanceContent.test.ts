@@ -67,3 +67,20 @@ describe('Shattered Meridian Resonance authoring', () => {
     ;[...dungeon.monsterPool, ...(dungeon.encounterSequence ?? []), dungeon.boss].forEach((monsterId) => expect(MONSTERS[monsterId].resonanceYield).toBeUndefined())
   })
 })
+
+describe('Black Sigil Reach Resonance authoring', () => {
+  it.each([
+    ['hall-of-unbound-names', { air: 36, water: 24 }, { air: 100, water: 100 }],
+    ['vault-of-the-black-sigil', { earth: 24, fire: 46 }, { earth: 110, fire: 110 }],
+  ] as const)('authors the requested mixed profile progression for %s', (dungeonId, firstProfile, bossProfile) => {
+    const dungeon = DUNGEONS[dungeonId]
+    expect(MONSTERS[dungeon.monsterPool[0]].resonanceYield).toEqual(firstProfile)
+    expect(MONSTERS[dungeon.boss].resonanceYield).toEqual(bossProfile)
+    ;[...dungeon.monsterPool, dungeon.boss].forEach((monsterId) => {
+      const profile = MONSTERS[monsterId].resonanceYield ?? {}
+      expect(Object.keys(profile).every((type) => type === (dungeonId === 'hall-of-unbound-names' ? 'air' : 'earth') || type === (dungeonId === 'hall-of-unbound-names' ? 'water' : 'fire'))).toBe(true)
+      expect(profile).not.toHaveProperty('arcane')
+      expect(profile).not.toHaveProperty('life')
+    })
+  })
+})

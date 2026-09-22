@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { DUNGEON_ORDER, DUNGEONS } from '../dungeons/dungeons'
+import { DUNGEON_ORDER, DUNGEONS, isDungeonUnlocked } from '../dungeons/dungeons'
+import { createInitialState } from '../../../store/initialState'
 import { COMBAT_CONTINENTS, COMBAT_LOCATIONS, COMBAT_REGIONS } from './worldNavigation'
 import { validateCombatWorldNavigation, type CombatWorldNavigationContent } from './worldNavigationValidation'
 
@@ -61,6 +62,33 @@ describe('combat world navigation content', () => {
       { id: 'world-tier-4', label: 'World Tier 4' },
       { id: 'act1-artifact-levels-8-10', label: 'Act 1 Artifact Levels 8-10' },
     ] })
+    expect(COMBAT_LOCATIONS['hall-of-unbound-names']).toMatchObject({ encounterMode: 'targeted', type: 'elite-zone', zoneAffixId: 'vicious' })
+    expect(COMBAT_LOCATIONS['vault-of-the-black-sigil']).toMatchObject({ encounterMode: 'targeted', type: 'elite-zone', zoneAffixId: 'armored' })
+    expect(COMBAT_LOCATIONS['black-gate']).toMatchObject({ encounterMode: 'sequence', type: 'dungeon', firstClearUnlockPreview: [{ id: 'world-tier-5', label: 'World Tier 5' }] })
+    expect(Object.entries(COMBAT_LOCATIONS['hall-of-unbound-names'].targetMetadata ?? {}).map(([monsterId, metadata]) => [monsterId, metadata.difficulty, metadata.order])).toEqual([
+      ['name-eater', 'standard', 1],
+      ['bound-echo', 'standard', 2],
+      ['hollow-liturgist', 'hard', 3],
+      ['whisper-archivist', 'hard', 4],
+      ['nameless-cantor', 'hard', 5],
+      ['oathless-confessor', 'apex', 6],
+      ['unwritten-hierophant', 'apex', 7],
+    ])
+    expect(Object.entries(COMBAT_LOCATIONS['vault-of-the-black-sigil'].targetMetadata ?? {}).map(([monsterId, metadata]) => [monsterId, metadata.difficulty, metadata.order])).toEqual([
+      ['black-seal-parasite', 'standard', 1],
+      ['inkbound-specter', 'standard', 2],
+      ['sigil-guardian', 'hard', 3],
+      ['vault-devourer', 'hard', 4],
+      ['sealbound-custodian', 'hard', 5],
+      ['blackscript-colossus', 'apex', 6],
+      ['voidseal-arbiter', 'apex', 7],
+    ])
+    for (const locationId of ['hall-of-unbound-names', 'vault-of-the-black-sigil'] as const) {
+      const location = COMBAT_LOCATIONS[locationId]
+      expect(Object.keys(location.targetMetadata ?? {})).toHaveLength(7)
+      expect(Object.keys(location.targetMetadata ?? {})).not.toContain(DUNGEONS[location.dungeonId!].boss)
+      expect(DUNGEONS[location.dungeonId!].threatRequired).toBe(40000)
+    }
     for (const locationId of ['flooded-reliquary', 'ashen-watch', 'rootscar-hollow'] as const) {
       const location = COMBAT_LOCATIONS[locationId]
       expect(location).toMatchObject({ encounterMode: 'targeted', type: 'combat-zone' })
@@ -101,5 +129,14 @@ describe('combat world navigation content', () => {
     const invalidNonElite = validContent()
     invalidNonElite.locations['whispering-woods'] = { ...invalidNonElite.locations['whispering-woods'], zoneAffixId: 'frenzied' }
     expect(validateCombatWorldNavigation(invalidNonElite)).toContain('whispering-woods: Zone Affix is only valid on targeted Elite Zones')
+  })
+
+  it('keeps the Black Gate locked until both final Elite bosses are defeated', () => {
+    const state = createInitialState()
+    expect(isDungeonUnlocked(DUNGEONS['black-gate'], state.progress)).toBe(false)
+    state.progress.bossKillsByBoss['unspoken-prelate'] = 1
+    expect(isDungeonUnlocked(DUNGEONS['black-gate'], state.progress)).toBe(false)
+    state.progress.bossKillsByBoss['sigil-warden'] = 1
+    expect(isDungeonUnlocked(DUNGEONS['black-gate'], state.progress)).toBe(true)
   })
 })

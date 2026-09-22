@@ -212,9 +212,39 @@ export const COMBAT_LOCATIONS: Record<CombatLocationId, CombatLocationDefinition
       { id: 'act1-artifact-levels-8-10', label: 'Act 1 Artifact Levels 8-10' },
     ],
   },
-  'hall-of-unbound-names': dungeonLocation('black-sigil-reach', 'hall-of-unbound-names', 'elite-zone', 1),
-  'vault-of-the-black-sigil': dungeonLocation('black-sigil-reach', 'vault-of-the-black-sigil', 'elite-zone', 2),
-  'black-gate': dungeonLocation('black-sigil-reach', 'black-gate', 'dungeon', 3),
+  'hall-of-unbound-names': {
+    ...dungeonLocation('black-sigil-reach', 'hall-of-unbound-names', 'elite-zone', 1),
+    encounterMode: 'targeted',
+    zoneAffixId: 'vicious',
+    targetMetadata: {
+      'name-eater': { difficulty: 'standard', order: 1 },
+      'bound-echo': { difficulty: 'standard', order: 2 },
+      'hollow-liturgist': { difficulty: 'hard', order: 3 },
+      'whisper-archivist': { difficulty: 'hard', order: 4 },
+      'nameless-cantor': { difficulty: 'hard', order: 5 },
+      'oathless-confessor': { difficulty: 'apex', order: 6 },
+      'unwritten-hierophant': { difficulty: 'apex', order: 7 },
+    },
+  },
+  'vault-of-the-black-sigil': {
+    ...dungeonLocation('black-sigil-reach', 'vault-of-the-black-sigil', 'elite-zone', 2),
+    encounterMode: 'targeted',
+    zoneAffixId: 'armored',
+    targetMetadata: {
+      'black-seal-parasite': { difficulty: 'standard', order: 1 },
+      'inkbound-specter': { difficulty: 'standard', order: 2 },
+      'sigil-guardian': { difficulty: 'hard', order: 3 },
+      'vault-devourer': { difficulty: 'hard', order: 4 },
+      'sealbound-custodian': { difficulty: 'hard', order: 5 },
+      'blackscript-colossus': { difficulty: 'apex', order: 6 },
+      'voidseal-arbiter': { difficulty: 'apex', order: 7 },
+    },
+  },
+  'black-gate': {
+    ...dungeonLocation('black-sigil-reach', 'black-gate', 'dungeon', 3),
+    encounterMode: 'sequence',
+    firstClearUnlockPreview: [{ id: 'world-tier-5', label: 'World Tier 5' }],
+  },
 }
 
 export const getCombatLocation = (locationId: CombatLocationId | null | undefined) => locationId ? COMBAT_LOCATIONS[locationId] ?? null : null

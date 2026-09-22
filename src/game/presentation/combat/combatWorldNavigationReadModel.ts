@@ -122,7 +122,7 @@ const buildLocation = (locationId: CombatLocationId, progress: GameState['progre
     description: definition.description ?? dungeon.ui?.description ?? 'A dangerous location beyond the tower gate.',
     encounterMode,
     zoneAffix: zoneAffix ? { id: zoneAffix.id, name: zoneAffix.name, description: zoneAffix.description } : null,
-    bossHunt: buildCombatBossHuntPresentation({ combat, progress, dungeon, locationType: definition.type, worldTier: currentWorldTier }),
+    bossHunt: encounterMode === 'targeted' ? buildCombatBossHuntPresentation({ combat, progress, dungeon, locationType: definition.type, worldTier: currentWorldTier }) : null,
     encounters: dungeon.monsterPool.map((monsterId) => buildEncounter(monsterId, 'normal', progress, currentWorldTier)),
     boss: buildEncounter(dungeon.boss, 'boss', progress, currentWorldTier),
     targeting: encounterMode === 'targeted' ? { mode: 'targeted', targets, activeTargetEnemyId } : null,

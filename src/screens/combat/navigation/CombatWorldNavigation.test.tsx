@@ -126,6 +126,41 @@ describe('CombatWorldNavigation', () => {
     expect(screen.queryByText('REGENERATIVE')).toBeNull()
   })
 
+  it('deep-links the selected Black Sigil target to its exact Bestiary dossier', () => {
+    const state = createInitialState()
+    state.progress.bossKillsByBoss['meridian-splitter'] = 1
+    useGameStore.setState(state)
+    const onBestiary = vi.fn()
+    render(<TooltipProvider><CombatWorldNavigation onSelectLocation={vi.fn()} onEnterLocation={vi.fn()} onHuntTarget={vi.fn(() => true)} onBestiary={onBestiary} onReturnToCombat={vi.fn()} /></TooltipProvider>)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Black Sigil Reach' }))
+    fireEvent.click(screen.getByRole('button', { name: /Hall of Unbound Names, ELITE ZONE/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Nameless CantorHARD/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'BESTIARY' }))
+
+    expect(onBestiary).toHaveBeenCalledWith(expect.objectContaining({ id: 'hall-of-unbound-names' }), 'nameless-cantor')
+  })
+
+  it('renders the Black Gate as a five-step Dungeon run without target or Threat controls', () => {
+    const state = createInitialState()
+    state.progress.bossKillsByBoss['meridian-splitter'] = 1
+    state.progress.bossKillsByBoss['unspoken-prelate'] = 1
+    state.progress.bossKillsByBoss['sigil-warden'] = 1
+    useGameStore.setState(state)
+    renderNavigation()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Black Sigil Reach' }))
+    fireEvent.click(screen.getByRole('button', { name: /The Black Gate, DUNGEON/ }))
+
+    expect(screen.getByText('DUNGEON RUN')).toBeTruthy()
+    expect(screen.getByText('5 FIXED STEPS')).toBeTruthy()
+    expect(screen.getByText('World Tier 5')).toBeTruthy()
+    expect(screen.queryByText('SELECT TARGET')).toBeNull()
+    expect(screen.queryByText('ZONE AFFIX')).toBeNull()
+    expect(screen.queryByText('AUTO HUNT')).toBeNull()
+    expect(screen.queryByText(/THREAT/)).toBeNull()
+  })
+
   it('keeps Zone Boss threat and Auto Hunt controls in the location inspector', () => {
     const state = createInitialState()
     state.progress.bossKillsByBoss['forest-heart'] = 1

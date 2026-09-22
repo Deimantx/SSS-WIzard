@@ -27,6 +27,9 @@ describe('Power-based Boss Threat', () => {
     for (const dungeonId of ['graveglass-hollow', 'stormvault-gallery', 'starfallen-observatory'] as const) {
       expect([1, 2, 3, 4, 5].map((tier) => resolveBossThreatRequirement(dungeonId, tier as 1 | 2 | 3 | 4 | 5))).toEqual([30000, 60000, 90000, 120000, 150000])
     }
+    for (const dungeonId of ['hall-of-unbound-names', 'vault-of-the-black-sigil'] as const) {
+      expect([1, 2, 3, 4, 5].map((tier) => resolveBossThreatRequirement(dungeonId, tier as 1 | 2 | 3 | 4 | 5))).toEqual([40000, 80000, 120000, 160000, 200000])
+    }
   })
 
   it('uses enemy Power at the captured encounter tier for targeted kills', () => {
@@ -45,6 +48,14 @@ describe('Power-based Boss Threat', () => {
     const state = prepareCombat(dungeonId)
     expect(usesPowerBasedThreat(getCombatLocationByDungeonId(dungeonId))).toBe(true)
     expect(resolveThreatGainForKill(state, enemyId, 5)).toBe(resolveEnemyPowerRating(enemyId, 5))
+  })
+
+  it.each([
+    ['hall-of-unbound-names', 'nameless-cantor'],
+    ['vault-of-the-black-sigil', 'blackscript-colossus'],
+  ] as const)('uses captured World Tier Power Threat for %s', (dungeonId, enemyId) => {
+    const state = prepareCombat(dungeonId)
+    expect(resolveThreatGainForKill(state, enemyId, 4)).toBe(resolveEnemyPowerRating(enemyId, 4))
   })
 
   it('keeps sequence dungeons at zero', () => {

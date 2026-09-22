@@ -871,6 +871,98 @@ describe('structured dungeon save migration', () => {
   })
 })
 
+describe('v45 Black Sigil Reach migration', () => {
+  const activeSave = (combat: Partial<ReturnType<typeof createInitialState>['combat']>, worldTier: 1 | 2 | 3 | 4 | 5 = 1, progress: Partial<ReturnType<typeof createInitialState>['progress']> = {}) => {
+    const initial = createInitialState()
+    return {
+      ...initial,
+      saveVersion: 45,
+      worldTier: { current: worldTier, highestUnlocked: worldTier },
+      progress: { ...initial.progress, ...progress },
+      combat: { ...initial.combat, active: true, ...combat },
+    }
+  }
+
+  it('converts Hall kill Threat proportionally and preserves the valid target', () => {
+    const migrated = migrateSave(activeSave({ dungeonId: 'hall-of-unbound-names', enemyId: 'name-eater', targetEnemyId: 'name-eater', threatCleared: 30 }) as any)
+    expect(migrated.saveVersion).toBe(46)
+    expect(migrated.combat.targetEnemyId).toBe('name-eater')
+    expect(migrated.combat.threatCleared).toBe(20000)
+  })
+
+  it('converts Vault kill Threat against the captured WT4 requirement', () => {
+    const migrated = migrateSave(activeSave({ dungeonId: 'vault-of-the-black-sigil', enemyId: 'blackscript-colossus', threatCleared: 30 }, 4) as any)
+    expect(migrated.combat.targetEnemyId).toBe('blackscript-colossus')
+    expect(migrated.combat.threatCleared).toBe(80000)
+  })
+
+  it.each([
+    ['hall-of-unbound-names', 'unspoken-prelate', 'name-eater'],
+    ['vault-of-the-black-sigil', 'sigil-warden', 'black-seal-parasite'],
+  ] as const)('preserves an active %s boss while assigning the first future normal target', (dungeonId, bossId, firstTarget) => {
+    const migrated = migrateSave(activeSave({ dungeonId, enemyId: bossId, targetEnemyId: bossId, threatCleared: 60 }) as any)
+    expect(migrated.combat.enemyId).toBe(bossId)
+    expect(migrated.combat.inBossFight).toBe(true)
+    expect(migrated.combat.targetEnemyId).toBe(firstTarget)
+    expect(migrated.combat.targetEnemyId).not.toBe(bossId)
+  })
+
+  it('converts an active Black Gate normal encounter to its exact sequence index', () => {
+    const migrated = migrateSave(activeSave({ dungeonId: 'black-gate', enemyId: 'portalbound-acolyte', threatCleared: 70, targetEnemyId: 'name-eater', pendingBossId: 'black-gatekeeper' }) as any)
+    expect(migrated.combat.dungeonSequenceIndex).toBe(2)
+    expect(migrated.combat.threatCleared).toBe(0)
+    expect(migrated.combat.targetEnemyId).toBeNull()
+    expect(migrated.combat.pendingBossId).toBeNull()
+  })
+
+  it('starts a converted Black Gate between encounters at step zero regardless of old Threat', () => {
+    const migrated = migrateSave(activeSave({ dungeonId: 'black-gate', enemyId: null, threatCleared: 70, dungeonSequenceIndex: 4 }) as any)
+    expect(migrated.combat.dungeonSequenceIndex).toBe(0)
+    expect(migrated.combat.threatCleared).toBe(0)
+    expect(migrated.combat.targetEnemyId).toBeNull()
+  })
+
+  it('preserves an active Black Gate boss at the final sequence index', () => {
+    const migrated = migrateSave(activeSave({ dungeonId: 'black-gate', enemyId: 'black-gatekeeper', threatCleared: 70 }) as any)
+    expect(migrated.combat.dungeonSequenceIndex).toBe(4)
+    expect(migrated.combat.inBossFight).toBe(true)
+    expect(migrated.combat.threatCleared).toBe(0)
+  })
+
+  it('reconciles stale WT4 access to WT5 from existing Black Gatekeeper evidence without a notification', () => {
+    const migrated = migrateSave(activeSave({ dungeonId: 'black-gate', enemyId: null }, 4, { bossKillsByBoss: { 'black-gatekeeper': 1 } }) as any)
+    expect(migrated.worldTier).toEqual({ current: 4, highestUnlocked: 5 })
+    expect(migrated.notifications).toEqual([])
+  })
+
+  it('round-trips targeted and sequence v46 combat state without losing the save version', () => {
+    const targeted = createInitialState()
+    targeted.combat.active = true
+    targeted.combat.dungeonId = 'hall-of-unbound-names'
+    targeted.combat.targetEnemyId = 'nameless-cantor'
+    targeted.combat.enemyId = 'nameless-cantor'
+    targeted.combat.enemyHp = 3210
+    targeted.combat.enemyWorldTier = 4
+    targeted.combat.threatCleared = 80000
+    targeted.worldTier.current = 4
+    targeted.worldTier.highestUnlocked = 4
+    const targetedLoaded = migrateSave(JSON.parse(JSON.stringify(serializeGameState(targeted))))
+    expect(targetedLoaded.saveVersion).toBe(46)
+    expect(targetedLoaded.combat).toMatchObject({ targetEnemyId: 'nameless-cantor', enemyId: 'nameless-cantor', enemyHp: 3210, enemyWorldTier: 4, threatCleared: 80000 })
+
+    const sequence = createInitialState()
+    sequence.combat.active = true
+    sequence.combat.dungeonId = 'black-gate'
+    sequence.combat.dungeonSequenceIndex = 4
+    sequence.combat.enemyId = 'black-gatekeeper'
+    sequence.combat.inBossFight = true
+    sequence.combat.enemyHp = 12000
+    const sequenceLoaded = migrateSave(JSON.parse(JSON.stringify(serializeGameState(sequence))))
+    expect(sequenceLoaded.saveVersion).toBe(46)
+    expect(sequenceLoaded.combat).toMatchObject({ dungeonId: 'black-gate', dungeonSequenceIndex: 4, enemyId: 'black-gatekeeper', enemyHp: 12000, inBossFight: true, targetEnemyId: null, threatCleared: 0 })
+  })
+})
+
 describe('targeted combat migration', () => {
   const migrateCombat = (combat: Partial<ReturnType<typeof createInitialState>['combat']>, saveVersion = 40) => {
     const initial = createInitialState()

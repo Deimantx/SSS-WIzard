@@ -5,6 +5,7 @@ import { DUNGEONS } from '../../content/dungeons/dungeons'
 import { advanceWithOfflineBank } from '../offline-bank/offlineBankSimulation'
 import { fastResolveNormalEnemiesForDebug } from './debugCombatRuntime'
 import { resolveCombatDeaths, spawnEnemy, spawnNextEnemy } from './combatRuntime'
+import { unlockWorldTierFromBossKill } from '../world-tier/worldTierRuntime'
 
 const prepare = () => {
   const state = createInitialState()
@@ -51,6 +52,7 @@ describe('structured dungeon encounters', () => {
     ['fractured-approach', ['rift-wolf', 'arcane-scavenger', 'withered-watcher', 'warded-husk'], 'corrupted-elemental-gatekeeper'],
     ['crossroads-of-ruin', ['arcane-binder', 'rift-archer', 'remnant-marauder', 'broken-construct'], 'crossroads-keeper'],
     ['broken-meridian', ['meridian-warden', 'fractured-channeler', 'arc-surge-horror', 'linebreaker-shade'], 'meridian-splitter'],
+    ['black-gate', ['gatebound-remnant', 'black-rift-stalker', 'portalbound-acolyte', 'sealbreaker-construct'], 'black-gatekeeper'],
   ] as const)('spawns %s in the authored order without Threat', (dungeonId, sequence, bossId) => {
     const state = prepare()
     state.combat.dungeonId = dungeonId
@@ -73,6 +75,25 @@ describe('structured dungeon encounters', () => {
     expect(spawnNextEnemy(state)).toBe(true)
     expect(state.combat.enemyId).toBe('meridian-warden')
     expect(state.combat.threatCleared).toBe(0)
+  })
+
+  it('ends the Black Gate after Black Gatekeeper and unlocks WT5 once through the generic boss map', () => {
+    const state = prepare()
+    state.combat.dungeonId = 'black-gate'
+    state.worldTier = { current: 4, highestUnlocked: 4 }
+    for (const expectedEnemyId of ['gatebound-remnant', 'black-rift-stalker', 'portalbound-acolyte', 'sealbreaker-construct'] as const) {
+      expect(spawnNextEnemy(state)).toBe(true)
+      expect(state.combat.enemyId).toBe(expectedEnemyId)
+      killCurrent(state)
+    }
+    expect(spawnNextEnemy(state)).toBe(true)
+    expect(state.combat.enemyId).toBe('black-gatekeeper')
+    killCurrent(state)
+
+    expect(state.combat.active).toBe(false)
+    expect(state.worldTier.highestUnlocked).toBe(5)
+    expect(state.notifications.filter((note) => note.text.includes('WORLD TIER 5')).length).toBe(1)
+    expect(unlockWorldTierFromBossKill(state, 'black-gatekeeper')).toBeNull()
   })
 
   it('completes after Edrin, preserves player resources, and clears the run state', () => {

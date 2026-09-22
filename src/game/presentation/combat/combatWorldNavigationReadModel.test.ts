@@ -78,4 +78,21 @@ describe('combat world navigation read model', () => {
     const afterSplitter = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedRegionId: 'black-sigil-reach', selectedLocationId: 'hall-of-unbound-names' })
     expect(afterSplitter.regions.find((region) => region.id === 'black-sigil-reach')).toMatchObject({ state: 'available' })
   })
+
+  it('presents the final Black Sigil topology and keeps target cards distinct from the dungeon run', () => {
+    const state = createInitialState()
+    state.progress.bossKillsByBoss['meridian-splitter'] = 1
+    const hall = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedRegionId: 'black-sigil-reach', selectedLocationId: 'hall-of-unbound-names' }).selectedLocation
+    expect(hall).toMatchObject({ type: 'elite-zone', encounterMode: 'targeted', zoneAffix: { id: 'vicious' } })
+    expect(hall?.targeting?.targets.map((target) => target.monsterId)).toEqual(['name-eater', 'bound-echo', 'hollow-liturgist', 'whisper-archivist', 'nameless-cantor', 'oathless-confessor', 'unwritten-hierophant'])
+    expect(hall?.targeting?.targets.every((target) => !('resonance' in target))).toBe(true)
+
+    const vault = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedRegionId: 'black-sigil-reach', selectedLocationId: 'vault-of-the-black-sigil' }).selectedLocation
+    expect(vault).toMatchObject({ type: 'elite-zone', encounterMode: 'targeted', zoneAffix: { id: 'armored' } })
+    expect(vault?.targeting?.targets.map((target) => target.monsterId)).toEqual(['black-seal-parasite', 'inkbound-specter', 'sigil-guardian', 'vault-devourer', 'sealbound-custodian', 'blackscript-colossus', 'voidseal-arbiter'])
+
+    const gate = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedRegionId: 'black-sigil-reach', selectedLocationId: 'black-gate' }).selectedLocation
+    expect(gate).toMatchObject({ type: 'dungeon', encounterMode: 'sequence', targeting: null, bossHunt: null, firstClearUnlockPreview: [{ id: 'world-tier-5', label: 'World Tier 5' }] })
+    expect(gate?.sequence?.steps.map((step) => step.monsterId)).toEqual(['gatebound-remnant', 'black-rift-stalker', 'portalbound-acolyte', 'sealbreaker-construct', 'black-gatekeeper'])
+  })
 })

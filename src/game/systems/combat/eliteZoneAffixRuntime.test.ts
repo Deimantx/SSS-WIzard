@@ -52,6 +52,18 @@ describe('Elite Zone Affix runtime provider', () => {
     expect(getActiveEliteZoneAffix(state)?.id).toBe(affixId)
   })
 
+  it.each([
+    ['hall-of-unbound-names', 'nameless-cantor', 'unspoken-prelate', 'vicious'],
+    ['vault-of-the-black-sigil', 'blackscript-colossus', 'sigil-warden', 'armored'],
+  ] as const)('applies %s only to normal targets and not its boss', (dungeonId, normalId, bossId, affixId) => {
+    const state = prepare()
+    state.combat.dungeonId = dungeonId
+    state.combat.enemyId = normalId
+    expect(getActiveEliteZoneAffixId(state)).toBe(affixId)
+    state.combat.enemyId = bossId
+    expect(getActiveEliteZoneAffixId(state)).toBeNull()
+  })
+
   it('activates Frenzied once at the threshold for different normal enemy IDs', () => {
     for (const monsterId of ['cavefang-wolf', 'den-stalker'] as const) {
       const state = prepare()

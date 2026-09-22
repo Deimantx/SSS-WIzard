@@ -1876,6 +1876,16 @@ The current World Tier unlock map is:
 
 Boss kills may unlock a tier once and show one notification; save migration silently reconciles durable boss-kill evidence without lowering valid access.
 
+### 32.2. Black Sigil Reach endpoint topology
+
+Black Sigil Reach completes the current Continent I location topology:
+
+- Hall of Unbound Names — targeted Elite Zone with the Vicious affix;
+- Vault of the Black Sigil — targeted Elite Zone with the Armored affix;
+- The Black Gate — a fixed four-normal sequence Dungeon followed by Black Gatekeeper.
+
+The two Elite Zones are the repeatable targeted farming layer. Their Boss clears jointly unlock The Black Gate, and Black Gatekeeper is the current Continent I endpoint that unlocks WT5. Alchemy remains a reserved future milestone only; it is not implemented in the current runtime or UI.
+
 ### Current and reserved progression milestones
 
 | Milestone | Current progression | Reserved future unlock |

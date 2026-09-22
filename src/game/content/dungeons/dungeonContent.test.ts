@@ -128,7 +128,7 @@ describe("Act 0 and Act 1 dungeon content", () => {
 
   it("keeps Act 1 monster ownership aligned with every authored dungeon", () => {
     expect(ACT1_DUNGEONS).toHaveLength(12);
-    expect(Object.keys(ACT1_MONSTERS)).toHaveLength(78);
+    expect(Object.keys(ACT1_MONSTERS)).toHaveLength(84);
     for (const dungeon of ACT1_DUNGEONS) {
       expect([4, 7]).toContain(dungeon.monsterPool.length);
       expect(dungeon.boss).toBeTruthy();
@@ -246,7 +246,7 @@ describe("Act 0 and Act 1 dungeon content", () => {
   });
 
   it("keeps all authored monster records and exact action sequences", () => {
-    expect(Object.keys(MONSTERS)).toHaveLength(97);
+    expect(Object.keys(MONSTERS)).toHaveLength(103);
     expect(validateMonsterDefinitions()).toEqual([]);
     expect(labels("forest-wisp")).toEqual([
       "Basic",

@@ -311,3 +311,31 @@ describe('Shattered Meridian targeted farming', () => {
     expect(state.combat.enemyId).toBe('ossuary-oracle')
   })
 })
+
+describe('Black Sigil Reach targeted farming', () => {
+  it.each([
+    ['hall-of-unbound-names', 'nameless-cantor', 'unspoken-prelate', 'air', 32],
+    ['vault-of-the-black-sigil', 'blackscript-colossus', 'sigil-warden', 'earth', 70],
+  ] as const)('repeats the selected %s target without random fallback', (dungeonId, targetEnemyId, bossId, resonanceType, resonanceAmount) => {
+    const state = prepare()
+    state.combat.dungeonId = dungeonId
+    state.combat.targetEnemyId = targetEnemyId
+    expect(spawnNextEnemy(state)).toBe(true)
+    expect(state.combat.enemyId).toBe(targetEnemyId)
+    state.combat.enemyHp = 0
+    finishEnemy(state)
+    expect(state.combat.threatCleared).toBe(resolveEnemyPowerRating(targetEnemyId, 1))
+    expect(state.resonance[resonanceType]).toBe(resonanceAmount)
+    expect(spawnNextEnemy(state)).toBe(true)
+    expect(state.combat.enemyId).toBe(targetEnemyId)
+    expect(bossId).not.toBe(targetEnemyId)
+  })
+
+  it.each(['hall-of-unbound-names', 'vault-of-the-black-sigil'] as const)('rejects a no-target spawn for %s instead of selecting a random normal', (dungeonId) => {
+    const state = prepare()
+    state.combat.dungeonId = dungeonId
+    expect(spawnNextEnemy(state)).toBe(false)
+    expect(state.combat.enemyId).toBeNull()
+    expect(state.notifications.some((note) => note.text.includes('Select a Hunt Target'))).toBe(true)
+  })
+})

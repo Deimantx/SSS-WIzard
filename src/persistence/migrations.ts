@@ -48,11 +48,18 @@ const LEGACY_ELEMENTAL_SCAR_THREAT_REQUIREMENTS: Partial<Record<DungeonId, numbe
   'rootscar-hollow': 40,
 }
 
+/** Historical kill-count thresholds for Hall and Vault before v46 Power Threat. */
+const LEGACY_BLACK_SIGIL_REACH_THREAT_REQUIREMENTS: Partial<Record<DungeonId, number>> = {
+  'hall-of-unbound-names': 60,
+  'vault-of-the-black-sigil': 60,
+}
+
 /** The save version at which each dungeon became a fixed sequence. */
 const SEQUENCE_CONVERSION_VERSION_BY_DUNGEON: Partial<Record<DungeonId, number>> = {
   'fractured-approach': 44,
   'crossroads-of-ruin': 44,
   'broken-meridian': 45,
+  'black-gate': 46,
 }
 
 /** Historical boss-kill thresholds for Shattered locations before v45. */
@@ -949,7 +956,9 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
         : sourceVersion < 44
           ? LEGACY_ELEMENTAL_SCAR_THREAT_REQUIREMENTS[dungeonId] ?? LEGACY_SHATTERED_MERIDIAN_THREAT_REQUIREMENTS[dungeonId]
           : sourceVersion < 45
-            ? LEGACY_SHATTERED_MERIDIAN_THREAT_REQUIREMENTS[dungeonId]
+            ? LEGACY_SHATTERED_MERIDIAN_THREAT_REQUIREMENTS[dungeonId] ?? LEGACY_BLACK_SIGIL_REACH_THREAT_REQUIREMENTS[dungeonId]
+            : sourceVersion < 46
+              ? LEGACY_BLACK_SIGIL_REACH_THREAT_REQUIREMENTS[dungeonId]
             : undefined
       : undefined
     if (dungeonId && location?.encounterMode === 'targeted' && (location.type === 'combat-zone' || location.type === 'elite-zone') && legacyRequirement) {

@@ -50,6 +50,7 @@ describe('structured dungeon encounters', () => {
   it.each([
     ['fractured-approach', ['rift-wolf', 'arcane-scavenger', 'withered-watcher', 'warded-husk'], 'corrupted-elemental-gatekeeper'],
     ['crossroads-of-ruin', ['arcane-binder', 'rift-archer', 'remnant-marauder', 'broken-construct'], 'crossroads-keeper'],
+    ['broken-meridian', ['meridian-warden', 'fractured-channeler', 'arc-surge-horror', 'linebreaker-shade'], 'meridian-splitter'],
   ] as const)('spawns %s in the authored order without Threat', (dungeonId, sequence, bossId) => {
     const state = prepare()
     state.combat.dungeonId = dungeonId
@@ -63,6 +64,15 @@ describe('structured dungeon encounters', () => {
     expect(spawnNextEnemy(state)).toBe(true)
     expect(state.combat.enemyId).toBe(bossId)
     expect(state.combat.inBossFight).toBe(true)
+  })
+
+  it('uses the Broken Meridian unlock prerequisites and keeps it as a sequence dungeon', () => {
+    const state = prepare()
+    state.combat.dungeonId = 'broken-meridian'
+    expect(DUNGEONS['broken-meridian'].unlock).toEqual({ type: 'all-boss-kills', bossIds: ['graveglass-behemoth', 'storm-archivist', 'fallen-astromancer'] })
+    expect(spawnNextEnemy(state)).toBe(true)
+    expect(state.combat.enemyId).toBe('meridian-warden')
+    expect(state.combat.threatCleared).toBe(0)
   })
 
   it('completes after Edrin, preserves player resources, and clears the run state', () => {
@@ -133,6 +143,27 @@ describe('structured dungeon encounters', () => {
     expect(fast.progress.lifetimeKillsByMonster['grave-wraith']).toBe(1)
     expect(fast.progress.lifetimeKillsByMonster['fallen-acolyte']).toBe(1)
     expect(fast.combat.dungeonSequenceIndex).toBe(3)
+    expect(fast.combat.threatCleared).toBe(0)
+  })
+
+  it('keeps Broken Meridian sequence order and zero Threat across Offline Bank and Fast Resolve', async () => {
+    const offline = prepare()
+    offline.combat.dungeonId = 'broken-meridian'
+    offline.combat.dungeonSequenceIndex = 0
+    offline.offlineBankMs = 6_000
+    expect(spawnNextEnemy(offline)).toBe(true)
+    offline.combat.enemyHp = 0
+    const offlineResult = await advanceWithOfflineBank(6_000, () => offline, (recipe) => recipe(offline), () => {}, undefined, {})
+    expect(offlineResult.ok).toBe(true)
+    expect(offline.combat.enemyId).toBe('fractured-channeler')
+    expect(offline.combat.dungeonSequenceIndex).toBe(1)
+    expect(offline.combat.threatCleared).toBe(0)
+
+    const fast = prepare()
+    fast.combat.dungeonId = 'broken-meridian'
+    const result = fastResolveNormalEnemiesForDebug(fast, 2, 'broken-meridian', false)
+    expect(result.resolved).toBe(2)
+    expect(fast.combat.dungeonSequenceIndex).toBe(2)
     expect(fast.combat.threatCleared).toBe(0)
   })
 })

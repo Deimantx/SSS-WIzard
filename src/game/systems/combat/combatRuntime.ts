@@ -23,7 +23,7 @@ import { activateSelectedSpellPresetForBattle, getSelectedSpellPreset } from '..
 import { resetArcaneCoreEncounterRuntime } from '../arcaneCore/arcaneCoreRuntime'
 import { grantEnemyResonanceReward } from '../resonance/resonanceRuntime'
 import { formatResonanceBundle } from '../../presentation/resonance/resonancePresentation'
-import { getWorldTierDefinition, resolveWorldTierEnemyProfile, unlockWorldTier } from '../world-tier/worldTierRuntime'
+import { getWorldTierDefinition, resolveWorldTierEnemyProfile, unlockWorldTierFromBossKill } from '../world-tier/worldTierRuntime'
 import { resolveBossThreatRequirement, resolveThreatGainForKill } from './combatThreat'
 
 export { applyStatus, clearStatuses, damageEnemy, damagePlayer, executeCombatEffects, gainBarrier }
@@ -230,6 +230,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
     state.combat.inBossFight = false
     const bossId = enemyId
     state.progress.bossKillsByBoss[bossId] = (state.progress.bossKillsByBoss[bossId] ?? 0) + 1
+    const unlockedWorldTier = unlockWorldTierFromBossKill(state, bossId)
     if (bossId === SUMMONING_UNLOCK_BOSS_ID && state.progress.bossKillsByBoss[bossId] === 1) pushNotification(state, 'Wizard Tower: Summoning unlocked.', 'success')
     if (bossId === 'corrupted-elemental-gatekeeper' && state.progress.bossKillsByBoss[bossId] === 1) pushNotification(state, 'FRACTURED APPROACH COMPLETE / Branch routes unlocked.', 'success')
     if (state.combat.pendingBossId === enemyId) state.combat.pendingBossId = null
@@ -250,7 +251,6 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
     if (bossId === 'corrupted-greatbear' && state.progress.bossKillsByBoss[bossId] === 1) pushNotification(state, 'HOWLING DEN COMPLETE / Abandoned Catacombs unlocked.', 'success')
     if (bossId === 'archmage-edrin-shade' && state.progress.bossKillsByBoss[bossId] === 1) {
       pushNotification(state, 'FIRST CHAPTER COMPLETE', 'success')
-      if (unlockWorldTier(state, 2)) pushNotification(state, 'WORLD TIER 2 UNLOCKED', 'success')
       if (state.progress.magicLevelCap < BALANCE.schoolProgression.tutorialCompleteCap) {
         state.progress.magicLevelCap = Math.max(state.progress.magicLevelCap, BALANCE.schoolProgression.tutorialCompleteCap)
         pushNotification(state, `Magic School cap increased to ${state.progress.magicLevelCap}`, 'success')
@@ -269,6 +269,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
       appendLog(state, `${monster.name} defeated${drops ? ` - ${drops}` : ''}${rewardText}. ${dungeon.name} cleared.`)
       pushNotification(state, `${dungeon.name.toUpperCase()} CLEARED`, 'success', { key: `dungeon-cleared:${dungeon.id}`, cooldownMs: 1000 })
     } else appendLog(state, `${monster.name} defeated${drops ? ` - ${drops}` : ''}${rewardText}. Threat resets.`)
+    if (unlockedWorldTier) pushNotification(state, `WORLD TIER ${unlockedWorldTier} UNLOCKED`, 'success')
   } else if (sequenceDungeon) {
     const sequenceLength = dungeon.encounterSequence?.length ?? 0
     state.combat.dungeonSequenceIndex = Math.min(sequenceLength, Math.max(0, (state.combat.dungeonSequenceIndex ?? 0) + 1))

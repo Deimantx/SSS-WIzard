@@ -271,3 +271,43 @@ describe('Elemental Scar targeted farming', () => {
     expect(state.combat.enemyId).toBe(targetEnemyId)
   })
 })
+
+describe('Shattered Meridian targeted farming', () => {
+  it.each([
+    ['graveglass-hollow', 'epitaph-weaver', 'water', 38],
+    ['stormvault-gallery', 'thundercoil-serpent', 'air', 44],
+    ['starfallen-observatory', 'comet-wraith', 'fire', 42],
+  ] as const)('repeats the selected %s target without random fallback', (dungeonId, targetEnemyId, resonanceType, resonanceAmount) => {
+    const state = prepare()
+    state.combat.dungeonId = dungeonId
+    state.combat.targetEnemyId = targetEnemyId
+    expect(spawnNextEnemy(state)).toBe(true)
+    expect(state.combat.enemyId).toBe(targetEnemyId)
+    state.combat.enemyHp = 0
+    finishEnemy(state)
+    expect(state.combat.threatCleared).toBe(resolveEnemyPowerRating(targetEnemyId, 1))
+    expect(state.resonance[resonanceType]).toBe(resonanceAmount)
+    expect(spawnNextEnemy(state)).toBe(true)
+    expect(state.combat.enemyId).toBe(targetEnemyId)
+  })
+
+  it.each(['graveglass-hollow', 'stormvault-gallery', 'starfallen-observatory'] as const)('rejects a no-target spawn for %s instead of choosing a random normal', (dungeonId) => {
+    const state = prepare()
+    state.combat.dungeonId = dungeonId
+    expect(spawnNextEnemy(state)).toBe(false)
+    expect(state.combat.enemyId).toBeNull()
+    expect(state.notifications.some((note) => note.text.includes('Select a Hunt Target'))).toBe(true)
+  })
+
+  it('preserves the selected Shattered target through its boss encounter', () => {
+    const state = prepare()
+    state.combat.dungeonId = 'graveglass-hollow'
+    state.combat.targetEnemyId = 'ossuary-oracle'
+    spawnEnemy(state, 'graveglass-behemoth')
+    state.combat.enemyHp = 0
+    finishEnemy(state)
+    expect(state.combat.targetEnemyId).toBe('ossuary-oracle')
+    expect(spawnNextEnemy(state)).toBe(true)
+    expect(state.combat.enemyId).toBe('ossuary-oracle')
+  })
+})

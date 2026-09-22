@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DUNGEON_ORDER } from '../dungeons/dungeons'
+import { DUNGEON_ORDER, DUNGEONS } from '../dungeons/dungeons'
 import { COMBAT_CONTINENTS, COMBAT_LOCATIONS, COMBAT_REGIONS } from './worldNavigation'
 import { validateCombatWorldNavigation, type CombatWorldNavigationContent } from './worldNavigationValidation'
 
@@ -43,7 +43,24 @@ describe('combat world navigation content', () => {
       { id: 'ashen-watch', label: 'Ashen Watch' },
       { id: 'rootscar-hollow', label: 'Rootscar Hollow' },
     ] })
-    expect(COMBAT_LOCATIONS['crossroads-of-ruin']).toMatchObject({ encounterMode: 'sequence', firstClearUnlockPreview: [{ id: 'shattered-meridian', label: 'Shattered Meridian' }] })
+    expect(COMBAT_LOCATIONS['crossroads-of-ruin']).toMatchObject({ encounterMode: 'sequence', firstClearUnlockPreview: [
+      { id: 'shattered-meridian', label: 'Shattered Meridian' },
+      { id: 'world-tier-3', label: 'World Tier 3' },
+    ] })
+    expect(COMBAT_LOCATIONS['graveglass-hollow']).toMatchObject({ encounterMode: 'targeted', type: 'elite-zone', zoneAffixId: 'warded' })
+    expect(COMBAT_LOCATIONS['stormvault-gallery']).toMatchObject({ encounterMode: 'targeted', type: 'combat-zone' })
+    expect(COMBAT_LOCATIONS['stormvault-gallery'].zoneAffixId).toBeUndefined()
+    expect(COMBAT_LOCATIONS['starfallen-observatory']).toMatchObject({ encounterMode: 'targeted', type: 'elite-zone', zoneAffixId: 'relentless' })
+    for (const locationId of ['graveglass-hollow', 'stormvault-gallery', 'starfallen-observatory'] as const) {
+      const location = COMBAT_LOCATIONS[locationId]
+      expect(Object.values(location.targetMetadata ?? {}).map((metadata) => metadata.order)).toEqual([1, 2, 3, 4, 5, 6, 7])
+      expect(DUNGEONS[locationId].threatRequired).toBe(30000)
+    }
+    expect(COMBAT_LOCATIONS['broken-meridian']).toMatchObject({ encounterMode: 'sequence', firstClearUnlockPreview: [
+      { id: 'black-sigil-reach', label: 'Black Sigil Reach' },
+      { id: 'world-tier-4', label: 'World Tier 4' },
+      { id: 'act1-artifact-levels-8-10', label: 'Act 1 Artifact Levels 8-10' },
+    ] })
     for (const locationId of ['flooded-reliquary', 'ashen-watch', 'rootscar-hollow'] as const) {
       const location = COMBAT_LOCATIONS[locationId]
       expect(location).toMatchObject({ encounterMode: 'targeted', type: 'combat-zone' })

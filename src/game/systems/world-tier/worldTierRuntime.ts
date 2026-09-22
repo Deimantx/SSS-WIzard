@@ -2,7 +2,7 @@ import { MONSTERS } from '../../content/monsters'
 import { DEFAULT_ENEMY_DEFENSE } from '../../core/balance/combatStats'
 import type { GameState, MonsterId } from '../../types'
 import { normalizeResonanceState, multiplyResonanceBundle } from '../../content/resonance/resonance'
-import { DEFAULT_WORLD_TIER_STATE, WORLD_TIER_IDS, WORLD_TIERS, type WorldTierDefinition, type WorldTierId, type WorldTierState } from '../../content/world-tier/worldTiers'
+import { DEFAULT_WORLD_TIER_STATE, WORLD_TIER_IDS, WORLD_TIERS, WORLD_TIER_UNLOCK_BOSS_BY_TIER, type WorldTierDefinition, type WorldTierId, type WorldTierState } from '../../content/world-tier/worldTiers'
 
 const finitePositive = (value: unknown, fallback: number) => typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : fallback
 const finiteNonNegative = (value: unknown, fallback: number) => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : fallback
@@ -32,6 +32,26 @@ export const unlockWorldTier = (state: Pick<GameState, 'worldTier'>, tier: World
   if (!isWorldTierId(tier) || tier <= state.worldTier.highestUnlocked) return false
   state.worldTier.highestUnlocked = tier
   return true
+}
+
+export const resolveWorldTierUnlockFromBossKill = (bossId: MonsterId): WorldTierId | null => {
+  const entry = (Object.entries(WORLD_TIER_UNLOCK_BOSS_BY_TIER) as Array<[string, MonsterId]>).find(([, mappedBossId]) => mappedBossId === bossId)
+  return entry ? Number(entry[0]) as WorldTierId : null
+}
+
+export const unlockWorldTierFromBossKill = (state: Pick<GameState, 'worldTier'>, bossId: MonsterId): WorldTierId | null => {
+  const tier = resolveWorldTierUnlockFromBossKill(bossId)
+  return tier !== null && unlockWorldTier(state, tier) ? tier : null
+}
+
+/** Reconciles legal World Tier access from durable boss-kill evidence without emitting presentation events. */
+export const reconcileWorldTierProgression = (state: Pick<GameState, 'worldTier' | 'progress'>): WorldTierState => {
+  const highestFromEvidence = (Object.entries(WORLD_TIER_UNLOCK_BOSS_BY_TIER) as Array<[string, MonsterId]>)
+    .filter(([, bossId]) => (state.progress.bossKillsByBoss[bossId] ?? 0) >= 1)
+    .reduce<number>((highest, [tier]) => Math.max(highest, Number(tier)), 1) as WorldTierId
+  state.worldTier.highestUnlocked = Math.max(state.worldTier.highestUnlocked, highestFromEvidence) as WorldTierId
+  state.worldTier.current = Math.min(state.worldTier.current, state.worldTier.highestUnlocked) as WorldTierId
+  return state.worldTier
 }
 
 export const setCurrentWorldTier = (state: Pick<GameState, 'worldTier'>, tier: WorldTierId): boolean => {

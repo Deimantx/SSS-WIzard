@@ -725,6 +725,112 @@ describe('v43 Elemental Scar migration', () => {
     expect(migrated.combat.threatCleared).toBe(0)
     expect(migrated.combat.targetEnemyId).toBeNull()
   })
+
+  it.each([
+    ['fractured-approach', 'corrupted-elemental-gatekeeper', 20],
+    ['crossroads-of-ruin', 'crossroads-keeper', 44],
+  ] as const)('does not reuse old Threat as sequence progress for %s between encounters', (dungeonId, pendingBossId, threatCleared) => {
+    const initial = createInitialState()
+    const migrated = migrateSave({
+      ...initial,
+      saveVersion: 43,
+      combat: { ...initial.combat, active: true, dungeonId, enemyId: null, targetEnemyId: 'forest-wisp', pendingBossId, threatCleared, dungeonSequenceIndex: undefined },
+    } as any)
+    expect(migrated.saveVersion).toBe(SAVE_VERSION)
+    expect(migrated.combat.dungeonSequenceIndex).toBe(0)
+    expect(migrated.combat.threatCleared).toBe(0)
+    expect(migrated.combat.targetEnemyId).toBeNull()
+    expect(migrated.combat.pendingBossId).toBeNull()
+  })
+
+  it('preserves a legitimate active Fractured Approach boss at the final sequence index', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({
+      ...initial,
+      saveVersion: 43,
+      combat: { ...initial.combat, active: true, dungeonId: 'fractured-approach', enemyId: 'corrupted-elemental-gatekeeper', threatCleared: 20, dungeonSequenceIndex: undefined },
+    } as any)
+    expect(migrated.combat.dungeonSequenceIndex).toBe(4)
+    expect(migrated.combat.inBossFight).toBe(true)
+    expect(migrated.combat.threatCleared).toBe(0)
+    expect(migrated.combat.targetEnemyId).toBeNull()
+    expect(migrated.combat.pendingBossId).toBeNull()
+  })
+})
+
+describe('v44 Shattered Meridian migration', () => {
+  const activeSave = (combat: Partial<ReturnType<typeof createInitialState>['combat']>, worldTier: 1 | 2 | 3 | 4 | 5 = 1) => {
+    const initial = createInitialState()
+    return {
+      ...initial,
+      saveVersion: 44,
+      worldTier: { current: worldTier, highestUnlocked: worldTier },
+      combat: { ...initial.combat, active: true, ...combat },
+    }
+  }
+
+  it.each([
+    ['graveglass-hollow', 'graveglass-shade', 1, 15_000],
+    ['starfallen-observatory', 'comet-wraith', 3, 45_000],
+  ] as const)('scales legacy %s Threat from the old 50-point requirement', (dungeonId, enemyId, worldTier, expectedThreat) => {
+    const migrated = migrateSave(activeSave({ dungeonId, enemyId, threatCleared: 25 }, worldTier) as any)
+    expect(migrated.saveVersion).toBe(SAVE_VERSION)
+    expect(migrated.combat.targetEnemyId).toBe(enemyId)
+    expect(migrated.combat.threatCleared).toBe(expectedThreat)
+  })
+
+  it('clamps converted Shattered Threat, recovers the first target, and preserves a pending boss', () => {
+    const migrated = migrateSave(activeSave({ dungeonId: 'graveglass-hollow', enemyId: 'graveglass-behemoth', targetEnemyId: 'ossuary-oracle', pendingBossId: 'graveglass-behemoth', threatCleared: 80 }) as any)
+    expect(migrated.combat.targetEnemyId).toBe('graveglass-shade')
+    expect(migrated.combat.pendingBossId).toBe('graveglass-behemoth')
+    expect(migrated.combat.threatCleared).toBe(30_000)
+
+    const noEnemy = migrateSave(activeSave({ dungeonId: 'stormvault-gallery', enemyId: null, targetEnemyId: null, threatCleared: 0 }) as any)
+    expect(noEnemy.combat.targetEnemyId).toBe('volt-wisp')
+  })
+
+  it('converts Broken Meridian v44 saves to its authored sequence without using old Threat or indices', () => {
+    const initial = createInitialState()
+    const activeNormal = migrateSave({
+      ...activeSave({ dungeonId: 'broken-meridian', enemyId: 'arc-surge-horror', targetEnemyId: 'forest-wisp', pendingBossId: 'meridian-splitter', threatCleared: 99, dungeonSequenceIndex: 0 }),
+    } as any)
+    expect(activeNormal.combat.dungeonSequenceIndex).toBe(2)
+    expect(activeNormal.combat.threatCleared).toBe(0)
+    expect(activeNormal.combat.targetEnemyId).toBeNull()
+    expect(activeNormal.combat.pendingBossId).toBeNull()
+
+    const noEnemy = migrateSave({
+      ...initial,
+      saveVersion: 44,
+      combat: { ...initial.combat, active: true, dungeonId: 'broken-meridian', enemyId: null, threatCleared: 55, dungeonSequenceIndex: 3 },
+    } as any)
+    expect(noEnemy.combat.dungeonSequenceIndex).toBe(0)
+    expect(noEnemy.combat.threatCleared).toBe(0)
+
+    const boss = migrateSave({
+      ...initial,
+      saveVersion: 44,
+      combat: { ...initial.combat, active: true, dungeonId: 'broken-meridian', enemyId: 'meridian-splitter', threatCleared: 55, dungeonSequenceIndex: 1 },
+    } as any)
+    expect(boss.combat.dungeonSequenceIndex).toBe(4)
+    expect(boss.combat.inBossFight).toBe(true)
+  })
+
+  it('reconciles World Tier from boss evidence silently and remains idempotent', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({
+      ...initial,
+      saveVersion: 44,
+      worldTier: { current: 2, highestUnlocked: 2 },
+      progress: { ...initial.progress, bossKillsByBoss: { 'crossroads-keeper': 1, 'meridian-splitter': 1, 'black-gatekeeper': 1 } },
+    } as any)
+    expect(migrated.worldTier).toEqual({ current: 2, highestUnlocked: 5 })
+    expect(migrated.notifications).toEqual([])
+    expect(migrateSave(JSON.parse(JSON.stringify(migrated))).worldTier).toEqual(migrated.worldTier)
+
+    const validHighTier = migrateSave({ ...initial, saveVersion: 44, worldTier: { current: 5, highestUnlocked: 5 } } as any)
+    expect(validHighTier.worldTier).toEqual({ current: 5, highestUnlocked: 5 })
+  })
 })
 
 describe('structured dungeon save migration', () => {

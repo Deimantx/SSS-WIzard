@@ -41,6 +41,17 @@ describe('Elite Zone Affix runtime provider', () => {
     expect(getActiveEliteZoneAffixId(state)).toBeNull()
   })
 
+  it.each([
+    ['graveglass-hollow', 'graveglass-shade', 'warded'],
+    ['starfallen-observatory', 'starbound-eye', 'relentless'],
+  ] as const)('derives the authored %s affix from the location for normal targets', (dungeonId, enemyId, affixId) => {
+    const state = prepare()
+    state.combat.dungeonId = dungeonId
+    state.combat.enemyId = enemyId
+    expect(getActiveEliteZoneAffixId(state)).toBe(affixId)
+    expect(getActiveEliteZoneAffix(state)?.id).toBe(affixId)
+  })
+
   it('activates Frenzied once at the threshold for different normal enemy IDs', () => {
     for (const monsterId of ['cavefang-wolf', 'den-stalker'] as const) {
       const state = prepare()

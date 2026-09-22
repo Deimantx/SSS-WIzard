@@ -24,6 +24,9 @@ describe('Power-based Boss Threat', () => {
     for (const dungeonId of ['flooded-reliquary', 'ashen-watch', 'rootscar-hollow'] as const) {
       expect([1, 2, 3, 4, 5].map((tier) => resolveBossThreatRequirement(dungeonId, tier as 1 | 2 | 3 | 4 | 5))).toEqual([20000, 40000, 60000, 80000, 100000])
     }
+    for (const dungeonId of ['graveglass-hollow', 'stormvault-gallery', 'starfallen-observatory'] as const) {
+      expect([1, 2, 3, 4, 5].map((tier) => resolveBossThreatRequirement(dungeonId, tier as 1 | 2 | 3 | 4 | 5))).toEqual([30000, 60000, 90000, 120000, 150000])
+    }
   })
 
   it('uses enemy Power at the captured encounter tier for targeted kills', () => {
@@ -32,6 +35,16 @@ describe('Power-based Boss Threat', () => {
     expect(resolveThreatGainForKill(state, 'forest-wisp', 1)).toBe(resolveEnemyPowerRating('forest-wisp', 1))
     expect(resolveThreatGainForKill(state, 'tempest-stag', 1)).toBeGreaterThan(resolveThreatGainForKill(state, 'forest-wisp', 1))
     expect(resolveThreatGainForKill(state, 'forest-wisp', 2)).toBe(resolveEnemyPowerRating('forest-wisp', 2))
+  })
+
+  it.each([
+    ['graveglass-hollow', 'epitaph-weaver'],
+    ['stormvault-gallery', 'thundercoil-serpent'],
+    ['starfallen-observatory', 'comet-wraith'],
+  ] as const)('uses Power Threat for the targeted Shattered Meridian zone %s', (dungeonId, enemyId) => {
+    const state = prepareCombat(dungeonId)
+    expect(usesPowerBasedThreat(getCombatLocationByDungeonId(dungeonId))).toBe(true)
+    expect(resolveThreatGainForKill(state, enemyId, 5)).toBe(resolveEnemyPowerRating(enemyId, 5))
   })
 
   it('keeps sequence dungeons at zero', () => {

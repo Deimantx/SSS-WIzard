@@ -28,3 +28,11 @@ export const WORLD_TIERS: Record<WorldTierId, WorldTierDefinition> = {
 }
 
 export const DEFAULT_WORLD_TIER_STATE: WorldTierState = { current: 1, highestUnlocked: 1 }
+
+/** Canonical boss evidence that unlocks the next World Tier. */
+export const WORLD_TIER_UNLOCK_BOSS_BY_TIER = {
+  2: 'archmage-edrin-shade',
+  3: 'crossroads-keeper',
+  4: 'meridian-splitter',
+  5: 'black-gatekeeper',
+} as const

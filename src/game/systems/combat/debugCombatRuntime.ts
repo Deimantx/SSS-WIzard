@@ -1,6 +1,6 @@
 import { DUNGEONS } from '../../content/dungeons/dungeons'
 import { isBossMonster, MONSTERS } from '../../content/monsters'
-import { getCombatEncounterMode, getCombatLocationByDungeonId } from '../../content/world-navigation'
+import { getCombatEncounterMode, getCombatLocationByDungeonId, isCombatTargetForLocation } from '../../content/world-navigation'
 import type { DungeonId, GameState, ItemId, MonsterId } from '../../types'
 import type { CombatEventSink } from './combatTypes'
 import { advanceCombatState, type AdvanceContext } from '../simulation/advanceGameState'
@@ -50,6 +50,10 @@ export const fastResolveNormalEnemiesForDebug = (
   const count = Math.min(1000, Math.max(0, Number.isFinite(requested) ? Math.floor(requested) : 0))
   let resolved = 0
   const sequenceDungeon = getCombatEncounterMode(getCombatLocationByDungeonId(dungeonId)) === 'sequence'
+  const location = getCombatLocationByDungeonId(dungeonId)
+  if (!sequenceDungeon && !isCombatTargetForLocation(location, dungeonId, state.combat.targetEnemyId)) {
+    state.combat.targetEnemyId = dungeon.monsterPool.find((monsterId) => isCombatTargetForLocation(location, dungeonId, monsterId)) ?? null
+  }
   while (resolved < count) {
     if (!state.combat.active) break
     if (!sequenceDungeon && stopAtBossReady && state.combat.threatCleared >= threatRequired) break

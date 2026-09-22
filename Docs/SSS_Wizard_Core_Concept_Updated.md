@@ -1870,6 +1870,23 @@ Combat gali tęstis fone.
 
 ---
 
+# 32.5. Shattered Meridian and World Tier progression
+
+Shattered Meridian is the first fully targeted late-act region:
+
+- Graveglass Hollow - targeted Elite Zone with the Warded affix;
+- Stormvault Gallery - targeted Combat Zone;
+- Starfallen Observatory - targeted Elite Zone with the Relentless affix;
+- The Broken Meridian - a four-normal sequence Dungeon followed by Meridian Splitter.
+
+Each targeted Shattered Meridian location has seven authored Hunt Targets and uses the canonical Power Threat resolver. Its WT1 base requirement is 30,000 Threat and World Tier multipliers resolve WT1 through WT5 as 30,000 / 60,000 / 90,000 / 120,000 / 150,000. Broken Meridian grants no Threat or Resonance and never uses Auto Hunt.
+
+The World Tier unlock evidence map is centralized: Archmage Edrin's Shade unlocks WT2, Crossroads Keeper unlocks WT3, Meridian Splitter unlocks WT4, and Black Gatekeeper unlocks WT5. Runtime boss kills may unlock a tier once and show one notification; save migration silently reconciles durable boss-kill evidence without lowering valid access.
+
+First-clear previews connect Crossroads of Ruin to Shattered Meridian and WT3, and The Broken Meridian to Black Sigil Reach, WT4, and Act 1 Artifact Levels 8-10.
+
+---
+
 # 33. Encounter recovery
 
 ## [PATVIRTINTA / IMPLEMENTUOTA KRYPTIS]

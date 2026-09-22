@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { MONSTERS } from '../../content/monsters'
-import { DEFAULT_WORLD_TIER_STATE, WORLD_TIER_IDS, WORLD_TIERS } from '../../content/world-tier/worldTiers'
+import { DEFAULT_WORLD_TIER_STATE, WORLD_TIER_IDS, WORLD_TIERS, WORLD_TIER_UNLOCK_BOSS_BY_TIER } from '../../content/world-tier/worldTiers'
 import { createInitialState } from '../../../store/initialState'
-import { getActiveEncounterWorldTier, resolveWorldTierEnemyProfile, resolveWorldTierLootQuantity, sanitizeWorldTierState, setCurrentWorldTier, unlockWorldTier } from './worldTierRuntime'
+import { getActiveEncounterWorldTier, reconcileWorldTierProgression, resolveWorldTierEnemyProfile, resolveWorldTierLootQuantity, resolveWorldTierUnlockFromBossKill, sanitizeWorldTierState, setCurrentWorldTier, unlockWorldTier, unlockWorldTierFromBossKill } from './worldTierRuntime'
 
 describe('World Tier runtime', () => {
   it('exposes the fixed authored WT1 through WT5 multipliers', () => {
@@ -43,6 +43,25 @@ describe('World Tier runtime', () => {
     expect(profile.basicAttackDamage).toBe(forestWisp.basicAttackDamage * 1.4)
     expect(profile.defense).toBe((forestWisp.defense ?? 0) * 1.25)
     expect(JSON.stringify(forestWisp)).toBe(before)
+  })
+
+  it('maps canonical boss evidence to World Tier unlocks and notifies only on a new unlock', () => {
+    const state = createInitialState()
+    expect(WORLD_TIER_UNLOCK_BOSS_BY_TIER).toEqual({ 2: 'archmage-edrin-shade', 3: 'crossroads-keeper', 4: 'meridian-splitter', 5: 'black-gatekeeper' })
+    expect(resolveWorldTierUnlockFromBossKill('crossroads-keeper')).toBe(3)
+    expect(unlockWorldTierFromBossKill(state, 'crossroads-keeper')).toBe(3)
+    expect(state.worldTier.highestUnlocked).toBe(3)
+    expect(unlockWorldTierFromBossKill(state, 'crossroads-keeper')).toBeNull()
+    expect(resolveWorldTierUnlockFromBossKill('forest-heart')).toBeNull()
+  })
+
+  it('reconciles World Tier from durable boss kills without lowering valid access', () => {
+    const state = createInitialState()
+    state.worldTier = { current: 3, highestUnlocked: 3 }
+    state.progress.bossKillsByBoss['meridian-splitter'] = 1
+    state.progress.bossKillsByBoss['black-gatekeeper'] = 1
+    expect(reconcileWorldTierProgression(state)).toEqual({ current: 3, highestUnlocked: 5 })
+    expect(reconcileWorldTierProgression(state)).toEqual({ current: 3, highestUnlocked: 5 })
   })
 
   it('uses the encounter snapshot over a changed global tier', () => {

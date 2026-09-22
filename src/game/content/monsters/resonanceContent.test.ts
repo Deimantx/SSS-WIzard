@@ -41,3 +41,29 @@ describe('Elemental Scar Resonance authoring', () => {
     }
   })
 })
+
+describe('Shattered Meridian Resonance authoring', () => {
+  it.each([
+    ['graveglass-hollow', { water: 24, earth: 12 }],
+    ['stormvault-gallery', { air: 30 }],
+    ['starfallen-observatory', { air: 24, fire: 16 }],
+  ] as const)('authors the requested resonance progression for %s', (dungeonId, firstProfile) => {
+    const dungeon = DUNGEONS[dungeonId]
+    expect(MONSTERS[dungeon.monsterPool[0]].resonanceYield).toEqual(firstProfile)
+    ;[...dungeon.monsterPool, dungeon.boss].forEach((monsterId) => {
+      const profile = MONSTERS[monsterId].resonanceYield
+      expect(profile, `${monsterId} should have a Shattered Meridian profile`).toBeTruthy()
+      Object.entries(profile ?? {}).forEach(([type, amount]) => {
+        expect(RESONANCE_TYPES).toContain(type)
+        expect(Number.isSafeInteger(amount)).toBe(true)
+        expect(amount).toBeGreaterThan(0)
+      })
+    })
+  })
+
+  it('keeps Broken Meridian sequence encounters Resonance-free', () => {
+    const dungeon = DUNGEONS['broken-meridian']
+    expect(dungeon.encounterSequence).toEqual(['meridian-warden', 'fractured-channeler', 'arc-surge-horror', 'linebreaker-shade'])
+    ;[...dungeon.monsterPool, ...(dungeon.encounterSequence ?? []), dungeon.boss].forEach((monsterId) => expect(MONSTERS[monsterId].resonanceYield).toBeUndefined())
+  })
+})

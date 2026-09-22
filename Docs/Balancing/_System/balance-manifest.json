@@ -1,9 +1,9 @@
 {
   "schemaVersion": 2,
   "snapshot": {
-    "commit": "4b41b82266971618b28936c6cf3c523b4cf700be",
+    "commit": "9f45ac71600bbf00a94954de897f712a092011cf",
     "workingTreeDirty": true,
-    "generatedAtUtc": "2026-09-22T12:07:25.409Z"
+    "generatedAtUtc": "2026-09-22T13:12:12.667Z"
   },
   "runtimePolicy": {
     "sourceOfTruth": "TypeScript runtime content and systems",
@@ -67,7 +67,7 @@
       ]
     },
     "monsters": {
-      "count": 88,
+      "count": 97,
       "ids": [
         "forest-wisp",
         "thornling",
@@ -126,16 +126,25 @@
         "bone-shardling",
         "silent-mourner",
         "crypt-guardian",
+        "epitaph-weaver",
+        "tombglass-reaver",
+        "ossuary-oracle",
         "graveglass-behemoth",
         "volt-wisp",
-        "static-armor",
         "gale-scribe",
         "charged-seeker",
+        "thundercoil-serpent",
+        "static-armor",
+        "stormbound-curator",
+        "tempest-engine",
         "storm-archivist",
         "starbound-eye",
         "astral-husk",
         "orbiting-fragment",
         "lenskeeper-remnant",
+        "comet-wraith",
+        "voidglass-custodian",
+        "zenith-horror",
         "fallen-astromancer",
         "meridian-warden",
         "fractured-channeler",
@@ -1038,6 +1047,9 @@
         "bone-shardling",
         "silent-mourner",
         "crypt-guardian",
+        "epitaph-weaver",
+        "tombglass-reaver",
+        "ossuary-oracle",
         "graveglass-behemoth"
       ],
       "runtimeSources": [
@@ -1049,9 +1061,12 @@
       "stableIds": [
         "stormvault-gallery",
         "volt-wisp",
-        "static-armor",
         "gale-scribe",
         "charged-seeker",
+        "thundercoil-serpent",
+        "static-armor",
+        "stormbound-curator",
+        "tempest-engine",
         "storm-archivist"
       ],
       "runtimeSources": [
@@ -1066,6 +1081,9 @@
         "astral-husk",
         "orbiting-fragment",
         "lenskeeper-remnant",
+        "comet-wraith",
+        "voidglass-custodian",
+        "zenith-horror",
         "fallen-astromancer"
       ],
       "runtimeSources": [

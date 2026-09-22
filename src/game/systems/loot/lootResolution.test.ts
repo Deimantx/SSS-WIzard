@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
+import { MONSTERS } from '../../content/monsters'
 import { resolveMonsterLoot } from './lootResolution'
 
 describe('monster loot resolution', () => {
@@ -58,5 +59,30 @@ describe('monster loot resolution', () => {
     state.combat.enemyWorldTier = 4
     resolveMonsterLoot(state, 'forest-wisp', undefined, () => 0.5)
     expect(state.inventory['life-essence']).toBe(8)
+  })
+
+  it('keeps every Phase 5D normal on the generic material-only loot path', () => {
+    const ids = [
+      'epitaph-weaver', 'tombglass-reaver', 'ossuary-oracle',
+      'thundercoil-serpent', 'stormbound-curator', 'tempest-engine',
+      'comet-wraith', 'voidglass-custodian', 'zenith-horror',
+    ] as const
+    ids.forEach((monsterId) => {
+      expect(MONSTERS[monsterId].loot.map((drop) => drop.itemId)).toEqual(['artifact-essence', 'life-essence'])
+      const state = createInitialState()
+      state.worldTier = { current: 5, highestUnlocked: 5 }
+      resolveMonsterLoot(state, monsterId, undefined, () => 0)
+      expect(state.inventory['artifact-essence']).toBeGreaterThan(0)
+      expect(state.inventory['life-essence']).toBeGreaterThan(0)
+      expect(Object.keys(state.inventory)).toEqual(expect.arrayContaining(['artifact-essence', 'life-essence']))
+    })
+
+    const wt1 = createInitialState()
+    const wt5 = createInitialState()
+    wt5.worldTier = { current: 5, highestUnlocked: 5 }
+    resolveMonsterLoot(wt1, 'epitaph-weaver', undefined, () => 0)
+    resolveMonsterLoot(wt5, 'epitaph-weaver', undefined, () => 0)
+    expect(wt5.inventory['artifact-essence']).toBe((wt1.inventory['artifact-essence'] ?? 0) * 5)
+    expect(wt5.inventory['life-essence']).toBe((wt1.inventory['life-essence'] ?? 0) * 5)
   })
 })

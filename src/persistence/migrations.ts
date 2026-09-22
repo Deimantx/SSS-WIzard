@@ -36,7 +36,7 @@ import { getTransmutationArrayBonuses } from '../game/systems/transmutation/tran
 import { ARCANE_CORE_MAJOR_COST_BY_RING, ARCANE_CORE_MAX_LEVEL, ARCANE_CORE_MAX_TOTAL_XP, ARCANE_CORE_STANDARD_RANK_COST_BY_RING, ARCANE_CORE_TOTAL_TREE_COST, getArcaneCoreLevelForXp } from '../game/content/arcaneCore/arcaneCoreBalance'
 import { getArcaneCoreNode } from '../game/content/arcaneCore/arcaneCoreBranches'
 import { normalizeResonanceState } from '../game/systems/resonance/resonanceRuntime'
-import { isWorldTierId, sanitizeWorldTierState } from '../game/systems/world-tier/worldTierRuntime'
+import { isWorldTierId, reconcileWorldTierProgression, sanitizeWorldTierState } from '../game/systems/world-tier/worldTierRuntime'
 import { LEGACY_POWER_THREAT_REQUIREMENTS, resolveBossThreatRequirement } from '../game/systems/combat/combatThreat'
 
 const statusValidationContext = createCombatValidationContext(STATUS_DEFINITIONS)
@@ -46,6 +46,20 @@ const LEGACY_ELEMENTAL_SCAR_THREAT_REQUIREMENTS: Partial<Record<DungeonId, numbe
   'flooded-reliquary': 40,
   'ashen-watch': 40,
   'rootscar-hollow': 40,
+}
+
+/** The save version at which each dungeon became a fixed sequence. */
+const SEQUENCE_CONVERSION_VERSION_BY_DUNGEON: Partial<Record<DungeonId, number>> = {
+  'fractured-approach': 44,
+  'crossroads-of-ruin': 44,
+  'broken-meridian': 45,
+}
+
+/** Historical boss-kill thresholds for Shattered locations before v45. */
+const LEGACY_SHATTERED_MERIDIAN_THREAT_REQUIREMENTS: Partial<Record<DungeonId, number>> = {
+  'graveglass-hollow': 50,
+  'stormvault-gallery': 50,
+  'starfallen-observatory': 50,
 }
 
 const normalizeScreen = (value: unknown, fallback: GameState['ui']['screen']): GameState['ui']['screen'] => {
@@ -355,11 +369,7 @@ const normalizeResonance = (migrated: GameState, raw: Record<string, any>) => {
 
 const normalizeWorldTier = (migrated: GameState, raw: Record<string, any>) => {
   const normalized = sanitizeWorldTierState(raw.worldTier)
-  const rawProgress = isRecord(raw.progress) ? raw.progress : {}
-  const rawBossKills = isRecord(rawProgress.bossKillsByBoss) ? rawProgress.bossKillsByBoss : {}
-  const bossKills = Math.max(migrated.progress.bossKillsByBoss['archmage-edrin-shade'] ?? 0, typeof rawBossKills['archmage-edrin-shade'] === 'number' ? rawBossKills['archmage-edrin-shade'] : 0)
-  const highestUnlocked = Math.max(normalized.highestUnlocked, bossKills >= 1 ? 2 : 1) as GameState['worldTier']['highestUnlocked']
-  migrated.worldTier = { highestUnlocked, current: normalized.current <= highestUnlocked ? normalized.current : 1 }
+  migrated.worldTier = { ...normalized }
 }
 
 /** V25 changes School XP meaning from the old curve to authored cumulative totals. */
@@ -493,9 +503,17 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
   if (migrated.combat.active && isSequenceDungeon && sequenceDungeon?.encounterSequence) {
     const sequence = sequenceDungeon.encounterSequence
     const legacyThreatIndex = Math.min(sequence.length, Math.max(0, nonNegativeInteger(rawCombat.threatCleared) ?? 0))
-    const inferredIndex = activeEnemyId ? activeEnemyId === sequenceDungeon.boss ? sequence.length : Math.max(0, sequence.indexOf(activeEnemyId)) : legacyThreatIndex
+    const sequenceConversionVersion = sequenceDungeonId ? SEQUENCE_CONVERSION_VERSION_BY_DUNGEON[sequenceDungeonId] : undefined
+    const convertedToSequence = sequenceConversionVersion !== undefined && sourceVersion < sequenceConversionVersion
+    const inferredIndex = activeEnemyId
+      ? activeEnemyId === sequenceDungeon.boss
+        ? sequence.length
+        : Math.max(0, sequence.indexOf(activeEnemyId))
+      : convertedToSequence
+        ? 0
+        : legacyThreatIndex
     const rawIndex = nonNegativeInteger(rawCombat.dungeonSequenceIndex)
-    const candidateIndex = sourceVersion >= 42 && rawIndex !== undefined && rawIndex <= sequence.length ? rawIndex : inferredIndex
+    const candidateIndex = sourceVersion >= 42 && !convertedToSequence && rawIndex !== undefined && rawIndex <= sequence.length ? rawIndex : inferredIndex
     const expectedEnemyId = candidateIndex === sequence.length ? sequenceDungeon.boss : sequence[candidateIndex]
     const repairedIndex = activeEnemyId && expectedEnemyId !== activeEnemyId ? inferredIndex : candidateIndex
     migrated.combat.dungeonSequenceIndex = Math.min(sequence.length, Math.max(0, repairedIndex))
@@ -660,9 +678,10 @@ const normalizeDirectContentReferences = (migrated: GameState, raw: Record<strin
     const rawTarget = typeof rawCombat.targetEnemyId === 'string' ? rawCombat.targetEnemyId as MonsterId : null
     const rawEnemy = migrated.combat.enemyId
     const firstTarget = DUNGEONS[migrated.combat.dungeonId].monsterPool.find((monsterId) => isCombatTargetForLocation(activeTargetedLocation, migrated.combat.dungeonId, monsterId)) ?? null
-    const candidate = isCombatTargetForLocation(activeTargetedLocation, migrated.combat.dungeonId, rawTarget)
+    const activeEnemyIsBoss = Boolean(rawEnemy && MONSTERS[rawEnemy] && isBossMonster(MONSTERS[rawEnemy]))
+    const candidate = !activeEnemyIsBoss && isCombatTargetForLocation(activeTargetedLocation, migrated.combat.dungeonId, rawTarget)
       ? rawTarget
-      : isCombatTargetForLocation(activeTargetedLocation, migrated.combat.dungeonId, rawEnemy)
+      : !activeEnemyIsBoss && isCombatTargetForLocation(activeTargetedLocation, migrated.combat.dungeonId, rawEnemy)
         ? rawEnemy
         : firstTarget
     migrated.combat.targetEnemyId = candidate
@@ -914,6 +933,7 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   normalizeDynamicRecords(migrated, raw)
   normalizeDarkPortalProgress(migrated)
   normalizeLegacyProgressEvidence(migrated.progress)
+  reconcileWorldTierProgression(migrated)
   normalizeSchoolCap(migrated, raw)
   normalizeSchoolXpCurveV25(migrated, raw, sourceVersion)
   normalizeSpellProgression(migrated, raw, sourceVersion)
@@ -925,8 +945,12 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
     const location = getCombatLocationByDungeonId(dungeonId)
     const legacyRequirement = dungeonId
       ? sourceVersion < 43
-        ? LEGACY_POWER_THREAT_REQUIREMENTS[dungeonId] ?? LEGACY_ELEMENTAL_SCAR_THREAT_REQUIREMENTS[dungeonId]
-        : LEGACY_ELEMENTAL_SCAR_THREAT_REQUIREMENTS[dungeonId]
+        ? LEGACY_POWER_THREAT_REQUIREMENTS[dungeonId] ?? LEGACY_ELEMENTAL_SCAR_THREAT_REQUIREMENTS[dungeonId] ?? LEGACY_SHATTERED_MERIDIAN_THREAT_REQUIREMENTS[dungeonId]
+        : sourceVersion < 44
+          ? LEGACY_ELEMENTAL_SCAR_THREAT_REQUIREMENTS[dungeonId] ?? LEGACY_SHATTERED_MERIDIAN_THREAT_REQUIREMENTS[dungeonId]
+          : sourceVersion < 45
+            ? LEGACY_SHATTERED_MERIDIAN_THREAT_REQUIREMENTS[dungeonId]
+            : undefined
       : undefined
     if (dungeonId && location?.encounterMode === 'targeted' && (location.type === 'combat-zone' || location.type === 'elite-zone') && legacyRequirement) {
       const progressRatio = Math.min(1, Math.max(0, migrated.combat.threatCleared / legacyRequirement))

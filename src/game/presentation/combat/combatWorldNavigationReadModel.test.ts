@@ -42,13 +42,15 @@ describe('combat world navigation read model', () => {
     expect(view.selectedLocation?.name).toBe('Howling Den')
   })
 
-  it('presents Howling Den affixes and the fixed Catacombs sequence', () => {
+  it('presents the Howling Den Zone Affix and the fixed Catacombs sequence', () => {
     const state = createInitialState()
     state.progress.bossKillsByBoss['forest-heart'] = 1
     state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
     const view = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedLocationId: 'howling-den' })
     expect(view.selectedLocation?.targeting?.targets).toHaveLength(6)
-    expect(view.selectedLocation?.targeting?.targets.map((target) => target.minorAffixId)).toEqual(['vicious', 'frenzied', 'warded', 'armored', 'relentless', 'regenerative'])
+    expect(view.selectedLocation?.zoneAffix).toMatchObject({ id: 'frenzied', name: 'Frenzied' })
+    expect(view.selectedLocation?.bossHunt).toMatchObject({ bossLabel: 'ELITE BOSS', threatCurrent: 0, threatRequired: 25, state: 'building' })
+    expect(view.selectedLocation?.targeting?.targets.every((target) => !('minorAffixId' in target))).toBe(true)
 
     const catacombs = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedLocationId: 'abandoned-catacombs' }).selectedLocation
     expect(catacombs?.sequence?.steps.map((step) => step.monsterId)).toEqual(['restless-skeleton', 'grave-wraith', 'fallen-acolyte', 'archmage-edrin-shade'])

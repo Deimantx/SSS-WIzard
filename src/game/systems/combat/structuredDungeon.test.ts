@@ -78,6 +78,7 @@ describe('structured dungeon encounters', () => {
     expect(resolveCombatDeaths(death)).toBe(true)
     expect(death.combat.active).toBe(false)
     expect(death.combat.dungeonSequenceIndex).toBeNull()
+    expect(death.combat.log).toContain('The wizard falls. Dungeon run reset.')
 
     const leave = prepare()
     useGameStore.setState({ ...useGameStore.getState(), ...leave })
@@ -85,6 +86,7 @@ describe('structured dungeon encounters', () => {
     expect(useGameStore.getState().combat.active).toBe(false)
     expect(useGameStore.getState().combat.dungeonSequenceIndex).toBeNull()
     expect(useGameStore.getState().combat.targetEnemyId).toBeNull()
+    expect(useGameStore.getState().combat.log).toContain('Left the dungeon run.')
   })
 
   it('uses the same deterministic sequence during Offline Bank and Fast Resolve', async () => {

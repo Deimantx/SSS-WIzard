@@ -9,7 +9,7 @@ Phase 5B makes the First Frontier's Howling Den and Abandoned Catacombs distinct
 - Remains a targeted Elite Zone with six normal targets and the existing Corrupted Greatbear boss.
 - Keeps the existing 25 Threat requirement and Auto Hunt Boss behavior.
 - Adds Bonehide Boar, Moonblind Jackal, and Den Stalker with authored action patterns, resonance, and the shared Howling Den normal loot table.
-- Adds the generic encounter-only Minor Affixes Vicious, Frenzied, Warded, Armored, Relentless, and Regenerative. Affixes are supplied at the combat runtime boundary, shown in target/loot/enemy UI, and excluded from intrinsic Bestiary traits and Power V1.
+- Adds the generic encounter-only Elite Zone Affixes Vicious, Frenzied, Warded, Armored, Relentless, and Regenerative. Howling Den owns the Frenzied Zone Affix globally for all normal encounters; it is supplied at the combat runtime boundary, shown in location/loot/enemy UI, and excluded from intrinsic Bestiary traits and Power V1.
 
 ## Abandoned Catacombs
 

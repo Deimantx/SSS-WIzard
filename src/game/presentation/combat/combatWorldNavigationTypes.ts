@@ -1,6 +1,7 @@
 import type { CombatContinentId, CombatEncounterMode, CombatLocationId, CombatLocationType, CombatRegionId, CombatTargetDifficulty } from '../../content/world-navigation'
-import type { EliteMinorAffixId } from '../../content/elite-affixes'
+import type { EliteZoneAffixId } from '../../content/elite-affixes'
 import type { DungeonId, MonsterId, WorldTierId } from '../../types'
+import type { CombatBossHuntPresentation } from './combatBossHuntPresentation'
 
 export type CombatLocationState = 'locked' | 'available' | 'active' | 'boss-ready' | 'completed' | 'prototype'
 export type CombatNavigationNodeState = 'locked' | 'available'
@@ -22,7 +23,6 @@ export interface CombatTargetViewModel {
   order: number
   powerRating: number
   worldTier: WorldTierId
-  minorAffixId?: EliteMinorAffixId
 }
 
 export interface CombatTargetingViewModel {
@@ -52,6 +52,8 @@ export interface CombatLocationViewModel {
   dungeonId: DungeonId | null
   description: string
   encounterMode: CombatEncounterMode
+  zoneAffix: { id: EliteZoneAffixId; name: string; description: string } | null
+  bossHunt: CombatBossHuntPresentation | null
   encounters: CombatEncounterViewModel[]
   boss: CombatEncounterViewModel | null
   targeting: CombatTargetingViewModel | null

@@ -320,7 +320,8 @@ export const resolveCombatDeaths = (state: GameState, report?: SimulationReportC
     }
     state.combat.inBossFight = false
     pushNotification(state, 'Defeated - recovering in the Tower', 'warning')
-    appendLog(state, 'The wizard falls. Threat Cleared resets to 0.')
+    const sequenceDungeon = getCombatEncounterMode(getCombatLocationByDungeonId(state.combat.dungeonId)) === 'sequence'
+    appendLog(state, sequenceDungeon ? 'The wizard falls. Dungeon run reset.' : 'The wizard falls. Threat Cleared resets to 0.')
     return true
   }
   if (state.debug.playerImmortal && state.player.health <= 0) state.player.health = 1

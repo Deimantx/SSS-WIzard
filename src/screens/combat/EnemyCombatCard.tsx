@@ -5,7 +5,7 @@ import { DUNGEONS } from '../../game/content/dungeons/dungeons'
 import { isBossMonster, MONSTERS } from '../../game/content/monsters'
 import { getCombatEncounterMode, getCombatLocationByDungeonId } from '../../game/content/world-navigation'
 import { getMonsterTraits } from '../../game/systems/combat/traitRuntime'
-import { getActiveEliteMinorAffix } from '../../game/systems/combat/eliteMinorAffixRuntime'
+import { getActiveEliteZoneAffix } from '../../game/systems/combat/eliteZoneAffixRuntime'
 import { getWorldTierDefinition } from '../../game/systems/world-tier/worldTierRuntime'
 import { formatNumber, formatTime } from '../../game/utils'
 import { useGameStore } from '../../store/gameStore'
@@ -50,7 +50,7 @@ export function EnemyCombatCard({ selectedDungeonId, selectedMonsterId, cardRef,
   const boss = Boolean(enemy && isBossMonster(enemy))
   const traits = useMemo(() => enemy ? getMonsterTraits(enemy) : [], [enemy])
   const worldTier = enemyWorldTier ? getWorldTierDefinition(enemyWorldTier) : null
-  const activeMinorAffix = useGameStore((state) => getActiveEliteMinorAffix(state))
+  const activeZoneAffix = useGameStore((state) => getActiveEliteZoneAffix(state))
 
   if (!enemy) {
     const dungeon = DUNGEONS[selectedDungeonId]
@@ -68,7 +68,7 @@ export function EnemyCombatCard({ selectedDungeonId, selectedMonsterId, cardRef,
     openContextMenu({ x: event.clientX, y: event.clientY, anchor: event.currentTarget, header: { title: enemy.name, meta: `${boss ? 'BOSS' : 'ENEMY'} · ${DUNGEONS[monsterDungeon.dungeonId].name}` }, sections: [{ id: 'enemy', actions: [{ id: 'bestiary', label: 'Open Bestiary', icon: BookOpen, onSelect: () => { setNavigationIntent({ combatMonsterId: enemy.id, combatDungeonId: monsterDungeon.dungeonId }); useGameStore.getState().setScreen('bestiary') } }, { id: 'drops', label: 'View Drops', icon: Package, onSelect: () => onOpenContext?.(event.currentTarget, 'loot') }, { id: 'dungeon', label: 'Open Dungeon', icon: Crosshair, onSelect: () => { setNavigationIntent({ combatDungeonId: monsterDungeon.dungeonId, combatMonsterId: null }); useGameStore.getState().setScreen('combat') } }] }] })
   }
   return <section ref={cardRef} className={`combat-actor-card combat-enemy-card${boss ? ' is-boss' : ''}${transitionState === 'exiting' ? ' combat-enemy-transition-exit' : transitionState === 'entering' ? ' combat-enemy-transition-enter' : ''}`} style={{ '--enemy-accent': enemy.color } as CSSProperties} onContextMenu={openEnemyMenu}>
-    <header className="combat-actor-head"><div className="combat-actor-head-copy"><span className="combat-subsection-label">{boss ? 'BOSS' : 'ENEMY'}</span><h2>{enemy.name}</h2></div><div className="combat-actor-head-status">{worldTier && <GameTooltip content={<TooltipContent title={worldTier.name} description={`Health ×${worldTier.enemyHealthMultiplier}; damage ×${worldTier.enemyDamageMultiplier}; defense ×${worldTier.enemyDefenseMultiplier}; Resonance rewards ×${worldTier.resonanceRewardMultiplier}; material loot ×${worldTier.itemLootQuantityMultiplier}.`} />}><span className="combat-enemy-tier-badge" tabIndex={0}>WT{worldTier.id}</span></GameTooltip>}{activeMinorAffix && !boss && <GameTooltip content={<TooltipContent title={`Minor Affix · ${activeMinorAffix.name}`} description={activeMinorAffix.description} />}><span className="combat-enemy-affix-badge" tabIndex={0}>AFFIX · {activeMinorAffix.name.toUpperCase()}</span></GameTooltip>}<Status tone={boss ? 'warning' : 'active'}>{boss ? 'Boss fight' : 'Engaged'}</Status></div></header>
+    <header className="combat-actor-head"><div className="combat-actor-head-copy"><span className="combat-subsection-label">{boss ? 'BOSS' : 'ENEMY'}</span><h2>{enemy.name}</h2></div><div className="combat-actor-head-status">{worldTier && <GameTooltip content={<TooltipContent title={worldTier.name} description={`Health ×${worldTier.enemyHealthMultiplier}; damage ×${worldTier.enemyDamageMultiplier}; defense ×${worldTier.enemyDefenseMultiplier}; Resonance rewards ×${worldTier.resonanceRewardMultiplier}; material loot ×${worldTier.itemLootQuantityMultiplier}.`} />}><span className="combat-enemy-tier-badge" tabIndex={0}>WT{worldTier.id}</span></GameTooltip>}{activeZoneAffix && !boss && <GameTooltip content={<TooltipContent title={`Zone Affix · ${activeZoneAffix.name}`} description={activeZoneAffix.description} />}><span className="combat-enemy-zone-affix-badge" tabIndex={0}>ZONE AFFIX · {activeZoneAffix.name.toUpperCase()}</span></GameTooltip>}<Status tone={boss ? 'warning' : 'active'}>{boss ? 'Boss fight' : 'Engaged'}</Status></div></header>
     <MonsterPortrait monster={enemy} boss={boss} />
     <div className="combat-enemy-subtitle">{enemy.subtitle}</div>
     <CombatFloatingFeedback actor="enemy" health={enemyHp} barrier={enemyBarrier} resetKey={enemy.id} />

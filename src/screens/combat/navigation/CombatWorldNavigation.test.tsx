@@ -109,6 +109,36 @@ describe('CombatWorldNavigation', () => {
     expect(useGameStore.getState().combat.active).toBe(false)
   })
 
+  it('shows one location-level Zone Affix instead of per-target affix labels', () => {
+    const state = createInitialState()
+    state.progress.bossKillsByBoss['forest-heart'] = 1
+    useGameStore.setState(state)
+    renderNavigation()
+    fireEvent.click(screen.getByRole('button', { name: /Howling Den, ELITE ZONE/ }))
+
+    expect(screen.getByText('ZONE AFFIX')).toBeTruthy()
+    expect(screen.getByText('Frenzied')).toBeTruthy()
+    expect(screen.queryByText('VICIOUS')).toBeNull()
+    expect(screen.queryByText('WARDED')).toBeNull()
+    expect(screen.queryByText('ARMORED')).toBeNull()
+    expect(screen.queryByText('RELENTLESS')).toBeNull()
+    expect(screen.queryByText('REGENERATIVE')).toBeNull()
+  })
+
+  it('shows Zone Affix context in Howling Den target loot', () => {
+    const state = createInitialState()
+    state.progress.bossKillsByBoss['forest-heart'] = 1
+    useGameStore.setState(state)
+    renderNavigation()
+    fireEvent.click(screen.getByRole('button', { name: /Howling Den, ELITE ZONE/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Bonehide BoarHARD/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'LOOT' }))
+
+    expect(screen.getAllByText(/ZONE AFFIX/).length).toBeGreaterThanOrEqual(1)
+    expect(screen.getByText(/FRENZIED/)).toBeTruthy()
+    expect(screen.queryByText(/MINOR AFFIX/)).toBeNull()
+  })
+
   it('disables targeted Loot without a target and opens the selected target reward view', () => {
     renderNavigation()
 

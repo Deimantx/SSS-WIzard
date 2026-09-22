@@ -1,6 +1,7 @@
 import { ShieldAlert } from 'lucide-react'
 import { ModalPortal, Button } from '../../components/ui'
 import { DUNGEONS } from '../../game/content/dungeons/dungeons'
+import { getCombatEncounterMode, getCombatLocationByDungeonId } from '../../game/content/world-navigation'
 import { MONSTERS, isBossMonster } from '../../game/content/monsters'
 import { formatCompactDuration, formatNumber } from '../../game/utils'
 import { useGameStore } from '../../store/gameStore'
@@ -20,7 +21,7 @@ export function DefeatSummaryModal() {
     <div className="combat-defeat-title-block"><strong>{enemy?.name?.toUpperCase() ?? 'YOUR WIZARD'} DEFEATED</strong><p>Your Wizard fell in {dungeon?.name ?? 'the Dungeon'}{enemy ? ` while fighting ${enemy.name}.` : '.'}</p>{enemy && isBossMonster(enemy) && <span className="combat-defeat-boss">BOSS ENCOUNTER</span>}</div>
     <div className="combat-defeat-metrics"><Metric label="ENCOUNTER" value={formatCompactDuration(snapshot.encounterDurationMs ?? 0)} /><Metric label="DAMAGE DONE" value={formatNumber(snapshot.damageDone ?? 0)} /><Metric label="DAMAGE TAKEN" value={formatNumber(snapshot.damageTaken ?? 0)} /><Metric label="HEALING" value={formatNumber(snapshot.healing ?? 0)} /></div>
     <section className="combat-defeat-events"><div className="combat-subsection-label">WHAT HAPPENED</div><div className="combat-defeat-event-list">{snapshot.events.map((entry, index) => <CombatLogRow key={`${entry.sequence}-${index}`} entry={entry} newestTimestampMs={newestTimestampMs} latest={index === snapshot.events.length - 1} />)}</div></section>
-    <footer className="combat-defeat-foot"><span>Threat progress reset to 0.</span><Button variant="primary" onClick={returnToTower}>RETURN TO TOWER</Button></footer>
+    <footer className="combat-defeat-foot"><span>{snapshot.dungeonId && getCombatEncounterMode(getCombatLocationByDungeonId(snapshot.dungeonId)) === 'sequence' ? 'Dungeon run reset.' : 'Threat progress reset to 0.'}</span><Button variant="primary" onClick={returnToTower}>RETURN TO TOWER</Button></footer>
   </ModalPortal>
 }
 

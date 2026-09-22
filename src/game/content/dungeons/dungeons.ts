@@ -47,10 +47,10 @@ export const getDungeonUnlockRequirement = (dungeon: DungeonDefinition) => {
   return `Defeat ${names.slice(0, -1).join(', ')}${names.length > 1 ? `, and ${names[names.length - 1]}` : names[0]}`
 }
 
-export const validateDungeonDefinitions = () => {
+export const validateDungeonDefinitions = (content: Record<DungeonId, DungeonDefinition> = DUNGEONS, order: readonly DungeonId[] = DUNGEON_ORDER) => {
   const errors: string[] = []
-  DUNGEON_ORDER.forEach((dungeonId) => {
-    const dungeon = DUNGEONS[dungeonId]
+  order.forEach((dungeonId) => {
+    const dungeon = content[dungeonId]
     if (!dungeon) { errors.push(`${dungeonId}: missing dungeon definition`); return }
     if (!Number.isInteger(dungeon.threatRequired) || dungeon.threatRequired <= 0) errors.push(`${dungeon.id}: threatRequired must be a positive integer`)
     if (!Number.isFinite(dungeon.encounterDelayMs) || dungeon.encounterDelayMs <= 0) errors.push(`${dungeon.id}: encounterDelayMs must be positive`)
@@ -62,7 +62,6 @@ export const validateDungeonDefinitions = () => {
         else if (isBossMonster(MONSTERS[monsterId])) errors.push(`${dungeon.id}: sequence may not contain boss ${monsterId}`)
         if (!dungeon.monsterPool.includes(monsterId)) errors.push(`${dungeon.id}: sequence monster ${monsterId} is not in monsterPool`)
       })
-      if (new Set(dungeon.encounterSequence).size !== dungeon.encounterSequence.length) errors.push(`${dungeon.id}: encounterSequence must not contain duplicate monsters`)
       if (dungeon.encounterSequence.includes(dungeon.boss)) errors.push(`${dungeon.id}: boss must not be duplicated in encounterSequence`)
     }
     if (!MONSTERS[dungeon.boss]) errors.push(`${dungeon.id}: unknown boss ${dungeon.boss}`)
@@ -70,7 +69,7 @@ export const validateDungeonDefinitions = () => {
     if (dungeon.unlock?.type === 'boss-kill' && (!MONSTERS[dungeon.unlock.bossId] || !isBossMonster(MONSTERS[dungeon.unlock.bossId]))) errors.push(`${dungeon.id}: unlock boss must be a known boss monster`)
     if (dungeon.unlock?.type === 'all-boss-kills') dungeon.unlock.bossIds.forEach((bossId) => { if (!MONSTERS[bossId] || !isBossMonster(MONSTERS[bossId])) errors.push(`${dungeon.id}: unlock boss must be a known boss monster: ${bossId}`) })
   })
-  const extraIds = Object.keys(DUNGEONS).filter((id) => !DUNGEON_ORDER.includes(id as DungeonId))
+  const extraIds = Object.keys(content).filter((id) => !order.includes(id as DungeonId))
   extraIds.forEach((id) => errors.push(`${id}: dungeon is missing from DUNGEON_ORDER`))
   if (errors.length && import.meta.env.DEV) console.error(`[dungeons] ${errors.join('; ')}`)
   return errors

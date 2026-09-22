@@ -23,9 +23,9 @@ describe('combat target reward presentation', () => {
     expect(reward.powerRating).toBeGreaterThan(0)
   })
 
-  it('includes the authored Elite Minor Affix in target reward inspection', () => {
-    const reward = buildCombatTargetRewardPresentation('bonehide-boar', 1, 'armored')
-    expect(reward.minorAffix).toMatchObject({ id: 'armored', name: 'Armored' })
-    expect(reward.minorAffix?.description).toContain('25%')
+  it('keeps location-owned Zone Affix context out of target reward payloads', () => {
+    const reward = buildCombatTargetRewardPresentation('bonehide-boar', 1)
+    expect('minorAffix' in reward).toBe(false)
+    expect('zoneAffix' in reward).toBe(false)
   })
 })

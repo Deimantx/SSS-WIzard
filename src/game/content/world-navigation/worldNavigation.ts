@@ -84,13 +84,14 @@ export const COMBAT_LOCATIONS: Record<CombatLocationId, CombatLocationDefinition
   'howling-den': {
     ...dungeonLocation('first-frontier', 'howling-den', 'elite-zone', 2),
     encounterMode: 'targeted',
+    zoneAffixId: 'frenzied',
     targetMetadata: {
-      'cavefang-wolf': { difficulty: 'standard', order: 1, minorAffixId: 'vicious' },
-      'razorclaw-lynx': { difficulty: 'standard', order: 2, minorAffixId: 'frenzied' },
-      'corrupted-dire-wolf': { difficulty: 'hard', order: 3, minorAffixId: 'warded' },
-      'bonehide-boar': { difficulty: 'hard', order: 4, minorAffixId: 'armored' },
-      'moonblind-jackal': { difficulty: 'hard', order: 5, minorAffixId: 'relentless' },
-      'den-stalker': { difficulty: 'apex', order: 6, minorAffixId: 'regenerative' },
+      'cavefang-wolf': { difficulty: 'standard', order: 1 },
+      'razorclaw-lynx': { difficulty: 'standard', order: 2 },
+      'corrupted-dire-wolf': { difficulty: 'hard', order: 3 },
+      'bonehide-boar': { difficulty: 'hard', order: 4 },
+      'moonblind-jackal': { difficulty: 'hard', order: 5 },
+      'den-stalker': { difficulty: 'apex', order: 6 },
     },
   },
   'abandoned-catacombs': {

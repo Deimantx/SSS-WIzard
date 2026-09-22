@@ -20,14 +20,14 @@ describe('combat world navigation content', () => {
     expect(COMBAT_REGIONS['first-frontier'].continentId).toBe('continent-1')
     expect(COMBAT_REGIONS['first-frontier'].locationIds).toEqual(['whispering-woods', 'howling-den', 'abandoned-catacombs'])
     expect(COMBAT_LOCATIONS['whispering-woods']).toMatchObject({ regionId: 'first-frontier', type: 'combat-zone', dungeonId: 'whispering-woods' })
-    expect(COMBAT_LOCATIONS['howling-den']).toMatchObject({ encounterMode: 'targeted', type: 'elite-zone', dungeonId: 'howling-den' })
-    expect(Object.entries(COMBAT_LOCATIONS['howling-den'].targetMetadata ?? {}).map(([monsterId, metadata]) => [monsterId, metadata.minorAffixId])).toEqual([
-      ['cavefang-wolf', 'vicious'],
-      ['razorclaw-lynx', 'frenzied'],
-      ['corrupted-dire-wolf', 'warded'],
-      ['bonehide-boar', 'armored'],
-      ['moonblind-jackal', 'relentless'],
-      ['den-stalker', 'regenerative'],
+    expect(COMBAT_LOCATIONS['howling-den']).toMatchObject({ encounterMode: 'targeted', type: 'elite-zone', dungeonId: 'howling-den', zoneAffixId: 'frenzied' })
+    expect(Object.entries(COMBAT_LOCATIONS['howling-den'].targetMetadata ?? {}).map(([monsterId, metadata]) => [monsterId, metadata.difficulty, metadata.order])).toEqual([
+      ['cavefang-wolf', 'standard', 1],
+      ['razorclaw-lynx', 'standard', 2],
+      ['corrupted-dire-wolf', 'hard', 3],
+      ['bonehide-boar', 'hard', 4],
+      ['moonblind-jackal', 'hard', 5],
+      ['den-stalker', 'apex', 6],
     ])
     expect(COMBAT_LOCATIONS['abandoned-catacombs']).toMatchObject({ encounterMode: 'sequence', dungeonId: 'abandoned-catacombs', firstClearUnlockPreview: [
       { id: 'black-portal-shard', label: 'Black Portal Shard' },
@@ -60,5 +60,15 @@ describe('combat world navigation content', () => {
       'orphan: references missing location missing-location',
       'duplicate-location: dungeon whispering-woods is already mapped by whispering-woods',
     ]))
+  })
+
+  it('requires Zone Affix only for targeted Elite Zones', () => {
+    const missingAffix = validContent()
+    missingAffix.locations['howling-den'] = { ...missingAffix.locations['howling-den'], zoneAffixId: undefined }
+    expect(validateCombatWorldNavigation(missingAffix)).toContain('howling-den: targeted elite zone requires one valid Zone Affix')
+
+    const invalidNonElite = validContent()
+    invalidNonElite.locations['whispering-woods'] = { ...invalidNonElite.locations['whispering-woods'], zoneAffixId: 'frenzied' }
+    expect(validateCombatWorldNavigation(invalidNonElite)).toContain('whispering-woods: Zone Affix is only valid on targeted Elite Zones')
   })
 })

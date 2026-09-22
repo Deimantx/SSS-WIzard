@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { createInitialState } from "../../../store/initialState";
-import { DUNGEONS, DUNGEON_ORDER, isDungeonUnlocked } from "./dungeons";
+import { DUNGEONS, DUNGEON_ORDER, isDungeonUnlocked, validateDungeonDefinitions } from "./dungeons";
 import { ACT1_DUNGEONS } from "./act1";
 import { MONSTERS, validateMonsterDefinitions } from "../monsters";
 import { ACT1_MONSTERS } from "../monsters/act1";
 import { STATUS_DEFINITIONS } from "../statuses";
 import { TRAIT_DEFINITIONS } from "../traits";
-import type { CombatSource } from "../../types";
+import type { CombatSource, MonsterId } from "../../types";
 import {
   damageEnemy,
   finishEnemy,
@@ -40,6 +40,17 @@ const playerSpell: CombatSource = {
 };
 
 describe("Act 0 and Act 1 dungeon content", () => {
+  it("allows repeated normal monsters in an authored sequence", () => {
+    const content = {
+      ...DUNGEONS,
+      "abandoned-catacombs": {
+        ...DUNGEONS["abandoned-catacombs"],
+        encounterSequence: ["restless-skeleton", "restless-skeleton", "grave-wraith"] as MonsterId[],
+      },
+    };
+    expect(validateDungeonDefinitions(content, DUNGEON_ORDER)).toEqual([]);
+  });
+
   it("authors the stable dungeon order, pools, bosses, unlocks, and delay", () => {
     expect(DUNGEON_ORDER).toEqual([
       "whispering-woods",

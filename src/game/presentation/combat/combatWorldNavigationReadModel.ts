@@ -1,6 +1,8 @@
 import { DUNGEONS, getDungeonUnlockRequirement, isDungeonCompleted, isDungeonUnlocked } from '../../content/dungeons/dungeons'
 import { MONSTERS } from '../../content/monsters'
 import { COMBAT_CONTINENTS, COMBAT_LOCATIONS, COMBAT_LOCATION_TYPE_METADATA, COMBAT_REGIONS, getCombatEncounterMode, getCombatLocationByDungeonId } from '../../content/world-navigation'
+import { getEliteZoneAffix } from '../../content/elite-affixes'
+import { buildCombatBossHuntPresentation } from './combatBossHuntPresentation'
 import type { CombatNavigationUnlockCondition, CombatContinentId, CombatLocationId, CombatRegionId, CombatTargetDifficulty } from '../../content/world-navigation'
 import { isBossCurrentlyActive } from '../../systems/combat/combatBossSelectors'
 import { resolveEnemyPowerRating } from './enemyPowerRating'
@@ -74,6 +76,7 @@ const buildLocation = (locationId: CombatLocationId, progress: GameState['progre
   const definition = COMBAT_LOCATIONS[locationId]
   const state = getLocationState(locationId, progress, combat)
   const dungeon = definition?.dungeonId ? DUNGEONS[definition.dungeonId] : null
+  const zoneAffix = getEliteZoneAffix(definition?.zoneAffixId)
   const unlockText = state === 'locked' ? (dungeon ? getDungeonUnlockRequirement(dungeon) : null) ?? getConditionText(definition?.unlock) ?? getConditionText(COMBAT_REGIONS[definition?.regionId ?? '']?.unlock) : null
   if (!definition || !dungeon) {
     return {
@@ -87,6 +90,8 @@ const buildLocation = (locationId: CombatLocationId, progress: GameState['progre
       dungeonId: null,
       description: definition?.description ?? 'This location has not been authored yet.',
       encounterMode: getCombatEncounterMode(definition),
+      zoneAffix: zoneAffix ? { id: zoneAffix.id, name: zoneAffix.name, description: zoneAffix.description } : null,
+      bossHunt: null,
       encounters: [],
       boss: null,
       targeting: null,
@@ -100,7 +105,7 @@ const buildLocation = (locationId: CombatLocationId, progress: GameState['progre
   const targets = encounterMode === 'targeted'
     ? dungeon.monsterPool.flatMap((monsterId) => {
       const metadata = definition.targetMetadata?.[monsterId]
-      return metadata ? [{ ...buildTarget(monsterId, metadata.difficulty, metadata.order, progress, currentWorldTier), ...(metadata.minorAffixId ? { minorAffixId: metadata.minorAffixId } : {}) }] : []
+      return metadata ? [buildTarget(monsterId, metadata.difficulty, metadata.order, progress, currentWorldTier)] : []
     }).sort((left, right) => left.order - right.order)
     : []
   const activeTargetEnemyId = combat.active && combat.dungeonId === dungeon.id && targets.some((target) => target.monsterId === combat.targetEnemyId) ? combat.targetEnemyId : null
@@ -115,6 +120,8 @@ const buildLocation = (locationId: CombatLocationId, progress: GameState['progre
     dungeonId: dungeon.id,
     description: definition.description ?? dungeon.ui?.description ?? 'A dangerous location beyond the tower gate.',
     encounterMode,
+    zoneAffix: zoneAffix ? { id: zoneAffix.id, name: zoneAffix.name, description: zoneAffix.description } : null,
+    bossHunt: buildCombatBossHuntPresentation({ combat, progress, dungeon, locationType: definition.type }),
     encounters: dungeon.monsterPool.map((monsterId) => buildEncounter(monsterId, 'normal', progress, currentWorldTier)),
     boss: buildEncounter(dungeon.boss, 'boss', progress, currentWorldTier),
     targeting: encounterMode === 'targeted' ? { mode: 'targeted', targets, activeTargetEnemyId } : null,

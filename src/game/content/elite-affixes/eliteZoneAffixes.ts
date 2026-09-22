@@ -2,10 +2,10 @@ import type { CombatModifier, CombatTriggerRule } from '../../systems/combat/com
 import { STATUS_DEFINITIONS } from '../statuses/statuses'
 import { createCombatValidationContext, validateCombatModifier, validateCombatTriggerRule } from '../../systems/combat/combatEffectValidation'
 
-export type EliteMinorAffixId = 'vicious' | 'frenzied' | 'warded' | 'armored' | 'relentless' | 'regenerative'
+export type EliteZoneAffixId = 'vicious' | 'frenzied' | 'warded' | 'armored' | 'relentless' | 'regenerative'
 
-export interface EliteMinorAffixDefinition {
-  id: EliteMinorAffixId
+export interface EliteZoneAffixDefinition {
+  id: EliteZoneAffixId
   name: string
   description: string
   modifiers?: CombatModifier[]
@@ -14,7 +14,7 @@ export interface EliteMinorAffixDefinition {
 
 const sourceMaxHealth = (value: number) => ({ type: 'source-max-health-percent' as const, value })
 
-export const ELITE_MINOR_AFFIXES: Record<EliteMinorAffixId, EliteMinorAffixDefinition> = {
+export const ELITE_ZONE_AFFIXES: Record<EliteZoneAffixId, EliteZoneAffixDefinition> = {
   vicious: {
     id: 'vicious',
     name: 'Vicious',
@@ -70,11 +70,11 @@ export const ELITE_MINOR_AFFIXES: Record<EliteMinorAffixId, EliteMinorAffixDefin
   },
 }
 
-export const getEliteMinorAffix = (id: EliteMinorAffixId | null | undefined) => id ? ELITE_MINOR_AFFIXES[id] ?? null : null
+export const getEliteZoneAffix = (id: EliteZoneAffixId | null | undefined) => id ? ELITE_ZONE_AFFIXES[id] ?? null : null
 
-export const validateEliteMinorAffixes = () => {
+export const validateEliteZoneAffixes = () => {
   const errors: string[] = []
-  const entries = Object.entries(ELITE_MINOR_AFFIXES) as Array<[EliteMinorAffixId, EliteMinorAffixDefinition]>
+  const entries = Object.entries(ELITE_ZONE_AFFIXES) as Array<[EliteZoneAffixId, EliteZoneAffixDefinition]>
   const ids = entries.map(([key, definition]) => { if (key !== definition.id) errors.push(`${key}: key/id mismatch`); return definition.id })
   if (new Set(ids).size !== ids.length) errors.push('affixes: IDs must be unique')
   entries.forEach(([key, definition]) => {

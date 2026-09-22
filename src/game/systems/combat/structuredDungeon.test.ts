@@ -47,6 +47,24 @@ describe('structured dungeon encounters', () => {
     expect(state.combat.inBossFight).toBe(true)
   })
 
+  it.each([
+    ['fractured-approach', ['rift-wolf', 'arcane-scavenger', 'withered-watcher', 'warded-husk'], 'corrupted-elemental-gatekeeper'],
+    ['crossroads-of-ruin', ['arcane-binder', 'rift-archer', 'remnant-marauder', 'broken-construct'], 'crossroads-keeper'],
+  ] as const)('spawns %s in the authored order without Threat', (dungeonId, sequence, bossId) => {
+    const state = prepare()
+    state.combat.dungeonId = dungeonId
+    state.combat.dungeonSequenceIndex = 0
+    for (const expectedEnemyId of sequence) {
+      expect(spawnNextEnemy(state)).toBe(true)
+      expect(state.combat.enemyId).toBe(expectedEnemyId)
+      killCurrent(state)
+      expect(state.combat.threatCleared).toBe(0)
+    }
+    expect(spawnNextEnemy(state)).toBe(true)
+    expect(state.combat.enemyId).toBe(bossId)
+    expect(state.combat.inBossFight).toBe(true)
+  })
+
   it('completes after Edrin, preserves player resources, and clears the run state', () => {
     const state = prepare()
     state.player.health = 61

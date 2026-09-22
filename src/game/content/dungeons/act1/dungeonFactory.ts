@@ -8,6 +8,7 @@ export const act1Dungeon = (
   threatRequired: number,
   unlock: NonNullable<DungeonDefinition['unlock']>,
   description: string,
+  options: Pick<DungeonDefinition, 'encounterSequence'> = {},
 ): DungeonDefinition => ({
   id,
   name,
@@ -16,5 +17,6 @@ export const act1Dungeon = (
   boss,
   encounterDelayMs: 5000,
   unlock,
+  ...options,
   ui: { description },
 })

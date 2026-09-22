@@ -169,6 +169,10 @@ export const spawnNextEnemy = (state: GameState, uiEvents?: CombatEventSink) => 
     }
   }
   const targetedEnemyId = isCombatTargetForLocation(location, dungeon.id, state.combat.targetEnemyId) ? state.combat.targetEnemyId : null
+  if (getCombatEncounterMode(location) === 'targeted' && !targetedEnemyId) {
+    pushNotification(state, 'Select a Hunt Target before starting this Location.', 'warning', { key: `combat-target-required:${dungeon.id}`, cooldownMs: 1000 })
+    return false
+  }
   const nextEnemyId = targetedEnemyId ?? chooseMonster(dungeon.monsterPool, () => nextCombatRandom(state))
   const spawned = spawnEnemy(state, nextEnemyId, uiEvents)
   if (!spawned && state.combat.active) state.combat.encounterTimerMs = dungeon.encounterDelayMs

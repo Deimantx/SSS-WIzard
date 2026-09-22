@@ -18,3 +18,26 @@ describe('Whispering Woods Phase 1 Resonance authoring', () => {
     })
   })
 })
+
+describe('Elemental Scar Resonance authoring', () => {
+  it.each([
+    ['flooded-reliquary', 'water'],
+    ['ashen-watch', 'fire'],
+    ['rootscar-hollow', 'earth'],
+  ] as const)('authors only the %s profile for every target and its boss', (dungeonId, resonanceType) => {
+    const dungeon = DUNGEONS[dungeonId]
+    ;[...dungeon.monsterPool, dungeon.boss].forEach((monsterId) => {
+      const profile = MONSTERS[monsterId].resonanceYield
+      expect(profile, `${monsterId} should have an Elemental Scar profile`).toBeTruthy()
+      expect(profile && Object.keys(profile)).toEqual([resonanceType])
+      expect(profile?.[resonanceType]).toBeGreaterThan(0)
+    })
+  })
+
+  it('does not add Resonance to the two sequence dungeons', () => {
+    for (const dungeonId of ['fractured-approach', 'crossroads-of-ruin'] as const) {
+      const dungeon = DUNGEONS[dungeonId]
+      ;[...dungeon.monsterPool, dungeon.boss].forEach((monsterId) => expect(MONSTERS[monsterId].resonanceYield).toBeUndefined())
+    }
+  })
+})

@@ -1,9 +1,9 @@
 {
   "schemaVersion": 2,
   "snapshot": {
-    "commit": "e22be9043966d8917be8cd96a438e36c31e180da",
+    "commit": "4b41b82266971618b28936c6cf3c523b4cf700be",
     "workingTreeDirty": true,
-    "generatedAtUtc": "2026-09-22T07:16:22.996Z"
+    "generatedAtUtc": "2026-09-22T12:07:25.409Z"
   },
   "runtimePolicy": {
     "sourceOfTruth": "TypeScript runtime content and systems",
@@ -67,7 +67,7 @@
       ]
     },
     "monsters": {
-      "count": 79,
+      "count": 88,
       "ids": [
         "forest-wisp",
         "thornling",
@@ -98,16 +98,25 @@
         "mist-wraith",
         "rune-leech",
         "drowned-keeper",
+        "tidefang-serpent",
+        "brinebound-sentinel",
+        "abyssal-archivist",
         "cinder-hound",
         "ash-cultist",
         "fire-elemental",
         "lava-eel",
         "flamebound-revenant",
+        "emberwing-harrier",
+        "charred-warden",
+        "pyre-colossus",
         "thorn-maw",
         "rootbound-stalker",
         "briar-sprite",
         "moss-carapace",
         "rootscar-ancient",
+        "sporeback-brute",
+        "vinebound-reaver",
+        "scarwood-behemoth",
         "remnant-marauder",
         "arcane-binder",
         "broken-construct",
@@ -964,6 +973,9 @@
         "reliquary-slime",
         "mist-wraith",
         "rune-leech",
+        "tidefang-serpent",
+        "brinebound-sentinel",
+        "abyssal-archivist",
         "drowned-keeper"
       ],
       "runtimeSources": [
@@ -978,6 +990,9 @@
         "ash-cultist",
         "fire-elemental",
         "lava-eel",
+        "emberwing-harrier",
+        "charred-warden",
+        "pyre-colossus",
         "flamebound-revenant"
       ],
       "runtimeSources": [
@@ -992,6 +1007,9 @@
         "rootbound-stalker",
         "briar-sprite",
         "moss-carapace",
+        "sporeback-brute",
+        "vinebound-reaver",
+        "scarwood-behemoth",
         "rootscar-ancient"
       ],
       "runtimeSources": [

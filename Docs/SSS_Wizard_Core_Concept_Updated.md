@@ -1791,10 +1791,19 @@ Kiekvienas dungeon turi:
 
 ## 32.1. Normal encounter selection
 
-Normal monster:
+Normal encounter selection follows the authored Location mode:
+
+- Combat Zone and Elite Zone use a player-selected normal target from the Location pool;
+- Dungeon uses its authored normal encounter sequence and then its Dungeon Boss.
+
+Legacy random-pool Locations may remain only until their content is converted; they are not the canonical model for new regions.
+
+<!-- superseded legacy wording retained only in the historical document body
 
 - žaidėjas pats nepasirenka;
 - atsitiktinai parenkamas iš dungeon pool.
+
+-->
 
 Kiekvienas normal kill:
 
@@ -2753,8 +2762,13 @@ Prieš projektuojant naują sistemą:
 - [x] Combat gali vykti kartu su Tower veiklomis.
 - [x] Monsteriai turi traits ir action sequences.
 - [x] Special Attacks turi telegraphs.
+<!-- superseded legacy encounter-selection checklist wording
 - [x] Dungeon normal monster parenkamas iš pool.
-- [x] Targeted normal kill = resolved enemy Power Threat; legacy random-pool kill = +1 Threat.
+- [x] Targeted normal kill = resolved enemy Power Threat; legacy random-pool kill = +1 Threat until conversion.
+- [x] Location encounter mode determines normal selection: targeted Zones or sequence Dungeons.
+-->
+- [x] Location encounter mode determines normal selection: targeted Zones or sequence Dungeons.
+- [x] Targeted normal kill = resolved enemy Power Threat; legacy random-pool kill = +1 Threat until conversion.
 - [x] Threat is capped at the resolved World-Tier boss requirement.
 - [x] Auto Hunt Boss atrakinamas po pirmo manual boss kill.
 - [x] Main Boss kelia Magic School cap.

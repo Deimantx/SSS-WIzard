@@ -3,7 +3,7 @@
 | Setting | Value |
 | --- | --- |
 | Dungeon | Ashen Watch (ashen-watch) |
-| Threat requirement | 40 |
+| Threat requirement | 20000 |
 | Encounter delay | 5 s |
 | Boss | Flamebound Revenant (flamebound-revenant) |
 | Unlock | Defeat Corrupted Elemental Gatekeeper (corrupted-elemental-gatekeeper) |
@@ -16,6 +16,9 @@
 | Ash Cultist (ash-cultist) | Normal |
 | Fire Elemental (fire-elemental) | Normal |
 | Lava Eel (lava-eel) | Normal |
+| Emberwing Harrier (emberwing-harrier) | Normal |
+| Charred Warden (charred-warden) | Normal |
+| Pyre Colossus (pyre-colossus) | Normal |
 | Flamebound Revenant (flamebound-revenant) | Boss |
 
 ## Core stats
@@ -26,6 +29,9 @@
 | Ash Cultist (ash-cultist) | Normal | 1563 | 74 | 2.3 s | 30 | 0% | 0% |
 | Fire Elemental (fire-elemental) | Normal | 1688 | 80 | 2.3 s | 34 | 0% | 0% |
 | Lava Eel (lava-eel) | Normal | 1875 | 82 | 2.3 s | 26 | 0% | 0% |
+| Emberwing Harrier (emberwing-harrier) | Normal | 1725 | 86 | 2.15 s | 28 | 0% | 0% |
+| Charred Warden (charred-warden) | Normal | 2250 | 88 | 2.8 s | 58 | 0% | 0% |
+| Pyre Colossus (pyre-colossus) | Normal | 2800 | 100 | 2.55 s | 48 | 0% | 0% |
 | Flamebound Revenant (flamebound-revenant) | Boss | 14500 | 95 | 2.3 s | 52 | 0% | 0% |
 
 ## Traits and patterns
@@ -36,6 +42,9 @@
 | Ash Cultist (ash-cultist) | Ash Cultist Fan | Basic Attack -> Ember Bolt -> Basic Attack -> Fan Flames | — |
 | Fire Elemental (fire-elemental) | Fire Elemental Emberheart | Basic Attack -> Flame Lash -> Basic Attack -> Ember Heart | — |
 | Lava Eel (lava-eel) | Lava Eel Molten Hide | Basic Attack -> Lava Surge -> Basic Attack -> Molten Hide | — |
+| Emberwing Harrier (emberwing-harrier) | Cinder Hound Flameblood | Basic Attack -> Emberwing Dive -> Basic Attack -> Smoke Rise | — |
+| Charred Warden (charred-warden) | Ash Cultist Fan | Basic Attack -> Charred Guard -> Basic Attack -> Brand Slam | — |
+| Pyre Colossus (pyre-colossus) | Fire Elemental Emberheart | Basic Attack -> Pyre Eruption -> Basic Attack -> Falling Cinders | — |
 | Flamebound Revenant (flamebound-revenant) | Fire Elemental Emberheart | Flame Brand -> Basic Attack -> Ashen Burst -> Basic Attack -> Burning Guard -> Basic Attack -> Cremation -> Basic Attack -> Rekindle | — |
 
 ## Special actions
@@ -50,6 +59,12 @@
 | Fire Elemental (fire-elemental) | Ember Heart (ember-heart) | 1.98 s | Regeneration | — |
 | Lava Eel (lava-eel) | Lava Surge (lava-surge) | 1.8 s | 165% of Basic Attack damage Fire damage | Fire |
 | Lava Eel (lava-eel) | Molten Hide (molten-hide) | 1.98 s | Fortified | — |
+| Emberwing Harrier (emberwing-harrier) | Emberwing Dive (emberwing-dive) | 1.8 s | 110% of Basic Attack damage Physical damage + 80% of Basic Attack damage Fire damage; Burning | Physical + Fire |
+| Emberwing Harrier (emberwing-harrier) | Smoke Rise (smoke-rise) | 1.98 s | Haste | — |
+| Charred Warden (charred-warden) | Charred Guard (charred-guard) | 1.8 s | Fortified | — |
+| Charred Warden (charred-warden) | Brand Slam (brand-slam) | 1.98 s | 135% of Basic Attack damage Physical damage + 65% of Basic Attack damage Fire damage | Physical + Fire |
+| Pyre Colossus (pyre-colossus) | Pyre Eruption (pyre-eruption) | 1.8 s | 155% of Basic Attack damage Fire damage; Burning | Fire |
+| Pyre Colossus (pyre-colossus) | Falling Cinders (falling-cinders) | 1.98 s | 110% of Basic Attack damage Fire damage | Fire |
 | Flamebound Revenant (flamebound-revenant) | Flame Brand (flame-brand) | 1.8 s | 125% of Basic Attack damage Fire damage; Burning | Fire |
 | Flamebound Revenant (flamebound-revenant) | Ashen Burst (ashen-burst) | 1.98 s | 160% of Basic Attack damage Fire damage | Fire |
 | Flamebound Revenant (flamebound-revenant) | Burning Guard (burning-guard) | 2.16 s | +6% of the caster's Max Health Barrier | — |
@@ -68,5 +83,11 @@
 | Fire Elemental (fire-elemental) | Life Essence (life-essence) | 1 | 3 | 100% | 2 |
 | Lava Eel (lava-eel) | Artifact Essence (artifact-essence) | 5 | 7 | 100% | 6 |
 | Lava Eel (lava-eel) | Life Essence (life-essence) | 1 | 3 | 100% | 2 |
+| Emberwing Harrier (emberwing-harrier) | Artifact Essence (artifact-essence) | 5 | 7 | 100% | 6 |
+| Emberwing Harrier (emberwing-harrier) | Life Essence (life-essence) | 1 | 3 | 100% | 2 |
+| Charred Warden (charred-warden) | Artifact Essence (artifact-essence) | 5 | 7 | 100% | 6 |
+| Charred Warden (charred-warden) | Life Essence (life-essence) | 1 | 3 | 100% | 2 |
+| Pyre Colossus (pyre-colossus) | Artifact Essence (artifact-essence) | 5 | 7 | 100% | 6 |
+| Pyre Colossus (pyre-colossus) | Life Essence (life-essence) | 1 | 3 | 100% | 2 |
 | Flamebound Revenant (flamebound-revenant) | Artifact Essence (artifact-essence) | 35 | 45 | 100% | 40 |
 | Flamebound Revenant (flamebound-revenant) | Life Essence (life-essence) | 25 | 55 | 100% | 40 |

@@ -64,7 +64,7 @@ export type CanonicalSpellId =
 export type LegacySpellId = 'ignite' | 'fireball' | 'water-ward' | 'flow-mend' | 'frostbite' | 'earth-spike' | 'stoneguard' | 'fortify' | 'air-lance' | 'quickening' | 'shock-spark'
 export type SpellId = CanonicalSpellId | LegacySpellId
 export type SpellPresetId = string
-export type MonsterId = 'forest-wisp' | 'thornling' | 'dewbound-sprite' | 'cinder-moth' | 'stone-root' | 'grove-sentinel' | 'tempest-stag' | 'forest-heart' | 'cavefang-wolf' | 'razorclaw-lynx' | 'corrupted-dire-wolf' | 'bonehide-boar' | 'moonblind-jackal' | 'den-stalker' | 'corrupted-greatbear' | 'restless-skeleton' | 'grave-wraith' | 'fallen-acolyte' | 'archmage-edrin-shade' | 'warded-husk' | 'rift-wolf' | 'arcane-scavenger' | 'withered-watcher' | 'corrupted-elemental-gatekeeper'
+export type MonsterId = 'forest-wisp' | 'thornling' | 'dewbound-sprite' | 'cinder-moth' | 'stone-root' | 'grove-sentinel' | 'tempest-stag' | 'forest-heart' | 'cavefang-wolf' | 'razorclaw-lynx' | 'corrupted-dire-wolf' | 'bonehide-boar' | 'moonblind-jackal' | 'den-stalker' | 'corrupted-greatbear' | 'restless-skeleton' | 'grave-wraith' | 'fallen-acolyte' | 'archmage-edrin-shade' | 'warded-husk' | 'rift-wolf' | 'arcane-scavenger' | 'withered-watcher' | 'corrupted-elemental-gatekeeper' | 'tidefang-serpent' | 'brinebound-sentinel' | 'abyssal-archivist' | 'emberwing-harrier' | 'charred-warden' | 'pyre-colossus' | 'sporeback-brute' | 'vinebound-reaver' | 'scarwood-behemoth'
   | 'drowned-acolyte' | 'reliquary-slime' | 'mist-wraith' | 'rune-leech' | 'drowned-keeper'
   | 'cinder-hound' | 'ash-cultist' | 'fire-elemental' | 'lava-eel' | 'flamebound-revenant'
   | 'thorn-maw' | 'rootbound-stalker' | 'briar-sprite' | 'moss-carapace' | 'rootscar-ancient'

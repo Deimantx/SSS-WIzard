@@ -41,6 +41,13 @@ import { LEGACY_POWER_THREAT_REQUIREMENTS, resolveBossThreatRequirement } from '
 
 const statusValidationContext = createCombatValidationContext(STATUS_DEFINITIONS)
 
+/** Historical kill-count thresholds used by the pre-v44 Elemental Scar pool runs. */
+const LEGACY_ELEMENTAL_SCAR_THREAT_REQUIREMENTS: Partial<Record<DungeonId, number>> = {
+  'flooded-reliquary': 40,
+  'ashen-watch': 40,
+  'rootscar-hollow': 40,
+}
+
 const normalizeScreen = (value: unknown, fallback: GameState['ui']['screen']): GameState['ui']['screen'] => {
   if (value === 'tower') return 'tower-channeling'
   const valid = ['home', 'combat', 'schools', 'inventory', 'equipment', 'arcane-core', 'collection', 'bestiary', 'tower-channeling', 'tower-focus', 'tower-research', 'tower-transmutation', 'tower-artificing', 'tower-summoning', 'tower-dark-portal', 'guild', 'settings']
@@ -652,11 +659,12 @@ const normalizeDirectContentReferences = (migrated: GameState, raw: Record<strin
   if (activeTargetedLocation && migrated.combat.dungeonId) {
     const rawTarget = typeof rawCombat.targetEnemyId === 'string' ? rawCombat.targetEnemyId as MonsterId : null
     const rawEnemy = migrated.combat.enemyId
+    const firstTarget = DUNGEONS[migrated.combat.dungeonId].monsterPool.find((monsterId) => isCombatTargetForLocation(activeTargetedLocation, migrated.combat.dungeonId, monsterId)) ?? null
     const candidate = isCombatTargetForLocation(activeTargetedLocation, migrated.combat.dungeonId, rawTarget)
       ? rawTarget
       : isCombatTargetForLocation(activeTargetedLocation, migrated.combat.dungeonId, rawEnemy)
         ? rawEnemy
-        : 'forest-wisp'
+        : firstTarget
     migrated.combat.targetEnemyId = candidate
   } else {
     migrated.combat.targetEnemyId = null
@@ -915,7 +923,11 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   if (sourceVersion < SAVE_VERSION && migrated.combat.active) {
     const dungeonId = migrated.combat.dungeonId
     const location = getCombatLocationByDungeonId(dungeonId)
-    const legacyRequirement = dungeonId ? LEGACY_POWER_THREAT_REQUIREMENTS[dungeonId] : undefined
+    const legacyRequirement = dungeonId
+      ? sourceVersion < 43
+        ? LEGACY_POWER_THREAT_REQUIREMENTS[dungeonId] ?? LEGACY_ELEMENTAL_SCAR_THREAT_REQUIREMENTS[dungeonId]
+        : LEGACY_ELEMENTAL_SCAR_THREAT_REQUIREMENTS[dungeonId]
+      : undefined
     if (dungeonId && location?.encounterMode === 'targeted' && (location.type === 'combat-zone' || location.type === 'elite-zone') && legacyRequirement) {
       const progressRatio = Math.min(1, Math.max(0, migrated.combat.threatCleared / legacyRequirement))
       const requirement = resolveBossThreatRequirement(dungeonId, migrated.worldTier.current)

@@ -92,13 +92,13 @@ describe('Whispering Woods targeted farming', () => {
     expect(resolveEnemyResonanceReward('tempest-stag', 2).finalYield).toMatchObject({ air: 100, earth: 30 })
   })
 
-  it('keeps random-pool dungeons random and honors target selection in Fast Resolve', () => {
+  it('honors target selection in every targeted zone and Fast Resolve', () => {
     const randomState = prepare()
     randomState.combat.dungeonId = 'howling-den'
-    randomState.combat.targetEnemyId = 'cinder-moth'
+    randomState.combat.targetEnemyId = 'cavefang-wolf'
     const randomResult = fastResolveNormalEnemiesForDebug(randomState, 1, 'howling-den', false)
     expect(randomResult.resolved).toBe(1)
-    expect(DUNGEONS['howling-den'].monsterPool).toContain(randomState.progress.discoveredMonsters.find((id) => DUNGEONS['howling-den'].monsterPool.includes(id)) ?? 'cavefang-wolf')
+    expect(randomState.progress.lifetimeKillsByMonster['cavefang-wolf']).toBe(1)
 
     const targetedState = prepare()
     targetedState.combat.targetEnemyId = 'forest-wisp'
@@ -228,5 +228,46 @@ describe('Whispering Woods targeted farming', () => {
     expect(state.combat.threatCleared).toBe(9)
     expect(state.combat.playerBarrier).toBe(22)
     expect(state.combat.playerStatuses).toHaveLength(1)
+  })
+})
+
+describe('Elemental Scar targeted farming', () => {
+  it('does not enter a targeted Location through the no-target Dungeon action', () => {
+    const state = prepare()
+    state.progress.bossKillsByBoss['corrupted-elemental-gatekeeper'] = 1
+    state.combat.active = false
+    state.combat.dungeonId = null
+    installStoreState(state)
+    useGameStore.getState().enterDungeon('flooded-reliquary')
+    const next = useGameStore.getState()
+    expect(next.combat.active).toBe(false)
+    expect(next.combat.dungeonId).toBeNull()
+    expect(next.notifications.some((note) => note.text.includes('Select a Hunt Target'))).toBe(true)
+  })
+
+  it('requires a valid Hunt Target instead of falling back to a random pool', () => {
+    const state = prepare()
+    state.combat.dungeonId = 'flooded-reliquary'
+    expect(spawnNextEnemy(state)).toBe(false)
+    expect(state.combat.enemyId).toBeNull()
+    expect(state.notifications.some((note) => note.text.includes('Select a Hunt Target'))).toBe(true)
+  })
+
+  it.each([
+    ['flooded-reliquary', 'tidefang-serpent', 'water'],
+    ['ashen-watch', 'emberwing-harrier', 'fire'],
+    ['rootscar-hollow', 'sporeback-brute', 'earth'],
+  ] as const)('repeats %s target and resolves Power Threat plus Resonance', (dungeonId, targetEnemyId, resonanceType) => {
+    const state = prepare()
+    state.combat.dungeonId = dungeonId
+    state.combat.targetEnemyId = targetEnemyId
+    expect(spawnNextEnemy(state)).toBe(true)
+    expect(state.combat.enemyId).toBe(targetEnemyId)
+    state.combat.enemyHp = 0
+    finishEnemy(state)
+    expect(state.combat.threatCleared).toBe(resolveEnemyPowerRating(targetEnemyId, 1))
+    expect(state.resonance[resonanceType]).toBeGreaterThan(0)
+    expect(spawnNextEnemy(state)).toBe(true)
+    expect(state.combat.enemyId).toBe(targetEnemyId)
   })
 })

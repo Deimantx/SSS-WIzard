@@ -37,6 +37,20 @@ describe('combat world navigation content', () => {
       { id: 'magic-school-cap', label: 'Magic School Cap Increase' },
     ] })
     expect(COMBAT_REGIONS['elemental-scar'].locationIds).toEqual(['fractured-approach', 'flooded-reliquary', 'ashen-watch', 'rootscar-hollow', 'crossroads-of-ruin'])
+    expect(COMBAT_LOCATIONS['fractured-approach']).toMatchObject({ encounterMode: 'sequence', firstClearUnlockPreview: [
+      { id: 'summoning', label: 'Summoning' },
+      { id: 'flooded-reliquary', label: 'Flooded Reliquary' },
+      { id: 'ashen-watch', label: 'Ashen Watch' },
+      { id: 'rootscar-hollow', label: 'Rootscar Hollow' },
+    ] })
+    expect(COMBAT_LOCATIONS['crossroads-of-ruin']).toMatchObject({ encounterMode: 'sequence', firstClearUnlockPreview: [{ id: 'shattered-meridian', label: 'Shattered Meridian' }] })
+    for (const locationId of ['flooded-reliquary', 'ashen-watch', 'rootscar-hollow'] as const) {
+      const location = COMBAT_LOCATIONS[locationId]
+      expect(location).toMatchObject({ encounterMode: 'targeted', type: 'combat-zone' })
+      expect(location.zoneAffixId).toBeUndefined()
+      expect(Object.keys(location.targetMetadata ?? {})).toHaveLength(7)
+      expect(Object.values(location.targetMetadata ?? {}).map((metadata) => metadata.order)).toEqual([1, 2, 3, 4, 5, 6, 7])
+    }
     expect(COMBAT_REGIONS['shattered-meridian'].locationIds).toEqual(['graveglass-hollow', 'stormvault-gallery', 'starfallen-observatory', 'broken-meridian'])
     expect(COMBAT_REGIONS['black-sigil-reach'].locationIds).toEqual(['hall-of-unbound-names', 'vault-of-the-black-sigil', 'black-gate'])
     expect(Object.values(COMBAT_LOCATIONS)).toHaveLength(15)

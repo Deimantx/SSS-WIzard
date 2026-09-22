@@ -670,12 +670,12 @@ describe('v42 power-based Threat migration', () => {
     expect(migrated.combat.threatCleared).toBe(expectedThreat)
   })
 
-  it('preserves ready state and leaves legacy random-pool Threat untouched', () => {
+  it('preserves ready state and clears converted sequence Threat', () => {
     const ready = migrateSave(activeLegacySave('whispering-woods', 20) as any)
     expect(ready.combat.threatCleared).toBe(5000)
 
     const legacy = migrateSave(activeLegacySave('fractured-approach', 7) as any)
-    expect(legacy.combat.threatCleared).toBe(7)
+    expect(legacy.combat.threatCleared).toBe(0)
   })
 
   it('round-trips v43 point Threat without converting it back to kills', () => {
@@ -684,8 +684,46 @@ describe('v42 power-based Threat migration', () => {
     state.combat.dungeonId = 'whispering-woods'
     state.combat.threatCleared = 3720
     const loaded = migrateSave(JSON.parse(JSON.stringify(serializeGameState(state))))
-    expect(loaded.saveVersion).toBe(43)
+    expect(loaded.saveVersion).toBe(SAVE_VERSION)
     expect(loaded.combat.threatCleared).toBe(3720)
+  })
+})
+
+describe('v43 Elemental Scar migration', () => {
+  const activeLegacySave = (dungeonId: 'flooded-reliquary' | 'ashen-watch' | 'rootscar-hollow', enemyId: 'mist-wraith' | 'cinder-hound' | 'thorn-maw', threatCleared: number, worldTier: 1 | 2) => {
+    const initial = createInitialState()
+    return {
+      ...initial,
+      saveVersion: 43,
+      worldTier: { current: worldTier, highestUnlocked: worldTier },
+      combat: { ...initial.combat, active: true, dungeonId, enemyId, threatCleared },
+    }
+  }
+
+  it.each([
+    ['flooded-reliquary', 'mist-wraith', 10_000, 1, 20],
+    ['ashen-watch', 'cinder-hound', 20_000, 2, 20],
+    ['rootscar-hollow', 'thorn-maw', 5_000, 1, 10],
+  ] as const)('converts legacy %s kill Threat and preserves the active target', (dungeonId, enemyId, expectedThreat, worldTier, oldThreat) => {
+    const migrated = migrateSave(activeLegacySave(dungeonId, enemyId, oldThreat, worldTier) as any)
+    expect(migrated.saveVersion).toBe(SAVE_VERSION)
+    expect(migrated.combat.targetEnemyId).toBe(enemyId)
+    expect(migrated.combat.threatCleared).toBe(expectedThreat)
+  })
+
+  it.each([
+    ['fractured-approach', 'withered-watcher', 2],
+    ['crossroads-of-ruin', 'broken-construct', 3],
+  ] as const)('infers %s sequence position and clears Threat', (dungeonId, enemyId, expectedIndex) => {
+    const initial = createInitialState()
+    const migrated = migrateSave({
+      ...initial,
+      saveVersion: 43,
+      combat: { ...initial.combat, active: true, dungeonId, enemyId, threatCleared: 40, dungeonSequenceIndex: undefined },
+    } as any)
+    expect(migrated.combat.dungeonSequenceIndex).toBe(expectedIndex)
+    expect(migrated.combat.threatCleared).toBe(0)
+    expect(migrated.combat.targetEnemyId).toBeNull()
   })
 })
 

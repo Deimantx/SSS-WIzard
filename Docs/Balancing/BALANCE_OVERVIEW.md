@@ -4,7 +4,7 @@
 | --- | --- | --- |
 | Items | 20 | Items/Items.md |
 | Equipment | 12 | Items/Items.md |
-| Monsters | 79 | Dungeons/<Dungeon>.md |
+| Monsters | 88 | Dungeons/<Dungeon>.md |
 | Dungeons | 15 | Dungeons/<Dungeon>.md |
 | Recipes | 17 | Crafting/Crafting.md |
 | Spells | 32 | Magic/Magic.md |

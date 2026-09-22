@@ -21,6 +21,9 @@ describe('Power-based Boss Threat', () => {
     expect([1, 2, 3, 4, 5].map((tier) => resolveBossThreatRequirement('whispering-woods', tier as 1 | 2 | 3 | 4 | 5))).toEqual([5000, 10000, 15000, 20000, 25000])
     expect([1, 2, 3, 4, 5].map((tier) => resolveBossThreatRequirement('howling-den', tier as 1 | 2 | 3 | 4 | 5))).toEqual([10000, 20000, 30000, 40000, 50000])
     expect(resolveBossThreatRequirement('fractured-approach', 5)).toBe(DUNGEONS['fractured-approach'].threatRequired)
+    for (const dungeonId of ['flooded-reliquary', 'ashen-watch', 'rootscar-hollow'] as const) {
+      expect([1, 2, 3, 4, 5].map((tier) => resolveBossThreatRequirement(dungeonId, tier as 1 | 2 | 3 | 4 | 5))).toEqual([20000, 40000, 60000, 80000, 100000])
+    }
   })
 
   it('uses enemy Power at the captured encounter tier for targeted kills', () => {
@@ -31,11 +34,10 @@ describe('Power-based Boss Threat', () => {
     expect(resolveThreatGainForKill(state, 'forest-wisp', 2)).toBe(resolveEnemyPowerRating('forest-wisp', 2))
   })
 
-  it('keeps sequence dungeons at zero and legacy random-pool locations at one', () => {
+  it('keeps sequence dungeons at zero', () => {
     const sequence = prepareCombat('abandoned-catacombs')
-    const legacy = prepareCombat('fractured-approach')
     expect(resolveThreatGainForKill(sequence, 'restless-skeleton', 1)).toBe(0)
-    expect(resolveThreatGainForKill(legacy, 'warded-husk', 1)).toBe(1)
+    expect(resolveThreatGainForKill(prepareCombat('fractured-approach'), 'warded-husk', 1)).toBe(0)
   })
 
   it('caps overshoot and emits readiness once while Auto Hunt queues immediately', () => {

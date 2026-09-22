@@ -116,6 +116,7 @@ describe("Act 0 and Act 1 dungeon content", () => {
       threatRequired: 35,
       boss: "corrupted-elemental-gatekeeper",
       encounterDelayMs: 5000,
+      encounterSequence: ["rift-wolf", "arcane-scavenger", "withered-watcher", "warded-husk"],
     });
     expect(DUNGEONS["fractured-approach"].monsterPool).toEqual([
       "warded-husk",
@@ -127,9 +128,9 @@ describe("Act 0 and Act 1 dungeon content", () => {
 
   it("keeps Act 1 monster ownership aligned with every authored dungeon", () => {
     expect(ACT1_DUNGEONS).toHaveLength(12);
-    expect(Object.keys(ACT1_MONSTERS)).toHaveLength(60);
+    expect(Object.keys(ACT1_MONSTERS)).toHaveLength(69);
     for (const dungeon of ACT1_DUNGEONS) {
-      expect(dungeon.monsterPool).toHaveLength(4);
+      expect([4, 7]).toContain(dungeon.monsterPool.length);
       expect(dungeon.boss).toBeTruthy();
       dungeon.monsterPool.forEach((monsterId) =>
         expect(ACT1_MONSTERS[monsterId]).toBeDefined(),
@@ -245,7 +246,7 @@ describe("Act 0 and Act 1 dungeon content", () => {
   });
 
   it("keeps all authored monster records and exact action sequences", () => {
-    expect(Object.keys(MONSTERS)).toHaveLength(79);
+    expect(Object.keys(MONSTERS)).toHaveLength(88);
     expect(validateMonsterDefinitions()).toEqual([]);
     expect(labels("forest-wisp")).toEqual([
       "Basic",

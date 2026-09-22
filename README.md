@@ -21,7 +21,7 @@ npm install
 npm run dev              <----///////////////////////////
 ```
 
-Open the local Vite address shown in the terminal, normally `http://localhost:5173`.
+Open the local Vite address shown in the terminal, normally `http://localhost:5173`
 
 ## Tests and Production Build
 

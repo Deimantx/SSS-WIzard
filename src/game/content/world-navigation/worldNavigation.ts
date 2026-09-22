@@ -210,6 +210,7 @@ export const COMBAT_LOCATIONS: Record<CombatLocationId, CombatLocationDefinition
       { id: 'black-sigil-reach', label: 'Black Sigil Reach' },
       { id: 'world-tier-4', label: 'World Tier 4' },
       { id: 'act1-artifact-levels-8-10', label: 'Act 1 Artifact Levels 8-10' },
+      { id: 'crystals', label: 'Crystals' },
     ],
   },
   'hall-of-unbound-names': {

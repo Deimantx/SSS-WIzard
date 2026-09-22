@@ -6,7 +6,7 @@ import type { GameContextMenuSection } from './gameContextMenuTypes'
 type ItemMenuSource = 'inventory' | 'collection' | 'reference'
 
 /** Shared item capabilities; callers own exact cross-screen selection. */
-export function buildItemContextSections({ itemId, owned, protectedItem, equipped, tracked = false, source = 'reference', onResearch, onToggleProtection, onQuickEquip, quickEquipOptions, onQuickUnequip, quickUnequipOptions, onCompare, onOpenArtifactPath, onOpenArtificing, onOpenTransmutation, onOpenUses, onWhereToGet, onTrack, onOpenInventory, onOpenCollection, onNavigate }: {
+export function buildItemContextSections({ itemId, owned, protectedItem, equipped, tracked = false, source = 'reference', onResearch, onToggleProtection, onQuickEquip, quickEquipOptions, onQuickUnequip, quickUnequipOptions, onCompare, onOpenArtifactPath, onOpenArtificing, onOpenTransmutation, onOpenUses, onOpenCrystalCache, onWhereToGet, onTrack, onOpenInventory, onOpenCollection, onNavigate }: {
   itemId: ItemId
   owned: number
   protectedItem?: boolean
@@ -24,6 +24,7 @@ export function buildItemContextSections({ itemId, owned, protectedItem, equippe
   onOpenArtificing?: () => void
   onOpenTransmutation?: () => void
   onOpenUses?: () => void
+  onOpenCrystalCache?: () => void
   onWhereToGet?: () => void
   onTrack?: () => void
   onOpenInventory?: () => void
@@ -42,6 +43,7 @@ export function buildItemContextSections({ itemId, owned, protectedItem, equippe
     ...(onOpenArtificing ? [{ id: 'artificing', label: 'Open Artificing Recipe', icon: Wrench, onSelect: onOpenArtificing }] : []),
     ...(onOpenTransmutation ? [{ id: 'transmutation', label: 'Open Transmutation Recipe', icon: Wrench, onSelect: onOpenTransmutation }] : []),
     ...(onOpenUses ? [{ id: 'uses', label: 'Used In...', icon: Library, onSelect: onOpenUses }] : []),
+    ...(onOpenCrystalCache ? [{ id: 'open-crystal-cache', label: 'Open Crystal Cache...', icon: Sparkles, onSelect: onOpenCrystalCache }] : []),
     ...(onOpenInventory ? [{ id: 'inventory', label: 'Open in Inventory', icon: ShoppingBag, disabled: source === 'inventory', onSelect: onOpenInventory }] : []),
     ...(onOpenCollection ? [{ id: 'collection', label: 'Open Collection', icon: Library, disabled: source === 'collection', onSelect: onOpenCollection }] : []),
     ...(onWhereToGet && item.source ? [{ id: 'source', label: 'Where to Get', icon: MapPin, onSelect: onWhereToGet }] : []),

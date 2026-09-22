@@ -885,7 +885,7 @@ describe('v45 Black Sigil Reach migration', () => {
 
   it('converts Hall kill Threat proportionally and preserves the valid target', () => {
     const migrated = migrateSave(activeSave({ dungeonId: 'hall-of-unbound-names', enemyId: 'name-eater', targetEnemyId: 'name-eater', threatCleared: 30 }) as any)
-    expect(migrated.saveVersion).toBe(46)
+    expect(migrated.saveVersion).toBe(47)
     expect(migrated.combat.targetEnemyId).toBe('name-eater')
     expect(migrated.combat.threatCleared).toBe(20000)
   })
@@ -947,7 +947,7 @@ describe('v45 Black Sigil Reach migration', () => {
     targeted.worldTier.current = 4
     targeted.worldTier.highestUnlocked = 4
     const targetedLoaded = migrateSave(JSON.parse(JSON.stringify(serializeGameState(targeted))))
-    expect(targetedLoaded.saveVersion).toBe(46)
+    expect(targetedLoaded.saveVersion).toBe(47)
     expect(targetedLoaded.combat).toMatchObject({ targetEnemyId: 'nameless-cantor', enemyId: 'nameless-cantor', enemyHp: 3210, enemyWorldTier: 4, threatCleared: 80000 })
 
     const sequence = createInitialState()
@@ -958,7 +958,7 @@ describe('v45 Black Sigil Reach migration', () => {
     sequence.combat.inBossFight = true
     sequence.combat.enemyHp = 12000
     const sequenceLoaded = migrateSave(JSON.parse(JSON.stringify(serializeGameState(sequence))))
-    expect(sequenceLoaded.saveVersion).toBe(46)
+    expect(sequenceLoaded.saveVersion).toBe(47)
     expect(sequenceLoaded.combat).toMatchObject({ dungeonId: 'black-gate', dungeonSequenceIndex: 4, enemyId: 'black-gatekeeper', enemyHp: 12000, inBossFight: true, targetEnemyId: null, threatCleared: 0 })
   })
 })

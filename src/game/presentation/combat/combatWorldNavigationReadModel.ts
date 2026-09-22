@@ -44,7 +44,8 @@ const getLocationState = (locationId: CombatLocationId, progress: GameState['pro
   if (!location.dungeonId || location.prototype) return 'prototype'
   const dungeon = DUNGEONS[location.dungeonId]
   const active = Boolean(combat.active && combat.dungeonId === dungeon.id)
-  if (active && combat.threatCleared >= resolveBossThreatRequirement(dungeon.id, worldTier) && !isBossCurrentlyActive({ combat }) && !combat.pendingBossId) return 'boss-ready'
+  const encounterMode = getCombatEncounterMode(location)
+  if (encounterMode === 'targeted' && active && combat.threatCleared >= resolveBossThreatRequirement(dungeon.id, worldTier) && !isBossCurrentlyActive({ combat }) && !combat.pendingBossId) return 'boss-ready'
   if (active) return 'active'
   if (isDungeonCompleted(dungeon.id, progress)) return 'completed'
   return 'available'

@@ -1,131 +1,528 @@
-import { Check, Coins, LockKeyhole, Search } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Card, SearchInput } from '../../components/ui'
-import { ScreenGrid } from '../../components/layout/ScreenGrid'
-import { useGameStore } from '../../store/gameStore'
-import type { ArtifactId, ItemId } from '../../game/types'
-import { CATEGORY_LABELS, getInventoryCategory, INVENTORY_CATEGORIES, MATERIAL_SUBCATEGORIES, type MaterialSubcategoryFilter } from '../../game/content/items/inventoryMetadata'
-import { groupOwnedItemIds, inventorySummary, materialSubcategoryCount, selectOwnedItemIds, selectVisibleItemIds, type InventoryFilter, type InventorySort, INVENTORY_SORTS } from './inventorySelectors'
-import { InventoryDetail } from './InventoryDetail'
-import { InventoryItemTile } from './InventoryItemTile'
-import { InventoryRecent } from './InventoryRecent'
-import { getItemFlow } from '../../game/systems/inventory/itemFlow'
-import { getNeededItemIds, type ItemEconomyState } from './inventoryEconomy'
-import { clearAttention, useProfileAttention } from '../../ui/attention/attentionStore'
-import { getActiveProfileId } from '../../profiles/profileSessionStore'
-import { InspectorTransition } from '../../ui/game-feel/InspectorTransition'
-import { ITEMS } from '../../game/content/items/items'
-import { useSmartScrollState } from '../../ui/game-feel/useSmartScrollState'
-import { setUiPreferences, useUiPreferences } from '../../ui/preferences/uiPreferencesStore'
-import { useNavigationIntent, setNavigationIntent } from '../../ui/navigation/navigationIntent'
-import { ItemUsesDialog } from '../../components/ui/item/ItemUsesDialog'
-import { getItemUses } from '../../game/content/items/inventoryMetadata'
-import { isTransmutationRecipeId } from '../../game/content/recipes/recipes'
-import { isArtifactItem } from '../../game/systems/artifacts/artifactProgression'
-import { ArtifactPathModal } from '../../components/artifacts/ArtifactPathModal'
-import { InventoryResourcesPanel } from './InventoryResourcesPanel'
+import { Check, Coins, LockKeyhole, Search } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Card, SearchInput } from "../../components/ui";
+import { ScreenGrid } from "../../components/layout/ScreenGrid";
+import { useGameStore } from "../../store/gameStore";
+import type { ArtifactId, ItemId } from "../../game/types";
+import {
+  CATEGORY_LABELS,
+  getInventoryCategory,
+  INVENTORY_CATEGORIES,
+  MATERIAL_SUBCATEGORIES,
+  type MaterialSubcategoryFilter,
+} from "../../game/content/items/inventoryMetadata";
+import {
+  groupOwnedItemIds,
+  inventorySummary,
+  materialSubcategoryCount,
+  selectOwnedItemIds,
+  selectVisibleItemIds,
+  type InventoryFilter,
+  type InventorySort,
+  INVENTORY_SORTS,
+} from "./inventorySelectors";
+import { InventoryDetail } from "./InventoryDetail";
+import { InventoryItemTile } from "./InventoryItemTile";
+import { InventoryRecent } from "./InventoryRecent";
+import { getItemFlow } from "../../game/systems/inventory/itemFlow";
+import { getNeededItemIds, type ItemEconomyState } from "./inventoryEconomy";
+import {
+  clearAttention,
+  useProfileAttention,
+} from "../../ui/attention/attentionStore";
+import { getActiveProfileId } from "../../profiles/profileSessionStore";
+import { InspectorTransition } from "../../ui/game-feel/InspectorTransition";
+import { ITEMS } from "../../game/content/items/items";
+import { useSmartScrollState } from "../../ui/game-feel/useSmartScrollState";
+import {
+  setUiPreferences,
+  useUiPreferences,
+} from "../../ui/preferences/uiPreferencesStore";
+import {
+  useNavigationIntent,
+  setNavigationIntent,
+} from "../../ui/navigation/navigationIntent";
+import { ItemUsesDialog } from "../../components/ui/item/ItemUsesDialog";
+import { getItemUses } from "../../game/content/items/inventoryMetadata";
+import { isTransmutationRecipeId } from "../../game/content/recipes/recipes";
+import { isArtifactItem } from "../../game/systems/artifacts/artifactProgression";
+import { ArtifactPathModal } from "../../components/artifacts/ArtifactPathModal";
+import { InventoryResourcesPanel } from "./InventoryResourcesPanel";
+import { CrystalCacheDialog } from "../crystals/CrystalsScreen";
 
 export function InventoryScreenV2() {
-  const [search, setSearch] = useState('')
-  const [filter, setFilter] = useState<InventoryFilter>('All')
-  const [materialSubcategory, setMaterialSubcategory] = useState<MaterialSubcategoryFilter>('All Materials')
-  const [sort, setSort] = useState<InventorySort>('Category')
-  const navigationIntent = useNavigationIntent()
-  const initialNavigationItemId = navigationIntent.inventoryItemId && ITEMS[navigationIntent.inventoryItemId] ? navigationIntent.inventoryItemId : null
-  const [selected, setSelected] = useState<ItemId | null>(() => initialNavigationItemId)
-  const [usesItemId, setUsesItemId] = useState<ItemId | null>(null)
-  const [artifactPathItemId, setArtifactPathItemId] = useState<ArtifactId | null>(null)
-  const [clearedNew, setClearedNew] = useState<Set<ItemId>>(() => new Set())
-  const inventory = useGameStore((state) => state.inventory)
-  const protectedItems = useGameStore((state) => state.protectedItems)
-  const equipment = useGameStore((state) => state.equipment)
-  const progress = useGameStore((state) => state.progress)
-  const activities = useGameStore((state) => state.activities)
-  const uiPreferences = useUiPreferences()
-  const pinnedRecipeIds = uiPreferences.screenState.artificing.pinnedRecipeIds
-  const trackedItemId = uiPreferences.trackedItemId
-  const currencies = useGameStore((state) => state.currencies)
-  const recentAcquisitions = useGameStore((state) => state.recentAcquisitions)
-  const toggleProtection = useGameStore((state) => state.toggleItemProtection)
-  const equipItem = useGameStore((state) => state.equipItem)
-  const sellItem = useGameStore((state) => state.sellItem)
-  const destroyItem = useGameStore((state) => state.destroyItem)
-  const clearRecentNew = useGameStore((state) => state.clearRecentNew)
-  const navigate = useGameStore((state) => state.setScreen)
-  const attention = useProfileAttention(getActiveProfileId())
-  const ownedIds = useMemo(() => selectOwnedItemIds(inventory), [inventory])
-  const recentOrder = useMemo(() => recentAcquisitions.map((entry) => entry.itemId), [recentAcquisitions])
-  const economyState = useMemo<ItemEconomyState>(() => ({ inventory, protectedItems, equipment, progress, activities }), [inventory, protectedItems, equipment, progress, activities])
-  const neededIds = useMemo(() => getNeededItemIds(economyState, pinnedRecipeIds), [economyState, pinnedRecipeIds])
-  const flowById = useMemo(() => new Map(ownedIds.map((id) => [id, getItemFlow(id, economyState)])), [ownedIds, economyState])
-  const visibleIds = useMemo(() => selectVisibleItemIds(inventory, protectedItems, equipment, search, filter, sort, materialSubcategory, recentOrder, neededIds), [inventory, protectedItems, equipment, search, filter, sort, materialSubcategory, recentOrder, neededIds])
-  const summary = useMemo(() => inventorySummary(ownedIds, inventory), [ownedIds, inventory])
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<InventoryFilter>("All");
+  const [materialSubcategory, setMaterialSubcategory] =
+    useState<MaterialSubcategoryFilter>("All Materials");
+  const [sort, setSort] = useState<InventorySort>("Category");
+  const navigationIntent = useNavigationIntent();
+  const initialNavigationItemId =
+    navigationIntent.inventoryItemId && ITEMS[navigationIntent.inventoryItemId]
+      ? navigationIntent.inventoryItemId
+      : null;
+  const [selected, setSelected] = useState<ItemId | null>(
+    () => initialNavigationItemId,
+  );
+  const [usesItemId, setUsesItemId] = useState<ItemId | null>(null);
+  const [artifactPathItemId, setArtifactPathItemId] =
+    useState<ArtifactId | null>(null);
+  const [cacheDialogOpen, setCacheDialogOpen] = useState(false);
+  const [clearedNew, setClearedNew] = useState<Set<ItemId>>(() => new Set());
+  const inventory = useGameStore((state) => state.inventory);
+  const protectedItems = useGameStore((state) => state.protectedItems);
+  const equipment = useGameStore((state) => state.equipment);
+  const progress = useGameStore((state) => state.progress);
+  const activities = useGameStore((state) => state.activities);
+  const uiPreferences = useUiPreferences();
+  const pinnedRecipeIds = uiPreferences.screenState.artificing.pinnedRecipeIds;
+  const trackedItemId = uiPreferences.trackedItemId;
+  const currencies = useGameStore((state) => state.currencies);
+  const recentAcquisitions = useGameStore((state) => state.recentAcquisitions);
+  const toggleProtection = useGameStore((state) => state.toggleItemProtection);
+  const equipItem = useGameStore((state) => state.equipItem);
+  const sellItem = useGameStore((state) => state.sellItem);
+  const destroyItem = useGameStore((state) => state.destroyItem);
+  const clearRecentNew = useGameStore((state) => state.clearRecentNew);
+  const navigate = useGameStore((state) => state.setScreen);
+  const openCrystalCaches = useGameStore((state) => state.openCrystalCaches);
+  const attention = useProfileAttention(getActiveProfileId());
+  const ownedIds = useMemo(() => selectOwnedItemIds(inventory), [inventory]);
+  const recentOrder = useMemo(
+    () => recentAcquisitions.map((entry) => entry.itemId),
+    [recentAcquisitions],
+  );
+  const economyState = useMemo<ItemEconomyState>(
+    () => ({ inventory, protectedItems, equipment, progress, activities }),
+    [inventory, protectedItems, equipment, progress, activities],
+  );
+  const neededIds = useMemo(
+    () => getNeededItemIds(economyState, pinnedRecipeIds),
+    [economyState, pinnedRecipeIds],
+  );
+  const flowById = useMemo(
+    () => new Map(ownedIds.map((id) => [id, getItemFlow(id, economyState)])),
+    [ownedIds, economyState],
+  );
+  const visibleIds = useMemo(
+    () =>
+      selectVisibleItemIds(
+        inventory,
+        protectedItems,
+        equipment,
+        search,
+        filter,
+        sort,
+        materialSubcategory,
+        recentOrder,
+        neededIds,
+      ),
+    [
+      inventory,
+      protectedItems,
+      equipment,
+      search,
+      filter,
+      sort,
+      materialSubcategory,
+      recentOrder,
+      neededIds,
+    ],
+  );
+  const summary = useMemo(
+    () => inventorySummary(ownedIds, inventory),
+    [ownedIds, inventory],
+  );
   const categoryCounts = useMemo(() => {
-    const counts = { All: ownedIds.length, Materials: 0, Equipment: 0, Special: 0 }
+    const counts = {
+      All: ownedIds.length,
+      Materials: 0,
+      Equipment: 0,
+      Special: 0,
+    };
     ownedIds.forEach((itemId) => {
-      const category = getInventoryCategory(itemId)
-      if (category === 'material') counts.Materials += 1
-      if (category === 'equipment') counts.Equipment += 1
-      if (category === 'special') counts.Special += 1
-    })
-    return counts
-  }, [ownedIds])
-  const newItems = useMemo(() => new Set(attention.unseenItems.filter((itemId) => !clearedNew.has(itemId))), [attention.unseenItems, clearedNew])
-  const catalogScrollRef = useRef<HTMLDivElement>(null)
-  useSmartScrollState(catalogScrollRef, { dependencies: [visibleIds.join('|'), search, filter, materialSubcategory, sort] })
+      const category = getInventoryCategory(itemId);
+      if (category === "material") counts.Materials += 1;
+      if (category === "equipment") counts.Equipment += 1;
+      if (category === "special") counts.Special += 1;
+    });
+    return counts;
+  }, [ownedIds]);
+  const newItems = useMemo(
+    () =>
+      new Set(
+        attention.unseenItems.filter((itemId) => !clearedNew.has(itemId)),
+      ),
+    [attention.unseenItems, clearedNew],
+  );
+  const catalogScrollRef = useRef<HTMLDivElement>(null);
+  useSmartScrollState(catalogScrollRef, {
+    dependencies: [
+      visibleIds.join("|"),
+      search,
+      filter,
+      materialSubcategory,
+      sort,
+    ],
+  });
 
   useEffect(() => {
-    setSelected((current) => current && visibleIds.includes(current) ? current : visibleIds[0] ?? null)
-  }, [visibleIds.join('|')])
+    setSelected((current) =>
+      current && visibleIds.includes(current)
+        ? current
+        : (visibleIds[0] ?? null),
+    );
+  }, [visibleIds.join("|")]);
 
   useEffect(() => {
-    const itemId = navigationIntent.inventoryItemId
-    if (!itemId) return
+    const itemId = navigationIntent.inventoryItemId;
+    if (!itemId) return;
     if (!ITEMS[itemId]) {
-      setNavigationIntent({ inventoryItemId: null })
-      return
+      setNavigationIntent({ inventoryItemId: null });
+      return;
     }
-    setSearch('')
-    setFilter('All')
-    setMaterialSubcategory('All Materials')
-    setSelected(itemId)
-    setNavigationIntent({ inventoryItemId: null })
-  }, [navigationIntent.inventoryItemId])
+    setSearch("");
+    setFilter("All");
+    setMaterialSubcategory("All Materials");
+    setSelected(itemId);
+    setNavigationIntent({ inventoryItemId: null });
+  }, [navigationIntent.inventoryItemId]);
 
   const selectItem = (itemId: ItemId) => {
-    setSelected(itemId)
-    clearRecentNew(itemId)
-    clearAttention(getActiveProfileId(), 'item', itemId)
-    setClearedNew((current) => new Set(current).add(itemId))
+    setSelected(itemId);
+    clearRecentNew(itemId);
+    clearAttention(getActiveProfileId(), "item", itemId);
+    setClearedNew((current) => new Set(current).add(itemId));
     window.setTimeout(() => {
-      const element = document.querySelector<HTMLElement>(`[data-item-id="${itemId}"]`)
-      if (element && typeof element.scrollIntoView === 'function') element.scrollIntoView({ behavior: document.documentElement.dataset.reducedMotion === 'true' ? 'auto' : 'smooth', block: 'nearest' })
-    }, 0)
-  }
+      const element = document.querySelector<HTMLElement>(
+        `[data-item-id="${itemId}"]`,
+      );
+      if (element && typeof element.scrollIntoView === "function")
+        element.scrollIntoView({
+          behavior:
+            document.documentElement.dataset.reducedMotion === "true"
+              ? "auto"
+              : "smooth",
+          block: "nearest",
+        });
+    }, 0);
+  };
 
   const selectRecent = (itemId: ItemId) => {
-    setSearch('')
-    setFilter('All')
-    setMaterialSubcategory('All Materials')
-    selectItem(itemId)
-  }
-  const setCategory = (next: InventoryFilter) => { setFilter(next); if (next !== 'Materials') setMaterialSubcategory('All Materials') }
-  const noMatchText = search.trim() ? `No owned items match “${search.trim()}”.` : filter === 'Protected' ? 'No protected items are currently owned.' : filter === 'Needed' ? 'No owned items are needed right now.' : 'No owned items match this view.'
+    setSearch("");
+    setFilter("All");
+    setMaterialSubcategory("All Materials");
+    selectItem(itemId);
+  };
+  const setCategory = (next: InventoryFilter) => {
+    setFilter(next);
+    if (next !== "Materials") setMaterialSubcategory("All Materials");
+  };
+  const noMatchText = search.trim()
+    ? `No owned items match “${search.trim()}”.`
+    : filter === "Protected"
+      ? "No protected items are currently owned."
+      : filter === "Needed"
+        ? "No owned items are needed right now."
+        : "No owned items match this view.";
 
   const renderGrid = () => {
-    if (visibleIds.length === 0) return <div className="inventory-empty-state"><div className="inventory-empty-mark">◇</div><strong>{noMatchText}</strong><span>Inventory shows only what the tower currently owns. Browse unowned discoveries in Collection.</span></div>
-    const filteredCategory = filter === 'Materials' ? 'material' : filter === 'Equipment' ? 'equipment' : 'special'
-    const groups = filter === 'All' || filter === 'Protected' || filter === 'Needed' ? groupOwnedItemIds(visibleIds) : [{ category: filteredCategory as 'material' | 'loot' | 'equipment' | 'special', ids: visibleIds }]
-    return <div className="inventory-groups">{groups.map((group) => <section className="inventory-group" key={group.category}><div className="inventory-group-heading"><span>{CATEGORY_LABELS[group.category]}</span><small>{group.ids.length} {group.ids.length === 1 ? 'TYPE' : 'TYPES'}</small></div><div className="inventory-grid">{group.ids.map((id) => <InventoryItemTile key={id} itemId={id} inventory={inventory} protectedItems={protectedItems} equipment={equipment} selected={selected === id} newItem={newItems.has(id)} flow={flowById.get(id)} flowDirection={flowById.get(id)?.direction ?? undefined} onSelect={() => selectItem(id)} onNavigate={navigate} onToggleProtection={toggleProtection} onTrack={(itemId) => setUiPreferences({ trackedItemId: trackedItemId === itemId ? null : itemId })} tracked={trackedItemId === id} onOpenUses={setUsesItemId} onOpenArtifactPath={isArtifactItem(id) ? setArtifactPathItemId : undefined} onEquip={equipItem} onUnequip={useGameStore.getState().unequipItem} />)}</div></section>)}</div>
-  }
+    if (visibleIds.length === 0)
+      return (
+        <div className="inventory-empty-state">
+          <div className="inventory-empty-mark">◇</div>
+          <strong>{noMatchText}</strong>
+          <span>
+            Inventory shows only what the tower currently owns. Browse unowned
+            discoveries in Collection.
+          </span>
+        </div>
+      );
+    const filteredCategory =
+      filter === "Materials"
+        ? "material"
+        : filter === "Equipment"
+          ? "equipment"
+          : "special";
+    const groups =
+      filter === "All" || filter === "Protected" || filter === "Needed"
+        ? groupOwnedItemIds(visibleIds)
+        : [
+            {
+              category: filteredCategory as
+                "material" | "loot" | "equipment" | "special",
+              ids: visibleIds,
+            },
+          ];
+    return (
+      <div className="inventory-groups">
+        {groups.map((group) => (
+          <section className="inventory-group" key={group.category}>
+            <div className="inventory-group-heading">
+              <span>{CATEGORY_LABELS[group.category]}</span>
+              <small>
+                {group.ids.length} {group.ids.length === 1 ? "TYPE" : "TYPES"}
+              </small>
+            </div>
+            <div className="inventory-grid">
+              {group.ids.map((id) => (
+                <InventoryItemTile
+                  key={id}
+                  itemId={id}
+                  inventory={inventory}
+                  protectedItems={protectedItems}
+                  equipment={equipment}
+                  selected={selected === id}
+                  newItem={newItems.has(id)}
+                  flow={flowById.get(id)}
+                  flowDirection={flowById.get(id)?.direction ?? undefined}
+                  onSelect={() => selectItem(id)}
+                  onNavigate={navigate}
+                  onToggleProtection={toggleProtection}
+                  onTrack={(itemId) =>
+                    setUiPreferences({
+                      trackedItemId: trackedItemId === itemId ? null : itemId,
+                    })
+                  }
+                  tracked={trackedItemId === id}
+                  onOpenUses={setUsesItemId}
+                  onOpenArtifactPath={
+                    isArtifactItem(id) ? setArtifactPathItemId : undefined
+                  }
+                  onOpenCrystalCache={
+                    id === "tier-1-crystal-cache"
+                      ? () => setCacheDialogOpen(true)
+                      : undefined
+                  }
+                  onEquip={equipItem}
+                  onUnequip={useGameStore.getState().unequipItem}
+                />
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+    );
+  };
 
-  const catalog = <Card title="ITEM VAULT" className="inventory-catalog-card" action={<span className="inventory-vault-header-meta"><span className="inventory-summary">{summary.types} ITEM TYPES <i>·</i> {summary.total.toLocaleString()} TOTAL ITEMS</span><span className="inventory-gold"><Coins size={14} /> GOLD {Math.max(0, Math.floor(currencies.gold)).toLocaleString()}</span></span>}>
-    <div className="inventory-toolbar"><div className="inventory-search"><Search size={16} aria-hidden="true" /><SearchInput value={search} onChange={setSearch} placeholder="Search inventory..." /></div><label className="inventory-sort"><span>SORT</span><select aria-label="Sort inventory" value={sort} onChange={(event) => setSort(event.target.value as InventorySort)}>{INVENTORY_SORTS.map((value) => <option key={value}>{value}</option>)}</select></label><div className="inventory-utility-filters"><button type="button" className={`inventory-protected-toggle ${filter === 'Protected' ? 'active' : ''}`} aria-pressed={filter === 'Protected'} onClick={() => setCategory(filter === 'Protected' ? 'All' : 'Protected')}><LockKeyhole size={14} /> Protected {filter === 'Protected' && <Check size={13} />}</button><button type="button" className={`inventory-protected-toggle ${filter === 'Needed' ? 'active' : ''}`} aria-pressed={filter === 'Needed'} onClick={() => setCategory(filter === 'Needed' ? 'All' : 'Needed')}>Needed {filter === 'Needed' && <Check size={13} />}</button></div></div>
-    <div className="inventory-category-bar" role="tablist" aria-label="Inventory categories">{INVENTORY_CATEGORIES.map((value) => <button type="button" role="tab" aria-selected={filter === value} className={filter === value ? 'active' : ''} key={value} onClick={() => setCategory(value)}><span>{value.toUpperCase()}</span><small>{categoryCounts[value]}</small></button>)}</div>
-    {filter === 'Materials' && <div className="inventory-material-bar" role="tablist" aria-label="Material subcategories">{MATERIAL_SUBCATEGORIES.map((value) => <button type="button" role="tab" aria-selected={materialSubcategory === value} className={materialSubcategory === value ? 'active' : ''} key={value} disabled={value !== 'All Materials' && materialSubcategoryCount(ownedIds, value) === 0} onClick={() => setMaterialSubcategory(value)}>{value}</button>)}</div>}
-    <InventoryRecent entries={recentAcquisitions} inventory={inventory} protectedItems={protectedItems} equipment={equipment} flows={flowById} onSelect={selectRecent} />
-    <div ref={catalogScrollRef} className="inventory-vault-content smart-scroll-region">{renderGrid()}</div>
-  </Card>
-  const detailPanel = <Card title="ITEM DETAILS" className="inventory-detail-card"><InspectorTransition identity={selected} accent={selected ? ITEMS[selected]?.color : undefined} fill>{selected ? <InventoryDetail itemId={selected} inventory={inventory} protectedItems={protectedItems} equipment={equipment} economyState={economyState} navigate={navigate} toggleProtection={toggleProtection} equipItem={equipItem} sellItem={sellItem} destroyItem={destroyItem} onOpenArtifactPath={selected && isArtifactItem(selected) ? setArtifactPathItemId : undefined} /> : <div className="inventory-detail-empty"><div className="inventory-empty-mark">◇</div><strong>SELECT AN ITEM</strong><span>Choose an item from the Vault to inspect its source, uses, and protection.</span></div>}</InspectorTransition></Card>
-  return <div className="screen-content inventory-screen"><div className="screen-header"><div><div className="eyebrow">TOWER VAULT · INVENTORY</div><h1>Everything the tower currently holds.</h1><p>Inspect owned materials and equipment, trace their sources, and see exactly where they are used.</p></div></div><InventoryResourcesPanel /><ScreenGrid screen="inventory" panels={[{ id: 'inventory-catalog', content: catalog }, { id: 'inventory-detail', content: detailPanel }, ]} /><ItemUsesDialog itemId={usesItemId ?? 'fire-fragment'} uses={usesItemId ? getItemUses(usesItemId) : []} open={Boolean(usesItemId)} onClose={() => setUsesItemId(null)} onSelectRecipe={(recipeId) => { setUsesItemId(null); const isTransmutation = isTransmutationRecipeId(recipeId); setNavigationIntent(isTransmutation ? { transmutationRecipeId: recipeId } : { artificingRecipeId: recipeId as never }); navigate(isTransmutation ? 'tower-transmutation' : 'tower-artificing') }} />{artifactPathItemId && <ArtifactPathModal artifactId={artifactPathItemId} onClose={() => setArtifactPathItemId(null)} />}</div>
+  const catalog = (
+    <Card
+      title="ITEM VAULT"
+      className="inventory-catalog-card"
+      action={
+        <span className="inventory-vault-header-meta">
+          <span className="inventory-summary">
+            {summary.types} ITEM TYPES <i>·</i> {summary.total.toLocaleString()}{" "}
+            TOTAL ITEMS
+          </span>
+          <span className="inventory-gold">
+            <Coins size={14} /> GOLD{" "}
+            {Math.max(0, Math.floor(currencies.gold)).toLocaleString()}
+          </span>
+        </span>
+      }
+    >
+      <div className="inventory-toolbar">
+        <div className="inventory-search">
+          <Search size={16} aria-hidden="true" />
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Search inventory..."
+          />
+        </div>
+        <label className="inventory-sort">
+          <span>SORT</span>
+          <select
+            aria-label="Sort inventory"
+            value={sort}
+            onChange={(event) => setSort(event.target.value as InventorySort)}
+          >
+            {INVENTORY_SORTS.map((value) => (
+              <option key={value}>{value}</option>
+            ))}
+          </select>
+        </label>
+        <div className="inventory-utility-filters">
+          <button
+            type="button"
+            className={`inventory-protected-toggle ${filter === "Protected" ? "active" : ""}`}
+            aria-pressed={filter === "Protected"}
+            onClick={() =>
+              setCategory(filter === "Protected" ? "All" : "Protected")
+            }
+          >
+            <LockKeyhole size={14} /> Protected{" "}
+            {filter === "Protected" && <Check size={13} />}
+          </button>
+          <button
+            type="button"
+            className={`inventory-protected-toggle ${filter === "Needed" ? "active" : ""}`}
+            aria-pressed={filter === "Needed"}
+            onClick={() => setCategory(filter === "Needed" ? "All" : "Needed")}
+          >
+            Needed {filter === "Needed" && <Check size={13} />}
+          </button>
+        </div>
+      </div>
+      <div
+        className="inventory-category-bar"
+        role="tablist"
+        aria-label="Inventory categories"
+      >
+        {INVENTORY_CATEGORIES.map((value) => (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={filter === value}
+            className={filter === value ? "active" : ""}
+            key={value}
+            onClick={() => setCategory(value)}
+          >
+            <span>{value.toUpperCase()}</span>
+            <small>{categoryCounts[value]}</small>
+          </button>
+        ))}
+      </div>
+      {filter === "Materials" && (
+        <div
+          className="inventory-material-bar"
+          role="tablist"
+          aria-label="Material subcategories"
+        >
+          {MATERIAL_SUBCATEGORIES.map((value) => (
+            <button
+              type="button"
+              role="tab"
+              aria-selected={materialSubcategory === value}
+              className={materialSubcategory === value ? "active" : ""}
+              key={value}
+              disabled={
+                value !== "All Materials" &&
+                materialSubcategoryCount(ownedIds, value) === 0
+              }
+              onClick={() => setMaterialSubcategory(value)}
+            >
+              {value}
+            </button>
+          ))}
+        </div>
+      )}
+      <InventoryRecent
+        entries={recentAcquisitions}
+        inventory={inventory}
+        protectedItems={protectedItems}
+        equipment={equipment}
+        flows={flowById}
+        onSelect={selectRecent}
+      />
+      <div
+        ref={catalogScrollRef}
+        className="inventory-vault-content smart-scroll-region"
+      >
+        {renderGrid()}
+      </div>
+    </Card>
+  );
+  const detailPanel = (
+    <Card title="ITEM DETAILS" className="inventory-detail-card">
+      <InspectorTransition
+        identity={selected}
+        accent={selected ? ITEMS[selected]?.color : undefined}
+        fill
+      >
+        {selected ? (
+          <InventoryDetail
+            itemId={selected}
+            inventory={inventory}
+            protectedItems={protectedItems}
+            equipment={equipment}
+            economyState={economyState}
+            navigate={navigate}
+            toggleProtection={toggleProtection}
+            equipItem={equipItem}
+            sellItem={sellItem}
+            destroyItem={destroyItem}
+            onOpenArtifactPath={
+              selected && isArtifactItem(selected)
+                ? setArtifactPathItemId
+                : undefined
+            }
+            onOpenCrystalCache={
+              selected === "tier-1-crystal-cache"
+                ? () => setCacheDialogOpen(true)
+                : undefined
+            }
+          />
+        ) : (
+          <div className="inventory-detail-empty">
+            <div className="inventory-empty-mark">◇</div>
+            <strong>SELECT AN ITEM</strong>
+            <span>
+              Choose an item from the Vault to inspect its source, uses, and
+              protection.
+            </span>
+          </div>
+        )}
+      </InspectorTransition>
+    </Card>
+  );
+  return (
+    <div className="screen-content inventory-screen">
+      <div className="screen-header">
+        <div>
+          <div className="eyebrow">TOWER VAULT · INVENTORY</div>
+          <h1>Everything the tower currently holds.</h1>
+          <p>
+            Inspect owned materials and equipment, trace their sources, and see
+            exactly where they are used.
+          </p>
+        </div>
+      </div>
+      <InventoryResourcesPanel />
+      <ScreenGrid
+        screen="inventory"
+        panels={[
+          { id: "inventory-catalog", content: catalog },
+          { id: "inventory-detail", content: detailPanel },
+        ]}
+      />
+      <ItemUsesDialog
+        itemId={usesItemId ?? "fire-fragment"}
+        uses={usesItemId ? getItemUses(usesItemId) : []}
+        open={Boolean(usesItemId)}
+        onClose={() => setUsesItemId(null)}
+        onSelectRecipe={(recipeId) => {
+          setUsesItemId(null);
+          const isTransmutation = isTransmutationRecipeId(recipeId);
+          setNavigationIntent(
+            isTransmutation
+              ? { transmutationRecipeId: recipeId }
+              : { artificingRecipeId: recipeId as never },
+          );
+          navigate(
+            isTransmutation ? "tower-transmutation" : "tower-artificing",
+          );
+        }}
+      />
+      {artifactPathItemId && (
+        <ArtifactPathModal
+          artifactId={artifactPathItemId}
+          onClose={() => setArtifactPathItemId(null)}
+        />
+      )}
+      {cacheDialogOpen && (
+        <CrystalCacheDialog
+          owned={inventory["tier-1-crystal-cache"] ?? 0}
+          onOpen={openCrystalCaches}
+          onClose={() => setCacheDialogOpen(false)}
+          onOpenInventory={() => {
+            setCacheDialogOpen(false);
+            setNavigationIntent({ openCrystalInventory: true });
+            navigate("crystals");
+          }}
+        />
+      )}
+    </div>
+  );
 }

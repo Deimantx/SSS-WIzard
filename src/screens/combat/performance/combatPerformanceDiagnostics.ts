@@ -9,7 +9,7 @@ export const COMBAT_PERFORMANCE_TOGGLE_LABELS = {
   patternProgress: 'Pattern Progress',
   cooldownOverlays: 'Spell Cooldown Overlays',
   combatAnalytics: 'Combat Analytics panel',
-  dungeonStatistics: 'Dungeon Statistics panel',
+  dungeonStatistics: 'Combat Statistics panel',
 } as const
 
 export type CombatPerformanceToggleId = keyof typeof COMBAT_PERFORMANCE_TOGGLE_LABELS

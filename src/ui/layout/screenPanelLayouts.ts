@@ -199,6 +199,15 @@ export const SCREEN_PANEL_LAYOUTS: Record<ScreenId, ScreenLayoutDefinition> = {
   }, ['arcane-core-overview']),
 
   // ============================================================
+  // CRYSTALS
+  // ============================================================
+  crystals: screen({
+    'crystals-board': panel({ order: 1, columnStart: 1, columnSpan: 8, rowStart: 1, minHeight: 560, preferredHeight: 720, label: 'Crystal Slot Board' }),
+    'crystals-summary': panel({ order: 2, columnStart: 9, columnSpan: 4, rowStart: 1, minHeight: 560, preferredHeight: 720, label: 'Crystal Summary' }),
+    'crystals-presets': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 2, minHeight: 190, preferredHeight: 250, label: 'Crystal Presets' }),
+  }, ['crystals-board', 'crystals-summary', 'crystals-presets']),
+
+  // ============================================================
   // COLLECTION
   // ============================================================
   collection: screen({

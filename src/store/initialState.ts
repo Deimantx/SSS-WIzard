@@ -8,10 +8,11 @@ import { DUNGEON_ORDER } from '../game/content/dungeons/dungeons'
 import { CANONICAL_SPELL_IDS } from '../game/content/spells/spells'
 import { createEmptyResonanceState } from '../game/systems/resonance/resonanceRuntime'
 import { createInitialWorldTierState } from '../game/systems/world-tier/worldTierRuntime'
+import { createInitialCrystalState } from '../game/systems/crystals/crystalRuntime'
 
 // Combat Action System V3 stores authored base work plus remaining work for
 // dynamic-rate action progression.
-export const SAVE_VERSION = 46
+export const SAVE_VERSION = 47
 
 const emptySpellRecord = <T>(value: T) => Object.fromEntries(CANONICAL_SPELL_IDS.map((spellId) => [spellId, value])) as Record<import('../game/types').SpellId, T>
 
@@ -23,6 +24,7 @@ export const createInitialState = (): GameState => ({
   resonance: createEmptyResonanceState(),
   worldTier: createInitialWorldTierState(),
   inventory: {},
+  crystals: createInitialCrystalState(),
   protectedItems: {},
   equipment: { weapon: null, armor: null, head: null },
   arcaneCore: { totalPointsEarned: 0, nodes: {} },

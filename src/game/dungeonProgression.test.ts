@@ -22,7 +22,7 @@ describe('dungeon progression helpers', () => {
     const game = useGameStore.getState()
     game.resetSave()
     game.setBossKills('forest-heart', 1)
-    game.enterDungeon('howling-den')
+    game.enterTargetedCombat('howling-den', 'cavefang-wolf')
     game.spawnDebugEnemy('cavefang-wolf')
     game.setThreat(DUNGEONS['howling-den'].threatRequired)
     game.setPlayerBarrier(37)
@@ -58,7 +58,7 @@ describe('dungeon progression helpers', () => {
     const game = useGameStore.getState()
     game.resetSave()
     game.setBossKills('forest-heart', 1)
-    game.enterDungeon('howling-den')
+    game.enterTargetedCombat('howling-den', 'cavefang-wolf')
     game.toggleAutoHunt('howling-den')
     game.setThreat(DUNGEONS['howling-den'].threatRequired - 1)
     game.spawnDebugEnemy('cavefang-wolf')
@@ -87,7 +87,7 @@ describe('dungeon progression helpers', () => {
     const beforeKills = before.progress.lifetimeKills
     const beforeMonsterKills = before.progress.lifetimeKillsByMonster['grove-sentinel'] ?? 0
 
-    game.enterDungeon('howling-den')
+    game.enterTargetedCombat('howling-den', 'cavefang-wolf')
 
     const after = useGameStore.getState()
     expect(after.combat.active).toBe(true)
@@ -157,6 +157,7 @@ describe('dungeon progression helpers', () => {
     expect(after.combat.threatCleared).toBe(12)
     expect(after.combat.enemyId).toBe(before.combat.enemyId)
   })
+
 })
 
 describe('dungeon-specific Guild request progression', () => {

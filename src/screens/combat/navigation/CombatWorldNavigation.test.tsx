@@ -214,6 +214,26 @@ describe('CombatWorldNavigation', () => {
     expect(screen.queryByText('Shared loot pool from normal encounters.')).toBeNull()
   })
 
+  it('disables targeted Bestiary until a target is selected', () => {
+    renderNavigation()
+
+    const bestiary = screen.getByRole('button', { name: 'BESTIARY' })
+    expect(bestiary).toHaveProperty('disabled', true)
+
+    fireEvent.click(screen.getByRole('button', { name: /Forest WispEASY/ }))
+    expect(screen.getByRole('button', { name: 'BESTIARY' })).not.toHaveProperty('disabled', true)
+  })
+
+  it('deep-links Bestiary to the selected targeted monster', () => {
+    const onBestiary = vi.fn()
+    render(<TooltipProvider><CombatWorldNavigation onSelectLocation={vi.fn()} onEnterLocation={vi.fn()} onHuntTarget={vi.fn(() => true)} onBestiary={onBestiary} onReturnToCombat={vi.fn()} /></TooltipProvider>)
+
+    fireEvent.click(screen.getByRole('button', { name: /ThornlingEASY/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'BESTIARY' }))
+
+    expect(onBestiary).toHaveBeenCalledWith(expect.objectContaining({ id: 'whispering-woods' }), 'thornling')
+  })
+
   it('keeps location-level Loot for non-targeted locations', () => {
     const state = createInitialState()
     state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
@@ -224,5 +244,22 @@ describe('CombatWorldNavigation', () => {
 
     expect(screen.getByText('LOCATION LOOT')).toBeTruthy()
     expect(screen.getByText('MONSTER LOOT')).toBeTruthy()
+  })
+
+  it('exposes the canonical manual Boss Engage action in the active Zone Boss section', () => {
+    const state = createInitialState()
+    state.combat.active = true
+    state.combat.dungeonId = 'whispering-woods'
+    state.combat.targetEnemyId = 'forest-wisp'
+    state.combat.threatCleared = 5000
+    state.combat.activeSpellLoadout = { presetId: null, presetName: 'Test Loadout', slots: [{ spellId: 'fire-bolt', autoCast: false }], signature: 'fire-bolt:0' }
+    useGameStore.setState(state)
+    renderNavigation()
+
+    expect(screen.getByRole('button', { name: 'ENGAGE BOSS' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'ENGAGE BOSS' }))
+
+    expect(useGameStore.getState().combat.enemyId).toBe('forest-heart')
+    expect(useGameStore.getState().combat.inBossFight).toBe(true)
   })
 })

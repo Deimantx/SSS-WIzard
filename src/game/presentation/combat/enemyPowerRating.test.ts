@@ -32,4 +32,11 @@ describe('enemy Power rating', () => {
     expect(breakdown.basicDps).toBe(profile.basicAttackDamage / (monster.basicAttackTimeMs / 1000))
     expect(breakdown.effectiveHealth).toBeGreaterThan(profile.maxHealth)
   })
+
+  it('stays finite and positive for every authored monster at every World Tier', () => {
+    Object.keys(MONSTERS).forEach((monsterId) => {
+      const ratings = [1, 2, 3, 4, 5].map((tier) => resolveEnemyPowerRating(monsterId as keyof typeof MONSTERS, tier as 1 | 2 | 3 | 4 | 5))
+      expect(ratings.every((rating) => Number.isFinite(rating) && rating > 0), monsterId).toBe(true)
+    })
+  })
 })

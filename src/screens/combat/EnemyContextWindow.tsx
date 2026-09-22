@@ -161,7 +161,7 @@ export function EnemyLootContent({ selectedDungeonId }: { selectedDungeonId: Dun
   const inventory = useGameStore((state) => state.inventory)
   const dungeon = DUNGEONS[combat.dungeonId ?? selectedDungeonId]
   const current = combat.enemyId ? MONSTERS[combat.enemyId] : null
-  return <div className="enemy-loot-content"><div className="enemy-context-loot-group"><div className="combat-subsection-label">{current ? 'CURRENT ENEMY DROPS' : 'DUNGEON DROPS'}</div>{current ? <LootTiles monster={current} inventory={inventory} /> : <p className="muted">No active enemy. Boss and normal enemy drops are shown when an encounter is active.</p>}</div><div className="enemy-context-loot-group"><div className="combat-subsection-label">BOSS DROPS · {MONSTERS[dungeon.boss].name.toUpperCase()}</div><LootTiles monster={MONSTERS[dungeon.boss]} inventory={inventory} /></div></div>
+  return <div className="enemy-loot-content"><div className="enemy-context-loot-group"><div className="combat-subsection-label">{current ? 'CURRENT ENEMY DROPS' : 'LOCATION DROPS'}</div>{current ? <LootTiles monster={current} inventory={inventory} /> : <p className="muted">No active enemy. Boss and normal enemy drops are shown when an encounter is active.</p>}</div><div className="enemy-context-loot-group"><div className="combat-subsection-label">BOSS DROPS · {MONSTERS[dungeon.boss].name.toUpperCase()}</div><LootTiles monster={MONSTERS[dungeon.boss]} inventory={inventory} /></div></div>
 }
 
 function LootTiles({ monster, inventory }: { monster: typeof MONSTERS[MonsterId]; inventory: Partial<Record<ItemId, number>> }) {

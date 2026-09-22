@@ -9,7 +9,7 @@ export function CombatAnalyticsPanel() {
   return <Card className="combat-analytics-panel">
     <header className="combat-analytics-head">
       <span className="combat-subsection-label">COMBAT ANALYTICS</span>
-      <small>Live combat performance and dungeon session data.</small>
+      <small>Live combat performance and location session data.</small>
     </header>
     <div className="combat-analytics-grid">
       <CombatDetailsPanel />

@@ -42,7 +42,7 @@ describe('DungeonStatisticsPanel V3.7', () => {
     expect(screen.getByText('SESSION')).toBeTruthy()
     expect(screen.getByText('FULL RUNS')).toBeTruthy()
 
-    return user.click(screen.getByRole('button', { name: 'Next Dungeon Statistics mode' })).then(() => user.click(screen.getByRole('button', { name: 'Next Dungeon Statistics mode' }))).then(() => {
+    return user.click(screen.getByRole('button', { name: 'Next Combat Statistics mode' })).then(() => user.click(screen.getByRole('button', { name: 'Next Combat Statistics mode' }))).then(() => {
     expect(screen.getByText('COMBAT UPTIME')).toBeTruthy()
     expect(screen.getByText('FASTEST BOSS')).toBeTruthy()
     })

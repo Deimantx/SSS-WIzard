@@ -38,6 +38,7 @@ import { getArcaneCoreNode } from '../game/content/arcaneCore/arcaneCoreBranches
 import { normalizeResonanceState } from '../game/systems/resonance/resonanceRuntime'
 import { isWorldTierId, reconcileWorldTierProgression, sanitizeWorldTierState } from '../game/systems/world-tier/worldTierRuntime'
 import { LEGACY_POWER_THREAT_REQUIREMENTS, resolveBossThreatRequirement } from '../game/systems/combat/combatThreat'
+import { isCrystalSystemUnlocked, normalizeCrystalState } from '../game/systems/crystals/crystalRuntime'
 
 const statusValidationContext = createCombatValidationContext(STATUS_DEFINITIONS)
 
@@ -71,7 +72,7 @@ const LEGACY_SHATTERED_MERIDIAN_THREAT_REQUIREMENTS: Partial<Record<DungeonId, n
 
 const normalizeScreen = (value: unknown, fallback: GameState['ui']['screen']): GameState['ui']['screen'] => {
   if (value === 'tower') return 'tower-channeling'
-  const valid = ['home', 'combat', 'schools', 'inventory', 'equipment', 'arcane-core', 'collection', 'bestiary', 'tower-channeling', 'tower-focus', 'tower-research', 'tower-transmutation', 'tower-artificing', 'tower-summoning', 'tower-dark-portal', 'guild', 'settings']
+  const valid = ['home', 'combat', 'schools', 'inventory', 'equipment', 'arcane-core', 'crystals', 'collection', 'bestiary', 'tower-channeling', 'tower-focus', 'tower-research', 'tower-transmutation', 'tower-artificing', 'tower-summoning', 'tower-dark-portal', 'guild', 'settings']
   if (value === 'tower-condensation') return 'tower-transmutation'
   return typeof value === 'string' && valid.includes(value) ? value as GameState['ui']['screen'] : fallback
 }
@@ -210,6 +211,7 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
   const rawCombat = isRecord(raw.combat) ? raw.combat : {}
 
   migrated.inventory = normalizeDynamicRecord(fresh.inventory, raw.inventory, itemIds, nonNegativeInteger)
+  migrated.crystals = normalizeCrystalState(raw.crystals)
   const rawArtifacts = isRecord(raw.artifactProgress) ? raw.artifactProgress : {}
   migrated.artifactProgress = Object.fromEntries(Object.entries(ARTIFACTS).flatMap(([artifactId, definition]) => {
     const rawProgress = isRecord(rawArtifacts[artifactId]) ? rawArtifacts[artifactId] : null
@@ -971,7 +973,9 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   removeDeletedPrismaticFocus(migrated, raw, sourceVersion)
   seedLegacyItemDiscoveries(migrated, raw, sourceVersion)
   reconcileStoryProgression(migrated)
-  const screenUnlocked = migrated.ui.screen === 'tower-summoning'
+  const screenUnlocked = migrated.ui.screen === 'crystals'
+    ? isCrystalSystemUnlocked(migrated)
+    : migrated.ui.screen === 'tower-summoning'
     ? isSummoningUnlocked(migrated)
     : isScreenUnlocked(migrated, migrated.ui.screen)
   if (!screenUnlocked) migrated.ui.screen = 'home'

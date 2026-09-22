@@ -25,6 +25,7 @@ import { grantEnemyResonanceReward } from '../resonance/resonanceRuntime'
 import { formatResonanceBundle } from '../../presentation/resonance/resonancePresentation'
 import { getWorldTierDefinition, resolveWorldTierEnemyProfile, unlockWorldTierFromBossKill } from '../world-tier/worldTierRuntime'
 import { resolveBossThreatRequirement, resolveThreatGainForKill } from './combatThreat'
+import { resolveCrystalCacheDrop } from '../crystals/crystalRuntime'
 
 export { applyStatus, clearStatuses, damageEnemy, damagePlayer, executeCombatEffects, gainBarrier }
 
@@ -189,8 +190,16 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   const undiscoveredItems = new Set(state.progress.discoveredItems)
   const resolvedDrops: CombatLootDrop[] = []
   const drops = resolveMonsterLoot(state, enemyId, (itemId, quantity) => { onItemAcquired?.(itemId, quantity); report?.recordLoot(itemId, quantity); resolvedDrops.push({ itemId, quantity, isNewDiscovery: !undiscoveredItems.has(itemId) }); uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'loot', sourceId: 'loot-drop', itemId, amount: quantity }) })
-  if (resolvedDrops.length) onLootResolved?.(state, enemyId, resolvedDrops)
   const encounterWorldTier = state.combat.enemyWorldTier ?? getWorldTierDefinition(state.worldTier.current).id
+  if (resolveCrystalCacheDrop(state, enemyId, encounterWorldTier, () => nextCombatRandom(state))) {
+    const itemId: ItemId = 'tier-1-crystal-cache'
+    const quantity = 1
+    onItemAcquired?.(itemId, quantity)
+    report?.recordLoot(itemId, quantity)
+    resolvedDrops.push({ itemId, quantity, isNewDiscovery: !undiscoveredItems.has(itemId) })
+    uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'loot', sourceId: 'crystal-cache-drop', itemId, amount: quantity })
+  }
+  if (resolvedDrops.length) onLootResolved?.(state, enemyId, resolvedDrops)
   const resonanceReward = grantEnemyResonanceReward(state.resonance, enemyId, encounterWorldTier)
   const resonanceGained = resonanceReward.grantedYield
   report?.recordResonance(resonanceGained)
@@ -230,6 +239,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
     state.combat.inBossFight = false
     const bossId = enemyId
     state.progress.bossKillsByBoss[bossId] = (state.progress.bossKillsByBoss[bossId] ?? 0) + 1
+    if (bossId === 'meridian-splitter' && state.progress.bossKillsByBoss[bossId] === 1) pushNotification(state, 'CRYSTALS UNLOCKED', 'success', { key: 'crystal-system-unlocked', cooldownMs: 1000 })
     const unlockedWorldTier = unlockWorldTierFromBossKill(state, bossId)
     if (bossId === SUMMONING_UNLOCK_BOSS_ID && state.progress.bossKillsByBoss[bossId] === 1) pushNotification(state, 'Wizard Tower: Summoning unlocked.', 'success')
     if (bossId === 'corrupted-elemental-gatekeeper' && state.progress.bossKillsByBoss[bossId] === 1) pushNotification(state, 'FRACTURED APPROACH COMPLETE / Branch routes unlocked.', 'success')

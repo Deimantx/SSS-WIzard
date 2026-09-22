@@ -1884,7 +1884,7 @@ Black Sigil Reach completes the current Continent I location topology:
 - Vault of the Black Sigil — targeted Elite Zone with the Armored affix;
 - The Black Gate — a fixed four-normal sequence Dungeon followed by Black Gatekeeper.
 
-The two Elite Zones are the repeatable targeted farming layer. Their Boss clears jointly unlock The Black Gate, and Black Gatekeeper is the current Continent I endpoint that unlocks WT5. Alchemy remains a reserved future milestone only; it is not implemented in the current runtime or UI.
+The two Elite Zones are the repeatable targeted farming layer. Their Boss clears jointly unlock The Black Gate, and Black Gatekeeper is the current Continent I endpoint that unlocks WT5. Crystal System V1 is implemented after the first Meridian Splitter defeat; Alchemy remains a reserved future milestone only.
 
 ### Current and reserved progression milestones
 
@@ -1893,10 +1893,10 @@ The two Elite Zones are the repeatable targeted farming layer. Their Boss clears
 | Archmage Edrin's Shade | WT2, Elemental Scar, existing chapter | — |
 | Corrupted Elemental Gatekeeper | Summoning / Elemental Guardians | — |
 | Crossroads Keeper | WT3, Shattered Meridian | — |
-| Meridian Splitter | WT4, Black Sigil Reach, Act 1 Artifact Levels 8–10 | `[RESERVED FUTURE UNLOCK]` Crystal System / Crystal Upgrading |
+| Meridian Splitter | WT4, Black Sigil Reach, Act 1 Artifact Levels 8–10, Crystal System V1 / Crystal Upgrading | — |
 | Black Gatekeeper | WT5 | `[RESERVED FUTURE UNLOCK]` Alchemy |
 
-Crystal System / Crystal Upgrading and Alchemy are reserved design milestones only. They have no current items, currencies, recipes, UI, save fields, runtime booleans, or first-clear UI rows.
+Crystal System V1 is an implemented Hero progression layer with dedicated Crystal state, Crystal Dust, cache loot, loadouts, presets, and first-clear presentation. Alchemy remains a reserved design milestone and is not implemented.
 
 ---
 

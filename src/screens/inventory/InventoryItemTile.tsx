@@ -12,7 +12,7 @@ import { buildItemContextSections } from '../../ui/context-menu/itemContextActio
 import { setNavigationIntent } from '../../ui/navigation/navigationIntent'
 import { isArtifactItem } from '../../game/systems/artifacts/artifactProgression'
 
-export function InventoryItemTile({ itemId, inventory, protectedItems, equipment, selected, newItem = false, flow, flowDirection, onSelect, onNavigate, onToggleProtection, onTrack, tracked, onOpenUses, onOpenArtifactPath, onEquip, onUnequip }: {
+export function InventoryItemTile({ itemId, inventory, protectedItems, equipment, selected, newItem = false, flow, flowDirection, onSelect, onNavigate, onToggleProtection, onTrack, tracked, onOpenUses, onOpenArtifactPath, onOpenCrystalCache, onEquip, onUnequip }: {
   itemId: ItemId
   inventory: GameState['inventory']
   protectedItems: GameState['protectedItems']
@@ -28,6 +28,7 @@ export function InventoryItemTile({ itemId, inventory, protectedItems, equipment
   tracked: boolean
   onOpenUses?: (itemId: ItemId) => void
   onOpenArtifactPath?: (itemId: ArtifactId) => void
+  onOpenCrystalCache?: () => void
   onEquip: (itemId: ItemId, targetPosition?: EquipmentPosition) => void
   onUnequip: (position: EquipmentPosition) => void
 }) {
@@ -65,6 +66,7 @@ export function InventoryItemTile({ itemId, inventory, protectedItems, equipment
       onOpenArtificing: artificingOutput ? () => { setNavigationIntent({ artificingRecipeId: artificingOutput.id as never }); onNavigate('tower-artificing') } : undefined,
       onOpenTransmutation: transmutationOutput ? () => { setNavigationIntent({ transmutationRecipeId: transmutationOutput.id as never }); onNavigate('tower-transmutation') } : undefined,
       onOpenUses: recipeUses.length > 0 && onOpenUses ? () => onOpenUses(itemId) : undefined,
+      onOpenCrystalCache: itemId === 'tier-1-crystal-cache' ? onOpenCrystalCache : undefined,
       onWhereToGet: () => { if (firstDrop) setNavigationIntent({ combatDungeonId: firstDrop.dungeonId, combatMonsterId: firstDrop.monsterId }); else setNavigationIntent({ inventoryItemId: itemId }); onNavigate(firstDrop ? 'combat' : item.sourceNavigation ?? 'inventory') },
       onTrack: () => onTrack(itemId),
       onToggleProtection: () => onToggleProtection(itemId),

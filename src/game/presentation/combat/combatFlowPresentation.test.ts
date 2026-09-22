@@ -89,4 +89,15 @@ describe('getCombatFlowPresentation', () => {
     expect(getCombatFlowPresentation(input({ enemyId: null, enemy: null, threatCleared: 5000 })).mode).toBe('boss-ready')
     expect(getCombatFlowPresentation(input({ enemyId: null, enemy: null, threatCleared: 0, encounterTimerMs: 3200 })).mode).toBe('encounter-delay')
   })
+
+  it('keeps sequence runs in encounter delay even if stale Threat reaches the Boss threshold', () => {
+    const sequenceDungeon = DUNGEONS['broken-meridian']
+    expect(getCombatFlowPresentation(input({ dungeon: sequenceDungeon, dungeonId: sequenceDungeon.id, selectedDungeonId: sequenceDungeon.id, enemyId: null, enemy: null, threatCleared: Number.MAX_SAFE_INTEGER })).mode).toBe('encounter-delay')
+  })
+
+  it('keeps Boss-ready presentation independent from the retired Run Bar control', () => {
+    const presentation = getCombatFlowPresentation(input({ enemyId: null, enemy: null, threatCleared: 5000 }))
+    expect(presentation.mode).toBe('boss-ready')
+    expect(presentation.dungeon.name).toBe('Whispering Woods')
+  })
 })

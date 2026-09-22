@@ -16,6 +16,8 @@ import { isScreenUnlocked } from '../game/systems/story/storyProgression'
 import { DarkPortalScreen } from './tower/dark-portal/DarkPortalScreen'
 import { isSummoningUnlocked } from '../game/systems/summoning/summoningSelectors'
 import { ArcaneCoreScreen } from './arcane-core/ArcaneCoreScreen'
+import { CrystalsScreen } from './crystals/CrystalsScreen'
+import { isCrystalSystemUnlocked } from '../game/systems/crystals/crystalRuntime'
 
 function CurrentScreen({ screen }: { screen: ScreenId }) {
   if (screen === 'home') return <HomeScreenV2 />
@@ -31,6 +33,7 @@ function CurrentScreen({ screen }: { screen: ScreenId }) {
   if (screen === 'inventory') return <InventoryScreenV2 />
   if (screen === 'equipment') return <EquipmentScreenV2 />
   if (screen === 'arcane-core') return <ArcaneCoreScreen />
+  if (screen === 'crystals') return <CrystalsScreen />
   if (screen === 'guild') return <GuildScreenV2 />
   if (screen === 'collection') return <CollectionScreen />
   if (screen === 'bestiary') return <BestiaryScreen />
@@ -41,8 +44,10 @@ export function ScreenRouter() {
   const requestedScreen = useGameStore((state) => state.ui.screen)
   const storyProgress = useGameStore((state) => state.storyProgress)
   const progress = useGameStore((state) => state.progress)
-  const screen = requestedScreen === 'tower-summoning'
-    ? isSummoningUnlocked({ progress }) ? requestedScreen : 'home'
-    : isScreenUnlocked({ storyProgress }, requestedScreen) ? requestedScreen : 'home'
+  const screen = requestedScreen === 'crystals'
+    ? isCrystalSystemUnlocked({ progress }) ? requestedScreen : 'home'
+    : requestedScreen === 'tower-summoning'
+      ? isSummoningUnlocked({ progress }) ? requestedScreen : 'home'
+      : isScreenUnlocked({ storyProgress }, requestedScreen) ? requestedScreen : 'home'
   return <ScreenErrorBoundary key={screen} screen={screen}><ScreenTransitionFrame key={screen} screen={screen}><CurrentScreen screen={screen} /></ScreenTransitionFrame></ScreenErrorBoundary>
 }

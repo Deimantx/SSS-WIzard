@@ -6,7 +6,7 @@ export type { WorldTierDefinition, WorldTierId, WorldTierState } from './content
 
 export type SchoolId = 'fire' | 'water' | 'earth' | 'air'
 export type ElementId = SchoolId
-export type ScreenId = 'home' | 'combat' | 'schools' | 'inventory' | 'equipment' | 'arcane-core' | 'collection' | 'bestiary' | 'tower-channeling' | 'tower-focus' | 'tower-research' | 'tower-transmutation' | 'tower-artificing' | 'tower-summoning' | 'tower-dark-portal' | 'guild' | 'settings'
+export type ScreenId = 'home' | 'combat' | 'schools' | 'inventory' | 'equipment' | 'arcane-core' | 'crystals' | 'collection' | 'bestiary' | 'tower-channeling' | 'tower-focus' | 'tower-research' | 'tower-transmutation' | 'tower-artificing' | 'tower-summoning' | 'tower-dark-portal' | 'guild' | 'settings'
 export type ActivityStatus = 'running' | 'mana-limited' | 'paused' | 'waiting-mana' | 'waiting-focus' | 'completed' | 'locked' | 'recovering'
 
 /**
@@ -22,6 +22,7 @@ export type ItemId =
   | 'prismatic-fragment'
   | 'artifact-essence'
   | 'life-essence'
+  | 'tier-1-crystal-cache'
   // Act 0 — Artifacts
   | 'ember-staff'
   | 'tideglass-wand'
@@ -79,6 +80,30 @@ export type MonsterId = 'forest-wisp' | 'thornling' | 'dewbound-sprite' | 'cinde
   | 'name-eater' | 'bound-echo' | 'hollow-liturgist' | 'whisper-archivist' | 'nameless-cantor' | 'oathless-confessor' | 'unwritten-hierophant' | 'unspoken-prelate'
   | 'sigil-guardian' | 'black-seal-parasite' | 'vault-devourer' | 'inkbound-specter' | 'sealbound-custodian' | 'blackscript-colossus' | 'voidseal-arbiter' | 'sigil-warden'
   | 'gatebound-remnant' | 'black-rift-stalker' | 'portalbound-acolyte' | 'sealbreaker-construct' | 'black-gatekeeper'
+export type CrystalGroupId = 'destruction' | 'bastion' | 'flow' | 'precision'
+export type CrystalFamilyId =
+  | 'force' | 'ruin' | 'torment' | 'cataclysm'
+  | 'vitality' | 'bulwark' | 'renewal' | 'ward'
+  | 'reservoir' | 'current' | 'concentration' | 'frugality'
+  | 'keen-sight' | 'tempo' | 'control' | 'discipline'
+export type CrystalTier = 1 | 2 | 3 | 4 | 5
+export type CrystalVariantId = `${CrystalFamilyId}-t${CrystalTier}`
+export type CrystalPresetId = 'crystal-preset-1' | 'crystal-preset-2' | 'crystal-preset-3'
+export interface CrystalPreset {
+  id: CrystalPresetId
+  name: string
+  slots: Array<CrystalVariantId | null>
+}
+export interface CrystalState {
+  dust: number
+  owned: Partial<Record<CrystalVariantId, number>>
+  equippedSlots: Array<CrystalVariantId | null>
+  unlockedSlots: number
+  presets: CrystalPreset[]
+  selectedPresetId: CrystalPresetId | null
+  rngState: number
+}
+
 export type GuardianId = 'fire-guardian' | 'water-guardian' | 'earth-guardian' | 'air-guardian'
 export type BestiaryCategory = 'monster' | 'boss'
 export type DungeonId = 'whispering-woods' | 'howling-den' | 'abandoned-catacombs' | 'fractured-approach' | 'flooded-reliquary' | 'ashen-watch' | 'rootscar-hollow' | 'crossroads-of-ruin' | 'graveglass-hollow' | 'stormvault-gallery' | 'starfallen-observatory' | 'broken-meridian' | 'hall-of-unbound-names' | 'vault-of-the-black-sigil' | 'black-gate'
@@ -584,6 +609,7 @@ export interface GameState {
   resonance: ResonanceState
   worldTier: WorldTierState
   inventory: Partial<Record<ItemId, number>>
+  crystals: CrystalState
   protectedItems: Partial<Record<ItemId, boolean>>
   equipment: Record<EquipmentPosition, ItemId | null>
   arcaneCore: ArcaneCoreState

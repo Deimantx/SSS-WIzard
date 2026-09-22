@@ -3,6 +3,25 @@ import { material, universalMaterial } from './itemAuthoring'
 
 /** SHARED — global materials used across Act 0 and Act 1. */
 export const SHARED_ITEMS: AuthoredItemRegistry = {
+  /** Special cache: opens into Crystal Dust or a Tier 1 Crystal after the Meridian clear. */
+  'tier-1-crystal-cache': {
+    id: 'tier-1-crystal-cache',
+    name: 'Tier 1 Crystal Cache',
+    description: 'A sealed resonance cache. Open it for Crystal Dust or a Tier 1 Crystal.',
+    icon: '◇',
+    color: '#c9a8ff',
+    kind: 'material',
+    category: 'boss-loot',
+    inventoryCategory: 'special',
+    materialSubtype: 'arcane',
+    materialTier: 1,
+    source: 'Combat → eligible enemies after Meridian Splitter',
+    sourceNavigation: 'combat',
+    sellValue: null,
+    canDestroy: false,
+    actionRestrictionReason: 'Crystal Caches must be opened; they cannot be sold or destroyed.',
+  },
+
   /** Shared material: Artifact progression catalyst. */
   'artifact-essence': universalMaterial(
     'artifact-essence',

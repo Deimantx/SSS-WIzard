@@ -95,4 +95,17 @@ describe('combat world navigation read model', () => {
     expect(gate).toMatchObject({ type: 'dungeon', encounterMode: 'sequence', targeting: null, bossHunt: null, firstClearUnlockPreview: [{ id: 'world-tier-5', label: 'World Tier 5' }] })
     expect(gate?.sequence?.steps.map((step) => step.monsterId)).toEqual(['gatebound-remnant', 'black-rift-stalker', 'portalbound-acolyte', 'sealbreaker-construct', 'black-gatekeeper'])
   })
+
+  it('never derives sequence Dungeon state from stale or debug Threat', () => {
+    const state = createInitialState()
+    state.progress.bossKillsByBoss['meridian-splitter'] = 1
+    state.progress.bossKillsByBoss['unspoken-prelate'] = 1
+    state.progress.bossKillsByBoss['sigil-warden'] = 1
+    state.combat.active = true
+    state.combat.dungeonId = 'black-gate'
+    state.combat.threatCleared = Number.MAX_SAFE_INTEGER
+
+    const gate = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedRegionId: 'black-sigil-reach', selectedLocationId: 'black-gate' }).selectedLocation
+    expect(gate?.state).not.toBe('boss-ready')
+  })
 })

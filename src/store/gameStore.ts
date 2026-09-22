@@ -696,7 +696,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     })
     return changed
   },
-  leaveDungeon: () => { endActiveDungeonRun(); return set((state) => { const sequence = getCombatEncounterMode(getCombatLocationByDungeonId(state.combat.dungeonId)) === 'sequence'; state.combat = { ...createInitialState().combat, dungeonId: state.combat.dungeonId, log: [sequence ? 'Left the dungeon run.' : 'Left the dungeon. Threat resets.'] }; return state }) },
+  leaveDungeon: () => { endActiveDungeonRun(); return set((state) => { const sequence = getCombatEncounterMode(getCombatLocationByDungeonId(state.combat.dungeonId)) === 'sequence'; state.combat = { ...createInitialState().combat, dungeonId: state.combat.dungeonId, log: [sequence ? 'Left the dungeon run.' : 'Left the Location. Threat resets.'] }; return state }) },
   engageBoss: (bossId) => set((state) => {
     const dungeon = state.combat.dungeonId ? DUNGEONS[state.combat.dungeonId] : null
     const boss = MONSTERS[bossId]
@@ -713,7 +713,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     if (spawnEnemy(state, bossId, combatLogUiSink)) pushNotification(state, `${boss.name} engaged`, 'warning')
     return state
   }),
-  toggleAutoHunt: (dungeonId = 'whispering-woods') => set((state) => { const dungeon = DUNGEONS[dungeonId]; if (!dungeon || getCombatEncounterMode(getCombatLocationByDungeonId(dungeonId)) === 'sequence' || !isDungeonUnlocked(dungeon, state.progress)) return state; const unlocked = state.progress.autoHuntBossUnlocked || Object.values(state.progress.bossKillsByBoss).some((kills) => kills > 0) || state.progress.firstBossKill; if (!unlocked) { pushNotification(state, 'Auto Hunt unlocks after the first dungeon boss kill', 'warning'); return state } state.progress.autoHuntBossUnlocked = true; state.progress.autoHuntBossByDungeon[dungeonId] = !state.progress.autoHuntBossByDungeon[dungeonId]; return state }),
+  toggleAutoHunt: (dungeonId = 'whispering-woods') => set((state) => { const dungeon = DUNGEONS[dungeonId]; if (!dungeon || getCombatEncounterMode(getCombatLocationByDungeonId(dungeonId)) === 'sequence' || !isDungeonUnlocked(dungeon, state.progress)) return state; const unlocked = state.progress.autoHuntBossUnlocked || Object.values(state.progress.bossKillsByBoss).some((kills) => kills > 0) || state.progress.firstBossKill; if (!unlocked) { pushNotification(state, 'Auto Hunt unlocks after the first Boss clear', 'warning'); return state } state.progress.autoHuntBossUnlocked = true; state.progress.autoHuntBossByDungeon[dungeonId] = !state.progress.autoHuntBossByDungeon[dungeonId]; return state }),
   killCurrentEnemy: () => set((state) => { forceKillEnemyForDebug(state, { uiEvents: combatLogUiSink }); return state }),
   despawnDebugEnemy: () => set((state) => { despawnEnemyForDebug(state); return state }),
   fastResolveDebugEnemies: (amount, dungeonId, stopAtBossReady = true) => set((state) => { fastResolveNormalEnemiesForDebug(state, amount, dungeonId ?? state.combat.dungeonId ?? 'whispering-woods', stopAtBossReady, { uiEvents: combatLogUiSink, onItemAcquired: (itemId, quantity) => recordRecentAcquisition(state, itemId, quantity), onCombatLoot: combatLootObserver }); return state }),

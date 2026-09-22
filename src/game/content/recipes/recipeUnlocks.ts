@@ -25,7 +25,7 @@ export const isRecipeUnlocked = (state: Pick<GameState, 'progress'>, recipe: { u
 export const getRecipeUnlockRequirement = (recipe: { unlock: RecipeUnlockCondition }): string | null => {
   switch (recipe.unlock.type) {
     case 'always': return null
-    case 'first-dungeon-boss-kill': return 'Defeat the first dungeon boss to unlock this recipe.'
+    case 'first-dungeon-boss-kill': return 'Defeat the first Boss to unlock this recipe.'
     case 'boss-kill': return `Defeat ${MONSTERS[recipe.unlock.bossId]?.name ?? recipe.unlock.bossId}${(recipe.unlock.count ?? 1) > 1 ? ` ${recipe.unlock.count} times` : ''} to unlock this recipe.`
     case 'monster-kill': return `Defeat ${MONSTERS[recipe.unlock.monsterId]?.name ?? recipe.unlock.monsterId}${(recipe.unlock.count ?? 1) > 1 ? ` ${recipe.unlock.count} times` : ''} to unlock this recipe.`
     case 'dungeon-monster-kills': return `Defeat any monster in ${DUNGEONS[recipe.unlock.dungeonId]?.name ?? recipe.unlock.dungeonId}${(recipe.unlock.count ?? 1) > 1 ? ` ${recipe.unlock.count} times` : ''} to unlock this recipe.`

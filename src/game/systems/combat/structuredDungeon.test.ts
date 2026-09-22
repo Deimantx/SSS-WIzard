@@ -87,6 +87,13 @@ describe('structured dungeon encounters', () => {
     expect(useGameStore.getState().combat.dungeonSequenceIndex).toBeNull()
     expect(useGameStore.getState().combat.targetEnemyId).toBeNull()
     expect(useGameStore.getState().combat.log).toContain('Left the dungeon run.')
+
+    const combatLeave = prepare()
+    combatLeave.combat.dungeonId = 'whispering-woods'
+    useGameStore.setState({ ...useGameStore.getState(), ...combatLeave })
+    useGameStore.getState().leaveDungeon()
+    expect(useGameStore.getState().combat.log).toContain('Left the Location. Threat resets.')
+    expect(useGameStore.getState().combat.log).not.toContain('Left the dungeon.')
   })
 
   it('uses the same deterministic sequence during Offline Bank and Fast Resolve', async () => {

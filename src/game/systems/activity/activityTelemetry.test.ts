@@ -4,6 +4,63 @@ import { prepareResearchAction, setResearchEchoesAction } from '../../../store/a
 import { getActivityTelemetry } from './activityTelemetry'
 import { getManaDemandBreakdown } from '../channeling/manaFlow'
 
+const prepareCombatActivity = (dungeonId: 'whispering-woods' | 'howling-den' | 'abandoned-catacombs', enemyId: 'forest-wisp' | 'bonehide-boar' | 'grave-wraith') => {
+  const state = createInitialState()
+  state.combat.active = true
+  state.combat.dungeonId = dungeonId
+  state.combat.enemyId = enemyId
+  state.combat.enemyHp = 50
+  state.combat.enemyMaxHp = 100
+  state.combat.enemyActionPatternId = 'default'
+  state.combat.enemyActionDurationMs = 1_000
+  state.combat.enemyActionTimerMs = 500
+  return state
+}
+
+describe('Combat activity telemetry', () => {
+  it('shows resolved Threat for targeted Combat Zones', () => {
+    const state = prepareCombatActivity('whispering-woods', 'forest-wisp')
+    state.combat.threatCleared = 2_430
+
+    const activity = getActivityTelemetry(state).find((entry) => entry.id === 'combat')
+
+    expect(activity?.metrics).toContainEqual({ label: 'Threat', value: '2,430 / 5,000' })
+    expect(activity?.collapsedSummary).toContain('Threat 2,430 / 5,000')
+  })
+
+  it('shows resolved Threat for Elite Zones', () => {
+    const state = prepareCombatActivity('howling-den', 'bonehide-boar')
+    const activity = getActivityTelemetry(state).find((entry) => entry.id === 'combat')
+
+    expect(activity?.metrics?.find((entry) => entry.label === 'Threat')?.value).toBe('0 / 10.0K')
+  })
+
+  it('removes Threat from sequence Dungeon combat and exposes the run step', () => {
+    const state = prepareCombatActivity('abandoned-catacombs', 'grave-wraith')
+    state.combat.dungeonSequenceIndex = 1
+
+    const activity = getActivityTelemetry(state).find((entry) => entry.id === 'combat')
+
+    expect(activity?.metrics?.some((entry) => entry.label === 'Threat')).toBe(false)
+    expect(activity?.metrics).toContainEqual({ label: 'Dungeon Run', value: 'Step 2 / 4' })
+    expect(activity?.collapsedSummary).toBe('Abandoned Catacombs · Step 2 / 4 · P100% / E50%')
+  })
+
+  it('keeps sequence between-encounter telemetry free of Threat', () => {
+    const state = createInitialState()
+    state.combat.active = true
+    state.combat.dungeonId = 'abandoned-catacombs'
+    state.combat.dungeonSequenceIndex = 2
+    state.combat.encounterTimerMs = 2_000
+
+    const activity = getActivityTelemetry(state).find((entry) => entry.id === 'combat')
+
+    expect(activity?.metrics?.some((entry) => entry.label === 'Threat')).toBe(false)
+    expect(activity?.metrics).toContainEqual({ label: 'Dungeon Run', value: 'Step 3 / 4' })
+    expect(activity?.collapsedSummary).not.toContain('Threat')
+  })
+})
+
 describe('Research activity telemetry', () => {
   it('aggregates active batches, Echoes, Focus, throughput, and waiting count', () => {
     const state = createInitialState()

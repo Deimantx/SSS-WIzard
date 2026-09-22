@@ -66,4 +66,11 @@ describe('Power-based Boss Threat', () => {
     finishEnemy(state)
     expect(state.combat.threatCleared).toBe(resolveEnemyPowerRating('forest-wisp', 1))
   })
+
+  it('uses neutral encounter copy for spawned enemies', () => {
+    const state = prepareCombat()
+    expect(spawnEnemy(state, 'forest-wisp')).toBe(true)
+    expect(state.combat.log).toContain('Forest Wisp enters the encounter.')
+    expect(state.combat.log).not.toContain('Forest Wisp enters the dungeon.')
+  })
 })

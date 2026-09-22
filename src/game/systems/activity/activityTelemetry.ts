@@ -4,6 +4,7 @@ import { MONSTERS } from '../../content/monsters'
 import { isRecipeUnlocked, TRANSMUTATION_RECIPES as RECIPES, TRANSMUTATION_RECIPE_ORDER as RECIPE_ORDER } from '../../content/recipes/recipes'
 import { SCHOOLS } from '../../content/schools/schools'
 import { BALANCE } from '../../core/balance/balance'
+import { getCombatEncounterMode, getCombatLocationByDungeonId } from '../../content/world-navigation'
 import { getCurrentEnemyActionStep, getEnemyAction, getNextEnemyActionStep } from '../combat/actionRuntime'
 import { resolveBossThreatRequirement } from '../combat/combatThreat'
 import { getRecipeOutputPerHour, getRecipeCurrentRemainingDuration, getRecipeManaDemandPerSecond, getRecipeStatus } from '../transmutation/transmutationSelectors'
@@ -17,6 +18,12 @@ const percent = (value: number, max: number) => Math.round(clamp(value / Math.ma
 export const getActivityTelemetry = (state: GameState): ActivityTelemetry[] => {
   const activities: ActivityTelemetry[] = []
   const dungeon = DUNGEONS[state.combat.dungeonId ?? 'whispering-woods']
+  const location = getCombatLocationByDungeonId(state.combat.dungeonId)
+  const encounterMode = getCombatEncounterMode(location)
+  const sequence = encounterMode === 'sequence'
+  const sequenceTotal = sequence ? (dungeon.encounterSequence?.length ?? 0) + 1 : 0
+  const sequenceStep = sequence ? Math.min(sequenceTotal, Math.max(1, (state.combat.dungeonSequenceIndex ?? 0) + 1)) : 0
+  const sequenceRunLabel = sequence ? `Step ${sequenceStep} / ${sequenceTotal}` : null
   const threatRequired = resolveBossThreatRequirement(dungeon.id, state.worldTier.current)
 
   if (state.combat.active) {
@@ -43,10 +50,10 @@ export const getActivityTelemetry = (state: GameState): ActivityTelemetry[] => {
           { label: 'Player HP', value: `${formatNumber(state.player.health)} / ${formatNumber(state.player.maxHealth)} (${playerPercent}%)`, percent: playerPercent, tone: playerPercent < 35 ? 'warning' : 'positive' },
           { label: enemyLabel, value: `${formatNumber(state.combat.enemyHp)} / ${formatNumber(state.combat.enemyMaxHp)} (${enemyPercent}%)`, percent: enemyPercent, tone: 'negative' },
         ],
-        collapsedSummary: boss ? `Boss ${enemy.name} · P${playerPercent}% / B${enemyPercent}%` : `Combat P${playerPercent}% / E${enemyPercent}% · Threat ${formatNumber(state.combat.threatCleared)} / ${formatNumber(threatRequired)}`,
+        collapsedSummary: sequence ? `${dungeon.name} · ${sequenceRunLabel} · P${playerPercent}% / E${enemyPercent}%` : boss ? `Boss ${enemy.name} · P${playerPercent}% / B${enemyPercent}%` : `Combat P${playerPercent}% / E${enemyPercent}% · Threat ${formatNumber(state.combat.threatCleared)} / ${formatNumber(threatRequired)}`,
         metrics: [
-          metric('Threat', `${formatNumber(state.combat.threatCleared)} / ${formatNumber(threatRequired)}`),
           metric(boss ? 'Boss Action' : 'Enemy Action', `${nextLabel} · ${formatCompactDuration(nextTime)}`),
+          ...(sequence ? [metric('Dungeon Run', sequenceRunLabel!)] : [metric('Threat', `${formatNumber(state.combat.threatCleared)} / ${formatNumber(threatRequired)}`)]),
           ...(boss ? [metric('Boss Encounter', enemy.name)] : []),
         ],
         accent: 'red',
@@ -62,10 +69,10 @@ export const getActivityTelemetry = (state: GameState): ActivityTelemetry[] => {
         bars: [
           { label: 'Player HP', value: `${formatNumber(state.player.health)} / ${formatNumber(state.player.maxHealth)} (${playerPercent}%)`, percent: playerPercent, tone: playerPercent < 35 ? 'warning' : 'positive' },
         ],
-        collapsedSummary: `Combat · NEXT ENCOUNTER ${formatCompactDuration(state.combat.encounterTimerMs)}`,
+        collapsedSummary: sequence ? `${dungeon.name} · NEXT ENCOUNTER ${formatCompactDuration(state.combat.encounterTimerMs)}` : `Combat · NEXT ENCOUNTER ${formatCompactDuration(state.combat.encounterTimerMs)}`,
         metrics: [
-          metric('Threat', `${formatNumber(state.combat.threatCleared)} / ${formatNumber(threatRequired)}`),
           metric('Next Encounter', formatCompactDuration(state.combat.encounterTimerMs)),
+          ...(sequence ? [metric('Dungeon Run', sequenceRunLabel!)] : [metric('Threat', `${formatNumber(state.combat.threatCleared)} / ${formatNumber(threatRequired)}`)]),
         ],
         accent: 'red',
       })

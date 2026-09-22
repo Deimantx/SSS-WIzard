@@ -228,7 +228,7 @@ export const formatItemStats = (item: ItemDefinition) => Object.entries(item.sta
 export const formatRecipeUnlock = (unlock: RecipeUnlockCondition) => {
   switch (unlock.type) {
     case 'always': return 'Available from the start'
-    case 'first-dungeon-boss-kill': return 'Defeat the first dungeon boss'
+    case 'first-dungeon-boss-kill': return 'Defeat the first Boss'
     case 'boss-kill': return `Defeat ${monsterName(unlock.bossId)}${unlock.count && unlock.count > 1 ? ` ${unlock.count} times` : ''}`
     case 'monster-kill': return `Defeat ${monsterName(unlock.monsterId)}${unlock.count && unlock.count > 1 ? ` ${unlock.count} times` : ''}`
     case 'dungeon-monster-kills': return `Defeat any monster in ${dungeonName(unlock.dungeonId)}${unlock.count && unlock.count > 1 ? ` ${unlock.count} times` : ''}`

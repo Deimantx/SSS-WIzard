@@ -350,7 +350,7 @@ const normalizeWorldTier = (migrated: GameState, raw: Record<string, any>) => {
   const rawProgress = isRecord(raw.progress) ? raw.progress : {}
   const rawBossKills = isRecord(rawProgress.bossKillsByBoss) ? rawProgress.bossKillsByBoss : {}
   const bossKills = Math.max(migrated.progress.bossKillsByBoss['archmage-edrin-shade'] ?? 0, typeof rawBossKills['archmage-edrin-shade'] === 'number' ? rawBossKills['archmage-edrin-shade'] : 0)
-  const highestUnlocked = bossKills >= 1 ? 2 : normalized.highestUnlocked
+  const highestUnlocked = Math.max(normalized.highestUnlocked, bossKills >= 1 ? 2 : 1) as GameState['worldTier']['highestUnlocked']
   migrated.worldTier = { highestUnlocked, current: normalized.current <= highestUnlocked ? normalized.current : 1 }
 }
 

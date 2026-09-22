@@ -22,6 +22,12 @@ export const getWorldTierDefinition = (tier: unknown): WorldTierDefinition => WO
 export const isWorldTierUnlocked = (state: Pick<GameState, 'worldTier'>, tier: unknown): tier is WorldTierId => isWorldTierId(tier) && tier <= state.worldTier.highestUnlocked
 export const getCurrentWorldTierDefinition = (state: Pick<GameState, 'worldTier'>) => getWorldTierDefinition(state.worldTier.current)
 
+/** Resolves a successful authored material drop quantity for an encounter tier. */
+export const resolveWorldTierLootQuantity = (baseQuantity: number, tier: WorldTierId): number => {
+  const base = Number.isFinite(baseQuantity) ? Math.max(0, Math.floor(baseQuantity)) : 0
+  return Math.max(0, Math.round(base * getWorldTierDefinition(tier).itemLootQuantityMultiplier))
+}
+
 export const unlockWorldTier = (state: Pick<GameState, 'worldTier'>, tier: WorldTierId): boolean => {
   if (!isWorldTierId(tier) || tier <= state.worldTier.highestUnlocked) return false
   state.worldTier.highestUnlocked = tier

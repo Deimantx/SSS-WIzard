@@ -168,3 +168,7 @@ Shared combat rules and authored combat values live here. Monster-specific value
 ## Formula notes
 
 Direct damage resolves magnitude, modifiers, Crit, Defense, resistance, and Block before Barrier and Health. Damage over Time does not roll direct-hit Crit or Block.
+
+## World Tier loot rule
+
+Monster and boss loot tables author the WT1/base material quantity and drop chance. World Tier does not change the authored chance; when a material drop succeeds, its rolled quantity is multiplied by the encounter World Tier material-loot multiplier. The canonical WT1-WT5 values and unlock policy are documented in [World Tiers](World_Tiers.md).

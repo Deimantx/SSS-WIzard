@@ -5,6 +5,7 @@ import { resolveEnemyResonanceReward } from '../resonance/resonanceRuntime'
 import { despawnEnemyForDebug, fastResolveNormalEnemiesForDebug, forceKillEnemyForDebug } from './debugCombatRuntime'
 import { finishEnemy, resolveCombatDeaths, spawnEnemy } from './combatRuntime'
 import { advanceWithOfflineBank } from '../offline-bank/offlineBankSimulation'
+import { createOfflineBankReportCollector } from '../offline-bank/offlineBankReport'
 
 const prepareCombat = (state: ReturnType<typeof makeInitialState>) => {
   state.progress.spellRanks['fire-bolt'] = 1
@@ -91,21 +92,48 @@ describe('canonical Combat Resonance rewards', () => {
     expect(events.find((event) => event.category === 'resonance')?.resonanceReward?.grantedYield).toMatchObject({ air: 20 })
   })
 
-  it('snapshots World Tier at spawn and doubles WT2 health and Resonance without changing authored data', () => {
+  it('snapshots World Tier at spawn and uses that tier for health, loot, and Resonance', () => {
     const state = makeInitialState()
     prepareCombat(state)
-    state.worldTier = { current: 2, highestUnlocked: 2 }
+    state.worldTier = { current: 4, highestUnlocked: 4 }
     state.combat.active = true
     state.combat.dungeonId = 'whispering-woods'
     const events: import('./combatTypes').CombatEvent[] = []
     expect(spawnEnemy(state, 'forest-wisp', { push: (event) => events.push(event) })).toBe(true)
-    expect(state.combat.enemyWorldTier).toBe(2)
-    expect(state.combat.enemyMaxHp).toBe(2 * MONSTERS['forest-wisp'].maxHealth)
+    expect(state.combat.enemyWorldTier).toBe(4)
+    expect(state.combat.enemyMaxHp).toBe(4 * MONSTERS['forest-wisp'].maxHealth)
+    state.worldTier.current = 1
     state.combat.enemyHp = 0
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0.5)
     finishEnemy(state, undefined, undefined, { push: (event) => events.push(event) })
-    expect(state.resonance.air).toBe(20)
+    expect(state.inventory['life-essence']).toBe(8)
+    expect(state.resonance.air).toBe(40)
     expect(events.filter((event) => event.category === 'resonance')).toHaveLength(1)
-    expect(events.find((event) => event.category === 'resonance')).toMatchObject({ worldTier: 2, resonanceReward: { rewardMultiplier: 2, finalYield: { air: 20 }, grantedYield: { air: 20 } } })
+    expect(events.find((event) => event.category === 'resonance')).toMatchObject({ worldTier: 4, resonanceReward: { rewardMultiplier: 4, finalYield: { air: 40 }, grantedYield: { air: 40 } } })
+    random.mockRestore()
+  })
+
+  it('keeps inventory, callback, offline report, loot reveal, and telemetry at final quantity', () => {
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0.5)
+    const state = makeInitialState()
+    prepareCombat(state)
+    state.worldTier = { current: 5, highestUnlocked: 5 }
+    state.combat.active = true
+    state.combat.dungeonId = 'whispering-woods'
+    expect(spawnEnemy(state, 'forest-wisp')).toBe(true)
+    state.combat.enemyHp = 0
+    const collector = createOfflineBankReportCollector(state, 1_000, 0)
+    const acquired: Array<[string, number]> = []
+    const revealed: number[] = []
+    const events: import('./combatTypes').CombatEvent[] = []
+    finishEnemy(state, collector, (itemId, quantity) => acquired.push([itemId, quantity]), { push: (event) => events.push(event) }, (_state, _enemyId, drops) => revealed.push(drops.find((drop) => drop.itemId === 'life-essence')?.quantity ?? 0))
+    const report = collector.finalize(state)
+    expect(state.inventory['life-essence']).toBe(10)
+    expect(acquired).toContainEqual(['life-essence', 10])
+    expect(revealed).toEqual([10])
+    expect(report.combat.loot['life-essence']).toBe(10)
+    expect(events.find((event) => event.category === 'loot' && event.itemId === 'life-essence')).toMatchObject({ amount: 10 })
+    random.mockRestore()
   })
 
   it('unlocks WT2 on the first Archmage Edrin Shade defeat without auto-selecting it', () => {

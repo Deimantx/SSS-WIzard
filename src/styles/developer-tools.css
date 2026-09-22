@@ -115,6 +115,8 @@
 .developer-resonance-row .button-row { margin: 0; }
 @media (max-width: 900px) { .developer-resonance-row { grid-template-columns: 1fr 1fr; }.developer-resonance-row .button-row, .developer-resonance-row .developer-number-field { grid-column: 1 / -1; } }
 .developer-world-tier-definitions, .developer-world-tier-preview-grid { display: grid; gap: 9px; }
+.developer-world-tier-actions { display: grid; gap: 6px; min-width: 0; }
+.developer-control-label { color: var(--ui-text-muted); font: var(--text-xs) var(--font-mono); letter-spacing: .08em; }
 .developer-world-tier-definition, .developer-world-tier-preview { display: grid; gap: 8px; padding: 10px; border: 1px solid var(--ui-border); border-radius: 7px; background: var(--ui-panel); }
 .developer-world-tier-definition-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .developer-world-tier-definition-head strong { color: var(--ui-text); font: var(--text-sm) var(--font-mono); }

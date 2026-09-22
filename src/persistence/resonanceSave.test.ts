@@ -33,6 +33,16 @@ describe('Resonance save migration and integrity', () => {
     expect(malformed.worldTier).toEqual({ current: 1, highestUnlocked: 1 })
   })
 
+  it('preserves valid WT5 progression and clamps current tier to the saved unlock ceiling', () => {
+    const state = createInitialState()
+    const wt5 = migrateSave({ ...state, worldTier: { current: 5, highestUnlocked: 5 } } as any)
+    expect(wt5.worldTier).toEqual({ current: 5, highestUnlocked: 5 })
+    const clamped = migrateSave({ ...state, worldTier: { current: 5, highestUnlocked: 3 } } as any)
+    expect(clamped.worldTier).toEqual({ current: 3, highestUnlocked: 3 })
+    const unknown = migrateSave({ ...state, worldTier: { current: 9, highestUnlocked: 9 } } as any)
+    expect(unknown.worldTier).toEqual({ current: 1, highestUnlocked: 1 })
+  })
+
   it('includes Resonance in critical save snapshots and requires it for current saves', () => {
     const state = createInitialState()
     const changed = createInitialState()

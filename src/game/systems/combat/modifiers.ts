@@ -16,7 +16,7 @@ import { getArcaneCoreCombatModifierProviders, getArcaneCoreStaticStats } from '
 
 export type CombatModifierState = {
   player: Pick<GameState['player'], 'health' | 'maxHealth' | 'mana' | 'maxMana'>
-  combat: Pick<GameState['combat'], 'enemyId' | 'enemyInstanceKey' | 'enemyHp' | 'enemyMaxHp' | 'playerBarrier' | 'enemyBarrier' | 'playerStatuses' | 'enemyStatuses'> & Partial<Pick<GameState['combat'], 'guardian'>>
+  combat: Pick<GameState['combat'], 'enemyId' | 'enemyInstanceKey' | 'enemyHp' | 'enemyMaxHp' | 'playerBarrier' | 'enemyBarrier' | 'playerStatuses' | 'enemyStatuses'> & Partial<Pick<GameState['combat'], 'dungeonId' | 'targetEnemyId' | 'guardian'>>
   equipment: GameState['equipment']
   artifactProgress: GameState['artifactProgress']
 } & Partial<Pick<GameState, 'arcaneCore'>>

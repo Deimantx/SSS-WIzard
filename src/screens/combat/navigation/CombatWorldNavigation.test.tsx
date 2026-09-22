@@ -93,16 +93,19 @@ describe('CombatWorldNavigation', () => {
     expect(screen.getByRole('heading', { name: 'Howling Den' })).toBeTruthy()
   })
 
-  it('enters a selected unlocked location only through the Inspector action', () => {
+  it('starts a selected Howling Den target through the Inspector action', () => {
     const state = createInitialState()
     state.progress.bossKillsByBoss['forest-heart'] = 1
     useGameStore.setState(state)
     const onEnterLocation = vi.fn()
-    renderNavigation(onEnterLocation)
+    const onHuntTarget = vi.fn(() => true)
+    renderNavigation(onEnterLocation, onHuntTarget)
     fireEvent.click(screen.getByRole('button', { name: /Howling Den, ELITE ZONE/ }))
-    fireEvent.click(screen.getByRole('button', { name: 'ENTER ELITE ZONE' }))
+    fireEvent.click(screen.getByRole('button', { name: /Bonehide BoarHARD/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'HUNT TARGET' }))
 
-    expect(onEnterLocation).toHaveBeenCalledWith('howling-den')
+    expect(onHuntTarget).toHaveBeenCalledWith('howling-den', 'bonehide-boar')
+    expect(onEnterLocation).not.toHaveBeenCalled()
     expect(useGameStore.getState().combat.active).toBe(false)
   })
 
@@ -125,8 +128,11 @@ describe('CombatWorldNavigation', () => {
   })
 
   it('keeps location-level Loot for non-targeted locations', () => {
+    const state = createInitialState()
+    state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
+    useGameStore.setState(state)
     renderNavigation()
-    fireEvent.click(screen.getByRole('button', { name: /Howling Den, ELITE ZONE/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Abandoned Catacombs, DUNGEON/ }))
     fireEvent.click(screen.getByRole('button', { name: 'LOOT' }))
 
     expect(screen.getByText('LOCATION LOOT')).toBeTruthy()

@@ -26,7 +26,7 @@ export interface DungeonStatisticsSession {
 
 export interface DungeonStatisticsObserver {
   beginSession: (dungeonId: DungeonId) => void
-  endSession: (reason: 'leave' | 'death' | 'dungeon-change') => void
+  endSession: (reason: 'leave' | 'death' | 'complete' | 'dungeon-change') => void
   advance: (deltaMs: number, state: GameState) => void
   beginRun: () => void
   completeRun: (durationMs: number) => void

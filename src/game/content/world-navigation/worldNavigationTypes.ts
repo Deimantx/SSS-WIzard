@@ -1,4 +1,5 @@
 import type { DungeonId, MonsterId } from '../../types'
+import type { EliteMinorAffixId } from '../elite-affixes'
 
 export type CombatContinentId = string
 export type CombatRegionId = string
@@ -11,12 +12,13 @@ export type CombatLocationType =
   | 'dungeon'
   | 'tower'
 
-export type CombatEncounterMode = 'random-pool' | 'targeted'
+export type CombatEncounterMode = 'random-pool' | 'targeted' | 'sequence'
 export type CombatTargetDifficulty = 'easy' | 'standard' | 'hard' | 'apex'
 
 export interface CombatTargetMetadata {
   difficulty: CombatTargetDifficulty
   order: number
+  minorAffixId?: EliteMinorAffixId
 }
 
 export type CombatNavigationUnlockCondition =
@@ -54,6 +56,7 @@ export interface CombatLocationDefinition {
   dungeonId?: DungeonId
   encounterMode?: CombatEncounterMode
   targetMetadata?: Partial<Record<MonsterId, CombatTargetMetadata>>
+  firstClearUnlockPreview?: Array<{ id: string; label: string }>
   unlock?: CombatNavigationUnlockCondition
   prototype?: boolean
 }

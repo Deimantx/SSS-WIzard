@@ -1,5 +1,6 @@
 import { Crown, Package, X } from 'lucide-react'
-import { Button, ModalPortal, Status } from '../../../components/ui'
+import { Button, GameTooltip, ModalPortal, Status } from '../../../components/ui'
+import { TooltipContent } from '../../../components/ui/tooltip/Tooltip'
 import { LootRewardTile } from '../../../components/combat/LootRewardTile'
 import { MONSTERS } from '../../../game/content/monsters'
 import { buildCombatTargetRewardPresentation, buildLocationLootPresentation, formatLocationLootChance, formatLocationLootQuantity, getLocationLootAvailabilityLabel, type CombatTargetRewardPresentation, type LocationLootEntry } from '../../../game/presentation/combat'
@@ -14,7 +15,7 @@ export function CombatLocationLootModal({ location, targetMonsterId, onClose }: 
   const worldTier = useGameStore((state) => state.worldTier.current)
   const targeted = Boolean(location.targeting)
   const target = targeted && targetMonsterId ? location.targeting?.targets.find((entry) => entry.monsterId === targetMonsterId) ?? null : null
-  const reward = target ? buildCombatTargetRewardPresentation(target.monsterId, worldTier) : null
+  const reward = target ? buildCombatTargetRewardPresentation(target.monsterId, worldTier, target.minorAffixId) : null
   const loot = !targeted && location.dungeonId ? buildLocationLootPresentation(location.dungeonId, progress) : null
   const title = reward ? `${reward.monsterName.toUpperCase()} — LOOT` : location.name.toUpperCase()
 
@@ -29,6 +30,7 @@ function TargetLootBody({ location, reward, inventory }: { location: CombatLocat
   return <div className="combat-location-loot-body"><div className="combat-location-loot-groups">
     <section className="combat-location-loot-group"><div className="combat-location-loot-group-head"><div className="combat-location-loot-eyebrow"><Package size={14} aria-hidden="true" /> ITEM DROPS</div><Status tone="active">WT{reward.worldTier} PREVIEW</Status></div><p className="combat-location-loot-group-description">Authored rewards from {reward.monsterName} in {location.name}.</p><div className="combat-location-loot-drop-grid">{reward.itemDrops.map((drop) => <LootRewardTile key={drop.itemId} drop={drop} inventory={inventory} sourceName={reward.monsterName} />)}</div></section>
     <section className="combat-location-loot-group is-resonance"><div className="combat-location-loot-eyebrow">RESONANCE</div>{resonanceEntries.length > 0 ? <div className="combat-target-resonance-list">{resonanceEntries.map((entry) => <div className="combat-target-resonance-row" key={entry.type}><span>{entry.label} Resonance</span><strong>+{entry.amount.toLocaleString('en-US')}</strong></div>)}</div> : <p className="combat-location-loot-group-description">No Resonance reward is authored for this target.</p>}</section>
+    {reward.minorAffix && <section className="combat-location-loot-group is-affix"><div className="combat-location-loot-eyebrow">MINOR AFFIX</div><GameTooltip content={<TooltipContent title={reward.minorAffix.name} description={reward.minorAffix.description} />}><div className="combat-location-loot-affix" tabIndex={0}><strong>{reward.minorAffix.name}</strong><span>{reward.minorAffix.description}</span></div></GameTooltip></section>}
   </div></div>
 }
 

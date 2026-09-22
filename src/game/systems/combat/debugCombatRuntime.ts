@@ -1,5 +1,6 @@
 import { DUNGEONS } from '../../content/dungeons/dungeons'
 import { isBossMonster, MONSTERS } from '../../content/monsters'
+import { getCombatEncounterMode, getCombatLocationByDungeonId } from '../../content/world-navigation'
 import type { DungeonId, GameState, ItemId, MonsterId } from '../../types'
 import type { CombatEventSink } from './combatTypes'
 import { advanceCombatState, type AdvanceContext } from '../simulation/advanceGameState'
@@ -46,8 +47,10 @@ export const fastResolveNormalEnemiesForDebug = (
   ensureDungeon(state, dungeonId)
   const count = Math.min(1000, Math.max(0, Number.isFinite(requested) ? Math.floor(requested) : 0))
   let resolved = 0
+  const sequenceDungeon = getCombatEncounterMode(getCombatLocationByDungeonId(dungeonId)) === 'sequence'
   while (resolved < count) {
-    if (stopAtBossReady && state.combat.threatCleared >= dungeon.threatRequired) break
+    if (!state.combat.active) break
+    if (!sequenceDungeon && stopAtBossReady && state.combat.threatCleared >= dungeon.threatRequired) break
     if (state.combat.enemyId) {
       // Never turn an active boss into a synthetic normal kill.
       if (isBossMonster(MONSTERS[state.combat.enemyId])) break
@@ -58,12 +61,13 @@ export const fastResolveNormalEnemiesForDebug = (
     if (!resolveCombatDeaths(state, undefined, context.onItemAcquired, context.uiEvents, { forceEnemyDeath: true, onLootResolved: context.onCombatLoot })) break
     resolved += 1
   }
-  return { resolved, bossReady: state.combat.threatCleared >= dungeon.threatRequired }
+  return { resolved, bossReady: sequenceDungeon ? (state.combat.dungeonSequenceIndex ?? 0) >= (dungeon.encounterSequence?.length ?? 0) : state.combat.threatCleared >= dungeon.threatRequired }
 }
 
 export const clearToBossForDebug = (state: GameState, dungeonId: DungeonId, context: DebugCombatRuntimeContext = {}) => {
   const dungeon = DUNGEONS[dungeonId]
   if (!dungeon) return { resolved: 0, bossReady: false }
+  if (getCombatEncounterMode(getCombatLocationByDungeonId(dungeonId)) === 'sequence') return fastResolveNormalEnemiesForDebug(state, dungeon.encounterSequence?.length ?? 0, dungeonId, false, context)
   const remaining = Math.max(0, dungeon.threatRequired - state.combat.threatCleared)
   return fastResolveNormalEnemiesForDebug(state, remaining, dungeonId, true, context)
 }
@@ -73,6 +77,7 @@ export const jumpToBossForDebug = (state: GameState, dungeonId: DungeonId, conte
   if (!dungeon) return false
   ensureDungeon(state, dungeonId)
   despawnEnemyForDebug(state)
+  if (getCombatEncounterMode(getCombatLocationByDungeonId(dungeonId)) === 'sequence') state.combat.dungeonSequenceIndex = dungeon.encounterSequence?.length ?? 0
   state.combat.threatCleared = Math.max(state.combat.threatCleared, dungeon.threatRequired)
   state.combat.pendingBossId = null
   spawnEnemy(state, dungeon.boss, context.uiEvents)
@@ -85,6 +90,7 @@ export const restartBossForDebug = (state: GameState, context: DebugCombatRuntim
   const bossId = state.combat.enemyId && isBossMonster(MONSTERS[state.combat.enemyId]) ? state.combat.enemyId : dungeon.boss
   ensureDungeon(state, dungeon.id)
   despawnEnemyForDebug(state)
+  if (getCombatEncounterMode(getCombatLocationByDungeonId(dungeon.id)) === 'sequence') state.combat.dungeonSequenceIndex = dungeon.encounterSequence?.length ?? 0
   state.combat.threatCleared = Math.max(state.combat.threatCleared, dungeon.threatRequired)
   state.combat.pendingBossId = null
   spawnEnemy(state, bossId, context.uiEvents)

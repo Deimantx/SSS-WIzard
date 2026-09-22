@@ -23,6 +23,7 @@ export interface CriticalSaveSnapshot {
   spellPresets: GameState['spellPresets']
   offlineBankMs: number
   targetEnemyId: GameState['combat']['targetEnemyId']
+  dungeonSequenceIndex: GameState['combat']['dungeonSequenceIndex']
   combatRngState: number
 }
 
@@ -71,6 +72,7 @@ export const getCriticalSaveSnapshot = (state: Pick<GameState, 'inventory' | 'pr
   spellPresets: state.spellPresets,
   offlineBankMs: state.offlineBankMs,
   targetEnemyId: state.combat.targetEnemyId,
+  dungeonSequenceIndex: state.combat.dungeonSequenceIndex,
   combatRngState: state.combat.combatRngState,
 })
 
@@ -103,6 +105,8 @@ const hasCurrentSaveShape = (value: Record<string, unknown>) => {
     && value.lastSavedAt >= 0
     && isRecord(value.progress)
     && Object.prototype.hasOwnProperty.call(value.progress, 'spellRanks')
+    && isRecord(value.combat)
+    && Object.prototype.hasOwnProperty.call(value.combat, 'dungeonSequenceIndex')
     && Object.prototype.hasOwnProperty.call(value, 'spellPresets')
 }
 

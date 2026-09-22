@@ -22,4 +22,10 @@ describe('combat target reward presentation', () => {
     expect(getNonZeroResonanceEntries(reward.resonance).map((entry) => entry.type)).toEqual(['earth', 'air'])
     expect(reward.powerRating).toBeGreaterThan(0)
   })
+
+  it('includes the authored Elite Minor Affix in target reward inspection', () => {
+    const reward = buildCombatTargetRewardPresentation('bonehide-boar', 1, 'armored')
+    expect(reward.minorAffix).toMatchObject({ id: 'armored', name: 'Armored' })
+    expect(reward.minorAffix?.description).toContain('25%')
+  })
 })

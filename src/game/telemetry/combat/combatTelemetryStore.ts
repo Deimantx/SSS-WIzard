@@ -6,7 +6,7 @@ import type { DungeonId, GameState, MonsterId } from '../../types'
 
 interface CombatTelemetryStore extends CombatTelemetryState {
   beginRun: (dungeonId: DungeonId) => void
-  endRun: (reason: 'leave' | 'defeat' | 'reset') => void
+  endRun: (reason: 'leave' | 'defeat' | 'complete' | 'reset') => void
   beginEncounter: (monsterId: MonsterId) => void
   endEncounter: (reason: 'death' | 'despawn' | 'leave') => void
   resetMeasurement: () => void

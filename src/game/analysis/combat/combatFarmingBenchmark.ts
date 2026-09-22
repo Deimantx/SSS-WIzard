@@ -211,7 +211,7 @@ class BenchmarkCollector implements CombatEventSink, CombatTelemetryObserver {
   private encounterStartedAtMs: number | null = null
 
   beginRun = (_dungeonId: DungeonId) => undefined
-  endRun = (_reason: 'leave' | 'defeat' | 'reset') => undefined
+  endRun = (_reason: 'leave' | 'defeat' | 'reset' | 'complete') => undefined
   beginEncounter = (_monsterId: MonsterId) => undefined
   endEncounter = (_reason: 'death' | 'despawn' | 'leave') => undefined
   resetMeasurement = () => undefined

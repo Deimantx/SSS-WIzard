@@ -233,7 +233,7 @@ describe("Act 0 and Act 1 dungeon content", () => {
   });
 
   it("keeps all authored monster records and exact action sequences", () => {
-    expect(Object.keys(MONSTERS)).toHaveLength(76);
+    expect(Object.keys(MONSTERS)).toHaveLength(79);
     expect(validateMonsterDefinitions()).toEqual([]);
     expect(labels("forest-wisp")).toEqual([
       "Basic",
@@ -343,6 +343,33 @@ describe("Act 0 and Act 1 dungeon content", () => {
       "Basic",
       "Arcane Bite",
     ]);
+    expect(labels("bonehide-boar")).toEqual([
+      "Basic",
+      "Tusk Charge",
+      "Basic",
+      "Bristle Guard",
+      "Basic",
+      "Basic",
+      "Tusk Charge",
+    ]);
+    expect(labels("moonblind-jackal")).toEqual([
+      "Basic",
+      "Moonbite",
+      "Basic",
+      "Blood Trail",
+      "Basic",
+      "Moonbite",
+      "Basic",
+    ]);
+    expect(labels("den-stalker")).toEqual([
+      "Vanish",
+      "Basic",
+      "Shadow Pounce",
+      "Basic",
+      "Execution Bite",
+      "Basic",
+      "Shadow Pounce",
+    ]);
     expect(labels("corrupted-greatbear")).toEqual([
       "Basic",
       "Basic",
@@ -413,6 +440,9 @@ describe("Act 0 and Act 1 dungeon content", () => {
       "cavefang-wolf",
       "razorclaw-lynx",
       "corrupted-dire-wolf",
+      "bonehide-boar",
+      "moonblind-jackal",
+      "den-stalker",
       "restless-skeleton",
       "grave-wraith",
       "fallen-acolyte",

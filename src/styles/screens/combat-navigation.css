@@ -74,6 +74,26 @@
 .combat-target-card-copy .combat-target-card-power { color: var(--ui-accent); font-weight: 700; letter-spacing: .04em; }
 .combat-target-card-marker { position: absolute; right: 6px; top: 5px; color: var(--ui-secondary); font: 7px var(--font-mono); letter-spacing: .08em; }
 .combat-target-card.is-hunting .combat-target-card-marker { color: var(--ui-warning); }
+.combat-target-card-copy .combat-target-card-affix { color: var(--ui-warning); font-weight: 700; letter-spacing: .04em; }
+.combat-dungeon-sequence-list,
+.combat-first-clear-list { display: grid; gap: 6px; }
+.combat-dungeon-sequence-step { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; gap: 7px; min-width: 0; padding: 7px 8px; border: 1px solid var(--ui-border); border-radius: 7px; background: color-mix(in srgb, var(--ui-panel) 72%, transparent); }
+.combat-dungeon-sequence-step.is-current { border-color: color-mix(in srgb, var(--ui-warning) 62%, var(--ui-border)); background: color-mix(in srgb, var(--ui-warning) 8%, var(--ui-panel)); }
+.combat-dungeon-sequence-step.is-completed { border-color: color-mix(in srgb, var(--ui-success) 38%, var(--ui-border)); }
+.combat-dungeon-sequence-step:last-child { border-color: color-mix(in srgb, var(--ui-gold) 38%, var(--ui-border)); }
+.combat-dungeon-sequence-order { display: grid; place-items: center; width: 20px; height: 20px; border: 1px solid var(--ui-border-strong); border-radius: 5px; color: var(--ui-secondary); font: 9px var(--font-mono); }
+.combat-dungeon-sequence-step > div:not(.combat-dungeon-sequence-meta) { display: grid; min-width: 0; gap: 2px; }
+.combat-dungeon-sequence-step strong { overflow: hidden; color: var(--ui-text-soft); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.combat-dungeon-sequence-step small { color: var(--ui-text-muted); font: 7px var(--font-mono); letter-spacing: .05em; }
+.combat-dungeon-sequence-meta { display: flex; align-items: center; justify-content: flex-end; gap: 5px; min-width: 0; }
+.combat-dungeon-sequence-meta > span { color: var(--ui-accent); font: 7px var(--font-mono); letter-spacing: .04em; }
+.combat-first-clear-list > div { display: flex; align-items: center; gap: 7px; padding: 6px 8px; border: 1px solid color-mix(in srgb, var(--ui-secondary) 24%, var(--ui-border)); border-radius: 6px; color: var(--ui-text-soft); font-size: 9px; }
+.combat-first-clear-list span { color: var(--ui-secondary); font: 12px var(--font-mono); }
+.combat-location-loot-group.is-affix { border-color: color-mix(in srgb, var(--ui-warning) 38%, var(--ui-border)); background: color-mix(in srgb, var(--ui-warning) 5%, var(--ui-panel)); }
+.combat-location-loot-group.is-affix .combat-location-loot-eyebrow { color: var(--ui-warning); }
+.combat-location-loot-affix { display: grid; gap: 3px; padding: 8px; border: 1px solid color-mix(in srgb, var(--ui-warning) 28%, var(--ui-border)); border-radius: 6px; color: var(--ui-text-soft); background: color-mix(in srgb, var(--ui-warning) 5%, transparent); cursor: help; }
+.combat-location-loot-affix strong { color: var(--ui-warning); font-size: 11px; }
+.combat-location-loot-affix span { color: var(--ui-text-muted); font-size: 10px; line-height: 1.35; }
 .combat-location-zone-boss .combat-location-encounter-tile { margin-top: 1px; }
 .combat-location-encounter-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
 .combat-location-encounter-grid > .game-tooltip-trigger { min-width: 0; }

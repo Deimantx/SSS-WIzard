@@ -1,5 +1,6 @@
 import { DUNGEON_ORDER, DUNGEONS } from '../dungeons/dungeons'
 import { MONSTERS, isBossMonster } from '../monsters'
+import { ELITE_MINOR_AFFIXES } from '../elite-affixes'
 import { COMBAT_CONTINENTS, COMBAT_LOCATIONS, COMBAT_REGIONS } from './worldNavigation'
 import type { CombatContinentDefinition, CombatLocationDefinition, CombatRegionDefinition, CombatTargetDifficulty } from './worldNavigationTypes'
 
@@ -76,7 +77,11 @@ export function validateCombatWorldNavigation(content: CombatWorldNavigationCont
       mappedDungeons.set(location.dungeonId, location.id)
     }
     const encounterMode = location.encounterMode ?? 'random-pool'
-    if (encounterMode !== 'random-pool' && encounterMode !== 'targeted') errors.push(`${location.id}: invalid encounter mode ${String(encounterMode)}`)
+    if (encounterMode !== 'random-pool' && encounterMode !== 'targeted' && encounterMode !== 'sequence') errors.push(`${location.id}: invalid encounter mode ${String(encounterMode)}`)
+    if (encounterMode === 'sequence') {
+      const dungeon = location.dungeonId ? DUNGEONS[location.dungeonId] : undefined
+      if (!dungeon?.encounterSequence?.length) errors.push(`${location.id}: sequence location requires a non-empty Dungeon encounterSequence`)
+    }
     if (encounterMode !== 'targeted') return
     const dungeon = location.dungeonId ? DUNGEONS[location.dungeonId] : undefined
     const pool = dungeon?.monsterPool ?? []
@@ -93,6 +98,8 @@ export function validateCombatWorldNavigation(content: CombatWorldNavigationCont
       }
       if (!TARGET_DIFFICULTIES.includes(metadata.difficulty)) errors.push(`${location.id}: invalid target difficulty for ${monsterId}`)
       if (!Number.isInteger(metadata.order) || metadata.order < 1) errors.push(`${location.id}: target order for ${monsterId} must be a positive integer`)
+      if (location.type === 'elite-zone' && (!metadata.minorAffixId || !ELITE_MINOR_AFFIXES[metadata.minorAffixId])) errors.push(`${location.id}: elite target ${monsterId} must reference one valid Minor Affix`)
+      if (location.type !== 'elite-zone' && metadata.minorAffixId && !ELITE_MINOR_AFFIXES[metadata.minorAffixId]) errors.push(`${location.id}: invalid Minor Affix for ${monsterId}`)
     })
     Object.keys(targetMetadata).forEach((monsterId) => { if (!pool.includes(monsterId as typeof pool[number])) errors.push(`${location.id}: target metadata references ${monsterId} outside the normal pool`) })
     const orders = pool.flatMap((monsterId) => targetMetadata[monsterId]?.order ?? [])

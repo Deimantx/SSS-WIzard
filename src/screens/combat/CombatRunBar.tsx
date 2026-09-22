@@ -20,6 +20,7 @@ export function CombatRunBar({ selectedDungeonId, onRequestLeave }: { selectedDu
     enemyId: state.combat.enemyId,
     targetEnemyId: state.combat.targetEnemyId,
     inBossFight: state.combat.inBossFight,
+    dungeonSequenceIndex: state.combat.dungeonSequenceIndex,
     threatCleared: state.combat.threatCleared,
     pendingBossId: state.combat.pendingBossId,
   })))
@@ -54,6 +55,7 @@ export function CombatRunBar({ selectedDungeonId, onRequestLeave }: { selectedDu
   const bossDominant = bossReady || mode === 'boss-queued' || mode === 'boss-fight'
   const thresholdReached = Boolean(combat.active && threatThreshold)
   const targeted = location?.encounterMode === 'targeted'
+  const sequence = location?.encounterMode === 'sequence' && dungeon.encounterSequence ? dungeon.encounterSequence : null
   const activeTarget = targeted && combat.targetEnemyId ? MONSTERS[combat.targetEnemyId] : null
   const previousThreat = useRef(combat.threatCleared)
   const [thresholdFlash, setThresholdFlash] = useState(false)
@@ -67,7 +69,15 @@ export function CombatRunBar({ selectedDungeonId, onRequestLeave }: { selectedDu
     previousThreat.current = combat.threatCleared
   }, [combat.threatCleared, dungeon.threatRequired, thresholdReached])
 
-  if (!combat.active) return <section className="combat-run-bar is-idle is-mode-tower"><div className="combat-run-context"><span className="combat-subsection-label">NO ACTIVE COMBAT</span><strong>{location?.name ?? dungeon.name}</strong><small>Select a Location and target to begin.</small></div></section>
+  if (!combat.active) return <section className="combat-run-bar is-idle is-mode-tower"><div className="combat-run-context"><span className="combat-subsection-label">NO ACTIVE COMBAT</span><strong>{location?.name ?? dungeon.name}</strong><small>{sequence ? 'Enter the dungeon to begin the fixed run.' : 'Select a Location and target to begin.'}</small></div></section>
+
+  if (sequence) {
+    const index = Math.min(sequence.length, Math.max(0, combat.dungeonSequenceIndex ?? 0))
+    const totalSteps = sequence.length + 1
+    const currentMonsterId = combat.enemyId ?? (index < sequence.length ? sequence[index] : dungeon.boss)
+    const currentMonster = MONSTERS[currentMonsterId]
+    return <section className="combat-run-bar is-active is-mode-sequence"><div className="combat-run-context"><span className="combat-subsection-label">CURRENT LOCATION</span><strong>{dungeon.name}</strong><small>{COMBAT_LOCATION_TYPE_METADATA[location?.type ?? 'dungeon'].label}</small></div><div className="combat-run-sequence"><div className="combat-run-metric-head"><span>DUNGEON RUN</span><strong>{index + 1} / {totalSteps}</strong></div><Progress value={(index + 1) / totalSteps * 100} tone="mana" /><small>CURRENT ENCOUNTER · {currentMonster?.name ?? 'Unknown'}</small></div><div className="combat-run-boss"><span className="combat-subsection-label"><Crown size={12} aria-hidden="true" /> FINAL BOSS</span><strong>{boss.name}</strong><small>{index >= sequence.length ? 'FIGHTING' : `STEP ${index + 1} OF ${totalSteps}`}</small></div><div className="combat-run-actions"><Button variant="ghost" onClick={onRequestLeave}><LogOut size={14} /> LEAVE</Button></div></section>
+  }
 
   const targetStatus = combat.inBossFight ? 'RESUMES AFTER BOSS' : combat.enemyId && combat.enemyId === combat.targetEnemyId ? 'CURRENT TARGET' : 'NEXT ENCOUNTER'
   return <section className={`combat-run-bar is-active${nearBoss ? ' is-near-boss' : ''}${thresholdFlash ? ' is-threshold-flash' : ''} is-mode-${mode}`}><div className="combat-run-context"><span className="combat-subsection-label">CURRENT LOCATION</span><strong>{dungeon.name}</strong><small>{COMBAT_LOCATION_TYPE_METADATA[location?.type ?? 'dungeon'].label} · {modeLabel}</small></div>{targeted && activeTarget && <div className="combat-run-target"><span className="combat-subsection-label">HUNTING</span><strong>{activeTarget.name}</strong><small>{targetStatus}</small></div>}<div className="combat-run-threat"><div className="combat-run-metric-head"><span>THREAT · {threatState}</span><strong>{threatLabel}</strong></div><Progress value={combat.threatCleared / Math.max(1, dungeon.threatRequired) * 100} tone="warning" /><small>{threatThreshold ? `${dungeon.threatRequired} / ${dungeon.threatRequired} threshold reached` : nearBoss ? 'Boss encounter approaching' : 'Building toward Boss encounter'}</small></div><div className={`combat-run-boss${bossDominant ? ' is-dominant' : ''}`}><span className="combat-subsection-label"><Crown size={12} aria-hidden="true" /> BOSS</span><strong>{boss.name}</strong><small>{bossStatus}</small></div><div className="combat-run-boss-controls">{manualBossEngageAvailable && <Button variant="danger" onClick={() => engageBoss(dungeon.boss)}><Swords size={14} /><span className="combat-run-engage-label-long">ENGAGE {boss.name.toUpperCase()}</span><span className="combat-run-engage-label-short">ENGAGE BOSS</span></Button>}<GameTooltip content={<TooltipContent title="Auto Hunt" description={autoHuntDescription} />}><button type="button" className={`combat-toggle combat-run-toggle${autoHuntEnabled ? ' is-on' : ''}`} disabled={autoHuntDisabled} onClick={() => toggleAutoHunt(dungeonId)}><span>AUTO HUNT</span><strong>{autoHuntDisabled ? 'LOCKED' : autoHuntEnabled ? 'ON' : 'OFF'}</strong></button></GameTooltip></div><div className="combat-run-actions"><Button variant="ghost" onClick={onRequestLeave}><LogOut size={14} /> LEAVE</Button></div></section>

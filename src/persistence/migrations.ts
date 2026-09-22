@@ -2,7 +2,7 @@ import { createInitialState, SAVE_VERSION } from '../store/initialState'
 import { COMBAT_RNG_DEFAULT_SEED } from '../game/core/balance/combatRng'
 import { MANA_PILLAR_IDS } from '../game/data/manaPillars'
 import { DUNGEONS, DUNGEON_ORDER } from '../game/content/dungeons/dungeons'
-import { getCombatLocationByDungeonId, isCombatTargetForLocation } from '../game/content/world-navigation'
+import { getCombatEncounterMode, getCombatLocationByDungeonId, isCombatTargetForLocation } from '../game/content/world-navigation'
 import { GUILD_REQUESTS } from '../game/content/guild/guildRequests'
 import { ITEMS } from '../game/content/items/items'
 import { isBossMonster, MONSTERS } from '../game/content/monsters'
@@ -479,6 +479,20 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
   void legacyPlayerBasicTiming
 
   const activeEnemyId = typeof migrated.combat.enemyId === 'string' && MONSTERS[migrated.combat.enemyId] ? migrated.combat.enemyId : null
+  const sequenceDungeonId = typeof migrated.combat.dungeonId === 'string' ? migrated.combat.dungeonId as DungeonId : null
+  const sequenceDungeon = sequenceDungeonId ? DUNGEONS[sequenceDungeonId] : undefined
+  const isSequenceDungeon = Boolean(sequenceDungeon && getCombatEncounterMode(getCombatLocationByDungeonId(sequenceDungeonId)) === 'sequence' && sequenceDungeon.encounterSequence?.length)
+  if (migrated.combat.active && isSequenceDungeon && sequenceDungeon?.encounterSequence) {
+    const sequence = sequenceDungeon.encounterSequence
+    const legacyThreatIndex = Math.min(sequence.length, Math.max(0, nonNegativeInteger(rawCombat.threatCleared) ?? 0))
+    const inferredIndex = activeEnemyId ? activeEnemyId === sequenceDungeon.boss ? sequence.length : Math.max(0, sequence.indexOf(activeEnemyId)) : legacyThreatIndex
+    const rawIndex = nonNegativeInteger(rawCombat.dungeonSequenceIndex)
+    const candidateIndex = sourceVersion >= 42 && rawIndex !== undefined && rawIndex <= sequence.length ? rawIndex : inferredIndex
+    const expectedEnemyId = candidateIndex === sequence.length ? sequenceDungeon.boss : sequence[candidateIndex]
+    const repairedIndex = activeEnemyId && expectedEnemyId !== activeEnemyId ? inferredIndex : candidateIndex
+    migrated.combat.dungeonSequenceIndex = Math.min(sequence.length, Math.max(0, repairedIndex))
+    migrated.combat.threatCleared = 0
+  } else migrated.combat.dungeonSequenceIndex = null
   const rawEnemyWorldTier = isWorldTierId(rawCombat.enemyWorldTier) ? rawCombat.enemyWorldTier : 1
   migrated.combat.enemyWorldTier = activeEnemyId ? sanitizeWorldTierState({ current: rawEnemyWorldTier, highestUnlocked: migrated.worldTier.highestUnlocked }).current : null
   const rawSerial = sourceVersion >= 22 ? nonNegativeInteger(rawCombat.enemyInstanceSerial) ?? 0 : sourceVersion === 21 && activeEnemyId ? 1 : 0
@@ -631,7 +645,7 @@ const normalizeDirectContentReferences = (migrated: GameState, raw: Record<strin
   migrated.combat.enemyId = enemyId === null ? null : validContentId(enemyId, monsterIds) ? enemyId as GameState['combat']['enemyId'] : fresh.combat.enemyId
   const pendingBossId = Object.prototype.hasOwnProperty.call(rawCombat, 'pendingBossId') ? rawCombat.pendingBossId : migrated.combat.pendingBossId
   migrated.combat.pendingBossId = pendingBossId === null ? null : validContentId(pendingBossId, monsterIds) ? pendingBossId as GameState['combat']['pendingBossId'] : fresh.combat.pendingBossId
-  const activeTargetedLocation = migrated.combat.active && migrated.combat.dungeonId === 'whispering-woods'
+  const activeTargetedLocation = migrated.combat.active && migrated.combat.dungeonId
     ? getCombatLocationByDungeonId(migrated.combat.dungeonId)
     : null
   if (activeTargetedLocation && migrated.combat.dungeonId) {
@@ -645,6 +659,11 @@ const normalizeDirectContentReferences = (migrated: GameState, raw: Record<strin
     migrated.combat.targetEnemyId = candidate
   } else {
     migrated.combat.targetEnemyId = null
+  }
+  if (migrated.combat.active && migrated.combat.dungeonId && getCombatEncounterMode(getCombatLocationByDungeonId(migrated.combat.dungeonId)) === 'sequence') {
+    migrated.combat.targetEnemyId = null
+    migrated.combat.pendingBossId = null
+    migrated.combat.threatCleared = 0
   }
 }
 

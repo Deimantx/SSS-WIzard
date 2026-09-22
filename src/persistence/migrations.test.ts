@@ -655,6 +655,44 @@ describe('save navigation migration', () => {
   })
 })
 
+describe('structured dungeon save migration', () => {
+  it('infers legacy Catacombs sequence progress from the active encounter and Threat', () => {
+    const initial = createInitialState()
+    const wraith = migrateSave({
+      ...initial,
+      saveVersion: 41,
+      combat: { ...initial.combat, active: true, dungeonId: 'abandoned-catacombs', enemyId: 'grave-wraith', threatCleared: 1, dungeonSequenceIndex: undefined },
+    } as any)
+    expect(wraith.combat.dungeonSequenceIndex).toBe(1)
+    expect(wraith.combat.threatCleared).toBe(0)
+
+    const boss = migrateSave({
+      ...initial,
+      saveVersion: 41,
+      combat: { ...initial.combat, active: true, dungeonId: 'abandoned-catacombs', enemyId: 'archmage-edrin-shade', dungeonSequenceIndex: undefined },
+    } as any)
+    expect(boss.combat.dungeonSequenceIndex).toBe(3)
+  })
+
+  it('repairs malformed sequence indices and clears sequence state outside sequence dungeons', () => {
+    const initial = createInitialState()
+    const malformed = migrateSave({
+      ...initial,
+      saveVersion: SAVE_VERSION,
+      combat: { ...initial.combat, active: true, dungeonId: 'abandoned-catacombs', enemyId: 'restless-skeleton', dungeonSequenceIndex: 99 },
+    } as any)
+    expect(malformed.combat.dungeonSequenceIndex).toBe(0)
+    expect(malformed.combat.threatCleared).toBe(0)
+
+    const nonSequence = migrateSave({
+      ...initial,
+      saveVersion: SAVE_VERSION,
+      combat: { ...initial.combat, active: true, dungeonId: 'howling-den', enemyId: 'cavefang-wolf', dungeonSequenceIndex: 2 },
+    } as any)
+    expect(nonSequence.combat.dungeonSequenceIndex).toBeNull()
+  })
+})
+
 describe('targeted combat migration', () => {
   const migrateCombat = (combat: Partial<ReturnType<typeof createInitialState>['combat']>, saveVersion = 40) => {
     const initial = createInitialState()
@@ -675,7 +713,7 @@ describe('targeted combat migration', () => {
   })
 
   it('clears targeted farming state outside the targeted combat zone and repairs malformed IDs', () => {
-    expect(migrateCombat({ active: true, dungeonId: 'howling-den', enemyId: 'thornling', targetEnemyId: 'forest-wisp' }).combat.targetEnemyId).toBeNull()
+    expect(migrateCombat({ active: true, dungeonId: 'abandoned-catacombs', enemyId: 'thornling', targetEnemyId: 'forest-wisp' }).combat.targetEnemyId).toBeNull()
     expect(migrateCombat({ active: true, dungeonId: 'whispering-woods', enemyId: 'thornling', targetEnemyId: 'removed-monster' as any }).combat.targetEnemyId).toBe('thornling')
   })
 

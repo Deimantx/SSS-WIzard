@@ -26,7 +26,7 @@ export function CombatWorldTierControl({ variant = 'card' }: { variant?: 'card' 
       const tooltip = current.active ? <TooltipContent title="World Tier locked during combat" description="Leave the current Location to change World Tier." /> : !unlocked ? <TooltipContent title={`WT${tier} - LOCKED`} description={lockedTierDescription(tier)} /> : <TooltipContent title={`World Tier ${tier}`} description={tierDescription(tier)} />
       return <GameTooltip key={tier} content={tooltip}><Button variant={current.tier === tier ? 'primary' : 'secondary'} disabled={disabled} ariaPressed={current.tier === tier} onClick={() => setWorldTier(tier)}>{!unlocked && <LockKeyhole size={13} aria-hidden="true" />} WT{tier}</Button></GameTooltip>
     })}</div>
-    <small className="combat-world-tier-status">{current.active ? 'LOCKED DURING COMBAT' : current.highest > 1 ? `WT1 and WT${current.highest} available.` : 'WT2 unlocks after Chapter 1.'}</small>
+    <small className="combat-world-tier-status">{current.active ? 'LOCKED DURING COMBAT' : current.highest > 1 ? `WT1–WT${current.highest} AVAILABLE` : 'WT2 unlocks after Chapter 1.'}</small>
   </>
   return variant === 'embedded' ? <div className="combat-world-tier-control is-embedded">{content}</div> : <Card className="combat-world-tier-control">{content}</Card>
 }

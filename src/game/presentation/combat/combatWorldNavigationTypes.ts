@@ -1,4 +1,5 @@
 import type { CombatContinentId, CombatEncounterMode, CombatLocationId, CombatLocationType, CombatRegionId, CombatTargetDifficulty } from '../../content/world-navigation'
+import type { EliteMinorAffixId } from '../../content/elite-affixes'
 import type { DungeonId, MonsterId, WorldTierId } from '../../types'
 
 export type CombatLocationState = 'locked' | 'available' | 'active' | 'boss-ready' | 'completed' | 'prototype'
@@ -21,12 +22,23 @@ export interface CombatTargetViewModel {
   order: number
   powerRating: number
   worldTier: WorldTierId
+  minorAffixId?: EliteMinorAffixId
 }
 
 export interface CombatTargetingViewModel {
   mode: 'targeted'
   targets: CombatTargetViewModel[]
   activeTargetEnemyId: MonsterId | null
+}
+
+export interface CombatDungeonSequenceStepViewModel {
+  order: number
+  monsterId: MonsterId
+  name: string
+  role: 'normal' | 'boss'
+  known: boolean
+  powerRating: number | null
+  state: 'upcoming' | 'current' | 'completed'
 }
 
 export interface CombatLocationViewModel {
@@ -43,6 +55,9 @@ export interface CombatLocationViewModel {
   encounters: CombatEncounterViewModel[]
   boss: CombatEncounterViewModel | null
   targeting: CombatTargetingViewModel | null
+  sequence: { mode: 'sequence'; steps: CombatDungeonSequenceStepViewModel[]; activeIndex: number | null; totalSteps: number } | null
+  firstClearUnlockPreview: Array<{ id: string; label: string }>
+  firstClearCompleted: boolean
 }
 
 export interface CombatContinentSummaryViewModel {

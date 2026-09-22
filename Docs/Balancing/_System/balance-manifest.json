@@ -1,9 +1,9 @@
 {
   "schemaVersion": 2,
   "snapshot": {
-    "commit": "9369d964fd4f64d5c66fac2e7f3e2ce57a5c8a10",
+    "commit": "e22be9043966d8917be8cd96a438e36c31e180da",
     "workingTreeDirty": true,
-    "generatedAtUtc": "2026-09-21T12:34:30.234Z"
+    "generatedAtUtc": "2026-09-22T07:16:22.996Z"
   },
   "runtimePolicy": {
     "sourceOfTruth": "TypeScript runtime content and systems",
@@ -67,7 +67,7 @@
       ]
     },
     "monsters": {
-      "count": 76,
+      "count": 79,
       "ids": [
         "forest-wisp",
         "thornling",
@@ -80,6 +80,9 @@
         "cavefang-wolf",
         "razorclaw-lynx",
         "corrupted-dire-wolf",
+        "bonehide-boar",
+        "moonblind-jackal",
+        "den-stalker",
         "corrupted-greatbear",
         "restless-skeleton",
         "grave-wraith",
@@ -917,6 +920,9 @@
         "cavefang-wolf",
         "razorclaw-lynx",
         "corrupted-dire-wolf",
+        "bonehide-boar",
+        "moonblind-jackal",
+        "den-stalker",
         "corrupted-greatbear"
       ],
       "runtimeSources": [
@@ -1611,12 +1617,16 @@
     "Combat/World_Tiers.md": {
       "stableIds": [
         "world-tier-1",
-        "world-tier-2"
+        "world-tier-2",
+        "world-tier-3",
+        "world-tier-4",
+        "world-tier-5"
       ],
       "runtimeSources": [
         "src/game/content/world-tier",
         "src/game/systems/world-tier",
-        "src/game/systems/combat"
+        "src/game/systems/combat",
+        "src/game/systems/loot"
       ]
     }
   },

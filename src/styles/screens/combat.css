@@ -4021,6 +4021,27 @@
 .combat-run-bar.is-idle .combat-run-context { padding: 0; }
 .combat-run-bar.is-idle .combat-run-context .combat-subsection-label { color: var(--ui-accent); }
 
+/* Phase 5B: deterministic dungeon runs keep sequence progress visible without Threat controls. */
+.combat-run-bar.is-mode-sequence {
+  grid-template-columns: minmax(150px, 1fr) minmax(190px, 1.2fr) minmax(170px, 1fr) minmax(86px, auto);
+  border-color: color-mix(in srgb, var(--ui-secondary) 38%, var(--ui-border-strong));
+  background: linear-gradient(110deg, color-mix(in srgb, var(--ui-secondary) 8%, var(--ui-panel)), color-mix(in srgb, var(--ui-panel-strong) 94%, transparent) 64%, color-mix(in srgb, var(--ui-gold) 4%, var(--ui-panel)));
+}
+.combat-run-sequence { display: grid; gap: 5px; min-width: 0; padding-inline: 14px; border-inline-start: 1px solid color-mix(in srgb, var(--ui-border-strong) 66%, transparent); }
+.combat-run-sequence .progress { height: 5px; background: color-mix(in srgb, var(--ui-bg) 74%, var(--ui-border)); }
+.combat-run-sequence .progress i { background: linear-gradient(90deg, var(--ui-secondary), var(--ui-accent)); }
+.combat-run-sequence small { overflow: hidden; color: var(--ui-text-muted); font: var(--ui-font-micro) var(--font-mono); letter-spacing: .05em; text-overflow: ellipsis; white-space: nowrap; }
+.combat-run-boss small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.combat-enemy-affix-badge { display: inline-flex; align-items: center; max-width: 150px; overflow: hidden; padding: 3px 5px; border: 1px solid color-mix(in srgb, var(--ui-warning) 42%, var(--ui-border)); border-radius: 4px; color: var(--ui-warning); background: color-mix(in srgb, var(--ui-warning) 8%, transparent); font: var(--text-micro) var(--font-mono); letter-spacing: .05em; text-overflow: ellipsis; white-space: nowrap; }
+
+@media (max-width: 760px) {
+  .combat-run-bar.is-mode-sequence { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 9px; }
+  .combat-run-bar.is-mode-sequence .combat-run-sequence { padding-inline: 0; border-inline-start: 0; }
+  .combat-run-bar.is-mode-sequence .combat-run-boss { padding-inline-start: 0; border-inline-start: 0; }
+  .combat-run-bar.is-mode-sequence .combat-run-actions { grid-column: 1 / -1; padding-inline-start: 0; border-inline-start: 0; }
+}
+
 .combat-loot-reward-meta small {
   overflow: hidden;
   color: var(--ui-text-muted);

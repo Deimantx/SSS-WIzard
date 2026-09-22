@@ -6,7 +6,7 @@ import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { BALANCE } from '../game/core/balance/balance'
 import { DUNGEONS, DUNGEON_ORDER, getDungeonUnlockRequirement, isDungeonUnlocked } from '../game/content/dungeons/dungeons'
-import { COMBAT_LOCATIONS, getCombatLocationByDungeonId, isCombatTargetForLocation, type CombatLocationId } from '../game/content/world-navigation'
+import { COMBAT_LOCATIONS, getCombatEncounterMode, getCombatLocationByDungeonId, isCombatTargetForLocation, type CombatLocationId } from '../game/content/world-navigation'
 import { MONSTERS } from '../game/content/monsters'
 import { ITEMS } from '../game/content/items/items'
 import { LEGACY_SPELL_ID_MAP, SPELLS } from '../game/content/spells/spells'
@@ -90,6 +90,12 @@ const offlineBankAnalyticsObservers: OfflineBankSimulationObservers = {
     useCombatTelemetryStore.setState(state.combat)
     useDungeonStatisticsStore.setState(state.dungeon)
   },
+  onCombatCompleted: () => {
+    combatAlertsObserver.clear()
+    combatTelemetryObserver.endRun('complete')
+    dungeonStatisticsObserver.endSession('complete')
+    clearCombatDefeat()
+  },
 }
 const combatLogUiSink = combatEventSink
 const combatLootObserver: CombatLootObserver = (state, enemyId, drops) => {
@@ -103,10 +109,10 @@ const emitActionFeel = (type: GameFeelEventType, selector: string, color = 'var(
   emitGameFeelEvent({ type, x: rect && rect.width > 0 ? rect.left + rect.width / 2 : (typeof window === 'undefined' ? 0 : window.innerWidth * 0.62), y: rect && rect.height > 0 ? rect.top + rect.height / 2 : 128, color, intensity })
 }
 
-const endActiveDungeonRun = () => {
+const endActiveDungeonRun = (reason: 'leave' | 'complete' = 'leave') => {
   combatAlertsObserver.clear()
-  combatTelemetryObserver.endRun('leave')
-  dungeonStatisticsObserver.endSession('leave')
+  combatTelemetryObserver.endRun(reason)
+  dungeonStatisticsObserver.endSession(reason)
   clearCombatDefeat()
 }
 
@@ -125,11 +131,13 @@ const initializeDungeonRun = (state: GameState, dungeonId: DungeonId, resetComba
   state.combat.dungeonId = dungeonId
   state.combat.targetEnemyId = targetEnemyId
   state.combat.encounterTimerMs = 0
+  state.combat.dungeonSequenceIndex = getCombatEncounterMode(getCombatLocationByDungeonId(dungeonId)) === 'sequence' ? 0 : null
   state.player.health = Math.max(1, state.player.health)
   if (!spawnNextEnemy(state, combatEventSink)) {
     state.combat.active = false
     state.combat.dungeonId = null
     state.combat.encounterTimerMs = 0
+    state.combat.dungeonSequenceIndex = null
     return
   }
   pushNotification(state, `${dungeon.name} entered`, 'info')
@@ -429,7 +437,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
   lastOfflineBankReport: null,
   tick: (deltaMs) => set((state) => {
     if (isOfflineBankSimulationActive()) return state
-    return advanceGameState(state, deltaMs, { mode: 'live', onItemAcquired: (itemId, amount) => recordRecentAcquisition(state, itemId, amount), onCombatLoot: combatLootObserver, uiEvents: combatEventSink, telemetry: combatTelemetryObserver, alerts: combatAlertsObserver, statistics: dungeonStatisticsObserver, onArtificingComplete: (completion) => { emitActionFeel('craft-complete', '.artificing-craft-button'); unpinArtificingRecipe(completion.recipeId) } })
+    return advanceGameState(state, deltaMs, { mode: 'live', onItemAcquired: (itemId, amount) => recordRecentAcquisition(state, itemId, amount), onCombatLoot: combatLootObserver, uiEvents: combatEventSink, telemetry: combatTelemetryObserver, alerts: combatAlertsObserver, statistics: dungeonStatisticsObserver, onCombatCompleted: () => endActiveDungeonRun('complete'), onArtificingComplete: (completion) => { emitActionFeel('craft-complete', '.artificing-craft-button'); unpinArtificingRecipe(completion.recipeId) } })
   }),
   setScreen: (screen) => set((state) => { state.ui.screen = screen === 'tower-summoning' ? (isSummoningUnlocked(state) ? screen : 'home') : isScreenUnlocked(state, screen) ? screen : 'home'; return state }),
   completeStoryEvent: (eventId) => set((state) => { const destination = completeStoryEventAction(state, eventId); if (destination) state.ui.screen = isScreenUnlocked(state, destination) ? destination : 'home'; return state }),
@@ -687,11 +695,12 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     })
     return changed
   },
-  leaveDungeon: () => { endActiveDungeonRun(); return set((state) => { state.combat = { ...createInitialState().combat, log: ['Left the dungeon. Threat Cleared resets.'] }; return state }) },
+  leaveDungeon: () => { endActiveDungeonRun(); return set((state) => { const sequence = getCombatEncounterMode(getCombatLocationByDungeonId(state.combat.dungeonId)) === 'sequence'; state.combat = { ...createInitialState().combat, dungeonId: state.combat.dungeonId, log: [sequence ? 'Left the dungeon run.' : 'Left the dungeon. Threat Cleared resets.'] }; return state }) },
   engageBoss: (bossId) => set((state) => {
     const dungeon = state.combat.dungeonId ? DUNGEONS[state.combat.dungeonId] : null
     const boss = MONSTERS[bossId]
     if (!state.combat.active || !dungeon) { pushNotification(state, 'Enter a Location first', 'warning'); return state }
+    if (getCombatEncounterMode(getCombatLocationByDungeonId(dungeon.id)) === 'sequence') return state
     if (!isDungeonUnlocked(dungeon, state.progress)) { pushNotification(state, `${dungeon.name} is locked.`, 'warning'); return state }
     if (!boss || dungeon.boss !== bossId) { pushNotification(state, `${boss?.name ?? bossId} is not the boss of ${dungeon.name}.`, 'warning'); return state }
     if (state.combat.threatCleared < dungeon.threatRequired) { pushNotification(state, `${boss.name} requires ${dungeon.threatRequired} Threat Cleared`, 'warning'); return state }
@@ -702,7 +711,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     if (spawnEnemy(state, bossId, combatLogUiSink)) pushNotification(state, `${boss.name} engaged`, 'warning')
     return state
   }),
-  toggleAutoHunt: (dungeonId = 'whispering-woods') => set((state) => { const dungeon = DUNGEONS[dungeonId]; if (!dungeon || !isDungeonUnlocked(dungeon, state.progress)) return state; const unlocked = state.progress.autoHuntBossUnlocked || Object.values(state.progress.bossKillsByBoss).some((kills) => kills > 0) || state.progress.firstBossKill; if (!unlocked) { pushNotification(state, 'Auto Hunt unlocks after the first dungeon boss kill', 'warning'); return state } state.progress.autoHuntBossUnlocked = true; state.progress.autoHuntBossByDungeon[dungeonId] = !state.progress.autoHuntBossByDungeon[dungeonId]; return state }),
+  toggleAutoHunt: (dungeonId = 'whispering-woods') => set((state) => { const dungeon = DUNGEONS[dungeonId]; if (!dungeon || getCombatEncounterMode(getCombatLocationByDungeonId(dungeonId)) === 'sequence' || !isDungeonUnlocked(dungeon, state.progress)) return state; const unlocked = state.progress.autoHuntBossUnlocked || Object.values(state.progress.bossKillsByBoss).some((kills) => kills > 0) || state.progress.firstBossKill; if (!unlocked) { pushNotification(state, 'Auto Hunt unlocks after the first dungeon boss kill', 'warning'); return state } state.progress.autoHuntBossUnlocked = true; state.progress.autoHuntBossByDungeon[dungeonId] = !state.progress.autoHuntBossByDungeon[dungeonId]; return state }),
   killCurrentEnemy: () => set((state) => { forceKillEnemyForDebug(state, { uiEvents: combatLogUiSink }); return state }),
   despawnDebugEnemy: () => set((state) => { despawnEnemyForDebug(state); return state }),
   fastResolveDebugEnemies: (amount, dungeonId, stopAtBossReady = true) => set((state) => { fastResolveNormalEnemiesForDebug(state, amount, dungeonId ?? state.combat.dungeonId ?? 'whispering-woods', stopAtBossReady, { uiEvents: combatLogUiSink, onItemAcquired: (itemId, quantity) => recordRecentAcquisition(state, itemId, quantity), onCombatLoot: combatLootObserver }); return state }),

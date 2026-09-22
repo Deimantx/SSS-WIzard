@@ -1,9 +1,9 @@
 import { BALANCE } from '../../core/balance/balance'
 import { DUNGEONS, chooseMonster } from '../../content/dungeons/dungeons'
-import { getCombatLocationByDungeonId, isCombatTargetForLocation } from '../../content/world-navigation'
+import { getCombatEncounterMode, getCombatLocationByDungeonId, isCombatTargetForLocation } from '../../content/world-navigation'
 import { isBossMonster, MONSTERS } from '../../content/monsters'
 import { recalculateDerivedStats, appendLog, pushNotification } from '../../engine'
-import type { ActiveCombatSpellLoadout, GameState, ItemId, MonsterId } from '../../types'
+import type { ActiveCombatSpellLoadout, DungeonId, GameState, ItemId, MonsterId } from '../../types'
 import { executeCombatEffects, damageEnemy, damagePlayer, gainBarrier } from './effectResolver'
 import { gainBarrier as gainBarrierRuntime } from './barrierRuntime'
 import { applyStatus, clearStatuses } from './statusRuntime'
@@ -145,6 +145,17 @@ export const abandonCurrentEncounter = (state: GameState, options: AbandonCurren
 
 export const spawnNextEnemy = (state: GameState, uiEvents?: CombatEventSink) => {
   const dungeon = DUNGEONS[state.combat.dungeonId ?? 'whispering-woods']
+  const location = getCombatLocationByDungeonId(dungeon.id)
+  if (getCombatEncounterMode(location) === 'sequence' && dungeon.encounterSequence?.length) {
+    const sequenceIndex = Number.isInteger(state.combat.dungeonSequenceIndex) && state.combat.dungeonSequenceIndex! >= 0 && state.combat.dungeonSequenceIndex! <= dungeon.encounterSequence.length
+      ? state.combat.dungeonSequenceIndex!
+      : 0
+    state.combat.dungeonSequenceIndex = sequenceIndex
+    const nextEnemyId = sequenceIndex < dungeon.encounterSequence.length ? dungeon.encounterSequence[sequenceIndex] : dungeon.boss
+    const spawned = spawnEnemy(state, nextEnemyId, uiEvents)
+    if (!spawned && state.combat.active) state.combat.encounterTimerMs = dungeon.encounterDelayMs
+    return spawned
+  }
   if (state.combat.pendingBossId) {
     const boss = state.combat.pendingBossId
     state.combat.pendingBossId = null
@@ -156,7 +167,6 @@ export const spawnNextEnemy = (state: GameState, uiEvents?: CombatEventSink) => 
       return spawned
     }
   }
-  const location = getCombatLocationByDungeonId(dungeon.id)
   const targetedEnemyId = isCombatTargetForLocation(location, dungeon.id, state.combat.targetEnemyId) ? state.combat.targetEnemyId : null
   const nextEnemyId = targetedEnemyId ?? chooseMonster(dungeon.monsterPool, () => nextCombatRandom(state))
   const spawned = spawnEnemy(state, nextEnemyId, uiEvents)
@@ -198,6 +208,8 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   state.combat.autoCastManaStarvedSpells = []
   clearEnemyRuleCooldowns(state)
   const dungeon = DUNGEONS[state.combat.dungeonId ?? 'whispering-woods']
+  const location = getCombatLocationByDungeonId(dungeon.id)
+  const sequenceDungeon = getCombatEncounterMode(location) === 'sequence' && Boolean(dungeon.encounterSequence?.length)
   const arcaneReward = getArcaneCoreReward(state.combat.dungeonId)
   const bossDefeated = isBossMonster(monster)
   const arcanePoints = arcaneReward ? (bossDefeated ? arcaneReward.bossKillPoints : arcaneReward.normalKillPoints) : 0
@@ -241,7 +253,23 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
     }
     reconcileStoryProgression(state)
     report?.recordNotable(`${monster.name} defeated`)
-    appendLog(state, `${monster.name} defeated${drops ? ` - ${drops}` : ''}${rewardText}. Threat Cleared resets.`)
+    if (sequenceDungeon) {
+      state.combat.active = false
+      state.combat.enemyMaxHp = 0
+      state.combat.dungeonSequenceIndex = null
+      state.combat.targetEnemyId = null
+      state.combat.pendingBossId = null
+      state.combat.inBossFight = false
+      state.combat.encounterTimerMs = 0
+      appendLog(state, `${monster.name} defeated${drops ? ` - ${drops}` : ''}${rewardText}. ${dungeon.name} cleared.`)
+      pushNotification(state, `${dungeon.name.toUpperCase()} CLEARED`, 'success', { key: `dungeon-cleared:${dungeon.id}`, cooldownMs: 1000 })
+    } else appendLog(state, `${monster.name} defeated${drops ? ` - ${drops}` : ''}${rewardText}. Threat Cleared resets.`)
+  } else if (sequenceDungeon) {
+    const sequenceLength = dungeon.encounterSequence?.length ?? 0
+    state.combat.dungeonSequenceIndex = Math.min(sequenceLength, Math.max(0, (state.combat.dungeonSequenceIndex ?? 0) + 1))
+    state.progress.lifetimeKills += 1
+    state.progress.lifetimeKillsByMonster[enemyId] = (state.progress.lifetimeKillsByMonster[enemyId] ?? 0) + 1
+    appendLog(state, `${monster.name} defeated${drops ? ` - ${drops}` : ''}${rewardText}`)
   } else {
     state.progress.lifetimeKills += 1
     state.progress.lifetimeKillsByMonster[enemyId] = (state.progress.lifetimeKillsByMonster[enemyId] ?? 0) + 1
@@ -257,7 +285,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   }
 }
 
-export interface ResolveCombatDeathsOptions { forceEnemyDeath?: boolean; onLootResolved?: CombatLootObserver; onPlayerDefeated?: (event: CombatEvent, state: GameState) => void }
+export interface ResolveCombatDeathsOptions { forceEnemyDeath?: boolean; onLootResolved?: CombatLootObserver; onPlayerDefeated?: (event: CombatEvent, state: GameState) => void; onCombatCompleted?: (state: GameState, dungeonId: DungeonId) => void }
 
 export const resolveCombatDeaths = (state: GameState, report?: SimulationReportCollector, onItemAcquired?: (itemId: ItemId, quantity: number) => void, uiEvents?: CombatEventSink, options: ResolveCombatDeathsOptions = {}) => {
   if (state.player.health <= 0 && !state.debug.playerImmortal) {
@@ -286,6 +314,10 @@ export const resolveCombatDeaths = (state: GameState, report?: SimulationReportC
     state.combat.pendingBossId = null
     resetAllCombatRuleRuntime(state)
     state.combat.threatCleared = 0
+    if (getCombatEncounterMode(getCombatLocationByDungeonId(state.combat.dungeonId)) === 'sequence') {
+      state.combat.dungeonSequenceIndex = null
+      state.combat.targetEnemyId = null
+    }
     state.combat.inBossFight = false
     pushNotification(state, 'Defeated - recovering in the Tower', 'warning')
     appendLog(state, 'The wizard falls. Threat Cleared resets to 0.')
@@ -299,8 +331,10 @@ export const resolveCombatDeaths = (state: GameState, report?: SimulationReportC
   }
   if (state.combat.enemyId && state.combat.enemyHp <= 0) {
     const enemyId = state.combat.enemyId
+    const dungeonId = state.combat.dungeonId
     uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'death', sourceId: 'enemy-defeated' })
     finishEnemy(state, report, onItemAcquired, uiEvents, options.onLootResolved)
+    if (!state.combat.active && dungeonId) options.onCombatCompleted?.(state, dungeonId)
     return true
   }
   return false

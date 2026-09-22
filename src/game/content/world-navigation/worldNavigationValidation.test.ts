@@ -20,6 +20,22 @@ describe('combat world navigation content', () => {
     expect(COMBAT_REGIONS['first-frontier'].continentId).toBe('continent-1')
     expect(COMBAT_REGIONS['first-frontier'].locationIds).toEqual(['whispering-woods', 'howling-den', 'abandoned-catacombs'])
     expect(COMBAT_LOCATIONS['whispering-woods']).toMatchObject({ regionId: 'first-frontier', type: 'combat-zone', dungeonId: 'whispering-woods' })
+    expect(COMBAT_LOCATIONS['howling-den']).toMatchObject({ encounterMode: 'targeted', type: 'elite-zone', dungeonId: 'howling-den' })
+    expect(Object.entries(COMBAT_LOCATIONS['howling-den'].targetMetadata ?? {}).map(([monsterId, metadata]) => [monsterId, metadata.minorAffixId])).toEqual([
+      ['cavefang-wolf', 'vicious'],
+      ['razorclaw-lynx', 'frenzied'],
+      ['corrupted-dire-wolf', 'warded'],
+      ['bonehide-boar', 'armored'],
+      ['moonblind-jackal', 'relentless'],
+      ['den-stalker', 'regenerative'],
+    ])
+    expect(COMBAT_LOCATIONS['abandoned-catacombs']).toMatchObject({ encounterMode: 'sequence', dungeonId: 'abandoned-catacombs', firstClearUnlockPreview: [
+      { id: 'black-portal-shard', label: 'Black Portal Shard' },
+      { id: 'dark-portal', label: 'Dark Portal' },
+      { id: 'world-tier-2', label: 'World Tier 2' },
+      { id: 'elemental-scar', label: 'Elemental Scar' },
+      { id: 'magic-school-cap', label: 'Magic School Cap Increase' },
+    ] })
     expect(COMBAT_REGIONS['elemental-scar'].locationIds).toEqual(['fractured-approach', 'flooded-reliquary', 'ashen-watch', 'rootscar-hollow', 'crossroads-of-ruin'])
     expect(COMBAT_REGIONS['shattered-meridian'].locationIds).toEqual(['graveglass-hollow', 'stormvault-gallery', 'starfallen-observatory', 'broken-meridian'])
     expect(COMBAT_REGIONS['black-sigil-reach'].locationIds).toEqual(['hall-of-unbound-names', 'vault-of-the-black-sigil', 'black-gate'])

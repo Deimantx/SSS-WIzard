@@ -78,7 +78,7 @@ export interface CombatTelemetryState {
   encounter: CombatTelemetryScope | null
 }
 
-export type CombatTelemetryEndReason = 'leave' | 'defeat' | 'reset'
+export type CombatTelemetryEndReason = 'leave' | 'defeat' | 'complete' | 'reset'
 export type CombatEncounterEndReason = 'death' | 'despawn' | 'leave'
 
 export interface CombatTelemetryObserver {

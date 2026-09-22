@@ -25,6 +25,7 @@ export const HOWLING_DEN_MONSTERS = {
     color: "#b8a0a0",
     ui: { portraitIcon: "wolf" },
     traitIds: ["cavefang-wolf-predator-instinct"],
+    resonanceYield: { air: 28 },
     actions: {
       pounce: {
         id: "pounce",
@@ -72,6 +73,7 @@ export const HOWLING_DEN_MONSTERS = {
     color: "#c18b73",
     ui: { portraitIcon: "claw" },
     traitIds: ["razorclaw-lynx-relentless-hunter"],
+    resonanceYield: { air: 32 },
     actions: {
       "rending-claws": {
         id: "rending-claws",
@@ -124,6 +126,7 @@ export const HOWLING_DEN_MONSTERS = {
     color: "#7e6c9f",
     ui: { portraitIcon: "wolf" },
     traitIds: ["corrupted-dire-wolf-arcane-corruption"],
+    resonanceYield: { air: 25, earth: 20 },
     resistances: { fire: 0.1, water: 0.1, earth: 0.1, air: 0.1 },
     actions: {
       "arcane-bite": {
@@ -195,6 +198,133 @@ export const HOWLING_DEN_MONSTERS = {
     defaultActionPatternId: "default",
     loot: withDungeonLoot("howling-den", "normal", { min: 3, max: 5 }),
   },
+  "bonehide-boar": {
+    id: "bonehide-boar",
+    bestiaryCategory: "monster",
+    name: "Bonehide Boar",
+    subtitle: "A slow armored bruiser that turns every charge into a wall of force",
+    maxHealth: 470,
+    basicAttackDamage: 24,
+    basicAttackTimeMs: 2900,
+    defense: 28,
+    color: "#9a8066",
+    ui: { portraitIcon: "bear" },
+    traitIds: [],
+    actions: {
+      "tusk-charge": {
+        id: "tusk-charge",
+        name: "Tusk Charge",
+        actionTimeMs: 2300,
+        description: "A brutal charge deals Physical damage and delays the Wizard's current action.",
+        effects: [scaledDirectDamage("physical", 1.45), delayCurrentAction(500)],
+        tags: ["special", "physical", "melee", "control", "direct"],
+      },
+      "bristle-guard": {
+        id: "bristle-guard",
+        name: "Bristle Guard",
+        actionTimeMs: 2000,
+        description: "The Boar hardens its hide and becomes Fortified.",
+        effects: [applyStatus("fortified", "self", 8000)],
+        tags: ["special", "buff"],
+      },
+    },
+    actionPatterns: {
+      default: {
+        id: "default",
+        steps: [basic("basic-1"), action("tusk-charge-step-1", "tusk-charge"), basic("basic-2"), action("bristle-guard-step", "bristle-guard"), basic("basic-3"), basic("basic-4"), action("tusk-charge-step-2", "tusk-charge")],
+      },
+    },
+    defaultActionPatternId: "default",
+    resonanceYield: { earth: 36 },
+    loot: withDungeonLoot("howling-den", "normal", { min: 3, max: 5 }),
+  },
+  "moonblind-jackal": {
+    id: "moonblind-jackal",
+    bestiaryCategory: "monster",
+    name: "Moonblind Jackal",
+    subtitle: "A fast debuff predator that hunts by scent and curse",
+    maxHealth: 340,
+    basicAttackDamage: 23,
+    basicAttackTimeMs: 1900,
+    defense: 15,
+    color: "#8c829d",
+    ui: { portraitIcon: "wolf" },
+    traitIds: [],
+    actions: {
+      moonbite: {
+        id: "moonbite",
+        name: "Moonbite",
+        actionTimeMs: 1700,
+        description: "Arcane damage leaves the Wizard Cursed.",
+        effects: [scaledDirectDamage("arcane", 1.1), applyStatus("cursed", "opponent", 7000)],
+        tags: ["special", "arcane", "melee", "debuff", "direct"],
+      },
+      "blood-trail": {
+        id: "blood-trail",
+        name: "Blood Trail",
+        actionTimeMs: 1800,
+        description: "Physical damage opens a Bleeding wound.",
+        effects: [scaledDirectDamage("physical", 0.9), scaledDot("bleeding", "physical", 1.2, 8000)],
+        tags: ["special", "physical", "melee", "debuff", "direct"],
+      },
+    },
+    actionPatterns: {
+      default: {
+        id: "default",
+        steps: [basic("basic-1"), action("moonbite-step-1", "moonbite"), basic("basic-2"), action("blood-trail-step", "blood-trail"), basic("basic-3"), action("moonbite-step-2", "moonbite"), basic("basic-4")],
+      },
+    },
+    defaultActionPatternId: "default",
+    resonanceYield: { air: 38 },
+    loot: withDungeonLoot("howling-den", "normal", { min: 3, max: 5 }),
+  },
+  "den-stalker": {
+    id: "den-stalker",
+    bestiaryCategory: "monster",
+    name: "Den Stalker",
+    subtitle: "An ambush predator that sets up a fragile target for the killing bite",
+    maxHealth: 400,
+    basicAttackDamage: 28,
+    basicAttackTimeMs: 2200,
+    defense: 18,
+    color: "#5e526e",
+    ui: { portraitIcon: "claw" },
+    traitIds: [],
+    actions: {
+      "shadow-pounce": {
+        id: "shadow-pounce",
+        name: "Shadow Pounce",
+        actionTimeMs: 1800,
+        description: "Physical damage leaves the Wizard Fragile.",
+        effects: [scaledDirectDamage("physical", 1.2), applyStatus("fragile", "opponent", 6000)],
+        tags: ["special", "physical", "melee", "debuff", "direct"],
+      },
+      vanish: {
+        id: "vanish",
+        name: "Vanish",
+        actionTimeMs: 1500,
+        description: "The Stalker slips into Spectral Fade.",
+        effects: [applyStatus("spectral-fade", "self", 5000)],
+        tags: ["special", "buff"],
+      },
+      "execution-bite": {
+        id: "execution-bite",
+        name: "Execution Bite",
+        actionTimeMs: 2100,
+        description: "A devastating bite that deals extra damage to Fragile targets.",
+        effects: [{ type: "deal-damage", target: "opponent", components: [{ damageType: "physical", magnitude: opponentStatusStackScaled("fragile", { type: "source-basic-damage-percent", value: 1.3 }, 0.5, 1) }], tags: ["special", "physical", "melee", "direct"] }],
+      },
+    },
+    actionPatterns: {
+      default: {
+        id: "default",
+        steps: [action("vanish-step", "vanish"), basic("basic-1"), action("shadow-pounce-step-1", "shadow-pounce"), basic("basic-2"), action("execution-bite-step", "execution-bite"), basic("basic-3"), action("shadow-pounce-step-2", "shadow-pounce")],
+      },
+    },
+    defaultActionPatternId: "default",
+    resonanceYield: { air: 32, earth: 18 },
+    loot: withDungeonLoot("howling-den", "normal", { min: 3, max: 5 }),
+  },
   "corrupted-greatbear": {
     id: "corrupted-greatbear",
     bestiaryCategory: "boss",
@@ -210,6 +340,7 @@ export const HOWLING_DEN_MONSTERS = {
       "corrupted-greatbear-thick-hide",
       "corrupted-greatbear-unstable-corruption",
     ],
+    resonanceYield: { earth: 110, air: 30 },
     actions: {
       "crushing-maul": {
         id: "crushing-maul",

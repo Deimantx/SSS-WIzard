@@ -8,7 +8,7 @@ interface CurrentEncounter { monsterId: MonsterId; boss: boolean; elapsedMs: num
 interface DungeonStatisticsStore extends DungeonStatisticsState {
   currentEncounter: CurrentEncounter | null
   beginSession: (dungeonId: DungeonId) => void
-  endSession: (reason: 'leave' | 'death' | 'dungeon-change') => void
+  endSession: (reason: 'leave' | 'death' | 'complete' | 'dungeon-change') => void
   advanceTime: (deltaMs: number, state: GameState) => void
   beginRun: () => void
   completeRun: (durationMs: number) => void

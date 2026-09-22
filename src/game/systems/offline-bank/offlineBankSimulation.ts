@@ -21,6 +21,7 @@ export interface OfflineBankSimulationObservers {
   getEncounterTelemetry?: () => CombatTelemetryScope | null
   snapshot?: () => unknown
   restore?: (snapshot: unknown) => void
+  onCombatCompleted?: (state: GameState, dungeonId: import('../../types').DungeonId) => void
 }
 
 let active = false
@@ -55,7 +56,7 @@ export const advanceWithOfflineBank = async (durationMs: number, getState: () =>
       remaining -= step
       setState((state) => {
         state.offlineBankMs = Math.max(0, state.offlineBankMs - step)
-        advanceGameState(state, step, { mode: 'banked', report: collector, onItemAcquired: (itemId, quantity) => onItemAcquired?.(state, itemId, quantity), onArtificingComplete: (completion) => completedArtificingRecipeIds.add(completion.recipeId), uiEvents: simulationEvents, onPlayerDefeated: (event) => combatTrace.captureDefeat(event, observers?.getEncounterTelemetry?.()), telemetry: observers?.telemetry, statistics: observers?.statistics })
+        advanceGameState(state, step, { mode: 'banked', report: collector, onItemAcquired: (itemId, quantity) => onItemAcquired?.(state, itemId, quantity), onArtificingComplete: (completion) => completedArtificingRecipeIds.add(completion.recipeId), uiEvents: simulationEvents, onPlayerDefeated: (event) => combatTrace.captureDefeat(event, observers?.getEncounterTelemetry?.()), onCombatCompleted: observers?.onCombatCompleted, telemetry: observers?.telemetry, statistics: observers?.statistics })
       })
       if (index > 0 && index % 50 === 0) await yieldToBrowser()
     }

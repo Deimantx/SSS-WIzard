@@ -15,6 +15,7 @@ export interface DungeonDefinition {
   threatRequired: number
   boss: MonsterId
   encounterDelayMs: number
+  encounterSequence?: MonsterId[]
   unlock?: DungeonUnlockCondition
   completesTutorial?: boolean
   ui?: { description: string }
@@ -54,6 +55,16 @@ export const validateDungeonDefinitions = () => {
     if (!Number.isInteger(dungeon.threatRequired) || dungeon.threatRequired <= 0) errors.push(`${dungeon.id}: threatRequired must be a positive integer`)
     if (!Number.isFinite(dungeon.encounterDelayMs) || dungeon.encounterDelayMs <= 0) errors.push(`${dungeon.id}: encounterDelayMs must be positive`)
     dungeon.monsterPool.forEach((monsterId) => { if (!MONSTERS[monsterId]) errors.push(`${dungeon.id}: unknown monster ${monsterId}`); else if (isBossMonster(MONSTERS[monsterId])) errors.push(`${dungeon.id}: normal pool may not contain boss ${monsterId}`) })
+    if (dungeon.encounterSequence) {
+      if (dungeon.encounterSequence.length === 0) errors.push(`${dungeon.id}: encounterSequence must not be empty`)
+      dungeon.encounterSequence.forEach((monsterId) => {
+        if (!MONSTERS[monsterId]) errors.push(`${dungeon.id}: sequence references unknown monster ${monsterId}`)
+        else if (isBossMonster(MONSTERS[monsterId])) errors.push(`${dungeon.id}: sequence may not contain boss ${monsterId}`)
+        if (!dungeon.monsterPool.includes(monsterId)) errors.push(`${dungeon.id}: sequence monster ${monsterId} is not in monsterPool`)
+      })
+      if (new Set(dungeon.encounterSequence).size !== dungeon.encounterSequence.length) errors.push(`${dungeon.id}: encounterSequence must not contain duplicate monsters`)
+      if (dungeon.encounterSequence.includes(dungeon.boss)) errors.push(`${dungeon.id}: boss must not be duplicated in encounterSequence`)
+    }
     if (!MONSTERS[dungeon.boss]) errors.push(`${dungeon.id}: unknown boss ${dungeon.boss}`)
     if (dungeon.monsterPool.includes(dungeon.boss)) errors.push(`${dungeon.id}: boss must not be in the normal monster pool`)
     if (dungeon.unlock?.type === 'boss-kill' && (!MONSTERS[dungeon.unlock.bossId] || !isBossMonster(MONSTERS[dungeon.unlock.bossId]))) errors.push(`${dungeon.id}: unlock boss must be a known boss monster`)

@@ -42,6 +42,21 @@ describe('combat world navigation read model', () => {
     expect(view.selectedLocation?.name).toBe('Howling Den')
   })
 
+  it('presents Howling Den affixes and the fixed Catacombs sequence', () => {
+    const state = createInitialState()
+    state.progress.bossKillsByBoss['forest-heart'] = 1
+    state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
+    const view = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedLocationId: 'howling-den' })
+    expect(view.selectedLocation?.targeting?.targets).toHaveLength(6)
+    expect(view.selectedLocation?.targeting?.targets.map((target) => target.minorAffixId)).toEqual(['vicious', 'frenzied', 'warded', 'armored', 'relentless', 'regenerative'])
+
+    const catacombs = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedLocationId: 'abandoned-catacombs' }).selectedLocation
+    expect(catacombs?.sequence?.steps.map((step) => step.monsterId)).toEqual(['restless-skeleton', 'grave-wraith', 'fallen-acolyte', 'archmage-edrin-shade'])
+    const sequenceSteps = catacombs?.sequence?.steps ?? []
+    expect(sequenceSteps[sequenceSteps.length - 1]?.role).toBe('boss')
+    expect(catacombs?.firstClearUnlockPreview).toHaveLength(5)
+  })
+
   it('unlocks the four authored Regions on their existing boss milestones', () => {
     const state = createInitialState()
     const before = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedRegionId: 'elemental-scar', selectedLocationId: 'fractured-approach' })

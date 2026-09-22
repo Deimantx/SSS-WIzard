@@ -37,6 +37,7 @@ export interface AdvanceContext {
   onArtificingComplete?: (completion: ArtificingCompletion) => void
   onCombatLoot?: CombatLootObserver
   onPlayerDefeated?: (event: import('../combat/combatTypes').CombatEvent, state: GameState) => void
+  onCombatCompleted?: (state: GameState, dungeonId: import('../../types').DungeonId) => void
   uiEvents?: CombatEventSink
   telemetry?: CombatTelemetryObserver
   alerts?: CombatAlertObserver
@@ -44,7 +45,7 @@ export interface AdvanceContext {
 }
 
 const spellUnlocked = isSpellUnlocked
-const resolveDeaths = (state: GameState, context: AdvanceContext) => resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents, { onLootResolved: context.onCombatLoot, onPlayerDefeated: context.onPlayerDefeated })
+const resolveDeaths = (state: GameState, context: AdvanceContext) => resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents, { onLootResolved: context.onCombatLoot, onPlayerDefeated: context.onPlayerDefeated, onCombatCompleted: context.onCombatCompleted })
 
 const evaluateAutoCondition = (state: GameState, condition: import('../../types').AutoCastCondition | undefined): boolean => {
   if (!condition || condition.type === 'always') return true

@@ -56,4 +56,20 @@ describe('EquipmentScreen', () => {
     expect(container.querySelector('.equipment-armory-card[data-item-id="wispveil-hood"]')).toBeTruthy()
     expect(container.querySelector('.equipment-armory-card[data-item-id="ember-staff"]')).toBeNull()
   })
+
+  it('shows equipped Crystal contribution in the Wizard Stats panel', () => {
+    const state = useGameStore.getState()
+    useGameStore.setState({
+      crystals: {
+        ...state.crystals,
+        owned: { ...state.crystals.owned, 'cataclysm-t1': 1 },
+        equippedSlots: ['cataclysm-t1', ...state.crystals.equippedSlots.slice(1)],
+      },
+    })
+
+    render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
+
+    expect(screen.getByText('Spell Power')).toBeTruthy()
+    expect(screen.getByText('57')).toBeTruthy()
+  })
 })

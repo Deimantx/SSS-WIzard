@@ -45,7 +45,7 @@ export interface EnemyCombatStats extends CommonCombatStats {
 }
 export type CombatStats = PlayerCombatStats | EnemyCombatStats
 
-export type PlayerSheetState = Pick<GameState, 'player' | 'progress' | 'activities' | 'equipment' | 'artifactProgress'> & Partial<Pick<GameState, 'debug' | 'arcaneCore'>>
+export type PlayerSheetState = Pick<GameState, 'player' | 'progress' | 'activities' | 'equipment' | 'artifactProgress' | 'crystals'> & Partial<Pick<GameState, 'debug' | 'arcaneCore'>>
 
 const finite = (value: number | undefined, fallback = 0) => Number.isFinite(value) ? value as number : fallback
 const clampPercent = (value: number, min: number, max: number) => Math.min(max, Math.max(min, finite(value)))

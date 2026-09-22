@@ -58,6 +58,18 @@ describe('universal combat stats foundation', () => {
     expect(getBlockChance(state, 'player', playerSpell)).toBe(0)
   })
 
+  it('includes equipped Crystal stats in live player combat modifiers', () => {
+    const state = createInitialState()
+    state.crystals.equippedSlots[0] = 'cataclysm-t1'
+    state.crystals.equippedSlots[1] = 'bulwark-t1'
+
+    const player = getPlayerCombatStats(state)
+
+    expect(player.critDamageMultiplier).toBe(BALANCE.player.baseCritDamage + 0.04)
+    expect(getDefense(state, 'player')).toBe(BALANCE.player.baseDefense + 12)
+    expect(getDefenseReduction(state, 'player')).toBeCloseTo(getDefenseReductionFromRating(BALANCE.player.baseDefense + 12))
+  })
+
   it('keeps the enemy Basic Attack path after removing player Basic fields', () => {
     const state = createInitialState()
     state.combat.active = true

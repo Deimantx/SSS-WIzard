@@ -13,6 +13,7 @@ import { getRootCombatSourceProvenance, isEnemySourceOwnerActive } from './comba
 import { getAllocatedArtifactCombatProviders, isArtifactItem } from '../artifacts/artifactProgression'
 import { getGuardianPassiveProviders } from '../summoning/summoningSelectors'
 import { getArcaneCoreCombatModifierProviders, getArcaneCoreStaticStats } from '../arcaneCore/arcaneCoreProgression'
+import { getEquippedCrystalStats } from '../crystals/crystalStats'
 
 export type CombatModifierState = {
   player: Pick<GameState['player'], 'health' | 'maxHealth' | 'mana' | 'maxMana'>
@@ -20,6 +21,7 @@ export type CombatModifierState = {
   equipment: GameState['equipment']
   artifactProgress: GameState['artifactProgress']
 } & Partial<Pick<GameState, 'arcaneCore'>>
+  & Partial<Pick<GameState, 'crystals'>>
 export type CombatModifierEvaluation = 'active' | 'unconditional' | 'all'
 
 export interface ModifierContext {
@@ -125,6 +127,10 @@ export const getCombatModifierContributions = (state: CombatModifierState, actor
     if (equipmentField && state.arcaneCore) {
       const value = Number(getArcaneCoreStaticStats(state.arcaneCore)[equipmentField] ?? 0)
       if (value !== 0) add({ key, value }, 'equipment-stats', 'arcane-core', 'Arcane Core', value)
+    }
+    if (equipmentField && state.crystals) {
+      const value = Number(getEquippedCrystalStats({ crystals: state.crystals })[equipmentField] ?? 0)
+      if (value !== 0) add({ key, value }, 'equipment-stats', 'crystals', 'Crystals', value)
     }
     getGuardianPassiveProviders(state).forEach(({ modifier, sourceId, sourceName }) => add(modifier, 'guardian', sourceId, sourceName))
   }

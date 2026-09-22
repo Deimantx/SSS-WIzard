@@ -59,7 +59,6 @@ const formatStat = formatCrystalStat;
 
 export function CrystalsScreen() {
   const crystals = useGameStore((state) => state.crystals);
-  const player = useGameStore((state) => state.player);
   const combatActive = useGameStore((state) => state.combat.active);
   const equipCrystal = useGameStore((state) => state.equipCrystal);
   const unequipCrystal = useGameStore((state) => state.unequipCrystal);
@@ -255,7 +254,13 @@ export function CrystalsScreen() {
               }
             >
               {locked ? (
-                <LockKeyhole size={19} />
+                <>
+                  <span className="crystal-socket-icon crystal-socket-locked-icon">
+                    <LockKeyhole size={21} />
+                  </span>
+                  <b className="crystal-socket-locked-label">LOCKED</b>
+                  <small>FUTURE SOCKET</small>
+                </>
               ) : variantId ? (
                 <>
                   <span className="crystal-socket-icon">{family?.icon}</span>
@@ -322,7 +327,10 @@ export function CrystalsScreen() {
   );
 
   const summary = (
-    <Card title="CRYSTAL SUMMARY" className="crystal-summary-card">
+    <Card
+      title="CRYSTAL SUMMARY"
+      className={`crystal-summary-card crystal-right-rail${selection?.source === "equipped" ? " is-inspecting" : ""}`}
+    >
       <div className="crystal-summary-hero">
         <div className="crystal-summary-mark">
           <Gem size={28} />
@@ -334,22 +342,6 @@ export function CrystalsScreen() {
           </strong>
           <small>Stats are resolved into your live build.</small>
         </div>
-      </div>
-      <div className="crystal-group-summary">
-        {(Object.keys(CRYSTAL_GROUP_LABELS) as CrystalGroupId[]).map(
-          (group) => (
-            <div
-              key={group}
-              className={`crystal-group-row ${getCrystalGroupUsage({ crystals }, group) > 0 ? "has-value" : ""}`}
-            >
-              <span>{CRYSTAL_GROUP_LABELS[group]}</span>
-              <b>
-                {getCrystalGroupUsage({ crystals }, group)} /{" "}
-                {CRYSTAL_GROUP_CAP}
-              </b>
-            </div>
-          ),
-        )}
       </div>
       <div className="crystal-stat-summary">
         {Object.entries(stats)
@@ -366,10 +358,36 @@ export function CrystalsScreen() {
           <p>No active Crystal contribution yet.</p>
         )}
       </div>
-      <div className="crystal-resource-note">
-        <span>MAX FOCUS</span>
-        <strong>{Math.floor(player.maxFocus)}</strong>
-        <small>Focus legality is checked before every loadout change.</small>
+      {selection?.source === "equipped" && (
+        <CrystalInspect
+          variantId={selection.variantId}
+          slotIndex={selection.slotIndex}
+          combatActive={combatActive}
+          onClose={() => setSelection(null)}
+          onUnequip={() => {
+            if (unequipCrystal(selection.slotIndex)) setSelection(null);
+          }}
+          onUpgrade={upgradeCrystal}
+        />
+      )}
+      <div className="crystal-group-footer">
+        <span className="eyebrow">GROUP LIMITS</span>
+        <div className="crystal-group-summary">
+          {(Object.keys(CRYSTAL_GROUP_LABELS) as CrystalGroupId[]).map(
+            (group) => (
+              <div
+                key={group}
+                className={`crystal-group-row ${getCrystalGroupUsage({ crystals }, group) > 0 ? "has-value" : ""}`}
+              >
+                <span>{CRYSTAL_GROUP_LABELS[group]}</span>
+                <b>
+                  {getCrystalGroupUsage({ crystals }, group)} /{" "}
+                  {CRYSTAL_GROUP_CAP}
+                </b>
+              </div>
+            ),
+          )}
+        </div>
       </div>
     </Card>
   );
@@ -480,18 +498,6 @@ export function CrystalsScreen() {
           onNavigateToInventory={() => navigate("inventory")}
         />
       )}{" "}
-      {selection?.source === "equipped" && !inventoryOpen && (
-        <CrystalInspect
-          variantId={selection.variantId}
-          slotIndex={selection.slotIndex}
-          combatActive={combatActive}
-          onClose={() => setSelection(null)}
-          onUnequip={() => {
-            if (unequipCrystal(selection.slotIndex)) setSelection(null);
-          }}
-          onUpgrade={upgradeCrystal}
-        />
-      )}
     </div>
   );
 }
@@ -883,11 +889,11 @@ function CrystalInspect({
   const next = getNextCrystalVariant(variantId);
   return (
     <div
-      className="crystal-inspect-popover"
+      className="crystal-selected-inspector"
       role="dialog"
       aria-label="Crystal actions"
     >
-      <div className="crystal-inspect-popover-head">
+      <div className="crystal-selected-inspector-head">
         <span style={{ color: family.color }}>{family.icon}</span>
         <div>
           <strong>{getCrystalVariantName(variantId)}</strong>

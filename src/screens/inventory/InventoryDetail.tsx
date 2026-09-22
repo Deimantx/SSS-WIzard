@@ -35,6 +35,7 @@ export function InventoryDetail({ itemId, inventory, protectedItems, equipment, 
   const activities = useGameStore((state) => state.activities)
   const artifactProgress = useGameStore((state) => state.artifactProgress)
   const arcaneCore = useGameStore((state) => state.arcaneCore)
+  const crystals = useGameStore((state) => state.crystals)
   const [usesOpen, setUsesOpen] = useState(false)
   const openSections: DetailAccordionState = { source: preferences.screenState.inventory.sourceOpen, researchValue: preferences.screenState.inventory.researchValueOpen }
   useSmartScrollState(detailScrollRef, { resetKey: itemId })
@@ -49,7 +50,7 @@ export function InventoryDetail({ itemId, inventory, protectedItems, equipment, 
   const source = getItemSourceDestination(itemId)
   const recipeUses = getItemUses(itemId).filter((use) => Boolean(use.recipeId))
   const equippedId = item.equipmentSlot ? getItemPositions(item).map((position) => equipment[position]).find(Boolean) ?? null : null
-  const equipmentPreview = item.kind === 'equipment' ? getEquipmentPreview({ player, progress, activities, equipment, inventory, artifactProgress, arcaneCore }, itemId) : null
+  const equipmentPreview = item.kind === 'equipment' ? getEquipmentPreview({ player, progress, activities, equipment, inventory, artifactProgress, arcaneCore, crystals }, itemId) : null
   const category = getInventorySubcategoryLabel(itemId) ? `${getInventorySubcategoryLabel(itemId)} Material` : getInventoryCategoryLabel(itemId)
   const processingChain = getItemProcessingChain(itemId).filter((chainItem) => Boolean(ITEMS[chainItem]))
   const flow = economyState ? getItemFlow(itemId, economyState) : null

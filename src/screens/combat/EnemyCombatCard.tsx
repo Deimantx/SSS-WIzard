@@ -7,6 +7,7 @@ import { getCombatEncounterMode, getCombatLocationByDungeonId } from '../../game
 import { getMonsterTraits } from '../../game/systems/combat/traitRuntime'
 import { getActiveEliteZoneAffix } from '../../game/systems/combat/eliteZoneAffixRuntime'
 import { getWorldTierDefinition } from '../../game/systems/world-tier/worldTierRuntime'
+import { resolveBossThreatRequirement } from '../../game/systems/combat/combatThreat'
 import { formatNumber, formatTime } from '../../game/utils'
 import { useGameStore } from '../../store/gameStore'
 import { GameTooltip, Status } from '../../components/ui'
@@ -54,10 +55,11 @@ export function EnemyCombatCard({ selectedDungeonId, selectedMonsterId, cardRef,
 
   if (!enemy) {
     const dungeon = DUNGEONS[selectedDungeonId]
+    const threatRequired = resolveBossThreatRequirement(dungeon.id, useGameStore.getState().worldTier.current)
     const sequence = getCombatEncounterMode(getCombatLocationByDungeonId(dungeon.id)) === 'sequence' ? dungeon.encounterSequence : null
     const selectedPreview = selectedMonsterId && (dungeon.monsterPool.includes(selectedMonsterId) || dungeon.boss === selectedMonsterId) ? MONSTERS[selectedMonsterId] : null
     const bossPreview = MONSTERS[dungeon.boss]
-    const routeSummary = sequence ? `FIXED RUN · ${sequence.length + 1} ENCOUNTERS` : `${dungeon.monsterPool.length} normal threats · ${dungeon.threatRequired} Threat`
+    const routeSummary = sequence ? `FIXED RUN · ${sequence.length + 1} ENCOUNTERS` : `${dungeon.monsterPool.length} normal threats · ${formatNumber(threatRequired)} Threat`
     return <section ref={cardRef} className="combat-actor-card combat-enemy-card combat-enemy-empty combat-enemy-transition-enter"><header className="combat-actor-head"><div className="combat-actor-head-copy"><span className="combat-subsection-label">ENEMY PREVIEW</span><h2>{combatActive ? 'NEXT THREAT' : selectedPreview ? 'SELECTED TARGET' : 'SELECTED ROUTE'}</h2></div><Status tone="neutral">{combatActive ? 'Searching' : 'Standby'}</Status></header>{combatActive ? <div className="combat-empty-actor"><Shield size={27} aria-hidden="true" /><span className="combat-subsection-label">NEXT THREAT</span><strong>Searching...</strong></div> : <div className="combat-route-preview"><MonsterPortrait monster={selectedPreview ?? bossPreview} boss={!selectedPreview && selectedPreview !== bossPreview} /><div><span className="combat-subsection-label">{selectedPreview ? 'TARGET' : 'BOSS PREVIEW'}</span><strong>{(selectedPreview ?? bossPreview).name}</strong><small>{selectedPreview ? selectedPreview.subtitle : routeSummary}</small></div></div>}</section>
   }
 

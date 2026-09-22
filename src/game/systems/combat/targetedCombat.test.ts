@@ -5,6 +5,7 @@ import { DUNGEONS } from '../../content/dungeons/dungeons'
 import { getCombatLocationByDungeonId, isCombatTargetForLocation } from '../../content/world-navigation'
 import { MONSTERS } from '../../content/monsters'
 import { resolveEnemyResonanceReward } from '../resonance/resonanceRuntime'
+import { resolveEnemyPowerRating } from '../../presentation/combat/enemyPowerRating'
 import { abandonCurrentEncounter, finishEnemy, spawnNextEnemy, spawnEnemy } from './combatRuntime'
 import { fastResolveNormalEnemiesForDebug } from './debugCombatRuntime'
 
@@ -40,7 +41,7 @@ describe('Whispering Woods targeted farming', () => {
     finishEnemy(state)
     expect(spawnNextEnemy(state)).toBe(true)
     expect(state.combat.enemyId).toBe('cinder-moth')
-    expect(state.combat.threatCleared).toBe(1)
+    expect(state.combat.threatCleared).toBe(resolveEnemyPowerRating('cinder-moth', 1))
   })
 
   it('switches the next normal spawn without interrupting the current enemy', () => {
@@ -60,13 +61,13 @@ describe('Whispering Woods targeted farming', () => {
     ['forest-wisp', 'air', 10],
     ['cinder-moth', 'fire', 20],
     ['tempest-stag', 'air', 50],
-  ] as const)('adds one Threat Cleared for %s', (enemyId, type, amount) => {
+  ] as const)('adds Power Threat for %s', (enemyId, type, amount) => {
     const state = prepare()
     state.combat.targetEnemyId = enemyId
     spawnNextEnemy(state)
     state.combat.enemyHp = 0
     finishEnemy(state)
-    expect(state.combat.threatCleared).toBe(1)
+    expect(state.combat.threatCleared).toBe(resolveEnemyPowerRating(enemyId, 1))
     expect(state.resonance[type]).toBe(amount)
   })
 

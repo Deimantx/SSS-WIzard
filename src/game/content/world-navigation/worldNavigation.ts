@@ -128,6 +128,10 @@ export const getCombatLocationByDungeonId = (dungeonId: DungeonId | null | undef
 
 export const getCombatEncounterMode = (location: CombatLocationDefinition | null | undefined): CombatEncounterMode => location?.encounterMode ?? 'random-pool'
 
+export const usesPowerBasedThreat = (location: CombatLocationDefinition | null | undefined) => Boolean(
+  location?.encounterMode === 'targeted' && (location.type === 'combat-zone' || location.type === 'elite-zone'),
+)
+
 export const isCombatTargetForLocation = (location: CombatLocationDefinition | null | undefined, dungeonId: DungeonId | null | undefined, targetEnemyId: string | null | undefined) => {
   if (!location || !dungeonId || getCombatEncounterMode(location) !== 'targeted' || !targetEnemyId || !location.targetMetadata?.[targetEnemyId as keyof typeof location.targetMetadata]) return false
   const dungeon = DUNGEONS[dungeonId]

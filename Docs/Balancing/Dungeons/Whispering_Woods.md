@@ -3,7 +3,7 @@
 | Setting | Value |
 | --- | --- |
 | Dungeon | Whispering Woods (whispering-woods) |
-| Threat requirement | 20 |
+| Threat requirement | 5000 |
 | Encounter delay | 5 s |
 | Boss | Forest Heart (forest-heart) |
 | Unlock | Available from the start |

@@ -24,6 +24,7 @@ import { resetArcaneCoreEncounterRuntime } from '../arcaneCore/arcaneCoreRuntime
 import { grantEnemyResonanceReward } from '../resonance/resonanceRuntime'
 import { formatResonanceBundle } from '../../presentation/resonance/resonancePresentation'
 import { getWorldTierDefinition, resolveWorldTierEnemyProfile, unlockWorldTier } from '../world-tier/worldTierRuntime'
+import { resolveBossThreatRequirement, resolveThreatGainForKill } from './combatThreat'
 
 export { applyStatus, clearStatuses, damageEnemy, damagePlayer, executeCombatEffects, gainBarrier }
 
@@ -263,7 +264,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
       state.combat.encounterTimerMs = 0
       appendLog(state, `${monster.name} defeated${drops ? ` - ${drops}` : ''}${rewardText}. ${dungeon.name} cleared.`)
       pushNotification(state, `${dungeon.name.toUpperCase()} CLEARED`, 'success', { key: `dungeon-cleared:${dungeon.id}`, cooldownMs: 1000 })
-    } else appendLog(state, `${monster.name} defeated${drops ? ` - ${drops}` : ''}${rewardText}. Threat Cleared resets.`)
+    } else appendLog(state, `${monster.name} defeated${drops ? ` - ${drops}` : ''}${rewardText}. Threat resets.`)
   } else if (sequenceDungeon) {
     const sequenceLength = dungeon.encounterSequence?.length ?? 0
     state.combat.dungeonSequenceIndex = Math.min(sequenceLength, Math.max(0, (state.combat.dungeonSequenceIndex ?? 0) + 1))
@@ -273,12 +274,16 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   } else {
     state.progress.lifetimeKills += 1
     state.progress.lifetimeKillsByMonster[enemyId] = (state.progress.lifetimeKillsByMonster[enemyId] ?? 0) + 1
-    state.combat.threatCleared += 1
+    const requirement = resolveBossThreatRequirement(dungeon.id, state.worldTier.current)
+    const beforeThreat = Math.max(0, state.combat.threatCleared)
+    const threatGain = resolveThreatGainForKill(state, enemyId, encounterWorldTier)
+    const afterThreat = Math.min(requirement, beforeThreat + threatGain)
+    state.combat.threatCleared = afterThreat
     if (enemyId === 'grove-sentinel') state.progress.requestProgress['sentinel-breaker'] = Math.max(state.progress.requestProgress['sentinel-breaker'] ?? 0, state.progress.lifetimeKillsByMonster[enemyId])
     if (state.combat.dungeonId === 'whispering-woods') state.progress.requestProgress['clear-the-woods'] = (state.progress.requestProgress['clear-the-woods'] ?? 0) + 1
     appendLog(state, `${monster.name} defeated${drops ? ` - ${drops}` : ''}${rewardText}`)
-    if (state.combat.threatCleared === dungeon.threatRequired) pushNotification(state, `${MONSTERS[dungeon.boss].name} is ready`, 'success')
-    if (state.progress.autoHuntBossByDungeon[dungeon.id] && state.combat.threatCleared >= dungeon.threatRequired && !state.combat.pendingBossId) {
+    if (beforeThreat < requirement && afterThreat >= requirement) pushNotification(state, `${MONSTERS[dungeon.boss].name} is ready`, 'success')
+    if (state.progress.autoHuntBossByDungeon[dungeon.id] && afterThreat >= requirement && !state.combat.pendingBossId) {
       state.combat.pendingBossId = dungeon.boss
       pushNotification(state, `Auto Hunt Boss queued ${MONSTERS[dungeon.boss].name}`, 'info')
     }
@@ -321,7 +326,7 @@ export const resolveCombatDeaths = (state: GameState, report?: SimulationReportC
     state.combat.inBossFight = false
     pushNotification(state, 'Defeated - recovering in the Tower', 'warning')
     const sequenceDungeon = getCombatEncounterMode(getCombatLocationByDungeonId(state.combat.dungeonId)) === 'sequence'
-    appendLog(state, sequenceDungeon ? 'The wizard falls. Dungeon run reset.' : 'The wizard falls. Threat Cleared resets to 0.')
+    appendLog(state, sequenceDungeon ? 'The wizard falls. Dungeon run reset.' : 'The wizard falls. Threat resets to 0.')
     return true
   }
   if (state.debug.playerImmortal && state.player.health <= 0) state.player.health = 1

@@ -1,5 +1,6 @@
 import { SPELLS } from '../../game/content/spells/spells'
 import { SCHOOL_MAX_LEVEL, getSchoolLevelFromXp, getSchoolTotalXpForLevel } from '../../game/core/balance/schoolXpCurve'
+import { resolveBossThreatRequirement } from '../../game/systems/combat/combatThreat'
 import { syncAllSpellUnlocks, syncSelectedSpellPresetRuntime, syncSpellUnlocksForSchool } from '../../game/systems/spells'
 import type { GameState, MonsterId, SchoolId, SpellId } from '../../game/types'
 
@@ -71,7 +72,10 @@ export const setLevelCapAction = (state: GameState, cap: number) => {
   syncAllSpellUnlocks(state)
   reconcileSelectedPresetRuntime(state)
 }
-export const setThreatAction = (state: GameState, amount: number) => { state.combat.threatCleared = Math.max(0, amount) }
+export const setThreatAction = (state: GameState, amount: number) => {
+  const requirement = state.combat.dungeonId ? resolveBossThreatRequirement(state.combat.dungeonId, state.worldTier.current) : Number.POSITIVE_INFINITY
+  state.combat.threatCleared = Math.min(requirement, Math.max(0, Number.isFinite(amount) ? amount : 0))
+}
 export const setBossKillsAction = (state: GameState, bossId: MonsterId, amount: number) => {
   state.progress.bossKillsByBoss[bossId] = Math.max(0, amount)
   if (bossId === 'grove-sentinel') state.progress.requestProgress['sentinel-breaker'] = Math.max(state.progress.requestProgress['sentinel-breaker'] ?? 0, state.progress.bossKillsByBoss[bossId])

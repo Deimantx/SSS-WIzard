@@ -7,11 +7,11 @@ import { getActiveEncounterWorldTier, resolveWorldTierEnemyProfile, resolveWorld
 describe('World Tier runtime', () => {
   it('exposes the fixed authored WT1 through WT5 multipliers', () => {
     expect(WORLD_TIER_IDS).toEqual([1, 2, 3, 4, 5])
-    expect(WORLD_TIERS[1]).toMatchObject({ enemyHealthMultiplier: 1, enemyDamageMultiplier: 1, enemyDefenseMultiplier: 1, resonanceRewardMultiplier: 1, itemLootQuantityMultiplier: 1 })
-    expect(WORLD_TIERS[2]).toMatchObject({ enemyHealthMultiplier: 2, enemyDamageMultiplier: 1.4, enemyDefenseMultiplier: 1.25, resonanceRewardMultiplier: 2, itemLootQuantityMultiplier: 2 })
-    expect(WORLD_TIERS[3]).toMatchObject({ enemyHealthMultiplier: 3, enemyDamageMultiplier: 1.8, enemyDefenseMultiplier: 1.5, resonanceRewardMultiplier: 3, itemLootQuantityMultiplier: 3 })
-    expect(WORLD_TIERS[4]).toMatchObject({ enemyHealthMultiplier: 4, enemyDamageMultiplier: 2.2, enemyDefenseMultiplier: 1.75, resonanceRewardMultiplier: 4, itemLootQuantityMultiplier: 4 })
-    expect(WORLD_TIERS[5]).toMatchObject({ enemyHealthMultiplier: 5, enemyDamageMultiplier: 2.6, enemyDefenseMultiplier: 2, resonanceRewardMultiplier: 5, itemLootQuantityMultiplier: 5 })
+    expect(WORLD_TIERS[1]).toMatchObject({ enemyHealthMultiplier: 1, enemyDamageMultiplier: 1, enemyDefenseMultiplier: 1, resonanceRewardMultiplier: 1, itemLootQuantityMultiplier: 1, bossThreatRequirementMultiplier: 1 })
+    expect(WORLD_TIERS[2]).toMatchObject({ enemyHealthMultiplier: 2, enemyDamageMultiplier: 1.4, enemyDefenseMultiplier: 1.25, resonanceRewardMultiplier: 2, itemLootQuantityMultiplier: 2, bossThreatRequirementMultiplier: 2 })
+    expect(WORLD_TIERS[3]).toMatchObject({ enemyHealthMultiplier: 3, enemyDamageMultiplier: 1.8, enemyDefenseMultiplier: 1.5, resonanceRewardMultiplier: 3, itemLootQuantityMultiplier: 3, bossThreatRequirementMultiplier: 3 })
+    expect(WORLD_TIERS[4]).toMatchObject({ enemyHealthMultiplier: 4, enemyDamageMultiplier: 2.2, enemyDefenseMultiplier: 1.75, resonanceRewardMultiplier: 4, itemLootQuantityMultiplier: 4, bossThreatRequirementMultiplier: 4 })
+    expect(WORLD_TIERS[5]).toMatchObject({ enemyHealthMultiplier: 5, enemyDamageMultiplier: 2.6, enemyDefenseMultiplier: 2, resonanceRewardMultiplier: 5, itemLootQuantityMultiplier: 5, bossThreatRequirementMultiplier: 5 })
   })
 
   it('sanitizes current tier against the highest unlocked tier', () => {

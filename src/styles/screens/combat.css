@@ -158,12 +158,13 @@
 .combat-world-tier-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(48px, 1fr)); gap: 6px; }
 .combat-world-tier-options .button { min-width: 0; padding: 7px 8px; font-size: 9px; }
 .combat-world-tier-status { display: block; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
-.combat-world-tier-control.is-embedded { padding: 0; gap: 4px; min-width: 180px; }
+.combat-world-tier-control.is-embedded { padding: 0; gap: 4px; min-width: min(240px, 100%); }
 .combat-world-tier-control.is-embedded .combat-world-tier-head { margin-bottom: 3px; }
 .combat-world-tier-control.is-embedded .combat-world-tier-head small { display: none; }
 .combat-world-tier-control.is-embedded .combat-world-tier-head > strong { font-size: 12px; }
-.combat-world-tier-control.is-embedded .combat-world-tier-options { grid-template-columns: repeat(auto-fit, minmax(48px, 1fr)); }
-.combat-world-tier-control.is-embedded .combat-world-tier-options .button { min-height: 27px; padding: 4px 7px; }
+.combat-world-tier-control.is-embedded .combat-world-tier-options { display: flex; flex-wrap: nowrap; gap: 4px; }
+.combat-world-tier-control.is-embedded .combat-world-tier-options > .game-tooltip-trigger { flex: 1 1 0; min-width: 0; }
+.combat-world-tier-control.is-embedded .combat-world-tier-options .button { width: 100%; min-width: 34px; min-height: 27px; padding: 4px 5px; }
 .combat-world-tier-control.is-embedded .combat-world-tier-status { font-size: 8px; text-align: right; }
 
 /* Stage */
@@ -2180,14 +2181,6 @@
 .combat-flow-panel.is-encounter-delay .progress { height: 5px; }
 .combat-flow-panel.is-encounter-delay .progress i { background: var(--semantic-time); }
 
-.combat-run-bar.is-near-boss { border-color: color-mix(in srgb, var(--ui-gold) 48%, var(--ui-border-strong)); background: linear-gradient(100deg, color-mix(in srgb, var(--ui-accent) 8%, var(--ui-panel)), color-mix(in srgb, var(--ui-gold) 11%, var(--ui-panel-strong))); }
-.combat-run-bar.is-near-boss .combat-run-boss-hunt .progress i { background: linear-gradient(90deg, var(--ui-warning), var(--ui-gold)); }
-.combat-run-bar.is-near-boss .combat-run-boss-hunt-state { color: var(--ui-gold); }
-.combat-run-bar.is-near-boss .combat-run-boss-hunt strong { color: var(--ui-text); }
-.combat-run-boss.is-dominant { padding: 7px 10px; border: 1px solid color-mix(in srgb, var(--ui-gold) 58%, var(--ui-border)); border-radius: 7px; background: color-mix(in srgb, var(--ui-gold) 9%, transparent); }
-.combat-run-boss.is-dominant strong { color: var(--ui-gold); font-size: 12px; }
-.combat-run-boss.is-dominant small { font-weight: 700; letter-spacing: .08em; }
-
 .combat-details-panel,
 .dungeon-statistics-panel { border-radius: 10px; }
 .combat-details-summary-total > strong { font-size: 22px; }
@@ -3055,63 +3048,28 @@
   .spell-combat-tile { transition: none; }
 }
 
-/* Phase 5B.1: Boss progress, readiness, and Auto Hunt share one decision cluster. */
+/* Phase 5B.2: Normal run context stays compact; boss progress lives in the World Navigation inspector. */
 .combat-run-bar:not(.is-mode-sequence) {
-  grid-template-columns: minmax(155px, .9fr) minmax(145px, .85fr) minmax(330px, 2fr) minmax(92px, .45fr);
+  grid-template-columns: minmax(170px, 1fr) minmax(170px, 1.2fr) auto;
   gap: 10px;
 }
-.combat-run-boss-hunt {
-  display: grid;
-  min-width: 0;
-  gap: 4px;
-  padding: 7px 10px;
+.combat-run-bar:not(.is-mode-sequence) .combat-run-actions {
   border-inline-start: 1px solid color-mix(in srgb, var(--ui-border-strong) 66%, transparent);
-  border: 1px solid color-mix(in srgb, var(--ui-border-strong) 58%, var(--ui-gold));
-  border-radius: 7px;
-  background: color-mix(in srgb, var(--ui-gold) 4%, var(--ui-panel-strong));
+  padding-inline-start: 12px;
 }
-.combat-run-boss-hunt.is-dominant,
-.combat-run-bar.is-near-boss .combat-run-boss-hunt {
-  border-color: color-mix(in srgb, var(--ui-gold) 62%, var(--ui-border));
-  background: color-mix(in srgb, var(--ui-gold) 8%, transparent);
-}
-.combat-run-boss-hunt.is-fighting {
-  border-color: color-mix(in srgb, var(--ui-danger) 58%, var(--ui-border));
-  background: color-mix(in srgb, var(--ui-danger) 7%, var(--ui-panel-strong));
-}
-.combat-run-boss-hunt-head { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: 7px; min-width: 0; }
-.combat-run-boss-hunt-head .combat-subsection-label { display: inline-flex; align-items: center; gap: 5px; color: var(--ui-gold); }
-.combat-run-boss-hunt-head .combat-subsection-label svg { flex: 0 0 auto; }
-.combat-run-boss-hunt-head strong { overflow: hidden; color: var(--ui-text); font-size: var(--ui-font-small); text-overflow: ellipsis; white-space: nowrap; }
-.combat-run-boss-hunt .combat-run-metric-head { margin-top: 1px; }
-.combat-run-boss-hunt .combat-run-metric-head span { color: var(--ui-text-muted); font-size: var(--ui-font-micro); font-weight: 700; letter-spacing: .12em; }
-.combat-run-boss-hunt .combat-run-metric-head strong { color: var(--ui-warning); font-size: var(--ui-font-small); font-variant-numeric: tabular-nums; }
-.combat-run-boss-hunt .progress { height: 5px; border-radius: 3px; background: color-mix(in srgb, var(--ui-bg) 74%, var(--ui-border)); }
-.combat-run-boss-hunt .progress i { border-radius: inherit; box-shadow: 0 0 7px color-mix(in srgb, var(--ui-warning) 30%, transparent); }
-.combat-run-boss-hunt-state { overflow: hidden; color: color-mix(in srgb, var(--ui-gold) 76%, var(--ui-text-muted)); font-size: var(--ui-font-micro); font-weight: 700; letter-spacing: .08em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
-.combat-run-boss-hunt.is-fighting .combat-run-boss-hunt-state { color: var(--ui-danger); }
-.combat-run-boss-hunt-controls { display: flex; align-items: center; gap: 6px; min-width: 0; margin-top: 2px; }
-.combat-run-boss-hunt-controls .button,
-.combat-run-boss-hunt-controls .combat-toggle { min-height: 29px; padding: 5px 8px; border-radius: 6px; font-size: 9px; }
-.combat-run-boss-hunt-controls .button { flex: 1 1 auto; min-width: 0; }
-.combat-run-boss-hunt-controls .combat-toggle { flex: 0 0 auto; min-width: 82px; }
-
 @container (max-width: 1050px) {
-  .combat-run-bar:not(.is-mode-sequence) { grid-template-columns: minmax(145px, 1fr) minmax(145px, 1fr); }
-  .combat-run-boss-hunt { grid-column: 1 / -1; border-inline-start: 0; }
-  .combat-run-bar:not(.is-mode-sequence) .combat-run-actions { grid-column: 1 / -1; border-inline-start: 0; padding-inline-start: 0; }
-  .combat-run-bar:not(.is-mode-sequence) .combat-run-actions .button { flex: 1 1 auto; justify-content: center; }
+  .combat-run-bar:not(.is-mode-sequence) { grid-template-columns: minmax(0, 1fr) auto; }
+  .combat-run-bar:not(.is-mode-sequence) .combat-run-target { grid-column: 1; }
+  .combat-run-bar:not(.is-mode-sequence) .combat-run-actions { grid-column: 2; border-inline-start: 1px solid color-mix(in srgb, var(--ui-border-strong) 66%, transparent); padding-inline-start: 10px; }
+  .combat-run-bar:not(.is-mode-sequence) .combat-run-actions .button { flex: 0 0 auto; }
 }
 @container (max-width: 480px) {
   .combat-run-bar:not(.is-mode-sequence) { grid-template-columns: 1fr; gap: 8px; }
   .combat-run-bar:not(.is-mode-sequence) .combat-run-context,
   .combat-run-bar:not(.is-mode-sequence) .combat-run-target,
-  .combat-run-boss-hunt,
   .combat-run-bar:not(.is-mode-sequence) .combat-run-actions { grid-column: auto; border-inline-start: 0; padding-inline: 0; }
-  .combat-run-target,
-  .combat-run-boss-hunt,
+  .combat-run-bar:not(.is-mode-sequence) .combat-run-target,
   .combat-run-bar:not(.is-mode-sequence) .combat-run-actions { padding-top: 8px; border-top: 1px solid color-mix(in srgb, var(--ui-border-strong) 58%, transparent); }
-  .combat-run-boss-hunt { border-inline-start: 0; }
 }
 
 @container (max-width: 900px) {
@@ -3424,23 +3382,6 @@
   color: var(--ui-danger);
   background: color-mix(in srgb, var(--ui-danger) 8%, transparent);
 }
-.combat-run-boss.is-dominant {
-  align-self: stretch;
-  margin-block: -2px;
-  padding: 7px 10px;
-  border-color: color-mix(in srgb, var(--ui-gold) 62%, var(--ui-border));
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--ui-gold) 8%, transparent);
-}
-.combat-run-boss.is-dominant strong {
-  color: var(--ui-gold);
-  font-size: var(--ui-font-small);
-}
-.combat-run-boss.is-dominant small {
-  color: var(--ui-gold);
-  font-weight: 700;
-}
-
 @container (max-width: 1050px) {
   .combat-run-bar {
     grid-template-columns: repeat(2, minmax(0, 1fr));

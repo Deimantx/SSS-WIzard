@@ -7,6 +7,6 @@ export const BALANCE = {
   focus: { startingMax: 100, forestHeartBonus: 10, guildApprenticeBonus: 10 },
   research: { maxPreparedSlots: 4, maxEchoes: 5, echoFocusCost: 10, manaCostPerItem: 30, durationPerItemMs: 10000, matchingXp: 12, nonMatchingXp: 8 },
   transmutation: { echoFocusCost: 10, maxEchoes: 5 },
-  dungeon: { encounterDelayMs: 5000, whisperingWoodsThreatRequired: 20 },
+  dungeon: { encounterDelayMs: 5000, whisperingWoodsThreatRequired: 5000 },
   schoolProgression: { startingCap: 20, tutorialCompleteCap: 40 },
 } as const

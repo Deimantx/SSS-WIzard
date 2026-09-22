@@ -1782,7 +1782,7 @@ Bestiary ir Combat turi naudoti tą pačią data.
 Kiekvienas dungeon turi:
 
 - normal monster pool;
-- current `Threat Cleared`;
+- current `Threat`;
 - Threat requirement;
 - Dungeon Boss;
 - optional future special content.
@@ -1799,40 +1799,41 @@ Normal monster:
 Kiekvienas normal kill:
 
 ```text
-+1 Threat Cleared
+Threat gain = defeated enemy Power at the encounter World Tier
 ```
+
+Legacy random-pool Locations retain +1 Threat until converted. Sequence Dungeons grant no Threat.
 
 ---
 
-## 32.2. Threat Cleared
+## 32.2. Threat
 
 Pavyzdys:
 
 ```text
-Threat Cleared: 14 / 20
+Threat: 2430 / 5000
 ```
 
 Dabartiniame Whispering Woods:
 
 ```text
-Boss requirement = 20
+WT1 base requirement = 5000 Threat
+WT2-WT5 requirement = 10000 / 15000 / 20000 / 25000 Threat
 ```
 
 ---
 
-## 32.3. Threat gali viršyti requirement
+## 32.3. Threat is capped at the resolved requirement
 
-Jeigu Auto Hunt Boss OFF:
+Threat is capped at the active dungeon's resolved World-Tier requirement. Auto Hunt Boss may queue the boss when the cap is reached; manual engagement remains available at the same threshold.
 
 ```text
-Threat gali būti 21 / 20
-100 / 20
-14850 / 20
+Whispering Woods: 5000 / 5000 at WT1
+Whispering Woods: 10000 / 10000 at WT2
+Howling Den: 50000 / 50000 at WT5
 ```
 
-Bosas lieka available.
-
-Normal farming neturi sustoti ties 20.
+Normal farming stops at the resolved requirement, so readiness is deterministic and cannot overshoot the boss threshold.
 
 ---
 
@@ -2753,8 +2754,8 @@ Prieš projektuojant naują sistemą:
 - [x] Monsteriai turi traits ir action sequences.
 - [x] Special Attacks turi telegraphs.
 - [x] Dungeon normal monster parenkamas iš pool.
-- [x] Normal kill = +1 Threat.
-- [x] Threat gali viršyti boss requirement.
+- [x] Targeted normal kill = resolved enemy Power Threat; legacy random-pool kill = +1 Threat.
+- [x] Threat is capped at the resolved World-Tier boss requirement.
 - [x] Auto Hunt Boss atrakinamas po pirmo manual boss kill.
 - [x] Main Boss kelia Magic School cap.
 - [x] Collection yra item archive.

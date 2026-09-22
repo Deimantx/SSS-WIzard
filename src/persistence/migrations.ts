@@ -37,6 +37,7 @@ import { ARCANE_CORE_MAJOR_COST_BY_RING, ARCANE_CORE_MAX_LEVEL, ARCANE_CORE_MAX_
 import { getArcaneCoreNode } from '../game/content/arcaneCore/arcaneCoreBranches'
 import { normalizeResonanceState } from '../game/systems/resonance/resonanceRuntime'
 import { isWorldTierId, sanitizeWorldTierState } from '../game/systems/world-tier/worldTierRuntime'
+import { LEGACY_POWER_THREAT_REQUIREMENTS, resolveBossThreatRequirement } from '../game/systems/combat/combatThreat'
 
 const statusValidationContext = createCombatValidationContext(STATUS_DEFINITIONS)
 
@@ -911,6 +912,16 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   normalizeSpellPresets(migrated, raw, sourceVersion)
   normalizeCombatState(migrated, raw, sourceVersion)
   normalizeDirectContentReferences(migrated, raw)
+  if (sourceVersion < SAVE_VERSION && migrated.combat.active) {
+    const dungeonId = migrated.combat.dungeonId
+    const location = getCombatLocationByDungeonId(dungeonId)
+    const legacyRequirement = dungeonId ? LEGACY_POWER_THREAT_REQUIREMENTS[dungeonId] : undefined
+    if (dungeonId && location?.encounterMode === 'targeted' && (location.type === 'combat-zone' || location.type === 'elite-zone') && legacyRequirement) {
+      const progressRatio = Math.min(1, Math.max(0, migrated.combat.threatCleared / legacyRequirement))
+      const requirement = resolveBossThreatRequirement(dungeonId, migrated.worldTier.current)
+      migrated.combat.threatCleared = Math.min(requirement, Math.max(0, Math.round(requirement * progressRatio)))
+    }
+  }
   normalizeGuardianRuntime(migrated, raw)
   removeDeletedPrismaticFocus(migrated, raw, sourceVersion)
   seedLegacyItemDiscoveries(migrated, raw, sourceVersion)

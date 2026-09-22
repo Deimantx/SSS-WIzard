@@ -27,6 +27,7 @@ describe('CombatWorldNavigation', () => {
     const tierControl = screen.getByText('WORLD TIER').closest('.combat-world-tier-control')
     expect(tierControl?.classList.contains('is-embedded')).toBe(true)
     expect(tierControl?.querySelector('.card')).toBeNull()
+    expect(tierControl?.querySelectorAll('.combat-world-tier-options > .game-tooltip-trigger')).toHaveLength(5)
     expect(screen.queryByText('CAMPAIGN')).toBeNull()
   })
 
@@ -123,6 +124,27 @@ describe('CombatWorldNavigation', () => {
     expect(screen.queryByText('ARMORED')).toBeNull()
     expect(screen.queryByText('RELENTLESS')).toBeNull()
     expect(screen.queryByText('REGENERATIVE')).toBeNull()
+  })
+
+  it('keeps Zone Boss threat and Auto Hunt controls in the location inspector', () => {
+    const state = createInitialState()
+    state.progress.bossKillsByBoss['forest-heart'] = 1
+    state.combat.active = true
+    state.combat.dungeonId = 'howling-den'
+    useGameStore.setState(state)
+    renderNavigation()
+    fireEvent.click(screen.getByRole('button', { name: /Howling Den, ELITE ZONE/ }))
+
+    expect(screen.getByText('ELITE BOSS')).toBeTruthy()
+    expect(screen.getByText('Corrupted Greatbear')).toBeTruthy()
+    expect(screen.getByText('THREAT 0 / 10.0K')).toBeTruthy()
+    expect(screen.getByText('10.0K THREAT TO BOSS')).toBeTruthy()
+    expect(screen.queryByText(/MORE KILLS TO BOSS/)).toBeNull()
+    const autoHunt = screen.getByRole('button', { name: 'AUTO HUNT OFF' })
+    expect(autoHunt).toBeTruthy()
+
+    fireEvent.click(autoHunt)
+    expect(useGameStore.getState().progress.autoHuntBossByDungeon['howling-den']).toBe(true)
   })
 
   it('shows Zone Affix context in Howling Den target loot', () => {

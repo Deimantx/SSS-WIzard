@@ -3,7 +3,7 @@
 | Setting | Value |
 | --- | --- |
 | Dungeon | Howling Den (howling-den) |
-| Threat requirement | 25 |
+| Threat requirement | 10000 |
 | Encounter delay | 5 s |
 | Boss | Corrupted Greatbear (corrupted-greatbear) |
 | Unlock | Defeat Forest Heart (forest-heart) |

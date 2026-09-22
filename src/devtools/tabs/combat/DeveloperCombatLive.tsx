@@ -8,6 +8,8 @@ import { useGameStore } from '../../../store/gameStore'
 import { CombatTimeControls } from './CombatTimeControls'
 import { Summary } from '../DeveloperTabPrimitives'
 import { formatResourceAmount } from '../../../game/presentation/resources/resourcePresentation'
+import { resolveBossThreatRequirement } from '../../../game/systems/combat/combatThreat'
+import { formatNumber } from '../../../game/utils'
 import type { MonsterId } from '../../../game/types'
 
 const Toggle = ({ label, checked, onChange, danger = false }: { label: string; checked: boolean; onChange: (value: boolean) => void; danger?: boolean }) => <label className={`developer-toggle-row${checked ? ' active' : ''}${danger ? ' danger' : ''}`}><input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} /> <span>{label}</span>{checked && <Status tone="warning">ON</Status>}</label>
@@ -18,6 +20,8 @@ export function DeveloperCombatLive() {
   const debug = useGameStore((state) => state.debug)
   const enemy = combat.enemyId ? MONSTERS[combat.enemyId] : null
   const dungeon = DUNGEONS[combat.dungeonId ?? 'whispering-woods']
+  const worldTier = useGameStore((state) => state.worldTier.current)
+  const threatRequired = resolveBossThreatRequirement(dungeon.id, worldTier)
   const location = getCombatLocationByDungeonId(combat.dungeonId)
   const setCombatTarget = useGameStore((state) => state.setCombatTarget)
   const targetIds = location?.targetMetadata
@@ -50,7 +54,7 @@ export function DeveloperCombatLive() {
       <Summary label="Player Mana" value={`${formatResourceAmount(player.mana)} / ${formatResourceAmount(player.maxMana)}`} />
       <Summary label="Player Barrier" value={Math.floor(combat.playerBarrier)} />
       <Summary label="Enemy Barrier" value={Math.floor(combat.enemyBarrier)} />
-      <Summary label="Threat" value={`${combat.threatCleared} / ${dungeon.threatRequired}`} />
+      <Summary label="Threat" value={`${formatNumber(combat.threatCleared)} / ${formatNumber(threatRequired)}`} />
       <Summary label="Current Action" value={currentStep?.type === 'basic' ? 'Basic Attack' : currentAction?.name ?? '-'} />
       <Summary label="Pattern" value={formatReadableId(combat.enemyActionPatternId ?? '-')} />
       <Summary label="Pattern position" value={combat.enemyNextActionIndex} />

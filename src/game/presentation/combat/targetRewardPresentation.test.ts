@@ -3,6 +3,7 @@ import { MONSTERS } from '../../content/monsters'
 import { getNonZeroResonanceEntries } from '../resonance/resonancePresentation'
 import { resolveWorldTierLootQuantity } from '../../systems/world-tier/worldTierRuntime'
 import { buildCombatTargetRewardPresentation } from './targetRewardPresentation'
+import { resolveEnemyPowerRating } from './enemyPowerRating'
 
 describe('combat target reward presentation', () => {
   it('exposes authored item drops before Bestiary discovery and applies canonical item scaling', () => {
@@ -21,6 +22,7 @@ describe('combat target reward presentation', () => {
     const reward = buildCombatTargetRewardPresentation('tempest-stag', 1)
     expect(getNonZeroResonanceEntries(reward.resonance).map((entry) => entry.type)).toEqual(['earth', 'air'])
     expect(reward.powerRating).toBeGreaterThan(0)
+    expect(reward.threatGain).toBe(resolveEnemyPowerRating('tempest-stag', 1))
   })
 
   it('keeps location-owned Zone Affix context out of target reward payloads', () => {

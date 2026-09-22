@@ -10,6 +10,8 @@ import { getManaCapacityBreakdown, getManaRegenBreakdown } from './engine/channe
 import { migrateSave } from '../persistence/migrations'
 import { serializeGameState } from '../persistence/profileSaveManager'
 import { makeInitialState, useGameStore } from '../store/gameStore'
+import { resolveBossThreatRequirement } from './systems/combat/combatThreat'
+import { resolveEnemyPowerRating } from './presentation/combat/enemyPowerRating'
 
 describe('focus reservation engine', () => {
   it('reserves Focus for running activities and releases it when paused', () => {
@@ -77,10 +79,11 @@ describe('central game loop', () => {
     const game = useGameStore.getState()
     game.resetSave()
     game.enterDungeon()
+    const firstEnemy = useGameStore.getState().combat.enemyId!
     game.killCurrentEnemy()
-    expect(useGameStore.getState().combat.threatCleared).toBe(1)
+    expect(useGameStore.getState().combat.threatCleared).toBe(resolveEnemyPowerRating(firstEnemy, 1))
     game.setScreen('tower-channeling')
-    expect(useGameStore.getState().combat.threatCleared).toBe(1)
+    expect(useGameStore.getState().combat.threatCleared).toBe(resolveEnemyPowerRating(firstEnemy, 1))
     game.setPlayer({ health: 1 })
     for (let index = 0; index < 12; index += 1) game.tick(1000)
     expect(useGameStore.getState().combat.threatCleared).toBe(0)
@@ -92,7 +95,7 @@ describe('central game loop', () => {
     game.resetSave()
     game.enterDungeon()
     game.killCurrentEnemy()
-    game.setThreat(BALANCE.dungeon.whisperingWoodsThreatRequired)
+    game.setThreat(resolveBossThreatRequirement('whispering-woods', 1))
     game.engageBoss('forest-heart')
     game.killCurrentEnemy()
     const state = useGameStore.getState()
@@ -108,29 +111,29 @@ describe('central game loop', () => {
     expect(useGameStore.getState().progress.autoHuntBossUnlocked).toBe(false)
     game.enterDungeon()
     game.killCurrentEnemy()
-    game.setThreat(BALANCE.dungeon.whisperingWoodsThreatRequired)
+    game.setThreat(resolveBossThreatRequirement('whispering-woods', 1))
     game.engageBoss('forest-heart')
     game.killCurrentEnemy()
     expect(useGameStore.getState().progress.autoHuntBossUnlocked).toBe(true)
     game.toggleAutoHunt()
     expect(useGameStore.getState().progress.autoHuntBossByDungeon['whispering-woods']).toBe(true)
     for (let index = 0; index < 5; index += 1) game.tick(1000)
-    game.setThreat(BALANCE.dungeon.whisperingWoodsThreatRequired)
+    game.setThreat(resolveBossThreatRequirement('whispering-woods', 1) - 1)
     game.killCurrentEnemy()
     for (let index = 0; index < 5; index += 1) game.tick(1000)
     expect(useGameStore.getState().combat.enemyId).toBe('forest-heart')
     expect(useGameStore.getState().combat.inBossFight).toBe(true)
   })
 
-  it('allows Threat to exceed the requirement while Auto Hunt is off', () => {
+  it('caps Threat at the requirement while Auto Hunt is off', () => {
     const game = useGameStore.getState()
     game.resetSave()
     game.enterDungeon()
-    game.setThreat(19)
+    game.setThreat(resolveBossThreatRequirement('whispering-woods', 1) - 1)
     game.killCurrentEnemy()
     for (let index = 0; index < 5; index += 1) game.tick(1000)
     game.killCurrentEnemy()
-    expect(useGameStore.getState().combat.threatCleared).toBe(21)
+    expect(useGameStore.getState().combat.threatCleared).toBe(resolveBossThreatRequirement('whispering-woods', 1))
     expect(useGameStore.getState().combat.pendingBossId).toBeNull()
   })
 })

@@ -400,10 +400,8 @@ describe('save navigation migration', () => {
     basic.combat.enemyCurrentActionPatternId = 'default'
     basic.combat.enemyActionDurationMs = 2_800
     basic.combat.enemyActionTimerMs = 1_743
-    basic.combat.playerAttackDurationMs = 2_200
-    basic.combat.playerAttackTimerMs = 777
     const basicLoaded = migrateSave(JSON.parse(JSON.stringify(serializeGameState(basic))))
-    expect(basicLoaded.combat).toMatchObject({ enemyActionPatternId: 'default', enemyNextActionIndex: 2, enemyCurrentStepId: 'basic-2', enemyCurrentActionId: null, enemyCurrentActionPatternId: 'default', enemyActionDurationMs: 2_800, enemyActionTimerMs: 1_743, playerAttackDurationMs: 2_200, playerAttackTimerMs: 777 })
+    expect(basicLoaded.combat).toMatchObject({ enemyActionPatternId: 'default', enemyNextActionIndex: 2, enemyCurrentStepId: 'basic-2', enemyCurrentActionId: null, enemyCurrentActionPatternId: 'default', enemyActionDurationMs: 2_800, enemyActionTimerMs: 1_743 })
 
     const skill = createInitialState()
     skill.combat.active = true
@@ -453,13 +451,9 @@ describe('save navigation migration', () => {
       enemyActionPatternId: 'default',
       enemyActionDurationMs: 9e15,
       enemyActionTimerMs: 9e15,
-      playerAttackDurationMs: 9e15,
-      playerAttackTimerMs: 9e15,
     } } as any)
     expect(migrated.combat.enemyActionDurationMs).toBeLessThanOrEqual(MAX_ACTION_WORK_MS)
     expect(migrated.combat.enemyActionTimerMs).toBe(MAX_ACTION_WORK_MS)
-    expect(migrated.combat.playerAttackDurationMs).toBeLessThanOrEqual(MAX_ACTION_WORK_MS)
-    expect(migrated.combat.playerAttackTimerMs).toBe(MAX_ACTION_WORK_MS)
   })
 
   it('preserves V21 equipment provider identity on ActiveStatus normalization', () => {
@@ -655,6 +649,46 @@ describe('save navigation migration', () => {
   })
 })
 
+describe('v42 power-based Threat migration', () => {
+  const activeLegacySave = (dungeonId: 'whispering-woods' | 'howling-den' | 'fractured-approach', threatCleared: number, worldTier: 1 | 2 = 1) => {
+    const initial = createInitialState()
+    return {
+      ...initial,
+      saveVersion: 42,
+      worldTier: { current: worldTier, highestUnlocked: worldTier },
+      combat: { ...initial.combat, active: true, dungeonId, enemyId: dungeonId === 'howling-den' ? 'cavefang-wolf' : dungeonId === 'fractured-approach' ? 'warded-husk' : 'forest-wisp', threatCleared },
+    }
+  }
+
+  it.each([
+    ['whispering-woods', 10, 1, 2500],
+    ['whispering-woods', 10, 2, 5000],
+    ['howling-den', 12, 1, 4800],
+  ] as const)('preserves %s progress as a percentage of the new requirement', (dungeonId, oldThreat, worldTier, expectedThreat) => {
+    const migrated = migrateSave(activeLegacySave(dungeonId, oldThreat, worldTier) as any)
+    expect(migrated.saveVersion).toBe(SAVE_VERSION)
+    expect(migrated.combat.threatCleared).toBe(expectedThreat)
+  })
+
+  it('preserves ready state and leaves legacy random-pool Threat untouched', () => {
+    const ready = migrateSave(activeLegacySave('whispering-woods', 20) as any)
+    expect(ready.combat.threatCleared).toBe(5000)
+
+    const legacy = migrateSave(activeLegacySave('fractured-approach', 7) as any)
+    expect(legacy.combat.threatCleared).toBe(7)
+  })
+
+  it('round-trips v43 point Threat without converting it back to kills', () => {
+    const state = createInitialState()
+    state.combat.active = true
+    state.combat.dungeonId = 'whispering-woods'
+    state.combat.threatCleared = 3720
+    const loaded = migrateSave(JSON.parse(JSON.stringify(serializeGameState(state))))
+    expect(loaded.saveVersion).toBe(43)
+    expect(loaded.combat.threatCleared).toBe(3720)
+  })
+})
+
 describe('structured dungeon save migration', () => {
   it('infers legacy Catacombs sequence progress from the active encounter and Threat', () => {
     const initial = createInitialState()
@@ -840,8 +874,8 @@ describe('Arcane Core V6 migration', () => {
     const initial = createInitialState()
     const migrated = migrateSave({
       ...initial,
-      saveVersion: SAVE_VERSION - 1,
-      arcaneCore: { totalPointsEarned: 100, nodes: { 'power-r1-arcane-force': { rank: 5 }, 'power-r1-overwhelming-force': { rank: 1 } } },
+       saveVersion: 37,
+       arcaneCore: { totalPointsEarned: 100, nodes: { 'power-r1-arcane-force': { rank: 5 }, 'power-r1-overwhelming-force': { rank: 1 } } },
     } as any)
     // V37 spent 5 standard points and 4 major points. V38 reprices those
     // allocations to 25 + 12 while carrying forward the old 91-point wallet.
@@ -852,8 +886,8 @@ describe('Arcane Core V6 migration', () => {
     const initial = createInitialState()
     const migrated = migrateSave({
       ...initial,
-      saveVersion: SAVE_VERSION - 1,
-      arcaneCore: { totalPointsEarned: 4, nodes: { 'power-r1-arcane-force': { rank: 5 } } },
+       saveVersion: 37,
+       arcaneCore: { totalPointsEarned: 4, nodes: { 'power-r1-arcane-force': { rank: 5 } } },
     } as any)
     expect(migrated.arcaneCore).toEqual({ totalPointsEarned: 25, nodes: { 'power-r1-arcane-force': { rank: 5 } } })
   })

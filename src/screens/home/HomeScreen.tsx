@@ -8,12 +8,14 @@ import { ScreenGrid } from '../../components/layout/ScreenGrid'
 import { getResearchEchoesAssigned } from '../../game/systems/research/researchSelectors'
 import { SchoolMasteryPanel } from '../../components/game/schools/SchoolMasteryPanel'
 import { CurrentArcaneWork } from './CurrentArcaneWork'
+import { resolveBossThreatRequirement } from '../../game/systems/combat/combatThreat'
 
 export function HomeScreenV2() {
   const player = useGameStore((state) => state.player)
   const progress = useGameStore((state) => state.progress)
   const activities = useGameStore((state) => state.activities)
   const combat = useGameStore((state) => state.combat)
+  const worldTier = useGameStore((state) => state.worldTier.current)
   const inventory = useGameStore((state) => state.inventory)
   const equipment = useGameStore((state) => state.equipment)
   const schools = useGameStore((state) => state.schools)
@@ -25,6 +27,7 @@ export function HomeScreenV2() {
   const woodsComplete = isDungeonCompleted('whispering-woods', progress)
   const denComplete = isDungeonCompleted('howling-den', progress)
   const chapterComplete = isTutorialCompleted(progress)
+  const whisperingThreatRequired = resolveBossThreatRequirement('whispering-woods', worldTier)
   const objectives = [
     { label: 'Assign your first Arcane Echo', done: activities.channeling.echoesAssigned > 0 },
     { label: 'Transmute a Fragment', done: Object.entries(inventory).some(([id, quantity]) => id.endsWith('fragment') && Boolean(quantity)) },
@@ -35,7 +38,7 @@ export function HomeScreenV2() {
     { label: 'Defeat a monster', done: progress.lifetimeKills > 0 },
     { label: 'Enable Auto-Cast', done: hasAuto },
     { label: 'Run Research during Combat', done: combat.active && getResearchEchoesAssigned({ activities }) > 0 },
-    { label: `Reach ${DUNGEONS['whispering-woods'].threatRequired} Threat`, done: combat.threatCleared >= DUNGEONS['whispering-woods'].threatRequired || woodsComplete },
+    { label: `Reach ${formatNumber(whisperingThreatRequired)} Threat`, done: combat.threatCleared >= whisperingThreatRequired || woodsComplete },
     { label: 'Defeat Forest Heart', done: woodsComplete },
     { label: 'Unlock Howling Den', done: woodsComplete },
     { label: 'Craft and equip an elemental item', done: hasEquipment },
@@ -48,7 +51,7 @@ export function HomeScreenV2() {
     { label: 'Complete the first three dungeons', done: chapterComplete },
   ]
   const objective = chapterComplete ? 'First Chapter Complete' : denComplete ? 'Enter Abandoned Catacombs' : woodsComplete ? 'Clear Howling Den' : 'Clear Whispering Woods'
-  const objectiveDescription = chapterComplete ? 'The first three dungeons are complete. The tower has learned what waits beyond the woods.' : denComplete ? "Enter the Abandoned Catacombs and confront Archmage Edrin's Shade." : woodsComplete ? 'Defeat Corrupted Greatbear to unlock the Abandoned Catacombs.' : `Reach ${DUNGEONS['whispering-woods'].threatRequired} Threat Cleared and defeat Forest Heart.`
+  const objectiveDescription = chapterComplete ? 'The first three dungeons are complete. The tower has learned what waits beyond the woods.' : denComplete ? "Enter the Abandoned Catacombs and confront Archmage Edrin's Shade." : woodsComplete ? 'Defeat Corrupted Greatbear to unlock the Abandoned Catacombs.' : `Reach ${formatNumber(whisperingThreatRequired)} Threat and defeat Forest Heart.`
   return <div className="screen-content"><div className="screen-header"><div><div className="eyebrow">WIZARD TOWER · OVERVIEW</div><h1>Good evening, apprentice.</h1><p>One wizard. One tower. Every system is competing for the same Focus.</p></div><Button variant="secondary" onClick={() => setScreen('tower-channeling')}>Open Channeling <ChevronRight size={15} /></Button></div><ScreenGrid screen="home" panels={[
     { id: 'home-objective', content: <div className={`objective-card ${chapterComplete ? 'success' : 'violet'}`}><div className="objective-icon"><Target size={22} /></div><div className="objective-copy"><span>MAIN OBJECTIVE</span><h2>{objective}</h2><p>{objectiveDescription}{!chapterComplete && woodsComplete && ` Permanent Focus gained: +${permanentFocus}.`}</p></div><div className="objective-state"><Status tone={chapterComplete ? 'success' : 'active'}>{chapterComplete ? 'COMPLETE' : `CAP ${progress.magicLevelCap}`}</Status></div></div> },
     { id: 'home-checklist', content: <Card title="Chapter checklist" action={<span className="muted">{objectives.filter((item) => item.done).length} / {objectives.length}</span>}><div className="objective-list">{objectives.map((item) => <div key={item.label} className={item.done ? 'done' : ''}><span>{item.done ? <Check size={14} /> : <i />}</span>{item.label}</div>)}</div></Card> },

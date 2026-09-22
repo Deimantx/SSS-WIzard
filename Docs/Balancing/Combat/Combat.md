@@ -39,7 +39,7 @@ Shared combat rules and authored combat values live here. Monster-specific value
 | Transmutation: Echo Focus Cost | 10 |
 | Transmutation: Max Echoes | 5 |
 | Dungeon: Encounter Delay Ms | 5000 |
-| Dungeon: Whispering Woods Threat Required | 20 |
+| Dungeon: Whispering Woods Threat Required | 5000 |
 | School Progression: Starting Cap | 20 |
 | School Progression: Tutorial Complete Cap | 40 |
 

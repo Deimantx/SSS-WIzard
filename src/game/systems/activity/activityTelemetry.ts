@@ -5,6 +5,7 @@ import { isRecipeUnlocked, TRANSMUTATION_RECIPES as RECIPES, TRANSMUTATION_RECIP
 import { SCHOOLS } from '../../content/schools/schools'
 import { BALANCE } from '../../core/balance/balance'
 import { getCurrentEnemyActionStep, getEnemyAction, getNextEnemyActionStep } from '../combat/actionRuntime'
+import { resolveBossThreatRequirement } from '../combat/combatThreat'
 import { getRecipeOutputPerHour, getRecipeCurrentRemainingDuration, getRecipeManaDemandPerSecond, getRecipeStatus } from '../transmutation/transmutationSelectors'
 import { getPreparedResearchJobs, getResearchBatchEtaMs, getResearchFocusReserved, getResearchItemsPerHour, getResearchJobProgressPercent, getResearchJobStatus, getResearchManaPerSecond, getResearchXpPerHour } from '../research/researchSelectors'
 import type { ActivityMetric, ActivityTelemetry, GameState } from '../../types'
@@ -16,6 +17,7 @@ const percent = (value: number, max: number) => Math.round(clamp(value / Math.ma
 export const getActivityTelemetry = (state: GameState): ActivityTelemetry[] => {
   const activities: ActivityTelemetry[] = []
   const dungeon = DUNGEONS[state.combat.dungeonId ?? 'whispering-woods']
+  const threatRequired = resolveBossThreatRequirement(dungeon.id, state.worldTier.current)
 
   if (state.combat.active) {
     const playerPercent = percent(state.player.health, state.player.maxHealth)
@@ -41,9 +43,9 @@ export const getActivityTelemetry = (state: GameState): ActivityTelemetry[] => {
           { label: 'Player HP', value: `${formatNumber(state.player.health)} / ${formatNumber(state.player.maxHealth)} (${playerPercent}%)`, percent: playerPercent, tone: playerPercent < 35 ? 'warning' : 'positive' },
           { label: enemyLabel, value: `${formatNumber(state.combat.enemyHp)} / ${formatNumber(state.combat.enemyMaxHp)} (${enemyPercent}%)`, percent: enemyPercent, tone: 'negative' },
         ],
-        collapsedSummary: boss ? `Boss ${enemy.name} · P${playerPercent}% / B${enemyPercent}%` : `Combat P${playerPercent}% / E${enemyPercent}% · Threat ${formatNumber(state.combat.threatCleared)} / ${formatNumber(dungeon.threatRequired)}`,
+        collapsedSummary: boss ? `Boss ${enemy.name} · P${playerPercent}% / B${enemyPercent}%` : `Combat P${playerPercent}% / E${enemyPercent}% · Threat ${formatNumber(state.combat.threatCleared)} / ${formatNumber(threatRequired)}`,
         metrics: [
-          metric('Threat Cleared', `${formatNumber(state.combat.threatCleared)} / ${formatNumber(dungeon.threatRequired)}`),
+          metric('Threat', `${formatNumber(state.combat.threatCleared)} / ${formatNumber(threatRequired)}`),
           metric(boss ? 'Boss Action' : 'Enemy Action', `${nextLabel} · ${formatCompactDuration(nextTime)}`),
           ...(boss ? [metric('Boss Encounter', enemy.name)] : []),
         ],
@@ -62,7 +64,7 @@ export const getActivityTelemetry = (state: GameState): ActivityTelemetry[] => {
         ],
         collapsedSummary: `Combat · NEXT ENCOUNTER ${formatCompactDuration(state.combat.encounterTimerMs)}`,
         metrics: [
-          metric('Threat Cleared', `${formatNumber(state.combat.threatCleared)} / ${formatNumber(dungeon.threatRequired)}`),
+          metric('Threat', `${formatNumber(state.combat.threatCleared)} / ${formatNumber(threatRequired)}`),
           metric('Next Encounter', formatCompactDuration(state.combat.encounterTimerMs)),
         ],
         accent: 'red',

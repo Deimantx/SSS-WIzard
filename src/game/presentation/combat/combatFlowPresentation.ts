@@ -4,9 +4,11 @@ import { buildCombatActionPresentation, formatCombatEffect, type CombatActionPre
 import { classifyEnemyActionPatternIcon, type EnemyPatternIconKind } from './enemyPatternIconPresentation'
 import type { ActionPattern, ActionStep, CombatActionDefinition } from '../../systems/combat/combatTypes'
 import type { DungeonId, MonsterId } from '../../types'
+import type { WorldTierId } from '../../types'
 import { SPELLS } from '../../content/spells'
 import type { PendingPlayerSpellCast } from '../../types'
 import { getFallbackTimedActionState, type TimedActionState } from '../../systems/combat/actionTiming'
+import { resolveBossThreatRequirement } from '../../systems/combat/combatThreat'
 
 export type CombatFlowMode = 'tower' | 'boss-ready' | 'encounter-delay' | 'combat'
 export type CombatFlowTimelineState = 'acting' | 'stunned' | 'paused' | 'disabled'
@@ -29,6 +31,7 @@ export interface CombatFlowPresentation {
   mode: CombatFlowMode
   dungeonId: DungeonId
   dungeon: DungeonDefinition
+  threatRequired: number
   enemy: MonsterDefinition | null
   playerTimeline: CombatFlowTimeline | null
   enemyTimeline: CombatFlowTimeline | null
@@ -50,6 +53,7 @@ export interface CombatFlowRuntimeInput {
   dungeon: DungeonDefinition
   enemy: MonsterDefinition | null
   threatCleared: number
+  worldTier?: WorldTierId
   inBossFight: boolean
   encounterTimerMs: number
   enemyActionTimerMs: number
@@ -78,10 +82,11 @@ const stepIndex = (pattern: ActionPattern | undefined, stepId: string | null | u
 }
 export function getCombatFlowPresentation(input: CombatFlowRuntimeInput): CombatFlowPresentation {
   const dungeonId = input.dungeonId ?? input.selectedDungeonId
-  const bossReady = input.active && !input.enemy && !input.inBossFight && input.threatCleared >= input.dungeon.threatRequired
-  if (!input.active) return { mode: 'tower', dungeonId, dungeon: input.dungeon, enemy: null, playerTimeline: null, enemyTimeline: null, enemyCurrentAction: null, pattern: undefined, currentStepIndex: -1, currentStepId: null, currentActionId: null, currentPatternOriginId: null, currentActionDurationMs: 0, encounterTimerMs: input.encounterTimerMs }
-  if (!input.enemy && bossReady) return { mode: 'boss-ready', dungeonId, dungeon: input.dungeon, enemy: null, playerTimeline: null, enemyTimeline: null, enemyCurrentAction: null, pattern: undefined, currentStepIndex: -1, currentStepId: null, currentActionId: null, currentPatternOriginId: null, currentActionDurationMs: 0, encounterTimerMs: input.encounterTimerMs }
-  if (!input.enemy) return { mode: 'encounter-delay', dungeonId, dungeon: input.dungeon, enemy: null, playerTimeline: null, enemyTimeline: null, enemyCurrentAction: null, pattern: undefined, currentStepIndex: -1, currentStepId: null, currentActionId: null, currentPatternOriginId: null, currentActionDurationMs: 0, encounterTimerMs: Math.max(0, input.encounterTimerMs) }
+  const threatRequired = resolveBossThreatRequirement(input.dungeon.id, input.worldTier ?? 1)
+  const bossReady = input.active && !input.enemy && !input.inBossFight && input.threatCleared >= threatRequired
+  if (!input.active) return { mode: 'tower', dungeonId, dungeon: input.dungeon, threatRequired, enemy: null, playerTimeline: null, enemyTimeline: null, enemyCurrentAction: null, pattern: undefined, currentStepIndex: -1, currentStepId: null, currentActionId: null, currentPatternOriginId: null, currentActionDurationMs: 0, encounterTimerMs: input.encounterTimerMs }
+  if (!input.enemy && bossReady) return { mode: 'boss-ready', dungeonId, dungeon: input.dungeon, threatRequired, enemy: null, playerTimeline: null, enemyTimeline: null, enemyCurrentAction: null, pattern: undefined, currentStepIndex: -1, currentStepId: null, currentActionId: null, currentPatternOriginId: null, currentActionDurationMs: 0, encounterTimerMs: input.encounterTimerMs }
+  if (!input.enemy) return { mode: 'encounter-delay', dungeonId, dungeon: input.dungeon, threatRequired, enemy: null, playerTimeline: null, enemyTimeline: null, enemyCurrentAction: null, pattern: undefined, currentStepIndex: -1, currentStepId: null, currentActionId: null, currentPatternOriginId: null, currentActionDurationMs: 0, encounterTimerMs: Math.max(0, input.encounterTimerMs) }
 
   const enemyAction = input.currentAction
   const enemyActionPresentation = enemyAction ? buildCombatActionPresentation(enemyAction, { actor: 'enemy', kind: 'action', sourceMonsterId: input.enemy.id }, { monster: input.enemy }) : null
@@ -116,7 +121,7 @@ export function getCombatFlowPresentation(input: CombatFlowRuntimeInput): Combat
   const currentIndex = !hasCommittedEnemyAction || currentPatternChanged ? -1 : stepIndex(input.pattern, input.currentStep?.id, rawIndex)
   const enemyCurrentAction = hasCommittedEnemyAction && enemyTiming ? { label: enemyAction?.name ?? (basicPresentation ? 'Basic Attack' : 'Enemy Action'), action: enemyActionPresentation, basic: basicPresentation, special: Boolean(enemyActionPresentation), iconKind: enemyAction ? classifyEnemyActionPatternIcon(enemyAction) : 'basic-attack' } : null
   return {
-    mode: 'combat', dungeonId, dungeon: input.dungeon, enemy: input.enemy,
+    mode: 'combat', dungeonId, dungeon: input.dungeon, threatRequired, enemy: input.enemy,
     playerTimeline, enemyTimeline,
     enemyCurrentAction,
     pattern: input.pattern, currentStepIndex: currentIndex, currentStepId: hasCommittedEnemyAction ? input.currentStep?.id ?? null : null, currentActionId: hasCommittedEnemyAction ? input.enemyCurrentActionId : null, currentPatternOriginId: hasCommittedEnemyAction ? input.enemyCurrentActionPatternId : null, currentActionDurationMs: enemyTimeline?.baseWorkMs ?? 0,

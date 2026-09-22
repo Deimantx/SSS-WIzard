@@ -13,15 +13,17 @@ describe('CombatRunBar world terminology', () => {
     useGameStore.setState(state)
   })
 
-  it('uses the active Location label and keeps only current-run management actions', () => {
+  it('uses the active Location label without duplicating the Zone Boss inspector', () => {
     render(<TooltipProvider><CombatRunBar selectedDungeonId="whispering-woods" onRequestLeave={vi.fn()} /></TooltipProvider>)
 
     expect(screen.getByText('CURRENT LOCATION')).toBeTruthy()
     expect(screen.getByText('COMBAT ZONE')).toBeTruthy()
-    expect(screen.getByText('THREAT')).toBeTruthy()
-    expect(screen.getByText('20 MORE KILLS TO BOSS')).toBeTruthy()
-    expect(document.querySelector('.combat-run-boss-hunt')).toBeTruthy()
+    expect(screen.queryByText('THREAT')).toBeNull()
+    expect(screen.queryByText('20 MORE KILLS TO BOSS')).toBeNull()
+    expect(screen.queryByText('Forest Heart')).toBeNull()
+    expect(document.querySelector('.combat-run-boss-hunt')).toBeNull()
     expect(document.querySelector('.combat-run-threat')).toBeNull()
+    expect(screen.queryByText('AUTO HUNT')).toBeNull()
     expect(screen.getByRole('button', { name: 'LEAVE' })).toBeTruthy()
     expect(screen.queryByText('CAMPAIGN')).toBeNull()
     expect(screen.queryByRole('button', { name: /ENTER/ })).toBeNull()
@@ -50,7 +52,7 @@ describe('CombatRunBar world terminology', () => {
     expect(screen.queryByText('NEXT NORMAL ENCOUNTER')).toBeNull()
   })
 
-  it('labels the Elite Zone boss and keeps the global hunt states in one cluster', () => {
+  it('keeps Elite Zone boss details out of the compact run bar', () => {
     const state = createInitialState()
     state.progress.bossKillsByBoss['forest-heart'] = 1
     state.combat.active = true
@@ -60,43 +62,28 @@ describe('CombatRunBar world terminology', () => {
     useGameStore.setState(state)
     const { container } = render(<TooltipProvider><CombatRunBar selectedDungeonId="howling-den" onRequestLeave={vi.fn()} /></TooltipProvider>)
 
-    expect(screen.getByText('ELITE BOSS')).toBeTruthy()
-    expect(screen.getByText('Corrupted Greatbear')).toBeTruthy()
-    expect(screen.getByText('25 MORE KILLS TO BOSS')).toBeTruthy()
-    expect(container.querySelector('.combat-run-boss-hunt .combat-run-toggle')).toBeTruthy()
+    expect(screen.queryByText('ELITE BOSS')).toBeNull()
+    expect(screen.queryByText('Corrupted Greatbear')).toBeNull()
+    expect(screen.queryByText('25 MORE KILLS TO BOSS')).toBeNull()
+    expect(screen.queryByText('THREAT')).toBeNull()
+    expect(screen.queryByText('AUTO HUNT')).toBeNull()
+    expect(container.querySelector('.combat-run-boss-hunt')).toBeNull()
+    expect(screen.getByRole('button', { name: 'LEAVE' })).toBeTruthy()
   })
 
-  it('shows ready, queued, and fighting copy inside the Boss Hunt cluster', () => {
-    const ready = createInitialState()
-    ready.progress.bossKillsByBoss['forest-heart'] = 1
-    ready.combat.active = true
-    ready.combat.dungeonId = 'howling-den'
-    ready.combat.threatCleared = 25
-    useGameStore.setState(ready)
-    const readyView = render(<TooltipProvider><CombatRunBar selectedDungeonId="howling-den" onRequestLeave={vi.fn()} /></TooltipProvider>)
-    expect(screen.getByText('BOSS READY')).toBeTruthy()
-    expect(screen.getByRole('button', { name: /ENGAGE CORRUPTED GREATBEAR/ })).toBeTruthy()
-    readyView.unmount()
-
-    const queuedBase = createInitialState()
-    queuedBase.progress.bossKillsByBoss['forest-heart'] = 1
-    queuedBase.progress.autoHuntBossUnlocked = true
-    queuedBase.combat.active = true
-    queuedBase.combat.dungeonId = 'howling-den'
-    queuedBase.combat.threatCleared = 25
-    queuedBase.combat.pendingBossId = 'corrupted-greatbear'
-    useGameStore.setState(queuedBase)
-    const queuedView = render(<TooltipProvider><CombatRunBar selectedDungeonId="howling-den" onRequestLeave={vi.fn()} /></TooltipProvider>)
-    expect(screen.getByText('AUTO HUNT QUEUED')).toBeTruthy()
-    expect(screen.queryByRole('button', { name: /ENGAGE CORRUPTED GREATBEAR/ })).toBeNull()
-    queuedView.unmount()
-
-    queuedBase.combat.pendingBossId = null
-    queuedBase.combat.enemyId = 'corrupted-greatbear'
-    queuedBase.combat.inBossFight = true
-    useGameStore.setState(queuedBase)
+  it('shows the active target context without adding boss controls', () => {
+    const state = createInitialState()
+    state.progress.bossKillsByBoss['forest-heart'] = 1
+    state.combat.active = true
+    state.combat.dungeonId = 'howling-den'
+    state.combat.enemyId = 'bonehide-boar'
+    state.combat.targetEnemyId = 'bonehide-boar'
+    useGameStore.setState(state)
     render(<TooltipProvider><CombatRunBar selectedDungeonId="howling-den" onRequestLeave={vi.fn()} /></TooltipProvider>)
-    expect(screen.getByText('BOSS FIGHT')).toBeTruthy()
+
+    expect(screen.getByText('HUNTING')).toBeTruthy()
+    expect(screen.getByText('Bonehide Boar')).toBeTruthy()
+    expect(screen.queryByText('ELITE BOSS')).toBeNull()
     expect(screen.queryByText('THREAT')).toBeNull()
   })
 

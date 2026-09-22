@@ -15,6 +15,7 @@ import {
 } from "../../systems/combat/combatRuntime";
 import { calculateCombatDamage } from "../../systems/combat/effectResolver";
 import { resolveMonsterBaseMagnitudePreview } from "../../presentation/combat";
+import { resolveBossThreatRequirement } from "../../systems/combat/combatThreat";
 
 const labels = (monsterId: keyof typeof MONSTERS, patternId = "default") =>
   MONSTERS[monsterId].actionPatterns[patternId].steps.map((step) =>
@@ -704,7 +705,7 @@ describe("Act 0 and Act 1 dungeon content", () => {
     const state = contentTestState();
     state.combat.active = true;
     state.combat.dungeonId = "howling-den";
-    state.combat.threatCleared = 24;
+    state.combat.threatCleared = resolveBossThreatRequirement('howling-den', 1) - 1;
     state.progress.autoHuntBossUnlocked = true;
     state.progress.autoHuntBossByDungeon["howling-den"] = true;
     spawnEnemy(state, "cavefang-wolf");

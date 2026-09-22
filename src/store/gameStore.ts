@@ -15,6 +15,7 @@ import type { ManualSpellRequestResult } from '../game/engine/spellEngine'
 import { appendLog, manaRegenPerSecond, pushNotification, recalculateDerivedStats, selectFreeFocus, selectUsedFocus } from '../game/engine'
 import { abandonCurrentEncounter, debugApplyStatus, spawnEnemy, spawnNextEnemy, type CombatLootObserver } from '../game/systems/combat/combatRuntime'
 import { canManuallyEngageDungeonBoss, isAutoHuntEnabledForDungeon, isBossCurrentlyActive } from '../game/systems/combat/combatBossSelectors'
+import { resolveBossThreatRequirement } from '../game/systems/combat/combatThreat'
 import { removeStatus as removeCombatStatus } from '../game/systems/combat/statusRuntime'
 import { damagePlayer, executeCombatEffects } from '../game/systems/combat/effectResolver'
 import { forceResolveEnemyAction as forceResolveEnemyActionRuntime, resolveCurrentEnemyAction as resolveCurrentEnemyActionRuntime, setEnemyActionPattern as setEnemyActionPatternRuntime, startEnemyAction as startEnemyActionRuntime, startNextEnemyAction as startNextEnemyActionRuntime } from '../game/systems/combat/actionRuntime'
@@ -695,7 +696,7 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     })
     return changed
   },
-  leaveDungeon: () => { endActiveDungeonRun(); return set((state) => { const sequence = getCombatEncounterMode(getCombatLocationByDungeonId(state.combat.dungeonId)) === 'sequence'; state.combat = { ...createInitialState().combat, dungeonId: state.combat.dungeonId, log: [sequence ? 'Left the dungeon run.' : 'Left the dungeon. Threat Cleared resets.'] }; return state }) },
+  leaveDungeon: () => { endActiveDungeonRun(); return set((state) => { const sequence = getCombatEncounterMode(getCombatLocationByDungeonId(state.combat.dungeonId)) === 'sequence'; state.combat = { ...createInitialState().combat, dungeonId: state.combat.dungeonId, log: [sequence ? 'Left the dungeon run.' : 'Left the dungeon. Threat resets.'] }; return state }) },
   engageBoss: (bossId) => set((state) => {
     const dungeon = state.combat.dungeonId ? DUNGEONS[state.combat.dungeonId] : null
     const boss = MONSTERS[bossId]
@@ -703,9 +704,10 @@ export const useGameStore = create<GameStore>()(immer((set, get) => ({
     if (getCombatEncounterMode(getCombatLocationByDungeonId(dungeon.id)) === 'sequence') return state
     if (!isDungeonUnlocked(dungeon, state.progress)) { pushNotification(state, `${dungeon.name} is locked.`, 'warning'); return state }
     if (!boss || dungeon.boss !== bossId) { pushNotification(state, `${boss?.name ?? bossId} is not the boss of ${dungeon.name}.`, 'warning'); return state }
-    if (state.combat.threatCleared < dungeon.threatRequired) { pushNotification(state, `${boss.name} requires ${dungeon.threatRequired} Threat Cleared`, 'warning'); return state }
+    const threatRequired = resolveBossThreatRequirement(dungeon.id, state.worldTier.current)
+    if (state.combat.threatCleared < threatRequired) { pushNotification(state, `${boss.name} requires ${threatRequired} Threat`, 'warning'); return state }
     if (isBossCurrentlyActive(state) || state.combat.pendingBossId || isAutoHuntEnabledForDungeon(state, dungeon.id)) return state
-    if (!canManuallyEngageDungeonBoss(state, dungeon)) return state
+    if (!canManuallyEngageDungeonBoss({ combat: state.combat, progress: state.progress, worldTier: state.worldTier.current }, dungeon)) return state
     state.combat.pendingBossId = null
     state.combat.encounterTimerMs = 0
     if (spawnEnemy(state, bossId, combatLogUiSink)) pushNotification(state, `${boss.name} engaged`, 'warning')

@@ -10,6 +10,7 @@ import { castSpellAction } from '../../engine/spellEngine'
 import { advanceGameState } from '../simulation/advanceGameState'
 import { applyStatus } from './statusRuntime'
 import { getDefense, getDefenseReductionFromRating } from './combatStats'
+import { resolveBossThreatRequirement } from './combatThreat'
 
 const source = { actor: 'player' as const, kind: 'spell' as const, sourceId: 'debug-spell', tags: ['spell' as const, 'direct' as const] }
 const enemySource = (state: GameState) => ({ actor: 'enemy' as const, kind: 'basic-attack' as const, sourceId: 'debug-enemy-hit', sourceMonsterId: state.combat.enemyId ?? undefined, sourceInstanceKey: state.combat.enemyInstanceKey ?? undefined, tags: ['basic-attack' as const, 'direct' as const] })
@@ -17,6 +18,9 @@ const damage = (value: number, actor: 'player' | 'enemy' = 'player') => ({ type:
 
 const activeState = () => {
   const state = createInitialState()
+  state.progress.spellRanks['fire-bolt'] = 1
+  state.spellPresets.presets = [{ id: 'debug-test', name: 'Debug Test', slots: [{ spellId: 'fire-bolt', autoCast: false }] }]
+  state.spellPresets.selectedPresetId = 'debug-test'
   state.combat.active = true
   state.combat.dungeonId = 'whispering-woods'
   return state
@@ -106,9 +110,9 @@ describe('Combat Lab immortality and forced-resolution runtime', () => {
   it('fast-resolves normal enemies through progression and stops at authored boss threat', () => {
     const state = activeState()
     const result = fastResolveNormalEnemiesForDebug(state, 100, 'howling-den', true)
-    expect(result.resolved).toBe(25)
-    expect(state.combat.threatCleared).toBe(25)
-    expect(state.progress.lifetimeKills).toBe(25)
+    expect(result.bossReady).toBe(true)
+    expect(state.combat.threatCleared).toBe(resolveBossThreatRequirement('howling-den', 1))
+    expect(state.progress.lifetimeKills).toBe(result.resolved)
     expect(state.combat.enemyId).toBeNull()
   })
 

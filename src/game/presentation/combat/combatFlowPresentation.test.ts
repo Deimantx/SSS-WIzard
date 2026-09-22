@@ -86,7 +86,7 @@ describe('getCombatFlowPresentation', () => {
 
   it('switches to non-timer modes outside an active enemy encounter', () => {
     expect(getCombatFlowPresentation(input({ active: false, enemyId: null, enemy: null })).mode).toBe('tower')
-    expect(getCombatFlowPresentation(input({ enemyId: null, enemy: null, threatCleared: 20 })).mode).toBe('boss-ready')
+    expect(getCombatFlowPresentation(input({ enemyId: null, enemy: null, threatCleared: 5000 })).mode).toBe('boss-ready')
     expect(getCombatFlowPresentation(input({ enemyId: null, enemy: null, threatCleared: 0, encounterTimerMs: 3200 })).mode).toBe('encounter-delay')
   })
 })

@@ -49,7 +49,7 @@ describe('combat world navigation read model', () => {
     const view = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedLocationId: 'howling-den' })
     expect(view.selectedLocation?.targeting?.targets).toHaveLength(6)
     expect(view.selectedLocation?.zoneAffix).toMatchObject({ id: 'frenzied', name: 'Frenzied' })
-    expect(view.selectedLocation?.bossHunt).toMatchObject({ bossLabel: 'ELITE BOSS', threatCurrent: 0, threatRequired: 25, state: 'building' })
+    expect(view.selectedLocation?.bossHunt).toMatchObject({ bossLabel: 'ELITE BOSS', threatCurrent: 0, threatRequired: 10000, state: 'building' })
     expect(view.selectedLocation?.targeting?.targets.every((target) => !('minorAffixId' in target))).toBe(true)
 
     const catacombs = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedLocationId: 'abandoned-catacombs' }).selectedLocation

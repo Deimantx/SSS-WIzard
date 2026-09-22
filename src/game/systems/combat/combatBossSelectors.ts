@@ -1,10 +1,11 @@
 import { isDungeonUnlocked, type DungeonDefinition } from '../../content/dungeons/dungeons'
 import { isBossMonster, MONSTERS } from '../../content/monsters'
-import type { DungeonId, GameState } from '../../types'
+import { resolveBossThreatRequirement } from './combatThreat'
+import type { DungeonId, GameState, WorldTierId } from '../../types'
 
 type CombatBossState = { combat: Pick<GameState['combat'], 'active' | 'dungeonId' | 'enemyId' | 'inBossFight' | 'pendingBossId' | 'threatCleared'> }
 type DungeonProgressState = { progress: Pick<GameState['progress'], 'autoHuntBossUnlocked' | 'bossKillsByBoss' | 'firstBossKill' | 'autoHuntBossByDungeon'> }
-type ManualBossState = { combat: CombatBossState['combat']; progress: DungeonProgressState['progress'] }
+type ManualBossState = { combat: CombatBossState['combat']; progress: DungeonProgressState['progress']; worldTier?: WorldTierId | GameState['worldTier'] }
 
 export function isBossCurrentlyActive(state: CombatBossState) {
   const enemy = state.combat.enemyId ? MONSTERS[state.combat.enemyId] : null
@@ -20,11 +21,12 @@ export function isAutoHuntEnabledForDungeon(state: DungeonProgressState, dungeon
 }
 
 export function canManuallyEngageDungeonBoss(state: ManualBossState, dungeon: DungeonDefinition) {
+  const worldTier = typeof state.worldTier === 'number' ? state.worldTier : state.worldTier?.current ?? 1
   return Boolean(
     state.combat.active &&
     state.combat.dungeonId === dungeon.id &&
     isDungeonUnlocked(dungeon, state.progress) &&
-    state.combat.threatCleared >= dungeon.threatRequired &&
+    state.combat.threatCleared >= resolveBossThreatRequirement(dungeon.id, worldTier) &&
     !isBossCurrentlyActive(state) &&
     !state.combat.pendingBossId &&
     !isAutoHuntEnabledForDungeon(state, dungeon.id),

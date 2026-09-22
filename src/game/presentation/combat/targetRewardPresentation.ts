@@ -16,6 +16,7 @@ export interface CombatTargetRewardPresentation {
   itemDrops: CombatTargetItemDropPresentation[]
   resonance: ResonanceState
   powerRating: number
+  threatGain: number
   worldTier: WorldTierId
 }
 
@@ -23,6 +24,7 @@ export interface CombatTargetRewardPresentation {
 export const buildCombatTargetRewardPresentation = (monsterId: MonsterId, worldTier: WorldTierId): CombatTargetRewardPresentation => {
   const monster = MONSTERS[monsterId]
   const profile = resolveWorldTierEnemyProfile(monsterId, worldTier)
+  const powerRating = resolveEnemyPowerRating(monsterId, worldTier)
   return {
     monsterId,
     monsterName: monster.name,
@@ -33,7 +35,8 @@ export const buildCombatTargetRewardPresentation = (monsterId: MonsterId, worldT
       chance: drop.chance,
     })),
     resonance: profile.resonanceYield,
-    powerRating: resolveEnemyPowerRating(monsterId, worldTier),
+    powerRating,
+    threatGain: powerRating,
     worldTier: profile.worldTier,
   }
 }

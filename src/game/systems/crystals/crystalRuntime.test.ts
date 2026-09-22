@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   CRYSTAL_FAMILY_ORDER,
+  CRYSTAL_STARTING_UNLOCKED_SLOTS,
   CRYSTAL_VARIANT_IDS,
   getCrystalVariantStats,
 } from "../../content/crystals/crystals";
+import { MONSTER_IDS } from "../../content/monsters";
+import { resolveEnemyPowerRating } from "../../presentation/combat/enemyPowerRating";
 import { createInitialState } from "../../../store/initialState";
 import {
   bulkCrushCrystals,
@@ -12,6 +15,7 @@ import {
   getCrystalAvailableCount,
   normalizeCrystalState,
   openCrystalCaches,
+  isCrystalCacheEligiblePower,
   resolveCrystalCacheDrop,
   renameCrystalPreset,
   saveCrystalPreset,
@@ -37,7 +41,17 @@ describe("Crystal System V1", () => {
     expect(normalized.owned).toEqual({ "force-t1": 1 });
     expect(normalized.equippedSlots.filter(Boolean)).toEqual(["force-t1"]);
     expect(normalized.equippedSlots).toHaveLength(15);
+    expect(normalized.unlockedSlots).toBe(CRYSTAL_STARTING_UNLOCKED_SLOTS);
     expect(normalized.presets).toHaveLength(3);
+  });
+
+  it.each([2995, 2999])("keeps a power rating of %s below the cache threshold", (power) => {
+    expect(isCrystalCacheEligiblePower(power)).toBe(false);
+  });
+
+  it("accepts exactly 3000 power for cache eligibility", () => {
+    expect(isCrystalCacheEligiblePower(3000)).toBe(true);
+    expect(isCrystalCacheEligiblePower(Number.NaN)).toBe(false);
   });
 
   it("opens caches atomically through the dedicated deterministic RNG", () => {
@@ -57,6 +71,18 @@ describe("Crystal System V1", () => {
         CRYSTAL_VARIANT_IDS.includes(id as never),
       ),
     ).toBe(true);
+  });
+
+  it("uses the exact deterministic 80/20 boundary and only grants T1 family variants", () => {
+    const state = createInitialState();
+    state.progress.bossKillsByBoss["meridian-splitter"] = 1;
+    state.inventory["tier-1-crystal-cache"] = 2;
+    const rolls = [0.7999, 0.8, 0];
+    const result = openCrystalCaches(state, 2, () => rolls.shift() ?? 0);
+
+    expect(result).toMatchObject({ ok: true, opened: 2, dust: 25 });
+    expect(result.crystals).toEqual({ "force-t1": 1 });
+    expect(Object.keys(result.crystals).every((id) => id.endsWith("-t1"))).toBe(true);
   });
 
   it("enforces two equipped crystals per group and resolves live stats", () => {
@@ -128,6 +154,31 @@ describe("Crystal System V1", () => {
     });
   });
 
+  it("rejects an upgrade when its material is protected and leaves state unchanged", () => {
+    const state = createInitialState();
+    state.crystals.owned["force-t1"] = 1;
+    state.crystals.dust = 100;
+    state.inventory["life-essence"] = 5;
+    state.protectedItems["life-essence"] = true;
+    const before = structuredClone({ crystals: state.crystals, inventory: state.inventory });
+
+    expect(upgradeCrystal(state, "force-t1")).toMatchObject({ ok: false });
+    expect({ crystals: state.crystals, inventory: state.inventory }).toEqual(before);
+  });
+
+  it("upgrades the exact equipped duplicate slot instead of the first matching copy", () => {
+    const state = createInitialState();
+    state.crystals.owned["force-t1"] = 2;
+    expect(equipCrystal(state, "force-t1", 0).ok).toBe(true);
+    expect(equipCrystal(state, "force-t1", 1).ok).toBe(true);
+    state.crystals.dust = 100;
+    state.inventory["life-essence"] = 5;
+
+    expect(upgradeCrystal(state, "force-t1", 1)).toMatchObject({ ok: true, nextVariant: "force-t2" });
+    expect(state.crystals.equippedSlots[0]).toBe("force-t1");
+    expect(state.crystals.equippedSlots[1]).toBe("force-t2");
+  });
+
   it("only drops caches after unlock and the current power threshold", () => {
     const state = createInitialState();
     expect(
@@ -141,6 +192,22 @@ describe("Crystal System V1", () => {
       () => 0,
     );
     expect(dropped).toBe(true);
+    expect(state.inventory["tier-1-crystal-cache"]).toBe(1);
+  });
+
+  it("can find one monster below the threshold at WT1 and above it at a higher tier", () => {
+    const candidate = MONSTER_IDS.find((monsterId) => {
+      const wt1 = resolveEnemyPowerRating(monsterId, 1);
+      const higherTier = resolveEnemyPowerRating(monsterId, 5);
+      return wt1 < 3000 && higherTier >= 3000;
+    });
+    expect(candidate).toBeDefined();
+    if (!candidate) return;
+
+    const state = createInitialState();
+    state.progress.bossKillsByBoss["meridian-splitter"] = 1;
+    expect(resolveCrystalCacheDrop(state, candidate, 1, () => 0)).toBe(false);
+    expect(resolveCrystalCacheDrop(state, candidate, 5, () => 0)).toBe(true);
     expect(state.inventory["tier-1-crystal-cache"]).toBe(1);
   });
 

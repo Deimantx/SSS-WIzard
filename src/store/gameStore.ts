@@ -297,6 +297,10 @@ import {
 import { stabilizeResourceValue } from "../game/presentation/resources/resourcePresentation";
 import { DEBUG_RESONANCE_TEST_BUNDLE } from "../game/content/resonance/resonance";
 import {
+  CRYSTAL_CACHE_ITEM_ID,
+  CRYSTAL_FAMILY_ORDER,
+} from "../game/content/crystals/crystals";
+import {
   clearAllResonance,
   clearResonance,
   grantResonance,
@@ -309,6 +313,7 @@ import {
 } from "../game/systems/world-tier/worldTierRuntime";
 import {
   createInitialCrystalState,
+  CRYSTAL_RNG_DEFAULT_SEED,
   isCrystalSystemUnlocked,
 } from "../game/systems/crystals/crystalRuntime";
 import {
@@ -317,6 +322,7 @@ import {
   equipCrystal,
   loadCrystalPreset,
   openCrystalCaches,
+  removeAvailableCrystals,
   renameCrystalPreset,
   saveCrystalPreset,
   unequipCrystal,
@@ -692,8 +698,14 @@ export interface GameActions {
   ) => boolean;
   debugUnlockCrystals: () => void;
   debugAddCrystalDust: (amount: number) => void;
+  debugSetCrystalDust: (amount: number) => void;
+  debugClearCrystalDust: () => void;
   debugGrantCrystal: (variantId: CrystalVariantId, quantity: number) => void;
+  debugRemoveCrystal: (variantId: CrystalVariantId, quantity: number) => void;
+  debugGrantAllT1Crystals: (quantity: number) => void;
   debugSetCrystalUnlockedSlots: (amount: number) => void;
+  debugResetCrystalRng: () => void;
+  debugClearCrystalCaches: () => void;
   debugResetCrystals: () => void;
   clearRecentNew: (itemId: ItemId) => void;
   equipItem: (itemId: ItemId, targetPosition?: EquipmentPosition) => void;
@@ -2809,6 +2821,19 @@ export const useGameStore = create<GameStore>()(
         );
         return state;
       }),
+    debugSetCrystalDust: (amount) =>
+      set((state) => {
+        state.crystals.dust = Math.max(
+          0,
+          Math.floor(Number.isFinite(amount) ? amount : 0),
+        );
+        return state;
+      }),
+    debugClearCrystalDust: () =>
+      set((state) => {
+        state.crystals.dust = 0;
+        return state;
+      }),
     debugGrantCrystal: (variantId, quantity) =>
       set((state) => {
         const amount = Math.max(
@@ -2817,6 +2842,24 @@ export const useGameStore = create<GameStore>()(
         );
         state.crystals.owned[variantId] =
           (state.crystals.owned[variantId] ?? 0) + amount;
+        return state;
+      }),
+    debugRemoveCrystal: (variantId, quantity) =>
+      set((state) => {
+        removeAvailableCrystals(state, variantId, quantity);
+        return state;
+      }),
+    debugGrantAllT1Crystals: (quantity) =>
+      set((state) => {
+        const amount = Math.max(
+          0,
+          Math.floor(Number.isFinite(quantity) ? quantity : 0),
+        );
+        CRYSTAL_FAMILY_ORDER.forEach((familyId) => {
+          const variantId = `${familyId}-t1` as CrystalVariantId;
+          state.crystals.owned[variantId] =
+            (state.crystals.owned[variantId] ?? 0) + amount;
+        });
         return state;
       }),
     debugSetCrystalUnlockedSlots: (amount) =>
@@ -2832,6 +2875,17 @@ export const useGameStore = create<GameStore>()(
           index += 1
         )
           state.crystals.equippedSlots[index] = null;
+        recalculateDerivedStats(state);
+        return state;
+      }),
+    debugResetCrystalRng: () =>
+      set((state) => {
+        state.crystals.rngState = CRYSTAL_RNG_DEFAULT_SEED;
+        return state;
+      }),
+    debugClearCrystalCaches: () =>
+      set((state) => {
+        state.inventory[CRYSTAL_CACHE_ITEM_ID] = 0;
         return state;
       }),
     debugResetCrystals: () =>

@@ -27,7 +27,7 @@ export function CrystalBulkCrushDialog({
   const [selected, setSelected] = useState<Record<CrystalVariantId, number>>(
     () =>
       Object.fromEntries(
-        available.map(({ variantId, quantity }) => [variantId, quantity]),
+        available.map(({ variantId }) => [variantId, 0]),
       ) as Record<CrystalVariantId, number>,
   );
   const selectedEntries = available.filter(
@@ -149,6 +149,35 @@ export function CrystalBulkCrushDialog({
             {totalQuantity} copies → {dust.toLocaleString()} Dust
           </span>
           <div>
+            <Button
+              variant="ghost"
+              onClick={() =>
+                setSelected(
+                  Object.fromEntries(
+                    available.map(({ variantId, quantity }) => [
+                      variantId,
+                      quantity,
+                    ]),
+                  ) as Record<CrystalVariantId, number>,
+                )
+              }
+              disabled={!available.length}
+            >
+              SELECT ALL AVAILABLE
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() =>
+                setSelected(
+                  Object.fromEntries(
+                    available.map(({ variantId }) => [variantId, 0]),
+                  ) as Record<CrystalVariantId, number>,
+                )
+              }
+              disabled={!totalQuantity}
+            >
+              CLEAR SELECTION
+            </Button>
             <Button variant="ghost" onClick={onClose}>
               CANCEL
             </Button>

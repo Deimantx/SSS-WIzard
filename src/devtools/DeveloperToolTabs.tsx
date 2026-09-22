@@ -10,6 +10,7 @@ import { DeveloperTransmutation } from './tabs/DeveloperTransmutation'
 import { DeveloperResearch } from './tabs/DeveloperResearch'
 import { DeveloperInventory } from './tabs/DeveloperInventory'
 import { DeveloperProgression } from './tabs/DeveloperProgression'
+import { DeveloperCrystals } from './tabs/DeveloperCrystals'
 import { DeveloperSaveState } from './tabs/DeveloperSaveState'
 import { DeveloperSpells } from './tabs/DeveloperSpells'
 import { DeveloperMonsters } from './tabs/DeveloperMonsters'
@@ -38,6 +39,7 @@ export function DeveloperTab({ tab, copy }: { tab: DeveloperToolsTab; copy: (lab
   if (tab === 'monsters') return <DeveloperMonsters />
   if (tab === 'statuses') return <DeveloperStatuses />
   if (tab === 'progression') return <DeveloperProgression />
+  if (tab === 'crystals') return <DeveloperCrystals />
   if (tab === 'arcane-core') return <DeveloperArcaneCore />
   if (tab === 'diagnostics') return <DeveloperDiagnostics copy={copy} />
   if (tab === 'ui-tuning') return <DeveloperUITuning copy={copy} />

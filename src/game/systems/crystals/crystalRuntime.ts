@@ -1,6 +1,7 @@
 import { getFocusCapacityBreakdown } from '../focus/focusCapacity'
 import { selectUsedFocus } from '../focus/focusReservations'
 import { grantItem } from '../inventory/itemAcquisition'
+import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
 import { resolveEnemyPowerRating } from '../../presentation/combat/enemyPowerRating'
 import { CRYSTAL_CACHE_DUST, CRYSTAL_CACHE_ITEM_ID, CRYSTAL_CACHE_POWER_THRESHOLD, CRYSTAL_CACHE_DROP_CHANCE, CRYSTAL_CRUSH_DUST, CRYSTAL_FAMILY_ORDER, CRYSTAL_GROUP_CAP, CRYSTAL_SLOT_COUNT, CRYSTAL_STARTING_UNLOCKED_SLOTS, CRYSTAL_UPGRADE_COSTS, CRYSTAL_VARIANT_IDS, getCrystalFamily, getCrystalTier, getNextCrystalVariant } from '../../content/crystals/crystals'
 import type { CrystalPreset, CrystalPresetId, CrystalState, CrystalTier, CrystalVariantId, GameState, ItemId } from '../../types'
@@ -32,7 +33,7 @@ export const normalizeCrystalState = (raw: unknown): CrystalState => {
     const quantity = finiteInteger(rawOwned[variantId])
     if (quantity > 0) owned[variantId] = quantity
   })
-  const unlockedSlots = Math.min(CRYSTAL_SLOT_COUNT, finiteInteger(source.unlockedSlots, fresh.unlockedSlots))
+  const unlockedSlots = Math.min(CRYSTAL_SLOT_COUNT, Math.max(CRYSTAL_STARTING_UNLOCKED_SLOTS, finiteInteger(source.unlockedSlots, fresh.unlockedSlots)))
   const equippedSlots: Array<CrystalVariantId | null> = Array.from({ length: CRYSTAL_SLOT_COUNT }, () => null)
   const equippedByVariant: Partial<Record<CrystalVariantId, number>> = {}
   const equippedByGroup: Partial<Record<ReturnType<typeof getCrystalFamily>['group'], number>> = {}
@@ -156,7 +157,7 @@ export const upgradeCrystal = (state: GameState, variantId: CrystalVariantId, eq
   const cost = CRYSTAL_UPGRADE_COSTS[tier]
   if (state.crystals.dust < cost.dust) return { ok: false, reason: `Requires ${cost.dust.toLocaleString()} Crystal Dust.` }
   for (const [itemId, quantity] of Object.entries(cost.materials) as [ItemId, number][]) {
-    if ((state.inventory[itemId] ?? 0) < quantity) return { ok: false, reason: `Requires ${quantity} ${itemId}.` }
+    if (getConsumableQuantity(state, itemId) < quantity) return { ok: false, reason: `Requires ${quantity} available ${itemId}.` }
   }
   state.crystals.dust -= cost.dust
   Object.entries(cost.materials).forEach(([itemId, quantity]) => { state.inventory[itemId as ItemId] = Math.max(0, (state.inventory[itemId as ItemId] ?? 0) - quantity) })
@@ -173,6 +174,14 @@ export const crushCrystals = (state: GameState, variantId: CrystalVariantId, qua
   state.crystals.owned[variantId] = Math.max(0, (state.crystals.owned[variantId] ?? 0) - amount)
   state.crystals.dust += dust
   return { ok: true, quantity: amount, dust }
+}
+
+/** Debug-only ownership removal that never touches equipped copies. */
+export const removeAvailableCrystals = (state: GameState, variantId: CrystalVariantId, quantity: number) => {
+  const amount = Math.min(getCrystalAvailableCount(state, variantId), Math.max(0, Math.floor(quantity)))
+  if (amount < 1) return 0
+  state.crystals.owned[variantId] = Math.max(0, (state.crystals.owned[variantId] ?? 0) - amount)
+  return amount
 }
 
 export const bulkCrushCrystals = (state: GameState, requests: Partial<Record<CrystalVariantId, number>>) => {
@@ -200,7 +209,9 @@ export interface CrystalCacheOpenResult {
   reason?: string
 }
 
-export const openCrystalCaches = (state: GameState, requestedQuantity: number): CrystalCacheOpenResult => {
+export const isCrystalCacheEligiblePower = (power: number) => Number.isFinite(power) && power >= CRYSTAL_CACHE_POWER_THRESHOLD
+
+export const openCrystalCaches = (state: GameState, requestedQuantity: number, rng: () => number = () => nextCrystalRandom(state)): CrystalCacheOpenResult => {
   const quantity = Math.min(Math.max(0, Math.floor(requestedQuantity)), state.inventory[CRYSTAL_CACHE_ITEM_ID] ?? 0)
   if (!isCrystalSystemUnlocked(state)) return { ok: false, opened: 0, dust: 0, crystals: {}, reason: 'Crystal System is not unlocked.' }
   if (quantity < 1) return { ok: false, opened: 0, dust: 0, crystals: {}, reason: 'No Crystal Caches are available.' }
@@ -208,9 +219,9 @@ export const openCrystalCaches = (state: GameState, requestedQuantity: number): 
   let dust = 0
   const crystals: Partial<Record<CrystalVariantId, number>> = {}
   for (let index = 0; index < quantity; index += 1) {
-    if (nextCrystalRandom(state) < 0.8) dust += CRYSTAL_CACHE_DUST
+    if (rng() < 0.8) dust += CRYSTAL_CACHE_DUST
     else {
-      const familyId = CRYSTAL_FAMILY_ORDER[Math.floor(nextCrystalRandom(state) * CRYSTAL_FAMILY_ORDER.length)]
+      const familyId = CRYSTAL_FAMILY_ORDER[Math.floor(rng() * CRYSTAL_FAMILY_ORDER.length)]
       const variantId = `${familyId}-t1` as CrystalVariantId
       crystals[variantId] = (crystals[variantId] ?? 0) + 1
       state.crystals.owned[variantId] = (state.crystals.owned[variantId] ?? 0) + 1
@@ -222,7 +233,7 @@ export const openCrystalCaches = (state: GameState, requestedQuantity: number): 
 
 export const resolveCrystalCacheDrop = (state: GameState, enemyId: import('../../types').MonsterId, enemyWorldTier: import('../../types').WorldTierId, rng: () => number) => {
   if (!isCrystalSystemUnlocked(state)) return false
-  if (resolveEnemyPowerRating(enemyId, enemyWorldTier) < CRYSTAL_CACHE_POWER_THRESHOLD) return false
+  if (!isCrystalCacheEligiblePower(resolveEnemyPowerRating(enemyId, enemyWorldTier))) return false
   if (rng() >= CRYSTAL_CACHE_DROP_CHANCE) return false
   grantItem(state, CRYSTAL_CACHE_ITEM_ID, 1)
   return true

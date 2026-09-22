@@ -48,7 +48,7 @@ import { isTransmutationRecipeId } from "../../game/content/recipes/recipes";
 import { isArtifactItem } from "../../game/systems/artifacts/artifactProgression";
 import { ArtifactPathModal } from "../../components/artifacts/ArtifactPathModal";
 import { InventoryResourcesPanel } from "./InventoryResourcesPanel";
-import { CrystalCacheDialog } from "../crystals/CrystalsScreen";
+import { CrystalCacheDialog } from "../crystals/CrystalCacheDialog";
 
 export function InventoryScreenV2() {
   const [search, setSearch] = useState("");

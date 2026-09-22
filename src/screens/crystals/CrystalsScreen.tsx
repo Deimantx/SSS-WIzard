@@ -16,11 +16,8 @@ import {
   getCrystalGroupUsage,
   getCrystalOwnedCount,
   hasUnsavedCrystalChanges,
-  type CrystalCacheOpenResult,
 } from "../../game/systems/crystals/crystalRuntime";
 import {
-  CRYSTAL_CRUSH_DUST,
-  CRYSTAL_FAMILY_ORDER,
   CRYSTAL_GROUP_LABELS,
   CRYSTAL_GROUP_CAP,
   CRYSTAL_SLOT_COUNT,
@@ -43,75 +40,22 @@ import { useGameContextMenu } from "../../ui/context-menu/GameContextMenuProvide
 import { CrystalBulkCrushDialog } from "./CrystalBulkCrushDialog";
 import { CrystalCrushQuantityDialog } from "./CrystalCrushQuantityDialog";
 import {
+  CrystalTooltipContent,
+  CRYSTAL_STAT_LABELS,
+  formatCrystalStat,
+} from "./CrystalTooltipContent";
+import {
   setNavigationIntent,
   useNavigationIntent,
 } from "../../ui/navigation/navigationIntent";
 
 type InventoryFilter = "all" | CrystalGroupId;
+type CrystalSelection =
+  | { source: "equipped"; variantId: CrystalVariantId; slotIndex: number }
+  | { source: "inventory"; variantId: CrystalVariantId };
 
-const STAT_LABELS: Record<string, string> = {
-  spellPower: "Spell Power",
-  maxHealth: "Max Health",
-  healthRegen: "Health Regen",
-  maxMana: "Max Mana",
-  manaRegen: "Mana Regen",
-  maxFocus: "Max Focus",
-  defense: "Defense",
-  critChance: "Crit Chance",
-  critDamage: "Crit Damage",
-  cooldownRecoveryPct: "Cooldown Recovery",
-  barrierPowerPct: "Barrier Power",
-  damageOverTimePct: "Damage over Time",
-  statusDurationPct: "Status Duration",
-  manaCostReductionPct: "Mana Cost Reduction",
-  focusEfficiencyPct: "Focus Efficiency",
-};
-const PERCENT_STATS = new Set([
-  "critChance",
-  "critDamage",
-  "cooldownRecoveryPct",
-  "barrierPowerPct",
-  "damageOverTimePct",
-  "statusDurationPct",
-  "manaCostReductionPct",
-  "focusEfficiencyPct",
-]);
-
-const formatStat = (key: string, value: number) =>
-  PERCENT_STATS.has(key)
-    ? `${value * 100 >= 10 ? (value * 100).toFixed(0) : (value * 100).toFixed(1)}%`
-    : key === "healthRegen" || key === "manaRegen"
-      ? `${value.toFixed(1)}/s`
-      : `${Math.round(value * 100) / 100}`;
-
-const crystalTooltip = (
-  variantId: CrystalVariantId,
-  crystals: GameState["crystals"],
-) => {
-  const family = getCrystalFamily(variantId);
-  const owned = getCrystalOwnedCount({ crystals }, variantId);
-  const equipped = getCrystalEquippedCount({ crystals }, variantId);
-  return (
-    <>
-      <strong>{getCrystalVariantName(variantId)}</strong>
-      <p>
-        {CRYSTAL_GROUP_LABELS[family.group]} · TIER {getCrystalTier(variantId)}
-      </p>
-      <p>
-        {Object.entries(getCrystalVariantStats(variantId))
-          .map(
-            ([key, value]) =>
-              `${STAT_LABELS[key] ?? key} +${formatStat(key, Number(value))}`,
-          )
-          .join(" · ")}
-      </p>
-      <p>
-        Group Limit: {CRYSTAL_GROUP_CAP} · Owned: {owned} · Equipped: {equipped} ·
-        Available: {Math.max(0, owned - equipped)}
-      </p>
-    </>
-  );
-};
+const STAT_LABELS = CRYSTAL_STAT_LABELS;
+const formatStat = formatCrystalStat;
 
 export function CrystalsScreen() {
   const crystals = useGameStore((state) => state.crystals);
@@ -129,8 +73,7 @@ export function CrystalsScreen() {
   const [inventoryOpen, setInventoryOpen] = useState(false);
   const [bulkCrushOpen, setBulkCrushOpen] = useState(false);
   const [destination, setDestination] = useState<number | null>(null);
-  const [selectedVariant, setSelectedVariant] =
-    useState<CrystalVariantId | null>(null);
+  const [selection, setSelection] = useState<CrystalSelection | null>(null);
   const [filter, setFilter] = useState<InventoryFilter>("all");
   const [tierFilter, setTierFilter] = useState<"all" | 1 | 2 | 3 | 4 | 5>(
     "all",
@@ -175,12 +118,11 @@ export function CrystalsScreen() {
     )
       return;
     if (equipCrystal(variantId, destination ?? undefined)) {
-      setSelectedVariant(variantId);
+      setSelection(null);
       setDestination(null);
       setInventoryOpen(false);
     }
   };
-  const selected = selectedVariant ? getCrystalFamily(selectedVariant) : null;
   const { openContextMenu } = useGameContextMenu();
   const openSocketMenu = (
     event: MouseEvent<HTMLButtonElement>,
@@ -204,7 +146,12 @@ export function CrystalsScreen() {
             {
               id: "inspect",
               label: "Inspect Crystal",
-              onSelect: () => setSelectedVariant(variantId),
+              onSelect: () =>
+                setSelection({
+                  source: "equipped",
+                  variantId,
+                  slotIndex: slot,
+                }),
             },
             {
               id: "unequip",
@@ -215,17 +162,24 @@ export function CrystalsScreen() {
                 : undefined,
               onSelect: () => {
                 unequipCrystal(slot);
-                setSelectedVariant(null);
+                setSelection(null);
               },
             },
             {
               id: "upgrade",
-              label: "Upgrade",
-              disabled: combatActive,
+              label: getNextCrystalVariant(variantId)
+                ? "Upgrade..."
+                : "MAX TIER",
+              disabled: combatActive || !getNextCrystalVariant(variantId),
               disabledReason: combatActive
                 ? "Equipped Crystal upgrades are disabled during active combat."
-                : undefined,
-              onSelect: () => upgradeCrystal(variantId, slot),
+                : "This Crystal is already at the maximum tier.",
+              onSelect: () =>
+                setSelection({
+                  source: "equipped",
+                  variantId,
+                  slotIndex: slot,
+                }),
             },
             {
               id: "inventory",
@@ -281,7 +235,13 @@ export function CrystalsScreen() {
               }
               disabled={locked}
               onClick={() =>
-                variantId ? setSelectedVariant(variantId) : openInventory(index)
+                variantId
+                  ? setSelection({
+                      source: "equipped",
+                      variantId,
+                      slotIndex: index,
+                    })
+                  : openInventory(index)
               }
               onContextMenu={(event) => {
                 if (variantId) openSocketMenu(event, variantId, index);
@@ -324,7 +284,12 @@ export function CrystalsScreen() {
               block
               content={
                 variantId
-                  ? crystalTooltip(variantId, crystals)
+                  ? (
+                      <CrystalTooltipContent
+                        variantId={variantId}
+                        crystals={crystals}
+                      />
+                    )
                   : "Empty unlocked socket · choose a Crystal from inventory."
               }
             >
@@ -472,7 +437,7 @@ export function CrystalsScreen() {
       <div className="screen-header">
         <div>
           <div className="eyebrow">HERO · CRYSTALS</div>
-          <h1>Turn resonance into a build.</h1>
+          <h1>Shape Crystal power into a build.</h1>
           <p>
             Equip, refine, and preserve Crystal loadouts without losing sight of
             the live stat contribution.
@@ -498,11 +463,13 @@ export function CrystalsScreen() {
           filter={filter}
           tierFilter={tierFilter}
           destination={destination}
-          selectedVariant={selectedVariant}
+          selection={selection}
           combatActive={combatActive}
           onFilter={setFilter}
           onTierFilter={setTierFilter}
-          onSelect={setSelectedVariant}
+          onSelect={(variantId) =>
+            setSelection({ source: "inventory", variantId })
+          }
           onEquip={handleEquip}
           onClose={() => {
             setInventoryOpen(false);
@@ -513,20 +480,16 @@ export function CrystalsScreen() {
           onNavigateToInventory={() => navigate("inventory")}
         />
       )}{" "}
-      {selectedVariant && !inventoryOpen && (
+      {selection?.source === "equipped" && !inventoryOpen && (
         <CrystalInspect
-          variantId={selectedVariant}
-          crystals={crystals}
+          variantId={selection.variantId}
+          slotIndex={selection.slotIndex}
           combatActive={combatActive}
-          onClose={() => setSelectedVariant(null)}
+          onClose={() => setSelection(null)}
           onUnequip={() => {
-            const slot = crystals.equippedSlots.findIndex(
-              (value) => value === selectedVariant,
-            );
-            if (slot >= 0 && unequipCrystal(slot)) setSelectedVariant(null);
+            if (unequipCrystal(selection.slotIndex)) setSelection(null);
           }}
           onUpgrade={upgradeCrystal}
-          onCrush={crushCrystal}
         />
       )}
     </div>
@@ -539,7 +502,7 @@ function CrystalInventoryModal({
   filter,
   tierFilter,
   destination,
-  selectedVariant,
+  selection,
   combatActive,
   onFilter,
   onTierFilter,
@@ -555,7 +518,7 @@ function CrystalInventoryModal({
   filter: InventoryFilter;
   tierFilter: "all" | 1 | 2 | 3 | 4 | 5;
   destination: number | null;
-  selectedVariant: CrystalVariantId | null;
+  selection: CrystalSelection | null;
   combatActive: boolean;
   onFilter: (filter: InventoryFilter) => void;
   onTierFilter: (filter: "all" | 1 | 2 | 3 | 4 | 5) => void;
@@ -568,7 +531,7 @@ function CrystalInventoryModal({
 }) {
   const { openContextMenu } = useGameContextMenu();
   const [inspect, setInspect] = useState<CrystalVariantId | null>(
-    selectedVariant,
+    selection?.source === "inventory" ? selection.variantId : null,
   );
   const selected = inspect ? getCrystalFamily(inspect) : null;
   const selectedTier = inspect ? getCrystalTier(inspect) : null;
@@ -706,15 +669,19 @@ function CrystalInventoryModal({
                               },
                               {
                                 id: "upgrade",
-                                label: "Upgrade",
+                                label: getNextCrystalVariant(variantId)
+                                  ? "Upgrade..."
+                                  : "MAX TIER",
                                 disabled:
+                                  !getNextCrystalVariant(variantId) ||
                                   getCrystalAvailableCount(
                                     { crystals },
                                     variantId,
                                   ) < 1,
-                                disabledReason:
-                                  "No unequipped copy is available.",
-                                onSelect: () => onUpgrade(variantId),
+                                disabledReason: !getNextCrystalVariant(variantId)
+                                  ? "This Crystal is already at the maximum tier."
+                                  : "No unequipped copy is available.",
+                                onSelect: () => onSelect(variantId),
                               },
                               {
                                 id: "crush",
@@ -754,7 +721,12 @@ function CrystalInventoryModal({
                     key={variantId}
                     block
                     wide
-                    content={crystalTooltip(variantId, crystals)}
+                    content={
+                      <CrystalTooltipContent
+                        variantId={variantId}
+                        crystals={crystals}
+                      />
+                    }
                   >
                     {tile}
                   </GameTooltip>
@@ -796,6 +768,15 @@ function CrystalInventoryModal({
                     <strong>
                       {getCrystalVariantName(getNextCrystalVariant(inspect)!)}
                     </strong>
+                    <div className="crystal-upgrade-stat-preview">
+                      {Object.entries(
+                        getCrystalVariantStats(getNextCrystalVariant(inspect)!),
+                      ).map(([key, value]) => (
+                        <span key={key}>
+                          {STAT_LABELS[key] ?? key}: +{formatStat(key, Number(value))}
+                        </span>
+                      ))}
+                    </div>
                     <small>
                       COST ·{" "}
                       {CRYSTAL_UPGRADE_COSTS[
@@ -830,15 +811,21 @@ function CrystalInventoryModal({
                   >
                     EQUIP
                   </Button>
-                  <Button
-                    variant="secondary"
-                    onClick={() => onUpgrade(inspect)}
-                    disabled={
-                      getCrystalAvailableCount({ crystals }, inspect) < 1
-                    }
-                  >
-                    UPGRADE
-                  </Button>
+                  {getNextCrystalVariant(inspect) ? (
+                    <Button
+                      variant="secondary"
+                      onClick={() => onUpgrade(inspect)}
+                      disabled={
+                        getCrystalAvailableCount({ crystals }, inspect) < 1
+                      }
+                    >
+                      UPGRADE
+                    </Button>
+                  ) : (
+                    <Button variant="secondary" disabled>
+                      MAX TIER
+                    </Button>
+                  )}
                   <Button
                     variant="danger"
                     onClick={() => setCrushTarget(inspect)}
@@ -879,23 +866,20 @@ function CrystalInventoryModal({
 
 function CrystalInspect({
   variantId,
-  crystals,
+  slotIndex,
   combatActive,
   onClose,
   onUnequip,
   onUpgrade,
-  onCrush,
 }: {
   variantId: CrystalVariantId;
-  crystals: GameState["crystals"];
+  slotIndex: number;
   combatActive: boolean;
   onClose: () => void;
   onUnequip: () => void;
   onUpgrade: (variantId: CrystalVariantId, slot?: number) => boolean;
-  onCrush: (variantId: CrystalVariantId, quantity: number) => boolean;
 }) {
   const family = getCrystalFamily(variantId);
-  const slot = crystals.equippedSlots.findIndex((value) => value === variantId);
   const next = getNextCrystalVariant(variantId);
   return (
     <div
@@ -907,9 +891,7 @@ function CrystalInspect({
         <span style={{ color: family.color }}>{family.icon}</span>
         <div>
           <strong>{getCrystalVariantName(variantId)}</strong>
-          <small>
-            {slot >= 0 ? `Equipped · Slot ${slot + 1}` : "Inventory copy"}
-          </small>
+          <small>Equipped · Slot {slotIndex + 1}</small>
         </div>
         <Button
           variant="ghost"
@@ -932,196 +914,43 @@ function CrystalInspect({
         )}
       </div>
       {next && (
+        <div className="crystal-upgrade-preview">
+          <span className="eyebrow">NEXT TIER</span>
+          <strong>{getCrystalVariantName(next)}</strong>
+          <div className="crystal-upgrade-stat-preview">
+            {Object.entries(getCrystalVariantStats(next)).map(([key, value]) => (
+              <span key={key}>
+                {STAT_LABELS[key] ?? key}: +{formatStat(key, Number(value))}
+              </span>
+            ))}
+          </div>
+          <small>
+            COST · {CRYSTAL_UPGRADE_COSTS[getCrystalTier(variantId)].dust.toLocaleString()} Dust
+            {Object.entries(CRYSTAL_UPGRADE_COSTS[getCrystalTier(variantId)].materials).map(
+              ([itemId, quantity]) => ` · ${quantity} ${ITEMS[itemId as keyof typeof ITEMS]?.name ?? itemId}`,
+            )}
+          </small>
+        </div>
+      )}
+      {next && (
         <Button
           variant="secondary"
-          disabled={combatActive && slot >= 0}
+          disabled={combatActive}
           onClick={() => {
-            if (onUpgrade(variantId, slot >= 0 ? slot : undefined)) onClose();
+            if (onUpgrade(variantId, slotIndex)) onClose();
           }}
         >
           UPGRADE
         </Button>
       )}
-      {slot >= 0 ? (
-        <Button variant="ghost" disabled={combatActive} onClick={onUnequip}>
-          UNEQUIP
-        </Button>
-      ) : (
-        <Button
-          variant="danger"
-          disabled={getCrystalAvailableCount({ crystals }, variantId) < 1}
-          onClick={() => {
-            if (
-              window.confirm(
-                `Crush 1 ${getCrystalVariantName(variantId)} for ${CRYSTAL_CRUSH_DUST[getCrystalTier(variantId)]} Dust?`,
-              )
-            ) {
-              if (onCrush(variantId, 1)) onClose();
-            }
-          }}
-        >
-          CRUSH 1
+      {!next && (
+        <Button variant="secondary" disabled>
+          MAX TIER
         </Button>
       )}
-    </div>
-  );
-}
-
-export function CrystalCacheDialog({
-  owned,
-  onOpen,
-  onClose,
-  onOpenInventory,
-}: {
-  owned: number;
-  onOpen: (quantity: number) => CrystalCacheOpenResult;
-  onClose: () => void;
-  onOpenInventory: () => void;
-}) {
-  const [quantity, setQuantity] = useState(Math.min(1, owned));
-  const [result, setResult] = useState<CrystalCacheOpenResult | null>(null);
-  const updateQuantity = (value: number) =>
-    setQuantity(
-      Math.max(1, Math.min(Math.max(1, owned), Math.floor(value) || 1)),
-    );
-  return (
-    <div className="crystal-modal-backdrop" role="presentation">
-      <section
-        className="crystal-inventory-modal crystal-cache-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Tier 1 Crystal Cache"
-      >
-        <div className="crystal-modal-head">
-          <div>
-            <span className="eyebrow">SPECIAL ITEM · OPEN ACTION</span>
-            <h2>
-              {result ? "TIER 1 CRYSTAL CACHE RESULTS" : "TIER 1 CRYSTAL CACHE"}
-            </h2>
-            <p>
-              {result
-                ? `${result.opened} cache${result.opened === 1 ? "" : "s"} opened.`
-                : `${owned.toLocaleString()} available · 80% Dust / 20% Crystal`}
-            </p>
-          </div>
-          <Button
-            variant="ghost"
-            icon
-            ariaLabel="Close cache dialog"
-            onClick={onClose}
-          >
-            <X size={17} />
-          </Button>
-        </div>
-        {result ? (
-          <div className="crystal-cache-results">
-            <div className="crystal-cache-result-total">
-              <span>OPENED</span>
-              <strong>{result.opened}</strong>
-              <small>One aggregated result</small>
-            </div>
-            <div className="crystal-cache-reward-grid">
-              <GameTooltip block content="25 Crystal Dust per Dust result.">
-                <div className="crystal-cache-reward">
-                  <Sparkles size={20} />
-                  <strong>+{result.dust.toLocaleString()}</strong>
-                  <span>CRYSTAL DUST</span>
-                </div>
-              </GameTooltip>
-              {Object.entries(result.crystals).map(([variantId, amount]) => {
-                const crystal = getCrystalFamily(variantId as CrystalVariantId);
-                return (
-                  <GameTooltip
-                    key={variantId}
-                    block
-                    wide
-                    content={
-                      <>
-                        <strong>
-                          {getCrystalVariantName(variantId as CrystalVariantId)}
-                        </strong>
-                        <p>Tier 1 Crystal reward from the cache.</p>
-                      </>
-                    }
-                  >
-                    <div
-                      className="crystal-cache-reward"
-                      style={
-                        { "--crystal-color": crystal.color } as CSSProperties
-                      }
-                    >
-                      <span>{crystal.icon}</span>
-                      <strong>+{amount}</strong>
-                      <span>
-                        {getCrystalVariantName(variantId as CrystalVariantId)}
-                      </span>
-                    </div>
-                  </GameTooltip>
-                );
-              })}
-            </div>
-            <div className="crystal-cache-dialog-actions">
-              <Button variant="secondary" onClick={onClose}>
-                CONTINUE
-              </Button>
-              <Button onClick={onOpenInventory}>CRYSTAL INVENTORY</Button>
-            </div>
-          </div>
-        ) : (
-          <div className="crystal-cache-open-form">
-            <div className="crystal-cache-open-icon">◇</div>
-            <p>
-              Open caches in one atomic roll transaction. Dust and Crystal
-              rewards are resolved by the dedicated cache RNG.
-            </p>
-            <div className="crystal-cache-quantity">
-              <label htmlFor="crystal-cache-quantity">OPEN QUANTITY</label>
-              <input
-                id="crystal-cache-quantity"
-                type="number"
-                min={1}
-                max={Math.max(1, owned)}
-                value={quantity}
-                onChange={(event) =>
-                  updateQuantity(Number(event.currentTarget.value))
-                }
-              />
-              <div>
-                <Button
-                  variant="ghost"
-                  onClick={() => updateQuantity(1)}
-                  disabled={owned < 1}
-                >
-                  1
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => updateQuantity(10)}
-                  disabled={owned < 1}
-                >
-                  10
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => updateQuantity(owned)}
-                  disabled={owned < 1}
-                >
-                  MAX
-                </Button>
-              </div>
-            </div>
-            <Button
-              onClick={() => {
-                const next = onOpen(quantity);
-                if (next.ok) setResult(next);
-              }}
-              disabled={owned < 1}
-            >
-              OPEN {quantity.toLocaleString()} CACHE{quantity === 1 ? "" : "S"}
-            </Button>
-          </div>
-        )}
-      </section>
+      <Button variant="ghost" disabled={combatActive} onClick={onUnequip}>
+        UNEQUIP
+      </Button>
     </div>
   );
 }

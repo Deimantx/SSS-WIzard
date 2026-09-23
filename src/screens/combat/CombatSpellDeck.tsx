@@ -8,12 +8,10 @@ import { useGameStore } from '../../store/gameStore'
 import { Button, Card, GameTooltip, SelectMenu, Status, type SelectMenuOption } from '../../components/ui'
 import { dismissGameTooltips } from '../../components/ui/tooltip/Tooltip'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
-import { SpellPresetDialog } from '../schools/SpellPresetDialog'
 import { CombatSpellTile } from './CombatSpellTile'
 import { useSmartScrollState } from '../../ui/game-feel/useSmartScrollState'
 
 export function CombatSpellDeck() {
-  const [presetOpen, setPresetOpen] = useState(false)
   const [presetNotice, setPresetNotice] = useState<string | null>(null)
   const noticeTimer = useRef<number | null>(null)
   const gridRef = useRef<HTMLDivElement>(null)
@@ -29,6 +27,7 @@ export function CombatSpellDeck() {
   const selectedPresetId = useGameStore((state) => state.spellPresets.selectedPresetId)
   const debugAllowFocusOverCap = useGameStore((state) => state.debug.allowFocusOverCap)
   const selectSpellPreset = useGameStore((state) => state.selectSpellPreset)
+  const setScreen = useGameStore((state) => state.setScreen)
   const playerStunned = useGameStore((state) => actorCannotAct(state, 'player'))
   const state = useMemo(() => {
     const live = useGameStore.getState()
@@ -77,7 +76,7 @@ export function CombatSpellDeck() {
     else if (result.reason === 'empty') showPresetNotice('This preset has no available Spells to select.')
     else showPresetNotice('This preset is no longer available.')
   }
-  const openPresetManager = () => { dismissGameTooltips(); setPresetOpen(true) }
+  const openPresetManager = () => { dismissGameTooltips(); setScreen('schools') }
 
   return <Card className="combat-spell-deck">
     <header className="combat-spell-deck-toprow">
@@ -93,6 +92,5 @@ export function CombatSpellDeck() {
       <div className="combat-spell-grid-region">{displaySlots.length ? <div ref={gridRef} className="combat-spell-grid smart-scroll-region">{displaySlots.map((slot) => <CombatSpellTile key={slot.spellId} spellId={slot.spellId} autoCast={slot.autoCast} autoCastPriority={slot.autoCast ? autoPriority.indexOf(slot.spellId) + 1 : null} presentationState={state} globalBlocker={globalBlocker} onOpenPresetManager={openPresetManager} />)}</div> : <div className="combat-spell-empty"><CircleDot size={20} aria-hidden="true" /><strong>{selectedPreset ? 'No available Spells in this preset.' : 'Create a combat preset to fill the deck.'}</strong><span>Choose up to eight slots in Preset Manager.</span></div>}</div>
       <footer className="combat-spell-deck-foot"><div className="combat-spell-deck-foot-left"><Status tone={focus.freeFocus < 0 ? 'warning' : 'success'}>{autoPriority.length} AUTO · {Math.max(0, displaySlots.length - autoPriority.length)} MANUAL · {focus.autoCastFocus} Focus reserved</Status></div><small>{displaySlots.length}/8 slots · {combat.active && activeLoadout ? 'ACTIVE SNAPSHOT' : 'PREVIEW'}</small></footer>
     </div>
-    <SpellPresetDialog open={presetOpen} onClose={() => setPresetOpen(false)} />
   </Card>
 }

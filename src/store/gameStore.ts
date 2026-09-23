@@ -209,6 +209,7 @@ import {
 import {
   applySpellPresetAction,
   addSpellToSelectedPresetAction,
+  addSpellToSelectedPresetAtAction,
   clearAutoCastAction,
   createSpellPresetAction,
   deleteSpellPresetAction,
@@ -219,6 +220,7 @@ import {
   renameSpellPresetAction,
   saveSpellPresetAction,
   selectSpellPresetAction,
+  selectSpellPresetForEditingAction,
   setPresetSlotAutoCastAction,
   syncSelectedSpellPresetRuntime,
   type ApplySpellPresetResult,
@@ -618,7 +620,9 @@ export interface GameActions {
   deleteSpellPreset: (id: SpellPresetId) => boolean;
   saveSpellPreset: (preset: SpellPreset) => boolean;
   selectSpellPreset: (id: SpellPresetId) => ApplySpellPresetResult;
+  selectSpellPresetForEditing: (id: SpellPresetId) => boolean;
   addSpellToSelectedPreset: (spellId: SpellId) => SelectedPresetSlotMutationResult;
+  addSpellToSelectedPresetAt: (spellId: SpellId, index: number) => SelectedPresetSlotMutationResult;
   removeSpellFromSelectedPreset: (spellId: SpellId) => SelectedPresetSlotMutationResult;
   moveSelectedPresetSlot: (fromIndex: number, toIndex: number) => SelectedPresetSlotMutationResult;
   setPresetSlotAutoCast: (
@@ -1888,12 +1892,25 @@ export const useGameStore = create<GameStore>()(
       });
       return result;
     },
+    selectSpellPresetForEditing: (id) => {
+      let result = false;
+      set((state) => {
+        result = selectSpellPresetForEditingAction(state, id);
+        return state;
+      });
+      return result;
+    },
     addSpellToSelectedPreset: (spellId) => {
       let result: SelectedPresetSlotMutationResult = { ok: false, reason: "missing-preset" };
       set((state) => {
         result = addSpellToSelectedPresetAction(state, spellId);
         return state;
       });
+      return result;
+    },
+    addSpellToSelectedPresetAt: (spellId, index) => {
+      let result: SelectedPresetSlotMutationResult = { ok: false, reason: 'missing-preset' };
+      set((state) => { result = addSpellToSelectedPresetAtAction(state, spellId, index); return state });
       return result;
     },
     removeSpellFromSelectedPreset: (spellId) => {

@@ -293,59 +293,7 @@ describe('screen smoke coverage', () => {
     expect(screen.getByText(/Requires Level 7/)).toBeTruthy()
   })
 
-  it('creates, saves, and applies an Auto-Cast preset from the Schools screen', async () => {
-    const user = userEvent.setup()
-    const progress = useGameStore.getState().progress
-    useGameStore.setState({ progress: { ...progress, spellRanks: { 'fire-bolt': 1 } } })
-    render(<GameShell />)
-    await goToMagicSchools(user)
-    await user.click(screen.getByRole('button', { name: 'Manage combat loadout' }))
-    const dialog = screen.getByRole('dialog', { name: 'SPELL PRESET MANAGER' })
-    expect(within(dialog).getByText('FIRE · RANK I')).toBeTruthy()
-    await user.clear(within(dialog).getByRole('textbox', { name: 'Preset name' }))
-    await user.type(within(dialog).getByRole('textbox', { name: 'Preset name' }), 'Fire opener')
-    await user.click(within(dialog).getByRole('button', { name: /Fire Bolt/ }))
-    await user.click(within(dialog).getByRole('button', { name: 'SAVE' }))
-    await user.click(within(dialog).getByRole('button', { name: 'SELECT PRESET' }))
-    expect(useGameStore.getState().spellPresets.presets[0]).toMatchObject({ name: 'Fire opener', slots: [{ spellId: 'fire-bolt', autoCast: false }] })
-    expect(useGameStore.getState().spellPresets.selectedPresetId).toBe('spell-preset-1')
-    expect(useGameStore.getState().activities.autoCast['fire-bolt']).toBe(false)
-  })
-
-  it('opens a local first-use preset draft without persisting it', async () => {
-    const user = userEvent.setup()
-    render(<GameShell />)
-    await goToMagicSchools(user)
-    expect(screen.getByText('0 / 8 prepared')).toBeTruthy()
-    await user.click(screen.getByRole('button', { name: 'Manage combat loadout' }))
-    const dialog = screen.getByRole('dialog', { name: 'SPELL PRESET MANAGER' })
-    expect(within(dialog).getByRole('heading', { name: 'AVAILABLE SPELLS' })).toBeTruthy()
-    expect(within(dialog).getByRole('heading', { name: 'COMBAT LOADOUT' })).toBeTruthy()
-    expect(within(dialog).getByText('NO SPELLS IN THIS PRESET')).toBeTruthy()
-    expect(within(dialog).getByText('FOCUS BUDGET')).toBeTruthy()
-    await user.click(within(dialog).getByRole('button', { name: 'Close spell preset manager' }))
-    expect(screen.queryByRole('dialog', { name: 'SPELL PRESET MANAGER' })).toBeNull()
-    expect(useGameStore.getState().spellPresets.presets).toHaveLength(0)
-  })
-
-  it('keeps a dirty preset draft behind a themed discard confirmation', async () => {
-    const user = userEvent.setup()
-    const progress = useGameStore.getState().progress
-    useGameStore.setState({ progress: { ...progress, spellRanks: { 'fire-bolt': 1 } } })
-    render(<GameShell />)
-    await goToMagicSchools(user)
-    await user.click(screen.getByRole('button', { name: 'Manage combat loadout' }))
-    const dialog = screen.getByRole('dialog', { name: 'SPELL PRESET MANAGER' })
-    await user.clear(within(dialog).getByRole('textbox', { name: 'Preset name' }))
-    await user.type(within(dialog).getByRole('textbox', { name: 'Preset name' }), 'Unsaved')
-    await user.click(within(dialog).getByRole('button', { name: 'Close spell preset manager' }))
-    expect(screen.getByRole('alertdialog', { name: 'DISCARD UNSAVED CHANGES?' })).toBeTruthy()
-    expect(useGameStore.getState().spellPresets.presets).toHaveLength(0)
-    await user.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'DISCARD' }))
-    expect(screen.queryByRole('dialog', { name: 'SPELL PRESET MANAGER' })).toBeNull()
-  })
-
-  it('uses the themed Type menu and disables Apply when the projected Focus overflows', async () => {
+  it('uses the themed Type menu for semantic spell filtering', async () => {
     const user = userEvent.setup()
     const progress = useGameStore.getState().progress
     const player = useGameStore.getState().player
@@ -357,15 +305,9 @@ describe('screen smoke coverage', () => {
     await user.click(screen.getByRole('tab', { name: 'Defense' }))
     expect(screen.getByText('Earthen Barrier', { selector: 'strong' })).toBeTruthy()
     expect(screen.queryByText('Fire Bolt', { selector: 'strong' })).toBeNull()
-    await user.click(screen.getByRole('button', { name: 'Manage combat loadout' }))
-    const dialog = screen.getByRole('dialog', { name: 'SPELL PRESET MANAGER' })
-    await user.click(within(dialog).getByRole('button', { name: /Earthen Barrier/ }))
-    await user.click(within(dialog).getByRole('button', { name: 'Enable Auto-Cast for Earthen Barrier' }))
-    expect(within(dialog).getByText('Need 10 more Focus.')).toBeTruthy()
-    expect(within(dialog).getByRole('button', { name: 'SELECT PRESET' }).hasAttribute('disabled')).toBe(true)
   })
 
-  it('dismisses the Rank Path rail from outside clicks, Escape, and Preset Manager', async () => {
+  it('dismisses the Rank Path rail from outside clicks and Escape', async () => {
     const user = userEvent.setup()
     const progress = useGameStore.getState().progress
     useGameStore.setState({ progress: { ...progress, spellRanks: { 'fire-bolt': 1 } } })
@@ -385,33 +327,5 @@ describe('screen smoke coverage', () => {
     await user.click(screen.getByRole('button', { name: /VIEW RANK PATH/ }))
     await user.click(screen.getByRole('button', { name: 'Close rank path' }))
     expect(screen.queryByRole('complementary', { name: 'Spell rank path' })).toBeNull()
-    await user.click(screen.getByRole('button', { name: /VIEW RANK PATH/ }))
-    await user.click(screen.getByRole('button', { name: 'Manage combat loadout' }))
-    expect(screen.queryByRole('complementary', { name: 'Spell rank path' })).toBeNull()
-    expect(screen.getByRole('dialog', { name: 'SPELL PRESET MANAGER' })).toBeTruthy()
   })
-
-  it('uses title mode for saved preset names and themed inline editing', async () => {
-    const user = userEvent.setup()
-    const progress = useGameStore.getState().progress
-    useGameStore.setState({ progress: { ...progress, spellRanks: { 'fire-bolt': 1 } } })
-    render(<GameShell />)
-    await goToMagicSchools(user)
-    await user.click(screen.getByRole('button', { name: 'Manage combat loadout' }))
-    const dialog = screen.getByRole('dialog', { name: 'SPELL PRESET MANAGER' })
-    await user.clear(within(dialog).getByRole('textbox', { name: 'Preset name' }))
-    await user.type(within(dialog).getByRole('textbox', { name: 'Preset name' }), 'Themed Build')
-    await user.click(within(dialog).getByRole('button', { name: /Fire Bolt/ }))
-    await user.click(within(dialog).getByRole('button', { name: 'SAVE' }))
-    await user.click(within(dialog).getByRole('button', { name: 'CANCEL' }))
-    await user.click(screen.getByRole('button', { name: 'Manage combat loadout' }))
-    const reopened = screen.getByRole('dialog', { name: 'SPELL PRESET MANAGER' })
-    expect(within(reopened).queryByRole('textbox', { name: 'Preset name' })).toBeNull()
-    await user.click(within(reopened).getByRole('button', { name: 'Edit preset name' }))
-    const nameInput = within(reopened).getByRole('textbox', { name: 'Preset name' })
-    await user.clear(nameInput)
-    await user.type(nameInput, 'Renamed Build')
-    await user.keyboard('{Enter}')
-    expect(within(reopened).getByText('Renamed Build')).toBeTruthy()
-  }, 30_000)
 })

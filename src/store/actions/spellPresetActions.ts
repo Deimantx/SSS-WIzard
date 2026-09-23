@@ -38,6 +38,25 @@ export const addSpellToSelectedPresetAction = (state: GameState, requestedSpellI
   return { ok: true }
 }
 
+/** Inserts a prepared Spell at a visible loadout position. A full loadout keeps its maximum size by dropping the final shifted slot. */
+export const addSpellToSelectedPresetAtAction = (state: GameState, requestedSpellId: SpellId, requestedIndex: number): SelectedPresetSlotMutationResult => {
+  const spellId = canonicalSpellId(requestedSpellId)
+  if (!spellId || !isSpellUnlocked(state, spellId)) return { ok: false, reason: 'unavailable' }
+  let preset = getSelectedSpellPreset(state)
+  if (!preset) {
+    const id = getNextSpellPresetId(state.spellPresets.presets)
+    preset = { id, name: 'Combat Loadout', slots: [] }
+    state.spellPresets.presets.push(preset)
+    state.spellPresets.selectedPresetId = id
+  }
+  if (preset.slots.some((slot) => slot.spellId === spellId)) return { ok: false, reason: 'duplicate' }
+  const index = Math.max(0, Math.min(Number.isInteger(requestedIndex) ? requestedIndex : preset.slots.length, MAX_COMBAT_SPELLS - 1))
+  preset.slots.splice(Math.min(index, preset.slots.length), 0, { spellId, autoCast: false })
+  if (preset.slots.length > MAX_COMBAT_SPELLS) preset.slots.length = MAX_COMBAT_SPELLS
+  if (!state.combat.active) syncSelectedSpellPresetRuntimeForState(state)
+  return { ok: true }
+}
+
 export const removeSpellFromSelectedPresetAction = (state: GameState, requestedSpellId: SpellId): SelectedPresetSlotMutationResult => {
   const spellId = canonicalSpellId(requestedSpellId)
   const preset = spellId ? getSelectedSpellPreset(state) : null
@@ -145,6 +164,18 @@ export const selectSpellPresetAction = (state: GameState, id: SpellPresetId): Ap
   if (!state.combat.active) syncAutoCastRuntimeForLoadout(state, projection.validSlots)
   if (projection.unavailableSpellIds.length) pushPresetNotification(state, `${preset.name} selected · ${projection.unavailableSpellIds.length} unavailable slot${projection.unavailableSpellIds.length === 1 ? '' : 's'} excluded until available.`, 'warning')
   return { ok: true, unavailableSpellIds: projection.unavailableSpellIds }
+}
+
+/** Selects a preset for editing without requiring it to be activation-ready. */
+export const selectSpellPresetForEditingAction = (state: GameState, id: SpellPresetId) => {
+  const preset = state.spellPresets.presets.find((entry) => entry.id === id)
+  if (!preset) return false
+  state.spellPresets.selectedPresetId = id
+  if (!state.combat.active) {
+    const projection = getSpellPresetFocusProjection(state, preset)
+    syncAutoCastRuntimeForLoadout(state, projection.validSlots)
+  }
+  return true
 }
 
 export const applySpellPresetAction = selectSpellPresetAction

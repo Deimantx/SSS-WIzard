@@ -5,7 +5,7 @@ import type { CombatEffect } from '../../game/systems/combat/combatTypes'
 import type { GameState, SchoolId, SpellId } from '../../game/types'
 import { SPELL_CATALOG_PLACEHOLDERS, type SpellCatalogPlaceholder } from './spellCatalogPlaceholders'
 
-export type SpellCatalogTag = 'Damage' | 'Healing' | 'Barrier' | 'Buff' | 'Control' | 'DoT'
+export type SpellCatalogTag = 'Damage' | 'Healing' | 'Barrier' | 'Buff' | 'Debuff' | 'Control' | 'DoT'
 export type SpellBrowserSchoolFilter = 'all' | SchoolId
 export type SpellBrowserTypeFilter = 'All Types' | SpellCatalogTag
 export type SpellBrowserSort = 'Unlock Level' | 'Name' | 'School'
@@ -42,7 +42,7 @@ export interface SpellBrowserPlaceholderEntry {
 
 export type SpellBrowserEntry = SpellBrowserSpellEntry | SpellBrowserPlaceholderEntry
 
-const TAG_ORDER: readonly SpellCatalogTag[] = ['Damage', 'Healing', 'Barrier', 'Buff', 'Control', 'DoT']
+const TAG_ORDER: readonly SpellCatalogTag[] = ['Damage', 'Healing', 'Barrier', 'Buff', 'Debuff', 'Control', 'DoT']
 
 export const getSpellCatalogTags = (spell: typeof SPELLS[SpellId]): SpellCatalogTag[] => {
   const tags = new Set<SpellCatalogTag>()
@@ -53,15 +53,20 @@ export const getSpellCatalogTags = (spell: typeof SPELLS[SpellId]): SpellCatalog
     if (effect.type === 'apply-status') {
       const status = STATUS_DEFINITIONS[effect.statusId]
       if (status?.classification === 'buff' || status?.tags.includes('buff')) tags.add('Buff')
+      if (spell.type !== 'dot' && (status?.classification === 'debuff' || status?.tags.includes('debuff'))) {
+        if (!status?.tags.includes('control')) tags.add('Debuff')
+      }
       if (status?.tags.includes('control')) tags.add('Control')
       if (status?.tags.includes('dot') || status?.periodic) tags.add('DoT')
     }
     if ('tags' in effect && effect.tags?.includes('control')) tags.add('Control')
     if ('tags' in effect && effect.tags?.includes('dot')) tags.add('DoT')
     if ('tags' in effect && effect.tags?.includes('buff')) tags.add('Buff')
+    if (spell.type !== 'dot' && 'tags' in effect && effect.tags?.includes('debuff') && !effect.tags?.includes('control')) tags.add('Debuff')
   })
   if (spell.type === 'dot') tags.add('DoT')
   if (spell.type === 'buff') tags.add('Buff')
+  if (spell.type === 'debuff') tags.add('Debuff')
   return TAG_ORDER.filter((tag) => tags.has(tag))
 }
 

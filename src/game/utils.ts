@@ -4,6 +4,10 @@ export const formatNumber = (value: number) => {
   if (Math.abs(value) < 1_000_000) return `${(value / 1_000).toFixed(value >= 100_000 ? 0 : 1)}K`
   return `${(value / 1_000_000).toFixed(2)}M`
 }
+export const formatDecimal = (value: number, maximumFractionDigits = 2) => {
+  if (!Number.isFinite(value)) return '0'
+  return value.toLocaleString(undefined, { maximumFractionDigits, minimumFractionDigits: 0 })
+}
 export const formatTime = (ms: number) => {
   const seconds = Math.max(0, ms) / 1000
   if (seconds < 60) return `${seconds.toFixed(1)}s`

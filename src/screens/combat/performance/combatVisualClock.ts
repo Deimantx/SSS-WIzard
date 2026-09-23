@@ -1,6 +1,12 @@
 export type CombatVisualFrameSubscriber = (timestamp: number) => void
 
-const subscribers = new Set<CombatVisualFrameSubscriber>()
+interface CombatVisualSubscriberEntry {
+  callback: CombatVisualFrameSubscriber
+  minIntervalMs: number
+  lastPublishedAt: number
+}
+
+const subscribers = new Set<CombatVisualSubscriberEntry>()
 const activeTimelines = new Set<object>()
 let frameHandle: number | null = null
 let visibilityBound = false
@@ -29,7 +35,11 @@ const onVisibilityChange = () => {
 const frame = (timestamp: number) => {
   frameHandle = null
   if (typeof document !== 'undefined' && document.hidden) return
-  subscribers.forEach((subscriber) => subscriber(timestamp))
+  subscribers.forEach((subscriber) => {
+    if (timestamp - subscriber.lastPublishedAt < subscriber.minIntervalMs) return
+    subscriber.lastPublishedAt = timestamp
+    subscriber.callback(timestamp)
+  })
   scheduleFrame()
 }
 
@@ -54,12 +64,17 @@ function unbindVisibility() {
  * Presentation-only clock shared by all Combat timelines. It never writes to
  * GameStore and never schedules React state updates.
  */
-export const subscribeCombatVisualFrame = (subscriber: CombatVisualFrameSubscriber) => {
-  subscribers.add(subscriber)
+export const subscribeCombatVisualFrame = (subscriber: CombatVisualFrameSubscriber, options: { minIntervalMs?: number } = {}) => {
+  const entry: CombatVisualSubscriberEntry = {
+    callback: subscriber,
+    minIntervalMs: Math.max(0, options.minIntervalMs ?? 0),
+    lastPublishedAt: -Infinity,
+  }
+  subscribers.add(entry)
   bindVisibility()
   scheduleFrame()
   return () => {
-    subscribers.delete(subscriber)
+    subscribers.delete(entry)
     if (subscribers.size === 0) {
       cancelFrame(frameHandle)
       frameHandle = null

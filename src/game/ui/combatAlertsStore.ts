@@ -17,6 +17,10 @@ let clockMs = Date.now()
 
 const withoutExpired = (alerts: CombatAlert[], now: number) => alerts.filter((alert) => alert.expiresAtMs === undefined || alert.expiresAtMs > now)
 const sortedVisible = (alerts: CombatAlert[]) => [...alerts].sort((left, right) => priorityRank[left.priority] - priorityRank[right.priority] || right.createdAtMs - left.createdAtMs).slice(0, 3)
+const alertsEqual = (left: readonly CombatAlert[], right: readonly CombatAlert[]) => left.length === right.length && left.every((alert, index) => {
+  const next = right[index]
+  return next?.id === alert.id && next.detail === alert.detail && next.title === alert.title && next.priority === alert.priority && next.expiresAtMs === alert.expiresAtMs
+})
 const materialize = (spec: CombatAlertSpec, now: number): CombatAlert => ({ ...spec, id: `combat-alert-${++nextAlertId}`, createdAtMs: now, ...(spec.durationMs === undefined ? {} : { expiresAtMs: now + spec.durationMs }) })
 
 export const useCombatAlertsStore = create<CombatAlertsState>((set) => ({
@@ -45,7 +49,8 @@ export const useCombatAlertsStore = create<CombatAlertsState>((set) => ({
       const existing = alerts.find((alert) => alert.dedupeKey === criticalHealth.dedupeKey)
       if (!existing) alerts = [...alerts, materialize(criticalHealth, clockMs)]
     } else alerts = alerts.filter((alert) => alert.dedupeKey !== 'critical-player-health')
-    return { alerts: sortedVisible(alerts) }
+    const nextAlerts = sortedVisible(alerts)
+    return alertsEqual(state.alerts, nextAlerts) ? state : { alerts: nextAlerts }
   }),
   clear: () => { clockMs = Date.now(); set({ alerts: [] }) },
 }))

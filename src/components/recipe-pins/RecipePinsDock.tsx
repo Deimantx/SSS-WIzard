@@ -15,7 +15,12 @@ import { MAX_ARTIFICING_RECIPE_PINS } from '../../ui/preferences/uiPreferencesTy
 import type { ArtificingRecipeId, GameState } from '../../game/types'
 
 export function RecipePinsDock() {
-  const state = useGameStore()
+  const inventory = useGameStore((state) => state.inventory)
+  const artifactProgress = useGameStore((state) => state.artifactProgress)
+  const setScreen = useGameStore((state) => state.setScreen)
+  // Read the complete snapshot only when this dock has a relevant narrow-store update.
+  // Combat timer mutations preserve these slice identities and do not notify it.
+  const state = useGameStore.getState()
   const preferences = useUiPreferences().screenState.artificing
   const [narrow, setNarrow] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 900)
   const [narrowOpen, setNarrowOpen] = useState(false)
@@ -36,7 +41,7 @@ export function RecipePinsDock() {
       return Boolean(recipe && isArtifactId(recipe.output.itemId) && ARTIFACTS[recipe.output.itemId] && (state.inventory[recipe.output.itemId] ?? 0) > 0 && state.artifactProgress?.[recipe.output.itemId])
     })
     if (staleArtifactPins.length) setUiPreferences({ screenState: { artificing: { pinnedRecipeIds: preferences.pinnedRecipeIds.filter((recipeId) => !staleArtifactPins.includes(recipeId)) } } })
-  }, [preferences.pinnedRecipeIds, state.inventory, state.artifactProgress])
+  }, [preferences.pinnedRecipeIds, inventory, artifactProgress])
 
   if (!recipes.length) return null
   const collapsed = preferences.pinsCollapsed || (narrow && !narrowOpen)
@@ -51,7 +56,7 @@ export function RecipePinsDock() {
   const openRecipe = (recipeId: ArtificingRecipeId) => {
     setUiPreferences({ screenState: { artificing: { selectedRecipeId: recipeId } } })
     setNavigationIntent({ artificingRecipeId: recipeId })
-    state.setScreen('tower-artificing')
+    setScreen('tower-artificing')
   }
 
   return <aside className={`recipe-pins-dock${collapsed ? ' is-collapsed' : ''}${narrow ? ' is-narrow' : ''}`} aria-label="Recipe Pins">

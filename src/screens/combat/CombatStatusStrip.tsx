@@ -93,7 +93,7 @@ function CombatStatusRingLive({ actor, statusId, instanceKey, fallbackRemainingM
     if (!timelineRef.current || !ringRef.current) return
     const progress = getCombatVisualTimelineProgress(timelineRef.current, timestamp)
     ringRef.current.style.setProperty('--status-duration-percent', `${Math.max(0, Math.min(100, (1 - progress) * 100))}%`)
-  }), [timelineRef])
+  }, { minIntervalMs: 33 }), [timelineRef])
 
   return <span ref={ringRef} className="combat-status-timer-ring" aria-hidden="true" />
 }

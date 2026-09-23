@@ -3,8 +3,7 @@ import { useLayoutEffect, useMemo, useRef, useEffect, type CSSProperties } from 
 import { useShallow } from 'zustand/react/shallow'
 import { SPELLS } from '../../game/content/spells/spells'
 import { SCHOOLS } from '../../game/content/schools/schools'
-import { actorCannotAct, actorCannotCastSpells } from '../../game/systems/combat/statusRuntime'
-import { getSpellRank, isSpellUnlocked } from '../../game/systems/spells'
+import { getSpellRank } from '../../game/systems/spells'
 import { getCooldownRecoveryMultiplier } from '../../game/systems/combat/combatStats'
 import type { CanonicalSpellId } from '../../game/types'
 import { formatTime } from '../../game/utils'
@@ -24,9 +23,21 @@ import { useGameStore } from '../../store/gameStore'
 import { useGameContextMenu } from '../../ui/context-menu/GameContextMenuProvider'
 import { setNavigationIntent } from '../../ui/navigation/navigationIntent'
 
-export function CombatSpellTile({ spellId, autoCast, autoCastPriority, presentationState, globalBlocker, onOpenPresetManager }: { spellId: CanonicalSpellId; autoCast: boolean; autoCastPriority: number | null; presentationState: SpellPresentationState; globalBlocker?: 'inactive' | 'no-target' | 'stunned' | null; onOpenPresetManager: () => void }) {
+type CombatSpellTileGlobalRuntime = {
+  playerMana: number
+  playerCannotAct: boolean
+  playerCannotCast: boolean
+  combatActive: boolean
+  hasTarget: boolean
+  inLoadout: boolean
+  ignoreCooldowns: boolean
+  infiniteMana: boolean
+  unlocked: boolean
+}
+
+export function CombatSpellTile({ spellId, autoCast, autoCastPriority, presentationState, globalBlocker, globalRuntime, onOpenPresetManager }: { spellId: CanonicalSpellId; autoCast: boolean; autoCastPriority: number | null; presentationState: SpellPresentationState; globalBlocker?: 'inactive' | 'no-target' | 'stunned' | null; globalRuntime: CombatSpellTileGlobalRuntime; onOpenPresetManager: () => void }) {
   const { openContextMenu } = useGameContextMenu()
-  const playerMana = useGameStore((state) => state.player.mana)
+  const playerMana = globalRuntime.playerMana
   const requestManualSpell = useGameStore((state) => state.requestManualSpell)
   const rank = getSpellRank({ progress: presentationState.progress }, spellId) ?? 1
   const spell = SPELLS[spellId]
@@ -35,16 +46,8 @@ export function CombatSpellTile({ spellId, autoCast, autoCastPriority, presentat
     cooldownActive: (state.combat.spellCooldowns[spellId] ?? 0) > 0,
     currentCast: state.combat.pendingPlayerSpellCast?.spellId === spell.id,
     manuallyQueued: state.combat.queuedPlayerSpellId === spell.id,
-    playerCannotAct: actorCannotAct(state, 'player'),
-    playerCannotCast: actorCannotCastSpells(state, 'player'),
-    combatActive: state.combat.active,
-    inLoadout: Boolean(state.combat.activeSpellLoadout?.slots.some((slot) => slot.spellId === spellId)),
-    hasTarget: Boolean(state.combat.enemyId),
-    ignoreCooldowns: state.debug.ignoreSpellCooldowns,
-    infiniteMana: state.debug.infiniteMana,
-    unlocked: isSpellUnlocked(state, spellId),
   })))
-  const liveState: CombatSpellTileLiveState = { playerMana, ...live }
+  const liveState: CombatSpellTileLiveState = { ...globalRuntime, ...live }
   const startFailure = globalBlocker === 'inactive' ? 'inactive' : globalBlocker === 'stunned' ? 'stunned' : getCombatSpellTileBlocker(spellId, tilePresentation, liveState)
   const manuallyQueued = live.manuallyQueued
   const currentCast = live.currentCast
@@ -103,6 +106,6 @@ function CooldownOverlayActive({ spellId, cooldownMs, signal }: { spellId: Canon
     if (!timelineRef.current || !overlayRef.current) return
     const progress = getCombatVisualTimelineProgress(timelineRef.current, timestamp)
     overlayRef.current.style.setProperty('--cooldown-percent', `${Math.max(0, Math.min(100, (1 - progress) * 100))}%`)
-  }), [timelineRef])
+  }, { minIntervalMs: 33 }), [timelineRef])
   return <span ref={overlayRef} className="spell-combat-cooldown-overlay" aria-hidden="true"><span className="spell-combat-cooldown-number">{formatCooldownNumber(signal.cooldown)}</span></span>
 }

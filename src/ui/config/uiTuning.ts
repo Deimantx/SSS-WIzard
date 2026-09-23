@@ -176,7 +176,7 @@ export const UI_TUNING: UITuningConfig = {
     },
     spellCardCombatDeck: {
       minWidth: 110,
-      height: 94,
+      height: 105,
       iconSize: 29,
       nameFontSize: 11,
       manaFontSize: 11,

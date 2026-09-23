@@ -147,6 +147,81 @@ export const formatSpellAutomationSummary = (slot: Pick<SpellPresetSlot, 'spellI
 const conditionResult = (condition: SpellAutomationCondition, passed: boolean, reason: string): AutomationCheck => ({ key: JSON.stringify(condition), passed, label: formatAutomationCondition(condition), reason })
 const activeStatus = (state: GameState, actor: 'player' | 'enemy', statusId: StatusId) => (actor === 'player' ? state.combat.playerStatuses : state.combat.enemyStatuses).find((status) => status.statusId === statusId)
 
+interface FastAutomationContext {
+  combatActive: boolean
+  hasEnemy: boolean
+  canAct: boolean
+  canCast: boolean
+  noActiveCast: boolean
+  manualOverrideClear: boolean
+  infiniteMana: boolean
+  ignoreCooldowns: boolean
+  allowFocusOverCap: boolean
+}
+
+const buildFastAutomationContext = (state: GameState): FastAutomationContext => {
+  const pendingManualCast = state.combat.pendingPlayerSpellCast?.castOrigin === 'manual-direct' || state.combat.pendingPlayerSpellCast?.castOrigin === 'manual-queued'
+  return {
+    combatActive: state.combat.active,
+    hasEnemy: Boolean(state.combat.enemyId),
+    canAct: !actorCannotAct(state, 'player'),
+    canCast: !actorCannotCastSpells(state, 'player'),
+    noActiveCast: !state.combat.pendingPlayerSpellCast,
+    manualOverrideClear: !state.combat.queuedPlayerSpellId && !pendingManualCast,
+    infiniteMana: state.debug.infiniteMana,
+    ignoreCooldowns: state.debug.ignoreSpellCooldowns,
+    allowFocusOverCap: state.debug.allowFocusOverCap,
+  }
+}
+
+const fastConditionPasses = (state: GameState, condition: SpellAutomationCondition, context: FastAutomationContext) => {
+  if (condition.type === 'always') return true
+  if (condition.type === 'player-hp') {
+    const percent = state.player.health / Math.max(1, state.player.maxHealth) * 100
+    return condition.operator === 'below' ? percent < condition.percent : percent > condition.percent
+  }
+  if (condition.type === 'enemy-hp') {
+    if (!context.hasEnemy) return false
+    const percent = state.combat.enemyHp / Math.max(1, state.combat.enemyMaxHp) * 100
+    return condition.operator === 'below' ? percent < condition.percent : percent > condition.percent
+  }
+  if (condition.type === 'mana') {
+    const percent = state.player.mana / Math.max(1, state.player.maxMana) * 100
+    return condition.operator === 'below' ? percent < condition.percent : percent > condition.percent
+  }
+  if (condition.type === 'boss') {
+    const enemy = state.combat.enemyId ? MONSTERS[state.combat.enemyId] : null
+    if (!enemy) return false
+    const isBoss = isBossMonster(enemy)
+    return condition.operator === 'is' ? isBoss : !isBoss
+  }
+  if (condition.type === 'player-barrier-below') return state.combat.playerBarrier < condition.value
+  if (condition.type === 'player-has-cleanseable-debuff') return state.combat.playerStatuses.some((status) => STATUS_DEFINITIONS[status.statusId]?.classification === 'debuff' && STATUS_DEFINITIONS[status.statusId]?.cleanseable)
+  const actor = condition.type === 'player-buff' ? 'player' : 'enemy'
+  const status = activeStatus(state, actor, condition.effectId)
+  if (condition.operator === 'missing') return !status
+  if (condition.operator === 'has') return Boolean(status)
+  return !status || (status.remainingMs !== null && status.remainingMs < (condition.seconds ?? 0) * 1000)
+}
+
+/**
+ * Runtime-only eligibility check. It intentionally returns a boolean and
+ * avoids building the verbose automation trace used by the inspection UI.
+ */
+export const canAutoCastSpellFast = (state: GameState, slot: Pick<SpellPresetSlot, 'spellId' | 'autoCast' | 'automation'>, context = buildFastAutomationContext(state)) => {
+  if (!slot.autoCast || !context.combatActive || !context.canAct || !context.canCast || !context.noActiveCast || !context.manualOverrideClear) return false
+  const spell = SPELLS[slot.spellId]
+  if (!spell || !isSpellUnlocked(state, spell.id)) return false
+  const config = getSpellAutomationConfig(slot)
+  if (config.targetRule === 'self' ? hasEnemyTarget(spell) : !context.hasEnemy || !hasEnemyTarget(spell)) return false
+  if (!context.ignoreCooldowns && (state.combat.spellCooldowns[spell.id] ?? 0) > 0) return false
+  if (!context.allowFocusOverCap && !state.activities.autoCast[spell.id]) return false
+  if (!config.conditions.every((condition) => fastConditionPasses(state, condition, context))) return false
+  if (context.infiniteMana) return true
+  const manaPreview = getSpellManaPreview(state, spell.id, 'auto')
+  return Boolean(manaPreview?.free || (manaPreview && state.player.mana >= manaPreview.manaCost))
+}
+
 const evaluateCondition = (state: GameState, condition: SpellAutomationCondition): AutomationCheck => {
   if (condition.type === 'always') return conditionResult(condition, true, 'Always is enabled.')
   if (condition.type === 'player-hp') {
@@ -238,13 +313,18 @@ export const evaluateSpellAutomation = (state: GameState, slot: Pick<SpellPreset
 
 export const selectNextAutomatedSpell = (state: GameState): AutomatedSpellSelection | null => {
   const slots = state.combat.activeSpellLoadout?.slots ?? []
+  const context = buildFastAutomationContext(state)
+  const selectedIndex = slots.findIndex((slot) => canAutoCastSpellFast(state, slot, context))
+  if (selectedIndex < 0) return null
   const trace: AutomatedSpellSelection['trace'] = []
-  for (const [slotIndex, slot] of slots.entries()) {
+  for (let slotIndex = 0; slotIndex <= selectedIndex; slotIndex += 1) {
+    const slot = slots[slotIndex]
     const evaluation = evaluateSpellAutomation(state, slot)
     trace.push({ slotIndex, spellId: slot.spellId, mode: evaluation.mode, evaluation })
-    if (evaluation.eligible) return { spellId: slot.spellId, slotIndex, evaluation, trace }
   }
-  return null
+  const selected = trace[selectedIndex]?.evaluation
+  if (!selected) return null
+  return { spellId: slots[selectedIndex].spellId, slotIndex: selectedIndex, evaluation: selected, trace }
 }
 
 /** Evaluates a draft against the complete ordered loadout, not in isolation. */

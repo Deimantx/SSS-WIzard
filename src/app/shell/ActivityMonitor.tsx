@@ -17,14 +17,14 @@ import { setNavigationIntent } from '../../ui/navigation/navigationIntent'
 import type { ItemId } from '../../game/types'
 import { TRANSMUTATION_RECIPES } from '../../game/content/recipes/recipes'
 import { getTransmutationJob } from '../../game/systems/transmutation/transmutationSelectors'
+import { useSampledGameReadModel } from './sampledGameReadModel'
 
 const collapsedStorageKey = 'sss-wizard.activity-monitor-collapsed'
 
 const summaryFor = (activity: ActivityTelemetry) => activity.collapsedSummary ?? (activity.remainingMs === undefined ? activity.status.toUpperCase() : formatCompactDuration(activity.remainingMs))
 
 export function ActivityMonitor() {
-  const state = useGameStore()
-  const activities = getActivityTelemetry(state)
+  const activities = useSampledGameReadModel((state) => getActivityTelemetry(state), 250)
   const [collapsed, setCollapsed] = useState(() => {
     try { return window.localStorage.getItem(collapsedStorageKey) === 'true' } catch { return false }
   })
@@ -55,27 +55,27 @@ export function ActivityMonitor() {
 }
 
 function PinnedTransmutationTracker() {
-  const state = useGameStore()
   const pinnedId = useUiPreferences().screenState.transmutation.pinnedRecipeId
+  const setScreen = useGameStore((state) => state.setScreen)
+  const echoes = useGameStore((state) => pinnedId ? getTransmutationJob(state, pinnedId)?.echoesAssigned ?? 0 : 0)
   if (!pinnedId) return null
   const recipe = TRANSMUTATION_RECIPES[pinnedId]
-  const echoes = getTransmutationJob(state, pinnedId)?.echoesAssigned ?? 0
-  return <aside className="transmutation-pinned-tracker" aria-label="Pinned Transmutation recipe"><button type="button" onClick={() => { setNavigationIntent({ transmutationRecipeId: pinnedId }); state.setScreen('tower-transmutation') }}><strong>PINNED · {recipe.name}</strong><span>{echoes > 0 ? `${echoes} ECHO${echoes === 1 ? '' : 'ES'} ASSIGNED` : 'READY TO START'}</span></button></aside>
+  return <aside className="transmutation-pinned-tracker" aria-label="Pinned Transmutation recipe"><button type="button" onClick={() => { setNavigationIntent({ transmutationRecipeId: pinnedId }); setScreen('tower-transmutation') }}><strong>PINNED · {recipe.name}</strong><span>{echoes > 0 ? `${echoes} ECHO${echoes === 1 ? '' : 'ES'} ASSIGNED` : 'READY TO START'}</span></button></aside>
 }
 
 function TrackedItemMonitor({ itemId }: { itemId: ItemId | null }) {
-  const state = useGameStore()
+  const owned = useGameStore((state) => itemId ? state.inventory[itemId] ?? 0 : 0)
+  const setScreen = useGameStore((state) => state.setScreen)
   const { openContextMenu } = useGameContextMenu()
   const [usesOpen, setUsesOpen] = useState(false)
   if (!itemId || !ITEMS[itemId]) return null
   const item = ITEMS[itemId]
-  const owned = state.inventory[itemId] ?? 0
   const drop = getItemDropSources(itemId)[0]
   const output = getItemSources(itemId).find((relation) => relation.kind === 'recipe' && relation.detail.endsWith('output'))
   const uses = getItemUses(itemId)
-  const openInventory = () => { setNavigationIntent({ inventoryItemId: itemId }); state.setScreen('inventory') }
-  const sections = buildItemContextSections({ itemId, owned, tracked: true, source: 'reference', onOpenInventory: openInventory, onWhereToGet: drop ? () => { setNavigationIntent({ combatDungeonId: drop.dungeonId, combatMonsterId: drop.monsterId }); state.setScreen('combat') } : undefined, onOpenUses: uses.length > 0 ? () => setUsesOpen(true) : undefined, onOpenArtificing: output?.detail === 'Artificing output' ? () => { setUiPreferences({ screenState: { artificing: { selectedRecipeId: output.id as never } } }); state.setScreen('tower-artificing') } : undefined, onOpenTransmutation: output?.detail === 'Transmutation output' ? () => { setUiPreferences({ screenState: { transmutation: { selectedRecipeId: output.id as never } } }); state.setScreen('tower-transmutation') } : undefined, onTrack: () => setUiPreferences({ trackedItemId: null }) })
-  return <><aside className="tracked-item-monitor" aria-label="Tracked Item"><button type="button" className="tracked-item-monitor-main" onClick={openInventory} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); openContextMenu({ x: event.clientX, y: event.clientY, anchor: event.currentTarget, header: { title: item.name, meta: `TRACKED · OWNED ${owned}` }, sections }) }}><span className="tracked-item-monitor-label">TRACKED ITEM</span><span className="tracked-item-monitor-value"><ItemIcon itemId={itemId} size="tiny" /><strong>{item.name}</strong><b>×{owned.toLocaleString()}</b></span></button><button type="button" className="tracked-item-monitor-remove" onClick={() => setUiPreferences({ trackedItemId: null })} aria-label={`Untrack ${item.name}`}>×</button></aside><ItemUsesDialog itemId={itemId} uses={uses} open={usesOpen} onClose={() => setUsesOpen(false)} onSelectRecipe={(recipeId) => { setUsesOpen(false); if (isTransmutationRecipeId(recipeId)) { setNavigationIntent({ transmutationRecipeId: recipeId }); state.setScreen('tower-transmutation') } else { setNavigationIntent({ artificingRecipeId: recipeId as never }); state.setScreen('tower-artificing') } }} /></>
+  const openInventory = () => { setNavigationIntent({ inventoryItemId: itemId }); setScreen('inventory') }
+  const sections = buildItemContextSections({ itemId, owned, tracked: true, source: 'reference', onOpenInventory: openInventory, onWhereToGet: drop ? () => { setNavigationIntent({ combatDungeonId: drop.dungeonId, combatMonsterId: drop.monsterId }); setScreen('combat') } : undefined, onOpenUses: uses.length > 0 ? () => setUsesOpen(true) : undefined, onOpenArtificing: output?.detail === 'Artificing output' ? () => { setUiPreferences({ screenState: { artificing: { selectedRecipeId: output.id as never } } }); setScreen('tower-artificing') } : undefined, onOpenTransmutation: output?.detail === 'Transmutation output' ? () => { setUiPreferences({ screenState: { transmutation: { selectedRecipeId: output.id as never } } }); setScreen('tower-transmutation') } : undefined, onTrack: () => setUiPreferences({ trackedItemId: null }) })
+  return <><aside className="tracked-item-monitor" aria-label="Tracked Item"><button type="button" className="tracked-item-monitor-main" onClick={openInventory} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); openContextMenu({ x: event.clientX, y: event.clientY, anchor: event.currentTarget, header: { title: item.name, meta: `TRACKED · OWNED ${owned}` }, sections }) }}><span className="tracked-item-monitor-label">TRACKED ITEM</span><span className="tracked-item-monitor-value"><ItemIcon itemId={itemId} size="tiny" /><strong>{item.name}</strong><b>×{owned.toLocaleString()}</b></span></button><button type="button" className="tracked-item-monitor-remove" onClick={() => setUiPreferences({ trackedItemId: null })} aria-label={`Untrack ${item.name}`}>×</button></aside><ItemUsesDialog itemId={itemId} uses={uses} open={usesOpen} onClose={() => setUsesOpen(false)} onSelectRecipe={(recipeId) => { setUsesOpen(false); if (isTransmutationRecipeId(recipeId)) { setNavigationIntent({ transmutationRecipeId: recipeId }); setScreen('tower-transmutation') } else { setNavigationIntent({ artificingRecipeId: recipeId as never }); setScreen('tower-artificing') } }} /></>
 }
 
 const ActivityCard = forwardRef<HTMLButtonElement, { activity: ActivityTelemetry; onClick: ButtonHTMLAttributes<HTMLButtonElement>['onClick'] } & ButtonHTMLAttributes<HTMLButtonElement>>(function ActivityCard({ activity, onClick, className = '', ...nativeProps }, ref) {

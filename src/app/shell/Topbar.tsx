@@ -10,6 +10,7 @@ import { dismissGameTooltips, GameTooltip, TooltipContent } from '../../componen
 import { GameValue } from '../../ui/game-feel/GameValue'
 import { FpsCounter } from '../../ui/performance/FpsCounter'
 import { formatResourceAmount } from '../../game/presentation/resources/resourcePresentation'
+import { useSampledGameReadModel } from './sampledGameReadModel'
 
 interface TopbarProps {
   screen: ScreenId
@@ -23,19 +24,26 @@ interface TopbarProps {
 export const clampResourcePercent = (value: number, max: number) => max <= 0 ? 0 : Math.max(0, Math.min(100, value / max * 100))
 
 export function Topbar({ screen, offlineBankOpen, onOfflineBankToggle, onDeveloperTools, onSettings, onMobileMenu }: TopbarProps) {
-  const state = useGameStore()
-  const player = state.player
-  const reservations = deriveFocusReservations(state)
-  const usedFocus = reservations.reduce((total, reservation) => total + reservation.amount, 0)
-  const freeFocus = Math.max(0, player.maxFocus - usedFocus)
-  const offlineBankMs = state.offlineBankMs
-  const flow = getManaFlowBreakdown(state)
+  const health = useGameStore((state) => state.player.health)
+  const maxHealth = useGameStore((state) => state.player.maxHealth)
+  const mana = useGameStore((state) => state.player.mana)
+  const maxMana = useGameStore((state) => state.player.maxMana)
+  const maxFocus = useGameStore((state) => state.player.maxFocus)
+  const offlineBankMs = useGameStore((state) => state.offlineBankMs)
+  const focusReadout = useSampledGameReadModel((state) => {
+    const reservations = deriveFocusReservations(state)
+    return { reservations, usedFocus: reservations.reduce((total, reservation) => total + reservation.amount, 0) }
+  })
+  const flow = useSampledGameReadModel((state) => getManaFlowBreakdown(state))
+  const reservations = focusReadout.reservations
+  const usedFocus = focusReadout.usedFocus
+  const freeFocus = Math.max(0, maxFocus - usedFocus)
   const navigation = getNavigationContext(screen)
-  const focusPercent = clampResourcePercent(usedFocus, player.maxFocus)
-  const manaPercent = clampResourcePercent(player.mana, player.maxMana)
-  const hpPercent = clampResourcePercent(player.health, player.maxHealth)
+  const focusPercent = clampResourcePercent(usedFocus, maxFocus)
+  const manaPercent = clampResourcePercent(mana, maxMana)
+  const hpPercent = clampResourcePercent(health, maxHealth)
   const flowLabel = flow.state === 'surplus' ? 'SURPLUS' : flow.state === 'deficit' ? 'DEFICIT' : 'BALANCED'
-  const isManaOverCap = player.mana > player.maxMana
+  const isManaOverCap = mana > maxMana
   const flowDetail = isManaOverCap && flow.state === 'surplus' ? 'OVER CAP' : flow.etaKind === 'full' ? (flow.etaMs === null ? 'FULL' : `FULL IN ${formatDuration(flow.etaMs)}`) : flow.etaKind === 'empty' ? `EMPTY IN ${formatDuration(flow.etaMs ?? 0)}` : flow.etaKind === 'starved' ? 'STARVED' : ''
 
   type ResourceId = 'health' | 'mana' | 'focus'
@@ -46,14 +54,14 @@ export function Topbar({ screen, offlineBankOpen, onOfflineBankToggle, onDevelop
   }
 
   const renderResource = (id: ResourceId) => {
-    if (id === 'health') return resource(id, <div className={`topbar-resource hp-resource ${hpPercent < 35 ? 'low-resource' : ''}`}><Heart size={15} /><div><small>HP</small><strong><GameValue value={player.health} tone="health" formatted={`${formatNumber(player.health)} / ${formatNumber(player.maxHealth)}`} /></strong><Meter value={hpPercent} tone="hp" /></div></div>, <TooltipContent title="Health" description="Current vitality for the wizard."><TooltipRow label="Current" value={`${formatNumber(player.health)} / ${formatNumber(player.maxHealth)}`} /></TooltipContent>, 'health')
+    if (id === 'health') return resource(id, <div className={`topbar-resource hp-resource ${hpPercent < 35 ? 'low-resource' : ''}`}><Heart size={15} /><div><small>HP</small><strong><GameValue value={health} tone="health" formatted={`${formatNumber(health)} / ${formatNumber(maxHealth)}`} /></strong><Meter value={hpPercent} tone="hp" /></div></div>, <TooltipContent title="Health" description="Current vitality for the wizard."><TooltipRow label="Current" value={`${formatNumber(health)} / ${formatNumber(maxHealth)}`} /></TooltipContent>, 'health')
     if (id === 'mana') return resource(id, <div className={`mana-hero flow-${flow.state}`}>
-      <div className="mana-hero-head"><span><Sparkles size={13} /> MANA</span><strong>{formatResourceAmount(player.mana)} / {formatResourceAmount(player.maxMana)}</strong></div>
+      <div className="mana-hero-head"><span><Sparkles size={13} /> MANA</span><strong>{formatResourceAmount(mana)} / {formatResourceAmount(maxMana)}</strong></div>
       <Meter value={manaPercent} tone="mana" />
       {isManaOverCap && <span className="mana-cap-state">OVER CAP</span>}
       <details className="mana-flow-details"><summary onClick={() => dismissGameTooltips()}><span>{flowLabel} {formatSignedRate(flow.net)}</span>{flowDetail && <small> · {flowDetail}</small>}</summary><div className="mana-flow-popover"><strong>Mana Flow</strong><div className="flow-row"><span>Production</span><b>{formatSignedRate(flow.production)}</b></div><div className="flow-row flow-demand-heading"><span>Consumption</span><b>{formatSignedRate(-flow.demand)}</b></div>{flow.demandSources.length ? flow.demandSources.map((source) => <div className="flow-row flow-source" key={source.id}><span>{source.label}{source.estimated ? ' · estimated' : ''}</span><b>{formatSignedRate(-source.manaPerSecond)}</b></div>) : <div className="flow-empty">No active Mana consumers.</div>}<div className="flow-row flow-net"><span>Net</span><b>{formatSignedRate(flow.net)}</b></div></div></details>
-    </div>, <TooltipContent title="Mana" description="Current reserves, production, and active consumption."><TooltipRow label="Current" value={`${formatResourceAmount(player.mana)} / ${formatResourceAmount(player.maxMana)}`} /><TooltipRow label="Net flow" value={formatSignedRate(flow.net)} /></TooltipContent>, 'mana')
-    return resource(id, <div className={`topbar-resource focus-resource ${freeFocus < 10 ? 'tight-resource' : ''}`} tabIndex={0} aria-label="Focus allocation"><div className="focus-head"><span><Target size={14} /> FOCUS</span><strong><GameValue value={freeFocus} tone="focus" formatted={`${formatNumber(freeFocus)} FREE`} /></strong></div><small>{formatNumber(usedFocus)} RESERVED / {formatNumber(player.maxFocus)} MAX</small><Meter value={focusPercent} tone="focus" /></div>, <TooltipContent title="Focus allocation" description="Reserved Focus is derived from active automated systems."><TooltipRow label="Free" value={formatNumber(freeFocus)} /><TooltipRow label="Reserved" value={formatNumber(usedFocus)} /><TooltipRow label="Maximum" value={formatNumber(player.maxFocus)} />{reservations.length > 0 && <div className="tooltip-section"><small>RESERVATIONS</small>{reservations.map((reservation) => <TooltipRow key={reservation.id} label={reservation.label} value={formatNumber(reservation.amount)} />)}</div>}</TooltipContent>, 'focus')
+    </div>, <TooltipContent title="Mana" description="Current reserves, production, and active consumption."><TooltipRow label="Current" value={`${formatResourceAmount(mana)} / ${formatResourceAmount(maxMana)}`} /><TooltipRow label="Net flow" value={formatSignedRate(flow.net)} /></TooltipContent>, 'mana')
+    return resource(id, <div className={`topbar-resource focus-resource ${freeFocus < 10 ? 'tight-resource' : ''}`} tabIndex={0} aria-label="Focus allocation"><div className="focus-head"><span><Target size={14} /> FOCUS</span><strong><GameValue value={freeFocus} tone="focus" formatted={`${formatNumber(freeFocus)} FREE`} /></strong></div><small>{formatNumber(usedFocus)} RESERVED / {formatNumber(maxFocus)} MAX</small><Meter value={focusPercent} tone="focus" /></div>, <TooltipContent title="Focus allocation" description="Reserved Focus is derived from active automated systems."><TooltipRow label="Free" value={formatNumber(freeFocus)} /><TooltipRow label="Reserved" value={formatNumber(usedFocus)} /><TooltipRow label="Maximum" value={formatNumber(maxFocus)} />{reservations.length > 0 && <div className="tooltip-section"><small>RESERVATIONS</small>{reservations.map((reservation) => <TooltipRow key={reservation.id} label={reservation.label} value={formatNumber(reservation.amount)} />)}</div>}</TooltipContent>, 'focus')
   }
 
   const utilities = <div className="topbar-utility-cluster" aria-label="Header utilities">

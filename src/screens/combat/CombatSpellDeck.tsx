@@ -1,7 +1,7 @@
 import { AlertTriangle, CircleDot, Settings2 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
-import { actorCannotAct } from '../../game/systems/combat/statusRuntime'
+import { actorCannotAct, actorCannotCastSpells } from '../../game/systems/combat/statusRuntime'
 import { getSpellPresetFocusBreakdown, getSpellPresetFocusProjection, getSpellPresetSignature } from '../../game/systems/spells'
 import type { SpellPresetProjectionState } from '../../game/systems/spells'
 import { useGameStore } from '../../store/gameStore'
@@ -20,12 +20,24 @@ export function CombatSpellDeck() {
   const equipment = useGameStore((state) => state.equipment)
   const artifactProgress = useGameStore((state) => state.artifactProgress)
   const arcaneCore = useGameStore((state) => state.arcaneCore)
-  const activities = useGameStore((state) => state.activities)
+  const activities = useGameStore(useShallow((state) => ({
+    channeling: state.activities.channeling,
+    research: state.activities.research,
+    transmutation: state.activities.transmutation,
+    artificing: state.activities.artificing,
+    autoCast: state.activities.autoCast,
+    autoCastPriority: state.activities.autoCastPriority,
+  })))
   const maxFocus = useGameStore((state) => state.player.maxFocus)
   const combat = useGameStore(useShallow((state) => ({ active: state.combat.active, enemyId: state.combat.enemyId, activeSpellLoadout: state.combat.activeSpellLoadout })))
   const presets = useGameStore((state) => state.spellPresets.presets)
   const selectedPresetId = useGameStore((state) => state.spellPresets.selectedPresetId)
   const debugAllowFocusOverCap = useGameStore((state) => state.debug.allowFocusOverCap)
+  const playerMana = useGameStore((state) => state.player.mana)
+  const playerCannotCast = useGameStore((state) => actorCannotCastSpells(state, 'player'))
+  const hasTarget = useGameStore((state) => Boolean(state.combat.enemyId))
+  const ignoreCooldowns = useGameStore((state) => state.debug.ignoreSpellCooldowns)
+  const infiniteMana = useGameStore((state) => state.debug.infiniteMana)
   const selectSpellPreset = useGameStore((state) => state.selectSpellPreset)
   const setScreen = useGameStore((state) => state.setScreen)
   const playerStunned = useGameStore((state) => actorCannotAct(state, 'player'))
@@ -89,7 +101,7 @@ export function CombatSpellDeck() {
         {banner && <div className={`combat-spell-banner${combat.active && !combat.enemyId ? ' is-neutral' : ''}`} role="status"><CircleDot size={13} aria-hidden="true" />{banner}</div>}
         {presetNotice && <div className="combat-spell-preset-notice" role="alert"><AlertTriangle size={13} aria-hidden="true" />{presetNotice}</div>}
       </div>}
-      <div className="combat-spell-grid-region">{displaySlots.length ? <div ref={gridRef} className="combat-spell-grid smart-scroll-region">{displaySlots.map((slot) => <CombatSpellTile key={slot.spellId} spellId={slot.spellId} autoCast={slot.autoCast} autoCastPriority={slot.autoCast ? autoPriority.indexOf(slot.spellId) + 1 : null} presentationState={state} globalBlocker={globalBlocker} onOpenPresetManager={openPresetManager} />)}</div> : <div className="combat-spell-empty"><CircleDot size={20} aria-hidden="true" /><strong>{selectedPreset ? 'No available Spells in this preset.' : 'Create a combat preset to fill the deck.'}</strong><span>Choose up to eight slots in Preset Manager.</span></div>}</div>
+      <div className="combat-spell-grid-region">{displaySlots.length ? <div ref={gridRef} className="combat-spell-grid smart-scroll-region">{displaySlots.map((slot) => <CombatSpellTile key={slot.spellId} spellId={slot.spellId} autoCast={slot.autoCast} autoCastPriority={slot.autoCast ? autoPriority.indexOf(slot.spellId) + 1 : null} presentationState={state} globalBlocker={globalBlocker} globalRuntime={{ playerMana, playerCannotAct: playerStunned, playerCannotCast, combatActive: combat.active, hasTarget, inLoadout: true, ignoreCooldowns, infiniteMana, unlocked: true }} onOpenPresetManager={openPresetManager} />)}</div> : <div className="combat-spell-empty"><CircleDot size={20} aria-hidden="true" /><strong>{selectedPreset ? 'No available Spells in this preset.' : 'Create a combat preset to fill the deck.'}</strong><span>Choose up to eight slots in Preset Manager.</span></div>}</div>
       <footer className="combat-spell-deck-foot"><div className="combat-spell-deck-foot-left"><Status tone={focus.freeFocus < 0 ? 'warning' : 'success'}>{autoPriority.length} AUTO · {Math.max(0, displaySlots.length - autoPriority.length)} MANUAL · {focus.autoCastFocus} Focus reserved</Status></div><small>{displaySlots.length}/8 slots · {combat.active && activeLoadout ? 'ACTIVE SNAPSHOT' : 'PREVIEW'}</small></footer>
     </div>
   </Card>

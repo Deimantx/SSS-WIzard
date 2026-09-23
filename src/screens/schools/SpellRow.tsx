@@ -1,4 +1,4 @@
-import { Check, Clock3, CircleDot, Droplet, LockKeyhole, Plus } from 'lucide-react'
+import { Check, Clock3, CircleDot, Droplet, Eye, LockKeyhole, Plus, Settings2, Trash2 } from 'lucide-react'
 import { GameTooltip } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { SCHOOLS } from '../../game/content/schools/schools'
@@ -12,16 +12,29 @@ import { getSpellCatalogTags, type SpellBrowserEntry } from './spellBrowserSelec
 import { buildSpellDetailPresentation, type SpellPresentationState } from './spellDetailPresentation'
 import { SpellSemanticIcons } from './SpellSemanticIcons'
 import { useSpellLoadoutDnd } from './SpellLoadoutDnd'
+import { useGameContextMenu } from '../../ui/context-menu/GameContextMenuProvider'
 
-export function SpellRow({ entry, state, selected, equipped, newSpell, canEdit, onSelect, onEquip, onRemove }: { entry: SpellBrowserEntry; state: SpellPresentationState; selected: boolean; equipped: boolean; newSpell: boolean; canEdit: boolean; onSelect: (id: SpellId | string) => void; onEquip: (spellId: SpellId) => void; onRemove: (spellId: SpellId) => void }) {
+export function SpellRow({ entry, state, selected, equipped, newSpell, canEdit, onSelect, onEquip, onRemove, onConfigureAutomation }: { entry: SpellBrowserEntry; state: SpellPresentationState; selected: boolean; equipped: boolean; newSpell: boolean; canEdit: boolean; onSelect: (id: SpellId | string) => void; onEquip: (spellId: SpellId) => void; onRemove: (spellId: SpellId) => void; onConfigureAutomation: (spellId: SpellId) => void }) {
   const { beginDrag } = useSpellLoadoutDnd()
+  const { openContextMenu } = useGameContextMenu()
   const school = SCHOOLS[entry.school]
   const spell = entry.kind === 'spell' ? SPELLS[entry.spellId] : null
   const unlocked = entry.kind === 'spell' && entry.unlocked
   const detail = unlocked ? buildSpellDetailPresentation(state, entry.spellId, entry.rank ?? 1) : null
   const tags = spell ? getSpellCatalogTags(spell) : []
   const label = unlocked ? `${spell?.name}, ${school.name} School, ${formatSpellRank(entry.rank ?? 1)}` : `Locked ${spell?.name ?? 'spell'}, requires ${school.name} School Level ${entry.unlockLevel}`
-  return <article className={`spell-row${selected ? ' is-selected' : ''}${!unlocked ? ' is-locked' : ''}`} style={{ '--school-accent': school.color } as React.CSSProperties}>
+  const openSpellContextMenu = (event: React.MouseEvent<HTMLElement>) => {
+    event.preventDefault()
+    event.stopPropagation()
+    const inspect = { id: 'inspect', label: 'Inspect Spell', icon: Eye, onSelect: () => onSelect(entry.id) }
+    const actions = !unlocked || entry.kind !== 'spell'
+      ? [inspect]
+      : equipped
+        ? [inspect, { id: 'automation', label: 'Configure Automation', icon: Settings2, disabled: !canEdit, disabledReason: !canEdit ? 'Automation is locked during an active battle.' : undefined, onSelect: () => onConfigureAutomation(entry.spellId) }, { id: 'remove', label: 'Remove from Combat Loadout', icon: Trash2, tone: 'warning' as const, disabled: !canEdit, disabledReason: !canEdit ? 'Loadout editing is locked during an active battle.' : undefined, onSelect: () => onRemove(entry.spellId) }]
+        : [inspect, { id: 'add', label: 'Add to Combat Loadout', icon: Plus, disabled: !canEdit, disabledReason: !canEdit ? 'Loadout editing is locked during an active battle.' : undefined, onSelect: () => onEquip(entry.spellId) }]
+    openContextMenu({ x: event.clientX, y: event.clientY, anchor: event.currentTarget, header: { title: spell?.name ?? 'Undiscovered Spell', meta: `${school.name.toUpperCase()} · ${unlocked ? formatSpellRank(entry.rank ?? 1).toUpperCase() : 'LOCKED'}`, icon: <SpellIcon school={entry.school} spellId={unlocked && entry.kind === 'spell' ? entry.spellId : undefined} locked={!unlocked} size="small" /> }, sections: [{ id: 'spell', actions }] })
+  }
+  return <article className={`spell-row${selected ? ' is-selected' : ''}${!unlocked ? ' is-locked' : ''}`} style={{ '--school-accent': school.color } as React.CSSProperties} onContextMenu={openSpellContextMenu}>
     <button type="button" className="spell-row-main" aria-label={label} aria-pressed={selected} onPointerDown={event => { if (unlocked && entry.kind === 'spell') beginDrag({ source: 'library', spellId: entry.spellId }, event) }} onClick={() => onSelect(entry.id)}>
       <span className="spell-row-icon"><SpellIcon school={entry.school} spellId={unlocked ? entry.spellId : undefined} locked={!unlocked} size="medium" /></span>
       <span className="spell-row-identity"><strong>{spell?.name ?? 'Undiscovered spell'}</strong><span>{school.name.toUpperCase()} · {unlocked ? formatSpellRank(entry.rank ?? 1).toUpperCase() : `REQUIRES LEVEL ${entry.unlockLevel}`}</span>{newSpell && <em>NEW</em>}</span>

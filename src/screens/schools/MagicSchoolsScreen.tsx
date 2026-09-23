@@ -41,6 +41,7 @@ export function MagicSchoolsScreenV2() {
   const [filters, setFilters] = useState<ScreenFilters>(() => ({ ...DEFAULT_FILTERS, school: navigationIntent.schoolId ?? DEFAULT_FILTERS.school }))
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(() => navigationIntent.schoolSpellId)
   const [rankPathOpen, setRankPathOpen] = useState(false)
+  const [automationRequest, setAutomationRequest] = useState<SpellId | null>(null)
   const browserState = useMemo(() => ({ schools, progress, equipment, artifactProgress, arcaneCore, activities, player, combat, debug: { allowFocusOverCap } }), [schools, progress, equipment, artifactProgress, arcaneCore, activities, player, combat, allowFocusOverCap])
   const selectedSchool = filters.school === 'all' ? 'fire' : filters.school
   const schoolEntries = useMemo(() => getSpellBrowserEntries(browserState, { ...filters, school: selectedSchool, showUnlockedOnly: false, type: 'All Types' }), [browserState, filters, selectedSchool])
@@ -100,9 +101,9 @@ export function MagicSchoolsScreenV2() {
     <MagicSchoolsHeader schools={schools} selectedSchool={selectedSchool} onSelect={selectSchool} />
     <SchoolProgressOverview state={{ schools, progress }} schoolId={selectedSchool} />
     <SpellLoadoutDndProvider onCommit={commitSpellDrop}><ScreenGrid screen="schools" panels={[
-      { id: 'schools-library', content: <SpellLibrary state={browserState} school={selectedSchool} filters={filters} selectedEntryId={selectedEntryId} newSpells={new Set(attention.unseenSpells)} equippedSpellIds={equippedSpellIds} canEdit={!combat.active} onFiltersChange={setFilters} onSelect={selectSpell} onEquip={equipSpell} onRemove={removeSpell} /> },
+      { id: 'schools-library', content: <SpellLibrary state={browserState} school={selectedSchool} filters={filters} selectedEntryId={selectedEntryId} newSpells={new Set(attention.unseenSpells)} equippedSpellIds={equippedSpellIds} canEdit={!combat.active} onFiltersChange={setFilters} onSelect={selectSpell} onEquip={equipSpell} onRemove={removeSpell} onConfigureAutomation={(spellId) => { selectLoadoutSpell(spellId); setAutomationRequest(spellId) }} /> },
       { id: 'schools-inspector', content: <InspectorTransition identity={selectedEntry?.id} accent={selectedEntry ? SCHOOLS[selectedEntry.school].color : undefined} fill><SpellInspector entry={selectedEntry} state={browserState} rankPathOpen={rankPathOpen} equippedSlotIndex={selectedEntry?.kind === 'spell' ? activeLoadout.findIndex((slot) => slot.spellId === selectedEntry.spellId) : null} canEdit={!combat.active} onEquip={equipSpell} onRemove={removeSpell} onToggleRankPath={() => { dismissGameTooltips(); setRankPathOpen((open) => !open) }} /></InspectorTransition> },
-      { id: 'schools-loadout', content: <CombatSpellLoadout focusState={focusState} onSelectSpell={selectLoadoutSpell} /> },
+      { id: 'schools-loadout', content: <CombatSpellLoadout focusState={focusState} onSelectSpell={selectLoadoutSpell} automationSpellId={automationRequest} onAutomationRequestHandled={() => setAutomationRequest(null)} /> },
     ]} /></SpellLoadoutDndProvider>
   </div>
 }

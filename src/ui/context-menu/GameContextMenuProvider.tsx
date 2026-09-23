@@ -17,11 +17,11 @@ export function GameContextMenuProvider({ children }: { children: ReactNode }) {
   }
   useEffect(() => { closeContextMenu() }, [screen])
   useEffect(() => {
-    const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') closeContextMenu() }
+    const escape = (event: KeyboardEvent) => { if (event.key === 'Escape' && menu) { event.preventDefault(); event.stopImmediatePropagation(); closeContextMenu() } }
     const outside = (event: MouseEvent) => { if (menu && !(event.target as Element | null)?.closest('.game-context-menu')) closeContextMenu() }
     const close = () => closeContextMenu()
-    window.addEventListener('keydown', escape); window.addEventListener('mousedown', outside); window.addEventListener('resize', close); window.addEventListener('scroll', close, true)
-    return () => { window.removeEventListener('keydown', escape); window.removeEventListener('mousedown', outside); window.removeEventListener('resize', close); window.removeEventListener('scroll', close, true) }
+    document.addEventListener('keydown', escape, true); window.addEventListener('mousedown', outside); window.addEventListener('resize', close); window.addEventListener('scroll', close, true)
+    return () => { document.removeEventListener('keydown', escape, true); window.removeEventListener('mousedown', outside); window.removeEventListener('resize', close); window.removeEventListener('scroll', close, true) }
   }, [menu])
   const value = useMemo(() => ({ openContextMenu, closeContextMenu }), [])
   return <Context.Provider value={value}>{children}{menu && <GameContextMenu {...menu} onClose={closeContextMenu} />}</Context.Provider>

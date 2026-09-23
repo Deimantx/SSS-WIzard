@@ -6,9 +6,10 @@ import { clearAttention, useProfileAttention } from '../../ui/attention/attentio
 import { InspectorTransition } from '../../ui/game-feel/InspectorTransition'
 import { setNavigationIntent, useNavigationIntent } from '../../ui/navigation/navigationIntent'
 import { useGameStore } from '../../store/gameStore'
+import { useShallow } from 'zustand/react/shallow'
 import { SCHOOLS } from '../../game/content/schools/schools'
 import { SPELLS } from '../../game/content/spells/spells'
-import type { SchoolId, SpellId } from '../../game/types'
+import type { GameState, ItemId, ResearchSlotId, SchoolId, SpellId, TransmutationRecipeId } from '../../game/types'
 import { getSpellBrowserEntries, type SpellBrowserFilters } from './spellBrowserSelectors'
 import { SpellInspector } from './SpellInspector'
 import { MagicSchoolsHeader } from './MagicSchoolsHeader'
@@ -23,15 +24,52 @@ type ScreenFilters = SpellBrowserFilters & { category: LibraryCategory }
 const DEFAULT_FILTERS: ScreenFilters = { school: 'fire', search: '', showUnlockedOnly: false, type: 'All Types', sort: 'Unlock Level', category: 'All' }
 
 export function MagicSchoolsScreenV2() {
-  const schools = useGameStore((state) => state.schools)
-  const progress = useGameStore((state) => state.progress)
-  const equipment = useGameStore((state) => state.equipment)
-  const artifactProgress = useGameStore((state) => state.artifactProgress)
-  const arcaneCore = useGameStore((state) => state.arcaneCore)
-  const activities = useGameStore((state) => state.activities)
-  const player = useGameStore((state) => state.player)
-  const combat = useGameStore((state) => state.combat)
-  const allowFocusOverCap = useGameStore((state) => state.debug.allowFocusOverCap)
+  const selectedState = useGameStore(useShallow((state) => ({
+    schools: state.schools,
+    spellRanks: state.progress.spellRanks,
+    magicLevelCap: state.progress.magicLevelCap,
+    equipment: state.equipment,
+    artifactProgress: state.artifactProgress,
+    arcaneCore: state.arcaneCore,
+    channelingEchoes: state.activities.channeling.echoesAssigned,
+    researchReservations: Object.entries(state.activities.research.slots).map(([slotId, job]) => `${slotId}:${job?.itemId ?? ''}:${job?.targetSchoolId ?? ''}:${job?.echoesAssigned ?? 0}`).sort().join('|'),
+    transmutationReservations: Object.entries(state.activities.transmutation.jobs).filter(([, job]) => Boolean(job?.echoesAssigned)).map(([recipeId, job]) => `${recipeId}:${job?.echoesAssigned ?? 0}`).sort().join('|'),
+    autoCast: state.activities.autoCast,
+    playerHealth: state.player.health,
+    playerMaxHealth: state.player.maxHealth,
+    playerMana: state.player.mana,
+    playerMaxMana: state.player.maxMana,
+    playerMaxFocus: state.player.maxFocus,
+    combatEnemyId: state.combat.enemyId,
+    combatEnemyHp: state.combat.enemyHp,
+    combatEnemyMaxHp: state.combat.enemyMaxHp,
+    combatEnemyBarrier: state.combat.enemyBarrier,
+    combatPlayerBarrier: state.combat.playerBarrier,
+    combatEnemyInstanceKey: state.combat.enemyInstanceKey,
+    combatPlayerStatuses: state.combat.playerStatuses,
+    combatEnemyStatuses: state.combat.enemyStatuses,
+    combatActive: state.combat.active,
+    activeSpellLoadout: state.combat.activeSpellLoadout,
+    allowFocusOverCap: state.debug.allowFocusOverCap,
+  })))
+  const { schools, equipment, artifactProgress, arcaneCore, combatActive, activeSpellLoadout, allowFocusOverCap } = selectedState
+  const progress = useMemo(() => ({ spellRanks: selectedState.spellRanks, magicLevelCap: selectedState.magicLevelCap }), [selectedState.spellRanks, selectedState.magicLevelCap])
+  const research = useMemo(() => {
+    const slots = { 'research-1': null, 'research-2': null, 'research-3': null, 'research-4': null } as GameState['activities']['research']['slots']
+    selectedState.researchReservations.split('|').filter(Boolean).forEach((entry) => {
+      const [slotId, itemId, targetSchoolId, echoesAssigned] = entry.split(':')
+      if (!slotId || !itemId || !targetSchoolId || Number(echoesAssigned) <= 0) return
+      slots[slotId as ResearchSlotId] = { itemId: itemId as ItemId, targetSchoolId: targetSchoolId as SchoolId, requestedQuantity: 0, remainingQuantity: 0, progressMs: 0, echoesAssigned: Number(echoesAssigned), status: 'prepared' }
+    })
+    return { slots }
+  }, [selectedState.researchReservations])
+  const transmutation = useMemo(() => ({ jobs: Object.fromEntries(selectedState.transmutationReservations.split('|').filter(Boolean).map((entry) => {
+    const [recipeId, echoesAssigned] = entry.split(':')
+    return [recipeId as TransmutationRecipeId, { echoesAssigned: Number(echoesAssigned), progressMs: 0 }]
+  })) }) as GameState['activities']['transmutation'], [selectedState.transmutationReservations])
+  const activities = useMemo(() => ({ channeling: { echoesAssigned: selectedState.channelingEchoes }, research, transmutation, autoCast: selectedState.autoCast }), [selectedState.channelingEchoes, research, transmutation, selectedState.autoCast])
+  const player = useMemo(() => ({ health: selectedState.playerHealth, maxHealth: selectedState.playerMaxHealth, mana: selectedState.playerMana, maxMana: selectedState.playerMaxMana, maxFocus: selectedState.playerMaxFocus }), [selectedState.playerHealth, selectedState.playerMaxHealth, selectedState.playerMana, selectedState.playerMaxMana, selectedState.playerMaxFocus])
+  const combat = useMemo(() => ({ enemyId: selectedState.combatEnemyId, enemyHp: selectedState.combatEnemyHp, enemyMaxHp: selectedState.combatEnemyMaxHp, enemyBarrier: selectedState.combatEnemyBarrier, playerBarrier: selectedState.combatPlayerBarrier, enemyInstanceKey: selectedState.combatEnemyInstanceKey, playerStatuses: selectedState.combatPlayerStatuses, enemyStatuses: selectedState.combatEnemyStatuses }), [selectedState.combatEnemyId, selectedState.combatEnemyHp, selectedState.combatEnemyMaxHp, selectedState.combatEnemyBarrier, selectedState.combatPlayerBarrier, selectedState.combatEnemyInstanceKey, selectedState.combatPlayerStatuses, selectedState.combatEnemyStatuses])
   const addSpell = useGameStore((state) => state.addSpellToSelectedPreset)
   const addSpellAt = useGameStore((state) => state.addSpellToSelectedPresetAt)
   const swapSlots = useGameStore((state) => state.swapSelectedPresetSlots)
@@ -42,13 +80,14 @@ export function MagicSchoolsScreenV2() {
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(() => navigationIntent.schoolSpellId)
   const [rankPathOpen, setRankPathOpen] = useState(false)
   const [automationRequest, setAutomationRequest] = useState<SpellId | null>(null)
-  const browserState = useMemo(() => ({ schools, progress, equipment, artifactProgress, arcaneCore, activities, player, combat, debug: { allowFocusOverCap } }), [schools, progress, equipment, artifactProgress, arcaneCore, activities, player, combat, allowFocusOverCap])
+  const browserState = useMemo(() => ({ schools, progress: { spellRanks: selectedState.spellRanks }, equipment, artifactProgress, arcaneCore, activities, player, combat, debug: { allowFocusOverCap } }), [schools, selectedState.spellRanks, equipment, artifactProgress, arcaneCore, activities, player, combat, allowFocusOverCap])
   const selectedSchool = filters.school === 'all' ? 'fire' : filters.school
-  const schoolEntries = useMemo(() => getSpellBrowserEntries(browserState, { ...filters, school: selectedSchool, showUnlockedOnly: false, type: 'All Types' }), [browserState, filters, selectedSchool])
+  const schoolEntries = useMemo(() => getSpellBrowserEntries({ progress: { spellRanks: selectedState.spellRanks } }, { ...filters, school: selectedSchool, showUnlockedOnly: false, type: 'All Types' }), [selectedState.spellRanks, filters, selectedSchool])
   const selectedEntry = schoolEntries.find((entry) => entry.id === selectedEntryId) ?? null
   const selectedPreset = useGameStore((state) => state.spellPresets.presets.find((preset) => preset.id === state.spellPresets.selectedPresetId) ?? null)
-  const activeLoadout = combat.active && combat.activeSpellLoadout ? combat.activeSpellLoadout.slots : selectedPreset?.slots ?? []
+  const activeLoadout = combatActive && activeSpellLoadout ? activeSpellLoadout.slots : selectedPreset?.slots ?? []
   const equippedSpellIds = useMemo(() => new Set(activeLoadout.map((slot) => slot.spellId)), [activeLoadout])
+  const unseenSpellIds = useMemo(() => new Set(attention.unseenSpells), [attention.unseenSpells])
   const focusState = useMemo(() => ({ activities, progress, equipment, artifactProgress, arcaneCore, player: { maxFocus: player.maxFocus } }), [activities, progress, equipment, artifactProgress, arcaneCore, player.maxFocus])
 
   useEffect(() => {
@@ -89,21 +128,21 @@ export function MagicSchoolsScreenV2() {
     setNavigationIntent({ schoolId: spell.school, schoolSpellId: spellId })
   }
   const commitSpellDrop = useCallback((payload: SpellDragPayload, target: SpellDropTarget) => {
-    if (combat.active) return
+    if (combatActive) return
     if (payload.source === 'loadout') {
       swapSlots(payload.fromIndex, target.index)
       return
     }
     addSpellAt(payload.spellId, Math.min(target.index, activeLoadout.length))
-  }, [combat.active, activeLoadout.length, swapSlots, addSpellAt])
+  }, [combatActive, activeLoadout.length, swapSlots, addSpellAt])
 
   return <div className="screen-content schools-screen">
     <MagicSchoolsHeader schools={schools} selectedSchool={selectedSchool} onSelect={selectSchool} />
     <SchoolProgressOverview state={{ schools, progress }} schoolId={selectedSchool} />
     <SpellLoadoutDndProvider onCommit={commitSpellDrop}><ScreenGrid screen="schools" panels={[
-      { id: 'schools-library', content: <SpellLibrary state={browserState} school={selectedSchool} filters={filters} selectedEntryId={selectedEntryId} newSpells={new Set(attention.unseenSpells)} equippedSpellIds={equippedSpellIds} canEdit={!combat.active} onFiltersChange={setFilters} onSelect={selectSpell} onEquip={equipSpell} onRemove={removeSpell} onConfigureAutomation={(spellId) => { selectLoadoutSpell(spellId); setAutomationRequest(spellId) }} /> },
-      { id: 'schools-inspector', content: <InspectorTransition identity={selectedEntry?.id} accent={selectedEntry ? SCHOOLS[selectedEntry.school].color : undefined} fill><SpellInspector entry={selectedEntry} state={browserState} rankPathOpen={rankPathOpen} equippedSlotIndex={selectedEntry?.kind === 'spell' ? activeLoadout.findIndex((slot) => slot.spellId === selectedEntry.spellId) : null} canEdit={!combat.active} onEquip={equipSpell} onRemove={removeSpell} onToggleRankPath={() => { dismissGameTooltips(); setRankPathOpen((open) => !open) }} /></InspectorTransition> },
-      { id: 'schools-loadout', content: <CombatSpellLoadout focusState={focusState} spellPresentationState={browserState} onSelectSpell={selectLoadoutSpell} automationSpellId={automationRequest} onAutomationRequestHandled={() => setAutomationRequest(null)} /> },
+      { id: 'schools-library', content: <SpellLibrary state={browserState} school={selectedSchool} entries={schoolEntries} filters={filters} selectedEntryId={selectedEntryId} newSpells={unseenSpellIds} equippedSpellIds={equippedSpellIds} canEdit={!combatActive} onFiltersChange={setFilters} onSelect={selectSpell} onEquip={equipSpell} onRemove={removeSpell} onConfigureAutomation={(spellId) => { selectLoadoutSpell(spellId); setAutomationRequest(spellId) }} /> },
+      { id: 'schools-inspector', content: <InspectorTransition identity={selectedEntry?.id} accent={selectedEntry ? SCHOOLS[selectedEntry.school].color : undefined} fill><SpellInspector entry={selectedEntry} state={browserState} rankPathOpen={rankPathOpen} equippedSlotIndex={selectedEntry?.kind === 'spell' ? activeLoadout.findIndex((slot) => slot.spellId === selectedEntry.spellId) : null} canEdit={!combatActive} onEquip={equipSpell} onRemove={removeSpell} onToggleRankPath={() => { dismissGameTooltips(); setRankPathOpen((open) => !open) }} /></InspectorTransition> },
+      { id: 'schools-loadout', content: <CombatSpellLoadout focusState={focusState} onSelectSpell={selectLoadoutSpell} automationSpellId={automationRequest} onAutomationRequestHandled={() => setAutomationRequest(null)} /> },
     ]} /></SpellLoadoutDndProvider>
   </div>
 }

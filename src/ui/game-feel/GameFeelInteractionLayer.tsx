@@ -7,7 +7,7 @@ const INTERACTIVE_SELECTOR = [
   '.activity-card', '.activity-mini-summary', '.combat-world-selector-button', '.combat-location-card', '.combat-location-actions .button', '.inventory-recent-item', '.inventory-use-row', '.inventory-need-row', '.theme-choice', '.preference-choice',
 ].join(',')
 const EXCLUDED_SELECTOR = '.modal-portal-backdrop, .modal-portal-surface, .game-tooltip, .developer-tools-window, .toast-stack'
-const ACTION_FEEDBACK_SELECTOR = '.inventory-actions-card .inventory-action-header-button, .inventory-actions-card .inventory-action-sell, .inventory-actions-card [aria-label="Confirm destroy"], .equipment-inspector-actions .button, .spell-autocast-control, .spell-combat-auto:not(.read-only), .echo-counter .button, .transmutation-echo-control .button, .transmutation-assignment-row .button, .transmutation-active-heading .button'
+const ACTION_FEEDBACK_SELECTOR = '.inventory-actions-card .inventory-action-header-button, .inventory-actions-card .inventory-action-sell, .inventory-actions-card [aria-label="Confirm destroy"], .equipment-inspector-actions .button, .spell-autocast-control, .echo-counter .button, .transmutation-echo-control .button, .transmutation-assignment-row .button, .transmutation-active-heading .button'
 
 const getInteractiveTarget = (target: EventTarget | null) => {
   if (!(target instanceof Element)) return null

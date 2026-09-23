@@ -5,9 +5,9 @@ import { SCHOOLS } from '../../game/content/schools/schools'
 import type { GameState, SchoolId } from '../../game/types'
 import { Progress } from '../../components/ui'
 
-export function SchoolProgressOverview({ state, schoolId }: { state: Pick<GameState, 'schools' | 'progress'>; schoolId: SchoolId }) {
+export function SchoolProgressOverview({ state, schoolId }: { state: { schools: GameState['schools']; progress: Pick<GameState['progress'], 'magicLevelCap' | 'spellRanks'> }; schoolId: SchoolId }) {
   const school = SCHOOLS[schoolId]
-  const info = getSchoolProgressInfo(state, schoolId)
+  const info = getSchoolProgressInfo(state as Parameters<typeof getSchoolProgressInfo>[0], schoolId)
   const nextSpell = Object.values(SPELLS).filter((spell) => spell.school === schoolId && getSpellRank(state, spell.id) === null && spell.unlockLevel > info.level).sort((left, right) => left.unlockLevel - right.unlockLevel)[0]
   const xpLabel = new Intl.NumberFormat('en-US').format(info.xp)
   const nextXpLabel = info.nextLevelXp === null ? 'MASTERED' : `${new Intl.NumberFormat('en-US').format(info.nextLevelXp)} XP`

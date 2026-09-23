@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { TooltipProvider } from '../../components/ui/tooltip/Tooltip'
 import { GameContextMenuProvider } from '../../ui/context-menu/GameContextMenuProvider'
 import { createInitialState } from '../../store/initialState'
+import { useGameStore } from '../../store/gameStore'
 import { SpellLoadoutDndProvider } from './SpellLoadoutDnd'
 import { SpellRow } from './SpellRow'
 import type { SpellBrowserSpellEntry } from './spellBrowserSelectors'
@@ -33,7 +34,11 @@ function renderSpellRow(rowEntry: SpellBrowserSpellEntry = entry) {
 }
 
 describe('SpellRow tooltip runtime integration', () => {
-  beforeEach(() => { window.localStorage.clear() })
+  beforeEach(() => {
+    window.localStorage.clear()
+    const current = useGameStore.getState()
+    useGameStore.setState({ progress: { ...current.progress, spellRanks: { ...current.progress.spellRanks, 'fire-bolt': 1 } } })
+  })
   afterEach(() => { vi.useRealTimers() })
 
   it('shows the real Mana and semantic Damage tooltips from SpellRow hover targets', () => {

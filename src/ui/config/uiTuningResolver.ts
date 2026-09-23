@@ -12,7 +12,7 @@ const FALLBACKS: Record<string, NumberRecord> = {
   inventoryItemCard: { minWidth: 102, maxWidth: 126, height: 126, paddingX: 3, paddingY: 3, paddingBottom: 20, cardGap: 4, iconSize: 54, nameFontSize: 10, nameLineHeight: 1.15, nameMaxLines: 2, quantityFontSize: 12, borderWidth: 1, borderRadius: 8, gridGap: 7, newDotSize: 7 },
   equipmentItemCard: { minWidth: 120, height: 90, iconSize: 38, titleFontSize: 12, metadataFontSize: 8, padding: 7, gap: 7, gridGap: 7 },
   spellCardMagicSchools: { minWidth: 160, height: 174, iconSize: 58, nameFontSize: 13, manaFontSize: 11, cooldownFontSize: 11, padding: 12, gap: 8, gridGap: 9 },
-  spellCardCombatDeck: { minWidth: 110, height: 74, iconSize: 29, nameFontSize: 11, manaFontSize: 11, cooldownFontSize: 11, padding: 8, gap: 3, gridGap: 7, paddingTop: 8, paddingRight: 32, paddingBottom: 6, paddingLeft: 9 },
+  spellCardCombatDeck: { minWidth: 110, height: 94, iconSize: 29, nameFontSize: 11, manaFontSize: 11, cooldownFontSize: 11, padding: 8, gap: 3, gridGap: 7, paddingTop: 8, paddingRight: 8, paddingBottom: 6, paddingLeft: 9 },
   statRow: { labelFontSize: 11, valueFontSize: 11, valueFontWeight: 700 },
   tooltip: { maxWidth: 360, paddingX: 10, paddingY: 8, fontSize: 12, lineHeight: 1.4 },
   typography: { screenTitleFontSize: 40, screenTitleFontWeight: 700, panelTitleFontSize: 14, panelTitleFontWeight: 700, itemNameFontSize: 12, itemNameFontWeight: 600, bodyFontSize: 13, metadataFontSize: 9, metadataLetterSpacing: 0.08, statLabelFontSize: 11, statValueFontSize: 11, statValueFontWeight: 700 },

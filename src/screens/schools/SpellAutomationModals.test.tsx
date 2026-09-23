@@ -22,6 +22,8 @@ describe('Spell automation editor audit fixes', () => {
   beforeEach(() => {
     window.localStorage.clear()
     useGameStore.getState().resetSave()
+    const current = useGameStore.getState()
+    useGameStore.setState({ progress: { ...current.progress, spellRanks: { ...current.progress.spellRanks, 'fire-bolt': 1 } } })
   })
 
   it('shows the authored Earthen Barrier condition instead of Always', () => {
@@ -74,7 +76,7 @@ describe('Spell automation editor audit fixes', () => {
 
   it('shows the rich tooltip on the Combat Automation Overview spell icon', () => {
     vi.useFakeTimers()
-    render(<TooltipProvider><CombatAutomationOverviewModal open readOnly presetName="Battle Snapshot" slots={[{ spellId: 'fire-bolt', autoCast: true }]} spellPresentationState={useGameStore.getState()} onClose={vi.fn()} onEdit={vi.fn()} onToggleMode={vi.fn()} /></TooltipProvider>)
+    render(<TooltipProvider><CombatAutomationOverviewModal open readOnly presetName="Battle Snapshot" slots={[{ spellId: 'fire-bolt', autoCast: true }]} onClose={vi.fn()} onEdit={vi.fn()} onToggleMode={vi.fn()} /></TooltipProvider>)
 
     const iconTarget = document.querySelector('.combat-automation-spell-icon-tooltip-target') as HTMLElement
     fireEvent.pointerEnter(iconTarget)
@@ -92,7 +94,7 @@ describe('Spell automation editor audit fixes', () => {
     useGameStore.getState().saveSpellPreset({ id, name: 'Tooltip Preset', slots: [{ spellId: 'fire-bolt', autoCast: true }] })
     useGameStore.getState().selectSpellPreset(id)
 
-    render(<TooltipProvider><SpellLoadoutDndProvider onCommit={() => {}}><CombatSpellLoadout focusState={focusState()} spellPresentationState={useGameStore.getState()} /></SpellLoadoutDndProvider></TooltipProvider>)
+    render(<TooltipProvider><SpellLoadoutDndProvider onCommit={() => {}}><CombatSpellLoadout focusState={focusState()} /></SpellLoadoutDndProvider></TooltipProvider>)
 
     const iconTarget = document.querySelector('.loadout-spell-icon-tooltip-target') as HTMLElement
     expect(iconTarget.dataset.noDrag).toBe('true')
@@ -128,7 +130,7 @@ describe('Spell automation editor audit fixes', () => {
 
   it('uses VIEW for read-only overview rows and forwards the selected slot', () => {
     const onEdit = vi.fn()
-    render(<CombatAutomationOverviewModal open readOnly presetName="Battle Snapshot" slots={[{ spellId: 'fire-bolt', autoCast: true }]} spellPresentationState={useGameStore.getState()} onClose={vi.fn()} onEdit={onEdit} onToggleMode={vi.fn()} />)
+    render(<CombatAutomationOverviewModal open readOnly presetName="Battle Snapshot" slots={[{ spellId: 'fire-bolt', autoCast: true }]} onClose={vi.fn()} onEdit={onEdit} onToggleMode={vi.fn()} />)
 
     expect(screen.getByRole('button', { name: 'VIEW' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'EDIT' })).toBeNull()
@@ -155,7 +157,7 @@ describe('Spell automation editor audit fixes', () => {
     const id = useGameStore.getState().createSpellPreset('Audit Preset')
     useGameStore.getState().saveSpellPreset({ id, name: 'Audit Preset', slots: [{ spellId: 'fire-bolt', autoCast: true }] })
     useGameStore.getState().selectSpellPreset(id)
-    render(<SpellLoadoutDndProvider onCommit={() => {}}><CombatSpellLoadout focusState={focusState()} spellPresentationState={useGameStore.getState()} /></SpellLoadoutDndProvider>)
+    render(<SpellLoadoutDndProvider onCommit={() => {}}><CombatSpellLoadout focusState={focusState()} /></SpellLoadoutDndProvider>)
 
     fireEvent.click(screen.getByRole('button', { name: 'Open combat automation overview' }))
     expect(screen.getByRole('dialog', { name: 'Combat Automation Overview' })).toBeTruthy()
@@ -173,7 +175,7 @@ describe('Spell automation editor audit fixes', () => {
     const id = useGameStore.getState().createSpellPreset('Direct Preset')
     useGameStore.getState().saveSpellPreset({ id, name: 'Direct Preset', slots: [{ spellId: 'fire-bolt', autoCast: true }] })
     useGameStore.getState().selectSpellPreset(id)
-    render(<SpellLoadoutDndProvider onCommit={() => {}}><CombatSpellLoadout focusState={focusState()} spellPresentationState={useGameStore.getState()} /></SpellLoadoutDndProvider>)
+    render(<SpellLoadoutDndProvider onCommit={() => {}}><CombatSpellLoadout focusState={focusState()} /></SpellLoadoutDndProvider>)
 
     fireEvent.click(screen.getByRole('button', { name: 'Configure Fire Bolt automation' }))
     expect(screen.getByRole('dialog', { name: 'Fire Bolt Automation' })).toBeTruthy()

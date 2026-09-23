@@ -20,8 +20,11 @@ describe('CombatSpellDeck', () => {
 
     expect(screen.getByText('Fire Bolt', { selector: 'strong' })).toBeTruthy()
     expect(screen.getByText('Wind Blade', { selector: 'strong' })).toBeTruthy()
-    expect(screen.getByLabelText('AUTO, priority 1')).toBeTruthy()
-    expect(screen.getByLabelText('MANUAL, no Auto-Cast focus')).toBeTruthy()
+    expect(screen.getByLabelText('Auto-Cast, priority 1')).toBeTruthy()
+    expect(screen.getByLabelText('Manual Cast, no Auto-Cast Focus')).toBeTruthy()
+    expect(screen.getByText('AUTO', { selector: '.spell-combat-mode-bar span' })).toBeTruthy()
+    expect(screen.getByText('#01')).toBeTruthy()
+    expect(screen.getByText('MANUAL', { selector: '.spell-combat-mode-bar span' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: /Enable Auto-Cast|Disable Auto-Cast|Move .*priority|Remove from Preset/ })).toBeNull()
     expect(screen.getByText(/1 AUTO · 1 MANUAL/)).toBeTruthy()
   })

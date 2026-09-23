@@ -2,7 +2,7 @@ import { useMemo, useRef } from 'react'
 import { FilterBar, SearchInput } from '../../components/ui'
 import type { SpellId, SchoolId } from '../../game/types'
 import { useSmartScrollState } from '../../ui/game-feel/useSmartScrollState'
-import { getSpellBrowserEntries, type SpellBrowserEntry, type SpellBrowserFilters } from './spellBrowserSelectors'
+import type { SpellBrowserEntry, SpellBrowserFilters } from './spellBrowserSelectors'
 import type { SpellPresentationState } from './spellDetailPresentation'
 import { SpellRow } from './SpellRow'
 
@@ -17,9 +17,8 @@ const categoryMatches = (entry: SpellBrowserEntry, category: LibraryCategory) =>
   return entry.tags.includes('Damage')
 }
 
-export function SpellLibrary({ state, school, filters, selectedEntryId, newSpells, equippedSpellIds, canEdit, onFiltersChange, onSelect, onEquip, onRemove, onConfigureAutomation }: { state: SpellPresentationState; school: SchoolId; filters: SpellBrowserFilters & { category: LibraryCategory }; selectedEntryId: string | null; newSpells: ReadonlySet<SpellId>; equippedSpellIds: ReadonlySet<SpellId>; canEdit: boolean; onFiltersChange: (next: SpellBrowserFilters & { category: LibraryCategory }) => void; onSelect: (id: SpellId | string) => void; onEquip: (spellId: SpellId) => void; onRemove: (spellId: SpellId) => void; onConfigureAutomation: (spellId: SpellId) => void }) {
+export function SpellLibrary({ state, school, entries, filters, selectedEntryId, newSpells, equippedSpellIds, canEdit, onFiltersChange, onSelect, onEquip, onRemove, onConfigureAutomation }: { state: SpellPresentationState; school: SchoolId; entries: SpellBrowserEntry[]; filters: SpellBrowserFilters & { category: LibraryCategory }; selectedEntryId: string | null; newSpells: ReadonlySet<SpellId>; equippedSpellIds: ReadonlySet<SpellId>; canEdit: boolean; onFiltersChange: (next: SpellBrowserFilters & { category: LibraryCategory }) => void; onSelect: (id: SpellId | string) => void; onEquip: (spellId: SpellId) => void; onRemove: (spellId: SpellId) => void; onConfigureAutomation: (spellId: SpellId) => void }) {
   const listRef = useRef<HTMLDivElement>(null)
-  const entries = useMemo(() => getSpellBrowserEntries(state, { ...filters, school, showUnlockedOnly: false, type: 'All Types', sort: filters.sort }), [state, filters, school])
   const visibleEntries = useMemo(() => entries.filter((entry) => categoryMatches(entry, filters.category)), [entries, filters.category])
   useSmartScrollState(listRef, { dependencies: [visibleEntries.map((entry) => entry.id).join('|'), filters.search, filters.category, school] })
   const update = <K extends keyof (SpellBrowserFilters & { category: LibraryCategory })>(key: K, value: (SpellBrowserFilters & { category: LibraryCategory })[K]) => onFiltersChange({ ...filters, [key]: value })

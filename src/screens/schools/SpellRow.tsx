@@ -1,6 +1,7 @@
 import { Check, Clock3, CircleDot, Droplet, Eye, LockKeyhole, Plus, Settings2, Trash2 } from 'lucide-react'
 import { GameTooltip } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
+import { SpellCardTooltip } from '../../components/spells/SpellCardTooltip'
 import { SCHOOLS } from '../../game/content/schools/schools'
 import { SPELLS } from '../../game/content/spells/spells'
 import { formatSpellRank, getSpellAutoCastFocusCost } from '../../game/systems/spells'
@@ -36,7 +37,7 @@ export function SpellRow({ entry, state, selected, equipped, newSpell, canEdit, 
   }
   return <article className={`spell-row${selected ? ' is-selected' : ''}${!unlocked ? ' is-locked' : ''}`} style={{ '--school-accent': school.color } as React.CSSProperties} onContextMenu={openSpellContextMenu}>
     <button type="button" className="spell-row-main" aria-label={label} aria-pressed={selected} onPointerDown={event => { if (unlocked && entry.kind === 'spell') beginDrag({ source: 'library', spellId: entry.spellId }, event) }} onClick={() => onSelect(entry.id)}>
-      <span className="spell-row-icon"><SpellIcon school={entry.school} spellId={unlocked ? entry.spellId : undefined} locked={!unlocked} size="medium" /></span>
+      {detail && entry.kind === 'spell' ? <GameTooltip wide placement="right" delay={200} content={<SpellCardTooltip presentation={detail} />}><span className="spell-row-icon spell-row-icon-tooltip-target" data-no-drag="true"><SpellIcon school={entry.school} spellId={entry.spellId} size="medium" /></span></GameTooltip> : <span className="spell-row-icon"><SpellIcon school={entry.school} spellId={unlocked ? entry.spellId : undefined} locked={!unlocked} size="medium" /></span>}
       <span className="spell-row-identity"><strong>{spell?.name ?? 'Undiscovered spell'}</strong><span>{school.name.toUpperCase()} · {unlocked ? formatSpellRank(entry.rank ?? 1).toUpperCase() : `REQUIRES LEVEL ${entry.unlockLevel}`}</span>{newSpell && <em>NEW</em>}</span>
       <span className="spell-row-category">{unlocked ? <SpellSemanticIcons tags={tags} /> : <span className="spell-row-locked-label">LOCKED</span>}</span>
       {detail && entry.kind === 'spell' ? <span className="spell-row-stats"><CompactStat semantic="mana" icon={<Droplet size={13} />} label="Mana Cost" value={formatResourceAmount(detail.manaCost)} /><CompactStat semantic="focus" icon={<CircleDot size={13} />} label="Auto-Cast Focus" value={`${getSpellAutoCastFocusCost(state, entry.spellId) ?? 0}`} /><CompactStat semantic="cast-time" icon={<Clock3 size={13} />} label="Cast Time" value={formatTime(detail.castTimeMs)} /><CompactStat semantic="cooldown" icon={<Clock3 size={13} />} label="Cooldown" value={detail.cooldownLabel} /></span> : <span className="spell-row-locked-copy"><LockKeyhole size={13} aria-hidden="true" />Requires {school.name} Level {entry.unlockLevel}</span>}

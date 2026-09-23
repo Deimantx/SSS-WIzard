@@ -49,7 +49,7 @@
 }
 
 /* Spellbook and Spell Preset cards are geometry-stable: never add them to lift/scale selectors. */
-.game-shell button:not(:disabled):not(.spell-browser-tile):not(.spell-preset-card):not(.spell-preset-available-tile):not(.spell-preset-drag-handle):active {
+.game-shell button:not(:disabled):not(.spell-browser-tile):not(.spell-preset-card):not(.spell-preset-available-tile):active {
   transform: translateY(1px) scale(.988);
   filter: brightness(.97);
   transition-duration: var(--game-feel-press-duration);

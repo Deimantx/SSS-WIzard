@@ -64,6 +64,8 @@
 .spell-card-tooltip-metric strong { color: var(--ui-text-soft); font: var(--text-micro) var(--font-mono); white-space: nowrap; }
 .spell-card-tooltip-metric strong.ui-mana { color: var(--semantic-mana); }
 .spell-card-tooltip-metric strong.ui-time { color: var(--semantic-time); }
+.spell-card-tooltip-metric strong.ui-cast-time { color: var(--ui-warning); }
+.spell-card-tooltip-metric strong.ui-cooldown { color: var(--semantic-time); }
 .spell-card-tooltip-metric strong.ui-focus { color: var(--semantic-focus); }
 .spell-card-tooltip-active { color: var(--semantic-focus); font: var(--text-micro) var(--font-mono); font-style: normal; }
 .spell-card-tooltip-effects { display: grid; gap: 8px; }

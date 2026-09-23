@@ -1,8 +1,8 @@
-import { Plus, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { FRAGMENT_ORDER, SCHOOLS } from '../../game/data/schools'
 import { SPELLS } from '../../game/content/spells/spells'
-import { DEFAULT_SPELL_PRESET_NAME, getSpellAutoCastFocusCost, getSpellPresetFocusBreakdown, getSpellPresetFocusProjection, getSpellPresetSignature, isSpellUnlocked, MAX_COMBAT_SPELLS, SPELL_PRESET_NAME_MAX_LENGTH } from '../../game/systems/spells'
+import { DEFAULT_SPELL_PRESET_NAME, getSpellAutoCastFocusCost, getSpellPresetFocusBreakdown, getSpellPresetFocusProjection, getSpellPresetSignature, insertSpellAt, isSpellUnlocked, MAX_COMBAT_SPELLS, moveSpellToIndex, SPELL_PRESET_NAME_MAX_LENGTH } from '../../game/systems/spells'
 import { formatSpellRank, getAllSpellsInOrder, getSpellRank } from '../../game/systems/spells/spellProgression'
 import type { SpellPresetProjectionState } from '../../game/systems/spells'
 import type { CanonicalSpellId, GameState, SchoolId, SpellPreset, SpellPresetId, SpellPresetSlot } from '../../game/types'
@@ -22,6 +22,18 @@ interface DraftPreset {
 }
 
 type PendingAction = { kind: 'close' } | { kind: 'new' } | { kind: 'select'; preset: SpellPreset } | { kind: 'delete' }
+type SpellPresetDragPayload = { source: 'available' | 'loadout'; spellId: CanonicalSpellId; fromIndex?: number }
+
+const SPELL_PRESET_DRAG_MIME = 'application/x-sss-wizard-spell-preset'
+const readSpellPresetDragPayload = (event: React.DragEvent<HTMLElement>): SpellPresetDragPayload | null => {
+  try {
+    const raw = event.dataTransfer.getData(SPELL_PRESET_DRAG_MIME)
+    const payload = raw ? JSON.parse(raw) as SpellPresetDragPayload : null
+    return payload && (payload.source === 'available' || payload.source === 'loadout') && typeof payload.spellId === 'string' ? payload : null
+  } catch {
+    return null
+  }
+}
 
 const cloneSlots = (slots: readonly SpellPresetSlot[]) => slots.map((slot) => ({ ...slot }))
 const clonePreset = (preset: SpellPreset): DraftPreset => ({ id: preset.id, name: preset.name, slots: cloneSlots(preset.slots) })
@@ -54,6 +66,9 @@ export function SpellPresetDialog({ open, onClose }: { open: boolean; onClose: (
   const [nameError, setNameError] = useState<string | null>(null)
   const [editingName, setEditingName] = useState(false)
   const [savedFeedback, setSavedFeedback] = useState(false)
+  const [dragPayload, setDragPayload] = useState<SpellPresetDragPayload | null>(null)
+  const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null)
+  const [dropFeedback, setDropFeedback] = useState<string | null>(null)
   const nameBeforeEditRef = useRef('')
   const state = useMemo<SpellPresetProjectionState>(() => ({ progress, activities, equipment, artifactProgress, arcaneCore, player: { maxFocus }, debug: { allowFocusOverCap: debugAllowFocusOverCap } }), [progress, activities, equipment, artifactProgress, arcaneCore, maxFocus, debugAllowFocusOverCap])
 
@@ -70,6 +85,9 @@ export function SpellPresetDialog({ open, onClose }: { open: boolean; onClose: (
     setEditingName(!selected)
     nameBeforeEditRef.current = selected?.name ?? DEFAULT_SPELL_PRESET_NAME
     setSavedFeedback(false)
+    setDragPayload(null)
+    setDropTargetIndex(null)
+    setDropFeedback(null)
   }, [open])
 
   const storedDraft = draft?.id ? spellPresets.presets.find((preset) => preset.id === draft.id) : null
@@ -134,15 +152,56 @@ export function SpellPresetDialog({ open, onClose }: { open: boolean; onClose: (
   const commitName = (name: string) => { if (!name.trim()) { setNameError('Preset name cannot be blank.'); return false }; setDraft((current) => current ? { ...current, name: name.trim() } : current); setNameError(null); setEditingName(false); nameBeforeEditRef.current = name.trim(); return true }
   const cancelRename = () => { setDraft((current) => current ? { ...current, name: nameBeforeEditRef.current } : current); setNameError(null); setEditingName(false) }
   const removeSpell = (spellId: CanonicalSpellId) => { setDraft((current) => current ? { ...current, slots: current.slots.filter((slot) => slot.spellId !== spellId) } : current); setApplyError(null) }
-  const addSpell = (spellId: CanonicalSpellId) => { setDraft((current) => current && current.slots.length < MAX_COMBAT_SPELLS && !current.slots.some((slot) => slot.spellId === spellId) ? { ...current, slots: [...current.slots, { spellId, autoCast: false }] } : current); setApplyError(null) }
+  const addSpell = (spellId: CanonicalSpellId) => {
+    setDraft((current) => {
+      if (!current) return current
+      const result = insertSpellAt(current.slots, spellId, current.slots.length, { available: isSpellUnlocked(state, spellId) })
+      return result.ok ? { ...current, slots: result.slots } : current
+    })
+    setApplyError(null)
+  }
   const toggleAutoCast = (spellId: CanonicalSpellId, autoCast: boolean) => setDraft((current) => current ? { ...current, slots: current.slots.map((slot) => slot.spellId === spellId ? { ...slot, autoCast } : slot) } : current)
   const moveSpell = (index: number, direction: -1 | 1) => setDraft((current) => {
-    if (!current || index + direction < 0 || index + direction >= current.slots.length) return current
-    const slots = [...current.slots]
-    const [item] = slots.splice(index, 1)
-    slots.splice(index + direction, 0, item)
-    return { ...current, slots }
+    if (!current) return current
+    const slots = moveSpellToIndex(current.slots, index, index + direction)
+    return slots ? { ...current, slots } : current
   })
+  const startDrag = (event: React.DragEvent<HTMLElement>, payload: SpellPresetDragPayload) => {
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData(SPELL_PRESET_DRAG_MIME, JSON.stringify(payload))
+    setDragPayload(payload)
+    setDropFeedback(null)
+  }
+  const endDrag = () => { setDragPayload(null); setDropTargetIndex(null) }
+  const handleDragOver = (event: React.DragEvent<HTMLElement>, index: number) => {
+    if (!readSpellPresetDragPayload(event) && !dragPayload) return
+    event.preventDefault()
+    event.dataTransfer.dropEffect = 'move'
+    setDropTargetIndex(index)
+  }
+  const handleDrop = (event: React.DragEvent<HTMLElement>, index: number) => {
+    event.preventDefault()
+    const payload = readSpellPresetDragPayload(event) ?? dragPayload
+    setDropTargetIndex(null)
+    if (!payload || !draft) return
+    if (payload.source === 'available') {
+      const result = insertSpellAt(draft.slots, payload.spellId, index, { available: isSpellUnlocked(state, payload.spellId) })
+      if (!result.ok) {
+        setDropFeedback(result.reason === 'duplicate' ? 'That Spell is already in this loadout.' : result.reason === 'full' ? 'The loadout already has eight Spells.' : 'That Spell is not currently available.')
+      } else {
+        setDraft({ ...draft, slots: result.slots })
+        setDropFeedback(null)
+        setApplyError(null)
+      }
+    } else {
+      const fromIndex = payload.fromIndex
+      const targetIndex = Math.min(index, draft.slots.length - 1)
+      if (fromIndex === undefined || draft.slots[fromIndex]?.spellId !== payload.spellId) return
+      const slots = moveSpellToIndex(draft.slots, fromIndex, targetIndex)
+      if (slots) { setDraft({ ...draft, slots }); setDropFeedback(null); setApplyError(null) }
+    }
+    setDragPayload(null)
+  }
   const deletePreset = () => { if (draft.id) setConfirmation({ kind: 'delete' }) }
   const duplicate = () => {
     if (!draft.id) return
@@ -161,22 +220,22 @@ export function SpellPresetDialog({ open, onClose }: { open: boolean; onClose: (
     <header className="spell-preset-dialog-head"><div><div className="panel-kicker">COMBAT CONFIGURATION</div><h2 id="spell-preset-dialog-title">SPELL PRESET MANAGER</h2><p id="spell-preset-dialog-description">Build an ordered combat deck of up to eight Spells. AUTO slots reserve Focus and run in slot order; MANUAL slots reserve none.</p></div><Button icon variant="ghost" ariaLabel="Close spell preset manager" onClick={requestClose}><X size={16} aria-hidden="true" /></Button></header>
     <div className="spell-preset-dialog-body">
       <aside className="spell-preset-sidebar"><div className="spell-preset-list-head"><strong>PRESETS</strong><Button variant="secondary" onClick={() => requestAction({ kind: 'new' })}>+ NEW</Button></div>{draft.id === null && <button type="button" className="spell-preset-card spell-preset-local-row is-selected" onClick={() => requestAction({ kind: 'new' })}><span className="spell-preset-card-title">{draft.name || DEFAULT_SPELL_PRESET_NAME}</span><PresetMiniIcons slots={draft.slots} /><small>{draft.slots.length}/{MAX_COMBAT_SPELLS} Slots · {projection.presetAutoCastFocus} Focus</small><Status tone="warning">UNSAVED</Status></button>}{presetRows.map(({ preset, projection: presetProjection }) => { const selected = preset.id === selectedId; const selectedDirty = selected && dirty; const usableSignature = getUsableSignature(preset); const active = activeLoadout?.presetId === preset.id && activeLoadout.signature === usableSignature; const next = activeLoadout && selectedPresetId === preset.id && presetProjection.canApply && !active; const status = selectedDirty ? 'UNSAVED' : active ? 'ACTIVE BATTLE' : next ? 'NEXT BATTLE' : selected ? 'SELECTED' : 'SAVED'; return <button type="button" className={`spell-preset-card${selected ? ' is-selected' : ''}`} key={preset.id} onClick={() => requestAction({ kind: 'select', preset })}><span className="spell-preset-card-title">{preset.name}</span><PresetMiniIcons slots={preset.slots} /><small>{preset.slots.length}/{MAX_COMBAT_SPELLS} Slots · {presetProjection.presetAutoCastFocus} Focus</small><Status tone={selectedDirty ? 'warning' : active ? 'success' : next ? 'active' : 'neutral'}>{status}</Status></button> })}</aside>
-      <section className="spell-preset-available-column"><div className="dialog-section-head"><div><div className="panel-kicker">ACTION LIBRARY</div><h3>AVAILABLE SPELLS</h3></div><span>{draft.slots.length}/{MAX_COMBAT_SPELLS} slots used</span></div><div className="dialog-filter-row"><FilterBar options={[{ value: 'all' as const, label: 'All' }, ...FRAGMENT_ORDER.map((school) => ({ value: school, label: <><span className="schools-filter-glyph" aria-hidden="true">{SCHOOLS[school].glyph}</span>{SCHOOLS[school].name}</> }))]} value={availableSchool} onChange={setAvailableSchool} ariaLabel="Available spell school" /><SearchInput value={availableSearch} onChange={setAvailableSearch} placeholder="Search available Spells…" ariaLabel="Search available Spells" /></div><AvailableSpells state={state} selectedIds={draft.slots.map((slot) => slot.spellId)} full={draft.slots.length >= MAX_COMBAT_SPELLS} school={availableSchool} search={availableSearch} onAdd={addSpell} /></section>
-      <section className="spell-preset-loadout-column"><div className="dialog-section-head"><div><div className="panel-kicker">ORDERED EDITOR</div><h3>COMBAT LOADOUT</h3></div>{dirty && <Status tone="warning">UNSAVED</Status>}{!dirty && activeLoadout?.presetId === draft.id && <Status tone={activeLoadout.signature === getUsableSignature(draft) ? 'success' : 'active'}>{activeLoadout.signature === getUsableSignature(draft) ? 'ACTIVE BATTLE' : 'NEXT BATTLE'}</Status>}</div><EditablePresetName value={draft.name} editing={editingName} error={nameError} autoFocus={draft.id === null && editingName} maxLength={SPELL_PRESET_NAME_MAX_LENGTH} onChange={rename} onStartEdit={beginRename} onCommit={commitName} onCancel={cancelRename} /><div className="spell-preset-contents">{draft.slots.map((slot, index) => { const available = isSpellUnlocked(state, slot.spellId); const spell = available ? SPELLS[slot.spellId] : null; return <PresetLoadoutSpellTile key={`${slot.spellId}-${index}`} spell={spell} slot={slot} index={index} total={draft.slots.length} rank={available ? getSpellRank(state, slot.spellId) : null} focusCost={available ? getSpellAutoCastFocusCost(state, slot.spellId) : null} onMove={moveSpell} onRemove={removeSpell} onToggleAutoCast={toggleAutoCast} /> })}{!draft.slots.length && <div className="spell-preset-empty-loadout"><strong><Plus size={14} aria-hidden="true" /> ADD SPELLS</strong><span className="spell-preset-empty-caption">Choose Spells from the library, then mark only the slots that should Auto-Cast.</span><span className="spell-preset-empty-legacy">NO SPELLS IN THIS PRESET</span></div>}</div><FocusBudget projection={projection} maxFocus={focus.maxFocus} /></section>
+      <section className="spell-preset-available-column"><div className="dialog-section-head"><div><div className="panel-kicker">ACTION LIBRARY</div><h3>AVAILABLE SPELLS</h3></div><span>{draft.slots.length}/{MAX_COMBAT_SPELLS} slots used</span></div><div className="dialog-filter-row"><FilterBar options={[{ value: 'all' as const, label: 'All' }, ...FRAGMENT_ORDER.map((school) => ({ value: school, label: <><span className="schools-filter-glyph" aria-hidden="true">{SCHOOLS[school].glyph}</span>{SCHOOLS[school].name}</> }))]} value={availableSchool} onChange={setAvailableSchool} ariaLabel="Available spell school" /><SearchInput value={availableSearch} onChange={setAvailableSearch} placeholder="Search available Spells…" ariaLabel="Search available Spells" /></div><AvailableSpells state={state} selectedIds={draft.slots.map((slot) => slot.spellId)} full={draft.slots.length >= MAX_COMBAT_SPELLS} school={availableSchool} search={availableSearch} onAdd={addSpell} draggingSpellId={dragPayload?.source === 'available' ? dragPayload.spellId : null} onDragStart={startDrag} onDragEnd={endDrag} /></section>
+      <section className="spell-preset-loadout-column"><div className="dialog-section-head"><div><div className="panel-kicker">ORDERED EDITOR</div><h3>COMBAT LOADOUT</h3></div><div className="spell-preset-header-status">{dirty && <Status tone="warning">UNSAVED</Status>}{!dirty && activeLoadout?.presetId === draft.id && <Status tone={activeLoadout.signature === getUsableSignature(draft) ? 'success' : 'active'}>{activeLoadout.signature === getUsableSignature(draft) ? 'ACTIVE BATTLE' : 'NEXT BATTLE'}</Status>}{dropFeedback && <span className="spell-preset-drag-feedback" role="status">{dropFeedback}</span>}</div></div><EditablePresetName value={draft.name} editing={editingName} error={nameError} autoFocus={draft.id === null && editingName} maxLength={SPELL_PRESET_NAME_MAX_LENGTH} onChange={rename} onStartEdit={beginRename} onCommit={commitName} onCancel={cancelRename} /><div className="spell-preset-contents">{Array.from({ length: MAX_COMBAT_SPELLS }, (_, index) => { const slot = draft.slots[index] ?? null; const available = Boolean(slot && isSpellUnlocked(state, slot.spellId)); const spell = slot && available ? SPELLS[slot.spellId] : null; return <PresetLoadoutSpellTile key={slot?.spellId ?? `empty-${index}`} spell={spell} slot={slot} index={index} total={draft.slots.length} rank={slot && available ? getSpellRank(state, slot.spellId) : null} focusCost={slot && available ? getSpellAutoCastFocusCost(state, slot.spellId) : null} dragging={Boolean(slot && dragPayload?.source === 'loadout' && dragPayload.spellId === slot.spellId)} dropTarget={dropTargetIndex === index} onMove={moveSpell} onRemove={removeSpell} onToggleAutoCast={toggleAutoCast} onDragStart={(event, spellId, fromIndex) => startDrag(event, { source: 'loadout', spellId, fromIndex })} onDragEnd={endDrag} onDragOver={handleDragOver} onDrop={handleDrop} /> })}</div><FocusBudget projection={projection} maxFocus={focus.maxFocus} /></section>
     </div>
     <footer className="spell-preset-dialog-foot"><div className="spell-preset-dialog-status">{savedFeedback && <Status tone="success">✓ SAVED</Status>}{!savedFeedback && applyError && <p role="alert">{applyError}</p>}{!savedFeedback && !applyError && projection.validSpellIds.length === 0 && <Status tone="warning">Add at least one available Spell to select this preset.</Status>}{!savedFeedback && !applyError && projection.validSpellIds.length > 0 && !projection.canApply && <Status tone="warning">Need {Math.max(0, projection.totalAfterApply - state.player.maxFocus)} more Focus.</Status>}{!savedFeedback && !applyError && projection.canApply && projection.unavailableSpellIds.length > 0 && <Status tone="warning">{projection.unavailableSpellIds.length} unavailable slot{projection.unavailableSpellIds.length === 1 ? '' : 's'} will be skipped.</Status>}</div><div className="spell-preset-dialog-actions"><Button variant="ghost" disabled={!draft.id} onClick={duplicate}>DUPLICATE</Button><Button variant="danger" disabled={!draft.id} onClick={deletePreset}>DELETE</Button><span className="spell-preset-dialog-spacer" /><Button variant="ghost" onClick={requestClose}>CANCEL</Button><Button variant="secondary" onClick={save}>{savedFeedback ? '✓ SAVED' : 'SAVE'}</Button><GameTooltip content={<TooltipContent title="Select preset" description={combat.active ? 'Store this selection for the next enemy battle.' : 'Use this ordered loadout for the next battle.'} />}><Button variant="success" disabled={!projection.canApply} onClick={apply}>SELECT PRESET</Button></GameTooltip></div></footer>
     {confirmation && <ConfirmationDialog confirmation={confirmation} draftName={draft.name} onCancel={() => setConfirmation(null)} onDiscard={discardConfirmation} onSave={saveConfirmation} />}
   </ModalPortal>
 }
 
-function AvailableSpells({ state, selectedIds, full, school, search, onAdd }: { state: Pick<GameState, 'progress' | 'equipment' | 'artifactProgress' | 'arcaneCore'>; selectedIds: CanonicalSpellId[]; full: boolean; school: 'all' | SchoolId; search: string; onAdd: (spellId: CanonicalSpellId) => void }) {
+function AvailableSpells({ state, selectedIds, full, school, search, onAdd, draggingSpellId, onDragStart, onDragEnd }: { state: Pick<GameState, 'progress' | 'equipment' | 'artifactProgress' | 'arcaneCore'>; selectedIds: CanonicalSpellId[]; full: boolean; school: 'all' | SchoolId; search: string; onAdd: (spellId: CanonicalSpellId) => void; draggingSpellId: CanonicalSpellId | null; onDragStart: (event: React.DragEvent<HTMLElement>, payload: SpellPresetDragPayload) => void; onDragEnd: () => void }) {
   const query = search.trim().toLocaleLowerCase()
   const spells = useMemo(() => getAllSpellsInOrder().filter((spell) => {
     if (school !== 'all' && spell.school !== school) return false
     if (!isSpellUnlocked(state, spell.id)) return false
     return !query || `${spell.name} ${spell.description}`.toLocaleLowerCase().includes(query)
   }), [state.progress, state.equipment, state.artifactProgress, state.arcaneCore, school, query])
-  return <div className="spell-preset-available-list">{spells.map((spell) => { const added = selectedIds.includes(spell.id); const rank = getSpellRank(state, spell.id); const focusCost = getSpellAutoCastFocusCost(state, spell.id); if (rank === null || focusCost === null) return null; return <PresetAvailableSpellTile key={spell.id} spell={spell} rank={rank} focusCost={focusCost} added={added} disabled={full && !added} onAdd={onAdd} /> })}{!spells.length && <div className="spell-preset-library-empty">No known Spells match this library filter.</div>}</div>
+  return <div className="spell-preset-available-list">{spells.map((spell) => { const added = selectedIds.includes(spell.id); const rank = getSpellRank(state, spell.id); const focusCost = getSpellAutoCastFocusCost(state, spell.id); if (rank === null || focusCost === null) return null; return <PresetAvailableSpellTile key={spell.id} spell={spell} rank={rank} focusCost={focusCost} added={added} disabled={full && !added} dragging={draggingSpellId === spell.id} onAdd={onAdd} onDragStart={(event, spellId) => onDragStart(event, { source: 'available', spellId })} onDragEnd={onDragEnd} /> })}{!spells.length && <div className="spell-preset-library-empty">No known Spells match this library filter.</div>}</div>
 }
 
 function FocusBudget({ projection, maxFocus }: { projection: ReturnType<typeof getSpellPresetFocusProjection>; maxFocus: number }) {

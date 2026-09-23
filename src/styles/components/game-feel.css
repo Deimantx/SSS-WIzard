@@ -48,7 +48,8 @@
   }
 }
 
-.game-shell button:not(:disabled):not(.spell-browser-tile):active {
+/* Spellbook and Spell Preset cards are geometry-stable: never add them to lift/scale selectors. */
+.game-shell button:not(:disabled):not(.spell-browser-tile):not(.spell-preset-card):not(.spell-preset-available-tile):not(.spell-preset-drag-handle):active {
   transform: translateY(1px) scale(.988);
   filter: brightness(.97);
   transition-duration: var(--game-feel-press-duration);
@@ -70,8 +71,6 @@
 .transmutation-recipe-tile,
 .equipment-armory-card,
 .research-item-tile,
-.spell-preset-card,
-.spell-preset-available-tile,
 .transmutation-assignment-row,
 .transmutation-ring-choice,
 .activity-card,
@@ -88,8 +87,6 @@
 .transmutation-recipe-tile:hover,
 .equipment-armory-card:hover,
 .research-item-tile:hover,
-.spell-preset-card:hover,
-.spell-preset-available-tile:hover,
 .transmutation-assignment-row:hover,
 .transmutation-ring-choice:hover,
 .activity-card:hover,
@@ -106,8 +103,6 @@
 .transmutation-recipe-tile:active,
 .equipment-armory-card:active,
 .research-item-tile:active,
-.spell-preset-card:active,
-.spell-preset-available-tile:active,
 .transmutation-assignment-row:active,
 .transmutation-ring-choice:active,
 .activity-card:active,
@@ -566,14 +561,12 @@
   to { border-color: var(--ui-border); }
 }
 
-/* Stronger feedback for real clickable surfaces. Static cards and editor surfaces are intentionally absent. */
+/* Stronger feedback for real clickable surfaces. Spellbook and Spell Preset cards stay geometry-stable. */
 .transmutation-recipe-tile,
 .equipment-armory-card,
 .equipment-slot-card,
 .research-item-tile,
 .spell-browser-tile,
-.spell-preset-card,
-.spell-preset-available-tile,
 .transmutation-assignment-row,
 .transmutation-ring-choice,
 .quick-card,
@@ -610,8 +603,6 @@
 .equipment-armory-card:hover,
 .equipment-slot-card:hover,
 .research-item-tile:hover,
-.spell-preset-card:hover,
-.spell-preset-available-tile:hover,
 .transmutation-assignment-row:hover,
 .transmutation-ring-choice:hover,
 .quick-card:hover,
@@ -631,8 +622,6 @@
 .equipment-armory-card:active,
 .equipment-slot-card:active,
 .research-item-tile:active,
-.spell-preset-card:active,
-.spell-preset-available-tile:active,
 .transmutation-assignment-row:active,
 .transmutation-ring-choice:active,
 .quick-card:active,

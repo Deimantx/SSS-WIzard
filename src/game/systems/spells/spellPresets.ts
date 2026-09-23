@@ -53,6 +53,39 @@ const normalizeRawSlots = (value: unknown, legacySpellIds?: unknown): SpellPrese
 
 export const normalizeSpellPresetSlots = (value: unknown, legacySpellIds?: unknown) => normalizeRawSlots(value, legacySpellIds)
 
+export type SpellPresetInsertFailure = 'duplicate' | 'full' | 'invalid-index' | 'unavailable'
+
+export type SpellPresetInsertResult =
+  | { ok: true; slots: SpellPresetSlot[] }
+  | { ok: false; reason: SpellPresetInsertFailure }
+
+/** Returns a reordered draft without mutating the source slot array or its slot objects. */
+export const moveSpellToIndex = (slots: readonly SpellPresetSlot[], fromIndex: number, toIndex: number): SpellPresetSlot[] | null => {
+  if (!Number.isInteger(fromIndex) || !Number.isInteger(toIndex) || fromIndex < 0 || fromIndex >= slots.length || toIndex < 0 || toIndex >= slots.length) return null
+  if (fromIndex === toIndex) return slots.map((slot) => ({ ...slot }))
+  const next = slots.map((slot) => ({ ...slot }))
+  const [moved] = next.splice(fromIndex, 1)
+  next.splice(toIndex, 0, moved)
+  return next
+}
+
+/** Inserts an unlocked spell into a draft while enforcing the editor's duplicate and slot limits. */
+export const insertSpellAt = (
+  slots: readonly SpellPresetSlot[],
+  spellId: CanonicalSpellId,
+  index: number,
+  options: { maxSlots?: number; available?: boolean } = {},
+): SpellPresetInsertResult => {
+  const maxSlots = options.maxSlots ?? MAX_COMBAT_SPELLS
+  if (!Number.isInteger(index) || index < 0 || index > maxSlots) return { ok: false, reason: 'invalid-index' }
+  if (options.available === false) return { ok: false, reason: 'unavailable' }
+  if (slots.some((slot) => slot.spellId === spellId)) return { ok: false, reason: 'duplicate' }
+  if (slots.length >= maxSlots) return { ok: false, reason: 'full' }
+  const next = slots.map((slot) => ({ ...slot }))
+  next.splice(Math.min(index, next.length), 0, { spellId, autoCast: false })
+  return { ok: true, slots: next }
+}
+
 /** Sanitizes persisted preset data. Legacy spellIds are converted to AUTO slots. */
 export const normalizeSpellPresetState = (raw: unknown): SpellPresetState => {
   const source = raw && typeof raw === 'object' ? raw as { presets?: unknown; selectedPresetId?: unknown; lastAppliedPresetId?: unknown } : {}

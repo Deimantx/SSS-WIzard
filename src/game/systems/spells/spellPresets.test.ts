@@ -2,9 +2,23 @@ import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { applySpellPresetAction, createSpellPresetAction, saveSpellPresetAction } from '../../../store/actions/spellPresetActions'
 import { spawnEnemy } from '../combat/combatRuntime'
-import { doesCurrentAutoCastMatchPreset, getSpellEquipmentBonusPreview, getSpellPresetFocusBreakdown, getSpellPresetFocusProjection, normalizeSpellPresetState } from './index'
+import { doesCurrentAutoCastMatchPreset, getSpellEquipmentBonusPreview, getSpellPresetFocusBreakdown, getSpellPresetFocusProjection, insertSpellAt, moveSpellToIndex, normalizeSpellPresetState } from './index'
 
 describe('spell preset foundation', () => {
+  it('reorders draft slots without changing Auto-Cast state', () => {
+    const slots = [{ spellId: 'fire-bolt' as const, autoCast: true }, { spellId: 'wind-blade' as const, autoCast: false }, { spellId: 'water-bolt' as const, autoCast: true }]
+    expect(moveSpellToIndex(slots, 0, 2)).toEqual([{ spellId: 'wind-blade', autoCast: false }, { spellId: 'water-bolt', autoCast: true }, { spellId: 'fire-bolt', autoCast: true }])
+    expect(slots).toEqual([{ spellId: 'fire-bolt', autoCast: true }, { spellId: 'wind-blade', autoCast: false }, { spellId: 'water-bolt', autoCast: true }])
+  })
+
+  it('inserts a unique available Spell at a requested index and enforces editor limits', () => {
+    const slots = [{ spellId: 'fire-bolt' as const, autoCast: true }]
+    expect(insertSpellAt(slots, 'wind-blade', 0)).toEqual({ ok: true, slots: [{ spellId: 'wind-blade', autoCast: false }, { spellId: 'fire-bolt', autoCast: true }] })
+    expect(insertSpellAt(slots, 'fire-bolt', 1)).toEqual({ ok: false, reason: 'duplicate' })
+    expect(insertSpellAt(slots, 'wind-blade', 1, { available: false })).toEqual({ ok: false, reason: 'unavailable' })
+    expect(insertSpellAt(Array.from({ length: 8 }, (_, index) => ({ spellId: (index % 2 ? 'wind-blade' : 'fire-bolt') as 'fire-bolt' | 'wind-blade', autoCast: false })), 'water-bolt', 0)).toEqual({ ok: false, reason: 'full' })
+  })
+
   it('auto-selects the first saved usable preset and does not switch an existing selection', () => {
     const state = createInitialState()
     state.progress.spellRanks = { 'fire-bolt': 1, 'wind-blade': 1 }

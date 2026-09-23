@@ -154,7 +154,7 @@
   font-size: var(--ui-tuning-schools-mana-size, 11px);
 }
 
-.schools-screen .spell-browser-footer .ui-time {
+.schools-screen .spell-browser-footer .ui-cast-time, .schools-screen .spell-browser-footer .ui-cooldown {
   font-size: var(--ui-tuning-schools-cooldown-size, 11px);
 }
 

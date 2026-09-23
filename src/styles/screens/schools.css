@@ -165,6 +165,7 @@
 .spell-automation-modal-footer { justify-content: flex-end; border-top: 1px solid var(--ui-border); border-bottom: 0; }
 .spell-automation-footer-spacer { flex: 1 1 auto; }
 .spell-automation-discard-copy { color: var(--ui-warning); font-size: var(--text-xs); }
+.spell-automation-apply-error { max-width: 280px; color: var(--ui-danger); font-size: var(--text-xs); text-align: right; }
 .combat-automation-overview-head, .combat-automation-overview-row { display: grid; grid-template-columns: 58px minmax(150px, 1.2fr) 92px minmax(170px, 1.6fr) 84px; align-items: center; gap: 10px; }
 .combat-automation-overview-head { padding: 0 9px 7px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .08em; }
 .combat-automation-overview-row { min-width: 0; padding: 9px; border-top: 1px solid var(--ui-border); }

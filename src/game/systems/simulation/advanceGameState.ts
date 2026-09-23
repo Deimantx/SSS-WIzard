@@ -282,6 +282,7 @@ const advanceCombatDowntimeTimeline = (state: GameState, delta: number, context:
       getNextPlayerBarrierEventMs(state),
       getNextHealthRegenEventMs(state),
       getNextQueuedSpellCooldownEventMs(state, cooldownRecovery),
+      getNextAutoCastCooldownEventMs(state, cooldownRecovery),
     ].filter((value): value is number => value !== null && Number.isFinite(value))
     const untilEvent = boundaries.length ? Math.min(...boundaries) : remaining
     const elapsed = Math.min(remaining, Math.max(0, untilEvent))

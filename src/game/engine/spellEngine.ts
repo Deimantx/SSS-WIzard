@@ -15,6 +15,7 @@ import { getArcaneCoreV6CastModifiers, type ArcaneCoreCastOrigin, type ArcaneCor
 import { getArcaneCoreCooldownPulseReduction } from '../systems/arcaneCore/arcaneCoreRuntime'
 import { runCombatTriggers } from '../systems/combat/triggerRuntime'
 import { createCombatResolutionContext } from '../systems/combat/combatTypes'
+import { getSpellManaPreview } from './spellCastPreview'
 
 const canonicalSpellId = (spellId: SpellId): CanonicalSpellId => SPELLS[spellId].id
 
@@ -49,11 +50,9 @@ export const getSpellStartFailure = (state: GameState, spellId: SpellId, options
   if (!options.ignoreCombatLoadout && !isSpellInActiveCombatLoadout(state, spell.id)) return 'not-in-loadout'
   if (spellRequiresEnemyTarget(spell) && !state.combat.enemyId) return 'no-target'
   if (!state.debug.ignoreSpellCooldowns && (state.combat.spellCooldowns[spell.id] ?? 0) > 0) return 'cooldown'
-  const manaCost = getEffectiveManaCost(state, spell.manaCost)
   const castOrigin = options.castOrigin ?? (state.combat.queuedPlayerSpellId === spell.id ? 'manual-queued' : 'auto')
-  const v6Preview = getArcaneCoreV6CastModifiers(state, { origin: castOrigin, spellId: spell.id, loadoutSlotIndex: state.combat.activeSpellLoadout?.slots.findIndex((slot) => slot.spellId === spell.id) ?? null, damaging: spell.effects.some((effect) => effect.type === 'deal-damage'), manaCost, maxMana: state.player.maxMana, playerMana: state.player.mana, enemyHealthPercent: state.combat.enemyHp / Math.max(1, state.combat.enemyMaxHp) * 100 }, true)
-  const requiredMana = Math.max(1, Math.ceil(manaCost * v6Preview.manaCostMultiplier))
-  if (!state.debug.infiniteMana && !isArcaneCoreSpellFree(state) && !v6Preview.free && !hasEnoughResource(state.player.mana, requiredMana)) return 'mana'
+  const manaPreview = getSpellManaPreview(state, spell.id, castOrigin)
+  if (manaPreview && !state.debug.infiniteMana && !manaPreview.free && !hasEnoughResource(state.player.mana, manaPreview.manaCost)) return 'mana'
   return null
 }
 
@@ -98,12 +97,13 @@ const startSpellCast = (state: GameState, spellId: SpellId, quiet: boolean, uiEv
     return false
   }
   const canonicalId = spell.id
-  const baseManaCost = getEffectiveManaCost(state, spell.manaCost)
   const castOrigin = options.castOrigin ?? 'auto'
   const loadoutSlotIndex = state.combat.activeSpellLoadout?.slots.findIndex((slot) => slot.spellId === spell.id) ?? -1
-  const v6Preview = getArcaneCoreV6CastModifiers(state, { origin: castOrigin, spellId: spell.id, loadoutSlotIndex: loadoutSlotIndex >= 0 ? loadoutSlotIndex : null, damaging: spell.effects.some((effect) => effect.type === 'deal-damage'), manaCost: baseManaCost, maxMana: state.player.maxMana, playerMana: state.player.mana, enemyHealthPercent: state.combat.enemyHp / Math.max(1, state.combat.enemyMaxHp) * 100 }, true)
-  const free = isArcaneCoreSpellFree(state) || v6Preview.free
-  const manaCost = Math.max(1, Math.ceil(baseManaCost * v6Preview.manaCostMultiplier))
+  const manaPreview = getSpellManaPreview(state, spell.id, castOrigin)
+  const baseManaCost = manaPreview?.baseManaCost ?? getEffectiveManaCost(state, spell.manaCost)
+  const v6Preview = manaPreview?.modifiers ?? getArcaneCoreV6CastModifiers(state, { origin: castOrigin, spellId: spell.id, loadoutSlotIndex: loadoutSlotIndex >= 0 ? loadoutSlotIndex : null, damaging: spell.effects.some((effect) => effect.type === 'deal-damage'), manaCost: baseManaCost, maxMana: state.player.maxMana, playerMana: state.player.mana, enemyHealthPercent: state.combat.enemyHp / Math.max(1, state.combat.enemyMaxHp) * 100 }, true)
+  const free = manaPreview?.free ?? (isArcaneCoreSpellFree(state) || v6Preview.free)
+  const manaCost = manaPreview?.manaCost ?? Math.max(1, Math.ceil(baseManaCost * v6Preview.manaCostMultiplier))
   const gustMultiplier = getCastWorkMultiplier(state)
   const multiplier = gustMultiplier / Math.max(0.1, v6Preview.actionSpeedMultiplier)
   const castWorkMs = spell.castTimeMs * multiplier

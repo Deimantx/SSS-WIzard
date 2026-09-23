@@ -1,5 +1,5 @@
-import { ArrowDown, ArrowUp, CircleDot, Eye, Pencil, Save, Settings2, Trash2, X } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { ArrowDown, ArrowUp, CircleDot, Eye, Pencil, Settings2, Trash2, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { Button, GameTooltip } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { SPELLS } from '../../game/content/spells/spells'
@@ -22,35 +22,32 @@ export function CombatSpellLoadout({ focusState, onSelectSpell, automationSpellI
   const removeSpell = useGameStore((state) => state.removeSpellFromSelectedPreset)
   const createPreset = useGameStore((state) => state.createSpellPreset)
   const savePreset = useGameStore((state) => state.saveSpellPreset)
-  const selectPreset = useGameStore((state) => state.selectSpellPreset)
   const selectPresetForEditing = useGameStore((state) => state.selectSpellPresetForEditing)
   const renamePreset = useGameStore((state) => state.renameSpellPreset)
   const deletePreset = useGameStore((state) => state.deleteSpellPreset)
   const setPresetSlotAutoCast = useGameStore((state) => state.setPresetSlotAutoCast)
-  const setPresetSlotAutomation = useGameStore((state) => state.setPresetSlotAutomation)
+  const applyPresetSlotAutomation = useGameStore((state) => state.applyPresetSlotAutomation)
   const selected = presets.presets.find((preset) => preset.id === presets.selectedPresetId) ?? null
   const slots = combat.active && combat.activeSpellLoadout ? combat.activeSpellLoadout.slots : selected?.slots ?? []
   const focus = getSpellPresetFocusBreakdown(focusState)
   const { drag, dropTarget, beginDrag, registerTarget } = useSpellLoadoutDnd()
-  const currentSignature = useMemo(() => JSON.stringify({ name: selected?.name ?? '', slots }), [selected?.name, slots])
-  const [savedSignature, setSavedSignature] = useState(currentSignature)
   const [editor, setEditor] = useState<'new' | 'rename' | null>(null)
   const [editorName, setEditorName] = useState('')
   const [copyCurrent, setCopyCurrent] = useState(true)
-  const [pendingPresetId, setPendingPresetId] = useState<typeof presets.selectedPresetId>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [automationIndex, setAutomationIndex] = useState<number | null>(null)
   const [automationOrigin, setAutomationOrigin] = useState<AutomationEditorOrigin>('direct')
   const [overviewOpen, setOverviewOpen] = useState(false)
-  const modified = Boolean(selected && currentSignature !== savedSignature)
+  const [automationError, setAutomationError] = useState<string | null>(null)
 
-  useEffect(() => { setSavedSignature(currentSignature); setEditor(null); setPendingPresetId(null); setConfirmDelete(false) }, [selected?.id])
+  useEffect(() => { setEditor(null); setConfirmDelete(false) }, [selected?.id])
   useEffect(() => {
     if (!automationSpellId) return
     try {
       if (combat.active) return
       const requestedIndex = slots.findIndex((slot) => slot.spellId === automationSpellId)
       if (requestedIndex >= 0) {
+        setAutomationError(null)
         setAutomationOrigin('direct')
         setAutomationIndex(requestedIndex)
       }
@@ -72,13 +69,10 @@ export function CombatSpellLoadout({ focusState, onSelectSpell, automationSpellI
       setEditor(null)
     }
   }
-  const saveCurrent = () => { if (selected) { savePreset({ id: selected.id, name: selected.name, slots }); setSavedSignature(currentSignature) } }
   const requestPresetChange = (id: typeof presets.selectedPresetId) => {
     if (!id || id === selected?.id) return
-    if (modified) setPendingPresetId(id)
-    else selectPreset(id)
+    if (!combat.active) selectPresetForEditing(id)
   }
-  const discardAndSwitch = () => { if (pendingPresetId) { selectPreset(pendingPresetId); setPendingPresetId(null) } }
   const automationSlot = automationIndex === null ? null : slots[automationIndex] ?? null
   const closeAutomationEditor = () => {
     const returnToOverview = automationOrigin === 'overview'
@@ -87,30 +81,34 @@ export function CombatSpellLoadout({ focusState, onSelectSpell, automationSpellI
     if (returnToOverview) setOverviewOpen(true)
   }
   const applyAutomation = (config: SpellAutomationConfig, autoCast: boolean) => {
-    if (!selected || !automationSlot) return
-    setPresetSlotAutomation(selected.id, automationSlot.spellId, config)
-    setPresetSlotAutoCast(selected.id, automationSlot.spellId, autoCast)
+    if (!selected || !automationSlot || combat.active) return
+    const result = applyPresetSlotAutomation(selected.id, automationSlot.spellId, config, autoCast)
+    if (!result.ok) {
+      setAutomationError(result.message)
+      return result
+    }
+    setAutomationError(null)
     closeAutomationEditor()
+    return result
   }
   const toggleAutomationMode = (slot: SpellPresetSlot) => {
-    if (selected) setPresetSlotAutoCast(selected.id, slot.spellId, !slot.autoCast)
+    if (selected && !combat.active) setPresetSlotAutoCast(selected.id, slot.spellId, !slot.autoCast)
   }
 
   return <section className="schools-loadout-panel">
-    <div className="section-heading loadout-heading"><div><div className="panel-kicker">COMBAT PREPARATION</div><h2>Combat Loadout</h2><p>{combat.active ? 'Active battle snapshot' : 'Drag spells onto each other to swap positions.'}</p></div><div className="loadout-preset-controls"><label>Preset <select aria-label="Active combat loadout preset" value={selected?.id ?? ''} onChange={event => requestPresetChange(event.target.value as typeof presets.selectedPresetId)}>{presets.presets.map((preset) => <option key={preset.id} value={preset.id}>{preset.name}</option>)}</select></label>{modified && <span className="loadout-modified">MODIFIED</span>}<GameTooltip content={<TooltipContent title="Automation overview" description={combat.active ? 'Automation is locked while the active battle snapshot is running.' : "Review every prepared Spell's mode, conditions, and priority."} />}><Button variant="secondary" ariaLabel="Open combat automation overview" disabled={!selected || combat.active} onClick={() => setOverviewOpen(true)}><Settings2 size={14} aria-hidden="true" /> AUTOMATION</Button></GameTooltip><GameTooltip content={<TooltipContent title="Save preset" description="Save this loadout's order and Auto-Cast state to the active preset." />}><Button variant="secondary" ariaLabel="Save active combat loadout preset" onClick={saveCurrent}><Save size={14} aria-hidden="true" /> SAVE</Button></GameTooltip><Button variant="ghost" onClick={beginNew}>NEW</Button><Button variant="ghost" disabled={!selected} onClick={beginRename}><Pencil size={14} aria-hidden="true" /> RENAME</Button><GameTooltip accent="warning" content={<TooltipContent title="Delete preset" description="Remove the active saved loadout after confirmation." />}><Button variant="ghost" disabled={!selected} ariaLabel="Delete active combat loadout preset" onClick={() => setConfirmDelete(true)}><Trash2 size={14} aria-hidden="true" /> DELETE</Button></GameTooltip></div></div>
+    <div className="section-heading loadout-heading"><div><div className="panel-kicker">COMBAT PREPARATION</div><h2>Combat Loadout</h2><p>{combat.active ? 'Active battle snapshot · read-only' : 'Changes save automatically.'}</p></div><div className="loadout-preset-controls"><label>Preset <select aria-label="Active combat loadout preset" disabled={combat.active} value={selected?.id ?? ''} onChange={event => requestPresetChange(event.target.value as typeof presets.selectedPresetId)}>{presets.presets.map((preset) => <option key={preset.id} value={preset.id}>{preset.name}</option>)}</select></label><GameTooltip content={<TooltipContent title="Automation overview" description={combat.active ? 'Review the active battle automation snapshot. Editing is disabled until combat ends.' : "Review every prepared Spell's mode, conditions, and priority."} />}><Button variant="secondary" ariaLabel="Open combat automation overview" disabled={!selected} onClick={() => setOverviewOpen(true)}><Settings2 size={14} aria-hidden="true" /> AUTOMATION</Button></GameTooltip><Button variant="ghost" disabled={combat.active} onClick={beginNew}>NEW</Button><Button variant="ghost" disabled={!selected || combat.active} onClick={beginRename}><Pencil size={14} aria-hidden="true" /> RENAME</Button><GameTooltip accent="warning" content={<TooltipContent title="Delete preset" description="Remove the active saved loadout after confirmation." />}><Button variant="ghost" disabled={!selected || combat.active} ariaLabel="Delete active combat loadout preset" onClick={() => setConfirmDelete(true)}><Trash2 size={14} aria-hidden="true" /> DELETE</Button></GameTooltip></div></div>
     {editor && <div className="loadout-inline-editor"><strong>{editor === 'new' ? 'NEW PRESET' : 'RENAME PRESET'}</strong><input aria-label={editor === 'new' ? 'New preset name' : 'Rename preset'} value={editorName} onChange={event => setEditorName(event.target.value)} placeholder="Preset name" onKeyDown={event => { if (event.key === 'Enter') submitEditor(); if (event.key === 'Escape') setEditor(null) }} />{editor === 'new' && <label><input type="checkbox" checked={copyCurrent} onChange={event => setCopyCurrent(event.target.checked)} /> Copy current loadout</label>}<Button variant="ghost" onClick={() => setEditor(null)}>CANCEL</Button><Button variant="secondary" disabled={!editorName.trim()} onClick={submitEditor}>{editor === 'new' ? 'CREATE' : 'SAVE'}</Button></div>}
-    {pendingPresetId && <div className="loadout-inline-confirm" role="alert"><span>Unsaved changes to “{selected?.name}”.</span><Button variant="ghost" onClick={() => setPendingPresetId(null)}>CANCEL</Button><Button variant="danger" onClick={discardAndSwitch}>DISCARD & SWITCH</Button><Button variant="secondary" onClick={() => { saveCurrent(); discardAndSwitch() }}>SAVE & SWITCH</Button></div>}
     {confirmDelete && selected && <div className="loadout-inline-confirm" role="alert"><span>Delete “{selected.name}”?</span><Button variant="ghost" onClick={() => setConfirmDelete(false)}>CANCEL</Button><Button variant="danger" onClick={() => { deletePreset(selected.id); setConfirmDelete(false) }}>DELETE</Button></div>}
     <div className="loadout-slot-list">
       {Array.from({ length: 8 }, (_, index) => {
         const slot = slots[index]
         const spell = slot ? SPELLS[slot.spellId] : null
-        return <LoadoutSlot key={`${index}-${slot?.spellId ?? 'empty'}`} index={index} totalSlots={slots.length} slot={slot} spell={spell} canEdit={!combat.active} dragging={drag?.payload.source === 'loadout' && drag.payload.fromIndex === index} dropTarget={dropTarget?.index === index} registerTarget={element => registerTarget(index, element)} onMove={moveSlot} onRemove={removeSpell} onSelect={onSelectSpell} onToggleAutoCast={toggleAutomationMode} onOpenAutomation={(nextIndex) => { setAutomationOrigin('direct'); setAutomationIndex(nextIndex) }} onPointerDown={event => { if (slot && !combat.active) beginDrag({ source: 'loadout', spellId: slot.spellId, fromIndex: index }, event) }} />
+        return <LoadoutSlot key={`${index}-${slot?.spellId ?? 'empty'}`} index={index} totalSlots={slots.length} slot={slot} spell={spell} canEdit={!combat.active} dragging={drag?.payload.source === 'loadout' && drag.payload.fromIndex === index} dropTarget={dropTarget?.index === index} registerTarget={element => registerTarget(index, element)} onMove={moveSlot} onRemove={removeSpell} onSelect={onSelectSpell} onToggleAutoCast={toggleAutomationMode} onOpenAutomation={(nextIndex) => { setAutomationError(null); setAutomationOrigin('direct'); setAutomationIndex(nextIndex) }} onPointerDown={event => { if (slot && !combat.active) beginDrag({ source: 'loadout', spellId: slot.spellId, fromIndex: index }, event) }} />
       })}
     </div>
     <div className="loadout-footer"><span>{slots.length} / 8 prepared</span><FocusBudgetMeter autoCastFocus={focus.autoCastFocus} otherFocus={focus.otherFocus} totalFocus={focus.totalFocus} maxFocus={focus.maxFocus} freeFocus={focus.freeFocus} compact /></div>
-    {selected && <CombatAutomationOverviewModal open={overviewOpen} presetName={selected.name} slots={slots} onClose={() => setOverviewOpen(false)} onEdit={(index) => { setAutomationOrigin('overview'); setOverviewOpen(false); setAutomationIndex(index) }} onToggleMode={toggleAutomationMode} />}
-    {selected && automationSlot && automationIndex !== null && <SpellAutomationModal open={automationIndex !== null} slot={automationSlot} slotIndex={automationIndex} presetName={selected.name} onClose={closeAutomationEditor} onApply={applyAutomation} />}
+    {selected && <CombatAutomationOverviewModal open={overviewOpen} presetName={selected.name} slots={slots} readOnly={combat.active} onClose={() => setOverviewOpen(false)} onEdit={(index) => { setAutomationError(null); setAutomationOrigin('overview'); setOverviewOpen(false); setAutomationIndex(index) }} onToggleMode={toggleAutomationMode} />}
+    {selected && automationSlot && automationIndex !== null && <SpellAutomationModal open={automationIndex !== null} slot={automationSlot} slotIndex={automationIndex} presetName={selected.name} loadoutSlots={slots} applyError={automationError} onClose={closeAutomationEditor} onApply={applyAutomation} />}
   </section>
 }
 

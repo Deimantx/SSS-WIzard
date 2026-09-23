@@ -2,7 +2,7 @@ import { CANONICAL_SPELL_IDS, LEGACY_SPELL_ID_MAP } from '../../content/spells/s
 import { deriveFocusReservations } from '../focus/focusReservations'
 import type { FocusReservationState } from '../focus/focusReservations'
 import { getSpellAutoCastFocusCost, isSpellUnlocked } from './spellProgression'
-import { normalizeSpellAutomationConfig } from './spellAutomation'
+import { getSpellAutomationConfig, normalizeSpellAutomationConfig } from './spellAutomation'
 import type { ActiveCombatSpellLoadout, CanonicalSpellId, GameState, SpellId, SpellPreset, SpellPresetId, SpellPresetSlot, SpellPresetState } from '../../types'
 
 export const MAX_COMBAT_SPELLS = 8
@@ -146,7 +146,18 @@ export const getSpellPresetFocusBreakdown = (state: SpellPresetFocusState): Spel
   return { autoCastFocus, otherFocus, totalFocus, maxFocus: state.player.maxFocus, freeFocus: state.player.maxFocus - totalFocus }
 }
 
-export const getSpellPresetSignature = (slots: readonly SpellPresetSlot[]) => slots.map((slot) => `${slot.spellId}:${slot.autoCast ? 1 : 0}`).join('|')
+const stableSerialize = (value: unknown): string => {
+  if (Array.isArray(value)) return `[${value.map(stableSerialize).join(',')}]`
+  if (value && typeof value === 'object') return `{${Object.keys(value as Record<string, unknown>).sort().map((key) => `${JSON.stringify(key)}:${stableSerialize((value as Record<string, unknown>)[key])}`).join(',')}}`
+  return JSON.stringify(value) ?? 'null'
+}
+
+/** Includes authored automation in battle identity so an edited rule cannot
+ * leave an old active snapshot looking equivalent to the new preset. */
+export const getSpellPresetSignature = (slots: readonly SpellPresetSlot[]) => slots.map((slot) => {
+  const automation = Object.prototype.hasOwnProperty.call(slot, 'automation') ? `:${stableSerialize(getSpellAutomationConfig(slot))}` : ''
+  return `${slot.spellId}:${slot.autoCast ? 1 : 0}${automation}`
+}).join('|')
 
 export const getSpellPresetAutoCastPriority = (slots: readonly SpellPresetSlot[]): CanonicalSpellId[] => slots.filter((slot) => slot.autoCast).map((slot) => slot.spellId)
 

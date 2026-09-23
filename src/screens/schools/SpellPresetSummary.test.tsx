@@ -54,7 +54,7 @@ describe('CombatSpellLoadout', () => {
     const focusState = { activities: current.activities, progress: current.progress, equipment: current.equipment, artifactProgress: current.artifactProgress, arcaneCore: current.arcaneCore, player: { maxFocus: current.player.maxFocus } }
     render(<SpellLoadoutDndProvider onCommit={() => {}}><CombatSpellLoadout focusState={focusState} /></SpellLoadoutDndProvider>)
     expect(screen.getByLabelText('Active combat loadout preset')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Save active combat loadout preset' })).toBeTruthy()
+    expect(screen.getByText('Changes save automatically.')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'NEW' })).toBeTruthy()
   })
 })

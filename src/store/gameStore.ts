@@ -226,8 +226,10 @@ import {
   selectSpellPresetForEditingAction,
   setPresetSlotAutoCastAction,
   setPresetSlotAutomationAction,
+  applyPresetSlotAutomationAction,
   syncSelectedSpellPresetRuntime,
   type ApplySpellPresetResult,
+  type ApplyPresetSlotAutomationResult,
   type SelectedPresetSlotMutationResult,
 } from "./actions/spellPresetActions";
 import {
@@ -640,6 +642,12 @@ export interface GameActions {
     spellId: CanonicalSpellId,
     automation: SpellAutomationConfig,
   ) => boolean;
+  applyPresetSlotAutomation: (
+    id: SpellPresetId,
+    spellId: CanonicalSpellId,
+    automation: SpellAutomationConfig,
+    autoCast: boolean,
+  ) => ApplyPresetSlotAutomationResult;
   applySpellPreset: (id: SpellPresetId) => ApplySpellPresetResult;
   enterDungeon: (dungeonId?: DungeonId) => void;
   enterTargetedCombat: (
@@ -1966,6 +1974,14 @@ export const useGameStore = create<GameStore>()(
       let result = false;
       set((state) => {
         result = setPresetSlotAutomationAction(state, id, spellId, automation);
+        return state;
+      });
+      return result;
+    },
+    applyPresetSlotAutomation: (id, spellId, automation, autoCast) => {
+      let result: ApplyPresetSlotAutomationResult = { ok: false, reason: 'missing-preset', message: 'This preset no longer exists.' };
+      set((state) => {
+        result = applyPresetSlotAutomationAction(state, id, spellId, automation, autoCast);
         return state;
       });
       return result;

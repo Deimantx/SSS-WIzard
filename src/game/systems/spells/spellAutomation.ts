@@ -2,9 +2,8 @@ import { MONSTERS, isBossMonster } from '../../content/monsters'
 import { STATUS_DEFINITIONS } from '../../content/statuses'
 import { SPELLS } from '../../content/spells/spells'
 import { actorCannotAct, actorCannotCastSpells } from '../combat/statusRuntime'
-import { getEffectiveManaCost } from '../combat/combatStats'
-import { isArcaneCoreSpellFree } from '../arcaneCore/arcaneCoreRuntime'
 import { isSpellUnlocked } from './spellProgression'
+import { getSpellManaPreview } from '../../engine/spellCastPreview'
 import type { AutoCastCondition, CanonicalSpellId, GameState, SpellAutomationCondition, SpellAutomationConfig, SpellAutomationTargetRule, SpellDefinition, SpellPresetSlot, StatusId } from '../../types'
 
 export const MAX_AUTOMATION_CONDITIONS = 5
@@ -29,6 +28,12 @@ export interface AutomatedSpellSelection {
   slotIndex: number
   evaluation: SpellAutomationEvaluation
   trace: Array<{ slotIndex: number; spellId: CanonicalSpellId; mode: 'auto' | 'manual'; evaluation?: SpellAutomationEvaluation }>
+}
+
+export interface SpellAutomationPriorityPreview {
+  isNext: boolean
+  firstEligibleSlotIndex: number | null
+  blockingSpellId?: CanonicalSpellId
 }
 
 export interface AutomationEffectOption {
@@ -61,7 +66,7 @@ const legacyConditionToAutomation = (condition: AutoCastCondition | undefined): 
 
 export const getDefaultSpellAutomationConfig = (spellId: CanonicalSpellId, autoCast: boolean, preserveAuthoredCondition = true): SpellAutomationConfig => {
   const spell = SPELLS[spellId]
-  const authored = preserveAuthoredCondition && autoCast ? legacyConditionToAutomation(spell?.autoCondition) : [{ type: 'always' as const }]
+  const authored = preserveAuthoredCondition ? legacyConditionToAutomation(spell?.autoCondition) : [{ type: 'always' as const }]
   return { conditions: authored.length ? authored : [{ type: 'always' }], targetRule: getDefaultSpellAutomationTarget(spellId) }
 }
 
@@ -181,7 +186,12 @@ const evaluateCondition = (state: GameState, condition: SpellAutomationCondition
   if (condition.operator === 'has') return conditionResult(condition, Boolean(status), status ? `${STATUS_DEFINITIONS[condition.effectId]?.name ?? 'Effect'} is active.` : `${STATUS_DEFINITIONS[condition.effectId]?.name ?? 'Effect'} is missing.`)
   const thresholdMs = (condition.seconds ?? 0) * 1000
   const passed = !status || (status.remainingMs !== null && status.remainingMs < thresholdMs)
-  return conditionResult(condition, passed, !status ? `${STATUS_DEFINITIONS[condition.effectId]?.name ?? 'Effect'} is missing and needs applying.` : `${STATUS_DEFINITIONS[condition.effectId]?.name ?? 'Effect'} has ${formatSeconds((status.remainingMs ?? 0) / 1000)} remaining, requires below ${formatSeconds(condition.seconds ?? 0)}.`)
+  const reason = !status
+    ? `${STATUS_DEFINITIONS[condition.effectId]?.name ?? 'Effect'} is missing and needs applying.`
+    : status.remainingMs === null
+      ? `${STATUS_DEFINITIONS[condition.effectId]?.name ?? 'Effect'} is permanent and has no expiry timer.`
+      : `${STATUS_DEFINITIONS[condition.effectId]?.name ?? 'Effect'} has ${formatSeconds(status.remainingMs / 1000)} remaining, requires below ${formatSeconds(condition.seconds ?? 0)}.`
+  return conditionResult(condition, passed, reason)
 }
 
 export const evaluateSpellAutomation = (state: GameState, slot: Pick<SpellPresetSlot, 'spellId' | 'autoCast' | 'automation'>): SpellAutomationEvaluation => {
@@ -199,8 +209,10 @@ export const evaluateSpellAutomation = (state: GameState, slot: Pick<SpellPreset
     addSystem('target', 'Valid target', targetValid, targetValid ? config.targetRule === 'self' ? 'Self target is valid.' : 'Current enemy target is valid.' : 'The selected target rule is unavailable for this spell or encounter.')
     const cooldownReady = Boolean(state.debug.ignoreSpellCooldowns || (state.combat.spellCooldowns[spell.id] ?? 0) <= 0)
     addSystem('cooldown', 'Cooldown ready', cooldownReady, cooldownReady ? 'Spell cooldown is ready.' : `Cooldown has ${(state.combat.spellCooldowns[spell.id] ?? 0) / 1000}s remaining.`)
-    const enoughMana = Boolean(state.debug.infiniteMana || isArcaneCoreSpellFree(state) || state.player.mana >= getEffectiveManaCost(state, spell.manaCost))
-    addSystem('mana', 'Enough Mana', enoughMana, enoughMana ? 'Enough Mana is available.' : `Mana is ${Math.round(state.player.mana)}, but this Spell requires ${Math.round(getEffectiveManaCost(state, spell.manaCost))}.`)
+    const manaPreview = getSpellManaPreview(state, spell.id, 'auto')
+    const enoughMana = Boolean(state.debug.infiniteMana || manaPreview?.free || (manaPreview && state.player.mana >= manaPreview.manaCost))
+    const requiredMana = manaPreview?.manaCost ?? spell.manaCost
+    addSystem('mana', 'Enough Mana', enoughMana, enoughMana ? 'Enough Mana is available.' : `Mana is ${Math.round(state.player.mana)}, but this Spell requires ${Math.round(requiredMana)}.`)
     const focusReserved = Boolean(state.debug.allowFocusOverCap || state.activities.autoCast[spell.id])
     addSystem('focus', 'Focus reserved', focusReserved, focusReserved ? 'Auto-Cast Focus is reserved for this Spell.' : 'This Spell has no active Auto-Cast Focus reservation.')
     const canAct = !actorCannotAct(state, 'player')
@@ -224,6 +236,17 @@ export const selectNextAutomatedSpell = (state: GameState): AutomatedSpellSelect
     if (evaluation.eligible) return { spellId: slot.spellId, slotIndex, evaluation, trace }
   }
   return null
+}
+
+/** Evaluates a draft against the complete ordered loadout, not in isolation. */
+export const getSpellAutomationPriorityPreview = (state: GameState, slots: readonly SpellPresetSlot[], slotIndex: number): SpellAutomationPriorityPreview => {
+  const evaluations = slots.map((slot) => evaluateSpellAutomation(state, slot))
+  const firstEligibleSlotIndex = evaluations.findIndex((evaluation, index) => Boolean(slots[index]?.autoCast && evaluation.eligible))
+  return {
+    isNext: firstEligibleSlotIndex === slotIndex,
+    firstEligibleSlotIndex: firstEligibleSlotIndex >= 0 ? firstEligibleSlotIndex : null,
+    blockingSpellId: firstEligibleSlotIndex >= 0 && firstEligibleSlotIndex !== slotIndex ? slots[firstEligibleSlotIndex]?.spellId : undefined,
+  }
 }
 
 export const getNextAutomatedSpellCooldownMs = (state: GameState, cooldownRecovery: number): number | null => {

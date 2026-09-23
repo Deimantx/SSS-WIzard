@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
-import { evaluateSpellAutomation, getSpellAutomationTargetOptions, normalizeSpellAutomationConfig, selectNextAutomatedSpell } from './spellAutomation'
+import { evaluateSpellAutomation, getSpellAutomationPriorityPreview, getSpellAutomationTargetOptions, normalizeSpellAutomationConfig, selectNextAutomatedSpell } from './spellAutomation'
 
 describe('spell automation evaluator', () => {
   it('normalizes automation rules to five AND conditions and validates targets', () => {
@@ -56,5 +56,23 @@ describe('spell automation evaluator', () => {
     }
 
     expect(selectNextAutomatedSpell(state)).toMatchObject({ spellId: 'wind-blade', slotIndex: 1 })
+  })
+
+  it('reports an eligible spell that is waiting behind an earlier eligible slot', () => {
+    const state = createInitialState()
+    state.combat.active = true
+    state.combat.enemyId = 'forest-wisp'
+    state.combat.enemyHp = 100
+    state.combat.enemyMaxHp = 100
+    state.progress.spellRanks = { 'fire-bolt': 1, 'wind-blade': 1 }
+    state.activities.autoCast['fire-bolt'] = true
+    state.activities.autoCast['wind-blade'] = true
+    state.player.mana = state.player.maxMana
+    const slots = [
+      { spellId: 'fire-bolt' as const, autoCast: true, automation: { conditions: [{ type: 'always' as const }], targetRule: 'current-enemy' as const } },
+      { spellId: 'wind-blade' as const, autoCast: true, automation: { conditions: [{ type: 'always' as const }], targetRule: 'current-enemy' as const } },
+    ]
+
+    expect(getSpellAutomationPriorityPreview(state, slots, 1)).toMatchObject({ isNext: false, firstEligibleSlotIndex: 0, blockingSpellId: 'fire-bolt' })
   })
 })

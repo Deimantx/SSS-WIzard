@@ -1,5 +1,6 @@
 import { Minus, Plus, RotateCcw, SlidersHorizontal, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { Button, GameTooltip, ModalPortal, Status } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { SPELLS } from '../../game/content/spells/spells'
@@ -11,11 +12,12 @@ import {
   getDefaultSpellAutomationConfig,
   getSpellAutomationConfig,
   getSpellAutomationTargetOptions,
+  getSpellAutomationPriorityPreview,
   MAX_AUTOMATION_CONDITIONS,
   normalizeSpellAutomationConfig,
   type SpellAutomationEvaluation,
 } from '../../game/systems/spells'
-import type { SpellAutomationCondition, SpellAutomationConfig, SpellAutomationTargetRule, SpellPresetSlot } from '../../game/types'
+import type { GameState, SpellAutomationCondition, SpellAutomationConfig, SpellAutomationTargetRule, SpellPresetSlot } from '../../game/types'
 import { useGameStore } from '../../store/gameStore'
 import { SpellIcon } from './SpellIcon'
 
@@ -53,8 +55,18 @@ const draftFromSlot = (slot: SpellPresetSlot): AutomationDraft => {
 
 const toneForCheck = (check: { passed: boolean }): 'success' | 'warning' => check.passed ? 'success' : 'warning'
 
-export function SpellAutomationModal({ open, slot, slotIndex, presetName, onClose, onApply }: { open: boolean; slot: SpellPresetSlot | null; slotIndex: number; presetName: string; onClose: () => void; onApply: (config: SpellAutomationConfig, autoCast: boolean) => void }) {
-  const liveState = useGameStore()
+export function SpellAutomationModal({ open, slot, slotIndex, presetName, loadoutSlots = [], readOnly = false, applyError = null, onClose, onApply }: { open: boolean; slot: SpellPresetSlot | null; slotIndex: number; presetName: string; loadoutSlots?: SpellPresetSlot[]; readOnly?: boolean; applyError?: string | null; onClose: () => void; onApply: (config: SpellAutomationConfig, autoCast: boolean) => unknown }) {
+  const liveState = useGameStore(useShallow((state) => ({
+    player: state.player,
+    combat: state.combat,
+    progress: state.progress,
+    debug: state.debug,
+    activities: state.activities,
+    equipment: state.equipment,
+    artifactProgress: state.artifactProgress,
+    arcaneCore: state.arcaneCore,
+    crystals: state.crystals,
+  }))) as unknown as GameState
   const [draft, setDraft] = useState<AutomationDraft | null>(null)
   const [confirmDiscard, setConfirmDiscard] = useState(false)
   const [showEvaluationDetails, setShowEvaluationDetails] = useState(false)
@@ -73,6 +85,15 @@ export function SpellAutomationModal({ open, slot, slotIndex, presetName, onClos
     if (!slot || !draft) return null
     return evaluateSpellAutomation(liveState, { ...slot, autoCast: draft.autoCast, automation: normalizeSpellAutomationConfig(draft, slot.spellId, draft.autoCast, false) })
   }, [draft, liveState, slot])
+  const previewState = useMemo(() => {
+    if (!draft) return liveState
+    return { ...liveState, activities: { ...liveState.activities, autoCast: { ...liveState.activities.autoCast, [slot?.spellId ?? '']: draft.autoCast } } }
+  }, [draft, liveState, slot?.spellId])
+  const priorityPreview = useMemo(() => {
+    if (!slot || !draft || !loadoutSlots.length) return null
+    const previewSlots = loadoutSlots.map((candidate, index) => index === slotIndex ? { ...candidate, autoCast: draft.autoCast, automation: normalizeSpellAutomationConfig(draft, slot.spellId, draft.autoCast, false) } : candidate)
+    return getSpellAutomationPriorityPreview(previewState, previewSlots, slotIndex)
+  }, [draft, loadoutSlots, previewState, slot, slotIndex])
   if (!slot || !spell || !school || !draft) return null
 
   const targetOptions = getSpellAutomationTargetOptions(slot.spellId)
@@ -101,34 +122,34 @@ export function SpellAutomationModal({ open, slot, slotIndex, presetName, onClos
     </header>
     <div className="spell-automation-modal-body">
       <section className="spell-automation-section spell-automation-main-section">
-        <div className="spell-automation-section-heading"><div><span className="section-label">AUTOMATION</span><p>Only AUTO spells are considered from top to bottom.</p></div><Button variant={draft.autoCast ? 'success' : 'secondary'} ariaPressed={draft.autoCast} onClick={() => setDraft((current) => current ? { ...current, autoCast: !current.autoCast } : current)}>{draft.autoCast ? 'ON · AUTO' : 'OFF · MANUAL'}</Button></div>
+        <div className="spell-automation-section-heading"><div><span className="section-label">AUTOMATION</span><p>{readOnly ? 'Active battle snapshot · configuration is read-only.' : 'Only AUTO spells are considered from top to bottom.'}</p></div><Button variant={draft.autoCast ? 'success' : 'secondary'} disabled={readOnly} ariaPressed={draft.autoCast} onClick={() => setDraft((current) => current ? { ...current, autoCast: !current.autoCast } : current)}>{draft.autoCast ? 'ON · AUTO' : 'OFF · MANUAL'}</Button></div>
         <div className="spell-automation-condition-heading"><span>CAST WHEN</span><small>ALL CONDITIONS MUST BE TRUE</small></div>
-        <div className="spell-automation-condition-list">{draft.conditions.map((condition, index) => <AutomationConditionRow key={`${index}-${condition.type}`} condition={condition} onChange={(next) => updateCondition(index, next)} onRemove={() => removeCondition(index)} />)}</div>
-        <Button variant="ghost" className="spell-automation-add-condition" disabled={draft.conditions.length >= MAX_AUTOMATION_CONDITIONS} onClick={addCondition}><Plus size={14} aria-hidden="true" /> ADD CONDITION</Button>
+        <div className="spell-automation-condition-list">{draft.conditions.map((condition, index) => <AutomationConditionRow key={`${index}-${condition.type}`} condition={condition} disabled={readOnly} onChange={(next) => updateCondition(index, next)} onRemove={() => removeCondition(index)} />)}</div>
+        <Button variant="ghost" className="spell-automation-add-condition" disabled={readOnly || draft.conditions.length >= MAX_AUTOMATION_CONDITIONS} onClick={addCondition}><Plus size={14} aria-hidden="true" /> ADD CONDITION</Button>
         <small className="spell-automation-limit">{draft.conditions.length} / {MAX_AUTOMATION_CONDITIONS} conditions</small>
         {hasDuplicateConditions && <small className="spell-automation-duplicate-warning">Duplicate conditions must be changed before applying.</small>}
       </section>
-      <section className="spell-automation-section spell-automation-compact-section"><span className="section-label">TARGET</span><div className="spell-automation-target">{targetOptions.length === 1 ? <strong>{targetOptions[0].label}</strong> : <select aria-label="Automation target" value={draft.targetRule} onChange={(event) => setDraft((current) => current ? { ...current, targetRule: event.target.value as SpellAutomationTargetRule } : current)}>{targetOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>}<small>{draft.targetRule === 'self' ? 'This Spell affects the wizard.' : 'This Spell uses the current enemy target.'}</small></div></section>
+      <section className="spell-automation-section spell-automation-compact-section"><span className="section-label">TARGET</span><div className="spell-automation-target">{targetOptions.length === 1 ? <strong>{targetOptions[0].label}</strong> : <select aria-label="Automation target" disabled={readOnly} value={draft.targetRule} onChange={(event) => setDraft((current) => current ? { ...current, targetRule: event.target.value as SpellAutomationTargetRule } : current)}>{targetOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>}<small>{draft.targetRule === 'self' ? 'This Spell affects the wizard.' : 'This Spell uses the current enemy target.'}</small></div></section>
       <section className="spell-automation-section spell-automation-compact-section"><span className="section-label">PRIORITY</span><div className="spell-automation-priority"><strong>{String(slotIndex + 1).padStart(2, '0')} · Combat Loadout order</strong><p>Move this Spell in the loadout to change its priority.</p></div></section>
-      <AutomationEvaluationPanel evaluation={evaluation} activeCombat={liveState.combat.active} detailsOpen={showEvaluationDetails} onToggleDetails={() => setShowEvaluationDetails((value) => !value)} />
+      <AutomationEvaluationPanel evaluation={evaluation} priorityPreview={priorityPreview} activeCombat={liveState.combat.active} detailsOpen={showEvaluationDetails} onToggleDetails={() => setShowEvaluationDetails((value) => !value)} />
     </div>
-    <footer className="spell-automation-modal-footer"><Button variant="ghost" onClick={reset}><RotateCcw size={14} aria-hidden="true" /> RESET</Button><span className="spell-automation-footer-spacer" />{confirmDiscard ? <><span className="spell-automation-discard-copy">Discard automation changes?</span><Button variant="ghost" onClick={() => setConfirmDiscard(false)}>CANCEL</Button><Button variant="danger" onClick={onClose}>DISCARD</Button></> : <><Button variant="ghost" onClick={requestClose}>CANCEL</Button><Button variant="primary" disabled={hasDuplicateConditions} onClick={apply}>APPLY</Button></>}</footer>
+    <footer className="spell-automation-modal-footer"><Button variant="ghost" disabled={readOnly} onClick={reset}><RotateCcw size={14} aria-hidden="true" /> RESET</Button><span className="spell-automation-footer-spacer" />{applyError && <span className="spell-automation-apply-error" role="alert">{applyError}</span>}{confirmDiscard ? <><span className="spell-automation-discard-copy">Discard automation changes?</span><Button variant="ghost" onClick={() => setConfirmDiscard(false)}>CANCEL</Button><Button variant="danger" onClick={onClose}>DISCARD</Button></> : <><Button variant="ghost" onClick={requestClose}>CANCEL</Button>{!readOnly && <Button variant="primary" disabled={hasDuplicateConditions} onClick={apply}>APPLY</Button>}</>}</footer>
   </ModalPortal>
 }
 
-function AutomationConditionRow({ condition, onChange, onRemove }: { condition: SpellAutomationCondition; onChange: (condition: SpellAutomationCondition) => void; onRemove: () => void }) {
+function AutomationConditionRow({ condition, disabled = false, onChange, onRemove }: { condition: SpellAutomationCondition; disabled?: boolean; onChange: (condition: SpellAutomationCondition) => void; onRemove: () => void }) {
   const playerBuffs = getAutomationEffectOptions('player-buff')
   const enemyDebuffs = getAutomationEffectOptions('enemy-debuff')
   if (condition.type === 'always') return <div className="spell-automation-condition-row"><select aria-label="Condition type" value="always" disabled><option value="always">Always</option></select><span className="spell-automation-condition-fallback">Fallback rule</span></div>
-  if (!isKnownCondition(condition)) return <div className="spell-automation-condition-row spell-automation-unsupported-condition"><div><strong>Unsupported Condition</strong><code>{String((condition as { type?: unknown }).type ?? 'unknown')}</code></div><RemoveConditionButton onRemove={onRemove} /></div>
+  if (!isKnownCondition(condition)) return <div className="spell-automation-condition-row spell-automation-unsupported-condition"><div><strong>Unsupported Condition</strong><code>{String((condition as { type?: unknown }).type ?? 'unknown')}</code></div>{!disabled && <RemoveConditionButton onRemove={onRemove} />}</div>
   return <div className="spell-automation-condition-row">
-    <select aria-label="Condition type" value={condition.type} onChange={(event) => onChange(event.target.value === 'always' ? { type: 'always' } : createCondition(event.target.value as EditableConditionType))}><option value="always">Always</option>{conditionTypes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
-    {condition.type === 'player-hp' || condition.type === 'enemy-hp' || condition.type === 'mana' ? <><select aria-label="Condition operator" value={condition.operator} onChange={(event) => onChange({ ...condition, operator: event.target.value as 'below' | 'above' })}><option value="below">Below</option><option value="above">Above</option></select><input aria-label="Condition percentage" type="number" min={1} max={100} value={condition.percent} onChange={(event) => onChange({ ...condition, percent: Number(event.target.value) })} /><span>%</span></> : null}
-    {condition.type === 'player-buff' || condition.type === 'enemy-debuff' ? <><select aria-label="Effect operator" value={condition.operator} onChange={(event) => onChange({ ...condition, operator: event.target.value as 'missing' | 'has' | 'remaining-below', seconds: event.target.value === 'remaining-below' ? condition.seconds ?? 1 : undefined })}><option value="missing">Missing</option><option value="has">Has</option><option value="remaining-below">Remaining Below</option></select><select aria-label="Effect" value={condition.effectId} onChange={(event) => onChange({ ...condition, effectId: event.target.value as typeof condition.effectId })}>{(condition.type === 'player-buff' ? playerBuffs : enemyDebuffs).map((effect) => <option key={effect.id} value={effect.id}>{effect.label}</option>)}</select>{condition.operator === 'remaining-below' && <><input aria-label="Duration seconds" type="number" min={0} step={0.1} value={condition.seconds ?? 1} onChange={(event) => onChange({ ...condition, seconds: Number(event.target.value) })} /><span>sec</span></>}</> : null}
-    {condition.type === 'boss' ? <select aria-label="Boss operator" value={condition.operator} onChange={(event) => onChange({ ...condition, operator: event.target.value as 'is' | 'is-not' })}><option value="is">Is Boss</option><option value="is-not">Is Not Boss</option></select> : null}
-    {condition.type === 'player-barrier-below' ? <><span>&lt;</span><input aria-label="Barrier value" type="number" min={0} value={condition.value} onChange={(event) => onChange({ ...condition, value: Math.max(0, Number(event.target.value)) })} /><span>barrier</span></> : null}
+    <select aria-label="Condition type" disabled={disabled} value={condition.type} onChange={(event) => onChange(event.target.value === 'always' ? { type: 'always' } : createCondition(event.target.value as EditableConditionType))}><option value="always">Always</option>{conditionTypes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+    {condition.type === 'player-hp' || condition.type === 'enemy-hp' || condition.type === 'mana' ? <><select aria-label="Condition operator" disabled={disabled} value={condition.operator} onChange={(event) => onChange({ ...condition, operator: event.target.value as 'below' | 'above' })}><option value="below">Below</option><option value="above">Above</option></select><input aria-label="Condition percentage" disabled={disabled} type="number" min={1} max={100} value={condition.percent} onChange={(event) => onChange({ ...condition, percent: Number(event.target.value) })} /><span>%</span></> : null}
+    {condition.type === 'player-buff' || condition.type === 'enemy-debuff' ? <><select aria-label="Effect operator" disabled={disabled} value={condition.operator} onChange={(event) => onChange({ ...condition, operator: event.target.value as 'missing' | 'has' | 'remaining-below', seconds: event.target.value === 'remaining-below' ? condition.seconds ?? 1 : undefined })}><option value="missing">Missing</option><option value="has">Has</option><option value="remaining-below">Remaining Below</option></select><select aria-label="Effect" disabled={disabled} value={condition.effectId} onChange={(event) => onChange({ ...condition, effectId: event.target.value as typeof condition.effectId })}>{(condition.type === 'player-buff' ? playerBuffs : enemyDebuffs).map((effect) => <option key={effect.id} value={effect.id}>{effect.label}</option>)}</select>{condition.operator === 'remaining-below' && <><input aria-label="Duration seconds" disabled={disabled} type="number" min={0} step={0.1} value={condition.seconds ?? 1} onChange={(event) => onChange({ ...condition, seconds: Number(event.target.value) })} /><span>sec</span></>}</> : null}
+    {condition.type === 'boss' ? <select aria-label="Boss operator" disabled={disabled} value={condition.operator} onChange={(event) => onChange({ ...condition, operator: event.target.value as 'is' | 'is-not' })}><option value="is">Is Boss</option><option value="is-not">Is Not Boss</option></select> : null}
+    {condition.type === 'player-barrier-below' ? <><span>&lt;</span><input aria-label="Barrier value" disabled={disabled} type="number" min={0} value={condition.value} onChange={(event) => onChange({ ...condition, value: Math.max(0, Number(event.target.value)) })} /><span>barrier</span></> : null}
     {condition.type === 'player-has-cleanseable-debuff' ? <span className="spell-automation-condition-static">Has cleanseable debuff</span> : null}
-    <RemoveConditionButton onRemove={onRemove} />
+    {!disabled && <RemoveConditionButton onRemove={onRemove} />}
   </div>
 }
 
@@ -136,17 +157,19 @@ function RemoveConditionButton({ onRemove }: { onRemove: () => void }) {
   return <GameTooltip accent="warning" content={<TooltipContent title="Remove Condition" description="Remove this exact condition from the AND rule." />}><Button variant="ghost" className="spell-automation-remove-condition" icon dataNoDrag ariaLabel="Remove Condition" onClick={onRemove}><Minus size={15} aria-hidden="true" /></Button></GameTooltip>
 }
 
-export function CombatAutomationOverviewModal({ open, presetName, slots, onClose, onEdit, onToggleMode }: { open: boolean; presetName: string; slots: SpellPresetSlot[]; onClose: () => void; onEdit: (index: number) => void; onToggleMode: (slot: SpellPresetSlot) => void }) {
+export function CombatAutomationOverviewModal({ open, presetName, slots, readOnly = false, onClose, onEdit, onToggleMode }: { open: boolean; presetName: string; slots: SpellPresetSlot[]; readOnly?: boolean; onClose: () => void; onEdit: (index: number) => void; onToggleMode: (slot: SpellPresetSlot) => void }) {
   return <ModalPortal open={open} onClose={onClose} backdropClassName="spell-automation-backdrop" surfaceClassName="combat-automation-overview-modal" ariaLabel="Combat Automation Overview">
     <header className="spell-automation-modal-header"><div><span className="panel-kicker">COMBAT AUTOMATION</span><h2>Automation Overview</h2><p>Preset: {presetName}</p></div><Button variant="ghost" icon dataNoDrag ariaLabel="Close Combat Automation Overview" onClick={onClose}><X size={17} aria-hidden="true" /></Button></header>
-    <div className="combat-automation-overview-body"><div className="combat-automation-overview-head"><span>PRIORITY</span><span>SPELL</span><span>MODE</span><span>RULE</span><span>ACTION</span></div>{slots.length ? slots.map((slot, index) => { const spell = SPELLS[slot.spellId]; const school = SCHOOLS[spell.school]; return <div className="combat-automation-overview-row" key={`${slot.spellId}-${index}`}><strong>{String(index + 1).padStart(2, '0')}</strong><div className="combat-automation-spell"><SpellIcon school={spell.school} spellId={spell.id} size="small" /><span><b>{spell.name}</b><small>{school.name.toUpperCase()}</small></span></div><Button variant={slot.autoCast ? 'success' : 'secondary'} className="combat-automation-mode" ariaPressed={slot.autoCast} onClick={() => onToggleMode(slot)}>{slot.autoCast ? 'AUTO' : 'MANUAL'}</Button><span className="combat-automation-summary">{formatSpellAutomationSummary(slot)}</span><Button variant="ghost" onClick={() => onEdit(index)}><SlidersHorizontal size={13} aria-hidden="true" /> EDIT</Button></div> }) : <p className="combat-automation-empty">No prepared Spells in this preset.</p>}</div>
+    <div className="combat-automation-overview-body"><div className="combat-automation-overview-head"><span>PRIORITY</span><span>SPELL</span><span>MODE</span><span>RULE</span><span>ACTION</span></div>{slots.length ? slots.map((slot, index) => { const spell = SPELLS[slot.spellId]; const school = SCHOOLS[spell.school]; return <div className="combat-automation-overview-row" key={`${slot.spellId}-${index}`}><strong>{String(index + 1).padStart(2, '0')}</strong><div className="combat-automation-spell"><SpellIcon school={spell.school} spellId={spell.id} size="small" /><span><b>{spell.name}</b><small>{school.name.toUpperCase()}</small></span></div><Button variant={slot.autoCast ? 'success' : 'secondary'} className="combat-automation-mode" disabled={readOnly} ariaPressed={slot.autoCast} onClick={() => onToggleMode(slot)}>{slot.autoCast ? 'AUTO' : 'MANUAL'}</Button><span className="combat-automation-summary">{formatSpellAutomationSummary(slot)}</span><Button variant="ghost" disabled={readOnly} onClick={() => onEdit(index)}><SlidersHorizontal size={13} aria-hidden="true" /> EDIT</Button></div> }) : <p className="combat-automation-empty">No prepared Spells in this preset.</p>}</div>
     <footer className="spell-automation-modal-footer"><span>Priority is determined by Combat Loadout order.</span><Button variant="secondary" onClick={onClose}>DONE</Button></footer>
   </ModalPortal>
 }
 
-function AutomationEvaluationPanel({ evaluation, activeCombat, detailsOpen, onToggleDetails }: { evaluation: SpellAutomationEvaluation | null; activeCombat: boolean; detailsOpen: boolean; onToggleDetails: () => void }) {
+function AutomationEvaluationPanel({ evaluation, priorityPreview, activeCombat, detailsOpen, onToggleDetails }: { evaluation: SpellAutomationEvaluation | null; priorityPreview: ReturnType<typeof getSpellAutomationPriorityPreview> | null; activeCombat: boolean; detailsOpen: boolean; onToggleDetails: () => void }) {
   if (!evaluation) return null
-  const status = !activeCombat ? 'WAITING FOR COMBAT' : evaluation.mode === 'manual' ? 'MANUAL' : evaluation.eligible ? 'WOULD CAST' : 'BLOCKED'
-  const summary = !activeCombat ? 'Live cast evaluation becomes available during an encounter.' : evaluation.eligible ? 'All conditions and system checks pass.' : evaluation.failureReason ?? 'A required condition or system check is not met.'
-  return <section className="spell-automation-section spell-automation-evaluation"><div className="spell-automation-evaluation-heading"><div><span className="section-label">EVALUATION</span><p className="spell-automation-evaluation-summary">{summary}</p></div><Status tone={!activeCombat ? 'neutral' : evaluation.eligible ? 'success' : 'warning'}>{status}</Status></div><Button variant="ghost" className="spell-automation-details-toggle" ariaPressed={detailsOpen} onClick={onToggleDetails}>{detailsOpen ? 'HIDE DETAILS' : 'SHOW DETAILS'}</Button>{detailsOpen && <div className="spell-automation-evaluation-details">{!activeCombat ? <><div className="spell-automation-check-group"><small>CONFIGURED RULES</small>{evaluation.conditions.map((check) => <div className="spell-automation-check" key={check.key}><Status tone="success">✓</Status><span><b>{check.label}</b></span></div>)}</div><div className="spell-automation-live-note"><small>LIVE CHECKS</small><span>Available when combat starts.</span></div></> : <><div className="spell-automation-check-group"><small>CONDITIONS</small>{evaluation.conditions.map((check) => <div className="spell-automation-check" key={check.key}><Status tone={toneForCheck(check)}>{check.passed ? '✓' : '•'}</Status><span><b>{check.label}</b><em>{check.reason}</em></span></div>)}</div><div className="spell-automation-check-group"><small>SYSTEM CHECKS</small>{evaluation.systemChecks.map((check) => <div className="spell-automation-check" key={check.key}><Status tone={toneForCheck(check)}>{check.passed ? '✓' : '•'}</Status><span><b>{check.label}</b><em>{check.reason}</em></span></div>)}</div></>}</div>}</section>
+  const waitingForPriority = Boolean(activeCombat && evaluation.eligible && priorityPreview && !priorityPreview.isNext)
+  const status = !activeCombat ? 'WAITING FOR COMBAT' : evaluation.mode === 'manual' ? 'MANUAL' : waitingForPriority ? 'WAITING PRIORITY' : evaluation.eligible ? 'WOULD CAST' : 'BLOCKED'
+  const blockingSpell = priorityPreview?.blockingSpellId ? SPELLS[priorityPreview.blockingSpellId] : null
+  const summary = !activeCombat ? 'Live cast evaluation becomes available during an encounter.' : waitingForPriority ? `Eligible, but ${blockingSpell?.name ?? 'an earlier AUTO Spell'} has higher priority.` : evaluation.eligible ? 'All conditions and system checks pass.' : evaluation.failureReason ?? 'A required condition or system check is not met.'
+  return <section className="spell-automation-section spell-automation-evaluation"><div className="spell-automation-evaluation-heading"><div><span className="section-label">EVALUATION</span><p className="spell-automation-evaluation-summary">{summary}</p></div><Status tone={!activeCombat ? 'neutral' : waitingForPriority ? 'warning' : evaluation.eligible ? 'success' : 'warning'}>{status}</Status></div><Button variant="ghost" className="spell-automation-details-toggle" ariaPressed={detailsOpen} onClick={onToggleDetails}>{detailsOpen ? 'HIDE DETAILS' : 'SHOW DETAILS'}</Button>{detailsOpen && <div className="spell-automation-evaluation-details">{!activeCombat ? <><div className="spell-automation-check-group"><small>CONFIGURED RULES</small>{evaluation.conditions.map((check) => <div className="spell-automation-check" key={check.key}><Status tone="success">✓</Status><span><b>{check.label}</b></span></div>)}</div><div className="spell-automation-live-note"><small>LIVE CHECKS</small><span>Available when combat starts.</span></div></> : <><div className="spell-automation-check-group"><small>CONDITIONS</small>{evaluation.conditions.map((check) => <div className="spell-automation-check" key={check.key}><Status tone={toneForCheck(check)}>{check.passed ? '✓' : '•'}</Status><span><b>{check.label}</b><em>{check.reason}</em></span></div>)}</div><div className="spell-automation-check-group"><small>SYSTEM CHECKS</small>{evaluation.systemChecks.map((check) => <div className="spell-automation-check" key={check.key}><Status tone={toneForCheck(check)}>{check.passed ? '✓' : '•'}</Status><span><b>{check.label}</b><em>{check.reason}</em></span></div>)}</div></>}</div>}</section>
 }

@@ -231,8 +231,8 @@ export const SCREEN_PANEL_LAYOUTS: Record<ScreenId, ScreenLayoutDefinition> = {
   'tower-channeling': screen({
     'channeling-mana-core': panel({ order: 1, columnStart: 1, columnSpan: 6, rowStart: 1, minHeight: 0, preferredHeight: 354, label: 'Mana Core' }),
     'channeling-echoes': panel({ order: 2, columnStart: 7, columnSpan: 6, rowStart: 1, minHeight: 354, preferredHeight: 354, label: 'Arcane Echoes' }),
-    'channeling-breakdown': panel({ order: 3, columnStart: 1, columnSpan: 6, rowStart: 2, minHeight: 354, preferredHeight: 750, label: 'Channeling Breakdown' }),
-    'channeling-pillars': panel({ order: 4, columnStart: 7, columnSpan: 6, rowStart: 2, minHeight: 354, preferredHeight: 750, label: 'Pillars of Mana' }),
+    'channeling-breakdown': panel({ order: 3, columnStart: 1, columnSpan: 6, rowStart: 2, minHeight: 354, preferredHeight: 650, label: 'Channeling Breakdown' }),
+    'channeling-pillars': panel({ order: 4, columnStart: 7, columnSpan: 6, rowStart: 2, minHeight: 354, preferredHeight: 650, label: 'Pillars of Mana' }),
   }, ['channeling-mana-core', 'channeling-echoes', 'channeling-breakdown', 'channeling-pillars']),
 
   // ============================================================

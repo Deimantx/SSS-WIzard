@@ -26,25 +26,29 @@
 .mana-mastery-indicator.filled { background: var(--pillar-accent, var(--ui-secondary)); box-shadow: 0 0 7px color-mix(in srgb, var(--pillar-accent, var(--ui-secondary)) 60%, transparent); }
 .mastery-leyline-conduit { --pillar-accent: #64b7ff; }.mastery-arcane-reservoir { --pillar-accent: #d5a36b; }.mastery-mana-resonance { --pillar-accent: #ff9a66; }.mastery-astral-expansion { --pillar-accent: #d6a878; }.mastery-echo-attunement { --pillar-accent: #b08aff; }
 
-.mana-pillars-panel { display: flex; min-height: 0; flex-direction: column; gap: 9px; }
+.mana-pillars-panel { display: flex; min-height: 0; flex-direction: column; gap: 9px; overflow: hidden; }
 .mana-pillars-panel > .card-head { flex: 0 0 auto; }
+.mana-pillars-panel-scroll { display: grid; flex: 1 1 0; align-content: start; gap: 9px; min-width: 0; min-height: 0; margin-right: -3px; padding: 0 3px 18px 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-color: var(--ui-scrollbar-thumb) transparent; scrollbar-gutter: stable; scrollbar-width: thin; }
+.mana-pillars-panel-scroll:focus-visible { outline: 1px solid color-mix(in srgb, var(--ui-accent) 58%, transparent); outline-offset: -1px; }
 .mana-pillars-intro { margin: 0; color: var(--ui-text-muted); font-size: var(--text-xs); line-height: 1.4; }
 .mana-pillar-bonus-summary { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 9px; padding: 7px 9px; border: 1px solid var(--ui-border); border-radius: 6px; color: var(--ui-text-muted); background: var(--ui-panel); font: var(--text-micro) / 1.4 var(--font-mono); }
 .mana-pillar-bonus-summary strong { color: var(--ui-text-soft); font-weight: 500; overflow-wrap: anywhere; }
-.mana-pillar-selector-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; min-width: 0; }
+.mana-pillar-selector-grid { display: grid; align-content: start; grid-auto-rows: 94px; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; min-width: 0; }
 .channeling-screen .screen-grid-panel-channeling-pillars .mana-pillar-selector-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.channeling-screen .screen-grid-panel-channeling-pillars .mana-pillar-selector-grid > :last-child { grid-column: 1 / -1; }
 .mana-pillar-selector-grid > .game-tooltip-trigger { display: block; min-width: 0; }
-.mana-pillar-selector { --pillar-accent: var(--ui-accent); display: flex; align-items: center; gap: 7px; width: 100%; min-width: 0; min-height: 52px; padding: 7px; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text-soft); background: var(--ui-panel); cursor: pointer; text-align: left; }
+.mana-pillar-selector { --pillar-accent: var(--ui-accent); display: flex; align-items: center; gap: 8px; width: 100%; height: 100%; min-width: 0; min-height: 0; padding: 7px 8px; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text-soft); background: var(--ui-panel); cursor: pointer; text-align: left; }
 .mana-pillar-selector:hover, .mana-pillar-selector:focus-visible { border-color: color-mix(in srgb, var(--pillar-accent) 70%, var(--ui-border)); outline: none; background: color-mix(in srgb, var(--pillar-accent) 8%, var(--ui-panel)); }
 .mana-pillar-selector.is-selected { border-color: var(--pillar-accent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pillar-accent) 36%, transparent), 0 0 0 2px color-mix(in srgb, var(--pillar-accent) 13%, transparent); background: color-mix(in srgb, var(--pillar-accent) 10%, var(--ui-panel)); }
 .mana-pillar-selector.is-mastered { border-color: color-mix(in srgb, var(--ui-success) 44%, var(--ui-border)); }
 .mana-pillar-selector-mark, .mana-pillar-selected-mark { display: block; flex: 0 0 auto; width: 5px; border-radius: 99px; background: var(--pillar-accent); }
-.mana-pillar-selector-mark { height: 30px; }
-.mana-pillar-selector-copy { display: grid; gap: 2px; min-width: 0; flex: 1 1 auto; }
+.mana-pillar-selector-mark { height: 34px; }
+.mana-pillar-selector-copy { display: grid; gap: 3px; min-width: 0; flex: 1 1 auto; }
 .mana-pillar-selector-copy strong { overflow: hidden; color: var(--ui-text); font-size: var(--text-xs); text-overflow: ellipsis; white-space: nowrap; }
 .mana-pillar-selector-copy small { overflow: hidden; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); text-overflow: ellipsis; white-space: nowrap; }
 .mana-pillar-selector-copy b { overflow: hidden; color: var(--pillar-accent); font: var(--text-micro) var(--font-mono); text-overflow: ellipsis; white-space: nowrap; }
+.mana-pillar-selector-levelbar { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 2px; min-width: 0; }
+.mana-pillar-selector-levelbar i { display: block; height: 3px; border-radius: 99px; background: var(--ui-border-strong); }
+.mana-pillar-selector-levelbar i.filled { background: var(--pillar-accent); box-shadow: 0 0 6px color-mix(in srgb, var(--pillar-accent) 34%, transparent); }
 .mana-pillar-selector > .status { flex: 0 0 auto; }
 .mana-pillar-selected { --pillar-accent: var(--ui-accent); display: grid; gap: 8px; min-width: 0; padding: 10px; border: 1px solid color-mix(in srgb, var(--pillar-accent) 48%, var(--ui-border)); border-radius: 8px; background: linear-gradient(150deg, color-mix(in srgb, var(--pillar-accent) 8%, var(--ui-panel-strong)), var(--ui-panel)); }
 .mana-pillar-selected-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
@@ -74,7 +78,7 @@
 
 @media (max-width: 980px) { .mana-pillar-selector-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 760px) { .mana-pillar-selector-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.mana-pillar-selected-effect.is-mastered { grid-template-columns: 1fr; }.mana-pillar-selected-effect.is-mastered > p { text-align: left; }.mana-pillar-selected-costs .mana-pillar-requirements > .game-tooltip-trigger { flex-basis: 68px; } }
-@media (max-width: 480px) { .channeling-screen .screen-grid-panel-channeling-pillars .mana-pillar-selector-grid { grid-template-columns: 1fr; }.channeling-screen .screen-grid-panel-channeling-pillars .mana-pillar-selector-grid > :last-child { grid-column: auto; } }
+@media (max-width: 480px) { .channeling-screen .screen-grid-panel-channeling-pillars .mana-pillar-selector-grid { grid-template-columns: 1fr; } }
 
 .channeling-breakdown-panel { display: flex; min-width: 0; min-height: 0; flex-direction: column; gap: 10px; }
 .channeling-breakdown-panel > .card-head { flex: 0 0 auto; }

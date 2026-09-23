@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from 'react'
+import { useRef, useState, type CSSProperties } from 'react'
 import { Button, Card, Status } from '../../../components/ui'
 import { GameTooltip, TooltipContent } from '../../../components/ui/tooltip/Tooltip'
 import { ItemRequirementTile } from '../../../components/ui/item/ItemRequirementTile'
@@ -7,6 +7,7 @@ import { getConsumableQuantity } from '../../../game/core/inventory/inventoryCon
 import { getEquippedReservedQuantity } from '../../../game/core/equipment/equipmentRules'
 import type { GameState, ItemId, ManaPillarId } from '../../../game/types'
 import { useGameStore } from '../../../store/gameStore'
+import { useSmartScrollState } from '../../../ui/game-feel/useSmartScrollState'
 
 type ManaPillars = GameState['progress']['channeling']['pillars']
 
@@ -28,16 +29,20 @@ const PILLAR_ACCENTS: Record<ManaPillarId, string> = {
 
 export function ManaPillarsPanel() {
   const [selectedPillarId, setSelectedPillarId] = useState<ManaPillarId>('leyline-conduit')
+  const scrollRef = useRef<HTMLDivElement>(null)
   const pillars = useGameStore((state) => state.progress.channeling.pillars)
   const mastered = MANA_PILLAR_IDS.filter((id) => getSafePillarLevel(pillars, id) >= MANA_PILLARS[id].maxLevel).length
+  useSmartScrollState(scrollRef, { resetKey: selectedPillarId, dependencies: [pillars, mastered] })
 
   return <Card className="mana-pillars-panel" title="PILLARS OF MANA" action={<div className="mana-mastery-summary"><span>RANK I MASTERY</span><strong>{mastered} / {MANA_PILLAR_IDS.length}</strong><PillarMastery pillars={pillars} /></div>}>
+    <div ref={scrollRef} className="mana-pillars-panel-scroll" data-scroll-owner="mana-pillars" tabIndex={0}>
     <p className="mana-pillars-intro">Strengthen the foundations that govern the tower's Mana economy.</p>
     <div className="mana-pillar-bonus-summary"><span>ACTIVE BONUSES</span><strong>Regen {summaryEffect(pillars, 'leyline-conduit')} · Capacity {summaryEffect(pillars, 'arcane-reservoir')} · Resonance {summaryEffect(pillars, 'mana-resonance')} · Max Mana {summaryEffect(pillars, 'astral-expansion')} · Echo {summaryEffect(pillars, 'echo-attunement')}</strong></div>
     <div className="mana-pillar-selector-grid" aria-label="Mana Pillars">
       {MANA_PILLAR_IDS.map((pillarId) => <PillarSelector key={pillarId} pillarId={pillarId} selected={selectedPillarId === pillarId} onSelect={() => setSelectedPillarId(pillarId)} />)}
     </div>
     <SelectedPillarInspector pillarId={selectedPillarId} />
+    </div>
   </Card>
 }
 
@@ -52,7 +57,7 @@ function PillarSelector({ pillarId, selected, onSelect }: { pillarId: ManaPillar
   const description = `${pillar.description} ${pillarTooltip(pillar)} Current level: ${level} / ${pillar.maxLevel}${mastered ? ' · Rank I mastered.' : ''}`
   return <GameTooltip block content={<TooltipContent title={pillar.name} description={description} />} accent="mana">
     <button type="button" className={`mana-pillar-selector ${selected ? 'is-selected' : ''} ${mastered ? 'is-mastered' : ''}`} onClick={onSelect} aria-pressed={selected} style={{ '--pillar-accent': PILLAR_ACCENTS[pillarId] } as CSSProperties}>
-      <span className="mana-pillar-selector-mark" aria-hidden="true" /><span className="mana-pillar-selector-copy"><strong>{pillar.name}</strong><small>{PILLAR_CATEGORIES[pillarId]} · Lv {level} / {pillar.maxLevel}</small><b>{effectValue(pillar, level)}</b></span>{mastered && <Status tone="success">MASTERED</Status>}
+      <span className="mana-pillar-selector-mark" aria-hidden="true" /><span className="mana-pillar-selector-copy"><strong>{pillar.name}</strong><small>{PILLAR_CATEGORIES[pillarId]} · Lv {level} / {pillar.maxLevel}</small><b>{effectValue(pillar, level)}</b><span className="mana-pillar-selector-levelbar" aria-label={`${pillar.name} level ${level} of ${pillar.maxLevel}`}>{Array.from({ length: pillar.maxLevel }, (_, index) => <i className={index < level ? 'filled' : ''} key={index} />)}</span></span>{mastered && <Status tone="success">MASTERED</Status>}
     </button>
   </GameTooltip>
 }

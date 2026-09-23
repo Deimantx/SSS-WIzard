@@ -181,7 +181,7 @@
 .transmutation-array-requirements { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; }
 .transmutation-array-requirements .game-tooltip-trigger, .transmutation-array-requirements .item-requirement-tile { min-width: 0; width: 100%; }
 .transmutation-array-selected > .game-tooltip-trigger { min-width: 0; }
-.transmutation-array-selected > .game-tooltip-trigger > .button { width: 100%; }
+.transmutation-array-selected > .game-tooltip-trigger.button { width: 100%; }
 
 .transmutation-library { min-height: 0; }
 .transmutation-filter-stack { display: grid; gap: 6px; padding-bottom: 9px; border-bottom: 1px solid var(--ui-border); }

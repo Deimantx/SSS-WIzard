@@ -70,7 +70,7 @@
 .mana-pillar-selected-costs .mana-pillar-requirements { display: flex; flex-wrap: wrap; gap: 6px; }
 .mana-pillar-selected-costs .mana-pillar-requirements > .game-tooltip-trigger { display: block; flex: 0 1 68px; width: 68px; }
 .mana-pillar-selected > .game-tooltip-trigger { min-width: 0; }
-.mana-pillar-selected > .game-tooltip-trigger > .button { width: 100%; }
+.mana-pillar-selected > .game-tooltip-trigger.button { width: 100%; }
 
 @media (max-width: 980px) { .mana-pillar-selector-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 760px) { .mana-pillar-selector-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.mana-pillar-selected-effect.is-mastered { grid-template-columns: 1fr; }.mana-pillar-selected-effect.is-mastered > p { text-align: left; }.mana-pillar-selected-costs .mana-pillar-requirements > .game-tooltip-trigger { flex-basis: 68px; } }

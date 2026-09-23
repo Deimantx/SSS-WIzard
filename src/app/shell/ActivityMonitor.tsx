@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronUp } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { forwardRef, useEffect, useState, type ButtonHTMLAttributes } from 'react'
 import { getActivityTelemetry } from '../../game/systems/activity/activityTelemetry'
 import { formatCompactDuration } from '../../game/utils'
 import { useGameStore } from '../../store/gameStore'
@@ -78,12 +78,12 @@ function TrackedItemMonitor({ itemId }: { itemId: ItemId | null }) {
   return <><aside className="tracked-item-monitor" aria-label="Tracked Item"><button type="button" className="tracked-item-monitor-main" onClick={openInventory} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); openContextMenu({ x: event.clientX, y: event.clientY, anchor: event.currentTarget, header: { title: item.name, meta: `TRACKED · OWNED ${owned}` }, sections }) }}><span className="tracked-item-monitor-label">TRACKED ITEM</span><span className="tracked-item-monitor-value"><ItemIcon itemId={itemId} size="tiny" /><strong>{item.name}</strong><b>×{owned.toLocaleString()}</b></span></button><button type="button" className="tracked-item-monitor-remove" onClick={() => setUiPreferences({ trackedItemId: null })} aria-label={`Untrack ${item.name}`}>×</button></aside><ItemUsesDialog itemId={itemId} uses={uses} open={usesOpen} onClose={() => setUsesOpen(false)} onSelectRecipe={(recipeId) => { setUsesOpen(false); if (isTransmutationRecipeId(recipeId)) { setNavigationIntent({ transmutationRecipeId: recipeId }); state.setScreen('tower-transmutation') } else { setNavigationIntent({ artificingRecipeId: recipeId as never }); state.setScreen('tower-artificing') } }} /></>
 }
 
-function ActivityCard({ activity, onClick }: { activity: ActivityTelemetry; onClick: () => void }) {
+const ActivityCard = forwardRef<HTMLButtonElement, { activity: ActivityTelemetry; onClick: ButtonHTMLAttributes<HTMLButtonElement>['onClick'] } & ButtonHTMLAttributes<HTMLButtonElement>>(function ActivityCard({ activity, onClick, className = '', ...nativeProps }, ref) {
   const statusLabel = activity.status === 'waiting-mana' ? 'WAITING FOR MANA' : activity.status === 'mana-limited' ? 'MANA LIMITED' : activity.status === 'waiting-materials' ? 'WAITING FOR MATERIALS' : activity.id === 'combat' && activity.status === 'paused' ? 'NEXT ENCOUNTER' : activity.status.toUpperCase()
   const progressLabel = activity.id === 'combat' ? 'Enemy HP' : activity.remainingMs === undefined ? '' : formatCompactDuration(activity.remainingMs)
-  return <button className={`activity-card accent-${activity.accent} ${activity.status === 'waiting-mana' || activity.status === 'mana-limited' || activity.status === 'waiting-materials' ? 'activity-waiting' : ''}`} onClick={onClick} aria-label={`Open ${activity.label} activity`}>
+  return <button {...nativeProps} ref={ref} className={`activity-card accent-${activity.accent} ${activity.status === 'waiting-mana' || activity.status === 'mana-limited' || activity.status === 'waiting-materials' ? 'activity-waiting' : ''} ${className}`} onClick={onClick} aria-label={`Open ${activity.label} activity`}>
     <div className="activity-card-head"><div><strong>{activity.label}</strong><span>{activity.subtitle}</span></div><small>{statusLabel}</small></div>
     {activity.bars?.length ? <div className="activity-bars">{activity.bars.map((bar) => <div className={`activity-bar-row ${bar.tone ?? 'neutral'}`} key={bar.label}><div className="activity-bar-label"><span>{bar.label}</span><b>{bar.value}</b></div><div className="activity-progress"><i style={{ width: `${Math.max(0, Math.min(100, bar.percent))}%` }} /></div></div>)}</div> : activity.progressPercent !== undefined && <div className="activity-progress-row"><div className="activity-progress"><i style={{ width: `${Math.max(0, Math.min(100, activity.progressPercent))}%` }} /></div><span>{progressLabel}</span></div>}
     <div className="activity-card-metrics">{activity.metrics.map((item, index) => <span className={item.tone ?? 'neutral'} key={`${item.label}-${index}`}><small>{item.label}</small><b>{item.value}</b></span>)}</div>
   </button>
-}
+})

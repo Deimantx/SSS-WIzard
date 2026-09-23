@@ -32,6 +32,22 @@ function ResizingWideTooltipFixture() {
   return <TooltipProvider><GameTooltip wide delay={0} content={<ResizeProbe />}><button>Resize</button></GameTooltip></TooltipProvider>
 }
 
+function LayoutNeutralFixture() {
+  return <TooltipProvider><div data-testid="grid" style={{ display: 'grid' }}><GameTooltip content="Grid details"><button data-testid="grid-target">Grid target</button></GameTooltip><button>Other</button></div><div data-testid="flex" style={{ display: 'flex' }}><GameTooltip content="Flex details"><button data-testid="flex-target">Flex target</button></GameTooltip><button>Other</button></div></TooltipProvider>
+}
+
+function AbsoluteTargetFixture() {
+  return <TooltipProvider><div data-testid="absolute-parent" style={{ position: 'relative', width: 800, height: 600 }}><GameTooltip delay={0} content="Absolute details"><button data-testid="absolute-target" style={{ position: 'absolute', left: 500, top: 300 }}>Absolute target</button></GameTooltip></div></TooltipProvider>
+}
+
+function UnmountingFixture() {
+  return <TooltipProvider><GameTooltip delay={0} content="Unmount details"><button>Unmount target</button></GameTooltip></TooltipProvider>
+}
+
+function DisabledTargetFixture() {
+  return <TooltipProvider><GameTooltip delay={0} content="Disabled details"><button disabled>Disabled target</button></GameTooltip></TooltipProvider>
+}
+
 describe('TooltipProvider singleton timing', () => {
   afterEach(() => { vi.useRealTimers() })
 
@@ -57,6 +73,71 @@ describe('TooltipProvider singleton timing', () => {
 
     const tooltip = screen.getByRole('tooltip')
     expect(tooltip.classList.contains('is-positioned')).toBe(true)
+  })
+
+  it('keeps grid and flex children direct while adding tooltip behavior', () => {
+    render(<LayoutNeutralFixture />)
+    const grid = screen.getByTestId('grid')
+    const flex = screen.getByTestId('flex')
+    expect(grid.children).toHaveLength(2)
+    expect(flex.children).toHaveLength(2)
+    expect(screen.getByTestId('grid-target').parentElement).toBe(grid)
+    expect(screen.getByTestId('flex-target').parentElement).toBe(flex)
+    expect(screen.getByTestId('grid-target').classList.contains('game-tooltip-trigger')).toBe(true)
+  })
+
+  it('positions from the actual absolute child element', () => {
+    vi.useFakeTimers()
+    render(<AbsoluteTargetFixture />)
+    const target = screen.getByTestId('absolute-target')
+    vi.spyOn(target, 'getBoundingClientRect').mockReturnValue({ top: 300, left: 500, right: 580, bottom: 340, width: 80, height: 40, x: 500, y: 300, toJSON: () => ({}) })
+    fireEvent.pointerEnter(target)
+    act(() => { vi.advanceTimersByTime(1) })
+    const tooltip = screen.getByRole('tooltip')
+    expect(Number.parseFloat(tooltip.style.left)).toBeGreaterThan(500 - 1)
+    expect(Number.parseFloat(tooltip.style.top)).toBeGreaterThan(240)
+  })
+
+  it('repositions an active tooltip when its target moves', () => {
+    vi.useFakeTimers()
+    render(<AbsoluteTargetFixture />)
+    const target = screen.getByTestId('absolute-target')
+    let top = 300
+    vi.spyOn(target, 'getBoundingClientRect').mockImplementation(() => ({ top, left: 500, right: 580, bottom: top + 40, width: 80, height: 40, x: 500, y: top, toJSON: () => ({}) }))
+    fireEvent.pointerEnter(target)
+    act(() => { vi.advanceTimersByTime(1) })
+    const tooltip = screen.getByRole('tooltip')
+    const firstTop = tooltip.style.top
+    top = 420
+    fireEvent.scroll(window)
+    expect(tooltip.style.top).not.toBe(firstTop)
+  })
+
+  it('dismisses on pointer down and when the target unmounts', () => {
+    vi.useFakeTimers()
+    const view = render(<UnmountingFixture />)
+    const target = screen.getByRole('button', { name: 'Unmount target' })
+    fireEvent.pointerEnter(target)
+    act(() => { vi.advanceTimersByTime(1) })
+    expect(screen.getByRole('tooltip')).toBeTruthy()
+    fireEvent.pointerDown(target, { pointerType: 'mouse' })
+    expect(screen.queryByRole('tooltip')).toBeNull()
+
+    fireEvent.pointerEnter(target)
+    act(() => { vi.advanceTimersByTime(1) })
+    expect(screen.getByRole('tooltip')).toBeTruthy()
+    view.unmount()
+    expect(document.querySelector('[role="tooltip"]')).toBeNull()
+  })
+
+  it('uses an opt-in-sized fallback anchor only for disabled native targets', () => {
+    vi.useFakeTimers()
+    render(<DisabledTargetFixture />)
+    const target = screen.getByRole('button', { name: 'Disabled target' })
+    expect(target.parentElement?.classList.contains('game-tooltip-disabled-anchor')).toBe(true)
+    fireEvent.pointerEnter(target.parentElement as HTMLElement)
+    act(() => { vi.advanceTimersByTime(1) })
+    expect(screen.getByRole('tooltip').textContent).toContain('Disabled details')
   })
 
   it('switches the visible tooltip without overlap', () => {

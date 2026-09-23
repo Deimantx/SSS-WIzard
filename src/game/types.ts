@@ -366,6 +366,27 @@ export interface ActivitiesState {
 export interface SpellPresetSlot {
   spellId: CanonicalSpellId
   autoCast: boolean
+  /** Optional for legacy saves; runtime normalizes missing rules to a safe default. */
+  automation?: SpellAutomationConfig
+}
+
+export type SpellAutomationTargetRule = 'current-enemy' | 'self'
+
+export type SpellAutomationCondition =
+  | { type: 'always' }
+  | { type: 'player-hp'; operator: 'below' | 'above'; percent: number }
+  | { type: 'enemy-hp'; operator: 'below' | 'above'; percent: number }
+  | { type: 'mana'; operator: 'below' | 'above'; percent: number }
+  | { type: 'player-buff'; operator: 'missing' | 'has' | 'remaining-below'; effectId: StatusId; seconds?: number }
+  | { type: 'enemy-debuff'; operator: 'missing' | 'has' | 'remaining-below'; effectId: StatusId; seconds?: number }
+  | { type: 'boss'; operator: 'is' | 'is-not' }
+  /** Compatibility conditions used by authored spell defaults from older saves. */
+  | { type: 'player-barrier-below'; value: number }
+  | { type: 'player-has-cleanseable-debuff' }
+
+export interface SpellAutomationConfig {
+  conditions: SpellAutomationCondition[]
+  targetRule: SpellAutomationTargetRule
 }
 export interface SpellPreset {
   id: SpellPresetId

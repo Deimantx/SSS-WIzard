@@ -2,6 +2,7 @@ import { CANONICAL_SPELL_IDS, LEGACY_SPELL_ID_MAP } from '../../content/spells/s
 import { deriveFocusReservations } from '../focus/focusReservations'
 import type { FocusReservationState } from '../focus/focusReservations'
 import { getSpellAutoCastFocusCost, isSpellUnlocked } from './spellProgression'
+import { normalizeSpellAutomationConfig } from './spellAutomation'
 import type { ActiveCombatSpellLoadout, CanonicalSpellId, GameState, SpellId, SpellPreset, SpellPresetId, SpellPresetSlot, SpellPresetState } from '../../types'
 
 export const MAX_COMBAT_SPELLS = 8
@@ -39,15 +40,17 @@ export const canonicalSpellId = (value: unknown): CanonicalSpellId | undefined =
 }
 
 const normalizeRawSlots = (value: unknown, legacySpellIds?: unknown): SpellPresetSlot[] => {
-  const source = Array.isArray(value)
-    ? value.map((entry) => ({ spellId: entry && typeof entry === 'object' ? (entry as { spellId?: unknown }).spellId : undefined, autoCast: entry && typeof entry === 'object' ? Boolean((entry as { autoCast?: unknown }).autoCast) : false }))
-    : Array.isArray(legacySpellIds) ? legacySpellIds.map((spellId) => ({ spellId, autoCast: true })) : []
+  const source: Array<{ spellId: unknown; autoCast: boolean; automation?: unknown; hasAutomation: boolean }> = Array.isArray(value)
+    ? value.map((entry) => ({ spellId: entry && typeof entry === 'object' ? (entry as { spellId?: unknown }).spellId : undefined, autoCast: entry && typeof entry === 'object' ? Boolean((entry as { autoCast?: unknown }).autoCast) : false, automation: entry && typeof entry === 'object' ? (entry as { automation?: unknown }).automation : undefined, hasAutomation: Boolean(entry && typeof entry === 'object' && Object.prototype.hasOwnProperty.call(entry, 'automation')) }))
+    : Array.isArray(legacySpellIds) ? legacySpellIds.map((spellId) => ({ spellId, autoCast: true, hasAutomation: false })) : []
   const seen = new Set<CanonicalSpellId>()
   return source.flatMap((entry): SpellPresetSlot[] => {
     const spellId = canonicalSpellId(entry.spellId)
     if (!spellId || seen.has(spellId)) return []
     seen.add(spellId)
-    return [{ spellId, autoCast: Boolean(entry.autoCast) }]
+    const slot: SpellPresetSlot = { spellId, autoCast: Boolean(entry.autoCast) }
+    if (entry.hasAutomation) slot.automation = normalizeSpellAutomationConfig(entry.automation, spellId, slot.autoCast)
+    return [slot]
   }).slice(0, MAX_COMBAT_SPELLS)
 }
 
@@ -174,7 +177,9 @@ export const getSpellPresetFocusProjection = (
     if (!canonical) { invalidSpellIds.push(String(rawId)); return }
     if (seen.has(canonical)) return
     seen.add(canonical)
-    const slot = { spellId: canonical, autoCast: Boolean((rawSlot as { autoCast?: unknown }).autoCast) }
+    const autoCast = Boolean((rawSlot as { autoCast?: unknown }).autoCast)
+    const slot: SpellPresetSlot = { spellId: canonical, autoCast }
+    if (rawSlot && typeof rawSlot === 'object' && Object.prototype.hasOwnProperty.call(rawSlot, 'automation')) slot.automation = normalizeSpellAutomationConfig((rawSlot as { automation?: unknown }).automation, canonical, autoCast)
     if (isSpellUnlocked(state, canonical)) {
       validSlots.push(slot)
       validSpellIds.push(canonical)

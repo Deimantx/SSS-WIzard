@@ -1,5 +1,5 @@
-import { canonicalSpellId, getNextSpellPresetId, getSelectedSpellPreset, getSpellPresetFocusProjection, isSpellUnlocked, MAX_COMBAT_SPELLS, moveSpellToIndex, normalizeSpellPresetName, normalizeSpellPresetSlots, swapSpellSlots, syncAutoCastRuntimeForLoadout, syncSelectedSpellPresetRuntime as syncSelectedSpellPresetRuntimeForState } from '../../game/systems/spells'
-import type { CanonicalSpellId, GameState, SpellId, SpellPreset, SpellPresetId } from '../../game/types'
+import { canonicalSpellId, getDefaultSpellAutomationConfig, getNextSpellPresetId, getSelectedSpellPreset, getSpellPresetFocusProjection, isSpellUnlocked, MAX_COMBAT_SPELLS, moveSpellToIndex, normalizeSpellAutomationConfig, normalizeSpellPresetName, normalizeSpellPresetSlots, swapSpellSlots, syncAutoCastRuntimeForLoadout, syncSelectedSpellPresetRuntime as syncSelectedSpellPresetRuntimeForState } from '../../game/systems/spells'
+import type { CanonicalSpellId, GameState, SpellAutomationConfig, SpellId, SpellPreset, SpellPresetId } from '../../game/types'
 
 export interface ApplySpellPresetResult {
   ok: boolean
@@ -33,7 +33,7 @@ export const addSpellToSelectedPresetAction = (state: GameState, requestedSpellI
   }
   if (preset.slots.some((slot) => slot.spellId === spellId)) return { ok: false, reason: 'duplicate' }
   if (preset.slots.length >= MAX_COMBAT_SPELLS) return { ok: false, reason: 'full' }
-  preset.slots.push({ spellId, autoCast: false })
+  preset.slots.push({ spellId, autoCast: false, automation: getDefaultSpellAutomationConfig(spellId, false, false) })
   if (!state.combat.active) syncSelectedSpellPresetRuntimeForState(state)
   return { ok: true }
 }
@@ -51,7 +51,7 @@ export const addSpellToSelectedPresetAtAction = (state: GameState, requestedSpel
   }
   if (preset.slots.some((slot) => slot.spellId === spellId)) return { ok: false, reason: 'duplicate' }
   const index = Math.max(0, Math.min(Number.isInteger(requestedIndex) ? requestedIndex : preset.slots.length, MAX_COMBAT_SPELLS - 1))
-  preset.slots.splice(Math.min(index, preset.slots.length), 0, { spellId, autoCast: false })
+  preset.slots.splice(Math.min(index, preset.slots.length), 0, { spellId, autoCast: false, automation: getDefaultSpellAutomationConfig(spellId, false, false) })
   if (preset.slots.length > MAX_COMBAT_SPELLS) preset.slots.length = MAX_COMBAT_SPELLS
   if (!state.combat.active) syncSelectedSpellPresetRuntimeForState(state)
   return { ok: true }
@@ -112,7 +112,7 @@ export const duplicateSpellPresetAction = (state: GameState, id: SpellPresetId):
   const source = state.spellPresets.presets.find((entry) => entry.id === id)
   if (!source) return null
   const nextId = getNextSpellPresetId(state.spellPresets.presets)
-  state.spellPresets.presets.push({ id: nextId, name: normalizeSpellPresetName(`${source.name} Copy`), slots: source.slots.map((slot) => ({ ...slot })) })
+  state.spellPresets.presets.push({ id: nextId, name: normalizeSpellPresetName(`${source.name} Copy`), slots: source.slots.map((slot) => ({ ...slot, automation: slot.automation ? { ...slot.automation, conditions: slot.automation.conditions.map((condition) => ({ ...condition })) } : undefined })) })
   return nextId
 }
 
@@ -142,7 +142,22 @@ export const setPresetSlotAutoCastAction = (state: GameState, id: SpellPresetId,
   const preset = state.spellPresets.presets.find((entry) => entry.id === id)
   const slot = preset?.slots.find((entry) => entry.spellId === spellId)
   if (!slot) return false
+  const previousAutoCast = slot.autoCast
   slot.autoCast = Boolean(autoCast)
+  if (slot.autoCast && !slot.automation) slot.automation = getDefaultSpellAutomationConfig(slot.spellId, true, false)
+  if (!state.combat.active && !syncSelectedSpellPresetRuntimeForState(state) && slot.autoCast) {
+    slot.autoCast = previousAutoCast
+    syncSelectedSpellPresetRuntimeForState(state)
+    return false
+  }
+  return true
+}
+
+export const setPresetSlotAutomationAction = (state: GameState, id: SpellPresetId, spellId: CanonicalSpellId, automation: SpellAutomationConfig) => {
+  const preset = state.spellPresets.presets.find((entry) => entry.id === id)
+  const slot = preset?.slots.find((entry) => entry.spellId === spellId)
+  if (!slot) return false
+  slot.automation = normalizeSpellAutomationConfig(automation, slot.spellId, slot.autoCast, false)
   return true
 }
 

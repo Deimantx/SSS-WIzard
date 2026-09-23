@@ -95,6 +95,7 @@ import type {
   ResearchSlotId,
   SchoolId,
   ScreenId,
+  SpellAutomationConfig,
   SpellId,
   SpellPreset,
   SpellPresetId,
@@ -198,6 +199,7 @@ import {
 import type { OfflineBankReport } from "../game/systems/offline-bank/offlineBankReport";
 import {
   DEFAULT_COMBAT_LOADOUT_NAME,
+  getDefaultSpellAutomationConfig,
   getNextSpellPresetId,
   getSelectedSpellPreset,
   getSpellAutoCastFocusCost,
@@ -223,6 +225,7 @@ import {
   selectSpellPresetAction,
   selectSpellPresetForEditingAction,
   setPresetSlotAutoCastAction,
+  setPresetSlotAutomationAction,
   syncSelectedSpellPresetRuntime,
   type ApplySpellPresetResult,
   type SelectedPresetSlotMutationResult,
@@ -632,6 +635,11 @@ export interface GameActions {
     spellId: CanonicalSpellId,
     autoCast: boolean,
   ) => boolean;
+  setPresetSlotAutomation: (
+    id: SpellPresetId,
+    spellId: CanonicalSpellId,
+    automation: SpellAutomationConfig,
+  ) => boolean;
   applySpellPreset: (id: SpellPresetId) => ApplySpellPresetResult;
   enterDungeon: (dungeonId?: DungeonId) => void;
   enterTargetedCombat: (
@@ -865,6 +873,7 @@ const toggleAutoCastState = (state: GameState, requestedSpellId: SpellId) => {
     )
       return false;
     slot.autoCast = !slot.autoCast;
+    if (slot.autoCast && !slot.automation) slot.automation = getDefaultSpellAutomationConfig(slot.spellId, true, false);
   } else {
     if (
       preset.slots.length >= MAX_COMBAT_SPELLS ||
@@ -872,7 +881,7 @@ const toggleAutoCastState = (state: GameState, requestedSpellId: SpellId) => {
         !canReserveFocus(state, getSpellAutoCastFocusCost(state, spellId) ?? 0))
     )
       return false;
-    preset.slots.push({ spellId, autoCast: true });
+    preset.slots.push({ spellId, autoCast: true, automation: getDefaultSpellAutomationConfig(spellId, true, false) });
   }
   if (!state.combat.active) syncSelectedSpellPresetRuntime(state);
   return true;
@@ -1949,6 +1958,14 @@ export const useGameStore = create<GameStore>()(
           state.spellPresets.selectedPresetId === id
         )
           syncSelectedSpellPresetRuntime(state);
+        return state;
+      });
+      return result;
+    },
+    setPresetSlotAutomation: (id, spellId, automation) => {
+      let result = false;
+      set((state) => {
+        result = setPresetSlotAutomationAction(state, id, spellId, automation);
         return state;
       });
       return result;

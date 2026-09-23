@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../initialState'
-import { addSpellToSelectedPresetAction, moveSelectedPresetSlotAction, removeSpellFromSelectedPresetAction } from './spellPresetActions'
+import { addSpellToSelectedPresetAction, moveSelectedPresetSlotAction, removeSpellFromSelectedPresetAction, setPresetSlotAutoCastAction, setPresetSlotAutomationAction } from './spellPresetActions'
 
 describe('selected combat loadout actions', () => {
   it('creates the default loadout and preserves ordered slot mutations', () => {
@@ -24,5 +24,16 @@ describe('selected combat loadout actions', () => {
     expect(state.spellPresets.presets).toHaveLength(0)
     expect(moveSelectedPresetSlotAction(state, 0, 1)).toEqual({ ok: false, reason: 'missing-preset' })
     expect(removeSpellFromSelectedPresetAction(state, 'fire-bolt')).toEqual({ ok: false, reason: 'missing-preset' })
+  })
+
+  it('persists per-slot automation separately from loadout order and mode', () => {
+    const state = createInitialState()
+    state.progress.spellRanks = { 'fire-bolt': 1 }
+    expect(addSpellToSelectedPresetAction(state, 'fire-bolt')).toEqual({ ok: true })
+    const preset = state.spellPresets.presets[0]
+    expect(setPresetSlotAutomationAction(state, preset.id, 'fire-bolt', { conditions: [{ type: 'mana', operator: 'below', percent: 25 }], targetRule: 'current-enemy' })).toBe(true)
+    expect(setPresetSlotAutoCastAction(state, preset.id, 'fire-bolt', true)).toBe(true)
+    expect(preset.slots[0]).toMatchObject({ autoCast: true, automation: { conditions: [{ type: 'mana', operator: 'below', percent: 25 }], targetRule: 'current-enemy' } })
+    expect(state.activities.autoCastPriority).toEqual(['fire-bolt'])
   })
 })

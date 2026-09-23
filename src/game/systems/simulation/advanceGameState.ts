@@ -2,7 +2,6 @@ import { BALANCE } from '../../core/balance/balance'
 import { CHANNELING_DISCOVERIES } from '../../content/channeling/channelingDiscoveries'
 import { MONSTERS } from '../../content/monsters'
 import { SPELLS } from '../../content/spells/spells'
-import { STATUS_DEFINITIONS } from '../../content/statuses'
 import { advanceChanneling } from '../../engine/channelingEngine'
 import { pushNotification, recalculateDerivedStats } from '../../engine'
 import { castSpellInternal, getPlayerSpellCastRate, getSpellStartFailure, resolvePlayerSpellCast, spellRequiresEnemyTarget } from '../../engine/spellEngine'
@@ -11,7 +10,7 @@ import { resolveCombatDeaths, spawnNextEnemy, type CombatLootObserver } from '..
 import { getCurrentEnemyActionRate, resolveCurrentEnemyAction, startNextEnemyAction } from '../combat/actionRuntime'
 import { actorCannotAct, actorCannotCastSpells, expirePendingStatuses, getNextCombatStatusEventMs, getNextPlayerStatusEventMs, tickStatuses } from '../combat/statusRuntime'
 import { getNextCombatBarrierEventMs, getNextPlayerBarrierEventMs, tickBarriers } from '../combat/barrierRuntime'
-import { getCooldownRecoveryMultiplier, getEffectiveManaCost, getPlayerCombatStats } from '../combat/combatStats'
+import { getCooldownRecoveryMultiplier, getPlayerCombatStats } from '../combat/combatStats'
 import { tickRuleCooldowns } from '../combat/triggerRuntime'
 import type { GameState, ItemId, SpellId } from '../../types'
 import type { CombatAlertObserver, CombatEventSink } from '../combat/combatTypes'
@@ -21,14 +20,13 @@ import { applyTransmutationAllocations, buildTransmutationWorkRequests } from '.
 import { advanceArtificing, type ArtificingCompletion } from '../artificing/artificingEngine'
 import { applyResearchAllocations, buildResearchWorkRequests } from '../research/researchEngine'
 import { allocateContinuousMana } from './continuousManaScheduler'
-import { isSpellUnlocked } from '../spells'
+import { evaluateSpellAutomation, getNextAutomatedSpellCooldownMs, isSpellUnlocked, selectNextAutomatedSpell } from '../spells'
 import { MAX_SIMULATION_DELTA_MS, SIMULATION_QUANTUM_MS } from './simulationConstants'
 import type { CombatTelemetryObserver } from '../../telemetry/combat/combatTelemetryTypes'
 import type { DungeonStatisticsObserver } from '../../telemetry/dungeon/dungeonStatisticsTypes'
 import { sanitizeCombatTimeScale } from '../../../store/actions/debugActions'
 import { advanceGuardianUpkeep, ensureGuardianForCurrentEncounter, getGuardianAttackBoundary, resolveGuardianAttack, suppressGuardianIfOutOfMana } from '../summoning/summoningRuntime'
-import { hasEnoughResource } from '../../presentation/resources/resourcePresentation'
-import { advanceArcaneCoreV6RuntimeTime, isArcaneCoreSpellFree } from '../arcaneCore/arcaneCoreRuntime'
+import { advanceArcaneCoreV6RuntimeTime } from '../arcaneCore/arcaneCoreRuntime'
 
 export interface AdvanceContext {
   mode: 'live' | 'banked'
@@ -47,29 +45,9 @@ export interface AdvanceContext {
 const spellUnlocked = isSpellUnlocked
 const resolveDeaths = (state: GameState, context: AdvanceContext) => resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents, { onLootResolved: context.onCombatLoot, onPlayerDefeated: context.onPlayerDefeated, onCombatCompleted: context.onCombatCompleted })
 
-const evaluateAutoCondition = (state: GameState, condition: import('../../types').AutoCastCondition | undefined): boolean => {
-  if (!condition || condition.type === 'always') return true
-  if (condition.type === 'health-below') return state.player.health / Math.max(1, state.player.maxHealth) * 100 < condition.percent
-  if (condition.type === 'barrier-below') return state.combat.playerBarrier < condition.value
-  if (condition.type === 'self-status-missing') return !state.combat.playerStatuses.some((status) => status.statusId === condition.statusId)
-  if (condition.type === 'target-status-missing') return !state.combat.enemyStatuses.some((status) => status.statusId === condition.statusId)
-  if (condition.type === 'self-has-cleanseable-debuff') return state.combat.playerStatuses.some((status) => {
-    const definition = STATUS_DEFINITIONS[status.statusId]
-    return definition?.classification === 'debuff' && definition.cleanseable
-  })
-  return condition.conditions.every((entry) => evaluateAutoCondition(state, entry))
-}
-
-const meetsAutoCondition = (state: GameState, spellId: SpellId) => evaluateAutoCondition(state, SPELLS[spellId].autoCondition)
-
-const getAutoCastPriority = (state: GameState): SpellId[] => state.combat.activeSpellLoadout?.slots.filter((slot) => slot.autoCast).map((slot) => slot.spellId) ?? []
-
 const isAutoCastEligible = (state: GameState, spellId: SpellId) => {
-  const spell = SPELLS[spellId]
-  const activeSlot = state.combat.activeSpellLoadout?.slots.find((slot) => slot.spellId === spell?.id)
-  if (!spell || !activeSlot?.autoCast || !spellUnlocked(state, spellId) || !state.combat.enemyId || actorCannotAct(state, 'player') || actorCannotCastSpells(state, 'player') || !meetsAutoCondition(state, spellId)) return false
-  if (!state.debug.ignoreSpellCooldowns && (state.combat.spellCooldowns[spell.id] ?? 0) > 0) return false
-  return state.debug.infiniteMana || isArcaneCoreSpellFree(state) || hasEnoughResource(state.player.mana, getEffectiveManaCost(state, spell.manaCost))
+  const activeSlot = state.combat.activeSpellLoadout?.slots.find((slot) => slot.spellId === spellId)
+  return Boolean(activeSlot?.autoCast && evaluateSpellAutomation(state, activeSlot).eligible)
 }
 
 const autoCastReadySpells = (state: GameState, context: AdvanceContext) => {
@@ -93,17 +71,17 @@ const autoCastReadySpells = (state: GameState, context: AdvanceContext) => {
     // target, cooldown, Mana, or temporary status recovery.
     return
   }
-  if (actorCannotAct(state, 'player') || !state.combat.enemyId || state.debug.freezePlayerActions || state.debug.disableAutoCast) return
+  if (actorCannotAct(state, 'player') || state.debug.freezePlayerActions || state.debug.disableAutoCast) return
   {
-    const spellId = getAutoCastPriority(state).find((id) => isAutoCastEligible(state, id))
-    if (spellId) castSpellInternal(state, spellId, true, context.uiEvents)
+    const selection = selectNextAutomatedSpell(state)
+    if (selection) castSpellInternal(state, selection.spellId, true, context.uiEvents)
   }
   suppressGuardianIfOutOfMana(state)
 }
 
 const hasReadyAutoCast = (state: GameState) => {
-  if (actorCannotAct(state, 'player') || !state.combat.enemyId || state.debug.freezePlayerActions || state.debug.disableAutoCast) return false
-  return !state.combat.pendingPlayerSpellCast && getAutoCastPriority(state).some((id) => isAutoCastEligible(state, id))
+  if (actorCannotAct(state, 'player') || state.debug.freezePlayerActions || state.debug.disableAutoCast) return false
+  return !state.combat.pendingPlayerSpellCast && Boolean(selectNextAutomatedSpell(state))
 }
 
 const tickSpellCooldowns = (state: GameState, deltaMs: number, cooldownRecovery: number) => {
@@ -116,16 +94,8 @@ const tickSpellCooldowns = (state: GameState, deltaMs: number, cooldownRecovery:
 
 /** Auto-Cast readiness is a combat-clock boundary, not an outer-quantum side effect. */
 const getNextAutoCastCooldownEventMs = (state: GameState, cooldownRecovery: number): number | null => {
-  if (!state.combat.enemyId || state.combat.queuedPlayerSpellId || cooldownRecovery <= 0 || state.debug.freezePlayerActions || state.debug.disableAutoCast || state.debug.ignoreSpellCooldowns) return null
-  let next: number | null = null
-  getAutoCastPriority(state).forEach((spellId) => {
-    if (!spellUnlocked(state, spellId) || state.debug.ignoreSpellCooldowns) return
-    const cooldown = state.combat.spellCooldowns[spellId] ?? 0
-    if (cooldown <= 0 || !Number.isFinite(cooldown)) return
-    const boundary = cooldown / cooldownRecovery
-    if (next === null || boundary < next) next = boundary
-  })
-  return next
+  if (state.combat.queuedPlayerSpellId || cooldownRecovery <= 0 || state.debug.freezePlayerActions || state.debug.disableAutoCast || state.debug.ignoreSpellCooldowns) return null
+  return getNextAutomatedSpellCooldownMs(state, cooldownRecovery)
 }
 
 export const getNextQueuedSpellCooldownEventMs = (state: GameState, cooldownRecovery: number): number | null => {

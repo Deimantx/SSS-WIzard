@@ -48,8 +48,9 @@
   }
 }
 
-/* Spellbook and Spell Preset cards are geometry-stable: never add them to lift/scale selectors. */
-.game-shell button:not(:disabled):not(.spell-browser-tile):not(.spell-preset-card):not(.spell-preset-available-tile):active {
+/* Magic Schools card geometry is owned by schools.css.
+   Do not add Spellbook/Preset cards to shared game-feel lift/scale rules. */
+.game-shell button:not(:disabled):not([data-static-motion='true']):active {
   transform: translateY(1px) scale(.988);
   filter: brightness(.97);
   transition-duration: var(--game-feel-press-duration);
@@ -310,7 +311,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .game-shell button:not(:disabled):active { transform: none; }
-  .transmutation-recipe-tile:hover, .equipment-armory-card:hover, .research-item-tile:hover, .spell-preset-card:hover, .spell-preset-available-tile:hover, .transmutation-assignment-row:hover, .transmutation-ring-choice:hover, .activity-card:hover, .activity-mini-summary:hover, .combat-location-card:hover, .inventory-recent-item:hover, .inventory-use-row:hover, .inventory-need-row:hover, .theme-choice:hover, .preference-choice:hover { transform: none; }
+  .transmutation-recipe-tile:hover, .equipment-armory-card:hover, .research-item-tile:hover, .transmutation-assignment-row:hover, .transmutation-ring-choice:hover, .activity-card:hover, .activity-mini-summary:hover, .combat-location-card:hover, .inventory-recent-item:hover, .inventory-use-row:hover, .inventory-need-row:hover, .theme-choice:hover, .preference-choice:hover { transform: none; }
   .game-screen-transition { animation: game-screen-reduced-enter 80ms ease-out both; }
   .main-area::before { animation: none; }
   .game-value.value-increased, .game-value.value-decreased { animation: game-value-static 240ms ease-out both; }
@@ -336,7 +337,7 @@
 }
 
 .game-shell.reduced-motion button:not(:disabled):active { transform: none; }
-.game-shell.reduced-motion .transmutation-recipe-tile:hover, .game-shell.reduced-motion .equipment-armory-card:hover, .game-shell.reduced-motion .research-item-tile:hover, .game-shell.reduced-motion .spell-preset-card:hover, .game-shell.reduced-motion .spell-preset-available-tile:hover, .game-shell.reduced-motion .transmutation-assignment-row:hover, .game-shell.reduced-motion .transmutation-ring-choice:hover, .game-shell.reduced-motion .activity-card:hover, .game-shell.reduced-motion .activity-mini-summary:hover, .game-shell.reduced-motion .combat-location-card:hover, .game-shell.reduced-motion .inventory-recent-item:hover, .game-shell.reduced-motion .inventory-use-row:hover, .game-shell.reduced-motion .inventory-need-row:hover, .game-shell.reduced-motion .theme-choice:hover, .game-shell.reduced-motion .preference-choice:hover { transform: none; }
+.game-shell.reduced-motion .transmutation-recipe-tile:hover, .game-shell.reduced-motion .equipment-armory-card:hover, .game-shell.reduced-motion .research-item-tile:hover, .game-shell.reduced-motion .transmutation-assignment-row:hover, .game-shell.reduced-motion .transmutation-ring-choice:hover, .game-shell.reduced-motion .activity-card:hover, .game-shell.reduced-motion .activity-mini-summary:hover, .game-shell.reduced-motion .combat-location-card:hover, .game-shell.reduced-motion .inventory-recent-item:hover, .game-shell.reduced-motion .inventory-use-row:hover, .game-shell.reduced-motion .inventory-need-row:hover, .game-shell.reduced-motion .theme-choice:hover, .game-shell.reduced-motion .preference-choice:hover { transform: none; }
 .game-shell.reduced-motion .game-screen-transition { animation: game-screen-reduced-enter 80ms ease-out both; }
 .game-shell.reduced-motion .main-area::before { animation: none; }
 .game-shell.reduced-motion .game-value.value-increased,
@@ -455,8 +456,6 @@
 .game-shell .screen-scroll .equipment-armory-card.selected,
 .game-shell .screen-scroll .equipment-slot-card.selected,
 .game-shell .screen-scroll .research-item-tile.selected,
-.game-shell .screen-scroll .spell-browser-tile.is-selected,
-.game-shell .screen-scroll .spell-preset-card.is-selected,
 .game-shell .screen-scroll .transmutation-assignment-row.selected {
   border-color: color-mix(in srgb, var(--ui-accent) 86%, var(--ui-border));
   background-color: color-mix(in srgb, var(--ui-accent) 10%, var(--ui-panel-strong));
@@ -467,8 +466,6 @@
 .game-shell .screen-scroll .equipment-armory-card.selected:hover,
 .game-shell .screen-scroll .equipment-slot-card.selected:hover,
 .game-shell .screen-scroll .research-item-tile.selected:hover,
-.game-shell .screen-scroll .spell-browser-tile.is-selected:hover,
-.game-shell .screen-scroll .spell-preset-card.is-selected:hover,
 .game-shell .screen-scroll .transmutation-assignment-row.selected:hover {
   transform: none;
 }
@@ -498,12 +495,10 @@
 
 .game-shell .screen-scroll .transmutation-recipe-tile.selected .transmutation-tile-icon,
 .game-shell .screen-scroll .equipment-armory-card.selected .equipment-armory-icon,
-.game-shell .screen-scroll .equipment-slot-card.selected .equipment-slot-icon,
-.game-shell .screen-scroll .spell-browser-tile.is-selected .spell-browser-icon-frame {
+.game-shell .screen-scroll .equipment-slot-card.selected .equipment-slot-icon {
   filter: drop-shadow(0 0 8px color-mix(in srgb, var(--ui-accent) 38%, transparent));
 }
 
-.game-shell .screen-scroll .spell-browser-tile.is-locked .spell-browser-icon-frame,
 .game-shell .screen-scroll .equipment-slot-card.locked .equipment-slot-icon {
   filter: saturate(.45);
   opacity: .64;
@@ -566,7 +561,6 @@
 .equipment-armory-card,
 .equipment-slot-card,
 .research-item-tile,
-.spell-browser-tile,
 .transmutation-assignment-row,
 .transmutation-ring-choice,
 .quick-card,
@@ -659,7 +653,6 @@
 .equipment-armory-card.selected,
 .equipment-slot-card.selected,
 .research-item-tile.selected,
-.spell-browser-tile.is-selected,
 .transmutation-assignment-row.selected,
 .theme-choice.active,
 .preference-choice.active {
@@ -670,11 +663,9 @@
 
 .transmutation-recipe-tile.locked,
 .research-item-tile.unavailable,
-.spell-browser-tile.is-locked,
 .equipment-slot-card.locked { background-image: repeating-linear-gradient(135deg, transparent 0 8px, color-mix(in srgb, var(--ui-text-disabled) 4%, transparent) 8px 9px); border-style: dashed; filter: saturate(.72); }
 
 .transmutation-recipe-tile.locked::before,
-.spell-browser-tile.is-locked::before,
 .equipment-slot-card.locked::before { opacity: .3; }
 
 @keyframes game-selected-ring {

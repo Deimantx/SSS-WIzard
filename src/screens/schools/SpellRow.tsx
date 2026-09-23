@@ -13,7 +13,7 @@ import { buildSpellDetailPresentation, type SpellPresentationState } from './spe
 import { SpellSemanticIcons } from './SpellSemanticIcons'
 import { useSpellLoadoutDnd } from './SpellLoadoutDnd'
 
-export function SpellRow({ entry, state, selected, equipped, newSpell, onSelect, onEquip }: { entry: SpellBrowserEntry; state: SpellPresentationState; selected: boolean; equipped: boolean; newSpell: boolean; onSelect: (id: SpellId | string) => void; onEquip: (spellId: SpellId) => void }) {
+export function SpellRow({ entry, state, selected, equipped, newSpell, canEdit, onSelect, onEquip, onRemove }: { entry: SpellBrowserEntry; state: SpellPresentationState; selected: boolean; equipped: boolean; newSpell: boolean; canEdit: boolean; onSelect: (id: SpellId | string) => void; onEquip: (spellId: SpellId) => void; onRemove: (spellId: SpellId) => void }) {
   const { beginDrag } = useSpellLoadoutDnd()
   const school = SCHOOLS[entry.school]
   const spell = entry.kind === 'spell' ? SPELLS[entry.spellId] : null
@@ -28,7 +28,7 @@ export function SpellRow({ entry, state, selected, equipped, newSpell, onSelect,
       <span className="spell-row-category">{unlocked ? <SpellSemanticIcons tags={tags} /> : <span className="spell-row-locked-label">LOCKED</span>}</span>
       {detail && entry.kind === 'spell' ? <span className="spell-row-stats"><CompactStat semantic="mana" icon={<Droplet size={13} />} label="Mana Cost" value={formatResourceAmount(detail.manaCost)} /><CompactStat semantic="focus" icon={<CircleDot size={13} />} label="Auto-Cast Focus" value={`${getSpellAutoCastFocusCost(state, entry.spellId) ?? 0}`} /><CompactStat semantic="cast-time" icon={<Clock3 size={13} />} label="Cast Time" value={formatTime(detail.castTimeMs)} /><CompactStat semantic="cooldown" icon={<Clock3 size={13} />} label="Cooldown" value={detail.cooldownLabel} /></span> : <span className="spell-row-locked-copy"><LockKeyhole size={13} aria-hidden="true" />Requires {school.name} Level {entry.unlockLevel}</span>}
     </button>
-    {unlocked && entry.kind === 'spell' && <GameTooltip content={<TooltipContent title={equipped ? 'Already prepared' : 'Equip spell'} description={equipped ? 'This Spell is already in the selected combat loadout.' : 'Add this Spell to the selected combat loadout as a manual slot.'} />}><button type="button" className={`spell-row-equip${equipped ? ' is-equipped' : ''}`} aria-label={equipped ? `${spell?.name} already equipped` : `Equip ${spell?.name}`} disabled={equipped} onClick={(event) => { event.stopPropagation(); onEquip(entry.spellId) }}>{equipped ? <Check size={15} aria-hidden="true" /> : <Plus size={15} aria-hidden="true" />}<span>{equipped ? 'EQUIPPED' : 'EQUIP'}</span></button></GameTooltip>}
+    {unlocked && entry.kind === 'spell' && canEdit && <GameTooltip content={<TooltipContent title={equipped ? 'Remove from Combat Loadout' : 'Equip spell'} description={equipped ? 'Unequip this Spell from the selected combat loadout.' : 'Add this Spell to the selected combat loadout as a manual slot.'} />}><button type="button" data-no-drag="true" className={`spell-row-equip${equipped ? ' is-equipped' : ''}`} aria-label={equipped ? `Remove ${spell?.name} from Combat Loadout` : `Equip ${spell?.name}`} onClick={(event) => { event.stopPropagation(); equipped ? onRemove(entry.spellId) : onEquip(entry.spellId) }}>{equipped ? <Check size={15} aria-hidden="true" /> : <Plus size={15} aria-hidden="true" />}<span>{equipped ? 'EQUIPPED' : 'EQUIP'}</span></button></GameTooltip>}
   </article>
 }
 

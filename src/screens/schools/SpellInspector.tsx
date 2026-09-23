@@ -2,7 +2,7 @@ import { CircleDot, Clock3, Droplet, Flame, HeartPulse, Shield, Sparkles, Snowfl
 import { useEffect, useRef } from 'react'
 import { SCHOOLS } from '../../game/content/schools/schools'
 import { SPELLS } from '../../game/content/spells/spells'
-import { formatSpellRank, getSpellPresetFocusBreakdown, type SpellRank } from '../../game/systems/spells'
+import { formatSpellRank, type SpellRank } from '../../game/systems/spells'
 import { getSpellEquipmentBonusPreview } from '../../game/systems/spells/spellEquipmentPreview'
 import type { CombatEffect } from '../../game/systems/combat/combatTypes'
 import type { SpellId } from '../../game/types'
@@ -19,7 +19,7 @@ import { buildSpellDetailPresentation, type SpellPresentationState } from './spe
 import { useSmartScrollState } from '../../ui/game-feel/useSmartScrollState'
 import { formatResourceAmount } from '../../game/presentation/resources/resourcePresentation'
 
-export function SpellInspector({ entry, state, rankPathOpen, equippedSlotIndex, canEdit, onEquip, onRemove, onToggleRankPath, onToggleAutoCast }: {
+export function SpellInspector({ entry, state, rankPathOpen, equippedSlotIndex, canEdit, onEquip, onRemove, onToggleRankPath }: {
   entry: SpellBrowserEntry | null
   state: SpellPresentationState
   rankPathOpen: boolean
@@ -28,7 +28,6 @@ export function SpellInspector({ entry, state, rankPathOpen, equippedSlotIndex, 
   onEquip: (spellId: SpellId) => void
   onRemove: (spellId: SpellId) => void
   onToggleRankPath: () => void
-  onToggleAutoCast: (spellId: SpellId) => void
 }) {
   const rankDrawerRef = useRef<HTMLElement>(null)
   const inspectorScrollRef = useRef<HTMLDivElement>(null)
@@ -55,14 +54,6 @@ export function SpellInspector({ entry, state, rankPathOpen, equippedSlotIndex, 
   const detail = buildSpellDetailPresentation(state, spell.id, rank)
   const focusCost = detail.autoCastFocus
   const preview = getSpellEquipmentBonusPreview(state, spell.id)
-  const autoCast = detail.autoCastActive
-  const focus = getSpellPresetFocusBreakdown(state)
-  const canEnable = autoCast || state.debug.allowFocusOverCap || focus.freeFocus >= focusCost
-  const autoCastTooltip = autoCast
-    ? `${focusCost} Focus is currently reserved by this Spell's Auto-Cast state.`
-    : canEnable
-      ? `Enable this Spell's live Auto-Cast reservation. ${focusCost} Focus will be reserved.`
-      : `Insufficient free Focus. Need ${focusCost} Focus.`
   return <Card className="schools-inspector-panel" style={{ '--spell-school-color': school.color, borderTopColor: school.color } as React.CSSProperties}>
     <div ref={inspectorScrollRef} className="spell-inspector-scroll smart-scroll-region">
       <div className="spell-inspector-layout">
@@ -74,7 +65,6 @@ export function SpellInspector({ entry, state, rankPathOpen, equippedSlotIndex, 
         </div>
         <div className="spell-inspector-section"><div className="section-label">CORE CASTING</div><div className="spell-core-grid"><Metric semantic="mana" icon={<Droplet size={14} />} label="Mana" value={formatResourceAmount(detail.manaCost)} description="Mana spent when this Spell is cast after current Mana Cost Reduction." /><Metric semantic="cast-time" icon={<Clock3 size={14} />} label="Cast Time" value={detail.castTimeLabel} description="Authored base work required before this Spell resolves. Live Action Speed can change the effective time." /><Metric semantic="cooldown" icon={<Clock3 size={14} />} label="Cooldown" value={detail.cooldownLabel} description="Current cooldown after active Cooldown Recovery." /><Metric semantic="focus" icon={<CircleDot size={14} />} label="Auto-Cast Focus" value={`${focusCost}`} description="Focus reserved while this Spell is enabled for Auto-Cast." /></div></div>
         <div className="spell-inspector-section"><div className="section-label">EFFECTS</div><div className="spell-effects">{detail.effects.map((model, index) => <EffectRow model={model} effect={spell.effects[index]} key={`${model.categoryKey}-${index}`} />)}</div></div>
-        <div className={`spell-autocast-card${autoCast ? ' is-active' : ''}${!canEnable ? ' is-blocked' : ''}`}><GameTooltip block accent={autoCast ? 'success' : !canEnable ? 'warning' : 'focus'} content={<TooltipContent title="Auto-Cast" description={autoCastTooltip} />}><button type="button" className="spell-autocast-control" aria-label={`Auto-Cast ${autoCast ? 'ON' : 'OFF'}`} aria-pressed={autoCast} disabled={!autoCast && !canEnable} onClick={() => onToggleAutoCast(spell.id)}><span className="spell-autocast-control-label"><span className="section-label">AUTO-CAST</span><strong>{autoCast ? 'ON' : 'OFF'}</strong></span><span className="spell-autocast-control-status">{autoCast ? 'ACTIVE' : <CircleDot size={16} aria-hidden="true" />}</span></button></GameTooltip><div className="spell-autocast-details"><strong>{conditionLabel(spell.autoCondition)}</strong><small>{autoCast ? `${focusCost} Focus reserved` : !canEnable ? `Need ${focusCost} Focus` : `${focusCost} Focus when enabled`}</small></div></div>
         <details className="spell-equipment-details"><summary><span>EQUIPMENT MODIFIERS</span>{preview.current.length || preview.spellPower !== 0 ? <Status tone="success">{preview.current.length + (preview.spellPower !== 0 ? 1 : 0)} ACTIVE</Status> : <Status>NONE</Status>}</summary><SpellEquipmentBonuses preview={preview} /></details>
         <div className="spell-rank-path-action"><span><small>RANK PROGRESSION</small><strong>{formatSpellRank(rank)} path</strong></span><GameTooltip content={<TooltipContent title="View Rank Path" description="Review the Rank I path and future Focus costs." />}><Button variant="ghost" onClick={onToggleRankPath}>VIEW RANK PATH <span aria-hidden="true">→</span></Button></GameTooltip></div>
       </div>
@@ -86,15 +76,6 @@ export function SpellInspector({ entry, state, rankPathOpen, equippedSlotIndex, 
 
 function InspectorEyebrow({ children }: { children: React.ReactNode }) { return <div className="panel-kicker">{children}</div> }
 function Metric({ icon, label, value, description, semantic }: { icon: React.ReactNode; label: string; value: string; description: string; semantic: 'mana' | 'time' | 'cast-time' | 'cooldown' | 'focus' }) { return <GameTooltip block accent={semantic === 'mana' ? 'mana' : semantic === 'focus' ? 'focus' : semantic === 'cast-time' ? 'warning' : 'neutral'} content={<TooltipContent title={label} description={description} />}><div className="spell-core-metric"><span className={`spell-core-metric-icon ui-${semantic}`} aria-hidden="true">{icon}</span><small>{label}</small><strong className={`ui-${semantic}`}>{value}</strong></div></GameTooltip> }
-function conditionLabel(condition: typeof SPELLS[SpellId]['autoCondition']): string {
-  if (!condition || condition.type === 'always') return 'Always'
-  if (condition.type === 'health-below') return `Health below ${condition.percent}%`
-  if (condition.type === 'barrier-below') return `Barrier below ${condition.value}`
-  if (condition.type === 'self-status-missing') return `Self lacks ${condition.statusId}`
-  if (condition.type === 'target-status-missing') return `Target lacks ${condition.statusId}`
-  if (condition.type === 'self-has-cleanseable-debuff') return 'Self has a cleanseable debuff'
-  return condition.conditions.map(conditionLabel).join(' and ')
-}
 function EffectRow({ model, effect }: { model: ReturnType<typeof buildSpellDetailPresentation>['effects'][number]; effect: CombatEffect }) {
   return <GameTooltip block wide delay={120} placement="right" accent={model.categoryKey === 'heal' ? 'success' : model.categoryKey === 'barrier' ? 'mana' : model.categoryKey === 'debuff' ? 'warning' : 'elemental'} content={<SpellEffectTooltip model={model} />}>
     <div tabIndex={0} aria-label={`${model.category}: ${model.title}`} className={`spell-effect-row effect-${model.categoryKey}`}><span className="spell-effect-icon" aria-hidden="true"><EffectIcon categoryKey={model.categoryKey} effect={effect} /></span><SpellEffectDetailBlock model={model} density="inline" /></div>

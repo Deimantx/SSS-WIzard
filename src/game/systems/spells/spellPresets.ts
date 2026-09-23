@@ -69,6 +69,19 @@ export const moveSpellToIndex = (slots: readonly SpellPresetSlot[], fromIndex: n
   return next
 }
 
+/** Swaps two visible loadout positions; an empty trailing position moves the source to the compacted end. */
+export const swapSpellSlots = (slots: readonly SpellPresetSlot[], sourceIndex: number, targetIndex: number): SpellPresetSlot[] | null => {
+  if (!Number.isInteger(sourceIndex) || !Number.isInteger(targetIndex) || sourceIndex < 0 || sourceIndex >= slots.length || targetIndex < 0 || targetIndex >= MAX_COMBAT_SPELLS) return null
+  if (sourceIndex === targetIndex) return slots.map((slot) => ({ ...slot }))
+  const next = slots.map((slot) => ({ ...slot }))
+  const resolvedTarget = Math.min(targetIndex, next.length - 1)
+  if (resolvedTarget < 0) return null
+  const source = next[sourceIndex]
+  next[sourceIndex] = next[resolvedTarget]
+  next[resolvedTarget] = source
+  return next
+}
+
 /** Inserts an unlocked spell into a draft while enforcing the editor's duplicate and slot limits. */
 export const insertSpellAt = (
   slots: readonly SpellPresetSlot[],

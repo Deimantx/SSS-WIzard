@@ -193,29 +193,25 @@ describe('screen smoke coverage', () => {
     expect(spellInspectorScroll?.classList.contains('smart-scroll-region')).toBe(true)
     expect(screen.getByText(/Auto-Cast Focus/)).toBeTruthy()
     expect(screen.queryByText('Current Rank')).toBeNull()
-    expect(screen.getByRole('button', { name: 'Auto-Cast OFF' })).toBeTruthy()
-    expect(screen.getByText('10 Focus when enabled')).toBeTruthy()
-    await user.click(screen.getByRole('button', { name: 'Auto-Cast OFF' }))
-    expect(screen.getByRole('button', { name: 'Auto-Cast ON' })).toBeTruthy()
-    expect(screen.getByText('10 Focus reserved')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Auto-Cast OFF' })).toBeNull()
+    expect(screen.queryByText('10 Focus reserved')).toBeNull()
     await user.click(screen.getByRole('tab', { name: /WATER/ }))
     await user.click(screen.getByRole('button', { name: /Water Bolt,/ }))
     expect(screen.getByRole('heading', { name: 'Water Bolt' })).toBeTruthy()
     expect(screen.getByRole('button', { name: /Water Bolt,/ }).getAttribute('aria-pressed')).toBe('true')
-    expect(screen.getByText('AUTO', { exact: true })).toBeTruthy()
   })
 
-  it('shows a themed insufficient-Focus Auto-Cast state without enabling it', async () => {
+  it('keeps runtime Auto-Cast configuration out of the spell inspector', async () => {
     const user = userEvent.setup()
     const progress = useGameStore.getState().progress
-    const player = useGameStore.getState().player
-    useGameStore.setState({ progress: { ...progress, spellRanks: { 'fire-bolt': 1 } }, player: { ...player, maxFocus: 0 } })
+    useGameStore.setState({ progress: { ...progress, spellRanks: { 'fire-bolt': 1 } } })
     render(<GameShell />)
     await goToMagicSchools(user)
     await user.click(screen.getByRole('button', { name: /Fire Bolt,/ }))
-    const toggle = screen.getByRole('button', { name: 'Auto-Cast OFF' })
-    expect(toggle.hasAttribute('disabled')).toBe(true)
-    expect(screen.getByText('Need 10 Focus')).toBeTruthy()
+    expect(screen.getByText('Auto-Cast Focus')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /Auto-Cast (ON|OFF)/ })).toBeNull()
+    expect(screen.queryByText('Always')).toBeNull()
+    expect(screen.queryByText('Focus reserved')).toBeNull()
   })
 
   it('exposes rich effect tooltips from the selected spell inspector', async () => {
@@ -291,6 +287,20 @@ describe('screen smoke coverage', () => {
     expect(screen.getByRole('heading', { name: 'Searing Touch' })).toBeTruthy()
     expect(screen.getByText('Current Fire Level')).toBeTruthy()
     expect(screen.getByText(/Requires Level 7/)).toBeTruthy()
+  })
+
+  it('clicking EQUIPPED removes the spell from the prepared loadout', async () => {
+    const user = userEvent.setup()
+    const progress = useGameStore.getState().progress
+    useGameStore.setState({ progress: { ...progress, spellRanks: { 'fire-bolt': 1 } } })
+    render(<GameShell />)
+    await goToMagicSchools(user)
+    await user.click(screen.getByRole('button', { name: 'Equip Fire Bolt' }))
+    expect(screen.getByRole('button', { name: 'Remove Fire Bolt from Combat Loadout' })).toBeTruthy()
+    expect(screen.getByText('1 / 8 prepared')).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Remove Fire Bolt from Combat Loadout' }))
+    expect(screen.queryByRole('button', { name: 'Remove Fire Bolt from Combat Loadout' })).toBeNull()
+    expect(screen.getByText('0 / 8 prepared')).toBeTruthy()
   })
 
   it('uses the themed Type menu for semantic spell filtering', async () => {

@@ -1,7 +1,8 @@
 import { render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
+import { swapSpellSlots } from '../../game/systems/spells'
 import { useGameStore } from '../../store/gameStore'
-import { CombatSpellLoadout, getLoadoutDropDestination } from './CombatSpellLoadout'
+import { CombatSpellLoadout } from './CombatSpellLoadout'
 import { SpellLoadoutDndProvider } from './SpellLoadoutDnd'
 
 describe('CombatSpellLoadout', () => {
@@ -35,13 +36,17 @@ describe('CombatSpellLoadout', () => {
     expect(screen.getByText('1 / 8 prepared')).toBeTruthy()
   })
 
-  it('calculates stable insertion destinations for first, last, middle and empty targets', () => {
-    expect(getLoadoutDropDestination(0, 7, 'after', 8)).toBe(7)
-    expect(getLoadoutDropDestination(7, 0, 'before', 8)).toBe(0)
-    expect(getLoadoutDropDestination(2, 5, 'after', 8)).toBe(5)
-    expect(getLoadoutDropDestination(5, 2, 'before', 8)).toBe(2)
-    expect(getLoadoutDropDestination(0, 7, 'before', 3)).toBe(2)
-    expect(getLoadoutDropDestination(8, 1, 'before', 8)).toBeNull()
+  it('swaps prepared positions directly across the visible loadout grid', () => {
+    const slots = [
+      { spellId: 'fire-bolt' as const, autoCast: false },
+      { spellId: 'water-bolt' as const, autoCast: false },
+      { spellId: 'stone-shard' as const, autoCast: false },
+      { spellId: 'wind-blade' as const, autoCast: false },
+    ]
+    expect(swapSpellSlots(slots, 0, 3)?.map((slot) => slot.spellId)).toEqual(['wind-blade', 'water-bolt', 'stone-shard', 'fire-bolt'])
+    expect(swapSpellSlots(slots, 0, 7)?.map((slot) => slot.spellId)).toEqual(['wind-blade', 'water-bolt', 'stone-shard', 'fire-bolt'])
+    expect(swapSpellSlots(slots, 2, 2)?.map((slot) => slot.spellId)).toEqual(['fire-bolt', 'water-bolt', 'stone-shard', 'wind-blade'])
+    expect(swapSpellSlots(slots, 4, 1)).toBeNull()
   })
 
   it('exposes direct preset controls instead of a separate manager modal', () => {

@@ -1,4 +1,4 @@
-import { canonicalSpellId, getNextSpellPresetId, getSelectedSpellPreset, getSpellPresetFocusProjection, isSpellUnlocked, MAX_COMBAT_SPELLS, moveSpellToIndex, normalizeSpellPresetName, normalizeSpellPresetSlots, syncAutoCastRuntimeForLoadout, syncSelectedSpellPresetRuntime as syncSelectedSpellPresetRuntimeForState } from '../../game/systems/spells'
+import { canonicalSpellId, getNextSpellPresetId, getSelectedSpellPreset, getSpellPresetFocusProjection, isSpellUnlocked, MAX_COMBAT_SPELLS, moveSpellToIndex, normalizeSpellPresetName, normalizeSpellPresetSlots, swapSpellSlots, syncAutoCastRuntimeForLoadout, syncSelectedSpellPresetRuntime as syncSelectedSpellPresetRuntimeForState } from '../../game/systems/spells'
 import type { CanonicalSpellId, GameState, SpellId, SpellPreset, SpellPresetId } from '../../game/types'
 
 export interface ApplySpellPresetResult {
@@ -72,6 +72,17 @@ export const moveSelectedPresetSlotAction = (state: GameState, fromIndex: number
   const preset = getSelectedSpellPreset(state)
   if (!preset) return { ok: false, reason: 'missing-preset' }
   const next = moveSpellToIndex(preset.slots, fromIndex, toIndex)
+  if (!next) return { ok: false, reason: 'invalid-index' }
+  preset.slots = next
+  if (!state.combat.active) syncSelectedSpellPresetRuntimeForState(state)
+  return { ok: true }
+}
+
+export const swapSelectedPresetSlotsAction = (state: GameState, sourceIndex: number, targetIndex: number): SelectedPresetSlotMutationResult => {
+  const preset = getSelectedSpellPreset(state)
+  if (!preset) return { ok: false, reason: 'missing-preset' }
+  if (sourceIndex === targetIndex) return { ok: true }
+  const next = swapSpellSlots(preset.slots, sourceIndex, targetIndex)
   if (!next) return { ok: false, reason: 'invalid-index' }
   preset.slots = next
   if (!state.combat.active) syncSelectedSpellPresetRuntimeForState(state)

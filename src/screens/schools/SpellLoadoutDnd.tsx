@@ -8,7 +8,7 @@ export type SpellDragPayload =
   | { source: 'loadout'; spellId: SpellId; fromIndex: number }
   | { source: 'library'; spellId: SpellId }
 
-export type SpellDropTarget = { index: number; position: 'before' | 'after' }
+export type SpellDropTarget = { index: number }
 
 type SpellLoadoutDndContextValue = {
   drag: { payload: SpellDragPayload; x: number; y: number } | null
@@ -58,10 +58,11 @@ export function SpellLoadoutDndProvider({ onCommit, children }: { onCommit: (pay
       for (const [index, element] of targetsRef.current) {
         const rect = element.getBoundingClientRect()
         if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) continue
-        nextTarget = { index, position: event.clientY <= rect.top + rect.height / 2 ? 'before' : 'after' }
+        if (pending.payload.source === 'loadout' && pending.payload.fromIndex === index) continue
+        nextTarget = { index }
         break
       }
-      setDropTarget((current) => current?.index === nextTarget?.index && current?.position === nextTarget?.position ? current : nextTarget)
+      setDropTarget((current) => current?.index === nextTarget?.index ? current : nextTarget)
       event.preventDefault()
     }
     const onPointerUp = (event: PointerEvent) => {

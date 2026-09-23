@@ -14,7 +14,7 @@ import { SpellInspector } from './SpellInspector'
 import { MagicSchoolsHeader } from './MagicSchoolsHeader'
 import { SchoolProgressOverview } from './SchoolProgressOverview'
 import { SpellLibrary } from './SpellLibrary'
-import { CombatSpellLoadout, getLoadoutDropDestination } from './CombatSpellLoadout'
+import { CombatSpellLoadout } from './CombatSpellLoadout'
 import { SpellLoadoutDndProvider, type SpellDragPayload, type SpellDropTarget } from './SpellLoadoutDnd'
 
 type LibraryCategory = 'All' | 'Damage' | 'Defense' | 'Control' | 'Utility'
@@ -34,9 +34,8 @@ export function MagicSchoolsScreenV2() {
   const allowFocusOverCap = useGameStore((state) => state.debug.allowFocusOverCap)
   const addSpell = useGameStore((state) => state.addSpellToSelectedPreset)
   const addSpellAt = useGameStore((state) => state.addSpellToSelectedPresetAt)
-  const moveSlot = useGameStore((state) => state.moveSelectedPresetSlot)
+  const swapSlots = useGameStore((state) => state.swapSelectedPresetSlots)
   const removeSpell = useGameStore((state) => state.removeSpellFromSelectedPreset)
-  const toggleAutoCast = useGameStore((state) => state.toggleAutoCast)
   const navigationIntent = useNavigationIntent()
   const attention = useProfileAttention(getActiveProfileId())
   const [filters, setFilters] = useState<ScreenFilters>(() => ({ ...DEFAULT_FILTERS, school: navigationIntent.schoolId ?? DEFAULT_FILTERS.school }))
@@ -91,20 +90,18 @@ export function MagicSchoolsScreenV2() {
   const commitSpellDrop = useCallback((payload: SpellDragPayload, target: SpellDropTarget) => {
     if (combat.active) return
     if (payload.source === 'loadout') {
-      const destination = getLoadoutDropDestination(payload.fromIndex, target.index, target.position, activeLoadout.length)
-      if (destination !== null) moveSlot(payload.fromIndex, destination)
+      swapSlots(payload.fromIndex, target.index)
       return
     }
-    const insertionIndex = Math.min(target.index + (target.position === 'after' ? 1 : 0), activeLoadout.length)
-    addSpellAt(payload.spellId, insertionIndex)
-  }, [combat.active, activeLoadout.length, moveSlot, addSpellAt])
+    addSpellAt(payload.spellId, Math.min(target.index, activeLoadout.length))
+  }, [combat.active, activeLoadout.length, swapSlots, addSpellAt])
 
   return <div className="screen-content schools-screen">
     <MagicSchoolsHeader schools={schools} selectedSchool={selectedSchool} onSelect={selectSchool} />
     <SchoolProgressOverview state={{ schools, progress }} schoolId={selectedSchool} />
     <SpellLoadoutDndProvider onCommit={commitSpellDrop}><ScreenGrid screen="schools" panels={[
-      { id: 'schools-library', content: <SpellLibrary state={browserState} school={selectedSchool} filters={filters} selectedEntryId={selectedEntryId} newSpells={new Set(attention.unseenSpells)} equippedSpellIds={equippedSpellIds} onFiltersChange={setFilters} onSelect={selectSpell} onEquip={equipSpell} /> },
-      { id: 'schools-inspector', content: <InspectorTransition identity={selectedEntry?.id} accent={selectedEntry ? SCHOOLS[selectedEntry.school].color : undefined} fill><SpellInspector entry={selectedEntry} state={browserState} rankPathOpen={rankPathOpen} equippedSlotIndex={selectedEntry?.kind === 'spell' ? activeLoadout.findIndex((slot) => slot.spellId === selectedEntry.spellId) : null} canEdit={!combat.active} onEquip={equipSpell} onRemove={removeSpell} onToggleRankPath={() => { dismissGameTooltips(); setRankPathOpen((open) => !open) }} onToggleAutoCast={toggleAutoCast} /></InspectorTransition> },
+      { id: 'schools-library', content: <SpellLibrary state={browserState} school={selectedSchool} filters={filters} selectedEntryId={selectedEntryId} newSpells={new Set(attention.unseenSpells)} equippedSpellIds={equippedSpellIds} canEdit={!combat.active} onFiltersChange={setFilters} onSelect={selectSpell} onEquip={equipSpell} onRemove={removeSpell} /> },
+      { id: 'schools-inspector', content: <InspectorTransition identity={selectedEntry?.id} accent={selectedEntry ? SCHOOLS[selectedEntry.school].color : undefined} fill><SpellInspector entry={selectedEntry} state={browserState} rankPathOpen={rankPathOpen} equippedSlotIndex={selectedEntry?.kind === 'spell' ? activeLoadout.findIndex((slot) => slot.spellId === selectedEntry.spellId) : null} canEdit={!combat.active} onEquip={equipSpell} onRemove={removeSpell} onToggleRankPath={() => { dismissGameTooltips(); setRankPathOpen((open) => !open) }} /></InspectorTransition> },
       { id: 'schools-loadout', content: <CombatSpellLoadout focusState={focusState} onSelectSpell={selectLoadoutSpell} /> },
     ]} /></SpellLoadoutDndProvider>
   </div>

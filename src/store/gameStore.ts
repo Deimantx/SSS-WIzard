@@ -216,6 +216,7 @@ import {
   duplicateSpellPresetAction,
   moveAutoCastPriorityAction,
   moveSelectedPresetSlotAction,
+  swapSelectedPresetSlotsAction,
   removeSpellFromSelectedPresetAction,
   renameSpellPresetAction,
   saveSpellPresetAction,
@@ -625,6 +626,7 @@ export interface GameActions {
   addSpellToSelectedPresetAt: (spellId: SpellId, index: number) => SelectedPresetSlotMutationResult;
   removeSpellFromSelectedPreset: (spellId: SpellId) => SelectedPresetSlotMutationResult;
   moveSelectedPresetSlot: (fromIndex: number, toIndex: number) => SelectedPresetSlotMutationResult;
+  swapSelectedPresetSlots: (sourceIndex: number, targetIndex: number) => SelectedPresetSlotMutationResult;
   setPresetSlotAutoCast: (
     id: SpellPresetId,
     spellId: CanonicalSpellId,
@@ -1925,6 +1927,14 @@ export const useGameStore = create<GameStore>()(
       let result: SelectedPresetSlotMutationResult = { ok: false, reason: "missing-preset" };
       set((state) => {
         result = moveSelectedPresetSlotAction(state, fromIndex, toIndex);
+        return state;
+      });
+      return result;
+    },
+    swapSelectedPresetSlots: (sourceIndex, targetIndex) => {
+      let result: SelectedPresetSlotMutationResult = { ok: false, reason: "missing-preset" };
+      set((state) => {
+        result = swapSelectedPresetSlotsAction(state, sourceIndex, targetIndex);
         return state;
       });
       return result;

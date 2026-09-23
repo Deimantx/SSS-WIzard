@@ -47,9 +47,9 @@
 .spell-library-list { display: grid; align-content: start; min-height: 0; padding-top: 8px; overflow: auto; scrollbar-color: var(--ui-scrollbar-thumb) transparent; scrollbar-width: thin; }
 .spell-library-list::-webkit-scrollbar { width: 6px; }
 .spell-library-list::-webkit-scrollbar-thumb { border-radius: 99px; background: var(--ui-scrollbar-thumb); }
-.spell-row { --school-accent: var(--ui-accent); display: grid; grid-template-columns: minmax(0, 1fr) auto; min-width: 0; min-height: 70px; border-bottom: 1px solid color-mix(in srgb, var(--ui-border) 78%, transparent); transition: background 140ms ease, border-color 140ms ease; }
-.spell-row:hover, .spell-row:focus-within { border-color: color-mix(in srgb, var(--school-accent) 52%, var(--ui-border)); background: color-mix(in srgb, var(--school-accent) 5%, transparent); }
-.spell-row.is-selected { border-left: 2px solid var(--school-accent); background: color-mix(in srgb, var(--school-accent) 8%, transparent); }
+.spell-row { --school-accent: var(--ui-accent); display: grid; grid-template-columns: minmax(0, 1fr) auto; min-width: 0; min-height: 70px; box-sizing: border-box; border: 1px solid transparent; border-bottom-color: color-mix(in srgb, var(--ui-border) 78%, transparent); border-radius: 7px; transition: background 140ms ease, border-color 140ms ease; }
+.spell-row:not(.is-selected):hover, .spell-row:not(.is-selected):focus-within { border-color: color-mix(in srgb, var(--school-accent) 52%, var(--ui-border)); background: color-mix(in srgb, var(--school-accent) 5%, transparent); }
+.spell-row.is-selected, .spell-row.is-selected:hover, .spell-row.is-selected:focus-within { border-color: var(--school-accent); background: color-mix(in srgb, var(--school-accent) 8%, transparent); box-shadow: inset 2px 0 0 var(--school-accent); }
 .spell-row-main { display: grid; grid-template-columns: 42px minmax(130px, 1.1fr) 100px minmax(260px, 1.7fr); align-items: center; gap: 10px; min-width: 0; padding: 9px 8px; border: 0; color: var(--ui-text-soft); background: transparent; cursor: pointer; text-align: left; }
 .spell-row-main:focus-visible { outline: 2px solid var(--school-accent); outline-offset: -2px; }
 .spell-row-icon .spell-icon-medium { width: 36px; height: 36px; border-radius: 8px; }
@@ -80,10 +80,7 @@
 .loadout-slot:active { cursor: grabbing; }
 .loadout-slot:hover { border-color: color-mix(in srgb, var(--school-accent) 58%, var(--ui-border)); background: color-mix(in srgb, var(--school-accent) 6%, var(--ui-panel-strong)); }
 .loadout-slot.is-dragging { opacity: .42; cursor: grabbing; }
-.loadout-slot.is-drop-before::before, .loadout-slot.is-drop-after::after { position: absolute; z-index: 1; right: -4px; left: -4px; height: 2px; border-radius: 99px; background: var(--ui-accent); box-shadow: 0 0 10px color-mix(in srgb, var(--ui-accent) 70%, transparent); content: ''; pointer-events: none; }
-.loadout-slot.is-drop-before::before { top: -4px; }
-.loadout-slot.is-drop-after::after { bottom: -4px; }
-.loadout-slot.is-drop-before, .loadout-slot.is-drop-after { border-color: color-mix(in srgb, var(--ui-accent) 70%, var(--ui-border)); background: color-mix(in srgb, var(--ui-accent) 9%, var(--ui-panel-strong)); }
+.loadout-slot.is-drop-target { border-color: color-mix(in srgb, var(--ui-accent) 78%, var(--ui-border)); background: color-mix(in srgb, var(--ui-accent) 12%, var(--ui-panel-strong)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ui-accent) 38%, transparent), 0 0 14px color-mix(in srgb, var(--ui-accent) 18%, transparent); }
 .loadout-slot.is-empty { grid-template-columns: 25px minmax(0, 1fr); border-left-color: var(--ui-border); border-style: dashed; color: var(--ui-text-disabled); }.loadout-slot-number { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }.loadout-slot .spell-icon-small { width: 28px; height: 28px; border-radius: 7px; font-size: .75rem; }.loadout-slot-copy { display: grid; gap: 2px; min-width: 0; }.loadout-slot-copy strong { overflow: hidden; color: var(--ui-text-soft); font-size: var(--text-xs); text-overflow: ellipsis; white-space: nowrap; }.loadout-slot-copy small, .loadout-slot-empty-copy + small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }.loadout-slot-mode { display: inline-flex; align-items: center; gap: 3px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }.loadout-slot-mode.is-auto { color: var(--semantic-focus); }.loadout-slot-actions { display: inline-flex; gap: 1px; }.loadout-slot-actions .button.icon { width: 25px; min-width: 25px; height: 25px; }.loadout-slot-empty-copy { color: var(--ui-text-disabled); font: var(--text-micro) var(--font-mono); letter-spacing: .05em; }.loadout-footer { display: grid; gap: 9px; margin-top: 12px; padding-top: 11px; border-top: 1px solid var(--ui-border); color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }.loadout-footer > span { color: var(--ui-text-soft); }
 .loadout-slot.is-readonly { cursor: default; }
 .loadout-slot-actions, .loadout-slot-actions * { cursor: pointer; }
@@ -210,7 +207,7 @@
 .spell-core-metric-icon.ui-cast-time { color: var(--ui-warning); }
 .spell-core-metric-icon.ui-cooldown { color: var(--semantic-time); }
 .spell-core-metric-icon.ui-focus { color: var(--semantic-focus); }
-.spell-core-metric small, .spell-autocast-card small, .spell-rank-path-action small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
+.spell-core-metric small, .spell-rank-path-action small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
 .spell-core-metric strong { grid-column: 2; color: var(--ui-text); font: var(--text-xs) var(--font-mono); white-space: nowrap; }
 .spell-core-metric strong.ui-mana { color: var(--semantic-mana); }
 .spell-core-metric strong.ui-time { color: var(--semantic-time); }
@@ -233,21 +230,6 @@
 .spell-effect-row.effect-debuff { --effect-accent: var(--ui-danger); }
 .spell-effect-row.effect-control { --effect-accent: #83c9ef; }
 .spell-effect-row.effect-dot { --effect-accent: var(--ui-warning); }
-.spell-autocast-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: stretch; gap: 11px; margin: 3px 0 11px; padding: 8px 10px; border: 1px solid var(--ui-border); border-radius: 8px; background: color-mix(in srgb, var(--ui-panel-strong) 82%, transparent); }
-.spell-autocast-card.is-active { border-color: color-mix(in srgb, var(--ui-success) 50%, var(--ui-border)); background: color-mix(in srgb, var(--ui-success) 7%, var(--ui-panel-strong)); }
-.spell-autocast-card.is-blocked { border-color: color-mix(in srgb, var(--ui-warning) 48%, var(--ui-border)); }
-.spell-autocast-card > .game-tooltip-trigger { min-width: 0; }
-.spell-autocast-control { display: flex; align-items: center; justify-content: space-between; gap: 9px; width: 100%; min-height: 45px; padding: 3px 5px; border: 1px solid transparent; border-radius: 6px; color: var(--ui-text); background: transparent; cursor: pointer; text-align: left; }
-.spell-autocast-control:hover:not(:disabled) { border-color: color-mix(in srgb, var(--semantic-focus) 44%, var(--ui-border)); background: color-mix(in srgb, var(--semantic-focus) 7%, transparent); }
-.spell-autocast-control:focus-visible { border-color: var(--semantic-focus); outline: 2px solid color-mix(in srgb, var(--semantic-focus) 45%, transparent); outline-offset: 1px; }
-.spell-autocast-control:disabled { cursor: not-allowed; opacity: .7; }
-.spell-autocast-control-label, .spell-autocast-details { display: grid; gap: 3px; min-width: 0; }
-.spell-autocast-control-label strong { color: var(--ui-text); font: var(--text-sm) var(--font-mono); letter-spacing: .05em; }
-.spell-autocast-control-status { display: inline-flex; align-items: center; gap: 4px; color: var(--semantic-focus); font: var(--text-micro) var(--font-mono); letter-spacing: .06em; }
-.spell-autocast-details { align-content: center; min-width: 112px; padding-left: 11px; border-left: 1px solid var(--ui-border); }
-.spell-autocast-details strong { color: var(--ui-text-soft); font-size: var(--text-xs); }
-.spell-autocast-details small { color: var(--ui-text-muted); }
-.spell-autocast-card.is-blocked .spell-autocast-details small { color: var(--ui-warning); }
 .spell-equipment-details { border-top: 1px solid var(--ui-border); border-bottom: 1px solid var(--ui-border); }
 .spell-equipment-details summary { display: flex; align-items: center; justify-content: space-between; gap: 7px; padding: 10px 0; color: var(--ui-text-muted); cursor: pointer; font: var(--text-micro) var(--font-mono); letter-spacing: .1em; list-style-position: inside; }
 .spell-equipment-details summary::marker { color: var(--ui-accent); }
@@ -439,8 +421,6 @@
 @container (max-width: 460px) {
   .spell-core-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .spell-core-grid > .game-tooltip-trigger:last-child { grid-column: 1 / -1; }
-  .spell-autocast-card { grid-template-columns: 1fr; }
-  .spell-autocast-details { min-width: 0; padding-top: 8px; padding-left: 0; border-top: 1px solid var(--ui-border); border-left: 0; }
 }
 @container (max-width: 300px) {
   .spell-core-grid { grid-template-columns: 1fr; }

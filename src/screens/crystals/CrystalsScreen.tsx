@@ -6,10 +6,14 @@ import {
   type CSSProperties,
   type MouseEvent,
 } from "react";
-import { Button, Card, GameTooltip, Status } from "../../components/ui";
+import {
+  Button,
+  Card,
+  GameTooltip,
+  Status,
+} from "../../components/ui";
 import { ScreenGrid } from "../../components/layout/ScreenGrid";
 import { useGameStore } from "../../store/gameStore";
-import { getEquippedCrystalStats } from "../../game/systems/crystals/crystalStats";
 import {
   getCrystalAvailableCount,
   getCrystalEquippedCount,
@@ -39,6 +43,7 @@ import "../../styles/screens/crystals.css";
 import { useGameContextMenu } from "../../ui/context-menu/GameContextMenuProvider";
 import { CrystalBulkCrushDialog } from "./CrystalBulkCrushDialog";
 import { CrystalCrushQuantityDialog } from "./CrystalCrushQuantityDialog";
+import { CrystalSummaryDialog } from "./CrystalSummaryDialog";
 import {
   CrystalTooltipContent,
   CRYSTAL_STAT_LABELS,
@@ -71,6 +76,7 @@ export function CrystalsScreen() {
   const navigationIntent = useNavigationIntent();
   const [inventoryOpen, setInventoryOpen] = useState(false);
   const [bulkCrushOpen, setBulkCrushOpen] = useState(false);
+  const [summaryOpen, setSummaryOpen] = useState(false);
   const [destination, setDestination] = useState<number | null>(null);
   const [selection, setSelection] = useState<CrystalSelection | null>(null);
   const [filter, setFilter] = useState<InventoryFilter>("all");
@@ -85,10 +91,6 @@ export function CrystalsScreen() {
     setNavigationIntent({ openCrystalInventory: false });
   }, [navigationIntent.openCrystalInventory]);
 
-  const stats = useMemo(
-    () => getEquippedCrystalStats({ crystals }),
-    [crystals],
-  );
   const visibleVariants = useMemo(
     () =>
       CRYSTAL_VARIANT_IDS.filter((variantId) => {
@@ -303,90 +305,81 @@ export function CrystalsScreen() {
           );
         })}
       </div>
-      <div className="crystal-board-footer">
-        <span>
-          <i className="crystal-legend-dot active" /> Active socket
-        </span>
-        <span>
-          <i className="crystal-legend-dot locked" /> Future progression
-        </span>
-        <Button variant="ghost" onClick={() => setBulkCrushOpen(true)}>
-          BULK CRUSH
-        </Button>
-        <Button variant="secondary" onClick={() => openInventory(null)}>
-          CRYSTAL INVENTORY
-        </Button>
-        {bulkCrushOpen && (
-          <CrystalBulkCrushDialog
-            crystals={crystals}
-            onClose={() => setBulkCrushOpen(false)}
-          />
-        )}
+      <div className="crystal-board-bottom">
+        <div className="crystal-board-groups">
+          <span className="eyebrow">GROUP LIMITS</span>
+          <div className="crystal-board-group-grid">
+            {(Object.keys(CRYSTAL_GROUP_LABELS) as CrystalGroupId[]).map(
+              (group) => {
+                const usage = getCrystalGroupUsage({ crystals }, group);
+                return (
+                  <div
+                    key={group}
+                    className={`crystal-board-group-row ${usage > 0 ? "has-value" : ""} ${usage >= CRYSTAL_GROUP_CAP ? "is-full" : ""}`}
+                  >
+                    <span>{CRYSTAL_GROUP_LABELS[group]}</span>
+                    <b>
+                      {usage} / {CRYSTAL_GROUP_CAP}
+                    </b>
+                  </div>
+                );
+              },
+            )}
+          </div>
+        </div>
+        <div className="crystal-board-actions">
+          <Button variant="secondary" onClick={() => openInventory(null)}>
+            CRYSTAL INVENTORY
+          </Button>
+          <Button variant="ghost" onClick={() => setBulkCrushOpen(true)}>
+            BULK CRUSH
+          </Button>
+        </div>
       </div>
+      {bulkCrushOpen && (
+        <CrystalBulkCrushDialog
+          crystals={crystals}
+          onClose={() => setBulkCrushOpen(false)}
+        />
+      )}
     </Card>
   );
 
-  const summary = (
+  const inspection = (
     <Card
-      title="CRYSTAL SUMMARY"
-      className={`crystal-summary-card crystal-right-rail${selection?.source === "equipped" ? " is-inspecting" : ""}`}
+      title="CRYSTAL INSPECTION"
+      className="crystal-inspection-card"
     >
-      <div className="crystal-summary-hero">
-        <div className="crystal-summary-mark">
-          <Gem size={28} />
-        </div>
-        <div>
-          <span>ACTIVE CONTRIBUTION</span>
-          <strong>
-            {crystals.equippedSlots.filter(Boolean).length} CRYSTALS
-          </strong>
-          <small>Stats are resolved into your live build.</small>
-        </div>
-      </div>
-      <div className="crystal-stat-summary">
-        {Object.entries(stats)
-          .filter(
-            ([key, value]) => key !== "resistances" && Number(value) !== 0,
-          )
-          .map(([key, value]) => (
-            <div key={key}>
-              <span>{STAT_LABELS[key] ?? key}</span>
-              <strong>+{formatStat(key, Number(value))}</strong>
-            </div>
-          ))}
-        {Object.keys(stats).length === 0 && (
-          <p>No active Crystal contribution yet.</p>
-        )}
-      </div>
-      {selection?.source === "equipped" && (
-        <CrystalInspect
-          variantId={selection.variantId}
-          slotIndex={selection.slotIndex}
-          combatActive={combatActive}
-          onClose={() => setSelection(null)}
-          onUnequip={() => {
-            if (unequipCrystal(selection.slotIndex)) setSelection(null);
-          }}
-          onUpgrade={upgradeCrystal}
-        />
-      )}
-      <div className="crystal-group-footer">
-        <span className="eyebrow">GROUP LIMITS</span>
-        <div className="crystal-group-summary">
-          {(Object.keys(CRYSTAL_GROUP_LABELS) as CrystalGroupId[]).map(
-            (group) => (
-              <div
-                key={group}
-                className={`crystal-group-row ${getCrystalGroupUsage({ crystals }, group) > 0 ? "has-value" : ""}`}
-              >
-                <span>{CRYSTAL_GROUP_LABELS[group]}</span>
-                <b>
-                  {getCrystalGroupUsage({ crystals }, group)} /{" "}
-                  {CRYSTAL_GROUP_CAP}
-                </b>
+      <div className="crystal-inspection-panel">
+        <div className="crystal-inspection-content">
+          {selection?.source === "equipped" ? (
+            <CrystalInspect
+              variantId={selection.variantId}
+              slotIndex={selection.slotIndex}
+              combatActive={combatActive}
+              onClose={() => setSelection(null)}
+              onUnequip={() => {
+                if (unequipCrystal(selection.slotIndex)) setSelection(null);
+              }}
+              onUpgrade={upgradeCrystal}
+            />
+          ) : (
+            <div className="crystal-inspection-empty">
+              <div className="crystal-inspection-empty-glyph">
+                <Gem size={25} />
               </div>
-            ),
+              <strong>SELECT A CRYSTAL</strong>
+              <span>
+                Select an equipped Crystal to inspect its stats, upgrade path,
+                and available actions.
+              </span>
+            </div>
           )}
+        </div>
+        <div className="crystal-inspection-summary-action">
+          <Button variant="secondary" onClick={() => setSummaryOpen(true)}>
+            <Gem size={14} /> SUMMARY
+          </Button>
         </div>
       </div>
     </Card>
@@ -470,7 +463,7 @@ export function CrystalsScreen() {
         screen="crystals"
         panels={[
           { id: "crystals-board", content: board },
-          { id: "crystals-summary", content: summary },
+          { id: "crystals-summary", content: inspection },
           { id: "crystals-presets", content: presets },
         ]}
       />
@@ -498,6 +491,12 @@ export function CrystalsScreen() {
           onNavigateToInventory={() => navigate("inventory")}
         />
       )}{" "}
+      {summaryOpen && (
+        <CrystalSummaryDialog
+          crystals={crystals}
+          onClose={() => setSummaryOpen(false)}
+        />
+      )}
     </div>
   );
 }
@@ -890,34 +889,44 @@ function CrystalInspect({
   return (
     <div
       className="crystal-selected-inspector"
-      role="dialog"
-      aria-label="Crystal actions"
+      role="region"
+      aria-label="Selected Crystal details"
     >
-      <div className="crystal-selected-inspector-head">
-        <span style={{ color: family.color }}>{family.icon}</span>
+      <div className="crystal-inspection-head">
+        <span
+          style={{ "--crystal-color": family.color } as CSSProperties}
+        >
+          {family.icon}
+        </span>
         <div>
+          <span className="eyebrow">
+            T{getCrystalTier(variantId)} · {CRYSTAL_GROUP_LABELS[family.group]}
+          </span>
           <strong>{getCrystalVariantName(variantId)}</strong>
           <small>Equipped · Slot {slotIndex + 1}</small>
         </div>
         <Button
           variant="ghost"
           icon
-          ariaLabel="Close Crystal details"
+          ariaLabel="Close Crystal inspection"
           onClick={onClose}
         >
           <X size={15} />
         </Button>
       </div>
       <p>{family.description}</p>
-      <div className="crystal-inspector-stat">
-        {Object.entries(getCrystalVariantStats(variantId)).map(
-          ([key, value]) => (
-            <div key={key}>
-              <span>{STAT_LABELS[key] ?? key}</span>
-              <strong>+{formatStat(key, Number(value))}</strong>
-            </div>
-          ),
-        )}
+      <div className="crystal-inspection-section">
+        <span className="eyebrow">CURRENT EFFECT</span>
+        <div className="crystal-inspector-stat">
+          {Object.entries(getCrystalVariantStats(variantId)).map(
+            ([key, value]) => (
+              <div key={key}>
+                <span>{STAT_LABELS[key] ?? key}</span>
+                <strong>+{formatStat(key, Number(value))}</strong>
+              </div>
+            ),
+          )}
+        </div>
       </div>
       {next && (
         <div className="crystal-upgrade-preview">
@@ -942,6 +951,11 @@ function CrystalInspect({
         <Button
           variant="secondary"
           disabled={combatActive}
+          tooltip={
+            combatActive
+              ? "Equipped Crystal upgrades are disabled during active combat."
+              : undefined
+          }
           onClick={() => {
             if (onUpgrade(variantId, slotIndex)) onClose();
           }}
@@ -954,7 +968,16 @@ function CrystalInspect({
           MAX TIER
         </Button>
       )}
-      <Button variant="ghost" disabled={combatActive} onClick={onUnequip}>
+      <Button
+        variant="ghost"
+        disabled={combatActive}
+        tooltip={
+          combatActive
+            ? "Crystal loadout changes are disabled during active combat."
+            : undefined
+        }
+        onClick={onUnequip}
+      >
         UNEQUIP
       </Button>
     </div>

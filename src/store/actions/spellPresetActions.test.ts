@@ -57,4 +57,20 @@ describe('selected combat loadout actions', () => {
     expect(preset.slots[0]).toMatchObject({ autoCast: false })
     expect(state.activities.autoCast['fire-bolt']).toBe(false)
   })
+
+  it('resynchronizes derived Auto-Cast state when Apply changes AUTO to MANUAL', () => {
+    const state = createInitialState()
+    state.progress.spellRanks = { 'fire-bolt': 1 }
+    expect(addSpellToSelectedPresetAction(state, 'fire-bolt')).toEqual({ ok: true })
+    const preset = state.spellPresets.presets[0]
+    const config = { conditions: [{ type: 'always' as const }], targetRule: 'current-enemy' as const }
+
+    expect(applyPresetSlotAutomationAction(state, preset.id, 'fire-bolt', config, true)).toEqual({ ok: true })
+    expect(state.activities.autoCast['fire-bolt']).toBe(true)
+    expect(state.activities.autoCastPriority).toEqual(['fire-bolt'])
+
+    expect(applyPresetSlotAutomationAction(state, preset.id, 'fire-bolt', config, false)).toEqual({ ok: true })
+    expect(state.activities.autoCast['fire-bolt']).toBe(false)
+    expect(state.activities.autoCastPriority).toEqual([])
+  })
 })

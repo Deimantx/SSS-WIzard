@@ -53,7 +53,6 @@ export const debugLockSpellAction = (state: GameState, spellId: SpellId) => {
   delete state.progress.spellRanks[spellId]
   state.activities.autoCast[spellId] = false
   state.activities.autoCastPriority = state.activities.autoCastPriority.filter((id) => id !== spellId)
-  state.combat.autoCastManaStarvedSpells = state.combat.autoCastManaStarvedSpells.filter((id) => id !== spellId)
   state.combat.spellCooldowns[spellId] = 0
   reconcileSelectedPresetRuntime(state)
   return true

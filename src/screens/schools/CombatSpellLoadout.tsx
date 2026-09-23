@@ -108,7 +108,7 @@ export function CombatSpellLoadout({ focusState, onSelectSpell, automationSpellI
     </div>
     <div className="loadout-footer"><span>{slots.length} / 8 prepared</span><FocusBudgetMeter autoCastFocus={focus.autoCastFocus} otherFocus={focus.otherFocus} totalFocus={focus.totalFocus} maxFocus={focus.maxFocus} freeFocus={focus.freeFocus} compact /></div>
     {selected && <CombatAutomationOverviewModal open={overviewOpen} presetName={selected.name} slots={slots} readOnly={combat.active} onClose={() => setOverviewOpen(false)} onEdit={(index) => { setAutomationError(null); setAutomationOrigin('overview'); setOverviewOpen(false); setAutomationIndex(index) }} onToggleMode={toggleAutomationMode} />}
-    {selected && automationSlot && automationIndex !== null && <SpellAutomationModal open={automationIndex !== null} slot={automationSlot} slotIndex={automationIndex} presetName={selected.name} loadoutSlots={slots} applyError={automationError} onClose={closeAutomationEditor} onApply={applyAutomation} />}
+    {selected && automationSlot && automationIndex !== null && <SpellAutomationModal open={automationIndex !== null} slot={automationSlot} slotIndex={automationIndex} presetName={selected.name} loadoutSlots={slots} readOnly={combat.active} applyError={automationError} onClose={closeAutomationEditor} onApply={applyAutomation} />}
   </section>
 }
 

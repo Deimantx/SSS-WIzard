@@ -216,7 +216,6 @@ export const syncAutoCastRuntimeForLoadout = (state: Pick<GameState, 'activities
   const priority = getSpellPresetAutoCastPriority(slots)
   priority.forEach((spellId) => { state.activities.autoCast[spellId] = true })
   state.activities.autoCastPriority = [...priority]
-  state.combat.autoCastManaStarvedSpells = state.combat.autoCastManaStarvedSpells.filter((spellId) => priority.includes(spellId as CanonicalSpellId))
 }
 
 export const getSelectedSpellPreset = (state: Pick<GameState, 'spellPresets'>) => state.spellPresets.presets.find((preset) => preset.id === state.spellPresets.selectedPresetId) ?? null

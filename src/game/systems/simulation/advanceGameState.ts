@@ -45,14 +45,7 @@ export interface AdvanceContext {
 const spellUnlocked = isSpellUnlocked
 const resolveDeaths = (state: GameState, context: AdvanceContext) => resolveCombatDeaths(state, context.report, context.onItemAcquired, context.uiEvents, { onLootResolved: context.onCombatLoot, onPlayerDefeated: context.onPlayerDefeated, onCombatCompleted: context.onCombatCompleted })
 
-const isAutoCastEligible = (state: GameState, spellId: SpellId) => {
-  const activeSlot = state.combat.activeSpellLoadout?.slots.find((slot) => slot.spellId === spellId)
-  return Boolean(activeSlot?.autoCast && evaluateSpellAutomation(state, activeSlot).eligible)
-}
-
 const autoCastReadySpells = (state: GameState, context: AdvanceContext) => {
-  const latches = state.combat.autoCastManaStarvedSpells ?? (state.combat.autoCastManaStarvedSpells = [])
-  latches.slice().forEach((spellId) => { if (!isAutoCastEligible(state, spellId)) latches.splice(latches.indexOf(spellId), 1) })
   if (state.combat.pendingPlayerSpellCast) return
   if (state.combat.queuedPlayerSpellId) {
     const queuedId = state.combat.queuedPlayerSpellId

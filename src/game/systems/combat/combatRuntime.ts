@@ -101,7 +101,6 @@ export const spawnEnemy = (state: GameState, enemyId: MonsterId, uiEvents?: Comb
   state.combat.inBossFight = isBossMonster(monster)
   state.combat.pendingPlayerSpellCast = null
   state.combat.enemyStatuses = []
-  state.combat.autoCastManaStarvedSpells = []
   discoverMonster(state, enemyId)
   uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'system', sourceId: 'encounter-start', worldTier: state.combat.enemyWorldTier })
   const combatStartResolution = createCombatResolutionContext()
@@ -137,7 +136,6 @@ export const abandonCurrentEncounter = (state: GameState, options: AbandonCurren
   state.combat.enemyBarrierRemainingMs = null
   state.combat.pendingPlayerSpellCast = null
   state.combat.enemyStatuses = []
-  state.combat.autoCastManaStarvedSpells = []
   state.combat.inBossFight = false
   if (clearPendingBoss) state.combat.pendingBossId = null
   if (resetEncounterTimer) state.combat.encounterTimerMs = 0
@@ -219,7 +217,6 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   state.combat.enemyBarrierRemainingMs = null
   resetEnemyActionRuntime(state)
   state.combat.enemyStatuses = []
-  state.combat.autoCastManaStarvedSpells = []
   clearEnemyRuleCooldowns(state)
   const dungeon = DUNGEONS[state.combat.dungeonId ?? 'whispering-woods']
   const location = getCombatLocationByDungeonId(dungeon.id)
@@ -329,7 +326,6 @@ export const resolveCombatDeaths = (state: GameState, report?: SimulationReportC
     state.combat.playerBarrierRemainingMs = null
     state.combat.playerStatuses = []
     state.combat.enemyStatuses = []
-    state.combat.autoCastManaStarvedSpells = []
     Object.keys(state.combat.spellCooldowns).forEach((spellId) => { delete state.combat.spellCooldowns[spellId as keyof typeof state.combat.spellCooldowns] })
     state.combat.pendingBossId = null
     resetAllCombatRuleRuntime(state)

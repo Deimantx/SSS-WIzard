@@ -46,5 +46,11 @@ export function SpellRow({ entry, state, selected, equipped, newSpell, canEdit, 
 }
 
 function CompactStat({ semantic, icon, label, value }: { semantic: string; icon: React.ReactNode; label: string; value: string }) {
-  return <GameTooltip delay={200} content={<TooltipContent title={label} description={label} />}><span className={`spell-row-compact-stat ui-${semantic}`} aria-label={`${label}: ${value}`}><span aria-hidden="true">{icon}</span>{value}</span></GameTooltip>
+  const descriptions: Record<string, string> = {
+    mana: 'Mana spent when the Spell successfully resolves.',
+    focus: 'Focus reserved while this Spell is enabled for Auto-Cast.',
+    'cast-time': 'Time required to complete this Spell after casting begins.',
+    cooldown: 'Time before this Spell becomes available again.',
+  }
+  return <GameTooltip delay={200} content={<TooltipContent title={label} description={descriptions[semantic] ?? label} />}><span className={`spell-row-compact-stat ui-${semantic}`} aria-label={`${label}: ${value}`}><span aria-hidden="true">{icon}</span>{value}</span></GameTooltip>
 }

@@ -442,7 +442,6 @@ export interface CombatState {
   dungeonSequenceIndex: number | null
   spellCooldowns: Record<SpellId, number>
   /** Runtime Auto-Cast starvation latch; persisted harmlessly with combat state. */
-  autoCastManaStarvedSpells: SpellId[]
   /** Deterministic transient counters for Arcane Core combat specials. */
   arcaneCoreRuntime: {
     /** Monotonic simulated milliseconds for V6 timestamps and windows. */

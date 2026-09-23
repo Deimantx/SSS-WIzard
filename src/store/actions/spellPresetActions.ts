@@ -15,7 +15,6 @@ export type SelectedPresetSlotMutationResult =
 const clearAutoCastRuntime = (state: GameState) => {
   const hadActiveAutoCast = Object.values(state.activities.autoCast).some(Boolean)
   syncAutoCastRuntimeForLoadout(state, [])
-  state.combat.autoCastManaStarvedSpells = []
   return hadActiveAutoCast
 }
 
@@ -177,15 +176,15 @@ export const applyPresetSlotAutomationAction = (state: GameState, id: SpellPrese
   const previousAutomation = slot.automation
   slot.autoCast = Boolean(autoCast)
   slot.automation = normalizeSpellAutomationConfig(automation, slot.spellId, slot.autoCast, false)
-  if (!state.combat.active && state.spellPresets.selectedPresetId === id && slot.autoCast) {
+  if (!state.combat.active && state.spellPresets.selectedPresetId === id) {
     const projection = getSpellPresetFocusProjection(state, preset)
-    if (!projection.canApply) {
+    if (slot.autoCast && !projection.canApply) {
       slot.autoCast = previousAutoCast
       slot.automation = previousAutomation
       const requiredExtraFocus = Math.max(0, projection.totalAfterApply - state.player.maxFocus)
       return { ok: false, reason: 'focus', requiredExtraFocus, message: `Cannot enable Auto-Cast: requires ${requiredExtraFocus} more Focus.` }
     }
-    syncAutoCastRuntimeForLoadout(state, projection.validSlots)
+    syncAutoCastRuntimeForLoadout(state, projection.canApply ? projection.validSlots : [])
   }
   return { ok: true }
 }

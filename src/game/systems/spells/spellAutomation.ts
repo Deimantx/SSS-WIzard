@@ -220,6 +220,15 @@ export const evaluateSpellAutomation = (state: GameState, slot: Pick<SpellPreset
     const canCast = !actorCannotCastSpells(state, 'player')
     addSystem('can-cast', 'Spell casting allowed', canCast, canCast ? 'Spell casting is allowed.' : 'A combat status prevents Spell casting.')
     addSystem('not-casting', 'No active cast', !state.combat.pendingPlayerSpellCast, state.combat.pendingPlayerSpellCast ? 'Another Spell is already being cast.' : 'No Spell is currently being cast.')
+    const queuedManualSpellId = state.combat.queuedPlayerSpellId
+    const pendingManualCast = state.combat.pendingPlayerSpellCast?.castOrigin === 'manual-direct' || state.combat.pendingPlayerSpellCast?.castOrigin === 'manual-queued'
+    const manualOverrideClear = !queuedManualSpellId && !pendingManualCast
+    const manualOverrideReason = queuedManualSpellId
+      ? 'Manual Spell queued. Automation resumes after the manual request resolves.'
+      : pendingManualCast
+        ? 'Manual Spell is currently casting. Automation resumes after it resolves.'
+        : 'No manual spell request is blocking automation.'
+    addSystem('manual-override', 'Manual override clear', manualOverrideClear, manualOverrideReason)
   }
   const mode = slot.autoCast ? 'auto' : 'manual'
   const passed = mode === 'auto' && conditions.every((check) => check.passed) && systemChecks.every((check) => check.passed)

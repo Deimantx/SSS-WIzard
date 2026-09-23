@@ -477,9 +477,6 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
   migrated.combat.enemyBarrierRemainingMs = migrated.combat.enemyBarrier > 0 ? nonNegativeNumber(rawCombat.enemyBarrierRemainingMs) ?? null : null
   migrated.combat.playerStatuses = normalizeStatuses(rawPlayerStatuses, 'player')
   migrated.combat.enemyStatuses = normalizeStatuses(rawCombat.enemyStatuses, 'enemy')
-  migrated.combat.autoCastManaStarvedSpells = Array.isArray(rawCombat.autoCastManaStarvedSpells)
-    ? rawCombat.autoCastManaStarvedSpells.map(normalizeSpellId).filter((spellId): spellId is CanonicalSpellId => Boolean(spellId))
-    : []
   migrated.combat.pendingPlayerSpellCast = null
   migrated.combat.queuedPlayerSpellId = null
   const rawActiveLoadout = isRecord(rawCombat.activeSpellLoadout) ? rawCombat.activeSpellLoadout : null

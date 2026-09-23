@@ -75,4 +75,44 @@ describe('spell automation evaluator', () => {
 
     expect(getSpellAutomationPriorityPreview(state, slots, 1)).toMatchObject({ isNext: false, firstEligibleSlotIndex: 0, blockingSpellId: 'fire-bolt' })
   })
+
+  it('hard-blocks AUTO evaluation while a manual spell is queued', () => {
+    const state = createInitialState()
+    state.combat.active = true
+    state.combat.enemyId = 'forest-wisp'
+    state.combat.enemyHp = 100
+    state.combat.enemyMaxHp = 100
+    state.combat.queuedPlayerSpellId = 'wind-blade'
+    state.progress.spellRanks = { 'fire-bolt': 1, 'wind-blade': 1 }
+    state.activities.autoCast['fire-bolt'] = true
+    state.player.mana = state.player.maxMana
+
+    const evaluation = evaluateSpellAutomation(state, {
+      spellId: 'fire-bolt',
+      autoCast: true,
+      automation: { conditions: [{ type: 'always' }], targetRule: 'current-enemy' },
+    })
+
+    expect(evaluation.eligible).toBe(false)
+    expect(evaluation.systemChecks).toContainEqual(expect.objectContaining({ key: 'manual-override', passed: false, reason: 'Manual Spell queued. Automation resumes after the manual request resolves.' }))
+  })
+
+  it('does not treat an AUTO pending cast as a manual override', () => {
+    const state = createInitialState()
+    state.combat.active = true
+    state.combat.enemyId = 'forest-wisp'
+    state.combat.enemyHp = 100
+    state.combat.enemyMaxHp = 100
+    state.progress.spellRanks = { 'fire-bolt': 1 }
+    state.activities.autoCast['fire-bolt'] = true
+    state.combat.pendingPlayerSpellCast = { spellId: 'fire-bolt', targetInstanceKey: null, remainingWorkMs: 100, castWorkMs: 100, manaCostSnapshot: 30, arcaneCoreFree: false, castWorkMultiplier: 1, castOrigin: 'auto' }
+
+    const evaluation = evaluateSpellAutomation(state, {
+      spellId: 'fire-bolt',
+      autoCast: true,
+      automation: { conditions: [{ type: 'always' }], targetRule: 'current-enemy' },
+    })
+
+    expect(evaluation.systemChecks).toContainEqual(expect.objectContaining({ key: 'manual-override', passed: true }))
+  })
 })

@@ -55,7 +55,7 @@ const getStateLabel = (state: CombatLocationState) => state === 'locked' ? 'LOCK
 
 const buildEncounter = (monsterId: MonsterId, role: 'normal' | 'boss', progress: GameState['progress'], worldTier: GameState['worldTier']['current']): CombatEncounterViewModel => {
   const known = progress.discoveredMonsters.includes(monsterId)
-  return { id: monsterId, monsterId, role, name: role === 'boss' || known ? MONSTERS[monsterId].name : 'UNKNOWN CREATURE', known, powerRating: role === 'boss' || known ? resolveEnemyPowerRating(monsterId, worldTier) : null }
+  return { id: monsterId, monsterId, role, name: MONSTERS[monsterId].name, known, powerRating: resolveEnemyPowerRating(monsterId, worldTier) }
 }
 
 const buildTarget = (monsterId: MonsterId, difficulty: CombatTargetDifficulty, order: number, progress: GameState['progress'], worldTier: GameState['worldTier']['current']): CombatTargetViewModel => {
@@ -68,8 +68,8 @@ const buildSequence = (dungeon: typeof DUNGEONS[DungeonId], progress: GameState[
   const activeIndex = combat.active && combat.dungeonId === dungeon.id && Number.isInteger(combat.dungeonSequenceIndex) && combat.dungeonSequenceIndex! >= 0 && combat.dungeonSequenceIndex! < encounterIds.length ? combat.dungeonSequenceIndex : null
   const steps: CombatDungeonSequenceStepViewModel[] = encounterIds.map((monsterId, index) => {
     const role = index === encounterIds.length - 1 ? 'boss' : 'normal'
-    const known = progress.discoveredMonsters.includes(monsterId) || role === 'boss'
-    return { order: index + 1, monsterId, name: known ? MONSTERS[monsterId].name : 'UNKNOWN CREATURE', role, known, powerRating: role === 'boss' || known ? resolveEnemyPowerRating(monsterId, worldTier) : null, state: activeIndex === null ? 'upcoming' : index < activeIndex ? 'completed' : index === activeIndex ? 'current' : 'upcoming' }
+    const known = progress.discoveredMonsters.includes(monsterId)
+    return { order: index + 1, monsterId, name: MONSTERS[monsterId].name, role, known, powerRating: resolveEnemyPowerRating(monsterId, worldTier), state: activeIndex === null ? 'upcoming' : index < activeIndex ? 'completed' : index === activeIndex ? 'current' : 'upcoming' }
   })
   return { mode: 'sequence' as const, steps, activeIndex, totalSteps: encounterIds.length }
 }
@@ -104,7 +104,9 @@ const buildLocation = (locationId: CombatLocationId, progress: GameState['progre
   }
   const encounterMode = getCombatEncounterMode(definition)
   const currentWorldTier = worldTier.current
+  const contentVisible = state !== 'locked' && state !== 'prototype'
   const targets = encounterMode === 'targeted'
+    && contentVisible
     ? dungeon.monsterPool.flatMap((monsterId) => {
       const metadata = definition.targetMetadata?.[monsterId]
       return metadata ? [buildTarget(monsterId, metadata.difficulty, metadata.order, progress, currentWorldTier)] : []
@@ -123,11 +125,11 @@ const buildLocation = (locationId: CombatLocationId, progress: GameState['progre
     description: definition.description ?? dungeon.ui?.description ?? 'A dangerous location beyond the tower gate.',
     encounterMode,
     zoneAffix: zoneAffix ? { id: zoneAffix.id, name: zoneAffix.name, description: zoneAffix.description } : null,
-    bossHunt: encounterMode === 'targeted' ? buildCombatBossHuntPresentation({ combat, progress, dungeon, locationType: definition.type, worldTier: currentWorldTier }) : null,
-    encounters: dungeon.monsterPool.map((monsterId) => buildEncounter(monsterId, 'normal', progress, currentWorldTier)),
-    boss: buildEncounter(dungeon.boss, 'boss', progress, currentWorldTier),
-    targeting: encounterMode === 'targeted' ? { mode: 'targeted', targets, activeTargetEnemyId } : null,
-    sequence: encounterMode === 'sequence' ? buildSequence(dungeon, progress, combat, currentWorldTier) : null,
+    bossHunt: contentVisible && encounterMode === 'targeted' ? buildCombatBossHuntPresentation({ combat, progress, dungeon, locationType: definition.type, worldTier: currentWorldTier }) : null,
+    encounters: contentVisible ? dungeon.monsterPool.map((monsterId) => buildEncounter(monsterId, 'normal', progress, currentWorldTier)) : [],
+    boss: contentVisible ? buildEncounter(dungeon.boss, 'boss', progress, currentWorldTier) : null,
+    targeting: contentVisible && encounterMode === 'targeted' ? { mode: 'targeted', targets, activeTargetEnemyId } : null,
+    sequence: contentVisible && encounterMode === 'sequence' ? buildSequence(dungeon, progress, combat, currentWorldTier) : null,
     firstClearUnlockPreview: definition.firstClearUnlockPreview ?? [],
     firstClearCompleted: isDungeonCompleted(dungeon.id, progress),
   }

@@ -26,6 +26,16 @@ describe('combat world navigation read model', () => {
     expect(view.selectedLocation?.targeting?.targets.map((target) => target.monsterId)).toEqual(['forest-wisp', 'thornling', 'dewbound-sprite', 'cinder-moth', 'stone-root', 'grove-sentinel', 'tempest-stag'])
   })
 
+  it('shows authored combat identities and power before Bestiary discovery', () => {
+    const state = createInitialState()
+    const view = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedLocationId: 'whispering-woods' })
+    const location = view.selectedLocation
+
+    expect(location?.targeting?.targets.find((target) => target.monsterId === 'tempest-stag')).toMatchObject({ name: 'Tempest Stag', known: false, powerRating: expect.any(Number) })
+    expect(location?.boss).toMatchObject({ name: 'Forest Heart', known: false, powerRating: expect.any(Number) })
+    expect(location?.encounters.find((encounter) => encounter.monsterId === 'tempest-stag')).toMatchObject({ name: 'Tempest Stag', known: false, powerRating: expect.any(Number) })
+  })
+
   it('keeps active combat separate from a browsed location', () => {
     const state = createInitialState()
     state.combat.active = true
@@ -37,6 +47,8 @@ describe('combat world navigation read model', () => {
     expect(view.activeLocation?.state).toBe('active')
     expect(view.selectedLocation?.id).toBe('howling-den')
     expect(view.selectedLocation?.state).toBe('locked')
+    expect(view.selectedLocation?.targeting).toBeNull()
+    expect(view.selectedLocation?.boss).toBeNull()
     expect(view.selectedContinent.name).toBe('Continent I')
     expect(view.selectedRegion.name).toBe('First Frontier')
     expect(view.selectedLocation?.name).toBe('Howling Den')
@@ -91,6 +103,8 @@ describe('combat world navigation read model', () => {
     expect(vault).toMatchObject({ type: 'elite-zone', encounterMode: 'targeted', zoneAffix: { id: 'armored' } })
     expect(vault?.targeting?.targets.map((target) => target.monsterId)).toEqual(['black-seal-parasite', 'inkbound-specter', 'sigil-guardian', 'vault-devourer', 'sealbound-custodian', 'blackscript-colossus', 'voidseal-arbiter'])
 
+    state.progress.bossKillsByBoss['unspoken-prelate'] = 1
+    state.progress.bossKillsByBoss['sigil-warden'] = 1
     const gate = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedRegionId: 'black-sigil-reach', selectedLocationId: 'black-gate' }).selectedLocation
     expect(gate).toMatchObject({ type: 'dungeon', encounterMode: 'sequence', targeting: null, bossHunt: null, firstClearUnlockPreview: [{ id: 'world-tier-5', label: 'World Tier 5' }] })
     expect(gate?.sequence?.steps.map((step) => step.monsterId)).toEqual(['gatebound-remnant', 'black-rift-stalker', 'portalbound-acolyte', 'sealbreaker-construct', 'black-gatekeeper'])

@@ -114,7 +114,6 @@
 .combat-location-encounter-tile .combat-monster-portrait::before,
 .combat-location-encounter-tile .combat-monster-portrait::after,
 .combat-location-encounter-tile .combat-portrait-aura { display: none; }
-.combat-location-unknown-glyph { display: grid; place-items: center; width: 28px; height: 28px; border: 1px dashed var(--ui-border-strong); border-radius: 7px; color: var(--ui-text-muted); font: 15px var(--font-mono); }
 .combat-location-encounter-tile strong { overflow: hidden; color: var(--ui-text-soft); font-size: 9px; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
 .combat-location-encounter-tile small { grid-column: 2; overflow: hidden; color: var(--ui-text-muted); font: 7px var(--font-mono); letter-spacing: .04em; text-overflow: ellipsis; white-space: nowrap; }
 .combat-location-encounter-tile .combat-location-encounter-power { color: var(--ui-accent); font-weight: 700; }

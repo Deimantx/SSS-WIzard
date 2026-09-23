@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { X } from "lucide-react";
 import { Button } from "../../components/ui";
 import { useGameStore } from "../../store/gameStore";
 import { getCrystalAvailableCount } from "../../game/systems/crystals/crystalRuntime";
@@ -45,14 +46,16 @@ export function CrystalBulkCrushDialog({
     0,
   );
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   const submit = () => {
-    if (
-      !totalQuantity ||
-      !window.confirm(
-        `Crush ${totalQuantity} Crystal copies for ${dust.toLocaleString()} Dust?`,
-      )
-    )
-      return;
+    if (!totalQuantity) return;
     if (
       bulkCrushCrystals(
         Object.fromEntries(
@@ -62,8 +65,9 @@ export function CrystalBulkCrushDialog({
           ]),
         ) as Partial<Record<CrystalVariantId, number>>,
       )
-    )
+    ) {
       onClose();
+    }
   };
 
   return (
@@ -75,7 +79,7 @@ export function CrystalBulkCrushDialog({
       }}
     >
       <section
-        className="crystal-bulk-modal"
+        className="crystal-modal-surface crystal-bulk-modal"
         role="dialog"
         aria-modal="true"
         aria-label="Bulk Crush Crystals"
@@ -95,13 +99,16 @@ export function CrystalBulkCrushDialog({
             ariaLabel="Close Bulk Crush"
             onClick={onClose}
           >
-            ×
+            <X size={17} />
           </Button>
         </div>
         <div className="crystal-bulk-list">
           {available.length ? (
             available.map(({ variantId, quantity }) => (
-              <label className="crystal-bulk-row" key={variantId}>
+              <label
+                className={`crystal-bulk-row ${(selected[variantId] ?? 0) > 0 ? "selected" : ""}`}
+                key={variantId}
+              >
                 <input
                   type="checkbox"
                   checked={(selected[variantId] ?? 0) > 0}
@@ -115,7 +122,7 @@ export function CrystalBulkCrushDialog({
                 <span>
                   <strong>{getCrystalVariantName(variantId)}</strong>
                   <small>
-                    T{getCrystalTier(variantId)} ·{" "}
+                    T{getCrystalTier(variantId)} -{" "}
                     {getCrystalFamily(variantId).group.toUpperCase()}
                   </small>
                 </span>
@@ -146,7 +153,7 @@ export function CrystalBulkCrushDialog({
         </div>
         <div className="crystal-bulk-footer">
           <span>
-            {totalQuantity} copies → {dust.toLocaleString()} Dust
+            {totalQuantity} copies -&gt; {dust.toLocaleString()} Dust
           </span>
           <div>
             <Button
@@ -163,7 +170,7 @@ export function CrystalBulkCrushDialog({
               }
               disabled={!available.length}
             >
-              SELECT ALL AVAILABLE
+              SELECT ALL
             </Button>
             <Button
               variant="ghost"
@@ -176,9 +183,9 @@ export function CrystalBulkCrushDialog({
               }
               disabled={!totalQuantity}
             >
-              CLEAR SELECTION
+              CLEAR
             </Button>
-            <Button variant="ghost" onClick={onClose}>
+            <Button variant="secondary" onClick={onClose}>
               CANCEL
             </Button>
             <Button variant="danger" disabled={!totalQuantity} onClick={submit}>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { Button } from "../../components/ui";
 import {
@@ -24,13 +24,16 @@ export function CrystalCrushQuantityDialog({
   const updateQuantity = (value: number) =>
     setQuantity(Math.max(1, Math.min(available, Math.floor(value) || 1)));
   const dust = quantity * CRYSTAL_CRUSH_DUST[getCrystalTier(variantId)];
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   const submit = () => {
-    if (
-      !window.confirm(
-        `Crush ${quantity} ${getCrystalVariantName(variantId)} for ${dust.toLocaleString()} Dust?`,
-      )
-    )
-      return;
     if (onCrush(quantity)) onClose();
   };
 
@@ -38,9 +41,12 @@ export function CrystalCrushQuantityDialog({
     <div
       className="crystal-modal-backdrop crystal-crush-backdrop"
       role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
     >
       <section
-        className="crystal-bulk-modal crystal-crush-dialog"
+        className="crystal-modal-surface crystal-bulk-modal crystal-crush-dialog"
         role="dialog"
         aria-modal="true"
         aria-label={`Crush ${getCrystalVariantName(variantId)}`}
@@ -84,14 +90,14 @@ export function CrystalCrushQuantityDialog({
               MAX
             </Button>
           </div>
-          <strong>
+          <strong className="crystal-crush-result">
             {quantity} copies → {dust.toLocaleString()} Dust
           </strong>
         </div>
         <div className="crystal-bulk-footer">
           <span>Equipped copies are protected.</span>
           <div>
-            <Button variant="ghost" onClick={onClose}>
+            <Button variant="secondary" onClick={onClose}>
               CANCEL
             </Button>
             <Button variant="danger" onClick={submit}>

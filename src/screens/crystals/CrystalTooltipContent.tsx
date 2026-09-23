@@ -1,7 +1,8 @@
+import type { CSSProperties } from "react";
 import type { CrystalVariantId, GameState } from "../../game/types";
 import {
-  CRYSTAL_GROUP_LABELS,
   CRYSTAL_GROUP_CAP,
+  CRYSTAL_GROUP_LABELS,
   getCrystalFamily,
   getCrystalTier,
   getCrystalVariantName,
@@ -9,6 +10,7 @@ import {
 } from "../../game/content/crystals/crystals";
 import {
   getCrystalEquippedCount,
+  getCrystalGroupUsage,
   getCrystalOwnedCount,
 } from "../../game/systems/crystals/crystalRuntime";
 
@@ -51,9 +53,11 @@ export const formatCrystalStat = (key: string, value: number) =>
 export function CrystalTooltipContent({
   variantId,
   crystals,
+  slotIndex,
 }: {
   variantId: CrystalVariantId;
   crystals?: GameState["crystals"];
+  slotIndex?: number;
 }) {
   const family = getCrystalFamily(variantId);
   const stats = getCrystalVariantStats(variantId);
@@ -61,27 +65,59 @@ export function CrystalTooltipContent({
   const equipped = crystals
     ? getCrystalEquippedCount({ crystals }, variantId)
     : null;
+  const groupUsage = crystals
+    ? getCrystalGroupUsage({ crystals }, family.group)
+    : null;
+
   return (
-    <>
-      <strong>{getCrystalVariantName(variantId)}</strong>
-      <p>
-        {CRYSTAL_GROUP_LABELS[family.group]} · TIER {getCrystalTier(variantId)}
-      </p>
-      <p>{family.description}</p>
-      <p>
-        {Object.entries(stats)
-          .map(
-            ([key, value]) =>
-              `${CRYSTAL_STAT_LABELS[key] ?? key} +${formatCrystalStat(key, Number(value))}`,
-          )
-          .join(" · ")}
-      </p>
+    <div
+      className="game-tooltip-content game-tooltip-rich crystal-tooltip-content"
+      style={{ "--crystal-color": family.color } as CSSProperties}
+    >
+      <div className="crystal-tooltip-header">
+        <span className="crystal-tooltip-meta">
+          T{getCrystalTier(variantId)} · {CRYSTAL_GROUP_LABELS[family.group]}
+        </span>
+        <strong className="crystal-tooltip-name">
+          {getCrystalVariantName(variantId)}
+        </strong>
+        <p>{family.description}</p>
+      </div>
+      <div className="tooltip-section crystal-tooltip-section">
+        <small>EFFECT</small>
+        <div className="tooltip-row-list">
+          {Object.entries(stats).map(([key, value]) => (
+            <div className="tooltip-row" key={key}>
+              <span>{CRYSTAL_STAT_LABELS[key] ?? key}</span>
+              <b>+{formatCrystalStat(key, Number(value))}</b>
+            </div>
+          ))}
+        </div>
+      </div>
       {crystals && (
-        <p>
-          Group Limit: {CRYSTAL_GROUP_CAP} · Owned: {owned} · Equipped: {equipped} ·
-          Available: {Math.max(0, (owned ?? 0) - (equipped ?? 0))}
-        </p>
+        <div className="tooltip-section crystal-tooltip-footer">
+          <div className="tooltip-row">
+            <span>GROUP LIMIT</span>
+            <b>
+              {groupUsage} / {CRYSTAL_GROUP_CAP}
+            </b>
+          </div>
+          {slotIndex !== undefined ? (
+            <div className="tooltip-row">
+              <span>EQUIPPED</span>
+              <b>SLOT {slotIndex + 1}</b>
+            </div>
+          ) : (
+            <div className="crystal-tooltip-ownership">
+              <span>OWNED {owned}</span>
+              <span>EQUIPPED {equipped}</span>
+              <span>
+                AVAILABLE {Math.max(0, (owned ?? 0) - (equipped ?? 0))}
+              </span>
+            </div>
+          )}
+        </div>
       )}
-    </>
+    </div>
   );
 }

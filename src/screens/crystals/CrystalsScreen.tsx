@@ -295,6 +295,7 @@ export function CrystalsScreen() {
                       <CrystalTooltipContent
                         variantId={variantId}
                         crystals={crystals}
+                        slotIndex={index}
                       />
                     )
                   : "Empty unlocked socket · choose a Crystal from inventory."
@@ -357,11 +358,21 @@ export function CrystalsScreen() {
               variantId={selection.variantId}
               slotIndex={selection.slotIndex}
               combatActive={combatActive}
-              onClose={() => setSelection(null)}
               onUnequip={() => {
                 if (unequipCrystal(selection.slotIndex)) setSelection(null);
               }}
-              onUpgrade={upgradeCrystal}
+              onUpgrade={(variantId, slotIndex) => {
+                const nextVariant = getNextCrystalVariant(variantId);
+                const upgraded = upgradeCrystal(variantId, slotIndex);
+                if (upgraded && nextVariant) {
+                  setSelection({
+                    source: "equipped",
+                    variantId: nextVariant,
+                    slotIndex: slotIndex ?? selection.slotIndex,
+                  });
+                }
+                return upgraded;
+              }}
             />
           ) : (
             <div className="crystal-inspection-empty">
@@ -453,10 +464,6 @@ export function CrystalsScreen() {
             Equip, refine, and preserve Crystal loadouts without losing sight of
             the live stat contribution.
           </p>
-        </div>
-        <div className="crystal-header-status">
-          <Status tone="success">SYSTEM ONLINE</Status>
-          <span>5 starting sockets · 4 paths · 2 per path</span>
         </div>
       </div>
       <ScreenGrid
@@ -705,11 +712,11 @@ function CrystalInventoryModal({
                     }}
                   >
                     <span className="crystal-tile-icon">{family.icon}</span>
-                    <strong>{family.name}</strong>
-                    <small>
+                    <small className="crystal-tile-meta">
                       T{getCrystalTier(variantId)} ·{" "}
                       {CRYSTAL_GROUP_LABELS[family.group]}
                     </small>
+                    <strong className="crystal-tile-name">{family.name}</strong>
                     <span className="crystal-tile-count">
                       OWNED {getCrystalOwnedCount({ crystals }, variantId)} ·
                       AVAILABLE{" "}
@@ -873,14 +880,12 @@ function CrystalInspect({
   variantId,
   slotIndex,
   combatActive,
-  onClose,
   onUnequip,
   onUpgrade,
 }: {
   variantId: CrystalVariantId;
   slotIndex: number;
   combatActive: boolean;
-  onClose: () => void;
   onUnequip: () => void;
   onUpgrade: (variantId: CrystalVariantId, slot?: number) => boolean;
 }) {
@@ -905,14 +910,6 @@ function CrystalInspect({
           <strong>{getCrystalVariantName(variantId)}</strong>
           <small>Equipped · Slot {slotIndex + 1}</small>
         </div>
-        <Button
-          variant="ghost"
-          icon
-          ariaLabel="Close Crystal inspection"
-          onClick={onClose}
-        >
-          <X size={15} />
-        </Button>
       </div>
       <p>{family.description}</p>
       <div className="crystal-inspection-section">
@@ -929,22 +926,48 @@ function CrystalInspect({
         </div>
       </div>
       {next && (
-        <div className="crystal-upgrade-preview">
-          <span className="eyebrow">NEXT TIER</span>
-          <strong>{getCrystalVariantName(next)}</strong>
-          <div className="crystal-upgrade-stat-preview">
-            {Object.entries(getCrystalVariantStats(next)).map(([key, value]) => (
-              <span key={key}>
-                {STAT_LABELS[key] ?? key}: +{formatStat(key, Number(value))}
-              </span>
+        <div className="crystal-inspection-section crystal-next-tier-section">
+          <span className="eyebrow">
+            NEXT TIER · T{getCrystalTier(next)}
+          </span>
+          <strong className="crystal-next-tier-name">
+            {getCrystalVariantName(next)}
+          </strong>
+          <div className="crystal-inspector-stat">
+            {Object.entries(getCrystalVariantStats(next)).map(
+              ([key, value]) => (
+                <div key={key}>
+                  <span>{STAT_LABELS[key] ?? key}</span>
+                  <strong>+{formatStat(key, Number(value))}</strong>
+                </div>
+              ),
+            )}
+          </div>
+        </div>
+      )}
+      {next && (
+        <div className="crystal-inspection-section crystal-upgrade-cost">
+          <span className="eyebrow">UPGRADE COST</span>
+          <div className="crystal-cost-list">
+            <div>
+              <span>Crystal Dust</span>
+              <strong>
+                {CRYSTAL_UPGRADE_COSTS[
+                  getCrystalTier(variantId)
+                ].dust.toLocaleString()}
+              </strong>
+            </div>
+            {Object.entries(
+              CRYSTAL_UPGRADE_COSTS[getCrystalTier(variantId)].materials,
+            ).map(([itemId, quantity]) => (
+              <div key={itemId}>
+                <span>
+                  {ITEMS[itemId as keyof typeof ITEMS]?.name ?? itemId}
+                </span>
+                <strong>{quantity.toLocaleString()}</strong>
+              </div>
             ))}
           </div>
-          <small>
-            COST · {CRYSTAL_UPGRADE_COSTS[getCrystalTier(variantId)].dust.toLocaleString()} Dust
-            {Object.entries(CRYSTAL_UPGRADE_COSTS[getCrystalTier(variantId)].materials).map(
-              ([itemId, quantity]) => ` · ${quantity} ${ITEMS[itemId as keyof typeof ITEMS]?.name ?? itemId}`,
-            )}
-          </small>
         </div>
       )}
       {next && (
@@ -956,9 +979,7 @@ function CrystalInspect({
               ? "Equipped Crystal upgrades are disabled during active combat."
               : undefined
           }
-          onClick={() => {
-            if (onUpgrade(variantId, slotIndex)) onClose();
-          }}
+          onClick={() => onUpgrade(variantId, slotIndex)}
         >
           UPGRADE
         </Button>

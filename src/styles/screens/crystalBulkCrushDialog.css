@@ -1,17 +1,201 @@
-.crystal-bulk-modal { width: min(760px, calc(100vw - 32px)); max-height: min(760px, calc(100vh - 32px)); display: flex; flex-direction: column; overflow: hidden; }
-.crystal-crush-backdrop { z-index: 90; }
-.crystal-crush-dialog { width: min(560px, calc(100vw - 32px)); }
-.crystal-crush-form { display: grid; justify-items: center; gap: 12px; padding: 24px; }
-.crystal-crush-form label { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
-.crystal-crush-form input { width: min(320px, 100%); padding: 10px; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text); background: var(--ui-panel); text-align: center; font: 700 1rem var(--font-mono); }
-.crystal-crush-form > div { display: flex; gap: 6px; }
-.crystal-crush-form strong { color: var(--ui-success); font-family: var(--font-mono); }
-.crystal-bulk-list { display: grid; gap: 8px; overflow: auto; padding: 16px; }
-.crystal-bulk-row { display: grid; grid-template-columns: 20px minmax(0, 1fr) 88px; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--line-subtle); border-radius: 10px; background: rgba(255,255,255,.025); }
-.crystal-bulk-row span { display: grid; gap: 3px; min-width: 0; }
-.crystal-bulk-row strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.crystal-bulk-row small { color: var(--text-muted); letter-spacing: .08em; font-size: 10px; }
-.crystal-bulk-row input[type="number"] { width: 100%; }
-.crystal-bulk-footer { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 14px 16px; border-top: 1px solid var(--line-subtle); color: var(--text-muted); }
-.crystal-bulk-footer > div { display: flex; gap: 8px; }
-@media (max-width: 640px) { .crystal-bulk-footer { align-items: stretch; flex-direction: column; } .crystal-bulk-footer > div { justify-content: flex-end; } }
+.crystal-modal-surface {
+  box-sizing: border-box;
+  border: 1px solid color-mix(in srgb, var(--ui-accent) 55%, var(--ui-border));
+  border-radius: 14px;
+  background: var(--ui-panel-strong);
+  box-shadow: 0 28px 90px rgba(0, 0, 0, .68), 0 0 0 1px rgba(0, 0, 0, .2);
+  opacity: 1;
+}
+
+.crystal-bulk-modal {
+  display: flex;
+  width: min(760px, calc(100vw - 32px));
+  max-height: min(760px, calc(100vh - 32px));
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.crystal-crush-backdrop {
+  z-index: 90;
+  background: rgba(5, 6, 14, .84);
+}
+
+.crystal-crush-dialog {
+  width: min(560px, calc(100vw - 32px));
+}
+
+.crystal-bulk-list {
+  display: grid;
+  flex: 1 1 auto;
+  min-height: 0;
+  align-content: start;
+  gap: 8px;
+  overflow-y: auto;
+  padding: 16px;
+  background: var(--ui-panel-strong);
+  scrollbar-gutter: stable;
+}
+
+.crystal-bulk-row {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) 88px;
+  align-items: center;
+  gap: 12px;
+  min-height: 58px;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid var(--ui-border);
+  border-radius: 10px;
+  background: var(--ui-panel);
+  color: var(--ui-text-soft);
+  cursor: pointer;
+  transition: border-color .16s ease, background-color .16s ease;
+}
+
+.crystal-bulk-row:hover,
+.crystal-bulk-row:focus-within,
+.crystal-bulk-row.selected {
+  border-color: color-mix(in srgb, var(--ui-accent) 65%, var(--ui-border));
+  background: color-mix(in srgb, var(--ui-accent) 9%, var(--ui-panel));
+}
+
+.crystal-bulk-row > input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--ui-accent);
+}
+
+.crystal-bulk-row > span {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.crystal-bulk-row strong {
+  overflow: hidden;
+  color: var(--ui-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crystal-bulk-row small {
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-mono);
+  letter-spacing: .08em;
+}
+
+.crystal-bulk-row input[type="number"] {
+  width: 88px;
+  box-sizing: border-box;
+  padding: 8px 7px;
+  border: 1px solid var(--ui-border);
+  border-radius: 7px;
+  color: var(--ui-text);
+  background: var(--ui-panel-strong);
+  text-align: center;
+  font: 700 .85rem var(--font-mono);
+}
+
+.crystal-bulk-row input[type="number"]:focus-visible,
+.crystal-crush-form input:focus-visible {
+  border-color: var(--ui-accent);
+  outline: 2px solid color-mix(in srgb, var(--ui-accent) 35%, transparent);
+  outline-offset: 1px;
+}
+
+.crystal-bulk-footer {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-top: 1px solid var(--ui-border);
+  background: var(--ui-panel-strong);
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-mono);
+}
+
+.crystal-bulk-footer > span {
+  color: var(--ui-text-soft);
+  white-space: nowrap;
+}
+
+.crystal-bulk-footer > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.crystal-bulk-footer .button {
+  white-space: nowrap;
+}
+
+.crystal-crush-form {
+  display: grid;
+  flex: 1 1 auto;
+  justify-items: center;
+  align-content: center;
+  gap: 12px;
+  min-height: 230px;
+  padding: 24px;
+  background: var(--ui-panel-strong);
+}
+
+.crystal-crush-form label {
+  color: var(--ui-text-muted);
+  font: var(--text-micro) var(--font-mono);
+  letter-spacing: .1em;
+}
+
+.crystal-crush-form input {
+  width: min(320px, 100%);
+  box-sizing: border-box;
+  padding: 10px;
+  border: 1px solid var(--ui-border);
+  border-radius: 7px;
+  color: var(--ui-text);
+  background: var(--ui-panel);
+  text-align: center;
+  font: 700 1rem var(--font-mono);
+}
+
+.crystal-crush-form > div {
+  display: flex;
+  gap: 6px;
+}
+
+.crystal-crush-result {
+  display: flex;
+  justify-content: center;
+  width: min(360px, 100%);
+  box-sizing: border-box;
+  padding: 11px 14px;
+  border: 1px solid color-mix(in srgb, var(--ui-success) 35%, var(--ui-border));
+  border-radius: 8px;
+  color: var(--ui-success);
+  background: color-mix(in srgb, var(--ui-success) 7%, var(--ui-panel));
+  font-family: var(--font-mono);
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .crystal-bulk-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .crystal-bulk-footer > span {
+    text-align: center;
+  }
+
+  .crystal-bulk-footer > div {
+    justify-content: stretch;
+  }
+
+  .crystal-bulk-footer > div .button {
+    flex: 1 1 auto;
+  }
+}

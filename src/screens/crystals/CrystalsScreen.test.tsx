@@ -75,15 +75,12 @@ describe('CrystalsScreen', () => {
     expect(container.querySelector('.crystal-inspect-popover')).toBeNull()
     expect(screen.getByText('Equipped · Slot 1')).toBeTruthy()
     expect(screen.getByText('CURRENT EFFECT')).toBeTruthy()
-    expect(screen.getByText('NEXT TIER')).toBeTruthy()
-    expect(screen.getByText(/COST/)).toBeTruthy()
+    expect(screen.getByText(/NEXT TIER/)).toBeTruthy()
+    expect(screen.getByText('UPGRADE COST')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Close Crystal inspection' })).toBeNull()
     expect((screen.getByRole('button', { name: 'UPGRADE' }) as HTMLButtonElement).disabled).toBe(false)
     expect((screen.getByRole('button', { name: 'UNEQUIP' }) as HTMLButtonElement).disabled).toBe(false)
     expect((screen.getByRole('button', { name: 'SUMMARY' }) as HTMLButtonElement).disabled).toBe(false)
-
-    fireEvent.click(screen.getByRole('button', { name: 'Close Crystal inspection' }))
-    expect(container.querySelector('.crystal-selected-inspector')).toBeNull()
-    expect(screen.getByText('SELECT A CRYSTAL')).toBeTruthy()
   })
 
   it('opens the canonical Crystal summary modal and preserves inspection selection when it closes', () => {

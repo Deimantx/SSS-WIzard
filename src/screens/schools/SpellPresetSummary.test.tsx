@@ -1,10 +1,9 @@
 import { render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { TooltipProvider } from '../../components/ui/tooltip/Tooltip'
 import { useGameStore } from '../../store/gameStore'
-import { SpellPresetSummary } from './SpellPresetSummary'
+import { CombatSpellLoadout } from './CombatSpellLoadout'
 
-describe('SpellPresetSummary', () => {
+describe('CombatSpellLoadout', () => {
   beforeEach(() => {
     window.localStorage.clear()
     useGameStore.getState().resetSave()
@@ -21,9 +20,17 @@ describe('SpellPresetSummary', () => {
     useGameStore.getState().saveSpellPreset({ id, name: 'Fire focus', slots: [{ spellId: 'fire-bolt', autoCast: true }] })
     useGameStore.getState().selectSpellPreset(id)
 
-    render(<TooltipProvider><SpellPresetSummary onManage={() => {}} /></TooltipProvider>)
+    const focusState = {
+      activities: useGameStore.getState().activities,
+      progress: useGameStore.getState().progress,
+      equipment: useGameStore.getState().equipment,
+      artifactProgress: useGameStore.getState().artifactProgress,
+      arcaneCore: useGameStore.getState().arcaneCore,
+      player: { maxFocus: useGameStore.getState().player.maxFocus },
+    }
+    render(<CombatSpellLoadout focusState={focusState} onManage={() => {}} />)
 
     expect(screen.getByText('Fire focus')).toBeTruthy()
-    expect(screen.getByText('1 AUTO · 0 MANUAL · 10 Focus', { selector: '.ui-focus' })).toBeTruthy()
+    expect(screen.getByText('1 / 8 prepared')).toBeTruthy()
   })
 })

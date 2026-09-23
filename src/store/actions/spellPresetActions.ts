@@ -1,4 +1,4 @@
-import { getNextSpellPresetId, getSelectedSpellPreset, getSpellPresetFocusProjection, normalizeSpellPresetName, normalizeSpellPresetSlots, syncAutoCastRuntimeForLoadout, syncSelectedSpellPresetRuntime as syncSelectedSpellPresetRuntimeForState } from '../../game/systems/spells'
+import { canonicalSpellId, getNextSpellPresetId, getSelectedSpellPreset, getSpellPresetFocusProjection, isSpellUnlocked, MAX_COMBAT_SPELLS, moveSpellToIndex, normalizeSpellPresetName, normalizeSpellPresetSlots, syncAutoCastRuntimeForLoadout, syncSelectedSpellPresetRuntime as syncSelectedSpellPresetRuntimeForState } from '../../game/systems/spells'
 import type { CanonicalSpellId, GameState, SpellId, SpellPreset, SpellPresetId } from '../../game/types'
 
 export interface ApplySpellPresetResult {
@@ -8,6 +8,10 @@ export interface ApplySpellPresetResult {
   unavailableSpellIds?: CanonicalSpellId[]
 }
 
+export type SelectedPresetSlotMutationResult =
+  | { ok: true }
+  | { ok: false; reason: 'missing-preset' | 'duplicate' | 'full' | 'unavailable' | 'invalid-index' }
+
 const clearAutoCastRuntime = (state: GameState) => {
   const hadActiveAutoCast = Object.values(state.activities.autoCast).some(Boolean)
   syncAutoCastRuntimeForLoadout(state, [])
@@ -16,6 +20,44 @@ const clearAutoCastRuntime = (state: GameState) => {
 }
 
 export const syncSelectedSpellPresetRuntime = (state: GameState) => syncSelectedSpellPresetRuntimeForState(state)
+
+export const addSpellToSelectedPresetAction = (state: GameState, requestedSpellId: SpellId): SelectedPresetSlotMutationResult => {
+  const spellId = canonicalSpellId(requestedSpellId)
+  if (!spellId || !isSpellUnlocked(state, spellId)) return { ok: false, reason: 'unavailable' }
+  let preset = getSelectedSpellPreset(state)
+  if (!preset) {
+    const id = getNextSpellPresetId(state.spellPresets.presets)
+    preset = { id, name: 'Combat Loadout', slots: [] }
+    state.spellPresets.presets.push(preset)
+    state.spellPresets.selectedPresetId = id
+  }
+  if (preset.slots.some((slot) => slot.spellId === spellId)) return { ok: false, reason: 'duplicate' }
+  if (preset.slots.length >= MAX_COMBAT_SPELLS) return { ok: false, reason: 'full' }
+  preset.slots.push({ spellId, autoCast: false })
+  if (!state.combat.active) syncSelectedSpellPresetRuntimeForState(state)
+  return { ok: true }
+}
+
+export const removeSpellFromSelectedPresetAction = (state: GameState, requestedSpellId: SpellId): SelectedPresetSlotMutationResult => {
+  const spellId = canonicalSpellId(requestedSpellId)
+  const preset = spellId ? getSelectedSpellPreset(state) : null
+  if (!preset) return { ok: false, reason: 'missing-preset' }
+  const index = preset.slots.findIndex((slot) => slot.spellId === spellId)
+  if (index < 0) return { ok: false, reason: 'unavailable' }
+  preset.slots.splice(index, 1)
+  if (!state.combat.active) syncSelectedSpellPresetRuntimeForState(state)
+  return { ok: true }
+}
+
+export const moveSelectedPresetSlotAction = (state: GameState, fromIndex: number, toIndex: number): SelectedPresetSlotMutationResult => {
+  const preset = getSelectedSpellPreset(state)
+  if (!preset) return { ok: false, reason: 'missing-preset' }
+  const next = moveSpellToIndex(preset.slots, fromIndex, toIndex)
+  if (!next) return { ok: false, reason: 'invalid-index' }
+  preset.slots = next
+  if (!state.combat.active) syncSelectedSpellPresetRuntimeForState(state)
+  return { ok: true }
+}
 
 /** Compatibility action retained for internal/debug callers. Build editing is owned by the Preset Manager. */
 export const clearAutoCastAction = (state: GameState) => clearAutoCastRuntime(state)

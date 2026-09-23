@@ -168,10 +168,10 @@ export const SCREEN_PANEL_LAYOUTS: Record<ScreenId, ScreenLayoutDefinition> = {
   // MAGIC SCHOOLS
   // ============================================================
   schools: screen({
-    'schools-browser': panel({ order: 1, columnStart: 1, columnSpan: 7, rowStart: 1, minHeight: 138, preferredHeight: 642, label: 'Spell browser' }),
-    'schools-inspector': panel({ order: 2, columnStart: 8, columnSpan: 5, rowStart: 1, minHeight: 138, preferredHeight: 642, label: 'Spell inspector' }),
-    'schools-presets': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 2, minHeight: 0, preferredHeight: 282, label: 'Spell presets' }),
-  }, ['schools-browser', 'schools-inspector', 'schools-presets']),
+    'schools-library': panel({ order: 1, columnStart: 1, columnSpan: 8, rowStart: 1, minHeight: 430, preferredHeight: 600, label: 'Spell library' }),
+    'schools-loadout': panel({ order: 2, columnStart: 9, columnSpan: 4, rowStart: 1, minHeight: 430, preferredHeight: 600, label: 'Combat loadout' }),
+    'schools-inspector': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 2, minHeight: 300, preferredHeight: 470, label: 'Spell inspector' }),
+  }, ['schools-library', 'schools-loadout', 'schools-inspector']),
 
   // ============================================================
   // INVENTORY

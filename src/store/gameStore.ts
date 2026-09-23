@@ -208,17 +208,21 @@ import {
 } from "../game/systems/spells";
 import {
   applySpellPresetAction,
+  addSpellToSelectedPresetAction,
   clearAutoCastAction,
   createSpellPresetAction,
   deleteSpellPresetAction,
   duplicateSpellPresetAction,
   moveAutoCastPriorityAction,
+  moveSelectedPresetSlotAction,
+  removeSpellFromSelectedPresetAction,
   renameSpellPresetAction,
   saveSpellPresetAction,
   selectSpellPresetAction,
   setPresetSlotAutoCastAction,
   syncSelectedSpellPresetRuntime,
   type ApplySpellPresetResult,
+  type SelectedPresetSlotMutationResult,
 } from "./actions/spellPresetActions";
 import {
   clearCombatLogUi,
@@ -614,6 +618,9 @@ export interface GameActions {
   deleteSpellPreset: (id: SpellPresetId) => boolean;
   saveSpellPreset: (preset: SpellPreset) => boolean;
   selectSpellPreset: (id: SpellPresetId) => ApplySpellPresetResult;
+  addSpellToSelectedPreset: (spellId: SpellId) => SelectedPresetSlotMutationResult;
+  removeSpellFromSelectedPreset: (spellId: SpellId) => SelectedPresetSlotMutationResult;
+  moveSelectedPresetSlot: (fromIndex: number, toIndex: number) => SelectedPresetSlotMutationResult;
   setPresetSlotAutoCast: (
     id: SpellPresetId,
     spellId: CanonicalSpellId,
@@ -1877,6 +1884,30 @@ export const useGameStore = create<GameStore>()(
       };
       set((state) => {
         result = selectSpellPresetAction(state, id);
+        return state;
+      });
+      return result;
+    },
+    addSpellToSelectedPreset: (spellId) => {
+      let result: SelectedPresetSlotMutationResult = { ok: false, reason: "missing-preset" };
+      set((state) => {
+        result = addSpellToSelectedPresetAction(state, spellId);
+        return state;
+      });
+      return result;
+    },
+    removeSpellFromSelectedPreset: (spellId) => {
+      let result: SelectedPresetSlotMutationResult = { ok: false, reason: "missing-preset" };
+      set((state) => {
+        result = removeSpellFromSelectedPresetAction(state, spellId);
+        return state;
+      });
+      return result;
+    },
+    moveSelectedPresetSlot: (fromIndex, toIndex) => {
+      let result: SelectedPresetSlotMutationResult = { ok: false, reason: "missing-preset" };
+      set((state) => {
+        result = moveSelectedPresetSlotAction(state, fromIndex, toIndex);
         return state;
       });
       return result;

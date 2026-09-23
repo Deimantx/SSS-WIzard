@@ -12,6 +12,7 @@ const nav = () => within(screen.getByRole('navigation', { name: 'Main navigation
 const navItem = (label: string) => nav().getAllByRole('button', { name: label }).find((button) => button.classList.contains('nav-item'))!
 const navGroup = (label: string) => nav().getByRole('button', { name: `Toggle ${label} group` })
 const goToTower = async (user: ReturnType<typeof userEvent.setup>, label: string) => { const group = navGroup('Wizard Tower'); if (group.getAttribute('aria-expanded') === 'false') await user.click(group); await user.click(navItem(label)) }
+const goToMagicSchools = async (user: ReturnType<typeof userEvent.setup>) => { await user.click(navItem('Magic Schools')); await user.click(screen.getByRole('tab', { name: /FIRE/ })) }
 
 describe('screen smoke coverage', () => {
   beforeEach(() => { window.localStorage.clear(); useGameStore.getState().resetSave(); resetAllUiPreferences() })
@@ -170,25 +171,23 @@ describe('screen smoke coverage', () => {
     const user = userEvent.setup()
     render(<GameShell />)
 
-    await user.click(navItem('Magic Schools'))
+    await goToMagicSchools(user)
     expect(screen.getByRole('heading', { name: 'Magic Schools' })).toBeTruthy()
-    expect(screen.getByRole('textbox', { name: 'Search Spells' })).toBeTruthy()
-    expect(screen.queryByText('Fire Bolt')).toBeNull()
-    expect((screen.getByRole('checkbox', { name: 'Unlocked Only' }) as HTMLInputElement).checked).toBe(true)
-    expect(screen.getByText('NO SPELLS LEARNED YET')).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'SELECT A SPELL' })).toBeTruthy()
-    expect(screen.queryByText(/EDRIN|CAP|Next Lv/)).toBeNull()
+    expect(screen.getByRole('textbox', { name: 'Search spells' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Spell Library' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Combat Loadout' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Fire Bolt' })).toBeTruthy()
 
     const progress = useGameStore.getState().progress
     useGameStore.setState({ progress: { ...progress, spellRanks: { 'fire-bolt': 1, 'water-bolt': 1 } } })
     await user.click(navItem('Combat'))
-    await user.click(navItem('Magic Schools'))
+    await goToMagicSchools(user)
     expect(screen.getByText('Fire Bolt', { selector: 'strong' })).toBeTruthy()
+    await user.click(screen.getByRole('tab', { name: /WATER/ }))
     expect(screen.getByText('Water Bolt', { selector: 'strong' })).toBeTruthy()
     expect(screen.queryAllByText('???')).toHaveLength(0)
+    await user.click(screen.getByRole('tab', { name: /FIRE/ }))
     const fireBoltTile = screen.getByRole('button', { name: /Fire Bolt,/ })
-    expect(fireBoltTile.querySelector('.spell-browser-rank-badge')).toBeNull()
-    expect(fireBoltTile.querySelector('.spell-tile-status')).toBeNull()
     await user.click(fireBoltTile)
     const spellInspectorScroll = document.querySelector('.schools-inspector-panel .spell-inspector-scroll')
     expect(spellInspectorScroll?.classList.contains('smart-scroll-region')).toBe(true)
@@ -199,15 +198,11 @@ describe('screen smoke coverage', () => {
     await user.click(screen.getByRole('button', { name: 'Auto-Cast OFF' }))
     expect(screen.getByRole('button', { name: 'Auto-Cast ON' })).toBeTruthy()
     expect(screen.getByText('10 Focus reserved')).toBeTruthy()
-    expect(fireBoltTile.querySelector('.spell-tile-status')).toBeTruthy()
+    await user.click(screen.getByRole('tab', { name: /WATER/ }))
     await user.click(screen.getByRole('button', { name: /Water Bolt,/ }))
     expect(screen.getByRole('heading', { name: 'Water Bolt' })).toBeTruthy()
     expect(screen.getByRole('button', { name: /Water Bolt,/ }).getAttribute('aria-pressed')).toBe('true')
-    expect(screen.getByRole('button', { name: /Fire Bolt,/ }).getAttribute('aria-pressed')).toBe('false')
-    await user.click(navItem('Combat'))
-    await user.click(navItem('Magic Schools'))
-    await user.click(screen.getByRole('checkbox', { name: 'Unlocked Only' }))
-    expect(screen.getAllByText('???').length).toBeGreaterThan(0)
+    expect(screen.getByText('AUTO', { exact: true })).toBeTruthy()
   })
 
   it('shows a themed insufficient-Focus Auto-Cast state without enabling it', async () => {
@@ -216,32 +211,21 @@ describe('screen smoke coverage', () => {
     const player = useGameStore.getState().player
     useGameStore.setState({ progress: { ...progress, spellRanks: { 'fire-bolt': 1 } }, player: { ...player, maxFocus: 0 } })
     render(<GameShell />)
-    await user.click(navItem('Magic Schools'))
+    await goToMagicSchools(user)
     await user.click(screen.getByRole('button', { name: /Fire Bolt,/ }))
     const toggle = screen.getByRole('button', { name: 'Auto-Cast OFF' })
     expect(toggle.hasAttribute('disabled')).toBe(true)
     expect(screen.getByText('Need 10 Focus')).toBeTruthy()
   })
 
-  it('derives effect micro-icons and exposes rich mouse and keyboard effect tooltips', async () => {
+  it('exposes rich effect tooltips from the selected spell inspector', async () => {
     const user = userEvent.setup()
     const progress = useGameStore.getState().progress
     useGameStore.setState({ progress: { ...progress, spellRanks: { 'searing-touch': 1 } } })
     render(<GameShell />)
-    await user.click(navItem('Magic Schools'))
+    await goToMagicSchools(user)
 
-    const searingTouchTile = screen.getByRole('button', { name: /Searing Touch,/ })
-    const tileShell = searingTouchTile.closest('.spell-browser-tile-shell')!
-    const microIcons = tileShell.querySelectorAll('.spell-browser-effect-icon')
-    expect(microIcons).toHaveLength(2)
-    expect(microIcons[0].getAttribute('aria-label')).toBe('Damage')
-    expect(microIcons[1].getAttribute('aria-label')).toBe('DoT')
-    await user.hover(microIcons[1])
-    expect((await screen.findByRole('tooltip')).textContent).toContain('DoT')
-    await user.unhover(microIcons[1])
-    await waitFor(() => expect(screen.queryByRole('tooltip')).toBeNull())
-
-    await user.click(searingTouchTile)
+    await user.click(screen.getByRole('button', { name: /Searing Touch,/ }))
     const effectRow = screen.getByLabelText('DOT: Burning')
     await user.hover(effectRow)
     const tooltip = await screen.findByRole('tooltip')
@@ -258,40 +242,21 @@ describe('screen smoke coverage', () => {
     expect(screen.queryByRole('tooltip')).toBeNull()
   })
 
-  it('shows the full spell tooltip and keeps prioritized Inspector details inline', async () => {
+  it('shows the selected spell inspector and prioritized details inline', async () => {
     const user = userEvent.setup()
     const progress = useGameStore.getState().progress
     const equipment = useGameStore.getState().equipment
     useGameStore.setState({ progress: { ...progress, spellRanks: { 'fire-bolt': 1, harden: 1, 'frost-touch': 1 } }, equipment: { ...equipment, weapon: 'ember-staff' } })
     render(<GameShell />)
-    await user.click(navItem('Magic Schools'))
+    await goToMagicSchools(user)
 
     const fireBoltTile = screen.getByRole('button', { name: /Fire Bolt,/ })
-    const fireBoltIcon = fireBoltTile.querySelector('.spell-browser-icon-frame')!
-    await user.hover(fireBoltIcon)
-    const spellTooltip = await screen.findByRole('tooltip')
-    await user.keyboard('{Alt>}')
-    await waitFor(() => expect(screen.getByRole('tooltip').textContent).toContain('Base Damage'))
-    expect(spellTooltip.classList.contains('game-tooltip-wide')).toBe(true)
-    expect(spellTooltip.textContent).toContain('FIRE · RANK I')
-    expect(spellTooltip.textContent).toContain('Fire Bolt')
-    expect(spellTooltip.textContent).toContain('MANA')
-    expect(spellTooltip.textContent).toContain('30')
-    expect(spellTooltip.textContent).toContain('COOLDOWN')
-    expect(spellTooltip.textContent).toContain('6.0s')
-    expect(spellTooltip.textContent).toContain('AUTO-CAST')
-    expect(spellTooltip.textContent).toContain('10 Focus')
-    expect(spellTooltip.textContent).toContain('Base Damage')
-    expect(spellTooltip.textContent).toContain('75% Spell Power')
-    expect(spellTooltip.textContent).not.toContain('Select to inspect this Spell')
-    await user.keyboard('{/Alt}')
-    await user.unhover(fireBoltIcon)
-    await waitFor(() => expect(screen.queryByRole('tooltip')).toBeNull())
     await user.click(fireBoltTile)
     expect(screen.getByRole('heading', { name: 'Fire Bolt' })).toBeTruthy()
     expect(screen.getByText('Base Damage')).toBeTruthy()
     expect(screen.getByText('75% Spell Power')).toBeTruthy()
 
+    await user.click(screen.getByRole('tab', { name: /EARTH/ }))
     await user.click(screen.getByRole('button', { name: /Harden,/ }))
     const fortifyRow = screen.getByLabelText('BUFF: Hardened')
     expect(fortifyRow.textContent).toContain('Damage Taken')
@@ -309,26 +274,23 @@ describe('screen smoke coverage', () => {
     await user.keyboard('{Escape}')
     expect(screen.queryByRole('tooltip')).toBeNull()
 
+    await user.click(screen.getByRole('tab', { name: /WATER/ }))
     await user.click(screen.getByRole('button', { name: /Frost Touch,/ }))
     expect(screen.getByLabelText('DAMAGE: Water Damage')).toBeTruthy()
     expect(screen.getByLabelText('CONTROL: Chilled')).toBeTruthy()
   })
 
-  it('keeps locked spell entries secret in their hover copy', async () => {
+  it('shows locked spell requirements in the inspector', async () => {
     const user = userEvent.setup()
     const progress = useGameStore.getState().progress
     useGameStore.setState({ progress: { ...progress, spellRanks: { 'fire-bolt': 1 } } })
     render(<GameShell />)
-    await user.click(navItem('Magic Schools'))
-    await user.click(screen.getByRole('checkbox', { name: 'Unlocked Only' }))
-
-    const lockedTile = screen.getAllByRole('button', { name: /Locked Fire spell/ })[0]
-    await user.hover(lockedTile.querySelector('.spell-browser-icon-frame')!)
-    const tooltip = await screen.findByRole('tooltip')
-    expect(tooltip.textContent).toContain('Locked spell')
-    expect(tooltip.textContent).not.toContain('Base Damage')
-    expect(tooltip.textContent).not.toContain('Current Base Preview')
-    expect(tooltip.textContent).not.toContain('Fireball')
+    await goToMagicSchools(user)
+    const lockedTile = screen.getAllByRole('button', { name: /Locked Searing Touch/ })[0]
+    await user.click(lockedTile)
+    expect(screen.getByRole('heading', { name: 'Searing Touch' })).toBeTruthy()
+    expect(screen.getByText('Current Fire Level')).toBeTruthy()
+    expect(screen.getByText(/Requires Level 7/)).toBeTruthy()
   })
 
   it('creates, saves, and applies an Auto-Cast preset from the Schools screen', async () => {
@@ -336,8 +298,8 @@ describe('screen smoke coverage', () => {
     const progress = useGameStore.getState().progress
     useGameStore.setState({ progress: { ...progress, spellRanks: { 'fire-bolt': 1 } } })
     render(<GameShell />)
-    await user.click(navItem('Magic Schools'))
-    await user.click(screen.getByRole('button', { name: 'MANAGE PRESETS' }))
+    await goToMagicSchools(user)
+    await user.click(screen.getByRole('button', { name: 'Manage combat loadout' }))
     const dialog = screen.getByRole('dialog', { name: 'SPELL PRESET MANAGER' })
     expect(within(dialog).getByText('FIRE · RANK I')).toBeTruthy()
     await user.clear(within(dialog).getByRole('textbox', { name: 'Preset name' }))
@@ -353,9 +315,9 @@ describe('screen smoke coverage', () => {
   it('opens a local first-use preset draft without persisting it', async () => {
     const user = userEvent.setup()
     render(<GameShell />)
-    await user.click(navItem('Magic Schools'))
-    expect(screen.getByText('0 AUTO · 0 MANUAL · 0 Focus')).toBeTruthy()
-    await user.click(screen.getByRole('button', { name: 'MANAGE PRESETS' }))
+    await goToMagicSchools(user)
+    expect(screen.getByText('0 / 8 prepared')).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Manage combat loadout' }))
     const dialog = screen.getByRole('dialog', { name: 'SPELL PRESET MANAGER' })
     expect(within(dialog).getByRole('heading', { name: 'AVAILABLE SPELLS' })).toBeTruthy()
     expect(within(dialog).getByRole('heading', { name: 'COMBAT LOADOUT' })).toBeTruthy()
@@ -371,8 +333,8 @@ describe('screen smoke coverage', () => {
     const progress = useGameStore.getState().progress
     useGameStore.setState({ progress: { ...progress, spellRanks: { 'fire-bolt': 1 } } })
     render(<GameShell />)
-    await user.click(navItem('Magic Schools'))
-    await user.click(screen.getByRole('button', { name: 'MANAGE PRESETS' }))
+    await goToMagicSchools(user)
+    await user.click(screen.getByRole('button', { name: 'Manage combat loadout' }))
     const dialog = screen.getByRole('dialog', { name: 'SPELL PRESET MANAGER' })
     await user.clear(within(dialog).getByRole('textbox', { name: 'Preset name' }))
     await user.type(within(dialog).getByRole('textbox', { name: 'Preset name' }), 'Unsaved')
@@ -389,13 +351,13 @@ describe('screen smoke coverage', () => {
     const player = useGameStore.getState().player
     useGameStore.setState({ progress: { ...progress, spellRanks: { 'fire-bolt': 1, 'earthen-barrier': 1 } }, player: { ...player, maxFocus: 0 } })
     render(<GameShell />)
-    await user.click(navItem('Magic Schools'))
+    await goToMagicSchools(user)
     expect(document.querySelector('.schools-browser-panel select')).toBeNull()
-    await user.click(screen.getByRole('button', { name: 'Spell type filter' }))
-    await user.click(screen.getByRole('option', { name: 'Barrier' }))
+    await user.click(screen.getByRole('tab', { name: /EARTH/ }))
+    await user.click(screen.getByRole('tab', { name: 'Defense' }))
     expect(screen.getByText('Earthen Barrier', { selector: 'strong' })).toBeTruthy()
     expect(screen.queryByText('Fire Bolt', { selector: 'strong' })).toBeNull()
-    await user.click(screen.getByRole('button', { name: 'MANAGE PRESETS' }))
+    await user.click(screen.getByRole('button', { name: 'Manage combat loadout' }))
     const dialog = screen.getByRole('dialog', { name: 'SPELL PRESET MANAGER' })
     await user.click(within(dialog).getByRole('button', { name: /Earthen Barrier/ }))
     await user.click(within(dialog).getByRole('button', { name: 'Enable Auto-Cast for Earthen Barrier' }))
@@ -408,7 +370,7 @@ describe('screen smoke coverage', () => {
     const progress = useGameStore.getState().progress
     useGameStore.setState({ progress: { ...progress, spellRanks: { 'fire-bolt': 1 } } })
     render(<GameShell />)
-    await user.click(navItem('Magic Schools'))
+    await goToMagicSchools(user)
     await user.click(screen.getByRole('button', { name: /Fire Bolt,/ }))
     await user.click(screen.getByRole('button', { name: /VIEW RANK PATH/ }))
     const rail = screen.getByRole('complementary', { name: 'Spell rank path' })
@@ -424,7 +386,7 @@ describe('screen smoke coverage', () => {
     await user.click(screen.getByRole('button', { name: 'Close rank path' }))
     expect(screen.queryByRole('complementary', { name: 'Spell rank path' })).toBeNull()
     await user.click(screen.getByRole('button', { name: /VIEW RANK PATH/ }))
-    await user.click(screen.getByRole('button', { name: 'MANAGE PRESETS' }))
+    await user.click(screen.getByRole('button', { name: 'Manage combat loadout' }))
     expect(screen.queryByRole('complementary', { name: 'Spell rank path' })).toBeNull()
     expect(screen.getByRole('dialog', { name: 'SPELL PRESET MANAGER' })).toBeTruthy()
   })
@@ -434,15 +396,15 @@ describe('screen smoke coverage', () => {
     const progress = useGameStore.getState().progress
     useGameStore.setState({ progress: { ...progress, spellRanks: { 'fire-bolt': 1 } } })
     render(<GameShell />)
-    await user.click(navItem('Magic Schools'))
-    await user.click(screen.getByRole('button', { name: 'MANAGE PRESETS' }))
+    await goToMagicSchools(user)
+    await user.click(screen.getByRole('button', { name: 'Manage combat loadout' }))
     const dialog = screen.getByRole('dialog', { name: 'SPELL PRESET MANAGER' })
     await user.clear(within(dialog).getByRole('textbox', { name: 'Preset name' }))
     await user.type(within(dialog).getByRole('textbox', { name: 'Preset name' }), 'Themed Build')
     await user.click(within(dialog).getByRole('button', { name: /Fire Bolt/ }))
     await user.click(within(dialog).getByRole('button', { name: 'SAVE' }))
     await user.click(within(dialog).getByRole('button', { name: 'CANCEL' }))
-    await user.click(screen.getByRole('button', { name: 'MANAGE PRESETS' }))
+    await user.click(screen.getByRole('button', { name: 'Manage combat loadout' }))
     const reopened = screen.getByRole('dialog', { name: 'SPELL PRESET MANAGER' })
     expect(within(reopened).queryByRole('textbox', { name: 'Preset name' })).toBeNull()
     await user.click(within(reopened).getByRole('button', { name: 'Edit preset name' }))

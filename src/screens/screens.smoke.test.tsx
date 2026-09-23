@@ -258,7 +258,7 @@ describe('screen smoke coverage', () => {
     expect(screen.queryByRole('tooltip')).toBeNull()
   })
 
-  it('keeps Spellbook cards tooltip-free and keeps prioritized Inspector details inline', async () => {
+  it('shows the full spell tooltip and keeps prioritized Inspector details inline', async () => {
     const user = userEvent.setup()
     const progress = useGameStore.getState().progress
     const equipment = useGameStore.getState().equipment
@@ -267,7 +267,25 @@ describe('screen smoke coverage', () => {
     await user.click(navItem('Magic Schools'))
 
     const fireBoltTile = screen.getByRole('button', { name: /Fire Bolt,/ })
-    await user.hover(fireBoltTile)
+    const fireBoltIcon = fireBoltTile.querySelector('.spell-browser-icon-frame')!
+    await user.hover(fireBoltIcon)
+    const spellTooltip = await screen.findByRole('tooltip')
+    await user.keyboard('{Alt>}')
+    await waitFor(() => expect(screen.getByRole('tooltip').textContent).toContain('Base Damage'))
+    expect(spellTooltip.classList.contains('game-tooltip-wide')).toBe(true)
+    expect(spellTooltip.textContent).toContain('FIRE · RANK I')
+    expect(spellTooltip.textContent).toContain('Fire Bolt')
+    expect(spellTooltip.textContent).toContain('MANA')
+    expect(spellTooltip.textContent).toContain('30')
+    expect(spellTooltip.textContent).toContain('COOLDOWN')
+    expect(spellTooltip.textContent).toContain('6.0s')
+    expect(spellTooltip.textContent).toContain('AUTO-CAST')
+    expect(spellTooltip.textContent).toContain('10 Focus')
+    expect(spellTooltip.textContent).toContain('Base Damage')
+    expect(spellTooltip.textContent).toContain('75% Spell Power')
+    expect(spellTooltip.textContent).not.toContain('Select to inspect this Spell')
+    await user.keyboard('{/Alt}')
+    await user.unhover(fireBoltIcon)
     await waitFor(() => expect(screen.queryByRole('tooltip')).toBeNull())
     await user.click(fireBoltTile)
     expect(screen.getByRole('heading', { name: 'Fire Bolt' })).toBeTruthy()
@@ -296,7 +314,7 @@ describe('screen smoke coverage', () => {
     expect(screen.getByLabelText('CONTROL: Chilled')).toBeTruthy()
   })
 
-  it('keeps locked spell entries free of hover tooltips', async () => {
+  it('keeps locked spell entries secret in their hover copy', async () => {
     const user = userEvent.setup()
     const progress = useGameStore.getState().progress
     useGameStore.setState({ progress: { ...progress, spellRanks: { 'fire-bolt': 1 } } })
@@ -306,7 +324,11 @@ describe('screen smoke coverage', () => {
 
     const lockedTile = screen.getAllByRole('button', { name: /Locked Fire spell/ })[0]
     await user.hover(lockedTile.querySelector('.spell-browser-icon-frame')!)
-    await waitFor(() => expect(screen.queryByRole('tooltip')).toBeNull())
+    const tooltip = await screen.findByRole('tooltip')
+    expect(tooltip.textContent).toContain('Locked spell')
+    expect(tooltip.textContent).not.toContain('Base Damage')
+    expect(tooltip.textContent).not.toContain('Current Base Preview')
+    expect(tooltip.textContent).not.toContain('Fireball')
   })
 
   it('creates, saves, and applies an Auto-Cast preset from the Schools screen', async () => {

@@ -35,18 +35,28 @@ function ResizingWideTooltipFixture() {
 describe('TooltipProvider singleton timing', () => {
   afterEach(() => { vi.useRealTimers() })
 
-  it('cancels stale pending requests and waits 500ms for the new target', () => {
+  it('cancels stale pending requests and waits 250ms for the new target', () => {
     vi.useFakeTimers()
     render(<TooltipFixture />)
     fireEvent.pointerEnter(screen.getByRole('button', { name: 'A' }))
     act(() => { vi.advanceTimersByTime(300) })
     fireEvent.pointerLeave(screen.getByRole('button', { name: 'A' }))
     fireEvent.pointerEnter(screen.getByRole('button', { name: 'B' }))
-    act(() => { vi.advanceTimersByTime(199) })
+    act(() => { vi.advanceTimersByTime(149) })
     expect(screen.queryByRole('tooltip')).toBeNull()
-    act(() => { vi.advanceTimersByTime(301) })
+    act(() => { vi.advanceTimersByTime(101) })
     expect(screen.getByRole('tooltip').textContent).toContain('Beta details')
     expect(document.querySelectorAll('[role="tooltip"]')).toHaveLength(1)
+  })
+
+  it('marks a portaled tooltip ready after position measurement', () => {
+    vi.useFakeTimers()
+    render(<TooltipFixture />)
+    fireEvent.pointerEnter(screen.getByRole('button', { name: 'A' }))
+    act(() => { vi.advanceTimersByTime(250) })
+
+    const tooltip = screen.getByRole('tooltip')
+    expect(tooltip.classList.contains('is-positioned')).toBe(true)
   })
 
   it('switches the visible tooltip without overlap', () => {

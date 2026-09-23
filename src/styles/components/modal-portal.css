@@ -24,4 +24,21 @@
   border-radius: 10px;
   background: var(--ui-panel-gradient-start, var(--ui-panel, #141623));
   box-shadow: 0 24px 80px var(--ui-shadow, rgb(0 0 0 / 42%));
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.modal-portal-surface input,
+.modal-portal-surface textarea,
+.modal-portal-surface select,
+.modal-portal-surface [contenteditable='true'],
+.modal-portal-surface .allow-text-selection,
+.modal-portal-surface [data-native-interaction='true'] {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.modal-portal-surface img {
+  -webkit-user-drag: none;
+  user-select: none;
 }

@@ -18,7 +18,7 @@ export function TooltipProvider({ children }: { children: ReactNode }) {
   const [pending, setPending] = useState<TooltipRequest | null>(null)
   const [active, setActive] = useState<TooltipRequest | null>(null)
   const [altPressed, setAltPressed] = useState(false)
-  const [position, setPosition] = useState({ top: 0, left: 0 })
+  const [position, setPosition] = useState({ top: 0, left: 0, ready: false })
   const timer = useRef<number | null>(null)
   const closeTimer = useRef<number | null>(null)
   const touchTimer = useRef<number | null>(null)
@@ -39,7 +39,7 @@ export function TooltipProvider({ children }: { children: ReactNode }) {
       closeTimer.current = null
     }
   }
-  const dismiss = () => { clearTimers(); pendingRef.current = null; activeRef.current = null; setPending(null); setActive(null) }
+  const dismiss = () => { clearTimers(); pendingRef.current = null; activeRef.current = null; setPending(null); setActive(null); setPosition({ top: 0, left: 0, ready: false }) }
   const scheduleClose = () => { cancelClose(); closeTimer.current = window.setTimeout(dismiss, 70) }
   const request = (next: TooltipRequest, delay = 500) => {
     if (activeRef.current?.id === next.id) {
@@ -53,12 +53,14 @@ export function TooltipProvider({ children }: { children: ReactNode }) {
     pendingRef.current = next
     activeRef.current = null
     setActive(null)
+    setPosition({ top: 0, left: 0, ready: false })
     setPending(next)
     timer.current = window.setTimeout(() => {
       if (pendingRef.current?.id !== next.id || !document.body.contains(next.element)) return
       pendingRef.current = null
       activeRef.current = next
       setPending(null)
+      setPosition({ top: 0, left: 0, ready: false })
       setActive(next)
     }, delay)
   }
@@ -89,11 +91,19 @@ export function TooltipProvider({ children }: { children: ReactNode }) {
   useEffect(() => { providerDismiss = dismiss; return () => { if (providerDismiss === dismiss) providerDismiss = null; clearTimers() } }, [])
   useLayoutEffect(() => {
     if (!active) return
+    let retryFrame: number | null = null
+    let retried = false
     const updatePosition = () => {
       if (!document.body.contains(active.element)) { dismiss(); return }
       const trigger = active.element.getBoundingClientRect()
       const layer = layerRef.current?.getBoundingClientRect()
-      if (!layer) return
+      if (!layer) {
+        if (!retried && typeof requestAnimationFrame !== 'undefined') {
+          retried = true
+          retryFrame = requestAnimationFrame(updatePosition)
+        }
+        return
+      }
       const gap = 8; const margin = 8
       const fits = { top: trigger.top - layer.height - gap >= margin, bottom: trigger.bottom + layer.height + gap <= innerHeight - margin, left: trigger.left - layer.width - gap >= margin, right: trigger.right + layer.width + gap <= innerWidth - margin }
       const fallbackOrder: Record<TooltipPlacement, TooltipPlacement[]> = { top: ['top', 'bottom', 'right', 'left'], bottom: ['bottom', 'top', 'right', 'left'], left: ['left', 'right', 'top', 'bottom'], right: ['right', 'left', 'top', 'bottom'] }
@@ -103,23 +113,23 @@ export function TooltipProvider({ children }: { children: ReactNode }) {
       if (side === 'bottom') top = trigger.bottom + gap
       if (side === 'left') { top = trigger.top + (trigger.height - layer.height) / 2; left = trigger.left - layer.width - gap }
       if (side === 'right') { top = trigger.top + (trigger.height - layer.height) / 2; left = trigger.right + gap }
-      setPosition({ top: Math.max(margin, Math.min(innerHeight - layer.height - margin, top)), left: Math.max(margin, Math.min(innerWidth - layer.width - margin, left)) })
+      setPosition({ top: Math.max(margin, Math.min(innerHeight - layer.height - margin, top)), left: Math.max(margin, Math.min(innerWidth - layer.width - margin, left)), ready: true })
     }
     updatePosition()
     addEventListener('resize', updatePosition); addEventListener('scroll', updatePosition, true)
     const observer = typeof ResizeObserver !== 'undefined' && layerRef.current ? new ResizeObserver(updatePosition) : null
     if (observer && layerRef.current) observer.observe(layerRef.current)
-    return () => { observer?.disconnect(); removeEventListener('resize', updatePosition); removeEventListener('scroll', updatePosition, true) }
+    return () => { if (retryFrame !== null) cancelAnimationFrame(retryFrame); observer?.disconnect(); removeEventListener('resize', updatePosition); removeEventListener('scroll', updatePosition, true) }
   }, [active, advanced])
 
   const value = { request, leave, dismiss, touch }
   const detailMode = { advanced }
-  return <TooltipContext.Provider value={value}><TooltipDetailModeContext.Provider value={detailMode}><>{children}</>{active && typeof document !== 'undefined' && createPortal(<div ref={layerRef} id={active.tooltipId} className={`game-tooltip game-tooltip-${active.accent}${active.wide ? ' game-tooltip-wide' : ''}${active.modal ? ' game-tooltip-modal' : ''} ${position.top > 0 ? 'is-positioned' : ''}`} role="tooltip" onPointerEnter={active.wide ? cancelClose : undefined} onPointerLeave={active.wide ? scheduleClose : undefined} style={{ top: position.top, left: position.left }}>{active.content}</div>, document.body)}</TooltipDetailModeContext.Provider></TooltipContext.Provider>
+  return <TooltipContext.Provider value={value}><TooltipDetailModeContext.Provider value={detailMode}><>{children}</>{active && typeof document !== 'undefined' && createPortal(<div ref={layerRef} id={active.tooltipId} className={`game-tooltip game-tooltip-${active.accent}${active.wide ? ' game-tooltip-wide' : ''}${active.modal ? ' game-tooltip-modal' : ''} ${position.ready ? 'is-positioned' : ''}`} role="tooltip" onPointerEnter={active.wide ? cancelClose : undefined} onPointerLeave={active.wide ? scheduleClose : undefined} style={{ top: position.top, left: position.left }}>{active.content}</div>, document.body)}</TooltipDetailModeContext.Provider></TooltipContext.Provider>
 }
 
 interface GameTooltipProps { children: ReactNode; content: ReactNode; accent?: TooltipAccent; placement?: TooltipPlacement; className?: string; block?: boolean; disabled?: boolean; delay?: number; wide?: boolean }
 
-export function GameTooltip({ children, content, accent = 'neutral', placement = 'top', className = '', block = false, disabled = false, delay = 500, wide = false }: GameTooltipProps) {
+export function GameTooltip({ children, content, accent = 'neutral', placement = 'top', className = '', block = false, disabled = false, delay = 250, wide = false }: GameTooltipProps) {
   const context = useContext(TooltipContext)
   const fallback = useFallbackTooltip(context === null)
   const triggerRef = useRef<HTMLSpanElement>(null)

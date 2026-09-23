@@ -13,6 +13,8 @@ import { useSpellLoadoutDnd } from './SpellLoadoutDnd'
 import { CombatAutomationOverviewModal, SpellAutomationModal } from './SpellAutomationModals'
 import { useGameContextMenu } from '../../ui/context-menu/GameContextMenuProvider'
 
+type AutomationEditorOrigin = 'overview' | 'direct'
+
 export function CombatSpellLoadout({ focusState, onSelectSpell, automationSpellId = null, onAutomationRequestHandled }: { focusState: SpellPresetFocusState; onSelectSpell?: (spellId: SpellId) => void; automationSpellId?: SpellId | null; onAutomationRequestHandled?: () => void }) {
   const presets = useGameStore((state) => state.spellPresets)
   const combat = useGameStore((state) => state.combat)
@@ -38,20 +40,23 @@ export function CombatSpellLoadout({ focusState, onSelectSpell, automationSpellI
   const [pendingPresetId, setPendingPresetId] = useState<typeof presets.selectedPresetId>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [automationIndex, setAutomationIndex] = useState<number | null>(null)
+  const [automationOrigin, setAutomationOrigin] = useState<AutomationEditorOrigin>('direct')
   const [overviewOpen, setOverviewOpen] = useState(false)
   const modified = Boolean(selected && currentSignature !== savedSignature)
 
   useEffect(() => { setSavedSignature(currentSignature); setEditor(null); setPendingPresetId(null); setConfirmDelete(false) }, [selected?.id])
   useEffect(() => {
     if (!automationSpellId) return
-    if (combat.active) {
+    try {
+      if (combat.active) return
+      const requestedIndex = slots.findIndex((slot) => slot.spellId === automationSpellId)
+      if (requestedIndex >= 0) {
+        setAutomationOrigin('direct')
+        setAutomationIndex(requestedIndex)
+      }
+    } finally {
       onAutomationRequestHandled?.()
-      return
     }
-    const requestedIndex = slots.findIndex((slot) => slot.spellId === automationSpellId)
-    if (requestedIndex < 0) return
-    setAutomationIndex(requestedIndex)
-    onAutomationRequestHandled?.()
   }, [automationSpellId, combat.active, slots, onAutomationRequestHandled])
 
   const beginNew = () => { setEditor('new'); setEditorName(''); setCopyCurrent(true) }
@@ -75,10 +80,17 @@ export function CombatSpellLoadout({ focusState, onSelectSpell, automationSpellI
   }
   const discardAndSwitch = () => { if (pendingPresetId) { selectPreset(pendingPresetId); setPendingPresetId(null) } }
   const automationSlot = automationIndex === null ? null : slots[automationIndex] ?? null
+  const closeAutomationEditor = () => {
+    const returnToOverview = automationOrigin === 'overview'
+    setAutomationIndex(null)
+    setAutomationOrigin('direct')
+    if (returnToOverview) setOverviewOpen(true)
+  }
   const applyAutomation = (config: SpellAutomationConfig, autoCast: boolean) => {
     if (!selected || !automationSlot) return
     setPresetSlotAutomation(selected.id, automationSlot.spellId, config)
     setPresetSlotAutoCast(selected.id, automationSlot.spellId, autoCast)
+    closeAutomationEditor()
   }
   const toggleAutomationMode = (slot: SpellPresetSlot) => {
     if (selected) setPresetSlotAutoCast(selected.id, slot.spellId, !slot.autoCast)
@@ -93,12 +105,12 @@ export function CombatSpellLoadout({ focusState, onSelectSpell, automationSpellI
       {Array.from({ length: 8 }, (_, index) => {
         const slot = slots[index]
         const spell = slot ? SPELLS[slot.spellId] : null
-        return <LoadoutSlot key={`${index}-${slot?.spellId ?? 'empty'}`} index={index} totalSlots={slots.length} slot={slot} spell={spell} canEdit={!combat.active} dragging={drag?.payload.source === 'loadout' && drag.payload.fromIndex === index} dropTarget={dropTarget?.index === index} registerTarget={element => registerTarget(index, element)} onMove={moveSlot} onRemove={removeSpell} onSelect={onSelectSpell} onToggleAutoCast={toggleAutomationMode} onOpenAutomation={setAutomationIndex} onPointerDown={event => { if (slot && !combat.active) beginDrag({ source: 'loadout', spellId: slot.spellId, fromIndex: index }, event) }} />
+        return <LoadoutSlot key={`${index}-${slot?.spellId ?? 'empty'}`} index={index} totalSlots={slots.length} slot={slot} spell={spell} canEdit={!combat.active} dragging={drag?.payload.source === 'loadout' && drag.payload.fromIndex === index} dropTarget={dropTarget?.index === index} registerTarget={element => registerTarget(index, element)} onMove={moveSlot} onRemove={removeSpell} onSelect={onSelectSpell} onToggleAutoCast={toggleAutomationMode} onOpenAutomation={(nextIndex) => { setAutomationOrigin('direct'); setAutomationIndex(nextIndex) }} onPointerDown={event => { if (slot && !combat.active) beginDrag({ source: 'loadout', spellId: slot.spellId, fromIndex: index }, event) }} />
       })}
     </div>
     <div className="loadout-footer"><span>{slots.length} / 8 prepared</span><FocusBudgetMeter autoCastFocus={focus.autoCastFocus} otherFocus={focus.otherFocus} totalFocus={focus.totalFocus} maxFocus={focus.maxFocus} freeFocus={focus.freeFocus} compact /></div>
-    {selected && <CombatAutomationOverviewModal open={overviewOpen} presetName={selected.name} slots={slots} onClose={() => setOverviewOpen(false)} onEdit={(index) => { setOverviewOpen(false); setAutomationIndex(index) }} onToggleMode={toggleAutomationMode} />}
-    {selected && automationSlot && automationIndex !== null && <SpellAutomationModal open={automationIndex !== null} slot={automationSlot} slotIndex={automationIndex} presetName={selected.name} onClose={() => setAutomationIndex(null)} onApply={applyAutomation} />}
+    {selected && <CombatAutomationOverviewModal open={overviewOpen} presetName={selected.name} slots={slots} onClose={() => setOverviewOpen(false)} onEdit={(index) => { setAutomationOrigin('overview'); setOverviewOpen(false); setAutomationIndex(index) }} onToggleMode={toggleAutomationMode} />}
+    {selected && automationSlot && automationIndex !== null && <SpellAutomationModal open={automationIndex !== null} slot={automationSlot} slotIndex={automationIndex} presetName={selected.name} onClose={closeAutomationEditor} onApply={applyAutomation} />}
   </section>
 }
 

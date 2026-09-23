@@ -30,7 +30,7 @@ describe('CombatSpellLoadout', () => {
       arcaneCore: useGameStore.getState().arcaneCore,
       player: { maxFocus: useGameStore.getState().player.maxFocus },
     }
-    render(<SpellLoadoutDndProvider onCommit={() => {}}><CombatSpellLoadout focusState={focusState} /></SpellLoadoutDndProvider>)
+    render(<SpellLoadoutDndProvider onCommit={() => {}}><CombatSpellLoadout focusState={focusState} spellPresentationState={useGameStore.getState()} /></SpellLoadoutDndProvider>)
 
     expect(screen.getByText('Fire focus')).toBeTruthy()
     expect(screen.getByText('1 / 8 prepared')).toBeTruthy()
@@ -52,7 +52,7 @@ describe('CombatSpellLoadout', () => {
   it('exposes direct preset controls instead of a separate manager modal', () => {
     const current = useGameStore.getState()
     const focusState = { activities: current.activities, progress: current.progress, equipment: current.equipment, artifactProgress: current.artifactProgress, arcaneCore: current.arcaneCore, player: { maxFocus: current.player.maxFocus } }
-    render(<SpellLoadoutDndProvider onCommit={() => {}}><CombatSpellLoadout focusState={focusState} /></SpellLoadoutDndProvider>)
+    render(<SpellLoadoutDndProvider onCommit={() => {}}><CombatSpellLoadout focusState={focusState} spellPresentationState={useGameStore.getState()} /></SpellLoadoutDndProvider>)
     expect(screen.getByLabelText('Active combat loadout preset')).toBeTruthy()
     expect(screen.getByText('Changes save automatically.')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'NEW' })).toBeTruthy()

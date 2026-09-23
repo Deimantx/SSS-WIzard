@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { Button, GameTooltip, ModalPortal, Status } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
+import { SpellCardTooltip } from '../../components/spells/SpellCardTooltip'
 import { SPELLS } from '../../game/content/spells/spells'
 import { SCHOOLS } from '../../game/content/schools/schools'
 import {
@@ -20,6 +21,7 @@ import {
 import type { GameState, SpellAutomationCondition, SpellAutomationConfig, SpellAutomationTargetRule, SpellPresetSlot } from '../../game/types'
 import { useGameStore } from '../../store/gameStore'
 import { SpellIcon } from './SpellIcon'
+import { buildSpellDetailPresentation, type SpellPresentationState } from './spellDetailPresentation'
 
 type AutomationDraft = SpellAutomationConfig & { autoCast: boolean }
 
@@ -57,6 +59,7 @@ const toneForCheck = (check: { passed: boolean }): 'success' | 'warning' => chec
 
 export function SpellAutomationModal({ open, slot, slotIndex, presetName, loadoutSlots = [], readOnly = false, applyError = null, onClose, onApply }: { open: boolean; slot: SpellPresetSlot | null; slotIndex: number; presetName: string; loadoutSlots?: SpellPresetSlot[]; readOnly?: boolean; applyError?: string | null; onClose: () => void; onApply: (config: SpellAutomationConfig, autoCast: boolean) => unknown }) {
   const liveState = useGameStore(useShallow((state) => ({
+    schools: state.schools,
     player: state.player,
     combat: state.combat,
     progress: state.progress,
@@ -72,6 +75,7 @@ export function SpellAutomationModal({ open, slot, slotIndex, presetName, loadou
   const [showEvaluationDetails, setShowEvaluationDetails] = useState(false)
   const spell = slot ? SPELLS[slot.spellId] : null
   const school = spell ? SCHOOLS[spell.school] : null
+  const spellPresentation = useMemo(() => spell ? buildSpellDetailPresentation(liveState, spell.id, liveState.progress.spellRanks[spell.id] ?? 1) : null, [liveState, spell])
 
   useEffect(() => {
     if (open && slot) {
@@ -136,7 +140,7 @@ export function SpellAutomationModal({ open, slot, slotIndex, presetName, loadou
 
   return <ModalPortal open={open} onClose={requestClose} onEscape={requestClose} backdropClassName="spell-automation-backdrop" surfaceClassName="spell-automation-modal" ariaLabel={`${spell.name} Automation`}>
     <header className="spell-automation-modal-header">
-      <div className="spell-automation-title"><SpellIcon school={spell.school} spellId={spell.id} size="medium" /><div><span className="panel-kicker">{school.name.toUpperCase()} · SLOT {String(slotIndex + 1).padStart(2, '0')}</span><h2>{spell.name} — AUTOMATION</h2><p>{presetName} · priority follows Combat Loadout order</p></div></div>
+      <div className="spell-automation-title"><GameTooltip wide placement="right" delay={200} content={spellPresentation ? <SpellCardTooltip presentation={spellPresentation} /> : null}><span className="spell-automation-title-icon-tooltip-target"><SpellIcon school={spell.school} spellId={spell.id} size="medium" /></span></GameTooltip><div><span className="panel-kicker">{school.name.toUpperCase()} · SLOT {String(slotIndex + 1).padStart(2, '0')}</span><h2>{spell.name} — AUTOMATION</h2><p>{presetName} · priority follows Combat Loadout order</p></div></div>
       <Button variant="ghost" icon dataNoDrag ariaLabel="Close Spell Automation" onClick={requestClose}><X size={17} aria-hidden="true" /></Button>
     </header>
     <div className="spell-automation-modal-body">
@@ -176,10 +180,10 @@ function RemoveConditionButton({ onRemove }: { onRemove: () => void }) {
   return <GameTooltip accent="warning" content={<TooltipContent title="Remove Condition" description="Remove this exact condition from the AND rule." />}><Button variant="ghost" className="spell-automation-remove-condition" icon dataNoDrag ariaLabel="Remove Condition" onClick={onRemove}><Minus size={15} aria-hidden="true" /></Button></GameTooltip>
 }
 
-export function CombatAutomationOverviewModal({ open, presetName, slots, readOnly = false, onClose, onEdit, onToggleMode }: { open: boolean; presetName: string; slots: SpellPresetSlot[]; readOnly?: boolean; onClose: () => void; onEdit: (index: number) => void; onToggleMode: (slot: SpellPresetSlot) => void }) {
+export function CombatAutomationOverviewModal({ open, presetName, slots, spellPresentationState, readOnly = false, onClose, onEdit, onToggleMode }: { open: boolean; presetName: string; slots: SpellPresetSlot[]; spellPresentationState: SpellPresentationState; readOnly?: boolean; onClose: () => void; onEdit: (index: number) => void; onToggleMode: (slot: SpellPresetSlot) => void }) {
   return <ModalPortal open={open} onClose={onClose} backdropClassName="spell-automation-backdrop" surfaceClassName="combat-automation-overview-modal" ariaLabel="Combat Automation Overview">
     <header className="spell-automation-modal-header"><div><span className="panel-kicker">COMBAT AUTOMATION</span><h2>Automation Overview</h2><p>Preset: {presetName}</p></div><Button variant="ghost" icon dataNoDrag ariaLabel="Close Combat Automation Overview" onClick={onClose}><X size={17} aria-hidden="true" /></Button></header>
-    <div className="combat-automation-overview-body"><div className="combat-automation-overview-head"><span>PRIORITY</span><span>SPELL</span><span>MODE</span><span>RULE</span><span>ACTION</span></div>{slots.length ? slots.map((slot, index) => { const spell = SPELLS[slot.spellId]; const school = SCHOOLS[spell.school]; return <div className="combat-automation-overview-row" key={`${slot.spellId}-${index}`}><strong>{String(index + 1).padStart(2, '0')}</strong><div className="combat-automation-spell"><SpellIcon school={spell.school} spellId={spell.id} size="small" /><span><b>{spell.name}</b><small>{school.name.toUpperCase()}</small></span></div><GameTooltip content={<TooltipContent title={slot.autoCast ? 'Auto-Cast Enabled' : 'Manual Only'} description={slot.autoCast ? 'This Spell may be selected by combat automation.' : 'This Spell is excluded from combat automation.'} />}><Button variant={slot.autoCast ? 'success' : 'secondary'} className="combat-automation-mode" disabled={readOnly} ariaPressed={slot.autoCast} onClick={() => onToggleMode(slot)}>{slot.autoCast ? 'AUTO' : 'MANUAL'}</Button></GameTooltip><GameTooltip content={<TooltipContent title="Automation Rule" description="Review the configured conditions for this Spell." />}><span className="combat-automation-summary">{formatSpellAutomationSummary(slot)}</span></GameTooltip><GameTooltip content={<TooltipContent title={readOnly ? 'View Automation' : 'Edit Automation'} description={readOnly ? 'Inspect this Spell’s automation without changing the active battle snapshot.' : 'Edit this Spell’s mode, target, and conditions.'} />}><Button variant="ghost" onClick={() => onEdit(index)}><SlidersHorizontal size={13} aria-hidden="true" /> {readOnly ? 'VIEW' : 'EDIT'}</Button></GameTooltip></div> }) : <p className="combat-automation-empty">No prepared Spells in this preset.</p>}</div>
+    <div className="combat-automation-overview-body"><div className="combat-automation-overview-head"><span>PRIORITY</span><span>SPELL</span><span>MODE</span><span>RULE</span><span>ACTION</span></div>{slots.length ? slots.map((slot, index) => { const spell = SPELLS[slot.spellId]; const school = SCHOOLS[spell.school]; return <div className="combat-automation-overview-row" key={`${slot.spellId}-${index}`}><strong>{String(index + 1).padStart(2, '0')}</strong><div className="combat-automation-spell"><GameTooltip wide placement="right" delay={200} content={<SpellCardTooltip presentation={buildSpellDetailPresentation(spellPresentationState, spell.id, spellPresentationState.progress.spellRanks[spell.id] ?? 1)} />}><span className="combat-automation-spell-icon-tooltip-target"><SpellIcon school={spell.school} spellId={spell.id} size="small" /></span></GameTooltip><span><b>{spell.name}</b><small>{school.name.toUpperCase()}</small></span></div><GameTooltip content={<TooltipContent title={slot.autoCast ? 'Auto-Cast Enabled' : 'Manual Only'} description={slot.autoCast ? 'This Spell may be selected by combat automation.' : 'This Spell is excluded from combat automation.'} />}><Button variant={slot.autoCast ? 'success' : 'secondary'} className="combat-automation-mode" disabled={readOnly} ariaPressed={slot.autoCast} onClick={() => onToggleMode(slot)}>{slot.autoCast ? 'AUTO' : 'MANUAL'}</Button></GameTooltip><GameTooltip content={<TooltipContent title="Automation Rule" description="Review the configured conditions for this Spell." />}><span className="combat-automation-summary">{formatSpellAutomationSummary(slot)}</span></GameTooltip><GameTooltip content={<TooltipContent title={readOnly ? 'View Automation' : 'Edit Automation'} description={readOnly ? 'Inspect this Spell’s automation without changing the active battle snapshot.' : 'Edit this Spell’s mode, target, and conditions.'} />}><Button variant="ghost" onClick={() => onEdit(index)}><SlidersHorizontal size={13} aria-hidden="true" /> {readOnly ? 'VIEW' : 'EDIT'}</Button></GameTooltip></div> }) : <p className="combat-automation-empty">No prepared Spells in this preset.</p>}</div>
     <footer className="spell-automation-modal-footer"><span>Priority is determined by Combat Loadout order.</span><Button variant="secondary" onClick={onClose}>DONE</Button></footer>
   </ModalPortal>
 }

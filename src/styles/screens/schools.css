@@ -78,6 +78,7 @@
 .loadout-slot-list { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; min-height: 0; overflow: visible; padding: 2px 1px 1px; }
 .loadout-slot { --school-accent: var(--ui-accent); position: relative; display: grid; grid-template-columns: 25px 30px minmax(0, 1fr) auto auto; align-items: center; gap: 8px; min-width: 0; min-height: 51px; padding: 6px 7px; border: 1px solid var(--ui-border); border-left: 2px solid var(--school-accent); border-radius: 7px; background: color-mix(in srgb, var(--ui-panel-strong) 72%, transparent); cursor: grab; transition: border-color 120ms ease, background 120ms ease, opacity 120ms ease, box-shadow 120ms ease; }
 .loadout-slot:active { cursor: grabbing; }
+.loadout-spell-icon-tooltip-target { display: inline-flex; min-width: 0; cursor: help; }
 .loadout-slot:hover { border-color: color-mix(in srgb, var(--school-accent) 58%, var(--ui-border)); background: color-mix(in srgb, var(--school-accent) 6%, var(--ui-panel-strong)); }
 .loadout-slot.is-dragging { opacity: .42; cursor: grabbing; }
 .loadout-slot.is-drop-target { border-color: color-mix(in srgb, var(--ui-accent) 78%, var(--ui-border)); background: color-mix(in srgb, var(--ui-accent) 12%, var(--ui-panel-strong)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ui-accent) 38%, transparent), 0 0 14px color-mix(in srgb, var(--ui-accent) 18%, transparent); }
@@ -116,6 +117,7 @@
 .spell-automation-title { display: flex; align-items: center; gap: 11px; min-width: 0; }
 .spell-automation-title > div:last-child { min-width: 0; }
 .spell-automation-title .spell-icon-medium { width: 44px; height: 44px; border-radius: 10px; }
+.spell-automation-title-icon-tooltip-target, .combat-automation-spell-icon-tooltip-target { display: inline-flex; min-width: 0; cursor: help; }
 .spell-automation-modal-body, .combat-automation-overview-body { min-height: 0; overflow: auto; padding: 14px 17px; scrollbar-color: var(--ui-scrollbar-thumb) transparent; scrollbar-width: thin; }
 .spell-automation-section { display: grid; gap: 9px; margin-bottom: 10px; padding: 13px; border: 1px solid var(--ui-border); border-radius: 9px; background: color-mix(in srgb, var(--ui-panel-strong) 62%, transparent); }
 .spell-automation-section:last-child { margin-bottom: 0; }
@@ -172,6 +174,7 @@
 .combat-automation-overview-row > strong { color: var(--ui-accent); font: var(--text-sm) var(--font-mono); }
 .combat-automation-spell { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .combat-automation-spell > span { display: grid; gap: 2px; min-width: 0; }
+.combat-automation-spell > .combat-automation-spell-icon-tooltip-target { display: inline-flex; align-items: center; }
 .combat-automation-spell b { overflow: hidden; color: var(--ui-text-soft); font-size: var(--text-xs); text-overflow: ellipsis; white-space: nowrap; }
 .combat-automation-spell small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
 .combat-automation-mode { justify-self: start; min-width: 69px; }

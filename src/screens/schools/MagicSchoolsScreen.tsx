@@ -103,7 +103,7 @@ export function MagicSchoolsScreenV2() {
     <SpellLoadoutDndProvider onCommit={commitSpellDrop}><ScreenGrid screen="schools" panels={[
       { id: 'schools-library', content: <SpellLibrary state={browserState} school={selectedSchool} filters={filters} selectedEntryId={selectedEntryId} newSpells={new Set(attention.unseenSpells)} equippedSpellIds={equippedSpellIds} canEdit={!combat.active} onFiltersChange={setFilters} onSelect={selectSpell} onEquip={equipSpell} onRemove={removeSpell} onConfigureAutomation={(spellId) => { selectLoadoutSpell(spellId); setAutomationRequest(spellId) }} /> },
       { id: 'schools-inspector', content: <InspectorTransition identity={selectedEntry?.id} accent={selectedEntry ? SCHOOLS[selectedEntry.school].color : undefined} fill><SpellInspector entry={selectedEntry} state={browserState} rankPathOpen={rankPathOpen} equippedSlotIndex={selectedEntry?.kind === 'spell' ? activeLoadout.findIndex((slot) => slot.spellId === selectedEntry.spellId) : null} canEdit={!combat.active} onEquip={equipSpell} onRemove={removeSpell} onToggleRankPath={() => { dismissGameTooltips(); setRankPathOpen((open) => !open) }} /></InspectorTransition> },
-      { id: 'schools-loadout', content: <CombatSpellLoadout focusState={focusState} onSelectSpell={selectLoadoutSpell} automationSpellId={automationRequest} onAutomationRequestHandled={() => setAutomationRequest(null)} /> },
+      { id: 'schools-loadout', content: <CombatSpellLoadout focusState={focusState} spellPresentationState={browserState} onSelectSpell={selectLoadoutSpell} automationSpellId={automationRequest} onAutomationRequestHandled={() => setAutomationRequest(null)} /> },
     ]} /></SpellLoadoutDndProvider>
   </div>
 }

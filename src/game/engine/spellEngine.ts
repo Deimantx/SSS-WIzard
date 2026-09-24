@@ -251,6 +251,7 @@ export const resolvePlayerSpellCast = (state: GameState, uiEvents?: CombatEventS
   })
   executeCombatEffects(state, effects, source, undefined, uiEvents, resolution)
   if (!state.debug.infiniteMana && arcaneCoreCast.manaRestoreFlat > 0) state.player.mana = stabilizeResourceValue(Math.min(state.player.maxMana, state.player.mana + arcaneCoreCast.manaRestoreFlat))
+  if (!state.debug.infiniteMana && arcaneCoreCast.manaOverflowBarrier > 0) executeCombatEffects(state, [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: arcaneCoreCast.manaOverflowBarrier }, mode: 'add', durationMs: null, tags: ['conversion-generated'] }], { actor: 'player', kind: 'arcane-core', sourceId: 'transcendence', tags: ['special'] }, undefined, uiEvents, resolution)
   if (!state.debug.infiniteMana && arcaneCoreCast.manaRefundPercent > 0 && paidMana > 0) state.player.mana = stabilizeResourceValue(Math.min(state.player.maxMana, state.player.mana + paidMana * arcaneCoreCast.manaRefundPercent))
   if (hadGust) removeStatus(state, 'player', 'gust')
   if (arcaneCoreCast.cooldownPulse) {

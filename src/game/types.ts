@@ -484,6 +484,14 @@ export interface CombatState {
     ruinStacks?: number
     chainReactionReady?: boolean
     arcaneOverloadReady?: boolean
+    arcaneEchoReady?: boolean
+    cataclysmUsed?: boolean
+    limitBreakUsed?: boolean
+    singularityUntilMs?: number
+    recentManaSpend?: Array<{ atMs: number; amount: number }>
+    nextManaRestoreFlat?: number
+    renewalLastAtMs?: number
+    v7EventLastAtMs?: Record<string, number>
     refuseDeathUsed?: boolean
     lastSurvivalToken?: 'refuse-death' | 'immortal-guard' | 'undying'
     barrierMemoryMultiplier?: number

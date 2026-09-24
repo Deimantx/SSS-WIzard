@@ -24,4 +24,25 @@ describe('Arcane Core V7 mechanic safety', () => {
     recordArcaneCoreV6CriticalResult(state, false)
     expect(state.combat.arcaneCoreRuntime.failedCritStreak).toBe(0)
   })
+
+  it('keeps the audited V7 cast curves exact and prevents Limit Break from being inert', () => {
+    const state = createInitialState()
+    const power = ARCANE_CORE_BRANCHES.find((branch) => branch.id === 'power')!
+    const openingVolley = power.nodes.find((entry) => entry.name === 'Opening Volley')!
+    const limitBreak = power.nodes.find((entry) => entry.name === 'Limit Break')!
+    state.arcaneCore.nodes[openingVolley.id] = { rank: 5 }
+    state.arcaneCore.nodes[limitBreak.id] = { rank: 1 }
+    const opening = getArcaneCoreV6CastModifiers(state, { origin: 'auto', spellId: 'fire-bolt', loadoutSlotIndex: 0, damaging: true, manaCost: 10, maxMana: 100, playerMana: 100, enemyHealthPercent: 100 }, true)
+    expect(opening.damageMultiplier).toBeCloseTo(1.05)
+    const limit = getArcaneCoreV6CastModifiers(state, { origin: 'manual-direct', spellId: 'fire-bolt', loadoutSlotIndex: 0, damaging: true, manaCost: 20, maxMana: 100, playerMana: 100, enemyHealthPercent: 100 }, true)
+    expect(limit.manaRefundPercent).toBeCloseTo(0.25)
+  })
+
+  it('evaluates Deep Breathing at projected post-cost Mana', () => {
+    const state = createInitialState()
+    const node = ARCANE_CORE_BRANCHES.find((branch) => branch.id === 'focus')!.nodes.find((entry) => entry.name === 'Deep Breathing')!
+    state.arcaneCore.nodes[node.id] = { rank: 1 }
+    const modifiers = getArcaneCoreV6CastModifiers(state, { origin: 'auto', spellId: 'fire-bolt', loadoutSlotIndex: 0, damaging: true, manaCost: 2, maxMana: 100, playerMana: 26, enemyHealthPercent: 100 }, true)
+    expect(modifiers.manaRestoreFlat).toBeCloseTo(10)
+  })
 })

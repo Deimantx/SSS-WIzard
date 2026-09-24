@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { Button, GameTooltip } from "../../components/ui";
 import { TooltipContent } from "../../components/ui/tooltip/Tooltip";
 import { ARCANE_CORE_TOTAL_COST_PER_CORE } from "../../game/content/arcaneCore/arcaneCoreBalance";
@@ -85,6 +86,8 @@ export function ArcaneCoreSummaryModal({
   core,
   onClose,
 }: ArcaneCoreSummaryModalProps) {
+  const surfaceRef = useRef<HTMLElement>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
   const summary = getArcaneCoreBranchResonanceSummary(core, branch.id);
   const scopedState = branchState(branch, core);
   const spent = getArcaneCorePointsSpent(scopedState);
@@ -100,6 +103,50 @@ export function ArcaneCoreSummaryModal({
     summary.alwaysOn.length > 0 ||
     summary.conditional.length > 0 ||
     summary.mechanics.length > 0;
+  const mechanicsByRing = new Map<number, typeof summary.mechanics>();
+  summary.mechanics.forEach((entry) => {
+    const node = branch.nodes.find((candidate) => candidate.id === entry.id);
+    const ring = node?.ring ?? 0;
+    const entries = mechanicsByRing.get(ring) ?? [];
+    entries.push(entry);
+    mechanicsByRing.set(ring, entries);
+  });
+
+  useEffect(() => {
+    openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const focusSelector = 'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])';
+    const focusTimer = window.setTimeout(() => {
+      surfaceRef.current?.querySelector<HTMLElement>('[data-autofocus="true"]')?.focus();
+    }, 0);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab" || !surfaceRef.current) return;
+      const focusable = [...surfaceRef.current.querySelectorAll<HTMLElement>(focusSelector)];
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        event.stopPropagation();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        event.stopPropagation();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.clearTimeout(focusTimer);
+      document.removeEventListener("keydown", handleKeyDown);
+      if (openerRef.current && document.body.contains(openerRef.current)) openerRef.current.focus();
+    };
+  }, [onClose]);
 
   return (
     <div
@@ -110,6 +157,7 @@ export function ArcaneCoreSummaryModal({
       }}
     >
       <section
+        ref={surfaceRef}
         className="arcane-core-summary-modal"
         role="dialog"
         aria-modal="true"
@@ -199,31 +247,38 @@ export function ArcaneCoreSummaryModal({
             <section className="arcane-core-summary-section">
               <div className="arcane-core-summary-section-head">
                 <span>ACTIVE MECHANICS</span>
-                <small>{summary.mechanics.length} purchased</small>
+                <small>{summary.mechanics.length} purchased · grouped by ring</small>
               </div>
-              <div className="arcane-core-summary-list">
-                {summary.mechanics.map((entry) => {
-                  const node = branch.nodes.find(
-                    (candidate) => candidate.id === entry.id,
-                  );
-                  const rank = node ? getArcaneCoreNodeRank(core, node.id) : 0;
-                  return (
-                    <div
-                      className="arcane-core-summary-mechanic"
-                      key={entry.id}
-                    >
-                      <div>
-                        <strong>{entry.label}</strong>
-                        <small>
-                          {node
-                            ? `RING ${node.ring} · RANK ${rank} / ${node.maxRank}`
-                            : "PURCHASED"}
-                        </small>
-                      </div>
-                      <p>{entry.formattedValue}</p>
+              <div className="arcane-core-summary-ring-groups">
+                {[...mechanicsByRing.entries()].map(([ring, entries]) => (
+                  <div className="arcane-core-summary-ring-group" key={ring}>
+                    <span className="arcane-core-summary-ring-label">RING {ring}</span>
+                    <div className="arcane-core-summary-list">
+                      {entries.map((entry) => {
+                        const node = branch.nodes.find(
+                          (candidate) => candidate.id === entry.id,
+                        );
+                        const rank = node ? getArcaneCoreNodeRank(core, node.id) : 0;
+                        return (
+                          <div
+                            className="arcane-core-summary-mechanic"
+                            key={entry.id}
+                          >
+                            <div>
+                              <strong>{entry.label}</strong>
+                              <small>
+                                {node
+                                  ? `RANK ${rank} / ${node.maxRank}`
+                                  : "PURCHASED"}
+                              </small>
+                            </div>
+                            <p>{entry.formattedValue}</p>
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             </section>
           )}

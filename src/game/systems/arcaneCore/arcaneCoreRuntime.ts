@@ -37,7 +37,7 @@ export const beginArcaneCoreSpellCast = (state: GameState, damaging: boolean, co
   const damageMultiplier = special(state.arcaneCore, 'nth-damaging-spell-bonus').reduce((multiplier, effect) => effect.type === 'nth-damaging-spell-bonus' && runtime.damagingSpellCount % effect.every === 0 ? multiplier * effect.damageMultiplier : multiplier, 1)
   const cooldownPulse = special(state.arcaneCore, 'nth-spell-cooldown-pulse').some((effect) => effect.type === 'nth-spell-cooldown-pulse' && runtime.spellCastCount % effect.every === 0)
   if (cooldownPulse) runtime.cooldownPulseSpellCount += 1
-  return { free, damageMultiplier, cooldownPulse, effectivenessMultiplier: 1, actionSpeedMultiplier: 1, manaCostMultiplier: 1, manaRefundPercent: 0, manaRestoreFlat: 0, critChanceBonus: 0, critDamageBonus: 0, guaranteedCrit: false, statusDurationMultiplier: 1 }
+  return { free, damageMultiplier, cooldownPulse, effectivenessMultiplier: 1, actionSpeedMultiplier: 1, manaCostMultiplier: 1, manaRefundPercent: 0, manaRestoreFlat: 0, manaOverflowBarrier: 0, critChanceBonus: 0, critDamageBonus: 0, guaranteedCrit: false, statusDurationMultiplier: 1 }
 }
 
 export const getArcaneCoreCooldownPulseReduction = (state: Pick<GameState, 'arcaneCore' | 'combat'>) => {
@@ -92,6 +92,12 @@ const createArcaneCoreRuntime = () => ({
   ruinStacks: 0,
   chainReactionReady: false,
   arcaneOverloadReady: false,
+  arcaneEchoReady: false,
+  cataclysmUsed: false,
+  limitBreakUsed: false,
+  recentManaSpend: [],
+  nextManaRestoreFlat: 0,
+  v7EventLastAtMs: {},
   refuseDeathUsed: false,
   secondWindUsed: false,
   refuseDeathThresholdUsed: false,
@@ -142,13 +148,19 @@ export const resetArcaneCoreEncounterRuntime = (state: GameState) => {
   runtime.nextLowCostDamageMultiplier = undefined
   runtime.costBandHistory = []
   runtime.lastWordUsed = false
-  runtime.sovereigntyCharges = 0
+  runtime.sovereigntyCharges = getArcaneCoreSpecialEffects(state.arcaneCore).some((effect) => effect.type === 'v6-mechanic' && effect.displayName === 'Sovereign Casting') ? 3 : 0
   runtime.nextNonCritDamageMultiplier = undefined
   runtime.criticalFeedbackLastAtMs = undefined
   runtime.criticalRecoveryLastAtMs = undefined
   runtime.nextCritChanceBonus = 0
   runtime.ruinStacks = 0
   runtime.arcaneOverloadReady = false
+  runtime.arcaneEchoReady = false
+  runtime.cataclysmUsed = false
+  runtime.limitBreakUsed = false
+  runtime.recentManaSpend = []
+  runtime.nextManaRestoreFlat = 0
+  runtime.v7EventLastAtMs = {}
   runtime.refuseDeathUsed = false
   runtime.secondWindUsed = false
   runtime.refuseDeathThresholdUsed = false
@@ -163,6 +175,7 @@ export const resetArcaneCoreEncounterRuntime = (state: GameState) => {
   runtime.undyingUntilMs = undefined
   runtime.overflowCharges = 0
   runtime.singularityUsed = false
+  runtime.singularityUntilMs = undefined
   runtime.perfectTimingUntilMs = undefined
   runtime.temporalFractureCount = 0
   runtime.stolenTimeStacks = 0
@@ -187,4 +200,6 @@ export const resetArcaneCoreEncounterRuntime = (state: GameState) => {
   runtime.nextControlStatusDurationMultiplier = undefined
   runtime.controlStatusApplications = 0
   runtime.lastDamageTakenAtMs = undefined
+  runtime.renewalLastAtMs = undefined
+  runtime.v7EventLastAtMs = {}
 }

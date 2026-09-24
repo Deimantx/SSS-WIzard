@@ -11,7 +11,7 @@ const ring1 = createRing('focus', 1, [
   perk('focus-r1-auto-cast-efficiency', 'Conservation', 'Occasionally restores a small amount of Mana after a completed Spell.', mechanic(1, 'S5', 'Conservation')),
   perk('focus-r1-efficient-recovery', 'Emergency Flow', 'Below 25% Mana, Mana regeneration receives a small bounded improvement.', mechanic(1, 'S6', 'Emergency Flow')),
   perk('focus-r1-deep-reserves', 'Full Reservoir', 'After maintaining high Mana, the next Spell receives a small cost reduction.', mechanic(1, 'S7', 'Full Reservoir')),
-  perk('focus-r1-low-mana-recovery', 'Quiet Mind', 'Low-pressure moments provide a small resource benefit.', mechanic(1, 'S8', 'Quiet Mind')),
+  perk('focus-r1-low-mana-recovery', 'Quiet Mind', 'Below 30% Mana, restore 1/1.5/2/2.5/3% Max Mana. Internal cooldown: 5 seconds.', mechanic(1, 'S8', 'Quiet Mind')),
   major('focus-r1-bottomless-well', 'Deep Breathing', 'The first time each encounter Mana falls below 25%, restore 10% Max Mana. Once per encounter. No free cast.', mechanic(1, 'M', 'Deep Breathing')),
 ])
 
@@ -32,7 +32,7 @@ const ring3 = createRing('focus', 3, [
   minor('focus-r3-mana-flow', 'Arcane Economy II', '-0.25% Mana Cost per rank. Rank 5: -1.25%.', linearStat('manaCostReductionPct', 0.0025)),
   minor('focus-r3-spell-economy', 'Echo Efficiency', '+0.3% Focus Efficiency per rank. Rank 5: +1.5%.', linearStat('focusEfficiencyPct', 0.003)),
   minor('focus-r3-combat-focus', 'Resonant Focus', '+0.6 Max Focus per rank. Rank 5: +3.', linearStat('maxFocus', 0.6)),
-  perk('focus-r3-high-mana-precision', 'Reserved Power', 'Reserved Focus improves a later Spell resource window.', mechanic(3, 'S5', 'Reserved Power')),
+  perk('focus-r3-high-mana-precision', 'Reserved Power', 'For damaging Spells, every 10 Reserved Focus grants +0.5/1/1.5/2/2.5% Damage, capped at +10%.', mechanic(3, 'S5', 'Reserved Power')),
   perk('focus-r3-low-mana-haste', 'Free Mind', 'Free Focus improves a later cast window.', mechanic(3, 'S6', 'Free Mind')),
   perk('focus-r3-victory-channel', 'Resonant Cast', 'A successful Spell prepares a bounded resource resonance.', mechanic(3, 'S7', 'Resonant Cast')),
   perk('focus-r3-resonant-power', 'Prepared Slot', 'A fresh loadout slot receives a small cost benefit.', mechanic(3, 'S8', 'Prepared Slot')),
@@ -44,10 +44,10 @@ const ring4 = createRing('focus', 4, [
   minor('focus-r4-apex-flow', 'Transcendent Flow', '+0.8% Mana Regen per rank. Rank 5: +4%.', manaRegen(0.008)),
   minor('focus-r4-perfect-economy', 'Arcane Economy III', '-0.3% Mana Cost per rank. Rank 5: -1.5%.', linearStat('manaCostReductionPct', 0.003)),
   minor('focus-r4-perfect-focus-capacity', 'Transcendent Efficiency', '+0.3% Focus Efficiency per rank. Rank 5: +1.5%.', linearStat('focusEfficiencyPct', 0.003)),
-  perk('focus-r4-auto-cast-mastery', 'Overflow Ward', 'Excess Mana restoration creates a bounded defensive reserve.', mechanic(4, 'S5', 'Overflow Ward')),
+  perk('focus-r4-auto-cast-mastery', 'Overflow Ward', 'Excess Mana restoration becomes Barrier at 10/15/20/25/30% conversion, capped at 3% Max Health per cast.', mechanic(4, 'S5', 'Overflow Ward')),
   perk('focus-r4-arcane-readiness', 'Mana to Tempo', 'A meaningful Mana restoration briefly improves Action Speed.', mechanic(4, 'S6', 'Mana to Tempo')),
-  perk('focus-r4-high-mana-dominion', 'Stable Reserve', 'Maintaining a reserve prevents a small amount of resource loss.', mechanic(4, 'S7', 'Stable Reserve')),
-  perk('focus-r4-desperation-channel', 'Emergency Conversion', 'A low-Mana event converts a bounded resource amount into defense.', mechanic(4, 'S8', 'Emergency Conversion')),
+  perk('focus-r4-high-mana-dominion', 'Stable Reserve', 'Above 75% Mana, reduce Mana Costs by 1/2/3/4/5%.', mechanic(4, 'S7', 'Stable Reserve')),
+  perk('focus-r4-desperation-channel', 'Emergency Conversion', 'Below 20% Mana, restore 1/2/3/4/5% Max Mana on the next cast.', mechanic(4, 'S8', 'Emergency Conversion')),
   major('focus-r4-arcane-efficiency', 'Transcendence', 'Excess Mana restoration becomes Barrier at 50% conversion value, capped at 5% Max Health. No cooldown-reduction overflow conversion.', mechanic(4, 'M', 'Transcendence')),
 ])
 
@@ -57,8 +57,8 @@ const ring5 = createRing('focus', 5, [
   minor('focus-r5-convergent-efficiency', 'Convergent Focus', '+0.8 Max Focus per rank. Rank 5: +4.', linearStat('maxFocus', 0.8)),
   minor('focus-r5-expanded-focus', 'Convergent Efficiency', '+0.4% Focus Efficiency per rank. Rank 5: +2%.', linearStat('focusEfficiencyPct', 0.004)),
   perk('focus-r5-auto-cast-convergence', 'Balanced Mind', 'Mixed AUTO/MANUAL loadouts gain a small Action Speed benefit.', mechanic(5, 'S5', 'Balanced Mind')),
-  perk('focus-r5-convergent-recovery', 'Manual Battery', 'MANUAL casting stores a bounded resource charge.', mechanic(5, 'S6', 'Manual Battery')),
-  perk('focus-r5-full-reservoir', 'Convergent Queue', 'Queued casts interact with the stored resource charge.', mechanic(5, 'S7', 'Convergent Queue')),
+  perk('focus-r5-convergent-recovery', 'Manual Battery', 'MANUAL casts restore 1/2/3/4/5 Mana.', mechanic(5, 'S6', 'Manual Battery')),
+  perk('focus-r5-full-reservoir', 'Convergent Queue', 'Queued Spells gain +1/2/3/4/5% effectiveness.', mechanic(5, 'S7', 'Convergent Queue')),
   perk('focus-r5-empty-reservoir', 'Reserved Conversion', 'Reserved Focus supports a bounded AUTO resource return.', mechanic(5, 'S8', 'Reserved Conversion')),
   major('focus-r5-arcane-convergence', 'Deep Reservoir', 'The first Spell each encounter costs 0 Mana and still starts normal cooldown.', mechanic(5, 'M', 'Deep Reservoir')),
 ])
@@ -68,10 +68,10 @@ const ring6 = createRing('focus', 6, [
   minor('focus-r6-overchannel-flow', 'Deep Economy', '-0.35% Mana Cost per rank. Rank 5: -1.75%.', linearStat('manaCostReductionPct', 0.0035)),
   minor('focus-r6-overchannel-economy', 'Overchannel Focus', '+0.8 Max Focus per rank. Rank 5: +4.', linearStat('maxFocus', 0.8)),
   minor('focus-r6-overchannel-focus', 'Overchannel Efficiency', '+0.5% Focus Efficiency per rank. Rank 5: +2.5%.', linearStat('focusEfficiencyPct', 0.005)),
-  perk('focus-r6-auto-cast-overchannel', 'Overchannel', 'A high-spend window temporarily improves resource output.', mechanic(6, 'S5', 'Overchannel')),
+  perk('focus-r6-auto-cast-overchannel', 'Overchannel', 'While Overchannel is active, each Spell restores 1/2/3/4/5 Mana.', mechanic(6, 'S5', 'Overchannel')),
   perk('focus-r6-mana-rebound', 'Deep Draw', 'Low Mana reduces the next Spell cost by a bounded amount.', mechanic(6, 'S6', 'Deep Draw')),
   perk('focus-r6-low-mana-acceleration', 'Arcane Return', 'A completed Spell returns a bounded amount of Mana.', mechanic(6, 'S7', 'Arcane Return')),
-  perk('focus-r6-high-mana-precision', 'Reservoir Break', 'Breaking a high reserve creates a bounded payoff.', mechanic(6, 'S8', 'Reservoir Break')),
+  perk('focus-r6-high-mana-precision', 'Reservoir Break', 'Above 80% Mana, damaging Spells gain +2/4/6/8/10% Damage.', mechanic(6, 'S8', 'Reservoir Break')),
   major('focus-r6-overchannel', 'Overchannel', 'After spending at least 25% Max Mana within 4 seconds, for 5 seconds gain +10% Action Speed and +7.5% Damage/Healing/Barrier effectiveness. Mana Regen is disabled and the effect cannot stack.', mechanic(6, 'M', 'Overchannel')),
 ])
 
@@ -80,8 +80,8 @@ const ring7 = createRing('focus', 7, [
   minor('focus-r7-astral-flow', 'Astral Flow', '+1.2% Mana Regen per rank. Rank 5: +6%.', manaRegen(0.012)),
   minor('focus-r7-astral-economy', 'Astral Economy', '-0.4% Mana Cost per rank. Rank 5: -2%.', linearStat('manaCostReductionPct', 0.004)),
   minor('focus-r7-astral-focus', 'Astral Efficiency', '+0.6% Focus Efficiency per rank. Rank 5: +3%.', linearStat('focusEfficiencyPct', 0.006)),
-  perk('focus-r7-astral-auto-cast', 'Astral Reserved Power', 'Reserved Focus grants capped Spell Power.', mechanic(7, 'S5', 'Astral Reserved Power')),
-  perk('focus-r7-focused-mind', 'Astral Open Mind', 'Free Focus grants capped Action Speed.', mechanic(7, 'S6', 'Astral Open Mind')),
+  perk('focus-r7-astral-auto-cast', 'Astral Reserved Power', 'For damaging Spells, every 10 Reserved Focus grants +0.5% Damage, capped at +7.5%.', mechanic(7, 'S5', 'Astral Reserved Power')),
+  perk('focus-r7-focused-mind', 'Astral Open Mind', 'Every 10 Free Focus grants +0.5% Action Speed, capped at +7.5%.', mechanic(7, 'S6', 'Astral Open Mind')),
   perk('focus-r7-open-mind', 'Astral Rotation', 'Rotating loadout slots creates a bounded resource return.', mechanic(7, 'S7', 'Astral Rotation')),
   perk('focus-r7-astral-victory', 'Echo Cascade', 'Repeated AUTO casts prepare a bounded MANUAL payoff.', mechanic(7, 'S8', 'Echo Cascade')),
   major('focus-r7-astral-mind', 'Astral Mind', 'Every 10 Reserved Focus grants +0.5% Spell Power and every 10 Free Focus grants +0.5% Action Speed, each capped at +7.5%.', mechanic(7, 'M', 'Astral Mind')),

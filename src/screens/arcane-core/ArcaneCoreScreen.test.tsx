@@ -74,8 +74,8 @@ describe("Arcane Core screen", () => {
       expect.arrayContaining([
         expect.objectContaining({
           label: "Enemy Damage Dealt",
-          formattedValue: "-0.50%",
-          conditionText: "While the enemy has at least 1 negative Statuses",
+          formattedValue: "-0.10%",
+          conditionText: "When its condition is met",
         }),
       ]),
     );
@@ -160,7 +160,7 @@ describe("Arcane Core screen", () => {
     useGameStore.getState().setArcanePoints(100);
     const lockedNode = ARCANE_CORE_BRANCHES.find(
       (branch) => branch.id === "power",
-    )!.nodes.find((node) => node.name === "Critical Insight")!;
+    )!.nodes.find((node) => node.name === "Critical Recovery")!;
     render(
       <TooltipProvider>
         <ArcaneCoreScreen />
@@ -169,7 +169,7 @@ describe("Arcane Core screen", () => {
     await user.click(screen.getByRole("button", { name: /Power Core/i }));
     const dialog = screen.getByRole("dialog", { name: "Power Core" });
     const node = dialog.querySelector(
-      '[aria-label^="Critical Insight"]',
+      '[aria-label^="Critical Recovery"]',
     ) as HTMLElement;
     await user.dblClick(node);
 
@@ -295,7 +295,7 @@ describe("Arcane Core screen", () => {
       dialog.querySelector(".arcane-core-orbit.is-next-locked[data-ring]"),
     ).toBeTruthy();
     await user.click(
-      dialog.querySelector('[aria-label^="Critical Insight"]') as HTMLElement,
+      dialog.querySelector('[aria-label^="Critical Recovery"]') as HTMLElement,
     );
     expect(
       within(dialog).getByText(/RING LOCKED .*0 \/ 20 PREVIOUS-RING RANKS/),

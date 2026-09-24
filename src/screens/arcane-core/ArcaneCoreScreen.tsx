@@ -29,6 +29,7 @@ import { ARCANE_CORE_BRANCHES } from "../../game/content/arcaneCore/arcaneCoreBr
 import {
   ARCANE_CORE_TOTAL_COST_PER_CORE,
   ARCANE_CORE_TOTAL_TREE_COST,
+  ARCANE_CORE_BRANCH_CURSOR_COLORS,
 } from "../../game/content/arcaneCore/arcaneCoreBalance";
 import {
   ARCANE_CORE_MAJOR_GATES,
@@ -60,6 +61,7 @@ import type {
   ArcaneCoreRingIndex,
 } from "../../game/types";
 import { useGameStore } from "../../store/gameStore";
+import { createCursorValue } from "../../ui/game-feel/gameCursor";
 import { ArcaneCoreSummaryModal } from "./ArcaneCoreSummaryModal";
 import {
   ARCANE_CORE_DRAG_THRESHOLD,
@@ -183,6 +185,37 @@ type CoreDragState = {
   moved: boolean;
 };
 
+type ArcaneCoreNodeState =
+  | "LOCKED_RING"
+  | "LOCKED_MAJOR_REQUIREMENT"
+  | "UNAFFORDABLE"
+  | "PURCHASABLE"
+  | "INVESTED"
+  | "MAXED";
+
+type ArcaneCoreFeedback =
+  | "purchase"
+  | "max"
+  | "denied"
+  | "unaffordable"
+  | "ring-unlock"
+  | "major-unlock";
+
+const getArcaneCoreNodeState = (
+  core: ReturnType<typeof useGameStore.getState>["arcaneCore"],
+  node: ArcaneCoreNodeDefinition,
+  highestRing: ArcaneCoreRingIndex,
+  pointsAvailable: number,
+): ArcaneCoreNodeState => {
+  const rank = getArcaneCoreNodeRank(core, node.id);
+  if (rank >= node.maxRank) return "MAXED";
+  if (node.ring > highestRing) return "LOCKED_RING";
+  if (!isArcaneCoreMajorUnlocked(core, node)) return "LOCKED_MAJOR_REQUIREMENT";
+  if (!isArcaneCoreNodeReachable(core, node.id)) return "LOCKED_RING";
+  if (pointsAvailable < node.rankCost) return "UNAFFORDABLE";
+  return rank > 0 ? "INVESTED" : "PURCHASABLE";
+};
+
 const nodeEffect = (node: ArcaneCoreNodeDefinition, rank: number) =>
   getArcaneCoreNodeEffectTexts(node, rank).join(" · ");
 
@@ -190,12 +223,12 @@ interface ArcaneCoreOrbitNodeProps {
   node: ArcaneCoreNodeDefinition;
   position: { left: number; top: number };
   rank: number;
-  nodeAvailable: boolean;
+  nodeState: ArcaneCoreNodeState;
   ringLocked: boolean;
   highestRing: ArcaneCoreRingIndex;
   selected: boolean;
   selectedRing: boolean;
-  feedback?: "purchase" | "max";
+  feedback?: ArcaneCoreFeedback;
   onSelect: (nodeId: string) => void;
   onDoublePurchase: (nodeId: string) => void;
 }
@@ -204,7 +237,7 @@ const ArcaneCoreOrbitNode = memo(function ArcaneCoreOrbitNode({
   node,
   position,
   rank,
-  nodeAvailable,
+  nodeState,
   ringLocked,
   highestRing,
   selected,
@@ -222,7 +255,7 @@ const ArcaneCoreOrbitNode = memo(function ArcaneCoreOrbitNode({
         data-no-pan
         data-ring={node.ring}
         data-angle={node.angleDeg}
-        className={`arcane-core-ring-node node-${node.nodeType} ${rank > 0 ? "is-active" : ""} ${nodeAvailable ? "is-available" : "is-locked"} ${ringLocked ? "is-ring-locked" : ""} ${ringLocked && node.ring === highestRing + 1 ? "is-next-locked" : ""} ${ringLocked && node.ring > highestRing + 1 ? "is-deep-locked" : ""} ${selectedRing ? "is-selected-ring-node" : ""} ${selected ? "is-selected" : ""} ${feedback ? `is-${feedback}-pulse` : ""}`}
+        className={`arcane-core-ring-node node-${node.nodeType} is-${nodeState.toLowerCase().replace(/_/g, "-")} ${rank > 0 ? "is-active" : ""} ${nodeState === "MAXED" || nodeState === "INVESTED" ? "is-available" : "is-locked"} ${node.nodeType === "major" ? "is-major" : ""} ${ringLocked ? "is-ring-locked" : ""} ${ringLocked && node.ring === highestRing + 1 ? "is-next-locked" : ""} ${ringLocked && node.ring > highestRing + 1 ? "is-deep-locked" : ""} ${selectedRing ? "is-selected-ring-node" : ""} ${selected ? "is-selected" : ""} ${feedback ? `is-${feedback}-pulse` : ""}`}
         style={{ left: position.left, top: position.top }}
         onClick={() => onSelect(node.id)}
         onDoubleClick={(event) => {
@@ -254,7 +287,7 @@ interface ArcaneCoreNodeLayerProps {
   core: ReturnType<typeof useGameStore.getState>["arcaneCore"];
   highestRing: ArcaneCoreRingIndex;
   selectedId: string;
-  feedback: { nodeId: string; kind: "purchase" | "max" } | null;
+  feedback: { nodeId: string; kind: ArcaneCoreFeedback } | null;
   onSelect: (nodeId: string) => void;
   onDoublePurchase: (nodeId: string) => void;
 }
@@ -276,18 +309,24 @@ const ArcaneCoreNodeLayer = memo(function ArcaneCoreNodeLayer({
     [branch.nodes],
   );
   const selectedNode = branch.nodes.find((item) => item.id === selectedId);
+  const wallet = getArcaneCoreWalletInfo(core);
   return (
     <div className="arcane-core-node-layer">
       {branch.nodes.map((node) => {
         const rank = getArcaneCoreNodeRank(core, node.id);
-        const nodeAvailable = isArcaneCoreNodeReachable(core, node.id);
+        const nodeState = getArcaneCoreNodeState(
+          core,
+          node,
+          highestRing,
+          wallet.pointsAvailable,
+        );
         return (
           <ArcaneCoreOrbitNode
             key={node.id}
             node={node}
             position={positions.get(node.id)!}
             rank={rank}
-            nodeAvailable={nodeAvailable}
+            nodeState={nodeState}
             ringLocked={node.ring > highestRing}
             highestRing={highestRing}
             selected={selectedId === node.id}
@@ -357,7 +396,7 @@ function CoreModal({
   const [selectedId, setSelectedId] = useState(branch.nodes[0]?.id ?? "");
   const [feedback, setFeedback] = useState<{
     nodeId: string;
-    kind: "purchase" | "max";
+    kind: ArcaneCoreFeedback;
   } | null>(null);
   const [ringPulse, setRingPulse] = useState<ArcaneCoreRingIndex | null>(null);
   const [confirmation, setConfirmation] = useState<PendingConfirmation | null>(
@@ -382,11 +421,11 @@ function CoreModal({
   const selected =
     branch.nodes.find((node) => node.id === selectedId) ?? branch.nodes[0];
   const selectedRank = selected ? getArcaneCoreNodeRank(core, selected.id) : 0;
-  const selectedAvailable = selected
-    ? isArcaneCoreNodeReachable(core, selected.id)
-    : false;
   const highestRing = getArcaneCoreHighestUnlockedRing(core, branch.id);
   const wallet = getArcaneCoreWalletInfo(core);
+  const selectedState = selected
+    ? getArcaneCoreNodeState(core, selected, highestRing, wallet.pointsAvailable)
+    : "LOCKED_RING";
   const spent = getArcaneCorePointsSpent({
     nodes: Object.fromEntries(
       branch.nodes
@@ -496,7 +535,7 @@ function CoreModal({
 
   const flashFeedback = (
     nodeId: string,
-    kind: "purchase" | "max",
+    kind: ArcaneCoreFeedback,
     unlockedRing?: ArcaneCoreRingIndex,
   ) => {
     if (feedbackTimer.current !== null)
@@ -517,7 +556,33 @@ function CoreModal({
       beforeCore,
       branch.id,
     );
-    if (!purchase(nodeId)) return false;
+    const beforeWallet = getArcaneCoreWalletInfo(beforeCore);
+    const beforeState = getArcaneCoreNodeState(
+      beforeCore,
+      node,
+      beforeHighestRing,
+      beforeWallet.pointsAvailable,
+    );
+    if (beforeState === "MAXED") {
+      flashFeedback(nodeId, "max");
+      return false;
+    }
+    if (beforeState === "LOCKED_RING") {
+      flashFeedback(nodeId, "ring-unlock");
+      return false;
+    }
+    if (beforeState === "LOCKED_MAJOR_REQUIREMENT") {
+      flashFeedback(nodeId, "major-unlock");
+      return false;
+    }
+    if (beforeState === "UNAFFORDABLE") {
+      flashFeedback(nodeId, "unaffordable");
+      return false;
+    }
+    if (!purchase(nodeId)) {
+      flashFeedback(nodeId, "denied");
+      return false;
+    }
     const afterCore = useGameStore.getState().arcaneCore;
     const afterRank = getArcaneCoreNodeRank(afterCore, nodeId);
     const afterHighestRing = getArcaneCoreHighestUnlockedRing(
@@ -585,16 +650,30 @@ function CoreModal({
   const previousRingRanks = selected
     ? getArcaneCoreRingStandardRanksInvested(core, branch.id, previousRing)
     : 0;
+  const pointsNeeded = selected
+    ? Math.max(0, selected.rankCost - wallet.pointsAvailable)
+    : 0;
   const statusText =
-    selected && selectedRank >= selected.maxRank
+    selectedState === "MAXED"
       ? "MAX RANK"
-      : selectedAvailable
-        ? "AVAILABLE"
-        : selected?.nodeType === "major"
-          ? `MAJOR LOCKED · ${standardRanks} / ${ARCANE_CORE_MAJOR_GATES[selected.ring]} STANDARD RANKS`
-          : selected?.ring === 1
-            ? "AVAILABLE"
-            : `RING LOCKED · ${previousRingRanks} / ${ARCANE_CORE_RING_GATES[selected?.ring ?? 1]} PREVIOUS-RING RANKS`;
+      : selectedState === "UNAFFORDABLE"
+        ? `NEED ${pointsNeeded} MORE AP`
+        : selectedState === "LOCKED_MAJOR_REQUIREMENT"
+          ? `MAJOR LOCKED · ${standardRanks} / ${ARCANE_CORE_MAJOR_GATES[selected?.ring ?? 1]} STANDARD RANKS`
+          : selectedState === "LOCKED_RING"
+            ? `RING LOCKED · ${previousRingRanks} / ${ARCANE_CORE_RING_GATES[selected?.ring ?? 1]} PREVIOUS-RING RANKS`
+            : selectedState === "INVESTED"
+              ? "INVESTED · NEXT RANK AVAILABLE"
+              : "PURCHASABLE";
+  const cursorAccent = ARCANE_CORE_BRANCH_CURSOR_COLORS[branch.id];
+  const modalStyle = {
+    "--branch-accent": branch.accent,
+    "--arcane-core-cursor-default": createCursorValue(cursorAccent, "default"),
+    "--arcane-core-cursor-action": createCursorValue(cursorAccent, "action"),
+    "--arcane-core-cursor-disabled": createCursorValue(cursorAccent, "disabled"),
+    "--arcane-core-cursor-drag": createCursorValue(cursorAccent, "drag"),
+    "--arcane-core-cursor-dragging": createCursorValue(cursorAccent, "dragging"),
+  } as CSSProperties;
 
   return (
     <ModalPortal
@@ -607,7 +686,7 @@ function CoreModal({
             ? setSummaryOpen(false)
             : onClose()
       }
-      surfaceStyle={{ "--branch-accent": branch.accent } as CSSProperties}
+      surfaceStyle={modalStyle}
       backdropClassName="arcane-core-modal-backdrop"
       surfaceClassName="arcane-core-modal"
       ariaLabel={`${branch.name} Core`}
@@ -618,9 +697,13 @@ function CoreModal({
             {branch.name.toUpperCase()} CORE · CONCENTRIC PATH
           </span>
           <h2>{branch.name} Core</h2>
-          <p>
-            Invest Arcane Points from the center outward. Each Ring unlocks by
-            standard-rank investment; every rank is permanent until refunded.
+          <p className="arcane-core-modal-subline">
+            <strong>RING {highestRing} / 8</strong>
+            <span>{spent.toLocaleString()} invested</span>
+            <span>{wallet.pointsAvailable.toLocaleString()} AP available</span>
+            <GameTooltip content="Invest from the center outward. Rings unlock through standard-rank investment; every rank is permanent until refunded.">
+              <span className="arcane-core-modal-help" aria-label="Arcane Core help">?</span>
+            </GameTooltip>
           </p>
         </div>
         <div className="arcane-core-modal-actions">
@@ -778,7 +861,10 @@ function CoreModal({
                       </strong>
                     </span>
                     <span>
-                      STATUS<strong>{statusText}</strong>
+                      STATUS
+                      <strong className={`arcane-core-status-chip is-${selectedState.toLowerCase().replace(/_/g, "-")}`}>
+                        {statusText}
+                      </strong>
                     </span>
                     <span>
                       COST
@@ -795,12 +881,29 @@ function CoreModal({
                     </span>
                   </div>
                 </section>
+                <div className="arcane-core-inspector-cost-card">
+                  <span>
+                    <small>{selected.nodeType === "major" ? "MAJOR COST" : selectedRank >= selected.maxRank ? "MAX RANK" : `RANK ${selectedRank + 1} COST`}</small>
+                    <strong>{selected.rankCost} AP</strong>
+                  </span>
+                  <span>
+                    <small>AVAILABLE</small>
+                    <strong>{wallet.pointsAvailable} AP</strong>
+                  </span>
+                  <span className={pointsNeeded > 0 ? "is-needed" : undefined}>
+                    <small>{pointsNeeded > 0 ? "NEED" : "REMAINING"}</small>
+                    <strong>{pointsNeeded > 0 ? `${pointsNeeded} MORE AP` : `${wallet.pointsAvailable - selected.rankCost} AP`}</strong>
+                  </span>
+                </div>
                 <div className="arcane-core-inspector-actions">
                   <Button
                     variant="primary"
                     onClick={handlePurchase}
                     disabled={
-                      selectedRank >= selected.maxRank || !selectedAvailable
+                      selectedState === "MAXED" ||
+                      selectedState === "LOCKED_RING" ||
+                      selectedState === "LOCKED_MAJOR_REQUIREMENT" ||
+                      selectedState === "UNAFFORDABLE"
                     }
                   >
                     PURCHASE {selected.nodeType === "major" ? "MAJOR" : "RANK"}{" "}

@@ -16,6 +16,14 @@ export const ARCANE_CORE_NODE_COUNT = ARCANE_CORE_NODE_COUNT_PER_BRANCH * ARCANE
 /** Runtime marker for the authored node/effect topology currently in saves. */
 export const ARCANE_CORE_SCHEMA_VERSION = 7 as const
 
+/** Literal accents used by the native custom-cursor pipeline (CSS variables are not valid cursor inputs). */
+export const ARCANE_CORE_BRANCH_CURSOR_COLORS = {
+  power: '#f08a74',
+  vitality: '#6fd0a7',
+  focus: '#8e9dff',
+  control: '#b89cff',
+} as const
+
 /** Legacy V36 curve, isolated for migration compatibility only. */
 export const ARCANE_CORE_XP_BASE = 100
 export const ARCANE_CORE_XP_EXPONENT = 1.15

@@ -60,7 +60,11 @@ function OpenOfflineBankPopover({ onClose, onViewLastResults }: Omit<OfflineBank
     setAdvancing(true)
     setAdvancingLabel(label)
     try {
-      const result = await advance(durationMs)
+      const result = await advance(durationMs, (progress) => {
+        if (progress.phase === 'simulating') setAdvancingLabel(`${label} · ${Math.round(progress.percent)}%`)
+        else if (progress.phase === 'finalizing') setAdvancingLabel('FINALIZING...')
+        else setAdvancingLabel('SAVING...')
+      })
       if (!result.ok) setError(result.error ?? 'Unable to advance Offline Bank.')
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Unable to advance Offline Bank.')

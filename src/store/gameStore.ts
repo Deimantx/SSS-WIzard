@@ -189,6 +189,7 @@ import {
 import {
   advanceWithOfflineBank as runOfflineBankAdvance,
   isOfflineBankSimulationActive,
+  type OfflineBankProgress,
   type OfflineBankResult,
   type OfflineBankSimulationObservers,
 } from "../game/systems/offline-bank/offlineBankSimulation";
@@ -255,10 +256,12 @@ import { createCombatEventSink } from "../game/systems/combat/combatEventSink";
 import {
   combatTelemetryObserver,
   combatTelemetrySink,
+  createCombatTelemetryAccumulator,
   useCombatTelemetryStore,
 } from "../game/telemetry/combat/combatTelemetryStore";
 import {
   clearDungeonStatistics,
+  createDungeonStatisticsAccumulator,
   dungeonStatisticsObserver,
   dungeonStatisticsSink,
   useDungeonStatisticsStore,
@@ -350,18 +353,9 @@ const combatEventSink = createCombatEventSink(
   dungeonStatisticsSink,
   combatTelemetrySink,
 );
-const offlineBankCombatAnalyticsSink = createCombatEventSink(
-  dungeonStatisticsSink,
-  combatTelemetrySink,
-);
 const cloneAnalyticsState = <T>(value: T) =>
   JSON.parse(JSON.stringify(value)) as T;
 const offlineBankAnalyticsObservers: OfflineBankSimulationObservers = {
-  uiEvents: offlineBankCombatAnalyticsSink,
-  telemetry: combatTelemetryObserver,
-  statistics: dungeonStatisticsObserver,
-  getEncounterTelemetry: () =>
-    cloneAnalyticsState(useCombatTelemetryStore.getState().encounter),
   snapshot: () => ({
     combat: cloneAnalyticsState(useCombatTelemetryStore.getState()),
     dungeon: cloneAnalyticsState(useDungeonStatisticsStore.getState()),
@@ -374,11 +368,29 @@ const offlineBankAnalyticsObservers: OfflineBankSimulationObservers = {
     useCombatTelemetryStore.setState(state.combat);
     useDungeonStatisticsStore.setState(state.dungeon);
   },
-  onCombatCompleted: () => {
-    combatAlertsObserver.clear();
-    combatTelemetryObserver.endRun("complete");
-    dungeonStatisticsObserver.endSession("complete");
-    clearCombatDefeat();
+  createDetached: () => {
+    const telemetry = createCombatTelemetryAccumulator(
+      cloneAnalyticsState(useCombatTelemetryStore.getState()),
+    );
+    const statistics = createDungeonStatisticsAccumulator(
+      cloneAnalyticsState(useDungeonStatisticsStore.getState()),
+    );
+    return {
+      telemetry,
+      statistics,
+      getEncounterTelemetry: () =>
+        cloneAnalyticsState(telemetry.getState().encounter),
+      onCombatCompleted: () => {
+        telemetry.endRun("complete");
+        statistics.endSession("complete");
+      },
+      commit: () => {
+        useCombatTelemetryStore.setState(telemetry.getState());
+        useDungeonStatisticsStore.setState(statistics.getState());
+        combatAlertsObserver.clear();
+        clearCombatDefeat();
+      },
+    };
   },
 };
 const combatLogUiSink = combatEventSink;
@@ -752,7 +764,7 @@ export interface GameActions {
   debugAddOfflineBank: (durationMs: number) => void;
   debugSetOfflineBank: (durationMs: number) => void;
   debugClearOfflineBank: () => void;
-  advanceWithOfflineBank: (durationMs: number) => Promise<OfflineBankResult>;
+  advanceWithOfflineBank: (durationMs: number, onProgress?: (progress: OfflineBankProgress) => void) => Promise<OfflineBankResult>;
   lastOfflineBankReport: OfflineBankReport | null;
 }
 
@@ -3114,7 +3126,7 @@ export const useGameStore = create<GameStore>()(
         state.offlineBankMs = 0;
         return state;
       }),
-    advanceWithOfflineBank: async (durationMs) => {
+  advanceWithOfflineBank: async (durationMs, onProgress) => {
       const result = await runOfflineBankAdvance(
         durationMs,
         get,
@@ -3129,6 +3141,7 @@ export const useGameStore = create<GameStore>()(
         (state, itemId, amount) =>
           recordRecentAcquisition(state as GameStore, itemId, amount),
         offlineBankAnalyticsObservers,
+        onProgress,
       );
       if (result.ok) {
         result.completedArtificingRecipeIds?.forEach((recipeId) =>

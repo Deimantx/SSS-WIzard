@@ -20,7 +20,7 @@ import { applyTransmutationAllocations, buildTransmutationWorkRequests } from '.
 import { advanceArtificing, type ArtificingCompletion } from '../artificing/artificingEngine'
 import { applyResearchAllocations, buildResearchWorkRequests } from '../research/researchEngine'
 import { allocateContinuousMana } from './continuousManaScheduler'
-import { evaluateSpellAutomation, getNextAutomatedSpellCooldownMs, isSpellUnlocked, selectNextAutomatedSpell } from '../spells'
+import { getNextAutomatedSpellCooldownMs, isSpellUnlocked, selectNextAutomatedSpellFast } from '../spells'
 import { MAX_SIMULATION_DELTA_MS, SIMULATION_QUANTUM_MS } from './simulationConstants'
 import type { CombatTelemetryObserver } from '../../telemetry/combat/combatTelemetryTypes'
 import type { DungeonStatisticsObserver } from '../../telemetry/dungeon/dungeonStatisticsTypes'
@@ -66,7 +66,7 @@ const autoCastReadySpells = (state: GameState, context: AdvanceContext) => {
   }
   if (actorCannotAct(state, 'player') || state.debug.freezePlayerActions || state.debug.disableAutoCast) return
   {
-    const selection = selectNextAutomatedSpell(state)
+    const selection = selectNextAutomatedSpellFast(state)
     if (selection) castSpellInternal(state, selection.spellId, true, context.uiEvents)
   }
   suppressGuardianIfOutOfMana(state)
@@ -74,7 +74,7 @@ const autoCastReadySpells = (state: GameState, context: AdvanceContext) => {
 
 const hasReadyAutoCast = (state: GameState) => {
   if (actorCannotAct(state, 'player') || state.debug.freezePlayerActions || state.debug.disableAutoCast) return false
-  return !state.combat.pendingPlayerSpellCast && Boolean(selectNextAutomatedSpell(state))
+  return !state.combat.pendingPlayerSpellCast && Boolean(selectNextAutomatedSpellFast(state))
 }
 
 const tickSpellCooldowns = (state: GameState, deltaMs: number, cooldownRecovery: number) => {

@@ -311,21 +311,37 @@ export const evaluateSpellAutomation = (state: GameState, slot: Pick<SpellPreset
   return { eligible: passed, mode, conditions, systemChecks, failureReason: failed }
 }
 
-export const selectNextAutomatedSpell = (state: GameState): AutomatedSpellSelection | null => {
+export interface AutomatedSpellFastSelection {
+  spellId: CanonicalSpellId
+  slotIndex: number
+}
+
+/** Runtime-only selection. It never allocates UI evaluations or trace strings. */
+export const selectNextAutomatedSpellFast = (state: GameState): AutomatedSpellFastSelection | null => {
   const slots = state.combat.activeSpellLoadout?.slots ?? []
   const context = buildFastAutomationContext(state)
   const selectedIndex = slots.findIndex((slot) => canAutoCastSpellFast(state, slot, context))
-  if (selectedIndex < 0) return null
+  return selectedIndex < 0 ? null : { spellId: slots[selectedIndex].spellId, slotIndex: selectedIndex }
+}
+
+/** Verbose selection used by Automation UI and diagnostics. */
+export const selectNextAutomatedSpellWithTrace = (state: GameState): AutomatedSpellSelection | null => {
+  const selectedFast = selectNextAutomatedSpellFast(state)
+  if (!selectedFast) return null
+  const slots = state.combat.activeSpellLoadout?.slots ?? []
   const trace: AutomatedSpellSelection['trace'] = []
-  for (let slotIndex = 0; slotIndex <= selectedIndex; slotIndex += 1) {
+  for (let slotIndex = 0; slotIndex <= selectedFast.slotIndex; slotIndex += 1) {
     const slot = slots[slotIndex]
     const evaluation = evaluateSpellAutomation(state, slot)
     trace.push({ slotIndex, spellId: slot.spellId, mode: evaluation.mode, evaluation })
   }
-  const selected = trace[selectedIndex]?.evaluation
+  const selected = trace[selectedFast.slotIndex]?.evaluation
   if (!selected) return null
-  return { spellId: slots[selectedIndex].spellId, slotIndex: selectedIndex, evaluation: selected, trace }
+  return { spellId: selectedFast.spellId, slotIndex: selectedFast.slotIndex, evaluation: selected, trace }
 }
+
+/** Backwards-compatible verbose API for existing inspection callers. */
+export const selectNextAutomatedSpell = selectNextAutomatedSpellWithTrace
 
 /** Evaluates a draft against the complete ordered loadout, not in isolation. */
 export const getSpellAutomationPriorityPreview = (state: GameState, slots: readonly SpellPresetSlot[], slotIndex: number): SpellAutomationPriorityPreview => {

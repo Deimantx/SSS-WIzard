@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
-import { evaluateSpellAutomation, getSpellAutomationPriorityPreview, getSpellAutomationTargetOptions, normalizeSpellAutomationConfig, selectNextAutomatedSpell } from './spellAutomation'
+import { evaluateSpellAutomation, getSpellAutomationPriorityPreview, getSpellAutomationTargetOptions, normalizeSpellAutomationConfig, selectNextAutomatedSpell, selectNextAutomatedSpellFast } from './spellAutomation'
 
 describe('spell automation evaluator', () => {
   it('normalizes automation rules to five AND conditions and validates targets', () => {
@@ -56,6 +56,7 @@ describe('spell automation evaluator', () => {
     }
 
     expect(selectNextAutomatedSpell(state)).toMatchObject({ spellId: 'wind-blade', slotIndex: 1 })
+    expect(selectNextAutomatedSpellFast(state)).toEqual({ spellId: 'wind-blade', slotIndex: 1 })
   })
 
   it('reports an eligible spell that is waiting behind an earlier eligible slot', () => {

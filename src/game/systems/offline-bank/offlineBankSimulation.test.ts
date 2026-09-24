@@ -18,6 +18,32 @@ const activeCombatState = () => {
 }
 
 describe('Offline Bank analytics wiring', () => {
+  it('runs detached and commits gameplay/analytics once', async () => {
+    const state = activeCombatState()
+    state.offlineBankMs = 5_000
+    const setState = vi.fn((recipe: (current: typeof state) => void) => recipe(state))
+    const liveTelemetry = { advance: vi.fn() }
+    const liveStatistics = { advance: vi.fn() }
+    const detachedTelemetry = { advance: vi.fn() }
+    const detachedStatistics = { advance: vi.fn() }
+    const commit = vi.fn()
+
+    const result = await advanceWithOfflineBank(5_000, () => state, setState, vi.fn(), undefined, {
+      telemetry: liveTelemetry as never,
+      statistics: liveStatistics as never,
+      createDetached: () => ({ telemetry: detachedTelemetry as never, statistics: detachedStatistics as never, commit }),
+    })
+
+    expect(result.ok, result.error).toBe(true)
+    expect(setState).toHaveBeenCalledTimes(1)
+    expect(commit).toHaveBeenCalledTimes(1)
+    expect(detachedTelemetry.advance).toHaveBeenCalled()
+    expect(detachedStatistics.advance).toHaveBeenCalled()
+    expect(liveTelemetry.advance).not.toHaveBeenCalled()
+    expect(liveStatistics.advance).not.toHaveBeenCalled()
+    expect(state.offlineBankMs).toBe(0)
+  })
+
   it('passes analytics observers and an event sink into banked simulation', async () => {
     const state = activeCombatState()
     const uiEvents = { push: vi.fn() }

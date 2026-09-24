@@ -17,8 +17,8 @@ import { recordRecoveredProfile, recordSaveFailure, recordSuccessfulSave } from 
 export interface ProfileSaveResult { ok: boolean; error: string | null }
 
 export const serializeGameState = (state: GameState, savedAt = state.lastSavedAt) => {
-  const { lastOfflineBankReport: _transientReport, recentAcquisitions: _transientAcquisitions, ...gameplayState } = state as GameState & { lastOfflineBankReport?: unknown; recentAcquisitions?: unknown }
-  return JSON.parse(JSON.stringify({ ...gameplayState, debug: undefined, notifications: [], saveVersion: CURRENT_SAVE_VERSION, lastSavedAt: savedAt })) as GameState
+  const { lastOfflineBankReport: _transientReport, recentAcquisitions: _transientAcquisitions, debug: _debug, ...gameplayState } = state as GameState & { lastOfflineBankReport?: unknown; recentAcquisitions?: unknown }
+  return { ...gameplayState, player: { ...gameplayState.player, godMode: false }, notifications: [], saveVersion: CURRENT_SAVE_VERSION, lastSavedAt: savedAt } as unknown as GameState
 }
 
 export interface StoredCandidateDiagnostic {

@@ -3,17 +3,9 @@ import { powerNodes } from './powerNodes'
 import { vitalityNodes } from './vitalityNodes'
 import { focusNodes } from './focusNodes'
 import { controlNodes } from './controlNodes'
-import { getArcaneCoreV6CatalogEntry } from './arcaneCoreV6Catalog'
-import { resolveArcaneCoreV6Effects } from './arcaneCoreV6Runtime'
 
 const createBranch = (id: ArcaneCoreBranchId, name: string, description: string, accent: string, nodes: ArcaneCoreNodeDefinition[][]): ArcaneCoreBranchDefinition => {
-  const ringSlots: Record<number, number> = {}
-  const v6Nodes = nodes.flat().map((node) => {
-    const slot = node.nodeType === 'major' ? 9 : (ringSlots[node.ring] = (ringSlots[node.ring] ?? 0) + 1)
-    const entry = getArcaneCoreV6CatalogEntry(id, node.ring, slot)
-    return entry ? { ...node, name: entry.name, description: entry.description, resolveEffects: (rank: number) => resolveArcaneCoreV6Effects(entry, rank) } : node
-  })
-  return { id, name, description, accent, nodes: v6Nodes }
+  return { id, name, description, accent, nodes: nodes.flat() }
 }
 
 export const ARCANE_CORE_BRANCHES: ArcaneCoreBranchDefinition[] = [

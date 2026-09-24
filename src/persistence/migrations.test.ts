@@ -1103,7 +1103,7 @@ describe('Arcane Core V6 migration', () => {
   it('keeps valid ranked allocations and the direct wallet in current saves', () => {
     const initial = createInitialState()
     const migrated = migrateSave({ ...initial, saveVersion: SAVE_VERSION, arcaneCore: { totalPointsEarned: 500, nodes: { 'power-r1-arcane-force': { rank: 3 } } } } as any)
-    expect(migrated.arcaneCore).toEqual({ totalPointsEarned: 500, nodes: { 'power-r1-arcane-force': { rank: 3 } } })
+    expect(migrated.arcaneCore).toEqual({ arcaneCoreVersion: 7, totalPointsEarned: 500, nodes: { 'power-r1-arcane-force': { rank: 3 } } })
   })
 
   it('reprices V37 allocations while preserving old unspent Arcane Points', () => {
@@ -1115,7 +1115,7 @@ describe('Arcane Core V6 migration', () => {
     } as any)
     // V37 spent 5 standard points and 4 major points. V38 reprices those
     // allocations to 25 + 12 while carrying forward the old 91-point wallet.
-    expect(migrated.arcaneCore).toEqual({ totalPointsEarned: 128, nodes: { 'power-r1-arcane-force': { rank: 5 }, 'power-r1-overwhelming-force': { rank: 1 } } })
+    expect(migrated.arcaneCore).toEqual({ arcaneCoreVersion: 7, totalPointsEarned: 128, nodes: { 'power-r1-arcane-force': { rank: 5 }, 'power-r1-overwhelming-force': { rank: 1 } } })
   })
 
   it('does not mint points when a malformed V37 wallet is below old allocation spend', () => {
@@ -1125,7 +1125,7 @@ describe('Arcane Core V6 migration', () => {
        saveVersion: 37,
        arcaneCore: { totalPointsEarned: 4, nodes: { 'power-r1-arcane-force': { rank: 5 } } },
     } as any)
-    expect(migrated.arcaneCore).toEqual({ totalPointsEarned: 25, nodes: { 'power-r1-arcane-force': { rank: 5 } } })
+    expect(migrated.arcaneCore).toEqual({ arcaneCoreVersion: 7, totalPointsEarned: 25, nodes: { 'power-r1-arcane-force': { rank: 5 } } })
   })
 
   it('sanitizes malformed V3 ranks without changing unrelated save content', () => {
@@ -1144,7 +1144,7 @@ describe('Arcane Core V6 migration', () => {
         },
       },
     } as any)
-    expect(migrated.arcaneCore).toEqual({ totalPointsEarned: 321, nodes: { 'power-r1-arcane-force': { rank: 5 } } })
+    expect(migrated.arcaneCore).toEqual({ arcaneCoreVersion: 7, totalPointsEarned: 321, nodes: { 'power-r1-arcane-force': { rank: 5 } } })
     expect(migrated.inventory).toEqual({ 'fire-fragment': 17 })
   })
 })

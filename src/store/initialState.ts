@@ -9,6 +9,7 @@ import { CANONICAL_SPELL_IDS } from '../game/content/spells/spells'
 import { createEmptyResonanceState } from '../game/systems/resonance/resonanceRuntime'
 import { createInitialWorldTierState } from '../game/systems/world-tier/worldTierRuntime'
 import { createInitialCrystalState } from '../game/systems/crystals/crystalRuntime'
+import { ARCANE_CORE_SCHEMA_VERSION } from '../game/content/arcaneCore/arcaneCoreBalance'
 
 // Combat Action System V3 stores authored base work plus remaining work for
 // dynamic-rate action progression.
@@ -27,7 +28,7 @@ export const createInitialState = (): GameState => ({
   crystals: createInitialCrystalState(),
   protectedItems: {},
   equipment: { weapon: null, armor: null, head: null },
-  arcaneCore: { totalPointsEarned: 0, nodes: {} },
+  arcaneCore: { arcaneCoreVersion: ARCANE_CORE_SCHEMA_VERSION, totalPointsEarned: 0, nodes: {} },
   artifactProgress: {},
   guardians: createInitialGuardiansState(),
   activities: {

@@ -234,8 +234,10 @@ export interface ArcaneCoreNodeProgress {
   rank: number
 }
 export interface ArcaneCoreState {
-  /** Optional only for compile-time compatibility with pre-V37 test fixtures; fresh and migrated saves always define it. */
+  /** Optional only for compile-time compatibility with historical test fixtures; fresh and migrated saves always define it. */
   totalPointsEarned?: number
+  /** Authored Arcane Core node/effect schema marker. Older saves omit this field. */
+  arcaneCoreVersion?: number
   nodes: Partial<Record<string, ArcaneCoreNodeProgress>>
 }
 
@@ -481,12 +483,19 @@ export interface CombatState {
     criticalRecoveryLastAtMs?: number
     ruinStacks?: number
     chainReactionReady?: boolean
+    arcaneOverloadReady?: boolean
     refuseDeathUsed?: boolean
-    lastSurvivalToken?: 'refuse-death' | 'immortal-guard'
+    lastSurvivalToken?: 'refuse-death' | 'immortal-guard' | 'undying'
     barrierMemoryMultiplier?: number
     barrierMemoryUntilMs?: number
+    arcaneAegisLastAtMs?: number
     immortalGuardUsed?: boolean
     immortalGuardUntilMs?: number
+    undyingUntilMs?: number
+    secondWindUsed?: boolean
+    refuseDeathThresholdUsed?: boolean
+    deepBreathingUsed?: boolean
+    controlledTempoUsed?: boolean
     overflowCharges?: number
     singularityUsed?: boolean
     perfectTimingUntilMs?: number

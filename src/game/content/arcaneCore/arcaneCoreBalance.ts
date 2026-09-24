@@ -13,6 +13,8 @@ export const ARCANE_CORE_POINTS_PER_CORE = ARCANE_CORE_TOTAL_COST_PER_CORE
 export const ARCANE_CORE_TOTAL_POINTS = ARCANE_CORE_TOTAL_TREE_COST
 export const ARCANE_CORE_NODE_COUNT_PER_BRANCH = ARCANE_CORE_RINGS_PER_CORE * (ARCANE_CORE_STANDARD_NODES_PER_RING + 1)
 export const ARCANE_CORE_NODE_COUNT = ARCANE_CORE_NODE_COUNT_PER_BRANCH * ARCANE_CORE_CORE_COUNT
+/** Runtime marker for the authored node/effect topology currently in saves. */
+export const ARCANE_CORE_SCHEMA_VERSION = 7 as const
 
 /** Legacy V36 curve, isolated for migration compatibility only. */
 export const ARCANE_CORE_XP_BASE = 100

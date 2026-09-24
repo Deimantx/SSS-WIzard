@@ -296,6 +296,10 @@ const calculateCombatDamageWithRolls = (
       );
   const critical = direct && rolls.critical === true;
   const afterCrit = sourceModified * (critical ? critMultiplier : 1);
+  const arcaneCoreUndyingProtection = target === "player"
+    && (state.combat.arcaneCoreRuntime.undyingUntilMs ?? 0) > state.combat.arcaneCoreRuntime.elapsedMs
+    ? 0.6
+    : 1;
   const targetModified =
     afterCrit *
     (1 +
@@ -304,7 +308,7 @@ const calculateCombatDamageWithRolls = (
         target,
         "damage-taken-percent",
         modifierContext,
-      ));
+      )) * arcaneCoreUndyingProtection;
   const defenseReduction = direct ? getDefenseReduction(state, target) : 0;
   const defense = direct ? getDefense(state, target) : 0;
   const afterDefense = targetModified * (1 - defenseReduction);
@@ -458,6 +462,21 @@ const applyDamage = (
             actor: "player",
             kind: "arcane-core",
             sourceId: "vitality:r1:M",
+            tags: ["special", "barrier"],
+          },
+          "player",
+          ["special", "barrier"],
+          { mode: "add", durationMs: null },
+        );
+      }
+      if (state.combat.arcaneCoreRuntime.lastSurvivalToken === "undying") {
+        gainBarrierRuntime(
+          state,
+          state.player.maxHealth * 0.15,
+          {
+            actor: "player",
+            kind: "arcane-core",
+            sourceId: "vitality:r7:M",
             tags: ["special", "barrier"],
           },
           "player",

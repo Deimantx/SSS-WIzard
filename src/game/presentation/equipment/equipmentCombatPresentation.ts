@@ -31,7 +31,7 @@ const SOURCE_KIND_NAMES: Record<CombatSource['kind'], string> = {
   'basic-attack': 'Basic Attacks', spell: 'Spells', weapon: 'Weapons', status: 'Status Effects', trait: 'Traits', action: 'Actions', 'arcane-core': 'Arcane Core', equipment: 'Equipment', guardian: 'Guardians', system: 'System',
 }
 const TAG_NAMES: Record<CombatTag, string> = {
-  'basic-attack': 'Basic Attack', spell: 'Spell', weapon: 'Weapon', equipment: 'Equipment', guardian: 'Guardian', summon: 'Summon', melee: 'Melee', ranged: 'Ranged', magic: 'Magic', direct: 'Direct', heal: 'Heal', dot: 'Damage over Time', hot: 'Heal over Time', status: 'Status', special: 'Special', trait: 'Trait', buff: 'Buff', debuff: 'Debuff', control: 'Control', barrier: 'Barrier', physical: 'Physical', arcane: 'Arcane', fire: 'Fire', water: 'Water', earth: 'Earth', air: 'Air',
+  'basic-attack': 'Basic Attack', spell: 'Spell', weapon: 'Weapon', equipment: 'Equipment', guardian: 'Guardian', summon: 'Summon', melee: 'Melee', ranged: 'Ranged', magic: 'Magic', direct: 'Direct', heal: 'Heal', dot: 'Damage over Time', hot: 'Heal over Time', status: 'Status', special: 'Special', trait: 'Trait', buff: 'Buff', debuff: 'Debuff', control: 'Control', barrier: 'Barrier', physical: 'Physical', arcane: 'Arcane', fire: 'Fire', water: 'Water', earth: 'Earth', air: 'Air', 'conversion-generated': 'Conversion',
 }
 const MODIFIER_LABELS: Record<ModifierKey, string> = {
   'damage-dealt-percent': 'Damage Dealt',

@@ -33,6 +33,7 @@ import { isSummoningUnlocked } from '../game/systems/summoning/summoningSelector
 import { normalizeDarkPortalProgress } from '../game/systems/dark-portal/portalShardProgression'
 import { isScreenUnlocked, reconcileStoryProgression } from '../game/systems/story/storyProgression'
 import { getTransmutationArrayBonuses } from '../game/systems/transmutation/transmutationArrays'
+import { ARCANE_CORE_SCHEMA_VERSION } from '../game/content/arcaneCore/arcaneCoreBalance'
 import { ARCANE_CORE_MAJOR_COST_BY_RING, ARCANE_CORE_MAX_LEVEL, ARCANE_CORE_MAX_TOTAL_XP, ARCANE_CORE_STANDARD_RANK_COST_BY_RING, ARCANE_CORE_TOTAL_TREE_COST, getArcaneCoreLevelForXp } from '../game/content/arcaneCore/arcaneCoreBalance'
 import { getArcaneCoreNode } from '../game/content/arcaneCore/arcaneCoreBranches'
 import { normalizeResonanceState } from '../game/systems/resonance/resonanceRuntime'
@@ -132,7 +133,7 @@ const normalizeArcaneCore = (migrated: GameState, raw: Record<string, any>) => {
     return nodes
   }
   if (sourceVersion >= PRE_RESONANCE_SAVE_VERSION && typeof source.totalPointsEarned === 'number' && Number.isFinite(source.totalPointsEarned)) {
-    migrated.arcaneCore = { totalPointsEarned: Math.max(0, Math.min(ARCANE_CORE_TOTAL_TREE_COST, Math.floor(source.totalPointsEarned))), nodes: normalizeNodes() }
+    migrated.arcaneCore = { arcaneCoreVersion: ARCANE_CORE_SCHEMA_VERSION, totalPointsEarned: Math.max(0, Math.min(ARCANE_CORE_TOTAL_TREE_COST, Math.floor(source.totalPointsEarned))), nodes: normalizeNodes() }
     return
   }
   if (sourceVersion === ARCANE_CORE_V37_REPRICE_SAVE_VERSION && typeof source.totalPointsEarned === 'number' && Number.isFinite(source.totalPointsEarned)) {
@@ -151,7 +152,7 @@ const normalizeArcaneCore = (migrated: GameState, raw: Record<string, any>) => {
       const cost = node.nodeType === 'major' ? ARCANE_CORE_MAJOR_COST_BY_RING[node.ring] : ARCANE_CORE_STANDARD_RANK_COST_BY_RING[node.ring]
       return total + (progress?.rank ?? 0) * cost
     }, 0)
-    migrated.arcaneCore = { totalPointsEarned: Math.min(ARCANE_CORE_TOTAL_TREE_COST, newSpent + oldAvailable), nodes }
+    migrated.arcaneCore = { arcaneCoreVersion: ARCANE_CORE_SCHEMA_VERSION, totalPointsEarned: Math.min(ARCANE_CORE_TOTAL_TREE_COST, newSpent + oldAvailable), nodes }
     return
   }
   const oldTotalXp = typeof source.totalXp === 'number' && Number.isFinite(source.totalXp) ? Math.max(0, Math.min(ARCANE_CORE_MAX_TOTAL_XP, source.totalXp)) : 0
@@ -169,7 +170,7 @@ const normalizeArcaneCore = (migrated: GameState, raw: Record<string, any>) => {
   const oldSpentPoints = Math.max(rankedSpentPoints, legacyNodeSpentPoints + unspentPoints)
   const legacyProgressPoints = Math.min(LEGACY_ARCANE_CORE_MAX_SPEND, Math.max(oldEarnedPoints, oldSpentPoints))
   const convertedPoints = Math.max(0, Math.min(ARCANE_CORE_TOTAL_TREE_COST, Math.round(legacyProgressPoints / LEGACY_ARCANE_CORE_MAX_SPEND * ARCANE_CORE_TOTAL_TREE_COST)))
-  migrated.arcaneCore = { totalPointsEarned: convertedPoints, nodes: {} }
+  migrated.arcaneCore = { arcaneCoreVersion: ARCANE_CORE_SCHEMA_VERSION, totalPointsEarned: convertedPoints, nodes: {} }
 }
 const REMOVED_PRISMATIC_FOCUS_ID = 'prismatic-focus'
 

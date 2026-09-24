@@ -51,6 +51,7 @@ export type CombatTag =
   | 'debuff'
   | 'control'
   | 'barrier'
+  | 'conversion-generated'
   | 'guardian'
   | 'summon'
   | DamageType

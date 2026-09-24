@@ -91,7 +91,12 @@ const createArcaneCoreRuntime = () => ({
   ruinTransferMultiplier: 1,
   ruinStacks: 0,
   chainReactionReady: false,
+  arcaneOverloadReady: false,
   refuseDeathUsed: false,
+  secondWindUsed: false,
+  refuseDeathThresholdUsed: false,
+  deepBreathingUsed: false,
+  controlledTempoUsed: false,
   lastSurvivalToken: undefined,
   immortalGuardUsed: false,
   overflowCharges: 0,
@@ -143,12 +148,19 @@ export const resetArcaneCoreEncounterRuntime = (state: GameState) => {
   runtime.criticalRecoveryLastAtMs = undefined
   runtime.nextCritChanceBonus = 0
   runtime.ruinStacks = 0
+  runtime.arcaneOverloadReady = false
   runtime.refuseDeathUsed = false
+  runtime.secondWindUsed = false
+  runtime.refuseDeathThresholdUsed = false
+  runtime.deepBreathingUsed = false
+  runtime.controlledTempoUsed = false
   runtime.lastSurvivalToken = undefined
   runtime.barrierMemoryMultiplier = undefined
   runtime.barrierMemoryUntilMs = undefined
+  runtime.arcaneAegisLastAtMs = undefined
   // Immortal Guard is explicitly once per dungeon run and survives enemy spawn.
   runtime.immortalGuardUntilMs = undefined
+  runtime.undyingUntilMs = undefined
   runtime.overflowCharges = 0
   runtime.singularityUsed = false
   runtime.perfectTimingUntilMs = undefined

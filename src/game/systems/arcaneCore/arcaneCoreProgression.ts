@@ -1,5 +1,5 @@
 import { ARCANE_CORE_BRANCHES, ARCANE_CORE_NODES, getArcaneCoreNode } from '../../content/arcaneCore/arcaneCoreBranches'
-import { ARCANE_CORE_RING_INDICES, ARCANE_CORE_TOTAL_TREE_COST } from '../../content/arcaneCore/arcaneCoreBalance'
+import { ARCANE_CORE_RING_INDICES, ARCANE_CORE_SCHEMA_VERSION, ARCANE_CORE_TOTAL_TREE_COST } from '../../content/arcaneCore/arcaneCoreBalance'
 import { ARCANE_CORE_MAJOR_GATES, ARCANE_CORE_RING_GATES } from '../../content/arcaneCore/arcaneCoreRings'
 import type { ArcaneCoreBranchId, ArcaneCoreNodeDefinition, ArcaneCoreNodeProgress, ArcaneCoreResolvedEffects, ArcaneCoreRingIndex, ArcaneCoreSpecialEffect, ArcaneCoreState, EquipmentStats } from '../../types'
 import type { CombatModifier, CombatTriggerRule } from '../combat/combatTypes'
@@ -10,7 +10,7 @@ export type ArcaneCoreActionResult = { ok: true; state: ArcaneCoreState } | { ok
 export interface ArcaneCoreActionOptions { freeCosts?: boolean; ignorePrerequisites?: boolean }
 export interface ArcaneCoreWalletInfo { totalPointsEarned: number; pointsSpent: number; pointsAvailable: number; treeCost: number }
 
-export const createInitialArcaneCoreState = (): ArcaneCoreState => ({ totalPointsEarned: 0, nodes: {} })
+export const createInitialArcaneCoreState = (): ArcaneCoreState => ({ arcaneCoreVersion: ARCANE_CORE_SCHEMA_VERSION, totalPointsEarned: 0, nodes: {} })
 const safePoints = (value: unknown) => Math.max(0, Math.min(ARCANE_CORE_TOTAL_TREE_COST, Math.floor(typeof value === 'number' && Number.isFinite(value) ? value : 0)))
 const safeRank = (node: ArcaneCoreNodeDefinition, value: unknown) => Math.max(0, Math.min(node.maxRank, Math.floor(typeof value === 'number' && Number.isFinite(value) ? value : 0)))
 const copyState = (state: ArcaneCoreState): ArcaneCoreState => {
@@ -20,7 +20,7 @@ const copyState = (state: ArcaneCoreState): ArcaneCoreState => {
     const rank = node ? safeRank(node, progress?.rank) : 0
     if (node && rank > 0) nodes[id] = { rank }
   })
-  return { totalPointsEarned: safePoints(state.totalPointsEarned), nodes }
+  return { arcaneCoreVersion: ARCANE_CORE_SCHEMA_VERSION, totalPointsEarned: safePoints(state.totalPointsEarned), nodes }
 }
 
 export const getArcaneCoreNodeProgress = (state: Pick<ArcaneCoreState, 'nodes'>, nodeId: string): ArcaneCoreNodeProgress => ({ rank: getArcaneCoreNodeRank(state, nodeId) })
@@ -112,7 +112,7 @@ export const getArcaneCoreBranchResetPreview = (state: ArcaneCoreState, branchId
   return { ok: true, state: next, branchId, nodeIds, nodesAffected: nodeIds.length, corePointsReturned: nodeIds.reduce((sum, id) => sum + getArcaneCoreNodeRank(state, id) * (getArcaneCoreNode(id)?.rankCost ?? 0), 0), ranksAffected: nodeIds.reduce((sum, id) => sum + getArcaneCoreNodeRank(state, id), 0), majorsAffected: nodeIds.filter((id) => getArcaneCoreNode(id)?.nodeType === 'major').length, ringsRelocked: [...new Set(branch.nodes.filter((node) => nodeIds.includes(node.id)).map((node) => `${branchId}-${node.ring}`))] }
 }
 export const resetArcaneCoreBranch = (state: ArcaneCoreState, branchId: ArcaneCoreBranchId): ArcaneCoreActionResult => { const preview = getArcaneCoreBranchResetPreview(state, branchId); return preview.ok ? { ok: true, state: preview.state } : preview }
-export const resetArcaneCore = (state: ArcaneCoreState): ArcaneCoreActionResult => ({ ok: true, state: { totalPointsEarned: getArcaneCoreTotalPointsEarned(state), nodes: {} } })
+export const resetArcaneCore = (state: ArcaneCoreState): ArcaneCoreActionResult => ({ ok: true, state: { arcaneCoreVersion: ARCANE_CORE_SCHEMA_VERSION, totalPointsEarned: getArcaneCoreTotalPointsEarned(state), nodes: {} } })
 
 export const setArcaneCoreNodeRank = (state: ArcaneCoreState, nodeId: string, rank: number): ArcaneCoreActionResult => {
   const node = getArcaneCoreNode(nodeId); if (!node) return { ok: false, reason: 'unknown-node' }; const next = copyState(state); const safe = safeRank(node, rank)

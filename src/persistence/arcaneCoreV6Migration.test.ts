@@ -8,7 +8,7 @@ describe('Arcane Core V6 migration', () => {
     const initial = createInitialState()
     const migrated = migrateSave({ ...initial, saveVersion: 36, arcaneCore: { totalXp: getArcaneCoreTotalXpForLevel(2), nodes: { 'power-r1-arcane-force': { rank: 1 } } } } as any)
     expect(migrated.saveVersion).toBe(SAVE_VERSION)
-    expect(migrated.arcaneCore).toEqual({ totalPointsEarned: Math.round(ARCANE_CORE_TOTAL_TREE_COST / 1376), nodes: {} })
+    expect(migrated.arcaneCore).toEqual({ arcaneCoreVersion: 7, totalPointsEarned: Math.round(ARCANE_CORE_TOTAL_TREE_COST / 1376), nodes: {} })
     expect(migrated.arcaneCore).not.toHaveProperty('totalXp')
   })
 

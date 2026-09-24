@@ -4,7 +4,7 @@ import { ARCANE_CORE_MAX_LEVEL, ARCANE_CORE_NODE_COUNT, ARCANE_CORE_NODE_COUNT_P
 import { ARCANE_CORE_RING_INDICES } from '../../content/arcaneCore/arcaneCoreRings'
 import { validateArcaneCoreCatalog } from './arcaneCoreValidation'
 
-describe('Arcane Core V6 catalog', () => {
+describe('Arcane Core V7 catalog', () => {
   it('contains four Cores with eight Rings of eight standards and one Major', () => {
     expect(validateArcaneCoreCatalog()).toEqual([])
     expect(ARCANE_CORE_BRANCHES.map((branch) => branch.id)).toEqual(['power', 'vitality', 'focus', 'control'])
@@ -15,6 +15,8 @@ describe('Arcane Core V6 catalog', () => {
       expect(nodes).toHaveLength(9)
       expect(nodes.filter((node) => node.nodeType === 'major')).toHaveLength(1)
       expect(nodes.filter((node) => node.nodeType !== 'major')).toHaveLength(8)
+      expect(nodes.filter((node) => node.nodeType === 'minor')).toHaveLength(4)
+      expect(nodes.filter((node) => node.nodeType === 'perk')).toHaveLength(4)
     }
     expect(ARCANE_CORE_MAX_LEVEL).toBe(1377) // legacy migration curve remains isolated from the live wallet.
   })

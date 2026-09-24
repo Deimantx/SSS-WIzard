@@ -14,7 +14,7 @@ const setRank = (state: ReturnType<typeof createInitialArcaneCoreState>, nodeId:
 }
 const withPoints = (amount: number) => grantArcanePoints(createInitialArcaneCoreState(), amount).state
 
-describe('Arcane Core V6 progression', () => {
+describe('Arcane Core V7 progression', () => {
   it('starts with a direct lifetime Arcane Points wallet', () => {
     expect(getArcaneCoreWalletInfo(createInitialArcaneCoreState())).toEqual({ totalPointsEarned: 0, pointsSpent: 0, pointsAvailable: 0, treeCost: ARCANE_CORE_TOTAL_TREE_COST })
   })
@@ -63,7 +63,7 @@ describe('Arcane Core V6 progression', () => {
     expect(refunded.ok).toBe(true)
     expect(getArcaneCoreAvailablePoints(state)).toBe(0)
     const reset = resetArcaneCore(state)
-    expect(reset).toEqual({ ok: true, state: { totalPointsEarned: 100, nodes: {} } })
+    expect(reset).toEqual({ ok: true, state: { arcaneCoreVersion: 7, totalPointsEarned: 100, nodes: {} } })
   })
 
   it('cascades nodes when a refund relocks a dependent Ring', () => {
@@ -84,6 +84,6 @@ describe('Arcane Core V6 progression', () => {
     const vitality = ARCANE_CORE_BRANCHES.find((branch) => branch.id === 'vitality')!.nodes.find((node) => node.ring === 1 && node.nodeType !== 'major')!
     const focus = ARCANE_CORE_BRANCHES.find((branch) => branch.id === 'focus')!.nodes.find((node) => node.ring === 1 && node.nodeType !== 'major')!
     const stats = getArcaneCoreStaticStats({ nodes: { [vitality.id]: { rank: 5 }, [focus.id]: { rank: 5 } } })
-    expect(stats).toMatchObject({ maxHealthPct: 0.025, maxManaPct: 0.025 })
+    expect(stats).toMatchObject({ maxHealthPct: 0.03, maxManaPct: 0.025 })
   })
 })

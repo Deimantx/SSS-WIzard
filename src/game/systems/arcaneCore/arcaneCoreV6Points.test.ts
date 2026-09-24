@@ -66,7 +66,7 @@ describe('Arcane Core V6 Arcane Points economy', () => {
     expect(getArcaneCorePointsSpent(state)).toBe(150)
     expect(getArcaneCoreAvailablePoints(state)).toBe(0)
     const reset = resetArcaneCore(state)
-    expect(reset).toEqual({ ok: true, state: { totalPointsEarned: 100, nodes: {} } })
+    expect(reset).toEqual({ ok: true, state: { arcaneCoreVersion: 7, totalPointsEarned: 100, nodes: {} } })
   })
 
   it('keeps a fresh Vitality Ring I rank at one point after Power investment', () => {
@@ -82,6 +82,6 @@ describe('Arcane Core V6 Arcane Points economy', () => {
     const vitality = ARCANE_CORE_BRANCHES.find((candidate) => candidate.id === 'vitality')!.nodes.find((node) => node.ring === 1 && node.nodeType !== 'major')!
     const focus = ARCANE_CORE_BRANCHES.find((candidate) => candidate.id === 'focus')!.nodes.find((node) => node.ring === 1 && node.nodeType !== 'major')!
     const state = setRank(setRank(createInitialArcaneCoreState(), vitality.id, 5), focus.id, 5)
-    expect(getArcaneCoreStaticStats(state)).toMatchObject({ maxHealthPct: 0.025, maxManaPct: 0.025 })
+    expect(getArcaneCoreStaticStats(state)).toMatchObject({ maxHealthPct: 0.03, maxManaPct: 0.025 })
   })
 })

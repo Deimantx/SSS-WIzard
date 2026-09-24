@@ -1,94 +1,104 @@
-import { createRing, fixedEffects, linearStat, modifier, perk, minor, major, rankedModifier, rankValues, rule } from './arcaneCoreNodeFactory'
-import { all, belowHp, negativeStatuses } from './arcaneCoreContentHelpers'
+import { createRing, linearStat, major, minor, modifier, rankedModifier, perk, v7Mechanic, v7MechanicWith } from './arcaneCoreNodeFactory'
+import { belowHp } from './arcaneCoreContentHelpers'
+
+const mechanic = (ring: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8, slot: `S${5 | 6 | 7 | 8}` | 'M', name: string) => v7Mechanic('vitality', ring, slot, name)
+const damageTaken = (perRank: number) => rankedModifier('damage-taken-percent', perRank)
+const healingReceived = (perRank: number) => rankedModifier('healing-received-percent', perRank)
 
 const ring1 = createRing('vitality', 1, [
-  minor('vitality-r1-vitality', 'Vitality', '+10 Max Health per rank.', linearStat('maxHealth', 10)),
-  minor('vitality-r1-natural-recovery', 'Natural Recovery', '+0.2 Health Regen per rank.', linearStat('healthRegen', 0.2)),
-  minor('vitality-r1-arcane-defense', 'Arcane Defense', '+1 Defense per rank.', linearStat('defense', 1)),
-  minor('vitality-r1-guard', 'Guard', 'Legacy compatibility slot; V6 catalog owns this mechanic.', linearStat('defense', 0)),
-  minor('vitality-r1-barrier-power', 'Barrier Power', '+2% Barrier Power per rank.', linearStat('barrierPowerPct', 0.02)),
-  minor('vitality-r1-healing-mastery', 'Healing Mastery', '+2% Healing Done per rank.', linearStat('healingDonePct', 0.02)),
-  perk('vitality-r1-fortified-body', 'Fortified Body', 'Above 80% Health: -0.5% Damage Taken per rank.', rankedModifier('damage-taken-percent', -0.005, { type: 'self-hp-above-percent', percent: 80 })),
-  perk('vitality-r1-victory-recovery', 'Victory Recovery', 'A kill heals 0.4% Max Health per rank.', (rank) => ({ rules: [rule('vitality-victory-recovery', 'on-kill', [{ type: 'heal', target: 'self', magnitude: { type: 'source-max-health-percent', value: 0.004 * rank } }])] })),
-  major('vitality-r1-deep-recovery', 'Deep Recovery', '+1 Health Regen and +10% Healing Received.', fixedEffects({ stats: { healthRegen: 1 }, modifiers: [modifier('healing-received-percent', 0.1)] })),
+  minor('vitality-r1-vitality', 'Vitality', '+0.6% Max Health per rank. Rank 5: +3%.', linearStat('maxHealthPct', 0.006)),
+  minor('vitality-r1-natural-recovery', 'Steady Guard', '+1 Defense per rank. Rank 5: +5.', linearStat('defense', 1)),
+  minor('vitality-r1-arcane-defense', 'Natural Recovery', '+0.1 Health Regen per rank. Rank 5: +0.5/sec.', linearStat('healthRegen', 0.1)),
+  minor('vitality-r1-guard', 'Reinforced Ward', '+0.6% Barrier Power per rank. Rank 5: +3%.', linearStat('barrierPowerPct', 0.006)),
+  perk('vitality-r1-barrier-power', 'Second Skin', 'Gain a small defensive benefit while above 80% Health.', mechanic(1, 'S5', 'Second Skin')),
+  perk('vitality-r1-healing-mastery', 'Emergency Pulse', 'The first low-health event each encounter restores a small amount of Health.', mechanic(1, 'S6', 'Emergency Pulse')),
+  perk('vitality-r1-fortified-body', 'Recovery Window', 'Healing received shortly after taking damage is slightly improved.', mechanic(1, 'S7', 'Recovery Window')),
+  perk('vitality-r1-victory-recovery', 'Victory Recovery', 'A defeated enemy restores a small amount of Health.', mechanic(1, 'S8', 'Victory Recovery')),
+  major('vitality-r1-deep-recovery', 'Second Wind', 'The first time each encounter the player falls below 30% Health, heal 5% Max Health. Once per encounter.', mechanic(1, 'M', 'Second Wind')),
 ])
+
 const ring2 = createRing('vitality', 2, [
-  perk('vitality-r2-second-wind', 'Second Wind', 'Below 30% Health: heal 1–5% Max Health. Cooldown 30 sec.', (rank) => ({ rules: [rule('vitality-second-wind', 'on-hp-threshold', [{ type: 'heal', target: 'self', magnitude: { type: 'source-max-health-percent', value: rankValues(rank, [0.01, 0.02, 0.03, 0.04, 0.05]) } }], belowHp(30), { cooldownMs: 30000 })] })),
-  perk('vitality-r2-steady-guard', 'Steady Guard', 'A successful Block heals 0.25–1.25% Max Health.', (rank) => ({ rules: [rule('vitality-steady-guard', 'on-damage-taken', [{ type: 'heal', target: 'self', magnitude: { type: 'source-max-health-percent', value: rankValues(rank, [0.0025, 0.005, 0.0075, 0.01, 0.0125]) } }], { type: 'event-was-blocked' }, { cooldownMs: 2000 })] })),
-  perk('vitality-r2-stonewall', 'Stonewall', 'While Barrier exists: +1 Defense per rank.', rankedModifier('defense-flat', 1, { type: 'self-has-barrier' })),
-  perk('vitality-r2-ward-reinforcement', 'Ward Reinforcement', 'While Barrier exists: -0.75% Damage Taken per rank.', rankedModifier('damage-taken-percent', -0.0075, { type: 'self-has-barrier' })),
-  minor('vitality-r2-reinforced-ward', 'Reinforced Ward', '+2 flat Barrier received per rank.', rankedModifier('barrier-received-flat', 2)),
-  perk('vitality-r2-ward-recovery', 'Ward Recovery', 'Barrier break heals 0.6% Max Health per rank.', (rank) => ({ rules: [rule('vitality-ward-recovery', 'on-barrier-broken', [{ type: 'heal', target: 'self', magnitude: { type: 'source-max-health-percent', value: 0.006 * rank } }])] })),
-  perk('vitality-r2-resilient-flow', 'Resilient Flow', 'Taking Health damage restores 1–3 Mana.', (rank) => ({ rules: [rule('vitality-resilient-flow', 'on-damage-taken', [{ type: 'restore-resource', target: 'self', resource: 'mana', magnitude: { type: 'flat', value: rankValues(rank, [1, 1, 2, 2, 3]) } }], { type: 'event-health-damage-positive' }, { cooldownMs: 2000 })] })),
-  perk('vitality-r2-emergency-recovery', 'Emergency Recovery', 'Below 25% Health: +3% Healing Received per rank.', rankedModifier('healing-received-percent', 0.03, belowHp(25))),
-  major('vitality-r2-unyielding', 'Unyielding', 'Below 50% Health: -6% Damage Taken.', fixedEffects({ modifiers: [modifier('damage-taken-percent', -0.06, belowHp(50))] })),
+  minor('vitality-r2-second-wind', 'Vitality II', '+0.6% Max Health per rank. Rank 5: +3%.', linearStat('maxHealthPct', 0.006)),
+  minor('vitality-r2-steady-guard', 'Fortified Guard', '+1.2 Defense per rank. Rank 5: +6.', linearStat('defense', 1.2)),
+  minor('vitality-r2-stonewall', 'Fortified Body', '-0.1% Damage Taken per rank. Rank 5: -0.5%.', damageTaken(-0.001)),
+  minor('vitality-r2-ward-reinforcement', 'Restoration', '+0.4% Healing Received per rank. Rank 5: +2%.', healingReceived(0.004)),
+  perk('vitality-r2-reinforced-ward', 'Stonewall', 'While Barrier exists, gain a small Defense bonus.', mechanic(2, 'S5', 'Stonewall')),
+  perk('vitality-r2-ward-recovery', 'Barrier Recovery', 'When Barrier breaks, restore a small amount of Health.', mechanic(2, 'S6', 'Barrier Recovery')),
+  perk('vitality-r2-resilient-flow', 'Guarded Recovery', 'Taking Health damage can restore a small amount of Mana with an internal cooldown.', mechanic(2, 'S7', 'Guarded Recovery')),
+  perk('vitality-r2-emergency-recovery', 'Low Health Guard', 'Below 25% Health, gain a small Healing Received bonus.', mechanic(2, 'S8', 'Low Health Guard')),
+  major('vitality-r2-unyielding', 'Unyielding', 'While below 50% Health, take 5% less Health damage. It does not reduce damage already absorbed by Barrier.', v7MechanicWith('vitality', 2, 'M', 'Unyielding', () => ({ modifiers: [modifier('damage-taken-percent', -0.05, belowHp(50))] }))),
 ])
+
 const ring3 = createRing('vitality', 3, [
-  perk('vitality-r3-reactive-ward', 'Reactive Ward', 'Taking Health damage without Barrier grants 0.6–3% Max Health Barrier.', (rank) => ({ rules: [rule('vitality-reactive-ward', 'on-damage-taken', [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'source-max-health-percent', value: rankValues(rank, [0.006, 0.012, 0.018, 0.024, 0.03]) } }], all({ type: 'event-health-damage-positive' }, { type: 'self-barrier-at-most', value: 0 }), { cooldownMs: 10000 })] })),
-  perk('vitality-r3-guarded-soul', 'Guarded Soul', 'While Barrier exists: +0.5% Block Chance per rank.', rankedModifier('block-chance', 0.005, { type: 'self-has-barrier' })),
-  minor('vitality-r3-aegis-strength', 'Aegis Strength', '+3% Barrier Power per rank.', linearStat('barrierPowerPct', 0.03)),
-  perk('vitality-r3-recovery-under-fire', 'Recovery Under Fire', 'Below 50% Health: +0.2 Health Regen per rank.', rankedModifier('health-regen-flat', 0.2, belowHp(50))),
-  perk('vitality-r3-defensive-flow', 'Defensive Flow', 'Successful Block reduces Spell cooldowns by 20–100 ms.', (rank) => ({ rules: [rule('vitality-defensive-flow', 'on-damage-taken', [{ type: 'modify-cooldown', target: 'self', amountMs: -rankValues(rank, [20, 40, 60, 80, 100]) }], { type: 'event-was-blocked' })] })),
-  perk('vitality-r3-ward-renewal', 'Ward Renewal', 'Whenever Barrier is gained, heal 0.25% Max Health per rank.', (rank) => ({ rules: [rule('vitality-ward-renewal', 'on-barrier-gained', [{ type: 'heal', target: 'self', magnitude: { type: 'source-max-health-percent', value: 0.0025 * rank } }], undefined, { cooldownMs: 3000 })] })),
-  perk('vitality-r3-lasting-guard', 'Lasting Guard', 'Below 40% Health: +1 Defense per rank.', rankedModifier('defense-flat', 1, belowHp(40))),
-  perk('vitality-r3-battle-recovery', 'Battle Recovery', 'A kill heals 0.5% Max Health per rank.', (rank) => ({ rules: [rule('vitality-battle-recovery', 'on-kill', [{ type: 'heal', target: 'self', magnitude: { type: 'source-max-health-percent', value: 0.005 * rank } }])] })),
-  major('vitality-r3-arcane-aegis', 'Arcane Aegis', 'Whenever Barrier is gained, heal 2% Max Health.', fixedEffects({ rules: [rule('vitality-arcane-aegis', 'on-barrier-gained', [{ type: 'heal', target: 'self', magnitude: { type: 'source-max-health-percent', value: 0.02 } }], undefined, { cooldownMs: 3000 })] })),
+  minor('vitality-r3-reactive-ward', 'Barrier Power', '+0.8% Barrier Power per rank. Rank 5: +4%.', linearStat('barrierPowerPct', 0.008)),
+  minor('vitality-r3-guarded-soul', 'Healing Mastery', '+0.4% Healing Done per rank. Rank 5: +2%.', linearStat('healingDonePct', 0.004)),
+  minor('vitality-r3-aegis-strength', 'Deep Recovery', '+0.2 Health Regen per rank. Rank 5: +1/sec.', linearStat('healthRegen', 0.2)),
+  minor('vitality-r3-recovery-under-fire', 'Aegis Defense', '+1.4 Defense per rank. Rank 5: +7.', linearStat('defense', 1.4)),
+  perk('vitality-r3-defensive-flow', 'Reactive Ward', 'Taking Health damage without Barrier grants a small Barrier.', mechanic(3, 'S5', 'Reactive Ward')),
+  perk('vitality-r3-ward-renewal', 'Ward Renewal', 'Gaining Barrier restores a small amount of Health with a bounded cooldown.', mechanic(3, 'S6', 'Ward Renewal')),
+  perk('vitality-r3-lasting-guard', 'Barrier Memory', 'A recently broken Barrier leaves a small defensive memory.', mechanic(3, 'S7', 'Barrier Memory')),
+  perk('vitality-r3-battle-recovery', 'Stable Protection', 'Barrier protection gains a small stability bonus without creating a conversion loop.', mechanic(3, 'S8', 'Stable Protection')),
+  major('vitality-r3-arcane-aegis', 'Arcane Aegis', 'When Barrier breaks, gain a replacement Barrier equal to 20% of the broken Barrier original value. Cooldown: 10 seconds.', mechanic(3, 'M', 'Arcane Aegis')),
 ])
+
 const ring4 = createRing('vitality', 4, [
-  minor('vitality-r4-apex-vitality', 'Apex Vitality', '+20 Max Health per rank.', linearStat('maxHealth', 20)),
-  minor('vitality-r4-immortal-recovery', 'Immortal Recovery', '+0.4 Health Regen per rank.', linearStat('healthRegen', 0.4)),
-  perk('vitality-r4-iron-will', 'Iron Will', 'Below 30% Health: -1% Damage Taken per rank.', rankedModifier('damage-taken-percent', -0.01, belowHp(30))),
-  perk('vitality-r4-last-bastion', 'Last Bastion', 'Below 30% Health: +3% Barrier Power per rank.', rankedModifier('barrier-power-percent', 0.03, belowHp(30))),
-  minor('vitality-r4-absolute-guard', 'Absolute Guard', 'Legacy compatibility slot; V6 catalog owns this mechanic.', linearStat('defense', 0)),
-  minor('vitality-r4-deep-fortification', 'Deep Fortification', '+2 Defense per rank.', linearStat('defense', 2)),
-  perk('vitality-r4-emergency-aegis', 'Emergency Aegis', 'Below 20% Health, gain 2–10% Max Health Barrier.', (rank) => ({ rules: [rule('vitality-emergency-aegis', 'on-hp-threshold', [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'source-max-health-percent', value: rankValues(rank, [0.02, 0.04, 0.06, 0.08, 0.1]) } }], belowHp(20), { cooldownMs: 30000 })] })),
-  perk('vitality-r4-recovery-mastery', 'Recovery Mastery', '+2% Healing Received per rank.', rankedModifier('healing-received-percent', 0.02)),
-  major('vitality-r4-survival-instinct', 'Survival Instinct', 'Once per dungeon run, lethal damage leaves the Wizard at 1 Health.', fixedEffects({ special: [{ type: 'lethal-survival', leaveAtHealth: 1, oncePerDungeonRun: true }] })),
+  minor('vitality-r4-apex-vitality', 'Immortal Vitality', '+0.8% Max Health per rank. Rank 5: +4%.', linearStat('maxHealthPct', 0.008)),
+  minor('vitality-r4-immortal-recovery', 'Immortal Defense', '+1.8 Defense per rank. Rank 5: +9.', linearStat('defense', 1.8)),
+  minor('vitality-r4-iron-will', 'Iron Will', '-0.15% Damage Taken per rank. Rank 5: -0.75%.', damageTaken(-0.0015)),
+  minor('vitality-r4-last-bastion', 'Recovery Mastery', '+0.6% Healing Received per rank. Rank 5: +3%.', healingReceived(0.006)),
+  perk('vitality-r4-absolute-guard', 'Last Breath', 'A low-health threshold grants a brief defensive reaction.', mechanic(4, 'S5', 'Last Breath')),
+  perk('vitality-r4-deep-fortification', 'Emergency Aegis', 'An emergency Barrier is granted when Health becomes dangerously low.', mechanic(4, 'S6', 'Emergency Aegis')),
+  perk('vitality-r4-emergency-aegis', 'Recovery Surge', 'Healing after taking damage is temporarily improved.', mechanic(4, 'S7', 'Recovery Surge')),
+  perk('vitality-r4-recovery-mastery', 'Survival Instinct', 'A near-lethal event grants a bounded defensive response.', mechanic(4, 'S8', 'Survival Instinct')),
+  major('vitality-r4-survival-instinct', 'Living Bastion', 'While Barrier exists, 10% of effective Healing received is also added to Barrier, capped at 3% Max Health per event. Conversion-generated Barrier cannot trigger another conversion.', mechanic(4, 'M', 'Living Bastion')),
 ])
 
 const ring5 = createRing('vitality', 5, [
-  minor('vitality-r5-bastion-heart', 'Bastion Heart', '+30 Max Health per rank.', linearStat('maxHealth', 30)),
-  minor('vitality-r5-iron-recovery', 'Iron Recovery', '+0.5 Health Regen per rank.', linearStat('healthRegen', 0.5)),
-  minor('vitality-r5-fortress-defense', 'Fortress Defense', '+3 Defense per rank.', linearStat('defense', 3)),
-  minor('vitality-r5-bastion-guard', 'Bastion Guard', 'Legacy compatibility slot; V6 catalog owns this mechanic.', linearStat('defense', 0)),
-  minor('vitality-r5-greater-barrier', 'Greater Barrier', '+4% Barrier Power per rank.', linearStat('barrierPowerPct', 0.04)),
-  minor('vitality-r5-resilient-healing', 'Resilient Healing', '+3% Healing Received per rank.', rankedModifier('healing-received-percent', 0.03)),
-  perk('vitality-r5-fortified-ward', 'Fortified Ward', 'While Barrier exists: -1% Damage Taken per rank.', rankedModifier('damage-taken-percent', -0.01, { type: 'self-has-barrier' })),
-  perk('vitality-r5-bastion-recovery', 'Bastion Recovery', 'A kill heals 0.75% Max Health per rank.', (rank) => ({ rules: [rule('vitality-bastion-recovery', 'on-kill', [{ type: 'heal', target: 'self', magnitude: { type: 'source-max-health-percent', value: 0.0075 * rank } }])] })),
-  major('vitality-r5-living-fortress', 'Living Fortress', 'While Barrier exists: -8% Damage Taken and +5 Defense.', fixedEffects({ modifiers: [modifier('damage-taken-percent', -0.08, { type: 'self-has-barrier' }), modifier('defense-flat', 5, { type: 'self-has-barrier' })] })),
+  minor('vitality-r5-bastion-heart', 'Bastion Ward', '+1% Barrier Power per rank. Rank 5: +5%.', linearStat('barrierPowerPct', 0.01)),
+  minor('vitality-r5-iron-recovery', 'Bastion Restoration', '+0.6% Healing Done per rank. Rank 5: +3%.', linearStat('healingDonePct', 0.006)),
+  minor('vitality-r5-fortress-defense', 'Bastion Recovery', '+0.3 Health Regen per rank. Rank 5: +1.5/sec.', linearStat('healthRegen', 0.3)),
+  minor('vitality-r5-bastion-guard', 'Fortress', '-0.15% Damage Taken per rank. Rank 5: -0.75%.', damageTaken(-0.0015)),
+  perk('vitality-r5-greater-barrier', 'Layered Ward', 'Successive Barriers gain a bounded layered benefit.', mechanic(5, 'S5', 'Layered Ward')),
+  perk('vitality-r5-resilient-healing', 'Ward Battery', 'Stored Barrier value supports a later defensive event.', mechanic(5, 'S6', 'Ward Battery')),
+  perk('vitality-r5-fortified-ward', 'Bastion Cast', 'While Barrier exists, defensive Spells receive a small Mana benefit.', mechanic(5, 'S7', 'Bastion Cast')),
+  perk('vitality-r5-bastion-recovery', 'Reinforced Recovery', 'Healing after Barrier damage is improved with a bounded response.', mechanic(5, 'S8', 'Reinforced Recovery')),
+  major('vitality-r5-living-fortress', 'Renewal', 'Every 12 seconds in combat, below 50% Health heals 4% Max Health; otherwise gain a Barrier equal to 4% Max Health.', mechanic(5, 'M', 'Renewal')),
 ])
+
 const ring6 = createRing('vitality', 6, [
-  minor('vitality-r6-greater-vitality', 'Greater Vitality', '+40 Max Health per rank.', linearStat('maxHealth', 40)),
-  minor('vitality-r6-greater-recovery', 'Greater Recovery', '+0.6 Health Regen per rank.', linearStat('healthRegen', 0.6)),
-  minor('vitality-r6-restoration-mastery', 'Restoration Mastery', '+4% Healing Done per rank.', linearStat('healingDonePct', 0.04)),
-  minor('vitality-r6-rejuvenation', 'Rejuvenation', '+4% Healing Received per rank.', rankedModifier('healing-received-percent', 0.04)),
-  perk('vitality-r6-ward-life', 'Ward Life', 'Whenever Barrier is gained, heal 0.4% Max Health per rank.', (rank) => ({ rules: [rule('vitality-ward-life', 'on-barrier-gained', [{ type: 'heal', target: 'self', magnitude: { type: 'source-max-health-percent', value: 0.004 * rank } }], undefined, { cooldownMs: 2000 })] })),
-  perk('vitality-r6-barrier-renewal', 'Barrier Renewal', 'When Barrier breaks, heal 1% Max Health per rank.', (rank) => ({ rules: [rule('vitality-barrier-renewal', 'on-barrier-broken', [{ type: 'heal', target: 'self', magnitude: { type: 'source-max-health-percent', value: 0.01 * rank } }])] })),
-  perk('vitality-r6-desperate-regeneration', 'Desperate Regeneration', 'Below 50% Health: +0.5 Health Regen per rank.', rankedModifier('health-regen-flat', 0.5, belowHp(50))),
-  perk('vitality-r6-renewed-guard', 'Renewed Guard', 'A successful Block heals 0.4–2% Max Health.', (rank) => ({ rules: [rule('vitality-renewed-guard', 'on-damage-taken', [{ type: 'heal', target: 'self', magnitude: { type: 'source-max-health-percent', value: rankValues(rank, [0.004, 0.008, 0.012, 0.016, 0.02]) } }], { type: 'event-was-blocked' }, { cooldownMs: 2000 })] })),
-  major('vitality-r6-phoenix-ward', 'Phoenix Ward', 'Crossing below 20% Health grants Barrier and heals for 10% Max Health.', fixedEffects({ rules: [rule('vitality-phoenix-ward', 'on-hp-threshold', [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'source-max-health-percent', value: 0.15 } }, { type: 'heal', target: 'self', magnitude: { type: 'source-max-health-percent', value: 0.1 } }], belowHp(20), { cooldownMs: 30000 })] })),
+  minor('vitality-r6-greater-vitality', 'Renewal Vitality', '+0.8% Max Health per rank. Rank 5: +4%.', linearStat('maxHealthPct', 0.008)),
+  minor('vitality-r6-greater-recovery', 'Renewal Ward', '+1.4% Barrier Power per rank. Rank 5: +7%.', linearStat('barrierPowerPct', 0.014)),
+  minor('vitality-r6-restoration-mastery', 'Renewal Defense', '+2.8 Defense per rank. Rank 5: +14.', linearStat('defense', 2.8)),
+  minor('vitality-r6-rejuvenation', 'Renewal Restoration', '+1% Healing Received per rank. Rank 5: +5%.', healingReceived(0.01)),
+  perk('vitality-r6-ward-life', 'Regenerative Casting', 'A successful defensive Spell restores a small amount of Health.', mechanic(6, 'S5', 'Regenerative Casting')),
+  perk('vitality-r6-barrier-renewal', 'Healing Momentum', 'Healing events build a bounded defensive tempo benefit.', mechanic(6, 'S6', 'Healing Momentum')),
+  perk('vitality-r6-desperate-regeneration', 'Barrier Break Recovery', 'Barrier breaking starts a bounded recovery response.', mechanic(6, 'S7', 'Barrier Break Recovery')),
+  perk('vitality-r6-renewed-guard', 'Renewal Cycle', 'Alternating Healing and Barrier events improves the next defensive event.', mechanic(6, 'S8', 'Renewal Cycle')),
+  major('vitality-r6-phoenix-ward', 'Refuse Death', 'The first time each encounter Health falls below 15%, gain a Barrier equal to 10% Max Health. It does not negate lethal damage after the fact.', mechanic(6, 'M', 'Refuse Death')),
 ])
+
 const ring7 = createRing('vitality', 7, [
-  minor('vitality-r7-undying-vitality', 'Undying Vitality', '+50 Max Health per rank.', linearStat('maxHealth', 50)),
-  minor('vitality-r7-undying-defense', 'Undying Defense', '+4 Defense per rank.', linearStat('defense', 4)),
-  minor('vitality-r7-undying-guard', 'Undying Guard', 'Legacy compatibility slot; V6 catalog owns this mechanic.', linearStat('defense', 0)),
-  minor('vitality-r7-undying-ward', 'Undying Ward', '+5% Barrier Power per rank.', linearStat('barrierPowerPct', 0.05)),
-  perk('vitality-r7-refuse-death', 'Refuse Death', 'Below 35% Health: -1.25% Damage Taken per rank.', rankedModifier('damage-taken-percent', -0.0125, belowHp(35))),
-  perk('vitality-r7-barrier-armor', 'Barrier Armor', 'While Barrier exists: +2 Defense per rank.', rankedModifier('defense-flat', 2, { type: 'self-has-barrier' })),
-  perk('vitality-r7-pain-to-mana', 'Pain to Mana', 'Taking positive Health damage restores 1–5 Mana.', (rank) => ({ rules: [rule('vitality-pain-to-mana', 'on-damage-taken', [{ type: 'restore-resource', target: 'self', resource: 'mana', magnitude: { type: 'flat', value: rank } }], { type: 'event-health-damage-positive' }, { cooldownMs: 2000 })] })),
-  perk('vitality-r7-undying-recovery', 'Undying Recovery', 'A kill heals 1% Max Health per rank.', (rank) => ({ rules: [rule('vitality-undying-recovery', 'on-kill', [{ type: 'heal', target: 'self', magnitude: { type: 'source-max-health-percent', value: 0.01 * rank } }])] })),
-  major('vitality-r7-undying-will', 'Undying Will', 'Below 35% Health: -10% Damage Taken and +20% Healing Received.', fixedEffects({ modifiers: [modifier('damage-taken-percent', -0.1, belowHp(35)), modifier('healing-received-percent', 0.2, belowHp(35))] })),
+  minor('vitality-r7-undying-vitality', 'Undying Vitality', '+1% Max Health per rank. Rank 5: +5%.', linearStat('maxHealthPct', 0.01)),
+  minor('vitality-r7-undying-defense', 'Undying Defense', '+3.8 Defense per rank. Rank 5: +19.', linearStat('defense', 3.8)),
+  minor('vitality-r7-undying-guard', 'Undying Recovery', '+0.6 Health Regen per rank. Rank 5: +3/sec.', linearStat('healthRegen', 0.6)),
+  minor('vitality-r7-undying-ward', 'Undying Will', '-0.2% Damage Taken per rank. Rank 5: -1%.', damageTaken(-0.002)),
+  perk('vitality-r7-refuse-death', 'Last Refuge', 'A severe low-health event grants a strong but bounded defensive response.', mechanic(7, 'S5', 'Last Refuge')),
+  perk('vitality-r7-barrier-armor', 'Defiant Casting', 'Low Health improves the next defensive Spell.', mechanic(7, 'S6', 'Defiant Casting')),
+  perk('vitality-r7-pain-to-mana', 'Pain Conversion', 'Taking Health damage can restore a bounded amount of Mana.', mechanic(7, 'S7', 'Pain Conversion')),
+  perk('vitality-r7-undying-recovery', 'Comeback', 'Recovering from low Health grants a bounded short-term benefit.', mechanic(7, 'S8', 'Comeback')),
+  major('vitality-r7-undying-will', 'Undying', 'Once per dungeon run, lethal damage leaves the player at 1 Health, grants a Barrier equal to 15% Max Health, and grants 40% Damage Reduction for 1.5 seconds.', mechanic(7, 'M', 'Undying')),
 ])
+
 const ring8 = createRing('vitality', 8, [
-  minor('vitality-r8-eternal-vitality', 'Eternal Vitality', '+75 Max Health per rank.', linearStat('maxHealth', 75)),
-  minor('vitality-r8-eternal-recovery', 'Eternal Recovery', '+1 Health Regen per rank.', linearStat('healthRegen', 1)),
-  minor('vitality-r8-eternal-defense', 'Eternal Defense', '+5 Defense per rank.', linearStat('defense', 5)),
-  minor('vitality-r8-eternal-guard', 'Eternal Guard', 'Legacy compatibility slot; V6 catalog owns this mechanic.', linearStat('defense', 0)),
-  minor('vitality-r8-eternal-barrier', 'Eternal Barrier', '+6% Barrier Power per rank.', linearStat('barrierPowerPct', 0.06)),
-  minor('vitality-r8-eternal-restoration', 'Eternal Restoration', '+5% Healing Done per rank.', linearStat('healingDonePct', 0.05)),
-  perk('vitality-r8-eternal-ward', 'Eternal Ward', 'While Barrier exists: -1.5% Damage Taken per rank.', rankedModifier('damage-taken-percent', -0.015, { type: 'self-has-barrier' })),
-  perk('vitality-r8-final-recovery', 'Final Recovery', 'Below 25% Health: +5% Healing Received per rank.', rankedModifier('healing-received-percent', 0.05, belowHp(25))),
-  major('vitality-r8-eternal-aegis', 'Eternal Aegis', '+150 Max Health, +10 Defense, +10% Barrier Power, and +10% Healing Received.', fixedEffects({ stats: { maxHealth: 150, defense: 10, barrierPowerPct: 0.1 }, modifiers: [modifier('healing-received-percent', 0.1)] })),
+  minor('vitality-r8-eternal-vitality', 'Eternal Vitality', '+1.2% Max Health per rank. Rank 5: +6%.', linearStat('maxHealthPct', 0.012)),
+  minor('vitality-r8-eternal-recovery', 'Eternal Ward', '+2.2% Barrier Power per rank. Rank 5: +11%.', linearStat('barrierPowerPct', 0.022)),
+  minor('vitality-r8-eternal-defense', 'Eternal Restoration', '+1% Healing Done per rank. Rank 5: +5%.', linearStat('healingDonePct', 0.01)),
+  minor('vitality-r8-eternal-guard', 'Eternal Fortress', '-0.4% Damage Taken per rank. Rank 5: -2%.', damageTaken(-0.004)),
+  perk('vitality-r8-eternal-barrier', 'Phoenix Pulse', 'A once-per-encounter low-health pulse grants immediate recovery.', mechanic(8, 'S5', 'Phoenix Pulse')),
+  perk('vitality-r8-eternal-restoration', 'Life Battery', 'Stored defensive value supports a later healing event.', mechanic(8, 'S6', 'Life Battery')),
+  perk('vitality-r8-eternal-ward', 'Unbroken Cycle', 'Alternating Healing and Barrier events sustain a bounded defensive cycle.', mechanic(8, 'S7', 'Unbroken Cycle')),
+  perk('vitality-r8-final-recovery', 'Eternal Recovery', 'Late-game recovery effects gain a bounded improvement.', mechanic(8, 'S8', 'Eternal Recovery')),
+  major('vitality-r8-eternal-aegis', 'Eternal Aegis', '15% of effective Healing grants Barrier and 15% of effective Barrier gained heals the player. Each conversion is capped at 3% Max Health per event and conversion-generated effects cannot recursively retrigger the opposite conversion.', mechanic(8, 'M', 'Eternal Aegis')),
 ])
 
 export const vitalityNodes = [ring1, ring2, ring3, ring4, ring5, ring6, ring7, ring8]

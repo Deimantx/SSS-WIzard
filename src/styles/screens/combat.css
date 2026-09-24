@@ -1929,7 +1929,7 @@
 .combat-details-reset-button { display: grid; width: 25px; height: 25px; place-items: center; padding: 0; border: 1px solid var(--ui-border-strong); border-radius: 5px; color: var(--ui-text-muted); background: transparent; cursor: pointer; }
 .combat-details-reset-button:hover,
 .combat-details-reset-button:focus-visible { border-color: var(--ui-accent); color: var(--ui-text); background: color-mix(in srgb, var(--ui-accent) 10%, transparent); outline: none; }
-.combat-details-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; min-width: 0; padding-bottom: 8px; border-bottom: 1px solid var(--ui-border); }
+.combat-details-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; min-width: 0; min-height: 0; align-items: start; padding-block: 8px 9px; border-bottom: 1px solid var(--ui-border); }
 .combat-details-summary > .game-tooltip-trigger { min-width: 0; padding-left: 8px; border-left: 1px solid var(--ui-border); }
 .combat-details-summary-stat { display: grid; min-width: 0; gap: 2px; align-content: start; padding: 0 8px; }
 .combat-details-summary-stat:first-child { padding-left: 0; }
@@ -1954,9 +1954,8 @@
 .combat-details-rank { color: var(--ui-text-muted); font: 10px var(--font-mono); text-align: right; }
 .combat-details-source-icon { display: grid; width: 22px; height: 22px; place-items: center; color: currentColor; }
 .combat-details-source-icon .spell-icon-shell { transform: scale(.8); }
-.combat-details-source { display: grid; min-width: 0; gap: 1px; }
-.combat-details-source strong { overflow: hidden; color: var(--ui-text-soft); font-size: 11px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
-.combat-details-source small { overflow: hidden; color: var(--ui-text-muted); font: 9px var(--font-mono); text-overflow: ellipsis; white-space: nowrap; }
+.combat-details-source { display: block; min-width: 0; min-height: 0; }
+.combat-details-source strong { display: block; overflow: hidden; color: var(--ui-text-soft); font-size: 11px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .combat-details-row-total,
 .combat-details-row-percent { position: relative; z-index: 1; color: var(--ui-text); font: 11px var(--font-mono); text-align: right; white-space: nowrap; }
 .combat-details-row-percent { min-width: 42px; color: var(--ui-text-muted); font-size: 10px; }
@@ -1975,12 +1974,10 @@
   .combat-details-row { grid-template-columns: 18px 20px minmax(0, 1fr) auto auto; gap: 4px; padding-right: 3px; }
   .combat-details-source-icon { width: 20px; height: 20px; }
   .combat-details-source strong { font-size: 10px; }
-  .combat-details-source small { font-size: 8px; }
   .combat-details-row-total { font-size: 10px; }
   .combat-details-row-percent { min-width: 36px; font-size: 9px; }
 }
 @container (max-width: 360px) {
-  .combat-details-source small { display: none; }
   .combat-details-row-percent { min-width: 32px; }
 }
 .combat-metric-tooltip-source-head > b { white-space: nowrap; }
@@ -2066,25 +2063,24 @@
 .dungeon-statistics-section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; }
 .dungeon-statistics-section-head > span { color: var(--ui-text-soft); }
 .dungeon-statistics-section-head > small { color: var(--ui-gold); font: inherit; letter-spacing: .06em; }
-.dungeon-statistics-drops-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: min-content; gap: 6px; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 1px 2px 3px 1px; scrollbar-color: var(--ui-border-strong) transparent; scrollbar-width: thin; }
+.dungeon-statistics-drops-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 108px)); grid-auto-rows: min-content; justify-content: start; gap: 6px; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 1px 2px 3px 1px; scrollbar-color: var(--ui-border-strong) transparent; scrollbar-width: thin; }
 .dungeon-statistics-drops-grid > .game-tooltip-trigger { display: block; min-width: 0; }
-.dungeon-statistics-drop-tile { display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto; align-items: center; min-width: 0; min-height: 106px; gap: 4px; padding: 7px 6px 6px; border: 1px solid color-mix(in srgb, var(--ui-accent) 24%, var(--ui-border)); border-radius: 7px; color: var(--ui-text-muted); background: linear-gradient(145deg, color-mix(in srgb, var(--ui-accent) 7%, var(--ui-panel-strong)), var(--ui-panel)); cursor: help; text-align: center; transition: border-color 180ms cubic-bezier(.32,.72,0,1), background 180ms cubic-bezier(.32,.72,0,1), transform 180ms cubic-bezier(.32,.72,0,1); }
+.dungeon-statistics-drop-tile { display: grid; grid-template-rows: 30px auto auto; align-items: center; min-width: 0; min-height: 76px; gap: 3px; padding: 6px 5px 5px; border: 1px solid color-mix(in srgb, var(--ui-accent) 24%, var(--ui-border)); border-radius: 7px; color: var(--ui-text-muted); background: linear-gradient(145deg, color-mix(in srgb, var(--ui-accent) 7%, var(--ui-panel-strong)), var(--ui-panel)); cursor: help; text-align: center; transition: border-color 180ms cubic-bezier(.32,.72,0,1), background 180ms cubic-bezier(.32,.72,0,1), transform 180ms cubic-bezier(.32,.72,0,1); }
 .dungeon-statistics-drop-tile:hover,
 .dungeon-statistics-drop-tile:focus-visible { border-color: color-mix(in srgb, var(--ui-accent) 72%, var(--ui-border-strong)); background: linear-gradient(145deg, color-mix(in srgb, var(--ui-accent) 13%, var(--ui-panel-strong)), var(--ui-panel)); outline: none; transform: translateY(-1px); }
-.dungeon-statistics-drop-icon { display: grid; place-items: center; min-height: 49px; }
-.dungeon-statistics-drop-icon .item-icon-tile { width: 48px; height: 48px; font-size: 29px; }
-.dungeon-statistics-drop-name { overflow: hidden; min-width: 0; color: var(--ui-text-soft); font-size: 9px; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
-.dungeon-statistics-drop-quantity { color: var(--ui-success); font: 15px/1 var(--font-mono); }
-.dungeon-statistics-drop-rate { color: var(--ui-gold); font: var(--text-micro) var(--font-mono); white-space: nowrap; }
+.dungeon-statistics-drop-icon { display: grid; min-height: 30px; place-items: center; }
+.dungeon-statistics-drop-icon .item-icon-tile { width: 30px; height: 30px; font-size: 18px; }
+.dungeon-statistics-drop-quantity { color: var(--ui-success); font: 12px/1 var(--font-mono); font-weight: 700; }
+.dungeon-statistics-drop-rate { color: var(--ui-gold); font: 10px/1 var(--font-mono); font-weight: 650; white-space: nowrap; }
 .dungeon-statistics-resonance-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 6px; }
 .dungeon-statistics-resonance-list > .game-tooltip-trigger { display: block; min-width: 0; }
-.dungeon-statistics-resonance-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 7px; align-items: center; min-width: 0; padding: 6px 7px; border: 1px solid color-mix(in srgb, currentColor 22%, var(--ui-border)); border-radius: 6px; background: color-mix(in srgb, currentColor 5%, var(--ui-panel)); cursor: help; }
+.dungeon-statistics-resonance-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(52px, auto) minmax(72px, auto); column-gap: 18px; align-items: center; min-width: 0; min-height: 26px; padding: 4px 7px; border: 1px solid color-mix(in srgb, currentColor 22%, var(--ui-border)); border-radius: 6px; background: color-mix(in srgb, currentColor 5%, var(--ui-panel)); cursor: help; }
 .dungeon-statistics-resonance-row:hover,
 .dungeon-statistics-resonance-row:focus-visible { border-color: color-mix(in srgb, currentColor 62%, var(--ui-border-strong)); outline: none; }
 .dungeon-statistics-resonance-name { display: inline-flex; align-items: center; min-width: 0; gap: 6px; overflow: hidden; color: var(--ui-text-soft); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 .dungeon-statistics-resonance-mark { width: 6px; height: 6px; flex: 0 0 auto; border-radius: 50%; background: currentColor; box-shadow: 0 0 7px currentColor; }
-.dungeon-statistics-resonance-row strong { color: var(--ui-success); font: var(--text-micro) var(--font-mono); white-space: nowrap; }
-.dungeon-statistics-resonance-row > span:last-child { color: var(--ui-gold); font: var(--text-micro) var(--font-mono); white-space: nowrap; }
+.dungeon-statistics-resonance-row strong { color: var(--ui-success); font: var(--text-micro) var(--font-mono); text-align: right; white-space: nowrap; }
+.dungeon-statistics-resonance-row > span:last-child { color: var(--ui-gold); font: var(--text-micro) var(--font-mono); text-align: right; white-space: nowrap; }
 .dungeon-statistics-resonance-row.resonance-fire { color: var(--semantic-damage-fire); }
 .dungeon-statistics-resonance-row.resonance-water { color: var(--semantic-damage-water); }
 .dungeon-statistics-resonance-row.resonance-earth { color: var(--semantic-damage-earth); }
@@ -2115,12 +2111,11 @@
   .dungeon-statistics-mode-nav { width: 100%; grid-template-columns: 25px minmax(0, 1fr) 25px 25px; }
   .dungeon-statistics-summary-grid { gap: 6px; }
   .dungeon-statistics-stat > strong { font-size: 13px; }
-  .dungeon-statistics-drops-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .dungeon-statistics-drops-grid { grid-template-columns: repeat(3, minmax(92px, 108px)); justify-content: start; }
   .dungeon-statistics-resonance-list { grid-template-columns: 1fr; }
 }
 @container (max-width: 300px) {
-  .dungeon-statistics-drops-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .dungeon-statistics-drop-tile { min-height: 98px; }
+  .dungeon-statistics-drops-grid { grid-template-columns: repeat(2, minmax(92px, 108px)); justify-content: start; }
 }
 
 /* V3.6.1 Defeat Summary */
@@ -2373,8 +2368,7 @@
 /* V3.9 responsive readability tokens for high-frequency Combat surfaces */
 .combat-flow-effect strong,
 .spell-combat-name strong,
-.dungeon-statistics-context strong,
-.dungeon-statistics-drop-name { font-size: var(--ui-font-small); }
+.dungeon-statistics-context strong { font-size: var(--ui-font-small); }
 .combat-flow-effect small,
 .combat-status-chip,
 .dungeon-statistics-stat > span,
@@ -2528,8 +2522,7 @@
 }
 @container (max-width: 360px) {
   .dungeon-statistics-drops-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; }
-  .dungeon-statistics-drop-tile { min-height: 96px; padding-inline: 4px; }
-  .dungeon-statistics-drop-name { font-size: var(--ui-font-micro); }
+  .dungeon-statistics-drop-tile { min-height: 76px; padding-inline: 4px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -3196,7 +3189,6 @@
 .combat-details-source-icon .spell-icon-shell { transform: scale(.84); }
 .combat-details-source { gap: 2px; }
 .combat-details-source strong { color: var(--ui-text-soft); font-size: var(--ui-font-small); font-weight: 650; }
-.combat-details-source small { color: var(--ui-text-muted); font-size: var(--ui-font-micro); }
 .combat-details-row-total { color: var(--ui-text); font-size: var(--ui-font-small); font-weight: 650; }
 .combat-details-row-percent { color: var(--ui-text-muted); font-size: var(--ui-font-micro); }
 .combat-details-empty { min-height: 92px; gap: 6px; }
@@ -3218,7 +3210,6 @@
 .dungeon-statistics-stat > strong { color: var(--ui-text); font-size: clamp(1rem, 1.3vw, 1.25rem); font-weight: 650; }
 .dungeon-statistics-drops-summary > .game-tooltip-trigger:last-child .dungeon-statistics-stat > strong { color: var(--ui-gold); }
 .dungeon-statistics-section-head > span { font-weight: 700; }
-.dungeon-statistics-drop-name { font-weight: 650; }
 .dungeon-statistics-feature-kpi { padding-bottom: 9px; border-bottom-color: color-mix(in srgb, var(--ui-gold) 20%, var(--ui-border)); }
 .dungeon-statistics-feature-kpi span,
 .dungeon-statistics-current-run span { color: var(--ui-text-muted); font-size: var(--ui-font-micro); font-weight: 600; letter-spacing: .09em; }

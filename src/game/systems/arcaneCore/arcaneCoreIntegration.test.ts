@@ -77,7 +77,7 @@ describe('Arcane Core V7 integration', () => {
     expect(controlStats.statusDurationPct).toBeCloseTo(0.20)
     expect(controlStats.cooldownRecoveryPct).toBeCloseTo(0.10)
     expect(sum(controlModifiers, 'action-speed-percent')).toBeCloseTo(0.08)
-    expect(sum(controlModifiers, 'damage-dealt-percent', 'enemy')).toBeCloseTo(-0.06)
+    expect(sum(controlModifiers, 'damage-dealt-percent', 'enemy')).toBeCloseTo(-0.11)
     expect(sum(controlModifiers, 'damage-dealt-percent', 'player')).toBeCloseTo(0.08)
   })
 })

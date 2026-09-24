@@ -15,6 +15,7 @@ import type {
   Magnitude,
 } from "../../systems/combat/combatTypes";
 import { ARCANE_CORE_NODES } from "../../content/arcaneCore/arcaneCoreBranches";
+import { ARCANE_CORE_V7_MECHANIC_REGISTRY } from "../../content/arcaneCore/arcaneCoreV7Mechanics";
 import {
   getArcaneCoreNodeRank,
   getArcaneCoreResolvedEffects,
@@ -442,9 +443,13 @@ export const getArcaneCoreNodeEffectTexts = (
   rank = 1,
 ) => {
   if (rank <= 0) return ["Inactive"];
-  const effects = node.resolveEffects(
-    Math.max(1, Math.min(node.maxRank, rank)),
-  );
+  const resolvedRank = Math.max(1, Math.min(node.maxRank, rank));
+  const effects = node.resolveEffects(resolvedRank);
+  const mechanic = effects.special?.find((value) => value.type === "v6-mechanic");
+  if (mechanic?.type === "v6-mechanic") {
+    const definition = ARCANE_CORE_V7_MECHANIC_REGISTRY[mechanic.mechanicId];
+    if (definition) return definition.describeRank(resolvedRank);
+  }
   const stats = Object.entries(effects.stats ?? {}).map(
     ([key, value]) =>
       `${getArcaneCoreModifierLabel(key as ArcaneCoreModifierKey)} ${formatArcaneCoreModifierValue(key as ArcaneCoreModifierKey, Number(value))}`,

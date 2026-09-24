@@ -224,6 +224,8 @@ export const processArcaneCoreV6CombatEvent = (state: GameState, actor: 'player'
       if (refreshRanks) runtime.nextControlStatusDurationMultiplier = Math.max(runtime.nextControlStatusDurationMultiplier ?? 1, 1 + rankPercent(refreshRanks, [0.01, 0.02, 0.03, 0.04, 0.05]))
       const chainRanks = mechanicRank(state, V6_MECHANICS.chainControl)
       if (chainRanks && (runtime.controlStatusApplications ?? 0) >= 2) runtime.nextDamageMultiplier = Math.max(runtime.nextDamageMultiplier ?? 1, 1 + rankPercent(chainRanks, [0.01, 0.02, 0.03, 0.04, 0.05]))
+      const coldPrecisionRanks = mechanicRank(state, V6_MECHANICS.coldPrecision)
+      if (coldPrecisionRanks && state.combat.enemyStatuses.some((status) => controlStatusIds.has(status.statusId))) runtime.nextDamageMultiplier = Math.max(runtime.nextDamageMultiplier ?? 1, 1 + rankPercent(coldPrecisionRanks, [0.015, 0.03, 0.045, 0.06, 0.075]))
       const tremorRanks = mechanicRank(state, V6_MECHANICS.tremorLock)
       if (tremorRanks) delayEnemyAction(state, rankPercent(tremorRanks, [50, 100, 150, 200, 250]))
       const interferenceRanks = mechanicRank(state, V6_MECHANICS.spellInterference)
@@ -286,8 +288,6 @@ export const processArcaneCoreV6CombatEvent = (state: GameState, actor: 'player'
   }
 
   if (event === 'on-barrier-broken' && actor === 'player') {
-    const secondSkinRanks = mechanicRank(state, V6_MECHANICS.secondSkin)
-    if (secondSkinRanks) pushHeal(rankPercent(secondSkinRanks, [0.0025, 0.005, 0.0075, 0.01, 0.0125]))
     const breakRecoveryRanks = mechanicRank(state, V6_MECHANICS.barrierBreakRecovery)
     if (breakRecoveryRanks) pushHeal(rankPercent(breakRecoveryRanks, [0.0075, 0.015, 0.0225, 0.03, 0.0375]))
     const emergencyPulseRanks = mechanicRank(state, V6_MECHANICS.emergencyPulse)
@@ -487,7 +487,9 @@ export const getArcaneCoreV6CastModifiers = (state: GameState, context: ArcaneCo
 
   if (hasMechanic(state, V6_MECHANICS.absoluteStasis) && (runtime.absoluteStasisUntilMs ?? 0) > runtime.elapsedMs) actionSpeedMultiplier *= 1.15
 
-  const autoCastNumber = (runtime.autoCastCount ?? 0) + (preview && context.origin === 'auto' ? 1 : 0)
+  // The modifier is evaluated both during preview and immediately after the
+  // cast is committed. Count the spell being evaluated in both paths.
+  const autoCastNumber = (runtime.autoCastCount ?? 0) + (context.origin === 'auto' ? 1 : 0)
   if (context.origin === 'auto' && autoSlots > 0 && hasMechanic(state, V6_MECHANICS.echoHarmony) && autoCastNumber > 0 && autoCastNumber % 3 === 0) {
     manaRestoreFlat += rankValue(mechanicRank(state, V6_MECHANICS.echoHarmony), [1, 2, 3, 4, 5])
   }
@@ -547,7 +549,7 @@ export const getArcaneCoreV6CastModifiers = (state: GameState, context: ArcaneCo
     if (mechanicId === V6_MECHANICS.unstablePower && context.damaging && nextDamagingNumber % 5 === 0) { damageMultiplier += 0.30; manaCostMultiplier *= 1.15 }
     if (mechanicId === V6_MECHANICS.overcharge && costBand.ratio >= 0.10) damageMultiplier += rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
     if (mechanicId === V6_MECHANICS.overcast && costBand.overcharged) damageMultiplier += rankValue(rank, [0.03, 0.06, 0.09, 0.12, 0.15])
-    if (mechanicId === V6_MECHANICS.manaBurn && context.playerMana / Math.max(1, context.maxMana) < 0.2) damageMultiplier += rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
+    if (mechanicId === V6_MECHANICS.manaBurn && projectedManaAfterCost / Math.max(1, context.maxMana) < 0.2) damageMultiplier += rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
     if (mechanicId === V6_MECHANICS.desperatePower && context.playerMana / Math.max(1, context.maxMana) < 0.2) damageMultiplier += rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
     if (mechanicId === V6_MECHANICS.manaEdge && context.playerMana / Math.max(1, context.maxMana) > 0.8) damageMultiplier += rankValue(rank, [0.005, 0.01, 0.015, 0.02, 0.025])
     if (mechanicId === V6_MECHANICS.finisher && context.enemyHealthPercent < 25) damageMultiplier += rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
@@ -574,6 +576,7 @@ export const getArcaneCoreV6CastModifiers = (state: GameState, context: ArcaneCo
     if (mechanicId === V6_MECHANICS.markedPrecision && hasControl) critChanceBonus += rankValue(rank, [0.002, 0.004, 0.006, 0.008, 0.010])
     if (mechanicId === V6_MECHANICS.perfectPrecision && context.damaging && (runtime.failedCritStreak ?? 0) >= 2) critChanceBonus += 0.15
     if (mechanicId === V6_MECHANICS.spellSequence && context.damaging && differentSpellPreview >= 3) damageMultiplier += rankValue(rank, [0.03, 0.06, 0.09, 0.12, 0.15])
+    if (mechanicId === V6_MECHANICS.aggressiveRotation && differentSpellPreview >= 5) actionSpeedMultiplier *= 1 + rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
     if (mechanicId === V6_MECHANICS.rapidEscalation && context.damaging && (runtime.lastSuccessfulCastAtMs ?? -Infinity) >= runtime.elapsedMs - 3000) damageMultiplier += rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
     if (mechanicId === V6_MECHANICS.heavyFollowUp && context.damaging && costBand.low && runtime.nextLowCostDamageMultiplier && runtime.nextLowCostDamageMultiplier > 1) damageMultiplier *= runtime.nextLowCostDamageMultiplier
     if ((mechanicId === V6_MECHANICS.debuffAssault || mechanicId === V6_MECHANICS.corrodedDefense || mechanicId === V6_MECHANICS.debuffPressure) && negativeStatusCount >= 2) damageMultiplier += rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
@@ -622,7 +625,10 @@ export const getArcaneCoreV6CastModifiers = (state: GameState, context: ArcaneCo
     if (mechanicId === V6_MECHANICS.echoCascade && context.origin !== 'auto' && (runtime.consecutiveAutoCasts ?? 0) >= 3) actionSpeedMultiplier *= 1 + rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
     if (mechanicId === V6_MECHANICS.manualCascade && context.origin === 'auto' && (runtime.consecutiveManualCasts ?? 0) >= 3) effectivenessMultiplier *= 1 + rankValue(rank, [0.02, 0.04, 0.06, 0.08, 0.10])
     if (mechanicId === V6_MECHANICS.singularityEcho && context.origin !== 'auto' && runtime.lastCastOrigin === 'auto' && runtime.lastCastAtFullMana) effectivenessMultiplier *= 1 + rankValue(rank, [0.03, 0.06, 0.09, 0.12, 0.15])
-    if (mechanicId === V6_MECHANICS.singularityManual && context.origin === 'auto' && runtime.nextAutoRefundPercent) manaRefundPercent = Math.max(manaRefundPercent, runtime.nextAutoRefundPercent)
+    if (mechanicId === V6_MECHANICS.singularityManual && context.origin !== 'auto' && runtime.nextAutoRefundPercent) {
+      manaRefundPercent = Math.max(manaRefundPercent, runtime.nextAutoRefundPercent)
+      if (!preview) runtime.nextAutoRefundPercent = undefined
+    }
     if (mechanicId === V6_MECHANICS.focusCollapse) {
       if (context.origin === 'auto' && reservedFocus > state.player.maxFocus * 0.75) actionSpeedMultiplier *= 1 + rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
       if (context.origin !== 'auto' && reservedFocus < state.player.maxFocus * 0.25) actionSpeedMultiplier *= 1 + rankValue(rank, [0.01, 0.02, 0.03, 0.04, 0.05])
@@ -644,6 +650,8 @@ export const getArcaneCoreV6CastModifiers = (state: GameState, context: ArcaneCo
   if (reservedPowerRanks && context.damaging) damageMultiplier += Math.min(0.10, Math.floor(reservedFocus / 10) * rankValue(reservedPowerRanks, [0.005, 0.01, 0.015, 0.02, 0.025]))
   const astralReservedRanks = mechanicRank(state, V6_MECHANICS.astralReservedPower)
   if (astralReservedRanks && context.damaging) damageMultiplier += Math.min(0.075, Math.floor(reservedFocus / 10) * 0.005)
+  const freeMindRanks = mechanicRank(state, V6_MECHANICS.freeMind)
+  if (freeMindRanks) actionSpeedMultiplier *= 1 + Math.min(0.10, Math.floor(freeFocus / 10) * rankValue(freeMindRanks, [0.005, 0.01, 0.015, 0.02, 0.025]))
   const astralOpenRanks = mechanicRank(state, V6_MECHANICS.astralOpenMind)
   if (astralOpenRanks) actionSpeedMultiplier *= 1 + Math.min(0.075, Math.floor(freeFocus / 10) * 0.005)
   const quietMindRanks = mechanicRank(state, V6_MECHANICS.quietMind)
@@ -729,7 +737,6 @@ export const commitArcaneCoreV6SpellCast = (state: GameState, context: ArcaneCor
   runtime.manualCastCount = context.origin === 'auto' ? (runtime.manualCastCount ?? 0) : (runtime.manualCastCount ?? 0) + 1
   if (context.origin === 'auto') runtime.echoCharges = Math.min(5, (runtime.echoCharges ?? 0) + 1)
   else runtime.manualCharges = Math.min(5, (runtime.manualCharges ?? 0) + 1)
-  if (context.loadoutSlotIndex !== null && context.loadoutSlotIndex !== undefined) runtime.castLoadoutSlots = [...new Set([...(runtime.castLoadoutSlots ?? []), context.loadoutSlotIndex])]
   const band = classifyArcaneCoreSpellCost(context)
   const bandName: 'low' | 'high' | 'overcharged' | 'extreme' = band.extreme ? 'extreme' : band.overcharged ? 'overcharged' : band.high ? 'high' : 'low'
   runtime.costBandHistory = [...(runtime.costBandHistory ?? []), bandName].slice(-3)
@@ -745,6 +752,18 @@ export const commitArcaneCoreV6SpellCast = (state: GameState, context: ArcaneCor
   runtime.lastLoadoutSlotIndex = context.loadoutSlotIndex
   if (context.origin === 'manual-queued' && hasMechanic(state, V6_MECHANICS.tacticalQueue)) reduceAllCooldowns(state, rankValue(mechanicRank(state, V6_MECHANICS.tacticalQueue), [50, 100, 150, 200, 250]))
   const result = getArcaneCoreV6CastModifiers(state, context)
+  if (context.loadoutSlotIndex !== null && context.loadoutSlotIndex !== undefined) runtime.castLoadoutSlots = [...new Set([...(runtime.castLoadoutSlots ?? []), context.loadoutSlotIndex])]
+  const cataclysmicReserveRank = mechanicRank(state, V6_MECHANICS.cataclysmicReserve)
+  if (cataclysmicReserveRank && band.overcharged) runtime.nextCritChanceBonus = Math.max(runtime.nextCritChanceBonus ?? 0, rankValue(cataclysmicReserveRank, [0.01, 0.02, 0.03, 0.04, 0.05]))
+  const resonantCastRank = mechanicRank(state, V6_MECHANICS.resonantCast)
+  if (resonantCastRank && runtime.differentSpellStreak >= 3) {
+    result.manaRestoreFlat += rankValue(resonantCastRank, [1, 2, 3, 4, 5])
+    runtime.differentSpellStreak = 0
+  }
+  const manaToTempoRank = mechanicRank(state, V6_MECHANICS.manaToTempo)
+  if (manaToTempoRank && result.manaRestoreFlat >= context.maxMana * 0.05) runtime.nextActionSpeedMultiplier = Math.max(runtime.nextActionSpeedMultiplier ?? 1, 1 + rankValue(manaToTempoRank, [0.01, 0.02, 0.03, 0.04, 0.05]))
+  const singularityManualRank = mechanicRank(state, V6_MECHANICS.singularityManual)
+  if (singularityManualRank && context.origin === 'auto') runtime.nextAutoRefundPercent = rankValue(singularityManualRank, [0.02, 0.04, 0.06, 0.08, 0.10])
   if (hasMechanic(state, V6_MECHANICS.lastWord) && context.damaging && context.enemyHealthPercent < 20) runtime.lastWordUsed = true
   if (hasMechanic(state, V6_MECHANICS.arcaneApotheosis) && context.damaging && runtime.damagingSpellCount >= 8 && !runtime.apotheosisUntilMs) runtime.apotheosisUntilMs = runtime.elapsedMs + 6000
   const recentManaTotal = (runtime.recentManaSpend ?? []).reduce((sum, entry) => sum + entry.amount, 0)
@@ -779,6 +798,11 @@ export const recordArcaneCoreV6CriticalResult = (state: GameState, critical: boo
   if (critical && hasMechanic(state, V6_MECHANICS.criticalRecovery) && (runtime.criticalRecoveryLastAtMs ?? -Infinity) + 750 <= runtime.elapsedMs) {
     state.player.mana = Math.min(state.player.maxMana, state.player.mana + rankValue(mechanicRank(state, V6_MECHANICS.criticalRecovery), [1, 2, 3, 4, 5]))
     runtime.criticalRecoveryLastAtMs = runtime.elapsedMs
+  }
+  const latestCostBand = runtime.costBandHistory?.[Math.max(0, (runtime.costBandHistory?.length ?? 1) - 1)]
+  if (critical && hasMechanic(state, V6_MECHANICS.criticalCataclysm) && runtime.lastSpellId && (latestCostBand === 'overcharged' || latestCostBand === 'extreme')) {
+    const remaining = state.combat.spellCooldowns[runtime.lastSpellId] ?? 0
+    state.combat.spellCooldowns[runtime.lastSpellId] = Math.max(0, remaining - rankValue(mechanicRank(state, V6_MECHANICS.criticalCataclysm), [200, 400, 600, 800, 1000]))
   }
   if (!critical && hasMechanic(state, V6_MECHANICS.secondChance)) {
     runtime.nextCritChanceBonus = rankValue(mechanicRank(state, V6_MECHANICS.secondChance), [0.002, 0.004, 0.006, 0.008, 0.010])

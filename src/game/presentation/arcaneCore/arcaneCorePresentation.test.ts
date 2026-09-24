@@ -108,7 +108,7 @@ describe("Arcane Core V6 presentation", () => {
     }
   });
 
-  it("formats V6 percentage stats and authored ranked effects in player-readable units", () => {
+  it("formats V7 percentage stats and authored ranked effects in player-readable units", () => {
     expect(formatArcaneCoreModifierValue("spellPowerPct", 0.005)).toBe(
       "+0.50%",
     );
@@ -116,16 +116,16 @@ describe("Arcane Core V6 presentation", () => {
     const node = ARCANE_CORE_NODES.find(
       (candidate) => candidate.name === "Arcane Scaling",
     )!;
-    expect(formatArcaneCoreNodeEffect(node, 1)).toContain("+0.10%");
-    expect(formatArcaneCoreNodeEffect(node, 5)).toContain("+0.50%");
+    expect(formatArcaneCoreNodeEffect(node, 1)).toContain("+0.50%");
+    expect(formatArcaneCoreNodeEffect(node, 5)).toContain("+2.50%");
   });
 
-  it("formats exact V6 descriptions and inactive Major state", () => {
+  it("formats exact V7 descriptions and inactive Major state", () => {
     const cycle = ARCANE_CORE_NODES.find(
-      (candidate) => candidate.name === "Arcane Spark",
+      (candidate) => candidate.name === "Arcane Momentum",
     )!;
-    expect(getArcaneCoreNodeEffectTexts(cycle, 5).join(" ")).toContain(
-      "Every 4th successful damaging Spell",
+    expect(getArcaneCoreNodeEffectTexts(cycle!, 5).join(" ")).toContain(
+      "Every 4th damaging Spell",
     );
     const major = ARCANE_CORE_NODES.find(
       (candidate) =>
@@ -135,7 +135,7 @@ describe("Arcane Core V6 presentation", () => {
     )!;
     expect(getArcaneCoreNodeEffectTexts(major, 0)).toEqual(["Inactive"]);
     expect(getArcaneCoreNodeEffectTexts(major, 1).join(" ")).toContain(
-      major.description.split(".")[0]!,
+      "500 ms",
     );
   });
 

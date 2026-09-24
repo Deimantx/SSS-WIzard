@@ -834,7 +834,7 @@ function CoreModal({
                       <h3>{selected.name}</h3>
                     </div>
                   </div>
-                  <p className="muted">{selected.description}</p>
+                  <p className="muted">{selectedCurrent}</p>
                 </div>
                 <section className="arcane-core-inspector-section">
                   <span className="arcane-core-inspector-section-label">

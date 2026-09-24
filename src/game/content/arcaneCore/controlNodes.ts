@@ -37,7 +37,7 @@ const ring3 = createRing('control', 3, [
   perk('control-r3-kill-momentum', 'Chain Control', 'After 2 control Statuses, the next control Status prepares +1/2/3/4/5% Damage for the next damaging Spell.', mechanic(3, 'S5', 'Chain Control')),
   perk('control-r3-controlled-flow', 'Status Echo', 'The next control Status gains a moderate duration benefit.', mechanic(3, 'S6', 'Status Echo')),
   perk('control-r3-cooldown-mastery', 'Queued Dominion', 'Queued Spells gain a bounded control-status benefit.', mechanic(3, 'S7', 'Queued Dominion')),
-  perk('control-r3-debuff-execution', 'Suppressed Enemy', 'Enemies carrying multiple negative Statuses deal less Damage.', mechanic(3, 'S8', 'Suppressed Enemy')),
+  perk('control-r3-debuff-execution', 'Suppressed Enemy', 'While the enemy has at least 2 Negative Statuses, it deals 1/2/3/4/5% less Damage.', v7MechanicWith('control', 3, 'S8', 'Suppressed Enemy', (rank) => ({ modifiers: [modifier('damage-dealt-percent', -rank * 0.01, negativeStatuses(2), 'enemy')] }))),
   major('control-r3-dominion', 'Temporal Flow', 'The first control-tagged Status applied each encounter delays the enemy by 300 ms and grants +5% Action Speed to the next Spell. Once per encounter.', mechanic(3, 'M', 'Temporal Flow')),
 ])
 

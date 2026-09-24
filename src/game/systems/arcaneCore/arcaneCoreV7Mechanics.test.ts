@@ -1,9 +1,22 @@
 import { describe, expect, it } from 'vitest'
 import { ARCANE_CORE_BRANCHES } from '../../content/arcaneCore/arcaneCoreBranches'
+import { ARCANE_CORE_V7_MECHANICS } from '../../content/arcaneCore/arcaneCoreV7Mechanics'
 import { createInitialState } from '../../../store/initialState'
 import { getArcaneCoreV6CastModifiers, recordArcaneCoreV6CriticalResult } from './arcaneCoreV6Runtime'
 
 describe('Arcane Core V7 mechanic safety', () => {
+  it('provides exact rank-aware, non-vague text for every dynamic node', () => {
+    const forbidden = /\b(small|moderate|meaningful|bounded|slightly|brief bonus|resource benefit|payoff|benefit)\b/i
+    expect(ARCANE_CORE_V7_MECHANICS).toHaveLength(160)
+    for (const definition of ARCANE_CORE_V7_MECHANICS) {
+      const rankOne = definition.describeRank(1).join(' ')
+      const maximum = definition.describeRank(definition.nodeType === 'major' ? 1 : 5).join(' ')
+      expect(rankOne).not.toMatch(forbidden)
+      expect(maximum).not.toMatch(forbidden)
+      if (definition.nodeType !== 'major' && !['Astral Reserved Power', 'Astral Open Mind', 'Limit Break'].includes(definition.name)) expect(rankOne, definition.name).not.toBe(maximum)
+    }
+  })
+
   it('keeps R1-R2 free-cast, lethal-save, hard-stasis, and guaranteed-crit effects out of authored resolvers', () => {
     const earlyNodes = ARCANE_CORE_BRANCHES.flatMap((branch) => branch.nodes.filter((node) => node.ring <= 2))
     const specialTypes = earlyNodes.flatMap((node) => node.resolveEffects(node.maxRank).special ?? []).map((effect) => effect.type)

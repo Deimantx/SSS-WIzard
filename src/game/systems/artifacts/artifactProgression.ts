@@ -30,8 +30,35 @@ const getActiveEffects = (state: Pick<GameState, 'artifactProgress'>, artifactId
   getArtifactUnlockedMajorMilestones(state, artifactId).forEach((major) => active.push({ name: major.name, effects: major.effects }))
   return active
 }
+type ArtifactCombatModifier = NonNullable<NonNullable<ArtifactResolvedEffects['combat']>['modifiers']>[number]
+
+const artifactModifierIdentity = (modifier: ArtifactCombatModifier) => JSON.stringify({ ...modifier, value: undefined })
+
+/** Shared current-state aggregation for runtime consumers and Artifact Path presentation. */
+export const mergeArtifactResolvedEffects = (effects: readonly ArtifactResolvedEffects[]): ArtifactResolvedEffects => {
+  const stats = effects.reduce<EquipmentStats>((total, entry) => addEffects(total, entry), {})
+  const modifiers = new Map<string, ArtifactCombatModifier>()
+  const rules = effects.flatMap((entry) => entry.combat?.rules ?? [])
+  const special = effects.flatMap((entry) => entry.special ?? [])
+
+  effects.flatMap((entry) => entry.combat?.modifiers ?? []).forEach((modifier) => {
+    const key = artifactModifierIdentity(modifier)
+    const prior = modifiers.get(key)
+    modifiers.set(key, { ...modifier, value: (prior?.value ?? 0) + modifier.value })
+  })
+
+  return {
+    ...(Object.keys(stats).length ? { stats } : {}),
+    ...(modifiers.size || rules.length ? { combat: { ...(modifiers.size ? { modifiers: [...modifiers.values()] } : {}), ...(rules.length ? { rules } : {}) } } : {}),
+    ...(special.length ? { special } : {}),
+  }
+}
+
+/** The Artifact's actual contribution: Rank 0 baseline plus purchased Minors and unlocked Majors. */
+export const getArtifactCurrentResolvedEffects = (state: Pick<GameState, 'artifactProgress'>, artifactId: ArtifactId) => mergeArtifactResolvedEffects(getActiveEffects(state, artifactId).map(({ effects }) => effects))
+
 export const getArtifactEffectiveStats = (state: Pick<GameState, 'artifactProgress'>, id: ArtifactId) => {
-  const total: EquipmentStats = {}; getActiveEffects(state, id).forEach(({ effects }) => addEffects(total, effects)); return total
+  return getArtifactCurrentResolvedEffects(state, id).stats ?? {}
 }
 export interface ActiveArtifactCombatProvider { name: string; modifiers: NonNullable<NonNullable<ArtifactResolvedEffects['combat']>['modifiers']>; rules: NonNullable<NonNullable<ArtifactResolvedEffects['combat']>['rules']>; special: NonNullable<ArtifactResolvedEffects['special']> }
 export const getActiveArtifactCombatProviders = (state: Pick<GameState, 'artifactProgress'>, id: ArtifactId): ActiveArtifactCombatProvider[] => getActiveEffects(state, id).map(({ name, effects }) => ({ name, modifiers: effects.combat?.modifiers ?? [], rules: effects.combat?.rules ?? [], special: effects.special ?? [] })).filter((provider) => provider.modifiers.length > 0 || provider.rules.length > 0 || provider.special.length > 0)

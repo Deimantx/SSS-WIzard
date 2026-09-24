@@ -108,3 +108,72 @@
     padding-inline: calc(max(var(--app-content-gutter, 24px), (100% - var(--app-content-max-width, 1440px)) / 2) + var(--app-content-padding-inline, 48px));
   }
 }
+
+/* Compact desktop header: adjust these two values to tune its vertical size. */
+@media (min-width: 981px) {
+  .topbar-v3 {
+    --topbar-height: 76px;
+    --topbar-content-height: 40px;
+    min-height: var(--topbar-height);
+    height: var(--topbar-height);
+    padding-block: 8px;
+  }
+
+  .topbar-context,
+  .topbar-right-hud,
+  .topbar-resource-cluster,
+  .topbar-resource-slot {
+    height: var(--topbar-content-height);
+  }
+
+  .topbar-resource {
+    padding-block: 4px;
+  }
+
+  .topbar-resource.hp-resource {
+    display: flex;
+    align-items: center;
+  }
+
+  .hp-resource > div {
+    align-self: stretch;
+    position: relative;
+  }
+
+  .hp-resource small,
+  .hp-resource strong {
+    line-height: 11px;
+  }
+
+  .hp-resource .shell-meter.hp {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: auto;
+    margin-top: 0;
+  }
+
+  .mana-hero,
+  .focus-resource {
+    padding-top: 4px;
+    padding-bottom: 3px;
+  }
+
+  .shell-meter.mana {
+    margin-top: 3px;
+  }
+
+  .focus-resource > small {
+    margin-top: 1px;
+  }
+
+  .shell-meter.focus {
+    margin-top: 9px;
+  }
+
+  .mana-flow-details {
+    /* Keep SURPLUS/BALANCED below the mana meter instead of on top of it. */
+    margin-top: 9px;
+  }
+}

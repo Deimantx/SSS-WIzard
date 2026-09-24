@@ -1,8 +1,10 @@
-import { describe, expect, it } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
+import { fireEvent, render, screen, within } from '@testing-library/react'
+import { ArtifactSummaryInspector } from './ArtifactNodeInspector'
 import { ArtifactTreeGraph } from './ArtifactTreeGraph'
 import { ARTIFACTS } from '../../game/content/artifacts/artifacts'
-import { getArtifactRankGraph } from '../../game/presentation/artifacts/artifactPathReadModel'
+import { getArtifactRankGraph, MAJOR_ROW_Y_OFFSET_PX } from '../../game/presentation/artifacts/artifactPathReadModel'
+import { getArtifactCurrentResolvedEffects } from '../../game/systems/artifacts/artifactProgression'
 import { createInitialState } from '../../store/initialState'
 import { getArtifactNextMajorMilestone, getArtifactTotalInvestedRanks } from '../../game/systems/artifacts/artifactProgression'
 
@@ -22,9 +24,47 @@ describe('Artifact rank path read model', () => {
     expect(getArtifactNextMajorMilestone(state, 'ember-staff')?.unlockAtTotalRanks).toBe(20)
   })
 
+  it('keeps Majors aligned while applying the named ten-pixel breathing-room offset', () => {
+    const graph = getArtifactRankGraph(ARTIFACTS['ember-staff'])
+    expect(graph.majorNodes.map((node) => node.y)).toEqual([420 + MAJOR_ROW_Y_OFFSET_PX, 420 + MAJOR_ROW_Y_OFFSET_PX, 420 + MAJOR_ROW_Y_OFFSET_PX, 420 + MAJOR_ROW_Y_OFFSET_PX, 420 + MAJOR_ROW_Y_OFFSET_PX])
+  })
+
+  it('shows the current baseline in the default Artifact Summary', () => {
+    const state = createInitialState()
+    render(<ArtifactSummaryInspector state={state} artifactId="ember-staff" />)
+
+    expect(screen.getByRole('region', { name: 'Artifact Summary' })).toBeTruthy()
+    expect(screen.getByText(/15 Spell Power/)).toBeTruthy()
+    expect(screen.getByText('None yet')).toBeTruthy()
+  })
+
+  it('clears selection on an empty click but not after graph dragging', () => {
+    const state = createInitialState()
+    const clearSelection = vi.fn()
+    render(<ArtifactTreeGraph state={state} artifactId="ember-staff" selectedNodeId="arcane-embers" onSelect={() => undefined} onClearSelection={clearSelection} />)
+    const viewport = screen.getByLabelText('Artifact rank progression track')
+
+    fireEvent.pointerDown(viewport, { pointerId: 1, clientX: 100, clientY: 100 })
+    fireEvent.pointerUp(viewport, { pointerId: 1, clientX: 100, clientY: 100 })
+    expect(clearSelection).toHaveBeenCalledTimes(1)
+
+    fireEvent.pointerDown(viewport, { pointerId: 2, clientX: 100, clientY: 100 })
+    fireEvent.pointerMove(viewport, { pointerId: 2, clientX: 110, clientY: 100 })
+    fireEvent.pointerUp(viewport, { pointerId: 2, clientX: 110, clientY: 100 })
+    expect(clearSelection).toHaveBeenCalledTimes(1)
+  })
+
+  it('adds unlocked Major effects to the canonical current Artifact result', () => {
+    const state = createInitialState()
+    state.artifactProgress['ember-staff'] = { minorRanks: { 'arcane-embers': 10 } }
+    const current = getArtifactCurrentResolvedEffects(state, 'ember-staff')
+    expect(current.stats?.spellPower).toBeGreaterThan(15)
+    expect(current.stats?.spellPower).toBe(37)
+  })
+
   it('shows every compact ordinary effect on a Major graph card', () => {
     const state = createInitialState()
-    render(<ArtifactTreeGraph state={state} artifactId="wispveil-hood" selectedNodeId={null} onSelect={() => undefined} />)
+    render(<ArtifactTreeGraph state={state} artifactId="wispveil-hood" selectedNodeId={null} onSelect={() => undefined} onClearSelection={() => undefined} />)
 
     const card = screen.getByRole('button', { name: /Arcane Sight/ })
     expect(within(card).getByText(/Spell Power/)).toBeTruthy()

@@ -33,6 +33,11 @@ describe('DungeonStatisticsPanel V3.7', () => {
     expect(document.querySelectorAll('.dungeon-statistics-drop-tile')).toHaveLength(allItemIds.length)
     expect(document.querySelectorAll('.dungeon-statistics-drop-quantity')).toHaveLength(allItemIds.length)
     expect(document.querySelector('.dungeon-statistics-drop-rate')?.textContent).toMatch(/\/h$/)
+    const tile = document.querySelector('.dungeon-statistics-drop-tile')
+    const values = tile?.querySelector('.dungeon-statistics-drop-values')
+    expect(values).toBeTruthy()
+    expect(values?.querySelector('.dungeon-statistics-drop-quantity')).toBeTruthy()
+    expect(values?.querySelector('.dungeon-statistics-drop-rate')).toBeTruthy()
   })
 
   it('separates resonance gains into typed rows with totals and rates', () => {

@@ -42,6 +42,8 @@ export type OfflineBankProgress = { phase: 'simulating' | 'finalizing' | 'saving
 export interface OfflineBankDetachedObservers {
   telemetry?: CombatTelemetryObserver
   statistics?: DungeonStatisticsObserver
+  /** Receives every resolved combat event produced by the detached simulation. */
+  combatEvents?: CombatEventSink
   getEncounterTelemetry?: () => CombatTelemetryScope | null
   onCombatCompleted?: (state: GameState, dungeonId: import('../../types').DungeonId) => void
   commit: () => void
@@ -88,7 +90,7 @@ export const advanceWithOfflineBank = async (durationMs: number, getState: () =>
   const previousIds = new Set(previousNotifications.map((note) => note.id))
   const collector = createOfflineBankReportCollector(before, duration, available)
   const combatTrace = createOfflineCombatTrace()
-  const simulationEvents = createCombatEventSink(combatTrace.sink, observers?.uiEvents)
+  const simulationEvents = createCombatEventSink(combatTrace.sink, detached?.combatEvents, observers?.uiEvents)
   const completedArtificingRecipeIds = new Set<ArtificingRecipeId>()
   const acquiredItems = new Map<ItemId, number>()
   const simulationStartedAt = typeof performance !== 'undefined' ? performance.now() : Date.now()

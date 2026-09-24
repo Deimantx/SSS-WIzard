@@ -375,9 +375,14 @@ const offlineBankAnalyticsObservers: OfflineBankSimulationObservers = {
     const statistics = createDungeonStatisticsAccumulator(
       cloneAnalyticsState(useDungeonStatisticsStore.getState()),
     );
+    const combatEvents = createCombatEventSink(
+      { push: (event) => telemetry.consume(event) },
+      { push: (event) => statistics.consume(event) },
+    );
     return {
       telemetry,
       statistics,
+      combatEvents,
       getEncounterTelemetry: () =>
         cloneAnalyticsState(telemetry.getState().encounter),
       onCombatCompleted: () => {

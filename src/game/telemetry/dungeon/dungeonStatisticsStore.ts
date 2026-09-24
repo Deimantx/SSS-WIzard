@@ -109,7 +109,7 @@ const consumeStatisticsEvent = (state: DungeonStatisticsSnapshot, event: CombatE
   if (!next.active && !next.session && event.dungeonId && event.sourceId === 'encounter-start') next = { ...next, active: true, session: newSession(event.dungeonId) }
   if (!next.active || !next.session) return next
   if (event.sourceId === 'encounter-start' && event.targetMonsterId) return beginEncounterState(next, event.targetMonsterId, bossFor(event.targetMonsterId))
-  if (event.category === 'loot' && event.sourceId === 'loot-drop' && event.itemId && Number.isFinite(event.amount) && (event.amount ?? 0) > 0) {
+  if (event.category === 'loot' && event.itemId && Number.isFinite(event.amount) && (event.amount ?? 0) > 0) {
     const quantity = event.amount ?? 0
     return { ...next, session: addLootToSession(next.session, event.itemId, quantity) }
   }

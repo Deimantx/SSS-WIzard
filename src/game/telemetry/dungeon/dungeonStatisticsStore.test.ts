@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { dungeonStatisticsObserver, useDungeonStatisticsStore } from './dungeonStatisticsStore'
 
-const event = (sourceId: string, targetMonsterId?: 'forest-wisp' | 'forest-heart', itemId?: 'life-essence', amount?: number) => ({ source: { kind: 'system' as const }, sourceKind: 'system' as const, dungeonId: 'whispering-woods' as const, target: targetMonsterId ? 'enemy' as const : undefined, targetMonsterId, category: sourceId === 'loot-drop' ? 'loot' as const : 'death' as const, sourceId, itemId, amount })
+const event = (sourceId: string, targetMonsterId?: 'forest-wisp' | 'forest-heart', itemId?: 'life-essence' | 'tier-1-crystal-cache', amount?: number, category: 'loot' | 'death' = sourceId === 'loot-drop' ? 'loot' : 'death') => ({ source: { kind: 'system' as const }, sourceKind: 'system' as const, dungeonId: 'whispering-woods' as const, target: targetMonsterId ? 'enemy' as const : undefined, targetMonsterId, category, sourceId, itemId, amount })
 
 describe('Dungeon Statistics observer', () => {
   beforeEach(() => dungeonStatisticsObserver.clear())
@@ -79,12 +79,12 @@ describe('Dungeon Statistics observer', () => {
     expect(useDungeonStatisticsStore.getState().session).toMatchObject({ totalLootQuantity: 9, lootByItemId: { 'life-essence': 9 } })
   })
 
-  it('ignores non-canonical item acquisition events', () => {
+  it('counts every positive loot-category item event, including crystal cache sources', () => {
     dungeonStatisticsObserver.beginSession('whispering-woods')
-    const nonDungeonAcquisition = { ...event('loot-drop', undefined, 'life-essence', 5), sourceId: 'transmutation' }
-    dungeonStatisticsObserver.consume(nonDungeonAcquisition)
+    dungeonStatisticsObserver.consume(event('transmutation', undefined, 'life-essence', 5, 'loot'))
+    dungeonStatisticsObserver.consume(event('crystal-cache-drop', undefined, 'tier-1-crystal-cache', 2, 'loot'))
 
-    expect(useDungeonStatisticsStore.getState().session).toMatchObject({ totalLootQuantity: 0, lootByItemId: {} })
+    expect(useDungeonStatisticsStore.getState().session).toMatchObject({ totalLootQuantity: 7, lootByItemId: { 'life-essence': 5, 'tier-1-crystal-cache': 2 } })
   })
 
   it('does not restart an already valid session from repeated lifecycle signals', () => {

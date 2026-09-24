@@ -5,6 +5,9 @@ import { executeCombatEffects } from '../combat/effectResolver'
 import { spawnEnemy } from '../combat/combatRuntime'
 import { startNextEnemyAction } from '../combat/actionRuntime'
 import { advanceGameStateBanked, advanceGameStateBankedReference } from './offlineBankFastForward'
+import { createCombatTelemetryAccumulator } from '../../telemetry/combat/combatTelemetryStore'
+import { createDungeonStatisticsAccumulator } from '../../telemetry/dungeon/dungeonStatisticsStore'
+import type { CombatEvent } from '../combat/combatTypes'
 
 const activeCombatState = () => {
   const state = createInitialState()
@@ -138,6 +141,40 @@ describe('Offline Bank analytics wiring', () => {
     expect(statistics.advance).toHaveBeenCalledTimes(1)
     expect(statistics.advance).toHaveBeenCalledWith(1_000, state)
     expect(state.offlineBankMs).toBe(0)
+  })
+
+  it('routes each resolved event to detached analytics once without touching live observers', async () => {
+    const state = activeAutoCastCombatState()
+    state.offlineBankMs = 2_000
+    const detachedTelemetry = createCombatTelemetryAccumulator()
+    const detachedStatistics = createDungeonStatisticsAccumulator()
+    const detachedEvents: CombatEvent[] = []
+    const uiEvents: CombatEvent[] = []
+    const liveTelemetry = { advance: vi.fn(), consume: vi.fn() }
+    const liveStatistics = { advance: vi.fn(), consume: vi.fn() }
+    const combatEvents = {
+      push: vi.fn((event: CombatEvent) => {
+        detachedEvents.push(event)
+        detachedTelemetry.consume(event)
+        detachedStatistics.consume(event)
+      }),
+    }
+
+    const result = await advanceWithOfflineBank(2_000, () => state, (recipe) => recipe(state), vi.fn(), undefined, {
+      telemetry: liveTelemetry as never,
+      statistics: liveStatistics as never,
+      uiEvents: { push: (event) => uiEvents.push(event) },
+      createDetached: () => ({ telemetry: detachedTelemetry, statistics: detachedStatistics, combatEvents, commit: vi.fn() }),
+    })
+
+    expect(result.ok, result.error).toBe(true)
+    expect(detachedEvents.length).toBeGreaterThan(0)
+    expect(detachedEvents).toEqual(uiEvents)
+    expect(combatEvents.push).toHaveBeenCalledTimes(detachedEvents.length)
+    expect(detachedEvents.some((event) => event.category === 'spell')).toBe(true)
+    expect(detachedTelemetry.getState().run?.player.damageDone.total).toBeGreaterThan(0)
+    expect(liveTelemetry.consume).not.toHaveBeenCalled()
+    expect(liveStatistics.consume).not.toHaveBeenCalled()
   })
 
   it('restores analytics when banked simulation fails after observer delivery', async () => {

@@ -65,7 +65,7 @@ export function EquipmentCatalog({ selected, onSelect, query, onQueryChange }: P
         <ItemIcon itemId={item.id} size="tiny" /><strong>{item.name}</strong>
         <span className={`artificing-kind-badge ${artifact ? 'artifact' : 'equipment'}`}>{artifact ? `T${getArtificingRecipePlayerTier(recipe)} ARTIFACT` : 'EQUIPMENT'}</span>
         <span className="artificing-badge">{getArtificingProfile(recipe)}</span>
-        {ownedArtifact && <span className="artificing-artifact-level">LV {catalogState.artifactLevel} / {catalogState.artifactMaxLevel}</span>}
+        {ownedArtifact && <span className="artificing-artifact-level">RANKS {catalogState.artifactRanks} / {catalogState.artifactMaxRanks}</span>}
         <Status tone={status === 'LOCKED' ? 'locked' : status === 'MISSING' ? 'warning' : status === 'READY' || status === 'FORGED' ? 'success' : 'active'}>{status}</Status>
       </button>
     </ItemTooltip>

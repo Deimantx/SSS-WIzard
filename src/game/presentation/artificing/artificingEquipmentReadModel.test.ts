@@ -17,10 +17,10 @@ describe('Artificing output read model', () => {
     expect('removedOffhand' in preview).toBe(false)
   })
 
-  it('uses Level 1 effective stats for an unowned Artifact forge result', () => {
+  it('uses Rank 0 effective stats for an unowned Artifact forge result', () => {
     const state = createInitialState()
     state.equipment.weapon = 'tideglass-wand'
-    state.artifactProgress['tideglass-wand'] = { level: 4, allocatedNodeIds: [], attunedNodeIds: [] }
+    state.artifactProgress['tideglass-wand'] = { minorRanks: {} }
 
     const inspection = getArtificingOutputInspection(state, ARTIFICING_RECIPES['ember-staff'])
     const preview = getArtificingEquipmentPreview(state, inspection.itemId, 'weapon')
@@ -28,11 +28,11 @@ describe('Artificing output read model', () => {
     expect(inspection).toMatchObject({
       itemId: 'ember-staff',
       owned: 0,
-      stats: { spellPower: 16 },
-      artifactLevel: 1,
-      artifactMaxLevel: 10,
+      stats: { spellPower: 15 },
+      artifactRanks: 0,
+      artifactMaxRanks: 50,
     })
     expect(preview.compatible).toBe(true)
-    expect(preview.impact).toMatchObject({ spellPower: -12 })
+    expect(preview.impact).toMatchObject({ spellPower: 0 })
   })
 })

@@ -1,87 +1,70 @@
-import { ARTIFACTS, getArtifactLevelBands, isArtifactId } from '../../content/artifacts/artifacts'
+import { ARTIFACTS, isArtifactId, type ArtifactDefinition, type ArtifactMinorNodeDefinition, type ArtifactResolvedEffects } from '../../content/artifacts/artifacts'
 import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
 import { grantItem } from '../inventory/itemAcquisition'
-import { getRecipeUnlockRequirement, isRecipeUnlocked } from '../../content/recipes/recipeUnlocks'
+import { spendResonanceBundle } from '../resonance/resonanceRuntime'
 import type { ArtifactId, ArtifactProgressState, EquipmentStats, GameState, ItemId } from '../../types'
 import { addEquipmentStats } from '../../core/equipment/equipmentStatAggregation'
 
-const EMPTY: ArtifactProgressState = { level: 1, allocatedNodeIds: [], attunedNodeIds: [] }
+const EMPTY: ArtifactProgressState = { minorRanks: {} }
 export const getArtifactDefinition = (id: ArtifactId) => ARTIFACTS[id]
-export const isArtifactItem = (id: ItemId): id is import('../../types').ArtifactId => isArtifactId(id)
-type ArtifactProgressionState = Pick<GameState, 'artifactProgress'> & Partial<Pick<GameState, 'debug'>>
+export const isArtifactItem = (id: ItemId): id is ArtifactId => isArtifactId(id)
 export const getArtifactProgress = (state: Pick<GameState, 'artifactProgress'>, id: ArtifactId) => state.artifactProgress?.[id] ?? EMPTY
-export const getArtifactLevel = (state: Pick<GameState, 'artifactProgress'>, id: ArtifactId) => getArtifactProgress(state, id).level
-const hasBossKill = (state: Pick<GameState, 'progress'>, bossId: import('../../types').MonsterId) => (state.progress.bossKillsByBoss[bossId] ?? 0) >= 1
-export const getArtifactLevelCapRequirement = (state: Pick<GameState, 'progress'> & Partial<Pick<GameState, 'debug'>>, id: ArtifactId) => {
-  if (state.debug?.artifactIgnoreDungeonGate || state.debug?.artifactIgnoreLevelCap) return null
-  const lockedBand = getArtifactLevelBands(id).find((band) => band.unlock.type !== 'always' && !hasBossKill(state, band.unlock.bossId))
-  if (lockedBand) return getRecipeUnlockRequirement({ unlock: lockedBand.unlock })
-  return null
+const getNode = (id: ArtifactId, nodeId: string) => ARTIFACTS[id]?.minorNodes.find((node) => node.id === nodeId)
+export const getArtifactMinorRank = (state: Pick<GameState, 'artifactProgress'>, artifactId: ArtifactId, nodeId: string) => Math.max(0, Math.min(10, Math.floor(getArtifactProgress(state, artifactId).minorRanks[nodeId] ?? 0)))
+export const getArtifactTotalInvestedRanks = (state: Pick<GameState, 'artifactProgress'>, artifactId: ArtifactId) => ARTIFACTS[artifactId]?.minorNodes.reduce((total, node) => total + getArtifactMinorRank(state, artifactId, node.id), 0) ?? 0
+export const getArtifactMaxInvestedRanks = (artifactId: ArtifactId) => (ARTIFACTS[artifactId]?.minorNodes.length ?? 0) * 10
+export const getArtifactUnlockedMajorMilestones = (state: Pick<GameState, 'artifactProgress'>, artifactId: ArtifactId) => (ARTIFACTS[artifactId]?.majorMilestones ?? []).filter((major) => getArtifactTotalInvestedRanks(state, artifactId) >= major.unlockAtTotalRanks)
+export const getArtifactNextMajorMilestone = (state: Pick<GameState, 'artifactProgress'>, artifactId: ArtifactId) => (ARTIFACTS[artifactId]?.majorMilestones.find((major) => getArtifactTotalInvestedRanks(state, artifactId) < major.unlockAtTotalRanks) ?? null)
+export const getArtifactCompletionPercent = (state: Pick<GameState, 'artifactProgress'>, artifactId: ArtifactId) => { const max = getArtifactMaxInvestedRanks(artifactId); return max > 0 ? getArtifactTotalInvestedRanks(state, artifactId) / max : 0 }
+export const getArtifactRankCost = (artifactId: ArtifactId, nodeId: string, nextRank = 1) => getNode(artifactId, nodeId)?.rankCosts[nextRank - 1] ?? null
+
+const addEffects = (target: EquipmentStats, resolved?: ArtifactResolvedEffects) => addEquipmentStats(target, resolved?.stats)
+const getActiveEffects = (state: Pick<GameState, 'artifactProgress'>, artifactId: ArtifactId) => {
+  const definition = ARTIFACTS[artifactId]
+  if (!definition) return [] as Array<{ name: string; effects: ArtifactResolvedEffects }>
+  const active: Array<{ name: string; effects: ArtifactResolvedEffects }> = [{ name: 'Rank 0 Baseline', effects: definition.baseline }]
+  definition.minorNodes.forEach((node) => { for (let rank = 1; rank <= getArtifactMinorRank(state, artifactId, node.id); rank += 1) active.push({ name: `${node.name} · Rank ${rank}`, effects: node.rankEffects[rank - 1] }) })
+  getArtifactUnlockedMajorMilestones(state, artifactId).forEach((major) => active.push({ name: major.name, effects: major.effects }))
+  return active
 }
-export const getArtifactLevelCap = (state: Pick<GameState, 'artifactProgress' | 'progress'> & Partial<Pick<GameState, 'debug'>>, id: ArtifactId) => {
-  if (!ARTIFACTS[id]) return 0
-  if (state.debug?.artifactIgnoreLevelCap) return ARTIFACTS[id].maxLevel
-  if (state.debug?.artifactIgnoreDungeonGate) return ARTIFACTS[id].maxLevel
-  const bands = getArtifactLevelBands(id)
-  let cap: number = bands[0]?.maxLevel ?? 0
-  for (const band of bands.slice(1)) {
-    if (band.unlock.type !== 'always' && !hasBossKill(state, band.unlock.bossId)) break
-    cap = band.maxLevel
-  }
-  return Math.min(cap, ARTIFACTS[id].maxLevel)
-}
-export const getArtifactTotalPoints = (state: ArtifactProgressionState, id: ArtifactId) => Math.max(0, getArtifactLevel(state, id) - 1) + Math.max(0, state.debug?.artifactBonusPointsByArtifact?.[id] ?? 0)
-export const getArtifactSpentPoints = (state: Pick<GameState, 'artifactProgress'>, id: ArtifactId) => getArtifactProgress(state, id).allocatedNodeIds.reduce((total, nodeId) => total + (ARTIFACTS[id]?.nodes.find(node => node.id === nodeId)?.pointCost ?? 0), 0)
-export const getArtifactAvailablePoints = (state: ArtifactProgressionState, id: ArtifactId) => Math.max(0, getArtifactTotalPoints(state, id) - getArtifactSpentPoints(state, id))
 export const getArtifactEffectiveStats = (state: Pick<GameState, 'artifactProgress'>, id: ArtifactId) => {
-  const definition = ARTIFACTS[id]; const progress = getArtifactProgress(state, id); const total: EquipmentStats = {}
-  addEquipmentStats(total, definition?.coreStatsByLevel[progress.level])
-  progress.allocatedNodeIds.forEach(nodeId => addEquipmentStats(total, definition?.nodes.find(node => node.id === nodeId)?.stats))
-  return total
+  const total: EquipmentStats = {}; getActiveEffects(state, id).forEach(({ effects }) => addEffects(total, effects)); return total
 }
-export const getAllocatedArtifactCombatProviders = (state: Pick<GameState, 'artifactProgress'>, id: ArtifactId) => {
-  const definition = ARTIFACTS[id]; const allocated = new Set(getArtifactProgress(state, id).allocatedNodeIds)
-  return (definition?.nodes.filter(node => allocated.has(node.id)) ?? []).map(node => ({ node, modifiers: node.combat?.modifiers ?? [], rules: node.combat?.rules ?? [] }))
-}
-export const getArtifactUpgrade = (id: ArtifactId, fromLevel: number) => ARTIFACTS[id]?.upgrades.find(upgrade => upgrade.fromLevel === fromLevel) ?? null
-export const isArtifactUpgradeUnlocked = (state: Pick<GameState, 'progress'> & Partial<Pick<GameState, 'debug'>>, upgrade: Pick<NonNullable<ReturnType<typeof getArtifactUpgrade>>, 'unlock'>) => !upgrade.unlock || Boolean(state.debug?.artifactIgnoreDungeonGate) || isRecipeUnlocked(state, { unlock: upgrade.unlock })
-export const getArtifactUpgradeUnlockRequirement = (upgrade: Pick<NonNullable<ReturnType<typeof getArtifactUpgrade>>, 'unlock'>) => upgrade.unlock ? getRecipeUnlockRequirement({ unlock: upgrade.unlock }) : null
-export const canUpgradeArtifact = (state: Pick<GameState, 'artifactProgress' | 'progress' | 'inventory' | 'protectedItems' | 'equipment' | 'activities'> & Partial<Pick<GameState, 'debug'>>, id: ArtifactId) => {
-  const definition = ARTIFACTS[id]; const progress = state.artifactProgress?.[id]; const upgrade = progress ? getArtifactUpgrade(id, progress.level) : null
-  return Boolean(definition && progress && (state.inventory[id] ?? 0) > 0 && progress.level < getArtifactLevelCap(state, id) && upgrade && isArtifactUpgradeUnlocked(state, upgrade) && (state.debug?.artifactFreeUpgrade || upgrade.ingredients.every(item => getConsumableQuantity(state, item.itemId) >= item.quantity)))
-}
-export const getArtifactNode = (id: ArtifactId, nodeId: string) => ARTIFACTS[id]?.nodes.find(node => node.id === nodeId) ?? null
-export type ArtifactNodeEligibilityStatus = 'allocated' | 'attuned' | 'available' | 'missingLevel' | 'missingPoints' | 'missingPrerequisites' | 'missingBoss' | 'missingCatalyst' | 'unowned'
-export interface ArtifactNodeEligibility {
-  status: ArtifactNodeEligibilityStatus
-  canAllocate: boolean
-  missingPrerequisiteIds: string[]
-  missingBossId?: import('../../types').MonsterId
-  catalystRequired?: { itemId: ItemId; quantity: number }
-}
-export const getArtifactNodeEligibility = (state: Pick<GameState, 'artifactProgress' | 'progress' | 'inventory' | 'protectedItems' | 'equipment' | 'activities'> & Partial<Pick<GameState, 'debug'>>, id: ArtifactId, nodeId: string): ArtifactNodeEligibility => {
-  const node = getArtifactNode(id, nodeId); const progress = state.artifactProgress?.[id]
-  if (!node || !progress || (state.inventory[id] ?? 0) < 1) return { status: 'unowned', canAllocate: false, missingPrerequisiteIds: [] }
-  if (progress.allocatedNodeIds.includes(nodeId)) return { status: 'allocated', canAllocate: false, missingPrerequisiteIds: [] }
-  if (progress.level < node.requiresLevel && !state.debug?.artifactAllowBeyondLimit) return { status: 'missingLevel', canAllocate: false, missingPrerequisiteIds: [] }
-  const missingPrerequisiteIds = state.debug?.artifactIgnoreNodePrerequisites ? [] : (node.prerequisites ?? []).filter((prerequisite) => !progress.allocatedNodeIds.includes(prerequisite))
-  if (missingPrerequisiteIds.length) return { status: 'missingPrerequisites', canAllocate: false, missingPrerequisiteIds }
-  if (node.requiresBossKill && (state.progress.bossKillsByBoss[node.requiresBossKill] ?? 0) < 1 && !state.debug?.artifactIgnoreDungeonGate) return { status: 'missingBoss', canAllocate: false, missingPrerequisiteIds: [], missingBossId: node.requiresBossKill }
-  const catalystRequired = node.catalyst && !progress.attunedNodeIds.includes(nodeId) ? node.catalyst : undefined
-  if (catalystRequired && getConsumableQuantity(state, catalystRequired.itemId) < catalystRequired.quantity) return { status: 'missingCatalyst', canAllocate: false, missingPrerequisiteIds: [], catalystRequired }
-  if (getArtifactAvailablePoints(state, id) < node.pointCost) return { status: 'missingPoints', canAllocate: false, missingPrerequisiteIds: [], catalystRequired }
-  return { status: progress.attunedNodeIds.includes(nodeId) ? 'attuned' : 'available', canAllocate: true, missingPrerequisiteIds: [], catalystRequired }
-}
-export const canAllocateArtifactNode = (state: Pick<GameState, 'artifactProgress' | 'progress' | 'inventory' | 'protectedItems' | 'equipment' | 'activities'>, id: ArtifactId, nodeId: string) => getArtifactNodeEligibility(state, id, nodeId).canAllocate
-export const allocateArtifactNode = (state: GameState, id: ArtifactId, nodeId: string) => {
-  const node = getArtifactNode(id, nodeId); if (!node || !canAllocateArtifactNode(state, id, nodeId)) return false
-  const progress = state.artifactProgress[id] ??= { ...EMPTY, allocatedNodeIds: [], attunedNodeIds: [] }
-  if (node.catalyst && !progress.attunedNodeIds.includes(nodeId)) {
-    if (getConsumableQuantity(state, node.catalyst.itemId) < node.catalyst.quantity) return false
-    state.inventory[node.catalyst.itemId] = Math.max(0, (state.inventory[node.catalyst.itemId] ?? 0) - node.catalyst.quantity)
-    progress.attunedNodeIds.push(nodeId)
+export interface ActiveArtifactCombatProvider { name: string; modifiers: NonNullable<NonNullable<ArtifactResolvedEffects['combat']>['modifiers']>; rules: NonNullable<NonNullable<ArtifactResolvedEffects['combat']>['rules']>; special: NonNullable<ArtifactResolvedEffects['special']> }
+export const getActiveArtifactCombatProviders = (state: Pick<GameState, 'artifactProgress'>, id: ArtifactId): ActiveArtifactCombatProvider[] => getActiveEffects(state, id).map(({ name, effects }) => ({ name, modifiers: effects.combat?.modifiers ?? [], rules: effects.combat?.rules ?? [], special: effects.special ?? [] })).filter((provider) => provider.modifiers.length > 0 || provider.rules.length > 0 || provider.special.length > 0)
+
+export type ArtifactRankPurchaseFailure = 'artifact-not-owned' | 'unknown-minor-node' | 'rank-maxed' | 'insufficient-artifact-essence' | 'insufficient-fragment' | 'insufficient-prismatic-fragment' | 'insufficient-resonance'
+export type ArtifactRankPurchaseResult = { ok: true; newRank: number; totalInvestedRanks: number } | { ok: false; reason: ArtifactRankPurchaseFailure }
+const hasArtifactOwnership = (state: Pick<GameState, 'inventory' | 'artifactProgress'>, artifactId: ArtifactId) => (state.inventory[artifactId] ?? 0) > 0 && Boolean(state.artifactProgress?.[artifactId])
+const ensureProgress = (state: GameState, artifactId: ArtifactId) => state.artifactProgress[artifactId] ??= { minorRanks: {} }
+export const purchaseArtifactMinorRank = (state: GameState, artifactId: ArtifactId, nodeId: string): ArtifactRankPurchaseResult => {
+  const definition = ARTIFACTS[artifactId]; const node = getNode(artifactId, nodeId)
+  if (!definition || (!state.debug.artifactIgnoreOwnership && !hasArtifactOwnership(state, artifactId))) return { ok: false, reason: 'artifact-not-owned' }
+  if (!node) return { ok: false, reason: 'unknown-minor-node' }
+  const currentRank = getArtifactMinorRank(state, artifactId, nodeId)
+  if (currentRank >= node.maxRank) return { ok: false, reason: 'rank-maxed' }
+  const cost = node.rankCosts[currentRank]
+  if (!state.debug.artifactFreeRankPurchase) {
+    if ((state.inventory['artifact-essence'] ?? 0) < cost.artifactEssence) return { ok: false, reason: 'insufficient-artifact-essence' }
+    if (cost.fragment && (state.inventory[cost.fragment.itemId] ?? 0) < cost.fragment.quantity) return { ok: false, reason: 'insufficient-fragment' }
+    if (cost.prismaticFragment && (state.inventory['prismatic-fragment'] ?? 0) < cost.prismaticFragment) return { ok: false, reason: 'insufficient-prismatic-fragment' }
+    if (!Object.entries(cost.resonance).every(([type, amount]) => (state.resonance[type as keyof typeof state.resonance] ?? 0) >= (amount ?? 0))) return { ok: false, reason: 'insufficient-resonance' }
+    state.inventory['artifact-essence'] = Math.max(0, (state.inventory['artifact-essence'] ?? 0) - cost.artifactEssence)
+    if (cost.fragment) state.inventory[cost.fragment.itemId] = Math.max(0, (state.inventory[cost.fragment.itemId] ?? 0) - cost.fragment.quantity)
+    if (cost.prismaticFragment) state.inventory['prismatic-fragment'] = Math.max(0, (state.inventory['prismatic-fragment'] ?? 0) - cost.prismaticFragment)
+    if (!spendResonanceBundle(state.resonance, cost.resonance)) return { ok: false, reason: 'insufficient-resonance' }
   }
-  progress.allocatedNodeIds.push(nodeId); return true
+  const progress = ensureProgress(state, artifactId); progress.minorRanks[nodeId] = currentRank + 1
+  return { ok: true, newRank: currentRank + 1, totalInvestedRanks: getArtifactTotalInvestedRanks(state, artifactId) }
 }
-export const respecArtifact = (state: GameState, id: ArtifactId) => { const progress = state.artifactProgress[id]; if (!progress) return false; progress.allocatedNodeIds = []; return true }
-export const completeArtifactForge = (state: GameState, id: ArtifactId) => { if (state.artifactProgress?.[id] || (state.inventory[id] ?? 0) > 0) return false; state.artifactProgress ??= {}; grantItem(state, id, 1); state.artifactProgress[id] = { ...EMPTY, allocatedNodeIds: [], attunedNodeIds: [] }; return true }
+
+export const debugSetArtifactMinorRank = (state: GameState, artifactId: ArtifactId, nodeId: string, rank: number) => { if (!ARTIFACTS[artifactId] || !getNode(artifactId, nodeId)) return false; const progress = ensureProgress(state, artifactId); progress.minorRanks[nodeId] = Math.max(0, Math.min(10, Math.floor(rank))); return true }
+export const debugAdjustArtifactMinorRank = (state: GameState, artifactId: ArtifactId, nodeId: string, delta: number) => debugSetArtifactMinorRank(state, artifactId, nodeId, getArtifactMinorRank(state, artifactId, nodeId) + delta)
+export const debugMaxArtifactMinorNode = (state: GameState, artifactId: ArtifactId, nodeId: string) => debugSetArtifactMinorRank(state, artifactId, nodeId, 10)
+export const debugResetArtifactMinorNode = (state: GameState, artifactId: ArtifactId, nodeId: string) => debugSetArtifactMinorRank(state, artifactId, nodeId, 0)
+export const debugMaxArtifact = (state: GameState, artifactId: ArtifactId) => { const definition = ARTIFACTS[artifactId]; if (!definition) return false; definition.minorNodes.forEach((node) => debugSetArtifactMinorRank(state, artifactId, node.id, 10)); return true }
+export const debugResetArtifact = (state: GameState, artifactId: ArtifactId) => { const definition = ARTIFACTS[artifactId]; if (!definition) return false; state.artifactProgress[artifactId] = { minorRanks: {} }; return true }
+export const debugMaxOwnedArtifacts = (state: GameState) => Object.keys(ARTIFACTS).forEach((id) => { if ((state.inventory[id as ArtifactId] ?? 0) > 0) debugMaxArtifact(state, id as ArtifactId) })
+export const debugGrantAllArtifacts = (state: GameState) => Object.keys(ARTIFACTS).forEach((id) => { if ((state.inventory[id as ArtifactId] ?? 0) < 1) grantItem(state, id as ArtifactId, 1) })
+export const debugResetAllArtifactRanks = (state: GameState) => Object.keys(ARTIFACTS).forEach((id) => debugResetArtifact(state, id as ArtifactId))
+export const completeArtifactForge = (state: GameState, id: ArtifactId) => { if (state.artifactProgress?.[id] || (state.inventory[id] ?? 0) > 0) return false; state.artifactProgress[id] = { minorRanks: {} }; grantItem(state, id, 1); return true }

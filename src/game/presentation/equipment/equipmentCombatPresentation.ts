@@ -159,6 +159,7 @@ const formatMagnitude = (magnitude: Magnitude, noun: string) => {
     case 'flat': return `${amount(magnitude.value)} ${noun}`
     case 'spell-power': return `${amount(magnitude.coefficient)}× Spell Power ${noun}`
     case 'source-max-health-percent': return `${formatSpellMagnitude(magnitude)} as ${noun}`
+    case 'source-max-mana-percent': return `${formatSpellMagnitude(magnitude)} as ${noun}`
     case 'target-max-health-percent': return `${formatSpellMagnitude(magnitude)} as ${noun}`
     case 'source-basic-damage-percent': return `${formatSpellMagnitude(magnitude)} as ${noun}`
     case 'source-current-barrier-percent': return `${formatSpellMagnitude(magnitude)} as ${noun}`

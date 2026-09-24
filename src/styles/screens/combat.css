@@ -2075,13 +2075,13 @@
 .dungeon-statistics-drop-rate { display: block; color: var(--ui-gold); font: 650 9px/1 var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .dungeon-statistics-resonance-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 6px; }
 .dungeon-statistics-resonance-list > .game-tooltip-trigger { display: block; min-width: 0; }
-.dungeon-statistics-resonance-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(52px, auto) minmax(72px, auto); column-gap: 18px; align-items: center; min-width: 0; min-height: 26px; padding: 4px 7px; border: 1px solid color-mix(in srgb, currentColor 22%, var(--ui-border)); border-radius: 6px; background: color-mix(in srgb, currentColor 5%, var(--ui-panel)); cursor: help; }
+.dungeon-statistics-resonance-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(52px, auto) minmax(72px, auto); column-gap: 5px; align-items: center; min-width: 0; min-height: 26px; padding: 4px 7px; border: 1px solid color-mix(in srgb, currentColor 22%, var(--ui-border)); border-radius: 6px; background: color-mix(in srgb, currentColor 5%, var(--ui-panel)); cursor: help; }
 .dungeon-statistics-resonance-row:hover,
 .dungeon-statistics-resonance-row:focus-visible { border-color: color-mix(in srgb, currentColor 62%, var(--ui-border-strong)); outline: none; }
-.dungeon-statistics-resonance-name { display: inline-flex; align-items: center; min-width: 0; gap: 6px; overflow: hidden; color: var(--ui-text-soft); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.dungeon-statistics-resonance-name { display: inline-flex; align-items: center; min-width: 0; margin-right: 10px; gap: 6px; overflow: hidden; color: var(--ui-text-soft); font-size: 13px; line-height: 1.1; text-overflow: ellipsis; white-space: nowrap; }
 .dungeon-statistics-resonance-mark { width: 6px; height: 6px; flex: 0 0 auto; border-radius: 50%; background: currentColor; box-shadow: 0 0 7px currentColor; }
-.dungeon-statistics-resonance-row strong { color: var(--ui-success); font: var(--text-micro) var(--font-mono); text-align: right; white-space: nowrap; }
-.dungeon-statistics-resonance-row > span:last-child { color: var(--ui-gold); font: var(--text-micro) var(--font-mono); text-align: right; white-space: nowrap; }
+.dungeon-statistics-resonance-row strong { color: var(--ui-success); font: 700 12px/1 var(--font-mono); text-align: right; white-space: nowrap; }
+.dungeon-statistics-resonance-row > span:last-child { margin-left: 20px; color: var(--ui-gold); font: 650 12px/1 var(--font-mono); text-align: right; white-space: nowrap; }
 .dungeon-statistics-resonance-row.resonance-fire { color: var(--semantic-damage-fire); }
 .dungeon-statistics-resonance-row.resonance-water { color: var(--semantic-damage-water); }
 .dungeon-statistics-resonance-row.resonance-earth { color: var(--semantic-damage-earth); }

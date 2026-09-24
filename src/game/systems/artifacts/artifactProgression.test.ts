@@ -1,72 +1,39 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
-import { grantItem } from '../inventory/itemAcquisition'
-import { upgradeArtifactInstant } from '../artificing/artificingEngine'
-import { canUpgradeArtifact, getArtifactLevelCap, getArtifactNodeEligibility } from './artifactProgression'
+import { debugMaxArtifact, debugResetArtifact, getArtifactNextMajorMilestone, getArtifactRankCost, getArtifactUnlockedMajorMilestones, purchaseArtifactMinorRank } from './artifactProgression'
 
-describe('Artifact progression foundation', () => {
-  it('caps Artifact ownership and returns the actual granted amount', () => {
-    const state = createInitialState()
-    expect(grantItem(state, 'ember-staff', 1)).toBe(1)
-    expect(grantItem(state, 'ember-staff', 10)).toBe(0)
-    expect(state.inventory['ember-staff']).toBe(1)
-    expect(state.artifactProgress['ember-staff']).toEqual({ level: 1, allocatedNodeIds: [], attunedNodeIds: [] })
-  })
-
-  it('repairs missing progression when an owned Artifact is granted again', () => {
-    const state = createInitialState()
-    state.inventory['tideglass-wand'] = 1
-    expect(state.artifactProgress['tideglass-wand']).toBeUndefined()
-    expect(grantItem(state, 'tideglass-wand', 1)).toBe(0)
-    expect(state.artifactProgress['tideglass-wand']).toEqual({ level: 1, allocatedNodeIds: [], attunedNodeIds: [] })
-  })
-
-  it('upgrades immediately, consumes exact materials, and does not acquire an extra item', () => {
+describe('Artifact rank progression', () => {
+  it('starts empty and unlocks automatic Majors by total invested ranks', () => {
     const state = createInitialState()
     state.inventory['ember-staff'] = 1
-    state.inventory['fire-fragment'] = 50
-    state.inventory['artifact-essence'] = 10
-    expect(upgradeArtifactInstant(state, 'ember-staff')).toMatchObject({ ok: false })
-    expect(state.inventory['fire-fragment']).toBe(50)
-    state.artifactProgress['ember-staff'] = { level: 1, allocatedNodeIds: [], attunedNodeIds: [] }
-    state.activities.artificing.activeJob = { kind: 'recipe', recipeId: 'windthread-wand' }
-    expect(canUpgradeArtifact(state, 'ember-staff')).toBe(true)
-    expect(upgradeArtifactInstant(state, 'ember-staff')).toMatchObject({ ok: true })
-    expect(state.inventory['ember-staff']).toBe(1)
-    expect(state.inventory['fire-fragment']).toBe(0)
-    expect(state.inventory['artifact-essence']).toBe(0)
-    expect(state.artifactProgress['ember-staff'].level).toBe(2)
-    expect(state.activities.artificing.activeJob).toEqual({ kind: 'recipe', recipeId: 'windthread-wand' })
+    state.artifactProgress['ember-staff'] = { minorRanks: { 'arcane-embers': 10 } }
+    expect(getArtifactUnlockedMajorMilestones(state, 'ember-staff')).toHaveLength(1)
+    expect(getArtifactNextMajorMilestone(state, 'ember-staff')?.unlockAtTotalRanks).toBe(20)
   })
 
-  it('reports specific node eligibility states', () => {
+  it('rejects rank purchases atomically when any resource is missing', () => {
     const state = createInitialState()
     state.inventory['ember-staff'] = 1
-    state.artifactProgress['ember-staff'] = { level: 1, allocatedNodeIds: [], attunedNodeIds: [] }
-    expect(getArtifactNodeEligibility(state, 'ember-staff', 'arcane-kindling').status).toBe('missingLevel')
-    state.artifactProgress['ember-staff'].level = 2
-    expect(getArtifactNodeEligibility(state, 'ember-staff', 'arcane-kindling').status).toBe('available')
-    state.artifactProgress['ember-staff'].allocatedNodeIds.push('arcane-kindling')
-    expect(getArtifactNodeEligibility(state, 'ember-staff', 'arcane-kindling').status).toBe('allocated')
-    state.artifactProgress['ember-staff'].level = 4
-    state.artifactProgress['ember-staff'].allocatedNodeIds.push('cinder-memory', 'lingering-flame')
-    expect(getArtifactNodeEligibility(state, 'ember-staff', 'heartfed-embers').status).toBe('missingBoss')
-    state.progress.bossKillsByBoss['forest-heart'] = 1
-    expect(getArtifactNodeEligibility(state, 'ember-staff', 'heartfed-embers').status).toBe('missingPoints')
+    state.artifactProgress['ember-staff'] = { minorRanks: {} }
+    state.inventory['artifact-essence'] = 15
+    const result = purchaseArtifactMinorRank(state, 'ember-staff', 'arcane-embers')
+    expect(result).toEqual({ ok: false, reason: 'insufficient-fragment' })
+    expect(state.inventory['artifact-essence']).toBe(15)
+    expect(state.artifactProgress['ember-staff']?.minorRanks).toEqual({})
   })
 
-  it('keeps authored caps and gates intact until artifact overrides are enabled', () => {
+  it('supports only the explicit rank debug controls', () => {
     const state = createInitialState()
-    state.inventory['ember-staff'] = 1
-    state.artifactProgress['ember-staff'] = { level: 10, allocatedNodeIds: ['arcane-kindling', 'cinder-memory', 'lingering-flame'], attunedNodeIds: [] }
-    expect(getArtifactLevelCap(state, 'ember-staff')).toBe(4)
-    state.debug.artifactIgnoreLevelCap = true
-    expect(getArtifactLevelCap(state, 'ember-staff')).toBe(10)
+    debugMaxArtifact(state, 'ember-staff')
+    expect(state.artifactProgress['ember-staff']?.minorRanks).toMatchObject({ 'arcane-embers': 10 })
+    state.debug.artifactIgnoreOwnership = true
+    debugMaxArtifact(state, 'ember-staff')
+    expect(state.artifactProgress['ember-staff']?.minorRanks['arcane-embers']).toBe(10)
+    debugResetArtifact(state, 'ember-staff')
+    expect(state.artifactProgress['ember-staff']?.minorRanks).toEqual({})
+  })
 
-    state.artifactProgress['ember-staff'].level = 4
-    state.debug.artifactBonusPointsByArtifact['ember-staff'] = 1
-    expect(getArtifactNodeEligibility(state, 'ember-staff', 'heartfed-embers').status).toBe('missingBoss')
-    state.debug.artifactIgnoreDungeonGate = true
-    expect(getArtifactNodeEligibility(state, 'ember-staff', 'heartfed-embers').status).toBe('available')
+  it('exposes the authored next-rank cost without deriving legacy levels', () => {
+    expect(getArtifactRankCost('ember-staff', 'arcane-embers', 1)).toMatchObject({ artifactEssence: 15, fragment: { quantity: 50 }, resonance: { fire: 50 } })
   })
 })

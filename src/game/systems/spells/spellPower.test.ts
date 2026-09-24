@@ -23,7 +23,7 @@ describe('Spell Power foundation', () => {
     expect(getSpellPower(state)).toBe(BALANCE.player.baseSpellPower + 16)
     expect(getSpellEquipmentBonusPreview(state, 'flame-burst')).toMatchObject({ spellPower: 16, totalPercent: 0 })
 
-    state.artifactProgress['ember-staff'] = { level: 10, allocatedNodeIds: [], attunedNodeIds: [] }
+    state.artifactProgress['ember-staff'] = { minorRanks: { 'arcane-embers': 10 } }
     expect(getSpellPowerBreakdown(state)).toEqual({ base: BALANCE.player.baseSpellPower, equipment: 75, total: BALANCE.player.baseSpellPower + 75 })
     expect(getSpellPower(state)).toBe(BALANCE.player.baseSpellPower + 75)
   })

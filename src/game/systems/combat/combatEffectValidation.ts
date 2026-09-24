@@ -32,6 +32,7 @@ export const validateMagnitude = (value: unknown, owner = 'magnitude', context: 
   switch (value.type) {
     case 'flat':
     case 'source-max-health-percent':
+    case 'source-max-mana-percent':
     case 'target-max-health-percent':
     case 'source-basic-damage-percent':
     case 'target-missing-health-percent':

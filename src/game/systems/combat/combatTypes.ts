@@ -240,6 +240,7 @@ export type EffectTarget = 'self' | 'opponent'
 export type Magnitude =
   | { type: 'flat'; value: number }
   | { type: 'source-max-health-percent'; value: number }
+  | { type: 'source-max-mana-percent'; value: number }
   | { type: 'target-max-health-percent'; value: number }
   | { type: 'source-basic-damage-percent'; value: number }
   | { type: 'school-level'; base: number; perLevel: number; school: SchoolId }
@@ -254,6 +255,7 @@ export const scaleMagnitude = (magnitude: Magnitude, factor: number): Magnitude 
   switch (magnitude.type) {
     case 'flat': return { type: 'flat', value: magnitude.value * scale }
     case 'source-max-health-percent': return { type: 'source-max-health-percent', value: magnitude.value * scale }
+    case 'source-max-mana-percent': return { type: 'source-max-mana-percent', value: magnitude.value * scale }
     case 'target-max-health-percent': return { type: 'target-max-health-percent', value: magnitude.value * scale }
     case 'source-basic-damage-percent': return { type: 'source-basic-damage-percent', value: magnitude.value * scale }
     case 'spell-power': return { type: 'spell-power', coefficient: magnitude.coefficient * scale }

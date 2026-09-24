@@ -24,7 +24,7 @@ describe('Artificing catalog', () => {
     expect(getVisibleArtificingRecipes(state, { ...filters, craftableOnly: true })).toHaveLength(0)
     state.protectedItems['fire-fragment'] = false
     state.inventory['ember-staff'] = 1
-    state.artifactProgress['ember-staff'] = { level: 1, allocatedNodeIds: [], attunedNodeIds: [] }
+    state.artifactProgress['ember-staff'] = { minorRanks: {} }
     expect(getVisibleArtificingRecipes(state, { ...filters, ownershipFilter: 'owned' }).map((recipe) => recipe.id)).toEqual(['ember-staff'])
     expect(getVisibleArtificingRecipes(state, { ...filters, ownershipFilter: 'unowned' }, 'ember-staff')).toHaveLength(0)
     expect(getVisibleArtificingRecipes(state, { ...defaults, tierFilter: 1 })).toHaveLength(6)
@@ -52,10 +52,10 @@ describe('Artificing catalog', () => {
     expect(missing?.status).toBe('MISSING')
     expect(missing?.materialReady).toBe(false)
     state.inventory['ember-staff'] = 1
-    state.artifactProgress['ember-staff'] = { level: 3, allocatedNodeIds: [], attunedNodeIds: [] }
+    state.artifactProgress['ember-staff'] = { minorRanks: { 'arcane-embers': 3 } }
     const forged = getArtificingCatalogRecipeState(state, 'ember-staff')
     expect(forged?.status).toBe('FORGED')
-    expect(forged?.artifactLevel).toBe(3)
-    expect(forged?.artifactMaxLevel).toBe(10)
+    expect(forged?.artifactRanks).toBe(3)
+    expect(forged?.artifactMaxRanks).toBe(50)
   })
 })

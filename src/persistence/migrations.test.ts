@@ -885,7 +885,7 @@ describe('v45 Black Sigil Reach migration', () => {
 
   it('converts Hall kill Threat proportionally and preserves the valid target', () => {
     const migrated = migrateSave(activeSave({ dungeonId: 'hall-of-unbound-names', enemyId: 'name-eater', targetEnemyId: 'name-eater', threatCleared: 30 }) as any)
-    expect(migrated.saveVersion).toBe(47)
+    expect(migrated.saveVersion).toBe(48)
     expect(migrated.combat.targetEnemyId).toBe('name-eater')
     expect(migrated.combat.threatCleared).toBe(20000)
   })
@@ -947,7 +947,7 @@ describe('v45 Black Sigil Reach migration', () => {
     targeted.worldTier.current = 4
     targeted.worldTier.highestUnlocked = 4
     const targetedLoaded = migrateSave(JSON.parse(JSON.stringify(serializeGameState(targeted))))
-    expect(targetedLoaded.saveVersion).toBe(47)
+    expect(targetedLoaded.saveVersion).toBe(48)
     expect(targetedLoaded.combat).toMatchObject({ targetEnemyId: 'nameless-cantor', enemyId: 'nameless-cantor', enemyHp: 3210, enemyWorldTier: 4, threatCleared: 80000 })
 
     const sequence = createInitialState()
@@ -958,7 +958,7 @@ describe('v45 Black Sigil Reach migration', () => {
     sequence.combat.inBossFight = true
     sequence.combat.enemyHp = 12000
     const sequenceLoaded = migrateSave(JSON.parse(JSON.stringify(serializeGameState(sequence))))
-    expect(sequenceLoaded.saveVersion).toBe(47)
+    expect(sequenceLoaded.saveVersion).toBe(48)
     expect(sequenceLoaded.combat).toMatchObject({ dungeonId: 'black-gate', dungeonSequenceIndex: 4, enemyId: 'black-gatekeeper', enemyHp: 12000, inBossFight: true, targetEnemyId: null, threatCleared: 0 })
   })
 })
@@ -1061,12 +1061,12 @@ describe('V25 Magic School XP semantic migration', () => {
   })
 })
 
-describe('legacy Artifact level-up migration', () => {
-  it('finalizes a valid timed upgrade and clears the obsolete Artificing job', () => {
+describe('V48 Artifact rank migration', () => {
+  it('hard-resets legacy progression and drops obsolete upgrade jobs', () => {
     const initial = createInitialState()
     const migrated = migrateSave({
       ...initial,
-      saveVersion: SAVE_VERSION,
+      saveVersion: SAVE_VERSION - 1,
       inventory: { ...initial.inventory, 'ember-staff': 1 },
       artifactProgress: { ...initial.artifactProgress, 'ember-staff': { level: 1, allocatedNodeIds: [], attunedNodeIds: [] } },
       activities: {
@@ -1075,7 +1075,7 @@ describe('legacy Artifact level-up migration', () => {
       },
     } as any)
 
-    expect(migrated.artifactProgress['ember-staff']?.level).toBe(2)
+    expect(migrated.artifactProgress['ember-staff']?.minorRanks).toEqual({})
     expect(migrated.activities.artificing.activeJob).toBeNull()
     expect(migrated.activities.artificing.progressMs).toBe(0)
   })

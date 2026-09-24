@@ -16,7 +16,7 @@ describe('Artificing detail ownership labels', () => {
 
   it('uses binary ownership text for a forged Artifact', () => {
     const current = useGameStore.getState()
-    useGameStore.setState({ inventory: { ...current.inventory, 'ember-staff': 1 }, artifactProgress: { ...current.artifactProgress, 'ember-staff': { level: 3, allocatedNodeIds: [], attunedNodeIds: [] } } })
+    useGameStore.setState({ inventory: { ...current.inventory, 'ember-staff': 1 }, artifactProgress: { ...current.artifactProgress, 'ember-staff': { minorRanks: {} } } })
     render(<TooltipProvider><ArtificingDetail recipe={ARTIFICING_RECIPES['ember-staff']} /></TooltipProvider>)
 
     expect(screen.getByText('OWNED')).toBeTruthy()
@@ -25,7 +25,7 @@ describe('Artificing detail ownership labels', () => {
 
   it('keeps Artifact ownership text for every starter Artifact', () => {
     const current = useGameStore.getState()
-    useGameStore.setState({ inventory: { ...current.inventory, 'tideglass-wand': 1 }, artifactProgress: { ...current.artifactProgress, 'tideglass-wand': { level: 1, allocatedNodeIds: [], attunedNodeIds: [] } } })
+    useGameStore.setState({ inventory: { ...current.inventory, 'tideglass-wand': 1 }, artifactProgress: { ...current.artifactProgress, 'tideglass-wand': { minorRanks: {} } } })
     render(<TooltipProvider><ArtificingDetail recipe={ARTIFICING_RECIPES['tideglass-wand']} /></TooltipProvider>)
 
     expect(screen.getAllByText('OWNED').length).toBeGreaterThan(0)

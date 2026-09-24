@@ -43,8 +43,8 @@ describe('equipment actions', () => {
     state.inventory['ember-staff'] = 1
     const preview = getEquipmentPreview(state, 'ember-staff')
     expect(preview.current.spellPower).toBe(BALANCE.player.baseSpellPower)
-    expect(preview.preview?.spellPower).toBe(BALANCE.player.baseSpellPower + 16)
-    expect(preview.impact.spellPower).toBe(16)
+    expect(preview.preview?.spellPower).toBe(BALANCE.player.baseSpellPower + 15)
+    expect(preview.impact.spellPower).toBe(15)
   })
 
   it('previews the derived Defense damage reduction change', () => {

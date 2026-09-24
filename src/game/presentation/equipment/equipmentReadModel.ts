@@ -32,7 +32,6 @@ export interface EquipmentStatSnapshot {
   focusEfficiency: number
   fireSpellDamage: number
   airSpellDamage: number
-  waterBarrierPower: number
   barrierReceivedFlat: number
   negativeStatusDurationReceived: number
   resistances: Partial<Record<DamageType, number>>
@@ -42,7 +41,6 @@ export interface EquipmentImpactStats extends EquipmentStats {
   damageReduction?: number
   fireSpellDamage?: number
   airSpellDamage?: number
-  waterBarrierPower?: number
   barrierReceivedFlat?: number
   negativeStatusDurationReceived?: number
 }
@@ -141,9 +139,8 @@ export function resolveEquipmentPreviewTarget({ itemId, selectedPosition }: Equi
 
 /** Compatibility projections for the current Equipment sheet; filtered modifiers use the generic evaluator. */
 const getStableEquipmentModifiers = (state: EquipmentSheetState, equipment: GameState['equipment']) => ({
-  fireSpellDamage: getEquipmentCombatModifierTotal({ ...state, equipment }, 'spell-damage-percent', { originSourceKinds: ['spell'], damageType: 'fire' }),
-  airSpellDamage: getEquipmentCombatModifierTotal({ ...state, equipment }, 'spell-damage-percent', { originSourceKinds: ['spell'], damageType: 'air' }),
-  waterBarrierPower: getEquipmentCombatModifierTotal({ ...state, equipment }, 'barrier-power-percent', { sourceKinds: ['spell'], damageType: 'water' }),
+  fireSpellDamage: getEquipmentCombatModifierTotal({ ...state, equipment }, 'spell-damage-percent', { originSourceKinds: ['spell'], sourceTags: ['direct'], damageType: 'fire' }),
+  airSpellDamage: getEquipmentCombatModifierTotal({ ...state, equipment }, 'spell-damage-percent', { originSourceKinds: ['spell'], sourceTags: ['direct'], damageType: 'air' }),
   barrierReceivedFlat: getEquipmentCombatModifierTotal({ ...state, equipment }, 'barrier-received-flat'),
   negativeStatusDurationReceived: getEquipmentCombatModifierTotal({ ...state, equipment }, 'status-duration-received-percent', { statusTags: ['debuff'] }),
 })
@@ -195,7 +192,6 @@ const subtractSnapshots = (current: EquipmentStatSnapshot, preview: EquipmentSta
   focusEfficiencyPct: preview.focusEfficiency - current.focusEfficiency,
   fireSpellDamage: preview.fireSpellDamage - current.fireSpellDamage,
   airSpellDamage: preview.airSpellDamage - current.airSpellDamage,
-  waterBarrierPower: preview.waterBarrierPower - current.waterBarrierPower,
   barrierReceivedFlat: preview.barrierReceivedFlat - current.barrierReceivedFlat,
   negativeStatusDurationReceived: preview.negativeStatusDurationReceived - current.negativeStatusDurationReceived,
   resistances: Object.fromEntries(Object.keys({ ...current.resistances, ...preview.resistances }).map((damageType) => [damageType, (preview.resistances[damageType as DamageType] ?? 0) - (current.resistances[damageType as DamageType] ?? 0)])) as EquipmentStats['resistances'],

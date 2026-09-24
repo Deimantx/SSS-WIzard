@@ -10,7 +10,7 @@ import { getActorTraits } from './traitRuntime'
 import type { CombatModifier, CombatSource, CombatTag, DamageType, ModifierKey } from './combatTypes'
 import { getStatusGroupStacks } from './statusSelectors'
 import { getRootCombatSourceProvenance, isEnemySourceOwnerActive } from './combatProvenance'
-import { getAllocatedArtifactCombatProviders, isArtifactItem } from '../artifacts/artifactProgression'
+import { getActiveArtifactCombatProviders, isArtifactItem } from '../artifacts/artifactProgression'
 import { getGuardianPassiveProviders } from '../summoning/summoningSelectors'
 import { getArcaneCoreCombatModifierProviders, getArcaneCoreStaticStats } from '../arcaneCore/arcaneCoreProgression'
 import { getEquippedCrystalStats } from '../crystals/crystalStats'
@@ -51,6 +51,7 @@ const EQUIPMENT_MODIFIER_STATS: Partial<Record<ModifierKey, ArcaneCoreModifierKe
   'healing-done-percent': 'healingDonePct',
   'barrier-power-percent': 'barrierPowerPct',
   'damage-over-time-percent': 'damageOverTimePct',
+  'damage-taken-percent': 'damageReductionPct',
   'status-duration-dealt-percent': 'statusDurationPct',
 }
 
@@ -114,8 +115,8 @@ export const getCombatModifierContributions = (state: CombatModifierState, actor
       ITEMS[itemId]?.combat?.modifiers?.forEach((modifier) => {
         add(modifier, 'equipment', itemId, ITEMS[itemId]?.name)
       })
-      if (isArtifactItem(itemId)) getAllocatedArtifactCombatProviders(state, itemId).forEach(provider => provider.modifiers.forEach(modifier => {
-        add(modifier, 'artifact', itemId, provider.node.name)
+      if (isArtifactItem(itemId)) getActiveArtifactCombatProviders(state, itemId).forEach(provider => provider.modifiers.forEach(modifier => {
+        add(modifier, 'artifact', itemId, provider.name)
       }))
     })
     const equipmentField = EQUIPMENT_MODIFIER_STATS[key]

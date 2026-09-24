@@ -37,7 +37,7 @@ describe('Artificing equipment catalog filters', () => {
 
     fireEvent.click(within(tierFilter).getByRole('button', { name: 'T2' }))
     expect(within(tierFilter).getByRole('button', { name: 'T2' }).getAttribute('aria-pressed')).toBe('true')
-    expect(screen.getByText('2 SHOWN')).toBeTruthy()
+    expect(screen.getByText('6 SHOWN')).toBeTruthy()
     expect(screen.queryByText('No Artifact recipes match the current filters.')).toBeNull()
 
     fireEvent.click(within(tierFilter).getByRole('button', { name: 'T1' }))
@@ -73,16 +73,16 @@ describe('Artificing equipment catalog filters', () => {
     expect(screen.getByText('2 SHOWN')).toBeTruthy()
   })
 
-  it('shows owned Artifacts as FORGED with their current level', () => {
+  it('shows owned Artifacts as FORGED with their current rank', () => {
     unlockWhisperingWoods()
     const current = useGameStore.getState()
-    useGameStore.setState({ inventory: { ...current.inventory, 'ember-staff': 1 }, artifactProgress: { ...current.artifactProgress, 'ember-staff': { level: 3, allocatedNodeIds: [], attunedNodeIds: [] } } })
+    useGameStore.setState({ inventory: { ...current.inventory, 'ember-staff': 1 }, artifactProgress: { ...current.artifactProgress, 'ember-staff': { minorRanks: {} } } })
     render(<TooltipProvider><EquipmentCatalog selected="ember-staff" onSelect={vi.fn()} query="ember-staff" onQueryChange={vi.fn()} /></TooltipProvider>)
 
     const card = document.querySelector('[data-recipe-id="ember-staff"]') as HTMLElement
     expect(card).toBeTruthy()
     expect(within(card).getByText('FORGED')).toBeTruthy()
-    expect(within(card).getByText('LV 3 / 10')).toBeTruthy()
+    expect(within(card).getByText('RANKS 0 / 50')).toBeTruthy()
     expect(card.classList.contains('artifact-forged')).toBe(true)
     expect(within(card).queryByText('MISSING')).toBeNull()
   })
@@ -117,7 +117,7 @@ describe('Artificing equipment catalog filters', () => {
   it('does not offer repeat forging for a forged Artifact', () => {
     unlockWhisperingWoods()
     const current = useGameStore.getState()
-    useGameStore.setState({ inventory: { ...current.inventory, 'ember-staff': 1 }, artifactProgress: { ...current.artifactProgress, 'ember-staff': { level: 1, allocatedNodeIds: [], attunedNodeIds: [] } } })
+    useGameStore.setState({ inventory: { ...current.inventory, 'ember-staff': 1 }, artifactProgress: { ...current.artifactProgress, 'ember-staff': { minorRanks: {} } } })
     render(<TooltipProvider><GameContextMenuProvider><EquipmentCatalog selected="ember-staff" onSelect={vi.fn()} query="ember-staff" onQueryChange={vi.fn()} /></GameContextMenuProvider></TooltipProvider>)
 
     fireEvent.contextMenu(document.querySelector('[data-recipe-id="ember-staff"]') as HTMLElement)

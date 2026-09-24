@@ -31,7 +31,7 @@ describe('Recipe Pins Dock', () => {
     render(<TooltipProvider><RecipePinsDock /></TooltipProvider>)
     expect(screen.getByText('READY TO FORGE')).toBeTruthy()
 
-    act(() => useGameStore.setState({ inventory: { ...useGameStore.getState().inventory, 'ember-staff': 1 }, artifactProgress: { ...useGameStore.getState().artifactProgress, 'ember-staff': { level: 1, allocatedNodeIds: [], attunedNodeIds: [] } } }))
+    act(() => useGameStore.setState({ inventory: { ...useGameStore.getState().inventory, 'ember-staff': 1 }, artifactProgress: { ...useGameStore.getState().artifactProgress, 'ember-staff': { minorRanks: {} } } }))
     expect(screen.queryByText('FORGED')).toBeNull()
     expect(getUiPreferences().screenState.artificing.pinnedRecipeIds).toEqual([])
   })

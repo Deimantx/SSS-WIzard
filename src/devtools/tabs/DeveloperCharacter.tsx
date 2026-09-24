@@ -69,7 +69,6 @@ export function DeveloperCharacter() {
         <Summary label="Focus Efficiency" value={`${Math.round(effectiveEquipment.focusEfficiency * 100)}%`} />
         <Summary label="Fire Spell Damage" value={`${Math.round(effectiveEquipment.fireSpellDamage * 100)}%`} />
         <Summary label="Air Spell Damage" value={`${Math.round(effectiveEquipment.airSpellDamage * 100)}%`} />
-        <Summary label="Water Barrier Power" value={`${Math.round(effectiveEquipment.waterBarrierPower * 100)}%`} />
         <Summary label="Barrier Received" value={`+${effectiveEquipment.barrierReceivedFlat}`} />
         <Summary label="Received Negative Status" value={`${Math.round(effectiveEquipment.negativeStatusDurationReceived * 100)}%`} />
         {Object.entries(effectiveEquipment.resistances).map(([type, value]) => <Summary key={type} label={`${type[0].toUpperCase()}${type.slice(1)} Resistance`} value={`${Math.round((value ?? 0) * 100)}%`} />)}

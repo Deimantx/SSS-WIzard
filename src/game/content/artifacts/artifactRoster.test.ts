@@ -1,212 +1,49 @@
 import { describe, expect, it } from 'vitest'
-import { createInitialState } from '../../../store/initialState'
-import { recalculateDerivedStats } from '../../engine'
 import { ITEMS } from '../items/items'
-import { MONSTERS } from '../monsters'
-import { ARTIFICING_RECIPES, isRecipeUnlocked } from '../recipes/recipes'
-import { ACT1_ARTIFACT_LEVEL_BANDS, ARTIFACTS, ARTIFACT_LEVEL_BANDS, validateArtifactDefinitions } from './artifacts'
-import { getArtifactEffectiveStats, getArtifactLevelCap, getArtifactLevelCapRequirement, getArtifactUpgrade, isArtifactUpgradeUnlocked, canUpgradeArtifact } from '../../systems/artifacts/artifactProgression'
-import { upgradeArtifactInstant } from '../../systems/artificing/artificingEngine'
-import { getCombatModifiers, getResistance } from '../../systems/combat/modifiers'
-import { damagePlayer } from '../../systems/combat/effectResolver'
-import { normalizeEquipmentState } from '../../core/equipment/equipmentRules'
-import type { ArtifactId, CombatSource, ItemId } from '../../types'
+import { ARTIFACTS, ACT1_ARTIFACT_IDS, validateArtifactDefinitions } from './artifacts'
+import { createInitialState } from '../../../store/initialState'
+import { getActiveArtifactCombatProviders, getArtifactEffectiveStats, getArtifactMaxInvestedRanks, getArtifactTotalInvestedRanks, purchaseArtifactMinorRank } from '../../systems/artifacts/artifactProgression'
 
-const artifactIds: readonly ArtifactId[] = ['reliquary-scepter', 'pyrebound-staff', 'rootheart-scepter', 'convergence-robe', 'waystone-circlet', 'ember-staff', 'tideglass-wand', 'stoneheart-scepter', 'windthread-wand', 'wispweave-robe', 'wispveil-hood', 'galeshard-staff']
-const elementalArtifacts: readonly [ArtifactId, ItemId][] = [['ember-staff', 'fire-fragment'], ['tideglass-wand', 'water-fragment'], ['stoneheart-scepter', 'earth-fragment'], ['windthread-wand', 'air-fragment'], ['reliquary-scepter', 'water-fragment'], ['pyrebound-staff', 'fire-fragment'], ['rootheart-scepter', 'earth-fragment']]
-const act1Artifacts: readonly ArtifactId[] = ['galeshard-staff', 'reliquary-scepter', 'pyrebound-staff', 'rootheart-scepter', 'convergence-robe', 'waystone-circlet']
-const spellSource = (school: 'water' | 'earth' | 'air'): CombatSource => ({ actor: 'player', kind: 'spell', sourceId: `artifact-${school}`, school, tags: ['spell', school] })
-
-describe('Artifact roster', () => {
-  it('contains the validated Artifact bases without item-level stat/combat duplicates', () => {
-    expect(Object.keys(ARTIFACTS)).toEqual(artifactIds)
-    expect(validateArtifactDefinitions(ITEMS, MONSTERS)).toEqual([])
-    artifactIds.forEach((id) => {
-      expect(ITEMS[id]).toMatchObject({ kind: 'equipment', source: 'Artificing', sourceNavigation: 'tower-artificing', sellValue: null, canDestroy: false })
-      expect(ITEMS[id].equipmentTier).toBe(id === 'galeshard-staff' ? 1.7 : ['reliquary-scepter', 'pyrebound-staff', 'rootheart-scepter'].includes(id) ? 1.8 : ['convergence-robe', 'waystone-circlet'].includes(id) ? 2 : 1)
-      expect(ARTIFACTS[id]?.tier).toBe(id === 'galeshard-staff' ? 1.7 : ['reliquary-scepter', 'pyrebound-staff', 'rootheart-scepter'].includes(id) ? 1.8 : ['convergence-robe', 'waystone-circlet'].includes(id) ? 2 : 1)
-      expect(ITEMS[id].stats).toBeUndefined()
-      expect(ITEMS[id].combat).toBeUndefined()
-      expect(ARTIFACTS[id]?.maxLevel).toBe(10)
+describe('V6 Artifact roster', () => {
+  it('contains the six Act 0 and six Act 1 definitions in the canonical schema', () => {
+    expect(Object.keys(ARTIFACTS)).toHaveLength(12)
+    expect(ACT1_ARTIFACT_IDS).toHaveLength(6)
+    Object.values(ARTIFACTS).forEach((artifact) => {
+      const expectedCount = ACT1_ARTIFACT_IDS.includes(artifact.id) ? 6 : 5
+      expect(artifact.minorNodes).toHaveLength(expectedCount)
+      expect(artifact.majorMilestones).toHaveLength(expectedCount)
+      expect(artifact.minorNodes.every((node) => node.maxRank === 10 && node.rankCosts.length === 10 && node.rankEffects.length === 10)).toBe(true)
+      expect(artifact.majorMilestones.map((major) => major.unlockAtTotalRanks)).toEqual(Array.from({ length: expectedCount }, (_, index) => (index + 1) * 10))
     })
   })
 
-  it('resolves the authored level-10 core stat tables', () => {
+  it('passes authored content validation', () => expect(validateArtifactDefinitions(ITEMS)).toEqual([]))
+
+  it('keeps Rank 0 baselines in runtime equipment stats', () => {
+    expect(getArtifactEffectiveStats({ artifactProgress: {} }, 'ember-staff')).toMatchObject({ spellPower: 15 })
+    expect(getArtifactEffectiveStats({ artifactProgress: {} }, 'tideglass-wand')).toMatchObject({ spellPower: 15, maxMana: 10 })
+    expect(getArtifactEffectiveStats({ artifactProgress: {} }, 'reliquary-scepter')).toMatchObject({ spellPower: 235, maxMana: 60, healingDonePct: 0.1 })
+  })
+
+  it('keeps signature threshold effects in the combat provider registry', () => {
     const state = createInitialState()
-    artifactIds.forEach((id) => { state.artifactProgress[id] = { level: 10, allocatedNodeIds: [], attunedNodeIds: [] } })
-    expect(getArtifactEffectiveStats(state, 'ember-staff')).toMatchObject({ spellPower: 75 })
-    expect(getArtifactEffectiveStats(state, 'tideglass-wand')).toMatchObject({ spellPower: 72 })
-    expect(getArtifactEffectiveStats(state, 'stoneheart-scepter')).toMatchObject({ spellPower: 67 })
-    expect(getArtifactEffectiveStats(state, 'windthread-wand')).toMatchObject({ spellPower: 73 })
-    expect(getArtifactEffectiveStats(state, 'wispweave-robe')).toMatchObject({ maxHealth: 92, defense: 19 })
-    expect(getArtifactEffectiveStats(state, 'wispveil-hood')).toMatchObject({ maxHealth: 49, defense: 14 })
-    expect(getArtifactEffectiveStats(state, 'galeshard-staff')).toMatchObject({ spellPower: 118 })
-    expect(getArtifactEffectiveStats(state, 'reliquary-scepter')).toMatchObject({ spellPower: 117 })
-    expect(getArtifactEffectiveStats(state, 'pyrebound-staff')).toMatchObject({ spellPower: 122 })
-    expect(getArtifactEffectiveStats(state, 'rootheart-scepter')).toMatchObject({ spellPower: 109 })
-    expect(getArtifactEffectiveStats(state, 'convergence-robe')).toMatchObject({ maxHealth: 145, defense: 27 })
-    expect(getArtifactEffectiveStats(state, 'waystone-circlet')).toMatchObject({ maxHealth: 80, defense: 20 })
+    state.artifactProgress['tideglass-wand'] = { minorRanks: { 'arcane-current': 10, 'deep-reservoir': 10, 'mending-current': 10, 'frosted-surge': 10, 'lingering-chill': 10 } }
+    const providers = getActiveArtifactCombatProviders(state, 'tideglass-wand')
+    expect(providers.flatMap((provider) => provider.rules)).toEqual(expect.arrayContaining([expect.objectContaining({ id: 'artifact-tidal-grace', oncePerEncounter: true, event: 'on-hp-threshold' })]))
   })
 
-  it('uses universal Artifact Essence plus the matching school fragment for starter elemental upgrades', () => {
-    const fragments = [50, 100, 200, 300, 500, 750, 1000, 1650, 2750]
-    const essence = [10, 20, 40, 60, 100, 150, 200, 300, 500]
-    elementalArtifacts.slice(0, 4).forEach(([artifactId, fragmentId]) => {
-      ARTIFACTS[artifactId]!.upgrades.forEach((upgrade, index) => {
-        expect(upgrade.ingredients).toHaveLength(2)
-        expect(upgrade.ingredients).toEqual(expect.arrayContaining([{ itemId: fragmentId, quantity: fragments[index] }, { itemId: 'artifact-essence', quantity: essence[index] }]))
-        expect(upgrade.ingredients.every(({ itemId }) => itemId === fragmentId || itemId === 'artifact-essence')).toBe(true)
-      })
-    })
-  })
-
-  it('uses the cheaper second-generation curve for Act 1 elemental Artifacts', () => {
-    const fragments = [40, 70, 120, 180, 260, 360, 500, 700, 1000]
-    const essence = [15, 25, 40, 60, 80, 110, 150, 220, 300]
-    elementalArtifacts.slice(4).forEach(([artifactId, fragmentId]) => {
-      ARTIFACTS[artifactId].upgrades.forEach((upgrade, index) => {
-        expect(upgrade.ingredients).toEqual(expect.arrayContaining([{ itemId: fragmentId, quantity: fragments[index] }, { itemId: 'artifact-essence', quantity: essence[index] }]))
-      })
-    })
-  })
-
-  it('uses only Air Fragment and Artifact Essence for Galeshard Staff upgrades', () => {
-    expect(ARTIFACTS['galeshard-staff'].upgrades.map((upgrade) => upgrade.ingredients[0].quantity)).toEqual([40, 70, 120, 180, 260, 360, 500, 700, 1000])
-    expect(ARTIFACTS['galeshard-staff'].upgrades.every((upgrade) => upgrade.ingredients.every(({ itemId }) => itemId === 'air-fragment' || itemId === 'artifact-essence'))).toBe(true)
-  })
-
-  it('uses only Prismatic Fragment and Artifact Essence for robe and hood upgrades', () => {
-    const fragments = [2, 4, 7, 10, 15, 20, 28, 38, 50]
-    const essence = [10, 20, 40, 60, 100, 150, 200, 300, 500]
-    ;(['wispweave-robe', 'wispveil-hood'] as const).forEach((artifactId) => {
-      ARTIFACTS[artifactId].upgrades.forEach((upgrade, index) => {
-        expect(upgrade.ingredients).toHaveLength(2)
-        expect(upgrade.ingredients).toEqual(expect.arrayContaining([{ itemId: 'prismatic-fragment', quantity: fragments[index] }, { itemId: 'artifact-essence', quantity: essence[index] }]))
-        expect(upgrade.ingredients.every(({ itemId }) => itemId === 'prismatic-fragment' || itemId === 'artifact-essence')).toBe(true)
-      })
-    })
-  })
-
-  it('unlocks starter Artifact recipes on a fresh save and gates Galeshard behind the Gatekeeper', () => {
-    const state = createInitialState()
-    artifactIds.filter((id) => !act1Artifacts.includes(id)).forEach((id) => {
-      expect(ARTIFICING_RECIPES[id]).toMatchObject({ kind: 'artificing', unlock: { type: 'always' } })
-      expect(ARTIFICING_RECIPES[id].sourceDungeonId).toBeUndefined()
-      expect(isRecipeUnlocked(state, ARTIFICING_RECIPES[id])).toBe(true)
-    })
-    expect(ARTIFICING_RECIPES['galeshard-staff']).toMatchObject({ unlock: { type: 'boss-kill', bossId: 'corrupted-elemental-gatekeeper' }, sourceDungeonId: 'fractured-approach' })
-    expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['galeshard-staff'])).toBe(false)
-    ;(['reliquary-scepter', 'pyrebound-staff', 'rootheart-scepter', 'convergence-robe', 'waystone-circlet'] as const).forEach((id) => expect(isRecipeUnlocked(state, ARTIFICING_RECIPES[id])).toBe(false))
-    state.progress.bossKillsByBoss['corrupted-elemental-gatekeeper'] = 1
-    expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['galeshard-staff'])).toBe(true)
-  })
-
-  it('uses Act 1 bosses for second-generation Artifact level bands', () => {
-    expect(ACT1_ARTIFACT_LEVEL_BANDS).toEqual([
-      { maxLevel: 4, unlock: { type: 'always' } },
-      { maxLevel: 7, unlock: { type: 'boss-kill', bossId: 'crossroads-keeper' } },
-      { maxLevel: 10, unlock: { type: 'boss-kill', bossId: 'meridian-splitter' } },
-    ])
-    const state = createInitialState()
-    expect(getArtifactLevelCap(state, 'galeshard-staff')).toBe(4)
-    expect(getArtifactLevelCapRequirement(state, 'galeshard-staff')).toContain('Crossroads Keeper')
-    state.progress.bossKillsByBoss['crossroads-keeper'] = 1
-    expect(getArtifactLevelCap(state, 'galeshard-staff')).toBe(7)
-    expect(getArtifactLevelCapRequirement(state, 'galeshard-staff')).toContain('Meridian Splitter')
-    state.progress.bossKillsByBoss['meridian-splitter'] = 1
-    expect(getArtifactLevelCap(state, 'galeshard-staff')).toBe(10)
-    expect(getArtifactLevelCapRequirement(state, 'galeshard-staff')).toBeNull()
-  })
-
-  it('uses Forest Heart and Corrupted Greatbear boss kills for Artifact level bands', () => {
-    expect(ARTIFACT_LEVEL_BANDS).toEqual([
-      { maxLevel: 4, unlock: { type: 'always' } },
-      { maxLevel: 7, unlock: { type: 'boss-kill', bossId: 'forest-heart' } },
-      { maxLevel: 10, unlock: { type: 'boss-kill', bossId: 'corrupted-greatbear' } },
-    ])
-    const state = createInitialState()
-    expect(getArtifactLevelCap(state, 'ember-staff')).toBe(4)
-    expect(getArtifactLevelCapRequirement(state, 'ember-staff')).toContain('Forest Heart')
-    state.progress.bossKillsByBoss['forest-heart'] = 1
-    expect(getArtifactLevelCap(state, 'ember-staff')).toBe(7)
-    expect(getArtifactLevelCapRequirement(state, 'ember-staff')).toContain('Corrupted Greatbear')
-    state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
-    expect(getArtifactLevelCap(state, 'ember-staff')).toBe(10)
-    expect(getArtifactLevelCapRequirement(state, 'ember-staff')).toBeNull()
-  })
-
-  it('locks 4→5 and 7→8 until their boss is defeated without consuming ingredients', () => {
+  it('uses one central item and resonance transaction for a Minor rank', () => {
     const state = createInitialState()
     state.inventory['ember-staff'] = 1
-    state.artifactProgress['ember-staff'] = { level: 4, allocatedNodeIds: [], attunedNodeIds: [] }
-    const levelFive = getArtifactUpgrade('ember-staff', 4)!
-    levelFive.ingredients.forEach(({ itemId, quantity }) => { state.inventory[itemId] = quantity })
-    expect(isArtifactUpgradeUnlocked(state, levelFive)).toBe(false)
-    expect(canUpgradeArtifact(state, 'ember-staff')).toBe(false)
-    expect(upgradeArtifactInstant(state, 'ember-staff')).toMatchObject({ ok: false })
-    levelFive.ingredients.forEach(({ itemId, quantity }) => expect(state.inventory[itemId]).toBe(quantity))
-
-    state.progress.bossKillsByBoss['forest-heart'] = 1
-    expect(isArtifactUpgradeUnlocked(state, levelFive)).toBe(true)
-    expect(canUpgradeArtifact(state, 'ember-staff')).toBe(true)
-    expect(upgradeArtifactInstant(state, 'ember-staff')).toMatchObject({ ok: true })
-    state.artifactProgress['ember-staff'].level = 7
-    const levelEight = getArtifactUpgrade('ember-staff', 7)!
-    levelEight.ingredients.forEach(({ itemId, quantity }) => { state.inventory[itemId] = quantity })
-    state.progress.bossKillsByBoss['corrupted-greatbear'] = 0
-    expect(isArtifactUpgradeUnlocked(state, levelEight)).toBe(false)
-    expect(canUpgradeArtifact(state, 'ember-staff')).toBe(false)
-    expect(upgradeArtifactInstant(state, 'ember-staff')).toMatchObject({ ok: false })
-    levelEight.ingredients.forEach(({ itemId, quantity }) => expect(state.inventory[itemId]).toBe(quantity))
-    state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
-    expect(isArtifactUpgradeUnlocked(state, levelEight)).toBe(true)
-  })
-
-  it('uses boss kills for current Artifact Path gates without catalysts', () => {
-    const bossGatedNodes = Object.values(ARTIFACTS).flatMap((artifact) => artifact.nodes.filter((node) => node.requiresBossKill))
-    expect(Object.values(ARTIFACTS).flatMap((artifact) => artifact.nodes).every((node) => node.catalyst === undefined)).toBe(true)
-    expect(bossGatedNodes.every((node) => node.requiresBossKill && ['forest-heart', 'corrupted-greatbear', 'archmage-edrin-shade', 'corrupted-elemental-gatekeeper', 'crossroads-keeper', 'meridian-splitter'].includes(node.requiresBossKill))).toBe(true)
-  })
-
-  it('treats every current Artifact as compatible with the single Weapon slot', () => {
-    const inventory = { 'ember-staff': 1, 'tideglass-wand': 1, 'stoneheart-scepter': 1, 'windthread-wand': 1, 'reliquary-scepter': 1, 'pyrebound-staff': 1, 'rootheart-scepter': 1 }
-    elementalArtifacts.forEach(([id]) => expect(normalizeEquipmentState({ weapon: id }, inventory).weapon).toBe(id))
-  })
-
-  it('filters Tideglass Barrier power to Water-origin Spell Barriers', () => {
-    const state = createInitialState()
-    state.equipment.weapon = 'tideglass-wand'
-    state.artifactProgress['tideglass-wand'] = { level: 3, allocatedNodeIds: ['flowing-conduit', 'protective-current'], attunedNodeIds: [] }
-    expect(getCombatModifiers(state, 'player', 'barrier-power-percent', { source: spellSource('water'), damageType: 'water' })).toBeCloseTo(0.1)
-    expect(getCombatModifiers(state, 'player', 'barrier-power-percent', { source: spellSource('earth'), damageType: 'earth' })).toBe(0)
-  })
-
-  it('applies Greatbear Stormheart only while Mana is above half', () => {
-    const state = createInitialState()
-    state.equipment.weapon = 'windthread-wand'
-    state.artifactProgress['windthread-wand'] = { level: 7, allocatedNodeIds: ['greatbear-stormheart'], attunedNodeIds: [] }
-    state.player.mana = 60
-    expect(getCombatModifiers(state, 'player', 'spell-damage-percent', { source: spellSource('air') })).toBeCloseTo(0.15)
-    state.player.mana = 40
-    expect(getCombatModifiers(state, 'player', 'spell-damage-percent', { source: spellSource('air') })).toBe(0)
-  })
-
-  it('runs a new Artifact defensive threshold trigger and merges nested resistances', () => {
-    const state = createInitialState()
-    state.combat.active = true
-    state.combat.enemyId = 'forest-wisp'
-    state.combat.enemyInstanceKey = 'artifact-roster-test'
-    state.combat.enemyMaxHp = 1000
-    state.combat.enemyHp = 1000
-    state.equipment.armor = 'wispweave-robe'
-    state.inventory['wispweave-robe'] = 1
-    state.artifactProgress['wispweave-robe'] = { level: 10, allocatedNodeIds: ['edrins-deathless-weave', 'greatbear-arcana'], attunedNodeIds: [] }
-    recalculateDerivedStats(state)
-    expect(getResistance(state, 'player', 'fire')).toBeCloseTo(0.1)
-    expect(getResistance(state, 'player', 'water')).toBeCloseTo(0.1)
-    state.player.health = state.player.maxHealth
-    const enemySource: CombatSource = { actor: 'enemy', kind: 'action', sourceId: 'artifact-roster-hit', sourceMonsterId: 'forest-wisp', sourceInstanceKey: 'artifact-roster-test', tags: ['physical'] }
-    damagePlayer(state, 180, enemySource)
-    expect(state.combat.playerBarrier).toBe(75)
+    state.artifactProgress['ember-staff'] = { minorRanks: {} }
+    state.inventory['artifact-essence'] = 15
+    state.inventory['fire-fragment'] = 50
+    state.resonance.fire = 50
+    const result = purchaseArtifactMinorRank(state, 'ember-staff', 'arcane-embers')
+    expect(result.ok).toBe(true)
+    expect(getArtifactTotalInvestedRanks(state, 'ember-staff')).toBe(1)
+    expect(getArtifactMaxInvestedRanks('ember-staff')).toBe(50)
+    expect(state.inventory['artifact-essence']).toBe(0)
+    expect(state.resonance.fire).toBe(0)
   })
 })

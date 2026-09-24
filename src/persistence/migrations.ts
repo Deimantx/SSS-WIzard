@@ -206,6 +206,7 @@ const normalizeDynamicRecord = <T>(base: Record<string, T>, incoming: unknown, v
 
 const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) => {
   const fresh = createInitialState()
+  const sourceVersion = typeof raw.saveVersion === 'number' ? raw.saveVersion : 0
   const rawProgress = isRecord(raw.progress) ? raw.progress : {}
   const rawActivities = isRecord(raw.activities) ? raw.activities : {}
   const rawCombat = isRecord(raw.combat) ? raw.combat : {}
@@ -216,36 +217,25 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
   migrated.artifactProgress = Object.fromEntries(Object.entries(ARTIFACTS).flatMap(([artifactId, definition]) => {
     const rawProgress = isRecord(rawArtifacts[artifactId]) ? rawArtifacts[artifactId] : null
     if (!rawProgress) return []
-    const level = Math.max(1, Math.min(definition!.maxLevel, Math.floor(nonNegativeNumber(rawProgress.level) ?? 1)))
-    const nodeIds = new Set(definition!.nodes.map(node => node.id))
-    const catalystIds = new Set(definition!.nodes.filter(node => node.catalyst).map(node => node.id))
-    const requested = Array.isArray(rawProgress.allocatedNodeIds) ? [...new Set(rawProgress.allocatedNodeIds.filter((id): id is string => typeof id === 'string' && nodeIds.has(id)))] : []
-    const allocated: string[] = []
-    requested.forEach((id) => { const node = definition!.nodes.find(item => item.id === id); if (node && node.requiresLevel <= level && (node.prerequisites ?? []).every(prerequisite => allocated.includes(prerequisite))) allocated.push(id) })
-    const attuned = Array.isArray(rawProgress.attunedNodeIds) ? [...new Set(rawProgress.attunedNodeIds.filter((id): id is string => typeof id === 'string' && catalystIds.has(id)))] : []
-    return [[artifactId, { level, allocatedNodeIds: allocated, attunedNodeIds: attuned }]]
+    const nodeIds = new Set(definition!.minorNodes.map(node => node.id))
+    const requested = sourceVersion >= 48 && isRecord(rawProgress.minorRanks) ? Object.entries(rawProgress.minorRanks).flatMap(([id, value]) => {
+      if (!nodeIds.has(id) || typeof value !== 'number' || !Number.isFinite(value)) return []
+      return [[id, Math.max(0, Math.min(10, Math.floor(value)))]] as const
+    }) : []
+    return [[artifactId, { minorRanks: Object.fromEntries(requested.filter(([, rank]) => rank > 0)) }]]
   })) as GameState['artifactProgress']
   migrated.protectedItems = normalizeDynamicRecord(fresh.protectedItems, raw.protectedItems, itemIds, booleanValue)
   const rawArtificing = isRecord(rawActivities.artificing) ? rawActivities.artificing : {}
   const activeRecipeId = typeof rawArtificing.activeRecipeId === 'string' && Object.prototype.hasOwnProperty.call(ARTIFICING_RECIPES, rawArtificing.activeRecipeId) ? rawArtificing.activeRecipeId as GameState['activities']['artificing']['activeRecipeId'] : null
   const rawActiveJob = isRecord(rawArtificing.activeJob) ? rawArtificing.activeJob : null
-  if (rawActiveJob?.kind === 'artifact-upgrade') {
-    const artifactId = typeof rawActiveJob.artifactId === 'string' && ARTIFACTS[rawActiveJob.artifactId as ArtifactId] ? rawActiveJob.artifactId as ArtifactId : null
-    const fromLevel = nonNegativeInteger(rawActiveJob.fromLevel)
-    const toLevel = nonNegativeInteger(rawActiveJob.toLevel)
-    const progress = artifactId ? migrated.artifactProgress[artifactId] : undefined
-    const upgrade = artifactId && fromLevel !== undefined ? ARTIFACTS[artifactId]?.upgrades.find(candidate => candidate.fromLevel === fromLevel) : undefined
-    if (progress && upgrade && toLevel !== undefined && upgrade.toLevel === toLevel && progress.level === fromLevel) progress.level = toLevel
-  }
   const rawJob = rawActiveJob?.kind === 'recipe' && typeof rawActiveJob.recipeId === 'string' && Object.prototype.hasOwnProperty.call(ARTIFICING_RECIPES, rawActiveJob.recipeId)
     ? { kind: 'recipe' as const, recipeId: rawActiveJob.recipeId as GameState['activities']['artificing']['activeRecipeId'] }
     : rawActiveJob?.kind === 'artifact-forge' && typeof rawActiveJob.artifactId === 'string' && Boolean(ARTIFACTS[rawActiveJob.artifactId as ArtifactId])
       ? { kind: 'artifact-forge' as const, artifactId: rawActiveJob.artifactId as ArtifactId }
       : null
-  const legacyUpgrade = rawActiveJob?.kind === 'artifact-upgrade'
-  const normalizedJob = rawJob as GameState['activities']['artificing']['activeJob'] ?? (!legacyUpgrade && activeRecipeId ? { kind: 'recipe', recipeId: activeRecipeId } : null)
+  const normalizedJob = rawJob as GameState['activities']['artificing']['activeJob'] ?? (activeRecipeId ? { kind: 'recipe', recipeId: activeRecipeId } : null)
   const normalizedRecipeId = normalizedJob?.kind === 'recipe' ? normalizedJob.recipeId : null
-  migrated.activities.artificing = { activeJob: normalizedJob, activeRecipeId: legacyUpgrade ? null : normalizedRecipeId, progressMs: normalizedJob ? Math.max(0, nonNegativeNumber(rawArtificing.progressMs) ?? 0) : 0 }
+  migrated.activities.artificing = { activeJob: normalizedJob, activeRecipeId: normalizedRecipeId, progressMs: normalizedJob ? Math.max(0, nonNegativeNumber(rawArtificing.progressMs) ?? 0) : 0 }
   const rawAutoCast = isRecord(rawActivities.autoCast) ? rawActivities.autoCast : {}
   const normalizedAutoCast = normalizeDynamicRecord(fresh.activities.autoCast, rawAutoCast, spellIds, booleanValue) as GameState['activities']['autoCast']
   Object.entries(LEGACY_SPELL_ID_MAP).forEach(([legacyId, canonicalId]) => {

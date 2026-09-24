@@ -184,6 +184,7 @@ export interface EquipmentStats {
   healingDonePct?: number
   barrierPowerPct?: number
   damageOverTimePct?: number
+  damageReductionPct?: number
   statusDurationPct?: number
   manaCostReductionPct?: number
   focusEfficiencyPct?: number
@@ -353,7 +354,7 @@ export type ArtificingJob =
   | { kind: 'recipe'; recipeId: ArtificingRecipeId }
   | { kind: 'artifact-forge'; artifactId: ArtifactId }
 export interface ArtificingActivity { activeJob: ArtificingJob | null; activeRecipeId?: ArtificingRecipeId | null; progressMs: number }
-export interface ArtifactProgressState { level: number; allocatedNodeIds: string[]; attunedNodeIds: string[] }
+export interface ArtifactProgressState { minorRanks: Partial<Record<string, number>> }
 export interface ActivitiesState {
   channeling: ChannelingActivity
   research: ResearchActivity
@@ -667,12 +668,8 @@ export interface DebugOverrides {
   combatPaused: boolean
   combatTimeScale: number
   /** Artifact-only tester controls. These values are reset on load and excluded from saves. */
-  artifactBonusPointsByArtifact: Partial<Record<ArtifactId, number>>
-  artifactIgnoreDungeonGate: boolean
-  artifactIgnoreLevelCap: boolean
-  artifactIgnoreNodePrerequisites: boolean
-  artifactAllowBeyondLimit: boolean
-  artifactFreeUpgrade: boolean
+  artifactFreeRankPurchase: boolean
+  artifactIgnoreOwnership: boolean
   arcaneCoreFreeCosts: boolean
   arcaneCoreIgnorePrerequisites: boolean
 }

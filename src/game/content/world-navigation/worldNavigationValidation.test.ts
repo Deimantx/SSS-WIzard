@@ -60,7 +60,6 @@ describe('combat world navigation content', () => {
     expect(COMBAT_LOCATIONS['broken-meridian']).toMatchObject({ encounterMode: 'sequence', firstClearUnlockPreview: [
       { id: 'black-sigil-reach', label: 'Black Sigil Reach' },
       { id: 'world-tier-4', label: 'World Tier 4' },
-      { id: 'act1-artifact-levels-8-10', label: 'Act 1 Artifact Levels 8-10' },
       { id: 'crystals', label: 'Crystals' },
     ] })
     expect(COMBAT_LOCATIONS['hall-of-unbound-names']).toMatchObject({ encounterMode: 'targeted', type: 'elite-zone', zoneAffixId: 'vicious' })

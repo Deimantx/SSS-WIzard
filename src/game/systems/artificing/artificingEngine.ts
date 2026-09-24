@@ -4,7 +4,7 @@ import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption
 import { grantItem } from '../inventory/itemAcquisition'
 import { ARTIFACTS } from '../../content/artifacts/artifacts'
 import { isRecipeUnlocked, getRecipeUnlockRequirement } from '../../content/recipes/recipeUnlocks'
-import { canUpgradeArtifact, getArtifactUpgrade, getArtifactLevelCap, getArtifactLevelCapRequirement, completeArtifactForge, getArtifactUpgradeUnlockRequirement, isArtifactUpgradeUnlocked } from '../artifacts/artifactProgression'
+import { completeArtifactForge } from '../artifacts/artifactProgression'
 import type { ArtificingRecipeId, ArtifactId, GameState, ItemId } from '../../types'
 export type ArtificingCraftResult = { ok: true; itemId: ItemId } | { ok: false; reason: string }
 export type ArtificingCompletion =
@@ -26,21 +26,6 @@ export const startArtificingCraft = (state: GameState, id: ArtificingRecipeId): 
   ingredients.forEach(({ itemId, quantity }) => { state.inventory[itemId] = Math.max(0, (state.inventory[itemId] ?? 0) - quantity) })
   state.activities.artificing = { activeJob: { kind: 'artifact-forge', artifactId: id }, activeRecipeId: null, progressMs: 0 }
   return { ok: true, itemId: recipe.output.itemId }
-}
-export const upgradeArtifactInstant = (state: GameState, id: ArtifactId, options?: { free?: boolean }): ArtificingCraftResult => {
-  if (!ARTIFACTS[id]) return { ok: false, reason: 'Artifact is not owned.' }
-  const progress = state.artifactProgress?.[id]
-  if (!progress) return { ok: false, reason: 'Artifact progression is missing or invalid.' }
-  const upgrade = getArtifactUpgrade(id, progress.level); const cap = getArtifactLevelCap(state, id)
-  const free = options?.free ?? Boolean(state.debug.artifactFreeUpgrade)
-  if ((state.inventory[id] ?? 0) < 1) return { ok: false, reason: 'Artifact is not owned.' }
-  if (progress.level >= cap) return { ok: false, reason: getArtifactLevelCapRequirement(state, id) ?? `Artifact level is capped at ${cap}.` }
-  if (!upgrade) return { ok: false, reason: 'Not enough legal upgrade materials.' }
-  if (!isArtifactUpgradeUnlocked(state, upgrade)) return { ok: false, reason: getArtifactUpgradeUnlockRequirement(upgrade) ?? 'Artifact upgrade is locked.' }
-  if (!canUpgradeArtifact({ ...state, debug: { ...state.debug, artifactFreeUpgrade: free } }, id)) return { ok: false, reason: 'Not enough legal upgrade materials.' }
-  if (!free) upgrade.ingredients.forEach(({ itemId, quantity }) => { state.inventory[itemId] = Math.max(0, (state.inventory[itemId] ?? 0) - quantity) })
-  progress.level = upgrade.toLevel
-  return { ok: true, itemId: id }
 }
 export const cancelArtificingCraft = (state: GameState) => { const job = active(state); if (!job) return false; const ingredients = getArtificingCraftIngredients(job.kind === 'recipe' ? job.recipeId : job.artifactId); ingredients?.forEach(({ itemId, quantity }) => grantItem(state, itemId, quantity)); clear(state); return true }
 export const advanceArtificing = (state: GameState, deltaMs: number, onComplete?: (completion: ArtificingCompletion) => void) => {

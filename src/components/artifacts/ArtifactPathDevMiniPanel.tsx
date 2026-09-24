@@ -1,5 +1,5 @@
 import { Button, GameTooltip } from '../ui'
-import { getArtifactLevel, getArtifactLevelCap, getArtifactNodeEligibility, getArtifactAvailablePoints } from '../../game/systems/artifacts/artifactProgression'
+import { getArtifactMinorRank, getArtifactTotalInvestedRanks } from '../../game/systems/artifacts/artifactProgression'
 import { ARTIFACTS } from '../../game/content/artifacts/artifacts'
 import type { ArtifactId, GameState } from '../../game/types'
 import { useGameStore } from '../../store/gameStore'
@@ -10,23 +10,6 @@ export function ArtifactPathDevMiniPanel({ state, artifactId, selectedNodeId }: 
   const actions = useGameStore()
   const definition = ARTIFACTS[artifactId]
   if (!session.showArtifactDevPanel || !definition) return null
-  const level = getArtifactLevel(state, artifactId)
-  const cap = getArtifactLevelCap(state, artifactId)
-  const selectedNode = selectedNodeId ? definition.nodes.find((node) => node.id === selectedNodeId) : null
-  const selectedEligibility = selectedNode ? getArtifactNodeEligibility(state, artifactId, selectedNode.id) : null
-  return <aside className="artifact-path-dev-mini" aria-label="Artifact Path developer panel">
-    <div className="artifact-path-dev-mini-header"><div><span className="eyebrow">DEV ONLY</span><strong>PATH CONTROL</strong></div><GameTooltip content="Hide the compact developer panel in Artifact Path"><button type="button" className="icon-button" aria-label="Hide Artifact Path Dev Panel" onClick={() => setArtifactDevPanelVisible(false)}>×</button></GameTooltip></div>
-    <div className="artifact-path-dev-mini-summary"><span>LV {level} / {definition.maxLevel}</span><span>CAP {cap}</span><span>{getArtifactAvailablePoints(state, artifactId)} PTS</span></div>
-    <div className="artifact-path-dev-mini-actions">
-      <Button className="artifact-dev-mini-button" disabled={level <= 1} tooltip="Lower this Artifact by one developer level. Uses the same debug level-setting semantics as the manual level field." onClick={() => actions.debugDecreaseArtifactLevel(artifactId)}>-1 LEVEL</Button>
-      <Button className="artifact-dev-mini-button" tooltip="Raise this Artifact one level without starting an Artificing job." onClick={() => actions.debugIncreaseArtifactLevel(artifactId)}>+1 LEVEL</Button>
-      <Button className="artifact-dev-mini-button" tooltip="Set this Artifact to its currently available progression cap." onClick={() => actions.debugSetArtifactLevel(artifactId, cap)}>MAX TO CAP</Button>
-      <Button className="artifact-dev-mini-button" variant="secondary" tooltip="Set this Artifact to its authored absolute maximum level." onClick={() => actions.debugSetArtifactLevel(artifactId, definition.maxLevel)}>MAX ABSOLUTE</Button>
-      <Button className="artifact-dev-mini-button" variant="ghost" tooltip="Grant one temporary developer Artifact Point." onClick={() => actions.debugGrantArtifactPoints(artifactId, 1)}>+1 POINT</Button>
-      <Button className="artifact-dev-mini-button" variant="ghost" disabled={!selectedNode} tooltip="Unlock the selected node, bypassing its normal requirements." onClick={() => selectedNode && actions.debugForceArtifactNode(artifactId, selectedNode.id)}>FORCE SELECTED</Button>
-      <Button className="artifact-dev-mini-button" variant="ghost" disabled={!selectedNode} tooltip={selectedEligibility?.canAllocate ? 'Allocate the selected node using normal progression rules.' : 'The selected node is not currently eligible.'} onClick={() => selectedNode && actions.debugAllocateArtifactNode(artifactId, selectedNode.id)}>NORMAL ALLOCATE</Button>
-      <Button className="artifact-dev-mini-button" variant="danger" tooltip="Reset allocated nodes for this path. Catalyst attunements remain as in normal respec." onClick={() => actions.debugResetArtifactPath(artifactId)}>RESET PATH</Button>
-    </div>
-    <div className="artifact-path-dev-mini-flags"><span>Overrides are session-only</span><span>{state.debug.artifactIgnoreDungeonGate || state.debug.artifactIgnoreLevelCap || state.debug.artifactIgnoreNodePrerequisites || state.debug.artifactAllowBeyondLimit ? 'ACTIVE' : 'OFF'}</span></div>
-  </aside>
+  const selected = selectedNodeId ? definition.minorNodes.find((node) => node.id === selectedNodeId) : null
+  return <aside className="artifact-path-dev-mini" aria-label="Artifact rank developer panel"><div className="artifact-path-dev-mini-header"><div><span className="eyebrow">DEV ONLY</span><strong>RANK CONTROL</strong></div><GameTooltip content="Hide the compact developer panel"><button type="button" className="icon-button" aria-label="Hide Artifact rank developer panel" onClick={() => setArtifactDevPanelVisible(false)}>×</button></GameTooltip></div><div className="artifact-path-dev-mini-summary"><span>RANKS {getArtifactTotalInvestedRanks(state, artifactId)} / {definition.minorNodes.length * 10}</span><span>{definition.majorMilestones.filter((major) => getArtifactTotalInvestedRanks(state, artifactId) >= major.unlockAtTotalRanks).length} MAJORS ACTIVE</span></div>{selected && <div className="artifact-path-dev-mini-actions"><Button className="artifact-dev-mini-button" tooltip="Raise the selected Minor node by one rank." onClick={() => actions.debugAdjustArtifactMinorRank(artifactId, selected.id, 1)}>+1 RANK</Button><Button className="artifact-dev-mini-button" tooltip="Lower the selected Minor node by one rank." disabled={getArtifactMinorRank(state, artifactId, selected.id) <= 0} onClick={() => actions.debugAdjustArtifactMinorRank(artifactId, selected.id, -1)}>-1 RANK</Button><Button className="artifact-dev-mini-button" variant="secondary" tooltip="Set the selected Minor node to rank 10." onClick={() => actions.debugMaxArtifactMinorNode(artifactId, selected.id)}>MAX NODE</Button><Button className="artifact-dev-mini-button" variant="ghost" tooltip="Reset the selected Minor node to rank 0." onClick={() => actions.debugResetArtifactMinorNode(artifactId, selected.id)}>RESET NODE</Button></div>}<div className="artifact-path-dev-mini-actions"><Button className="artifact-dev-mini-button" variant="secondary" tooltip="Max every Minor node on this Artifact." onClick={() => actions.debugMaxArtifact(artifactId)}>MAX ARTIFACT</Button><Button className="artifact-dev-mini-button" variant="danger" tooltip="Reset every Minor node on this Artifact." onClick={() => actions.debugResetArtifact(artifactId)}>RESET ARTIFACT</Button></div></aside>
 }

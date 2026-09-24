@@ -52,6 +52,15 @@ export const grantResonanceBundle = (state: ResonanceState, bundle: ResonanceYie
   return state
 }
 
+export const canSpendResonanceBundle = (state: ResonanceState, bundle: ResonanceYield): boolean =>
+  RESONANCE_TYPES.every((type) => sanitizeResonanceAmount(state[type]) >= sanitizeResonanceAmount(bundle[type]))
+
+export const spendResonanceBundle = (state: ResonanceState, bundle: ResonanceYield): boolean => {
+  if (!canSpendResonanceBundle(state, bundle)) return false
+  RESONANCE_TYPES.forEach((type) => { state[type] = sanitizeResonanceAmount(state[type]) - sanitizeResonanceAmount(bundle[type]) })
+  return true
+}
+
 export const grantResonanceBundleWithDelta = (state: ResonanceState, bundle: ResonanceYield): ResonanceState => {
   const granted = createEmptyResonanceState()
   RESONANCE_TYPES.forEach((type) => { granted[type] = grantResonance(state, type, bundle[type]) })

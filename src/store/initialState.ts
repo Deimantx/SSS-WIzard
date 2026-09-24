@@ -12,7 +12,7 @@ import { createInitialCrystalState } from '../game/systems/crystals/crystalRunti
 
 // Combat Action System V3 stores authored base work plus remaining work for
 // dynamic-rate action progression.
-export const SAVE_VERSION = 47
+export const SAVE_VERSION = 48
 
 const emptySpellRecord = <T>(value: T) => Object.fromEntries(CANONICAL_SPELL_IDS.map((spellId) => [spellId, value])) as Record<import('../game/types').SpellId, T>
 
@@ -46,5 +46,5 @@ export const createInitialState = (): GameState => ({
   offlineBankMs: 0,
   lastSavedAt: Date.now(),
   notifications: [],
-  debug: { bonusManaRegenFlat: 0, bonusMaxManaFlat: 0, bonusMaxFocusFlat: 0, allowManaOverCap: false, allowFocusOverCap: false, ignoreEchoLimit: false, transmutationEchoCapacityOverride: null, showLockedTransmutationRecipes: false, showLockedArtificingRecipes: false, playerImmortal: false, enemyImmortal: false, infiniteMana: false, ignoreSpellCooldowns: false, disableAutoCast: false, freezePlayerActions: false, freezeEnemyActions: false, combatPaused: false, combatTimeScale: 1, artifactBonusPointsByArtifact: {}, artifactIgnoreDungeonGate: false, artifactIgnoreLevelCap: false, artifactIgnoreNodePrerequisites: false, artifactAllowBeyondLimit: false, artifactFreeUpgrade: false, arcaneCoreFreeCosts: false, arcaneCoreIgnorePrerequisites: false },
+  debug: { bonusManaRegenFlat: 0, bonusMaxManaFlat: 0, bonusMaxFocusFlat: 0, allowManaOverCap: false, allowFocusOverCap: false, ignoreEchoLimit: false, transmutationEchoCapacityOverride: null, showLockedTransmutationRecipes: false, showLockedArtificingRecipes: false, playerImmortal: false, enemyImmortal: false, infiniteMana: false, ignoreSpellCooldowns: false, disableAutoCast: false, freezePlayerActions: false, freezeEnemyActions: false, combatPaused: false, combatTimeScale: 1, artifactFreeRankPurchase: false, artifactIgnoreOwnership: false, arcaneCoreFreeCosts: false, arcaneCoreIgnorePrerequisites: false },
 })

@@ -10,7 +10,7 @@ import { GameTooltip, TooltipProvider } from '../ui/tooltip/Tooltip'
 function igniteModel() {
   const state = createInitialState()
   state.equipment.weapon = 'ember-staff'
-  state.artifactProgress['ember-staff'] = { level: 4, allocatedNodeIds: ['cinder-memory', 'lingering-flame', 'heartfed-embers'], attunedNodeIds: [] }
+  state.artifactProgress['ember-staff'] = { minorRanks: { 'lingering-flame': 4 } }
   return buildSpellEffectTooltipModel(state, 'ignite', 1)
 }
 

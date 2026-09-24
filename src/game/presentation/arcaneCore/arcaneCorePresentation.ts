@@ -399,6 +399,8 @@ const formatMagnitude = (magnitude: Magnitude, verb: string) => {
       return `${verb} ${trimNumber(magnitude.value, 2)}`;
     case "source-max-health-percent":
       return `${verb} ${trimNumber(magnitude.value * 100, 2)}% Max Health`;
+    case "source-max-mana-percent":
+      return `${verb} ${trimNumber(magnitude.value * 100, 2)}% Max Mana`;
     case "target-max-health-percent":
       return `${verb} ${trimNumber(magnitude.value * 100, 2)}% Target Max Health`;
     default:

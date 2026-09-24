@@ -26,7 +26,7 @@ export const validateGameContent = () => {
     ...validateDungeonDefinitions(),
     ...validateRecipeDefinitions(),
     ...validateEquipmentSetDefinitions(),
-    ...validateArtifactDefinitions(ITEMS, MONSTERS),
+    ...validateArtifactDefinitions(ITEMS),
     ...validateEliteZoneAffixes(),
   ]
   if (errors.length && import.meta.env.DEV) console.error(`[game-content] ${errors.join('; ')}`)

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { getItemSourceLabel, getResearchXp, ITEMS } from '../../../game/content/items/items'
-import { getArtifactDefinition, getArtifactEffectiveStats, getArtifactLevel, isArtifactItem } from '../../../game/systems/artifacts/artifactProgression'
+import { getArtifactDefinition, getArtifactEffectiveStats, getArtifactMaxInvestedRanks, getArtifactTotalInvestedRanks, isArtifactItem } from '../../../game/systems/artifacts/artifactProgression'
 import { SCHOOLS } from '../../../game/content/schools/schools'
 import type { EquipmentStats, ItemId } from '../../../game/types'
 import { useGameStore } from '../../../store/gameStore'
@@ -34,25 +34,25 @@ interface ItemTooltipContentProps {
   recipeContext?: ItemTooltipRecipeContext
   effectiveStats?: EquipmentStats
   artifactTier?: number
-  artifactLevel?: number
-  artifactMaxLevel?: number
+  artifactRanks?: number
+  artifactMaxRanks?: number
   extraContent?: ReactNode
 }
 
-export function ItemTooltip({ itemId, owned, protectedItem = false, equipped = false, recentlyGained, flow, recipeContext, effectiveStats, artifactTier, artifactLevel, artifactMaxLevel, extraContent, children }: ItemTooltipContentProps & { children: ReactNode }) {
+export function ItemTooltip({ itemId, owned, protectedItem = false, equipped = false, recentlyGained, flow, recipeContext, effectiveStats, artifactTier, artifactRanks, artifactMaxRanks, extraContent, children }: ItemTooltipContentProps & { children: ReactNode }) {
   const item = ITEMS[itemId]
   const artifactProgress = useGameStore((state) => state.artifactProgress)
   const artifact = item.kind === 'equipment' && isArtifactItem(itemId)
   const resolvedStats = effectiveStats ?? (artifact ? getArtifactEffectiveStats({ artifactProgress }, itemId) : item.stats)
   const artifactDefinition = artifact ? getArtifactDefinition(itemId) : undefined
   const resolvedArtifactTier = artifactTier ?? artifactDefinition?.tier
-  const resolvedArtifactLevel = artifactLevel ?? (artifact ? getArtifactLevel({ artifactProgress }, itemId) : undefined)
-  const resolvedArtifactMaxLevel = artifactMaxLevel ?? artifactDefinition?.maxLevel
+  const resolvedArtifactRanks = artifactRanks ?? (artifact ? getArtifactTotalInvestedRanks({ artifactProgress }, itemId) : undefined)
+  const resolvedArtifactMaxRanks = artifactMaxRanks ?? (artifact ? getArtifactMaxInvestedRanks(itemId) : undefined)
   const accent = item.inventoryCategory === 'equipment' ? 'success' : item.inventoryCategory === 'loot' ? 'warning' : item.materialSubtype === 'elemental' ? 'elemental' : 'neutral'
-  return <GameTooltip block accent={accent} content={<ItemTooltipContent itemId={itemId} owned={owned} protectedItem={protectedItem} equipped={equipped} recentlyGained={recentlyGained} flow={flow} recipeContext={recipeContext} effectiveStats={resolvedStats} artifactTier={resolvedArtifactTier} artifactLevel={resolvedArtifactLevel} artifactMaxLevel={resolvedArtifactMaxLevel} extraContent={extraContent} />}>{children}</GameTooltip>
+  return <GameTooltip block accent={accent} content={<ItemTooltipContent itemId={itemId} owned={owned} protectedItem={protectedItem} equipped={equipped} recentlyGained={recentlyGained} flow={flow} recipeContext={recipeContext} effectiveStats={resolvedStats} artifactTier={resolvedArtifactTier} artifactRanks={resolvedArtifactRanks} artifactMaxRanks={resolvedArtifactMaxRanks} extraContent={extraContent} />}>{children}</GameTooltip>
 }
 
-export function ItemTooltipContent({ itemId, owned, protectedItem = false, equipped = false, recentlyGained, flow, recipeContext, effectiveStats, artifactTier, artifactLevel, artifactMaxLevel, extraContent }: ItemTooltipContentProps) {
+export function ItemTooltipContent({ itemId, owned, protectedItem = false, equipped = false, recentlyGained, flow, recipeContext, effectiveStats, artifactTier, artifactRanks, artifactMaxRanks, extraContent }: ItemTooltipContentProps) {
   const item = ITEMS[itemId]
   const stats = effectiveStats ?? item.stats
   const visibleStats = stats ? flattenItemStats(stats) : []
@@ -68,7 +68,7 @@ export function ItemTooltipContent({ itemId, owned, protectedItem = false, equip
         <div className="item-tooltip-identity">
           <strong>{item.name}</strong>
           <span>{category}{item.materialTier !== undefined ? ' · T' + item.materialTier : ''}</span>
-          {artifactLevel !== undefined && artifactMaxLevel !== undefined && <span className="item-tooltip-artifact-meta">{'T' + (artifactTier ?? 1) + ' ARTIFACT · LEVEL ' + artifactLevel + ' / ' + artifactMaxLevel}</span>}
+          {artifactRanks !== undefined && artifactMaxRanks !== undefined && <span className="item-tooltip-artifact-meta">{'T' + (artifactTier ?? 1) + ' ARTIFACT · RANKS ' + artifactRanks + ' / ' + artifactMaxRanks}</span>}
           <p>{item.description}</p>
         </div>
       </div>

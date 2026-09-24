@@ -1,423 +1,136 @@
-import type { ArtifactId, EquipmentStats, ItemDefinition, ItemId, MonsterId, RecipeUnlockCondition } from '../../types'
-import type { CombatModifier, CombatTriggerRule } from '../../systems/combat/combatTypes'
+import type { ArtifactId, EquipmentStats, ItemDefinition, ItemId } from '../../types'
+import type { CombatModifier, CombatTriggerRule, DamageType } from '../../systems/combat/combatTypes'
+import type { ResonanceType } from '../resonance/resonance'
 import { createCombatValidationContext, validateCombatProvider } from '../../systems/combat/combatEffectValidation'
 import { STATUS_DEFINITIONS } from '../statuses/statuses'
 
 export interface ArtifactForgeDefinition { ingredients: { itemId: ItemId; quantity: number }[] }
-export interface ArtifactLevelUpgradeDefinition { fromLevel: number; toLevel: number; ingredients: { itemId: ItemId; quantity: number }[]; unlock?: RecipeUnlockCondition }
-export interface ArtifactBranchDefinition { id: string; name: string; description?: string }
-export interface ArtifactNodeDefinition {
-  id: string
-  artifactId: ArtifactId
-  name: string
-  type: 'minor' | 'major' | 'capstone'
-  branch: string
-  pointCost: number
-  requiresLevel: number
-  prerequisites?: string[]
-  catalyst?: { itemId: ItemId; quantity: number }
-  requiresBossKill?: MonsterId
-  stats?: EquipmentStats
-  combat?: { modifiers?: CombatModifier[]; rules?: CombatTriggerRule[] }
+export interface ArtifactRankCost {
+  artifactEssence: number
+  fragment?: { itemId: ItemId; quantity: number }
+  prismaticFragment?: number
+  resonance: Partial<Record<ResonanceType, number>>
 }
-export interface ArtifactDefinition {
-  id: ArtifactId
-  itemId: ItemId
-  tier: number
-  maxLevel: number
-  coreStatsByLevel: Record<number, EquipmentStats>
-  forge: ArtifactForgeDefinition
-  upgrades: ArtifactLevelUpgradeDefinition[]
-  branches: ArtifactBranchDefinition[]
-  nodes: ArtifactNodeDefinition[]
-}
-
-export const ARTIFACT_LEVEL_BANDS = [
-  { maxLevel: 4, unlock: { type: 'always' } },
-  { maxLevel: 7, unlock: { type: 'boss-kill', bossId: 'forest-heart' } },
-  { maxLevel: 10, unlock: { type: 'boss-kill', bossId: 'corrupted-greatbear' } },
-] as const satisfies readonly { maxLevel: number; unlock: RecipeUnlockCondition }[]
-
-/** Act 1 Artifact gates carry progression forward instead of reusing Act 0 bosses. */
-export const ACT1_ARTIFACT_LEVEL_BANDS = [
-  { maxLevel: 4, unlock: { type: 'always' } },
-  { maxLevel: 7, unlock: { type: 'boss-kill', bossId: 'crossroads-keeper' } },
-  { maxLevel: 10, unlock: { type: 'boss-kill', bossId: 'meridian-splitter' } },
-] as const satisfies readonly { maxLevel: number; unlock: RecipeUnlockCondition }[]
-
-export const ACT1_ARTIFACT_IDS: readonly ArtifactId[] = [
-  'galeshard-staff', 'reliquary-scepter', 'pyrebound-staff', 'rootheart-scepter',
-  'convergence-robe', 'waystone-circlet',
-]
-
-export const getArtifactLevelBands = (id: ArtifactId) => ACT1_ARTIFACT_IDS.includes(id) ? ACT1_ARTIFACT_LEVEL_BANDS : ARTIFACT_LEVEL_BANDS
-
-const upgrade = (fromLevel: number, ingredients: ArtifactLevelUpgradeDefinition['ingredients'], unlock?: RecipeUnlockCondition) => ({ fromLevel, toLevel: fromLevel + 1, ingredients, ...(unlock ? { unlock } : {}) })
-const emberNodes: ArtifactNodeDefinition[] = [
-  { id: 'arcane-kindling', artifactId: 'ember-staff', name: 'Arcane Kindling', type: 'minor', branch: 'shared', pointCost: 1, requiresLevel: 2, combat: { modifiers: [{ key: 'spell-damage-percent', value: 0.05, originSourceKinds: ['spell'], damageTypes: ['fire'] }] } },
-  { id: 'cinder-memory', artifactId: 'ember-staff', name: 'Cinder Memory', type: 'minor', branch: 'burning', pointCost: 1, requiresLevel: 3, prerequisites: ['arcane-kindling'], combat: { modifiers: [{ key: 'damage-over-time-percent', value: 0.1 }] } },
-  { id: 'lingering-flame', artifactId: 'ember-staff', name: 'Lingering Flame', type: 'minor', branch: 'burning', pointCost: 1, requiresLevel: 4, prerequisites: ['cinder-memory'], combat: { modifiers: [{ key: 'status-duration-dealt-percent', value: 0.1 }] } },
-  { id: 'heartfed-embers', artifactId: 'ember-staff', name: 'Heartfed Embers', type: 'major', branch: 'burning', pointCost: 1, requiresLevel: 4, prerequisites: ['lingering-flame'], requiresBossKill: 'forest-heart', combat: { modifiers: [{ key: 'spell-damage-percent', value: 0.1, originSourceKinds: ['spell'], damageTypes: ['fire'], condition: { type: 'target-has-status', statusId: 'burning' } }] } },
-  { id: 'charred-continuance', artifactId: 'ember-staff', name: 'Charred Continuance', type: 'minor', branch: 'burning', pointCost: 1, requiresLevel: 6, prerequisites: ['heartfed-embers'], combat: { modifiers: [{ key: 'damage-over-time-percent', value: 0.1 }] } },
-  { id: 'corrupted-combustion', artifactId: 'ember-staff', name: 'Corrupted Combustion', type: 'major', branch: 'burning', pointCost: 1, requiresLevel: 7, prerequisites: ['charred-continuance'], requiresBossKill: 'corrupted-greatbear', combat: { modifiers: [{ key: 'damage-over-time-percent', value: 0.15, originSourceKinds: ['spell'], damageTypes: ['fire'] }] } },
-  { id: 'edrins-blackflame', artifactId: 'ember-staff', name: "Edrin's Blackflame", type: 'capstone', branch: 'burning', pointCost: 2, requiresLevel: 10, prerequisites: ['corrupted-combustion'], requiresBossKill: 'archmage-edrin-shade', combat: { modifiers: [{ key: 'damage-over-time-percent', value: 0.25, originSourceKinds: ['spell'], damageTypes: ['fire'] }] } },
-  { id: 'focused-flame', artifactId: 'ember-staff', name: 'Focused Flame', type: 'minor', branch: 'direct-fire', pointCost: 1, requiresLevel: 3, prerequisites: ['arcane-kindling'], combat: { modifiers: [{ key: 'crit-chance', value: 0.03, originSourceKinds: ['spell'], damageTypes: ['fire'], sourceTags: ['direct'] }] } },
-  { id: 'flame-precision', artifactId: 'ember-staff', name: 'Flame Precision', type: 'minor', branch: 'direct-fire', pointCost: 1, requiresLevel: 4, prerequisites: ['focused-flame'], combat: { modifiers: [{ key: 'crit-damage', value: 0.15, originSourceKinds: ['spell'], damageTypes: ['fire'], sourceTags: ['direct'] }] } },
-  { id: 'heartfire-focus', artifactId: 'ember-staff', name: 'Heartfire Focus', type: 'major', branch: 'direct-fire', pointCost: 1, requiresLevel: 4, prerequisites: ['flame-precision'], requiresBossKill: 'forest-heart', combat: { modifiers: [{ key: 'spell-damage-percent', value: 0.1, originSourceKinds: ['spell'], damageTypes: ['fire'], sourceTags: ['direct'], condition: { type: 'target-has-status', statusId: 'burning' } }] } },
-  { id: 'blazing-tempo', artifactId: 'ember-staff', name: 'Blazing Tempo', type: 'minor', branch: 'direct-fire', pointCost: 1, requiresLevel: 6, prerequisites: ['heartfire-focus'], stats: { cooldownRecoveryPct: 0.1 } },
-  { id: 'corrupted-burst', artifactId: 'ember-staff', name: 'Corrupted Burst', type: 'major', branch: 'direct-fire', pointCost: 1, requiresLevel: 7, prerequisites: ['blazing-tempo'], requiresBossKill: 'corrupted-greatbear', combat: { modifiers: [{ key: 'spell-damage-percent', value: 0.15, originSourceKinds: ['spell'], damageTypes: ['fire'], sourceTags: ['direct'], condition: { type: 'target-has-status-tag', tag: 'debuff' } }] } },
-  { id: 'edrins-inferno', artifactId: 'ember-staff', name: "Edrin's Inferno", type: 'capstone', branch: 'direct-fire', pointCost: 2, requiresLevel: 10, prerequisites: ['corrupted-burst'], requiresBossKill: 'archmage-edrin-shade', combat: { modifiers: [{ key: 'spell-damage-percent', value: 0.25, originSourceKinds: ['spell'], damageTypes: ['fire'], sourceTags: ['direct'], condition: { type: 'target-has-status', statusId: 'burning' } }] } },
-]
-
-const emberStats: Record<number, EquipmentStats> = { 1: { spellPower: 16 }, 2: { spellPower: 20 }, 3: { spellPower: 24 }, 4: { spellPower: 29 }, 5: { spellPower: 35 }, 6: { spellPower: 41 }, 7: { spellPower: 48 }, 8: { spellPower: 56 }, 9: { spellPower: 65 }, 10: { spellPower: 75 } }
+export type ArtifactSpecialEffect =
+  | { type: 'heal-on-hp-threshold'; threshold: number; maxHealthPercent: number }
+  | { type: 'damage-taken-while-barrier'; reduction: number }
+  | { type: 'critical-next-cooldown'; school: DamageType; reduction: number }
+  | { type: 'lethal-barrier'; barrierMaxHealthPercent: number }
+  | { type: 'barrier-break'; barrierMaxHealthPercent: number; cooldownMs: number }
+  | { type: 'barrier-gain-mana'; maxHealthPercent: number; cooldownMs: number }
+  | { type: 'hp-threshold-barrier-status-immunity'; threshold: number; barrierMaxHealthPercent: number; durationMs: number }
+  | { type: 'nth-spell-refund'; every: number; focusPercent: number; manaPercent: number }
+  | { type: 'first-spell-after-focus-change'; manaReduction: number }
+  | { type: 'first-spell-after-idle'; damageIncrease: number; idleMs: number }
+  | { type: 'air-spell-repeat'; every: number; effectiveness: number }
+  | { type: 'burn-refresh-detonation'; damagePercent: number }
+  | { type: 'after-heal-water-damage'; damageIncrease: number }
+  | { type: 'critical-air-damage'; damagePercent: number }
+export interface ArtifactResolvedEffects { stats?: EquipmentStats; combat?: { modifiers?: CombatModifier[]; rules?: CombatTriggerRule[] }; special?: ArtifactSpecialEffect[] }
+export interface ArtifactMinorNodeDefinition { id: string; name: string; description: string; maxRank: 10; rankCosts: readonly ArtifactRankCost[]; rankEffects: readonly ArtifactResolvedEffects[] }
+export interface ArtifactMajorMilestoneDefinition { id: string; name: string; unlockAtTotalRanks: number; effects: ArtifactResolvedEffects }
+export interface ArtifactDefinition { id: ArtifactId; itemId: ArtifactId; tier: number; forge: ArtifactForgeDefinition; baseline: ArtifactResolvedEffects; minorNodes: readonly ArtifactMinorNodeDefinition[]; majorMilestones: readonly ArtifactMajorMilestoneDefinition[] }
 
 const material = (itemId: ItemId, quantity: number) => ({ itemId, quantity })
+const act0WeaponCosts = [[15, 50, 50], [25, 80, 100], [40, 120, 150], [60, 170, 225], [90, 240, 350], [130, 330, 500], [185, 450, 685], [260, 600, 885], [360, 800, 1125], [500, 1050, 1500]] as const
+const act0PrismaticCosts = [[15, 5, 35], [25, 8, 70], [40, 12, 105], [60, 17, 160], [90, 24, 250], [130, 33, 360], [185, 45, 500], [260, 60, 650], [360, 80, 825], [500, 105, 1100]] as const
+const act1WeaponCosts = [[25, 100, 100], [40, 160, 200], [65, 240, 300], [100, 350, 450], [150, 500, 700], [225, 700, 1000], [320, 950, 1370], [450, 1250, 1770], [650, 1650, 2250], [900, 2200, 3000]] as const
+const act1PrismaticCosts = [[25, 8, 30], [40, 12, 60], [65, 18, 90], [100, 26, 140], [150, 36, 220], [225, 50, 320], [320, 68, 440], [450, 90, 570], [650, 120, 725], [900, 160, 950]] as const
+const resonanceBundle = (types: readonly ResonanceType[], amount: number) => Object.fromEntries(types.map((type) => [type, amount])) as Partial<Record<ResonanceType, number>>
+const weaponCost = (table: readonly (readonly [number, number, number])[], fragment: ItemId, resonance: ResonanceType) => table.map(([artifactEssence, fragmentQuantity, resonanceAmount]) => ({ artifactEssence, fragment: material(fragment, fragmentQuantity), resonance: { [resonance]: resonanceAmount } }))
+const prismaticCost = (table: readonly (readonly [number, number, number])[], resonanceTypes: readonly ResonanceType[]) => table.map(([artifactEssence, fragment, resonance]) => ({ artifactEssence, prismaticFragment: fragment, resonance: resonanceBundle(resonanceTypes, resonance) }))
+const effect = (stats?: EquipmentStats, modifiers?: CombatModifier[], special?: ArtifactSpecialEffect[], rules?: CombatTriggerRule[]): ArtifactResolvedEffects => ({ ...(stats ? { stats } : {}), ...(modifiers?.length || rules?.length ? { combat: { ...(modifiers?.length ? { modifiers } : {}), ...(rules?.length ? { rules } : {}) } } : {}), ...(special?.length ? { special } : {}) })
+const pct = (values: readonly number[]) => values.map((value) => value / 100)
+const act0Spell = [0.75, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3, 3.75]
+const act1Spell = [1.25, 1.5, 1.75, 2, 2.5, 3, 3.75, 4.5, 5.5, 7]
+const act0Damage = pct([0.25, 0.5, 0.5, 0.75, 0.75, 1, 1.25, 1.5, 1.75, 2])
+const act1Damage = pct([0.5, 0.75, 0.75, 1, 1.25, 1.5, 1.75, 2.25, 2.75, 3.5])
+const act0Duration = pct([0.5, 0.5, 0.5, 0.75, 0.75, 0.75, 1, 1, 1.25, 1.5])
+const act1Duration = pct([0.5, 0.75, 0.75, 1, 1, 1.25, 1.5, 1.75, 2, 2.5])
+const act0Mana = [0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3, 3.75, 5]
+const act1Mana = [1.25, 1.5, 2, 2.5, 3, 3.75, 5, 6.25, 7.5, 10]
+const act0Defense = [0.25, 0.25, 0.25, 0.5, 0.5, 0.75, 0.75, 1, 1.25, 1.5]
+const act1Defense = [0.5, 0.5, 0.75, 0.75, 1, 1.25, 1.5, 2, 2.5, 3]
+const act0Health = [1.25, 1.25, 2, 2.5, 3, 3.75, 5, 6.25, 7.5, 10]
+const act1Health = [2.5, 3, 3.75, 5, 6.25, 8.75, 11.25, 15, 20, 27.5]
+const act0Crit = pct([0.0625, 0.0625, 0.125, 0.125, 0.1875, 0.1875, 0.25, 0.3125, 0.375, 0.5])
+const act1Crit = pct([0.125, 0.125, 0.1875, 0.1875, 0.25, 0.3125, 0.375, 0.4375, 0.5625, 0.75])
+const act0CritDamage = pct([0.25, 0.25, 0.5, 0.5, 0.75, 0.75, 1, 1.25, 1.5, 2])
+const act1CritDamage = pct([0.5, 0.5, 0.75, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5])
+const act0Cooldown = pct([0.0625, 0.125, 0.1875, 0.25, 0.3125, 0.375, 0.4375, 0.5, 0.625, 0.75])
+const act1Cooldown = pct([0.125, 0.1875, 0.25, 0.3125, 0.375, 0.4375, 0.5, 0.625, 0.75, 1])
+const act0Resistance = pct([0.0625, 0.0625, 0.125, 0.125, 0.1875, 0.1875, 0.25, 0.25, 0.3125, 0.375])
+const act1Resistance = pct([0.125, 0.125, 0.1875, 0.1875, 0.25, 0.3125, 0.375, 0.5, 0.625, 0.75])
+const act1Reduction = pct([0.0625, 0.0625, 0.125, 0.125, 0.1875, 0.1875, 0.25, 0.3125, 0.375, 0.5])
+const act1Focus = pct([0.0625, 0.125, 0.125, 0.1875, 0.25, 0.3125, 0.375, 0.5, 0.625, 0.875])
+const direct = (school: DamageType, values: readonly number[]) => values.map((value) => effect(undefined, [{ key: 'spell-damage-percent', value, originSourceKinds: ['spell'], damageTypes: [school], sourceTags: ['direct'] }]))
+const statRanks = (key: keyof EquipmentStats, values: readonly number[]) => values.map((value) => effect({ [key]: value } as EquipmentStats))
+const resistanceRanks = (school: DamageType, values: readonly number[]) => values.map((value) => effect(undefined, [{ key: 'resistance-percent', value: -value, originSourceKinds: ['spell'], damageTypes: [school] }]))
+const minor = (id: string, name: string, description: string, costs: readonly ArtifactRankCost[], rankEffects: readonly ArtifactResolvedEffects[]): ArtifactMinorNodeDefinition => ({ id, name, description, maxRank: 10, rankCosts: costs, rankEffects: rankEffects.length === 1 ? Array.from({ length: 10 }, () => rankEffects[0]) : rankEffects })
+const majors = (entries: readonly [string, string, number, ArtifactResolvedEffects][]): ArtifactMajorMilestoneDefinition[] => entries.map(([id, name, unlockAtTotalRanks, effects]) => ({ id, name, unlockAtTotalRanks, effects }))
+const weaponRanks = (table: readonly (readonly [number, number, number])[], fragment: ItemId, resonance: ResonanceType) => weaponCost(table, fragment, resonance)
+const armorRanks = (table: readonly (readonly [number, number, number])[], types: readonly ResonanceType[]) => prismaticCost(table, types)
+const forge = (fragment: ItemId, quantity = 20, essence = 20): ArtifactForgeDefinition => ({ ingredients: [material(fragment, quantity), material('artifact-essence', essence)] })
+const two = (a: ResonanceType, b: ResonanceType) => [a, b] as const
+const four = ['fire', 'water', 'earth', 'air'] as const
+const fire = 'fire' as const
+const water = 'water' as const
+const earth = 'earth' as const
+const air = 'air' as const
+const act0Elemental = (id: ArtifactId, baseline: EquipmentStats, fragment: ItemId, nodes: ArtifactMinorNodeDefinition[], majorMilestones: ArtifactMajorMilestoneDefinition[]) => ({ id, itemId: id, tier: 1, forge: forge(fragment), baseline: effect(baseline), minorNodes: nodes, majorMilestones }) satisfies ArtifactDefinition
+const act1Elemental = (id: ArtifactId, baseline: EquipmentStats, fragment: ItemId, nodes: ArtifactMinorNodeDefinition[], majorMilestones: ArtifactMajorMilestoneDefinition[]) => ({ id, itemId: id, tier: 2, forge: forge(fragment, 40, 80), baseline: effect(baseline), minorNodes: nodes, majorMilestones }) satisfies ArtifactDefinition
+const prismatic = (id: ArtifactId, tier: number, baseline: EquipmentStats, nodes: ArtifactMinorNodeDefinition[], majorMilestones: ArtifactMajorMilestoneDefinition[]) => ({ id, itemId: id, tier, forge: forge('prismatic-fragment', tier === 1 ? 5 : 40, tier === 1 ? 20 : 80), baseline: effect(baseline), minorNodes: nodes, majorMilestones }) satisfies ArtifactDefinition
 
-const ELEMENTAL_UPGRADE_COSTS = [
-  [50, 10], [100, 20], [200, 40], [300, 60], [500, 100],
-  [750, 150], [1000, 200], [1650, 300], [2750, 500],
-] as const
-const PRISMATIC_UPGRADE_COSTS = [
-  [2, 10], [4, 20], [7, 40], [10, 60], [15, 100],
-  [20, 150], [28, 200], [38, 300], [50, 500],
-] as const
-const upgradeUnlock = (artifactId: ArtifactId, fromLevel: number): RecipeUnlockCondition | undefined => {
-  const bands = getArtifactLevelBands(artifactId)
-  const band = bands.find((entry, index) => fromLevel + 1 <= entry.maxLevel && fromLevel + 1 > (bands[index - 1]?.maxLevel ?? 0))
-  return band?.unlock.type === 'always' ? undefined : band?.unlock
-}
-const createUpgradeCurve = (artifactId: ArtifactId, fragment: ItemId, costs: readonly (readonly [number, number])[]) =>
-  costs.map(([fragmentQuantity, essenceQuantity], index) =>
-    upgrade(index + 1, [material(fragment, fragmentQuantity), material('artifact-essence', essenceQuantity)], upgradeUnlock(artifactId, index + 1)),
-  )
-const act1UpgradeCosts = [
-  [40, 15], [70, 25], [120, 40], [180, 60], [260, 80],
-  [360, 110], [500, 150], [700, 220], [1000, 300],
-] as const
-const emberUpgrades = createUpgradeCurve('ember-staff', 'fire-fragment', ELEMENTAL_UPGRADE_COSTS)
-const tideglassUpgrades = createUpgradeCurve('tideglass-wand', 'water-fragment', ELEMENTAL_UPGRADE_COSTS)
-const stoneheartUpgrades = createUpgradeCurve('stoneheart-scepter', 'earth-fragment', ELEMENTAL_UPGRADE_COSTS)
-const windthreadUpgrades = createUpgradeCurve('windthread-wand', 'air-fragment', ELEMENTAL_UPGRADE_COSTS)
-const wispweaveUpgrades = createUpgradeCurve('wispweave-robe', 'prismatic-fragment', PRISMATIC_UPGRADE_COSTS)
-const wispveilUpgrades = createUpgradeCurve('wispveil-hood', 'prismatic-fragment', PRISMATIC_UPGRADE_COSTS)
-const galeshardUpgrades = createUpgradeCurve('galeshard-staff', 'air-fragment', act1UpgradeCosts)
+const emberCosts = weaponRanks(act0WeaponCosts, 'fire-fragment', fire)
+const emberNodes = [minor('arcane-embers', 'Arcane Embers', 'Spell Power', emberCosts, statRanks('spellPower', act0Spell)), minor('lingering-flame', 'Lingering Flame', 'Burn Duration', emberCosts, statRanks('statusDurationPct', act0Duration)), minor('feeding-fire', 'Feeding Fire', 'Burn Damage', emberCosts, statRanks('damageOverTimePct', pct([0.5, 0.5, 0.75, 0.75, 1, 1, 1.25, 1.25, 1.5, 1.75]))), minor('flame-impact', 'Flame Impact', 'Direct Fire Spell Damage', emberCosts, direct(fire, act0Damage)), minor('quickkindle', 'Quickkindle', 'Fire Spell Cast Time', emberCosts, statRanks('cooldownRecoveryPct', act0Cooldown))]
+const emberMajors = majors([['kindle-sigil', 'Kindle Sigil', 10, effect({ spellPower: 3.75, statusDurationPct: 0.0125 })], ['heartfire-seal', 'Heartfire Seal', 20, effect({ spellPower: 5, damageOverTimePct: 0.025 })], ['furnace-core', 'Furnace Core', 30, effect({ spellPower: 6.25, statusDurationPct: 0.025 })], ['blackflame-crest', 'Blackflame Crest', 40, effect({ spellPower: 7.5, cooldownRecoveryPct: 0.0125 }, [{ key: 'spell-damage-percent', value: 0.025, originSourceKinds: ['spell'], damageTypes: [fire], sourceTags: ['direct'] }])], ['edrins-inferno', "Edrin's Inferno", 50, effect({ spellPower: 11.25, damageOverTimePct: 0.0375 }, [{ key: 'spell-damage-percent', value: 0.025, originSourceKinds: ['spell'], damageTypes: [fire], sourceTags: ['direct'] }])]])
+const tideCosts = weaponRanks(act0WeaponCosts, 'water-fragment', water)
+const tideNodes = [minor('arcane-current', 'Arcane Current', 'Spell Power', tideCosts, statRanks('spellPower', act0Spell)), minor('deep-reservoir', 'Deep Reservoir', 'Maximum Mana', tideCosts, statRanks('maxMana', act0Mana)), minor('mending-current', 'Mending Current', 'Healing Done', tideCosts, statRanks('healingDonePct', pct([0.25, 0.5, 0.5, 0.75, 0.75, 1, 1.25, 1.5, 1.75, 2]))), minor('frosted-surge', 'Frosted Surge', 'Direct Water Spell Damage', tideCosts, direct(water, act0Damage)), minor('lingering-chill', 'Lingering Chill', 'Chilled Duration', tideCosts, statRanks('statusDurationPct', act0Duration))]
+const tideMajors = majors([['tideglass-sigil', 'Tideglass Sigil', 10, effect({ spellPower: 3.75, maxMana: 2.5 })], ['deepwater-seal', 'Deepwater Seal', 20, effect({ spellPower: 5, healingDonePct: 0.025 })], ['frozen-grace', 'Frozen Grace', 30, effect({ spellPower: 6.25, statusDurationPct: 0.025 })], ['abyssal-current', 'Abyssal Current', 40, effect({ spellPower: 7.5, maxMana: 3.75 }, [{ key: 'spell-damage-percent', value: 0.025, originSourceKinds: ['spell'], damageTypes: [water], sourceTags: ['direct'] }])], ['edrins-tidal-grace', "Edrin's Tidal Grace", 50, effect({ spellPower: 11.25, healingDonePct: 0.0375 }, undefined, undefined, [{ id: 'artifact-tidal-grace', event: 'on-hp-threshold', condition: { type: 'self-hp-below-percent', percent: 35 }, effects: [{ type: 'heal', target: 'self', magnitude: { type: 'source-max-health-percent', value: 0.05 } }], oncePerEncounter: true }])]])
+const stoneCosts = weaponRanks(act0WeaponCosts, 'earth-fragment', earth)
+const stoneNodes = [minor('stonebound-arcana', 'Stonebound Arcana', 'Spell Power', stoneCosts, statRanks('spellPower', act0Spell)), minor('earthen-force', 'Earthen Force', 'Direct Earth Spell Damage', stoneCosts, direct(earth, act0Damage)), minor('granite-skin', 'Granite Skin', 'Defense', stoneCosts, statRanks('defense', act0Defense)), minor('living-bulwark', 'Living Bulwark', 'Barrier Power', stoneCosts, statRanks('barrierPowerPct', act0Damage)), minor('rooted-vitality', 'Rooted Vitality', 'Maximum Health', stoneCosts, statRanks('maxHealth', act0Health))]
+const stoneMajors = majors([['stone-sigil', 'Stone Sigil', 10, effect({ spellPower: 3.75, defense: 0.75 })], ['deepcore-seal', 'Deepcore Seal', 20, effect({ spellPower: 5, maxHealth: 7.5 })], ['mountain-heart', 'Mountain Heart', 30, effect({ spellPower: 6.25, barrierPowerPct: 0.025 })], ['colossus-ward', 'Colossus Ward', 40, effect({ spellPower: 7.5, defense: 1.25 }, [{ key: 'spell-damage-percent', value: 0.025, originSourceKinds: ['spell'], damageTypes: [earth], sourceTags: ['direct'] }])], ['edrins-worldstone', "Edrin's Worldstone", 50, effect({ spellPower: 11.25, maxHealth: 15, barrierPowerPct: 0.0375 }, [{ key: 'damage-taken-percent', value: -0.02, condition: { type: 'self-has-barrier' } }], [{ type: 'damage-taken-while-barrier', reduction: 0.02 }])]])
+const windCosts = weaponRanks(act0WeaponCosts, 'air-fragment', air)
+const windNodes = [minor('arcane-draft', 'Arcane Draft', 'Spell Power', windCosts, statRanks('spellPower', act0Spell)), minor('razorwind', 'Razorwind', 'Direct Air Spell Damage', windCosts, direct(air, act0Damage)), minor('eye-of-the-gale', 'Eye of the Gale', 'Spell Critical Chance', windCosts, statRanks('critChance', act0Crit)), minor('storm-edge', 'Storm Edge', 'Spell Critical Damage', windCosts, statRanks('critDamage', act0CritDamage)), minor('windstep', 'Windstep', 'Air Spell Cooldown Time', windCosts, statRanks('cooldownRecoveryPct', act0Cooldown))]
+const windMajors = majors([['gale-sigil', 'Gale Sigil', 10, effect({ spellPower: 3.75, critChance: 0.00375 })], ['storm-focus', 'Storm Focus', 20, effect({ spellPower: 5, critDamage: 0.02 })], ['tempest-rhythm', 'Tempest Rhythm', 30, effect({ spellPower: 6.25, cooldownRecoveryPct: 0.0075 })], ['skybreaker-crest', 'Skybreaker Crest', 40, effect({ spellPower: 7.5, critChance: 0.005 }, [{ key: 'spell-damage-percent', value: 0.025, originSourceKinds: ['spell'], damageTypes: [air], sourceTags: ['direct'] }])], ['edrins-tempest', "Edrin's Tempest", 50, effect({ spellPower: 11.25, critDamage: 0.03 }, [{ key: 'spell-damage-percent', value: 0.0375, originSourceKinds: ['spell'], damageTypes: [air], sourceTags: ['direct'] }, { key: 'cooldown-recovery-percent', value: 0.025, originSourceKinds: ['spell'], damageTypes: [air] }], [{ type: 'critical-next-cooldown', school: air, reduction: 0.025 }])]])
 
-const tideglassStats: Record<number, EquipmentStats> = { 1: { spellPower: 15 }, 2: { spellPower: 19 }, 3: { spellPower: 23 }, 4: { spellPower: 28 }, 5: { spellPower: 34 }, 6: { spellPower: 40 }, 7: { spellPower: 47 }, 8: { spellPower: 55 }, 9: { spellPower: 63 }, 10: { spellPower: 72 } }
-const stoneheartStats: Record<number, EquipmentStats> = { 1: { spellPower: 14 }, 2: { spellPower: 18 }, 3: { spellPower: 22 }, 4: { spellPower: 27 }, 5: { spellPower: 32 }, 6: { spellPower: 38 }, 7: { spellPower: 44 }, 8: { spellPower: 51 }, 9: { spellPower: 59 }, 10: { spellPower: 67 } }
-const windthreadStats: Record<number, EquipmentStats> = { 1: { spellPower: 15 }, 2: { spellPower: 19 }, 3: { spellPower: 23 }, 4: { spellPower: 28 }, 5: { spellPower: 34 }, 6: { spellPower: 41 }, 7: { spellPower: 48 }, 8: { spellPower: 56 }, 9: { spellPower: 64 }, 10: { spellPower: 73 } }
-const wispweaveStats: Record<number, EquipmentStats> = { 1: { maxHealth: 20, defense: 4 }, 2: { maxHealth: 24, defense: 5 }, 3: { maxHealth: 29, defense: 6 }, 4: { maxHealth: 35, defense: 7 }, 5: { maxHealth: 42, defense: 8 }, 6: { maxHealth: 50, defense: 10 }, 7: { maxHealth: 59, defense: 12 }, 8: { maxHealth: 69, defense: 14 }, 9: { maxHealth: 80, defense: 16 }, 10: { maxHealth: 92, defense: 19 } }
-const wispveilStats: Record<number, EquipmentStats> = { 1: { maxHealth: 10, defense: 2 }, 2: { maxHealth: 12, defense: 3 }, 3: { maxHealth: 15, defense: 4 }, 4: { maxHealth: 18, defense: 5 }, 5: { maxHealth: 22, defense: 6 }, 6: { maxHealth: 26, defense: 7 }, 7: { maxHealth: 31, defense: 8 }, 8: { maxHealth: 36, defense: 10 }, 9: { maxHealth: 42, defense: 12 }, 10: { maxHealth: 49, defense: 14 } }
-const galeshardStats: Record<number, EquipmentStats> = { 1: { spellPower: 90 }, 2: { spellPower: 93 }, 3: { spellPower: 96 }, 4: { spellPower: 99 }, 5: { spellPower: 102 }, 6: { spellPower: 106 }, 7: { spellPower: 109 }, 8: { spellPower: 112 }, 9: { spellPower: 115 }, 10: { spellPower: 118 } }
+const wispweaveCosts = armorRanks(act0PrismaticCosts, two(earth, water))
+const wispweaveNodes = [minor('spiritwoven-vitality', 'Spiritwoven Vitality', 'Maximum Health', wispweaveCosts, statRanks('maxHealth', act0Health)), minor('wispguard-weave', 'Wispguard Weave', 'Defense', armorRanks(act0PrismaticCosts, two(earth, fire)), statRanks('defense', act0Defense)), minor('arcane-mesh', 'Arcane Mesh', 'Barrier Power', armorRanks(act0PrismaticCosts, two(water, earth)), statRanks('barrierPowerPct', act0Damage)), minor('deep-thread', 'Deep Thread', 'Maximum Mana', armorRanks(act0PrismaticCosts, two(water, air)), statRanks('maxMana', act0Mana)), minor('elemental-weave', 'Elemental Weave', 'All Element Resistance', armorRanks(act0PrismaticCosts, two(fire, air)), [effect({ resistances: { fire: 0.000625, water: 0.000625, earth: 0.000625, air: 0.000625 } })])]
+const wispweaveMajors = majors([['wisp-knot', 'Wisp Knot', 10, effect({ maxHealth: 10, defense: 0.75 })], ['spirit-mantle', 'Spirit Mantle', 20, effect({ maxHealth: 15, barrierPowerPct: 0.025 })], ['arcane-loom', 'Arcane Loom', 30, effect({ maxHealth: 20, maxMana: 5 })], ['deathless-weave', 'Deathless Weave', 40, effect({ maxHealth: 25, defense: 1.25, resistances: { fire: 0.0075, water: 0.0075, earth: 0.0075, air: 0.0075 } })], ['edrins-ghostweave', "Edrin's Ghostweave", 50, effect({ maxHealth: 37.5, defense: 2, barrierPowerPct: 0.0375 }, undefined, [{ type: 'lethal-barrier', barrierMaxHealthPercent: 0.05 }])]])
+const wispveilCosts = armorRanks(act0PrismaticCosts, two(fire, air))
+const wispveilNodes = [minor('veiled-intellect', 'Veiled Intellect', 'Spell Power', wispveilCosts, statRanks('spellPower', act0Spell)), minor('spirit-reservoir', 'Spirit Reservoir', 'Maximum Mana', armorRanks(act0PrismaticCosts, two(water, air)), statRanks('maxMana', act0Mana)), minor('arcane-precision', 'Arcane Precision', 'Spell Critical Chance', wispveilCosts, statRanks('critChance', act0Crit)), minor('veil-tempo', 'Veil Tempo', 'Spell Cooldown Time', armorRanks(act0PrismaticCosts, two(air, water)), statRanks('cooldownRecoveryPct', act0Cooldown)), minor('wisp-clarity', 'Wisp Clarity', 'Spell Status Duration', armorRanks(act0PrismaticCosts, two(water, earth)), statRanks('statusDurationPct', pct([0.25, 0.25, 0.5, 0.5, 0.75, 0.75, 1, 1, 1.25, 1.5])))]
+const wispveilMajors = majors([['wispmark', 'Wispmark', 10, effect({ spellPower: 3.75, maxMana: 2.5 })], ['thought-veil', 'Thought Veil', 20, effect({ spellPower: 5, critChance: 0.00375 })], ['arcane-sight', 'Arcane Sight', 30, effect({ spellPower: 6.25, statusDurationPct: 0.0125 })], ['phantom-tempo', 'Phantom Tempo', 40, effect({ spellPower: 7.5, cooldownRecoveryPct: 0.0075, maxMana: 3.75 })], ['edrins-veil', "Edrin's Veil", 50, effect({ spellPower: 11.25, critChance: 0.005, statusDurationPct: 0.02 }, undefined, [{ type: 'first-spell-after-idle', damageIncrease: 0.05, idleMs: 5000 }])]])
 
-const spellDamage = (value: number, school: 'water' | 'earth' | 'air', sourceTags?: CombatModifier['sourceTags']): CombatModifier => ({ key: 'spell-damage-percent', value, originSourceKinds: ['spell'], damageTypes: [school], ...(sourceTags ? { sourceTags } : {}) })
-const directSpellDamage = (value: number, school: 'water' | 'earth' | 'air', condition?: CombatModifier['condition']): CombatModifier => ({ ...spellDamage(value, school, ['direct']), ...(condition ? { condition } : {}) })
-const barrierPower = (value: number, school: 'water' | 'earth' | 'air') => ({ key: 'barrier-power-percent' as const, value, originSourceKinds: ['spell' as const], damageTypes: [school] })
-const bossRule = (id: string, condition: NonNullable<CombatTriggerRule['condition']>, value: number, cooldownMs?: number): CombatTriggerRule => ({ id, event: 'on-hp-threshold', condition, oncePerEncounter: true, ...(cooldownMs ? { cooldownMs } : {}), effects: [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value } }] })
+const act1Weapon = (id: ArtifactId, baseline: EquipmentStats, fragment: ItemId, school: ResonanceType, nodes: ArtifactMinorNodeDefinition[], milestoneData: readonly [string, string, number, ArtifactResolvedEffects][]) => act1Elemental(id, baseline, fragment, nodes, majors(milestoneData))
+const galeshardCosts = weaponRanks(act1WeaponCosts, 'air-fragment', air)
+const galeshard = act1Weapon('galeshard-staff', { spellPower: 245, critChance: 0.04 }, 'air-fragment', air, [minor('fractured-arcana', 'Fractured Arcana', 'Spell Power', galeshardCosts, statRanks('spellPower', act1Spell)), minor('razorstorm', 'Razorstorm', 'Direct Air Spell Damage', galeshardCosts, direct(air, act1Damage)), minor('storm-eye', 'Storm Eye', 'Spell Critical Chance', galeshardCosts, statRanks('critChance', act1Crit)), minor('shatter-edge', 'Shatter Edge', 'Spell Critical Damage', galeshardCosts, statRanks('critDamage', act1CritDamage)), minor('gale-tempo', 'Gale Tempo', 'Air Spell Cooldown Time', galeshardCosts, statRanks('cooldownRecoveryPct', act1Cooldown)), minor('pressure-break', 'Pressure Break', 'Air Resistance Ignored', galeshardCosts, resistanceRanks(air, act1Resistance))], [['gatewind-sigil', 'Gatewind Sigil', 10, effect({ spellPower: 7.5, critChance: 0.005 })], ['shardstorm-seal', 'Shardstorm Seal', 20, effect({ spellPower: 10, critDamage: 0.025 })], ['tempest-core', 'Tempest Core', 30, effect({ spellPower: 13.75, cooldownRecoveryPct: 0.0125 })], ['meridian-break', 'Meridian Break', 40, effect({ spellPower: 17.5 }, [{ key: 'spell-damage-percent', value: 0.0375, originSourceKinds: ['spell'], damageTypes: [air], sourceTags: ['direct'] }])], ['skyfracture-crown', 'Skyfracture Crown', 50, effect({ spellPower: 22.5, critChance: 0.01, critDamage: 0.0375 }, undefined, [{ type: 'critical-air-damage', damagePercent: 0.0375 }])], ['eye-of-the-gale-major', 'Eye of the Gale', 60, effect({ spellPower: 30, cooldownRecoveryPct: 0.01875 }, [{ key: 'spell-damage-percent', value: 0.05, originSourceKinds: ['spell'], damageTypes: [air], sourceTags: ['direct'] }], [{ type: 'air-spell-repeat', every: 5, effectiveness: 0.1 }])]])
+const reliquaryCosts = weaponRanks(act1WeaponCosts, 'water-fragment', water)
+const reliquary = act1Weapon('reliquary-scepter', { spellPower: 235, maxMana: 60, healingDonePct: 0.1 }, 'water-fragment', water, [minor('drowned-arcana', 'Drowned Arcana', 'Spell Power', reliquaryCosts, statRanks('spellPower', act1Spell)), minor('reliquary-current', 'Reliquary Current', 'Direct Water Spell Damage', reliquaryCosts, direct(water, act1Damage)), minor('drowned-grace', 'Drowned Grace', 'Healing Done', reliquaryCosts, statRanks('healingDonePct', act1Damage)), minor('deep-reservoir-act1', 'Deep Reservoir', 'Maximum Mana', reliquaryCosts, statRanks('maxMana', act1Mana)), minor('frozen-memory', 'Frozen Memory', 'Chilled Duration', reliquaryCosts, statRanks('statusDurationPct', act1Duration)), minor('cold-tempo', 'Cold Tempo', 'Water Spell Cast Time', reliquaryCosts, statRanks('cooldownRecoveryPct', act1Cooldown))], [['drowned-sigil', 'Drowned Sigil', 10, effect({ spellPower: 7.5, maxMana: 5 })], ['reliquary-seal', 'Reliquary Seal', 20, effect({ spellPower: 10, healingDonePct: 0.03 })], ['undertow-grace', 'Undertow Grace', 30, effect({ spellPower: 13.75, statusDurationPct: 0.03 })], ['abyssal-reliquary', 'Abyssal Reliquary', 40, effect({ spellPower: 17.5, maxMana: 7.5 }, [{ key: 'spell-damage-percent', value: 0.0375, originSourceKinds: ['spell'], damageTypes: [water], sourceTags: ['direct'] }])], ['frozen-benediction', 'Frozen Benediction', 50, effect({ spellPower: 22.5, healingDonePct: 0.045, cooldownRecoveryPct: 0.0125 }, undefined, [{ type: 'after-heal-water-damage', damageIncrease: 0.05 }])], ['crown-of-the-deep', 'Crown of the Deep', 60, effect({ spellPower: 30, maxMana: 15, healingDonePct: 0.0625 }, [{ key: 'spell-damage-percent', value: 0.05, originSourceKinds: ['spell'], damageTypes: [water], sourceTags: ['direct'] }], undefined, [{ id: 'artifact-crown-deep', event: 'on-hp-threshold', condition: { type: 'self-hp-below-percent', percent: 35 }, effects: [{ type: 'heal', target: 'self', magnitude: { type: 'source-max-health-percent', value: 0.075 } }, { type: 'restore-resource', target: 'self', resource: 'mana', magnitude: { type: 'source-max-mana-percent', value: 0.0375 } }], oncePerEncounter: true }])]])
+const pyreCosts = weaponRanks(act1WeaponCosts, 'fire-fragment', fire)
+const pyrebound = act1Weapon('pyrebound-staff', { spellPower: 240, damageOverTimePct: 0.1 }, 'fire-fragment', fire, [minor('pyre-arcana', 'Pyre Arcana', 'Spell Power', pyreCosts, statRanks('spellPower', act1Spell)), minor('bound-flame', 'Bound Flame', 'Burn Damage', pyreCosts, statRanks('damageOverTimePct', pct([0.75, 0.75, 1, 1, 1.25, 1.5, 1.75, 2, 2.5, 3.25]))), minor('ashen-memory', 'Ashen Memory', 'Burn Duration', pyreCosts, statRanks('statusDurationPct', act1Duration)), minor('watchfire-impact', 'Watchfire Impact', 'Direct Fire Spell Damage', pyreCosts, direct(fire, act1Damage)), minor('cinder-tempo', 'Cinder Tempo', 'Fire Spell Cast Time', pyreCosts, statRanks('cooldownRecoveryPct', act1Cooldown)), minor('scorching-depth', 'Scorching Depth', 'Fire Resistance Ignored', pyreCosts, resistanceRanks(fire, act1Resistance))], [['watchfire-sigil', 'Watchfire Sigil', 10, effect({ spellPower: 7.5, damageOverTimePct: 0.03 })], ['pyre-seal', 'Pyre Seal', 20, effect({ spellPower: 10, statusDurationPct: 0.03 })], ['ashen-furnace', 'Ashen Furnace', 30, effect({ spellPower: 13.75, damageOverTimePct: 0.045 })], ['revenant-flame', 'Revenant Flame', 40, effect({ spellPower: 17.5 }, [{ key: 'spell-damage-percent', value: 0.0375, originSourceKinds: ['spell'], damageTypes: [fire], sourceTags: ['direct'] }])], ['black-pyre', 'Black Pyre', 50, effect({ spellPower: 22.5, damageOverTimePct: 0.055, cooldownRecoveryPct: 0.0125 }, undefined, [{ type: 'burn-refresh-detonation', damagePercent: 0.0375 }])], ['pyrebound-inferno', 'Pyrebound Inferno', 60, effect({ spellPower: 30, damageOverTimePct: 0.075 }, [{ key: 'spell-damage-percent', value: 0.05, originSourceKinds: ['spell'], damageTypes: [fire], sourceTags: ['direct'] }], [{ type: 'burn-refresh-detonation', damagePercent: 0.0625 }])]])
+const rootCosts = weaponRanks(act1WeaponCosts, 'earth-fragment', earth)
+const rootheart = act1Weapon('rootheart-scepter', { spellPower: 230, defense: 50, maxHealth: 150, barrierPowerPct: 0.1 }, 'earth-fragment', earth, [minor('rooted-arcana', 'Rooted Arcana', 'Spell Power', rootCosts, statRanks('spellPower', act1Spell)), minor('earthen-pulse', 'Earthen Pulse', 'Direct Earth Spell Damage', rootCosts, direct(earth, act1Damage)), minor('barkbound-guard', 'Barkbound Guard', 'Defense', rootCosts, statRanks('defense', act1Defense)), minor('root-ward', 'Root Ward', 'Barrier Power', rootCosts, statRanks('barrierPowerPct', act1Damage)), minor('ancient-vitality', 'Ancient Vitality', 'Maximum Health', rootCosts, statRanks('maxHealth', act1Health)), minor('stonebound-endurance', 'Stonebound Endurance', 'Damage Reduction', rootCosts, statRanks('damageReductionPct', act1Reduction))], [['root-sigil', 'Root Sigil', 10, effect({ spellPower: 7.5, defense: 2 })], ['deepwood-seal', 'Deepwood Seal', 20, effect({ spellPower: 10, maxHealth: 18.75 })], ['ancient-core', 'Ancient Core', 30, effect({ spellPower: 13.75, barrierPowerPct: 0.03 })], ['hollow-guardian', 'Hollow Guardian', 40, effect({ spellPower: 17.5, defense: 3 }, [{ key: 'spell-damage-percent', value: 0.0375, originSourceKinds: ['spell'], damageTypes: [earth], sourceTags: ['direct'] }])], ['living-bastion', 'Living Bastion', 50, effect({ spellPower: 22.5, maxHealth: 31.25, damageReductionPct: 0.0125 }, undefined, [{ type: 'damage-taken-while-barrier', reduction: 0.05 }])], ['rootheart-colossus', 'Rootheart Colossus', 60, effect({ spellPower: 30, maxHealth: 50, barrierPowerPct: 0.0625, damageReductionPct: 0.02 }, undefined, [{ type: 'barrier-break', barrierMaxHealthPercent: 0.0375, cooldownMs: 12000 }])]])
+const convergenceCosts = armorRanks(act1PrismaticCosts, four)
+const convergence = prismatic('convergence-robe', 2, { maxHealth: 700, defense: 60, resistances: { fire: 0.05, water: 0.05, earth: 0.05, air: 0.05 } }, [minor('convergent-vitality', 'Convergent Vitality', 'Maximum Health', convergenceCosts, statRanks('maxHealth', act1Health)), minor('crossroad-weave', 'Crossroad Weave', 'Defense', convergenceCosts, statRanks('defense', act1Defense)), minor('meridian-barrier', 'Meridian Barrier', 'Barrier Power', convergenceCosts, statRanks('barrierPowerPct', act1Damage)), minor('convergence-reserve', 'Convergence Reserve', 'Maximum Mana', convergenceCosts, statRanks('maxMana', act1Mana)), minor('fourfold-ward', 'Fourfold Ward', 'All Element Resistance', convergenceCosts, [effect({ resistances: { fire: 0.00125, water: 0.00125, earth: 0.00125, air: 0.00125 } })]), minor('perfect-weave', 'Perfect Weave', 'Damage Reduction', convergenceCosts, statRanks('damageReductionPct', act1Reduction))], majors([['first-convergence', 'First Convergence', 10, effect({ maxHealth: 25, defense: 2 })], ['crossroads-mantle', 'Crossroads Mantle', 20, effect({ maxHealth: 37.5, barrierPowerPct: 0.03 })], ['meridian-loom', 'Meridian Loom', 30, effect({ maxHealth: 50, maxMana: 10 })], ['fourfold-aegis', 'Fourfold Aegis', 40, effect({ maxHealth: 62.5, defense: 3.75, resistances: { fire: 0.0125, water: 0.0125, earth: 0.0125, air: 0.0125 } })], ['stable-convergence', 'Stable Convergence', 50, effect({ maxHealth: 87.5, barrierPowerPct: 0.05, damageReductionPct: 0.015 }, undefined, [{ type: 'barrier-gain-mana', maxHealthPercent: 0.0125, cooldownMs: 5000 }])], ['perfect-convergence', 'Perfect Convergence', 60, effect({ maxHealth: 125, defense: 6.25, damageReductionPct: 0.025, resistances: { fire: 0.02, water: 0.02, earth: 0.02, air: 0.02 } }, undefined, [{ type: 'hp-threshold-barrier-status-immunity', threshold: 0.3, barrierMaxHealthPercent: 0.0875, durationMs: 3000 }])]]))
+const waystone = prismatic('waystone-circlet', 2, { spellPower: 240, maxMana: 120, critChance: 0.03 }, [minor('waystone-intellect', 'Waystone Intellect', 'Spell Power', convergenceCosts, statRanks('spellPower', act1Spell)), minor('meridian-reservoir', 'Meridian Reservoir', 'Maximum Mana', convergenceCosts, statRanks('maxMana', act1Mana)), minor('focus-anchor', 'Focus Anchor', 'Focus Cost', convergenceCosts, statRanks('focusEfficiencyPct', act1Focus)), minor('waystep-tempo', 'Waystep Tempo', 'Spell Cooldown Time', convergenceCosts, statRanks('cooldownRecoveryPct', act1Cooldown)), minor('stabilized-incantation', 'Stabilized Incantation', 'Spell Status Duration', convergenceCosts, statRanks('statusDurationPct', act1Duration)), minor('waystone-precision', 'Waystone Precision', 'Spell Critical Chance', convergenceCosts, statRanks('critChance', act1Crit))], majors([['waymark', 'Waymark', 10, effect({ spellPower: 7.5, maxMana: 5 })], ['focus-seal', 'Focus Seal', 20, effect({ spellPower: 10, focusEfficiencyPct: 0.0075 })], ['meridian-crown', 'Meridian Crown', 30, effect({ spellPower: 13.75, statusDurationPct: 0.025 })], ['stable-path', 'Stable Path', 40, effect({ spellPower: 17.5, cooldownRecoveryPct: 0.0125, maxMana: 7.5 })], ['convergent-sight', 'Convergent Sight', 50, effect({ spellPower: 22.5, critChance: 0.01, focusEfficiencyPct: 0.01 }, undefined, [{ type: 'first-spell-after-focus-change', manaReduction: 0.0625 }])], ['perfect-waystone', 'Perfect Waystone', 60, effect({ spellPower: 30, maxMana: 15, cooldownRecoveryPct: 0.01875, focusEfficiencyPct: 0.015 }, undefined, [{ type: 'nth-spell-refund', every: 10, focusPercent: 0.25, manaPercent: 0.125 }])]]))
 
-const galeshardNodes: ArtifactNodeDefinition[] = [
-  { id: 'fractured-current', artifactId: 'galeshard-staff', name: 'Fractured Current', type: 'minor', branch: 'shared', pointCost: 1, requiresLevel: 2, combat: { modifiers: [spellDamage(0.05, 'air')] } },
-  { id: 'swift-gale', artifactId: 'galeshard-staff', name: 'Swift Gale', type: 'minor', branch: 'gale-tempo', pointCost: 1, requiresLevel: 3, prerequisites: ['fractured-current'], combat: { modifiers: [{ key: 'cooldown-recovery-percent', value: 0.05 }] } },
-  { id: 'wind-reserve', artifactId: 'galeshard-staff', name: 'Wind Reserve', type: 'minor', branch: 'gale-tempo', pointCost: 1, requiresLevel: 4, prerequisites: ['swift-gale'], stats: { maxMana: 10 } },
-  { id: 'gatekeeper-current', artifactId: 'galeshard-staff', name: 'Crossroads Current', type: 'major', branch: 'gale-tempo', pointCost: 1, requiresLevel: 4, prerequisites: ['wind-reserve'], requiresBossKill: 'crossroads-keeper', combat: { modifiers: [spellDamage(0.1, 'air')] } },
-  { id: 'airborne-tempo', artifactId: 'galeshard-staff', name: 'Airborne Tempo', type: 'minor', branch: 'gale-tempo', pointCost: 1, requiresLevel: 6, prerequisites: ['gatekeeper-current'], combat: { modifiers: [{ key: 'cooldown-recovery-percent', value: 0.05 }] } },
-  { id: 'fractured-velocity', artifactId: 'galeshard-staff', name: 'Fractured Velocity', type: 'major', branch: 'gale-tempo', pointCost: 1, requiresLevel: 7, prerequisites: ['airborne-tempo'], requiresBossKill: 'meridian-splitter', combat: { modifiers: [directSpellDamage(0.15, 'air')] } },
-  { id: 'eye-of-the-gale', artifactId: 'galeshard-staff', name: 'Eye of the Gale', type: 'capstone', branch: 'gale-tempo', pointCost: 2, requiresLevel: 10, prerequisites: ['fractured-velocity'], requiresBossKill: 'meridian-splitter', combat: { modifiers: [spellDamage(0.2, 'air')] } },
-  { id: 'razorwind', artifactId: 'galeshard-staff', name: 'Razorwind', type: 'minor', branch: 'storm-precision', pointCost: 1, requiresLevel: 3, prerequisites: ['fractured-current'], combat: { modifiers: [{ key: 'crit-chance', value: 0.03, originSourceKinds: ['spell'], damageTypes: ['air'], sourceTags: ['direct'] }] } },
-  { id: 'storm-edge', artifactId: 'galeshard-staff', name: 'Storm Edge', type: 'minor', branch: 'storm-precision', pointCost: 1, requiresLevel: 4, prerequisites: ['razorwind'], combat: { modifiers: [{ key: 'crit-damage', value: 0.15, originSourceKinds: ['spell'], damageTypes: ['air'], sourceTags: ['direct'] }] } },
-  { id: 'fractured-eye', artifactId: 'galeshard-staff', name: 'Fractured Eye', type: 'major', branch: 'storm-precision', pointCost: 1, requiresLevel: 4, prerequisites: ['storm-edge'], requiresBossKill: 'crossroads-keeper', combat: { modifiers: [directSpellDamage(0.1, 'air')] } },
-  { id: 'swift-edge', artifactId: 'galeshard-staff', name: 'Swift Edge', type: 'minor', branch: 'storm-precision', pointCost: 1, requiresLevel: 6, prerequisites: ['fractured-eye'], combat: { modifiers: [{ key: 'crit-chance', value: 0.03, originSourceKinds: ['spell'], damageTypes: ['air'], sourceTags: ['direct'] }] } },
-  { id: 'gatekeeper-focus', artifactId: 'galeshard-staff', name: 'Meridian Focus', type: 'major', branch: 'storm-precision', pointCost: 1, requiresLevel: 7, prerequisites: ['swift-edge'], requiresBossKill: 'meridian-splitter', combat: { modifiers: [{ key: 'cooldown-recovery-percent', value: 0.1 }] } },
-  { id: 'stormbreak', artifactId: 'galeshard-staff', name: 'Stormbreak', type: 'capstone', branch: 'storm-precision', pointCost: 2, requiresLevel: 10, prerequisites: ['gatekeeper-focus'], requiresBossKill: 'meridian-splitter', combat: { modifiers: [directSpellDamage(0.2, 'air')] } },
-]
-
-const tideglassNodes: ArtifactNodeDefinition[] = [
-  { id: 'flowing-conduit', artifactId: 'tideglass-wand', name: 'Flowing Conduit', type: 'minor', branch: 'shared', pointCost: 1, requiresLevel: 2, combat: { modifiers: [spellDamage(0.05, 'water')] } },
-  { id: 'protective-current', artifactId: 'tideglass-wand', name: 'Protective Current', type: 'minor', branch: 'tidal-ward', pointCost: 1, requiresLevel: 3, prerequisites: ['flowing-conduit'], combat: { modifiers: [barrierPower(0.1, 'water')] } },
-  { id: 'lingering-tide', artifactId: 'tideglass-wand', name: 'Lingering Tide', type: 'minor', branch: 'tidal-ward', pointCost: 1, requiresLevel: 4, prerequisites: ['protective-current'], combat: { modifiers: [{ key: 'status-duration-dealt-percent', value: 0.1, originSourceKinds: ['spell'], damageTypes: ['water'] }] } },
-  { id: 'heartwater-shell', artifactId: 'tideglass-wand', name: 'Heartwater Shell', type: 'major', branch: 'tidal-ward', pointCost: 1, requiresLevel: 4, prerequisites: ['lingering-tide'], requiresBossKill: 'forest-heart', combat: { modifiers: [barrierPower(0.1, 'water')] } },
-  { id: 'deep-reservoir', artifactId: 'tideglass-wand', name: 'Deep Reservoir', type: 'minor', branch: 'tidal-ward', pointCost: 1, requiresLevel: 6, prerequisites: ['heartwater-shell'], stats: { maxMana: 10 } },
-  { id: 'greatbear-tidewall', artifactId: 'tideglass-wand', name: 'Greatbear Tidewall', type: 'major', branch: 'tidal-ward', pointCost: 1, requiresLevel: 7, prerequisites: ['deep-reservoir'], requiresBossKill: 'corrupted-greatbear', combat: { modifiers: [barrierPower(0.15, 'water')] } },
-  { id: 'edrins-abyssal-aegis', artifactId: 'tideglass-wand', name: "Edrin's Abyssal Aegis", type: 'capstone', branch: 'tidal-ward', pointCost: 2, requiresLevel: 10, prerequisites: ['greatbear-tidewall'], requiresBossKill: 'archmage-edrin-shade', combat: { modifiers: [barrierPower(0.25, 'water')] } },
-  { id: 'cold-precision', artifactId: 'tideglass-wand', name: 'Cold Precision', type: 'minor', branch: 'frozen-current', pointCost: 1, requiresLevel: 3, prerequisites: ['flowing-conduit'], combat: { modifiers: [{ key: 'crit-chance', value: 0.03, originSourceKinds: ['spell'], damageTypes: ['water'], sourceTags: ['direct'] }] } },
-  { id: 'deep-chill', artifactId: 'tideglass-wand', name: 'Deep Chill', type: 'minor', branch: 'frozen-current', pointCost: 1, requiresLevel: 4, prerequisites: ['cold-precision'], combat: { modifiers: [{ key: 'status-duration-dealt-percent', value: 0.1, originSourceKinds: ['spell'], damageTypes: ['water'] }] } },
-  { id: 'heartfrost', artifactId: 'tideglass-wand', name: 'Heartfrost', type: 'major', branch: 'frozen-current', pointCost: 1, requiresLevel: 4, prerequisites: ['deep-chill'], requiresBossKill: 'forest-heart', combat: { modifiers: [directSpellDamage(0.1, 'water', { type: 'target-has-status', statusId: 'chilled' })] } },
-  { id: 'accelerated-current', artifactId: 'tideglass-wand', name: 'Accelerated Current', type: 'minor', branch: 'frozen-current', pointCost: 1, requiresLevel: 6, prerequisites: ['heartfrost'], combat: { modifiers: [{ key: 'cooldown-recovery-percent', value: 0.1 }] } },
-  { id: 'corrupted-undertow', artifactId: 'tideglass-wand', name: 'Corrupted Undertow', type: 'major', branch: 'frozen-current', pointCost: 1, requiresLevel: 7, prerequisites: ['accelerated-current'], requiresBossKill: 'corrupted-greatbear', combat: { modifiers: [directSpellDamage(0.15, 'water', { type: 'target-has-status-tag', tag: 'debuff' })] } },
-  { id: 'edrins-frozen-depth', artifactId: 'tideglass-wand', name: "Edrin's Frozen Depth", type: 'capstone', branch: 'frozen-current', pointCost: 2, requiresLevel: 10, prerequisites: ['corrupted-undertow'], requiresBossKill: 'archmage-edrin-shade', combat: { modifiers: [directSpellDamage(0.25, 'water', { type: 'target-has-status', statusId: 'chilled' })] } },
-]
-
-const stoneheartNodes: ArtifactNodeDefinition[] = [
-  { id: 'stone-channel', artifactId: 'stoneheart-scepter', name: 'Stone Channel', type: 'minor', branch: 'shared', pointCost: 1, requiresLevel: 2, combat: { modifiers: [spellDamage(0.05, 'earth')] } },
-  { id: 'stone-skin', artifactId: 'stoneheart-scepter', name: 'Stone Skin', type: 'minor', branch: 'living-bastion', pointCost: 1, requiresLevel: 3, prerequisites: ['stone-channel'], stats: { defense: 5 } },
-  { id: 'earthen-reserve', artifactId: 'stoneheart-scepter', name: 'Earthen Reserve', type: 'minor', branch: 'living-bastion', pointCost: 1, requiresLevel: 4, prerequisites: ['stone-skin'], stats: { maxHealth: 10 } },
-  { id: 'heartroot-bulwark', artifactId: 'stoneheart-scepter', name: 'Heartroot Bulwark', type: 'major', branch: 'living-bastion', pointCost: 1, requiresLevel: 4, prerequisites: ['earthen-reserve'], requiresBossKill: 'forest-heart', combat: { modifiers: [{ key: 'defense-flat', value: 5, condition: { type: 'self-has-barrier' } }] } },
-  { id: 'regrowing-stone', artifactId: 'stoneheart-scepter', name: 'Regrowing Stone', type: 'minor', branch: 'living-bastion', pointCost: 1, requiresLevel: 6, prerequisites: ['heartroot-bulwark'], stats: { healthRegen: 1 } },
-  { id: 'greatbear-foundation', artifactId: 'stoneheart-scepter', name: 'Greatbear Foundation', type: 'major', branch: 'living-bastion', pointCost: 1, requiresLevel: 7, prerequisites: ['regrowing-stone'], requiresBossKill: 'corrupted-greatbear', stats: { resistances: { physical: 0.1 } } },
-  { id: 'edrins-immortal-earth', artifactId: 'stoneheart-scepter', name: "Edrin's Immortal Earth", type: 'capstone', branch: 'living-bastion', pointCost: 2, requiresLevel: 10, prerequisites: ['greatbear-foundation'], requiresBossKill: 'archmage-edrin-shade', combat: { rules: [bossRule('immortal-earth', { type: 'self-hp-below-percent', percent: 35 }, 60)] } },
-  { id: 'heavy-channel', artifactId: 'stoneheart-scepter', name: 'Heavy Channel', type: 'minor', branch: 'crushing-earth', pointCost: 1, requiresLevel: 3, prerequisites: ['stone-channel'], combat: { modifiers: [spellDamage(0.05, 'earth')] } },
-  { id: 'fracture-point', artifactId: 'stoneheart-scepter', name: 'Fracture Point', type: 'minor', branch: 'crushing-earth', pointCost: 1, requiresLevel: 4, prerequisites: ['heavy-channel'], combat: { modifiers: [{ key: 'crit-chance', value: 0.03, originSourceKinds: ['spell'], damageTypes: ['earth'], sourceTags: ['direct'] }] } },
-  { id: 'heartstone-impact', artifactId: 'stoneheart-scepter', name: 'Heartstone Impact', type: 'major', branch: 'crushing-earth', pointCost: 1, requiresLevel: 4, prerequisites: ['fracture-point'], requiresBossKill: 'forest-heart', combat: { modifiers: [directSpellDamage(0.1, 'earth', { type: 'target-has-status-tag', tag: 'debuff' })] } },
-  { id: 'crushing-momentum', artifactId: 'stoneheart-scepter', name: 'Crushing Momentum', type: 'minor', branch: 'crushing-earth', pointCost: 1, requiresLevel: 6, prerequisites: ['heartstone-impact'], combat: { modifiers: [{ key: 'crit-damage', value: 0.15, originSourceKinds: ['spell'], damageTypes: ['earth'], sourceTags: ['direct'] }] } },
-  { id: 'corrupted-fault', artifactId: 'stoneheart-scepter', name: 'Corrupted Fault', type: 'major', branch: 'crushing-earth', pointCost: 1, requiresLevel: 7, prerequisites: ['crushing-momentum'], requiresBossKill: 'corrupted-greatbear', combat: { modifiers: [directSpellDamage(0.15, 'earth', { type: 'target-has-status-tag', tag: 'control' })] } },
-  { id: 'edrins-world-break', artifactId: 'stoneheart-scepter', name: "Edrin's World Break", type: 'capstone', branch: 'crushing-earth', pointCost: 2, requiresLevel: 10, prerequisites: ['corrupted-fault'], requiresBossKill: 'archmage-edrin-shade', combat: { modifiers: [directSpellDamage(0.25, 'earth', { type: 'target-has-status-tag', tag: 'debuff' })] } },
-]
-
-const windthreadNodes: ArtifactNodeDefinition[] = [
-  { id: 'wind-channel', artifactId: 'windthread-wand', name: 'Wind Channel', type: 'minor', branch: 'shared', pointCost: 1, requiresLevel: 2, combat: { modifiers: [spellDamage(0.05, 'air')] } },
-  { id: 'quickened-thought', artifactId: 'windthread-wand', name: 'Quickened Thought', type: 'minor', branch: 'tempest-tempo', pointCost: 1, requiresLevel: 3, prerequisites: ['wind-channel'], combat: { modifiers: [{ key: 'cooldown-recovery-percent', value: 0.05 }] } },
-  { id: 'efficient-current', artifactId: 'windthread-wand', name: 'Efficient Current', type: 'minor', branch: 'tempest-tempo', pointCost: 1, requiresLevel: 4, prerequisites: ['quickened-thought'], stats: { manaCostReductionPct: 0.05 } },
-  { id: 'heartwind-rhythm', artifactId: 'windthread-wand', name: 'Heartwind Rhythm', type: 'major', branch: 'tempest-tempo', pointCost: 1, requiresLevel: 4, prerequisites: ['efficient-current'], requiresBossKill: 'forest-heart', combat: { modifiers: [{ key: 'cooldown-recovery-percent', value: 0.05 }] } },
-  { id: 'sustained-flow', artifactId: 'windthread-wand', name: 'Sustained Flow', type: 'minor', branch: 'tempest-tempo', pointCost: 1, requiresLevel: 6, prerequisites: ['heartwind-rhythm'], stats: { manaRegen: 2 } },
-  { id: 'greatbear-stormheart', artifactId: 'windthread-wand', name: 'Greatbear Stormheart', type: 'major', branch: 'tempest-tempo', pointCost: 1, requiresLevel: 7, prerequisites: ['sustained-flow'], requiresBossKill: 'corrupted-greatbear', combat: { modifiers: [{ ...spellDamage(0.15, 'air'), condition: { type: 'self-mana-above-percent', percent: 50 } }] } },
-  { id: 'edrins-endless-tempest', artifactId: 'windthread-wand', name: "Edrin's Endless Tempest", type: 'capstone', branch: 'tempest-tempo', pointCost: 2, requiresLevel: 10, prerequisites: ['greatbear-stormheart'], requiresBossKill: 'archmage-edrin-shade', combat: { modifiers: [{ ...spellDamage(0.25, 'air'), condition: { type: 'self-mana-above-percent', percent: 50 } }] } },
-  { id: 'charged-aim', artifactId: 'windthread-wand', name: 'Charged Aim', type: 'minor', branch: 'storm-precision', pointCost: 1, requiresLevel: 3, prerequisites: ['wind-channel'], combat: { modifiers: [{ key: 'crit-chance', value: 0.03, originSourceKinds: ['spell'], damageTypes: ['air'], sourceTags: ['direct'] }] } },
-  { id: 'storm-edge', artifactId: 'windthread-wand', name: 'Storm Edge', type: 'minor', branch: 'storm-precision', pointCost: 1, requiresLevel: 4, prerequisites: ['charged-aim'], combat: { modifiers: [{ key: 'crit-damage', value: 0.15, originSourceKinds: ['spell'], damageTypes: ['air'], sourceTags: ['direct'] }] } },
-  { id: 'heartstorm', artifactId: 'windthread-wand', name: 'Heartstorm', type: 'major', branch: 'storm-precision', pointCost: 1, requiresLevel: 4, prerequisites: ['storm-edge'], requiresBossKill: 'forest-heart', combat: { modifiers: [directSpellDamage(0.1, 'air', { type: 'target-has-status-tag', tag: 'debuff' })] } },
-  { id: 'pressure-spike', artifactId: 'windthread-wand', name: 'Pressure Spike', type: 'minor', branch: 'storm-precision', pointCost: 1, requiresLevel: 6, prerequisites: ['heartstorm'], combat: { modifiers: [spellDamage(0.05, 'air')] } },
-  { id: 'corrupted-lightning', artifactId: 'windthread-wand', name: 'Corrupted Lightning', type: 'major', branch: 'storm-precision', pointCost: 1, requiresLevel: 7, prerequisites: ['pressure-spike'], requiresBossKill: 'corrupted-greatbear', combat: { modifiers: [directSpellDamage(0.15, 'air', { type: 'target-has-status-tag', tag: 'debuff' })] } },
-  { id: 'edrins-sky-rend', artifactId: 'windthread-wand', name: "Edrin's Sky Rend", type: 'capstone', branch: 'storm-precision', pointCost: 2, requiresLevel: 10, prerequisites: ['corrupted-lightning'], requiresBossKill: 'archmage-edrin-shade', combat: { modifiers: [directSpellDamage(0.25, 'air', { type: 'target-has-status-tag', tag: 'debuff' })] } },
-]
-
-const wispweaveNodes: ArtifactNodeDefinition[] = [
-  { id: 'reinforced-weave', artifactId: 'wispweave-robe', name: 'Reinforced Weave', type: 'minor', branch: 'shared', pointCost: 1, requiresLevel: 2, stats: { maxHealth: 5 } },
-  { id: 'hardened-thread', artifactId: 'wispweave-robe', name: 'Hardened Thread', type: 'minor', branch: 'living-bastion', pointCost: 1, requiresLevel: 3, prerequisites: ['reinforced-weave'], stats: { defense: 4 } },
-  { id: 'vital-weave', artifactId: 'wispweave-robe', name: 'Vital Weave', type: 'minor', branch: 'living-bastion', pointCost: 1, requiresLevel: 4, prerequisites: ['hardened-thread'], stats: { maxHealth: 10 } },
-  { id: 'heartseed-lining', artifactId: 'wispweave-robe', name: 'Heartseed Lining', type: 'major', branch: 'living-bastion', pointCost: 1, requiresLevel: 4, prerequisites: ['vital-weave'], requiresBossKill: 'forest-heart', stats: { healthRegen: 1 } },
-  { id: 'stonebound-cloth', artifactId: 'wispweave-robe', name: 'Stonebound Cloth', type: 'minor', branch: 'living-bastion', pointCost: 1, requiresLevel: 6, prerequisites: ['heartseed-lining'], stats: { resistances: { physical: 0.05 } } },
-  { id: 'greatbear-weave', artifactId: 'wispweave-robe', name: 'Greatbear Weave', type: 'major', branch: 'living-bastion', pointCost: 1, requiresLevel: 7, prerequisites: ['stonebound-cloth'], requiresBossKill: 'corrupted-greatbear', stats: { defense: 10 } },
-  { id: 'edrins-deathless-weave', artifactId: 'wispweave-robe', name: "Edrin's Deathless Weave", type: 'capstone', branch: 'living-bastion', pointCost: 2, requiresLevel: 10, prerequisites: ['greatbear-weave'], requiresBossKill: 'archmage-edrin-shade', combat: { rules: [bossRule('deathless-weave', { type: 'self-hp-below-percent', percent: 35 }, 75)] } },
-  { id: 'mana-thread', artifactId: 'wispweave-robe', name: 'Mana Thread', type: 'minor', branch: 'arcane-weave', pointCost: 1, requiresLevel: 3, prerequisites: ['reinforced-weave'], stats: { maxMana: 10 } },
-  { id: 'ward-stitching', artifactId: 'wispweave-robe', name: 'Ward Stitching', type: 'minor', branch: 'arcane-weave', pointCost: 1, requiresLevel: 4, prerequisites: ['mana-thread'], combat: { modifiers: [{ key: 'barrier-power-percent', value: 0.1 }] } },
-  { id: 'heartseed-channel', artifactId: 'wispweave-robe', name: 'Heartseed Channel', type: 'major', branch: 'arcane-weave', pointCost: 1, requiresLevel: 4, prerequisites: ['ward-stitching'], requiresBossKill: 'forest-heart', combat: { modifiers: [{ key: 'barrier-received-flat', value: 10 }] } },
-  { id: 'restorative-weave', artifactId: 'wispweave-robe', name: 'Restorative Weave', type: 'minor', branch: 'arcane-weave', pointCost: 1, requiresLevel: 6, prerequisites: ['heartseed-channel'], combat: { modifiers: [{ key: 'healing-done-percent', value: 0.05 }] } },
-  { id: 'greatbear-arcana', artifactId: 'wispweave-robe', name: 'Greatbear Arcana', type: 'major', branch: 'arcane-weave', pointCost: 1, requiresLevel: 7, prerequisites: ['restorative-weave'], requiresBossKill: 'corrupted-greatbear', stats: { resistances: { fire: 0.1, water: 0.1, earth: 0.1, air: 0.1 } } },
-  { id: 'edrins-soulweave', artifactId: 'wispweave-robe', name: "Edrin's Soulweave", type: 'capstone', branch: 'arcane-weave', pointCost: 2, requiresLevel: 10, prerequisites: ['greatbear-arcana'], requiresBossKill: 'archmage-edrin-shade', combat: { rules: [{ id: 'soulweave', event: 'on-barrier-broken', cooldownMs: 30_000, effects: [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 40 } }] }] } },
-]
-
-const wispveilNodes: ArtifactNodeDefinition[] = [
-  { id: 'arcane-sight', artifactId: 'wispveil-hood', name: 'Arcane Sight', type: 'minor', branch: 'shared', pointCost: 1, requiresLevel: 2, stats: { maxMana: 5 } },
-  { id: 'deep-focus', artifactId: 'wispveil-hood', name: 'Deep Focus', type: 'minor', branch: 'arcane-insight', pointCost: 1, requiresLevel: 3, prerequisites: ['arcane-sight'], stats: { maxMana: 10 } },
-  { id: 'lingering-thought', artifactId: 'wispveil-hood', name: 'Lingering Thought', type: 'minor', branch: 'arcane-insight', pointCost: 1, requiresLevel: 4, prerequisites: ['deep-focus'], combat: { modifiers: [{ key: 'status-duration-dealt-percent', value: 0.1 }] } },
-  { id: 'heartmind', artifactId: 'wispveil-hood', name: 'Heartmind', type: 'major', branch: 'arcane-insight', pointCost: 1, requiresLevel: 4, prerequisites: ['lingering-thought'], requiresBossKill: 'forest-heart', stats: { manaRegen: 1 } },
-  { id: 'rapid-thought', artifactId: 'wispveil-hood', name: 'Rapid Thought', type: 'minor', branch: 'arcane-insight', pointCost: 1, requiresLevel: 6, prerequisites: ['heartmind'], combat: { modifiers: [{ key: 'cooldown-recovery-percent', value: 0.05 }] } },
-  { id: 'greatbear-clarity', artifactId: 'wispveil-hood', name: 'Greatbear Clarity', type: 'major', branch: 'arcane-insight', pointCost: 1, requiresLevel: 7, prerequisites: ['rapid-thought'], requiresBossKill: 'corrupted-greatbear', combat: { modifiers: [{ key: 'status-duration-received-percent', value: -0.1, statusTags: ['debuff'] }] } },
-  { id: 'edrins-forbidden-insight', artifactId: 'wispveil-hood', name: "Edrin's Forbidden Insight", type: 'capstone', branch: 'arcane-insight', pointCost: 2, requiresLevel: 10, prerequisites: ['greatbear-clarity'], requiresBossKill: 'archmage-edrin-shade', stats: { cooldownRecoveryPct: 0.1, statusDurationPct: 0.1 } },
-  { id: 'keen-sight', artifactId: 'wispveil-hood', name: 'Keen Sight', type: 'minor', branch: 'arcane-precision', pointCost: 1, requiresLevel: 3, prerequisites: ['arcane-sight'], stats: { critChance: 0.02 } },
-  { id: 'spell-edge', artifactId: 'wispveil-hood', name: 'Spell Edge', type: 'minor', branch: 'arcane-precision', pointCost: 1, requiresLevel: 4, prerequisites: ['keen-sight'], stats: { critDamage: 0.1 } },
-  { id: 'heartseeker', artifactId: 'wispveil-hood', name: 'Heartseeker', type: 'major', branch: 'arcane-precision', pointCost: 1, requiresLevel: 4, prerequisites: ['spell-edge'], requiresBossKill: 'forest-heart', stats: { spellPower: 5 } },
-  { id: 'accelerated-casting', artifactId: 'wispveil-hood', name: 'Accelerated Casting', type: 'minor', branch: 'arcane-precision', pointCost: 1, requiresLevel: 6, prerequisites: ['heartseeker'], combat: { modifiers: [{ key: 'cooldown-recovery-percent', value: 0.05 }] } },
-  { id: 'greatbear-focus', artifactId: 'wispveil-hood', name: 'Greatbear Focus', type: 'major', branch: 'arcane-precision', pointCost: 1, requiresLevel: 7, prerequisites: ['accelerated-casting'], requiresBossKill: 'corrupted-greatbear', stats: { critChance: 0.03 } },
-  { id: 'edrins-perfect-moment', artifactId: 'wispveil-hood', name: "Edrin's Perfect Moment", type: 'capstone', branch: 'arcane-precision', pointCost: 2, requiresLevel: 10, prerequisites: ['greatbear-focus'], requiresBossKill: 'archmage-edrin-shade', stats: { critChance: 0.05, critDamage: 0.15 } },
-]
-const reliquaryStats: Record<number, EquipmentStats> = { 1: { spellPower: 90 }, 2: { spellPower: 93 }, 3: { spellPower: 96 }, 4: { spellPower: 99 }, 5: { spellPower: 102 }, 6: { spellPower: 106 }, 7: { spellPower: 109 }, 8: { spellPower: 112 }, 9: { spellPower: 115 }, 10: { spellPower: 117 } }
-const pyreboundStats: Record<number, EquipmentStats> = { 1: { spellPower: 94 }, 2: { spellPower: 97 }, 3: { spellPower: 100 }, 4: { spellPower: 103 }, 5: { spellPower: 106 }, 6: { spellPower: 110 }, 7: { spellPower: 113 }, 8: { spellPower: 116 }, 9: { spellPower: 119 }, 10: { spellPower: 122 } }
-const rootheartStats: Record<number, EquipmentStats> = { 1: { spellPower: 84 }, 2: { spellPower: 87 }, 3: { spellPower: 89 }, 4: { spellPower: 92 }, 5: { spellPower: 95 }, 6: { spellPower: 98 }, 7: { spellPower: 101 }, 8: { spellPower: 104 }, 9: { spellPower: 107 }, 10: { spellPower: 109 } }
-
-const createAct1WeaponArtifact = (id: ArtifactId, name: string, fragment: ItemId, tier: number, coreStatsByLevel: Record<number, EquipmentStats>): ArtifactDefinition => {
-  const nodes: ArtifactNodeDefinition[] = [
-    { id: `${id}-conduit`, artifactId: id, name: 'Resonant Conduit', type: 'minor', branch: 'resonance', pointCost: 1, requiresLevel: 2, stats: { spellPower: 5 } },
-    { id: `${id}-tempo`, artifactId: id, name: 'Measured Current', type: 'minor', branch: 'resonance', pointCost: 1, requiresLevel: 3, prerequisites: [`${id}-conduit`], combat: { modifiers: [{ key: 'cooldown-recovery-percent', value: 0.05 }] } },
-    { id: `${id}-reserve`, artifactId: id, name: 'Deep Reserve', type: 'minor', branch: 'resonance', pointCost: 1, requiresLevel: 4, prerequisites: [`${id}-tempo`], stats: { maxMana: 10 } },
-    { id: `${id}-awakening`, artifactId: id, name: 'Dungeon Awakening', type: 'major', branch: 'resonance', pointCost: 1, requiresLevel: 4, prerequisites: [`${id}-reserve`], requiresBossKill: 'crossroads-keeper', stats: { spellPower: 8 } },
-    { id: `${id}-focus`, artifactId: id, name: 'Focused Current', type: 'minor', branch: 'resonance', pointCost: 1, requiresLevel: 6, prerequisites: [`${id}-awakening`], combat: { modifiers: [{ key: 'spell-damage-percent', value: 0.05 }] } },
-    { id: `${id}-mastery`, artifactId: id, name: 'Mastery', type: 'major', branch: 'resonance', pointCost: 1, requiresLevel: 7, prerequisites: [`${id}-focus`], requiresBossKill: 'meridian-splitter', stats: { spellPower: 10 } },
-    { id: `${id}-capstone`, artifactId: id, name: 'Perfect Resonance', type: 'capstone', branch: 'resonance', pointCost: 2, requiresLevel: 10, prerequisites: [`${id}-mastery`], requiresBossKill: 'meridian-splitter', stats: { spellPower: 15 } },
-  ]
-  return { id, itemId: id, tier, maxLevel: 10, coreStatsByLevel, forge: { ingredients: [material(fragment, 40), material('artifact-essence', 80)] }, upgrades: createUpgradeCurve(id, fragment, act1UpgradeCosts), branches: [{ id: 'resonance', name: 'Resonance', description: `${name} mastery.` }], nodes }
-}
-const convergenceRobeStats: Record<number, EquipmentStats> = {
-  1: { maxHealth: 115, defense: 23 }, 2: { maxHealth: 119, defense: 23 }, 3: { maxHealth: 123, defense: 24 },
-  4: { maxHealth: 127, defense: 24 }, 5: { maxHealth: 131, defense: 25 }, 6: { maxHealth: 135, defense: 25 },
-  7: { maxHealth: 138, defense: 26 }, 8: { maxHealth: 141, defense: 26 }, 9: { maxHealth: 143, defense: 27 }, 10: { maxHealth: 145, defense: 27 },
-}
-const waystoneCircletStats: Record<number, EquipmentStats> = {
-  1: { maxHealth: 61, defense: 17 }, 2: { maxHealth: 63, defense: 17 }, 3: { maxHealth: 65, defense: 17 },
-  4: { maxHealth: 67, defense: 18 }, 5: { maxHealth: 69, defense: 18 }, 6: { maxHealth: 71, defense: 18 },
-  7: { maxHealth: 73, defense: 19 }, 8: { maxHealth: 75, defense: 19 }, 9: { maxHealth: 77, defense: 20 }, 10: { maxHealth: 80, defense: 20 },
-}
-const convergenceRobeUpgrades = createUpgradeCurve('convergence-robe', 'prismatic-fragment', PRISMATIC_UPGRADE_COSTS)
-const waystoneCircletUpgrades = createUpgradeCurve('waystone-circlet', 'prismatic-fragment', PRISMATIC_UPGRADE_COSTS)
-const convergenceRobeNodes: ArtifactNodeDefinition[] = [
-  { id: 'convergence-thread', artifactId: 'convergence-robe', name: 'Convergence Thread', type: 'minor', branch: 'shared', pointCost: 1, requiresLevel: 2, stats: { maxHealth: 12 } },
-  { id: 'crossroads-ward', artifactId: 'convergence-robe', name: 'Crossroads Ward', type: 'minor', branch: 'crossroads-ward', pointCost: 1, requiresLevel: 3, prerequisites: ['convergence-thread'], stats: { defense: 2 } },
-  { id: 'woven-reserve', artifactId: 'convergence-robe', name: 'Woven Reserve', type: 'minor', branch: 'crossroads-ward', pointCost: 1, requiresLevel: 4, prerequisites: ['crossroads-ward'], stats: { maxMana: 10 } },
-  { id: 'keeper-shelter', artifactId: 'convergence-robe', name: 'Keeper Shelter', type: 'major', branch: 'crossroads-ward', pointCost: 1, requiresLevel: 4, prerequisites: ['woven-reserve'], requiresBossKill: 'crossroads-keeper', stats: { maxHealth: 20, defense: 2 } },
-  { id: 'steady-loom', artifactId: 'convergence-robe', name: 'Steady Loom', type: 'minor', branch: 'crossroads-ward', pointCost: 1, requiresLevel: 6, prerequisites: ['keeper-shelter'], stats: { healthRegen: 1 } },
-  { id: 'meridian-weave', artifactId: 'convergence-robe', name: 'Meridian Weave', type: 'major', branch: 'crossroads-ward', pointCost: 1, requiresLevel: 7, prerequisites: ['steady-loom'], requiresBossKill: 'meridian-splitter', stats: { defense: 3, maxHealth: 20 } },
-  { id: 'unbroken-convergence', artifactId: 'convergence-robe', name: 'Unbroken Convergence', type: 'capstone', branch: 'crossroads-ward', pointCost: 2, requiresLevel: 10, prerequisites: ['meridian-weave'], requiresBossKill: 'meridian-splitter', stats: { maxHealth: 35, defense: 4 } },
-  { id: 'arcane-lining', artifactId: 'convergence-robe', name: 'Arcane Lining', type: 'minor', branch: 'arcane-lining', pointCost: 1, requiresLevel: 3, prerequisites: ['convergence-thread'], stats: { maxMana: 8 } },
-  { id: 'prismatic-stitch', artifactId: 'convergence-robe', name: 'Prismatic Stitch', type: 'minor', branch: 'arcane-lining', pointCost: 1, requiresLevel: 4, prerequisites: ['arcane-lining'], stats: { spellPower: 5 } },
-  { id: 'keeper-attunement', artifactId: 'convergence-robe', name: 'Keeper Attunement', type: 'major', branch: 'arcane-lining', pointCost: 1, requiresLevel: 4, prerequisites: ['prismatic-stitch'], requiresBossKill: 'crossroads-keeper', stats: { maxMana: 12 } },
-  { id: 'focused-weave', artifactId: 'convergence-robe', name: 'Focused Weave', type: 'minor', branch: 'arcane-lining', pointCost: 1, requiresLevel: 6, prerequisites: ['keeper-attunement'], stats: { spellPower: 7 } },
-  { id: 'meridian-focus', artifactId: 'convergence-robe', name: 'Meridian Focus', type: 'major', branch: 'arcane-lining', pointCost: 1, requiresLevel: 7, prerequisites: ['focused-weave'], requiresBossKill: 'meridian-splitter', stats: { maxMana: 15 } },
-  { id: 'convergent-aegis', artifactId: 'convergence-robe', name: 'Convergent Aegis', type: 'capstone', branch: 'arcane-lining', pointCost: 2, requiresLevel: 10, prerequisites: ['meridian-focus'], requiresBossKill: 'meridian-splitter', stats: { spellPower: 12, maxMana: 20 } },
-]
-const waystoneCircletNodes: ArtifactNodeDefinition[] = [
-  { id: 'anchored-thought', artifactId: 'waystone-circlet', name: 'Anchored Thought', type: 'minor', branch: 'shared', pointCost: 1, requiresLevel: 2, stats: { maxMana: 8 } },
-  { id: 'waystone-clarity', artifactId: 'waystone-circlet', name: 'Waystone Clarity', type: 'minor', branch: 'waystone-clarity', pointCost: 1, requiresLevel: 3, prerequisites: ['anchored-thought'], stats: { spellPower: 5 } },
-  { id: 'quiet-focus', artifactId: 'waystone-circlet', name: 'Quiet Focus', type: 'minor', branch: 'waystone-clarity', pointCost: 1, requiresLevel: 4, prerequisites: ['waystone-clarity'], stats: { maxFocus: 4 } },
-  { id: 'keeper-sight', artifactId: 'waystone-circlet', name: 'Keeper Sight', type: 'major', branch: 'waystone-clarity', pointCost: 1, requiresLevel: 4, prerequisites: ['quiet-focus'], requiresBossKill: 'crossroads-keeper', stats: { spellPower: 8 } },
-  { id: 'stable-channel', artifactId: 'waystone-circlet', name: 'Stable Channel', type: 'minor', branch: 'waystone-clarity', pointCost: 1, requiresLevel: 6, prerequisites: ['keeper-sight'], stats: { manaRegen: 1 } },
-  { id: 'meridian-sight', artifactId: 'waystone-circlet', name: 'Meridian Sight', type: 'major', branch: 'waystone-clarity', pointCost: 1, requiresLevel: 7, prerequisites: ['stable-channel'], requiresBossKill: 'meridian-splitter', stats: { spellPower: 10 } },
-  { id: 'wayfinder-crown', artifactId: 'waystone-circlet', name: 'Wayfinder Crown', type: 'capstone', branch: 'waystone-clarity', pointCost: 2, requiresLevel: 10, prerequisites: ['meridian-sight'], requiresBossKill: 'meridian-splitter', stats: { spellPower: 15, maxFocus: 6 } },
-  { id: 'crossroads-pulse', artifactId: 'waystone-circlet', name: 'Crossroads Pulse', type: 'minor', branch: 'crossroads-pulse', pointCost: 1, requiresLevel: 3, prerequisites: ['anchored-thought'], stats: { maxHealth: 12 } },
-  { id: 'resonant-mark', artifactId: 'waystone-circlet', name: 'Resonant Mark', type: 'minor', branch: 'crossroads-pulse', pointCost: 1, requiresLevel: 4, prerequisites: ['crossroads-pulse'], stats: { critChance: 0.02 } },
-  { id: 'keeper-resonance', artifactId: 'waystone-circlet', name: 'Keeper Resonance', type: 'major', branch: 'crossroads-pulse', pointCost: 1, requiresLevel: 4, prerequisites: ['resonant-mark'], requiresBossKill: 'crossroads-keeper', stats: { maxHealth: 18, maxMana: 8 } },
-  { id: 'clear-signal', artifactId: 'waystone-circlet', name: 'Clear Signal', type: 'minor', branch: 'crossroads-pulse', pointCost: 1, requiresLevel: 6, prerequisites: ['keeper-resonance'], stats: { statusDurationPct: 0.05 } },
-  { id: 'meridian-resonance', artifactId: 'waystone-circlet', name: 'Meridian Resonance', type: 'major', branch: 'crossroads-pulse', pointCost: 1, requiresLevel: 7, prerequisites: ['clear-signal'], requiresBossKill: 'meridian-splitter', stats: { maxHealth: 25, maxMana: 12 } },
-  { id: 'anchored-meridian', artifactId: 'waystone-circlet', name: 'Anchored Meridian', type: 'capstone', branch: 'crossroads-pulse', pointCost: 2, requiresLevel: 10, prerequisites: ['meridian-resonance'], requiresBossKill: 'meridian-splitter', stats: { maxHealth: 35, defense: 4 } },
-]
-
-const ACT1_ARTIFACTS: Record<'reliquary-scepter' | 'pyrebound-staff' | 'rootheart-scepter' | 'convergence-robe' | 'waystone-circlet', ArtifactDefinition> = {
-  'reliquary-scepter': createAct1WeaponArtifact('reliquary-scepter', 'Reliquary Scepter', 'water-fragment', 1.8, reliquaryStats),
-  'pyrebound-staff': createAct1WeaponArtifact('pyrebound-staff', 'Pyrebound Staff', 'fire-fragment', 1.8, pyreboundStats),
-  'rootheart-scepter': createAct1WeaponArtifact('rootheart-scepter', 'Rootheart Scepter', 'earth-fragment', 1.8, rootheartStats),
-  'convergence-robe': { id: 'convergence-robe', itemId: 'convergence-robe', tier: 2, maxLevel: 10, coreStatsByLevel: convergenceRobeStats, forge: { ingredients: [material('prismatic-fragment', 40), material('artifact-essence', 80)] }, upgrades: convergenceRobeUpgrades, branches: [{ id: 'crossroads-ward', name: 'Crossroads Ward', description: 'Health, Defense, and survival through the convergence.' }, { id: 'arcane-lining', name: 'Arcane Lining', description: 'Mana and spell support woven into the ward.' }], nodes: convergenceRobeNodes },
-  'waystone-circlet': { id: 'waystone-circlet', itemId: 'waystone-circlet', tier: 2, maxLevel: 10, coreStatsByLevel: waystoneCircletStats, forge: { ingredients: [material('prismatic-fragment', 40), material('artifact-essence', 80)] }, upgrades: waystoneCircletUpgrades, branches: [{ id: 'waystone-clarity', name: 'Waystone Clarity', description: 'Spell Power, Focus, and controlled casting.' }, { id: 'crossroads-pulse', name: 'Crossroads Pulse', description: 'Health, Mana, and flexible status support.' }], nodes: waystoneCircletNodes },
-}
-
-export const ARTIFACTS: Record<ArtifactId, ArtifactDefinition> = {
-  ...ACT1_ARTIFACTS,
-  'ember-staff': {
-    id: 'ember-staff', itemId: 'ember-staff', tier: 1, maxLevel: 10, coreStatsByLevel: emberStats,
-    forge: { ingredients: [material('fire-fragment', 20), material('artifact-essence', 20)] },
-    branches: [
-      { id: 'burning', name: 'Burning', description: 'Persistent Fire damage and Burning.' },
-      { id: 'direct-fire', name: 'Direct Fire', description: 'Direct Fire hits, Criticals, and spell tempo.' },
-    ],
-    upgrades: emberUpgrades, nodes: emberNodes,
-  },
-  'tideglass-wand': {
-    id: 'tideglass-wand', itemId: 'tideglass-wand', tier: 1, maxLevel: 10, coreStatsByLevel: tideglassStats,
-    forge: { ingredients: [material('water-fragment', 20), material('artifact-essence', 20)] },
-    upgrades: tideglassUpgrades,
-    branches: [
-      { id: 'tidal-ward', name: 'Tidal Ward', description: 'Water Barrier strength, Mana, and defensive spell support.' },
-      { id: 'frozen-current', name: 'Frozen Current', description: 'Direct Water damage, Chill interaction, and spell tempo.' },
-    ],
-    nodes: tideglassNodes,
-  },
-  'stoneheart-scepter': {
-    id: 'stoneheart-scepter', itemId: 'stoneheart-scepter', tier: 1, maxLevel: 10, coreStatsByLevel: stoneheartStats,
-    forge: { ingredients: [material('earth-fragment', 20), material('artifact-essence', 20)] },
-    upgrades: stoneheartUpgrades,
-    branches: [
-      { id: 'living-bastion', name: 'Living Bastion', description: 'Defense, regeneration, resistance, and emergency Barrier.' },
-      { id: 'crushing-earth', name: 'Crushing Earth', description: 'Heavy direct Earth Spell hits and conditional damage.' },
-    ],
-    nodes: stoneheartNodes,
-  },
-  'windthread-wand': {
-    id: 'windthread-wand', itemId: 'windthread-wand', tier: 1, maxLevel: 10, coreStatsByLevel: windthreadStats,
-    forge: { ingredients: [material('air-fragment', 20), material('artifact-essence', 20)] },
-    upgrades: windthreadUpgrades,
-    branches: [
-      { id: 'tempest-tempo', name: 'Tempest Tempo', description: 'Cooldown, Mana efficiency, sustain, and high-Mana Air damage.' },
-      { id: 'storm-precision', name: 'Storm Precision', description: 'Direct Air Critical damage and Debuff interaction.' },
-    ],
-    nodes: windthreadNodes,
-  },
-  'wispweave-robe': {
-    id: 'wispweave-robe', itemId: 'wispweave-robe', tier: 1, maxLevel: 10, coreStatsByLevel: wispweaveStats,
-    forge: { ingredients: [material('prismatic-fragment', 5), material('artifact-essence', 20)] },
-    upgrades: wispweaveUpgrades,
-    branches: [
-      { id: 'living-bastion', name: 'Living Bastion', description: 'Health, Defense, regeneration, and emergency survival.' },
-      { id: 'arcane-weave', name: 'Arcane Weave', description: 'Mana, Barrier, Healing, and elemental resistance.' },
-    ],
-    nodes: wispweaveNodes,
-  },
-  'wispveil-hood': {
-    id: 'wispveil-hood', itemId: 'wispveil-hood', tier: 1, maxLevel: 10, coreStatsByLevel: wispveilStats,
-    forge: { ingredients: [material('prismatic-fragment', 5), material('artifact-essence', 20)] },
-    upgrades: wispveilUpgrades,
-    branches: [
-      { id: 'arcane-insight', name: 'Arcane Insight', description: 'Mana, Status Duration, cooldowns, and hostile-status protection.' },
-      { id: 'arcane-precision', name: 'Arcane Precision', description: 'Critical chance, Critical damage, Spell Power, and casting speed.' },
-    ],
-    nodes: wispveilNodes,
-  },
-  'galeshard-staff': {
-    id: 'galeshard-staff', itemId: 'galeshard-staff', tier: 1.7, maxLevel: 10, coreStatsByLevel: galeshardStats,
-    forge: { ingredients: [material('air-fragment', 40), material('artifact-essence', 80)] },
-    upgrades: galeshardUpgrades,
-    branches: [
-      { id: 'gale-tempo', name: 'Gale Tempo', description: 'Air spell damage, cooldown recovery, and Mana.' },
-      { id: 'storm-precision', name: 'Storm Precision', description: 'Direct Air critical chance, critical damage, and casting speed.' },
-    ],
-    nodes: galeshardNodes,
-  },
-}
+export const ACT1_ARTIFACT_IDS: readonly ArtifactId[] = ['galeshard-staff', 'reliquary-scepter', 'pyrebound-staff', 'rootheart-scepter', 'convergence-robe', 'waystone-circlet']
+export const ARTIFACTS: Record<ArtifactId, ArtifactDefinition> = { 'ember-staff': act0Elemental('ember-staff', { spellPower: 15 }, 'fire-fragment', emberNodes, emberMajors), 'tideglass-wand': act0Elemental('tideglass-wand', { spellPower: 15, maxMana: 10 }, 'water-fragment', tideNodes, tideMajors), 'stoneheart-scepter': act0Elemental('stoneheart-scepter', { spellPower: 15, defense: 3 }, 'earth-fragment', stoneNodes, stoneMajors), 'windthread-wand': act0Elemental('windthread-wand', { spellPower: 15, critChance: 0.01 }, 'air-fragment', windNodes, windMajors), 'wispweave-robe': prismatic('wispweave-robe', 1, { maxHealth: 40, defense: 4 }, wispweaveNodes, wispweaveMajors), 'wispveil-hood': prismatic('wispveil-hood', 1, { spellPower: 15, maxMana: 10 }, wispveilNodes, wispveilMajors), 'galeshard-staff': galeshard, 'reliquary-scepter': reliquary, 'pyrebound-staff': pyrebound, 'rootheart-scepter': rootheart, 'convergence-robe': convergence, 'waystone-circlet': waystone }
 export const isArtifactId = (itemId: ItemId): itemId is ArtifactId => Object.prototype.hasOwnProperty.call(ARTIFACTS, itemId)
 export const getArtifactDefinition = (itemId: ItemId) => isArtifactId(itemId) ? ARTIFACTS[itemId] : undefined
 
-/** Structural checks for the shared Artifact foundation. Balance power is intentionally out of scope. */
-export const validateArtifactDefinitions = (items: Record<string, ItemDefinition>, monsters?: Record<string, { id: string; bestiaryCategory?: string }>) => {
-  const errors: string[] = []
-  const combatValidationContext = createCombatValidationContext(STATUS_DEFINITIONS)
+export const validateArtifactDefinitions = (items: Record<string, ItemDefinition>) => {
+  const errors: string[] = []; const context = createCombatValidationContext(STATUS_DEFINITIONS)
   Object.entries(ARTIFACTS).forEach(([key, definition]) => {
-    if (!definition) return
     if (key !== definition.id || definition.itemId !== definition.id) errors.push(`${key}: Artifact key/id mismatch`)
     const item = items[definition.itemId]
     if (!item) errors.push(`${definition.id}: Artifact item is missing`)
-    else {
-      if (item.kind !== 'equipment') errors.push(`${definition.id}: Artifact item must be Equipment`)
-      if (item.source !== 'Artificing') errors.push(`${definition.id}: Artifact item source must be Artificing`)
-      if (item.stats !== undefined) errors.push(`${definition.id}: Artifact item must not define static stats`)
-      if (item.combat !== undefined) errors.push(`${definition.id}: Artifact item must not define static combat effects`)
-      if (item.sellValue !== null) errors.push(`${definition.id}: Artifact item must not be sellable`)
-      if (item.canDestroy) errors.push(`${definition.id}: Artifact item must not be destroyable`)
-      if (!['weapon', 'armor', 'helmet'].includes(item.equipmentSlot ?? '')) errors.push(`${definition.id}: Artifact slot is not supported`)
-    }
-    if (!Number.isFinite(definition.tier) || definition.tier <= 0) errors.push(`${definition.id}: tier must be finite and greater than 0`)
-    if (!Number.isInteger(definition.maxLevel) || definition.maxLevel < 1) errors.push(`${definition.id}: maxLevel must be a positive integer`)
-    for (let level = 1; level <= definition.maxLevel; level += 1) {
-      const stats = definition.coreStatsByLevel[level]
-      if (!stats) { errors.push(`${definition.id}: missing core stats for level ${level}`); continue }
-      Object.entries(stats).forEach(([stat, value]) => {
-        if (stat === 'resistances' && value && typeof value === 'object') Object.values(value).forEach((resistance) => { if (!Number.isFinite(resistance)) errors.push(`${definition.id}: non-finite core resistance at level ${level}`) })
-        else if (!Number.isFinite(value)) errors.push(`${definition.id}: non-finite core stat ${stat} at level ${level}`)
-      })
-      if (item?.equipmentSlot === 'weapon') {
-        if (!(stats.spellPower && stats.spellPower > 0)) errors.push(`${definition.id}: weapon Artifact requires positive spellPower at level ${level}`)
-        if (!(stats.spellPower && stats.spellPower > 0)) errors.push(`${definition.id}: weapon Artifact requires positive spellPower at level ${level}`)
-      }
-      if (item?.equipmentSlot === 'armor' || item?.equipmentSlot === 'helmet') {
-        if (!(stats.maxHealth && stats.maxHealth > 0)) errors.push(`${definition.id}: ${item.equipmentSlot} Artifact requires positive maxHealth at level ${level}`)
-        if (!(stats.defense && stats.defense > 0)) errors.push(`${definition.id}: ${item.equipmentSlot} Artifact requires positive defense at level ${level}`)
-      }
-    }
-    for (let fromLevel = 1; fromLevel < definition.maxLevel; fromLevel += 1) {
-      const upgradeDefinition = definition.upgrades.find((upgradeEntry) => upgradeEntry.fromLevel === fromLevel && upgradeEntry.toLevel === fromLevel + 1)
-      if (!upgradeDefinition) errors.push(`${definition.id}: missing upgrade ${fromLevel} to ${fromLevel + 1}`)
-      if (upgradeDefinition?.unlock?.type === 'boss-kill' && monsters && !monsters[upgradeDefinition.unlock.bossId]) errors.push(`${definition.id}: unknown upgrade unlock boss ${upgradeDefinition.unlock.bossId}`)
-    }
-    const validateIngredients = (owner: string, ingredients: { itemId: ItemId; quantity: number }[]) => ingredients.forEach((ingredient) => {
-      if (!items[ingredient.itemId]) errors.push(`${owner}: unknown ingredient ${ingredient.itemId}`)
-      if (!Number.isInteger(ingredient.quantity) || ingredient.quantity <= 0) errors.push(`${owner}: ingredient quantity must be a positive integer`)
-    })
-    validateIngredients(`${definition.id}.forge`, definition.forge.ingredients)
-    definition.upgrades.forEach((upgradeDefinition) => validateIngredients(`${definition.id}.upgrade.${upgradeDefinition.fromLevel}`, upgradeDefinition.ingredients))
-    if (new Set(definition.branches.map((branch) => branch.id)).size !== definition.branches.length) errors.push(`${definition.id}: duplicate branch id`)
-    const nodeIds = new Set<string>()
-    definition.nodes.forEach((node) => {
-      if (nodeIds.has(node.id)) errors.push(`${definition.id}: duplicate node id ${node.id}`)
-      nodeIds.add(node.id)
-      errors.push(...validateCombatProvider(node.combat, definition.id + '.' + node.id + '.combat', combatValidationContext))
-      if (node.artifactId !== definition.id) errors.push(`${definition.id}/${node.id}: wrong artifactId`)
-      if (!Number.isInteger(node.pointCost) || node.pointCost <= 0) errors.push(`${definition.id}/${node.id}: pointCost must be a positive integer`)
-      if (!Number.isInteger(node.requiresLevel) || node.requiresLevel < 1 || node.requiresLevel > definition.maxLevel) errors.push(`${definition.id}/${node.id}: requiresLevel is outside Artifact levels`)
-      if (node.branch !== 'shared' && !definition.branches.some((branch) => branch.id === node.branch)) errors.push(`${definition.id}/${node.id}: unknown branch ${node.branch}`)
-      node.prerequisites?.forEach((prerequisite) => { if (prerequisite === node.id) errors.push(`${definition.id}/${node.id}: self prerequisite`); else if (!definition.nodes.some((candidate) => candidate.id === prerequisite)) errors.push(`${definition.id}/${node.id}: unknown prerequisite ${prerequisite}`) })
-      if (node.catalyst) {
-        if (!items[node.catalyst.itemId]) errors.push(`${definition.id}/${node.id}: unknown catalyst ${node.catalyst.itemId}`)
-        if (!Number.isInteger(node.catalyst.quantity) || node.catalyst.quantity <= 0) errors.push(`${definition.id}/${node.id}: catalyst quantity must be a positive integer`)
-      }
-      if (node.requiresBossKill && monsters && !monsters[node.requiresBossKill]) errors.push(`${definition.id}/${node.id}: unknown boss ${node.requiresBossKill}`)
-    })
-    const visiting = new Set<string>(); const visited = new Set<string>()
-    const visit = (nodeId: string) => { if (visiting.has(nodeId)) { errors.push(`${definition.id}: prerequisite cycle`); return }; if (visited.has(nodeId)) return; visiting.add(nodeId); definition.nodes.find((node) => node.id === nodeId)?.prerequisites?.forEach(visit); visiting.delete(nodeId); visited.add(nodeId) }
-    definition.nodes.forEach((node) => visit(node.id))
-  })
-  return errors
+    else { if (item.kind !== 'equipment') errors.push(`${definition.id}: Artifact item must be Equipment`); if (item.source !== 'Artificing') errors.push(`${definition.id}: Artifact item source must be Artificing`); if (item.stats !== undefined) errors.push(`${definition.id}: Artifact item must not define static stats`); if (item.combat !== undefined) errors.push(`${definition.id}: Artifact item must not define static combat effects`); if (item.sellValue !== null) errors.push(`${definition.id}: Artifact item must not be sellable`); if (item.canDestroy) errors.push(`${definition.id}: Artifact item must not be destroyable`) }
+    if (!definition.baseline) errors.push(`${definition.id}: missing Rank 0 baseline object`)
+    const expectedCount = ACT1_ARTIFACT_IDS.includes(definition.id) ? 6 : 5; const expectedMax = expectedCount * 10
+    if (definition.minorNodes.length !== expectedCount) errors.push(`${definition.id}: wrong Minor count`)
+    if (definition.majorMilestones.length !== expectedCount || definition.majorMilestones[definition.majorMilestones.length - 1]?.unlockAtTotalRanks !== expectedMax) errors.push(`${definition.id}: wrong Major thresholds`)
+    const nodeIds = new Set<string>(); definition.minorNodes.forEach((node) => { if (nodeIds.has(node.id)) errors.push(`${definition.id}: duplicate node id ${node.id}`); nodeIds.add(node.id); if (node.maxRank !== 10) errors.push(`${definition.id}/${node.id}: maxRank must be 10`); if (node.rankCosts.length !== 10) errors.push(`${definition.id}/${node.id}: rankCosts must contain 10 entries`); if (node.rankEffects.length !== 10) errors.push(`${definition.id}/${node.id}: rankEffects must contain 10 entries`); node.rankCosts.forEach((cost) => { if (cost.artifactEssence < 0 || cost.prismaticFragment !== undefined && cost.prismaticFragment < 0 || cost.fragment?.quantity !== undefined && cost.fragment.quantity < 0 || Object.values(cost.resonance).some((value) => (value ?? 0) < 0)) errors.push(`${definition.id}/${node.id}: negative rank cost`) }); node.rankEffects.forEach((resolved) => { errors.push(...validateCombatProvider(resolved.combat, `${definition.id}.${node.id}.combat`, context)) }) })
+    const majorIds = new Set<string>(); let previous = 0; definition.majorMilestones.forEach((major) => { if (majorIds.has(major.id)) errors.push(`${definition.id}: duplicate Major ID ${major.id}`); majorIds.add(major.id); if (major.unlockAtTotalRanks <= previous || major.unlockAtTotalRanks > expectedMax) errors.push(`${definition.id}: unordered Major thresholds`); previous = major.unlockAtTotalRanks })
+  }); return errors
 }

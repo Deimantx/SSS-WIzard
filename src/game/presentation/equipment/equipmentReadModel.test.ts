@@ -26,10 +26,10 @@ describe('Equipment read model', () => {
     const state = createInitialState()
     state.inventory['ember-staff'] = 1
     state.equipment.weapon = 'ember-staff'
-    state.artifactProgress['ember-staff'] = { level: 2, allocatedNodeIds: ['arcane-kindling'], attunedNodeIds: [] }
-    expect(getEquipmentStatSnapshot(state, state.equipment).fireSpellDamage).toBeCloseTo(0.05)
+    state.artifactProgress['ember-staff'] = { minorRanks: { 'flame-impact': 2 } }
+    expect(getEquipmentStatSnapshot(state, state.equipment).fireSpellDamage).toBeCloseTo(0.005)
     expect(getEquipmentLoadoutIdentity('ember-staff')).toEqual(['FIRE', 'DOT'])
-    expect(getEquipmentLoadoutIdentity('tideglass-wand')).toEqual(['WATER', 'BARRIER'])
+    expect(getEquipmentLoadoutIdentity('tideglass-wand')).toEqual(['WATER', 'HEALING'])
   })
 
   it('projects representative equipped Crystal stats through the shared Wizard sheet', () => {

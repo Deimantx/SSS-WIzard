@@ -211,13 +211,13 @@ describe("Crystal System V1", () => {
     expect(state.inventory["tier-1-crystal-cache"]).toBe(1);
   });
 
-  it("migrates a v46 save to an empty, valid v47 Crystal state without retroactive cache grants", () => {
+  it("migrates a v46 save to an empty, valid current Crystal state without retroactive cache grants", () => {
     const migrated = migrateSave({
       saveVersion: 46,
       progress: { bossKillsByBoss: { "meridian-splitter": 1 } },
       inventory: { "tier-1-crystal-cache": 0 },
     });
-    expect(migrated.saveVersion).toBe(47);
+    expect(migrated.saveVersion).toBe(48);
     expect(migrated.crystals.equippedSlots).toHaveLength(15);
     expect(migrated.crystals.unlockedSlots).toBe(5);
     expect(migrated.inventory["tier-1-crystal-cache"]).toBe(0);

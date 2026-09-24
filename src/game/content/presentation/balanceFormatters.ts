@@ -55,6 +55,7 @@ export const formatMagnitude = (magnitude: Magnitude): string => {
   switch (magnitude.type) {
     case 'flat': return formatNumber(magnitude.value)
     case 'source-max-health-percent': return `${formatPercent(magnitude.value)} of the caster's Max Health`
+    case 'source-max-mana-percent': return `${formatPercent(magnitude.value)} of the caster's Max Mana`
     case 'target-max-health-percent': return `${formatPercent(magnitude.value)} of the opponent's Max Health`
     case 'source-basic-damage-percent': return `${formatPercent(magnitude.value)} of Basic Attack damage`
     case 'source-current-barrier-percent': return `${formatPercent(magnitude.value)} of current Barrier`

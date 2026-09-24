@@ -1,7 +1,7 @@
 import { ITEMS } from '../../content/items/items'
 import { getEquipmentPreview, type EquipmentPreview } from '../equipment/equipmentReadModel'
 import { getEffectiveEquipmentItemStats } from '../../core/equipment/equipmentStats'
-import { getArtifactLevel, getArtifactDefinition, isArtifactItem } from '../../systems/artifacts/artifactProgression'
+import { getArtifactDefinition, getArtifactMaxInvestedRanks, getArtifactTotalInvestedRanks, isArtifactItem } from '../../systems/artifacts/artifactProgression'
 import type { EquipmentItemSlot, EquipmentPosition, EquipmentStats, GameState, ItemId } from '../../types'
 import type { ArtificingRecipeDefinition } from '../../content/recipes/artificingRecipes'
 
@@ -14,8 +14,8 @@ export interface ArtificingOutputInspection {
   owned: number
   equipment: ArtificingEquipmentInspection | null
   stats: EquipmentStats
-  artifactLevel: number | null
-  artifactMaxLevel: number | null
+  artifactRanks: number | null
+  artifactMaxRanks: number | null
 }
 
 const getForgeArtifactProgress = (state: Pick<GameState, 'inventory' | 'artifactProgress'>, itemId: ItemId, owned: number) => {
@@ -36,8 +36,8 @@ export function getArtificingOutputInspection(state: Pick<GameState, 'inventory'
     owned,
     equipment: item.kind === 'equipment' && item.equipmentSlot ? { slot: item.equipmentSlot } : null,
     stats: item.kind === 'equipment' ? getEffectiveEquipmentItemStats(effectiveState, recipe.output.itemId) : {},
-    artifactLevel: artifactId ? getArtifactLevel(effectiveState, artifactId) : null,
-    artifactMaxLevel: artifactId ? getArtifactDefinition(artifactId)?.maxLevel ?? null : null,
+    artifactRanks: artifactId ? getArtifactTotalInvestedRanks(effectiveState, artifactId) : null,
+    artifactMaxRanks: artifactId ? getArtifactMaxInvestedRanks(artifactId) : null,
   }
 }
 

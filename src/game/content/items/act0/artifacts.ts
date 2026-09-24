@@ -26,7 +26,7 @@ export const ACT0_ARTIFACTS: AuthoredItemRegistry = {
     icon: '◇',
     color: '#64b7ff',
     equipmentTier: 1.0,
-    buildTags: ['spell', 'water', 'barrier', 'status'],
+    buildTags: ['spell', 'water', 'healing', 'status'],
     equipmentBudgetProfile: 'signature',
     equipmentSlot: 'weapon',
     sellValue: null,

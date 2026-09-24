@@ -42,32 +42,32 @@ describe('equipment Item Tooltip presentation', () => {
   it('uses explicit Artifact tooltip overrides over global progression', () => {
     vi.useFakeTimers()
     const previous = useGameStore.getState().artifactProgress
-    useGameStore.setState({ artifactProgress: { 'ember-staff': { level: 10, allocatedNodeIds: [], attunedNodeIds: [] } } })
+    useGameStore.setState({ artifactProgress: { 'ember-staff': { minorRanks: {} } } })
     try {
-      render(<TooltipProvider><ItemTooltip itemId="ember-staff" owned={0} effectiveStats={{ spellPower: 16 }} artifactLevel={1} artifactMaxLevel={10}><button>Ember Staff preview</button></ItemTooltip></TooltipProvider>)
+      render(<TooltipProvider><ItemTooltip itemId="ember-staff" owned={0} effectiveStats={{ spellPower: 16 }} artifactRanks={1} artifactMaxRanks={50}><button>Ember Staff preview</button></ItemTooltip></TooltipProvider>)
       fireEvent.pointerEnter(screen.getByRole('button', { name: 'Ember Staff preview' }))
       act(() => { vi.advanceTimersByTime(500) })
       const tooltip = screen.getByRole('tooltip')
-      expect(tooltip.textContent).toContain('LEVEL 1 / 10')
+      expect(tooltip.textContent).toContain('RANKS 1 / 50')
       expect(tooltip.textContent).toContain('Spell Power+16')
       expect(tooltip.textContent).not.toContain('Basic Attack')
-      expect(tooltip.textContent).not.toContain('LEVEL 10 / 10')
+      expect(tooltip.textContent).not.toContain('RANKS 50 / 50')
     } finally {
       useGameStore.setState({ artifactProgress: previous })
     }
   })
 
-  it('shows effective Level 10 Ember Staff stats', () => {
+  it('shows current Ember Staff baseline stats', () => {
     vi.useFakeTimers()
     const previous = useGameStore.getState().artifactProgress
-    useGameStore.setState({ artifactProgress: { 'ember-staff': { level: 10, allocatedNodeIds: [], attunedNodeIds: [] } } })
+    useGameStore.setState({ artifactProgress: { 'ember-staff': { minorRanks: {} } } })
     try {
       render(<TooltipProvider><ItemTooltip itemId="ember-staff" owned={1}><button>Ember Staff max</button></ItemTooltip></TooltipProvider>)
       fireEvent.pointerEnter(screen.getByRole('button', { name: 'Ember Staff max' }))
       act(() => { vi.advanceTimersByTime(500) })
       const tooltip = screen.getByRole('tooltip')
-      expect(tooltip.textContent).toContain('LEVEL 10 / 10')
-      expect(tooltip.textContent).toContain('Spell Power+75')
+      expect(tooltip.textContent).toContain('RANKS 0 / 50')
+      expect(tooltip.textContent).toContain('Spell Power+15')
     } finally {
       useGameStore.setState({ artifactProgress: previous })
     }
@@ -82,8 +82,8 @@ describe('equipment Item Tooltip presentation', () => {
       fireEvent.pointerEnter(screen.getByRole('button', { name: 'Wispveil Hood' }))
       act(() => { vi.advanceTimersByTime(500) })
       const tooltip = screen.getByRole('tooltip')
-      expect(tooltip.textContent).toContain('LEVEL 1 / 10')
-      expect(tooltip.textContent).toContain('Max Health+10')
+      expect(tooltip.textContent).toContain('RANKS 0 / 50')
+      expect(tooltip.textContent).toContain('Spell Power+15')
     } finally {
       useGameStore.setState({ artifactProgress: previous })
     }

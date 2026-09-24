@@ -9,12 +9,12 @@ export function grantItem(state: GameState, itemId: ItemId, quantity: number) {
   const amount = Number.isFinite(quantity) ? Math.floor(quantity) : 0
   const current = Math.max(0, state.inventory[itemId] ?? 0)
   const artifact = isArtifactItem(itemId)
-  if (artifact && current > 0 && !state.artifactProgress[itemId]) state.artifactProgress[itemId] = { level: 1, allocatedNodeIds: [], attunedNodeIds: [] }
+  if (artifact && current > 0 && !state.artifactProgress[itemId]) state.artifactProgress[itemId] = { minorRanks: {} }
   if (amount <= 0) return 0
   const next = artifact ? Math.min(1, current + amount) : current + amount
   const granted = next - current
   state.inventory[itemId] = next
-  if (artifact && !state.artifactProgress[itemId]) state.artifactProgress[itemId] = { level: 1, allocatedNodeIds: [], attunedNodeIds: [] }
+  if (artifact && !state.artifactProgress[itemId]) state.artifactProgress[itemId] = { minorRanks: {} }
   if (granted > 0) discoverItem(state, itemId)
   return granted
 }

@@ -53,6 +53,7 @@ export const formatSpellMagnitude = (magnitude: Magnitude): string => {
   if (magnitude.type === 'spell-power') return `${formatValue(magnitude.coefficient * 100)}% Spell Power`
   if (magnitude.type === 'school-level') return `${formatValue(magnitude.base)} + ${formatValue(magnitude.perLevel)} per ${capitalize(magnitude.school)} School Level`
   if (magnitude.type === 'source-max-health-percent') return `${formatValue(magnitude.value * 100)}% of Max Health`
+  if (magnitude.type === 'source-max-mana-percent') return `${formatValue(magnitude.value * 100)}% of Max Mana`
   if (magnitude.type === 'target-max-health-percent') return `${formatValue(magnitude.value * 100)}% of target Max Health`
   if (magnitude.type === 'source-basic-damage-percent') return `${formatValue(magnitude.value * 100)}% of Basic Damage`
   if (magnitude.type === 'source-current-barrier-percent') return `${formatValue(magnitude.value * 100)}% of current Barrier`

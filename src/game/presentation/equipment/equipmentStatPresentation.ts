@@ -40,7 +40,6 @@ const STAT_LABELS: Record<string, string> = {
   focusEfficiency: 'Focus Efficiency',
   fireSpellDamage: 'Fire Spell Damage',
   airSpellDamage: 'Air Spell Damage',
-  waterBarrierPower: 'Water Barrier Power',
   barrierReceivedFlat: 'Barrier Received',
   negativeStatusDurationReceived: 'Received Negative Status Duration',
 }
@@ -73,7 +72,6 @@ const STAT_DESCRIPTIONS: Record<string, string> = {
   focusEfficiency: 'Reduces Focus reserved by supported systems such as Auto-Cast.',
   fireSpellDamage: 'Additional damage for Fire Spells only.',
   airSpellDamage: 'Additional damage for Air Spells only.',
-  waterBarrierPower: 'Additional Barrier power for Water Spells that generate Barrier.',
   barrierReceivedFlat: 'Adds flat Barrier capacity whenever you gain Barrier.',
   negativeStatusDurationReceived: 'Changes the duration of debuffs applied to you. Positive buffs are unaffected.',
 }
@@ -82,7 +80,7 @@ const PERCENT_KEYS = new Set([
   'critChance', 'critDamage', 'critDamageMultiplier', 'cooldownRecoveryPct', 'healingDonePct', 'healingDoneBonus',
   'barrierPowerPct', 'barrierPowerBonus', 'damageOverTimePct', 'damageOverTimeBonus', 'statusDurationPct', 'statusDurationBonus',
   'manaCostReductionPct', 'manaCostReduction', 'focusEfficiencyPct', 'focusEfficiency', 'fireSpellDamage', 'airSpellDamage',
-  'waterBarrierPower', 'negativeStatusDurationReceived',
+  'negativeStatusDurationReceived',
 ])
 
 export function getEquipmentStatLabel(key: string): string {

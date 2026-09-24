@@ -1,134 +1,21 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it } from 'vitest'
-import { ArtifactPathModal } from './ArtifactPathModal'
+import { describe, expect, it } from 'vitest'
 import { ARTIFACTS } from '../../game/content/artifacts/artifacts'
-import { getArtifactNodePresentation } from '../../game/presentation/artifacts/artifactPresentation'
-import { setArtifactDevPanelVisible } from '../../devtools/developerToolsStore'
-import { useGameStore } from '../../store/gameStore'
+import { getArtifactRankGraph } from '../../game/presentation/artifacts/artifactPathReadModel'
+import { createInitialState } from '../../store/initialState'
+import { getArtifactNextMajorMilestone, getArtifactTotalInvestedRanks } from '../../game/systems/artifacts/artifactProgression'
 
-describe('Artifact Path presentation', () => {
-  beforeEach(() => {
-    setArtifactDevPanelVisible(false)
-    useGameStore.getState().resetSave()
-    useGameStore.getState().addItem('ember-staff', 1)
-    useGameStore.getState().debugSetArtifactLevel('ember-staff', 1)
+describe('Artifact rank path read model', () => {
+  it('renders Minor circles and Major milestone squares from authored content', () => {
+    const graph = getArtifactRankGraph(ARTIFACTS['ember-staff'])
+    expect(graph.minorNodes).toHaveLength(5)
+    expect(graph.majorNodes).toHaveLength(5)
+    expect(graph.connections.length).toBeGreaterThan(0)
   })
 
-  it('renders the artifact summary, graph, connectors, and selected-node inspector', () => {
-    const view = render(<ArtifactPathModal artifactId="ember-staff" onClose={() => undefined} />)
-    expect(screen.getByRole('dialog', { name: 'Ember Staff Artifact Path' })).toBeTruthy()
-    expect(screen.getByText('PATH POINTS')).toBeTruthy()
-    expect(screen.getByText('PATH MAP')).toBeTruthy()
-    expect(document.querySelectorAll('.artifact-tree-connector').length).toBeGreaterThan(0)
-    expect(screen.getByText('SELECT A NODE')).toBeTruthy()
-
-    fireEvent.click(screen.getByRole('button', { name: /Arcane Kindling/ }))
-    expect(screen.getByRole('heading', { name: 'Arcane Kindling' })).toBeTruthy()
-    expect(screen.getByText('REQUIREMENTS')).toBeTruthy()
-  })
-
-  it('shows canonical node effects and keeps card metadata focused', () => {
-    render(<ArtifactPathModal artifactId="ember-staff" onClose={() => undefined} />)
-
-    const arcaneKindling = ARTIFACTS['ember-staff'].nodes.find((node) => node.id === 'arcane-kindling')!
-    const arcaneCard = screen.getByRole('button', { name: /Arcane Kindling/ })
-    expect(arcaneCard.querySelector('.artifact-node-effect')?.textContent).toBe(getArtifactNodePresentation(arcaneKindling).summary)
-    expect(arcaneCard.textContent).not.toContain('MINOR')
-    expect(arcaneCard.textContent).not.toContain('1 PT')
-    expect(arcaneCard.querySelector('.artifact-node-cost')).toBeNull()
-
-    const capstoneCard = screen.getByRole('button', { name: /Edrin's Inferno/ })
-    expect(capstoneCard.querySelector('.artifact-node-cost')?.textContent).toBe('2 PT')
-  })
-
-  it('shows one generic state and preserves a meaningful blocker reason', () => {
-    useGameStore.getState().debugSetArtifactLevel('ember-staff', 4)
-    useGameStore.getState().debugForceArtifactNode('ember-staff', 'arcane-kindling')
-    useGameStore.getState().debugForceArtifactNode('ember-staff', 'cinder-memory')
-    useGameStore.getState().debugForceArtifactNode('ember-staff', 'lingering-flame')
-    render(<ArtifactPathModal artifactId="ember-staff" onClose={() => undefined} />)
-
-    const allocatedCard = screen.getByRole('button', { name: /Arcane Kindling/ })
-    expect(allocatedCard.textContent?.match(/ALLOCATED/g)).toHaveLength(1)
-
-    const blockedCard = screen.getByRole('button', { name: /Heartfed Embers/ })
-    const heartfedEmbers = ARTIFACTS['ember-staff'].nodes.find((node) => node.id === 'heartfed-embers')!
-    expect(blockedCard.querySelector('.artifact-node-effect')?.textContent).toBe(getArtifactNodePresentation(heartfedEmbers).summary)
-    expect(blockedCard.querySelector('.artifact-node-reason')?.textContent).toBe('Forest Heart REQUIRED')
-  })
-
-  it('pans the fixed tree without rearranging nodes', () => {
-    const view = render(<ArtifactPathModal artifactId="ember-staff" onClose={() => undefined} />)
-    const viewport = document.querySelector('.artifact-tree-viewport') as HTMLElement
-    fireEvent.pointerDown(viewport, { button: 0, pointerId: 1, clientX: 30, clientY: 40 })
-    fireEvent.pointerMove(viewport, { pointerId: 1, clientX: 90, clientY: 75 })
-    fireEvent.pointerUp(viewport, { pointerId: 1, clientX: 90, clientY: 75 })
-    expect(viewport.querySelector('.artifact-tree-board')?.getAttribute('data-pan-x')).toBe('60')
-    expect(viewport.querySelectorAll('.artifact-tree-node').length).toBeGreaterThan(0)
-  })
-
-  it('keeps the mini dev panel hidden until the main DevTools toggle is enabled', async () => {
-    const view = render(<ArtifactPathModal artifactId="ember-staff" onClose={() => undefined} />)
-    expect(document.querySelector('.artifact-path-dev-mini')).toBeNull()
-    act(() => setArtifactDevPanelVisible(true))
-    await waitFor(() => expect(document.querySelector('.artifact-path-dev-mini')).toBeTruthy())
-  })
-
-  it('opens a specific artifact path by ID', () => {
-    const view = render(<ArtifactPathModal artifactId="tideglass-wand" onClose={() => undefined} />)
-    expect(screen.getByRole('dialog', { name: 'Tideglass Wand Artifact Path' })).toBeTruthy()
-    expect(document.querySelector('.artifact-tree-connector')).toBeTruthy()
-  })
-
-  it('shows the real next-level cost, stat preview, and no fake XP progress', () => {
-    render(<ArtifactPathModal artifactId="ember-staff" onClose={() => undefined} />)
-    expect((screen.getByRole('button', { name: 'MISSING MATERIALS' }) as HTMLButtonElement).disabled).toBe(true)
-    expect(document.querySelector('.artifact-level-up-cost strong')?.textContent).toBe('50')
-    expect(document.querySelector('.artifact-level-up-cost small')?.textContent).toBe('OWNED 0')
-    expect(screen.getByText('Basic Attack Damage')).toBeTruthy()
-    const statPreviews = Array.from(document.querySelectorAll('.artifact-level-up-stat strong')).map((element) => element.textContent ?? '')
-    expect(statPreviews.some((value) => value.includes('+5') && value.includes('+6'))).toBe(true)
-    expect(statPreviews.some((value) => value.includes('+16') && value.includes('+20'))).toBe(true)
-    expect(screen.queryByText(/ARTIFACT XP|XP PROGRESS/i)).toBeNull()
-  })
-
-  it('renders multi-material upgrades as compact horizontal cost cards', () => {
-    useGameStore.getState().debugSetArtifactLevel('ember-staff', 2)
-    render(<ArtifactPathModal artifactId="ember-staff" onClose={() => undefined} />)
-    const costs = document.querySelector('.artifact-level-up-costs')
-    expect(costs).toBeTruthy()
-    expect(costs?.classList.contains('artifact-level-up-costs')).toBe(true)
-    expect(costs?.querySelectorAll('.artifact-level-up-cost')).toHaveLength(2)
-    expect(screen.queryByText('Fire Fragment')).toBeNull()
-    expect(screen.getByLabelText(/Fire Fragment: owned 0, required 100/)).toBeTruthy()
-  })
-
-  it('uses the real player Artifact upgrade action immediately when materials are ready', () => {
-    useGameStore.getState().addItem('fire-fragment', 50)
-    useGameStore.getState().addItem('artifact-essence', 10)
-    render(<ArtifactPathModal artifactId="ember-staff" onClose={() => undefined} />)
-    const button = screen.getByRole('button', { name: 'LEVEL UP' })
-    expect((button as HTMLButtonElement).disabled).toBe(false)
-    fireEvent.click(button)
-    expect(useGameStore.getState().artifactProgress['ember-staff']?.level).toBe(2)
-    expect(useGameStore.getState().inventory['fire-fragment']).toBe(0)
-    expect(useGameStore.getState().inventory['artifact-essence']).toBe(0)
-    expect(useGameStore.getState().activities.artificing.activeJob).toBeNull()
-    expect(screen.queryByText('UPGRADING...')).toBeNull()
-    expect(screen.queryByRole('progressbar', { name: 'Artifact upgrade progress' })).toBeNull()
-    expect(screen.getByRole('button', { name: 'MISSING MATERIALS' })).toBeTruthy()
-  })
-
-  it('explains the current cap and absolute maximum states', () => {
-    useGameStore.getState().debugSetArtifactLevel('ember-staff', 4)
-    const capped = render(<ArtifactPathModal artifactId="ember-staff" onClose={() => undefined} />)
-    expect((screen.getByRole('button', { name: 'LEVEL CAP REACHED' }) as HTMLButtonElement).disabled).toBe(true)
-    expect(screen.getByText(/Current cap: 4\. Defeat Forest Heart/)).toBeTruthy()
-    capped.unmount()
-
-    useGameStore.getState().debugSetArtifactLevel('ember-staff', 10)
-    render(<ArtifactPathModal artifactId="ember-staff" onClose={() => undefined} />)
-    expect((screen.getByRole('button', { name: 'MAX LEVEL' }) as HTMLButtonElement).disabled).toBe(true)
-    expect(screen.getByText('MAXIMUM LEVEL')).toBeTruthy()
+  it('reports next milestone from total invested ranks', () => {
+    const state = createInitialState()
+    state.artifactProgress['ember-staff'] = { minorRanks: { 'arcane-embers': 10 } }
+    expect(getArtifactTotalInvestedRanks(state, 'ember-staff')).toBe(10)
+    expect(getArtifactNextMajorMilestone(state, 'ember-staff')?.unlockAtTotalRanks).toBe(20)
   })
 })

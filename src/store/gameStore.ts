@@ -179,12 +179,18 @@ import { forceCompleteResearchCycle } from "../game/systems/research/researchEng
 import {
   cancelArtificingCraft,
   craftArtificingRecipe as craftArtificing,
-  upgradeArtifactInstant,
 } from "../game/systems/artificing/artificingEngine";
 import {
-  allocateArtifactNode,
-  getArtifactLevelCap,
-  respecArtifact,
+  debugAdjustArtifactMinorRank,
+  debugGrantAllArtifacts,
+  debugMaxOwnedArtifacts,
+  debugMaxArtifact,
+  debugMaxArtifactMinorNode,
+  debugResetAllArtifactRanks,
+  debugResetArtifact,
+  debugResetArtifactMinorNode,
+  debugSetArtifactMinorRank,
+  purchaseArtifactMinorRank,
 } from "../game/systems/artifacts/artifactProgression";
 import {
   advanceWithOfflineBank as runOfflineBankAdvance,
@@ -528,11 +534,8 @@ export interface GameActions {
   setDebugFreezeEnemyActions: (enabled: boolean) => void;
   setDebugCombatPaused: (enabled: boolean) => void;
   setDebugCombatTimeScale: (scale: number) => void;
-  setDebugArtifactIgnoreDungeonGate: (enabled: boolean) => void;
-  setDebugArtifactIgnoreLevelCap: (enabled: boolean) => void;
-  setDebugArtifactIgnoreNodePrerequisites: (enabled: boolean) => void;
-  setDebugArtifactAllowBeyondLimit: (enabled: boolean) => void;
-  setDebugArtifactFreeUpgrade: (enabled: boolean) => void;
+  setDebugArtifactFreeRankPurchase: (enabled: boolean) => void;
+  setDebugArtifactIgnoreOwnership: (enabled: boolean) => void;
   clearCombatDebugOverrides: () => void;
   resetDebugOverrides: () => void;
   prepareResearch: (
@@ -570,12 +573,10 @@ export interface GameActions {
   craftArtificingRecipe: (
     recipeId: import("../game/types").ArtificingRecipeId,
   ) => boolean;
-  upgradeArtifact: (artifactId: import("../game/types").ArtifactId) => boolean;
-  allocateArtifactNode: (
+  purchaseArtifactRank: (
     artifactId: import("../game/types").ArtifactId,
     nodeId: string,
   ) => boolean;
-  respecArtifact: (artifactId: import("../game/types").ArtifactId) => boolean;
   grantArcanePoints: (amount: number) => void;
   setArcanePoints: (amount: number) => void;
   debugGrantResonance: (type: ResonanceType, amount: number) => void;
@@ -609,25 +610,15 @@ export interface GameActions {
   loadArcaneCorePreset: (presetId: string) => boolean;
   setDebugArcaneCoreFreeCosts: (enabled: boolean) => void;
   setDebugArcaneCoreIgnorePrerequisites: (enabled: boolean) => void;
-  debugSetArtifactLevel: (artifactId: ArtifactId, level: number) => void;
-  debugDecreaseArtifactLevel: (artifactId: ArtifactId) => void;
-  debugIncreaseArtifactLevel: (artifactId: ArtifactId) => void;
-  debugGrantArtifactPoints: (artifactId: ArtifactId, amount: number) => void;
-  debugRefillArtifactPoints: (artifactId: ArtifactId) => void;
-  debugForceArtifactNode: (artifactId: ArtifactId, nodeId: string) => boolean;
-  debugAllocateArtifactNode: (
-    artifactId: ArtifactId,
-    nodeId: string,
-  ) => boolean;
-  debugLockArtifactNode: (artifactId: ArtifactId, nodeId: string) => boolean;
-  debugUnlockArtifactNodes: (
-    artifactId: ArtifactId,
-    mode?: "non-capstone" | "all" | "capstones",
-  ) => void;
-  debugResetArtifactPath: (artifactId: ArtifactId) => void;
-  debugMaxArtifactLevels: (absolute: boolean) => void;
-  debugUnlockAllArtifactPaths: () => void;
-  debugResetAllArtifactPaths: () => void;
+  debugSetArtifactMinorRank: (artifactId: ArtifactId, nodeId: string, rank: number) => void;
+  debugAdjustArtifactMinorRank: (artifactId: ArtifactId, nodeId: string, delta: number) => void;
+  debugMaxArtifactMinorNode: (artifactId: ArtifactId, nodeId: string) => void;
+  debugResetArtifactMinorNode: (artifactId: ArtifactId, nodeId: string) => void;
+  debugMaxArtifact: (artifactId: ArtifactId) => void;
+  debugResetArtifact: (artifactId: ArtifactId) => void;
+  debugMaxOwnedArtifacts: () => void;
+  debugGrantAllArtifacts: () => void;
+  debugResetAllArtifactRanks: () => void;
   debugGrantArtifactMaterials: () => void;
   cancelArtificingCraft: () => void;
   setDebugTransmutationEchoCapacity: (amount: number | null) => void;
@@ -804,75 +795,13 @@ export const recordRecentAcquisition = (
 const ensureDebugArtifact = (state: GameState, artifactId: ArtifactId) => {
   if (!ARTIFACTS[artifactId]) return null;
   if ((state.inventory[artifactId] ?? 0) < 1) grantItem(state, artifactId, 1);
-  return (state.artifactProgress[artifactId] ??= {
-    level: 1,
-    allocatedNodeIds: [],
-    attunedNodeIds: [],
-  });
+  return (state.artifactProgress[artifactId] ??= { minorRanks: {} });
 };
-
-const forceArtifactNodeInState = (
-  state: GameState,
-  artifactId: ArtifactId,
-  nodeId: string,
-) => {
-  const progress = ensureDebugArtifact(state, artifactId);
-  const node = ARTIFACTS[artifactId]?.nodes.find(
-    (candidate) => candidate.id === nodeId,
-  );
-  if (!progress || !node) return false;
-  if (!progress.allocatedNodeIds.includes(nodeId))
-    progress.allocatedNodeIds.push(nodeId);
-  if (node.catalyst && !progress.attunedNodeIds.includes(nodeId))
-    progress.attunedNodeIds.push(nodeId);
-  return true;
-};
-
-const setDebugArtifactLevelInState = (
-  state: GameState,
-  artifactId: ArtifactId,
-  level: number,
-) => {
-  const progress = ensureDebugArtifact(state, artifactId);
-  const definition = ARTIFACTS[artifactId];
-  if (!progress || !definition) return;
-  progress.level = clamp(
-    Math.floor(sanitizeDebugNumber(level)),
-    1,
-    definition.maxLevel,
-  );
-};
-
-const unlockDebugArtifactNodesInState = (
-  state: GameState,
-  artifactId: ArtifactId,
-  mode: "non-capstone" | "all" | "capstones" = "all",
-) => {
-  const nodes =
-    ARTIFACTS[artifactId]?.nodes.filter(
-      (node) =>
-        mode === "all" ||
-        (mode === "capstones"
-          ? node.type === "capstone"
-          : node.type !== "capstone"),
-    ) ?? [];
-  nodes.forEach((node) => forceArtifactNodeInState(state, artifactId, node.id));
-};
-
 const grantDebugArtifactMaterialsInState = (state: GameState) => {
-  Object.values(ARTIFACTS).forEach((definition) => {
-    if (!definition) return;
-    const ingredients = [
-      ...definition.forge.ingredients,
-      ...definition.upgrades.flatMap((upgrade) => upgrade.ingredients),
-      ...definition.nodes.flatMap((node) =>
-        node.catalyst ? [node.catalyst] : [],
-      ),
-    ];
-    ingredients.forEach(({ itemId, quantity }) =>
-      grantItem(state, itemId, quantity),
-    );
-  });
+  grantItem(state, 'artifact-essence', 100000);
+  grantItem(state, 'prismatic-fragment', 100000);
+  Object.values(ARTIFACTS).forEach((definition) => definition?.forge.ingredients.forEach(({ itemId, quantity }) => grantItem(state, itemId, quantity * 10)));
+  Object.keys(state.resonance).forEach((type) => { state.resonance[type as ResonanceType] = Number.MAX_SAFE_INTEGER; });
 };
 
 const spellUnlocked = isSpellUnlocked;
@@ -1188,29 +1117,14 @@ export const useGameStore = create<GameStore>()(
         state.debug.combatTimeScale = sanitizeCombatTimeScale(scale);
         return state;
       }),
-    setDebugArtifactIgnoreDungeonGate: (enabled) =>
+    setDebugArtifactFreeRankPurchase: (enabled) =>
       set((state) => {
-        state.debug.artifactIgnoreDungeonGate = enabled;
+        state.debug.artifactFreeRankPurchase = enabled;
         return state;
       }),
-    setDebugArtifactIgnoreLevelCap: (enabled) =>
+    setDebugArtifactIgnoreOwnership: (enabled) =>
       set((state) => {
-        state.debug.artifactIgnoreLevelCap = enabled;
-        return state;
-      }),
-    setDebugArtifactIgnoreNodePrerequisites: (enabled) =>
-      set((state) => {
-        state.debug.artifactIgnoreNodePrerequisites = enabled;
-        return state;
-      }),
-    setDebugArtifactAllowBeyondLimit: (enabled) =>
-      set((state) => {
-        state.debug.artifactAllowBeyondLimit = enabled;
-        return state;
-      }),
-    setDebugArtifactFreeUpgrade: (enabled) =>
-      set((state) => {
-        state.debug.artifactFreeUpgrade = enabled;
+        state.debug.artifactIgnoreOwnership = enabled;
         return state;
       }),
     setDebugArcaneCoreFreeCosts: (enabled) =>
@@ -1374,17 +1288,15 @@ export const useGameStore = create<GameStore>()(
       });
       return ok;
     },
-    upgradeArtifact: (artifactId) => {
+    purchaseArtifactRank: (artifactId, nodeId) => {
       let ok = false;
       set((state) => {
-        const result = upgradeArtifactInstant(state, artifactId, {
-          free: state.debug.artifactFreeUpgrade,
-        });
+        const result = purchaseArtifactMinorRank(state, artifactId, nodeId);
         ok = result.ok;
         if (result.ok) recalculateDerivedStats(state);
         else
           pushNotification(state, result.reason, "warning", {
-            key: "artifact-upgrade-failed",
+            key: "artifact-rank-purchase-failed",
             cooldownMs: 1200,
           });
         return state;
@@ -1396,30 +1308,6 @@ export const useGameStore = create<GameStore>()(
           "var(--ui-success)",
           1.05,
         );
-      return ok;
-    },
-    allocateArtifactNode: (artifactId, nodeId) => {
-      let ok = false;
-      set((state) => {
-        ok = allocateArtifactNode(state, artifactId, nodeId);
-        if (!ok)
-          pushNotification(
-            state,
-            "Artifact Node requirements are not satisfied.",
-            "warning",
-          );
-        recalculateDerivedStats(state);
-        return state;
-      });
-      return ok;
-    },
-    respecArtifact: (artifactId) => {
-      let ok = false;
-      set((state) => {
-        ok = respecArtifact(state, artifactId);
-        recalculateDerivedStats(state);
-        return state;
-      });
       return ok;
     },
     grantArcanePoints: (amount) =>
@@ -1661,144 +1549,63 @@ export const useGameStore = create<GameStore>()(
       });
       return ok;
     },
-    debugSetArtifactLevel: (artifactId, level) =>
+    debugSetArtifactMinorRank: (artifactId, nodeId, rank) =>
       set((state) => {
-        setDebugArtifactLevelInState(state, artifactId, level);
+        ensureDebugArtifact(state, artifactId);
+        debugSetArtifactMinorRank(state, artifactId, nodeId, rank);
         recalculateDerivedStats(state);
         return state;
       }),
-    debugDecreaseArtifactLevel: (artifactId) =>
+    debugAdjustArtifactMinorRank: (artifactId, nodeId, delta) =>
       set((state) => {
-        const progress = ensureDebugArtifact(state, artifactId);
-        if (progress)
-          setDebugArtifactLevelInState(state, artifactId, progress.level - 1);
+        ensureDebugArtifact(state, artifactId);
+        debugAdjustArtifactMinorRank(state, artifactId, nodeId, delta);
         recalculateDerivedStats(state);
         return state;
       }),
-    debugIncreaseArtifactLevel: (artifactId) =>
+    debugMaxArtifactMinorNode: (artifactId, nodeId) =>
       set((state) => {
-        const progress = ensureDebugArtifact(state, artifactId);
-        if (progress)
-          setDebugArtifactLevelInState(state, artifactId, progress.level + 1);
+        ensureDebugArtifact(state, artifactId);
+        debugMaxArtifactMinorNode(state, artifactId, nodeId);
         recalculateDerivedStats(state);
         return state;
       }),
-    debugGrantArtifactPoints: (artifactId, amount) =>
+    debugResetArtifactMinorNode: (artifactId, nodeId) =>
       set((state) => {
-        if (!ensureDebugArtifact(state, artifactId)) return state;
-        state.debug.artifactBonusPointsByArtifact[artifactId] = Math.max(
-          0,
-          Math.floor(
-            sanitizeDebugNumber(
-              state.debug.artifactBonusPointsByArtifact[artifactId] ?? 0,
-            ) + sanitizeDebugNumber(amount),
-          ),
-        );
-        return state;
-      }),
-    debugRefillArtifactPoints: (artifactId) =>
-      set((state) => {
-        if (!ensureDebugArtifact(state, artifactId)) return state;
-        state.debug.artifactBonusPointsByArtifact[artifactId] = 999;
-        return state;
-      }),
-    debugForceArtifactNode: (artifactId, nodeId) => {
-      let ok = false;
-      set((state) => {
-        ok = forceArtifactNodeInState(state, artifactId, nodeId);
-        recalculateDerivedStats(state);
-        return state;
-      });
-      return ok;
-    },
-    debugAllocateArtifactNode: (artifactId, nodeId) => {
-      let ok = false;
-      set((state) => {
-        ok = allocateArtifactNode(state, artifactId, nodeId);
-        recalculateDerivedStats(state);
-        return state;
-      });
-      return ok;
-    },
-    debugLockArtifactNode: (artifactId, nodeId) => {
-      let ok = false;
-      set((state) => {
-        const progress = state.artifactProgress[artifactId];
-        const definition = ARTIFACTS[artifactId];
-        if (
-          !progress ||
-          !definition ||
-          definition.nodes.some(
-            (node) =>
-              progress.allocatedNodeIds.includes(node.id) &&
-              (node.prerequisites ?? []).includes(nodeId),
-          )
-        )
-          return state;
-        const index = progress.allocatedNodeIds.indexOf(nodeId);
-        if (index < 0) return state;
-        progress.allocatedNodeIds.splice(index, 1);
-        progress.attunedNodeIds = progress.attunedNodeIds.filter(
-          (id) => id !== nodeId,
-        );
-        ok = true;
-        recalculateDerivedStats(state);
-        return state;
-      });
-      return ok;
-    },
-    debugUnlockArtifactNodes: (artifactId, mode = "all") =>
-      set((state) => {
-        unlockDebugArtifactNodesInState(state, artifactId, mode);
+        ensureDebugArtifact(state, artifactId);
+        debugResetArtifactMinorNode(state, artifactId, nodeId);
         recalculateDerivedStats(state);
         return state;
       }),
-    debugResetArtifactPath: (artifactId) =>
+    debugMaxArtifact: (artifactId) =>
       set((state) => {
-        respecArtifact(state, artifactId);
-        delete state.debug.artifactBonusPointsByArtifact[artifactId];
+        ensureDebugArtifact(state, artifactId);
+        debugMaxArtifact(state, artifactId);
         recalculateDerivedStats(state);
         return state;
       }),
-    debugMaxArtifactLevels: (absolute) =>
+    debugResetArtifact: (artifactId) =>
       set((state) => {
-        Object.entries(ARTIFACTS).forEach(([artifactId, definition]) => {
-          if (
-            !definition ||
-            (state.inventory[artifactId as ArtifactId] ?? 0) < 1
-          )
-            return;
-          setDebugArtifactLevelInState(
-            state,
-            artifactId as ArtifactId,
-            absolute
-              ? definition.maxLevel
-              : getArtifactLevelCap(state, artifactId as ArtifactId),
-          );
-        });
+        ensureDebugArtifact(state, artifactId);
+        debugResetArtifact(state, artifactId);
         recalculateDerivedStats(state);
         return state;
       }),
-    debugUnlockAllArtifactPaths: () =>
+    debugMaxOwnedArtifacts: () =>
       set((state) => {
-        Object.entries(ARTIFACTS).forEach(([artifactId, definition]) => {
-          if (!definition) return;
-          const id = artifactId as ArtifactId;
-          ensureDebugArtifact(state, id);
-          setDebugArtifactLevelInState(state, id, definition.maxLevel);
-          unlockDebugArtifactNodesInState(state, id, "all");
-        });
+        debugMaxOwnedArtifacts(state);
         recalculateDerivedStats(state);
         return state;
       }),
-    debugResetAllArtifactPaths: () =>
+    debugGrantAllArtifacts: () =>
       set((state) => {
-        Object.keys(ARTIFACTS).forEach((artifactId) => {
-          respecArtifact(state, artifactId as ArtifactId);
-          delete state.debug.artifactBonusPointsByArtifact[
-            artifactId as ArtifactId
-          ];
-        });
+        debugGrantAllArtifacts(state);
+        recalculateDerivedStats(state);
+        return state;
+      }),
+    debugResetAllArtifactRanks: () =>
+      set((state) => {
+        debugResetAllArtifactRanks(state);
         recalculateDerivedStats(state);
         return state;
       }),

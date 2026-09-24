@@ -1,6 +1,6 @@
 import { ITEMS } from '../../content/items/items'
 import type { CombatModifier, CombatTag, DamageType, EquipmentStats, GameState, ModifierKey } from '../../types'
-import { getArtifactEffectiveStats, getAllocatedArtifactCombatProviders, isArtifactItem } from '../../systems/artifacts/artifactProgression'
+import { getArtifactEffectiveStats, getActiveArtifactCombatProviders, isArtifactItem } from '../../systems/artifacts/artifactProgression'
 import { getArcaneCoreStaticStats } from '../../systems/arcaneCore/arcaneCoreProgression'
 import { addEquipmentStats } from './equipmentStatAggregation'
 import { getEquippedCrystalStats } from '../../systems/crystals/crystalStats'
@@ -38,7 +38,7 @@ export const getEquipmentCombatModifierTotal = (state: EquipmentStatsState, key:
   const sourceTags = context.sourceTags ?? []
   const originTags = context.originTags ?? []
   return Object.values(state.equipment).reduce((total, itemId) => {
-    const artifactProviders = itemId && isArtifactItem(itemId) ? getAllocatedArtifactCombatProviders(state, itemId) : []
+    const artifactProviders = itemId && isArtifactItem(itemId) ? getActiveArtifactCombatProviders(state, itemId) : []
     const modifiers = itemId ? [...(ITEMS[itemId]?.combat?.modifiers ?? []), ...artifactProviders.flatMap(provider => provider.modifiers)] : []
     return total + modifiers.reduce((itemTotal, modifier) => {
       if (modifier.key !== key || modifier.condition) return itemTotal

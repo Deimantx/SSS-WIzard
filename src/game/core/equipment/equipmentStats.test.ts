@@ -10,7 +10,7 @@ describe('effective Equipment stats', () => {
 
     expect(getEffectiveEquipmentItemStats(state, 'ember-staff')).toEqual({ basicDamage: 5, spellPower: 16 })
 
-    state.artifactProgress['ember-staff'] = { level: 10, allocatedNodeIds: [], attunedNodeIds: [] }
+    state.artifactProgress['ember-staff'] = { minorRanks: {} }
     expect(getEffectiveEquipmentItemStats(state, 'ember-staff')).toEqual({ basicDamage: 17, spellPower: 75 })
     expect(getEquipmentStats(state)).toMatchObject({ basicDamage: 17, spellPower: 75 })
   })
@@ -18,7 +18,7 @@ describe('effective Equipment stats', () => {
   it('includes current Artifact level in weapon Basic Damage', () => {
     const state = createInitialState()
     state.equipment.weapon = 'stoneheart-scepter'
-    state.artifactProgress['stoneheart-scepter'] = { level: 10, allocatedNodeIds: [], attunedNodeIds: [] }
+    state.artifactProgress['stoneheart-scepter'] = { minorRanks: {} }
 
     expect(playerBasicDamage(state)).toBe(19 + 5)
   })

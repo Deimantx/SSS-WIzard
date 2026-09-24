@@ -9,7 +9,7 @@ import { conditionContainsCrossedHpThreshold, conditionHasHpThreshold, evaluateC
 import { createCombatResolutionContext, type CombatConditionContext, type CombatEffect, type CombatEventSink, type CombatResolutionContext, type CombatSource, type CombatTag, type CombatTrigger, type CombatTriggerRule } from './combatTypes'
 import { isEnemySourceOwnerActive } from './combatProvenance'
 import { nextCombatRandom } from './combatRng'
-import { getAllocatedArtifactCombatProviders, isArtifactItem } from '../artifacts/artifactProgression'
+import { getActiveArtifactCombatProviders, isArtifactItem } from '../artifacts/artifactProgression'
 import { getArcaneCoreCombatRules } from '../arcaneCore/arcaneCoreProgression'
 import { processArcaneCoreV6CombatEvent } from '../arcaneCore/arcaneCoreV6Runtime'
 
@@ -59,9 +59,9 @@ export const collectOwnedRules = (state: GameState, actor: CombatActor, transien
       owned.push({ rule, ownerKind: 'equipment', ownerId: item.id, ownerName: item.name, actor, sourceTags: ['equipment'], providerInstanceKey: `equipment:${position}:${item.id}`, equipmentPosition: position, stableOrder })
       stableOrder += 1
     })
-    if (itemId && isArtifactItem(itemId)) getAllocatedArtifactCombatProviders(state, itemId).forEach((provider) => provider.rules.forEach((rule) => {
-      const providerInstanceKey = `artifact-node:${position}:${itemId}:${provider.node.id}`
-      owned.push({ rule, ownerKind: 'equipment', ownerId: providerInstanceKey, ownerName: provider.node.name, actor, sourceTags: ['equipment'], providerInstanceKey, stableOrder })
+    if (itemId && isArtifactItem(itemId)) getActiveArtifactCombatProviders(state, itemId).forEach((provider) => provider.rules.forEach((rule) => {
+      const providerInstanceKey = `artifact-node:${position}:${itemId}:${provider.name}`
+      owned.push({ rule, ownerKind: 'equipment', ownerId: providerInstanceKey, ownerName: provider.name, actor, sourceTags: ['equipment'], providerInstanceKey, stableOrder })
       stableOrder += 1
     }))
   })

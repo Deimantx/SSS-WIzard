@@ -111,10 +111,10 @@ export const checkChannelingDiscoveries = (state: GameState): ChannelingDiscover
   return newlyCompleted
 }
 
-export const advanceChanneling = (state: GameState, deltaMs: number) => {
+export const advanceChanneling = (state: GameState, deltaMs: number, manaRateOverride?: number) => {
   const delta = Math.max(0, deltaMs)
   const before = state.player.mana
-  const generated = manaRegenPerSecond(state) * delta / 1000
+  const generated = (manaRateOverride ?? manaRegenPerSecond(state)) * delta / 1000
   const maxMana = state.player.maxMana
   const overflow = !state.debug.allowManaOverCap ? Math.max(0, before + generated - maxMana) : 0
   state.player.mana = stabilizeResourceValue(state.debug.allowManaOverCap

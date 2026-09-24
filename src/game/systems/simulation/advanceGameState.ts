@@ -19,8 +19,8 @@ import type { SimulationReportCollector } from '../offline-bank/offlineBankRepor
 import { applyTransmutationAllocations, buildTransmutationWorkRequests } from '../transmutation/transmutationEngine'
 import { advanceArtificing, type ArtificingCompletion } from '../artificing/artificingEngine'
 import { applyResearchAllocations, buildResearchWorkRequests } from '../research/researchEngine'
-import { allocateContinuousMana, getContinuousManaDemandPerSecond } from './continuousManaScheduler'
-import { getNextAutoCastEligibilityBoundaryMs, getNextAutomatedSpellCooldownMs, isSpellUnlocked, selectNextAutomatedSpellFast } from '../spells'
+import { allocateContinuousMana, getContinuousManaDemandPerSecond, type ContinuousManaWorkRequest } from './continuousManaScheduler'
+import { getNextAutoCastEligibilityBoundaryMs, getNextAutomatedSpellCooldownMs, isSpellUnlocked, selectNextAutomatedSpellFast, type PreparedAutoCastRuntime } from '../spells'
 import { MAX_SIMULATION_DELTA_MS, SIMULATION_QUANTUM_MS } from './simulationConstants'
 import type { CombatTelemetryObserver } from '../../telemetry/combat/combatTelemetryTypes'
 import type { DungeonStatisticsObserver } from '../../telemetry/dungeon/dungeonStatisticsTypes'
@@ -43,6 +43,22 @@ export interface AdvanceContext {
   onAutoCastSelection?: () => void
   onResearchComplete?: () => void
   onTransmutationComplete?: () => void
+  onAutoCastCheck?: (elapsedMs: number) => void
+  onContinuousManaAllocation?: () => void
+  autoCastRuntime?: PreparedAutoCastRuntime
+  onCombatElapsed?: (deltaMs: number) => void
+  manaDeltaPerSecond?: number
+  onAnalyticsAdvance?: (elapsedMs: number) => void
+}
+
+/**
+ * Optional prepared continuous-work input used by detached Offline Bank
+ * epochs. Live simulation intentionally leaves this unset so it keeps the
+ * normal authoritative request planning path.
+ */
+export interface AdvanceContinuousOptions {
+  preparedWorkRequests?: readonly ContinuousManaWorkRequest[]
+  manaRegenPerSecondOverride?: number
 }
 
 const spellUnlocked = isSpellUnlocked
@@ -69,7 +85,9 @@ const autoCastReadySpells = (state: GameState, context: AdvanceContext) => {
   }
   if (actorCannotAct(state, 'player') || state.debug.freezePlayerActions || state.debug.disableAutoCast) return
   {
-    const selection = selectNextAutomatedSpellFast(state)
+    const selectionStartedAt = typeof performance !== 'undefined' ? performance.now() : Date.now()
+    const selection = selectNextAutomatedSpellFast(state, context.autoCastRuntime)
+    context.onAutoCastCheck?.((typeof performance !== 'undefined' ? performance.now() : Date.now()) - selectionStartedAt)
     if (selection) {
       context.onAutoCastSelection?.()
       castSpellInternal(state, selection.spellId, true, context.uiEvents)
@@ -78,9 +96,9 @@ const autoCastReadySpells = (state: GameState, context: AdvanceContext) => {
   suppressGuardianIfOutOfMana(state)
 }
 
-const hasReadyAutoCast = (state: GameState) => {
+const hasReadyAutoCast = (state: GameState, autoCastRuntime?: PreparedAutoCastRuntime) => {
   if (actorCannotAct(state, 'player') || state.debug.freezePlayerActions || state.debug.disableAutoCast) return false
-  return !state.combat.pendingPlayerSpellCast && Boolean(selectNextAutomatedSpellFast(state))
+  return !state.combat.pendingPlayerSpellCast && Boolean(selectNextAutomatedSpellFast(state, autoCastRuntime))
 }
 
 const tickSpellCooldowns = (state: GameState, deltaMs: number, cooldownRecovery: number) => {
@@ -92,9 +110,9 @@ const tickSpellCooldowns = (state: GameState, deltaMs: number, cooldownRecovery:
 }
 
 /** Auto-Cast readiness is a combat-clock boundary, not an outer-quantum side effect. */
-const getNextAutoCastCooldownEventMs = (state: GameState, cooldownRecovery: number): number | null => {
+const getNextAutoCastCooldownEventMs = (state: GameState, cooldownRecovery: number, autoCastRuntime?: PreparedAutoCastRuntime): number | null => {
   if (state.combat.queuedPlayerSpellId || cooldownRecovery <= 0 || state.debug.freezePlayerActions || state.debug.disableAutoCast || state.debug.ignoreSpellCooldowns) return null
-  return getNextAutomatedSpellCooldownMs(state, cooldownRecovery)
+  return getNextAutomatedSpellCooldownMs(state, cooldownRecovery, autoCastRuntime)
 }
 
 export const getNextQueuedSpellCooldownEventMs = (state: GameState, cooldownRecovery: number): number | null => {
@@ -115,17 +133,30 @@ const hasImmediateCombatTimelineEvent = (state: GameState) => {
 
 const advanceObservers = (state: GameState, delta: number, context: AdvanceContext) => {
   if (delta <= 0) return
+  const startedAt = typeof performance !== 'undefined' ? performance.now() : Date.now()
   context.telemetry?.advance(delta, state)
   context.statistics?.advance(delta, state)
+  context.onAnalyticsAdvance?.((typeof performance !== 'undefined' ? performance.now() : Date.now()) - startedAt)
+}
+
+export const advanceChannelingState = (state: GameState, delta: number, context: AdvanceContext, manaRateOverride?: number) => {
+  const channelingTick = advanceChanneling(state, delta, manaRateOverride)
+  if (channelingTick.discoveries.includes('deep-reservoir')) recalculateDerivedStats(state)
+  channelingTick.discoveries.forEach((id) => {
+    context.report?.recordDiscovery(id)
+    const discovery = CHANNELING_DISCOVERIES.find((entry) => entry.id === id)
+    if (discovery) pushNotification(state, `Arcane Discovery: ${discovery.name}`, 'success')
+  })
+  return channelingTick
 }
 
 const getNextHealthRegenEventMs = (state: GameState, skipFullHealth = false) => skipFullHealth && state.player.health >= state.player.maxHealth ? Number.POSITIVE_INFINITY : state.player.healthRegenTimerMs > 0 ? state.player.healthRegenTimerMs : Number.POSITIVE_INFINITY
 
 /** Earliest combat-owned boundary used by the banked event-driven runner. */
-export const getNextCombatBoundaryMs = (state: GameState): number | null => {
+export const getNextCombatBoundaryMs = (state: GameState, options: { manaDeltaPerSecond?: number; autoCastRuntime?: PreparedAutoCastRuntime } = {}): number | null => {
   if (!state.combat.active || (state.combat.enemyId && !MONSTERS[state.combat.enemyId])) return null
   const cooldownRecovery = getCooldownRecoveryMultiplier(state)
-  const manaDeltaPerSecond = manaRegenPerSecond(state) - getContinuousManaDemandPerSecond(state)
+  const manaDeltaPerSecond = options.manaDeltaPerSecond ?? (manaRegenPerSecond(state) - getContinuousManaDemandPerSecond(state))
   if (state.player.health <= 0 || (state.combat.enemyId && state.combat.enemyHp <= 0)) return 0
   if (!state.combat.enemyId) {
     if (state.combat.encounterTimerMs <= 0) return 0
@@ -140,8 +171,8 @@ export const getNextCombatBoundaryMs = (state: GameState): number | null => {
       getNextPlayerBarrierEventMs(state) ?? Number.POSITIVE_INFINITY,
       getNextHealthRegenEventMs(state, true),
       getNextQueuedSpellCooldownEventMs(state, cooldownRecovery) ?? Number.POSITIVE_INFINITY,
-      getNextAutoCastCooldownEventMs(state, cooldownRecovery) ?? Number.POSITIVE_INFINITY,
-      getNextAutoCastEligibilityBoundaryMs(state, cooldownRecovery, manaDeltaPerSecond) ?? Number.POSITIVE_INFINITY,
+      getNextAutoCastCooldownEventMs(state, cooldownRecovery, options.autoCastRuntime) ?? Number.POSITIVE_INFINITY,
+      getNextAutoCastEligibilityBoundaryMs(state, cooldownRecovery, manaDeltaPerSecond, options.autoCastRuntime) ?? Number.POSITIVE_INFINITY,
     )
   }
   if (!state.combat.enemyCurrentStepId && !actorCannotAct(state, 'enemy') && !state.debug.freezeEnemyActions) return 0
@@ -159,8 +190,8 @@ export const getNextCombatBoundaryMs = (state: GameState): number | null => {
     getNextCombatBarrierEventMs(state) ?? Number.POSITIVE_INFINITY,
     getNextHealthRegenEventMs(state, true),
     getNextQueuedSpellCooldownEventMs(state, cooldownRecovery) ?? Number.POSITIVE_INFINITY,
-    getNextAutoCastCooldownEventMs(state, cooldownRecovery) ?? Number.POSITIVE_INFINITY,
-    getNextAutoCastEligibilityBoundaryMs(state, cooldownRecovery, manaDeltaPerSecond) ?? Number.POSITIVE_INFINITY,
+    getNextAutoCastCooldownEventMs(state, cooldownRecovery, options.autoCastRuntime) ?? Number.POSITIVE_INFINITY,
+    getNextAutoCastEligibilityBoundaryMs(state, cooldownRecovery, manaDeltaPerSecond, options.autoCastRuntime) ?? Number.POSITIVE_INFINITY,
     state.combat.guardian.activeGuardianId ? Math.max(0, state.combat.guardian.attackTimerMs) : Number.POSITIVE_INFINITY,
     arcaneStasisActive ? Math.max(0, state.combat.arcaneCoreRuntime.absoluteStasisUntilMs! - state.combat.arcaneCoreRuntime.elapsedMs) : Number.POSITIVE_INFINITY,
   )
@@ -217,7 +248,7 @@ const advanceCombatTimeline = (state: GameState, delta: number, context: Advance
 
     // A ready Auto-Cast spell is attempted once at encounter start. Casts are
     // committed work; effects and payment happen only at completion.
-    if (!attemptedImmediateAutoCast && (state.combat.queuedPlayerSpellId !== null || hasReadyAutoCast(state))
+    if (!attemptedImmediateAutoCast && (state.combat.queuedPlayerSpellId !== null || hasReadyAutoCast(state, context.autoCastRuntime))
       && !actorCannotAct(state, 'player')
       && getNextCombatStatusEventMs(state) !== 0
       && getNextCombatBarrierEventMs(state) !== 0) {
@@ -243,12 +274,13 @@ const advanceCombatTimeline = (state: GameState, delta: number, context: Advance
       getNextCombatBarrierEventMs(state),
       getNextHealthRegenEventMs(state, context.mode === 'banked'),
       getNextQueuedSpellCooldownEventMs(state, cooldownRecovery),
-      getNextAutoCastCooldownEventMs(state, cooldownRecovery),
+      getNextAutoCastCooldownEventMs(state, cooldownRecovery, context.autoCastRuntime),
       getGuardianAttackBoundary(state),
       arcaneStasisActive ? Math.max(0, state.combat.arcaneCoreRuntime.absoluteStasisUntilMs! - state.combat.arcaneCoreRuntime.elapsedMs) : null,
     ].filter((value): value is number => value !== null && Number.isFinite(value))
     const untilEvent = boundaries.length ? Math.min(...boundaries) : remaining
     const elapsed = Math.min(remaining, Math.max(0, untilEvent))
+    context.onCombatElapsed?.(elapsed)
     advanceArcaneCoreV6RuntimeTime(state, elapsed)
 
     if (!playerBlockedAtSegmentStart && playerRate > 0 && state.combat.pendingPlayerSpellCast) state.combat.pendingPlayerSpellCast.remainingWorkMs = Math.max(0, state.combat.pendingPlayerSpellCast.remainingWorkMs - elapsed * playerRate)
@@ -333,10 +365,11 @@ const advanceCombatDowntimeTimeline = (state: GameState, delta: number, context:
       getNextPlayerBarrierEventMs(state),
       getNextHealthRegenEventMs(state, context.mode === 'banked'),
       getNextQueuedSpellCooldownEventMs(state, cooldownRecovery),
-      getNextAutoCastCooldownEventMs(state, cooldownRecovery),
+      getNextAutoCastCooldownEventMs(state, cooldownRecovery, context.autoCastRuntime),
     ].filter((value): value is number => value !== null && Number.isFinite(value))
     const untilEvent = boundaries.length ? Math.min(...boundaries) : remaining
     const elapsed = Math.min(remaining, Math.max(0, untilEvent))
+    context.onCombatElapsed?.(elapsed)
     advanceArcaneCoreV6RuntimeTime(state, elapsed)
 
     const pendingStatusExpirations = tickStatuses(state, elapsed, executeCombatEffects, context.uiEvents, ['player'], { deferExpiry: true })
@@ -375,8 +408,8 @@ const advanceCombatDowntimeTimeline = (state: GameState, delta: number, context:
 }
 
 const tickCombat = (state: GameState, delta: number, context: AdvanceContext) => {
-  if (!state.combat.active) return
-  if (state.combat.enemyId && !MONSTERS[state.combat.enemyId]) return
+  if (!state.combat.active) return Math.max(0, delta)
+  if (state.combat.enemyId && !MONSTERS[state.combat.enemyId]) return Math.max(0, delta)
   let remaining = Math.max(0, delta)
   let guard = 0
   while (guard < 10_000 && remaining > 0 && state.combat.active) {
@@ -385,25 +418,25 @@ const tickCombat = (state: GameState, delta: number, context: AdvanceContext) =>
       ? advanceCombatTimeline(state, remaining, context)
       : advanceCombatDowntimeTimeline(state, remaining, context)
   }
+  return remaining
 }
 
 /** Advances only Combat-local systems. Developer stepping uses this same path. */
 export const advanceCombatState = (state: GameState, delta: number, context: AdvanceContext) => {
-  const bounded = Math.max(0, delta)
-  if (bounded <= 0 || !state.combat.active) return state
-  context.alerts?.advance(bounded, state)
-  tickCombat(state, bounded, context)
+  advanceCombatStateWithRemaining(state, delta, context)
   return state
 }
 
-export const advanceGameStateStep = (state: GameState, delta: number, context: AdvanceContext) => {
-  const channelingTick = advanceChanneling(state, delta)
-  if (channelingTick.discoveries.includes('deep-reservoir')) recalculateDerivedStats(state)
-  channelingTick.discoveries.forEach((id) => {
-    context.report?.recordDiscovery(id)
-    const discovery = CHANNELING_DISCOVERIES.find((entry) => entry.id === id)
-    if (discovery) pushNotification(state, `Arcane Discovery: ${discovery.name}`, 'success')
-  })
+/** Banked callers may need to continue non-combat systems after a defeat. */
+export const advanceCombatStateWithRemaining = (state: GameState, delta: number, context: AdvanceContext) => {
+  const bounded = Math.max(0, delta)
+  if (bounded <= 0 || !state.combat.active) return bounded
+  context.alerts?.advance(bounded, state)
+  return tickCombat(state, bounded, context)
+}
+
+export const advanceGameStateContinuous = (state: GameState, delta: number, context: AdvanceContext, options: AdvanceContinuousOptions = {}) => {
+  advanceChannelingState(state, delta, context, options.manaRegenPerSecondOverride)
   if (!state.combat.active) advanceHealthRegenTimer(state, delta, false, context)
   advanceArtificing(state, delta, (completion) => {
     context.report?.recordArtificing(completion.recipeId, completion.itemId)
@@ -411,11 +444,24 @@ export const advanceGameStateStep = (state: GameState, delta: number, context: A
     if (completion.kind !== 'recipe') recalculateDerivedStats(state)
     context.onArtificingComplete?.(completion)
   })
-  const researchRequests = buildResearchWorkRequests(state, delta, context)
-  const transmutationRequests = buildTransmutationWorkRequests(state, delta)
-  const funding = allocateContinuousMana(state, [...researchRequests, ...transmutationRequests])
-  applyResearchAllocations(state, researchRequests, funding.allocations, context)
-  applyTransmutationAllocations(state, transmutationRequests, funding.allocations, context)
+  const researchRequests = options.preparedWorkRequests
+    ? options.preparedWorkRequests.filter((request) => request.system === 'research')
+    : buildResearchWorkRequests(state, delta, context)
+  const transmutationRequests = options.preparedWorkRequests
+    ? options.preparedWorkRequests.filter((request) => request.system === 'transmutation')
+    : buildTransmutationWorkRequests(state, delta)
+  const continuousRequests = [...researchRequests, ...transmutationRequests]
+  if (continuousRequests.length > 0) {
+    const funding = allocateContinuousMana(state, continuousRequests)
+    context.onContinuousManaAllocation?.()
+    applyResearchAllocations(state, researchRequests, funding.allocations, context)
+    applyTransmutationAllocations(state, transmutationRequests, funding.allocations, context)
+  }
+  return state
+}
+
+export const advanceGameStateStep = (state: GameState, delta: number, context: AdvanceContext) => {
+  advanceGameStateContinuous(state, delta, context)
   const combatDelta = context.mode === 'live'
     ? (state.debug.combatPaused ? 0 : delta * sanitizeCombatTimeScale(state.debug.combatTimeScale))
     : delta

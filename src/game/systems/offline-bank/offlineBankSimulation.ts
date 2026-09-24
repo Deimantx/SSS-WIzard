@@ -27,6 +27,12 @@ export interface OfflineBankPerformanceMetrics {
   researchCompletions: number
   transmutationCompletions: number
   artificingCompletions: number
+  combatBoundaryCalls: number
+  researchPlannerCalls: number
+  transmutationPlannerCalls: number
+  continuousManaAllocationCalls: number
+  autoCastChecks: number
+  timing: { boundaryMs: number; combatMs: number; continuousManaMs: number; autoCastMs: number; analyticsMs: number; yieldMs: number }
 }
 export interface OfflineBankResult { ok: boolean; error?: string; report?: OfflineBankReport; completedArtificingRecipeIds?: ArtificingRecipeId[]; combatDefeat?: OfflineCombatDefeatResult; performance?: OfflineBankPerformanceMetrics }
 type StateSetter = (recipe: (state: GameState) => void) => void
@@ -88,8 +94,8 @@ export const advanceWithOfflineBank = async (durationMs: number, getState: () =>
   const simulationStartedAt = typeof performance !== 'undefined' ? performance.now() : Date.now()
   let combatEvents = 0
   let finalSaveMs = 0
-  let fastForwardMetrics: OfflineFastForwardMetrics = { eventBoundaries: 0, largestJumpMs: 0, totalJumpMs: 0, combatSelections: 0, statusTicks: 0, researchCompletions: 0, transmutationCompletions: 0, artificingCompletions: 0, yields: 0, longestCpuSliceMs: 0 }
-  const performanceMetrics = (): OfflineBankPerformanceMetrics => ({ requestedDurationMs: duration, realExecutionMs: (typeof performance !== 'undefined' ? performance.now() : Date.now()) - simulationStartedAt, simulationQuanta: fastForwardMetrics.eventBoundaries, yields: fastForwardMetrics.yields, combatEvents, longestCpuSliceMs: fastForwardMetrics.longestCpuSliceMs, finalSaveMs, eventBoundaries: fastForwardMetrics.eventBoundaries, largestJumpMs: fastForwardMetrics.largestJumpMs, averageJumpMs: fastForwardMetrics.eventBoundaries > 0 ? fastForwardMetrics.totalJumpMs / fastForwardMetrics.eventBoundaries : 0, combatSelections: fastForwardMetrics.combatSelections, statusTicks: fastForwardMetrics.statusTicks, researchCompletions: fastForwardMetrics.researchCompletions, transmutationCompletions: fastForwardMetrics.transmutationCompletions, artificingCompletions: fastForwardMetrics.artificingCompletions })
+  let fastForwardMetrics: OfflineFastForwardMetrics = { eventBoundaries: 0, largestJumpMs: 0, totalJumpMs: 0, combatSelections: 0, statusTicks: 0, researchCompletions: 0, transmutationCompletions: 0, artificingCompletions: 0, yields: 0, longestCpuSliceMs: 0, combatBoundaryCalls: 0, researchPlannerCalls: 0, transmutationPlannerCalls: 0, continuousManaAllocationCalls: 0, autoCastChecks: 0, timing: { boundaryMs: 0, combatMs: 0, continuousManaMs: 0, autoCastMs: 0, analyticsMs: 0, yieldMs: 0 } }
+  const performanceMetrics = (): OfflineBankPerformanceMetrics => ({ requestedDurationMs: duration, realExecutionMs: (typeof performance !== 'undefined' ? performance.now() : Date.now()) - simulationStartedAt, simulationQuanta: fastForwardMetrics.eventBoundaries, yields: fastForwardMetrics.yields, combatEvents, longestCpuSliceMs: fastForwardMetrics.longestCpuSliceMs, finalSaveMs, eventBoundaries: fastForwardMetrics.eventBoundaries, largestJumpMs: fastForwardMetrics.largestJumpMs, averageJumpMs: fastForwardMetrics.eventBoundaries > 0 ? fastForwardMetrics.totalJumpMs / fastForwardMetrics.eventBoundaries : 0, combatSelections: fastForwardMetrics.combatSelections, statusTicks: fastForwardMetrics.statusTicks, researchCompletions: fastForwardMetrics.researchCompletions, transmutationCompletions: fastForwardMetrics.transmutationCompletions, artificingCompletions: fastForwardMetrics.artificingCompletions, combatBoundaryCalls: fastForwardMetrics.combatBoundaryCalls, researchPlannerCalls: fastForwardMetrics.researchPlannerCalls, transmutationPlannerCalls: fastForwardMetrics.transmutationPlannerCalls, continuousManaAllocationCalls: fastForwardMetrics.continuousManaAllocationCalls, autoCastChecks: fastForwardMetrics.autoCastChecks, timing: fastForwardMetrics.timing })
   try {
     const context: AdvanceContext = { mode: 'banked', report: collector, onItemAcquired: (itemId, quantity) => { acquiredItems.set(itemId, (acquiredItems.get(itemId) ?? 0) + quantity) }, onArtificingComplete: (completion) => completedArtificingRecipeIds.add(completion.recipeId), uiEvents: simulationEvents, onPlayerDefeated: (event) => combatTrace.captureDefeat(event, getEncounterTelemetry?.()), onCombatCompleted, telemetry, statistics }
     const runner = shouldUseOfflineBankReferenceEngine() ? advanceGameStateBankedReference : advanceGameStateBanked

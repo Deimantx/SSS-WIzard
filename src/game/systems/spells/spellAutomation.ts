@@ -4,6 +4,7 @@ import { SPELLS } from '../../content/spells/spells'
 import { actorCannotAct, actorCannotCastSpells } from '../combat/statusRuntime'
 import { isSpellUnlocked } from './spellProgression'
 import { getSpellManaPreview } from '../../engine/spellCastPreview'
+import { getEffectiveManaCost } from '../combat/combatStats'
 import { manaRegenPerSecond } from '../../engine/channelingEngine'
 import type { AutoCastCondition, CanonicalSpellId, GameState, SpellAutomationCondition, SpellAutomationConfig, SpellAutomationTargetRule, SpellDefinition, SpellPresetSlot, StatusId } from '../../types'
 
@@ -209,16 +210,17 @@ const fastConditionPasses = (state: GameState, condition: SpellAutomationConditi
  * Runtime-only eligibility check. It intentionally returns a boolean and
  * avoids building the verbose automation trace used by the inspection UI.
  */
-export const canAutoCastSpellFast = (state: GameState, slot: Pick<SpellPresetSlot, 'spellId' | 'autoCast' | 'automation'>, context = buildFastAutomationContext(state)) => {
+export const canAutoCastSpellFast = (state: GameState, slot: Pick<SpellPresetSlot, 'spellId' | 'autoCast' | 'automation'> | PreparedAutomatedSpellSlot, context = buildFastAutomationContext(state), prepared?: PreparedAutomatedSpellSlot) => {
   if (!slot.autoCast || !context.combatActive || !context.canAct || !context.canCast || !context.noActiveCast || !context.manualOverrideClear) return false
   const spell = SPELLS[slot.spellId]
   if (!spell || !isSpellUnlocked(state, spell.id)) return false
-  const config = getSpellAutomationConfig(slot)
+  const config = prepared?.config ?? ('config' in slot ? slot.config : getSpellAutomationConfig(slot))
   if (config.targetRule === 'self' ? hasEnemyTarget(spell) : !context.hasEnemy || !hasEnemyTarget(spell)) return false
   if (!context.ignoreCooldowns && (state.combat.spellCooldowns[spell.id] ?? 0) > 0) return false
   if (!context.allowFocusOverCap && !state.activities.autoCast[spell.id]) return false
   if (!config.conditions.every((condition) => fastConditionPasses(state, condition, context))) return false
   if (context.infiniteMana) return true
+  if (prepared && !prepared.requiresDynamicManaPreview) return state.player.mana >= prepared.staticManaCost
   const manaPreview = getSpellManaPreview(state, spell.id, 'auto')
   return Boolean(manaPreview?.free || (manaPreview && state.player.mana >= manaPreview.manaCost))
 }
@@ -317,11 +319,39 @@ export interface AutomatedSpellFastSelection {
   slotIndex: number
 }
 
+export interface PreparedAutomatedSpellSlot {
+  spellId: CanonicalSpellId
+  slotIndex: number
+  autoCast: boolean
+  config: SpellAutomationConfig
+  staticManaCost: number
+  requiresDynamicManaPreview: boolean
+}
+
+export interface PreparedAutoCastRuntime {
+  slots: readonly PreparedAutomatedSpellSlot[]
+}
+
+/** Builds immutable loadout data once for a detached Offline Bank epoch. */
+export const prepareAutoCastRuntime = (state: GameState): PreparedAutoCastRuntime => {
+  const hasArcaneCoreModifiers = Object.keys(state.arcaneCore.nodes).length > 0 || state.debug.arcaneCoreFreeCosts
+  return {
+    slots: (state.combat.activeSpellLoadout?.slots ?? []).map((slot, slotIndex) => ({
+      spellId: slot.spellId,
+      slotIndex,
+      autoCast: slot.autoCast,
+      config: getSpellAutomationConfig(slot),
+      staticManaCost: Math.max(1, Math.ceil(getEffectiveManaCost(state, SPELLS[slot.spellId]?.manaCost ?? 0))),
+      requiresDynamicManaPreview: hasArcaneCoreModifiers,
+    })),
+  }
+}
+
 /** Runtime-only selection. It never allocates UI evaluations or trace strings. */
-export const selectNextAutomatedSpellFast = (state: GameState): AutomatedSpellFastSelection | null => {
-  const slots = state.combat.activeSpellLoadout?.slots ?? []
+export const selectNextAutomatedSpellFast = (state: GameState, preparedRuntime?: PreparedAutoCastRuntime): AutomatedSpellFastSelection | null => {
+  const slots = preparedRuntime?.slots ?? state.combat.activeSpellLoadout?.slots ?? []
   const context = buildFastAutomationContext(state)
-  const selectedIndex = slots.findIndex((slot) => canAutoCastSpellFast(state, slot, context))
+  const selectedIndex = slots.findIndex((slot, index) => canAutoCastSpellFast(state, slot, context, preparedRuntime?.slots[index]))
   return selectedIndex < 0 ? null : { spellId: slots[selectedIndex].spellId, slotIndex: selectedIndex }
 }
 
@@ -355,10 +385,10 @@ export const getSpellAutomationPriorityPreview = (state: GameState, slots: reado
   }
 }
 
-export const getNextAutomatedSpellCooldownMs = (state: GameState, cooldownRecovery: number): number | null => {
+export const getNextAutomatedSpellCooldownMs = (state: GameState, cooldownRecovery: number, preparedRuntime?: PreparedAutoCastRuntime): number | null => {
   if (cooldownRecovery <= 0 || state.debug.ignoreSpellCooldowns || state.combat.queuedPlayerSpellId) return null
   let next: number | null = null
-  state.combat.activeSpellLoadout?.slots.forEach((slot) => {
+  ;(preparedRuntime?.slots ?? state.combat.activeSpellLoadout?.slots ?? []).forEach((slot) => {
     if (!slot.autoCast || !SPELLS[slot.spellId] || !isSpellUnlocked(state, slot.spellId)) return
     const cooldown = state.combat.spellCooldowns[slot.spellId] ?? 0
     if (cooldown > 0 && Number.isFinite(cooldown)) next = next === null ? cooldown / cooldownRecovery : Math.min(next, cooldown / cooldownRecovery)
@@ -369,16 +399,16 @@ export const getNextAutomatedSpellCooldownMs = (state: GameState, cooldownRecove
 const addBoundary = (current: number | null, candidate: number | null) => candidate !== null && Number.isFinite(candidate) && candidate >= 0 ? current === null ? candidate : Math.min(current, candidate) : current
 
 /** Returns a timed boundary that can make an Auto-Cast slot eligible. */
-export const getNextAutoCastEligibilityBoundaryMs = (state: GameState, cooldownRecovery: number, manaDeltaPerSecond = manaRegenPerSecond(state)): number | null => {
+export const getNextAutoCastEligibilityBoundaryMs = (state: GameState, cooldownRecovery: number, manaDeltaPerSecond = manaRegenPerSecond(state), preparedRuntime?: PreparedAutoCastRuntime): number | null => {
   if (!state.combat.active || state.debug.disableAutoCast || state.debug.freezePlayerActions || actorCannotAct(state, 'player') || actorCannotCastSpells(state, 'player')) return null
-  const slots = state.combat.activeSpellLoadout?.slots ?? []
+  const slots = preparedRuntime?.slots ?? state.combat.activeSpellLoadout?.slots ?? []
   const context = buildFastAutomationContext(state)
   let next: number | null = null
   slots.forEach((slot) => {
     if (!slot.autoCast) return
     const spell = SPELLS[slot.spellId]
     if (!spell || !isSpellUnlocked(state, spell.id) || (!context.allowFocusOverCap && !state.activities.autoCast[spell.id])) return
-    const config = getSpellAutomationConfig(slot)
+    const config = 'config' in slot ? slot.config : getSpellAutomationConfig(slot)
     if (config.targetRule === 'self' ? hasEnemyTarget(spell) : !context.hasEnemy || !hasEnemyTarget(spell)) return
     const cooldown = state.debug.ignoreSpellCooldowns ? 0 : state.combat.spellCooldowns[spell.id] ?? 0
     next = addBoundary(next, cooldown > 0 && cooldownRecovery > 0 ? cooldown / cooldownRecovery : null)
@@ -395,8 +425,9 @@ export const getNextAutoCastEligibilityBoundaryMs = (state: GameState, cooldownR
       if (condition.operator === 'below' && state.player.mana >= threshold && manaDeltaPerSecond < 0) next = addBoundary(next, (state.player.mana - threshold) / -manaDeltaPerSecond * 1000)
     })
     if (!context.infiniteMana) {
-      const manaPreview = getSpellManaPreview(state, spell.id, 'auto')
-      const required = manaPreview?.manaCost ?? spell.manaCost
+      const prepared = 'staticManaCost' in slot ? slot : undefined
+      const manaPreview = prepared?.requiresDynamicManaPreview ? getSpellManaPreview(state, spell.id, 'auto') : null
+      const required = manaPreview?.manaCost ?? prepared?.staticManaCost ?? spell.manaCost
       if (!manaPreview?.free && state.player.mana < required && manaDeltaPerSecond > 0) next = addBoundary(next, (required - state.player.mana) / manaDeltaPerSecond * 1000)
     }
   })

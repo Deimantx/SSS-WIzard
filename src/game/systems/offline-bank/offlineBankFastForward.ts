@@ -1,19 +1,22 @@
 import { BALANCE } from '../../core/balance/balance'
-import { advanceGameStateStep, getNextCombatBoundaryMs, type AdvanceContext } from '../simulation/advanceGameState'
+import { advanceChannelingState, advanceGameStateContinuous, advanceGameStateStep, advanceCombatStateWithRemaining, getNextCombatBoundaryMs, type AdvanceContext } from '../simulation/advanceGameState'
 import { manaRegenPerSecond } from '../../engine/channelingEngine'
 import { getActiveArtificingJob } from '../artificing/artificingSelectors'
-import { ensureResearchActivity } from '../research/researchEngine'
+import { buildResearchWorkRequests, ensureResearchActivity } from '../research/researchEngine'
 import { TRANSMUTATION_RECIPES, TRANSMUTATION_RECIPE_ORDER } from '../../content/recipes/recipes'
 import { isRecipeUnlocked } from '../transmutation/transmutationSelectors'
 import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
 import { getEffectiveTransmutationWorkMultiplier } from '../transmutation/transmutationArrays'
 import { getContinuousManaDemandPerSecond } from '../simulation/continuousManaScheduler'
+import { buildTransmutationWorkRequests } from '../transmutation/transmutationEngine'
+import type { ContinuousManaWorkRequest } from '../simulation/continuousManaScheduler'
+import { prepareAutoCastRuntime, type PreparedAutoCastRuntime } from '../spells'
 import type { CombatEventSink } from '../combat/combatTypes'
 import type { GameState } from '../../types'
 
 export const OFFLINE_FAST_FORWARD_EPSILON_MS = 0.001
 export const OFFLINE_FAST_FORWARD_ITERATION_LIMIT = 100_000
-const OFFLINE_CPU_SLICE_BUDGET_MS = 10
+const OFFLINE_CPU_SLICE_BUDGET_MS = 30
 
 export interface OfflineFastForwardMetrics {
   eventBoundaries: number
@@ -26,6 +29,19 @@ export interface OfflineFastForwardMetrics {
   artificingCompletions: number
   yields: number
   longestCpuSliceMs: number
+  combatBoundaryCalls: number
+  researchPlannerCalls: number
+  transmutationPlannerCalls: number
+  continuousManaAllocationCalls: number
+  autoCastChecks: number
+  timing: {
+    boundaryMs: number
+    combatMs: number
+    continuousManaMs: number
+    autoCastMs: number
+    analyticsMs: number
+    yieldMs: number
+  }
 }
 
 export interface OfflineFastForwardOptions {
@@ -35,6 +51,14 @@ export interface OfflineFastForwardOptions {
 
 const now = () => typeof performance !== 'undefined' ? performance.now() : Date.now()
 const yieldToBrowser = () => new Promise<void>((resolve) => {
+  const schedulerApi = (globalThis as typeof globalThis & { scheduler?: { yield?: () => Promise<void> } }).scheduler
+  if (schedulerApi?.yield) { void schedulerApi.yield().then(resolve); return }
+  if (typeof MessageChannel !== 'undefined') {
+    const channel = new MessageChannel()
+    channel.port1.onmessage = () => { channel.port1.close(); channel.port2.close(); resolve() }
+    channel.port2.postMessage(undefined)
+    return
+  }
   if (typeof window !== 'undefined') window.setTimeout(resolve, 0)
   else setTimeout(resolve, 0)
 })
@@ -48,10 +72,8 @@ const minBoundary = (values: readonly (number | null | undefined)[]) => {
 }
 const positiveRateBoundary = (remaining: number, ratePerSecond: number) => ratePerSecond > 0 && Number.isFinite(ratePerSecond) ? Math.max(0, remaining / ratePerSecond * 1000) : null
 
-const getNextManaBoundaryMs = (state: GameState) => {
+const getNextManaBoundaryMs = (state: GameState, production = manaRegenPerSecond(state), demand = getContinuousManaDemandPerSecond(state)) => {
   if (state.debug.allowManaOverCap) return null
-  const production = manaRegenPerSecond(state)
-  const demand = getContinuousManaDemandPerSecond(state)
   const net = production - demand
   if (net < 0 && state.player.mana > 0) return state.player.mana / -net * 1000
   if (net > 0 && state.player.mana < state.player.maxMana) return (state.player.maxMana - state.player.mana) / net * 1000
@@ -89,9 +111,8 @@ const getNextArtificingBoundaryMs = (state: GameState) => {
   return Math.max(0, 5_000 - Math.max(0, state.activities.artificing.progressMs))
 }
 
-const getNextChannelingBoundaryMs = (state: GameState) => {
+const getNextChannelingBoundaryMs = (state: GameState, manaRate = manaRegenPerSecond(state)) => {
   const channeling = state.progress.channeling
-  const manaRate = manaRegenPerSecond(state)
   const boundaries: (number | null)[] = []
   const manaCanAccrue = state.debug.allowManaOverCap || state.player.mana < state.player.maxMana
   if (!channeling.discoveries['stable-leyline'] && manaRate > 0 && manaCanAccrue) boundaries.push((BALANCE.channeling.stableLeylineThreshold - channeling.totalManaGenerated) / manaRate * 1000)
@@ -137,9 +158,104 @@ const wrapEvents = (sink: CombatEventSink | undefined, onEvent: OfflineFastForwa
   },
 } : undefined
 
-const createMetrics = (): OfflineFastForwardMetrics => ({ eventBoundaries: 0, largestJumpMs: 0, totalJumpMs: 0, combatSelections: 0, statusTicks: 0, researchCompletions: 0, transmutationCompletions: 0, artificingCompletions: 0, yields: 0, longestCpuSliceMs: 0 })
+const createMetrics = (): OfflineFastForwardMetrics => ({
+  eventBoundaries: 0,
+  largestJumpMs: 0,
+  totalJumpMs: 0,
+  combatSelections: 0,
+  statusTicks: 0,
+  researchCompletions: 0,
+  transmutationCompletions: 0,
+  artificingCompletions: 0,
+  yields: 0,
+  longestCpuSliceMs: 0,
+  combatBoundaryCalls: 0,
+  researchPlannerCalls: 0,
+  transmutationPlannerCalls: 0,
+  continuousManaAllocationCalls: 0,
+  autoCastChecks: 0,
+  timing: { boundaryMs: 0, combatMs: 0, continuousManaMs: 0, autoCastMs: 0, analyticsMs: 0, yieldMs: 0 },
+})
 
-const runBanked = async (state: GameState, durationMs: number, context: AdvanceContext, options: OfflineFastForwardOptions, reference: boolean) => {
+interface PreparedWorkTemplate {
+  request: ContinuousManaWorkRequest
+  progressPerMs: number
+}
+
+interface OfflineContinuousEpoch {
+  manaRate: number
+  demandPerSecond: number
+  research: PreparedWorkTemplate[]
+  transmutation: PreparedWorkTemplate[]
+  autoCastRuntime: PreparedAutoCastRuntime
+}
+
+interface OfflineEventSchedule {
+  combatAt: number | null
+  researchAt: number | null
+  transmutationAt: number | null
+  artificingAt: number | null
+  channelingAt: number | null
+  manaAt: number | null
+}
+
+const createEpoch = (state: GameState, context: AdvanceContext, metrics: OfflineFastForwardMetrics): OfflineContinuousEpoch => {
+  const researchRequests = buildResearchWorkRequests(state, 1, context)
+  const transmutationRequests = buildTransmutationWorkRequests(state, 1)
+  metrics.researchPlannerCalls += 1
+  metrics.transmutationPlannerCalls += 1
+  const toTemplate = (request: ContinuousManaWorkRequest): PreparedWorkTemplate => ({ request, progressPerMs: request.requestedProgressMs })
+  const research = researchRequests.map(toTemplate)
+  const transmutation = transmutationRequests.map(toTemplate)
+  const demandPerSecond = [...researchRequests, ...transmutationRequests].reduce((total, request) => total + request.requestedMana * 1000, 0)
+  return { manaRate: manaRegenPerSecond(state), demandPerSecond, research, transmutation, autoCastRuntime: prepareAutoCastRuntime(state) }
+}
+
+const scalePreparedWork = (templates: readonly PreparedWorkTemplate[], deltaMs: number) => templates.map(({ request, progressPerMs }) => ({
+  ...request,
+  requestedProgressMs: progressPerMs * deltaMs,
+  requestedMana: request.requestedMana * deltaMs,
+}))
+
+const getPreparedWorkBoundaryMs = (state: GameState, templates: readonly PreparedWorkTemplate[], kind: 'research' | 'transmutation', epoch: OfflineContinuousEpoch) => {
+  if (!templates.length || (state.player.mana <= OFFLINE_FAST_FORWARD_EPSILON_MS && epoch.manaRate <= epoch.demandPerSecond)) return null
+  let next: number | null = null
+  for (const template of templates) {
+    const job = kind === 'research'
+      ? state.activities.research.slots[template.request.sourceId as keyof typeof state.activities.research.slots]
+      : state.activities.transmutation.jobs[template.request.sourceId as keyof typeof state.activities.transmutation.jobs]
+    if (!job || template.progressPerMs <= 0) continue
+    const duration = template.request.cycleDurationMs
+    const remaining = Math.max(0, duration - Math.max(0, job.progressMs))
+    next = minBoundary([next, remaining / template.progressPerMs])
+  }
+  return next
+}
+
+const createEventSchedule = (state: GameState, epoch: OfflineContinuousEpoch, metrics: OfflineFastForwardMetrics): OfflineEventSchedule => {
+  const boundaryStartedAt = now()
+  metrics.combatBoundaryCalls += 1
+  const combatAt = state.combat.active ? getNextCombatBoundaryMs(state, { manaDeltaPerSecond: epoch.manaRate - epoch.demandPerSecond, autoCastRuntime: epoch.autoCastRuntime }) : null
+  metrics.timing.boundaryMs += now() - boundaryStartedAt
+  return {
+    combatAt,
+    researchAt: getPreparedWorkBoundaryMs(state, epoch.research, 'research', epoch),
+    transmutationAt: getPreparedWorkBoundaryMs(state, epoch.transmutation, 'transmutation', epoch),
+    artificingAt: getNextArtificingBoundaryMs(state),
+    channelingAt: getNextChannelingBoundaryMs(state, epoch.manaRate),
+    manaAt: getNextManaBoundaryMs(state, epoch.manaRate, epoch.demandPerSecond),
+  }
+}
+
+const scheduleMinimum = (schedule: OfflineEventSchedule) => minBoundary(Object.values(schedule))
+const decrementSchedule = (schedule: OfflineEventSchedule, deltaMs: number) => {
+  ;(Object.keys(schedule) as Array<keyof OfflineEventSchedule>).forEach((key) => {
+    const value = schedule[key]
+    if (value !== null) schedule[key] = Math.max(0, value - deltaMs)
+  })
+}
+
+const runReferenceBanked = async (state: GameState, durationMs: number, context: AdvanceContext, options: OfflineFastForwardOptions) => {
   const metrics = createMetrics()
   const startedAt = now()
   let lastYieldAt = startedAt
@@ -165,7 +281,7 @@ const runBanked = async (state: GameState, durationMs: number, context: AdvanceC
       throw new Error(`Offline fast-forward iteration guard exceeded: ${details}`)
     }
     metrics.eventBoundaries += 1
-    const boundary = reference ? 100 : getNextOfflineSimulationBoundaryMs(state)
+    const boundary = 100
     let delta = Math.min(remaining, boundary === null ? remaining : Math.max(0, boundary))
     if (delta <= OFFLINE_FAST_FORWARD_EPSILON_MS) {
       const beforeSignature = stateBoundarySignature(state)
@@ -202,6 +318,149 @@ const runBanked = async (state: GameState, durationMs: number, context: AdvanceC
   options.onProgress?.(durationMs)
   return { metrics, realExecutionMs: now() - startedAt }
 }
+
+const runOptimizedBanked = async (state: GameState, durationMs: number, context: AdvanceContext, options: OfflineFastForwardOptions) => {
+  const metrics = createMetrics()
+  const startedAt = now()
+  let lastYieldAt = startedAt
+  let lastProgressAt = startedAt
+  let simulatedMs = 0
+  let remaining = Math.max(0, durationMs)
+  let zeroBoundaryStalls = 0
+  let epochDirty = false
+  let epoch = createEpoch(state, context, metrics)
+
+  const eventContext: AdvanceContext = {
+    ...context,
+    uiEvents: wrapEvents(context.uiEvents, (event) => {
+      if (event.category === 'status' && event.statusPhase === undefined) metrics.statusTicks += 1
+      options.onCombatEvent?.(event)
+    }),
+    onAutoCastSelection: () => { metrics.combatSelections += 1; context.onAutoCastSelection?.() },
+    onResearchComplete: () => { metrics.researchCompletions += 1; epochDirty = true; context.onResearchComplete?.() },
+    onTransmutationComplete: () => { metrics.transmutationCompletions += 1; epochDirty = true; context.onTransmutationComplete?.() },
+    onArtificingComplete: (completion) => { metrics.artificingCompletions += 1; context.onArtificingComplete?.(completion) },
+    onItemAcquired: (itemId, quantity) => {
+      const hasAssignedPassiveWork = epoch.research.length > 0 || epoch.transmutation.length > 0
+        || Object.values(state.activities.research.slots).some((job) => Boolean(job?.echoesAssigned))
+        || Object.values(state.activities.transmutation.jobs).some((job) => Boolean(job?.echoesAssigned))
+      if (hasAssignedPassiveWork) epochDirty = true
+      context.onItemAcquired?.(itemId, quantity)
+    },
+    autoCastRuntime: epoch.autoCastRuntime,
+    manaDeltaPerSecond: epoch.manaRate - epoch.demandPerSecond,
+    onCombatElapsed: (elapsedMs) => {
+      if (epoch.research.length === 0 && epoch.transmutation.length === 0 && !getActiveArtificingJob(state)) {
+        advanceChannelingState(state, elapsedMs, eventContext, epoch.manaRate)
+      }
+    },
+    onAutoCastCheck: (elapsedMs) => { metrics.autoCastChecks += 1; metrics.timing.autoCastMs += elapsedMs; context.onAutoCastCheck?.(elapsedMs) },
+    onContinuousManaAllocation: () => { metrics.continuousManaAllocationCalls += 1; context.onContinuousManaAllocation?.() },
+    onAnalyticsAdvance: (elapsedMs) => { metrics.timing.analyticsMs += elapsedMs; context.onAnalyticsAdvance?.(elapsedMs) },
+  }
+  let schedule = createEventSchedule(state, epoch, metrics)
+
+  const refreshCombatSchedule = () => {
+    const started = now()
+    metrics.combatBoundaryCalls += 1
+    schedule.combatAt = state.combat.active
+      ? getNextCombatBoundaryMs(state, { manaDeltaPerSecond: epoch.manaRate - epoch.demandPerSecond, autoCastRuntime: epoch.autoCastRuntime })
+      : null
+    metrics.timing.boundaryMs += now() - started
+  }
+  const refreshPassiveSchedules = () => {
+    schedule.researchAt = getPreparedWorkBoundaryMs(state, epoch.research, 'research', epoch)
+    schedule.transmutationAt = getPreparedWorkBoundaryMs(state, epoch.transmutation, 'transmutation', epoch)
+    schedule.artificingAt = getNextArtificingBoundaryMs(state)
+    schedule.channelingAt = getNextChannelingBoundaryMs(state, epoch.manaRate)
+    schedule.manaAt = getNextManaBoundaryMs(state, epoch.manaRate, epoch.demandPerSecond)
+  }
+
+  while (remaining > OFFLINE_FAST_FORWARD_EPSILON_MS) {
+    if (metrics.eventBoundaries >= OFFLINE_FAST_FORWARD_ITERATION_LIMIT) {
+      const details = JSON.stringify({ remaining, enemyId: state.combat.enemyId, encounterTimerMs: state.combat.encounterTimerMs, nextBoundaryMs: scheduleMinimum(schedule) })
+      throw new Error(`Offline fast-forward iteration guard exceeded: ${details}`)
+    }
+    metrics.eventBoundaries += 1
+    const hasPassiveWork = epoch.research.length > 0 || epoch.transmutation.length > 0 || Boolean(getActiveArtificingJob(state))
+    const passiveBoundary = minBoundary([schedule.researchAt, schedule.transmutationAt, schedule.artificingAt, schedule.channelingAt, schedule.manaAt])
+    const combatBatch = state.combat.active && !hasPassiveWork
+    const boundary = combatBatch ? passiveBoundary : scheduleMinimum(schedule)
+    const quietFrozenBatch = combatBatch && (state.debug.freezePlayerActions || state.debug.freezeEnemyActions)
+    const delta = Math.min(remaining, combatBatch ? quietFrozenBatch ? remaining : 1_000 : boundary === null ? remaining : Math.max(OFFLINE_FAST_FORWARD_EPSILON_MS, boundary))
+    const due = {
+      combat: schedule.combatAt !== null && schedule.combatAt <= delta + OFFLINE_FAST_FORWARD_EPSILON_MS,
+      research: schedule.researchAt !== null && schedule.researchAt <= delta + OFFLINE_FAST_FORWARD_EPSILON_MS,
+      transmutation: schedule.transmutationAt !== null && schedule.transmutationAt <= delta + OFFLINE_FAST_FORWARD_EPSILON_MS,
+      artificing: schedule.artificingAt !== null && schedule.artificingAt <= delta + OFFLINE_FAST_FORWARD_EPSILON_MS,
+      channeling: schedule.channelingAt !== null && schedule.channelingAt <= delta + OFFLINE_FAST_FORWARD_EPSILON_MS,
+      mana: schedule.manaAt !== null && schedule.manaAt <= delta + OFFLINE_FAST_FORWARD_EPSILON_MS,
+    }
+    const beforeSignature = stateBoundarySignature(state)
+    const combatStarted = now()
+    if (combatBatch) {
+      const unconsumedCombatMs = advanceCombatStateWithRemaining(state, delta, eventContext)
+      if (unconsumedCombatMs > 0) {
+        const continuousStarted = now()
+        advanceChannelingState(state, unconsumedCombatMs, eventContext, epoch.manaRate)
+        metrics.timing.continuousManaMs += now() - continuousStarted
+      }
+    } else {
+      const continuousStarted = now()
+      const preparedRequests = [
+        ...scalePreparedWork(epoch.research, delta),
+        ...scalePreparedWork(epoch.transmutation, delta),
+      ]
+      advanceGameStateContinuous(state, delta, eventContext, { preparedWorkRequests: preparedRequests, manaRegenPerSecondOverride: epoch.manaRate })
+      metrics.timing.continuousManaMs += now() - continuousStarted
+      if (state.combat.active) advanceCombatStateWithRemaining(state, delta, eventContext)
+    }
+    metrics.timing.combatMs += now() - combatStarted
+    decrementSchedule(schedule, delta)
+    remaining = Math.max(0, remaining - delta)
+    simulatedMs += delta
+    metrics.largestJumpMs = Math.max(metrics.largestJumpMs, delta)
+    metrics.totalJumpMs += delta
+
+    if (beforeSignature === stateBoundarySignature(state) && boundary !== null && boundary <= OFFLINE_FAST_FORWARD_EPSILON_MS) {
+      zeroBoundaryStalls += 1
+      if (zeroBoundaryStalls >= 3) throw new Error(`Offline fast-forward stalled at zero-time boundary: ${JSON.stringify({ schedule, combat: { active: state.combat.active, enemyId: state.combat.enemyId, targetEnemyId: state.combat.targetEnemyId, activeLoadout: Boolean(state.combat.activeSpellLoadout), enemyCurrentStepId: state.combat.enemyCurrentStepId, enemyActionTimerMs: state.combat.enemyActionTimerMs, encounterTimerMs: state.combat.encounterTimerMs, pendingCast: state.combat.pendingPlayerSpellCast?.remainingWorkMs }, mana: state.player.mana })}`)
+    } else zeroBoundaryStalls = 0
+
+    const epochRateChanged = Math.abs(manaRegenPerSecond(state) - epoch.manaRate) > 1e-9
+    if (epochDirty || epochRateChanged) {
+      epoch = createEpoch(state, eventContext, metrics)
+      epochDirty = false
+      eventContext.autoCastRuntime = epoch.autoCastRuntime
+      eventContext.manaDeltaPerSecond = epoch.manaRate - epoch.demandPerSecond
+      schedule = createEventSchedule(state, epoch, metrics)
+    } else {
+      if (due.combat || due.research || due.transmutation || due.artificing || due.channeling || due.mana) refreshPassiveSchedules()
+      if (due.combat || due.research || due.transmutation || due.channeling || due.mana) refreshCombatSchedule()
+    }
+
+    const timestamp = now()
+    if (timestamp - lastProgressAt >= 100) {
+      options.onProgress?.(Math.min(durationMs, simulatedMs))
+      lastProgressAt = timestamp
+    }
+    if (timestamp - lastYieldAt >= OFFLINE_CPU_SLICE_BUDGET_MS) {
+      const slice = timestamp - lastYieldAt
+      metrics.longestCpuSliceMs = Math.max(metrics.longestCpuSliceMs, slice)
+      const yieldStarted = now()
+      if (slice > 50 && import.meta.env.DEV) console.warn(`[Offline Bank] long fast-forward CPU slice: ${slice.toFixed(1)}ms`)
+      await yieldToBrowser()
+      metrics.timing.yieldMs += now() - yieldStarted
+      metrics.yields += 1
+      lastYieldAt = now()
+    }
+  }
+  options.onProgress?.(durationMs)
+  return { metrics, realExecutionMs: now() - startedAt }
+}
+
+const runBanked = (state: GameState, durationMs: number, context: AdvanceContext, options: OfflineFastForwardOptions, reference: boolean) =>
+  reference ? runReferenceBanked(state, durationMs, context, options) : runOptimizedBanked(state, durationMs, context, options)
 
 export const advanceGameStateBanked = (state: GameState, durationMs: number, context: AdvanceContext, options: OfflineFastForwardOptions = {}) => runBanked(state, durationMs, context, options, false)
 

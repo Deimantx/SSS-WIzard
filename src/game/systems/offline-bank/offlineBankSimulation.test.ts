@@ -11,10 +11,35 @@ const activeCombatState = () => {
   state.offlineBankMs = 1_000
   state.combat.active = true
   state.combat.dungeonId = 'whispering-woods'
+  state.combat.targetEnemyId = 'forest-wisp'
   state.combat.enemyId = 'forest-wisp'
   state.combat.enemyHp = state.combat.enemyMaxHp = 100
   state.debug.freezePlayerActions = true
   state.debug.freezeEnemyActions = true
+  return state
+}
+
+const activeAutoCastCombatState = () => {
+  const state = createInitialState()
+  const spellIds = ['fire-bolt', 'water-bolt', 'stone-shard', 'wind-blade'] as const
+  spellIds.forEach((spellId) => {
+    state.progress.spellRanks[spellId] = 1
+    state.activities.autoCast[spellId] = true
+  })
+  state.activities.channeling.echoesAssigned = 5
+  state.player.maxHealth = 1_000_000
+  state.player.health = state.player.maxHealth
+  state.player.mana = state.player.maxMana
+  state.combat.active = true
+  state.combat.dungeonId = 'whispering-woods'
+  state.combat.targetEnemyId = 'forest-wisp'
+  state.combat.activeSpellLoadout = {
+    presetId: null,
+    presetName: 'Offline benchmark',
+    slots: spellIds.map((spellId) => ({ spellId, autoCast: true })),
+    signature: spellIds.map((spellId) => `${spellId}:1`).join('|'),
+  }
+  expect(spawnEnemy(state, 'forest-wisp')).toBe(true)
   return state
 }
 
@@ -36,6 +61,26 @@ describe('Offline Bank analytics wiring', () => {
 
     expect(result.metrics.eventBoundaries).toBe(1)
     expect(result.metrics.largestJumpMs).toBe(900_000)
+  })
+
+  it('profiles real active Auto-Cast combat at one, five, and fifteen minutes', async () => {
+    const durations = [60_000, 300_000, 900_000]
+    const measurements = []
+    for (const duration of durations) {
+      const state = activeAutoCastCombatState()
+      const result = await advanceGameStateBanked(state, duration, { mode: 'banked' })
+      measurements.push({ durationMs: duration, realExecutionMs: result.realExecutionMs, eventBoundaries: result.metrics.eventBoundaries, combatSelections: result.metrics.combatSelections, autoCastChecks: result.metrics.autoCastChecks, researchPlannerCalls: result.metrics.researchPlannerCalls, transmutationPlannerCalls: result.metrics.transmutationPlannerCalls, continuousManaAllocationCalls: result.metrics.continuousManaAllocationCalls, timing: result.metrics.timing })
+      expect(result.metrics.combatSelections).toBeGreaterThan(0)
+    }
+    console.info('[Offline Bank] real active combat benchmark', measurements)
+  }, 30_000)
+
+  it('keeps real Auto-Cast combat identical to the fixed-quantum reference', async () => {
+    const fast = activeAutoCastCombatState()
+    const reference = JSON.parse(JSON.stringify(fast)) as typeof fast
+    await advanceGameStateBanked(fast, 15_000, { mode: 'banked' })
+    await advanceGameStateBankedReference(reference, 15_000, { mode: 'banked' })
+    expect(fast).toEqual(reference)
   })
 
   it('keeps long Research production in parity while jumping between completions', async () => {

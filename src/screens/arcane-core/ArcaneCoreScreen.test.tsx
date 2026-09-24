@@ -282,6 +282,45 @@ describe("Arcane Core screen", () => {
     ).toEqual({ rank: 1 });
   });
 
+  it("keeps purchasable nodes actionable and previews a Major without standard-rank rows", async () => {
+    const user = userEvent.setup();
+    useGameStore.getState().setArcanePoints(5);
+    const power = ARCANE_CORE_BRANCHES.find((branch) => branch.id === "power")!;
+    const major = power.nodes.find((node) => node.nodeType === "major")!;
+    render(
+      <TooltipProvider>
+        <ArcaneCoreScreen />
+      </TooltipProvider>,
+    );
+    await user.click(screen.getByRole("button", { name: /Power Core/i }));
+    const dialog = screen.getByRole("dialog", { name: "Power Core" });
+    const purchasable = dialog.querySelector('[aria-label^="Arcane Scaling"]') as HTMLElement;
+    expect(purchasable.classList.contains("is-purchasable")).toBe(true);
+    expect(purchasable.classList.contains("is-locked")).toBe(false);
+    await user.click(dialog.querySelector(`[aria-label^="${major.name}"]`) as HTMLElement);
+    const effect = dialog.querySelector(".arcane-core-inspector-effect") as HTMLElement;
+    expect(within(effect).getByText("MAJOR EFFECT")).toBeTruthy();
+    expect(within(effect).queryByText(/NEXT|MAX ·/)).toBeNull();
+  });
+
+  it("shows a purchased Major as MAXED without NEXT or MAX rows", async () => {
+    const user = userEvent.setup();
+    const power = ARCANE_CORE_BRANCHES.find((branch) => branch.id === "power")!;
+    const major = power.nodes.find((node) => node.nodeType === "major")!;
+    useGameStore.getState().setArcaneCoreNodeRank(major.id, 1);
+    render(
+      <TooltipProvider>
+        <ArcaneCoreScreen />
+      </TooltipProvider>,
+    );
+    await user.click(screen.getByRole("button", { name: /Power Core/i }));
+    const dialog = screen.getByRole("dialog", { name: "Power Core" });
+    await user.click(dialog.querySelector(`[aria-label^="${major.name}"]`) as HTMLElement);
+    const effect = dialog.querySelector(".arcane-core-inspector-effect") as HTMLElement;
+    expect(within(effect).getByText("MAXED")).toBeTruthy();
+    expect(within(effect).queryByText(/NEXT|MAX ·/)).toBeNull();
+  });
+
   it("keeps locked nodes selectable and reports the exact rank gate", async () => {
     const user = userEvent.setup();
     render(

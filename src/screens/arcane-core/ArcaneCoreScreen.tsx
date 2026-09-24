@@ -219,6 +219,9 @@ const getArcaneCoreNodeState = (
 const nodeEffect = (node: ArcaneCoreNodeDefinition, rank: number) =>
   getArcaneCoreNodeEffectTexts(node, rank).join(" · ");
 
+const nodeTooltipEffect = (node: ArcaneCoreNodeDefinition, rank: number) =>
+  nodeEffect(node, rank > 0 ? rank : 1);
+
 interface ArcaneCoreOrbitNodeProps {
   node: ArcaneCoreNodeDefinition;
   position: { left: number; top: number };
@@ -246,16 +249,21 @@ const ArcaneCoreOrbitNode = memo(function ArcaneCoreOrbitNode({
   onSelect,
   onDoublePurchase,
 }: ArcaneCoreOrbitNodeProps) {
+  const availabilityClass = nodeState === "LOCKED_RING" || nodeState === "LOCKED_MAJOR_REQUIREMENT"
+    ? "is-locked"
+    : nodeState === "UNAFFORDABLE"
+      ? "is-available is-unaffordable"
+      : "is-available";
   return (
     <GameTooltip
-      content={`${node.name} · Rank ${rank}/${node.maxRank} · ${nodeEffect(node, rank)}`}
+      content={`${node.name} · ${node.nodeType === "major" ? "MAJOR" : `Rank ${rank}/${node.maxRank}`} · ${nodeTooltipEffect(node, rank)}`}
     >
       <button
         type="button"
         data-no-pan
         data-ring={node.ring}
         data-angle={node.angleDeg}
-        className={`arcane-core-ring-node node-${node.nodeType} is-${nodeState.toLowerCase().replace(/_/g, "-")} ${rank > 0 ? "is-active" : ""} ${nodeState === "MAXED" || nodeState === "INVESTED" ? "is-available" : "is-locked"} ${node.nodeType === "major" ? "is-major" : ""} ${ringLocked ? "is-ring-locked" : ""} ${ringLocked && node.ring === highestRing + 1 ? "is-next-locked" : ""} ${ringLocked && node.ring > highestRing + 1 ? "is-deep-locked" : ""} ${selectedRing ? "is-selected-ring-node" : ""} ${selected ? "is-selected" : ""} ${feedback ? `is-${feedback}-pulse` : ""}`}
+        className={`arcane-core-ring-node node-${node.nodeType} is-${nodeState.toLowerCase().replace(/_/g, "-")} ${rank > 0 ? "is-active" : ""} ${availabilityClass} ${node.nodeType === "major" ? "is-major" : ""} ${ringLocked ? "is-ring-locked" : ""} ${ringLocked && node.ring === highestRing + 1 ? "is-next-locked" : ""} ${ringLocked && node.ring > highestRing + 1 ? "is-deep-locked" : ""} ${selectedRing ? "is-selected-ring-node" : ""} ${selected ? "is-selected" : ""} ${feedback ? `is-${feedback}-pulse` : ""}`}
         style={{ left: position.left, top: position.top }}
         onClick={() => onSelect(node.id)}
         onDoubleClick={(event) => {
@@ -634,7 +642,9 @@ function CoreModal({
         },
       });
   };
-  const selectedCurrent = selected ? nodeEffect(selected, selectedRank) : "";
+  const selectedCurrent = selected
+    ? nodeEffect(selected, selected.nodeType === "major" ? Math.max(1, selectedRank) : selectedRank)
+    : "";
   const selectedNext =
     selected && selectedRank < selected.maxRank
       ? nodeEffect(selected, selectedRank + 1)
@@ -841,12 +851,22 @@ function CoreModal({
                     EFFECT SUMMARY
                   </span>
                   <div className="arcane-core-inspector-effect">
-                    <span>
-                      CURRENT EFFECT · RANK {selectedRank}/{selected.maxRank}
-                    </span>
-                    <strong>{selectedCurrent}</strong>
-                    <small>NEXT · {selectedNext}</small>
-                    <small>MAX · {selectedMax}</small>
+                    {selected.nodeType === "major" ? (
+                      <>
+                        <span>MAJOR EFFECT</span>
+                        <strong>{selectedCurrent}</strong>
+                        {selectedRank > 0 && <small>MAXED</small>}
+                      </>
+                    ) : (
+                      <>
+                        <span>
+                          CURRENT EFFECT · RANK {selectedRank}/{selected.maxRank}
+                        </span>
+                        <strong>{selectedCurrent}</strong>
+                        <small>NEXT · {selectedNext}</small>
+                        <small>MAX · {selectedMax}</small>
+                      </>
+                    )}
                   </div>
                 </section>
                 <section className="arcane-core-inspector-section">

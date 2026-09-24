@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { ARCANE_CORE_BRANCHES } from '../../content/arcaneCore/arcaneCoreBranches'
 import { ARCANE_CORE_V7_MECHANICS } from '../../content/arcaneCore/arcaneCoreV7Mechanics'
 import { createInitialState } from '../../../store/initialState'
-import { getArcaneCoreV6CastModifiers, recordArcaneCoreV6CriticalResult } from './arcaneCoreV6Runtime'
+import { commitArcaneCoreV6SpellCast, getArcaneCoreV6CastModifiers, recordArcaneCoreV6CriticalResult, recordArcaneCoreV7CooldownCompletion } from './arcaneCoreV6Runtime'
 
 describe('Arcane Core V7 mechanic safety', () => {
   it('provides exact rank-aware, non-vague text for every dynamic node', () => {
@@ -57,5 +57,32 @@ describe('Arcane Core V7 mechanic safety', () => {
     state.arcaneCore.nodes[node.id] = { rank: 1 }
     const modifiers = getArcaneCoreV6CastModifiers(state, { origin: 'auto', spellId: 'fire-bolt', loadoutSlotIndex: 0, damaging: true, manaCost: 2, maxMana: 100, playerMana: 26, enemyHealthPercent: 100 }, true)
     expect(modifiers.manaRestoreFlat).toBeCloseTo(10)
+  })
+
+  it('prepares Burst Window only when a positive cooldown crosses to zero', () => {
+    const state = createInitialState()
+    const node = ARCANE_CORE_BRANCHES.find((branch) => branch.id === 'power')!.nodes.find((entry) => entry.name === 'Burst Window')!
+    state.arcaneCore.nodes[node.id] = { rank: 1 }
+    recordArcaneCoreV7CooldownCompletion(state, 0, 0)
+    expect(state.combat.arcaneCoreRuntime.burstWindowReady ?? false).toBe(false)
+    recordArcaneCoreV7CooldownCompletion(state, 100, 0)
+    expect(state.combat.arcaneCoreRuntime.burstWindowReady).toBe(true)
+    const context = { origin: 'auto' as const, spellId: 'fire-bolt' as const, loadoutSlotIndex: 0, damaging: true, manaCost: 20, maxMana: 100, playerMana: 100, enemyHealthPercent: 100 }
+    expect(getArcaneCoreV6CastModifiers(state, context, true).damageMultiplier).toBeCloseTo(1.02)
+    const committed = getArcaneCoreV6CastModifiers(state, context)
+    expect(committed.damageMultiplier).toBeCloseTo(1.02)
+    expect(state.combat.arcaneCoreRuntime.burstWindowReady).toBe(false)
+  })
+
+  it('resets the three no-repeat spell sequences at their authored boundaries', () => {
+    const state = createInitialState()
+    const node = ARCANE_CORE_BRANCHES.find((branch) => branch.id === 'power')!.nodes.find((entry) => entry.name === 'Spell Sequence')!
+    state.arcaneCore.nodes[node.id] = { rank: 1 }
+    const cast = (spellId: 'fire-bolt' | 'water-bolt' | 'wind-blade') => commitArcaneCoreV6SpellCast(state, { origin: 'auto', spellId, loadoutSlotIndex: 0, damaging: true, manaCost: 20, maxMana: 100, playerMana: 100, enemyHealthPercent: 100 })
+    cast('fire-bolt')
+    cast('water-bolt')
+    const third = cast('wind-blade')
+    expect(third.damageMultiplier).toBeCloseTo(1.03)
+    expect(state.combat.arcaneCoreRuntime.spellSequenceStreak).toBe(0)
   })
 })

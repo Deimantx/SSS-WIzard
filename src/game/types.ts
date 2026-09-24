@@ -461,6 +461,10 @@ export interface CombatState {
     lastSpellId?: CanonicalSpellId | null
     lastLoadoutSlotIndex?: number | null
     differentSpellStreak?: number
+    /** Independent no-repeat sequences used by the V7 Power branch. */
+    spellSequenceStreak?: number
+    aggressiveRotationStreak?: number
+    sovereignSequenceStreak?: number
     alternatingCastStreak?: number
     enemyDamagingSpellCount?: number
     nextDamageMultiplier?: number
@@ -483,6 +487,7 @@ export interface CombatState {
     criticalRecoveryLastAtMs?: number
     ruinStacks?: number
     chainReactionReady?: boolean
+    burstWindowReady?: boolean
     arcaneOverloadReady?: boolean
     arcaneEchoReady?: boolean
     cataclysmUsed?: boolean
@@ -521,6 +526,14 @@ export interface CombatState {
     manaRegenDisabledUntilMs?: number
     nextHealingActionSpeedMultiplier?: number
     nextSelfTargetActionSpeedMultiplier?: number
+    /** V7 one-shot and timed combat windows. */
+    detonationTheoryReady?: boolean
+    recoveryWindowUntilMs?: number
+    recoveryWindowMultiplier?: number
+    reinforcedRecoveryUntilMs?: number
+    reinforcedRecoveryMultiplier?: number
+    comebackPrepared?: boolean
+    stasisCollapseUntilMs?: number
     castLoadoutSlots?: number[]
     echoCharges?: number
     manualCharges?: number

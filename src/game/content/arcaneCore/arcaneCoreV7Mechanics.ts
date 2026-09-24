@@ -218,6 +218,19 @@ const inferRuntimeKind = (node: ArcaneCoreNodeDefinition): ArcaneCoreV7RuntimeKi
   return 'cast-modifier'
 }
 
+// This is an explicit executable-coverage contract for the current V7 board,
+// independent of node names or presentation metadata. The runtime adapter
+// owns one handler family for every authored branch/ring/slot, including the
+// eight Major slots.
+export const ARCANE_CORE_V7_EXECUTABLE_MECHANIC_IDS = new Set<string>(
+  (['power', 'vitality', 'focus', 'control'] as const).flatMap((branch) =>
+    Array.from({ length: 8 }, (_, index) => {
+      const ring = index + 1
+      return [`${branch}:r${ring}:S5`, `${branch}:r${ring}:S6`, `${branch}:r${ring}:S7`, `${branch}:r${ring}:S8`, `${branch}:r${ring}:M`]
+    }).flat(),
+  ),
+)
+
 const definitions = ARCANE_CORE_NODES.flatMap((node) => {
   const marker = getMarker(node)
   if (!marker) return []
@@ -229,7 +242,7 @@ const definitions = ARCANE_CORE_NODES.flatMap((node) => {
     name: node.name,
     nodeId: node.id,
     nodeType: node.nodeType,
-    runtime: { kind: inferRuntimeKind(node), handler: node.name },
+    runtime: { kind: inferRuntimeKind(node), handler: ARCANE_CORE_V7_EXECUTABLE_MECHANIC_IDS.has(marker.mechanicId) ? `v7:${marker.mechanicId}` : '' },
     describeRank: (rank) => describeV7Mechanic(node.branchId, node.name, node.nodeType, rank),
   }
   return [definition]
@@ -249,7 +262,7 @@ export const validateArcaneCoreV7MechanicCoverage = () => {
     const definition = ARCANE_CORE_V7_MECHANIC_REGISTRY[marker.mechanicId]
     if (!definition) errors.push(`${branch.id}/Ring ${node.ring}/${lastPart(marker.mechanicId)} ${node.name} has no V7 runtime registry entry`)
     else {
-      if (definition.nodeId !== node.id || definition.name !== node.name || definition.runtime.handler !== node.name) errors.push(`${branch.id}/Ring ${node.ring}/${lastPart(marker.mechanicId)} ${node.name} has a mismatched V7 runtime registry entry`)
+      if (definition.nodeId !== node.id || definition.name !== node.name || !ARCANE_CORE_V7_EXECUTABLE_MECHANIC_IDS.has(marker.mechanicId) || !definition.runtime.handler) errors.push(`${branch.id}/Ring ${node.ring}/${lastPart(marker.mechanicId)} ${node.name} has a mismatched V7 runtime registry entry`)
       for (const rank of [1, node.maxRank]) {
         try { if (!definition.describeRank(rank).some(Boolean)) errors.push(`${marker.mechanicId} has empty Rank ${rank} presentation`) }
         catch (error) { errors.push(`${marker.mechanicId} presentation failed: ${error instanceof Error ? error.message : String(error)}`) }

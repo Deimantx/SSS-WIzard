@@ -1,3 +1,7 @@
+# DEPRECATED — V5 Artifact Progression
+
+This file is retained only as historical context. It is not an implementation or balance source. Current V6 runtime definitions live in `src/game/content/artifacts/artifacts.ts` and `src/game/systems/artifacts/artifactProgression.ts`; see `Docs/ARTIFACT_SYSTEM_V6.md` for the source map.
+
 # SSS Wizard — Artifact Progression V5
 ## Baseline Stats + Rank-Based Nodes + Automatic Major Milestones — 50% Node Power Nerf
 

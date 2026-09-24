@@ -1,24 +1,16 @@
 import type { ArtifactDefinition, ArtifactMajorMilestoneDefinition, ArtifactMinorNodeDefinition } from '../../content/artifacts/artifacts'
 
-export interface ArtifactRankGraphNode {
-  id: string
-  kind: 'minor' | 'major'
-  minor?: ArtifactMinorNodeDefinition
-  major?: ArtifactMajorMilestoneDefinition
-  x: number
-  y: number
-}
+export interface ArtifactRankGraphNode { id: string; kind: 'minor' | 'major'; minor?: ArtifactMinorNodeDefinition; major?: ArtifactMajorMilestoneDefinition; x: number; y: number }
 export interface ArtifactPathConnection { from: string; to: string; path: string }
 export interface ArtifactRankGraph { minorNodes: ArtifactRankGraphNode[]; majorNodes: ArtifactRankGraphNode[]; connections: ArtifactPathConnection[]; width: number; height: number }
+const ACT0_MINOR_POSITIONS = [[0.50, 0.10], [0.27, 0.32], [0.73, 0.32], [0.33, 0.60], [0.67, 0.60]] as const
+const ACT1_MINOR_POSITIONS = [[0.50, 0.08], [0.20, 0.25], [0.50, 0.25], [0.80, 0.25], [0.30, 0.48], [0.70, 0.48]] as const
+const position = (width: number, height: number, normalized: readonly [number, number]) => ({ x: normalized[0] * width, y: normalized[1] * height })
 
-/** Deterministic layout for the authored V6 rank track. Minor nodes are the active circles; majors form the milestone rail. */
+/** Symmetric V6 board layout: circles are authored nodes and milestones form a clean bottom rail. */
 export const getArtifactRankGraph = (definition: ArtifactDefinition): ArtifactRankGraph => {
-  const width = Math.max(760, definition.minorNodes.length * 138 + 80)
-  const minorNodes = definition.minorNodes.map((minor, index) => ({ id: minor.id, kind: 'minor' as const, minor, x: 70 + index * ((width - 140) / Math.max(1, definition.minorNodes.length - 1)), y: 120 }))
-  const majorNodes = definition.majorMilestones.map((major, index) => ({ id: major.id, kind: 'major' as const, major, x: 110 + index * ((width - 220) / Math.max(1, definition.majorMilestones.length - 1)), y: 310 }))
-  const connections: ArtifactPathConnection[] = []
-  minorNodes.slice(1).forEach((node, index) => { const previous = minorNodes[index]; connections.push({ from: previous.id, to: node.id, path: `M ${previous.x} 145 L ${node.x} 145` }) })
-  minorNodes.forEach((node, index) => { const major = majorNodes[Math.min(majorNodes.length - 1, Math.floor(index * majorNodes.length / Math.max(1, minorNodes.length)))]; if (major) connections.push({ from: node.id, to: major.id, path: `M ${node.x} 150 C ${node.x} 220, ${major.x} 235, ${major.x} 280` }) })
-  majorNodes.slice(1).forEach((node, index) => { const previous = majorNodes[index]; connections.push({ from: previous.id, to: node.id, path: `M ${previous.x} 335 L ${node.x} 335` }) })
-  return { minorNodes, majorNodes, connections, width, height: 410 }
+  const width = 860; const height = 500; const minorPositions = definition.minorNodes.length === 5 ? ACT0_MINOR_POSITIONS : ACT1_MINOR_POSITIONS
+  const minorNodes = definition.minorNodes.map((minor, index) => ({ id: minor.id, kind: 'minor' as const, minor, ...position(width, height, minorPositions[index] ?? [0.5, 0.1]) }))
+  const majorNodes = definition.majorMilestones.map((major, index) => ({ id: major.id, kind: 'major' as const, major, ...position(width, height, [0.1 + (index / Math.max(1, definition.majorMilestones.length - 1)) * 0.8, 0.84]) }))
+  return { minorNodes, majorNodes, connections: [], width, height }
 }

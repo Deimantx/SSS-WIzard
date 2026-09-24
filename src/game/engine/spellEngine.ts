@@ -9,6 +9,8 @@ import { scaleMagnitude } from '../systems/combat/combatTypes'
 import { getEffectiveManaCost } from '../systems/combat/combatStats'
 import { getCombatModifiers } from '../systems/combat/modifiers'
 import { getSpellCombatSource } from '../systems/spells/spellSource'
+import { getSpellCastTimeMultiplier } from '../systems/spells/spellCastTiming'
+import { getArtifactPreCastDamageMultiplier, getArtifactPreCastManaMultiplier, getArtifactSpellCritDamageBonus } from '../systems/artifacts/artifactProgression'
 import { hasEnoughResource, stabilizeResourceValue } from '../presentation/resources/resourcePresentation'
 import { beginArcaneCoreSpellCast, isArcaneCoreSpellFree } from '../systems/arcaneCore/arcaneCoreRuntime'
 import { getArcaneCoreV6CastModifiers, type ArcaneCoreCastOrigin, type ArcaneCoreV6CastModifiers } from '../systems/arcaneCore/arcaneCoreV6Runtime'
@@ -87,7 +89,7 @@ const getSpellCastRate = (state: GameState) => {
 
 export const getPlayerSpellCastRate = getSpellCastRate
 
-const getCastWorkMultiplier = (state: GameState) => state.combat.playerStatuses.some((status) => status.statusId === 'gust') ? 0.7 : 1
+const getCastWorkMultiplier = (state: GameState, spellId: SpellId) => (state.combat.playerStatuses.some((status) => status.statusId === 'gust') ? 0.7 : 1) * getSpellCastTimeMultiplier(state, spellId)
 
 const startSpellCast = (state: GameState, spellId: SpellId, quiet: boolean, uiEvents?: CombatEventSink, options: SpellRequestOptions = {}) => {
   const spell = SPELLS[spellId]
@@ -103,8 +105,8 @@ const startSpellCast = (state: GameState, spellId: SpellId, quiet: boolean, uiEv
   const baseManaCost = manaPreview?.baseManaCost ?? getEffectiveManaCost(state, spell.manaCost)
   const v6Preview = manaPreview?.modifiers ?? getArcaneCoreV6CastModifiers(state, { origin: castOrigin, spellId: spell.id, loadoutSlotIndex: loadoutSlotIndex >= 0 ? loadoutSlotIndex : null, damaging: spell.effects.some((effect) => effect.type === 'deal-damage'), manaCost: baseManaCost, maxMana: state.player.maxMana, playerMana: state.player.mana, enemyHealthPercent: state.combat.enemyHp / Math.max(1, state.combat.enemyMaxHp) * 100 }, true)
   const free = manaPreview?.free ?? (isArcaneCoreSpellFree(state) || v6Preview.free)
-  const manaCost = manaPreview?.manaCost ?? Math.max(1, Math.ceil(baseManaCost * v6Preview.manaCostMultiplier))
-  const gustMultiplier = getCastWorkMultiplier(state)
+  const manaCost = Math.max(1, Math.ceil((manaPreview?.manaCost ?? baseManaCost * v6Preview.manaCostMultiplier) * getArtifactPreCastManaMultiplier(state)))
+  const gustMultiplier = getCastWorkMultiplier(state, spell.id)
   const multiplier = gustMultiplier / Math.max(0.1, v6Preview.actionSpeedMultiplier)
   const castWorkMs = spell.castTimeMs * multiplier
   state.combat.pendingPlayerSpellCast = {
@@ -192,7 +194,10 @@ const buildCompletionSource = (state: GameState, pending: PendingPlayerSpellCast
   }
   if (pending.spellId === 'frozen-current' && targetHas('chilled')) spellDamageMultiplier += 0.25
   spellDamageMultiplier += staticDamageBonus
-  return { ...getSpellCombatSource(pending.spellId), spellDamageMultiplier, spellCritChanceBonus: (pending.spellId === 'lightning-spark' ? 0.25 : 0) + (arcaneCoreCast?.critChanceBonus ?? pending.arcaneCoreCritChanceBonus ?? 0) + (arcaneCoreCast?.guaranteedCrit || pending.arcaneCoreGuaranteedCrit ? 1 : 0), spellCritDamageBonus: (pending.spellId === 'thunderstrike' ? 0.5 : 0) + (arcaneCoreCast?.critDamageBonus ?? pending.arcaneCoreCritDamageBonus ?? 0), castOrigin: pending.castOrigin ?? 'auto', loadoutSlotIndex: pending.loadoutSlotIndex ?? null }
+  const artifactRuntime = state.combat.arcaneCoreRuntime
+  if (pending.spellId && artifactRuntime.artifactAfterHealWaterReady && spell.school === 'water') { spellDamageMultiplier += 0.05; artifactRuntime.artifactAfterHealWaterReady = false }
+  spellDamageMultiplier *= getArtifactPreCastDamageMultiplier(state, spell.school)
+  return { ...getSpellCombatSource(pending.spellId), spellDamageMultiplier, spellCritChanceBonus: (pending.spellId === 'lightning-spark' ? 0.25 : 0) + (arcaneCoreCast?.critChanceBonus ?? pending.arcaneCoreCritChanceBonus ?? 0) + (arcaneCoreCast?.guaranteedCrit || pending.arcaneCoreGuaranteedCrit ? 1 : 0), spellCritDamageBonus: (pending.spellId === 'thunderstrike' ? 0.5 : 0) + (arcaneCoreCast?.critDamageBonus ?? pending.arcaneCoreCritDamageBonus ?? 0) + getArtifactSpellCritDamageBonus(state, spell.school), castOrigin: pending.castOrigin ?? 'auto', loadoutSlotIndex: pending.loadoutSlotIndex ?? null }
 }
 
 const scaleSpellEffect = (effect: CombatEffect, factor: number, statusDurationMultiplier = 1): CombatEffect => {

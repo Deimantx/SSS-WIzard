@@ -336,6 +336,7 @@ export type ModifierKey =
   | 'barrier-received-percent'
   | 'mana-regen-percent'
   | 'cooldown-recovery-percent'
+  | 'spell-cast-time-percent'
   | 'control-duration-received-percent'
   | 'status-duration-dealt-percent'
   | 'status-duration-received-percent'

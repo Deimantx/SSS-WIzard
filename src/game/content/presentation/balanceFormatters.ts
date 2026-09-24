@@ -153,6 +153,7 @@ const modifierLabels: Record<ModifierKey, string> = {
   'mana-regen-percent': 'Mana regeneration',
   'health-regen-flat': 'Health regeneration',
   'cooldown-recovery-percent': 'Cooldown recovery',
+  'spell-cast-time-percent': 'Spell cast time',
   'control-duration-received-percent': 'Control duration received',
   'status-duration-dealt-percent': 'Status duration dealt',
   'status-duration-received-percent': 'Status duration received',

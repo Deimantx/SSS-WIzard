@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
-import { debugMaxArtifact, debugResetArtifact, getArtifactNextMajorMilestone, getArtifactRankCost, getArtifactUnlockedMajorMilestones, purchaseArtifactMinorRank } from './artifactProgression'
+import { debugMaxArtifact, debugResetArtifact, getArtifactNextMajorMilestone, getArtifactRankCost, getArtifactRankPurchaseEligibility, getArtifactUnlockedMajorMilestones, purchaseArtifactMinorRank } from './artifactProgression'
 
 describe('Artifact rank progression', () => {
   it('starts empty and unlocks automatic Majors by total invested ranks', () => {
@@ -35,5 +35,18 @@ describe('Artifact rank progression', () => {
 
   it('exposes the authored next-rank cost without deriving legacy levels', () => {
     expect(getArtifactRankCost('ember-staff', 'arcane-embers', 1)).toMatchObject({ artifactEssence: 15, fragment: { quantity: 50 }, resonance: { fire: 50 } })
+  })
+
+  it('uses one canonical eligibility result for item and Resonance requirements', () => {
+    const state = createInitialState()
+    state.inventory['ember-staff'] = 1
+    state.artifactProgress['ember-staff'] = { minorRanks: {} }
+    state.inventory['artifact-essence'] = 15
+    state.inventory['fire-fragment'] = 50
+    const eligibility = getArtifactRankPurchaseEligibility(state, 'ember-staff', 'arcane-embers')
+    expect(eligibility.canPurchase).toBe(false)
+    expect(eligibility.requirements).toEqual(expect.arrayContaining([{ kind: 'resonance', id: 'fire', label: 'Fire Resonance', owned: 0, required: 50, sufficient: false }]))
+    state.resonance.fire = 50
+    expect(getArtifactRankPurchaseEligibility(state, 'ember-staff', 'arcane-embers').canPurchase).toBe(true)
   })
 })

@@ -517,6 +517,12 @@ export interface CombatState {
     nextControlStatusDurationMultiplier?: number
     controlStatusApplications?: number
     lastDamageTakenAtMs?: number
+    artifactSpellCount?: number
+    artifactAirSpellCount?: number
+    artifactLastSpellAtMs?: number
+    artifactAfterHealWaterReady?: boolean
+    artifactNextIdleDamageMultiplier?: number
+    artifactFreeFocusSnapshot?: number
   }
   playerStatuses: ActiveStatus[]
   enemyStatuses: ActiveStatus[]

@@ -9,7 +9,8 @@ describe('Artifact rank path read model', () => {
     const graph = getArtifactRankGraph(ARTIFACTS['ember-staff'])
     expect(graph.minorNodes).toHaveLength(5)
     expect(graph.majorNodes).toHaveLength(5)
-    expect(graph.connections.length).toBeGreaterThan(0)
+    expect(graph.connections).toHaveLength(0)
+    expect(graph.minorNodes.map((node) => [node.x / graph.width, node.y / graph.height])).toEqual([[0.5, 0.1], [0.27, 0.32], [0.73, 0.32], [0.33, 0.6], [0.67, 0.6]])
   })
 
   it('reports next milestone from total invested ranks', () => {

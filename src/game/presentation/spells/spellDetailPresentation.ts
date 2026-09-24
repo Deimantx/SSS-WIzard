@@ -4,6 +4,7 @@ import type { SchoolId, SpellId } from '../../types'
 import { formatTime } from '../../utils'
 import { buildSpellEffectTooltipModel, getCompactSpellEffectRows, getExpandedSpellEffectRows, type SpellEffectTooltipModel, type SpellEffectTooltipRow } from './spellEffectTooltipModel'
 import { getEffectiveSpellCooldown, getEffectiveSpellManaCost, getEffectiveSpellPower, type SpellPresentationState } from './effectiveSpellPresentation'
+import { getEffectiveSpellCastTimeMs } from '../../systems/spells/spellCastTiming'
 
 export type { SpellPresentationState } from './effectiveSpellPresentation'
 
@@ -62,5 +63,6 @@ export function buildSpellDetailPresentation(state: SpellPresentationState, spel
   const mana = getEffectiveSpellManaCost(state, spellId)
   const cooldown = getEffectiveSpellCooldown(state, spellId)
   const spellPowerBreakdown = getEffectiveSpellPower(state)
-  return { spellId, spellName: spell.name, school: spell.school, rankLabel: formatSpellRank(rank), description: spell.description, manaCost: mana.effective, castTimeMs: spell.castTimeMs, castTimeLabel: formatTime(spell.castTimeMs), cooldownMs: cooldown.effective, cooldownLabel: formatTime(cooldown.effective), autoCastFocus: getSpellAutoCastFocusCost(state, spellId) ?? 0, autoCastActive: Boolean(state.activities.autoCast[spellId]), spellPower: spellPowerBreakdown.total, spellPowerBreakdown, effects: spell.effects.map((_, index) => buildSpellEffectTooltipModel(state, spellId, index)) }
+  const castTimeMs = getEffectiveSpellCastTimeMs(state, spellId)
+  return { spellId, spellName: spell.name, school: spell.school, rankLabel: formatSpellRank(rank), description: spell.description, manaCost: mana.effective, castTimeMs, castTimeLabel: formatTime(castTimeMs), cooldownMs: cooldown.effective, cooldownLabel: formatTime(cooldown.effective), autoCastFocus: getSpellAutoCastFocusCost(state, spellId) ?? 0, autoCastActive: Boolean(state.activities.autoCast[spellId]), spellPower: spellPowerBreakdown.total, spellPowerBreakdown, effects: spell.effects.map((_, index) => buildSpellEffectTooltipModel(state, spellId, index)) }
 }

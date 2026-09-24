@@ -577,6 +577,11 @@ export interface GameActions {
     artifactId: import("../game/types").ArtifactId,
     nodeId: string,
   ) => boolean;
+  debugPurchaseArtifactRank: (
+    artifactId: import("../game/types").ArtifactId,
+    nodeId: string,
+    free: boolean,
+  ) => boolean;
   grantArcanePoints: (amount: number) => void;
   setArcanePoints: (amount: number) => void;
   debugGrantResonance: (type: ResonanceType, amount: number) => void;
@@ -798,10 +803,11 @@ const ensureDebugArtifact = (state: GameState, artifactId: ArtifactId) => {
   return (state.artifactProgress[artifactId] ??= { minorRanks: {} });
 };
 const grantDebugArtifactMaterialsInState = (state: GameState) => {
-  grantItem(state, 'artifact-essence', 100000);
-  grantItem(state, 'prismatic-fragment', 100000);
-  Object.values(ARTIFACTS).forEach((definition) => definition?.forge.ingredients.forEach(({ itemId, quantity }) => grantItem(state, itemId, quantity * 10)));
-  Object.keys(state.resonance).forEach((type) => { state.resonance[type as ResonanceType] = Number.MAX_SAFE_INTEGER; });
+  Object.keys(ITEMS).filter((itemId) => itemId === 'artifact-essence' || itemId === 'prismatic-fragment' || itemId.includes('fragment')).forEach((itemId) => {
+    const current = state.inventory[itemId as ItemId] ?? 0;
+    if (current < 100000) grantItem(state, itemId as ItemId, 100000 - current);
+  });
+  Object.keys(state.resonance).forEach((type) => { state.resonance[type as ResonanceType] = Math.max(100000, state.resonance[type as ResonanceType] ?? 0); });
 };
 
 const spellUnlocked = isSpellUnlocked;
@@ -1308,6 +1314,17 @@ export const useGameStore = create<GameStore>()(
           "var(--ui-success)",
           1.05,
         );
+      return ok;
+    },
+    debugPurchaseArtifactRank: (artifactId, nodeId, free) => {
+      let ok = false;
+      set((state) => {
+        const result = purchaseArtifactMinorRank(state, artifactId, nodeId, { free });
+        ok = result.ok;
+        if (result.ok) recalculateDerivedStats(state);
+        else pushNotification(state, result.reason, "warning", { key: "artifact-rank-purchase-failed", cooldownMs: 1200 });
+        return state;
+      });
       return ok;
     },
     grantArcanePoints: (amount) =>

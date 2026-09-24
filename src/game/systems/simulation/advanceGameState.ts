@@ -2,7 +2,7 @@ import { BALANCE } from '../../core/balance/balance'
 import { CHANNELING_DISCOVERIES } from '../../content/channeling/channelingDiscoveries'
 import { MONSTERS } from '../../content/monsters'
 import { SPELLS } from '../../content/spells/spells'
-import { advanceChanneling } from '../../engine/channelingEngine'
+import { advanceChanneling, manaRegenPerSecond } from '../../engine/channelingEngine'
 import { pushNotification, recalculateDerivedStats } from '../../engine'
 import { castSpellInternal, getPlayerSpellCastRate, getSpellStartFailure, resolvePlayerSpellCast, spellRequiresEnemyTarget } from '../../engine/spellEngine'
 import { executeCombatEffects } from '../combat/effectResolver'
@@ -19,8 +19,8 @@ import type { SimulationReportCollector } from '../offline-bank/offlineBankRepor
 import { applyTransmutationAllocations, buildTransmutationWorkRequests } from '../transmutation/transmutationEngine'
 import { advanceArtificing, type ArtificingCompletion } from '../artificing/artificingEngine'
 import { applyResearchAllocations, buildResearchWorkRequests } from '../research/researchEngine'
-import { allocateContinuousMana } from './continuousManaScheduler'
-import { getNextAutomatedSpellCooldownMs, isSpellUnlocked, selectNextAutomatedSpellFast } from '../spells'
+import { allocateContinuousMana, getContinuousManaDemandPerSecond } from './continuousManaScheduler'
+import { getNextAutoCastEligibilityBoundaryMs, getNextAutomatedSpellCooldownMs, isSpellUnlocked, selectNextAutomatedSpellFast } from '../spells'
 import { MAX_SIMULATION_DELTA_MS, SIMULATION_QUANTUM_MS } from './simulationConstants'
 import type { CombatTelemetryObserver } from '../../telemetry/combat/combatTelemetryTypes'
 import type { DungeonStatisticsObserver } from '../../telemetry/dungeon/dungeonStatisticsTypes'
@@ -40,6 +40,9 @@ export interface AdvanceContext {
   telemetry?: CombatTelemetryObserver
   alerts?: CombatAlertObserver
   statistics?: DungeonStatisticsObserver
+  onAutoCastSelection?: () => void
+  onResearchComplete?: () => void
+  onTransmutationComplete?: () => void
 }
 
 const spellUnlocked = isSpellUnlocked
@@ -67,7 +70,10 @@ const autoCastReadySpells = (state: GameState, context: AdvanceContext) => {
   if (actorCannotAct(state, 'player') || state.debug.freezePlayerActions || state.debug.disableAutoCast) return
   {
     const selection = selectNextAutomatedSpellFast(state)
-    if (selection) castSpellInternal(state, selection.spellId, true, context.uiEvents)
+    if (selection) {
+      context.onAutoCastSelection?.()
+      castSpellInternal(state, selection.spellId, true, context.uiEvents)
+    }
   }
   suppressGuardianIfOutOfMana(state)
 }
@@ -113,7 +119,52 @@ const advanceObservers = (state: GameState, delta: number, context: AdvanceConte
   context.statistics?.advance(delta, state)
 }
 
-const getNextHealthRegenEventMs = (state: GameState) => state.player.healthRegenTimerMs > 0 ? state.player.healthRegenTimerMs : Number.POSITIVE_INFINITY
+const getNextHealthRegenEventMs = (state: GameState, skipFullHealth = false) => skipFullHealth && state.player.health >= state.player.maxHealth ? Number.POSITIVE_INFINITY : state.player.healthRegenTimerMs > 0 ? state.player.healthRegenTimerMs : Number.POSITIVE_INFINITY
+
+/** Earliest combat-owned boundary used by the banked event-driven runner. */
+export const getNextCombatBoundaryMs = (state: GameState): number | null => {
+  if (!state.combat.active || (state.combat.enemyId && !MONSTERS[state.combat.enemyId])) return null
+  const cooldownRecovery = getCooldownRecoveryMultiplier(state)
+  const manaDeltaPerSecond = manaRegenPerSecond(state) - getContinuousManaDemandPerSecond(state)
+  if (state.player.health <= 0 || (state.combat.enemyId && state.combat.enemyHp <= 0)) return 0
+  if (!state.combat.enemyId) {
+    if (state.combat.encounterTimerMs <= 0) return 0
+    const playerBlocked = actorCannotAct(state, 'player') || state.debug.freezePlayerActions
+    const playerRate = getPlayerSpellCastRate(state)
+    const pending = state.combat.pendingPlayerSpellCast
+    const playerRemaining = playerBlocked || playerRate <= 0 || !pending ? Number.POSITIVE_INFINITY : Math.max(0, pending.remainingWorkMs) / playerRate
+    return Math.min(
+      Math.max(0, state.combat.encounterTimerMs),
+      playerRemaining,
+      getNextPlayerStatusEventMs(state) ?? Number.POSITIVE_INFINITY,
+      getNextPlayerBarrierEventMs(state) ?? Number.POSITIVE_INFINITY,
+      getNextHealthRegenEventMs(state, true),
+      getNextQueuedSpellCooldownEventMs(state, cooldownRecovery) ?? Number.POSITIVE_INFINITY,
+      getNextAutoCastCooldownEventMs(state, cooldownRecovery) ?? Number.POSITIVE_INFINITY,
+      getNextAutoCastEligibilityBoundaryMs(state, cooldownRecovery, manaDeltaPerSecond) ?? Number.POSITIVE_INFINITY,
+    )
+  }
+  if (!state.combat.enemyCurrentStepId && !actorCannotAct(state, 'enemy') && !state.debug.freezeEnemyActions) return 0
+  const playerBlocked = actorCannotAct(state, 'player') || state.debug.freezePlayerActions
+  const enemyBlocked = actorCannotAct(state, 'enemy') || state.debug.freezeEnemyActions
+  const playerRate = getPlayerSpellCastRate(state)
+  const arcaneStasisActive = (state.combat.arcaneCoreRuntime.absoluteStasisUntilMs ?? 0) > state.combat.arcaneCoreRuntime.elapsedMs
+  const enemyRate = arcaneStasisActive ? 0 : state.combat.enemyCurrentStepId ? getCurrentEnemyActionRate(state) : 0
+  const playerRemaining = playerBlocked || playerRate <= 0 || !state.combat.pendingPlayerSpellCast ? Number.POSITIVE_INFINITY : Math.max(0, state.combat.pendingPlayerSpellCast.remainingWorkMs) / playerRate
+  const enemyRemaining = enemyBlocked || !state.combat.enemyCurrentStepId || enemyRate <= 0 ? Number.POSITIVE_INFINITY : Math.max(0, state.combat.enemyActionTimerMs) / enemyRate
+  return Math.min(
+    playerRemaining,
+    enemyRemaining,
+    getNextCombatStatusEventMs(state) ?? Number.POSITIVE_INFINITY,
+    getNextCombatBarrierEventMs(state) ?? Number.POSITIVE_INFINITY,
+    getNextHealthRegenEventMs(state, true),
+    getNextQueuedSpellCooldownEventMs(state, cooldownRecovery) ?? Number.POSITIVE_INFINITY,
+    getNextAutoCastCooldownEventMs(state, cooldownRecovery) ?? Number.POSITIVE_INFINITY,
+    getNextAutoCastEligibilityBoundaryMs(state, cooldownRecovery, manaDeltaPerSecond) ?? Number.POSITIVE_INFINITY,
+    state.combat.guardian.activeGuardianId ? Math.max(0, state.combat.guardian.attackTimerMs) : Number.POSITIVE_INFINITY,
+    arcaneStasisActive ? Math.max(0, state.combat.arcaneCoreRuntime.absoluteStasisUntilMs! - state.combat.arcaneCoreRuntime.elapsedMs) : Number.POSITIVE_INFINITY,
+  )
+}
 
 const resolveHealthRegenTick = (state: GameState, activeCombat: boolean, context: AdvanceContext) => {
   const interval = BALANCE.player.healthRegenIntervalMs
@@ -127,6 +178,13 @@ const resolveHealthRegenTick = (state: GameState, activeCombat: boolean, context
 }
 
 const advanceHealthRegenTimer = (state: GameState, delta: number, activeCombat: boolean, context: AdvanceContext) => {
+  if (context.mode === 'banked' && delta > 0 && state.player.health >= state.player.maxHealth) {
+    const interval = BALANCE.player.healthRegenIntervalMs
+    const timer = Math.max(0, state.player.healthRegenTimerMs)
+    const remainder = ((timer - delta) % interval + interval) % interval
+    state.player.healthRegenTimerMs = remainder > 0 ? remainder : interval
+    return
+  }
   let remaining = Math.max(0, delta)
   let guard = 0
   while (remaining > 0 && guard++ < 1000) {
@@ -183,7 +241,7 @@ const advanceCombatTimeline = (state: GameState, delta: number, context: Advance
       enemyRemaining,
       getNextCombatStatusEventMs(state),
       getNextCombatBarrierEventMs(state),
-      getNextHealthRegenEventMs(state),
+      getNextHealthRegenEventMs(state, context.mode === 'banked'),
       getNextQueuedSpellCooldownEventMs(state, cooldownRecovery),
       getNextAutoCastCooldownEventMs(state, cooldownRecovery),
       getGuardianAttackBoundary(state),
@@ -273,7 +331,7 @@ const advanceCombatDowntimeTimeline = (state: GameState, delta: number, context:
       Math.max(0, state.combat.encounterTimerMs),
       getNextPlayerStatusEventMs(state),
       getNextPlayerBarrierEventMs(state),
-      getNextHealthRegenEventMs(state),
+      getNextHealthRegenEventMs(state, context.mode === 'banked'),
       getNextQueuedSpellCooldownEventMs(state, cooldownRecovery),
       getNextAutoCastCooldownEventMs(state, cooldownRecovery),
     ].filter((value): value is number => value !== null && Number.isFinite(value))
@@ -338,7 +396,7 @@ export const advanceCombatState = (state: GameState, delta: number, context: Adv
   return state
 }
 
-const advanceGameStateStep = (state: GameState, delta: number, context: AdvanceContext) => {
+export const advanceGameStateStep = (state: GameState, delta: number, context: AdvanceContext) => {
   const channelingTick = advanceChanneling(state, delta)
   if (channelingTick.discoveries.includes('deep-reservoir')) recalculateDerivedStats(state)
   channelingTick.discoveries.forEach((id) => {

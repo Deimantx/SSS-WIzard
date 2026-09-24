@@ -1,4 +1,5 @@
-import { advanceGameState } from '../simulation/advanceGameState'
+import { advanceGameStateBanked, advanceGameStateBankedReference, shouldUseOfflineBankReferenceEngine, type OfflineFastForwardMetrics } from './offlineBankFastForward'
+import type { AdvanceContext } from '../simulation/advanceGameState'
 import { pushNotification } from '../../engine'
 import type { ArtificingRecipeId, GameState, ItemId } from '../../types'
 import type { CombatEventSink } from '../combat/combatTypes'
@@ -18,6 +19,14 @@ export interface OfflineBankPerformanceMetrics {
   combatEvents: number
   longestCpuSliceMs: number
   finalSaveMs: number
+  eventBoundaries: number
+  largestJumpMs: number
+  averageJumpMs: number
+  combatSelections: number
+  statusTicks: number
+  researchCompletions: number
+  transmutationCompletions: number
+  artificingCompletions: number
 }
 export interface OfflineBankResult { ok: boolean; error?: string; report?: OfflineBankReport; completedArtificingRecipeIds?: ArtificingRecipeId[]; combatDefeat?: OfflineCombatDefeatResult; performance?: OfflineBankPerformanceMetrics }
 type StateSetter = (recipe: (state: GameState) => void) => void
@@ -77,35 +86,19 @@ export const advanceWithOfflineBank = async (durationMs: number, getState: () =>
   const completedArtificingRecipeIds = new Set<ArtificingRecipeId>()
   const acquiredItems = new Map<ItemId, number>()
   const simulationStartedAt = typeof performance !== 'undefined' ? performance.now() : Date.now()
-  let lastYieldAt = simulationStartedAt
-  let lastProgressAt = simulationStartedAt
-  let yields = 0
   let combatEvents = 0
-  let longestCpuSliceMs = 0
   let finalSaveMs = 0
-  const performanceMetrics = (): OfflineBankPerformanceMetrics => ({ requestedDurationMs: duration, realExecutionMs: (typeof performance !== 'undefined' ? performance.now() : Date.now()) - simulationStartedAt, simulationQuanta: Math.ceil(duration / 100), yields, combatEvents, longestCpuSliceMs, finalSaveMs })
+  let fastForwardMetrics: OfflineFastForwardMetrics = { eventBoundaries: 0, largestJumpMs: 0, totalJumpMs: 0, combatSelections: 0, statusTicks: 0, researchCompletions: 0, transmutationCompletions: 0, artificingCompletions: 0, yields: 0, longestCpuSliceMs: 0 }
+  const performanceMetrics = (): OfflineBankPerformanceMetrics => ({ requestedDurationMs: duration, realExecutionMs: (typeof performance !== 'undefined' ? performance.now() : Date.now()) - simulationStartedAt, simulationQuanta: fastForwardMetrics.eventBoundaries, yields: fastForwardMetrics.yields, combatEvents, longestCpuSliceMs: fastForwardMetrics.longestCpuSliceMs, finalSaveMs, eventBoundaries: fastForwardMetrics.eventBoundaries, largestJumpMs: fastForwardMetrics.largestJumpMs, averageJumpMs: fastForwardMetrics.eventBoundaries > 0 ? fastForwardMetrics.totalJumpMs / fastForwardMetrics.eventBoundaries : 0, combatSelections: fastForwardMetrics.combatSelections, statusTicks: fastForwardMetrics.statusTicks, researchCompletions: fastForwardMetrics.researchCompletions, transmutationCompletions: fastForwardMetrics.transmutationCompletions, artificingCompletions: fastForwardMetrics.artificingCompletions })
   try {
-    const steps = Math.ceil(duration / 1000)
-    let remaining = duration
-    for (let index = 0; index < steps; index += 1) {
-      const step = Math.min(1000, remaining)
-      remaining -= step
-      workingState.offlineBankMs = Math.max(0, workingState.offlineBankMs - step)
-      advanceGameState(workingState, step, { mode: 'banked', report: collector, onItemAcquired: (itemId, quantity) => { acquiredItems.set(itemId, (acquiredItems.get(itemId) ?? 0) + quantity) }, onArtificingComplete: (completion) => completedArtificingRecipeIds.add(completion.recipeId), uiEvents: { push: (event) => { combatEvents += 1; simulationEvents.push(event) } }, onPlayerDefeated: (event) => combatTrace.captureDefeat(event, getEncounterTelemetry?.()), onCombatCompleted, telemetry, statistics })
-      const now = typeof performance !== 'undefined' ? performance.now() : Date.now()
-      if (now - lastProgressAt >= 100) {
-        onProgress?.({ phase: 'simulating', percent: Math.min(99, ((index + 1) / steps) * 100) })
-        lastProgressAt = now
-      }
-      if (now - lastYieldAt >= 10) {
-        const cpuSliceMs = now - lastYieldAt
-        longestCpuSliceMs = Math.max(longestCpuSliceMs, cpuSliceMs)
-        if (cpuSliceMs > 20 && import.meta.env.DEV) console.warn(`[Offline Bank] long simulation slice: ${cpuSliceMs.toFixed(1)}ms`)
-        await yieldToBrowser()
-        yields += 1
-        lastYieldAt = typeof performance !== 'undefined' ? performance.now() : Date.now()
-      }
-    }
+    const context: AdvanceContext = { mode: 'banked', report: collector, onItemAcquired: (itemId, quantity) => { acquiredItems.set(itemId, (acquiredItems.get(itemId) ?? 0) + quantity) }, onArtificingComplete: (completion) => completedArtificingRecipeIds.add(completion.recipeId), uiEvents: simulationEvents, onPlayerDefeated: (event) => combatTrace.captureDefeat(event, getEncounterTelemetry?.()), onCombatCompleted, telemetry, statistics }
+    const runner = shouldUseOfflineBankReferenceEngine() ? advanceGameStateBankedReference : advanceGameStateBanked
+    const fastForwardResult = await runner(workingState, duration, context, {
+      onProgress: (simulatedMs) => onProgress?.({ phase: 'simulating', percent: Math.min(99, duration > 0 ? simulatedMs / duration * 100 : 100) }),
+      onCombatEvent: () => { combatEvents += 1 },
+    })
+    fastForwardMetrics = fastForwardResult.metrics
+    workingState.offlineBankMs = Math.max(0, workingState.offlineBankMs - duration)
     onProgress?.({ phase: 'finalizing', percent: 100 })
     for (const [itemId, quantity] of acquiredItems) onItemAcquired?.(workingState, itemId, quantity)
     const report = collector.finalize(workingState)

@@ -4,6 +4,7 @@ import { advanceWithOfflineBank } from './offlineBankSimulation'
 import { executeCombatEffects } from '../combat/effectResolver'
 import { spawnEnemy } from '../combat/combatRuntime'
 import { startNextEnemyAction } from '../combat/actionRuntime'
+import { advanceGameStateBanked, advanceGameStateBankedReference } from './offlineBankFastForward'
 
 const activeCombatState = () => {
   const state = createInitialState()
@@ -18,6 +19,40 @@ const activeCombatState = () => {
 }
 
 describe('Offline Bank analytics wiring', () => {
+  it('skips empty time while matching the fixed-quantum reference state', async () => {
+    const fast = activeCombatState()
+    const reference = JSON.parse(JSON.stringify(fast)) as typeof fast
+    const fastResult = await advanceGameStateBanked(fast, 5_000, { mode: 'banked' })
+    const referenceResult = await advanceGameStateBankedReference(reference, 5_000, { mode: 'banked' })
+
+    expect(fast).toEqual(reference)
+    expect(fastResult.metrics.eventBoundaries).toBeLessThan(referenceResult.metrics.eventBoundaries)
+    expect(fastResult.metrics.largestJumpMs).toBe(5_000)
+  })
+
+  it('does not regress to 100ms stepping for a quiet fifteen-minute bank advance', async () => {
+    const state = activeCombatState()
+    const result = await advanceGameStateBanked(state, 900_000, { mode: 'banked' })
+
+    expect(result.metrics.eventBoundaries).toBe(1)
+    expect(result.metrics.largestJumpMs).toBe(900_000)
+  })
+
+  it('keeps long Research production in parity while jumping between completions', async () => {
+    const fast = createInitialState()
+    fast.inventory['fire-fragment'] = 3
+    fast.player.mana = fast.player.maxMana
+    fast.activities.research.slots['research-1'] = { itemId: 'fire-fragment', targetSchoolId: 'fire', requestedQuantity: 3, remainingQuantity: 3, progressMs: 0, echoesAssigned: 1, status: 'running' }
+    const reference = JSON.parse(JSON.stringify(fast)) as typeof fast
+
+    const fastResult = await advanceGameStateBanked(fast, 15_000, { mode: 'banked' })
+    const referenceResult = await advanceGameStateBankedReference(reference, 15_000, { mode: 'banked' })
+
+    expect(fast).toEqual(reference)
+    expect(fastResult.metrics.eventBoundaries).toBeLessThan(referenceResult.metrics.eventBoundaries)
+    expect(fastResult.metrics.researchCompletions).toBeGreaterThan(0)
+  })
+
   it('runs detached and commits gameplay/analytics once', async () => {
     const state = activeCombatState()
     state.offlineBankMs = 5_000
@@ -53,10 +88,10 @@ describe('Offline Bank analytics wiring', () => {
     const result = await advanceWithOfflineBank(1_000, () => state, (recipe) => recipe(state), vi.fn(), undefined, { uiEvents, telemetry: telemetry as never, statistics: statistics as never })
 
     expect(result.ok).toBe(true)
-    expect(telemetry.advance).toHaveBeenCalledTimes(10)
-    expect(telemetry.advance).toHaveBeenCalledWith(100, state)
-    expect(statistics.advance).toHaveBeenCalledTimes(10)
-    expect(statistics.advance).toHaveBeenCalledWith(100, state)
+    expect(telemetry.advance).toHaveBeenCalledTimes(1)
+    expect(telemetry.advance).toHaveBeenCalledWith(1_000, state)
+    expect(statistics.advance).toHaveBeenCalledTimes(1)
+    expect(statistics.advance).toHaveBeenCalledWith(1_000, state)
     expect(state.offlineBankMs).toBe(0)
   })
 

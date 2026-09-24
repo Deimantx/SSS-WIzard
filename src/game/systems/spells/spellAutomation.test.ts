@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
-import { evaluateSpellAutomation, getSpellAutomationPriorityPreview, getSpellAutomationTargetOptions, normalizeSpellAutomationConfig, selectNextAutomatedSpell, selectNextAutomatedSpellFast } from './spellAutomation'
+import { evaluateSpellAutomation, getNextAutoCastEligibilityBoundaryMs, getSpellAutomationPriorityPreview, getSpellAutomationTargetOptions, normalizeSpellAutomationConfig, selectNextAutomatedSpell, selectNextAutomatedSpellFast } from './spellAutomation'
 
 describe('spell automation evaluator', () => {
   it('normalizes automation rules to five AND conditions and validates targets', () => {
@@ -75,6 +75,25 @@ describe('spell automation evaluator', () => {
     ]
 
     expect(getSpellAutomationPriorityPreview(state, slots, 1)).toMatchObject({ isNext: false, firstEligibleSlotIndex: 0, blockingSpellId: 'fire-bolt' })
+  })
+
+  it('schedules the exact Mana threshold instead of polling Auto-Cast', () => {
+    const state = createInitialState()
+    state.combat.active = true
+    state.combat.enemyId = 'forest-wisp'
+    state.combat.enemyHp = 100
+    state.combat.enemyMaxHp = 100
+    state.progress.spellRanks = { 'fire-bolt': 1 }
+    state.activities.autoCast['fire-bolt'] = true
+    state.player.mana = 0
+    state.combat.activeSpellLoadout = {
+      presetId: null,
+      presetName: 'Test',
+      signature: '',
+      slots: [{ spellId: 'fire-bolt', autoCast: true, automation: { conditions: [{ type: 'always' }], targetRule: 'current-enemy' } }],
+    }
+
+    expect(getNextAutoCastEligibilityBoundaryMs(state, 1, 10)).toBe(3_000)
   })
 
   it('hard-blocks AUTO evaluation while a manual spell is queued', () => {

@@ -4,6 +4,7 @@ import { SPELLS } from '../../content/spells/spells'
 import { actorCannotAct, actorCannotCastSpells } from '../combat/statusRuntime'
 import { isSpellUnlocked } from './spellProgression'
 import { getSpellManaPreview } from '../../engine/spellCastPreview'
+import { manaRegenPerSecond } from '../../engine/channelingEngine'
 import type { AutoCastCondition, CanonicalSpellId, GameState, SpellAutomationCondition, SpellAutomationConfig, SpellAutomationTargetRule, SpellDefinition, SpellPresetSlot, StatusId } from '../../types'
 
 export const MAX_AUTOMATION_CONDITIONS = 5
@@ -361,6 +362,43 @@ export const getNextAutomatedSpellCooldownMs = (state: GameState, cooldownRecove
     if (!slot.autoCast || !SPELLS[slot.spellId] || !isSpellUnlocked(state, slot.spellId)) return
     const cooldown = state.combat.spellCooldowns[slot.spellId] ?? 0
     if (cooldown > 0 && Number.isFinite(cooldown)) next = next === null ? cooldown / cooldownRecovery : Math.min(next, cooldown / cooldownRecovery)
+  })
+  return next
+}
+
+const addBoundary = (current: number | null, candidate: number | null) => candidate !== null && Number.isFinite(candidate) && candidate >= 0 ? current === null ? candidate : Math.min(current, candidate) : current
+
+/** Returns a timed boundary that can make an Auto-Cast slot eligible. */
+export const getNextAutoCastEligibilityBoundaryMs = (state: GameState, cooldownRecovery: number, manaDeltaPerSecond = manaRegenPerSecond(state)): number | null => {
+  if (!state.combat.active || state.debug.disableAutoCast || state.debug.freezePlayerActions || actorCannotAct(state, 'player') || actorCannotCastSpells(state, 'player')) return null
+  const slots = state.combat.activeSpellLoadout?.slots ?? []
+  const context = buildFastAutomationContext(state)
+  let next: number | null = null
+  slots.forEach((slot) => {
+    if (!slot.autoCast) return
+    const spell = SPELLS[slot.spellId]
+    if (!spell || !isSpellUnlocked(state, spell.id) || (!context.allowFocusOverCap && !state.activities.autoCast[spell.id])) return
+    const config = getSpellAutomationConfig(slot)
+    if (config.targetRule === 'self' ? hasEnemyTarget(spell) : !context.hasEnemy || !hasEnemyTarget(spell)) return
+    const cooldown = state.debug.ignoreSpellCooldowns ? 0 : state.combat.spellCooldowns[spell.id] ?? 0
+    next = addBoundary(next, cooldown > 0 && cooldownRecovery > 0 ? cooldown / cooldownRecovery : null)
+    config.conditions.forEach((condition) => {
+      if (condition.type === 'player-buff' || condition.type === 'enemy-debuff') {
+        const status = activeStatus(state, condition.type === 'player-buff' ? 'player' : 'enemy', condition.effectId)
+        if (condition.operator === 'remaining-below' && status?.remainingMs !== null && status?.remainingMs !== undefined) next = addBoundary(next, Math.max(0, status.remainingMs - (condition.seconds ?? 0) * 1000))
+        else if (condition.operator === 'has' && status?.remainingMs !== null && status?.remainingMs !== undefined) next = addBoundary(next, status.remainingMs)
+        return
+      }
+      if (condition.type !== 'mana' || !Number.isFinite(manaDeltaPerSecond) || Math.abs(manaDeltaPerSecond) <= 1e-9) return
+      const threshold = state.player.maxMana * condition.percent / 100
+      if (condition.operator === 'above' && state.player.mana <= threshold && manaDeltaPerSecond > 0) next = addBoundary(next, (threshold - state.player.mana) / manaDeltaPerSecond * 1000)
+      if (condition.operator === 'below' && state.player.mana >= threshold && manaDeltaPerSecond < 0) next = addBoundary(next, (state.player.mana - threshold) / -manaDeltaPerSecond * 1000)
+    })
+    if (!context.infiniteMana) {
+      const manaPreview = getSpellManaPreview(state, spell.id, 'auto')
+      const required = manaPreview?.manaCost ?? spell.manaCost
+      if (!manaPreview?.free && state.player.mana < required && manaDeltaPerSecond > 0) next = addBoundary(next, (required - state.player.mana) / manaDeltaPerSecond * 1000)
+    }
   })
   return next
 }

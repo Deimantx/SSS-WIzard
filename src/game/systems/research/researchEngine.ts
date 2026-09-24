@@ -10,6 +10,7 @@ import { RESEARCH_SLOT_ORDER } from './researchReservations'
 export interface ResearchAdvanceContext {
   mode: 'live' | 'banked'
   report?: { recordResearch: (itemId: ItemId, schoolId: SchoolId, xp: number) => void; recordResearchStoppedAtCap: () => void }
+  onResearchComplete?: () => void
 }
 
 const finiteQuantity = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0
@@ -114,6 +115,7 @@ const completeResearchCycle = (state: GameState, slotId: ResearchSlotId, job: Re
   const xp = getResearchXp(job.itemId, job.targetSchoolId)
   const levels = grantSchoolXp(state, job.targetSchoolId, xp)
   context.report?.recordResearch(job.itemId, job.targetSchoolId, xp)
+  context.onResearchComplete?.()
   job.remainingQuantity -= 1
   return 'complete' as const
 }

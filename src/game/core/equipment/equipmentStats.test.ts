@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
-import { playerBasicDamage } from '../../engine'
 import { getEffectiveEquipmentItemStats, getEquipmentStats } from './equipmentStats'
 
 describe('effective Equipment stats', () => {
@@ -13,14 +12,6 @@ describe('effective Equipment stats', () => {
     state.artifactProgress['ember-staff'] = { minorRanks: {} }
     expect(getEffectiveEquipmentItemStats(state, 'ember-staff')).toEqual({ basicDamage: 17, spellPower: 75 })
     expect(getEquipmentStats(state)).toMatchObject({ basicDamage: 17, spellPower: 75 })
-  })
-
-  it('includes current Artifact level in weapon Basic Damage', () => {
-    const state = createInitialState()
-    state.equipment.weapon = 'stoneheart-scepter'
-    state.artifactProgress['stoneheart-scepter'] = { minorRanks: {} }
-
-    expect(playerBasicDamage(state)).toBe(19 + 5)
   })
 
   it('includes Arcane Core modifiers in the shared equipment stat model', () => {

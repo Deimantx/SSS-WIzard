@@ -2,6 +2,7 @@ import { ARCANE_CORE_BRANCHES, ARCANE_CORE_NODES } from '../../content/arcaneCor
 import { ARCANE_CORE_FULL_RING_COST_BY_RING, ARCANE_CORE_MAJOR_COST_BY_RING, ARCANE_CORE_NODE_COUNT, ARCANE_CORE_NODE_COUNT_PER_BRANCH, ARCANE_CORE_RING_INDICES, ARCANE_CORE_TOTAL_COST_PER_CORE, ARCANE_CORE_TOTAL_TREE_COST, ARCANE_CORE_STANDARD_RANK_COST_BY_RING } from '../../content/arcaneCore/arcaneCoreBalance'
 import { ARCANE_CORE_MAJOR_GATES, ARCANE_CORE_RING_GATES } from '../../content/arcaneCore/arcaneCoreRings'
 import { validateArcaneCoreV7MechanicCoverage } from '../../content/arcaneCore/arcaneCoreV7Mechanics'
+import { validateArcaneCoreV7RuntimeCoverage } from './arcaneCoreV6Runtime'
 
 export const validateArcaneCoreCatalog = () => {
   const errors: string[] = []
@@ -41,5 +42,6 @@ export const validateArcaneCoreCatalog = () => {
   if (JSON.stringify(ARCANE_CORE_RING_INDICES.map((ring) => ARCANE_CORE_RING_GATES[ring])) !== JSON.stringify([0, 20, 25, 30, 32, 34, 36, 38])) errors.push('Arcane Core ring gates are invalid')
   if (JSON.stringify(ARCANE_CORE_RING_INDICES.map((ring) => ARCANE_CORE_MAJOR_GATES[ring])) !== JSON.stringify([30, 35, 35, 40, 40, 40, 40, 40])) errors.push('Arcane Core major gates are invalid')
   errors.push(...validateArcaneCoreV7MechanicCoverage())
+  errors.push(...validateArcaneCoreV7RuntimeCoverage())
   return errors
 }

@@ -527,12 +527,10 @@ export interface CombatState {
     nextHealingActionSpeedMultiplier?: number
     nextSelfTargetActionSpeedMultiplier?: number
     /** V7 one-shot and timed combat windows. */
-    detonationTheoryReady?: boolean
     recoveryWindowUntilMs?: number
     recoveryWindowMultiplier?: number
     reinforcedRecoveryUntilMs?: number
     reinforcedRecoveryMultiplier?: number
-    comebackPrepared?: boolean
     stasisCollapseUntilMs?: number
     castLoadoutSlots?: number[]
     echoCharges?: number

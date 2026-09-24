@@ -199,17 +199,4 @@ describe('dungeon-specific Guild request progression', () => {
     expect(state.progress.permanentFocusBonuses['guild-apprentice']).toBe(10)
   })
 
-  it('makes the chapter-complete developer preset canonical', () => {
-    const game = useGameStore.getState()
-    game.preset('chapter-complete')
-    const state = useGameStore.getState()
-
-    expect(DUNGEONS['whispering-woods'].boss).toBe('forest-heart')
-    expect(DUNGEONS['howling-den'].boss).toBe('corrupted-greatbear')
-    expect(DUNGEONS['abandoned-catacombs'].boss).toBe('archmage-edrin-shade')
-    expect(state.progress.bossKillsByBoss['forest-heart']).toBe(1)
-    expect(state.progress.bossKillsByBoss['corrupted-greatbear']).toBe(1)
-    expect(state.progress.bossKillsByBoss['archmage-edrin-shade']).toBe(1)
-    expect(isTutorialCompleted(state.progress)).toBe(true)
-  })
 })

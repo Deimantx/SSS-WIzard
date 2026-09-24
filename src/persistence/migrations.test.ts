@@ -597,7 +597,7 @@ describe('save navigation migration', () => {
     expect(migrated.combat.playerStatuses[0].periodicEffects?.[0]).toEqual({ type: 'deal-damage', target: 'self', components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 5 } }] })
   })
 
-  it('keeps durable progression while rebuilding a V17 Player Basic cycle', () => {
+  it('keeps durable progression while rebuilding a legacy V17 combat save', () => {
     const initial = createInitialState()
     const migrated = migrateSave({
       ...initial,
@@ -606,7 +606,7 @@ describe('save navigation migration', () => {
       inventory: { ...initial.inventory, 'fire-fragment': 37, 'tideglass-wand': 1 },
       equipment: { ...initial.equipment, weapon: 'tideglass-wand' },
       progress: { ...initial.progress, spellRanks: { ...initial.progress.spellRanks, 'fire-bolt': 1 }, bossKillsByBoss: { ...initial.progress.bossKillsByBoss, 'forest-heart': 2 } },
-      combat: { ...initial.combat, active: true, dungeonId: 'whispering-woods', enemyId: 'forest-wisp', playerAttackTimerMs: 500 },
+      combat: { ...initial.combat, active: true, dungeonId: 'whispering-woods', enemyId: 'forest-wisp', playerAttackTimerMs: 500 } as typeof initial.combat,
     })
 
     expect(migrated.currencies.gold).toBe(321)
@@ -614,7 +614,8 @@ describe('save navigation migration', () => {
     expect(migrated.equipment.weapon).toBe('tideglass-wand')
     expect(migrated.progress.spellRanks['fire-bolt']).toBe(1)
     expect(migrated.progress.bossKillsByBoss['forest-heart']).toBe(2)
-    expect(migrated.combat.playerAttackTimerMs).toBe(migrated.combat.playerAttackDurationMs)
+    expect(migrated.combat).not.toHaveProperty('playerAttackTimerMs')
+    expect(migrated.combat).not.toHaveProperty('playerAttackDurationMs')
   })
 
   it('clears legacy Transmutation full bars so they cannot craft for free', () => {

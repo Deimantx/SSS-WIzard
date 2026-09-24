@@ -41,7 +41,8 @@ type V6Entry = Extract<ReturnType<typeof getArcaneCoreSpecialEffects>[number], {
 const entries = (state: Pick<GameState, 'arcaneCore'>): V6Entry[] => getArcaneCoreSpecialEffects(state.arcaneCore).flatMap((effect) => {
   if (effect.type !== 'v6-mechanic') return []
   const behavior = ARCANE_CORE_V7_MECHANIC_REGISTRY[effect.mechanicId]?.runtime
-  return behavior ? [{ ...effect, behavior }] : []
+  const registration = ARCANE_CORE_V7_RUNTIME_HANDLER_REGISTRATIONS[effect.mechanicId]
+  return behavior && registration ? [{ ...effect, behavior }] : []
 })
 
 type V6EffectExecutor = (state: GameState, effects: CombatEffect[], source: CombatSource, depth?: number, uiEvents?: CombatEventSink, resolution?: CombatResolutionContext) => void
@@ -131,13 +132,35 @@ const V7_MECHANIC_NAMES = new Set([
   'lastRefuge', 'defiantCasting', 'painConversion', 'comeback', 'undying', 'phoenixPulse', 'lifeBattery', 'unbrokenCycle', 'eternalRecovery', 'eternalAegis',
   'conservation', 'emergencyFlow', 'fullReservoir', 'quietMind', 'deepBreathing', 'echoHarmony', 'manualReservoir', 'alternatingMind', 'efficientQueue', 'dualMind',
   'reservedPower', 'freeMind', 'resonantCast', 'preparedSlot', 'resonance', 'overflowWard', 'manaToTempo', 'stableReserve', 'emergencyConversion', 'transcendence',
-  'balancedMind', 'manualBattery', 'convergentQueue', 'reservedConversion', 'convergence', 'deepReservoir', 'overchannel', 'deepDraw', 'arcaneReturn', 'reservoirBreak', 'overchannelMajor',
+  'balancedMind', 'manualBattery', 'convergentQueue', 'reservedConversion', 'deepReservoir', 'overchannel', 'deepDraw', 'arcaneReturn', 'reservoirBreak', 'overchannelMajor',
   'astralReservedPower', 'astralOpenMind', 'astralRotation', 'echoCascade', 'astralMind', 'zeroPoint', 'eventHorizon', 'singularityManual', 'focusCollapse', 'arcaneSingularity',
   'openingControl', 'controlledStrike', 'recoveryWindowControl', 'tempoTheft', 'controlledTempo', 'layeredControl', 'controlledFlow', 'debuffPressure', 'controlRefresh', 'suppressionWindow',
   'chainControl', 'statusEcho', 'queuedDominion', 'suppressedEnemy', 'temporalFlow', 'aftershock', 'tremorLock', 'coldPrecision', 'controlConversion', 'perfectTiming',
   'spellInterference', 'statusFracture', 'debuffTheft', 'manualDisruption', 'dominion', 'preparedCast', 'queuedPrecision', 'temporalRefund', 'chronoCycle', 'temporalFracture',
   'lockdownDelay', 'controlCascade', 'controlledTarget', 'noEscape', 'totalLockdown', 'absoluteDelay', 'statusRecursion', 'timelineTheft', 'stasisCollapse', 'absoluteStasis',
 ])
+
+export type ArcaneCoreV7RuntimeHandlerFamily = 'v7-runtime-adapter'
+export interface ArcaneCoreV7RuntimeHandlerRegistration { family: ArcaneCoreV7RuntimeHandlerFamily }
+
+// These registrations are the executable boundary for the compatibility
+// adapter. They are keyed from the explicit current V7 mechanic name list,
+// not inferred from branch/ring/slot geometry. `entries` below refuses to
+// activate an authored mechanic unless it has one of these registrations.
+const V7_RUNTIME_REGISTRATION_NAMES = [...V7_MECHANIC_NAMES]
+const V7_RUNTIME_REGISTRATION_ENTRIES = V7_RUNTIME_REGISTRATION_NAMES.map((name) => [V6_MECHANICS[name], { family: 'v7-runtime-adapter' as const }] as const)
+export const ARCANE_CORE_V7_RUNTIME_HANDLER_REGISTRATIONS: Readonly<Record<string, ArcaneCoreV7RuntimeHandlerRegistration>> = Object.fromEntries(V7_RUNTIME_REGISTRATION_ENTRIES)
+
+export const validateArcaneCoreV7RuntimeCoverage = () => {
+  const errors: string[] = []
+  const duplicateIds = V7_RUNTIME_REGISTRATION_ENTRIES.map(([id]) => id).filter((id, index, ids) => ids.indexOf(id) !== index)
+  duplicateIds.forEach((id) => errors.push(`duplicate Arcane Core V7 runtime registration ${id}`))
+  const authoredIds = new Set(Object.keys(ARCANE_CORE_V7_MECHANIC_REGISTRY))
+  const registeredIds = new Set(Object.keys(ARCANE_CORE_V7_RUNTIME_HANDLER_REGISTRATIONS))
+  authoredIds.forEach((id) => { if (!registeredIds.has(id)) errors.push(`missing executable Arcane Core V7 runtime registration ${id}`) })
+  registeredIds.forEach((id) => { if (!authoredIds.has(id)) errors.push(`orphan Arcane Core V7 runtime registration ${id}`) })
+  return errors
+}
 // V7 intentionally prunes the old V6-only mechanic names. Keep their typed
 // aliases for the compatibility adapter, but make them inert so a new node
 // occupying the same stable slot cannot accidentally activate retired logic.
@@ -166,11 +189,6 @@ export const getArcaneCoreV6ManaRegenMultiplier = (state: GameState) => {
 
 const isControlEvent = (context: CombatConditionContext) => Boolean(context.eventStatusTags?.includes('control') || (context.statusId && controlStatusIds.has(context.statusId)))
 const isNegativeStatusEvent = (context: CombatConditionContext) => Boolean(context.statusId && STATUS_DEFINITIONS[context.statusId]?.classification === 'debuff')
-const isDamagingPeriodicStatusEvent = (context: CombatConditionContext) => Boolean(
-  context.statusId
-  && context.eventStatusTags?.includes('dot')
-  && STATUS_DEFINITIONS[context.statusId]?.periodic?.effects.some((effect) => effect.type === 'deal-damage'),
-)
 const delayEnemyAction = (state: GameState, amountMs: number) => {
   if (state.combat.enemyActionDurationMs <= 0 || state.combat.enemyActionTimerMs <= 0) return 0
   const before = state.combat.enemyActionTimerMs
@@ -206,12 +224,12 @@ export const recordArcaneCoreV7CooldownCompletion = (state: GameState, previousC
 const v7EventReady = (state: GameState, key: string, cooldownMs = 0) => ((state.combat.arcaneCoreRuntime.v7EventLastAtMs?.[key] ?? -Infinity) + cooldownMs <= state.combat.arcaneCoreRuntime.elapsedMs)
 const markV7Event = (state: GameState, key: string) => { state.combat.arcaneCoreRuntime.v7EventLastAtMs = { ...(state.combat.arcaneCoreRuntime.v7EventLastAtMs ?? {}), [key]: state.combat.arcaneCoreRuntime.elapsedMs } }
 
-export const getArcaneCoreV7HealingReceivedMultiplier = (state: Pick<GameState, 'combat'>) => {
+export const getArcaneCoreV7HealingReceivedBonusPct = (state: Pick<GameState, 'combat'>) => {
   const runtime = state.combat.arcaneCoreRuntime
   const now = runtime.elapsedMs
-  const recoveryWindow = runtime.recoveryWindowUntilMs && runtime.recoveryWindowUntilMs > now ? runtime.recoveryWindowMultiplier ?? 1 : 1
-  const reinforcedRecovery = runtime.reinforcedRecoveryUntilMs && runtime.reinforcedRecoveryUntilMs > now ? runtime.reinforcedRecoveryMultiplier ?? 1 : 1
-  return Math.max(1, recoveryWindow, reinforcedRecovery)
+  const recoveryWindow = runtime.recoveryWindowUntilMs && runtime.recoveryWindowUntilMs > now ? Math.max(0, (runtime.recoveryWindowMultiplier ?? 1) - 1) : 0
+  const reinforcedRecovery = runtime.reinforcedRecoveryUntilMs && runtime.reinforcedRecoveryUntilMs > now ? Math.max(0, (runtime.reinforcedRecoveryMultiplier ?? 1) - 1) : 0
+  return recoveryWindow + reinforcedRecovery
 }
 
 /**
@@ -307,15 +325,6 @@ export const processArcaneCoreV6CombatEvent = (state: GameState, actor: 'player'
     }
     const conversionRanks = mechanicRank(state, V6_MECHANICS.controlConversion)
     if (event === 'on-status-removed' && conversionRanks) { pushMana(rankPercent(conversionRanks, [1, 2, 3, 4, 5])); reduceLongestCooldown(state, rankPercent(conversionRanks, [100, 200, 300, 400, 500])) }
-  }
-
-  // Detonation Theory is intentionally tied to an actual early removal of a
-  // player-owned damaging periodic Status. Natural expiry is handled by the
-  // separate `on-status-expired` event and never prepares this token.
-  if (event === 'on-status-removed' && context.eventTarget === 'enemy'
-    && isDamagingPeriodicStatusEvent(context) && context.source?.actor === 'player') {
-    const detonationRanks = mechanicRank(state, V6_MECHANICS.detonationTheory)
-    if (detonationRanks) runtime.detonationTheoryReady = true
   }
 
   if (event === 'on-barrier-broken' && actor === 'player') {
@@ -457,7 +466,6 @@ export const processArcaneCoreV6CombatEvent = (state: GameState, actor: 'player'
     const comebackRanks = mechanicRank(state, V6_MECHANICS.comeback)
     if (comebackRanks && (context.previousHpPercent ?? 100) < 25 && (context.currentHpPercent ?? 0) >= 25 && v7EventReady(state, 'comeback', 5_000)) {
       runtime.nextActionSpeedMultiplier = Math.max(runtime.nextActionSpeedMultiplier ?? 1, 1 + rankPercent(comebackRanks, [0.02, 0.04, 0.06, 0.08, 0.10]))
-      runtime.comebackPrepared = true
       markV7Event(state, 'comeback')
     }
   }
@@ -733,9 +741,19 @@ export const getArcaneCoreV6CastModifiers = (state: GameState, context: ArcaneCo
   if (manualDisruptionRanks && context.origin !== 'auto' && state.combat.enemyActionTimerMs > 0) damageMultiplier += rankValue(manualDisruptionRanks, [0.01, 0.02, 0.03, 0.04, 0.05])
 
   const detonationTheoryRank = mechanicRank(state, V6_MECHANICS.detonationTheory)
-  if (detonationTheoryRank && context.damaging && runtime.detonationTheoryReady) {
+  const detonationTheoryEligible = Boolean(
+    detonationTheoryRank
+    && context.damaging
+    && spell?.effects.some((effect) => effect.type === 'detonate-status'
+      && effect.target === 'opponent'
+      && effect.consume !== false
+      && enemyStatuses.some((active) => active.statusId === effect.statusId
+        && (active.remainingMs === null || (active.remainingMs ?? 0) > 0)
+        && active.source.actor === 'player'
+        && (active.periodicEffects ?? STATUS_DEFINITIONS[active.statusId]?.periodic?.effects ?? []).some((periodic) => periodic.type === 'deal-damage'))),
+  )
+  if (detonationTheoryEligible) {
     damageMultiplier += rankValue(detonationTheoryRank, [0.03, 0.06, 0.09, 0.12, 0.15])
-    if (!preview) runtime.detonationTheoryReady = false
   }
   if (!context.damaging && (hasHealing || hasBarrier) && runtime.nextSelfTargetActionSpeedMultiplier) actionSpeedMultiplier *= runtime.nextSelfTargetActionSpeedMultiplier
 

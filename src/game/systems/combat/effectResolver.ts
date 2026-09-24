@@ -57,7 +57,7 @@ import {
   type EffectTarget,
 } from "./combatTypes";
 import { stabilizeResourceValue } from "../../presentation/resources/resourcePresentation";
-import { getArcaneCoreHealingReceivedMultiplier, tryConsumeArcaneCoreSurvival } from "../arcaneCore/arcaneCoreRuntime";
+import { getArcaneCoreHealingReceivedBonusPct, tryConsumeArcaneCoreSurvival } from "../arcaneCore/arcaneCoreRuntime";
 import { recordArcaneCoreV6CriticalResult } from "../arcaneCore/arcaneCoreV6Runtime";
 import { getActiveEncounterWorldTierDefinition } from '../world-tier/worldTierRuntime'
 
@@ -692,14 +692,11 @@ const applyHealing = (
           sourceTags: tags,
         })),
   );
-  const received = Math.max(
-    0,
-    1 +
-      getCombatModifiers(state, target, "healing-received-percent", {
-        source,
-        sourceTags: tags,
-      }) * (target === "player" ? getArcaneCoreHealingReceivedMultiplier(state) : 1),
-  );
+  const healingReceivedPct = getCombatModifiers(state, target, "healing-received-percent", {
+    source,
+    sourceTags: tags,
+  }) + (target === "player" ? getArcaneCoreHealingReceivedBonusPct(state) : 0);
+  const received = Math.max(0, 1 + healingReceivedPct);
   const before = getActorHealth(state, target);
   const max =
     target === "player" ? state.player.maxHealth : state.combat.enemyMaxHp;

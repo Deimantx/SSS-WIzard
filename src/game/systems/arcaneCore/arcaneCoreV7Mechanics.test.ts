@@ -3,6 +3,8 @@ import { ARCANE_CORE_BRANCHES } from '../../content/arcaneCore/arcaneCoreBranche
 import { ARCANE_CORE_V7_MECHANICS } from '../../content/arcaneCore/arcaneCoreV7Mechanics'
 import { createInitialState } from '../../../store/initialState'
 import { commitArcaneCoreV6SpellCast, getArcaneCoreV6CastModifiers, recordArcaneCoreV6CriticalResult, recordArcaneCoreV7CooldownCompletion } from './arcaneCoreV6Runtime'
+import { executeCombatEffects } from '../combat/effectResolver'
+import { applyStatus } from '../combat/statusRuntime'
 
 describe('Arcane Core V7 mechanic safety', () => {
   it('provides exact rank-aware, non-vague text for every dynamic node', () => {
@@ -84,5 +86,67 @@ describe('Arcane Core V7 mechanic safety', () => {
     const third = cast('wind-blade')
     expect(third.damageMultiplier).toBeCloseTo(1.03)
     expect(state.combat.arcaneCoreRuntime.spellSequenceStreak).toBe(0)
+  })
+
+  it('applies Recovery Window and Reinforced Recovery additively to direct healing', () => {
+    const heal = (recovery: number, reinforced: number, permanent = 0, elapsedMs = 1_000) => {
+      const state = createInitialState()
+      state.player.maxHealth = 1_000
+      state.player.health = 500
+      state.combat.arcaneCoreRuntime.elapsedMs = elapsedMs
+      state.combat.arcaneCoreRuntime.recoveryWindowUntilMs = 3_000
+      state.combat.arcaneCoreRuntime.recoveryWindowMultiplier = 1 + recovery
+      state.combat.arcaneCoreRuntime.reinforcedRecoveryUntilMs = 3_000
+      state.combat.arcaneCoreRuntime.reinforcedRecoveryMultiplier = 1 + reinforced
+      if (permanent > 0) {
+        const vitality = ARCANE_CORE_BRANCHES.find((branch) => branch.id === 'vitality')!
+        for (const name of ['Restoration', 'Recovery Mastery', 'Renewal Restoration']) {
+          const node = vitality.nodes.find((entry) => entry.name === name)!
+          state.arcaneCore.nodes[node.id] = { rank: 5 }
+        }
+      }
+      executeCombatEffects(state, [{ type: 'heal', target: 'self', magnitude: { type: 'flat', value: 100 } }], { actor: 'player', kind: 'spell', sourceId: 'test' })
+      return state.player.health - 500
+    }
+
+    expect(heal(0.05, 0)).toBeCloseTo(105)
+    expect(heal(0, 0.10)).toBeCloseTo(110)
+    expect(heal(0.05, 0.10)).toBeCloseTo(115)
+    expect(heal(0.05, 0.10, 0.10)).toBeCloseTo(125)
+    expect(heal(0.05, 0, 0, 3_000)).toBeCloseTo(100)
+  })
+
+  it('applies Detonation Theory to the same qualifying Combustion cast only', () => {
+    const makeState = () => {
+      const state = createInitialState()
+      state.combat.enemyId = 'forest-wisp'
+      state.combat.enemyHp = 100
+      state.combat.enemyMaxHp = 100
+      const node = ARCANE_CORE_BRANCHES.find((branch) => branch.id === 'power')!.nodes.find((entry) => entry.name === 'Detonation Theory')!
+      state.arcaneCore.nodes[node.id] = { rank: 1 }
+      return state
+    }
+    const context = { origin: 'manual-direct' as const, spellId: 'combustion' as const, loadoutSlotIndex: 0, damaging: true, manaCost: 75, maxMana: 100, playerMana: 100, enemyHealthPercent: 100 }
+    const playerSpell = { actor: 'player' as const, kind: 'spell' as const, sourceId: 'fireball' }
+    const enemySpell = { actor: 'enemy' as const, kind: 'action' as const, sourceId: 'enemy-burn' }
+
+    const active = makeState()
+    applyStatus(active, 'enemy', 'burning', playerSpell, { durationMs: 5_000 })
+    expect(getArcaneCoreV6CastModifiers(active, context, true).damageMultiplier).toBeCloseTo(1.03)
+    expect(getArcaneCoreV6CastModifiers(active, context).damageMultiplier).toBeCloseTo(1.03)
+
+    const absent = makeState()
+    expect(getArcaneCoreV6CastModifiers(absent, context, true).damageMultiplier).toBeCloseTo(1)
+
+    const enemyOwned = makeState()
+    applyStatus(enemyOwned, 'enemy', 'burning', enemySpell, { durationMs: 5_000 })
+    expect(getArcaneCoreV6CastModifiers(enemyOwned, context, true).damageMultiplier).toBeCloseTo(1)
+
+    const nonDamaging = makeState()
+    applyStatus(nonDamaging, 'enemy', 'burning', playerSpell, {
+      durationMs: 5_000,
+      periodicEffects: [{ type: 'heal', target: 'self', magnitude: { type: 'flat', value: 1 } }],
+    })
+    expect(getArcaneCoreV6CastModifiers(nonDamaging, context, true).damageMultiplier).toBeCloseTo(1)
   })
 })

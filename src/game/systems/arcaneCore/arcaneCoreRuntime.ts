@@ -1,7 +1,7 @@
 import type { ArcaneCoreState, GameState } from '../../types'
 import { getArcaneCoreSpecialEffects } from './arcaneCoreProgression'
 import { selectFreeFocus, selectUsedFocus } from '../focus/focusReservations'
-import { commitArcaneCoreV6SpellCast, getArcaneCoreV6DynamicManaRegen, getArcaneCoreV6DynamicSpellPower, getArcaneCoreV6ManaRegenMultiplier, getArcaneCoreV7HealingReceivedMultiplier, tryConsumeArcaneCoreV6Survival, type ArcaneCoreSpellCastContext } from './arcaneCoreV6Runtime'
+import { commitArcaneCoreV6SpellCast, getArcaneCoreV6DynamicManaRegen, getArcaneCoreV6DynamicSpellPower, getArcaneCoreV6ManaRegenMultiplier, getArcaneCoreV7HealingReceivedBonusPct, tryConsumeArcaneCoreV6Survival, type ArcaneCoreSpellCastContext } from './arcaneCoreV6Runtime'
 
 const special = (state: Pick<ArcaneCoreState, 'nodes'>, type: import('../../types').ArcaneCoreSpecialEffect['type']) => getArcaneCoreSpecialEffects(state).filter((effect) => effect.type === type)
 
@@ -22,7 +22,7 @@ export const getArcaneCoreDynamicManaRegen = (state: Pick<GameState, 'arcaneCore
 
 export const getArcaneCoreDynamicManaRegenMultiplier = (state: Pick<GameState, 'arcaneCore' | 'player'>) => getArcaneCoreV6ManaRegenMultiplier(state as never)
 
-export const getArcaneCoreHealingReceivedMultiplier = (state: Pick<GameState, 'combat'>) => getArcaneCoreV7HealingReceivedMultiplier(state as never)
+export const getArcaneCoreHealingReceivedBonusPct = (state: Pick<GameState, 'combat'>) => getArcaneCoreV7HealingReceivedBonusPct(state as never)
 
 export const beginArcaneCoreSpellCast = (state: GameState, damaging: boolean, context?: ArcaneCoreSpellCastContext) => {
   if (context) {
@@ -76,12 +76,10 @@ const createArcaneCoreRuntime = () => ({
   nextEnemyDamageMultiplier: 1,
   nextEffectivenessMultiplier: 1,
   nextActionSpeedMultiplier: 1,
-  detonationTheoryReady: false,
   recoveryWindowUntilMs: undefined,
   recoveryWindowMultiplier: undefined,
   reinforcedRecoveryUntilMs: undefined,
   reinforcedRecoveryMultiplier: undefined,
-  comebackPrepared: false,
   stasisCollapseUntilMs: undefined,
   nextManaRefundPercent: 0,
   nextCritChanceBonus: 0,
@@ -155,12 +153,10 @@ export const resetArcaneCoreEncounterRuntime = (state: GameState) => {
   runtime.nextDamageMultiplier = 1
   runtime.nextEffectivenessMultiplier = 1
   runtime.nextActionSpeedMultiplier = 1
-  runtime.detonationTheoryReady = false
   runtime.recoveryWindowUntilMs = undefined
   runtime.recoveryWindowMultiplier = undefined
   runtime.reinforcedRecoveryUntilMs = undefined
   runtime.reinforcedRecoveryMultiplier = undefined
-  runtime.comebackPrepared = false
   runtime.stasisCollapseUntilMs = undefined
   runtime.nextManaRefundPercent = 0
   runtime.nextCritChanceBonus = 0

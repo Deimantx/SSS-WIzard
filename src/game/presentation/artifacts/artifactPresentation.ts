@@ -4,7 +4,15 @@ import type { EquipmentStats } from '../../types'
 import { addEquipmentStats } from '../../core/equipment/equipmentStatAggregation'
 import { getEquipmentCombatPresentation } from '../equipment/equipmentCombatPresentation'
 
-export interface ArtifactNodePresentation { summary: string; details: string[]; currentTotal?: ArtifactNodePresentation; nextRank?: ArtifactNodePresentation | null }
+export interface ArtifactNodePresentation {
+  summary: string
+  details: string[]
+  /** Compact graph-safe rows; excludes long signature mechanics. */
+  compactDetails?: string[]
+  hasSpecialEffect?: boolean
+  currentTotal?: ArtifactNodePresentation
+  nextRank?: ArtifactNodePresentation | null
+}
 const numberLabel = (value: number) => Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')
 const percentLabel = (value: number) => `${numberLabel(value * 100)}%`
 const secondsLabel = (value: number) => `${numberLabel(value / 1000)}s`
@@ -41,8 +49,10 @@ const mergeResolvedEffects = (effects: readonly ArtifactResolvedEffects[]): Arti
 export const getArtifactEffectsPresentation = (effects: ArtifactResolvedEffects): ArtifactNodePresentation => {
   const combat = getEquipmentCombatPresentation(effects.combat)
   const statDetails = Object.entries(effects.stats ?? {}).flatMap(([key, value]) => key === 'resistances' ? Object.entries(value ?? {}).map(([damageType, resistance]) => `${formatStatValue('resistancePct', Number(resistance))} ${formatStatLabel(damageType)} resistance`) : `${formatStatValue(key, Number(value))} ${formatStatLabel(key)}`)
-  const details = [...combat.modifiers, ...combat.rules.map((rule) => rule.summary), ...statDetails, ...(effects.special ?? []).map(formatSpecialEffect)]
-  return { summary: details[0] ?? 'No active effect', details }
+  const compactDetails = [...combat.modifiers, ...combat.rules.map((rule) => rule.summary), ...statDetails]
+  const specialDetails = (effects.special ?? []).map(formatSpecialEffect)
+  const details = [...compactDetails, ...specialDetails]
+  return { summary: details[0] ?? 'No active effect', details, compactDetails, hasSpecialEffect: specialDetails.length > 0 }
 }
 export const getArtifactMinorCurrentTotalPresentation = (node: ArtifactMinorNodeDefinition, currentRank: number) => getArtifactEffectsPresentation(currentRank > 0 ? mergeResolvedEffects(node.rankEffects.slice(0, currentRank)) : {})
 export const getArtifactMinorNextRankPresentation = (node: ArtifactMinorNodeDefinition, currentRank: number) => currentRank < node.maxRank ? getArtifactEffectsPresentation(node.rankEffects[currentRank]) : null

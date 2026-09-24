@@ -7,7 +7,6 @@ import { RESONANCE_METADATA, type ResonanceType } from '../../content/resonance/
 import type { ArtifactId, ArtifactProgressState, EquipmentStats, GameState, ItemId } from '../../types'
 import { addEquipmentStats } from '../../core/equipment/equipmentStatAggregation'
 import { scaleMagnitude, type CombatConditionContext, type CombatEffect, type CombatEventSink, type CombatResolutionContext, type CombatSource, type CombatTrigger } from '../combat/combatTypes'
-import { selectFreeFocus } from '../focus/focusReservations'
 
 const EMPTY: ArtifactProgressState = { minorRanks: {} }
 export const getArtifactDefinition = (id: ArtifactId) => ARTIFACTS[id]
@@ -47,8 +46,8 @@ export const getArtifactPreCastDamageMultiplier = (state: GameState, school: str
   })
   return multiplier
 }
-export const getArtifactPreCastManaMultiplier = (state: GameState) => {
-  const runtime = state.combat.arcaneCoreRuntime; const current = selectFreeFocus(state); const changed = runtime.artifactFreeFocusSnapshot !== undefined && runtime.artifactFreeFocusSnapshot !== current; runtime.artifactFreeFocusSnapshot = current
+export const getArtifactPreCastManaMultiplier = (state: GameState, currentFreeFocus: number) => {
+  const runtime = state.combat.arcaneCoreRuntime; const changed = runtime.artifactFreeFocusSnapshot !== undefined && runtime.artifactFreeFocusSnapshot !== currentFreeFocus; runtime.artifactFreeFocusSnapshot = currentFreeFocus
   if (!changed) return 1
   return getActiveArtifactSpecialEffects(state).reduce((multiplier, { special }) => special.type === 'first-spell-after-focus-change' ? multiplier * (1 - special.manaReduction) : multiplier, 1)
 }

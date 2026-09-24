@@ -1,6 +1,7 @@
 import { Button, GameTooltip } from '../ui'
 import { TooltipContent } from '../ui/tooltip/Tooltip'
 import { ItemIcon } from '../ui/item'
+import { SpellIcon } from '../spells/SpellIcon'
 import { getArtifactMajorPresentation, getArtifactMinorCurrentTotalPresentation, getArtifactMinorNextRankPresentation } from '../../game/presentation/artifacts/artifactPresentation'
 import { getArtifactMinorRank, getArtifactRankPurchaseEligibility, getArtifactTotalInvestedRanks } from '../../game/systems/artifacts/artifactProgression'
 import { RESONANCE_METADATA, type ResonanceType } from '../../game/content/resonance/resonance'
@@ -8,12 +9,8 @@ import { ARTIFACTS, type ArtifactMajorMilestoneDefinition, type ArtifactMinorNod
 import type { ArtifactId, ItemId } from '../../game/types'
 import type { GameStore } from '../../store/gameStore'
 
-function ResonanceIcon({ type }: { type: ResonanceType }) {
-  return <span className={`artifact-resonance-icon artifact-resonance-${type}`} aria-hidden="true">✦</span>
-}
-
 function RequirementCard({ requirement }: { requirement: ReturnType<typeof getArtifactRankPurchaseEligibility>['requirements'][number] }) {
-  const icon = requirement.kind === 'item' ? <ItemIcon itemId={requirement.id as ItemId} size="tile" /> : <ResonanceIcon type={requirement.id as ResonanceType} />
+  const icon = requirement.kind === 'item' ? <ItemIcon itemId={requirement.id as ItemId} size="tiny" /> : <SpellIcon school={requirement.id as ResonanceType} size="small" />
   return <div className={`artifact-requirement-card${requirement.sufficient ? ' sufficient' : ' missing'}`}><span className="artifact-requirement-icon">{icon}</span><span className="artifact-requirement-copy"><strong>{requirement.kind === 'item' ? requirement.label : RESONANCE_METADATA[requirement.id as ResonanceType].label}</strong><small>REQUIRED {requirement.required.toLocaleString()} · OWNED {requirement.owned.toLocaleString()}</small></span><span className="artifact-requirement-state">{requirement.sufficient ? 'READY' : `−${(requirement.required - requirement.owned).toLocaleString()}`}</span></div>
 }
 

@@ -13,13 +13,13 @@ const makeSession = (): DungeonStatisticsSession => ({
   completedRuns: 2, currentRunElapsedMs: 60_000, completedRunDurationTotalMs: 600_000, bestRunMs: 280_000,
   normalEncounterCount: 4, normalEncounterDurationTotalMs: 40_000, fastestEncounterMs: 8_000,
   bossEncounterCount: 2, bossDurationTotalMs: 60_000, fastestBossMs: 28_000,
-  totalLootQuantity: 0, lootByItemId: {},
+  totalLootQuantity: 0, lootByItemId: {}, resonanceByType: {},
 })
 
 describe('DungeonStatisticsPanel V3.7', () => {
   beforeEach(() => { resetAllUiPreferences(); useDungeonStatisticsStore.getState().clear() })
 
-  it('uses the 50/50 panel language and renders every recorded drop', () => {
+  it('renders recorded loot as compact icon tiles instead of a text list', () => {
     const allItemIds = Object.keys(ITEMS) as Array<keyof typeof ITEMS>
     const lootByItemId = Object.fromEntries(allItemIds.map((itemId, index) => [itemId, index + 1])) as DungeonStatisticsSession['lootByItemId']
     useDungeonStatisticsStore.setState({ active: true, session: { ...makeSession(), totalLootQuantity: allItemIds.length * (allItemIds.length + 1) / 2, lootByItemId }, currentEncounter: null })
@@ -27,12 +27,24 @@ describe('DungeonStatisticsPanel V3.7', () => {
 
     render(<TooltipProvider><DungeonStatisticsPanel /></TooltipProvider>)
 
-    expect(screen.getAllByText('DROPS').length).toBeGreaterThanOrEqual(2)
-    expect(screen.queryByText('LOOT')).toBeNull()
+    expect(screen.getByText('LOOT DROPS')).toBeTruthy()
+    expect(screen.getByText('RESONANCE GAINS')).toBeTruthy()
     expect(screen.queryByText('TOP DROPS')).toBeNull()
-    expect(document.querySelectorAll('.dungeon-statistics-drop-row')).toHaveLength(allItemIds.length)
-    expect(document.querySelector('.dungeon-statistics-drop-quantity')).toBeNull()
+    expect(document.querySelectorAll('.dungeon-statistics-drop-tile')).toHaveLength(allItemIds.length)
+    expect(document.querySelectorAll('.dungeon-statistics-drop-quantity')).toHaveLength(allItemIds.length)
     expect(document.querySelector('.dungeon-statistics-drop-rate')?.textContent).toMatch(/\/h$/)
+  })
+
+  it('separates resonance gains into typed rows with totals and rates', () => {
+    useDungeonStatisticsStore.setState({ active: true, session: { ...makeSession(), elapsedMs: 1_800_000, resonanceByType: { fire: 120, air: 200 } }, currentEncounter: null })
+    setUiPreferences({ screenState: { combat: { dungeonStatisticsMode: 'drops' } } })
+
+    render(<TooltipProvider><DungeonStatisticsPanel /></TooltipProvider>)
+
+    expect(document.querySelectorAll('.dungeon-statistics-resonance-row')).toHaveLength(2)
+    expect(screen.getByLabelText('Fire Resonance, gained 120, 240 /h')).toBeTruthy()
+    expect(screen.getByLabelText('Air Resonance, gained 200, 400 /h')).toBeTruthy()
+    expect(screen.getByText('No loot acquired yet.')).toBeTruthy()
   })
 
   it('keeps Runs and Efficiency as distinct KPI-focused modes', () => {
@@ -56,7 +68,7 @@ describe('DungeonStatisticsPanel V3.7', () => {
       render(<TooltipProvider><DungeonStatisticsPanel /></TooltipProvider>)
 
       expect(screen.queryByText('EARLY SAMPLE')).toBeNull()
-      const row = document.querySelector('.dungeon-statistics-drop-row')
+      const row = document.querySelector('.dungeon-statistics-drop-tile')
       if (!row) throw new Error('Expected a drop row')
       fireEvent.pointerEnter(row)
       act(() => vi.advanceTimersByTime(500))

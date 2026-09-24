@@ -19,6 +19,7 @@ const session = (lootByItemId: DungeonStatisticsSession['lootByItemId']): Dungeo
   fastestBossMs: 28_000,
   totalLootQuantity: Object.values(lootByItemId).reduce((sum, amount) => sum + (amount ?? 0), 0),
   lootByItemId,
+  resonanceByType: {},
 })
 
 describe('dungeon statistics presentation', () => {
@@ -67,5 +68,12 @@ describe('dungeon statistics presentation', () => {
 
     expect(presentation.totalDrops).toBe(75)
     expect(presentation.totalDropsLabel).toBe('75')
+  })
+
+  it('presents resonance gains in the authored elemental order with hourly rates', () => {
+    const presentation = getDungeonStatisticsPresentation({ ...session({}), elapsedMs: 1_800_000, resonanceByType: { air: 200, fire: 120 } })
+
+    expect(presentation.resonanceRows.map((row) => row.type)).toEqual(['fire', 'air'])
+    expect(presentation.resonanceRows.map((row) => row.perHourLabel)).toEqual(['240 /h', '400 /h'])
   })
 })

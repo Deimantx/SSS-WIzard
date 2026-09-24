@@ -87,6 +87,13 @@ describe('Dungeon Statistics observer', () => {
     expect(useDungeonStatisticsStore.getState().session).toMatchObject({ totalLootQuantity: 7, lootByItemId: { 'life-essence': 5, 'tier-1-crystal-cache': 2 } })
   })
 
+  it('records resonance reward payloads separately from item loot', () => {
+    dungeonStatisticsObserver.beginSession('whispering-woods')
+    dungeonStatisticsObserver.consume({ ...event('resonance-reward'), category: 'resonance', resonanceReward: { enemyId: 'forest-wisp', worldTier: 1, rewardMultiplier: 1, baseYield: { air: 10 }, finalYield: { air: 10 }, grantedYield: { air: 10 } } })
+
+    expect(useDungeonStatisticsStore.getState().session).toMatchObject({ totalLootQuantity: 0, lootByItemId: {}, resonanceByType: { air: 10 } })
+  })
+
   it('does not restart an already valid session from repeated lifecycle signals', () => {
     const state = createInitialState()
     state.combat.active = true

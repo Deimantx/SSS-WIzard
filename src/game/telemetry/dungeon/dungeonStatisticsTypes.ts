@@ -1,5 +1,5 @@
 import type { CombatEvent } from '../../systems/combat/combatTypes'
-import type { DungeonId, GameState, ItemId, MonsterId } from '../../types'
+import type { DungeonId, GameState, ItemId, MonsterId, ResonanceType } from '../../types'
 
 export type DungeonStatisticsMode = 'runs' | 'drops' | 'efficiency'
 
@@ -22,6 +22,8 @@ export interface DungeonStatisticsSession {
   fastestBossMs: number | null
   totalLootQuantity: number
   lootByItemId: Partial<Record<ItemId, number>>
+  /** Resonance granted by resolved combat rewards during this measurement session. */
+  resonanceByType?: Partial<Record<ResonanceType, number>>
 }
 
 export interface DungeonStatisticsObserver {

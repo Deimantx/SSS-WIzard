@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { isBossMonster, MONSTERS } from '../../content/monsters'
+import { RESONANCE_TYPES, sanitizeResonanceAmount, type ResonanceType } from '../../content/resonance/resonance'
 import type { CombatEvent, CombatEventSink } from '../../systems/combat/combatTypes'
 import type { DungeonId, GameState, ItemId, MonsterId } from '../../types'
 import type { DungeonStatisticsObserver, DungeonStatisticsSession, DungeonStatisticsState } from './dungeonStatisticsTypes'
@@ -37,6 +38,7 @@ const newSession = (dungeonId: DungeonId): DungeonStatisticsSession => ({
   fastestBossMs: null,
   totalLootQuantity: 0,
   lootByItemId: {},
+  resonanceByType: {},
 })
 
 const bossFor = (monsterId: MonsterId) => Boolean(MONSTERS[monsterId] && isBossMonster(MONSTERS[monsterId]))
@@ -45,6 +47,14 @@ const addLootToSession = (session: DungeonStatisticsSession, itemId: ItemId, qua
   const lootByItemId = { ...session.lootByItemId, [itemId]: (session.lootByItemId[itemId] ?? 0) + quantity }
   const totalLootQuantity = Object.values(lootByItemId).reduce((total, amount) => total + (Number.isFinite(amount) ? Math.max(0, amount ?? 0) : 0), 0)
   return { ...session, totalLootQuantity, lootByItemId }
+}
+const addResonanceToSession = (session: DungeonStatisticsSession, grantedYield: Partial<Record<ResonanceType, number>>): DungeonStatisticsSession => {
+  const resonanceByType = { ...(session.resonanceByType ?? {}) }
+  RESONANCE_TYPES.forEach((type) => {
+    const amount = sanitizeResonanceAmount(grantedYield[type])
+    if (amount > 0) resonanceByType[type] = (resonanceByType[type] ?? 0) + amount
+  })
+  return { ...session, resonanceByType }
 }
 
 type DungeonStatisticsSnapshot = DungeonStatisticsState & { currentEncounter: CurrentEncounter | null }
@@ -77,7 +87,7 @@ const completeRunState = (state: DungeonStatisticsSnapshot, durationMs: number):
 
 const cloneStatisticsState = (state: DungeonStatisticsSnapshot): DungeonStatisticsSnapshot => ({
   active: state.active,
-  session: state.session ? { ...state.session, lootByItemId: { ...state.session.lootByItemId } } : null,
+  session: state.session ? { ...state.session, lootByItemId: { ...state.session.lootByItemId }, resonanceByType: { ...(state.session.resonanceByType ?? {}) } } : null,
   currentEncounter: state.currentEncounter ? { ...state.currentEncounter } : null,
 })
 
@@ -112,6 +122,9 @@ const consumeStatisticsEvent = (state: DungeonStatisticsSnapshot, event: CombatE
   if (event.category === 'loot' && event.itemId && Number.isFinite(event.amount) && (event.amount ?? 0) > 0) {
     const quantity = event.amount ?? 0
     return { ...next, session: addLootToSession(next.session, event.itemId, quantity) }
+  }
+  if (event.category === 'resonance' && event.resonanceReward?.grantedYield) {
+    return { ...next, session: addResonanceToSession(next.session, event.resonanceReward.grantedYield) }
   }
   if (event.sourceId === 'enemy-defeated' && event.targetMonsterId) {
     const boss = bossFor(event.targetMonsterId)

@@ -1,5 +1,6 @@
 import { DUNGEONS } from '../../content/dungeons/dungeons'
 import { ITEMS } from '../../content/items/items'
+import { RESONANCE_METADATA, RESONANCE_TYPES, sanitizeResonanceAmount, type ResonanceType } from '../../content/resonance/resonance'
 import { formatCompactDuration } from '../../utils'
 import { averageBossMs, averageEncounterMs, ratePerHour, runsPerHour, totalLootQuantity as selectTotalLootQuantity } from '../../telemetry/dungeon/dungeonStatisticsSelectors'
 import type { DungeonStatisticsSession } from '../../telemetry/dungeon/dungeonStatisticsTypes'
@@ -20,6 +21,14 @@ export interface DungeonDropRowPresentation {
   icon: string
 }
 
+export interface DungeonResonanceRowPresentation {
+  type: ResonanceType
+  label: string
+  amount: number
+  perHour: number
+  perHourLabel: string
+}
+
 export interface DungeonStatisticsAggregatePresentation {
   dungeonName: string | null
   fullRuns: number
@@ -32,6 +41,7 @@ export interface DungeonStatisticsAggregatePresentation {
   fastestEncounter: string
   fastestBoss: string
   dropRows: DungeonDropRowPresentation[]
+  resonanceRows: DungeonResonanceRowPresentation[]
 }
 
 export interface DungeonStatisticsClockPresentation {
@@ -72,6 +82,10 @@ export function getDungeonStatisticsAggregatePresentation(session: DungeonStatis
     fastestEncounter: formatStatisticsTime(session?.fastestEncounterMs ?? null),
     fastestBoss: formatStatisticsTime(session?.fastestBossMs ?? null),
     dropRows,
+    resonanceRows: RESONANCE_TYPES.flatMap((type) => {
+      const amount = sanitizeResonanceAmount(session?.resonanceByType?.[type])
+      return amount > 0 ? [{ type, label: RESONANCE_METADATA[type].label, amount, perHour: 0, perHourLabel: missingValue }] : []
+    }),
   }
 }
 
@@ -102,5 +116,10 @@ export function getDungeonStatisticsPresentation(session: DungeonStatisticsSessi
     perHour: session ? ratePerHour(row.quantity, session) : 0,
     perHourLabel: session && session.elapsedMs > 0 ? getDungeonDropRateLabel(row.quantity, session.elapsedMs) : missingValue,
   }))
-  return { ...aggregate, ...clock, dropRows }
+  const resonanceRows = aggregate.resonanceRows.map((row) => ({
+    ...row,
+    perHour: session ? ratePerHour(row.amount, session) : 0,
+    perHourLabel: session && session.elapsedMs > 0 ? getDungeonDropRateLabel(row.amount, session.elapsedMs) : missingValue,
+  }))
+  return { ...aggregate, ...clock, dropRows, resonanceRows }
 }

@@ -33,4 +33,26 @@ describe('Bestiary combat navigation intent', () => {
     expect(screen.getByText('UNDISCOVERED CREATURE')).toBeTruthy()
     expect(screen.getByText('AREA: WHISPERING WOODS')).toBeTruthy()
   })
+
+  it('shows boss mechanic and phase detail only after discovery', () => {
+    const state = createInitialState()
+    state.progress.discoveredMonsters = ['forest-heart']
+    useGameStore.setState(state)
+    setNavigationIntent({ combatMonsterId: 'forest-heart' })
+    renderBestiary()
+
+    expect(screen.getByText('BOSS MECHANICS')).toBeTruthy()
+    expect(screen.getByText('Below 50% HP')).toBeTruthy()
+    expect(screen.getAllByText('Rapid Regrow').length).toBeGreaterThan(0)
+    expect(screen.getByText('PHASES / ROTATIONS')).toBeTruthy()
+    expect(screen.getAllByText('Overgrown').length).toBeGreaterThan(0)
+  })
+
+  it('does not expose boss mechanics for an undiscovered target', () => {
+    setNavigationIntent({ combatMonsterId: 'forest-heart' })
+    renderBestiary()
+
+    expect(screen.queryByText('BOSS MECHANICS')).toBeNull()
+    expect(screen.queryByText('Rapid Regrow')).toBeNull()
+  })
 })

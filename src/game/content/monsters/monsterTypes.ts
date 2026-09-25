@@ -46,7 +46,15 @@ export interface MonsterDefinition {
   blockChance?: number;
   color: string;
   image?: string;
-  ui?: { portraitIcon?: MonsterPortraitIcon };
+  ui?: {
+    portraitIcon?: MonsterPortraitIcon;
+    bestiary?: {
+      /** Scan-level encounter labels only; combat values remain authored in combat definitions. */
+      roleTags?: string[];
+      phaseLabels?: Record<string, string>;
+      phaseOrder?: string[];
+    };
+  };
   traitIds: TraitId[];
   resistances?: Partial<Record<DamageType, number>>;
   damageImmunities?: DamageType[];

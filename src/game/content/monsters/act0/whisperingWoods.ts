@@ -392,7 +392,14 @@ export const WHISPERING_WOODS_MONSTERS = {
     basicAttackTimeMs: 2400,
     defense: 30,
     color: "#e06c8b",
-    ui: { portraitIcon: "boss" },
+    ui: {
+      portraitIcon: "boss",
+      bestiary: {
+        roleTags: ["Sustain", "Healing", "Barrier", "Control", "2 Phases"],
+        phaseLabels: { default: "Default", overgrown: "Overgrown" },
+        phaseOrder: ["default", "overgrown"],
+      },
+    },
     traitIds: ["forest-heart-living-core"],
     actions: {
       "heart-pulse": {

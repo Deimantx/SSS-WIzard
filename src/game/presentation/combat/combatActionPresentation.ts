@@ -1,6 +1,6 @@
 import { STATUS_DEFINITIONS } from '../../content/statuses'
 import type { MonsterDefinition } from '../../content/monsters'
-import type { CombatActionDefinition, CombatEffect, CombatSource, DamageType } from '../../systems/combat/combatTypes'
+import type { CombatActionDefinition, CombatEffect, CombatSource, DamageType, StatusId } from '../../systems/combat/combatTypes'
 import { scaleMagnitude, type Magnitude } from '../../systems/combat/combatTypes'
 import { formatSpellMagnitude } from '../spells/spellEffectTooltipModel'
 import { formatTime } from '../../utils'
@@ -22,7 +22,11 @@ export interface CombatEffectPresentation {
   totalBasePreview?: string
   damageType?: DamageType
   damageTypes?: DamageType[]
-  statusId?: string
+  statusId?: StatusId
+  durationMs?: number | null
+  periodicEffects?: CombatEffect[]
+  patternId?: string
+  lifeStealLabel?: string
   targetLabel?: string
   timeLabel?: string
 }
@@ -105,7 +109,7 @@ export const formatCombatEffect = (effect: CombatEffect, source: CombatSource, o
     const preview = previews.length > 0 && previews.every((value): value is number => value !== null) ? previews.reduce((sum, value) => sum + value, 0) : null
     const value = preview === null ? components.map((component) => `${capitalize(component.damageType)} ${formatSpellMagnitude(component.magnitude)}`).join(' + ') : formatPreviewValue(preview)
     const scalingLabel = options.monster ? components.map((component) => formatMonsterScalingLabel(component.magnitude)).filter(Boolean).join(' + ') || undefined : undefined
-    return { kind: 'damage', tone, label: damageTypes.length === 1 ? `${capitalize(damageTypes[0])} Damage` : 'Split Damage', value, basePreview: preview === null ? undefined : formatPreviewValue(preview), scalingLabel, detail: `${effect.lifeStealPercent ? `Heals for ${formatCoefficient(effect.lifeStealPercent)}% of actual Health damage. ` : ''}Target: ${target}`, damageType: damageTypes.length === 1 ? damageTypes[0] : undefined, damageTypes, targetLabel: target }
+    return { kind: 'damage', tone, label: damageTypes.length === 1 ? `${capitalize(damageTypes[0])} Damage` : 'Split Damage', value, basePreview: preview === null ? undefined : formatPreviewValue(preview), scalingLabel, detail: `${effect.lifeStealPercent ? `Heals for ${formatCoefficient(effect.lifeStealPercent)}% of actual Health damage. ` : ''}Target: ${target}`, lifeStealLabel: effect.lifeStealPercent ? `Lifesteal: ${formatCoefficient(effect.lifeStealPercent)}% actual Health damage` : undefined, damageType: damageTypes.length === 1 ? damageTypes[0] : undefined, damageTypes, targetLabel: target }
   }
   if (effect.type === 'heal') {
     const preview = options.monster ? resolveMonsterBaseMagnitudePreview(options.monster, effect.magnitude) : null
@@ -132,12 +136,13 @@ export const formatCombatEffect = (effect: CombatEffect, source: CombatSource, o
       : undefined
     const scalingLabel = options.monster && totalMagnitude ? formatMonsterScalingLabel(totalMagnitude) : undefined
     const totalBasePreview = totalPreview === null || !periodicDamage || periodicDamage.type !== 'deal-damage' || !tickComponent ? undefined : `${formatPreviewValue(totalPreview)} ${capitalize(tickComponent.damageType)}`
-    return { kind: 'status', tone, label: `Applies ${status?.name ?? capitalize(effect.statusId)}`, value, scalingLabel, totalBasePreview, detail: `Target: ${target}`, damageType: periodicDamage?.type === 'deal-damage' && tickComponent ? tickComponent.damageType : undefined, statusId: effect.statusId, targetLabel: target, timeLabel: duration === null || duration === undefined ? undefined : formatTime(duration) }
+    return { kind: 'status', tone, label: `Applies ${status?.name ?? capitalize(effect.statusId)}`, value, scalingLabel, totalBasePreview, detail: `Target: ${target}`, damageType: periodicDamage?.type === 'deal-damage' && tickComponent ? tickComponent.damageType : undefined, statusId: effect.statusId, durationMs: duration ?? null, periodicEffects: periodic, targetLabel: target, timeLabel: duration === null || duration === undefined ? undefined : formatTime(duration) }
   }
   if (effect.type === 'modify-action-timer') return { kind: 'control', tone, label: effect.action === 'basic-attack' ? 'Basic Attack' : 'Current Action', value: `${effect.amountMs >= 0 ? '+' : '-'}${Math.abs(effect.amountMs) / 1000}s`, detail: effect.amountMs >= 0 ? `Delayed: ${target}` : `Accelerated: ${target}`, targetLabel: target, timeLabel: `${Math.abs(effect.amountMs) / 1000}s` }
   if (effect.type === 'restore-resource' || effect.type === 'drain-resource') return { kind: 'resource', tone, label: `${effect.type === 'restore-resource' ? 'Restore' : 'Drain'} ${capitalize(effect.resource)}`, value: formatSpellMagnitude(effect.magnitude), detail: `Target: ${target}`, targetLabel: target }
   if (effect.type === 'remove-status' || effect.type === 'cleanse' || effect.type === 'dispel') return { kind: 'control', tone, label: capitalize(effect.type.replace(/-/g, ' ')), detail: `Target: ${target}`, targetLabel: target }
   if (effect.type === 'modify-cooldown') return { kind: 'cooldown', tone, label: effect.amountMs >= 0 ? 'Delay Spell Cooldown' : 'Reduce Spell Cooldown', value: `${Math.abs(effect.amountMs) / 1000}s`, detail: `Target: ${target}`, targetLabel: target, timeLabel: `${Math.abs(effect.amountMs) / 1000}s` }
+  if (effect.type === 'set-action-pattern') return { kind: 'pattern', tone, label: 'Action Pattern', detail: `Switches to ${effect.patternId.replace(/[-_]/g, ' ')} pattern`, patternId: effect.patternId, targetLabel: target }
   return { kind: 'pattern', tone, label: 'Action Pattern', detail: 'Changes the enemy sequence', targetLabel: target }
 }
 

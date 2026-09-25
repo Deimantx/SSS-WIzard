@@ -335,7 +335,14 @@ export const HOWLING_DEN_MONSTERS = {
     basicAttackTimeMs: 2800,
     defense: 30,
     color: "#554240",
-    ui: { portraitIcon: "bear" },
+    ui: {
+      portraitIcon: "bear",
+      bestiary: {
+        roleTags: ["Physical", "Stacking Debuff", "Ramping Damage", "Control", "2 Phases"],
+        phaseLabels: { default: "Thick Hide", corrupted: "Corrupted" },
+        phaseOrder: ["default", "corrupted"],
+      },
+    },
     traitIds: [
       "corrupted-greatbear-thick-hide",
       "corrupted-greatbear-unstable-corruption",

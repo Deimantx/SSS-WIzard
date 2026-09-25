@@ -9,6 +9,9 @@ import { BestiaryLootTable } from './BestiaryLootTable'
 import { BestiarySequence } from './BestiarySequence'
 import { BestiaryStats } from './BestiaryStats'
 import { BestiaryTraits } from './BestiaryTraits'
+import { BestiaryBossSummary } from './BestiaryBossSummary'
+import { BestiaryBossMechanics } from './BestiaryBossMechanics'
+import { BestiaryBossPhases } from './BestiaryBossPhases'
 import { useRef } from 'react'
 import { useSmartScrollState } from '../../ui/game-feel/useSmartScrollState'
 
@@ -25,5 +28,5 @@ function Dossier({ monster, progress }: { monster: MonsterDefinition; progress: 
   useSmartScrollState(dossierScrollRef, { resetKey: monster.id })
   const locations = getMonsterLocations(monster.id)
   const boss = isBossMonster(monster)
-  return <Card title="CREATURE DOSSIER" className="bestiary-inspector"><div ref={dossierScrollRef} className="bestiary-inspector-scroll smart-scroll-region" style={{ '--bestiary-color': monster.color } as CSSProperties}><div className="bestiary-dossier-hero"><div className={`bestiary-portrait ${boss ? 'boss' : ''}`}>{monster.image ? <img src={monster.image} alt="" /> : <span>{boss ? '♛' : '◈'}</span>}</div><div><span className="bestiary-dossier-category">{BESTIARY_ENTRY_CATEGORY_LABELS[monster.bestiaryCategory]}</span><h2>{monster.name}</h2><p>{monster.subtitle}</p><Status tone="success">DISCOVERED</Status></div></div><div className="bestiary-dossier-meta"><span>DEFEATED <strong>{getMonsterDefeatCount({ progress }, monster.id).toLocaleString()}</strong></span><span><MapPin size={13} /> {locations.length ? locations.join(' · ') : 'Unknown location'}</span></div><BestiaryStats monster={monster} /><BestiaryTraits monster={monster} /><BestiaryAbilities monster={monster} /><BestiarySequence monster={monster} /><BestiaryLootTable monster={monster} progress={progress} /></div></Card>
+  return <Card title="CREATURE DOSSIER" className="bestiary-inspector"><div ref={dossierScrollRef} className="bestiary-inspector-scroll smart-scroll-region" style={{ '--bestiary-color': monster.color } as CSSProperties}><div className="bestiary-dossier-hero"><div className={`bestiary-portrait ${boss ? 'boss' : ''}`}>{monster.image ? <img src={monster.image} alt="" /> : <span>{boss ? '♛' : '◈'}</span>}</div><div><span className="bestiary-dossier-category">{BESTIARY_ENTRY_CATEGORY_LABELS[monster.bestiaryCategory]}</span><h2>{monster.name}</h2><p>{monster.subtitle}</p><Status tone="success">DISCOVERED</Status>{boss && <BestiaryBossSummary monster={monster} />}</div></div><div className="bestiary-dossier-meta"><span>DEFEATED <strong>{getMonsterDefeatCount({ progress }, monster.id).toLocaleString()}</strong></span><span><MapPin size={13} /> {locations.length ? locations.join(' · ') : 'Unknown location'}</span></div><BestiaryStats monster={monster} />{boss ? <><BestiaryBossMechanics monster={monster} /><BestiaryBossPhases monster={monster} /></> : <BestiaryTraits monster={monster} />}<BestiaryAbilities monster={monster} />{!boss && <BestiarySequence monster={monster} />}<BestiaryLootTable monster={monster} progress={progress} /></div></Card>
 }

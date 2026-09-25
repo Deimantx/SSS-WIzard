@@ -232,7 +232,14 @@ export const ABANDONED_CATACOMBS_MONSTERS = {
     basicAttackTimeMs: 2500,
     defense: 45,
     color: "#70619b",
-    ui: { portraitIcon: "mage" },
+    ui: {
+      portraitIcon: "mage",
+      bestiary: {
+        roleTags: ["Magic", "Lifesteal", "Control", "Soft Enrage", "2 Phases"],
+        phaseLabels: { default: "Gravefire", "unbound-opening": "Unbound Opening", unbound: "Unbound" },
+        phaseOrder: ["default", "unbound-opening", "unbound"],
+      },
+    },
     traitIds: [
       "archmage-edrin-arcane-remnant",
       "archmage-edrin-unbound-spirit",

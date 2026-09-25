@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { MONSTERS } from '../../content/monsters'
-import { formatDefeats, getBestiaryCompletion, getBestiaryEntries, getMonsterDefeatCount, getMonsterLocations } from './bestiarySelectors'
+import { formatDefeats, getBestiaryCompletion, getBestiaryEntries, getBestiarySearchText, getMonsterDefeatCount, getMonsterLocations } from './bestiarySelectors'
 
 describe('Bestiary selectors', () => {
   it('derives all authored categories from monster content', () => {
@@ -34,5 +34,14 @@ describe('Bestiary selectors', () => {
     expect(completion).toMatchObject({ discovered: 2, total: Object.keys(MONSTERS).length, percent: 2 })
     expect(completion.categories).toMatchObject({ monster: { discovered: 2, total: monsterTotal }, boss: { discovered: 0, total: bossTotal } })
     expect(getMonsterLocations('forest-wisp')).toEqual(['Whispering Woods'])
+  })
+
+  it('searches discovered entries through referenced status definitions and action effects', () => {
+    expect(getBestiarySearchText(MONSTERS['forest-heart'])).toContain('rapid regrow')
+    expect(getBestiarySearchText(MONSTERS['forest-heart'])).toContain('haste')
+    expect(getBestiarySearchText(MONSTERS['corrupted-greatbear'])).toContain('corruption')
+    expect(getBestiarySearchText(MONSTERS['corrupted-greatbear'])).toContain('vulnerable')
+    expect(getBestiarySearchText(MONSTERS['archmage-edrin-shade'])).toContain('arcane disruption')
+    expect(getBestiarySearchText(MONSTERS['archmage-edrin-shade'])).toContain('final incantation')
   })
 })

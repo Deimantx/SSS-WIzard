@@ -1,4 +1,6 @@
 export * from './combatActionPresentation'
+export * from './combatModifierPresentation'
+export * from './combatStatusDetailPresentation'
 export * from './combatFlowPresentation'
 export * from './combatLogPresentation'
 export * from './combatSourcePresentation'

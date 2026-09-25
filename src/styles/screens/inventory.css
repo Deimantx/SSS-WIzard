@@ -466,8 +466,8 @@
   /* Position offsets are unitless pixels: 0, 3, -2, etc. */
   --inventory-name-x: 0;
   --inventory-name-y: 0;
-  --inventory-quantity-x: 25;
-  --inventory-quantity-y: 20;
+  --inventory-quantity-x: 0;
+  --inventory-quantity-y: 14;
   border-radius: 8px;
   background: linear-gradient(155deg, color-mix(in srgb, var(--inventory-accent, var(--ui-accent)) 7%, var(--ui-panel-strong)), var(--ui-panel));
 }
@@ -528,9 +528,13 @@
 
 .inventory-item > .item-quantity {
   position: relative;
+  justify-self: center;
+  align-self: end;
+  margin: 0;
   font-size: var(--inventory-quantity-size, var(--text-xs)) !important;
   left: calc(var(--inventory-quantity-x, 0) * 1px);
   top: calc(var(--inventory-quantity-y, 0) * 1px);
+  text-align: center;
 }
 
 .inventory-item-state {

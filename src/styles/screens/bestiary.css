@@ -13,10 +13,12 @@
 .bestiary-entry-art { border: 1px solid color-mix(in srgb, var(--bestiary-color, var(--ui-accent)) 30%, var(--ui-border)); color: var(--bestiary-color, var(--ui-accent)); background: color-mix(in srgb, var(--bestiary-color, var(--ui-accent)) 8%, transparent); font-size: 28px; }
 .bestiary-entry-art img, .bestiary-portrait img { display: block; width: 78%; height: 78%; object-fit: contain; }
 .bestiary-entry-card.undiscovered .bestiary-entry-art { border-color: var(--ui-border); color: var(--ui-text-muted); background: color-mix(in srgb, var(--ui-panel) 75%, transparent); filter: grayscale(1); }
-.bestiary-entry-copy { display: grid; align-content: start; gap: 3px; min-width: 0; }
-.bestiary-entry-copy strong { overflow: hidden; color: var(--ui-text); font-size: var(--text-xs); text-overflow: ellipsis; white-space: nowrap; }
-.bestiary-entry-copy small { overflow: hidden; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); text-overflow: ellipsis; white-space: nowrap; }
-.bestiary-entry-card.undiscovered .bestiary-entry-copy strong { color: var(--ui-text-muted); }
+.bestiary-entry-card { grid-template-rows: 64px minmax(0, 1fr); min-height: 150px; }
+.bestiary-entry-art { height: 64px; }
+.bestiary-entry-copy { display: grid; align-content: start; gap: 3px; min-width: 0; padding: 0 1px; }
+.bestiary-entry-name { display: -webkit-box; min-height: 2.3em; overflow: hidden; color: var(--ui-text); font-size: var(--text-sm); font-weight: 700; line-height: 1.15; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.bestiary-entry-copy small { overflow: hidden; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
+.bestiary-entry-card.undiscovered .bestiary-entry-name { color: var(--ui-text-muted); }
 .bestiary-empty, .bestiary-inspector-empty { display: grid; place-content: center; justify-items: center; gap: 7px; min-height: 175px; padding: 20px; color: var(--ui-text-muted); text-align: center; }
 .bestiary-empty strong, .bestiary-inspector-empty strong { color: var(--ui-text-soft); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; }
 .bestiary-empty span, .bestiary-inspector-empty span { font-size: var(--text-xs); line-height: 1.45; }

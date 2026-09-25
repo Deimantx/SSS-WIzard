@@ -12,7 +12,7 @@ import { buildTransmutationWorkRequests } from '../transmutation/transmutationEn
 import type { ContinuousManaWorkRequest } from '../simulation/continuousManaScheduler'
 import { prepareAutoCastRuntime, type PreparedAutoCastRuntime } from '../spells'
 import type { CombatEventSink } from '../combat/combatTypes'
-import type { GameState } from '../../types'
+import type { GameState, ItemId } from '../../types'
 import { RESOURCE_EPSILON } from '../../presentation/resources/resourcePresentation'
 
 export const OFFLINE_FAST_FORWARD_EPSILON_MS = 0.001
@@ -185,6 +185,8 @@ const createMetrics = (): OfflineFastForwardMetrics => ({
 interface PreparedWorkTemplate {
   request: ContinuousManaWorkRequest
   progressPerMs: number
+  manaPerMs: number
+  prepared: ContinuousManaWorkRequest
 }
 
 interface OfflineContinuousEpoch {
@@ -192,6 +194,9 @@ interface OfflineContinuousEpoch {
   demandPerSecond: number
   research: PreparedWorkTemplate[]
   transmutation: PreparedWorkTemplate[]
+  preparedResearch: ContinuousManaWorkRequest[]
+  preparedTransmutation: ContinuousManaWorkRequest[]
+  preparedRequests: ContinuousManaWorkRequest[]
   autoCastRuntime: PreparedAutoCastRuntime
 }
 
@@ -209,18 +214,39 @@ const createEpoch = (state: GameState, context: AdvanceContext, metrics: Offline
   const transmutationRequests = buildTransmutationWorkRequests(state, 1)
   metrics.researchPlannerCalls += 1
   metrics.transmutationPlannerCalls += 1
-  const toTemplate = (request: ContinuousManaWorkRequest): PreparedWorkTemplate => ({ request, progressPerMs: request.requestedProgressMs })
+  const toTemplate = (request: ContinuousManaWorkRequest): PreparedWorkTemplate => ({
+    request,
+    progressPerMs: request.requestedProgressMs,
+    manaPerMs: request.requestedMana,
+    prepared: { ...request, requestedProgressMs: 0, requestedMana: 0 },
+  })
   const research = researchRequests.map(toTemplate)
   const transmutation = transmutationRequests.map(toTemplate)
   const demandPerSecond = [...researchRequests, ...transmutationRequests].reduce((total, request) => total + request.requestedMana * 1000, 0)
-  return { manaRate: manaRegenPerSecond(state), demandPerSecond, research, transmutation, autoCastRuntime: prepareAutoCastRuntime(state) }
+  const preparedResearch = research.map((template) => template.prepared)
+  const preparedTransmutation = transmutation.map((template) => template.prepared)
+  return { manaRate: manaRegenPerSecond(state), demandPerSecond, research, transmutation, preparedResearch, preparedTransmutation, preparedRequests: [...preparedResearch, ...preparedTransmutation], autoCastRuntime: prepareAutoCastRuntime(state) }
 }
 
-const scalePreparedWork = (templates: readonly PreparedWorkTemplate[], deltaMs: number) => templates.map(({ request, progressPerMs }) => ({
-  ...request,
-  requestedProgressMs: progressPerMs * deltaMs,
-  requestedMana: request.requestedMana * deltaMs,
-}))
+const scalePreparedWork = (templates: readonly PreparedWorkTemplate[], deltaMs: number) => templates.forEach(({ prepared, progressPerMs, manaPerMs }) => {
+  prepared.requestedProgressMs = progressPerMs * deltaMs
+  prepared.requestedMana = manaPerMs * deltaMs
+})
+
+const prepareEpochWork = (epoch: OfflineContinuousEpoch, deltaMs: number) => {
+  scalePreparedWork(epoch.research, deltaMs)
+  scalePreparedWork(epoch.transmutation, deltaMs)
+}
+
+const itemCanChangePassiveWork = (state: GameState, itemId: ItemId) => {
+  const researchUsesItem = Object.values(ensureResearchActivity(state).slots).some((job) => Boolean(job && job.echoesAssigned > 0 && job.itemId === itemId))
+  if (researchUsesItem) return true
+  return TRANSMUTATION_RECIPE_ORDER.some((recipeId) => {
+    const job = state.activities.transmutation.jobs[recipeId]
+    if (!job || job.echoesAssigned <= 0) return false
+    return TRANSMUTATION_RECIPES[recipeId].ingredients.some((ingredient) => ingredient.itemId === itemId)
+  })
+}
 
 const getPreparedWorkBoundaryMs = (state: GameState, templates: readonly PreparedWorkTemplate[], kind: 'research' | 'transmutation', epoch: OfflineContinuousEpoch) => {
   if (!templates.length || (state.player.mana <= OFFLINE_FAST_FORWARD_EPSILON_MS && epoch.manaRate <= epoch.demandPerSecond)) return null
@@ -334,6 +360,14 @@ const runOptimizedBanked = async (state: GameState, durationMs: number, context:
   let zeroBoundaryStalls = 0
   let epochDirty = false
   let epoch = createEpoch(state, context, metrics)
+  // The normal UI only offers minute-scale skips. Keep sub-minute calls on the
+  // reference timeline so short mixed-work calls retain exact parity while
+  // player-facing minute-scale skips use the batched epoch path below.
+  const useMixedEpochBatching = durationMs >= 60_000
+  const hasInitialPassiveWork = epoch.research.length > 0 || epoch.transmutation.length > 0 || Boolean(getActiveArtificingJob(state))
+  if (!useMixedEpochBatching && state.combat.active && hasInitialPassiveWork) {
+    return runReferenceBanked(state, durationMs, context, options)
+  }
 
   const eventContext: AdvanceContext = {
     ...context,
@@ -346,22 +380,37 @@ const runOptimizedBanked = async (state: GameState, durationMs: number, context:
     onTransmutationComplete: () => { metrics.transmutationCompletions += 1; epochDirty = true; context.onTransmutationComplete?.() },
     onArtificingComplete: (completion) => { metrics.artificingCompletions += 1; context.onArtificingComplete?.(completion) },
     onItemAcquired: (itemId, quantity) => {
-      const hasAssignedPassiveWork = epoch.research.length > 0 || epoch.transmutation.length > 0
-        || Object.values(state.activities.research.slots).some((job) => Boolean(job?.echoesAssigned))
-        || Object.values(state.activities.transmutation.jobs).some((job) => Boolean(job?.echoesAssigned))
-      if (hasAssignedPassiveWork) epochDirty = true
+      if (itemCanChangePassiveWork(state, itemId)) epochDirty = true
       context.onItemAcquired?.(itemId, quantity)
     },
     autoCastRuntime: epoch.autoCastRuntime,
     manaDeltaPerSecond: epoch.manaRate - epoch.demandPerSecond,
-    onCombatElapsed: (elapsedMs) => {
-      if (epoch.research.length === 0 && epoch.transmutation.length === 0 && !getActiveArtificingJob(state)) {
-        advanceChannelingState(state, elapsedMs, eventContext, epoch.manaRate)
-      }
-    },
     onAutoCastCheck: (elapsedMs) => { metrics.autoCastChecks += 1; metrics.timing.autoCastMs += elapsedMs; context.onAutoCastCheck?.(elapsedMs) },
     onContinuousManaAllocation: () => { metrics.continuousManaAllocationCalls += 1; context.onContinuousManaAllocation?.() },
     onAnalyticsAdvance: (elapsedMs) => { metrics.timing.analyticsMs += elapsedMs; context.onAnalyticsAdvance?.(elapsedMs) },
+  }
+  const advanceContinuousElapsed = (elapsedMs: number) => {
+    if (elapsedMs <= 0) return
+    const hasPassiveWork = epoch.research.length > 0 || epoch.transmutation.length > 0 || Boolean(getActiveArtificingJob(state))
+    if (!hasPassiveWork) {
+      advanceChannelingState(state, elapsedMs, eventContext, manaRegenPerSecond(state))
+      return
+    }
+    prepareEpochWork(epoch, elapsedMs)
+    advanceGameStateContinuous(state, elapsedMs, eventContext, {
+      preparedWorkRequests: epoch.preparedRequests,
+      preparedResearchRequests: epoch.preparedResearch,
+      preparedTransmutationRequests: epoch.preparedTransmutation,
+      manaRegenPerSecondOverride: manaRegenPerSecond(state),
+    })
+  }
+  eventContext.onCombatElapsed = (elapsedMs) => {
+    const hasPassiveWork = epoch.research.length > 0 || epoch.transmutation.length > 0 || Boolean(getActiveArtificingJob(state))
+    if (!hasPassiveWork) {
+      advanceChannelingState(state, elapsedMs, eventContext, manaRegenPerSecond(state))
+    } else if (useMixedEpochBatching) {
+      advanceContinuousElapsed(elapsedMs)
+    }
   }
   let schedule = createEventSchedule(state, epoch, metrics)
 
@@ -389,10 +438,11 @@ const runOptimizedBanked = async (state: GameState, durationMs: number, context:
     metrics.eventBoundaries += 1
     const hasPassiveWork = epoch.research.length > 0 || epoch.transmutation.length > 0 || Boolean(getActiveArtificingJob(state))
     const passiveBoundary = minBoundary([schedule.researchAt, schedule.transmutationAt, schedule.artificingAt, schedule.channelingAt, schedule.manaAt])
-    const combatBatch = state.combat.active && !hasPassiveWork
+    const mixedEpochBatch = state.combat.active && hasPassiveWork && useMixedEpochBatching
+    const combatBatch = state.combat.active && (!hasPassiveWork || mixedEpochBatch)
     const boundary = combatBatch ? passiveBoundary : scheduleMinimum(schedule)
     const quietFrozenBatch = combatBatch && (state.debug.freezePlayerActions || state.debug.freezeEnemyActions)
-    const delta = Math.min(remaining, combatBatch ? quietFrozenBatch ? remaining : 1_000 : boundary === null ? remaining : Math.max(OFFLINE_FAST_FORWARD_EPSILON_MS, boundary))
+    const delta = Math.min(remaining, combatBatch ? quietFrozenBatch ? remaining : Math.min(1_000, boundary ?? remaining) : boundary === null ? remaining : Math.max(OFFLINE_FAST_FORWARD_EPSILON_MS, boundary))
     const due = {
       combat: schedule.combatAt !== null && schedule.combatAt <= delta + OFFLINE_FAST_FORWARD_EPSILON_MS,
       research: schedule.researchAt !== null && schedule.researchAt <= delta + OFFLINE_FAST_FORWARD_EPSILON_MS,
@@ -407,16 +457,19 @@ const runOptimizedBanked = async (state: GameState, durationMs: number, context:
       const unconsumedCombatMs = advanceCombatStateWithRemaining(state, delta, eventContext)
       if (unconsumedCombatMs > 0) {
         const continuousStarted = now()
-        advanceChannelingState(state, unconsumedCombatMs, eventContext, epoch.manaRate)
+        advanceContinuousElapsed(unconsumedCombatMs)
         metrics.timing.continuousManaMs += now() - continuousStarted
       }
+    } else if (state.combat.active) {
+      const continuousStarted = now()
+      prepareEpochWork(epoch, delta)
+      advanceGameStateContinuous(state, delta, eventContext, { preparedWorkRequests: epoch.preparedRequests, manaRegenPerSecondOverride: manaRegenPerSecond(state) })
+      metrics.timing.continuousManaMs += now() - continuousStarted
+      if (state.combat.active) advanceCombatStateWithRemaining(state, delta, eventContext)
     } else {
       const continuousStarted = now()
-      const preparedRequests = [
-        ...scalePreparedWork(epoch.research, delta),
-        ...scalePreparedWork(epoch.transmutation, delta),
-      ]
-      advanceGameStateContinuous(state, delta, eventContext, { preparedWorkRequests: preparedRequests, manaRegenPerSecondOverride: epoch.manaRate })
+      prepareEpochWork(epoch, delta)
+      advanceGameStateContinuous(state, delta, eventContext, { preparedWorkRequests: epoch.preparedRequests, manaRegenPerSecondOverride: manaRegenPerSecond(state) })
       metrics.timing.continuousManaMs += now() - continuousStarted
       if (state.combat.active) advanceCombatStateWithRemaining(state, delta, eventContext)
     }
@@ -440,8 +493,8 @@ const runOptimizedBanked = async (state: GameState, durationMs: number, context:
       eventContext.manaDeltaPerSecond = epoch.manaRate - epoch.demandPerSecond
       schedule = createEventSchedule(state, epoch, metrics)
     } else {
-      if (due.combat || due.research || due.transmutation || due.artificing || due.channeling || due.mana) refreshPassiveSchedules()
-      if (due.combat || due.research || due.transmutation || due.channeling || due.mana) refreshCombatSchedule()
+      if (due.research || due.transmutation || due.artificing || due.channeling || due.mana) refreshPassiveSchedules()
+      if (due.combat || due.mana) refreshCombatSchedule()
     }
 
     const timestamp = now()

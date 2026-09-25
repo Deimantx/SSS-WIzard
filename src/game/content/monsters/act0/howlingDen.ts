@@ -275,7 +275,7 @@ export const HOWLING_DEN_MONSTERS = {
       },
     },
     defaultActionPatternId: "default",
-    resonanceYield: { air: 38 },
+    resonanceYield: { air: 38, fire: 12 },
     loot: withDungeonLoot("howling-den", "normal", { min: 3, max: 5 }),
   },
   "den-stalker": {

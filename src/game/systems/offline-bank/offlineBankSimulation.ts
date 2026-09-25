@@ -108,6 +108,7 @@ export const advanceWithOfflineBank = async (durationMs: number, getState: () =>
     fastForwardMetrics = fastForwardResult.metrics
     workingState.offlineBankMs = Math.max(0, workingState.offlineBankMs - duration)
     onProgress?.({ phase: 'finalizing', percent: 100 })
+    await yieldToBrowser()
     for (const [itemId, quantity] of acquiredItems) onItemAcquired?.(workingState, itemId, quantity)
     const report = collector.finalize(workingState)
     const majorEvents = workingState.notifications.filter((note) => !previousIds.has(note.id) && isMajorNotification(note.text))

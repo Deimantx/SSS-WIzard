@@ -59,6 +59,8 @@ export interface AdvanceContext {
  */
 export interface AdvanceContinuousOptions {
   preparedWorkRequests?: readonly ContinuousManaWorkRequest[]
+  preparedResearchRequests?: readonly ContinuousManaWorkRequest[]
+  preparedTransmutationRequests?: readonly ContinuousManaWorkRequest[]
   manaRegenPerSecondOverride?: number
 }
 
@@ -450,13 +452,17 @@ export const advanceGameStateContinuous = (state: GameState, delta: number, cont
     if (completion.kind !== 'recipe') recalculateDerivedStats(state)
     context.onArtificingComplete?.(completion)
   })
-  const researchRequests = options.preparedWorkRequests
-    ? options.preparedWorkRequests.filter((request) => request.system === 'research')
-    : buildResearchWorkRequests(state, delta, context)
-  const transmutationRequests = options.preparedWorkRequests
-    ? options.preparedWorkRequests.filter((request) => request.system === 'transmutation')
-    : buildTransmutationWorkRequests(state, delta)
-  const continuousRequests = [...researchRequests, ...transmutationRequests]
+  const researchRequests = options.preparedResearchRequests
+    ?? (options.preparedWorkRequests
+      ? options.preparedWorkRequests.filter((request) => request.system === 'research')
+      : undefined)
+    ?? buildResearchWorkRequests(state, delta, context)
+  const transmutationRequests = options.preparedTransmutationRequests
+    ?? (options.preparedWorkRequests
+      ? options.preparedWorkRequests.filter((request) => request.system === 'transmutation')
+      : undefined)
+    ?? buildTransmutationWorkRequests(state, delta)
+  const continuousRequests = options.preparedWorkRequests ?? [...researchRequests, ...transmutationRequests]
   if (continuousRequests.length > 0) {
     const funding = allocateContinuousMana(state, continuousRequests)
     context.onContinuousManaAllocation?.()

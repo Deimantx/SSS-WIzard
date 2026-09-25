@@ -70,7 +70,6 @@ export function CombatWorldNavigation({ onSelectLocation, onEnterLocation, onHun
   const enterSelectedLocation = () => {
     const location = viewModel.selectedLocation
     if (!location || !location.dungeonId || location.state === 'locked' || location.state === 'prototype') return
-    selectLocation(location.id)
     if (location.targeting) {
       const targetEnemyId = selectedTargetEnemyId
       if (!targetEnemyId) return

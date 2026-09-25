@@ -19,7 +19,9 @@ describe('Focus screen', () => {
     expect(screen.getAllByText('CHANNELING').length).toBeGreaterThan(0)
     expect(screen.getByText('RESEARCH')).toBeTruthy()
     expect(screen.getByText('TRANSMUTATION')).toBeTruthy()
-    expect(screen.getByText('NO PREPARED COMBAT')).toBeTruthy()
+    expect(screen.getByText('Combat Auto-Cast')).toBeTruthy()
+    expect(screen.getByText('0 Focus')).toBeTruthy()
+    expect(screen.getByText(/0% · INACTIVE/)).toBeTruthy()
   })
 
   it('shows one Prismatic requirement and the +5 progression', () => {
@@ -35,7 +37,7 @@ describe('Focus screen', () => {
     expect(screen.queryByRole('img', { name: /Life Essence/ })).toBeNull()
   })
 
-  it('keeps a prepared Combat preset out of active Focus totals', () => {
+  it('shows a prepared Combat projection without adding it to active Focus totals', () => {
     const state = createInitialState()
     state.progress.spellRanks['fire-bolt'] = 1
     state.spellPresets.presets = [{ id: 'spell-preset-1', name: 'Prepared Burst', slots: [{ spellId: 'fire-bolt', autoCast: true }] }]
@@ -43,10 +45,30 @@ describe('Focus screen', () => {
     useGameStore.getState().hydrateState(state)
     render(<TooltipProvider><FocusScreen /></TooltipProvider>)
 
-    expect(screen.getByText('PREPARED COMBAT')).toBeTruthy()
-    expect(screen.getByText('Prepared Burst')).toBeTruthy()
-    expect(screen.getByText('READY')).toBeTruthy()
-    expect(screen.queryByText('Combat Auto-Cast')).toBeNull()
+    expect(screen.getByText('Combat Auto-Cast')).toBeTruthy()
+    expect(screen.getByText(/10 Focus/)).toBeTruthy()
+    expect(screen.getByText(/10% · INACTIVE/)).toBeTruthy()
+    expect(screen.queryByText('Prepared Burst')).toBeNull()
+    expect(screen.queryByText('Fire Bolt')).toBeNull()
+  })
+
+  it('does not expose spell names in the Combat Auto-Cast projection', () => {
+    const state = createInitialState()
+    state.progress.spellRanks = { 'fire-bolt': 1, 'mending-waters': 1, 'wind-blade': 1 }
+    state.spellPresets.presets = [{ id: 'spell-preset-1', name: 'Mixed Modes', slots: [
+      { spellId: 'fire-bolt', autoCast: true },
+      { spellId: 'mending-waters', autoCast: false },
+      { spellId: 'wind-blade', autoCast: true },
+    ] }]
+    state.spellPresets.selectedPresetId = 'spell-preset-1'
+    useGameStore.getState().hydrateState(state)
+    render(<TooltipProvider><FocusScreen /></TooltipProvider>)
+
+    expect(screen.getByText('Combat Auto-Cast')).toBeTruthy()
+    expect(screen.getByText(/20 Focus/)).toBeTruthy()
+    expect(screen.queryByText('Fire Bolt')).toBeNull()
+    expect(screen.queryByText('Wind Blade')).toBeNull()
+    expect(screen.queryByText('Mending Waters')).toBeNull()
   })
 
   it('navigates a research reservation to the Research screen', async () => {
@@ -56,7 +78,7 @@ describe('Focus screen', () => {
     state.activities.research.slots['research-1'] = { itemId: 'fire-fragment', targetSchoolId: 'fire', requestedQuantity: 1, remainingQuantity: 1, progressMs: 0, echoesAssigned: 1, status: 'running' }
     useGameStore.getState().hydrateState(state)
     render(<TooltipProvider><FocusScreen /></TooltipProvider>)
-    await user.click(screen.getByRole('button', { name: /Research · Fire Fragment/ }))
+    await user.click(screen.getByRole('button', { name: /Research Allocation/ }))
     expect(useGameStore.getState().ui.screen).toBe('tower-research')
   })
 })

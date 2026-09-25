@@ -1,10 +1,7 @@
 import { ArrowRight } from 'lucide-react'
 import { Card, GameTooltip, Status } from '../../../components/ui'
 import { TooltipContent } from '../../../components/ui/tooltip/Tooltip'
-import { FOCUS_USAGE_GROUPS, getFocusUsageGroups, type FocusUsageEntry } from '../../../game/systems/focus/focusUsage'
-import { getCombatFocusReadiness } from '../../../game/systems/focus/focusReservations'
-import { getSelectedSpellPreset, getSpellPresetFocusProjection } from '../../../game/systems/spells'
-import { SPELLS } from '../../../game/content/spells/spells'
+import { FOCUS_USAGE_GROUPS, getFocusUsagePresentationGroups, type FocusUsageEntry } from '../../../game/systems/focus/focusUsage'
 import { formatNumber } from '../../../game/utils'
 import { selectUsedFocus } from '../../../store/selectors'
 import { useGameStore } from '../../../store/gameStore'
@@ -14,13 +11,10 @@ const GROUP_LABELS: Record<(typeof FOCUS_USAGE_GROUPS)[number], string> = { chan
 
 export function FocusUsagePanel() {
   const state = useGameStore()
-  const groups = getFocusUsageGroups(state)
+  const groups = getFocusUsagePresentationGroups(state)
   const entries = groups.flatMap((group) => group.entries)
   const used = selectUsedFocus(state)
   const navigate = useGameStore((game) => game.setScreen)
-  const selectedPreset = getSelectedSpellPreset(state)
-  const preparedProjection = selectedPreset ? getSpellPresetFocusProjection(state, selectedPreset) : null
-  const preparedReadiness = preparedProjection ? getCombatFocusReadiness(state, preparedProjection.validSlots) : null
   return <Card className="focus-usage" title="ACTIVE FOCUS ALLOCATION" action={<span className="focus-usage-total">{formatNumber(used)} / {formatNumber(state.player.maxFocus)} ACTIVE</span>}>
     <div className="focus-usage-list">
       {entries.length === 0 ? <EmptyUsage maxFocus={state.player.maxFocus} navigate={navigate} /> : groups.map((group) => {
@@ -28,19 +22,7 @@ export function FocusUsagePanel() {
         return <section className="focus-usage-group" key={group.sourceType}><div className="focus-usage-group-heading"><span>{GROUP_LABELS[group.sourceType]}</span><strong>{formatNumber(group.amount)} FOCUS</strong></div>{group.entries.map((entry) => <ReservationTile key={entry.id} entry={entry} maxFocus={state.player.maxFocus} onNavigate={() => navigate(getFocusReservationDestination(entry.sourceType))} />)}</section>
       })}
     </div>
-    {!state.combat.active && <PreparedCombat readiness={preparedReadiness} presetName={selectedPreset?.name ?? null} spellNames={preparedProjection?.validSlots.map((slot) => SPELLS[slot.spellId]?.name ?? slot.spellId) ?? []} navigate={() => navigate('combat')} />}
   </Card>
-}
-
-function PreparedCombat({ readiness, presetName, spellNames, navigate }: { readiness: ReturnType<typeof getCombatFocusReadiness> | null; presetName: string | null; spellNames: string[]; navigate: () => void }) {
-  if (!readiness || !presetName) return <div className="focus-prepared-combat"><Status tone="neutral">NO PREPARED COMBAT</Status><p>Select a Spell Preset to preview its Combat Focus requirement.</p><button type="button" onClick={navigate}>OPEN COMBAT LOADOUT</button></div>
-  const names = spellNames.slice(0, 5)
-  return <section className={`focus-prepared-combat${readiness.ready ? ' is-ready' : ' is-short'}`} aria-label="Prepared Combat">
-    <div className="focus-prepared-combat-heading"><span>PREPARED COMBAT</span><Status tone={readiness.ready ? 'success' : 'warning'}>{readiness.ready ? 'READY' : 'NOT READY'}</Status></div>
-    <strong>{presetName}</strong>
-    <div className="focus-prepared-combat-metrics"><span><b>{formatNumber(readiness.combatFocusRequired)}</b> Focus Required</span><span><b>{formatNumber(readiness.autoCastSpellCount)}</b> Auto-Cast Spells</span><span><b>{formatNumber(readiness.availableForCombat)}</b> Available</span>{!readiness.ready && <span className="is-warning"><b>{formatNumber(readiness.missingFocus)}</b> Focus Short</span>}</div>
-    {names.length > 0 && <small>{names.join(' Â· ')}</small>}
-  </section>
 }
 
 function ReservationTile({ entry, maxFocus, onNavigate }: { entry: FocusUsageEntry; maxFocus: number; onNavigate: () => void }) {

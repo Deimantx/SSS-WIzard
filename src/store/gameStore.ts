@@ -206,7 +206,9 @@ import {
 import type { OfflineBankReport } from "../game/systems/offline-bank/offlineBankReport";
 import {
   DEFAULT_COMBAT_LOADOUT_NAME,
+  clearCombatSpellRuntime,
   getDefaultSpellAutomationConfig,
+  getCombatEntryPreset,
   getNextSpellPresetId,
   getSelectedSpellPreset,
   getSpellAutoCastFocusCost,
@@ -259,6 +261,7 @@ import {
   combatDefeatSink,
   publishOfflineCombatDefeat,
 } from "../game/ui/combatDefeatStore";
+import { clearCombatEntryBlock, showCombatFocusBlock } from "../game/ui/combatEntryBlockStore";
 import { createCombatEventSink } from "../game/systems/combat/combatEventSink";
 import {
   combatTelemetryObserver,
@@ -461,6 +464,7 @@ const initializeDungeonRun = (
   if (resetCombatState) state.combat = createInitialState().combat;
   clearCombatLogUi();
   clearCombatDefeat();
+  clearCombatEntryBlock();
   beginCombatRecapRun();
   combatAlertsObserver.beginRun(dungeonId);
   combatTelemetryObserver.beginRun(dungeonId);
@@ -479,6 +483,7 @@ const initializeDungeonRun = (
   state.player.health = Math.max(1, state.player.health);
   if (!spawnNextEnemy(state, combatEventSink)) {
     state.combat.active = false;
+    clearCombatSpellRuntime(state);
     state.combat.dungeonId = null;
     state.combat.encounterTimerMs = 0;
     state.combat.dungeonSequenceIndex = null;
@@ -815,7 +820,7 @@ const spellUnlocked = isSpellUnlocked;
 const canReserveFocus = canReserveFocusAction;
 
 const getCombatEntryFailureMessage = (state: GameState, failure: ReturnType<typeof validateSelectedCombatLoadout>) => {
-  const preset = getSelectedSpellPreset(state)
+  const preset = getCombatEntryPreset(state)
   if (failure.ok) return ''
   if (failure.reason !== 'focus' || !failure.focus) {
     return failure.reason === 'missing-preset'
@@ -826,6 +831,14 @@ const getCombatEntryFailureMessage = (state: GameState, failure: ReturnType<type
   }
   const focus = failure.focus
   return `NOT ENOUGH FOCUS · Combat Loadout: ${preset?.name ?? 'Selected Preset'} · Combat Focus Required: ${focus.combatFocusRequired} · Max Focus: ${focus.maxFocus} · Currently Used: ${focus.activeNonCombatFocus} · Available for Combat: ${focus.availableForCombat} · Missing Focus: ${focus.missingFocus}. Free additional Focus before starting combat.`
+}
+
+const showCombatFocusPreflightBlock = (state: GameState, failure: ReturnType<typeof validateSelectedCombatLoadout>) => {
+  if (failure.ok) return false
+  if (failure.reason !== 'focus' || !failure.focus) return false
+  const preset = getCombatEntryPreset(state)
+  showCombatFocusBlock({ kind: 'focus', loadoutName: preset?.name ?? 'Selected Preset', ...failure.focus })
+  return true
 }
 
 const toggleAutoCastState = (state: GameState, requestedSpellId: SpellId) => {
@@ -904,8 +917,9 @@ export const useGameStore = create<GameStore>()(
           },
         });
       }),
-    setScreen: (screen) =>
-      set((state) => {
+    setScreen: (screen) => {
+      if (screen !== "combat") clearCombatEntryBlock();
+      return set((state) => {
         state.ui.screen =
           screen === "crystals"
             ? isCrystalSystemUnlocked(state)
@@ -919,7 +933,8 @@ export const useGameStore = create<GameStore>()(
                 ? screen
                 : "home";
         return state;
-      }),
+      });
+    },
     completeStoryEvent: (eventId) =>
       set((state) => {
         const destination = completeStoryEventAction(state, eventId);
@@ -1864,6 +1879,7 @@ export const useGameStore = create<GameStore>()(
         return;
       const preflight = validateSelectedCombatLoadout(currentState)
       if (!preflight.ok) {
+        if (showCombatFocusPreflightBlock(currentState, preflight)) return;
         set((state) => {
           pushNotification(state, getCombatEntryFailureMessage(state, preflight), "warning", { key: `combat-focus-preflight:${state.spellPresets.selectedPresetId ?? 'missing'}`, cooldownMs: 1000 })
           return state
@@ -1925,6 +1941,7 @@ export const useGameStore = create<GameStore>()(
       if (!sameLocation) {
         const preflight = validateSelectedCombatLoadout(currentState)
         if (!preflight.ok) {
+          if (showCombatFocusPreflightBlock(currentState, preflight)) return false;
           set((state) => {
             pushNotification(state, getCombatEntryFailureMessage(state, preflight), "warning", { key: `combat-focus-preflight:${state.spellPresets.selectedPresetId ?? 'missing'}`, cooldownMs: 1000 })
             return state
@@ -2013,7 +2030,9 @@ export const useGameStore = create<GameStore>()(
     },
     leaveDungeon: () => {
       endActiveDungeonRun();
+      clearCombatEntryBlock();
       return set((state) => {
+        clearCombatSpellRuntime(state);
         const sequence =
           getCombatEncounterMode(
             getCombatLocationByDungeonId(state.combat.dungeonId),
@@ -2456,6 +2475,7 @@ export const useGameStore = create<GameStore>()(
       clearCombatAlerts();
       clearCombatRecap();
       clearCombatDefeat();
+      clearCombatEntryBlock();
       clearDungeonStatistics();
       combatTelemetryObserver.clear();
       set((state) => {
@@ -2491,6 +2511,7 @@ export const useGameStore = create<GameStore>()(
       clearCombatAlerts();
       clearCombatRecap();
       clearCombatDefeat();
+      clearCombatEntryBlock();
       clearDungeonStatistics();
       combatTelemetryObserver.clear();
       set((state) => {
@@ -2510,6 +2531,7 @@ export const useGameStore = create<GameStore>()(
       clearCombatAlerts();
       clearCombatRecap();
       clearCombatDefeat();
+      clearCombatEntryBlock();
       clearDungeonStatistics();
       combatTelemetryObserver.clear();
       return set((state) => {

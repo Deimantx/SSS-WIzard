@@ -31,7 +31,10 @@ export function CombatSpellLoadout({ focusState, onSelectSpell, automationSpellI
   const applyPresetSlotAutomation = useGameStore((state) => state.applyPresetSlotAutomation)
   const selected = presets.presets.find((preset) => preset.id === presets.selectedPresetId) ?? null
   const slots = combatActive && activeSpellLoadout ? activeSpellLoadout.slots : selected?.slots ?? []
-  const readiness = getCombatFocusReadiness(focusState, combatActive && activeSpellLoadout ? activeSpellLoadout.slots : slots)
+  // Keep this screen resilient to lightweight read-model callers that omit the
+  // optional combat slice. The live store is authoritative for battle state.
+  const resolvedFocusState: SpellPresetFocusState = { ...focusState, combat: { active: combatActive, activeSpellLoadout } }
+  const readiness = getCombatFocusReadiness(resolvedFocusState, combatActive && activeSpellLoadout ? activeSpellLoadout.slots : slots)
   const { drag, dropTarget, beginDrag, registerTarget } = useSpellLoadoutDnd()
   const [editor, setEditor] = useState<'new' | 'rename' | null>(null)
   const [editorName, setEditorName] = useState('')
@@ -108,7 +111,7 @@ export function CombatSpellLoadout({ focusState, onSelectSpell, automationSpellI
         return <LoadoutSlot key={`${index}-${slot?.spellId ?? 'empty'}`} index={index} totalSlots={slots.length} slot={slot} spell={spell} canEdit={!combatActive} dragging={drag?.payload.source === 'loadout' && drag.payload.fromIndex === index} dropTarget={dropTarget?.index === index} registerTarget={element => registerTarget(index, element)} onMove={moveSlot} onRemove={removeSpell} onSelect={onSelectSpell} onToggleAutoCast={toggleAutomationMode} onOpenAutomation={(nextIndex) => { setAutomationError(null); setAutomationOrigin('direct'); setAutomationIndex(nextIndex) }} onPointerDown={event => { if (slot && !combatActive) beginDrag({ source: 'loadout', spellId: slot.spellId, fromIndex: index }, event) }} />
       })}
     </div>
-    <div className="loadout-footer"><span>{slots.length} / 8 prepared</span><FocusBudgetMeter readiness={readiness} compact /></div>
+    <div className="loadout-footer"><span>{slots.length} / 8 {combatActive ? 'active' : 'prepared'}</span><FocusBudgetMeter readiness={readiness} mode={combatActive ? 'active' : 'prepared'} compact /></div>
     {selected && overviewOpen && <CombatAutomationOverviewModal open presetName={selected.name} slots={slots} readOnly={combatActive} onClose={() => setOverviewOpen(false)} onEdit={(index) => { setAutomationError(null); setAutomationOrigin('overview'); setOverviewOpen(false); setAutomationIndex(index) }} onToggleMode={toggleAutomationMode} />}
     {selected && automationSlot && automationIndex !== null && <SpellAutomationModal open slot={automationSlot} slotIndex={automationIndex} presetName={selected.name} loadoutSlots={slots} readOnly={combatActive} applyError={automationError} onClose={closeAutomationEditor} onApply={applyAutomation} />}
   </section>

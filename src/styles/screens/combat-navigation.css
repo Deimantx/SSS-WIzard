@@ -123,8 +123,14 @@
 .combat-location-lock-note svg { flex: 0 0 auto; color: var(--ui-warning); }
 .combat-location-lock-note.is-prototype { border-color: color-mix(in srgb, var(--ui-secondary) 36%, var(--ui-border)); background: color-mix(in srgb, var(--ui-secondary) 7%, transparent); }
 .combat-location-lock-note.is-prototype svg { color: var(--ui-secondary); }
-.combat-location-actions { display: grid; gap: 6px; margin-top: auto; }
-.combat-location-secondary-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.combat-location-actions { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; width: 100%; min-width: 0; margin-top: auto; }
+.combat-location-secondary-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; width: 100%; min-width: 0; }
+.combat-location-actions > .game-tooltip-trigger,
+.combat-location-secondary-actions > .game-tooltip-trigger { display: block; width: 100%; min-width: 0; }
+.combat-location-actions > .button,
+.combat-location-actions > .game-tooltip-trigger > .button,
+.combat-location-secondary-actions > .button,
+.combat-location-secondary-actions > .game-tooltip-trigger > .button { width: 100%; min-width: 0; }
 .combat-location-actions .button { min-height: 32px; font-size: 9px; }
 .combat-location-secondary-actions .button { min-height: 29px; color: var(--ui-text-soft); background: color-mix(in srgb, var(--ui-panel) 76%, transparent); }
 .combat-location-inspector-empty { display: grid; place-items: center; align-content: center; min-height: 240px; gap: 7px; padding: 20px; color: var(--ui-text-muted); text-align: center; }

@@ -471,8 +471,7 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
   migrated.combat.pendingPlayerSpellCast = null
   migrated.combat.queuedPlayerSpellId = null
   const rawActiveLoadout = isRecord(rawCombat.activeSpellLoadout) ? rawCombat.activeSpellLoadout : null
-  const encounterExists = Boolean(migrated.combat.enemyId)
-  if (encounterExists) {
+  if (migrated.combat.active) {
     const slots = normalizeSpellPresetSlots(rawActiveLoadout?.slots)
     if (rawActiveLoadout && slots.length > 0) {
       const presetId = typeof rawActiveLoadout.presetId === 'string' ? rawActiveLoadout.presetId : null
@@ -484,7 +483,7 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
     syncAutoCastRuntimeForLoadout(migrated, migrated.combat.activeSpellLoadout.slots)
   } else {
     migrated.combat.activeSpellLoadout = null
-    if (!migrated.combat.active) syncAutoCastRuntimeForLoadout(migrated, [])
+    syncAutoCastRuntimeForLoadout(migrated, [])
   }
   // Read and normalize legacy player Basic timing at the migration boundary,
   // but do not copy it into current state: player combat is Spell-only.

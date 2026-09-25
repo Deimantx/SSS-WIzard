@@ -78,6 +78,20 @@ describe('CombatWorldNavigation', () => {
     expect(screen.getByText('SELECTED')).toBeTruthy()
   })
 
+  it('preserves the selected target when a hunt attempt is blocked', () => {
+    const onHuntTarget = vi.fn(() => false)
+    renderNavigation(vi.fn(), onHuntTarget)
+
+    fireEvent.click(screen.getByRole('button', { name: /Forest WispEASY/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'HUNT TARGET' }))
+
+    expect(onHuntTarget).toHaveBeenCalledWith('whispering-woods', 'forest-wisp')
+    expect(screen.getByRole('button', { name: /Forest WispEASY/ }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByRole('button', { name: 'LOOT' })).not.toHaveProperty('disabled', true)
+    expect(screen.getByRole('button', { name: 'BESTIARY' })).not.toHaveProperty('disabled', true)
+    expect(screen.getByRole('button', { name: 'HUNT TARGET' })).not.toHaveProperty('disabled', true)
+  })
+
   it('lets the player browse another location while the active run remains unchanged', () => {
     const state = createInitialState()
     state.combat.active = true

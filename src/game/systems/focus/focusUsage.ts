@@ -1,8 +1,7 @@
 import { BALANCE } from '../../core/balance/balance'
 import { deriveActiveCombatFocusReservations, deriveActiveNonCombatFocusReservations } from './focusReservations'
-import { TRANSMUTATION_RECIPES as RECIPES } from '../../content/recipes/recipes'
-import { getRecipeStatus } from '../transmutation/transmutationSelectors'
-import type { FocusReservation, GameState, ResearchJobStatus } from '../../types'
+import type { FocusReservation, GameState } from '../../types'
+import { getCombatEntryPreset, getSpellPresetFocusProjection } from '../spells'
 
 export interface FocusUsageEntry {
   id: string
@@ -20,29 +19,40 @@ export interface FocusUsageGroup {
   amount: number
 }
 
+export interface CombatFocusUsagePresentation {
+  amount: number
+  status: 'ACTIVE' | 'INACTIVE'
+}
+
 export const FOCUS_USAGE_GROUPS: readonly FocusReservation['sourceType'][] = ['channeling', 'research', 'transmutation', 'combat']
 
 const plural = (count: number, singular: string) => `${count} ${singular}${count === 1 ? '' : 's'}`
-const researchStatusLabel = (status: ResearchJobStatus | undefined) => status ? status.replace('-', ' ').toUpperCase() : 'RUNNING'
 
-/** Returns active usage rows. Combat Auto-Cast is intentionally one aggregate row. */
+/** Returns one readable usage row per active system. */
 export function getFocusUsageEntries(state: GameState): FocusUsageEntry[] {
-  const entries = deriveActiveNonCombatFocusReservations(state).map((reservation) => {
-    if (reservation.sourceType === 'channeling') {
-      const echoes = Math.max(0, Math.floor(state.activities.channeling.echoesAssigned))
-      return { ...reservation, detail: `${plural(echoes, 'Echo')} x ${BALANCE.channeling.echoFocusCost} Focus`, status: 'ACTIVE' }
-    }
-    if (reservation.sourceType === 'research') {
-      const job = state.activities.research.slots[reservation.sourceId as keyof typeof state.activities.research.slots]
-      const echoes = Math.max(0, Math.floor(job?.echoesAssigned ?? reservation.amount / BALANCE.research.echoFocusCost))
-      return { ...reservation, detail: `${plural(echoes, 'Echo')} x ${BALANCE.research.echoFocusCost} Focus`, status: researchStatusLabel(job?.status) }
-    }
-    const job = state.activities.transmutation.jobs[reservation.sourceId.replace('transmutation-', '') as keyof typeof state.activities.transmutation.jobs]
-    const recipe = RECIPES[reservation.sourceId.replace('transmutation-', '') as keyof typeof RECIPES]
-    const echoes = Math.max(0, Math.floor(job?.echoesAssigned ?? reservation.amount / BALANCE.transmutation.echoFocusCost))
-    const status = recipe ? getRecipeStatus(state, recipe).replace('-', ' ').toUpperCase() : 'ACTIVE'
-    return { ...reservation, detail: `${plural(echoes, 'Echo')} x ${BALANCE.transmutation.echoFocusCost} Focus`, status }
-  })
+  const reservations = deriveActiveNonCombatFocusReservations(state)
+  const entries: FocusUsageEntry[] = []
+  const channeling = reservations.filter((reservation) => reservation.sourceType === 'channeling')
+  if (channeling.length) {
+    const echoes = Math.max(0, Math.floor(state.activities.channeling.echoesAssigned))
+    entries.push({ ...channeling[0], id: 'channeling-summary', sourceId: 'echoes', amount: channeling.reduce((sum, reservation) => sum + reservation.amount, 0), detail: `${plural(echoes, 'Echo')}`, status: 'ACTIVE' })
+  }
+
+  const research = reservations.filter((reservation) => reservation.sourceType === 'research')
+  if (research.length) {
+    const echoes = research.reduce((sum, reservation) => sum + Math.max(0, Math.floor((state.activities.research.slots[reservation.sourceId as keyof typeof state.activities.research.slots]?.echoesAssigned ?? reservation.amount / BALANCE.research.echoFocusCost))), 0)
+    entries.push({ id: 'research-summary', label: 'Research Allocation', sourceType: 'research', sourceId: 'research', amount: research.reduce((sum, reservation) => sum + reservation.amount, 0), detail: `${plural(echoes, 'Echo')} Â· ${plural(research.length, 'active project')}`, status: 'ACTIVE' })
+  }
+
+  const transmutation = reservations.filter((reservation) => reservation.sourceType === 'transmutation')
+  if (transmutation.length) {
+    const echoes = transmutation.reduce((sum, reservation) => {
+      const job = state.activities.transmutation.jobs[reservation.sourceId as keyof typeof state.activities.transmutation.jobs]
+      return sum + Math.max(0, Math.floor(job?.echoesAssigned ?? reservation.amount / BALANCE.transmutation.echoFocusCost))
+    }, 0)
+    entries.push({ id: 'transmutation-summary', label: 'Transmutation Allocation', sourceType: 'transmutation', sourceId: 'transmutation', amount: transmutation.reduce((sum, reservation) => sum + reservation.amount, 0), detail: `${plural(echoes, 'Echo')} Â· ${plural(transmutation.length, 'active job')}`, status: 'ACTIVE' })
+  }
+
   const combatReservations = deriveActiveCombatFocusReservations(state)
   if (combatReservations.length) entries.push({
     id: 'combat-autocast',
@@ -50,10 +60,37 @@ export function getFocusUsageEntries(state: GameState): FocusUsageEntry[] {
     sourceType: 'combat',
     sourceId: 'combat',
     amount: combatReservations.reduce((sum, reservation) => sum + reservation.amount, 0),
-    detail: `${combatReservations.length} Auto-Cast Spell${combatReservations.length === 1 ? '' : 's'} x ${combatReservations.map((entry) => entry.label.replace(/ Auto-Cast$/, '')).join(' x ')}`,
+    detail: `${plural(combatReservations.length, 'Auto-Cast Spell')}`,
     status: 'ACTIVE',
   })
   return entries
+}
+
+/** Returns the combat tile shown on Focus without turning a prepared loadout into an active reservation. */
+export function getCombatFocusUsagePresentation(state: GameState): CombatFocusUsagePresentation {
+  const activeReservations = deriveActiveCombatFocusReservations(state)
+  if (activeReservations.length) return { amount: activeReservations.reduce((sum, reservation) => sum + reservation.amount, 0), status: 'ACTIVE' }
+  const preset = getCombatEntryPreset(state)
+  const projection = preset ? getSpellPresetFocusProjection(state, preset) : null
+  return { amount: projection?.presetAutoCastFocus ?? 0, status: 'INACTIVE' }
+}
+
+/** Presentation-only entries; inactive prepared combat is intentionally excluded from active Focus totals. */
+export function getFocusUsagePresentationEntries(state: GameState): FocusUsageEntry[] {
+  const combat = getCombatFocusUsagePresentation(state)
+  return [
+    ...getFocusUsageEntries(state).filter((entry) => entry.sourceType !== 'combat'),
+    { id: 'combat-autocast', label: 'Combat Auto-Cast', sourceType: 'combat', sourceId: 'combat', amount: combat.amount, detail: combat.status, status: combat.status },
+  ]
+}
+
+export function getFocusUsagePresentationGroups(state: GameState): FocusUsageGroup[] {
+  const entries = getFocusUsagePresentationEntries(state)
+  return FOCUS_USAGE_GROUPS.map((sourceType) => {
+    const groupEntries = entries.filter((entry) => entry.sourceType === sourceType)
+    const activeAmount = groupEntries.filter((entry) => entry.status === 'ACTIVE').reduce((sum, entry) => sum + entry.amount, 0)
+    return { sourceType, entries: groupEntries, amount: activeAmount }
+  })
 }
 
 /** Groups the authoritative reservation entries for Focus Load and Active Focus Usage. */

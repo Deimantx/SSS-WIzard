@@ -223,6 +223,20 @@ export const syncAutoCastRuntimeForLoadout = (state: Pick<GameState, 'activities
 
 export const getSelectedSpellPreset = (state: Pick<GameState, 'spellPresets'>) => state.spellPresets.presets.find((preset) => preset.id === state.spellPresets.selectedPresetId) ?? null
 
+/** Resolves the preset used for a new combat run without changing selection state. */
+export const getCombatEntryPreset = (state: Pick<GameState, 'spellPresets'>) => {
+  const selected = getSelectedSpellPreset(state)
+  if (selected) return selected
+  return state.spellPresets.presets.length === 1 ? state.spellPresets.presets[0] : null
+}
+
+/** Clears battle-bound and compatibility Auto-Cast runtime without changing saved preset configuration. */
+export const clearCombatSpellRuntime = (state: Pick<GameState, 'activities' | 'combat'>) => {
+  state.combat.activeSpellLoadout = null
+  state.combat.queuedPlayerSpellId = null
+  syncAutoCastRuntimeForLoadout(state, [])
+}
+
 /** Reconciles the derived compatibility Auto-Cast runtime without touching an active battle snapshot. */
 export const syncSelectedSpellPresetRuntime = (state: GameState) => {
   if (state.combat.active) return false
@@ -232,7 +246,7 @@ export const syncSelectedSpellPresetRuntime = (state: GameState) => {
 }
 
 export const buildActiveCombatSpellLoadout = (state: SpellPresetProjectionState & Pick<GameState, 'spellPresets'>): ActiveCombatSpellLoadout => {
-  const preset = getSelectedSpellPreset(state)
+  const preset = getCombatEntryPreset(state)
   const projection = preset ? getSpellPresetFocusProjection(state, preset) : null
   const slots = projection?.validSlots ?? []
   return { presetId: preset?.id ?? null, presetName: preset?.name ?? 'No Preset Selected', slots, signature: getSpellPresetSignature(slots) }
@@ -244,7 +258,7 @@ export type CombatLoadoutPreflight =
 
 /** Validates the persisted preset and its current projection before an encounter starts. */
 export const validateSelectedCombatLoadout = (state: GameState): CombatLoadoutPreflight => {
-  const preset = getSelectedSpellPreset(state)
+  const preset = getCombatEntryPreset(state)
   if (!preset) return { ok: false, reason: 'missing-preset' }
   const projection = getSpellPresetFocusProjection(state, preset)
   if (!preset.slots.length) return { ok: false, reason: 'empty', unavailableSpellIds: projection.unavailableSpellIds }
@@ -261,15 +275,12 @@ export type ActivateCombatLoadoutResult =
 
 /** The only battle-boundary transition from persisted build configuration to combat runtime. */
 export const activateSelectedSpellPresetForBattle = (state: GameState): ActivateCombatLoadoutResult => {
-  if (state.spellPresets.selectedPresetId === null && state.spellPresets.presets.length === 1) {
-    const onlyPreset = state.spellPresets.presets[0]
-    const onlyProjection = getSpellPresetFocusProjection(state, onlyPreset)
-    if (onlyProjection.validSlots.length) state.spellPresets.selectedPresetId = onlyPreset.id
-  }
   const preflight = validateSelectedCombatLoadout(state)
   if (!preflight.ok) return preflight
-  const preset = getSelectedSpellPreset(state)
+  const preset = getCombatEntryPreset(state)
   if (!preset) return { ok: false, reason: 'missing-preset' }
+
+  if (state.spellPresets.selectedPresetId === null) state.spellPresets.selectedPresetId = preflight.presetId
 
   const slots = preflight.projection.validSlots
   const next: ActiveCombatSpellLoadout = { presetId: preset.id, presetName: preset.name, slots, signature: getSpellPresetSignature(slots) }

@@ -55,17 +55,6 @@
 .focus-empty-shortcuts { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; margin-top: 6px; }
 .focus-empty-shortcuts button { padding: 5px 7px; border: 1px solid var(--ui-border); border-radius: 5px; color: var(--ui-text-soft); background: transparent; cursor: pointer; font: var(--text-micro) var(--font-mono); }
 .focus-empty-shortcuts button:hover, .focus-empty-shortcuts button:focus-visible { border-color: var(--ui-secondary); outline: none; }
-.focus-prepared-combat { display: grid; gap: 8px; margin-top: 14px; padding: 12px; border: 1px solid color-mix(in srgb, var(--semantic-focus) 35%, var(--ui-border)); border-radius: 8px; background: color-mix(in srgb, var(--semantic-focus) 7%, var(--ui-panel-strong)); }
-.focus-prepared-combat.is-short { border-color: color-mix(in srgb, var(--ui-warning) 58%, var(--ui-border)); background: color-mix(in srgb, var(--ui-warning) 7%, var(--ui-panel-strong)); }
-.focus-prepared-combat-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--ui-secondary); font: var(--text-micro) var(--font-mono); letter-spacing: .12em; }
-.focus-prepared-combat > strong { color: var(--ui-text); font: var(--text-md) var(--font-mono); }
-.focus-prepared-combat-metrics { display: flex; flex-wrap: wrap; gap: 5px 12px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
-.focus-prepared-combat-metrics b { color: var(--ui-text-soft); }
-.focus-prepared-combat-metrics .is-warning, .focus-prepared-combat-metrics .is-warning b { color: var(--ui-warning); }
-.focus-prepared-combat > small { overflow: hidden; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); text-overflow: ellipsis; white-space: nowrap; }
-.focus-prepared-combat > p { margin: 0; color: var(--ui-text-muted); font-size: var(--text-xs); }
-.focus-prepared-combat > button { justify-self: start; padding: 5px 7px; border: 1px solid var(--ui-border); border-radius: 5px; color: var(--ui-text-soft); background: transparent; cursor: pointer; font: var(--text-micro) var(--font-mono); }
-.focus-prepared-combat > button:hover, .focus-prepared-combat > button:focus-visible { border-color: var(--ui-secondary); outline: none; }
 .focus-improvement-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 9px; }
 .focus-improvement-heading > .game-tooltip-trigger { min-width: 0; }
 .focus-improvement-heading > div { min-width: 0; }

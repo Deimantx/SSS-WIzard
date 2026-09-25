@@ -1204,4 +1204,20 @@ describe('Combat Spell Loadout V35 to V36 migration', () => {
     expect(migrated.combat.activeSpellLoadout).toEqual({ presetId: 'spell-preset-old', presetName: 'Encounter Deck', slots: [{ spellId: 'fire-bolt', autoCast: true }], signature: 'fire-bolt:1' })
     expect(migrated.activities.autoCastPriority).toEqual(['fire-bolt'])
   })
+
+  it('preserves the active combat snapshot during downtime between encounters', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({
+      ...initial,
+      saveVersion: SAVE_VERSION,
+      progress: { ...initial.progress, spellRanks: { 'fire-bolt': 1 } },
+      spellPresets: { presets: [{ id: 'spell-preset-1', name: 'Prepared', slots: [{ spellId: 'fire-bolt', autoCast: false }] }], selectedPresetId: 'spell-preset-1' },
+      combat: { ...initial.combat, active: true, dungeonId: 'whispering-woods', enemyId: null, activeSpellLoadout: { presetId: 'spell-preset-old', presetName: 'Active Snapshot', slots: [{ spellId: 'fire-bolt', autoCast: true }], signature: 'stale' } },
+    } as any)
+
+    expect(migrated.combat.active).toBe(true)
+    expect(migrated.combat.activeSpellLoadout).toEqual({ presetId: 'spell-preset-old', presetName: 'Active Snapshot', slots: [{ spellId: 'fire-bolt', autoCast: true }], signature: 'fire-bolt:1' })
+    expect(migrated.activities.autoCast['fire-bolt']).toBe(true)
+    expect(migrated.activities.autoCastPriority).toEqual(['fire-bolt'])
+  })
 })

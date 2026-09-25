@@ -11,7 +11,9 @@ import { CombatStage } from './CombatStage'
 import { CombatAnalyticsPanel } from './CombatAnalyticsPanel'
 import { EnemyContextWindow, type EnemyContextMode } from './EnemyContextWindow'
 import { useCombatDefeatStore } from '../../game/ui/combatDefeatStore'
+import { clearCombatEntryBlock, useCombatEntryBlockStore } from '../../game/ui/combatEntryBlockStore'
 import { CombatAmbientBackdrop } from './CombatAmbientBackdrop'
+import { CombatFocusBlockedModal } from './CombatFocusBlockedModal'
 import { setNavigationIntent, useNavigationIntent } from '../../ui/navigation/navigationIntent'
 import { CombatWorldNavigation } from './navigation/CombatWorldNavigation'
 import { COMBAT_LOCATIONS } from '../../game/content/world-navigation'
@@ -36,6 +38,7 @@ export function CombatScreenV2() {
   const enemyCardRef = useRef<HTMLElement>(null)
   const enemyContextTriggerRef = useRef<HTMLElement>(null)
   const defeatSnapshot = useCombatDefeatStore((state) => state.snapshot)
+  const focusBlockSnapshot = useCombatEntryBlockStore((state) => state.snapshot)
   useEffect(() => { if (!combat.active && navigationIntent.combatDungeonId) setSelectedDungeonId(navigationIntent.combatDungeonId) }, [combat.active, navigationIntent.combatDungeonId])
   const closeEnemyContext = useCallback(() => setEnemyContextMode(null), [])
   const openEnemyContext = useCallback((trigger: HTMLElement, mode: EnemyContextMode = 'intel') => {
@@ -61,5 +64,5 @@ export function CombatScreenV2() {
   const openLocationBestiary = useCallback((location: CombatLocationViewModel, monsterId: MonsterId | null = null) => { if (!location.dungeonId) return; setNavigationIntent({ combatDungeonId: location.dungeonId, combatMonsterId: monsterId }); useGameStore.getState().setScreen('bestiary') }, [])
   const returnToCombat = useCallback(() => { const stage = document.querySelector('.combat-stage-panel'); if (stage instanceof HTMLElement && typeof stage.scrollIntoView === 'function') stage.scrollIntoView({ behavior: 'smooth', block: 'start' }) }, [])
   const bossActive = Boolean(combat.active && combat.inBossFight)
-  return <div className={`screen-content combat-screen combat-ambient-screen${bossActive ? ' is-boss-active' : ''}`}><CombatAmbientBackdrop combatActive={combat.active} bossActive={bossActive} /><div className="screen-header"><div><div className="eyebrow">ARCANE COMBAT</div><h1>Combat</h1><p>Read enemy intent, manage Mana, and control your Spell automation.</p></div></div><CombatRunBar selectedDungeonId={selectedDungeonId} onRequestLeave={requestLeave} /><CombatWorldNavigation onSelectLocation={selectLocation} onEnterLocation={enterLocation} onHuntTarget={huntTarget} onBestiary={openLocationBestiary} onReturnToCombat={returnToCombat} /><ScreenGrid screen="combat" panels={[{ id: 'combat-stage', content: <CombatStage selectedDungeonId={selectedDungeonId} bossActive={bossActive} enemyCardRef={enemyCardRef} onOpenEnemyContext={openEnemyContext} /> }, { id: 'combat-spell-deck', content: <CombatSpellDeck /> }, { id: 'combat-analytics', content: <CombatAnalyticsPanel /> }]} />{enemyContextMode && <EnemyContextWindow mode={enemyContextMode} anchorRef={enemyCardRef} triggerRef={enemyContextTriggerRef} selectedDungeonId={selectedDungeonId} onModeChange={setEnemyContextMode} onClose={closeEnemyContext} />}</div>
+  return <div className={`screen-content combat-screen combat-ambient-screen${bossActive ? ' is-boss-active' : ''}`}><CombatAmbientBackdrop combatActive={combat.active} bossActive={bossActive} /><div className="screen-header"><div><div className="eyebrow">ARCANE COMBAT</div><h1>Combat</h1><p>Read enemy intent, manage Mana, and control your Spell automation.</p></div></div><CombatRunBar selectedDungeonId={selectedDungeonId} onRequestLeave={requestLeave} /><CombatWorldNavigation onSelectLocation={selectLocation} onEnterLocation={enterLocation} onHuntTarget={huntTarget} onBestiary={openLocationBestiary} onReturnToCombat={returnToCombat} /><ScreenGrid screen="combat" panels={[{ id: 'combat-stage', content: <CombatStage selectedDungeonId={selectedDungeonId} bossActive={bossActive} enemyCardRef={enemyCardRef} onOpenEnemyContext={openEnemyContext} /> }, { id: 'combat-spell-deck', content: <CombatSpellDeck /> }, { id: 'combat-analytics', content: <CombatAnalyticsPanel /> }]} />{enemyContextMode && <EnemyContextWindow mode={enemyContextMode} anchorRef={enemyCardRef} triggerRef={enemyContextTriggerRef} selectedDungeonId={selectedDungeonId} onModeChange={setEnemyContextMode} onClose={closeEnemyContext} />}<CombatFocusBlockedModal snapshot={focusBlockSnapshot} onClose={clearCombatEntryBlock} onManageFocus={() => { clearCombatEntryBlock(); useGameStore.getState().setScreen('tower-focus') }} /></div>
 }

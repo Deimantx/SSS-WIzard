@@ -19,7 +19,7 @@ import { nextCombatRandom } from './combatRng'
 import { reconcileStoryProgression } from '../story/storyProgression'
 import { SUMMONING_UNLOCK_BOSS_ID } from '../../content/guardians/guardians'
 import { beginGuardianEncounter, clearGuardianRuntime, suppressGuardianIfOutOfMana } from '../summoning/summoningRuntime'
-import { activateSelectedSpellPresetForBattle, getSelectedSpellPreset } from '../spells'
+import { activateSelectedSpellPresetForBattle, clearCombatSpellRuntime, getCombatEntryPreset, getSelectedSpellPreset } from '../spells'
 import { resetArcaneCoreEncounterRuntime } from '../arcaneCore/arcaneCoreRuntime'
 import { grantEnemyResonanceReward } from '../resonance/resonanceRuntime'
 import { formatResonanceBundle } from '../../presentation/resonance/resonancePresentation'
@@ -80,12 +80,12 @@ export const spawnEnemy = (state: GameState, enemyId: MonsterId, uiEvents?: Comb
   const monster = MONSTERS[enemyId]
   const resolution = resolveSpellLoadoutForNextBattle(state)
   if (!resolution.ok) {
-    const selectedPreset = getSelectedSpellPreset(state)
+    const selectedPreset = getCombatEntryPreset(state)
     pushNotification(state, getLoadoutFailureMessage(resolution.failure, selectedPreset), 'warning', { key: `combat-loadout-activation:${state.spellPresets.selectedPresetId ?? 'missing'}:${resolution.failure.reason}`, cooldownMs: 1000 })
     return false
   }
   if (resolution.activatedSelected === false) {
-    const selectedPreset = getSelectedSpellPreset(state)
+    const selectedPreset = getCombatEntryPreset(state)
     pushNotification(state, getLoadoutFailureMessage(resolution.failure, selectedPreset, resolution.loadout.presetName), 'warning', { key: `combat-loadout-fallback:${state.spellPresets.selectedPresetId ?? 'missing'}:${resolution.failure.reason}`, cooldownMs: 15_000 })
   }
   const previousSerial = Number.isSafeInteger(state.combat.enemyInstanceSerial) ? state.combat.enemyInstanceSerial : 0
@@ -271,6 +271,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
     report?.recordNotable(`${monster.name} defeated`)
     if (sequenceDungeon) {
       state.combat.active = false
+      clearCombatSpellRuntime(state)
       state.combat.enemyMaxHp = 0
       state.combat.dungeonSequenceIndex = null
       state.combat.targetEnemyId = null
@@ -321,7 +322,7 @@ export const resolveCombatDeaths = (state: GameState, report?: SimulationReportC
     state.combat.enemyInstanceKey = null
     state.combat.pendingPlayerSpellCast = null
     state.combat.queuedPlayerSpellId = null
-    state.combat.activeSpellLoadout = null
+    clearCombatSpellRuntime(state)
     state.combat.enemyHp = 0
     state.combat.enemyBarrier = 0
     state.combat.enemyBarrierRemainingMs = null

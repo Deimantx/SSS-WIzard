@@ -56,8 +56,8 @@ function Metric({ label, value, description, accent }: { label: string; value: n
 function FocusLoadRow({ group, maxFocus }: { group: FocusUsageGroup; maxFocus: number }) {
   const percentage = maxFocus > 0 ? Math.round(group.amount / maxFocus * 100) : 0
   const label = GROUP_LABELS[group.sourceType]
-  const reservationCount = group.entries.length
-  return <GameTooltip block accent="focus" content={<TooltipContent title={`${label} Focus Load`} description={`${formatNumber(group.amount)} Focus reserved · ${percentage}% of Max Focus · ${reservationCount} active ${reservationCount === 1 ? 'reservation' : 'reservations'}.`} />}>
+  const systemDetail = group.entries[0]?.detail ?? 'No active allocation.'
+  return <GameTooltip block accent="focus" content={<TooltipContent title={`${label} Focus Load`} description={`${formatNumber(group.amount)} Focus reserved · ${percentage}% of Max Focus · ${systemDetail}.`} />}>
     <div className="focus-load-row" tabIndex={0}><div className="focus-load-heading"><strong>{label}</strong><span>{formatNumber(group.amount)} Focus · {percentage}%</span></div><Progress value={percentage} tone="gold" /></div>
   </GameTooltip>
 }

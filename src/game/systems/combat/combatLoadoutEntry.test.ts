@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { getAllSpellsInOrder, getSpellPresetFocusProjection } from '../spells'
 import { createInitialState } from '../../../store/initialState'
-import { spawnEnemy } from './combatRuntime'
+import { resolveCombatDeaths, spawnEnemy } from './combatRuntime'
 
 const prepareCombatState = () => {
   const state = createInitialState()
@@ -58,6 +58,22 @@ describe('combat spell loadout entry preflight', () => {
     state.spellPresets.presets = [{ id: 'spell-preset-1', name: 'Only', slots: [{ spellId: 'fire-bolt', autoCast: false }] }]
     expect(state.spellPresets.selectedPresetId).toBeNull()
     expect(spawnEnemy(state, 'forest-wisp')).toBe(true)
+    expect(state.spellPresets.selectedPresetId).toBe('spell-preset-1')
+  })
+
+  it('clears compatibility Auto-Cast runtime when the player is defeated', () => {
+    const state = prepareCombatState()
+    state.progress.spellRanks = { 'fire-bolt': 1 }
+    state.spellPresets.presets = [{ id: 'spell-preset-1', name: 'Prepared', slots: [{ spellId: 'fire-bolt', autoCast: true }] }]
+    state.spellPresets.selectedPresetId = 'spell-preset-1'
+    expect(spawnEnemy(state, 'forest-wisp')).toBe(true)
+    state.player.health = 0
+
+    expect(resolveCombatDeaths(state)).toBe(true)
+    expect(state.combat.active).toBe(false)
+    expect(state.combat.activeSpellLoadout).toBeNull()
+    expect(Object.values(state.activities.autoCast).some(Boolean)).toBe(false)
+    expect(state.activities.autoCastPriority).toEqual([])
     expect(state.spellPresets.selectedPresetId).toBe('spell-preset-1')
   })
 })

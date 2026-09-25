@@ -249,8 +249,8 @@ export const SCREEN_PANEL_LAYOUTS: Record<ScreenId, ScreenLayoutDefinition> = {
   // ============================================================
   'tower-research': screen({
     'research-school-mastery': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 138, preferredHeight: 150, label: 'Magic School Mastery' }),
-    'research-library': panel({ order: 2, columnStart: 1, columnSpan: 6, rowStart: 2, minHeight: 282, preferredHeight: 700, label: 'Researchable items' }),
-    'research-inspector': panel({ order: 3, columnStart: 7, columnSpan: 6, rowStart: 2, minHeight: 426, preferredHeight: 700, label: 'Item inspection' }),
+    'research-library': panel({ order: 2, columnStart: 1, columnSpan: 6, rowStart: 2, minHeight: 282, preferredHeight: 740, label: 'Researchable items' }),
+    'research-inspector': panel({ order: 3, columnStart: 7, columnSpan: 6, rowStart: 2, minHeight: 426, preferredHeight: 740, label: 'Item inspection' }),
     'research-prepared': panel({ order: 4, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 246, preferredHeight: 500, label: 'Prepared Research' }),
   }, ['research-school-mastery', 'research-library', 'research-inspector', 'research-prepared']),
 

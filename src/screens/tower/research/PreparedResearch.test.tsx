@@ -21,17 +21,17 @@ describe('PreparedResearch', () => {
     render(<TooltipProvider><PreparedResearch /></TooltipProvider>)
 
     expect(document.querySelectorAll('.prepared-research-row')).toHaveLength(4)
-    expect(screen.getByText(/ITEM SLOTS 4 \/ 4/)).toBeTruthy()
-    expect(screen.getByText(/ECHOES 5 \/ 5/)).toBeTruthy()
+    expect(screen.getByText('4 / 4')).toBeTruthy()
+    expect(screen.getByText('5 / 5 ECHOES')).toBeTruthy()
     expect((screen.getByRole('button', { name: /Assign Research Echo to Air Fragment/ }) as HTMLButtonElement).disabled).toBe(true)
 
     fireEvent.click(screen.getByRole('button', { name: /Remove Research Echo from Fire Fragment/ }))
     expect(useGameStore.getState().activities.research.slots['research-1']?.echoesAssigned).toBe(1)
-    expect(screen.getByText(/ECHOES 4 \/ 5/)).toBeTruthy()
+    expect(screen.getByText('4 / 5 ECHOES')).toBeTruthy()
     expect(document.querySelectorAll('.game-tooltip-trigger').length).toBeGreaterThan(0)
   })
 
-  it('renders live metrics and disables Echo assignment without free Focus', () => {
+  it('renders compact live metrics and keeps exact values behind expansion', () => {
     const state = createInitialState()
     state.inventory['fire-fragment'] = 10
     state.player.baseMaxFocus = 10
@@ -41,12 +41,32 @@ describe('PreparedResearch', () => {
     useGameStore.getState().hydrateState(state)
     render(<TooltipProvider><PreparedResearch /></TooltipProvider>)
 
-    expect(screen.getByText('ITEMS / H')).toBeTruthy()
-    expect(screen.getByText('MANA / S')).toBeTruthy()
-    expect(screen.getByText('XP / H')).toBeTruthy()
+    expect(screen.getByLabelText(/items per hour/)).toBeTruthy()
+    expect(screen.queryByText('XP REMAINING')).toBeNull()
+    expect(screen.queryByText('EST. NEXT LEVEL')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Show Research batch details' }))
     expect(screen.getByText('XP REMAINING')).toBeTruthy()
-    expect(screen.getAllByText(/SCHOOL PROGRESS/).length).toBeGreaterThan(0)
-    expect(screen.getAllByText(/EST\. NEXT LEVEL/).length).toBeGreaterThan(0)
+    expect(screen.getByText('EST. NEXT LEVEL')).toBeTruthy()
+    expect(screen.getByText('SCHOOL XP')).toBeTruthy()
+    expect(screen.getByText('FOCUS RESERVED')).toBeTruthy()
     expect((screen.getByRole('button', { name: /Assign Research Echo to Fire Fragment/ }) as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('keeps only one research batch expanded at a time', () => {
+    const state = createInitialState()
+    ;(['fire', 'water'] as const).forEach((school) => {
+      state.inventory[`${school}-fragment`] = 10
+      prepareResearchAction(state, `${school}-fragment` as never, school, 5)
+    })
+    useGameStore.getState().hydrateState(state)
+    render(<TooltipProvider><PreparedResearch /></TooltipProvider>)
+
+    const expanders = screen.getAllByRole('button', { name: 'Show Research batch details' })
+    fireEvent.click(expanders[0])
+    expect(expanders[0].getAttribute('aria-pressed')).toBe('true')
+    const secondExpander = screen.getAllByRole('button', { name: 'Show Research batch details' })[0]
+    fireEvent.click(secondExpander)
+    expect(screen.getAllByRole('button', { name: 'Hide Research batch details' })).toHaveLength(1)
+    expect(document.querySelectorAll('.prepared-research-row-details')).toHaveLength(1)
   })
 })

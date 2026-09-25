@@ -67,7 +67,7 @@ describe('Offline Bank analytics wiring', () => {
   })
 
   it('profiles real active Auto-Cast combat at one, five, and fifteen minutes', async () => {
-    const durations = [60_000, 300_000, 900_000]
+    const durations = [60_000, 300_000, 900_000, 3_600_000]
     const measurements = []
     for (const duration of durations) {
       const state = activeAutoCastCombatState()
@@ -78,12 +78,54 @@ describe('Offline Bank analytics wiring', () => {
     console.info('[Offline Bank] real active combat benchmark', measurements)
   }, 30_000)
 
+  it('advances exactly one hour through the transactional Offline Bank path', async () => {
+    const state = activeAutoCastCombatState()
+    state.offlineBankMs = 3_600_000
+    const killsBefore = state.progress.lifetimeKills
+    const progress: Array<{ phase: string; percent: number }> = []
+
+    const result = await advanceWithOfflineBank(3_600_000, () => state, (recipe) => recipe(state), vi.fn(), undefined, undefined, (entry) => progress.push(entry))
+
+    expect(result.ok, result.error).toBe(true)
+    expect(state.offlineBankMs).toBe(0)
+    expect(result.report?.durationMs).toBe(3_600_000)
+    expect(result.report?.combat.killsTotal).toBeGreaterThan(0)
+    expect(state.progress.lifetimeKills).toBeGreaterThan(killsBefore)
+    expect(progress.some((entry) => entry.phase === 'simulating')).toBe(true)
+    expect(progress[progress.length - 1]).toEqual({ phase: 'saving', percent: 100 })
+  }, 180_000)
+
   it('keeps real Auto-Cast combat identical to the fixed-quantum reference', async () => {
     const fast = activeAutoCastCombatState()
     const reference = JSON.parse(JSON.stringify(fast)) as typeof fast
     await advanceGameStateBanked(fast, 15_000, { mode: 'banked' })
     await advanceGameStateBankedReference(reference, 15_000, { mode: 'banked' })
     expect(fast).toEqual(reference)
+  })
+
+  it.each([60_000, 300_000, 900_000, 3_600_000])('debits and reports the exact requested duration (%s ms)', async (durationMs) => {
+    const state = activeCombatState()
+    state.offlineBankMs = durationMs + 1_000
+    state.activities.channeling.echoesAssigned = 5
+    const manaGeneratedBefore = state.progress.channeling.totalManaGenerated
+    const bankBefore = state.offlineBankMs
+
+    const result = await advanceWithOfflineBank(durationMs, () => state, (recipe) => recipe(state), vi.fn())
+
+    expect(result.ok, result.error).toBe(true)
+    expect(state.offlineBankMs).toBe(bankBefore - durationMs)
+    expect(result.report?.durationMs).toBe(durationMs)
+    expect(state.progress.channeling.totalManaGenerated).toBeGreaterThan(manaGeneratedBefore)
+  })
+
+  it('rejects a request above one hour without spending banked time', async () => {
+    const state = activeCombatState()
+    state.offlineBankMs = 7_200_000
+
+    const result = await advanceWithOfflineBank(3_600_001, () => state, (recipe) => recipe(state), vi.fn())
+
+    expect(result).toEqual({ ok: false, error: 'Offline Bank advances are limited to one hour.' })
+    expect(state.offlineBankMs).toBe(7_200_000)
   })
 
   it('keeps long Research production in parity while jumping between completions', async () => {
@@ -100,6 +142,66 @@ describe('Offline Bank analytics wiring', () => {
     expect(fastResult.metrics.eventBoundaries).toBeLessThan(referenceResult.metrics.eventBoundaries)
     expect(fastResult.metrics.researchCompletions).toBeGreaterThan(0)
   })
+
+  it('keeps one-hour Research production in parity', async () => {
+    const fast = createInitialState()
+    fast.inventory['fire-fragment'] = 100
+    fast.player.mana = fast.player.maxMana
+    fast.activities.research.slots['research-1'] = { itemId: 'fire-fragment', targetSchoolId: 'fire', requestedQuantity: 100, remainingQuantity: 100, progressMs: 0, echoesAssigned: 1, status: 'running' }
+    const reference = JSON.parse(JSON.stringify(fast)) as typeof fast
+
+    await advanceGameStateBanked(fast, 3_600_000, { mode: 'banked' })
+    await advanceGameStateBankedReference(reference, 3_600_000, { mode: 'banked' })
+
+    expect(fast).toEqual(reference)
+    expect(fast.schools.fire.xp).toBeGreaterThan(0)
+  }, 60_000)
+
+  it('keeps the mixed Combat/Transmutation boundary transition in parity', async () => {
+    const fast = activeAutoCastCombatState()
+    fast.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 1, progressMs: 0 }
+    const reference = JSON.parse(JSON.stringify(fast)) as typeof fast
+
+    await advanceGameStateBanked(fast, 10_000, { mode: 'banked' })
+    await advanceGameStateBankedReference(reference, 10_000, { mode: 'banked' })
+
+    expect(fast.progress.lifetimeKills).toBe(reference.progress.lifetimeKills)
+    expect(fast.inventory).toEqual(reference.inventory)
+    expect(fast.combat.enemyId).toBe(reference.combat.enemyId)
+    expect(fast.combat.enemyHp).toBeCloseTo(reference.combat.enemyHp, 6)
+    expect(fast.activities.transmutation.jobs['fire-fragment']?.progressMs).toBeCloseTo(reference.activities.transmutation.jobs['fire-fragment']?.progressMs ?? 0, 6)
+    expect(fast.player.mana).toBeCloseTo(reference.player.mana, 5)
+  }, 60_000)
+
+  it('advances one hour with active Transmutation production', async () => {
+    const state = createInitialState()
+    state.offlineBankMs = 3_600_000
+    state.player.mana = state.player.maxMana
+    state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 5, progressMs: 0 }
+    const before = state.inventory['fire-fragment'] ?? 0
+
+    const result = await advanceWithOfflineBank(3_600_000, () => state, (recipe) => recipe(state), vi.fn())
+
+    expect(result.ok, result.error).toBe(true)
+    expect(state.offlineBankMs).toBe(0)
+    expect(result.report?.durationMs).toBe(3_600_000)
+    expect(result.report?.production.transmutation).toMatchObject({ 'fire-fragment': expect.any(Number) })
+    expect(state.inventory['fire-fragment'] ?? 0).toBeGreaterThan(before)
+  }, 60_000)
+
+  it('advances one hour with active Combat and Transmutation together', async () => {
+    const state = activeAutoCastCombatState()
+    state.offlineBankMs = 3_600_000
+    state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 1, progressMs: 0 }
+
+    const result = await advanceWithOfflineBank(3_600_000, () => state, (recipe) => recipe(state), vi.fn())
+
+    expect(result.ok, result.error).toBe(true)
+    expect(state.offlineBankMs).toBe(0)
+    expect(result.report?.durationMs).toBe(3_600_000)
+    expect(result.report?.combat.killsTotal).toBeGreaterThan(0)
+    expect(result.report?.production.transmutation['fire-fragment']).toBeGreaterThan(0)
+  }, 180_000)
 
   it('runs detached and commits gameplay/analytics once', async () => {
     const state = activeCombatState()

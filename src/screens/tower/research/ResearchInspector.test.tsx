@@ -38,13 +38,13 @@ describe('ResearchInspector', () => {
     researchState()
     render(<ResearchInspector itemId="fire-fragment" />)
 
-    expect(screen.getByText('PROJECTED SCHOOL')).toBeTruthy()
-    expect(document.querySelector('.research-projection-school')?.textContent).toBe('Fire')
+    expect(screen.getByText(/PROJECTED SCHOOL/)).toBeTruthy()
+    expect(document.querySelector('.research-projection-heading .eyebrow')?.textContent).toContain('Fire')
     const slider = screen.getByLabelText('Research quantity slider') as HTMLInputElement
     fireEvent.change(slider, { target: { value: '9' } })
-    expect(document.querySelector('.research-projection-level strong')?.textContent).toContain('LV 2')
+    expect(document.querySelector('.research-projection-school')?.textContent).toContain('LV 2')
     fireEvent.click(screen.getByRole('button', { name: 'WATER' }))
-    expect(document.querySelector('.research-projection-school')?.textContent).toBe('Water')
+    expect(document.querySelector('.research-projection-heading .eyebrow')?.textContent).toContain('Water')
   })
 
   it('uses unreserved quantity for the slider and preserves inventory on Prepare', () => {

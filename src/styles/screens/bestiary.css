@@ -52,7 +52,6 @@
 .bestiary-trait-list > div, .bestiary-trait-list > article, .bestiary-ability-list > div { display: grid; gap: 3px; padding: 8px; border: 1px solid var(--ui-border); border-radius: 6px; background: color-mix(in srgb, var(--ui-panel-strong) 58%, transparent); }
 .bestiary-trait-list strong, .bestiary-ability-list strong, .bestiary-loot-row strong { color: var(--ui-text-soft); font-size: var(--text-xs); }
 .bestiary-trait-list span, .bestiary-ability-list span { color: var(--ui-text-muted); font-size: var(--text-xs); line-height: 1.45; }
-.bestiary-ability-list > div > div { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .bestiary-ability-list small, .bestiary-loot-row small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
 .bestiary-loot-row { display: grid; grid-template-columns: 27px minmax(0, 1fr) auto; align-items: center; gap: 7px; padding: 7px; border: 1px solid var(--ui-border); border-radius: 6px; }
 .bestiary-loot-row > div { display: grid; gap: 3px; min-width: 0; }
@@ -290,15 +289,17 @@
 .bestiary-phase-transition-arrow { color: var(--ui-warning); font-size: 18px; text-align: center; }
 .bestiary-phase-transition > div { display: grid; gap: 5px; min-width: 0; }
 
-.bestiary-effect-row-list { display: grid; gap: 5px; }
-.bestiary-effect-row-trigger { display: block; min-width: 0; }
+.bestiary-effect-row-list { display: flex; flex-wrap: wrap; align-items: stretch; justify-content: flex-start; gap: 5px; min-width: 0; }
+.bestiary-effect-row-trigger { display: flex; flex: 0 1 auto; min-width: 0; }
 .bestiary-effect-row-trigger:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 2px; border-radius: 5px; }
 .bestiary-effect-row {
   display: grid;
   grid-template-columns: 68px minmax(0, 1fr);
+  flex: 0 1 auto;
   align-items: start;
   gap: 8px;
   min-width: 0;
+  max-width: 100%;
   padding: 6px 7px;
   border: 1px solid color-mix(in srgb, var(--ui-border) 90%, transparent);
   border-radius: 5px;

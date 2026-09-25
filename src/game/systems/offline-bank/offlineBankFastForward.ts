@@ -13,6 +13,7 @@ import type { ContinuousManaWorkRequest } from '../simulation/continuousManaSche
 import { prepareAutoCastRuntime, type PreparedAutoCastRuntime } from '../spells'
 import type { CombatEventSink } from '../combat/combatTypes'
 import type { GameState } from '../../types'
+import { RESOURCE_EPSILON } from '../../presentation/resources/resourcePresentation'
 
 export const OFFLINE_FAST_FORWARD_EPSILON_MS = 0.001
 export const OFFLINE_FAST_FORWARD_ITERATION_LIMIT = 100_000
@@ -75,8 +76,12 @@ const positiveRateBoundary = (remaining: number, ratePerSecond: number) => rateP
 const getNextManaBoundaryMs = (state: GameState, production = manaRegenPerSecond(state), demand = getContinuousManaDemandPerSecond(state)) => {
   if (state.debug.allowManaOverCap) return null
   const net = production - demand
-  if (net < 0 && state.player.mana > 0) return state.player.mana / -net * 1000
-  if (net > 0 && state.player.mana < state.player.maxMana) return (state.player.maxMana - state.player.mana) / net * 1000
+  const epsilonManaMovement = Math.max(RESOURCE_EPSILON, OFFLINE_FAST_FORWARD_EPSILON_MS * Math.abs(net) / 1000)
+  if (net < 0 && state.player.mana > epsilonManaMovement) return state.player.mana / -net * 1000
+  if (net > 0 && state.player.mana < state.player.maxMana) {
+    const remainingMana = state.player.maxMana - state.player.mana
+    if (remainingMana > epsilonManaMovement) return remainingMana / net * 1000
+  }
   return null
 }
 

@@ -6,8 +6,9 @@ import { formatNumber } from '../../../game/utils'
 import { BALANCE } from '../../../game/core/balance/balance'
 import { useGameStore } from '../../../store/gameStore'
 import { PreparedResearchRow } from './PreparedResearchRow'
-import { useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSmartScrollState } from '../../../ui/game-feel/useSmartScrollState'
+import type { ResearchSlotId } from '../../../game/types'
 
 export function PreparedResearch() {
   const state = useGameStore()
@@ -18,6 +19,7 @@ export function PreparedResearch() {
   const clearPrepared = state.clearPreparedResearch
   const assignOneEach = state.assignOneResearchEchoEach
   const bulkAssignment = getResearchAssignOneEachState(state)
+  const [expandedSlotId, setExpandedSlotId] = useState<ResearchSlotId | null>(null)
   const bulkTooltip = bulkAssignment.blockedReason === 'no-targets'
     ? 'No prepared Research batch can currently accept another Echo.'
     : bulkAssignment.blockedReason === 'echo-capacity'
@@ -27,8 +29,11 @@ export function PreparedResearch() {
         : `Assign +1 Research Echo to each of ${bulkAssignment.targetCount} eligible prepared batches. Requires ${bulkAssignment.targetCount} Echo slots and ${bulkAssignment.requiredFocus} Focus.`
   const preparedListRef = useRef<HTMLDivElement>(null)
   useSmartScrollState(preparedListRef, { dependencies: [count, RESEARCH_SLOT_ORDER.map((slotId) => getResearchJob(state, slotId)?.itemId ?? '').join('|')] })
-  return <Card className="research-prepared" title="PREPARED RESEARCH" action={<span className="research-prepared-summary">ITEM SLOTS {count} / {BALANCE.research.maxPreparedSlots} &middot; ECHOES {echoes} / {capacity} &middot; FOCUS {formatNumber(getResearchFocusReserved(state))}</span>}>
-    <div className="research-prepared-header"><div><span className="eyebrow">RESEARCH ECHO POOL</span><strong>{echoes} / {capacity} assigned</strong></div><GameTooltip content={<TooltipContent title="Research Echo pool" description={`${BALANCE.research.echoFocusCost} Focus per assigned Echo. Echoes can be distributed across all prepared batches.`} />} accent="focus"><div className="research-echo-pips" aria-label={`${echoes} of ${capacity} Research Echoes assigned`}>{Array.from({ length: Math.min(BALANCE.research.maxEchoes, capacity), }, (_, index) => <i className={index < echoes ? 'filled' : ''} key={index} />)}</div></GameTooltip><div className="research-prepared-actions">{count > 0 && <GameTooltip content={<TooltipContent title="Assign one Echo each" description={bulkTooltip} />} accent={bulkAssignment.canAssign ? 'focus' : 'warning'}><Button variant="ghost" onClick={assignOneEach} disabled={!bulkAssignment.canAssign}>ASSIGN 1 EACH</Button></GameTooltip>}{echoes > 0 && <GameTooltip content={<TooltipContent title="Clear Research Echoes" description="Release all Research Echoes. Prepared items and progress are preserved." />}><Button variant="ghost" onClick={clearEchoes}>CLEAR ECHOES</Button></GameTooltip>}{count > 0 && <GameTooltip content={<TooltipContent title="Clear prepared Research" description="Remove all prepared batches. Unconsumed items become available again; partial progress is lost." />}><Button variant="ghost" onClick={clearPrepared}>CLEAR</Button></GameTooltip>}</div></div>
-    {count === 0 ? <div className="empty-state small"><strong>NO RESEARCH PREPARED</strong><span>Choose an item above, select a target school and quantity, then press Prepare.</span></div> : <div ref={preparedListRef} className="prepared-research-list smart-scroll-region">{RESEARCH_SLOT_ORDER.map((slotId) => getResearchJob(state, slotId) ? <PreparedResearchRow key={slotId} slotId={slotId} /> : null)}</div>}
+  useEffect(() => {
+    if (expandedSlotId && !getResearchJob(state, expandedSlotId)) setExpandedSlotId(null)
+  }, [expandedSlotId, state])
+  return <Card className="research-prepared" title="PREPARED RESEARCH">
+    <div className="research-prepared-header"><div className="research-prepared-overview"><div className="research-prepared-batch-summary"><span className="eyebrow">BATCHES</span><strong>{count} / {BALANCE.research.maxPreparedSlots}</strong></div><GameTooltip content={<TooltipContent title="Research Echo pool" description={`${BALANCE.research.echoFocusCost} Focus per assigned Echo. Echoes can be distributed across all prepared batches.`} />} accent="focus"><div className="research-echo-summary"><div className="research-echo-pips" aria-label={`${echoes} of ${capacity} Research Echoes assigned`}>{Array.from({ length: Math.min(BALANCE.research.maxEchoes, capacity), }, (_, index) => <i className={index < echoes ? 'filled' : ''} key={index} />)}</div><strong>{echoes} / {capacity} ECHOES</strong></div></GameTooltip><div className="research-prepared-focus"><span>FOCUS</span><strong>{formatNumber(getResearchFocusReserved(state))}</strong></div></div><div className="research-prepared-actions">{count > 0 && <GameTooltip content={<TooltipContent title="Assign one Echo each" description={bulkTooltip} />} accent={bulkAssignment.canAssign ? 'focus' : 'warning'}><Button variant="ghost" onClick={assignOneEach} disabled={!bulkAssignment.canAssign}>ASSIGN 1 EACH</Button></GameTooltip>}{echoes > 0 && <GameTooltip content={<TooltipContent title="Clear Research Echoes" description="Release all Research Echoes. Prepared items and progress are preserved." />}><Button variant="ghost" onClick={clearEchoes}>CLEAR ECHOES</Button></GameTooltip>}{count > 0 && <GameTooltip content={<TooltipContent title="Clear prepared Research" description="Remove all prepared batches. Unconsumed items become available again; partial progress is lost." />}><Button variant="ghost" onClick={clearPrepared}>CLEAR</Button></GameTooltip>}</div></div>
+    {count === 0 ? <div className="empty-state small"><strong>NO RESEARCH PREPARED</strong><span>Choose an item above, select a target school and quantity, then press Prepare.</span></div> : <div ref={preparedListRef} className="prepared-research-list smart-scroll-region">{RESEARCH_SLOT_ORDER.map((slotId) => getResearchJob(state, slotId) ? <PreparedResearchRow key={slotId} slotId={slotId} expanded={expandedSlotId === slotId} onToggleExpanded={() => setExpandedSlotId((current) => current === slotId ? null : slotId)} /> : null)}</div>}
   </Card>
 }

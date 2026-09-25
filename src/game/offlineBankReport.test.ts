@@ -75,7 +75,7 @@ describe('Offline Bank event reports', () => {
 
     expect(result.combat.killsTotal).toBe(1)
     expect(result.combat.killsByMonster['forest-wisp']).toBe(1)
-    expect(result.combat.resonance).toEqual({ fire: 0, water: 0, earth: 0, air: 10 })
+    expect(result.combat.resonance).toEqual({ fire: 0, water: 0, earth: 0, air: 2 })
     expect(Object.keys(result.combat.loot).length).toBeGreaterThan(0)
   })
 
@@ -91,8 +91,8 @@ describe('Offline Bank event reports', () => {
     const collector = createOfflineBankReportCollector(state, 1, 1_000)
     resolveCombatDeaths(state, collector)
     const result = collector.finalize(state)
-    expect(state.resonance.air).toBe(10)
-    expect(result.combat.resonance.air).toBe(10)
+    expect(state.resonance.air).toBe(2)
+    expect(result.combat.resonance.air).toBe(2)
 
     const nonCombat = createOfflineBankReportCollector(makeInitialState(), 1_000, 1_000).finalize(makeInitialState())
     expect(nonCombat.combat.resonance).toEqual({ fire: 0, water: 0, earth: 0, air: 0 })

@@ -10,7 +10,7 @@ export const FRACTURED_APPROACH_MONSTERS = {
       'ward-slam': { id: 'ward-slam', name: 'Ward Slam', actionTimeMs: 2400, description: 'The Husk crashes its fractured ward into the target.', effects: [scaledDirectDamage('physical', 1.55)], tags: ['special', 'physical', 'melee', 'direct'] },
     },
     actionPatterns: { default: { id: 'default', steps: [basic('basic-1'), action('fractured-ward-step', 'fractured-ward'), basic('basic-2'), action('ward-slam-step', 'ward-slam'), basic('basic-3')] } }, defaultActionPatternId: 'default',
-    loot: withDungeonLoot('fractured-approach', 'normal', { min: 5, max: 10 }),
+    loot: withDungeonLoot('fractured-approach', 'normal'),
   },
   'rift-wolf': {
     id: 'rift-wolf', bestiaryCategory: 'monster', name: 'Rift Wolf', subtitle: 'A predator twisted by unstable air and fractured space',
@@ -20,7 +20,7 @@ export const FRACTURED_APPROACH_MONSTERS = {
       'arc-flash': { id: 'arc-flash', name: 'Arc Flash', actionTimeMs: 1750, description: 'Unstable air flashes across the target in a cutting arc.', effects: [scaledDirectDamage('air', 1.15)], tags: ['special', 'air', 'magic', 'direct'] },
     },
     actionPatterns: { default: { id: 'default', steps: [basic('basic-1'), action('rift-lunge-step', 'rift-lunge'), basic('basic-2'), action('arc-flash-step', 'arc-flash'), basic('basic-3')] } }, defaultActionPatternId: 'default',
-    loot: withDungeonLoot('fractured-approach', 'normal', { min: 5, max: 10 }),
+    loot: withDungeonLoot('fractured-approach', 'normal'),
   },
   'arcane-scavenger': {
     id: 'arcane-scavenger', bestiaryCategory: 'monster', name: 'Arcane Scavenger', subtitle: 'A looter feeding on the residue of ruined wards',
@@ -30,7 +30,7 @@ export const FRACTURED_APPROACH_MONSTERS = {
       'unstable-charge': { id: 'unstable-charge', name: 'Unstable Charge', actionTimeMs: 2400, description: 'The Scavenger detonates a volatile bundle of stolen magic.', effects: [scaledDirectDamage('arcane', 1.80)], tags: ['special', 'arcane', 'magic', 'ranged', 'direct'] },
     },
     actionPatterns: { default: { id: 'default', steps: [action('salvaged-bolt-step', 'salvaged-bolt'), basic('basic-1'), basic('basic-2'), action('unstable-charge-step', 'unstable-charge'), basic('basic-3')] } }, defaultActionPatternId: 'default',
-    loot: withDungeonLoot('fractured-approach', 'normal', { min: 5, max: 10 }),
+    loot: withDungeonLoot('fractured-approach', 'normal'),
   },
   'withered-watcher': {
     id: 'withered-watcher', bestiaryCategory: 'monster', name: 'Withered Watcher', subtitle: 'A failing construct that still obeys its last command',
@@ -41,7 +41,7 @@ export const FRACTURED_APPROACH_MONSTERS = {
       'watchers-lance': { id: 'watchers-lance', name: "Watcher's Lance", actionTimeMs: 2600, description: 'A lance of unstable wind strikes through the target.', effects: [scaledDirectDamage('air', 1.65)], tags: ['special', 'air', 'magic', 'ranged', 'direct'] },
     },
     actionPatterns: { default: { id: 'default', steps: [basic('basic-1'), action('elemental-pulse-step', 'elemental-pulse'), action('broken-aegis-step', 'broken-aegis'), basic('basic-2'), action('watchers-lance-step', 'watchers-lance')] } }, defaultActionPatternId: 'default',
-    loot: withDungeonLoot('fractured-approach', 'normal', { min: 5, max: 10 }),
+    loot: withDungeonLoot('fractured-approach', 'normal'),
   },
   'corrupted-elemental-gatekeeper': {
     id: 'corrupted-elemental-gatekeeper', bestiaryCategory: 'boss', name: 'Corrupted Elemental Gatekeeper', subtitle: "The shattered frontier's last ward, poisoned by elemental instability",
@@ -55,6 +55,6 @@ export const FRACTURED_APPROACH_MONSTERS = {
       'elemental-rupture': { id: 'elemental-rupture', name: 'Elemental Rupture', actionTimeMs: 3400, description: 'The Gatekeeper telegraphs a devastating arcane rupture.', effects: [scaledDirectDamage('arcane', 2.0)], tags: ['special', 'arcane', 'magic', 'direct'] },
     },
     actionPatterns: { default: { id: 'default', steps: [action('flame-surge-step', 'flame-surge'), basic('basic-1'), action('tidal-break-step', 'tidal-break'), action('fractured-aegis-step', 'fractured-aegis'), basic('basic-2'), action('stone-crush-step', 'stone-crush'), action('gale-lance-step', 'gale-lance'), basic('basic-3'), action('elemental-rupture-step', 'elemental-rupture')] } }, defaultActionPatternId: 'default',
-    loot: withDungeonLoot('fractured-approach', 'boss', { min: 25, max: 55 }),
+    loot: withDungeonLoot('fractured-approach', 'boss'),
   },
 } satisfies Partial<Record<MonsterId, MonsterDefinition>>

@@ -28,7 +28,15 @@ describe('Resonance runtime', () => {
   })
 
   it('resolves authored and missing enemy profiles through the WT1 seam', () => {
-    expect(resolveEnemyResonanceReward('forest-wisp')).toMatchObject({ enemyId: 'forest-wisp', worldTier: 1, rewardMultiplier: 1, baseYield: { air: 10 }, finalYield: { air: 10 } })
-    expect(resolveEnemyResonanceReward('cavefang-wolf')).toMatchObject({ worldTier: 1, rewardMultiplier: 1, finalYield: {} })
+    expect(resolveEnemyResonanceReward('forest-wisp')).toMatchObject({ enemyId: 'forest-wisp', worldTier: 1, worldTierRewardMultiplier: 1, globalRewardMultiplier: 0.2, rewardMultiplier: 0.2, baseYield: { air: 10 }, finalYield: { air: 2 } })
+    expect(resolveEnemyResonanceReward('cavefang-wolf')).toMatchObject({ worldTier: 1, rewardMultiplier: 0.2, finalYield: {} })
+  })
+
+  it('combines World Tier and global scaling before sanitizing quantities', () => {
+    const wt1 = resolveEnemyResonanceReward('forest-wisp', 1)
+    const wt5 = resolveEnemyResonanceReward('forest-wisp', 5)
+    expect(wt1.rewardMultiplier).toBe(0.2)
+    expect(wt5.rewardMultiplier).toBe(1)
+    expect(wt5.finalYield).toEqual({ air: 10 })
   })
 })

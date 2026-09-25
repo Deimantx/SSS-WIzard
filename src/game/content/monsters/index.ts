@@ -40,6 +40,7 @@ export const validateMonsterDefinitions = (monsters: Record<string, MonsterDefin
     if (monster.critDamage !== undefined && (!Number.isFinite(monster.critDamage) || monster.critDamage < 1 || monster.critDamage > MAX_CRIT_DAMAGE_MULTIPLIER)) errors.push(`${monster.id}: invalid crit damage`)
     if (monster.blockChance !== undefined && (!Number.isFinite(monster.blockChance) || monster.blockChance < 0 || monster.blockChance > MAX_BLOCK_CHANCE)) errors.push(`${monster.id}: invalid block chance`)
     if (new Set(monster.traitIds).size !== monster.traitIds.length) errors.push(`${monster.id}: duplicate trait id`)
+    if (monster.loot.some((drop) => drop.itemId === 'life-essence')) errors.push(`${monster.id}: Life Essence must be resolved dynamically, not authored in monster loot`)
     monster.loot.forEach((drop) => {
       const item = ITEMS[drop.itemId]
       if (!item) errors.push(`${monster.id}: unknown loot item ${drop.itemId}`)

@@ -60,7 +60,7 @@ export const ABANDONED_CATACOMBS_MONSTERS = {
       },
     },
     defaultActionPatternId: "default",
-    loot: withDungeonLoot("abandoned-catacombs", "normal", { min: 4, max: 8 }),
+    loot: withDungeonLoot("abandoned-catacombs", "normal"),
   },
   "grave-wraith": {
     id: "grave-wraith",
@@ -136,7 +136,7 @@ export const ABANDONED_CATACOMBS_MONSTERS = {
       },
     },
     defaultActionPatternId: "default",
-    loot: withDungeonLoot("abandoned-catacombs", "normal", { min: 4, max: 8 }),
+    loot: withDungeonLoot("abandoned-catacombs", "normal"),
   },
   "fallen-acolyte": {
     id: "fallen-acolyte",
@@ -220,7 +220,7 @@ export const ABANDONED_CATACOMBS_MONSTERS = {
       },
     },
     defaultActionPatternId: "default",
-    loot: withDungeonLoot("abandoned-catacombs", "normal", { min: 5, max: 10 }),
+    loot: withDungeonLoot("abandoned-catacombs", "normal"),
   },
   "archmage-edrin-shade": {
     id: "archmage-edrin-shade",
@@ -342,6 +342,6 @@ export const ABANDONED_CATACOMBS_MONSTERS = {
       },
     },
     defaultActionPatternId: "default",
-    loot: withDungeonLoot("abandoned-catacombs", "boss", { min: 21, max: 48 }),
+    loot: withDungeonLoot("abandoned-catacombs", "boss"),
   },
 } satisfies Partial<Record<MonsterId, MonsterDefinition>>;

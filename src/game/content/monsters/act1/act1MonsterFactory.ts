@@ -2,7 +2,7 @@ import type { CombatEffect, DamageType, DungeonId, MonsterId, StatusId, TraitId 
 import { action, applyStatus, basic, drainMana, gainBarrier, scaledDirectDamage, scaledDot, scaledHeal, scaledMultiDamage, withDungeonLoot, type MonsterDefinition } from '../monsterTypes'
 
 type Special = { id: string; name: string; damage?: Array<{ type: DamageType; coefficient: number }>; status?: { id: StatusId; target?: 'self' | 'opponent'; stacks?: number }; dot?: { statusId: StatusId; damageType: DamageType; coefficient: number; durationMs: number }; barrier?: number; heal?: number; manaDrain?: number }
-export type Act1MonsterSpec = { dungeonId: DungeonId; id: MonsterId; name: string; subtitle: string; hp: number; damage: number; defense: number; time?: number; resistances?: Partial<Record<DamageType, number>>; resonanceYield?: MonsterDefinition['resonanceYield']; trait: TraitId; icon?: MonsterDefinition['ui']; color?: string; specials: Special[]; boss?: boolean; lifeEssence?: { min: number; max: number } }
+export type Act1MonsterSpec = { dungeonId: DungeonId; id: MonsterId; name: string; subtitle: string; hp: number; damage: number; defense: number; time?: number; resistances?: Partial<Record<DamageType, number>>; resonanceYield?: MonsterDefinition['resonanceYield']; trait: TraitId; icon?: MonsterDefinition['ui']; color?: string; specials: Special[]; boss?: boolean }
 
 const specialEffects = (special: Special): CombatEffect[] => [
   ...(special.damage?.length ? [special.damage.length === 1 ? scaledDirectDamage(special.damage[0].type, special.damage[0].coefficient) : scaledMultiDamage(special.damage.map(({ type, coefficient }) => ({ damageType: type, coefficient })))] : []),
@@ -22,7 +22,7 @@ export const makeAct1Monster = (spec: Act1MonsterSpec): MonsterDefinition => {
   return {
     id: spec.id, bestiaryCategory: spec.boss ? 'boss' : 'monster', name: spec.name, subtitle: spec.subtitle, maxHealth: spec.hp, basicAttackDamage: spec.damage, basicAttackTimeMs: spec.time ?? 2300, defense: spec.defense,
     resistances: spec.resistances, resonanceYield: spec.resonanceYield, color: spec.color ?? '#9b8dbd', ui: spec.icon ?? { portraitIcon: spec.boss ? 'boss' : 'guardian' }, traitIds: [spec.trait],
-    actions, actionPatterns: { default: { id: 'default', steps } }, defaultActionPatternId: 'default', loot: withDungeonLoot(spec.dungeonId!, spec.boss ? 'boss' : 'normal', spec.lifeEssence),
+    actions, actionPatterns: { default: { id: 'default', steps } }, defaultActionPatternId: 'default', loot: withDungeonLoot(spec.dungeonId!, spec.boss ? 'boss' : 'normal'),
   }
 }
 

@@ -74,39 +74,17 @@ export const action = (id: string, actionId: string): ActionStep => ({
   type: "action",
   actionId,
 });
-export const lifeEssenceDrop = {
-  itemId: "life-essence" as const,
-  min: 1,
-  max: 3,
-  chance: 1,
-};
-export const withLifeEssence = (
-  drops: MonsterDefinition["loot"],
-  overrides: Partial<
-    Pick<typeof lifeEssenceDrop, "min" | "max" | "chance">
-  > = {},
-): MonsterDefinition["loot"] => [
-  ...drops,
-  { ...lifeEssenceDrop, ...overrides },
-];
 export const withDungeonLoot = (
   dungeonId: DungeonId,
   role: "normal" | "boss",
-  lifeEssence: Partial<
-    Pick<typeof lifeEssenceDrop, "min" | "max" | "chance">
-  > = {},
 ): MonsterDefinition["loot"] => {
   const essenceRange = getDungeonArtifactEssenceRange(dungeonId, role);
-  const drops: MonsterDefinition["loot"] = [
-    {
+  return [{
       itemId: "artifact-essence",
       min: essenceRange[0],
       max: essenceRange[1],
       chance: 1,
-    },
-  ];
-  drops.push({ ...lifeEssenceDrop, ...lifeEssence });
-  return drops;
+    }];
 };
 
 /** Default Monster authoring: damage scales from Basic Attack Damage. */

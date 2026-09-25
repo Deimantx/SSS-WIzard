@@ -6,6 +6,7 @@ import { despawnEnemyForDebug, fastResolveNormalEnemiesForDebug, forceKillEnemyF
 import { finishEnemy, resolveCombatDeaths, spawnEnemy } from './combatRuntime'
 import { advanceWithOfflineBank } from '../offline-bank/offlineBankSimulation'
 import { createOfflineBankReportCollector } from '../offline-bank/offlineBankReport'
+import { resolveLifeEssenceRewardRange } from '../loot/lifeEssenceReward'
 
 const prepareCombat = (state: ReturnType<typeof makeInitialState>) => {
   state.progress.spellRanks['fire-bolt'] = 1
@@ -24,12 +25,12 @@ describe('canonical Combat Resonance rewards', () => {
     state.combat.enemyHp = 0
     const events: import('./combatTypes').CombatEvent[] = []
     expect(resolveCombatDeaths(state, undefined, undefined, { push: (event) => events.push(event) })).toBe(true)
-    expect(state.resonance).toEqual({ fire: 0, water: 0, earth: 0, air: 10 })
+    expect(state.resonance).toEqual({ fire: 0, water: 0, earth: 0, air: 2 })
     expect(state.inventory['artifact-essence']).toBeGreaterThan(0)
     expect(resolveCombatDeaths(state)).toBe(false)
-    expect(state.resonance.air).toBe(10)
+    expect(state.resonance.air).toBe(2)
     expect(events.filter((event) => event.category === 'resonance')).toHaveLength(1)
-    expect(events.find((event) => event.category === 'resonance')).toMatchObject({ sourceId: 'resonance-reward', worldTier: 1, resonanceReward: { enemyId: 'forest-wisp', worldTier: 1, rewardMultiplier: 1, baseYield: { air: 10 }, finalYield: { air: 10 }, grantedYield: { air: 10 } } })
+    expect(events.find((event) => event.category === 'resonance')).toMatchObject({ sourceId: 'resonance-reward', worldTier: 1, resonanceReward: { enemyId: 'forest-wisp', worldTier: 1, rewardMultiplier: 0.2, baseYield: { air: 10 }, finalYield: { air: 2 }, grantedYield: { air: 2 } } })
     random.mockRestore()
   })
 
@@ -59,7 +60,7 @@ describe('canonical Combat Resonance rewards', () => {
     spawnEnemy(state, 'forest-heart')
     state.combat.enemyHp = 0
     finishEnemy(state)
-    expect(state.resonance.earth).toBe(80)
+    expect(state.resonance.earth).toBe(16)
     expect(state.progress.bossKillsByBoss['forest-heart']).toBe(1)
     expect(state.arcaneCore.totalPointsEarned).toBeGreaterThan(0)
   })
@@ -87,9 +88,9 @@ describe('canonical Combat Resonance rewards', () => {
     const result = await advanceWithOfflineBank(1_000, () => state, (recipe) => recipe(state), vi.fn(), undefined, { uiEvents: { push: (event) => events.push(event) } })
 
     expect(result.ok).toBe(true)
-    expect(state.resonance.air).toBe(20)
+    expect(state.resonance.air).toBe(4)
     expect(events.filter((event) => event.category === 'resonance')).toHaveLength(1)
-    expect(events.find((event) => event.category === 'resonance')?.resonanceReward?.grantedYield).toMatchObject({ air: 20 })
+    expect(events.find((event) => event.category === 'resonance')?.resonanceReward?.grantedYield).toMatchObject({ air: 4 })
   })
 
   it('snapshots World Tier at spawn and uses that tier for health, loot, and Resonance', () => {
@@ -106,10 +107,13 @@ describe('canonical Combat Resonance rewards', () => {
     state.combat.enemyHp = 0
     const random = vi.spyOn(Math, 'random').mockReturnValue(0.5)
     finishEnemy(state, undefined, undefined, { push: (event) => events.push(event) })
-    expect(state.inventory['life-essence']).toBe(8)
-    expect(state.resonance.air).toBe(40)
+    const wt4LifeEssence = state.inventory['life-essence'] ?? 0
+    const wt4Range = resolveLifeEssenceRewardRange('forest-wisp', 4)
+    expect(wt4LifeEssence).toBeGreaterThanOrEqual(wt4Range.finalMin)
+    expect(wt4LifeEssence).toBeLessThanOrEqual(wt4Range.finalMax)
+    expect(state.resonance.air).toBe(8)
     expect(events.filter((event) => event.category === 'resonance')).toHaveLength(1)
-    expect(events.find((event) => event.category === 'resonance')).toMatchObject({ worldTier: 4, resonanceReward: { rewardMultiplier: 4, finalYield: { air: 40 }, grantedYield: { air: 40 } } })
+    expect(events.find((event) => event.category === 'resonance')).toMatchObject({ worldTier: 4, resonanceReward: { rewardMultiplier: 0.8, finalYield: { air: 8 }, grantedYield: { air: 8 } } })
     random.mockRestore()
   })
 
@@ -128,11 +132,15 @@ describe('canonical Combat Resonance rewards', () => {
     const events: import('./combatTypes').CombatEvent[] = []
     finishEnemy(state, collector, (itemId, quantity) => acquired.push([itemId, quantity]), { push: (event) => events.push(event) }, (_state, _enemyId, drops) => revealed.push(drops.find((drop) => drop.itemId === 'life-essence')?.quantity ?? 0))
     const report = collector.finalize(state)
-    expect(state.inventory['life-essence']).toBe(10)
-    expect(acquired).toContainEqual(['life-essence', 10])
-    expect(revealed).toEqual([10])
-    expect(report.combat.loot['life-essence']).toBe(10)
-    expect(events.find((event) => event.category === 'loot' && event.itemId === 'life-essence')).toMatchObject({ amount: 10 })
+    const expectedLifeEssence = state.inventory['life-essence'] ?? 0
+    const wt5Range = resolveLifeEssenceRewardRange('forest-wisp', 5)
+    expect(expectedLifeEssence).toBeGreaterThanOrEqual(wt5Range.finalMin)
+    expect(expectedLifeEssence).toBeLessThanOrEqual(wt5Range.finalMax)
+    expect(state.inventory['life-essence']).toBe(expectedLifeEssence)
+    expect(acquired).toContainEqual(['life-essence', expectedLifeEssence])
+    expect(revealed).toEqual([expectedLifeEssence])
+    expect(report.combat.loot['life-essence']).toBe(expectedLifeEssence)
+    expect(events.find((event) => event.category === 'loot' && event.itemId === 'life-essence')).toMatchObject({ amount: expectedLifeEssence })
     random.mockRestore()
   })
 

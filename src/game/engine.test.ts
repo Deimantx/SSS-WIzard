@@ -336,16 +336,8 @@ describe('Pillars of Mana economy', () => {
 })
 
 describe('Life Essence combat material', () => {
-  it('uses the authored quantity and chance for every current monster while preserving existing loot', () => {
-    const expected: Partial<Record<keyof typeof MONSTERS, [number, number, number]>> = {
-      'forest-wisp': [1, 3, 1], 'thornling': [1, 3, 1], 'stone-root': [1, 3, 0.2], 'grove-sentinel': [2, 5, 1], 'forest-heart': [10, 18, 1],
-      'cavefang-wolf': [3, 5, 1], 'razorclaw-lynx': [3, 5, 1], 'corrupted-dire-wolf': [3, 5, 1], 'corrupted-greatbear': [12, 30, 1],
-      'restless-skeleton': [4, 8, 1], 'grave-wraith': [4, 8, 1], 'fallen-acolyte': [5, 10, 1], 'archmage-edrin-shade': [21, 48, 1],
-      'warded-husk': [5, 10, 1], 'rift-wolf': [5, 10, 1], 'arcane-scavenger': [5, 10, 1], 'withered-watcher': [5, 10, 1], 'corrupted-elemental-gatekeeper': [25, 55, 1],
-    }
-    Object.entries(expected).forEach(([monsterId, [min, max, chance]]) => {
-      expect(MONSTERS[monsterId as keyof typeof MONSTERS].loot).toContainEqual({ itemId: 'life-essence', min, max, chance })
-    })
+  it('keeps Life Essence out of authored monster loot while preserving existing authored materials', () => {
+    expect(Object.values(MONSTERS).every((monster) => monster.loot.every((drop) => drop.itemId !== 'life-essence'))).toBe(true)
     expect(MONSTERS['forest-heart'].loot.some((drop) => drop.itemId === 'artifact-essence')).toBe(true)
   })
 })

@@ -5,6 +5,9 @@ export type ResonanceType = typeof RESONANCE_TYPES[number]
 export type ResonanceState = Record<ResonanceType, number>
 export type ResonanceYield = Partial<Record<ResonanceType, number>>
 
+/** Global combat-income scalar. Authored monster yields remain relative source identity. */
+export const RESONANCE_REWARD_GLOBAL_MULTIPLIER = 0.20
+
 export const RESONANCE_METADATA: Record<ResonanceType, { label: string; shortLabel: string }> = {
   fire: { label: 'Fire Resonance', shortLabel: 'Fire' },
   water: { label: 'Water Resonance', shortLabel: 'Water' },

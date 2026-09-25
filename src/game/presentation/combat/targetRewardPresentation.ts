@@ -1,5 +1,8 @@
 import { MONSTERS } from '../../content/monsters'
-import { resolveWorldTierLootQuantity, resolveWorldTierEnemyProfile } from '../../systems/world-tier/worldTierRuntime'
+import { normalizeResonanceState } from '../../content/resonance/resonance'
+import { resolveLifeEssenceRewardRange } from '../../systems/loot/lifeEssenceReward'
+import { resolveEnemyResonanceReward } from '../../systems/resonance/resonanceRuntime'
+import { resolveWorldTierLootQuantity } from '../../systems/world-tier/worldTierRuntime'
 import type { ItemId, MonsterId, ResonanceState, WorldTierId } from '../../types'
 import { resolveEnemyPowerRating } from './enemyPowerRating'
 
@@ -23,20 +26,24 @@ export interface CombatTargetRewardPresentation {
 /** Read model for targeted-hunting reward inspection; it is transparent before Bestiary discovery. */
 export const buildCombatTargetRewardPresentation = (monsterId: MonsterId, worldTier: WorldTierId): CombatTargetRewardPresentation => {
   const monster = MONSTERS[monsterId]
-  const profile = resolveWorldTierEnemyProfile(monsterId, worldTier)
+  const resonanceReward = resolveEnemyResonanceReward(monsterId, worldTier)
+  const lifeEssence = resolveLifeEssenceRewardRange(monsterId, worldTier)
   const powerRating = resolveEnemyPowerRating(monsterId, worldTier)
   return {
     monsterId,
     monsterName: monster.name,
-    itemDrops: monster.loot.map((drop) => ({
-      itemId: drop.itemId,
-      min: resolveWorldTierLootQuantity(drop.min, worldTier),
-      max: resolveWorldTierLootQuantity(drop.max, worldTier),
-      chance: drop.chance,
-    })),
-    resonance: profile.resonanceYield,
+    itemDrops: [
+      ...monster.loot.map((drop) => ({
+        itemId: drop.itemId,
+        min: resolveWorldTierLootQuantity(drop.min, worldTier),
+        max: resolveWorldTierLootQuantity(drop.max, worldTier),
+        chance: drop.chance,
+      })),
+      { itemId: 'life-essence', min: lifeEssence.finalMin, max: lifeEssence.finalMax, chance: 1 },
+    ],
+    resonance: normalizeResonanceState(resonanceReward.finalYield),
     powerRating,
     threatGain: powerRating,
-    worldTier: profile.worldTier,
+    worldTier: resonanceReward.worldTier,
   }
 }

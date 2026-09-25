@@ -23,7 +23,8 @@ describe('BestiaryResonanceYield', () => {
 
     expect(screen.getByText('RESONANCE YIELD')).toBeTruthy()
     expect(screen.getByText('Earth Resonance')).toBeTruthy()
-    expect(screen.getByText('+80')).toBeTruthy()
+    expect(screen.getByText('+16')).toBeTruthy()
+    expect(screen.getByText('Life Essence')).toBeTruthy()
     expect(screen.getByText('LOOT TABLE')).toBeTruthy()
     expect(document.querySelector('.bestiary-resonance-section')?.compareDocumentPosition(document.querySelector('.bestiary-loot-list') as Node) === Node.DOCUMENT_POSITION_FOLLOWING).toBe(true)
   })
@@ -31,13 +32,13 @@ describe('BestiaryResonanceYield', () => {
   it('renders multiple types and reacts to the current World Tier', () => {
     renderInspector('graveglass-shade', 1)
     expect(screen.getByText('WT1')).toBeTruthy()
-    expect(screen.getByText('+24')).toBeTruthy()
-    expect(screen.getByText('+12')).toBeTruthy()
+    expect(screen.getByText('+4')).toBeTruthy()
+    expect(screen.getByText('+2')).toBeTruthy()
 
     act(() => { useGameStore.getState().setWorldTier(2) })
     expect(screen.getByText('WT2')).toBeTruthy()
-    expect(screen.getByText('+48')).toBeTruthy()
-    expect(screen.getByText('+24')).toBeTruthy()
+    expect(screen.getByText('+9')).toBeTruthy()
+    expect(screen.getByText('+4')).toBeTruthy()
   })
 
   it('shows an explicit empty state for an enemy without Resonance', () => {

@@ -12,6 +12,7 @@ import { Button, GameTooltip } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { MonsterPortrait } from './MonsterPortrait'
 import { getEnemyCombatStats } from '../../game/systems/combat/combatStats'
+import { resolveLifeEssenceRewardRange } from '../../game/systems/loot/lifeEssenceReward'
 import { CombatEffectChip } from '../../components/combat/CombatEffectChip'
 import { EnemyCombatStatList } from '../../components/combat/EnemyCombatStatList'
 import { EnemyResistanceStatList } from '../../components/combat/EnemyResistanceStatList'
@@ -159,13 +160,16 @@ function ActionIntel({ monsterId }: { monsterId: MonsterId }) {
 export function EnemyLootContent({ selectedDungeonId }: { selectedDungeonId: DungeonId }) {
   const combat = useGameStore((state) => state.combat)
   const inventory = useGameStore((state) => state.inventory)
+  const worldTier = useGameStore((state) => state.combat.enemyWorldTier ?? state.worldTier.current)
   const dungeon = DUNGEONS[combat.dungeonId ?? selectedDungeonId]
   const current = combat.enemyId ? MONSTERS[combat.enemyId] : null
-  return <div className="enemy-loot-content"><div className="enemy-context-loot-group"><div className="combat-subsection-label">{current ? 'CURRENT ENEMY DROPS' : 'LOCATION DROPS'}</div>{current ? <LootTiles monster={current} inventory={inventory} /> : <p className="muted">No active enemy. Boss and normal enemy drops are shown when an encounter is active.</p>}</div><div className="enemy-context-loot-group"><div className="combat-subsection-label">BOSS DROPS · {MONSTERS[dungeon.boss].name.toUpperCase()}</div><LootTiles monster={MONSTERS[dungeon.boss]} inventory={inventory} /></div></div>
+  return <div className="enemy-loot-content"><div className="enemy-context-loot-group"><div className="combat-subsection-label">{current ? 'CURRENT ENEMY DROPS' : 'LOCATION DROPS'}</div>{current ? <LootTiles monster={current} inventory={inventory} worldTier={worldTier} /> : <p className="muted">No active enemy. Boss and normal enemy drops are shown when an encounter is active.</p>}</div><div className="enemy-context-loot-group"><div className="combat-subsection-label">BOSS DROPS · {MONSTERS[dungeon.boss].name.toUpperCase()}</div><LootTiles monster={MONSTERS[dungeon.boss]} inventory={inventory} worldTier={worldTier} /></div></div>
 }
 
-function LootTiles({ monster, inventory }: { monster: typeof MONSTERS[MonsterId]; inventory: Partial<Record<ItemId, number>> }) {
-  return <div className="enemy-loot-grid">{monster.loot.map((drop) => <LootRewardTile key={drop.itemId} drop={drop} sourceName={monster.name} inventory={inventory} />)}</div>
+function LootTiles({ monster, inventory, worldTier }: { monster: typeof MONSTERS[MonsterId]; inventory: Partial<Record<ItemId, number>>; worldTier: 1 | 2 | 3 | 4 | 5 }) {
+  const lifeEssence = resolveLifeEssenceRewardRange(monster.id, worldTier)
+  const drops = [...monster.loot, { itemId: 'life-essence' as const, min: lifeEssence.finalMin, max: lifeEssence.finalMax, chance: 1 }]
+  return <div className="enemy-loot-grid">{drops.map((drop) => <LootRewardTile key={drop.itemId} drop={drop} sourceName={monster.name} inventory={inventory} tooltipNote={drop.itemId === 'life-essence' ? `WT1 Enemy Power ${lifeEssence.powerAtWT1}; current WT${lifeEssence.worldTier} dynamic reward.` : undefined} />)}</div>
 }
 
 function pretty(value: string) { return value.replace(/-/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()) }

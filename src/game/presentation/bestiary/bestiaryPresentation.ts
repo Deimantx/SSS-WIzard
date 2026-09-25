@@ -61,6 +61,8 @@ export interface BestiaryResonanceEntryPresentation {
 
 export interface BestiaryResonancePresentation {
   worldTier: WorldTierId
+  worldTierRewardMultiplier: number
+  globalRewardMultiplier: number
   rewardMultiplier: number
   entries: BestiaryResonanceEntryPresentation[]
 }
@@ -69,6 +71,8 @@ export const getBestiaryResonancePresentation = (monster: MonsterDefinition, wor
   const reward = resolveEnemyResonanceReward(monster.id, worldTier)
   return {
     worldTier: reward.worldTier,
+    worldTierRewardMultiplier: reward.worldTierRewardMultiplier,
+    globalRewardMultiplier: reward.globalRewardMultiplier,
     rewardMultiplier: reward.rewardMultiplier,
     entries: RESONANCE_TYPES.flatMap((type) => {
       const finalAmount = reward.finalYield[type] ?? 0

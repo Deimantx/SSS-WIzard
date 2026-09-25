@@ -5,6 +5,7 @@ import { MONSTER_IDS, MONSTERS } from '../../game/content/monsters'
 import { WORLD_TIER_IDS, WORLD_TIERS, type WorldTierId } from '../../game/content/world-tier/worldTiers'
 import { formatResonanceBundle } from '../../game/presentation/resonance/resonancePresentation'
 import { resolveWorldTierEnemyProfile } from '../../game/systems/world-tier/worldTierRuntime'
+import { resolveEnemyResonanceReward } from '../../game/systems/resonance/resonanceRuntime'
 import type { MonsterId } from '../../game/types'
 import { useGameStore } from '../../store/gameStore'
 import { Summary } from './DeveloperTabPrimitives'
@@ -17,7 +18,7 @@ export function DeveloperWorldTier() {
   const [selectedEnemy, setSelectedEnemy] = useState<MonsterId>('forest-wisp')
   const selectedMonster = MONSTERS[selectedEnemy]
   const activeTier = state.combat.enemyWorldTier
-  const profiles = WORLD_TIER_IDS.map((tier) => ({ tier, profile: resolveWorldTierEnemyProfile(selectedEnemy, tier) }))
+  const profiles = WORLD_TIER_IDS.map((tier) => ({ tier, profile: resolveWorldTierEnemyProfile(selectedEnemy, tier), resonance: resolveEnemyResonanceReward(selectedEnemy, tier) }))
   const highestUnlocked = state.worldTier.highestUnlocked
 
   return <div className="developer-tab-stack developer-world-tier-tab">
@@ -45,7 +46,7 @@ export function DeveloperWorldTier() {
     <Card title="WORLD TIER · Canonical enemy preview">
       <label className="developer-select-field">SELECT ENEMY<select aria-label="World Tier preview enemy" value={selectedEnemy} onChange={(event) => setSelectedEnemy(event.target.value as MonsterId)}>{MONSTER_IDS.map((id) => <option key={id} value={id}>{MONSTERS[id].name}</option>)}</select></label>
       <div className="developer-inspector-title"><div><strong>{selectedMonster.name}</strong><small className="muted">{selectedMonster.subtitle}</small></div><Status tone={activeTier ? 'active' : 'neutral'}>{activeTier ? `ACTIVE WT${activeTier}` : 'NO ACTIVE ENCOUNTER'}</Status></div>
-      <div className="developer-world-tier-preview-grid">{profiles.map(({ tier, profile }) => <GameTooltip key={tier} block content={<TooltipContent title={`WT${tier} preview`} description="Pure authored preview. This does not mutate the profile or active encounter." />}><div className={`developer-world-tier-preview${activeTier === tier ? ' is-active' : ''}`}><div className="developer-world-tier-definition-head"><strong>WT{tier}</strong>{activeTier === tier && <Status tone="active">SNAPSHOT</Status>}</div><div className="developer-detail-grid"><span>HP<strong>{profile.maxHealth.toLocaleString()} <small>from {profile.baseMaxHealth.toLocaleString()}</small></strong></span><span>BASIC DAMAGE<strong>{profile.basicAttackDamage.toFixed(1)} <small>from {profile.baseBasicAttackDamage.toFixed(1)}</small></strong></span><span>DEFENSE<strong>{profile.defense.toFixed(1)} <small>from {profile.baseDefense.toFixed(1)}</small></strong></span><span>RESONANCE<strong>{formatResonanceBundle(profile.resonanceYield)}</strong></span><span>ITEM LOOT<strong>{formatMultiplier(WORLD_TIERS[tier].itemLootQuantityMultiplier)}</strong></span></div></div></GameTooltip>)}</div>
+      <div className="developer-world-tier-preview-grid">{profiles.map(({ tier, profile, resonance }) => <GameTooltip key={tier} block content={<TooltipContent title={`WT${tier} preview`} description="Pure authored preview. This does not mutate the profile or active encounter." />}><div className={`developer-world-tier-preview${activeTier === tier ? ' is-active' : ''}`}><div className="developer-world-tier-definition-head"><strong>WT{tier}</strong>{activeTier === tier && <Status tone="active">SNAPSHOT</Status>}</div><div className="developer-detail-grid"><span>HP<strong>{profile.maxHealth.toLocaleString()} <small>from {profile.baseMaxHealth.toLocaleString()}</small></strong></span><span>BASIC DAMAGE<strong>{profile.basicAttackDamage.toFixed(1)} <small>from {profile.baseBasicAttackDamage.toFixed(1)}</small></strong></span><span>DEFENSE<strong>{profile.defense.toFixed(1)} <small>from {profile.baseDefense.toFixed(1)}</small></strong></span><span>RESONANCE<strong>{formatResonanceBundle(resonance.finalYield)}</strong></span><span>REWARD RATE<strong>{formatMultiplier(resonance.rewardMultiplier)}</strong></span><span>ITEM LOOT<strong>{formatMultiplier(WORLD_TIERS[tier].itemLootQuantityMultiplier)}</strong></span></div></div></GameTooltip>)}</div>
       <p className="developer-debug-note">Preview uses the same profile resolver as encounter spawn and combat stat reads. Resistances, speed, action patterns, loot chance, Arcane Points, and threat are unchanged.</p>
     </Card>
   </div>

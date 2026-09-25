@@ -16,7 +16,7 @@ export function CombatLocationLootModal({ location, targetMonsterId, onClose }: 
   const targeted = Boolean(location.targeting)
   const target = targeted && targetMonsterId ? location.targeting?.targets.find((entry) => entry.monsterId === targetMonsterId) ?? null : null
   const reward = target ? buildCombatTargetRewardPresentation(target.monsterId, worldTier) : null
-  const loot = !targeted && location.dungeonId ? buildLocationLootPresentation(location.dungeonId, progress) : null
+  const loot = !targeted && location.dungeonId ? buildLocationLootPresentation(location.dungeonId, progress, worldTier) : null
   const title = reward ? `${reward.monsterName.toUpperCase()} — LOOT` : location.name.toUpperCase()
 
   return <ModalPortal open onClose={onClose} backdropClassName="combat-location-loot-backdrop" surfaceClassName="combat-location-loot-modal" ariaLabelledBy="combat-location-loot-title">

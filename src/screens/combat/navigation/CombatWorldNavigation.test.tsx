@@ -224,7 +224,7 @@ describe('CombatWorldNavigation', () => {
     expect(screen.getByText('CINDER MOTH — LOOT')).toBeTruthy()
     expect(screen.getByText('ITEM DROPS')).toBeTruthy()
     expect(screen.getByText('RESONANCE')).toBeTruthy()
-    expect(screen.getByText('+20')).toBeTruthy()
+    expect(screen.getByText('+4')).toBeTruthy()
     expect(screen.queryByText('Shared loot pool from normal encounters.')).toBeNull()
   })
 

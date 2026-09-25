@@ -1,11 +1,13 @@
 import { MONSTERS } from '../../content/monsters'
-import { multiplyResonanceBundle, normalizeResonanceState, RESONANCE_TYPES, sanitizeResonanceAmount, type ResonanceState, type ResonanceType, type ResonanceYield } from '../../content/resonance/resonance'
+import { multiplyResonanceBundle, normalizeResonanceState, RESONANCE_REWARD_GLOBAL_MULTIPLIER, RESONANCE_TYPES, sanitizeResonanceAmount, type ResonanceState, type ResonanceType, type ResonanceYield } from '../../content/resonance/resonance'
 import type { MonsterId, WorldTierId } from '../../types'
 import { getWorldTierDefinition } from '../world-tier/worldTierRuntime'
 
 export interface ResonanceRewardResolution {
   enemyId: MonsterId
   worldTier: WorldTierId
+  worldTierRewardMultiplier: number
+  globalRewardMultiplier: number
   rewardMultiplier: number
   baseYield: ResonanceYield
   finalYield: ResonanceYield
@@ -75,8 +77,11 @@ export const aggregateResonanceBundle = (bundle: ResonanceYield, count: unknown)
 export const resolveEnemyResonanceReward = (enemyId: MonsterId, worldTier: WorldTierId = 1): ResonanceRewardResolution => {
   const tier = getWorldTierDefinition(worldTier)
   const baseYield = normalizeResonanceState(MONSTERS[enemyId]?.resonanceYield) as ResonanceYield
-  const finalYield = multiplyResonanceBundle(baseYield, tier.resonanceRewardMultiplier)
-  return { enemyId, worldTier: tier.id, rewardMultiplier: tier.resonanceRewardMultiplier, baseYield, finalYield }
+  const worldTierRewardMultiplier = tier.resonanceRewardMultiplier
+  const globalRewardMultiplier = RESONANCE_REWARD_GLOBAL_MULTIPLIER
+  const rewardMultiplier = worldTierRewardMultiplier * globalRewardMultiplier
+  const finalYield = multiplyResonanceBundle(baseYield, rewardMultiplier)
+  return { enemyId, worldTier: tier.id, worldTierRewardMultiplier, globalRewardMultiplier, rewardMultiplier, baseYield, finalYield }
 }
 
 export const grantEnemyResonanceReward = (state: ResonanceState, enemyId: MonsterId, worldTier: WorldTierId = 1): ResonanceRewardEventPayload => {

@@ -106,7 +106,8 @@ export const scaledDirectDamage = (
   damageType: DamageType,
   coefficient: number,
   tags: CombatTag[] = ["direct"],
-): CombatEffect => ({
+  lifeStealPercent?: number,
+): Extract<CombatEffect, { type: "deal-damage" }> => ({
   type: "deal-damage",
   target: "opponent",
   components: [
@@ -116,6 +117,7 @@ export const scaledDirectDamage = (
     },
   ],
   tags,
+  ...(lifeStealPercent === undefined ? {} : { lifeStealPercent }),
 });
 export const scaledMultiDamage = (
   components: Array<{ damageType: DamageType; coefficient: number }>,
@@ -171,6 +173,18 @@ export const opponentStatusStackScaled = (
   maxStacks?: number,
 ): Magnitude => ({
   type: "opponent-status-stack-scaled",
+  statusId,
+  base,
+  perStack,
+  ...(maxStacks === undefined ? {} : { maxStacks }),
+});
+export const sourceStatusStackScaled = (
+  statusId: StatusId,
+  base: Magnitude,
+  perStack: number,
+  maxStacks?: number,
+): Magnitude => ({
+  type: "source-status-stack-scaled",
   statusId,
   base,
   perStack,

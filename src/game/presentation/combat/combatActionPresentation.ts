@@ -52,7 +52,7 @@ export const resolveMonsterBaseMagnitudePreview = (monster: MonsterDefinition, m
   if (magnitude.type === 'flat') return magnitude.value
   if (magnitude.type === 'source-basic-damage-percent') return monster.basicAttackDamage * magnitude.value
   if (magnitude.type === 'source-max-health-percent') return monster.maxHealth * magnitude.value
-  if (magnitude.type === 'opponent-status-stack-scaled') return resolveMonsterBaseMagnitudePreview(monster, magnitude.base)
+  if (magnitude.type === 'opponent-status-stack-scaled' || magnitude.type === 'source-status-stack-scaled') return resolveMonsterBaseMagnitudePreview(monster, magnitude.base)
   return null
 }
 
@@ -63,6 +63,11 @@ export const formatMonsterScalingLabel = (magnitude: Magnitude): string | undefi
     const base: string | undefined = formatMonsterScalingLabel(magnitude.base)
     const status = STATUS_DEFINITIONS[magnitude.statusId]?.name ?? capitalize(magnitude.statusId)
     return `${base ?? 'Base magnitude'} · +${formatCoefficient(magnitude.perStack)}% per ${status} stack${magnitude.maxStacks === undefined ? '' : ` (max ${magnitude.maxStacks})`}`
+  }
+  if (magnitude.type === 'source-status-stack-scaled') {
+    const base: string | undefined = formatMonsterScalingLabel(magnitude.base)
+    const status = STATUS_DEFINITIONS[magnitude.statusId]?.name ?? capitalize(magnitude.statusId)
+    return `${base ?? 'Base magnitude'} · +${formatCoefficient(magnitude.perStack)}% per own ${status} stack${magnitude.maxStacks === undefined ? '' : ` (max ${magnitude.maxStacks})`}`
   }
   return undefined
 }
@@ -100,7 +105,7 @@ export const formatCombatEffect = (effect: CombatEffect, source: CombatSource, o
     const preview = previews.length > 0 && previews.every((value): value is number => value !== null) ? previews.reduce((sum, value) => sum + value, 0) : null
     const value = preview === null ? components.map((component) => `${capitalize(component.damageType)} ${formatSpellMagnitude(component.magnitude)}`).join(' + ') : formatPreviewValue(preview)
     const scalingLabel = options.monster ? components.map((component) => formatMonsterScalingLabel(component.magnitude)).filter(Boolean).join(' + ') || undefined : undefined
-    return { kind: 'damage', tone, label: damageTypes.length === 1 ? `${capitalize(damageTypes[0])} Damage` : 'Split Damage', value, basePreview: preview === null ? undefined : formatPreviewValue(preview), scalingLabel, detail: `Target: ${target}`, damageType: damageTypes.length === 1 ? damageTypes[0] : undefined, damageTypes, targetLabel: target }
+    return { kind: 'damage', tone, label: damageTypes.length === 1 ? `${capitalize(damageTypes[0])} Damage` : 'Split Damage', value, basePreview: preview === null ? undefined : formatPreviewValue(preview), scalingLabel, detail: `${effect.lifeStealPercent ? `Heals for ${formatCoefficient(effect.lifeStealPercent)}% of actual Health damage. ` : ''}Target: ${target}`, damageType: damageTypes.length === 1 ? damageTypes[0] : undefined, damageTypes, targetLabel: target }
   }
   if (effect.type === 'heal') {
     const preview = options.monster ? resolveMonsterBaseMagnitudePreview(options.monster, effect.magnitude) : null

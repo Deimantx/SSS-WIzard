@@ -843,17 +843,31 @@ export const executeCombatEffect = (
         damageType: component.damageType,
       }));
       const hitCount = Math.max(1, Math.floor(effect.hitCount ?? 1));
+      let actualHealthDamage = 0;
       for (
         let hit = 0;
         hit < hitCount && isCombatActorAlive(state, target);
         hit += 1
       ) {
-        applyDamage(
+        actualHealthDamage += applyDamage(
           state,
           components,
           effectSource,
           target,
           tags,
+          execute,
+          depth,
+          uiEvents,
+          cascade,
+        );
+      }
+      if (effect.lifeStealPercent !== undefined && actualHealthDamage > 0) {
+        applyHealing(
+          state,
+          actualHealthDamage * effect.lifeStealPercent,
+          effectSource,
+          effectSource.actor,
+          [...tags, "heal"],
           execute,
           depth,
           uiEvents,

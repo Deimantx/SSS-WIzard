@@ -428,7 +428,7 @@ export const WHISPERING_WOODS_MONSTERS = {
         actionTimeMs: 2800,
         description:
           "The Heart thickens its living shell and draws new vitality from the grove.",
-        effects: [scaledBarrier(0.12), scaledHeal(0.04)],
+        effects: [scaledBarrier(0.12), scaledHeal(0.1)],
         tags: ["special", "barrier", "heal"],
       },
     },

@@ -167,6 +167,7 @@ const formatMagnitude = (magnitude: Magnitude, noun: string) => {
     case 'target-missing-health-percent': return `${formatSpellMagnitude(magnitude)} as ${noun}`
     case 'school-level': return `${amount(magnitude.base)} + ${amount(magnitude.perLevel)} per ${titleCase(magnitude.school)} level ${noun}`
     case 'opponent-status-stack-scaled': return `${formatSpellMagnitude(magnitude)} as ${noun}`
+    case 'source-status-stack-scaled': return `${formatSpellMagnitude(magnitude)} as ${noun}`
   }
 }
 

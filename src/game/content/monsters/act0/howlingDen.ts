@@ -345,7 +345,7 @@ export const HOWLING_DEN_MONSTERS = {
       "crushing-maul": {
         id: "crushing-maul",
         name: "Crushing Maul",
-        actionTimeMs: 1800,
+        actionTimeMs: 2200,
         description: "A brutal maul strike crashes into the target.",
         effects: [scaledDirectDamage("physical", 1.55)],
         tags: ["special", "physical", "melee", "direct"],
@@ -356,7 +356,7 @@ export const HOWLING_DEN_MONSTERS = {
         actionTimeMs: 2500,
         description:
           "The Greatbear shatters the ground, disrupting the Wizard's current Spell cast.",
-        effects: [scaledDirectDamage("physical", 1.2), delayCurrentAction(700)],
+        effects: [scaledDirectDamage("physical", 1.2), delayCurrentAction(1000)],
         tags: ["special", "physical", "control"],
       },
       "corrupted-roar": {
@@ -365,29 +365,29 @@ export const HOWLING_DEN_MONSTERS = {
         actionTimeMs: 2200,
         description: "Makes the target Vulnerable and adds 1 Corruption.",
         effects: [
-          applyStatus("vulnerable", "opponent", 6000),
-          applyStatus("corruption", "opponent", undefined, 1),
+          applyStatus("vulnerable", "opponent", 10000),
+          applyStatus("corruption", "opponent", 30000, 1),
         ],
         tags: ["special", "debuff"],
       },
-      "arcane-rampage": {
-        id: "arcane-rampage",
-        name: "Arcane Rampage",
-        actionTimeMs: 3500,
-        description: "A heavy Arcane strike empowered by unstable corruption.",
+      "savage-rampage": {
+        id: "savage-rampage",
+        name: "Savage Rampage",
+        actionTimeMs: 3000,
+        description: "A heavy Physical strike empowered by Corruption.",
         effects: [
           {
             type: "deal-damage",
             target: "opponent",
             components: [{
-              damageType: "arcane",
+              damageType: "physical",
               magnitude: opponentStatusStackScaled("corruption", { type: "source-basic-damage-percent", value: 2 }, 0.12, 5),
             }],
             tags: ["direct"],
           },
-          applyStatus("corruption", "opponent", undefined, 1),
+          applyStatus("corruption", "opponent", 30000, 1),
         ],
-        tags: ["special", "magic", "arcane", "debuff", "direct"],
+        tags: ["special", "physical", "melee", "debuff", "direct"],
       },
     },
     actionPatterns: {
@@ -408,10 +408,11 @@ export const HOWLING_DEN_MONSTERS = {
           action("corrupted-roar-step", "corrupted-roar"),
           action("crushing-maul-step-1", "crushing-maul"),
           basic("basic-1"),
-          action("arcane-rampage-step-1", "arcane-rampage"),
+          action("savage-rampage-step-1", "savage-rampage"),
           basic("basic-2"),
           action("crushing-maul-step-2", "crushing-maul"),
-          action("arcane-rampage-step-2", "arcane-rampage"),
+          action("savage-rampage-step-2", "savage-rampage"),
+          basic("basic-3"),
         ],
       },
     },

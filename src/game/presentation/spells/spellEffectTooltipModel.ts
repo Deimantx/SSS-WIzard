@@ -62,6 +62,11 @@ export const formatSpellMagnitude = (magnitude: Magnitude): string => {
     const cap = magnitude.maxStacks === undefined ? '' : `, up to ${magnitude.maxStacks}`
     return `${formatSpellMagnitude(magnitude.base)} · +${formatValue(magnitude.perStack * 100)}% per ${statusName} stack${cap}`
   }
+  if (magnitude.type === 'source-status-stack-scaled') {
+    const statusName = STATUS_DEFINITIONS[magnitude.statusId]?.name ?? capitalize(magnitude.statusId)
+    const cap = magnitude.maxStacks === undefined ? '' : `, up to ${magnitude.maxStacks}`
+    return `${formatSpellMagnitude(magnitude.base)} · +${formatValue(magnitude.perStack * 100)}% per own ${statusName} stack${cap}`
+  }
   return `${formatValue(magnitude.value * 100)}% of missing Health`
 }
 

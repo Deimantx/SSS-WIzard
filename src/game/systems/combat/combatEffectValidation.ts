@@ -46,6 +46,13 @@ export const validateMagnitude = (value: unknown, owner = 'magnitude', context: 
       if (value.maxStacks !== undefined && (!isFiniteNumber(value.maxStacks) || !Number.isInteger(value.maxStacks) || value.maxStacks < 1)) errors.push(`${owner}: maxStacks must be a finite integer >= 1`)
       errors.push(...validateMagnitude(value.base, `${owner}.base`, context))
       break
+    case 'source-status-stack-scaled':
+      if (!isStatusId(value.statusId, {})) errors.push(`${owner}: invalid status reference`)
+      else if (context.hasStatus && !context.hasStatus(value.statusId)) errors.push(`${owner}: invalid status reference`)
+      if (!isFiniteNumber(value.perStack)) errors.push(`${owner}: perStack must be finite`)
+      if (value.maxStacks !== undefined && (!isFiniteNumber(value.maxStacks) || !Number.isInteger(value.maxStacks) || value.maxStacks < 1)) errors.push(`${owner}: maxStacks must be a finite integer >= 1`)
+      errors.push(...validateMagnitude(value.base, `${owner}.base`, context))
+      break
     case 'spell-power':
       if (!isFiniteNumber(value.coefficient) || value.coefficient < 0) errors.push(`${owner}: Spell Power coefficient must be finite and non-negative`)
       break
@@ -138,6 +145,7 @@ const validateCombatEffectInternal = (value: unknown, owner: string, context: Co
       errors.push(...validateMagnitude(isRecord(component) ? component.magnitude : undefined, `${owner}.components[${index}].magnitude`, context))
     })
     if (value.school !== undefined && !['fire', 'water', 'earth', 'air'].includes(String(value.school))) errors.push(`${owner}: invalid school`)
+    if (value.lifeStealPercent !== undefined && (!isFiniteNumber(value.lifeStealPercent) || value.lifeStealPercent < 0)) errors.push(`${owner}: lifeStealPercent must be finite and non-negative`)
     if (value.tags !== undefined && (!Array.isArray(value.tags) || !value.tags.every(isTag))) errors.push(`${owner}: invalid tags`)
     return errors
   }
@@ -273,6 +281,7 @@ export const normalizePersistedCombatEffect = (value: unknown, context: CombatVa
     components: [{ damageType: value.damageType, magnitude: value.magnitude as never }],
     ...(value.school !== undefined ? { school: value.school as never } : {}),
     ...(Array.isArray(value.tags) ? { tags: value.tags as never } : {}),
+    ...(value.lifeStealPercent !== undefined ? { lifeStealPercent: value.lifeStealPercent as never } : {}),
   }
   return isPersistedCombatEffect(migrated, context) ? migrated : undefined
 }

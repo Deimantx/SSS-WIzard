@@ -63,6 +63,7 @@ export const formatMagnitude = (magnitude: Magnitude): string => {
     case 'target-missing-health-percent': return `${formatPercent(magnitude.value)} of the opponent's missing Health`
     case 'school-level': return `${formatNumber(magnitude.base)} + ${formatNumber(magnitude.perLevel)} per ${readableId(magnitude.school)} School level`
     case 'opponent-status-stack-scaled': return `${formatMagnitude(magnitude.base)}; +${formatPercent(magnitude.perStack)} per ${statusName(magnitude.statusId)} stack${magnitude.maxStacks === undefined ? '' : `, up to ${magnitude.maxStacks}`}`
+    case 'source-status-stack-scaled': return `${formatMagnitude(magnitude.base)}; +${formatPercent(magnitude.perStack)} per own ${statusName(magnitude.statusId)} stack${magnitude.maxStacks === undefined ? '' : `, up to ${magnitude.maxStacks}`}`
   }
 }
 

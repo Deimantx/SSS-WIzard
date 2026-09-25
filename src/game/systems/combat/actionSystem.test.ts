@@ -126,7 +126,7 @@ describe('classic real-time combat action timing', () => {
     clearCurrentEnemyAction(state)
     state.combat.enemyNextActionIndex = 2
     startNextEnemyAction(state, executeCombatEffects)
-    expect(state.combat.enemyActionDurationMs).toBe(1800)
+    expect(state.combat.enemyActionDurationMs).toBe(2200)
     expect(getEnemySkillActionRate(state)).toBeCloseTo(1.15)
 
   })

@@ -6,11 +6,14 @@ import {
   forceResolveEnemyAction,
   getEnemyBasicAttackRate,
   getEnemySkillActionRate,
+  resolveCurrentEnemyAction,
+  startNextEnemyAction,
 } from "./actionRuntime";
 import { executeCombatEffects, damageEnemy } from "./effectResolver";
 import { spawnEnemy } from "./combatRuntime";
 import { getActiveBarrier } from "./barrierRuntime";
 import { resolveMagnitude } from "./magnitude";
+import { tickStatuses } from "./statusRuntime";
 import type { CombatEvent, CombatEventSink, CombatSource } from "./combatTypes";
 import { createCombatValidationContext, validateCombatEffect } from "./combatEffectValidation";
 import { STATUS_DEFINITIONS } from "../../content/statuses";
@@ -31,6 +34,98 @@ const stateWithEnemy = (enemyId: Parameters<typeof spawnEnemy>[1]) => {
 };
 
 describe("Act 0 enemy combat foundation", () => {
+  it("gives Forest Heart one Rapid Regrow window at the first phase crossing", () => {
+    const state = stateWithEnemy("forest-heart");
+    state.combat.enemyHp = 451;
+    damageEnemy(state, 3, "spell");
+    expect(state.combat.enemyStatuses.some((status) => status.statusId === "haste")).toBe(true);
+    expect(state.combat.enemyStatuses.some((status) => status.statusId === "rapid-regrow")).toBe(true);
+    expect(state.combat.enemyActionPatternId).toBe("overgrown");
+
+    const beforeTicks = state.combat.enemyHp;
+    for (let index = 0; index < 8; index += 1) tickStatuses(state, 1000, executeCombatEffects);
+    expect(state.combat.enemyHp - beforeTicks).toBeCloseTo(900 * 0.05 * 8);
+    expect(state.combat.enemyStatuses.some((status) => status.statusId === "rapid-regrow")).toBe(false);
+
+    state.combat.enemyHp = 800;
+    damageEnemy(state, 500, "spell");
+    expect(state.combat.enemyActionPatternId).toBe("overgrown");
+    expect(state.combat.enemyStatuses.some((status) => status.statusId === "rapid-regrow")).toBe(false);
+    expect(state.combat.triggeredRuleIds.filter((id) => id.includes("forest-heart-living-core-threshold"))).toHaveLength(1);
+  });
+
+  it("keeps Overgrowth limited to its Barrier and immediate heal", () => {
+    const state = stateWithEnemy("forest-heart");
+    state.combat.enemyHp = 450;
+    clearCurrentEnemyAction(state);
+    expect(forceResolveEnemyAction(state, "overgrowth", executeCombatEffects)).toBe(true);
+    expect(getActiveBarrier(state, "enemy")).toBeCloseTo(900 * 0.12);
+    expect(state.combat.enemyHp).toBeCloseTo(450 + 900 * 0.1);
+    expect(state.combat.enemyStatuses.some((status) => status.statusId === "rapid-regrow")).toBe(false);
+  });
+
+  it("gives Edrin Barrier and Unbound Power without Haste", () => {
+    const state = stateWithEnemy("archmage-edrin-shade");
+    state.combat.enemyHp = 3001;
+    damageEnemy(state, 2, "spell");
+    expect(getActiveBarrier(state, "enemy")).toBeCloseTo(3000);
+    expect(state.combat.enemyStatuses.some((status) => status.statusId === "unbound-power")).toBe(true);
+    expect(state.combat.enemyStatuses.some((status) => status.statusId === "haste")).toBe(false);
+    expect(state.combat.enemyActionPatternId).toBe("unbound-opening");
+  });
+
+  it("resolves Edrin's opening Disruption once and never reapplies it after cleanse", () => {
+    const state = stateWithEnemy("archmage-edrin-shade");
+    state.combat.enemyHp = 3001;
+    damageEnemy(state, 2, "spell");
+    clearCurrentEnemyAction(state);
+    expect(startNextEnemyAction(state, executeCombatEffects)).toBe(true);
+    expect(state.combat.enemyCurrentActionId).toBe("arcane-disruption");
+    expect(resolveCurrentEnemyAction(state, executeCombatEffects)).toBe(true);
+    expect(state.combat.enemyActionPatternId).toBe("unbound");
+    expect(state.combat.playerStatuses.find((status) => status.statusId === "arcane-disruption")?.remainingMs).toBe(600000);
+    executeCombatEffects(state, [{ type: "cleanse", target: "self", mode: "all" }], { actor: "player", kind: "system", sourceId: "test-cleanse" });
+    expect(state.combat.playerStatuses.some((status) => status.statusId === "arcane-disruption")).toBe(false);
+
+    state.debug.playerImmortal = true;
+    for (let index = 0; index < 12; index += 1) {
+      if (state.combat.enemyCurrentStepId) resolveCurrentEnemyAction(state, executeCombatEffects);
+      expect(state.combat.enemyCurrentActionId).not.toBe("arcane-disruption");
+    }
+    expect(state.combat.playerStatuses.some((status) => status.statusId === "arcane-disruption")).toBe(false);
+  });
+
+  it("lets Soul Drain heal only from effective Health damage", () => {
+    const state = stateWithEnemy("archmage-edrin-shade");
+    state.combat.enemyHp = 5000;
+    state.player.maxHealth = 1000;
+    state.player.health = 1000;
+    state.combat.playerBarrier = 50;
+    const events: CombatEvent[] = [];
+    const action = MONSTERS["archmage-edrin-shade"].actions["soul-drain"];
+    executeCombatEffects(state, action.effects, { actor: "enemy", kind: "action", sourceId: "soul-drain", tags: ["special", "arcane", "magic", "direct"] }, 0, { push: (event) => events.push(event) });
+    const damage = events.find((event) => event.damageComponents !== undefined);
+    expect(damage?.healthDamage).toBeGreaterThan(0);
+    expect(damage?.barrierAbsorbed).toBe(50);
+    expect(state.combat.enemyHp).toBeCloseTo(5000 + (damage?.healthDamage ?? 0));
+    expect(state.player.health).toBeCloseTo(1000 - (damage?.healthDamage ?? 0));
+  });
+
+  it("uses Final Incantation stacks before adding the current cast", () => {
+    const state = stateWithEnemy("archmage-edrin-shade");
+    state.player.maxHealth = 100000;
+    state.player.health = 100000;
+    const action = MONSTERS["archmage-edrin-shade"].actions["final-incantation"];
+    const source: CombatSource = { actor: "enemy", kind: "action", sourceId: "final-incantation", tags: ["special", "arcane", "magic", "direct"] };
+    for (let cast = 0; cast < 11; cast += 1) {
+      const events: CombatEvent[] = [];
+      executeCombatEffects(state, action.effects, source, 0, { push: (event) => events.push(event) });
+      const damage = events.find((event) => event.damageComponents !== undefined);
+      expect(damage?.damageComponents?.[0]?.raw).toBeCloseTo(120 * (1 + cast * 0.1));
+      expect(state.combat.enemyStatuses.find((status) => status.statusId === "final-incantation-empowerment")?.stacks).toBe(cast + 1);
+    }
+  });
+
   it("delays only a currently casting player Spell", () => {
     const casting = stateWithEnemy("stone-root");
     clearCurrentEnemyAction(casting);
@@ -188,10 +283,12 @@ describe("Act 0 enemy combat foundation", () => {
     expect(MONSTERS["grave-wraith"].actions["chilling-touch"].effects[1]).toMatchObject({ durationMs: 10000 });
   });
 
-  it("scales Arcane Rampage from capped player Corruption, then adds one stack", () => {
-    const action = MONSTERS["corrupted-greatbear"].actions["arcane-rampage"];
+  it("scales Savage Rampage from capped player Corruption, then adds one stack", () => {
+    const action = MONSTERS["corrupted-greatbear"].actions["savage-rampage"];
+    expect(action.actionTimeMs).toBe(3000);
+    expect(action.effects[0]).toMatchObject({ type: "deal-damage", components: [{ damageType: "physical" }] });
     const magnitude = (action.effects[0] as Extract<(typeof action.effects)[number], { type: "deal-damage" }>).components[0].magnitude;
-    const source: CombatSource = { actor: "enemy", kind: "action", sourceId: "arcane-rampage" };
+    const source: CombatSource = { actor: "enemy", kind: "action", sourceId: "savage-rampage" };
     const expectedBase = MONSTERS["corrupted-greatbear"].basicAttackDamage * 2;
 
     for (const stacks of [0, 1, 3, 5, 7]) {
@@ -216,8 +313,8 @@ describe("Act 0 enemy combat foundation", () => {
     applied.player.maxHealth = 1000;
     applied.player.health = 1000;
     clearCurrentEnemyAction(applied);
-    expect(forceResolveEnemyAction(applied, "arcane-rampage", executeCombatEffects)).toBe(true);
-    expect(applied.combat.playerStatuses.find((status) => status.statusId === "corruption")?.stacks).toBe(1);
+    expect(forceResolveEnemyAction(applied, "savage-rampage", executeCombatEffects)).toBe(true);
+    expect(applied.combat.playerStatuses.find((status) => status.statusId === "corruption")).toMatchObject({ stacks: 1, remainingMs: 30000 });
   });
 
   it("recursively validates status-scaled magnitudes and the Barrier consume effect", () => {

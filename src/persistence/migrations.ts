@@ -550,9 +550,11 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
   clearCurrent()
 
   if (monster && sourceVersion >= 18) {
-    const rawCurrentActionId = typeof rawCombat.enemyCurrentActionId === 'string' ? rawCombat.enemyCurrentActionId : null
+    const normalizeLegacyActionId = (actionId: string | null) => activeEnemyId === 'corrupted-greatbear' && actionId === 'arcane-rampage' ? 'savage-rampage' : actionId
+    const normalizeLegacyStepId = (stepId: string | undefined) => activeEnemyId === 'corrupted-greatbear' && stepId?.startsWith('arcane-rampage-step-') ? stepId.replace('arcane-rampage-step-', 'savage-rampage-step-') : stepId
+    const rawCurrentActionId = normalizeLegacyActionId(typeof rawCombat.enemyCurrentActionId === 'string' ? rawCombat.enemyCurrentActionId : null)
     const currentAction = rawCurrentActionId ? monster.actions[rawCurrentActionId] : undefined
-    const rawCurrentStepId = typeof rawCombat.enemyCurrentStepId === 'string' ? rawCombat.enemyCurrentStepId : undefined
+    const rawCurrentStepId = normalizeLegacyStepId(typeof rawCombat.enemyCurrentStepId === 'string' ? rawCombat.enemyCurrentStepId : undefined)
     const currentStep = findStep(pattern, rawCurrentStepId, rawCurrentActionId)
     const rawCurrentOriginId = typeof rawCombat.enemyCurrentActionPatternId === 'string' ? rawCombat.enemyCurrentActionPatternId : undefined
     const currentOrigin = rawCurrentOriginId && monster.actionPatterns[rawCurrentOriginId] ? monster.actionPatterns[rawCurrentOriginId] : pattern

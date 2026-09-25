@@ -395,10 +395,11 @@ describe("Act 0 and Act 1 dungeon content", () => {
       "Corrupted Roar",
       "Crushing Maul",
       "Basic",
-      "Arcane Rampage",
+      "Savage Rampage",
       "Basic",
       "Crushing Maul",
-      "Arcane Rampage",
+      "Savage Rampage",
+      "Basic",
     ]);
     expect(labels("restless-skeleton")).toEqual([
       "Basic",
@@ -432,17 +433,24 @@ describe("Act 0 and Act 1 dungeon content", () => {
       "Basic",
       "Frostbind",
       "Basic",
-      "Arcane Ward",
+      "Gravefire",
       "Soul Drain",
       "Basic",
+      "Basic",
+      "Frostbind",
+      "Soul Drain",
+    ]);
+    expect(labels("archmage-edrin-shade", "unbound-opening")).toEqual([
+      "Arcane Disruption",
     ]);
     expect(labels("archmage-edrin-shade", "unbound")).toEqual([
-      "Arcane Disruption",
       "Gravefire",
       "Frostbind",
       "Basic",
       "Soul Drain",
       "Final Incantation",
+      "Basic",
+      "Soul Drain",
       "Basic",
     ]);
     const act0NormalIds = [
@@ -543,7 +551,7 @@ describe("Act 0 and Act 1 dungeon content", () => {
         action.effects.forEach((effect) => {
           if (effect.type === "deal-damage" && !effect.tags?.includes("dot"))
             effect.components.forEach((component) =>
-              expect(["source-basic-damage-percent", "opponent-status-stack-scaled", "source-current-barrier-percent"]).toContain(component.magnitude.type),
+              expect(["source-basic-damage-percent", "opponent-status-stack-scaled", "source-status-stack-scaled", "source-current-barrier-percent"]).toContain(component.magnitude.type),
             );
           if (effect.type === "heal")
             expect(["source-max-health-percent", "opponent-status-stack-scaled"]).toContain(effect.magnitude.type);
@@ -585,7 +593,7 @@ describe("Act 0 and Act 1 dungeon content", () => {
       ["corrupted-dire-wolf", "arcane-bite", 0, 16.9],
       ["corrupted-greatbear", "crushing-maul", 0, 77.5],
       ["corrupted-greatbear", "groundbreaker", 0, 60],
-      ["corrupted-greatbear", "arcane-rampage", 0, 100],
+      ["corrupted-greatbear", "savage-rampage", 0, 100],
       ["restless-skeleton", "bone-cleaver", 0, 83.25],
       ["grave-wraith", "chilling-touch", 0, 72.8],
       ["fallen-acolyte", "grave-bolt", 0, 72.5],
@@ -594,9 +602,7 @@ describe("Act 0 and Act 1 dungeon content", () => {
       ["fallen-acolyte", "death-ward", 0, 99],
       ["archmage-edrin-shade", "gravefire", 0, 66],
       ["archmage-edrin-shade", "frostbind", 0, 63],
-      ["archmage-edrin-shade", "arcane-ward", 0, 480],
-      ["archmage-edrin-shade", "soul-drain", 0, 72],
-      ["archmage-edrin-shade", "soul-drain", 1, 300],
+      ["archmage-edrin-shade", "soul-drain", 0, 90],
       ["archmage-edrin-shade", "final-incantation", 0, 120],
       ["warded-husk", "ward-slam", 0, 89.9],
       ["rift-wolf", "rift-lunge", 0, 91.35],
@@ -657,10 +663,10 @@ describe("Act 0 and Act 1 dungeon content", () => {
     expect(
       TRAIT_DEFINITIONS["corrupted-greatbear-unstable-corruption"].rules?.[0]
         .effects,
-    ).toHaveLength(2);
+    ).toHaveLength(3);
     expect(
       TRAIT_DEFINITIONS["archmage-edrin-unbound-spirit"].rules?.[0].effects,
-    ).toHaveLength(2);
+    ).toHaveLength(3);
   });
 
   it("uses canonical resistances and crosses each boss phase once", () => {
@@ -683,10 +689,10 @@ describe("Act 0 and Act 1 dungeon content", () => {
     edrin.combat.dungeonId = "abandoned-catacombs";
     spawnEnemy(edrin, "archmage-edrin-shade");
     damageEnemy(edrin, 3000, "spell");
-    expect(edrin.combat.enemyActionPatternId).toBe("unbound");
+    expect(edrin.combat.enemyActionPatternId).toBe("unbound-opening");
     expect(
       edrin.combat.enemyStatuses.some((status) => status.statusId === "haste"),
-    ).toBe(true);
+    ).toBe(false);
 
     const wraith = contentTestState();
     wraith.combat.active = true;

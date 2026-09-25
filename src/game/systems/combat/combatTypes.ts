@@ -249,6 +249,7 @@ export type Magnitude =
   | { type: 'target-missing-health-percent'; value: number }
   | { type: 'source-current-barrier-percent'; value: number }
   | { type: 'opponent-status-stack-scaled'; statusId: StatusId; base: Magnitude; perStack: number; maxStacks?: number }
+  | { type: 'source-status-stack-scaled'; statusId: StatusId; base: Magnitude; perStack: number; maxStacks?: number }
 
 /** Pure linear scaling for authored total magnitudes such as periodic payloads. */
 export const scaleMagnitude = (magnitude: Magnitude, factor: number): Magnitude => {
@@ -264,6 +265,7 @@ export const scaleMagnitude = (magnitude: Magnitude, factor: number): Magnitude 
     case 'target-missing-health-percent': return { type: 'target-missing-health-percent', value: magnitude.value * scale }
     case 'source-current-barrier-percent': return { type: 'source-current-barrier-percent', value: magnitude.value * scale }
     case 'opponent-status-stack-scaled': return { ...magnitude, base: scaleMagnitude(magnitude.base, scale) }
+    case 'source-status-stack-scaled': return { ...magnitude, base: scaleMagnitude(magnitude.base, scale) }
   }
 }
 
@@ -304,9 +306,13 @@ export type StatusId =
   | 'silenced'
   | 'corruption'
   | 'arcane-disruption'
+  | 'rapid-regrow'
+  | 'corrupted-fury'
+  | 'unbound-power'
+  | 'final-incantation-empowerment'
 
 export type CombatEffect =
-  | { type: 'deal-damage'; target: EffectTarget; components: DamageComponent[]; tags?: CombatTag[]; school?: SchoolId; hitCount?: number }
+  | { type: 'deal-damage'; target: EffectTarget; components: DamageComponent[]; tags?: CombatTag[]; school?: SchoolId; hitCount?: number; lifeStealPercent?: number }
   | { type: 'heal'; target: EffectTarget; magnitude: Magnitude; tags?: CombatTag[] }
   | { type: 'gain-barrier'; target: EffectTarget; magnitude: Magnitude; mode?: 'add' | 'replace' | 'replace-if-stronger'; durationMs?: number | null; tags?: CombatTag[] }
   | { type: 'consume-barrier'; target: EffectTarget; mode?: 'all' }

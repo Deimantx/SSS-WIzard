@@ -433,7 +433,7 @@ describe('save navigation migration', () => {
     switched.combat.enemyActionDurationMs = 1_800
     switched.combat.enemyActionTimerMs = 901
     const switchedLoaded = migrateSave(JSON.parse(JSON.stringify(serializeGameState(switched))))
-    expect(switchedLoaded.combat).toMatchObject({ enemyActionPatternId: 'corrupted', enemyNextActionIndex: 4, enemyCurrentStepId: 'crushing-maul-step', enemyCurrentActionId: 'crushing-maul', enemyCurrentActionPatternId: 'default', enemyActionDurationMs: 1_800, enemyActionTimerMs: 901 })
+    expect(switchedLoaded.combat).toMatchObject({ enemyActionPatternId: 'corrupted', enemyNextActionIndex: 4, enemyCurrentStepId: 'crushing-maul-step', enemyCurrentActionId: 'crushing-maul', enemyCurrentActionPatternId: 'default', enemyActionDurationMs: 2_200, enemyActionTimerMs: 901 })
   })
 
   it('clamps malformed current action work to the shared safety cap', () => {

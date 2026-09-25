@@ -47,5 +47,13 @@ export const resolveMagnitude = (state: MagnitudeState, magnitude: Magnitude, so
       const cappedStacks = magnitude.maxStacks === undefined ? stacks : Math.min(stacks, magnitude.maxStacks)
       return Math.max(0, resolveMagnitude(state, magnitude.base, source, target) * (1 + cappedStacks * magnitude.perStack))
     }
+    case 'source-status-stack-scaled': {
+      const statuses = source.actor === 'player' ? state.combat.playerStatuses : state.combat.enemyStatuses
+      const stacks = statuses
+        .filter((status) => status.statusId === magnitude.statusId)
+        .reduce((total, status) => total + Math.max(0, status.stacks), 0)
+      const cappedStacks = magnitude.maxStacks === undefined ? stacks : Math.min(stacks, magnitude.maxStacks)
+      return Math.max(0, resolveMagnitude(state, magnitude.base, source, target) * (1 + cappedStacks * magnitude.perStack))
+    }
   }
 }

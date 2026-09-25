@@ -31,6 +31,21 @@ describe('V27 story progression migration', () => {
 })
 
 describe('save navigation migration', () => {
+  it('does not restore stale compatibility Auto-Cast outside an active encounter', () => {
+    const initial = createInitialState()
+    initial.progress.spellRanks['fire-bolt'] = 1
+    initial.activities.autoCast['fire-bolt'] = true
+    initial.activities.autoCastPriority = ['fire-bolt']
+    initial.combat.active = false
+    initial.combat.enemyId = null
+    initial.combat.activeSpellLoadout = null
+
+    const migrated = migrateSave({ ...initial, saveVersion: SAVE_VERSION } as any)
+
+    expect(migrated.activities.autoCast['fire-bolt']).toBe(false)
+    expect(migrated.activities.autoCastPriority).toEqual([])
+  })
+
   it('round-trips the last successfully entered combat dungeon and tolerates old saves without it', () => {
     const initial = createInitialState()
     const oldSave = migrateSave({ ...initial, saveVersion: 31, ui: { screen: 'combat' } } as any)

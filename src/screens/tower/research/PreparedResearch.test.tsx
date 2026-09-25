@@ -4,6 +4,7 @@ import { TooltipProvider } from '../../../components/ui/tooltip/Tooltip'
 import { createInitialState } from '../../../store/initialState'
 import { useGameStore } from '../../../store/gameStore'
 import { prepareResearchAction, setResearchEchoesAction } from '../../../store/actions/researchActions'
+import { BALANCE } from '../../../game/core/balance/balance'
 import { resetAllUiPreferences } from '../../../ui/preferences/uiPreferencesStore'
 import { PreparedResearch } from './PreparedResearch'
 
@@ -23,6 +24,7 @@ describe('PreparedResearch', () => {
     expect(document.querySelectorAll('.prepared-research-row')).toHaveLength(4)
     expect(screen.getByText('4 / 4')).toBeTruthy()
     expect(screen.getByText('5 / 5 ECHOES')).toBeTruthy()
+    expect(Array.from(document.querySelectorAll('.prepared-research-compact-progress .progress > i')).map((fill) => fill.className)).toEqual(['violet', 'fire', 'violet', 'water', 'violet', 'earth', 'violet', 'air'])
     expect((screen.getByRole('button', { name: /Assign Research Echo to Air Fragment/ }) as HTMLButtonElement).disabled).toBe(true)
 
     fireEvent.click(screen.getByRole('button', { name: /Remove Research Echo from Fire Fragment/ }))
@@ -50,6 +52,38 @@ describe('PreparedResearch', () => {
     expect(screen.getByText('SCHOOL XP')).toBeTruthy()
     expect(screen.getByText('FOCUS RESERVED')).toBeTruthy()
     expect((screen.getByRole('button', { name: /Assign Research Echo to Fire Fragment/ }) as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('keeps current-item and school-level progress bars visible with their real values', () => {
+    const state = createInitialState()
+    state.inventory['fire-fragment'] = 10
+    prepareResearchAction(state, 'fire-fragment', 'fire', 5)
+    state.activities.research.slots['research-1']!.progressMs = BALANCE.research.durationPerItemMs * 0.22
+    state.schools.fire.xp = 24
+    useGameStore.getState().hydrateState(state)
+    render(<TooltipProvider><PreparedResearch /></TooltipProvider>)
+
+    const groups = screen.getAllByRole('group')
+    expect(groups.find((group) => group.getAttribute('aria-label') === 'Current Research item progress: 22%')).toBeTruthy()
+    expect(groups.find((group) => group.getAttribute('aria-label') === 'Fire school level progress: 24%')).toBeTruthy()
+    const fills = Array.from(document.querySelectorAll('.prepared-research-compact-progress .progress > i')) as HTMLElement[]
+    expect(fills).toHaveLength(2)
+    expect(fills[0].style.width).toBe('22%')
+    expect(fills[1].style.width).toBe('24%')
+  })
+
+  it('keeps school progress visibly full and labels the school cap', () => {
+    const state = createInitialState()
+    state.inventory['fire-fragment'] = 10
+    state.progress.magicLevelCap = 1
+    state.schools.fire.level = 1
+    prepareResearchAction(state, 'fire-fragment', 'fire', 5)
+    useGameStore.getState().hydrateState(state)
+    render(<TooltipProvider><PreparedResearch /></TooltipProvider>)
+
+    expect(screen.getByRole('group', { name: 'Fire school level progress: CAP' })).toBeTruthy()
+    const schoolFill = document.querySelectorAll('.prepared-research-compact-progress .progress > i')[1] as HTMLElement
+    expect(schoolFill.style.width).toBe('100%')
   })
 
   it('keeps only one research batch expanded at a time', () => {

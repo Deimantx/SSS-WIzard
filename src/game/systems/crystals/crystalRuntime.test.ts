@@ -115,19 +115,19 @@ describe("Crystal System V1", () => {
     }
   });
 
-  it("rejects removing a Focus-efficiency Crystal when reservations would become illegal", () => {
+  it("rejects removing a Focus-capacity Crystal when reservations would become illegal", () => {
     const state = createInitialState();
     state.player.baseMaxFocus = 69;
-    state.progress.spellRanks = { fireball: 7 };
-    state.activities.autoCast.fireball = true;
-    state.crystals.owned["discipline-t1"] = 1;
+    state.activities.channeling.echoesAssigned = 5;
+    state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 2, progressMs: 0 };
+    state.crystals.owned["concentration-t1"] = 1;
 
-    expect(equipCrystal(state, "discipline-t1").ok).toBe(true);
+    expect(equipCrystal(state, "concentration-t1").ok).toBe(true);
     expect(unequipCrystal(state, 0)).toMatchObject({
       ok: false,
       reason: "Not enough Focus capacity for the current reservations.",
     });
-    expect(state.crystals.equippedSlots[0]).toBe("discipline-t1");
+    expect(state.crystals.equippedSlots[0]).toBe("concentration-t1");
   });
 
   it("protects equipped copies from crushing and upgrades deterministically", () => {

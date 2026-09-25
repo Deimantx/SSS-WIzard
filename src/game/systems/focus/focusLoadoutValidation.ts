@@ -2,7 +2,7 @@ import { getFocusCapacityBreakdown } from './focusCapacity'
 import { deriveFocusReservations } from './focusReservations'
 import type { GameState } from '../../types'
 
-export type FocusLoadoutState = Pick<GameState, 'player' | 'progress' | 'activities' | 'equipment' | 'artifactProgress' | 'arcaneCore'>
+export type FocusLoadoutState = Pick<GameState, 'player' | 'progress' | 'activities' | 'equipment' | 'artifactProgress' | 'arcaneCore'> & { combat?: Pick<GameState['combat'], 'active' | 'activeSpellLoadout'> }
 
 export interface FocusLoadoutValidation {
   valid: boolean

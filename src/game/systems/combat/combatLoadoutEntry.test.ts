@@ -48,7 +48,8 @@ describe('combat spell loadout entry preflight', () => {
     focus.spellPresets.presets = [{ id: 'spell-preset-1', name: 'Too Much', slots: [{ spellId: 'fire-bolt', autoCast: true }] }]
     focus.spellPresets.selectedPresetId = 'spell-preset-1'
     expect(spawnEnemy(focus, 'forest-wisp')).toBe(false)
-    expect(focus.notifications[focus.notifications.length - 1]?.text).toBe('Too Much could not activate — requires 10 more Focus.')
+    expect(focus.notifications[focus.notifications.length - 1]?.text).toContain('Combat Focus Required: 10')
+    expect(focus.notifications[focus.notifications.length - 1]?.text).toContain('Missing Focus: 10')
   })
 
   it('auto-selects one valid saved preset when entry is otherwise unambiguous', () => {

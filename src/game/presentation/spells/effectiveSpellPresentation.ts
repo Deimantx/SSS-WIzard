@@ -22,7 +22,7 @@ export type SpellPresentationState = {
   progress: Pick<GameState['progress'], 'spellRanks'>
   activities: Pick<GameState['activities'], 'channeling' | 'research' | 'transmutation' | 'autoCast'>
   player: Pick<GameState['player'], 'health' | 'maxHealth' | 'mana' | 'maxMana' | 'maxFocus'>
-  combat: Pick<GameState['combat'], 'enemyId' | 'enemyHp' | 'enemyMaxHp' | 'enemyBarrier' | 'playerBarrier' | 'enemyInstanceKey' | 'playerStatuses' | 'enemyStatuses'>
+  combat: Pick<GameState['combat'], 'active' | 'activeSpellLoadout' | 'enemyId' | 'enemyHp' | 'enemyMaxHp' | 'enemyBarrier' | 'playerBarrier' | 'enemyInstanceKey' | 'playerStatuses' | 'enemyStatuses'>
   debug: Pick<GameState['debug'], 'allowFocusOverCap'>
 }
 

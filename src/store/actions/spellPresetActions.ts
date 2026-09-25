@@ -1,4 +1,4 @@
-import { canonicalSpellId, getDefaultSpellAutomationConfig, getNextSpellPresetId, getSelectedSpellPreset, getSpellPresetFocusProjection, isSpellUnlocked, MAX_COMBAT_SPELLS, moveSpellToIndex, normalizeSpellAutomationConfig, normalizeSpellPresetName, normalizeSpellPresetSlots, swapSpellSlots, syncAutoCastRuntimeForLoadout, syncSelectedSpellPresetRuntime as syncSelectedSpellPresetRuntimeForState } from '../../game/systems/spells'
+import { canonicalSpellId, getDefaultSpellAutomationConfig, getNextSpellPresetId, getSelectedSpellPreset, getSpellPresetFocusProjection, isSpellUnlocked, MAX_COMBAT_SPELLS, moveSpellToIndex, normalizeSpellAutomationConfig, normalizeSpellPresetName, normalizeSpellPresetSlots, swapSpellSlots, syncSelectedSpellPresetRuntime as syncSelectedSpellPresetRuntimeForState } from '../../game/systems/spells'
 import type { CanonicalSpellId, GameState, SpellAutomationConfig, SpellId, SpellPreset, SpellPresetId } from '../../game/types'
 
 export interface ApplySpellPresetResult {
@@ -11,12 +11,6 @@ export interface ApplySpellPresetResult {
 export type SelectedPresetSlotMutationResult =
   | { ok: true }
   | { ok: false; reason: 'missing-preset' | 'duplicate' | 'full' | 'unavailable' | 'invalid-index' }
-
-const clearAutoCastRuntime = (state: GameState) => {
-  const hadActiveAutoCast = Object.values(state.activities.autoCast).some(Boolean)
-  syncAutoCastRuntimeForLoadout(state, [])
-  return hadActiveAutoCast
-}
 
 export const syncSelectedSpellPresetRuntime = (state: GameState) => syncSelectedSpellPresetRuntimeForState(state)
 
@@ -37,7 +31,6 @@ export const addSpellToSelectedPresetAction = (state: GameState, requestedSpellI
   return { ok: true }
 }
 
-/** Inserts a prepared Spell at a visible loadout position. A full loadout keeps its maximum size by dropping the final shifted slot. */
 export const addSpellToSelectedPresetAtAction = (state: GameState, requestedSpellId: SpellId, requestedIndex: number): SelectedPresetSlotMutationResult => {
   const spellId = canonicalSpellId(requestedSpellId)
   if (!spellId || !isSpellUnlocked(state, spellId)) return { ok: false, reason: 'unavailable' }
@@ -60,7 +53,7 @@ export const removeSpellFromSelectedPresetAction = (state: GameState, requestedS
   const spellId = canonicalSpellId(requestedSpellId)
   const preset = spellId ? getSelectedSpellPreset(state) : null
   if (!preset) return { ok: false, reason: 'missing-preset' }
-  const index = preset.slots.findIndex((slot) => slot.spellId === spellId)
+  const index = preset.slots.findIndex((entry) => entry.spellId === spellId)
   if (index < 0) return { ok: false, reason: 'unavailable' }
   preset.slots.splice(index, 1)
   if (!state.combat.active) syncSelectedSpellPresetRuntimeForState(state)
@@ -88,10 +81,14 @@ export const swapSelectedPresetSlotsAction = (state: GameState, sourceIndex: num
   return { ok: true }
 }
 
-/** Compatibility action retained for internal/debug callers. Build editing is owned by the Preset Manager. */
-export const clearAutoCastAction = (state: GameState) => clearAutoCastRuntime(state)
+/** Compatibility action retained for internal/debug callers. */
+export const clearAutoCastAction = (state: GameState) => {
+  const hadActiveAutoCast = Object.values(state.activities.autoCast).some(Boolean)
+  Object.keys(state.activities.autoCast).forEach((spellId) => { state.activities.autoCast[spellId as SpellId] = false })
+  state.activities.autoCastPriority = []
+  return hadActiveAutoCast
+}
 
-/** @deprecated Auto priority is now the order of AUTO slots in the selected loadout. */
 export const moveAutoCastPriorityAction = (_state: GameState, _spellId: SpellId, _direction: -1 | 1) => false
 
 export const createSpellPresetAction = (state: GameState, name: string): SpellPresetId => {
@@ -123,17 +120,8 @@ export const saveSpellPresetAction = (state: GameState, preset: Pick<SpellPreset
   stored.slots = normalizeSpellPresetSlots(preset.slots)
   const projection = getSpellPresetFocusProjection(state, stored)
   if (shouldAutoSelect && projection.validSlots.length) state.spellPresets.selectedPresetId = stored.id
-  const isSelectedOutsideCombat = !state.combat.active && state.spellPresets.selectedPresetId === stored.id
-  if (isSelectedOutsideCombat) {
-    if (!projection.validSlots.length) {
-      syncAutoCastRuntimeForLoadout(state, [])
-      pushPresetNotification(state, `Saved ${stored.name}, but it has no available Spells to activate.`, 'warning')
-    } else if (projection.canApply) {
-      syncAutoCastRuntimeForLoadout(state, projection.validSlots)
-    } else {
-      pushPresetNotification(state, `Saved ${stored.name}, but it requires ${Math.max(0, projection.totalAfterApply - state.player.maxFocus)} more Focus to activate.`, 'warning')
-    }
-  }
+  if (!state.combat.active) syncSelectedSpellPresetRuntimeForState(state)
+  if (state.spellPresets.selectedPresetId === stored.id && projection.validSlots.length && !projection.canApply) pushPresetNotification(state, `Saved ${stored.name}; it is ${Math.max(0, projection.totalAfterApply - state.player.maxFocus)} Focus short for combat.`, 'warning')
   return true
 }
 
@@ -141,16 +129,9 @@ export const setPresetSlotAutoCastAction = (state: GameState, id: SpellPresetId,
   const preset = state.spellPresets.presets.find((entry) => entry.id === id)
   const slot = preset?.slots.find((entry) => entry.spellId === spellId)
   if (!slot) return false
-  const previousAutoCast = slot.autoCast
   slot.autoCast = Boolean(autoCast)
   if (slot.autoCast && !slot.automation) slot.automation = getDefaultSpellAutomationConfig(slot.spellId, true, true)
-  if (!state.combat.active && !syncSelectedSpellPresetRuntimeForState(state) && slot.autoCast) {
-    const projection = preset && state.spellPresets.selectedPresetId === id ? getSpellPresetFocusProjection(state, preset) : null
-    slot.autoCast = previousAutoCast
-    syncSelectedSpellPresetRuntimeForState(state)
-    if (projection) pushPresetNotification(state, `Cannot enable Auto-Cast · Requires ${Math.max(0, projection.totalAfterApply - state.player.maxFocus)} more Focus.`, 'warning')
-    return false
-  }
+  if (!state.combat.active) syncSelectedSpellPresetRuntimeForState(state)
   return true
 }
 
@@ -159,33 +140,23 @@ export const setPresetSlotAutomationAction = (state: GameState, id: SpellPresetI
   const slot = preset?.slots.find((entry) => entry.spellId === spellId)
   if (!slot) return false
   slot.automation = normalizeSpellAutomationConfig(automation, slot.spellId, slot.autoCast, false)
+  if (!state.combat.active) syncSelectedSpellPresetRuntimeForState(state)
   return true
 }
 
 export type ApplyPresetSlotAutomationResult =
   | { ok: true }
-  | { ok: false; reason: 'missing-preset' | 'missing-slot' | 'focus'; requiredExtraFocus?: number; message: string }
+  | { ok: false; reason: 'missing-preset' | 'missing-slot'; message: string }
 
-/** Applies the editor's mode and rule as one state transition. */
+/** Applies the editor's mode and rule without treating Focus shortage as an editor failure. */
 export const applyPresetSlotAutomationAction = (state: GameState, id: SpellPresetId, spellId: CanonicalSpellId, automation: SpellAutomationConfig, autoCast: boolean): ApplyPresetSlotAutomationResult => {
   const preset = state.spellPresets.presets.find((entry) => entry.id === id)
   if (!preset) return { ok: false, reason: 'missing-preset', message: 'This preset no longer exists.' }
   const slot = preset.slots.find((entry) => entry.spellId === spellId)
   if (!slot) return { ok: false, reason: 'missing-slot', message: 'This Spell is no longer in the selected loadout.' }
-  const previousAutoCast = slot.autoCast
-  const previousAutomation = slot.automation
   slot.autoCast = Boolean(autoCast)
   slot.automation = normalizeSpellAutomationConfig(automation, slot.spellId, slot.autoCast, false)
-  if (!state.combat.active && state.spellPresets.selectedPresetId === id) {
-    const projection = getSpellPresetFocusProjection(state, preset)
-    if (slot.autoCast && !projection.canApply) {
-      slot.autoCast = previousAutoCast
-      slot.automation = previousAutomation
-      const requiredExtraFocus = Math.max(0, projection.totalAfterApply - state.player.maxFocus)
-      return { ok: false, reason: 'focus', requiredExtraFocus, message: `Cannot enable Auto-Cast: requires ${requiredExtraFocus} more Focus.` }
-    }
-    syncAutoCastRuntimeForLoadout(state, projection.canApply ? projection.validSlots : [])
-  }
+  if (!state.combat.active) syncSelectedSpellPresetRuntimeForState(state)
   return { ok: true }
 }
 
@@ -193,11 +164,7 @@ export const deleteSpellPresetAction = (state: GameState, id: SpellPresetId) => 
   const index = state.spellPresets.presets.findIndex((entry) => entry.id === id)
   if (index < 0) return false
   state.spellPresets.presets.splice(index, 1)
-  if (state.spellPresets.selectedPresetId === id) {
-    const replacement = state.spellPresets.presets[index] ?? state.spellPresets.presets[index - 1] ?? null
-    state.spellPresets.selectedPresetId = replacement?.id ?? null
-    if (!state.combat.active) syncSelectedSpellPresetRuntime(state)
-  }
+  if (state.spellPresets.selectedPresetId === id) state.spellPresets.selectedPresetId = state.spellPresets.presets[index]?.id ?? state.spellPresets.presets[index - 1]?.id ?? null
   return true
 }
 
@@ -206,29 +173,20 @@ export const selectSpellPresetAction = (state: GameState, id: SpellPresetId): Ap
   if (!preset) return { ok: false, reason: 'missing-preset', unavailableSpellIds: [] }
   const projection = getSpellPresetFocusProjection(state, preset)
   if (!projection.validSlots.length) {
-    pushPresetNotification(state, `Cannot select ${preset.name} · Add at least one available Spell.`, 'warning')
+    pushPresetNotification(state, `Cannot select ${preset.name}; add at least one available Spell.`, 'warning')
     return { ok: false, reason: 'empty', unavailableSpellIds: projection.unavailableSpellIds }
   }
-  if (!projection.canApply) {
-    const required = Math.max(0, projection.totalAfterApply - state.player.maxFocus)
-    pushPresetNotification(state, `Cannot select ${preset.name} · Requires ${required} more Focus.`, 'warning')
-    return { ok: false, reason: 'focus', requiredExtraFocus: required, unavailableSpellIds: projection.unavailableSpellIds }
-  }
   state.spellPresets.selectedPresetId = id
-  if (!state.combat.active) syncAutoCastRuntimeForLoadout(state, projection.validSlots)
-  if (projection.unavailableSpellIds.length) pushPresetNotification(state, `${preset.name} selected · ${projection.unavailableSpellIds.length} unavailable slot${projection.unavailableSpellIds.length === 1 ? '' : 's'} excluded until available.`, 'warning')
+  if (!state.combat.active) syncSelectedSpellPresetRuntimeForState(state)
+  if (projection.unavailableSpellIds.length) pushPresetNotification(state, `${preset.name} selected; unavailable slots are excluded until available.`, 'warning')
+  if (!projection.canApply) pushPresetNotification(state, `${preset.name} selected; ${Math.max(0, projection.totalAfterApply - state.player.maxFocus)} Focus short for combat.`, 'warning')
   return { ok: true, unavailableSpellIds: projection.unavailableSpellIds }
 }
 
-/** Selects a preset for editing without requiring it to be activation-ready. */
 export const selectSpellPresetForEditingAction = (state: GameState, id: SpellPresetId) => {
-  const preset = state.spellPresets.presets.find((entry) => entry.id === id)
-  if (!preset) return false
+  if (!state.spellPresets.presets.some((entry) => entry.id === id)) return false
   state.spellPresets.selectedPresetId = id
-  if (!state.combat.active) {
-    const projection = getSpellPresetFocusProjection(state, preset)
-    syncAutoCastRuntimeForLoadout(state, projection.canApply ? projection.validSlots : [])
-  }
+  if (!state.combat.active) syncSelectedSpellPresetRuntimeForState(state)
   return true
 }
 

@@ -12,14 +12,14 @@ describe('Focus screen', () => {
   it('renders the overview, usage, and improvement panels', () => {
     render(<TooltipProvider><FocusScreen /></TooltipProvider>)
     expect(screen.getByRole('heading', { name: 'FOCUS OVERVIEW' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'ACTIVE FOCUS USAGE' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'ACTIVE FOCUS ALLOCATION' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'FOCUS IMPROVEMENT' })).toBeTruthy()
     expect(screen.getByText('FOCUS LOAD')).toBeTruthy()
     expect(screen.getByText('AVAILABLE CAPACITY')).toBeTruthy()
     expect(screen.getAllByText('CHANNELING').length).toBeGreaterThan(0)
     expect(screen.getByText('RESEARCH')).toBeTruthy()
     expect(screen.getByText('TRANSMUTATION')).toBeTruthy()
-    expect(screen.getByText('AUTO-CAST')).toBeTruthy()
+    expect(screen.getByText('NO PREPARED COMBAT')).toBeTruthy()
   })
 
   it('shows one Prismatic requirement and the +5 progression', () => {
@@ -33,6 +33,20 @@ describe('Focus screen', () => {
     expect(document.body.textContent).toContain('+25 Max Focus')
     expect(screen.getByRole('img', { name: /Prismatic Fragment, 32 available, 160 required/ })).toBeTruthy()
     expect(screen.queryByRole('img', { name: /Life Essence/ })).toBeNull()
+  })
+
+  it('keeps a prepared Combat preset out of active Focus totals', () => {
+    const state = createInitialState()
+    state.progress.spellRanks['fire-bolt'] = 1
+    state.spellPresets.presets = [{ id: 'spell-preset-1', name: 'Prepared Burst', slots: [{ spellId: 'fire-bolt', autoCast: true }] }]
+    state.spellPresets.selectedPresetId = 'spell-preset-1'
+    useGameStore.getState().hydrateState(state)
+    render(<TooltipProvider><FocusScreen /></TooltipProvider>)
+
+    expect(screen.getByText('PREPARED COMBAT')).toBeTruthy()
+    expect(screen.getByText('Prepared Burst')).toBeTruthy()
+    expect(screen.getByText('READY')).toBeTruthy()
+    expect(screen.queryByText('Combat Auto-Cast')).toBeNull()
   })
 
   it('navigates a research reservation to the Research screen', async () => {

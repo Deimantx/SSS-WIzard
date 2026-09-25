@@ -1,14 +1,15 @@
-import { useState, type CSSProperties } from 'react'
+import { useRef, useState, type CSSProperties } from 'react'
 import { Button, Card, Status } from '../../../components/ui'
-import { ItemIcon, ItemRequirementTile } from '../../../components/ui/item'
+import { ItemRequirementTile } from '../../../components/ui/item'
 import { GameTooltip, TooltipContent } from '../../../components/ui/tooltip/Tooltip'
 import { ITEMS } from '../../../game/content/items/items'
 import { TRANSMUTATION_ARRAYS, TRANSMUTATION_ARRAY_IDS, getTransmutationArrayFragmentItemId, getTransmutationArrayLevelCost, type ElementalFragmentKey, type TransmutationArrayDefinition } from '../../../game/content/transmutation/transmutationArrays'
 import { getConsumableQuantity } from '../../../game/core/inventory/inventoryConsumption'
 import { getEquippedReservedQuantity } from '../../../game/core/equipment/equipmentRules'
 import { getTransmutationArrayBonuses, getTransmutationArrayEffectValue } from '../../../game/systems/transmutation/transmutationArrays'
-import type { GameState, ItemId, TransmutationArrayId } from '../../../game/types'
+import type { GameState, TransmutationArrayId } from '../../../game/types'
 import { useGameStore } from '../../../store/gameStore'
+import { useSmartScrollState } from '../../../ui/game-feel/useSmartScrollState'
 
 type TransmutationArrays = GameState['progress']['transmutation']['arrays']
 
@@ -23,30 +24,38 @@ const ARRAY_CATEGORIES: Record<TransmutationArrayId, 'PROCESS' | 'YIELD' | 'CONT
 
 export function TransmutationArraysPanel() {
   const [selectedArrayId, setSelectedArrayId] = useState<TransmutationArrayId>('temporal-array')
+  const scrollRef = useRef<HTMLDivElement>(null)
   const progress = useGameStore((state) => state.progress)
   const arrays = progress.transmutation.arrays
   const bonuses = getTransmutationArrayBonuses({ progress })
   const mastered = TRANSMUTATION_ARRAY_IDS.filter((id) => getSafeArrayLevel(arrays, id) >= TRANSMUTATION_ARRAYS[id].maxLevel).length
+  useSmartScrollState(scrollRef, { resetKey: selectedArrayId, dependencies: [arrays, mastered] })
 
-  return <Card className="transmutation-arrays-panel" title="TRANSMUTATION ARRAYS" action={<div className="transmutation-array-mastery-summary"><span>RANK I</span><strong>{mastered} / {TRANSMUTATION_ARRAY_IDS.length} MASTERED</strong></div>}>
-    <p className="transmutation-arrays-intro">Permanent Arrays tune Transmutation speed, yield, Mana, and Echo capacity.</p>
-    <div className="transmutation-array-bonus-summary"><span>ACTIVE BONUSES</span><strong>Speed +{formatPercent(bonuses.craftSpeedPct)} · Preserve {formatPercent(bonuses.preservationChance)} · Replicate {formatPercent(bonuses.replicationChance)} · Mana −{formatPercent(bonuses.manaCostReductionPct)} · Echo +{bonuses.echoCapacityBonus}</strong></div>
-    <div className="transmutation-array-selector-grid" aria-label="Transmutation Arrays">
-      {TRANSMUTATION_ARRAY_IDS.map((arrayId, index) => <ArraySelector key={arrayId} arrayId={arrayId} selected={selectedArrayId === arrayId} wide={index === TRANSMUTATION_ARRAY_IDS.length - 1} onSelect={() => setSelectedArrayId(arrayId)} />)}
+  return <Card className="transmutation-arrays-panel" title="TRANSMUTATION ARRAYS" action={<div className="transmutation-array-mastery-summary"><span>RANK I MASTERY</span><strong>{mastered} / {TRANSMUTATION_ARRAY_IDS.length}</strong><ArrayMastery arrays={arrays} /></div>}>
+    <div ref={scrollRef} className="transmutation-arrays-panel-scroll" data-scroll-owner="transmutation-arrays" tabIndex={0}>
+      <p className="transmutation-arrays-intro">Permanent Arrays tune Transmutation speed, yield, Mana, and Echo capacity.</p>
+      <div className="transmutation-array-bonus-summary"><span>ACTIVE BONUSES</span><strong>Speed +{formatPercent(bonuses.craftSpeedPct)} · Preserve {formatPercent(bonuses.preservationChance)} · Replicate {formatPercent(bonuses.replicationChance)} · Mana −{formatPercent(bonuses.manaCostReductionPct)} · Echo +{bonuses.echoCapacityBonus}</strong></div>
+      <div className="transmutation-array-selector-grid" aria-label="Transmutation Arrays">
+        {TRANSMUTATION_ARRAY_IDS.map((arrayId) => <ArraySelector key={arrayId} arrayId={arrayId} selected={selectedArrayId === arrayId} onSelect={() => setSelectedArrayId(arrayId)} />)}
+      </div>
+      <SelectedArrayInspector arrayId={selectedArrayId} />
     </div>
-    <SelectedArrayInspector arrayId={selectedArrayId} />
   </Card>
 }
 
-function ArraySelector({ arrayId, selected, wide, onSelect }: { arrayId: TransmutationArrayId; selected: boolean; wide: boolean; onSelect: () => void }) {
+function ArrayMastery({ arrays }: { arrays: TransmutationArrays }) {
+  return <div className="transmutation-array-mastery-indicators" aria-label="Rank I Array mastery">{TRANSMUTATION_ARRAY_IDS.map((id) => { const definition = TRANSMUTATION_ARRAYS[id]; const level = getSafeArrayLevel(arrays, id); const mastered = level >= definition.maxLevel; return <GameTooltip key={id} content={<TooltipContent title={definition.name} description={`Rank I · Level ${level} / ${definition.maxLevel}${mastered ? ' · Mastered' : ''}`} />} accent={mastered ? 'success' : 'neutral'}><span className={`transmutation-array-mastery-indicator ${mastered ? 'filled' : ''}`} style={{ '--array-dominant-accent': getArrayAccent(definition) } as CSSProperties} aria-label={`${definition.name} Rank I Level ${level} of ${definition.maxLevel}${mastered ? ', Mastered' : ''}`} /></GameTooltip> })}</div>
+}
+
+function ArraySelector({ arrayId, selected, onSelect }: { arrayId: TransmutationArrayId; selected: boolean; onSelect: () => void }) {
   const definition = TRANSMUTATION_ARRAYS[arrayId]
   const level = useGameStore((state) => getSafeArrayLevel(state.progress.transmutation.arrays, arrayId))
   const mastered = level >= definition.maxLevel
   const description = `${definition.description} Current level: ${level} / ${definition.maxLevel}${mastered ? ' · Rank I mastered.' : ''}`
-  return <GameTooltip block className={wide ? 'is-wide' : ''} content={<TooltipContent title={definition.name} description={description} />} accent="elemental">
-    <button type="button" className={`transmutation-array-selector ${selected ? 'is-selected' : ''} ${mastered ? 'is-mastered' : ''} ${wide ? 'is-wide' : ''}`} aria-pressed={selected} onClick={onSelect} style={{ '--array-dominant-accent': getArrayAccent(definition) } as CSSProperties}>
-      <ItemIcon itemId={getTransmutationArrayFragmentItemId(definition.dominantElement)} size="tiny" />
-      <span className="transmutation-array-selector-copy"><strong>{definition.name}</strong><small>{ARRAY_CATEGORIES[arrayId]} · Lv {level} / {definition.maxLevel}</small><b>{compactEffectText(definition, getTransmutationArrayEffectValue(arrayId, level))}</b></span>
+  return <GameTooltip block content={<TooltipContent title={definition.name} description={description} />} accent="elemental">
+    <button type="button" className={`transmutation-array-selector ${selected ? 'is-selected' : ''} ${mastered ? 'is-mastered' : ''}`} aria-pressed={selected} onClick={onSelect} style={{ '--array-dominant-accent': getArrayAccent(definition) } as CSSProperties}>
+      <span className="transmutation-array-selector-mark" aria-hidden="true" />
+      <span className="transmutation-array-selector-copy"><strong>{definition.name}</strong><small>{ARRAY_CATEGORIES[arrayId]} · Lv {level} / {definition.maxLevel}</small><b>{compactEffectText(definition, getTransmutationArrayEffectValue(arrayId, level))}</b><span className="transmutation-array-selector-levelbar" aria-label={`${definition.name} level ${level} of ${definition.maxLevel}`}>{Array.from({ length: definition.maxLevel }, (_, index) => <i className={index < level ? 'filled' : ''} key={index} />)}</span></span>
       {mastered && <Status tone="success">MASTERED</Status>}
     </button>
   </GameTooltip>
@@ -73,7 +82,7 @@ function SelectedArrayInspector({ arrayId }: { arrayId: TransmutationArrayId }) 
   const reason = mastered ? 'Rank I already mastered.' : protectedMaterial ? 'Required material is protected.' : missingMaterial ? 'Missing required materials.' : ''
 
   return <section className="transmutation-array-selected" style={{ '--array-dominant-accent': getArrayAccent(definition) } as CSSProperties}>
-    <div className="transmutation-array-selected-head"><div className="transmutation-array-selected-identity"><span className="transmutation-array-selected-icon"><ItemIcon itemId={getTransmutationArrayFragmentItemId(definition.dominantElement)} size="tiny" /></span><div><span className="eyebrow">RANK I · {ARRAY_CATEGORIES[arrayId]} ARRAY</span><h3>{definition.name}</h3><span className="transmutation-array-selected-level">LEVEL {level} / {definition.maxLevel}</span></div></div>{mastered && <Status tone="success">MASTERED</Status>}</div>
+    <div className="transmutation-array-selected-head"><div className="transmutation-array-selected-identity"><span className="transmutation-array-selected-mark" aria-hidden="true" /><div><span className="eyebrow">RANK I · {ARRAY_CATEGORIES[arrayId]} ARRAY</span><h3>{definition.name}</h3><span className="transmutation-array-selected-level">LEVEL {level} / {definition.maxLevel}</span></div></div>{mastered && <Status tone="success">MASTERED</Status>}</div>
     <p className="transmutation-array-selected-description">{definition.description}</p>
     <div className="transmutation-array-level"><span>LEVEL PROGRESSION</span><div className="transmutation-array-marks" aria-label={`${definition.name} progress ${level} of ${definition.maxLevel}`}>{Array.from({ length: definition.maxLevel }, (_, index) => <i className={index < level ? 'filled' : ''} key={index} />)}</div></div>
     {mastered ? <div className="transmutation-array-effect-row is-mastered"><div><span>CURRENT</span><strong>{effectText(definition, currentValue)}</strong></div><p>RANK I MASTERED<br /><small>Further ranks are not yet available.</small></p></div> : <GameTooltip block content={<TooltipContent title={definition.effectLabel} description={effectTooltip(definition)} />} accent="elemental"><div className="transmutation-array-effect-row"><div><span>CURRENT</span><strong>{effectText(definition, currentValue)}</strong></div><b aria-hidden="true">→</b><div><span>{definition.effect === 'echo-capacity' ? `NEXT MILESTONE · Lv${level < 5 ? 5 : 10}` : 'NEXT'}</span><strong>{definition.effect === 'echo-capacity' ? `+${nextValue} Echo Capacity` : effectText(definition, nextValue)}</strong></div></div></GameTooltip>}

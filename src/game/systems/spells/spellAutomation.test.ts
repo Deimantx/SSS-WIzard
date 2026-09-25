@@ -69,6 +69,7 @@ describe('spell automation evaluator', () => {
     state.activities.autoCast['fire-bolt'] = true
     state.activities.autoCast['wind-blade'] = true
     state.player.mana = state.player.maxMana
+    state.combat.activeSpellLoadout = { presetId: null, presetName: 'Test', signature: 'fire-bolt:1|wind-blade:1', slots: [{ spellId: 'fire-bolt', autoCast: true }, { spellId: 'wind-blade', autoCast: true }] }
     const slots = [
       { spellId: 'fire-bolt' as const, autoCast: true, automation: { conditions: [{ type: 'always' as const }], targetRule: 'current-enemy' as const } },
       { spellId: 'wind-blade' as const, autoCast: true, automation: { conditions: [{ type: 'always' as const }], targetRule: 'current-enemy' as const } },

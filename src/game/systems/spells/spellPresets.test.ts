@@ -25,12 +25,12 @@ describe('spell preset foundation', () => {
     const firstId = createSpellPresetAction(state, 'First')
     expect(saveSpellPresetAction(state, { id: firstId, name: 'First', slots: [{ spellId: 'fire-bolt', autoCast: true }] })).toBe(true)
     expect(state.spellPresets.selectedPresetId).toBe(firstId)
-    expect(state.activities.autoCastPriority).toEqual(['fire-bolt'])
+    expect(state.activities.autoCastPriority).toEqual([])
 
     const secondId = createSpellPresetAction(state, 'Second')
     expect(saveSpellPresetAction(state, { id: secondId, name: 'Second', slots: [{ spellId: 'wind-blade', autoCast: true }] })).toBe(true)
     expect(state.spellPresets.selectedPresetId).toBe(firstId)
-    expect(state.activities.autoCastPriority).toEqual(['fire-bolt'])
+    expect(state.activities.autoCastPriority).toEqual([])
   })
 
   it('projects available and unavailable slots and reserves Focus only for AUTO slots', () => {
@@ -46,28 +46,28 @@ describe('spell preset foundation', () => {
     expect(projection.canApply).toBe(true)
   })
 
-  it('selects a preset and replaces the compatibility Auto-Cast runtime outside battle', () => {
+  it('selects a preset without activating compatibility Auto-Cast runtime outside battle', () => {
     const state = createInitialState()
     state.progress.spellRanks = { 'fire-bolt': 1, 'flame-burst': 3 }
     state.activities.autoCast['fire-bolt'] = true
     state.spellPresets.presets = [{ id: 'spell-preset-1', name: 'Burst', slots: [{ spellId: 'flame-burst', autoCast: true }] }]
     expect(applySpellPresetAction(state, 'spell-preset-1')).toMatchObject({ ok: true })
     expect(state.activities.autoCast['fire-bolt']).toBe(false)
-    expect(state.activities.autoCast['flame-burst']).toBe(true)
+    expect(state.activities.autoCast['flame-burst']).toBe(false)
     expect(state.spellPresets.selectedPresetId).toBe('spell-preset-1')
   })
 
-  it('rejects Focus overflow without changing selection or Auto-Cast state', () => {
+  it('allows a prepared preset to exceed current Focus without changing runtime state', () => {
     const state = createInitialState()
     state.player.maxFocus = 20
     state.progress.spellRanks = { 'fire-bolt': 1, 'flame-burst': 3 }
     state.activities.autoCast['fire-bolt'] = true
     state.activities.autoCastPriority = ['fire-bolt']
     state.spellPresets.presets = [{ id: 'spell-preset-1', name: 'Too much', slots: [{ spellId: 'flame-burst', autoCast: true }] }]
-    expect(applySpellPresetAction(state, 'spell-preset-1')).toMatchObject({ ok: false, reason: 'focus', requiredExtraFocus: 10 })
-    expect(state.activities.autoCast['fire-bolt']).toBe(true)
+    expect(applySpellPresetAction(state, 'spell-preset-1')).toMatchObject({ ok: true })
+    expect(state.activities.autoCast['fire-bolt']).toBe(false)
     expect(state.activities.autoCast['flame-burst']).toBe(false)
-    expect(state.spellPresets.selectedPresetId).toBeNull()
+    expect(state.spellPresets.selectedPresetId).toBe('spell-preset-1')
   })
 
   it('returns an empty result without disabling live Auto-Cast', () => {
@@ -95,6 +95,8 @@ describe('spell preset foundation', () => {
     state.activities.autoCast['fire-bolt'] = true
     state.activities.autoCastPriority = ['fire-bolt']
     state.activities.channeling.echoesAssigned = 2
+    state.combat.active = true
+    state.combat.activeSpellLoadout = { presetId: null, presetName: 'Test', slots: [{ spellId: 'fire-bolt', autoCast: true }], signature: 'fire-bolt:1' }
     expect(getSpellPresetFocusBreakdown(state)).toEqual({ autoCastFocus: 10, otherFocus: 20, totalFocus: 30, maxFocus: state.player.maxFocus, freeFocus: state.player.maxFocus - 30 })
     expect(doesCurrentAutoCastMatchPreset(state, { slots: [{ spellId: 'fire-bolt', autoCast: true }] })).toBe(true)
     expect(doesCurrentAutoCastMatchPreset(state, { slots: [] })).toBe(false)
@@ -156,7 +158,7 @@ describe('spell preset foundation', () => {
     expect(state.activities.autoCastPriority).toEqual(['fire-bolt'])
     expect(state.combat.queuedPlayerSpellId).toBe('fire-bolt')
     expect(state.spellPresets.selectedPresetId).toBe('spell-preset-b')
-    expect(state.notifications[state.notifications.length - 1]?.text).toBe('B could not activate — requires 10 more Focus. Continuing with A.')
+    expect(state.notifications[state.notifications.length - 1]?.text).toBe('Selected Preset is 10 Focus short. Continuing with A.')
 
     state.player.maxFocus = 40
     state.combat.enemyId = null
@@ -191,13 +193,13 @@ describe('spell preset foundation', () => {
 
     expect(saveSpellPresetAction(state, { id: 'spell-preset-a', name: 'A', slots: [{ spellId: 'fire-bolt', autoCast: false }, { spellId: 'wind-blade', autoCast: true }] })).toBe(true)
     expect(state.activities.autoCast['fire-bolt']).toBe(false)
-    expect(state.activities.autoCast['wind-blade']).toBe(true)
-    expect(state.activities.autoCastPriority).toEqual(['wind-blade'])
+    expect(state.activities.autoCast['wind-blade']).toBe(false)
+    expect(state.activities.autoCastPriority).toEqual([])
 
     state.player.maxFocus = 20
     expect(saveSpellPresetAction(state, { id: 'spell-preset-a', name: 'A', slots: [{ spellId: 'flame-burst', autoCast: true }] })).toBe(true)
     expect(state.spellPresets.presets[0].slots).toEqual([{ spellId: 'flame-burst', autoCast: true }])
-    expect(state.activities.autoCast['wind-blade']).toBe(true)
-    expect(state.activities.autoCastPriority).toEqual(['wind-blade'])
+    expect(state.activities.autoCast['wind-blade']).toBe(false)
+    expect(state.activities.autoCastPriority).toEqual([])
   })
 })

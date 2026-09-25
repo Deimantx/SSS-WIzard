@@ -1,6 +1,10 @@
 import { STATUS_DEFINITIONS } from '../../content/statuses'
+import { RESONANCE_METADATA, RESONANCE_TYPES } from '../../content/resonance/resonance'
 import { getMonsterTraits } from '../../systems/combat/traitRuntime'
+import { resolveEnemyResonanceReward } from '../../systems/resonance/resonanceRuntime'
 import type { MonsterDefinition } from '../../content/monsters'
+import type { ResonanceType } from '../../content/resonance/resonance'
+import type { WorldTierId } from '../../types'
 import type { ActionPattern, CombatCondition, CombatEffect, CombatModifier, CombatTriggerRule, StatusId, TraitDefinition } from '../../systems/combat/combatTypes'
 import { buildCombatActionPresentation, formatCombatCondition, formatCombatEffect, formatCombatModifier, formatCombatStatusDuration } from '../combat'
 
@@ -46,6 +50,40 @@ export interface BestiaryBossTransitionPresentation {
   oncePerEncounter: boolean
   effects: BestiaryMechanicEffectPresentation[]
 }
+
+export interface BestiaryResonanceEntryPresentation {
+  type: ResonanceType
+  label: string
+  shortLabel: string
+  baseAmount: number
+  finalAmount: number
+}
+
+export interface BestiaryResonancePresentation {
+  worldTier: WorldTierId
+  rewardMultiplier: number
+  entries: BestiaryResonanceEntryPresentation[]
+}
+
+export const getBestiaryResonancePresentation = (monster: MonsterDefinition, worldTier: WorldTierId): BestiaryResonancePresentation => {
+  const reward = resolveEnemyResonanceReward(monster.id, worldTier)
+  return {
+    worldTier: reward.worldTier,
+    rewardMultiplier: reward.rewardMultiplier,
+    entries: RESONANCE_TYPES.flatMap((type) => {
+      const finalAmount = reward.finalYield[type] ?? 0
+      return finalAmount > 0
+        ? [{ type, label: RESONANCE_METADATA[type].label, shortLabel: RESONANCE_METADATA[type].shortLabel, baseAmount: reward.baseYield[type] ?? 0, finalAmount }]
+        : []
+    }),
+  }
+}
+
+/** Search identity is authored/base data, so it remains stable across World Tier changes. */
+export const getBestiaryResonanceSearchText = (monster: MonsterDefinition) => RESONANCE_TYPES.flatMap((type) => {
+  const amount = monster.resonanceYield?.[type] ?? 0
+  return amount > 0 ? [type, RESONANCE_METADATA[type].shortLabel, RESONANCE_METADATA[type].label] : []
+}).join(' ')
 
 export interface BestiaryBossPhasesPresentation {
   phases: BestiaryBossPhasePresentation[]

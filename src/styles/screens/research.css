@@ -120,14 +120,14 @@
 .prepared-research-echo-control .button, .prepared-research-remove { width: 26px; min-width: 26px; min-height: 26px; padding: 4px; }
 .prepared-research-echo-control > strong { min-width: 14px; color: var(--ui-text); font: 500 var(--text-xs) var(--font-mono); text-align: center; }
 .prepared-research-remove { margin-left: 1px; }
-.prepared-research-row-progress { display: grid; grid-template-columns: minmax(100px, 1fr) minmax(100px, 1fr) auto auto; align-items: center; gap: 9px; min-width: 0; }
-.prepared-research-compact-progress { display: grid; gap: 3px; min-width: 0; }
+.prepared-research-row-progress { display: grid; grid-template-columns: minmax(150px, 1fr) minmax(150px, 1fr) minmax(0, auto) auto; align-items: end; gap: 10px; min-width: 0; }
+.prepared-research-compact-progress { display: grid; gap: 5px; min-width: 0; }
 .prepared-research-compact-progress > div { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; min-width: 0; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
 .prepared-research-compact-progress > div span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .prepared-research-compact-progress > div b { color: var(--ui-text-muted); font-weight: 400; }
 .prepared-research-compact-progress > div strong { color: var(--school-color, var(--ui-text-soft)); font: 500 var(--text-micro) var(--font-mono); }
-.prepared-research-compact-progress .progress-wrap { min-width: 0; }
-.prepared-research-compact-progress .progress { height: 4px; }
+.prepared-research-compact-progress .progress-wrap { min-width: 0; margin-top: 0; }
+.prepared-research-compact-progress .progress { height: 7px; border: 1px solid color-mix(in srgb, var(--ui-text-muted) 17%, var(--ui-panel-strong)); background: color-mix(in srgb, var(--ui-text-muted) 15%, var(--ui-panel-strong)); }
 .prepared-research-rates { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 3px 7px; min-width: 0; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); white-space: nowrap; }
 .prepared-research-rates span:first-child { color: var(--ui-text-soft); }
 .prepared-research-rates span:nth-child(2) { color: var(--resource-mana); }

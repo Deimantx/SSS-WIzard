@@ -438,12 +438,13 @@ describe('Developer channeling overrides', () => {
 describe('Phase 2 progression', () => {
   it('uses the Rank-based Auto-Cast Focus formula', () => {
     const state = makeInitialState()
+    state.combat.active = true
     state.progress.spellRanks = { 'water-bolt': 1 }
-    state.activities.autoCast['water-bolt'] = true
+    state.combat.activeSpellLoadout = { presetId: null, presetName: 'Test', slots: [{ spellId: 'water-bolt', autoCast: true }], signature: 'water-bolt:1' }
     expect(selectUsedFocus(state)).toBe(10)
-    state.activities.autoCast['water-bolt'] = false
+    state.combat.activeSpellLoadout.slots[0].autoCast = false
     state.progress.spellRanks = { 'fire-bolt': 1 }
-    state.activities.autoCast['fire-bolt'] = true
+    state.combat.activeSpellLoadout.slots = [{ spellId: 'fire-bolt', autoCast: true }]
     expect(selectUsedFocus(state)).toBe(10)
   })
 

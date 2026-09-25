@@ -119,7 +119,7 @@ describe('Spell automation editor audit fixes', () => {
       progress: { ...current.progress, spellRanks: { ...current.progress.spellRanks, 'fire-bolt': 1 } },
       player: { ...current.player, mana: current.player.maxMana },
       activities: { ...current.activities, autoCast: { ...current.activities.autoCast, 'fire-bolt': true } },
-      combat: { ...current.combat, active: true, enemyId: 'forest-wisp', enemyHp: 100, enemyMaxHp: 100 },
+      combat: { ...current.combat, active: true, enemyId: 'forest-wisp', enemyHp: 100, enemyMaxHp: 100, activeSpellLoadout: { presetId: null, presetName: 'Test', slots: [{ spellId: 'fire-bolt', autoCast: true }], signature: 'fire-bolt:1' } },
     })
     renderAutomationModal('fire-bolt')
 

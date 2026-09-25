@@ -211,6 +211,7 @@ import {
   getSelectedSpellPreset,
   getSpellAutoCastFocusCost,
   getSpellPresetFocusProjection,
+  validateSelectedCombatLoadout,
   isSpellUnlocked,
   MAX_COMBAT_SPELLS,
   syncAutoCastRuntimeForLoadout,
@@ -813,6 +814,20 @@ const grantDebugArtifactMaterialsInState = (state: GameState) => {
 const spellUnlocked = isSpellUnlocked;
 const canReserveFocus = canReserveFocusAction;
 
+const getCombatEntryFailureMessage = (state: GameState, failure: ReturnType<typeof validateSelectedCombatLoadout>) => {
+  const preset = getSelectedSpellPreset(state)
+  if (failure.ok) return ''
+  if (failure.reason !== 'focus' || !failure.focus) {
+    return failure.reason === 'missing-preset'
+      ? 'Select a Spell Preset before entering combat.'
+      : failure.reason === 'empty'
+        ? `${preset?.name ?? 'Selected Preset'} has no Spells. Add at least one Spell in Manage Presets.`
+        : `${preset?.name ?? 'Selected Preset'} has no currently unlocked Spells.`
+  }
+  const focus = failure.focus
+  return `NOT ENOUGH FOCUS · Combat Loadout: ${preset?.name ?? 'Selected Preset'} · Combat Focus Required: ${focus.combatFocusRequired} · Max Focus: ${focus.maxFocus} · Currently Used: ${focus.activeNonCombatFocus} · Available for Combat: ${focus.availableForCombat} · Missing Focus: ${focus.missingFocus}. Free additional Focus before starting combat.`
+}
+
 const toggleAutoCastState = (state: GameState, requestedSpellId: SpellId) => {
   const spellId = (LEGACY_SPELL_ID_MAP[requestedSpellId] ??
     requestedSpellId) as CanonicalSpellId;
@@ -826,24 +841,12 @@ const toggleAutoCastState = (state: GameState, requestedSpellId: SpellId) => {
   }
   const slot = preset.slots.find((entry) => entry.spellId === spellId);
   if (slot) {
-    if (
-      !slot.autoCast &&
-      !state.debug.allowFocusOverCap &&
-      !canReserveFocus(state, getSpellAutoCastFocusCost(state, spellId) ?? 0)
-    )
-      return false;
     slot.autoCast = !slot.autoCast;
     if (slot.autoCast && !slot.automation) slot.automation = getDefaultSpellAutomationConfig(slot.spellId, true, false);
   } else {
-    if (
-      preset.slots.length >= MAX_COMBAT_SPELLS ||
-      (!state.debug.allowFocusOverCap &&
-        !canReserveFocus(state, getSpellAutoCastFocusCost(state, spellId) ?? 0))
-    )
-      return false;
+    if (preset.slots.length >= MAX_COMBAT_SPELLS) return false;
     preset.slots.push({ spellId, autoCast: true, automation: getDefaultSpellAutomationConfig(spellId, true, false) });
   }
-  if (!state.combat.active) syncSelectedSpellPresetRuntime(state);
   return true;
 };
 
@@ -1859,6 +1862,14 @@ export const useGameStore = create<GameStore>()(
         currentState.combat.dungeonId === dungeonId
       )
         return;
+      const preflight = validateSelectedCombatLoadout(currentState)
+      if (!preflight.ok) {
+        set((state) => {
+          pushNotification(state, getCombatEntryFailureMessage(state, preflight), "warning", { key: `combat-focus-preflight:${state.spellPresets.selectedPresetId ?? 'missing'}`, cooldownMs: 1000 })
+          return state
+        })
+        return;
+      }
       const switching = currentState.combat.active;
       if (switching) endActiveDungeonRun();
       set((state) => {
@@ -1912,6 +1923,14 @@ export const useGameStore = create<GameStore>()(
         currentState.combat.dungeonId === dungeonId,
       );
       if (!sameLocation) {
+        const preflight = validateSelectedCombatLoadout(currentState)
+        if (!preflight.ok) {
+          set((state) => {
+            pushNotification(state, getCombatEntryFailureMessage(state, preflight), "warning", { key: `combat-focus-preflight:${state.spellPresets.selectedPresetId ?? 'missing'}`, cooldownMs: 1000 })
+            return state
+          })
+          return false
+        }
         if (currentState.combat.active) endActiveDungeonRun();
         set((state) => {
           initializeDungeonRun(

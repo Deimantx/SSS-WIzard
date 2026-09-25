@@ -21,8 +21,10 @@ const overcommittedState = () => {
   state.inventory[focusCapacityWeapon] = 1
   state.inventory['tideglass-wand'] = 1
   state.equipment.weapon = focusCapacityWeapon
-  state.progress.spellRanks = { fireball: 7 }
-  state.activities.autoCast.fireball = true
+  state.progress.spellRanks = { 'fire-bolt': 7 }
+  state.activities.autoCast['fire-bolt'] = true
+  state.combat.active = true
+  state.combat.activeSpellLoadout = { presetId: null, presetName: 'Test', slots: [{ spellId: 'fire-bolt', autoCast: true }], signature: 'fire-bolt:1' }
   state.activities.channeling.echoesAssigned = 5
   recalculateDerivedStats(state)
   return state
@@ -39,7 +41,7 @@ describe('Focus candidate loadout validation', () => {
     expect(result).toMatchObject({ ok: false, reason: 'insufficient-focus-capacity', maxFocus: 100, usedFocus: 120, deficit: 20 })
     expect(state.equipment.weapon).toBe(focusCapacityWeapon)
     expect(state.activities.channeling.echoesAssigned).toBe(5)
-    expect(state.activities.autoCast.fireball).toBe(true)
+    expect(state.activities.autoCast['fire-bolt']).toBe(true)
     expect(state.notifications[state.notifications.length - 1]?.text).toContain('Free 20 Focus')
   })
 
@@ -59,8 +61,10 @@ describe('Focus candidate loadout validation', () => {
     const state = createInitialState()
     state.inventory[focusEfficientWeapon] = 1
     state.player.baseMaxFocus = 70
-    state.progress.spellRanks = { fireball: 8 }
-    state.activities.autoCast.fireball = true
+    state.progress.spellRanks = { 'fire-bolt': 8 }
+    state.activities.autoCast['fire-bolt'] = true
+    state.combat.active = true
+    state.combat.activeSpellLoadout = { presetId: null, presetName: 'Test', slots: [{ spellId: 'fire-bolt', autoCast: true }], signature: 'fire-bolt:1' }
     recalculateDerivedStats(state)
     expect(selectUsedFocus(state)).toBe(80)
 

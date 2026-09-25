@@ -710,7 +710,7 @@ export interface DebugOverrides {
 export interface NotificationItem { id: string; text: string; tone: 'info' | 'success' | 'warning'; key?: string; createdAt?: number }
 export interface FocusReservation {
   id: string
-  sourceType: 'autocast' | 'research' | 'transmutation' | 'channeling'
+  sourceType: 'combat' | 'research' | 'transmutation' | 'channeling'
   sourceId: string
   amount: number
   label: string

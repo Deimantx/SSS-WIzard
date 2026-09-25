@@ -57,6 +57,17 @@
 .bestiary-loot-row > div { display: grid; gap: 3px; min-width: 0; }
 .bestiary-loot-row .status { white-space: nowrap; }
 .bestiary-muted { margin: 0; color: var(--ui-text-muted); font-size: var(--text-xs); }
+.bestiary-resonance-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.bestiary-resonance-tier { color: var(--bestiary-color); font: var(--text-micro) var(--font-mono); letter-spacing: .08em; }
+.bestiary-resonance-list { display: grid; gap: 5px; }
+.bestiary-resonance-list > .game-tooltip-trigger { display: block; min-width: 0; }
+.bestiary-resonance-row { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: center; gap: 8px; min-width: 0; padding: 7px 8px; border: 1px solid color-mix(in srgb, var(--resonance-color) 28%, var(--ui-border)); border-radius: 6px; background: color-mix(in srgb, var(--resonance-color) 6%, var(--ui-panel-strong)); }
+.bestiary-resonance-row:hover, .bestiary-resonance-row:focus-visible { border-color: color-mix(in srgb, var(--resonance-color) 62%, var(--ui-border)); outline: none; }
+.bestiary-resonance-icon { display: grid; place-items: center; width: 26px; height: 26px; border: 1px solid color-mix(in srgb, var(--resonance-color) 48%, var(--ui-border)); border-radius: 5px; color: var(--resonance-color); background: color-mix(in srgb, var(--resonance-color) 12%, transparent); }
+.bestiary-resonance-copy { display: grid; gap: 2px; min-width: 0; }
+.bestiary-resonance-copy strong { overflow: hidden; color: var(--ui-text-soft); font-size: var(--text-xs); text-overflow: ellipsis; white-space: nowrap; }
+.bestiary-resonance-copy small { overflow: hidden; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); text-overflow: ellipsis; white-space: nowrap; }
+.bestiary-resonance-value { color: var(--resonance-color); font: 600 var(--text-sm) var(--font-mono); white-space: nowrap; }
 .bestiary-total-defeats { display: flex; justify-content: space-between; gap: 8px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--ui-border); color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; }
 .bestiary-total-defeats strong { color: var(--ui-text-soft); }
 

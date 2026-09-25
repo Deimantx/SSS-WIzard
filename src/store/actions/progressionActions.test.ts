@@ -40,8 +40,9 @@ describe('school progression debug controls', () => {
     state.spellPresets.presets = [{ id: 'spell-preset-1', name: 'Fire', slots: [{ spellId: 'kindling', autoCast: true }] }]
     state.spellPresets.selectedPresetId = 'spell-preset-1'
     setSchoolLevelDebugAction(state, 'fire', 20)
-    expect(state.activities.autoCast.kindling).toBe(true)
-    expect(state.activities.autoCastPriority).toEqual(['kindling'])
+    expect(state.activities.autoCast.kindling).toBe(false)
+    expect(state.activities.autoCastPriority).toEqual([])
+    expect(state.spellPresets.presets[0].slots[0].autoCast).toBe(true)
 
     state.combat.active = true
     state.combat.activeSpellLoadout = { presetId: 'spell-preset-1', presetName: 'Fire', slots: [{ spellId: 'kindling', autoCast: true }], signature: 'kindling:1' }

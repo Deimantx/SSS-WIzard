@@ -2,7 +2,7 @@ import { AlertTriangle, CircleDot, Settings2 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { actorCannotAct, actorCannotCastSpells } from '../../game/systems/combat/statusRuntime'
-import { getSpellPresetFocusBreakdown, getSpellPresetFocusProjection, getSpellPresetSignature } from '../../game/systems/spells'
+import { getCombatFocusReadiness, getSpellPresetFocusProjection, getSpellPresetSignature } from '../../game/systems/spells'
 import type { SpellPresetProjectionState } from '../../game/systems/spells'
 import { useGameStore } from '../../store/gameStore'
 import { Button, Card, GameTooltip, SelectMenu, Status, type SelectMenuOption } from '../../components/ui'
@@ -51,11 +51,11 @@ export function CombatSpellDeck() {
       progress,
       activities,
       player: { health: live.player.health, maxHealth: live.player.maxHealth, mana: live.player.mana, maxMana: live.player.maxMana, maxFocus: live.player.maxFocus },
-      combat: { enemyId: live.combat.enemyId, enemyHp: live.combat.enemyHp, enemyMaxHp: live.combat.enemyMaxHp, enemyBarrier: live.combat.enemyBarrier, playerBarrier: live.combat.playerBarrier, enemyInstanceKey: live.combat.enemyInstanceKey, playerStatuses: live.combat.playerStatuses, enemyStatuses: live.combat.enemyStatuses },
+      combat: { active: live.combat.active, activeSpellLoadout: live.combat.activeSpellLoadout, enemyId: live.combat.enemyId, enemyHp: live.combat.enemyHp, enemyMaxHp: live.combat.enemyMaxHp, enemyBarrier: live.combat.enemyBarrier, playerBarrier: live.combat.playerBarrier, enemyInstanceKey: live.combat.enemyInstanceKey, playerStatuses: live.combat.playerStatuses, enemyStatuses: live.combat.enemyStatuses },
       debug: { allowFocusOverCap: debugAllowFocusOverCap },
     }
-  }, [schools, equipment, artifactProgress, arcaneCore, progress, activities, debugAllowFocusOverCap])
-  const focusState = useMemo<SpellPresetProjectionState>(() => ({ activities, progress, equipment, artifactProgress, arcaneCore, player: { maxFocus }, debug: { allowFocusOverCap: debugAllowFocusOverCap } }), [activities, progress, equipment, artifactProgress, arcaneCore, maxFocus, debugAllowFocusOverCap])
+  }, [schools, equipment, artifactProgress, arcaneCore, progress, activities, debugAllowFocusOverCap, combat])
+  const focusState = useMemo<SpellPresetProjectionState>(() => ({ activities, progress, equipment, artifactProgress, arcaneCore, player: { maxFocus }, debug: { allowFocusOverCap: debugAllowFocusOverCap }, combat }), [activities, progress, equipment, artifactProgress, arcaneCore, maxFocus, debugAllowFocusOverCap, combat])
   const selectedPreset = presets.find((preset) => preset.id === selectedPresetId) ?? null
   const selectedProjection = selectedPreset ? getSpellPresetFocusProjection(focusState, selectedPreset) : null
   const activeLoadout = combat.activeSpellLoadout
@@ -63,7 +63,7 @@ export function CombatSpellDeck() {
   const selectedSignature = selectedProjection ? getSpellPresetSignature(selectedProjection.validSlots) : ''
   const nextBattle = Boolean(combat.active && activeLoadout && selectedPreset && selectedProjection?.canApply && (activeLoadout.presetId !== selectedPreset.id || activeSignature !== selectedSignature))
   const displaySlots = combat.active && activeLoadout ? activeLoadout.slots : selectedProjection?.validSlots ?? []
-  const focus = getSpellPresetFocusBreakdown(focusState)
+  const focus = getCombatFocusReadiness(focusState, combat.active && activeLoadout ? activeLoadout.slots : selectedProjection?.validSlots ?? [])
   const presetOptions = useMemo<SelectMenuOption<string>[]>(() => presets.map((preset) => ({ value: preset.id, label: preset.name })), [presets])
   const globalBlocker = playerStunned ? 'stunned' : !combat.active ? 'inactive' : null
   const banner = globalBlocker === 'stunned'
@@ -94,7 +94,7 @@ export function CombatSpellDeck() {
     <header className="combat-spell-deck-toprow">
       <div className="combat-spell-deck-heading"><strong>COMBAT SPELL DECK</strong><small>{combat.active && activeLoadout ? `ACTIVE: ${activeLoadout.presetName}` : selectedPreset ? `SELECTED: ${selectedPreset.name}` : 'NO PRESET SELECTED'}</small></div>
       <div className="combat-preset-control"><div className="combat-preset-control-label"><span className="combat-subsection-label">NEXT BATTLE PRESET</span><small>{nextBattle ? `Will activate next battle · ${selectedPreset?.name ?? 'none'}` : combat.active ? 'Frozen for this enemy encounter.' : 'Selected slots become active when battle begins.'}</small></div><div className="combat-preset-control-row"><SelectMenu options={presetOptions} value={selectedPresetId ?? ''} onChange={choosePreset} ariaLabel="Next battle spell preset" /><GameTooltip content={<TooltipContent title="Manage Presets" description="Build, reorder, and configure the eight combat slots." />}><Button className="combat-preset-manage" variant="secondary" onClick={openPresetManager}><Settings2 size={13} /> MANAGE</Button></GameTooltip></div></div>
-      <div className="combat-focus-summary"><span>AUTO</span><strong className="ui-focus">{focus.autoCastFocus} Focus</strong></div>
+      <div className="combat-focus-summary"><span>COMBAT FOCUS</span><strong className="ui-focus">{focus.combatFocusRequired} Required</strong></div>
     </header>
     <div className="combat-spell-content-row">
       {(banner || presetNotice) && <div className="combat-spell-status-region">
@@ -102,7 +102,7 @@ export function CombatSpellDeck() {
         {presetNotice && <div className="combat-spell-preset-notice" role="alert"><AlertTriangle size={13} aria-hidden="true" />{presetNotice}</div>}
       </div>}
       <div className="combat-spell-grid-region">{displaySlots.length ? <div ref={gridRef} className="combat-spell-grid smart-scroll-region">{displaySlots.map((slot) => <CombatSpellTile key={slot.spellId} spellId={slot.spellId} autoCast={slot.autoCast} autoCastPriority={slot.autoCast ? autoPriority.indexOf(slot.spellId) + 1 : null} presentationState={state} globalBlocker={globalBlocker} globalRuntime={{ playerMana, playerCannotAct: playerStunned, playerCannotCast, combatActive: combat.active, hasTarget, inLoadout: true, ignoreCooldowns, infiniteMana, unlocked: true }} onOpenPresetManager={openPresetManager} />)}</div> : <div className="combat-spell-empty"><CircleDot size={20} aria-hidden="true" /><strong>{selectedPreset ? 'No available Spells in this preset.' : 'Create a combat preset to fill the deck.'}</strong><span>Choose up to eight slots in Preset Manager.</span></div>}</div>
-      <footer className="combat-spell-deck-foot"><div className="combat-spell-deck-foot-left"><Status tone={focus.freeFocus < 0 ? 'warning' : 'success'}>{autoPriority.length} AUTO · {Math.max(0, displaySlots.length - autoPriority.length)} MANUAL · {focus.autoCastFocus} Focus reserved</Status></div><small>{displaySlots.length}/8 slots · {combat.active && activeLoadout ? 'ACTIVE SNAPSHOT' : 'PREVIEW'}</small></footer>
+      <footer className="combat-spell-deck-foot"><div className="combat-spell-deck-foot-left"><Status tone={focus.ready ? 'success' : 'warning'}>{autoPriority.length} AUTO · {Math.max(0, displaySlots.length - autoPriority.length)} MANUAL · {focus.combatFocusRequired} Combat Focus {focus.ready ? 'READY' : `${focus.missingFocus} SHORT`}</Status></div><small>{displaySlots.length}/8 slots · {combat.active && activeLoadout ? 'ACTIVE SNAPSHOT' : 'PREPARED'}</small></footer>
     </div>
   </Card>
 }

@@ -30,9 +30,8 @@ export const getManaDemandBreakdown = (state: GameState): ManaDemandSource[] => 
   }
 
   if (state.combat.active) {
-    Object.entries(state.activities.autoCast).forEach(([id, enabled]) => {
-      if (!enabled) return
-      const spell = SPELLS[id as keyof typeof SPELLS]
+    state.combat.activeSpellLoadout?.slots.filter((slot) => slot.autoCast).forEach((slot) => {
+      const spell = SPELLS[slot.spellId]
       if (!spell || !isSpellUnlocked(state, spell.id) || spell.cooldownMs <= 0) return
       sources.push({
         id: `autocast-${spell.id}`,

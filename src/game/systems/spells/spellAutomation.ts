@@ -217,7 +217,7 @@ export const canAutoCastSpellFast = (state: GameState, slot: Pick<SpellPresetSlo
   const config = prepared?.config ?? ('config' in slot ? slot.config : getSpellAutomationConfig(slot))
   if (config.targetRule === 'self' ? hasEnemyTarget(spell) : !context.hasEnemy || !hasEnemyTarget(spell)) return false
   if (!context.ignoreCooldowns && (state.combat.spellCooldowns[spell.id] ?? 0) > 0) return false
-  if (!context.allowFocusOverCap && !state.activities.autoCast[spell.id]) return false
+  if (!context.allowFocusOverCap && !state.combat.activeSpellLoadout?.slots.some((activeSlot) => activeSlot.spellId === spell.id && activeSlot.autoCast)) return false
   if (!config.conditions.every((condition) => fastConditionPasses(state, condition, context))) return false
   if (context.infiniteMana) return true
   if (prepared && !prepared.requiresDynamicManaPreview) return state.player.mana >= prepared.staticManaCost
@@ -291,7 +291,7 @@ export const evaluateSpellAutomation = (state: GameState, slot: Pick<SpellPreset
     const enoughMana = Boolean(state.debug.infiniteMana || manaPreview?.free || (manaPreview && state.player.mana >= manaPreview.manaCost))
     const requiredMana = manaPreview?.manaCost ?? spell.manaCost
     addSystem('mana', 'Enough Mana', enoughMana, enoughMana ? 'Enough Mana is available.' : `Mana is ${Math.round(state.player.mana)}, but this Spell requires ${Math.round(requiredMana)}.`)
-    const focusReserved = Boolean(state.debug.allowFocusOverCap || state.activities.autoCast[spell.id])
+    const focusReserved = Boolean(state.debug.allowFocusOverCap || state.combat.activeSpellLoadout?.slots.some((activeSlot) => activeSlot.spellId === spell.id && activeSlot.autoCast))
     addSystem('focus', 'Focus reserved', focusReserved, focusReserved ? 'Auto-Cast Focus is reserved for this Spell.' : 'This Spell has no active Auto-Cast Focus reservation.')
     const canAct = !actorCannotAct(state, 'player')
     addSystem('can-act', 'Wizard can act', canAct, canAct ? 'Wizard is able to act.' : 'Wizard is currently prevented from acting.')
@@ -407,7 +407,7 @@ export const getNextAutoCastEligibilityBoundaryMs = (state: GameState, cooldownR
   slots.forEach((slot) => {
     if (!slot.autoCast) return
     const spell = SPELLS[slot.spellId]
-    if (!spell || !isSpellUnlocked(state, spell.id) || (!context.allowFocusOverCap && !state.activities.autoCast[spell.id])) return
+    if (!spell || !isSpellUnlocked(state, spell.id) || (!context.allowFocusOverCap && !state.combat.activeSpellLoadout?.slots.some((activeSlot) => activeSlot.spellId === spell.id && activeSlot.autoCast))) return
     const config = 'config' in slot ? slot.config : getSpellAutomationConfig(slot)
     if (config.targetRule === 'self' ? hasEnemyTarget(spell) : !context.hasEnemy || !hasEnemyTarget(spell)) return
     const cooldown = state.debug.ignoreSpellCooldowns ? 0 : state.combat.spellCooldowns[spell.id] ?? 0

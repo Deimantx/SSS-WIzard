@@ -1,5 +1,5 @@
 import { CANONICAL_SPELL_IDS, LEGACY_SPELL_ID_MAP } from '../../content/spells/spells'
-import { deriveFocusReservations } from '../focus/focusReservations'
+import { deriveActiveNonCombatFocusReservations, getCombatFocusReadiness } from '../focus/focusReservations'
 import type { FocusReservationState } from '../focus/focusReservations'
 import { getSpellAutoCastFocusCost, isSpellUnlocked } from './spellProgression'
 import { getSpellAutomationConfig, normalizeSpellAutomationConfig } from './spellAutomation'
@@ -25,6 +25,7 @@ export interface SpellPresetFocusProjection {
 export type SpellPresetProjectionState = Pick<GameState, 'activities' | 'progress' | 'equipment' | 'artifactProgress' | 'arcaneCore'> & {
   player: Pick<GameState['player'], 'maxFocus'>
   debug: Pick<GameState['debug'], 'allowFocusOverCap'>
+  combat?: Pick<GameState['combat'], 'active' | 'activeSpellLoadout'>
 }
 
 export const normalizeSpellPresetName = (value: unknown, fallback = DEFAULT_SPELL_PRESET_NAME) => {
@@ -139,9 +140,10 @@ export interface SpellPresetFocusBreakdown {
 export type SpellPresetFocusState = FocusReservationState & { player: Pick<GameState['player'], 'maxFocus'> }
 
 export const getSpellPresetFocusBreakdown = (state: SpellPresetFocusState): SpellPresetFocusBreakdown => {
-  const reservations = deriveFocusReservations(state)
-  const autoCastFocus = reservations.filter((reservation) => reservation.sourceType === 'autocast').reduce((sum, reservation) => sum + reservation.amount, 0)
-  const otherFocus = reservations.filter((reservation) => reservation.sourceType !== 'autocast').reduce((sum, reservation) => sum + reservation.amount, 0)
+  const autoCastFocus = state.combat?.active
+    ? getCombatFocusReadiness(state, state.combat.activeSpellLoadout?.slots).combatFocusRequired
+    : 0
+  const otherFocus = deriveActiveNonCombatFocusReservations(state).reduce((sum, reservation) => sum + reservation.amount, 0)
   const totalFocus = autoCastFocus + otherFocus
   return { autoCastFocus, otherFocus, totalFocus, maxFocus: state.player.maxFocus, freeFocus: state.player.maxFocus - totalFocus }
 }
@@ -162,7 +164,7 @@ export const getSpellPresetSignature = (slots: readonly SpellPresetSlot[]) => sl
 export const getSpellPresetAutoCastPriority = (slots: readonly SpellPresetSlot[]): CanonicalSpellId[] => slots.filter((slot) => slot.autoCast).map((slot) => slot.spellId)
 
 export const doesCurrentAutoCastMatchPreset = (
-  state: Pick<GameState, 'activities' | 'progress' | 'equipment' | 'artifactProgress' | 'arcaneCore'>,
+  state: Pick<GameState, 'activities' | 'progress' | 'equipment' | 'artifactProgress' | 'arcaneCore' | 'combat'>,
   preset: Pick<SpellPreset, 'slots'>,
 ) => {
   const projection = getSpellPresetFocusProjection({ ...state, player: { maxFocus: 0 }, debug: { allowFocusOverCap: true } }, preset)
@@ -197,10 +199,11 @@ export const getSpellPresetFocusProjection = (
     } else unavailableSpellIds.push(canonical)
   })
   const presetAutoCastFocus = validSlots.filter((slot) => slot.autoCast).reduce((sum, slot) => sum + (getSpellAutoCastFocusCost(state, slot.spellId) ?? 0), 0)
-  const nonAutoCastFocus = getSpellPresetFocusBreakdown({ activities: state.activities, progress: state.progress, equipment: state.equipment, artifactProgress: state.artifactProgress, arcaneCore: state.arcaneCore, player: state.player }).otherFocus
-  const totalAfterApply = nonAutoCastFocus + presetAutoCastFocus
-  const freeAfterApply = state.player.maxFocus - totalAfterApply
-  return { validSlots, validSpellIds, unavailableSpellIds, invalidSpellIds, presetAutoCastFocus, nonAutoCastFocus, totalAfterApply, freeAfterApply, canApply: validSlots.length > 0 && (Boolean(state.debug.allowFocusOverCap) || totalAfterApply <= state.player.maxFocus) }
+  const readiness = getCombatFocusReadiness(state, validSlots)
+  const nonAutoCastFocus = readiness.activeNonCombatFocus
+  const totalAfterApply = readiness.projectedTotalFocus
+  const freeAfterApply = readiness.projectedFreeFocus
+  return { validSlots, validSpellIds, unavailableSpellIds, invalidSpellIds, presetAutoCastFocus, nonAutoCastFocus, totalAfterApply, freeAfterApply, canApply: validSlots.length > 0 && readiness.ready }
 }
 
 export const getNextSpellPresetId = (presets: readonly SpellPreset[]) => {
@@ -223,15 +226,9 @@ export const getSelectedSpellPreset = (state: Pick<GameState, 'spellPresets'>) =
 /** Reconciles the derived compatibility Auto-Cast runtime without touching an active battle snapshot. */
 export const syncSelectedSpellPresetRuntime = (state: GameState) => {
   if (state.combat.active) return false
-  const preset = getSelectedSpellPreset(state)
-  const projection = preset ? getSpellPresetFocusProjection(state, preset) : null
-  if (!projection || !projection.validSlots.length) {
-    syncAutoCastRuntimeForLoadout(state, [])
-    return true
-  }
-  if (!projection.canApply) return false
-  syncAutoCastRuntimeForLoadout(state, projection.validSlots)
-  return true
+  const hadActiveAutoCast = Object.values(state.activities.autoCast).some(Boolean)
+  syncAutoCastRuntimeForLoadout(state, [])
+  return hadActiveAutoCast
 }
 
 export const buildActiveCombatSpellLoadout = (state: SpellPresetProjectionState & Pick<GameState, 'spellPresets'>): ActiveCombatSpellLoadout => {
@@ -243,7 +240,7 @@ export const buildActiveCombatSpellLoadout = (state: SpellPresetProjectionState 
 
 export type CombatLoadoutPreflight =
   | { ok: true; presetId: SpellPresetId; projection: SpellPresetFocusProjection }
-  | { ok: false; reason: 'focus' | 'empty' | 'unavailable' | 'missing-preset'; requiredExtraFocus?: number; unavailableSpellIds?: CanonicalSpellId[] }
+  | { ok: false; reason: 'focus' | 'empty' | 'unavailable' | 'missing-preset'; requiredExtraFocus?: number; unavailableSpellIds?: CanonicalSpellId[]; focus?: ReturnType<typeof getCombatFocusReadiness> }
 
 /** Validates the persisted preset and its current projection before an encounter starts. */
 export const validateSelectedCombatLoadout = (state: GameState): CombatLoadoutPreflight => {
@@ -253,7 +250,7 @@ export const validateSelectedCombatLoadout = (state: GameState): CombatLoadoutPr
   if (!preset.slots.length) return { ok: false, reason: 'empty', unavailableSpellIds: projection.unavailableSpellIds }
   if (!projection.validSlots.length) return { ok: false, reason: 'unavailable', unavailableSpellIds: projection.unavailableSpellIds }
   if (!projection.canApply) {
-    return { ok: false, reason: 'focus', requiredExtraFocus: Math.max(0, projection.totalAfterApply - state.player.maxFocus), unavailableSpellIds: projection.unavailableSpellIds }
+    return { ok: false, reason: 'focus', requiredExtraFocus: Math.max(0, projection.totalAfterApply - state.player.maxFocus), unavailableSpellIds: projection.unavailableSpellIds, focus: getCombatFocusReadiness(state, projection.validSlots) }
   }
   return { ok: true, presetId: preset.id, projection }
 }
@@ -267,7 +264,7 @@ export const activateSelectedSpellPresetForBattle = (state: GameState): Activate
   if (state.spellPresets.selectedPresetId === null && state.spellPresets.presets.length === 1) {
     const onlyPreset = state.spellPresets.presets[0]
     const onlyProjection = getSpellPresetFocusProjection(state, onlyPreset)
-    if (onlyProjection.validSlots.length && onlyProjection.canApply) state.spellPresets.selectedPresetId = onlyPreset.id
+    if (onlyProjection.validSlots.length) state.spellPresets.selectedPresetId = onlyPreset.id
   }
   const preflight = validateSelectedCombatLoadout(state)
   if (!preflight.ok) return preflight

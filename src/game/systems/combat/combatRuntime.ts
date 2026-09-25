@@ -61,6 +61,8 @@ const getLoadoutFailureMessage = (failure: CombatLoadoutFailure, selectedPreset:
         ? `${selectedPreset?.name ?? 'Selected Preset'} has no Spells. Add at least one Spell in Manage Presets.`
         : failure.reason === 'unavailable'
           ? `${selectedPreset?.name ?? 'Selected Preset'} has no currently unlocked Spells.`
+        : failure.focus
+          ? `NOT ENOUGH FOCUS · Combat Loadout: ${selectedPreset?.name ?? 'Selected Preset'} · Combat Focus Required: ${failure.focus.combatFocusRequired} · Max Focus: ${failure.focus.maxFocus} · Currently Used: ${failure.focus.activeNonCombatFocus} · Available for Combat: ${failure.focus.availableForCombat} · Missing Focus: ${failure.focus.missingFocus}. Free additional Focus before starting combat.`
           : `${selectedPreset?.name ?? 'Selected Preset'} could not activate — requires ${failure.requiredExtraFocus ?? 0} more Focus.`
   }
   return failure.reason === 'missing-preset'
@@ -69,7 +71,9 @@ const getLoadoutFailureMessage = (failure: CombatLoadoutFailure, selectedPreset:
       ? `${selectedPreset?.name ?? 'Selected Preset'} has no Spells. Continuing with ${continuingWith}.`
       : failure.reason === 'unavailable'
         ? `${selectedPreset?.name ?? 'Selected Preset'} has no currently unlocked Spells. Continuing with ${continuingWith}.`
-        : `${selectedPreset?.name ?? 'Selected Preset'} could not activate — requires ${failure.requiredExtraFocus ?? 0} more Focus. Continuing with ${continuingWith}.`
+        : failure.focus
+          ? `Selected Preset is ${failure.focus.missingFocus} Focus short. Continuing with ${continuingWith}.`
+          : `${selectedPreset?.name ?? 'Selected Preset'} could not activate — requires ${failure.requiredExtraFocus ?? 0} more Focus. Continuing with ${continuingWith}.`
 }
 
 export const spawnEnemy = (state: GameState, enemyId: MonsterId, uiEvents?: CombatEventSink) => {

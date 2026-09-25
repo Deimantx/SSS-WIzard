@@ -484,6 +484,7 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
     syncAutoCastRuntimeForLoadout(migrated, migrated.combat.activeSpellLoadout.slots)
   } else {
     migrated.combat.activeSpellLoadout = null
+    if (!migrated.combat.active) syncAutoCastRuntimeForLoadout(migrated, [])
   }
   // Read and normalize legacy player Basic timing at the migration boundary,
   // but do not copy it into current state: player combat is Spell-only.
@@ -878,7 +879,6 @@ const normalizeTransmutationJobs = (migrated: GameState, raw: Record<string, any
   const researchEchoFocus = RESEARCH_SLOT_ORDER.reduce((sum, slotId) => sum + Math.max(0, Math.floor(migrated.activities.research.slots[slotId]?.echoesAssigned ?? 0)) * BALANCE.research.echoFocusCost, 0)
   const nonTransmutationFocus = Math.max(0, Math.floor(migrated.activities.channeling.echoesAssigned)) * BALANCE.channeling.echoFocusCost
     + researchEchoFocus
-    + Object.entries(migrated.activities.autoCast).filter(([, active]) => active).reduce((sum, [spellId]) => sum + (getSpellAutoCastFocusCost(migrated, spellId as SpellId) ?? 0), 0)
   const effectiveTransmutationCapacity = BALANCE.transmutation.maxEchoes + getTransmutationArrayBonuses(migrated).echoCapacityBonus
   const focusCapacity = Math.floor((migrated.player.maxFocus - nonTransmutationFocus) / BALANCE.transmutation.echoFocusCost)
   let remaining = Math.max(0, Math.min(effectiveTransmutationCapacity, focusCapacity))
@@ -896,7 +896,6 @@ const normalizeTransmutationJobs = (migrated: GameState, raw: Record<string, any
 const normalizeResearchFocus = (migrated: GameState) => {
   const nonResearchFocus = Math.max(0, Math.floor(migrated.activities.channeling.echoesAssigned)) * BALANCE.channeling.echoFocusCost
     + Object.entries(migrated.activities.transmutation.jobs).reduce((sum, [, job]) => sum + Math.max(0, Math.floor(job?.echoesAssigned ?? 0)) * BALANCE.transmutation.echoFocusCost, 0)
-    + Object.entries(migrated.activities.autoCast).filter(([, active]) => active).reduce((sum, [spellId]) => sum + (getSpellAutoCastFocusCost(migrated, spellId as SpellId) ?? 0), 0)
   let remaining = Math.max(0, Math.floor((migrated.player.maxFocus - nonResearchFocus) / BALANCE.research.echoFocusCost))
   RESEARCH_SLOT_ORDER.forEach((slotId) => {
     const job = migrated.activities.research.slots[slotId]

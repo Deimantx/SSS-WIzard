@@ -34,7 +34,7 @@ describe('selected combat loadout actions', () => {
     expect(setPresetSlotAutomationAction(state, preset.id, 'fire-bolt', { conditions: [{ type: 'mana', operator: 'below', percent: 25 }], targetRule: 'current-enemy' })).toBe(true)
     expect(setPresetSlotAutoCastAction(state, preset.id, 'fire-bolt', true)).toBe(true)
     expect(preset.slots[0]).toMatchObject({ autoCast: true, automation: { conditions: [{ type: 'mana', operator: 'below', percent: 25 }], targetRule: 'current-enemy' } })
-    expect(state.activities.autoCastPriority).toEqual(['fire-bolt'])
+    expect(state.activities.autoCastPriority).toEqual([])
   })
 
   it('keeps authored automation when a newly added slot starts in Manual mode', () => {
@@ -45,7 +45,7 @@ describe('selected combat loadout actions', () => {
     expect(state.spellPresets.presets[0].slots[0].automation).toMatchObject({ conditions: [{ type: 'player-barrier-below', value: 10 }] })
   })
 
-  it('applies AUTO and automation atomically when Focus rejects the change', () => {
+  it('allows AUTO and automation when prepared Focus is currently unavailable', () => {
     const state = createInitialState()
     state.progress.spellRanks = { 'fire-bolt': 1 }
     state.player.maxFocus = 0
@@ -53,12 +53,12 @@ describe('selected combat loadout actions', () => {
     const preset = state.spellPresets.presets[0]
 
     const result = applyPresetSlotAutomationAction(state, preset.id, 'fire-bolt', { conditions: [{ type: 'always' }], targetRule: 'current-enemy' }, true)
-    expect(result).toMatchObject({ ok: false, reason: 'focus' })
-    expect(preset.slots[0]).toMatchObject({ autoCast: false })
+    expect(result).toMatchObject({ ok: true })
+    expect(preset.slots[0]).toMatchObject({ autoCast: true })
     expect(state.activities.autoCast['fire-bolt']).toBe(false)
   })
 
-  it('resynchronizes derived Auto-Cast state when Apply changes AUTO to MANUAL', () => {
+  it('keeps compatibility Auto-Cast runtime inactive outside combat', () => {
     const state = createInitialState()
     state.progress.spellRanks = { 'fire-bolt': 1 }
     expect(addSpellToSelectedPresetAction(state, 'fire-bolt')).toEqual({ ok: true })
@@ -66,8 +66,8 @@ describe('selected combat loadout actions', () => {
     const config = { conditions: [{ type: 'always' as const }], targetRule: 'current-enemy' as const }
 
     expect(applyPresetSlotAutomationAction(state, preset.id, 'fire-bolt', config, true)).toEqual({ ok: true })
-    expect(state.activities.autoCast['fire-bolt']).toBe(true)
-    expect(state.activities.autoCastPriority).toEqual(['fire-bolt'])
+    expect(state.activities.autoCast['fire-bolt']).toBe(false)
+    expect(state.activities.autoCastPriority).toEqual([])
 
     expect(applyPresetSlotAutomationAction(state, preset.id, 'fire-bolt', config, false)).toEqual({ ok: true })
     expect(state.activities.autoCast['fire-bolt']).toBe(false)

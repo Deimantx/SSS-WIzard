@@ -11,9 +11,11 @@ describe('Focus usage groups', () => {
     state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 3, progressMs: 0 }
     state.progress.spellRanks = { 'fire-bolt': 1 }
     state.activities.autoCast['fire-bolt'] = true
+    state.combat.active = true
+    state.combat.activeSpellLoadout = { presetId: null, presetName: 'Test', slots: [{ spellId: 'fire-bolt', autoCast: true }], signature: 'fire-bolt:1' }
 
     const groups = getFocusUsageGroups(state)
-    expect(groups.map((group) => group.sourceType)).toEqual(['channeling', 'research', 'transmutation', 'autocast'])
+    expect(groups.map((group) => group.sourceType)).toEqual(['channeling', 'research', 'transmutation', 'combat'])
     expect(groups.map((group) => group.amount)).toEqual([40, 20, 30, 10])
     expect(groups.reduce((sum, group) => sum + group.amount, 0)).toBe(selectUsedFocus(state))
   })

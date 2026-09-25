@@ -4,7 +4,7 @@ export const FOCUS_NAVIGATION: Record<FocusReservation['sourceType'], ScreenId> 
   channeling: 'tower-channeling',
   research: 'tower-research',
   transmutation: 'tower-transmutation',
-  autocast: 'combat',
+  combat: 'combat',
 }
 
 export const getFocusReservationDestination = (sourceType: FocusReservation['sourceType']) => FOCUS_NAVIGATION[sourceType]

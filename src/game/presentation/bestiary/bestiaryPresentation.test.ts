@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { MONSTERS } from '../../content/monsters'
-import { buildBestiaryBossPhases, getBestiaryBossSummaryTags, getBestiaryTraitPresentations } from './bestiaryPresentation'
+import { buildBestiaryBossPhases, getBestiaryBossSummaryTags, getBestiaryResonancePresentation, getBestiaryResonanceSearchText, getBestiaryTraitPresentations } from './bestiaryPresentation'
 import { buildCombatStatusDetailPresentation } from '../combat'
 
 describe('Bestiary combat presentation', () => {
@@ -36,5 +36,19 @@ describe('Bestiary combat presentation', () => {
     expect(phases.phases[1].opening).toBe(true)
     expect(phases.transitions.default.effects.map((effect) => effect.label)).toContain('Unbound Power')
     expect(getBestiaryBossSummaryTags(MONSTERS['archmage-edrin-shade'])).toContain('Soft Enrage')
+  })
+
+  it('presents current World Tier resonance in canonical order and omits zero values', () => {
+    const presentation = getBestiaryResonancePresentation(MONSTERS['graveglass-shade'], 2)
+    expect(presentation).toMatchObject({ worldTier: 2, rewardMultiplier: 2 })
+    expect(presentation.entries.map((entry) => [entry.label, entry.baseAmount, entry.finalAmount])).toEqual([
+      ['Water Resonance', 24, 48],
+      ['Earth Resonance', 12, 24],
+    ])
+  })
+
+  it('keeps Bestiary Resonance search identity on authored base values', () => {
+    expect(getBestiaryResonanceSearchText(MONSTERS['forest-wisp']).toLowerCase()).toContain('air resonance')
+    expect(getBestiaryResonanceSearchText(MONSTERS['meridian-warden'])).toBe('')
   })
 })

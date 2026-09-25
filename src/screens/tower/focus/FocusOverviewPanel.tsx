@@ -6,7 +6,7 @@ import { formatNumber } from '../../../game/utils'
 import { selectFreeFocus, selectRawFreeFocus, selectUsedFocus } from '../../../store/selectors'
 import { useGameStore } from '../../../store/gameStore'
 
-const GROUP_LABELS: Record<FocusUsageGroup['sourceType'], string> = { channeling: 'CHANNELING', research: 'RESEARCH', transmutation: 'TRANSMUTATION', autocast: 'AUTO-CAST' }
+const GROUP_LABELS: Record<FocusUsageGroup['sourceType'], string> = { channeling: 'CHANNELING', research: 'RESEARCH', transmutation: 'TRANSMUTATION', combat: 'COMBAT' }
 
 export function FocusOverviewPanel() {
   const state = useGameStore()
@@ -21,12 +21,12 @@ export function FocusOverviewPanel() {
   return <Card className={`focus-overview focus-pressure-${pressure}`} title="FOCUS OVERVIEW" action={<Status tone={pressure === 'normal' ? 'success' : pressure === 'over-cap' || pressure === 'high' ? 'warning' : 'neutral'}>{pressureLabel}</Status>}>
     <div className="focus-overview-metrics">
       <Metric label="MAX FOCUS" value={breakdown.total} description="Total Focus capacity from the base tower, progression, permanent rewards, equipment, and developer overrides." accent="focus" />
-      <Metric label="RESERVED" value={used} description="Focus currently reserved by active Channeling, Research, Transmutation, and Auto-Cast systems." accent="warning" />
+      <Metric label="ACTIVE" value={used} description="Focus currently held by active Channeling, Research, Transmutation, and Combat systems." accent="warning" />
       <Metric label="FREE" value={free} description="Focus remaining after active reservations. This value is zero when reservations exceed capacity." accent="success" />
       <Metric label="UTILIZATION" value={`${Math.round(utilization)}%`} description="Reserved Focus as a percentage of Max Focus. 70% is moderate pressure and 90% is high pressure." accent="warning" />
     </div>
     <div className="focus-allocation-bar">
-      <Progress value={breakdown.total ? used / breakdown.total * 100 : 0} tone="gold" label="FOCUS ALLOCATION" right={`${formatNumber(used)} / ${formatNumber(breakdown.total)}`} />
+      <Progress value={breakdown.total ? used / breakdown.total * 100 : 0} tone="gold" label="ACTIVE FOCUS" right={`${formatNumber(used)} / ${formatNumber(breakdown.total)}`} />
       {rawFree < 0 && <strong>OVER CAP BY {formatNumber(Math.abs(rawFree))}</strong>}
     </div>
     <div className="focus-load">

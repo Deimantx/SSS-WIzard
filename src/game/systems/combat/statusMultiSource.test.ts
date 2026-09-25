@@ -9,11 +9,12 @@ import { applyStatus, getStatusApplicationSourceKey, tickStatuses } from './stat
 import type { CombatEffect, CombatEvent, CombatSource } from './combatTypes'
 import { removeStatus } from './statusRuntime'
 import { spawnEnemy } from './combatRuntime'
+import { createCombatTestState } from './testCombatState'
 
 const source = (sourceId: string): CombatSource => ({ actor: 'player', kind: 'spell', sourceId, school: 'fire', tags: ['spell', 'magic', 'fire'] })
 const burnEffect = (spellId: 'searing-touch' | 'inferno') => SPELLS[spellId].effects.find((effect): effect is Extract<CombatEffect, { type: 'apply-status' }> => effect.type === 'apply-status')!
 const stateWithEnemy = () => {
-  const state = createInitialState()
+  const state = createCombatTestState()
   state.combat.active = true
   state.combat.dungeonId = 'whispering-woods'
   spawnEnemy(state, 'forest-wisp')
@@ -30,7 +31,7 @@ describe('multi-source periodic statuses', () => {
 
     expect(state.combat.enemyStatuses).toHaveLength(2)
     expect(state.combat.enemyStatuses.map((status) => status.instanceKey)).toEqual(['player:spell:searing-touch', 'player:spell:inferno'])
-    expect(getCombatStatusGroups(state.combat.enemyStatuses)).toMatchObject([{ statusId: 'burning', displayRemainingMs: 12_000, instances: expect.any(Array), sourceBreakdown: [{ sourceLabel: 'Searing Touch' }, { sourceLabel: 'Inferno' }], totalCurrentRate: expect.closeTo(7.2916667, 6) }])
+    expect(getCombatStatusGroups(state.combat.enemyStatuses, state)).toMatchObject([{ statusId: 'burning', displayRemainingMs: 12_000, instances: expect.any(Array), sourceBreakdown: [{ sourceLabel: 'Searing Touch' }, { sourceLabel: 'Inferno' }], totalCurrentRate: expect.closeTo(7.2916667, 6) }])
 
     const events: CombatEvent[] = []
     tickStatuses(state, 10_000, executeCombatEffects, { push: (event) => events.push(event) })

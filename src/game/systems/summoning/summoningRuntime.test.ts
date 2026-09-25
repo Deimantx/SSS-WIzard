@@ -3,10 +3,11 @@ import { SUMMONING_UNLOCK_BOSS_ID } from '../../content/guardians/guardians'
 import { createInitialState } from '../../../store/initialState'
 import { getCombatModifiers } from '../combat/modifiers'
 import { spawnEnemy } from '../combat/combatRuntime'
+import { createCombatTestState } from '../combat/testCombatState'
 import { advanceGuardianUpkeep, clearGuardianRuntime, ensureGuardianForCurrentEncounter, resolveGuardianAttack } from './summoningRuntime'
 
 const unlockedState = () => {
-  const state = createInitialState()
+  const state = createCombatTestState()
   state.progress.bossKillsByBoss[SUMMONING_UNLOCK_BOSS_ID] = 1
   state.guardians.selectedGuardianId = 'fire-guardian'
   state.combat.active = true

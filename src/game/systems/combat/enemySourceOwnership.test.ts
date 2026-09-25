@@ -11,9 +11,10 @@ import { finishEnemy, spawnEnemy } from './combatRuntime'
 import { executeCombatEffects } from './effectResolver'
 import { isEnemySourceOwnerActive } from './combatProvenance'
 import { tickStatuses } from './statusRuntime'
+import { createCombatTestState } from './testCombatState'
 
 const makeState = (enemyId: GameState['combat']['enemyId']) => {
-  const state = createInitialState()
+  const state = createCombatTestState()
   state.combat.active = true
   state.combat.dungeonId = 'howling-den'
   if (enemyId) spawnEnemy(state, enemyId)

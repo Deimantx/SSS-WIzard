@@ -11,7 +11,7 @@ import { isEnemySourceOwnerActive } from './combatProvenance'
 import { nextCombatRandom } from './combatRng'
 import { getActiveArtifactCombatProviders, isArtifactItem, processArtifactSpecialCombatEvent } from '../artifacts/artifactProgression'
 import { getArcaneCoreCombatRules } from '../arcaneCore/arcaneCoreProgression'
-import { processArcaneCoreV6CombatEvent } from '../arcaneCore/arcaneCoreV6Runtime'
+import { processArcaneCoreV6CombatEvent } from '../arcaneCore/arcaneCoreV7Runtime'
 
 export type CombatEventContext = CombatConditionContext
 export type TriggerEffectExecutor = (state: GameState, effects: CombatEffect[], source: CombatSource, depth?: number, uiEvents?: CombatEventSink, resolution?: CombatResolutionContext) => void
@@ -134,7 +134,7 @@ export const runCombatTriggers = (
   // Trigger rules are owned by the actor that provides them. A detached
   // source may still resolve its already-authored effect, but a dead actor
   // cannot start a new Trait, Status, or Equipment reaction.
-  if (!isCombatActorAlive(state, actor) && !(actor === 'player' && event === 'on-damage-taken')) return
+  if (!isCombatActorAlive(state, actor)) return
   const cascade = resolution ?? createCombatResolutionContext()
   // A periodic effect from a defeated Enemy may still tick, but it cannot
   // execute source-side rules from the next encounter. Combat-start uses a

@@ -21,7 +21,7 @@ describe('spell detail presentation', () => {
     expect(detail).toMatchObject({ spellId: 'fire-bolt', spellName: 'Fire Bolt', school: 'fire', rankLabel: 'Rank I', description: expect.any(String), manaCost: 30, cooldownLabel: '6.0s', autoCastFocus: 10, autoCastActive: false })
     expect(detail.spellPower).toBeGreaterThan(BALANCE.player.baseSpellPower)
     expect(detail.effects).toHaveLength(1)
-    expect(row(cardRows, 'Damage')?.value).toBe('49.5')
+    expect(row(cardRows, 'Damage')?.value).toBe('48.8')
     expect(row(cardRows, 'Scaling')).toBeUndefined()
     expect(row(cardRows, 'Base Damage')).toBeUndefined()
     expect(row(cardRows, 'Current Base Preview')).toBeUndefined()

@@ -14,7 +14,7 @@ import { getArtifactPreCastDamageMultiplier, getArtifactPreCastManaMultiplier, g
 import { selectFreeFocus } from '../systems/focus/focusReservations'
 import { hasEnoughResource, stabilizeResourceValue } from '../presentation/resources/resourcePresentation'
 import { beginArcaneCoreSpellCast, isArcaneCoreSpellFree } from '../systems/arcaneCore/arcaneCoreRuntime'
-import { getArcaneCoreV6CastModifiers, type ArcaneCoreCastOrigin, type ArcaneCoreV6CastModifiers } from '../systems/arcaneCore/arcaneCoreV6Runtime'
+import { getArcaneCoreV6CastModifiers, type ArcaneCoreCastOrigin, type ArcaneCoreV6CastModifiers } from '../systems/arcaneCore/arcaneCoreV7Runtime'
 import { getArcaneCoreCooldownPulseReduction } from '../systems/arcaneCore/arcaneCoreRuntime'
 import { runCombatTriggers } from '../systems/combat/triggerRuntime'
 import { createCombatResolutionContext } from '../systems/combat/combatTypes'

@@ -12,6 +12,14 @@ import { serializeGameState } from '../persistence/profileSaveManager'
 import { makeInitialState, useGameStore } from '../store/gameStore'
 import { resolveBossThreatRequirement } from './systems/combat/combatThreat'
 import { resolveEnemyPowerRating } from './presentation/combat/enemyPowerRating'
+import { createCombatTestState } from './systems/combat/testCombatState'
+
+const resetCombatGame = () => {
+  const game = useGameStore.getState()
+  game.resetSave()
+  useGameStore.setState(createCombatTestState())
+  return useGameStore.getState()
+}
 
 describe('focus reservation engine', () => {
   it('reserves Focus for running activities and releases it when paused', () => {
@@ -25,8 +33,7 @@ describe('focus reservation engine', () => {
   })
 
   it('rejects a Focus activity when the action would exceed max Focus', () => {
-    const game = useGameStore.getState()
-    game.resetSave()
+    const game = resetCombatGame()
     game.setPlayer({ baseMaxFocus: 15 })
     game.addArcaneEcho()
     game.assignTransmutationEcho('fire-fragment')
@@ -37,8 +44,7 @@ describe('focus reservation engine', () => {
   })
 
   it('rejects spell Auto-Cast when insufficient Focus is available', () => {
-    const game = useGameStore.getState()
-    game.resetSave()
+    const game = resetCombatGame()
     game.unlockAllSpells()
     game.setPlayer({ baseMaxFocus: 9 })
     game.toggleAutoCast('fire-bolt')
@@ -77,9 +83,8 @@ describe('research rules', () => {
 
 describe('central game loop', () => {
   it('keeps dungeon threat while navigating and resets it on death', () => {
-    const game = useGameStore.getState()
-    game.resetSave()
-    game.enterDungeon()
+    const game = resetCombatGame()
+    game.enterTargetedCombat('whispering-woods', 'forest-wisp')
     const firstEnemy = useGameStore.getState().combat.enemyId!
     game.killCurrentEnemy()
     expect(useGameStore.getState().combat.threatCleared).toBe(resolveEnemyPowerRating(firstEnemy, 1))
@@ -92,9 +97,8 @@ describe('central game loop', () => {
   })
 
   it('first Forest Heart kill unlocks the Guild and the next dungeon', () => {
-    const game = useGameStore.getState()
-    game.resetSave()
-    game.enterDungeon()
+    const game = resetCombatGame()
+    game.enterTargetedCombat('whispering-woods', 'forest-wisp')
     game.killCurrentEnemy()
     game.setThreat(resolveBossThreatRequirement('whispering-woods', 1))
     game.engageBoss('forest-heart')
@@ -107,10 +111,9 @@ describe('central game loop', () => {
   })
 
   it('unlocks Auto Hunt after a manual boss kill and queues the current dungeon boss', () => {
-    const game = useGameStore.getState()
-    game.resetSave()
+    const game = resetCombatGame()
     expect(useGameStore.getState().progress.autoHuntBossUnlocked).toBe(false)
-    game.enterDungeon()
+    game.enterTargetedCombat('whispering-woods', 'forest-wisp')
     game.killCurrentEnemy()
     game.setThreat(resolveBossThreatRequirement('whispering-woods', 1))
     game.engageBoss('forest-heart')
@@ -127,9 +130,8 @@ describe('central game loop', () => {
   })
 
   it('caps Threat at the requirement while Auto Hunt is off', () => {
-    const game = useGameStore.getState()
-    game.resetSave()
-    game.enterDungeon()
+    const game = resetCombatGame()
+    game.enterTargetedCombat('whispering-woods', 'forest-wisp')
     game.setThreat(resolveBossThreatRequirement('whispering-woods', 1) - 1)
     game.killCurrentEnemy()
     for (let index = 0; index < 5; index += 1) game.tick(1000)
@@ -148,8 +150,7 @@ describe('Pillars of Mana economy', () => {
   })
 
   it('does not regenerate fresh Mana without Echoes and tracks only actual Mana gained', () => {
-    const game = useGameStore.getState()
-    game.resetSave()
+    const game = resetCombatGame()
     game.setPlayer({ mana: 0 })
     game.tick(1000)
     expect(useGameStore.getState().player.mana).toBe(0)
@@ -161,8 +162,7 @@ describe('Pillars of Mana economy', () => {
   })
 
   it('adds exactly five Mana per Echo and reserves ten Focus per Echo', () => {
-    const game = useGameStore.getState()
-    game.resetSave()
+    const game = resetCombatGame()
     for (let index = 0; index < 5; index += 1) game.addArcaneEcho()
     const state = useGameStore.getState()
     expect(state.activities.channeling.echoesAssigned).toBe(5)
@@ -174,8 +174,7 @@ describe('Pillars of Mana economy', () => {
   })
 
   it('rejects an Echo when only five Focus is free', () => {
-    const game = useGameStore.getState()
-    game.resetSave()
+    const game = resetCombatGame()
     game.setPlayer({ baseMaxFocus: 5 })
     game.addArcaneEcho()
     const state = useGameStore.getState()
@@ -185,8 +184,7 @@ describe('Pillars of Mana economy', () => {
   })
 
   it('applies Leyline Conduit levels as additive passive regen', () => {
-    const game = useGameStore.getState()
-    game.resetSave()
+    const game = resetCombatGame()
     game.setManaPillarLevel('leyline-conduit', 3)
     expect(manaRegenPerSecond(useGameStore.getState())).toBe(3)
     game.setChannelingEchoes(5)
@@ -196,8 +194,7 @@ describe('Pillars of Mana economy', () => {
   })
 
   it('purchases Arcane Reservoir with Fragments plus Life Essence and preserves current Mana', () => {
-    const game = useGameStore.getState()
-    game.resetSave()
+    const game = resetCombatGame()
     game.setPlayer({ mana: 50 })
     game.addItem('fire-fragment', 20)
     game.addItem('water-fragment', 20)
@@ -217,8 +214,7 @@ describe('Pillars of Mana economy', () => {
   })
 
   it('blocks purchases when Life Essence is protected without consuming anything', () => {
-    const game = useGameStore.getState()
-    game.resetSave()
+    const game = resetCombatGame()
     game.addItem('water-fragment', 5)
     game.addItem('earth-fragment', 5)
     game.addItem('life-essence', 10)
@@ -233,8 +229,7 @@ describe('Pillars of Mana economy', () => {
   })
 
   it('blocks an incomplete transaction when one required resource is missing', () => {
-    const game = useGameStore.getState()
-    game.resetSave()
+    const game = resetCombatGame()
     game.addItem('fire-fragment', 20)
     game.addItem('water-fragment', 20)
     game.addItem('earth-fragment', 20)
@@ -251,8 +246,7 @@ describe('Pillars of Mana economy', () => {
   })
 
   it('tracks capped Mana generation instead of theoretical flow', () => {
-    const game = useGameStore.getState()
-    game.resetSave()
+    const game = resetCombatGame()
     game.setChannelingEchoes(5)
     game.setPlayer({ mana: 99 })
     game.tick(1000)
@@ -261,8 +255,7 @@ describe('Pillars of Mana economy', () => {
   })
 
   it('completes Stable Leyline and Echo Resonance exactly once', () => {
-    const game = useGameStore.getState()
-    game.resetSave()
+    const game = resetCombatGame()
     game.setPlayer({ mana: 0 })
     game.setChannelingManaGenerated(2499)
     game.setChannelingEchoes(1)
@@ -279,8 +272,7 @@ describe('Pillars of Mana economy', () => {
   })
 
   it('resets the continuous Echo timer when five Echoes stop sustaining', () => {
-    const game = useGameStore.getState()
-    game.resetSave()
+    const game = resetCombatGame()
     game.setChannelingEchoes(5)
     for (let index = 0; index < 90; index += 1) game.tick(1000)
     game.setChannelingEchoes(4)
@@ -289,8 +281,7 @@ describe('Pillars of Mana economy', () => {
   })
 
   it('adds Deep Reservoir capacity as a derived discovery bonus', () => {
-    const game = useGameStore.getState()
-    game.resetSave()
+    const game = resetCombatGame()
     game.setManaPillarLevel('arcane-reservoir', 5)
     const state = useGameStore.getState()
     expect(state.progress.channeling.discoveries['deep-reservoir']).toBe(true)
@@ -298,8 +289,7 @@ describe('Pillars of Mana economy', () => {
   })
 
   it('separates passive Mana Resonance from Echo output', () => {
-    const game = useGameStore.getState()
-    game.resetSave()
+    const game = resetCombatGame()
     game.setManaPillarLevel('leyline-conduit', 10)
     game.setManaPillarLevel('mana-resonance', 10)
     game.setManaPillarLevel('echo-attunement', 10)
@@ -312,8 +302,7 @@ describe('Pillars of Mana economy', () => {
   })
 
   it('amplifies the full Max Mana pool with Astral Expansion and floors once', () => {
-    const game = useGameStore.getState()
-    game.resetSave()
+    const game = resetCombatGame()
     game.setManaPillarLevel('arcane-reservoir', 4)
     game.setChannelingDiscovery('deep-reservoir', false)
     game.setManaPillarLevel('astral-expansion', 10)
@@ -326,8 +315,7 @@ describe('Pillars of Mana economy', () => {
   })
 
   it('stacks Echo Attunement multiplicatively with Echo Resonance', () => {
-    const game = useGameStore.getState()
-    game.resetSave()
+    const game = resetCombatGame()
     game.setManaPillarLevel('echo-attunement', 10)
     game.setChannelingEchoes(5)
     game.setChannelingDiscovery('echo-resonance', true)
@@ -335,8 +323,7 @@ describe('Pillars of Mana economy', () => {
   })
 
   it('cannot raise a Pillar beyond Level 10 or spend after mastery', () => {
-    const game = useGameStore.getState()
-    game.resetSave()
+    const game = resetCombatGame()
     game.setManaPillarLevel('mana-resonance', 10)
     game.addItem('fire-fragment', 250)
     game.addItem('air-fragment', 250)
@@ -365,8 +352,7 @@ describe('Life Essence combat material', () => {
 
 describe('Developer channeling overrides', () => {
   it('adds a temporary Mana regen source and restores the normal calculation', () => {
-    const game = useGameStore.getState()
-    game.resetSave()
+    const game = resetCombatGame()
     const normal = getManaRegenBreakdown(useGameStore.getState()).total
     game.setDebugManaRegenBonus(100)
     expect(getManaRegenBreakdown(useGameStore.getState())).toMatchObject({ developerBonus: 100, total: normal + 100 })
@@ -375,16 +361,14 @@ describe('Developer channeling overrides', () => {
   })
 
   it('applies a debug Max Mana flat bonus before Astral Expansion', () => {
-    const game = useGameStore.getState()
-    game.resetSave()
+    const game = resetCombatGame()
     game.forceSetManaPillarLevel('astral-expansion', 10)
     game.setDebugMaxManaBonus(500)
     expect(getManaCapacityBreakdown(useGameStore.getState())).toMatchObject({ developerCapacityBonus: 500, preAmplification: 600, total: 660 })
   })
 
   it('allows explicit Mana over-cap testing without changing normal clamps', () => {
-    const game = useGameStore.getState()
-    game.resetSave()
+    const game = resetCombatGame()
     game.setDebugAllowManaOverCap(true)
     game.setChannelingEchoes(1)
     game.setPlayer({ mana: 1000 })
@@ -396,8 +380,7 @@ describe('Developer channeling overrides', () => {
   })
 
   it('reports raw negative Focus while keeping gameplay free Focus safe', () => {
-    const game = useGameStore.getState()
-    game.resetSave()
+    const game = resetCombatGame()
     game.setDebugMaxFocusBonus(500)
     game.setDebugIgnoreEchoLimit(true)
     game.forceSetEchoes(20)
@@ -409,8 +392,7 @@ describe('Developer channeling overrides', () => {
   })
 
   it('allows normal Focus actions to exceed the pool only in debug over-reservation mode', () => {
-    const game = useGameStore.getState()
-    game.resetSave()
+    const game = resetCombatGame()
     game.setPlayer({ baseMaxFocus: 5 })
     game.setDebugAllowFocusOverCap(true)
     game.addArcaneEcho()
@@ -421,8 +403,7 @@ describe('Developer channeling overrides', () => {
   })
 
   it('force sets Echoes and Pillars without consuming materials', () => {
-    const game = useGameStore.getState()
-    game.resetSave()
+    const game = resetCombatGame()
     game.forceSetEchoes(20)
     expect(useGameStore.getState().activities.channeling.echoesAssigned).toBe(5)
     game.setDebugIgnoreEchoLimit(true)
@@ -434,8 +415,7 @@ describe('Developer channeling overrides', () => {
   })
 
   it('resets only debug controls and strips them from normal profile serialization', () => {
-    const game = useGameStore.getState()
-    game.resetSave()
+    const game = resetCombatGame()
     game.addItem('fire-fragment', 9)
     game.setManaPillarLevel('mana-resonance', 1)
     game.setDebugManaRegenBonus(500)
@@ -449,7 +429,7 @@ describe('Developer channeling overrides', () => {
     expect(serialized).not.toHaveProperty('debug')
     game.resetDebugOverrides()
     const after = useGameStore.getState()
-    expect(after.debug).toEqual({ bonusManaRegenFlat: 0, bonusMaxManaFlat: 0, bonusMaxFocusFlat: 0, allowManaOverCap: false, allowFocusOverCap: false, ignoreEchoLimit: false, transmutationEchoCapacityOverride: null, showLockedTransmutationRecipes: false, showLockedArtificingRecipes: false, playerImmortal: false, enemyImmortal: false, infiniteMana: false, ignoreSpellCooldowns: false, disableAutoCast: false, freezePlayerActions: false, freezeEnemyActions: false, combatPaused: false, combatTimeScale: 1, artifactBonusPointsByArtifact: {}, artifactIgnoreDungeonGate: false, artifactIgnoreLevelCap: false, artifactIgnoreNodePrerequisites: false, artifactAllowBeyondLimit: false, artifactFreeUpgrade: false, arcaneCoreFreeCosts: false, arcaneCoreIgnorePrerequisites: false })
+    expect(after.debug).toEqual(makeInitialState().debug)
     expect(after.inventory['fire-fragment']).toBe(before.inventory['fire-fragment'])
     expect(after.progress.channeling.pillars['mana-resonance'].level).toBe(1)
   })

@@ -58,7 +58,7 @@ import {
 } from "./combatTypes";
 import { stabilizeResourceValue } from "../../presentation/resources/resourcePresentation";
 import { getArcaneCoreHealingReceivedBonusPct, tryConsumeArcaneCoreSurvival } from "../arcaneCore/arcaneCoreRuntime";
-import { recordArcaneCoreV6CriticalResult } from "../arcaneCore/arcaneCoreV6Runtime";
+import { recordArcaneCoreV6CriticalResult } from "../arcaneCore/arcaneCoreV7Runtime";
 import { getActiveEncounterWorldTierDefinition } from '../world-tier/worldTierRuntime'
 
 const MAX_EFFECT_DEPTH = 20;

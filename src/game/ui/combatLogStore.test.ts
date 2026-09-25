@@ -4,6 +4,7 @@ import { advanceGameState } from '../systems/simulation/advanceGameState'
 import { spawnEnemy } from '../systems/combat/combatRuntime'
 import { createInitialState } from '../../store/initialState'
 import { clearCombatLogUi, combatLogUiSink, useCombatLogStore } from './combatLogStore'
+import { createCombatTestState } from '../systems/combat/testCombatState'
 
 const event = (amount: number, timestampMs = amount): CombatLogEvent => ({
   source: { kind: 'player' },
@@ -42,18 +43,19 @@ describe('combatLogStore', () => {
   })
 
   it('emits live combat detail while suppressing the same stream in banked simulation', () => {
-    const liveState = createInitialState()
+    const liveState = createCombatTestState()
     liveState.combat.active = true
     liveState.combat.dungeonId = 'whispering-woods'
     liveState.player.mana = liveState.player.maxMana
     liveState.progress.spellRanks['fire-bolt'] = 1
     liveState.activities.autoCast['fire-bolt'] = true
     liveState.activities.autoCastPriority = ['fire-bolt']
+    liveState.spellPresets.presets[0].slots[0].autoCast = true
     const liveSink: CombatUiEventSink = { push: vi.fn() }
     spawnEnemy(liveState, 'forest-wisp', liveSink)
     advanceGameState(liveState, 1_000, { mode: 'live', uiEvents: liveSink })
 
-    const bankedState = createInitialState()
+    const bankedState = createCombatTestState()
     bankedState.combat.active = true
     bankedState.combat.dungeonId = 'whispering-woods'
     spawnEnemy(bankedState, 'forest-wisp')

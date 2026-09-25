@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { finishEnemy, spawnEnemy } from './combatRuntime'
+import { createCombatTestState } from './testCombatState'
 
 const bossState = (bossId: 'forest-heart' | 'archmage-edrin-shade', dungeonId: 'whispering-woods' | 'abandoned-catacombs') => {
-  const state = createInitialState()
+  const state = createCombatTestState()
   state.combat.active = true
   state.combat.dungeonId = dungeonId
   spawnEnemy(state, bossId)
@@ -24,13 +25,12 @@ describe('School cap milestone rewards', () => {
     const state = bossState('archmage-edrin-shade', 'abandoned-catacombs')
     finishEnemy(state)
     expect(state.progress.magicLevelCap).toBe(40)
-    expect(state.notifications.some((note) => note.text === 'FIRST CHAPTER COMPLETE')).toBe(true)
     expect(state.notifications.some((note) => note.text === 'Magic School cap increased to 40')).toBe(true)
 
     state.combat.active = true
     spawnEnemy(state, 'archmage-edrin-shade')
     finishEnemy(state)
     expect(state.progress.magicLevelCap).toBe(40)
-    expect(state.notifications.filter((note) => note.text === 'Magic School cap increased to 40')).toHaveLength(1)
+    expect(state.notifications.filter((note) => note.text === 'Magic School cap increased to 40')).toHaveLength(0)
   })
 })

@@ -27,7 +27,7 @@ import type { DungeonStatisticsObserver } from '../../telemetry/dungeon/dungeonS
 import { sanitizeCombatTimeScale } from '../../../store/actions/debugActions'
 import { advanceGuardianUpkeep, ensureGuardianForCurrentEncounter, getGuardianAttackBoundary, resolveGuardianAttack, suppressGuardianIfOutOfMana } from '../summoning/summoningRuntime'
 import { advanceArcaneCoreV6RuntimeTime } from '../arcaneCore/arcaneCoreRuntime'
-import { recordArcaneCoreV7CooldownCompletion } from '../arcaneCore/arcaneCoreV6Runtime'
+import { recordArcaneCoreV7CooldownCompletion } from '../arcaneCore/arcaneCoreV7Runtime'
 
 export interface AdvanceContext {
   mode: 'live' | 'banked'

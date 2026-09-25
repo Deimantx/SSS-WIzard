@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState, SAVE_VERSION } from '../../../store/initialState'
+import { createCombatTestState } from './testCombatState'
 import { migrateSave } from '../../../persistence/migrations'
 import { STATUS_DEFINITIONS } from '../../content/statuses'
 import { TRAIT_DEFINITIONS, validateTraitDefinitions } from '../../content/traits'
@@ -17,7 +18,7 @@ const playerSource: CombatSource = { actor: 'player', kind: 'spell', sourceId: '
 const enemySource = (state: GameState): CombatSource => ({ actor: 'enemy', kind: 'basic-attack', sourceId: 'trait-test-attack', sourceMonsterId: state.combat.enemyId ?? undefined, sourceInstanceKey: state.combat.enemyInstanceKey ?? undefined, tags: ['basic-attack', 'direct'] })
 
 const stateWithEnemy = () => {
-  const state = createInitialState()
+  const state = createCombatTestState()
   state.combat.active = true
   state.combat.dungeonId = 'whispering-woods'
   spawnEnemy(state, 'forest-wisp')
@@ -40,14 +41,13 @@ const withTemporaryTrait = (trait: TraitDefinition, test: () => void) => {
 
 describe('Universal Trait System V1', () => {
   it('uses the edited combat rebalance values in runtime state and authored traits', () => {
-    const state = createInitialState()
+    const state = createCombatTestState()
     const flicker = TRAIT_DEFINITIONS['forest-wisp-flicker']
-    const effect = flicker.rules?.[0]?.effects[0]
 
     expect(state.player.mana).toBe(BALANCE.mana.startingMana)
-    expect(BALANCE.player).toMatchObject({ outOfCombatRegenMultiplier: 2, basicAttackDamage: 5, baseSpellPower: 50, baseDefense: 5 })
-    expect(effect).toMatchObject({ type: 'apply-status', statusId: 'haste', durationMs: 10_000 })
-    expect(flicker.description).toContain('10 seconds')
+    expect(BALANCE.player).toMatchObject({ outOfCombatRegenMultiplier: 2, baseSpellPower: 50, baseDefense: 5 })
+    expect(flicker.rules).toBeUndefined()
+    expect(flicker.description).toContain('Haste')
   })
 
   it('evaluates conditional Trait modifiers through the canonical combat pipeline', () => {

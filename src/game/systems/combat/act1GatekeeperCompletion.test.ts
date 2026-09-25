@@ -3,10 +3,11 @@ import { createInitialState } from '../../../store/initialState'
 import { isDungeonCompleted } from '../../content/dungeons/dungeons'
 import { isSummoningUnlocked } from '../summoning/summoningSelectors'
 import { finishEnemy, spawnEnemy } from './combatRuntime'
+import { createCombatTestState } from './testCombatState'
 
 describe('Corrupted Elemental Gatekeeper completion', () => {
   it('uses the normal boss death pipeline once for T2 completion and Summoning unlock', () => {
-    const state = createInitialState()
+    const state = createCombatTestState()
     state.combat.active = true
     state.combat.dungeonId = 'fractured-approach'
     spawnEnemy(state, 'corrupted-elemental-gatekeeper')

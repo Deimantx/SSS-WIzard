@@ -5,6 +5,7 @@ import { forceResolveEnemyAction } from './actionRuntime'
 import { executeCombatEffects } from './effectResolver'
 import { resolveMagnitude } from './magnitude'
 import { spawnEnemy } from './combatRuntime'
+import { createCombatTestState } from './testCombatState'
 
 const enemySource = (state: ReturnType<typeof createInitialState>, sourceId: string) => ({
   actor: 'enemy' as const,
@@ -16,7 +17,7 @@ const enemySource = (state: ReturnType<typeof createInitialState>, sourceId: str
 
 describe('scaled enemy action output', () => {
   it('resolves direct damage from the Monster Basic Attack Damage baseline', () => {
-    const state = createInitialState()
+    const state = createCombatTestState()
     state.combat.active = true
     state.combat.dungeonId = 'whispering-woods'
     spawnEnemy(state, 'forest-heart')
@@ -36,7 +37,7 @@ describe('scaled enemy action output', () => {
   })
 
   it('resolves healing and Barrier from the current Monster Max Health', () => {
-    const state = createInitialState()
+    const state = createCombatTestState()
     state.combat.active = true
     state.combat.dungeonId = 'whispering-woods'
     spawnEnemy(state, 'forest-heart')
@@ -47,7 +48,7 @@ describe('scaled enemy action output', () => {
     state.combat.enemyMaxHp = 800
     expect(resolveMagnitude(state, heal.magnitude, source, 'enemy')).toBe(80)
 
-    const barrierState = createInitialState()
+    const barrierState = createCombatTestState()
     barrierState.combat.active = true
     barrierState.combat.dungeonId = 'whispering-woods'
     spawnEnemy(barrierState, 'grove-sentinel')
@@ -57,7 +58,7 @@ describe('scaled enemy action output', () => {
   })
 
   it('snapshots a scaled DoT so later Monster stat changes do not rewrite it', () => {
-    const state = createInitialState()
+    const state = createCombatTestState()
     state.combat.active = true
     state.combat.dungeonId = 'howling-den'
     spawnEnemy(state, 'razorclaw-lynx')

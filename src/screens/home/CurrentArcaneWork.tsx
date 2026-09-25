@@ -1,7 +1,7 @@
 import { ChevronRight } from 'lucide-react'
 import { Button, Card, GameTooltip, Status } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
-import { manaRegenPerSecond } from '../../game/engine'
+import { manaRegenPerSecond } from '../../game/engine/channelingEngine'
 import { isRecipeUnlocked } from '../../game/content/recipes/recipeUnlocks'
 import { TRANSMUTATION_RECIPE_ORDER as RECIPE_ORDER, TRANSMUTATION_RECIPES as RECIPES } from '../../game/content/recipes/transmutationRecipes'
 import { getPreparedResearchJobs, getResearchEchoesAssigned, getResearchXpPerHour } from '../../game/systems/research/researchSelectors'

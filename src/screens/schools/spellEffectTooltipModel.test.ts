@@ -15,7 +15,7 @@ describe('spell effect tooltip models', () => {
 
     expect(model).toMatchObject({ category: 'DAMAGE', title: 'Fire Damage', description: 'Deals Fire damage when this Spell resolves.' })
     expect(row(model, 'Scaling')?.value).toBe('75% Spell Power')
-    expect(row(model, 'Damage')?.value).toBe('49.5')
+    expect(row(model, 'Damage')?.value).toBe('48.8')
     expect(row(model, 'School Scaling')).toBeUndefined()
     expect(row(model, 'Current School Level')).toBeUndefined()
     expect(row(model, 'Current Base Preview')).toBeUndefined()
@@ -49,9 +49,9 @@ describe('spell effect tooltip models', () => {
 
     expect(model).toMatchObject({ category: 'BARRIER', title: 'Barrier' })
     expect(row(model, 'Scaling')?.value).toBe('120% Spell Power')
-    expect(row(model, 'Amount')?.value).toBe('79')
+    expect(row(model, 'Amount')?.value).toBe('78')
     expect(row(model, 'Duration')?.value).toBe('10.0s')
-    expect(row(model, 'Mode')?.value).toBe('Add')
+    expect(row(model, 'Mode')?.value).toBe('Replace if Stronger')
     expect(row(model, 'Tideglass Wand')).toBeUndefined()
     expect(row(model, 'Target')?.value).toBe('Self')
     expect(row(model, 'Source')?.value).toBe('Earthen Barrier')

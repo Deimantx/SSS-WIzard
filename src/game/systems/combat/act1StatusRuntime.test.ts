@@ -9,12 +9,13 @@ import { getCooldownRecoveryMultiplier, getDefense } from './combatStats'
 import { actorCannotAct, actorCannotCastSpells, applyStatus, tickStatuses } from './statusRuntime'
 import { spawnEnemy } from './combatRuntime'
 import type { CombatSource } from './combatTypes'
+import { createCombatTestState } from './testCombatState'
 
 const playerSource: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'test-spell', school: 'fire', tags: ['spell', 'magic', 'fire'] }
 const enemySource: CombatSource = { actor: 'enemy', kind: 'action', sourceId: 'test-action', sourceMonsterId: 'forest-wisp', tags: ['special'] }
 
 const combatState = () => {
-  const state = createInitialState()
+  const state = createCombatTestState()
   state.combat.active = true
   state.combat.dungeonId = 'whispering-woods'
   spawnEnemy(state, 'forest-wisp')

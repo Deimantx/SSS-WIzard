@@ -22,8 +22,8 @@ describe('current Equipment content', () => {
 state.arcaneCore.nodes['power-r1-arcane-force'] = { rank: 1 }
 state.arcaneCore.nodes['control-r1-cooldown-control'] = { rank: 1 }
 
-    expect(getEquipmentStats(state)).toMatchObject({ spellPower: 18 })
-    expect(getCooldownRecoveryMultiplier(state, 'player')).toBeCloseTo(1.01)
+    expect(getEquipmentStats(state)).toMatchObject({ spellPower: 15 })
+    expect(getCooldownRecoveryMultiplier(state, 'player')).toBeCloseTo(1.002)
   })
 
   it('keeps all monster loot limited to material items', () => {

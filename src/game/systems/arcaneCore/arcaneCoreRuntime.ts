@@ -1,7 +1,7 @@
 import type { ArcaneCoreState, GameState } from '../../types'
 import { getArcaneCoreSpecialEffects } from './arcaneCoreProgression'
 import { selectFreeFocus, selectUsedFocus } from '../focus/focusReservations'
-import { commitArcaneCoreV6SpellCast, getArcaneCoreV6DynamicManaRegen, getArcaneCoreV6DynamicSpellPower, getArcaneCoreV6ManaRegenMultiplier, getArcaneCoreV7HealingReceivedBonusPct, tryConsumeArcaneCoreV6Survival, type ArcaneCoreSpellCastContext } from './arcaneCoreV6Runtime'
+import { commitArcaneCoreV6SpellCast, getArcaneCoreV6DynamicManaRegen, getArcaneCoreV6DynamicSpellPower, getArcaneCoreV6ManaRegenMultiplier, getArcaneCoreV7HealingReceivedBonusPct, tryConsumeArcaneCoreV6Survival, type ArcaneCoreSpellCastContext } from './arcaneCoreV7Runtime'
 
 const special = (state: Pick<ArcaneCoreState, 'nodes'>, type: import('../../types').ArcaneCoreSpecialEffect['type']) => getArcaneCoreSpecialEffects(state).filter((effect) => effect.type === type)
 

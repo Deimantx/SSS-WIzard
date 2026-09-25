@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { ARCANE_CORE_BRANCHES } from '../../content/arcaneCore/arcaneCoreBranches'
 import { ARCANE_CORE_V7_MECHANICS } from '../../content/arcaneCore/arcaneCoreV7Mechanics'
 import { createInitialState } from '../../../store/initialState'
-import { commitArcaneCoreV6SpellCast, getArcaneCoreV6CastModifiers, recordArcaneCoreV6CriticalResult, recordArcaneCoreV7CooldownCompletion } from './arcaneCoreV6Runtime'
+import { commitArcaneCoreV6SpellCast, getArcaneCoreV6CastModifiers, recordArcaneCoreV6CriticalResult, recordArcaneCoreV7CooldownCompletion } from './arcaneCoreV7Runtime'
 import { executeCombatEffects } from '../combat/effectResolver'
 import { applyStatus } from '../combat/statusRuntime'
 

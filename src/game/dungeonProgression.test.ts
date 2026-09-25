@@ -4,10 +4,18 @@ import { createInitialState } from '../store/initialState'
 import { finishEnemy, spawnEnemy } from './systems/combat/combatRuntime'
 import { promoteGuildAction } from '../store/actions/guildActions'
 import { useGameStore } from '../store/gameStore'
+import { createCombatTestState } from './systems/combat/testCombatState'
+
+const resetCombatGame = () => {
+  const game = useGameStore.getState()
+  game.resetSave()
+  useGameStore.setState(createCombatTestState())
+  return useGameStore.getState()
+}
 
 describe('dungeon progression helpers', () => {
   it('uses boss records for dungeon and tutorial completion', () => {
-    const state = createInitialState()
+    const state = createCombatTestState()
     expect(isDungeonCompleted('whispering-woods', state.progress)).toBe(false)
     expect(isTutorialCompleted(state.progress)).toBe(false)
 
@@ -19,8 +27,7 @@ describe('dungeon progression helpers', () => {
   })
 
   it('replaces an active normal monster without resolving it when engaging a boss', () => {
-    const game = useGameStore.getState()
-    game.resetSave()
+    const game = resetCombatGame()
     game.setBossKills('forest-heart', 1)
     game.enterTargetedCombat('howling-den', 'cavefang-wolf')
     game.spawnDebugEnemy('cavefang-wolf')
@@ -55,8 +62,7 @@ describe('dungeon progression helpers', () => {
   })
 
   it('does not duplicate a boss transition when a boss is already queued by Auto Hunt', () => {
-    const game = useGameStore.getState()
-    game.resetSave()
+    const game = resetCombatGame()
     game.setBossKills('forest-heart', 1)
     game.enterTargetedCombat('howling-den', 'cavefang-wolf')
     game.toggleAutoHunt('howling-den')
@@ -76,10 +82,9 @@ describe('dungeon progression helpers', () => {
   })
 
   it('switches an active run directly into another unlocked dungeon without resolving the old encounter', () => {
-    const game = useGameStore.getState()
-    game.resetSave()
+    const game = resetCombatGame()
     game.setBossKills('forest-heart', 1)
-    game.enterDungeon('whispering-woods')
+    game.enterTargetedCombat('whispering-woods', 'forest-wisp')
     game.setThreat(18)
     game.spawnDebugEnemy('grove-sentinel')
     const before = useGameStore.getState()
@@ -104,14 +109,13 @@ describe('dungeon progression helpers', () => {
   })
 
   it('abandons a queued or active boss attempt when switching dungeons', () => {
-    const game = useGameStore.getState()
-    game.resetSave()
+    const game = resetCombatGame()
     game.setBossKills('forest-heart', 1)
-    game.enterDungeon('whispering-woods')
+    game.enterTargetedCombat('whispering-woods', 'forest-wisp')
     game.jumpDebugToBoss('whispering-woods')
     expect(useGameStore.getState().combat.inBossFight).toBe(true)
 
-    game.enterDungeon('howling-den')
+    game.enterTargetedCombat('howling-den', 'cavefang-wolf')
 
     const after = useGameStore.getState()
     expect(after.combat.dungeonId).toBe('howling-den')
@@ -122,9 +126,8 @@ describe('dungeon progression helpers', () => {
   })
 
   it('returns to the same active dungeon without restarting its run', () => {
-    const game = useGameStore.getState()
-    game.resetSave()
-    game.enterDungeon('whispering-woods')
+    const game = resetCombatGame()
+    game.enterTargetedCombat('whispering-woods', 'forest-wisp')
     game.setThreat(17)
     game.setEnemyHealthPercent(37)
     const before = useGameStore.getState()
@@ -132,7 +135,7 @@ describe('dungeon progression helpers', () => {
     const beforeEnemyHp = before.combat.enemyHp
     const beforeEnemySerial = before.combat.enemyInstanceSerial
 
-    game.enterDungeon('whispering-woods')
+    game.enterTargetedCombat('whispering-woods', 'forest-wisp')
 
     const after = useGameStore.getState()
     expect(after.combat.dungeonId).toBe('whispering-woods')
@@ -143,13 +146,12 @@ describe('dungeon progression helpers', () => {
   })
 
   it('keeps the active run when a locked dungeon is requested', () => {
-    const game = useGameStore.getState()
-    game.resetSave()
-    game.enterDungeon('whispering-woods')
+    const game = resetCombatGame()
+    game.enterTargetedCombat('whispering-woods', 'forest-wisp')
     game.setThreat(12)
     const before = useGameStore.getState()
 
-    game.enterDungeon('howling-den')
+    game.enterTargetedCombat('howling-den', 'cavefang-wolf')
 
     const after = useGameStore.getState()
     expect(after.combat.active).toBe(true)
@@ -162,7 +164,7 @@ describe('dungeon progression helpers', () => {
 
 describe('dungeon-specific Guild request progression', () => {
   it('counts Grove Sentinel as a normal kill and keeps Clear the Woods local to Whispering Woods', () => {
-    const state = createInitialState()
+    const state = createCombatTestState()
     state.combat.active = true
     state.combat.dungeonId = 'howling-den'
     state.progress.requestProgress['clear-the-woods'] = 10
@@ -197,6 +199,27 @@ describe('dungeon-specific Guild request progression', () => {
 
     expect(state.progress.guildRank).toBe('apprentice')
     expect(state.progress.permanentFocusBonuses['guild-apprentice']).toBe(10)
+  })
+
+  it('claims each completed Guild Request once and preserves the authored reputation total', () => {
+    const game = resetCombatGame()
+    useGameStore.setState((state) => {
+      state.progress.guildUnlocked = true
+      state.progress.requestProgress = { 'clear-the-woods': 30, 'sentinel-breaker': 2 }
+      state.inventory['fire-fragment'] = 20
+      return state
+    })
+
+    game.donateGuildRequest('arcane-supply', 'max')
+    game.claimGuildReward('arcane-supply')
+    game.claimGuildReward('clear-the-woods')
+    game.claimGuildReward('sentinel-breaker')
+    game.claimGuildReward('sentinel-breaker')
+
+    const state = useGameStore.getState()
+    expect(state.progress.requestClaims).toEqual({ 'arcane-supply': true, 'clear-the-woods': true, 'sentinel-breaker': true })
+    expect(state.progress.guildReputation).toBe(175)
+    expect(state.inventory['fire-fragment']).toBe(0)
   })
 
 })

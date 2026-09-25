@@ -31,8 +31,8 @@ describe('Focus Capacity', () => {
     const state = createInitialState()
 state.arcaneCore.nodes['focus-r1-focus-capacity'] = { rank: 1 }
 
-    expect(getFocusCapacityBreakdown(state).equipment).toBe(1)
-    expect(getFocusCapacityBreakdown(state).total).toBe(101)
+    expect(getFocusCapacityBreakdown(state).equipment).toBe(0.4)
+    expect(getFocusCapacityBreakdown(state).total).toBe(100.4)
   })
 
   it('consumes the exact Prismatic-only Level 1 cost and updates derived Max Focus', () => {

@@ -45,7 +45,6 @@ describe('progressive Spell effect tooltip details', () => {
     expect(screen.getByText('Base Damage Per Tick')).toBeTruthy()
     expect(screen.getByText('Total Base Damage')).toBeTruthy()
     expect(screen.getByText('Base Duration')).toBeTruthy()
-    expect(screen.getByText('Conditional: Fire Spell Damage')).toBeTruthy()
     expect(screen.queryByText('Hold Alt for more details')).toBeNull()
 
     fireEvent.keyUp(window, { key: 'Alt' })

@@ -1,7 +1,7 @@
 import { SPELLS } from '../content/spells'
 import { getEffectiveManaCost } from '../systems/combat/combatStats'
 import { isArcaneCoreSpellFree } from '../systems/arcaneCore/arcaneCoreRuntime'
-import { getArcaneCoreV6CastModifiers, type ArcaneCoreCastOrigin } from '../systems/arcaneCore/arcaneCoreV6Runtime'
+import { getArcaneCoreV6CastModifiers, type ArcaneCoreCastOrigin } from '../systems/arcaneCore/arcaneCoreV7Runtime'
 import type { CanonicalSpellId, GameState, SpellId } from '../types'
 
 /**

@@ -6,6 +6,7 @@ import { createCombatEventSink } from '../../systems/combat/combatEventSink'
 import { executeCombatEffects } from '../../systems/combat/effectResolver'
 import { applyStatus, tickStatuses } from '../../systems/combat/statusRuntime'
 import { spawnEnemy } from '../../systems/combat/combatRuntime'
+import { createCombatTestState } from '../../systems/combat/testCombatState'
 import { advanceCombatTelemetryScope, consumeCombatEvent, createCombatTelemetryScope, getCombatMetricRate, getCombatMetricSourceKey, reconcileCombatBarrierTelemetry } from './combatTelemetryAggregator'
 import { combatTelemetryObserver, useCombatTelemetryStore } from './combatTelemetryStore'
 
@@ -54,7 +55,7 @@ describe('combat telemetry foundation', () => {
 
   it('does not count unused or expired shield capacity, but counts full and partial absorption', () => {
     const scope = createCombatTelemetryScope('run-test', 1, 'whispering-woods')
-    const state = createInitialState()
+    const state = createCombatTestState()
     consumeCombatEvent(scope, barrierEvent({ kind: 'player' }, 'water-ward', 35, 'player', 'replace'))
     state.combat.playerBarrier = 35
     reconcileCombatBarrierTelemetry(scope, state)
@@ -88,7 +89,7 @@ describe('combat telemetry foundation', () => {
   })
 
   it('uses resolved runtime barrier capacity and damage-before values for attribution', () => {
-    const state = createInitialState()
+    const state = createCombatTestState()
     state.combat.active = true
     state.combat.dungeonId = 'whispering-woods'
     state.combat.enemyId = 'grove-sentinel'
@@ -167,7 +168,7 @@ describe('combat telemetry foundation', () => {
   })
 
   it('preserves Ignite and Fireball origins through runtime Status ticks', () => {
-    const state = createInitialState()
+    const state = createCombatTestState()
     state.combat.active = true
     state.combat.dungeonId = 'whispering-woods'
     spawnEnemy(state, 'forest-wisp')

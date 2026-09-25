@@ -212,7 +212,7 @@ export function buildSpellEffectTooltipModel(state: SpellPresentationState, spel
       if (!preview) return
       const componentPrefix = multipleComponents ? `${capitalize(component.damageType)} ` : ''
       if (component.magnitude.type === 'spell-power') rows.push({ label: `${componentPrefix}Scaling`.trim(), value: `${formatSpellMagnitude(scaleMagnitude(component.magnitude, preview.fullTicks + preview.partialTickFraction))} over ${formatTime(durationPreview.effective)}`, semantic: 'school', detailLevel: 'advanced' })
-      appendEffectiveAmount(rows, `${componentPrefix}Damage Per Tick`.trim(), preview.damagePerTick.base, preview.damagePerTick.effective, 'school', `${componentPrefix}Base Damage Per Tick`.trim())
+      appendEffectiveAmount(rows, `${componentPrefix}Damage Per Tick`.trim(), preview.damagePerTick.base, preview.damagePerTick.effective, 'school', `${componentPrefix}Base Damage Per Tick`.trim(), true)
       appendEffectiveAmount(rows, `${componentPrefix}Total Damage`.trim(), preview.totalDamage.base, preview.totalDamage.effective, 'school', `${componentPrefix}Total Base Damage`.trim(), true)
       appendPreviewModifiers(rows, preview.modifiers)
       appendConditionalModifiers(rows, preview.conditionalModifiers)

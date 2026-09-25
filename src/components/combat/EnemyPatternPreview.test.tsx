@@ -12,7 +12,7 @@ describe('EnemyPatternPreview', () => {
     expect(container.querySelectorAll('.combat-pattern-arrow')).toHaveLength(monster.actionPatterns.default.steps.length - 1)
     expect(container.querySelector('.combat-pattern-repeat')).toBeTruthy()
     expect(container.querySelectorAll('.combat-pattern-node span')).toHaveLength(0)
-    expect(container.querySelectorAll('.combat-pattern-icon-basic-attack')).toHaveLength(3)
+    expect(container.querySelectorAll('.combat-pattern-icon-basic-attack')).toHaveLength(4)
     expect(container.querySelector('.combat-pattern-icon-direct-damage')).toBeTruthy()
     expect(container.querySelector('.combat-pattern-icon-barrier')).toBeTruthy()
     expect(container.querySelector('[aria-current]')).toBeNull()

@@ -18,7 +18,8 @@ export interface ProfileSaveResult { ok: boolean; error: string | null }
 
 export const serializeGameState = (state: GameState, savedAt = state.lastSavedAt) => {
   const { lastOfflineBankReport: _transientReport, recentAcquisitions: _transientAcquisitions, debug: _debug, ...gameplayState } = state as GameState & { lastOfflineBankReport?: unknown; recentAcquisitions?: unknown }
-  return { ...gameplayState, player: { ...gameplayState.player, godMode: false }, notifications: [], saveVersion: CURRENT_SAVE_VERSION, lastSavedAt: savedAt } as unknown as GameState
+  const { godMode: _legacyGodMode, ...safePlayer } = gameplayState.player as typeof gameplayState.player & { godMode?: boolean }
+  return { ...gameplayState, player: safePlayer, notifications: [], saveVersion: CURRENT_SAVE_VERSION, lastSavedAt: savedAt } as unknown as GameState
 }
 
 export interface StoredCandidateDiagnostic {

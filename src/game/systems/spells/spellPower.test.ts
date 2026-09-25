@@ -9,6 +9,7 @@ import { getSpellEquipmentBonusPreview } from './spellEquipmentPreview'
 import { getSpellPower, getSpellPowerBreakdown } from './spellPower'
 import type { CombatEffect, CombatSource } from '../../types'
 import { BALANCE } from '../../core/balance/balance'
+import { createCombatTestState } from '../combat/testCombatState'
 
 const spellSource: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'test-spell', school: 'fire', tags: ['spell', 'magic', 'fire'] }
 
@@ -19,20 +20,20 @@ describe('Spell Power foundation', () => {
     expect(getSpellPowerBreakdown(state)).toEqual({ base: BALANCE.player.baseSpellPower, equipment: 0, total: BALANCE.player.baseSpellPower })
 
     state.equipment.weapon = 'ember-staff'
-    expect(getSpellPowerBreakdown(state)).toEqual({ base: BALANCE.player.baseSpellPower, equipment: 16, total: BALANCE.player.baseSpellPower + 16 })
-    expect(getSpellPower(state)).toBe(BALANCE.player.baseSpellPower + 16)
-    expect(getSpellEquipmentBonusPreview(state, 'flame-burst')).toMatchObject({ spellPower: 16, totalPercent: 0 })
+    expect(getSpellPowerBreakdown(state)).toEqual({ base: BALANCE.player.baseSpellPower, equipment: 15, total: BALANCE.player.baseSpellPower + 15 })
+    expect(getSpellPower(state)).toBe(BALANCE.player.baseSpellPower + 15)
+    expect(getSpellEquipmentBonusPreview(state, 'flame-burst')).toMatchObject({ spellPower: 15, totalPercent: 0 })
 
     state.artifactProgress['ember-staff'] = { minorRanks: { 'arcane-embers': 10 } }
-    expect(getSpellPowerBreakdown(state)).toEqual({ base: BALANCE.player.baseSpellPower, equipment: 75, total: BALANCE.player.baseSpellPower + 75 })
-    expect(getSpellPower(state)).toBe(BALANCE.player.baseSpellPower + 75)
+    expect(getSpellPowerBreakdown(state)).toEqual({ base: BALANCE.player.baseSpellPower, equipment: 37, total: BALANCE.player.baseSpellPower + 37 })
+    expect(getSpellPower(state)).toBe(BALANCE.player.baseSpellPower + 37)
   })
 
   it('resolves Spell Power coefficients only for Spell sources', () => {
     const state = createInitialState()
     state.equipment.weapon = 'ember-staff'
-    expect(resolveMagnitude(state, { type: 'spell-power', coefficient: 1 }, spellSource, 'enemy')).toBe(BALANCE.player.baseSpellPower + 16)
-    expect(resolveMagnitude(state, { type: 'spell-power', coefficient: 0.8 }, spellSource, 'player')).toBe((BALANCE.player.baseSpellPower + 16) * 0.8)
+    expect(resolveMagnitude(state, { type: 'spell-power', coefficient: 1 }, spellSource, 'enemy')).toBe(BALANCE.player.baseSpellPower + 15)
+    expect(resolveMagnitude(state, { type: 'spell-power', coefficient: 0.8 }, spellSource, 'player')).toBe((BALANCE.player.baseSpellPower + 15) * 0.8)
     expect(resolveMagnitude(state, { type: 'spell-power', coefficient: 1 }, { actor: 'enemy', kind: 'action', sourceId: 'enemy-action' }, 'player')).toBe(0)
   })
 
@@ -49,7 +50,7 @@ describe('Spell Power foundation', () => {
     if (infernoTickMagnitude?.type !== 'deal-damage' || infernoTickMagnitude.components[0]?.magnitude.type !== 'spell-power') throw new Error('Expected an Inferno Burn payload')
     expect(infernoTickMagnitude.components[0].magnitude.coefficient).toBeCloseTo(0.75 / 12)
 
-    const state = createInitialState()
+    const state = createCombatTestState()
     state.combat.active = true
     state.combat.dungeonId = 'howling-den'
     state.equipment.weapon = 'ember-staff'
@@ -58,6 +59,6 @@ describe('Spell Power foundation', () => {
     state.combat.enemyMaxHp = 1_000
     executeCombatEffects(state, [searingTouch], spellSource)
     tickStatuses(state, 1_000, executeCombatEffects)
-    expect(state.combat.enemyHp).toBe(1_000 - (BALANCE.player.baseSpellPower + 16) / 12)
+    expect(state.combat.enemyHp).toBe(1_000 - (BALANCE.player.baseSpellPower + 15) / 12)
   })
 })

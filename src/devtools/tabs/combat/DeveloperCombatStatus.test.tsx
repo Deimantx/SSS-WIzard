@@ -2,11 +2,12 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { useGameStore } from '../../../store/gameStore'
 import { DeveloperCombatStatus } from './DeveloperCombatStatus'
+import { createCombatTestState } from '../../../game/systems/combat/testCombatState'
 
 describe('DeveloperCombatStatus Equipment fixtures', () => {
   beforeEach(() => {
     window.localStorage.clear()
-    useGameStore.getState().resetSave()
+    useGameStore.setState(createCombatTestState())
   })
 
   it('uses current Artifact slots for the authored combat fixtures', () => {

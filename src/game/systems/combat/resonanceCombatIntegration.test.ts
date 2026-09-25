@@ -6,7 +6,7 @@ import { despawnEnemyForDebug, fastResolveNormalEnemiesForDebug, forceKillEnemyF
 import { finishEnemy, resolveCombatDeaths, spawnEnemy } from './combatRuntime'
 import { advanceWithOfflineBank } from '../offline-bank/offlineBankSimulation'
 import { createOfflineBankReportCollector } from '../offline-bank/offlineBankReport'
-import { resolveLifeEssenceRewardRange } from '../loot/lifeEssenceReward'
+import { resolvePowerScaledCurrencyRewardRange } from '../loot/powerScaledCurrencyRewards'
 
 const prepareCombat = (state: ReturnType<typeof makeInitialState>) => {
   state.progress.spellRanks['fire-bolt'] = 1
@@ -108,7 +108,7 @@ describe('canonical Combat Resonance rewards', () => {
     const random = vi.spyOn(Math, 'random').mockReturnValue(0.5)
     finishEnemy(state, undefined, undefined, { push: (event) => events.push(event) })
     const wt4LifeEssence = state.inventory['life-essence'] ?? 0
-    const wt4Range = resolveLifeEssenceRewardRange('forest-wisp', 4)
+    const wt4Range = resolvePowerScaledCurrencyRewardRange('forest-wisp', 'life-essence', 4)
     expect(wt4LifeEssence).toBeGreaterThanOrEqual(wt4Range.finalMin)
     expect(wt4LifeEssence).toBeLessThanOrEqual(wt4Range.finalMax)
     expect(state.resonance.air).toBe(8)
@@ -133,7 +133,7 @@ describe('canonical Combat Resonance rewards', () => {
     finishEnemy(state, collector, (itemId, quantity) => acquired.push([itemId, quantity]), { push: (event) => events.push(event) }, (_state, _enemyId, drops) => revealed.push(drops.find((drop) => drop.itemId === 'life-essence')?.quantity ?? 0))
     const report = collector.finalize(state)
     const expectedLifeEssence = state.inventory['life-essence'] ?? 0
-    const wt5Range = resolveLifeEssenceRewardRange('forest-wisp', 5)
+    const wt5Range = resolvePowerScaledCurrencyRewardRange('forest-wisp', 'life-essence', 5)
     expect(expectedLifeEssence).toBeGreaterThanOrEqual(wt5Range.finalMin)
     expect(expectedLifeEssence).toBeLessThanOrEqual(wt5Range.finalMax)
     expect(state.inventory['life-essence']).toBe(expectedLifeEssence)

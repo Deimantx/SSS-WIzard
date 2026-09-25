@@ -3,7 +3,7 @@ import { MONSTERS } from '../../content/monsters'
 import type { GameState, ItemId, MonsterId } from '../../types'
 import { grantItem } from '../inventory/itemAcquisition'
 import { getActiveEncounterWorldTier, resolveWorldTierLootQuantity } from '../world-tier/worldTierRuntime'
-import { rollLifeEssenceReward } from './lifeEssenceReward'
+import { rollPowerScaledCurrencyReward } from './powerScaledCurrencyRewards'
 
 /** Resolves the authored material table into inventory changes and a readable log fragment. */
 export function resolveMonsterLoot(state: GameState, enemyId: MonsterId, onDrop?: (itemId: ItemId, quantity: number) => void, rng: () => number = Math.random): string {
@@ -17,9 +17,13 @@ export function resolveMonsterLoot(state: GameState, enemyId: MonsterId, onDrop?
     onDrop?.(drop.itemId, quantity)
     drops.push(`${quantity} ${ITEMS[drop.itemId].name}`)
   })
-  const lifeEssenceQuantity = rollLifeEssenceReward(enemyId, encounterWorldTier, rng)
+  const lifeEssenceQuantity = rollPowerScaledCurrencyReward(enemyId, 'life-essence', encounterWorldTier, rng)
   grantItem(state, 'life-essence', lifeEssenceQuantity)
   onDrop?.('life-essence', lifeEssenceQuantity)
   drops.push(`${lifeEssenceQuantity} ${ITEMS['life-essence'].name}`)
+  const artifactEssenceQuantity = rollPowerScaledCurrencyReward(enemyId, 'artifact-essence', encounterWorldTier, rng)
+  grantItem(state, 'artifact-essence', artifactEssenceQuantity)
+  onDrop?.('artifact-essence', artifactEssenceQuantity)
+  drops.push(`${artifactEssenceQuantity} ${ITEMS['artifact-essence'].name}`)
   return drops.join(', ')
 }

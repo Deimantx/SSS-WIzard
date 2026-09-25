@@ -12,7 +12,7 @@ import { Button, GameTooltip } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { MonsterPortrait } from './MonsterPortrait'
 import { getEnemyCombatStats } from '../../game/systems/combat/combatStats'
-import { resolveLifeEssenceRewardRange } from '../../game/systems/loot/lifeEssenceReward'
+import { resolvePowerScaledCurrencyRewardRange } from '../../game/systems/loot/powerScaledCurrencyRewards'
 import { CombatEffectChip } from '../../components/combat/CombatEffectChip'
 import { EnemyCombatStatList } from '../../components/combat/EnemyCombatStatList'
 import { EnemyResistanceStatList } from '../../components/combat/EnemyResistanceStatList'
@@ -167,9 +167,10 @@ export function EnemyLootContent({ selectedDungeonId }: { selectedDungeonId: Dun
 }
 
 function LootTiles({ monster, inventory, worldTier }: { monster: typeof MONSTERS[MonsterId]; inventory: Partial<Record<ItemId, number>>; worldTier: 1 | 2 | 3 | 4 | 5 }) {
-  const lifeEssence = resolveLifeEssenceRewardRange(monster.id, worldTier)
-  const drops = [...monster.loot, { itemId: 'life-essence' as const, min: lifeEssence.finalMin, max: lifeEssence.finalMax, chance: 1 }]
-  return <div className="enemy-loot-grid">{drops.map((drop) => <LootRewardTile key={drop.itemId} drop={drop} sourceName={monster.name} inventory={inventory} tooltipNote={drop.itemId === 'life-essence' ? `WT1 Enemy Power ${lifeEssence.powerAtWT1}; current WT${lifeEssence.worldTier} dynamic reward.` : undefined} />)}</div>
+  const lifeEssence = resolvePowerScaledCurrencyRewardRange(monster.id, 'life-essence', worldTier)
+  const artifactEssence = resolvePowerScaledCurrencyRewardRange(monster.id, 'artifact-essence', worldTier)
+  const drops = [...monster.loot, { itemId: 'life-essence' as const, min: lifeEssence.finalMin, max: lifeEssence.finalMax, chance: 1 }, { itemId: 'artifact-essence' as const, min: artifactEssence.finalMin, max: artifactEssence.finalMax, chance: 1 }]
+  return <div className="enemy-loot-grid">{drops.map((drop) => <LootRewardTile key={drop.itemId} drop={drop} sourceName={monster.name} inventory={inventory} tooltipNote={drop.itemId === 'life-essence' ? `WT1 Enemy Power ${lifeEssence.wt1Power}; current WT${lifeEssence.worldTier} dynamic reward.` : drop.itemId === 'artifact-essence' ? `WT1 Enemy Power ${artifactEssence.wt1Power}; current WT${artifactEssence.worldTier} dynamic reward.` : undefined} />)}</div>
 }
 
 function pretty(value: string) { return value.replace(/-/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()) }

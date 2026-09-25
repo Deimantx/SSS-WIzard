@@ -1,2 +1,2 @@
 export { resolveMonsterLoot } from './lootResolution'
-export { resolveBaseLifeEssenceRange, resolveLifeEssenceRewardRange, rollLifeEssenceReward } from './lifeEssenceReward'
+export { POWER_SCALED_COMBAT_CURRENCY_CONFIG, resolveBasePowerScaledCurrencyRange, resolveEnemyEssenceRewardRanges, resolvePowerScaledCurrencyRewardRange, rollPowerScaledCurrencyReward } from './powerScaledCurrencyRewards'

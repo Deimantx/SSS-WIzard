@@ -13,8 +13,6 @@ import type {
   TraitId,
 } from "../../types";
 import { periodicDamageStatus } from "../statuses/periodicDamageStatus";
-import { getDungeonArtifactEssenceRange } from "../dungeons/dungeonLoot";
-import type { DungeonId } from "../../types";
 import type { ResonanceYield } from "../resonance/resonance";
 
 export type MonsterPortraitIcon =
@@ -74,19 +72,6 @@ export const action = (id: string, actionId: string): ActionStep => ({
   type: "action",
   actionId,
 });
-export const withDungeonLoot = (
-  dungeonId: DungeonId,
-  role: "normal" | "boss",
-): MonsterDefinition["loot"] => {
-  const essenceRange = getDungeonArtifactEssenceRange(dungeonId, role);
-  return [{
-      itemId: "artifact-essence",
-      min: essenceRange[0],
-      max: essenceRange[1],
-      chance: 1,
-    }];
-};
-
 /** Default Monster authoring: damage scales from Basic Attack Damage. */
 export const scaledDirectDamage = (
   damageType: DamageType,

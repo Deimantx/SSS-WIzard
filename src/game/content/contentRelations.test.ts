@@ -8,9 +8,10 @@ describe('content relations', () => {
     expect(info.relations.some((relation) => relation.kind === 'dungeon' || relation.kind === 'monster')).toBe(false)
   })
 
-  it('derives material loot sources from authored monster tables', () => {
+  it('keeps universal combat currencies out of authored monster source relations', () => {
     const info = getItemSourceInfo('artifact-essence')
-    expect(info.relations.filter((relation) => relation.kind === 'monster').length).toBeGreaterThan(0)
+    expect(info.relations.filter((relation) => relation.kind === 'monster')).toEqual([])
+    expect(info.authoredSource).toContain('Combat')
     expect(getMonsterDungeon('grove-sentinel')).toMatchObject({ dungeonId: 'whispering-woods', role: 'normal' })
     expect(getMonsterDungeon('corrupted-greatbear')).toMatchObject({ dungeonId: 'howling-den', role: 'boss' })
   })

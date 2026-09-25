@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { getItemDropSources } from './contentRelations'
 import { ARTIFACTS, isArtifactId } from './artifacts/artifacts'
 import { DUNGEONS, DUNGEON_ORDER } from './dungeons/dungeons'
-import { DUNGEON_LOOT, validateDungeonLootDefinitions } from './dungeons/dungeonLoot'
 import { ARTIFACT_EQUIPMENT_IDS, getEquipmentIdsForDungeon, getEquipmentOrigin } from './equipment/equipmentSets'
 import { ITEMS } from './items/items'
 import { MONSTERS, validateMonsterDefinitions } from './monsters'
@@ -12,24 +11,18 @@ import { createInitialState } from '../../store/initialState'
 import { isRecipeUnlocked } from './recipes/recipeUnlocks'
 
 describe('dungeon loot and equipment ownership', () => {
-  it('keeps dungeon loot material-only and validates all authored tables', () => {
-    expect(validateDungeonLootDefinitions()).toEqual([])
+  it('keeps authored monster loot material-only and validates all authored tables', () => {
     expect(validateMonsterDefinitions()).toEqual([])
     expect(Object.values(MONSTERS).flatMap((monster) => monster.loot).every((drop) => ITEMS[drop.itemId]?.kind !== 'equipment')).toBe(true)
     expect(Object.values(MONSTERS).flatMap((monster) => monster.loot).some((drop) => isArtifactId(drop.itemId))).toBe(false)
+    expect(Object.values(MONSTERS).flatMap((monster) => monster.loot).some((drop) => drop.itemId === 'life-essence' || drop.itemId === 'artifact-essence')).toBe(false)
   })
 
-  it('gives each normal monster and boss its authored material baseline', () => {
+  it('keeps every current monster on the authored non-currency loot path', () => {
     DUNGEON_ORDER.forEach((dungeonId) => {
       const dungeon = DUNGEONS[dungeonId]
-      dungeon.monsterPool.forEach((monsterId) => {
-        const drop = MONSTERS[monsterId].loot.find((entry) => entry.itemId === 'artifact-essence')
-        expect(drop).toEqual({ itemId: 'artifact-essence', min: DUNGEON_LOOT[dungeonId].artifactEssence.normal[0], max: DUNGEON_LOOT[dungeonId].artifactEssence.normal[1], chance: 1 })
-        expect(MONSTERS[monsterId].loot.some((entry) => entry.itemId === 'life-essence')).toBe(true)
-      })
-      const bossDrop = MONSTERS[dungeon.boss].loot.find((entry) => entry.itemId === 'artifact-essence')
-      expect(bossDrop).toEqual({ itemId: 'artifact-essence', min: DUNGEON_LOOT[dungeonId].artifactEssence.boss[0], max: DUNGEON_LOOT[dungeonId].artifactEssence.boss[1], chance: 1 })
-      expect(MONSTERS[dungeon.boss].loot.some((entry) => entry.itemId === 'life-essence')).toBe(true)
+      dungeon.monsterPool.forEach((monsterId) => expect(MONSTERS[monsterId].loot.every((entry) => entry.itemId !== 'life-essence' && entry.itemId !== 'artifact-essence')).toBe(true))
+      expect(MONSTERS[dungeon.boss].loot.every((entry) => entry.itemId !== 'life-essence' && entry.itemId !== 'artifact-essence')).toBe(true)
     })
   })
 

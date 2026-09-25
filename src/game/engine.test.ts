@@ -338,7 +338,7 @@ describe('Pillars of Mana economy', () => {
 describe('Life Essence combat material', () => {
   it('keeps Life Essence out of authored monster loot while preserving existing authored materials', () => {
     expect(Object.values(MONSTERS).every((monster) => monster.loot.every((drop) => drop.itemId !== 'life-essence'))).toBe(true)
-    expect(MONSTERS['forest-heart'].loot.some((drop) => drop.itemId === 'artifact-essence')).toBe(true)
+    expect(MONSTERS['forest-heart'].loot.some((drop) => drop.itemId === 'artifact-essence')).toBe(false)
   })
 })
 

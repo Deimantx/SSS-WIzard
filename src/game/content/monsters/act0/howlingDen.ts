@@ -8,7 +8,6 @@ import {
   scaledDirectDamage,
   scaledDot,
   scaledMultiDamage,
-  withDungeonLoot,
   type MonsterDefinition,
 } from "../monsterTypes";
 
@@ -59,7 +58,7 @@ export const HOWLING_DEN_MONSTERS = {
       },
     },
     defaultActionPatternId: "default",
-    loot: withDungeonLoot("howling-den", "normal"),
+    loot: [],
   },
   "razorclaw-lynx": {
     id: "razorclaw-lynx",
@@ -112,7 +111,7 @@ export const HOWLING_DEN_MONSTERS = {
       },
     },
     defaultActionPatternId: "default",
-    loot: withDungeonLoot("howling-den", "normal"),
+    loot: [],
   },
   "corrupted-dire-wolf": {
     id: "corrupted-dire-wolf",
@@ -196,7 +195,7 @@ export const HOWLING_DEN_MONSTERS = {
       },
     },
     defaultActionPatternId: "default",
-    loot: withDungeonLoot("howling-den", "normal"),
+    loot: [],
   },
   "bonehide-boar": {
     id: "bonehide-boar",
@@ -236,7 +235,7 @@ export const HOWLING_DEN_MONSTERS = {
     },
     defaultActionPatternId: "default",
     resonanceYield: { earth: 36 },
-    loot: withDungeonLoot("howling-den", "normal"),
+    loot: [],
   },
   "moonblind-jackal": {
     id: "moonblind-jackal",
@@ -276,7 +275,7 @@ export const HOWLING_DEN_MONSTERS = {
     },
     defaultActionPatternId: "default",
     resonanceYield: { air: 38, fire: 12 },
-    loot: withDungeonLoot("howling-den", "normal"),
+    loot: [],
   },
   "den-stalker": {
     id: "den-stalker",
@@ -323,7 +322,7 @@ export const HOWLING_DEN_MONSTERS = {
     },
     defaultActionPatternId: "default",
     resonanceYield: { air: 32, earth: 18 },
-    loot: withDungeonLoot("howling-den", "normal"),
+    loot: [],
   },
   "corrupted-greatbear": {
     id: "corrupted-greatbear",
@@ -424,6 +423,6 @@ export const HOWLING_DEN_MONSTERS = {
       },
     },
     defaultActionPatternId: "default",
-    loot: withDungeonLoot("howling-den", "boss"),
+    loot: [],
   },
 } satisfies Partial<Record<MonsterId, MonsterDefinition>>;

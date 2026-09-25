@@ -13,19 +13,21 @@ const discoveredProgress = (dungeonId: keyof typeof DUNGEONS, includeBoss = true
 describe('location loot presentation', () => {
   it('shows only material rewards and keeps boss rewards separate', () => {
     const normal = buildLocationLootPresentation('abandoned-catacombs', discoveredProgress('abandoned-catacombs', false))
-    expect(normal.monsters.map((entry) => entry.itemId)).toEqual(['artifact-essence', 'life-essence'])
+    expect(normal.monsters.map((entry) => entry.itemId)).toEqual(['life-essence', 'artifact-essence'])
     expect(normal.boss).toEqual([])
     expect(normal.discoveredNormalEncounterCount).toBe(3)
 
     const withBoss = buildLocationLootPresentation('abandoned-catacombs', discoveredProgress('abandoned-catacombs'))
-    expect(withBoss.boss.map((entry) => entry.itemId)).toEqual(['artifact-essence', 'life-essence'])
+    expect(withBoss.boss.map((entry) => entry.itemId)).toEqual(['life-essence', 'artifact-essence'])
     expect(withBoss.boss.some((entry) => entry.signature)).toBe(false)
   })
 
   it('derives shared and varying values from raw material loot', () => {
     const woods = buildLocationLootPresentation('whispering-woods', discoveredProgress('whispering-woods', false))
     const life = woods.monsters.find((entry) => entry.itemId === 'life-essence')!
+    const artifact = woods.monsters.find((entry) => entry.itemId === 'artifact-essence')!
     expect(life).toMatchObject({ chanceMin: 1, chanceMax: 1, variesByEncounter: true, sourceCount: 7, encounterCount: 7 })
+    expect(artifact).toMatchObject({ chanceMin: 1, chanceMax: 1, variesByEncounter: true, sourceCount: 7, encounterCount: 7 })
     expect(getLocationLootAvailabilityLabel(life)).toBe('Varies')
   })
 

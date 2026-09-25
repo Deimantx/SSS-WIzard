@@ -4,6 +4,8 @@ import { TooltipProvider } from '../../components/ui/tooltip/Tooltip'
 import { createInitialState } from '../../store/initialState'
 import { useGameStore } from '../../store/gameStore'
 import type { WorldTierId } from '../../game/types'
+import { resolvePowerScaledCurrencyRewardRange } from '../../game/systems/loot/powerScaledCurrencyRewards'
+import { formatDropQuantity } from '../../game/systems/bestiary/bestiarySelectors'
 import { BestiaryInspector } from './BestiaryInspector'
 
 const renderInspector = (monsterId: Parameters<typeof BestiaryInspector>[0]['monsterId'], worldTier: WorldTierId = 1, discovered = true) => {
@@ -25,8 +27,25 @@ describe('BestiaryResonanceYield', () => {
     expect(screen.getByText('Earth Resonance')).toBeTruthy()
     expect(screen.getByText('+16')).toBeTruthy()
     expect(screen.getByText('Life Essence')).toBeTruthy()
+    expect(screen.getByText('Artifact Essence')).toBeTruthy()
     expect(screen.getByText('LOOT TABLE')).toBeTruthy()
     expect(document.querySelector('.bestiary-resonance-section')?.compareDocumentPosition(document.querySelector('.bestiary-loot-list') as Node) === Node.DOCUMENT_POSITION_FOLLOWING).toBe(true)
+  })
+
+  it('shows guaranteed dynamic Essence ranges and updates them with World Tier', () => {
+    renderInspector('forest-wisp', 1)
+    const wt1Life = resolvePowerScaledCurrencyRewardRange('forest-wisp', 'life-essence', 1)
+    const wt1Artifact = resolvePowerScaledCurrencyRewardRange('forest-wisp', 'artifact-essence', 1)
+    const wt1Loot = document.querySelector('.bestiary-loot-list') as HTMLElement
+    expect(wt1Loot.textContent).toContain(formatDropQuantity(wt1Life.finalMin, wt1Life.finalMax))
+    expect(wt1Loot.textContent).toContain(formatDropQuantity(wt1Artifact.finalMin, wt1Artifact.finalMax))
+
+    act(() => { useGameStore.getState().setWorldTier(2) })
+    const wt2Life = resolvePowerScaledCurrencyRewardRange('forest-wisp', 'life-essence', 2)
+    const wt2Artifact = resolvePowerScaledCurrencyRewardRange('forest-wisp', 'artifact-essence', 2)
+    const wt2Loot = document.querySelector('.bestiary-loot-list') as HTMLElement
+    expect(wt2Loot.textContent).toContain(formatDropQuantity(wt2Life.finalMin, wt2Life.finalMax))
+    expect(wt2Loot.textContent).toContain(formatDropQuantity(wt2Artifact.finalMin, wt2Artifact.finalMax))
   })
 
   it('renders multiple types and reacts to the current World Tier', () => {

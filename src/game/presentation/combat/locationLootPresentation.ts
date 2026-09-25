@@ -1,7 +1,7 @@
 import { DUNGEONS } from '../../content/dungeons/dungeons'
 import { MONSTERS } from '../../content/monsters'
 import { formatDropChance, formatDropQuantity } from '../../systems/bestiary/bestiarySelectors'
-import { resolveLifeEssenceRewardRange } from '../../systems/loot/lifeEssenceReward'
+import { resolvePowerScaledCurrencyRewardRange } from '../../systems/loot/powerScaledCurrencyRewards'
 import type { DungeonId, GameState, ItemId, MonsterId, WorldTierId } from '../../types'
 
 export interface LocationLootEntry {
@@ -35,10 +35,9 @@ const percentage = (chance: number) => `${Number((Math.max(0, chance) * 100).toF
 const aggregateLoot = (monsterIds: readonly MonsterId[], worldTier: WorldTierId, signatureItemId?: ItemId): LocationLootEntry[] => {
   const entries = new Map<ItemId, AggregateEntry>()
   monsterIds.forEach((monsterId) => {
-    const drops = [...MONSTERS[monsterId].loot, (() => {
-      const reward = resolveLifeEssenceRewardRange(monsterId, worldTier)
-      return { itemId: 'life-essence' as const, min: reward.finalMin, max: reward.finalMax, chance: 1 }
-    })()]
+    const lifeEssence = resolvePowerScaledCurrencyRewardRange(monsterId, 'life-essence', worldTier)
+    const artifactEssence = resolvePowerScaledCurrencyRewardRange(monsterId, 'artifact-essence', worldTier)
+    const drops = [...MONSTERS[monsterId].loot, { itemId: 'life-essence' as const, min: lifeEssence.finalMin, max: lifeEssence.finalMax, chance: 1 }, { itemId: 'artifact-essence' as const, min: artifactEssence.finalMin, max: artifactEssence.finalMax, chance: 1 }]
     drops.forEach((drop) => {
       const entry = entries.get(drop.itemId) ?? {
         itemId: drop.itemId,

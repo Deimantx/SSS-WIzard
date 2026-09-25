@@ -8,7 +8,6 @@ import {
   scaledHeal,
   opponentStatusStackScaled,
   sourceStatusStackScaled,
-  withDungeonLoot,
   applyStatus,
   type MonsterDefinition,
 } from "../monsterTypes";
@@ -60,7 +59,7 @@ export const ABANDONED_CATACOMBS_MONSTERS = {
       },
     },
     defaultActionPatternId: "default",
-    loot: withDungeonLoot("abandoned-catacombs", "normal"),
+    loot: [],
   },
   "grave-wraith": {
     id: "grave-wraith",
@@ -136,7 +135,7 @@ export const ABANDONED_CATACOMBS_MONSTERS = {
       },
     },
     defaultActionPatternId: "default",
-    loot: withDungeonLoot("abandoned-catacombs", "normal"),
+    loot: [],
   },
   "fallen-acolyte": {
     id: "fallen-acolyte",
@@ -220,7 +219,7 @@ export const ABANDONED_CATACOMBS_MONSTERS = {
       },
     },
     defaultActionPatternId: "default",
-    loot: withDungeonLoot("abandoned-catacombs", "normal"),
+    loot: [],
   },
   "archmage-edrin-shade": {
     id: "archmage-edrin-shade",
@@ -342,6 +341,6 @@ export const ABANDONED_CATACOMBS_MONSTERS = {
       },
     },
     defaultActionPatternId: "default",
-    loot: withDungeonLoot("abandoned-catacombs", "boss"),
+    loot: [],
   },
 } satisfies Partial<Record<MonsterId, MonsterDefinition>>;

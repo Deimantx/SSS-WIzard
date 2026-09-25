@@ -540,7 +540,7 @@ describe("Act 0 and Act 1 dungeon content", () => {
     ]);
     expect(
       Object.values(MONSTERS).every((monster) =>
-        monster.loot.every((drop) => drop.itemId !== "life-essence"),
+        monster.loot.every((drop) => drop.itemId !== "life-essence" && drop.itemId !== "artifact-essence"),
       ),
     ).toBe(true);
   });

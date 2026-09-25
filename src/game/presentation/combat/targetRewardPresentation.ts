@@ -1,6 +1,6 @@
 import { MONSTERS } from '../../content/monsters'
 import { normalizeResonanceState } from '../../content/resonance/resonance'
-import { resolveLifeEssenceRewardRange } from '../../systems/loot/lifeEssenceReward'
+import { resolvePowerScaledCurrencyRewardRange } from '../../systems/loot/powerScaledCurrencyRewards'
 import { resolveEnemyResonanceReward } from '../../systems/resonance/resonanceRuntime'
 import { resolveWorldTierLootQuantity } from '../../systems/world-tier/worldTierRuntime'
 import type { ItemId, MonsterId, ResonanceState, WorldTierId } from '../../types'
@@ -27,7 +27,8 @@ export interface CombatTargetRewardPresentation {
 export const buildCombatTargetRewardPresentation = (monsterId: MonsterId, worldTier: WorldTierId): CombatTargetRewardPresentation => {
   const monster = MONSTERS[monsterId]
   const resonanceReward = resolveEnemyResonanceReward(monsterId, worldTier)
-  const lifeEssence = resolveLifeEssenceRewardRange(monsterId, worldTier)
+  const lifeEssence = resolvePowerScaledCurrencyRewardRange(monsterId, 'life-essence', worldTier)
+  const artifactEssence = resolvePowerScaledCurrencyRewardRange(monsterId, 'artifact-essence', worldTier)
   const powerRating = resolveEnemyPowerRating(monsterId, worldTier)
   return {
     monsterId,
@@ -40,6 +41,7 @@ export const buildCombatTargetRewardPresentation = (monsterId: MonsterId, worldT
         chance: drop.chance,
       })),
       { itemId: 'life-essence', min: lifeEssence.finalMin, max: lifeEssence.finalMax, chance: 1 },
+      { itemId: 'artifact-essence', min: artifactEssence.finalMin, max: artifactEssence.finalMax, chance: 1 },
     ],
     resonance: normalizeResonanceState(resonanceReward.finalYield),
     powerRating,

@@ -11,7 +11,6 @@ import {
   scaledDot,
   scaledHeal,
   sourceCurrentBarrierPercent,
-  withDungeonLoot,
   type MonsterDefinition,
 } from "../monsterTypes";
 
@@ -61,7 +60,7 @@ export const WHISPERING_WOODS_MONSTERS = {
       },
     },
     defaultActionPatternId: "default",
-    loot: withDungeonLoot("whispering-woods", "normal"),
+    loot: [],
     resonanceYield: { air: 10 },
   },
   thornling: {
@@ -117,7 +116,7 @@ export const WHISPERING_WOODS_MONSTERS = {
       },
     },
     defaultActionPatternId: "default",
-    loot: withDungeonLoot("whispering-woods", "normal"),
+    loot: [],
     resonanceYield: { earth: 12 },
   },
   "dewbound-sprite": {
@@ -157,7 +156,7 @@ export const WHISPERING_WOODS_MONSTERS = {
       },
     },
     defaultActionPatternId: "default",
-    loot: withDungeonLoot("whispering-woods", "normal"),
+    loot: [],
     resonanceYield: { water: 18 },
   },
   "cinder-moth": {
@@ -205,7 +204,7 @@ export const WHISPERING_WOODS_MONSTERS = {
       },
     },
     defaultActionPatternId: "default",
-    loot: withDungeonLoot("whispering-woods", "normal"),
+    loot: [],
     resonanceYield: { fire: 20 },
   },
   "stone-root": {
@@ -254,7 +253,7 @@ export const WHISPERING_WOODS_MONSTERS = {
       },
     },
     defaultActionPatternId: "default",
-    loot: withDungeonLoot("whispering-woods", "normal"),
+    loot: [],
     resonanceYield: { earth: 20 },
   },
   "grove-sentinel": {
@@ -331,7 +330,7 @@ export const WHISPERING_WOODS_MONSTERS = {
       },
     },
     defaultActionPatternId: "default",
-    loot: withDungeonLoot("whispering-woods", "normal"),
+    loot: [],
     resonanceYield: { earth: 45 },
   },
   "tempest-stag": {
@@ -379,7 +378,7 @@ export const WHISPERING_WOODS_MONSTERS = {
       },
     },
     defaultActionPatternId: "default",
-    loot: withDungeonLoot("whispering-woods", "normal"),
+    loot: [],
     resonanceYield: { air: 50, earth: 15 },
   },
   "forest-heart": {
@@ -468,7 +467,7 @@ export const WHISPERING_WOODS_MONSTERS = {
       },
     },
     defaultActionPatternId: "default",
-    loot: withDungeonLoot("whispering-woods", "boss"),
+    loot: [],
     resonanceYield: { earth: 80 },
   },
 } satisfies Partial<Record<MonsterId, MonsterDefinition>>;

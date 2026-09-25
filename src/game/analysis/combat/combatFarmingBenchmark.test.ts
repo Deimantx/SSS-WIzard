@@ -71,8 +71,8 @@ describe('combat farming benchmark', () => {
     const wt2 = runCombatFarmingBenchmark({ sourceState: state, locationId: 'whispering-woods', targetEnemyId: 'forest-wisp', worldTier: 2, durationMs: 120_000 })
     expect(wt1.kills).toBeGreaterThan(0)
     expect(wt2.kills).toBeGreaterThan(0)
-    expect(wt1.resonanceTotal.air / wt1.kills).toBe(10)
-    expect(wt2.resonanceTotal.air / wt2.kills).toBe(20)
+    expect(wt1.resonanceTotal.air / wt1.kills).toBe(2)
+    expect(wt2.resonanceTotal.air / wt2.kills).toBe(4)
   })
 
   it('stops early when the cloned player dies', () => {

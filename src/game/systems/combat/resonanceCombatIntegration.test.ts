@@ -140,7 +140,9 @@ describe('canonical Combat Resonance rewards', () => {
     expect(acquired).toContainEqual(['life-essence', expectedLifeEssence])
     expect(revealed).toEqual([expectedLifeEssence])
     expect(report.combat.loot['life-essence']).toBe(expectedLifeEssence)
+    expect(report.combat.loot['artifact-essence']).toBe(state.inventory['artifact-essence'])
     expect(events.find((event) => event.category === 'loot' && event.itemId === 'life-essence')).toMatchObject({ amount: expectedLifeEssence })
+    expect(events.find((event) => event.category === 'loot' && event.itemId === 'artifact-essence')).toMatchObject({ amount: state.inventory['artifact-essence'] })
     random.mockRestore()
   })
 

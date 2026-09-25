@@ -4,7 +4,7 @@ import { migrateSave } from './migrations'
 import { serializeGameState } from './profileSaveManager'
 
 describe('item discovery save migration', () => {
-  it('seeds V10 archives from owned, equipped, and guaranteed defeated drops', () => {
+  it('seeds V10 archives from owned and equipped items without inventing dynamic rewards', () => {
     const legacy = createInitialState() as any
     legacy.saveVersion = 10
     delete legacy.progress.discoveredItems
@@ -14,7 +14,9 @@ describe('item discovery save migration', () => {
 
     const migrated = migrateSave(legacy)
     expect(migrated.saveVersion).toBe(SAVE_VERSION)
-    expect(migrated.progress.discoveredItems).toEqual(expect.arrayContaining(['fire-fragment', 'artifact-essence', 'life-essence']))
+    expect(migrated.progress.discoveredItems).toEqual(expect.arrayContaining(['fire-fragment']))
+    expect(migrated.progress.discoveredItems).not.toContain('artifact-essence')
+    expect(migrated.progress.discoveredItems).not.toContain('life-essence')
     expect(migrated.progress.discoveredItems).not.toContain('apprentice-wand')
     expect(migrated.progress.discoveredItems).not.toContain('heartseed')
   })

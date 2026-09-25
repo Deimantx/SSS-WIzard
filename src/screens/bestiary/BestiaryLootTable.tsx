@@ -18,6 +18,19 @@ export function BestiaryLootTable({ monster, progress, worldTier }: { monster: M
   }
 
   return <section className="bestiary-section">
+    <span className="bestiary-section-label">GUARANTEED REWARDS · WT{worldTier}</span>
+    <div className="bestiary-loot-list">
+      <div className="bestiary-loot-row" key="life-essence">
+        <GameTooltip content={<TooltipContent title={lifeEssenceItem.name} description={`${lifeEssenceItem.description} Guaranteed on every defeat. WT1 Enemy Power ${lifeEssence.wt1Power}; base range ${formatDropQuantity(lifeEssence.baseMin, lifeEssence.baseMax)}${lifeEssence.bossMultiplier > 1 ? ` · Boss target ×${lifeEssence.bossMultiplier}` : ''}. Current WT${lifeEssence.worldTier} range: ${formatDropQuantity(lifeEssence.finalMin, lifeEssence.finalMax)}.`} />}><ItemIcon itemId="life-essence" size="tiny" /></GameTooltip>
+        <div><strong>{lifeEssenceItem.name}</strong><small>{formatDropQuantity(lifeEssence.finalMin, lifeEssence.finalMax)} · GUARANTEED</small></div>
+        {renderStatus('life-essence')}
+      </div>
+      <div className="bestiary-loot-row" key="artifact-essence">
+        <GameTooltip content={<TooltipContent title={artifactEssenceItem.name} description={`${artifactEssenceItem.description} Guaranteed on every defeat. WT1 Enemy Power ${artifactEssence.wt1Power}; base range ${formatDropQuantity(artifactEssence.baseMin, artifactEssence.baseMax)}${artifactEssence.bossMultiplier > 1 ? ` · Boss target ×${artifactEssence.bossMultiplier}` : ''}. Current WT${artifactEssence.worldTier} range: ${formatDropQuantity(artifactEssence.finalMin, artifactEssence.finalMax)}.`} />}><ItemIcon itemId="artifact-essence" size="tiny" /></GameTooltip>
+        <div><strong>{artifactEssenceItem.name}</strong><small>{formatDropQuantity(artifactEssence.finalMin, artifactEssence.finalMax)} · GUARANTEED</small></div>
+        {renderStatus('artifact-essence')}
+      </div>
+    </div>
     <span className="bestiary-section-label">LOOT TABLE</span>
     <div className="bestiary-loot-list">
       {monster.loot.map((drop) => {
@@ -28,16 +41,6 @@ export function BestiaryLootTable({ monster, progress, worldTier }: { monster: M
           {renderStatus(drop.itemId)}
         </div>
       })}
-      <div className="bestiary-loot-row" key="life-essence">
-        <GameTooltip content={<TooltipContent title={lifeEssenceItem.name} description={`${lifeEssenceItem.description} Guaranteed on every defeat. WT1 Enemy Power ${lifeEssence.wt1Power}; base range ${formatDropQuantity(lifeEssence.baseMin, lifeEssence.baseMax)}${lifeEssence.bossMultiplier > 1 ? ` · Boss target ×${lifeEssence.bossMultiplier}` : ''}. Current WT${lifeEssence.worldTier} range: ${formatDropQuantity(lifeEssence.finalMin, lifeEssence.finalMax)}.`} />}><ItemIcon itemId="life-essence" size="tiny" /></GameTooltip>
-        <div><strong>{lifeEssenceItem.name}</strong><small>{formatDropQuantity(lifeEssence.finalMin, lifeEssence.finalMax)} · {formatDropChance(1)}</small></div>
-        {renderStatus('life-essence')}
-      </div>
-      <div className="bestiary-loot-row" key="artifact-essence">
-        <GameTooltip content={<TooltipContent title={artifactEssenceItem.name} description={`${artifactEssenceItem.description} Guaranteed on every defeat. WT1 Enemy Power ${artifactEssence.wt1Power}; base range ${formatDropQuantity(artifactEssence.baseMin, artifactEssence.baseMax)}${artifactEssence.bossMultiplier > 1 ? ` · Boss target ×${artifactEssence.bossMultiplier}` : ''}. Current WT${artifactEssence.worldTier} range: ${formatDropQuantity(artifactEssence.finalMin, artifactEssence.finalMax)}.`} />}><ItemIcon itemId="artifact-essence" size="tiny" /></GameTooltip>
-        <div><strong>{artifactEssenceItem.name}</strong><small>{formatDropQuantity(artifactEssence.finalMin, artifactEssence.finalMax)} · {formatDropChance(1)}</small></div>
-        {renderStatus('artifact-essence')}
-      </div>
     </div>
   </section>
 }

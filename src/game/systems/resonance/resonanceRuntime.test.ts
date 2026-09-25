@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { MONSTERS } from '../../content/monsters'
 import { RESONANCE_TYPES } from '../../content/resonance/resonance'
 import { createEmptyResonanceState, grantResonance, grantResonanceBundle, normalizeResonanceState, resolveEnemyResonanceReward, sanitizeResonanceAmount, setResonance } from './resonanceRuntime'
 
@@ -38,5 +39,15 @@ describe('Resonance runtime', () => {
     expect(wt1.rewardMultiplier).toBe(0.2)
     expect(wt5.rewardMultiplier).toBe(1)
     expect(wt5.finalYield).toEqual({ air: 10 })
+  })
+
+  it('preserves small yields when combined scaling resolves to exactly one', () => {
+    const original = MONSTERS['forest-wisp'].resonanceYield
+    MONSTERS['forest-wisp'].resonanceYield = { air: 7 }
+    try {
+      expect(resolveEnemyResonanceReward('forest-wisp', 5).finalYield).toEqual({ air: 7 })
+    } finally {
+      MONSTERS['forest-wisp'].resonanceYield = original
+    }
   })
 })

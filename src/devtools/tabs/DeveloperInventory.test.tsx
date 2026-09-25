@@ -38,8 +38,8 @@ describe('DeveloperInventory selection safety', () => {
     expect(within(browser).queryByText('Ember Staff')).toBeNull()
 
     fireEvent.click(screen.getByRole('tab', { name: 'BOSS DROPS' }))
-    expect((await screen.findAllByText('Artifact Essence')).length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Life Essence').length).toBeGreaterThan(0)
+    expect(screen.queryByText('Artifact Essence')).toBeNull()
+    expect(screen.queryByText('Life Essence')).toBeNull()
     expect(within(browser).queryByText('Fire Fragment')).toBeNull()
     expect(within(browser).queryByText('Prismatic Fragment')).toBeNull()
   })

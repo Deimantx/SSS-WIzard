@@ -31,7 +31,7 @@ describe('Developer Resonance tab', () => {
     const before = { ...useGameStore.getState().resonance }
     fireEvent.change(screen.getByRole('combobox', { name: 'Preview enemy' }), { target: { value: 'stone-root' } })
     fireEvent.click(screen.getByRole('button', { name: 'SIMULATE' }))
-    expect(screen.getByText('2,000')).toBeTruthy()
+    expect(screen.getByText('400')).toBeTruthy()
     expect(useGameStore.getState().resonance).toEqual(before)
   })
 })
